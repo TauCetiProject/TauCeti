@@ -9,7 +9,6 @@ public import TauCeti.Analysis.SpringSystem.Tetrahedron.Character
 public import TauCeti.Analysis.SpringSystem.Tetrahedron.MatchingStabilizer
 public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
-import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 
 /-!
 # The decomposition of the displacements of the spring tetrahedron into irreducibles
@@ -56,9 +55,6 @@ centred vertices sum to zero.
 
 ## Main results
 
-* `TauCeti.det_tetrahedronSymmetryMatrix`: `det R_σ = sgn σ`.
-* `TauCeti.tetrahedronSymmetryMatrix_mul_crossProductMatrix_mul`:
-  `R_σ ω̂ R_σ⁻¹ = sgn σ • (R_σ ω)^`, where `ω̂` is the matrix of `x ↦ ω ⨯₃ x`.
 * `TauCeti.range_tetrahedronBreathingMap`, `TauCeti.range_tetrahedronMatchingMap`,
   `TauCeti.range_tetrahedronVibrationMap`: the three summands are the eigenspaces of `H` for `-8`,
   `-2` and `-4`.
@@ -66,9 +62,9 @@ centred vertices sum to zero.
   the rotations span the kernel of `H`.
 * `TauCeti.tetrahedronSpringMatrix_mulVec_tetrahedronModeEquiv`: `H` acts on the five summands by
   `-8`, `-2`, `-4`, `0` and `0`.
-* `TauCeti.dotProduct_eq_zero_of_mem_eigenspace_tetrahedronSpringMatrix` and
-  `TauCeti.dotProduct_tetrahedronTranslationMap_tetrahedronRotationMap`: the summands are mutually
-  orthogonal.
+* `TauCeti.dotProduct_tetrahedronTranslationMap_tetrahedronRotationMap`: translations are
+  orthogonal to rotations; the other summands are orthogonal as distinct eigenspaces of `H`
+  (`TauCeti.dotProduct_eq_zero_of_mem_eigenspace_tetrahedronSpringMatrix`).
 
 ## References
 
@@ -82,29 +78,6 @@ public section
 open Matrix Equiv Representation LieAlgebra.Orthogonal
 
 namespace TauCeti
-
-/-! ### The determinant of a tetrahedral symmetry -/
-
-/-- **A tetrahedral symmetry has determinant `sgn σ`**: transpositions act by reflections, of
-determinant `-1`. -/
-theorem det_tetrahedronSymmetryMatrix (σ : Perm (Fin 4)) :
-    (tetrahedronSymmetryMatrix σ).det = ((Perm.sign σ : ℤ) : ℝ) := by
-  refine Perm.swap_induction_on σ (by simp) fun f x y hxy ih ↦ ?_
-  rw [map_mul, det_mul, ih, Perm.sign_mul, Perm.sign_swap hxy, tetrahedronSymmetryMatrix_swap,
-    det_one_sub_vecMulVec]
-  simp [sub_dotProduct, dotProduct_sub, dotProduct_tetrahedronCenteredVertex, hxy, Ne.symm hxy]
-  norm_num
-
-/-- Conjugating the hat matrix `ω̂` of `x ↦ ω ⨯₃ x` by a tetrahedral symmetry gives the hat matrix
-of `R_σ ω`, twisted by the sign: `R_σ ω̂ R_σ⁻¹ = sgn σ • (R_σ ω)^`. So `R_σ` preserves the cross
-product only up to `sgn σ`. -/
-theorem tetrahedronSymmetryMatrix_mul_crossProductMatrix_mul (σ : Perm (Fin 4))
-    (ω : Fin 3 → ℝ) :
-    tetrahedronSymmetryMatrix σ * crossProductMatrix ℝ ω * tetrahedronSymmetryMatrix σ⁻¹ =
-      ((Perm.sign σ : ℤ) : ℝ) • crossProductMatrix ℝ (tetrahedronSymmetryMatrix σ *ᵥ ω) := by
-  rw [← transpose_tetrahedronSymmetryMatrix,
-    mul_crossProductMatrix_mul_transpose_of_mem_orthogonalGroup
-      (tetrahedronSymmetryMatrix_mem_orthogonalGroup σ), det_tetrahedronSymmetryMatrix]
 
 /-! ### Translations and infinitesimal rotations -/
 
@@ -220,47 +193,6 @@ theorem range_tetrahedronBreathingMap :
   rw [IntertwiningMap.toLinearMap_apply, tetrahedronBreathingMap_apply,
     tetrahedronBreathingMode_def, ← map_smul, Prod.smul_mk, smul_zero]
 
-/-! ### Seeds indexed by a permuted set -/
-
-section Seed
-
-variable {G X : Type*} [Monoid G] [MulAction G X] [Fintype X]
-
-/-- The combination `c ↦ ∑ₓ cₓ s x` of a family of displacements, on the sum-zero vectors of
-`ℝ[X]`. -/
-private noncomputable def seedMap (s : X → Fin 4 × Fin 3 → ℝ) :
-    (augmentationSubrepresentation ℝ G X).toSubmodule →ₗ[ℝ] (Fin 4 × Fin 3 → ℝ) where
-  toFun v := ∑ x, (v : MonoidAlgebra ℝ X).coeff x • s x
-  map_add' v w := by simp [add_smul, Finset.sum_add_distrib]
-  map_smul' c v := by simp [Finset.smul_sum, smul_smul]
-
-private theorem seedMap_apply (s : X → Fin 4 × Fin 3 → ℝ)
-    (v : (augmentationSubrepresentation ℝ G X).toSubmodule) :
-    seedMap s v = ∑ x, (v : MonoidAlgebra ℝ X).coeff x • s x :=
-  (rfl)
-
-/-- A family of displacements `s` that sums to zero lies in the range of `c ↦ ∑ₓ cₓ s x` on
-the sum-zero vectors: `s y` is the image of `δ_y - (1/|X|) ∑ₓ δₓ`. -/
-private theorem range_seedMap {s : X → Fin 4 × Fin 3 → ℝ} (hs : ∑ x, s x = 0) :
-    LinearMap.range (seedMap (G := G) s) = Submodule.span ℝ (Set.range s) := by
-  classical
-  refine le_antisymm ?_ (Submodule.span_le.2 ?_)
-  · rintro _ ⟨v, rfl⟩
-    exact Submodule.sum_mem _ fun x _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, rfl⟩)
-  rintro _ ⟨y, rfl⟩
-  have : Nonempty X := ⟨y⟩
-  have hX : (Fintype.card X : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-  let v := MonoidAlgebra.single y 1 - (Fintype.card X : ℝ)⁻¹ • permutationSum ℝ X
-  have hv : v ∈ augmentationSubrepresentation ℝ G X := by
-    rw [mem_augmentationSubrepresentation_iff, map_sub, map_smul, sumCoords_basis_permutationSum,
-      smul_eq_mul, inv_mul_cancel₀ hX]
-    simp
-  refine ⟨⟨v, hv⟩, ?_⟩
-  simp [v, seedMap_apply, sub_smul, Finset.sum_sub_distrib, MonoidAlgebra.coeff_single,
-    Finsupp.single_apply, ite_smul, ← Finset.smul_sum, hs]
-
-end Seed
-
 /-! ### The vibrational copy of the standard representation -/
 
 /-- **The vibrational copy of `V`**: a sum-zero vector `c` on the four vertices goes to the
@@ -268,9 +200,10 @@ combination `∑ⱼ cⱼ Vⱼ` of the vibration seeds `(Vⱼ)ᵢ = Aⱼ qᵢ`, w
 they permute the vertices. -/
 noncomputable def tetrahedronVibrationMap :
     IntertwiningMap (standardRepresentation ℝ (Fin 4)) tetrahedronDisplacementRep :=
-  (seedMap tetrahedronVibrationSeed).intertwiningMap_of_isIntertwiningMap _ _ fun σ v ↦ by
-    simp only [seedMap_apply, coe_standardRepresentation_apply, coeff_ofMulAction, map_sum,
-      map_smul, tetrahedronDisplacementRep_vibrationSeed]
+  (augmentationLinearCombination ℝ (Perm (Fin 4))
+      tetrahedronVibrationSeed).intertwiningMap_of_isIntertwiningMap _ _ fun σ v ↦ by
+    simp only [augmentationLinearCombination_apply, coe_standardRepresentation_apply,
+      coeff_ofMulAction, map_sum, map_smul, tetrahedronDisplacementRep_vibrationSeed]
     rw [← Equiv.sum_comp σ]
     simp [Perm.smul_def]
 
@@ -279,14 +212,14 @@ theorem tetrahedronVibrationMap_apply
     (v : (augmentationSubrepresentation ℝ (Perm (Fin 4)) (Fin 4)).toSubmodule) :
     tetrahedronVibrationMap v =
       ∑ j, (v : MonoidAlgebra ℝ (Fin 4)).coeff j • tetrahedronVibrationSeed j :=
-  (rfl)
+  augmentationLinearCombination_apply _ v
 
 /-- **The vibrational copy of `V` is the eigenspace of the force matrix for `-4`.** -/
 theorem range_tetrahedronVibrationMap :
     LinearMap.range tetrahedronVibrationMap.toLinearMap =
       Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-4) := by
   rw [← span_range_tetrahedronVibrationSeed]
-  exact range_seedMap sum_tetrahedronVibrationSeed
+  exact range_augmentationLinearCombination (by norm_num) sum_tetrahedronVibrationSeed
 
 /-- The vibrational copy of `V` lies in the eigenspace of the force matrix for `-4`. -/
 theorem tetrahedronVibrationMap_mem_eigenspace
@@ -302,10 +235,11 @@ permute the matchings. -/
 noncomputable def tetrahedronMatchingMap :
     IntertwiningMap (symmetricGroupFourTwoDimensionalRepresentation ℝ)
       tetrahedronDisplacementRep :=
-  (seedMap tetrahedronMatchingSeed).intertwiningMap_of_isIntertwiningMap _ _ fun σ v ↦ by
-    simp only [seedMap_apply, symmetricGroupFourTwoDimensionalRepresentation_apply,
-      coe_standardRepresentation_apply, coeff_ofMulAction, map_sum, map_smul,
-      tetrahedronDisplacementRep_matchingSeed]
+  (augmentationLinearCombination ℝ (Perm (Fin 3))
+      tetrahedronMatchingSeed).intertwiningMap_of_isIntertwiningMap _ _ fun σ v ↦ by
+    simp only [augmentationLinearCombination_apply,
+      symmetricGroupFourTwoDimensionalRepresentation_apply, coe_standardRepresentation_apply,
+      coeff_ofMulAction, map_sum, map_smul, tetrahedronDisplacementRep_matchingSeed]
     rw [← Equiv.sum_comp (symmetricGroupFourMatchingHom σ)]
     simp [Perm.smul_def]
 
@@ -314,32 +248,20 @@ theorem tetrahedronMatchingMap_apply
     (v : (augmentationSubrepresentation ℝ (Perm (Fin 3)) (Fin 3)).toSubmodule) :
     tetrahedronMatchingMap v =
       ∑ m, (v : MonoidAlgebra ℝ (Fin 3)).coeff m • tetrahedronMatchingSeed m :=
-  (rfl)
+  augmentationLinearCombination_apply _ v
 
 /-- **The summand `E` is the eigenspace of the force matrix for `-2`.** -/
 theorem range_tetrahedronMatchingMap :
     LinearMap.range tetrahedronMatchingMap.toLinearMap =
       Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-2) := by
   rw [← span_range_tetrahedronMatchingSeed]
-  exact range_seedMap sum_tetrahedronMatchingSeed
+  exact range_augmentationLinearCombination (by norm_num) sum_tetrahedronMatchingSeed
 
 /-- The summand `E` lies in the eigenspace of the force matrix for `-2`. -/
 theorem tetrahedronMatchingMap_mem_eigenspace
     (v : (augmentationSubrepresentation ℝ (Perm (Fin 3)) (Fin 3)).toSubmodule) :
     tetrahedronMatchingMap v ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-2) :=
   range_tetrahedronMatchingMap ▸ LinearMap.mem_range_self _ v
-
-/-! ### Orthogonality of the eigenspaces -/
-
-/-- **Distinct eigenspaces of the force matrix are orthogonal**, since `H` is symmetric. -/
-theorem dotProduct_eq_zero_of_mem_eigenspace_tetrahedronSpringMatrix {μ ν : ℝ} (h : μ ≠ ν)
-    {u v : Fin 4 × Fin 3 → ℝ} (hu : u ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' μ)
-    (hv : v ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' ν) : u ⬝ᵥ v = 0 := by
-  rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hu hv
-  have hsymm : (tetrahedronSpringMatrix *ᵥ u) ⬝ᵥ v = u ⬝ᵥ (tetrahedronSpringMatrix *ᵥ v) := by
-    rw [dotProduct_mulVec, ← mulVec_transpose, isSymm_tetrahedronSpringMatrix.eq]
-  rw [hu, hv, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul] at hsymm
-  exact (mul_eq_mul_right_iff.1 hsymm).resolve_left h
 
 /-! ### The decomposition -/
 

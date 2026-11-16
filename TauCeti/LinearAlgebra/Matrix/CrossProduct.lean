@@ -74,11 +74,9 @@ determinant times its transpose. A reflection, of determinant `-1`, reverses the
 theorem _root_.Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup
     {M : Matrix (Fin 3) (Fin 3) R} (hM : M ∈ orthogonalGroup (Fin 3) R) (u w : Fin 3 → R) :
     (M *ᵥ u) ⨯₃ (M *ᵥ w) = M.det • M *ᵥ (u ⨯₃ w) := by
-  have hadj : M.adjugate = M.det • Mᵀ := by
-    calc M.adjugate = M.adjugate * (M * Mᵀ) := by
-          rw [(mem_orthogonalGroup_iff _ _).1 hM, Matrix.mul_one]
-      _ = M.det • Mᵀ := by rw [← Matrix.mul_assoc, adjugate_mul, smul_mul_assoc, one_mul]
-  rw [Matrix.mulVec_cross_mulVec, hadj, transpose_smul, transpose_transpose, smul_mulVec]
+  rw [Matrix.mulVec_cross_mulVec,
+    adjugate_eq_det_smul_of_mul_eq_one ((mem_orthogonalGroup_iff _ _).1 hM), transpose_smul,
+    transpose_transpose, smul_mulVec]
 
 /-- **Rotations preserve the cross product**: `(M u) ⨯₃ (M w) = M (u ⨯₃ w)` for `M ∈ SO(3)`, the
 case `det M = 1` of `Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup`. The converse direction is
