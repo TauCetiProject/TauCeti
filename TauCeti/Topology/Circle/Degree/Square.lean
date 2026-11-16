@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Homotopy.Cube.Basic
-public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 
 /-!
 # The degree of a circle-valued map around the boundary of the square
@@ -31,7 +30,7 @@ laws of a winding number:
   (`TauCeti.squareBoundaryDegree_eq_of_homotopy`);
 * **subdivision:** if `Γ` is also continuous on the vertical segment `s = 1/2`, the degree of `Γ`
   is the sum of the degrees of its two halves, read through the affine maps
-  `TauCeti.squareLeftHalf` and `TauCeti.squareRightHalf` of `I²` onto `s ≤ 1/2` and `s ≥ 1/2`
+  `TauCeti.cubeLeftHalf 0` and `TauCeti.cubeRightHalf 0` of `I²` onto `s ≤ 1/2` and `s ≥ 1/2`
   (`TauCeti.squareBoundaryDegree_eq_add`). This is the subdivision along the first coordinate
   that Mathlib uses to multiply classes of `π₂` (`GenLoop.transAt 0`).
 
@@ -213,8 +212,9 @@ private theorem square_ext {y z : Fin 2 → I} (h₀ : (y 0 : ℝ) = z 0) (h₁ 
   fin_cases i
   exacts [h₀, h₁]
 
-private theorem mapsTo_squareLeftHalf :
-    MapsTo squareLeftHalf (Cube.boundary (Fin 2)) (Cube.boundary (Fin 2) ∪ squareSeam) := by
+private theorem mapsTo_cubeLeftHalf :
+    MapsTo (cubeLeftHalf (0 : Fin 2)) (Cube.boundary (Fin 2))
+      (Cube.boundary (Fin 2) ∪ squareSeam) := by
   intro y hy
   simp only [Cube.boundary, mem_ofPred_eq, Fin.exists_fin_two] at hy
   rcases hy with (hi | hi) | hi
@@ -222,8 +222,9 @@ private theorem mapsTo_squareLeftHalf :
   · exact Or.inr (by simp [squareSeam, hi])
   · exact Or.inl ⟨1, by simpa using hi⟩
 
-private theorem mapsTo_squareRightHalf :
-    MapsTo squareRightHalf (Cube.boundary (Fin 2)) (Cube.boundary (Fin 2) ∪ squareSeam) := by
+private theorem mapsTo_cubeRightHalf :
+    MapsTo (cubeRightHalf (0 : Fin 2)) (Cube.boundary (Fin 2))
+      (Cube.boundary (Fin 2) ∪ squareSeam) := by
   intro y hy
   simp only [Cube.boundary, mem_ofPred_eq, Fin.exists_fin_two] at hy
   rcases hy with (hi | hi) | hi
@@ -272,11 +273,11 @@ halves. -/
 private theorem pathAngle_horizontal_eq_add {a b : Fin 2 → I} (γ : Path a b) (c : I)
     (hγ : ∀ s, γ s = ![s, c]) (h : ContinuousOn Γ (Cube.boundary (Fin 2) ∪ squareSeam))
     (hrange : range γ ⊆ Cube.boundary (Fin 2)) :
-    pathAngle γ Γ = pathAngle γ (Γ ∘ squareLeftHalf) + pathAngle γ (Γ ∘ squareRightHalf) := by
-  have hL : ContinuousOn (Γ ∘ squareLeftHalf) (range γ) :=
-    (h.comp (map_continuous _).continuousOn mapsTo_squareLeftHalf).mono hrange
-  have hR : ContinuousOn (Γ ∘ squareRightHalf) (range γ) :=
-    (h.comp (map_continuous _).continuousOn mapsTo_squareRightHalf).mono hrange
+    pathAngle γ Γ = pathAngle γ (Γ ∘ cubeLeftHalf 0) + pathAngle γ (Γ ∘ cubeRightHalf 0) := by
+  have hL : ContinuousOn (Γ ∘ cubeLeftHalf 0) (range γ) :=
+    (h.comp (map_continuous _).continuousOn mapsTo_cubeLeftHalf).mono hrange
+  have hR : ContinuousOn (Γ ∘ cubeRightHalf 0) (range γ) :=
+    (h.comp (map_continuous _).continuousOn mapsTo_cubeRightHalf).mono hrange
   have hΓ : ContinuousOn Γ (range γ) := (h.mono subset_union_left).mono hrange
   rw [pathAngle_eq γ hΓ, pathAngle_eq γ hL, pathAngle_eq γ hR]
   refine Circle.angleChange_eq_add_of_halves _ _ _ (fun s t ht ↦ ?_) fun s t ht ↦ ?_ <;>
@@ -289,32 +290,32 @@ to the left and right halves of the square. -/
 theorem squareBoundaryDegree_eq_add
     (h : ContinuousOn Γ (Cube.boundary (Fin 2) ∪ {y | (y 0 : ℝ) = 1 / 2})) :
     squareBoundaryDegree Γ =
-      squareBoundaryDegree (Γ ∘ squareLeftHalf) + squareBoundaryDegree (Γ ∘ squareRightHalf) := by
+      squareBoundaryDegree (Γ ∘ cubeLeftHalf 0) + squareBoundaryDegree (Γ ∘ cubeRightHalf 0) := by
   have hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)) := h.mono subset_union_left
-  have hL : ContinuousOn (Γ ∘ squareLeftHalf) (Cube.boundary (Fin 2)) :=
-    h.comp (map_continuous _).continuousOn mapsTo_squareLeftHalf
-  have hR : ContinuousOn (Γ ∘ squareRightHalf) (Cube.boundary (Fin 2)) :=
-    h.comp (map_continuous _).continuousOn mapsTo_squareRightHalf
+  have hL : ContinuousOn (Γ ∘ cubeLeftHalf 0) (Cube.boundary (Fin 2)) :=
+    h.comp (map_continuous _).continuousOn mapsTo_cubeLeftHalf
+  have hR : ContinuousOn (Γ ∘ cubeRightHalf 0) (Cube.boundary (Fin 2)) :=
+    h.comp (map_continuous _).continuousOn mapsTo_cubeRightHalf
   -- The horizontal edges split into halves.
   have hbot := pathAngle_horizontal_eq_add squareBottom 0 (fun _ ↦ rfl) h range_squareBottom
   have htop := pathAngle_horizontal_eq_add squareTop 1 (fun _ ↦ rfl) h range_squareTop
   -- The outer vertical edges are those of the halves.
-  have hright : pathAngle squareRight Γ = pathAngle squareRight (Γ ∘ squareRightHalf) :=
+  have hright : pathAngle squareRight Γ = pathAngle squareRight (Γ ∘ cubeRightHalf 0) :=
     pathAngle_congr _ _ (hΓ.mono range_squareRight) (hR.mono range_squareRight) fun t ↦
       congrArg Γ (square_ext (by simp [squareRight]) (by simp [squareRight]))
-  have hleft : pathAngle squareLeft Γ = pathAngle squareLeft (Γ ∘ squareLeftHalf) :=
+  have hleft : pathAngle squareLeft Γ = pathAngle squareLeft (Γ ∘ cubeLeftHalf 0) :=
     pathAngle_congr _ _ (hΓ.mono range_squareLeft) (hL.mono range_squareLeft) fun t ↦
       congrArg Γ (square_ext (by simp [squareLeft]) (by simp [squareLeft]))
   -- The inner vertical edges are both the seam `s = 1/2`, and cancel.
-  have hseam : pathAngle squareRight (Γ ∘ squareLeftHalf) =
-      pathAngle squareLeft (Γ ∘ squareRightHalf) :=
+  have hseam : pathAngle squareRight (Γ ∘ cubeLeftHalf 0) =
+      pathAngle squareLeft (Γ ∘ cubeRightHalf 0) :=
     pathAngle_congr _ _ (hL.mono range_squareRight) (hR.mono range_squareLeft) fun t ↦
       congrArg Γ (square_ext (by simp [squareRight, squareLeft])
         (by simp [squareRight, squareLeft]))
   have key := squareBoundaryDegree_mul_two_pi hΓ
   rw [hbot, htop, hright, hleft] at key
-  have hsum : ((squareBoundaryDegree (Γ ∘ squareLeftHalf) +
-      squareBoundaryDegree (Γ ∘ squareRightHalf) : ℤ) : ℝ) * (2 * Real.pi) =
+  have hsum : ((squareBoundaryDegree (Γ ∘ cubeLeftHalf 0) +
+      squareBoundaryDegree (Γ ∘ cubeRightHalf 0) : ℤ) : ℝ) * (2 * Real.pi) =
       (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) := by
     rw [Int.cast_add, add_mul, squareBoundaryDegree_mul_two_pi hL,
       squareBoundaryDegree_mul_two_pi hR, key, hseam]

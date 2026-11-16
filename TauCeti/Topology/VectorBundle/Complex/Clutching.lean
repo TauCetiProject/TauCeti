@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Analysis.Complex.NormalizedDeterminant
 public import TauCeti.Topology.Circle.Degree.Square
+public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 public import TauCeti.Topology.VectorBundle.Contractible
 
 /-!
@@ -303,24 +304,24 @@ theorem clutchingNumber_transAt (p q : Ω^ (Fin 2) X x) :
     · exact mem_preimage.2 (mem_of_eq_of_mem (GenLoop.boundary f y hy) hx₀)
     · exact mem_preimage.2 (mem_of_eq_of_mem (GenLoop.transAt_apply_of_coe_eq_half 0 q p hy) hx₀)
   -- The two halves of the concatenation are `q` and `p`, with the halves of the frame `Ψ`.
-  let qL : Ω^ (Fin 2) X x := ⟨f.1.comp squareLeftHalf, fun y hy ↦
-    (GenLoop.transAt_apply_squareLeftHalf p q y).trans (GenLoop.boundary q y hy)⟩
-  let pR : Ω^ (Fin 2) X x := ⟨f.1.comp squareRightHalf, fun y hy ↦
-    (GenLoop.transAt_apply_squareRightHalf p q y).trans (GenLoop.boundary p y hy)⟩
-  have hqL : qL = q := GenLoop.ext _ _ (GenLoop.transAt_apply_squareLeftHalf p q)
-  have hpR : pR = p := GenLoop.ext _ _ (GenLoop.transAt_apply_squareRightHalf p q)
-  have hqLc : clutchingFunction qL (fun y ↦ Ψ (squareLeftHalf y)) e₀ =
-      clutchingFunction f Ψ e₀ ∘ squareLeftHalf :=
-    funext (clutchingFunction_comp f squareLeftHalf Ψ e₀)
-  have hpRc : clutchingFunction pR (fun y ↦ Ψ (squareRightHalf y)) e₀ =
-      clutchingFunction f Ψ e₀ ∘ squareRightHalf :=
-    funext (clutchingFunction_comp f squareRightHalf Ψ e₀)
+  let qL : Ω^ (Fin 2) X x := ⟨f.1.comp (cubeLeftHalf 0), fun y hy ↦
+    (GenLoop.transAt_apply_cubeLeftHalf 0 q p y).trans (GenLoop.boundary q y hy)⟩
+  let pR : Ω^ (Fin 2) X x := ⟨f.1.comp (cubeRightHalf 0), fun y hy ↦
+    (GenLoop.transAt_apply_cubeRightHalf 0 q p y).trans (GenLoop.boundary p y hy)⟩
+  have hqL : qL = q := GenLoop.ext _ _ (GenLoop.transAt_apply_cubeLeftHalf 0 q p)
+  have hpR : pR = p := GenLoop.ext _ _ (GenLoop.transAt_apply_cubeRightHalf 0 q p)
+  have hqLc : clutchingFunction qL (fun y ↦ Ψ ((cubeLeftHalf 0) y)) e₀ =
+      clutchingFunction f Ψ e₀ ∘ cubeLeftHalf 0 :=
+    funext (clutchingFunction_comp f (cubeLeftHalf 0) Ψ e₀)
+  have hpRc : clutchingFunction pR (fun y ↦ Ψ ((cubeRightHalf 0) y)) e₀ =
+      clutchingFunction f Ψ e₀ ∘ cubeRightHalf 0 :=
+    funext (clutchingFunction_comp f (cubeRightHalf 0) Ψ e₀)
   rw [clutchingNumber_eq_squareBoundaryDegree f e₀ hx₀ hΨ, squareBoundaryDegree_eq_add hcont,
     ← hqL, ← hpR,
-    clutchingNumber_eq_squareBoundaryDegree qL e₀ hx₀ (φ := fun y ↦ Ψ (squareLeftHalf y))
-      (hΨ.comp ((squareLeftHalf.continuous.comp continuous_fst).prodMk continuous_snd)),
-    clutchingNumber_eq_squareBoundaryDegree pR e₀ hx₀ (φ := fun y ↦ Ψ (squareRightHalf y))
-      (hΨ.comp ((squareRightHalf.continuous.comp continuous_fst).prodMk continuous_snd)),
+    clutchingNumber_eq_squareBoundaryDegree qL e₀ hx₀ (φ := fun y ↦ Ψ ((cubeLeftHalf 0) y))
+      (hΨ.comp (((cubeLeftHalf 0).continuous.comp continuous_fst).prodMk continuous_snd)),
+    clutchingNumber_eq_squareBoundaryDegree pR e₀ hx₀ (φ := fun y ↦ Ψ ((cubeRightHalf 0) y))
+      (hΨ.comp (((cubeRightHalf 0).continuous.comp continuous_fst).prodMk continuous_snd)),
     hqLc, hpRc]
 
 variable (F E x) in
