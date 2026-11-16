@@ -39,6 +39,8 @@ This applies to words in the generators of a Coxeter group, whose Coxeter graph 
   one-degenerate order that is invariant under commutations and rotations is constant.
 * `List.IsOneDegenerateOrder.append_singleton` builds a one-degenerate order letter by letter, and
   `List.IsOneDegenerateOrder.map_equiv` transports one along an equivalence.
+* `List.isOneDegenerateOrder_of_pairwise`: a list ordered by `r` is a one-degenerate order when
+  each letter has at most one neighbour `r`-below it.
 
 ## References
 
@@ -153,6 +155,15 @@ theorem CommEquiv.append_singleton {m m' : List α} (h : CommEquiv adj m m') {z 
 /-- The empty list is a one-degenerate order. -/
 theorem isOneDegenerateOrder_nil : IsOneDegenerateOrder adj ([] : List α) :=
   fun S₁ z S₂ h => by simp at h
+
+/-- A list ordered by `r` is a one-degenerate order as soon as each letter is adjacent to at most
+one letter `r`-below it. For instance `List.finRange n` is a one-degenerate order for a graph in
+which each vertex has at most one smaller neighbour, such as a path numbered along the path. -/
+theorem isOneDegenerateOrder_of_pairwise {r : α → α → Prop} {S : List α} (hS : S.Pairwise r)
+    (h : ∀ x y z, r x z → r y z → adj z x → adj z y → x = y) : IsOneDegenerateOrder adj S := by
+  intro S₁ z S₂ hS' x hx y hy
+  rw [hS', pairwise_append] at hS
+  exact h x y z (hS.2.2 x hx z mem_cons_self) (hS.2.2 y hy z mem_cons_self)
 
 /-- Removing the last letter of a one-degenerate order leaves a one-degenerate order. -/
 theorem IsOneDegenerateOrder.of_append_singleton {S : List α} {z : α}

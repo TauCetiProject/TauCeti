@@ -7,6 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.Algebra.Ring.Regular
+import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Matrix adjugation
@@ -34,6 +37,11 @@ adjugate. Summing over the replaced row, or over the replaced column, gives in b
 `trace (adj A * B)` (`Matrix.sum_det_updateRow_eq_trace_adjugate_mul` and
 `Matrix.sum_det_updateCol_eq_trace_adjugate_mul`): Jacobi's formula for the derivative of `det` at
 `A` in the direction `B`, read row by row or column by column.
+
+A matrix `P` with nonzero determinant over a ring without zero divisors cancels on both sides, so
+`A * P = P * B` forces `A` and `B` to have the same order (`Matrix.orderOf_eq_of_mul_eq_mul`), as
+it forces them to have the same characteristic polynomial (`Matrix.charpoly_eq_of_mul_eq_mul`),
+even when `P` is not invertible.
 -/
 
 public section
@@ -86,6 +94,14 @@ theorem mul_eq_smul_one_comm {n : Type*} [Fintype n] [DecidableEq n] {A B : Matr
   apply (isRegular_of_isLeftRegular_det hdet).left
   simp only [← Matrix.mul_assoc, h, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
     Matrix.mul_one]
+
+/-- **Intertwined matrices have the same order.** If `A * P = P * B` for a square matrix `P` with
+nonzero determinant over a ring without zero divisors, then `A` and `B` have the same order. Unlike
+`MulEquiv.orderOf_eq` for conjugation, `P` need not be invertible. -/
+theorem orderOf_eq_of_mul_eq_mul [NoZeroDivisors R] {n : Type*} [Fintype n] [DecidableEq n]
+    {A B P : Matrix n n R} (hP : P.det ≠ 0) (h : A * P = P * B) : orderOf A = orderOf B :=
+  (SemiconjBy.orderOf_eq_of_isRegular h.symm
+    (isRegular_of_isLeftRegular_det (IsRegular.of_ne_zero' hP).left)).symm
 
 /-- **Congruence transports inverses up to a scalar.** If `P` has a right inverse `P'` and
 `B₁ = Pᵀ * B₂ * P`, and both `B₁ * D₁` and `B₂ * D₂` are the scalar matrix `c • 1` for a

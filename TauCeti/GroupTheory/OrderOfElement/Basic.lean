@@ -71,6 +71,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 * `TauCeti.coprime_orderOf_of_mul_mul_inv_eq_pow`,
   `TauCeti.mem_normalizer_zpowers_of_mul_mul_inv_eq_pow`: if `s * t * s⁻¹ = t ^ q` with `t` of
   finite order, then `q` is prime to the order of `t` and `s` normalizes `⟨t⟩`.
+* `SemiconjBy.orderOf_eq_of_isRegular`: semiconjugation by a regular element, such as a square
+  matrix with nonzero determinant over a domain, preserves orders.
 -/
 
 public section
@@ -111,6 +113,20 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
     (Nat.dvd_of_mem_primeFactors hp).trans hf]
 
 end IsOfFinOrder
+
+/-- **Semiconjugation by a regular element preserves orders**: if `a * x = y * a` with `a`
+cancellable on both sides, then `x` and `y` have the same order. Unlike
+`SemiconjBy.orderOf_eq`, `a` need not be a unit; for instance it can be a square matrix with
+nonzero determinant over a domain. -/
+theorem SemiconjBy.orderOf_eq_of_isRegular {M : Type*} [Monoid M] {a x y : M}
+    (h : SemiconjBy a x y) (ha : IsRegular a) : orderOf x = orderOf y := by
+  refine orderOf_eq_orderOf_iff.2 fun n => ⟨fun hx => ha.right ?_, fun hy => ha.left ?_⟩
+  · have := (h.pow_right n).eq
+    rw [hx, mul_one] at this
+    exact this.symm.trans (one_mul a).symm
+  · have := (h.pow_right n).eq
+    rw [hy, one_mul] at this
+    exact this.trans (mul_one a).symm
 
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive
