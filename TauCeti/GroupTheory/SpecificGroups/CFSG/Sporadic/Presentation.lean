@@ -183,4 +183,10 @@ theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic
 theorem SporadicName.presentation_J2 : SporadicName.J2.presentation = Sporadic.j2Presentation :=
   (rfl)
 
+/-- The presentation selected for `He` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.hePresentation`. -/
+@[simp]
+theorem SporadicName.presentation_He : SporadicName.He.presentation = Sporadic.hePresentation :=
+  (rfl)
+
 end TauCeti
