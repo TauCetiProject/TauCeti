@@ -84,9 +84,9 @@ def restrict (S : Set P) [DecidablePred (· ∈ S)]
   m x y := m.m x y
   mem_graded x y := m.mem_graded x y
   twisting x y := by
-    rw [m.twisting, ← Fintype.sum_subtype_add_sum_subtype (· ∈ S),
-      Finset.sum_eq_zero (s := (Finset.univ : Finset {z // z ∉ S})) fun z _ ↦ by
-        rw [hS x z y x.2 y.2 z.2, smul_zero], add_zero]
+    rw [m.twisting]
+    refine Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ ?_
+    rw [hS x z y x.2 y.2 hz, smul_zero]
   one_sided x y := m.one_sided x y
 
 @[simp]
@@ -127,12 +127,10 @@ def ofRestrict (S : Set P) [DecidablePred (· ∈ S)] (hS : ∀ x y, x ∈ S →
   ν x y := (1 : Matrix P P A) x y
   mem_graded x y := kronecker_mem_graded (ind := ind) x y
   continuation x y := by
-    rw [continuation_kronecker m.m hd x y, ← Fintype.sum_subtype_add_sum_subtype (· ∈ S)
-      fun z ↦ m.m x z * (1 : Matrix P P A) z y,
-      Finset.sum_eq_zero (s := (Finset.univ : Finset {z // z ∉ S})) fun z _ ↦ by
-        rw [hS x z x.2 z.2, zero_mul], add_zero]
+    rw [continuation_kronecker (ind := ind) m.m hd x y]
+    congr 1
     -- The entries of the restriction are those of `m` (`TauCeti.TwistingCocycle.restrict_m`).
-    rfl
+    exact Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ by rw [hS x z x.2 hz, zero_mul]
 
 @[simp]
 theorem ofRestrict_ν (S : Set P) [DecidablePred (· ∈ S)]
@@ -149,13 +147,11 @@ def toRestrict (T : Set P) [DecidablePred (· ∈ T)] (hT : ∀ x y, x ∉ T →
   ν x y := (1 : Matrix P P A) x y
   mem_graded x y := kronecker_mem_graded (ind := ind) x y
   continuation x y := by
-    rw [continuation_kronecker m.m hd x y, ← Fintype.sum_subtype_add_sum_subtype (· ∈ T)
-      fun z ↦ (ind x - ind z - 1).negOnePow • ((1 : Matrix P P A) x z * m.m z y),
-      Finset.sum_eq_zero (s := (Finset.univ : Finset {z // z ∉ T})) fun z _ ↦ by
-        rw [hT z y z.2 y.2, mul_zero, smul_zero],
-      add_zero]
+    rw [continuation_kronecker (ind := ind) m.m hd x y]
+    congr 1
     -- The entries of the restriction are those of `m` (`TauCeti.TwistingCocycle.restrict_m`).
-    rfl
+    exact Finset.sum_congr_set T _ _ (fun _ _ ↦ rfl) fun z hz ↦ by
+      rw [hT z y hz y.2, mul_zero, smul_zero]
 
 @[simp]
 theorem toRestrict_ν (T : Set P) [DecidablePred (· ∈ T)]
@@ -180,14 +176,12 @@ def restrict (ν : ContinuationCocycle mP mQ) (S : Set P) [DecidablePred (· ∈
   ν x y := ν.ν x y
   mem_graded x y := ν.mem_graded x y
   continuation x y := by
-    rw [ν.continuation, ← Fintype.sum_subtype_add_sum_subtype (· ∈ S),
-      ← Fintype.sum_subtype_add_sum_subtype (· ∈ S'),
-      Finset.sum_eq_zero (s := (Finset.univ : Finset {z // z ∉ S})) fun z _ ↦ h₁ x z y x.2 z.2 y.2,
-      Finset.sum_eq_zero (s := (Finset.univ : Finset {z // z ∉ S'})) fun z _ ↦ by
-        rw [h₂ x z y x.2 z.2 y.2, smul_zero],
-      add_zero, add_zero]
+    rw [ν.continuation]
     -- The entries of the restrictions are those of `mP`, `mQ` and `ν`.
-    rfl
+    congr 1
+    · exact Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ h₁ x z y x.2 hz y.2
+    · exact Finset.sum_congr_set S' _ _ (fun _ _ ↦ rfl) fun z hz ↦ by
+        rw [h₂ x z y x.2 hz y.2, smul_zero]
 
 omit [GradedAlgebra 𝒜] [DecidableEq P] in
 @[simp]
@@ -217,6 +211,7 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
 namespace ContinuationCocycle
 
 /-- The continuation map of `TauCeti.ContinuationCocycle.ofRestrict` is extension by zero. -/
+@[simp]
 theorem continuationMap_ofRestrict_apply (S : Set P) [DecidablePred (· ∈ S)]
     (hS : ∀ x y, x ∈ S → y ∉ S → m.m x y = 0) (f : S → M) (y : P) :
     continuationMap R M (ofRestrict m hd S hS).ν f y = if hy : y ∈ S then f ⟨y, hy⟩ else 0 := by
@@ -230,6 +225,7 @@ theorem continuationMap_ofRestrict_apply (S : Set P) [DecidablePred (· ∈ S)]
 
 /-- The continuation map of `TauCeti.ContinuationCocycle.toRestrict` is restriction of
 functions. -/
+@[simp]
 theorem continuationMap_toRestrict_apply (T : Set P) [DecidablePred (· ∈ T)]
     (hT : ∀ x y, x ∉ T → y ∈ T → m.m x y = 0) (f : P → M) (y : T) :
     continuationMap R M (toRestrict m hd T hT).ν f y = f y := by
@@ -240,6 +236,29 @@ theorem continuationMap_toRestrict_apply (T : Set P) [DecidablePred (· ∈ T)]
 end ContinuationCocycle
 
 end Maps
+
+/-! ### Extension by zero and restriction preserve the total degree -/
+
+section TotalGrading
+
+variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
+  {P : Type uP} {ind : P → ℤ} {ℳ : ℤ → Submodule R M} {n : ℤ} (S : Set P)
+
+/-- Extension by zero from a set `S` of generators to `P` preserves the total degree. -/
+theorem dite_mem_twistedTotalGrading [DecidablePred (· ∈ S)] {f : S → M}
+    (hf : f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n) :
+    (fun x ↦ if hx : x ∈ S then f ⟨x, hx⟩ else 0) ∈ twistedTotalGrading ℳ ind n := by
+  refine mem_twistedTotalGrading_iff.mpr fun x ↦ ?_
+  split_ifs with hx
+  · exact mem_twistedTotalGrading_iff.mp hf ⟨x, hx⟩
+  · exact zero_mem _
+
+/-- Restriction from `P` to a set `S` of generators preserves the total degree. -/
+theorem domRestrict_mem_twistedTotalGrading {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
+    S.domRestrict f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n :=
+  mem_twistedTotalGrading_iff.mpr fun x ↦ mem_twistedTotalGrading_iff.mp hf x
+
+end TotalGrading
 
 /-! ### The short exact sequence of a subcomplex and its quotient -/
 
@@ -253,16 +272,32 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ] {dM : M →ₗ[R] M}
   (m : TwistingCocycle 𝒜 d P ind) (hM : IsDGRightModule h ℳ dM)
-  (S T : Set P) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+
+namespace TwistingCocycle
+
+/-- In each degree, the projection onto the quotient complex of a set `T` of generators which the
+twisted differential never enters from outside is surjective: a function on `T` extends by zero to
+`P`, in the same total degree. -/
+theorem surjective_toRestrict_continuationHom_f (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → m.m x y = 0) (n : ℤ) :
+    Function.Surjective
+      (((ContinuationCocycle.toRestrict m h.map_one_eq_zero T hT).continuationHom hM).f n) := by
+  intro g
+  refine ⟨(twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm
+    ⟨_, dite_mem_twistedTotalGrading T (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _)
+      (TwistingCocycle.twisting _) hM n g).2⟩,
+    (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM
+      n).injective (Subtype.ext (funext fun y ↦ ?_))⟩
+  simp [y.2]
+
+variable (S T : Set P) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
   (hS : ∀ x y, x ∈ S → y ∉ S → m.m x y = 0) (hST : ∀ x, x ∈ T ↔ x ∉ S)
 
 include hS hST
 
-namespace TwistingCocycle
-
 /-- The composite of the inclusion of the subcomplex of `S` and the projection onto the
 quotient complex of its complement `T` vanishes. -/
-theorem ofRestrict_comp_toRestrict :
+theorem ofRestrict_continuationHom_comp_toRestrict_continuationHom :
     (ContinuationCocycle.ofRestrict m h.map_one_eq_zero S hS).continuationHom hM ≫
       (ContinuationCocycle.toRestrict m h.map_one_eq_zero T
         (m.forall_eq_zero_of_compl hS hST)).continuationHom hM = 0 := by
@@ -270,41 +305,51 @@ theorem ofRestrict_comp_toRestrict :
   refine HomologicalComplex.hom_ext _ _ fun n ↦ termHom_ext fun f ↦ ?_
   rw [ContinuationCocycle.continuationHom_f_apply, ContinuationCocycle.continuationMap_comp]
   funext y
-  rw [LinearMap.comp_apply, ContinuationCocycle.continuationMap_toRestrict_apply,
-    ContinuationCocycle.continuationMap_ofRestrict_apply]
   simp [(hST y).1 y.2]
 
 /-- **The short complex of a subcomplex and its quotient.** For a set `S` of generators which
 the twisted differential never leaves, with complement `T`, the inclusion of the twisted complex
 on `S` (extension by zero) followed by the projection onto the twisted complex on `T`
 (restriction of functions). -/
+@[expose]
 noncomputable def restrictShortComplex :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
-  ShortComplex.mk _ _ (m.ofRestrict_comp_toRestrict hM S T hS hST)
+  ShortComplex.mk _ _ (m.ofRestrict_continuationHom_comp_toRestrict_continuationHom hM S T hS hST)
 
-omit [DecidablePred (· ∈ S)] in
-/-- In each degree, the projection onto the quotient complex is surjective: a function on `T`
-extends by zero to `P`, in the same total degree. -/
-theorem surjective_toRestrict_continuationHom_f (n : ℤ) :
-    Function.Surjective (((ContinuationCocycle.toRestrict m h.map_one_eq_zero T
-      (m.forall_eq_zero_of_compl hS hST)).continuationHom hM).f n) := by
-  intro g
-  set g' := (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _)
-    (TwistingCocycle.twisting _) hM n g : T → M)
-  have hg := mem_twistedTotalGrading_iff.mp (twistedCochainComplexXEquiv
-    (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM n g).2
-  have hf : (fun x ↦ if hx : x ∈ T then g' ⟨x, hx⟩ else 0) ∈ twistedTotalGrading ℳ ind n := by
-    refine mem_twistedTotalGrading_iff.mpr fun x ↦ ?_
-    split_ifs with hx
-    · exact hg ⟨x, hx⟩
-    · exact zero_mem _
-  refine ⟨(twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm ⟨_, hf⟩,
-    (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM
-      n).injective (Subtype.ext ?_)⟩
-  funext y
-  rw [ContinuationCocycle.continuationHom_f_apply,
-    ContinuationCocycle.continuationMap_toRestrict_apply]
-  simp [g', y.2]
+@[simp]
+theorem restrictShortComplex_X₁ :
+    (m.restrictShortComplex hM S T hS hST).X₁ =
+      (m.restrict S (m.mul_eq_zero_of_forall_eq_zero hS)).twistedCochainComplex dM hM :=
+  (rfl)
+
+@[simp]
+theorem restrictShortComplex_X₂ :
+    (m.restrictShortComplex hM S T hS hST).X₂ = m.twistedCochainComplex dM hM :=
+  (rfl)
+
+@[simp]
+theorem restrictShortComplex_X₃ :
+    (m.restrictShortComplex hM S T hS hST).X₃ =
+      (m.restrict T (m.mul_eq_zero_of_forall_eq_zero'
+        (m.forall_eq_zero_of_compl hS hST))).twistedCochainComplex dM hM :=
+  (rfl)
+
+/-- The first map of `TauCeti.TwistingCocycle.restrictShortComplex` is the inclusion of the
+subcomplex of `S`. -/
+@[simp]
+theorem restrictShortComplex_f :
+    (m.restrictShortComplex hM S T hS hST).f =
+      (ContinuationCocycle.ofRestrict m h.map_one_eq_zero S hS).continuationHom hM :=
+  (rfl)
+
+/-- The second map of `TauCeti.TwistingCocycle.restrictShortComplex` is the projection onto the
+quotient complex of `T`. -/
+@[simp]
+theorem restrictShortComplex_g :
+    (m.restrictShortComplex hM S T hS hST).g =
+      (ContinuationCocycle.toRestrict m h.map_one_eq_zero T
+        (m.forall_eq_zero_of_compl hS hST)).continuationHom hM :=
+  (rfl)
 
 omit hST in
 /-- In each degree, the inclusion of the subcomplex is injective: extension by zero forgets
@@ -318,8 +363,7 @@ theorem injective_ofRestrict_continuationHom_f (n : ℤ) :
   simp only [ContinuationCocycle.continuationHom_f_apply] at hfg'
   refine (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _)
     hM n).injective (Subtype.ext (funext fun x ↦ ?_))
-  have := congrFun hfg' x
-  simpa [ContinuationCocycle.continuationMap_ofRestrict_apply, x.2] using this
+  simpa [x.2] using congrFun hfg' x
 
 /-- In each degree, an element whose restriction to `T` vanishes is the extension by zero of its
 restriction to `S`. -/
@@ -329,25 +373,19 @@ theorem exists_ofRestrict_continuationHom_f_eq (n : ℤ)
       (m.forall_eq_zero_of_compl hS hST)).continuationHom hM).f n g = 0) :
     ∃ f, ((ContinuationCocycle.ofRestrict m h.map_one_eq_zero S hS).continuationHom hM).f n f =
       g := by
-  set g' := (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n g : P → M)
   have hg' := congrArg (fun x ↦ (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _)
     (TwistingCocycle.twisting _) hM n x : T → M)) hg
   simp only [ContinuationCocycle.continuationHom_f_apply, map_zero, ZeroMemClass.coe_zero] at hg'
-  have hT (y : P) (hy : y ∉ S) : g' y = 0 := by
-    simpa [ContinuationCocycle.continuationMap_toRestrict_apply] using
-      congrFun hg' ⟨y, (hST y).2 hy⟩
-  have hgr := mem_twistedTotalGrading_iff.mp
-    (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n g).2
-  have hf : (fun x : S ↦ g' x) ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n :=
-    mem_twistedTotalGrading_iff.mpr fun x ↦ hgr x
   refine ⟨(twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _)
-    hM n).symm ⟨_, hf⟩, (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
+    hM n).symm ⟨_, domRestrict_mem_twistedTotalGrading S
+      (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n g).2⟩,
+    (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
       (Subtype.ext (funext fun y ↦ ?_))⟩
   rw [ContinuationCocycle.continuationHom_f_apply,
     ContinuationCocycle.continuationMap_ofRestrict_apply]
   split_ifs with hy
-  · simp [g']
-  · exact (hT y hy).symm
+  · simp
+  · simpa using (congrFun hg' ⟨y, (hST y).2 hy⟩).symm
 
 /-- **A subcomplex and its quotient form a short exact sequence.** For a set `S` of generators
 which the twisted differential never leaves, with complement `T`, the twisted complex on `S`, the
@@ -361,7 +399,7 @@ theorem restrictShortComplex_shortExact :
         (m.exists_ofRestrict_continuationHom_f_eq hM S T hS hST n))
       ((ModuleCat.mono_iff_injective _).mpr (m.injective_ofRestrict_continuationHom_f hM S hS n))
       ((ModuleCat.epi_iff_surjective _).mpr
-        (m.surjective_toRestrict_continuationHom_f hM S T hS hST n))
+        (m.surjective_toRestrict_continuationHom_f hM T (m.forall_eq_zero_of_compl hS hST) n))
 
 end TwistingCocycle
 
@@ -410,10 +448,9 @@ theorem ofRestrict_comp :
   rw [comp_ν, comp_ν, Matrix.mul_apply, Matrix.mul_apply]
   simp only [Matrix.of_apply, ofRestrict_ν, restrictSubcomplex_ν]
   -- Both sides are `ν x y`: on the right, the generators outside `S'` contribute nothing.
-  rw [← add_zero (∑ z : S', ν.ν x z * (1 : Matrix Q Q A) z y),
-    ← Finset.sum_eq_zero (s := (Finset.univ : Finset {z // z ∉ S'})) fun z _ ↦
-      (show ν.ν x z * (1 : Matrix Q Q A) z y = 0 by rw [hν x z x.2 z.2, zero_mul]),
-    Fintype.sum_subtype_add_sum_subtype (· ∈ S') fun z ↦ ν.ν x z * (1 : Matrix Q Q A) z y]
+  rw [← Finset.sum_congr_set S' (fun z ↦ ν.ν x z * (1 : Matrix Q Q A) z y)
+    (fun z ↦ ν.ν x z * (1 : Matrix Q Q A) z y) (fun _ _ ↦ rfl) fun z hz ↦ by
+      rw [hν x z x.2 hz, zero_mul]]
   simp [Matrix.one_apply]
 
 variable {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
@@ -492,24 +529,49 @@ theorem comp_ν_eq_zero_of_add_lt [GradedAlgebra 𝒜] (h : IsDGAlgebra 𝒜 d)
         _ < actS z := by rwa [add_assoc]
     rw [Matrix.of_apply, Matrix.of_apply, h₂ y z this, mul_zero]
 
+/-- If the continuation cocycle `ν` raises the action by at most `δ`, it never leaves the
+generators of action `< a + δ` from those of action `< a`. -/
+theorem ν_eq_zero_of_mem_setOf_lt (ν : ContinuationCocycle mP mQ) {δ : Γ}
+    (hν : ∀ x y, actP x + δ < actQ y → ν.ν x y = 0) {a : Γ} :
+    ∀ x y, x ∈ {x | actP x < a} → y ∉ {x | actQ x < a + δ} → ν.ν x y = 0 :=
+  fun x y hx hy ↦ hν x y <| by
+    calc actP x + δ < a + δ := add_lt_add_left hx δ
+      _ ≤ actQ y := not_lt.1 hy
+
+variable (ν : ContinuationCocycle mP mQ) (hmP : ∀ x y, actP x < actP y → mP.m x y = 0)
+  (hmQ : ∀ x y, actQ x < actQ y → mQ.m x y = 0) {δ : Γ}
+  (hν : ∀ x y, actP x + δ < actQ y → ν.ν x y = 0) (a : Γ)
+
 /-- **The action filtration estimate of a continuation map.** If the twisted differentials of
 `mP` and `mQ` do not raise the actions `actP` and `actQ`, and the continuation cocycle `ν`
 raises the action by at most `δ`, `ν x y = 0` whenever `actP x + δ < actQ y`, then `ν` restricts
-to a continuation cocycle from the generators of action `< a` to those of action `< a + δ`. By
-`TauCeti.ContinuationCocycle.ofRestrict_continuationHom_comp`, the continuation morphism of `ν`
+to a continuation cocycle from the generators of action `< a` to those of action `< a + δ`. It is
+a `TauCeti.ContinuationCocycle.restrictSubcomplex`
+(`TauCeti.ContinuationCocycle.actionSublevel_eq_restrictSubcomplex`), so by
+`TauCeti.ContinuationCocycle.ofRestrict_continuationHom_comp` the continuation morphism of `ν`
 carries the first subcomplex into the second. -/
-def actionSublevel (ν : ContinuationCocycle mP mQ) (hmP : ∀ x y, actP x < actP y → mP.m x y = 0)
-    (hmQ : ∀ x y, actQ x < actQ y → mQ.m x y = 0) {δ : Γ}
-    (hν : ∀ x y, actP x + δ < actQ y → ν.ν x y = 0) (a : Γ) :
+def actionSublevel :
     ContinuationCocycle
       (mP.restrict {x | actP x < a}
         (mP.mul_eq_zero_of_forall_eq_zero (mP.m_eq_zero_of_mem_setOf_lt hmP)))
       (mQ.restrict {x | actQ x < a + δ}
         (mQ.mul_eq_zero_of_forall_eq_zero (mQ.m_eq_zero_of_mem_setOf_lt hmQ))) :=
   ν.restrictSubcomplex _ (mP.m_eq_zero_of_mem_setOf_lt hmP) _
-    (mQ.m_eq_zero_of_mem_setOf_lt hmQ) fun x y hx hy ↦ hν x y <| by
-    calc actP x + δ < a + δ := add_lt_add_left hx δ
-      _ ≤ actQ y := not_lt.1 hy
+    (mQ.m_eq_zero_of_mem_setOf_lt hmQ) (ν.ν_eq_zero_of_mem_setOf_lt hν)
+
+@[simp]
+theorem actionSublevel_ν (x : {x | actP x < a}) (y : {x | actQ x < a + δ}) :
+    (ν.actionSublevel hmP hmQ hν a).ν x y = ν.ν x y :=
+  (rfl)
+
+/-- The action sublevel of `ν` is its restriction to the subcomplexes of generators of action
+`< a` and `< a + δ`. -/
+theorem actionSublevel_eq_restrictSubcomplex :
+    ν.actionSublevel hmP hmQ hν a =
+      ν.restrictSubcomplex {x | actP x < a} (mP.m_eq_zero_of_mem_setOf_lt hmP)
+        {x | actQ x < a + δ} (mQ.m_eq_zero_of_mem_setOf_lt hmQ)
+        (ν.ν_eq_zero_of_mem_setOf_lt hν) :=
+  (rfl)
 
 end ContinuationCocycle
 
@@ -536,9 +598,16 @@ onto the twisted complex on the generators of action `≥ a`. -/
 noncomputable def actionShortComplex :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   m.restrictShortComplex hM {x | act x < a} {x | a ≤ act x} (m.m_eq_zero_of_mem_setOf_lt hm)
-    fun _ ↦ by simp
+    fun _ ↦ not_lt.symm
 
-/-- **The action filtration splits the twisted complex.** If the twisted differential does not
+@[simp]
+theorem actionShortComplex_eq :
+    m.actionShortComplex hm hM a =
+      m.restrictShortComplex hM {x | act x < a} {x | a ≤ act x} (m.m_eq_zero_of_mem_setOf_lt hm)
+        fun _ ↦ not_lt.symm :=
+  (rfl)
+
+/-- **The action filtration gives a short exact sequence.** If the twisted differential does not
 raise the action, the twisted complexes on the generators of action `< a`, on all generators and
 on the generators of action `≥ a` form a short exact sequence. -/
 theorem actionShortComplex_shortExact : (m.actionShortComplex hm hM a).ShortExact :=
