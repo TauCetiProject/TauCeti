@@ -60,6 +60,14 @@ theorem IsNullSet.chartwise {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [
     μ (extChartAt I x '' (s ∩ (extChartAt I x).source)) = 0 :=
   (isNullSet_iff I s).1 hs x μ
 
+/-- The empty set is chartwise null. -/
+@[simp]
+theorem isNullSet_empty {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [BorelSpace E] :
+    IsNullSet I (∅ : Set M) := by
+  rw [isNullSet_iff]
+  intro x μ _
+  simp
+
 /-- A subset of a null set is null. -/
 theorem IsNullSet.mono {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE : BorelSpace E]
     {s t : Set M} (ht : IsNullSet I t) (hst : s ⊆ t) : IsNullSet I s := by

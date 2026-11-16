@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -40,6 +41,8 @@ support, and null-set agreement with `TauCeti.Manifold.ae`) are proved in
 
 ## Main results
 
+* `MeasureTheory.Measure.setLIntegral_extendCoordChange`: change of variables between two charts
+  of the `C¹` maximal atlas for a weighted Haar integral.
 * `TauCeti.IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq`: uniqueness of the
   continuous chart weight on the extended chart target.
 * `TauCeti.IsPositiveContinuousDensity.chartWeight_haar_eq`: scaling of chart weights under a
@@ -58,51 +61,43 @@ open scoped ENNReal Manifold Topology
 
 noncomputable section
 
+namespace MeasureTheory.Measure
+
+/-- Change of variables between two charts of the maximal atlas for a weighted Haar integral. -/
+theorem setLIntegral_extendCoordChange {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    (ν : Measure E) [ν.IsAddHaarMeasure]
+    {e e' : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
+    {A : Set E} (hA : MeasurableSet A) (hAsub : A ⊆ (I.extendCoordChange e e').source)
+    (g : E → ℝ≥0∞) :
+    ∫⁻ z in I.extendCoordChange e e' '' A, g z ∂ν =
+      ∫⁻ y in A,
+        ENNReal.ofReal |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| *
+          g (I.extendCoordChange e e' y) ∂ν := by
+  have hArange : A ⊆ range I :=
+    hAsub.trans (by rw [I.extendCoordChange_source]; exact image_subset_range _ _)
+  have hderiv : ∀ y ∈ A,
+      HasFDerivWithinAt (I.extendCoordChange e e')
+        (fderivWithin ℝ (I.extendCoordChange e e') (range I) y) A y := fun y hy ↦
+    ((I.contDiffWithinAt_extendCoordChange he he' (hAsub hy)).differentiableWithinAt
+      one_ne_zero).hasFDerivWithinAt.mono hArange
+  exact lintegral_image_eq_lintegral_abs_det_fderiv_mul ν hA hderiv
+    ((I.extendCoordChange e e').injOn.mono hAsub) g
+
+end MeasureTheory.Measure
+
 namespace TauCeti
 
-/-! ### Auxiliary chart-measure and coordinate-change lemmas -/
+/-! ### Auxiliary chart-measure lemmas -/
 
 section Helpers
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M]
-
-/-- The source of an extended coordinate change is measurable whenever open subsets of `E`
-are measurable. -/
-theorem measurableSet_extendCoordChange_source [MeasurableSpace E] [OpensMeasurableSpace E]
-    (e e' : OpenPartialHomeomorph M H) : MeasurableSet (I.extendCoordChange e e').source := by
-  rw [I.extendCoordChange_source, I.image_eq]
-  exact ((e.symm ≫ₕ e').open_source.preimage I.continuous_symm).measurableSet.inter
-    I.isClosed_range.measurableSet
-
-/-- Evaluation of the pushforward of a measure restricted to a chart source along the
-extended chart `e.extend I`. -/
-theorem map_restrict_extend_apply [MeasurableSpace E] [BorelSpace E]
-    [MeasurableSpace M] [OpensMeasurableSpace M] (e : OpenPartialHomeomorph M H)
-    (μ : Measure M) {A : Set E} (hA : MeasurableSet A) :
-    ((μ.restrict e.source).map (e.extend I)) A = μ (e.extend I ⁻¹' A ∩ e.source) := by
-  have hcont : ContinuousOn (e.extend I) e.source := by
-    rw [← e.extend_source (I := I)]
-    exact e.continuousOn_extend
-  rw [Measure.map_apply_of_aemeasurable (hcont.aemeasurable e.open_source.measurableSet) hA,
-    Measure.restrict_apply' e.open_source.measurableSet]
-
-/-- Rewriting a weighted Haar measure on a subset of `E` in terms of another additive Haar measure
-multiplies the density by `Measure.addHaarScalarFactor`. -/
-private theorem withDensity_ofReal_addHaar_eq [FiniteDimensional ℝ E] [MeasurableSpace E]
-    [BorelSpace E] (ν₁ ν₂ : Measure E) [ν₁.IsAddHaarMeasure] [ν₂.IsAddHaarMeasure]
-    (s : Set E) (w : E → ℝ) :
-    (ν₁.restrict s).withDensity (fun y ↦ ENNReal.ofReal (w y)) =
-      (ν₂.restrict s).withDensity fun y ↦
-        ENNReal.ofReal ((Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * w y) := by
-  set c : NNReal := Measure.addHaarScalarFactor ν₁ ν₂
-  have hν : ν₁ = (c : ℝ≥0∞) • ν₂ := Measure.isAddLeftInvariant_eq_smul ν₁ ν₂
-  rw [hν, Measure.restrict_smul, withDensity_smul_measure,
-    ← withDensity_smul' _ _ ENNReal.coe_ne_top]
-  refine congrArg _ (funext fun y ↦ ?_)
-  simp only [Pi.smul_apply, smul_eq_mul, ENNReal.ofReal_mul c.coe_nonneg,
-    ENNReal.ofReal_coe_nnreal]
 
 /-- Pulling an additive Haar measure back to a relatively open subset of `range I` yields a
 measure positive on nonempty relatively open subsets. -/
@@ -189,7 +184,7 @@ private theorem comap_restrict_eq_comap_withDensity [MeasurableSpace E] [BorelSp
   ext B hB
   have hBs : MeasurableSet (Subtype.val '' B : Set M) := hval.measurableSet_image' hB
   have hBim : MeasurableSet (e.source.domRestrict (e.extend I) '' B) := hR.measurableSet_image' hB
-  rw [hval.comap_apply, hR.comap_apply, ← hmap, map_restrict_extend_apply (I := I) e μ hBim,
+  rw [hval.comap_apply, hR.comap_apply, ← hmap, e.map_restrict_extend_apply I μ hBim,
     Measure.restrict_apply hBs, inter_eq_left.2 (Subtype.coe_image_subset e.source B)]
   congr 1
   ext x
@@ -244,125 +239,6 @@ private theorem setLIntegral_eq_of_map_restrict_eq [MeasurableSpace E] [BorelSpa
     Measure.restrict_restrict hA, inter_eq_left.2 hAT]
   rfl
 
-private theorem fderivWithin_extendCoordChange_eq_source
-    {e e' : OpenPartialHomeomorph M H} {y : E} (hy : y ∈ (I.extendCoordChange e e').source) :
-    fderivWithin ℝ (I.extendCoordChange e e') (range I) y =
-      fderivWithin ℝ (I.extendCoordChange e e') (I.extendCoordChange e e').source y := by
-  refine fderivWithin_congr_set ?_
-  have hsub : (I.extendCoordChange e e').source ⊆ range I := by
-    rw [I.extendCoordChange_source]
-    exact image_subset_range _ _
-  have h := nhdsWithin_restrict'' (range I) (I.extendCoordChange_source_mem_nhdsWithin hy)
-  rw [inter_eq_right.2 hsub] at h
-  exact nhdsWithin_eq_iff_eventuallyEqSet.1 h
-
-/-- The absolute Jacobian determinant of a `C¹` extended coordinate change is continuous on
-its source. -/
-theorem continuousOn_abs_det_fderivWithin_extendCoordChange
-    [ChartedSpace H M] {e e' : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M) :
-    ContinuousOn
-      (fun y ↦ |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det|)
-      (I.extendCoordChange e e').source := by
-  set Φ := I.extendCoordChange e e'
-  have hcont : ContinuousOn (fun y ↦ fderivWithin ℝ Φ Φ.source y) Φ.source :=
-    (I.contDiffOn_extendCoordChange he he').continuousOn_fderivWithin
-      I.uniqueDiffOn_extendCoordChange_source le_rfl
-  have hdet : ContinuousOn (fun y ↦ |(fderivWithin ℝ Φ Φ.source y).det|) Φ.source :=
-    (continuous_abs.comp ContinuousLinearMap.continuous_det).comp_continuousOn hcont
-  exact hdet.congr fun y hy ↦ by rw [fderivWithin_extendCoordChange_eq_source hy]
-
-/-- The absolute Jacobian determinant of a `C¹` extended coordinate change is strictly
-positive at every point of its source. -/
-theorem abs_det_fderivWithin_extendCoordChange_pos
-    [ChartedSpace H M] {e e' : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
-    {y : E} (hy : y ∈ (I.extendCoordChange e e').source) :
-    0 < |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| := by
-  rw [fderivWithin_extendCoordChange_eq_source hy, abs_pos]
-  obtain ⟨A, hA⟩ := I.isInvertible_fderivWithin_extendCoordChange one_ne_zero he he' hy
-  rw [← hA]
-  intro hdet
-  have h1 : (A.symm.toLinearMap.comp A.toLinearMap).det = 1 := by
-    have : A.symm.toLinearMap.comp A.toLinearMap = LinearMap.id := by
-      ext v
-      simp
-    rw [this, LinearMap.det_id]
-  rw [LinearMap.det_comp, show A.toLinearMap.det = 0 from hdet, mul_zero] at h1
-  exact zero_ne_one h1
-
-/-- Chain rule for the Jacobian determinants of extended coordinate changes on a triple overlap. -/
-private theorem abs_det_fderivWithin_extendCoordChange_comp
-    [ChartedSpace H M] {e e' e'' : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
-    (he'' : e'' ∈ IsManifold.maximalAtlas I 1 M) {x : M}
-    (hxe : x ∈ e.source) (hxe' : x ∈ e'.source) (hxe'' : x ∈ e''.source) :
-    |(fderivWithin ℝ (I.extendCoordChange e e'') (range I) (e.extend I x)).det| =
-      |(fderivWithin ℝ (I.extendCoordChange e' e'') (range I) (e'.extend I x)).det| *
-        |(fderivWithin ℝ (I.extendCoordChange e e') (range I) (e.extend I x)).det| := by
-  set y := e.extend I x
-  set z := e'.extend I x
-  have hy_ee' : y ∈ (I.extendCoordChange e e').source := by
-    rw [← OpenPartialHomeomorph.extend_image_source_inter (f := e) (f' := e')]
-    exact mem_image_of_mem _ ⟨hxe, hxe'⟩
-  have hz_e'e'' : z ∈ (I.extendCoordChange e' e'').source := by
-    rw [← OpenPartialHomeomorph.extend_image_source_inter (f := e') (f' := e'')]
-    exact mem_image_of_mem _ ⟨hxe', hxe''⟩
-  have hΦy : I.extendCoordChange e e' y = z := by
-    have hye : x ∈ (e.extend I).source := by rwa [e.extend_source]
-    simp only [y, z, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
-      (e.extend I).left_inv hye]
-  have hd1 : DifferentiableWithinAt ℝ (I.extendCoordChange e e') (range I) y :=
-    (I.contDiffWithinAt_extendCoordChange he he' hy_ee').differentiableWithinAt one_ne_zero
-  have hd2 : DifferentiableWithinAt ℝ (I.extendCoordChange e' e'') (range I) z :=
-    (I.contDiffWithinAt_extendCoordChange he' he'' hz_e'e'').differentiableWithinAt one_ne_zero
-  have hU : UniqueDiffWithinAt ℝ (range I) y :=
-    I.uniqueDiffOn y (e.extend_target_subset_range
-      ((e.extend I).map_source (by rwa [e.extend_source])))
-  have hmaps : MapsTo (I.extendCoordChange e e') (range I) (range I) := fun w _ ↦
-    mem_range_self _
-  have heq : I.extendCoordChange e e'' =ᶠ[𝓝[range I] y]
-      I.extendCoordChange e' e'' ∘ I.extendCoordChange e e' := by
-    have hmem : (I.extendCoordChange e e').source ∩ (I.extendCoordChange e e'').source ∈
-        𝓝[range I] y :=
-      Filter.inter_mem (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe')
-        (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe'')
-    filter_upwards [hmem] with w hw
-    have hxw' : (e.extend I).symm w ∈ (e'.extend I).source := hw.1.2
-    simp only [Function.comp_apply, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
-      (e'.extend I).left_inv hxw']
-  have heq0 : I.extendCoordChange e e'' y =
-      (I.extendCoordChange e' e'' ∘ I.extendCoordChange e e') y := by
-    have hxw' : x ∈ (e'.extend I).source := by rwa [e'.extend_source]
-    have hxe_s : x ∈ (e.extend I).source := by rwa [e.extend_source]
-    simp only [Function.comp_apply, y, ModelWithCorners.extendCoordChange,
-      PartialEquiv.trans_apply, (e.extend I).left_inv hxe_s, (e'.extend I).left_inv hxw']
-  rw [heq.fderivWithin_eq heq0, fderivWithin_comp y (hΦy ▸ hd2) hd1 hmaps hU, hΦy]
-  change |(LinearMap.det (_ ∘ₗ _))| = _
-  rw [LinearMap.det_comp, abs_mul]
-
-/-- Change of variables between two charts of the maximal atlas for a weighted Haar integral. -/
-theorem setLIntegral_extendCoordChange [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [ChartedSpace H M]
-    (ν : Measure E) [ν.IsAddHaarMeasure]
-    {e e' : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
-    {A : Set E} (hA : MeasurableSet A) (hAsub : A ⊆ (I.extendCoordChange e e').source)
-    (g : E → ℝ≥0∞) :
-    ∫⁻ z in I.extendCoordChange e e' '' A, g z ∂ν =
-      ∫⁻ y in A,
-        ENNReal.ofReal |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| *
-          g (I.extendCoordChange e e' y) ∂ν := by
-  have hArange : A ⊆ range I :=
-    hAsub.trans (by rw [I.extendCoordChange_source]; exact image_subset_range _ _)
-  have hderiv : ∀ y ∈ A,
-      HasFDerivWithinAt (I.extendCoordChange e e')
-        (fderivWithin ℝ (I.extendCoordChange e e') (range I) y) A y := fun y hy ↦
-    ((I.contDiffWithinAt_extendCoordChange he he' (hAsub hy)).differentiableWithinAt
-      one_ne_zero).hasFDerivWithinAt.mono hArange
-  exact lintegral_image_eq_lintegral_abs_det_fderiv_mul ν hA hderiv
-    ((I.extendCoordChange e e').injOn.mono hAsub) g
-
 end Helpers
 
 /-! ### Positive continuous density measures -/
@@ -396,8 +272,10 @@ theorem isPositiveContinuousDensity_iff {μ : Measure M} :
 variable {I}
 
 /-- The coordinate density of a positive continuous density measure `μ` in a chart `e` of the `C¹`
-maximal atlas, relative to an additive Haar measure `ν` on the model space. Its values on
-`(e.extend I).target` are uniquely determined by `μ`, `e`, and `ν`. -/
+maximal atlas, relative to an additive Haar measure `ν` on the model space. When `E` is
+finite-dimensional with `BorelSpace E`, its values on `(e.extend I).target` are uniquely
+determined by `μ`, `e`, and `ν`; see
+`IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq`. -/
 def IsPositiveContinuousDensity.chartWeight {μ : Measure M}
     (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
     (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] : E → ℝ :=
@@ -456,9 +334,11 @@ theorem IsPositiveContinuousDensity.chartWeight_haar_eq [FiniteDimensional ℝ E
       (Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * hμ.chartWeight he ν₁ y := by
   have hmap : (μ.restrict e.source).map (e.extend I) =
       (ν₂.restrict (e.extend I).target).withDensity fun z ↦
-        ENNReal.ofReal ((Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * hμ.chartWeight he ν₁ z) :=
-    (hμ.map_restrict_eq_withDensity_chartWeight he ν₁).trans
-      (withDensity_ofReal_addHaar_eq ν₁ ν₂ (e.extend I).target (hμ.chartWeight he ν₁))
+        ENNReal.ofReal ((Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * hμ.chartWeight he ν₁ z) := by
+    rw [hμ.map_restrict_eq_withDensity_chartWeight he ν₁, ← restrict_withDensity',
+      Measure.withDensity_eq_withDensity_addHaarScalarFactor ν₁ ν₂, restrict_withDensity']
+    refine congrArg (ν₂.restrict (e.extend I).target).withDensity (funext fun z ↦ ?_)
+    rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
   exact hμ.chartWeight_eq_of_map_restrict_eq he ν₂
     (continuousOn_const.mul (hμ.continuousOn_chartWeight he ν₁))
     (fun z hz ↦ mul_nonneg (Measure.addHaarScalarFactor ν₁ ν₂).coe_nonneg
@@ -540,7 +420,7 @@ private theorem setLIntegral_overlap_eq {μ : Measure M} {ν : Measure E} [ν.Is
   have h2 := setLIntegral_eq_of_map_restrict_eq (I := I) hw' hmap' hs_meas hse' (fun _ ↦ 1)
   simp only [mul_one, setLIntegral_one] at h1 h2
   conv_lhs => rw [← him_e]
-  rw [← h1, h2, him_e', setLIntegral_extendCoordChange (I := I) ν he he' hB hBsub]
+  rw [← h1, h2, him_e', ν.setLIntegral_extendCoordChange (I := I) he he' hB hBsub]
   exact setLIntegral_congr_fun hB fun y _ ↦ (ENNReal.ofReal_mul (abs_nonneg _)).symm
 
 /-- Shared Jacobian identity for two chart densities presenting the same measure on their
@@ -561,7 +441,7 @@ private theorem eqOn_abs_det_mul_of_map_restrict_eq
   set Φ := I.extendCoordChange e e'
   have hΦ_src : Φ.source = I.symm ⁻¹' (e.symm ≫ₕ e').source ∩ range I := by
     rw [I.extendCoordChange_source, I.image_eq]
-  have hΦ_meas : MeasurableSet Φ.source := measurableSet_extendCoordChange_source (I := I) e e'
+  have hΦ_meas : MeasurableSet Φ.source := e.measurableSet_extendCoordChange_source e' I
   have hsubT : Φ.source ⊆ (e.extend I).target := fun _ hy ↦ hy.1
   have hmeq :
       (ν.restrict Φ.source).withDensity (fun y ↦ ENNReal.ofReal (w y)) =
@@ -653,11 +533,11 @@ private theorem atlasPullbackWeight_eq {μ : Measure M} {ν : Measure E} [ν.IsA
     simp only [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
       ((φ i).extend I).left_inv hxi']
   have hyx : e.extend I x = y := (e.extend I).right_inv hyi.1
-  change |(fderivWithin ℝ (I.extendCoordChange e (φ i)) (range I) y).det| *
-      w i ((φ i).extend I x) =
-    |(fderivWithin ℝ (I.extendCoordChange e (φ j)) (range I) y).det| *
-      w j ((φ j).extend I x)
-  rw [htr, hΦij, ← hyx, hchain]
+  have hΦi : I.extendCoordChange e (φ i) y = (φ i).extend I x :=
+    PartialEquiv.trans_apply (e.extend I).symm ((φ i).extend I)
+  have hΦj : I.extendCoordChange e (φ j) y = (φ j).extend I x :=
+    PartialEquiv.trans_apply (e.extend I).symm ((φ j).extend I)
+  rw [hΦi, hΦj, htr, hΦij, ← hyx, hchain]
   ring
 
 /-- Local pushforward verification on a measurable subset of one chart overlap. -/
@@ -671,7 +551,7 @@ private theorem atlasPullback_map_piece {μ : Measure M} {ν : Measure E} [ν.Is
       w' (I.extendCoordChange e e' y)) (I.extendCoordChange e e').source)
     {A : Set E} (hA : MeasurableSet A) (hAsub : A ⊆ (I.extendCoordChange e e').source) :
     ((μ.restrict e.source).map (e.extend I)) A = ∫⁻ y in A, ENNReal.ofReal (w0 y) ∂ν := by
-  rw [map_restrict_extend_apply (I := I) e μ hA]
+  rw [e.map_restrict_extend_apply I μ hA]
   set s := e.extend I ⁻¹' A ∩ e.source
   have hs_meas : MeasurableSet s := e.measurableSet_preimage_extend_inter I hA
   have hs_e' : s ⊆ e'.source := by
@@ -692,7 +572,7 @@ private theorem atlasPullback_map_piece {μ : Measure M} {ν : Measure E} [ν.Is
       simpa only [← e.extend_source (I := I)] using (e.extend I).map_target hyT
   have h1 := setLIntegral_eq_of_map_restrict_eq (I := I) hw' hmap' hs_meas hs_e' (fun _ ↦ 1)
   simp only [mul_one, setLIntegral_one] at h1
-  rw [h1, him, setLIntegral_extendCoordChange (I := I) ν he he' hA hAsub]
+  rw [h1, him, ν.setLIntegral_extendCoordChange (I := I) he he' hA hAsub]
   exact setLIntegral_congr_fun hA fun y hy ↦ by
     rw [hw0_eq (hAsub hy), ENNReal.ofReal_mul (abs_nonneg _)]
 
@@ -734,8 +614,7 @@ private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
   rw [withDensity_apply _ hA, Measure.restrict_restrict hA]
   have hAT_eq : ((μ.restrict e.source).map (e.extend I)) A =
       ((μ.restrict e.source).map (e.extend I)) (A ∩ (e.extend I).target) := by
-    rw [map_restrict_extend_apply (I := I) e μ hA,
-      map_restrict_extend_apply (I := I) e μ (hA.inter hT_meas)]
+    rw [e.map_restrict_extend_apply I μ hA, e.map_restrict_extend_apply I μ (hA.inter hT_meas)]
     congr 1; ext x
     refine ⟨fun ⟨hxA, hxe⟩ ↦ ⟨⟨hxA, ?_⟩, hxe⟩, fun ⟨⟨hxA, _⟩, hxe⟩ ↦ ⟨hxA, hxe⟩⟩
     exact (e.extend I).map_source (by rwa [e.extend_source])
@@ -745,7 +624,7 @@ private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
     rw [hTe, inter_empty, measure_empty, Measure.restrict_empty, lintegral_zero_measure]
   obtain ⟨f, rfl⟩ := ht.exists_eq_range htne
   set U : ℕ → Set E := fun n ↦ (I.extendCoordChange e (φ (f n))).source
-  have hU_meas (n : ℕ) : MeasurableSet (U n) := measurableSet_extendCoordChange_source (I := I) e _
+  have hU_meas (n : ℕ) : MeasurableSet (U n) := e.measurableSet_extendCoordChange_source _ I
   set d : ℕ → Set E := fun n ↦ A ∩ (e.extend I).target ∩ disjointed U n
   have hd_meas (n : ℕ) : MeasurableSet (d n) :=
     (hA.inter hT_meas).inter (MeasurableSet.disjointed hU_meas n)
@@ -808,10 +687,14 @@ theorem isPositiveContinuousDensity_of_atlas {μ : Measure M}
       (hw_pos i _ ((I.extendCoordChange e (φ i)).map_source hyi).1)
   have hmap_nu := atlasPullback_map_eq (I := I) (μ := μ) (ν := ν) hcov_e fun i _ hA hAsub ↦
     atlasPullback_map_piece he (hφ i) (hw_cont i) (hw_map i) (hw0_eq i) hA hAsub
-  exact ⟨fun y ↦ (Measure.addHaarScalarFactor ν ν' : ℝ) * w0 y,
+  refine ⟨fun y ↦ (Measure.addHaarScalarFactor ν ν' : ℝ) * w0 y,
     continuousOn_const.mul hw0_cont,
     fun y hy ↦ mul_pos (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure ν ν') (hw0_pos y hy),
-    hmap_nu.trans (withDensity_ofReal_addHaar_eq ν ν' (e.extend I).target w0)⟩
+    ?_⟩
+  rw [hmap_nu, ← restrict_withDensity',
+    Measure.withDensity_eq_withDensity_addHaarScalarFactor ν ν', restrict_withDensity']
+  refine congrArg (ν'.restrict (e.extend I).target).withDensity (funext fun y ↦ ?_)
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
 
 /-- A Borel measure is a positive continuous density measure iff it has a strictly positive
 continuous density against a fixed additive Haar measure in every preferred extended chart. -/

@@ -82,8 +82,15 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `OpenPartialHomeomorph.measurableSet_extend_target`,
   `OpenPartialHomeomorph.measurableEmbedding_extend_restrict`,
   `OpenPartialHomeomorph.measurableSet_image_extend`,
-  `OpenPartialHomeomorph.measurableSet_preimage_extend_inter`: the corresponding measurability and
-  measurable-embedding lemmas for an arbitrary extended chart `e.extend I`.
+  `OpenPartialHomeomorph.measurableSet_preimage_extend_inter`,
+  `OpenPartialHomeomorph.measurableSet_extendCoordChange_source`,
+  `OpenPartialHomeomorph.map_restrict_extend_apply`: the corresponding measurability,
+  measurable-embedding, coordinate-change source measurability, and chart-pushforward evaluation
+  lemmas for arbitrary extended charts `e.extend I`.
+* `TauCeti.continuousOn_abs_det_fderivWithin_extendCoordChange`,
+  `TauCeti.abs_det_fderivWithin_extendCoordChange_pos`,
+  `TauCeti.abs_det_fderivWithin_extendCoordChange_comp`: continuity, positivity, and chain rule
+  for the absolute Jacobian determinant of `C¹` extended coordinate changes.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
 * `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
@@ -1156,6 +1163,131 @@ theorem measurableSet_preimage_extend_inter [MeasurableSpace E] [BorelSpace E]
   rw [hseq]
   exact hval.measurableSet_image.2 (hcont.measurable hA)
 
+/-- The source of an extended coordinate change is measurable whenever open subsets of `E`
+are measurable. -/
+theorem measurableSet_extendCoordChange_source [MeasurableSpace E] [OpensMeasurableSpace E]
+    (e e' : OpenPartialHomeomorph M H) (I : ModelWithCorners 𝕜 E H) :
+    MeasurableSet (I.extendCoordChange e e').source := by
+  rw [I.extendCoordChange_source, I.image_eq]
+  exact ((e.symm ≫ₕ e').open_source.preimage I.continuous_symm).measurableSet.inter
+    I.isClosed_range.measurableSet
+
+/-- Evaluation of the pushforward of a measure restricted to a chart source along the
+extended chart `e.extend I`. -/
+theorem map_restrict_extend_apply [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace M] [OpensMeasurableSpace M] (e : OpenPartialHomeomorph M H)
+    (I : ModelWithCorners 𝕜 E H) (μ : MeasureTheory.Measure M) {A : Set E} (hA : MeasurableSet A) :
+    ((μ.restrict e.source).map (e.extend I)) A = μ (e.extend I ⁻¹' A ∩ e.source) := by
+  have hcont : Continuous (e.source.domRestrict (e.extend I)) := by
+    rw [← continuousOn_iff_continuous_domRestrict, ← e.extend_source (I := I)]
+    exact e.continuousOn_extend
+  rw [MeasureTheory.Measure.map_apply_of_aemeasurable
+      (aemeasurable_restrict_of_measurable_subtype e.open_source.measurableSet
+        hcont.measurable) hA,
+    MeasureTheory.Measure.restrict_apply' e.open_source.measurableSet]
+
 end ExtendMeasurability
 
 end OpenPartialHomeomorph
+
+namespace TauCeti
+
+section ExtendCoordChangeDet
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+
+private theorem fderivWithin_extendCoordChange_eq_source
+    {e e' : OpenPartialHomeomorph M H} {y : E} (hy : y ∈ (I.extendCoordChange e e').source) :
+    fderivWithin ℝ (I.extendCoordChange e e') (Set.range I) y =
+      fderivWithin ℝ (I.extendCoordChange e e') (I.extendCoordChange e e').source y := by
+  refine fderivWithin_congr_set ?_
+  have hsub : (I.extendCoordChange e e').source ⊆ Set.range I := by
+    rw [I.extendCoordChange_source]
+    exact Set.image_subset_range _ _
+  have h := nhdsWithin_restrict'' (Set.range I) (I.extendCoordChange_source_mem_nhdsWithin hy)
+  rw [Set.inter_eq_right.2 hsub] at h
+  exact nhdsWithin_eq_iff_eventuallyEqSet.1 h
+
+/-- The absolute Jacobian determinant of a `C¹` extended coordinate change is continuous on
+its source. -/
+theorem continuousOn_abs_det_fderivWithin_extendCoordChange
+    [ChartedSpace H M] {e e' : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M) :
+    ContinuousOn
+      (fun y ↦ |(fderivWithin ℝ (I.extendCoordChange e e') (Set.range I) y).det|)
+      (I.extendCoordChange e e').source := by
+  set Φ := I.extendCoordChange e e'
+  have hcont : ContinuousOn (fun y ↦ fderivWithin ℝ Φ Φ.source y) Φ.source :=
+    (I.contDiffOn_extendCoordChange he he').continuousOn_fderivWithin
+      I.uniqueDiffOn_extendCoordChange_source le_rfl
+  have hdet : ContinuousOn (fun y ↦ |(fderivWithin ℝ Φ Φ.source y).det|) Φ.source :=
+    (continuous_abs.comp ContinuousLinearMap.continuous_det).comp_continuousOn hcont
+  exact hdet.congr fun y hy ↦ by rw [fderivWithin_extendCoordChange_eq_source hy]
+
+/-- The absolute Jacobian determinant of a `C¹` extended coordinate change is strictly
+positive at every point of its source. -/
+theorem abs_det_fderivWithin_extendCoordChange_pos
+    [ChartedSpace H M] {e e' : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
+    {y : E} (hy : y ∈ (I.extendCoordChange e e').source) :
+    0 < |(fderivWithin ℝ (I.extendCoordChange e e') (Set.range I) y).det| := by
+  rw [fderivWithin_extendCoordChange_eq_source hy, abs_pos]
+  obtain ⟨A, hA⟩ := I.isInvertible_fderivWithin_extendCoordChange one_ne_zero he he' hy
+  rw [← hA]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
+
+/-- Chain rule for the absolute Jacobian determinants of `C¹` extended coordinate changes on a
+triple chart overlap. -/
+theorem abs_det_fderivWithin_extendCoordChange_comp
+    [ChartedSpace H M] {e e' e'' : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
+    (he'' : e'' ∈ IsManifold.maximalAtlas I 1 M) {x : M}
+    (hxe : x ∈ e.source) (hxe' : x ∈ e'.source) (hxe'' : x ∈ e''.source) :
+    |(fderivWithin ℝ (I.extendCoordChange e e'') (Set.range I) (e.extend I x)).det| =
+      |(fderivWithin ℝ (I.extendCoordChange e' e'') (Set.range I) (e'.extend I x)).det| *
+        |(fderivWithin ℝ (I.extendCoordChange e e') (Set.range I) (e.extend I x)).det| := by
+  set y := e.extend I x
+  set z := e'.extend I x
+  have hy_ee' : y ∈ (I.extendCoordChange e e').source := by
+    rw [← OpenPartialHomeomorph.extend_image_source_inter (f := e) (f' := e')]
+    exact Set.mem_image_of_mem _ ⟨hxe, hxe'⟩
+  have hz_e'e'' : z ∈ (I.extendCoordChange e' e'').source := by
+    rw [← OpenPartialHomeomorph.extend_image_source_inter (f := e') (f' := e'')]
+    exact Set.mem_image_of_mem _ ⟨hxe', hxe''⟩
+  have hΦy : I.extendCoordChange e e' y = z := by
+    have hye : x ∈ (e.extend I).source := by rwa [e.extend_source]
+    simp only [y, z, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
+      (e.extend I).left_inv hye]
+  have hd1 : DifferentiableWithinAt ℝ (I.extendCoordChange e e') (Set.range I) y :=
+    (I.contDiffWithinAt_extendCoordChange he he' hy_ee').differentiableWithinAt one_ne_zero
+  have hd2 : DifferentiableWithinAt ℝ (I.extendCoordChange e' e'') (Set.range I) z :=
+    (I.contDiffWithinAt_extendCoordChange he' he'' hz_e'e'').differentiableWithinAt one_ne_zero
+  have hU : UniqueDiffWithinAt ℝ (Set.range I) y :=
+    I.uniqueDiffOn y (e.extend_target_subset_range
+      ((e.extend I).map_source (by rwa [e.extend_source])))
+  have hmaps : Set.MapsTo (I.extendCoordChange e e') (Set.range I) (Set.range I) := fun _ _ ↦
+    Set.mem_range_self _
+  have heq : I.extendCoordChange e e'' =ᶠ[𝓝[Set.range I] y]
+      I.extendCoordChange e' e'' ∘ I.extendCoordChange e e' := by
+    have hmem : (I.extendCoordChange e e').source ∩ (I.extendCoordChange e e'').source ∈
+        𝓝[Set.range I] y :=
+      Filter.inter_mem (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe')
+        (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe'')
+    filter_upwards [hmem] with w hw
+    have hxw' : (e.extend I).symm w ∈ (e'.extend I).source := hw.1.2
+    simp only [Function.comp_apply, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
+      (e'.extend I).left_inv hxw']
+  have heq0 : I.extendCoordChange e e'' y =
+      (I.extendCoordChange e' e'' ∘ I.extendCoordChange e e') y := by
+    have hxw' : x ∈ (e'.extend I).source := by rwa [e'.extend_source]
+    have hxe_s : x ∈ (e.extend I).source := by rwa [e.extend_source]
+    simp only [Function.comp_apply, y, ModelWithCorners.extendCoordChange,
+      PartialEquiv.trans_apply, (e.extend I).left_inv hxe_s, (e'.extend I).left_inv hxw']
+  rw [heq.fderivWithin_eq heq0, fderivWithin_comp y (hΦy ▸ hd2) hd1 hmaps hU, hΦy]
+  simp only [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
+    abs_mul]
+
+end ExtendCoordChangeDet
+
+end TauCeti

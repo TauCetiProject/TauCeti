@@ -13,7 +13,6 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ExtChartAt
-import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Existence and basic properties of positive continuous density measures
@@ -88,8 +87,9 @@ private theorem image_extChartAt_preimage_inter (x₀ i : M) (A : Set E) :
     · rw [← OpenPartialHomeomorph.extend_image_source_inter (f := chartAt H x₀) (f' := chartAt H i)]
       exact mem_image_of_mem _ ⟨hx0, hxi⟩
     · have hx0' : x ∈ (extChartAt I x₀).source := by rwa [extChartAt_source]
-      change (extChartAt I i) ((extChartAt I x₀).symm (extChartAt I x₀ x)) = z
-      rwa [(extChartAt I x₀).left_inv hx0']
+      rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply, ← extChartAt, ← extChartAt,
+        (extChartAt I x₀).left_inv hx0']
+      exact hxz
   · have hyT : y ∈ (extChartAt I x₀).target := hyΦ.1
     have hxi : (extChartAt I x₀).symm y ∈ (chartAt H i).source :=
       (chartAt H i).extend_source (I := I) ▸ hyΦ.2
@@ -133,15 +133,14 @@ private theorem map_localChartMeasure_apply (ν : Measure E) [ν.IsAddHaarMeasur
           else 0) ∂ν := by
   set e₀ := chartAt H x₀
   set Φ := I.extendCoordChange e₀ (chartAt H i)
-  have hΦ_meas := measurableSet_extendCoordChange_source (I := I) e₀ (chartAt H i)
+  have hΦ_meas := e₀.measurableSet_extendCoordChange_source (chartAt H i) I
   have hT₀ : MeasurableSet (extChartAt I x₀).target := e₀.measurableSet_extend_target I
-  change ((localChartMeasure (I := I) ν i f).restrict e₀.source).map (e₀.extend I) A = _
-  rw [map_restrict_extend_apply (I := I) e₀ _ hA]
   have hs_meas : MeasurableSet (extChartAt I x₀ ⁻¹' A ∩ e₀.source) :=
     e₀.measurableSet_preimage_extend_inter I hA
-  change localChartMeasure (I := I) ν i f (extChartAt I x₀ ⁻¹' A ∩ e₀.source) = _
-  rw [localChartMeasure_apply (I := I) ν i f hs_meas, image_extChartAt_preimage_inter,
-    setLIntegral_extendCoordChange (I := I) ν
+  conv_lhs => rw [extChartAt]
+  rw [e₀.map_restrict_extend_apply I _ hA, ← extChartAt,
+    localChartMeasure_apply (I := I) ν i f hs_meas, image_extChartAt_preimage_inter,
+    ν.setLIntegral_extendCoordChange (I := I)
       (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i)
       (hA.inter hΦ_meas) inter_subset_right,
     ← lintegral_indicator (hA.inter hΦ_meas), ← lintegral_indicator (hA.inter hT₀)]
@@ -244,22 +243,15 @@ private theorem continuousOn_finsum_partitionSummand (ρ : PartitionOfUnity M M 
     (hρ : ρ.IsSubordinate fun x : M ↦ (chartAt H x).source) (x₀ : M) :
     ContinuousOn (fun y ↦ ∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y)
       (extChartAt I x₀).target := by
-  classical
-  intro y hy
-  obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ hy
-  have hsum_cont : ContinuousOn (fun z ↦ ∑ i ∈ hNfin.toFinset, partitionSummand (I := I) ρ x₀ i z)
-      (extChartAt I x₀).target := by
-    induction hNfin.toFinset using Finset.induction_on with
-    | empty => simpa using continuousOn_const
-    | @insert a s ha ih =>
-      have h1 : ContinuousOn (partitionSummand (I := I) ρ x₀ a) (extChartAt I x₀).target :=
-        continuousOn_summand (I := I) x₀ a (ρ a).continuous (hρ a)
-      simp_rw [Finset.sum_insert ha]
-      exact h1.add ih
-  refine (hsum_cont y hy).congr_of_eventuallyEq (Filter.eventuallyEq_of_mem hN fun z hz ↦ ?_) ?_
-  · exact finsum_eq_sum_of_support_subset _ fun i hi ↦ hNfin.mem_toFinset.2 ⟨z, hz, hi⟩
-  · exact finsum_eq_sum_of_support_subset _ fun i hi ↦
-      hNfin.mem_toFinset.2 ⟨y, mem_of_mem_nhdsWithin hy hN, hi⟩
+  refine continuousOn_iff_continuous_domRestrict.2 <|
+    continuous_finsum (f := fun i (y : (extChartAt I x₀).target) ↦
+        partitionSummand (I := I) ρ x₀ i y.1)
+      (fun i ↦ continuousOn_iff_continuous_domRestrict.1
+        (continuousOn_summand (I := I) x₀ i (ρ i).continuous (hρ i))) fun y ↦ ?_
+  obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ y.2
+  refine ⟨Subtype.val ⁻¹' N, ?_, hNfin.subset fun i ⟨z, hzh, hzN⟩ ↦ ⟨z.1, hzN, hzh⟩⟩
+  rw [nhds_subtype_eq_comap_nhdsWithin]
+  exact Filter.preimage_mem_comap hN
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace M]
   [BorelSpace M] in
@@ -363,15 +355,14 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
   have hT₀ : MeasurableSet (extChartAt I x₀).target := (chartAt H x₀).measurableSet_extend_target I
   ext A hA
   have hpre := (chartAt H x₀).measurableSet_preimage_extend_inter I hA
-  change ((Measure.sum fun i : M ↦ localChartMeasure (I := I) ν i (ρ i)).restrict
-    (chartAt H x₀).source).map ((chartAt H x₀).extend I) A = _
-  rw [map_restrict_extend_apply (I := I) (chartAt H x₀) _ hA, Measure.sum_apply _ hpre,
+  conv_lhs => rw [extChartAt]
+  rw [(chartAt H x₀).map_restrict_extend_apply I _ hA, Measure.sum_apply _ hpre,
     withDensity_apply _ hA, Measure.restrict_restrict hA]
   have hterm (i : M) : localChartMeasure (I := I) ν i (ρ i)
       ((chartAt H x₀).extend I ⁻¹' A ∩ (chartAt H x₀).source) =
       ∫⁻ y in A ∩ (extChartAt I x₀).target,
         ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i y) ∂ν := by
-    rw [← map_restrict_extend_apply (I := I) (chartAt H x₀) _ hA]
+    rw [← (chartAt H x₀).map_restrict_extend_apply I _ hA, ← extChartAt]
     exact map_localChartMeasure_apply (I := I) ν hA
   have haem (i : S) : AEMeasurable
       (fun y ↦ ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.1 y))
@@ -513,8 +504,7 @@ private theorem measure_eq_zero_iff_image_of_measurableSet {μ : Measure M}
       exact (ENNReal.ofReal_pos.2 (hμ.chartWeight_pos he ν (hsubT hy))).ne' hy0
     simpa only [not_false_eq_true, ofPred_true, Measure.restrict_apply_univ] using ae_iff.1 hfalse
   · intro hz
-    change ∫⁻ y in extChartAt I x '' s, ENNReal.ofReal (hμ.chartWeight he ν y) ∂ν = 0
-    rw [Measure.restrict_zero_set hz, lintegral_zero_measure]
+    rw [← extChartAt, Measure.restrict_zero_set hz, lintegral_zero_measure]
 
 omit [FiniteDimensional ℝ E] in
 /-- On a chart source, an arbitrary (not necessarily measurable) subset has `μ`-measure zero iff

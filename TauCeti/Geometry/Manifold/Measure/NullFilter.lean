@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Measure
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Geometry.Manifold.Measure.Differentiable
@@ -24,9 +23,7 @@ homeomorphic to a subset of the finite-dimensional (hence hereditarily Lindelöf
 
 The sets with null complement form a filter `TauCeti.Manifold.ae I M` closed under countable
 intersections and nontrivial on every nonempty finite-dimensional manifold. On a normed space
-modelled on itself it coincides with `MeasureTheory.ae μ` for every additive Haar measure `μ`, and
-on a Lindelöf `C¹` manifold equipped with any continuous Riemannian metric it coincides with
-`MeasureTheory.ae (TauCeti.riemannianVolume I M)`.
+modelled on itself it coincides with `MeasureTheory.ae μ` for every additive Haar measure `μ`.
 
 ## Main definitions
 
@@ -42,14 +39,11 @@ on a Lindelöf `C¹` manifold equipped with any continuous Riemannian metric it 
 * `TauCeti.isNullSet_iff_forall_atlas`: nullity can be tested on any covering `C¹` atlas.
 * `TauCeti.Manifold.ae_modelWithCornersSelf_eq`: on a finite-dimensional real normed space, the
   manifold almost-everywhere filter is the Haar almost-everywhere filter.
-* `TauCeti.Manifold.ae_eq_ae_riemannianVolume`,
-  `TauCeti.Manifold.eventually_ae_iff_ae_riemannianVolume`: on a Lindelöf `C¹` manifold, the
-  almost-everywhere filter coincides with that of any continuous Riemannian volume measure.
 -/
 
 public section
 
-open Bundle Filter MeasureTheory Set
+open Filter MeasureTheory Set
 open scoped Manifold Topology
 
 namespace TauCeti
@@ -60,13 +54,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M]
-
-/-- The empty set is chartwise null. -/
-@[simp]
-theorem isNullSet_empty : IsNullSet I (∅ : Set M) := by
-  rw [isNullSet_iff]
-  intro x μ _
-  simp
 
 omit [MeasurableSpace E] [BorelSpace E] [ChartedSpace H M] in
 /-- A finite-dimensional chart source is Lindelöf, because it embeds homeomorphically into the
@@ -199,22 +186,22 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The **metric-free almost-everywhere filter** on a charted manifold: the filter of sets whose
 complements are chartwise null (`TauCeti.IsNullSet`). This depends on neither a Riemannian metric
 nor an orientation, and needs no measurable structure on the manifold itself. -/
-def ae : Filter M where
-  sets := {s | IsNullSet I sᶜ}
-  univ_sets := by simp
-  sets_of_superset hs hst := hs.mono (compl_subset_compl.2 hst)
-  inter_sets hs ht := by
-    simpa only [mem_ofPred_eq, compl_inter] using hs.union ht
+def ae : Filter M :=
+  Filter.ofCountableUnion {s | IsNullSet I s}
+    (fun S hSc hS ↦ by simpa only [mem_ofPred_eq, sUnion_eq_biUnion] using IsNullSet.biUnion hSc hS)
+    (fun _ ht _ hst ↦ ht.mono hst)
 
 variable {I M}
 
 /-- A set belongs to the manifold almost-everywhere filter iff its complement is chartwise null. -/
 @[simp]
-theorem mem_ae_iff {s : Set M} : s ∈ ae I M ↔ IsNullSet I sᶜ := Iff.rfl
+theorem mem_ae_iff {s : Set M} : s ∈ ae I M ↔ IsNullSet I sᶜ :=
+  Filter.mem_ofCountableUnion
 
 /-- A predicate holds eventually in `Manifold.ae I M` iff the set where it fails is null. -/
 theorem eventually_ae_iff {p : M → Prop} :
-    (∀ᶠ x in ae I M, p x) ↔ IsNullSet I {x | ¬ p x} := Iff.rfl
+    (∀ᶠ x in ae I M, p x) ↔ IsNullSet I {x | ¬ p x} :=
+  mem_ae_iff
 
 /-- The complement of a null set lies in the manifold almost-everywhere filter. -/
 theorem _root_.TauCeti.IsNullSet.compl_mem_ae {s : Set M} (hs : IsNullSet I s) :
@@ -226,10 +213,8 @@ theorem _root_.TauCeti.IsNullSet.eventually_notMem {s : Set M} (hs : IsNullSet I
     ∀ᶠ x in ae I M, x ∉ s :=
   hs.compl_mem_ae
 
-instance instCountableInterFilter_ae : CountableInterFilter (ae I M) where
-  countable_sInter_mem S hSc hS := by
-    rw [mem_ae_iff, compl_sInter, sUnion_image]
-    exact IsNullSet.biUnion hSc fun s hs ↦ hS s hs
+instance instCountableInterFilter_ae : CountableInterFilter (ae I M) :=
+  Filter.countableInter_ofCountableUnion ..
 
 instance instNeBot_ae [FiniteDimensional ℝ E] [Nonempty M] : (ae I M).NeBot := by
   rw [neBot_iff]
@@ -249,31 +234,6 @@ theorem ae_modelWithCornersSelf_eq [FiniteDimensional ℝ E]
   rw [mem_ae_iff, MeasureTheory.mem_ae_iff, isNullSet_modelWithCornersSelf_iff μ]
 
 end Filter
-
-section Riemannian
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-/-- On a Lindelöf `C¹` manifold with any continuous Riemannian metric, the metric-free
-almost-everywhere filter coincides with the almost-everywhere filter of the Riemannian volume. -/
-theorem ae_eq_ae_riemannianVolume :
-    ae I M = MeasureTheory.ae (riemannianVolume I M) := by
-  ext s
-  rw [mem_ae_iff, MeasureTheory.mem_ae_iff, isNullSet_iff_riemannianVolume_eq_zero]
-
-/-- A property holds almost everywhere for the Riemannian volume of any continuous Riemannian
-metric iff it holds in the metric-free filter `TauCeti.Manifold.ae I M`. -/
-theorem eventually_ae_iff_ae_riemannianVolume {p : M → Prop} :
-    (∀ᶠ x in ae I M, p x) ↔ ∀ᵐ x ∂riemannianVolume I M, p x := by
-  rw [ae_eq_ae_riemannianVolume]
-
-end Riemannian
 
 end Manifold
 
