@@ -9,37 +9,35 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 
 /-!
-# Bounded operators on Bessel-potential spaces from operators on tempered distributions
+# The directional derivative on Bessel-potential spaces, and real-valued elements
 
 A continuous linear operator `A` on tempered distributions that maps `H^{s,p}(E, F)` into
-`H^{r,p}(E, G)` is automatically bounded between these Banach spaces, by the closed graph theorem
-(`BesselPotentialSpace.continuous_of_continuous_toDistr`). This file bundles such restrictions
-(`BesselPotentialSpace.mapCLM`) and applies the construction to the directional derivative
-`∂_v : H^{s+1}(E, F) → H^s(E, F)` (`BesselPotentialSpace.lineDerivCLM`). With
-`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le` it also gives
-multiplication by a function with bounded derivatives as a bounded operator on `H^{k,p}`.
-These are the linear building blocks of differential operators with nondecaying smooth
-coefficients on the Sobolev scale, and polynomial field equations built from them and the products
-`BesselPotentialSpace.mulCLM` are smooth maps between Bessel-potential spaces.
+`H^{r,p}(E, G)` is automatically bounded between these Banach spaces, by the closed graph theorem;
+`BesselPotentialSpace.mapCLM` bundles such restrictions. This file applies the construction to the
+directional derivative `∂_v : H^{s+1,p}(E, F) → H^{s,p}(E, F)` for `1 < p < ∞`
+(`BesselPotentialSpace.lineDerivCLM`). Combined with
+`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`, `mapCLM` likewise yields
+multiplication by a function with bounded derivatives as a bounded operator on `H^{k,p}`; these
+are the linear building blocks of differential operators with nondecaying smooth coefficients on
+the Sobolev scale.
 
-For `s ≥ 0` an element `u` of `H^{s}(E)` is an `L²` function, `BesselPotentialSpace.inclusionLp`.
+For `s ≥ 0` an element `u` of `H^{s,p}(E)` is an `Lᵖ` function, `BesselPotentialSpace.inclusionLp`.
 The second part of the file describes the operators on these functions when `u` is real-valued:
 
 * a real function `f` lies in `realSobolevFunctions E s p` exactly when `f`, viewed as a complex
   function, is almost everywhere the `Lᵖ` function of some `u ∈ H^{s,p}(E)`
   (`TemperedDistribution.mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq`);
-* if moreover `f` is `C¹` and `u ∈ H^{s+1}(E)`, then the `L²` function of `∂_v u` is almost
-  everywhere the classical derivative `x ↦ fderiv ℝ f x v`
+* if moreover `f` is `C¹`, `1 < p < ∞` and `u ∈ H^{s+1,p}(E)`, then the `Lᵖ` function of `∂_v u`
+  is almost everywhere the classical derivative `x ↦ fderiv ℝ f x v`
   (`BesselPotentialSpace.coeFn_inclusionLp_lineDerivCLM_ae_eq`);
 * if `w` has the tempered distribution `g u` for a bounded function `g` of temperate growth, then
-  the `L²` function of `w` is almost everywhere `g` times that of `u`
+  the `Lᵖ` function of `w` is almost everywhere `g` times that of `u`
   (`BesselPotentialSpace.coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM`).
 
 ## Main declarations
 
-* `BesselPotentialSpace.mapCLM`: the restriction `H^{s,p}(E, F) →L[ℂ] H^{r,p}(E, G)` of an operator
-  on tempered distributions that maps `H^{s,p}` into `H^{r,p}`.
-* `BesselPotentialSpace.lineDerivCLM`: the directional derivative `H^{s+1}(E, F) →L[ℂ] H^s(E, F)`.
+* `BesselPotentialSpace.lineDerivCLM`: the directional derivative
+  `H^{s+1,p}(E, F) →L[ℂ] H^{s,p}(E, F)` for `1 < p < ∞`.
 -/
 
 public section
@@ -49,55 +47,28 @@ noncomputable section
 open MeasureTheory TemperedDistribution
 open scoped ENNReal SchwartzMap BesselPotentialSpace LineDeriv
 
-variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
 namespace BesselPotentialSpace
 
-section mapCLM
-
-variable [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-  [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] {r s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- **Restriction of an operator on tempered distributions to Bessel-potential spaces.** A
-continuous linear map `A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G)` that maps `H^{s,p}(E, F)` into
-`H^{r,p}(E, G)` restricts to a bounded operator between these spaces; its continuity is the
-closed graph theorem. The restriction keeps the action of `A` on the underlying tempered
-distributions (`BesselPotentialSpace.toDistr_mapCLM`). -/
-def mapCLM (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G)) (hA : ∀ u : H^{s, p}(E, F), MemSobolev r p (A u.toDistr)) :
-    H^{s, p}(E, F) →L[ℂ] H^{r, p}(E, G) :=
-  let L : H^{s, p}(E, F) →ₗ[ℂ] H^{r, p}(E, G) :=
-    { toFun u := (hA u).toBesselPotentialSpace
-      map_add' u v := ext (by simp)
-      map_smul' c u := ext (by simp) }
-  { L with
-    cont := continuous_of_continuous_toDistr (L.restrictScalars ℝ) <|
-      (A.continuous.comp continuous_toDistr).congr fun u ↦ by simp [L] }
-
-/-- `mapCLM A hA` acts on the underlying tempered distributions by `A`. -/
-@[simp]
-theorem toDistr_mapCLM (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G))
-    (hA : ∀ u : H^{s, p}(E, F), MemSobolev r p (A u.toDistr)) (u : H^{s, p}(E, F)) :
-    (mapCLM A hA u).toDistr = A u.toDistr :=
-  MemSobolev.toBesselPotentialSpace_toDistr _
-
-end mapCLM
-
 section lineDerivCLM
 
-variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ}
+variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ} {p : ℝ≥0∞}
+  [Fact (1 ≤ p)]
 
-/-- **The directional derivative on the Sobolev scale.** The derivative `∂_v` in the direction
-`v`, as a bounded operator `H^{s+1}(E, F) →L[ℂ] H^s(E, F)`
-(`TemperedDistribution.MemSobolev.lineDerivOp`). -/
-def lineDerivCLM (v : E) : H^{s + 1}(E, F) →L[ℂ] H^{s}(E, F) :=
+/-- **The directional derivative on the Sobolev scale.** For `1 < p < ∞`, the derivative `∂_v` in
+the direction `v`, as a bounded operator `H^{s+1,p}(E, F) →L[ℂ] H^{s,p}(E, F)`
+(`TemperedDistribution.MemSobolev.lineDerivOp_of_one_lt`). -/
+def lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) :
+    H^{s + 1, p}(E, F) →L[ℂ] H^{s, p}(E, F) :=
   mapCLM (LineDeriv.lineDerivOpCLM ℂ 𝓢'(E, F) v) fun u ↦ by
-    simpa using u.memSobolev_toDistr.lineDerivOp (m := v)
+    simpa using u.memSobolev_toDistr.lineDerivOp_of_one_lt hp hp_top (m := v)
 
-/-- `lineDerivCLM v` acts on the underlying tempered distributions by `∂_v`. -/
+/-- `lineDerivCLM hp hp_top v` acts on the underlying tempered distributions by `∂_v`. -/
 @[simp]
-theorem toDistr_lineDerivCLM (v : E) (u : H^{s + 1}(E, F)) :
-    (lineDerivCLM v u).toDistr = ∂_{v} u.toDistr := by
+theorem toDistr_lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) (u : H^{s + 1, p}(E, F)) :
+    (lineDerivCLM hp hp_top v u).toDistr = ∂_{v} u.toDistr := by
   simp [lineDerivCLM]
 
 end lineDerivCLM
@@ -125,53 +96,44 @@ theorem mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq {s : ℝ} {p : ℝ
       with x h h'
     rw [h, Complex.ofRealCLM_apply, h']
   · rintro ⟨u, hu⟩
-    -- The real part of the `Lᵖ` function of `u` is a real `Lᵖ` representative of `f`.
-    set w := BesselPotentialSpace.inclusionLp hs u
-    have hre : ⇑(Complex.reCLM.compLp w) =ᵐ[volume] f := by
-      filter_upwards [Complex.reCLM.coeFn_compLp (p := p) (μ := volume) w, hu] with x h h'
-      rw [h, Complex.reCLM_apply, h', Complex.ofReal_re]
-    have hw : Complex.ofRealCLM.compLp (Complex.reCLM.compLp w) = w := by
-      refine Lp.ext ?_
-      filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume)
-        (Complex.reCLM.compLp w), hre, hu] with x h h' h''
-      rw [h, Complex.ofRealCLM_apply, h', h'']
-    refine mem_realSobolevFunctions.2 ⟨Complex.reCLM.compLp w, hre, ?_⟩
-    rw [hw, BesselPotentialSpace.toTemperedDistribution_inclusionLp]
+    refine mem_realSobolevFunctions_of_ae_eq_ofReal ?_ hu
+    rw [BesselPotentialSpace.toTemperedDistribution_inclusionLp]
     exact u.memSobolev_toDistr
 
 end TemperedDistribution
 
 namespace BesselPotentialSpace
 
-/-- **Classical derivatives of real elements of `H^{s+1}`.** For `s ≥ 0`, if the `L²` function of
-`u ∈ H^{s+1}(E)` is almost everywhere a real `C¹` function `f`, then the `L²` function of the
-derivative `∂_v u ∈ H^s(E)` is almost everywhere its classical derivative `x ↦ fderiv ℝ f x v`. -/
-theorem coeFn_inclusionLp_lineDerivCLM_ae_eq {s : ℝ} (hs : 0 ≤ s) {f : E → ℝ}
-    (hf : ContDiff ℝ 1 f) {u : H^{s + 1}(E)}
+/-- **Classical derivatives of real elements of `H^{s+1,p}`.** For `1 < p < ∞` and `s ≥ 0`, if the
+`Lᵖ` function of `u ∈ H^{s+1,p}(E)` is almost everywhere a real `C¹` function `f`, then the `Lᵖ`
+function of the derivative `∂_v u ∈ H^{s,p}(E)` is almost everywhere its classical derivative
+`x ↦ fderiv ℝ f x v`. -/
+theorem coeFn_inclusionLp_lineDerivCLM_ae_eq {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ∞) (hs : 0 ≤ s) {f : E → ℝ} (hf : ContDiff ℝ 1 f) {u : H^{s + 1, p}(E)}
     (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] fun x ↦ (f x : ℂ)) (v : E) :
-    ⇑(inclusionLp hs (lineDerivCLM v u)) =ᵐ[volume] fun x ↦ (fderiv ℝ f x v : ℂ) := by
+    ⇑(inclusionLp hs (lineDerivCLM hp hp_top v u)) =ᵐ[volume] fun x ↦ (fderiv ℝ f x v : ℂ) := by
   have hmem := (mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq (by linarith)).2 ⟨u, hu⟩
   obtain ⟨u₀, hu₀f, -⟩ := mem_realSobolevFunctions.1 hmem
   obtain ⟨u', hu'f, -⟩ := mem_realSobolevFunctions.1
-    (fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) hs hf hmem v)
+    (fderiv_apply_mem_realSobolevFunctions hp hp_top hs hf hmem v)
   -- The tempered distribution of `u` is that of the real function `u₀`.
   have hu₀ : u.toDistr = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u₀) := by
     rw [← toTemperedDistribution_inclusionLp (by linarith : 0 ≤ s + 1)]
     congr 1
     refine Lp.ext ?_
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u₀, hu₀f, hu]
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) u₀, hu₀f, hu]
       with x h h' h''
     rw [h'', h, Complex.ofRealCLM_apply, h']
-  have hd : inclusionLp hs (lineDerivCLM v u) = Complex.ofRealCLM.compLp u' := by
+  have hd : inclusionLp hs (lineDerivCLM hp hp_top v u) = Complex.ofRealCLM.compLp u' := by
     rw [inclusionLp_eq_iff, toDistr_lineDerivCLM, hu₀,
       TauCeti.lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf hu₀f hu'f]
-  filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u', hu'f] with x h h'
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) u', hu'f] with x h h'
   rw [hd, h, Complex.ofRealCLM_apply, h']
 
 variable [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {r s : ℝ} {p : ℝ≥0∞}
   [Fact (1 ≤ p)]
 
-/-- **Multiplication by a bounded function on `L²` functions.** For `r, s ≥ 0`, if
+/-- **Multiplication by a bounded function on `Lᵖ` functions.** For `r, s ≥ 0`, if
 `w ∈ H^{r,p}(E, F)` has the tempered distribution `g u` of `u ∈ H^{s,p}(E, F)`, for a bounded
 function `g` of temperate growth, then the `Lᵖ` function of `w` is almost everywhere `g` times
 that of `u`. -/

@@ -10,9 +10,9 @@ public import TauCeti.Analysis.PDE.Vortex.Multiplier
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 public import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
-import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # The plane vortex equation on the Sobolev scale
@@ -47,17 +47,16 @@ functions, which lie in `H^(k+1)` because `H^(k+1)(ℂ)` is an algebra for `k �
 The fields are pointwise representatives and the operators are classical differential expressions,
 so these membership statements assume `C¹` regularity of the field, variation or phase.
 
-**The equation map between Hilbert spaces.** The second part of the file realizes the equation as a
-smooth map of Hilbert spaces, the nonlinear map whose zeros are the vortices of `A_m^(k+1)`. Its
-coordinates are the complexified coordinates of the variation, elements of Mathlib's
-Bessel-potential space `H^(k+1)(ℂ) = H^{k+1,2}(ℂ, ℂ)`, on which the vortex equation is a polynomial
-map. For `k ≥ 1`:
+**The equation map between Hilbert spaces.** The second part of the file realizes the equation, in
+the affine chart `y ↦ x_m + y` of `A_m^(k+1)`, as a smooth map of Hilbert spaces. Its coordinates
+are the complexified coordinates of the variation, elements of Mathlib's Bessel-potential space
+`H^(k+1)(ℂ) = H^{k+1,2}(ℂ, ℂ)`, on which the vortex equation is a polynomial map. For `k ≥ 1`:
 
 * `sobolevEquation f m hk : (Fin 4 → H^(k+1)(ℂ)) → (Fin 3 → H^k(ℂ))` is the sum of the reference
   defect `sobolevReferenceDefect`, the linearized equation `sobolevLinearizedEquation f m hk 0` at
   the reference field, and the quadratic term `sobolevQuadraticTerm`. It is analytic
-  (`contDiff_sobolevEquation`), and its derivative at `y` is the linearized equation
-  `sobolevLinearizedEquation f m hk y` at the field `x_m + y` (`hasFDerivAt_sobolevEquation`).
+  (`contDiff_sobolevEquation`), and its derivative at `y` is the complexified linearized equation
+  `sobolevLinearizedEquation f m hk y` at `x_m + y` (`hasFDerivAt_sobolevEquation`).
   The derivatives in it are `BesselPotentialSpace.lineDerivCLM`, the coefficients of the reference
   field act by `referenceMulCLM`, and those of `x_m + y` by `fieldMulCLM`.
 * A real field `y` lies in `sobolevFields s` exactly when its coordinates are, almost everywhere,
@@ -65,8 +64,11 @@ map. For `k ≥ 1`:
   (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`). For such `u` and `C¹` fields, the Sobolev
   maps compute the pointwise ones: `sobolevEquation f m hk u` is almost everywhere
   `equation (x_m + y)` (`coeFn_inclusionLp_sobolevEquation_ae_eq`), and similarly for the linearized
-  equation and the quadratic term. In particular a `C¹` field `x ∈ A_m^(k+1)` is a vortex exactly
-  when `sobolevEquation` vanishes at the coordinates of `x - x_m` (`sobolevEquation_eq_zero_iff`).
+  equation and the quadratic term. In particular, for a real `C¹` field `x ∈ A_m^(k+1)` whose
+  difference with `x_m` has coordinates `u`, `x` is a vortex exactly when
+  `sobolevEquation f m hk u = 0` (`sobolevEquation_eq_zero_iff`). Only these real zeros, at
+  coordinates of real fields, are vortices: the complexified map can also vanish at non-real `u`,
+  which corresponds to no field, and its restriction to the real subspace is not constructed here.
 
 No Fredholm property, slice or quotient is constructed here.
 
@@ -289,25 +291,6 @@ open scoped BesselPotentialSpace
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
 
-private theorem contDiff_ofReal_referenceField_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ)
-    (a : Fin 4) : ContDiff ℝ ∞ fun z ↦ (referenceField f m z a : ℂ) :=
-  Complex.ofRealCLM.contDiff.comp (contDiff_euclidean.1 (contDiff_referenceField f m) a)
-
-private theorem exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le
-    (f : ContDiffBump (0 : ℝ)) (m : ℕ) (a : Fin 4) (n : ℕ) :
-    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (referenceField f m z a : ℂ)) z‖ ≤ C := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceField_apply_le f m a n
-  refine ⟨C, fun z ↦ ?_⟩
-  have h := Complex.ofRealLI.norm_iteratedFDeriv_comp_left
-    ((contDiff_euclidean.1 (contDiff_referenceField f m) a).contDiffAt (x := z))
-    (i := n) (by exact_mod_cast le_top)
-  exact (le_of_eq h).trans (hC z)
-
-private theorem hasTemperateGrowth_ofReal_referenceField_apply (f : ContDiffBump (0 : ℝ))
-    (m : ℕ) (a : Fin 4) : (fun z ↦ (referenceField f m z a : ℂ)).HasTemperateGrowth :=
-  .of_norm_iteratedFDeriv_le (contDiff_ofReal_referenceField_apply f m a)
-    (exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a)
-
 private theorem finrank_lt_two_mul_natCast_add_one (hk : 1 ≤ k) :
     (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1) :=
   finrank_real_complex_lt_two_mul (by linarith [show (1 : ℝ) ≤ k from mod_cast hk])
@@ -340,9 +323,9 @@ theorem coeFn_inclusionLp_referenceMulCLM_ae_eq (a : Fin 4) (u : H^{(k : ℝ)}(�
     (fun z ↦ by simpa using hC z) (toDistr_referenceMulCLM a u)
 
 variable (f m) in
-/-- Multiplication by the coordinate `a` of the field `x_m + y`, for a variation
-`y ∈ H^(k+1)(ℂ)⁴`, as a bounded operator `H^(k+1)(ℂ) → H^k(ℂ)`. The product with `y_a` uses that
-`H^(k+1)(ℂ)` is an algebra for `k ≥ 1`. -/
+/-- Multiplication by the coordinate `a` of `x_m + y`, for complexified coordinates
+`y ∈ H^(k+1)(ℂ)⁴` of a variation, as a bounded operator `H^(k+1)(ℂ) → H^k(ℂ)`. The product with
+`y_a` uses that `H^(k+1)(ℂ)` is an algebra for `k ≥ 1`. -/
 def fieldMulCLM (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) :
     H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
   (referenceMulCLM f m k a).comp (inclusion (lt_add_one _).le) +
@@ -357,15 +340,17 @@ theorem fieldMulCLM_apply (hk : 1 ≤ k) (hs : (Module.finrank ℝ ℂ : ℝ) < 
   (rfl)
 
 variable (f m) in
-/-- **The linearized vortex equation between Sobolev spaces.** At the field `x_m + y` of
-`A_m^(k+1)`, `k ≥ 1`, the linearized equation `d₁` (`TauCeti.Vortex.linearizedEquation`) as a
-bounded operator `H^(k+1)(ℂ)⁴ → H^k(ℂ)³` on complexified coordinates. Its rows are those of
-`linearizedEquation`, with the classical derivatives replaced by `lineDerivCLM` and the
-coefficients of the field by `fieldMulCLM`. -/
+/-- **The linearized vortex equation between Sobolev spaces.** For `k ≥ 1` and complexified
+coordinates `y ∈ H^(k+1)(ℂ)⁴`, the complexified linearized equation `d₁`
+(`TauCeti.Vortex.linearizedEquation`) at `x_m + y`, as a bounded operator `H^(k+1)(ℂ)⁴ → H^k(ℂ)³`.
+When `y` holds the coordinates of a real variation, it computes the linearized equation at the
+field `x_m + y` of `A_m^(k+1)` (`coeFn_inclusionLp_sobolevLinearizedEquation_ae_eq`). Its rows are
+those of `linearizedEquation`, with the classical derivatives replaced by `lineDerivCLM` and the
+coefficients of `x_m + y` by `fieldMulCLM`. -/
 def sobolevLinearizedEquation (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :
     (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] (Fin 3 → H^{(k : ℝ)}(ℂ)) :=
   let D (v : ℂ) (b : Fin 4) : (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
-    (lineDerivCLM v).comp (proj b)
+    (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v).comp (proj b)
   let X (a b : Fin 4) : (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
     (fieldMulCLM f m hk y a).comp (proj b)
   pi ![D I 0 - D 1 1 + X 2 2 + X 3 3,
@@ -378,23 +363,29 @@ variable (hk : 1 ≤ k) (y h : Fin 4 → H^{(k : ℝ) + 1}(ℂ))
 
 /-- The first row of `sobolevLinearizedEquation`, the linearized curvature equation. -/
 theorem sobolevLinearizedEquation_apply_zero :
-    sobolevLinearizedEquation f m hk y h 0 = lineDerivCLM I (h 0) - lineDerivCLM 1 (h 1) +
-      fieldMulCLM f m hk y 2 (h 2) + fieldMulCLM f m hk y 3 (h 3) :=
+    sobolevLinearizedEquation f m hk y h 0 =
+      lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I (h 0) -
+        lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 (h 1) +
+        fieldMulCLM f m hk y 2 (h 2) + fieldMulCLM f m hk y 3 (h 3) :=
   (rfl)
 
 /-- The second row of `sobolevLinearizedEquation`, the real part of the linearized `∂bar_a α`. -/
 theorem sobolevLinearizedEquation_apply_one :
-    sobolevLinearizedEquation f m hk y h 1 = lineDerivCLM 1 (h 2) - lineDerivCLM I (h 3) -
-      fieldMulCLM f m hk y 0 (h 3) - fieldMulCLM f m hk y 3 (h 0) -
-      fieldMulCLM f m hk y 1 (h 2) - fieldMulCLM f m hk y 2 (h 1) :=
+    sobolevLinearizedEquation f m hk y h 1 =
+      lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 (h 2) -
+        lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I (h 3) -
+        fieldMulCLM f m hk y 0 (h 3) - fieldMulCLM f m hk y 3 (h 0) -
+        fieldMulCLM f m hk y 1 (h 2) - fieldMulCLM f m hk y 2 (h 1) :=
   (rfl)
 
 /-- The third row of `sobolevLinearizedEquation`, the imaginary part of the linearized
 `∂bar_a α`. -/
 theorem sobolevLinearizedEquation_apply_two :
-    sobolevLinearizedEquation f m hk y h 2 = lineDerivCLM 1 (h 3) + lineDerivCLM I (h 2) +
-      fieldMulCLM f m hk y 0 (h 2) + fieldMulCLM f m hk y 2 (h 0) -
-      fieldMulCLM f m hk y 1 (h 3) - fieldMulCLM f m hk y 3 (h 1) :=
+    sobolevLinearizedEquation f m hk y h 2 =
+      lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 (h 3) +
+        lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I (h 2) +
+        fieldMulCLM f m hk y 0 (h 2) + fieldMulCLM f m hk y 2 (h 0) -
+        fieldMulCLM f m hk y 1 (h 3) - fieldMulCLM f m hk y 3 (h 1) :=
   (rfl)
 
 end apply
@@ -501,7 +492,7 @@ private theorem hasFDerivAt_sobolevQuadraticTerm (hk : 1 ≤ k) (y : Fin 4 → H
     abel
 
 /-- **The derivative of the vortex equation map.** The derivative of `sobolevEquation` at `y` is
-the linearized equation at the field `x_m + y`. -/
+the complexified linearized equation at `x_m + y`. -/
 theorem hasFDerivAt_sobolevEquation (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :
     HasFDerivAt (sobolevEquation f m hk) (sobolevLinearizedEquation f m hk y) y := by
   have h := ((hasFDerivAt_const (sobolevReferenceDefect f m k) y).add
@@ -547,24 +538,6 @@ theorem mem_sobolevFields_iff_exists_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
   exact ⟨fun h ↦ ⟨fun a ↦ (h a).choose, fun a ↦ (h a).choose_spec⟩,
     fun ⟨u, hu⟩ a ↦ ⟨u a, hu a⟩⟩
 
-section ae
-
-variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {u v : Lp ℂ 2 μ} {g h : α → ℂ}
-
-private theorem ae_add (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) : ⇑(u + v) =ᵐ[μ] g + h :=
-  (Lp.coeFn_add u v).trans (hu.add hv)
-
-private theorem ae_sub (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) : ⇑(u - v) =ᵐ[μ] g - h :=
-  (Lp.coeFn_sub u v).trans (hu.sub hv)
-
-private theorem ae_neg (hu : ⇑u =ᵐ[μ] g) : ⇑(-u) =ᵐ[μ] -g :=
-  (Lp.coeFn_neg u).trans hu.neg
-
-private theorem ae_smul (c : ℂ) (hu : ⇑u =ᵐ[μ] g) : ⇑(c • u) =ᵐ[μ] c • g :=
-  (Lp.coeFn_smul c u).trans (hu.const_smul c)
-
-end ae
-
 /-- The equation defect of the reference field is, as an `L²` function, the pointwise defect
 `equation x_m`. -/
 theorem coeFn_inclusionLp_sobolevReferenceDefect_ae_eq (i : Fin 3) :
@@ -589,10 +562,9 @@ theorem coeFn_inclusionLp_fieldMulCLM_ae_eq (hk : 1 ≤ k) {u : Fin 4 → H^{(k 
   have hr := (coeFn_inclusionLp_referenceMulCLM_ae_eq (f := f) (m := m) a
     (inclusion (lt_add_one _).le v))
   rw [inclusionLp_inclusion] at hr
-  have hp := coeFn_toLp_inclusion_mulCLM hs h₀ (u a) v
-  rw [toLp_inclusion, toLp_inclusion, toLp_inclusion] at hp
   filter_upwards [Lp.coeFn_add (inclusionLp _ (referenceMulCLM f m k a
-    (inclusion (lt_add_one _).le v))) (inclusionLp h₀ (mulCLM hs (u a) v)), hr, hp, hu a, hv]
+    (inclusion (lt_add_one _).le v))) (inclusionLp h₀ (mulCLM hs (u a) v)), hr,
+    coeFn_inclusionLp_mulCLM_ae_eq hs h₀ (u a) v, hu a, hv]
     with z h₁ h₂ h₃ h₄ h₅
   rw [h₁, Pi.add_apply, h₂, h₃, h₄, h₅]
   simp only [PiLp.add_apply, Pi.add_apply, Complex.ofReal_mul, Complex.ofReal_add]
@@ -609,26 +581,31 @@ theorem coeFn_inclusionLp_sobolevLinearizedEquation_ae_eq (hk : 1 ≤ k)
     (hh : ContDiff ℝ 1 h) (i : Fin 3) :
     ⇑(inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) (sobolevLinearizedEquation f m hk u w i))
       =ᵐ[volume] fun z ↦ (linearizedEquation (referenceField f m + y) h z i : ℂ) := by
-  have hd (b : Fin 4) (v : ℂ) := coeFn_inclusionLp_lineDerivCLM_ae_eq k.cast_nonneg
-    (contDiff_euclidean.1 hh b) (hw b) v
+  have hd (b : Fin 4) (v : ℂ) := coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two
+    ENNReal.ofNat_ne_top k.cast_nonneg (contDiff_euclidean.1 hh b) (hw b) v
   have hX (a b : Fin 4) := coeFn_inclusionLp_fieldMulCLM_ae_eq (f := f) (m := m) hk hu a (hw b)
   fin_cases i
   · simp only [Fin.zero_eta, Fin.isValue, sobolevLinearizedEquation_apply_zero, map_add, map_sub]
-    filter_upwards [ae_add (ae_add (ae_sub (hd 0 I) (hd 1 1)) (hX 2 2)) (hX 3 3)] with z hz
+    filter_upwards [Lp.coeFn_add_ae_eq_of_ae_eq (Lp.coeFn_add_ae_eq_of_ae_eq
+      (Lp.coeFn_sub_ae_eq_of_ae_eq (hd 0 I) (hd 1 1)) (hX 2 2)) (hX 3 3)] with z hz
     rw [hz]
     simp only [Pi.add_apply, Pi.sub_apply, Fin.isValue, linearizedEquation_apply_zero,
       Complex.ofReal_add, Complex.ofReal_sub]
   · simp only [Fin.mk_one, Fin.isValue, sobolevLinearizedEquation_apply_one, map_sub]
-    filter_upwards [ae_sub (ae_sub (ae_sub (ae_sub (ae_sub (hd 2 1) (hd 3 I)) (hX 0 3))
-      (hX 3 0)) (hX 1 2)) (hX 2 1)] with z hz
+    filter_upwards [Lp.coeFn_sub_ae_eq_of_ae_eq (Lp.coeFn_sub_ae_eq_of_ae_eq
+      (Lp.coeFn_sub_ae_eq_of_ae_eq (Lp.coeFn_sub_ae_eq_of_ae_eq
+        (Lp.coeFn_sub_ae_eq_of_ae_eq (hd 2 1) (hd 3 I)) (hX 0 3)) (hX 3 0)) (hX 1 2)) (hX 2 1)]
+      with z hz
     rw [hz]
     simp only [Pi.sub_apply, Fin.isValue, linearizedEquation_apply_one,
       Complex.ofReal_sub, Complex.ofReal_mul]
     ring
   · simp only [Fin.reduceFinMk, Fin.isValue, sobolevLinearizedEquation_apply_two, map_add,
       map_sub]
-    filter_upwards [ae_sub (ae_sub (ae_add (ae_add (ae_add (hd 3 1) (hd 2 I)) (hX 0 2))
-      (hX 2 0)) (hX 1 3)) (hX 3 1)] with z hz
+    filter_upwards [Lp.coeFn_sub_ae_eq_of_ae_eq (Lp.coeFn_sub_ae_eq_of_ae_eq
+      (Lp.coeFn_add_ae_eq_of_ae_eq (Lp.coeFn_add_ae_eq_of_ae_eq
+        (Lp.coeFn_add_ae_eq_of_ae_eq (hd 3 1) (hd 2 I)) (hX 0 2)) (hX 2 0)) (hX 1 3)) (hX 3 1)]
+      with z hz
     rw [hz]
     simp only [Pi.add_apply, Pi.sub_apply, Fin.isValue, linearizedEquation_apply_two,
       Complex.ofReal_add, Complex.ofReal_sub, Complex.ofReal_mul]
@@ -647,28 +624,29 @@ theorem coeFn_inclusionLp_sobolevQuadraticTerm_ae_eq (hk : 1 ≤ k)
   have h₀ : (0 : ℝ) ≤ k + 1 := by positivity
   have hP (a b : Fin 4) : ⇑(inclusionLp h₀ (mulCLM hs (u a) (u b))) =ᵐ[volume]
       fun z ↦ (y z a : ℂ) * y z b := by
-    have hp := coeFn_toLp_inclusion_mulCLM hs h₀ (u a) (u b)
-    rw [toLp_inclusion, toLp_inclusion, toLp_inclusion] at hp
-    filter_upwards [hp, hu a, hu b] with z h₁ h₂ h₃
+    filter_upwards [coeFn_inclusionLp_mulCLM_ae_eq hs h₀ (u a) (u b), hu a, hu b]
+      with z h₁ h₂ h₃
     rw [h₁, h₂, h₃]
   fin_cases i
   · simp only [Fin.zero_eta, Fin.isValue, sobolevQuadraticTerm_apply_zero hk hs,
       inclusionLp_inclusion, map_smul, map_add]
-    filter_upwards [ae_smul (1 / 2 : ℂ) (ae_add (hP 2 2) (hP 3 3))] with z hz
+    filter_upwards [Lp.coeFn_smul_ae_eq_of_ae_eq (1 / 2 : ℂ)
+      (Lp.coeFn_add_ae_eq_of_ae_eq (hP 2 2) (hP 3 3))] with z hz
     rw [hz]
     simp only [Pi.smul_apply, Pi.add_apply, smul_eq_mul, quadraticTerm_apply_zero]
     push_cast
     ring
   · simp only [Fin.mk_one, Fin.isValue, sobolevQuadraticTerm_apply_one hk hs,
       inclusionLp_inclusion, map_sub, map_neg]
-    filter_upwards [ae_sub (ae_neg (hP 0 3)) (hP 1 2)] with z hz
+    filter_upwards [Lp.coeFn_sub_ae_eq_of_ae_eq (Lp.coeFn_neg_ae_eq_of_ae_eq (hP 0 3)) (hP 1 2)]
+      with z hz
     rw [hz]
     simp only [Pi.sub_apply, Pi.neg_apply, quadraticTerm_apply_one]
     push_cast
     ring
   · simp only [Fin.reduceFinMk, Fin.isValue, sobolevQuadraticTerm_apply_two hk hs,
       inclusionLp_inclusion, map_sub]
-    filter_upwards [ae_sub (hP 0 2) (hP 1 3)] with z hz
+    filter_upwards [Lp.coeFn_sub_ae_eq_of_ae_eq (hP 0 2) (hP 1 3)] with z hz
     rw [hz]
     simp only [Pi.sub_apply, quadraticTerm_apply_two]
     push_cast
@@ -689,7 +667,8 @@ theorem coeFn_inclusionLp_sobolevEquation_ae_eq (hk : 1 ≤ k) {u : Fin 4 → H^
     rw [Pi.zero_apply, map_zero]
     exact (Lp.coeFn_zero _ _ _).trans (.of_forall fun _ ↦ by simp)
   rw [sobolevEquation_def, Pi.add_apply, Pi.add_apply, map_add, map_add]
-  filter_upwards [ae_add (ae_add (coeFn_inclusionLp_sobolevReferenceDefect_ae_eq i)
+  filter_upwards [Lp.coeFn_add_ae_eq_of_ae_eq (Lp.coeFn_add_ae_eq_of_ae_eq
+    (coeFn_inclusionLp_sobolevReferenceDefect_ae_eq i)
     (coeFn_inclusionLp_sobolevLinearizedEquation_ae_eq hk h₀ hu hy i))
     (coeFn_inclusionLp_sobolevQuadraticTerm_ae_eq hk hu i)] with z hz
   rw [hz]

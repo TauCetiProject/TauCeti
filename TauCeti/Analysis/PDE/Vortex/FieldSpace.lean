@@ -13,6 +13,7 @@ public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 public import TauCeti.Analysis.Distribution.Sobolev
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
@@ -49,7 +50,8 @@ holomorphic factor `z ^ m` and the harmonic amplitude `-m log |z|`
 its vortex defect is a smooth compactly supported field
 (`hasCompactSupport_equation_referenceField`). Every coordinate has bounded derivatives of each
 order on the whole plane (`exists_norm_iteratedFDeriv_referenceField_apply_le`), since the reference
-section and connection do. These are the properties of the reference
+section and connection do; as complex functions they therefore have temperate growth
+(`hasTemperateGrowth_ofReal_referenceField_apply`). These are the properties of the reference
 that make multiplication by its coefficients, and its own defect, compatible with the Sobolev
 scale.
 
@@ -256,6 +258,30 @@ theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 
       ((1 / 2 : ℝ) • reCLM) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
   · simpa [referenceField_apply, div_eq_inv_mul] using hcomp (contDiff_referenceSection f m)
       ((1 / 2 : ℝ) • imCLM) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
+
+/-- Each coordinate of the reference field, viewed as a complex function, is smooth. -/
+theorem contDiff_ofReal_referenceField_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ) (i : Fin 4) :
+    ContDiff ℝ ∞ fun z ↦ (referenceField f m z i : ℂ) :=
+  Complex.ofRealCLM.contDiff.comp (contDiff_euclidean.1 (contDiff_referenceField f m) i)
+
+/-- Each coordinate of the reference field, viewed as a complex function, has bounded derivatives
+of each order on the whole plane (`exists_norm_iteratedFDeriv_referenceField_apply_le`). -/
+theorem exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le (f : ContDiffBump (0 : ℝ))
+    (m : ℕ) (i : Fin 4) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (referenceField f m z i : ℂ)) z‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceField_apply_le f m i n
+  refine ⟨C, fun z ↦ ?_⟩
+  have h := Complex.ofRealLI.norm_iteratedFDeriv_comp_left
+    ((contDiff_euclidean.1 (contDiff_referenceField f m) i).contDiffAt (x := z))
+    (i := n) (by exact_mod_cast le_top)
+  exact (le_of_eq h).trans (hC z)
+
+/-- Each coordinate of the reference field, viewed as a complex function, has temperate growth,
+since it is smooth with bounded derivatives. -/
+theorem hasTemperateGrowth_ofReal_referenceField_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ)
+    (i : Fin 4) : (fun z ↦ (referenceField f m z i : ℂ)).HasTemperateGrowth :=
+  .of_norm_iteratedFDeriv_le (contDiff_ofReal_referenceField_apply f m i)
+    (exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m i)
 
 /-! ### Sobolev fields -/
 
