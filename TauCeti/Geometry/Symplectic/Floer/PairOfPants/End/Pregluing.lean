@@ -36,8 +36,9 @@ other end of the cylinder `v`.
 
 * **Away from the neck it is `u`.** Where the signed longitudinal coordinate of the end `q` is at
   most `R - 1`, the pre-glued pair of pants is `u` (`TauCeti.Floer.preglueEnd_of_le`), and near
-  such points with coordinate less than `R - 1`, other than the puncture of the end, it agrees
-  with `u` (`TauCeti.Floer.preglueEnd_eventuallyEq_of_lt`). So it has the same perturbed
+  such points with coordinate less than `R - 1`, other than the center
+  `TauCeti.ThricePuncturedSphere.Puncture.endCenter` of the end coordinate, it agrees with `u`
+  (`TauCeti.Floer.preglueEnd_eventuallyEq_of_lt`). So it has the same perturbed
   derivative `du - X_K` there, for any perturbation `K`, by
   `TauCeti.SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`: if `u` solves the Floer
   equation, so does the pre-glued pair of pants at these points.

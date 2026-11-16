@@ -43,8 +43,7 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `s > 1` that of `v` at `(s - R, t)`
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
   `TauCeti.SymplecticForm.floerOperator_preglue_of_one_lt`). If `u` and `v` are solutions, the
-  error is supported in the neck. More generally the Floer operator of the cylindrical datum
-  commutes with translations in `s` (`TauCeti.SymplecticForm.floerOperator_comp_sub`).
+  error is supported in the neck.
 * **The error on the neck.** On the neck, `‖F(w_R)‖` is bounded by a constant times the
   `C¹` distances of `u` from `x` at `s + R` and of `v` from `x` at `s - R`
   (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le`).
@@ -342,15 +341,6 @@ theorem floerOperator_preglue_of_one_lt (ω : SymplecticForm V) (J : ℝ → V �
       ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) := by
   simp only [floerOperator_def, fderiv_preglue_of_one_lt hz, preglue_of_one_le hz.le,
     Prod.snd_sub, sub_zero]
-
-/-- **Translation invariance of the Floer operator.** For the cylindrical datum `K = H_t dt` and a
-structure `J_t` independent of `s`, the Floer operator of the translate `w ↦ f(w - (R, 0))` at `z`
-is the Floer operator of `f` at `z - (R, 0)`. -/
-theorem floerOperator_comp_sub (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V) (H : ℝ → V → ℝ)
-    (f : ℝ × ℝ → V) (R : ℝ) (z : ℝ × ℝ) :
-    ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (fun w ↦ f (w - (R, 0))) z =
-      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) f (z - (R, 0)) := by
-  simp only [floerOperator_def, fderiv_comp_sub, Prod.snd_sub, sub_zero]
 
 /-- **The pointwise pre-gluing error.** Let `x` be an orbit of `X_{H_t}` at `t = z.2`, and write
 `Du = du - (σ, τ) ↦ τ X_{H_t}(x(t))`, and similarly `Dv`. If `‖J_z(w_R z)‖ ≤ M`, `X_{H_t}` is
