@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Spectrum
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Unique
 
 /-!
@@ -17,13 +18,12 @@ evaluating `holomorphicCalculus a` at the composite germ `g ∘ f`.
 
 Rather than computing iterated nested contour integrals, the proof deduces composition directly from
 the uniqueness theorem (`eq_holomorphicCalculus_of_forall_continuous`), the spectral mapping
-theorem (`spectrum_holomorphicCalculus`), and compact-open continuity of postcomposition on algebras
+theorem (`spectrum_holomorphicCalculus`), and compact-open continuity of precomposition on algebras
 of holomorphic functions (`HolomorphicFunctions.continuous_comp`).
 
 ## Main results
 
-* `TauCeti.holomorphicCalculus_comp` and `TauCeti.holomorphicCalculus_comp_restrict`: germ-level
-  composition `g(f(a)) = (g ∘ f)(a)`.
+* `TauCeti.holomorphicCalculus_comp`: germ-level composition `g(f(a)) = (g ∘ f)(a)`.
 * `TauCeti.holomorphicCalculus_ofFun_comp`: represented analytic germ form.
 * `TauCeti.holomorphicCalculusOn_comp`, `TauCeti.holomorphicCalculusOn_comp_restrict`, and
   `TauCeti.holomorphicCalculusOn_of_comp`: open-domain forms.
@@ -85,14 +85,6 @@ theorem holomorphicCalculus_comp (a : A) (f : holomorphicGerms (spectrum ℂ a))
     rw [heq]
     exact (continuous_holomorphicCalculusOn a U' haU').comp (continuous_comp f₁ hf₁V)
 
-/-- Germ composition when the outer germ is given on a set `t` containing `spectrum ℂ f`. -/
-theorem holomorphicCalculus_comp_restrict (a : A) (f : holomorphicGerms (spectrum ℂ a))
-    {t : Set ℂ} (ht : spectrum ℂ f ⊆ t) (g : holomorphicGerms t) :
-    holomorphicCalculus (holomorphicCalculus a f)
-        (holomorphicGerms.restrict ((spectrum_holomorphicCalculus a f).trans_subset ht) g) =
-      holomorphicCalculus a (holomorphicGerms.comp f ht g) := by
-  rw [holomorphicCalculus_comp, holomorphicGerms.comp_restrict]
-
 /-- **Composition theorem (represented analytic germ form).** If `f` is analytic near `spectrum ℂ a`
 and `g` is analytic near a set `t` containing `f '' spectrum ℂ a`, then `g(f(a)) = (g ∘ f)(a)`. -/
 theorem holomorphicCalculus_ofFun_comp (a : A) (f : ℂ → ℂ)
@@ -107,8 +99,7 @@ theorem holomorphicCalculus_ofFun_comp (a : A) (f : ℂ → ℂ)
     rwa [holomorphicGerms.spectrum_ofFun]
   rw [← holomorphicGerms.restrict_ofFun
       ((spectrum_holomorphicCalculus a (holomorphicGerms.ofFun f hf)).trans_subset hst) g hg,
-    holomorphicCalculus_comp_restrict a (holomorphicGerms.ofFun f hf) hst,
-    holomorphicGerms.comp_ofFun]
+    holomorphicCalculus_comp, holomorphicGerms.comp_restrict, holomorphicGerms.comp_ofFun]
 
 /-- **Composition theorem on open domains.** If `f : holomorphicFunctions U` maps `U` into `V`, then
 for `g : holomorphicFunctions V`, `g(f(a)) = (g ∘ f)(a)`. -/

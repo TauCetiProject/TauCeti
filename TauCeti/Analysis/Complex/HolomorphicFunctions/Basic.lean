@@ -16,7 +16,7 @@ functions on the open set `U`. Holomorphy can be checked on any ambient represen
 in particular, extension by zero outside `U` gives the same condition. The topology and
 uniformity are inherited from continuous maps, so convergence means locally uniform
 convergence. This subalgebra is closed and complete, and both restriction to a smaller open
-set and postcomposition along a holomorphic map into another open set are continuous algebra
+set and precomposition along a holomorphic map into another open set are continuous algebra
 homomorphisms.
 
 These algebras provide domains for continuous holomorphic functional calculi without
@@ -147,7 +147,7 @@ theorem restrict_refl : restrict (le_refl U) = AlgHom.id ℂ (holomorphicFunctio
   simp
 
 @[simp]
-theorem restrict_comp (hVU : V ≤ U) (hWV : W ≤ V) :
+theorem restrict_comp_restrict (hVU : V ≤ U) (hWV : W ≤ V) :
     (restrict hWV).comp (restrict hVU) = restrict (hWV.trans hVU) := by
   ext f z
   simp
@@ -190,7 +190,7 @@ theorem apply_mem_of_mapsTo_extend (f : holomorphicFunctions U)
   rw [← extend_apply]
   exact hf z.property
 
-/-- Postcomposition with holomorphic functions on `V` along a holomorphic map from `U` into `V`. -/
+/-- Precomposition with holomorphic functions on `V` along a holomorphic map from `U` into `V`. -/
 noncomputable def comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V) :
     holomorphicFunctions V →ₐ[ℂ] holomorphicFunctions U :=
   ((ContinuousMap.compRightAlgHom ℂ ℂ
@@ -227,14 +227,9 @@ theorem comp_of (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V)
   ext z
   simp [Function.comp_apply]
 
-/-- Composing the coordinate function on `V` with `f` recovers `f`. -/
-theorem comp_id (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V) :
-    comp f hf (of V id differentiableOn_id) = f := by
-  simp
-
-/-- Restricting the domain commutes with postcomposition. -/
+/-- Restricting the domain commutes with precomposition. -/
 @[simp]
-theorem restrict_comp_apply (hWU : W ≤ U) (f : holomorphicFunctions U)
+theorem restrict_comp (hWU : W ≤ U) (f : holomorphicFunctions U)
     (hf : MapsTo (extend f) U V) (g : holomorphicFunctions V) :
     restrict hWU (comp f hf g) =
       comp (restrict hWU f)
@@ -246,7 +241,26 @@ theorem restrict_comp_apply (hWU : W ≤ U) (f : holomorphicFunctions U)
   simp only [restrict_apply, comp_apply]
   rfl
 
-/-- Postcomposition along a holomorphic map is continuous for the compact-open topology. -/
+/-- Restricting the codomain before precomposing agrees with precomposing directly. -/
+@[simp]
+theorem comp_restrict {V' : Opens ℂ} (hVV' : V ≤ V') (f : holomorphicFunctions U)
+    (hf : MapsTo (extend f) U V) (g : holomorphicFunctions V') :
+    comp f hf (restrict hVV' g) = comp f (hf.mono_right hVV') g := by
+  apply Subtype.ext
+  ext z
+  rfl
+
+/-- Precomposition of holomorphic functions is associative. -/
+theorem comp_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V)
+    (g : holomorphicFunctions V) (hg : MapsTo (extend g) V W) (h : holomorphicFunctions W) :
+    comp f hf (comp g hg h) =
+      comp (comp f hf g)
+        (fun z hz => by rw [extend_comp f hf g hz]; exact hg (hf hz)) h := by
+  apply Subtype.ext
+  ext z
+  rfl
+
+/-- Precomposition along a holomorphic map is continuous for the compact-open topology. -/
 @[continuity]
 theorem continuous_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V) :
     Continuous (comp f hf) := by

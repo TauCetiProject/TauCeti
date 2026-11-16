@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Cauchy
-public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Spectrum
+public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
+import TauCeti.Analysis.Contour.Cycle.Polygon
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -28,8 +29,9 @@ converge to the contour integral defining `holomorphicCalculusOn a U ha f`.
 
 ## Main results
 
-* `TauCeti.algHom_toGerm_cauchyKernel` and `TauCeti.algHom_toGerm_cauchyRiemannSum`: any unital
-  algebra homomorphism sending the coordinate germ to `a` maps Cauchy kernels outside `V` to
+* `TauCeti.algHom_toGerm_cauchyKernel`, `TauCeti.holomorphicCalculusOn_cauchyKernel`, and
+  `TauCeti.algHom_toGerm_cauchyRiemannSum`: any unital algebra homomorphism sending the coordinate
+  germ to `a` (and in particular `holomorphicCalculusOn a V haV`) maps Cauchy kernels outside `V` to
   resolvents of `a` and Cauchy Riemann sums on `V` to resolvent Riemann sums.
 * `TauCeti.tendsto_algHom_toGerm_cauchyRiemannSum`: those resolvent Riemann sums converge in `A` to
   `holomorphicCalculusOn a U ha f`.
@@ -61,10 +63,7 @@ theorem algHom_toGerm_cauchyKernel {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
     (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
     {V : Opens ℂ} (haV : spectrum ℂ a ⊆ V) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
     Φ (toGerm haV (cauchyKernel V w hw)) = resolvent a w := by
-  have hw_res : w ∈ resolventSet ℂ a := spectrum.notMem_iff.mp fun hwσ ↦ hw (haV hwσ)
-  rw [cauchyKernel_def, toGerm_of,
-    (holomorphicGerms.ofFun_eq_iff _ (analyticOnNhd_sub_inv hw_res)).mpr EventuallyEq.rfl]
-  exact algHom_ofFun_sub_inv_eq_resolvent Φ hid hw_res
+  rw [toGerm_cauchyKernel, algHom_ofFun_sub_inv_eq_resolvent Φ hid]
 
 /-- Image of `cauchyRiemannSum` under `Φ ∘ toGerm haV` for any unital complex-algebra homomorphism
 `Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A` sending the coordinate germ to `a`: every Cauchy
@@ -90,38 +89,21 @@ universe u
 
 variable {A : Type u} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
-/-- Deduce the scalar `ℂ` segment-sum integral formula from a universe-`u` segment-sum integral
-formula by embedding `ℂ` into `PUnit.{u + 1} → ℂ`. -/
-private theorem integral_eq_sum_segments_complex {E : Finset (ℂ × ℂ)} {Γ : Cycle}
-    (hΓ : Γ.IsIn (⋃ e ∈ E, segment ℝ e.1 e.2))
-    (hint : ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {g : ℂ → F},
-      ContinuousOn g (⋃ e ∈ E, segment ℝ e.1 e.2) → Cycle.integral g Γ =
-        ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, g (AffineMap.lineMap e.1 e.2 t))
-    {g : ℂ → ℂ} (hg : ContinuousOn g (⋃ e ∈ E, segment ℝ e.1 e.2)) :
-    Cycle.integral g Γ =
-      ∑ e ∈ E, (e.2 - e.1) * ∫ t in (0 : ℝ)..1, g (AffineMap.lineMap e.1 e.2 t) := by
-  let L : (PUnit.{u + 1} → ℂ) ≃L[ℂ] ℂ := ContinuousLinearEquiv.funUnique PUnit.{u + 1} ℂ ℂ
-  have hgL : ContinuousOn (fun z ↦ L.symm (g z)) (⋃ e ∈ E, segment ℝ e.1 e.2) :=
-    L.symm.continuous.comp_continuousOn hg
-  calc Cycle.integral g Γ
-      = Cycle.integral (fun z ↦ L.toContinuousLinearMap (L.symm (g z))) Γ :=
-          Cycle.integral_congr fun z _ ↦ (L.apply_symm_apply (g z)).symm
-    _ = L (Cycle.integral (fun z ↦ L.symm (g z)) Γ) :=
-          Cycle.integral_comp_comm
-            (fun _ ↦ Cycle.intervalIntegrable_of_mem_support (hgL.mono (Cycle.isIn_iff.mp hΓ)))
-            L.toContinuousLinearMap
-    _ = L (∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, L.symm (g (AffineMap.lineMap e.1 e.2 t))) :=
-          congrArg L (hint hgL)
-    _ = ∑ e ∈ E, (e.2 - e.1) * ∫ t in (0 : ℝ)..1, g (AffineMap.lineMap e.1 e.2 t) := by
-          rw [map_sum]
-          refine Finset.sum_congr rfl fun e _ ↦ ?_
-          rw [map_smul, smul_eq_mul, ← L.intervalIntegral_comp_comm]
-          simp only [L.apply_symm_apply]
+/-- On an open neighbourhood `V` of `spectrum ℂ a`, `holomorphicCalculusOn` sends the Cauchy kernel
+`cauchyKernel V w hw` to `resolvent a w`. -/
+@[simp]
+theorem holomorphicCalculusOn_cauchyKernel (a : A) (V : Opens ℂ) (haV : spectrum ℂ a ⊆ V)
+    (w : ℂ) (hw : w ∉ (V : Set ℂ)) :
+    holomorphicCalculusOn a V haV (cauchyKernel V w hw) = resolvent a w := by
+  rw [cauchyKernel_def, holomorphicCalculusOn_sub_inv]
 
 /-- For any unital complex-algebra homomorphism `Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A`
-sending the coordinate germ to `a` (with no continuity assumption on `Φ`), the images of the Cauchy
-Riemann sums of `f : holomorphicFunctions U` on `V ≤ U` converge in `A` to
-`holomorphicCalculusOn a U (haV.trans hVU) f`. -/
+sending the coordinate germ to `a` (with no continuity assumption on `Φ`), if `spectrum ℂ a ⊆ V`,
+`V ≤ U`, `f : holomorphicFunctions U`, and `E` is a finite segment family in `U \ V` carrying a
+cycle `Γ` that is null-homologous in `U`, winds once around every point of `spectrum ℂ a`, and
+integrates continuous `A`-valued functions as the sum of their segment integrals over `E`, then the
+images of the Cauchy Riemann sums `cauchyRiemannSum V (extend f) E hEV` under `Φ ∘ toGerm haV`
+converge in `A` to `holomorphicCalculusOn a U (haV.trans hVU) f`. -/
 theorem tendsto_algHom_toGerm_cauchyRiemannSum {a : A}
     (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
     (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
@@ -150,9 +132,9 @@ theorem tendsto_algHom_toGerm_cauchyRiemannSum {a : A}
         fun t ht ↦ mem_biUnion he (segment_eq_image_lineMap ℝ e.1 e.2 ▸ mem_image_of_mem _ ht)
     refine ((TauCeti.intervalIntegral.tendsto_riemannSum_zero_one hcont_e).const_smul
       (e.2 - e.1)).congr fun N ↦ ?_
-    rw [← one_smul ℂ (∑ k ∈ _, _), ← smul_assoc (N + 1 : ℝ)⁻¹ (1 : ℂ), Complex.real_smul, mul_one,
-      Complex.ofReal_inv, Complex.ofReal_add, Complex.ofReal_natCast, Complex.ofReal_one,
-      smul_smul, ← div_eq_mul_inv, one_smul]
+    rw [RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
+    push_cast
+    rw [← div_eq_mul_inv]
   have hΓ_in : Γ.IsIn ((U : Set ℂ) \ spectrum ℂ a) :=
     Cycle.isIn_iff.mpr fun _ hz ↦
       have hzE := Cycle.isIn_iff.mp hΓ hz
@@ -183,7 +165,7 @@ theorem eq_holomorphicCalculus_of_forall_continuous {a : A}
       atTop (𝓝 (Φ (toGerm haU f))) := by
     have hlim := ((hcont V' haV).tendsto (restrict hVU f)).comp
       (tendsto_cauchyRiemannSum (V := V') hVU f E hEU hEV Γ hΓ hn hw
-        (integral_eq_sum_segments_complex hΓ hint))
+        (Cycle.integral_eq_sum_segments_complex hint))
     rw [Function.comp_apply, toGerm_restrict haV hVU f] at hlim
     exact hlim
   have h2 := tendsto_algHom_toGerm_cauchyRiemannSum (V := V') Φ hid haV hVU f E hEU hEV Γ hΓ hn

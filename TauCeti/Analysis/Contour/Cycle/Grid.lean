@@ -38,9 +38,8 @@ union. For small `δ` the union lies in `G`.
 
 ## Main results
 
-* `TauCeti.Contour.exists_segments_cycle_trace_subset_gridCover` and
-  `TauCeti.Contour.exists_cycle_trace_subset_gridCover`: for `δ > 0` and bounded `K`, there is a
-  cycle carried on a finite segment family in `gridCover δ K \ K`, null-homologous in
+* `TauCeti.Contour.exists_segments_cycle_trace_subset_gridCover`: for `δ > 0` and bounded `K`,
+  there is a cycle carried on a finite segment family in `gridCover δ K \ K`, null-homologous in
   `gridCover δ K`, winding once around every point of `K`, and integrating continuous functions as
   the sum of their segment integrals.
 * `IsCompact.exists_segments_cycle_windingNumber_eq_one`,
@@ -463,17 +462,6 @@ theorem exists_segments_cycle_trace_subset_gridCover.{u} (hδ : 0 < δ)
       ⟨subset_interior_gridCover hδ hz, fun h ↦ (hU h).2 hz⟩
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx ↦ (hball hx).2
     simp [hzw, interior_subset (hball hw).1]
-
-/-- **A grid cycle around a bounded set.** For `δ > 0` and a bounded set `K`, there is a contour
-cycle in `gridCover δ K \ K`, where `gridCover δ K` is the union of the grid squares of side `δ`
-meeting `K`, which is null-homologous in `gridCover δ K` and winds once around every point of
-`K`. -/
-theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBounded K) :
-    ∃ Γ : Cycle, Γ.IsIn (gridCover δ K \ K) ∧ Γ.IsNullHomologous (gridCover δ K) ∧
-      ∀ z ∈ K, Cycle.windingNumber z Γ = 1 := by
-  obtain ⟨E, Γ, hsub, hin, hnull, hK1, -⟩ :=
-    exists_segments_cycle_trace_subset_gridCover.{0} hδ hK
-  exact ⟨Γ, Cycle.isIn_iff.2 ((Cycle.isIn_iff.1 hin).trans hsub), hnull, hK1⟩
 
 end TauCeti.Contour
 
