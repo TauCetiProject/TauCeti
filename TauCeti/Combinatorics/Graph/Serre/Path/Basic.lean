@@ -248,6 +248,29 @@ theorem Path.tgt_eq_of_mem_getLast?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ
       Option.mem_def, Option.some.injEq] at he
     exact he ▸ f.2.2
 
+/-- A dart of a path whose target is the source of no dart of the path is the last dart of the
+path. -/
+theorem Path.mem_getLast?_darts_of_forall_src_ne {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) (hp : ∀ f ∈ Path.darts Γ p, Γ.src f ≠ Γ.tgt e) :
+    e ∈ (Path.darts Γ p).getLast? := by
+  induction p with
+  | nil => simp at he
+  | cons p f ih =>
+    rcases (by simpa using he : e ∈ Path.darts Γ p ∨ e = f.1) with he | rfl
+    · refine (hp f.1 (by simp) (f.2.1.trans ?_)).elim
+      exact (Path.tgt_eq_of_mem_getLast?_darts Γ p (ih he fun g hg => hp g (by simp [hg]))).symm
+    · simp
+
+/-- A dart of a path whose source is the target of no dart of the path is the first dart of the
+path. -/
+theorem Path.mem_head?_darts_of_forall_tgt_ne {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) (hp : ∀ f ∈ Path.darts Γ p, Γ.tgt f ≠ Γ.src e) :
+    e ∈ (Path.darts Γ p).head? := by
+  -- The reverse of `e` is the last dart of the reverse of `p`.
+  have h := Path.mem_getLast?_darts_of_forall_src_ne Γ (p := p.reverse) (e := Γ.rev e)
+    (by simpa [Γ.rev_injective.eq_iff] using he) (by simpa using hp)
+  simpa [List.getLast?_reverse, Γ.rev_injective.eq_iff] using h
+
 /-- A vertex of a path is its start or the end of one of its darts. -/
 theorem Path.eq_or_exists_tgt_eq_of_mem_vertices {a b : Γ.V} (p : Γ.Path a b) {v : Γ.V}
     (hv : v ∈ p.vertices) : v = a ∨ ∃ e ∈ Path.darts Γ p, Γ.tgt e = v := by
