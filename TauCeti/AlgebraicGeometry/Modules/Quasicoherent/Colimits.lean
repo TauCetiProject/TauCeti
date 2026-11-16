@@ -43,8 +43,10 @@ components.
   sheaves is quasicoherent;
 * `AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso`: over an affine
   open, sections are naturally global sections on the affine chart;
-* `TauCeti.AlgebraicGeometry.isColimitMapCoconeSectionsFunctor`: sections over an affine open
-  preserve small colimits of quasicoherent sheaves;
+* `TauCeti.AlgebraicGeometry.isColimitMapCoconeSectionsFunctor`,
+  `TauCeti.AlgebraicGeometry.preservesColimit_sectionsFunctor`, and
+  `TauCeti.AlgebraicGeometry.preservesColimit_parallelPair_zero_sectionsFunctor`: sections over an
+  affine open preserve small colimits, and in particular cokernels, of quasicoherent sheaves;
 * `TauCeti.AlgebraicGeometry.cokernelSectionsEquiv`: sections of `cokernel φ` over an affine open
   are the quotient of the target sections by the range of `φ`;
 * `TauCeti.AlgebraicGeometry.toModule_sectionsFunctor_map_bijective`: the sections over an affine
@@ -197,34 +199,40 @@ def isColimitMapCoconeSectionsFunctor {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj 
       (fun j ↦ have := hK j; isQuasicoherent_restrictFunctor _ _)
       (isColimitOfPreserves (restrictFunctor hU.fromSpec) hc))
 
-private instance preservesZeroMorphisms_sectionsFunctor (U : X.Opens) :
-    (sectionsFunctor U).PreservesZeroMorphisms :=
-  ⟨fun _ _ ↦ rfl⟩
+/-- Sections over an affine open `U` preserve the colimit of any small diagram of quasicoherent
+`𝒪_X`-modules. -/
+theorem preservesColimit_sectionsFunctor {K : J ⥤ X.Modules}
+    (hK : ∀ j, (K.obj j).IsQuasicoherent) (hU : IsAffineOpen U) :
+    PreservesColimit K (sectionsFunctor U) :=
+  ⟨fun hc ↦ ⟨isColimitMapCoconeSectionsFunctor hK hc hU⟩⟩
 
-private lemma preservesColimit_parallelPair_zero_sectionsFunctor {M N : X.Modules}
-    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) (U : X.affineOpens) :
-    PreservesColimit (parallelPair φ 0) (sectionsFunctor U.1) :=
-  preservesColimit_of_preserves_colimit_cocone (cokernelIsCokernel φ) <|
-    isColimitMapCoconeSectionsFunctor (K := parallelPair φ 0)
-      (by rintro (_ | _) <;> dsimp <;> infer_instance) (cokernelIsCokernel φ) U.2
+/-- Sections over an affine open `U` preserve the cokernel of a morphism of quasicoherent
+`𝒪_X`-modules. -/
+theorem preservesColimit_parallelPair_zero_sectionsFunctor {M N : X.Modules}
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) (hU : IsAffineOpen U) :
+    PreservesColimit (parallelPair φ 0) (sectionsFunctor U) :=
+  preservesColimit_sectionsFunctor (K := parallelPair φ 0)
+    (by rintro (_ | _) <;> dsimp <;> infer_instance) hU
 
 /-- Over an affine open `U`, the sections of the cokernel of a morphism `φ : M ⟶ N` of
 quasicoherent `𝒪_X`-modules identify with
-`Γ(N, U) ⧸ LinearMap.range ((sectionsFunctor U).map φ).hom`. -/
+`Γ(N, U) ⧸ LinearMap.range (φ.val.app (Opposite.op U)).hom`. -/
 def cokernelSectionsEquiv {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
     (φ : M ⟶ N) (U : X.affineOpens) :
-    (Γ(N, U.1) ⧸ LinearMap.range ((sectionsFunctor U.1).map φ).hom) ≃ₗ[Γ(X, U)]
+    (Γ(N, U.1) ⧸ LinearMap.range (τ₁₂ := RingHom.id Γ(X, U.1))
+        (M := Γ(M, U.1)) (M₂ := Γ(N, U.1)) (φ.val.app (Opposite.op U.1)).hom) ≃ₗ[Γ(X, U)]
       Γ(cokernel φ, U.1) := by
-  haveI := preservesColimit_parallelPair_zero_sectionsFunctor φ U
+  haveI := preservesColimit_parallelPair_zero_sectionsFunctor φ U.2
   exact (PreservesCokernel.iso (sectionsFunctor U.1) φ ≪≫
     ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U.1).map φ)).symm.toLinearEquiv
 
 /-- `cokernelSectionsEquiv` sends the quotient class of a section `s ∈ Γ(N, U)` to its image under
 the cokernel projection `(cokernel.π φ).app U`. -/
+@[simp]
 theorem cokernelSectionsEquiv_mk {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
     (φ : M ⟶ N) (U : X.affineOpens) (s : Γ(N, U.1)) :
     cokernelSectionsEquiv φ U (Submodule.Quotient.mk s) = (cokernel.π φ).app U.1 s := by
-  have := preservesColimit_parallelPair_zero_sectionsFunctor φ U
+  have := preservesColimit_parallelPair_zero_sectionsFunctor φ U.2
   let F := sectionsFunctor U.1
   let e := PreservesCokernel.iso F φ ≪≫ ModuleCat.cokernelIsoRangeQuotient (F.map φ)
   have hπ : ModuleCat.ofHom (LinearMap.range (F.map φ).hom).mkQ ≫ e.inv = F.map (cokernel.π φ) := by
@@ -235,6 +243,7 @@ theorem cokernelSectionsEquiv_mk {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuas
 
 /-- The inverse of `cokernelSectionsEquiv` sends the image of `s ∈ Γ(N, U)` under `cokernel.π φ`
 to its quotient class modulo the range of `φ` on `U`. -/
+@[simp]
 theorem cokernelSectionsEquiv_symm_π {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
     (φ : M ⟶ N) (U : X.affineOpens) (s : Γ(N, U.1)) :
     (cokernelSectionsEquiv φ U).symm ((cokernel.π φ).app U.1 s) = Submodule.Quotient.mk s :=

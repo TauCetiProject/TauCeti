@@ -37,8 +37,8 @@ compatible affine opens `V ⊆ Y` and `U ⊆ f⁻¹(V)` are the relative Kähler
 `Ω[Γ(X, U)⁄Γ(Y, V)]` (`cotangentCokernelSectionsEquiv`), and whose formation commutes with
 arbitrary base change `R → S` (`cotangentCokernelBaseChangeIso`).
 
-Whenever `Ω_{X/R}` is of finite type, the cokernel `cokernel (cotangentMap R f)` is also of finite
-type, and its zeroth Fitting ideal sheaf is the **ramification ideal sheaf**
+Whenever `cokernel (cotangentMap R f)` is of finite type (in particular whenever `Ω_{X/R}` is of
+finite type), its zeroth Fitting ideal sheaf is the **ramification ideal sheaf**
 `ramificationIdealSheaf R f ⊆ 𝒪_X`. It restricts on compatible affine opens to
 `Fitt₀(Ω[Γ(X, U)⁄Γ(Y, V)])` (`ramificationIdealSheaf_ideal_eq_fittingIdeal_kaehlerDifferential`)
 and commutes with arbitrary base change `R → S` (`comap_ramificationIdealSheaf`). When `Ω_{X/R}`
@@ -229,22 +229,24 @@ section FixedBase
 variable (R : Type u) [CommRing R] {X Y : Scheme.{u}}
   [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
 
-/-- When `Ω_{X/R}` is of finite type, the sections of `cokernel (cotangentMap R f)` over any affine
-open `U` of `X` form a finite `Γ(X, U)`-module. -/
-instance finite_sections_cokernel_cotangentMap [(X.relativeDifferentials R).IsFiniteType]
+/-- When `cokernel (cotangentMap R f)` is of finite type, its sections over any affine open `U` of
+`X` form a finite `Γ(X, U)`-module. -/
+instance finite_sections_cokernel_cotangentMap [(cokernel (cotangentMap R f)).IsFiniteType]
     (U : X.affineOpens) :
     Module.Finite Γ(X, U) Γ(cokernel (cotangentMap R f), U) :=
   (cokernel (cotangentMap R f)).finite_sections_of_isAffineOpen U.1 U.2
 
-/-- For a morphism `f : X ⟶ Y` over `Spec R` with `Ω_{X/R}` of finite type, the
-**ramification ideal sheaf** `ramificationIdealSheaf R f` on `X` is the zeroth Fitting ideal sheaf
-of `cokernel (cotangentMap R f)`. -/
-def ramificationIdealSheaf [(X.relativeDifferentials R).IsFiniteType] : X.IdealSheafData :=
+/-- For a morphism `f : X ⟶ Y` over `Spec R` whose relative differential sheaf
+`cokernel (cotangentMap R f)` is of finite type, the **ramification ideal sheaf**
+`ramificationIdealSheaf R f` on `X` is the zeroth Fitting ideal sheaf of
+`cokernel (cotangentMap R f)`. -/
+def ramificationIdealSheaf [(cokernel (cotangentMap R f)).IsFiniteType] : X.IdealSheafData :=
   (cokernel (cotangentMap R f)).fittingIdeal (finite_sections_cokernel_cotangentMap R f) 0
 
 /-- The ramification ideal sheaf equals the zeroth Fitting ideal sheaf of
 `cokernel (cotangentMap R f)`. -/
-theorem ramificationIdealSheaf_eq_fittingIdeal_cokernel [(X.relativeDifferentials R).IsFiniteType] :
+theorem ramificationIdealSheaf_eq_fittingIdeal_cokernel
+    [(cokernel (cotangentMap R f)).IsFiniteType] :
     ramificationIdealSheaf R f =
       (cokernel (cotangentMap R f)).fittingIdeal
         (finite_sections_cokernel_cotangentMap R f) 0 := by
@@ -271,11 +273,11 @@ theorem ramificationIdealSheaf_eq_imageIdealSheaf_twistedToUnit
     (Scheme.Modules.fittingIdeal_tensor_of_isInvertible (cokernel (cotangentMap R f))
       (InvertibleSheaf.dual L₂) 0)).symm
 
-/-- When `Ω_{X/R}` is of finite type, over compatible affine opens `V` of `Y` and `U ≤ f⁻¹ V` of
-`X`, the ideal of `ramificationIdealSheaf R f` on `U` is the zeroth Fitting ideal
-`Fitt₀(Ω[Γ(X, U)⁄Γ(Y, V)])`. -/
+/-- When `cokernel (cotangentMap R f)` is of finite type, over compatible affine opens `V` of `Y`
+and `U ≤ f⁻¹ V` of `X`, the ideal of `ramificationIdealSheaf R f` on `U` is the zeroth Fitting
+ideal `Fitt₀(Ω[Γ(X, U)⁄Γ(Y, V)])`. -/
 theorem ramificationIdealSheaf_ideal_eq_fittingIdeal_kaehlerDifferential
-    [(X.relativeDifferentials R).IsFiniteType]
+    [(cokernel (cotangentMap R f)).IsFiniteType]
     (V : Y.affineOpens) (U : X.affineOpens) (hUV : U.1 ≤ f ⁻¹ᵁ V.1) :
     letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V.1 U.1 hUV).hom.toAlgebra
     haveI : Module.Finite Γ(X, U) Ω[Γ(X, U)⁄Γ(Y, V)] :=
@@ -291,26 +293,26 @@ theorem ramificationIdealSheaf_ideal_eq_fittingIdeal_kaehlerDifferential
 end FixedBase
 
 /-- **Base-change invariance of the ramification ideal sheaf.** Under any ring map `R → S`, when
-`Ω_{X/R}` is of finite type, pulling back `ramificationIdealSheaf R f` along `g_X : X' ⟶ X` gives
-`ramificationIdealSheaf S f'`. -/
+`cokernel (cotangentMap R f)` is of finite type, pulling back `ramificationIdealSheaf R f` along
+`g_X : X' ⟶ X` gives `ramificationIdealSheaf S f'`. -/
 theorem comap_ramificationIdealSheaf {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
     {X Y X' Y' : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
     [X'.Over (Spec (.of S))] [Y'.Over (Spec (.of S))]
     {f : X ⟶ Y} [f.IsOver (Spec (.of R))] {f' : X' ⟶ Y'} [f'.IsOver (Spec (.of S))]
     {g_X : X' ⟶ X} {g_Y : Y' ⟶ Y}
-    [(X.relativeDifferentials R).IsFiniteType]
+    [(cokernel (cotangentMap R f)).IsFiniteType]
     (H_X : IsPullback g_X (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R S))))
     (H_Y : IsPullback g_Y (Y' ↘ Spec (.of S)) (Y ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R S))))
     (w : g_X ≫ f = f' ≫ g_Y) :
-    haveI : (X'.relativeDifferentials S).IsFiniteType :=
+    haveI : (cokernel (cotangentMap S f')).IsFiniteType :=
       SheafOfModules.IsFiniteType.of_iso (R := X'.ringCatSheaf)
-        (relativeDifferentialsBaseChangeIso H_X)
+        (cotangentCokernelBaseChangeIso H_X H_Y w)
     (ramificationIdealSheaf R f).comap g_X = ramificationIdealSheaf S f' := by
-  have : (X'.relativeDifferentials S).IsFiniteType :=
+  have : (cokernel (cotangentMap S f')).IsFiniteType :=
     SheafOfModules.IsFiniteType.of_iso (R := X'.ringCatSheaf)
-      (relativeDifferentialsBaseChangeIso H_X)
+      (cotangentCokernelBaseChangeIso H_X H_Y w)
   rw [ramificationIdealSheaf_eq_fittingIdeal_cokernel R f,
     ramificationIdealSheaf_eq_fittingIdeal_cokernel S f',
     ← Scheme.Modules.fittingIdeal_pullback g_X (cokernel (cotangentMap R f)) 0]

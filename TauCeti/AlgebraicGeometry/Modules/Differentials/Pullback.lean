@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 import Mathlib.RingTheory.Kaehler.TensorProduct
 import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.Kaehler.BaseChange
 
 /-!
@@ -288,19 +289,12 @@ section CotangentMap
 variable (R : Type u) [CommRing R] {X Y Z : Scheme.{u}}
   [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [Z.Over (Spec (.of R))]
 
-private lemma commSq_of_isOver (f : X ⟶ Y) [hf : f.IsOver (Spec (.of R))] :
-    CommSq f (X ↘ Spec (.of R)) (Y ↘ Spec (.of R))
-      (Spec.map (CommRingCat.ofHom (algebraMap R R))) := by
-  refine ⟨?_⟩
-  rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id, Category.comp_id]
-  exact hf.comp_over
-
 /-- The **cotangent map** `f^* Ω_{Y/R} ⟶ Ω_{X/R}` associated to a morphism `f : X ⟶ Y` over
 `Spec R`: the first morphism in the relative cotangent exact sequence
 `f^* Ω_{Y/R} ⟶ Ω_{X/R} ⟶ Ω_{X/Y} ⟶ 0`. -/
 def cotangentMap (f : X ⟶ Y) [f.IsOver (Spec (.of R))] :
     (Scheme.Modules.pullback f).obj (Y.relativeDifferentials R) ⟶ X.relativeDifferentials R :=
-  relativeDifferentialsPullbackHom (commSq_of_isOver R f)
+  relativeDifferentialsPullbackHom (f.commSq_specMap_algebraMap_self R)
 
 /-- For any morphism `f : X ⟶ Y` over `Spec R` and its commuting square over `Spec R ⟶ Spec R`,
 `cotangentMap R f` agrees with `relativeDifferentialsPullbackHom`. -/
@@ -308,7 +302,7 @@ theorem cotangentMap_eq_relativeDifferentialsPullbackHom (f : X ⟶ Y) [f.IsOver
     (C : CommSq f (X ↘ Spec (.of R)) (Y ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R R)))) :
     cotangentMap R f = relativeDifferentialsPullbackHom C := by
-  rw [cotangentMap, Subsingleton.elim (commSq_of_isOver R f) C]
+  rw [cotangentMap, Subsingleton.elim (f.commSq_specMap_algebraMap_self R) C]
 
 /-- The pullback–pushforward adjunction transpose of `cotangentMap R f` is the morphism induced by
 `pushforwardDerivation R f (X.universalDerivation R)`. -/
@@ -363,7 +357,8 @@ theorem cotangentMap_comp (f : X ⟶ Y) (g : Y ⟶ Z)
         (Scheme.Modules.pullback f).map (cotangentMap R g) ≫
         cotangentMap R f :=
   relativeDifferentialsPullbackHom_comp
-    (commSq_of_isOver R f) (commSq_of_isOver R g) (commSq_of_isOver R (f ≫ g))
+    (f.commSq_specMap_algebraMap_self R) (g.commSq_specMap_algebraMap_self R)
+    ((f ≫ g).commSq_specMap_algebraMap_self R)
 
 /-- Equal morphisms over `Spec R` induce compatible cotangent maps. -/
 @[reassoc]
@@ -666,9 +661,9 @@ theorem pullback_cotangentMap_comp_relativeDifferentialsPullbackHom
       (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
     ⟨by rw [Category.assoc, C_Y.w, ← Category.assoc, HomIsOver.comp_over]⟩
   have h₁ := relativeDifferentialsPullbackHom_comp
-    (R := R) (S := R) (T := S) C_X (commSq_of_isOver R f) C_left
+    (R := R) (S := R) (T := S) C_X (f.commSq_specMap_algebraMap_self R) C_left
   have h₂ := relativeDifferentialsPullbackHom_comp
-    (R := R) (S := S) (T := S) (commSq_of_isOver S f') C_Y C_right
+    (R := R) (S := S) (T := S) (f'.commSq_specMap_algebraMap_self S) C_Y C_right
   have hc := relativeDifferentialsPullbackHom_congr w C_left C_right
   rw [← cancel_epi ((Scheme.Modules.pullbackComp g_X f).inv.app (Y.relativeDifferentials R)),
     Iso.inv_hom_id_app_assoc]

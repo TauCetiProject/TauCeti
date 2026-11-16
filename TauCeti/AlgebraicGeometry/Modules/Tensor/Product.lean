@@ -32,7 +32,10 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `𝒪ₓ`-modules;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
   `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
-  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation.
+  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation;
+* `AlgebraicGeometry.Scheme.Modules.sectionsFunctor` and
+  `AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive`: sections over an open as a lax
+  braided monoidal, additive functor `X.Modules ⥤ ModuleCat Γ(X, U)`.
 
 -/
 
@@ -119,6 +122,11 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorLaxBraided (U : 
   letI F : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf := _root_.SheafOfModules.forget _
   letI : F.LaxBraided := SheafOfModules.forgetLaxBraided X.sheaf
   inferInstanceAs (F ⋙ PresheafOfModulesOfCommRing.evaluation (Opposite.op U)).LaxBraided
+
+variable {X} in
+/-- Taking sections over an open is additive, and in particular preserves zero morphisms. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive (U : X.Opens) :
+    (Scheme.Modules.sectionsFunctor U).Additive where
 
 variable {X} in
 /-- The image of an `𝒪ₓ`-module under the sections functor is its module of sections over `U`. -/
