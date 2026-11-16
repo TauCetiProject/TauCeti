@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+import TauCeti.Analysis.Normed.Module.Orientation
 
 /-!
 # The orientation double cover as a quotient of the orthonormal frame bundle
@@ -200,48 +201,19 @@ private theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank �
       e.mapOrientation ι hq (Orientation.map ι q.frame.toLinearEquiv o) =
         e.mapOrientation ι h₀ (Orientation.map ι p₀.frame.toLinearEquiv o) := by
   have hU : proj ⁻¹' e.baseSet ∈ 𝓝 p₀ := (e.open_baseSet.preimage continuous_proj).mem_nhds h₀
-  -- `L q` is the frame at `q` read in `e`.
+  -- `L q` is the frame at `q` read in `e`; as a continuous linear map it is `coord e q`, which
+  -- varies continuously near `p₀`.
   let L (q : OrthonormalFrameBundle ℝ F E V) (hq : q.proj ∈ e.baseSet) : V ≃L[ℝ] F :=
     q.frame.toContinuousLinearEquiv.trans (e.continuousLinearEquivAt ℝ q.proj hq)
-  have hL {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
-      (L q hq).toLinearEquiv = q.frame.toLinearEquiv.trans (e.linearEquivAt ℝ q.proj hq) :=
-    rfl
-  suffices ∀ᶠ q in 𝓝 p₀, ∃ hq : q.proj ∈ e.baseSet,
-      Orientation.map ι ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv o = o by
-    filter_upwards [this] with q ⟨hq, hpos⟩
-    refine ⟨hq, ?_⟩
-    simp only [Trivialization.mapOrientation_apply, ← Orientation.map_trans, ← hL]
-    calc Orientation.map ι (L q hq).toLinearEquiv o
-        = Orientation.map ι (L p₀ h₀).toLinearEquiv
-            (Orientation.map ι ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv o) := by
-          rw [← Orientation.map_trans]
-          refine congrArg (fun f : V ≃ₗ[ℝ] F ↦ Orientation.map ι f o) (LinearEquiv.ext fun v ↦ ?_)
-          simp
-      _ = Orientation.map ι (L p₀ h₀).toLinearEquiv o := by rw [hpos]
-  -- `continuousOn_coord` requires `FiniteDimensional ℝ V`, which follows from `hι` once `ι` is
-  -- nonempty.
-  rcases isEmpty_or_nonempty ι with _ | _
-  · filter_upwards [hU] with q hq
-    exact ⟨hq, Orientation.map_of_isEmpty ι o _⟩
-  · have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
-    -- The frames near `p₀`, read in `e` and then read back in the frame `p₀`, form a continuous
-    -- family of endomorphisms of `V` equal to the identity at `p₀`, so their determinants stay
-    -- positive near `p₀`.
-    have hcoord {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
-        (((L p₀ h₀).symm : F →L[ℝ] V).comp (coord e q) : V →ₗ[ℝ] V) =
-          ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv := by
-      ext v
-      simp [L, coord_apply hq, e.continuousLinearEquivAt_apply (R := ℝ)]
-    let d : OrthonormalFrameBundle ℝ F E V → ℝ := fun q ↦
-      (((L p₀ h₀).symm : F →L[ℝ] V).comp (coord e q)).det
-    have hd : ContinuousAt d p₀ := ContinuousLinearMap.continuous_det.continuousAt.comp
-      (continuousAt_const.clm_comp ((continuousOn_coord e).continuousAt hU))
-    have hd₀ : d p₀ = 1 := by
-      simp only [d, ContinuousLinearMap.det, hcoord h₀, ContinuousLinearEquiv.self_trans_symm]
-      exact LinearMap.det_id
-    filter_upwards [hU, hd.eventually (lt_mem_nhds (hd₀ ▸ one_pos))] with q hq hdq
-    refine ⟨hq, (o.map_eq_iff_det_pos _ hι).2 ?_⟩
-    rwa [← hcoord hq]
+  have hcoord {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
+      (L q hq : V →L[ℝ] F) = coord e q := by
+    ext v
+    simp [L, coord_apply hq, e.continuousLinearEquivAt_apply (R := ℝ)]
+  filter_upwards [hU, Orientation.eventually_map_eq_map_of_continuousAt hι o
+    (fun _ ↦ (continuousOn_coord e).continuousAt hU) (hcoord h₀).symm] with q hq h
+  refine ⟨hq, ?_⟩
+  simp only [Trivialization.mapOrientation_apply, ← Orientation.map_trans]
+  exact h (L q hq) (hcoord hq)
 
 /-- The map from the orthonormal frame bundle to the orientation double cover is continuous. -/
 theorem continuous_toOrientationCover (hι : Fintype.card ι = finrank ℝ V)
@@ -265,14 +237,19 @@ theorem surjective_toOrientationCover [Nonempty ι] (hι : Fintype.card ι = fin
     (((trivializationAt F E b).linearEquivAt ℝ b hb).finrank_eq.trans hF.symm) o o'
   exact ⟨⟨b, φ⟩, VectorBundleOrientationCover.mk_eq_mk_iff.2 hφ⟩
 
-variable [FiniteDimensional ℝ V] [IsContinuousRiemannianBundle F E]
+variable [ContinuousFiberNorm F E]
 
 /-- The map from the orthonormal frame bundle to the orientation double cover is open, provided
-`card ι` is the dimension of `V` and of the model fibre. -/
-theorem isOpenMap_toOrientationCover [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ V)
-    (hF : Fintype.card ι = finrank ℝ F) (o : Orientation ℝ V ι) :
+`V` is finite-dimensional of dimension `card ι`. -/
+theorem isOpenMap_toOrientationCover [FiniteDimensional ℝ V] (hι : Fintype.card ι = finrank ℝ V)
+    (o : Orientation ℝ V ι) :
     IsOpenMap (toOrientationCover o : OrthonormalFrameBundle ℝ F E V → _) := by
   refine IsOpenMap.of_nhds_le fun p₀ ↦ ?_
+  -- The frame `p₀` read in a trivialization identifies `V` with the model fibre.
+  have hVF := p₀.frame.toLinearEquiv.trans ((trivializationAt F E p₀.proj).linearEquivAt ℝ p₀.proj
+    (FiberBundle.mem_baseSet_trivializationAt' p₀.proj))
+  have : FiniteDimensional ℝ F := hVF.finiteDimensional
+  have hF : Fintype.card ι = finrank ℝ F := hι.trans hVF.finrank_eq
   obtain ⟨T, hT, -⟩ := exists_trivialization (E := E) (hι.symm.trans hF) p₀.proj
   -- The local section `s` of the frame bundle over `T.baseSet` through `p₀`.
   let s (y : B) : OrthonormalFrameBundle ℝ F E V := T.toOpenPartialHomeomorph.symm (y, (T p₀).2)
@@ -310,13 +287,14 @@ theorem isOpenMap_toOrientationCover [FiniteDimensional ℝ F] (hι : Fintype.ca
 
 /-- When `card ι` is positive and equal to the dimension of `V` and of the model fibre, the map
 from the orthonormal frame bundle to the orientation double cover is an open quotient map. -/
-theorem isOpenQuotientMap_toOrientationCover [Nonempty ι] [FiniteDimensional ℝ F]
-    (hι : Fintype.card ι = finrank ℝ V) (hF : Fintype.card ι = finrank ℝ F)
-    (o : Orientation ℝ V ι) :
+theorem isOpenQuotientMap_toOrientationCover [Nonempty ι] (hι : Fintype.card ι = finrank ℝ V)
+    (hF : Fintype.card ι = finrank ℝ F) (o : Orientation ℝ V ι) :
     IsOpenQuotientMap (toOrientationCover o : OrthonormalFrameBundle ℝ F E V → _) where
   surjective := surjective_toOrientationCover hι hF o
   continuous := continuous_toOrientationCover hι o
-  isOpenMap := isOpenMap_toOrientationCover hι hF o
+  isOpenMap :=
+    have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
+    isOpenMap_toOrientationCover hι o
 
 /-- The orientation double cover of `E` is the quotient of the orthonormal frame bundle by the
 right action of the special orthogonal group of `V`: when `card ι` is positive and equal to the
@@ -324,7 +302,7 @@ dimension of `V` and of the model fibre, transporting the orientation `o` of `V`
 descends to a homeomorphism from the quotient by `orientedRel` onto the orientation double cover.
 It sends the class of a frame `p` to `toOrientationCover o p`
 (`TauCeti.OrthonormalFrameBundle.orientationCoverHomeomorph_mk`). -/
-def orientationCoverHomeomorph [Nonempty ι] [FiniteDimensional ℝ F]
+def orientationCoverHomeomorph [CompleteSpace V] [Nonempty ι]
     (hι : Fintype.card ι = finrank ℝ V) (hF : Fintype.card ι = finrank ℝ F)
     (o : Orientation ℝ V ι) :
     Quotient (orientedRel F E V) ≃ₜ VectorBundleOrientationCover F E ι :=
@@ -335,7 +313,7 @@ def orientationCoverHomeomorph [Nonempty ι] [FiniteDimensional ℝ F]
 /-- The homeomorphism `orientationCoverHomeomorph` sends the class of a frame to the orientation
 it transports. -/
 @[simp]
-theorem orientationCoverHomeomorph_mk [Nonempty ι] [FiniteDimensional ℝ F]
+theorem orientationCoverHomeomorph_mk [CompleteSpace V] [Nonempty ι]
     (hι : Fintype.card ι = finrank ℝ V) (hF : Fintype.card ι = finrank ℝ F)
     (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle ℝ F E V) :
     orientationCoverHomeomorph hι hF o (Quotient.mk _ p) = toOrientationCover o p :=

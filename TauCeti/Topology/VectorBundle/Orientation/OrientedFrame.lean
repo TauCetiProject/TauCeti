@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal
 public import TauCeti.Topology.VectorBundle.Orientation.OrthonormalFrame
+import Mathlib.Topology.Algebra.Indicator
 
 /-!
 # The oriented orthonormal frame bundle
@@ -254,14 +255,9 @@ private theorem coe_toSpecialOrthogonal {g : unitary (V →L[ℝ] V)}
 `unitary (V →L[ℝ] V)`. -/
 private theorem continuous_toSpecialOrthogonal :
     Continuous (toSpecialOrthogonal : unitary (V →L[ℝ] V) → specialOrthogonalGroup V) := by
-  refine Topology.IsInducing.subtypeVal.continuous_iff.2
-    (continuous_iff_continuousAt.2 fun g ↦ ?_)
-  by_cases hg : g ∈ specialOrthogonalGroup V
-  · exact continuousAt_id.congr (Filter.eventuallyEq_of_mem
-      (isOpen_specialOrthogonalGroup.mem_nhds hg) fun _ hx ↦ (coe_toSpecialOrthogonal hx).symm)
-  · exact (continuousAt_const (y := (1 : unitary (V →L[ℝ] V)))).congr
-      (Filter.eventuallyEq_of_mem (isClosed_specialOrthogonalGroup.isOpen_compl.mem_nhds hg)
-        fun _ (hx : _ ∉ specialOrthogonalGroup V) ↦ by simp [toSpecialOrthogonal, hx])
+  refine Topology.IsInducing.subtypeVal.continuous_iff.2 <|
+    (isClopen_specialOrthogonalGroup.continuous_mulIndicator continuous_id).congr fun g ↦ ?_
+  by_cases hg : g ∈ specialOrthogonalGroup V <;> simp [toSpecialOrthogonal, hg]
 
 end ToSpecialOrthogonal
 
@@ -495,7 +491,7 @@ end Trivialization
 /-- In positive rank the positively oriented frames are locally trivial with fibre the special
 orthogonal group, by trivializations equivariant for its right action: this is the principal
 `SO(n)`-bundle of an oriented Riemannian vector bundle of rank `n = card ι ≥ 1`. -/
-theorem exists_trivialization_orientedFrames [IsContinuousRiemannianBundle F E] [Nonempty ι]
+theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty ι]
     (hF : Fintype.card ι = finrank ℝ F) (x : B) :
     ∃ t : Trivialization (specialOrthogonalGroup V)
         (fun p : orientedFrames s o ↦ (p : OrthonormalFrameBundle ℝ F E V).proj),
