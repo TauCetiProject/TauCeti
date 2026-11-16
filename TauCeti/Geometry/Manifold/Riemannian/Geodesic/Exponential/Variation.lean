@@ -32,9 +32,10 @@ positive on `V`, the transverse geodesics from all the points of `γ` near a giv
 leaving the boundary of a domain inwards enter the domain.
 
 Combined with an endpoint correction in a chart, the exponential variation realizes every `C^n`
-field `V` along `γ` on `[a, b]` as the variation field of a `C^n` variation whose left endpoint
-follows a prescribed curve `σ` with `σ 0 = γ a` and velocity `V a`, and whose right endpoint
-follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 0`.
+field `V` along `γ` on the segment between `a` and `b ≠ a` as the variation field of a `C^n`
+variation whose curves pass through a prescribed curve `σ` at parameter `a` for `s` near `0`,
+with `σ 0 = γ a` and velocity `V a`, and follow the geodesic `s ↦ exp_(γ b) (s • V b)` at
+parameter `b`, which is fixed when `V b = 0`. The prescribed moving endpoint may be either end.
 
 ## Main definitions and results
 
