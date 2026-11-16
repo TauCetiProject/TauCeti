@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.OpenPos
 import Mathlib.Tactic.Linarith
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Parametric incidence transversality in finite dimensions
@@ -208,24 +209,24 @@ theorem dense_setOf_forall_isRegularIncidenceParameterOn
     (ae_forall_isRegularIncidenceParameterOn addHaar hF hj htotal hn)
 
 /-- **Simultaneous generic avoidance of a countable family of low-dimensional targets.** When
-`finrank ℝ (E i) + finrank ℝ (W i) < finrank ℝ (V i)` for every `i`, almost every parameter `p`
-gives slices `x ↦ F i (x, p)` whose images miss `range (j i)` for all `i`. Notice that `1 ≤ n i`
-already meets the Morse--Sard threshold
-`finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ (V i) + 1 = 1`. -/
+`finrank ℝ (E i) + finrank ℝ (W i) < finrank ℝ (V i)` for every `i`, `C¹` regularity at incidence
+points already meets the Morse--Sard threshold
+`finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ (V i) + 1 = 1`, so almost every parameter `p` gives
+slices `x ↦ F i (x, p)` whose images miss `range (j i)` for all `i`. -/
 theorem ae_forall_disjoint_range_of_finrank_lt
     [MeasurableSpace P] [BorelSpace P] (μ : Measure P) [IsAddHaarMeasure μ]
-    {F : ∀ i, E i × P → V i} {j : ∀ i, W i → V i} {n : ι → ℕ∞ω} (hn : ∀ i, 1 ≤ n i)
-    (hF : ∀ i z, incidenceEquation (F i) (j i) z = 0 → ContDiffAt ℝ (n i) (F i) (z.1.1, z.2))
-    (hj : ∀ i z, incidenceEquation (F i) (j i) z = 0 → ContDiffAt ℝ (n i) (j i) z.1.2)
+    {F : ∀ i, E i × P → V i} {j : ∀ i, W i → V i}
+    (hF : ∀ i z, incidenceEquation (F i) (j i) z = 0 → ContDiffAt ℝ 1 (F i) (z.1.1, z.2))
+    (hj : ∀ i z, incidenceEquation (F i) (j i) z = 0 → ContDiffAt ℝ 1 (j i) z.1.2)
     (htotal : ∀ i z, incidenceEquation (F i) (j i) z = 0 →
       Surjective (fderiv ℝ (incidenceEquation (F i) (j i)) z))
     (hdim : ∀ i, finrank ℝ (E i) + finrank ℝ (W i) < finrank ℝ (V i)) :
     ∀ᵐ p ∂μ, ∀ i, Disjoint (range fun x ↦ F i (x, p)) (range (j i)) := by
-  have hae := ae_forall_isRegularIncidenceParameterOn (U := fun _ ↦ univ) (n := n) μ
+  have hae := ae_forall_isRegularIncidenceParameterOn (U := fun _ ↦ univ) (n := fun _ ↦ 1) μ
     (fun i z _ ↦ hF i z) (fun i z _ ↦ hj i z) (fun i z _ ↦ htotal i z) fun i ↦ by
       have hsub : finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ (V i) = 0 :=
         Nat.sub_eq_zero_of_le (hdim i).le
-      simpa [hsub] using hn i
+      simp [hsub]
   filter_upwards [hae] with p hp i
   exact (isRegularIncidenceParameterOn_univ.1 (hp i)).disjoint_range (hdim i)
 
@@ -240,38 +241,29 @@ fibre is empty. -/
 theorem isRegularIncidenceParameter_sq_add_zero_iff (p : ℝ) :
     IsRegularIncidenceParameter (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2) (fun _ : Unit ↦ (0 : ℝ)) p ↔
       p ≠ 0 := by
-  have hF : ContDiff ℝ ∞ (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2) :=
-    (contDiff_fst.pow 2).add contDiff_snd
-  have hj : ContDiff ℝ ∞ (fun _ : Unit ↦ (0 : ℝ)) := contDiff_const
-  rw [isRegularIncidenceParameter_iff_surjective_coprod
-    (fun _ _ _ ↦ hF.contDiffAt.differentiableAt (by simp))
-    (fun _ _ _ ↦ hj.contDiffAt.differentiableAt (by simp))]
-  have hslice (x u : ℝ) :
-      fderiv ℝ (fun x' : ℝ ↦ (x', p).1 ^ 2 + (x', p).2) x u = 2 * x * u := by
+  rw [isRegularIncidenceParameter_const, isRegularParameter_iff]
+  have hF : Differentiable ℝ (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2) := by fun_prop
+  have hslice (x : ℝ) :
+      (fderiv ℝ (fun z : ℝ × ℝ ↦ z.1 ^ 2 + z.2) (x, p)).comp (ContinuousLinearMap.inl ℝ ℝ ℝ) =
+        ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (2 * x) := by
+    rw [← fderiv_slice_left (hF (x, p))]
     have hd : HasDerivAt (fun x' : ℝ ↦ x' ^ 2 + p) (2 * x) x := by
       simpa using (hasDerivAt_pow 2 x).add_const p
-    have hfd := hd.hasFDerivAt.fderiv
-    have hfun : (fun x' : ℝ ↦ (x', p).1 ^ 2 + (x', p).2) = fun x' : ℝ ↦ x' ^ 2 + p := rfl
-    rw [hfun, hfd]
-    simp [mul_comm]
-  have hj0 (y : Unit) : fderiv ℝ (fun _ : Unit ↦ (0 : ℝ)) y = 0 := by
-    simp
+    exact hd.hasFDerivAt.fderiv
   constructor
   · intro h hp0
     subst hp0
-    obtain ⟨⟨u, _⟩, huv⟩ := h 0 () (by norm_num) 1
-    simp only [ContinuousLinearMap.coprod_apply, hslice 0 u, hj0, neg_zero, zero_apply] at huv
-    norm_num at huv
-  · intro hp x y hxy w
+    obtain ⟨u, hu⟩ := h 0 (by norm_num) 1
+    rw [hslice 0] at hu
+    simp at hu
+  · intro hp x hxy w
     have hx0 : x ≠ 0 := by
       intro rfl
       apply hp
       linarith
-    refine ⟨(w / (2 * x), ()), ?_⟩
-    have h2x : 2 * x ≠ 0 := mul_ne_zero two_ne_zero hx0
-    simp only [ContinuousLinearMap.coprod_apply, hslice x (w / (2 * x)), hj0, neg_zero,
-      zero_apply, add_zero]
-    exact mul_div_cancel₀ w h2x
+    refine ⟨w / (2 * x), ?_⟩
+    rw [hslice x]
+    simp [div_mul_cancel₀ w (mul_ne_zero two_ne_zero hx0)]
 
 -- At `p = 0`, the quadratic family `(x, p) ↦ x ^ 2 + p` fails incidence regularity against `0`.
 example :

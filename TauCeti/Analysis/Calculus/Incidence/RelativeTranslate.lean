@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Relative translation families and small transverse perturbations
@@ -26,9 +27,9 @@ leaves `f` unchanged on `C`, varies linearly with `p` in every higher `C^k` norm
 and connects `f` to `relativeTranslate f β p` via the straight-line homotopy
 `t ↦ relativeTranslate f β (t • p)` fixing `C`.
 
-Suppose now that `β` is nonnegative with zero set `{x | β x = 0} = C`, and that `f`, `β`, and
-`j : W → V` are differentiable. Every zero `x` of `β` is a local minimum of `β`, so
-`fderiv ℝ β x = 0` by Fermat's theorem. Consequently:
+Suppose now that `f`, `β`, and `j : W → V` are differentiable and that `fderiv ℝ β x = 0` whenever
+`β x = 0` (for instance, whenever `β` is locally nonnegative near its zeros, since every zero is a
+local minimum and `fderiv ℝ β x = 0` by Fermat's theorem). Consequently:
 1. Where `β x ≠ 0`, differentiating `relativeTranslate f β p x` in the parameter `p` gives the
    surjective scaling `q ↦ β x • q` onto `V`.
 2. Where `β x = 0`, we have `x ∈ C`, `relativeTranslate f β p x = f x`, and the parameter
@@ -49,25 +50,24 @@ closed set `C` in a finite-dimensional real normed space.
 
 * `TauCeti.relativeTranslate`: the family `f x + β x • p`, defined with minimal algebraic
   typeclasses so that it applies unchanged to arbitrary source types (including manifolds).
-* `TauCeti.fderiv_relativeTranslate_of_eventually_nonneg_of_eq_zero` and
-  `TauCeti.fderiv_relativeTranslate_snd_fst_of_eventually_nonneg_of_eq_zero`: at a zero `x` of a
-  locally nonnegative cutoff `β` differentiable at `x`, `relativeTranslate f β p` has Fréchet
-  derivative `fderiv ℝ f x` and `(x', p') ↦ relativeTranslate f β p' x'` has Fréchet derivative
+* `TauCeti.fderiv_relativeTranslate_of_hasFDerivAt_zero`,
+  `TauCeti.fderiv_relativeTranslate_snd_fst_of_hasFDerivAt_zero_of_eq_zero`, and the
+  nonnegative-cutoff corollary `TauCeti.fderiv_relativeTranslate_of_eventually_nonneg_of_eq_zero`:
+  at a point `x` where `β` has zero derivative (in particular at a zero of a locally nonnegative
+  differentiable cutoff), `relativeTranslate f β p` has Fréchet derivative `fderiv ℝ f x`, and if
+  also `β x = 0` then `(x', p') ↦ relativeTranslate f β p' x'` has Fréchet derivative
   `(fderiv ℝ f x).comp fst`.
 * `TauCeti.exists_norm_iteratedFDeriv_relativeTranslate_sub_le`: uniform linear `O(‖p‖)` control of
   all derivatives up to order `k` of `relativeTranslate f β p - f` on compact sets.
 * `TauCeti.surjective_fderiv_incidenceEquation_relativeTranslate_iff`: characterizes surjectivity of
   the total derivative of the incidence equation of `relativeTranslate f β` against `j` at
-  `((x, y), p)` under differentiability at `x` and `y` and local nonnegativity of `β` near `x`,
-  accompanied by slice-transversality characterizations
-  `TauCeti.isRegularIncidenceParameterOn_relativeTranslate_iff_surjective_coprod` and
-  `TauCeti.isRegularIncidenceParameterOn_relativeTranslate_iff_range_sup_eq_top`.
+  `((x, y), p)` under differentiability at `x` and `y` and `β x = 0 → fderiv ℝ β x = 0`.
 * `TauCeti.addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zero`,
   `TauCeti.exists_forall_isRegularIncidenceParameterOn_relativeTranslate`,
   `TauCeti.exists_forall_isRegularIncidenceParameter_relativeTranslate`, and
   `TauCeti.exists_isRegularIncidenceParameter_relativeTranslate`: generic and arbitrarily small
-  `C^n` relative transverse perturbations (localized on subsets `U i` or global, against a
-  countable family of maps or a single map).
+  `C^n` relative transverse perturbations (localized on subsets `U i` under vanishing derivative of
+  `β` at its zeros, or global for nonnegative cutoffs, against a countable family or a single map).
 * `IsClosed.exists_forall_isRegularIncidenceParameter_relativeTranslate` and
   `IsClosed.exists_isRegularIncidenceParameter_relativeTranslate`: cutoff-free closed-set `C^n`
   relative transversality in finite dimensions, producing a single smooth cutoff `β` vanishing
@@ -274,10 +274,8 @@ theorem differentiable_relativeTranslate {f : E → V} {β : E → ℝ}
 theorem hasFDerivAt_relativeTranslate {f : E → V} {β : E → ℝ}
     {Df : E →L[ℝ] V} {Dβ : E →L[ℝ] ℝ} {x : E}
     (hf : HasFDerivAt f Df x) (hβ : HasFDerivAt β Dβ x) (p : V) :
-    HasFDerivAt (relativeTranslate f β p) (Df + Dβ.smulRight p) x := by
-  refine (hf.add (hβ.smul (hasFDerivAt_const p x))).congr_fderiv ?_
-  ext u
-  simp
+    HasFDerivAt (relativeTranslate f β p) (Df + Dβ.smulRight p) x :=
+  hf.add (hβ.smul_const p)
 
 /-- Fréchet derivative of the fixed-parameter slice `relativeTranslate f β p` at `x` as a
 continuous linear map. -/
@@ -287,29 +285,51 @@ theorem fderiv_relativeTranslate {f : E → V} {β : E → ℝ} {x : E}
       fderiv ℝ f x + (fderiv ℝ β x).smulRight p :=
   (hasFDerivAt_relativeTranslate hf.hasFDerivAt hβ.hasFDerivAt p).fderiv
 
-/-- At a zero `x` of a locally nonnegative cutoff `β` differentiable at `x`, if `f` has Fréchet
-derivative `Df` at `x`, then `(x', p') ↦ relativeTranslate f β p' x'` has Fréchet derivative
-`Df.comp fst` at `(x, p)`. -/
-theorem hasFDerivAt_relativeTranslate_snd_fst_of_eventually_nonneg_of_eq_zero
+/-- At a point `x` where `β` has zero Fréchet derivative, if `f` has Fréchet derivative `Df` at
+`x`, then `relativeTranslate f β p` also has Fréchet derivative `Df` at `x`. -/
+theorem hasFDerivAt_relativeTranslate_of_hasFDerivAt_zero {f : E → V} {β : E → ℝ}
+    {Df : E →L[ℝ] V} {x : E} (hf : HasFDerivAt f Df x) (hβ : HasFDerivAt β (0 : E →L[ℝ] ℝ) x)
+    (p : V) :
+    HasFDerivAt (relativeTranslate f β p) Df x := by
+  simpa using hasFDerivAt_relativeTranslate hf hβ p
+
+/-- At a point `x` where `β` has zero Fréchet derivative, the Fréchet derivative of
+`relativeTranslate f β p` equals `fderiv ℝ f x` (without assuming `f` is differentiable at `x`). -/
+theorem fderiv_relativeTranslate_of_hasFDerivAt_zero {f : E → V} {β : E → ℝ} {x : E}
+    (hβ : HasFDerivAt β (0 : E →L[ℝ] ℝ) x) (p : V) :
+    fderiv ℝ (relativeTranslate f β p) x = fderiv ℝ f x := by
+  by_cases hf : DifferentiableAt ℝ f x
+  · exact (hasFDerivAt_relativeTranslate_of_hasFDerivAt_zero hf.hasFDerivAt hβ p).fderiv
+  · have hnot : ¬ DifferentiableAt ℝ (relativeTranslate f β p) x :=
+      mt (differentiableAt_relativeTranslate_iff hβ.differentiableAt p).1 hf
+    rw [fderiv_zero_of_not_differentiableAt hnot, fderiv_zero_of_not_differentiableAt hf]
+
+/-- At a zero `x` of `β` where `β` also has zero Fréchet derivative, if `f` has Fréchet derivative
+`Df` at `x`, then `(x', p') ↦ relativeTranslate f β p' x'` has Fréchet derivative `Df.comp fst` at
+`(x, p)`. -/
+theorem hasFDerivAt_relativeTranslate_snd_fst_of_hasFDerivAt_zero_of_eq_zero
     {f : E → V} {β : E → ℝ} {Df : E →L[ℝ] V} {x : E}
-    (hf : HasFDerivAt f Df x) (hβ : DifferentiableAt ℝ β x)
-    (hnonneg : ∀ᶠ y in 𝓝 x, 0 ≤ β y) (hx : β x = 0) (p : V) :
+    (hf : HasFDerivAt f Df x) (hβ : HasFDerivAt β (0 : E →L[ℝ] ℝ) x) (hx : β x = 0) (p : V) :
     HasFDerivAt (fun z : E × V ↦ relativeTranslate f β z.2 z.1)
       (Df.comp (ContinuousLinearMap.fst ℝ E V)) (x, p) := by
-  have hmin : IsLocalMin β x := hnonneg.mono fun y hy ↦ by rwa [hx]
-  have hβ0 : HasFDerivAt β 0 x := hmin.fderiv_eq_zero ▸ hβ.hasFDerivAt
-  simpa [hx] using hasFDerivAt_relativeTranslate_snd_fst hf hβ0 p
+  simpa [hx] using hasFDerivAt_relativeTranslate_snd_fst hf hβ p
 
-/-- At a zero `x` of a locally nonnegative cutoff `β` differentiable at `x`, if `f` has Fréchet
-derivative `Df` at `x`, then `relativeTranslate f β p` also has Fréchet derivative `Df` at `x`. -/
-theorem hasFDerivAt_relativeTranslate_of_eventually_nonneg_of_eq_zero {f : E → V} {β : E → ℝ}
-    {Df : E →L[ℝ] V} {x : E} (hf : HasFDerivAt f Df x) (hβ : DifferentiableAt ℝ β x)
-    (hnonneg : ∀ᶠ y in 𝓝 x, 0 ≤ β y) (hx : β x = 0) (p : V) :
-    HasFDerivAt (relativeTranslate f β p) Df x := by
-  have h := (hasFDerivAt_relativeTranslate_snd_fst_of_eventually_nonneg_of_eq_zero
-    hf hβ hnonneg hx p).comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x p)
-  rwa [Function.comp_def, ContinuousLinearMap.comp_assoc, ContinuousLinearMap.fst_comp_inl,
-    ContinuousLinearMap.comp_id] at h
+/-- At a zero `x` of `β` where `β` also has zero Fréchet derivative, the joint Fréchet derivative
+of `(x', p') ↦ relativeTranslate f β p' x'` at `(x, p)` kills the parameter variation and reduces
+to `(fderiv ℝ f x).comp fst` (without assuming `f` is differentiable at `x`). -/
+theorem fderiv_relativeTranslate_snd_fst_of_hasFDerivAt_zero_of_eq_zero
+    {f : E → V} {β : E → ℝ} {x : E}
+    (hβ : HasFDerivAt β (0 : E →L[ℝ] ℝ) x) (hx : β x = 0) (p : V) :
+    fderiv ℝ (fun z : E × V ↦ relativeTranslate f β z.2 z.1) (x, p) =
+      (fderiv ℝ f x).comp (ContinuousLinearMap.fst ℝ E V) := by
+  by_cases hf : DifferentiableAt ℝ f x
+  · exact (hasFDerivAt_relativeTranslate_snd_fst_of_hasFDerivAt_zero_of_eq_zero
+      hf.hasFDerivAt hβ hx p).fderiv
+  · have hnot : ¬ DifferentiableAt ℝ (fun z : E × V ↦ relativeTranslate f β z.2 z.1) (x, p) :=
+      fun hFd ↦ hf ((differentiableAt_relativeTranslate_iff hβ.differentiableAt p).1
+        hFd.hasFDerivAt_slice_fst.differentiableAt)
+    rw [fderiv_zero_of_not_differentiableAt hnot, fderiv_zero_of_not_differentiableAt hf,
+      ContinuousLinearMap.zero_comp]
 
 /-- At a zero `x` of a locally nonnegative differentiable cutoff `β`, the Fréchet derivative of
 `relativeTranslate f β p` equals `fderiv ℝ f x` (without assuming `f` is differentiable at `x`). -/
@@ -317,34 +337,8 @@ theorem fderiv_relativeTranslate_of_eventually_nonneg_of_eq_zero {f : E → V} {
     (hβ : DifferentiableAt ℝ β x)
     (hnonneg : ∀ᶠ y in 𝓝 x, 0 ≤ β y) (hx : β x = 0) (p : V) :
     fderiv ℝ (relativeTranslate f β p) x = fderiv ℝ f x := by
-  by_cases hf : DifferentiableAt ℝ f x
-  · exact (hasFDerivAt_relativeTranslate_of_eventually_nonneg_of_eq_zero
-      hf.hasFDerivAt hβ hnonneg hx p).fderiv
-  · have hnot : ¬ DifferentiableAt ℝ (relativeTranslate f β p) x :=
-      mt (differentiableAt_relativeTranslate_iff hβ p).1 hf
-    rw [fderiv_zero_of_not_differentiableAt hnot, fderiv_zero_of_not_differentiableAt hf]
-
-/-- At a zero `x` of a locally nonnegative differentiable cutoff `β`, the joint Fréchet derivative
-of `(x', p') ↦ relativeTranslate f β p' x'` at `(x, p)` kills the parameter variation and reduces
-to `(fderiv ℝ f x).comp fst` (without assuming `f` is differentiable at `x`). -/
-theorem fderiv_relativeTranslate_snd_fst_of_eventually_nonneg_of_eq_zero
-    {f : E → V} {β : E → ℝ} {x : E}
-    (hβ : DifferentiableAt ℝ β x)
-    (hnonneg : ∀ᶠ y in 𝓝 x, 0 ≤ β y) (hx : β x = 0) (p : V) :
-    fderiv ℝ (fun z : E × V ↦ relativeTranslate f β z.2 z.1) (x, p) =
-      (fderiv ℝ f x).comp (ContinuousLinearMap.fst ℝ E V) := by
-  by_cases hf : DifferentiableAt ℝ f x
-  · exact (hasFDerivAt_relativeTranslate_snd_fst_of_eventually_nonneg_of_eq_zero
-      hf.hasFDerivAt hβ hnonneg hx p).fderiv
-  · have hnot : ¬ DifferentiableAt ℝ (fun z : E × V ↦ relativeTranslate f β z.2 z.1) (x, p) := by
-      intro hFd
-      have hslice : DifferentiableAt ℝ
-          ((fun z : E × V ↦ relativeTranslate f β z.2 z.1) ∘ fun y ↦ (y, p)) x :=
-        hFd.comp x (differentiableAt_id.prodMk (differentiableAt_const p))
-      rw [Function.comp_def] at hslice
-      exact hf ((differentiableAt_relativeTranslate_iff hβ p).1 hslice)
-    rw [fderiv_zero_of_not_differentiableAt hnot, fderiv_zero_of_not_differentiableAt hf,
-      ContinuousLinearMap.zero_comp]
+  have hmin : IsLocalMin β x := hnonneg.mono fun _ hy ↦ by rwa [hx]
+  exact fderiv_relativeTranslate_of_hasFDerivAt_zero (hmin.fderiv_eq_zero ▸ hβ.hasFDerivAt) p
 
 /-- **Uniform `C^k` norm control on compact sets (localized form).** If `β : E → ℝ` is `C^n` on an
 open neighbourhood `s` of a compact set `K ⊆ E`, then for any `f : E → V` (requiring no regularity
@@ -392,15 +386,15 @@ variable {E W V : Type*}
   [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- **Universal transversality criterion for `relativeTranslate`.** Suppose `f : E → V` and
-`β : E → ℝ` are differentiable at `x`, `j : W → V` is differentiable at `y`, and `β` is locally
-nonnegative near `x`. Then the total Fréchet derivative of
+`β : E → ℝ` are differentiable at `x`, `j : W → V` is differentiable at `y`, and `fderiv ℝ β x = 0`
+whenever `β x = 0`. Then the total Fréchet derivative of
 `incidenceEquation (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j` at `((x, y), p)` is
 surjective if and only if `(fderiv ℝ f x).coprod (-fderiv ℝ j y)` is surjective whenever
 `β x = 0`. -/
 theorem surjective_fderiv_incidenceEquation_relativeTranslate_iff
     {f : E → V} {β : E → ℝ} {j : W → V} {x : E} {y : W} {p : V}
     (hf : DifferentiableAt ℝ f x) (hβ : DifferentiableAt ℝ β x) (hj : DifferentiableAt ℝ j y)
-    (hnonneg : ∀ᶠ x' in 𝓝 x, 0 ≤ β x') :
+    (hβ0 : β x = 0 → fderiv ℝ β x = 0) :
     Surjective
         (fderiv ℝ (incidenceEquation (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j)
           ((x, y), p)) ↔
@@ -408,8 +402,9 @@ theorem surjective_fderiv_incidenceEquation_relativeTranslate_iff
   have hFd : DifferentiableAt ℝ (fun z : E × V ↦ relativeTranslate f β z.2 z.1) (x, p) :=
     differentiableAt_relativeTranslate_snd_fst hf hβ p
   by_cases hβx : β x = 0
-  · rw [surjective_fderiv_incidenceEquation_iff hFd hj,
-      fderiv_relativeTranslate_snd_fst_of_eventually_nonneg_of_eq_zero hβ hnonneg hβx p]
+  · rw [surjective_fderiv_incidenceEquation_iff_surjective_coprod hFd hj,
+      fderiv_relativeTranslate_snd_fst_of_hasFDerivAt_zero_of_eq_zero
+        (hβ0 hβx ▸ hβ.hasFDerivAt) hβx p]
     constructor
     · intro hsurj _ w
       obtain ⟨⟨⟨u, _⟩, v⟩, huv⟩ := hsurj w
@@ -424,84 +419,6 @@ theorem surjective_fderiv_incidenceEquation_relativeTranslate_iff
       fderiv_relativeTranslate_snd_fst_apply hf hβ p 0 ((β x)⁻¹ • w), map_zero, zero_smul,
       zero_add, smul_smul, mul_inv_cancel₀ hβx, one_smul]
 
-/-- **Slice-transversality criterion on `U` for `relativeTranslate` (coproduct form).** Assuming
-differentiability of `f`, `β`, and `j` at incidence points in `U`, `p` is regular on `U` if and
-only if `(fderiv ℝ (relativeTranslate f β p) x).coprod (-fderiv ℝ j y)` is surjective at every
-incidence point `((x, y), p) ∈ U`. -/
-theorem isRegularIncidenceParameterOn_relativeTranslate_iff_surjective_coprod
-    {f : E → V} {β : E → ℝ} {j : W → V} {U : Set ((E × W) × V)} {p : V}
-    (hf : ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-      DifferentiableAt ℝ f x)
-    (hβ : ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-      DifferentiableAt ℝ β x)
-    (hj : ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-      DifferentiableAt ℝ j y) :
-    IsRegularIncidenceParameterOn
-        (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j U p ↔
-      ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-        Surjective ((fderiv ℝ (relativeTranslate f β p) x).coprod (-fderiv ℝ j y)) :=
-  isRegularIncidenceParameterOn_iff_surjective_coprod
-    (fun x y hU hEq ↦
-      differentiableAt_relativeTranslate_snd_fst (hf x y hU hEq) (hβ x y hU hEq) p)
-    hj
-
-/-- **Slice-transversality criterion on `U` for `relativeTranslate` (subspace-sum form).** Assuming
-differentiability of `f`, `β`, and `j` at incidence points in `U`, `p` is regular on `U` if and
-only if the ranges of `fderiv ℝ (relativeTranslate f β p) x` and `fderiv ℝ j y` together span `V`
-at every incidence point `((x, y), p) ∈ U`. -/
-theorem isRegularIncidenceParameterOn_relativeTranslate_iff_range_sup_eq_top
-    {f : E → V} {β : E → ℝ} {j : W → V} {U : Set ((E × W) × V)} {p : V}
-    (hf : ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-      DifferentiableAt ℝ f x)
-    (hβ : ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-      DifferentiableAt ℝ β x)
-    (hj : ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-      DifferentiableAt ℝ j y) :
-    IsRegularIncidenceParameterOn
-        (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j U p ↔
-      ∀ x y, ((x, y), p) ∈ U → relativeTranslate f β p x = j y →
-        (fderiv ℝ (relativeTranslate f β p) x).range ⊔ (fderiv ℝ j y).range = ⊤ :=
-  isRegularIncidenceParameterOn_iff_range_sup_eq_top
-    (fun x y hU hEq ↦
-      differentiableAt_relativeTranslate_snd_fst (hf x y hU hEq) (hβ x y hU hEq) p)
-    hj
-
-/-- **Global slice-transversality criterion for `relativeTranslate` (coproduct form).** Assuming
-differentiability of `f`, `β`, and `j` at incidence points, `p` is a regular incidence parameter if
-and only if `(fderiv ℝ (relativeTranslate f β p) x).coprod (-fderiv ℝ j y)` is surjective whenever
-`relativeTranslate f β p x = j y`. -/
-theorem isRegularIncidenceParameter_relativeTranslate_iff_surjective_coprod
-    {f : E → V} {β : E → ℝ} {j : W → V} {p : V}
-    (hf : ∀ x y, relativeTranslate f β p x = j y → DifferentiableAt ℝ f x)
-    (hβ : ∀ x y, relativeTranslate f β p x = j y → DifferentiableAt ℝ β x)
-    (hj : ∀ x y, relativeTranslate f β p x = j y → DifferentiableAt ℝ j y) :
-    IsRegularIncidenceParameter
-        (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j p ↔
-      ∀ x y, relativeTranslate f β p x = j y →
-        Surjective ((fderiv ℝ (relativeTranslate f β p) x).coprod (-fderiv ℝ j y)) :=
-  isRegularIncidenceParameter_iff_surjective_coprod
-    (fun x y hEq ↦
-      differentiableAt_relativeTranslate_snd_fst (hf x y hEq) (hβ x y hEq) p)
-    hj
-
-/-- **Global slice-transversality criterion for `relativeTranslate` (subspace-sum form).** Assuming
-differentiability of `f`, `β`, and `j` at incidence points, `p` is a regular incidence parameter if
-and only if the ranges of `fderiv ℝ (relativeTranslate f β p) x` and `fderiv ℝ j y` together span
-`V` whenever `relativeTranslate f β p x = j y`. -/
-theorem isRegularIncidenceParameter_relativeTranslate_iff_range_sup_eq_top
-    {f : E → V} {β : E → ℝ} {j : W → V} {p : V}
-    (hf : ∀ x y, relativeTranslate f β p x = j y → DifferentiableAt ℝ f x)
-    (hβ : ∀ x y, relativeTranslate f β p x = j y → DifferentiableAt ℝ β x)
-    (hj : ∀ x y, relativeTranslate f β p x = j y → DifferentiableAt ℝ j y) :
-    IsRegularIncidenceParameter
-        (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j p ↔
-      ∀ x y, relativeTranslate f β p x = j y →
-        (fderiv ℝ (relativeTranslate f β p) x).range ⊔ (fderiv ℝ j y).range = ⊤ :=
-  isRegularIncidenceParameter_iff_range_sup_eq_top
-    (fun x y hEq ↦
-      differentiableAt_relativeTranslate_snd_fst (hf x y hEq) (hβ x y hEq) p)
-    hj
-
 end Transversality
 
 section FiniteDimensional
@@ -513,7 +430,7 @@ variable {E V W : Type*}
 
 /-- **Generic relative perturbations on a subset `U` (measure form).** For `C^n` data along the
 incidence locus inside `U ⊆ (E × W) × V` above the Morse--Sard threshold
-`finrank ℝ E + finrank ℝ W - finrank ℝ V + 1 ≤ n`, if `β` is locally nonnegative and `f` is already
+`finrank ℝ E + finrank ℝ W - finrank ℝ V + 1 ≤ n`, if `fderiv ℝ β` vanishes and `f` is already
 transverse to `j` at incidence points in `U` where `β` vanishes, then the parameters `p : V` failing
 regularity on `U` have additive Haar measure zero. -/
 theorem addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zero
@@ -522,7 +439,7 @@ theorem addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zer
     (hf : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n f z.1.1)
     (hβ : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n β z.1.1)
     (hj : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n j z.1.2)
-    (hnonneg : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ∀ᶠ x' in 𝓝 z.1.1, 0 ≤ β x')
+    (hβ0 : ∀ z ∈ U, β z.1.1 = 0 → f z.1.1 = j z.1.2 → fderiv ℝ β z.1.1 = 0)
     (hgood : ∀ z ∈ U, β z.1.1 = 0 → f z.1.1 = j z.1.2 →
       Surjective ((fderiv ℝ f z.1.1).coprod (-fderiv ℝ j z.1.2)))
     (hn : ((finrank ℝ E + finrank ℝ W - finrank ℝ V + 1 : ℕ) : ℕ∞ω) ≤ n) :
@@ -537,8 +454,9 @@ theorem addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zer
   · have hEq : relativeTranslate f β p x = j y := incidenceEquation_eq_zero.1 hz0
     exact (surjective_fderiv_incidenceEquation_relativeTranslate_iff
       ((hf _ hzU hEq).differentiableAt hn0) ((hβ _ hzU hEq).differentiableAt hn0)
-      ((hj _ hzU hEq).differentiableAt hn0) (hnonneg _ hzU hEq)).2 fun hβ0 ↦
-      hgood _ hzU hβ0 (by rwa [relativeTranslate_apply_of_eq_zero p hβ0] at hEq)
+      ((hj _ hzU hEq).differentiableAt hn0)
+      fun h0 ↦ hβ0 _ hzU h0 (by rwa [relativeTranslate_apply_of_eq_zero p h0] at hEq)).2
+      fun h0 ↦ hgood _ hzU h0 (by rwa [relativeTranslate_apply_of_eq_zero p h0] at hEq)
 
 /-- Almost every parameter `p : V` for additive Haar measure is a regular incidence parameter on
 `U` for `relativeTranslate f β` against `j`. -/
@@ -548,7 +466,7 @@ theorem ae_isRegularIncidenceParameterOn_relativeTranslate
     (hf : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n f z.1.1)
     (hβ : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n β z.1.1)
     (hj : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n j z.1.2)
-    (hnonneg : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ∀ᶠ x' in 𝓝 z.1.1, 0 ≤ β x')
+    (hβ0 : ∀ z ∈ U, β z.1.1 = 0 → f z.1.1 = j z.1.2 → fderiv ℝ β z.1.1 = 0)
     (hgood : ∀ z ∈ U, β z.1.1 = 0 → f z.1.1 = j z.1.2 →
       Surjective ((fderiv ℝ f z.1.1).coprod (-fderiv ℝ j z.1.2)))
     (hn : ((finrank ℝ E + finrank ℝ W - finrank ℝ V + 1 : ℕ) : ℕ∞ω) ≤ n) :
@@ -556,7 +474,7 @@ theorem ae_isRegularIncidenceParameterOn_relativeTranslate
       (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j U p :=
   ae_iff.2 <|
     addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zero μ
-      hf hβ hj hnonneg hgood hn
+      hf hβ hj hβ0 hgood hn
 
 /-- The parameters `p : V` that are regular on `U` for `relativeTranslate f β` against `j` are
 dense in `V` (needing no measurable space on `V`). -/
@@ -565,7 +483,7 @@ theorem dense_setOf_isRegularIncidenceParameterOn_relativeTranslate
     (hf : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n f z.1.1)
     (hβ : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n β z.1.1)
     (hj : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ContDiffAt ℝ n j z.1.2)
-    (hnonneg : ∀ z ∈ U, relativeTranslate f β z.2 z.1.1 = j z.1.2 → ∀ᶠ x' in 𝓝 z.1.1, 0 ≤ β x')
+    (hβ0 : ∀ z ∈ U, β z.1.1 = 0 → f z.1.1 = j z.1.2 → fderiv ℝ β z.1.1 = 0)
     (hgood : ∀ z ∈ U, β z.1.1 = 0 → f z.1.1 = j z.1.2 →
       Surjective ((fderiv ℝ f z.1.1).coprod (-fderiv ℝ j z.1.2)))
     (hn : ((finrank ℝ E + finrank ℝ W - finrank ℝ V + 1 : ℕ) : ℕ∞ω) ≤ n) :
@@ -573,7 +491,7 @@ theorem dense_setOf_isRegularIncidenceParameterOn_relativeTranslate
       (fun z : E × V ↦ relativeTranslate f β z.2 z.1) j U p} := by
   borelize V
   exact Measure.dense_of_ae (μ := (addHaar : Measure V))
-    (ae_isRegularIncidenceParameterOn_relativeTranslate addHaar hf hβ hj hnonneg hgood hn)
+    (ae_isRegularIncidenceParameterOn_relativeTranslate addHaar hf hβ hj hβ0 hgood hn)
 
 /-- **Generic relative perturbations (global `C^n` measure form).** For `C^n` maps `f`, `β`, and
 `j` with `0 ≤ β` satisfying the Morse--Sard threshold
@@ -593,7 +511,8 @@ theorem addHaar_setOf_not_isRegularIncidenceParameter_relativeTranslate_eq_zero
   simpa only [isRegularIncidenceParameterOn_univ] using
     addHaar_setOf_not_isRegularIncidenceParameterOn_relativeTranslate_eq_zero (U := univ) μ
       (fun _ _ _ ↦ hf.contDiffAt) (fun _ _ _ ↦ hβ.contDiffAt) (fun _ _ _ ↦ hj.contDiffAt)
-      (fun _ _ _ ↦ Eventually.of_forall hnonneg) (fun z _ ↦ hgood z.1.1 z.1.2) hn
+      (fun z _ h0 _ ↦ IsLocalMin.fderiv_eq_zero (Eventually.of_forall fun y ↦ h0.symm ▸ hnonneg y))
+      (fun z _ ↦ hgood z.1.1 z.1.2) hn
 
 /-- Almost every parameter `p : V` for additive Haar measure makes `relativeTranslate f β p`
 transverse to `j`. -/
@@ -625,7 +544,8 @@ theorem dense_setOf_isRegularIncidenceParameter_relativeTranslate
   simpa only [isRegularIncidenceParameterOn_univ] using
     dense_setOf_isRegularIncidenceParameterOn_relativeTranslate (U := univ)
       (fun _ _ _ ↦ hf.contDiffAt) (fun _ _ _ ↦ hβ.contDiffAt) (fun _ _ _ ↦ hj.contDiffAt)
-      (fun _ _ _ ↦ Eventually.of_forall hnonneg) (fun z _ ↦ hgood z.1.1 z.1.2) hn
+      (fun z _ h0 _ ↦ IsLocalMin.fderiv_eq_zero (Eventually.of_forall fun y ↦ h0.symm ▸ hnonneg y))
+      (fun z _ ↦ hgood z.1.1 z.1.2) hn
 
 end FiniteDimensional
 
@@ -651,8 +571,7 @@ theorem ae_forall_isRegularIncidenceParameterOn_relativeTranslate
       ContDiffAt ℝ (n i) (β i) z.1.1)
     (hj : ∀ i, ∀ z ∈ U i, relativeTranslate (f i) (β i) z.2 z.1.1 = j i z.1.2 →
       ContDiffAt ℝ (n i) (j i) z.1.2)
-    (hnonneg : ∀ i, ∀ z ∈ U i, relativeTranslate (f i) (β i) z.2 z.1.1 = j i z.1.2 →
-      ∀ᶠ x' in 𝓝 z.1.1, 0 ≤ β i x')
+    (hβ0 : ∀ i, ∀ z ∈ U i, β i z.1.1 = 0 → f i z.1.1 = j i z.1.2 → fderiv ℝ (β i) z.1.1 = 0)
     (hgood : ∀ i, ∀ z ∈ U i, β i z.1.1 = 0 → f i z.1.1 = j i z.1.2 →
       Surjective ((fderiv ℝ (f i) z.1.1).coprod (-fderiv ℝ (j i) z.1.2)))
     (hn : ∀ i, ((finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ V + 1 : ℕ) : ℕ∞ω) ≤ n i) :
@@ -660,7 +579,7 @@ theorem ae_forall_isRegularIncidenceParameterOn_relativeTranslate
       (fun z : E i × V ↦ relativeTranslate (f i) (β i) z.2 z.1) (j i) (U i) p :=
   ae_all_iff.2 fun i ↦
     ae_isRegularIncidenceParameterOn_relativeTranslate μ
-      (hf i) (hβ i) (hj i) (hnonneg i) (hgood i) (hn i)
+      (hf i) (hβ i) (hj i) (hβ0 i) (hgood i) (hn i)
 
 /-- Parameters `p : V` simultaneously regular on `U i` for `relativeTranslate (f i) (β i)` against
 `j i` across a countable family are dense in `V` (needing no measurable space on `V`). -/
@@ -673,8 +592,7 @@ theorem dense_setOf_forall_isRegularIncidenceParameterOn_relativeTranslate
       ContDiffAt ℝ (n i) (β i) z.1.1)
     (hj : ∀ i, ∀ z ∈ U i, relativeTranslate (f i) (β i) z.2 z.1.1 = j i z.1.2 →
       ContDiffAt ℝ (n i) (j i) z.1.2)
-    (hnonneg : ∀ i, ∀ z ∈ U i, relativeTranslate (f i) (β i) z.2 z.1.1 = j i z.1.2 →
-      ∀ᶠ x' in 𝓝 z.1.1, 0 ≤ β i x')
+    (hβ0 : ∀ i, ∀ z ∈ U i, β i z.1.1 = 0 → f i z.1.1 = j i z.1.2 → fderiv ℝ (β i) z.1.1 = 0)
     (hgood : ∀ i, ∀ z ∈ U i, β i z.1.1 = 0 → f i z.1.1 = j i z.1.2 →
       Surjective ((fderiv ℝ (f i) z.1.1).coprod (-fderiv ℝ (j i) z.1.2)))
     (hn : ∀ i, ((finrank ℝ (E i) + finrank ℝ (W i) - finrank ℝ V + 1 : ℕ) : ℕ∞ω) ≤ n i) :
@@ -682,7 +600,7 @@ theorem dense_setOf_forall_isRegularIncidenceParameterOn_relativeTranslate
       (fun z : E i × V ↦ relativeTranslate (f i) (β i) z.2 z.1) (j i) (U i) p} := by
   borelize V
   exact Measure.dense_of_ae (μ := (addHaar : Measure V))
-    (ae_forall_isRegularIncidenceParameterOn_relativeTranslate addHaar hf hβ hj hnonneg hgood hn)
+    (ae_forall_isRegularIncidenceParameterOn_relativeTranslate addHaar hf hβ hj hβ0 hgood hn)
 
 /-- **Simultaneous small localized relative perturbations.** Under the hypotheses of
 `TauCeti.dense_setOf_forall_isRegularIncidenceParameterOn_relativeTranslate`, if each cutoff `β i`
@@ -697,8 +615,7 @@ theorem exists_forall_isRegularIncidenceParameterOn_relativeTranslate
       ContDiffAt ℝ (n i) (β i) z.1.1)
     (hj : ∀ i, ∀ z ∈ U i, relativeTranslate (f i) (β i) z.2 z.1.1 = j i z.1.2 →
       ContDiffAt ℝ (n i) (j i) z.1.2)
-    (hnonneg : ∀ i, ∀ z ∈ U i, relativeTranslate (f i) (β i) z.2 z.1.1 = j i z.1.2 →
-      ∀ᶠ x' in 𝓝 z.1.1, 0 ≤ β i x')
+    (hβ0 : ∀ i, ∀ z ∈ U i, β i z.1.1 = 0 → f i z.1.1 = j i z.1.2 → fderiv ℝ (β i) z.1.1 = 0)
     (hC : ∀ i, ∀ x ∈ C i, β i x = 0)
     (hgood : ∀ i, ∀ z ∈ U i, β i z.1.1 = 0 → f i z.1.1 = j i z.1.2 →
       Surjective ((fderiv ℝ (f i) z.1.1).coprod (-fderiv ℝ (j i) z.1.2)))
@@ -709,7 +626,7 @@ theorem exists_forall_isRegularIncidenceParameterOn_relativeTranslate
         (fun z : E i × V ↦ relativeTranslate (f i) (β i) z.2 z.1) (j i) (U i) p) ∧
       ∀ i, EqOn (relativeTranslate (f i) (β i) p) (f i) (C i) := by
   have hdense := dense_setOf_forall_isRegularIncidenceParameterOn_relativeTranslate
-    hf hβ hj hnonneg hgood hn
+    hf hβ hj hβ0 hgood hn
   obtain ⟨p, hp_ball, hp_reg⟩ := Metric.dense_iff.1 hdense 0 r hr
   exact ⟨p, mem_ball_zero_iff.1 hp_ball, hp_reg,
     fun i ↦ eqOn_relativeTranslate_of_eq_zero p (hC i)⟩
@@ -750,7 +667,8 @@ theorem exists_forall_isRegularIncidenceParameter_relativeTranslate
       (fun _ _ _ _ ↦ (hf.of_le ((min_le_left _ _).trans (min_le_left _ _))).contDiffAt)
       (fun _ _ _ _ ↦ (hβ.of_le ((min_le_left _ _).trans (min_le_right _ _))).contDiffAt)
       (fun i _ _ _ ↦ ((hj i).of_le (min_le_right _ _)).contDiffAt)
-      (fun _ _ _ _ ↦ Eventually.of_forall hnonneg)
+      (fun _ z _ h0 _ ↦
+        IsLocalMin.fderiv_eq_zero (Eventually.of_forall fun y ↦ h0.symm ▸ hnonneg y))
       (fun _ x hx ↦ (hzero x).2 hx)
       (fun i z _ hβ0 ↦ hgood i z.1.1 ((hzero z.1.1).1 hβ0) z.1.2) hn hr
   exact ⟨p, hpr, fun i ↦ isRegularIncidenceParameterOn_univ.1 (hpreg i),
@@ -866,20 +784,17 @@ example (p : ℝ) :
     ¬ IsRegularIncidenceParameter
       (fun z : ℝ × ℝ ↦ relativeTranslate (fun x : ℝ ↦ x ^ 2) (fun x : ℝ ↦ x ^ 2) z.2 z.1)
       (fun _ : Unit ↦ (0 : ℝ)) p := by
+  rw [isRegularIncidenceParameter_const, isRegularParameter_iff]
   intro hp
   have hd : HasDerivAt (fun x : ℝ ↦ x ^ 2) 0 (0 : ℝ) := by
     simpa using hasDerivAt_pow 2 (0 : ℝ)
   have hsq : DifferentiableAt ℝ (fun x : ℝ ↦ x ^ 2) 0 := hd.differentiableAt
-  obtain ⟨⟨u, _⟩, huv⟩ :=
-    hp.surjective_coprod (x := 0) (y := ()) (by norm_num [relativeTranslate]) 1
-  have h0 : fderiv ℝ (relativeTranslate (fun x : ℝ ↦ x ^ 2) (fun x : ℝ ↦ x ^ 2) p) 0 = 0 := by
-    rw [fderiv_relativeTranslate_of_eventually_nonneg_of_eq_zero hsq
-      (Eventually.of_forall fun x ↦ sq_nonneg x) (by norm_num) p, hd.hasFDerivAt.fderiv]
-    ext
-    simp
-  have hj0 : fderiv ℝ (fun _ : Unit ↦ (0 : ℝ)) () = 0 := by simp
-  rw [h0, hj0] at huv
-  simp at huv
+  obtain ⟨u, hu⟩ := hp 0 (by norm_num [relativeTranslate]) 1
+  rw [← fderiv_slice_left (differentiableAt_relativeTranslate_snd_fst hsq hsq p),
+    fderiv_relativeTranslate_of_eventually_nonneg_of_eq_zero hsq
+      (Eventually.of_forall fun x ↦ sq_nonneg x) (by norm_num) p,
+    hd.hasFDerivAt.fderiv] at hu
+  simp at hu
 
 end Examples
 
