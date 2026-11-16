@@ -136,12 +136,16 @@ theorem integrable_quantizationKernel_integrand (ha : Integrable (fun ξ ↦ a (
   simpa only [inner_neg_right, neg_neg] using
     (Real.fourierIntegral_convergent_iff (-(x - y))).2 (ha.comp_smul two_pi_pos.ne')
 
+/-- The change of variables `ξ = 2πζ` in a real integral over `E`, with `n = finrank ℝ E`:
+`∫ g(2πζ) dζ = (2π)⁻ⁿ ∫ g(ξ) dξ`. -/
+private theorem integral_comp_two_pi_smul (g : E → ℝ) :
+    ∫ ζ, g ((2 * π) • ζ) = ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, g ξ := by
+  rw [Measure.integral_comp_smul, smul_eq_mul, abs_of_pos (by positivity)]
+
 /-- **Uniform bound.** `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ` for every `y`. -/
 theorem norm_quantizationKernel_le (a : E × E → V →L[ℂ] W) (x y : E) :
     ‖quantizationKernel a x y‖ ≤ ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖a (x, ξ)‖ := by
-  have hpos : 0 < ((2 * π) ^ finrank ℝ E)⁻¹ := by positivity
-  rw [← abs_of_pos hpos, ← smul_eq_mul,
-    ← Measure.integral_comp_smul (μ := volume) (f := fun ξ ↦ ‖a (x, ξ)‖)]
+  rw [← integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ)‖]
   exact (norm_integral_le_integral_norm _).trans_eq
     (by simp_rw [Circle.norm_smul (E := V →L[ℂ] W)])
 
@@ -185,7 +189,6 @@ theorem norm_quantizationKernel_sub_quantizationKernel_right_le
     (y y' : E) :
     ‖quantizationKernel a x y - quantizationKernel a x y'‖ ≤
       ((2 * π) ^ finrank ℝ E)⁻¹ * ‖y - y'‖ * ∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖ := by
-  have hpos : 0 < ((2 * π) ^ finrank ℝ E)⁻¹ := by positivity
   rw [quantizationKernel_def, quantizationKernel_def,
     ← integral_sub (integrable_quantizationKernel_integrand ha y)
       (integrable_quantizationKernel_integrand ha y')]
@@ -195,9 +198,7 @@ theorem norm_quantizationKernel_sub_quantizationKernel_right_le
   · refine (Real.norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
     rw [sub_sub_sub_cancel_left, norm_sub_rev, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
     ring
-  · have hc := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖) (2 * π)
-    rw [smul_eq_mul, abs_of_pos hpos] at hc
-    rw [integral_const_mul, hc]
+  · rw [integral_const_mul, integral_comp_two_pi_smul fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖]
     ring
 
 /-- **Increments in the first variable.** If the frequency slices `ξ ↦ a(x, ξ)` and
@@ -210,7 +211,6 @@ theorem norm_quantizationKernel_sub_quantizationKernel_left_le {x' : E}
     ‖quantizationKernel a x y - quantizationKernel a x' y‖ ≤
       ((2 * π) ^ finrank ℝ E)⁻¹ *
         (‖x - x'‖ * (∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖) + ∫ ξ, ‖a (x, ξ) - a (x', ξ)‖) := by
-  have hpos : 0 < ((2 * π) ^ finrank ℝ E)⁻¹ := by positivity
   have hd : Integrable (fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖) := (ha.sub hx').norm
   rw [quantizationKernel_def, quantizationKernel_def,
     ← integral_sub (integrable_quantizationKernel_integrand ha y)
@@ -232,14 +232,10 @@ theorem norm_quantizationKernel_sub_quantizationKernel_left_le {x' : E}
       rw [sub_sub_sub_cancel_right, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
       ring
     · exact (Circle.norm_smul (E := V →L[ℂ] W) _ _).le
-  · have hc₁ := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖) (2 * π)
-    have hc₂ := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖) (2 * π)
-    rw [smul_eq_mul, abs_of_pos hpos] at hc₁ hc₂
-    have h₁ : ∫ ζ, ‖x - x'‖ * (‖(2 * π) • ζ‖ * ‖a (x, (2 * π) • ζ)‖) =
-        ‖x - x'‖ * (((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖) := by
-      rw [integral_const_mul, hc₁]
-    rw [Pi.add_def, integral_add ((ha'.comp_smul two_pi_pos.ne').const_mul _)
-      (hd.comp_smul two_pi_pos.ne'), h₁, hc₂]
+  · rw [Pi.add_def, integral_add ((ha'.comp_smul two_pi_pos.ne').const_mul _)
+      (hd.comp_smul two_pi_pos.ne'), integral_const_mul,
+      integral_comp_two_pi_smul fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖,
+      integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖]
     ring
 
 /-- **Joint continuity.** For a continuous coefficient whose growth bound

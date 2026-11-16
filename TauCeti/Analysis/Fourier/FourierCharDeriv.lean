@@ -68,9 +68,7 @@ theorem norm_fourierChar_sub_fourierChar_le (t t' : ℝ) :
     ‖(𝐞 t : ℂ) - 𝐞 t'‖ ≤ 2 * π * |t - t'| := by
   have h := TauCeti.lipschitzWith_one_circleExp.dist_le_mul (2 * π * t) (2 * π * t')
   rw [← fourierChar_apply', ← fourierChar_apply'] at h
-  calc ‖(𝐞 t : ℂ) - 𝐞 t'‖ = dist (𝐞 t) (𝐞 t') := by
-        rw [← Complex.dist_eq]
-        exact (Subtype.dist_eq _ _).symm
+  calc ‖(𝐞 t : ℂ) - 𝐞 t'‖ = dist (𝐞 t) (𝐞 t') := (Circle.dist_eq_norm_coe_sub _ _).symm
     _ ≤ 2 * π * |t - t'| := by
         simpa [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos two_pi_pos] using h
 
