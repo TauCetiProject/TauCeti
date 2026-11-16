@@ -156,7 +156,7 @@ theorem generalizedGammaMeasure_one_shape_neg_eq_generalizedExtremeValueMeasure
     generalizedExtremeValueMeasure_of_pos (div_pos hs hc), expMeasure]
   apply Measure.map_congr
   filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
-  rw [generalizedExtremeValueMap_eq_rpow hx, ite_eq_right (inv_ne_zero hc.ne')]
+  rw [generalizedExtremeValueMap_eq_rpow hx (inv_ne_zero hc.ne')]
   simp only [inv_neg]
   field_simp
   ring
@@ -191,8 +191,7 @@ theorem weibullMeasure_map_neg (hc : 0 < c) :
     generalizedExtremeValueMeasure_of_pos (div_pos hs hc), expMeasure]
   apply Measure.map_congr
   filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
-  rw [generalizedExtremeValueMap_eq_rpow hx,
-    ite_eq_right (neg_ne_zero.mpr (inv_ne_zero hc.ne'))]
+  rw [generalizedExtremeValueMap_eq_rpow hx (neg_ne_zero.mpr (inv_ne_zero hc.ne'))]
   simp only [Function.comp_apply, neg_neg]
   field_simp
   ring
