@@ -48,6 +48,13 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
     conjTranspose_eq_transpose_of_trivial]
   exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hO).trans (map_one _))
 
+/-- An orthogonal real matrix `O`, as a complex matrix, satisfies `O Oᵀ = 1`. -/
+theorem map_ofReal_mul_transpose_eq_one [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
+    (hO : O ∈ orthogonalGroup n ℝ) : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
+  rw [mem_orthogonalGroup_iff] at hO
+  rw [← transpose_map]
+  exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hO).trans (map_one _))
+
 /-- A real symmetric matrix is Hermitian as a complex matrix. -/
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
