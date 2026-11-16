@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Integral.SchurTest
-import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Measure.Restrict.Basic
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
 # Bounded-domain diameter estimates for Riesz potentials and weakly singular integral operators
@@ -33,15 +35,17 @@ integral of `‖x - y‖ ^ s` converges for every `s > -n`
 exponent pairs `1 ≤ p ≤ q ≤ ∞` above the scaling threshold (including `α = n` at
 `(p, q) = (1, ∞)`):
 
-* **Pointwise `Lᵖ → L^∞` estimate on `closure Ω`**
-  (`TauCeti.rieszPotential_restrict_le_of_mem_closure`, Brenner–Scott, Lemma 4.3.1): if `n / p < α`,
-  or `p = 1` and `n ≤ α`, then for every `x ∈ closure Ω`,
-  `rieszPotential (μ.restrict Ω) α f x` is bounded by
-  `rieszDiamConst μ α p ∞ * (diam Ω) ^ (α - n / p) * ‖f‖_{Lᵖ(Ω)}`, generalizing the `α = 1`,
-  `n < p < ∞` estimate `TauCeti.setLIntegral_mul_enorm_sub_rpow_one_sub_finrank_le`.
+* **Pointwise `Lᵖ → L^∞` estimates on closed balls and `closure Ω`**
+  (`TauCeti.rieszPotential_restrict_le_of_subset_closedBall` and
+  `TauCeti.rieszPotential_restrict_le_of_mem_closure`, Brenner–Scott, Lemma 4.3.1): if `n / p < α`,
+  or `p = 1` and `n ≤ α`, then whenever `Ω ⊆ closedBall x D` we have
+  `rieszPotential (μ.restrict Ω) α f x ≤ rieszDiamConst μ α p ∞ * D ^ (α - n / p) * ‖f‖_{Lᵖ(Ω)}`
+  (generalizing the `α = 1`, `n < p < ∞` estimate
+  `TauCeti.setLIntegral_mul_enorm_sub_rpow_one_sub_finrank_le`), and in particular for every
+  `x ∈ closure Ω` one may take `D = diam Ω`.
 * **Sharpness below the threshold** (`TauCeti.exists_memLp_rieszPotential_restrict_eq_top`): on a
-  nontrivial space, if `1 ≤ p < ∞`, `α < n / p`, and `x ∈ interior Ω`, there exists `f ∈ Lᵖ(Ω)`
-  with `rieszPotential (μ.restrict Ω) α f x = ∞`.
+  nontrivial space, for any `p : ℝ≥0∞`, if `α < n * p.toReal⁻¹` and `x ∈ interior Ω`, there exists
+  `f ∈ Lᵖ(Ω)` with `rieszPotential (μ.restrict Ω) α f x = ∞`.
 * **`Lᵖ → L^q` and `Lᵖ → Lᵖ` norm estimates** (`TauCeti.eLpNorm_rieszPotential_restrict_le_of_le`
   and `TauCeti.eLpNorm_rieszPotential_restrict_le`, Brenner–Scott, Lemma 4.3.6): if `1 ≤ p ≤ q ≤ ∞`
   and `n * (1/p - 1/q) < α` (or `p = 1`, `q = ∞`, `n ≤ α`), then
@@ -51,29 +55,40 @@ exponent pairs `1 ≤ p ≤ q ≤ ∞` above the scaling threshold (including `�
   `(n * μ.real (ball 0 1) / α) * (diam Ω) ^ α`.
 * **Operator-valued Bochner kernels dominated by a Riesz kernel**
   (`TauCeti.norm_setIntegral_apply_le_of_riesz_bound`,
-  `TauCeti.lpNorm_setIntegral_apply_le_of_riesz_bound`, and `TauCeti.rieszIntegralOperatorLp`):
-  on a measurable bounded set `Ω`, if `K : E → E → (G →L[𝕜] H)` satisfies
-  `‖K x y‖ ≤ C * ‖x - y‖ ^ (α - n)` off the diagonal on `Ω`, then `x ↦ ∫ y in Ω, K x y (u y) ∂μ`
-  inherits the corresponding pointwise bound on `closure Ω`, the `Lᵖ → L^q` norm bounds on `Ω`, and
-  a bundled continuous linear operator `Lp G p (μ.restrict Ω) →L[𝕜] Lp H p (μ.restrict Ω)`.
+  `TauCeti.eLpNorm_setIntegral_apply_le_of_riesz_bound`,
+  `TauCeti.lpNorm_setIntegral_apply_le_of_riesz_bound_of_le`,
+  `TauCeti.lpNorm_setIntegral_apply_le_of_riesz_bound`, and
+  `TauCeti.integralOperatorLpOfRieszBound`): on a measurable bounded set `Ω`, at a fixed point
+  `x ∈ closure Ω`, if `T : E → (G →L[𝕜] H)` satisfies `‖T y‖ ≤ C * ‖x - y‖ ^ (α - n)` for all
+  `y ∈ Ω` with `x ≠ y` and `u ∈ Lᵖ(Ω)` above the scaling threshold, then `∫ y in Ω, T y (u y) ∂μ`
+  satisfies the corresponding pointwise norm bound; and if `K : E → E → (G →L[𝕜] H)` is jointly
+  a.e. strongly measurable on `Ω × Ω` and satisfies `‖K x y‖ ≤ C * ‖x - y‖ ^ (α - n)` off the
+  diagonal on `Ω × Ω`, then `x ↦ ∫ y in Ω, K x y (u y) ∂μ` satisfies the corresponding `Lᵖ → L^q`
+  `eLpNorm` and `lpNorm` bounds (with `TauCeti.lpNorm_setIntegral_apply_le_of_riesz_bound` as the
+  `Lᵖ → Lᵖ` real `lpNorm` specialization) and induces a bundled continuous linear operator
+  `Lp G p (μ.restrict Ω) →L[𝕜] Lp H p (μ.restrict Ω)`.
 
 The `ℝ≥0∞` potential estimates require neither measurability of `Ω` (since `closure Ω` and
 `closedBall x D` are closed) nor measurability of `f`.
 
 ## Main declarations
 
-* `TauCeti.rieszDiamConst`: the geometric constant in the bounded-domain `Lᵖ → L^q` Riesz bound.
+* `TauCeti.rieszDiamConst`, `TauCeti.rieszDiamConst_def`: the geometric constant in the
+  bounded-domain `Lᵖ → L^q` Riesz bound.
 * `TauCeti.rieszPotential_restrict_le_of_subset_closedBall`,
   `TauCeti.rieszPotential_restrict_le_of_mem_closure`: pointwise `Lᵖ → L^∞` bounds.
 * `TauCeti.eLpNorm_rieszPotential_restrict_le_of_le`,
   `TauCeti.eLpNorm_rieszPotential_restrict_le`: `Lᵖ → L^q` and `Lᵖ → Lᵖ` norm bounds on bounded
   sets.
 * `TauCeti.norm_setIntegral_apply_le_of_riesz_bound`,
+  `TauCeti.eLpNorm_setIntegral_apply_le_of_riesz_bound`,
+  `TauCeti.lpNorm_setIntegral_apply_le_of_riesz_bound_of_le`,
   `TauCeti.lpNorm_setIntegral_apply_le_of_riesz_bound`,
-  `TauCeti.rieszIntegralOperatorLp`: pointwise, `Lᵖ`, and bundled operator bounds for Bochner
+  `TauCeti.integralOperatorLpOfRieszBound`: pointwise `closure Ω` bound, `Lᵖ → L^q` `eLpNorm` and
+  `lpNorm` bounds, `Lᵖ → Lᵖ` `lpNorm` specialization, and bundled operator on `Lᵖ(Ω)` for Bochner
   integral operators with Riesz-dominated kernels.
 * `TauCeti.exists_memLp_rieszPotential_restrict_eq_top`: divergence at interior poles when
-  `1 ≤ p < ∞` and `α < n / p`.
+  `α < n * p.toReal⁻¹`.
 
 ## References
 
@@ -92,32 +107,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-/-- Almost every point under `μ.restrict s` belongs to `closure s`, whether or not `s` is
-measurable. -/
-private theorem ae_restrict_mem_closure {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
-    [OpensMeasurableSpace α] {μ : Measure α} (s : Set α) :
-    ∀ᵐ x ∂μ.restrict s, x ∈ closure s :=
-  ae_restrict_of_ae_restrict_of_subset subset_closure
-    (ae_restrict_mem isClosed_closure.measurableSet)
-
-/-- Equivalence between the `ℝ≥0∞` product condition `n < k * p` (or `p = 1` and `n ≤ k`) for an
-integer order `k ≥ 1` and the real reciprocal form `n * p.toReal⁻¹ < k` (or `p = 1` and `n ≤ k`). -/
-theorem nat_mul_lt_iff_finrank_mul_toReal_inv_lt {E : Type*} [AddCommGroup E] [Module ℝ E]
-    {k : ℕ} (hk : 1 ≤ k) {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    (finrank ℝ E : ℝ≥0∞) < k * p ∨ (p = 1 ∧ finrank ℝ E ≤ k) ↔
-      (finrank ℝ E : ℝ) * p.toReal⁻¹ < k ∨ (p = 1 ∧ (finrank ℝ E : ℝ) ≤ k) := by
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · have hk0 : (k : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-    have hkr : (0 : ℝ) < k := Nat.cast_pos.2 (by omega)
-    simp [ENNReal.mul_top hk0, hkr]
-  have hp_pos : 0 < p.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp_top
-  have hlt : (finrank ℝ E : ℝ≥0∞) < k * p ↔ (finrank ℝ E : ℝ) * p.toReal⁻¹ < k := by
-    rw [← ENNReal.toReal_lt_toReal (ENNReal.natCast_ne_top _)
-      (ENNReal.mul_ne_top (ENNReal.natCast_ne_top _) hp_top),
-      ENNReal.toReal_natCast, ENNReal.toReal_mul, ENNReal.toReal_natCast,
-      ← div_lt_iff₀ hp_pos, div_eq_mul_inv]
-  simp only [hlt, Nat.cast_le]
-
 section DiamConst
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
@@ -133,6 +122,14 @@ simplifies to `1`; and for `q = ∞`, `1 < p < ∞` it gives the Hölder radial 
 def rieszDiamConst (μ : Measure E) (α : ℝ) (p q : ℝ≥0∞) : ℝ :=
   let δ := p.toReal⁻¹ - q.toReal⁻¹
   ((finrank ℝ E : ℝ) * μ.real (ball 0 1) * (1 - δ) / (α - (finrank ℝ E : ℝ) * δ)) ^ (1 - δ)
+
+/-- Explicit formula for `TauCeti.rieszDiamConst`. -/
+theorem rieszDiamConst_def (μ : Measure E) (α : ℝ) (p q : ℝ≥0∞) :
+    rieszDiamConst μ α p q =
+      ((finrank ℝ E : ℝ) * μ.real (ball 0 1) * (1 - (p.toReal⁻¹ - q.toReal⁻¹)) /
+        (α - (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹))) ^
+      (1 - (p.toReal⁻¹ - q.toReal⁻¹)) :=
+  (rfl)
 
 /-- At `p = q`, the bounded-domain Riesz constant is `n * μ.real (ball 0 1) / α`. -/
 @[simp]
@@ -153,13 +150,6 @@ theorem rieszDiamConst_of_subsingleton [Subsingleton E] (μ : Measure E) (α : �
   have h1 : 1 - (p.toReal⁻¹ - q.toReal⁻¹) ≠ 0 := sub_ne_zero.2 hδ.symm
   simp [rieszDiamConst, finrank_zero_of_subsingleton, Real.zero_rpow h1]
 
-private theorem toReal_inv_sub_toReal_inv_le_one {p : ℝ≥0∞} (hp : 1 ≤ p) (q : ℝ≥0∞) :
-    p.toReal⁻¹ - q.toReal⁻¹ ≤ 1 := by
-  have hp1 : p.toReal⁻¹ ≤ 1 := by
-    simpa only [one_div, sub_nonneg] using ENNReal.one_sub_one_div_toReal_nonneg hp
-  have hq0 : 0 ≤ q.toReal⁻¹ := inv_nonneg.2 ENNReal.toReal_nonneg
-  linarith
-
 /-- The constant `rieszDiamConst μ α p q` is nonnegative for `1 ≤ p` and
 `n * (1/p - 1/q) ≤ α`. -/
 theorem rieszDiamConst_nonneg (μ : Measure E) {α : ℝ} {p q : ℝ≥0∞} (hp : 1 ≤ p)
@@ -168,7 +158,7 @@ theorem rieszDiamConst_nonneg (μ : Measure E) {α : ℝ} {p q : ℝ≥0∞} (hp
   apply Real.rpow_nonneg
   exact div_nonneg
     (mul_nonneg (mul_nonneg (Nat.cast_nonneg _) measureReal_nonneg)
-      (sub_nonneg.2 (toReal_inv_sub_toReal_inv_le_one hp q)))
+      (sub_nonneg.2 (ENNReal.toReal_inv_sub_toReal_inv_le_one hp q)))
     (sub_nonneg.2 hα)
 
 /-- On a nontrivial space with an additive Haar measure, `rieszDiamConst μ α p q` is strictly
@@ -178,7 +168,7 @@ theorem rieszDiamConst_pos [Nontrivial E] [FiniteDimensional ℝ E]
     (hα : (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹) < α) :
     0 < rieszDiamConst μ α p q := by
   rw [rieszDiamConst]
-  rcases (toReal_inv_sub_toReal_inv_le_one hp q).eq_or_lt with h1 | hlt
+  rcases (ENNReal.toReal_inv_sub_toReal_inv_le_one hp q).eq_or_lt with h1 | hlt
   · simp [h1]
   have hn : (0 : ℝ) < finrank ℝ E := Nat.cast_pos.2 finrank_pos
   have hω : 0 < μ.real (ball 0 1) :=
@@ -186,6 +176,20 @@ theorem rieszDiamConst_pos [Nontrivial E] [FiniteDimensional ℝ E]
   exact Real.rpow_pos_of_pos (div_pos (mul_pos (mul_pos hn hω) (sub_pos.2 hlt)) (sub_pos.2 hα)) _
 
 end DiamConst
+
+private theorem add_sub_mul_one_sub_inv_eq {n α δ : ℝ} (hδ : δ < 1) :
+    n + (α - n) * (1 - δ)⁻¹ = (α - n * δ) / (1 - δ) := by
+  have : 1 - δ ≠ 0 := (sub_pos.2 hδ).ne'
+  rw [← div_eq_mul_inv]
+  field_simp
+  ring
+
+private theorem neg_lt_sub_mul_one_sub_inv {n α δ : ℝ} (hδ : δ < 1) (hα : n * δ < α) :
+    -n < (α - n) * (1 - δ)⁻¹ := by
+  have hpos : 0 < n + (α - n) * (1 - δ)⁻¹ := by
+    rw [add_sub_mul_one_sub_inv_eq hδ]
+    exact div_pos (sub_pos.2 hα) (sub_pos.2 hδ)
+  linarith
 
 section Estimates
 
@@ -211,8 +215,7 @@ private theorem ofReal_kernel_integral_rpow_eq {α D : ℝ} {p q : ℝ≥0∞}
   have h1δ : 0 < 1 - δ := sub_pos.2 hδ
   have h1δ_ne : 1 - δ ≠ 0 := h1δ.ne'
   have hαn : 0 < α - n * δ := sub_pos.2 hα
-  have hns_eq : n + s = (α - n * δ) / (1 - δ) := by
-    dsimp [s]; rw [← div_eq_mul_inv]; field_simp; ring
+  have hns_eq : n + s = (α - n * δ) / (1 - δ) := add_sub_mul_one_sub_inv_eq hδ
   have hns : 0 < n + s := hns_eq ▸ div_pos hαn h1δ
   have hbase : 0 ≤ n * μ.real (ball 0 1) * (D ^ (n + s) / (n + s)) :=
     mul_nonneg (mul_nonneg (Nat.cast_nonneg _) measureReal_nonneg)
@@ -231,23 +234,6 @@ private theorem ofReal_kernel_integral_rpow_eq {α D : ℝ} {p q : ℝ≥0∞}
           (Real.rpow_nonneg hD _)
     _ = rieszDiamConst μ α p q * D ^ (α - n * δ) := by
         rw [hcoeff, ← Real.rpow_mul hD, hexp, rieszDiamConst]
-
-/-- On a nontrivial space, a bounded set of diameter `0` has Haar restriction `0`. -/
-private theorem restrict_eq_zero_of_diam_eq_zero [Nontrivial E] {Ω : Set E}
-    (hb : Bornology.IsBounded Ω) (hd : diam Ω = 0) : μ.restrict Ω = 0 := by
-  rw [← Measure.measure_univ_eq_zero, Measure.restrict_apply_univ]
-  rcases Ω.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · exact measure_empty
-  · refine measure_mono_null (fun y hy => mem_singleton_iff.2 ?_) (measure_singleton x₀)
-    exact dist_le_zero.1 ((dist_le_diam_of_mem hb hy hx₀).trans_eq hd)
-
-omit [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- On a zero-dimensional space, `rieszPotential ν α f` vanishes identically whenever `0 < α`. -/
-private theorem rieszPotential_eq_zero_of_subsingleton [Subsingleton E] (ν : Measure E)
-    {α : ℝ} (hα : 0 < α) (f : E → F) : rieszPotential ν α f = 0 := by
-  funext x
-  simp [rieszPotential_def, Subsingleton.elim (x - _) 0, finrank_zero_of_subsingleton,
-    ENNReal.zero_rpow_of_pos hα]
 
 omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- Endpoint `p = 1`, `n ≤ α` of `rieszPotential_restrict_le_of_subset_closedBall`: on
@@ -280,11 +266,7 @@ private theorem rieszPotential_restrict_le_of_one_lt_of_subset_closedBall [Nontr
     rieszPotential (μ.restrict Ω) α f x ≤
       ENNReal.ofReal (rieszDiamConst μ α p ∞ * D ^ (α - (finrank ℝ E : ℝ) * p.toReal⁻¹)) *
         eLpNorm f p (μ.restrict Ω) := by
-  have hp_inv_lt : p.toReal⁻¹ < 1 := by
-    rcases eq_or_ne p ∞ with rfl | hp_top
-    · simp
-    · exact inv_lt_one_of_one_lt₀
-        (by simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp1)
+  have hp_inv_lt : p.toReal⁻¹ < 1 := ENNReal.toReal_inv_lt_one hp1
   have hC_pos : 0 < rieszDiamConst μ α p ∞ * D ^ (α - (finrank ℝ E : ℝ) * p.toReal⁻¹) :=
     mul_pos (rieszDiamConst_pos μ hp1.le (by simpa using hαp)) (Real.rpow_pos_of_pos hD_pos _)
   rcases eq_or_ne (eLpNorm f p (μ.restrict Ω)) ∞ with hN | hN
@@ -293,11 +275,7 @@ private theorem rieszPotential_restrict_le_of_one_lt_of_subset_closedBall [Nontr
   have hk : Measurable fun y : E => ‖x - y‖ₑ ^ (α - finrank ℝ E) := by fun_prop
   set δ := p.toReal⁻¹
   set s := (α - finrank ℝ E) * (1 - δ)⁻¹
-  have hs : -(finrank ℝ E : ℝ) < s := by
-    have h1_ne : 1 - δ ≠ 0 := (sub_pos.2 hp_inv_lt).ne'
-    have hns : (finrank ℝ E : ℝ) + s = (α - (finrank ℝ E : ℝ) * δ) / (1 - δ) := by
-      dsimp [s]; rw [← div_eq_mul_inv]; field_simp; ring
-    linarith [div_pos (sub_pos.2 hαp) (sub_pos.2 hp_inv_lt)]
+  have hs : -(finrank ℝ E : ℝ) < s := neg_lt_sub_mul_one_sub_inv hp_inv_lt hαp
   have hker : ∫⁻ y in Ω, (‖x - y‖ₑ ^ (α - finrank ℝ E)) ^ (1 - p.toReal⁻¹)⁻¹ ∂μ ≤
       ENNReal.ofReal ((finrank ℝ E : ℝ) * μ.real (ball 0 1) *
         (D ^ ((finrank ℝ E : ℝ) + s) / ((finrank ℝ E : ℝ) + s))) := by
@@ -307,7 +285,7 @@ private theorem rieszPotential_restrict_le_of_one_lt_of_subset_closedBall [Nontr
   calc ∫⁻ y in Ω, ‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖f y‖ₑ ∂μ
       ≤ (∫⁻ y in Ω, (‖x - y‖ₑ ^ (α - finrank ℝ E)) ^ (1 - p.toReal⁻¹)⁻¹ ∂μ) ^ (1 - p.toReal⁻¹) *
           eLpNorm (fun y => ‖f y‖ₑ) p (μ.restrict Ω) :=
-        lintegral_mul_le_rpow_mul_eLpNorm hk.aemeasurable hf.eNorm hp1
+        lintegral_mul_le_rpow_mul_eLpNorm hk.aemeasurable hp1
     _ ≤ ENNReal.ofReal ((finrank ℝ E : ℝ) * μ.real (ball 0 1) *
             (D ^ ((finrank ℝ E : ℝ) + s) / ((finrank ℝ E : ℝ) + s))) ^ (1 - p.toReal⁻¹) *
           eLpNorm f p (μ.restrict Ω) := by
@@ -371,15 +349,6 @@ theorem rieszPotential_restrict_le_of_mem_closure {Ω : Set E} {x : E} {α : ℝ
       ((dist_le_diam_of_mem hb.closure (subset_closure hy) hx).trans_eq (diam_closure Ω)))
     hp hα f
 
-/-- Specialization of `TauCeti.rieszPotential_restrict_le_of_mem_closure` to `x ∈ Ω`. -/
-theorem rieszPotential_restrict_le_of_mem {Ω : Set E} {x : E} {α : ℝ} {p : ℝ≥0∞}
-    (hb : Bornology.IsBounded Ω) (hx : x ∈ Ω) (hp : 1 ≤ p)
-    (hα : (finrank ℝ E : ℝ) * p.toReal⁻¹ < α ∨ (p = 1 ∧ (finrank ℝ E : ℝ) ≤ α)) (f : E → F) :
-    rieszPotential (μ.restrict Ω) α f x ≤
-      ENNReal.ofReal (rieszDiamConst μ α p ∞ * diam Ω ^ (α - (finrank ℝ E : ℝ) * p.toReal⁻¹)) *
-        eLpNorm f p (μ.restrict Ω) :=
-  rieszPotential_restrict_le_of_mem_closure hb (subset_closure hx) hp hα f
-
 /-- Finiteness of `rieszPotential (μ.restrict Ω) α f x` at every `x ∈ closure Ω` when `f ∈ Lᵖ(Ω)`
 and `n / p < α` (or `p = 1` and `n ≤ α`). -/
 theorem rieszPotential_restrict_lt_top_of_mem_closure {Ω : Set E} {x : E} {α : ℝ} {p : ℝ≥0∞}
@@ -390,17 +359,18 @@ theorem rieszPotential_restrict_lt_top_of_mem_closure {Ω : Set E} {x : E} {α :
   (rieszPotential_restrict_le_of_mem_closure hb hx hp hα f).trans_lt
     (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hf.eLpNorm_lt_top)
 
-/-- Integer-order specialization of `TauCeti.rieszPotential_restrict_le_of_mem_closure` written in
-terms of `(finrank ℝ E : ℝ≥0∞) < k * p ∨ (p = 1 ∧ finrank ℝ E ≤ k)` for `1 ≤ k`. -/
-theorem rieszPotential_restrict_nat_le_of_mem_closure {Ω : Set E} {x : E} {k : ℕ} {p : ℝ≥0∞}
-    (hb : Bornology.IsBounded Ω) (hx : x ∈ closure Ω) (hk : 1 ≤ k) (hp : 1 ≤ p)
+/-- Natural-number order specialization of `TauCeti.rieszPotential_restrict_le_of_mem_closure`
+written in terms of `(finrank ℝ E : ℝ≥0∞) < k * p ∨ (p = 1 ∧ finrank ℝ E ≤ k)`. -/
+theorem rieszPotential_restrict_natCast_le_of_mem_closure {Ω : Set E} {x : E} {k : ℕ} {p : ℝ≥0∞}
+    (hb : Bornology.IsBounded Ω) (hx : x ∈ closure Ω) (hp : 1 ≤ p)
     (hkp : (finrank ℝ E : ℝ≥0∞) < k * p ∨ (p = 1 ∧ finrank ℝ E ≤ k)) (f : E → F) :
     rieszPotential (μ.restrict Ω) k f x ≤
       ENNReal.ofReal
         (rieszDiamConst μ k p ∞ * diam Ω ^ ((k : ℝ) - (finrank ℝ E : ℝ) * p.toReal⁻¹)) *
         eLpNorm f p (μ.restrict Ω) :=
   rieszPotential_restrict_le_of_mem_closure hb hx hp
-    ((nat_mul_lt_iff_finrank_mul_toReal_inv_lt hk hp).1 hkp) f
+    (hkp.imp (ENNReal.natCast_lt_natCast_mul_iff (zero_lt_one.trans_le hp).ne').1
+      (And.imp_right Nat.cast_le.2)) f
 
 /-- Endpoint `L¹ → L^∞` Riesz potential bound for `(p, q) = (1, ∞)` on a bounded set. -/
 private theorem eLpNorm_top_rieszPotential_restrict_le_one {Ω : Set E}
@@ -419,7 +389,7 @@ private theorem eLpNorm_top_rieszPotential_restrict_le_one {Ω : Set E}
         (.of_forall fun _ => by simp)).trans lintegral_eNorm_le_eLpNorm_one
     · simp [rieszPotential_eq_zero_of_subsingleton _ hα0]
   rcases (diam_nonneg (s := Ω)).eq_or_lt with hd0 | hd_pos
-  · simp [restrict_eq_zero_of_diam_eq_zero hb hd0.symm]
+  · simp [Measure.restrict_eq_zero_of_diam_eq_zero hb hd0.symm]
   rcases eq_or_ne (eLpNorm f 1 (μ.restrict Ω)) ∞ with hN | hN
   · rw [hN, ENNReal.mul_top (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos hd_pos _)).ne']
     exact le_top
@@ -430,28 +400,6 @@ private theorem eLpNorm_top_rieszPotential_restrict_le_one {Ω : Set E}
   filter_upwards [ae_restrict_mem_closure Ω] with x hx
   rw [eNorm_eq_self]
   simpa using rieszPotential_restrict_le_of_mem_closure hb hx le_rfl (Or.inr ⟨rfl, hα⟩) f
-
-/-- When `1 ≤ p ≤ q` and `(p, q) ≠ (1, ∞)`, the reciprocal gap `1/p - 1/q` is strictly below `1`. -/
-private theorem toReal_inv_sub_toReal_inv_lt_one {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q)
-    (hp1q : ¬ (p = 1 ∧ q = ∞)) : p.toReal⁻¹ - q.toReal⁻¹ < 1 := by
-  have hq0 : 0 ≤ q.toReal⁻¹ := inv_nonneg.2 ENNReal.toReal_nonneg
-  refine (toReal_inv_sub_toReal_inv_le_one hp q).lt_of_ne fun h1 => hp1q ?_
-  have hp_eq : p = 1 := by
-    by_contra hp_ne
-    have hp1 : 1 < p := hp.lt_of_ne' hp_ne
-    have hp_lt : p.toReal⁻¹ < 1 := by
-      rcases eq_or_ne p ∞ with rfl | hp_top
-      · simp
-      · exact inv_lt_one_of_one_lt₀
-          (by simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp1)
-    linarith
-  refine ⟨hp_eq, ?_⟩
-  by_contra hq_ne
-  have hq_pos : 0 < q.toReal⁻¹ :=
-    inv_pos.2 (ENNReal.toReal_pos (zero_lt_one.trans_le (hp.trans hpq)).ne' hq_ne)
-  subst hp_eq
-  simp only [ENNReal.toReal_one, inv_one] at h1
-  linarith
 
 /-- Non-endpoint `Lᵖ → L^q` Riesz potential bound (`1/p - 1/q < 1`) via Young's inequality for
 integral kernels (`TauCeti.eLpNorm_lintegral_mul_le_of_le`). -/
@@ -467,7 +415,7 @@ private theorem eLpNorm_rieszPotential_restrict_le_of_sub_lt_one {Ω : Set E}
   · exact (rieszPotential_eq_zero_of_subsingleton _
       (by simpa [finrank_zero_of_subsingleton] using hα') f).symm ▸ by simp
   rcases (diam_nonneg (s := Ω)).eq_or_lt with hd0 | hd_pos
-  · simp [restrict_eq_zero_of_diam_eq_zero hb hd0.symm]
+  · simp [Measure.restrict_eq_zero_of_diam_eq_zero hb hd0.symm]
   have hC_pos : 0 < rieszDiamConst μ α p q *
       diam Ω ^ (α - (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹)) :=
     mul_pos (rieszDiamConst_pos μ hp hα') (Real.rpow_pos_of_pos hd_pos _)
@@ -476,11 +424,7 @@ private theorem eLpNorm_rieszPotential_restrict_le_of_sub_lt_one {Ω : Set E}
   have hf : AEStronglyMeasurable f (μ.restrict Ω) := aestronglyMeasurable_of_eLpNorm_ne_top hN
   set δ := p.toReal⁻¹ - q.toReal⁻¹
   set s := (α - finrank ℝ E) * (1 - δ)⁻¹
-  have hs : -(finrank ℝ E : ℝ) < s := by
-    have h1δ_ne : 1 - δ ≠ 0 := (sub_pos.2 hδ).ne'
-    have hns : (finrank ℝ E : ℝ) + s = (α - (finrank ℝ E : ℝ) * δ) / (1 - δ) := by
-      dsimp [s]; rw [← div_eq_mul_inv]; field_simp; ring
-    linarith [div_pos (sub_pos.2 hα') (sub_pos.2 hδ)]
+  have hs : -(finrank ℝ E : ℝ) < s := neg_lt_sub_mul_one_sub_inv hδ hα'
   set A := ENNReal.ofReal ((finrank ℝ E : ℝ) * μ.real (ball 0 1) *
     (diam Ω ^ ((finrank ℝ E : ℝ) + s) / ((finrank ℝ E : ℝ) + s)))
   have hrow : ∀ᵐ x ∂μ.restrict Ω,
@@ -526,7 +470,7 @@ theorem eLpNorm_rieszPotential_restrict_le_of_le {Ω : Set E} (hb : Bornology.Is
       hα.elim (fun h => by simpa using h.le) fun h => h.2.2
     simpa using eLpNorm_top_rieszPotential_restrict_le_one hb hαn f
   exact eLpNorm_rieszPotential_restrict_le_of_sub_lt_one hb hp hpq
-    (toReal_inv_sub_toReal_inv_lt_one hp hpq hp1q)
+    (ENNReal.toReal_inv_sub_toReal_inv_lt_one hp (zero_lt_one.trans_le (hp.trans hpq)).ne' hp1q)
     (hα.resolve_right fun h => hp1q ⟨h.1, h.2.1⟩) f
 
 /-- **`Lᵖ → Lᵖ` diameter bound for the Riesz potential on a bounded set**
@@ -568,20 +512,6 @@ variable {E 𝕜 G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Finite
   [NontriviallyNormedField 𝕜] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
-/-- Off-diagonal real-norm Riesz domination `‖K x y‖ ≤ C * ‖x - y‖ ^ (α - n)` on a measurable set
-`Ω` implies almost-everywhere `ℝ≥0∞` Riesz domination on `μ.restrict Ω` when `E` is nontrivial
-(so that the diagonal singleton `{x}` has Haar measure zero). -/
-theorem ae_enorm_le_riesz_of_norm_le [Nontrivial E] {Ω : Set E} (hΩ : MeasurableSet Ω)
-    {K : E → E → G →L[𝕜] H} {x : E} {α C : ℝ} (hC : 0 ≤ C)
-    (hKx : ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E)) :
-    ∀ᵐ y ∂μ.restrict Ω, ‖K x y‖ₑ ≤ ENNReal.ofReal C * ‖x - y‖ₑ ^ (α - finrank ℝ E) := by
-  filter_upwards [ae_restrict_mem hΩ,
-    ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := μ) x))] with y hy hyx
-  have hne : x ≠ y := Ne.symm hyx
-  have hpos : 0 < ‖x - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
-  rw [← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_rpow_of_pos hpos, ← ENNReal.ofReal_mul hC]
-  exact ENNReal.ofReal_le_ofReal (hKx y hy hne)
-
 /-- Row operator-norm integral bound for a Riesz-dominated kernel on `μ.restrict Ω`. -/
 private theorem ae_row_lintegral_enorm_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
     (hΩ : MeasurableSet Ω) (hb : Bornology.IsBounded Ω) {K : E → E → G →L[𝕜] H} {α C : ℝ}
@@ -593,17 +523,18 @@ private theorem ae_row_lintegral_enorm_le_of_riesz_bound [Nontrivial E] {Ω : Se
   filter_upwards [ae_restrict_mem hΩ] with x hx
   calc ∫⁻ y in Ω, ‖K x y‖ₑ ∂μ
       ≤ ∫⁻ y in Ω, ENNReal.ofReal C * ‖x - y‖ₑ ^ (α - finrank ℝ E) ∂μ :=
-        lintegral_mono_ae (ae_enorm_le_riesz_of_norm_le (μ := μ) hΩ hC (hK x hx))
+        lintegral_mono_ae
+          (ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le (μ := μ) hΩ hC (hK x hx))
     _ = ENNReal.ofReal C * ∫⁻ y in Ω, ‖x - y‖ₑ ^ (α - finrank ℝ E) ∂μ :=
         lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
     _ ≤ ENNReal.ofReal C * ENNReal.ofReal ((finrank ℝ E : ℝ) * μ.real (ball 0 1) *
           (diam Ω ^ ((finrank ℝ E : ℝ) + (α - finrank ℝ E)) /
             ((finrank ℝ E : ℝ) + (α - finrank ℝ E)))) :=
-        mul_le_mul_right (setLIntegral_enorm_sub_rpow_le_of_mem hs hb hx) _
+        mul_le_mul_right (setLIntegral_enorm_sub_rpow_le_of_mem_closure hs hb (subset_closure hx)) _
     _ = ENNReal.ofReal (C * ((finrank ℝ E : ℝ) * μ.real (ball 0 1) / α) * diam Ω ^ α) := by
         rw [add_sub_cancel, ← ENNReal.ofReal_mul hC]
         congr 1; ring
-    _ = _ := rfl
+    _ = _ := (ENNReal.ofNNReal_toNNReal _).symm
 
 /-- Column operator-norm integral bound for a Riesz-dominated kernel on `μ.restrict Ω`. -/
 private theorem ae_col_lintegral_enorm_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
@@ -611,52 +542,40 @@ private theorem ae_col_lintegral_enorm_le_of_riesz_bound [Nontrivial E] {Ω : Se
     (hα : 0 < α) (hC : 0 ≤ C)
     (hK : ∀ x ∈ Ω, ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E)) :
     ∀ᵐ y ∂μ.restrict Ω, ∫⁻ x in Ω, ‖K x y‖ₑ ∂μ ≤
-      ((C * ((finrank ℝ E : ℝ) * μ.real (ball 0 1) / α) * diam Ω ^ α).toNNReal : ℝ≥0∞) := by
-  have hs : -(finrank ℝ E : ℝ) < α - finrank ℝ E := by linarith
-  filter_upwards [ae_restrict_mem hΩ] with y hy
-  have hdom : ∀ᵐ x ∂μ.restrict Ω, ‖K x y‖ₑ ≤ ENNReal.ofReal C * ‖y - x‖ₑ ^ (α - finrank ℝ E) := by
-    filter_upwards [ae_restrict_mem hΩ,
-      ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := μ) y))] with x hx hxy
-    have hpos : 0 < ‖y - x‖ := norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hxy))
-    rw [← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_rpow_of_pos hpos, ← ENNReal.ofReal_mul hC,
-      norm_sub_rev y x]
-    exact ENNReal.ofReal_le_ofReal (hK x hx y hy hxy)
-  calc ∫⁻ x in Ω, ‖K x y‖ₑ ∂μ
-      ≤ ∫⁻ x in Ω, ENNReal.ofReal C * ‖y - x‖ₑ ^ (α - finrank ℝ E) ∂μ := lintegral_mono_ae hdom
-    _ = ENNReal.ofReal C * ∫⁻ x in Ω, ‖y - x‖ₑ ^ (α - finrank ℝ E) ∂μ :=
-        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
-    _ ≤ ENNReal.ofReal C * ENNReal.ofReal ((finrank ℝ E : ℝ) * μ.real (ball 0 1) *
-          (diam Ω ^ ((finrank ℝ E : ℝ) + (α - finrank ℝ E)) /
-            ((finrank ℝ E : ℝ) + (α - finrank ℝ E)))) :=
-        mul_le_mul_right (setLIntegral_enorm_sub_rpow_le_of_mem hs hb hy) _
-    _ = ENNReal.ofReal (C * ((finrank ℝ E : ℝ) * μ.real (ball 0 1) / α) * diam Ω ^ α) := by
-        rw [add_sub_cancel, ← ENNReal.ofReal_mul hC]
-        congr 1; ring
-    _ = _ := rfl
+      ((C * ((finrank ℝ E : ℝ) * μ.real (ball 0 1) / α) * diam Ω ^ α).toNNReal : ℝ≥0∞) :=
+  ae_row_lintegral_enorm_le_of_riesz_bound (K := fun y x => K x y) hΩ hb hα hC
+    fun y hy x hx hyx => by rw [norm_sub_rev]; exact hK x hx y hy hyx.symm
 
-/-- Pointwise Bochner integrability at `x ∈ closure Ω` for an operator-valued kernel dominated by a
-Riesz kernel of order `α` above the critical threshold `n / p` (or `p = 1` and `n ≤ α`). -/
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+private theorem lintegral_enorm_apply_le_mul_rieszPotential {T : E → G →L[𝕜] H}
+    {u : E → G} {x : E} {α : ℝ} {c : ℝ≥0∞} (hc : c ≠ ∞)
+    (hT : ∀ᵐ y ∂μ, ‖T y‖ₑ ≤ c * ‖x - y‖ₑ ^ (α - finrank ℝ E)) :
+    ∫⁻ y, ‖T y (u y)‖ₑ ∂μ ≤ c * rieszPotential μ α u x := by
+  calc ∫⁻ y, ‖T y (u y)‖ₑ ∂μ
+      ≤ ∫⁻ y, c * (‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖u y‖ₑ) ∂μ := by
+        refine lintegral_mono_ae (hT.mono fun y hy => (T y).le_opENorm (u y) |>.trans ?_)
+        rw [← mul_assoc]
+        exact mul_le_mul_left hy _
+    _ = c * rieszPotential μ α u x := by
+        rw [lintegral_const_mul' _ _ hc, rieszPotential_def]
+
+/-- Pointwise Bochner integrability at `x ∈ closure Ω` for an operator-valued family `T` dominated
+by a Riesz kernel of order `α` above the critical threshold `n / p` (or `p = 1` and `n ≤ α`). -/
 theorem integrableOn_apply_of_riesz_bound_of_mem_closure [Nontrivial E] {Ω : Set E}
-    (hΩ : MeasurableSet Ω) (hb : Bornology.IsBounded Ω) {K : E → E → G →L[𝕜] H} {u : E → G}
-    {x : E} (hx : x ∈ closure Ω) (hKx_meas : AEStronglyMeasurable (K x) (μ.restrict Ω))
+    (hΩ : MeasurableSet Ω) (hb : Bornology.IsBounded Ω) {T : E → G →L[𝕜] H} {u : E → G}
+    {x : E} (hx : x ∈ closure Ω) (hT_meas : AEStronglyMeasurable T (μ.restrict Ω))
     {α C : ℝ} (hC : 0 ≤ C)
-    (hKx : ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E))
+    (hT : ∀ y ∈ Ω, x ≠ y → ‖T y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E))
     {p : ℝ≥0∞} (hp : 1 ≤ p)
     (hα : (finrank ℝ E : ℝ) * p.toReal⁻¹ < α ∨ (p = 1 ∧ (finrank ℝ E : ℝ) ≤ α))
     (hu : MemLp u p (μ.restrict Ω)) :
-    IntegrableOn (fun y => K x y (u y)) Ω μ := by
-  refine ⟨isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂ hKx_meas
-    hu.aestronglyMeasurable, ?_⟩
-  have hdom := ae_enorm_le_riesz_of_norm_le (μ := μ) hΩ hC hKx
-  calc ∫⁻ y in Ω, ‖K x y (u y)‖ₑ ∂μ
-      ≤ ∫⁻ y in Ω, ENNReal.ofReal C * (‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖u y‖ₑ) ∂μ := by
-        refine lintegral_mono_ae (hdom.mono fun y hy => (K x y).le_opENorm (u y) |>.trans ?_)
-        rw [← mul_assoc]
-        exact mul_le_mul_left hy _
-    _ = ENNReal.ofReal C * rieszPotential (μ.restrict Ω) α u x := by
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, rieszPotential_def]
-    _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
-        (rieszPotential_restrict_lt_top_of_mem_closure hb hx hp hα hu)
+    IntegrableOn (fun y => T y (u y)) Ω μ :=
+  ⟨isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂ hT_meas
+    hu.aestronglyMeasurable,
+    (lintegral_enorm_apply_le_mul_rieszPotential ENNReal.ofReal_ne_top
+      (ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le (μ := μ) hΩ hC hT)).trans_lt
+      (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+        (rieszPotential_restrict_lt_top_of_mem_closure hb hx hp hα hu))⟩
 
 /-- Almost-everywhere Bochner integrability on `Ω` for `u ∈ Lᵖ(Ω)` (`1 ≤ p ≤ ∞`) against a
 Riesz-dominated operator kernel of any positive order `α > 0`. -/
@@ -674,34 +593,28 @@ theorem ae_integrableOn_apply_of_riesz_bound [Nontrivial E] {Ω : Set E}
 variable [NormedSpace ℝ H]
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- If an operator-valued kernel `K` satisfies `‖K x y‖ₑ ≤ c * ‖x - y‖ₑ ^ (α - n)` a.e. on `Ω` for
-finite `c`, then `‖∫ y in Ω, K x y (u y) ∂μ‖ₑ ≤ c * rieszPotential (μ.restrict Ω) α u x`. -/
-theorem enorm_setIntegral_apply_le_rieszPotential {Ω : Set E} {K : E → E → G →L[𝕜] H}
+/-- If an operator-valued family `T` satisfies `‖T y‖ₑ ≤ c * ‖x - y‖ₑ ^ (α - n)` a.e. under `μ` for
+finite `c`, then `‖∫ y, T y (u y) ∂μ‖ₑ ≤ c * rieszPotential μ α u x`. -/
+theorem enorm_integral_apply_le_mul_rieszPotential {T : E → G →L[𝕜] H}
     {u : E → G} {x : E} {α : ℝ} {c : ℝ≥0∞} (hc : c ≠ ∞)
-    (hKx : ∀ᵐ y ∂μ.restrict Ω, ‖K x y‖ₑ ≤ c * ‖x - y‖ₑ ^ (α - finrank ℝ E)) :
-    ‖∫ y in Ω, K x y (u y) ∂μ‖ₑ ≤ c * rieszPotential (μ.restrict Ω) α u x := by
-  calc ‖∫ y in Ω, K x y (u y) ∂μ‖ₑ
-      ≤ ∫⁻ y in Ω, ‖K x y (u y)‖ₑ ∂μ := eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ y in Ω, c * (‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖u y‖ₑ) ∂μ := by
-        refine lintegral_mono_ae (hKx.mono fun y hy => (K x y).le_opENorm (u y) |>.trans ?_)
-        rw [← mul_assoc]
-        exact mul_le_mul_left hy _
-    _ = c * rieszPotential (μ.restrict Ω) α u x := by
-        rw [lintegral_const_mul' _ _ hc, rieszPotential_def]
+    (hT : ∀ᵐ y ∂μ, ‖T y‖ₑ ≤ c * ‖x - y‖ₑ ^ (α - finrank ℝ E)) :
+    ‖∫ y, T y (u y) ∂μ‖ₑ ≤ c * rieszPotential μ α u x :=
+  (eNorm_integral_le_lintegral_eNorm _).trans
+    (lintegral_enorm_apply_le_mul_rieszPotential hc hT)
 
 /-- **Pointwise `Lᵖ → L^∞` bound for a Riesz-dominated operator kernel on `closure Ω`.** If `Ω` is
-measurable and bounded, `‖K x y‖ ≤ C * ‖x - y‖ ^ (α - n)` for `y ∈ Ω \ {x}`, `u ∈ Lᵖ(Ω)`,
-`1 ≤ p ≤ ∞`, and `n / p < α` (or `p = 1` and `n ≤ α`), then at every `x ∈ closure Ω`,
-`‖∫ y in Ω, K x y (u y) ∂μ‖` is bounded by
+measurable and bounded, `‖T y‖ ≤ C * ‖x - y‖ ^ (α - n)` for `y ∈ Ω` with `x ≠ y`, `u ∈ Lᵖ(Ω)`,
+`1 ≤ p ≤ ∞`, and `n / p < α` (or `p = 1` and `n ≤ α`), then at `x ∈ closure Ω`,
+`‖∫ y in Ω, T y (u y) ∂μ‖` is bounded by
 `C * rieszDiamConst μ α p ∞ * (diam Ω) ^ (α - n / p) * lpNorm u p (μ.restrict Ω)`. -/
 theorem norm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
-    (hΩ : MeasurableSet Ω) (hb : Bornology.IsBounded Ω) {K : E → E → G →L[𝕜] H} {u : E → G}
+    (hΩ : MeasurableSet Ω) (hb : Bornology.IsBounded Ω) {T : E → G →L[𝕜] H} {u : E → G}
     {x : E} (hx : x ∈ closure Ω) {α C : ℝ} (hC : 0 ≤ C)
-    (hKx : ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E))
+    (hT : ∀ y ∈ Ω, x ≠ y → ‖T y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E))
     {p : ℝ≥0∞} (hp : 1 ≤ p)
     (hα : (finrank ℝ E : ℝ) * p.toReal⁻¹ < α ∨ (p = 1 ∧ (finrank ℝ E : ℝ) ≤ α))
     (hu : MemLp u p (μ.restrict Ω)) :
-    ‖∫ y in Ω, K x y (u y) ∂μ‖ ≤
+    ‖∫ y in Ω, T y (u y) ∂μ‖ ≤
       C * rieszDiamConst μ α p ∞ * diam Ω ^ (α - (finrank ℝ E : ℝ) * p.toReal⁻¹) *
         lpNorm u p (μ.restrict Ω) := by
   have hα_le : (finrank ℝ E : ℝ) * (p.toReal⁻¹ - (∞ : ℝ≥0∞).toReal⁻¹) ≤ α := by
@@ -712,8 +625,8 @@ theorem norm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
   rw [← toReal_eLpNorm, ← ENNReal.ofReal_le_ofReal_iff (mul_nonneg hconst_nn ENNReal.toReal_nonneg),
     ofReal_norm, ENNReal.ofReal_mul hconst_nn, ENNReal.ofReal_toReal hu.eLpNorm_lt_top.ne,
     mul_assoc C, ENNReal.ofReal_mul hC, mul_assoc]
-  exact (enorm_setIntegral_apply_le_rieszPotential ENNReal.ofReal_ne_top
-    (ae_enorm_le_riesz_of_norm_le (μ := μ) hΩ hC hKx)).trans
+  exact (enorm_integral_apply_le_mul_rieszPotential ENNReal.ofReal_ne_top
+    (ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le (μ := μ) hΩ hC hT)).trans
     (mul_le_mul_right (rieszPotential_restrict_le_of_mem_closure hb hx hp hα u) _)
 
 /-- **`Lᵖ → L^q` `eLpNorm` bound for a Riesz-dominated operator kernel on a bounded measurable
@@ -721,7 +634,6 @@ set.** -/
 theorem eLpNorm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
     (hΩ : MeasurableSet Ω) (hb : Bornology.IsBounded Ω) {K : E → E → G →L[𝕜] H} {u : E → G}
     (hK_meas : AEStronglyMeasurable (uncurry K) ((μ.restrict Ω).prod (μ.restrict Ω)))
-    (hu_meas : AEStronglyMeasurable u (μ.restrict Ω))
     {α C : ℝ} (hC : 0 ≤ C)
     (hK : ∀ x ∈ Ω, ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E))
     {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q)
@@ -731,6 +643,28 @@ theorem eLpNorm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
       ENNReal.ofReal (C * rieszDiamConst μ α p q *
         diam Ω ^ (α - (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹))) *
         eLpNorm u p (μ.restrict Ω) := by
+  rcases eq_or_ne (eLpNorm u p (μ.restrict Ω)) ∞ with hN | hN
+  · rcases hC.eq_or_lt with rfl | hC_pos
+    · have hzero : (fun x => ∫ y in Ω, K x y (u y) ∂μ) =ᵐ[μ.restrict Ω] 0 := by
+        filter_upwards [ae_restrict_mem hΩ] with x hx
+        have hdom : ∀ᵐ y ∂μ.restrict Ω, ‖K x y‖ₑ ≤ 0 * ‖x - y‖ₑ ^ (α - finrank ℝ E) := by
+          simpa using
+            ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le (μ := μ) hΩ le_rfl (hK x hx)
+        simpa using enorm_integral_apply_le_mul_rieszPotential (u := u) ENNReal.zero_ne_top hdom
+      rw [eLpNorm_congr_ae hzero]
+      simp
+    · rcases (diam_nonneg (s := Ω)).eq_or_lt with hd0 | hd_pos
+      · simp [Measure.restrict_eq_zero_of_diam_eq_zero hb hd0.symm]
+      · have hconst_pos : 0 < rieszDiamConst μ α p q := by
+          rcases hα with hα' | ⟨rfl, rfl, _⟩
+          · exact rieszDiamConst_pos μ hp hα'
+          · simp
+        have hrhs_pos : 0 < C * rieszDiamConst μ α p q *
+            diam Ω ^ (α - (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹)) :=
+          mul_pos (mul_pos hC_pos hconst_pos) (Real.rpow_pos_of_pos hd_pos _)
+        rw [hN, ENNReal.mul_top (ENNReal.ofReal_pos.2 hrhs_pos).ne']
+        exact le_top
+  have hu_meas : AEStronglyMeasurable u (μ.restrict Ω) := aestronglyMeasurable_of_eLpNorm_ne_top hN
   have hq0 : 0 < q := zero_lt_one.trans_le (hp.trans hpq)
   have hmeas_int := aestronglyMeasurable_integral_apply hK_meas hu_meas
   have hpoint : ∀ᵐ x ∂μ.restrict Ω,
@@ -738,8 +672,8 @@ theorem eLpNorm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
         ‖ENNReal.ofReal C * rieszPotential (μ.restrict Ω) α u x‖ₑ := by
     filter_upwards [ae_restrict_mem hΩ] with x hx
     rw [eNorm_eq_self]
-    exact enorm_setIntegral_apply_le_rieszPotential ENNReal.ofReal_ne_top
-      (ae_enorm_le_riesz_of_norm_le (μ := μ) hΩ hC (hK x hx))
+    exact enorm_integral_apply_le_mul_rieszPotential ENNReal.ofReal_ne_top
+      (ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le (μ := μ) hΩ hC (hK x hx))
   calc eLpNorm (fun x => ∫ y in Ω, K x y (u y) ∂μ) q (μ.restrict Ω)
       ≤ eLpNorm (fun x => ENNReal.ofReal C * rieszPotential (μ.restrict Ω) α u x)
           q (μ.restrict Ω) :=
@@ -752,6 +686,33 @@ theorem eLpNorm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
         mul_le_mul_right (eLpNorm_rieszPotential_restrict_le_of_le hb hp hpq hα u) _
     _ = _ := by rw [← mul_assoc, ← ENNReal.ofReal_mul hC, mul_assoc C]
 
+/-- **Real `lpNorm` `Lᵖ → L^q` bound for a Riesz-dominated operator kernel on a bounded measurable
+set.** -/
+theorem lpNorm_setIntegral_apply_le_of_riesz_bound_of_le [Nontrivial E] {Ω : Set E}
+    (hΩ : MeasurableSet Ω) (hb : Bornology.IsBounded Ω) {K : E → E → G →L[𝕜] H} {u : E → G}
+    (hK_meas : AEStronglyMeasurable (uncurry K) ((μ.restrict Ω).prod (μ.restrict Ω)))
+    {α C : ℝ} (hC : 0 ≤ C)
+    (hK : ∀ x ∈ Ω, ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E))
+    {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q)
+    (hα : (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹) < α ∨
+      (p = 1 ∧ q = ∞ ∧ (finrank ℝ E : ℝ) ≤ α))
+    (hu : MemLp u p (μ.restrict Ω)) :
+    lpNorm (fun x => ∫ y in Ω, K x y (u y) ∂μ) q (μ.restrict Ω) ≤
+      C * rieszDiamConst μ α p q *
+        diam Ω ^ (α - (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹)) *
+        lpNorm u p (μ.restrict Ω) := by
+  have hα_le : (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹) ≤ α := by
+    rcases hα with h | ⟨rfl, rfl, h⟩
+    · exact h.le
+    · simpa using h
+  have hconst_nn : 0 ≤ C * rieszDiamConst μ α p q *
+      diam Ω ^ (α - (finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹)) :=
+    mul_nonneg (mul_nonneg hC (rieszDiamConst_nonneg μ hp hα_le)) (Real.rpow_nonneg diam_nonneg _)
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm]
+  refine ENNReal.toReal_le_of_le_ofReal (mul_nonneg hconst_nn ENNReal.toReal_nonneg) ?_
+  rw [ENNReal.ofReal_mul hconst_nn, ENNReal.ofReal_toReal hu.eLpNorm_lt_top.ne]
+  exact eLpNorm_setIntegral_apply_le_of_riesz_bound hΩ hb hK_meas hC hK hp hpq hα
+
 /-- Real `lpNorm` `Lᵖ → Lᵖ` bound for a Riesz-dominated operator kernel on a bounded measurable set
 (the operator-kernel form of Brenner–Scott, Lemma 4.3.6). -/
 theorem lpNorm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
@@ -763,21 +724,15 @@ theorem lpNorm_setIntegral_apply_le_of_riesz_bound [Nontrivial E] {Ω : Set E}
     lpNorm (fun x => ∫ y in Ω, K x y (u y) ∂μ) p (μ.restrict Ω) ≤
       C * ((finrank ℝ E : ℝ) * μ.real (ball 0 1) / α) * diam Ω ^ α *
         lpNorm u p (μ.restrict Ω) := by
-  have he := eLpNorm_setIntegral_apply_le_of_riesz_bound hΩ hb hK_meas hu.aestronglyMeasurable
-    hC hK hp le_rfl (Or.inl (by simpa using hα))
-  simp only [sub_self, mul_zero, sub_zero, rieszDiamConst_self] at he
-  have hconst_nn : 0 ≤ C * ((finrank ℝ E : ℝ) * μ.real (ball 0 1) / α) * diam Ω ^ α := by
-    positivity
-  rw [← toReal_eLpNorm, ← toReal_eLpNorm]
-  refine ENNReal.toReal_le_of_le_ofReal (mul_nonneg hconst_nn ENNReal.toReal_nonneg) ?_
-  rwa [ENNReal.ofReal_mul hconst_nn, ENNReal.ofReal_toReal hu.eLpNorm_lt_top.ne]
+  simpa using lpNorm_setIntegral_apply_le_of_riesz_bound_of_le hΩ hb hK_meas hC hK hp le_rfl
+    (Or.inl (by simpa using hα)) hu
 
 variable [SMulCommClass ℝ 𝕜 H]
 
 /-- The integral operator `u ↦ (x ↦ ∫ y in Ω, K x y (u y) ∂μ)` on `Lᵖ(Ω)` (`1 ≤ p ≤ ∞`) induced by
 an a.e. strongly measurable kernel `K` satisfying `‖K x y‖ ≤ C * ‖x - y‖ ^ (α - n)` off the
 diagonal on `Ω` for `α > 0`, constructed via `TauCeti.integralOperatorLp`. -/
-def rieszIntegralOperatorLp [Nontrivial E] {Ω : Set E} (hΩ : MeasurableSet Ω)
+def integralOperatorLpOfRieszBound [Nontrivial E] {Ω : Set E} (hΩ : MeasurableSet Ω)
     (hb : Bornology.IsBounded Ω) (K : E → E → G →L[𝕜] H) (p : ℝ≥0∞) [Fact (1 ≤ p)]
     (hK_meas : AEStronglyMeasurable (uncurry K) ((μ.restrict Ω).prod (μ.restrict Ω)))
     {α C : ℝ} (hα : 0 < α) (hC : 0 ≤ C)
@@ -787,38 +742,38 @@ def rieszIntegralOperatorLp [Nontrivial E] {Ω : Set E} (hΩ : MeasurableSet Ω)
     (ae_row_lintegral_enorm_le_of_riesz_bound hΩ hb hα hC hK)
     (ae_col_lintegral_enorm_le_of_riesz_bound hΩ hb hα hC hK)
 
-/-- `TauCeti.rieszIntegralOperatorLp` acts almost everywhere on `Ω` by
+/-- `TauCeti.integralOperatorLpOfRieszBound` acts almost everywhere on `Ω` by
 `x ↦ ∫ y in Ω, K x y (u y) ∂μ`. -/
-theorem coeFn_rieszIntegralOperatorLp [Nontrivial E] {Ω : Set E} {hΩ : MeasurableSet Ω}
+theorem coeFn_integralOperatorLpOfRieszBound [Nontrivial E] {Ω : Set E} {hΩ : MeasurableSet Ω}
     {hb : Bornology.IsBounded Ω} {K : E → E → G →L[𝕜] H} {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {hK_meas : AEStronglyMeasurable (uncurry K) ((μ.restrict Ω).prod (μ.restrict Ω))}
     {α C : ℝ} {hα : 0 < α} {hC : 0 ≤ C}
     {hK : ∀ x ∈ Ω, ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E)}
     (u : Lp G p (μ.restrict Ω)) :
-    rieszIntegralOperatorLp hΩ hb K p hK_meas hα hC hK u =ᵐ[μ.restrict Ω]
+    integralOperatorLpOfRieszBound hΩ hb K p hK_meas hα hC hK u =ᵐ[μ.restrict Ω]
       fun x => ∫ y in Ω, K x y (u y) ∂μ :=
   coeFn_integralOperatorLp u
 
 /-- An `Lᵖ(Ω)` class equal almost everywhere to `x ↦ ∫ y in Ω, K x y (u y) ∂μ` is the image of `u`
-under `TauCeti.rieszIntegralOperatorLp`. -/
-theorem rieszIntegralOperatorLp_eq_iff [Nontrivial E] {Ω : Set E} {hΩ : MeasurableSet Ω}
+under `TauCeti.integralOperatorLpOfRieszBound`. -/
+theorem integralOperatorLpOfRieszBound_eq_iff [Nontrivial E] {Ω : Set E} {hΩ : MeasurableSet Ω}
     {hb : Bornology.IsBounded Ω} {K : E → E → G →L[𝕜] H} {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {hK_meas : AEStronglyMeasurable (uncurry K) ((μ.restrict Ω).prod (μ.restrict Ω))}
     {α C : ℝ} {hα : 0 < α} {hC : 0 ≤ C}
     {hK : ∀ x ∈ Ω, ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E)}
     {u : Lp G p (μ.restrict Ω)} {v : Lp H p (μ.restrict Ω)} :
-    rieszIntegralOperatorLp hΩ hb K p hK_meas hα hC hK u = v ↔
+    integralOperatorLpOfRieszBound hΩ hb K p hK_meas hα hC hK u = v ↔
       (fun x => ∫ y in Ω, K x y (u y) ∂μ) =ᵐ[μ.restrict Ω] v :=
   integralOperatorLp_eq_iff
 
-/-- Operator-norm bound for `TauCeti.rieszIntegralOperatorLp`: its norm on `Lᵖ(Ω)` is at most
+/-- Operator-norm bound for `TauCeti.integralOperatorLpOfRieszBound`: its norm on `Lᵖ(Ω)` is at most
 `C * (n * μ.real (ball 0 1) / α) * (diam Ω) ^ α`. -/
-theorem norm_rieszIntegralOperatorLp_le [Nontrivial E] {Ω : Set E} {hΩ : MeasurableSet Ω}
+theorem norm_integralOperatorLpOfRieszBound_le [Nontrivial E] {Ω : Set E} {hΩ : MeasurableSet Ω}
     {hb : Bornology.IsBounded Ω} {K : E → E → G →L[𝕜] H} {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {hK_meas : AEStronglyMeasurable (uncurry K) ((μ.restrict Ω).prod (μ.restrict Ω))}
     {α C : ℝ} {hα : 0 < α} {hC : 0 ≤ C}
     {hK : ∀ x ∈ Ω, ∀ y ∈ Ω, x ≠ y → ‖K x y‖ ≤ C * ‖x - y‖ ^ (α - finrank ℝ E)} :
-    ‖rieszIntegralOperatorLp hΩ hb K p hK_meas hα hC hK‖ ≤
+    ‖integralOperatorLpOfRieszBound hΩ hb K p hK_meas hα hC hK‖ ≤
       C * ((finrank ℝ E : ℝ) * μ.real (ball 0 1) / α) * diam Ω ^ α := by
   refine norm_integralOperatorLp_le_max.trans ?_
   rw [max_self, Real.coe_toNNReal _ (by positivity)]
@@ -830,15 +785,24 @@ section Sharpness
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- **Sharpness of the `n / p` threshold for pointwise finiteness.** On a nontrivial space, if
-`1 ≤ p < ∞`, `α < n / p`, and `x ∈ interior Ω`, there exists `f ∈ Lᵖ(Ω; ℝ)` whose Riesz potential
-`rieszPotential (μ.restrict Ω) α f x` is infinite. -/
+/-- **Sharpness of the `n / p` threshold for pointwise finiteness.** On a nontrivial space, for any
+`p : ℝ≥0∞`, if `α < n * p.toReal⁻¹` and `x ∈ interior Ω`, there exists `f ∈ Lᵖ(Ω; ℝ)` whose Riesz
+potential `rieszPotential (μ.restrict Ω) α f x` is infinite. -/
 theorem exists_memLp_rieszPotential_restrict_eq_top [Nontrivial E] {Ω : Set E} {x : E}
-    (hx : x ∈ interior Ω) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) {α : ℝ}
+    (hx : x ∈ interior Ω) {p : ℝ≥0∞} {α : ℝ}
     (hα : α < (finrank ℝ E : ℝ) * p.toReal⁻¹) :
     ∃ f : E → ℝ, MemLp f p (μ.restrict Ω) ∧ rieszPotential (μ.restrict Ω) α f x = ∞ := by
+  by_cases hp_ext : p = 0 ∨ p = ∞
+  · have hα0 : α < 0 := by rcases hp_ext with rfl | rfl <;> simpa using hα
+    refine ⟨fun _ => 1, ?_, ?_⟩
+    · rcases hp_ext with rfl | rfl
+      · exact memLp_zero_iff_aestronglyMeasurable.2 aestronglyMeasurable_const
+      · exact memLp_top_const 1
+    · simpa [rieszPotential_def] using
+        setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior (mu := μ)
+          (s := α - finrank ℝ E) (by linarith) hx
+  obtain ⟨hp0, hp_top⟩ := not_or.1 hp_ext
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hx)
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
   have hs : -(finrank ℝ E : ℝ) < -α * p.toReal := by
     have : α * p.toReal < finrank ℝ E := by
@@ -890,16 +854,16 @@ example : rieszPotential (volume.restrict (Ioo (-1 : ℝ) 1)) 1 (fun _ : ℝ => 
     ENNReal.ofReal (rieszDiamConst (volume : Measure ℝ) 1 1 ∞ *
       diam (Ioo (-1 : ℝ) 1) ^ ((1 : ℝ) - (finrank ℝ ℝ : ℝ) * (1 : ℝ≥0∞).toReal⁻¹)) *
       eLpNorm (fun _ : ℝ => (1 : ℝ)) 1 (volume.restrict (Ioo (-1 : ℝ) 1)) :=
-  rieszPotential_restrict_le_of_mem (Metric.isBounded_Ioo (-1 : ℝ) 1) (by norm_num) le_rfl
-    (Or.inr ⟨rfl, by simp⟩) _
+  rieszPotential_restrict_le_of_mem_closure (Metric.isBounded_Ioo (-1 : ℝ) 1)
+    (subset_closure (by norm_num)) le_rfl (Or.inr ⟨rfl, by simp⟩) _
 
 -- Concrete boundary-point `p = ∞` sanity check at `x = 1 ∈ closure (0, 1)` with integer order `1`.
 example : rieszPotential (volume.restrict (Ioo (0 : ℝ) 1)) (1 : ℕ) (fun _ : ℝ => (1 : ℝ)) 1 ≤
     ENNReal.ofReal (rieszDiamConst (volume : Measure ℝ) (1 : ℕ) ∞ ∞ *
       diam (Ioo (0 : ℝ) 1) ^ (((1 : ℕ) : ℝ) - (finrank ℝ ℝ : ℝ) * (∞ : ℝ≥0∞).toReal⁻¹)) *
       eLpNorm (fun _ : ℝ => (1 : ℝ)) ∞ (volume.restrict (Ioo (0 : ℝ) 1)) :=
-  rieszPotential_restrict_nat_le_of_mem_closure (Metric.isBounded_Ioo (0 : ℝ) 1)
-    (by rw [closure_Ioo zero_ne_one]; exact right_mem_Icc.2 zero_le_one) le_rfl le_top
+  rieszPotential_restrict_natCast_le_of_mem_closure (Metric.isBounded_Ioo (0 : ℝ) 1)
+    (by rw [closure_Ioo zero_ne_one]; exact right_mem_Icc.2 zero_le_one) le_top
     (Or.inl (by simp)) _
 
 -- Concrete 1D `Lᵖ → Lᵖ` sanity check on `(0, 1)` with `α = 1` and `f = 1` for every `1 ≤ p ≤ ∞`.

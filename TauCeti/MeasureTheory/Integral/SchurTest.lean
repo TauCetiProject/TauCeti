@@ -47,17 +47,14 @@ and column integrals are only required almost everywhere.
 
 ## Main declarations
 
-* `TauCeti.lintegral_mul_le_rpow_mul_eLpNorm`: pointwise Hölder bound
-  `∫⁻ k g ≤ (∫⁻ k ^ (1 - 1/p)⁻¹) ^ (1 - 1/p) * ‖g‖_p` for `1 < p ≤ ∞`.
 * `TauCeti.lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq`: Young's inequality for integral
   kernels.
 * `TauCeti.lintegral_rpow_lintegral_mul_le`: Schur's test.
 * `TauCeti.eLpNorm_lintegral_mul_le_of_le`, `TauCeti.memLp_lintegral_mul_of_le`: Young's
   inequality as an `Lᵖ → L^q` bound and membership for `1 ≤ p ≤ q ≤ ∞` with `(p, q) ≠ (1, ∞)`.
 * `TauCeti.eLpNorm_lintegral_mul_le`: Schur's test as an `Lᵖ` bound, including `p = ∞`.
-* `TauCeti.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top'`,
-  `TauCeti.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top`: finiteness of the constants
-  `A ^ (1 - 1/p) * B ^ (1/q)` and `A ^ (1 - 1/p) * B ^ (1/p)` for finite `A` and `B`.
+* `TauCeti.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top`: finiteness of the constant
+  `A ^ (1 - 1/p) * B ^ (1/q)` for finite `A` and `B`.
 * `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
 
 ## References
@@ -75,31 +72,6 @@ open scoped ENNReal NNReal
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {μ : Measure α} {ν : Measure β}
-
-/-- **Hölder's inequality for an integral kernel row.** For `1 < p ≤ ∞` (with `1/∞` read as `0`),
-`∫⁻ y, k y * g y ∂ν ≤ (∫⁻ y, k y ^ (1 - 1/p)⁻¹ ∂ν) ^ (1 - 1/p) * ‖g‖_p`. -/
-theorem lintegral_mul_le_rpow_mul_eLpNorm {k g : β → ℝ≥0∞} (hk : AEMeasurable k ν)
-    (hg : AEMeasurable g ν) {p : ℝ≥0∞} (hp : 1 < p) :
-    ∫⁻ y, k y * g y ∂ν ≤
-      (∫⁻ y, k y ^ (1 - p.toReal⁻¹)⁻¹ ∂ν) ^ (1 - p.toReal⁻¹) * eLpNorm g p ν := by
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · simp only [eLpNorm_exponent_top hg.aestronglyMeasurable, ENNReal.toReal_top, inv_zero,
-      sub_zero, inv_one, ENNReal.rpow_one]
-    calc ∫⁻ y, k y * g y ∂ν ≤ ∫⁻ y, k y * eLpNormEssSup g ν ∂ν := by
-          refine lintegral_mono_ae ?_
-          filter_upwards [ae_le_eLpNormEssSup (f := g) (μ := ν)] with y hy
-          gcongr
-          simpa only [eNorm_eq_self] using hy
-      _ = (∫⁻ y, k y ∂ν) * eLpNormEssSup g ν := lintegral_mul_const'' _ hk
-  have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
-  have hp1 : 1 < p.toReal := by
-    simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  have hpos : 0 < 1 - p.toReal⁻¹ := sub_pos.2 (inv_lt_one_of_one_lt₀ hp1)
-  have hconj : ((1 - p.toReal⁻¹)⁻¹).HolderConjugate p.toReal :=
-    ⟨by rw [inv_inv, sub_add_cancel, inv_one], inv_pos.2 hpos, zero_lt_one.trans hp1⟩
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hg.aestronglyMeasurable]
-  simp only [eNorm_eq_self]
-  simpa only [Pi.mul_apply, one_div, inv_inv] using ENNReal.lintegral_mul_le_Lp_mul_Lq ν hconj hk hg
 
 /-- Young's inequality for integral kernels for a jointly measurable kernel; see
 `TauCeti.lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq` for the a.e. measurable case. -/
@@ -206,8 +178,7 @@ theorem lintegral_rpow_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β
 
 /-- For finite `A` and `B`, the constant `A ^ (1 - 1/p) * B ^ (1/q)` of Young's inequality is the
 coercion of the same expression in `ℝ≥0`. -/
-theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv' {p : ℝ≥0∞} (hp : 1 ≤ p) (q : ℝ≥0∞)
-    (A B : ℝ≥0) :
+theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p q : ℝ≥0∞} (hp : 1 ≤ p) (A B : ℝ≥0) :
     ((A ^ (1 - p.toReal⁻¹) * B ^ q.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
       (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ q.toReal⁻¹ := by
   have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
@@ -217,21 +188,9 @@ theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv' {p : ℝ≥0∞} (hp : 
 
 /-- The constant `A ^ (1 - 1/p) * B ^ (1/q)` of Young's inequality is finite for finite `A`
 and `B`. -/
-theorem rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top' {p : ℝ≥0∞} (hp : 1 ≤ p) (q : ℝ≥0∞)
+theorem rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top {p q : ℝ≥0∞} (hp : 1 ≤ p)
     (A B : ℝ≥0) : (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ q.toReal⁻¹ < ∞ :=
-  coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv' hp q A B ▸ ENNReal.coe_lt_top
-
-/-- For finite `A` and `B`, the constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is the
-coercion of the same expression in `ℝ≥0`. -/
-theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p : ℝ≥0∞} (hp : 1 ≤ p) (A B : ℝ≥0) :
-    ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
-      (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ :=
-  coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv' hp p A B
-
-/-- The constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is finite for finite `A` and `B`. -/
-theorem rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (A B : ℝ≥0) : (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ < ∞ :=
-  rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top' hp p A B
+  coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv hp A B ▸ ENNReal.coe_lt_top
 
 /-- **Young's inequality for integral kernels** as an `Lᵖ → L^q` bound: for `1 ≤ p ≤ q ≤ ∞` with
 `p.toReal⁻¹ - q.toReal⁻¹ < 1` (excluding only `(p, q) = (1, ∞)`) and
@@ -260,7 +219,7 @@ theorem eLpNorm_lintegral_mul_le_of_le [SFinite μ] [SFinite ν] {k : α → β 
     have hkx : AEMeasurable (k x) ν :=
       (hk.measurable_mk.comp measurable_prodMk_left).aemeasurable.congr (hx'.mono fun _ ↦ Eq.symm)
     rw [eNorm_eq_self]
-    exact (lintegral_mul_le_rpow_mul_eLpNorm hkx hg hp1).trans
+    exact (lintegral_mul_le_rpow_mul_eLpNorm hkx hp1).trans
       (mul_le_mul_left (ENNReal.rpow_le_rpow hx h0) _)
   have hp_top : p ≠ ∞ := (hpq.trans_lt hq_top.lt_top).ne
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
@@ -297,7 +256,7 @@ theorem memLp_lintegral_mul_of_le [SFinite μ] [SFinite ν] {k : α → β → �
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, k x y ^ (1 - (p.toReal⁻¹ - q.toReal⁻¹))⁻¹ ∂μ ≤ B) :
     MemLp (fun x ↦ ∫⁻ y, k x y * g y ∂ν) q μ :=
   (eLpNorm_lintegral_mul_le_of_le hk hg.aestronglyMeasurable.aemeasurable hp hpq hδ hA hB).trans_lt
-    (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top' hp q A B)
+    (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
       hg.eLpNorm_lt_top)
 
 /-- **Schur's test** as an `Lᵖ` bound: if the kernel `k` has row integrals `∫⁻ y, k x y ∂ν` at

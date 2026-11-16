@@ -427,6 +427,13 @@ theorem rieszPotential_const_smul {𝕜 : Type*} [NNNorm 𝕜] [SMul 𝕜 F] [EN
   rw [rieszPotential_def, rieszPotential_def, ← lintegral_const_mul' _ _ eNorm_ne_top]
   exact lintegral_congr fun y => by rw [Pi.smul_apply, eNorm_smul, mul_left_comm]
 
+/-- In dimension zero, the Riesz potential of positive order vanishes identically. -/
+theorem rieszPotential_eq_zero_of_subsingleton [Subsingleton E] (μ : Measure E) {α : ℝ}
+    (hα : 0 < α) (f : E → F) : rieszPotential μ α f = 0 := by
+  funext x
+  simp [rieszPotential_def, Subsingleton.elim (x - _) 0, finrank_zero_of_subsingleton,
+    ENNReal.zero_rpow_of_pos hα]
+
 end Definition
 
 section Sublinear
@@ -772,15 +779,6 @@ theorem exists_rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow
   rw [ENNReal.coe_toNNReal (hedbergConst_ne_top hα hp hαp)]
   exact rieszPotential_le_hedbergConst hα hp hαp f x
 
-omit [BorelSpace E] in
-/-- In dimension zero the kernel `‖x - y‖ ^ α` vanishes identically for `α > 0`. -/
-private theorem rieszPotential_eq_zero_of_subsingleton [Subsingleton E] (hα : 0 < α) :
-    rieszPotential μ α f x = 0 := by
-  have hk (y : E) : ‖x - y‖ₑ ^ (α - finrank ℝ E) = 0 := by
-    rw [Subsingleton.elim x y, sub_self, eNorm_zero, finrank_zero_of_subsingleton, Nat.cast_zero,
-      sub_zero, ENNReal.zero_rpow_of_pos hα]
-  simp [rieszPotential_def, hk]
-
 /-- The Hardy–Littlewood–Sobolev inequality at a single function `f`, for `n > 0`, given a
 constant `K` for the strong-type `(p, p)` maximal inequality at `f`. -/
 private theorem eLpNorm_rieszPotential_le_mul [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
@@ -842,8 +840,7 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
   -- In dimension zero the potential vanishes.
   rcases subsingleton_or_nontrivial E with hE | hE
   · refine ⟨0, fun f => ?_⟩
-    have : rieszPotential μ α f = 0 := funext fun x => rieszPotential_eq_zero_of_subsingleton hα
-    simp [this]
+    simp [rieszPotential_eq_zero_of_subsingleton μ hα f]
   -- The exponents: `α p < n` and `q (1 - α p / n) = p`.
   have hd : (0 : ℝ) < finrank ℝ E := by exact_mod_cast Module.finrank_pos
   have hq₀ : (0 : ℝ) < q := by exact_mod_cast pos_iff_ne_zero.2 hq

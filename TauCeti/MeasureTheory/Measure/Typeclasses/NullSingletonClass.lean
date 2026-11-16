@@ -8,10 +8,13 @@ module
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
-# Images after removing countably many inputs
+# Null-singleton measure lemmas
 
 For a measure with null singletons, removing countably many inputs changes the image of an
-arbitrary map only on a null set. Neither measurability nor injectivity of the map is needed.
+arbitrary map only on a null set (`Set.Countable.image_sdiff_ae_eq`), without measurability or
+injectivity of the map. Moreover, on a metric space any bounded set of diameter zero is a
+subsingleton and therefore has zero restricted measure
+(`MeasureTheory.Measure.restrict_eq_zero_of_diam_eq_zero`).
 -/
 
 public section
@@ -29,3 +32,11 @@ theorem Set.Countable.image_sdiff_ae_eq {α β : Type*} [MeasurableSpace β]
     rintro y ⟨⟨x, hx, rfl⟩, hn⟩
     exact ⟨x, by by_contra hne; exact hn ⟨x, ⟨hx, hne⟩, rfl⟩, rfl⟩
   · rw [sdiff_eq_empty.mpr (image_mono sdiff_subset), measure_empty]
+
+/-- For a measure with null singletons on a metric space, a bounded set of diameter zero has zero
+restricted measure. -/
+theorem MeasureTheory.Measure.restrict_eq_zero_of_diam_eq_zero {α : Type*} [MetricSpace α]
+    [MeasurableSpace α] {μ : Measure α} [NullSingletonClass μ] {s : Set α}
+    (hs : Bornology.IsBounded s) (hd : Metric.diam s = 0) : μ.restrict s = 0 :=
+  Measure.restrict_eq_zero.2 <|
+    (Set.not_nontrivial_iff.1 fun hn => (Metric.diam_pos hn hs).ne' hd).measure_zero μ
