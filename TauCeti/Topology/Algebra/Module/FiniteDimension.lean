@@ -57,9 +57,9 @@ The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`.
-The coordinates of a finite basis `v` are continuous linear functionals `Module.Basis.coordCLM`,
-the continuous counterparts of `Module.Basis.coord`, and `x = ∑ i, v.coordCLM i x • v i`
-(`Module.Basis.sum_coordCLM_smul`).
+A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
+bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
+of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -252,24 +252,7 @@ equivalence. -/
   ext x i
   simp [equivFun_apply]
 
-/-- The `i`-th coordinate of a finite basis `v`, as a continuous linear functional: the continuous
-counterpart of `Module.Basis.coord`. -/
-noncomputable def coordCLM [Finite ι] (v : Basis ι 𝕜 E) (i : ι) : E →L[𝕜] 𝕜 :=
-  (ContinuousLinearMap.proj i).comp v.equivFunL.toContinuousLinearMap
-
-@[simp] theorem coordCLM_apply [Finite ι] (v : Basis ι 𝕜 E) (i : ι) (x : E) :
-    v.coordCLM i x = v.repr x i :=
-  (rfl)
-
-@[simp] theorem coe_coordCLM [Finite ι] (v : Basis ι 𝕜 E) (i : ι) :
-    (v.coordCLM i : E →ₗ[𝕜] 𝕜) = v.coord i :=
-  (rfl)
-
 variable [Fintype ι]
-
-/-- A vector is the combination of a finite basis `v` with its continuous coordinates. -/
-theorem sum_coordCLM_smul (v : Basis ι 𝕜 E) (x : E) : ∑ i, v.coordCLM i x • v i = x := by
-  simp
 
 /-- The inverse of the continuous coordinate equivalence of a finite basis `v` sends a coordinate
 vector `x` to the linear combination `∑ i, x i • v i`. -/
@@ -279,6 +262,29 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
     rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
+
+namespace ContinuousLinearMap
+
+variable {R F G H : Type*} [CommSemiring R]
+  [AddCommMonoid F] [Module R F] [TopologicalSpace F]
+  [AddCommMonoid G] [Module R G] [TopologicalSpace G] [ContinuousAdd G] [ContinuousConstSMul R G]
+  [AddCommMonoid H] [Module R H] [TopologicalSpace H] [ContinuousAdd H] [ContinuousConstSMul R H]
+
+/-- The composition `S ∘ T` expanded in the products `b l ∘ a k` of a finite basis `b` of
+`G →L[R] H` and a finite basis `a` of `F →L[R] G`, with the products of the coordinates of `S` and
+`T` as coefficients. -/
+theorem comp_eq_sum_coord {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (a : Module.Basis κ R (F →L[R] G)) (b : Module.Basis ι R (G →L[R] H)) (S : G →L[R] H)
+    (T : F →L[R] G) :
+    S.comp T = ∑ lk : ι × κ, (b.coord lk.1 S * a.coord lk.2 T) • (b lk.1).comp (a lk.2) := by
+  ext v
+  conv_lhs => rw [← a.sum_repr T, ← b.sum_repr S]
+  simp only [comp_apply, sum_apply, smul_apply, map_sum, map_smul, Finset.smul_sum, smul_smul,
+    Fintype.sum_prod_type, Module.Basis.coord_apply]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
+
+end ContinuousLinearMap
 
 namespace Submodule
 

@@ -88,7 +88,8 @@ def mulLeftCLM (A : E → F →L[ℂ] G) (hA : A.HasTemperateGrowth)
     (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) :
     BesovSpace F φ s p q →L[ℂ] BesovSpace G φ s p q :=
   ∑ k, postcomp φ s p q (Module.finBasis ℂ (F →L[ℂ] G) k) ∘L
-    smulLeftCLM F φ s p q ((Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k ∘ A)
+    smulLeftCLM F φ s p q
+      (LinearMap.toContinuousLinearMap ((Module.finBasis ℂ (F →L[ℂ] G)).coord k) ∘ A)
       (hA.continuousLinearMap_comp _)
       (ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_of_forall_exists _
         (hA.1.of_le (mod_cast le_top)) hbd)
@@ -149,18 +150,19 @@ theorem exists_norm_mulLeftCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |s
       ‖mulLeftCLM φ s p q A hA hbd‖ ≤ C * M := by
   obtain ⟨C, hC, hmul⟩ := exists_norm_smulLeftCLM_le (F := F) (s := s) φ hN
   set b := Module.finBasis ℂ (F →L[ℂ] G)
-  refine ⟨C * ∑ k, ‖b k‖ * ‖b.coordCLM k‖, by positivity,
+  refine ⟨C * ∑ k, ‖b k‖ * ‖LinearMap.toContinuousLinearMap (b.coord k)‖, by positivity,
     fun {p q} _ _ A hA hbd M hAM ↦ ?_⟩
   -- Each term `L k (c k u)` has norm at most `‖L k‖ C ‖c k‖_{C^N}`, and the derivatives of the
-  -- coordinate `c k` are bounded by `‖b.coordCLM k‖ M`.
+  -- coordinate `c k` are bounded by `‖c k‖ M`.
   rw [mulLeftCLM]
-  calc _ ≤ ∑ k, ‖b k‖ * (C * (‖b.coordCLM k‖ * M)) := by
+  calc _ ≤ ∑ k, ‖b k‖ * (C * (‖LinearMap.toContinuousLinearMap (b.coord k)‖ * M)) := by
         refine (norm_sum_le _ _).trans ?_
         refine Finset.sum_le_sum fun k _ ↦ (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
         exact mul_le_mul (norm_postcomp_le _) (hmul _ _
-          ((b.coordCLM k).norm_iteratedFDeriv_comp_left_le_of_forall_le
-            (hA.1.of_le (mod_cast le_top)) hAM)) (norm_nonneg _) (norm_nonneg _)
-    _ = C * (∑ k, ‖b k‖ * ‖b.coordCLM k‖) * M := by
+          (ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le
+            (LinearMap.toContinuousLinearMap (b.coord k)) (hA.1.of_le (mod_cast le_top)) hAM))
+          (norm_nonneg _) (norm_nonneg _)
+    _ = C * (∑ k, ‖b k‖ * ‖LinearMap.toContinuousLinearMap (b.coord k)‖) * M := by
         rw [Finset.mul_sum, Finset.sum_mul]
         exact Finset.sum_congr rfl fun k _ ↦ by ring
 
