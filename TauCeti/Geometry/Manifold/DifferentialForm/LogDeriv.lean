@@ -269,7 +269,7 @@ theorem IsPrimitiveOn.eventually_mul_exp_neg_eq [IsManifold I 1 M] {u g : M → 
     (hg : IsPrimitiveOn (mlogDeriv I u) g U) (hu : MDifferentiableOn I 𝓘(ℝ, ℂ) u U)
     (hu₀ : ∀ y ∈ U, u y ≠ 0) {x : M} (hx : x ∈ U) :
     ∀ᶠ y in 𝓝 x, u y * exp (-g y) = u x * exp (-g x) := by
-  have hg' := hg.const_smul (-1)
+  have hg' := hg.const_smul (-1 : ℝ)
   set w : M → ℂ := u * fun y ↦ exp (((-1 : ℝ) • g) y) with hw_def
   have hgy (y : M) (hy : y ∈ U) : MDifferentiableAt I 𝓘(ℝ, ℂ) ((-1 : ℝ) • g) y :=
     (hg'.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
