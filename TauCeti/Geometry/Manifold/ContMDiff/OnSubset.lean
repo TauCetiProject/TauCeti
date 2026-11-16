@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # `C^n` maps on arbitrary subsets of a normed space
@@ -29,6 +30,8 @@ a subset of Euclidean space with corners.
 * `TauCeti.ContMDiffOnSubset.comp_contDiff`: precomposition with a `C^n` map of normed spaces.
 * `ContMDiff.comp_contMDiffOnSubset`: postcomposition with a `C^n` map of manifolds.
 * `TauCeti.ContMDiffOnSubset.prodMk`: a pair of such maps is such a map to the product.
+* `TauCeti.ContMDiffOnSubset.subtypeVal_comp_iff`: a map into an open submanifold is such a map
+  exactly when its composition with the inclusion is.
 
 ## References
 
@@ -108,6 +111,32 @@ theorem prodMk {g : s → N} (hf : ContMDiffOnSubset I n f) (hg : ContMDiffOnSub
   exact ⟨U ∩ V, Filter.inter_mem hU hV, fun y ↦ (f' y, g' y),
     (hf'.mono inter_subset_left).prodMk (hg'.mono inter_subset_right),
     fun y hy ↦ Prod.ext (hff y hy.1) (hgg y hy.2)⟩
+
+/-- A map into an open submanifold `V` is `C^n` on `s` exactly when its composition with the
+inclusion of `V` is. -/
+@[simp]
+theorem subtypeVal_comp_iff {V : TopologicalSpace.Opens M} {f : s → V} :
+    ContMDiffOnSubset I n (Subtype.val ∘ f) ↔ ContMDiffOnSubset I n f := by
+  classical
+  refine ⟨fun hf x ↦ ?_, fun hf x ↦ ?_⟩
+  · -- A local extension into `M` takes values in the open set `V` near `x`, by continuity, and
+    -- there it is a local extension into `V`.
+    obtain ⟨U, hU, g, hg, hgf⟩ := hf x
+    have hgx : g x ∈ V := by
+      rw [hgf x (mem_of_mem_nhds hU)]
+      exact (f x).2
+    refine ⟨U ∩ g ⁻¹' V, Filter.inter_mem hU
+      ((hg.continuousOn.continuousAt hU).preimage_mem_nhds (V.isOpen.mem_nhds hgx)),
+      fun y ↦ if h : g y ∈ V then ⟨g y, h⟩ else f x, ?_, fun y hy ↦ Subtype.ext ?_⟩
+    · rw [← TauCeti.ContMDiffOn.subtypeVal_comp_iff]
+      refine (hg.mono inter_subset_left).congr fun y hy ↦ ?_
+      have hyV : g y ∈ V := hy.2
+      simp [hyV]
+    · have hyV : g y ∈ V := hy.2
+      simpa [hyV] using hgf y hy.1
+  · obtain ⟨U, hU, g, hg, hgf⟩ := hf x
+    exact ⟨U, hU, Subtype.val ∘ g, contMDiff_subtype_val.comp_contMDiffOn hg,
+      fun y hy ↦ congrArg Subtype.val (hgf y hy)⟩
 
 end ContMDiffOnSubset
 
