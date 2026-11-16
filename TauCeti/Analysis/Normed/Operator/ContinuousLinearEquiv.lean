@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Normalizing continuous linear equivalences
@@ -26,6 +27,10 @@ For finite index types `S` and `T`, the splitting `ContinuousLinearEquiv.sumPiEq
 family indexed by `S ⊕ T` into its restrictions to `S` and to `T` preserves the sup norms
 (`ContinuousLinearEquiv.norm_sumPiEquivProdPi_apply`), so it and its inverse have operator norm
 at most `1`.
+
+Inverting a family of continuous linear equivalences out of a Banach space preserves continuity
+in the operator norm (`ContinuousWithinAt.continuousLinearEquiv_symm`,
+`ContinuousAt.continuousLinearEquiv_symm`).
 -/
 
 public section
@@ -147,3 +152,28 @@ theorem image_add_symm_smul_subset_ball (L : E ≃L[ℝ] F) (x : E) {t R : ℝ} 
     _ < R := htR
 
 end ContinuousLinearEquiv
+
+section Symm
+
+variable {𝕜 E F X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X]
+  {e : X → E ≃L[𝕜] F} {s : Set X} {x₀ : X}
+
+/-- The inverses of a family of continuous linear equivalences out of a Banach space which is
+continuous within `s` at `x₀` in the operator norm are continuous within `s` at `x₀`. -/
+theorem ContinuousWithinAt.continuousLinearEquiv_symm
+    (he : ContinuousWithinAt (fun x ↦ (e x : E →L[𝕜] F)) s x₀) :
+    ContinuousWithinAt (fun x ↦ ((e x).symm : F →L[𝕜] E)) s x₀ := by
+  simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
+    (contDiffAt_map_inverse (n := 0) (e x₀)).continuousAt.comp_continuousWithinAt
+      (f := fun x ↦ (e x : E →L[𝕜] F)) he
+
+/-- The inverses of a family of continuous linear equivalences out of a Banach space which is
+continuous at `x₀` in the operator norm are continuous at `x₀`. -/
+theorem ContinuousAt.continuousLinearEquiv_symm
+    (he : ContinuousAt (fun x ↦ (e x : E →L[𝕜] F)) x₀) :
+    ContinuousAt (fun x ↦ ((e x).symm : F →L[𝕜] E)) x₀ := by
+  rw [← continuousWithinAt_univ] at he ⊢
+  exact he.continuousLinearEquiv_symm
+
+end Symm

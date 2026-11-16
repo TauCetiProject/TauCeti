@@ -74,8 +74,8 @@ the linear algebra itself is standard.
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
   its determinant.
-* `LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `M` and `e'` of
-  `N` act on `det M ⊗ (det N)^*` by `det e * (det e')⁻¹`.
+* `LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `V` and `e'` of
+  `W` act on `det V ⊗ (det W)^*` by `det e * (det e')⁻¹`.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
   dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
   convention).
@@ -190,21 +190,23 @@ theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x 
   rw [coe_detLineCongr, ← exteriorPower.coe_map, LinearMap.map_exteriorPower_finrank_eq_det_smul]
   simp
 
-/-- Automorphisms `e` of `M` and `e'` of `N` act on `det M ⊗ (det N)^*` by multiplication by
+/-- Automorphisms `e` of `V` and `e'` of `W` act on `det V ⊗ (det W)^*` by multiplication by
 `det e * (det e')⁻¹`. -/
-theorem tensorCongr_detLineCongr_apply_eq_det_smul {K M N : Type*} [Field K] [AddCommGroup M]
-    [Module K M] [AddCommGroup N] [Module K N] (e : M ≃ₗ[K] M) (e' : N ≃ₗ[K] N)
-    (z : detLine K M ⊗[K] Dual K (detLine K N)) :
+theorem tensorCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Module.Free R W]
+    (e : V ≃ₗ[R] V) (e' : W ≃ₗ[R] W) (z : detLine R V ⊗[R] Dual R (detLine R W)) :
     TensorProduct.congr e.detLineCongr e'.detLineCongr.symm.dualMap z =
-      (LinearMap.det (e : M →ₗ[K] M) * (LinearMap.det (e' : N →ₗ[K] N))⁻¹) • z := by
+      (LinearEquiv.det e * (LinearEquiv.det e')⁻¹) • z := by
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
-    have hφ : e'.detLineCongr.symm.dualMap φ = (LinearMap.det (e' : N →ₗ[K] N))⁻¹ • φ := by
+    -- The dual factor is precomposed with the inverse of multiplication by `det e'`.
+    have hφ : e'.detLineCongr.symm.dualMap φ = ((LinearEquiv.det e')⁻¹ : Rˣ) • φ := by
       refine LinearMap.ext fun y ↦ ?_
-      rw [dualMap_apply, detLineCongr_symm, detLineCongr_apply_eq_det_smul, _root_.map_smul,
-        det_coe_symm, LinearMap.smul_apply]
-    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul, hφ,
-      TensorProduct.smul_tmul_smul]
+      have hy : e'.detLineCongr.symm y = ((LinearEquiv.det e')⁻¹ : Rˣ) • y := by
+        rw [LinearEquiv.symm_apply_eq, detLineCongr_apply_eq_det_smul, ← LinearEquiv.coe_det,
+          ← Units.smul_def, smul_inv_smul]
+      rw [dualMap_apply, hy, LinearMap.smul_apply, Units.smul_def, Units.smul_def, _root_.map_smul]
+    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
+    simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
   | add a b ha hb => rw [map_add, ha, hb, smul_add]
 
 end LinearEquiv
@@ -462,22 +464,8 @@ theorem detLineCongr_apply_eq_det_smul (f : M →ₗ[R] N) [Module.Free R (ker f
       (LinearEquiv.det
           (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)) *
         (LinearEquiv.det (Submodule.Quotient.equiv _ _ e₂
-          (f.map_range_eq_range_of_comp_eq e₁.surjective h)))⁻¹) • z := by
-  set k₂ := Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁.surjective h)
-  induction z using TensorProduct.inductionOn with
-  | tmul x φ =>
-    -- The dual factor is precomposed with the inverse of multiplication by `det k₂`.
-    have hφ : φ ∘ₗ (LinearEquiv.detLineCongr k₂).symm.toLinearMap =
-        ((LinearEquiv.det k₂)⁻¹ : Rˣ) • φ := by
-      refine LinearMap.ext fun y ↦ ?_
-      have hy : (LinearEquiv.detLineCongr k₂).symm y = ((LinearEquiv.det k₂)⁻¹ : Rˣ) • y := by
-        rw [LinearEquiv.symm_apply_eq, LinearEquiv.detLineCongr_apply_eq_det_smul,
-          ← LinearEquiv.coe_det, ← Units.smul_def, smul_inv_smul]
-      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, hy, LinearMap.smul_apply, Units.smul_def,
-        Units.smul_def, map_smul]
-    rw [detLineCongr_tmul, LinearEquiv.detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
-    simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
-  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+          (f.map_range_eq_range_of_comp_eq e₁.surjective h)))⁻¹) • z :=
+  LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul _ _ z
 
 /-- Let `e₁` and `e₂` act on the source and target of `f` as multiplication by the same unit `c`.
 Transport along the commuting square they form multiplies the determinant line of `f` by

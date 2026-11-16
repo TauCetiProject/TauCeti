@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # The parametric Morse lemma in trivial and general vector bundles
@@ -315,10 +316,8 @@ theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
     ∀ᶠ z in 𝓝 (a, (0 : E)), parametricMorseCoord f' (σ z.1, T z.1 z.2) =
       T z.1 (parametricMorseCoord f z) := by
   -- Inversion of operators is continuous at the isomorphism `T a`, since `E` is complete.
-  have hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a := by
-    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
-      ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := fun b ↦ (T b : E →L[ℝ] E'))
-        (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
+  have hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a :=
+    hT.continuousLinearEquiv_symm
   -- The fibrewise changes of coordinates `(b, v) ↦ (b, T b v)` and its inverse fix `(a, 0)`.
   have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
     hT.tendsto_prodMk_clm_apply

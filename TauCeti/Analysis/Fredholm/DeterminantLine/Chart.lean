@@ -47,6 +47,18 @@ lifting a fixed basis of `Λ' ⧸ range ι`, obtained from the right inverse nor
 depend continuously on the operator, and the transition coefficient is the inverse of the
 determinant of their `q'`-coordinates, up to a constant.
 
+Kernel charts are natural with respect to commuting squares of stabilized operators
+(`ContinuousLinearMap.detLineChartEquiv_detLineCongr`); in particular a kernel chart of `S`, for
+`S ∘ e₁ = e₂ ∘ T`, reads the transport of the determinant line of `T` as the conjugate kernel chart
+of `T` reads it (`ContinuousLinearMap.detLineChartEquiv_detLineCongr_of_comp_eq`). Changing the
+kernel coordinate `q` of a chart to `q₁` multiplies it by the determinant of `q₁ ∘ kerSection q`
+(`ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul`), and changing the stabilizer `D₂` to
+`D₂ + (D₁.coprod D₂) ∘ L`, with `L` valued in the kernel of `q`, multiplies it by the determinant
+of `1 + snd ∘ L` (`ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_comp_eq`). Over `ℝ`,
+when the stabilizer and the coordinate move continuously with a parameter, both determinants are
+close to `1`, so the chart with moving data is a positive multiple of the chart with the data
+frozen (`ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`).
+
 ## Main definitions
 
 * `ContinuousLinearMap.detLineChartEquiv`: the kernel chart `det T ≃ det G ⊗ (det Λ)^*` of the
@@ -58,10 +70,17 @@ determinant of their `q'`-coordinates, up to a constant.
   between the kernel charts of nested stabilizers are continuous and nowhere zero.
 * `ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`: the same for any two
   kernel charts.
+* `ContinuousLinearMap.detLineChartEquiv_detLineCongr`,
+  `ContinuousLinearMap.detLineChartEquiv_detLineCongr_of_comp_eq`: naturality of kernel charts.
+* `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul`,
+  `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_comp_eq`: changing the kernel
+  coordinate or the stabilizer of a kernel chart multiplies it by a determinant.
 * `ContinuousLinearMap.IsFredholm.exists_isOpen_kernelChart`: a Fredholm operator has a kernel
   chart valid on an open neighbourhood.
 * `ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`: over `ℝ`, the transition between
   two kernel charts valid at an operator is, nearby, a positive multiple of its value there.
+* `ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`: over `ℝ`, a kernel chart with
+  continuously moving data is, nearby, a positive multiple of the chart with the data frozen.
 
 ## References
 
@@ -241,6 +260,178 @@ private theorem detLineCongr_detLineShortExactEquiv_ne_zero
 end Nested
 
 end Chart
+
+section ChartCongr
+
+variable {𝕜 E Λ F G E' Λ' F' G' : Type*} [Field 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [TopologicalSpace E] [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [AddCommGroup F]
+  [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [AddCommGroup G] [Module 𝕜 G]
+  [TopologicalSpace G] [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E']
+  [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ'] [AddCommGroup F'] [Module 𝕜 F']
+  [TopologicalSpace F'] [ContinuousAdd F'] [AddCommGroup G'] [Module 𝕜 G'] [TopologicalSpace G']
+  [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 G] [FiniteDimensional 𝕜 Λ'] [FiniteDimensional 𝕜 G']
+  {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {D₁' : E' →L[𝕜] F'} {D₂' : Λ' →L[𝕜] F'}
+  {q : E × Λ →L[𝕜] G} {q' : E' × Λ' →L[𝕜] G'}
+  {e₁ : E ≃ₗ[𝕜] E'} {e₂ : F ≃ₗ[𝕜] F'} {eΛ : Λ ≃ₗ[𝕜] Λ'} {Ψ : (E × Λ) ≃ₗ[𝕜] (E' × Λ')}
+
+/-- **Naturality of kernel charts.** In the setting of
+`ContinuousLinearMap.detLineStabilizationEquiv_congr`, let `(D₂, q)` and `(D₂', q')` be kernel
+charts of `D₁` and `D₁'`, and let `eG : G ≃ G'` match the kernel coordinates along `Ψ` on the
+stabilized kernel. Then the two charts intertwine the transport of determinant lines along the
+square formed by `e₁` and `e₂` with the isomorphism `det G ⊗ (det Λ)^* ≃ det G' ⊗ (det Λ')^*`
+induced by `eG` and `eΛ`. -/
+theorem detLineChartEquiv_detLineCongr
+    (hΨ : (D₁'.coprod D₂' : E' × Λ' →ₗ[𝕜] F') ∘ₗ Ψ.toLinearMap =
+      e₂.toLinearMap ∘ₗ (D₁.coprod D₂ : E × Λ →ₗ[𝕜] F))
+    (hΨ₁ : ∀ x, Ψ (x, 0) = (e₁ x, 0)) (hΨ₂ : ∀ y, (Ψ y).2 = eΛ y.2) (eG : G ≃ₗ[𝕜] G')
+    (hq : ∀ y ∈ (D₁.coprod D₂).ker, q' (Ψ y) = eG (q y))
+    (hinv : ((D₁.coprod D₂).prod q).IsInvertible)
+    (hinv' : ((D₁'.coprod D₂').prod q').IsInvertible) (y : (D₁ : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv D₁' D₂' q' hinv'
+        ((D₁ : E →ₗ[𝕜] F).detLineCongr e₁ e₂ (comp_eq_of_coprod_comp_eq hΨ hΨ₁) y) =
+      TensorProduct.congr eG.detLineCongr eΛ.detLineCongr.symm.dualMap
+        (detLineChartEquiv D₁ D₂ q hinv y) := by
+  have := finiteDimensional_ker_of_isInvertible_prod_coprod hinv
+  have := finiteDimensional_ker_of_isInvertible_prod_coprod hinv'
+  have hs := surjective_of_isInvertible_prod hinv
+  obtain ⟨t, rfl⟩ := (detLineStabilizationEquiv D₁ D₂ hs).surjective y
+  rw [← detLineStabilizationEquiv_congr hΨ hΨ₁ hΨ₂ hs t,
+    detLineChartEquiv_detLineStabilizationEquiv, detLineChartEquiv_detLineStabilizationEquiv]
+  induction t using TensorProduct.inductionOn with
+  | tmul a φ =>
+    rw [TensorProduct.congr_tmul, LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul,
+      TensorProduct.congr_tmul]
+    congr 1
+    rw [← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans,
+      ← LinearEquiv.detLineCongr_trans]
+    -- Both composites read a stabilized kernel vector `k` as `q' (Ψ k) = eG (q k)`.
+    refine congrArg (fun e ↦ LinearEquiv.detLineCongr e a) (LinearEquiv.ext fun k ↦ ?_)
+    simp [hq k k.2]
+  | add a b ha hb => rw [LinearEquiv.map_add, LinearEquiv.map_add, ha, hb, LinearEquiv.map_add,
+      LinearEquiv.map_add]
+
+/-- **Changing the kernel coordinate.** Two kernel charts of `D₁` with the same stabilizer `D₂`
+differ by the determinant of the change of coordinate `q₁ ∘ kerSection q` of `G`. -/
+theorem detLineChartEquiv_apply_eq_det_smul (h : ((D₁.coprod D₂).prod q).IsInvertible)
+    {q₁ : E × Λ →L[𝕜] G} (h₁ : ((D₁.coprod D₂).prod q₁).IsInvertible)
+    (y : (D₁ : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv D₁ D₂ q₁ h₁ y =
+      (q₁ ∘L (D₁.coprod D₂).kerSection q).det • detLineChartEquiv D₁ D₂ q h y := by
+  set eG : G ≃ₗ[𝕜] G := ((D₁.coprod D₂).kerEquivOfProd q h).toLinearEquiv.trans
+    ((D₁.coprod D₂).kerEquivOfProd q₁ h₁).toLinearEquiv.symm with heG
+  have hdet : LinearMap.det (eG : G →ₗ[𝕜] G) = (q₁ ∘L (D₁.coprod D₂).kerSection q).det := by
+    congr 1
+    exact LinearMap.ext fun g ↦ by simp [heG]
+  have := detLineChartEquiv_detLineCongr (D₁' := D₁) (D₂' := D₂) (e₁ := LinearEquiv.refl 𝕜 E)
+    (e₂ := LinearEquiv.refl 𝕜 F) (eΛ := LinearEquiv.refl 𝕜 Λ) (Ψ := LinearEquiv.refl 𝕜 (E × Λ))
+    (LinearMap.ext fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) eG
+    (fun z hz ↦ by simp [heG, kerSection_apply_of_mem_ker h hz]) h h₁ y
+  rwa [LinearMap.detLineCongr_refl, LinearEquiv.refl_apply,
+    LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul, LinearEquiv.det_refl, inv_one, mul_one,
+    Units.smul_def, LinearEquiv.coe_det, hdet] at this
+
+variable [ContinuousAdd Λ] in
+/-- **Changing the stabilizer.** Let `D₂' = D₂ + (D₁.coprod D₂) ∘ L` for a map `L : Λ → E × Λ`
+with values in the kernel of the coordinate `q`. Then the kernel charts `(D₂', q)` and `(D₂, q)` of
+`D₁` differ by the determinant of the induced change `1 + snd ∘ L` of the stabilizing space. -/
+theorem detLineChartEquiv_apply_eq_det_smul_of_comp_eq {D₂' : Λ →L[𝕜] F} {L : Λ →L[𝕜] E × Λ}
+    (hL : ∀ l, D₁.coprod D₂ (L l) = D₂' l - D₂ l) (hqL : ∀ l, q (L l) = 0)
+    (h : ((D₁.coprod D₂).prod q).IsInvertible) (h' : ((D₁.coprod D₂').prod q).IsInvertible)
+    (y : (D₁ : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv D₁ D₂' q h' y =
+      (ContinuousLinearMap.id 𝕜 Λ + snd 𝕜 E Λ ∘L L).det • detLineChartEquiv D₁ D₂ q h y := by
+  set Φ := ContinuousLinearMap.id 𝕜 Λ + snd 𝕜 E Λ ∘L L with hΦ_def
+  -- `Ψ (u, l) = (u, l) + L l` carries the kernel of `(D₁.coprod D₂', q)` into that of
+  -- `(D₁.coprod D₂, q)`, so `Φ` is injective.
+  have hΨL (z : E × Λ) : (D₁.coprod D₂ (z + L z.2), q (z + L z.2)) =
+      (D₁.coprod D₂' z, q z) := by
+    refine Prod.ext ?_ ?_
+    · simp only [map_add, hL, coprod_apply]
+      abel
+    · simp [hqL]
+  have hΦ : LinearMap.det (Φ : Λ →ₗ[𝕜] Λ) ≠ 0 := by
+    rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, LinearMap.ker_eq_bot']
+    intro l hl
+    have hl' : l + (L l).2 = 0 := by simpa [hΦ_def] using hl
+    have hz : ((D₁.coprod D₂').prod q) (-(L l).1, l) = 0 := by
+      have h0 : (-(L l).1, l) + L (-(L l).1, l).2 = 0 := Prod.ext (neg_add_cancel _) hl'
+      rw [prod_apply, ← hΨL, h0, map_zero, map_zero, Prod.mk_zero_zero]
+    obtain ⟨e, he⟩ := h'
+    rw [← he, ContinuousLinearEquiv.coe_coe, e.map_eq_zero_iff] at hz
+    exact congrArg Prod.snd hz
+  set eΛ : Λ ≃ₗ[𝕜] Λ := (Φ : Λ →ₗ[𝕜] Λ).equivOfDetNeZero hΦ with heΛ
+  set Ψ : (E × Λ) ≃ₗ[𝕜] (E × Λ) := (LinearEquiv.prodComm 𝕜 E Λ).trans
+    ((eΛ.skewProd (LinearEquiv.refl 𝕜 E) (fst 𝕜 E Λ ∘L L : Λ →L[𝕜] E)).trans
+      (LinearEquiv.prodComm 𝕜 Λ E)) with hΨ_def
+  have hΨ (z : E × Λ) : Ψ z = z + L z.2 := by
+    ext <;> simp [hΨ_def, heΛ, hΦ_def]
+  have := detLineChartEquiv_detLineCongr (D₁' := D₁) (D₂' := D₂) (q' := q)
+    (e₁ := LinearEquiv.refl 𝕜 E) (e₂ := LinearEquiv.refl 𝕜 F) (eΛ := eΛ) (Ψ := Ψ)
+    (LinearMap.ext fun z ↦ by simpa [hΨ] using congrArg Prod.fst (hΨL z))
+    (fun u ↦ by simp [hΨ]) (fun z ↦ by simp [hΨ, heΛ, hΦ_def]) (LinearEquiv.refl 𝕜 G)
+    (fun z _ ↦ by simp [hΨ, hqL]) h' h y
+  rw [LinearMap.detLineCongr_refl, LinearEquiv.refl_apply,
+    LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul, LinearEquiv.det_refl, one_mul,
+    Units.smul_def, Units.val_inv_eq_inv_val, LinearEquiv.coe_det] at this
+  have hdet : LinearMap.det (eΛ : Λ →ₗ[𝕜] Λ) = Φ.det := by simp [heΛ]
+  rw [hdet] at this
+  exact (inv_smul_eq_iff₀ (hdet ▸ hΦ)).mp this.symm
+
+end ChartCongr
+
+section Conjugate
+
+variable {𝕜 E Λ F G E' F' : Type*} [Field 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [TopologicalSpace E] [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [AddCommGroup F]
+  [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [AddCommGroup G] [Module 𝕜 G]
+  [TopologicalSpace G] [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E'] [AddCommGroup F']
+  [Module 𝕜 F'] [TopologicalSpace F'] [ContinuousAdd F'] [FiniteDimensional 𝕜 Λ]
+  [FiniteDimensional 𝕜 G] {T : E →L[𝕜] F} {S : E' →L[𝕜] F'} {e₁ : E ≃L[𝕜] E'} {e₂ : F ≃L[𝕜] F'}
+  {D₂ : Λ →L[𝕜] F'} {q : E' × Λ →L[𝕜] G}
+
+omit [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 G] in
+/-- A kernel chart `(D₂, q)` of `S`, for `S ∘ e₁ = e₂ ∘ T`, is valid when the kernel chart
+`(e₂⁻¹ ∘ D₂, q ∘ (e₁ × 1))` of `T` is. -/
+theorem isInvertible_prod_coprod_of_comp_eq
+    (h : (S : E' →ₗ[𝕜] F') ∘ₗ e₁.toLinearEquiv.toLinearMap =
+      e₂.toLinearEquiv.toLinearMap ∘ₗ (T : E →ₗ[𝕜] F))
+    (hT : ((T.coprod ((e₂.symm : F' →L[𝕜] F) ∘L D₂)).prod
+      (q ∘L ((e₁ : E →L[𝕜] E') ∘L fst 𝕜 E Λ).prod (snd 𝕜 E Λ))).IsInvertible) :
+    ((S.coprod D₂).prod q).IsInvertible := by
+  have hS (u : E') : S u = e₂ (T (e₁.symm u)) := by
+    simpa using LinearMap.congr_fun h (e₁.symm u)
+  have : (S.coprod D₂).prod q =
+      ((e₂.prodCongr (ContinuousLinearEquiv.refl 𝕜 G) : F × G →L[𝕜] F' × G) ∘L
+        (T.coprod ((e₂.symm : F' →L[𝕜] F) ∘L D₂)).prod
+          (q ∘L ((e₁ : E →L[𝕜] E') ∘L fst 𝕜 E Λ).prod (snd 𝕜 E Λ))) ∘L
+      ((e₁.prodCongr (ContinuousLinearEquiv.refl 𝕜 Λ)).symm : E' × Λ →L[𝕜] E × Λ) := by
+    ext z <;> simp [hS]
+  rw [this, isInvertible_comp_equiv, isInvertible_equiv_comp]
+  exact hT
+
+/-- **Conjugate kernel charts.** For `S ∘ e₁ = e₂ ∘ T`, the kernel chart `(D₂, q)` of `S` reads
+the transport of `y ∈ det T` along the square as the kernel chart `(e₂⁻¹ ∘ D₂, q ∘ (e₁ × 1))` of
+`T` reads `y`. -/
+theorem detLineChartEquiv_detLineCongr_of_comp_eq
+    (h : (S : E' →ₗ[𝕜] F') ∘ₗ e₁.toLinearEquiv.toLinearMap =
+      e₂.toLinearEquiv.toLinearMap ∘ₗ (T : E →ₗ[𝕜] F))
+    (hT : ((T.coprod ((e₂.symm : F' →L[𝕜] F) ∘L D₂)).prod
+      (q ∘L ((e₁ : E →L[𝕜] E') ∘L fst 𝕜 E Λ).prod (snd 𝕜 E Λ))).IsInvertible)
+    (y : (T : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv S D₂ q (isInvertible_prod_coprod_of_comp_eq h hT)
+        ((T : E →ₗ[𝕜] F).detLineCongr e₁.toLinearEquiv e₂.toLinearEquiv h y) =
+      detLineChartEquiv T ((e₂.symm : F' →L[𝕜] F) ∘L D₂)
+        (q ∘L ((e₁ : E →L[𝕜] E') ∘L fst 𝕜 E Λ).prod (snd 𝕜 E Λ)) hT y := by
+  have hS (u : E) : S (e₁ u) = e₂ (T u) := by simpa using LinearMap.congr_fun h u
+  have := detLineChartEquiv_detLineCongr (e₁ := e₁.toLinearEquiv) (e₂ := e₂.toLinearEquiv)
+    (Ψ := e₁.toLinearEquiv.prodCongr (LinearEquiv.refl 𝕜 Λ)) (eΛ := LinearEquiv.refl 𝕜 Λ)
+    (LinearMap.ext fun z ↦ by simp [hS])
+    (fun _ ↦ rfl) (fun _ ↦ rfl) (LinearEquiv.refl 𝕜 G) (fun z _ ↦ by simp) hT
+    (isInvertible_prod_coprod_of_comp_eq h hT) y
+  rw [LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul] at this
+  simpa using this
+
+end Conjugate
 
 section Continuity
 
@@ -471,5 +662,76 @@ theorem eventually_detLineChartEquiv_symm_eq_smul {A₀ : E →L[ℝ] F}
   exact ⟨hUinv A hAV.1, hUinv' A hAV.2, c ⟨A, hAV⟩, hcA hAV, hcu ⟨A, hAV⟩⟩
 
 end Real
+
+section Moving
+
+open Filter Topology
+
+variable {E F Λ G X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup Λ] [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [TopologicalSpace X]
+  {T : X → E →L[ℝ] F} {D₂ : X → Λ →L[ℝ] F} {q : X → E × Λ →L[ℝ] G} {s : Set X} {x₀ : X}
+
+/-- **Kernel charts with moving data.** Let `T` be a family of operators and `(D₂ x, q x)` a
+kernel chart whose stabilizer and coordinate depend on the parameter, all continuous within `s`
+at `x₀`. Near `x₀` the chart with the moving data reads the determinant line of `T x` as a
+positive multiple of the chart with the data frozen at `x₀`. -/
+theorem eventually_detLineChartEquiv_eq_smul (hT : ContinuousWithinAt T s x₀)
+    (hD₂ : ContinuousWithinAt D₂ s x₀) (hq : ContinuousWithinAt q s x₀)
+    (h₀ : (((T x₀).coprod (D₂ x₀)).prod (q x₀)).IsInvertible) :
+    ∀ᶠ x in 𝓝[s] x₀, ∃ (h : (((T x).coprod (D₂ x)).prod (q x)).IsInvertible)
+      (h' : (((T x).coprod (D₂ x₀)).prod (q x₀)).IsInvertible) (c : ℝ), 0 < c ∧
+      ∀ y, detLineChartEquiv (T x) (D₂ x) (q x) h y =
+        c • detLineChartEquiv (T x) (D₂ x₀) (q x₀) h' y := by
+  have : CompleteSpace Λ := FiniteDimensional.completeSpace ℝ Λ
+  have hA : ContinuousWithinAt (fun x ↦ (T x).coprod (D₂ x)) s x₀ :=
+    hT.continuousLinearMapCoprod hD₂
+  have hA₀ : ContinuousWithinAt (fun x ↦ (T x).coprod (D₂ x₀)) s x₀ :=
+    hT.continuousLinearMapCoprod continuousWithinAt_const
+  have hprod {B : X → E × Λ →L[ℝ] F} {r : X → E × Λ →L[ℝ] G} (hB : ContinuousWithinAt B s x₀)
+      (hr : ContinuousWithinAt r s x₀) (hBr : ((B x₀).prod (r x₀)).IsInvertible) :
+      ∀ᶠ x in 𝓝[s] x₀, ((B x).prod (r x)).IsInvertible :=
+    ((prodL ℝ).continuous.continuousAt.comp_continuousWithinAt (hB.prodMk hr)).tendsto.eventually
+      hBr.eventually_nhds
+  -- The three pairs of the comparison are invertible near `x₀`.
+  have ev₀ := hprod hA₀ continuousWithinAt_const h₀
+  have ev₁ := hprod hA continuousWithinAt_const h₀
+  have ev₂ := hprod hA hq h₀
+  -- Moving the stabilizer from `D₂ x₀` to `D₂ x` is the cutoff change `D₂ x = D₂ x₀ + A₀ ∘ L x`,
+  -- where `L x` is normalized by `q x₀`; it acts on the stabilizer by `Φ x = 1 + snd ∘ L x`.
+  set L : X → Λ →L[ℝ] E × Λ :=
+    fun x ↦ (q x₀).kerSection ((T x).coprod (D₂ x₀)) ∘L (D₂ x - D₂ x₀) with hL_def
+  set Φ : X → Λ →L[ℝ] Λ := fun x ↦ ContinuousLinearMap.id ℝ Λ + snd ℝ E Λ ∘L L x with hΦ_def
+  have hL : ContinuousWithinAt L s x₀ :=
+    ((contDiffAt_kerSection (n := 0)
+      (isInvertible_prod_comm.mp h₀)).continuousAt.comp_continuousWithinAt
+        (f := fun x ↦ (q x₀, (T x).coprod (D₂ x₀))) (continuousWithinAt_const.prodMk hA₀)).clm_comp
+      (hD₂.sub continuousWithinAt_const)
+  have hΦ : ContinuousWithinAt (fun x ↦ (Φ x).det) s x₀ :=
+    continuous_det.continuousAt.comp_continuousWithinAt
+      (continuousWithinAt_const.add (continuousWithinAt_const.clm_comp hL))
+  have hΦ₀ : (Φ x₀).det = 1 := by
+    simp [hΦ_def, hL_def, ContinuousLinearMap.det, LinearMap.det_id]
+  -- Moving the coordinate from `q x₀` to `q x` acts on `G` by `K x = q x ∘ kerSection`.
+  set K : X → G →L[ℝ] G := fun x ↦ q x ∘L ((T x).coprod (D₂ x)).kerSection (q x₀)
+  have hK : ContinuousWithinAt (fun x ↦ (K x).det) s x₀ :=
+    continuous_det.continuousAt.comp_continuousWithinAt (hq.clm_comp
+      ((contDiffAt_kerSection (n := 0) h₀).continuousAt.comp_continuousWithinAt
+        (f := fun x ↦ ((T x).coprod (D₂ x), q x₀)) (hA.prodMk continuousWithinAt_const)))
+  have hK₀ : (K x₀).det = 1 := by
+    have : K x₀ = ContinuousLinearMap.id ℝ G :=
+      ContinuousLinearMap.ext fun g ↦ apply_kerSection_right h₀ g
+    rw [this, ContinuousLinearMap.det, coe_id, LinearMap.det_id]
+  have evΦ := hΦ.tendsto.eventually (lt_mem_nhds (hΦ₀ ▸ one_pos : (0 : ℝ) < (Φ x₀).det))
+  have evK := hK.tendsto.eventually (lt_mem_nhds (hK₀ ▸ one_pos : (0 : ℝ) < (K x₀).det))
+  filter_upwards [ev₀, ev₁, ev₂, evΦ, evK] with x h0x h1x h2x hΦx hKx
+  refine ⟨h2x, h0x, (K x).det * (Φ x).det, mul_pos hKx hΦx, fun y ↦ ?_⟩
+  rw [detLineChartEquiv_apply_eq_det_smul h1x h2x,
+    detLineChartEquiv_apply_eq_det_smul_of_comp_eq (L := L x)
+      (fun l ↦ apply_kerSection_right (isInvertible_prod_comm.mp h0x) _)
+      (fun l ↦ apply_kerSection _) h0x h1x, smul_smul]
+
+end Moving
 
 end ContinuousLinearMap
