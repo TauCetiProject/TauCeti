@@ -12,7 +12,7 @@ public import Mathlib.Tactic.Group
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Basic
 public import TauCeti.GroupTheory.Perm.MovedNorm
 import Mathlib.Algebra.BigOperators.Group.List.Basic
-import Mathlib.Algebra.Module.BigOperators
+import TauCeti.Combinatorics.Optimization.Replication
 import Mathlib.Tactic.GCongr
 
 /-!
@@ -209,8 +209,8 @@ theorem cost_ge_of_forall_cons_one {m : ℕ} (α : Fin (m + 1) → Fin (m + 1) �
 
 Replace each vertex of `K_k` by a block of `q` consecutive vertices of `K_{kq}`
 (`finProdFinEquiv`), put `1` on the pairs inside a block and the seed value between blocks. These
-are the two counts needed here; see `Cochain.defect_replicate` and `Cochain.gaugeDist_replicate`
-for the general statements. -/
+are only the two counts the upper bound needs; the general cochain statements are the roadmap's
+`Cochain.defect_replicate` and `Cochain.gaugeDist_replicate`. -/
 
 section Replication
 
@@ -287,70 +287,34 @@ private theorem rep_edge_le (α : Fin k → Fin k → S3) (γ : Fin (k * q) → 
   · simp only [hij, ↓reduceIte]
     exact Nat.zero_le _
 
-private theorem sum_two_coords (i j : Fin k) (hij : i ≠ j) (G : Fin q → Fin q → ℕ) :
-    ∑ s : Fin k → Fin q, G (s i) (s j) = q ^ (k - 2) * ∑ a, ∑ b, G a b := by
-  rw [← Equiv.sum_comp (Equiv.funSplitAt i (Fin q)).symm, Fintype.sum_prod_type]
-  have hj : j ≠ i := hij.symm
-  have key : ∀ a : Fin q, ∑ s' : {x // x ≠ i} → Fin q,
-      G ((Equiv.funSplitAt i (Fin q)).symm (a, s') i)
-        ((Equiv.funSplitAt i (Fin q)).symm (a, s') j) = q ^ (k - 2) * ∑ b, G a b := by
-    intro a
-    have e : ∀ s' : {x // x ≠ i} → Fin q, G ((Equiv.funSplitAt i (Fin q)).symm (a, s') i)
-        ((Equiv.funSplitAt i (Fin q)).symm (a, s') j) = G a (s' ⟨j, hj⟩) := by
-      intro s'
-      simp [Equiv.funSplitAt, Equiv.piSplitAt, hj]
-    simp only [e]
-    rw [← Fintype.piFinset_univ, Fintype.sum_piFinset_apply (G a) univ (⟨j, hj⟩ : {x // x ≠ i}),
-      smul_eq_mul]
-    simp only [Fintype.card_subtype_compl, Fintype.card_subtype_eq, card_univ, Fintype.card_fin]
-    congr 2
-  simp only [key, ← Finset.mul_sum]
-
 /-- Every gauge of the replication costs at least `q ^ 2` times a lower bound `D` for the seed:
-each of the `q ^ k` sections (one vertex per block) restricts the gauge to a gauge of the seed,
-and each pair between two blocks lies in exactly `q ^ (k - 2)` sections. -/
-theorem cost_rep_ge (hq : 0 < q) (α : Fin k → Fin k → S3) (D : ℕ)
-    (hD : ∀ β : Fin k → S3, D ≤ cost α β) (γ : Fin (k * q) → S3) :
-    q ^ 2 * D ≤ cost (rep q α) γ := by
-  by_cases hk : k < 2
-  · have h0 : cost α (fun _ => 1) = 0 := by
-      rw [cost_eq_sum]
-      refine Finset.sum_eq_zero fun u _ => Finset.sum_eq_zero fun v _ => ?_
-      have huv : ¬ u < v := by
-        intro huv; have := u.isLt; have := v.isLt; rw [Fin.lt_def] at huv; omega
-      simp [huv]
-    have : D = 0 := by have := hD (fun _ => 1); omega
-    simp [this]
-  set G : Fin k → Fin k → Fin q → Fin q → ℕ := fun i j a b =>
-    if i < j then moved ((γ (vert q i a))⁻¹ * α i j * γ (vert q j b)) else 0 with hG
-  have hI : ∑ i, ∑ j, ∑ a, ∑ b, G i j a b ≤ cost (rep q α) γ := by
-    rw [cost_eq_sum]
-    simp only [sum_blocks (q := q)]
-    rw [show ∑ i, ∑ j, ∑ a, ∑ b, G i j a b = ∑ i, ∑ a, ∑ j, ∑ b, G i j a b from
-      Finset.sum_congr rfl fun i _ => Finset.sum_comm]
-    gcongr with i _ a _ j _ b _
-    exact rep_edge_le α γ i j a b
-  have hS : ∑ s : Fin k → Fin q, cost α (fun i => γ (vert q i (s i))) =
-      q ^ (k - 2) * ∑ i, ∑ j, ∑ a, ∑ b, G i j a b := by
-    simp only [cost_eq_sum]
-    rw [Finset.sum_comm, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    by_cases hij : i < j
-    · exact sum_two_coords i j hij.ne (G i j)
-    · simp [hG, hij]
-  have hsec : q ^ k * D ≤ ∑ s : Fin k → Fin q, cost α (fun i => γ (vert q i (s i))) := by
-    have := Finset.sum_le_sum fun (s : Fin k → Fin q) (_ : s ∈ Finset.univ) =>
-      hD (fun i => γ (vert q i (s i)))
-    simpa [Finset.sum_const, Finset.card_univ, Fintype.card_fun, Fintype.card_fin,
-      mul_comm] using this
-  have hpow : q ^ k = q ^ (k - 2) * q ^ 2 := by rw [← pow_add]; congr 1; omega
-  refine Nat.le_of_mul_le_mul_left ?_ (pow_pos hq (k - 2))
-  calc q ^ (k - 2) * (q ^ 2 * D) = q ^ k * D := by rw [hpow, mul_assoc]
-    _ ≤ _ := hsec
-    _ = _ := hS
-    _ ≤ _ := Nat.mul_le_mul_left _ hI
+each section (one vertex per block) restricts the gauge to a gauge of the seed
+(`Finset.card_sq_nsmul_le_sum_of_forall_le_sum`), and pairs inside a block cost at least `0`. -/
+theorem cost_rep_ge (α : Fin k → Fin k → S3) (D : ℕ) (hD : ∀ β : Fin k → S3, D ≤ cost α β)
+    (γ : Fin (k * q) → S3) : q ^ 2 * D ≤ cost (rep q α) γ := by
+  set E := univ.filter fun e : Fin k × Fin k => e.1 < e.2
+  set w : Fin k × Fin k → Fin q → Fin q → ℕ := fun e a b =>
+    moved ((γ (vert q e.1 a))⁻¹ * α e.1 e.2 * γ (vert q e.2 b))
+  have hsum (F : Fin k → Fin k → ℕ) :
+      ∑ e ∈ E, F e.1 e.2 = ∑ i, ∑ j, if i < j then F i j else 0 := by
+    rw [Finset.sum_filter, Fintype.sum_prod_type]
+  have h := Finset.card_sq_nsmul_le_sum_of_forall_le_sum E
+    (fun e he => (Finset.mem_filter.mp he).2.ne) w (d := D) fun s => by
+      rw [hsum fun i j => w (i, j) (s i) (s j)]
+      simpa only [w, cost_eq_sum] using hD fun i => γ (vert q i (s i))
+  rw [Fintype.card_fin, smul_eq_mul] at h
+  refine h.trans ?_
+  rw [cost_eq_sum]
+  simp only [sum_blocks (q := q)]
+  calc ∑ e ∈ E, ∑ a, ∑ b, w e a b = ∑ i, ∑ j, ∑ a, ∑ b, if i < j then w (i, j) a b else 0 := by
+        rw [hsum (fun i j => ∑ a, ∑ b, w (i, j) a b)]
+        refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+        split_ifs <;> simp
+    _ = ∑ i, ∑ a, ∑ j, ∑ b, if i < j then w (i, j) a b else 0 :=
+        Finset.sum_congr rfl fun i _ => Finset.sum_comm
+    _ ≤ _ := by
+        gcongr with i _ a _ j _ b _
+        exact rep_edge_le α γ i j a b
 
 end Replication
 

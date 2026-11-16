@@ -81,7 +81,7 @@ private theorem exists_seed (k : ℕ) (hk : 3 ≤ k) : ∃ (α : Fin k → Fin k
     · exact ⟨w4, 6, by norm_num, cost_w4_ge, by rw [defect_w4]⟩
     · exact ⟨stair (2 * t + 1), t * (t + 1), Nat.mul_pos (by omega) (by omega),
         stair_cost_lower t, (stair_defect_mul t).le⟩
-  refine ⟨rep q α, q ^ 2 * D, Nat.mul_pos (pow_pos hq 2) hD, cost_rep_ge hq α D hcost, ?_⟩
+  refine ⟨rep q α, q ^ 2 * D, Nat.mul_pos (pow_pos hq 2) hD, cost_rep_ge α D hcost, ?_⟩
   rw [defect_rep]
   calc 3 * (q ^ 3 * defect α) = q ^ 3 * (3 * defect α) := by ring
     _ ≤ q ^ 3 * (m * D) := Nat.mul_le_mul_left _ hN
