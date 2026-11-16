@@ -32,7 +32,7 @@ of `S`.
 
 ## Main results
 
-* `TauCeti.EqIneqSystem.eval_wordMap_mem_V_eqSet`, `TauCeti.EqIneqSystem.mapsToWordMap_wordMap`:
+* `TauCeti.EqIneqSystem.eval_wordMap_mem_V_eqSet`, `TauCeti.EqIneqSystem.mapsTo_wordMap_wordMap`:
   the word maps send solutions of `Ω_T*` to solutions of the equations of the system.
 * `TauCeti.EqIneqSystem.evalGHom_comp_coordHom`, `TauCeti.EqIneqSystem.homEquiv_comp_coordHom`:
   composing a homomorphism `F_{R(Ω_T)} → H` with `π_Ω` corresponds, on points, to applying the
@@ -77,23 +77,22 @@ theorem mk_substituteVars_wordMap_mem_V_eqSet (hT : IsPartitionTable S.toWords T
 /-- **Kharlampovich–Myasnikov, Lemma 14(4).** In every group over `F(A)`, the word maps of a
 partition table of the words of a system map the algebraic set of `Ω_T*` into the algebraic set of
 the equations of the system. -/
-theorem mapsToWordMap_wordMap (ι : FreeGroup A →* H) (hT : IsPartitionTable S.toWords T) :
-    CoordGroup.MapsToWordMap ι (S.genEq T).toSystem S.eqSet
-      fun x => toGX _ FreeGroup.of (FreeGroup.mk (S.wordMap T x)) :=
-  (CoordGroup.mapsToWordMap_iff ..).2 fun v hv => by
-    convert eval_wordMap_mem_V_eqSet hT hv using 1
-    exact funext fun x => by rw [GroupAlgGeom.wordMap_apply, eval_toGX]
+theorem mapsTo_wordMap_wordMap (ι : FreeGroup A →* H) (hT : IsPartitionTable S.toWords T) :
+    Set.MapsTo (GroupAlgGeom.wordMap ι fun x => toGX _ FreeGroup.of (FreeGroup.mk (S.wordMap T x)))
+      (V ι (S.genEq T).toSystem) (V ι S.eqSet) := fun v hv => by
+  convert eval_wordMap_mem_V_eqSet hT hv using 1
+  exact funext fun x => by rw [GroupAlgGeom.wordMap_apply, eval_toGX]
 
 /-- **Kharlampovich–Myasnikov, Lemma 14(2).** The homomorphism `π_Ω : F_{R(S)} → F_{R(Ω_T)}` over
 `F(A)` induced by the word maps `x ↦ P_x` of a partition table of the words of a system, the
 coordinate groups being taken with respect to a group `H` over `F(A)`. -/
 noncomputable def coordHom (ι : FreeGroup A →* H) (hT : IsPartitionTable S.toWords T) :
     GHom (CoordGroup.coeff ι S.eqSet) (CoordGroup.coeff ι (S.genEq T).toSystem) :=
-  CoordGroup.homOfMapsToWordMap ι _ _ _ (mapsToWordMap_wordMap ι hT)
+  CoordGroup.homOfMapsToWordMap ι _ _ _ (mapsTo_wordMap_wordMap ι hT)
 
 theorem coordHom_def (ι : FreeGroup A →* H) (hT : IsPartitionTable S.toWords T) :
     coordHom ι hT = CoordGroup.homOfMapsToWordMap ι (S.genEq T).toSystem S.eqSet
-      (fun x => toGX _ FreeGroup.of (FreeGroup.mk (S.wordMap T x))) (mapsToWordMap_wordMap ι hT) :=
+      (fun x => toGX _ FreeGroup.of (FreeGroup.mk (S.wordMap T x))) (mapsTo_wordMap_wordMap ι hT) :=
   (rfl)
 
 /-- The homomorphism `π_Ω` sends the class of a word to the class of its image under the word
