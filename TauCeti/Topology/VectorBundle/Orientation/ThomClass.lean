@@ -68,6 +68,11 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   `singularCohomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg` and
   `singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq_neg` describe
   the effect of equal or opposite orientation readings in every degree.
+* In `Bundle.Trivialization`, the lemmas
+  `singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq` and
+  `singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg` are their homology
+  counterparts: equal readings induce the same map `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})`, and
+  opposite readings opposite maps.
 * `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`: there is a
   unique class of `Hʳ(E, E₀)` restricting on every fibre to the class read off from `g` along
   trivializations carrying the orientation of the fibre to `ω`, and to its negative along those
@@ -111,7 +116,7 @@ noncomputable section
 open Bundle CategoryTheory Filter Module Set
 open scoped Topology
 
-universe w
+universe w v u
 
 namespace Bundle.Trivialization
 
@@ -181,6 +186,40 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq
       hb' hι (by rw [h₁, h₂]; exact (neg_neg ω).symm)]
   · exact e.singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq e' hb hb' hι
       (h₂.trans h₁.symm) _
+
+variable {A : Type u} [Category.{v} A] [Limits.HasCoproducts.{w} A] [Abelian A] (R : A)
+
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as the same
+orientation of the model fibre induce the same map `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})`. This is
+the homology counterpart of
+`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq`. -/
+theorem singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
+    (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
+      TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R n := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_iff_det_pos _ _ hι] at h
+  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+  have hd : 0 < (e.coordChangeL ℝ e' b : F →L[ℝ] F).det := h
+  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_pos hd,
+    SignType.coe_one, one_smul]
+
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
+orientations of the model fibre induce opposite maps `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})`. This
+is the homology counterpart of
+`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg`.
+-/
+theorem singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg
+    (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
+      -TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R n := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
+    at h
+  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+  have hd : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det < 0 := h
+  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_neg hd,
+    SignType.coe_neg_one, neg_one_zsmul]
 
 end Bundle.Trivialization
 
