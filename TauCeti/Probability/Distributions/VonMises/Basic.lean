@@ -294,7 +294,7 @@ namespace ProbabilityTheory
 
 open TauCeti.Probability
 
-local instance factTwoPiPosHasLaw : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+attribute [local instance] factTwoPiPos
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → AddCircle (2 * π)}
   {m : AddCircle (2 * π)} {κ : ℝ}
@@ -309,8 +309,8 @@ theorem HasLaw.hasPDF_vonMisesMeasure (hX : HasLaw X (vonMisesMeasure m κ) P) :
   · refine hasPDF_of_hasLaw_withDensity (f := 0) aemeasurable_const ?_
     rwa [withDensity_zero, ← vonMisesMeasure_of_neg (not_le.mp hκ)]
 
-/-- The canonical Haar density of a random angle with a von Mises law agrees almost everywhere
-with the named von Mises density. -/
+/-- For a nonnegative concentration, the canonical Haar density of a random angle with a von Mises
+law agrees almost everywhere with the named von Mises density. -/
 theorem HasLaw.pdf_vonMisesMeasure (hX : HasLaw X (vonMisesMeasure m κ) P) (hκ : 0 ≤ κ) :
     pdf X P AddCircle.haarAddCircle =ᵐ[AddCircle.haarAddCircle] vonMisesPDF m κ := by
   rw [vonMisesMeasure_of_nonneg hκ] at hX
