@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SacksSplitting.Corollaries
+public import TauCeti.Computability.SacksSplitting.Code
 public import TauCeti.Computability.Simple.Lowness
 
 /-!
@@ -182,8 +182,16 @@ theorem exists_low_ce_degree_incompRel_lowSimpleSet :
         Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
           (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) ∧
       IncompRel (· ≤ ·) (toAntisymmetrization TuringReducible A.oracle)
-        (toAntisymmetrization TuringReducible lowSimpleSet.oracle) :=
-  exists_low_ce_degree_incompRel rePred_mem_lowSimpleSet degree_lowSimpleSet_mem_Ioo
+        (toAntisymmetrization TuringReducible lowSimpleSet.oracle) := by
+  have hK : ¬TuringReducible (∅ : Set ℕ).jump.oracle lowSimpleSet.oracle := fun h =>
+    degree_lowSimpleSet_mem_Ioo.2.not_ge (turingDegree_le_iff.2 h)
+  obtain ⟨A, hA, hlow, h₁, h₂⟩ :=
+    exists_low_incomparable_degree rePred_mem_lowSimpleSet simple_lowSimpleSet.not_computablePred hK
+  exact ⟨A, hA, hlow,
+    Set.degree_mem_Ioo_of_incomparable hlow.turingReducible_jump_empty
+      (Set.turingReducible_jump_of_rePred ∅ rePred_mem_lowSimpleSet)
+      (mt turingDegree_le_iff.2 h₁) (mt turingDegree_le_iff.2 h₂),
+    h₁, h₂⟩
 
 /-! ### Index-level splitting of the halting set -/
 

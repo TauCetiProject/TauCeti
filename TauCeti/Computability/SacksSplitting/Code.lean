@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SacksSplitting.Low
+public import TauCeti.Computability.SacksSplitting.Degree
 public import TauCeti.Computability.Split
 
 /-!
@@ -21,10 +21,16 @@ numerical indices.
 Unconditional properties are kept separate from those requiring a noncomputable target:
 
 * for **all** codes `c₀` and `c₁`, the domain of `splitCode b c₀ c₁` is
-  `splitHalf c₀.domStage c₁.domStage b`, the two domains are disjoint with union `W_{c₀}`, and
-  `Nat.Partrec.Code.splitProgram` applied to `(splitCode b c₀ c₁, splitCode (!b) c₀ c₁)` computes
-  the `b`-half relative to `W_{c₀}`;
-* when `W_{c₁}` is **noncomputable**, both output domains are low and neither computes `W_{c₁}`.
+  `splitHalf c₀.domStage c₁.domStage b`, the two domains are disjoint with union `W_{c₀}` and
+  parity join Turing equivalent to `W_{c₀}`, and `Nat.Partrec.Code.splitProgram` applied to
+  `(splitCode b c₀ c₁, splitCode (!b) c₀ c₁)` computes the `b`-half relative to `W_{c₀}`;
+* when `W_{c₁}` is **noncomputable**, both output domains are low and neither computes `W_{c₁}`,
+  and self-splitting `splitCode b c c` produces Turing incomparable halves;
+* fixing a code `k₀` for `(∅ : Set ℕ).jump`, the primitive recursive pair
+  `(fun c => splitCode false k₀ c, fun c => splitCode true k₀ c)` partitions `(∅ : Set ℕ).jump`
+  for all `c`, with both domains low and at least one Turing incomparable with `W_c` whenever `W_c`
+  is noncomputable and incomplete [S, VII.3.7 and p. 125], without asserting a computable selector
+  between the two halves.
 
 No computable operator extracting lowness-reduction indices uniformly from `c₁` is asserted.
 
@@ -45,16 +51,20 @@ No computable operator extracting lowness-reduction indices uniformly from `c₁
 * `TauCeti.SacksSplitting.setOf_dom_eval_splitCode`,
   `TauCeti.SacksSplitting.disjoint_dom_eval_splitCode`,
   `TauCeti.SacksSplitting.dom_eval_splitCode_false_union_true`,
-  `TauCeti.SacksSplitting.eval_splitProgram_splitCode`: unconditional domain, disjointness, union,
-  and uniform split-reduction identities for all `c₀, c₁`.
+  `TauCeti.SacksSplitting.eval_splitProgram_splitCode`,
+  `TauCeti.SacksSplitting.turingEquivalent_dom_eval_join_splitCode`: unconditional domain,
+  disjointness, union, uniform split-reduction, and join-equivalence identities for all `c₀, c₁`.
 * `TauCeti.SacksSplitting.low_dom_eval_splitCode`,
-  `TauCeti.SacksSplitting.not_turingReducible_dom_eval_splitCode`: lowness and cone avoidance of
-  both output domains when `W_{c₁}` is noncomputable.
+  `TauCeti.SacksSplitting.not_turingReducible_dom_eval_splitCode`,
+  `TauCeti.SacksSplitting.incompRel_dom_eval_splitCode_self`,
+  `TauCeti.SacksSplitting.exists_primrec_code_pair_incompRel_of_incomplete`: lowness, cone
+  avoidance, self-splitting incomparability, and the uniform primitive recursive pair for
+  incomplete targets.
 
 ## References
 
 * R. I. Soare, *Recursively Enumerable Sets and Degrees*, Springer, 1987, Theorem VII.3.2,
-  pp. 124–126.
+  Remark VII.3.3, and Corollaries VII.3.4 and VII.3.7, pp. 124–126.
 -/
 
 public section
@@ -202,6 +212,24 @@ theorem eval_splitProgram_splitCode (b : Bool) (c₀ c₁ : Nat.Partrec.Code) :
   · have h := Nat.Partrec.Code.eval_splitProgram (disjoint_dom_eval_splitCode c₀ c₁).symm
     rwa [Set.union_comm, dom_eval_splitCode_false_union_true, setOf_dom_eval_splitCode] at h
 
+/-- For **all** codes `c₀` and `c₁`, `W_{c₀}` is Turing equivalent to the parity join of the two
+output domains `W_{splitCode false c₀ c₁}` and `W_{splitCode true c₀ c₁}` [S, VII.3.3]. -/
+theorem turingEquivalent_dom_eval_join_splitCode (c₀ c₁ : Nat.Partrec.Code) :
+    TuringEquivalent {x | (c₀.eval x).Dom}.oracle
+      ({x | ((splitCode false c₀ c₁).eval x).Dom}.join
+        {x | ((splitCode true c₀ c₁).eval x).Dom}).oracle := by
+  rw [← dom_eval_splitCode_false_union_true c₀ c₁]
+  exact (disjoint_dom_eval_splitCode c₀ c₁).turingEquivalent_union_join
+    (splitCode false c₀ c₁).rePred_dom_eval (splitCode true c₀ c₁).rePred_dom_eval
+
+/-- When `W_{c₀}` is not low, the parity join of `W_{splitCode false c₀ c₁}` and
+`W_{splitCode true c₀ c₁}` is not low, for any target code `c₁`. -/
+theorem not_low_join_dom_eval_splitCode {c₀ : Nat.Partrec.Code} (c₁ : Nat.Partrec.Code)
+    (hnl : ¬{x | (c₀.eval x).Dom}.Low) :
+    ¬({x | ((splitCode false c₀ c₁).eval x).Dom}.join
+      {x | ((splitCode true c₀ c₁).eval x).Dom}).Low := fun h =>
+  hnl ((Set.low_congr (turingEquivalent_dom_eval_join_splitCode c₀ c₁)).2 h)
+
 /-! ### Promised lowness and cone avoidance for noncomputable targets -/
 
 section NoncomputableTarget
@@ -229,6 +257,66 @@ theorem not_turingReducible_dom_eval_splitCode (b : Bool) (c₀ : Nat.Partrec.Co
     c₁.computable_domStage hnc' b
 
 end NoncomputableTarget
+
+/-- When `W_c` is noncomputable, the domains of `splitCode false c c` and `splitCode true c c` are
+Turing incomparable [S, VII.3.4]. -/
+theorem incompRel_dom_eval_splitCode_self {c : Nat.Partrec.Code}
+    (hnc : ¬ComputablePred fun x => (c.eval x).Dom) :
+    IncompRel TuringReducible {x | ((splitCode false c c).eval x).Dom}.oracle
+      {x | ((splitCode true c c).eval x).Dom}.oracle := by
+  rw [setOf_dom_eval_splitCode, setOf_dom_eval_splitCode]
+  have hnclim : ¬ComputablePred (· ∈ stageLimit c.domStage) := by
+    rwa [Nat.Partrec.Code.stageLimit_domStage]
+  exact incompRel_splitHalf_self c.monotone_domStage c.computable_domStage hnclim
+
+/-- Given a code `k₀` for `(∅ : Set ℕ).jump` and a code `c` whose domain `W_c` is noncomputable
+and incomplete, at least one side `b` of `splitCode b k₀ c` has a low domain Turing incomparable
+with `W_c` [S, VII.3.7]. -/
+theorem exists_side_incompRel_splitCode_of_incomplete {k₀ c : Nat.Partrec.Code}
+    (hk₀ : {x | (k₀.eval x).Dom} = (∅ : Set ℕ).jump)
+    (hnc : ¬ComputablePred fun x => (c.eval x).Dom)
+    (hinc : ¬TuringReducible (∅ : Set ℕ).jump.oracle {x | (c.eval x).Dom}.oracle) :
+    ∃ b : Bool, {x | ((splitCode b k₀ c).eval x).Dom}.Low ∧
+      IncompRel TuringReducible {x | ((splitCode b k₀ c).eval x).Dom}.oracle
+        {x | (c.eval x).Dom}.oracle := by
+  by_contra! hall
+  have hred (b : Bool) :
+      TuringReducible {x | ((splitCode b k₀ c).eval x).Dom}.oracle {x | (c.eval x).Dom}.oracle := by
+    by_contra hnr
+    exact hall b (low_dom_eval_splitCode hnc b k₀)
+      ⟨hnr, not_turingReducible_dom_eval_splitCode hnc b k₀⟩
+  have heq := turingEquivalent_dom_eval_join_splitCode k₀ c
+  rw [hk₀] at heq
+  exact hinc (heq.1.trans (Set.join_turingReducible (hred false) (hred true)))
+
+/-- **Uniform code-pair form of [S, VII.3.7 and p. 125].** There is a pair of primitive recursive
+code transformations `(f₀, f₁)` whose domains partition `(∅ : Set ℕ).jump` for **every** code `c`,
+such that whenever `W_c` is noncomputable and incomplete, both domains are low and **at least one**
+of them is Turing incomparable with `W_c`. Following Soare's remark on p. 125, the pair
+`(f₀ c, f₁ c)` is uniform in `c`, whereas no computable selector choosing a single successful half
+is claimed. -/
+theorem exists_primrec_code_pair_incompRel_of_incomplete :
+    ∃ f₀ f₁ : Nat.Partrec.Code → Nat.Partrec.Code, Primrec f₀ ∧ Primrec f₁ ∧
+      (∀ c, Disjoint {x | ((f₀ c).eval x).Dom} {x | ((f₁ c).eval x).Dom} ∧
+        {x | ((f₀ c).eval x).Dom} ∪ {x | ((f₁ c).eval x).Dom} = (∅ : Set ℕ).jump) ∧
+      ∀ c, (¬ComputablePred fun x => (c.eval x).Dom) →
+        ¬TuringReducible (∅ : Set ℕ).jump.oracle {x | (c.eval x).Dom}.oracle →
+        {x | ((f₀ c).eval x).Dom}.Low ∧ {x | ((f₁ c).eval x).Dom}.Low ∧
+          (IncompRel TuringReducible {x | ((f₀ c).eval x).Dom}.oracle {x | (c.eval x).Dom}.oracle ∨
+            IncompRel TuringReducible {x | ((f₁ c).eval x).Dom}.oracle
+              {x | (c.eval x).Dom}.oracle) := by
+  obtain ⟨k₀, hk₀⟩ := rePred_iff_exists_code.1 Set.rePred_mem_jump_empty
+  have hk₀' : {x | (k₀.eval x).Dom} = (∅ : Set ℕ).jump := Set.ext fun x => (hk₀ x).symm
+  refine ⟨fun c => splitCode false k₀ c, fun c => splitCode true k₀ c,
+    (primrec₂_splitCode false).comp (Primrec.const k₀) Primrec.id,
+    (primrec₂_splitCode true).comp (Primrec.const k₀) Primrec.id,
+    fun c => ⟨disjoint_dom_eval_splitCode k₀ c,
+      (dom_eval_splitCode_false_union_true k₀ c).trans hk₀'⟩,
+    fun c hnc hinc => ⟨low_dom_eval_splitCode hnc false k₀, low_dom_eval_splitCode hnc true k₀, ?_⟩⟩
+  obtain ⟨b, -, hincb⟩ := exists_side_incompRel_splitCode_of_incomplete hk₀' hnc hinc
+  cases b
+  · exact Or.inl hincb
+  · exact Or.inr hincb
 
 /-! ### Numerical index operator -/
 
