@@ -24,6 +24,7 @@ coordinates adapted to a totally real submanifold.
 ## Main declarations
 
 * `normalExtension`: a parametrization extended by a prescribed normal frame.
+* `contDiffOn_normalExtension`: regularity on coordinate domains.
 * `hasFDerivAt_normalExtension_zero`: its first jet for merely continuous normal frames.
 * `adaptedNormalExtension`: the frame obtained by applying `J` to the tangential derivative.
 * `contDiffOn_adaptedNormalExtension`: finite regularity on open coordinate domains.
@@ -75,6 +76,14 @@ theorem contDiffAt_normalExtension {γ : V → W} {A : V → E →L[𝕜] W} {n 
     ContDiffAt 𝕜 n (normalExtension γ A) (x, y) :=
   (hγ.comp (x, y) contDiffAt_fst).add
     ((hA.comp (x, y) contDiffAt_fst).clm_apply contDiffAt_snd)
+
+/-- The extension is `C^n` on `U ×ˢ univ` where its parametrization and its frame are `C^n` on
+`U`. -/
+theorem contDiffOn_normalExtension {γ : V → W} {A : V → E →L[𝕜] W} {n : ℕ∞ω} {U : Set V}
+    (hγ : ContDiffOn 𝕜 n γ U) (hA : ContDiffOn 𝕜 n A U) :
+    ContDiffOn 𝕜 n (normalExtension γ A) (U ×ˢ Set.univ) := by
+  have hfst : Set.MapsTo (Prod.fst : V × E → V) (U ×ˢ Set.univ) U := fun _ hp ↦ hp.1
+  exact (hγ.comp contDiffOn_fst hfst).add ((hA.comp contDiffOn_fst hfst).clm_apply contDiffOn_snd)
 
 /-- On the zero section, continuity of the normal frame suffices for the first-jet formula.
 No derivative of that frame is required. -/
@@ -137,12 +146,8 @@ theorem contDiffOn_adaptedNormalExtension {γ : V → W} {J : W → W →L[𝕜]
     (hγΩ : Set.MapsTo γ U Ω) :
     ContDiffOn 𝕜 n (adaptedNormalExtension γ J) (U ×ˢ Set.univ) := by
   have hγn := hγ.of_le (le_self_add : n ≤ n + 1)
-  have hA := (hJ.comp hγn hγΩ).clm_comp (hγ.fderiv_of_isOpen hU le_rfl)
-  have hfst : Set.MapsTo (Prod.fst : V × V → V) (U ×ˢ Set.univ) U := fun _ hp ↦ hp.1
-  exact ((hγn.comp contDiffOn_fst hfst).add
-    ((hA.comp contDiffOn_fst hfst).clm_apply contDiffOn_snd)).congr
-      (fun p _ ↦ by simp only [adaptedNormalExtension_apply, Function.comp_apply,
-        ContinuousLinearMap.comp_apply])
+  exact contDiffOn_normalExtension hγn
+    ((hJ.comp hγn hγΩ).clm_comp (hγ.fderiv_of_isOpen hU le_rfl))
 
 /-- The adapted first jet requires only a `C^1` parametrization and a continuous structure
 at the base point. In particular it does not consume a derivative of `J`. -/
