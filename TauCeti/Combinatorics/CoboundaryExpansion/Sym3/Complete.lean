@@ -23,8 +23,8 @@ For every finite linearly ordered `V` with `4 ≤ Fintype.card V`:
 
 The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
 For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with
-`t, q ≥ 1`. The seeds are the `k = 4` witness `Sym3.w4` (defect `8`, every gauge costs at least
-`6`, checked by `decide +kernel`) and Kozlov's staircase `Sym3.stair (2 t + 1)` (defect
+`t, q ≥ 1`. The seeds are a private `k = 4` witness (defect `8`, every gauge costs at least `6`,
+checked by `decide +kernel`) and Kozlov's staircase `Sym3.stair (2 t + 1)` (defect
 `t (t + 1) (2 t + 1) / 3`, every gauge costs at least `t (t + 1)`). Balanced replication multiplies
 the defect by `q ^ 3` and the gauge lower bound by `q ^ 2`, so `K_k` carries a cochain with
 `3 N ≤ k D` and `0 < D`, and `h1_le_div` applies.
@@ -47,7 +47,7 @@ namespace Sym3
 
 /-- The `k = 4` seed: `t12`, `t01`, `t02` on the edges `{1, 2}`, `{1, 3}`, `{2, 3}` and `1` on the
 other edges. -/
-def w4 (u v : Fin 4) : S3 :=
+private def w4 (u v : Fin 4) : S3 :=
   if u = 1 ∧ v = 2 then t12 else if u = 1 ∧ v = 3 then t01 else if u = 2 ∧ v = 3 then t02 else 1
 
 private theorem defect_w4 : defect w4 = 8 := by decide +kernel

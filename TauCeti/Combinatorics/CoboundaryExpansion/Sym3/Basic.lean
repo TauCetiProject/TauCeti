@@ -202,12 +202,25 @@ theorem cost_ge_of_forall_cons_one {m : ℕ} (α : Fin (m + 1) → Fin (m + 1) �
   rw [cost_ofLt] at hβ
   exact_mod_cast hβ
 
+end TauCeti.Sym3
+
+end
+
 /-! ### Balanced replication
 
 Replace each vertex of `K_k` by a block of `q` consecutive vertices of `K_{kq}`
 (`finProdFinEquiv`), put `1` on the pairs inside a block and the seed value between blocks.
 Replication multiplies the defect by `q ^ 3` (`Sym3.defect_rep`) and the gauge lower bound by
-`q ^ 2` (`Sym3.cost_rep_ge`). -/
+`q ^ 2` (`Sym3.cost_rep_ge`). The bodies of `blk`, `vert` and `rep` are not exposed; use their
+defining lemmas. -/
+
+public section
+
+open Finset Equiv
+
+namespace TauCeti.Sym3
+
+variable {k : ℕ}
 
 section Replication
 
@@ -218,6 +231,18 @@ def blk (q : ℕ) (x : Fin (k * q)) : Fin k := (finProdFinEquiv.symm x).1
 
 /-- Vertex `a` of block `i`. -/
 def vert (q : ℕ) (i : Fin k) (a : Fin q) : Fin (k * q) := finProdFinEquiv (i, a)
+
+/-- The defining equation of `blk`. -/
+theorem blk_def (q : ℕ) (x : Fin (k * q)) : blk q x = (finProdFinEquiv.symm x).1 := by
+  rw [blk]
+
+/-- The defining equation of `vert`. -/
+theorem vert_def (q : ℕ) (i : Fin k) (a : Fin q) : vert q i a = finProdFinEquiv (i, a) := by
+  rw [vert]
+
+/-- Vertex `a` of block `i` is the number `a + q i`. -/
+@[simp] theorem val_vert (i : Fin k) (a : Fin q) : (vert q i a : ℕ) = a + q * i := by
+  simp [vert, finProdFinEquiv_apply_val]
 
 @[simp] theorem blk_vert (i : Fin k) (a : Fin q) : blk q (vert q i a) = i := by simp [blk, vert]
 
@@ -233,6 +258,21 @@ theorem vert_lt_iff (i j : Fin k) (a b : Fin q) :
 /-- The `q`-fold balanced replication of `α`. -/
 def rep (q : ℕ) (α : Fin k → Fin k → S3) : Fin (k * q) → Fin (k * q) → S3 :=
   fun x y => if blk q x = blk q y then 1 else val α (blk q x) (blk q y)
+
+/-- The defining equation of `rep`. -/
+theorem rep_apply (α : Fin k → Fin k → S3) (x y : Fin (k * q)) :
+    rep q α x y = if blk q x = blk q y then 1 else val α (blk q x) (blk q y) := by
+  rw [rep]
+
+/-- Inside a block the replication is `1`. -/
+@[simp] theorem rep_of_blk_eq (α : Fin k → Fin k → S3) {x y : Fin (k * q)}
+    (h : blk q x = blk q y) : rep q α x y = 1 := by
+  simp [rep_apply, h]
+
+/-- Between distinct blocks the replication is the seed value. -/
+@[simp] theorem rep_of_blk_ne (α : Fin k → Fin k → S3) {x y : Fin (k * q)}
+    (h : blk q x ≠ blk q y) : rep q α x y = val α (blk q x) (blk q y) := by
+  simp [rep_apply, h]
 
 private theorem moved_one : moved (1 : S3) = 0 := by decide
 
