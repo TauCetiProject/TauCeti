@@ -189,15 +189,13 @@ private theorem unitaryFrame_eq_neg_mul_sqrt_mul (hg : ∀ v w, ω v (J₀ w) = 
   set R := CFC.sqrt h♯
   have hRT : R * T = 1 := ContinuousLinearMap.sqrt_mul_metricChangeTransport hH
   have hTR : T * R = 1 := ContinuousLinearMap.metricChangeTransport_mul_sqrt hH
-  have hRR : R * R = h♯ := CFC.sqrt_mul_sqrt_self _ hH.nonneg
   -- `T * T` is the inverse `-(B * A)` of `h♯ = -(A * B)`.
   have hTT : T * T = -(B * A) := by
-    have h1 : T * T * h♯ = 1 := by
-      rw [← hRR, show T * T * (R * R) = T * (T * R) * R by noncomm_ring, hTR, mul_one, hTR]
     have h2 : h♯ * -(B * A) = 1 := by
       rw [hP, show -(A * B) * -(B * A) = A * (B * B) * A by noncomm_ring, hBB]
       simp [hAA]
-    rw [← mul_one (T * T), ← h2, ← mul_assoc, h1, one_mul]
+    rw [← mul_one (T * T), ← h2, ← mul_assoc,
+      ContinuousLinearMap.metricChangeTransport_mul_self_mul hH, one_mul]
   have hstar : star A = -A := by
     rw [ContinuousLinearMap.star_eq_adjoint]
     exact ω.adjoint_eq_neg_of_forall_inner_apply_eq (inner_apply_left_eq_of_apply_apply_eq_inner hg)
