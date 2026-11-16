@@ -29,7 +29,8 @@ one.
   agree.
 * `Representation.toContRepresentation`: a representation on a finite-dimensional space as a
   continuous representation, with `Representation.toContRepresentation_toRepresentation` recovering
-  the original representation.
+  the original representation and `ContRepresentation.toRepresentation_toContRepresentation`
+  recovering a continuous one.
 
 The file also records that continuous intertwiners between finite-dimensional representations form
 a finite-dimensional space, over any field and without completeness.
@@ -221,5 +222,11 @@ theorem toContRepresentation_apply (ρ : Representation 𝕜 G V) (g : G) (v : V
 theorem toContRepresentation_toRepresentation (ρ : Representation 𝕜 G V) :
     ρ.toContRepresentation.toRepresentation = ρ :=
   (rfl)
+
+/-- Equipping the underlying representation of `π` with its automatic continuity recovers `π`. -/
+@[simp]
+theorem _root_.ContRepresentation.toRepresentation_toContRepresentation
+    (π : ContRepresentation 𝕜 G V) : π.toRepresentation.toContRepresentation = π :=
+  DFunLike.ext _ _ fun _ ↦ ContinuousLinearMap.ext fun _ ↦ rfl
 
 end Representation
