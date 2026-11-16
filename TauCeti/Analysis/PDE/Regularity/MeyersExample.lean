@@ -722,7 +722,7 @@ theorem exists_meyersSolution_not_exists_w1p {p : ℝ≥0∞} [Fact (1 ≤ p)] (
   refine ⟨u, hu, energyFormH1_meyersCoefficient_eq_zero hμ0 u hu, ?_⟩
   rintro ⟨w, hw⟩
   have := (exists_w1p_value_ae_eq_meyersSolution_iff hμ0 hq hb h0).1
-    ⟨W1p.ofExponentLE hqp w, (W1p.value_ofExponentLE_ae hqp w).trans hw⟩
+    ⟨W1p.ofExponentLE hqp w, (W1p.coeFn_value_ofExponentLE hqp w).eventuallyEq.trans hw⟩
   rw [sub_sub_cancel, mul_div_cancel₀ _ (by linarith)] at this
   exact lt_irrefl _ this
 
