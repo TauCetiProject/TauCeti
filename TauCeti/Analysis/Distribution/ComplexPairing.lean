@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.Analysis.Distribution.Support
 import Mathlib.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.Distribution.DerivNotation
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -134,12 +135,9 @@ directions. -/
 theorem complexPairing_iteratedLineDerivOp (T : 𝓓'(Ω, ℂ)) {k : ℕ} (m : Fin k → E)
     (φ : 𝓓(Ω, ℂ)) :
     (∂^{m} T).complexPairing φ = (-1 : ℂ) ^ k * T.complexPairing (∂^{m ∘ Fin.rev} φ) := by
-  induction k generalizing φ with
-  | zero => simp
-  | succ k ih =>
-    rw [iteratedLineDerivOp_succ_left, complexPairing_lineDerivOp, ih,
-      iteratedLineDerivOp_succ_right, pow_succ]
-    simp [Fin.init_def, Fin.tail_def, Function.comp_def, Fin.rev_castSucc]
+  rw [← smul_eq_mul]
+  exact pairing_iteratedLineDerivOp (fun (T : 𝓓'(Ω, ℂ)) φ ↦ T.complexPairing φ)
+    (fun v T φ ↦ complexPairing_lineDerivOp T v φ) m T φ
 
 /-- The complex-linear extension of the complex point mass at `x` evaluates a complex test
 function at `x`. -/

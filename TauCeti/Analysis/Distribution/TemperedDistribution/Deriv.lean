@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+import TauCeti.Analysis.Distribution.DerivNotation
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -58,13 +59,9 @@ order `n` of a tempered distribution pairs with a Schwartz function `u` as `(-1)
 distribution paired with the iterated derivative of `u` in the reversed directions. -/
 @[simp]
 theorem iteratedLineDerivOp_apply_apply (f : 𝓢'(E, F)) {n : ℕ} (m : Fin n → E) (u : 𝓢(E, ℂ)) :
-    ∂^{m} f u = (-1 : ℂ) ^ n • f (∂^{m ∘ Fin.rev} u) := by
-  induction n generalizing u with
-  | zero => simp
-  | succ n ih =>
-    rw [LineDeriv.iteratedLineDerivOp_succ_left, lineDerivOp_apply_apply, map_neg, ih,
-      LineDeriv.iteratedLineDerivOp_succ_right, pow_succ, mul_smul]
-    simp [Fin.init_def, Fin.tail_def, Function.comp_def, Fin.rev_castSucc]
+    ∂^{m} f u = (-1 : ℂ) ^ n • f (∂^{m ∘ Fin.rev} u) :=
+  LineDeriv.pairing_iteratedLineDerivOp (fun (f : 𝓢'(E, F)) u ↦ f u)
+    (fun _ _ _ ↦ by rw [lineDerivOp_apply_apply, map_neg]) m f u
 
 variable [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] [FiniteDimensional ℝ E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
