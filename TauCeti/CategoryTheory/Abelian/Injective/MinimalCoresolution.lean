@@ -248,6 +248,7 @@ private theorem cosyzygyι_isoTerm_hom (hE : E.IsMinimalInjectiveCoresolution)
       (isoCosyzygy hE hS e i (by omega)).hom ≫ hS.cosyzygyι i :=
   (exists_iso_obj'_comm hE hS i hi (isoCosyzygy hE hS e i (by omega))).choose_spec
 
+@[reassoc]
 private theorem π_isoCosyzygy_zero_hom (hE : E.IsMinimalInjectiveCoresolution)
     (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) :
     cokernel.π (E.map' 0 1) ≫ (isoCosyzygy hE hS e 0 (by omega)).hom =
@@ -255,6 +256,7 @@ private theorem π_isoCosyzygy_zero_hom (hE : E.IsMinimalInjectiveCoresolution)
   rw [isoCosyzygy, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, hS.cosyzygyZeroIso_inv,
     hE.π_cosyzygyZeroIso_hom_assoc]
 
+@[reassoc]
 private theorem π_isoCosyzygy_succ_hom (hE : E.IsMinimalInjectiveCoresolution)
     (hS : S.IsMinimalInjectiveCoresolution) (e : E.obj' 1 ≅ S.obj' 1) (i : ℕ) (hi : i < n) :
     cokernel.π (E.map' (i + 1) (i + 2)) ≫ (isoCosyzygy hE hS e (i + 1) (by omega)).hom =
@@ -276,16 +278,13 @@ theorem exists_iso (hE : E.IsMinimalInjectiveCoresolution)
   match i, hi with
   | 0, _ => exact hE.isZero_left.eq_of_src _ _
   | 1, _ =>
-    -- The components at `1` and `2` are `e` and `isoTerm … 0`.
-    change E.map' 1 2 ≫ (isoTerm hE hS e 0 (by omega)).hom = e.hom ≫ S.map' 1 2
-    rw [← hE.π_cosyzygyι 0, Category.assoc, cosyzygyι_isoTerm_hom, ← Category.assoc,
-      π_isoCosyzygy_zero_hom, Category.assoc, hS.π_cosyzygyι 0]
+    dsimp only [app]
+    rw [← hE.π_cosyzygyι 0, Category.assoc, cosyzygyι_isoTerm_hom, π_isoCosyzygy_zero_hom_assoc,
+      hS.π_cosyzygyι 0]
   | k + 2, _ =>
-    -- The components at `k + 2` and `k + 3` are `isoTerm … k` and `isoTerm … (k + 1)`.
-    change E.map' (k + 2) (k + 3) ≫ (isoTerm hE hS e (k + 1) (by omega)).hom =
-      (isoTerm hE hS e k (by omega)).hom ≫ S.map' (k + 2) (k + 3)
-    rw [← hE.π_cosyzygyι (k + 1), Category.assoc, cosyzygyι_isoTerm_hom, ← Category.assoc,
-      π_isoCosyzygy_succ_hom, Category.assoc, hS.π_cosyzygyι (k + 1)]
+    dsimp only [app]
+    rw [← hE.π_cosyzygyι (k + 1), Category.assoc, cosyzygyι_isoTerm_hom,
+      π_isoCosyzygy_succ_hom_assoc, hS.π_cosyzygyι (k + 1)]
 
 /-- Two minimal injective coresolutions with `n` terms of isomorphic objects are isomorphic as
 composable arrows. -/

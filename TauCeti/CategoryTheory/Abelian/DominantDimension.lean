@@ -16,10 +16,13 @@ public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 An object `X` of an abelian category has a *projective-injective coresolution with `n` terms* when
 there is an exact sequence `0 → X → I⁰ → ⋯ → Iⁿ⁻¹`, exact at `X` and at `I⁰, …, Iⁿ⁻²`, whose terms
-are projective and injective (`CategoryTheory.HasProjectiveInjectiveCoresolution`). The **dominant
-dimension** `dom.dim X ∈ ℕ∞` is the supremum of such `n` (`CategoryTheory.dominantDimension`). For
-`n = 0` the condition always holds, so `dom.dim X ≥ 0`, and `dom.dim X = ⊤` when `X` is itself
-projective and injective, through `0 → X → X → 0 → 0 → ⋯`.
+are projective and injective (`CategoryTheory.HasProjectiveInjectiveCoresolution`). It is defined
+as being an `n`-th syzygy relative to the projective-injective objects
+(`CategoryTheory.ObjectProperty.IsSyzygy`), which in an abelian category is the same
+(`CategoryTheory.hasProjectiveInjectiveCoresolution_iff`). The **dominant dimension**
+`dom.dim X ∈ ℕ∞` is the supremum of such `n` (`CategoryTheory.dominantDimension`). For `n = 0` the
+condition always holds, so `dom.dim X ≥ 0`, and `dom.dim X = ⊤` when `X` is itself projective and
+injective, through `0 → X → X → 0 → 0 → ⋯`.
 
 For the module category of an Artin algebra this is the dominant dimension of [ARS, §VI.5]: it is
 read off the minimal injective coresolution, whose first `n` terms are projective exactly when
@@ -35,9 +38,10 @@ Since projective-injective coresolutions are closed under extensions and retract
 extension is at least the minimum of those of its ends, that of a retract is at least that of the
 whole object, and that of a finite biproduct is the minimum, in every abelian category.
 
-The definitions, the description of `n ≤ dom.dim X`, invariance under isomorphisms and the
-behaviour under exact functors need only zero morphisms (and a zero object for `n ≤ dom.dim X`);
-the other results are stated for abelian categories.
+The definitions, the description of `n ≤ dom.dim X`, the value `⊤` for projective-injective and
+zero objects, invariance under isomorphisms and the behaviour under exact functors need only zero
+morphisms (and a zero object for the value `⊤`); the other results are stated for abelian
+categories.
 
 ## Main definitions
 
@@ -49,6 +53,8 @@ the other results are stated for abelian categories.
 
 * `CategoryTheory.natCast_le_dominantDimension_iff`: `n ≤ dom.dim X` exactly when `X` has a
   projective-injective coresolution with `n` terms.
+* `CategoryTheory.hasProjectiveInjectiveCoresolution_iff`: in an abelian category, the description
+  by coresolutions (`CategoryTheory.ComposableArrows.IsCoresolution`).
 * `CategoryTheory.two_le_dominantDimension_iff`: `dom.dim X ≥ 2` exactly when `X` has an injective
   copresentation `0 → X → I⁰ → I¹` by projective-injective objects.
 * `CategoryTheory.dominantDimension_eq_top`: a projective and injective object has dominant
@@ -91,22 +97,18 @@ section HasZeroMorphisms
 
 variable [HasZeroMorphisms C]
 
-/-- `X` has a **projective-injective coresolution with `n` terms**: an exact sequence
-`0 → X → I⁰ → ⋯ → Iⁿ⁻¹`, exact at `X` and at `I⁰, …, Iⁿ⁻²`, with every `Iⁱ` projective and
-injective. For `n = 0` this always holds. -/
+/-- `X` has a **projective-injective coresolution with `n` terms**: it is an `n`-th syzygy
+(`CategoryTheory.ObjectProperty.IsSyzygy`) relative to the projective and injective objects. In an
+abelian category this means an exact sequence `0 → X → I⁰ → ⋯ → Iⁿ⁻¹`, exact at `X` and at
+`I⁰, …, Iⁿ⁻²`, with every `Iⁱ` projective and injective
+(`CategoryTheory.hasProjectiveInjectiveCoresolution_iff`). For `n = 0` this always holds. -/
 def HasProjectiveInjectiveCoresolution (X : C) (n : ℕ) : Prop :=
-  HasCoresolution (fun Y ↦ Projective Y ∧ Injective Y) X n
+  ObjectProperty.IsSyzygy (fun Y ↦ Projective Y ∧ Injective Y) n X
 
-theorem hasProjectiveInjectiveCoresolution_iff_hasCoresolution {X : C} {n : ℕ} :
+theorem hasProjectiveInjectiveCoresolution_iff_isSyzygy {X : C} {n : ℕ} :
     HasProjectiveInjectiveCoresolution X n ↔
-      HasCoresolution (fun Y ↦ Projective Y ∧ Injective Y) X n :=
+      ObjectProperty.IsSyzygy (fun Y ↦ Projective Y ∧ Injective Y) n X :=
   Iff.rfl
-
-theorem hasProjectiveInjectiveCoresolution_iff {X : C} {n : ℕ} :
-    HasProjectiveInjectiveCoresolution X n ↔ ∃ S : ComposableArrows C (n + 1),
-      S.IsCoresolution ∧ Nonempty (S.obj' 1 ≅ X) ∧
-        ∀ (i : ℕ) (hi : i < n), Projective (S.obj' (i + 2)) ∧ Injective (S.obj' (i + 2)) :=
-  hasCoresolution_iff
 
 /-- The **dominant dimension** `dom.dim X` of an object `X`: the supremum in
 `ℕ∞` of the `n` for which `X` has a projective-injective coresolution with `n` terms.
@@ -130,25 +132,21 @@ theorem dominantDimension_le_iff {X : C} {d : ℕ∞} :
 theorem HasProjectiveInjectiveCoresolution.of_le {X : C} {m n : ℕ}
     (h : HasProjectiveInjectiveCoresolution X n) (hmn : m ≤ n) :
     HasProjectiveInjectiveCoresolution X m :=
-  HasCoresolution.of_le h hmn
+  ObjectProperty.IsSyzygy.of_le hmn h
 
 theorem HasProjectiveInjectiveCoresolution.of_iso {X Y : C} {n : ℕ}
     (h : HasProjectiveInjectiveCoresolution X n) (e : X ≅ Y) :
     HasProjectiveInjectiveCoresolution Y n :=
-  HasCoresolution.of_iso h e
+  (ObjectProperty.IsSyzygy _ n).prop_of_iso e h
 
 theorem dominantDimension_eq_of_iso {X Y : C} (e : X ≅ Y) :
     dominantDimension X = dominantDimension Y :=
   le_antisymm (iSup₂_le fun n hn ↦ le_iSup₂_of_le n (hn.of_iso e) le_rfl)
     (iSup₂_le fun n hn ↦ le_iSup₂_of_le n (hn.of_iso e.symm) le_rfl)
 
-section HasZeroObject
-
-variable [HasZeroObject C]
-
 @[simp]
 theorem hasProjectiveInjectiveCoresolution_zero (X : C) : HasProjectiveInjectiveCoresolution X 0 :=
-  hasCoresolution_zero X
+  ObjectProperty.isSyzygy_zero _ X
 
 /-- **`n ≤ dom.dim X` exactly when `X` has a projective-injective coresolution with `n` terms.** -/
 theorem natCast_le_dominantDimension_iff {X : C} {n : ℕ} :
@@ -169,27 +167,50 @@ theorem dominantDimension_le_natCast_iff {X : C} {n : ℕ} :
   rw [← natCast_le_dominantDimension_iff, Nat.cast_add, Nat.cast_one,
     ENat.add_one_le_iff (ENat.natCast_ne_top n), not_lt]
 
-end HasZeroObject
+/-- **A projective and injective object has dominant dimension `⊤`**, through the coresolution
+`0 → X → X → 0 → 0 → ⋯`. In particular a left self-injective ring has dominant dimension `⊤`. -/
+theorem dominantDimension_eq_top [HasZeroObject C] (X : C) [Projective X] [Injective X] :
+    dominantDimension X = ⊤ :=
+  dominantDimension_eq_top_iff.2 (ObjectProperty.isSyzygy_of_prop
+    ⟨(isZero_zero C).projective, (isZero_zero C).injective⟩ ⟨inferInstance, inferInstance⟩)
+
+/-- A zero object has projective-injective coresolutions of every length. -/
+theorem Limits.IsZero.hasProjectiveInjectiveCoresolution {Z : C} (hZ : IsZero Z) (n : ℕ) :
+    HasProjectiveInjectiveCoresolution Z n := by
+  have := hZ.hasZeroObject
+  exact ObjectProperty.isSyzygy_of_prop ⟨(isZero_zero C).projective, (isZero_zero C).injective⟩
+    ⟨hZ.projective, hZ.injective⟩ n
+
+/-- A zero object has dominant dimension `⊤`. -/
+theorem Limits.IsZero.dominantDimension_eq_top {Z : C} (hZ : IsZero Z) :
+    dominantDimension Z = ⊤ :=
+  dominantDimension_eq_top_iff.2 hZ.hasProjectiveInjectiveCoresolution
 
 section Map
 
 variable {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D]
 
-/-- An exact functor preserving projective and injective objects carries projective-injective
-coresolutions to projective-injective coresolutions. -/
+/-- A functor preserving short exact sequences and projective and injective objects carries
+projective-injective coresolutions to projective-injective coresolutions. -/
 theorem HasProjectiveInjectiveCoresolution.map (F : C ⥤ D) [F.PreservesZeroMorphisms]
-    [F.PreservesHomology] [F.PreservesProjectiveObjects] [F.PreservesInjectiveObjects] {X : C}
-    {n : ℕ} (h : HasProjectiveInjectiveCoresolution X n) :
+    [F.PreservesProjectiveObjects] [F.PreservesInjectiveObjects]
+    (hF : ∀ S : ShortComplex C, S.ShortExact → (S.map F).ShortExact) {X : C} {n : ℕ}
+    (h : HasProjectiveInjectiveCoresolution X n) :
     HasProjectiveInjectiveCoresolution (F.obj X) n :=
-  HasCoresolution.map F
+  ObjectProperty.IsSyzygy.map F hF
     (fun _ hY ↦ ⟨F.projective_obj_of_projective hY.1, F.injective_obj_of_injective hY.2⟩) h
 
 /-- **Exact functors preserving projective and injective objects do not lower the dominant
-dimension.** -/
+dimension.** Here exactness means preserving homology, monomorphisms and epimorphisms, as do
+functors preserving finite limits and finite colimits. -/
 theorem Functor.dominantDimension_le_obj (F : C ⥤ D) [F.PreservesZeroMorphisms]
-    [F.PreservesHomology] [F.PreservesProjectiveObjects] [F.PreservesInjectiveObjects] (X : C) :
+    [F.PreservesHomology] [F.PreservesMonomorphisms] [F.PreservesEpimorphisms]
+    [F.PreservesProjectiveObjects] [F.PreservesInjectiveObjects] (X : C) :
     dominantDimension X ≤ dominantDimension (F.obj X) :=
-  iSup₂_le fun n hn ↦ le_iSup₂_of_le n (hn.map F) le_rfl
+  iSup₂_le fun n hn ↦ le_iSup₂_of_le n (hn.map F fun _ hS ↦
+    have := hS.mono_f
+    have := hS.epi_g
+    hS.map F) le_rfl
 
 /-- **Equivalences preserve the dominant dimension.** -/
 @[simp]
@@ -214,25 +235,34 @@ private theorem projective_and_injective_biprod (A B : C) (hA : Projective A ∧
   obtain ⟨_, _⟩ := hB
   exact ⟨inferInstance, inferInstance⟩
 
+/-- **Projective-injective coresolutions.** In an abelian category, `X` has a projective-injective
+coresolution with `n` terms exactly when there is an exact sequence `0 → X → I⁰ → ⋯ → Iⁿ⁻¹` with
+every `Iⁱ` projective and injective. -/
+theorem hasProjectiveInjectiveCoresolution_iff {X : C} {n : ℕ} :
+    HasProjectiveInjectiveCoresolution X n ↔ ∃ S : ComposableArrows C (n + 1),
+      S.IsCoresolution ∧ Nonempty (S.obj' 1 ≅ X) ∧
+        ∀ (i : ℕ) (hi : i < n), Projective (S.obj' (i + 2)) ∧ Injective (S.obj' (i + 2)) :=
+  ObjectProperty.isSyzygy_iff_exists_isCoresolution
+
 /-- Projective-injective coresolutions of a retract: if `Y` has one with `n` terms, so does every
 retract of `Y`. -/
 theorem HasProjectiveInjectiveCoresolution.of_retract {X Y : C} {n : ℕ} (r : Retract X Y)
     (h : HasProjectiveInjectiveCoresolution Y n) : HasProjectiveInjectiveCoresolution X n :=
-  HasCoresolution.of_retract (fun _ h ↦ h.2) projective_and_injective_biprod r h
+  ObjectProperty.IsSyzygy.of_retract (fun _ h ↦ h.2) projective_and_injective_biprod r h
 
 /-- Projective-injective coresolutions of an extension: if the ends of a short exact sequence have
 projective-injective coresolutions with `n` terms, so does the middle. -/
 theorem HasProjectiveInjectiveCoresolution.of_shortExact {S : ShortComplex C} (hS : S.ShortExact)
     {n : ℕ} (h₁ : HasProjectiveInjectiveCoresolution S.X₁ n)
     (h₃ : HasProjectiveInjectiveCoresolution S.X₃ n) : HasProjectiveInjectiveCoresolution S.X₂ n :=
-  HasCoresolution.of_shortExact (fun _ h ↦ h.2) projective_and_injective_biprod hS h₁ h₃
+  ObjectProperty.IsSyzygy.of_shortExact (fun _ h ↦ h.2) projective_and_injective_biprod hS h₁ h₃
 
 /-- **The case `dom.dim X ≥ 1`.** It holds exactly when `X` embeds into a projective-injective
 object. -/
 theorem one_le_dominantDimension_iff {X : C} :
     1 ≤ dominantDimension X ↔ ∃ (I : C) (ι : X ⟶ I), Mono ι ∧ Projective I ∧ Injective I := by
   rw [← Nat.cast_one, natCast_le_dominantDimension_iff, HasProjectiveInjectiveCoresolution,
-    hasCoresolution_one_iff]
+    ObjectProperty.isSyzygy_one_iff]
 
 /-- **The case `dom.dim X = 0`.** It holds exactly when `X` embeds into no projective-injective
 object. -/
@@ -248,32 +278,7 @@ theorem two_le_dominantDimension_iff {X : C} :
         (ShortComplex.mk f g w).Exact ∧ (Projective I₀ ∧ Injective I₀) ∧
           (Projective I₁ ∧ Injective I₁) := by
   rw [← Nat.cast_ofNat, natCast_le_dominantDimension_iff, HasProjectiveInjectiveCoresolution,
-    hasCoresolution_two_iff]
-
-/-- A zero object has projective-injective coresolutions of every length. -/
-theorem Limits.IsZero.hasProjectiveInjectiveCoresolution {Z : C} (hZ : IsZero Z) (n : ℕ) :
-    HasProjectiveInjectiveCoresolution Z n := by
-  induction n generalizing Z with
-  | zero => exact hasProjectiveInjectiveCoresolution_zero Z
-  | succ n ih =>
-    exact hasCoresolution_succ_iff.2 ⟨Z, 𝟙 Z, inferInstance, ⟨hZ.projective, hZ.injective⟩,
-      ih (isZero_cokernel_of_epi _)⟩
-
-/-- **A projective and injective object has dominant dimension `⊤`.** In particular a left
-self-injective ring has dominant dimension `⊤`. -/
-theorem dominantDimension_eq_top (X : C) [Projective X] [Injective X] :
-    dominantDimension X = ⊤ := by
-  refine dominantDimension_eq_top_iff.2 fun n ↦ ?_
-  cases n with
-  | zero => exact hasProjectiveInjectiveCoresolution_zero X
-  | succ n =>
-    exact hasCoresolution_succ_iff.2 ⟨X, 𝟙 X, inferInstance, ⟨inferInstance, inferInstance⟩,
-      (isZero_cokernel_of_epi (𝟙 X)).hasProjectiveInjectiveCoresolution n⟩
-
-/-- A zero object has dominant dimension `⊤`. -/
-theorem Limits.IsZero.dominantDimension_eq_top {Z : C} (hZ : IsZero Z) :
-    dominantDimension Z = ⊤ :=
-  dominantDimension_eq_top_iff.2 hZ.hasProjectiveInjectiveCoresolution
+    ObjectProperty.isSyzygy_two_iff]
 
 namespace ComposableArrows.IsMinimalInjectiveCoresolution
 
