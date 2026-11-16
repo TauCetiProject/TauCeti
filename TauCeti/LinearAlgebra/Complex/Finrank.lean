@@ -18,7 +18,10 @@ results, but has no symplectic hypotheses. Consequently a real-linear isomorphis
 modules preserves the complex dimension (`LinearEquiv.finrank_complex_eq`) and finite
 dimensionality (`LinearEquiv.finiteDimensional_complex`), and one anticommuting with `I`, that is,
 a conjugate-linear isomorphism, maps complex bases to complex bases
-(`LinearEquiv.exists_basis_coe_eq_comp_of_map_I_smul`).
+(`LinearEquiv.exists_basis_coe_eq_comp_of_map_I_smul`). Likewise the range of a complex-linear
+map has real dimension twice its complex dimension
+(`LinearMap.finrank_range_restrictScalars_eq_two_mul`), also when transported to a real-linear
+map along real isomorphisms (`LinearMap.finrank_range_eq_two_mul_of_comp_eq`).
 -/
 
 public section
@@ -73,3 +76,27 @@ theorem LinearEquiv.exists_basis_coe_eq_comp_of_map_I_smul {V W : Type*} [AddCom
   have hn : Fintype.card (Fin n) = Module.finrank ℂ W := by
     rw [← g.finrank_complex_eq, Module.finrank_eq_card_basis b]
   exact ⟨basisOfLinearIndependentOfCardEqFinrank' _ hli hn, by simp⟩
+
+namespace LinearMap
+
+variable {V W V' W' : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V]
+  [AddCommGroup W] [Module ℝ W] [Module ℂ W] [IsScalarTower ℝ ℂ W]
+
+/-- The range of a complex-linear map has real dimension twice its complex dimension. -/
+theorem finrank_range_restrictScalars_eq_two_mul (f : V →ₗ[ℂ] W) :
+    Module.finrank ℝ (range (f.restrictScalars ℝ)) = 2 * Module.finrank ℂ (range f) := by
+  rw [range_restrictScalars]
+  exact TauCeti.finrank_real_eq_two_mul_finrank_complex (V := (range f).restrictScalars ℝ)
+
+/-- Transported along real isomorphisms `e : V ≃ V'` and `e' : W ≃ W'` intertwining a
+complex-linear `f` with a real-linear `g`, the range of `g` has real dimension twice the complex
+dimension of the range of `f`. -/
+theorem finrank_range_eq_two_mul_of_comp_eq [AddCommGroup V'] [Module ℝ V'] [AddCommGroup W']
+    [Module ℝ W'] {f : V →ₗ[ℂ] W} {g : V' →ₗ[ℝ] W'} (e : V ≃ₗ[ℝ] V') (e' : W ≃ₗ[ℝ] W')
+    (h : g ∘ₗ e.toLinearMap = e'.toLinearMap ∘ₗ f.restrictScalars ℝ) :
+    Module.finrank ℝ (range g) = 2 * Module.finrank ℂ (range f) := by
+  have hr : range g = (range (f.restrictScalars ℝ)).map e'.toLinearMap := by
+    rw [← range_comp, ← h, range_comp_of_range_eq_top _ e.range]
+  rw [hr, LinearEquiv.finrank_map_eq, finrank_range_restrictScalars_eq_two_mul]
+
+end LinearMap
