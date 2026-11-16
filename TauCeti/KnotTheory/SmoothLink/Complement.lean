@@ -5,40 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Complement
-public import TauCeti.KnotTheory.SmoothLink.Isotopy
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Complement
+public import TauCeti.KnotTheory.SmoothLink.Basic
 
 /-!
 # The complement of a smooth link
 
 A smooth link `L` in a Hausdorff manifold `M` is a finite union of embedded circles, so the subset
-`L.range` it occupies is compact, hence closed, and its complement `M ∖ L` is an open subset of `M`
-(`TauCeti.SmoothLinkEmbedding.complement`). As an open subset it is a smooth manifold over the
-model of `M`, boundaryless when `M` is (`BoundarylessManifold.open`); for a link in `S³` it is the
-link complement, a boundaryless `3`-manifold. The complement of a one-component link is the
-complement of its circle embedding (`TauCeti.SmoothLinkEmbedding.complement_singleton`), and the
-complement does not see the labelling or the orientations of the components.
+`L.range` it occupies is compact, hence closed (`TauCeti.SmoothLinkEmbedding.isClosed_range`), and
+its complement `M ∖ L` is an open subset of `M` (`TauCeti.SmoothLinkEmbedding.complement`). As an
+open subset it is a smooth manifold over the model of `M`, boundaryless when `M` is
+(`ModelWithCorners.BoundarylessManifold.open`); for a link in `S³` it is the link complement, a
+boundaryless `3`-manifold. The complement of a link is the intersection of the complements of its
+components (`TauCeti.SmoothLinkEmbedding.complement_eq_iInf`); the complement of a one-component
+link is the complement of its circle embedding
+(`TauCeti.SmoothLinkEmbedding.complement_singleton`), and the complement does not see the
+labelling, the parametrisations or the orientations of the components.
 
-A diffeomorphism of the ambient manifolds carrying one link to another, component by component,
-restricts to a diffeomorphism of their complements
-(`TauCeti.SmoothLinkEmbedding.complementDiffeomorph`). Applied to the final diffeomorphism of the
-shared diffeotopy, this shows that **smoothly ambient isotopic links have diffeomorphic
-complements**
-(`TauCeti.SmoothLinkEmbedding.SmoothAmbientIsotopic.nonempty_complementDiffeomorph`), the smooth
-form of `TauCeti.SmoothLinkEmbedding.SmoothAmbientIsotopic.nonempty_complementHomeomorph`.
+A diffeomorphism of the ambient manifolds mapping the subset occupied by one link onto the subset
+occupied by another restricts to a diffeomorphism of their complements
+(`TauCeti.SmoothLinkEmbedding.complementDiffeomorph`). The two links may have different numbers of
+components, and the diffeomorphism may permute, reparametrise or reverse them.
 
 ## Main definitions
 
 * `TauCeti.SmoothLinkEmbedding.complement`: the complement of a smooth link, as an open subset.
 * `TauCeti.SmoothLinkEmbedding.complementDiffeomorph`: the restriction to the complements of an
-  ambient diffeomorphism carrying one link to the other.
-
-## Main results
-
-* `TauCeti.SmoothLinkEmbedding.isCompact_range`, `TauCeti.SmoothLinkEmbedding.isClosed_range`: a
-  smooth link occupies a compact, and in a Hausdorff manifold closed, subset.
-* `TauCeti.SmoothLinkEmbedding.SmoothAmbientIsotopic.nonempty_complementDiffeomorph`: smoothly
-  ambient isotopic links have diffeomorphic complements.
+  ambient diffeomorphism mapping one link onto the other.
 
 ## References
 
@@ -56,26 +49,31 @@ namespace TauCeti
 open Set TopologicalSpace
 open scoped _root_.Manifold ContDiff
 
-namespace SmoothLinkEmbedding
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H : Type*} [TopologicalSpace H] {H' : Type*} [TopologicalSpace H']
   {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ E' H'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
-  {n : ℕ} {k : ℕ∞ω}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [T2Space P]
+  {n m : ℕ} {k : ℕ∞ω}
 
-/-- A smooth link occupies a compact subset of the ambient manifold: a finite union of circles. -/
-theorem isCompact_range (L : SmoothLinkEmbedding I M n) : IsCompact L.range := by
-  rw [← range_toContinuousMap]
-  exact _root_.isCompact_range (map_continuous _)
+namespace SmoothCircleEmbedding
 
-/-- A smooth link in a Hausdorff manifold occupies a closed subset. -/
-theorem isClosed_range [T2Space M] (L : SmoothLinkEmbedding I M n) : IsClosed L.range :=
-  L.isCompact_range.isClosed
+/-- Rotating the parametrisation of a circle embedding does not change its complement. -/
+@[simp]
+theorem complement_rotate (f : SmoothCircleEmbedding I M) (a : Circle) :
+    (f.rotate a).complement = f.complement :=
+  Opens.ext (by simp)
 
-variable [T2Space M] [T2Space P]
+/-- Reversing the orientation of a circle embedding does not change its complement. -/
+@[simp]
+theorem complement_reverse (f : SmoothCircleEmbedding I M) :
+    f.reverse.complement = f.complement :=
+  Opens.ext (by simp)
+
+end SmoothCircleEmbedding
+
+namespace SmoothLinkEmbedding
 
 /-- The **complement** of a smooth link `L` in a Hausdorff manifold `M`: the open subset `M ∖ L`
 of the points lying on no component of `L`. -/
@@ -92,6 +90,16 @@ theorem coe_complement (L : SmoothLinkEmbedding I M n) : (L.complement : Set M) 
 theorem mem_complement {L : SmoothLinkEmbedding I M n} {y : M} :
     y ∈ L.complement ↔ y ∉ L.range :=
   Iff.rfl
+
+/-- The complement of a smooth link is the intersection of the complements of its components. -/
+theorem complement_eq_iInf (L : SmoothLinkEmbedding I M n) :
+    L.complement = ⨅ i, (L i).complement :=
+  Opens.ext <| Set.ext fun y ↦ by simp [Opens.coe_iInf]
+
+/-- The complement of a smooth link lies in the complement of each of its components. -/
+theorem complement_le_component (L : SmoothLinkEmbedding I M n) (i : Fin n) :
+    L.complement ≤ (L i).complement :=
+  L.complement_eq_iInf.trans_le (iInf_le _ i)
 
 /-- The complement of the empty link is the whole manifold. -/
 @[simp]
@@ -116,28 +124,27 @@ theorem complement_reverse (L : SmoothLinkEmbedding I M n) :
     L.reverse.complement = L.complement :=
   Opens.ext (by simp)
 
-/-- A diffeomorphism `e` carrying every component of the link `L` to the corresponding component
-of `K` maps a point into the complement of `K` exactly when the point lies in the complement of
-`L`. -/
-theorem apply_mem_complement_iff {L : SmoothLinkEmbedding I M n} {K : SmoothLinkEmbedding I' P n}
-    (e : M ≃ₘ^k⟮I, I'⟯ P) (h : ∀ i x, e (L i x) = K i x) (y : M) :
+/-- A diffeomorphism `e` mapping the subset occupied by the link `L` onto the subset occupied by
+the link `K` maps a point into the complement of `K` exactly when the point lies in the complement
+of `L`. -/
+theorem apply_mem_complement_iff {L : SmoothLinkEmbedding I M n} {K : SmoothLinkEmbedding I' P m}
+    (e : M ≃ₘ^k⟮I, I'⟯ P) (h : e '' L.range = K.range) (y : M) :
     e y ∈ K.complement ↔ y ∈ L.complement := by
-  simp only [mem_complement, mem_range_iff, not_exists]
-  exact forall_congr' fun i ↦ forall_congr' fun x ↦ not_congr
-    ⟨fun hx ↦ e.injective ((h i x).trans hx), fun hx ↦ (h i x).symm.trans (congrArg e hx)⟩
+  rw [mem_complement, mem_complement, ← h]
+  exact not_congr (e.injective.mem_set_image (s := L.range))
 
 /-- The **diffeomorphism of link complements** induced by an ambient diffeomorphism: a
-diffeomorphism `e : M ≃ P` carrying every component of `L` to the corresponding component of `K`
+diffeomorphism `e : M ≃ P` mapping the subset occupied by `L` onto the subset occupied by `K`
 restricts to a diffeomorphism from the complement of `L` onto the complement of `K`. -/
-def complementDiffeomorph {L : SmoothLinkEmbedding I M n} {K : SmoothLinkEmbedding I' P n}
-    (e : M ≃ₘ^k⟮I, I'⟯ P) (h : ∀ i x, e (L i x) = K i x) :
+def complementDiffeomorph {L : SmoothLinkEmbedding I M n} {K : SmoothLinkEmbedding I' P m}
+    (e : M ≃ₘ^k⟮I, I'⟯ P) (h : e '' L.range = K.range) :
     L.complement ≃ₘ^k⟮I, I'⟯ K.complement :=
   e.subtype fun y ↦ (apply_mem_complement_iff e h y).symm
 
 /-- The diffeomorphism of link complements is the ambient diffeomorphism. -/
 @[simp]
 theorem coe_complementDiffeomorph_apply {L : SmoothLinkEmbedding I M n}
-    {K : SmoothLinkEmbedding I' P n} (e : M ≃ₘ^k⟮I, I'⟯ P) (h : ∀ i x, e (L i x) = K i x)
+    {K : SmoothLinkEmbedding I' P m} (e : M ≃ₘ^k⟮I, I'⟯ P) (h : e '' L.range = K.range)
     (y : L.complement) :
     (complementDiffeomorph e h y : P) = e y :=
   e.subtype_apply_coe _ y
@@ -146,18 +153,10 @@ theorem coe_complementDiffeomorph_apply {L : SmoothLinkEmbedding I M n}
 diffeomorphism. -/
 @[simp]
 theorem coe_complementDiffeomorph_symm_apply {L : SmoothLinkEmbedding I M n}
-    {K : SmoothLinkEmbedding I' P n} (e : M ≃ₘ^k⟮I, I'⟯ P) (h : ∀ i x, e (L i x) = K i x)
+    {K : SmoothLinkEmbedding I' P m} (e : M ≃ₘ^k⟮I, I'⟯ P) (h : e '' L.range = K.range)
     (y : K.complement) :
     ((complementDiffeomorph e h).symm y : M) = e.symm y :=
   e.subtype_symm_apply_coe _ y
-
-/-- **Smoothly ambient isotopic links have diffeomorphic complements.** The final diffeomorphism
-of a diffeotopy carrying every component of `L` to the corresponding component of `K` restricts to
-a diffeomorphism from `M ∖ L` onto `M ∖ K`. -/
-theorem SmoothAmbientIsotopic.nonempty_complementDiffeomorph {L K : SmoothLinkEmbedding I M n}
-    (hLK : SmoothAmbientIsotopic L K) : Nonempty (L.complement ≃ₘ⟮I, I⟯ K.complement) := by
-  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
-  exact ⟨complementDiffeomorph Φ.final hΦ⟩
 
 end SmoothLinkEmbedding
 

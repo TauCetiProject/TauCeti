@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.SmoothLink.Complement
 public import TauCeti.KnotTheory.SmoothLink.Isotopy
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
 public import TauCeti.Topology.Homotopy.AmbientIsotopic.Complement
@@ -23,6 +24,10 @@ isotopy of embeddings for singleton links.
 The auxiliary continuous relation specializes general continuous ambient isotopy to the map from
 the disjoint union of component circles. Forgetting smoothness maps the smooth relation to this
 continuous relation, so its complement-preservation theorem applies to smooth link equivalence.
+For smooth link equivalence the complements are moreover diffeomorphic: the final diffeomorphism
+of the shared diffeotopy maps one link onto the other, so it restricts to a diffeomorphism of the
+open complements
+(`TauCeti.SmoothLinkEmbedding.SmoothAmbientIsotopic.nonempty_complementDiffeomorph`).
 
 ## Main definitions
 
@@ -279,6 +284,18 @@ theorem singleton_iff {f g : SmoothCircleEmbedding I M} :
 theorem nonempty_complementHomeomorph (hLK : SmoothAmbientIsotopic L K) :
     Nonempty (↑(L.range)ᶜ ≃ₜ ↑(K.range)ᶜ) :=
   hLK.continuousAmbientIsotopic.nonempty_complementHomeomorph
+
+/-- **Smoothly ambient isotopic links have diffeomorphic complements.** If the links `L` and `K`
+in the Hausdorff manifold `M` are smoothly ambient isotopic, then their open complements `M ∖ L`
+and `M ∖ K` are diffeomorphic. For an explicit diffeomorphism, apply
+`TauCeti.SmoothLinkEmbedding.complementDiffeomorph` to the final diffeomorphism of a witnessing
+diffeotopy. -/
+theorem nonempty_complementDiffeomorph [T2Space M] (hLK : SmoothAmbientIsotopic L K) :
+    Nonempty (L.complement ≃ₘ⟮I, I⟯ K.complement) := by
+  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hLK
+  refine ⟨complementDiffeomorph Φ.final (Set.ext fun y ↦ ?_)⟩
+  simp only [Set.mem_image, mem_range_iff, ← hΦ]
+  exact ⟨fun ⟨_, ⟨i, x, hx⟩, hy⟩ ↦ ⟨i, x, hx ▸ hy⟩, fun ⟨i, x, hy⟩ ↦ ⟨_, ⟨i, x, rfl⟩, hy⟩⟩
 
 /-- Simultaneously relabelling components preserves the shared smooth ambient motion. -/
 theorem relabel (hLK : SmoothAmbientIsotopic L K) (e : Equiv.Perm (Fin n)) :

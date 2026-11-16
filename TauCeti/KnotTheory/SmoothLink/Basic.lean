@@ -19,7 +19,8 @@ exactly those data and develops their basic transformations.
 Component relabeling changes only the `Fin n` labels.  Orientation reversal is performed on every
 component, while an ambient diffeomorphism transports all components at once.  Relabeling and
 orientation reversal preserve the underlying subset of the ambient manifold, while ambient
-transport carries it to its image under the diffeomorphism.  The zero-component link and the
+transport carries it to its image under the diffeomorphism.  As a finite union of circles, this
+subset is compact, hence closed in a Hausdorff manifold.  The zero-component link and the
 one-component link show that this presentation includes the empty link and recovers
 `SmoothCircleEmbedding` exactly.
 
@@ -115,6 +116,15 @@ def toContinuousMap (L : SmoothLinkEmbedding I M n) : C((Σ _ : Fin n, Circle), 
     Set.range L.toContinuousMap = L.range := by
   rw [Set.range_sigma_eq_iUnion_range]
   rfl
+
+/-- A smooth link occupies a compact subset of the ambient manifold: a finite union of circles. -/
+theorem isCompact_range (L : SmoothLinkEmbedding I M n) : IsCompact L.range := by
+  rw [← range_toContinuousMap]
+  exact _root_.isCompact_range (map_continuous _)
+
+/-- A smooth link in a Hausdorff manifold occupies a closed subset. -/
+theorem isClosed_range [T2Space M] (L : SmoothLinkEmbedding I M n) : IsClosed L.range :=
+  L.isCompact_range.isClosed
 /-- Two components of a smooth link have disjoint images exactly when their labels differ. -/
 @[simp, grind =]
 theorem disjoint_range_iff (L : SmoothLinkEmbedding I M n) (i j : Fin n) :
