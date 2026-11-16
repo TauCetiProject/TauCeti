@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Open.Basic
-public import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Analysis.Normed.Operator.Mul
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.Analysis.Holder.Open.Inclusion
 
 /-!
-# Bilinear products, scalar action, and Banach algebra multiplication on `C^{k,α}(Ω, F)`
+# Bilinear products, scalar action, and algebra multiplication on `C^{k,α}(Ω, F)`
 
 On a convex open set `Ω` and for `α ≤ 1`, a continuous bilinear map `B : E₁ →L[ℝ] E₂ →L[ℝ] G` acts
 pointwise on `CkHolderOnSpace k α Ω` as a continuous bilinear map
@@ -41,7 +41,7 @@ public section
 
 noncomputable section
 
-open scoped NNReal BoundedContinuousFunction
+open scoped NNReal
 open TauCeti
 
 namespace ContinuousLinearMap
@@ -63,8 +63,7 @@ private theorem norm_iteratedFDeriv_ckHolderOnBilinear_le (B : E₁ →L[ℝ] E�
     (fun i hi ↦ f.norm_iteratedFDeriv_extendByZero_le (hi.trans hj) ⟨x, hx⟩)
     (fun i hi ↦ g.norm_iteratedFDeriv_extendByZero_le (hi.trans hj) ⟨x, hx⟩)).trans ?_
   have hpow : (2 : ℝ) ^ j ≤ 2 ^ k := pow_le_pow_right₀ one_le_two hj
-  calc ‖B‖ * 2 ^ j * ‖f‖ * ‖g‖ = 2 ^ j * (‖B‖ * ‖f‖ * ‖g‖) := by ring
-    _ ≤ 2 ^ k * (‖B‖ * ‖f‖ * ‖g‖) := by gcongr
+  calc ‖B‖ * 2 ^ j * ‖f‖ * ‖g‖ ≤ ‖B‖ * 2 ^ k * ‖f‖ * ‖g‖ := by gcongr
     _ = 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by ring
 
 private theorem holderOnWith_iteratedFDeriv_ckHolderOnBilinear (B : E₁ →L[ℝ] E₂ →L[ℝ] G)
@@ -123,6 +122,7 @@ def compCkHolderOn₂ (B : E₁ →L[ℝ] E₂ →L[ℝ] G) (hΩ : Convex ℝ (�
   (ckHolderOnBilinearLinear B hΩ hα).mkContinuous₂ ((k + 7) * 2 ^ k * ‖B‖)
     (norm_ckHolderOnBilinear_le B hΩ hα)
 
+/-- The lifted bilinear map `compCkHolderOn₂` evaluates pointwise via `B`. -/
 @[simp]
 theorem compCkHolderOn₂_apply (B : E₁ →L[ℝ] E₂ →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderOnSpace k α Ω E₁) (g : CkHolderOnSpace k α Ω E₂) (x : Ω) :
@@ -161,6 +161,7 @@ def smulL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
     CkHolderOnSpace k α Ω R →L[ℝ] CkHolderOnSpace k α Ω F →L[ℝ] CkHolderOnSpace k α Ω F :=
   (ContinuousLinearMap.lsmul ℝ R : R →L[ℝ] F →L[ℝ] F).compCkHolderOn₂ hΩ hα
 
+/-- Pointwise scalar multiplication `smulL` evaluates by multiplying values at `x`. -/
 @[simp]
 theorem smulL_apply (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderOnSpace k α Ω R) (g : CkHolderOnSpace k α Ω F) (x : Ω) :
@@ -200,6 +201,7 @@ def mulL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
     CkHolderOnSpace k α Ω A →L[ℝ] CkHolderOnSpace k α Ω A →L[ℝ] CkHolderOnSpace k α Ω A :=
   (ContinuousLinearMap.mul ℝ A).compCkHolderOn₂ hΩ hα
 
+/-- Pointwise algebra multiplication `mulL` evaluates by multiplying values at `x`. -/
 @[simp]
 theorem mulL_apply (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f g : CkHolderOnSpace k α Ω A) (x : Ω) :
