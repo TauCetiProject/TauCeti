@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
 public import TauCeti.CategoryTheory.Comma.Over
-public import TauCeti.CategoryTheory.Limits.Shapes.BinaryProducts
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
 /-!

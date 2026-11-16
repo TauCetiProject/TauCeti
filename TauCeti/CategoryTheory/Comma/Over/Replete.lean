@@ -8,11 +8,13 @@ module
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import TauCeti.CategoryTheory.Comma.Over.Pullback
 public import TauCeti.CategoryTheory.Limits.Replete
+public import TauCeti.CategoryTheory.Limits.Shapes.BinaryProducts
 
 /-!
 # Repleteness of slice categories and descent along covers
 
-Every slice of a replete category with binary products is replete (`TauCeti.isReplete_over`).
+Every slice `Over X` of a replete category `C` for which `Over.forget X` preserves epimorphisms
+(for example when `C` has binary products or pushouts) is replete (`TauCeti.isReplete_over`).
 Conversely, when epimorphisms are stable under base change, repleteness is local on the base
 (Bhatt–Scholze, Lemma 3.1.3):
 
@@ -22,8 +24,9 @@ Conversely, when epimorphisms are stable under base change, repleteness is local
 * `TauCeti.IsReplete.of_over_epi` and `TauCeti.isReplete_over_iff`: when epimorphisms are stable
   under base change and `U ⟶ ⊤_ C` is an epimorphism, `Over U` is replete if and only if `C` is
   replete;
-* `TauCeti.IsReplete.of_over_pullback_epi`: repleteness of slices descends along any epimorphism
-  `f : X ⟶ Y` via `Over.pullback f : Over Y ⥤ Over X`;
+* `TauCeti.isReplete_over_of_epi`: when `C` has pullbacks along an epimorphism `f : X ⟶ Y`,
+  epimorphisms are stable under base change, and `Over.forget Y` preserves epimorphisms,
+  repleteness of slices descends from `Over X` to `Over Y` via `Over.pullback f : Over Y ⥤ Over X`;
 * `TauCeti.IsReplete.of_forall_over_of_jointly_epi_snd`: repleteness descends from a family of
   slices `Over (U i)` whose second projections `U i ⨯ Z ⟶ Z` are jointly epimorphic, avoiding any
   coproduct hypothesis on `C`.
@@ -44,9 +47,11 @@ universe v u
 
 variable {C : Type u} [Category.{v} C]
 
-/-- Every slice of a replete category with binary products is replete. This applies,
-in particular, to slices of replete topoi. -/
-instance isReplete_over [HasBinaryProducts C] [IsReplete C] (X : C) : IsReplete (Over X) :=
+/-- Every slice `Over X` of a replete category `C` for which `Over.forget X` preserves epimorphisms
+(for example when `C` has binary products or pushouts) is replete. This applies, in particular, to
+slices of replete topoi. -/
+instance isReplete_over [IsReplete C] (X : C) [(Over.forget X).PreservesEpimorphisms] :
+    IsReplete (Over X) :=
   have : IsConnected ℕᵒᵖ := IsCofiltered.isConnected ℕᵒᵖ
   IsReplete.of_reflectsEpimorphisms (Over.forget X)
 
@@ -77,10 +82,10 @@ theorem isReplete_over_iff [HasBinaryProducts C] [HasTerminal C]
   ⟨fun _ ↦ IsReplete.of_over_epi U, fun _ ↦ inferInstance⟩
 
 /-- **Repleteness of slices descends along epimorphisms** (Bhatt–Scholze, Lemma 3.1.3). If
-`f : X ⟶ Y` is an epimorphism in a category in which epimorphisms are stable under base change,
-`Over.forget Y` preserves epimorphisms (for example when `C` has binary products), and `Over X` is
-replete, then `Over Y` is replete. -/
-theorem IsReplete.of_over_pullback_epi [(MorphismProperty.epimorphisms C).IsStableUnderBaseChange]
+`f : X ⟶ Y` is an epimorphism in a category that has pullbacks along `f` and in which epimorphisms
+are stable under base change, `Over.forget Y` preserves epimorphisms (for example when `C` has
+binary products), and `Over X` is replete, then `Over Y` is replete. -/
+theorem isReplete_over_of_epi [(MorphismProperty.epimorphisms C).IsStableUnderBaseChange]
     {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f] [(Over.forget Y).PreservesEpimorphisms] [Epi f]
     [IsReplete (Over X)] : IsReplete (Over Y) :=
   have (Z : C) (g : Z ⟶ Y) : Epi (pullback.fst g f) :=

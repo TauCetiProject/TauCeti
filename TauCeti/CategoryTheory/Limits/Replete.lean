@@ -150,7 +150,8 @@ end IsReplete
 `∀ i, D i` are detected componentwise. -/
 instance isReplete_pi {I : Type*} {D : I → Type*} [∀ i, Category (D i)] [∀ i, IsReplete (D i)] :
     IsReplete (∀ i, D i) :=
-  IsReplete.of_jointlyReflectEpimorphisms (JointlyFaithful.piEval D).jointlyReflectEpimorphisms
+  IsReplete.of_jointlyReflectEpimorphisms
+    (CategoryTheory.Pi.jointlyFaithful_eval D).jointlyReflectEpimorphisms
 
 /-- A Cartesian product of replete categories is replete. -/
 instance isReplete_prod {D : Type u'} [Category.{v'} D] [IsReplete C] [IsReplete D] :
@@ -317,15 +318,15 @@ theorem epi_isLimitMap {cF : Cone F} (hcF : IsLimit cF) (h₀ : Epi (φ.app ⟨0
   exact epi_comp' hπ hfst
 
 omit hcG in
-/-- **Epimorphisms of inverse limits** (`lim.map` form; Bhatt–Scholze, Lemma 3.1.8). In a replete
-category with sequential limits and pullbacks in which epimorphisms are stable under base change,
-if `φ : F ⟶ G` is a morphism of towers such that `F 0 ⟶ G 0` and every comparison map
-`F (n + 1) ⟶ F n ×_{G n} G (n + 1)` are epimorphisms, then `lim.map φ : lim F ⟶ lim G` is an
+/-- **Epimorphisms of inverse limits** (`limMap` form; Bhatt–Scholze, Lemma 3.1.8). In a replete
+category with pullbacks in which epimorphisms are stable under base change, if `φ : F ⟶ G` is a
+morphism of towers that have limits such that `F 0 ⟶ G 0` and every comparison map
+`F (n + 1) ⟶ F n ×_{G n} G (n + 1)` are epimorphisms, then `limMap φ : limit F ⟶ limit G` is an
 epimorphism. -/
-theorem epi_limMap [HasLimitsOfShape ℕᵒᵖ C] (h₀ : Epi (φ.app ⟨0⟩))
+theorem epi_limMap [HasLimit F] [HasLimit G] (h₀ : Epi (φ.app ⟨0⟩))
     (h : ∀ n, Epi (pullback.lift (F.map (homOfLE (Nat.le_succ n)).op) (φ.app ⟨n + 1⟩)
       (φ.naturality _))) :
-    Epi (lim.map φ) :=
+    Epi (limMap φ) :=
   epi_isLimitMap φ (limit.isLimit G) (limit.isLimit F) h₀ h
 
 end Map

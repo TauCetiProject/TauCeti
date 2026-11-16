@@ -22,10 +22,13 @@ coefficient change and with covers of the base site:
   (under the standard hypotheses identifying epimorphisms of `A`-valued sheaves with locally
   surjective morphisms), then `Sheaf J A` is replete and (when abelian) satisfies
   `CountableAB4Star`.
-* `TauCeti.IsReplete.of_coversTop` and `TauCeti.IsReplete.of_coversTop_sheaf` (Bhatt–Scholze,
-  Lemma 3.1.3): if `X : I → C` covers the terminal object for `J` and every slice sheaf category
-  `Sheaf (J.over (X i)) (Type w)` (or `Sheaf (J.over (X i)) A`) is replete, then
-  `Sheaf J (Type w)` (respectively `Sheaf J A`) is replete, by descending along the jointly
+* `TauCeti.isReplete_sheaf_types_of_coversTop` and `TauCeti.isReplete_sheaf_of_coversTop`
+  (Bhatt–Scholze, Lemma 3.1.3): if `X : I → C` covers the terminal object for `J` and every slice
+  sheaf category `Sheaf (J.over (X i)) (Type w)` (when `J` admits sheafification of
+  `Type w`-valued presheaves) or `Sheaf (J.over (X i)) A` (when `A` is a concrete category with
+  sequential limits satisfying `[∀ i, (J.over (X i)).HasSheafCompose (forget A)]` and the standard
+  hypotheses identifying epimorphisms in `Sheaf J A` with locally surjective morphisms) is replete,
+  then `Sheaf J (Type w)` (respectively `Sheaf J A`) is replete, by descending along the jointly
   faithful family of restriction functors `J.overPullback`.
 
 Because `TauCeti.CategoryTheory.Sites.EpiMono` registers
@@ -75,19 +78,24 @@ theorem countableAB4Star_sheaf [IsReplete (Sheaf J (Type w))] (A : Type*) [Categ
   inferInstance
 
 variable {J} in
-/-- **Repleteness of a topos is local on a site cover** (Bhatt–Scholze, Lemma 3.1.3). If
-`X : I → C` covers the terminal object for `J` and every slice topos
-`Sheaf (J.over (X i)) (Type w)` is replete, then `Sheaf J (Type w)` is replete. -/
-theorem IsReplete.of_coversTop {I : Type*} {X : I → C} (hX : J.CoversTop X)
+/-- **Repleteness of a topos is local on a site cover** (Bhatt–Scholze, Lemma 3.1.3). If `J`
+admits sheafification of `Type w`-valued presheaves (`[HasSheafify J (Type w)]`), `X : I → C`
+covers the terminal object for `J`, and every slice topos `Sheaf (J.over (X i)) (Type w)` is
+replete, then `Sheaf J (Type w)` is replete. -/
+theorem isReplete_sheaf_types_of_coversTop {I : Type*} {X : I → C} (hX : J.CoversTop X)
     [HasSheafify J (Type w)] [∀ i, IsReplete (Sheaf (J.over (X i)) (Type w))] :
     IsReplete (Sheaf J (Type w)) :=
   IsReplete.of_jointlyReflectEpimorphisms (hX.jointlyReflectEpimorphisms_overPullback (Type w))
 
 variable {J} in
 /-- **Repleteness of concrete-category-valued sheaves is local on a site cover.** If `X : I → C`
-covers the terminal object for `J` and every slice sheaf category `Sheaf (J.over (X i)) A` is
-replete, then `Sheaf J A` is replete. -/
-theorem IsReplete.of_coversTop_sheaf {I : Type*} {X : I → C} (hX : J.CoversTop X)
+covers the terminal object for `J`, `A` is a concrete category with sequential limits satisfying
+`[∀ i, (J.over (X i)).HasSheafCompose (forget A)]` together with the standard hypotheses
+identifying epimorphisms in `Sheaf J A` with locally surjective morphisms (`[HasSheafify J A]`,
+`[J.HasSheafCompose (forget A)]`, `[J.WEqualsLocallyBijective A]`,
+`[ConcreteCategory.HasFunctorialSurjectiveInjectiveFactorization A]`, and `[Balanced (Sheaf J A)]`),
+and every slice sheaf category `Sheaf (J.over (X i)) A` is replete, then `Sheaf J A` is replete. -/
+theorem isReplete_sheaf_of_coversTop {I : Type*} {X : I → C} (hX : J.CoversTop X)
     (A : Type*) [Category* A] {FA : A → A → Type*} {CA : A → Type w}
     [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory.{w} A FA]
     [HasLimitsOfShape ℕᵒᵖ A] [HasSheafify J A] [J.HasSheafCompose (forget A)]

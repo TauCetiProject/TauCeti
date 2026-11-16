@@ -22,9 +22,10 @@ limits and sequential limits), since limits of sheaves are computed on the under
 
 When `u` is moreover cocontinuous (`u.IsCocontinuous J K`), precomposition with `u.op` preserves
 locally surjective morphisms (`CategoryTheory.Presheaf.isLocallySurjective_whisker`), so
-`u.sheafPushforwardContinuous` preserves local surjectivity and hence epimorphisms of sheaves of
-types (and of sheaves in any concrete category whose epimorphisms are the locally surjective
-morphisms).
+`u.sheafPushforwardContinuous` preserves local surjectivity, and hence preserves epimorphisms of
+`Type w`-valued sheaves when `K` admits sheafification (`[HasSheafify K (Type w)]`), and of
+`A`-valued sheaves under `[J.HasSheafCompose (forget A)]` and the standard hypotheses on `(D, K)`
+and `A` identifying epimorphisms in `Sheaf K A` with locally surjective morphisms.
 -/
 
 public section
@@ -49,8 +50,7 @@ instance preservesLimitsOfShape_sheafPushforwardContinuous {I : Type*} [Category
     [HasLimitsOfShape I A] :
     PreservesLimitsOfShape I (u.sheafPushforwardContinuous A J K) := by
   have : PreservesLimitsOfShape I (u.sheafPushforwardContinuous A J K ⋙ sheafToPresheaf J A) :=
-    inferInstanceAs
-      (PreservesLimitsOfShape I (sheafToPresheaf K A ⋙ (whiskeringLeft _ _ _).obj u.op))
+    preservesLimitsOfShape_of_natIso (u.sheafPushforwardContinuousCompSheafToPresheafIso A J K).symm
   exact preservesLimitsOfShape_of_reflects_of_preserves _ (sheafToPresheaf J A)
 
 /-- The pushforward of sheaves along a continuous functor preserves finite limits, since limits
@@ -64,8 +64,16 @@ instance isLocallySurjective_sheafPushforwardContinuous_map
     {FA : A → A → Type*} {CA : A → Type*} [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)]
     [ConcreteCategory A FA] [u.IsCocontinuous J K] {F G : Sheaf K A} (φ : F ⟶ G)
     [Sheaf.IsLocallySurjective φ] :
-    Sheaf.IsLocallySurjective ((u.sheafPushforwardContinuous A J K).map φ) :=
-  Presheaf.isLocallySurjective_whisker J K u φ.hom
+    Sheaf.IsLocallySurjective ((u.sheafPushforwardContinuous A J K).map φ) := by
+  rw [← Sheaf.isLocallySurjective_sheafToPresheaf_map_iff,
+    ← Presheaf.isLocallySurjective_comp_iff J _
+      ((u.sheafPushforwardContinuousCompSheafToPresheafIso A J K).hom.app G),
+    ← Functor.comp_map,
+    (u.sheafPushforwardContinuousCompSheafToPresheafIso A J K).hom.naturality φ,
+    Presheaf.comp_isLocallySurjective_iff, Functor.comp_map, whiskeringLeft_obj_map]
+  have : Presheaf.IsLocallySurjective K ((sheafToPresheaf K A).map φ) :=
+    (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff φ).2 ‹_›
+  exact Presheaf.isLocallySurjective_whisker J K u ((sheafToPresheaf K A).map φ)
 
 /-- If `u : C ⥤ D` is both continuous and cocontinuous and `K` admits sheafification of
 `Type w`-valued presheaves, then `u.sheafPushforwardContinuous (Type w) J K` preserves
@@ -78,8 +86,9 @@ instance preservesEpimorphisms_sheafPushforwardContinuous_types
     infer_instance
 
 /-- If `u : C ⥤ D` is both continuous and cocontinuous, then `u.sheafPushforwardContinuous A J K`
-preserves epimorphisms of sheaves valued in a concrete category `A` whose epimorphisms are the
-locally surjective morphisms. -/
+preserves epimorphisms of `A`-valued sheaves under `[J.HasSheafCompose (forget A)]` and the
+standard hypotheses on `(D, K)` and `A` identifying epimorphisms in `Sheaf K A` with locally
+surjective morphisms. -/
 instance preservesEpimorphisms_sheafPushforwardContinuous
     {FA : A → A → Type*} {CA : A → Type w} [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)]
     [ConcreteCategory.{w} A FA] [u.IsCocontinuous J K]
