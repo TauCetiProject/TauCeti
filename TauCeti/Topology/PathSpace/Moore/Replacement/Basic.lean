@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Homotopy.Equiv
+public import TauCeti.Topology.PathSpace.Moore.From
 public import TauCeti.Topology.PathSpace.Moore.Lifting
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
@@ -47,6 +48,8 @@ act strictly on `F` by `f · ω = Φ (f, ω)(end)`, and transport is strictly eq
 ## Main results
 
 * `TauCeti.MooreReplacement.isHurewiczFibration_endpoint`: `p'` is a Hurewicz fibration.
+* `TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`: the end point map of the based path space
+  `P_b B`, the Moore-path replacement of the inclusion of `b`, is a Hurewicz fibration.
 * `TauCeti.MooreReplacement.homotopyEquiv`: `E ≃ₕ E'`, by the inclusion over `B`.
 * `TauCeti.MooreLiftingFunction.transportHomotopyEquiv`: transport is a homotopy equivalence.
 * `TauCeti.MooreLiftingFunction.IsTransitive.transport_act`: transport is strictly equivariant.
@@ -575,5 +578,34 @@ theorem map_comp (h : C(E, E')) (h' : C(E', E'')) (hh : p'.comp h = p) (hh' : p'
   ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp))
 
 end MooreReplacement.Fiber
+
+/-! ### The based path space -/
+
+namespace MoorePathFrom
+
+variable (B) in
+/-- The based path space `P_b B` is the Moore-path replacement of the inclusion of the point `b`. -/
+private def homeomorphMooreReplacement (b : B) :
+    MoorePathFrom B b ≃ₜ MooreReplacement (ContinuousMap.const PUnit.{1} b) where
+  toFun γ := MooreReplacement.mk PUnit.unit γ.toMoorePath
+    ((source γ).trans (ContinuousMap.const_apply _ _).symm)
+  invFun x := ⟨x.path, x.source_path.trans (ContinuousMap.const_apply _ _)⟩
+  left_inv _ := ext (by rw [toMoorePath_mk, MooreReplacement.path_mk])
+  right_inv _ := MooreReplacement.ext rfl (by rw [MooreReplacement.path_mk, toMoorePath_mk])
+  continuous_toFun := MooreReplacement.continuous_mk continuous_const continuous_toMoorePath _
+  continuous_invFun := MooreReplacement.continuous_path.subtype_mk _
+
+variable (B) in
+/-- **The end point map of the based path space is a Hurewicz fibration.** The based path space
+`P_b B` is the Moore-path replacement of the inclusion of `b`, whose end point map has the
+transitive lifting function given by concatenation. -/
+theorem isHurewiczFibration_endpoint (b : B) : IsHurewiczFibration.{w} (endpoint B b) := by
+  convert (MooreReplacement.isHurewiczFibration_endpoint _).comp_homeomorph
+    (homeomorphMooreReplacement B b)
+  ext γ
+  rw [Function.comp_apply, MooreReplacement.endpoint_apply, endpoint_apply]
+  exact congrArg MoorePath.target (MooreReplacement.path_mk _ _ _).symm
+
+end MoorePathFrom
 
 end TauCeti
