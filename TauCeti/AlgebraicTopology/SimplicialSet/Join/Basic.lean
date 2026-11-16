@@ -48,6 +48,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 
 ## Main results
 
+* `SSet.join.hom_ext_stdSimplex`: maps from a join to a standard simplex are determined by
+  their restrictions to the two factors.
 * `SSet.join.homEquiv`: maps `X ⟶ K ⋆ L` correspond to join data on `X`, naturally in `X`
   (`SSet.join.homEquiv_comp`); this is the representability `SSet.join.representableBy`.
 * `SSet.join.edge_mem_joinFiber_zero`: an edge of `K ⋆ L` ending over the vertex `0` lies over
@@ -701,6 +703,27 @@ lemma inr_app_univ_right_app {n : SimplexCategoryᵒᵖ} (x : (join K L).obj n)
     (inr K L).app n ((univ K L).right.app n ⟨x, hx⟩) = x :=
   -- Elaborated without the expected type, which is only definitionally equal.
   (ConcreteCategory.congr_hom (NatTrans.congr_app (univ_right_comp_inr K L) n) ⟨x, hx⟩ :)
+
+/-- Maps from a join to a standard simplex are determined by their restrictions to the two
+factors: every vertex of the join comes from one of them. -/
+theorem hom_ext_stdSimplex {K L : SSet.{u}} {k : ℕ} {σ σ' : join K L ⟶ Δ[k]}
+    (h₀ : inl K L ≫ σ = inl K L ≫ σ') (h : inr K L ≫ σ = inr K L ≫ σ') : σ = σ' := by
+  refine stdSimplex.hom_ext fun y ↦ ?_
+  by_cases hy : (univ K L).p.app _ y 0 = 0
+  · have hy' : y ∈ (joinFiber (univ K L).p 0).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact hy
+    rw [← inl_app_univ_left_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h₀ _) _
+  · have hy' : y ∈ (joinFiber (univ K L).p 1).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact Fin.eq_one_of_ne_zero _ hy
+    rw [← inr_app_univ_right_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h _) _
 
 variable (K L) in
 /-- The inclusion of `K` lands in the part of the join over the vertex `0`. -/
