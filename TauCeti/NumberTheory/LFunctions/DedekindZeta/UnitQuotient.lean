@@ -181,10 +181,8 @@ theorem hasSum_norm_cpow_fundamentalCone (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
   have hval : (FractionalIdeal.mk0 K J : FractionalIdeal (𝓞 K)⁰ K) =
       FractionalIdeal.spanSingleton (𝓞 K)⁰ ((m : ℚ) : K) * (I : FractionalIdeal (𝓞 K)⁰ K) := by
     simpa [coe_toPrincipalIdeal] using congrArg Units.val hJ
-  have hsumJ := (interIdealLatticeEquiv (Nat.cast_ne_zero.mpr hm) hval).hasSum_iff.mpr
-    (show HasSum (fun a : (fundamentalCone K ∩ idealLattice K (FractionalIdeal.mk0 K J) :
-        Set (mixedSpace K)) ↦ ((mixedEmbedding.norm (a : mixedSpace K) : ℝ) : ℂ) ^ (-s)) _ from
-      hasSum_norm_cpow_idealSet J hs)
+  have hsumJ := (interIdealLatticeEquiv (Nat.cast_ne_zero.mpr hm) hval).hasSum_iff.mpr <| by
+    simpa only [idealSet] using hasSum_norm_cpow_idealSet J hs
   rw [← Complex.ofReal_natCast (absNorm (J : Ideal (𝓞 K))), hnormJ, Complex.ofReal_mul,
     Complex.mul_cpow_ofReal_nonneg hc.le (Rat.cast_nonneg.mpr (FractionalIdeal.absNorm_nonneg _)),
     Complex.ofReal_ratCast, htsum] at hsumJ

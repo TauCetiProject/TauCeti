@@ -34,10 +34,9 @@ gamma factor `Γ_ℝ(s)^r₁ Γ_ℂ(s)^r₂` of the completed Dedekind zeta func
 This is the gamma integral contributed by one unit orbit of lattice points when the theta series
 of an ideal lattice is integrated over the cone above a fundamental domain for the units (Hecke's
 integral representation of a partial zeta function). The integrand is integrable
-(`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), as are its `L¹` norms
-(`TauCeti.LFunctions.integrable_norm_archGaussian_mul_archNorm_cpow`, with exact value given by
-`TauCeti.LFunctions.integral_norm_archGaussian_mul_archNorm_cpow`), as the interchange of the
-lattice sum with the integral requires.
+(`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), and its `L¹` norm is evaluated by
+`TauCeti.LFunctions.integral_norm_archGaussian_mul_archNorm_cpow`, as the interchange of the lattice
+sum with the integral requires.
 
 ## References
 
@@ -182,13 +181,6 @@ private theorem ofReal_norm_archGaussian_mul_archNorm_cpow {y : realSpace K} (hy
   have hre : (s / 2).re = s.re / 2 := by simp
   rw [norm_mul, hexp, norm_cpow_eq_rpow_re_of_pos hN, hre, ofReal_mul, archGaussian_apply,
     ofReal_cpow hN.le, ofReal_div, ofReal_ofNat]
-
-/-- For `x` of nonzero norm and `0 < Re s`, `y ↦ ‖archGaussian y x * N(y)^(s / 2)‖` is integrable
-on `realSpace K` with respect to `archHaar K`. -/
-theorem integrable_norm_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 0)
-    (hs : 0 < s.re) :
-    Integrable (fun y ↦ ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖) (archHaar K) :=
-  (integrable_archGaussian_mul_archNorm_cpow hx hs).norm
 
 /-- **Evaluation of the `L¹` norm of the archimedean Gaussian.** For a point `x : mixedSpace K`
 with `N(x) ≠ 0` and `0 < Re s`, the `archHaar K`-integral of `‖archGaussian y x * N(y)^(s / 2)‖` is

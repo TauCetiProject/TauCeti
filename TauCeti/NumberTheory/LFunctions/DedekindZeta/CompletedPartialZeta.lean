@@ -52,9 +52,10 @@ equation:
   meromorphic germs everywhere and as values away from `{0, 1}` — independently of `D`.
 * **Analyticity, poles, and residues** (`analyticAt_completedPartialZeta_iff`,
   `meromorphicOrderAt_completedPartialZeta_zero`, `meromorphicOrderAt_completedPartialZeta_one`,
-  `tendsto_mul_completedPartialZeta`, `tendsto_sub_one_mul_completedPartialZeta`):
-  `completedPartialZeta I` is analytic away from `0` and `1`, where it has simple poles with
-  residues `-2 a₀` and `2 a₀`, with `a₀ = mellinConstant K = 2^(r₁ + r₂ - 1) R / w` (so
+  `completedPartialZeta_zero`, `completedPartialZeta_one`, `tendsto_mul_completedPartialZeta`,
+  `tendsto_sub_one_mul_completedPartialZeta`): `completedPartialZeta I` is analytic away from `0`
+  and `1`, where it has simple poles (taking the canonical normal-form value `0`) with residues
+  `-2 a₀` and `2 a₀`, with `a₀ = mellinConstant K = 2^(r₁ + r₂ - 1) R / w` (so
   `2 a₀ = 2^(r₁ + r₂) R / w`).
 * **Functional equation** (`completedPartialZeta_one_sub`,
   `completedPartialZeta_one_sub_eventuallyEq`): if `J` is the trace dual
@@ -488,6 +489,24 @@ theorem meromorphicOrderAt_completedPartialZeta_one (I : (FractionalIdeal (𝓞 
   have hk : ((1 : ℂ) / 2) = (P.k : ℂ) := by simp [P]
   rw [meromorphicOrderAt_completedPartialZeta_eq, hk]
   exact P.meromorphicOrderAt_Λ_k (by simp [P])
+
+/-- `completedPartialZeta I` takes the canonical normal-form value `0` at its pole `s = 0`. -/
+@[simp]
+theorem completedPartialZeta_zero (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    completedPartialZeta I 0 = 0 :=
+  not_ne_iff.mp <| (meromorphicNFOn_completedPartialZeta I (mem_univ 0)
+    |>.meromorphicOrderAt_eq_zero_iff).not.mp <| by
+    rw [meromorphicOrderAt_completedPartialZeta_zero]
+    decide
+
+/-- `completedPartialZeta I` takes the canonical normal-form value `0` at its pole `s = 1`. -/
+@[simp]
+theorem completedPartialZeta_one (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    completedPartialZeta I 1 = 0 :=
+  not_ne_iff.mp <| (meromorphicNFOn_completedPartialZeta I (mem_univ 1)
+    |>.meromorphicOrderAt_eq_zero_iff).not.mp <| by
+    rw [meromorphicOrderAt_completedPartialZeta_one]
+    decide
 
 /-- `completedPartialZeta I` is analytic away from `0` and `1`. -/
 theorem analyticAt_completedPartialZeta (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ}
