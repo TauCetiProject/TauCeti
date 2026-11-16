@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.Loop
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Topology.Circle.Normalize
 
 /-!
 # Degrees of boundary direction maps of discs
@@ -43,12 +44,6 @@ noncomputable section
 open scoped unitInterval
 
 namespace Circle
-
-/-- A point of the circle that is the direction `w / ‖w‖` of a complex number `w` forces
-`w ≠ 0`, since `0 / ‖0‖ = 0` is not on the circle. -/
-theorem ne_zero_of_coe_eq_div_norm {z : Circle} {w : ℂ} (h : (z : ℂ) = w / ‖w‖) : w ≠ 0 := by
-  rintro rfl
-  simp at h
 
 /-- **Homotopy invariance of the degree of direction maps.** Let `F : [0, 1] × S¹ → ℂ` be
 continuous and without zeros. Then the direction maps `ζ ↦ F (0, ζ) / ‖F (0, ζ)‖` and

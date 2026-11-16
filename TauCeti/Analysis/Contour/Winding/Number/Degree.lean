@@ -15,7 +15,7 @@ import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Winding.SegmentSum
 import TauCeti.Analysis.Contour.Winding.Number.Periodic
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
-import TauCeti.Topology.Circle.Degree.Disc
+import TauCeti.Topology.Circle.Normalize
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
