@@ -64,7 +64,7 @@ noncomputable section
 open Bundle Metric Module Set Topology
 open scoped RealInnerProductSpace
 
-universe u
+universe u w
 
 namespace TauCeti
 
@@ -144,33 +144,21 @@ private def sphereBundleHomeomorph [TopologicalSpace X] (F : Type*) :
 
 variable [Fintype ι]
 
-private theorem complementProjection_eq (ho : ∀ x, Orthonormal ℝ (f x)) (x : X) (w : E) :
-    complementProjection f x w = w - ∑ i, ⟪f x i, w⟫ • f x i := by
-  simp [complementProjection, Submodule.starProjection_orthogonal',
-    (ho x).starProjection_apply_eq_sum rfl]
-
 omit [Fintype ι] in
 private theorem continuous_complementProjection [Finite ι] [TopologicalSpace X]
     (hf : Continuous f) (ho : ∀ x, Orthonormal ℝ (f x)) : Continuous (complementProjection f) := by
-  have := Fintype.ofFinite ι
-  refine continuous_clm_apply.2 fun w ↦ ?_
-  simp only [complementProjection_eq ho]
-  exact continuous_const.sub (continuous_finsetSum _ fun i _ ↦ by fun_prop)
-
-private theorem finrank_range_complementProjection (ho : ∀ x, Orthonormal ℝ (f x)) (x : X) :
-    finrank ℝ (complementProjection f x).range = finrank ℝ E - Fintype.card ι := by
-  have h := (Submodule.span ℝ (range (f x))).finrank_add_finrank_orthogonal
-  rw [finrank_span_eq_card (ho x).linearIndependent] at h
-  rw [complementProjection, Submodule.range_starProjection]
-  omega
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  change Continuous fun x ↦ complementProjection f x
+  simp only [complementProjection, Submodule.starProjection_orthogonal']
+  exact continuous_const.sub (Orthonormal.continuous_starProjection hf ho fun _ ↦ rfl)
 
 /-- The model fibre `F` is isomorphic to every orthogonal complement. -/
-private theorem nonempty_continuousLinearEquiv_range (ho : ∀ x, Orthonormal ℝ (f x))
+private theorem nonempty_continuousLinearEquiv_range {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] (ho : ∀ x, Orthonormal ℝ (f x))
     (hF : finrank ℝ F + Fintype.card ι = finrank ℝ E) (x : X) :
     Nonempty (F ≃L[ℝ] (complementProjection f x).range) :=
-  ⟨ContinuousLinearEquiv.ofFinrankEq (by rw [finrank_range_complementProjection ho]; omega)⟩
+  ⟨ContinuousLinearEquiv.ofFinrankEq (by
+    rw [complementProjection, Submodule.range_starProjection, (ho x).finrank_orthogonal_span]
+    omega)⟩
 
 end Complement
 
@@ -206,21 +194,31 @@ theorem exists_trivialization_orthogonalSphereBundleProj (hf : Continuous f)
   rw [← hproj]
   exact ⟨e.compHomeomorph (sphereBundleHomeomorph F).symm, he⟩
 
+/-- The charts of `TauCeti.exists_trivialization_orthogonalSphereBundleProj` with fibre the unit
+sphere of `ℝ^(dim E - card ι)`, the dimension being read off the orthonormal frame at the point. -/
+private theorem exists_trivialization_euclidean (hf : Continuous f)
+    (ho : ∀ x, Orthonormal ℝ (f x)) (x : X) :
+    ∃ e : Trivialization (sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E - Fintype.card ι))) 1)
+      (orthogonalSphereBundleProj f), x ∈ e.baseSet := by
+  have h := (ho x).linearIndependent.fintype_card_le_finrank
+  exact exists_trivialization_orthogonalSphereBundleProj hf ho (by simp; omega) x
+
+omit [Fintype ι] in
 /-- **The unit spheres orthogonal to a continuous orthonormal frame form a Serre fibration.** -/
-theorem TopCat.mem_serreFibrations_orthogonalSphereBundleProj (hf : Continuous f)
-    (ho : ∀ x, Orthonormal ℝ (f x)) (hF : finrank ℝ F + Fintype.card ι = finrank ℝ E) :
+theorem TopCat.mem_serreFibrations_orthogonalSphereBundleProj [Finite ι] (hf : Continuous f)
+    (ho : ∀ x, Orthonormal ℝ (f x)) :
     TopCat.serreFibrations (_root_.TopCat.ofHom (orthogonalSphereBundleProj f) :
       _root_.TopCat.of (orthogonalSphereBundle f) ⟶ _root_.TopCat.of X) :=
-  TopCat.mem_serreFibrations_of_exists_trivialization
-    (exists_trivialization_orthogonalSphereBundleProj hf ho hF)
+  have := Fintype.ofFinite ι
+  TopCat.mem_serreFibrations_of_exists_trivialization (exists_trivialization_euclidean hf ho)
 
+omit [Fintype ι] in
 /-- **The unit spheres orthogonal to a continuous orthonormal frame over a normal paracompact base
 form a Hurewicz fibration.** -/
-theorem isHurewiczFibration_orthogonalSphereBundleProj [NormalSpace X] [ParacompactSpace X]
-    (hf : Continuous f) (ho : ∀ x, Orthonormal ℝ (f x))
-    (hF : finrank ℝ F + Fintype.card ι = finrank ℝ E) :
-    IsHurewiczFibration.{u} (orthogonalSphereBundleProj f) :=
-  isHurewiczFibration_of_exists_trivialization
-    (exists_trivialization_orthogonalSphereBundleProj hf ho hF)
+theorem isHurewiczFibration_orthogonalSphereBundleProj [Finite ι] [NormalSpace X]
+    [ParacompactSpace X] (hf : Continuous f) (ho : ∀ x, Orthonormal ℝ (f x)) :
+    IsHurewiczFibration.{w} (orthogonalSphereBundleProj f) :=
+  have := Fintype.ofFinite ι
+  isHurewiczFibration_of_exists_trivialization (exists_trivialization_euclidean hf ho)
 
 end TauCeti

@@ -146,17 +146,18 @@ theorem exists_trivialization_twoFieldEquators [FiniteDimensional ℝ E] {F : Ty
   exact ⟨e.compHomeomorph _, he⟩
 
 /-- **The space of equators is a Serre fibration over the sphere.** For two continuous vector
-fields `u`, `v` on the unit sphere `Sⁿ⁺²` of `E`, orthonormal at every point, the projection
-`(x, q) ↦ x` of the space of equators is a Serre fibration with fibre `Sⁿ`. -/
+fields `u`, `v` on the unit sphere `Sⁿ` of `E`, orthonormal at every point, the projection
+`(x, q) ↦ x` of the space of equators is a Serre fibration with fibre `Sⁿ⁻²`. -/
 theorem TopCat.mem_serreFibrations_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
-    (hv : Continuous v) (huv : ∀ x, Orthonormal ℝ ![u x, v x]) {n : ℕ}
-    (hE : Module.finrank ℝ E = n + 3) :
+    (hv : Continuous v) (huv : ∀ x, Orthonormal ℝ ![u x, v x]) :
     TopCat.serreFibrations (_root_.TopCat.ofHom
       (ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v))) :
         _root_.TopCat.of (twoFieldEquators u v) ⟶ _root_.TopCat.of (sphere (0 : E) 1)) :=
-  TopCat.mem_serreFibrations_of_exists_trivialization
-    (exists_trivialization_twoFieldEquators (F := EuclideanSpace ℝ (Fin (n + 1))) hu hv huv
-      (by simp [hE]))
+  TopCat.mem_serreFibrations_of_exists_trivialization fun x ↦ by
+    -- The dimension of the fibre is read off the orthonormal pair at `x`.
+    have h := (huv x).linearIndependent.fintype_card_le_finrank
+    exact exists_trivialization_twoFieldEquators
+      (F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 2))) hu hv huv (by simp at h ⊢; omega) x
 
 section Pointwise
 
