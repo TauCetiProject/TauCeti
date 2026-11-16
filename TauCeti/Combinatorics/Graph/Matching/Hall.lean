@@ -34,15 +34,21 @@ capacitated matching is an ordinary matching, and these become the Kőnig–Ore 
 
 ## Main results
 
-* `Graph.IsCapacitatedMatching.sum_add_sum_le`: the capacitated Kőnig–Ore inequality.
-* `Graph.IsBipartition.exists_isCapacitatedMatching_sum_add_sum_eq`: the capacitated Kőnig–Ore
-  formula in witness form.
-* `Graph.IsBipartition.isGreatest_sum_isCapacitatedMatching`: the largest size of a multiset
+* `Graph.IsCapacitatedMatching.sum_add_sum_le` and
+  `Graph.IsCapacitatedMatching.sum_add_sum_right_le`: the capacitated Kőnig–Ore inequality on each
+  side.
+* `Graph.IsBipartition.exists_isCapacitatedMatching_sum_add_sum_eq` and
+  `Graph.IsBipartition.exists_isCapacitatedMatching_sum_add_sum_right_eq`: the capacitated
+  Kőnig–Ore formula in witness form.
+* `Graph.IsBipartition.isGreatest_sum_isCapacitatedMatching` and
+  `Graph.IsBipartition.isGreatest_sum_isCapacitatedMatching_right`: the largest size of a multiset
   capacitated matching.
-* `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_left_iff`: **Hall's theorem** for
+* `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_left_iff` and
+  `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_right_iff`: **Hall's theorem** for
   multiset capacitated matchings.
-* `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_iff`: the condition for a multiset
-  capacitated matching saturating every actual vertex.
+* `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_iff` and
+  `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_iff_right`: the conditions for a
+  multiset capacitated matching saturating every actual vertex.
 
 ## Implementation notes
 
@@ -97,6 +103,14 @@ theorem sum_add_sum_le (hx : G.IsCapacitatedMatching b x) (hLR : G.IsBipartition
   have := sum_sdiff (f := b) hS
   omega
 
+/-- **The capacitated Kőnig–Ore inequality** for subsets of the right side: every multiset
+capacitated matching `x` and every `T ⊆ R` satisfy `∑ e, x e + b(T) ≤ b(R) + b(N(T))`, where
+`N(T)` is the set of neighbours of `T` in `L`. -/
+theorem sum_add_sum_right_le (hx : G.IsCapacitatedMatching b x) (hLR : G.IsBipartition L R)
+    {T : Finset V(G)} (hT : T ⊆ R) :
+    ∑ e, x e + ∑ v ∈ T, b v ≤ ∑ v ∈ R, b v + ∑ v ∈ G.neighborsIn T L, b v :=
+  hx.sum_add_sum_le hLR.symm hT
+
 end IsCapacitatedMatching
 
 namespace IsBipartition
@@ -127,6 +141,15 @@ theorem exists_isCapacitatedMatching_sum_add_sum_eq (hLR : G.IsBipartition L R)
   rw [sdiff_sdiff_right_self] at this
   omega
 
+/-- **The capacitated Kőnig–Ore formula** for subsets of the right side: some multiset capacitated
+matching `x` and some `T ⊆ R` satisfy `∑ e, x e + b(T) = b(R) + b(N(T))`, where `N(T)` is the set
+of neighbours of `T` in `L`. -/
+theorem exists_isCapacitatedMatching_sum_add_sum_right_eq (hLR : G.IsBipartition L R)
+    (b : V(G) → ℕ) :
+    ∃ (x : E(G) → ℕ) (T : Finset V(G)), G.IsCapacitatedMatching b x ∧ T ⊆ R ∧
+      ∑ e, x e + ∑ v ∈ T, b v = ∑ v ∈ R, b v + ∑ v ∈ G.neighborsIn T L, b v :=
+  hLR.symm.exists_isCapacitatedMatching_sum_add_sum_eq b
+
 /-- **The largest multiset capacitated matching.** In a bipartite multigraph with sides `L` and
 `R`, the largest size of a multiset capacitated matching is `b(L) - max_{S ⊆ L} (b(S) - b(N(S)))`,
 with truncated subtraction, where `N(S)` is the set of neighbours of `S`. -/
@@ -151,6 +174,14 @@ theorem isGreatest_sum_isCapacitatedMatching (hLR : G.IsBipartition L R) (b : V(
   have := hub hx
   exact ⟨x, hx, by omega⟩
 
+/-- The largest size of a multiset capacitated matching, expressed in terms of subsets of the right
+side `R`: `b(R) - max_{T ⊆ R} (b(T) - b(N(T)))`. -/
+theorem isGreatest_sum_isCapacitatedMatching_right (hLR : G.IsBipartition L R) (b : V(G) → ℕ) :
+    IsGreatest {n | ∃ x : E(G) → ℕ, G.IsCapacitatedMatching b x ∧ ∑ e, x e = n}
+      (∑ v ∈ R, b v -
+        R.powerset.sup fun T ↦ ∑ v ∈ T, b v - ∑ v ∈ G.neighborsIn T L, b v) :=
+  hLR.symm.isGreatest_sum_isCapacitatedMatching b
+
 /-- **Hall's theorem for multiset capacitated matchings.** In a bipartite multigraph with sides
 `L` and `R`, some multiset capacitated matching saturates every vertex of `L` if and only if
 `b(S) ≤ b(N(S))` for every `S ⊆ L`, where `N(S)` is the set of neighbours of `S`. -/
@@ -171,6 +202,16 @@ theorem exists_isCapacitatedMatching_saturating_left_iff (hLR : G.IsBipartition 
     have := hHall S hS
     omega
 
+/-- **Hall's theorem for multiset capacitated matchings** saturating the right side `R`: some
+multiset capacitated matching saturates every vertex of `R` if and only if `b(T) ≤ b(N(T))` for
+every `T ⊆ R`, where `N(T)` is the set of neighbours of `T` in `L`. -/
+theorem exists_isCapacitatedMatching_saturating_right_iff (hLR : G.IsBipartition L R)
+    (b : V(G) → ℕ) :
+    (∃ x : E(G) → ℕ, G.IsCapacitatedMatching b x ∧
+        ∀ v ∈ R, ∑ e ∈ G.incidentEdges {v}, x e = b v) ↔
+      ∀ T ⊆ R, ∑ v ∈ T, b v ≤ ∑ v ∈ G.neighborsIn T L, b v :=
+  hLR.symm.exists_isCapacitatedMatching_saturating_left_iff b
+
 /-- In a bipartite multigraph with sides `L` and `R`, some multiset capacitated matching saturates
 every actual vertex if and only if `b(L) = b(R)` and `b(S) ≤ b(N(S))` for every `S ⊆ L`, where
 `N(S)` is the set of neighbours of `S`. -/
@@ -189,6 +230,16 @@ theorem exists_isCapacitatedMatching_saturating_iff (hLR : G.IsBipartition L R)
     have hsatR := (hx.sum_eq_sum_left_iff hLR.symm).1 <|
       ((hx.sum_eq_sum_left_iff hLR).2 hsat).trans hLR_eq
     exact ⟨x, hx, fun v ↦ (hLR.mem_or_mem v).elim (hsat v) (hsatR v)⟩
+
+/-- In a bipartite multigraph with sides `L` and `R`, some multiset capacitated matching saturates
+every actual vertex if and only if `b(L) = b(R)` and `b(T) ≤ b(N(T))` for every `T ⊆ R`, where
+`N(T)` is the set of neighbours of `T` in `L`. -/
+theorem exists_isCapacitatedMatching_saturating_iff_right (hLR : G.IsBipartition L R)
+    (b : V(G) → ℕ) :
+    (∃ x : E(G) → ℕ, G.IsCapacitatedMatching b x ∧
+        ∀ v, ∑ e ∈ G.incidentEdges {v}, x e = b v) ↔
+      ∑ v ∈ L, b v = ∑ v ∈ R, b v ∧ ∀ T ⊆ R, ∑ v ∈ T, b v ≤ ∑ v ∈ G.neighborsIn T L, b v := by
+  rw [hLR.symm.exists_isCapacitatedMatching_saturating_iff b, eq_comm]
 
 end IsBipartition
 

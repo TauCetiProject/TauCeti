@@ -9,6 +9,8 @@ public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
+import TauCeti.Combinatorics.SimpleGraph.Bipartite
+
 /-!
 # Bipartitions of multigraphs
 
@@ -36,8 +38,10 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.IsBipartition.loopless`: a multigraph with a bipartition has no loops.
 * `Graph.IsBipartition.finite`: a multigraph with a bipartition has finitely many actual vertices.
 * `Graph.IsBipartition.deleteEdges`: deleting edges preserves a displayed bipartition.
-* `SimpleGraph.isBipartition_ofSimpleGraph_iff`: covering bipartitions of
-  `Graph.ofSimpleGraph H` are precisely bipartitions of `H` whose two sides cover every vertex.
+* `SimpleGraph.isBipartition_ofSimpleGraph_iff`,
+  `SimpleGraph.IsBipartiteWith.exists_isBipartition_ofSimpleGraph_compl`, and
+  `SimpleGraph.image_neighborsIn_ofSimpleGraph_of_isBipartiteWith`: correspondence between
+  bipartitions and neighbourhoods of a simple graph `H` and those of `Graph.ofSimpleGraph H`.
 * `Graph.IsBipartition.isVertexCover_left`: the side `L` of a bipartition is a vertex cover, and
   similarly for `R`.
 * `Graph.IsBipartition.sum_sum_incidentEdges_left`: summing over `L` the values of the edges
@@ -390,5 +394,60 @@ theorem isBipartition_ofSimpleGraph_iff (H : SimpleGraph α)
       · obtain ⟨x', hx'R, hxx'⟩ := hxy.1
         obtain ⟨y', hy'L, hyy'⟩ := hxy.2
         exact Or.inr ⟨Subtype.ext hxx' ▸ hx'R, Subtype.ext hyy' ▸ hy'L⟩
+
+/-- For a simple graph on a finite vertex type, any displayed bipartition `H.IsBipartiteWith L R`
+induces a covering multigraph bipartition of `Graph.ofSimpleGraph H` on the preimages of `L` and
+`Lᶜ`. -/
+theorem IsBipartiteWith.exists_isBipartition_ofSimpleGraph_compl [Finite α] {H : SimpleGraph α}
+    {L R : Set α} (h : H.IsBipartiteWith L R) :
+    ∃ L' R' : Finset V(Graph.ofSimpleGraph H),
+      (Graph.ofSimpleGraph H).IsBipartition L' R' ∧
+        Subtype.val '' (L' : Set V(Graph.ofSimpleGraph H)) = L ∧
+        Subtype.val '' (R' : Set V(Graph.ofSimpleGraph H)) = Lᶜ := by
+  have himg (A : Set α) :
+      Subtype.val ''
+        (((Subtype.val ⁻¹' A : Set V(Graph.ofSimpleGraph H)).toFinite.toFinset : Finset _) :
+          Set V(Graph.ofSimpleGraph H)) = A := by
+    rw [Set.Finite.coe_toFinset, Subtype.image_preimage_coe]
+    simp
+  let L' : Finset V(Graph.ofSimpleGraph H) :=
+    (Subtype.val ⁻¹' L : Set V(Graph.ofSimpleGraph H)).toFinite.toFinset
+  let R' : Finset V(Graph.ofSimpleGraph H) :=
+    (Subtype.val ⁻¹' Lᶜ : Set V(Graph.ofSimpleGraph H)).toFinite.toFinset
+  refine ⟨L', R', (isBipartition_ofSimpleGraph_iff H L' R').2 ?_, himg L, himg Lᶜ⟩
+  rw [himg L, himg Lᶜ]
+  exact ⟨h.compl_right, Set.union_compl_self L⟩
+
+/-- Under `Graph.ofSimpleGraph H`, `Graph.neighborsIn S T` corresponds to the vertices of `T`
+that belong to the `H`-neighbourhood union of `S`. -/
+theorem image_neighborsIn_ofSimpleGraph (H : SimpleGraph α)
+    (S T : Finset V(Graph.ofSimpleGraph H)) :
+    Subtype.val '' ((Graph.ofSimpleGraph H).neighborsIn S T : Set V(Graph.ofSimpleGraph H)) =
+      (Subtype.val '' (T : Set V(Graph.ofSimpleGraph H))) ∩
+        ⋃ x ∈ Subtype.val '' (S : Set V(Graph.ofSimpleGraph H)), H.neighborSet x := by
+  ext y
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    rw [Finset.mem_coe, Graph.mem_neighborsIn] at hz
+    obtain ⟨hzT, x, hxS, hxz⟩ := hz
+    rw [Graph.ofSimpleGraph_adj_iff] at hxz
+    exact ⟨⟨z, hzT, rfl⟩, Set.mem_biUnion ⟨x, hxS, rfl⟩ hxz⟩
+  · rintro ⟨⟨z, hzT, rfl⟩, hyN⟩
+    obtain ⟨_, ⟨x, hxS, rfl⟩, hxz⟩ := Set.mem_iUnion₂.mp hyN
+    refine ⟨z, ?_, rfl⟩
+    rw [Finset.mem_coe, Graph.mem_neighborsIn]
+    exact ⟨hzT, x, hxS, (Graph.ofSimpleGraph_adj_iff x.1 z.1).2 hxz⟩
+
+/-- When `H.IsBipartiteWith s t`, `S` lies in `s`, and `T` covers `t`, all `H`-neighbours of `S`
+already belong to `t`, so `Graph.neighborsIn S T` on `Graph.ofSimpleGraph H` projects onto the full
+`H`-neighbourhood union of `S`. -/
+theorem image_neighborsIn_ofSimpleGraph_of_isBipartiteWith {H : SimpleGraph α} {s t : Set α}
+    (h : H.IsBipartiteWith s t) {S T : Finset V(Graph.ofSimpleGraph H)}
+    (hS : Subtype.val '' (S : Set V(Graph.ofSimpleGraph H)) ⊆ s)
+    (hT : t ⊆ Subtype.val '' (T : Set V(Graph.ofSimpleGraph H))) :
+    Subtype.val '' ((Graph.ofSimpleGraph H).neighborsIn S T : Set V(Graph.ofSimpleGraph H)) =
+      ⋃ x ∈ Subtype.val '' (S : Set V(Graph.ofSimpleGraph H)), H.neighborSet x := by
+  rw [image_neighborsIn_ofSimpleGraph, Set.inter_eq_right]
+  exact Set.iUnion₂_subset fun x hx ↦ (isBipartiteWith_neighborSet_subset h (hS hx)).trans hT
 
 end SimpleGraph

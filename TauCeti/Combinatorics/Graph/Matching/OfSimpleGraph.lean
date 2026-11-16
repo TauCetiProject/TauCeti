@@ -74,6 +74,11 @@ theorem edgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
   induction p using Sym2.inductionOn with
   | _ x y => simp [SimpleGraph.Subgraph.mem_edgeSet]
 
+/-- Tracing selected edges does not change their extended cardinality. -/
+theorem encard_edgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
+    (H.matchingSubgraph M).edgeSet.encard = M.encard := by
+  rw [edgeSet_matchingSubgraph, Subtype.val_injective.encard_image]
+
 /-- Tracing selected edges does not change their cardinality. -/
 theorem ncard_edgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
     (H.matchingSubgraph M).edgeSet.ncard = M.ncard := by
@@ -104,6 +109,13 @@ theorem toGraphEdgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
     (H.matchingSubgraph M).toGraphEdgeSet = M := by
   rw [Subgraph.toGraphEdgeSet, edgeSet_matchingSubgraph,
     Set.preimage_image_eq _ Subtype.val_injective]
+
+/-- Converting a simple-graph subgraph's edges to multigraph edge identities preserves their
+extended cardinality. -/
+@[simp]
+theorem Subgraph.encard_toGraphEdgeSet (S : H.Subgraph) :
+    S.toGraphEdgeSet.encard = S.edgeSet.encard := by
+  rw [← S.edgeSet_matchingSubgraph_toGraphEdgeSet, encard_edgeSet_matchingSubgraph]
 
 /-- Converting a simple-graph subgraph's edges to multigraph edge identities preserves their
 cardinality. -/
@@ -160,6 +172,12 @@ theorem Subgraph.matchingSubgraph_toGraphEdgeSet (S : H.Subgraph) (hS : S.IsMatc
       exact ⟨⟨e, S.edgeSet_subset heS⟩, heS, hxe⟩
   · exact (Sym2.fromRel_eq_fromRel_iff_eq _ _).mp S.edgeSet_matchingSubgraph_toGraphEdgeSet
 
+/-- The multigraph edge set of a matching subgraph is a multigraph matching. -/
+theorem Subgraph.IsMatching.toGraphEdgeSet {S : H.Subgraph} (hS : S.IsMatching) :
+    (Graph.ofSimpleGraph H).IsMatching S.toGraphEdgeSet := by
+  rw [← matchingSubgraph_isMatching_iff, S.matchingSubgraph_toGraphEdgeSet hS]
+  exact hS
+
 /-- Matchings of `Graph.ofSimpleGraph H`, represented by selected edge identities, are equivalent
 to matching subgraphs of `H` in Mathlib's canonical representation. -/
 def matchingEquiv (H : SimpleGraph V) :
@@ -167,10 +185,7 @@ def matchingEquiv (H : SimpleGraph V) :
       {S : H.Subgraph // S.IsMatching} where
   toFun M := ⟨H.matchingSubgraph M,
     (matchingSubgraph_isMatching_iff (H := H) M).2 M.2⟩
-  invFun S := ⟨S.1.toGraphEdgeSet,
-    (matchingSubgraph_isMatching_iff (H := H) _).1 <| by
-      rw [Subgraph.matchingSubgraph_toGraphEdgeSet S.1 S.2]
-      exact S.2⟩
+  invFun S := ⟨S.1.toGraphEdgeSet, S.2.toGraphEdgeSet⟩
   left_inv M := by
     apply Subtype.ext
     exact toGraphEdgeSet_matchingSubgraph M.1
@@ -190,6 +205,12 @@ theorem matchingEquiv_apply (M :
 theorem matchingEquiv_symm_apply (S : {S : H.Subgraph // S.IsMatching}) :
     ((matchingEquiv H).symm S : Set E(Graph.ofSimpleGraph H)) = S.1.toGraphEdgeSet :=
   (rfl)
+
+/-- The matching equivalence preserves the extended cardinality of selected edges. -/
+theorem encard_edgeSet_matchingEquiv (M :
+    {M : Set E(Graph.ofSimpleGraph H) // (Graph.ofSimpleGraph H).IsMatching M}) :
+    (matchingEquiv H M).1.edgeSet.encard = M.1.encard := by
+  rw [matchingEquiv_apply, encard_edgeSet_matchingSubgraph]
 
 /-- The matching equivalence preserves the number of selected edges. -/
 theorem ncard_edgeSet_matchingEquiv (M :

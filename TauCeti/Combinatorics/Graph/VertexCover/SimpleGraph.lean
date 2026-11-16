@@ -89,4 +89,10 @@ theorem isVertexCover_ofSimpleGraph_image_iff {C : Set V(Graph.ofSimpleGraph H)}
   rw [← isVertexCover_ofSimpleGraph_preimage_iff]
   simp only [Set.preimage_image_eq _ Subtype.val_injective]
 
+/-- The simplification of `Graph.ofSimpleGraph H` has the same vertex cover number as `H`. -/
+@[simp]
+theorem vertexCoverNum_toSimpleGraph_ofSimpleGraph (H : SimpleGraph α) :
+    (Graph.ofSimpleGraph H).toSimpleGraph.vertexCoverNum = H.vertexCoverNum :=
+  vertexCoverNum_congr (Graph.toSimpleGraphOfSimpleGraphIso H)
+
 end SimpleGraph

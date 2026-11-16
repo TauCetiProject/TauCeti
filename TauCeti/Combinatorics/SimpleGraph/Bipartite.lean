@@ -29,6 +29,9 @@ independent of the colouring up to exchanging the two classes.
 
 ## Main results
 
+* `SimpleGraph.IsBipartiteWith.compl_right`, `SimpleGraph.IsBipartiteWith.compl_left`, and
+  `SimpleGraph.IsBipartite.exists_isBipartiteWith_compl`: enlarging one side of a bipartition to
+  the complement of the other produces a covering bipartition without disturbing edges.
 * `SimpleGraph.edgeFinset_between`, `SimpleGraph.card_edgeFinset_top_between`: edge finset of
   `G.between S T` and edge count of `(⊤ : SimpleGraph V).between S T` for disjoint `S` and `T`.
 * `SimpleGraph.card_edgeFinset_between`: the edges between disjoint finite sets `s` and `t` are
@@ -45,6 +48,28 @@ open scoped symmDiff Finset
 namespace SimpleGraph
 
 variable {V : Type*}
+
+/-- Enlarging the right class of a bipartition of `G` to the complement of the left class preserves
+`IsBipartiteWith` while covering every vertex of `G`: vertices outside `s ∪ t` are isolated in
+`G`. -/
+theorem IsBipartiteWith.compl_right {G : SimpleGraph V} {s t : Set V} (h : G.IsBipartiteWith s t) :
+    G.IsBipartiteWith s sᶜ where
+  disjoint := disjoint_compl_right
+  mem_of_adj _ _ hadj := (h.mem_of_adj hadj).imp
+    (And.imp_right fun hw ↦ h.disjoint.subset_compl_left hw)
+    (And.imp_left fun hv ↦ h.disjoint.subset_compl_left hv)
+
+/-- Enlarging the left class of a bipartition of `G` to the complement of the right class preserves
+`IsBipartiteWith` while covering every vertex of `G`. -/
+theorem IsBipartiteWith.compl_left {G : SimpleGraph V} {s t : Set V} (h : G.IsBipartiteWith s t) :
+    G.IsBipartiteWith tᶜ t :=
+  h.symm.compl_right.symm
+
+/-- Every bipartite simple graph admits a bipartition whose two classes are complementary. -/
+theorem IsBipartite.exists_isBipartiteWith_compl {G : SimpleGraph V} (h : G.IsBipartite) :
+    ∃ s : Set V, G.IsBipartiteWith s sᶜ :=
+  let ⟨s, _, hst⟩ := h.exists_isBipartiteWith
+  ⟨s, hst.compl_right⟩
 
 /-- Restricting a graph to pairs between two sets is intersection with the corresponding
 restriction of the complete graph. -/

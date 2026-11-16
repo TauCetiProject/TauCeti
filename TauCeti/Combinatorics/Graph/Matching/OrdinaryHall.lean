@@ -21,10 +21,17 @@ and `S ⊆ L` such that `|M| + |S| = |L| + |N(S)|`. Hall's theorem says that a m
 
 ## Main results
 
-* `Graph.IsBipartition.exists_isMatching_card_add_card_eq`: the ordinary Kőnig–Ore formula.
-* `Graph.IsBipartition.isGreatest_card_isMatching`: the numerical deficiency formula.
-* `Graph.IsBipartition.exists_isMatching_saturating_left_iff`: Hall's theorem for finite
+* `Graph.IsBipartition.exists_isMatching_card_add_card_eq` and
+  `Graph.IsBipartition.exists_isMatching_card_add_card_right_eq`: the ordinary Kőnig–Ore formula
+  on each side.
+* `Graph.IsBipartition.isGreatest_card_isMatching` and
+  `Graph.IsBipartition.isGreatest_card_isMatching_right`: the numerical deficiency formula.
+* `Graph.IsBipartition.exists_isMatching_saturating_left_iff` and
+  `Graph.IsBipartition.exists_isMatching_saturating_right_iff`: Hall's theorem for finite
   bipartite multigraphs.
+* `Graph.IsBipartition.exists_isPerfectMatching_iff` and
+  `Graph.IsBipartition.exists_isPerfectMatching_iff_right`: Hall's condition for a perfect
+  matching in a finite bipartite multigraph.
 
 ## References
 
@@ -58,6 +65,13 @@ theorem card_add_card_le {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G)))
   have hx := hM.isCapacitatedMatching_indicator
   simpa [Set.indicator_apply] using hx.sum_add_sum_le hLR hS
 
+/-- The Kőnig–Ore inequality for subsets of the right side: if `M` is a matching and `T ⊆ R`,
+then `|M| + |T| ≤ |R| + |N(T)|`, where `N(T)` is the set of neighbours of `T` in `L`. -/
+theorem card_add_card_right_le {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G)))
+    (hLR : G.IsBipartition L R) {T : Finset V(G)} (hT : T ⊆ R) :
+    M.card + T.card ≤ R.card + (G.neighborsIn T L).card :=
+  hM.card_add_card_le hLR.symm hT
+
 end IsMatching
 
 namespace IsBipartition
@@ -74,6 +88,13 @@ theorem exists_isMatching_card_add_card_eq (hLR : G.IsBipartition L R) :
   refine ⟨Finset.univ.filter (fun e ↦ x e ≠ 0), S,
     hx.supportFinset_isMatching hLR.loopless, hS, ?_⟩
   simpa [hx.sum_eq_card_support] using hxS
+
+/-- The ordinary Kőnig–Ore formula for subsets of the right side `R`: there are a matching `M`
+and a set `T ⊆ R` attaining `|M| + |T| = |R| + |N(T)|`. -/
+theorem exists_isMatching_card_add_card_right_eq (hLR : G.IsBipartition L R) :
+    ∃ (M : Finset E(G)) (T : Finset V(G)), G.IsMatching (M : Set E(G)) ∧ T ⊆ R ∧
+      M.card + T.card = R.card + (G.neighborsIn T L).card :=
+  hLR.symm.exists_isMatching_card_add_card_eq
 
 /-- The numerical Kőnig–Ore deficiency formula. The greatest size of an ordinary matching is
 `|L| - max_{S ⊆ L} (|S| - |N(S)|)`. -/
@@ -96,6 +117,13 @@ theorem isGreatest_card_isMatching (hLR : G.IsBipartition L R) :
       simp [Set.indicator_apply]
   rw [← hvalues]
   simpa using hLR.isGreatest_sum_isCapacitatedMatching (fun _ ↦ 1)
+
+/-- The numerical Kőnig–Ore deficiency formula in terms of subsets of the right side `R`:
+the greatest size of an ordinary matching is `|R| - max_{T ⊆ R} (|T| - |N(T)|)`. -/
+theorem isGreatest_card_isMatching_right (hLR : G.IsBipartition L R) :
+    IsGreatest {n | ∃ M : Finset E(G), G.IsMatching (M : Set E(G)) ∧ M.card = n}
+      (R.card - R.powerset.sup fun T ↦ T.card - (G.neighborsIn T L).card) :=
+  hLR.symm.isGreatest_card_isMatching
 
 /-- **Hall's theorem for finite bipartite multigraphs.** There is an ordinary matching incident
 to every vertex of `L` if and only if every `S ⊆ L` has at least `|S|` neighbours in `R`. -/
@@ -129,6 +157,52 @@ theorem exists_isMatching_saturating_left_iff (hLR : G.IsBipartition L R) :
     obtain ⟨z, hz, hez⟩ := (mem_incidentEdges G).1 he
     have hzy : z = y := by simpa using hz
     exact ⟨e, by simpa using hxe.ne', hzy ▸ hez⟩
+
+/-- **Hall's theorem for finite bipartite multigraphs** saturating the right side `R`: there is
+an ordinary matching incident to every vertex of `R` if and only if every `T ⊆ R` has at least
+`|T|` neighbours in `L`. -/
+theorem exists_isMatching_saturating_right_iff (hLR : G.IsBipartition L R) :
+    (∃ M : Finset E(G), G.IsMatching (M : Set E(G)) ∧
+        ∀ y ∈ R, ∃ e ∈ M, G.Inc e y) ↔
+      ∀ T ⊆ R, T.card ≤ (G.neighborsIn T L).card :=
+  hLR.symm.exists_isMatching_saturating_left_iff
+
+/-- **Hall's condition for a perfect matching in a finite bipartite multigraph.** A perfect
+matching exists if and only if the two sides have equal cardinality and every `S ⊆ L` has at least
+`|S|` neighbours in `R`. -/
+theorem exists_isPerfectMatching_iff (hLR : G.IsBipartition L R) :
+    (∃ M : Set E(G), G.IsPerfectMatching M) ↔
+      L.card = R.card ∧ ∀ S ⊆ L, S.card ≤ (G.neighborsIn S R).card := by
+  classical
+  let _ := Fintype.ofFinite E(G)
+  let _ : G.Loopless := hLR.loopless
+  constructor
+  · rintro ⟨M, hM⟩
+    obtain ⟨hM, hsat⟩ := isPerfectMatching_def.1 hM
+    let M' : Finset E(G) := M.toFinset
+    let x : E(G) → ℕ := (M' : Set E(G)).indicator fun _ ↦ 1
+    have hx : G.IsCapacitatedMatching (fun _ ↦ 1) x := by
+      refine IsMatching.isCapacitatedMatching_indicator ?_
+      simpa [M'] using hM
+    have hcap := (hLR.exists_isCapacitatedMatching_saturating_iff (fun _ ↦ 1)).1
+      ⟨x, hx, fun y ↦ le_antisymm (isCapacitatedMatching_def.1 hx y) (by
+        obtain ⟨e, heM, hey⟩ := hsat y
+        have he : e ∈ G.incidentEdges {y} := (mem_incidentEdges G).2 ⟨y, by simp, hey⟩
+        have hxe : x e = 1 := Set.indicator_of_mem (by simpa [M'] using heM) _
+        exact hxe ▸ single_le_sum (fun _ _ ↦ Nat.zero_le _) he)⟩
+    simpa using hcap
+  · rintro ⟨hcard, hHall⟩
+    have hcap : ∑ _ ∈ L, 1 = ∑ _ ∈ R, 1 ∧ ∀ S ⊆ L, ∑ _ ∈ S, 1 ≤ ∑ _ ∈ G.neighborsIn S R, 1 := by
+      simpa using ⟨hcard, hHall⟩
+    obtain ⟨x, -, hsat⟩ := (hLR.exists_isCapacitatedMatching_saturating_iff (fun _ ↦ 1)).2 hcap
+    exact ⟨{e | x e ≠ 0}, isPerfectMatching_of_sum_incidentEdges_eq_one hsat⟩
+
+/-- **Hall's condition for a perfect matching in a finite bipartite multigraph**, stated via
+subsets of the right side `R`. -/
+theorem exists_isPerfectMatching_iff_right (hLR : G.IsBipartition L R) :
+    (∃ M : Set E(G), G.IsPerfectMatching M) ↔
+      L.card = R.card ∧ ∀ T ⊆ R, T.card ≤ (G.neighborsIn T L).card := by
+  rw [hLR.symm.exists_isPerfectMatching_iff, eq_comm]
 
 end IsBipartition
 
