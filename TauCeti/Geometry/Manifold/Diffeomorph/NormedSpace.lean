@@ -26,7 +26,9 @@ A diffeomorphism between normed spaces of nonzero smoothness is differentiable
 (`Diffeomorph.differentiable`), and its Fréchet derivative composed with that of its inverse,
 in either order, is the identity (`Diffeomorph.fderiv_apply_fderiv_symm_apply`,
 `Diffeomorph.fderiv_comp_fderiv_symm`, `Diffeomorph.fderiv_symm_comp_fderiv`). The derivative of
-a composition of diffeomorphisms is given by the chain rule (`Diffeomorph.fderiv_trans`).
+a composition of diffeomorphisms is given by the chain rule (`Diffeomorph.fderiv_trans`). For a
+`C^n` diffeomorphism `h` and `m + 1 ≤ n`, the derivative `y ↦ Dh(h⁻¹ y)` is `C^m` in the image
+point (`Diffeomorph.contDiff_fderiv_comp_symm`).
 -/
 
 public section
@@ -72,6 +74,12 @@ theorem fderiv_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
     fderiv 𝕜 (h₁.trans h₂) x = (fderiv 𝕜 h₂ (h₁ x)).comp (fderiv 𝕜 h₁ x) := by
   rw [coe_trans]
   exact fderiv_comp x (h₂.differentiable hn _) (h₁.differentiable hn x)
+
+/-- The derivative `y ↦ Dh(h⁻¹ y)` of a `C^n` diffeomorphism `h`, as a function of the image point
+`y`, is `C^m` for `m + 1 ≤ n`. -/
+theorem contDiff_fderiv_comp_symm {m : ℕ∞ω} (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hmn : m + 1 ≤ n) :
+    ContDiff 𝕜 m fun y ↦ fderiv 𝕜 h (h.symm y) :=
+  (h.contDiff.fderiv_right hmn).comp (h.symm.contDiff.of_le (le_self_add.trans hmn))
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse

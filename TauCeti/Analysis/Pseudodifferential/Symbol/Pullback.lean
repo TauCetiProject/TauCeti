@@ -189,22 +189,17 @@ private theorem contDiff_coreCoeff (hL : ContDiff ℝ ∞ L) (a : Symbol n V W m
   a.contDiff_coefficient.comp ((κ.contDiff.comp contDiff_fst).prodMk
     ((hL.comp (κ.contDiff.comp contDiff_fst)).clm_apply contDiff_snd))
 
-/-- The derivative `Dκ(κ⁻¹ y) v` of `κ` in a fixed direction `v` is smooth in the image point
-`y`. -/
-private theorem contDiff_fderiv_symm_apply (v : CoordinateSpace n) :
-    ContDiff ℝ ∞ fun y ↦ fderiv ℝ κ (κ.symm y) v :=
-  ((κ.contDiff.fderiv_right (m := ∞) le_rfl).comp κ.symm.contDiff).clm_apply contDiff_const
-
 /-- The symbol whose coefficient composed with `(κ x, L(κ x) ξ)` is the position derivative
 `∂_{x_j}` of `a(κ x, L(κ x) ξ)`: with `y = κ x`, `η = L(y) ξ` and `v = Dκ(x) e_j`, it is
 `∑ᵢ vᵢ ∂_{y_i} a(y, η) + ∑ₖ (DL(y)(v) L(y)⁻¹ η)ₖ ∂_{η_k} a(y, η)`. -/
 private def coreSpatial (hL : ContDiff ℝ ∞ L) (hLinv : ContDiff ℝ ∞ Linv) (j : Fin n)
     (a : Symbol n V W m) : Symbol n V W m :=
   (∑ i, smulSpatial (fun y ↦ fderiv ℝ κ (κ.symm y) (EuclideanSpace.single j 1) i)
-      ((contDiff_piLp 2).1 (contDiff_fderiv_symm_apply κ _) i) (spatialDeriv i a)) +
+      ((contDiff_piLp 2).1 ((κ.contDiff_fderiv_comp_symm (m := ∞) le_rfl).clm_apply
+        contDiff_const) i) (spatialDeriv i a)) +
     eulerTerm (fun y ↦ (fderiv ℝ L y (fderiv ℝ κ (κ.symm y) (EuclideanSpace.single j 1))).comp
       (Linv y)) (((hL.fderiv_right (m := ∞) le_rfl).clm_apply
-        (contDiff_fderiv_symm_apply κ _)).clm_comp hLinv) a
+        ((κ.contDiff_fderiv_comp_symm (m := ∞) le_rfl).clm_apply contDiff_const)).clm_comp hLinv) a
 
 /-- The symbol whose coefficient composed with `(κ x, L(κ x) ξ)` is the frequency derivative
 `∂_{ξ_j}` of `a(κ x, L(κ x) ξ)`, namely `∑ₖ (L(y) e_j)ₖ ∂_{η_k} a(y, L(y) ξ)` at `y = κ x`. -/

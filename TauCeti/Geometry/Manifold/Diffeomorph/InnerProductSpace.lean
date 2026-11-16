@@ -50,7 +50,7 @@ theorem contDiff_adjoint_fderiv_symm (h : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, F
 `C^m` for a `C^n` diffeomorphism `h` with `m + 1 ≤ n`. -/
 theorem contDiff_adjoint_fderiv_comp_symm (h : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F) (hmn : m + 1 ≤ n) :
     ContDiff ℝ m fun y ↦ adjoint (fderiv ℝ h (h.symm y)) :=
-  ((h.contDiff.fderiv_right hmn).comp (h.symm.contDiff.of_le (le_self_add.trans hmn))).adjoint
+  (h.contDiff_fderiv_comp_symm hmn).adjoint
 
 /-- The adjoint of `Dh(h⁻¹ y)` is a left inverse of the adjoint of `D(h⁻¹)(y)`. -/
 theorem adjoint_fderiv_comp_adjoint_fderiv_symm (h : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F) (hn : n ≠ 0)
