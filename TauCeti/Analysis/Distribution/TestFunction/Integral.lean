@@ -51,6 +51,9 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 * `TestFunction.norm_integral_le_measureReal_mul_norm`: `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞` for a test
   function `φ` supported in a compact `K ⊆ Ω`.
 
+* `TestFunction.integrable_ofReal`: a real test function, viewed as an `RCLike`-valued function,
+  is integrable against any measure finite on compact sets.
+
 * `TestFunction.integrable_bilin_subtype`: `x ↦ B (φ x) (g x)` is integrable for `g` locally
   integrable for a measure on `Ω`.
 
@@ -124,6 +127,12 @@ theorem norm_integral_le_measureReal_mul_norm (φ : 𝓓(Ω, F)) {K : Set E} (hK
     mul_comm]
   exact norm_setIntegral_le_of_norm_le_const hK'.measure_lt_top fun x _ => by
     simpa using (φ : E →ᵇ F).norm_coe_le_norm x
+
+/-- A real test function, viewed as an `RCLike`-valued function, is integrable against any measure
+finite on compact sets. -/
+theorem integrable_ofReal {𝕜 : Type*} [RCLike 𝕜] [OpensMeasurableSpace E] {μ : Measure E}
+    [IsFiniteMeasureOnCompacts μ] (ψ : 𝓓^{n}(Ω, ℝ)) : Integrable (fun x ↦ (ψ x : 𝕜)) μ :=
+  (ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport).ofReal
 
 /-- A test function on `Ω` pairs integrably, through a continuous bilinear map `B`, with every
 function `g` that is locally integrable for a measure on the subspace `Ω`. -/
