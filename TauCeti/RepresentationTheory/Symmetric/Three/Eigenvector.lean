@@ -30,6 +30,7 @@ unity `ζ` the vectors `v_ζ` and `v_{ζ²}` form an eigenbasis of `τ` on `V₃
 ## Main results
 
 * `TauCeti.standardRepresentation_finRotate_symmetricGroupThreeEigenvector`: `τ v_ζ = ζ v_ζ`.
+* `TauCeti.symmetricGroupThreeEigenvector_ne_zero`: `v_ζ ≠ 0`.
 * `TauCeti.linearIndependent_symmetricGroupThreeEigenvector`: `v_ζ` and `v_ζ'` are linearly
   independent for distinct primitive cube roots of unity `ζ` and `ζ'`.
 -/
@@ -77,7 +78,8 @@ theorem standardRepresentation_finRotate_symmetricGroupThreeEigenvector
     hζ.pow_eq_one • (-(single 1 1) : MonoidAlgebra k (Fin 3))
 
 /-- `v_ζ` is nonzero: its coefficient at `0` is `1`. -/
-private theorem symmetricGroupThreeEigenvector_ne_zero (hζ : IsPrimitiveRoot ζ 3) :
+@[simp]
+theorem symmetricGroupThreeEigenvector_ne_zero (hζ : IsPrimitiveRoot ζ 3) :
     symmetricGroupThreeEigenvector hζ ≠ 0 := by
   intro h
   have h0 := congrArg (fun v : MonoidAlgebra k (Fin 3) => v.coeff 0) (Subtype.ext_iff.mp h)

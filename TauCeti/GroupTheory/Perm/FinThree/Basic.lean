@@ -21,9 +21,6 @@ public import TauCeti.GroupTheory.TrivialIntersection
 -- group API computes the exponent of the abelianization.
 import Mathlib.GroupTheory.SpecificGroups.Alternating.Centralizer
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
--- Non-public: a cycle and an adjacent transposition generate, which gives the generators of `S₃`.
-import Mathlib.GroupTheory.Perm.Closure
-import Mathlib.GroupTheory.Perm.Fin
 
 /-!
 # The two subgroups of the symmetric group on three points
@@ -49,8 +46,6 @@ permutations.
   three transpositions, or one of the two rotations.
 * `Equiv.Perm.fin_three_conj_cases`: every permutation of three points is the identity or a
   conjugate of the transposition `(0 1)` or of the rotation `(0 1 2)`.
-* `TauCeti.closure_finRotate_three_swap_eq_top`: the transposition `(0 1)` and the rotation
-  `(0 1 2)` generate `S₃`.
 * `Equiv.Perm.isSwap_fin_three_iff`: a permutation of three points is a transposition exactly when
   it is `(0 1)`, `(0 2)`, or `(1 2)`.
 * `TauCeti.setOf_isSwap_perm_fin_three`: the same, as an equality of sets.
@@ -120,12 +115,6 @@ theorem isSwap_fin_three_iff (σ : Equiv.Perm (Fin 3)) :
 end Equiv.Perm
 
 namespace TauCeti
-
-/-- **The transposition `(0 1)` and the cycle `(0 1 2)` generate `S₃`.** -/
-theorem closure_finRotate_three_swap_eq_top :
-    Subgroup.closure {finRotate 3, Equiv.swap (0 : Fin 3) 1} = ⊤ := by
-  simpa using Equiv.Perm.closure_cycle_adjacent_swap (σ := finRotate 3) isCycle_finRotate
-    support_finRotate 0
 
 /-- The transpositions of `S₃`, as a set: `(0 1)`, `(0 2)`, and `(1 2)`. -/
 theorem setOf_isSwap_perm_fin_three :

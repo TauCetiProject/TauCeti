@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.SymmetricPower
 public import TauCeti.RepresentationTheory.Symmetric.Three.Eigenvector
-import TauCeti.GroupTheory.Perm.FinThree.Basic
+import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.RepresentationTheory.Intertwining
 
 /-!
@@ -58,8 +58,8 @@ root of unity. That file also compares the characters with the dihedral characte
 
 * `TauCeti.standardRepresentation_finRotate_symmetricGroupThreeAlpha` and its three companions:
   the action of `τ` and `σ` on `α` and `β`.
-* `TauCeti.symmetricPower_finRotate_tprod_symmetricGroupThreeAlpha` and its two companions: on the
-  monomial basis `α², β², αβ` of `Sym² V₃` the eigenvalues of `τ` are `ω, ω², 1`.
+* `TauCeti.symmetricPower_two_finRotate_tprod_symmetricGroupThreeAlpha` and its two companions:
+  on the monomial basis `α², β², αβ` of `Sym² V₃` the eigenvalues of `τ` are `ω, ω², 1`.
 * `TauCeti.symmetricGroupThreeSymSqEquiv_apply_one_zero`,
   `TauCeti.symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha` and their companions: the two
   isomorphisms and their inverses on the generators and on the monomials.
@@ -77,7 +77,9 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-variable {k : Type} [Field k] {ω : k}
+section Eigenbasis
+
+variable {k : Type*} [Field k] {ω : k}
 
 /-! ### The eigenbasis of the standard module -/
 
@@ -97,6 +99,7 @@ noncomputable def symmetricGroupThreeBeta (hω : IsPrimitiveRoot ω 3) :
 variable (hω : IsPrimitiveRoot ω 3)
 
 /-- The coordinates of `α`. -/
+@[simp]
 theorem coe_symmetricGroupThreeAlpha :
     (symmetricGroupThreeAlpha hω : MonoidAlgebra k (Fin 3)) =
       single 0 1 + ω • single 1 1 + ω ^ 2 • single 2 1 := by
@@ -104,6 +107,7 @@ theorem coe_symmetricGroupThreeAlpha :
     show ω ^ (2 * 2) = ω by rw [show 2 * 2 = 3 + 1 by rfl, pow_succ, hω.pow_eq_one, one_mul]]
 
 /-- The coordinates of `β`. -/
+@[simp]
 theorem coe_symmetricGroupThreeBeta :
     (symmetricGroupThreeBeta hω : MonoidAlgebra k (Fin 3)) =
       ω • single 0 1 + single 1 1 + ω ^ 2 • single 2 1 := by
@@ -188,14 +192,19 @@ private theorem standardRepresentation_swap_symmetricGroupThreeBasis (i : Fin 2)
       symmetricGroupThreeBasis hω (Equiv.swap 0 1 i) := by
   fin_cases i <;> simp
 
-/-! ### The monomial bases of the symmetric powers -/
-
 /-- The basis `α, β` lists `α` and then `β`. -/
 theorem coe_symmetricGroupThreeBasis :
     ⇑(symmetricGroupThreeBasis hω) =
       ![symmetricGroupThreeAlpha hω, symmetricGroupThreeBeta hω] := by
   ext i : 1
   fin_cases i <;> simp
+
+end Eigenbasis
+
+/-! ### The monomial bases of the symmetric powers -/
+
+-- The symmetric power API asks for the scalars in `Type`.
+variable {k : Type} [Field k] {ω : k} (hω : IsPrimitiveRoot ω 3)
 
 /-- The monomial basis vector of `Symⁿ V₃` indexed by the unordered tuple `Sym.ofFn p` is the
 pure symmetric tensor of the basis vectors listed by `p`. -/
@@ -214,9 +223,9 @@ private theorem symmetricPower_finRotate_symmetricGroupThreeBasis_ofFn {n : ℕ}
     (standardRepresentation k (Fin 3)).symmetricPower n (finRotate 3)
         ((symmetricGroupThreeBasis hω).symmetricPower n (Sym.ofFn p)) =
       c • (symmetricGroupThreeBasis hω).symmetricPower n (Sym.ofFn p) := by
-  rw [Representation.symmetricPower_apply, (symmetricGroupThreeBasis hω).map_symmetricPower_of_apply
-    _ _ (standardRepresentation_finRotate_symmetricGroupThreeBasis hω), Sym.coe_ofFn,
-    Multiset.map_coe, Multiset.prod_coe, List.map_ofFn, List.prod_ofFn, Function.comp_def, hc]
+  rw [Basis.symmetricPower_apply, SymmetricPower.tprodOfSym_ofFn,
+    Representation.symmetricPower_apply_tprod_of_apply_eq_smul _
+      fun i => standardRepresentation_finRotate_symmetricGroupThreeBasis hω (p i), hc]
 
 /-- `σ` sends the monomial basis vector of `Symⁿ V₃` indexed by `Sym.ofFn p` to the one indexed
 by `Sym.ofFn q`, for any `q` listing the indices of `p` with `α` and `β` exchanged. -/
@@ -234,7 +243,7 @@ private theorem symmetricPower_swap_symmetricGroupThreeBasis_ofFn {n : ℕ}
 
 /-- **`τ α² = ω α²`**: the first eigenvalue of `τ` on the monomial basis `α², β², αβ` of
 `Sym² V₃`. -/
-theorem symmetricPower_finRotate_tprod_symmetricGroupThreeAlpha :
+theorem symmetricPower_two_finRotate_tprod_symmetricGroupThreeAlpha :
     (standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)
         (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeAlpha hω) =
       ω • (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeAlpha hω) := by
@@ -246,7 +255,7 @@ theorem symmetricPower_finRotate_tprod_symmetricGroupThreeAlpha :
 
 /-- **`τ β² = ω² β²`**: the second eigenvalue of `τ` on the monomial basis `α², β², αβ` of
 `Sym² V₃`. -/
-theorem symmetricPower_finRotate_tprod_symmetricGroupThreeBeta :
+theorem symmetricPower_two_finRotate_tprod_symmetricGroupThreeBeta :
     (standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)
         (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeBeta hω) =
       ω ^ 2 • (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeBeta hω) := by
@@ -256,7 +265,7 @@ theorem symmetricPower_finRotate_tprod_symmetricGroupThreeBeta :
 
 /-- **`τ (αβ) = αβ`**: the third eigenvalue of `τ` on the monomial basis `α², β², αβ` of
 `Sym² V₃` is `1`. -/
-theorem symmetricPower_finRotate_tprod_symmetricGroupThreeAlpha_beta :
+theorem symmetricPower_two_finRotate_tprod_symmetricGroupThreeAlpha_beta :
     (standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)
         (⨂ₛ[k] i, ![symmetricGroupThreeAlpha hω, symmetricGroupThreeBeta hω] i) =
       ⨂ₛ[k] i, ![symmetricGroupThreeAlpha hω, symmetricGroupThreeBeta hω] i := by
@@ -356,7 +365,7 @@ noncomputable def symmetricGroupThreeSymSqEquiv :
       ((standardRepresentation k (Fin 3)).symmetricPower 2) :=
   Representation.Equiv.ofClosureEqTop
     (LinearEquiv.ofBijective (symSqMap hω) (symSqMap_bijective hω))
-    closure_finRotate_three_swap_eq_top (by
+    closure_finRotate_swap_eq_top (by
       rintro g (rfl | rfl)
       · exact LinearMap.congr_fun (symSqMap_comp hω (.inl rfl))
       · exact LinearMap.congr_fun (symSqMap_comp hω (.inr rfl)))
@@ -573,7 +582,7 @@ noncomputable def symmetricGroupThreeSymCubeEquiv (h2 : (2 : k) ≠ 0) :
       ((standardRepresentation k (Fin 3)).symmetricPower 3) :=
   Representation.Equiv.ofClosureEqTop
     (LinearEquiv.ofBijective (symCubeMap hω) (symCubeMap_bijective hω h2))
-    closure_finRotate_three_swap_eq_top (by
+    closure_finRotate_swap_eq_top (by
       rintro g (rfl | rfl)
       · exact LinearMap.congr_fun (symCubeMap_comp hω (.inl rfl))
       · exact LinearMap.congr_fun (symCubeMap_comp hω (.inr rfl)))

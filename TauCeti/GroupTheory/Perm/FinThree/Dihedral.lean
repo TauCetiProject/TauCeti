@@ -7,13 +7,13 @@ module
 
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
-import TauCeti.GroupTheory.Perm.FinThree.Basic
+import TauCeti.GroupTheory.Perm.Fin
 
 /-!
 # The symmetric group on three points is the dihedral group of order six
 
 The transposition `σ = (0 1)` and the cycle `τ = (0 1 2) = finRotate 3` generate `S₃`
-(`TauCeti.closure_finRotate_three_swap_eq_top`). The two involutions `σ` and `στ` therefore
+(`TauCeti.closure_finRotate_swap_eq_top`). The two involutions `σ` and `στ` therefore
 generate it too, and their product is `τ`, of order three, so the recognition criterion
 `TauCeti.dihedralGroupMulEquiv` identifies `S₃` with `DihedralGroup 3`: the rotation `r i` goes to
 `τ ^ i` and the reflection `sr i` to `σ τ ^ i`. This is the identification under which character
@@ -40,7 +40,7 @@ namespace TauCeti
 /-- The two involutions `σ` and `στ` generate `S₃`. -/
 private theorem closure_swap_swap_mul_finRotate :
     Subgroup.closure {Equiv.swap (0 : Fin 3) 1, Equiv.swap 0 1 * finRotate 3} = ⊤ := by
-  rw [eq_top_iff, ← closure_finRotate_three_swap_eq_top, Subgroup.closure_le]
+  rw [eq_top_iff, ← closure_finRotate_swap_eq_top, Subgroup.closure_le]
   have hσ : Equiv.swap (0 : Fin 3) 1 ∈
       Subgroup.closure {Equiv.swap (0 : Fin 3) 1, Equiv.swap 0 1 * finRotate 3} :=
     Subgroup.subset_closure (Set.mem_insert _ _)

@@ -413,6 +413,14 @@ theorem ofClosureEqTop_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.clos
     ofClosureEqTop f hs h v = f v :=
   (rfl)
 
+/-- The inverse of the equivalence constructed from equivariance on generators acts by the inverse
+of the given linear equivalence. -/
+@[simp]
+theorem ofClosureEqTop_symm_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) (w : W) :
+    (ofClosureEqTop f hs h).symm w = f.symm w :=
+  (rfl)
+
 end Equiv
 
 end Representation

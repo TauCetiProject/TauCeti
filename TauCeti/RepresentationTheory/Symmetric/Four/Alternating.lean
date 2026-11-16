@@ -231,9 +231,9 @@ power `c ^ κ(g)` of the three-cycle `c = (0 1 2)`, which acts on the eigenvecto
 theorem symmetricGroupFourTwoDimensionalRepresentation_apply_eigenvector (ζ : rootsOfUnity 3 k)
     (hζ : ζ ≠ 1) (g : alternatingGroup (Fin 4)) :
     symmetricGroupFourTwoDimensionalRepresentation k g
-        (symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ)) =
+        (symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one hζ)) =
       (alternatingGroupFourLinearCharacter ζ g : k) •
-        symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ) := by
+        symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one hζ) := by
   have hc : ([0, 1, 2].formPerm : Perm (Fin 3)) = finRotate 3 := by decide
   rw [symmetricGroupFourTwoDimensionalRepresentation_apply,
     symmetricGroupFourMatchingHom_coe_eq_pow, alternatingGroupFourLinearCharacter_apply,
@@ -250,15 +250,15 @@ theorem symmetricGroupFourTwoDimensionalRepresentation_apply_eigenvector (ζ : r
 private noncomputable def eigenvectorMap (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) :
     k × k →ₗ[k] (augmentationSubrepresentation k (Perm (Fin 3)) (Fin 3)).toSubmodule :=
   (LinearMap.toSpanSingleton k _
-      (symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ))).coprod
+      (symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one hζ))).coprod
     (LinearMap.toSpanSingleton k _ (symmetricGroupThreeEigenvector
-      (rootsOfUnity.isPrimitiveRoot_of_ne_one
+      (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one
         (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num)))))
 
 private theorem eigenvectorMap_apply (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) (x : k × k) :
     eigenvectorMap ζ hζ x =
-      x.1 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ) +
-        x.2 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one
+      x.1 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one hζ) +
+        x.2 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one
           (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num))) :=
   rfl
 
@@ -299,8 +299,8 @@ noncomputable def alternatingGroupFourTwoDimensionalEquiv (ζ : rootsOfUnity 3 k
 theorem alternatingGroupFourTwoDimensionalEquiv_symm_apply (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1)
     (x : k × k) :
     (alternatingGroupFourTwoDimensionalEquiv ζ hζ).symm x =
-      x.1 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ) +
-        x.2 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one
+      x.1 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one hζ) +
+        x.2 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_coe_of_ne_one
           (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num))) :=
   (rfl)
 
@@ -327,8 +327,7 @@ theorem symmetricGroupFourTwoDimensionalRepresentation_liesOver (ζ : rootsOfUni
   have h1 : (alternatingGroupFourTwoDimensionalEquiv ζ hζ).symm (1, 0) = 0 :=
     DFunLike.congr_fun h (1 : k)
   rw [alternatingGroupFourTwoDimensionalEquiv_symm_apply, one_smul, zero_smul, add_zero] at h1
-  have h0 := congrArg (fun v => MonoidAlgebra.coeff (Subtype.val v) 0) h1
-  simp [MonoidAlgebra.coeff_add, MonoidAlgebra.coeff_single] at h0
+  exact symmetricGroupThreeEigenvector_ne_zero _ h1
 
 end LiesOver
 

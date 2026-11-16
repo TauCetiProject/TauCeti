@@ -7,8 +7,12 @@ module
 
 public import TauCeti.GroupTheory.Perm.FinThree.Dihedral
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Dihedral.Three
-public import TauCeti.RepresentationTheory.Symmetric.Three.SymmetricPower
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
+public import TauCeti.RepresentationTheory.Symmetric.Standard
+public import TauCeti.RepresentationTheory.SymmetricPower
 import TauCeti.GroupTheory.Perm.FinThree.Basic
+import TauCeti.LinearAlgebra.SymmetricPower.Basis
 import TauCeti.LinearAlgebra.SymmetricPower.Coordinates
 import TauCeti.RepresentationTheory.Character.Basic
 import TauCeti.RepresentationTheory.FDRep.Basic
@@ -24,11 +28,12 @@ primitive cube root of unity or characteristic restriction.
 
 ## Main results
 
-* `TauCeti.char_standardRepresentation_one`, `TauCeti.char_standardRepresentation_swap` and
-  `TauCeti.char_standardRepresentation_finRotate`: the standard character values.
-* `TauCeti.trace_symmetricPower_two_standardRepresentation` and
-  `TauCeti.trace_symmetricPower_three_standardRepresentation`: the characters are `1 + χ` and
-  `1 + sgn + χ`, where `χ` is the standard character.
+* `TauCeti.char_standardRepresentation_fin_three_one`,
+  `TauCeti.char_standardRepresentation_fin_three_swap` and
+  `TauCeti.char_standardRepresentation_fin_three_finRotate`: the standard character values.
+* `TauCeti.trace_symmetricPower_two_standardRepresentation_fin_three` and
+  `TauCeti.trace_symmetricPower_three_standardRepresentation_fin_three`: the characters are
+  `1 + χ` and `1 + sgn + χ`, where `χ` is the standard character.
 * `TauCeti.dihedralGroupThreeCharacterTable_eq_character`: through the isomorphism sending
   a rotation to `finRotate 3` and a reflection to `(0 1)`, the rows of the displayed dihedral
   character table are the trivial, sign and standard characters. Its column order is identity,
@@ -57,20 +62,20 @@ points minus one (`TauCeti.char_standardRepresentation`). -/
 section Character
 
 /-- **`χ_{V₃}(1) = 2`.** -/
-theorem char_standardRepresentation_one (K : Type*) [Field K] :
+theorem char_standardRepresentation_fin_three_one (K : Type*) [Field K] :
     (standardRepresentation K (Fin 3)).character 1 = 2 := by
   rw [Representation.char_one, finrank_augmentationSubrepresentation]
   norm_num
 
 /-- **`χ_{V₃}(σ) = 0`** for the transposition `σ = (0 1)`, which fixes one point. -/
-theorem char_standardRepresentation_swap (K : Type*) [Field K] :
+theorem char_standardRepresentation_fin_three_swap (K : Type*) [Field K] :
     (standardRepresentation K (Fin 3)).character (Equiv.swap 0 1) = 0 := by
   rw [char_standardRepresentation, char_ofMulAction, Nat.card_eq_fintype_card,
     show Fintype.card {x : Fin 3 // Equiv.swap (0 : Fin 3) 1 • x = x} = 1 by decide]
   simp
 
 /-- **`χ_{V₃}(τ) = -1`** for the cycle `τ = (0 1 2)`, which fixes no point. -/
-theorem char_standardRepresentation_finRotate (K : Type*) [Field K] :
+theorem char_standardRepresentation_fin_three_finRotate (K : Type*) [Field K] :
     (standardRepresentation K (Fin 3)).character (finRotate 3) = -1 := by
   rw [char_standardRepresentation, char_ofMulAction, Nat.card_eq_fintype_card,
     show Fintype.card {x : Fin 3 // finRotate 3 • x = x} = 0 by decide]
@@ -153,7 +158,7 @@ private theorem repr_standardRepresentation_finRotate_symmetricGroupThreeDiffBas
   fin_cases j <;> fin_cases i <;> simp [hx, hy]
 
 /-- The trace of `σ` on `Symⁿ V₃` counts the monomials in `x, y` fixed by exchanging `x` and `y`. -/
-private theorem trace_symmetricPower_standardRepresentation_swap (n : ℕ) :
+private theorem trace_symmetricPower_standardRepresentation_fin_three_swap (n : ℕ) :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower n (Equiv.swap 0 1)) =
       (Finset.univ.filter fun s : Sym (Fin 2) n => s.map (Equiv.swap 0 1) = s).card := by
   classical
@@ -182,7 +187,7 @@ private theorem symmetricPower_repr_finRotate_symmetricGroupThreeDiffBasis {n : 
 
 /-- The trace of the identity on `Symⁿ V₃` is its dimension, the number `2 multichoose n` of
 monomials of degree `n` in `x, y`. -/
-private theorem trace_symmetricPower_standardRepresentation_one (n : ℕ) :
+private theorem trace_symmetricPower_standardRepresentation_fin_three_one (n : ℕ) :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower n 1) =
       Nat.multichoose 2 n := by
   -- The trace of the identity is stated for an additive group, so it is applied up to the
@@ -194,22 +199,22 @@ private theorem trace_symmetricPower_standardRepresentation_one (n : ℕ) :
   simp
 
 /-- **`χ_{Sym² V₃}(1) = 3`**: `Sym² V₃` has dimension `3`. -/
-theorem trace_symmetricPower_two_standardRepresentation_one :
+theorem trace_symmetricPower_two_standardRepresentation_fin_three_one :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 1) = 3 := by
-  rw [trace_symmetricPower_standardRepresentation_one]
+  rw [trace_symmetricPower_standardRepresentation_fin_three_one]
   simp [Nat.multichoose_eq]
 
 /-- **`χ_{Sym² V₃}(σ) = 1`** for the transposition `σ = (0 1)`, which fixes the monomial `xy` and
 exchanges `x²` and `y²`. -/
-theorem trace_symmetricPower_two_standardRepresentation_swap :
+theorem trace_symmetricPower_two_standardRepresentation_fin_three_swap :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 2 (Equiv.swap 0 1)) = 1 := by
-  rw [trace_symmetricPower_standardRepresentation_swap, show (Finset.univ.filter
+  rw [trace_symmetricPower_standardRepresentation_fin_three_swap, show (Finset.univ.filter
     fun s : Sym (Fin 2) 2 => s.map (Equiv.swap 0 1) = s).card = 1 by decide, Nat.cast_one]
 
 /-- **`χ_{Sym² V₃}(τ) = 0`** for the cycle `τ = (0 1 2)`, whose diagonal coefficients on the
 monomials `x², xy, y²` are `1, -1, 0`. -/
-theorem trace_symmetricPower_two_standardRepresentation_finRotate :
+theorem trace_symmetricPower_two_standardRepresentation_fin_three_finRotate :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)) = 0 := by
   have huniv : (Finset.univ : Finset (Sym (Fin 2) 2)) =
@@ -236,36 +241,37 @@ theorem trace_symmetricPower_two_standardRepresentation_finRotate :
 (compare `TauCeti.symmetricGroupThreeSymSqEquiv`). Both sides are class functions, so it suffices
 to compare them at the identity, at `σ = (0 1)` and at `τ = (0 1 2)`. This holds over every
 field. -/
-theorem trace_symmetricPower_two_standardRepresentation (g : Equiv.Perm (Fin 3)) :
+theorem trace_symmetricPower_two_standardRepresentation_fin_three (g : Equiv.Perm (Fin 3)) :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 g) =
       1 + (standardRepresentation k (Fin 3)).character g := by
   obtain ⟨h, rfl | rfl | rfl⟩ := Equiv.Perm.fin_three_conj_cases g
-  · rw [trace_symmetricPower_two_standardRepresentation_one, char_standardRepresentation_one]
+  · rw [trace_symmetricPower_two_standardRepresentation_fin_three_one,
+      char_standardRepresentation_fin_three_one]
     norm_num
   · rw [Representation.trace_conj, Representation.char_conj,
-      trace_symmetricPower_two_standardRepresentation_swap, char_standardRepresentation_swap,
-      add_zero]
+      trace_symmetricPower_two_standardRepresentation_fin_three_swap,
+      char_standardRepresentation_fin_three_swap, add_zero]
   · rw [Representation.trace_conj, Representation.char_conj,
-      trace_symmetricPower_two_standardRepresentation_finRotate,
-      char_standardRepresentation_finRotate, add_neg_cancel]
+      trace_symmetricPower_two_standardRepresentation_fin_three_finRotate,
+      char_standardRepresentation_fin_three_finRotate, add_neg_cancel]
 
 /-- **`χ_{Sym³ V₃}(1) = 4`**: `Sym³ V₃` has dimension `4`. -/
-theorem trace_symmetricPower_three_standardRepresentation_one :
+theorem trace_symmetricPower_three_standardRepresentation_fin_three_one :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 1) = 4 := by
-  rw [trace_symmetricPower_standardRepresentation_one]
+  rw [trace_symmetricPower_standardRepresentation_fin_three_one]
   simp [Nat.multichoose_eq]
 
 /-- **`χ_{Sym³ V₃}(σ) = 0`** for the transposition `σ = (0 1)`, which permutes the monomials
 `x³, x²y, xy², y³` without fixed points. -/
-theorem trace_symmetricPower_three_standardRepresentation_swap :
+theorem trace_symmetricPower_three_standardRepresentation_fin_three_swap :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 3 (Equiv.swap 0 1)) = 0 := by
-  rw [trace_symmetricPower_standardRepresentation_swap, show (Finset.univ.filter
+  rw [trace_symmetricPower_standardRepresentation_fin_three_swap, show (Finset.univ.filter
     fun s : Sym (Fin 2) 3 => s.map (Equiv.swap 0 1) = s).card = 0 by decide, Nat.cast_zero]
 
 /-- **`χ_{Sym³ V₃}(τ) = 1`** for the cycle `τ = (0 1 2)`, whose diagonal coefficients on the
 monomials `x³, x²y, xy², y³` are `-1, 2, 0, 0`. -/
-theorem trace_symmetricPower_three_standardRepresentation_finRotate :
+theorem trace_symmetricPower_three_standardRepresentation_fin_three_finRotate :
     LinearMap.trace k _
       ((standardRepresentation k (Fin 3)).symmetricPower 3 (finRotate 3)) = 1 := by
   have huniv : (Finset.univ : Finset (Sym (Fin 2) 3)) = {Sym.ofFn ![0, 0, 0],
@@ -296,23 +302,23 @@ theorem trace_symmetricPower_three_standardRepresentation_finRotate :
 (compare `TauCeti.symmetricGroupThreeSymCubeEquiv`). Both sides are class functions, so it
 suffices to compare them at the identity, at `σ = (0 1)` and at `τ = (0 1 2)`. Unlike the
 isomorphism `1 ⊕ sgn ⊕ V₃ ≃ Sym³ V₃`, this holds over every field. -/
-theorem trace_symmetricPower_three_standardRepresentation (g : Equiv.Perm (Fin 3)) :
+theorem trace_symmetricPower_three_standardRepresentation_fin_three (g : Equiv.Perm (Fin 3)) :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 g) =
       1 + (Equiv.Perm.sign g : ℤ) + (standardRepresentation k (Fin 3)).character g := by
   have hsign : ∀ x h : Equiv.Perm (Fin 3), Equiv.Perm.sign (h * x * h⁻¹) = Equiv.Perm.sign x := by
     intro x h
     rw [map_mul, map_mul, Equiv.Perm.sign_inv, mul_right_comm, Int.units_mul_self, one_mul]
   obtain ⟨h, rfl | rfl | rfl⟩ := Equiv.Perm.fin_three_conj_cases g
-  · rw [trace_symmetricPower_three_standardRepresentation_one, map_one,
-      char_standardRepresentation_one]
+  · rw [trace_symmetricPower_three_standardRepresentation_fin_three_one, map_one,
+      char_standardRepresentation_fin_three_one]
     norm_num
   · rw [Representation.trace_conj, hsign, Representation.char_conj,
-      trace_symmetricPower_three_standardRepresentation_swap,
-      char_standardRepresentation_swap, Equiv.Perm.sign_swap (by decide)]
+      trace_symmetricPower_three_standardRepresentation_fin_three_swap,
+      char_standardRepresentation_fin_three_swap, Equiv.Perm.sign_swap (by decide)]
     norm_num
   · rw [Representation.trace_conj, hsign, Representation.char_conj,
-      trace_symmetricPower_three_standardRepresentation_finRotate,
-      char_standardRepresentation_finRotate, sign_finRotate]
+      trace_symmetricPower_three_standardRepresentation_fin_three_finRotate,
+      char_standardRepresentation_fin_three_finRotate, sign_finRotate]
     norm_num
 
 /-! ### Comparison with the character table of the dihedral group of order six -/
@@ -349,7 +355,7 @@ theorem dihedralGroupThreeCharacterTable_eq_character {K : Type*} [Field K]
       dihedralGroupThreeMulEquivPerm_sr_two,
       Representation.char_conj, Representation.char_trivial,
       Representation.char_ofLinearCharacter, coe_signLinearCharacter_apply,
-      char_standardRepresentation_swap, char_standardRepresentation_finRotate,
+      char_standardRepresentation_fin_three_swap, char_standardRepresentation_fin_three_finRotate,
       sign_finRotate]
 
 end TauCeti
