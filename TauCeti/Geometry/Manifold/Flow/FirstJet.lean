@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import TauCeti.Dynamics.Flow.RestPoint
+import Mathlib.Analysis.ODE.Gronwall
+import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Connection
 
 /-!
@@ -18,7 +19,8 @@ import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Connection
 A jointly `C¹` time-dependent vector field whose first jet vanishes at a point
 between two times has a flow fixing that point with identity differential on its full
 ambient tangent space. The primary statements use the intrinsic first jet, without choosing a
-connection. Corollaries express its vanishing using a covariant derivative.
+connection, on manifolds modelled on a complete normed space. Corollaries for finite-dimensional
+models express its vanishing using a covariant derivative.
 Both `HasMFDerivAt` and its differential and
 pointwise consequences are provided. Only vanishing between the specified times is required,
 even when the vector field is not complete. A local connection suffices for the covariant
@@ -45,10 +47,10 @@ ambient first jet along a submanifold, rather than just its points.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 4.
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, §7 (relative Moser theorem).
 
-The coordinate variational argument uses
-`TauCeti.exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn`. The connection bridge uses
-`TauCeti.FirstJetBundle.connectionEquiv`, built from the local-frame comparison
-`TauCeti.Manifold.covariantDerivative_eq_add_christoffelForm`.
+The coordinate argument uses the local representative characterized by
+`TauCeti.FirstJetBundle.jet_eq_zero_iff_localRep` and Mathlib's Grönwall estimate
+`norm_le_gronwallBound_of_norm_deriv_right_le`.
+The connection bridge uses `TauCeti.FirstJetBundle.jet_eq_zero_iff`.
 -/
 
 public section
@@ -60,13 +62,13 @@ namespace TauCeti
 
 open TauCeti.Manifold
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 2 M]
   [BoundarylessManifold I M]
   {X : ℝ → Π x : M, TangentSpace I x} {x : M}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] in
+omit [CompleteSpace E] [T2Space M] [BoundarylessManifold I M] in
 private theorem contDiffOn_timeDependentField_coordinates
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) (s t : ℝ) :
@@ -141,63 +143,30 @@ private theorem eventually_timeDependentFlowOf_in_chart_ball
   filter_upwards [hc.preimage_mem_nhds (hU.mem_nhds hcxU)] with z hz τ hτ
   exact hTU (mk_mem_prod (hIT hτ) hz)
 
-private theorem eventually_timeDependentFlowOf_chart_eq_localFlow
+omit [CompleteSpace E] in
+private theorem hasDerivAt_timeDependentFlowOf_coordinates
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    (s t : ℝ) (hx : ∀ u ∈ uIcc s t, X u x = 0) {ε : ℝ} (hε : 0 < ε)
-    (hY : ContDiffOn ℝ 1 (fun p : ℝ × E ↦ (t - s) •
-      FirstJetBundle.localRep I E (X (s + p.1 * (t - s))) x p.2)
-      (Icc (0 : ℝ) 1 ×ˢ Metric.closedBall (extChartAt I x x) ε))
-    {ψ : ℝ → E → E} (hψ₀ : ψ 0 = id)
-    (hev : ∀ᶠ z in 𝓝 (extChartAt I x x), ∀ τ ∈ Icc (0 : ℝ) 1,
-      ψ τ z ∈ Metric.ball (extChartAt I x x) ε ∧
-        HasDerivAt (fun r ↦ ψ r z)
-          ((t - s) • FirstJetBundle.localRep I E (X (s + τ * (t - s))) x (ψ τ z)) τ) :
-    (fun z ↦ extChartAt I x (timeDependentFlowOf X s t ((extChartAt I x).symm z)))
-      =ᶠ[𝓝 (extChartAt I x x)] ψ 1 := by
+    (s t τ : ℝ) (z : E)
+    (hdomain : ((s, s + τ * (t - s)), (extChartAt I x).symm z) ∈ timeDependentFlowDomain X)
+    (hsource : timeDependentFlowOf X s (s + τ * (t - s)) ((extChartAt I x).symm z) ∈
+      (extChartAt I x).source) :
+    HasDerivAt (fun r ↦ extChartAt I x
+      (timeDependentFlowOf X s (s + r * (t - s)) ((extChartAt I x).symm z)))
+      ((t - s) • FirstJetBundle.localRep I E (X (s + τ * (t - s))) x
+        (extChartAt I x
+          (timeDependentFlowOf X s (s + τ * (t - s)) ((extChartAt I x).symm z)))) τ := by
   have : IsManifold I (1 : ℕ∞) M := IsManifold.of_le (n := 2) (by norm_num)
-  let c := extChartAt I x
-  let e := trivializationAt E (TangentSpace I) x
-  let Y : ℝ → E → E := fun τ z ↦ (t - s) •
-    FirstJetBundle.localRep I E (X (s + τ * (t - s))) x z
-  have htarget : c x ∈ interior c.target :=
-    ModelWithCorners.isInteriorPoint_iff.1 BoundarylessManifold.isInteriorPoint
-  obtain ⟨K, hK⟩ := (hY).exists_lipschitzOnWith
-    one_ne_zero ((convex_Icc 0 1).prod (convex_closedBall (c x) ε))
-    (isCompact_Icc.prod (isCompact_closedBall (c x) ε))
-  have hKt (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) :
-      LipschitzOnWith K (Y τ) (Metric.closedBall (c x) ε) := by
-    have h := hK.comp (LipschitzWith.prodMk_left τ).lipschitzOnWith
-      (fun z hz ↦ mk_mem_prod hτ hz)
-    rwa [mul_one] at h
-  filter_upwards [hev, eventually_timeDependentFlowOf_in_chart_ball hX s t hx hε,
-    isOpen_interior.mem_nhds htarget] with z hz hflowz hzc
-  let φ : ℝ → E := fun τ ↦ c (timeDependentFlowOf X s (s + τ * (t - s)) (c.symm z))
-  have hφ (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : HasDerivAt φ (Y τ (φ τ)) τ := by
-    have hsrc := (hflowz τ hτ).2.1
-    have hd := (hasMFDerivAt_timeDependentFlowOf hX
-      (hflowz τ hτ).1).hasDerivAt_extChartAt_comp hsrc
-    have htime : HasDerivAt (fun r : ℝ ↦ s + r * (t - s)) (t - s) τ := by
-      simpa only [zero_add, one_mul, Pi.add_apply, id_eq] using! (hasDerivAt_const τ s).add
-        ((hasDerivAt_id τ).mul_const (t - s))
-    have hcomp := hd.scomp τ htime
-    dsimp only [Y, φ]
-    rw [FirstJetBundle.localRep_apply, c.left_inv hsrc]
-    simpa only [Function.comp_def, c, e,
-      TangentBundle.trivializationAt_apply_tangentCoordChange] using hcomp
-  have hsame := ODE_solution_unique_of_mem_Icc_right
-    (fun τ hτ ↦ hKt τ (Ico_subset_Icc_self hτ))
-    (fun τ hτ ↦ (hφ τ hτ).continuousAt.continuousWithinAt)
-    (fun τ hτ ↦ (hφ τ (Ico_subset_Icc_self hτ)).hasDerivWithinAt)
-    (fun τ hτ ↦ Metric.ball_subset_closedBall (hflowz τ (Ico_subset_Icc_self hτ)).2.2)
-    (fun τ hτ ↦ (hz τ hτ).2.continuousAt.continuousWithinAt)
-    (fun τ hτ ↦ (hz τ (Ico_subset_Icc_self hτ)).2.hasDerivWithinAt)
-    (fun τ hτ ↦ Metric.ball_subset_closedBall (hz τ (Ico_subset_Icc_self hτ)).1)
-    (by simp only [φ, zero_mul, add_zero, timeDependentFlowOf_self, hψ₀, id_eq,
-      c.right_inv (interior_subset hzc)]) (right_mem_Icc.2 zero_le_one)
-  simpa only [φ, one_mul, add_sub_cancel] using hsame
+  have hd := (hasMFDerivAt_timeDependentFlowOf hX hdomain).hasDerivAt_extChartAt_comp hsource
+  have htime : HasDerivAt (fun r : ℝ ↦ s + r * (t - s)) (t - s) τ := by
+    simpa only [zero_add, one_mul, Pi.add_apply, id_eq] using! (hasDerivAt_const τ s).add
+      ((hasDerivAt_id τ).mul_const (t - s))
+  have hcomp := hd.scomp τ htime
+  rw [FirstJetBundle.localRep_apply, (extChartAt I x).left_inv hsource]
+  simpa only [Function.comp_def, TangentBundle.trivializationAt_apply_tangentCoordChange]
+    using hcomp
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
+omit [CompleteSpace E] [T2Space M] in
 private theorem fderiv_timeDependentField_coordinates_eq_zero
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
@@ -209,29 +178,27 @@ private theorem fderiv_timeDependentField_coordinates_eq_zero
     ((hX.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero) x
   have hrep := (FirstJetBundle.differentiableWithinAt_localRep I E hS
     (FirstJetBundle.mem_baseSet_self E (TangentSpace I) x)).hasFDerivWithinAt
-  rw [FirstJetBundle.fderivWithin_localRep_eq_zero_of_jet_eq_zero I E hjet] at hrep
+  rw [((FirstJetBundle.jet_eq_zero_iff_localRep I E).1 hjet).2] at hrep
   exact ((hrep.hasFDerivAt
     (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).const_smul
     a).fderiv.trans (smul_zero _)
 
-private theorem hasFDerivAt_timeDependentFlowOf_chart_of_jet_eq_zero
+omit [CompleteSpace E] [T2Space M] in
+private theorem exists_ball_norm_timeDependentField_coordinates_le
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    (s t : ℝ)
-    (hjet : ∀ u ∈ uIcc s t, FirstJetBundle.jet I E (X u) x = 0) :
-    HasFDerivAt (fun z ↦ extChartAt I x
-      (timeDependentFlowOf X s t ((extChartAt I x).symm z)))
-      (ContinuousLinearMap.id ℝ E) (extChartAt I x x) := by
+    (s t : ℝ) (hjet : ∀ u ∈ uIcc s t, FirstJetBundle.jet I E (X u) x = 0)
+    {η : ℝ} (hη : 0 < η) :
+    ∃ ε > 0, ∀ τ ∈ Icc (0 : ℝ) 1, ∀ z ∈ Metric.ball (extChartAt I x x) ε,
+      ‖(t - s) • FirstJetBundle.localRep I E (X (s + τ * (t - s))) x z‖ ≤
+        η * ‖z - extChartAt I x x‖ := by
   have hx (u : ℝ) (hu : u ∈ uIcc s t) : X u x = 0 := by
-    simpa only [FirstJetBundle.value_jet, map_zero] using
-      congrArg (FirstJetBundle.value I E x) (hjet u hu)
+    exact ((FirstJetBundle.jet_eq_zero_iff_localRep I E).1 (hjet u hu)).1
   let c := extChartAt I x
   let Y : ℝ → E → E := fun τ z ↦ (t - s) •
     FirstJetBundle.localRep I E (X (s + τ * (t - s))) x z
   have htarget : c x ∈ interior c.target :=
     ModelWithCorners.isInteriorPoint_iff.1 BoundarylessManifold.isInteriorPoint
-  obtain ⟨ε, hε, hεc⟩ := Metric.nhds_basis_closedBall.mem_iff.1
-    (isOpen_interior.mem_nhds htarget)
   have hY : ContDiffOn ℝ 1 (fun p : ℝ × E ↦ Y p.1 p.2)
       (univ ×ˢ interior c.target) := by
     simpa only [Y, FirstJetBundle.localRep_apply] using
@@ -246,32 +213,119 @@ private theorem hasFDerivAt_timeDependentFlowOf_chart_of_jet_eq_zero
       (mem_baseSet_trivializationAt E (TangentSpace I) x), map_zero, smul_zero]
   have hY' (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : fderiv ℝ (Y τ) (c x) = 0 :=
     fderiv_timeDependentField_coordinates_eq_zero hX _ _ (hjet _ (htime τ hτ))
-  -- Subtracting the value at the center makes it stationary for all times; on the
-  -- interval of comparison this changes neither the field nor its spatial derivative.
-  let Z : ℝ → E → E := fun τ z ↦ Y τ z - Y τ (c x)
-  have hZ : ContDiffOn ℝ 1 (fun p : ℝ × E ↦ Z p.1 p.2)
-      (univ ×ˢ interior c.target) :=
-    hY.sub (hY.comp (contDiff_fst.prodMk contDiff_const).contDiffOn
-      (fun _ _ ↦ ⟨mem_univ _, htarget⟩))
-  have hZ' (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : fderiv ℝ (Z τ) (c x) = 0 := by
-    simpa only [Z, fderiv_sub_const] using hY' τ hτ
-  obtain ⟨ψ, hψ₀, hψderiv, hev⟩ := exists_localFlow_hasFDerivAt_id isOpen_univ
-    Metric.isOpen_ball (subset_univ _) (Metric.mem_ball_self hε)
-    (hZ.mono (prod_mono subset_rfl (Metric.ball_subset_closedBall.trans hεc)))
-    (fun τ _ ↦ sub_self _) hZ'
-  have hevY : ∀ᶠ z in 𝓝 (c x), ∀ τ ∈ Icc (0 : ℝ) 1,
-      ψ τ z ∈ Metric.ball (c x) ε ∧ HasDerivAt (fun r ↦ ψ r z) (Y τ (ψ τ z)) τ := by
-    filter_upwards [hev] with z hz τ hτ
-    simpa only [Z, hY₀ τ hτ, sub_zero] using hz τ hτ
-  exact hψderiv.congr_of_eventuallyEq
-    (eventually_timeDependentFlowOf_chart_eq_localFlow hX s t hx hε
-      (hY.mono (prod_mono (subset_univ _) hεc)) hψ₀ hevY)
+  -- Continuity of the spatial derivative gives a uniform small bound on a tube
+  -- around the compact time interval and the stationary chart coordinate.
+  let G : ℝ × E → E := fun p ↦ Y p.1 p.2
+  let D : ℝ × E → E →L[ℝ] E := fun p ↦
+    (fderiv ℝ G p).comp (ContinuousLinearMap.inr ℝ ℝ E)
+  have hopen : IsOpen ((univ : Set ℝ) ×ˢ interior c.target) := isOpen_univ.prod isOpen_interior
+  have hGdiff (p : ℝ × E) (hp : p ∈ univ ×ˢ interior c.target) :
+      DifferentiableAt ℝ G p :=
+    (hY.differentiableOn one_ne_zero p hp).differentiableAt (hopen.mem_nhds hp)
+  have hD (τ : ℝ) (z : E) (hz : z ∈ interior c.target) :
+      fderiv ℝ (Y τ) z = D (τ, z) :=
+    ((hGdiff (τ, z) ⟨mem_univ _, hz⟩).hasFDerivAt.comp z
+      (hasFDerivAt_prodMk_right τ z)).fderiv
+  have hDcont : ContinuousOn D (univ ×ˢ interior c.target) :=
+    (hY.continuousOn_fderiv_of_isOpen hopen le_rfl).clm_comp continuousOn_const
+  obtain ⟨T, U, -, hU, hIT, hxU, hTU⟩ := generalized_tube_lemma
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) (isCompact_singleton (x := c x))
+    (hDcont.norm.isOpen_inter_preimage hopen (isOpen_Iio (a := η))) (fun p hp ↦ by
+      have hp₂ : p.2 = c x := hp.2
+      refine ⟨⟨mem_univ _, by simpa only [hp₂] using htarget⟩, ?_⟩
+      change ‖D (p.1, p.2)‖ < η
+      rw [hp₂, ← hD p.1 (c x) htarget, hY' p.1 hp.1, norm_zero]
+      exact hη)
+  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU (c x) (hxU rfl)
+  have hball (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) (z : E)
+      (hz : z ∈ Metric.ball (c x) ε) :
+      z ∈ interior c.target ∧ ‖fderiv ℝ (Y τ) z‖ ≤ η := by
+    have h := hTU (mk_mem_prod (hIT hτ) (hεU hz))
+    exact ⟨h.1.2, by rw [hD τ z h.1.2]; exact h.2.le⟩
+  -- The mean-value estimate converts the derivative bound into a field bound.
+  have hbound (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) (z : E)
+      (hz : z ∈ Metric.ball (c x) ε) : ‖Y τ z‖ ≤ η * ‖z - c x‖ := by
+    have hd (w : E) (hw : w ∈ Metric.ball (c x) ε) : DifferentiableAt ℝ (Y τ) w :=
+      ((hGdiff (τ, w) ⟨mem_univ _, (hball τ hτ w hw).1⟩).comp w
+        (hasFDerivAt_prodMk_right τ w).differentiableAt)
+    simpa only [hY₀ τ hτ, sub_zero] using Convex.norm_image_sub_le_of_norm_fderiv_le
+      hd (fun w hw ↦ (hball τ hτ w hw).2) (convex_ball (c x) ε)
+      (Metric.mem_ball_self hε) hz
+  exact ⟨ε, hε, hbound⟩
+
+private theorem hasFDerivAt_timeDependentFlowOf_chart_of_jet_eq_zero
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (s t : ℝ)
+    (hjet : ∀ u ∈ uIcc s t, FirstJetBundle.jet I E (X u) x = 0) :
+    HasFDerivAt (fun z ↦ extChartAt I x
+      (timeDependentFlowOf X s t ((extChartAt I x).symm z)))
+      (ContinuousLinearMap.id ℝ E) (extChartAt I x x) := by
+  have : IsManifold I (1 : ℕ∞) M := IsManifold.of_le (n := 2) (by norm_num)
+  have hx (u : ℝ) (hu : u ∈ uIcc s t) : X u x = 0 := by
+    exact ((FirstJetBundle.jet_eq_zero_iff_localRep I E).1 (hjet u hu)).1
+  let c := extChartAt I x
+  let Y : ℝ → E → E := fun τ z ↦ (t - s) •
+    FirstJetBundle.localRep I E (X (s + τ * (t - s))) x z
+  have htarget : c x ∈ interior c.target :=
+    ModelWithCorners.isInteriorPoint_iff.1 BoundarylessManifold.isInteriorPoint
+  have hfix : c (timeDependentFlowOf X s t (c.symm (c x))) = c x := by
+    have hc : c.symm (c x) = x := extChartAt_to_inv x
+    rw [hc, timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero hX s t hx]
+  rw [hasFDerivAt_iff_isLittleO, Asymptotics.isLittleO_iff]
+  intro δ hδ
+  let η : ℝ := min 1 (δ / Real.exp 1)
+  have hη : 0 < η := lt_min zero_lt_one (div_pos hδ (Real.exp_pos _))
+  have hηone : η ≤ 1 := min_le_left _ _
+  have hηδ : η * Real.exp 1 ≤ δ :=
+    (le_div_iff₀ (Real.exp_pos _)).1 (min_le_right _ _)
+  obtain ⟨ε, hε, hbound⟩ :=
+    exists_ball_norm_timeDependentField_coordinates_le hX s t hjet hη
+  filter_upwards [eventually_timeDependentFlowOf_in_chart_ball hX s t hx hε,
+    isOpen_interior.mem_nhds htarget] with z hz hzc
+  let φ : ℝ → E := fun τ ↦ c (timeDependentFlowOf X s (s + τ * (t - s)) (c.symm z))
+  have hφ (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : HasDerivAt φ (Y τ (φ τ)) τ :=
+    hasDerivAt_timeDependentFlowOf_coordinates hX s t τ z (hz τ hτ).1 (hz τ hτ).2.1
+  have hφ₀ : φ 0 = z := by
+    simp only [φ, zero_mul, add_zero, timeDependentFlowOf_self, c.right_inv (interior_subset hzc)]
+  -- Grönwall controls the orbit displacement; integrating its small velocity
+  -- then bounds the time-one residual by an arbitrarily small multiple of the input.
+  have horbit (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) :
+      ‖φ τ - c x‖ ≤ Real.exp 1 * ‖z - c x‖ := by
+    have hg := norm_le_gronwallBound_of_norm_deriv_right_le
+      (f := fun r ↦ φ r - c x) (f' := fun r ↦ Y r (φ r))
+      (δ := ‖z - c x‖) (K := 1) (ε := 0)
+      (fun r hr ↦ ((hφ r hr).sub_const (c x)).continuousAt.continuousWithinAt)
+      (fun r hr ↦ ((hφ r (Ico_subset_Icc_self hr)).sub_const (c x)).hasDerivWithinAt)
+      (by rw [hφ₀]) (fun r hr ↦ by
+        have hb := hbound r (Ico_subset_Icc_self hr) (φ r)
+          (hz r (Ico_subset_Icc_self hr)).2.2
+        calc ‖Y r (φ r)‖ ≤ η * ‖φ r - c x‖ := hb
+             _ ≤ 1 * ‖φ r - c x‖ + 0 := by
+               simpa only [add_zero] using
+                 mul_le_mul_of_nonneg_right hηone (norm_nonneg (φ r - c x))) τ hτ
+    rw [gronwallBound_ε0, sub_zero, one_mul] at hg
+    exact hg.trans (by rw [mul_comm]; gcongr; exact hτ.2)
+  have hres := norm_image_sub_le_of_norm_deriv_le_segment_01'
+    (f := fun r ↦ φ r - z) (f' := fun r ↦ Y r (φ r))
+    (fun r hr ↦ ((hφ r hr).sub_const z).hasDerivWithinAt)
+    (fun r hr ↦ calc
+      ‖Y r (φ r)‖ ≤ η * ‖φ r - c x‖ :=
+        hbound r (Ico_subset_Icc_self hr) (φ r) (hz r (Ico_subset_Icc_self hr)).2.2
+      _ ≤ η * (Real.exp 1 * ‖z - c x‖) :=
+        mul_le_mul_of_nonneg_left (horbit r (Ico_subset_Icc_self hr)) hη.le
+      _ ≤ δ * ‖z - c x‖ := by
+        simpa only [mul_assoc] using
+          mul_le_mul_of_nonneg_right hηδ (norm_nonneg (z - c x)))
+  change ‖c (timeDependentFlowOf X s t (c.symm z)) -
+      c (timeDependentFlowOf X s t (c.symm (c x))) - (z - c x)‖ ≤ δ * ‖z - c x‖
+  rw [hfix, sub_sub_sub_cancel_right]
+  simpa only [hφ₀, sub_self, sub_zero, φ, one_mul, add_sub_cancel] using hres
 
 
-omit [FiniteDimensional ℝ E] in
 /-- A time-dependent field with zero first jet at `x` between two times fixes `x`
 under the corresponding time map. No vanishing assumption is needed outside that interval. -/
-theorem timeDependentFlowOf_eq_self_of_jet_eq_zero [CompleteSpace E]
+theorem timeDependentFlowOf_eq_self_of_jet_eq_zero
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (hjet : ∀ u ∈ uIcc s t, FirstJetBundle.jet I E (X u) x = 0) :
@@ -279,13 +333,12 @@ theorem timeDependentFlowOf_eq_self_of_jet_eq_zero [CompleteSpace E]
   have : IsManifold I (1 : ℕ∞) M := .of_le (n := 2) (by norm_num)
   apply timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero hX s t
   intro u hu
-  simpa only [FirstJetBundle.value_jet, map_zero] using
-    congrArg (FirstJetBundle.value I E x) (hjet u hu)
+  exact ((FirstJetBundle.jet_eq_zero_iff_localRep I E).1 (hjet u hu)).1
 
 /-- If a jointly `C¹` time-dependent vector field has zero first jet at `x` between
 `s` and `t`, its time map has identity derivative.
 The identity is transported to the target tangent space using the stationary-point equation. No
-completeness is required. -/
+completeness of the vector field is required. -/
 theorem hasMFDerivAt_timeDependentFlowOf_of_jet_eq_zero
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
@@ -301,8 +354,7 @@ theorem hasMFDerivAt_timeDependentFlowOf_of_jet_eq_zero
     (((contMDiffOn_timeDependentFlowOf (n := 1) le_rfl hX).contMDiffAt
       ((isOpen_timeDependentFlowDomain hX).mem_nhds
         (mem_timeDependentFlowDomain_of_forall_mem_uIcc_eq_zero hX s t (fun u hu ↦ by
-          simpa only [FirstJetBundle.value_jet, map_zero] using
-            congrArg (FirstJetBundle.value I E x) (hjet u hu))))).comp x
+          exact ((FirstJetBundle.jet_eq_zero_iff_localRep I E).1 (hjet u hu)).1)))).comp x
       (contMDiffAt_const.prodMk contMDiffAt_id)).continuousAt
   have hcast (y : M) (hy : x = y) :
       (tangentSpaceCastModel I y).toContinuousLinearMap ∘L
@@ -368,7 +420,7 @@ variable {cov : (Π x : M, TangentSpace I x) →
 
 /-- If a jointly `C¹` time-dependent field and its covariant derivative vanish at `x`
 between `s` and `t`, the time map has identity derivative. The connection laws need hold
-only on a set containing `x`. No completeness is required. -/
+only on a set containing `x`. No completeness of the vector field is required. -/
 theorem hasMFDerivAt_timeDependentFlowOf_of_forall_eq_zero
     (hcov : IsCovariantDerivativeOn E cov U) (hxU : x ∈ U)
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
@@ -427,7 +479,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {X : ℝ → Π x : M, TangentSpace I x} {x : M}
 
 /-- If a jointly `C¹` time-dependent field and its covariant derivative vanish at `x`
-between `s` and `t`, its time map has identity derivative. No completeness is required. -/
+between `s` and `t`, its time map has identity derivative.
+No completeness of the vector field is required. -/
 theorem hasMFDerivAt_timeDependentFlowOf_of_forall_eq_zero
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
