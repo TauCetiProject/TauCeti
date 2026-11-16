@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.Order.Preorder.Finite
 
 /-!
 # Triangular matrices
@@ -342,16 +344,7 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
           nonsing_inv_mul L hLdet, one_apply_eq]
       nlinarith [hLpos i]
     · exact hMpos i
-  have hLinvt_right : Lᵀ * L⁻¹ᵀ = 1 := by
-    rw [← transpose_mul, nonsing_inv_mul L hLdet, transpose_one]
-  have hQorth : (L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1 := by
-    rw [transpose_mul]
-    calc
-      (L⁻¹ * M) * (Mᵀ * L⁻¹ᵀ) = L⁻¹ * (M * Mᵀ) * L⁻¹ᵀ := by
-        simp only [Matrix.mul_assoc]
-      _ = L⁻¹ * (L * Lᵀ) * L⁻¹ᵀ := by rw [← hgram]
-      _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
-      _ = 1 := by rw [nonsing_inv_mul L hLdet, hLinvt_right, one_mul]
+  have hQorth := inv_mul_mul_transpose_inv_mul_eq_one hLdet hgram
   have hQone : L⁻¹ * M = 1 := by
     exact hQtri.eq_one_of_mul_transpose_self_eq_one (fun i ↦ (hQdiag i).le) hQorth
   calc
@@ -490,25 +483,16 @@ theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
     (hstable : ∀ j v, v ∈ N → A j *ᵥ v ∈ N) :
     ∃ v ∈ N, v ≠ 0 ∧ ∀ j, A j *ᵥ v = 0 := by
   classical
-  have htop (v : ι → S) (hv : v ≠ 0) :
-      ∃ a, v a ≠ 0 ∧ ∀ b, a < b → v b = 0 := by
-    have hs : {a | v a ≠ 0}.Nonempty := by
-      simpa only [Set.nonempty_def, Set.mem_ofPred_eq, ne_eq, funext_iff, Pi.zero_apply,
-        not_forall] using hv
-    obtain ⟨a, ha, hmax⟩ := (Set.toFinite {a | v a ≠ 0}).exists_maximal hs
-    exact ⟨a, ha, fun b hab ↦ by
-      by_contra hb
-      exact hab.not_ge (hmax hb hab.le)⟩
   let P : ι → Prop := fun a ↦ ∃ v ∈ N, v a ≠ 0 ∧ ∀ b, a < b → v b = 0
   have hP : ∃ a, P a := by
     obtain ⟨v, hv, hv0⟩ := N.ne_bot_iff.mp hN
-    obtain ⟨a, ha, htop⟩ := htop v hv0
+    obtain ⟨a, ha, htop⟩ := TauCeti.exists_ne_zero_forall_gt_eq_zero v hv0
     exact ⟨a, v, hv, ha, htop⟩
   obtain ⟨a, ha, hmin⟩ := (Set.toFinite {a | P a}).exists_minimal hP
   obtain ⟨v, hv, hva, hsupport⟩ := ha
   refine ⟨v, hv, fun h ↦ hva (congrFun h a), fun j ↦ ?_⟩
   by_contra hzero
-  obtain ⟨b, hb, htop'⟩ := htop (A j *ᵥ v) hzero
+  obtain ⟨b, hb, htop'⟩ := TauCeti.exists_ne_zero_forall_gt_eq_zero (A j *ᵥ v) hzero
   have hvanish (c : ι) (hac : a ≤ c) : (A j *ᵥ v) c = 0 := by
     apply Finset.sum_eq_zero
     intro d _

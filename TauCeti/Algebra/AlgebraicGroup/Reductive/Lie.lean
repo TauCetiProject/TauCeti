@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Reductive
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.LieContainment
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Tangent
 public import Mathlib.Algebra.Lie.Semisimple.Defs
+import TauCeti.Algebra.Lie.Solvable.Basic
 
 /-!
 # The Lie algebra of a reductive group in characteristic zero
@@ -60,5 +61,14 @@ theorem hasCentralRadical_lieAlgebra (hH : reductiveCommHopfAlgProperty k H) :
   exact hH.isCentral_solvableRadicalDefiningIdeal.lieSubalgebra_le_center
     ((HopfIdeal.mem_lieSubalgebra_iff _ d).mpr
       ((HopfIdeal.IsNormal.mem_lieIdeal_iff _ d).mp hd))
+
+/-- The Lie algebra of a reductive affine group over an algebraically closed field of
+characteristic zero, in its cotangent-dual model `(ker ε / ker ε²)*`, has solvable radical equal to
+its center. This is the model on which the adjoint representation and the nilpotent cone are
+defined. -/
+theorem hasCentralRadical_dual_cotangentSpace (hH : reductiveCommHopfAlgProperty k H) :
+    LieAlgebra.HasCentralRadical k (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
+  have := hH.hasCentralRadical_lieAlgebra
+  LieAlgebra.hasCentralRadical_of_equiv Derivation.cotangentDualLieEquiv.symm
 
 end TauCeti.reductiveCommHopfAlgProperty
