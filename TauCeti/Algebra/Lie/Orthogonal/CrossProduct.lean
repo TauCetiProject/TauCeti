@@ -47,7 +47,9 @@ tangent model `so(3) ⧸ so(3)_ν` of the coadjoint orbit through `ν_n` has dim
 orbit derivative `[ξ̂] ↦ ν_(ξ ⨯₃ n)` maps it onto the plane `n^⊥`
 (`TauCeti.soThreeDualEquiv_mem_range_coadjointTangentMap_iff`). Over `ℝ`, `n^⊥` is the tangent
 plane at `n` of the sphere of radius `r = ‖n‖` about the origin; this sphere is the coadjoint orbit
-of the rotation group `SO(3)` through `ν_n`, a fact about the group action not treated here.
+of the rotation group `SO(3)` through `ν_n`
+(`TauCeti.range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`, in
+`TauCeti.Algebra.Lie.Orthogonal.CoadjointOrbit`).
 
 The Kirillov–Kostant–Souriau form of `ν_n` is the triple product
 

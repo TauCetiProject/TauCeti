@@ -30,6 +30,8 @@ odd orthogonal Gram matrix `LieAlgebra.Orthogonal.JB ι R`.
 
 * `Matrix.mem_so_iff_mem_skewAdjoint` identifies the real orthogonal Lie algebra with the
   skew-adjoint matrices.
+* `LieAlgebra.Orthogonal.mul_mul_transpose_mem_so`: the orthogonal Lie algebra is stable under
+  `A ↦ M A Mᵀ`, in particular under conjugation by orthogonal matrices.
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
 * `LieAlgebra.Orthogonal.isSymm_JB` and `LieAlgebra.Orthogonal.isUnit_JB`: the split odd
@@ -54,6 +56,14 @@ theorem mem_so_iff_mem_skewAdjoint (A : Matrix n n ℝ) :
 end Matrix
 
 namespace LieAlgebra.Orthogonal
+
+open Matrix in
+/-- The orthogonal Lie algebra is stable under `A ↦ M A Mᵀ` for every square matrix `M`; for an
+orthogonal `M` this is conjugation by `M`. -/
+theorem mul_mul_transpose_mem_so {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (M : Matrix n n R) {A : Matrix n n R} (hA : A ∈ so n R) : M * A * Mᵀ ∈ so n R := by
+  rw [mem_so] at hA ⊢
+  simp [Matrix.transpose_mul, hA, Matrix.mul_assoc]
 
 variable {p q R : Type*} [DecidableEq p] [DecidableEq q] [Fintype p] [Fintype q] [CommRing R]
 
