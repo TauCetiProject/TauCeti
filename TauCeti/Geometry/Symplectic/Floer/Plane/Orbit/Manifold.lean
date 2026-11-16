@@ -216,8 +216,9 @@ private theorem exists_halfCylinder_comp_realChart_positive (ω : SmoothTwoForm 
     fun s _ ↦ ?_, fun z hz ↦ ?_,
     ((ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le hH hHs ha hud).trans_lt
       ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne⟩
-  · simpa only [comp_apply, realChart_positive_mk] using
-      periodic_comp_cylindricalEndLift_positive u s
+  · simpa only [comp_apply, comp_def, realChart_positive_mk] using
+      (positive.periodic_cylindricalEndLift (positive.endSign * s)).comp
+        fun w ↦ u (Complex.equivRealProdCLM w)
   · exact ω.isComplexLinearMap_perturbedMFDeriv_comp_realChart_positive hH hHs (ha.trans hz.1.le)
       (mdifferentiableAt_realChart_positive hud hz.1) (hfloer _ (hmem hz.1))
 

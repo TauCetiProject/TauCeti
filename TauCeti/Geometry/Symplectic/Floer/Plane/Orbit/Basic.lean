@@ -238,7 +238,9 @@ private theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm
       (ha.trans hz.1.le) (differentiableAt_realChart_positive hud hz.1) (hfloer _ (hmem hz.1)),
     ((ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le hH hHs ha hud).trans_lt
       ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne⟩
-  simpa only [comp_apply, realChart_positive_mk] using periodic_comp_cylindricalEndLift_positive u s
+  simpa only [comp_apply, comp_def, realChart_positive_mk] using
+    (positive.periodic_cylindricalEndLift (positive.endSign * s)).comp
+      fun w ↦ u (Complex.equivRealProdCLM w)
 
 /-- **The asymptotic orbit at the end of the positive plane.** This is the case `p = positive` of
 `exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation`, for an arbitrary Hamiltonian;
@@ -421,7 +423,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbatio
   rw [hrev hyper]
   refine hA.neg.congr fun R ↦ ?_
   simp only [cylindricalEndLift_negative_endSign_mul]
-  exact (hrev (periodic_comp_cylindricalEndLift_positive u R)).symm
+  exact (hrev ((positive.periodic_cylindricalEndLift (positive.endSign * R)).comp
+    fun w ↦ u (Complex.equivRealProdCLM w))).symm
 
 /-- **The energy of a finite-energy PSS plane.** Let `𝔎` be the perturbation of a PSS plane `p`
 given by a period-one `C¹` Hamiltonian `H`, and let `u` be a `C²` solution of the Floer equation

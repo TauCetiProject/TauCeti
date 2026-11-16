@@ -202,22 +202,10 @@ theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1)
 
 /-- The end lift of the positive plane is injective on the half-strip `s > a`, `0 ≤ t < 1`. -/
 theorem injOn_realChart_positive (a : ℝ) :
-    InjOn (realChart positive.cylindricalEndLift) (Ioi a ×ˢ Ico 0 1) := by
-  intro a ha b hb hab
-  rw [realChart_apply, realChart_apply] at hab
-  have ha' : Complex.equivRealProdCLM.symm a ∈ {z : ℂ | z.im ∈ Ico 0 (0 + 1)} := by
-    simpa using ha.2
-  have hb' : Complex.equivRealProdCLM.symm b ∈ {z : ℂ | z.im ∈ Ico 0 (0 + 1)} := by
-    simpa using hb.2
-  have h := positive.injOn_cylindricalEndLift 0 ha' hb' (Complex.equivRealProdCLM.injective hab)
-  exact Complex.equivRealProdCLM.symm.injective h
-
-/-- The loops of the positive plane along its end are periodic. -/
-theorem periodic_comp_cylindricalEndLift_positive {X : Type*} (u : ℝ × ℝ → X) (R : ℝ) :
-    Periodic (fun t : ℝ ↦ u (Complex.equivRealProdCLM
-      (positive.cylindricalEndLift (↑(positive.endSign * R) + ↑t * Complex.I)))) 1 := fun t ↦
-  congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
-    (positive.periodic_cylindricalEndLift (positive.endSign * R) t)
+    InjOn (realChart positive.cylindricalEndLift) (Ioi a ×ˢ Ico 0 1) :=
+  TauCeti.Complex.injOn_realChart <| (positive.injOn_cylindricalEndLift 0).mono <| by
+    rintro _ ⟨p, hp, rfl⟩
+    simpa using hp.2
 
 end Floer.PSSPlane
 
