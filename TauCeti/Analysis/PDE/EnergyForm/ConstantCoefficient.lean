@@ -95,9 +95,10 @@ theorem energyFormH1_const_coefficientSymmetricPart (A : Matrix ι ι ℝ) (u : 
     (EuclideanSpace.basisFun ι ℝ i) • ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ ∂mu
   have hJ : ∀ i j, J i j = J j i := fun i j =>
     W1p.integral_lineDeriv_smul_inner_gradient_comm _ _ _ _
-  change energyFormH1 (fun _ => S) 0 0 u _ = energyFormH1 (fun _ => A) 0 0 u _
-  rw [energyFormH1_ofTestFunctionₗ_eq_sum_sum, energyFormH1_ofTestFunctionₗ_eq_sum_sum]
-  change ∑ j, ∑ i, S i j * J i j = ∑ j, ∑ i, A i j * J i j
+  have hsum : ∀ M : Matrix ι ι ℝ, energyFormH1 (fun _ => M) 0 0 u
+      (W1p.ofTestFunctionₗ mu Omega 2 ψ) = ∑ j, ∑ i, M i j * J i j := fun M =>
+    energyFormH1_ofTestFunctionₗ_eq_sum_sum M u ψ
+  rw [Set.mem_ofPred_eq, hsum, hsum]
   -- The transposed half pairs `Aⱼᵢ` with `J i j = J j i`, which relabels to the `A` sum.
   have hT : ∑ j, ∑ i, A j i * J i j = ∑ j, ∑ i, A i j * J i j := by
     rw [Finset.sum_comm]

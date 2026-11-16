@@ -365,7 +365,7 @@ theorem W1p.ae_gradient_eq_zero_of_inner_lt (hH : ∀ x, x ∈ H ↔ c < ⟪x, �
 /-- **The gradient of the odd reflection is odd.** For `u ∈ W^{1,p}(U)`, the weak gradient of
 the odd reflection `w = u - u ∘ ρ` satisfies `∇w ∘ ρ = -R ∘ ∇w` almost everywhere on `U`, where
 `R` is the linear part of the reflection `ρ`. -/
-theorem W1p.ae_gradient_sub_compHyperplaneReflectionL_comp (hp : p ≠ ⊤)
+theorem W1p.gradient_sub_compHyperplaneReflectionL_hyperplaneReflection_ae (hp : p ≠ ⊤)
     (hU : MapsTo (hyperplaneReflection ν c) U U) (u : W1p mu U p) :
     ∀ᵐ x ∂mu.restrict U,
       W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) (hyperplaneReflection ν c x) =

@@ -190,8 +190,8 @@ private theorem coe_boundaryShear_symm (h : ⟪ν, conormalShearVector A ν⟫_�
 private theorem inner_boundaryShear (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0)
     (y : EuclideanSpace ℝ ι) :
     ⟪boundaryShear A ν c₀ h y, ν⟫_ℝ = ⟪y, ν⟫_ℝ := by
-  rw [boundaryShear_apply, real_inner_comm, inner_sub_right, transvectionL_apply, inner_add_right,
-    inner_smul_right, inner_smul_right, h, mul_zero, mul_zero, add_zero, sub_zero, real_inner_comm]
+  rw [boundaryShear_apply, real_inner_comm, inner_sub_right, inner_transvectionL h,
+    inner_smul_right, h, mul_zero, sub_zero, real_inner_comm]
 
 /-- The shear fixes the points of the hyperplane `⟪x, ν⟫ = c₀`. -/
 private theorem boundaryShear_eq_self (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0)
@@ -221,7 +221,7 @@ private theorem dist_boundaryShear_symm_le (h : ⟪ν, conormalShearVector A ν�
 private theorem measurePreserving_boundaryShear (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) :
     MeasurePreserving (boundaryShear A ν c₀ h) volume volume := by
   have hdet : LinearMap.det (transvectionL ν (conormalShearVector A ν)).toLinearMap = 1 := by
-    simpa [ContinuousLinearMap.det] using det_transvectionL h
+    simpa [ContinuousLinearMap.det, h] using det_transvectionL ν (conormalShearVector A ν)
   have hL : MeasurePreserving (transvectionL ν (conormalShearVector A ν)) volume volume := by
     refine ⟨(transvectionL ν _).continuous.measurable, ?_⟩
     simpa [hdet] using Measure.map_linearMap_addHaar_eq_smul_addHaar volume
@@ -243,11 +243,11 @@ private theorem fderiv_boundaryShear_symm (h : ⟪ν, conormalShearVector A ν�
 
 private theorem abs_det_fderiv_boundaryShear (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0)
     (y : EuclideanSpace ℝ ι) : |(fderiv ℝ (boundaryShear A ν c₀ h) y).det| = 1 := by
-  rw [fderiv_boundaryShear, det_transvectionL h, abs_one]
+  rw [fderiv_boundaryShear, det_transvectionL, h, add_zero, abs_one]
 
 private theorem abs_det_fderiv_boundaryShear_symm (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0)
     (x : EuclideanSpace ℝ ι) : |(fderiv ℝ (boundaryShear A ν c₀ h).symm x).det| = 1 := by
-  rw [fderiv_boundaryShear_symm, det_transvectionL (by rw [inner_neg_right, h, neg_zero]), abs_one]
+  rw [fderiv_boundaryShear_symm, det_transvectionL, inner_neg_right, h, neg_zero, add_zero, abs_one]
 
 private theorem boundaryShear_mem_iff (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0)
     {H : Set (EuclideanSpace ℝ ι)} (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (y : EuclideanSpace ℝ ι) :
@@ -310,6 +310,34 @@ private theorem energyFormH1_pullback_boundaryShear (h : ⟪ν, conormalShearVec
     funext y; simp [pullbackDensity_apply]
   rw [hA, hb, hc]
 
+/-- Precomposition with the shear, `W^{1,2}(V) → W^{1,2}(U)`, for open `U` mapped into `V` and a
+bound `κ` on the norm of its linear part. -/
+private def boundaryShearCompL (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) {κ : ℝ}
+    (hL : ‖transvectionL ν (conormalShearVector A ν)‖ ≤ κ) {U V : Opens (EuclideanSpace ℝ ι)}
+    (hUV : MapsTo (boundaryShear A ν c₀ h) U V) : W1p volume V 2 →L[ℝ] W1p volume U 2 :=
+  W1p.compL (boundaryShear A ν c₀ h) ENNReal.ofNat_ne_top
+    (differentiable_boundaryShear h).differentiableOn (boundaryShear A ν c₀ h).injective.injOn hUV
+    (fun y _ => (congrArg norm (fderiv_boundaryShear h y)).trans_le hL) one_pos
+    (fun y _ => (abs_det_fderiv_boundaryShear h y).ge)
+
+private theorem value_boundaryShearCompL_ae (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) {κ : ℝ}
+    (hL : ‖transvectionL ν (conormalShearVector A ν)‖ ≤ κ) {U V : Opens (EuclideanSpace ℝ ι)}
+    (hUV : MapsTo (boundaryShear A ν c₀ h) U V) (u : W1p volume V 2) :
+    W1p.value (boundaryShearCompL h hL hUV u) =ᵐ[volume.restrict U]
+      fun y => W1p.value u (boundaryShear A ν c₀ h y) :=
+  W1p.value_compL_ae _ _ _ _ _ _ _ _ u
+
+/-- The weak gradient of `u ∘ P` is `K (∇u ∘ P)`, for the transposed shear `K x = x + ⟪s, x⟫ ν`. -/
+private theorem gradient_boundaryShearCompL_ae (h : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) {κ : ℝ}
+    (hL : ‖transvectionL ν (conormalShearVector A ν)‖ ≤ κ) {U V : Opens (EuclideanSpace ℝ ι)}
+    (hUV : MapsTo (boundaryShear A ν c₀ h) U V) (u : W1p volume V 2) :
+    W1p.gradient (boundaryShearCompL h hL hUV u) =ᵐ[volume.restrict U]
+      fun y => transvectionL (conormalShearVector A ν) ν
+        (W1p.gradient u (boundaryShear A ν c₀ h y)) := by
+  refine (W1p.gradient_compL_ae _ _ _ _ _ _ _ _ u).trans (ae_of_all _ fun y => ?_)
+  dsimp only
+  rw [fderiv_boundaryShear, adjoint_transvectionL]
+
 end ShearMap
 
 /-! ### The weak equation in sheared coordinates -/
@@ -369,28 +397,25 @@ private theorem forall_energyFormH1_restrictL_eq_zero_of_comp_boundaryShear
     one_pos
     (fun x _ => (abs_det_fderiv_boundaryShear_symm hs x).ge) (fun y _ => P.symm_apply_apply y)
     (fun x _ => P.apply_symm_apply x) hu'
-  have hid : W1p.compL P ENNReal.ofNat_ne_top hPd.differentiableOn P.injective.injOn hPV
-      (fun y _ => hLb y) one_pos (fun y _ => (abs_det_fderiv_boundaryShear hs y).ge)
-      (W1p.restrictL (hVUH.trans inf_le_left) u) = W1p.restrictL inf_le_left h := by
+  have hid : boundaryShearCompL hs hL hPV (W1p.restrictL (hVUH.trans inf_le_left) u) =
+      W1p.restrictL inf_le_left h := by
     refine W1p.ext_value (Lp.ext ?_)
-    filter_upwards [W1p.value_compL_ae (mu := volume) P ENNReal.ofNat_ne_top
-      hPd.differentiableOn P.injective.injOn hPV (fun y _ => hLb y) one_pos
-      (fun y _ => (abs_det_fderiv_boundaryShear hs y).ge)
-      (W1p.restrictL (hVUH.trans inf_le_left) u),
+    filter_upwards [value_boundaryShearCompL_ae hs hL hPV
+        (W1p.restrictL (hVUH.trans inf_le_left) u),
       ae_restrict_comp_boundaryShear hs hPV V.isOpen.measurableSet
         (W1p.value_restrictL_ae (hVUH.trans inf_le_left) u),
       W1p.value_restrictL_ae inf_le_left h,
       ae_restrict_of_ae_restrict_of_subset inter_subset_left hval] with y h1 h2 h3 h4
     rw [h1, h2, h3, h4]
   have key : energyFormH1 (pullbackPrincipal P fun _ => A) (pullbackDrift P 0)
-      (pullbackDensity P 0) (W1p.compL P ENNReal.ofNat_ne_top hPd.differentiableOn
-        P.injective.injOn hPV (fun y _ => hLb y) one_pos
-        (fun y _ => (abs_det_fderiv_boundaryShear hs y).ge)
+      (pullbackDensity P 0) (boundaryShearCompL hs hL
+        (U := (⟨ball z (r / κ), isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) ⊓ H) (V := V) hPV
         (W1p.restrictL (hVUH.trans inf_le_left) u)) =
       energyFormH1 (fun _ => pullbackPrincipal P (fun _ => A) z) 0 0
         (W1p.restrictL (inf_le_left : (⟨ball z (r / κ), isOpen_ball⟩ :
           Opens (EuclideanSpace ℝ ι)) ⊓ H ≤ _) h) := by
     rw [hid, energyFormH1_pullback_boundaryShear hs z]
+  -- `boundaryShearCompL hs hL hPV` is by definition the `W1p.compL` appearing in `hcomp`.
   exact (congrFun key _).symm.trans ((hcomp v).trans (by simp))
 
 /-- **Pulling a weak solution back along the shear.** Let `u ∈ H¹(U)` vanish on `U ∖ H` and
@@ -417,19 +442,13 @@ private theorem exists_comp_boundaryShear (hs : ⟪ν, conormalShearVector A ν�
           (W1p.gradient u (boundaryShear A ν c₀ hs y))) := by
   set P := boundaryShear A ν c₀ hs
   have hBr : (⟨ball z r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) ≤ U := hball
-  have hLb : ∀ y, ‖fderiv ℝ P y‖ ≤ κ := fun y => by rw [fderiv_boundaryShear]; exact hL
-  have hPd := differentiable_boundaryShear hs (c₀ := c₀)
   have hPY := mapsTo_boundaryShear_ball hs hz hκ hL (r := r)
-  obtain ⟨h, hh⟩ : ∃ h, W1p.compL (U := ⟨ball z (r / κ), isOpen_ball⟩)
-      (V := ⟨ball z r, isOpen_ball⟩) P ENNReal.ofNat_ne_top hPd.differentiableOn
-      P.injective.injOn hPY (fun y _ => hLb y) one_pos
-      (fun y _ => (abs_det_fderiv_boundaryShear hs y).ge) (W1p.restrictL hBr u) = h := ⟨_, rfl⟩
+  obtain ⟨h, hh⟩ : ∃ h, boundaryShearCompL hs hL (U := ⟨ball z (r / κ), isOpen_ball⟩)
+      (V := ⟨ball z r, isOpen_ball⟩) hPY (W1p.restrictL hBr u) = h := ⟨_, rfl⟩
   have hval : ∀ᵐ y ∂volume.restrict (ball z (r / κ)), W1p.value h y = W1p.value u (P y) := by
     rw [← hh]
-    filter_upwards [W1p.value_compL_ae (mu := volume) (U := ⟨ball z (r / κ), isOpen_ball⟩)
-      (V := ⟨ball z r, isOpen_ball⟩) P ENNReal.ofNat_ne_top hPd.differentiableOn
-      P.injective.injOn hPY (fun y _ => hLb y) one_pos
-      (fun y _ => (abs_det_fderiv_boundaryShear hs y).ge) (W1p.restrictL hBr u),
+    filter_upwards [value_boundaryShearCompL_ae hs hL (U := ⟨ball z (r / κ), isOpen_ball⟩)
+      (V := ⟨ball z r, isOpen_ball⟩) hPY (W1p.restrictL hBr u),
       ae_restrict_comp_boundaryShear hs hPY measurableSet_ball (W1p.value_restrictL_ae hBr u)]
       with y h1 h2
     rw [h1, h2]
@@ -439,13 +458,11 @@ private theorem exists_comp_boundaryShear (hs : ⟪ν, conormalShearVector A ν�
       (ae_restrict_of_ae_restrict_of_subset hball hu0)] with y h1 h2 hy
     rw [h1, h2 fun hPy => hy ((boundaryShear_mem_iff hs (H := (H : Set _)) hH y).1 hPy)]
   · rw [← hh]
-    filter_upwards [W1p.gradient_compL_ae (mu := volume) (U := ⟨ball z (r / κ), isOpen_ball⟩)
-      (V := ⟨ball z r, isOpen_ball⟩) P ENNReal.ofNat_ne_top
-      hPd.differentiableOn P.injective.injOn hPY (fun y _ => hLb y) one_pos
-      (fun y _ => (abs_det_fderiv_boundaryShear hs y).ge) (W1p.restrictL hBr u),
+    filter_upwards [gradient_boundaryShearCompL_ae hs hL (U := ⟨ball z (r / κ), isOpen_ball⟩)
+      (V := ⟨ball z r, isOpen_ball⟩) hPY (W1p.restrictL hBr u),
       ae_restrict_comp_boundaryShear hs hPY measurableSet_ball
         (W1p.gradient_restrictL_ae hBr u)] with y h1 h2
-    rw [h1, h2, fderiv_boundaryShear, adjoint_transvectionL]
+    rw [h1, h2]
 
 /-- The pulled-back matrix `B` in sheared coordinates satisfies `B(K η, K ξ) = A(η, ξ)` for the
 transposed shear `K x = x + ⟪s, x⟫ ν`. -/
@@ -457,8 +474,8 @@ private theorem matrixBilinearForm_pullbackPrincipal_transvectionL
       matrixBilinearForm A η ξ := by
   have hfd := fderiv_boundaryShear hs (c₀ := c₀) z
   have h := matrixBilinearForm_pullbackPrincipal (Φ := boundaryShear A ν c₀ hs) (fun _ => A)
-    (x := z) (by rw [hfd, det_transvectionL hs]; exact one_ne_zero) η ξ
-  rwa [hfd, adjoint_transvectionL, det_transvectionL hs, abs_one, one_mul] at h
+    (x := z) (by rw [hfd, det_transvectionL, hs, add_zero]; exact one_ne_zero) η ξ
+  rwa [hfd, adjoint_transvectionL, det_transvectionL, hs, add_zero, abs_one, one_mul] at h
 
 /-- The pulled-back matrix is invariant under the reflection in the hyperplane `ν⊥`: in sheared
 coordinates the conormal direction of `A` is the normal `ν`. -/
@@ -615,8 +632,8 @@ private theorem setIntegral_ball_inter_norm_gradient_sub_sq_le_of_comp_boundaryS
       (boundaryShear_mem_iff hs (H := (H : Set _)) hH y).2 hy.2⟩
   have hgPint : IntegrableOn (fun y => ‖W1p.gradient u (P y) - t • ν‖ ^ 2)
       (P ⁻¹' (ball z r ∩ H)) := (hP.integrableOn_comp_preimage hPe).2 hgint
-  have hKν : transvectionL (conormalShearVector A ν) ν ν = ν := by
-    rw [transvectionL_apply, real_inner_comm, hs, zero_smul, add_zero]
+  have hKν : transvectionL (conormalShearVector A ν) ν ν = ν :=
+    transvectionL_apply_of_inner_eq_zero ν ((real_inner_comm ν _).trans hs)
   calc _ ≤ ∫ y in ball z (r / κ) ∩ H, κ ^ 2 * ‖W1p.gradient u (P y) - t • ν‖ ^ 2 := by
         have hhint : IntegrableOn (fun y => ‖W1p.gradient h y - t • ν‖ ^ 2) (ball z (r / κ)) :=
           (Lp.memLp (W1p.gradient h)).integrableOn_norm_sub_sq_of_subset subset_rfl
@@ -786,8 +803,9 @@ private theorem exists_boundaryReflection {lam Lam : ℝ} (hlam : 0 < lam)
     energyFormH1_sub_compHyperplaneReflectionL_eq_zero hν hq hAs' hs hH hz heq hvan,
     fun ρ hρ hρU c => setIntegral_ball_inter_norm_gradient_sub_sq_le_of_boundaryShear hs hH hz hκ
       hL' hK' hρU hw1 hρ c, fun t => ?_,
-    W1p.ae_gradient_sub_compHyperplaneReflectionL_comp ENNReal.ofNat_ne_top hYρ h, fun t => ?_⟩
-  · rw [map_smul, transvectionL_apply, real_inner_comm, hs, zero_smul, add_zero]
+    W1p.gradient_sub_compHyperplaneReflectionL_hyperplaneReflection_ae ENNReal.ofNat_ne_top hYρ h,
+    fun t => ?_⟩
+  · rw [map_smul, transvectionL_apply_of_inner_eq_zero _ ((real_inner_comm ν _).trans hs)]
   · calc _ ≤ 2 * ∫ y in ball z (r / κ) ∩ H, ‖W1p.gradient h y - t • ν‖ ^ 2 :=
           W1p.setIntegral_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_le hν hH hYρ
             measure_ball_lt_top.ne hvan t

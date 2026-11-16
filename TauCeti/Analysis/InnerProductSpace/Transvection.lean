@@ -20,9 +20,11 @@ and inverse `x ↦ x - ⟪ν, x⟫ s`.
 
 * `TauCeti.transvectionL`: the transvection `x ↦ x + ⟪ν, x⟫ s` as a continuous linear map.
 * `TauCeti.coe_transvectionL`: its underlying linear map is `LinearMap.transvection`.
+* `TauCeti.transvectionL_apply_of_inner_eq_zero` and `TauCeti.inner_transvectionL`: it fixes `ν⊥`
+  pointwise and, for `⟪ν, s⟫ = 0`, preserves `⟪ν, ·⟫`.
 * `TauCeti.transvectionL_transvectionL_neg` and `TauCeti.transvectionEquivL`: for `⟪ν, s⟫ = 0`
   its inverse is the transvection along `-s`, and it is a continuous linear equivalence.
-* `TauCeti.det_transvectionL`: for `⟪ν, s⟫ = 0` its determinant is one.
+* `TauCeti.det_transvectionL`: its determinant is `1 + ⟪ν, s⟫`.
 * `TauCeti.adjoint_transvectionL`: its adjoint is the transvection with `ν` and `s` exchanged.
 * `TauCeti.norm_transvectionL_le`: its operator norm is at most `1 + ‖ν‖ ‖s‖`.
 -/
@@ -55,6 +57,16 @@ theorem coe_transvectionL (ν s : E) :
     rw [ContinuousLinearMap.coe_coe, transvectionL_apply, LinearMap.transvection.apply,
       innerₛₗ_apply_apply]
 
+/-- The transvection `x ↦ x + ⟪ν, x⟫ s` fixes every `x` with `⟪ν, x⟫ = 0`. -/
+theorem transvectionL_apply_of_inner_eq_zero (s : E) {ν x : E} (hx : ⟪ν, x⟫_ℝ = 0) :
+    transvectionL ν s x = x := by
+  rw [transvectionL_apply, hx, zero_smul, add_zero]
+
+/-- For `⟪ν, s⟫ = 0`, the transvection `x ↦ x + ⟪ν, x⟫ s` preserves `⟪ν, ·⟫`. -/
+theorem inner_transvectionL {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : E) :
+    ⟪ν, transvectionL ν s x⟫_ℝ = ⟪ν, x⟫_ℝ := by
+  rw [transvectionL_apply, inner_add_right, inner_smul_right, h, mul_zero, add_zero]
+
 /-- For `⟪ν, s⟫ = 0`, the transvection along `-s` inverts the transvection along `s`. -/
 theorem transvectionL_transvectionL_neg {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : E) :
     transvectionL ν s (transvectionL ν (-s) x) = x := by
@@ -86,11 +98,11 @@ theorem transvectionEquivL_symm_apply {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : 
   rw [transvectionEquivL, ContinuousLinearEquiv.symm_equivOfInverse,
     ContinuousLinearEquiv.equivOfInverse_apply]
 
-/-- For `⟪ν, s⟫ = 0`, the transvection `x ↦ x + ⟪ν, x⟫ s` has determinant one. -/
-theorem det_transvectionL [FiniteDimensional ℝ E] {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) :
-    (transvectionL ν s).det = 1 := by
+/-- The transvection `x ↦ x + ⟪ν, x⟫ s` has determinant `1 + ⟪ν, s⟫`. -/
+theorem det_transvectionL [FiniteDimensional ℝ E] (ν s : E) :
+    (transvectionL ν s).det = 1 + ⟪ν, s⟫_ℝ := by
   rw [ContinuousLinearMap.det, coe_transvectionL, LinearMap.transvection.det,
-    innerₛₗ_apply_apply, h, add_zero]
+    innerₛₗ_apply_apply]
 
 /-- The adjoint of the transvection `x ↦ x + ⟪ν, x⟫ s` is `x ↦ x + ⟪s, x⟫ ν`. -/
 theorem adjoint_transvectionL [CompleteSpace E] (ν s : E) :
