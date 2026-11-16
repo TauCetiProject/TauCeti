@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Product
-public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 
 /-!
@@ -46,7 +46,8 @@ alone, for every rank, `TauCeti.prodThomPairSingularCohomologyEquiv` identifies
 `TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic`. The homology counterpart for every rank
 is `TauCeti.prodThomPairSingularHomologyIso` in degrees `n + r`, with
 `TauCeti.isZero_singularHomology_prodThomPair` below `r`. The ranks `0` and `1`, where `F ∖ {0}`
-is empty or has two contractible components, are not treated here.
+is empty or has two contractible components, are not treated here; rank `1` is
+`TauCeti.prodThomPairSingularCohomologyLineEquiv`.
 
 ## Main definitions and results
 
@@ -212,37 +213,6 @@ theorem prodThomPairPuncturedSingularCohomologyEquiv_apply
           (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) n bc.2) :=
   puncturedMap_apply M e n m h bc
 
-omit [Module ℝ F] in
-/-- Every class of `Hᵐ(B × F; M)` is pulled back from the base, since `F` is contractible. -/
-private theorem exists_singularCohomologyMap_prodThomPairProj_eq [ContractibleSpace F] (m : ℕ)
-    (y : (prodThomPair B F).fst.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
-    ∃ b, TopCat.singularCohomologyMap (prodThomPairProj B F) m b = y := by
-  have := (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap
-    (𝟙_ (ModuleCat.{w} k)) k M m
-  rw [ContinuousMap.HomotopyEquiv.prodContractible_toFun] at this
-  have hproj : TopCat.ofHom ContinuousMap.fst = prodThomPairProj B F :=
-    TopCat.ext fun p ↦ (prodThomPairProj_apply F p).symm
-  have : IsIso (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k) (M := M)
-    (prodThomPairProj B F) m) := hproj ▸ this
-  refine ⟨inv (TopCat.singularCohomologyMap (prodThomPairProj B F) m) y, ?_⟩
-  rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
-
-/-- Pulling back along the projection `B × (F ∖ {0}) → B` is injective, since the projection has
-the section `b ↦ (b, e⁻¹ v)` for a unit vector `v`. -/
-private theorem injective_singularCohomologyMap_prodThomPairPuncturedProj
-    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) (m : ℕ) :
-    Function.Injective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-      (M := M) (prodThomPairPuncturedProj B F) m) := by
-  let v : F := e.symm (EuclideanSpace.single 0 1)
-  have hv : v ≠ 0 := by simp [v]
-  let s : TopCat.of B ⟶ (prodThomPair B F).snd :=
-    TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
-  have hs : s ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
-    TopCat.ext fun b ↦ prodThomPairPuncturedProj_apply F (s b)
-  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap s m) fun b ↦ ?_
-  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
-    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
-
 /-- The classes `π^* b` of the decomposition `TauCeti.prodThomPairPuncturedSingularCohomologyEquiv`
 are the restrictions of the classes of `B × F` pulled back from `B`. -/
 private theorem prodThomPairPuncturedSingularCohomologyEquiv_apply_zero
@@ -253,78 +223,6 @@ private theorem prodThomPairPuncturedSingularCohomologyEquiv_apply_zero
         (TopCat.singularCohomologyMap (prodThomPairProj B F) _ b) := by
   rw [prodThomPairPuncturedSingularCohomologyEquiv_apply, map_zero, map_zero, add_zero,
     ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, map_comp_prodThomPairProj]
-
-/-- The map `c ↦ δ (σ ⌣ π^* c)`, written as `δ ∘ D ∘ inr` for the decomposition `D` of the
-cohomology of the punctured product bundle. -/
-private def sphereDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) (n m : ℕ)
-    (h : n + (d + 2) = m) :
-    (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n →ₗ[k]
-      (prodThomPair B F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m :=
-  ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m).hom ∘ₗ
-    (prodThomPairPuncturedSingularCohomologyEquiv M B e n (d + 1 + n)).toLinearMap ∘ₗ
-      LinearMap.inr k _ _
-
-private theorem sphereDeltaMap_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) (n m : ℕ)
-    (h : n + (d + 2) = m) (c : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
-    sphereDeltaMap M e n m h c =
-      ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m)
-        ((prodThomPairPuncturedSingularCohomologyEquiv M B e n (d + 1 + n)) (0, c)) :=
-  -- `sphereDeltaMap` is this composite by definition.
-  (rfl)
-
-/-- `c ↦ δ (σ ⌣ π^* c)` is injective: if `δ (D (0, c)) = 0`, then `D (0, c)` is restricted from
-`B × F`, where every class is pulled back from `B`, so `D (0, c) = D (b, 0)` for some `b`. -/
-private theorem injective_sphereDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2)))
-    (n m : ℕ) (h : n + (d + 2) = m) :
-    Function.Injective (sphereDeltaMap (B := B) M e n m h) := by
-  have := e.toHomeomorph.contractibleSpace
-  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  rw [sphereDeltaMap_apply] at hc
-  obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).1
-    ((prodThomPair B F).singularCohomology_exact_subspace (𝟙_ (ModuleCat.{w} k)) k M
-      (d + 1 + n) m) _ hc
-  obtain ⟨b, rfl⟩ := exists_singularCohomologyMap_prodThomPairProj_eq M _ y
-  rw [← prodThomPairPuncturedSingularCohomologyEquiv_apply_zero M e n _ (add_comm _ _)] at hy
-  exact congrArg Prod.snd
-    ((prodThomPairPuncturedSingularCohomologyEquiv M B e n (d + 1 + n)).injective hy).symm
-
-/-- `c ↦ δ (σ ⌣ π^* c)` is surjective. A class `z` of the pair maps to a class of `B × F` pulled
-back from `B` whose restriction to `B × (F ∖ {0})` vanishes; since `π^*` is injective, `z` maps to
-zero, so `z = δ (D (b, c))` by exactness, and `δ (D (b, 0)) = 0` as `D (b, 0)` is restricted from
-`B × F`. -/
-private theorem surjective_sphereDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2)))
-    (n m : ℕ) (h : n + (d + 2) = m) :
-    Function.Surjective (sphereDeltaMap (B := B) M e n m h) := by
-  have := e.toHomeomorph.contractibleSpace
-  let P := prodThomPair B F
-  let D := prodThomPairPuncturedSingularCohomologyEquiv M B e n (d + 1 + n)
-  intro z
-  obtain ⟨b, hb⟩ := exists_singularCohomologyMap_prodThomPairProj_eq M _
-    (P.singularCohomologyπ _ k M _ z)
-  have hπ : P.singularCohomologyπ _ k M _ z = 0 := by
-    have h0 := ConcreteCategory.congr_hom
-      (P.singularCohomologyπ_comp_singularCohomologyMap (𝟙_ (ModuleCat.{w} k)) k M m) z
-    rw [ConcreteCategory.comp_apply, ← hb, ← ConcreteCategory.comp_apply,
-      ← TopCat.singularCohomologyMap_comp, map_comp_prodThomPairProj] at h0
-    rw [← hb, injective_singularCohomologyMap_prodThomPairPuncturedProj M e _
-      (h0.trans (map_zero _).symm), map_zero]
-  obtain ⟨x, rfl⟩ : ∃ x, (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m) x = z :=
-    (ShortComplex.moduleCat_exact_iff _).1
-      (P.singularCohomology_exact_relative (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m) z hπ
-  obtain ⟨⟨b', c⟩, rfl⟩ := D.surjective x
-  refine ⟨c, ?_⟩
-  have hδ : (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m) (D (b', 0)) = 0 := by
-    rw [prodThomPairPuncturedSingularCohomologyEquiv_apply_zero M e n _ (add_comm _ _) b',
-      ← ConcreteCategory.comp_apply,
-      P.singularCohomologyMap_comp_singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m]
-    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
-  have hbc : ((b', c) : _ × _) = (b', 0) + (0, c) := by simp
-  rw [sphereDeltaMap_apply, hbc, map_add, map_add, hδ, zero_add]
-
-private theorem bijective_sphereDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2)))
-    (n m : ℕ) (h : n + (d + 2) = m) :
-    Function.Bijective (sphereDeltaMap (B := B) M e n m h) :=
-  ⟨injective_sphereDeltaMap M e n m h, surjective_sphereDeltaMap M e n m h⟩
 
 variable (B) in
 /-- **The cohomology of the Thom pair of a product bundle in degrees at least its rank.** Let
@@ -338,7 +236,26 @@ def prodThomPairSingularCohomologySphereEquiv (e : F ≃L[ℝ] EuclideanSpace �
     (n m : ℕ) (h : n + (d + 2) = m := by lia) :
     (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n ≃ₗ[k]
       (prodThomPair B F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m :=
-  LinearEquiv.ofBijective (sphereDeltaMap M e n m h) (bijective_sphereDeltaMap M e n m h)
+  LinearEquiv.ofBijective
+    (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m).hom ∘ₗ
+      (prodThomPairPuncturedSingularCohomologyEquiv M B e n (d + 1 + n)).toLinearMap ∘ₗ
+        LinearMap.inr k _ _) <| by
+    have := e.toHomeomorph.contractibleSpace
+    exact bijective_singularCohomologyδ_prodThomPair_comp_inr M
+      (v := e.symm (EuclideanSpace.single 0 1)) (by simp) (d + 1 + n) m _
+      (prodThomPairPuncturedSingularCohomologyEquiv M B e n (d + 1 + n))
+      (prodThomPairPuncturedSingularCohomologyEquiv_apply_zero M e n _ (add_comm _ _))
+
+/-- The equivalence `TauCeti.prodThomPairSingularCohomologySphereEquiv` is `c ↦ δ (D (0, c))` for
+the decomposition `D` of the cohomology of the punctured product bundle. -/
+private theorem prodThomPairSingularCohomologySphereEquiv_eq
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) (n m : ℕ) (h : n + (d + 2) = m)
+    (c : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+    prodThomPairSingularCohomologySphereEquiv M B e n m h c =
+      ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m)
+        ((prodThomPairPuncturedSingularCohomologyEquiv M B e n (d + 1 + n)) (0, c)) :=
+  -- The equivalence is this composite by definition.
+  (rfl)
 
 /-- The equivalence `TauCeti.prodThomPairSingularCohomologySphereEquiv` sends `c` to
 `δ (σ ⌣ π^* c)`. -/
@@ -351,8 +268,8 @@ theorem prodThomPairSingularCohomologySphereEquiv_apply
         ((prodThomPair B F).snd.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
           (d + 1) n (d + 1 + n) rfl (prodThomPairPuncturedClass k B e)
           (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) n c)) := by
-  rw [prodThomPairSingularCohomologySphereEquiv, LinearEquiv.ofBijective_apply,
-    sphereDeltaMap_apply, prodThomPairPuncturedSingularCohomologyEquiv_apply, map_zero, zero_add]
+  rw [prodThomPairSingularCohomologySphereEquiv_eq,
+    prodThomPairPuncturedSingularCohomologyEquiv_apply, map_zero, zero_add]
 
 /-- The equivalence `TauCeti.prodThomPairSingularCohomologySphereEquiv` sends the unit
 `1 ∈ H⁰(B; k)`, the class of the constant `0`-cocycle, to `δ σ`, where `σ` is
@@ -423,9 +340,8 @@ theorem prodThomPairSingularCohomologySphereEquiv_naturality
         (prodThomPairSingularCohomologySphereEquiv M B' e n m h c) =
       prodThomPairSingularCohomologySphereEquiv M B e n m h
         (TopCat.singularCohomologyMap (TopCat.ofHom g) n c) := by
-  rw [prodThomPairSingularCohomologySphereEquiv, prodThomPairSingularCohomologySphereEquiv,
-    LinearEquiv.ofBijective_apply, LinearEquiv.ofBijective_apply, sphereDeltaMap_apply,
-    sphereDeltaMap_apply, ← ConcreteCategory.comp_apply,
+  rw [prodThomPairSingularCohomologySphereEquiv_eq, prodThomPairSingularCohomologySphereEquiv_eq,
+    ← ConcreteCategory.comp_apply,
     TopPair.singularCohomologyδ_naturality (prodThomPairMap F g) (d + 1 + n) m,
     ConcreteCategory.comp_apply,
     prodThomPairPuncturedSingularCohomologyEquiv_naturality M g e n _ (add_comm _ _), map_zero]

@@ -29,6 +29,9 @@ disjoint union.
   product of cochain complexes.
 * `TauCeti.isLimitFanSingularCohomology`: singular cohomology takes a disjoint union to a product
   in every degree.
+* `TauCeti.singularCohomology_prod_ext_of_discreteTopology`: for a discrete space `X`, a class on
+  `X × Y` is determined by its restrictions to the slices `{x} × Y`, since `X × Y` is the disjoint
+  union of these slices.
 
 ## Sources
 
@@ -87,5 +90,49 @@ def isLimitFanSingularCohomology [Small.{v} ι] (n : ℕ) :
   isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
       (isLimitFanSingularCochainComplex X C R k M)
+
+section Discrete
+
+open MonoidalCategory
+
+variable {C : Type u} [Category.{w} C] [HasCoproducts.{w} C] [Abelian C] {R M : C}
+  {k : Type*} [Ring k] [Linear k C]
+
+/-- **Classes on a product with a discrete space are determined on the slices.** For a discrete
+space `X`, two classes of `Hⁿ(X × Y; R, M)` whose restrictions to every slice `{x} × Y`, along
+`y ↦ (x, y)`, agree are equal: `X × Y` is the disjoint union of these slices. -/
+theorem singularCohomology_prod_ext_of_discreteTopology {X Y : TopCat.{w}} [DiscreteTopology X]
+    (n : ℕ) {z z' : (X ⊗ Y).singularCohomology R k M n}
+    (h : ∀ x : X, TopCat.singularCohomologyMap
+      (CartesianMonoidalCategory.lift (TopCat.ofHom (ContinuousMap.const Y x)) (𝟙 Y)) n z =
+        TopCat.singularCohomologyMap
+          (CartesianMonoidalCategory.lift (TopCat.ofHom (ContinuousMap.const Y x)) (𝟙 Y)) n z') :
+    z = z' := by
+  let S : X → TopCat.{w} := fun _ ↦ Y
+  -- The identity of `X × Y` factors through the disjoint union `Σ x, Y` of the slices.
+  let r : TopCat.of (Σ x, S x) ⟶ X ⊗ Y :=
+    TopCat.ofHom ⟨fun p ↦ (p.1, p.2), continuous_sigma fun _ ↦ by fun_prop⟩
+  let q : X ⊗ Y ⟶ TopCat.of (Σ x, S x) :=
+    TopCat.ofHom ⟨fun p ↦ ⟨p.1, p.2⟩,
+      continuous_prod_of_discrete_left.2 fun _ ↦ continuous_sigmaMk (σ := fun x ↦ S x)⟩
+  -- Both composites below hold by `rfl`: `≫`, `TopCat.ofHom`, `sigmaι` and `lift` all unfold
+  -- to the underlying functions, so both sides agree pointwise by definition.
+  have hqr : q ≫ r = 𝟙 _ := TopCat.ext fun _ ↦ (rfl)
+  have hr : TopCat.singularCohomologyMap r n z = TopCat.singularCohomologyMap r n z' :=
+    Concrete.isLimit_ext _ (isLimitFanSingularCohomology S C R k M n) _ _ fun ⟨x⟩ ↦ by
+      have hx : sigmaι S x ≫ r =
+          CartesianMonoidalCategory.lift (TopCat.ofHom (ContinuousMap.const Y x)) (𝟙 Y) :=
+        TopCat.ext fun _ ↦ (rfl)
+      simp only [Fan.mk_pt, Fan.mk_π_app, ← ConcreteCategory.comp_apply,
+        ← TopCat.singularCohomologyMap_comp, hx]
+      exact h x
+  calc z = TopCat.singularCohomologyMap (q ≫ r) n z := by
+        rw [hqr, TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+    _ = TopCat.singularCohomologyMap (q ≫ r) n z' := by
+        rw [TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply,
+          ConcreteCategory.comp_apply, hr]
+    _ = z' := by rw [hqr, TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+
+end Discrete
 
 end TauCeti
