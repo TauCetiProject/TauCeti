@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Cube.Dual.Complex
-public import TauCeti.Algebra.Homology.UniversalCoefficient.CochainModule
+public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Module
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Resolution.Mirror
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -352,7 +352,7 @@ def khovanovHomologyMirrorIso :
     D.mirror.khovanovHomology hD' R i j ≅
       (linearHomComplex R (D.khovanovComplex hD R (-j))
         ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).homology i :=
-  (HomologicalComplex.homologyFunctor _ _ i).mapIso (D.khovanovComplexMirrorIso hD R j hD')
+  HomologicalComplex.homologyMapIso (D.khovanovComplexMirrorIso hD R j hD') i
 
 /-- **The mirror Kronecker pairing** `Khⁱʲ(D.mirror; R) →ₗ[R] Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))`:
 transports a mirror cohomology class along `khovanovHomologyMirrorIso` and evaluates the resulting
@@ -379,13 +379,18 @@ theorem khovanovMirrorKronecker_homologyπ_apply
         (((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom
           ((D.mirror.khovanovComplex hD' R j).iCycles i z))).hom
         ((D.khovanovComplex hD R (-j)).iCycles (-i) w) := by
-  change ((D.khovanovComplex hD R (-j)).homologyπ (-i) ≫
-      (D.khovanovComplex hD R (-j)).kronecker R (ModuleCat.of R R) i
-        ((HomologicalComplex.homologyMap (D.khovanovComplexMirrorIso hD R j hD').hom i)
-          ((D.mirror.khovanovComplex hD' R j).homologyπ i z))).hom w = _
-  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ,
-    CochainComplex.kronecker_homologyπ, ModuleCat.hom_comp, LinearMap.comp_apply,
-    HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
+  have h := congrArg (fun f ↦ f.hom w)
+    ((D.khovanovComplex hD R (-j)).kronecker_homologyπ (k := R) (Y := ModuleCat.of R R) i
+      (HomologicalComplex.cyclesMap (D.khovanovComplexMirrorIso hD R j hD').hom i z))
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ← HomologicalComplex.moduleCat_homologyMap_homologyπ,
+    ModuleCat.hom_comp, LinearMap.comp_apply,
+    HomologicalComplex.moduleCat_iCycles_cyclesMap_apply] at h
+  simp only [khovanovMirrorKronecker, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Iso.toLinearEquiv_apply, khovanovHomologyMirrorIso, HomologicalComplex.homologyMapIso_hom]
+  rw [ModuleCat.homLinearEquiv_apply]
+  -- `ModuleCat.homAddEquiv.toFun` is `ModuleCat.Hom.hom` by definition.
+  exact h
 
 /-- Over a self-injective commutative coefficient ring `R`, the mirror Kronecker pairing is an
 `R`-linear equivalence `Khⁱʲ(D.mirror; R) ≃ₗ[R] Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))`. -/

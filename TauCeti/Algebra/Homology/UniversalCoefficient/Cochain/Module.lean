@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
-public import Mathlib.LinearAlgebra.Dual.Basis
-public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.Dual.Defs
+public import TauCeti.Algebra.Category.ModuleCat.Ext.ScalarAction
 public import TauCeti.Algebra.Homology.PrincipalIdealRing
-public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain
-import Mathlib.Algebra.Module.PID
+public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
+import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
+import TauCeti.Algebra.Category.ModuleCat.Ext.PID
+import TauCeti.LinearAlgebra.Dual.PID
 
 /-!
 # Bimodule coefficients and PID specializations for the cochain universal coefficient sequence
@@ -27,12 +27,15 @@ a cochain complex `CochainComplex.bimoduleHomComplex` in `ModuleCat S`. Both map
 universal coefficient sequence and the splitting induced by `k`-linear cycle retractions preserve
 the `S`-action.
 
-Over a principal ideal domain `R` with coefficients in `R`, when `H¹⁻ⁱ(K)` is finitely generated,
-`Ext¹(H¹⁻ⁱ(K), R)` is torsion while `Module.Dual R (H⁻ⁱ(K))` is torsion-free, so the cochain
-universal coefficient sequence canonically identifies `Ext¹(H¹⁻ⁱ(K), R)` with the torsion submodule
-of `Hⁱ(Hom(K, R[0]))` (`CochainComplex.extEquivTorsion`) and `Module.Dual R (H⁻ⁱ(K))` with the
-torsion-free quotient (`CochainComplex.modTorsionEquivDual`), and equates `Module.finrank` when
-`H⁻ⁱ(K)` is also finitely generated (`CochainComplex.finrank_homology_linearHomComplex_single₀`).
+Over a principal ideal domain `R` with coefficients in `R`, `Ext¹(H¹⁻ⁱ(K), R)` is torsion whenever
+`H¹⁻ⁱ(K)` is finitely generated (`ModuleCat.isTorsion_ext_succ_of_finite`) while
+`Module.Dual R (H⁻ⁱ(K))` is torsion-free. When `K.cycles (1 - i)` is projective, `K.iCycles (1 - i)`
+splits, and `H¹⁻ⁱ(K)` is finitely generated, the cochain universal coefficient sequence canonically
+identifies `Ext¹(H¹⁻ⁱ(K), R)` with the torsion submodule of `Hⁱ(Hom(K, R[0]))`
+(`CochainComplex.extEquivTorsion`). When `K.iCycles (-i)` also splits, it canonically identifies
+`Module.Dual R (H⁻ⁱ(K))` with the torsion-free quotient (`CochainComplex.modTorsionEquivDual`), and
+equates `Module.finrank` when `H⁻ⁱ(K)` is also finitely generated
+(`CochainComplex.finrank_homology_linearHomComplex_single₀`).
 -/
 
 public section
@@ -44,60 +47,6 @@ open CochainComplex CochainComplex.HomComplex
 open scoped nonZeroDivisors
 
 universe u
-
-namespace TauCeti
-
-section ScalarAction
-
-variable (k : Type u) [CommRing k] (S : Type*) [Ring S]
-  (M : Type u) [AddCommGroup M] [Module k M] [Module S M] [SMulCommClass k S M]
-
-/-- Scalar multiplication by `s : S` on `M` as a `k`-linear endomorphism of `ModuleCat.of k M`. -/
-private def coeffScalarHom (s : S) : ModuleCat.of k M ⟶ ModuleCat.of k M :=
-  have := SMulCommClass.symm k S M
-  ModuleCat.ofHom (DistribSMul.toLinearMap k M s)
-
-/-- **The `S`-action on `Extⁿ(A, M)`** induced by functoriality of `Ext` in the target module. -/
-def extScalarAction (A : ModuleCat.{u} k) (n : ℕ) :
-    S →+* Module.End k (Ext.{u} A (ModuleCat.of k M) n) where
-  toFun s := Ext.postcompOfLinear (Ext.mk₀ (coeffScalarHom k S M s)) k A (add_zero n)
-  map_one' := by
-    have h1 : coeffScalarHom k S M 1 = 𝟙 _ := by ext m; exact one_smul S m
-    ext e
-    simp [h1]
-  map_mul' r s := by
-    have hmul : coeffScalarHom k S M (r * s) =
-        coeffScalarHom k S M s ≫ coeffScalarHom k S M r := by
-      ext m
-      exact mul_smul r s m
-    ext e
-    change e.comp (Ext.mk₀ (coeffScalarHom k S M (r * s))) (add_zero n) =
-      (e.comp (Ext.mk₀ (coeffScalarHom k S M s)) (add_zero n)).comp
-        (Ext.mk₀ (coeffScalarHom k S M r)) (add_zero n)
-    rw [hmul, ← Ext.mk₀_comp_mk₀, ← Ext.comp_assoc _ _ _ (add_zero n) (zero_add 0) (add_zero n)]
-  map_zero' := by
-    have h0 : coeffScalarHom k S M 0 = 0 := by ext m; exact zero_smul S m
-    ext e
-    simp [h0]
-  map_add' r s := by
-    have hadd : coeffScalarHom k S M (r + s) =
-        coeffScalarHom k S M r + coeffScalarHom k S M s := by
-      ext m
-      exact add_smul r s m
-    ext e
-    simp [hadd, Ext.mk₀_add]
-
-@[simp]
-lemma extScalarAction_apply (A : ModuleCat.{u} k) (n : ℕ) (s : S)
-    (e : Ext.{u} A (ModuleCat.of k M) n) :
-    have := SMulCommClass.symm k S M
-    extScalarAction k S M A n s e =
-      e.comp (Ext.mk₀ (ModuleCat.ofHom (DistribSMul.toLinearMap k M s))) (add_zero n) := by
-  simp [extScalarAction, coeffScalarHom]
-
-end ScalarAction
-
-end TauCeti
 
 namespace CochainComplex
 
@@ -179,10 +128,8 @@ lemma toSingleEquiv_linearHomComplexSingleScalarHom_f_apply (s : S) (i : ℤ)
           ((K.linearHomComplexSingleScalarHom S M s).f i).hom z)) =
       s • ModuleCat.Hom.hom (Cochain.toSingleEquiv (neg_add_cancel i) z) := by
   obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective z (-i) (neg_add_cancel i)
-  change ModuleCat.Hom.hom (Cochain.toSingleEquiv (neg_add_cancel i)
-    (((TauCeti.linearHomComplexPostcomp k K
-      ((singleFunctor _ 0).map (coeffScalarHom S M s))).f i).hom
-        (Cochain.toSingleMk f (neg_add_cancel i)))) = _
+  rw [linearHomComplexSingleScalarHom]
+  -- `linearHomComplexPostcomp_f_apply` is stated on the unfolded carrier `Cochain K _ i`.
   erw [TauCeti.linearHomComplexPostcomp_f_apply]
   rw [← Cochain.toSingleMk_postcomp, Cochain.toSingleEquiv_toSingleMk,
     Cochain.toSingleEquiv_toSingleMk]
@@ -213,8 +160,9 @@ def linearHomComplexSingleHomologyAction (i : ℤ) :
       have hc : coeffScalarHom (k := k) S M 0 = 0 := by ext m; exact zero_smul S m
       ext j z
       obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective z (-j) (neg_add_cancel j)
-      change (((TauCeti.linearHomComplexPostcomp k K
-        ((singleFunctor _ 0).map (coeffScalarHom S M 0))).f j).hom _) = 0
+      rw [linearHomComplexSingleScalarHom, HomologicalComplex.zero_f_apply, ModuleCat.hom_zero,
+        LinearMap.zero_apply]
+      -- `linearHomComplexPostcomp_f_apply` is stated on the unfolded carrier `Cochain K _ j`.
       erw [TauCeti.linearHomComplexPostcomp_f_apply]
       rw [← Cochain.toSingleMk_postcomp, hc, comp_zero, Cochain.toSingleMk_zero]
     ext x
@@ -230,6 +178,7 @@ def linearHomComplexSingleHomologyAction (i : ℤ) :
       obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective z (-j) (neg_add_cancel j)
       simp only [linearHomComplexSingleScalarHom, HomologicalComplex.add_f_apply,
         ModuleCat.hom_add, LinearMap.add_apply]
+      -- `linearHomComplexPostcomp_f_apply` is stated on the unfolded carrier `Cochain K _ j`.
       erw [TauCeti.linearHomComplexPostcomp_f_apply, TauCeti.linearHomComplexPostcomp_f_apply,
         TauCeti.linearHomComplexPostcomp_f_apply]
       rw [← Cochain.toSingleMk_postcomp, ← Cochain.toSingleMk_postcomp,
@@ -356,67 +305,7 @@ end BimoduleCoefficients
 section PrincipalIdealDomain
 
 variable {R : Type u} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
-
-/-- Over a principal ideal domain, `Ext^{n + 1}(A, Y)` is a torsion `R`-module whenever `A` is
-finitely generated: the torsion-free quotient `A ⧸ torsion R A` is finite free, so restricting to
-`torsion R A` is injective on `Ext^{n + 1}` and `torsion R A` is killed by a single nonzero
-scalar. -/
-private theorem isTorsion_ext_succ_of_finite (A Y : ModuleCat.{u} R) [Module.Finite R A] (n : ℕ) :
-    Module.IsTorsion R (Ext.{u} A Y (n + 1)) := by
-  let T := Submodule.torsion R A
-  let Q := A ⧸ T
-  have : Module.Free R Q := Module.free_of_finite_type_torsion_free'
-  have : Projective (ModuleCat.of R Q) :=
-    ModuleCat.projective_of_free (Module.Free.chooseBasis R Q)
-  let S : ShortComplex (ModuleCat.{u} R) :=
-    ShortComplex.mk (ModuleCat.ofHom T.subtype) (ModuleCat.ofHom T.mkQ) (by ext; simp)
-  have hS : S.ShortExact :=
-    { exact := (ShortComplex.moduleCat_exact_iff _).2 fun x hx ↦
-        ⟨⟨x, (Submodule.Quotient.mk_eq_zero T).1 hx⟩, rfl⟩
-      mono_f := (ModuleCat.mono_iff_injective _).2 T.injective_subtype
-      epi_g := (ModuleCat.epi_iff_surjective _).2 T.mkQ_surjective }
-  obtain ⟨r, hr_ann, hr_mem⟩ :=
-    Submodule.annihilator_top_inter_nonZeroDivisors (Submodule.torsion_isTorsion (R := R) (M := A))
-  have hrT : r • (𝟙 (ModuleCat.of R T) : ModuleCat.of R T ⟶ ModuleCat.of R T) = 0 := by
-    ext x
-    exact congrArg Subtype.val (Submodule.mem_annihilator.1 hr_ann x Submodule.mem_top)
-  have hrSf : r • S.f = 0 := by
-    rw [← Category.id_comp S.f, ← Linear.smul_comp, hrT, zero_comp]
-  intro e
-  refine ⟨⟨r, hr_mem⟩, ?_⟩
-  have hex := TauCeti.exact_precompOfLinear R hS Y (n + 1)
-  have hzero : Ext.precompOfLinear (Ext.mk₀ S.f) R Y (zero_add (n + 1)) (r • e) = 0 := by
-    change (Ext.mk₀ S.f).comp (r • e) (zero_add (n + 1)) = 0
-    rw [Ext.comp_smul, ← Ext.smul_comp, ← Ext.mk₀_smul, hrSf, Ext.mk₀_zero, Ext.zero_comp]
-  obtain ⟨q, hq⟩ := (hex (r • e)).1 hzero
-  rw [Ext.eq_zero_of_projective q, map_zero] at hq
-  exact hq.symm
-
-/-- Over a principal ideal domain, a finitely generated module and its `R`-dual have the same
-`finrank`. -/
-private theorem finrank_dual_eq_of_finite (M : Type*) [AddCommGroup M] [Module R M]
-    [Module.Finite R M] :
-    Module.finrank R (Module.Dual R M) = Module.finrank R M := by
-  let T := Submodule.torsion R M
-  let Q := M ⧸ T
-  have : Module.Free R Q := Module.free_of_finite_type_torsion_free'
-  have hker : ∀ φ : Module.Dual R M, T ≤ LinearMap.ker φ := fun φ x ⟨r, hr⟩ ↦ by
-    rw [LinearMap.mem_ker]
-    have h0 : (r : R) • φ x = 0 := by
-      rw [← map_smul, ← Submonoid.smul_def, hr, map_zero]
-    exact (smul_eq_zero.1 h0).resolve_left (nonZeroDivisors.coe_ne_zero r)
-  let eDual : Module.Dual R M ≃ₗ[R] Module.Dual R Q :=
-    { toFun φ := T.liftQ φ (hker φ)
-      invFun ψ := ψ.comp T.mkQ
-      left_inv φ := LinearMap.ext fun _ ↦ rfl
-      right_inv ψ := LinearMap.ext fun q ↦ Submodule.Quotient.induction_on T q fun _ ↦ rfl
-      map_add' φ₁ φ₂ := LinearMap.ext fun q ↦ Submodule.Quotient.induction_on T q fun _ ↦ rfl
-      map_smul' r φ := LinearMap.ext fun q ↦ Submodule.Quotient.induction_on T q fun _ ↦ rfl }
-  exact eDual.finrank_eq.trans
-    ((Module.Free.chooseBasis R Q).toDualEquiv.symm.finrank_eq.trans
-      (finrank_quotient_eq_of_le_torsion le_rfl))
-
-variable (K : CochainComplex (ModuleCat.{u} R) ℤ)
+  (K : CochainComplex (ModuleCat.{u} R) ℤ)
 
 /-- Over a principal ideal domain, when `K.cycles (1 - i)` is projective, `K.iCycles (1 - i)`
 splits, and `H¹⁻ⁱ(K)` is finitely generated, the image of `extToHomology` in `Hⁱ(Hom(K, R[0]))` is
@@ -428,7 +317,7 @@ theorem range_extToHomology_eq_torsion (i : ℤ)
       Submodule.torsion R
         ((linearHomComplex R K ((singleFunctor (ModuleCat.{u} R) 0).obj
           (ModuleCat.of R R))).homology i) := by
-  have htor := isTorsion_ext_succ_of_finite (K.homology (1 - i)) (ModuleCat.of R R) 0
+  have htor := ModuleCat.isTorsion_ext_succ_of_finite (K.homology (1 - i)) (ModuleCat.of R R) 0
   have hex := exact_extToHomology_kronecker.{u} (K := K) (k := R) (Y := ModuleCat.of R R) i
   refine le_antisymm ?_ ?_
   · rintro _ ⟨e, rfl⟩
@@ -521,7 +410,8 @@ theorem finrank_homology_linearHomComplex_single₀ (i : ℤ)
           (ModuleCat.of R R))).homology i) =
       Module.finrank R (K.homology (-i)) :=
   (finrank_quotient_eq_of_le_torsion le_rfl).symm.trans
-    ((K.modTorsionEquivDual i).finrank_eq.trans (finrank_dual_eq_of_finite (K.homology (-i))))
+    ((K.modTorsionEquivDual i).finrank_eq.trans
+      (TauCeti.Module.dual_finrank_eq_of_isPrincipalIdealRing R (K.homology (-i))))
 
 end PrincipalIdealDomain
 
