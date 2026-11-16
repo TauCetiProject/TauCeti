@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
@@ -51,6 +52,8 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
   Fourier transform by `c`.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
+* `Real.conj_fourier_apply`, `Real.conj_fourierInv_apply`: conjugating the Fourier transform of
+  `v` gives the Fourier transform of `ξ ↦ conj (v (-ξ))`.
 * `TauCeti.exp_inner_mul_I_eq_fourierChar`: the exponential `exp(i ⟪y, ξ⟫)` is the Fourier
   character at the frequency `ξ / 2π`.
 -/
@@ -209,6 +212,28 @@ theorem fourier_smul_const [CompleteSpace F] (f : E → ℂ) (v : F) (w : E) :
     𝓕 (fun z ↦ f z • v) w = 𝓕 f w • v := by
   simp only [Real.fourier_eq, ← smul_assoc]
   exact integral_smul_const _ v
+
+/-! ### Complex conjugation -/
+
+open ComplexConjugate in
+/-- **The Fourier transform of a conjugate.** Conjugating the Fourier integral of `v` gives the
+Fourier integral of `ξ ↦ conj (v (-ξ))`. -/
+theorem _root_.Real.conj_fourier_apply (v : E → ℂ) (x : E) :
+    conj (𝓕 v x) = 𝓕 (fun ξ ↦ conj (v (-ξ))) x := by
+  rw [Real.fourier_eq', Real.fourier_eq', ← integral_conj, ← integral_neg_eq_self]
+  congr 1
+  ext ξ
+  simp [← Complex.exp_conj, inner_neg_left, map_ofNat]
+
+open ComplexConjugate in
+/-- **The inverse Fourier transform of a conjugate.** Conjugating the inverse Fourier integral
+of `v` gives the inverse Fourier integral of `ξ ↦ conj (v (-ξ))`. -/
+theorem _root_.Real.conj_fourierInv_apply (v : E → ℂ) (x : E) :
+    conj (𝓕⁻ v x) = 𝓕⁻ (fun ξ ↦ conj (v (-ξ))) x := by
+  rw [Real.fourierInv_eq', Real.fourierInv_eq', ← integral_conj, ← integral_neg_eq_self]
+  congr 1
+  ext ξ
+  simp [← Complex.exp_conj, inner_neg_left, map_ofNat]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The exponential `exp(i ⟪y, ξ⟫)` is the Fourier character `𝐞 ⟪y, ξ / 2π⟫`. -/
