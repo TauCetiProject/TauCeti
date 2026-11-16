@@ -28,7 +28,8 @@ the uniformizer up to multiplication by a unit of the residue field.
 
 The explicit principal-power equivalence below follows the construction of Mathlib's
 `Ideal.quotEquivPowQuotPowSucc`, retaining a specified generator in order to expose the
-change-of-uniformizer formula.
+change-of-uniformizer formula; `principalUnitGradedSuccEquivResidueFieldOfUniformizer` and its
+companion lemmas adapt `TauCeti/NumberTheory/LocalField/UnitFiltration/Uniformizer.lean`.
 
 ## Main results
 
@@ -201,10 +202,7 @@ theorem principalUnitGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ)
         (principalUnitGradedSuccEquivResidueFieldOfUniformizer n π hπ
           (Additive.ofMul (QuotientGroup.mk u))) =
       Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩ := by
-  rw [principalUnitGradedSuccEquivResidueFieldOfUniformizer]
-  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
-    IsLocalRing.principalUnitGradedSuccEquivMaximalIdealGraded_mk]
-  exact LinearEquiv.apply_symm_apply _ _
+  simp [principalUnitGradedSuccEquivResidueFieldOfUniformizer, LinearEquiv.coe_toAddEquiv]
 
 /-- If `u - 1 = y * π ^ (n + 1)`, then the uniformizer coordinate of the class of `u` is the
 residue of `y`. -/
@@ -226,7 +224,9 @@ theorem principalUnitGradedSuccEquivResidueFieldOfUniformizer_change (n : ℕ)
     (x : Additive (IsLocalRing.PrincipalUnitGraded R (n + 1))) :
     principalUnitGradedSuccEquivResidueFieldOfUniformizer n π hπ x =
       residue R (uniformizerChangeUnit π π' hπ hπ' : R) ^ (n + 1) *
-        principalUnitGradedSuccEquivResidueFieldOfUniformizer n π' hπ' x :=
-  residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change π π' hπ hπ' (n + 1) _
+        principalUnitGradedSuccEquivResidueFieldOfUniformizer n π' hπ' x := by
+  simp only [principalUnitGradedSuccEquivResidueFieldOfUniformizer, AddEquiv.trans_apply,
+    LinearEquiv.coe_toAddEquiv]
+  exact residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change π π' hπ hπ' (n + 1) _
 
 end TauCeti

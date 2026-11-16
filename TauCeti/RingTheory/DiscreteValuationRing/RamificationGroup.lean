@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Solvable
 public import Mathlib.GroupTheory.Sylow
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
+import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.GroupTheory.PGroup
 
 /-!
@@ -39,25 +39,29 @@ positive depth `n + 1`, composing with the uniformizer coordinate
 `ramificationGroupGradedToResidueField G S n π hπ : Additive (G_{n+1} / G_{n+2}) →+ κ`, together
 with its change-of-uniformizer and conjugation formulas.
 
+Even without any base ring or separability assumption on `κ`, the kernel of `tameCharacter G S`
+moves every element of `𝔪` by an element of `𝔪 ^ 2`; combining this with the general local-ring
+filtration theory in `TauCeti/RingTheory/LocalRing/RamificationGroup.lean` yields solvability of
+`G_i` (`i ≥ 0`), cyclicity of `G_0` in residue characteristic zero or when the residue
+characteristic does not divide `#G_0`, and the divisibility `#(G_0 / G_1) ∣ #κ - 1`.
+
 When `S` is an algebra over a local ring `R` fixed by `G` such that `algebraMap R S` is local and
-the residue extension `κ / ResidueField R` is separable, membership of an inertia element in
+the residue extension `κ / ResidueField R` is separable, membership of an element of `G_i` in
 `G_{i+1}` is decided at a uniformizer
 (`TauCeti.IsLocalRing.mem_ramificationGroup_succ_iff_of_irreducible`),
-so all of these graded maps are **injective**. From those embeddings follow the structure theorems
-for inertia and wild inertia without residue finiteness:
+so all of the graded maps are **injective**. From those embeddings follow the tame/wild
+splitting theorems without residue finiteness:
 
-* every graded piece `G_i / G_{i+1}` (`i ≥ 0`) is commutative, and when `G` acts faithfully with
-  finite `G_0`, every `G_i` (`i ≥ 0`), in particular inertia `G_0`, is solvable;
+* every graded piece `G_i / G_{i+1}` (`i ≥ 0`) is commutative;
 * when `G_0 / G_1` is finite, it is cyclic of order not divisible by the residue characteristic;
-* in positive residue characteristic `p`, every positive-depth quotient `G_{n+1} / G_{n+2}` has
-  exponent dividing `p`, and for a faithful action with finite `G_0`, every `G_i` (`i ≥ 1`) is a
-  `p`-group and `G_1` is the unique normal Sylow `p`-subgroup of `G_0`;
-* in residue characteristic zero, for a faithful action with finite `G_0`, `G_i = ⊥` for all
-  `i ≥ 1` (in particular `G_1 = ⊥`) and `G_0` itself is cyclic.
+* in positive residue characteristic `p`, for a faithful action with finite `G_0`, wild inertia
+  `G_1` is the unique normal Sylow `p`-subgroup of `G_0`, and `G_1 = ⊥` if and only if `p ∤ #G_0`.
 
-The specialization to nonarchimedean local fields, where `κ` is finite and Teichmüller lifts
-replace the separable-residue hypothesis, is
-`TauCeti/NumberTheory/LocalField/UnitFiltration/RamificationGroup.lean`.
+The positive-depth coordinate, conjugation equivariance, and wild-inertia Sylow constructions here
+adapt the nonarchimedean local-field formalizations in
+`TauCeti/NumberTheory/LocalField/UnitFiltration/RamificationGroup.lean` and
+`TauCeti/NumberTheory/LocalField/UnitFiltration/Conjugation.lean` (where `κ` is finite and
+Teichmüller lifts replace the separable-residue hypothesis).
 
 ## Main definitions
 
@@ -81,6 +85,11 @@ replace the separable-residue hypothesis, is
   `TauCeti.IsDiscreteValuationRing.tameCharacterGraded_ramificationGroupGradedConj`, and
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField_conj`: conjugation
   equivariance of the tame character and positive-depth residue coordinates.
+* `TauCeti.IsDiscreteValuationRing.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`,
+  `TauCeti.IsDiscreteValuationRing.isSolvable_ramificationGroup`,
+  `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroup_zero_of_charZero`, and
+  `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroup_zero_of_not_dvd_card`: divisibility,
+  solvability, and cyclicity of inertia without a base ring or separability assumption.
 * `TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToPrincipalUnitGraded`,
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGraded_injective`,
   `TauCeti.IsDiscreteValuationRing.tameCharacterGraded_injective`, and
@@ -88,17 +97,10 @@ replace the separable-residue hypothesis, is
   the kernels and injectivity of the graded maps over a separable residue extension.
 * `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero` and
   `TauCeti.IsDiscreteValuationRing.not_dvd_index_ramificationGroup_one`: `G_0 / G_1` is cyclic of
-  order prime to the residue characteristic.
-* `TauCeti.IsDiscreteValuationRing.pow_char_eq_one_of_ramificationGroupGraded_natCast_succ`,
-  `TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroup`, and
-  `TauCeti.IsDiscreteValuationRing.eq_ramificationGroupOneSylow` for the positive-characteristic
-  wild-inertia structure theorems.
-* `TauCeti.IsDiscreteValuationRing.ramificationGroup_eq_bot_of_charZero`,
-  `TauCeti.IsDiscreteValuationRing.ramificationGroup_one_eq_bot_of_charZero`, and
-  `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroup_zero_of_charZero`: vanishing of wild
-  inertia and cyclicity of `G_0` in residue characteristic zero, unified with positive
-  characteristic in `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`.
-* `TauCeti.IsDiscreteValuationRing.isSolvable_ramificationGroup`: solvability of `G_i` for `i ≥ 0`.
+  order prime to the residue characteristic over a separable residue extension.
+* `TauCeti.IsDiscreteValuationRing.eq_ramificationGroupOneSylow` and
+  `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: wild inertia `G_1` as
+  the unique normal Sylow `p`-subgroup of `G_0`, and the unified criterion for `G_1 = ⊥`.
 
 ## References
 
@@ -115,32 +117,6 @@ open IsLocalRing TauCeti.IsLocalRing
 
 namespace TauCeti.IsDiscreteValuationRing
 
-section UnitRatio
-
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [MulSemiringAction G S]
-
-/-- Any ring automorphism in `G` carries an irreducible element of `S` to an irreducible element. -/
-theorem irreducible_smul {ϖ : S} (hϖ : Irreducible ϖ) (σ : G) : Irreducible (σ • ϖ) :=
-  hϖ.map (MulSemiringAction.toRingAut G S σ).toMulEquiv
-
-variable [IsLocalRing S]
-
-/-- Over any commutative local ring `S`, an automorphism `σ ∈ G_i` (`i : ℕ`) moves every unit
-`u : Sˣ` by a factor in the next principal-unit group `1 + 𝔪 ^ (i + 1)`. -/
-theorem unitsMap_mul_inv_mem_principalUnitGroup_pow {i : ℕ} {σ : G}
-    (hσ : σ ∈ ramificationGroup G S (i : ℤ)) (u : Sˣ) :
-    Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ ∈
-      (maximalIdeal S ^ (i + 1)).principalUnitGroup := by
-  rw [Ideal.mem_principalUnitGroup]
-  have hrew : ((Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ : Sˣ) : S) - 1 =
-      (σ • (u : S) - (u : S)) * ↑u⁻¹ := by
-    simp only [Units.val_mul, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      MulSemiringAction.toRingHom_apply, sub_mul, u.mul_inv]
-  rw [hrew]
-  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
-
-end UnitRatio
-
 section UniformizerRatio
 
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S]
@@ -149,15 +125,17 @@ variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S]
 /-- The unique unit `u : Sˣ` satisfying `ϖ * u = σ • ϖ`, for a uniformizer `ϖ` of `S` and `σ : G`.
 In the fraction field of `S` this unit represents `σ(ϖ) / ϖ`. -/
 def uniformizerRatio (ϖ : S) (hϖ : Irreducible ϖ) (σ : G) : Sˣ :=
-  TauCeti.uniformizerChangeUnit ϖ (σ • ϖ) hϖ (irreducible_smul hϖ σ)
+  TauCeti.uniformizerChangeUnit ϖ (σ • ϖ) hϖ (hϖ.map (MulSemiringAction.toRingAut G S σ).toMulEquiv)
 
 /-- Multiplying `ϖ` on the right by `uniformizerRatio ϖ hϖ σ` gives `σ • ϖ`. -/
 @[simp]
 theorem mul_uniformizerRatio (ϖ : S) (hϖ : Irreducible ϖ) (σ : G) :
     ϖ * (uniformizerRatio ϖ hϖ σ : S) = σ • ϖ :=
-  TauCeti.mul_uniformizerChangeUnit ϖ (σ • ϖ) hϖ (irreducible_smul hϖ σ)
+  TauCeti.mul_uniformizerChangeUnit ϖ (σ • ϖ) hϖ
+    (hϖ.map (MulSemiringAction.toRingAut G S σ).toMulEquiv)
 
 /-- Multiplying `ϖ` on the left by `uniformizerRatio ϖ hϖ σ` gives `σ • ϖ`. -/
+@[simp]
 theorem uniformizerRatio_mul_self (ϖ : S) (hϖ : Irreducible ϖ) (σ : G) :
     (uniformizerRatio ϖ hϖ σ : S) * ϖ = σ • ϖ := by
   rw [mul_comm, mul_uniformizerRatio]
@@ -180,9 +158,8 @@ theorem uniformizerRatio_mul (ϖ : S) (hϖ : Irreducible ϖ) (σ τ : G) :
     uniformizerRatio ϖ hϖ (σ * τ) =
       uniformizerRatio ϖ hϖ σ *
         Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom (uniformizerRatio ϖ hϖ τ) := by
-  rw [uniformizerRatio_eq_iff, Units.val_mul, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, MulSemiringAction.toRingHom_apply, ← mul_assoc, mul_uniformizerRatio,
-    ← smul_mul', mul_uniformizerRatio, mul_smul]
+  rw [uniformizerRatio_eq_iff]
+  simp [← mul_assoc, ← smul_mul', mul_smul]
 
 /-- Replacing `ϖ` by `ϖ' = ϖ * a` multiplies `uniformizerRatio` by the coboundary
 `(σ • a) * a⁻¹`. -/
@@ -204,11 +181,11 @@ theorem uniformizerRatio_change (ϖ ϖ' : S) (hϖ : Irreducible ϖ) (hϖ' : Irre
     _ = ϖ' * ↑(uniformizerRatio ϖ hϖ σ *
           (Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom a * a⁻¹)) := by
       rw [← ha]
-      simp only [Units.val_mul, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-        MulSemiringAction.toRingHom_apply]
+      simp [-mul_uniformizerRatio, -uniformizerRatio_mul_self, -Units.mul_inv]
       ring
 
-/-- The uniformizer ratio lies in `1 + 𝔪 ^ i` if and only if `σ` moves `ϖ` into `𝔪 ^ (i + 1)`. -/
+/-- The uniformizer ratio lies in `1 + 𝔪 ^ i` if and only if `σ` moves `ϖ` by an element of
+`𝔪 ^ (i + 1)`. -/
 theorem uniformizerRatio_mem_principalUnitGroup_pow_iff (i : ℕ) (ϖ : S) (hϖ : Irreducible ϖ)
     (σ : G) :
     uniformizerRatio ϖ hϖ σ ∈ (maximalIdeal S ^ i).principalUnitGroup ↔
@@ -261,23 +238,22 @@ private def ramificationGroupToPrincipalUnitGradedAux (i : ℕ) (ϖ : S) (hϖ : 
       simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_principalUnitUniformizerRatio,
         uniformizerRatio_mul, mul_inv_rev, inv_inv]
       rw [mul_assoc, inv_mul_cancel_left, mul_comm]
-    rw [← Subgroup.inv_mem_iff]
-    change (((principalUnitUniformizerRatio i ϖ hϖ (σ * τ))⁻¹ *
-        (principalUnitUniformizerRatio i ϖ hϖ σ *
-          principalUnitUniformizerRatio i ϖ hϖ τ) :
-        (maximalIdeal S ^ i).principalUnitGroup) : Sˣ)⁻¹ ∈
-      (maximalIdeal S ^ (i + 1)).principalUnitGroup
-    rw [hmul, inv_inv]
-    exact unitsMap_mul_inv_mem_principalUnitGroup_pow σ.2 (uniformizerRatio ϖ hϖ (τ : G))
+    rw [hmul, Subgroup.inv_mem_iff]
+    exact unitsMap_mul_inv_mem_principalUnitGroup_pow_succ σ.2 (uniformizerRatio ϖ hϖ (τ : G))
+
+private theorem ramificationGroupToPrincipalUnitGradedAux_apply (i : ℕ) (ϖ : S)
+    (hϖ : Irreducible ϖ) (σ : ramificationGroup G S (i : ℤ)) :
+    ramificationGroupToPrincipalUnitGradedAux i ϖ hϖ σ =
+      QuotientGroup.mk (principalUnitUniformizerRatio i ϖ hϖ σ) :=
+  congrFun (MonoidHom.mk'_apply _ _) σ
 
 private theorem ramificationGroupToPrincipalUnitGradedAux_eq (i : ℕ) {ϖ ϖ' : S}
     (hϖ : Irreducible ϖ) (hϖ' : Irreducible ϖ') :
     ramificationGroupToPrincipalUnitGradedAux (G := G) i ϖ hϖ =
       ramificationGroupToPrincipalUnitGradedAux (G := G) i ϖ' hϖ' := by
   ext σ
-  change QuotientGroup.mk (principalUnitUniformizerRatio i ϖ hϖ σ) =
-    QuotientGroup.mk (principalUnitUniformizerRatio i ϖ' hϖ' σ)
-  rw [QuotientGroup.eq, Subgroup.mem_subgroupOf]
+  rw [ramificationGroupToPrincipalUnitGradedAux_apply,
+    ramificationGroupToPrincipalUnitGradedAux_apply, QuotientGroup.eq, Subgroup.mem_subgroupOf]
   set a := TauCeti.uniformizerChangeUnit ϖ ϖ' hϖ hϖ'
   have hchange :
       (((principalUnitUniformizerRatio i ϖ hϖ σ)⁻¹ *
@@ -288,7 +264,7 @@ private theorem ramificationGroupToPrincipalUnitGradedAux_eq (i : ℕ) {ϖ ϖ' :
       coe_principalUnitUniformizerRatio, uniformizerRatio_change ϖ ϖ' hϖ hϖ' (σ : G),
       inv_mul_cancel_left]
   rw [hchange]
-  exact unitsMap_mul_inv_mem_principalUnitGroup_pow σ.2 a
+  exact unitsMap_mul_inv_mem_principalUnitGroup_pow_succ σ.2 a
 
 variable (G S) in
 /-- The canonical homomorphism `G_i →* (1 + 𝔪 ^ i) ⧸ (1 + 𝔪 ^ (i + 1))` sending `σ ∈ G_i` to the
@@ -307,11 +283,11 @@ theorem ramificationGroupToPrincipalUnitGraded_apply_of_irreducible (i : ℕ) {�
     ramificationGroupToPrincipalUnitGraded G S i σ =
       QuotientGroup.mk (principalUnitUniformizerRatio i ϖ hϖ σ) := by
   rw [ramificationGroupToPrincipalUnitGraded,
-    ramificationGroupToPrincipalUnitGradedAux_eq i _ hϖ]
-  rfl
+    ramificationGroupToPrincipalUnitGradedAux_eq i _ hϖ,
+    ramificationGroupToPrincipalUnitGradedAux_apply]
 
 /-- An element `σ ∈ G_i` lies in the kernel of `ramificationGroupToPrincipalUnitGraded G S i` if
-and only if it moves a chosen uniformizer `ϖ` into `𝔪 ^ (i + 2)`. -/
+and only if it moves a chosen uniformizer `ϖ` by an element of `𝔪 ^ (i + 2)`. -/
 theorem mem_ker_ramificationGroupToPrincipalUnitGraded_iff_of_irreducible {i : ℕ} {ϖ : S}
     (hϖ : Irreducible ϖ) {σ : ramificationGroup G S (i : ℤ)} :
     σ ∈ (ramificationGroupToPrincipalUnitGraded G S i).ker ↔
@@ -366,12 +342,20 @@ def tameCharacter : ramificationGroup G S 0 →* (ResidueField S)ˣ :=
   (principalUnitGradedZeroEquivResidueFieldUnits S).toMonoidHom.comp
     (ramificationGroupToPrincipalUnitGraded G S 0)
 
+variable (G S) in
+/-- Defining factorization of `tameCharacter` through `PrincipalUnitGraded S 0`. -/
+theorem tameCharacter_def :
+    tameCharacter G S =
+      (principalUnitGradedZeroEquivResidueFieldUnits S).toMonoidHom.comp
+        (ramificationGroupToPrincipalUnitGraded G S 0) :=
+  (rfl)
+
 /-- At any uniformizer `ϖ`, the tame character reduces `uniformizerRatio ϖ hϖ σ` modulo `𝔪`. -/
 theorem tameCharacter_apply_of_irreducible {ϖ : S} (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G S 0) :
     tameCharacter G S σ =
       Units.map (residue S).toMonoidHom (uniformizerRatio ϖ hϖ (σ : G)) := by
-  rw [tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+  rw [tameCharacter_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ramificationGroupToPrincipalUnitGraded_apply_of_irreducible 0 hϖ,
     principalUnitGradedZeroEquivResidueFieldUnits_mk, coe_principalUnitUniformizerRatio]
 
@@ -380,29 +364,27 @@ residue-field element `residue S y`. -/
 theorem coe_tameCharacter_of_mul_eq_smul {ϖ y : S} (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G S 0) (hy : ϖ * y = (σ : G) • ϖ) :
     (tameCharacter G S σ : ResidueField S) = residue S y := by
-  rw [tameCharacter_apply_of_irreducible hϖ, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass]
-  congr 1
-  exact mul_left_cancel₀ hϖ.ne_zero ((mul_uniformizerRatio ϖ hϖ (σ : G)).trans hy.symm)
+  rw [tameCharacter_apply_of_irreducible hϖ]
+  simpa using congrArg (residue S)
+    (mul_left_cancel₀ hϖ.ne_zero ((mul_uniformizerRatio ϖ hϖ (σ : G)).trans hy.symm))
 
 /-- An element `σ ∈ G_0` lies in the kernel of `tameCharacter` if and only if it moves a chosen
-uniformizer `ϖ` into `𝔪 ^ 2`. -/
+uniformizer `ϖ` by an element of `𝔪 ^ 2`. -/
 theorem mem_ker_tameCharacter_iff_of_irreducible {ϖ : S} (hϖ : Irreducible ϖ)
     {σ : ramificationGroup G S 0} :
     σ ∈ (tameCharacter G S).ker ↔ (σ : G) • ϖ - ϖ ∈ maximalIdeal S ^ 2 := by
-  rw [MonoidHom.mem_ker, tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    map_eq_one_iff _ (principalUnitGradedZeroEquivResidueFieldUnits S).injective,
-    ← MonoidHom.mem_ker, mem_ker_ramificationGroupToPrincipalUnitGraded_iff_of_irreducible hϖ]
+  rw [tameCharacter_def, MulEquiv.toMonoidHom_eq_coe, MonoidHom.ker_mulEquiv_comp,
+    mem_ker_ramificationGroupToPrincipalUnitGraded_iff_of_irreducible hϖ, zero_add]
 
 variable (G S) in
 /-- Wild inertia `G_1` always lies in the kernel of `tameCharacter`. -/
 theorem ramificationGroup_one_subgroupOf_le_ker_tameCharacter :
     (ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0) ≤
       (tameCharacter G S).ker := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
   intro σ hσ
-  rw [mem_ker_tameCharacter_iff_of_irreducible hϖ]
-  exact (mem_ramificationGroup_natCast_iff (n := 1)).mp (Subgroup.mem_subgroupOf.mp hσ) ϖ
+  rw [tameCharacter_def, MulEquiv.toMonoidHom_eq_coe, MonoidHom.ker_mulEquiv_comp]
+  exact ramificationGroup_succ_subgroupOf_le_ker_ramificationGroupToPrincipalUnitGraded G S 0
+    (by simpa only [Subgroup.mem_subgroupOf, Nat.cast_zero, zero_add] using hσ)
 
 variable (G S) in
 /-- The canonical **graded tame character** `G_0 / G_1 →* (ResidueField S)ˣ`. Over a separable
@@ -410,6 +392,14 @@ residue extension it is injective (`tameCharacterGraded_injective`). -/
 def tameCharacterGraded : RamificationGroupGraded G S 0 →* (ResidueField S)ˣ :=
   (principalUnitGradedZeroEquivResidueFieldUnits S).toMonoidHom.comp
     (ramificationGroupGradedToPrincipalUnitGraded G S 0)
+
+variable (G S) in
+/-- Defining factorization of `tameCharacterGraded` through `PrincipalUnitGraded S 0`. -/
+theorem tameCharacterGraded_def :
+    tameCharacterGraded G S =
+      (principalUnitGradedZeroEquivResidueFieldUnits S).toMonoidHom.comp
+        (ramificationGroupGradedToPrincipalUnitGraded G S 0) :=
+  (rfl)
 
 @[simp]
 theorem tameCharacterGraded_mk (σ : ramificationGroup G S 0) :
@@ -419,25 +409,19 @@ theorem tameCharacterGraded_mk (σ : ramificationGroup G S 0) :
 private def ramificationGroupGradedSuccCastEquiv (n : ℕ) :
     RamificationGroupGraded G S ((n : ℤ) + 1) ≃*
       RamificationGroupGraded G S ((n + 1 : ℕ) : ℤ) :=
-  let e : ramificationGroup G S ((n : ℤ) + 1) ≃*
-      ramificationGroup G S ((n + 1 : ℕ) : ℤ) :=
-    { toFun σ := ⟨(σ : G), by simpa only [Nat.cast_add, Nat.cast_one] using σ.2⟩
-      invFun σ := ⟨(σ : G), by simpa only [Nat.cast_add, Nat.cast_one] using σ.2⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_mul' _ _ := rfl }
-  QuotientGroup.congr
-    ((ramificationGroup G S ((n : ℤ) + 1 + 1)).subgroupOf (ramificationGroup G S ((n : ℤ) + 1)))
-    ((ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1)).subgroupOf
-      (ramificationGroup G S ((n + 1 : ℕ) : ℤ)))
-    e <| by
-      ext x
-      simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
-      refine ⟨fun ⟨y, hy, hyx⟩ ↦ ?_, fun hx ↦ ⟨e.symm x, ?_, e.apply_symm_apply x⟩⟩
-      · have hyeq : (y : G) = (x : G) := congrArg Subtype.val hyx
-        simpa only [Nat.cast_add, Nat.cast_one, ← hyeq] using hy
-      · simpa only [e, MulEquiv.symm_mk, MulEquiv.coe_mk, Equiv.coe_fn_symm_mk,
-          Nat.cast_add, Nat.cast_one] using hx
+  QuotientGroup.equivQuotientSubgroupOfOfEq
+    (congrArg (ramificationGroup G S) (by push_cast; rfl))
+    (congrArg (ramificationGroup G S) (by push_cast; rfl))
+
+private theorem ramificationGroupGradedSuccCastEquiv_mk (n : ℕ)
+    (τ : ramificationGroup G S ((n : ℤ) + 1)) :
+    ramificationGroupGradedSuccCastEquiv (G := G) (S := S) n
+        (QuotientGroup.mk τ : RamificationGroupGraded G S ((n : ℤ) + 1)) =
+      (QuotientGroup.mk ⟨(τ : G), by simpa only [Nat.cast_add, Nat.cast_one] using τ.2⟩ :
+        RamificationGroupGraded G S ((n + 1 : ℕ) : ℤ)) := by
+  simp only [ramificationGroupGradedSuccCastEquiv, QuotientGroup.equivQuotientSubgroupOfOfEq,
+    MonoidHom.toMulEquiv_apply, QuotientGroup.quotientMapSubgroupOfOfLe_mk]
+  exact congrArg QuotientGroup.mk (Subtype.ext (Subgroup.coe_inclusion _ τ))
 
 variable (G S) in
 /-- The positive-depth graded homomorphism `Additive (G_{n+1} / G_{n+2}) →+ ResidueField S` in the
@@ -457,12 +441,11 @@ theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) (π : S) (hπ :
         (Additive.ofMul
           (QuotientGroup.mk (principalUnitUniformizerRatio (n + 1) π hπ
             ⟨(τ : G), by simpa only [Nat.cast_add, Nat.cast_one] using τ.2⟩))) := by
-  rw [ramificationGroupGradedToResidueField, AddMonoidHom.comp_apply,
+  simp only [ramificationGroupGradedToResidueField, AddMonoidHom.comp_apply,
     AddEquiv.coe_toAddMonoidHom, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, ramificationGroupGradedSuccCastEquiv,
-    QuotientGroup.congr_mk,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  rw [ramificationGroupGradedSuccCastEquiv_mk,
     ramificationGroupGradedToPrincipalUnitGraded_mk_of_irreducible (n + 1) hπ]
-  rfl
 
 /-- If `(τ : G) • π - π = y * π ^ (n + 2)` for `τ ∈ G_{n+1}`, then the positive-depth residue
 coordinate of `τ` with respect to `π` is `residue S y`. -/
@@ -483,8 +466,9 @@ theorem ramificationGroupGradedToResidueField_of_smul_sub_eq (n : ℕ) (π : S) 
     _ = y * π ^ (n + 2) := hmove
     _ = π * (y * π ^ (n + 1)) := by ring
 
-/-- Replacing the uniformizer `π` by `π' = π * a` multiplies the positive-depth residue coordinate
-on `G_{n+1} / G_{n+2}` by `residue S a ^ (n + 1)`. -/
+/-- When `π' = π * a`, the positive-depth residue coordinate on `G_{n+1} / G_{n+2}` relative to
+`π` equals `residue S a ^ (n + 1)` times the coordinate relative to `π'` (so replacing `π` by
+`π'` divides the coordinate by `residue S a ^ (n + 1)`). -/
 theorem ramificationGroupGradedToResidueField_change (n : ℕ) (π π' : S) (hπ : Irreducible π)
     (hπ' : Irreducible π') (τ : RamificationGroupGraded G S ((n : ℤ) + 1)) :
     ramificationGroupGradedToResidueField G S n π hπ (Additive.ofMul τ) =
@@ -509,7 +493,8 @@ theorem tameCharacter_conj (g : G) (σ : ramificationGroup G S 0) :
   have hu : π * u = (σ : G) • π := mul_uniformizerRatio π hπ (σ : G)
   have hgu : (g • π) * (g • u) = (MulAut.conjNormal g σ : G) • (g • π) := by
     rw [MulAut.conjNormal_apply, mul_smul, mul_smul, inv_smul_smul, ← hu, smul_mul']
-  rw [coe_tameCharacter_of_mul_eq_smul (irreducible_smul hπ g) (MulAut.conjNormal g σ) hgu,
+  rw [coe_tameCharacter_of_mul_eq_smul (hπ.map (MulSemiringAction.toRingAut G S g).toMulEquiv)
+      (MulAut.conjNormal g σ) hgu,
     coe_tameCharacter_of_mul_eq_smul hπ σ hu, ResidueField.residue_smul]
 
 /-- If `g ∈ G` acts on the residue field as the `q`-th power map, then
@@ -549,7 +534,7 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : S) (hπ : Irr
   induction τ using QuotientGroup.induction_on with
   | _ τ =>
     let π' : S := (σ : G)⁻¹ • π
-    have hπ' : Irreducible π' := irreducible_smul hπ (σ : G)⁻¹
+    have hπ' : Irreducible π' := hπ.map (MulSemiringAction.toRingAut G S (σ : G)⁻¹).toMulEquiv
     have hτ' : (τ : G) ∈ ramificationGroup G S ((n + 1 : ℕ) : ℤ) := by
       simpa only [Nat.cast_add, Nat.cast_one] using τ.2
     have hmove : (τ : G) • π' - π' ∈ maximalIdeal S ^ (n + 2) :=
@@ -588,6 +573,211 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : S) (hπ : Irr
 
 end UniformizerRatio
 
+section InertiaStructure
+
+variable (G S : Type*) [Group G] [CommRing S] [IsDomain S]
+  [_root_.IsDiscreteValuationRing S] [MulSemiringAction G S]
+
+/-! ### Divisibility, solvability, and cyclicity of inertia without separability hypotheses -/
+
+/-- The cardinality of `G_0 / G_1` divides `Nat.card (ResidueField S) - 1` (in particular, when the
+residue field is finite of order `q`, `#(G_0 / G_1) ∣ q - 1`). -/
+theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
+    Nat.card (RamificationGroupGraded G S 0) ∣ Nat.card (ResidueField S) - 1 := by
+  by_cases hfin : Finite (ResidueField S)
+  · cases nonempty_fintype (ResidueField S)
+    have hker :
+        (ramificationGroupToPrincipalUnitGraded G S 0).ker =
+          (ramificationGroup G S ((0 : ℤ) + 1)).subgroupOf (ramificationGroup G S 0) := by
+      obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+      refine le_antisymm (fun σ hσ ↦ ?_)
+        (ramificationGroup_succ_subgroupOf_le_ker_ramificationGroupToPrincipalUnitGraded G S 0)
+      rw [mem_ker_ramificationGroupToPrincipalUnitGraded_iff_of_irreducible hϖ, zero_add] at hσ
+      rw [Subgroup.mem_subgroupOf, zero_add, ← Nat.cast_one, mem_ramificationGroup_natCast_iff]
+      intro x
+      set q := Fintype.card (ResidueField S)
+      have hq_mem : (q : S) ∈ maximalIdeal S := by
+        rw [← residue_eq_zero_iff, map_natCast, FiniteField.cast_card_eq_zero]
+      set d : S := (σ : G) • x - x
+      have hd : d ∈ maximalIdeal S := mem_ramificationGroup_zero_iff.mp σ.2 x
+      have hpow : ((σ : G) • x) ^ q - x ^ q ∈ maximalIdeal S ^ 2 := by
+        have hdx : (σ : G) • x = d + x := by simp [d]
+        have hexp : (d + x) ^ q - x ^ q =
+            ∑ k ∈ Finset.range q, d ^ (k + 1) * x ^ (q - (k + 1)) * (q.choose (k + 1) : S) := by
+          rw [add_pow, Finset.sum_range_succ']
+          simp
+        rw [hdx, hexp]
+        refine Submodule.sum_mem _ fun k _ ↦ ?_
+        cases k with
+        | zero =>
+          simp only [zero_add, pow_one, Nat.choose_one_right]
+          have hrew : d * x ^ (q - 1) * (q : S) = ((q : S) * d) * x ^ (q - 1) := by ring
+          rw [hrew]
+          exact Ideal.mul_mem_right _ _ (by rw [sq]; exact Ideal.mul_mem_mul hq_mem hd)
+        | succ k =>
+          have hrew :
+              d ^ (k + 1 + 1) * x ^ (q - (k + 1 + 1)) * (q.choose (k + 1 + 1) : S) =
+                d ^ 2 * (d ^ k * x ^ (q - (k + 1 + 1)) * (q.choose (k + 1 + 1) : S)) := by ring
+          rw [hrew]
+          exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hd 2)
+      set z : S := x ^ q - x
+      have hz : z ∈ maximalIdeal S := by
+        rw [← residue_eq_zero_iff, map_sub, map_pow, FiniteField.pow_card, sub_self]
+      have hσ0 : (σ : G) ∈ ramificationGroup G S (0 : ℕ) := by
+        simpa only [Nat.cast_zero] using σ.2
+      have hϖmove : ∀ π ∈ ({ϖ} : Set S), (σ : G) • π - π ∈ maximalIdeal S ^ (0 + 2) := by
+        intro π hπ
+        rw [Set.mem_singleton_iff.mp hπ, zero_add]
+        exact hσ
+      have hmovez : (σ : G) • z - z ∈ maximalIdeal S ^ 2 :=
+        smul_sub_mem_maximalIdeal_pow_succ_of_mem_maximalIdeal hϖ.maximalIdeal_eq.symm hσ0 hϖmove hz
+      have hdiff : d = (((σ : G) • x) ^ q - x ^ q) - ((σ : G) • z - z) := by
+        simp only [d, z, smul_sub, smul_pow']
+        ring
+      rw [hdiff]
+      exact sub_mem hpow hmovez
+    have hinj : Function.Injective (tameCharacterGraded G S) :=
+      (principalUnitGradedZeroEquivResidueFieldUnits S).injective.comp
+        ((QuotientGroup.injective_lift_iff _ _ _).2 hker.symm)
+    rw [← Nat.card_units]
+    exact Subgroup.card_dvd_of_injective _ hinj
+  · have : Infinite (ResidueField S) := not_finite_iff_infinite.mp hfin
+    rw [Nat.card_eq_zero_of_infinite (α := ResidueField S), Nat.zero_sub]
+    exact dvd_zero _
+
+private theorem ramificationGroup_ker_tameCharacter_zero_eq_top :
+    ramificationGroup (tameCharacter G S).ker S 0 = ⊤ := by
+  rw [eq_top_iff]
+  rintro σ -
+  rw [mem_ramificationGroup_zero_iff]
+  intro x
+  rw [Subgroup.smul_def, Subgroup.smul_def]
+  exact mem_ramificationGroup_zero_iff.mp σ.1.2 x
+
+private theorem smul_sub_mem_of_mem_ramificationGroup_ker_tameCharacter_zero :
+    ∀ σ ∈ ramificationGroup (tameCharacter G S).ker S 0,
+      ∀ y ∈ maximalIdeal S ^ ((0 : ℤ) + 1).toNat,
+        σ • y - y ∈ maximalIdeal S ^ ((0 : ℤ) + 1 + 1).toNat := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  intro σ _ y hy
+  have h1 : ((0 : ℤ) + 1).toNat = 1 := rfl
+  have h2 : ((0 : ℤ) + 1 + 1).toNat = 2 := rfl
+  rw [h1, pow_one] at hy
+  rw [h2, Subgroup.smul_def, Subgroup.smul_def]
+  have hσ0 : ((σ : ramificationGroup G S 0) : G) ∈ ramificationGroup G S (0 : ℕ) := by
+    simpa only [Nat.cast_zero] using σ.1.2
+  have hϖmove : ∀ π ∈ ({ϖ} : Set S),
+      ((σ : ramificationGroup G S 0) : G) • π - π ∈ maximalIdeal S ^ (0 + 2) := by
+    intro π hπ
+    rw [Set.mem_singleton_iff.mp hπ, zero_add]
+    exact (mem_ker_tameCharacter_iff_of_irreducible hϖ).mp σ.2
+  exact smul_sub_mem_maximalIdeal_pow_succ_of_mem_maximalIdeal
+    hϖ.maximalIdeal_eq.symm hσ0 hϖmove hy
+
+/-- **Inertia is solvable** whenever `G` acts faithfully on a discrete valuation ring `S` with
+finite inertia group `G_0` (with no separability assumption on the residue field). -/
+theorem isSolvable_ramificationGroup_zero [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
+    Group.IsSolvable (ramificationGroup G S 0) := by
+  let K := (tameCharacter G S).ker
+  have hK1 : Group.IsSolvable (ramificationGroup K S 1) :=
+    isSolvable_ramificationGroup_of_pos K S one_pos
+  let H1 := (ramificationGroup K S ((0 : ℤ) + 1)).subgroupOf (ramificationGroup K S 0)
+  have : Group.IsSolvable H1 := by
+    let e1 : H1 ≃* ramificationGroup K S 1 :=
+      (Subgroup.subgroupOfEquivOfLe
+        (ramificationGroup_antitone K S (by omega : (0 : ℤ) ≤ (0 : ℤ) + 1))).trans
+        (MulEquiv.subgroupCongr (congrArg (ramificationGroup K S) (zero_add (1 : ℤ))))
+    exact Group.isSolvable_of_isSolvable_injective (f := e1.toMonoidHom) e1.injective
+  have : Group.IsSolvable (RamificationGroupGraded K S 0) :=
+    Group.isSolvable_of_comm (mul_comm_ramificationGroupGraded_of_smul_sub_mem le_rfl
+      (smul_sub_mem_of_mem_ramificationGroup_ker_tameCharacter_zero G S))
+  have hK0 : Group.IsSolvable (ramificationGroup K S 0) :=
+    Group.isSolvable_of_subgroup_quotient H1
+  let eK : K ≃* ramificationGroup K S 0 :=
+    Subgroup.topEquiv.symm.trans
+      (MulEquiv.subgroupCongr (ramificationGroup_ker_tameCharacter_zero_eq_top G S).symm)
+  have : Group.IsSolvable K :=
+    Group.isSolvable_of_isSolvable_injective (f := eK.toMonoidHom) eK.injective
+  have : Group.IsSolvable (ramificationGroup G S 0 ⧸ K) := by
+    let eq := QuotientGroup.quotientKerEquivRange (tameCharacter G S)
+    exact Group.isSolvable_of_isSolvable_injective (f := eq.toMonoidHom) eq.injective
+  exact Group.isSolvable_of_subgroup_quotient K
+
+/-- **Solvability of the ramification groups.** For a faithful action on a discrete valuation ring
+`S` with finite inertia group `G_0`, every `G_i` with `0 ≤ i` — in particular `G_0` itself — is
+solvable (Serre, *Local Fields*, Chapter IV, §2, Corollary 4). -/
+theorem isSolvable_ramificationGroup [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
+    {i : ℤ} (hi : 0 ≤ i) : Group.IsSolvable (ramificationGroup G S i) := by
+  have := isSolvable_ramificationGroup_zero G S
+  exact Group.isSolvable_of_isSolvable_injective
+    (f := Subgroup.inclusion (ramificationGroup_antitone G S hi))
+    (Subgroup.inclusion_injective _)
+
+/-- **Inertia is cyclic in residue characteristic zero**, for a faithful action on a discrete
+valuation ring `S` with finite `G_0` (with no separability assumption on the residue field). -/
+theorem isCyclic_ramificationGroup_zero_of_charZero [CharZero (ResidueField S)] [FaithfulSMul G S]
+    [Finite (ramificationGroup G S 0)] :
+    IsCyclic (ramificationGroup G S 0) := by
+  let K := (tameCharacter G S).ker
+  have hK1 : ramificationGroup K S 1 = ⊥ := ramificationGroup_one_eq_bot_of_charZero K S
+  have : Subsingleton (RamificationGroupGraded K S 0) :=
+    subsingleton_ramificationGroupGraded_of_charZero_of_smul_sub_mem le_rfl
+      (smul_sub_mem_of_mem_ramificationGroup_ker_tameCharacter_zero G S)
+  have hK0 : ramificationGroup K S 0 = ⊥ := by
+    rw [eq_bot_iff]
+    intro σ hσ
+    have hq : (QuotientGroup.mk ⟨σ, hσ⟩ : RamificationGroupGraded K S 0) = 1 :=
+      Subsingleton.elim _ _
+    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, zero_add, hK1] at hq
+    exact hq
+  have htop : (⊤ : Subgroup K) = ⊥ := by
+    rw [← ramificationGroup_ker_tameCharacter_zero_eq_top G S, hK0]
+  have hker : (tameCharacter G S).ker = ⊥ := by
+    rw [eq_bot_iff]
+    intro x hx
+    have hk : (⟨x, hx⟩ : K) ∈ (⊤ : Subgroup K) := trivial
+    rw [htop, Subgroup.mem_bot] at hk
+    exact congrArg Subtype.val hk
+  exact isCyclic_of_injective_ringHom
+    ((Units.coeHom (ResidueField S)).comp (tameCharacter G S))
+    (Units.val_injective.comp ((MonoidHom.ker_eq_bot_iff _).mp hker))
+
+/-- When the residue characteristic `p` does not divide `#G_0`, inertia `G_0` itself is cyclic
+(with no separability assumption on the residue field). -/
+theorem isCyclic_ramificationGroup_zero_of_not_dvd_card (p : ℕ) [CharP (ResidueField S) p]
+    [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
+    (hndvd : ¬ p ∣ Nat.card (ramificationGroup G S 0)) :
+    IsCyclic (ramificationGroup G S 0) := by
+  rcases CharP.char_is_prime_or_zero (ResidueField S) p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    let K := (tameCharacter G S).ker
+    have hK1 : IsPGroup p (ramificationGroup K S 1) :=
+      isPGroup_ramificationGroup K S p one_pos
+    have hK1' : IsPGroup p
+        ((ramificationGroup K S ((0 : ℤ) + 1)).subgroupOf (ramificationGroup K S 0)) := by
+      rw [zero_add]
+      exact hK1.comap_subtype
+    have hK0 : IsPGroup p (ramificationGroup K S 0) :=
+      IsPGroup.of_subgroup_of_quotient hK1'
+        (isPGroup_ramificationGroupGraded_of_smul_sub_mem p le_rfl
+          (smul_sub_mem_of_mem_ramificationGroup_ker_tameCharacter_zero G S))
+    let eK : K ≃* ramificationGroup K S 0 :=
+      Subgroup.topEquiv.symm.trans
+        (MulEquiv.subgroupCongr (ramificationGroup_ker_tameCharacter_zero_eq_top G S).symm)
+    have hKp : IsPGroup p K := hK0.of_equiv eK.symm
+    have htopCard : ¬ p ∣ Nat.card (⊤ : Subgroup (ramificationGroup G S 0)) := by
+      rwa [Nat.card_congr Subgroup.topEquiv.toEquiv]
+    have hker : (tameCharacter G S).ker = ⊥ := by
+      rw [← top_inf_eq (tameCharacter G S).ker]
+      exact (TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup htopCard hKp).eq_bot
+    exact isCyclic_of_injective_ringHom
+      ((Units.coeHom (ResidueField S)).comp (tameCharacter G S))
+      (Units.val_injective.comp ((MonoidHom.ker_eq_bot_iff _).mp hker))
+  · have : CharZero (ResidueField S) := CharP.charP_to_charZero (ResidueField S)
+    exact isCyclic_ramificationGroup_zero_of_charZero G S
+
+end InertiaStructure
+
 section SeparableResidue
 
 variable (R G S : Type*) [Group G] [CommRing R] [IsLocalRing R] [CommRing S] [IsDomain S]
@@ -623,12 +813,10 @@ theorem ramificationGroupGradedToPrincipalUnitGraded_injective (i : ℕ) :
 theorem ker_tameCharacter :
     (tameCharacter G S).ker =
       (ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0) := by
+  rw [tameCharacter_def, MulEquiv.toMonoidHom_eq_coe, MonoidHom.ker_mulEquiv_comp,
+    ker_ramificationGroupToPrincipalUnitGraded R G S 0]
   ext σ
-  rw [MonoidHom.mem_ker, tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    map_eq_one_iff _ (principalUnitGradedZeroEquivResidueFieldUnits S).injective,
-    ← MonoidHom.mem_ker, ker_ramificationGroupToPrincipalUnitGraded R G S 0,
-    Subgroup.mem_subgroupOf, Subgroup.mem_subgroupOf]
-  rfl
+  simp only [Subgroup.mem_subgroupOf, Nat.cast_zero, zero_add]
 
 /-- **Injectivity of the graded tame character.** Over a separable residue extension,
 `G_0 / G_1` embeds into `(ResidueField S)ˣ` via `tameCharacterGraded`. -/
@@ -654,68 +842,25 @@ theorem ramificationGroupGradedConj_zero (σ : ramificationGroup G S 0)
   apply tameCharacterGraded_injective R G S
   induction τ using QuotientGroup.induction_on with
   | _ τ =>
-    rw [ramificationGroupGradedConj_mk, tameCharacterGraded_mk, tameCharacterGraded_mk,
-      MulAut.conjNormal_val, MulAut.conj_apply, map_mul, map_mul, map_inv,
-      mul_comm (tameCharacter G S σ) (tameCharacter G S τ), mul_assoc, mul_inv_cancel, mul_one]
+    rw [ramificationGroupGradedConj_mk, tameCharacterGraded_mk, tameCharacterGraded_mk]
+    simp [MulAut.conjNormal_val, MulAut.conj_apply]
 
-/-! ### Commutativity of the graded pieces and solvability of inertia -/
+/-! ### Commutativity of the graded pieces and structure of `G_0 / G_1` -/
 
-/-- Every graded piece `G_i / G_{i+1}` (`0 ≤ i`) is commutative, since it embeds into a
-commutative principal-unit graded piece. -/
+/-- Every graded piece `G_i / G_{i+1}` (`0 ≤ i`) is commutative: positive-depth pieces commute over
+any local ring (`TauCeti.IsLocalRing.mul_comm_ramificationGroupGraded_of_pos`), and at depth `0`
+over a separable residue extension `G_0 / G_1` embeds into `(ResidueField S)ˣ`. -/
 theorem mul_comm_ramificationGroupGraded {i : ℤ} (hi : 0 ≤ i)
     (x y : RamificationGroupGraded G S i) : x * y = y * x := by
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hi
-  apply ramificationGroupGradedToPrincipalUnitGraded_injective R G S n
-  rw [map_mul, map_mul]
-  generalize ramificationGroupGradedToPrincipalUnitGraded G S n x = a,
-    ramificationGroupGradedToPrincipalUnitGraded G S n y = b
-  induction a using QuotientGroup.induction_on with | _ u =>
-  induction b using QuotientGroup.induction_on with | _ v =>
-  rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, mul_comm]
+  rcases hi.eq_or_lt with rfl | hpos
+  · apply tameCharacterGraded_injective R G S
+    rw [map_mul, map_mul, mul_comm]
+  · exact mul_comm_ramificationGroupGraded_of_pos G S hpos x y
 
 /-- Bundled `IsMulCommutative` form of `mul_comm_ramificationGroupGraded`. -/
 theorem isMulCommutative_ramificationGroupGraded {i : ℤ} (hi : 0 ≤ i) :
     IsMulCommutative (RamificationGroupGraded G S i) :=
   ⟨⟨mul_comm_ramificationGroupGraded R G S hi⟩⟩
-
-/-- **Solvability of the ramification groups.** For a faithful action with finite inertia group
-`G_0` and separable residue extension, every `G_i` with `0 ≤ i` — in particular `G_0` itself — is
-solvable (Serre, *Local Fields*, Chapter IV, §2, Corollary 4). -/
-theorem isSolvable_ramificationGroup [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
-    {i : ℤ} (hi : 0 ≤ i) : Group.IsSolvable (ramificationGroup G S i) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
-  have hi' : (i.toNat : ℤ) = i := Int.toNat_of_nonneg hi
-  rw [← hi']
-  suffices ∀ d j : ℕ, N ≤ (j : ℤ) + (d : ℤ) →
-      Group.IsSolvable (ramificationGroup G S (j : ℤ)) from
-    this (N - i).toNat i.toNat (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    rw [hN (j : ℤ) (by omega)]
-    infer_instance
-  | succ d ih =>
-    intro j hj
-    have hcast : ((j + 1 : ℕ) : ℤ) = (j : ℤ) + 1 := by push_cast; rfl
-    have hsucc : Group.IsSolvable (ramificationGroup G S ((j : ℤ) + 1)) :=
-      hcast ▸ ih (j + 1) (by omega)
-    let H := (ramificationGroup G S ((j : ℤ) + 1)).subgroupOf (ramificationGroup G S (j : ℤ))
-    let e := Subgroup.subgroupOfEquivOfLe
-      (ramificationGroup_antitone G S (by omega : (j : ℤ) ≤ (j : ℤ) + 1))
-    have : Group.IsSolvable H :=
-      Group.isSolvable_of_isSolvable_injective (f := e.toMonoidHom) e.injective
-    have : Group.IsSolvable (RamificationGroupGraded G S (j : ℤ)) :=
-      Group.isSolvable_of_comm (mul_comm_ramificationGroupGraded R G S (Nat.cast_nonneg j))
-    exact Group.isSolvable_of_subgroup_quotient H
-
-/-- **Inertia is solvable** whenever `G` acts faithfully with finite `G_0` and separable residue
-extension. -/
-theorem isSolvable_ramificationGroup_zero [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
-    Group.IsSolvable (ramificationGroup G S 0) :=
-  isSolvable_ramificationGroup R G S le_rfl
-
-/-! ### The tame quotient `G_0 / G_1` -/
 
 /-- **The tame quotient is cyclic.** Over a separable residue extension, any finite tame quotient
 `G_0 / G_1` embeds into the multiplicative group of the field `ResidueField S`, hence is cyclic.
@@ -726,7 +871,8 @@ theorem isCyclic_ramificationGroupGraded_zero [Finite (RamificationGroupGraded G
     ((Units.coeHom (ResidueField S)).comp (tameCharacterGraded G S))
     (Units.val_injective.comp (tameCharacterGraded_injective R G S))
 
-/-- Whenever wild inertia `G_1` is trivial and `G_0` is finite, inertia `G_0` itself is cyclic. -/
+/-- Over a separable residue extension, whenever wild inertia `G_1` is trivial and `G_0` is finite,
+inertia `G_0` itself is cyclic. -/
 theorem isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot
     [Finite (ramificationGroup G S 0)] (h1 : ramificationGroup G S 1 = ⊥) :
     IsCyclic (ramificationGroup G S 0) := by
@@ -742,24 +888,15 @@ characteristic `0` (`p = 0`). -/
 theorem not_dvd_card_ramificationGroupGraded_zero (p : ℕ) [CharP (ResidueField S) p]
     [Finite (RamificationGroupGraded G S 0)] :
     ¬ p ∣ Nat.card (RamificationGroupGraded G S 0) := by
-  rcases CharP.char_is_prime_or_zero (ResidueField S) p with hp | rfl
-  · have : Fact p.Prime := ⟨hp⟩
-    intro hdvd
-    obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' p hdvd
-    have hxp : (tameCharacterGraded G S x : ResidueField S) ^ p = 1 := by
-      rw [← Units.val_pow_eq_pow_val, ← map_pow, ← hx, pow_orderOf_eq_one, map_one, Units.val_one]
-    have hsub : ((tameCharacterGraded G S x : ResidueField S) - 1) ^ p = 0 := by
-      rw [sub_pow_char, hxp, one_pow, sub_self]
-    have hx1 : x = 1 := by
-      apply tameCharacterGraded_injective R G S
-      rw [map_one]
-      apply Units.ext
-      rw [Units.val_one]
-      exact sub_eq_zero.mp ((pow_eq_zero_iff hp.ne_zero).mp hsub)
-    rw [hx1, orderOf_one] at hx
-    exact hp.ne_one hx.symm
-  · rw [zero_dvd_iff]
-    exact Nat.card_pos.ne'
+  cases nonempty_fintype (RamificationGroupGraded G S 0)
+  let e : RamificationGroupGraded G S 0 ≃* (tameCharacterGraded G S).range :=
+    MonoidHom.ofInjective (tameCharacterGraded_injective R G S)
+  let _ : Fintype (tameCharacterGraded G S).range := Fintype.ofEquiv _ e.toEquiv
+  have hcard : Nat.card (RamificationGroupGraded G S 0) =
+      Fintype.card (tameCharacterGraded G S).range := by
+    rw [Nat.card_congr e.toEquiv, Nat.card_eq_fintype_card]
+  rw [hcard, ← CharP.cast_eq_zero_iff (ResidueField S) p]
+  exact FiniteField.card_cast_subgroup_card_ne_zero (tameCharacterGraded G S).range
 
 /-- The index `[G_0 : G_1]` is not divisible by the residue characteristic `p`. -/
 theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP (ResidueField S) p]
@@ -771,54 +908,7 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP (ResidueField S) p]
   rw [h]
   exact not_dvd_card_ramificationGroupGraded_zero R G S p
 
-/-- The cardinality of `G_0 / G_1` divides `Nat.card (ResidueField S) - 1` (in particular, when the
-residue field is finite of order `q`, `#(G_0 / G_1) ∣ q - 1`). -/
-theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
-    Nat.card (RamificationGroupGraded G S 0) ∣ Nat.card (ResidueField S) - 1 := by
-  rw [← Nat.card_units]
-  exact Subgroup.card_dvd_of_injective _ (tameCharacterGraded_injective R G S)
-
-/-! ### Positive residue characteristic: wild inertia as the Sylow `p`-subgroup of `G_0` -/
-
-/-- In residue characteristic `p`, every positive-depth quotient `G_{n+1} / G_{n+2}` has exponent
-dividing `p`: it embeds into the additive group of `ResidueField S`. -/
-theorem pow_char_eq_one_of_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP (ResidueField S) p]
-    (n : ℕ) (x : RamificationGroupGraded G S ((n : ℤ) + 1)) : x ^ p = 1 := by
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  apply Additive.ofMul.injective
-  apply ramificationGroupGradedToResidueField_injective R G S n π hπ
-  rw [ofMul_pow, map_nsmul, nsmul_eq_mul, CharP.cast_eq_zero, zero_mul, ofMul_one, map_zero]
-
-/-- In residue characteristic `p`, every positive-depth graded piece `G_{n+1} / G_{n+2}` is a
-`p`-group, with no finiteness assumption on `G` or `ResidueField S`. -/
-theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP (ResidueField S) p] (n : ℕ) :
-    IsPGroup p (RamificationGroupGraded G S ((n : ℤ) + 1)) :=
-  fun x ↦ ⟨1, by rw [pow_one, pow_char_eq_one_of_ramificationGroupGraded_natCast_succ R G S p n x]⟩
-
-/-- **Positive-depth ramification groups are `p`-groups** for the residue characteristic `p`,
-whenever `G` acts faithfully with finite `G_0` and separable residue extension; in particular wild
-inertia `G_1` is a `p`-group. -/
-theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p] [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] {i : ℤ} (hi : 0 < i) :
-    IsPGroup p (ramificationGroup G S i) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
-  obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = (j : ℤ) + 1 := ⟨(i - 1).toNat, by omega⟩
-  suffices ∀ d j : ℕ, N ≤ (j : ℤ) + 1 + (d : ℤ) →
-      IsPGroup p (ramificationGroup G S ((j : ℤ) + 1)) from
-    this N.toNat j (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    rw [hN ((j : ℤ) + 1) (by omega)]
-    exact IsPGroup.of_bot
-  | succ d ih =>
-    intro j hj
-    have hcast : ((j + 1 : ℕ) : ℤ) + 1 = (j : ℤ) + 1 + 1 := by push_cast; ring
-    have hsucc : IsPGroup p (ramificationGroup G S ((j : ℤ) + 1 + 1)) :=
-      hcast ▸ ih (j + 1) (by omega)
-    exact IsPGroup.of_subgroup_of_quotient hsucc.comap_subtype
-      (isPGroup_ramificationGroupGraded_natCast_succ R G S p j)
+/-! ### Wild inertia as the Sylow `p`-subgroup of `G_0` and unified tame-inertia criterion -/
 
 /-- **Wild inertia is the Sylow `p`-subgroup of inertia.** In positive residue characteristic `p`,
 for a faithful action with finite `G_0` and separable residue extension, `G_1` viewed inside `G_0`
@@ -826,7 +916,11 @@ is a Sylow `p`-subgroup of `G_0` (Serre, *Local Fields*, Chapter IV, §2, Coroll
 def ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p]
     [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
     Sylow p (ramificationGroup G S 0) :=
-  ((isPGroup_ramificationGroup R G S p (i := 1) one_pos).comap_subtype).toSylow
+  have : Finite (ramificationGroup G S 1) :=
+    Finite.of_injective
+      (Subgroup.inclusion (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1)))
+      (Subgroup.inclusion_injective _)
+  ((isPGroup_ramificationGroup G S p (i := 1) one_pos).comap_subtype).toSylow
     (not_dvd_index_ramificationGroup_one R G S p)
 
 @[simp]
@@ -840,10 +934,8 @@ theorem ramificationGroupOneSylow_coe (p : ℕ) [Fact p.Prime] [CharP (ResidueFi
 theorem ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p]
     [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
     (ramificationGroupOneSylow R G S p : Subgroup (ramificationGroup G S 0)).Normal := by
-  rw [ramificationGroupOneSylow_coe, Subgroup.normal_subgroupOf_iff_le_normalizer
-    (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1))]
-  rw [Subgroup.normalizer_eq_top_iff.mpr inferInstance]
-  exact le_top
+  rw [ramificationGroupOneSylow_coe]
+  infer_instance
 
 /-- `ramificationGroupOneSylow` is the unique Sylow `p`-subgroup of `G_0`. -/
 theorem eq_ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p]
@@ -864,74 +956,6 @@ theorem natCard_ramificationGroup_one (p : ℕ) [Fact p.Prime] [CharP (ResidueFi
   exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
     (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
 
-/-! ### Residue characteristic zero and unified tame-inertia criteria -/
-
-/-- In residue characteristic zero, any finite positive-depth graded piece `G_{n+1} / G_{n+2}` is
-trivial, because the additive group of `ResidueField S` is torsion-free. -/
-theorem subsingleton_ramificationGroupGraded_natCast_succ_of_charZero [CharZero (ResidueField S)]
-    (n : ℕ) [Finite (RamificationGroupGraded G S ((n : ℤ) + 1))] :
-    Subsingleton (RamificationGroupGraded G S ((n : ℤ) + 1)) := by
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  refine subsingleton_of_forall_eq 1 fun x ↦ ?_
-  apply Additive.ofMul.injective
-  apply ramificationGroupGradedToResidueField_injective R G S n π hπ
-  have hord : (orderOf x : ResidueField S) ≠ 0 := Nat.cast_ne_zero.mpr (orderOf_pos x).ne'
-  have hmul :
-      (orderOf x : ResidueField S) *
-        ramificationGroupGradedToResidueField G S n π hπ (Additive.ofMul x) = 0 := by
-    rw [← nsmul_eq_mul, ← map_nsmul, ← ofMul_pow, pow_orderOf_eq_one, ofMul_one, map_zero]
-  rw [ofMul_one, map_zero]
-  exact (mul_eq_zero.mp hmul).resolve_left hord
-
-/-- **Vanishing of positive-depth ramification groups in residue characteristic zero.** For a
-faithful action with finite `G_0` and separable residue extension of characteristic zero,
-`G_i = ⊥` for every `0 < i` (Serre, *Local Fields*, Chapter IV, §2, Corollary 2). -/
-theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField S)] [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] {i : ℤ} (hi : 0 < i) :
-    ramificationGroup G S i = ⊥ := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
-  have hstep : ∀ n : ℕ,
-      ramificationGroup G S ((n : ℤ) + 1) = ramificationGroup G S ((n : ℤ) + 1 + 1) := by
-    intro n
-    refine le_antisymm (fun σ hσ ↦ ?_) (ramificationGroup_antitone G S (by omega))
-    have : Finite (ramificationGroup G S ((n : ℤ) + 1)) :=
-      Finite.of_injective
-        (Subgroup.inclusion (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ (n : ℤ) + 1)))
-        (Subgroup.inclusion_injective _)
-    have : Subsingleton (RamificationGroupGraded G S ((n : ℤ) + 1)) :=
-      subsingleton_ramificationGroupGraded_natCast_succ_of_charZero R G S n
-    have hq :
-        (QuotientGroup.mk ⟨σ, hσ⟩ : RamificationGroupGraded G S ((n : ℤ) + 1)) = 1 :=
-      Subsingleton.elim _ _
-    rwa [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hq
-  obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = (j : ℤ) + 1 := ⟨(i - 1).toNat, by omega⟩
-  suffices ∀ d j : ℕ, N ≤ (j : ℤ) + 1 + (d : ℤ) →
-      ramificationGroup G S ((j : ℤ) + 1) = ⊥ from
-    this N.toNat j (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    exact hN ((j : ℤ) + 1) (by omega)
-  | succ d ih =>
-    intro j hj
-    rw [hstep j]
-    simpa only [Nat.cast_add, Nat.cast_one, add_assoc] using ih (j + 1) (by omega)
-
-/-- **Wild inertia vanishes in residue characteristic zero:** `G_1 = ⊥`. -/
-theorem ramificationGroup_one_eq_bot_of_charZero [CharZero (ResidueField S)] [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] :
-    ramificationGroup G S 1 = ⊥ :=
-  ramificationGroup_eq_bot_of_charZero R G S one_pos
-
-/-- **Inertia is cyclic in residue characteristic zero**, for a faithful action with finite `G_0`
-and separable residue extension. -/
-theorem isCyclic_ramificationGroup_zero_of_charZero [CharZero (ResidueField S)] [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] :
-    IsCyclic (ramificationGroup G S 0) :=
-  isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot R G S
-    (ramificationGroup_one_eq_bot_of_charZero R G S)
-
 /-- **Wild inertia is trivial if and only if the residue characteristic `p` does not divide
 `#G_0`.** Holds uniformly for both positive prime characteristic and characteristic zero
 (`p = 0`). -/
@@ -944,25 +968,12 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p 
       pow_eq_one_iff_right hp.ne_one, Nat.factorization_eq_zero_iff]
     simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
   · have : CharZero (ResidueField S) := CharP.charP_to_charZero (ResidueField S)
-    rw [ramificationGroup_one_eq_bot_of_charZero R G S, zero_dvd_iff]
+    have : Finite (ramificationGroup G S 1) :=
+      Finite.of_injective
+        (Subgroup.inclusion (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1)))
+        (Subgroup.inclusion_injective _)
+    rw [ramificationGroup_one_eq_bot_of_charZero G S, zero_dvd_iff]
     exact ⟨fun _ ↦ Nat.card_pos.ne', fun _ ↦ rfl⟩
-
-/-- When the residue characteristic `p` does not divide `#G_0`, all positive-depth ramification
-groups `G_i` (`0 < i`) vanish. -/
-theorem ramificationGroup_eq_bot_of_not_dvd_card_ramificationGroup_zero (p : ℕ)
-    [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
-    (hndvd : ¬ p ∣ Nat.card (ramificationGroup G S 0)) {i : ℤ} (hi : 0 < i) :
-    ramificationGroup G S i = ⊥ :=
-  eq_bot_mono (ramificationGroup_antitone G S (by omega : (1 : ℤ) ≤ i))
-    ((ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero R G S p).mpr hndvd)
-
-/-- When the residue characteristic `p` does not divide `#G_0`, inertia `G_0` itself is cyclic. -/
-theorem isCyclic_ramificationGroup_zero_of_not_dvd_card (p : ℕ) [CharP (ResidueField S) p]
-    [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
-    (hndvd : ¬ p ∣ Nat.card (ramificationGroup G S 0)) :
-    IsCyclic (ramificationGroup G S 0) :=
-  isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot R G S
-    ((ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero R G S p).mpr hndvd)
 
 end SeparableResidue
 

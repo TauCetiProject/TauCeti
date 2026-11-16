@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The units congruent to one modulo an ideal
@@ -56,6 +57,8 @@ so `1 + I` is an iterated extension of additive groups.
 
 * `Ideal.principalUnitGroup_ker`: the principal unit group of the kernel of a ring homomorphism
   is the kernel of the induced map on units.
+* `Ideal.unitsMap_mul_inv_mem_principalUnitGroup`: an element of the inertia subgroup of a
+  two-sided ideal `I` moves every unit `u` by a factor in `I.principalUnitGroup`.
 * `Ideal.unitsMap_quotientMk_surjective`: reduction of units modulo an ideal contained in the
   Jacobson radical is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
@@ -121,6 +124,19 @@ theorem principalUnitGroup_ker {S : Type*} [Ring S] (f : R →+* S) :
 theorem principalUnitGroup_pow_antitone (I : Ideal R) :
     Antitone fun n : ℕ ↦ (I ^ n).principalUnitGroup :=
   fun _ _ h ↦ principalUnitGroup_mono (pow_le_pow_right h)
+
+/-- An automorphism in the inertia subgroup of a two-sided ideal `I` moves every unit `u` by a
+factor `(σ • u) * u⁻¹` in `I.principalUnitGroup`. -/
+theorem unitsMap_mul_inv_mem_principalUnitGroup {G : Type*} [Group G] [MulSemiringAction G R]
+    {I : Ideal R} [I.IsTwoSided] {σ : G} (hσ : σ ∈ I.inertia G) (u : Rˣ) :
+    Units.map (MulSemiringAction.toRingHom G R σ).toMonoidHom u * u⁻¹ ∈ I.principalUnitGroup := by
+  rw [mem_principalUnitGroup]
+  have hrew :
+      ((Units.map (MulSemiringAction.toRingHom G R σ).toMonoidHom u * u⁻¹ : Rˣ) : R) - 1 =
+        (σ • (u : R) - (u : R)) * ↑u⁻¹ := by
+    simp [sub_mul]
+  rw [hrew]
+  exact Ideal.mul_mem_right _ _ (Ideal.mem_inertia.mp hσ (u : R))
 
 section CommRing
 
@@ -252,34 +268,18 @@ abbrev PrincipalUnitGraded (i : ℕ) :=
     (maximalIdeal R ^ (i + 1)).principalUnitGroup.subgroupOf
       (maximalIdeal R ^ i).principalUnitGroup
 
-private noncomputable def principalUnitZeroToResidueFieldUnits :
-    (maximalIdeal R ^ 0).principalUnitGroup →* (ResidueField R)ˣ :=
-  (Units.map (residue R).toMonoidHom).comp (maximalIdeal R ^ 0).principalUnitGroup.subtype
-
-private theorem ker_principalUnitZeroToResidueFieldUnits :
-    (principalUnitZeroToResidueFieldUnits R).ker =
-      (maximalIdeal R ^ (0 + 1)).principalUnitGroup.subgroupOf
-        (maximalIdeal R ^ 0).principalUnitGroup := by
-  ext u
-  rw [MonoidHom.mem_ker, principalUnitZeroToResidueFieldUnits, MonoidHom.comp_apply,
-    Subgroup.coe_subtype, ← MonoidHom.mem_ker, ← Ideal.principalUnitGroup_ker,
-    _root_.IsLocalRing.ker_residue, Subgroup.mem_subgroupOf, zero_add, pow_one]
-
-private theorem principalUnitZeroToResidueFieldUnits_surjective :
-    Function.Surjective (principalUnitZeroToResidueFieldUnits R) := by
-  intro v
-  obtain ⟨u, rfl⟩ :=
-    _root_.IsLocalRing.surjective_units_map_of_local_ringHom (residue R) residue_surjective
-      inferInstance v
-  exact ⟨⟨u, by simp⟩, rfl⟩
-
 /-- At depth zero, reduction modulo the maximal ideal identifies `PrincipalUnitGraded R 0`,
 that is `Rˣ ⧸ (1 + 𝔪)`, with the multiplicative group `(ResidueField R)ˣ`. -/
 noncomputable def principalUnitGradedZeroEquivResidueFieldUnits :
     PrincipalUnitGraded R 0 ≃* (ResidueField R)ˣ :=
-  (QuotientGroup.quotientMulEquivOfEq (ker_principalUnitZeroToResidueFieldUnits R).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _
-      (principalUnitZeroToResidueFieldUnits_surjective R))
+  (QuotientGroup.congr
+    ((maximalIdeal R ^ (0 + 1)).principalUnitGroup.subgroupOf
+      (maximalIdeal R ^ 0).principalUnitGroup)
+    (maximalIdeal R).principalUnitGroup
+    ((MulEquiv.subgroupCongr (by simp)).trans Subgroup.topEquiv)
+    (by ext; simp [Subgroup.mem_subgroupOf])).trans
+    (Ideal.unitsQuotientPrincipalUnitGroupEquiv
+      (_root_.IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge)
 
 variable {R} in
 /-- The depth-zero principal-unit graded equivalence acts by reducing a unit modulo the maximal
@@ -289,16 +289,19 @@ theorem principalUnitGradedZeroEquivResidueFieldUnits_mk
     (u : (maximalIdeal R ^ 0).principalUnitGroup) :
     principalUnitGradedZeroEquivResidueFieldUnits R (QuotientGroup.mk u) =
       Units.map (residue R).toMonoidHom (u : Rˣ) := by
+  -- `Ideal.unitsQuotientPrincipalUnitGroupEquiv` has codomain `(R ⧸ maximalIdeal R)ˣ`, whereas
+  -- the stated codomain is `(ResidueField R)ˣ`; `rw [MulEquiv.trans_apply]` cannot match across
+  -- that semireducible `def`, so split the composite by unification first.
   exact (MulEquiv.trans_apply ..).trans <|
-    (congrArg _ (QuotientGroup.quotientMulEquivOfEq_mk ..)).trans <|
-      TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk ..
+    (congrArg _ (QuotientGroup.congr_mk ..)).trans <|
+      (Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk ..).trans <|
+        Units.ext (by simp [residue_def])
 
 private theorem comap_maximalIdeal_pow_succ (n : ℕ) :
     Submodule.comap (maximalIdeal R ^ (n + 1)).subtype (maximalIdeal R ^ (n + 2)) =
-      (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ (n + 1) : Ideal R)) := by
-  ext x
-  rw [Submodule.mem_comap, Submodule.subtype_apply, Submodule.mem_smul_top_iff, smul_eq_mul,
-    ← pow_succ']
+      (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ (n + 1) : Ideal R)) :=
+  pow_succ (maximalIdeal R) (n + 1) ▸
+    (Ideal.smul_top_eq_comap_mul (maximalIdeal R ^ (n + 1)) (maximalIdeal R)).symm
 
 /-- At positive depth `n + 1`, subtracting `1` identifies `PrincipalUnitGraded R (n + 1)` with the
 multiplicative copy of the maximal-ideal graded piece `𝔪 ^ (n + 1) ⧸ 𝔪 ^ (n + 2)` (written with
@@ -320,9 +323,6 @@ theorem principalUnitGradedSuccEquivMaximalIdealGraded_mk (n : ℕ)
     principalUnitGradedSuccEquivMaximalIdealGraded R n (QuotientGroup.mk u) =
       Multiplicative.ofAdd
         (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩) := by
-  refine (MulEquiv.trans_apply ..).trans ?_
-  rw [Ideal.principalUnitGroupPowQuotientEquiv_mk]
-  exact congrArg Multiplicative.ofAdd
-    (Submodule.quotEquivOfEq_mk _ _ (comap_maximalIdeal_pow_succ R n) _)
+  simp [principalUnitGradedSuccEquivMaximalIdealGraded, LinearEquiv.coe_toAddEquiv]
 
 end TauCeti.IsLocalRing
