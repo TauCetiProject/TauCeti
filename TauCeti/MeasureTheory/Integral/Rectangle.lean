@@ -33,8 +33,11 @@ a doubly (twisted) periodic map are used.
   equal values on the two opposite sides integrates to zero over the rectangle.
 * `TauCeti.eqOn_zero_of_setIntegral_rect_eq_zero`: a continuous nonnegative function with zero
   integral over a nondegenerate rectangle vanishes on it.
+* `Continuous.integrableOn_Icc_prod_Icc`: a continuous function is integrable over every closed
+  rectangle.
 * `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing outside
   the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
+* `TauCeti.measurePreserving_add_fst`: translation by `(L, 0)` preserves `volume` on `ℝ × ℝ`.
 * `TauCeti.setIntegral_Icc_add_prod_eq`: the integral over a translated strip
   `[c + L, d + L] × I` is the integral of the translate `z ↦ f (z + (L, 0))` over `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
@@ -133,6 +136,12 @@ theorem eqOn_zero_of_setIntegral_rect_eq_zero {f : ℝ × ℝ → ℝ} (h₁ : a
   rw [← hcl]
   exact hU.of_subset_closure hf.continuousOn continuousOn_const subset_closure subset_rfl
 
+omit [NormedSpace ℝ E] in
+/-- A continuous function is integrable over every closed rectangle `[a₁, b₁] × [a₂, b₂]`. -/
+theorem _root_.Continuous.integrableOn_Icc_prod_Icc {f : ℝ × ℝ → E} (hf : Continuous f) :
+    IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂) :=
+  hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+
 /-- **Enlarging a strip.** If `f` vanishes at every point whose first coordinate lies outside
 `[a₁, b₁]`, then its integrals over a wider strip `[c, d] × I ⊇ [a₁, b₁] × I` and over
 `[a₁, b₁] × I` agree. -/
@@ -144,7 +153,7 @@ theorem setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero {X : Type*} [Measur
     (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z fun h ↦ hz.2 ⟨h, hz.1.2⟩
 
 /-- Translation along the first coordinate preserves `volume` on `ℝ × ℝ`. -/
-private theorem measurePreserving_add_fst (L : ℝ) :
+theorem measurePreserving_add_fst (L : ℝ) :
     MeasurePreserving (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) := by
   -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
   have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by

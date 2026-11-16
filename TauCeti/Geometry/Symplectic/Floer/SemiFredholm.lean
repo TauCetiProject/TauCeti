@@ -96,14 +96,6 @@ private theorem setIntegral_norm_floerLinearization_sq_eq (ω : SymplecticForm V
       (eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hξ hz), floerLinearization_zero]
     simp
 
-omit [FiniteDimensional ℝ V] in
-/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
-private theorem continuous_sobolev {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
-  have := hξ.continuous_fderiv one_ne_zero
-  fun_prop
-
 /-- **The `L²` norm of `D_u` on a cut-off section.** For a cutoff `β(s)` with `|β| ≤ 1`,
 `|β'| ≤ M` and `β'` supported in `[-T, T]`, the `L²` norm of `D_u (β ξ) = β D_u ξ + β' ξ` is
 bounded by those of `D_u ξ` and of `ξ` over `[-T, T] × [0, 1]`. -/
@@ -130,18 +122,15 @@ private theorem setIntegral_norm_floerLinearization_smul_sq_le (ω : SymplecticF
     fun_prop
   have hrect : MeasurableSet (Icc a' b' ×ˢ Icc (0 : ℝ) 1) :=
     measurableSet_Icc.prod measurableSet_Icc
-  have hI {f : ℝ × ℝ → ℝ} (hf : Continuous f) (p q : ℝ) :
-      IntegrableOn f (Icc p q ×ˢ Icc (0 : ℝ) 1) :=
-    hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
   simp_rw [hD]
   calc _ ≤ ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1,
         (2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * (β' z.1 ^ 2 * ‖ξ z‖ ^ 2)) := by
         refine setIntegral_mono_on ?_ ?_ hrect fun z _ ↦ ?_
-        · refine hI ?_ _ _
+        · refine Continuous.integrableOn_Icc_prod_Icc ?_
           have hβc : Continuous β := continuous_iff_continuousAt.2 fun s ↦ (hβ s).continuousAt
           have := hξ.continuous
           fun_prop
-        · exact hI (by fun_prop) _ _
+        · exact Continuous.integrableOn_Icc_prod_Icc (by fun_prop)
         have h : ‖β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' z.1 • ξ z‖ ≤
             ‖ω.floerLinearization J Ks Kt u ξ z‖ + |β' z.1| * ‖ξ z‖ := by
           refine (norm_add_le _ _).trans ?_
@@ -153,7 +142,8 @@ private theorem setIntegral_norm_floerLinearization_smul_sq_le (ω : SymplecticF
           _ = _ := by rw [mul_pow, sq_abs]; ring
     _ = 2 * (∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
           2 * ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, β' z.1 ^ 2 * ‖ξ z‖ ^ 2 := by
-        rw [integral_add (hI (by fun_prop) _ _) (hI (by fun_prop) _ _), integral_const_mul,
+        rw [integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+            (Continuous.integrableOn_Icc_prod_Icc (by fun_prop)), integral_const_mul,
           integral_const_mul, setIntegral_norm_floerLinearization_sq_eq ω J Ks Kt u hξ₀ ha hb,
           setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero measurableSet_Icc hTa hTb
             fun z hz ↦ by
@@ -162,7 +152,8 @@ private theorem setIntegral_norm_floerLinearization_smul_sq_le (ω : SymplecticF
     _ ≤ _ := by
         have h : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, β' z.1 ^ 2 * ‖ξ z‖ ^ 2 ≤
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, M ^ 2 * ‖ξ z‖ ^ 2 := by
-          refine setIntegral_mono_on (hI hβ'ξ _ _) (hI (by have := hξ.continuous; fun_prop) _ _)
+          refine setIntegral_mono_on hβ'ξ.integrableOn_Icc_prod_Icc
+            (Continuous.integrableOn_Icc_prod_Icc (by have := hξ.continuous; fun_prop))
             (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
           have h₁ : β' z.1 ^ 2 ≤ M ^ 2 := by
             rw [← sq_abs]
@@ -233,9 +224,6 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
     fun ξ hξ hper a b hab hξ₀ ↦ ?_⟩
   have hξ₀' (s t : ℝ) (h : s ≤ a ∨ b ≤ s) : ξ (s, t) = 0 :=
     hξ₀ s t fun h' ↦ by rcases h with h | h <;> linarith [h'.1, h'.2]
-  have hI {f : ℝ × ℝ → ℝ} (hf : Continuous f) (p q : ℝ) :
-      IntegrableOn f (Icc p q ×ˢ Icc (0 : ℝ) 1) :=
-    hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
   -- The three pieces of `ξ`.
   set ξp : ℝ × ℝ → V := fun w ↦ βp w.1 • ξ w
   set ξm : ℝ × ℝ → V := fun w ↦ βm w.1 • ξ w
@@ -310,7 +298,7 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
   have hint {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) (p q : ℝ) :
       IntegrableOn (fun z ↦ ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) (Icc p q ×ˢ Icc (0 : ℝ) 1) :=
-    hI (continuous_sobolev (hη.of_le one_le_two)) p q
+    (Floer.continuous_sobolev (hη.of_le one_le_two)).integrableOn_Icc_prod_Icc
   -- The piece near `+∞`.
   have hPp : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξp z stdComplexLineReal‖ ^ 2 +
       ‖fderiv ℝ ξp z stdComplexLineImag‖ ^ 2 + ‖ξp z‖ ^ 2) ≤ max Cp 0 * (L * (X + Y)) := by
@@ -343,19 +331,21 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
     have hdξ₀ := hξ₀c.continuous_fderiv two_ne_zero
     have hDξ₀ := ω.continuous_floerLinearization (J := J') hJ hKs hKt hu (hξ₀c.of_le one_le_two)
     rw [setIntegral_sobolev_eq (a' := a') (b' := b') hv₀ (min_le_right _ _) (le_max_right _ _),
-      integral_add (hI (by fun_prop) _ _) (hI (by fun_prop) _ _)]
+      integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+        (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))]
     have hcore' := hcore hξ₀c (fun s _ ↦ by rw [← zero_add (1 : ℝ), hper₀])
       (fun t ↦ hv₀ _ t fun h ↦ lt_irrefl _ h.1) (fun t ↦ hv₀ _ t fun h ↦ lt_irrefl _ h.2)
-    rw [integral_add (hI (f := fun z ↦ ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2)
-      (by fun_prop) _ _) (hI (by fun_prop) _ _)] at hcore'
+    rw [integral_add (Continuous.integrableOn_Icc_prod_Icc
+      (f := fun z ↦ ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2) (by fun_prop))
+      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))] at hcore'
     have hD₀ : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1,
         ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2 ≤ L * (X + Y) := by
       rw [← setIntegral_norm_floerLinearization_sq_eq (a' := a') (b' := b') ω J' Ks Kt u hv₀
         (min_le_right a _) (le_max_right b _)]
       exact hcut hβ₀c hβ₀1 hβ₀M hβ₀T'
     have hξ₀Y : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ₀ z‖ ^ 2 ≤ Y := by
-      refine setIntegral_mono_on (hI (by fun_prop) _ _)
-        (hI (by have := hξ.continuous; fun_prop) _ _)
+      refine setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+        (Continuous.integrableOn_Icc_prod_Icc (by have := hξ.continuous; fun_prop))
         (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
       simp only [ξ₀, norm_smul, Real.norm_eq_abs]
       gcongr
@@ -388,9 +378,11 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
             ‖ξm z‖ ^ 2) +
           (‖fderiv ℝ ξ₀ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ₀ z stdComplexLineImag‖ ^ 2 +
             ‖ξ₀ z‖ ^ 2)) :=
-        setIntegral_mono_on (hint hξ _ _) (hI (by fun_prop) _ _) hrect fun z _ ↦ hE z
+        setIntegral_mono_on (hint hξ _ _) (Continuous.integrableOn_Icc_prod_Icc (by fun_prop)) hrect
+          fun z _ ↦ hE z
       _ = _ := by
-        rw [integral_const_mul, integral_add (hI (by fun_prop) _ _) (hint hξ₀c _ _),
+        rw [integral_const_mul,
+          integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop)) (hint hξ₀c _ _),
           integral_add (hint hξp _ _) (hint hξm _ _)]
   calc _ ≤ _ := hsum
     _ ≤ 3 * (max Cp 0 * (L * (X + Y)) + max Cm 0 * (L * (X + Y)) +

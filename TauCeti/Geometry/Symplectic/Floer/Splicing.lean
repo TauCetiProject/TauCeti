@@ -91,19 +91,6 @@ private theorem sobolev_add_le {ξ₁ ξ₂ : ℝ × ℝ → E} {z : ℝ × ℝ}
   linarith [hsq (fderiv ℝ ξ₁ z stdComplexLineReal) (fderiv ℝ ξ₂ z stdComplexLineReal),
     hsq (fderiv ℝ ξ₁ z stdComplexLineImag) (fderiv ℝ ξ₂ z stdComplexLineImag), hsq (ξ₁ z) (ξ₂ z)]
 
-/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
-private theorem continuous_sobolev {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
-  have := hξ.continuous_fderiv one_ne_zero
-  have := hξ.continuous
-  fun_prop
-
-/-- Continuous functions are integrable over the rectangles `[a, b] × [0, 1]`. -/
-private theorem integrableOn_rect {f : ℝ × ℝ → ℝ} (hf : Continuous f) (a b : ℝ) :
-    IntegrableOn f (Icc a b ×ˢ Icc (0 : ℝ) 1) :=
-  hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-
 omit [NormedSpace ℝ F] in
 /-- **Absorbing a comparison error.** If the `W^{1,2}` energy of `η` is controlled by the `L²` norm
 of `g`, and `g` differs from `f` pointwise by at most `ε (‖∂t η‖ + ‖η‖)` with `8 C ε² ≤ 1`, then
@@ -136,11 +123,11 @@ private theorem setIntegral_sobolev_le_of_norm_le_add {η : ℝ × ℝ → E} (h
   have hint : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖g z‖ ^ 2 ≤
       2 * (∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖f z‖ ^ 2) + 4 * ε ^ 2 * W := by
     rw [← integral_const_mul, ← integral_const_mul,
-      ← integral_add (integrableOn_rect (by fun_prop) a b)
-        (integrableOn_rect ((continuous_sobolev hη).const_mul _) a b)]
-    exact setIntegral_mono_on (integrableOn_rect (by fun_prop) a b)
-      ((integrableOn_rect (by fun_prop) a b).add
-        (integrableOn_rect ((continuous_sobolev hη).const_mul _) a b)) hrect fun z _ ↦ hpt z
+      ← integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+        ((continuous_sobolev hη).const_mul _).integrableOn_Icc_prod_Icc]
+    exact setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+      ((Continuous.integrableOn_Icc_prod_Icc (by fun_prop)).add
+        ((continuous_sobolev hη).const_mul _).integrableOn_Icc_prod_Icc) hrect fun z _ ↦ hpt z
   nlinarith [mul_le_mul_of_nonneg_left hint hC, mul_le_mul_of_nonneg_right hε hW]
 
 /-- **The `L²` norm of `P` on a cut-off section.** If `P (β ξ) = β P ξ + β' σ ξ` for cutoffs
@@ -174,9 +161,11 @@ private theorem setIntegral_norm_sq_smul_fst_le {P : (ℝ × ℝ → E) → ℝ 
     nlinarith [norm_nonneg (P (fun w ↦ β w.1 • ξ w) z),
       sq_nonneg (‖P ξ z‖ - M * ‖σ‖ * ‖ξ z‖)]
   rw [← integral_const_mul, ← integral_const_mul,
-    ← integral_add (integrableOn_rect (by fun_prop) a b) (integrableOn_rect (by fun_prop) a b)]
-  exact setIntegral_mono_on (integrableOn_rect (by have := hPc hβξ; fun_prop) a b)
-    ((integrableOn_rect (by fun_prop) a b).add (integrableOn_rect (by fun_prop) a b)) hrect
+    ← integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))]
+  exact setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by have := hPc hβξ; fun_prop))
+    ((Continuous.integrableOn_Icc_prod_Icc (by fun_prop)).add
+      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))) hrect
     fun z _ ↦ by simpa [mul_pow] using hpt z
 
 /-- **The estimate for one cut-off piece.** Let `β(s)` be a cutoff with `|β| ≤ 1` and `|β'| ≤ M`,
@@ -268,10 +257,12 @@ private theorem setIntegral_sobolev_le_add_of_cutoff {ξ : ℝ × ℝ → E} (h�
     ((contDiff_const.sub hβ).comp contDiff_fst).smul hξ
   have hsum : ξ = (fun w ↦ β w.1 • ξ w) + fun w ↦ (1 - β w.1) • ξ w :=
     funext fun w ↦ by simp [← add_smul]
-  have hi₁ := (integrableOn_rect (continuous_sobolev (hξ₁.of_le one_le_two)) a b).const_mul 2
-  have hi₂ := (integrableOn_rect (continuous_sobolev (hξ₂.of_le one_le_two)) a b).const_mul 2
+  have hi₁ := ((continuous_sobolev (hξ₁.of_le one_le_two)).integrableOn_Icc_prod_Icc
+    (a₁ := a) (b₁ := b) (a₂ := 0) (b₂ := 1)).const_mul 2
+  have hi₂ := ((continuous_sobolev (hξ₂.of_le one_le_two)).integrableOn_Icc_prod_Icc
+    (a₁ := a) (b₁ := b) (a₂ := 0) (b₂ := 1)).const_mul 2
   rw [← integral_const_mul, ← integral_const_mul, ← integral_add hi₁ hi₂]
-  refine setIntegral_mono_on (integrableOn_rect (continuous_sobolev (hξ.of_le one_le_two)) a b)
+  refine setIntegral_mono_on (continuous_sobolev (hξ.of_le one_le_two)).integrableOn_Icc_prod_Icc
     (hi₁.add hi₂) (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
   have h := sobolev_add_le (hξ₁.differentiable two_ne_zero z) (hξ₂.differentiable two_ne_zero z)
   rwa [← hsum] at h
@@ -281,8 +272,8 @@ private theorem setIntegral_norm_sq_le_sobolev {ξ : ℝ × ℝ → E} (hξ : Co
     ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 ≤
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) :=
-  setIntegral_mono_on (integrableOn_rect (by have := hξ.continuous; fun_prop) a b)
-    (integrableOn_rect (continuous_sobolev hξ) a b) (measurableSet_Icc.prod measurableSet_Icc)
+  setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by have := hξ.continuous; fun_prop))
+    (continuous_sobolev hξ).integrableOn_Icc_prod_Icc (measurableSet_Icc.prod measurableSet_Icc)
     fun z _ ↦ by
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
@@ -358,31 +349,6 @@ end Floer
 namespace SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- **The linearized operator of a translate.** The linearized Floer operator of the data
-`w ↦ (J, K_s, K_t, u) (w + v)` in the direction `w ↦ ξ (w + v)` at `z` is the linearized operator of
-the data `(J, K_s, K_t, u)` in the direction `ξ` at `z + v`. -/
-theorem floerLinearization_comp_add_right (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) (v z : ℝ × ℝ) :
-    ω.floerLinearization (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
-        (fun w ↦ u (w + v)) (fun w ↦ ξ (w + v)) z =
-      ω.floerLinearization J Ks Kt u ξ (z + v) := by
-  simp only [floerLinearization_def, fderiv_comp_add_right]
-
-/-- **Comparing two linearized operators at a point.** The linearized Floer operators
-`∂s ξ + J(z, u z) ∂t ξ + C(z) ξ` of two data sets differ at `z` by at most
-`‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t ξ‖ + ‖C(z) - C₁(z)‖ ‖ξ‖`, where `C = floerLinearizationCoeff`. -/
-theorem norm_floerLinearization_sub_floerLinearization_le (ω : SymplecticForm V)
-    (J J₁ : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt Ks₁ Kt₁ : ℝ × ℝ → V → ℝ) (u u₁ ξ : ℝ × ℝ → V)
-    (z : ℝ × ℝ) :
-    ‖ω.floerLinearization J Ks Kt u ξ z - ω.floerLinearization J₁ Ks₁ Kt₁ u₁ ξ z‖ ≤
-      ‖J z (u z) - J₁ z (u₁ z)‖ * ‖fderiv ℝ ξ z stdComplexLineImag‖ +
-        ‖ω.floerLinearizationCoeff J Ks Kt u z - ω.floerLinearizationCoeff J₁ Ks₁ Kt₁ u₁ z‖ *
-          ‖ξ z‖ := by
-  rw [floerLinearization_eq_add, floerLinearization_eq_add,
-    show ∀ a b c b' c' : V, a + b + c - (a + b' + c') = (b - b') + (c - c') by
-      intro a b c b' c'; abel, ← sub_apply, ← sub_apply]
-  exact (norm_add_le _ _).trans (add_le_add (le_opNorm _ _) (le_opNorm _ _))
 
 /-- **The injectivity estimate is invariant under translation.** If the linearized Floer operator
 of the data `(J, K_s, K_t, u)` satisfies `‖ξ‖²_{W^{1,2}} ≤ C ‖D ξ‖²_{L²}` on `C²` maps of period

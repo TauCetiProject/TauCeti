@@ -29,7 +29,11 @@ Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
-(`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
+(`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so two
+linearized operators differ pointwise by the differences of their coefficients
+(`norm_floerLinearization_sub_floerLinearization_le`). Translating the data and the direction
+translates the operator (`floerLinearization_comp_add_right`). The `W^{1,2}` energy density
+`‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a `C¹` map is continuous (`TauCeti.Floer.continuous_sobolev`).
 The universal variation theorem identifies its direction field with the actual parameter derivative
 of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
@@ -203,6 +207,16 @@ theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
   rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
 
+/-- **The linearized operator of a translate.** The linearized Floer operator of the data
+`w ↦ (J, K_s, K_t, u) (w + v)` in the direction `w ↦ ξ (w + v)` at `z` is the linearized operator of
+the data `(J, K_s, K_t, u)` in the direction `ξ` at `z + v`. -/
+theorem floerLinearization_comp_add_right (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.floerLinearization (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) (fun w ↦ ξ (w + v)) z =
+      ω.floerLinearization J Ks Kt u ξ (z + v) := by
+  simp only [floerLinearization_def, fderiv_comp_add_right]
+
 /-- The zeroth-order part `ξ ↦ (dJ(u) ξ)(∂t u - X_Kt(u)) - dX_Ks(u) ξ - J(u) dX_Kt(u) ξ` of the
 linearized Floer operator at the domain point `z`. -/
 noncomputable def floerLinearizationCoeff (ω : SymplecticForm V)
@@ -232,6 +246,21 @@ theorem floerLinearization_eq_add (ω : SymplecticForm V)
         ω.floerLinearizationCoeff J Ks Kt u z (ξ z) := by
   simp only [floerLinearization_def, floerLinearizationCoeff_apply, map_sub]
   abel
+
+/-- **Comparing two linearized operators at a point.** The linearized Floer operators
+`∂s ξ + J(z, u z) ∂t ξ + C(z) ξ` of two data sets differ at `z` by at most
+`‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t ξ‖ + ‖C(z) - C₁(z)‖ ‖ξ‖`, where `C = floerLinearizationCoeff`. -/
+theorem norm_floerLinearization_sub_floerLinearization_le (ω : SymplecticForm V)
+    (J J₁ : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt Ks₁ Kt₁ : ℝ × ℝ → V → ℝ) (u u₁ ξ : ℝ × ℝ → V)
+    (z : ℝ × ℝ) :
+    ‖ω.floerLinearization J Ks Kt u ξ z - ω.floerLinearization J₁ Ks₁ Kt₁ u₁ ξ z‖ ≤
+      ‖J z (u z) - J₁ z (u₁ z)‖ * ‖fderiv ℝ ξ z stdComplexLineImag‖ +
+        ‖ω.floerLinearizationCoeff J Ks Kt u z - ω.floerLinearizationCoeff J₁ Ks₁ Kt₁ u₁ z‖ *
+          ‖ξ z‖ := by
+  rw [floerLinearization_eq_add, floerLinearization_eq_add,
+    show ∀ a b c b' c' : V, a + b + c - (a + b' + c') = (b - b') + (c - c') by
+      intro a b c b' c'; abel, ← sub_apply, ← sub_apply]
+  exact (norm_add_le _ _).trans (add_le_add (le_opNorm _ _) (le_opNorm _ _))
 
 /-- The zeroth-order part of the linearized Floer operator is continuous at `z` when the data are
 `C¹` (and the Hamiltonians `C²`) at `(z, u z)`, and `u` is `C¹` at `z`. -/
@@ -387,3 +416,17 @@ theorem fderiv_floerOperator_apply (h : P) :
 end Families
 
 end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+/-- The `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a `C¹` map `ξ : ℝ × ℝ → E` is
+continuous. -/
+theorem continuous_sobolev {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 1 ξ) :
+    Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
+  have := hξ.continuous_fderiv one_ne_zero
+  have := hξ.continuous
+  fun_prop
+
+end TauCeti.Floer
