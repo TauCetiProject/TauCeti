@@ -67,6 +67,8 @@ Serre fibration.
 * `TauCeti.TopCat.fiberHomologyTransport_congr`, `TauCeti.TopCat.fiberHomologyTransport_refl`,
   `TauCeti.TopCat.fiberHomologyTransport_trans`: transport is invariant under homotopy and
   functorial.
+* `TauCeti.TopCat.fiberHomologyTransport_naturality`: transport is natural in maps of Serre
+  fibrations.
 * `TauCeti.TopCat.fiberHomologyTransport_eq_singularHomologyMap_fiberTransport`: for a fibration
   with a lifting function, transport on homology is induced by the transport map.
 
@@ -173,47 +175,10 @@ theorem pullbackFiberTransport_eq_id (g : K ⟶ B) {k₀ k₁ : K} {b : B}
   let H : _root_.TopCat.Homotopy (p.pullbackFiberι g h₁) (p.pullbackFiberι g h₀) :=
     { toFun x := ⟨(γ (σ x.1), x.2.1), (hγ _).trans (x.2.2 : p x.2.1 = b).symm⟩
       continuous_toFun := by fun_prop
-      map_zero_left x := Subtype.ext (Prod.ext (by simp only [symm_zero, Path.target]; rfl) rfl)
-      map_one_left x := Subtype.ext (Prod.ext (by simp only [symm_one, Path.source]; rfl) rfl) }
+      map_zero_left x := Subtype.ext (by rw [TopCat.Hom.coe_pullbackFiberι_apply]; simp)
+      map_one_left x := Subtype.ext (by rw [TopCat.Hom.coe_pullbackFiberι_apply]; simp) }
   rw [Category.id_comp]
   exact H.congr_homologyMap_singularChainComplexFunctor M n
-
-/-- A map of parameter spaces over `B` and a map of Serre fibrations over a map of bases commute
-with transport: the general form of `TauCeti.TopCat.pullbackFiberTransport_naturality` and
-`TauCeti.TopCat.pullbackFiberTransport_comp_left`, for an arbitrary map `m` of base changes which
-is compatible with the fibre inclusions. -/
-private theorem pullbackFiberTransport_comp_eq {E' B' K' : TopCat.{u}} {p' : E' ⟶ B'}
-    [ContractibleSpace K'] (hp' : serreFibrations p') (g : K ⟶ B)
-    (g' : K' ⟶ B') {k₀ k₁ : K} {k₀' k₁' : K'} {b₀ b₁ : B} {b₀' b₁' : B'} (h₀ : g k₀ = b₀)
-    (h₁ : g k₁ = b₁) (h₀' : g' k₀' = b₀') (h₁' : g' k₁' = b₁')
-    (m : TopCat.of {x : K × E // g x.1 = p x.2} ⟶ TopCat.of {x : K' × E' // g' x.1 = p' x.2})
-    (φ₀ : p.fiber b₀ ⟶ p'.fiber b₀') (φ₁ : p.fiber b₁ ⟶ p'.fiber b₁')
-    (hm₀ : p.pullbackFiberι g h₀ ≫ m = φ₀ ≫ p'.pullbackFiberι g' h₀')
-    (hm₁ : p.pullbackFiberι g h₁ ≫ m = φ₁ ≫ p'.pullbackFiberι g' h₁') :
-    pullbackFiberTransport hp M n g h₀ h₁ ≫
-        ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map φ₁ =
-      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map φ₀ ≫
-        pullbackFiberTransport hp' M n g' h₀' h₁' := by
-  have := isIso_singularHomologyMap_pullbackFiberι hp' M n g' h₁'
-  rw [← cancel_mono (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-    (p'.pullbackFiberι g' h₁')), Category.assoc, Category.assoc,
-    pullbackFiberTransport_comp_map_pullbackFiberι, ← Functor.map_comp, ← hm₁, Functor.map_comp,
-    pullbackFiberTransport_comp_map_pullbackFiberι_assoc, ← Functor.map_comp, hm₀,
-    Functor.map_comp]
-
-/-- **Transport is natural in maps of parameter spaces.** If `φ : K' ⟶ K` lies over `B`, that is
-`φ ≫ g = g'`, transport along `g'` from `k₀` to `k₁` is transport along `g` from `φ k₀` to
-`φ k₁`, here written `k₀'` and `k₁'`. -/
-theorem pullbackFiberTransport_comp_left {K' : TopCat.{u}} [ContractibleSpace K']
-    (g : K ⟶ B) (g' : K' ⟶ B) (φ : K' ⟶ K) (hφ : φ ≫ g = g')
-    {k₀ k₁ : K'} {k₀' k₁' : K} (hk₀ : φ k₀ = k₀') (hk₁ : φ k₁ = k₁') {b₀ b₁ : B}
-    (h₀ : g' k₀ = b₀) (h₁ : g' k₁ = b₁) (h₀' : g k₀' = b₀) (h₁' : g k₁' = b₁) :
-    pullbackFiberTransport hp M n g' h₀ h₁ = pullbackFiberTransport hp M n g h₀' h₁' := by
-  subst hφ hk₀ hk₁
-  simpa using pullbackFiberTransport_comp_eq hp M n hp (φ ≫ g) g h₀ h₁ h₀' h₁'
-    (TopCat.ofHom ⟨fun x ↦ ⟨(φ x.1.1, x.1.2), x.2⟩, Continuous.subtype_mk
-      ((φ.hom.continuous.comp (continuous_fst.comp continuous_subtype_val)).prodMk
-        (continuous_snd.comp continuous_subtype_val)) fun x ↦ x.2⟩) (𝟙 _) (𝟙 _) rfl rfl
 
 /-- **Transport is natural in maps of Serre fibrations.** For a commutative square from `p` to `p'`
 over `g_B : B ⟶ B'`, and a map `φ : K ⟶ K'` of contractible parameter spaces compatible with
@@ -228,21 +193,33 @@ theorem pullbackFiberTransport_naturality {E' B' K' : TopCat.{u}} {p' : E' ⟶ B
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b₁) =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b₀) ≫
         pullbackFiberTransport hp' M n g' h₀' h₁' := by
-  have hmem (x : {x : K × E // g x.1 = p x.2}) : g' (φ x.1.1) = p' (f x.1.2) := by
-    rw [← ConcreteCategory.comp_apply, hφ, ConcreteCategory.comp_apply, x.2,
-      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, sq.w]
-  let m : TopCat.of {x : K × E // g x.1 = p x.2} ⟶ TopCat.of {x : K' × E' // g' x.1 = p' x.2} :=
-    TopCat.ofHom ⟨fun x ↦ ⟨(φ x.1.1, f x.1.2), hmem x⟩, Continuous.subtype_mk
-      ((φ.hom.continuous.comp (continuous_fst.comp continuous_subtype_val)).prodMk
-        (f.hom.continuous.comp (continuous_snd.comp continuous_subtype_val))) hmem⟩
-  -- On a fibre, `m` acts by the map of fibres, at the image under `φ` of the base point.
+  have := isIso_singularHomologyMap_pullbackFiberι hp' M n g' h₁'
+  -- On a fibre, the map of base changes acts by the map of fibres, at the image under `φ` of the
+  -- base point.
   have hm {k : K} {b : B} (h : g k = b) (h' : g' (φ k) = g_B b) :
-      p.pullbackFiberι g h ≫ m = sq.fiberMap b ≫ p'.pullbackFiberι g' h' := by
-    ext x
-    · rfl
-    · exact (sq.fiberMap_apply_coe b x).symm
-  exact pullbackFiberTransport_comp_eq hp M n hp' g g' h₀ h₁ h₀' h₁' m (sq.fiberMap b₀)
-    (sq.fiberMap b₁) (hm h₀ h₀') (hm h₁ h₁')
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b) ≫
+          ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p'.pullbackFiberι g' h') =
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.pullbackFiberι g h) ≫
+          ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
+            (sq.pullbackMapOfCompEq φ hφ) := by
+    rw [← Functor.map_comp, ← Functor.map_comp, sq.pullbackFiberι_comp_pullbackMapOfCompEq]
+  rw [← cancel_mono (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
+    (p'.pullbackFiberι g' h₁'))]
+  simp only [Category.assoc, hm h₁ h₁', hm h₀ h₀', pullbackFiberTransport_comp_map_pullbackFiberι,
+    pullbackFiberTransport_comp_map_pullbackFiberι_assoc]
+
+/-- **Transport is natural in maps of parameter spaces.** If `φ : K' ⟶ K` lies over `B`, that is
+`φ ≫ g = g'`, transport along `g'` from `k₀` to `k₁` is transport along `g` from `φ k₀` to
+`φ k₁`, here written `k₀'` and `k₁'`. -/
+theorem pullbackFiberTransport_comp_left {K' : TopCat.{u}} [ContractibleSpace K']
+    (g : K ⟶ B) (g' : K' ⟶ B) (φ : K' ⟶ K) (hφ : φ ≫ g = g')
+    {k₀ k₁ : K'} {k₀' k₁' : K} (hk₀ : φ k₀ = k₀') (hk₁ : φ k₁ = k₁') {b₀ b₁ : B}
+    (h₀ : g' k₀ = b₀) (h₁ : g' k₁ = b₁) (h₀' : g k₀' = b₀) (h₁' : g k₁' = b₁) :
+    pullbackFiberTransport hp M n g' h₀ h₁ = pullbackFiberTransport hp M n g h₀' h₁' := by
+  subst hφ hk₀ hk₁
+  -- This is naturality for the identity map of `p`.
+  simpa using pullbackFiberTransport_naturality hp M n (CommSq.mk (by simp : 𝟙 E ≫ p = p ≫ 𝟙 B))
+    hp (φ ≫ g) g φ (Category.comp_id _).symm h₀ h₁ h₀' h₁'
 
 end Pullback
 
@@ -265,7 +242,9 @@ def fiberHomologyTransport (γ : Path b₀ b₁) :
   pullbackFiberTransport hp M n (TopCat.pathEquiv.symm γ).hom (k₀ := 0) (k₁ := 1)
     (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁
 
-private lemma fiberHomologyTransport_eq (γ : Path b₀ b₁) :
+/-- Transport along a path is transport over the interval, along the path seen as a map from
+`TopCat.I`, from `0` to `1`. -/
+lemma fiberHomologyTransport_eq_pullbackFiberTransport (γ : Path b₀ b₁) :
     fiberHomologyTransport hp M n γ =
       pullbackFiberTransport hp M n (TopCat.pathEquiv.symm γ).hom (k₀ := 0) (k₁ := 1)
         (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ :=
@@ -283,7 +262,7 @@ theorem fiberHomologyTransport_comp_map_pullbackFiberι
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
         (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0)
           (TopCat.pathEquiv.symm γ).hom₀) := by
-  rw [fiberHomologyTransport_eq]
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact pullbackFiberTransport_comp_map_pullbackFiberι hp M n _ _ _
 
 /-- Transport along `γ` is the unique map which, followed by the inclusion of the fibre over `b₁`
@@ -298,14 +277,14 @@ theorem eq_fiberHomologyTransport_iff (γ : Path b₀ b₁)
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0)
             (TopCat.pathEquiv.symm γ).hom₀) := by
-  rw [fiberHomologyTransport_eq]
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact eq_pullbackFiberTransport_iff hp M n _ _ _ f
 
 /-- **Transport along a constant path is the identity.** -/
 @[simp]
 theorem fiberHomologyTransport_refl (b : B) :
     fiberHomologyTransport hp M n (Path.refl b) = 𝟙 _ := by
-  rw [fiberHomologyTransport_eq]
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact pullbackFiberTransport_eq_id hp M n (TopCat.pathEquiv.symm (Path.refl b)).hom (b := b)
     ⟨⟨fun t ↦ TopCat.I.homeomorph.symm t, by fun_prop⟩, rfl, rfl⟩ (fun _ ↦ rfl) rfl rfl
 
@@ -347,7 +326,9 @@ theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
       fiberHomologyTransport hp M n γ ≫ fiberHomologyTransport hp M n δ := by
   -- Transport over the interval along `γ.trans δ` passes through the midpoint, and its two halves
   -- are transport along `γ` and along `δ`.
-  rw [fiberHomologyTransport_eq, fiberHomologyTransport_eq, fiberHomologyTransport_eq,
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport,
+    fiberHomologyTransport_eq_pullbackFiberTransport,
+    fiberHomologyTransport_eq_pullbackFiberTransport,
     ← pullbackFiberTransport_comp_pullbackFiberTransport hp M n _ _
       (TopCat.pathEquiv_symm_trans_hom_midpoint γ δ),
     pullbackFiberTransport_comp_left hp M n _ _ TopCat.I.firstHalf
@@ -360,6 +341,19 @@ theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
       TopCat.I.secondHalf_zero TopCat.I.secondHalf_one (TopCat.pathEquiv.symm δ).hom₀
       (TopCat.pathEquiv.symm δ).hom₁
       (TopCat.pathEquiv_symm_trans_hom_midpoint γ δ) (TopCat.pathEquiv.symm (γ.trans δ)).hom₁]
+
+/-- **Transport along a path is natural in maps of Serre fibrations.** For a commutative square
+from `p` to `p'` over `g : B ⟶ B'`, transport along `γ` followed by the map of fibres over `b₁` is
+the map of fibres over `b₀` followed by transport along the image of `γ` under `g`. -/
+theorem fiberHomologyTransport_naturality {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E'}
+    {g : B ⟶ B'} (sq : CommSq f p p' g) (hp' : serreFibrations p') (γ : Path b₀ b₁) :
+    fiberHomologyTransport hp M n γ ≫
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b₁) =
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b₀) ≫
+        fiberHomologyTransport hp' M n (γ.map g.hom.continuous) :=
+  pullbackFiberTransport_naturality hp M n sq hp' (TopCat.pathEquiv.symm γ).hom
+    (TopCat.pathEquiv.symm (γ.map g.hom.continuous)).hom (𝟙 _) rfl
+    (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ _ _
 
 /-- **The local system of fibre homology of a Serre fibration** `b ↦ Hₙ(p⁻¹(b); M)`, with
 singular homology with coefficients in a module `M`. The class of a path acts by transport along
@@ -419,9 +413,13 @@ theorem fiberHomologyTransport_eq_singularHomologyMap_fiberTransport
         refine Continuous.subtype_mk (Continuous.prodMk (by fun_prop) ?_) _
         exact continuous_eval.comp
           ((Λ.continuous_lift (by fun_prop) continuous_const _).prodMk continuous_fst)
-      map_zero_left x := Subtype.ext (Prod.ext rfl (Λ.lift_zero _ _ _))
-      map_one_left x := Subtype.ext (Prod.ext rfl ((Λ.transport_apply_coe γ x).symm.trans
-        (congrArg Subtype.val (ContinuousMap.congr_fun (fiberTransport_hom Λ γ).symm x)))) }
+      map_zero_left x := Subtype.ext <| by
+        rw [TopCat.Hom.coe_pullbackFiberι_apply]
+        exact Prod.ext rfl (Λ.lift_zero _ _ _)
+      map_one_left x := Subtype.ext <| by
+        rw [ConcreteCategory.comp_apply, TopCat.Hom.coe_pullbackFiberι_apply]
+        exact Prod.ext rfl ((Λ.transport_apply_coe γ x).symm.trans
+          (congrArg Subtype.val (ContinuousMap.congr_fun (fiberTransport_hom Λ γ).symm x))) }
   rw [← Functor.map_comp]
   exact (H.congr_homologyMap_singularChainComplexFunctor M n).symm
 
@@ -503,9 +501,7 @@ def serreFiberLocalSystemMap :
     congr 1
     rw [← Category.assoc, ← Category.assoc]
     congr 1
-    exact pullbackFiberTransport_naturality hp M n sq hp' (TopCat.pathEquiv.symm γ).hom
-      (TopCat.pathEquiv.symm (γ.map g.hom.continuous)).hom (𝟙 _) rfl
-      (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ _ _
+    exact fiberHomologyTransport_naturality hp M n sq hp' γ
 
 /-- On the fibre over `b`, the map of local systems induced by a map of Serre fibrations is the map
 induced on homology by the map of fibres. -/

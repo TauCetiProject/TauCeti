@@ -23,7 +23,10 @@ same fibres as `p`: its fibre over `b'` is the fibre of `p` over `g b'`
 (`TopCat.pullbackMapOfCompEq`), which is `f` on these fibres
 (`TopCat.Hom.fiberPullbackFstIso_hom_naturality`).
 The inclusion `e ↦ (k, e)` of a fibre of `p` into the base change along `g` at a point `k` over
-it is `TopCat.Hom.pullbackFiberι`.
+it is `TopCat.Hom.pullbackFiberι`. A map of fibrations over a map of bases, with a compatible map
+of parameter spaces, induces a map of base changes (`CategoryTheory.CommSq.pullbackMapOfCompEq`),
+which is the map of fibres on these fibre inclusions
+(`CategoryTheory.CommSq.pullbackFiberι_comp_pullbackMapOfCompEq`).
 -/
 
 public section
@@ -157,7 +160,7 @@ lemma fiberPullbackFstIso_inv_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B') (
 is the inclusion of the fibre of the base change over `k`, read through
 `TopCat.Hom.fiberPullbackFstIso`; the equation `g k = b` lets the fibre be named by its point of
 `B`, as for the end points of a path. -/
-@[expose] def pullbackFiberι {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
+def pullbackFiberι {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
     (h : g k = b) : p.fiber b ⟶ TopCat.of {x : K × E // g x.1 = p x.2} :=
   TopCat.ofHom ⟨fun e ↦ ⟨(k, e.1), h.trans (e.2 : p e.1 = b).symm⟩, by fun_prop⟩
 
@@ -166,6 +169,17 @@ is the inclusion of the fibre of the base change over `k`, read through
 lemma coe_pullbackFiberι_apply {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
     (h : g k = b) (e : p.fiber b) : (p.pullbackFiberι g h e : K × E) = (k, e.1) :=
   (rfl)
+
+/-- The inclusion of the fibre of `p` over `g k` into the base change of `p` along `g`, at `k`, is
+the inclusion of the fibre of the base change over `k`, read through
+`TopCat.Hom.fiberPullbackFstIso`. -/
+lemma pullbackFiberι_eq_fiberPullbackFstIso_inv_comp_fiberι {K : TopCat.{u}} (p : E ⟶ B)
+    (g : K ⟶ B) (k : K) :
+    p.pullbackFiberι g (rfl : g k = g k) =
+      (p.fiberPullbackFstIso g k).inv ≫ (TopCat.pullbackFst g p).fiberι k := by
+  ext e <;>
+  · rw [ConcreteCategory.comp_apply, fiberι_apply, fiberPullbackFstIso_inv_apply_coe]
+    rfl
 
 /-- The identifications `TopCat.Hom.fiberPullbackFstIso` of the fibres of base changes are natural
 in maps over the base: on fibres, the map of base changes induced by `f` is the map of fibres
@@ -185,3 +199,42 @@ lemma fiberPullbackFstIso_hom_naturality {E' : TopCat.{u}} {p : E ⟶ B} {p' : E
     (sq.fiberMap_apply_coe (g b') ((p.fiberPullbackFstIso g b').hom x)).symm
 
 end TopCat.Hom
+
+namespace CategoryTheory.CommSq
+
+universe u
+
+variable {E E' B B' K K' : TopCat.{u}} {f : E ⟶ E'} {p : E ⟶ B} {p' : E' ⟶ B'} {g : B ⟶ B'}
+
+/-- The map `(k, e) ↦ (φ k, f e)` from the base change of `p` along `h : K ⟶ B` to the base change
+of `p'` along `h' : K' ⟶ B'`, induced by a map of fibrations, that is, a commutative square from
+`p` to `p'` over `g`, and a map `φ : K ⟶ K'` of parameter spaces compatible with `g`. For
+`φ = 𝟙` and `g = 𝟙` it is `TopCat.pullbackMapOfCompEq`. -/
+def pullbackMapOfCompEq (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'} (φ : K ⟶ K')
+    (hφ : φ ≫ h' = h ≫ g) :
+    TopCat.of {x : K × E // h x.1 = p x.2} ⟶ TopCat.of {x : K' × E' // h' x.1 = p' x.2} :=
+  TopCat.ofHom ⟨fun x ↦ ⟨(φ x.1.1, f x.1.2), (ConcreteCategory.congr_hom hφ x.1.1).trans
+      ((congrArg g x.2).trans (ConcreteCategory.congr_hom sq.w x.1.2).symm)⟩,
+    (by fun_prop : Continuous fun x : {x : K × E // h x.1 = p x.2} ↦ (φ x.1.1, f x.1.2)
+      ).subtype_mk _⟩
+
+@[simp]
+lemma coe_pullbackMapOfCompEq_apply (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'}
+    (φ : K ⟶ K') (hφ : φ ≫ h' = h ≫ g) (x : TopCat.of {x : K × E // h x.1 = p x.2}) :
+    (sq.pullbackMapOfCompEq φ hφ x : K' × E') = (φ x.1.1, f x.1.2) :=
+  (rfl)
+
+/-- On fibres, the map of base changes induced by a map of fibrations is the map of fibres: the
+inclusion of the fibre over `b` at `k`, followed by the map of base changes, is the map of fibres
+followed by the inclusion of the fibre over `g b` at `φ k`. -/
+@[reassoc]
+lemma pullbackFiberι_comp_pullbackMapOfCompEq (sq : CommSq f p p' g) {h : K ⟶ B}
+    {h' : K' ⟶ B'} (φ : K ⟶ K') (hφ : φ ≫ h' = h ≫ g) {k : K} {b : B} (hk : h k = b)
+    (hk' : h' (φ k) = g b) :
+    p.pullbackFiberι h hk ≫ sq.pullbackMapOfCompEq φ hφ =
+      sq.fiberMap b ≫ p'.pullbackFiberι h' hk' := by
+  ext x
+  · rfl
+  · exact (sq.fiberMap_apply_coe b x).symm
+
+end CategoryTheory.CommSq
