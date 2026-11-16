@@ -166,6 +166,23 @@ theorem exchangeAlmostComplex_zero (h₀ : ω.Compatible J₀) :
   rw [cayley_exchangeAlmostComplex h₀ ⟨by norm_num, by norm_num⟩, Complex.ofReal_zero, sub_zero]
   exact (cayley_pairOfPantsAlmostComplex_eq_add h₀ w x).symm
 
+/-- **The family near the inputs.** For `-1 ≤ c ≤ 2`, on the disc `‖w‖ ≤ 3` every member of the
+family is the pair-of-pants structure: the input part and the translated plane part are both `J₀`
+there. -/
+theorem exchangeAlmostComplex_eq_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {c : ℝ}
+    (hc : c ∈ Icc (-1) 2) {w : ℂ} (hw : ‖w‖ ≤ 3) (x : M) :
+    exchangeAlmostComplex h₀ J hJ c w x = pairOfPantsAlmostComplex h₀ J hJ w x := by
+  have h14 := fourteen_le_two_mul_exp_two_pi
+  have hwc : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
+    have h := norm_sub_le w (c : ℂ)
+    rw [Complex.norm_real, Real.norm_eq_abs] at h
+    linarith [abs_le.2 (⟨by linarith [hc.1], hc.2⟩ : -2 ≤ c ∧ c ≤ 2)]
+  refine h₀.eq_of_cayley_eq (tames_exchangeAlmostComplex h₀ c w x)
+    (tames_pairOfPantsAlmostComplex h₀ w x) ?_
+  rw [cayley_exchangeAlmostComplex h₀ hc, cayley_pairOfPantsAlmostComplex_eq_add (hJb := hJ) h₀,
+    negativePlaneAlmostComplex_eq_of_norm_le h₀ hwc,
+    negativePlaneAlmostComplex_eq_of_norm_le h₀ (by linarith)]
+
 /-- The input part of the pair-of-pants structure is exchanged by `w ↦ 1 - w`: the input part with
 exchanged end structures at `1 - w` is the input part at `w`. -/
 private theorem pairOfPantsAlmostComplex_update_exchangeEndData_one_sub

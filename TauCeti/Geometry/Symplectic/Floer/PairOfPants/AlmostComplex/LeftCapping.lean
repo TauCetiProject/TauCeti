@@ -167,22 +167,6 @@ theorem cappedExchangeAlmostComplex_one (h₀ : ω.Compatible J₀) (hJp : Perio
   · rw [cappedExchangeAlmostComplex_of_re_endCoord_le h₀ hw, exchangeAlmostComplex_one h₀ hJp hJ',
       plumbedAlmostComplex_def, ite_eq_right (by rw [hre]; exact hw.not_gt)]
 
-/-- Near the input at `0`, the member `c` of the input-exchange family is the pair-of-pants
-structure: the translated plane part and the plane part at `0` are both `J₀` there. -/
-private theorem exchangeAlmostComplex_eq_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀)
-    (hc : c ∈ Icc (-1) 2) (hw : ‖w‖ ≤ 1) (x : M) :
-    exchangeAlmostComplex h₀ J hJ c w x = pairOfPantsAlmostComplex h₀ J hJ w x := by
-  have h14 := fourteen_le_two_mul_exp_two_pi
-  have hwc : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
-    have h := norm_sub_le w (c : ℂ)
-    rw [Complex.norm_real, Real.norm_eq_abs] at h
-    linarith [abs_le.2 (⟨by linarith [hc.1], hc.2⟩ : -2 ≤ c ∧ c ≤ 2)]
-  refine h₀.eq_of_cayley_eq (tames_exchangeAlmostComplex h₀ c w x)
-    (tames_pairOfPantsAlmostComplex h₀ w x) ?_
-  rw [cayley_exchangeAlmostComplex h₀ hc, cayley_pairOfPantsAlmostComplex_eq_add (hJb := hJ) h₀,
-    negativePlaneAlmostComplex_eq_of_norm_le h₀ hwc,
-    negativePlaneAlmostComplex_eq_of_norm_le h₀ (by linarith)]
-
 /-- **Near the capped puncture the family is the capping structure at `0`.** For `-1 ≤ c ≤ 2`, on
 the disc `‖w‖ ≤ 1` the member `c` of the family is the capping structure at `0`, whatever the neck
 length. -/
@@ -195,7 +179,8 @@ theorem cappedExchangeAlmostComplex_of_norm_le (h₀ : ω.Compatible J₀) (hc :
   · rw [cappedExchangeAlmostComplex_of_lt_re_endCoord h₀ hw', plumbedAlmostComplex_def,
       ite_eq_left hw', pairOfPantsAlmostComplex_update_inf]
   · rw [cappedExchangeAlmostComplex_of_re_endCoord_le h₀ hw',
-      exchangeAlmostComplex_eq_pairOfPantsAlmostComplex h₀ hc hw, plumbedAlmostComplex_def,
+      exchangeAlmostComplex_eq_pairOfPantsAlmostComplex h₀ hc (hw.trans (by norm_num)),
+      plumbedAlmostComplex_def,
       ite_eq_right hw'.not_gt]
 
 /-- **The capped disc.** For `L > 2` and `-1 ≤ c ≤ 2`, every member of the family is `J₀` on the
