@@ -406,6 +406,21 @@ private theorem exists_similarity_of_innerProductSpace [FiniteDimensional ℂ E]
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
   {Ω : Opens ℂ} {ξ : ℂ → V} {C : ℂ → V →L[ℝ] V} {p : ℝ≥0∞}
 
+/-- The disc form of the similarity principle, with complex-linear `Φ`, gives a similarity
+factorization at the centre. -/
+private theorem hasSimilarityFactorizationAt_of_exists_similarity {s : Set ℂ} {z₀ : ℂ}
+    (h : ∃ r, 0 < r ∧ ball z₀ r ⊆ s ∧ ∃ (Φ : ℂ → V →L[ℂ] V) (σ : ℂ → V),
+      ContinuousOn Φ (ball z₀ r) ∧ (∀ z ∈ ball z₀ r, IsUnit (Φ z)) ∧
+      DifferentiableOn ℂ σ (ball z₀ r) ∧ EqOn ξ (fun z ↦ Φ z (σ z)) (ball z₀ r)) :
+    HasSimilarityFactorizationAt ξ z₀ := by
+  have := FiniteDimensional.completeSpace ℂ V
+  obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ := h
+  obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
+  -- restricting the scalars of the equivalence `Φ z₀` to `ℝ` keeps it invertible
+  refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
+    ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
+    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξσ
+
 /-- **The similarity principle** (Carleman) for weak solutions with `Lᵖ` coefficients. Let `ξ` be
 continuous on an open set `Ω ⊆ ℂ` and solve `∂ₛξ + i ∂ₜξ + C ξ = 0` distributionally on `Ω`, that
 is `bar∂ξ = ½ (-C ξ)`, for a field `C` of real-linear endomorphisms of a finite-dimensional
@@ -452,15 +467,9 @@ real-linear coefficient `C` for some `p > 2`, has a similarity factorization at 
 theorem hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn (hp : 2 < p)
     (hC : MemLpLoc p Ω C) (hξ : ContinuousOn ξ Ω)
     (heq : HasWeakConjWirtingerDerivOn volume Ω ξ (fun z ↦ (2 : ℂ)⁻¹ • -C z (ξ z))) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt ξ z₀ := by
-  have := FiniteDimensional.completeSpace ℂ V
-  obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
-    exists_similarity_of_hasWeakConjWirtingerDerivOn hp hC hξ heq hz₀
-  obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
-  -- restricting the scalars of the equivalence `Φ z₀` to `ℝ` keeps it invertible
-  refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
-    ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
-    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξσ
+    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt ξ z₀ :=
+  hasSimilarityFactorizationAt_of_exists_similarity
+    (exists_similarity_of_hasWeakConjWirtingerDerivOn hp hC hξ heq hz₀)
 
 /-- **Unique continuation** for weak solutions with `Lᵖ` coefficients, `p > 2`. On a connected
 open set `Ω`, a continuous weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` that vanishes on a nonempty
@@ -543,15 +552,9 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn (hΩ : IsOpen Ω) (hξ : Cont
     (hCm : AEStronglyMeasurable C (volume.restrict Ω))
     (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt ξ z₀ := by
-  have := FiniteDimensional.completeSpace ℂ V
-  obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
-    exists_similarity_of_contDiffOn hΩ hξ hCm hCb heq hz₀
-  obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
-  -- restricting the scalars of the equivalence `Φ z₀` to `ℝ` keeps it invertible
-  refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
-    ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
-    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξσ
+    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt ξ z₀ :=
+  hasSimilarityFactorizationAt_of_exists_similarity
+    (exists_similarity_of_contDiffOn hΩ hξ hCm hCb heq hz₀)
 
 /-- **Unique continuation** for classical solutions. On a connected open set `Ω`, a `C¹` solution
 of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with measurable, locally bounded real-linear coefficient `C`, that

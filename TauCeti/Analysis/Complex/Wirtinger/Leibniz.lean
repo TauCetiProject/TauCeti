@@ -20,10 +20,10 @@ Only the conjugate Wirtinger derivatives are assumed, not the full weak derivati
 regularity for `\bar∂` (`TauCeti.HasWeakConjWirtingerDerivOn.memWkpLoc_one`) supplies those:
 both factors lie in `W^{1,p}_loc`, after lowering an infinite `p` to a finite one. Being
 continuous, they are locally in every finite `Lᵃ`, so the bilinear weak Leibniz rule
-`TauCeti.HasWeakLineDerivOn.bilin_of_memLp` applies in the two real directions `1` and `I`, with
-an exponent `a ≥ 2` for the factors with `1/a + 1/p ≤ 1`. The derivative of the product along
-`1` and `I` assembles into its conjugate Wirtinger derivative, in which the complex linearity of
-`A` turns `A (∂ₛξ) + i A (∂ₜξ)` into `2 A (\bar∂ξ)`.
+`TauCeti.HasWeakFDerivOn.bilin_of_memLp` applies, with an exponent `a ≥ 2` for the factors with
+`1/a + 1/p ≤ 1`. The weak derivative of the product along `1` and `I` assembles into its
+conjugate Wirtinger derivative, in which the complex linearity of `A` turns
+`A (∂ₛξ) + i A (∂ₜξ)` into `2 A (\bar∂ξ)`.
 
 This is the product rule through which a solution of a linear Cauchy–Riemann equation is
 multiplied by an integrating factor, as in the similarity principle.
@@ -82,21 +82,19 @@ theorem HasWeakConjWirtingerDerivOn.clm_apply (hp : 1 < p)
   have hap' : a⁻¹ + p⁻¹ ≤ 1 := by rwa [add_comm]
   let B : (V →L[ℂ] W) →L[ℝ] V →L[ℝ] W :=
     (ContinuousLinearMap.restrictScalarsL ℂ V W ℝ ℂ).restrictScalars ℝ
-  -- the Leibniz rule along a real direction
-  have hline (v : ℂ) : HasWeakLineDerivOn volume Ω (fun z ↦ A z (ξ z))
-      (fun z ↦ DA z v (ξ z) + A z (Dξ z v)) v := by
-    simpa [B] using (hDA.hasWeakLineDerivOn v).bilin_of_memLp B ha_top hp_top ha_top hp_top haa
-      hpa hap' (hDξ.hasWeakLineDerivOn v)
-      (fun K hK hKΩ ↦ memLpLoc_iff.1 hAc.memLpLoc K hKΩ hK)
-      (fun K hK hKΩ ↦ memLpLoc_iff.1 (hDAp.clm_comp (ContinuousLinearMap.apply ℝ _ v)) K hKΩ hK)
-      (fun K hK hKΩ ↦ memLpLoc_iff.1 hξc.memLpLoc K hKΩ hK)
-      (fun K hK hKΩ ↦ memLpLoc_iff.1 (hDξp.clm_comp (ContinuousLinearMap.apply ℝ _ v)) K hKΩ hK)
-  refine (hasWeakConjWirtingerDerivOn_of_hasWeakLineDerivOn (hline 1) (hline I)).congr_ae_deriv ?_
+  refine ((hDA.bilin_of_memLp B ha_top hp_top ha_top hp_top haa hpa hap' hDξ
+    (fun K hK hKΩ ↦ memLpLoc_iff.1 hAc.memLpLoc K hKΩ hK)
+    (fun K hK hKΩ ↦ memLpLoc_iff.1 hDAp K hKΩ hK)
+    (fun K hK hKΩ ↦ memLpLoc_iff.1 hξc.memLpLoc K hKΩ hK)
+    (fun K hK hKΩ ↦ memLpLoc_iff.1 hDξp K hKΩ hK)).hasWeakConjWirtingerDerivOn).congr_ae_deriv ?_
   -- the conjugate Wirtinger derivatives of the factors are `G` and `h` almost everywhere
   filter_upwards [hDA.hasWeakConjWirtingerDerivOn.ae_eq hA,
     hDξ.hasWeakConjWirtingerDerivOn.ae_eq hξ] with z hAz hξz
   rw [← hAz, ← hξz]
-  simp only [smul_apply, add_apply, map_smul, map_add]
+  simp only [smul_apply, add_apply, map_smul, map_add, ContinuousLinearMap.precompL_apply,
+    ContinuousLinearMap.precompR_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.comp_apply, B, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.coe_restrict_scalarsL']
   module
 
 end TauCeti
