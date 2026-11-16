@@ -36,8 +36,8 @@ eigenvalues of `A⁻` crossed by `δ⁻`, counted with multiplicity
 (`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_pointSpectralSubspace_Ico`). In
 particular, as the weight increases through one exceptional value at either end, the index
 decreases by the multiplicity of the crossed eigenvalue
-(`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atTop` and
-`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atBot`).
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_eigenspace_atTop` and
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_eigenspace_atBot`).
 The weights below the spectral gap of `TauCeti.Analysis.ODE.EnergyEstimate.Weighted` cross no
 eigenvalue, and leave the index unchanged.
 
@@ -45,7 +45,7 @@ For the symmetric weight `w(s) = δ log (cosh s)`, which is `δ |s|` up to a bou
 is `δ tanh s` and the index is `n_{< -δ}(A⁻) - n_{< δ}(A⁺)`
 (`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank`).
 In the scalar case `E = ℝ` with constant coefficient `a`, the operator `u ↦ u' + (a - δ tanh s) u`
-has index `0` for `0 ≤ δ < |a|` and index `-1` for `δ > |a|`: as `δ` increases through `|a|`, one
+has index `0` for `|δ| < |a|` and index `-1` for `δ > |a|`: as `δ` increases through `|a|`, one
 of the two slopes `±δ` crosses the simple eigenvalue `a` of the limits.
 
 ## Main results
@@ -56,8 +56,8 @@ In the namespace `TauCeti.WeakDerivStep`:
   `D_{A - c}` for slopes `c` with non-exceptional limits `δ±` is `n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺)`.
 * `index_trajectoryOperator_eq_add_finrank_pointSpectralSubspace_Ico`: moving the limits of the
   slope outward changes the index by the number of eigenvalues crossed at the two ends.
-* `index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atTop`,
-  `index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atBot`: crossing one eigenvalue
+* `index_trajectoryOperator_eq_add_finrank_eigenspace_atTop`,
+  `index_trajectoryOperator_eq_add_finrank_eigenspace_atBot`: crossing one eigenvalue
   at one end changes the index by its multiplicity.
 * `index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank`: the index for the
   symmetric weight `δ log (cosh s)`.
@@ -181,7 +181,7 @@ same non-exceptional limit at `-∞`, and with limits `δ₁ < ν < δ₂` at `+
 eigenvalue of the symmetric limit `A⁺` in `[δ₁, δ₂]`. Then the index of `u ↦ u' + (A - c₁) u`
 exceeds that of `u ↦ u' + (A - c₂) u` by the multiplicity of `ν`: as the decay weight at `+∞`
 increases through `ν`, the index decreases by the dimension of the eigenspace of `A⁺` at `ν`. -/
-theorem index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atTop
+theorem index_trajectoryOperator_eq_add_finrank_eigenspace_atTop
     (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
     (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
@@ -204,13 +204,9 @@ theorem index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atTop
       hbot htop hc₁ hc₂ hc₁bot hc₁top hc₂bot hc₂top le_rfl (hν.1.trans hν.2).le hδminus hδ₁
       hδminus hδ₂ BL₁ BL₂ hBL₁ hBL₂,
     Ico_self, Module.End.pointSpectralSubspace_empty, finrank_bot, Nat.cast_zero, add_zero,
-    Module.End.pointSpectralSubspace_eq_eigenspace (Ioo_subset_Ico_self hν),
+    Module.End.pointSpectralSubspace_Ico_eq_eigenspace (𝕜 := ℝ) (Ioo_subset_Ico_self hν) hδ₁
+      hother,
     RCLike.ofReal_real_eq_id, id_eq]
-  intro μ hμ hμν
-  rw [RCLike.ofReal_real_eq_id, id_eq, ← not_ne_iff, ← Module.End.hasEigenvalue_iff]
-  rcases eq_or_lt_of_le hμ.1 with rfl | hμ₁
-  · exact hδ₁
-  · exact hother μ ⟨hμ₁, hμ.2⟩ hμν
 
 /-- **Crossing one exceptional value at `-∞`.** Let `c₁` and `c₂` be continuous slopes with the
 same non-exceptional limit at `+∞`, and with limits `δ₂ < ν < δ₁` at `-∞`, where `ν` is the only
@@ -218,7 +214,7 @@ eigenvalue of the symmetric limit `A⁻` in `[δ₂, δ₁]`. Then the index of 
 exceeds that of `u ↦ u' + (A - c₂) u` by the multiplicity of `ν`: as the decay weight at `-∞`
 increases through `ν`, its slope decreasing through `ν`, the index decreases by the dimension of
 the eigenspace of `A⁻` at `ν`. -/
-theorem index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atBot
+theorem index_trajectoryOperator_eq_add_finrank_eigenspace_atBot
     (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
     (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
@@ -241,13 +237,9 @@ theorem index_trajectoryOperator_eq_add_finrank_eigenspace_of_tendsto_atBot
       hbot htop hc₁ hc₂ hc₁bot hc₁top hc₂bot hc₂top (hν.1.trans hν.2).le le_rfl hδ₁ hδplus
       hδ₂ hδplus BL₁ BL₂ hBL₁ hBL₂,
     Ico_self, Module.End.pointSpectralSubspace_empty, finrank_bot, Nat.cast_zero, add_zero,
-    Module.End.pointSpectralSubspace_eq_eigenspace (Ioo_subset_Ico_self hν),
+    Module.End.pointSpectralSubspace_Ico_eq_eigenspace (𝕜 := ℝ) (Ioo_subset_Ico_self hν) hδ₂
+      hother,
     RCLike.ofReal_real_eq_id, id_eq]
-  intro μ hμ hμν
-  rw [RCLike.ofReal_real_eq_id, id_eq, ← not_ne_iff, ← Module.End.hasEigenvalue_iff]
-  rcases eq_or_lt_of_le hμ.1 with rfl | hμ₂
-  · exact hδ₂
-  · exact hother μ ⟨hμ₂, hμ.2⟩ hμν
 
 /-- **The index for the symmetric weight `δ log (cosh s)`.** Let `A` be a continuous family with
 symmetric limits `A±`, and let `δ` be a real number such that `-δ` is not an eigenvalue of `A⁻`
@@ -279,8 +271,8 @@ variable {a δ : ℝ}
 `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank`:
 the scalar `a` has the single eigenvalue `a`, so it has one eigenvalue below `t` if `a < t` and
 none otherwise. -/
-private theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id (hδ : 0 ≤ δ)
-    (hδa : δ ≠ |a|) (BL : Lp (ℝ →L[ℝ] ℝ) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+private theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id (h₁ : a ≠ -δ)
+    (h₂ : a ≠ δ) (BL : Lp (ℝ →L[ℝ] ℝ) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ a • ContinuousLinearMap.id ℝ ℝ - (δ * Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
     (trajectoryOperator (p := 2) BL).index =
@@ -309,20 +301,21 @@ private theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id (hδ : 0 �
       rw [hcoe, hs, finrank_top, Module.finrank_self]
     · rw [hscalar _ h, finrank_bot]
   rw [index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank continuous_const hsym
-      hsym tendsto_const_nhds tendsto_const_nhds
-      (hne fun h ↦ hδa (by rw [← h, abs_neg, abs_of_nonneg hδ]))
-      (hne fun h ↦ hδa (by rw [← h, abs_of_nonneg hδ])) BL hBL,
+      hsym tendsto_const_nhds tendsto_const_nhds (hne (Ne.symm h₁)) (hne (Ne.symm h₂)) BL hBL,
     hfinrank, hfinrank]
 
-/-- **The scalar crossing below the rate.** For `0 ≤ δ < |a|`, the operator
+/-- **The scalar crossing below the rate.** For `|δ| < |a|`, the operator
 `u ↦ u' + (a - δ tanh s) u` on `W^{1,2}(ℝ)`, the conjugate of `u ↦ u' + a u` on the spaces weighted
 by `exp (δ log (cosh s))`, has index `0`. -/
-theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_lt_abs (hδ : 0 ≤ δ)
-    (hδa : δ < |a|) (BL : Lp (ℝ →L[ℝ] ℝ) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_lt_abs
+    (hδa : |δ| < |a|) (BL : Lp (ℝ →L[ℝ] ℝ) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ a • ContinuousLinearMap.id ℝ ℝ - (δ * Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
     (trajectoryOperator (p := 2) BL).index = 0 := by
-  rw [index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id hδ hδa.ne BL hBL]
+  rw [index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id (by rintro rfl; simp at hδa)
+    (by rintro rfl; simp at hδa) BL hBL]
+  have hδ₁ := le_abs_self δ
+  have hδ₂ := neg_abs_le δ
   rcases lt_abs.mp hδa with h | h
   · simp [show ¬a < -δ by linarith, show ¬a < δ by linarith]
   · simp [show a < -δ by linarith, show a < δ by linarith]
@@ -335,9 +328,8 @@ theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_abs_lt (hδa : 
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ a • ContinuousLinearMap.id ℝ ℝ - (δ * Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
     (trajectoryOperator (p := 2) BL).index = -1 := by
-  rw [index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id ((abs_nonneg a).trans hδa.le)
-    hδa.ne' BL hBL]
   obtain ⟨h₁, h₂⟩ := abs_lt.mp hδa
+  rw [index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id h₁.ne' h₂.ne BL hBL]
   simp [show ¬a < -δ by linarith, show a < δ by linarith]
 
 end Scalar

@@ -80,7 +80,8 @@ spectrum from that of its orthogonal complement.
 * `Module.End.pointSpectralSubspace_sub_smul_id`: the point-spectral subspaces of `A - c` are those
   of `A` with the selected set shifted by `c`.
 * `Module.End.pointSpectralSubspace_eq_eigenspace`: if `μ` is the only eigenvalue in `Ω`, the
-  point-spectral subspace selected by `Ω` is the eigenspace at `μ`.
+  point-spectral subspace selected by `Ω` is the eigenspace at `μ`;
+  `Module.End.pointSpectralSubspace_Ico_eq_eigenspace` specialises this to `[a, b)`.
 * `Module.End.finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace`: in finite dimension, the
   dimension of `A.pointSpectralSubspace Ω` is the sum of the dimensions of `A.eigenspace μ` over
   `μ ∈ Ω`.
@@ -382,6 +383,18 @@ theorem pointSpectralSubspace_eq_eigenspace (hμ : μ ∈ Ω)
   rcases eq_or_ne ν μ with rfl | hνμ
   · exact le_rfl
   · simp [h ν hν hνμ]
+
+/-- If `μ ∈ [a, b)` is the only eigenvalue of `A` in `(a, b)` and `a` is not an eigenvalue, the
+point-spectral subspace selected by `[a, b)` is the eigenspace at `μ`. -/
+theorem pointSpectralSubspace_Ico_eq_eigenspace {a b : ℝ} (hμ : μ ∈ Set.Ico a b)
+    (ha : ¬A.HasEigenvalue (a : 𝕜))
+    (h : ∀ ν ∈ Set.Ioo a b, ν ≠ μ → ¬A.HasEigenvalue (ν : 𝕜)) :
+    A.pointSpectralSubspace (Set.Ico a b) = A.eigenspace (μ : 𝕜) := by
+  refine pointSpectralSubspace_eq_eigenspace hμ fun ν hν hνμ ↦ ?_
+  rw [← not_ne_iff, ← hasEigenvalue_iff]
+  rcases eq_or_lt_of_le hν.1 with rfl | hν₁
+  · exact ha
+  · exact h ν ⟨hν₁, hν.2⟩ hνμ
 
 /-- The point-spectral subspace of the scalar `c` selected by a set containing `c` is the whole
 space. -/
