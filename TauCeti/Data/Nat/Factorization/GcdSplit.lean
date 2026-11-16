@@ -31,7 +31,7 @@ passing to the `p`-free parts strictly shrinks the gcd.
   for any `p` (trivially when `p` is not prime).
 * `TauCeti.Nat.gcd_ordCompl_lt`: removing the `p`-part strictly shrinks the gcd.
 * `Nat.coprime_iff_coprime_ordCompl`: coprimality to `n` splits into a condition at `p`
-  and coprimality to the `p`-free part of `n`.
+  and coprimality to the `p`-free part of `n`, for any `p`.
 * `Nat.gcd_mul_prime_eq_of_factorization_le`: multiplying `c` by a prime `p` does not change
   `gcd n c` once the `p`-part of `n` already divides `c`.
 -/
@@ -81,14 +81,24 @@ theorem gcd_eq_gcd_ordCompl_mul_pow_min {p m n : ℕ} (hm : m ≠ 0)
     exact gcd_pow_mul_pow_mul hp (Nat.not_dvd_ordCompl hp hm) (Nat.not_dvd_ordCompl hp hn)
   · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
 
-/-- **Removing the `p`-part strictly shrinks the gcd**, when `p` divides both arguments:
+/-- **Removing the `p`-part strictly shrinks the gcd**, when `p` divides both arguments and they
+are not both zero:
 
 `gcd (ordCompl[p] m) (ordCompl[p] n) < gcd m n`.
 
-This is what lets an induction along `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min` terminate. -/
-theorem gcd_ordCompl_lt {p m n : ℕ} (hp : p.Prime) (hm : m ≠ 0) (hn : n ≠ 0)
+This is what lets an induction along `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min` terminate.
+If one argument is `0`, the other is the gcd and strictly shrinks by its `p`-part. -/
+theorem gcd_ordCompl_lt {p m n : ℕ} (hp : p.Prime) (h : m ≠ 0 ∨ n ≠ 0)
     (hpm : p ∣ m) (hpn : p ∣ n) :
     Nat.gcd (ordCompl[p] m) (ordCompl[p] n) < Nat.gcd m n := by
+  have hlt {k : ℕ} (hk : k ≠ 0) (hpk : p ∣ k) : ordCompl[p] k < k :=
+    Nat.div_lt_self (Nat.pos_of_ne_zero hk)
+      (Nat.one_lt_pow (hp.factorization_pos_of_dvd hk hpk).ne' hp.one_lt)
+  rcases eq_or_ne m 0 with rfl | hm
+  · have hn : n ≠ 0 := h.resolve_left (by simp)
+    simpa using hlt hn hpn
+  rcases eq_or_ne n 0 with rfl | hn
+  · simpa using hlt hm hpm
   rw [gcd_eq_gcd_ordCompl_mul_pow_min hm hn]
   refine lt_mul_of_one_lt_right (Nat.pos_of_ne_zero fun h ↦
     (Nat.ordCompl_pos p hm).ne' (Nat.eq_zero_of_gcd_eq_zero_left h)) (Nat.one_lt_pow ?_ hp.one_lt)
@@ -103,9 +113,13 @@ end TauCeti
 namespace Nat
 
 /-- **Coprimality splits at a prime.** Writing `n = p ^ e * n'` with `p ∤ n'`, the number `m` is
-coprime to `n` exactly when `p ∣ m` forces `e = 0` and `m` is coprime to `n'`. -/
-theorem coprime_iff_coprime_ordCompl {p m n : ℕ} (hp : p.Prime) :
+coprime to `n` exactly when `p ∣ m` forces `e = 0` and `m` is coprime to `n'`. For `p` not prime
+the exponent is `0` and `n' = n`, so the statement holds trivially. -/
+theorem coprime_iff_coprime_ordCompl {p m n : ℕ} :
     m.Coprime n ↔ (p ∣ m → n.factorization p = 0) ∧ m.Coprime (ordCompl[p] n) := by
+  by_cases hp : p.Prime
+  swap
+  · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
   conv_lhs => rw [← Nat.ordProj_mul_ordCompl_eq_self n p]
   rw [Nat.coprime_mul_iff_right]
   refine and_congr_left' ?_

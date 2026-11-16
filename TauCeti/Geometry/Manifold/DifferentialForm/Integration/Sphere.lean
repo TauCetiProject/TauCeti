@@ -44,14 +44,17 @@ differentiable, so the integral is computed on a smooth representative:
   (`TauCeti.rectangleIntegral_eq_of_homotopy`).
 
 So the integral `TauCeti.sphereIntegral φ x a` of `φ` over a class `a` is its integral over the
-unit square along any smooth sphere representing `a` (`TauCeti.sphereIntegral_mk`). Concatenating
+unit square along any smooth sphere representing `a` (`TauCeti.sphereIntegral_mk`), and more
+generally along any smooth map of the plane whose restriction to the unit square represents `a`
+(`TauCeti.sphereIntegral_mk_of_contMDiff`), such as two caps of a loop glued along it. Concatenating
 two smooth spheres along the first coordinate represents the product in `π₂(M, x)`, so the
 integral is additive (`TauCeti.sphereIntegral_mul`). It is natural: the integral of the pullback
 of a form along a smooth map `f` over a class `a` is the integral of the form over `f_* a`
 (`TauCeti.sphereIntegral_mpullback`). A form that vanishes on spheres in the sense of
 `TauCeti.VanishesOnSpheres` has zero integral over every class
 (`TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`); in particular this holds for exact forms
-(`TauCeti.sphereIntegral_mextDeriv`).
+(`TauCeti.sphereIntegral_mextDeriv`). The integral is linear in the form
+(`TauCeti.sphereIntegral_smul`, `TauCeti.sphereIntegral_add`, `TauCeti.sphereIntegral_sub`).
 
 The integral does not depend on the base point: transporting a class along a path from `x` to `y`
 (`TauCeti.homotopyGroupTransport`) does not change its integral
@@ -76,6 +79,8 @@ glued to a cap is compatible with moving the base point of a capped loop.
 * `TauCeti.rectangleIntegral_eq_of_isSmoothSphere_of_homotopic`: homotopic smooth spheres have
   the same integral.
 * `TauCeti.sphereIntegral_mk`: the integral over the class of a smooth sphere.
+* `TauCeti.sphereIntegral_mk_of_contMDiff`: the integral over the class of a generalized loop that
+  is the restriction of any smooth map of the plane.
 * `TauCeti.sphereIntegral_mul`, `TauCeti.sphereIntegral_one`: additivity.
 * `TauCeti.sphereIntegral_mpullback`: naturality under smooth maps.
 * `TauCeti.sphereIntegral_homotopyGroupTransport`: invariance under change of base point.
@@ -83,6 +88,8 @@ glued to a cap is compatible with moving the base point of a capped loop.
   group.
 * `TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`, `TauCeti.sphereIntegral_mextDeriv`: forms
   vanishing on spheres, such as exact forms, have zero integral over every class.
+* `TauCeti.sphereIntegral_smul`, `TauCeti.sphereIntegral_zero`, `TauCeti.sphereIntegral_neg`,
+  `TauCeti.sphereIntegral_add`, `TauCeti.sphereIntegral_sub`: linearity in the form.
 
 ## References
 
@@ -565,6 +572,141 @@ private theorem rectangleIntegral_sphereConcat [IsManifold I 1 M] {φ : RoughFor
 
 end Concat
 
+/-! ### Flattening a map of the plane near the boundary of the unit square -/
+
+section Flatten
+
+/-- A smooth reparametrization of the line into `[0, 1]` that is `0` below `1 / 4` and `1` above
+`3 / 4`. Reparametrizing both coordinates of a map of the plane by it flattens the map near the
+boundary of the unit square. -/
+private def flatten (s : ℝ) : ℝ :=
+  Real.smoothTransition (2 * s - 1 / 2)
+
+private theorem contDiff_flatten : ContDiff ℝ ∞ flatten :=
+  Real.smoothTransition.contDiff.comp (by fun_prop)
+
+private theorem flatten_mem (s : ℝ) : flatten s ∈ Icc (0 : ℝ) 1 :=
+  ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+
+private theorem flatten_of_le {s : ℝ} (hs : s ≤ 1 / 4) : flatten s = 0 :=
+  Real.smoothTransition.zero_of_nonpos (by linarith)
+
+private theorem flatten_of_ge {s : ℝ} (hs : 3 / 4 ≤ s) : flatten s = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
+
+/-- The straight-line homotopy from the identity, at `c = 0`, to `flatten`, at `c = 1`. -/
+private def flattenHom (c s : ℝ) : ℝ :=
+  s + c * (flatten s - s)
+
+private theorem contDiff_flattenHom : ContDiff ℝ ∞ fun q : ℝ × ℝ ↦ flattenHom q.1 q.2 :=
+  contDiff_snd.add (contDiff_fst.mul ((contDiff_flatten.comp contDiff_snd).sub contDiff_snd))
+
+private theorem flattenHom_zero_left (s : ℝ) : flattenHom 0 s = s := by
+  simp [flattenHom]
+
+private theorem flattenHom_one_left (s : ℝ) : flattenHom 1 s = flatten s := by
+  simp [flattenHom]
+
+private theorem flattenHom_zero (c : ℝ) : flattenHom c 0 = 0 := by
+  simp [flattenHom, flatten_of_le (by norm_num : (0 : ℝ) ≤ 1 / 4)]
+
+private theorem flattenHom_one (c : ℝ) : flattenHom c 1 = 1 := by
+  simp [flattenHom, flatten_of_ge (by norm_num : (3 / 4 : ℝ) ≤ 1)]
+
+/-- The straight-line homotopy keeps `[0, 1]` inside `[0, 1]`. -/
+private theorem flattenHom_mem {c s : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) (hs : s ∈ Icc (0 : ℝ) 1) :
+    flattenHom c s ∈ Icc (0 : ℝ) 1 := by
+  convert convex_Icc (0 : ℝ) 1 hs (flatten_mem s) (sub_nonneg.2 hc.2) hc.1 (by ring) using 1
+  simp only [flattenHom, smul_eq_mul]
+  ring
+
+omit [TopologicalSpace M] in
+/-- A map of the plane that sends the boundary of the unit square to `x` still does so after
+reparametrizing both coordinates by the straight-line homotopy at any time `c ∈ [0, 1]`. -/
+private theorem apply_flattenHom_eq {w : ℝ × ℝ → M}
+    (hw : ∀ a ∈ Icc (0 : ℝ) 1, ∀ b ∈ Icc (0 : ℝ) 1, a = 0 ∨ a = 1 ∨ b = 0 ∨ b = 1 → w (a, b) = x)
+    {c a b : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) (ha : a ∈ Icc (0 : ℝ) 1) (hb : b ∈ Icc (0 : ℝ) 1)
+    (hab : a = 0 ∨ a = 1 ∨ b = 0 ∨ b = 1) : w (flattenHom c a, flattenHom c b) = x :=
+  hw _ (flattenHom_mem hc ha) _ (flattenHom_mem hc hb) <| by
+    rcases hab with rfl | rfl | rfl | rfl <;> simp [flattenHom_zero, flattenHom_one]
+
+/-- A smooth map of the plane that sends the boundary of the unit square to `x` becomes a smooth
+sphere after flattening both coordinates. -/
+private theorem isSmoothSphere_comp_flatten {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ w)
+    (hwx : ∀ a ∈ Icc (0 : ℝ) 1, ∀ b ∈ Icc (0 : ℝ) 1, a = 0 ∨ a = 1 ∨ b = 0 ∨ b = 1 →
+      w (a, b) = x) :
+    IsSmoothSphere I x (w ∘ Prod.map flatten flatten) := by
+  refine ⟨hw.comp (contDiff_flatten.prodMap contDiff_flatten).contMDiff, 1 / 4, by norm_num,
+    fun z hz ↦ hwx _ (flatten_mem _) _ (flatten_mem _) ?_⟩
+  simp only [mem_prod, mem_Icc, not_and_or, not_le] at hz
+  rcases hz with ((hz | hz) | (hz | hz))
+  · exact Or.inl (flatten_of_le hz.le)
+  · exact Or.inr (Or.inl (flatten_of_ge (by linarith)))
+  · exact Or.inr (Or.inr (Or.inl (flatten_of_le hz.le)))
+  · exact Or.inr (Or.inr (Or.inr (flatten_of_ge (by linarith))))
+
+/-- The generalized loop of the flattening of a map `w` of the plane is homotopic to any
+generalized loop `p` restricting `w` to the unit square, by the straight-line homotopy. -/
+private theorem genLoop_homotopic_comp_flatten {w : ℝ × ℝ → M} {p : Ω^ (Fin 2) M x}
+    (hp : ∀ y, p y = w ((y 0 : ℝ), (y 1 : ℝ)))
+    (hv : IsSmoothSphere I x (w ∘ Prod.map flatten flatten)) :
+    GenLoop.Homotopic hv.genLoop p := by
+  refine GenLoop.Homotopic.symm ⟨{
+    toFun := fun q ↦ p fun i ↦ projIcc 0 1 zero_le_one (flattenHom q.1 (q.2 i))
+    continuous_toFun := p.1.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp
+      (contDiff_flattenHom.continuous.comp
+        (by fun_prop : Continuous fun q : unitInterval × (Fin 2 → unitInterval) ↦
+          ((q.1 : ℝ), (q.2 i : ℝ)))))
+    map_zero_left := fun y ↦ by simp [flattenHom_zero_left]
+    map_one_left := fun y ↦ by
+      simp only [Icc.coe_one, hp]
+      congr 2 <;>
+      · rw [projIcc_of_mem _ (flattenHom_mem ⟨zero_le_one, le_rfl⟩ (Subtype.prop _))]
+        simp [flattenHom_one_left, cubeToPlane_apply]
+    prop' := fun t y hy ↦ ?_ }⟩
+  obtain ⟨i, hi⟩ := hy
+  simp only [ContinuousMap.coe_mk]
+  rw [p.2 y ⟨i, hi⟩]
+  refine p.2 _ ⟨i, ?_⟩
+  rcases hi with hi | hi
+  · exact Or.inl (by simp only [hi, Icc.coe_zero, flattenHom_zero, projIcc_left, Icc.mk_zero])
+  · exact Or.inr (by simp only [hi, Icc.coe_one, flattenHom_one, projIcc_right, Icc.mk_one])
+
+/-- Flattening a smooth map of the plane that sends the boundary of the unit square to `x` does
+not change the integral of a closed `C¹` form over the unit square along it: the straight-line
+homotopy keeps the four edges of the square at `x`. -/
+private theorem rectangleIntegral_comp_flatten [IsManifold I 2 M] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {w : ℝ × ℝ → M}
+    (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ w)
+    (hwx : ∀ a ∈ Icc (0 : ℝ) 1, ∀ b ∈ Icc (0 : ℝ) 1, a = 0 ∨ a = 1 ∨ b = 0 ∨ b = 1 →
+      w (a, b) = x) :
+    rectangleIntegral φ (w ∘ Prod.map flatten flatten) (0, 0) (1, 1) =
+      rectangleIntegral φ w (0, 0) (1, 1) := by
+  let Φ : (ℝ × ℝ) × ℝ → M := fun q ↦ w (flattenHom q.2 q.1.1, flattenHom q.2 q.1.2)
+  have hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ :=
+    (hw.comp ((contDiff_flattenHom.comp
+      (by fun_prop : ContDiff ℝ ∞ fun q : (ℝ × ℝ) × ℝ ↦ (q.2, q.1.1))).prodMk
+      (contDiff_flattenHom.comp
+        (by fun_prop : ContDiff ℝ ∞ fun q : (ℝ × ℝ) × ℝ ↦ (q.2, q.1.2)))).contMDiff).of_le
+      (by norm_cast)
+  have h01 : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
+  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
+  have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
+  have key := rectangleIntegral_eq_of_homotopy hφ hdφ hΦ (a := (0, 0)) (b := (1, 1))
+    (Or.inr fun t ht c hc ↦ (apply_flattenHom_eq hwx hc h0 (h01 ▸ ht) (Or.inl rfl)).trans
+      (apply_flattenHom_eq hwx hc h0 h0 (Or.inl rfl)).symm)
+    (Or.inr fun t ht c hc ↦ (apply_flattenHom_eq hwx hc h1 (h01 ▸ ht) (Or.inr (Or.inl rfl))).trans
+      (apply_flattenHom_eq hwx hc h1 h1 (Or.inr (Or.inl rfl))).symm)
+    fun s hs c hc ↦
+      (apply_flattenHom_eq hwx hc (h01 ▸ hs) h1 (Or.inr (Or.inr (Or.inr rfl)))).trans
+        (apply_flattenHom_eq hwx hc (h01 ▸ hs) h0 (Or.inr (Or.inr (Or.inl rfl)))).symm
+  have hΦ₁ : (fun z ↦ Φ (z, 1)) = w ∘ Prod.map flatten flatten :=
+    funext fun z ↦ by simp [Φ, flattenHom_one_left, Prod.map]
+  have hΦ₀ : (fun z ↦ Φ (z, 0)) = w := funext fun z ↦ by simp [Φ, flattenHom_zero_left]
+  rwa [hΦ₁, hΦ₀] at key
+
+end Flatten
+
 /-! ### The integral over the second homotopy group -/
 
 section Integral
@@ -588,6 +730,25 @@ theorem sphereIntegral_mk (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) 
     sphereIntegral φ x ⟦hv.genLoop⟧ = rectangleIntegral φ v (0, 0) (1, 1) := by
   obtain ⟨hv', h⟩ := (exists_isSmoothSphere (I := I) (⟦hv.genLoop⟧ : π_ 2 M x)).choose_spec
   exact rectangleIntegral_eq_of_isSmoothSphere_of_homotopic hφ hdφ hv' hv (Quotient.exact h)
+
+/-- The integral of a closed `C¹` form over the class of a generalized loop `p` that is the
+restriction to the unit square of a smooth map `w` of the plane is the integral over the unit
+square along `w`. Unlike a smooth sphere, `w` need not be constant near the boundary of the
+square; it only sends the boundary to `x`, because `p` does. -/
+theorem sphereIntegral_mk_of_contMDiff (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ w) {p : Ω^ (Fin 2) M x}
+    (hp : ∀ y, p y = w ((y 0 : ℝ), (y 1 : ℝ))) :
+    sphereIntegral φ x ⟦p⟧ = rectangleIntegral φ w (0, 0) (1, 1) := by
+  -- `w` sends the boundary of the unit square to `x`, because `p` does.
+  have hwx : ∀ a ∈ Icc (0 : ℝ) 1, ∀ b ∈ Icc (0 : ℝ) 1, a = 0 ∨ a = 1 ∨ b = 0 ∨ b = 1 →
+      w (a, b) = x := fun a ha b hb hab ↦ by
+    refine (hp ![⟨a, ha⟩, ⟨b, hb⟩]).symm.trans (p.2 _ ?_)
+    rcases hab with h | h | h | h
+    exacts [⟨0, Or.inl (Subtype.ext h)⟩, ⟨0, Or.inr (Subtype.ext h)⟩,
+      ⟨1, Or.inl (Subtype.ext h)⟩, ⟨1, Or.inr (Subtype.ext h)⟩]
+  have hv := isSmoothSphere_comp_flatten hw hwx
+  rw [← Quotient.sound (genLoop_homotopic_comp_flatten hp hv), sphereIntegral_mk hφ hdφ hv,
+    rectangleIntegral_comp_flatten hφ hdφ hw hwx]
 
 /-- The integral of a closed `C¹` form over the identity class vanishes. -/
 @[simp]
@@ -642,6 +803,49 @@ theorem VanishesOnSpheres.sphereIntegral_eq_zero (hS : VanishesOnSpheres φ) (a 
 theorem sphereIntegral_mextDeriv {α : RoughForm I M F 1} (hα : IsSmoothForm I 1 α)
     (a : π_ 2 M x) : sphereIntegral (mextDeriv α) x a = 0 :=
   (vanishesOnSpheres_mextDeriv hα).sphereIntegral_eq_zero a
+
+/-- The integral over a class of `π₂(M, x)` is linear in the form: scalar multiples. -/
+@[simp]
+theorem sphereIntegral_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (c : 𝕜) (φ : RoughForm I M F 2) (a : π_ 2 M x) :
+    sphereIntegral (c • φ) x a = c • sphereIntegral φ x a :=
+  rectangleIntegral_smul c φ _ _ _
+
+/-- The integral of the zero form over every class of `π₂(M, x)` vanishes. -/
+@[simp]
+theorem sphereIntegral_zero (a : π_ 2 M x) : sphereIntegral (0 : RoughForm I M F 2) x a = 0 := by
+  simpa using sphereIntegral_smul (0 : ℝ) (0 : RoughForm I M F 2) a
+
+/-- The integral of the negative of a form over a class of `π₂(M, x)` is the negative of its
+integral. -/
+@[simp]
+theorem sphereIntegral_neg (φ : RoughForm I M F 2) (a : π_ 2 M x) :
+    sphereIntegral (-φ) x a = -sphereIntegral φ x a :=
+  rectangleIntegral_neg φ _ _ _
+
+/-- The integral over a class of `π₂(M, x)` is linear in the form: sums of continuous forms. -/
+@[simp]
+theorem sphereIntegral_add {ψ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    (hψ : IsSmoothForm I 0 ψ) (a : π_ 2 M x) :
+    sphereIntegral (φ + ψ) x a = sphereIntegral φ x a + sphereIntegral ψ x a := by
+  have hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (exists_isSmoothSphere (I := I) a).choose :=
+    (exists_isSmoothSphere (I := I) a).choose_spec.1.contMDiff.of_le (by simp)
+  have hint {θ : RoughForm I M F 2} (hθ : IsSmoothForm I 0 θ) (s : ℝ) :
+      IntervalIntegrable (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I (exists_isSmoothSphere (I := I) a).choose
+        θ (s, t) ![(1, 0), (0, 1)]) MeasureTheory.volume 0 1 :=
+    ((hθ.continuous_mpullback_apply hv ![(1, 0), (0, 1)]).comp
+      (Continuous.prodMk_right s)).intervalIntegrable 0 1
+  exact rectangleIntegral_add (a := (0, 0)) (b := (1, 1)) (fun s _ ↦ hint hφ s)
+    (fun s _ ↦ hint hψ s) ((continuous_integral_mpullback hφ hv 0 1).intervalIntegrable 0 1)
+    ((continuous_integral_mpullback hψ hv 0 1).intervalIntegrable 0 1)
+
+/-- The integral over a class of `π₂(M, x)` is linear in the form: differences of continuous
+forms. -/
+@[simp]
+theorem sphereIntegral_sub {ψ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    (hψ : IsSmoothForm I 0 ψ) (a : π_ 2 M x) :
+    sphereIntegral (φ - ψ) x a = sphereIntegral φ x a - sphereIntegral ψ x a := by
+  rw [sub_eq_add_neg, sphereIntegral_add hφ hψ.neg, sphereIntegral_neg, sub_eq_add_neg]
 
 /-- **Naturality.** For a smooth map `f : M → M'` of compact manifolds and a closed `C¹` two-form
 `φ` on `M'`, the integral of the pullback `f^* φ` over a class `a ∈ π₂(M, x)` is the integral of
