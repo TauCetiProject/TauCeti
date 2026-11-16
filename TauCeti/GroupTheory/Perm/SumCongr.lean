@@ -35,6 +35,8 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   lengths of the cycles.
 * `Equiv.Perm.sameCycle_sumCongr_inl`, `Equiv.Perm.sameCycle_sumCongr_inr`: two points of one
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
+* `Equiv.Perm.IsCycleOn.sumCongr_inl`, `Equiv.Perm.IsCycleOn.sumCongr_inr`: so a cycle of one
+  summand on a set is a cycle of the sum permutation on the copy of that set.
 * `Equiv.Perm.existsUnique_sameCycle_sumCongr`: representatives of the cycles of the two summands
   together represent the cycles of the sum.
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
@@ -147,6 +149,24 @@ theorem sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {a b : β} :
   rintro ⟨k, hk⟩
   simp only [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl,
     Sum.inl_ne_inr] at hk
+
+/-- A cycle of `σ` on `s` is a cycle of `Equiv.Perm.sumCongr σ τ` on the copy of `s` in the left
+summand. -/
+theorem IsCycleOn.sumCongr_inl {σ : Perm α} {s : Set α} (h : σ.IsCycleOn s) (τ : Perm β) :
+    (Perm.sumCongr σ τ).IsCycleOn (Sum.inl '' s) := by
+  refine ⟨(Perm.sumCongr σ τ).bijOn fun x => ?_, ?_⟩
+  · rcases x with a | b <;> simp [h.apply_mem_iff]
+  · rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩
+    exact sameCycle_sumCongr_inl.mpr (h.2 ha hb)
+
+/-- A cycle of `τ` on `s` is a cycle of `Equiv.Perm.sumCongr σ τ` on the copy of `s` in the right
+summand. -/
+theorem IsCycleOn.sumCongr_inr {τ : Perm β} {s : Set β} (h : τ.IsCycleOn s) (σ : Perm α) :
+    (Perm.sumCongr σ τ).IsCycleOn (Sum.inr '' s) := by
+  refine ⟨(Perm.sumCongr σ τ).bijOn fun x => ?_, ?_⟩
+  · rcases x with a | b <;> simp [h.apply_mem_iff]
+  · rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩
+    exact sameCycle_sumCongr_inr.mpr (h.2 ha hb)
 
 /-- Choices of one point on every cycle of `σ` and of `τ` together choose one point on every
 cycle of `Equiv.Perm.sumCongr σ τ`. -/
