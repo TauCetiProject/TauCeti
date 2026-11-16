@@ -283,23 +283,13 @@ private theorem exists_forall_form_coord_le [Finite ι]
     (hQ : Q ≠ 0) (y : ι → ι → K) :
     ∃ R : FinitePlace K → ℝ, (∀ w, 0 ≤ R w) ∧
       (∀ w k i, w (L w.1 i (y k)) ≤ R w * |Q| ^ c w.1 i) ∧ ∀ w k j, w (y k j) ≤ R w := by
-  have := Fintype.ofFinite ι
   have hQc (w : FinitePlace K) (i : ι) : 0 < |Q| ^ c w.1 i :=
     Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
-  let R : FinitePlace K → ℝ := fun w ↦
-    ∑ p : ι × ι, (w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2))
-  have hterm_nonneg (w : FinitePlace K) (p : ι × ι) :
-      0 ≤ w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2) :=
-    add_nonneg (div_nonneg (apply_nonneg _ _) (hQc w p.2).le) (apply_nonneg _ _)
-  have hR_pair (w : FinitePlace K) (k i : ι) :
-      w (L w.1 i (y k)) / |Q| ^ c w.1 i + w (y k i) ≤ R w :=
-    Finset.single_le_sum (fun p _ ↦ hterm_nonneg w p) (Finset.mem_univ (k, i))
-  refine ⟨R, fun w ↦ Finset.sum_nonneg fun p _ ↦ hterm_nonneg w p, fun w k i ↦ ?_,
-    fun w k j ↦ ?_⟩
-  · exact (div_le_iff₀ (hQc w i)).mp
-      ((le_add_of_nonneg_right (apply_nonneg _ _)).trans (hR_pair w k i))
-  · exact (le_add_of_nonneg_left (div_nonneg (apply_nonneg _ _) (hQc w j).le)).trans
-      (hR_pair w k j)
+  refine ⟨fun w ↦ ⨆ p : ι × ι,
+      max (w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2) (w (y p.1 p.2)),
+    fun w ↦ Real.iSup_nonneg fun p ↦ le_max_of_le_right (apply_nonneg _ _),
+    fun w k i ↦ (div_le_iff₀ (hQc w i)).mp (Finite.le_ciSup_of_le (k, i) (le_max_left _ _)),
+    fun w k j ↦ Finite.le_ciSup_of_le (k, j) (le_max_right _ _)⟩
 
 /-- Given vectors `y k : ι → K` already satisfying the local bound of `approxModule S₀ L c Q` at a
 chosen finite place `v`, some algebraic integer `d` with `v d = 1` scales every `y k` into
