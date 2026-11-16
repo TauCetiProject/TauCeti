@@ -159,7 +159,8 @@ theorem isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_absolutelyContinuous
       ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) →
       π' = graphPlan T ((μ : ProbabilityMeasure E) : Measure E) := fun π' hπ' ↦ by
     rw [ENNReal.toReal_ofNat] at hπ'
-    exact (isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two hπ').unique hμ hgraph
+    exact (isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two hπ').unique
+      (isCCRegular_of_absolutelyContinuous hμ) hgraph
       (transportCost_norm_sub_sq_div_two_ne_top μ ν)
   rw [isGeodesicSegment_iff_coe_eq_map_smul_add_smul ENNReal.one_lt_two ENNReal.ofNat_ne_top hπ]
   refine forall₂_congr fun t _ ↦ ?_
@@ -172,8 +173,8 @@ two geodesic segments of `P₂ (E)` from `μ` to `ν` agree on `[0, 1]`. -/
 theorem eqOn_of_isGeodesicSegment_of_absolutelyContinuous {μ ν : WassersteinSpace 2 E}
     (hμ : ((μ : ProbabilityMeasure E) : Measure E) ≪ ρ) {γ γ' : ℝ → WassersteinSpace 2 E}
     (h : IsGeodesicSegment γ μ ν) (h' : IsGeodesicSegment γ' μ ν) : EqOn γ γ' (Icc 0 1) := by
-  obtain ⟨u, -, -, -, -, hT, -⟩ := exists_isKantorovichOptimalTransportMap_gradient hμ
-    (transportCost_norm_sub_sq_div_two_ne_top μ ν)
+  obtain ⟨u, -, -, -, -, hT, -⟩ := exists_isKantorovichOptimalTransportMap_gradient
+    (isCCRegular_of_absolutelyContinuous hμ) (transportCost_norm_sub_sq_div_two_ne_top μ ν)
   intro t ht
   refine ext (ProbabilityMeasure.toMeasure_injective ?_)
   rw [(isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_absolutelyContinuous hμ hT).1 h t ht,

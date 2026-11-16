@@ -133,7 +133,8 @@ theorem ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp (hUρ : m.ma
   -- Exchanging the coordinates gives the graph plan of `∇u⋆`, so `∇u⋆ ∘ ∇u = id` `P`-a.e.
   have hinv := (comp_ae_eq_id_of_map_swap_graphPlan_eq hT.aemeasurable
     (measurable_gradient _).aemeasurable
-    (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hUρ hsub).2).1
+    (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq
+      (isCCRegular_of_absolutelyContinuous hUρ) hsub).2).1
   -- Read the inverse relation along `s`, whose law is `P`.
   rw [← hs.map_eq] at hinv
   filter_upwards [ae_eq_comp hs.aemeasurable hinv, h] with ω hω hω'
@@ -171,7 +172,8 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m]
         (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ U := by
   have := isProbabilityMeasure_left_of_transportCost_ne_top hfin
   obtain ⟨u, hconv, hlsc, hbot, hdiff, -, hT, hS, -, hinv⟩ :=
-    exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate hP hUρ hfin
+    exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate
+      (isCCRegular_of_absolutelyContinuous hP) (isCCRegular_of_absolutelyContinuous hUρ) hfin
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩
   filter_upwards [ae_eq_comp hU hinv] with ω hω using hω.symm
 
@@ -220,7 +222,8 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
       exact hle
     exact hsymm ▸ hopt.swap
   -- That optimal plan is the graph plan of a gradient `∇v`, so `s` and `s'` are both `∇v ∘ U`.
-  obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUρ hfin'
+  have hUreg : IsCCRegular (m.map U) := isCCRegular_of_absolutelyContinuous hUρ
+  obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUreg hfin'
   have hS := measurable_gradient fun y => (v y).toReal
   have hfactor : ∀ {t : α → E}, HasLaw t P m →
       (m.map fun ω => (t ω, U ω)).map Prod.swap = graphPlan (∇ fun y => (v y).toReal) (m.map U) →
@@ -229,7 +232,7 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
     have hae := ae_snd_eq_graphPlan (μ := m.map U) hS.aemeasurable
     rw [← heq] at hae
     exact ae_of_ae_map (ht.aemeasurable.prodMk hU) (ae_of_ae_map measurable_swap.aemeasurable hae)
-  filter_upwards [hfactor hs' (((hopt hs le_rfl).unique hUρ (hopt hs' hle) hfin').symm.trans
+  filter_upwards [hfactor hs' (((hopt hs le_rfl).unique hUreg (hopt hs' hle) hfin').symm.trans
       hgraph), hfactor hs hgraph] with ω h₁ h₂
   rw [h₁, h₂]
 

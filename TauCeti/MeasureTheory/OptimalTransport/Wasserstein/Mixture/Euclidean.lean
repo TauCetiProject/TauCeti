@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Mixture.Basic
 # Strict convexity of `W₂ ^ 2` on a Euclidean space
 
 On a finite-dimensional real inner product space, Brenier's theorem
-(`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous`) shows that every optimal
+(`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_isCCRegular`) shows that every optimal
 plan for the cost `edist ^ 2` out of a law absolutely continuous with respect to an additive Haar
 measure, such as Lebesgue measure on `ℝⁿ`, into a law at finite `W₂` distance from it, is induced
 by a map. This is the hypothesis of the general strict convexity result
@@ -66,7 +66,8 @@ theorem wassersteinEDist_two_smul_add_smul_sq_lt {μ ν₀ ν₁ : Measure E} [I
       ⟨ENNReal.mul_ne_top ha' (ENNReal.rpow_ne_top_of_nonneg zero_le_two h₀),
         ENNReal.mul_ne_top hb' (ENNReal.rpow_ne_top_of_nonneg zero_le_two h₁)⟩
   rw [ENNReal.toReal_ofNat] at hπ
-  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_absolutelyContinuous hμ hfin
+  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_isCCRegular
+    (isCCRegular_of_absolutelyContinuous hμ) hfin
   exact ⟨T, hT.aemeasurable, hπT⟩
 
 end TauCeti

@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniq
 # Uniqueness of quadratic Euclidean barycenters
 
 On a finite-dimensional real inner product space, Brenier's theorem
-(`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous`) shows that every optimal
+(`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_isCCRegular`) shows that every optimal
 plan for the cost `edist ^ 2` out of a law absolutely continuous with respect to an additive Haar
 measure, such as Lebesgue measure on `ℝⁿ`, into a law at finite `W₂` distance from it, is induced
 by a map. Between laws of `P₂(E)` the distance is always finite, so this is the hypothesis of the
@@ -64,8 +64,8 @@ theorem subsingleton_frechetBarycenters_two {P : Measure (WassersteinSpace 2 E)}
     hP (measure_mono_null ?_ h)
   intro m (hm : _ ≪ ρ) ν π hπ
   rw [ENNReal.toReal_ofNat] at hπ
-  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_absolutelyContinuous hm
-    (wassersteinEDist_ne_top measurable_edist m ν)
+  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_isCCRegular
+    (isCCRegular_of_absolutelyContinuous hm) (wassersteinEDist_ne_top measurable_edist m ν)
   exact ⟨T, hT.aemeasurable, hπT⟩
 
 /-- **Uniqueness of quadratic Wasserstein barycenters of finitely many laws** (Agueh–Carlier). On

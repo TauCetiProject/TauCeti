@@ -61,6 +61,9 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
+* `TauCeti.orthogonalProjectionOnto_add_inner_smul`,
+  `TauCeti.orthogonalProjectionOnto_coe_add_smul`, and `TauCeti.setOf_inner_eq_eq_range`:
+  orthogonal decomposition along a unit vector and parametric graphs over `(𝕜 ∙ e)ᗮ`.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -293,6 +296,37 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
     ⟪e, (y : E) + t • e⟫ = t := by
   rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
     ContinuousLinearEquiv.symm_apply_apply]
+
+/-- Orthogonal decomposition of a vector into its projection onto `(𝕜 ∙ e)ᗮ` and its component
+along a unit vector `e`. -/
+theorem orthogonalProjectionOnto_add_inner_smul {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {e : F} (he : ‖e‖ = 1) (x : F) :
+    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x : F) + inner 𝕜 e x • e = x := by
+  simpa only [Submodule.starProjection_unit_singleton 𝕜 he, Submodule.starProjection_apply,
+    add_comm] using (𝕜 ∙ e).starProjection_add_starProjection_orthogonal x
+
+/-- Projecting `(y : F) + t • e` onto `(𝕜 ∙ e)ᗮ` recovers the transverse coordinate `y`. -/
+@[simp]
+theorem orthogonalProjectionOnto_coe_add_smul {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (e : F) (y : (𝕜 ∙ e)ᗮ) (t : 𝕜) :
+    (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto ((y : F) + t • e) = y := by
+  rw [map_add, map_smul, Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
+    smul_zero, add_zero]
+  exact Subtype.ext ((Submodule.coe_orthogonalProjectionOnto_apply _ _).trans
+    ((Submodule.starProjection_eq_self_iff (K := (𝕜 ∙ e)ᗮ)).2 y.2))
+
+/-- A graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` for a unit vector `e` is the parametric
+range `y ↦ y + φ y • e`. -/
+theorem setOf_inner_eq_eq_range {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {e : F} (he : ‖e‖ = 1) (φ : (𝕜 ∙ e)ᗮ → 𝕜) :
+    {x : F | inner 𝕜 e x = φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+      Set.range fun y : (𝕜 ∙ e)ᗮ => (y : F) + φ y • e := by
+  ext x; simp only [Set.mem_ofPred_eq, Set.mem_range]
+  refine ⟨fun hx => ⟨_, hx ▸ orthogonalProjectionOnto_add_inner_smul he x⟩, ?_⟩
+  rintro ⟨y, rfl⟩
+  rw [orthogonalProjectionOnto_coe_add_smul, inner_add_right,
+    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.2, zero_add, inner_smul_right,
+    inner_self_eq_norm_sq_to_K, he, RCLike.ofReal_one, one_pow, mul_one]
 
 end TauCeti
 
