@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ToDistribution
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
-import TauCeti.Analysis.Distribution.Support
 
 /-!
 # Output support of pseudodifferential operators on Bessel-potential spaces

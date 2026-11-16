@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Tempered
 public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
-import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Normed.Module.Cone

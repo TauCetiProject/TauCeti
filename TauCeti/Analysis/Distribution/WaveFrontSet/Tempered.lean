@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.ToDistribution
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 
@@ -75,12 +76,12 @@ theorem fourierAtomMulSchwartzMap_apply (φ : 𝓓(Ω, ℂ)) (η x : E) :
 theorem fourier_fourierAtomMulSchwartzMap [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     (φ : 𝓓(Ω, ℂ)) (η ξ : E) :
     𝓕 (φ.fourierAtomMulSchwartzMap η) ξ = 𝓕 (toSchwartzMapCLM ℂ φ) (ξ + η) := by
-  rw [SchwartzMap.fourier_coe, SchwartzMap.fourier_coe, Real.fourier_eq, Real.fourier_eq]
-  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-  simp only [fourierAtomMulSchwartzMap_apply, toSchwartzMapCLM_apply,
-    TauCeti.fourierAtom_eq_fourierChar, Circle.smul_def, smul_eq_mul, inner_add_right, neg_add,
-    AddChar.map_add_eq_mul, Circle.coe_mul]
-  ring
+  have hmod : ⇑(φ.fourierAtomMulSchwartzMap η) = fun y ↦ 𝐞 ⟪y, -η⟫ • toSchwartzMapCLM ℂ φ y := by
+    ext y
+    rw [fourierAtomMulSchwartzMap_apply, toSchwartzMapCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
+      inner_neg_right, Circle.smul_def, smul_eq_mul, mul_comm]
+  rw [SchwartzMap.fourier_coe, hmod, TauCeti.fourier_fourierChar_smul, sub_neg_eq_add,
+    SchwartzMap.fourier_coe]
 
 end TestFunction
 
@@ -88,6 +89,7 @@ namespace TemperedDistribution
 
 /-- **The localized Fourier transform of a restricted tempered distribution.** The localized
 Fourier transform of the restriction of `S` to `Ω`, with cutoff `φ`, is `η ↦ S (φ e_η)`. -/
+@[simp]
 theorem localFourier_toDistribution (S : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
     (toDistribution Ω S).localFourier φ η = S (φ.fourierAtomMulSchwartzMap η) := by
   rw [Distribution.localFourier_def, complexPairing_toDistribution, fourierAtomMulSchwartzMap]
