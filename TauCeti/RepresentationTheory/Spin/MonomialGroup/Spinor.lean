@@ -431,7 +431,6 @@ square to `±1`, over a separably closed field. -/
 private noncomputable def spinPolarizationDataOfIsOrthoᵢ
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     SpinPolarizationData Q :=
-  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
   SpinPolarizationData.ofNondegenerate Q
     (QuadraticMap.nondegenerate_of_isOrthoᵢ hb fun i ↦ by rcases hQ i with h | h <;> simp [h])
 
