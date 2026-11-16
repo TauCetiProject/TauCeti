@@ -71,9 +71,10 @@ same constant `C`. The integrals are over the image `L K`, a tube of volume
 `C (A₂ / c D₁ / |det L| + A₁ / √c ‖L‖ √(D₂ Vol K / |det L|))`
 (`exists_abs_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_wedge_le_sqrt`).
 For the normal dilation and `D₁, D₂ = O(h²)` this is `O((h / λ)² + h / λ)`, with the `C²` norm of
-`ζ` entering through `A₂` and its `C¹` norm through `A₁`. Hence along a family with
-`h² / |det L| → 0`, in particular `h / λ → 0`, the pairings of `L^* Θ` and of `L^* i F_a` with each
-fixed test form differ by a quantity tending to zero
+`ζ` entering through `A₂` and its `C¹` norm through `A₁`. Hence along a family with `‖L‖`
+bounded and `h² / |det L| → 0`, in particular for normal dilations with `λ ≤ 1` and `h / λ → 0`,
+the pairings of `L^* Θ` and of `L^* i F_a` with each fixed test form differ by a quantity tending
+to zero
 (`tendsto_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_wedge`):
 the dilated cutoff current and the dilated curvature current of the original connection have the
 same weak limits.
