@@ -100,9 +100,6 @@ diffeomorphism of the model space read through it has explicit source and forwar
   local diffeomorphism if the composite is one.
 * `TauCeti.isLocalDiffeomorphAt_of_writtenInExtChartAt`: at an interior point with interior image,
   a continuous map whose extended-chart representative is a local diffeomorphism is one.
-* `PartialDiffeomorph.tendsto_symm_of_tendstoLocallyUniformlyOn`: a locally uniform limit of
-  maps `φ ∘ uᵢ` with values in the image of a subset `K` of the source is read back through the
-  inverse of `φ`, and the `uᵢ` converge pointwise to that reading.
 * `TauCeti.isLocalDiffeomorphAt_of_fderiv_eq`: the inverse function theorem in a Banach space, as a
   local diffeomorphism.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
@@ -683,51 +680,6 @@ theorem isLocalDiffeomorphAt_of_writtenInExtChartAt [IsManifold I n M] [IsManifo
 end EqOn
 
 end General
-
-section LocallyUniformLimit
-
-variable {𝕂 : Type*} [NontriviallyNormedField 𝕂]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
-  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {N : Type*} [UniformSpace N] [ChartedSpace G N]
-  {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
-
-open Filter in
-/-- A locally uniform limit `w` of maps `φ ∘ uᵢ`, where the `uᵢ` take values in a set
-`K ⊆ φ.source` and `w` takes values in `φ '' K`, is read back through the inverse of `φ`:
-`φ⁻¹ ∘ w` is continuous with values in `K`, the maps `φ ∘ uᵢ` converge to `φ ∘ φ⁻¹ ∘ w`, and
-`uᵢ → φ⁻¹ ∘ w` pointwise. -/
-theorem _root_.PartialDiffeomorph.tendsto_symm_of_tendstoLocallyUniformlyOn
-    (φ : PartialDiffeomorph I J M N n) {K : Set M} (hKφ : K ⊆ φ.source) {ι X : Type*}
-    [TopologicalSpace X] {l : Filter ι} {S : Set X} {w : X → N} {u : ι → X → M}
-    (hwc : ContinuousOn w S) (hwK : MapsTo w S (φ '' K)) (huK : ∀ i, MapsTo (u i) S K)
-    (hlim : TendstoLocallyUniformlyOn (fun i ↦ φ ∘ u i) w l S) :
-    ContinuousOn (φ.symm ∘ w) S ∧ MapsTo (φ.symm ∘ w) S K ∧
-      TendstoLocallyUniformlyOn (fun i ↦ φ ∘ u i) (φ ∘ φ.symm ∘ w) l S ∧
-      ∀ y ∈ S, Tendsto (fun i ↦ u i y) l (𝓝 ((φ.symm ∘ w) y)) := by
-  have hwt : ∀ y ∈ S, φ (φ.symm (w y)) = w y ∧ φ.symm (w y) ∈ K := by
-    intro y hy
-    obtain ⟨x, hx, hxw⟩ := hwK hy
-    have h := φ.toPartialEquiv.left_inv (hKφ hx)
-    rw [← hxw]
-    exact ⟨congrArg φ h, (congrArg (· ∈ K) h).mpr hx⟩
-  refine ⟨?_, fun y hy ↦ (hwt y hy).2, hlim.congr_right fun y hy ↦ ((hwt y hy).1).symm,
-    fun y hy ↦ ?_⟩
-  · refine φ.symm.contMDiffOn.continuousOn.comp hwc fun y hy ↦ ?_
-    obtain ⟨x, hx, hxw⟩ := hwK hy
-    rw [← hxw]
-    exact φ.toPartialEquiv.map_source (hKφ hx)
-  · obtain ⟨x, hx, hxw⟩ := hwK hy
-    have hcont : ContinuousAt φ.symm (w y) := by
-      rw [← hxw]
-      exact φ.symm.contMDiffOn.continuousOn.continuousAt
-        (φ.open_target.mem_nhds (φ.toPartialEquiv.map_source (hKφ hx)))
-    refine ((hcont.tendsto.comp (hlim.tendsto_at hy)).congr fun i ↦ ?_)
-    exact φ.toPartialEquiv.left_inv (hKφ (huK i hy))
-
-end LocallyUniformLimit
 
 section InverseFunctionTheorem
 

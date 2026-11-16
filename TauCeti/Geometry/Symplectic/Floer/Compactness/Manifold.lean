@@ -10,8 +10,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness of Floer solutions in a chart of a manifold
@@ -434,8 +434,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (fun k z hz ↦ (hpt k hz).2) (fun k z hz ↦ ⟨u k z, huK k hz, rfl⟩)
     (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hpt k hy).1).symm) hΩ.measurableSet)
     (fun k ↦ (hint_eq k hΩ.measurableSet subset_rfl).trans_le (hA k))
-  obtain ⟨hvc, hvK, hvlim, hvpt⟩ := φ.tendsto_symm_of_tendstoLocallyUniformlyOn hKφ hwc hwK
-    (fun n ↦ (huK (ψ n)).mono_left sdiff_subset) hlim
+  obtain ⟨hvc, hvK, hvlim, hvpt⟩ :=
+    φ.toOpenPartialHomeomorph.tendsto_symm_of_tendstoLocallyUniformlyOn hKφ hwc hwK
+      (fun n ↦ (huK (ψ n)).mono_left sdiff_subset) hlim
   refine ⟨ψ, p₀, Z, φ.symm ∘ w, hψ, hp₀, hplim, hZΩ, hcard, fun z hz ε hε ↦ ?_, hbd, hvc, hvK,
     hvlim, hvpt⟩
   filter_upwards [hconc z hz ε hε] with n hn
