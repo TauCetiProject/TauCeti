@@ -42,6 +42,7 @@ is `LinearMap.transvection (innerₛₗ ℝ ν) s` (`TauCeti.coe_transvectionL`)
 def transvectionL (ν s : E) : E →L[ℝ] E :=
   ContinuousLinearMap.id ℝ E + (innerSL ℝ ν).smulRight s
 
+/-- The transvection `TauCeti.transvectionL ν s` sends `x` to `x + ⟪ν, x⟫ s`. -/
 @[simp]
 theorem transvectionL_apply (ν s x : E) : transvectionL ν s x = x + ⟪ν, x⟫_ℝ • s := by
   rw [transvectionL, add_apply, ContinuousLinearMap.id_apply,
@@ -72,11 +73,13 @@ def transvectionEquivL {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) : E ≃L[ℝ] E :=
         transvectionL_transvectionL_neg (s := -s) (by rw [inner_neg_right, h, neg_zero]) x)
     (transvectionL_transvectionL_neg h)
 
+/-- The equivalence `TauCeti.transvectionEquivL` applies the transvection along `s`. -/
 @[simp]
 theorem transvectionEquivL_apply {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : E) :
     transvectionEquivL h x = transvectionL ν s x := by
   rw [transvectionEquivL, ContinuousLinearEquiv.equivOfInverse_apply]
 
+/-- The inverse of `TauCeti.transvectionEquivL` is the transvection along `-s`. -/
 @[simp]
 theorem transvectionEquivL_symm_apply {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : E) :
     (transvectionEquivL h).symm x = transvectionL ν (-s) x := by

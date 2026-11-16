@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.HyperplaneReflection
 public import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 import TauCeti.Analysis.InnerProductSpace.Transvection
 import TauCeti.Analysis.InnerProductSpace.Reflection
+import TauCeti.Analysis.PDE.EnergyForm.ConstantCoefficient
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 
@@ -16,7 +17,7 @@ import TauCeti.MeasureTheory.Integral.Average
 # Decay estimates at a flat boundary for constant coefficients
 
 Let `H = {x | c₀ < ⟪x, ν⟫}`, let `z` lie on its boundary hyperplane, and let `A` be a constant
-symmetric matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, `λ > 0`. Let `u ∈ H¹(U)`,
+matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, `λ > 0`. Let `u ∈ H¹(U)`,
 `B(z, r) ⊆ U`, vanish on `U ∖ H` and solve `-div(A ∇u) = 0` weakly on `U ∩ H`: zero boundary values
 on the flat part of the boundary. With `B_s⁺ = B(z, s) ∩ H` and `0 ≤ ρ ≤ r`, this file proves the
 half-ball versions of the decay estimates for constant coefficients on balls
@@ -38,8 +39,11 @@ points in Campanato's approach to `C^{1,α}` estimates up to a flat boundary; fo
 
 ## The argument
 
-The odd reflection of `u` solves the equation with coefficient `A` above the hyperplane and
-`R A R` below it, `R` the linear part of the reflection; this is constant exactly when `A ν ∥ ν`.
+Tested against `H¹₀`, the constant-coefficient equation only sees the symmetric part of `A`
+(`TauCeti.PDE.energyFormH1_const_coefficientSymmetricPart`), which has the same constants, so `A`
+may be taken symmetric. The odd reflection of `u` solves the equation with coefficient `A` above
+the hyperplane and `R A R` below it, `R` the linear part of the reflection; this is constant
+exactly when `A ν ∥ ν`.
 The shear `P y = y + (⟪ν, y⟫ - c₀) s`, `s = A ν / ⟪ν, A ν⟫ - ν / ‖ν‖²`, fixes the hyperplane,
 preserves `H` and the Lebesgue measure, and turns `A` into a constant `B` with `B ν ∥ ν`. So the
 odd reflection of `u ∘ P` solves `-div(B ∇w) = 0` on a whole ball centred at `z`
@@ -728,7 +732,7 @@ ellipticity constants `λ / κ²` and `Λ κ²`, a linear map `M` fixing `ν` an
 half-ball integrals of `u`, and conversely. -/
 private theorem exists_boundaryReflection {lam Lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hA' : ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) (hAs : A.IsSymm)
+    (hA' : ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
     (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hz : ⟪z, ν⟫_ℝ = c₀) (hball : ball z r ⊆ U)
     {u : W1p volume U 2} (hu0 : ∀ᵐ x ∂volume.restrict U, x ∉ H → W1p.value u x = 0)
     (hu : ∀ v : W1p0 volume (U ⊓ H) 2,
@@ -750,6 +754,11 @@ private theorem exists_boundaryReflection {lam Lam : ℝ} (hlam : 0 < lam)
         (hyperplaneReflection ν c₀ y) = -(ℝ ∙ ν)ᗮ.reflection (W1p.gradient w y)) ∧
       ∀ t : ℝ, ∫ y in ball z (r / (1 + Lam / lam)), ‖W1p.gradient w y - t • ν‖ ^ 2 ≤
         2 * (1 + Lam / lam) ^ 2 * ∫ x in ball z r ∩ H, ‖W1p.gradient u x - t • ν‖ ^ 2 := by
+  -- Only the symmetric part of `A` enters the weak equation, with the same constants.
+  wlog hAs : A.IsSymm generalizing A
+  · exact this (by simpa using hA) (abs_dotProduct_coefficientSymmetricPart_mulVec_le hA')
+      (fun v => (energyFormH1_const_coefficientSymmetricPart A _ v).trans (hu v))
+      (coefficientSymmetricPart_isSymm A)
   obtain ⟨hs, hq, hLam, hL, hL', hK, hK'⟩ := boundaryShear_constants hlam hν hA hA'
   set κ := 1 + Lam / lam
   have hκ : 0 < κ := by positivity
@@ -832,7 +841,7 @@ private theorem le_mul_div_pow_mul_of_le {X Z D κ ρ r : ℝ} (m : ℕ) (hκ : 
 /-- **Decay of the `L²` mass of the gradient at a flat boundary, for constant coefficients.** Let
 `n` be the dimension and `0 < λ`. There is `C > 0`, depending only on `n`, `λ` and `Λ`, with the
 following property. Let `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `z` lie on the boundary
-hyperplane, and let `A` be a symmetric matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`.
+hyperplane, and let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`.
 Let `u ∈ H¹(U)` vanish on `U ∖ H`, where `ball z r ⊆ U`, and solve `-div(A ∇u) = 0` weakly on
 `U ∩ H`. Then for `0 ≤ ρ ≤ r`,
 
@@ -841,7 +850,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le {lam Lam : ℝ} (hlam 
     ∃ C : ℝ, 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
       {ν z : EuclideanSpace ℝ ι} {c₀ r ρ : ℝ} {u : W1p volume U 2},
       (∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
-      (∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) → A.IsSymm → ν ≠ 0 →
+      (∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) → ν ≠ 0 →
       (∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) → ⟪z, ν⟫_ℝ = c₀ → ball z r ⊆ U →
       (∀ᵐ x ∂volume.restrict U, x ∉ H → W1p.value u x = 0) →
       (∀ v : W1p0 volume (U ⊓ H) 2, energyFormH1 (fun _ => A) 0 0 (W1p.restrictL inf_le_left u)
@@ -853,7 +862,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le {lam Lam : ℝ} (hlam 
   set n := Fintype.card ι
   set D := 2 ^ n * √(Lam * κ ^ 2 / (lam / κ ^ 2)) ^ n
   refine ⟨2 * (κ ^ 2) ^ (n + 2) * D + (κ ^ 2) ^ n + 1, by positivity, ?_⟩
-  intro U H A ν z c₀ r ρ u hA hA' hAs hν hH hz hball hu0 hu hρ hρr
+  intro U H A ν z c₀ r ρ u hA hA' hν hH hz hball hu0 hu hρ hρr
   obtain ⟨-, -, hLam, -⟩ := boundaryShear_constants hlam hν hA hA'
   have hI : 0 ≤ ∫ x in ball z r ∩ H, ‖W1p.gradient u x‖ ^ 2 :=
     setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet) fun _ _ => by positivity
@@ -867,7 +876,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le {lam Lam : ℝ} (hlam 
       (Filter.Eventually.of_forall fun _ => by positivity)
       (Filter.Eventually.of_forall (inter_subset_inter_left _ (ball_subset_ball hρr))))
   obtain ⟨B, M, w, hB, hB', hw, hT, -, -, hR⟩ :=
-    exists_boundaryReflection hlam hA hA' hAs hν hH hz hball hu0 hu
+    exists_boundaryReflection hlam hA hA' hν hH hz hball hu0 hu
   have : 0 < κ := add_pos_of_pos_of_nonneg one_pos (div_nonneg hLam hlam.le)
   have hr : 0 < r := hρ0.trans_le hρr
   have h1 := hT ρ hsmall ((ball_subset_ball hρr).trans hball) 0
@@ -887,7 +896,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le {lam Lam : ℝ} (hlam 
 /-- **Decay of the gradient's distance to the normal constants at a flat boundary, for constant
 coefficients.** Let `n` be the dimension and `0 < λ`. There is `C > 0`, depending only on `n`, `λ`
 and `Λ`, with the following property. Let `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `z` lie on the
-boundary hyperplane, and let `A` be a symmetric matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and
+boundary hyperplane, and let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and
 `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`. Let `u ∈ H¹(U)` vanish on `U ∖ H`, where `ball z r ⊆ U`, and solve
 `-div(A ∇u) = 0` weakly on `U ∩ H`. Write `B_s⁺ = B(z, s) ∩ H`. Then for `0 ≤ ρ ≤ r` and real `t`,
 
@@ -902,7 +911,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
     ∃ C : ℝ, 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
       {ν z : EuclideanSpace ℝ ι} {c₀ r ρ : ℝ} {u : W1p volume U 2},
       (∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
-      (∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) → A.IsSymm → ν ≠ 0 →
+      (∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) → ν ≠ 0 →
       (∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) → ⟪z, ν⟫_ℝ = c₀ → ball z r ⊆ U →
       (∀ᵐ x ∂volume.restrict U, x ∉ H → W1p.value u x = 0) →
       (∀ v : W1p0 volume (U ⊓ H) 2, energyFormH1 (fun _ => A) 0 0 (W1p.restrictL inf_le_left u)
@@ -916,7 +925,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
   set n := Fintype.card ι
   set D := 2 ^ (3 * n + 10) * (n + 1) ^ 2 * √(Lam * κ ^ 2 / (lam / κ ^ 2)) ^ (n + 2)
   refine ⟨2 * (κ ^ 2) ^ (n + 2 + 2) * D + (κ ^ 2) ^ (n + 2) + 1, by positivity, ?_⟩
-  intro U H A ν z c₀ r ρ u hA hA' hAs hν hH hz hball hu0 hu hρ hρr t
+  intro U H A ν z c₀ r ρ u hA hA' hν hH hz hball hu0 hu hρ hρr t
   obtain ⟨-, -, hLam, -⟩ := boundaryShear_constants hlam hν hA hA'
   have hI : 0 ≤ ∫ x in ball z r ∩ H, ‖W1p.gradient u x - t • ν‖ ^ 2 :=
     setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet) fun _ _ => by positivity
@@ -935,7 +944,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
       (Filter.Eventually.of_forall fun _ => by positivity)
       (Filter.Eventually.of_forall (inter_subset_inter_left _ (ball_subset_ball hρr)))))
   obtain ⟨B, M, w, hB, hB', hw, hT, hM, hodd, hR⟩ :=
-    exists_boundaryReflection hlam hA hA' hAs hν hH hz hball hu0 hu
+    exists_boundaryReflection hlam hA hA' hν hH hz hball hu0 hu
   have : 0 < κ := add_pos_of_pos_of_nonneg one_pos (div_nonneg hLam hlam.le)
   have hr : 0 < r := hρ0.trans_le hρr
   -- The average `m` of the odd field `∇w` over a ball centred on the hyperplane is normal.
