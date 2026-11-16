@@ -626,6 +626,31 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     (ENNReal.mul_ne_top (ENNReal.div_ne_top ht hs) (setLAverage_lt_top hfc.2.ne).ne)
     (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst).1 c)
 
+/-- Two constants `c` and `d` approximating `g` on average over `s ⊆ t` and over `t` are close:
+`‖c - d‖` is at most the average of `‖g - c‖` over `s` plus `μ t / μ s` times the average of
+`‖g - d‖` over `t`. Only the real-valued functions `‖g - c‖` and `‖g - d‖` are integrated. -/
+theorem norm_sub_le_setAverage_add_div_mul_setAverage_of_subset {E : Type*}
+    [SeminormedAddCommGroup E] {g : X → E} {c d : E} (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
+    (hc : IntegrableOn (fun x => ‖g x - c‖) s μ) (hd : IntegrableOn (fun x => ‖g x - d‖) t μ) :
+    ‖c - d‖ ≤ ⨍ x in s, ‖g x - c‖ ∂μ + μ.real t / μ.real s * ⨍ x in t, ‖g x - d‖ ∂μ := by
+  have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
+  have hs0 : 0 < μ.real s := ENNReal.toReal_pos hs hs'
+  have ht0 : μ.real t ≠ 0 := (measureReal_ne_zero_iff ht).2 fun h => hs (measure_mono_null hst h)
+  -- Integrate `‖c - d‖ ≤ ‖g - c‖ + ‖g - d‖` over `s`, and enlarge the second integral to `t`.
+  have key : μ.real s * ‖c - d‖ ≤ (∫ x in s, ‖g x - c‖ ∂μ) + ∫ x in t, ‖g x - d‖ ∂μ :=
+    calc μ.real s * ‖c - d‖ = ∫ _ in s, ‖c - d‖ ∂μ := by simp
+      _ ≤ ∫ x in s, (‖g x - c‖ + ‖g x - d‖) ∂μ :=
+          setIntegral_mono (integrableOn_const hs') (hc.add (hd.mono_set hst)) fun x => by
+            rw [← norm_neg (g x - c), neg_sub]
+            exact norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ = (∫ x in s, ‖g x - c‖ ∂μ) + ∫ x in s, ‖g x - d‖ ∂μ := integral_add hc (hd.mono_set hst)
+      _ ≤ _ := add_le_add_right (setIntegral_mono_set hd (.of_forall fun _ => norm_nonneg _)
+          (.of_forall hst)) _
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul,
+    show μ.real t / μ.real s * ((μ.real t)⁻¹ * ∫ x in t, ‖g x - d‖ ∂μ) =
+      (μ.real s)⁻¹ * ∫ x in t, ‖g x - d‖ ∂μ by field_simp, ← mul_add, le_inv_mul_iff₀ hs0]
+  exact key
+
 /-- The mean oscillation of `f` on `s` is at most the average of `‖f x - f y‖ₑ` over pairs of
 points of `s`. No integrability is assumed. -/
 theorem setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage
