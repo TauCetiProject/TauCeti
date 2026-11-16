@@ -102,13 +102,18 @@ theorem continuous_tangentCircle (p u : V) :
   fun_prop
 
 /-- A linear isometry carries the circle through `p` tangent to `u` and through `q` to the circle
-through the images. For the inclusion of a subspace, the circles of the subspace are the circles of
-the ambient space. -/
+through the images. For the inclusion of a subspace, see `Submodule.coe_tangentCircle`. -/
 @[simp]
 theorem _root_.LinearIsometry.map_tangentCircle {W : Type*} [NormedAddCommGroup W]
     [InnerProductSpace ℝ W] (f : V →ₗᵢ[ℝ] W) (p u q : V) (θ : ℝ) :
     f (tangentCircle p u q θ) = tangentCircle (f p) (f u) (f q) θ := by
   simp [tangentCircle_def, ← map_sub]
+
+/-- The circles of a subspace are the circles of the ambient space through the same points. -/
+@[simp, norm_cast]
+theorem _root_.Submodule.coe_tangentCircle (K : Submodule ℝ V) (p u q : K) (θ : ℝ) :
+    ((tangentCircle p u q θ : K) : V) = tangentCircle (p : V) u q θ :=
+  K.subtypeₗᵢ.map_tangentCircle p u q θ
 
 /-- A vector orthogonal to `p`, `q` and `u` is orthogonal to the whole circle. -/
 theorem inner_tangentCircle_eq_zero {p u q w : V} (hp : ⟪p, w⟫ = 0) (hu : ⟪u, w⟫ = 0)

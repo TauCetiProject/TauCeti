@@ -293,11 +293,9 @@ private theorem twoFieldSphereFamilyFiber_sphereCollapse (x : sphere (0 : E) 1)
     (twoFieldSphereFamilyFiber h hu hv x (twoFieldEquatorsFiberHomeomorph huv q)).1
         (sphereCollapse 2 Sphere2.north y) =
       tangentCircleDoubleLoop hux hvx p₀ q (y 0) (y 1) := by
-  have hK := (ℝ ∙ u x)ᗮ.subtypeₗᵢ.map_tangentCircle
-  simp only [Submodule.coe_subtypeₗᵢ, Submodule.coe_subtype] at hK
   apply Subtype.ext
   rw [coe_twoFieldSphereFamilyFiber_apply, coe_twoFieldSphereFamily_sphereCollapse,
-    coe_tangentCircleDoubleLoop_apply, hK]
+    coe_tangentCircleDoubleLoop_apply, Submodule.coe_tangentCircle]
   simp [hp₀]
 
 /-- **The two-spheres over a point generate the homology of the double loop space**
@@ -325,22 +323,23 @@ theorem isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber {m : ℕ}
   -- `(S², north) → (Sⁿ, x)`, through the generalized loops of the cube `I²`.
   set a := (orthogonalSphereToEquator (u x) p₀ : sphere (0 : E) 1)
   have ha : a = x := Subtype.ext (by simp [a, hp₀])
+  let B := BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
+    ⟨sphere (0 : E) 1, a⟩ Sphere2.north
   let Φ : Ω (Ω (sphere (0 : E) 1) a) (Path.refl a) ≃ₜ
       BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x :=
-    ((GenLoop.homeomorphOfUnique (Fin 1)).symm.trans (GenLoop.genLoopLoopHomeomorph a 1)).trans
-      ((basedMapSphereHomeomorph 2 a Sphere2.north).symm.trans
-        ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl))
+    B.symm.trans ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl)
   have hsq : (twoFieldSphereFamilyFiber h hu hv x).comp (e : C(_, _)) =
       (Φ : C(_, _)).comp (tangentCircleDoubleLoop hux hvx p₀) := by
     ext q z : 3
     obtain ⟨y, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north z
     refine (twoFieldSphereFamilyFiber_sphereCollapse h hu hv x huv hux hvx p₀ q hp₀ y).trans ?_
-    simp only [ContinuousMap.comp_apply, Φ, Homeomorph.trans_apply, ContinuousMap.coe_ofClass,
-      Homeomorph.subtype_apply_coe, Homeomorph.refl_apply, id_eq,
-      basedMapSphereHomeomorph_symm_apply, GenLoop.genLoopLoopHomeomorph_apply,
-      GenLoop.homeomorphOfUnique_symm_apply]
-    -- `default.castSucc` and `Fin.last 1` are the coordinates `0` and `1` of `Fin 2`
-    rfl
+    -- Read through `Map_*(S², Sⁿ) ≃ₜ Ω^[2] Sⁿ`, the double loop `σ(q)` is the cube loop `σ(q)`.
+    have hγ := (congrArg (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph 2 _)
+      (B.apply_symm_apply (tangentCircleDoubleLoop hux hvx p₀ q))).symm.trans
+      (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace
+        2 ⟨sphere (0 : E) 1, a⟩ Sphere2.north _)
+    exact ((BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_two_apply _ _ y).symm.trans
+      (DFunLike.congr_fun hγ y)).trans (basedMapSphereHomeomorph_apply ..)
   -- So the fibre map is the double loops of `tangentCircleDoubleLoop` up to homeomorphisms.
   let F := (singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)
   have hσ := isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop hE hux hvx p₀

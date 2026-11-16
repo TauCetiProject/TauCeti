@@ -45,8 +45,9 @@ which lies over `Sⁿ`: evaluation at the north pole sends `σ (x, q)` to `x`
 of their Example 6.20. The fibre `Σₓ` of `Σ` over `x` is the equator orthogonal to `v x` of the
 unit sphere of the orthogonal complement of `u x` (`TauCeti.twoFieldEquatorsFiberHomeomorph`),
 and over it `σ` restricts to a family of based maps `(S², north) → (Sⁿ, x)`
-(`TauCeti.twoFieldSphereFamilyFiber`). That the class of a fibre is nonvanishing, indeed a
-generator of `H_{n-2}(Ω²Sⁿ; ℤ)`, is proved in `TauCeti.AlgebraicTopology.Sphere.DoubleTangentCircle`
+(`TauCeti.twoFieldSphereFamilyFiber`). That the class of a fibre is nonvanishing for `n ≥ 4`,
+indeed a generator of `H_{n-2}(Ω²Sⁿ; ℤ)`, is proved in
+`TauCeti.AlgebraicTopology.Sphere.DoubleTangentCircle`
 (`TauCeti.isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber`). The remaining requirement
 of that definition, that `Σ → Sⁿ` be an oriented locally trivial bundle of closed manifolds, is
 not addressed here. The first cube coordinate `s` runs along the inner circle, as in
