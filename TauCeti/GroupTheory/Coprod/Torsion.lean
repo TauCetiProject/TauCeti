@@ -19,8 +19,9 @@ import TauCeti.GroupTheory.CoprodI.Word
 Every element of finite order in a free product of groups is conjugate to an element of finite order
 in one of the free factors; in particular, a free product of torsion-free groups is torsion-free,
 and any mixed two-letter product `inl x * inr y` of nontrivial factor elements has infinite order.
-Elements of the canonical factor submonoids are conjugate in the free product if and only if either
-both are `1` or they come from the same factor and are conjugate there.
+Elements of the canonical factor submonoids of `CoprodI M` are conjugate in the free product if and
+only if either both are `1` or they come from the same factor and are conjugate there (the binary
+counterparts for `M ∗ N` live in `TauCeti.GroupTheory.Coprod.Conj`).
 
 Both the indexed free product `Monoid.CoprodI` and the binary free product `Monoid.Coprod` across
 arbitrary universes are covered.
@@ -33,9 +34,6 @@ arbitrary universes are covered.
   `Monoid.CoprodI.eq_one_or_exists_isConj_of_isOfFinOrder`,
   `Monoid.CoprodI.isOfFinOrder_iff`: classification of torsion elements in `CoprodI G`.
 * `Monoid.CoprodI.instIsMulTorsionFree`: a free product of torsion-free groups is torsion-free.
-* `Monoid.Coprod.isConj_inl_inl_iff`, `Monoid.Coprod.isConj_inr_inr_iff`,
-  `Monoid.Coprod.isConj_inl_inr_iff`, `Monoid.Coprod.isConj_inr_inl_iff`: conjugacy between images
-  of factor elements in `M ∗ N`.
 * `Monoid.Coprod.exists_isConj_of_isOfFinOrder_of_ne_one`,
   `Monoid.Coprod.exists_isConj_inl_or_inr_of_isOfFinOrder`,
   `Monoid.Coprod.isOfFinOrder_iff`, `Monoid.Coprod.not_isOfFinOrder_inl_mul_inr`,
@@ -258,28 +256,6 @@ namespace Monoid.Coprod
 section Monoid
 
 variable {M N : Type*} [Monoid M] [Monoid N]
-
-/-- Two elements of `M` are conjugate in `M ∗ N` if and only if they are conjugate in `M`. -/
-@[simp]
-theorem isConj_inl_inl_iff {x y : M} : IsConj (inl x : M ∗ N) (inl y) ↔ IsConj x y :=
-  ⟨fun h => by simpa using fst.map_isConj h, (inl : M →* M ∗ N).map_isConj⟩
-
-/-- Two elements of `N` are conjugate in `M ∗ N` if and only if they are conjugate in `N`. -/
-@[simp]
-theorem isConj_inr_inr_iff {x y : N} : IsConj (inr x : M ∗ N) (inr y) ↔ IsConj x y :=
-  ⟨fun h => by simpa using snd.map_isConj h, (inr : N →* M ∗ N).map_isConj⟩
-
-/-- An element of `M` and an element of `N` are conjugate in `M ∗ N` if and only if both are `1`. -/
-@[simp]
-theorem isConj_inl_inr_iff {x : M} {y : N} : IsConj (inl x : M ∗ N) (inr y) ↔ x = 1 ∧ y = 1 := by
-  refine ⟨fun h => ⟨?_, ?_⟩, by rintro ⟨rfl, rfl⟩; simp⟩
-  · exact isConj_one_left.mp (by simpa using fst.map_isConj h)
-  · exact isConj_one_right.mp (by simpa using snd.map_isConj h)
-
-/-- An element of `N` and an element of `M` are conjugate in `M ∗ N` if and only if both are `1`. -/
-@[simp]
-theorem isConj_inr_inl_iff {x : M} {y : N} : IsConj (inr y : M ∗ N) (inl x) ↔ y = 1 ∧ x = 1 := by
-  rw [isConj_comm, isConj_inl_inr_iff, and_comm]
 
 /-- An element of `M` has finite order in `M ∗ N` if and only if it has finite order in `M`. -/
 @[simp]

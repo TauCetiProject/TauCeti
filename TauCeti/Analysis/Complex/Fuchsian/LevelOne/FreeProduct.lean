@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.Index
 public import TauCeti.NumberTheory.Modular.Generators
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+import TauCeti.GroupTheory.Coprod.Conj
 import TauCeti.GroupTheory.Coprod.Torsion
 import TauCeti.GroupTheory.CoprodI
 import TauCeti.GroupTheory.Index.Torsion
@@ -215,7 +216,7 @@ theorem not_isConj_coe_S_coe_R_sq : ¬IsConj (S : PSL(2, ℤ)) ((R : PSL(2, ℤ)
 theorem not_isConj_coe_R_coe_R_sq : ¬IsConj (R : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := fun h ↦ by
   have hmap := psl2zEquivCoprod.toMonoidHom.map_isConj h
   rw [MulEquiv.coe_toMonoidHom, map_pow, psl2zEquivCoprod_coe_R, ← map_pow,
-    Monoid.Coprod.isConj_inr_inr_iff, isConj_iff_eq] at hmap
+    Monoid.Coprod.isConj_inr_iff, isConj_iff_eq] at hmap
   have hadd : (1 : ZMod 3) = 2 := by
     simpa [← ofAdd_nsmul] using congrArg Multiplicative.toAdd hmap
   exact absurd hadd (by decide)
