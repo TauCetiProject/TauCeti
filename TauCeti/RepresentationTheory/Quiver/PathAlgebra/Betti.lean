@@ -37,15 +37,18 @@ the graded Cartan matrix `C(q) = (I - q Aᵀ)⁻¹`.
 
 * `TauCeti.PathAlgebra.isGeneratedInDegree_zero_gradedVertexProjective`: `kQ eᵢ` is generated in
   internal degree `0`.
+* `TauCeti.PathAlgebra.gradedFiniteProjectiveModules_gradedArrowSum`: the arrow kernel
+  `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is a finite graded projective `kQ`-module.
 * `TauCeti.PathAlgebra.isLinear_gradedVertexSimpleProjectiveResolution` and
   `TauCeti.PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution`: the first-arrow resolution
   of `Sᵢ` is linear and minimal.
+* `TauCeti.PathAlgebra.laurentK0_gradedArrowSum_eq_sum`: the class of `⨁_{a : j ⟶ i} (kQ eᵢ){1}`
+  in `K₀^gr(proj kQ)` is `∑ i, |j ⟶ i| q [kQ eᵢ]`.
+* `TauCeti.PathAlgebra.bettiPoincareMatrix_gradedVertexSimple`: the Betti Poincaré matrix of any
+  minimal resolutions of the graded vertex simples of a finite acyclic path algebra is
+  `I + q t Aᵀ`.
 * `TauCeti.PathAlgebra.eval_neg_one_trunc_two_bettiPoincareMatrix`: evaluating the truncated Betti
   Poincaré matrix at `t = -1` gives `1 - q Aᵀ`.
-* `TauCeti.PathAlgebra.bettiPoincareMatrix_gradedVertexSimpleProjectiveResolution`: the Betti
-  Poincaré matrix of a finite acyclic path algebra is `I + q t Aᵀ`.
-* `TauCeti.PathAlgebra.laurentK0_gradedArrowSum_eq_sum`: the class of `⨁_{a : i ⟶ j} (kQ eⱼ){1}`
-  in `K₀^gr(proj kQ)` is `∑ l, |i ⟶ l| q [kQ e_l]`.
 
 ## References
 
@@ -62,7 +65,7 @@ noncomputable section
 
 namespace TauCeti.PathAlgebra
 
-open CategoryTheory LaurentPolynomial
+open CategoryTheory CategoryTheory.Limits LaurentPolynomial
 open scoped Matrix
 
 universe u v w
@@ -113,6 +116,16 @@ theorem isGeneratedInDegree_one_gradedArrowSum (i : Q) :
   rw [InternalGrading.isGeneratedInDegree_shift_iff, add_neg_cancel]
   exact isGeneratedInDegree_zero_gradedVertexProjective k Q a.1
 
+/-- The arrow kernel `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is a finite graded projective `kQ`-module. -/
+theorem gradedFiniteProjectiveModules_gradedArrowSum (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
+    gradedFiniteProjectiveModules (integerGrade k Q) (gradedArrowSum k Q i) := by
+  refine gradedFiniteProjectiveModules_iff.mpr
+    ⟨gradedFiniteModules_iff.mp (gradedFiniteModules_gradedArrowSum k Q i), ?_⟩
+  let _ : ∀ a : (j : Q) × (i ⟶ j),
+      Module.Projective (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
+    fun a => moduleProjective_gradedVertexProjective k Q a.1
+  infer_instance
+
 private abbrev resolutionTerm (i : Q) : ℕ → GradedModuleCat.{max u v w} (integerGrade k Q)
   | 0 => gradedVertexProjective k Q i
   | 1 => gradedArrowSum k Q i
@@ -127,11 +140,8 @@ def gradedVertexSimpleProjectiveResolution (i : Q) [Finite ((j : Q) × (i ⟶ j)
   grading n := (resolutionTerm k Q i n).grading
   projective
     | 0 => moduleProjective_gradedVertexProjective k Q i
-    | 1 =>
-      let _ : ∀ a : (j : Q) × (i ⟶ j),
-          Module.Projective (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
-        fun a => moduleProjective_gradedVertexProjective k Q a.1
-      inferInstance
+    | 1 => (gradedFiniteProjectiveModules_iff.mp
+        (gradedFiniteProjectiveModules_gradedArrowSum k Q i)).2
     | _ + 2 => inferInstance
   d
     | 0 => (gradedArrowSumToVertexProjective k Q i).hom
@@ -234,96 +244,160 @@ theorem isMinimal_gradedVertexSimpleProjectiveResolution (i : Q)
 
 end Resolution
 
+section ArrowSumClass
+
+variable (k Q) [CommRing k] [Fintype Q]
+
+/-- The class of the arrow kernel `⨁_{a : j ⟶ i} (kQ eᵢ){1}` in `K₀^gr(proj kQ)` is
+`∑ i, |j ⟶ i| q [kQ eᵢ]`. -/
+theorem laurentK0_gradedArrowSum_eq_sum (j : Q) [Finite ((i : Q) × (j ⟶ i))] :
+    LaurentK0.of.{max u v w}
+        (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
+        ⟨gradedArrowSum k Q j, gradedFiniteProjectiveModules_gradedArrowSum k Q j⟩ =
+      ∑ i : Q, ((Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1) •
+        gradedVertexProjectiveClass k Q i := by
+  classical
+  let _ (i : Q) : Finite (j ⟶ i) :=
+    Finite.of_injective (fun f : j ⟶ i => (⟨i, f⟩ : (i : Q) × (j ⟶ i)))
+      fun _ _ h => eq_of_heq (Sigma.mk.inj h).2
+  let _ (i : Q) : Fintype (j ⟶ i) := Fintype.ofFinite (j ⟶ i)
+  let e : Fin (Fintype.card ((i : Q) × (j ⟶ i))) ≃ ((i : Q) × (j ⟶ i)) :=
+    (Fintype.equivFin _).symm
+  let P := gradedFiniteProjectiveModules (integerGrade k Q)
+  let G : ((i : Q) × (j ⟶ i)) → GradedModuleCat.{max u v w} (integerGrade k Q) :=
+    fun a => (gradedVertexProjective k Q a.1).shiftObj 1
+  let F : Fin (Fintype.card ((i : Q) × (j ⟶ i))) → P.FullSubcategory := fun m =>
+    ⟨G (e m), gradedFiniteProjectiveModules_shiftObj
+      (gradedFiniteProjectiveModules_gradedVertexProjective k Q (e m).1) 1⟩
+  have _ : HasFiniteBiproducts P.FullSubcategory := hasFiniteBiproducts_of_hasBinaryBiproducts
+  have _ : HasBiproduct (fun m => G (e m)) := HasBiproduct.of_hasCoproduct _
+  let e₁ : P.ι.obj (⨁ F) ≅ ⨁ (fun m => G (e m)) := P.ι.mapBiproduct F
+  let e₂ : ⨁ (fun m => G (e m)) ≅ GradedModuleCat.directSumObj (fun m => G (e m)) :=
+    (biproduct.isColimit (fun m => G (e m))).coconePointUniqueUpToIso
+      (GradedModuleCat.coproductCofanIsColimit (fun m => G (e m)))
+  let e₃ : GradedModuleCat.directSumObj (fun m => G (e m)) ≅ GradedModuleCat.directSumObj G :=
+    { hom := GradedModuleCat.coproductDesc (fun m => G (e m))
+        (Cofan.mk (GradedModuleCat.directSumObj G)
+          fun m => (GradedModuleCat.coproductCofan G).inj (e m))
+      inv := GradedModuleCat.coproductDesc G
+        (Cofan.mk (GradedModuleCat.directSumObj (fun m => G (e m)))
+          fun a => (eqToIso (congrArg G (e.apply_symm_apply a).symm)).hom ≫
+            (GradedModuleCat.coproductCofan (fun m => G (e m))).inj (e.symm a))
+      hom_inv_id :=
+        Cofan.IsColimit.hom_ext (GradedModuleCat.coproductCofanIsColimit _) _ _ fun m => by
+          rw [← Category.assoc, GradedModuleCat.coproductCofan_inj_desc]
+          change (GradedModuleCat.coproductCofan G).inj (e m) ≫ _ = _
+          rw [GradedModuleCat.coproductCofan_inj_desc, Category.comp_id]
+          have h_eq : ∀ {m'} (h : m = m'),
+              (eqToIso (congrArg (fun x => G (e x)) h)).hom ≫
+                (GradedModuleCat.coproductCofan (fun x => G (e x))).inj m' =
+              (GradedModuleCat.coproductCofan (fun x => G (e x))).inj m := by
+            rintro _ rfl; simp
+          exact h_eq (e.symm_apply_apply m).symm
+      inv_hom_id :=
+        Cofan.IsColimit.hom_ext (GradedModuleCat.coproductCofanIsColimit _) _ _ fun a => by
+          rw [← Category.assoc, GradedModuleCat.coproductCofan_inj_desc]
+          change ((eqToIso (congrArg G (e.apply_symm_apply a).symm)).hom ≫
+            (GradedModuleCat.coproductCofan (fun m => G (e m))).inj (e.symm a)) ≫ _ = _
+          rw [Category.assoc, GradedModuleCat.coproductCofan_inj_desc, Category.comp_id]
+          have h_eq : ∀ {a'} (h : a = a'),
+              (eqToIso (congrArg G h)).hom ≫ (GradedModuleCat.coproductCofan G).inj a' =
+              (GradedModuleCat.coproductCofan G).inj a := by
+            rintro _ rfl; simp
+          exact h_eq (e.apply_symm_apply a).symm }
+  let iso : (⨁ F) ≅
+      (⟨gradedArrowSum k Q j, gradedFiniteProjectiveModules_gradedArrowSum k Q j⟩ :
+        P.FullSubcategory) :=
+    ObjectProperty.isoMk P (e₁ ≪≫ e₂ ≪≫ e₃)
+  rw [← LaurentK0.of_congr.{max u v w} _ iso,
+    ← LaurentK0.ofExactK0_exactK0_of.{max u v w},
+    ← ExactK0.fromSplit_of.{max u v w},
+    SplitK0.of_biproduct, map_sum, map_sum]
+  have hterm : ∀ m,
+      LaurentK0.ofExactK0.{max u v w}
+          (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
+          (ExactK0.fromSplit.{max u v w} _ (SplitK0.of.{max u v w} (F m))) =
+        (T 1 : LaurentPolynomial ℤ) • gradedVertexProjectiveClass k Q (e m).1 := fun m => by
+    rw [ExactK0.fromSplit_of.{max u v w}, LaurentK0.ofExactK0_exactK0_of.{max u v w},
+      gradedVertexProjectiveClass_eq]
+    exact laurentK0_projective_of_shiftObj
+      ⟨gradedVertexProjective k Q (e m).1,
+        gradedFiniteProjectiveModules_gradedVertexProjective k Q (e m).1⟩ 1
+  simp_rw [hterm]
+  rw [e.sum_comp fun a : (i : Q) × (j ⟶ i) =>
+    (T 1 : LaurentPolynomial ℤ) • gradedVertexProjectiveClass k Q a.1,
+    Fintype.sum_sigma]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  dsimp only
+  rw [Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, ← Nat.cast_smul_eq_nsmul
+    (LaurentPolynomial ℤ), smul_smul]
+
+end ArrowSumClass
+
 /-! ### Betti Poincaré matrix of a finite acyclic path algebra -/
 
 section BettiMatrix
 
 variable (k Q) [Field k] [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
-  [∀ i : Q, Finite ((j : Q) × (i ⟶ j))]
-
-/-- **Evaluation of the Betti Poincaré matrix of a finite acyclic path algebra at `t = -1`**
-gives `1 - q Aᵀ`, the left and right inverse of the graded Cartan matrix `C(q)`. -/
-theorem eval_neg_one_trunc_two_bettiPoincareMatrix [DecidableEq Q] :
-    (bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q)
-        (fun j => gradedVertexSimpleProjectiveResolution k Q j)).map
-        (fun P => (PowerSeries.trunc 2 P).eval (-1)) =
-      1 - (T 1 : LaurentPolynomial ℤ) •
-        (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ := by
-  let _ := integerGradedAlgebra k Q
-  let _ := Fintype.ofFinite Q
-  have hCB :
-      gradedCartanMatrix (integerGrade k Q) (gradedVertexProjectiveClassBasis k Q)
-          (gradedVertexSimpleClassBasis k Q) *
-        (bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q)
-            (fun j => gradedVertexSimpleProjectiveResolution k Q j)).map
-          (fun P => (PowerSeries.trunc 2 P).eval (-1)) = 1 :=
-    gradedCartanMatrix_mul_eval_neg_one_trunc_bettiPoincareMatrix_eq_one
-      (gradedVertexProjectiveClassBasis k Q) (gradedVertexSimpleClassBasis k Q)
-      (fun j => gradedVertexSimpleClassBasis_apply k Q j)
-      (fun j => gradedVertexSimpleProjectiveResolution k Q j)
-      (fun j _ hn => subsingleton_gradedVertexSimpleProjectiveResolution_of_two_le k Q j hn)
-  have hMC := one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one k Q
-  calc
-    (bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q)
-        (fun j => gradedVertexSimpleProjectiveResolution k Q j)).map
-        (fun P => (PowerSeries.trunc 2 P).eval (-1))
-      = 1 * (bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q)
-          (fun j => gradedVertexSimpleProjectiveResolution k Q j)).map
-          (fun P => (PowerSeries.trunc 2 P).eval (-1)) := (Matrix.one_mul _).symm
-    _ = ((1 - (T 1 : LaurentPolynomial ℤ) •
-            (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ) *
-          gradedCartanMatrix (integerGrade k Q) (gradedVertexProjectiveClassBasis k Q)
-            (gradedVertexSimpleClassBasis k Q)) *
-          (bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q)
-            (fun j => gradedVertexSimpleProjectiveResolution k Q j)).map
-            (fun P => (PowerSeries.trunc 2 P).eval (-1)) := by rw [hMC]
-    _ = (1 - (T 1 : LaurentPolynomial ℤ) •
-            (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ) * 1 := by
-          rw [Matrix.mul_assoc, hCB]
-    _ = 1 - (T 1 : LaurentPolynomial ℤ) •
-          (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ :=
-          Matrix.mul_one _
 
 /-- **The Betti Poincaré matrix of a finite acyclic path algebra is `I + q t Aᵀ`.** In the graded
-vertex-projective basis `[kQ eᵢ]`, the `(i, j)` entry of the Betti Poincaré matrix of the minimal
-resolutions of the graded vertex simples `Sⱼ` is `δᵢⱼ + |j ⟶ i| q t`. -/
-theorem bettiPoincareMatrix_gradedVertexSimpleProjectiveResolution [DecidableEq Q] (i j : Q) :
-    bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q)
-        (fun l => gradedVertexSimpleProjectiveResolution k Q l) i j =
+vertex-projective basis `[kQ eᵢ]`, the `(i, j)` entry of the Betti Poincaré matrix of any minimal
+graded projective resolutions `r` of the graded vertex simples `Sⱼ` is `δᵢⱼ + |j ⟶ i| q t`. -/
+theorem bettiPoincareMatrix_gradedVertexSimple [DecidableEq Q]
+    (r : ∀ l, GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
+      (integerGrade k Q) (gradedVertexSimple k Q l).grading)
+    [∀ l n, Module.Finite (pathAlgebra k Q) ((r l).X n)]
+    (hr : ∀ l, (r l).IsMinimal) (i j : Q) :
+    bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q) r i j =
       (if i = j then 1 else 0) +
         PowerSeries.C ((Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1) * PowerSeries.X := by
   let _ := integerGradedAlgebra k Q
+  let _ := Fintype.ofFinite Q
+  let _ (a b : Q) : Finite (a ⟶ b) :=
+    finite_hom_of_module_finite_pathAlgebra k Q inferInstance a b
+  have heq :
+      bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q) r =
+        bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q)
+          (fun l => gradedVertexSimpleProjectiveResolution k Q l) :=
+    bettiPoincareMatrix_eq_of_isMinimal (gradedVertexProjectiveClassBasis k Q) hr
+      (fun l => isMinimal_gradedVertexSimpleProjectiveResolution k Q l)
+      (fun _ hp => integerGrade_eq_bot_of_neg k Q hp)
+  rw [heq, bettiPoincareMatrix_apply]
+  let r₀ := gradedVertexSimpleProjectiveResolution k Q j
   have h0 :
-      PowerSeries.coeff 0 ((gradedVertexSimpleProjectiveResolution k Q j).bettiPoincareSeries
-          (gradedVertexProjectiveClassBasis k Q) i) =
+      PowerSeries.coeff 0 (r₀.bettiPoincareSeries (gradedVertexProjectiveClassBasis k Q) i) =
         if i = j then 1 else 0 := by
     rw [GradedProjectiveResolution.coeff_bettiPoincareSeries]
     have hterm :
         LaurentK0.of.{max u v w}
             (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
-            ((gradedVertexSimpleProjectiveResolution k Q j).finiteProjectiveTerm 0) =
+            (r₀.finiteProjectiveTerm 0) =
           gradedVertexProjectiveClassBasis k Q j := by
       rw [gradedVertexProjectiveClassBasis_apply, gradedVertexProjectiveClass_eq]
       congr 1
       refine ObjectProperty.FullSubcategory.ext ?_
-      rw [(gradedVertexSimpleProjectiveResolution k Q j).finiteProjectiveTerm_obj 0,
-        gradedVertexSimpleProjectiveResolution_termObj_zero]
+      rw [r₀.finiteProjectiveTerm_obj 0, gradedVertexSimpleProjectiveResolution_termObj_zero]
     rw [hterm, Module.Basis.repr_self, Finsupp.single_apply]
     simp [eq_comm]
   have h1 :
-      PowerSeries.coeff 1 ((gradedVertexSimpleProjectiveResolution k Q j).bettiPoincareSeries
-          (gradedVertexProjectiveClassBasis k Q) i) =
+      PowerSeries.coeff 1 (r₀.bettiPoincareSeries (gradedVertexProjectiveClassBasis k Q) i) =
         (Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1 := by
-    have heval := congrFun (congrFun (eval_neg_one_trunc_two_bettiPoincareMatrix k Q) i) j
-    rw [Matrix.map_apply, bettiPoincareMatrix_apply,
-      GradedProjectiveResolution.eval_neg_one_trunc_bettiPoincareSeries,
-      Finset.sum_range_succ, Finset.sum_range_one, pow_zero, one_mul, pow_one,
-      neg_one_mul, ← sub_eq_add_neg, ← GradedProjectiveResolution.coeff_bettiPoincareSeries,
-      ← GradedProjectiveResolution.coeff_bettiPoincareSeries, h0] at heval
-    simp only [Matrix.sub_apply, Matrix.one_apply, Matrix.smul_apply, Matrix.transpose_apply,
-      Matrix.of_apply, smul_eq_mul] at heval
-    linear_combination -heval
-  rw [bettiPoincareMatrix_apply]
+    rw [GradedProjectiveResolution.coeff_bettiPoincareSeries]
+    have hterm :
+        r₀.finiteProjectiveTerm 1 =
+          ⟨gradedArrowSum k Q j, gradedFiniteProjectiveModules_gradedArrowSum k Q j⟩ :=
+      ObjectProperty.FullSubcategory.ext <| by
+        rw [r₀.finiteProjectiveTerm_obj 1, gradedVertexSimpleProjectiveResolution_termObj_one]
+    rw [hterm, laurentK0_gradedArrowSum_eq_sum k Q j, map_sum, Finsupp.finsetSum_apply]
+    have hcoord (l : Q) :
+        ((gradedVertexProjectiveClassBasis k Q).repr
+            (((Nat.card (j ⟶ l) : LaurentPolynomial ℤ) * T 1) •
+              gradedVertexProjectiveClass k Q l)) i =
+          if l = i then (Nat.card (j ⟶ l) : LaurentPolynomial ℤ) * T 1 else 0 := by
+      rw [← gradedVertexProjectiveClassBasis_apply k Q l, map_smul, Module.Basis.repr_self,
+        Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero]
+    simp_rw [hcoord]
+    simp
   refine PowerSeries.ext fun n => ?_
   cases n with
   | zero =>
@@ -337,38 +411,36 @@ theorem bettiPoincareMatrix_gradedVertexSimpleProjectiveResolution [DecidableEq 
     | succ m =>
       have hsub := subsingleton_gradedVertexSimpleProjectiveResolution_of_two_le k Q j
         (n := m + 2) (by omega)
-      let r := gradedVertexSimpleProjectiveResolution k Q j
       have hzero :=
-        r.coeff_bettiPoincareSeries_eq_zero_of_subsingleton
+        r₀.coeff_bettiPoincareSeries_eq_zero_of_subsingleton
           (gradedVertexProjectiveClassBasis k Q) i hsub
       rw [hzero, map_add, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_C,
         ite_eq_right (Nat.succ_ne_zero m), add_zero]
       split_ifs <;> simp [PowerSeries.coeff_one]
 
-/-- The class of the arrow kernel `⨁_{a : j ⟶ i} (kQ eᵢ){1}` in `K₀^gr(proj kQ)` is
-`∑ i, |j ⟶ i| q [kQ eᵢ]`. -/
-theorem laurentK0_gradedArrowSum_eq_sum [Fintype Q] (j : Q) :
-    LaurentK0.of.{max u v w}
-        (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
-        ((gradedVertexSimpleProjectiveResolution k Q j).finiteProjectiveTerm 1) =
-      ∑ i : Q, ((Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1) •
-        gradedVertexProjectiveClass k Q i := by
-  classical
-  let _ := integerGradedAlgebra k Q
-  rw [← (gradedVertexProjectiveClassBasis k Q).sum_repr
-    (LaurentK0.of.{max u v w} _
-      ((gradedVertexSimpleProjectiveResolution k Q j).finiteProjectiveTerm 1))]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [gradedVertexProjectiveClassBasis_apply]
-  have hB := congrArg (PowerSeries.coeff 1)
-    (bettiPoincareMatrix_gradedVertexSimpleProjectiveResolution k Q i j)
-  have hite :
-      PowerSeries.coeff 1
-        (if i = j then (1 : PowerSeries (LaurentPolynomial ℤ)) else 0) = 0 := by
-    split_ifs <;> simp [PowerSeries.coeff_one]
-  rw [bettiPoincareMatrix_apply, GradedProjectiveResolution.coeff_bettiPoincareSeries, map_add,
-    hite, zero_add, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_C] at hB
-  rw [hB]
+/-- **Evaluation of the Betti Poincaré matrix of a finite acyclic path algebra at `t = -1`**
+gives `1 - q Aᵀ`, the left and right inverse of the graded Cartan matrix `C(q)`. -/
+theorem eval_neg_one_trunc_two_bettiPoincareMatrix [DecidableEq Q]
+    (r : ∀ l, GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
+      (integerGrade k Q) (gradedVertexSimple k Q l).grading)
+    [∀ l n, Module.Finite (pathAlgebra k Q) ((r l).X n)]
+    (hr : ∀ l, (r l).IsMinimal) :
+    (bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q) r).map
+        (fun P => (PowerSeries.trunc 2 P).eval (-1)) =
+      1 - (T 1 : LaurentPolynomial ℤ) •
+        (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ := by
+  refine Matrix.ext fun i j => ?_
+  rw [Matrix.map_apply, bettiPoincareMatrix_gradedVertexSimple k Q r hr i j,
+    Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range]
+  simp only [Matrix.sub_apply, Matrix.one_apply, Matrix.smul_apply, Matrix.transpose_apply,
+    Matrix.of_apply, smul_eq_mul, Finset.sum_range_succ, Finset.sum_range_zero, zero_add,
+    pow_zero, pow_one, mul_one, RingHom.id_apply, map_add, PowerSeries.coeff_zero_mul_X,
+    PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_C, add_zero]
+  split_ifs
+  · simp only [PowerSeries.coeff_one, ↓reduceIte, one_ne_zero, zero_add]
+    ring
+  · simp only [map_zero, zero_add]
+    ring
 
 end BettiMatrix
 

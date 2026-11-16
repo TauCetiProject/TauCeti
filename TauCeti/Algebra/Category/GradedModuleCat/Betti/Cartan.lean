@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Betti.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.PowerSeries
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Betti–Ext comparison and unbounded Cartan–Betti identities
@@ -308,8 +309,8 @@ theorem IsMinimal.coeff_coeff_bettiPoincareSeries_eq_zero_iff
 
 include he₀ hne hself hbP in
 /-- **Diagonal Betti support criterion for linearity.** Over a finite-dimensional nonnegatively
-graded algebra, a finite-term minimal resolution `r` is linear if and only if every Betti Poincaré
-series `Bᵢ(q, t)` is supported on the diagonal `n = d`. -/
+graded algebra, a minimal resolution `r` with finitely generated terms is linear if and only if
+every Betti Poincaré series `Bᵢ(q, t)` is supported on the diagonal `n = d`. -/
 theorem IsMinimal.isLinear_iff_diagonal_bettiPoincareSeries
     (hS : IsExhaustiveGradedSimpleFamily S)
     (hr : r.IsMinimal)
@@ -366,8 +367,9 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
       gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩)
 
 include he₀ hne hself hS hbP in
-/-- Chosen finite-term minimal resolutions of an exhaustive degree-zero simple family are all
-linear if and only if the Betti Poincaré matrix `B(q, t)` has diagonal support in every entry. -/
+/-- Chosen minimal resolutions with finitely generated terms of an exhaustive degree-zero simple
+family are all linear if and only if the Betti Poincaré matrix `B(q, t)` has diagonal support in
+every entry. -/
 theorem forall_isLinear_iff_diagonal_bettiPoincareMatrix
     (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (S j).obj.grading)
     [∀ j n, Module.Finite A ((r j).X n)] (hr : ∀ j, (r j).IsMinimal)
@@ -408,31 +410,6 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
     ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
       gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩)
 
-private theorem mul_eq_one_iff_transpose_mul_eq_diagonal
-    {I : Type uI} [Fintype I] [DecidableEq I]
-    {C B E : Matrix I I (PowerSeries ℤ)} {d : I → PowerSeries ℤ}
-    (hd : ∀ i, d i ≠ 0) (hDB : Matrix.diagonal d * B = Eᵀ) :
-    C * B = 1 ↔ Cᵀ * E = Matrix.diagonal d := by
-  constructor
-  · intro hCB
-    have hBC : B * C = 1 := mul_eq_one_comm.mpr hCB
-    have hT : Eᵀ * C = Matrix.diagonal d := by
-      rw [← hDB, Matrix.mul_assoc, hBC, Matrix.mul_one]
-    have h := congrArg Matrix.transpose hT
-    simpa [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose] using h
-  · intro hCE
-    have hT : Eᵀ * C = Matrix.diagonal d := by
-      have h := congrArg Matrix.transpose hCE
-      simpa [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose] using h
-    have hDBC : Matrix.diagonal d * (B * C) = Matrix.diagonal d * 1 := by
-      rw [← Matrix.mul_assoc, hDB, hT, Matrix.mul_one]
-    have hBC : B * C = 1 := by
-      refine Matrix.ext fun i j => ?_
-      have hij := congrFun (congrFun hDBC i) j
-      rw [Matrix.diagonal_mul, Matrix.diagonal_mul] at hij
-      exact mul_left_cancel₀ (hd i) hij
-    exact mul_eq_one_comm.mp hBC
-
 omit [GradedAlgebra 𝒜] [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)] [Fintype I] [DecidableEq I] in
 include hself in
 private theorem C_finrank_smul_piece_zero_ne_zero
@@ -449,10 +426,10 @@ private theorem C_finrank_smul_piece_zero_ne_zero
 include hbP in
 /-- **Unbounded formal-power-series Cartan–Betti identity `C_ps · B_euler = I`.** Over a
 finite-dimensional nonnegatively graded algebra, let `Sᵢ` be an exhaustive degree-zero simple
-family with chosen finite-term minimal resolutions `rᵢ`. Evaluating the Betti Poincaré matrix at
-`t = -1` via `Bigraded.eulerPowerSeries` yields a formal-power-series right (and left) inverse to
-the truncated graded Cartan matrix `C_ps`, with neither finite global dimension nor a splitting
-field assumption. -/
+family with chosen minimal resolutions `rᵢ` having finitely generated terms. Evaluating the Betti
+Poincaré matrix at `t = -1` via `Bigraded.eulerPowerSeries` yields a formal-power-series right (and
+left) inverse to the truncated graded Cartan matrix `C_ps`, with neither finite global dimension
+nor a splitting field assumption. -/
 theorem gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincareMatrix_eq_one
     (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (S j).obj.grading)
     [∀ j n, Module.Finite A ((r j).X n)] (hr : ∀ j, (r j).IsMinimal)
@@ -469,7 +446,7 @@ theorem gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincareMatrix_eq_one
       IsGradedExtInternallyFinite.{uA} k (GradedModuleCat.shift 𝒜) (S i).obj (S j).obj :=
     fun i j => GradedModuleCat.isGradedExtInternallyFinite_of_moduleFinite (S i).obj (S j).obj
   refine (mul_eq_one_iff_transpose_mul_eq_diagonal
-    (C_finrank_smul_piece_zero_ne_zero S hself hconc) ?_).mpr
+    (fun i => mul_right_injective₀ (C_finrank_smul_piece_zero_ne_zero S hself hconc i)) ?_).mpr
     (gradedCartanMatrix_trunc_transpose_mul_eulerPowerSeries_eq_diagonal
       S he he₀ hI hne hself hS bP hbP r hr hneg hconc hExt)
   refine Matrix.ext fun i j => ?_
@@ -533,8 +510,8 @@ theorem coeff_gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincareMatrix
 
 include hbP in
 /-- **Linearity is the unbounded Cartan–Betti identity for the Maslov-graded Euler series.** Chosen
-finite-term minimal resolutions of an exhaustive degree-zero simple family are all linear if and
-only if `C_ps · B_maslov = 1` in `Matrix I I (PowerSeries ℤ)`. -/
+minimal resolutions with finitely generated terms of an exhaustive degree-zero simple family are
+all linear if and only if `C_ps · B_maslov = 1` in `Matrix I I (PowerSeries ℤ)`. -/
 theorem forall_isLinear_iff_cartan_betti_maslovEulerPowerSeries
     (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (S j).obj.grading)
     [∀ j n, Module.Finite A ((r j).X n)] (hr : ∀ j, (r j).IsMinimal)
@@ -553,7 +530,7 @@ theorem forall_isLinear_iff_cartan_betti_maslovEulerPowerSeries
     S he he₀ hI hne hself hS bP hbP r hr hneg hconc hExt]
   symm
   refine mul_eq_one_iff_transpose_mul_eq_diagonal
-    (C_finrank_smul_piece_zero_ne_zero S hself hconc) ?_
+    (fun i => mul_right_injective₀ (C_finrank_smul_piece_zero_ne_zero S hself hconc i)) ?_
   refine Matrix.ext fun i j => ?_
   rw [Matrix.diagonal_mul, Matrix.transpose_apply, Matrix.map_apply, Matrix.map_apply,
     bettiPoincareMatrix_apply, bigradedExtPoincarePowerSeriesMatrix_apply]

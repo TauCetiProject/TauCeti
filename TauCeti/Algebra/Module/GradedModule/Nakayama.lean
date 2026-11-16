@@ -237,15 +237,16 @@ theorem exists_piece_eq_bot_of_lt [DirectSum.Decomposition 𝒜] [Module.Finite 
       add_mem' := L₀.add_mem
       zero_mem' := L₀.zero_mem
       smul_mem' := hsmul }
+  have hmemL : ∀ y : M, y ∈ L ↔ y ∈ L₀ := fun _ => Iff.rfl
   have hL : L = ⊤ := by
     rw [eq_top_iff, ← hs, Submodule.span_le]
     intro g hg
     rw [← sum_support_decompose G.piece g]
     refine L.sum_mem fun q hq => ?_
     have hbq : b ≤ q := hb (Finset.mem_biUnion.2 ⟨g, hg, hq⟩)
-    exact Submodule.mem_iSup_of_mem q
+    exact (hmemL _).mpr <| Submodule.mem_iSup_of_mem q
       (Submodule.mem_iSup_of_mem hbq (decompose G.piece g q).property)
-  have hxL : x ∈ L₀ := (hL.symm ▸ Submodule.mem_top : x ∈ L)
+  have hxL : x ∈ L₀ := (hmemL x).mp (hL.symm ▸ Submodule.mem_top)
   have hdecomp : ∀ y ∈ L₀, (decompose G.piece y p : M) = 0 := by
     intro y hy
     refine Submodule.iSup_induction _ (motive := fun z => (decompose G.piece z p : M) = 0)

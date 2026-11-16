@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Algebra.Group.Pi.Units
+import Mathlib.LinearAlgebra.Matrix.SemiringInverse
 
 /-!
 # Diagonal matrices: products with matrix units, and commutation
@@ -41,6 +42,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
+* `TauCeti.mul_eq_one_iff_transpose_mul_eq_diagonal`: when `diagonal d * B = Eᵀ` with left-regular
+  diagonal entries over a commutative semiring, `C * B = 1` if and only if `Cᵀ * E = diagonal d`.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
   bases exactly when it scales the corresponding basis vectors by the diagonal entries.
 -/
@@ -58,6 +61,7 @@ theorem dvd_diagonal_apply {ι α : Type*} [DecidableEq ι] [MonoidWithZero α]
 end Matrix
 
 open Matrix
+open scoped Matrix
 
 namespace TauCeti
 
@@ -123,6 +127,33 @@ theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
   fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
 
 end Commute
+
+/-- If `diagonal d * B = Eᵀ` with every diagonal entry `d i` left-regular over a commutative
+semiring, then `C * B = 1` if and only if `Cᵀ * E = diagonal d`. -/
+theorem mul_eq_one_iff_transpose_mul_eq_diagonal
+    {n R : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+    {C B E : Matrix n n R} {d : n → R}
+    (hd : ∀ i, IsLeftRegular (d i)) (hDB : diagonal d * B = Eᵀ) :
+    C * B = 1 ↔ Cᵀ * E = diagonal d := by
+  constructor
+  · intro hCB
+    have hBC : B * C = 1 := mul_eq_one_comm.mpr hCB
+    have hT : Eᵀ * C = diagonal d := by
+      rw [← hDB, Matrix.mul_assoc, hBC, Matrix.mul_one]
+    have h := congrArg Matrix.transpose hT
+    simpa [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose] using h
+  · intro hCE
+    have hT : Eᵀ * C = diagonal d := by
+      have h := congrArg Matrix.transpose hCE
+      simpa [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose] using h
+    have hDBC : diagonal d * (B * C) = diagonal d * 1 := by
+      rw [← Matrix.mul_assoc, hDB, hT, Matrix.mul_one]
+    have hBC : B * C = 1 := by
+      refine Matrix.ext fun i j => ?_
+      have hij := congrFun (congrFun hDBC i) j
+      rw [Matrix.diagonal_mul, Matrix.diagonal_mul] at hij
+      exact hd i hij
+    exact mul_eq_one_comm.mp hBC
 
 end TauCeti
 

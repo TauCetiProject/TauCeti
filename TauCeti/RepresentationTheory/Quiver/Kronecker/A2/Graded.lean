@@ -88,12 +88,6 @@ theorem gradedEulerMatrixA2_mul_gradedCartanMatrixA2_map_invert_transpose :
 def gradedBettiMatrixA2 : Matrix (Fin 2) (Fin 2) (PowerSeries (LaurentPolynomial ℤ)) :=
   !![1, 0; PowerSeries.C (T 1) * PowerSeries.X, 1]
 
-/-- The entries of the Betti Poincaré matrix of `1 ⟶ 2`. -/
-@[simp]
-theorem gradedBettiMatrixA2_apply (i j : Fin 2) :
-    gradedBettiMatrixA2 i j = !![1, 0; PowerSeries.C (T 1) * PowerSeries.X, 1] i j := by
-  rw [gradedBettiMatrixA2]
-
 /-- The graded Cartan matrix and the `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2`
 satisfy `C(q) · B(q, -1) = I`. -/
 @[simp]
@@ -102,7 +96,7 @@ theorem gradedCartanMatrixA2_mul_eval_neg_one_trunc_gradedBettiMatrixA2 :
       gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, Polynomial.eval,
+    simp [gradedBettiMatrixA2, Matrix.mul_apply, Fin.sum_univ_two, Polynomial.eval,
       PowerSeries.eval₂_trunc_eq_sum_range, Finset.sum_range_succ, PowerSeries.coeff_one]
 
 /-- The `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2` is also a left inverse of the
@@ -197,8 +191,9 @@ theorem submatrix_bettiPoincareMatrix_eq_gradedBettiMatrixA2 :
   let _ : Fintype A := Unique.fintype
   refine Matrix.ext fun i j => ?_
   rw [Matrix.submatrix_apply,
-    PathAlgebra.bettiPoincareMatrix_gradedVertexSimpleProjectiveResolution]
-  fin_cases i <;> fin_cases j <;> simp [Nat.card_eq_fintype_card]
+    PathAlgebra.bettiPoincareMatrix_gradedVertexSimple k (Kronecker A) _
+      (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution k (Kronecker A) l)]
+  fin_cases i <;> fin_cases j <;> simp [gradedBettiMatrixA2, Nat.card_eq_fintype_card]
 
 variable [HasExt.{max u v}
   (GradedModuleCat.{max u v} (PathAlgebra.integerGrade k (Kronecker A)))]

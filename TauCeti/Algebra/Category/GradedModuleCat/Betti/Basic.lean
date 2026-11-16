@@ -32,8 +32,8 @@ This file develops the basis-generic, Ext-free part of the theory:
 1. **Shift law**: shifting a resolution to `M{d}` multiplies its Betti Poincaré series by `qᵈ`
    (`GradedProjectiveResolution.bettiPoincareSeries_shiftObj`).
 2. **Independence of minimal resolution**: over a direct-sum grading, any two bounded-below minimal
-   resolutions of `M` (in particular, over a nonnegatively graded algebra, any two finite-term
-   minimal resolutions) have the same Betti Poincaré series
+   resolutions of `M` (in particular, over a nonnegatively graded algebra, any two minimal
+   resolutions with finitely generated terms) have the same Betti Poincaré series
    (`GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_eq` and
    `IsMinimal.bettiPoincareSeries_shiftObj_eq`).
 3. **Finite-resolution Cartan–Betti identity**: when a resolution vanishes from homological degree
@@ -51,12 +51,8 @@ live in `TauCeti.Algebra.Category.GradedModuleCat.Betti.Cartan`.
 
 ## Main definitions
 
-* `TauCeti.GradedProjectiveResolution.shiftObj`: shifts a resolution of `M` to a resolution of
-  `M{d}`.
-* `TauCeti.GradedProjectiveResolution.tail`: the first-syzygy tail resolution of
-  `GradedModuleCat.kernelObj r.augmentation`.
 * `TauCeti.GradedProjectiveResolution.bettiPoincareSeries`: the bigraded Betti Poincaré series of a
-  finite-term graded projective resolution in a projective basis `bP`.
+  graded projective resolution with finitely generated terms in a projective basis `bP`.
 * `TauCeti.bettiPoincareMatrix`: the matrix of Betti Poincaré series with projective rows and
   resolved-module columns.
 
@@ -99,30 +95,9 @@ universe uk uA uI uJ v
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A}
 
-/-! ### Shifted resolutions in `GradedModuleCat` -/
+/-! ### Finite-projective terms under shift and tail -/
 
 namespace GradedProjectiveResolution
-
-variable {M : GradedModuleCat.{v} 𝒜}
-
-/-- Shifting a graded projective resolution of `M` by `d` produces a graded projective resolution
-of `M.shiftObj d` with `n`-th term `(r.termObj n).shiftObj d`. -/
-abbrev shiftObj (r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading) (d : ℤ) :
-    GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
-  r.shift (-d)
-
-/-- The `n`-th term of a shifted resolution is the `d`-shift of the original `n`-th term. -/
-@[simp]
-theorem termObj_shiftObj (r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading)
-    (d : ℤ) (n : ℕ) :
-    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d :=
-  rfl
-
-/-- Shifting a resolution preserves minimality. -/
-theorem isMinimal_shiftObj_iff (r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading)
-    (d : ℤ) :
-    (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
-  r.isMinimal_shift_iff (-d)
 
 /-- The `n`-th finite projective term of a shifted resolution is the `d`-shift of the original
 finite projective term. -/
@@ -134,30 +109,6 @@ theorem finiteProjectiveTerm_shiftObj {M : GradedModuleCat.{uA} 𝒜}
       ⟨(r.finiteProjectiveTerm n).obj.shiftObj d,
         gradedFiniteProjectiveModules_shiftObj (r.finiteProjectiveTerm n).property d⟩ :=
   ObjectProperty.FullSubcategory.ext (by simp)
-
-/-- The tail (first syzygy) resolution of a graded projective resolution `r`, resolving
-`GradedModuleCat.kernelObj r.augmentation` with `n`-th term `r.X (n + 1)`. -/
-abbrev tail (r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading) :
-    GradedProjectiveResolution.{uk, uA, v, v} 𝒜
-      (GradedModuleCat.kernelObj r.augmentation).grading where
-  X n := r.X (n + 1)
-  grading n := r.grading (n + 1)
-  projective n := r.projective (n + 1)
-  d n := r.d (n + 1)
-  «π» := (r.d 0).codRestrict (LinearMap.ker r.π) fun x =>
-    LinearMap.mem_ker.mpr (r.exact_d_π.apply_apply_eq_zero x)
-  isHomogeneous_d n := r.isHomogeneous_d (n + 1)
-  isHomogeneous_π := LinearMap.isHomogeneous_def.2 fun _ _ hx => by
-    rw [InternalGrading.mem_ker_piece]
-    exact (r.isHomogeneous_d 0).map_mem hx
-  surjective_π := by
-    rintro ⟨y, hy⟩
-    obtain ⟨x, hx⟩ := (r.exact_d_π y).mp (LinearMap.mem_ker.mp hy)
-    exact ⟨x, Subtype.ext hx⟩
-  exact_d_π := fun y =>
-    ⟨fun hy => (r.exact_d_d 0 y).mp (congrArg Subtype.val hy),
-     by rintro ⟨z, rfl⟩; exact Subtype.ext ((r.exact_d_d 0).apply_apply_eq_zero z)⟩
-  exact_d_d n := r.exact_d_d (n + 1)
 
 /-- The `n`-th finite projective term of the tail resolution is the `(n + 1)`-st finite projective
 term of `r`. -/
@@ -216,12 +167,6 @@ theorem bettiPoincareSeries_shiftObj (d : ℤ) (i : I) :
   rw [coeff_bettiPoincareSeries, PowerSeries.coeff_C_mul, coeff_bettiPoincareSeries,
     finiteProjectiveTerm_shiftObj, laurentK0_projective_of_shiftObj, map_smul,
     Finsupp.smul_apply, smul_eq_mul]
-
-/-- Shifting a resolution by `1` multiplies its Betti Poincaré series by `q`. -/
-theorem bettiPoincareSeries_shiftObj_one (i : I) :
-    (r.shiftObj 1).bettiPoincareSeries bP i =
-      PowerSeries.C (T 1) * r.bettiPoincareSeries bP i :=
-  r.bettiPoincareSeries_shiftObj bP 1 i
 
 /-- A vanishing term of a resolution contributes zero to the Betti Poincaré series. -/
 theorem coeff_bettiPoincareSeries_eq_zero_of_subsingleton (i : I) {n : ℕ}
@@ -291,7 +236,8 @@ theorem IsMinimal.bettiPoincareSeries_eq
   exact eqToIso (r₁.finiteProjectiveTerm_obj n) ≪≫ e ≪≫ eqToIso (r₂.finiteProjectiveTerm_obj n).symm
 
 /-- Over a nonnegatively graded algebra, finitely generated terms are automatically bounded below,
-so any two finite-term minimal resolutions of `M` have the same Betti Poincaré series. -/
+so any two minimal resolutions of `M` with finitely generated terms have the same Betti Poincaré
+series. -/
 theorem IsMinimal.bettiPoincareSeries_eq_of_nonneg
     {r₁ r₂ : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}
     [∀ n, Module.Finite A (r₁.X n)] [∀ n, Module.Finite A (r₂.X n)]
@@ -303,8 +249,8 @@ theorem IsMinimal.bettiPoincareSeries_eq_of_nonneg
     (fun m => (r₂.grading m).exists_piece_eq_bot_of_lt 𝒜 hneg) i
 
 /-- **Intrinsic shift law for minimal resolutions**: over a nonnegatively graded algebra, the Betti
-Poincaré series of any finite-term minimal resolution of `M{d}` equals `qᵈ` times the Betti
-Poincaré series of any finite-term minimal resolution of `M`. -/
+Poincaré series of any minimal resolution of `M{d}` with finitely generated terms equals `qᵈ` times
+the Betti Poincaré series of any minimal resolution of `M` with finitely generated terms. -/
 theorem IsMinimal.bettiPoincareSeries_shiftObj_eq
     {r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}
     {d : ℤ} {r' : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M.shiftObj d).grading}
@@ -313,16 +259,6 @@ theorem IsMinimal.bettiPoincareSeries_shiftObj_eq
     r'.bettiPoincareSeries bP i = PowerSeries.C (T d) * r.bettiPoincareSeries bP i := by
   have hmin : (r.shiftObj d).IsMinimal := (r.isMinimal_shiftObj_iff d).mpr hr
   rw [hr'.bettiPoincareSeries_eq_of_nonneg bP hmin hneg i, bettiPoincareSeries_shiftObj]
-
-/-- Over a nonnegatively graded algebra, any finite-term minimal resolution of `M{1}` has Betti
-Poincaré series `q` times that of any finite-term minimal resolution of `M`. -/
-theorem IsMinimal.bettiPoincareSeries_shiftObj_one_eq
-    {r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}
-    {r' : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M.shiftObj 1).grading}
-    [∀ n, Module.Finite A (r.X n)] [∀ n, Module.Finite A (r'.X n)]
-    (hr : r.IsMinimal) (hr' : r'.IsMinimal) (hneg : ∀ p < 0, 𝒜 p = ⊥) (i : I) :
-    r'.bettiPoincareSeries bP i = PowerSeries.C (T 1) * r.bettiPoincareSeries bP i :=
-  hr.bettiPoincareSeries_shiftObj_eq bP hr' hneg i
 
 end Uniqueness
 
@@ -413,9 +349,9 @@ variable {I : Type uI} {J : Type uJ}
   (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading)
   [∀ j n, Module.Finite A ((r j).X n)]
 
-/-- **The Betti Poincaré matrix** of a family of finite-term graded projective resolutions `r j`
-in a projective basis `bP`: rows are indexed by the projective basis `I` and columns by the
-resolved family `J`. -/
+/-- **The Betti Poincaré matrix** of a family of graded projective resolutions `r j` with finitely
+generated terms in a projective basis `bP`: rows are indexed by the projective basis `I` and
+columns by the resolved family `J`. -/
 def bettiPoincareMatrix : Matrix I J (PowerSeries (LaurentPolynomial ℤ)) :=
   Matrix.of fun i j => (r j).bettiPoincareSeries bP i
 
@@ -427,7 +363,7 @@ theorem bettiPoincareMatrix_apply (i : I) (j : J) :
   rw [bettiPoincareMatrix, Matrix.of_apply]
 
 /-- Over a nonnegatively graded algebra, the Betti Poincaré matrix is independent of the choice of
-finite-term minimal resolutions of the family `M`. -/
+minimal resolutions of the family `M` with finitely generated terms. -/
 theorem bettiPoincareMatrix_eq_of_isMinimal [DirectSum.Decomposition 𝒜]
     {r₁ r₂ : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading}
     [∀ j n, Module.Finite A ((r₁ j).X n)] [∀ j n, Module.Finite A ((r₂ j).X n)]

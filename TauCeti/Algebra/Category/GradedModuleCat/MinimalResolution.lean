@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 public import TauCeti.Algebra.Module.GradedModule.Nakayama
+import TauCeti.LinearAlgebra.End.LocallyNilpotent
 
 /-!
 # Ext from minimal graded resolutions and uniqueness
@@ -31,7 +32,7 @@ module taking values in `A₊ P` is locally nilpotent, so `𝟙 P - h` is an iso
 (`GradedModuleCat.isIso_id_sub_of_mem_positive_smul_top`). Applying this to the homotopy
 equivalence between two bounded-below minimal graded projective resolutions shows that the
 comparison map is an isomorphism of chain complexes
-(`GradedProjectiveResolution.IsMinimal.isIso_homotopyEquiv_hom`), so the terms of a minimal
+(`GradedProjectiveResolution.IsMinimal.isIso_hom_of_homotopyEquiv`), so the terms of a minimal
 resolution are unique up to graded isomorphism (`IsMinimal.nonempty_iso_termObj`). In particular,
 linearity is independent of the choice of minimal resolution (`IsMinimal.isLinear_iff`).
 
@@ -91,42 +92,21 @@ theorem GradedModuleCat.isIso_id_sub_of_mem_positive_smul_top {P : GradedModuleC
     IsIso (𝟙 P - h) := by
   classical
   have hpow := GradedModuleCat.pow_apply_eq_zero_of_mem_positive_smul_top h b hbelow hh
-  rw [GradedModuleCat.isIso_iff_bijective]
-  constructor
-  · refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
-    have hfix : h.hom x = x := (sub_eq_zero.mp (by simpa using hx)).symm
-    have hfix_pow : ∀ m : ℕ, (h.hom ^ m) x = x := by
-      intro m
-      induction m with
-      | zero => simp
-      | succ m ih => rw [pow_succ', mul_apply_eq_comp, ih, hfix]
+  have hnil : ∀ x : P, ∃ m : ℕ, ((-h.hom) ^ m) x = 0 := fun x => by
     obtain ⟨u, hu⟩ := (DirectSum.decompose P.grading.piece x).support.finite_toSet.bddAbove
-    let m : ℕ := (u - b + 1).toNat
-    rw [← hfix_pow m, ← DirectSum.sum_support_decompose P.grading.piece x, map_sum]
+    refine ⟨(u - b + 1).toNat, (Module.End.neg_pow_apply_eq_zero_iff h.hom _ x).mpr ?_⟩
+    rw [← DirectSum.sum_support_decompose P.grading.piece x, map_sum]
     refine Finset.sum_eq_zero fun p hp => ?_
     have hpu : p ≤ u := hu hp
-    exact hpow m (by omega) _ (DirectSum.decompose P.grading.piece x p).property
-  · have hpiece : ∀ (p : ℤ) (y : P), y ∈ P.grading.piece p →
-        ∃ z : P, (𝟙 P - h).hom z = y := by
-      intro p y hy
-      let m : ℕ := (p - b + 1).toNat
-      refine ⟨∑ j ∈ Finset.range m, (h.hom ^ j) y, ?_⟩
-      have hsub : (𝟙 P - h).hom (∑ j ∈ Finset.range m, (h.hom ^ j) y) =
-          ∑ j ∈ Finset.range m, ((h.hom ^ j) y - (h.hom ^ (j + 1)) y) := by
-        simp only [GradedModuleCat.hom_sub, GradedModuleCat.hom_id, LinearMap.sub_apply,
-          LinearMap.id_apply, map_sum]
-        refine Finset.sum_congr rfl fun j _ => ?_
-        rw [pow_succ', mul_apply_eq_comp]
-      rw [hsub, Finset.sum_range_sub' (fun j => (h.hom ^ j) y) m, pow_zero, one_apply_eq_self,
-        hpow m (by omega) y hy, sub_zero]
-    intro y
-    choose pre hpre using fun p =>
-      hpiece p (DirectSum.decompose P.grading.piece y p : P)
-        (DirectSum.decompose P.grading.piece y p).property
-    refine ⟨∑ p ∈ (DirectSum.decompose P.grading.piece y).support, pre p, ?_⟩
-    rw [map_sum]
-    conv_rhs => rw [← DirectSum.sum_support_decompose P.grading.piece y]
-    exact Finset.sum_congr rfl fun p _ => hpre p
+    exact hpow _ (by omega) _ (DirectSum.decompose P.grading.piece x p).property
+  have hunit : IsUnit (1 + (-h.hom)) :=
+    Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (-h.hom) hnil
+  rw [GradedModuleCat.isIso_iff_bijective]
+  have hhom : (𝟙 P - h).hom = 1 + (-h.hom) := by
+    rw [GradedModuleCat.hom_sub, GradedModuleCat.hom_id, sub_eq_add_neg]
+    rfl
+  rw [hhom]
+  exact (Module.End.isUnit_iff _).mp hunit
 
 namespace GradedProjectiveResolution
 
@@ -277,7 +257,7 @@ private theorem IsMinimal.isIso_f_of_homotopy_id (hr : r.IsMinimal)
 /-- **Uniqueness of minimal graded projective resolutions.** The canonical homotopy equivalence
 between two bounded-below minimal graded projective resolutions of `M` is an isomorphism of chain
 complexes in `GradedModuleCat 𝒜`. -/
-theorem IsMinimal.isIso_homotopyEquiv_hom
+theorem IsMinimal.isIso_hom_of_homotopyEquiv
     {r₁ r₂ : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
     (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
@@ -304,7 +284,7 @@ theorem IsMinimal.nonempty_iso_termObj
     (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
     (hb₂ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₂.grading n).piece p = ⊥) (n : ℕ) :
     Nonempty (r₁.termObj n ≅ r₂.termObj n) := by
-  have := hr₁.isIso_homotopyEquiv_hom hr₂ hb₁ hb₂
+  have := hr₁.isIso_hom_of_homotopyEquiv hr₂ hb₁ hb₂
   exact ⟨(r₁.toProjectiveResolutionXIso n).symm ≪≫
     (HomologicalComplex.eval (GradedModuleCat.{v} 𝒜) (ComplexShape.down ℕ) n).mapIso
       (asIso (ProjectiveResolution.homotopyEquiv
