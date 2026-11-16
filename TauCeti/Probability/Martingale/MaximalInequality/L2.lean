@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Probability.Martingale.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.Order.PartialSups
+public import TauCeti.MeasureTheory.Function.Lp.Order
 import Mathlib.Order.SuccPred.Nat
-import Mathlib.MeasureTheory.Function.LpOrder
 
 /-!
 # Doob's L² maximal inequality
@@ -77,10 +76,8 @@ theorem Submartingale.integral_sq_partialSups_le (hf : Submartingale f ℱ μ)
   -- Terminal square integrability controls all earlier values and their finite maxima.
   have hL2 (k : ℕ) (hk : k ≤ n) : MemLp (f k) 2 μ :=
     hf.memLp_of_le hk (hpos k) (by norm_num) hn
-  have hM (k : ℕ) (hk : k ≤ n) : MemLp (partialSups f k) 2 μ := by
-    rw [partialSups_apply]
-    exact Finset.sup'_induction _ _ (p := fun g => MemLp g 2 μ)
-      (fun _ hf _ hg => hf.sup hg) (fun j hj => hL2 j ((mem_Iic.mp hj).trans hk))
+  have hM (k : ℕ) (hk : k ≤ n) : MemLp (partialSups f k) 2 μ :=
+    MemLp.partialSups (fun j hj ↦ hL2 j (hj.trans hk))
   have hMa (k : ℕ) : StronglyMeasurable[ℱ k] (partialSups f k) := by
     let : MeasurableSpace Ω := ℱ k
     rw [partialSups_apply]

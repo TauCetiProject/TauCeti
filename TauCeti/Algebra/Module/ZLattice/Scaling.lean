@@ -37,7 +37,8 @@ first statement does not extend to `|c| < 1`.
 
 ## Main statements
 
-* `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`.
+* `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`, for real
+  scalars and for any division ring of scalars commuting with them, such as `ℂ`.
 * `ZLattice.basisSmul`: for `c ≠ 0`, a `ℤ`-basis `b` of `L` gives the `ℤ`-basis `c • b` of `c • L`.
 * `ZLattice.exists_forall_ne_zero_lt_norm`: scaling up the integer span of a basis gives full
   lattices all of whose nonzero vectors are longer than a prescribed bound.
@@ -107,9 +108,14 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (L : Submodule ℤ E)
 
-/-- For `c ≠ 0`, the scaled lattice `c • L` is the pullback of `L` along the linear automorphism
-`x ↦ c⁻¹ • x`. -/
-theorem smul_eq_comap {c : ℝ} (hc : c ≠ 0) :
+section Scalar
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [Module 𝕜 E] [ContinuousConstSMul 𝕜 E] [SMulCommClass 𝕜 ℝ E]
+
+/-- For `c ≠ 0`, the scaled lattice `c • L` is the pullback of `L` along the real-linear
+automorphism `x ↦ c⁻¹ • x`. The scalar `c` may lie in any division ring acting continuously on `E`
+and commuting with the real scalars, such as `ℝ` itself or `ℂ` acting on a complex space. -/
+theorem smul_eq_comap {c : 𝕜} (hc : c ≠ 0) :
     c • L = ZLattice.comap ℝ L
       (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)⁻¹ : E ≃L[ℝ] E).toLinearMap := by
   ext x
@@ -118,15 +124,18 @@ theorem smul_eq_comap {c : ℝ} (hc : c ≠ 0) :
   simp [Units.smul_def]
 
 /-- Scaling a discrete lattice by a nonzero scalar gives a discrete lattice. -/
-instance [DiscreteTopology L] (c : ℝ) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ E) := by
+instance [DiscreteTopology L] (c : 𝕜) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ E) := by
   rw [smul_eq_comap L (NeZero.ne c)]
   infer_instance
 
 /-- Scaling a full lattice by a nonzero scalar gives a full lattice. -/
-instance [DiscreteTopology L] [IsZLattice ℝ L] (c : ℝ) [NeZero c] : IsZLattice ℝ (c • L) where
+instance [DiscreteTopology L] [IsZLattice ℝ L] (c : 𝕜) [NeZero c] :
+    IsZLattice ℝ (c • L : Submodule ℤ E) where
   span_top := by
     rw [smul_eq_comap L (NeZero.ne c)]
     exact IsZLattice.span_top
+
+end Scalar
 
 section Basis
 

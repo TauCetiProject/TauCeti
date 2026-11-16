@@ -428,7 +428,9 @@ def typeCSimpleIndex (n : ℕ) (i : Fin n) : Fin (2 * n ^ 2) :=
 lemma typeCSimpleIndex_injective : Injective (typeCSimpleIndex n) :=
   Fin.castLE_injective (typeC_le_two_mul_sq n)
 
-private lemma typeCIndexEquiv_symm_typeCSimpleIndex (i : Fin n) :
+/-- The numbered simple root is encoded by consecutive classical coordinates, with the
+successor clamped at the last node. -/
+@[simp] lemma typeCIndexEquiv_symm_typeCSimpleIndex (i : Fin n) :
     (typeCIndexEquiv n).symm (typeCSimpleIndex n i) = (i, Order.succ i, false) := by
   have hi : (i : ℕ) < n := i.isLt
   simp [typeCIndexEquiv, typeCShapeEquiv, finProdFinEquiv, Fin.divNat, Fin.modNat,

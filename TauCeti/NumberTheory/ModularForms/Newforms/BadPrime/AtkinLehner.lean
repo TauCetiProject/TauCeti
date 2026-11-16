@@ -94,7 +94,7 @@ theorem qExpansion_coeff_prime_sq_of_isExactDivisor (f : Newform N k) (hp : p.Pr
       χ₀ (ZMod.unitOfCoprime p h.coprime) * (p : ℂ) ^ (k - 2) := by
   have hpsq := h.not_sq_dvd hp.one_lt.ne'
   have hW := isAtkinLehnerMatrix_descendExtra hp h.dvd hpsq
-  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self hp.ne_zero h.dvd
+  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self
   have hu := hW.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hp.ne_zero h.dvd hγ hsq
   have hu' := hW.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq
   -- the diamond label of `W_p ∘ W_p` is `p` modulo `N / p`

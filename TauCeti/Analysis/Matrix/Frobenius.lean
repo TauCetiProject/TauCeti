@@ -23,6 +23,8 @@ and the inner product together.
 
 ## Main declarations
 
+* `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
+  squared entry norms.
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
   `Matrix.frobeniusSeminormedAddCommGroup`.
 * `Matrix.frobenius_inner_def` — the inner product is the sum of the entrywise inner products.
@@ -49,6 +51,12 @@ open scoped ComplexConjugate InnerProductSpace
 namespace Matrix
 
 variable {𝕜 E m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
+
+/-- The real part of the trace of `X * Xᴴ` is the sum of the squared entry norms. -/
+theorem re_trace_mul_conjTranspose_self (X : Matrix m n 𝕜) :
+    RCLike.re (Matrix.trace (X * X.conjTranspose)) = ∑ i, ∑ j, ‖X i j‖ ^ 2 := by
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
+    RCLike.star_def, RCLike.mul_conj]
 
 section Def
 

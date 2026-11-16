@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
-import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Riemannian volume under finite quotient coverings
@@ -31,7 +30,7 @@ The proof is local on `N`. Near any point, `q⁻¹ D` of a small set `D` is the 
 the `|G|` translates of one sheet, and on each sheet `q` is an injective local isometry, hence
 preserves volume (`TauCeti.riemannianVolume_image_of_inner_mfderiv`). Only the tangent maps of
 `q` are required to preserve the inner products; no separate hypothesis that `G` acts by
-isometries is needed.
+isometries, or that `q` is differentiable, is needed.
 
 ## Main results
 
@@ -61,7 +60,7 @@ namespace IsQuotientCoveringMap
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [MeasurableSpace M] [BorelSpace M] [HereditarilyLindelofSpace M]
+  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
@@ -75,7 +74,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 the disjoint union of the `|G|` translates of `V ∩ q⁻¹ D`, each of which `q` maps isometrically
 onto `D`. -/
 private theorem riemannianVolume_preimage_of_subset_image (hq : IsQuotientCoveringMap q G)
-    (hd : MDifferentiable I I' q)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
     {V : Set M} (hVm : MeasurableSet V) (hV : InjOn q V) {D : Set N} (hD : MeasurableSet D)
@@ -109,9 +107,7 @@ private theorem riemannianVolume_preimage_of_subset_image (hq : IsQuotientCoveri
       simp only [hq.map_smul]
       rw [image_inter_preimage, inter_eq_right.2 hDV]
     conv_rhs => rw [← himage]
-    refine (riemannianVolume_image_of_inner_mfderiv (hsmul g) ?_
-      (fun t _ ht ↦ hq.isLocalHomeomorph.measurableSet_image ht) (fun x _ ↦ hd x)
-      fun x _ ↦ hinner x).symm
+    refine (riemannianVolume_image_of_inner_mfderiv (hsmul g) ?_ fun x _ ↦ hinner x).symm
     rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
     simp only [hq.map_smul] at hab
     rw [hV ha.1 hb.1 hab]
@@ -121,7 +117,7 @@ private theorem riemannianVolume_preimage_of_subset_image (hq : IsQuotientCoveri
 /-- **Riemannian volume under a finite quotient covering.** If `q : M → N` is a quotient covering
 map for an action of a finite group `G` and a local isometry, then it pushes the Riemannian volume
 of `M` forward to `|G|` times the Riemannian volume of `N`. -/
-theorem map_riemannianVolume (hq : IsQuotientCoveringMap q G) (hd : MDifferentiable I I' q)
+theorem map_riemannianVolume (hq : IsQuotientCoveringMap q G)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     (riemannianVolume I M).map q = (Nat.card G : ℝ≥0∞) • riemannianVolume I' N := by
@@ -143,41 +139,39 @@ theorem map_riemannianVolume (hq : IsQuotientCoveringMap q G) (hd : MDifferentia
     hD.inter (hopen _ isOpen_interior).measurableSet
   rw [Measure.restrict_apply hD, Measure.restrict_apply hD,
     Measure.map_apply hq.continuous.measurable hDU, smul_apply, smul_eq_mul]
-  exact riemannianVolume_preimage_of_subset_image hq hd hinner isOpen_interior.measurableSet
+  exact riemannianVolume_preimage_of_subset_image hq hinner isOpen_interior.measurableSet
     ((hinj x).mono interior_subset) hDU inter_subset_right
 
 /-- The preimage of a measurable set under a finite quotient covering map which is a local
 isometry has `|G|` times its Riemannian volume. -/
-theorem riemannianVolume_preimage (hq : IsQuotientCoveringMap q G) (hd : MDifferentiable I I' q)
+theorem riemannianVolume_preimage (hq : IsQuotientCoveringMap q G)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
     {B : Set N} (hB : MeasurableSet B) :
     riemannianVolume I M (q ⁻¹' B) = Nat.card G * riemannianVolume I' N B := by
-  rw [← Measure.map_apply hq.continuous.measurable hB, hq.map_riemannianVolume hd hinner,
+  rw [← Measure.map_apply hq.continuous.measurable hB, hq.map_riemannianVolume hinner,
     smul_apply, smul_eq_mul]
 
 /-- Pulling a nonnegative function back along a finite quotient covering map which is a local
 isometry multiplies its integral by `|G|`. -/
 theorem lintegral_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
-    (hd : MDifferentiable I I' q)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
     {f : N → ℝ≥0∞} (hf : AEMeasurable f (riemannianVolume I' N)) :
     ∫⁻ x, f (q x) ∂riemannianVolume I M = Nat.card G * ∫⁻ y, f y ∂riemannianVolume I' N := by
-  have h := hq.map_riemannianVolume hd hinner
+  have h := hq.map_riemannianVolume hinner
   rw [← lintegral_map' (by rw [h]; exact hf.smul_measure _) hq.continuous.aemeasurable, h,
     lintegral_smul_measure, smul_eq_mul]
 
 /-- Pulling a function back along a finite quotient covering map which is a local isometry
 multiplies its Bochner integral by `|G|`. -/
 theorem integral_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
-    (hd : MDifferentiable I I' q)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : N → F}
     (hf : AEStronglyMeasurable f (riemannianVolume I' N)) :
     ∫ x, f (q x) ∂riemannianVolume I M = Nat.card G • ∫ y, f y ∂riemannianVolume I' N := by
-  have h := hq.map_riemannianVolume hd hinner
+  have h := hq.map_riemannianVolume hinner
   rw [← integral_map hq.continuous.aemeasurable (by rw [h]; exact hf.smul_measure _), h,
     integral_smul_measure, ENNReal.toReal_natCast, Nat.cast_smul_eq_nsmul]
 
@@ -185,14 +179,13 @@ theorem integral_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
 multiplies its `Lᵖ` seminorm by `|G| ^ (1/p)`. For `p = 2` this says that `|G| ^ (-1/2) q^*` is
 an isometry from `L²(N)` to `L²(M)`. -/
 theorem eLpNorm_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
-    (hd : MDifferentiable I I' q)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
     {F : Type*} [NormedAddCommGroup F] {f : N → F}
     (hf : AEStronglyMeasurable f (riemannianVolume I' N)) (p : ℝ≥0∞) :
     eLpNorm (f ∘ q) p (riemannianVolume I M) =
       (Nat.card G : ℝ≥0∞) ^ (1 / p).toReal * eLpNorm f p (riemannianVolume I' N) := by
-  have h := hq.map_riemannianVolume hd hinner
+  have h := hq.map_riemannianVolume hinner
   rw [← eLpNorm_map_measure (by rw [h]; exact hf.smul_measure _) hq.continuous.aemeasurable, h,
     eLpNorm_smul_measure_of_ne_zero (Nat.cast_ne_zero.2 Nat.card_pos.ne'), smul_eq_mul]
 
