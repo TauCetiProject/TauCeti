@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Matrix.Mul
 
 /-!
-# Matrix products: positivity of powers, nonvanishing of factors, and opposite transposes
+# Matrix products: powers, nonvanishing, outer products, and opposite transposes
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -18,6 +18,9 @@ matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero.
+
+A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
+out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
 Over noncommutative rings, transpose followed by entrywise `MulOpposite.op` or `MulOpposite.unop`
 reverses matrix multiplication and intertwines column-vector multiplication with row-vector
@@ -30,6 +33,8 @@ multiplication.
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
+  (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.transpose_map_op_mul`, `Matrix.transpose_map_unop_mul`, `Matrix.op_comp_mulVec`:
   opposite-entry transpose reverses matrix multiplication and intertwines `mulVec` with `vecMul`.
 -/
@@ -87,6 +92,24 @@ theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : 
     B ≠ 0 := fun hB ↦ h (by simp [hB])
 
 end NonUnitalNonAssocSemiring
+
+section MulZeroOneClass
+
+variable {α R m p : Type*} [MulZeroOneClass α] [SMulZeroClass R α] [DecidableEq m]
+
+/-- A scalar on the right factor of an outer product with `Pi.single i 1` may be pulled out to the
+left. Unlike `Matrix.vecMulVec_smul`, this needs no `SMulCommClass R α α`, because the entries of
+`Pi.single i 1` are `0` and `1`; so it applies, for instance, to left multiplication in a
+noncommutative ring. -/
+@[simp]
+theorem vecMulVec_single_one_smul (r : R) (i : m) (v : p → α) :
+    vecMulVec (Pi.single i (1 : α)) (r • v) = r • vecMulVec (Pi.single i (1 : α)) v := by
+  ext a b
+  rcases eq_or_ne a i with rfl | h
+  · simp [vecMulVec_apply]
+  · simp [vecMulVec_apply, h]
+
+end MulZeroOneClass
 
 end Matrix
 

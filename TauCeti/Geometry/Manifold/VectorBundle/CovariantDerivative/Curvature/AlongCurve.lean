@@ -19,9 +19,8 @@ In particular, when the curvature is parallel, applying curvature to three paral
 again gives a parallel field. For a metric connection its pairing with a fourth parallel
 field is constant.
 
-The connection need not be torsion free. The Riemannian bundle supplies fibre norms for the
-smooth hom-bundle representation of curvature; compatibility is needed only for the final
-scalar conservation law.
+The connection need not be torsion free. A Riemannian bundle and metric compatibility
+are needed only for the final scalar conservation law.
 
 ## References
 
@@ -44,7 +43,6 @@ namespace CovariantDerivative
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
   [ContMDiffCovariantDerivative cov ∞]
   {γ : ℝ → M} {s : Set ℝ} {t : ℝ}
@@ -69,16 +67,11 @@ private theorem exists_curvatureTensor_coordinates (x₀ : M) :
   let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
   let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
   let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : ∀ x : M, NormedAddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedSpace ℝ (TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedAddCommGroup
+  -- Cache the algebraic Hom-fibre instance to keep coordinate elaboration within budget.
+  let _ : ∀ x : M, AddCommMonoid
       (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedSpace ℝ
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
+    fun x ↦ (inferInstance : AddCommGroup
+      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)).toAddCommMonoid
   let A : M → E →L[ℝ] E →L[ℝ] E →L[ℝ] E := fun x ↦
     inCoordinates E (TangentSpace I) (E →L[ℝ] E →L[ℝ] E)
       (fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)
@@ -255,6 +248,7 @@ theorem HasParallelCurvature.alongCurveWithin_curvatureTensor_eq_zero
 /-- For a metric connection with parallel curvature, the curvature pairing of four
 parallel fields is constant on every preconnected parameter set with unique derivatives. -/
 theorem HasParallelCurvature.inner_curvatureTensor_eq_of_alongCurveWithin_eq_zero
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (h : cov.HasParallelCurvature)
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
