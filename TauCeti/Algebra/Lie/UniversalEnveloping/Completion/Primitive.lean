@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Graded.Completion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Bialgebra
 
+import TauCeti.Algebra.DirectSum.Component
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 import TauCeti.Algebra.Lie.UniversalEnveloping.Primitive
 import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 
@@ -36,6 +38,8 @@ freeness or finite-rank hypothesis on `L`.
   `d.truncatedLie ℒ k` to the order-`k` enveloping quotient.
 * `TauCeti.UniversalEnvelopingAlgebra.completedLieToU`: the Lie homomorphism from
   `d.completedLie ℒ` to `completedEnveloping`.
+* `TauCeti.UniversalEnvelopingAlgebra.envelopingComponent`: homogeneous component projection on
+  `completedEnveloping`, obtained via `TauCeti.PositiveDegrees.completionComponent`.
 * `TauCeti.UniversalEnvelopingAlgebra.completedPrimitiveLieEquiv`: Lie isomorphism between
   `d.completedLie ℒ` and `completedPrimitiveLieSubalgebra` over a commutative `ℚ`-algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.completedLieExpEquiv`: equivalence between
@@ -55,21 +59,15 @@ freeness or finite-rank hypothesis on `L`.
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter II, §6.
+* J.-P. Serre, *Lie Algebras and Lie Groups*, Part I, Chapter IV.
+* E. Petracci, *Universal representations of Lie algebras by coderivations*,
+  arXiv:math/0303020, §8 (used via `TauCeti.UniversalEnvelopingAlgebra.primitiveEquiv` and
+  `TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat`).
 -/
 
 public section
 
 open scoped TensorProduct DirectSum
-
-namespace TauCeti.PositiveDegrees
-
-/-- A positive grading has no pieces of negative degree. -/
-theorem eq_bot_of_degree_neg {N R M : Type*} [AddCommMonoid N] [Semiring R] [AddCommMonoid M]
-    [Module R M] (d : PositiveDegrees N) (ℒ : N → Submodule R M) [IsPositiveGrading d ℒ]
-    (n : N) (hn : d.degree n < 0) : ℒ n = ⊥ :=
-  d.eq_bot_of_degree_nonpos ℒ n hn.le
-
-end TauCeti.PositiveDegrees
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -175,9 +173,7 @@ noncomputable def completedLieToU :
         projection_completedLieToUFun]
   map_lie' {x y} := (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completion_ext
     fun k => by
-      rw [projection_completedLieToUFun, LieHom.map_lie, LieHom.map_lie,
-        LieRing.of_associative_ring_bracket, LieRing.of_associative_ring_bracket,
-        map_sub, map_mul, map_mul, projection_completedLieToUFun, projection_completedLieToUFun]
+      simp [projection_completedLieToUFun, LieRing.of_associative_ring_bracket]
 
 /-- At cutoff `k`, `completedLieToU` applies `truncatedLieToU` to the `k`-th Lie projection. -/
 @[simp]
@@ -256,39 +252,88 @@ theorem homogeneousSubmodule_eq_bot_of_not_mem_monoid {n : N} (hn : n ∉ d.mono
         Submodule.mem_bot] using a.2.property
     exact List.prod_eq_zero <| List.mem_map.mpr ⟨a, hal, by simp [ha0]⟩
 
-private noncomputable def projHomogeneous (n : N) : U →ₗ[R] homogeneousSubmodule ℒ n :=
-  (_root_.DirectSum.component R N (fun m => homogeneousSubmodule ℒ m) n).comp
-    (_root_.DirectSum.decomposeLinearEquiv (homogeneousSubmodule ℒ)).toLinearMap
+private noncomputable def envelopingIdealSubmodule (k : ℕ) : Submodule R U :=
+  ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1)).restrictScalars R
 
-private noncomputable def envelopingQuotientComponent (k : ℕ) (n : N) (hn : d.degree n ≤ k) :
-    (U ⧸ (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1)) →ₗ[R]
-      homogeneousSubmodule ℒ n :=
-  ((((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1)).restrictScalars
-      R).liftQ (projHomogeneous ℒ n) fun a ha =>
-    LinearMap.mem_ker.mpr <| Subtype.ext <|
-      (mem_degreeFiltration_ideal_iff ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).mp ha n
-        (by omega)) ∘ₗ
-    (Submodule.Quotient.restrictScalarsEquiv R
-      ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1))).symm.toLinearMap
+private theorem envelopingIdealSubmodule_antitone :
+    Antitone (envelopingIdealSubmodule d ℒ) := fun _ _ h =>
+  (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).antitone (Nat.add_le_add_right h 1)
 
-@[simp]
-private theorem envelopingQuotientComponent_mk (k : ℕ) (n : N) (hn : d.degree n ≤ k) (a : U) :
-    envelopingQuotientComponent d ℒ k n hn
-        (Ideal.Quotient.mk
-          ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1)) a) =
-      _root_.DirectSum.decompose (homogeneousSubmodule ℒ) a n := by
-  simp only [envelopingQuotientComponent, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    ← Ideal.Quotient.mk_eq_mk, Submodule.Quotient.restrictScalarsEquiv_symm_mk,
-    Submodule.liftQ_apply]
-  rfl
+private theorem envelopingIdealSubmodule_eq_degreeSubmodule (k : ℕ) :
+    envelopingIdealSubmodule d ℒ k = d.degreeSubmodule (homogeneousSubmodule ℒ) k := by
+  ext a
+  rw [envelopingIdealSubmodule, Submodule.restrictScalars_mem, mem_degreeFiltration_ideal_iff,
+    d.mem_degreeSubmodule_iff]
+  exact ⟨fun h n hn => h n (by omega), fun h n hn => h n (by omega)⟩
+
+private noncomputable def envelopingQuotEquiv (k : ℕ) :
+    (ModuleTower.quotients (envelopingIdealSubmodule d ℒ)
+      (envelopingIdealSubmodule_antitone d ℒ)).obj (Opposite.op k) ≃ₗ[R]
+      U ⧸ (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1) :=
+  ModuleTower.quotientsLiftEquiv (envelopingIdealSubmodule d ℒ)
+    (envelopingIdealSubmodule_antitone d ℒ) k
+    (Ideal.Quotient.mkₐ R
+      ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1))).toLinearMap
+    (by
+      ext a
+      simp [envelopingIdealSubmodule, Ideal.Quotient.eq_zero_iff_mem])
+    Ideal.Quotient.mk_surjective
+
+private theorem envelopingQuotEquiv_π (k : ℕ) (a : U) :
+    envelopingQuotEquiv d ℒ k
+        (ModuleTower.quotientsπ (envelopingIdealSubmodule d ℒ)
+          (envelopingIdealSubmodule_antitone d ℒ) k a) =
+      Ideal.Quotient.mk
+        ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1)) a :=
+  ModuleTower.quotientsLiftEquiv_quotientsπ _ _ _ _ _ _ a
+
+private theorem envelopingQuotEquiv_transition {k l : ℕ} (h : k ≤ l)
+    (x : (ModuleTower.quotients (envelopingIdealSubmodule d ℒ)
+      (envelopingIdealSubmodule_antitone d ℒ)).obj (Opposite.op l)) :
+    envelopingQuotEquiv d ℒ k
+        ((ModuleTower.quotients (envelopingIdealSubmodule d ℒ)
+          (envelopingIdealSubmodule_antitone d ℒ)).transitionOfLE h x) =
+      Ideal.Quotient.factor
+        ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).antitone
+          (Nat.add_le_add_right h 1))
+        (envelopingQuotEquiv d ℒ l x) := by
+  obtain ⟨a, rfl⟩ := ModuleTower.quotientsπ_surjective _ _ l x
+  rw [ModuleTower.transitionOfLE_quotientsπ, envelopingQuotEquiv_π, envelopingQuotEquiv_π,
+    Ideal.Quotient.factor_mk]
+
+private noncomputable def toModuleCompletion :
+    completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ) →ₗ[R]
+      (ModuleTower.quotients (envelopingIdealSubmodule d ℒ)
+        (envelopingIdealSubmodule_antitone d ℒ)).lim :=
+  (ModuleTower.quotients (envelopingIdealSubmodule d ℒ)
+      (envelopingIdealSubmodule_antitone d ℒ)).limLift
+    (fun k => (envelopingQuotEquiv d ℒ k).symm.toLinearMap.comp
+      ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).projectionₐ (R := R)
+        k).toLinearMap)
+    (fun k => by
+      ext u
+      apply (envelopingQuotEquiv d ℒ k).injective
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+        ← ModuleTower.transitionOfLE_succ, envelopingQuotEquiv_transition]
+      simp)
+
+private theorem limπ_toModuleCompletion (k : ℕ)
+    (u : completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ)) :
+    (ModuleTower.quotients (envelopingIdealSubmodule d ℒ)
+        (envelopingIdealSubmodule_antitone d ℒ)).limπ k (toModuleCompletion d ℒ u) =
+      (envelopingQuotEquiv d ℒ k).symm
+        ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).projection k u) := by
+  rw [toModuleCompletion, ← LinearMap.comp_apply, ModuleTower.limπ_comp_limLift]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
+    TauCeti.AlgFiltration.projectionₐ_apply]
 
 /-- The `n`-th homogeneous enveloping component of an element of `completedEnveloping`. -/
 noncomputable def envelopingComponent (n : N) :
     completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ) →ₗ[R]
       homogeneousSubmodule ℒ n :=
-  (envelopingQuotientComponent d ℒ (d.degree n).toNat n (Int.self_le_toNat _)).comp
-    ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).projectionₐ
-      (R := R) (d.degree n).toNat).toLinearMap
+  (d.completionComponent (homogeneousSubmodule ℒ) (envelopingIdealSubmodule d ℒ)
+    (envelopingIdealSubmodule_antitone d ℒ)
+    (envelopingIdealSubmodule_eq_degreeSubmodule d ℒ) n).comp (toModuleCompletion d ℒ)
 
 /-- Any representative at a cutoff `k ≥ d.degree n` computes `envelopingComponent`. -/
 theorem envelopingComponent_eq_of_representative {n : N} {k : ℕ} (hn : d.degree n ≤ k)
@@ -298,14 +343,60 @@ theorem envelopingComponent_eq_of_representative {n : N} {k : ℕ} (hn : d.degre
         (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).projection k u) :
     envelopingComponent d ℒ n u =
       _root_.DirectSum.decompose (homogeneousSubmodule ℒ) a n := by
-  let 𝓕 := degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
-  have hle : (d.degree n).toNat ≤ k := by omega
-  have hproj : 𝓕.projection (d.degree n).toNat u =
-      Ideal.Quotient.mk (𝓕.ideal ((d.degree n).toNat + 1)) a := by
-    rw [← 𝓕.factor_projection hle u, ← ha, Ideal.Quotient.factor_mk]
-  simp only [envelopingComponent, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-    TauCeti.AlgFiltration.projectionₐ_apply, 𝓕] at hproj ⊢
-  rw [hproj, envelopingQuotientComponent_mk]
+  have hrep :
+      (ModuleTower.quotients (envelopingIdealSubmodule d ℒ)
+        (envelopingIdealSubmodule_antitone d ℒ)).limπ k (toModuleCompletion d ℒ u) =
+      ModuleTower.quotientsπ (envelopingIdealSubmodule d ℒ)
+        (envelopingIdealSubmodule_antitone d ℒ) k a := by
+    rw [limπ_toModuleCompletion, ← ha, ← envelopingQuotEquiv_π, LinearEquiv.symm_apply_apply]
+  rw [envelopingComponent, LinearMap.comp_apply,
+    d.completionComponent_eq_quotientComponent (homogeneousSubmodule ℒ)
+      (envelopingIdealSubmodule d ℒ) (envelopingIdealSubmodule_antitone d ℒ)
+      (envelopingIdealSubmodule_eq_degreeSubmodule d ℒ) n k hn,
+    hrep, d.quotientComponent_mk]
+
+/-- `envelopingComponent` recovers the ordinary homogeneous components on `toCompletion`. -/
+@[simp]
+theorem envelopingComponent_toCompletion (n : N) (a : U) :
+    envelopingComponent d ℒ n
+        ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).toCompletion a) =
+      _root_.DirectSum.decompose (homogeneousSubmodule ℒ) a n :=
+  envelopingComponent_eq_of_representative d ℒ (Int.self_le_toNat (d.degree n)) _ a
+    ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).projection_toCompletion _ a).symm
+
+/-- `envelopingComponent` on `completedLieToU` is `ι` applied to the corresponding completed Lie
+component. -/
+theorem envelopingComponent_completedLieToU (n : N) (x : d.completedLie ℒ) :
+    (envelopingComponent d ℒ n (completedLieToU d ℒ x) : U) =
+      ι R (d.completionLieEquivPi ℒ x n : L) := by
+  classical
+  let k := (d.degree n).toNat
+  have hk : d.degree n ≤ k := Int.self_le_toNat _
+  let y : L := ∑ m ∈ (d.finite_cutoff k).toFinset, (d.completionLieEquivPi ℒ x m : L)
+  have hproj :
+      Ideal.Quotient.mk
+          ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1)) (ι R y) =
+        (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).projection k
+          (completedLieToU d ℒ x) := by
+    rw [projection_completedLieToU, d.completionProjection_eq_mkQ_sum ℒ x k,
+      LieIdeal.mkQ_apply, truncatedLieToU_mk]
+  rw [envelopingComponent_eq_of_representative d ℒ hk _ (ι R y) hproj,
+    ι_apply, coe_decompose_mkAlgHom_ι]
+  congr 1
+  by_cases hnP : n ∈ d.monoid
+  · have hmem : n ∈ (d.finite_cutoff k).toFinset := by simp [hnP, hk]
+    rw [_root_.DirectSum.decompose_sum, _root_.DirectSum.sum_apply, Submodule.coe_sum,
+      Finset.sum_eq_single n]
+    · exact _root_.DirectSum.decompose_of_mem_same ℒ (d.completionLieEquivPi ℒ x n).property
+    · intro m _ hmn
+      exact _root_.DirectSum.decompose_of_mem_ne ℒ (d.completionLieEquivPi ℒ x m).property hmn
+    · exact fun h => (h hmem).elim
+  · have hbot : ℒ n = ⊥ := IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n (Or.inl hnP)
+    have h1 : (_root_.DirectSum.decompose ℒ y n : L) = 0 :=
+      (Submodule.mem_bot R).mp (hbot ▸ (_root_.DirectSum.decompose ℒ y n).property)
+    have h2 : (d.completionLieEquivPi ℒ x n : L) = 0 :=
+      (Submodule.mem_bot R).mp (hbot ▸ (d.completionLieEquivPi ℒ x n).property)
+    exact h1.trans h2.symm
 
 /-- At cutoff `k`, every element of `completedEnveloping` is represented by the finite sum of its
 homogeneous components in `d.cutoff k`. -/
@@ -315,64 +406,29 @@ theorem mk_sum_envelopingComponent (k : ℕ)
         ((degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).ideal (k + 1))
         (∑ m ∈ (d.finite_cutoff k).toFinset, (envelopingComponent d ℒ m u : U)) =
       (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).projection k u := by
-  classical
-  let 𝓕 := degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (𝓕.projection k u)
-  rw [← ha, Ideal.Quotient.eq, mem_degreeFiltration_ideal_iff]
-  intro n hn
-  have hnk : d.degree n ≤ k := by omega
-  by_cases hP : n ∈ d.monoid
-  · have hmem : n ∈ (d.finite_cutoff k).toFinset := by simp [hP, hnk]
-    rw [_root_.DirectSum.decompose_sub, _root_.DirectSum.sub_apply, Submodule.coe_sub,
-      _root_.DirectSum.decompose_sum, _root_.DirectSum.sum_apply, Submodule.coe_sum,
-      Finset.sum_eq_single n]
-    · rw [_root_.DirectSum.decompose_of_mem_same (homogeneousSubmodule ℒ)
-        (envelopingComponent d ℒ n u).property,
-        envelopingComponent_eq_of_representative d ℒ hnk u a ha, sub_self]
-    · intro m _ hmn
-      exact _root_.DirectSum.decompose_of_mem_ne (homogeneousSubmodule ℒ)
-        (envelopingComponent d ℒ m u).property hmn
-    · exact fun h => (h hmem).elim
-  · have hbot := homogeneousSubmodule_eq_bot_of_not_mem_monoid d ℒ hP
-    exact (Submodule.mem_bot R).mp
-      (hbot ▸ (_root_.DirectSum.decompose (homogeneousSubmodule ℒ) _ n).property)
+  have h := d.projection_eq_sum_completionComponent (homogeneousSubmodule ℒ)
+    (envelopingIdealSubmodule d ℒ) (envelopingIdealSubmodule_antitone d ℒ)
+    (envelopingIdealSubmodule_eq_degreeSubmodule d ℒ)
+    (fun _ hn => homogeneousSubmodule_eq_bot_of_not_mem_monoid d ℒ hn)
+    k (toModuleCompletion d ℒ u)
+  have h' := congrArg (envelopingQuotEquiv d ℒ k) h
+  rw [limπ_toModuleCompletion, LinearEquiv.apply_symm_apply, envelopingQuotEquiv_π] at h'
+  exact h'.symm
 
 private def tensorGrading (p : N × N) : Submodule R (U ⊗[R] U) :=
   Submodule.map₂ (TensorProduct.mk R U U)
     (homogeneousSubmodule ℒ p.1) (homogeneousSubmodule ℒ p.2)
 
 omit [DecidableEq N] [GradedLieAlgebra ℒ] in
-private theorem tensorGrading_eq_bot_of_not_mem {p : N × N}
-    (hp : ¬ (p.1 ∈ d.monoid ∧ p.2 ∈ d.monoid)) :
-    tensorGrading ℒ p = ⊥ := by
-  rw [not_and_or] at hp
-  rw [eq_bot_iff]
-  refine Submodule.map₂_le.mpr fun u hu v hv => ?_
-  rcases hp with hp1 | hp2
-  · have hu0 : u = 0 := (Submodule.mem_bot R).mp
-      (homogeneousSubmodule_eq_bot_of_not_mem_monoid d ℒ hp1 ▸ hu)
-    simp [hu0]
-  · have hv0 : v = 0 := (Submodule.mem_bot R).mp
-      (homogeneousSubmodule_eq_bot_of_not_mem_monoid d ℒ hp2 ▸ hv)
-    simp [hv0]
-
-omit [DecidableEq N] [GradedLieAlgebra ℒ] in
 private theorem mul_mem_tensorGrading {p q : N × N} {x y : U ⊗[R] U}
     (hx : x ∈ tensorGrading ℒ p) (hy : y ∈ tensorGrading ℒ q) :
     x * y ∈ tensorGrading ℒ (p + q) := by
-  have h₁ : tensorGrading ℒ p ≤
-      (tensorGrading ℒ (p + q)).comap ((LinearMap.mul R (U ⊗[R] U)).flip y) := by
-    refine Submodule.map₂_le.mpr fun u₁ hu₁ v₁ hv₁ => ?_
-    rw [Submodule.mem_comap, LinearMap.flip_apply, LinearMap.mul_apply']
-    have h₂ : tensorGrading ℒ q ≤
-        (tensorGrading ℒ (p + q)).comap (LinearMap.mul R (U ⊗[R] U) (u₁ ⊗ₜ[R] v₁)) := by
-      refine Submodule.map₂_le.mpr fun u₂ hu₂ v₂ hv₂ => ?_
-      simp only [Submodule.mem_comap, TensorProduct.mk_apply, LinearMap.mul_apply',
-        Algebra.TensorProduct.tmul_mul_tmul]
-      exact Submodule.apply_mem_map₂ (TensorProduct.mk R U U)
-        (SetLike.mul_mem_graded hu₁ hu₂) (SetLike.mul_mem_graded hv₁ hv₂)
-    exact h₂ hy
-  exact h₁ hx
+  have hle : tensorGrading ℒ p * tensorGrading ℒ q ≤ tensorGrading ℒ (p + q) :=
+    (Submodule.map₂_tmul_mul_le _ _ _ _).trans <|
+      Submodule.map₂_le_map₂
+        (TauCeti.GradedAlgebra.mul_le_grade_add (homogeneousSubmodule ℒ) p.1 q.1)
+        (TauCeti.GradedAlgebra.mul_le_grade_add (homogeneousSubmodule ℒ) p.2 q.2)
+  exact hle (Submodule.mul_mem_mul hx hy)
 
 private def tensorTotalDegree (m : N) : Submodule R (U ⊗[R] U) :=
   ⨆ p : {p : N × N // p.1 + p.2 = m}, tensorGrading ℒ p.1
@@ -444,18 +500,24 @@ private theorem primDefect_mem_tensorTotalDegree {m : N} {a : U}
 omit [GradedLieAlgebra ℒ] in
 private noncomputable def tensorComponentKer
     [_root_.DirectSum.Decomposition (tensorGrading ℒ)] (p : N × N) : Submodule R (U ⊗[R] U) :=
-  LinearMap.ker ((tensorGrading ℒ p).subtype.comp
-    ((_root_.DirectSum.component R (N × N) (fun q => tensorGrading ℒ q) p).comp
-      (_root_.DirectSum.decomposeLinearEquiv (tensorGrading ℒ)).toLinearMap))
+  LinearMap.ker (TauCeti.homogeneousComponent (tensorGrading ℒ) p)
+
+omit [GradedLieAlgebra ℒ] in
+private theorem mem_tensorComponentKer
+    [_root_.DirectSum.Decomposition (tensorGrading ℒ)] {p : N × N} {z : U ⊗[R] U} :
+    z ∈ tensorComponentKer ℒ p ↔
+      (_root_.DirectSum.decompose (tensorGrading ℒ) z p : U ⊗[R] U) = 0 := by
+  simp [tensorComponentKer]
 
 omit [GradedLieAlgebra ℒ] in
 private theorem decompose_eq_zero_of_mem_tensorTotalDegree
     [_root_.DirectSum.Decomposition (tensorGrading ℒ)] {m : N} {z : U ⊗[R] U}
     (hz : z ∈ tensorTotalDegree ℒ m) {p : N × N} (hp : p.1 + p.2 ≠ m) :
-    (_root_.DirectSum.decompose (tensorGrading ℒ) z p : U ⊗[R] U) = 0 :=
-  Submodule.iSup_induction _ (motive := fun w => w ∈ tensorComponentKer ℒ p) hz
-    (fun q _ hw => _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ) hw fun h => hp (h ▸ q.2))
-    (zero_mem _) (fun _ _ => add_mem)
+    (_root_.DirectSum.decompose (tensorGrading ℒ) z p : U ⊗[R] U) = 0 := by
+  have hle : tensorTotalDegree ℒ m ≤ tensorComponentKer ℒ p :=
+    iSup_le fun q _ hw => (mem_tensorComponentKer ℒ).mpr <|
+      _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ) hw fun h => hp (h ▸ q.2)
+  exact (mem_tensorComponentKer ℒ).mp (hle hz)
 
 private theorem decompose_eq_zero_of_mem_tensorProduct_ideal
     [_root_.DirectSum.Decomposition (tensorGrading ℒ)] {k : ℕ} {t : U ⊗[R] U}
@@ -463,32 +525,23 @@ private theorem decompose_eq_zero_of_mem_tensorProduct_ideal
       (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ))).ideal (k + 1))
     {p : N × N} (hp : d.degree p.1 + d.degree p.2 ≤ k) :
     (_root_.DirectSum.decompose (tensorGrading ℒ) t p : U ⊗[R] U) = 0 := by
-  let K := tensorComponentKer ℒ p
-  rw [TauCeti.AlgFiltration.mem_tensorProduct_ideal_iff, tensorFiltrationTail_def] at ht
-  refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) ht (fun a z hz => ?_)
-    (zero_mem K) (fun _ _ => add_mem)
-  refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun b z hz => ?_)
-    (zero_mem K) (fun _ _ => add_mem)
-  refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun hab z hz => ?_)
-    (zero_mem K) (fun _ _ => add_mem)
-  refine Submodule.map₂_le.mpr (fun u hu v hv => ?_) hz
-  rw [Submodule.restrictScalars_mem, degreeFiltration_ideal,
-    ← Submodule.restrictScalars_mem R, TauCeti.GradedAlgebra.degreeIdeal_restrictScalars,
-    TauCeti.DirectSum.degreeTail_def] at hu hv
-  refine Submodule.iSup_induction _ (motive := fun u => TensorProduct.mk R U U u v ∈ K) hu
-    (fun i _ hu => Submodule.iSup_induction _ (motive := fun u => TensorProduct.mk R U U u v ∈ K)
-      hu (fun hi u hu => ?_) (by simp [zero_mem K])
-      fun _ _ h₁ h₂ => by simpa [TensorProduct.add_tmul] using add_mem h₁ h₂)
-    (by simp [zero_mem K]) (fun _ _ h₁ h₂ => by simpa [TensorProduct.add_tmul] using add_mem h₁ h₂)
-  refine Submodule.iSup_induction _ (motive := fun v => TensorProduct.mk R U U u v ∈ K) hv
-    (fun j _ hv => Submodule.iSup_induction _ (motive := fun v => TensorProduct.mk R U U u v ∈ K)
-      hv (fun hj v hv => ?_) (by simp [zero_mem K])
-      fun _ _ h₁ h₂ => by simpa [TensorProduct.tmul_add] using add_mem h₁ h₂)
-    (by simp [zero_mem K]) (fun _ _ h₁ h₂ => by simpa [TensorProduct.tmul_add] using add_mem h₁ h₂)
-  refine _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ) (i := (i, j))
-    (Submodule.apply_mem_map₂ (TensorProduct.mk R U U) hu hv) fun heq => ?_
-  rcases Prod.ext_iff.mp heq with ⟨rfl, rfl⟩
-  omega
+  let 𝓕 := degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
+  have hle :
+      TauCeti.tensorFiltrationTail
+        (fun n => (𝓕.ideal n).restrictScalars R)
+        (fun n => (𝓕.ideal n).restrictScalars R) (k + 1) ≤ tensorComponentKer ℒ p := by
+    rw [TauCeti.tensorFiltrationTail_def]
+    refine iSup_le fun a => iSup_le fun b => iSup_le fun hab => ?_
+    simp only [𝓕, degreeFiltration_ideal, TauCeti.GradedAlgebra.degreeIdeal_restrictScalars,
+      TauCeti.DirectSum.degreeTail_def, Submodule.map₂_iSup_left, Submodule.map₂_iSup_right,
+      iSup_le_iff, Submodule.map₂_le]
+    intro j hj i hi x hx y hy
+    refine (mem_tensorComponentKer ℒ).mpr <|
+      _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ) (i := (i, j))
+        (Submodule.apply_mem_map₂ (TensorProduct.mk R U U) hx hy) fun heq => ?_
+    rcases Prod.ext_iff.mp heq with ⟨rfl, rfl⟩
+    omega
+  exact (mem_tensorComponentKer ℒ).mp (hle ((𝓕.mem_tensorProduct_ideal_iff R 𝓕).mp ht))
 
 private theorem isPrimitiveElem_envelopingComponent_of_mem_monoid
     {u : completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ)}
@@ -496,31 +549,18 @@ private theorem isPrimitiveElem_envelopingComponent_of_mem_monoid
     {n : N} (hnP : n ∈ d.monoid) :
     Bialgebra.IsPrimitiveElem R (envelopingComponent d ℒ n u : U) := by
   classical
-  let 𝓕 := degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
+  let k := (d.degree n).toNat
+  let s := (d.finite_cutoff k).toFinset
+  let a : U := ∑ m ∈ s, (envelopingComponent d ℒ m u : U)
   let _ : _root_.DirectSum.Decomposition (tensorGrading ℒ) :=
     (_root_.DirectSum.IsInternal.tensorProduct _ _
       (isInternal_homogeneousSubmodule ℒ)
       (isInternal_homogeneousSubmodule ℒ)).chooseDecomposition
-  let k := (d.degree n).toNat
-  let s := (d.finite_cutoff k).toFinset
-  let a : U := ∑ m ∈ s, (envelopingComponent d ℒ m u : U)
-  have ha : Ideal.Quotient.mk (𝓕.ideal (k + 1)) a = 𝓕.projection k u :=
-    mk_sum_envelopingComponent d ℒ k u
-  have h1 : Ideal.Quotient.mk (𝓕.ideal (k + 1)) (1 : U) = 𝓕.projection k 1 :=
-    (map_one (𝓕.projection k)).symm
-  have hmem : Coalgebra.comul (R := R) a - (1 ⊗ₜ[R] a + a ⊗ₜ[R] 1) ∈
-      (𝓕.tensorProduct R 𝓕).ideal (k + 1) := by
-    have hprim := (isCompletedPrimitive_iff ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).mp hu
-    have hproj := congrArg ((𝓕.tensorProduct R 𝓕).projection k) hprim
-    rw [projection_completedCoproduct, ← ha, Ideal.quotient_map_mkₐ,
-      Ideal.Quotient.mkₐ_eq_mk, Bialgebra.comulAlgHom_apply, map_add,
-      𝓕.projection_completedTensor_of_representatives R 𝓕 k u 1 a 1 ha h1,
-      𝓕.projection_completedTensor_of_representatives R 𝓕 k 1 u 1 a h1 ha,
-      add_comm (Ideal.Quotient.mk _ (a ⊗ₜ[R] 1)), ← map_add, Ideal.Quotient.eq] at hproj
-    exact hproj
+  have hmem := hu.comul_sub_mem_tensorProduct_ideal (mk_sum_envelopingComponent d ℒ k u)
   let δ : U →ₗ[R] U ⊗[R] U :=
     Coalgebra.comul - ((TensorProduct.mk R U U 1) + (TensorProduct.mk R U U).flip 1)
-  have hδ (b : U) : δ b = Coalgebra.comul (R := R) b - (1 ⊗ₜ[R] b + b ⊗ₜ[R] 1) := rfl
+  have hδ (b : U) : δ b = Coalgebra.comul (R := R) b - (1 ⊗ₜ[R] b + b ⊗ₜ[R] 1) := by
+    simp [δ]
   refine Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul.mpr (sub_eq_zero.mp ?_)
   apply (_root_.DirectSum.decomposeLinearEquiv (tensorGrading ℒ)).injective
   rw [map_zero]
@@ -528,22 +568,19 @@ private theorem isPrimitiveElem_envelopingComponent_of_mem_monoid
   simp only [_root_.DirectSum.decomposeLinearEquiv_apply, _root_.DirectSum.zero_apply,
     ZeroMemClass.coe_zero]
   by_cases hpn : p.1 + p.2 = n
-  · by_cases hpP : p.1 ∈ d.monoid ∧ p.2 ∈ d.monoid
-    · have hpk : d.degree p.1 + d.degree p.2 ≤ k := by
-        rw [← map_add, hpn]
-        exact Int.self_le_toNat _
-      have h0 := decompose_eq_zero_of_mem_tensorProduct_ideal d ℒ hmem hpk
-      rw [← hδ a, map_sum δ _ s, _root_.DirectSum.decompose_sum, _root_.DirectSum.sum_apply,
-        Submodule.coe_sum, Finset.sum_eq_single n] at h0
-      · exact h0
-      · intro m _ hmn
-        exact decompose_eq_zero_of_mem_tensorTotalDegree ℒ
-          (primDefect_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ m u).property)
-          (hpn.trans_ne hmn.symm)
-      · exact fun hns => (hns (by simp [s, k, hnP])).elim
-    · have hbot := tensorGrading_eq_bot_of_not_mem d ℒ hpP
-      exact (Submodule.mem_bot R).mp
-        (hbot ▸ (_root_.DirectSum.decompose (tensorGrading ℒ) _ p).property)
+  · have hpk : d.degree p.1 + d.degree p.2 ≤ k := by
+      rw [← map_add, hpn]
+      exact Int.self_le_toNat _
+    have h0 := decompose_eq_zero_of_mem_tensorProduct_ideal d ℒ hmem hpk
+    rw [← hδ a, map_sum δ _ s, _root_.DirectSum.decompose_sum, _root_.DirectSum.sum_apply,
+      Submodule.coe_sum, Finset.sum_eq_single n] at h0
+    · rwa [hδ] at h0
+    · intro m _ hmn
+      rw [hδ]
+      exact decompose_eq_zero_of_mem_tensorTotalDegree ℒ
+        (primDefect_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ m u).property)
+        (hpn.trans_ne hmn.symm)
+    · exact fun hns => (hns (by simp [s, k, hnP])).elim
   · exact decompose_eq_zero_of_mem_tensorTotalDegree ℒ
       (primDefect_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ n u).property) hpn
 
@@ -654,14 +691,7 @@ noncomputable def completedLieExpEquiv :
     d.completedLie ℒ ≃
       {u : completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ) //
         IsCompletedGroupLike ℒ d.degree (d.eq_bot_of_degree_neg ℒ) u} :=
-  ((completedPrimitiveLieEquiv d ℒ).toLinearEquiv.toEquiv.trans
-    { toFun := fun u =>
-        ⟨⟨u.1, ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp u.2).mem_completionIdeal_one
-          ℒ d.degree (hpos := d.eq_bot_of_degree_nonpos ℒ)⟩,
-          (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp u.2⟩
-      invFun := fun p => ⟨p.1.1, (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr p.2⟩
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }).trans
+  (completedPrimitiveLieEquiv d ℒ).toLinearEquiv.toEquiv.trans
     (completedPrimitiveExpEquiv ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ))
 
 @[simp]
@@ -678,8 +708,7 @@ theorem completedLieToU_completedLieExpEquiv_symm
       IsCompletedGroupLike ℒ d.degree (d.eq_bot_of_degree_neg ℒ) u}) :
     completedLieToU d ℒ ((completedLieExpEquiv d ℒ).symm u) =
       (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completedLog
-        ⟨u.1, u.2.sub_one_mem_completionIdeal_one ℒ d.degree
-          (hpos := d.eq_bot_of_degree_nonpos ℒ)⟩ :=
+        ⟨u.1, u.2.sub_one_mem_completionIdeal_one (d.eq_bot_of_degree_nonpos ℒ)⟩ :=
   (completedLieToU_completedPrimitiveLieEquiv_symm d ℒ _).trans
     (coe_completedPrimitiveExpEquiv_symm ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ) u)
 

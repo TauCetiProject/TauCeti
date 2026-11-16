@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Free.Enveloping
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Primitive
 
-import TauCeti.Algebra.Lie.UniversalEnveloping.Primitive
 import TauCeti.RingTheory.Nilpotent.BCH
 
 /-!
@@ -17,7 +16,7 @@ import TauCeti.RingTheory.Nilpotent.BCH
 Let `F = FreeLieAlgebra ℚ (Fin 2)` be the free Lie algebra over `ℚ` on two generators `X = of ℚ 0`
 and `Y = of ℚ 1`, graded by word length over `PositiveDegrees.naturals`. Its word-length degree
 ideals coincide with the lower central series (`naturals_degreeIdeal_eq_lowerCentralSeries`), and
-the associated degree filtration on `U(F)` coincides with the powers of the augmentation ideal
+the associated degree filtration on `U(F)` coincides with the powers of the augmentation ideal `J`
 (`naturals_degreeFiltration_eq_augmentation_pow`).
 
 In the completed enveloping algebra `completedEnveloping`, the completed exponentials of `X` and
@@ -48,6 +47,12 @@ polynomial
 
 * `TauCeti.FreeLieAlgebra.comap_freeAugmentation_pow_ι`: the preimage of
   `freeAugmentation ^ (c + 1)` under `ι ℚ` is `lowerCentralSeries ℚ FreeLieTwo FreeLieTwo c`.
+* `TauCeti.FreeLieAlgebra.completedExp_completedLieToU_bchCompleted`: in `completedEnveloping`,
+  the completed exponential of `completedLieToU bchCompleted` equals the product of the completed
+  exponentials of the two canonical generators.
+* `TauCeti.FreeLieAlgebra.quotEquivOfEq_completionProjection_bchCompleted` and
+  `TauCeti.FreeLieAlgebra.completionProjection_bchCompleted`: the order-`c` projection of
+  `bchCompleted` corresponds to `bchElement c`.
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_bchElement`: `lowerCentralQuotientι` sends
   `bchElement c` to `log (exp X * exp Y)` modulo `freeAugmentation ^ (c + 1)`.
 * `TauCeti.FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement` and
@@ -63,6 +68,7 @@ polynomial
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter II, §6.
+* J.-P. Serre, *Lie Algebras and Lie Groups*, Part I, Chapter IV.
 -/
 
 public section
@@ -74,42 +80,6 @@ section Grading
 variable (R : Type*) [CommRing R] (S : Type*)
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- Word length is a positive Lie grading of `FreeLieAlgebra R S` over
-`PositiveDegrees.naturals`. -/
-instance isPositiveGrading_homogeneousSubmodule :
-    IsPositiveGrading PositiveDegrees.naturals (homogeneousSubmodule R S) where
-  eq_bot n hn := by
-    rcases hn with hmem | rfl
-    · exact (hmem PositiveDegrees.mem_naturals_monoid).elim
-    · exact homogeneousSubmodule_zero R S
-
-/-- For the word-length grading over `PositiveDegrees.naturals`, the degree ideal at cutoff `c` is
-the `c`-th term of the lower central series. -/
-theorem naturals_degreeIdeal_eq_lowerCentralSeries (c : ℕ) :
-    PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule R S) c =
-      LieModule.lowerCentralSeries R (_root_.FreeLieAlgebra R S)
-        (_root_.FreeLieAlgebra R S) c := by
-  apply LieSubmodule.toSubmodule_injective
-  rw [PositiveDegrees.degreeIdeal_toSubmodule, PositiveDegrees.degreeSubmodule_def,
-    lowerCentralSeries_toSubmodule_eq_iSup, iSup_subtype]
-  refine iSup_congr fun n => iSup_congr_Prop ?_ fun _ => rfl
-  simp [Nat.cast_lt]
-
-/-- On `U(FreeLieAlgebra R S)`, the degree filtration for `PositiveDegrees.naturals` coincides with
-powers of the augmentation ideal. -/
-theorem naturals_degreeFiltration_eq_augmentation_pow (k : ℕ) :
-    (UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule R S)
-      PositiveDegrees.naturals.degree
-      (PositiveDegrees.naturals.eq_bot_of_degree_neg (homogeneousSubmodule R S))).ideal k =
-    (HopfIdeal.augmentation R
-      (_root_.UniversalEnvelopingAlgebra R (_root_.FreeLieAlgebra R S))).toIdeal ^ k :=
-  UniversalEnvelopingAlgebra.degreeFiltration_eq_augmentation_pow
-    (homogeneousSubmodule R S) PositiveDegrees.naturals.degree
-    (PositiveDegrees.naturals.eq_bot_of_degree_nonpos (homogeneousSubmodule R S))
-    (_root_.FreeLieAlgebra.of R) (fun _ => 1) (lieSpan_range_of_eq_top R S)
-    (fun s => by simpa using word_mem_homogeneousSubmodule R (FreeMagma.of s))
-    (fun _ => by simp) k
 
 /-- `truncatedLieToU` for `PositiveDegrees.naturals` agrees with `lowerCentralQuotientι` across the
 identifications of degree ideals with lower central terms and filtration ideals with augmentation
@@ -128,35 +98,6 @@ theorem quotientEquivAlgOfEq_truncatedLieToU (c : ℕ)
   simp [LieIdeal.mkQ_apply, LieIdeal.quotEquivOfEq_mk]
 
 end Grading
-
-section RationalAugmentation
-
-variable (R : Type) [CommRing R] [Algebra ℚ R] (S : Type*)
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- Over a commutative `ℚ`-algebra `R : Type`, the preimage of the `(c + 1)`-st power of the
-augmentation ideal under `ι R` is the `c`-th term of the lower central series. -/
-theorem comap_augmentation_pow_ι_of_algebra_rat (c : ℕ) :
-    (((HopfIdeal.augmentation R
-          (_root_.UniversalEnvelopingAlgebra R (_root_.FreeLieAlgebra R S))).toIdeal ^
-        (c + 1)).restrictScalars R).comap
-      (_root_.UniversalEnvelopingAlgebra.ι R : _root_.FreeLieAlgebra R S →ₗ⁅R⁆
-        _root_.UniversalEnvelopingAlgebra R (_root_.FreeLieAlgebra R S)).toLinearMap =
-      (LieModule.lowerCentralSeries R (_root_.FreeLieAlgebra R S)
-        (_root_.FreeLieAlgebra R S) c).toSubmodule :=
-  comap_augmentation_pow_ι R S
-    (UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat R (_root_.FreeLieAlgebra R S)) c
-
-/-- Over a commutative `ℚ`-algebra `R : Type`, the free nilpotent Lie algebra of class at most `c`
-embeds into the truncated enveloping algebra modulo the `(c + 1)`-st augmentation power. -/
-theorem lowerCentralQuotientι_injective_of_algebra_rat (c : ℕ) :
-    Function.Injective
-      (UniversalEnvelopingAlgebra.lowerCentralQuotientι R (_root_.FreeLieAlgebra R S) c) :=
-  lowerCentralQuotientι_injective R S
-    (UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat R (_root_.FreeLieAlgebra R S)) c
-
-end RationalAugmentation
 
 section BCH
 
@@ -193,8 +134,54 @@ noncomputable def bchCompleted :
   (UniversalEnvelopingAlgebra.completedLieExpEquiv PositiveDegrees.naturals
       (homogeneousSubmodule ℚ (Fin 2))).symm
     ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1,
-      (bchGroupLikeFactor 0).2.mul (homogeneousSubmodule ℚ (Fin 2))
-        PositiveDegrees.naturals.degree (bchGroupLikeFactor 1).2⟩
+      (bchGroupLikeFactor 0).2.mul (bchGroupLikeFactor 1).2⟩
+
+/-- In the completed enveloping algebra of `FreeLieTwo`, the completed exponential of `bchCompleted`
+is the product of the completed exponentials of the two canonical generators. -/
+theorem completedExp_completedLieToU_bchCompleted :
+    (UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
+        PositiveDegrees.naturals.degree
+        (PositiveDegrees.naturals.eq_bot_of_degree_neg
+          (homogeneousSubmodule ℚ (Fin 2)))).completedExp
+      ⟨UniversalEnvelopingAlgebra.completedLieToU PositiveDegrees.naturals
+          (homogeneousSubmodule ℚ (Fin 2)) bchCompleted,
+        UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one
+          PositiveDegrees.naturals (homogeneousSubmodule ℚ (Fin 2)) bchCompleted⟩ =
+    (UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
+        PositiveDegrees.naturals.degree
+        (PositiveDegrees.naturals.eq_bot_of_degree_neg
+          (homogeneousSubmodule ℚ (Fin 2)))).completedExp
+      ⟨(UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
+          PositiveDegrees.naturals.degree
+          (PositiveDegrees.naturals.eq_bot_of_degree_neg
+            (homogeneousSubmodule ℚ (Fin 2)))).toCompletion
+          (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 0)),
+        UniversalEnvelopingAlgebra.toCompletion_ι_mem_completionIdeal_one
+          (homogeneousSubmodule ℚ (Fin 2)) PositiveDegrees.naturals.degree
+          (PositiveDegrees.naturals.eq_bot_of_degree_nonpos (homogeneousSubmodule ℚ (Fin 2)))
+          (_root_.FreeLieAlgebra.of ℚ 0)⟩ *
+    (UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
+        PositiveDegrees.naturals.degree
+        (PositiveDegrees.naturals.eq_bot_of_degree_neg
+          (homogeneousSubmodule ℚ (Fin 2)))).completedExp
+      ⟨(UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
+          PositiveDegrees.naturals.degree
+          (PositiveDegrees.naturals.eq_bot_of_degree_neg
+            (homogeneousSubmodule ℚ (Fin 2)))).toCompletion
+          (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 1)),
+        UniversalEnvelopingAlgebra.toCompletion_ι_mem_completionIdeal_one
+          (homogeneousSubmodule ℚ (Fin 2)) PositiveDegrees.naturals.degree
+          (PositiveDegrees.naturals.eq_bot_of_degree_nonpos (homogeneousSubmodule ℚ (Fin 2)))
+          (_root_.FreeLieAlgebra.of ℚ 1)⟩ := by
+  have happ := congrArg Subtype.val <|
+    (UniversalEnvelopingAlgebra.completedLieExpEquiv PositiveDegrees.naturals
+      (homogeneousSubmodule ℚ (Fin 2))).apply_symm_apply
+        ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1,
+          (bchGroupLikeFactor 0).2.mul (bchGroupLikeFactor 1).2⟩
+  simp only [bchCompleted, bchGroupLikeFactor,
+    UniversalEnvelopingAlgebra.coe_completedLieExpEquiv_apply,
+    UniversalEnvelopingAlgebra.completedLieToU_toCompletion] at happ ⊢
+  exact happ
 
 /-- The universal Baker–Campbell–Hausdorff element of nilpotency class `c` in
 `FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo c`. -/
@@ -207,6 +194,31 @@ noncomputable def bchElement (c : ℕ) :
       (PositiveDegrees.naturals.degreeIdeal_antitone (homogeneousSubmodule ℚ (Fin 2)))
       c bchCompleted)
 
+/-- Identifying the degree ideal with the lower central series sends the order-`c` projection of
+`bchCompleted` to `bchElement c`. -/
+@[simp]
+theorem quotEquivOfEq_completionProjection_bchCompleted (c : ℕ) :
+    ((PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule ℚ (Fin 2)) c).quotEquivOfEq _
+        (naturals_degreeIdeal_eq_lowerCentralSeries ℚ (Fin 2) c))
+      (LieIdeal.completionProjection
+        (PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule ℚ (Fin 2)))
+        (PositiveDegrees.naturals.degreeIdeal_antitone (homogeneousSubmodule ℚ (Fin 2)))
+        c bchCompleted) =
+      bchElement c :=
+  (rfl)
+
+/-- The order-`c` projection of `bchCompleted` is `bchElement c` transported back along the
+identification of degree ideals with lower central terms. -/
+theorem completionProjection_bchCompleted (c : ℕ) :
+    LieIdeal.completionProjection
+        (PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule ℚ (Fin 2)))
+        (PositiveDegrees.naturals.degreeIdeal_antitone (homogeneousSubmodule ℚ (Fin 2)))
+        c bchCompleted =
+      ((PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule ℚ (Fin 2)) c).quotEquivOfEq _
+          (naturals_degreeIdeal_eq_lowerCentralSeries ℚ (Fin 2) c)).symm
+        (bchElement c) := by
+  rw [← quotEquivOfEq_completionProjection_bchCompleted c, LieEquiv.symm_apply_apply]
+
 private noncomputable abbrev freeDegreeFiltration :=
   UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
     PositiveDegrees.naturals.degree
@@ -215,35 +227,12 @@ private noncomputable abbrev freeDegreeFiltration :=
 private noncomputable abbrev bchEnvEquiv (c : ℕ) :=
   Ideal.quotientEquivAlgOfEq ℚ (naturals_degreeFiltration_eq_augmentation_pow ℚ (Fin 2) (c + 1))
 
-private theorem bchEnvEquiv_projection_bchGroupLikeFactor (c : ℕ) (i : Fin 2) :
-    bchEnvEquiv c (freeDegreeFiltration.projection c (bchGroupLikeFactor i).1) =
-      IsNilpotent.exp
-        (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
-          (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ i))) := by
-  let d := PositiveDegrees.naturals
-  let ℒ := homogeneousSubmodule ℚ (Fin 2)
-  let xHat : d.completedLie ℒ :=
-    LieIdeal.toCompletion (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ)
-      (_root_.FreeLieAlgebra.of ℚ i)
-  have hmem := UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one d ℒ xHat
-  have hnil := freeDegreeFiltration.isNilpotent_projection hmem c
-  calc
-    bchEnvEquiv c (freeDegreeFiltration.projection c (bchGroupLikeFactor i).1)
-      = bchEnvEquiv c (freeDegreeFiltration.projection c
-          (freeDegreeFiltration.completedExp
-            ⟨UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat, hmem⟩)) := by
-          rw [bchGroupLikeFactor, UniversalEnvelopingAlgebra.coe_completedLieExpEquiv_apply]
-          rfl
-    _ = bchEnvEquiv c (IsNilpotent.exp
-          (freeDegreeFiltration.projection c
-            (UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat))) :=
-          congrArg (bchEnvEquiv c) (freeDegreeFiltration.projection_completedExp ⟨_, hmem⟩ c)
-    _ = IsNilpotent.exp (bchEnvEquiv c
-          (freeDegreeFiltration.projection c
-            (UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat))) :=
-          hnil.map_exp (bchEnvEquiv c)
-    _ = _ := by
-          simp [d, ℒ, xHat, bchEnvEquiv, freeDegreeFiltration, freeAugmentation]
+private theorem bchEnvEquiv_projection_completedExp (c : ℕ)
+    (x : freeDegreeFiltration.completionIdeal 1) :
+    bchEnvEquiv c (freeDegreeFiltration.projection c (freeDegreeFiltration.completedExp x)) =
+      IsNilpotent.exp (bchEnvEquiv c (freeDegreeFiltration.projection c x)) := by
+  rw [freeDegreeFiltration.projection_completedExp x c,
+    (freeDegreeFiltration.isNilpotent_projection x.property c).map_exp (bchEnvEquiv c)]
 
 /-- Exponentiating the image of `bchElement c` in `U(FreeLieTwo) ⧸ freeAugmentation ^ (c + 1)`
 recovers `exp X * exp Y`. -/
@@ -256,40 +245,18 @@ theorem exp_lowerCentralQuotientι_bchElement (c : ℕ) :
         IsNilpotent.exp
           (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
             (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 1))) := by
-  let d := PositiveDegrees.naturals
-  let ℒ := homogeneousSubmodule ℚ (Fin 2)
-  have hmem := UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one d ℒ bchCompleted
-  have hnil := freeDegreeFiltration.isNilpotent_projection hmem c
-  have happ : (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ bchCompleted).1 =
-      (bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1 :=
-    congrArg Subtype.val <|
-      (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ).apply_symm_apply
-        ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1,
-          (bchGroupLikeFactor 0).2.mul ℒ d.degree (bchGroupLikeFactor 1).2⟩
-  calc
-    IsNilpotent.exp
-        (UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ FreeLieTwo c (bchElement c))
-      = IsNilpotent.exp (bchEnvEquiv c (freeDegreeFiltration.projection c
-          (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted))) := by
-          rw [bchElement, ← quotientEquivAlgOfEq_truncatedLieToU ℚ (Fin 2) c,
-            ← UniversalEnvelopingAlgebra.projection_completedLieToU d ℒ c bchCompleted]
-    _ = bchEnvEquiv c (IsNilpotent.exp (freeDegreeFiltration.projection c
-          (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted))) :=
-          (hnil.map_exp (bchEnvEquiv c)).symm
-    _ = bchEnvEquiv c (freeDegreeFiltration.projection c
-          (freeDegreeFiltration.completedExp
-            ⟨UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted, hmem⟩)) :=
-          congrArg (bchEnvEquiv c) (freeDegreeFiltration.projection_completedExp ⟨_, hmem⟩ c).symm
-    _ = bchEnvEquiv c (freeDegreeFiltration.projection c
-          (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ bchCompleted).1) := by
-          rw [UniversalEnvelopingAlgebra.coe_completedLieExpEquiv_apply]
-          rfl
-    _ = bchEnvEquiv c (freeDegreeFiltration.projection c
-          ((bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1)) :=
-          congrArg (fun u => bchEnvEquiv c (freeDegreeFiltration.projection c u)) happ
-    _ = _ := by
-          rw [map_mul, map_mul, bchEnvEquiv_projection_bchGroupLikeFactor c 0,
-            bchEnvEquiv_projection_bchGroupLikeFactor c 1]
+  rw [← quotEquivOfEq_completionProjection_bchCompleted c,
+    ← quotientEquivAlgOfEq_truncatedLieToU ℚ (Fin 2) c,
+    ← UniversalEnvelopingAlgebra.projection_completedLieToU PositiveDegrees.naturals
+      (homogeneousSubmodule ℚ (Fin 2)) c bchCompleted,
+    ← bchEnvEquiv_projection_completedExp c
+      ⟨UniversalEnvelopingAlgebra.completedLieToU PositiveDegrees.naturals
+          (homogeneousSubmodule ℚ (Fin 2)) bchCompleted,
+        UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one
+          PositiveDegrees.naturals (homogeneousSubmodule ℚ (Fin 2)) bchCompleted⟩,
+    completedExp_completedLieToU_bchCompleted, map_mul, map_mul,
+    bchEnvEquiv_projection_completedExp c, bchEnvEquiv_projection_completedExp c]
+  simp [bchEnvEquiv, freeDegreeFiltration, freeAugmentation]
 
 /-- Under `lowerCentralQuotientι`, `bchElement c` maps to the finite logarithm of `exp X * exp Y`
 modulo `freeAugmentation ^ (c + 1)`. -/

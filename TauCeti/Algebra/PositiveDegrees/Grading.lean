@@ -123,6 +123,11 @@ theorem eq_bot_of_degree_nonpos (n : N) (hn : d.degree n ≤ 0) : ℒ n = ⊥ :=
   · exact absurd (d.degree_pos h.1 h.2) (not_lt.mpr hn)
   · exact IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n (by tauto)
 
+omit [DecidableEq N] [DirectSum.Decomposition ℒ] in
+/-- A positive grading has no pieces of negative degree. -/
+theorem eq_bot_of_degree_neg (n : N) (hn : d.degree n < 0) : ℒ n = ⊥ :=
+  d.eq_bot_of_degree_nonpos ℒ n hn.le
+
 /-- All of a positively graded module lies above the zero cutoff. -/
 @[simp]
 theorem degreeSubmodule_zero : d.degreeSubmodule ℒ 0 = ⊤ := by

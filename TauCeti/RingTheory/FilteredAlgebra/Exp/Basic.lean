@@ -34,15 +34,6 @@ namespace TauCeti.AlgFiltration
 
 variable {A : Type*} [Ring A] (F : AlgFiltration A)
 
-/-- Elements congruent to one modulo a completion ideal remain so under multiplication. -/
-theorem mul_sub_one_mem_completionIdeal {n : ℕ} {u v : F.completion}
-    (hu : u - 1 ∈ F.completionIdeal n) (hv : v - 1 ∈ F.completionIdeal n) :
-    u * v - 1 ∈ F.completionIdeal n := by
-  have huv : u * v - 1 = u * (v - 1) + (u - 1) := by
-    rw [mul_sub, mul_one, sub_add_sub_cancel]
-  rw [huv]
-  exact add_mem ((F.completionIdeal n).mul_mem_left u hv) hu
-
 variable [Algebra ℚ A]
 
 /-- The completed exponential, defined by the finite exponential at every order. -/
