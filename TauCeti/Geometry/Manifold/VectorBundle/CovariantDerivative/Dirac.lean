@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
-public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
 /-!
 # The Dirac operator of a connection and a Clifford multiplication
@@ -180,8 +180,7 @@ theorem diracOperator_addOneForm (A : Π y : M, V y →L[ℝ] TangentSpace I y �
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     (cov.addOneForm A).diracOperator c σ x =
       cov.diracOperator c σ x + ∑ i, c x (b i) (A x (σ x) (b i)) := by
-  have h : (cov.addOneForm A) σ x = cov σ x + A x (σ x) := rfl
-  rw [diracOperator_eq_sum _ c σ x b, diracOperator_eq_sum cov c σ x b, h]
+  rw [diracOperator_eq_sum _ c σ x b, diracOperator_eq_sum cov c σ x b, addOneForm_apply]
   simp only [add_apply, map_add, Finset.sum_add_distrib]
 
 /-- **Change of connection by a scalar one-form.** If the endomorphism-valued one-form `A` is
