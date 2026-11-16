@@ -132,6 +132,10 @@ theorem of_congr_matrix {ι : Type*} [Fintype ι] {e₁ e₂ : Matrix ι ι R}
   subst h
   rfl
 
+private theorem setoid_r_iff (a b : IdempotentPresentation R) :
+    (idempotentPresentationSetoid R).r a b ↔ a.2.1.IsAlgebraicEquivalent b.2.1 :=
+  Iff.rfl
+
 /-- Two idempotent matrices define the same class in `IdempotentMonoid R` if and only if they are
 algebraically equivalent. -/
 theorem of_eq_of_iff {ι κ : Type*} [Fintype ι] [Fintype κ] {e : Matrix ι ι R} {f : Matrix κ κ R}
@@ -139,8 +143,7 @@ theorem of_eq_of_iff {ι κ : Type*} [Fintype ι] [Fintype κ] {e : Matrix ι ι
     of e he = of f hf ↔ e.IsAlgebraicEquivalent f := by
   let σ := Fintype.equivFin ι
   let τ := Fintype.equivFin κ
-  rw [of, of, Quotient.eq]
-  change (e.reindex σ σ).IsAlgebraicEquivalent (f.reindex τ τ) ↔ e.IsAlgebraicEquivalent f
+  rw [of, of, Quotient.eq, setoid_r_iff]
   exact ⟨fun h ↦ (he.isAlgebraicEquivalent_reindex σ).symm.trans
       (h.trans (hf.isAlgebraicEquivalent_reindex τ)),
     fun h ↦ (he.isAlgebraicEquivalent_reindex σ).trans
@@ -180,7 +183,19 @@ theorem lift_of_fin {α : Sort*}
     lift f hf (of e he) = f e he :=
   hf _ he (he.isAlgebraicEquivalent_reindex (Fintype.equivFin (Fin n)))
 
-/-- Reindexing an idempotent matrix along an index equivalence preserves its class. -/
+/-- Reindexing an idempotent matrix along an index equivalence via `Matrix.submatrix` preserves its
+class. This is the `simp`-normal form of `of_reindex`, since `Matrix.reindex_apply` simplifies
+`e.reindex σ σ` to `e.submatrix σ.symm σ.symm`. -/
+@[simp]
+theorem of_submatrix_equiv {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : Matrix ι ι R)
+    (he : IsIdempotentElem e) (σ : ι' ≃ ι) :
+    of (e.submatrix σ σ) (he.isAlgebraicEquivalent_reindex σ.symm).isIdempotentElem_left =
+      of e he :=
+  of_eq_of_iff.mpr (he.isAlgebraicEquivalent_reindex σ.symm)
+
+/-- Reindexing an idempotent matrix along an index equivalence preserves its class. Not marked
+`@[simp]` because `Matrix.reindex_apply` simplifies `e.reindex σ σ` to `e.submatrix σ.symm σ.symm`,
+after which `of_submatrix_equiv` applies. -/
 theorem of_reindex {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : Matrix ι ι R)
     (he : IsIdempotentElem e) (σ : ι ≃ ι') :
     of (e.reindex σ σ) (he.isAlgebraicEquivalent_reindex σ).isIdempotentElem_left = of e he :=
@@ -196,11 +211,13 @@ theorem of_zero {ι : Type*} [Fintype ι] :
   of_eq_of_iff.mpr (Matrix.isAlgebraicEquivalent_zero_zero ι (Fin 0))
 
 /-- A class in `IdempotentMonoid R` vanishes if and only if its representing matrix is `0`. -/
+@[simp]
 theorem of_eq_zero_iff {ι : Type*} [Fintype ι] {e : Matrix ι ι R} {he : IsIdempotentElem e} :
     of e he = 0 ↔ e = 0 :=
   of_eq_of_iff.trans Matrix.isAlgebraicEquivalent_zero_iff
 
 /-- Padding by a lower-right zero block preserves the class in `IdempotentMonoid R`. -/
+@[simp]
 theorem of_fromBlocks_zero_right {ι κ : Type*} [Fintype ι] [Fintype κ] (e : Matrix ι ι R)
     (he : IsIdempotentElem e) :
     of (fromBlocks e 0 0 (0 : Matrix κ κ R))
@@ -208,6 +225,7 @@ theorem of_fromBlocks_zero_right {ι κ : Type*} [Fintype ι] [Fintype κ] (e : 
   of_eq_of_iff.mpr (he.isAlgebraicEquivalent_fromBlocks_zero_right κ)
 
 /-- Padding by an upper-left zero block preserves the class in `IdempotentMonoid R`. -/
+@[simp]
 theorem of_fromBlocks_zero_left {ι κ : Type*} [Fintype ι] [Fintype κ] (e : Matrix κ κ R)
     (he : IsIdempotentElem e) :
     of (fromBlocks (0 : Matrix ι ι R) 0 0 e)
@@ -219,21 +237,22 @@ noncomputable instance : Add (IdempotentMonoid R) where
     (fun a b ↦ of (fromBlocks a.2.1 0 0 b.2.1) (a.2.2.fromBlocks_zero₁₂_zero₂₁ b.2.2))
     fun _ _ _ _ h₁ h₂ ↦ of_eq_of_iff.mpr (h₁.fromBlocks_zero₁₂_zero₂₁ h₂)
 
+private theorem mk_add_mk (a b : IdempotentPresentation R) :
+    Quotient.mk (idempotentPresentationSetoid R) a +
+        Quotient.mk (idempotentPresentationSetoid R) b =
+      of (fromBlocks a.2.1 0 0 b.2.1) (a.2.2.fromBlocks_zero₁₂_zero₂₁ b.2.2) :=
+  rfl
+
 /-- Addition in `IdempotentMonoid R` is given by the block direct sum
 `Matrix.fromBlocks e 0 0 f`. -/
 @[simp]
 theorem of_add_of {ι κ : Type*} [Fintype ι] [Fintype κ] (e : Matrix ι ι R)
     (he : IsIdempotentElem e) (f : Matrix κ κ R) (hf : IsIdempotentElem f) :
     of e he + of f hf = of (fromBlocks e 0 0 f) (he.fromBlocks_zero₁₂_zero₂₁ hf) := by
-  let σ := Fintype.equivFin ι
-  let τ := Fintype.equivFin κ
-  change of (fromBlocks (e.reindex σ σ) 0 0 (f.reindex τ τ))
-      ((he.isAlgebraicEquivalent_reindex σ).isIdempotentElem_left.fromBlocks_zero₁₂_zero₂₁
-        (hf.isAlgebraicEquivalent_reindex τ).isIdempotentElem_left) =
-    of (fromBlocks e 0 0 f) (he.fromBlocks_zero₁₂_zero₂₁ hf)
+  rw [of, of, mk_add_mk]
   exact of_eq_of_iff.mpr
-    ((he.isAlgebraicEquivalent_reindex σ).fromBlocks_zero₁₂_zero₂₁
-      (hf.isAlgebraicEquivalent_reindex τ))
+    ((he.isAlgebraicEquivalent_reindex (Fintype.equivFin ι)).fromBlocks_zero₁₂_zero₂₁
+      (hf.isAlgebraicEquivalent_reindex (Fintype.equivFin κ)))
 
 noncomputable instance : AddCommMonoid (IdempotentMonoid R) where
   nsmul := nsmulRec
@@ -253,12 +272,10 @@ noncomputable instance : AddCommMonoid (IdempotentMonoid R) where
       (hf.fromBlocks_zero₁₂_zero₂₁ hg)).isAlgebraicEquivalent_reindex _
   zero_add a := by
     induction a using induction_on with | of n e he =>
-    change of (0 : Matrix (Fin 0) (Fin 0) R) IsIdempotentElem.zero + of e he = of e he
-    rw [of_add_of, of_fromBlocks_zero_left]
+    rw [← of_zero (ι := Fin 0), of_add_of, of_fromBlocks_zero_left]
   add_zero a := by
     induction a using induction_on with | of n e he =>
-    change of e he + of (0 : Matrix (Fin 0) (Fin 0) R) IsIdempotentElem.zero = of e he
-    rw [of_add_of, of_fromBlocks_zero_right]
+    rw [← of_zero (ι := Fin 0), of_add_of, of_fromBlocks_zero_right]
   add_comm a b := by
     induction a using induction_on with | of m e he =>
     induction b using induction_on with | of n f hf =>
@@ -283,16 +300,14 @@ variable {S T F G : Type*} [NonUnitalSemiring S] [NonUnitalSemiring T]
 
 private noncomputable def mapFun [FunLike F R S] [NonUnitalRingHomClass F R S] (φ : F) :
     IdempotentMonoid R → IdempotentMonoid S :=
-  lift (fun _ e he ↦ of (e.map φ) (he.map_nonUnitalRingHom φ))
+  lift (fun _ e he ↦ of (e.map φ) (he.matrix_map φ))
     fun _ _ _ _ _ _ h ↦ of_eq_of_iff.mpr (h.map φ)
 
 private theorem mapFun_of {ι : Type*} [Fintype ι] [FunLike F R S] [NonUnitalRingHomClass F R S]
     (φ : F) (e : Matrix ι ι R) (he : IsIdempotentElem e) :
-    mapFun φ (of e he) = of (e.map φ) (he.map_nonUnitalRingHom φ) := by
+    mapFun φ (of e he) = of (e.map φ) (he.matrix_map φ) := by
   let σ := Fintype.equivFin ι
-  change of ((e.reindex σ σ).map φ)
-      ((he.isAlgebraicEquivalent_reindex σ).isIdempotentElem_left.map_nonUnitalRingHom φ) =
-    of (e.map φ) (he.map_nonUnitalRingHom φ)
+  rw [← of_reindex e he σ, mapFun, lift_of_fin]
   exact of_eq_of_iff.mpr ((he.isAlgebraicEquivalent_reindex σ).map φ)
 
 /-- **Functoriality of `IdempotentMonoid`.** Any nonunital ring homomorphism `φ : R → S` induces an
@@ -302,8 +317,7 @@ noncomputable def map [FunLike F R S] [NonUnitalRingHomClass F R S] (φ : F) :
     IdempotentMonoid R →+ IdempotentMonoid S where
   toFun := mapFun φ
   map_zero' := by
-    change mapFun φ (of (0 : Matrix (Fin 0) (Fin 0) R) IsIdempotentElem.zero) = 0
-    rw [mapFun_of]
+    rw [← of_zero (ι := Fin 0), mapFun_of]
     exact of_eq_zero_iff.mpr (by ext i; exact Fin.elim0 i)
   map_add' a b := by
     induction a using induction_on with | of m e he =>
@@ -315,7 +329,7 @@ noncomputable def map [FunLike F R S] [NonUnitalRingHomClass F R S] (φ : F) :
 @[simp]
 theorem map_of {ι : Type*} [Fintype ι] [FunLike F R S] [NonUnitalRingHomClass F R S] (φ : F)
     (e : Matrix ι ι R) (he : IsIdempotentElem e) :
-    map φ (of e he) = of (e.map φ) (he.map_nonUnitalRingHom φ) :=
+    map φ (of e he) = of (e.map φ) (he.matrix_map φ) :=
   mapFun_of φ e he
 
 @[simp]
@@ -337,23 +351,22 @@ theorem map_comp [FunLike F R S] [NonUnitalRingHomClass F R S] [FunLike G S T]
 /-- A ring equivalence induces an additive isomorphism on `IdempotentMonoid`. -/
 noncomputable def congr (e : R ≃+* S) :
     IdempotentMonoid R ≃+ IdempotentMonoid S where
-  __ := map e.toNonUnitalRingHom
+  toFun := map e.toNonUnitalRingHom
   invFun := map e.symm.toNonUnitalRingHom
+  map_add' := map_add (map e.toNonUnitalRingHom)
   left_inv x := by
     induction x using induction_on with | of n M hM =>
-    change map e.symm.toNonUnitalRingHom (map e.toNonUnitalRingHom (of M hM)) = of M hM
     rw [map_of, map_of]
     exact of_congr_matrix _ _ (by ext; simp)
   right_inv y := by
     induction y using induction_on with | of n M hM =>
-    change map e.toNonUnitalRingHom (map e.symm.toNonUnitalRingHom (of M hM)) = of M hM
     rw [map_of, map_of]
     exact of_congr_matrix _ _ (by ext; simp)
 
 @[simp]
 theorem congr_of {ι : Type*} [Fintype ι] (φ : R ≃+* S)
     (e : Matrix ι ι R) (he : IsIdempotentElem e) :
-    congr φ (of e he) = of (e.map φ) (he.map_nonUnitalRingHom φ) :=
+    congr φ (of e he) = of (e.map φ) (he.matrix_map φ) :=
   map_of φ.toNonUnitalRingHom e he
 
 end Map
@@ -377,6 +390,7 @@ theorem map_id : map (RingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) := by
 
 /-- Conjugating an idempotent matrix by an invertible matrix preserves its class in
 `IdempotentMonoid R`. -/
+@[simp]
 theorem of_conj_units {ι : Type*} [Fintype ι] [DecidableEq ι] (e : Matrix ι ι R)
     (he : IsIdempotentElem e) (u : (Matrix ι ι R)ˣ) :
     of (u.val * e * u⁻¹.val) (he.isAlgebraicEquivalent_conj_units u).isIdempotentElem_left =
@@ -384,6 +398,7 @@ theorem of_conj_units {ι : Type*} [Fintype ι] [DecidableEq ι] (e : Matrix ι 
   of_eq_of_iff.mpr (he.isAlgebraicEquivalent_conj_units u)
 
 /-- Every diagonal matrix unit `Eᵢᵢ` represents the class of `1 ∈ M₁(R)` in `IdempotentMonoid R`. -/
+@[simp]
 theorem of_single_one_eq_of_one {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι) :
     of (single i i (1 : R)) (isIdempotentElem_single_one i) =
       of (1 : Matrix (Fin 1) (Fin 1) R) IsIdempotentElem.one :=
@@ -462,12 +477,11 @@ private noncomputable def finrankHom : IdempotentMonoid D →+ ℕ where
 `D`-dimension of its column range `e Dⁿ` is an additive monoid isomorphism
 `IdempotentMonoid D ≃+ ℕ`, with inverse `n ↦ [1ₙ]`. -/
 noncomputable def finrankAddEquiv : IdempotentMonoid D ≃+ ℕ where
-  __ := finrankHom D
+  toFun := finrankFun D
   invFun n := of (1 : Matrix (Fin n) (Fin n) D) IsIdempotentElem.one
+  map_add' := (finrankHom D).map_add
   left_inv a := by
     induction a using induction_on with | of n e he =>
-    change of (1 : Matrix (Fin (finrankFun D (of e he))) (Fin (finrankFun D (of e he))) D)
-        IsIdempotentElem.one = of e he
     rw [finrankFun_of]
     set r := Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ))
     refine of_eq_of_iff.mpr ?_

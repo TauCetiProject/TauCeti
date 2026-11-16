@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
+import TauCeti.Data.Matrix.Mul
+
 /-!
 # Finitely generated projective right modules from column ranges of idempotent matrices
 
@@ -29,6 +31,7 @@ this file intertwines left multiplication by `M` on `n → R` with right multipl
 
 * `Matrix.rangeMulVecBilinEquivRangeVecMulLinear`: the `Rᵐᵒᵖ`-linear isomorphism between the
   column range of `M` and the row range of `Mᵀ.map op`.
+* `Matrix.rangeMulVecBilinOneEquiv`: the column range of `1 : Matrix m m R` is `m → R`.
 * `Matrix.rangeMulVecBilinMap`: applying a ring homomorphism `f` coordinatewise maps the column
   range of `M` semilinearly along `RingHom.op f` to the column range of `M.map f`.
 * `Matrix.rangeMulVecBilinFromBlocksEquiv`: the column range of `Matrix.fromBlocks e 0 0 f` is the
@@ -36,13 +39,10 @@ this file intertwines left multiplication by `M` on `n → R` with right multipl
 
 ## Main results
 
-* `IsIdempotentElem.projective_range`: the range of an idempotent endomorphism of a projective
-  module is projective.
 * `IsIdempotentElem.mem_range_mulVecBilin_iff`: the column range of an idempotent matrix consists
   of its fixed column vectors.
-* `IsIdempotentElem.projective_range_vecMulLinear` and
-  `IsIdempotentElem.projective_range_mulVecBilin`: the row and column ranges of an idempotent
-  matrix are projective.
+* `IsIdempotentElem.projective_range_mulVecBilin`: the column range of an idempotent matrix is
+  projective.
 * `Module.Finite.exists_linearEquiv_range_mulVecBilin`: every finitely generated projective right
   `R`-module is `Rᵐᵒᵖ`-linearly isomorphic to the column range of an idempotent matrix over `R`.
 
@@ -57,35 +57,13 @@ public section
 
 open LinearMap Matrix MulOpposite
 
-section ProjectiveRange
-
-/-- The range of an idempotent endomorphism of a projective module is a direct summand, hence
-projective. -/
-theorem IsIdempotentElem.projective_range {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] [Module.Projective R M] {f : M →ₗ[R] M} (hf : IsIdempotentElem f) :
-    Module.Projective R (range f) :=
-  Module.Projective.of_split (range f).subtype f.rangeRestrict <|
-    LinearMap.ext fun v ↦ Subtype.ext (hf.mem_range_iff.mp v.2)
-
-end ProjectiveRange
-
 section ColumnRange
-
-/-- Applying `MulOpposite.op` to each coordinate intertwines matrix-vector multiplication by `M`
-with vector-matrix multiplication by `Mᵀ.map op`. -/
-theorem Matrix.op_comp_mulVec {R m n : Type*} [NonUnitalNonAssocSemiring R] [Fintype n]
-    (M : Matrix m n R) (v : n → R) :
-    op ∘ (M *ᵥ v) = (op ∘ v) ᵥ* M.transpose.map op := by
-  ext i
-  simp [mulVec, vecMul, dotProduct]
 
 /-- Transpose followed by entrywise `MulOpposite.op` preserves idempotence of matrices. -/
 theorem IsIdempotentElem.transpose_map_op {R ι : Type*} [Mul R] [AddCommMonoid R] [Fintype ι]
     {e : Matrix ι ι R} (he : IsIdempotentElem e) :
     IsIdempotentElem (e.transpose.map op) := by
-  have hop : IsIdempotentElem (op e) := by
-    rw [IsIdempotentElem, ← op_mul, he.eq]
-  exact hop.map RingEquiv.mopMatrix.symm
+  rw [IsIdempotentElem, transpose_map_op_mul, he.eq]
 
 variable {R : Type*} [Semiring R] {ι ι' κ κ' : Type*}
 
@@ -104,11 +82,6 @@ theorem IsIdempotentElem.mulVecBilin {e : Matrix ι ι R} (he : IsIdempotentElem
 theorem IsIdempotentElem.mem_range_mulVecBilin_iff {e : Matrix ι ι R} (he : IsIdempotentElem e)
     {v : ι → R} : v ∈ range (e.mulVecBilin R Rᵐᵒᵖ) ↔ e *ᵥ v = v :=
   he.mulVecBilin.mem_range_iff
-
-/-- The row range of an idempotent matrix over `R` is a projective left `R`-module. -/
-theorem IsIdempotentElem.projective_range_vecMulLinear {e : Matrix ι ι R}
-    (he : IsIdempotentElem e) : Module.Projective R (range e.vecMulLinear) :=
-  he.vecMulLinear.projective_range
 
 namespace Matrix
 
@@ -129,10 +102,11 @@ def rangeMulVecBilinEquivRangeVecMulLinear (M : Matrix ι' ι R) :
   invFun w := ⟨unop ∘ w, by
     obtain ⟨u, hu⟩ := w.2
     refine ⟨unop ∘ u, ?_⟩
-    apply (opLinearEquiv Rᵐᵒᵖ).injective.comp_left
-    change op ∘ (M *ᵥ (unop ∘ u)) = op ∘ unop ∘ w
-    rw [M.op_comp_mulVec]
-    exact congrArg (fun x : ι' → Rᵐᵒᵖ ↦ x) hu⟩
+    rw [mulVecBilin_apply]
+    apply MulOpposite.op_injective.comp_left
+    dsimp only
+    rw [M.op_comp_mulVec, ← vecMulLinear_apply]
+    simpa [Function.comp_def] using hu⟩
   map_add' _ _ := rfl
   map_smul' r v := Subtype.ext <| funext fun i ↦ op_smul r ((v : ι' → R) i)
   left_inv _ := rfl
@@ -261,6 +235,27 @@ end FromBlocks
 end Matrix
 
 end ColumnRange
+
+namespace Matrix
+
+/-- The column range of the identity matrix `1 : Matrix m m R` is `Rᵐᵒᵖ`-linearly isomorphic to
+the coordinate column module `m → R`. -/
+def rangeMulVecBilinOneEquiv (m R : Type*) [Semiring R] [Fintype m] [DecidableEq m] :
+    range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] (m → R) where
+  toFun v := v
+  invFun v := ⟨v, ⟨v, by simp⟩⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem rangeMulVecBilinOneEquiv_apply {m R : Type*} [Semiring R] [Fintype m] [DecidableEq m]
+    (v : range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) :
+    rangeMulVecBilinOneEquiv m R v = (v : m → R) :=
+  (rfl)
+
+end Matrix
 
 namespace Module.Finite
 

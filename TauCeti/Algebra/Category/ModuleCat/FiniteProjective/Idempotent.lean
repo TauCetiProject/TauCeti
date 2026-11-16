@@ -195,6 +195,9 @@ private noncomputable def objectCodeHom :
   map_zero' := by
     let Z := FiniteProjectiveModules.ofIdempotent (0 : Matrix (Fin 0) (Fin 0) R)
       IsIdempotentElem.zero
+    -- The full-subcategory inclusion `ι` sends `Z` to `ModuleCat.of Rᵐᵒᵖ (range _)`, whose
+    -- underlying carrier is definitionally `range _` and hence `Subsingleton` since `Fin 0` is
+    -- empty.
     have hsub : Subsingleton ((finiteProjectiveModules Rᵐᵒᵖ).ι.obj Z) :=
       show Subsingleton (range ((0 : Matrix (Fin 0) (Fin 0) R).mulVecBilin R Rᵐᵒᵖ)) from
         inferInstance
@@ -361,13 +364,10 @@ theorem map_comp_grothendieckAddGroupEquivSplitK0 (f : R →+* S) :
         (Algebra.GrothendieckAddGroup.lift
           (Algebra.GrothendieckAddGroup.of.comp (IdempotentMonoid.map f))) := by
   refine Algebra.GrothendieckAddGroup.lift.symm.injective ?_
-  rw [Algebra.GrothendieckAddGroup.lift_symm_apply, AddMonoidHom.comp_assoc]
-  change (SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars).comp
-      (toSplitK0 R) = _
-  rw [← toSplitK0_comp_map, Algebra.GrothendieckAddGroup.lift_symm_apply,
-    AddMonoidHom.comp_assoc, ← Algebra.GrothendieckAddGroup.lift_symm_apply,
-    Equiv.symm_apply_apply, ← AddMonoidHom.comp_assoc]
-  rfl
+  rw [Algebra.GrothendieckAddGroup.lift_symm_apply, AddMonoidHom.comp_assoc, ← toSplitK0,
+    ← toSplitK0_comp_map, Algebra.GrothendieckAddGroup.lift_symm_apply, AddMonoidHom.comp_assoc,
+    ← Algebra.GrothendieckAddGroup.lift_symm_apply, Equiv.symm_apply_apply,
+    ← AddMonoidHom.comp_assoc, ← toSplitK0]
 
 end Functoriality
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Matrix.Mul
 
 /-!
-# Matrix products: positivity of powers and nonvanishing of factors
+# Matrix products: positivity of powers, nonvanishing of factors, and opposite transposes
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -19,6 +19,10 @@ matrix.
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero.
 
+Over noncommutative rings, transpose followed by entrywise `MulOpposite.op` or `MulOpposite.unop`
+reverses matrix multiplication and intertwines column-vector multiplication with row-vector
+multiplication.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -26,6 +30,8 @@ zero.
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.transpose_map_op_mul`, `Matrix.transpose_map_unop_mul`, `Matrix.op_comp_mulVec`:
+  opposite-entry transpose reverses matrix multiplication and intertwines `mulVec` with `vecMul`.
 -/
 
 public section
@@ -83,3 +89,39 @@ theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : 
 end NonUnitalNonAssocSemiring
 
 end Matrix
+
+section MulOpposite
+
+open MulOpposite
+
+namespace Matrix
+
+variable {l m n R : Type*}
+
+/-- Over any type with multiplication and commutative addition, transpose followed by entrywise
+`MulOpposite.op` reverses matrix multiplication. -/
+theorem transpose_map_op_mul [Fintype n] [Mul R] [AddCommMonoid R]
+    (x : Matrix m n R) (y : Matrix n l R) :
+    y.transpose.map op * x.transpose.map op = (x * y).transpose.map op := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- Over any type with multiplication and commutative addition, transpose followed by entrywise
+`MulOpposite.unop` reverses matrix multiplication. -/
+theorem transpose_map_unop_mul [Fintype n] [Mul R] [AddCommMonoid R]
+    (x : Matrix m n Rᵐᵒᵖ) (y : Matrix n l Rᵐᵒᵖ) :
+    y.transpose.map unop * x.transpose.map unop = (x * y).transpose.map unop := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- Applying `MulOpposite.op` to each coordinate intertwines matrix-vector multiplication by `M`
+with vector-matrix multiplication by `Mᵀ.map op`. -/
+theorem op_comp_mulVec [NonUnitalNonAssocSemiring R] [Fintype n]
+    (M : Matrix m n R) (v : n → R) :
+    op ∘ (M *ᵥ v) = (op ∘ v) ᵥ* M.transpose.map op := by
+  ext i
+  simp [mulVec, vecMul, dotProduct]
+
+end Matrix
+
+end MulOpposite

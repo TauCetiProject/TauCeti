@@ -11,6 +11,8 @@ public import TauCeti.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
 public import TauCeti.RingTheory.Idempotents.Matrix
 
+import TauCeti.Data.Matrix.Mul
+
 /-!
 # Rectangular algebraic equivalence of idempotent matrices
 
@@ -46,7 +48,6 @@ This file establishes the calculus of rectangular algebraic equivalence:
 * `Matrix.IsAlgebraicEquivalent`: rectangular algebraic equivalence of square matrices.
 * `Matrix.linearEquivRangeMulVecBilinOfMulEq`: the explicit `Rᵐᵒᵖ`-linear isomorphism between
   column ranges induced by normalized witnesses `(x, y)`.
-* `Matrix.rangeMulVecBilinOneEquiv`: the column range of `1 : Matrix m m R` is `m → R`.
 
 ## Main results
 
@@ -118,20 +119,6 @@ theorem IsAlgebraicEquivalent.reindex [Fintype m] [Fintype m'] [Fintype n] [Fint
   obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
   refine ⟨x.reindex σ τ, y.reindex τ σ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp [reindex_apply, submatrix_mul_equiv, hxy, hyx, hex, hxf, hfy, hye]
-
-/-- Over any type with multiplication and commutative addition, transpose followed by entrywise
-`MulOpposite.op` reverses matrix multiplication. -/
-theorem transpose_map_op_mul [Fintype n] [Mul R] [AddCommMonoid R]
-    (x : Matrix m n R) (y : Matrix n l R) :
-    y.transpose.map op * x.transpose.map op = (x * y).transpose.map op := by
-  ext i j
-  simp [Matrix.mul_apply]
-
-private theorem transpose_map_unop_mul [Fintype n] [Mul R] [AddCommMonoid R]
-    (x : Matrix m n Rᵐᵒᵖ) (y : Matrix n l Rᵐᵒᵖ) :
-    y.transpose.map unop * x.transpose.map unop = (x * y).transpose.map unop := by
-  ext i j
-  simp [Matrix.mul_apply]
 
 /-- Transpose followed by entrywise `MulOpposite.op` preserves and reflects rectangular algebraic
 equivalence. -/
@@ -205,14 +192,6 @@ theorem isAlgebraicEquivalent_zero_iff [Fintype m] [Fintype n] {e : Matrix m m R
 theorem zero_isAlgebraicEquivalent_iff [Fintype m] [Fintype n] {f : Matrix n n R} :
     (0 : Matrix m m R).IsAlgebraicEquivalent f ↔ f = 0 := by
   rw [isAlgebraicEquivalent_comm, isAlgebraicEquivalent_zero_iff]
-
-/-- Entrywise application of a nonunital ring homomorphism preserves matrix idempotence,
-generalizing `IsIdempotentElem.matrix_map` from `RingHom` to `NonUnitalRingHomClass`. -/
-theorem _root_.IsIdempotentElem.map_nonUnitalRingHom [Fintype m] [NonUnitalNonAssocSemiring S]
-    [FunLike F R S] [NonUnitalRingHomClass F R S] {e : Matrix m m R}
-    (he : IsIdempotentElem e) (φ : F) :
-    IsIdempotentElem (e.map φ) := by
-  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
 
 /-- Entrywise application of a nonunital ring homomorphism preserves rectangular algebraic
 equivalence. -/
@@ -370,7 +349,7 @@ section Semiring
 
 variable {m n R : Type*} [Semiring R]
 
-/-- Conjugating an idempotent matrix by a matrix unit yields an algebraically equivalent
+/-- Conjugating an idempotent matrix by an invertible matrix yields an algebraically equivalent
 idempotent matrix. -/
 theorem _root_.IsIdempotentElem.isAlgebraicEquivalent_conj_units [Fintype m] [DecidableEq m]
     {e : Matrix m m R} (he : IsIdempotentElem e) (u : (Matrix m m R)ˣ) :
@@ -425,13 +404,9 @@ def linearEquivRangeMulVecBilinOfMulEq [Fintype m] [Fintype n]
     map_add' u v := Subtype.ext (mulVec_add x u v)
     map_smul' r v := Subtype.ext (mulVec_smul x r v)
     left_inv v := Subtype.ext <| by
-      change y *ᵥ (x *ᵥ (v : n → R)) = v
-      rw [mulVec_mulVec, hyx]
-      exact hff.mem_range_mulVecBilin_iff.mp v.2
+      simp [mulVec_mulVec, hyx, hff.mem_range_mulVecBilin_iff.mp v.2]
     right_inv w := Subtype.ext <| by
-      change x *ᵥ (y *ᵥ (w : m → R)) = w
-      rw [mulVec_mulVec, hxy]
-      exact hee.mem_range_mulVecBilin_iff.mp w.2 }
+      simp [mulVec_mulVec, hxy, hee.mem_range_mulVecBilin_iff.mp w.2] }
 
 @[simp]
 theorem coe_linearEquivRangeMulVecBilinOfMulEq_apply [Fintype m] [Fintype n]
@@ -471,24 +446,6 @@ theorem isAlgebraicEquivalent_iff_nonempty_linearEquiv_range_mulVecBilin [Fintyp
       (ψ.trans f.rangeMulVecBilinEquivRangeVecMulLinear.symm)⟩,
     fun ⟨ψ⟩ ↦ ⟨e.rangeMulVecBilinEquivRangeVecMulLinear.symm.trans
       (ψ.trans f.rangeMulVecBilinEquivRangeVecMulLinear)⟩⟩
-
-variable (m R) in
-/-- The column range of the identity matrix `1 : Matrix m m R` is `Rᵐᵒᵖ`-linearly isomorphic to
-the coordinate column module `m → R`. -/
-def rangeMulVecBilinOneEquiv [Fintype m] [DecidableEq m] :
-    range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] (m → R) where
-  toFun v := v
-  invFun v := ⟨v, ⟨v, by simp⟩⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-theorem rangeMulVecBilinOneEquiv_apply [Fintype m] [DecidableEq m]
-    (v : range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) :
-    rangeMulVecBilinOneEquiv m R v = (v : m → R) :=
-  (rfl)
 
 /-- **Stable equivalence of column ranges in matrix form.** For idempotent matrices `e` and `f`,
 their column ranges are stably equivalent right `R`-modules if and only if `e ⊕ 1ₖ` and `f ⊕ 1ₖ`

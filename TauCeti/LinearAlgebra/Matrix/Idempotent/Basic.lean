@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 
+import TauCeti.Algebra.Module.Projective.Complement
+
 /-!
 # Finitely generated projective modules from idempotent matrices
 
@@ -30,8 +32,12 @@ so direct sums of modules correspond to block sums of idempotents.
 
 ## Main results
 
+* `IsIdempotentElem.matrix_map`: applying a nonunital ring homomorphism entrywise preserves matrix
+  idempotence.
 * `IsIdempotentElem.mem_range_vecMulLinear_iff`: the range of an idempotent matrix consists of its
   fixed row vectors.
+* `IsIdempotentElem.projective_range_vecMulLinear`: the row range of an idempotent matrix is a
+  projective left module.
 * `IsIdempotentElem.linearMap_apply_eq_vecMul`: a linear map out of this range is right
   multiplication by the matrix of its values on the rows.
 * `Matrix.nonempty_linearEquiv_range_vecMulLinear_iff`: the ranges of two idempotent matrices are
@@ -55,6 +61,13 @@ public section
 
 open LinearMap Matrix
 
+/-- The entrywise image of an idempotent matrix under a nonunital ring homomorphism is
+idempotent. -/
+theorem IsIdempotentElem.matrix_map {A B F ι : Type*} [NonUnitalNonAssocSemiring A]
+    [NonUnitalNonAssocSemiring B] [FunLike F A B] [NonUnitalRingHomClass F A B] [Fintype ι]
+    {e : Matrix ι ι A} (he : IsIdempotentElem e) (f : F) : IsIdempotentElem (e.map f) := by
+  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
+
 section Idempotent
 
 variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
@@ -65,16 +78,16 @@ theorem IsIdempotentElem.vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentEle
   ext v : 1
   simp [mul_apply_eq_comp, Matrix.vecMul_vecMul, he.eq]
 
-/-- The entrywise image of an idempotent matrix under a ring homomorphism is idempotent. -/
-theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A}
-    (he : IsIdempotentElem e) (f : A →+* B) : IsIdempotentElem (e.map f) := by
-  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
-
 /-- The range of right multiplication by an idempotent matrix `e` consists of the row vectors
 fixed by `e`. -/
 theorem IsIdempotentElem.mem_range_vecMulLinear_iff {e : Matrix ι ι A} (he : IsIdempotentElem e)
     {v : ι → A} : v ∈ range e.vecMulLinear ↔ v ᵥ* e = v :=
   he.vecMulLinear.mem_range_iff
+
+/-- The row range of an idempotent matrix over `A` is a projective left `A`-module. -/
+theorem IsIdempotentElem.projective_range_vecMulLinear {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) : Module.Projective A (range e.vecMulLinear) :=
+  he.vecMulLinear.projective_range
 
 /-- A vector `v` in the range of an idempotent matrix `e` is the combination `∑ i, vᵢ • eᵢ` of
 the rows `eᵢ` of `e`. -/
