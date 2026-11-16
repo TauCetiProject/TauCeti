@@ -75,20 +75,7 @@ universe u
 
 namespace TauCeti
 
-variable (k : Type u) [Ring k] {Y : TopCat.{u}} (X : ℤ → Set Y)
-
-/-- The normalized cubical chains of an empty space vanish, as there are no singular cubes in
-it. -/
-lemma isZero_normalizedCubicalChainComplex_obj_of_isEmpty (Z : TopCat.{u}) [IsEmpty Z] :
-    IsZero ((normalizedCubicalChainComplex k).obj Z) := by
-  rw [IsZero.iff_id_eq_zero]
-  ext n x
-  have : IsEmpty (SingularCube Z n) := ⟨fun c ↦ isEmptyElim (c fun _ ↦ 0)⟩
-  have : Subsingleton (NormalizedCubicalChain Z k n) :=
-    (Submodule.Quotient.mk_surjective _).subsingleton
-  exact this.elim _ _
-
-variable {X}
+variable (k : Type u) [Ring k] {Y : TopCat.{u}} {X : ℤ → Set Y}
 
 /-- The stage of the filtration of normalized cubical chains at an empty subset is zero. -/
 @[simp]
@@ -97,7 +84,7 @@ lemma cubicalChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
   have : IsEmpty (TopPair.ofSubset (X a)).snd := by
     rw [ha]
     exact Set.isEmpty_coe_sort.2 rfl
-  exact chainFiltration_eq_bot_of_isZero _ (isZero_normalizedCubicalChainComplex_obj_of_isEmpty k _)
+  exact chainFiltration_eq_bot_of_isZero _ (isZero_normalizedCubicalChainComplex_obj_of_isEmpty _)
 
 variable (hX : Monotone X)
 
