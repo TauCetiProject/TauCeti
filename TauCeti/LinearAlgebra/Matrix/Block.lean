@@ -37,8 +37,8 @@ segments. In particular, it applies to weight-space blocks of arbitrary dimensio
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
   `Matrix.toBlocks₂₁_eq_submatrix`, and `Matrix.toBlocks₂₂_eq_submatrix`: block extraction
   as submatrix restriction.
-* `Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero`: a matrix with vanishing off-diagonal blocks is
-  block diagonal.
+* `Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a matrix with vanishing
+  off-diagonal blocks is block diagonal.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
@@ -87,8 +87,8 @@ public theorem toBlocks₂₂_eq_submatrix {m n p q α : Type*} (M : Matrix (m �
 
 /-- A matrix with vanishing off-diagonal blocks is the block-diagonal matrix of its diagonal
 blocks. -/
-public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero {p q α : Type*} [Zero α]
-    {X : Matrix (p ⊕ q) (p ⊕ q) α} (h₁₂ : X.toBlocks₁₂ = 0) (h₂₁ : X.toBlocks₂₁ = 0) :
+public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero {p q α : Type*}
+    [Zero α] {X : Matrix (p ⊕ q) (p ⊕ q) α} (h₁₂ : X.toBlocks₁₂ = 0) (h₂₁ : X.toBlocks₂₁ = 0) :
     X = fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
   rw [← h₁₂, ← h₂₁, fromBlocks_toBlocks]
 

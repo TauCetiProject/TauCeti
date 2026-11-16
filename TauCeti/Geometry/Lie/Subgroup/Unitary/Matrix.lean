@@ -362,8 +362,8 @@ theorem mem_matrixLieAlgebra_fromBlocksProd_iff {X : Matrix (n ⊕ m) (n ⊕ m) 
     have hdiag (t : ℝ) : ∃ g₁ ∈ G₁, ∃ g₂ ∈ G₂, (g₁ : Matrix n n 𝕜) = exp (t • X.toBlocks₁₁) ∧
         (g₂ : Matrix m m 𝕜) = exp (t • X.toBlocks₂₂) := by
       obtain ⟨g₁, h₁, g₂, h₂, he⟩ := hexp t
-      rw [Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero hoff.1 hoff.2, exp_smul_fromBlocks_zero,
-        Matrix.fromBlocks_inj] at he
+      rw [Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero hoff.1 hoff.2,
+        exp_smul_fromBlocks_zero, Matrix.fromBlocks_inj] at he
       exact ⟨g₁, h₁, g₂, h₂, he.1.symm, he.2.2.2.symm⟩
     refine ⟨hoff.1, hoff.2, fun t ↦ ?_, fun t ↦ ?_⟩
     · obtain ⟨g₁, h₁, -, -, he, -⟩ := hdiag t
@@ -389,7 +389,7 @@ theorem eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd {X : Matrix (n ⊕ 
     (hX : X ∈ (G₁.fromBlocksProd G₂).matrixLieAlgebra) :
     X = Matrix.fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
   obtain ⟨h₁₂, h₂₁, -, -⟩ := mem_matrixLieAlgebra_fromBlocksProd_iff.mp hX
-  exact Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero h₁₂ h₂₁
+  exact Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero h₁₂ h₂₁
 
 variable (G₁ G₂) in
 /-- The Lie algebra of the block-diagonal product `G₁ × G₂` is the product of the Lie algebras,
