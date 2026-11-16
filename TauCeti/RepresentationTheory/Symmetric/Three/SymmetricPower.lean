@@ -7,8 +7,6 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.LinearAlgebra.SymmetricPower.Basis
-public import TauCeti.RepresentationTheory.FDRep.Basic
-public import TauCeti.RepresentationTheory.Induction.Permutation
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.Symmetric.Standard
@@ -112,12 +110,6 @@ theorem coe_symmetricGroupThreeBeta :
   rw [symmetricGroupThreeBeta, Submodule.coe_smul, coe_symmetricGroupThreeEigenvector]
   linear_combination (norm := module) hω.pow_eq_one • (single 1 1 : MonoidAlgebra k (Fin 3))
 
-/-- The action of `σ = (0 1)` on the basis vectors of `k[Fin 3]`. -/
-private theorem swap_zero_one_smul :
-    Equiv.swap (0 : Fin 3) 1 • (0 : Fin 3) = 1 ∧ Equiv.swap (0 : Fin 3) 1 • (1 : Fin 3) = 0 ∧
-      Equiv.swap (0 : Fin 3) 1 • (2 : Fin 3) = 2 := by
-  decide
-
 /-- **`τ α = ω² α`.** -/
 @[simp]
 theorem standardRepresentation_finRotate_symmetricGroupThreeAlpha :
@@ -140,9 +132,9 @@ theorem standardRepresentation_swap_symmetricGroupThreeAlpha :
       symmetricGroupThreeBeta hω := by
   rw [← toRepresentation_augmentationSubrepresentation,
     Subrepresentation.toRepresentation_apply_coe]
-  obtain ⟨h0, h1, h2⟩ := swap_zero_one_smul
   simp only [coe_symmetricGroupThreeAlpha, coe_symmetricGroupThreeBeta, map_add, map_smul,
-    Representation.ofMulAction_single, h0, h1, h2]
+    Representation.ofMulAction_single, Equiv.Perm.smul_def, Equiv.swap_apply_left,
+    Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne, ne_eq, Fin.reduceEq, not_false_eq_true]
   abel
 
 /-- **`σ β = α`.** -/
@@ -240,23 +232,14 @@ private theorem symmetricPower_swap_symmetricGroupThreeBasis_ofFn {n : ℕ}
   congr 1
   rwa [← Sym.coe_inj, Sym.coe_ofFn, Sym.coe_ofFn]
 
-/-- `τ` scales a pure symmetric tensor of `τ`-eigenvectors by the product of their eigenvalues. -/
-private theorem symmetricPower_finRotate_tprod {n : ℕ} {c : Fin n → k}
-    {m : Fin n → (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule}
-    (hm : ∀ i, standardRepresentation k (Fin 3) (finRotate 3) (m i) = c i • m i) :
-    (standardRepresentation k (Fin 3)).symmetricPower n (finRotate 3) (⨂ₛ[k] i, m i) =
-      (∏ i, c i) • ⨂ₛ[k] i, m i := by
-  rw [Representation.symmetricPower_apply_tprod]
-  simp_rw [hm]
-  exact (SymmetricPower.tprod k).map_smul_univ c m
-
 /-- **`τ α² = ω α²`**: the first eigenvalue of `τ` on the monomial basis `α², β², αβ` of
 `Sym² V₃`. -/
 theorem symmetricPower_finRotate_tprod_symmetricGroupThreeAlpha :
     (standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)
         (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeAlpha hω) =
       ω • (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeAlpha hω) := by
-  rw [symmetricPower_finRotate_tprod (c := fun _ => ω ^ 2) fun _ => by simp]
+  rw [Representation.symmetricPower_apply_tprod_of_apply_eq_smul _ (c := fun _ => ω ^ 2)
+    fun _ => by simp]
   congr 1
   simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
   linear_combination ω * hω.pow_eq_one
@@ -267,7 +250,8 @@ theorem symmetricPower_finRotate_tprod_symmetricGroupThreeBeta :
     (standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)
         (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeBeta hω) =
       ω ^ 2 • (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeBeta hω) := by
-  rw [symmetricPower_finRotate_tprod (c := fun _ => ω) fun _ => by simp]
+  rw [Representation.symmetricPower_apply_tprod_of_apply_eq_smul _ (c := fun _ => ω)
+    fun _ => by simp]
   simp
 
 /-- **`τ (αβ) = αβ`**: the third eigenvalue of `τ` on the monomial basis `α², β², αβ` of
@@ -276,7 +260,8 @@ theorem symmetricPower_finRotate_tprod_symmetricGroupThreeAlpha_beta :
     (standardRepresentation k (Fin 3)).symmetricPower 2 (finRotate 3)
         (⨂ₛ[k] i, ![symmetricGroupThreeAlpha hω, symmetricGroupThreeBeta hω] i) =
       ⨂ₛ[k] i, ![symmetricGroupThreeAlpha hω, symmetricGroupThreeBeta hω] i := by
-  rw [symmetricPower_finRotate_tprod (c := ![ω ^ 2, ω]) fun i => by fin_cases i <;> simp]
+  rw [Representation.symmetricPower_apply_tprod_of_apply_eq_smul _ (c := ![ω ^ 2, ω])
+    fun i => by fin_cases i <;> simp]
   simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← pow_succ, hω.pow_eq_one, one_smul]
 
@@ -316,11 +301,7 @@ private theorem symSqMap_surjective : Function.Surjective (symSqMap hω) := by
   rw [← LinearMap.range_eq_top, eq_top_iff,
     ← ((symmetricGroupThreeBasis hω).symmetricPower 2).span_eq, Submodule.span_le]
   rintro _ ⟨s, rfl⟩
-  have hs : s = Sym.ofFn ![0, 0] ∨ s = Sym.ofFn ![0, 1] ∨ s = Sym.ofFn ![1, 1] := by
-    obtain ⟨p, rfl⟩ := Sym.ofFn_surjective s
-    simp only [← Sym.coe_inj, Sym.coe_ofFn]
-    revert p; decide
-  rcases hs with rfl | rfl | rfl
+  rcases Sym.fin_two_two_cases s with rfl | rfl | rfl
   · exact ⟨(0, symmetricGroupThreeBeta hω), symSqMap_beta hω⟩
   · exact ⟨(1, 0), by rw [symSqMap_inl, one_smul]⟩
   · exact ⟨(0, symmetricGroupThreeAlpha hω), symSqMap_alpha hω⟩
@@ -508,12 +489,7 @@ private theorem symCubeMap_surjective (h2 : (2 : k) ≠ 0) : Function.Surjective
   rw [← LinearMap.range_eq_top, eq_top_iff,
     ← ((symmetricGroupThreeBasis hω).symmetricPower 3).span_eq, Submodule.span_le]
   rintro _ ⟨s, rfl⟩
-  have hs : s = Sym.ofFn ![0, 0, 0] ∨ s = Sym.ofFn ![0, 0, 1] ∨ s = Sym.ofFn ![0, 1, 1] ∨
-      s = Sym.ofFn ![1, 1, 1] := by
-    obtain ⟨p, rfl⟩ := Sym.ofFn_surjective s
-    simp only [← Sym.coe_inj, Sym.coe_ofFn]
-    revert p; decide
-  rcases hs with rfl | rfl | rfl | rfl
+  rcases Sym.fin_two_three_cases s with rfl | rfl | rfl | rfl
   · exact ⟨_, (symCubeMap_inv_two hω h2).1⟩
   · exact ⟨(0, 0, symmetricGroupThreeAlpha hω), symCubeMap_alpha hω⟩
   · exact ⟨(0, 0, symmetricGroupThreeBeta hω), symCubeMap_beta hω⟩

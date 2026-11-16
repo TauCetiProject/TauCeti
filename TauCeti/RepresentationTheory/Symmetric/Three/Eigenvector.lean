@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.RepresentationTheory.Symmetric.Standard
+-- Non-public: eigenvectors for distinct eigenvalues are linearly independent.
+import Mathlib.LinearAlgebra.Eigenspace.Basic
 
 /-!
 # Eigenvectors of the three-cycle on the standard representation of `S₃`
@@ -68,13 +70,26 @@ theorem standardRepresentation_finRotate_symmetricGroupThreeEigenvector
       ζ • symmetricGroupThreeEigenvector hζ := by
   rw [← toRepresentation_augmentationSubrepresentation,
     Subrepresentation.toRepresentation_apply_coe]
-  have h0 : finRotate 3 • (0 : Fin 3) = 1 := by decide
-  have h1 : finRotate 3 • (1 : Fin 3) = 2 := by decide
-  have h2 : finRotate 3 • (2 : Fin 3) = 0 := by decide
   simp only [coe_symmetricGroupThreeEigenvector, Submodule.coe_smul, map_add, map_smul,
-    Representation.ofMulAction_single, h0, h1, h2]
+    Representation.ofMulAction_single, Equiv.Perm.smul_def, finRotate_apply, Fin.isValue,
+    Fin.reduceAdd]
   linear_combination (norm := module)
     hζ.pow_eq_one • (-(single 1 1) : MonoidAlgebra k (Fin 3))
+
+/-- `v_ζ` is nonzero: its coefficient at `0` is `1`. -/
+private theorem symmetricGroupThreeEigenvector_ne_zero (hζ : IsPrimitiveRoot ζ 3) :
+    symmetricGroupThreeEigenvector hζ ≠ 0 := by
+  intro h
+  have h0 := congrArg (fun v : MonoidAlgebra k (Fin 3) => v.coeff 0) (Subtype.ext_iff.mp h)
+  simp at h0
+
+/-- `v_ζ` is an eigenvector of `τ = (0 1 2)` for the eigenvalue `ζ`. -/
+private theorem hasEigenvector_symmetricGroupThreeEigenvector (hζ : IsPrimitiveRoot ζ 3) :
+    Module.End.HasEigenvector (standardRepresentation k (Fin 3) (finRotate 3)) ζ
+      (symmetricGroupThreeEigenvector hζ) :=
+  ⟨Module.End.mem_eigenspace_iff.mpr
+    (standardRepresentation_finRotate_symmetricGroupThreeEigenvector hζ),
+    symmetricGroupThreeEigenvector_ne_zero hζ⟩
 
 /-- **Eigenvectors of `τ` for distinct eigenvalues are linearly independent**: `v_ζ` and `v_ζ'`
 are linearly independent for distinct primitive cube roots of unity `ζ` and `ζ'`. -/
@@ -82,21 +97,10 @@ theorem linearIndependent_symmetricGroupThreeEigenvector (hζ : IsPrimitiveRoot 
     (hζ' : IsPrimitiveRoot ζ' 3) (hne : ζ ≠ ζ') :
     LinearIndependent k
       ![symmetricGroupThreeEigenvector hζ, symmetricGroupThreeEigenvector hζ'] := by
-  rw [LinearIndependent.pair_iff]
-  intro s t hst
-  have hc (i : Fin 3) :
-      s * (symmetricGroupThreeEigenvector hζ : MonoidAlgebra k (Fin 3)).coeff i +
-        t * (symmetricGroupThreeEigenvector hζ' : MonoidAlgebra k (Fin 3)).coeff i = 0 := by
-    simpa [-coe_symmetricGroupThreeEigenvector] using
-      congrArg (fun v : MonoidAlgebra k (Fin 3) => v.coeff i) (Subtype.ext_iff.mp hst)
-  have h0 := hc 0
-  have h2 := hc 2
-  simp only [coe_symmetricGroupThreeEigenvector, coeff_add, coeff_smul, coeff_single,
-    Finsupp.add_apply, Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul] at h0 h2
-  norm_num at h0 h2
-  have hs : s * (ζ - ζ') = 0 := by linear_combination h2 - ζ' * h0
-  have hs0 : s = 0 := (mul_eq_zero.mp hs).resolve_right (sub_ne_zero.mpr hne)
-  refine ⟨hs0, ?_⟩
-  simpa [hs0] using h0
+  refine Module.End.eigenvectors_linearIndependent' _ ![ζ, ζ'] ?_ _ <|
+    Fin.forall_fin_two.mpr ⟨hasEigenvector_symmetricGroupThreeEigenvector hζ,
+      hasEigenvector_symmetricGroupThreeEigenvector hζ'⟩
+  intro i j hij
+  fin_cases i <;> fin_cases j <;> simp_all [eq_comm]
 
 end TauCeti

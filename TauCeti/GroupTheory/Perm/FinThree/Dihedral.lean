@@ -37,11 +37,6 @@ public section
 
 namespace TauCeti
 
-/-- The product of the involutions `σ = (0 1)` and `στ` is `τ = (0 1 2)`. -/
-private theorem swap_mul_swap_mul_finRotate :
-    Equiv.swap (0 : Fin 3) 1 * (Equiv.swap 0 1 * finRotate 3) = finRotate 3 := by
-  decide
-
 /-- The two involutions `σ` and `στ` generate `S₃`. -/
 private theorem closure_swap_swap_mul_finRotate :
     Subgroup.closure {Equiv.swap (0 : Fin 3) 1, Equiv.swap 0 1 * finRotate 3} = ⊤ := by
@@ -54,7 +49,7 @@ private theorem closure_swap_swap_mul_finRotate :
     Subgroup.subset_closure (Set.mem_insert_of_mem _ rfl)
   rintro g (rfl | rfl)
   · have h := mul_mem hσ hστ
-    rwa [swap_mul_swap_mul_finRotate] at h
+    rwa [Equiv.swap_mul_self_mul] at h
   · exact hσ
 
 /-- **The dihedral group of order six is `S₃`**: the isomorphism sending the rotation `r 1` to
@@ -63,7 +58,7 @@ private theorem closure_swap_swap_mul_finRotate :
 noncomputable def dihedralGroupThreeMulEquivPerm : DihedralGroup 3 ≃* Equiv.Perm (Fin 3) :=
   dihedralGroupMulEquiv (s := Equiv.swap 0 1) (t := Equiv.swap 0 1 * finRotate 3)
     (by decide) (by decide) (by decide) (by decide)
-    (by rw [swap_mul_swap_mul_finRotate]; exact orderOf_eq_prime (by decide) (by decide))
+    (by rw [Equiv.swap_mul_self_mul]; exact orderOf_eq_prime (by decide) (by decide))
     closure_swap_swap_mul_finRotate
 
 /-- The rotation `r i` goes to `τ ^ i`. -/
@@ -71,14 +66,14 @@ noncomputable def dihedralGroupThreeMulEquivPerm : DihedralGroup 3 ≃* Equiv.Pe
 theorem dihedralGroupThreeMulEquivPerm_r (i : ZMod 3) :
     dihedralGroupThreeMulEquivPerm (.r i) = finRotate 3 ^ (i.cast : ℤ) := by
   rw [dihedralGroupThreeMulEquivPerm, dihedralGroupMulEquiv_apply, dihedralHom_r,
-    swap_mul_swap_mul_finRotate]
+    Equiv.swap_mul_self_mul]
 
 /-- The reflection `sr i` goes to `σ τ ^ i`. -/
 @[simp]
 theorem dihedralGroupThreeMulEquivPerm_sr (i : ZMod 3) :
     dihedralGroupThreeMulEquivPerm (.sr i) = Equiv.swap 0 1 * finRotate 3 ^ (i.cast : ℤ) := by
   rw [dihedralGroupThreeMulEquivPerm, dihedralGroupMulEquiv_apply, dihedralHom_sr,
-    swap_mul_swap_mul_finRotate]
+    Equiv.swap_mul_self_mul]
 
 /-- The rotation `r 2` goes to the conjugate `σ τ σ⁻¹` of `τ`. -/
 theorem dihedralGroupThreeMulEquivPerm_r_two :
