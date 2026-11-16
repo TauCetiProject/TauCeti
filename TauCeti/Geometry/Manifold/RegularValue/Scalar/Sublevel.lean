@@ -695,8 +695,7 @@ theorem boundary_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1
   let := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
   have := isManifold_scalarRegularSublevel hreg hn hm hfm
   ext x
-  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-    (ENat.one_le_iff_ne_zero_withTop.1 hm) (chart_mem_atlas _ x) (mem_chart_source _ x),
+  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (mem_chart_source _ x),
     scalarRegularSublevelChartedSpace_chartAt, mem_ofPred_eq]
   have hxa : f x ≤ a := x.2
   rcases hxa.lt_or_eq with hx | hx
@@ -1234,8 +1233,7 @@ theorem boundary_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤
   let := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb hm hfm hab
   ext x
-  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-    (ENat.one_le_iff_ne_zero_withTop.1 hm) (chart_mem_atlas _ x) (mem_chart_source _ x),
+  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (mem_chart_source _ x),
     scalarRegularBandChartedSpace_chartAt, mem_ofPred_eq]
   have hsrc := mem_scalarRegularBandChartAt_source (hfm.of_le hm) hn ha hb hab x
   by_cases hxa : f x = a

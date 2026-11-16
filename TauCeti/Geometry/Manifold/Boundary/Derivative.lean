@@ -26,10 +26,7 @@ open scoped Manifold Topology
 namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
-
-local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
 
 /-- The boundary chart target is exactly the zero-coordinate slice of the ambient target. -/
 theorem boundaryParam_mem_extChartAt_target_iff
@@ -51,8 +48,7 @@ theorem boundaryParam_extChartAt {α x : (𝓡∂ (n + 1)).boundary M}
       extChartAt (𝓡∂ (n + 1)) (α : M) (x : M) := by
   have hx : (x : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) (α : M)).source := by
     simpa only [extChartAt_source, boundaryChartedSpace_chartAt_source, mem_preimage] using hα
-  have hb := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-    one_ne_zero (chart_mem_atlas _ (α : M)) hx).mp x.property
+  have hb := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hx).mp x.property
   have hp := congrArg Subtype.val (EuclideanHalfSpace.boundaryParam_boundaryProj hb)
   simpa only [EuclideanHalfSpace.boundaryParam_coe, EuclideanHalfSpace.boundaryProj_coe,
     extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
@@ -85,6 +81,11 @@ theorem mfderiv_subtypeVal_boundary (x : (𝓡∂ (n + 1)).boundary M) :
   convert hd.hasFDerivWithinAt (s := Set.range 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) using 1
   ext v
   rfl
+
+variable [IsManifold (𝓡∂ (n + 1)) 1 M]
+
+local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- Boundary transition derivatives are the ambient transition derivatives restricted to the
 coordinate hyperplane and then projected back to boundary coordinates. -/

@@ -35,7 +35,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 local instance : IsManifold (𝓡 n) ω
     ((𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :=
-  isManifold_boundary (n := n) (closedBall (0 : E) 1) (by simp)
+  isManifold_boundary (n := n) (closedBall (0 : E) 1)
 
 /-- The standard unit sphere is analytically diffeomorphic to the actual intrinsic boundary
 of the closed unit ball. The map preserves the underlying ambient point. -/
@@ -51,14 +51,13 @@ def sphereDiffeomorphBoundaryClosedBall :
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
   contMDiff_toFun := by
-    apply (contMDiff_iff_comp_subtypeVal_boundary (n := n) (by simp)).mpr
+    apply (contMDiff_iff_comp_subtypeVal_boundary (n := n)).mpr
     apply (contMDiff_iff_comp_subtypeVal_closedBall (n := n + 1)).mpr
     exact contMDiff_coe_sphere
   contMDiff_invFun := by
     apply ContMDiff.codRestrict_sphere
     exact contMDiff_subtypeVal_closedBall.comp
-      (isSmoothEmbedding_subtypeVal_boundary (n := n) (closedBall (0 : E) 1)
-        (by simp : (ω : ℕ∞ω) ≠ 0)).contMDiff
+      (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := ω) (closedBall (0 : E) 1)).contMDiff
 
 /-- The identification of the sphere with the intrinsic boundary preserves its ambient point. -/
 @[simp]
