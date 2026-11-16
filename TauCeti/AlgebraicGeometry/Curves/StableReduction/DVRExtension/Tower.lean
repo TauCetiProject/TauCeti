@@ -77,14 +77,21 @@ instance finiteDVRExtensionCategory : Category (FiniteDVRExtension R K) where
     { field := AlgHom.id K E.extensionField
       localMap := AlgHom.id R E.localRing
       field_local := fun x ↦ by simp
-      isLocalHom_localMap := isLocalHom_id E.localRing }
+      isLocalHom_localMap := by
+        rw [AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom]
+        exact isLocalHom_id E.localRing }
   comp f g :=
     { field := g.field.comp f.field
       localMap := g.localMap.comp f.localMap
       field_local := fun x ↦ by
         simp only [AlgHom.comp_apply]
         rw [f.field_local x, g.field_local (f.localMap x)]
-      isLocalHom_localMap := RingHom.isLocalHom_comp g.localMap.toRingHom f.localMap.toRingHom }
+      isLocalHom_localMap := by
+        have hg := g.isLocalHom_localMap
+        have hf := f.isLocalHom_localMap
+        rw [AlgHom.toRingHom_eq_coe] at hg hf ⊢
+        rw [AlgHom.comp_toRingHom]
+        exact RingHom.isLocalHom_comp _ _ }
 
 namespace Hom
 
