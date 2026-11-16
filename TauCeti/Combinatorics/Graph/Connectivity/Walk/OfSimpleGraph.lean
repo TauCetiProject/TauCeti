@@ -21,9 +21,10 @@ walks in `Graph.ofSimpleGraph H`.  In the latter graph, the edge joining `x` and
 unordered pair `s(x, y)`, so no edge choice is lost in either direction.
 
 The two conversions preserve length, vertex support, edge lists, concatenation, reversal,
-trails, paths, and cycles.  Their equivalence also identifies the two reachability predicates,
-providing the basic bridge through which simple-graph connectivity results can be used for
-multigraph walks.
+trails, paths, cycles, and internal vertex-disjointness. Their equivalence also identifies the
+two reachability predicates, providing the basic bridge through which simple-graph connectivity
+results can be used for multigraph walks. Edge-disjointness follows directly from preservation of
+the edge lists.
 
 In the other direction, reachability by edge-labelled walks in a multigraph `G` agrees with
 reachability in its underlying simple graph `G.toSimpleGraph`. A walk in the underlying simple
@@ -245,6 +246,13 @@ theorem isCycle_toGraph_iff (p : H.Walk x x) : p.toGraph.IsCycle ↔ p.IsCycle :
   rw [hne]
   tauto
 
+/-- Converting simple-graph walks to edge-labelled walks preserves and reflects internal
+vertex-disjointness. -/
+@[simp]
+theorem internallyDisjoint_toGraph_iff (p q : H.Walk x y) :
+    p.toGraph.InternallyDisjoint q.toGraph ↔ p.InternallyDisjoint q := by
+  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_toGraph]
+
 end Walk
 
 /-- Multigraph reachability in `Graph.ofSimpleGraph H` is simple-graph reachability in `H`. -/
@@ -278,6 +286,14 @@ theorem isPath_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
 theorem isCycle_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
     p.toSimpleGraph.IsCycle ↔ p.IsCycle := by
   rw [← SimpleGraph.Walk.isCycle_toGraph_iff, toGraph_toSimpleGraph]
+
+/-- Forgetting the redundant edge labels preserves and reflects internal vertex-disjointness. -/
+@[simp]
+theorem internallyDisjoint_toSimpleGraph_iff
+    (p q : (Graph.ofSimpleGraph H).Walk x y) :
+    p.toSimpleGraph.InternallyDisjoint q.toSimpleGraph ↔ p.InternallyDisjoint q := by
+  rw [← SimpleGraph.Walk.internallyDisjoint_toGraph_iff, toGraph_toSimpleGraph,
+    toGraph_toSimpleGraph]
 
 end Graph.Walk
 
