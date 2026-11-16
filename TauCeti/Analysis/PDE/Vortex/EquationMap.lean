@@ -425,17 +425,6 @@ theorem sobolevQuadraticTerm_apply_two :
 
 end apply
 
-private theorem hasCompactSupport_ofReal_equation_referenceField_apply
-    (f : ContDiffBump (0 : ℝ)) (m : ℕ) (i : Fin 3) :
-    HasCompactSupport fun z ↦ (equation (referenceField f m) z i : ℂ) :=
-  (hasCompactSupport_equation_referenceField f m).comp_left
-    (g := fun v : EuclideanSpace ℝ (Fin 3) ↦ (v i : ℂ)) (by simp)
-
-private theorem contDiff_ofReal_equation_referenceField_apply (f : ContDiffBump (0 : ℝ))
-    (m : ℕ) (i : Fin 3) : ContDiff ℝ ∞ fun z ↦ (equation (referenceField f m) z i : ℂ) :=
-  Complex.ofRealCLM.contDiff.comp (contDiff_euclidean.1
-    (contDiff_equation (contDiff_referenceField f m) ENat.coe_top_add_one.le) i)
-
 variable (f m k) in
 /-- The equation defect of the reference field `x_m`, as an element of `H^k(ℂ)³`. The reference
 field is an exact vortex outside a disc, so its defect is smooth with compact support. -/
@@ -527,16 +516,6 @@ For `s ≥ 0` an element `u` of `H^s(ℂ)` is an `L²` function (`inclusionLp`).
 `y : ℂ → ℝ⁴` lies in `sobolevFields s` exactly when its coordinates are, almost everywhere, the
 `L²` functions of some `u : Fin 4 → H^s(ℂ)`; this `u` is unique. The theorems below compute the
 Sobolev maps on such `u` through the pointwise expressions of the vortex equations. -/
-
-/-- A real field lies in `sobolevFields s`, `s ≥ 0`, exactly when its coordinates are almost
-everywhere the `L²` functions of elements of `H^s(ℂ)`. -/
-theorem mem_sobolevFields_iff_exists_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
-    y ∈ sobolevFields s ↔ ∃ u : Fin 4 → H^{s}(ℂ),
-      ∀ a, ⇑(inclusionLp hs (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ) := by
-  simp only [mem_sobolevFields, mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq hs]
-  exact ⟨fun h ↦ ⟨fun a ↦ (h a).choose, fun a ↦ (h a).choose_spec⟩,
-    fun ⟨u, hu⟩ a ↦ ⟨u a, hu a⟩⟩
 
 /-- The equation defect of the reference field is, as an `L²` function, the pointwise defect
 `equation x_m`. -/
