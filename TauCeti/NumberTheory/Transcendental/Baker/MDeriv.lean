@@ -126,15 +126,6 @@ private theorem listDeriv_add (hf : Differentiable ℂ f) (hg : Differentiable �
     rw [listDeriv_cons, listDeriv_cons, listDeriv_cons, ih,
       iterate_partialDeriv_add (differentiable_listDeriv hf l σ) (differentiable_listDeriv hg l σ)]
 
-private theorem listDeriv_sub (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
-    (l : List (Fin n)) (σ : Fin n → ℕ) :
-    listDeriv l σ (f - g) = listDeriv l σ f - listDeriv l σ g := by
-  induction l with
-  | nil => rfl
-  | cons i l ih =>
-    rw [listDeriv_cons, listDeriv_cons, listDeriv_cons, ih,
-      iterate_partialDeriv_sub (differentiable_listDeriv hf l σ) (differentiable_listDeriv hg l σ)]
-
 private theorem listDeriv_const_mul (c : ℂ) (l : List (Fin n)) (σ : Fin n → ℕ) :
     listDeriv l σ (fun z ↦ c * f z) = fun z ↦ c * listDeriv l σ f z := by
   induction l with
@@ -259,10 +250,19 @@ theorem mDeriv_add {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (
     (σ : Fin n → ℕ) : mDeriv σ (f + g) = mDeriv σ f + mDeriv σ g :=
   listDeriv_add hf hg _ σ
 
+/-- `D^σ` commutes with multiplication by a constant. -/
+@[simp]
+theorem mDeriv_const_mul {f : (Fin n → ℂ) → ℂ} (c : ℂ) (σ : Fin n → ℕ) :
+    mDeriv σ (fun z ↦ c * f z) = fun z ↦ c * mDeriv σ f z :=
+  listDeriv_const_mul c _ σ
+
 /-- `D^σ` commutes with subtraction on entire functions. -/
 theorem mDeriv_sub {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
-    (σ : Fin n → ℕ) : mDeriv σ (f - g) = mDeriv σ f - mDeriv σ g :=
-  listDeriv_sub hf hg _ σ
+    (σ : Fin n → ℕ) : mDeriv σ (f - g) = mDeriv σ f - mDeriv σ g := by
+  have hsub : f - g = f + fun z ↦ (-1 : ℂ) * g z := by ext z; simp [sub_eq_add_neg]
+  rw [hsub, mDeriv_add hf (hg.const_mul (-1)), mDeriv_const_mul]
+  ext z
+  simp [sub_eq_add_neg]
 
 /-- An entire factor independent of every coordinate differentiated by `σ` pulls out of `D^σ`. -/
 theorem mDeriv_mul_of_update_eq {φ f : (Fin n → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
@@ -270,12 +270,6 @@ theorem mDeriv_mul_of_update_eq {φ f : (Fin n → ℂ) → ℂ} (hφ : Differen
     (hφσ : ∀ j, σ j ≠ 0 → ∀ z s, φ (update z j s) = φ z) :
     mDeriv σ (fun z ↦ φ z * f z) = fun z ↦ φ z * mDeriv σ f z :=
   listDeriv_mul_of_update_eq hφ hf _ fun j _ ↦ hφσ j
-
-/-- `D^σ` commutes with multiplication by a constant. -/
-@[simp]
-theorem mDeriv_const_mul {f : (Fin n → ℂ) → ℂ} (c : ℂ) (σ : Fin n → ℕ) :
-    mDeriv σ (fun z ↦ c * f z) = fun z ↦ c * mDeriv σ f z :=
-  listDeriv_const_mul c _ σ
 
 /-- `D^σ` commutes with finite sums of entire functions. -/
 theorem mDeriv_sum {ι : Type*} (s : Finset ι) {f : ι → (Fin n → ℂ) → ℂ}

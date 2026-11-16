@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import TauCeti.NumberTheory.Transcendental.Baker.MDeriv
-import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.CoordinateDivision
 import TauCeti.Analysis.Complex.DividedDifference
 
@@ -26,6 +26,9 @@ multi-orders `κ` with `κᵢ < (P i).rootMultiplicity (ζ i)`, then `f₀ = 0`
 
 * `TauCeti.Baker.exists_degree_lt_and_mDeriv_eq_eval`: `mDeriv σ f` preserves any strict
   coordinate polynomial degree bound `< d`.
+* `TauCeti.Baker.eq_zero_of_degree_lt_of_mDeriv_eq_zero`: an entire function with
+  `deg_{z_j} f₀ < deg (P j)` in every coordinate whose mixed partial derivatives vanish on
+  `∏ᵢ Pᵢ⁻¹(0)` up to the root multiplicities is identically zero.
 * `TauCeti.Baker.eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero`: vanishing of the multivariate
   division remainder when `D^κ f` vanishes on `∏ᵢ Pᵢ⁻¹(0)` up to the root multiplicities.
 
@@ -91,6 +94,50 @@ private theorem mDeriv_mul_eval_eq_zero {g : (Fin n → ℂ) → ℂ} (hg : Diff
   exact iterate_partialDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity (differentiable_mDeriv hg _)
     hκ
 
+/-- If an entire function `f₀ : (Fin n → ℂ) → ℂ` has polynomial degree strictly less than
+`deg (P j)` in every coordinate `z_j` and satisfies `mDeriv κ f₀ ζ = 0` at every root tuple
+`ζ ∈ ∏ᵢ Pᵢ⁻¹(0)` for every multi-order `κ` with `∀ i, κ i < (P i).rootMultiplicity (ζ i)`, then
+`f₀ = 0`. -/
+theorem eq_zero_of_degree_lt_of_mDeriv_eq_zero {f₀ : (Fin n → ℂ) → ℂ} {P : Fin n → ℂ[X]}
+    (hf₀ : Differentiable ℂ f₀)
+    (hdeg₀ : ∀ j z, ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ w, f₀ (update z j w) = Q.eval w)
+    (hzero : ∀ ζ : Fin n → ℂ, (∀ i, (P i).IsRoot (ζ i)) →
+      ∀ κ : Fin n → ℕ, (∀ i, κ i < (P i).rootMultiplicity (ζ i)) → mDeriv κ f₀ ζ = 0) :
+    f₀ = 0 := by
+  have claim (m : ℕ) (hm : m ≤ n) :
+      ∀ (z : Fin n → ℂ), (∀ i : Fin n, m ≤ i.val → (P i).IsRoot (z i)) →
+      ∀ (κ : Fin n → ℕ), (∀ i : Fin n, i.val < m → κ i = 0) →
+        (∀ i : Fin n, m ≤ i.val → κ i < (P i).rootMultiplicity (z i)) →
+        mDeriv κ f₀ z = 0 := by
+    induction m with
+    | zero =>
+      intro z hz κ _ hκ
+      exact hzero z (fun i ↦ hz i (Nat.zero_le _)) κ (fun i ↦ hκ i (Nat.zero_le _))
+    | succ m ih =>
+      intro z hz κ hκ0 hκ
+      let j : Fin n := ⟨m, hm⟩
+      have hκj : κ j = 0 := hκ0 j (Nat.lt_succ_self m)
+      refine eq_zero_of_degree_lt_of_iterate_partialDeriv_eq_zero (differentiable_mDeriv hf₀ κ)
+        (exists_degree_lt_and_mDeriv_eq_eval hf₀ j κ (hdeg₀ j) z) fun ζ hζ r hr ↦ ?_
+      rw [← mDeriv_single, mDeriv_mDeriv hf₀, add_comm]
+      refine ih (Nat.le_of_succ_le hm) (update z j ζ) ?_ (κ + Pi.single j r) ?_ ?_
+      · intro i hi
+        by_cases hij : i = j
+        · subst hij; simpa using hζ
+        · rw [update_of_ne hij]
+          exact hz i (by have : i.val ≠ m := fun h ↦ hij (Fin.ext h); omega)
+      · intro i hi
+        have hij : i ≠ j := Fin.ne_of_val_ne hi.ne
+        simp [hij, hκ0 i (Nat.lt_succ_of_lt hi)]
+      · intro i hi
+        by_cases hij : i = j
+        · subst hij; simpa [hκj] using hr
+        · rw [update_of_ne hij, Pi.add_apply, Pi.single_eq_of_ne hij, add_zero]
+          exact hκ i (by have : i.val ≠ m := fun h ↦ hij (Fin.ext h); omega)
+  ext z
+  simpa using claim n le_rfl z (fun i hi ↦ (i.isLt.not_ge hi).elim) 0 (fun _ _ ↦ rfl)
+    (fun i hi ↦ (i.isLt.not_ge hi).elim)
+
 /-- **Vanishing of the multivariate remainder (Waldschmidt, Lemma 4.8).**
 Let `f(z) = f₀(z) + ∑ i, g_i(z) (P i).eval (z i)` where `f₀` and each `g_i` are entire and `f₀` is
 a polynomial of degree `< deg (P j)` in every coordinate `z_j`. If `D^κ f(ζ) = 0` at every root
@@ -106,60 +153,15 @@ theorem eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero
     f₀ = 0 := by
   have hterm (i : Fin n) : Differentiable ℂ (fun y : Fin n → ℂ ↦ g i y * (P i).eval (y i)) :=
     (hg i).mul ((P i).differentiable.comp (differentiable_apply i))
-  -- Induct on `m ≤ n`: when coordinates `≥ m` lie at roots of `P i` and `κ` vanishes on `< m`
-  -- while staying below the root multiplicities on `≥ m`, `mDeriv κ f₀ z = 0`.
-  have claim (m : ℕ) (hm : m ≤ n) :
-      ∀ (z : Fin n → ℂ), (∀ i : Fin n, m ≤ i.val → (P i).IsRoot (z i)) →
-      ∀ (κ : Fin n → ℕ), (∀ i : Fin n, i.val < m → κ i = 0) →
-        (∀ i : Fin n, m ≤ i.val → κ i < (P i).rootMultiplicity (z i)) →
-        mDeriv κ f₀ z = 0 := by
-    induction m with
-    | zero =>
-      -- Base case `m = 0`: at a root tuple `z ∈ ∏ᵢ Pᵢ⁻¹(0)`, `D^κ` annihilates every term
-      -- `g i * P i (z i)` because `κ i < (P i).rootMultiplicity (z i)`.
-      intro z hz κ _ hκ
-      have hf_eq : f = f₀ + ∑ i : Fin n, fun y ↦ g i y * (P i).eval (y i) := by
-        ext y
-        simp [hdiv y, Finset.sum_apply]
-      have h0 : mDeriv κ f z = 0 :=
-        hzero z (fun i ↦ hz i (Nat.zero_le _)) κ (fun i ↦ hκ i (Nat.zero_le _))
-      rw [hf_eq, mDeriv_add hf₀ (Differentiable.sum fun i _ ↦ hterm i),
-        mDeriv_sum univ (fun i _ ↦ hterm i), Pi.add_apply, Finset.sum_apply] at h0
-      have hsum0 : ∑ i : Fin n, mDeriv κ (fun y ↦ g i y * (P i).eval (y i)) z = 0 :=
-        sum_eq_zero fun i _ ↦ mDeriv_mul_eval_eq_zero (hg i) (hκ i (Nat.zero_le _))
-      rwa [hsum0, add_zero] at h0
-    | succ m ih =>
-      -- Inductive step: `D^κ f₀` has polynomial degree `< deg (P m)` in coordinate `j = m` and
-      -- its partial derivatives `∂_j^r (D^κ f₀) = D^{κ + r e_j} f₀` vanish at every root of `P j`
-      -- by the induction hypothesis, so univariate vanishing gives `D^κ f₀ z = 0`.
-      intro z hz κ hκ0 hκ
-      let j : Fin n := ⟨m, hm⟩
-      have hj_val : j.val = m := rfl
-      have hκj : κ j = 0 := hκ0 j (by simp [hj_val])
-      refine eq_zero_of_eq_add_mul_eval_of_iterate_partialDeriv_eq_zero
-        (f := mDeriv κ f₀) (differentiable_mDeriv hf₀ κ) (differentiable_const 0)
-        (fun y ↦ by simp) (exists_degree_lt_and_mDeriv_eq_eval hf₀ j κ (hdeg₀ j) z)
-        fun ζ hζ r hr ↦ ?_
-      rw [← mDeriv_single, mDeriv_mDeriv hf₀, add_comm]
-      refine ih (Nat.le_of_succ_le hm) (update z j ζ) ?_ (κ + Pi.single j r) ?_ ?_
-      · intro i hi
-        by_cases hij : i = j
-        · subst hij; simpa using hζ
-        · have him : i.val ≠ m := fun h ↦ hij (Fin.ext (h.trans hj_val.symm))
-          rw [update_of_ne hij]
-          exact hz i (by omega)
-      · intro i hi
-        have hij : i ≠ j := Fin.ne_of_val_ne (by omega)
-        simp [hij, hκ0 i (Nat.lt_succ_of_lt hi)]
-      · intro i hi
-        by_cases hij : i = j
-        · subst hij
-          simpa [hκj] using hr
-        · have him : i.val ≠ m := fun h ↦ hij (Fin.ext (h.trans hj_val.symm))
-          rw [update_of_ne hij, Pi.add_apply, Pi.single_eq_of_ne hij, add_zero]
-          exact hκ i (by omega)
-  ext z
-  simpa using claim n le_rfl z (fun i hi ↦ (i.isLt.not_ge hi).elim) 0 (fun _ _ ↦ rfl)
-    (fun i hi ↦ (i.isLt.not_ge hi).elim)
+  have hf_eq : f = f₀ + ∑ i : Fin n, fun y ↦ g i y * (P i).eval (y i) := by
+    ext y
+    simp [hdiv y, Finset.sum_apply]
+  refine eq_zero_of_degree_lt_of_mDeriv_eq_zero hf₀ hdeg₀ fun ζ hζ κ hκ ↦ ?_
+  have h0 : mDeriv κ f ζ = 0 := hzero ζ hζ κ hκ
+  rw [hf_eq, mDeriv_add hf₀ (Differentiable.sum fun i _ ↦ hterm i),
+    mDeriv_sum univ (fun i _ ↦ hterm i), Pi.add_apply, Finset.sum_apply] at h0
+  have hsum0 : ∑ i : Fin n, mDeriv κ (fun y ↦ g i y * (P i).eval (y i)) ζ = 0 :=
+    sum_eq_zero fun i _ ↦ mDeriv_mul_eval_eq_zero (hg i) (hκ i)
+  rwa [hsum0, add_zero] at h0
 
 end TauCeti.Baker

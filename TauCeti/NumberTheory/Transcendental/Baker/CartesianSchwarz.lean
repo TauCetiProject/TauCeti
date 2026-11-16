@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Transcendental.Baker.MDeriv
+import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.Roots
-import TauCeti.Algebra.Polynomial.BigOperators
+import Mathlib.Data.Finsupp.Indicator
+import Mathlib.Data.Finsupp.Multiset
+import Mathlib.Data.Finsupp.Weight
 import TauCeti.Analysis.Complex.CoordinateDivision
+import TauCeti.Analysis.Polynomial.OfMultiset
 import TauCeti.NumberTheory.Transcendental.Baker.CoordinateDivision
 
 /-!
@@ -20,8 +24,9 @@ given a finite set `E i ⊆ closedBall (c i) r` and multiplicities `k i : ℂ �
 `p ≤ ∑ ζ ∈ E i, k i ζ`, and that when `0 < p` every mixed partial derivative `mDeriv σ f ξ` with
 `∀ i, σ i < k i (ξ i)` vanishes on the Cartesian product `{ξ | ∀ i, ξ i ∈ E i}`.
 
-Trimming the weights `k i` to total weight `p` and dividing `f` by the monic coordinate polynomials
-`P i = ∏ ζ ∈ E i, (X - C ζ) ^ k' i ζ` of degree `p` expresses `f(z)` as
+Trimming the weights `k i` via `Finsupp.exists_le_degree_eq` to finitely supported weights `k' i`
+of total degree `p` and dividing `f` by the monic coordinate polynomials
+`P i = Polynomial.ofMultiset (k' i).toMultiset` of degree `p` expresses `f(z)` as
 `∑ i, g i z * (P i).eval (z i)` with controlled supremum norms on `closedBall c R`, yielding the
 estimate `‖f z‖ ≤ M * (6 ^ n * r / R) ^ p` on `closedBall c r` (including the degenerate cases
 `p = 0`, `n = 0`, `r = 0`, and `r ≤ R < 5 * r`). For finite sets of cardinality `#(E i) ≥ S₁` and
@@ -54,65 +59,6 @@ namespace TauCeti.Baker
 
 /-! ### Preliminary helpers -/
 
-/-- Any non-negative weight function `k` whose sum over a finite set `s` is at least `p` can be
-trimmed pointwise to `k' ≤ k` with exact sum `p` over `s`. -/
-private lemma exists_le_and_sum_eq {α : Type*} {s : Finset α} {k : α → ℕ} {p : ℕ}
-    (hp : p ≤ ∑ a ∈ s, k a) :
-    ∃ k' : α → ℕ, (∀ a, k' a ≤ k a) ∧ ∑ a ∈ s, k' a = p := by
-  classical
-  induction s using Finset.induction_on generalizing p with
-  | empty =>
-    simp only [sum_empty, Nat.le_zero] at hp
-    exact ⟨0, fun _ ↦ Nat.zero_le _, by simp [hp]⟩
-  | insert a s ha ih =>
-    rw [sum_insert ha] at hp
-    let c : ℕ := min p (k a)
-    obtain ⟨k', hk'_le, hk'_sum⟩ := ih (p := p - c) (by omega)
-    refine ⟨Function.update k' a c, fun b ↦ ?_, ?_⟩
-    · by_cases hba : b = a
-      · subst hba; simp [c]
-      · simp [hba, hk'_le b]
-    · rw [sum_insert ha, Function.update_self]
-      have hrest : ∑ x ∈ s, Function.update k' a c x = ∑ x ∈ s, k' x :=
-        sum_congr rfl fun x hx ↦ Function.update_of_ne (ne_of_mem_of_not_mem hx ha) _ _
-      rw [hrest, hk'_sum]
-      omega
-
-/-- Every root of `∏ ζ ∈ E, (X - C ζ) ^ k ζ` belongs to `E`. -/
-private lemma isRoot_prod_X_sub_C_pow_mem {E : Finset ℂ} {k : ℂ → ℕ} {a : ℂ}
-    (ha : (∏ ζ ∈ E, (X - C ζ) ^ k ζ).IsRoot a) : a ∈ E := by
-  rw [isRoot_prod] at ha
-  obtain ⟨η, hηE, hη⟩ := ha
-  rw [IsRoot.def, eval_pow, eval_sub, eval_X, eval_C] at hη
-  exact sub_eq_zero.mp (eq_zero_of_pow_eq_zero hη) ▸ hηE
-
-/-- At each `a ∈ E`, the root multiplicity of `∏ ζ ∈ E, (X - C ζ) ^ k ζ` equals `k a`. -/
-private lemma rootMultiplicity_prod_X_sub_C_pow {E : Finset ℂ} {k : ℂ → ℕ} {a : ℂ} (ha : a ∈ E) :
-    (∏ ζ ∈ E, (X - C ζ) ^ k ζ).rootMultiplicity a = k a := by
-  have hsplit : ∏ ζ ∈ E, (X - C ζ) ^ k ζ =
-      (∏ ζ ∈ E.erase a, (X - C ζ) ^ k ζ) * (X - C a) ^ k a := by
-    rw [← mul_prod_erase E _ ha, mul_comm]
-  have hq_monic : (∏ ζ ∈ E.erase a, (X - C ζ) ^ k ζ).Monic :=
-    monic_prod_X_sub_C_pow (E.erase a) id k
-  have hq_not_root : ¬ (∏ ζ ∈ E.erase a, (X - C ζ) ^ k ζ).IsRoot a := fun h ↦
-    notMem_erase a E (isRoot_prod_X_sub_C_pow_mem h)
-  rw [hsplit, rootMultiplicity_mul_X_sub_C_pow hq_monic.ne_zero,
-    rootMultiplicity_eq_zero hq_not_root, zero_add]
-
-/-- On `closedBall c r`, the polynomial `∏ ζ ∈ E, (X - C ζ) ^ k ζ` with `E ⊆ closedBall c r` is
-bounded in modulus by `(2 * r) ^ ∑ ζ ∈ E, k ζ`. -/
-private lemma norm_eval_prod_X_sub_C_pow_le {E : Finset ℂ} {k : ℂ → ℕ} {c w : ℂ} {r : ℝ}
-    (hE : (E : Set ℂ) ⊆ closedBall c r) (hw : w ∈ closedBall c r) :
-    ‖(∏ ζ ∈ E, (X - C ζ) ^ k ζ).eval w‖ ≤ (2 * r) ^ ∑ ζ ∈ E, k ζ := by
-  rw [eval_prod, norm_prod]
-  calc ∏ ζ ∈ E, ‖((X - C ζ) ^ k ζ).eval w‖
-      ≤ ∏ ζ ∈ E, (2 * r) ^ k ζ := by
-        refine prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun ζ hζ ↦ ?_
-        rw [eval_pow, eval_sub, eval_X, eval_C, norm_pow, ← dist_eq_norm]
-        refine pow_le_pow_left₀ dist_nonneg ?_ _
-        linarith [dist_triangle_right w ζ c, mem_closedBall.mp hw, mem_closedBall.mp (hE hζ)]
-    _ = (2 * r) ^ ∑ ζ ∈ E, k ζ := prod_pow_eq_pow_sum _ _ _
-
 /-- Elementary constant bound `n * 2 ^ p * 3 ^ (n * p) ≤ 6 ^ (n * p)` for positive `n, p`. -/
 private lemma mul_two_pow_mul_three_pow_le_six_pow {n p : ℕ} (hn : 0 < n) (hp : 0 < p) :
     n * 2 ^ p * 3 ^ (n * p) ≤ 6 ^ (n * p) := by
@@ -127,6 +73,65 @@ private lemma mul_two_pow_mul_three_pow_le_six_pow {n p : ℕ} (hn : 0 < n) (hp 
         have hn1 : n - 1 + 1 = n := by omega
         rw [← pow_add, ← add_one_mul, hn1]
     _ = 6 ^ (n * p) := by rw [← mul_pow]; rfl
+
+/-- Core `0 < n`, `0 < p`, `0 < r`, `5 * r ≤ R` regime of the weighted Cartesian Schwarz lemma. -/
+private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (Fin n → ℂ) → ℂ}
+    (hf : Differentiable ℂ f) {E : Fin n → Finset ℂ} {k : Fin n → ℂ → ℕ} {p : ℕ}
+    (hn : 0 < n) (hp : 0 < p) (hsum : ∀ i, p ≤ ∑ ζ ∈ E i, k i ζ)
+    {c : Fin n → ℂ} {r R M : ℝ} (hE : ∀ i, (E i : Set ℂ) ⊆ closedBall (c i) r)
+    (hr : 0 < r) (hrR : 5 * r ≤ R)
+    (hzero : ∀ ξ : Fin n → ℂ, (∀ i, ξ i ∈ E i) →
+      ∀ σ : Fin n → ℕ, (∀ i, σ i < k i (ξ i)) → mDeriv σ f ξ = 0)
+    (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : Fin n → ℂ} (hz : z ∈ closedBall c r) :
+    ‖f z‖ ≤ M * (6 ^ n * r / R) ^ p := by
+  classical
+  have hR_pos : 0 < R := by linarith
+  have hzR : z ∈ closedBall c R := closedBall_subset_closedBall (by linarith) hz
+  have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans (hM z hzR)
+  let K (i : Fin n) : ℂ →₀ ℕ := Finsupp.indicator (E i) fun a _ ↦ k i a
+  have hK_deg (i : Fin n) : (K i).degree = ∑ ζ ∈ E i, k i ζ := by
+    rw [Finsupp.degree_apply, Finset.sum_subset (Finsupp.support_indicator_subset _ _)
+      fun _ _ h ↦ Finsupp.notMem_support_iff.mp h]
+    exact sum_congr rfl fun ζ hζ ↦ by simp [hζ]
+  choose k' hk'_le hk'_deg using fun i ↦
+    Finsupp.exists_le_degree_eq (K i) p ((hK_deg i).symm ▸ hsum i)
+  let P (i : Fin n) : ℂ[X] := Polynomial.ofMultiset (k' i).toMultiset
+  have hP_monic (i : Fin n) : (P i).Monic := monic_multisetProd_X_sub_C _
+  have hcard (i : Fin n) : (k' i).toMultiset.card = p := by
+    rw [Finsupp.card_toMultiset]; simpa [Finsupp.degree_apply, Finsupp.sum] using hk'_deg i
+  have hP_deg (i : Fin n) : (P i).natDegree = p :=
+    (natDegree_multiset_prod_X_sub_C_eq_card _).trans (hcard i)
+  have hmem (i : Fin n) {ζ : ℂ} (hζ : ζ ∈ (k' i).toMultiset) : ζ ∈ E i :=
+    Finsupp.support_indicator_subset _ _ <|
+      Finsupp.support_mono (hk'_le i) ((Finsupp.mem_toMultiset _ _).mp hζ)
+  have hP_mem (i : Fin n) {ζ : ℂ} (hζ : (P i).IsRoot ζ) : ζ ∈ E i :=
+    hmem i (roots_ofMultiset (k' i).toMultiset ▸ (mem_roots (hP_monic i).ne_zero).mpr hζ)
+  obtain ⟨f₀, g, hf₀, hg, hdiv, hdeg₀, hdeg_g⟩ :=
+    exists_eq_add_sum_mul_eval_of_ne_zero hf fun i ↦ (hP_monic i).ne_zero
+  have hf₀_zero : f₀ = 0 :=
+    eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero hf₀ hg hdiv hdeg₀ fun ξ hξ κ hκ ↦
+      hzero ξ (fun i ↦ hP_mem i (hξ i)) κ fun i ↦ (hκ i).trans_le <| by
+        rw [← count_roots, roots_ofMultiset, Finsupp.count_toMultiset]
+        simpa [K, hP_mem i (hξ i)] using hk'_le i (ξ i)
+  obtain ⟨-, hg_bound⟩ := norm_le_of_eq_add_sum_mul_eval_of_monic hf₀ hg hP_monic
+    hdiv hdeg₀ hdeg_g hR_pos hrR (fun i ζ hζ ↦ hE i (hP_mem i hζ)) hM hzR
+  have hsum_deg : ∑ j : Fin n, (P j).natDegree = n * p := by simp [hP_deg]
+  have hconst : (n : ℝ) * 2 ^ p * 3 ^ (n * p) ≤ (6 : ℝ) ^ (n * p) := by
+    exact_mod_cast mul_two_pow_mul_three_pow_le_six_pow hn hp
+  calc ‖f z‖ = ‖∑ i : Fin n, g i z * (P i).eval (z i)‖ := by simp [hdiv z, hf₀_zero]
+    _ ≤ ∑ i : Fin n, ‖g i z * (P i).eval (z i)‖ := norm_sum_le _ _
+    _ ≤ ∑ _ : Fin n, ((3 : ℝ) ^ (n * p) / R ^ p * M) * (2 * r) ^ p :=
+        sum_le_sum fun i _ ↦ by
+          rw [norm_mul]
+          have hPi : ‖(P i).eval (z i)‖ ≤ (2 * r) ^ p := hcard i ▸
+            norm_eval_ofMultiset_le_two_mul_pow (fun ζ hζ ↦ hE i (hmem i hζ))
+              (mem_closedBall.mpr ((dist_le_pi_dist z c i).trans (mem_closedBall.mp hz)))
+          exact mul_le_mul (by simpa [hsum_deg, hP_deg i] using hg_bound i) hPi
+            (norm_nonneg _) (by positivity)
+    _ = M * ((n : ℝ) * 2 ^ p * 3 ^ (n * p)) * (r / R) ^ p := by
+        simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul, mul_pow, div_pow]; ring
+    _ ≤ M * (6 : ℝ) ^ (n * p) * (r / R) ^ p := by gcongr
+    _ = M * (6 ^ n * r / R) ^ p := by rw [pow_mul, mul_div_assoc, mul_pow, mul_assoc]
 
 /-! ### Schwarz's lemma for Cartesian products -/
 
@@ -150,7 +155,6 @@ theorem norm_le_mul_six_pow_mul_div_pow_of_le_sum {n : ℕ} {f : (Fin n → ℂ)
   have hzR : z ∈ closedBall c R := closedBall_subset_closedBall hrR hz
   have hfz : ‖f z‖ ≤ M := hM z hzR
   have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans hfz
-  -- Handle the degenerate cases `p = 0`, `n = 0`, `r = 0`, and `R < 5 * r` first.
   rcases Nat.eq_zero_or_pos p with rfl | hp
   · simpa using hfz
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -181,57 +185,16 @@ theorem norm_le_mul_six_pow_mul_div_pow_of_le_sum {n : ℕ} {f : (Fin n → ℂ)
     calc ‖f z‖ ≤ M := hfz
       _ = M * 1 := (mul_one M).symm
       _ ≤ M * (6 ^ n * r / R) ^ p := mul_le_mul_of_nonneg_left (one_le_pow₀ h1) hM0
-  -- Main case: `0 < p`, `0 < n`, `0 < r`, and `5 * r ≤ R`. Trim `k` to exact weight `p` per
-  -- coordinate and divide `f` by the monic polynomials `P i = ∏ ζ ∈ E i, (X - C ζ) ^ k' i ζ`.
-  have hR_pos : 0 < R := by linarith
-  choose k' hk'_le hk'_sum using fun i ↦ exists_le_and_sum_eq (hsum i)
-  let P : Fin n → ℂ[X] := fun i ↦ ∏ ζ ∈ E i, (X - C ζ) ^ k' i ζ
-  have hP_monic (i : Fin n) : (P i).Monic := monic_prod_X_sub_C_pow (E i) id (k' i)
-  have hP_deg (i : Fin n) : (P i).natDegree = p :=
-    (natDegree_prod_X_sub_C_pow (E i) id (k' i)).trans (hk'_sum i)
-  have hP_roots (i : Fin n) (ζ : ℂ) (hζ : (P i).IsRoot ζ) : ζ ∈ closedBall (c i) r :=
-    hE i (isRoot_prod_X_sub_C_pow_mem hζ)
-  obtain ⟨f₀, g, hf₀, hg, hdiv, hdeg₀, hdeg_g⟩ :=
-    exists_eq_add_sum_mul_eval_of_ne_zero hf fun i ↦ (hP_monic i).ne_zero
-  have hf₀_zero : f₀ = 0 :=
-    eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero hf₀ hg hdiv hdeg₀ fun ξ hξ κ hκ ↦ by
-      have hξE : ∀ i, ξ i ∈ E i := fun i ↦ isRoot_prod_X_sub_C_pow_mem (hξ i)
-      exact hzero hp ξ hξE κ fun i ↦
-        (rootMultiplicity_prod_X_sub_C_pow (hξE i) ▸ hκ i).trans_le (hk'_le i (ξ i))
-  obtain ⟨-, hg_bound⟩ := norm_le_of_eq_add_sum_mul_eval_of_monic hf₀ hg hP_monic hdiv hdeg₀
-    hdeg_g hR_pos hR_large hP_roots hM hzR
-  have hsum_deg : ∑ j : Fin n, (P j).natDegree = n * p := by simp [hP_deg]
-  have hconst : (n : ℝ) * 2 ^ p * 3 ^ (n * p) ≤ (6 : ℝ) ^ (n * p) := by
-    exact_mod_cast mul_two_pow_mul_three_pow_le_six_pow hn hp
-  have hf_sum : f z = ∑ i : Fin n, g i z * (P i).eval (z i) := by
-    rw [hdiv z, hf₀_zero, Pi.zero_apply, zero_add]
-  calc ‖f z‖
-      = ‖∑ i : Fin n, g i z * (P i).eval (z i)‖ := by rw [hf_sum]
-    _ ≤ ∑ i : Fin n, ‖g i z * (P i).eval (z i)‖ := norm_sum_le _ _
-    _ ≤ ∑ _ : Fin n, ((3 : ℝ) ^ (n * p) / R ^ p * M) * (2 * r) ^ p := by
-        refine sum_le_sum fun i _ ↦ ?_
-        rw [norm_mul]
-        have hgi : ‖g i z‖ ≤ (3 : ℝ) ^ (n * p) / R ^ p * M := by
-          simpa [hsum_deg, hP_deg i] using hg_bound i
-        have hzi : z i ∈ closedBall (c i) r :=
-          mem_closedBall.mpr ((dist_le_pi_dist z c i).trans (mem_closedBall.mp hz))
-        have hPi : ‖(P i).eval (z i)‖ ≤ (2 * r) ^ p := by
-          simpa [hk'_sum i] using norm_eval_prod_X_sub_C_pow_le (k := k' i) (hE i) hzi
-        exact mul_le_mul hgi hPi (norm_nonneg _) (by positivity)
-    _ = M * ((n : ℝ) * 2 ^ p * 3 ^ (n * p)) * (r / R) ^ p := by
-        simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul, mul_pow, div_pow]
-        ring
-    _ ≤ M * (6 : ℝ) ^ (n * p) * (r / R) ^ p :=
-        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hconst hM0) (by positivity)
-    _ = M * (6 ^ n * r / R) ^ p := by
-        rw [pow_mul, mul_div_assoc, mul_pow, mul_assoc]
+  exact norm_le_mul_six_pow_mul_div_pow_of_five_mul_le hf hn hp hsum hE hr_pos hR_large
+    (hzero hp) hM hz
 
 /-- **Schwarz's lemma for Cartesian products (Waldschmidt, Proposition 4.7).**
 Let `f : (Fin n → ℂ) → ℂ` be an entire function bounded by `M` on `closedBall c R` with `r ≤ R`.
 Suppose `E : Fin n → Finset ℂ` satisfies `S₁ ≤ #(E i)` and `(E i : Set ℂ) ⊆ closedBall (c i) r`
 for every `i : Fin n`, and whenever `0 < S₀ * S₁`, `mDeriv σ f ξ = 0` at every point `ξ` with
-`∀ i, ξ i ∈ E i` and every multi-index `σ : Fin n → ℕ` with `∀ i, σ i < S₀`. Then for every
-`z ∈ closedBall c r`, `‖f z‖ ≤ M * (18 ^ n * r / R) ^ (S₀ * S₁)`. -/
+`∀ i, ξ i ∈ E i` and every multi-index `σ : Fin n → ℕ` of max-norm `maxᵢ σᵢ < S₀` (i.e.
+`∀ i, σ i < S₀`, matching Waldschmidt's coordinatewise derivative-order hypothesis `|σ| < S₀`).
+Then for every `z ∈ closedBall c r`, `‖f z‖ ≤ M * (18 ^ n * r / R) ^ (S₀ * S₁)`. -/
 theorem norm_le_mul_eighteen_pow_mul_div_pow {n : ℕ} {f : (Fin n → ℂ) → ℂ}
     (hf : Differentiable ℂ f) {E : Fin n → Finset ℂ} {S₀ S₁ : ℕ}
     (hcard : ∀ i, S₁ ≤ #(E i))

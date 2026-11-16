@@ -183,12 +183,9 @@ theorem iterate_partialDeriv_add (hf : Differentiable ℂ f) (hg : Differentiabl
 /-- `∂ᵢ^k` commutes with subtraction on entire functions. -/
 theorem iterate_partialDeriv_sub (hf : Differentiable ℂ f) (hg : Differentiable ℂ g) (i : ι)
     (k : ℕ) : (partialDeriv i)^[k] (f - g) = (partialDeriv i)^[k] f - (partialDeriv i)^[k] g := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [iterate_succ_apply', iterate_succ_apply', iterate_succ_apply', ih,
-      partialDeriv_sub (differentiable_iterate_partialDeriv hf i k)
-        (differentiable_iterate_partialDeriv hg i k)]
+  have := Fintype.ofFinite ι
+  rw [sub_eq_add_neg, ← neg_one_smul ℂ g, iterate_partialDeriv_add hf (hg.const_smul (-1 : ℂ)),
+    iterate_partialDeriv_const_smul, neg_one_smul, sub_eq_add_neg]
 
 /-- The iterated partial derivative `∂ᵢ^k f (z)` is the `k`-th derivative of `f` restricted to the
 line through `z` parallel to the `i`-th coordinate axis. -/
