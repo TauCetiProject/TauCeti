@@ -52,18 +52,18 @@ namespace TauCeti.Probability
 variable {α β r : ℝ}
 
 /-- Removing the inner cutoff from compensated band laws recovers any probability factor in
-the stable large-jump decomposition. The cutoffs need not be monotone. Shape two is excluded:
+the stable large-jump decomposition. The inner cutoffs need not be monotone, and need not stay
+below the outer cutoff `r`: they tend to zero, so they eventually do. Shape two is excluded:
 there the Lévy measure vanishes, so the band laws are the point mass at zero while the factor is
 Gaussian. -/
 theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
     (hα : α ≠ 2) {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0)
-    {ε : ℕ → ℝ} (hε : ∀ n, 0 < ε n) (hεr : ∀ n, ε n ≤ r)
+    {ε : ℕ → ℝ} (hε : ∀ n, 0 < ε n) (hr : 0 < r)
     (hlim : Tendsto ε atTop (𝓝[>] 0)) :
     Tendsto (β := ProbabilityMeasure ℝ) (fun n ↦ ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
       isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩ :
         ℕ → ProbabilityMeasure ℝ) atTop (𝓝 μ) := by
-  have hr : 0 < r := (hε 0).trans_le (hεr 0)
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   -- The decomposition forces valid parameters, since the stable measure is zero otherwise.
   have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
@@ -85,11 +85,10 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
   have ht := ((tendsto_charFun_stableCompensatedPoissonMeasure hα hβ t).comp hlim).div_const
     (charFun (stableCompensatedPoissonMeasure α β r) t)
   apply ht.congr'
-  apply Eventually.of_forall
-  intro n
+  filter_upwards [(tendsto_nhdsWithin_iff.mp hlim).1.eventually_le_const hr] with n hnr
   let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure (α := α) (β := β) (r := r) (hε n)
   simp only [Function.comp_apply, ProbabilityMeasure.coe_mk]
-  rw [stableCompensatedPoissonMeasure_split α β (hε n) (hεr n),
+  rw [stableCompensatedPoissonMeasure_split α β (hε n) hnr,
     charFun_conv, mul_div_cancel_right₀ _ hne]
 
 private theorem lintegral_sq_le_of_conv_eq
@@ -118,7 +117,7 @@ private theorem lintegral_sq_le_of_conv_eq
         (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 2⁻¹)
           (by norm_num : (2 : ℝ)⁻¹ < 1)))
   have hconv : Tendsto ρ atTop (𝓝 μ) :=
-    tendsto_stableSmallJumpRemainderMeasure_of_conv_eq hα hμ hε hεr hεlim
+    tendsto_stableSmallJumpRemainderMeasure_of_conv_eq hα hμ hε hr hεlim
   have hbound (n : ℕ) : ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(ρ n : Measure ℝ) ≤
       ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
     have hmem := memLp_two_id_stableSmallJumpRemainderMeasure hα' hβ (hε n) (hεr n)
@@ -154,11 +153,10 @@ theorem memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
     have hv : (2 : ℝ) ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
       rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
       infer_instance
-    rw [stableCompensatedPoissonMeasure_def, stableLevyMeasure_eq_zero_of_not (by norm_num),
-      stableMeasure_two hv.2] at hμ
-    simp only [FunLike.coe_zero, Pi.zero_apply, ENNReal.toNNReal_zero,
-      compoundPoissonMeasure_zero, Measure.restrict_zero, integral_zero_measure, sub_zero,
-      Measure.map_id', Measure.conv_dirac_zero] at hμ
+    -- At shape two the Lévy measure vanishes, so the compensated law is the point mass at zero.
+    have hδ : stableCompensatedPoissonMeasure 2 β r = Measure.dirac 0 := by
+      simp [stableCompensatedPoissonMeasure_def]
+    rw [hδ, Measure.conv_dirac_zero, stableMeasure_two hv.2] at hμ
     rw [hμ]
     exact memLp_id_gaussianReal' 2 (by norm_num)
   apply (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
@@ -188,7 +186,7 @@ theorem tendsto_integral_sq_smallJumpFactor_zero
     (hα : α ≠ 2) {ι : Type*} {L : Filter ι}
     {r : ι → ℝ} (hlim : Tendsto r L (𝓝[>] 0))
     {μ : ι → ProbabilityMeasure ℝ}
-    (hμ : ∀ i, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
+    (hμ : ∀ᶠ i in L, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
       stableMeasure α β 1 0) :
     Tendsto (fun i ↦ ∫ x, x ^ 2 ∂(μ i : Measure ℝ)) L (𝓝 0) := by
   have hV := ((tendsto_integral_sq_stableLevyMeasure_ball_zero (α := α) (β := β)).mono_left
@@ -198,7 +196,8 @@ theorem tendsto_integral_sq_smallJumpFactor_zero
   have hbound := hV.add (((hr0.div_const 6).mul hV).pow 2)
   simp only [zero_div, zero_mul, zero_pow (by decide : 2 ≠ 0), add_zero] at hbound
   exact squeeze_zero' (Eventually.of_forall fun i ↦ integral_nonneg fun x ↦ sq_nonneg x)
-    (hr.mono fun i hi ↦ integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq hα hi (hμ i))
+    ((hr.and hμ).mono fun i hi ↦
+      integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq hα hi.1 hi.2)
     hbound
 
 /-- Limiting small-jump factors concentrate weakly at zero as their cutoffs shrink. Shape two is
@@ -207,14 +206,14 @@ theorem tendsto_smallJumpFactor_dirac
     (hα : α ≠ 2) {ι : Type*} {L : Filter ι}
     [L.IsCountablyGenerated] {r : ι → ℝ}
     (hlim : Tendsto r L (𝓝[>] 0)) {μ : ι → ProbabilityMeasure ℝ}
-    (hμ : ∀ i, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
+    (hμ : ∀ᶠ i in L, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
       stableMeasure α β 1 0) :
     Tendsto μ L (𝓝 (⟨Measure.dirac 0, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
   have hr : ∀ᶠ i in L, 0 < r i := (tendsto_nhdsWithin_iff.mp hlim).2
   apply ProbabilityMeasure.tendsto_dirac_of_eventually_integral_dist_sq_tendsto_zero
-  · filter_upwards [hr] with i hi
+  · filter_upwards [hr, hμ] with i hi hμi
     simpa only [Real.dist_eq, sub_zero, ← Real.norm_eq_abs, id_eq] using
-      (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hi (hμ i)).norm
+      (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hi hμi).norm
   · simpa only [Real.dist_eq, sub_zero, sq_abs] using
       tendsto_integral_sq_smallJumpFactor_zero hα hlim hμ
 
