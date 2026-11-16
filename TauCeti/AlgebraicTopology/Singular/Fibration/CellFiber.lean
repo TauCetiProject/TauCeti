@@ -419,8 +419,8 @@ def cellDiskPullbackPairSingularHomologyIso (n q : ℕ) (j : cell C n) :
     (cellDiskPullbackPair p C n j).singularHomology (ModuleCat.of R R) (q + n) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {map n j 0} : Set E)) :=
-  singularHomologyPreimageSphereIso R (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j)) q
-      (q + n) (by simp) ≪≫
+  singularHomologyPreimageSphereIso (ModuleCat.of R R)
+      (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j)) q (q + n) (by simp) ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
       (ModuleCat.of R R)).mapIso
       (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p C n j))
@@ -444,7 +444,7 @@ lemma cellDiskPullbackPairSingularHomologyIso_hom_naturality (hp' : serreFibrati
   have hfP := _root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf
   -- The map of the fibres of the pullbacks over the centre of the disk.
   let g₀ := TopCat.Hom.preimageMap _ hfP {x | (x : ULift.{u} (Fin n → ℝ)) = 0}
-  have nat := singularHomologyPreimageSphereIso_hom_naturality R
+  have nat := singularHomologyPreimageSphereIso_hom_naturality (ModuleCat.of R R)
     (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j))
     (mem_serreFibrations_pullbackFst hp' (cellULiftMap C n j)) hfP g₀
     (TopCat.Hom.coe_preimageMap_apply _ hfP _) q (q + n) (by simp)

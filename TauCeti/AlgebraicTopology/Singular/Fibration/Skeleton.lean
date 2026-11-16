@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.SerreFibration
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.RelHomotopyGroup
 public import TauCeti.Topology.CWComplex.Classical.Subcomplex
 
 /-!
@@ -19,8 +19,8 @@ Let `p : E → B` be a Serre fibration. A Serre fibration pulls `n`-connected pa
 singular homology vanishes below the connectivity of a pair
 (`TauCeti.isZero_singularHomology_ofSubset_of_relHomotopyGroup`). Together:
 
-* if `(B, A)` is `(n - 1)`-connected, then `Hₘ(E, p⁻¹(A); R) = 0` for every `m < n`
-  (`TauCeti.TopCat.isZero_singularHomology_preimage_of_relHomotopyGroup`).
+* if `(B, A)` is `(n - 1)`-connected, then `Hₘ(E, p⁻¹(A); M) = 0` for every `m < n` and every
+  module `M` (`TauCeti.TopCat.isZero_singularHomology_preimage_of_relHomotopyGroup`).
 
 Over a relative CW complex `C ⊆ B` with skeleta `Xⁱ = skeletonLT C (i + 1)`, the pair
 `(skeletonLT C k, Xⁱ)` is `i`-connected for every `k ≥ i + 1` (Hatcher, Corollary 4.12), and the
@@ -74,17 +74,17 @@ variable {E B : _root_.TopCat.{u}} {p : E ⟶ B}
 /-- **Homology of a preimage pair vanishes below the connectivity of the base pair.** Let
 `p : E ⟶ B` be a Serre fibration and `A ⊆ B`. If every point of `B` is joined by a path to a
 point of `A`, and the relative homotopy set `π_{k+1}(B, A, a)` is trivial for every `k + 1 < n`
-and every `a ∈ A`, then `Hₘ(E, p⁻¹(A); R) = 0` for every `m < n`. -/
+and every `a ∈ A`, then `Hₘ(E, p⁻¹(A); M) = 0` for every `m < n` and every module `M`. -/
 theorem isZero_singularHomology_preimage_of_relHomotopyGroup (hp : serreFibrations p)
     {A : Set B} {n : ℕ} (h₀ : ∀ b : B, ∃ a ∈ A, Joined b a)
     (h : ∀ k : ℕ, k + 1 < n → ∀ a : A,
       Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A, a⟩))
-    (R : Type u) [Ring R] {m : ℕ} (hm : m < n) :
-    IsZero ((TopPair.ofSubset (p ⁻¹' A)).singularHomology (ModuleCat.of R R) m) :=
+    {R : Type*} [Ring R] (M : ModuleCat.{u} R) {m : ℕ} (hm : m < n) :
+    IsZero ((TopPair.ofSubset (p ⁻¹' A)).singularHomology M m) :=
   isZero_singularHomology_ofSubset_of_relHomotopyGroup
     (exists_joined_preimage_of_mem_serreFibrations hp h₀)
     (fun k hk e ↦ subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations hp e
-      (h k hk ⟨p e, e.2⟩)) R hm
+      (h k hk ⟨p e, e.2⟩)) M hm
 
 /-- **A Serre fibration over a deformation has acyclic preimage pair.** Let `p : E ⟶ B` be a Serre
 fibration and `A ⊆ S ⊆ B`. If the identity of `S` is homotopic, relative to `A`, to a map with
@@ -105,7 +105,7 @@ theorem isZero_singularHomology_preimage_of_homotopyRel (hp : serreFibrations p)
     · rw [TopPair.range_ofSubset_map]
       exact hg x
   have hz := isZero_singularHomology_preimage_of_relHomotopyGroup
-    (mem_serreFibrations_restrictPreimage hp S) h₀ h R (Nat.lt_succ_self m)
+    (mem_serreFibrations_restrictPreimage hp S) h₀ h (ModuleCat.of R R) (Nat.lt_succ_self m)
   -- The preimage pair of the restriction of `p` over `S` is the pair `(p⁻¹(S), p⁻¹(A))`.
   exact hz.of_iso (asIso (TopPair.singularHomologyMap
     (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hAS)).hom
@@ -147,7 +147,7 @@ theorem isZero_singularHomology_preimage_skeletonLT (hp : serreFibrations p) (R 
   -- The restriction of `p` over `t` is a Serre fibration, so its preimage pair has vanishing
   -- homology below degree `i + 1`.
   have hz := isZero_singularHomology_preimage_of_relHomotopyGroup
-    (mem_serreFibrations_restrictPreimage hp t) h₀ h R (Nat.lt_succ_of_le hm)
+    (mem_serreFibrations_restrictPreimage hp t) h₀ h (ModuleCat.of R R) (Nat.lt_succ_of_le hm)
   -- That preimage pair is the pair `(p⁻¹(t), p⁻¹(s))`, up to the identification of the preimage
   -- of `A` in `p⁻¹(t)` with `p⁻¹(s)`.
   exact hz.of_iso (asIso (TopPair.singularHomologyMap
