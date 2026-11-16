@@ -34,7 +34,8 @@ block.
 ## Main results
 
 * `TauCeti.ReducedTensorWords.splice_congr`: a spliced word depends only on the letters spliced.
-* `TauCeti.ReducedTensorWords.splice_smul`: a spliced word is linear in the letter spliced in.
+* `TauCeti.ReducedTensorWords.splice_smul` and `TauCeti.ReducedTensorWords.splice_add`: a spliced
+  word is linear in the letter spliced in.
 * `TauCeti.ReducedTensorWords.exists_splice_eq_of_tprod`: a letter outside the collapsed block
   survives in the spliced word.
 * `TauCeti.ReducedTensorWords.splice_two_succ_eq_splice_two_pred`: deleting an interior letter by
@@ -107,6 +108,15 @@ theorem splice_eq_of_tprod_replaceBlock (x : ℕ → M) {n p d : ℕ} (hd : 0 < 
   · simp [h]
   · simp [h, show ¬ (j : ℕ) < p by omega, show (j : ℕ) ≠ p by omega]
 
+/-- A spliced word of a natural-indexed string of length `p + d + t`, collapsing the block of
+length `d` at `p`, is the word of length `p + 1 + t` of the string with the block replaced. -/
+theorem splice_eq_of_tprod_replaceBlock_add (x : ℕ → M) {p d t : ℕ} (hd : 0 < d) (e : M) :
+    splice R (fun i : Fin (p + d + t) ↦ x i) 0 (p + d + t) p d e =
+      of R M ⟨p + 1 + t, by omega⟩
+        (PiTensorProduct.tprod R fun j : Fin (p + 1 + t) ↦ replaceBlock x p d e j) := by
+  rw [splice_eq_of_tprod_replaceBlock R x hd (by omega) e]
+  exact of_tprod_congr R M _ (by omega) fun _ ↦ rfl
+
 /-- Collapsing an empty subblock is zero: a letter is never produced out of nothing. -/
 @[simp]
 theorem splice_zero_length {n : ℕ} (x : Fin n → M) (a b p : ℕ) (e : M) :
@@ -167,29 +177,37 @@ theorem splice_zero {n : ℕ} (x : Fin n → M) (a b p d : ℕ) : splice R x a b
       (PiTensorProduct.tprod R).map_coord_zero ⟨p, by simp only; omega⟩ (by simp), map_zero]
   · exact splice_eq_zero R x 0 h
 
-/-- A spliced word is linear in the letter spliced in. -/
+/-- A spliced word is the value at the letter spliced in of a linear map: on the intended range,
+the pure tensor of the letters, as a function of the new letter. -/
+private theorem exists_linearMap_splice {n : ℕ} (x : Fin n → M) (a b p d : ℕ) :
+    ∃ L : M →ₗ[R] ReducedTensorWords R M, ∀ e, splice R x a b p d e = L e := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · refine ⟨of R M ⟨b + 1 - d, by omega⟩ ∘ₗ (PiTensorProduct.tprod R).toLinearMap
+      (fun j : Fin (b + 1 - d) ↦ if _ : j.1 < p then x ⟨a + j.1, by omega⟩
+        else if _ : j.1 = p then 0 else x ⟨a + (j.1 + d - 1), by omega⟩) ⟨p, by omega⟩,
+      fun e ↦ ?_⟩
+    rw [splice_eq_of_tprod R x e h.1 h.2.1 h.2.2, LinearMap.comp_apply,
+      MultilinearMap.toLinearMap_apply]
+    congr 2
+    funext j
+    by_cases hj : j.1 = p
+    · rw [show j = ⟨p, by omega⟩ from Fin.ext hj, Function.update_self]
+      simp
+    · rw [Function.update_of_ne fun h ↦ hj (congrArg Fin.val h)]
+      simp [hj]
+  · exact ⟨0, fun e ↦ splice_eq_zero R x e h⟩
+
+/-- A spliced word commutes with scalar multiplication of the letter spliced in. -/
 theorem splice_smul {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (c : R) (e : M) :
     splice R x a b p d (c • e) = c • splice R x a b p d e := by
-  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
-  · rw [splice_eq_of_tprod R x _ h.1 h.2.1 h.2.2, splice_eq_of_tprod R x e h.1 h.2.1 h.2.2,
-      ← map_smul]
-    congr 1
-    -- The two tuples differ only in the spliced position.
-    set i : Fin (b + 1 - d) := ⟨p, by omega⟩
-    have hupd (y : M) : (fun j : Fin (b + 1 - d) ↦
-        if _ : j.1 < p then x ⟨a + j.1, by omega⟩ else if _ : j.1 = p then y
-        else x ⟨a + (j.1 + d - 1), by omega⟩) =
-        Function.update (fun j : Fin (b + 1 - d) ↦
-          if _ : j.1 < p then x ⟨a + j.1, by omega⟩ else if _ : j.1 = p then e
-          else x ⟨a + (j.1 + d - 1), by omega⟩) i y := by
-      funext j
-      by_cases hj : j = i
-      · subst hj
-        simp [i]
-      · have hjp : j.1 ≠ p := fun h ↦ hj (Fin.ext h)
-        simp [Function.update_of_ne hj, hjp]
-    rw [hupd (c • e), (PiTensorProduct.tprod R).map_update_smul, ← hupd e, RingHom.id_apply]
-  · rw [splice_eq_zero R x _ h, splice_eq_zero R x e h, smul_zero]
+  obtain ⟨L, hL⟩ := exists_linearMap_splice R x a b p d
+  rw [hL, hL, map_smul]
+
+/-- A spliced word is additive in the letter spliced in. -/
+theorem splice_add {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e e' : M) :
+    splice R x a b p d (e + e') = splice R x a b p d e + splice R x a b p d e' := by
+  obtain ⟨L, hL⟩ := exists_linearMap_splice R x a b p d
+  rw [hL, hL, hL, map_add]
 
 /-- A letter outside the collapsed block survives in a spliced word: the spliced word is a pure
 tensor word one of whose letters is that letter. -/

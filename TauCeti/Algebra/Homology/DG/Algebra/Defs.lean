@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 import TauCeti.Algebra.Module.GradedModule.Internal
+import TauCeti.Data.List.ProdOfFn
+import TauCeti.Algebra.GradedMonoid
 
 /-!
 # Nonunital and unital differential graded algebras
@@ -54,6 +56,9 @@ its degree alone.
   factor has degree zero.
 * `TauCeti.IsDGAlgebra.map_one_eq_zero` and `TauCeti.IsDGAlgebra.map_algebraMap`: the differential
   annihilates the unit and, more generally, the image of the ground ring.
+* `TauCeti.IsDGAlgebra.neg`: the negative of a differential is a differential.
+* `TauCeti.IsDGAlgebra.map_list_prod_ofFn`: the differential of an ordered product of homogeneous
+  elements is given by the graded Leibniz rule, one factor at a time.
 * `TauCeti.isNonUnitalDGAlgebra_zero` and `TauCeti.isDGAlgebra_zero`: a graded algebra with zero
   differential is a differential graded algebra.
 * `TauCeti.isDGAlgebra_trivialGrading`: in particular, the ground ring, trivially graded with zero
@@ -230,6 +235,35 @@ theorem map_one_eq_zero (h : IsDGAlgebra 𝒜 d) : d 1 = 0 :=
 /-- The differential of a differential graded algebra annihilates the image of the ground ring. -/
 theorem map_algebraMap (h : IsDGAlgebra 𝒜 d) (r : R) : d (algebraMap R A r) = 0 :=
   map_algebraMap_of_leibniz h.leibniz r
+
+/-- The negative of the differential of a differential graded algebra is again a differential. -/
+theorem neg (h : IsDGAlgebra 𝒜 d) : IsDGAlgebra 𝒜 (-d) where
+  map_mem ha := Submodule.neg_mem _ (h.map_mem ha)
+  sq_zero a := by rw [LinearMap.neg_apply, LinearMap.neg_apply, map_neg, h.sq_zero, neg_neg]
+  leibniz ha b := by
+    simp only [LinearMap.neg_apply, h.leibniz ha, neg_add, neg_mul, mul_neg, smul_neg]
+
+/-- **The graded Leibniz rule for an ordered product** of homogeneous elements: the differential of
+`b 0 ⋯ b (n - 1)` is the sum over `k` of the products with `b k` replaced by `d (b k)`, each with
+the sign of the total degree of the factors before it. -/
+theorem map_list_prod_ofFn (h : IsDGAlgebra 𝒜 d) {n : ℕ} (b : ℕ → A) (e : ℕ → ℤ)
+    (hb : ∀ i < n, b i ∈ 𝒜 (e i)) :
+    d (List.ofFn fun j : Fin n ↦ b j).prod =
+      ∑ k ∈ Finset.range n, (∑ i ∈ Finset.range k, e i).negOnePow •
+        (List.ofFn fun j : Fin n ↦ Function.update b k (d (b k)) j).prod := by
+  induction n with
+  | zero => simp [h.map_one_eq_zero]
+  | succ n ih =>
+    rw [List.prod_ofFn_val_succ,
+      h.leibniz (SetLike.list_prod_ofFn_val_mem_graded 𝒜 b e fun i hi ↦ hb i (by omega)),
+      ih fun i hi ↦ hb i (by omega), Finset.sum_range_succ, Finset.sum_mul]
+    congr 1
+    · refine Finset.sum_congr rfl fun k hk ↦ ?_
+      rw [Finset.mem_range] at hk
+      rw [smul_mul_assoc, List.prod_ofFn_val_succ (Function.update b k (d (b k))),
+        Function.update_of_ne (by omega : n ≠ k)]
+    · rw [List.prod_ofFn_val_succ (Function.update b n (d (b n))), Function.update_self,
+        List.prod_ofFn_val_congr fun i hi ↦ Function.update_of_ne (by omega : i ≠ n) _ _]
 
 end IsDGAlgebra
 

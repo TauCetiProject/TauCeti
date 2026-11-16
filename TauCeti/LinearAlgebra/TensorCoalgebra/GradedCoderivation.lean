@@ -243,6 +243,21 @@ theorem ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous (G : InternalGr
   refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun d _ ↦
     splice_twistedTuple_smul G q x 𝒟 hx p d _
 
+/-- Evaluation of the graded Taylor expansion on the first `n` letters of a natural-indexed family
+of homogeneous letters: each summand is the corresponding untwisted splice, scaled by the Koszul
+sign `(-1)^(q * (𝒟 0 + ⋯ + 𝒟 (p - 1)))` of the letters preceding the collapsed block. -/
+theorem ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous_nat (G : InternalGrading R M ℤ)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (hn : 0 < n) (x : ℕ → M) (𝒟 : ℕ → ℤ)
+    (hx : ∀ i < n, x i ∈ G.piece (𝒟 i)) :
+    gradedCoderiv G F q (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun j : Fin n ↦ x j)) =
+      ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+        negOnePowCast R (q * ∑ j ∈ Finset.range p, 𝒟 j) •
+          splice R (fun j : Fin n ↦ x j) 0 n p d (F (subword R (fun j : Fin n ↦ x j) p d)) := by
+  rw [gradedCoderiv_of_tprod_of_homogeneous G F q hn _ (fun j ↦ 𝒟 j) fun j ↦ hx j j.isLt]
+  refine Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [← negOnePowCast_eq_intCast,
+    Finset.sum_congr rfl fun j hj ↦ dite_eq_left (by rw [Finset.mem_range] at hp hj; omega)]
+
 /-- Evaluation of the graded Taylor expansion of a map acting on single letters only: it applies
 `f` to one letter at a time and twists the letters preceding it.  On homogeneous letters the twist
 is the Koszul sign of moving an operation of degree `q` past those letters. -/

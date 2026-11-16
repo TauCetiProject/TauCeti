@@ -517,6 +517,17 @@ theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (
   rw [𝒜.taylor_isSuspension.taylor_eq (AInfinity.isSuspension_suspensionTaylor _ _),
     AInfinity.suspensionTaylor_of_tprod]
 
+/-- The suspended Taylor map sends the word of the first `n` letters of a natural-indexed family of
+homogeneous letters to the piece of their total suspended degree plus one. -/
+theorem taylor_of_tprod_mem (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 0 < n) (a : ℕ → A)
+    (dA : ℕ → ℤ) (ha : ∀ i < n, a i ∈ (𝒜.grading.shift 1).piece (dA i)) :
+    𝒜.taylor (ReducedTensorWords.of R A ⟨n, hn⟩ (PiTensorProduct.tprod R fun j : Fin n ↦ a j)) ∈
+      (𝒜.grading.shift 1).piece (∑ i ∈ Finset.range n, dA i + 1) := by
+  have h := ReducedTensorWords.mem_gradedPiece_of_tprod (𝒜.grading.shift 1) hn
+    (fun j : Fin n ↦ a j) (fun j ↦ dA j) fun j ↦ ha j j.isLt
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ dA i)] at h
+  exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem h
+
 /-- A vanishing operation has vanishing suspended Taylor component. -/
 theorem taylor_comp_of_eq_zero_of_m_eq_zero (𝒜 : AInfinityAlgebra R A)
     (n : {n : ℕ // 0 < n}) (hn : 𝒜.m n.1 = 0) :
