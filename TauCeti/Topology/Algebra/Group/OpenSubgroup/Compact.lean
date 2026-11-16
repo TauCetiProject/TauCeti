@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Pointwise.Stabilizer
-public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import Mathlib.Topology.Separation.Regular
 
@@ -24,26 +23,25 @@ makes smoothness and invariants under compact open subgroups interchangeable.
 The argument is the translation stabilizer of a compact open set `C`. Compactness of `C` and
 continuity of multiplication give an identity neighbourhood `V` with `V * C ⊆ C`, so `C` is
 stabilised by `V ∩ V⁻¹` and its stabilizer `{g | g • C = C}` is an open subgroup. When `1 ∈ C`
-the stabilizer lies inside `C`, hence is compact, being closed. In a Hausdorff, totally
-disconnected, weakly locally compact group the compact clopen sets form a basis at the identity,
-so every identity neighbourhood contains a compact open subgroup.
+the stabilizer lies inside `C`, hence is compact, being closed. In a zero-dimensional, weakly
+locally compact group, such as a Hausdorff, totally disconnected, weakly locally compact group,
+the compact clopen sets form a basis at the identity, so every identity neighbourhood contains a
+compact open subgroup.
 
 ## Main results
 
 * `IsCompact.isOpen_stabilizer`: the left translation stabilizer of a compact open set is open.
 * `IsCompact.exists_openSubgroup_subset`: a compact open set containing the identity contains a
   compact open subgroup.
-* `OpenSubgroup.isCompact_of_subset`: an open subgroup contained in a compact set is compact.
-* `TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace`: a Hausdorff,
-  totally disconnected, weakly locally compact topological group is nonarchimedean.
+* `TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace`: a
+  zero-dimensional, weakly locally compact topological group is nonarchimedean. This covers
+  Hausdorff, totally disconnected, locally compact groups, and in particular profinite groups.
 * `NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup`: in a weakly locally compact
   nonarchimedean group the compact open subgroups form a basis of neighbourhoods of the identity.
 * `OpenSubgroup.directedOn_isCompact`: the compact open subgroups are directed under reverse
   inclusion.
 * `TauCeti.IsTopologicalGroup.locallyCompact_totallyDisconnected_tfae`: van Dantzig's theorem,
   the equivalence of the three descriptions of a locally profinite group.
-* `ProfiniteGrp.ofCompactSubgroup`: a compact subgroup of a totally disconnected group, in
-  particular a compact open subgroup of a locally profinite group, is a profinite group.
 
 All results have additive versions.
 
@@ -93,20 +91,13 @@ theorem IsCompact.exists_openSubgroup_subset (hC : IsCompact C) (hCo : IsOpen C)
 
 end Stabilizer
 
-/-- An open subgroup contained in a compact set is compact, being closed. -/
-@[to_additive /-- An open additive subgroup contained in a compact set is compact, being
-closed. -/]
-theorem OpenSubgroup.isCompact_of_subset [SeparatelyContinuousMul G] {K : Set G}
-    (hK : IsCompact K) {H : OpenSubgroup G} (hH : (H : Set G) ⊆ K) : IsCompact (H : Set G) :=
-  hK.of_isClosed_subset H.isClosed hH
-
 /-- The compact open subgroups of a topological group are directed under reverse inclusion: the
 intersection of two of them is again one. -/
 @[to_additive /-- The compact open additive subgroups of a topological additive group are
 directed under reverse inclusion. -/]
 theorem OpenSubgroup.directedOn_isCompact [SeparatelyContinuousMul G] :
     DirectedOn (· ≥ ·) {H : OpenSubgroup G | IsCompact (H : Set G)} := fun H₁ h₁ H₂ _ ↦
-  ⟨H₁ ⊓ H₂, OpenSubgroup.isCompact_of_subset h₁ inter_subset_left, inf_le_left, inf_le_right⟩
+  ⟨H₁ ⊓ H₂, h₁.of_isClosed_subset (H₁ ⊓ H₂).isClosed inter_subset_left, inf_le_left, inf_le_right⟩
 
 /-- In a weakly locally compact nonarchimedean group the compact open subgroups form a basis of
 neighbourhoods of the identity. -/
@@ -118,20 +109,23 @@ theorem NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup [Nonarchime
   refine ⟨fun U ↦ ⟨fun hU ↦ ?_, fun ⟨H, _, hHU⟩ ↦ mem_of_superset H.mem_nhds_one hHU⟩⟩
   obtain ⟨K, hK, hK1⟩ := exists_compact_mem_nhds (1 : G)
   obtain ⟨H, hH⟩ := NonarchimedeanGroup.is_nonarchimedean _ (inter_mem hU hK1)
-  exact ⟨H, OpenSubgroup.isCompact_of_subset hK (hH.trans inter_subset_right),
+  exact ⟨H, hK.of_isClosed_subset H.isClosed (hH.trans inter_subset_right),
     hH.trans inter_subset_left⟩
 
 namespace TauCeti
 
-/-- **Van Dantzig's theorem**, in instance form: a Hausdorff, totally disconnected, weakly locally
-compact topological group is nonarchimedean. Every neighbourhood of the identity contains in fact
-a compact open subgroup, by `NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup`. -/
+/-- **Van Dantzig's theorem**, in instance form: a zero-dimensional, weakly locally compact
+topological group is nonarchimedean. This covers Hausdorff, totally disconnected, weakly locally
+compact groups, which are zero-dimensional, and in particular profinite groups. Every
+neighbourhood of the identity contains in fact a compact open subgroup, by
+`NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup`. -/
 @[to_additive IsTopologicalAddGroup.nonarchimedeanAddGroup_of_weaklyLocallyCompactSpace
-/-- **Van Dantzig's theorem**, in instance form: a Hausdorff, totally disconnected, weakly
-locally compact topological additive group is nonarchimedean. -/]
+/-- **Van Dantzig's theorem**, in instance form: a zero-dimensional, weakly locally compact
+topological additive group is nonarchimedean. This covers Hausdorff, totally disconnected, weakly
+locally compact additive groups, and in particular compact totally disconnected ones. -/]
 instance (priority := 100) IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace
-    [IsTopologicalGroup G] [T2Space G] [TotallyDisconnectedSpace G]
-    [WeaklyLocallyCompactSpace G] : NonarchimedeanGroup G where
+    [IsTopologicalGroup G] [ZeroDimensionalSpace G] [WeaklyLocallyCompactSpace G] :
+    NonarchimedeanGroup G where
   is_nonarchimedean U hU := by
     obtain ⟨K, hK, hK1⟩ := exists_compact_mem_nhds (1 : G)
     obtain ⟨C, ⟨hCc, hC1⟩, hCUK⟩ := (nhds_basis_isClopen (1 : G)).mem_iff.1 (inter_mem hU hK1)
@@ -169,12 +163,3 @@ theorem IsTopologicalGroup.locallyCompact_totallyDisconnected_tfae [IsTopologica
   tfae_finish
 
 end TauCeti
-
-/-- A compact subgroup of a totally disconnected topological group, as a profinite group. This
-applies to every compact open subgroup of a locally profinite group. -/
-@[to_additive /-- A compact additive subgroup of a totally disconnected topological additive
-group, as a profinite additive group. -/]
-abbrev ProfiniteGrp.ofCompactSubgroup [IsTopologicalGroup G] [TotallyDisconnectedSpace G]
-    (H : Subgroup G) (hH : IsCompact (H : Set G)) : ProfiniteGrp :=
-  letI : CompactSpace H := isCompact_iff_compactSpace.mp hH
-  ProfiniteGrp.of H

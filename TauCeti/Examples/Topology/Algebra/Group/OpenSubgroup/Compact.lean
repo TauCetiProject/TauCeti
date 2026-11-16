@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Algebra.Category.ProfiniteGrp.Basic
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 import Mathlib.Data.Fintype.Perm
 import Mathlib.NumberTheory.Padics.ProperSpace
