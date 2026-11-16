@@ -38,17 +38,22 @@ imposing convergence. It underlies the complex Mellin product formula in this fi
 * `TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform of `∫₀^∞ f(t) h(xt) dt` is
   `𝓜f(1 - z) 𝓜h(z)` (DLMF 2.5.3–2.5.4).
 * `TauCeti.integral_mul_comp_mul_eq_mellinInv`: the Parseval formula (DLMF 2.5.5).
+* `TauCeti.mellinConv`: the multiplicative Mellin convolution `∫₀^∞ f(y) g(x/y) dy/y`, with
+  commutativity on `(0, ∞)` without integrability (`TauCeti.mellinConv_comm`), linearity,
+  support bounds (`TauCeti.support_mellinConv_subset_Icc`), and its Mellin product formulas
+  (`TauCeti.hasMellin_mellinConv`, `TauCeti.mellin_mellinConv_of_integrableOn`).
 
 ## References
 
 * [DLMF] *NIST Digital Library of Mathematical Functions*, §2.5(i), <https://dlmf.nist.gov/2.5.i>.
+* A. Kontorovich, T. Tao and contributors, *Prime Number Theorem And …*, §4.3 (Mellin convolution).
 
-The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
-files `DLMFMathlib/Analysis/MellinConvolution.lean` and
+The proofs of the Parseval formula are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), files `DLMFMathlib/Analysis/MellinConvolution.lean` and
 `DLMF/AsymptoticApproximations/Mellin/Transforms.lean`.
 -/
 
-@[expose] public section
+public section
 
 open MeasureTheory Complex Set Filter
 open scoped Topology
@@ -184,5 +189,154 @@ theorem integral_mul_comp_mul_eq_mellinInv {f h : ℝ → ℂ} {c x : ℝ} (hx :
     _ = _ := by
       unfold mellinInv
       simp only [hline]
+
+/-! ### Multiplicative Mellin convolution -/
+
+/-- The multiplicative Mellin convolution of two complex-valued functions on `(0, ∞)`:
+`(mellinConv f g) x = ∫ y in (0, ∞), f y * g (x / y) / y`. -/
+noncomputable def mellinConv (f g : ℝ → ℂ) (x : ℝ) : ℂ :=
+  ∫ y in Ioi (0 : ℝ), f y * g (x / y) / y
+
+/-- Definitional unfolding of `mellinConv`. -/
+theorem mellinConv_def (f g : ℝ → ℂ) (x : ℝ) :
+    mellinConv f g x = ∫ y in Ioi (0 : ℝ), f y * g (x / y) / y := (rfl)
+
+@[simp]
+theorem mellinConv_zero_left (g : ℝ → ℂ) (x : ℝ) : mellinConv 0 g x = 0 := by
+  simp [mellinConv_def]
+
+@[simp]
+theorem mellinConv_zero_right (f : ℝ → ℂ) (x : ℝ) : mellinConv f 0 x = 0 := by
+  simp [mellinConv_def]
+
+/-- Left scalar linearity of `mellinConv`. -/
+theorem mellinConv_const_mul_left (c : ℂ) (f g : ℝ → ℂ) (x : ℝ) :
+    mellinConv (fun y ↦ c * f y) g x = c * mellinConv f g x := by
+  simp only [mellinConv_def, mul_assoc, mul_div_assoc, integral_const_mul]
+
+/-- Right scalar linearity of `mellinConv`. -/
+theorem mellinConv_const_mul_right (c : ℂ) (f g : ℝ → ℂ) (x : ℝ) :
+    mellinConv f (fun y ↦ c * g y) x = c * mellinConv f g x := by
+  rw [mellinConv_def, mellinConv_def, ← integral_const_mul]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y _ ↦ ?_
+  ring
+
+/-- For `x > 0`, `mellinConv f g x` depends on `f` and `g` only through their values on `(0, ∞)`. -/
+theorem mellinConv_congr {f₁ f₂ g₁ g₂ : ℝ → ℂ} (hf : EqOn f₁ f₂ (Ioi 0))
+    (hg : EqOn g₁ g₂ (Ioi 0)) {x : ℝ} (hx : 0 < x) :
+    mellinConv f₁ g₁ x = mellinConv f₂ g₂ x := by
+  refine setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
+  rw [hf hy, hg (div_pos hx hy)]
+
+/-- Mellin convolution is commutative on `(0, ∞)`, with no integrability hypothesis. -/
+theorem mellinConv_comm (f g : ℝ → ℂ) {x : ℝ} (hx : 0 < x) :
+    mellinConv f g x = mellinConv g f x := by
+  have h_log (u v : ℝ → ℂ) :
+      mellinConv u v x = ∫ t : ℝ, u (Real.exp t) * v (Real.exp (Real.log x - t)) := by
+    rw [mellinConv_def, ← integral_comp_exp]
+    refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
+    dsimp only
+    rw [Complex.real_smul, Real.exp_sub, Real.exp_log hx]
+    have hexp : ((Real.exp t : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (Real.exp_ne_zero t)
+    field_simp [hexp]
+  rw [h_log f g, h_log g f, ← integral_sub_left_eq_self _ volume (Real.log x)]
+  refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [sub_sub_cancel, mul_comm]
+
+/-- Left additivity of `mellinConv` where both component integrals converge. -/
+theorem mellinConv_add_left {f₁ f₂ g : ℝ → ℂ} {x : ℝ}
+    (h₁ : IntegrableOn (fun y : ℝ ↦ f₁ y * g (x / y) / y) (Ioi 0))
+    (h₂ : IntegrableOn (fun y : ℝ ↦ f₂ y * g (x / y) / y) (Ioi 0)) :
+    mellinConv (f₁ + f₂) g x = mellinConv f₁ g x + mellinConv f₂ g x := by
+  rw [mellinConv_def, mellinConv_def, mellinConv_def, ← integral_add h₁ h₂]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y _ ↦ ?_
+  simp only [Pi.add_apply]
+  ring
+
+/-- Right additivity of `mellinConv` where both component integrals converge. -/
+theorem mellinConv_add_right {f g₁ g₂ : ℝ → ℂ} {x : ℝ}
+    (h₁ : IntegrableOn (fun y : ℝ ↦ f y * g₁ (x / y) / y) (Ioi 0))
+    (h₂ : IntegrableOn (fun y : ℝ ↦ f y * g₂ (x / y) / y) (Ioi 0)) :
+    mellinConv f (g₁ + g₂) x = mellinConv f g₁ x + mellinConv f g₂ x := by
+  rw [mellinConv_def, mellinConv_def, mellinConv_def, ← integral_add h₁ h₂]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y _ ↦ ?_
+  simp only [Pi.add_apply]
+  ring
+
+/-- If `f` is supported in `[a, b]` and `g` is supported in `[c, d]` with `0 ≤ c`, then
+`mellinConv f g` is supported in `[a * c, b * d]`. -/
+theorem support_mellinConv_subset_Icc {f g : ℝ → ℂ} {a b c d : ℝ} (hc : 0 ≤ c)
+    (hf : Function.support f ⊆ Icc a b) (hg : Function.support g ⊆ Icc c d) :
+    Function.support (mellinConv f g) ⊆ Icc (a * c) (b * d) := by
+  intro x hx
+  by_contra hx'
+  apply hx
+  rw [mellinConv_def]
+  refine setIntegral_eq_zero_of_forall_eq_zero fun y hy ↦ ?_
+  by_cases hfy : f y = 0
+  · simp [hfy]
+  · by_cases hgy : g (x / y) = 0
+    · simp [hgy]
+    · exfalso
+      have hyab : y ∈ Icc a b := hf hfy
+      have hxycd : x / y ∈ Icc c d := hg hgy
+      have hlo : a * c ≤ x := calc
+        a * c ≤ y * c := mul_le_mul_of_nonneg_right hyab.1 hc
+        _ ≤ y * (x / y) := mul_le_mul_of_nonneg_left hxycd.1 (le_of_lt hy)
+        _ = x := mul_div_cancel₀ x (ne_of_gt hy)
+      have hhi : x ≤ b * d := calc
+        x = y * (x / y) := (mul_div_cancel₀ x (ne_of_gt hy)).symm
+        _ ≤ y * d := mul_le_mul_of_nonneg_left hxycd.2 (le_of_lt hy)
+        _ ≤ b * d := mul_le_mul_of_nonneg_right hyab.2 ((hc.trans hxycd.1).trans hxycd.2)
+      exact hx' ⟨hlo, hhi⟩
+
+/-- If `mellin f s` and `mellin g s` converge absolutely, then `mellinConv f g` has absolutely
+convergent Mellin transform `mellin f s * mellin g s`. -/
+theorem hasMellin_mellinConv {f g : ℝ → ℂ} {s : ℂ}
+    (hf : MellinConvergent f s) (hg : MellinConvergent g s) :
+    HasMellin (mellinConv f g) s (mellin f s * mellin g s) :=
+  hasMellin_integral_mul_div hf hg
+
+/-- Fubini form of the Mellin convolution product formula: if the joint integrand
+`(x, y) ↦ f y * g (x / y) * x ^ (s - 1) / y` is integrable on `(0, ∞) × (0, ∞)`, then
+`mellin (mellinConv f g) s = mellin f s * mellin g s`. -/
+theorem mellin_mellinConv_of_integrableOn {f g : ℝ → ℂ} {s : ℂ}
+    (h : IntegrableOn (fun p : ℝ × ℝ ↦ f p.2 * g (p.1 / p.2) * (p.1 : ℂ) ^ (s - 1) / p.2)
+      (Ioi (0 : ℝ) ×ˢ Ioi (0 : ℝ))) :
+    mellin (mellinConv f g) s = mellin f s * mellin g s := by
+  have hprod : Integrable (fun p : ℝ × ℝ ↦ f p.2 * g (p.1 / p.2) * (p.1 : ℂ) ^ (s - 1) / p.2)
+      ((volume.restrict (Ioi (0 : ℝ))).prod (volume.restrict (Ioi (0 : ℝ)))) := by
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+    exact h
+  calc
+    mellin (mellinConv f g) s
+      = ∫ x in Ioi (0 : ℝ), ∫ y in Ioi (0 : ℝ),
+          f y * g (x / y) * (x : ℂ) ^ (s - 1) / y := by
+        rw [mellin]
+        refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
+        rw [mellinConv_def, smul_eq_mul, ← integral_const_mul]
+        refine setIntegral_congr_fun measurableSet_Ioi fun y _ ↦ ?_
+        ring
+    _ = ∫ y in Ioi (0 : ℝ), ∫ x in Ioi (0 : ℝ),
+          f y * g (x / y) * (x : ℂ) ^ (s - 1) / y :=
+        integral_integral_swap hprod
+    _ = ∫ y in Ioi (0 : ℝ), (y : ℂ) ^ (s - 1) * f y * mellin g s := by
+        refine setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
+        have hy0 : 0 < y := hy
+        have hstep : (∫ x in Ioi (0 : ℝ), f y * g (x / y) * (x : ℂ) ^ (s - 1) / y) =
+            (f y / y) * mellin (fun x ↦ g (y⁻¹ * x)) s := by
+          rw [mellin, ← integral_const_mul]
+          refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
+          rw [smul_eq_mul, div_eq_inv_mul x y]
+          ring
+        rw [hstep, mellin_comp_mul_left g s (inv_pos.mpr hy0), smul_eq_mul, ofReal_inv,
+          inv_cpow_ofReal_nonneg hy0.le, cpow_neg, inv_inv]
+        have hyc : (y : ℂ) ≠ 0 := ofReal_ne_zero.mpr hy0.ne'
+        rw [cpow_sub _ _ hyc, cpow_one]
+        ring
+    _ = mellin f s * mellin g s := by
+        rw [integral_mul_const]
+        simp only [mellin, smul_eq_mul]
 
 end TauCeti
