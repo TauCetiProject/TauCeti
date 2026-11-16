@@ -83,14 +83,6 @@ theorem exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn
       (z : (extChartAt I x).target), chartIteratedFDeriv h x m hm z = q x z m := by
   let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-  -- A chart target is relatively open in the convex range of the model, so each of its points
-  -- has a convex neighbourhood in it.
-  have hV (x : M) (z : E) (hz : z ∈ (extChartAt I x).target) : ∃ t ⊆ (extChartAt I x).target,
-      Convex ℝ t ∧ t ∈ 𝓝[(extChartAt I x).target] z := by
-    obtain ⟨r, hr, hrs⟩ := Metric.mem_nhdsWithin_iff.mp (extChartAt_target_mem_nhdsWithin_of_mem hz)
-    exact ⟨Metric.ball z r ∩ range I, hrs, (convex_ball z r).inter I.convex_range,
-      mem_nhdsWithin.mpr ⟨Metric.ball z r, Metric.isOpen_ball, Metric.mem_ball_self hr,
-        fun y hy ↦ ⟨hy.1, extChartAt_target_subset_range x hy.2⟩⟩⟩
   have hcd (x : M) (i : ι) :
       ContDiffOn 𝕜 (r : ℕ∞ω) (f i ∘ (extChartAt I x).symm) (extChartAt I x).target :=
     contDiffOn_comp_extend_symm (f i) (chart_mem_maximalAtlas x)
@@ -105,7 +97,8 @@ theorem exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn
   -- In every chart the limits are the Taylor series of the order-zero limit.
   have hT (x : M) : HasFTaylorSeriesUpToOn (r : ℕ∞ω) (fun z ↦ (q x z 0).curry0) (q x)
       (extChartAt I x).target :=
-    HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn_of_convex (hV x)
+    HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn_of_convex
+      (fun _ ↦ TauCeti.exists_convex_subset_mem_nhdsWithin_extChartAt_target)
       (fun i ↦ (hcd x i).ftaylorSeriesWithin (uniqueDiffOn_extChartAt_target x)) (hq x) (hval x)
   -- The glued map, read at each point in its own chart.
   let G : M → F := fun y ↦ (q y (extChartAt I y y) 0).curry0
