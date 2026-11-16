@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.GraphOfGroups.BaseVertex
 public import TauCeti.GroupTheory.GraphOfGroups.Hom
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
+import Mathlib.CategoryTheory.PathCategory.Basic
 
 /-!
 # Functoriality of the fundamental group of a graph of groups at a vertex
@@ -107,11 +108,13 @@ def mapLetter : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Letter x y →
     -- which holds by unfolding `SerreGraph.Hom.toPrefunctor`.
     rfl
 
-/-- The path map of a morphism: the `𝔹`-path read along an `𝔸`-path, letter by letter. -/
-def mapPath {x : 𝔸.LetterVertex} : ∀ {y : 𝔸.LetterVertex}, 𝔸.Path x y →
-    𝔹.Path ⟨Φ.graph.mapV x.as⟩ ⟨Φ.graph.mapV y.as⟩
-  | _, .nil => .nil
-  | _, .cons p l => (mapPath p).comp (Φ.mapLetter l)
+/-- The path map of a morphism: the `𝔹`-path read along an `𝔸`-path, letter by letter. It is the
+action on paths of the functor of path categories `CategoryTheory.Paths.lift` extending
+`mapLetter`. -/
+def mapPath {x y : 𝔸.LetterVertex} (p : 𝔸.Path x y) :
+    𝔹.Path ⟨Φ.graph.mapV x.as⟩ ⟨Φ.graph.mapV y.as⟩ :=
+  (CategoryTheory.Paths.lift (V := 𝔸.LetterVertex) (C := CategoryTheory.Paths 𝔹.LetterVertex)
+    { obj v := (⟨Φ.graph.mapV v.as⟩ : 𝔹.LetterVertex), map := Φ.mapLetter }).map p
 
 section mapPath
 
@@ -123,14 +126,12 @@ variable {x y z : 𝔸.LetterVertex}
     Φ.mapPath (p.cons l) = (Φ.mapPath p).comp (Φ.mapLetter l) := (rfl)
 
 @[simp] theorem mapPath_comp (p : 𝔸.Path x y) (q : 𝔸.Path y z) :
-    Φ.mapPath (p.comp q) = (Φ.mapPath p).comp (Φ.mapPath q) := by
-  induction q with
-  | nil => rfl
-  | cons q l ih => simp [ih, Quiver.Path.comp_assoc]
+    Φ.mapPath (p.comp q) = (Φ.mapPath p).comp (Φ.mapPath q) :=
+  CategoryTheory.Functor.map_comp _ _ _
 
 @[simp] theorem mapPath_toPath (l : 𝔸.Letter x y) :
-    Φ.mapPath (Quiver.Hom.toPath (V := 𝔸.LetterVertex) l) = Φ.mapLetter l := by
-  rw [Quiver.Hom.toPath, mapPath_cons, mapPath_nil, Quiver.Path.nil_comp]
+    Φ.mapPath (Quiver.Hom.toPath (V := 𝔸.LetterVertex) l) = Φ.mapLetter l :=
+  CategoryTheory.Paths.lift_toPath _ _
 
 @[simp] theorem mapPath_ofVertex {a : Γ.V} (g : 𝔸.vertexGroup a) :
     Φ.mapPath (Path.ofVertex g) = Path.ofVertex (Φ.vertexHom a g) := by
