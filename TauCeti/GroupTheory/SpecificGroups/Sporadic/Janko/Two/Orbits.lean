@@ -12,20 +12,29 @@ import Mathlib.Algebra.Group.Action.Prod
 import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 import Mathlib.Data.Nat.Bits
+import TauCeti.Logic.Function.Rigidity
 
 /-!
-# The first three basic orbits of the second Janko group
+# Basic orbits and a base of the second Janko group
 
-The degree-100 ATLAS model `TauCeti.Sporadic.J2` is transitive, the orbit of `1` under
-its stabilizer of `0` has length `63`, and the orbit of `2` under its pointwise stabilizer
-of `0, 1` has length `24`. These give the first three factors in a stabilizer-chain
-order computation: its order is `151200` times the order of its three-point stabilizer.
+The degree-100 ATLAS model `TauCeti.Sporadic.J2` is transitive, the orbit of `1` under its
+stabilizer of `0` has length `63`, the orbit of `2` under its pointwise stabilizer of `0, 1`
+has length `24`, and the orbit of `3` under its pointwise stabilizer of `0, 1, 2` has length
+`4`. The four points `0, 1, 2, 3` form a base, so the pointwise stabilizer of `0, 1, 2` has
+order `4`.
 
-Explicit words in the two ATLAS generators witness all three orbit lower bounds. For the upper
-bound on the second orbit, a binary relation on the 100 points is checked to be invariant under
-both generators. Its row at `0` has exactly 63 entries. The third orbit consists of the points
-other than `1` in that row but not in the row at `1`. The relation and the word tables are
-private computation data; all computations are checked by the kernel.
+Explicit words in the two ATLAS generators witness all four orbit lower bounds. For the upper
+bounds and rigidity, a binary relation `orbital` on the 100 points is checked to be invariant
+under both generators. Its row at `0` has 63 entries (the second basic orbit), and the points
+other than `1` in that row but not in the row at `1` give the 24-point third basic orbit.
+Fixing `0, 1, 2, 3` determines all 100 points in four rounds of unique `orbital`-adjacency
+signatures (`Function.apply_eq_self_of_rank`), proving that only the identity preserves
+`orbital` and fixes `0, 1, 2, 3`. Together with the non-adjacency witness `54`, the relation
+narrows the image of `3` under any `orbital`-preserving permutation fixing `0, 1, 2` to eight
+points; four are reached by powers of a single cycle in the three-point stabilizer, and the
+other four are sent to `23` by those powers and matched by an explicit odd `orbital`-preserving
+involution, which cannot lie in `J2 ≤ alternatingGroup (Fin 100)`. All finite checks run in
+the kernel.
 
 ## References
 
@@ -582,5 +591,257 @@ theorem card_eq_mul_card_stabilizer_zero_one_two :
     ncard_orbit_zero, ncard_orbit_stabilizer_zero_one, ncard_orbit_stabilizer_zero_one_two,
     Nat.reduceMul] using
     (J2.prod_ncard_orbit_mul_card_stabilizerChain basePoint 3).symm
+
+/-! ### Rigidity after the fourth point -/
+
+-- Round numbers in `{0, 1, 2, 3, 4}` recording when each vertex becomes uniquely determined
+-- by its `orbital` values at lower-rank vertices, starting from the seed `{0, 1, 2, 3}`.
+private def rigidRank (i : Fin 100) : ℕ :=
+  (#[
+    #[0, 0, 0, 0, 3, 3, 3, 3, 4, 4, 3, 2, 4, 3, 3, 3, 2, 4, 3, 3],
+    #[4, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3],
+    #[4, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 3, 3, 3, 3, 3],
+    #[3, 3, 4, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 3],
+    #[2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3]] : Array (Array ℕ))
+    |>.getD (i.val / 20) #[]
+    |>.getD (i.val % 20) 0
+
+-- Short lists of lower-rank vertices whose `orbital` values uniquely identify each non-seed point.
+private def rigidAnchors (i : Fin 100) : List (Fin 100) :=
+  (#[
+    #[[], [], [], [], [0, 2, 3, 11, 54], [0, 2, 41, 54], [1, 16, 3, 80, 0], [0, 1, 2, 16, 3],
+      [11, 13, 15, 37], [73, 5, 55, 2], [0, 73, 11, 80], [0, 1, 2, 54], [73, 22, 26, 54],
+      [16, 0, 2, 11, 3, 41], [2, 80, 37, 16], [1, 73, 16, 2, 37], [0, 2, 3, 54],
+      [41, 13, 29, 37], [0, 2, 37, 1], [1, 73, 16, 2, 37]],
+    #[[0, 37, 41, 4], [0, 2, 73, 54], [2, 3, 11, 80, 54], [1, 16, 41, 3, 37], [37, 22, 23, 3],
+      [2, 37, 16, 1, 0], [0, 41, 80, 1, 16], [80, 0, 1, 11, 3, 41], [3, 54, 80, 0, 1],
+      [54, 11, 37, 1], [1, 16, 2, 11, 0], [1, 16, 37, 3], [1, 2, 3, 54, 41], [0, 41, 16, 2, 80],
+      [54, 16, 37, 3], [1, 54, 80, 0, 2], [0, 2, 54, 11, 16], [1, 3, 54, 2, 0],
+      [0, 37, 11, 1, 16], [1, 3, 11, 16, 54]],
+    #[[11, 13, 19, 16], [1, 2, 54, 3, 0], [3, 37, 73, 80, 2], [2, 37, 11, 1], [0, 1, 41, 3, 54],
+      [11, 37, 16, 1, 0], [0, 37, 11, 16], [2, 54, 16, 0, 1], [0, 73, 80, 3, 11],
+      [1, 2, 3, 54, 37], [0, 41, 16, 80], [0, 1, 3, 11, 54], [0, 2, 41, 3, 54],
+      [0, 1, 37, 2, 54], [0, 1, 2, 3], [0, 37, 16, 3, 11], [1, 2, 11, 54, 16], [2, 11, 41, 3, 0],
+      [3, 41, 11, 1, 37], [0, 1, 73, 3]],
+    #[[0, 3, 73, 1, 54], [0, 1, 37, 54], [37, 6, 13, 1], [1, 37, 41, 2, 11, 80],
+      [1, 37, 41, 80, 2], [0, 2, 73, 1, 54], [16, 41, 80, 1, 0], [3, 54, 16, 0, 1],
+      [0, 37, 41, 15], [1, 54, 11, 0, 2], [2, 37, 41, 1], [0, 1, 41, 54], [11, 0, 1, 80, 2, 37],
+      [2, 3, 54, 1, 0], [1, 11, 37, 41, 3], [2, 37, 73, 3], [1, 2, 3, 11, 41],
+      [3, 41, 11, 1, 37], [0, 73, 11, 2, 80], [0, 1, 54, 11, 37]],
+    #[[0, 1, 3, 54], [2, 41, 73, 1, 11, 16], [3, 37, 73, 1, 80, 16], [0, 3, 73, 54],
+      [0, 3, 37, 54], [1, 16, 37, 2, 41], [2, 3, 1, 11, 54, 16], [0, 1, 73, 2],
+      [2, 16, 41, 73, 1], [41, 6, 27, 73], [1, 16, 37, 2, 41], [0, 3, 54, 16, 37],
+      [0, 3, 37, 2, 54], [11, 25, 42, 1], [3, 16, 37, 73, 1], [1, 3, 2, 11, 54, 16],
+      [11, 73, 80, 2, 0], [1, 73, 16, 54], [2, 54, 11, 0, 1], [54, 80, 41, 1]]] :
+      Array (Array (List (Fin 100))))
+    |>.getD (i.val / 20) #[]
+    |>.getD (i.val % 20) []
+
+private theorem rigidAnchors_rank :
+    ∀ x : Fin 100, ∀ z ∈ rigidAnchors x, rigidRank z < rigidRank x := by
+  decide +kernel
+
+private theorem rigidRank_lt_five : ∀ x : Fin 100, rigidRank x < 5 := by
+  decide +kernel
+
+private theorem rigidAnchors_unique :
+    ∀ x : Fin 100, 4 ≤ x.val → ∀ y : Fin 100,
+      (rigidAnchors x).map (orbital · y) = (rigidAnchors x).map (orbital · x) → y = x := by
+  decide +kernel
+
+private theorem eq_one_of_fix_four (g : Equiv.Perm (Fin 100))
+    (hg : ∀ x y, orbital (g x) (g y) = orbital x y)
+    (hfix : ∀ x : Fin 100, x.val < 4 → g x = x) : g = 1 := by
+  apply Equiv.ext
+  intro x
+  apply Function.apply_eq_self_of_rank (⇑g) (rel := orbital) (rank := rigidRank)
+    (seed := fun y ↦ y.val < 4) hg 5 (fun y _ hy ↦ hfix y hy)
+  · intro y _ hy z hz
+    apply rigidAnchors_unique y (by omega) z
+    exact List.map_congr_left fun w hw ↦ hz w (rigidAnchors_rank y w hw)
+  · exact rigidRank_lt_five x
+
+/-- The points `0, 1, 2, 3` form a base of the ATLAS model of `J₂`. -/
+theorem stabilizerChain_four_eq_bot : J2.stabilizerChain basePoint 4 = ⊥ := by
+  apply (Subgroup.eq_bot_iff_forall _).mpr
+  intro g hg
+  obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp hg
+  apply eq_one_of_fix_four g (orbital_apply hg)
+  intro x hx
+  have h := hfix x.val hx
+  rw [basePoint_def, Equiv.Perm.smul_def, Fin.ofNat_eq_cast, Fin.cast_val_eq_self] at h
+  exact h
+
+/-! ### The fourth basic orbit -/
+
+-- An involution with 14 fixed points and 43 disjoint transpositions preserving `orbital`,
+-- fixing `0, 1, 2`, and exchanging `3` with `23`. Since it is odd, it does not lie in `J2`.
+private def oddSymmetry : Equiv.Perm (Fin 100) :=
+  let f (i : Fin 100) : Fin 100 := (#[
+    #[0, 1, 2, 23, 21, 5, 31, 54, 34, 72, 10, 59, 42, 40, 86, 37, 16, 82, 52, 95],
+    #[38, 4, 88, 3, 58, 47, 91, 77, 99, 29, 90, 6, 76, 55, 8, 64, 65, 15, 20, 63],
+    #[13, 49, 12, 73, 71, 67, 92, 25, 84, 41, 83, 79, 18, 61, 7, 33, 97, 70, 24, 11],
+    #[68, 53, 89, 39, 35, 36, 94, 45, 60, 69, 57, 44, 9, 43, 74, 81, 32, 27, 78, 51],
+    #[87, 75, 17, 50, 48, 85, 14, 80, 22, 62, 30, 26, 46, 93, 66, 19, 96, 56, 98, 28]] :
+      Array (Array (Fin 100))) |>.getD (i.val / 20) #[] |>.getD (i.val % 20) 0
+  { toFun := f
+    invFun := f
+    left_inv := by decide +kernel
+    right_inv := by decide +kernel }
+
+private theorem orbital_oddSymmetry :
+    ∀ x y, orbital (oddSymmetry x) (oddSymmetry y) = orbital x y := by
+  decide +kernel
+
+private theorem sign_oddSymmetry : Equiv.Perm.sign oddSymmetry = -1 := by
+  decide +kernel
+
+private theorem oddSymmetry_fix : ∀ x : Fin 100, x.val < 3 → oddSymmetry x = x := by
+  decide +kernel
+
+private theorem oddSymmetry_three : oddSymmetry 3 = 23 := by
+  decide +kernel
+
+-- A 55-letter word in the ATLAS generators fixing `0, 1, 2` and acting as the 4-cycles
+-- `(3, 56, 41, 6)` and `(23, 31, 49, 97)`. Encoded by its bits with a terminal 1-bit marker.
+private def tailCycle : Equiv.Perm (Fin 100) :=
+  word ((60153642662407533 : ℕ).bits.dropLast.map fun t ↦ if t then 1 else 0)
+
+private theorem tailCycle_fix :
+    tailCycle 0 = 0 ∧ tailCycle 1 = 1 ∧ tailCycle 2 = 2 := by
+  decide +kernel
+
+private theorem tailCycle_even :
+    tailCycle 3 = 56 ∧ tailCycle 56 = 41 ∧ tailCycle 41 = 6 := by
+  decide +kernel
+
+private theorem tailCycle_odd :
+    tailCycle 31 = 49 ∧ tailCycle 49 = 97 ∧ tailCycle 97 = 23 := by
+  decide +kernel
+
+private theorem tailCycle_mem : tailCycle ∈ J2.stabilizerChain basePoint 3 := by
+  obtain ⟨h0, h1, h2⟩ := tailCycle_fix
+  apply (Subgroup.mem_stabilizerChain_iff _ _).mpr
+  refine ⟨word_mem _, fun j hj ↦ ?_⟩
+  interval_cases j
+  · simpa only [basePoint_def, Equiv.Perm.smul_def, Fin.reduceOfNat] using h0
+  · simpa only [basePoint_def, Equiv.Perm.smul_def, Fin.reduceOfNat] using h1
+  · simpa only [basePoint_def, Equiv.Perm.smul_def, Fin.reduceOfNat] using h2
+
+private theorem not_apply_three_eq_23 {g : Equiv.Perm (Fin 100)}
+    (hg : g ∈ J2.stabilizerChain basePoint 3) (h3 : g 3 = 23) : False := by
+  obtain ⟨hgJ2, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp hg
+  have hrel : ∀ x y,
+      orbital ((oddSymmetry⁻¹ * g) x) ((oddSymmetry⁻¹ * g) y) = orbital x y := by
+    intro x y
+    have h := orbital_oddSymmetry ((oddSymmetry⁻¹ * g) x) ((oddSymmetry⁻¹ * g) y)
+    simp only [Equiv.Perm.mul_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply] at h
+    exact h.symm.trans (orbital_apply hgJ2 x y)
+  have heq : oddSymmetry⁻¹ * g = 1 := by
+    apply eq_one_of_fix_four _ hrel
+    intro x hx
+    apply oddSymmetry.injective
+    simp only [Equiv.Perm.mul_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
+    by_cases hx3 : x.val < 3
+    · have hgx := hfix x.val hx3
+      rw [basePoint_def, Equiv.Perm.smul_def, Fin.ofNat_eq_cast, Fin.cast_val_eq_self] at hgx
+      exact hgx.trans (oddSymmetry_fix x hx3).symm
+    · have hx_eq : x = 3 := Fin.ext (by omega)
+      exact hx_eq ▸ h3.trans oddSymmetry_three.symm
+  have hsign := Equiv.Perm.mem_alternatingGroup.mp (le_alternatingGroup hgJ2)
+  have hg_eq : g = oddSymmetry := (inv_mul_eq_one.mp heq).symm
+  rw [hg_eq, sign_oddSymmetry] at hsign
+  exact (by decide : (-1 : ℤˣ) ≠ 1) hsign
+
+private theorem not_apply_three_odd {g : Equiv.Perm (Fin 100)}
+    (hg : g ∈ J2.stabilizerChain basePoint 3)
+    (h3 : g 3 = 23 ∨ g 3 = 31 ∨ g 3 = 49 ∨ g 3 = 97) : False := by
+  obtain ⟨h31, h49, h97⟩ := tailCycle_odd
+  rcases h3 with h23 | h | h | h
+  · exact not_apply_three_eq_23 hg h23
+  · apply not_apply_three_eq_23
+      (mul_mem tailCycle_mem (mul_mem tailCycle_mem (mul_mem tailCycle_mem hg)))
+    simp only [Equiv.Perm.mul_apply, h, h31, h49, h97]
+  · apply not_apply_three_eq_23 (mul_mem tailCycle_mem (mul_mem tailCycle_mem hg))
+    simp only [Equiv.Perm.mul_apply, h, h49, h97]
+  · apply not_apply_three_eq_23 (mul_mem tailCycle_mem hg)
+    simp only [Equiv.Perm.mul_apply, h, h97]
+
+-- Every `orbital`-preserving permutation fixing `0, 1, 2` maps `3` into this 8-point set,
+-- witnessed by its `orbital` values at `0, 1, 2` and the image of the non-neighbor `54`.
+private theorem fourthOrbit_candidates : ∀ x : Fin 100,
+    x ≠ 1 → x ≠ 2 → orbital 0 x = true → orbital 1 x = false → orbital 2 x = false →
+    (∃ y : Fin 100, orbital 0 y = false ∧ orbital 1 y = false ∧
+      orbital 2 y = false ∧ orbital x y = false) →
+    x ∈ ({3, 6, 41, 56} : Finset (Fin 100)) ∨ x = 23 ∨ x = 31 ∨ x = 49 ∨ x = 97 := by
+  decide +kernel
+
+private theorem witness_54 :
+    orbital 0 54 = false ∧ orbital 1 54 = false ∧
+    orbital 2 54 = false ∧ orbital 3 54 = false := by
+  decide +kernel
+
+/-- The fourth basic orbit of the ATLAS model of `J₂`: the points reachable from `3` while
+fixing `0`, `1`, and `2`. -/
+theorem orbit_stabilizer_zero_one_two_three :
+    orbit (J2.stabilizerChain basePoint 3) (basePoint 3) =
+      ({3, 6, 41, 56} : Finset (Fin 100)) := by
+  have h0 : basePoint 0 = 0 := rfl
+  have h1 : basePoint 1 = 1 := rfl
+  have h2 : basePoint 2 = 2 := rfl
+  have h3 : basePoint 3 = 3 := rfl
+  rw [h3]
+  ext x
+  constructor
+  · rintro ⟨g, rfl⟩
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.property
+    obtain ⟨hw0, hw1, hw2, hw3⟩ := witness_54
+    have hg0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := by
+      simpa only [h0, Equiv.Perm.smul_def] using hfix 0 (by decide)
+    have hg1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := by
+      simpa only [h1, Equiv.Perm.smul_def] using hfix 1 (by decide)
+    have hg2 : (g : Equiv.Perm (Fin 100)) 2 = 2 := by
+      simpa only [h2, Equiv.Perm.smul_def] using hfix 2 (by decide)
+    have hcand := fourthOrbit_candidates ((g : Equiv.Perm (Fin 100)) 3)
+      (fun he ↦ (by decide : (3 : Fin 100) ≠ 1) (g.val.injective (he.trans hg1.symm)))
+      (fun he ↦ (by decide : (3 : Fin 100) ≠ 2) (g.val.injective (he.trans hg2.symm)))
+      (by simpa only [hg0] using (orbital_apply hg 0 3).trans (by decide +kernel))
+      (by simpa only [hg1] using (orbital_apply hg 1 3).trans (by decide +kernel))
+      (by simpa only [hg2] using (orbital_apply hg 2 3).trans (by decide +kernel))
+      ⟨(g : Equiv.Perm (Fin 100)) 54,
+        by simpa only [hg0] using (orbital_apply hg 0 54).trans hw0,
+        by simpa only [hg1] using (orbital_apply hg 1 54).trans hw1,
+        by simpa only [hg2] using (orbital_apply hg 2 54).trans hw2,
+        (orbital_apply hg 3 54).trans hw3⟩
+    exact hcand.resolve_right (not_apply_three_odd g.property)
+  · intro hx
+    obtain ⟨he3, he56, he41⟩ := tailCycle_even
+    simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx
+    rcases hx with rfl | rfl | rfl | rfl
+    · exact mem_orbit_self _
+    · refine mem_orbit_iff.mpr
+        ⟨⟨tailCycle * (tailCycle * tailCycle),
+          mul_mem tailCycle_mem (mul_mem tailCycle_mem tailCycle_mem)⟩, ?_⟩
+      simp only [Subgroup.mk_smul, Equiv.Perm.smul_def, Equiv.Perm.mul_apply, he3, he56, he41]
+    · refine mem_orbit_iff.mpr
+        ⟨⟨tailCycle * tailCycle, mul_mem tailCycle_mem tailCycle_mem⟩, ?_⟩
+      simp only [Subgroup.mk_smul, Equiv.Perm.smul_def, Equiv.Perm.mul_apply, he3, he56]
+    · refine mem_orbit_iff.mpr ⟨⟨tailCycle, tailCycle_mem⟩, ?_⟩
+      simp only [Subgroup.mk_smul, Equiv.Perm.smul_def, he3]
+
+/-- The fourth basic orbit, for the ordered base beginning `0, 1, 2, 3`, has length 4. -/
+@[simp]
+theorem ncard_orbit_stabilizer_zero_one_two_three :
+    (orbit (J2.stabilizerChain basePoint 3) (basePoint 3)).ncard = 4 := by
+  rw [orbit_stabilizer_zero_one_two_three, Set.ncard_coe_finset]
+  decide +kernel
+
+/-- The pointwise stabilizer of `0, 1, 2` in the ATLAS model of `J₂` has order 4. -/
+-- Simplify before the subtype's membership predicate expands the stabilizer chain.
+@[simp↓]
+theorem card_stabilizerChain_three : Nat.card (J2.stabilizerChain basePoint 3) = 4 := by
+  have h := J2.ncard_orbit_mul_card_stabilizerChain_succ basePoint 3
+  simpa only [Nat.reduceAdd, ncard_orbit_stabilizer_zero_one_two_three,
+    stabilizerChain_four_eq_bot, Subgroup.card_bot, mul_one] using h.symm
 
 end TauCeti.Sporadic.J2
