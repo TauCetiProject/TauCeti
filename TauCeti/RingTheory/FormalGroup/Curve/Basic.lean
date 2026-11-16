@@ -61,6 +61,7 @@ yields Cartier's relations over every commutative ring:
 * `FormalGroup.Curve.map`: base change of curves along a ring homomorphism `R →+* S`.
 * `TauCeti.FormalGroupHom.mapCurve` and `TauCeti.FormalGroupIso.curveEquiv`: pushforward of curves
   along homomorphisms and isomorphisms of formal group laws.
+* `TauCeti.FormalCoordinate.toCurve`: a formal coordinate viewed as a curve on `F`.
 * `FormalGroup.verschiebungCurve`: Cartier's Verschiebung operator `V_n : F.Curve →+ F.Curve`.
 * `FormalGroup.frobeniusCurve`: Cartier's Frobenius operator `f_n : F.Curve →+ F.Curve`.
 
@@ -257,16 +258,22 @@ theorem isSymmetric_val_sum_coordPointHom [F.IsComm] {σ : Type*} [Fintype σ] (
       exact Equiv.sum_comp e fun i ↦ coordPointHom F i γ
     rw [rename_eq_subst, ← val_substPointHom F (HasSubst.X_comp e), hsum]
 
+/-- Every coordinate embedding of a curve has zero constant coefficient. -/
+theorem constantCoeff_val_coordPointHom {σ : Type*} (i : σ) (γ : F.Curve) :
+    constantCoeff (coordPointHom F i γ).val = 0 := by
+  rw [val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
+  exact γ.constantCoeff_toPowerSeries
+
+/-- Any formal-group sum of coordinate embeddings of a curve over a `Finset` has zero constant
+coefficient. -/
 @[simp]
-theorem constantCoeff_val_sum_coordPointHom [F.IsComm] {σ : Type*} [Fintype σ] (γ : F.Curve) :
-    constantCoeff (∑ i : σ, coordPointHom F i γ).val = 0 := by
+theorem constantCoeff_val_sum_coordPointHom [F.IsComm] {σ : Type*} (s : Finset σ) (γ : F.Curve) :
+    constantCoeff (∑ i ∈ s, coordPointHom F i γ).val = 0 := by
   refine Finset.sum_induction _ (fun x : F.Point σ ↦ constantCoeff x.val = 0)
-    (fun x y hx hy ↦ ?_) (by simp) (fun i _ ↦ ?_)
-  · exact constantCoeff_subst_eq_zero
-      (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hx, hy⟩))
-      (Fin.forall_fin_two.mpr ⟨hx, hy⟩) F.zero_constantCoeff
-  · rw [val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
-    exact γ.constantCoeff_toPowerSeries
+    (fun x y hx hy ↦ ?_) (by simp) fun i _ ↦ constantCoeff_val_coordPointHom i γ
+  exact constantCoeff_subst_eq_zero
+    (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hx, hy⟩))
+    (Fin.forall_fin_two.mpr ⟨hx, hy⟩) F.zero_constantCoeff
 
 /-- The formal-group sum `∑ i : σ, γ(Tᵢ)` of copies of a curve `γ` in each variable of a finite
 index type `σ`, viewed in `MvPowerSeries.symmetricSubalgebra σ R`. -/
@@ -295,7 +302,7 @@ theorem coe_symmSum_add (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
 theorem constantCoeff_symmSum (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
     (γ : F.Curve) :
     constantCoeff (symmSum F σ γ : MvPowerSeries σ R) = 0 :=
-  constantCoeff_val_sum_coordPointHom γ
+  constantCoeff_val_sum_coordPointHom Finset.univ γ
 
 /-- Adding a curve `δ` whose coefficients vanish below degree `m` leaves degrees `< m` unchanged
 and adds `coeff m δ` in degree `m`. -/
@@ -526,6 +533,40 @@ end FormalGroupIso
 
 end Hom
 
+namespace FormalCoordinate
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- View a formal coordinate `φ(T) = u T + ⋯` as a curve on a formal group law `F`. -/
+def toCurve (φ : FormalCoordinate R) (F : FormalGroup R) : F.Curve where
+  toPowerSeries := φ.toPowerSeries
+  constantCoeff_toPowerSeries := φ.constantCoeff_toPowerSeries
+
+/-- Viewing a formal coordinate as a curve preserves its underlying power series. -/
+@[simp]
+theorem toPowerSeries_toCurve (φ : FormalCoordinate R) (F : FormalGroup R) :
+    (φ.toCurve F).toPowerSeries = φ.toPowerSeries :=
+  (rfl)
+
+/-- The identity coordinate `X` viewed as a curve on `F` is the tautological curve of `F`. -/
+@[simp]
+theorem toCurve_one (F : FormalGroup R) :
+    (1 : FormalCoordinate R).toCurve F = F.tautologicalCurve :=
+  FormalGroup.Curve.ext (by simp)
+
+/-- Two formal coordinates are equal if they give the same curve on `F`. -/
+theorem toCurve_injective (F : FormalGroup R) :
+    Function.Injective (fun φ : FormalCoordinate R ↦ φ.toCurve F) :=
+  fun _ _ h ↦ FormalCoordinate.ext (congrArg FormalGroup.Curve.toPowerSeries h)
+
+/-- Viewing a formal coordinate as a curve commutes with base change. -/
+@[simp]
+theorem toCurve_map (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
+    (φ.map f).toCurve (F.map f) = FormalGroup.Curve.map f (φ.toCurve F) :=
+  FormalGroup.Curve.ext (by simp [toPowerSeries_map])
+
+end FormalCoordinate
+
 end TauCeti
 
 namespace FormalGroup
@@ -651,19 +692,6 @@ private theorem truncTotal_val_symmSum_congr (F : FormalGroup R) [F.IsComm] {n N
       PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
     truncTotal N (Curve.symmSum F (Fin n) γ₁).1 =
       truncTotal N (Curve.symmSum F (Fin n) γ₂).1 := by
-  have hconst_coord : ∀ (i : Fin n) (γ : F.Curve),
-      constantCoeff (Curve.coordPointHom F i γ).val = 0 := fun i γ ↦ by
-    rw [Curve.val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
-    exact γ.constantCoeff_toPowerSeries
-  have hconst_sum : ∀ (s : Finset (Fin n)) (γ : F.Curve),
-      constantCoeff (∑ i ∈ s, Curve.coordPointHom F i γ).val = 0 := fun s γ ↦ by
-    induction s using Finset.induction_on with
-    | empty => simp [zero_apply]
-    | @insert a s ha ih =>
-      rw [Finset.sum_insert ha, add_apply]
-      exact constantCoeff_subst_eq_zero
-        (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hconst_coord a γ, ih⟩))
-        (Fin.forall_fin_two.mpr ⟨hconst_coord a γ, ih⟩) F.zero_constantCoeff
   have hcoord : ∀ i : Fin n,
       truncTotal N (Curve.coordPointHom F i γ₁).val =
         truncTotal N (Curve.coordPointHom F i γ₂).val := fun i ↦ by
@@ -684,10 +712,14 @@ private theorem truncTotal_val_symmSum_congr (F : FormalGroup R) [F.IsComm] {n N
     | @insert a s ha ih =>
       have h₁ := truncTotal_subst (f := F.toPowerSeries) (k := N)
         (a := ![(Curve.coordPointHom F a γ₁).val, (∑ i ∈ s, Curve.coordPointHom F i γ₁).val])
-        (Fin.forall_fin_two.mpr ⟨hconst_coord a γ₁, hconst_sum s γ₁⟩)
+        (Fin.forall_fin_two.mpr
+          ⟨Curve.constantCoeff_val_coordPointHom a γ₁,
+           Curve.constantCoeff_val_sum_coordPointHom s γ₁⟩)
       have h₂ := truncTotal_subst (f := F.toPowerSeries) (k := N)
         (a := ![(Curve.coordPointHom F a γ₂).val, (∑ i ∈ s, Curve.coordPointHom F i γ₂).val])
-        (Fin.forall_fin_two.mpr ⟨hconst_coord a γ₂, hconst_sum s γ₂⟩)
+        (Fin.forall_fin_two.mpr
+          ⟨Curve.constantCoeff_val_coordPointHom a γ₂,
+           Curve.constantCoeff_val_sum_coordPointHom s γ₂⟩)
       rw [Finset.sum_insert ha, Finset.sum_insert ha, add_apply, add_apply, h₁, h₂]
       refine congrArg (truncTotal N ∘ (truncTotal N F.toPowerSeries).toMvPowerSeries.subst) ?_
       exact funext <| Fin.forall_fin_two.mpr

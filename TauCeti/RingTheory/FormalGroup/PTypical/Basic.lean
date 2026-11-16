@@ -37,7 +37,6 @@ and deleting all other degrees.
 
 ## Main definitions
 
-* `TauCeti.FormalCoordinate.toCurve`: a formal coordinate viewed as a curve on `F`.
 * `FormalGroup.IsPTypical`: the predicate that `F.tautologicalCurve` is `p`-typical.
 * `FormalGroup.pTypicalCoordinate`: the strict coordinate obtained by projecting
   `F.tautologicalCurve` onto `p`-typical curves.
@@ -67,46 +66,12 @@ and deleting all other degrees.
   Paris Sér. A-B 265 (1967), A129–A132.
 * D. Quillen, *On the formal group laws of unoriented and complex cobordism theory*, Bull. Amer.
   Math. Soc. 75 (1969), 1293–1298.
-* [M. Hazewinkel, *Formal Groups and Applications*][hazewinkel1978], Chapter III, §16.2–16.4.
+* M. Hazewinkel, *Formal Groups and Applications*, Academic Press (1978), Chapter III, §16.2–16.4.
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Academic Press (1986),
   Appendix A2.1.21–A2.1.24.
 -/
 
 public section
-
-namespace TauCeti.FormalCoordinate
-
-variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- View a formal coordinate `φ(T) = u T + ⋯` as a curve on a formal group law `F`. -/
-def toCurve (φ : FormalCoordinate R) (F : FormalGroup R) : F.Curve where
-  toPowerSeries := φ.toPowerSeries
-  constantCoeff_toPowerSeries := φ.constantCoeff_toPowerSeries
-
-/-- Viewing a formal coordinate as a curve preserves its underlying power series. -/
-@[simp]
-theorem toPowerSeries_toCurve (φ : FormalCoordinate R) (F : FormalGroup R) :
-    (φ.toCurve F).toPowerSeries = φ.toPowerSeries :=
-  (rfl)
-
-/-- The identity coordinate `X` viewed as a curve on `F` is the tautological curve of `F`. -/
-@[simp]
-theorem one_toCurve (F : FormalGroup R) :
-    (1 : FormalCoordinate R).toCurve F = F.tautologicalCurve :=
-  FormalGroup.Curve.ext (by simp)
-
-/-- Two formal coordinates are equal if they give the same curve on `F`. -/
-theorem toCurve_injective (F : FormalGroup R) :
-    Function.Injective (fun φ : FormalCoordinate R ↦ φ.toCurve F) :=
-  fun _ _ h ↦ FormalCoordinate.ext (congrArg FormalGroup.Curve.toPowerSeries h)
-
-/-- Viewing a formal coordinate as a curve commutes with base change. -/
-@[simp]
-theorem map_toCurve (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
-    (φ.map f).toCurve (F.map f) = FormalGroup.Curve.map f (φ.toCurve F) :=
-  FormalGroup.Curve.ext (by simp [toPowerSeries_map])
-
-end TauCeti.FormalCoordinate
 
 namespace FormalGroup
 
@@ -247,14 +212,7 @@ theorem toCurve_pTypicalCoordinate (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
     (F.pTypicalCoordinate p hunit).toCurve F =
       F.pTypicalProjectorCurve p hunit F.tautologicalCurve :=
-  Curve.ext rfl
-
-/-- `FormalGroup.pTypicalCoordinate` has linear coefficient `1`. -/
-theorem coeff_one_pTypicalCoordinate (p : ℕ)
-    (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
-    PowerSeries.coeff 1 (F.pTypicalCoordinate p hunit).toPowerSeries = 1 := by
-  rw [toPowerSeries_pTypicalCoordinate, coeff_one_pTypicalProjectorCurve,
-    toPowerSeries_tautologicalCurve, PowerSeries.coeff_one_X]
+  Curve.ext (FormalCoordinate.toPowerSeries_toCurve _ F)
 
 /-- `FormalGroup.pTypicalCoordinate` is a strict formal coordinate (`linearCoeff = 1`). -/
 @[simp]
@@ -277,7 +235,7 @@ theorem pTypicalCoordinate_eq_one_iff (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
     F.pTypicalCoordinate p hunit = 1 ↔ F.IsPTypical p := by
   rw [← (FormalCoordinate.toCurve_injective F).eq_iff, toCurve_pTypicalCoordinate,
-    FormalCoordinate.one_toCurve, pTypicalProjectorCurve_eq_self_iff,
+    FormalCoordinate.toCurve_one, pTypicalProjectorCurve_eq_self_iff,
     ← isPTypical_iff_tautologicalCurve]
 
 /-- **Cartier–Quillen `p`-typicalization** of a commutative formal group law `F` over a ring in
@@ -327,6 +285,7 @@ theorem pTypicalIso_invHom_toPowerSeries (p : ℕ)
   simp [pTypicalIso]
 
 /-- The `p`-typicalization of every commutative formal group law is `p`-typical. -/
+@[simp]
 theorem isPTypical_pTypicalize (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
     (F.pTypicalize p hunit).IsPTypical p := by
@@ -370,7 +329,7 @@ theorem map_pTypicalCoordinate (φ : R →+* S) (p : ℕ)
       (F.map φ).pTypicalCoordinate p (fun _ hq hqp ↦ by simpa using (hR hq hqp).map φ) := by
   apply FormalCoordinate.toCurve_injective (F.map φ)
   dsimp only
-  rw [FormalCoordinate.map_toCurve, toCurve_pTypicalCoordinate, toCurve_pTypicalCoordinate,
+  rw [FormalCoordinate.toCurve_map, toCurve_pTypicalCoordinate, toCurve_pTypicalCoordinate,
     F.map_pTypicalProjectorCurve φ p hR, map_tautologicalCurve]
 
 /-- Base change commutes with `FormalGroup.pTypicalize`. -/

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.Localization.Basic
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
 public import TauCeti.RingTheory.FormalGroup.PTypical.Basic
+public import TauCeti.RingTheory.Localization.Int
 
 /-!
 # Quillen's `p`-typicalization idempotent on localizations of the Lazard ring
@@ -48,23 +49,30 @@ retract of `S`.
 
 ## Main results
 
-* `TauCeti.LazardRing.pTypicalIdeal_le_ker_iff`: `pTypicalIdeal p ≤ RingHom.ker f` if and only if
-  `(formalGroup.map f).IsPTypical p`.
+* `TauCeti.LazardRing.pTypicalIdeal_le_iff`,
+  `TauCeti.LazardRing.coeff_frobeniusCurve_tautologicalCurve_mem_pTypicalIdeal`, and
+  `TauCeti.LazardRing.pTypicalIdeal_le_ker_iff`: ideal-containment and generator characterization of
+  `pTypicalIdeal p`, and `pTypicalIdeal p ≤ RingHom.ker f ↔ (formalGroup.map f).IsPTypical p`.
 * `TauCeti.LazardRing.map_pTypicalEnd`: base-changing the universal formal group law over `S` along
   `pTypicalEnd` yields its `p`-typicalization.
 * `TauCeti.LazardRing.comp_pTypicalEnd_eq_self_iff`: `φ.comp (pTypicalEnd M p hunit) = φ` if and
   only if `φ` classifies a `p`-typical formal group law.
 * `TauCeti.LazardRing.pTypicalEnd_comp_pTypicalEnd` and
   `TauCeti.LazardRing.isIdempotentElem_pTypicalEnd`: Quillen's endomorphism is idempotent.
-* `TauCeti.LazardRing.ker_pTypicalEnd` and `TauCeti.LazardRing.sub_mem_map_pTypicalIdeal`: the
-  kernel of `pTypicalEnd` is `(pTypicalIdeal p).map (algebraMap LazardRing S)`, and `e x - x` lies
-  in this ideal for every `x : S`.
+* `TauCeti.LazardRing.ker_pTypicalEnd` and
+  `TauCeti.LazardRing.pTypicalEnd_sub_self_mem_map_pTypicalIdeal`: the kernel of `pTypicalEnd` is
+  `(pTypicalIdeal p).map (algebraMap LazardRing S)`, and `e x - x` lies in this ideal for every
+  `x : S`.
+* `TauCeti.LazardRing.map_pTypicalEndAtPrime`,
+  `TauCeti.LazardRing.comp_pTypicalEndAtPrime_eq_self_iff`, and
+  `TauCeti.LazardRing.ker_pTypicalEndAtPrime`: the corresponding properties for
+  `pTypicalEndAtPrime`.
 
 ## References
 
 * D. Quillen, *On the formal group laws of unoriented and complex cobordism theory*, Bull. Amer.
   Math. Soc. 75 (1969), 1293–1298.
-* [M. Hazewinkel, *Formal Groups and Applications*][hazewinkel1978], Chapter III, §16.4.
+* M. Hazewinkel, *Formal Groups and Applications*, Academic Press (1978), Chapter III, §16.4.
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Academic Press (1986),
   Theorem 4.1.12 and Appendix A2.1.23.
 -/
@@ -89,22 +97,38 @@ def pTypicalIdeal (p : ℕ) : Ideal LazardRing :=
       PowerSeries.coeff n
         (formalGroup.frobeniusCurve q hq.ne_zero formalGroup.tautologicalCurve).toPowerSeries = x}
 
+/-- An ideal `I` of `LazardRing` contains `pTypicalIdeal p` if and only if it contains every
+coefficient of `f_q T` for all primes `q ≠ p`. -/
+theorem pTypicalIdeal_le_iff (p : ℕ) (I : Ideal LazardRing) :
+    pTypicalIdeal p ≤ I ↔
+      ∀ ⦃q : ℕ⦄ (hq : q.Prime), q ≠ p → ∀ n,
+        PowerSeries.coeff n
+          (formalGroup.frobeniusCurve q hq.ne_zero formalGroup.tautologicalCurve).toPowerSeries ∈
+          I := by
+  rw [pTypicalIdeal, Ideal.span_le]
+  exact ⟨fun h q hq hqp n ↦ h ⟨q, hq, hqp, n, rfl⟩,
+    by rintro h _ ⟨q, hq, hqp, n, rfl⟩; exact h hq hqp n⟩
+
+/-- Every coefficient of the Frobenius curve `f_q T` of the universal formal group law (for a prime
+`q ≠ p`) lies in `pTypicalIdeal p`. -/
+theorem coeff_frobeniusCurve_tautologicalCurve_mem_pTypicalIdeal {p q : ℕ} (hq : q.Prime)
+    (hqp : q ≠ p) (n : ℕ) :
+    PowerSeries.coeff n
+      (formalGroup.frobeniusCurve q hq.ne_zero formalGroup.tautologicalCurve).toPowerSeries ∈
+      pTypicalIdeal p :=
+  (pTypicalIdeal_le_iff p (pTypicalIdeal p)).mp le_rfl hq hqp n
+
 /-- A ring homomorphism `f : LazardRing →+* R` kills `pTypicalIdeal p` if and only if the formal
 group law `formalGroup.map f` over `R` is `p`-typical. -/
 theorem pTypicalIdeal_le_ker_iff (p : ℕ) (f : LazardRing →+* R) :
     pTypicalIdeal p ≤ RingHom.ker f ↔ (formalGroup.map f).IsPTypical p := by
-  rw [pTypicalIdeal, Ideal.span_le, isPTypical_iff_tautologicalCurve, Curve.isPTypical_def]
-  constructor
-  · intro hf q hq hqp
-    ext n
-    rw [← map_tautologicalCurve, ← formalGroup.map_frobeniusCurve f q hq.ne_zero,
-      Curve.toPowerSeries_map, PowerSeries.coeff_map, Curve.toPowerSeries_zero, map_zero,
-      ← RingHom.mem_ker]
-    exact hf ⟨q, hq, hqp, n, rfl⟩
-  · rintro hF _ ⟨q, hq, hqp, n, rfl⟩
-    rw [SetLike.mem_coe, RingHom.mem_ker, ← PowerSeries.coeff_map, ← Curve.toPowerSeries_map,
-      formalGroup.map_frobeniusCurve f q hq.ne_zero, map_tautologicalCurve, hF hq hqp,
-      Curve.toPowerSeries_zero, map_zero]
+  rw [pTypicalIdeal_le_iff, isPTypical_iff_tautologicalCurve, Curve.isPTypical_def]
+  refine forall₂_congr fun q hq ↦ imp_congr_right fun _ ↦ ?_
+  rw [Curve.ext_iff, PowerSeries.ext_iff]
+  refine forall_congr' fun n ↦ ?_
+  rw [RingHom.mem_ker, ← PowerSeries.coeff_map, ← Curve.toPowerSeries_map,
+    formalGroup.map_frobeniusCurve f q hq.ne_zero, map_tautologicalCurve,
+    Curve.toPowerSeries_zero, map_zero]
 
 /-- On the quotient `LazardRing ⧸ pTypicalIdeal p`, the universal formal group law becomes
 `p`-typical. -/
@@ -126,12 +150,12 @@ submonoid `M : Submonoid ℤ` in which all primes `q ≠ p` are units: the uniqu
 def pTypicalEnd (M : Submonoid ℤ)
     [IsLocalization (Algebra.algebraMapSubmonoid LazardRing M) S] (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : S)) : S →+* S :=
-  IsLocalization.lift (M := Algebra.algebraMapSubmonoid LazardRing M)
+  _root_.IsLocalization.lift (M := Algebra.algebraMapSubmonoid LazardRing M)
     (g := lift ⟨(formalGroup.map (algebraMap LazardRing S)).pTypicalize p hunit, inferInstance⟩)
     fun y ↦ by
-      obtain ⟨m, -, hm⟩ := y.2
-      have hy : (y : LazardRing) = (m : LazardRing) := by simpa only [eq_intCast] using hm.symm
-      simpa only [hy, map_intCast] using IsLocalization.map_units S y
+      obtain ⟨m, hm, hy⟩ := y.2
+      rw [← hy, eq_intCast, map_intCast]
+      exact TauCeti.IsLocalization.isUnit_intCast_of_mem LazardRing hm
 
 variable (M : Submonoid ℤ) [IsLocalization (Algebra.algebraMapSubmonoid LazardRing M) S]
 
@@ -142,7 +166,7 @@ theorem pTypicalEnd_algebraMap (p : ℕ) (hunit : ∀ ⦃q : ℕ⦄, q.Prime →
     (x : LazardRing) :
     pTypicalEnd M p hunit (algebraMap LazardRing S x) =
       lift ⟨(formalGroup.map (algebraMap LazardRing S)).pTypicalize p hunit, inferInstance⟩ x :=
-  IsLocalization.lift_eq _ x
+  _root_.IsLocalization.lift_eq _ x
 
 /-- Composing `pTypicalEnd` with `algebraMap LazardRing S` yields the homomorphism classifying the
 `p`-typicalization of `formalGroup.map (algebraMap LazardRing S)`. -/
@@ -171,7 +195,7 @@ theorem comp_pTypicalEnd_eq_self_iff (p : ℕ)
   · have hmap : ((FS.pTypicalize p hunit).map φ) = FS.map φ := by
       rw [← map_pTypicalEnd M p hunit, FormalGroup.map_comp, h]
     exact (isPTypical_congr hmap p).mp ((FS.isPTypical_pTypicalize p hunit).map φ)
-  · refine IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid LazardRing M) <|
+  · refine _root_.IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid LazardRing M) <|
       hom_ext ?_
     rw [← FormalGroup.map_comp, ← FormalGroup.map_comp, ← FormalGroup.map_comp,
       map_pTypicalEnd, FS.map_pTypicalize φ p hunit, (FS.map φ).pTypicalize_eq_self _ hF]
@@ -192,6 +216,7 @@ theorem pTypicalEnd_pTypicalEnd (p : ℕ)
   RingHom.congr_fun (pTypicalEnd_comp_pTypicalEnd M p hunit) x
 
 /-- Quillen's `p`-typicalization ring endomorphism is an idempotent element in `S →+* S`. -/
+@[simp]
 theorem isIdempotentElem_pTypicalEnd (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : S)) :
     IsIdempotentElem (pTypicalEnd M p hunit) :=
@@ -208,7 +233,7 @@ theorem map_pTypicalIdeal_le_ker_iff (p : ℕ)
     comp_pTypicalEnd_eq_self_iff]
 
 /-- For every `x : S`, `pTypicalEnd x - x` lies in the extension of `pTypicalIdeal p` to `S`. -/
-theorem sub_mem_map_pTypicalIdeal (p : ℕ)
+theorem pTypicalEnd_sub_self_mem_map_pTypicalIdeal (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : S)) (x : S) :
     pTypicalEnd M p hunit x - x ∈ (pTypicalIdeal p).map (algebraMap LazardRing S) := by
   let I : Ideal S := (pTypicalIdeal p).map (algebraMap LazardRing S)
@@ -221,7 +246,7 @@ theorem sub_mem_map_pTypicalIdeal (p : ℕ)
 theorem ker_pTypicalEnd (p : ℕ) (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : S)) :
     RingHom.ker (pTypicalEnd M p hunit) = (pTypicalIdeal p).map (algebraMap LazardRing S) := by
   refine le_antisymm (fun x hx ↦ ?_) ?_
-  · have hsub := sub_mem_map_pTypicalIdeal M p hunit x
+  · have hsub := pTypicalEnd_sub_self_mem_map_pTypicalIdeal M p hunit x
     rw [RingHom.mem_ker.mp hx, zero_sub, neg_mem_iff] at hsub
     exact hsub
   · exact (map_pTypicalIdeal_le_ker_iff M p hunit _).mpr (pTypicalEnd_comp_pTypicalEnd M p hunit)
@@ -232,35 +257,70 @@ end Localization
 
 section AtPrime
 
-/-- In any localization `S` of `LazardRing` at the prime ideal `(p)` of `ℤ`, every prime `q ≠ p` is
-invertible. -/
-theorem isUnit_natCast_of_isLocalization_primeCompl (p : ℕ) [hp : Fact p.Prime]
-    [Algebra LazardRing S]
-    [IsLocalization (Algebra.algebraMapSubmonoid LazardRing (Ideal.span {(p : ℤ)}).primeCompl) S]
-    ⦃q : ℕ⦄ (hq : q.Prime) (hqp : q ≠ p) : IsUnit (q : S) := by
-  have hmem : (q : LazardRing) ∈
-      Algebra.algebraMapSubmonoid LazardRing (Ideal.span {(p : ℤ)}).primeCompl := by
-    refine ⟨(q : ℤ), ?_, by simp⟩
-    rw [SetLike.mem_coe, Ideal.mem_primeCompl_iff, Ideal.mem_span_singleton,
-      Int.natCast_dvd_natCast]
-    intro hdvd
-    exact hqp ((hq.dvd_iff_eq hp.out.ne_one).mp hdvd)
-  simpa using IsLocalization.map_units S ⟨(q : LazardRing), hmem⟩
+variable (p : ℕ) [Fact p.Prime] [Algebra LazardRing S]
+  [IsLocalization (Algebra.algebraMapSubmonoid LazardRing (Ideal.span {(p : ℤ)}).primeCompl) S]
 
 /-- Quillen's `p`-typicalization ring endomorphism on a localization `S` of `LazardRing` at the
 prime ideal `(p)` of `ℤ` (such as `LazardRing ⊗[ℤ] ℤ_(p)`). -/
-def pTypicalEndAtPrime (p : ℕ) [Fact p.Prime] [Algebra LazardRing S]
-    [IsLocalization (Algebra.algebraMapSubmonoid LazardRing (Ideal.span {(p : ℤ)}).primeCompl) S] :
-    S →+* S :=
+def pTypicalEndAtPrime : S →+* S :=
   pTypicalEnd (Ideal.span {(p : ℤ)}).primeCompl p
-    (isUnit_natCast_of_isLocalization_primeCompl p)
+    (TauCeti.IsLocalization.isUnit_natCast_of_prime_ne LazardRing p)
+
+/-- Defining equation relating `pTypicalEndAtPrime` to `pTypicalEnd`. -/
+theorem pTypicalEndAtPrime_def :
+    pTypicalEndAtPrime (S := S) p =
+      pTypicalEnd (Ideal.span {(p : ℤ)}).primeCompl p
+        (TauCeti.IsLocalization.isUnit_natCast_of_prime_ne LazardRing p) :=
+  (rfl)
+
+/-- On the image of `LazardRing` in `S`, `pTypicalEndAtPrime` agrees with the homomorphism
+classifying the `p`-typicalization of `formalGroup.map (algebraMap LazardRing S)`. -/
+@[simp]
+theorem pTypicalEndAtPrime_algebraMap (x : LazardRing) :
+    pTypicalEndAtPrime p (algebraMap LazardRing S x) =
+      lift ⟨(formalGroup.map (algebraMap LazardRing S)).pTypicalize p
+        (TauCeti.IsLocalization.isUnit_natCast_of_prime_ne LazardRing p), inferInstance⟩ x :=
+  pTypicalEnd_algebraMap _ p _ x
+
+/-- Base-changing the universal formal group law over `S` along `pTypicalEndAtPrime` produces its
+`p`-typicalization. -/
+theorem map_pTypicalEndAtPrime :
+    (formalGroup.map (algebraMap LazardRing S)).map (pTypicalEndAtPrime p) =
+      (formalGroup.map (algebraMap LazardRing S)).pTypicalize p
+        (TauCeti.IsLocalization.isUnit_natCast_of_prime_ne LazardRing p) :=
+  map_pTypicalEnd _ p _
+
+/-- A ring homomorphism `φ : S →+* R` satisfies `φ ∘ pTypicalEndAtPrime p = φ` if and only if the
+formal group law `(formalGroup.map (algebraMap LazardRing S)).map φ` over `R` is `p`-typical. -/
+theorem comp_pTypicalEndAtPrime_eq_self_iff (φ : S →+* R) :
+    φ.comp (pTypicalEndAtPrime p) = φ ↔
+      ((formalGroup.map (algebraMap LazardRing S)).map φ).IsPTypical p :=
+  comp_pTypicalEnd_eq_self_iff _ p _ φ
 
 /-- `TauCeti.LazardRing.pTypicalEndAtPrime` is idempotent. -/
 @[simp]
-theorem pTypicalEndAtPrime_comp_pTypicalEndAtPrime (p : ℕ) [Fact p.Prime] [Algebra LazardRing S]
-    [IsLocalization (Algebra.algebraMapSubmonoid LazardRing (Ideal.span {(p : ℤ)}).primeCompl) S] :
+theorem pTypicalEndAtPrime_comp_pTypicalEndAtPrime :
     (pTypicalEndAtPrime (S := S) p).comp (pTypicalEndAtPrime p) = pTypicalEndAtPrime p :=
   pTypicalEnd_comp_pTypicalEnd _ p _
+
+/-- Pointwise idempotence of `TauCeti.LazardRing.pTypicalEndAtPrime`. -/
+@[simp]
+theorem pTypicalEndAtPrime_pTypicalEndAtPrime (x : S) :
+    pTypicalEndAtPrime p (pTypicalEndAtPrime p x) = pTypicalEndAtPrime p x :=
+  pTypicalEnd_pTypicalEnd _ p _ x
+
+/-- `TauCeti.LazardRing.pTypicalEndAtPrime` is an idempotent element in `S →+* S`. -/
+@[simp]
+theorem isIdempotentElem_pTypicalEndAtPrime :
+    IsIdempotentElem (pTypicalEndAtPrime (S := S) p) :=
+  isIdempotentElem_pTypicalEnd _ p _
+
+/-- The kernel of `TauCeti.LazardRing.pTypicalEndAtPrime` is the extension of `pTypicalIdeal p` to
+`S`. -/
+theorem ker_pTypicalEndAtPrime :
+    RingHom.ker (pTypicalEndAtPrime (S := S) p) =
+      (pTypicalIdeal p).map (algebraMap LazardRing S) :=
+  ker_pTypicalEnd _ p _
 
 end AtPrime
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Projector
-import TauCeti.Algebra.Module.Rat
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Data.Nat.Pow
 
 /-!
@@ -52,10 +52,11 @@ idempotent additive endomorphism of `F.Curve` whose image and fixed-point subgro
   curves.
 * `FormalGroup.Curve.isPTypical_iff_coeff_subst_log_eq_zero`: rational logarithm characterization
   of `p`-typical curves.
-* `FormalGroup.isPTypical_pTypicalProjectorCurve`,
+* `FormalGroup.coeff_pTypicalProjectorCurve_congr`,
+  `FormalGroup.isPTypical_pTypicalProjectorCurve`,
   `FormalGroup.pTypicalProjectorCurve_eq_self_iff`, and
-  `FormalGroup.range_pTypicalProjectorCurve`: Cartier's projector lands in and fixes precisely the
-  `p`-typical curves.
+  `FormalGroup.range_pTypicalProjectorCurve`: finite-degree coefficient dependence and the fact
+  that Cartier's projector lands in and fixes precisely the `p`-typical curves.
 * `FormalGroup.pTypicalProjectorCurve_verschiebungCurve_eq_zero_of_forall_ne_pow`: Cartier's
   projector kills `V_n` whenever `n ≠ 0` is not a power of `p`.
 * `FormalGroup.map_pTypicalProjectorCurve` and
@@ -71,7 +72,7 @@ idempotent additive endomorphism of `F.Curve` whose image and fixed-point subgro
   Paris Sér. A-B 265 (1967), A129–A132.
 * D. Quillen, *On the formal group laws of unoriented and complex cobordism theory*, Bull. Amer.
   Math. Soc. 75 (1969), 1293–1298.
-* [M. Hazewinkel, *Formal Groups and Applications*][hazewinkel1978], Chapter III, §16.2–16.3.
+* M. Hazewinkel, *Formal Groups and Applications*, Academic Press (1978), Chapter III, §16.2–16.3.
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Academic Press (1986),
   Appendix A2.1.21–A2.1.23.
 -/
@@ -110,7 +111,7 @@ theorem IsPTypical.frobeniusCurve_eq_zero {γ : F.Curve} {p : ℕ} (hγ : γ.IsP
 theorem IsPTypical.frobeniusCurve_eq_zero_of_forall_ne_pow {γ : F.Curve} {p : ℕ}
     (hγ : γ.IsPTypical p) {n : ℕ} (hn : n ≠ 0) (hpow : ∀ k, n ≠ p ^ k) :
     F.frobeniusCurve n hn γ = 0 := by
-  obtain ⟨q, hq, ⟨m, rfl⟩, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hn hpow
+  obtain ⟨q, hq, ⟨m, rfl⟩, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hpow
   have hm : m ≠ 0 := right_ne_zero_of_mul hn
   rw [F.frobeniusCurve_congr (Nat.mul_comm q m) hn (mul_ne_zero hm hq.ne_zero),
     ← frobeniusCurve_frobeniusCurve F hm hq.ne_zero, hγ hq hqp, map_zero]
@@ -253,15 +254,13 @@ theorem IsPTypical.coeff_𝔾ₐ_eq_zero {p : ℕ}
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R))
     {γ : (𝔾ₐ (R := R)).Curve} (hγ : γ.IsPTypical p) {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
     PowerSeries.coeff k γ.toPowerSeries = 0 := by
-  rcases eq_or_ne k 0 with rfl | hk0
-  · exact γ.coeff_zero_toPowerSeries
-  · obtain ⟨q, hq, ⟨j, rfl⟩, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hk0 fun n hkn ↦
-      hk n hkn.symm
-    have hf : PowerSeries.coeff j ((𝔾ₐ (R := R)).frobeniusCurve q hq.ne_zero γ).toPowerSeries = 0 :=
-      by rw [hγ hq hqp, toPowerSeries_zero, map_zero]
-    rw [toPowerSeries_frobeniusCurve_𝔾ₐ, PowerSeries.coeff_smul, PowerSeries.coeff_cartier,
-      Nat.add_zero] at hf
-    exact (hunit hq hqp).smul_eq_zero.mp hf
+  obtain ⟨q, hq, ⟨j, rfl⟩, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow fun n hkn ↦
+    hk n hkn.symm
+  have hf : PowerSeries.coeff j ((𝔾ₐ (R := R)).frobeniusCurve q hq.ne_zero γ).toPowerSeries = 0 :=
+    by rw [hγ hq hqp, toPowerSeries_zero, map_zero]
+  rw [toPowerSeries_frobeniusCurve_𝔾ₐ, PowerSeries.coeff_smul, PowerSeries.coeff_cartier,
+    Nat.add_zero] at hf
+  exact (hunit hq hqp).smul_eq_zero.mp hf
 
 /-- For a prime `p` when all primes `q ≠ p` are units in `R`, a curve on `𝔾ₐ` is `p`-typical if
 and only if its coefficients vanish outside degrees `p^n`. -/
@@ -299,7 +298,7 @@ namespace FormalGroupHom
 
 /-- Homomorphisms of commutative formal group laws push `p`-typical curves to `p`-typical
 curves. -/
-theorem mapCurve_isPTypical (f : FormalGroupHom F G) {γ : F.Curve} {p : ℕ}
+theorem isPTypical_mapCurve (f : FormalGroupHom F G) {γ : F.Curve} {p : ℕ}
     (hγ : γ.IsPTypical p) : (f.mapCurve γ).IsPTypical p := by
   intro q hq hqp
   rw [← f.mapCurve_frobeniusCurve, hγ hq hqp, map_zero]
@@ -314,8 +313,8 @@ preserves and reflects `p`-typical curves. -/
 theorem isPTypical_mapCurve_toHom_iff (e : FormalGroupIso F G) (γ : F.Curve) (p : ℕ) :
     (e.toHom.mapCurve γ).IsPTypical p ↔ γ.IsPTypical p :=
   ⟨fun h ↦ by
-    simpa [← FormalGroupHom.comp_mapCurve] using e.invHom.mapCurve_isPTypical h,
-   e.toHom.mapCurve_isPTypical⟩
+    simpa [← FormalGroupHom.comp_mapCurve] using e.invHom.isPTypical_mapCurve h,
+   e.toHom.isPTypical_mapCurve⟩
 
 /-- Pushforward along the inverse homomorphism of an isomorphism of commutative formal group laws
 preserves and reflects `p`-typical curves. -/
@@ -323,12 +322,6 @@ preserves and reflects `p`-typical curves. -/
 theorem isPTypical_mapCurve_invHom_iff (e : FormalGroupIso F G) (γ : G.Curve) (p : ℕ) :
     (e.invHom.mapCurve γ).IsPTypical p ↔ γ.IsPTypical p := by
   simpa using e.symm.isPTypical_mapCurve_toHom_iff γ p
-
-/-- The curve equivalence attached to an isomorphism of commutative formal group laws preserves and
-reflects `p`-typical curves. -/
-theorem isPTypical_curveEquiv_iff (e : FormalGroupIso F G) (γ : F.Curve) (p : ℕ) :
-    (e.curveEquiv γ).IsPTypical p ↔ γ.IsPTypical p := by
-  rw [curveEquiv_apply, isPTypical_mapCurve_toHom_iff]
 
 end FormalGroupIso
 
@@ -353,7 +346,7 @@ theorem IsPTypical.coeff_subst_log_eq_zero {γ : F.Curve} {p : ℕ} (hγ : γ.Is
     PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) = 0 := by
   simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logIso_toHom,
     logHom_toPowerSeries] using
-    (F.logIso.toHom.mapCurve_isPTypical hγ).coeff_𝔾ₐ_eq_zero
+    (F.logIso.toHom.isPTypical_mapCurve hγ).coeff_𝔾ₐ_eq_zero
       (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero hq.ne_zero) hk
 
 /-- Over a `ℚ`-algebra and for a prime `p`, a curve `γ` on `F` is `p`-typical if and only if
@@ -483,6 +476,123 @@ theorem coeff_one_pTypicalProjectorCurve (p : ℕ)
       PowerSeries.coeff 1 γ.toPowerSeries :=
   F.coeff_pTypicalProjectorCurve_of_forall_prime_gt hunit (fun _ hq _ ↦ hq.one_lt) γ
 
+omit [F.IsComm] in
+private theorem coeff_neg_congr {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (-γ₁).toPowerSeries = PowerSeries.coeff k (-γ₂).toPowerSeries := by
+  have hzero : ∀ i ≤ k,
+      PowerSeries.coeff i (-γ₁ + γ₂).toPowerSeries =
+        PowerSeries.coeff i (0 : F.Curve).toPowerSeries := fun i hi ↦ by
+    rw [← neg_add_cancel γ₁]
+    exact Curve.coeff_add_congr (fun _ _ ↦ rfl) fun j hj ↦ (h j (hj.trans hi)).symm
+  simpa only [add_neg_cancel_right, _root_.zero_add] using
+    Curve.coeff_add_congr hzero (γ₂ := -γ₂) (γ₂' := -γ₂) (fun _ _ ↦ rfl)
+
+omit [F.IsComm] in
+private theorem coeff_sub_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
+    (h₁ : ∀ i ≤ k,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₁'.toPowerSeries)
+    (h₂ : ∀ i ≤ k,
+      PowerSeries.coeff i γ₂.toPowerSeries = PowerSeries.coeff i γ₂'.toPowerSeries) :
+    PowerSeries.coeff k (γ₁ - γ₂).toPowerSeries =
+      PowerSeries.coeff k (γ₁' - γ₂').toPowerSeries := by
+  rw [sub_eq_add_neg, sub_eq_add_neg]
+  exact Curve.coeff_add_congr h₁ fun i hi ↦ F.coeff_neg_congr (fun j hj ↦ h₂ j (hj.trans hi))
+
+omit [F.IsComm] in
+private theorem coeff_nsmul_of_forall_lt_eq_zero (n : ℕ) {j : ℕ} (hj : j ≠ 0) {ξ : F.Curve}
+    (hξ : ∀ i < j, PowerSeries.coeff i ξ.toPowerSeries = 0) :
+    PowerSeries.coeff j (n • ξ).toPowerSeries = n • PowerSeries.coeff j ξ.toPowerSeries := by
+  induction n with
+  | zero => rw [zero_smul, zero_smul, Curve.toPowerSeries_zero, map_zero]
+  | succ m ih =>
+    rw [succ_nsmul, succ_nsmul, Curve.coeff_add_of_forall_lt_coeff_eq_zero (m • ξ) ξ hj le_rfl hξ,
+      ite_eq_left rfl, ih]
+
+private theorem coeff_nsmulCurveEquiv_symm_eq_zero_of_forall_le {n m : ℕ}
+    (hunit : IsUnit (n : R)) {η : F.Curve}
+    (hη : ∀ j ≤ m, PowerSeries.coeff j η.toPowerSeries = 0) {j : ℕ} (hj : j ≤ m) :
+    PowerSeries.coeff j ((F.nsmulCurveEquiv n hunit).symm η).toPowerSeries = 0 := by
+  induction j using Nat.strong_induction_on with
+  | ind j ih =>
+    rcases eq_or_ne j 0 with rfl | hj0
+    · exact Curve.coeff_zero_toPowerSeries _
+    · apply hunit.smul_eq_zero.mp
+      rw [Nat.cast_smul_eq_nsmul R,
+        ← F.coeff_nsmul_of_forall_lt_eq_zero n hj0 fun i hi ↦ ih i hi (hi.le.trans hj),
+        nsmul_nsmulCurveEquiv_symm]
+      exact hη j hj
+
+private theorem coeff_nsmulCurveEquiv_symm_congr {n m : ℕ} (hunit : IsUnit (n : R))
+    {η₁ η₂ : F.Curve}
+    (h : ∀ j ≤ m,
+      PowerSeries.coeff j η₁.toPowerSeries = PowerSeries.coeff j η₂.toPowerSeries)
+    {j : ℕ} (hj : j ≤ m) :
+    PowerSeries.coeff j ((F.nsmulCurveEquiv n hunit).symm η₁).toPowerSeries =
+      PowerSeries.coeff j ((F.nsmulCurveEquiv n hunit).symm η₂).toPowerSeries := by
+  have hsub : ∀ i ≤ m, PowerSeries.coeff i (η₁ - η₂).toPowerSeries = 0 := fun i hi ↦ by
+    rw [F.coeff_sub_congr (fun l hl ↦ h l (hl.trans hi)) (fun _ _ ↦ rfl), sub_self,
+      Curve.toPowerSeries_zero, map_zero]
+  have hzero : ∀ i ≤ j,
+      PowerSeries.coeff i ((F.nsmulCurveEquiv n hunit).symm (η₁ - η₂)).toPowerSeries =
+        PowerSeries.coeff i (0 : F.Curve).toPowerSeries := fun i hi ↦ by
+    rw [Curve.toPowerSeries_zero, map_zero]
+    exact F.coeff_nsmulCurveEquiv_symm_eq_zero_of_forall_le hunit hsub (hi.trans hj)
+  have hadd : (F.nsmulCurveEquiv n hunit).symm η₁ =
+      (F.nsmulCurveEquiv n hunit).symm η₂ + (F.nsmulCurveEquiv n hunit).symm (η₁ - η₂) := by
+    rw [map_sub, add_sub_cancel]
+  rw [hadd, Curve.coeff_add_congr (fun _ _ ↦ rfl) hzero, _root_.add_zero]
+
+private theorem coeff_cartierProjectorCurve_congr {n k : ℕ} (hn : n ≠ 0) (hunit : IsUnit (n : R))
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.cartierProjectorCurve n hn hunit γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.cartierProjectorCurve n hn hunit γ₂).toPowerSeries := by
+  have hfrob : ∀ j ≤ k / n,
+      PowerSeries.coeff j (F.frobeniusCurve n hn γ₁).toPowerSeries =
+        PowerSeries.coeff j (F.frobeniusCurve n hn γ₂).toPowerSeries :=
+    fun j hj ↦ F.coeff_frobeniusCurve_congr hn fun i hi ↦
+      h i (hi.trans ((Nat.mul_le_mul_right n hj).trans (Nat.div_mul_le_self k n)))
+  have hV : ∀ i ≤ k,
+      PowerSeries.coeff i (F.verschiebungCurve n hn
+          ((F.nsmulCurveEquiv n hunit).symm (F.frobeniusCurve n hn γ₁))).toPowerSeries =
+        PowerSeries.coeff i (F.verschiebungCurve n hn
+          ((F.nsmulCurveEquiv n hunit).symm (F.frobeniusCurve n hn γ₂))).toPowerSeries :=
+    fun i hi ↦ by
+      rw [toPowerSeries_verschiebungCurve, toPowerSeries_verschiebungCurve,
+        PowerSeries.coeff_expand, PowerSeries.coeff_expand]
+      split_ifs with hdvd
+      · exact F.coeff_nsmulCurveEquiv_symm_congr hunit hfrob (Nat.div_le_div_right hi)
+      · rfl
+  rw [cartierProjectorCurve_apply, cartierProjectorCurve_apply]
+  exact F.coeff_sub_congr h hV
+
+/-- The degree-`k` coefficient of `F.pTypicalProjectorCurve p hunit γ` depends only on the
+coefficients of `γ` in degrees `≤ k`. -/
+theorem coeff_pTypicalProjectorCurve_congr {p k : ℕ}
+    (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.pTypicalProjectorCurve p hunit γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.pTypicalProjectorCurve p hunit γ₂).toPowerSeries := by
+  have hstage : ∀ N, ∀ i ≤ k,
+      PowerSeries.coeff i (F.pTypicalProjectorStage p hunit N γ₁).toPowerSeries =
+        PowerSeries.coeff i (F.pTypicalProjectorStage p hunit N γ₂).toPowerSeries := fun N ↦ by
+    induction N with
+    | zero => exact h
+    | succ n ih =>
+      intro i hi
+      simp only [pTypicalProjectorStage]
+      split_ifs with hn
+      · exact F.coeff_cartierProjectorCurve_congr hn.1.ne_zero (hunit hn.1 hn.2)
+          fun j hj ↦ ih j (hj.trans hi)
+      · exact ih i hi
+  rw [F.coeff_pTypicalProjectorCurve_eq_stage hunit (Nat.lt_succ_self k),
+    F.coeff_pTypicalProjectorCurve_eq_stage hunit (Nat.lt_succ_self k)]
+  exact hstage (k + 1) k le_rfl
+
 private theorem frobeniusCurve_pTypicalProjectorStage_eq_zero {p q N : ℕ}
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R))
     (hq : q.Prime) (hqp : q ≠ p) (hqN : q < N) (γ : F.Curve) :
@@ -502,6 +612,7 @@ private theorem frobeniusCurve_pTypicalProjectorStage_eq_zero {p q N : ℕ}
         frobeniusCurve_cartierProjectorCurve]
 
 /-- The image of every curve under Cartier's `p`-typical projector is `p`-typical. -/
+@[simp]
 theorem isPTypical_pTypicalProjectorCurve (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) (γ : F.Curve) :
     (F.pTypicalProjectorCurve p hunit γ).IsPTypical p := by
@@ -615,7 +726,7 @@ theorem pTypicalProjectorCurve_verschiebungCurve_eq_zero_of_forall_ne_pow {p n :
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R))
     (hn : n ≠ 0) (hpow : ∀ k, n ≠ p ^ k) (γ : F.Curve) :
     F.pTypicalProjectorCurve p hunit (F.verschiebungCurve n hn γ) = 0 := by
-  obtain ⟨q, hq, ⟨m, rfl⟩, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hn hpow
+  obtain ⟨q, hq, ⟨m, rfl⟩, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hpow
   have hm : m ≠ 0 := right_ne_zero_of_mul hn
   rw [← F.verschiebungCurve_verschiebungCurve hq.ne_zero hm,
     F.pTypicalProjectorCurve_verschiebungCurve_eq_zero hunit hq hqp]

@@ -35,16 +35,16 @@ commutative ring `R`, including rings with torsion.
   `FormalGroup.isPTypical_iff_exists_eq_hazewinkelFormalGroup`: rational classification of
   `p`-typical formal group laws by Hazewinkel families `v : ℕ+ → K`.
 * `FormalGroup.existsUnique_pTypicalize_eq_hazewinkelFormalGroup` and
-  `FormalGroup.hazewinkelLogCoeff_of_pTypicalize_eq`: over a `ℚ`-algebra, the `p`-typicalization of
-  any commutative formal group law `F` is `hazewinkelFormalGroup p v` for a unique `v`, whose
-  Hazewinkel logarithm coefficients satisfy `m_n(v) = [X^(p^n)] log_F(X)`.
+  `TauCeti.hazewinkelLogCoeff_of_pTypicalize_eq`: over a `ℚ`-algebra and for a prime `p`, the
+  `p`-typicalization of any commutative formal group law `F` is `hazewinkelFormalGroup p v` for a
+  unique `v`, whose Hazewinkel logarithm coefficients satisfy `m_n(v) = [X^(p^n)] log_F(X)`.
 
 ## References
 
 * M. Hazewinkel, *Constructing formal groups. I. The local one dimensional case*, J. Pure Appl.
   Algebra 9 (1977), 131–149.
-* [M. Hazewinkel, *Formal Groups and Applications*][hazewinkel1978], Chapter I, §2 and Chapter III,
-  §16.
+* M. Hazewinkel, *Formal Groups and Applications*, Academic Press (1978), Chapter I, §2 and
+  Chapter III, §16.
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Academic Press (1986),
   Appendix A2.1.24–A2.1.27.
 -/
@@ -64,6 +64,16 @@ theorem isPTypical_hazewinkelFormalGroup {p : ℕ} (hp : p.Prime) (v : ℕ+ → 
   rw [FormalGroup.isPTypical_iff_coeff_log_eq_zero _ hp, log_hazewinkelFormalGroup]
   intro k hk
   exact coeff_hazewinkelLog_eq_zero v hk
+
+/-- Over a `ℚ`-algebra and for a prime `p`, if the `p`-typicalization of `F` equals
+`hazewinkelFormalGroup p v`, then the `n`-th Hazewinkel logarithm coefficient `m_n(v)` equals the
+`X^(p^n)` coefficient of `log_F`. -/
+theorem hazewinkelLogCoeff_of_pTypicalize_eq {F : FormalGroup K} [F.IsComm] {p : ℕ}
+    (hp : p.Prime) {hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : K)} {v : ℕ+ → K}
+    (hv : F.pTypicalize p hunit = hazewinkelFormalGroup p v) (n : ℕ) :
+    hazewinkelLogCoeff p v n = PowerSeries.coeff (p ^ n) F.log := by
+  rw [← coeff_hazewinkelLog_pow v hp.one_lt n, ← log_hazewinkelFormalGroup, ← hv,
+    F.coeff_log_pTypicalize_pow hp hunit n]
 
 end Rational
 
@@ -118,14 +128,5 @@ theorem existsUnique_pTypicalize_eq_hazewinkelFormalGroup (F : FormalGroup K) [F
     (hp : p.Prime) (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : K)) :
     ∃! v : ℕ+ → K, F.pTypicalize p hunit = hazewinkelFormalGroup p v :=
   (F.isPTypical_pTypicalize p hunit).existsUnique_eq_hazewinkelFormalGroup hp
-
-/-- If the `p`-typicalization of `F` over a `ℚ`-algebra equals `hazewinkelFormalGroup p v`, then
-the `n`-th Hazewinkel logarithm coefficient `m_n(v)` equals the `X^(p^n)` coefficient of `log_F`. -/
-theorem hazewinkelLogCoeff_of_pTypicalize_eq {F : FormalGroup K} [F.IsComm] {p : ℕ}
-    (hp : p.Prime) {hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : K)} {v : ℕ+ → K}
-    (hv : F.pTypicalize p hunit = hazewinkelFormalGroup p v) (n : ℕ) :
-    hazewinkelLogCoeff p v n = PowerSeries.coeff (p ^ n) F.log := by
-  rw [← coeff_hazewinkelLog_pow v hp.one_lt n, ← log_hazewinkelFormalGroup, ← hv,
-    F.coeff_log_pTypicalize_pow hp hunit n]
 
 end FormalGroup
