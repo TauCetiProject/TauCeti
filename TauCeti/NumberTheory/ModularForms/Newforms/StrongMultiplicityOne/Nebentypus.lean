@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.B
 public import TauCeti.NumberTheory.ModularForms.Newforms.Fields
 import TauCeti.NumberTheory.DirichletCharacter.PrimeValues
 import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
+import TauCeti.NumberTheory.ModularForms.Parity
 
 /-!
 # Strong multiplicity one without a nebentypus hypothesis
@@ -32,10 +33,8 @@ What the primes do see is the Petersson adjoint relation `a_p = χ(p) · conj a_
 (`HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_mul_conj`): wherever `a_p ≠ 0` it pins
 `χ(p) = a_p / conj a_p`. So for newforms `f`, `g` whose eigenvalues agree at almost all primes,
 the quotient `ψ` of their nebentypes satisfies `ψ(p) a_p(f) = a_p(f)` at almost all primes: it is
-a self-twist of `f` on the prime coefficients. When `f` has no nontrivial such self-twist, the
-nebentypes therefore agree. A form with complex multiplication has a nontrivial self-twist, since
-its coefficients vanish at the inert primes, and there this argument leaves the nebentypes at
-those primes undetermined.
+a self-twist of `f` on the prime coefficients. By the parity lemma `ψ` is also even when `f` and
+`g` have the same weight. So the nebentypes agree unless `f` has a nontrivial even self-twist.
 
 ## Main results
 
@@ -52,14 +51,10 @@ All in the namespace `HeckeRing.GL2.Newform`:
   outside a finite set.
 * `level_eq_and_coe_eq_of_forall_notMem_qExpansion_coeff_eq`: across levels, such newforms have the
   same level and are the same function.
-* `dirichletLift_apply_eq_of_eigenvalue_eq`: newforms with the same nonzero eigenvalue at a good
-  prime have the same nebentypus value there.
-* `eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_eq`: for newforms whose
-  eigenvalues agree at almost all primes, the quotient of the nebentypes is a self-twist of the
-  prime coefficients.
-* `χ_comp_unitsMap_eq_of_forall_selfTwist_eq_one_of_forall_notMem_prime_eigenvalue_eq`: such
-  newforms have nebentypes inducing the same character modulo a common multiple `L` of the levels,
-  provided the first has no nontrivial self-twist modulo `L` on its prime coefficients.
+* `eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_prime_eq`: for newforms
+  whose eigenvalues agree at almost all primes, the quotient of the nebentypes is a self-twist of
+  the prime coefficients.
+* `even_changeLevel_inv_mul_changeLevel`: for newforms of the same weight this quotient is even.
 
 ## References
 
@@ -171,83 +166,58 @@ theorem level_eq_and_coe_eq_of_forall_notMem_qExpansion_coeff_eq (f : Newform N 
 
 /-! ### Agreement at the primes alone -/
 
-/-- **At a good prime with a nonzero eigenvalue, the eigenvalue determines the nebentypus.** If
-newforms `f` and `g` of levels `N` and `M` have the same eigenvalue `λ_p ≠ 0` at a prime
-`p ∤ N M`, their zero-extended nebentypes agree at `p`: by the Petersson adjoint relation
-`λ_p = χ(p) · conj λ_p` (`EigenformAwayFromLevel.eigenvalue_eq_mul_conj`), both values are
-`λ_p / conj λ_p`. -/
-theorem dirichletLift_apply_eq_of_eigenvalue_eq (f : Newform N k) (g : Newform M k) {p : ℕ}
-    (hp : p.Prime) (hpN : p.Coprime N) (hpM : p.Coprime M)
-    (h : f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpM)
-    (h0 : f.eigenvalue ⟨p, hp.pos⟩ hpN ≠ 0) :
-    f.dirichletLift p = g.dirichletLift p := by
-  rw [f.dirichletLift_apply_of_coprime hpN, g.dirichletLift_apply_of_coprime hpM]
-  refine mul_right_cancel₀ ((map_ne_zero (starRingEnd ℂ)).mpr h0) ?_
-  rw [← f.toEigenformAwayFromLevel.eigenvalue_eq_mul_conj hp hpN, h]
-  exact g.toEigenformAwayFromLevel.eigenvalue_eq_mul_conj hp hpM
-
 /-- **The quotient of the nebentypes is a self-twist on the prime coefficients.** Let `f` and `g`
 be newforms of levels `N` and `M` whose eigenvalues agree at every prime `p ∤ N M` outside a
 finite set, and let `L ≠ 0` be a common multiple of `N` and `M`. Then the quotient `ψ = χ_f⁻¹ χ_g`
 of their nebentypes, lifted to level `L`, satisfies `ψ(p) a_p(f) = a_p(f)` at all but finitely
-many primes: the twist of `f` by `ψ` has the prime coefficients of `f`. At a large prime with
-`a_p(f) ≠ 0` this is `χ_f(p) = χ_g(p)` (`Newform.dirichletLift_apply_eq_of_eigenvalue_eq`), and
-it is trivial where `a_p(f) = 0`. -/
-theorem eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_eq {L : ℕ}
-    [NeZero L] (f : Newform N k) (g : Newform M k) (hN : N ∣ L) (hM : M ∣ L) {S : Finset ℕ}
+many primes `p`: at those primes the twist of `f` by `ψ` has the same coefficient as `f`. At a
+large prime with `a_p(f) ≠ 0` this is `χ_f(p) = χ_g(p)`
+(`EigenformAwayFromLevel.χ_unitOfCoprime_eq_of_eigenvalue_eq`), and it is trivial where
+`a_p(f) = 0`. -/
+theorem eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_prime_eq {L : ℕ}
+    [NeZero L] {k' : ℤ} (f : Newform N k) (g : Newform M k') (hN : N ∣ L) (hM : M ∣ L)
+    {S : Finset ℕ}
     (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : p.Coprime N) (hpM : p.Coprime M), p ∉ S →
       f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpM) :
     ∀ᶠ p : ℕ in cofinite, p.Prime →
       ((DirichletCharacter.changeLevel hN f.dirichletLift)⁻¹ *
         DirichletCharacter.changeLevel hM g.dirichletLift) p *
         (qExpansion 1 f.toCuspForm).coeff p = (qExpansion 1 f.toCuspForm).coeff p := by
-  rw [Nat.cofinite_eq_atTop]
-  filter_upwards [eventually_gt_atTop (S.sup id + L)] with p hpB hp
-  -- a prime larger than `L` and every element of `S` is prime to `L`, hence to `N` and `M`
-  have hpL : p.Coprime L := Nat.coprime_of_lt_prime (NeZero.ne L) (by omega) hp
-  have hpS : p ∉ S := fun hpS ↦ (Finset.le_sup (f := id) hpS).not_gt (by simp only [id]; omega)
+  filter_upwards [S.eventually_cofinite_notMem,
+    (Nat.cofinite_eq_atTop ▸ eventually_gt_atTop L : ∀ᶠ p : ℕ in cofinite, L < p)]
+    with p hpS hLp hp
+  -- a prime larger than `L` is prime to `L`, hence to `N` and `M`
+  have hpL : p.Coprime L := Nat.coprime_of_lt_prime (NeZero.ne L) hLp hp
   have hpN := hpL.coprime_dvd_right hN
   have hpM := hpL.coprime_dvd_right hM
-  have hcop : IsCoprime (p : ℤ) L := Nat.isCoprime_iff_coprime.mpr hpL
   have hcoeff := f.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpN
   rw [PNat.mk_coe] at hcoeff
   rw [hcoeff]
   by_cases h0 : f.eigenvalue ⟨p, hp.pos⟩ hpN = 0
   · rw [h0, mul_zero]
-  have hχ := dirichletLift_apply_eq_of_eigenvalue_eq f g hp hpN hpM (h p hp hpN hpM hpS) h0
-  have hfL := DirichletCharacter.changeLevel_eq_cast_of_dvd' f.dirichletLift hN hcop
-  have hgL := DirichletCharacter.changeLevel_eq_cast_of_dvd' g.dirichletLift hM hcop
-  simp only [Int.cast_natCast] at hfL hgL
-  have hne : f.dirichletLift p ≠ 0 := by
-    rw [f.dirichletLift_apply_of_coprime hpN]
-    exact Units.ne_zero _
-  rw [MulChar.mul_apply, MulChar.inv_apply_eq_inv', hfL, hgL, ← hχ, inv_mul_cancel₀ hne, one_mul]
+  have hχ := EigenformAwayFromLevel.χ_unitOfCoprime_eq_of_eigenvalue_eq f.toEigenformAwayFromLevel
+    g.toEigenformAwayFromLevel hp hpN hpM (h p hp hpN hpM hpS) h0
+  rw [MulChar.mul_apply, MulChar.inv_apply_eq_inv',
+    DirichletCharacter.changeLevel_natCast_of_coprime hN _ hpL,
+    DirichletCharacter.changeLevel_natCast_of_coprime hM _ hpL,
+    f.dirichletLift_apply_of_coprime hpN, g.dirichletLift_apply_of_coprime hpM, ← hχ,
+    inv_mul_cancel₀ (Units.ne_zero _), one_mul]
 
-/-- **Newforms with the same prime eigenvalues and no self-twist have the same nebentypus.**
-Let `f` and `g` be newforms of levels `N` and `M` whose eigenvalues agree at every prime
-`p ∤ N M` outside a finite set, and let `L ≠ 0` be a common multiple of `N` and `M`. Suppose that
-`f` has no nontrivial self-twist modulo `L` on its prime coefficients: the only Dirichlet
-character `ψ` modulo `L` with `ψ(p) a_p(f) = a_p(f)` at all but finitely many primes is the
-trivial one. Then the nebentypes of `f` and `g` induce the same character modulo `L`, and
-`Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq` (at `L = lcm N M`) makes `f`
-and `g` of the same level and the same function.
-
-The quotient of the nebentypes is such a self-twist
-(`Newform.eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_eq`), so the
-hypothesis on `f` forces it to be trivial. The hypothesis excludes the forms with a nontrivial
-self-twist, such as the forms with complex multiplication, whose coefficients vanish at the inert
-primes: agreement at the primes sees the nebentypes only where `a_p(f) ≠ 0`. -/
-theorem χ_comp_unitsMap_eq_of_forall_selfTwist_eq_one_of_forall_notMem_prime_eigenvalue_eq
-    {L : ℕ} [NeZero L] (f : Newform N k) (g : Newform M k) (hN : N ∣ L) (hM : M ∣ L)
-    (hf : ∀ ψ : DirichletCharacter ℂ L, (∀ᶠ p : ℕ in cofinite, p.Prime →
-      ψ p * (qExpansion 1 f.toCuspForm).coeff p = (qExpansion 1 f.toCuspForm).coeff p) → ψ = 1)
-    {S : Finset ℕ}
-    (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : p.Coprime N) (hpM : p.Coprime M), p ∉ S →
-      f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpM) :
-    f.χ.comp (ZMod.unitsMap hN) = g.χ.comp (ZMod.unitsMap hM) := by
-  have := congrArg MulChar.toUnitHom (inv_mul_eq_one.mp
-    (hf _ (eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_eq f g hN hM h)))
-  rwa [changeLevel_dirichletLift_toUnitHom, changeLevel_dirichletLift_toUnitHom] at this
+/-- **The quotient of the nebentypes of two newforms of the same weight is even.** By the parity
+lemma (`TauCeti.char_neg_one_of_mem_cuspFormCharSpace`) the nebentypes of newforms `f` and `g`
+of weight `k` both take the value `(-1)^k` at `-1`, so the quotient `χ_f⁻¹ χ_g` of their
+nebentypes, lifted to any common multiple `L` of the levels, is even. -/
+theorem even_changeLevel_inv_mul_changeLevel {L : ℕ} (f : Newform N k) (g : Newform M k)
+    (hN : N ∣ L) (hM : M ∣ L) :
+    ((DirichletCharacter.changeLevel hN f.dirichletLift)⁻¹ *
+      DirichletCharacter.changeLevel hM g.dirichletLift).Even := by
+  have hpar {N : ℕ} [NeZero N] (f : Newform N k) : f.dirichletLift (-1) = (-1 : ℂ) ^ k := by
+    rw [← Units.val_one, ← Units.val_neg, dirichletLift_def, MulChar.ofUnitHom_coe]
+    exact TauCeti.char_neg_one_of_mem_cuspFormCharSpace f.mem_charSpace f.ne_zero
+  rw [DirichletCharacter.Even, MulChar.mul_apply, MulChar.inv_apply_eq_inv',
+    DirichletCharacter.changeLevel_apply_neg_one, DirichletCharacter.changeLevel_apply_neg_one,
+    hpar f, hpar g]
+  exact inv_mul_cancel₀ (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero))
 
 end Newform
 
