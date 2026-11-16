@@ -97,7 +97,7 @@ noncomputable def finitePresentationEquivalenceMod :
     (presented_finiteProjectiveModules R).symm
 
 /-- The regular module `R`, as a finitely generated projective `R`-module. -/
-def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
+@[expose] def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
   ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2
     ⟨inferInstanceAs (Module.Finite R R), inferInstanceAs (Module.Projective R R)⟩⟩
 

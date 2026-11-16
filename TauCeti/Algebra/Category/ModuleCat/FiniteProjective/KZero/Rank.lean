@@ -66,18 +66,6 @@ namespace FiniteProjectiveModules
 
 variable (A : Type u) [Ring A]
 
-/-- The regular module, as an object of the subcategory, is `A`. -/
-private noncomputable def regularLinearEquiv : (finiteProjectiveModulesRegular A).obj ≃ₗ[A] A :=
-  (eqToIso (finiteProjectiveModulesRegular_obj A)).toLinearEquiv
-
-/-- The class of `Aⁿ` is `n[A]`. -/
-private theorem of_fin_eq_nsmul (n : ℕ) :
-    SplitK0.of.{u} (⟨ModuleCat.of A (Fin n → A),
-      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :
-        (finiteProjectiveModules A).FullSubcategory) =
-      n • SplitK0.of.{u} (finiteProjectiveModulesRegular A) :=
-  SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (regularLinearEquiv A)
-
 /-- **Invariant basis number in `K₀`.** If `A` has the invariant basis number property, then the
 multiples `n[A]`, `n : ℤ`, of the class of the regular module are pairwise distinct. -/
 theorem zsmul_of_finiteProjectiveModulesRegular_injective [InvariantBasisNumber A] :
@@ -87,8 +75,11 @@ theorem zsmul_of_finiteProjectiveModulesRegular_injective [InvariantBasisNumber 
   -- Write `z = n - m` with `n m : ℕ`, so that `n[A] = m[A]`, that is `[Aⁿ] = [Aᵐ]`.
   obtain ⟨n, m, rfl⟩ : ∃ n m : ℕ, z = n - m := ⟨z.toNat, (-z).toNat, by omega⟩
   rw [zmultiplesHom_apply, sub_smul, sub_eq_zero, natCast_zsmul, natCast_zsmul,
-    ← of_fin_eq_nsmul, ← of_fin_eq_nsmul, SplitK0.of_eq_of_iff_stableEquivalent,
-    stableEquivalent_iff] at hz
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin n → A),
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _) (.refl _ _),
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin m → A),
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _) (.refl _ _),
+    SplitK0.of_eq_of_iff_stableEquivalent, stableEquivalent_iff] at hz
   obtain ⟨k, ⟨e⟩⟩ := hz
   have := eq_of_fin_equiv A <| (LinearEquiv.piFinAppend A A n k).trans <|
     e.trans (LinearEquiv.piFinAppend A A m k).symm
@@ -116,8 +107,8 @@ theorem exists_zsmul_of_finiteProjectiveModulesRegular_eq
   refine ⟨(Fintype.card (Module.Free.ChooseBasisIndex A (P.obj × N)) : ℤ) -
     Fintype.card (Module.Free.ChooseBasisIndex A N), ?_⟩
   rw [zmultiplesHom_apply, sub_smul, natCast_zsmul, natCast_zsmul,
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := PN) eP (regularLinearEquiv A),
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := N') eN (regularLinearEquiv A), hPN,
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := PN) eP (.refl _ _),
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := N') eN (.refl _ _), hPN,
     add_sub_cancel_right]
 
 variable [InvariantBasisNumber A]
@@ -150,8 +141,9 @@ the class of a free module to its rank. -/
 @[simp]
 theorem rankEquiv_of [StrongRankCondition A] (P : (finiteProjectiveModules A).FullSubcategory)
     [Module.Free A P.obj] : rankEquiv A h (SplitK0.of.{u} P) = finrank A P.obj := by
-  rw [SplitK0.of_eq_nsmul_of_linearEquiv_fin (Module.finBasis A P.obj).equivFun
-    (regularLinearEquiv A), ← natCast_zsmul, rankEquiv_zsmul_of_finiteProjectiveModulesRegular]
+  rw [SplitK0.of_eq_nsmul_of_linearEquiv_fin (R' := finiteProjectiveModulesRegular A)
+    (Module.finBasis A P.obj).equivFun (.refl _ _), ← natCast_zsmul,
+    rankEquiv_zsmul_of_finiteProjectiveModulesRegular]
 
 end FiniteProjectiveModules
 
