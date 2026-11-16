@@ -130,6 +130,13 @@ theorem outgoingDir_def (s v : ℝ) :
     χ.outgoingDir s v = v • deriv χ s + √(1 - v ^ 2) • o.rightAngleRotation (deriv χ s) :=
   (rfl)
 
+/-- Reversing the tangential component of a state subtracts twice that component times the unit
+tangent from its outgoing velocity. -/
+theorem outgoingDir_neg (s v : ℝ) :
+    χ.outgoingDir s (-v) = χ.outgoingDir s v - (2 * v) • deriv χ s := by
+  rw [outgoingDir_def, outgoingDir_def, neg_sq]
+  module
+
 @[simp]
 theorem inner_deriv_outgoingDir (s v : ℝ) : ⟪deriv χ s, χ.outgoingDir s v⟫ = v := by
   simp [outgoingDir, inner_add_right, inner_smul_right, χ.norm_deriv _]

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Data.ZMod.QuotientRing
+import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Additive homomorphisms as morphisms of integer modules
@@ -13,11 +15,15 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 Bundling additive homomorphisms as integer-linear categorical morphisms preserves and
 reflects vanishing of their composite. This transports zero-composite laws between
 additive groups and `ModuleCat ℤ`.
+
+An endomorphism of `ℤ` in `ModuleCat ℤ` is multiplication by an integer `m`, and its cokernel is
+`ℤ/(m)`. So it is determined up to sign by its cokernel: if the cokernel is `ℤ/n`, it is
+multiplication by `n` or by `-n` (`ModuleCat.eq_smul_id_or_eq_neg_smul_id_of_cokernel_iso_zmod`).
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory CategoryTheory.Limits
 
 namespace AddMonoidHom
 
@@ -36,3 +42,28 @@ theorem ofHom_toIntLinearMap_comp_eq_zero_iff (a : M →+ N) (b : N →+ P) :
     AddMonoidHom.ext_iff, AddMonoidHom.comp_apply, AddMonoidHom.zero_apply]
 
 end AddMonoidHom
+
+namespace ModuleCat
+
+/-- An endomorphism of `ℤ` whose cokernel is `ℤ/n` is multiplication by `n` or by `-n`. -/
+theorem eq_smul_id_or_eq_neg_smul_id_of_cokernel_iso_zmod {n : ℕ}
+    (φ : ModuleCat.of ℤ ℤ ⟶ ModuleCat.of ℤ ℤ) (e : cokernel φ ≅ ModuleCat.of ℤ (ZMod n)) :
+    φ = (n : ℤ) • 𝟙 _ ∨ φ = -(n : ℤ) • 𝟙 _ := by
+  -- `φ` is multiplication by `m = φ 1`, whose range is the ideal `(m)`.
+  set m := φ.hom 1
+  have hφ : φ.hom = LinearMap.toSpanSingleton ℤ ℤ m := LinearMap.ext_ring (by simp [m])
+  have hrange : φ.hom.range = Ideal.span {m} := by
+    rw [hφ, LinearMap.range_toSpanSingleton]
+  -- Counting the cokernel `ℤ/(m) ≅ ℤ/|m|` gives `|m| = n`.
+  have hcard : m.natAbs = n := by
+    rw [← Nat.card_zmod m.natAbs, ← Nat.card_zmod n,
+      ← Nat.card_congr (Int.quotientSpanEquivZMod m).toEquiv, ← hrange]
+    exact Nat.card_congr ((cokernelIsoRangeQuotient φ).symm ≪≫ e).toLinearEquiv.toEquiv
+  have hφ' : ∀ c : ℤ, m = c → φ = c • 𝟙 _ := fun c hc ↦ by
+    ext : 1
+    exact LinearMap.ext_ring (by simp [← hc, m])
+  rcases Int.natAbs_eq m with h | h
+  · exact .inl (hφ' n (by rw [h, hcard]))
+  · exact .inr (hφ' (-n) (by rw [h, hcard]))
+
+end ModuleCat

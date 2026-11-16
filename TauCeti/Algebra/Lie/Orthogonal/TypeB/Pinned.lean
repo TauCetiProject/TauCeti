@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basis
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 import TauCeti.Algebra.Lie.Orthogonal.TypeB.Killing
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
@@ -79,6 +80,20 @@ theorem typeBPinnedLieEquiv_lieBasis_f (i : Fin (n + 1)) :
     (DynkinType.B (n + 1)).lieEquivOfBasis_lieBasis_f ht (typeBLieBasis (K := ℚ) n)
       (by simp) i
 
+/-- The pinned signed simple-root family maps to the native numbered root family. -/
+@[simp↓]
+theorem typeBPinnedLieEquiv_lieBasis_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    typeBPinnedLieEquiv n ht (((DynkinType.B (n + 1)).lieBasis ht).rootGenerator k) =
+      typeBSimpleRootGeneratorFamily k := by
+  -- The Dynkin rank reduces to n + 1 when matching the two signed families.
+  cases k with
+  | inl i =>
+      erw [LieAlgebra.Basis.rootGenerator_inl, typeBSimpleRootGeneratorFamily_inl,
+        typeBPinnedLieEquiv_lieBasis_e]
+  | inr i =>
+      erw [LieAlgebra.Basis.rootGenerator_inr, typeBSimpleRootGeneratorFamily_inr,
+        typeBPinnedLieEquiv_lieBasis_f]
+
 /-- The inverse identification preserves each numbered simple coroot. -/
 @[simp]
 theorem typeBPinnedLieEquiv_symm_typeBSimpleCorootGenerator (i : Fin (n + 1)) :
@@ -99,6 +114,14 @@ theorem typeBPinnedLieEquiv_symm_typeBSimpleNegativeRootGenerator (i : Fin (n + 
     (typeBPinnedLieEquiv n ht).symm (typeBSimpleNegativeRootGenerator i) =
       ((DynkinType.B (n + 1)).lieBasis ht).f i := by
   rw [LieEquiv.symm_apply_eq, typeBPinnedLieEquiv_lieBasis_f]
+
+/-- The inverse identification preserves the numbered signed simple-root family. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBSimpleRootGeneratorFamily
+    (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    (typeBPinnedLieEquiv n ht).symm (typeBSimpleRootGeneratorFamily k) =
+      ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator k := by
+  rw [LieEquiv.symm_apply_eq, typeBPinnedLieEquiv_lieBasis_rootGenerator]
 
 /-- The inverse identification sends the terminal short coroot to the pinned Cartan generator. -/
 @[simp]
