@@ -128,7 +128,7 @@ private theorem norm_mul_sub_mul_le {k₁ k₂ a₁ a₂ : ℂ} {η B K₀ c : �
   have hsplit : k₁ * a₁ - k₂ * a₂ = (k₁ - k₂) * a₁ + k₂ * (a₁ - a₂) := by ring
   have hterm₁ : ‖(k₁ - k₂) * a₁‖ ≤ η / 2 * B := by
     rw [norm_mul]
-    exact mul_le_mul hk_diff ha₁ (norm_nonneg _) (half_nonneg hη)
+    exact mul_le_mul hk_diff ha₁ (norm_nonneg _) (div_nonneg hη zero_le_two)
   have hterm₂ : ‖k₂ * (a₁ - a₂)‖ ≤ η / 2 * B := by
     rw [norm_mul]
     calc ‖k₂‖ * ‖a₁ - a₂‖ ≤ K₀ * (c * B) := mul_le_mul hk₂ ha_diff (norm_nonneg _) hK₀
