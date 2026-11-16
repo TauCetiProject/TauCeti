@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
@@ -35,6 +36,9 @@ in small balls takes intermediate values at arbitrarily small radii unless it te
 
 A function continuous and strictly monotone on a neighbourhood `s` of `x` maps it onto a
 neighbourhood of `f x`, `StrictMonoOn.image_mem_nhds`.
+
+A continuous antiperiodic function, `f (x + c) = -f x`, vanishes somewhere on `[[a, a + c]]` for
+every `a`, `Function.Antiperiodic.exists_mem_uIcc_eq_zero`.
 -/
 
 public section
@@ -175,3 +179,17 @@ theorem StrictMonoOn.image_mem_nhds [ConditionallyCompleteLinearOrder X] [OrderT
   exact Filter.mem_of_superset (Icc_mem_nhds (hf (hab ⟨le_rfl, (hax.trans hxb).le⟩) hx hax)
     (hf hx (hab ⟨(hax.trans hxb).le, le_rfl⟩) hxb))
     ((intermediate_value_Icc (hax.trans hxb).le (hcont.mono hab)).trans (image_mono hab))
+
+/-- A function `f` with `f (x + c) = -f x` for all `x`, with values in an ordered additive group,
+vanishes somewhere on `[[a, a + c]]` if it is continuous there. -/
+theorem Function.Antiperiodic.exists_mem_uIcc_eq_zero [ConditionallyCompleteLinearOrder X]
+    [OrderTopology X] [DenselyOrdered X] [Add X] [AddGroup α] [AddLeftMono α] {f : X → α} {c : X}
+    (h : Function.Antiperiodic f c) (a : X) (hf : ContinuousOn f (uIcc a (a + c))) :
+    ∃ x ∈ uIcc a (a + c), f x = 0 := by
+  -- The values at the two ends are negatives of each other.
+  have h0 : (0 : α) ∈ uIcc (f a) (f (a + c)) := by
+    rw [h a, mem_uIcc]
+    rcases le_total 0 (f a) with h' | h'
+    · exact .inr ⟨Left.neg_nonpos_iff.2 h', h'⟩
+    · exact .inl ⟨h', Left.nonneg_neg_iff.2 h'⟩
+  exact intermediate_value_uIcc hf h0
