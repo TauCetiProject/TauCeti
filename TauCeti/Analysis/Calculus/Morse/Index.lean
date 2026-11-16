@@ -379,6 +379,14 @@ theorem morseIndex_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional �
   rw [Module.finrank_of_not_finite hE] at h
   omega
 
+/-- A constant function has Morse index `0` at every point, since its Hessian vanishes. -/
+@[simp]
+theorem morseIndex_const (c : ℝ) : morseIndex (fun _ : E ↦ c) x = 0 := by
+  by_cases hE : FiniteDimensional ℝ E
+  · rw [morseIndex_def, ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
+    simp
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
+
 /-- If the Hessian is nondegenerate, the Morse indices of a function and its negation add to the
 dimension of the ambient space. In an infinite-dimensional space both indices and the dimension
 are `0` by convention. -/

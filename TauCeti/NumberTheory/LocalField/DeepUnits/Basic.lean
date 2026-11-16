@@ -150,6 +150,17 @@ theorem coe_deepUnitExpLogEquiv_symm_apply (hi : absoluteRamificationIndex K p <
     (((deepUnitExpLogEquiv K hi).symm x : Kˣ) : K) = exp ((x.toAdd : 𝒪[K]) : K) :=
   coe_deepUnitExp hi x.toAdd
 
+/-- On a deep additive ideal, integer multiples exponentiate to integer powers. -/
+theorem exp_zsmul_of_mem_maximalIdeal_pow
+    (hi : absoluteRamificationIndex K p < (p - 1) * i)
+    (x : (𝓂[K] ^ i : Ideal 𝒪[K])) (b : ℤ) :
+    exp (b • (x : K)) = exp (x : K) ^ b := by
+  have h := congrArg (fun u : unitFiltration K i => ((u : Kˣ) : K))
+    (map_zpow (deepUnitExpLogEquiv K hi).symm (Multiplicative.ofAdd x) b)
+  simpa only [coe_deepUnitExpLogEquiv_symm_apply, toAdd_zpow, toAdd_ofAdd,
+    Submodule.coe_smul_of_tower, zsmul_eq_mul, Subring.coe_mul, Subring.coe_intCast,
+    Subgroup.coe_zpow, Units.val_zpow_eq_zpow_val] using h
+
 variable (p i) in
 /-- **Deep logarithms in every direction.** For every depth `i` and every `z` in `K`, some nonzero
 `ℚ_p`-scalar multiple of `z` is the logarithm of a unit in `U(K,i)`. No hypothesis relates `i` to

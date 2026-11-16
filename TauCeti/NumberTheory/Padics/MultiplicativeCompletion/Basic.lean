@@ -400,14 +400,14 @@ theorem _root_.MonoidAlgebra.smul_padicCompletionUnitsOf_of_forall_eq
     (x : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) {u : Lˣ}
     (hu : ∀ σ : L ≃ₐ[K] L, Units.map σ.toRingEquiv.toMonoidHom u = u) :
     x • Additive.ofMul (padicCompletionUnitsOf p L u) =
-      TauCeti.MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L) x •
+      MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L) x •
         Additive.ofMul (padicCompletionUnitsOf p L u) := by
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
   | add x y hx hy => simp [add_smul, hx, hy]
   | single σ a =>
     simp only [padicCompletionUnits_single_smul, padicCompletionUnitsAut_of, hu,
-      TauCeti.MonoidAlgebra.augmentation_single]
+      MonoidAlgebra.augmentation_single]
 
 end GaloisAction
 

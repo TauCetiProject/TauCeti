@@ -237,67 +237,91 @@ section Bounds
 variable [Fintype ι] [Fintype κ]
 
 omit [Fintype κ] in
-/-- Sampling without replacement from a random finite population increases the mass of a
-measurable event by at most the uniform-measure mass of colliding index selections.
+/-- Sampling without replacement from a random finite population increases the mass of an
+event by at most the uniform-measure mass of colliding index selections.
 This mass is a collision probability when the selection space is nonempty. -/
 theorem sampleWithoutReplacement_le_sampleWithReplacement_add_collision [Finite κ]
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
       uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
-    samplePopulation_apply_population hA, samplePopulation_apply_population hA]
-  let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
-  let f : (κ → α) → ℝ≥0∞ := fun x =>
-    uniformOn (Set.univ : Set (ι → κ)) ((fun k i => x (k i)) ⁻¹' A)
-  have hf : Measurable f := by
-    exact measurable_measure_prodMk_right (measurable_reindexPopulation hA)
+  -- First for measurable events, then for any event through a measurable hull.
+  have key : ∀ B : Set (ι → α), MeasurableSet B →
+      sampleWithoutReplacement ρ B ≤ sampleWithReplacement ρ B +
+        uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
+    intro B hB
+    rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
+      samplePopulation_apply_population hB, samplePopulation_apply_population hB]
+    let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
+    let f : (κ → α) → ℝ≥0∞ := fun x =>
+      uniformOn (Set.univ : Set (ι → κ)) ((fun k i => x (k i)) ⁻¹' B)
+    have hf : Measurable f := by
+      exact measurable_measure_prodMk_right (measurable_reindexPopulation hB)
+    calc
+      (∫⁻ x, uniformOn {k : ι → κ | Function.Injective k}
+          ((fun k i => x (k i)) ⁻¹' B) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
+        lintegral_mono fun x => uniformOn_injective_le_add _
+      _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
+      _ = (∫⁻ x, f x ∂ρ) + c := by simp
   calc
-    (∫⁻ x, uniformOn {k : ι → κ | Function.Injective k}
-        ((fun k i => x (k i)) ⁻¹' A) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
-      lintegral_mono fun x => uniformOn_injective_le_add _
-    _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
-    _ = (∫⁻ x, f x ∂ρ) + c := by simp
+    sampleWithoutReplacement ρ A
+        ≤ sampleWithoutReplacement ρ (toMeasurable (sampleWithReplacement ρ) A) :=
+      measure_mono (subset_toMeasurable _ _)
+    _ ≤ sampleWithReplacement ρ (toMeasurable (sampleWithReplacement ρ) A) + _ :=
+      key _ (measurableSet_toMeasurable _ _)
+    _ = sampleWithReplacement ρ A + _ := by rw [measure_toMeasurable]
 
 omit [Fintype κ] in
-/-- Sampling with replacement from a random finite population increases the mass of a
-measurable event by at most the uniform-measure mass of colliding index selections.
+/-- Sampling with replacement from a random finite population increases the mass of an
+event by at most the uniform-measure mass of colliding index selections.
 This mass is a collision probability when the selection space is nonempty. -/
 theorem sampleWithReplacement_le_sampleWithoutReplacement_add_collision [Finite κ]
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
       uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
-    samplePopulation_apply_population hA, samplePopulation_apply_population hA]
-  let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
-  let f : (κ → α) → ℝ≥0∞ := fun x =>
-    uniformOn {k : ι → κ | Function.Injective k} ((fun k i => x (k i)) ⁻¹' A)
-  have hf : Measurable f := by
-    exact measurable_measure_prodMk_right (measurable_reindexPopulation hA)
+  -- First for measurable events, then for any event through a measurable hull.
+  have key : ∀ B : Set (ι → α), MeasurableSet B →
+      sampleWithReplacement ρ B ≤ sampleWithoutReplacement ρ B +
+        uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
+    intro B hB
+    rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
+      samplePopulation_apply_population hB, samplePopulation_apply_population hB]
+    let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
+    let f : (κ → α) → ℝ≥0∞ := fun x =>
+      uniformOn {k : ι → κ | Function.Injective k} ((fun k i => x (k i)) ⁻¹' B)
+    have hf : Measurable f := by
+      exact measurable_measure_prodMk_right (measurable_reindexPopulation hB)
+    calc
+      (∫⁻ x, uniformOn (Set.univ : Set (ι → κ))
+          ((fun k i => x (k i)) ⁻¹' B) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
+        lintegral_mono fun x => uniformOn_univ_le_injective_add _
+      _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
+      _ = (∫⁻ x, f x ∂ρ) + c := by simp
   calc
-    (∫⁻ x, uniformOn (Set.univ : Set (ι → κ))
-        ((fun k i => x (k i)) ⁻¹' A) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
-      lintegral_mono fun x => uniformOn_univ_le_injective_add _
-    _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
-    _ = (∫⁻ x, f x ∂ρ) + c := by simp
+    sampleWithReplacement ρ A
+        ≤ sampleWithReplacement ρ (toMeasurable (sampleWithoutReplacement ρ) A) :=
+      measure_mono (subset_toMeasurable _ _)
+    _ ≤ sampleWithoutReplacement ρ (toMeasurable (sampleWithoutReplacement ρ) A) + _ :=
+      key _ (measurableSet_toMeasurable _ _)
+    _ = sampleWithoutReplacement ρ A + _ := by rw [measure_toMeasurable]
 
-/-- **Finite sampling bound, without replacement to with replacement.** For every measurable
-event, sampling without replacement from a random finite population has mass at most its
+/-- **Finite sampling bound, without replacement to with replacement.** For every event,
+sampling without replacement from a random finite population has mass at most its
 with-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
 theorem sampleWithoutReplacement_le_sampleWithReplacement_add
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ :=
-  (sampleWithoutReplacement_le_sampleWithReplacement_add_collision hA).trans
+  (sampleWithoutReplacement_le_sampleWithReplacement_add_collision A).trans
     (add_le_add le_rfl uniformOn_not_injective_le)
 
-/-- **Finite sampling bound, with replacement to without replacement.** For every measurable
-event, sampling with replacement from a random finite population has mass at most its
+/-- **Finite sampling bound, with replacement to without replacement.** For every event,
+sampling with replacement from a random finite population has mass at most its
 without-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
 theorem sampleWithReplacement_le_sampleWithoutReplacement_add
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ :=
-  (sampleWithReplacement_le_sampleWithoutReplacement_add_collision hA).trans
+  (sampleWithReplacement_le_sampleWithoutReplacement_add_collision A).trans
     (add_le_add le_rfl uniformOn_not_injective_le)
 
 end Bounds

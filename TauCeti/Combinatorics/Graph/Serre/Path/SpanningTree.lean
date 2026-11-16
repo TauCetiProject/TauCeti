@@ -14,7 +14,8 @@ public import TauCeti.Combinatorics.Graph.Serre.SpanningTree
 A spanning tree bases any path at a chosen vertex by adjoining the tree paths to its
 endpoints. In particular, the loop through a dart follows the tree to its source, crosses
 the dart, and returns through the tree. Basing respects concatenation and reversal, and
-paths contained in the tree give the identity.
+paths contained in the tree give the identity. A closed path is the product of the tree loops of
+its darts, which expresses the tree loops of one spanning tree in those of another.
 
 The comparison with spanning-tree presentations and free groups is developed in
 `TauCeti.GroupTheory.GraphOfGroups.PathGroup`.
@@ -105,6 +106,30 @@ theorem basedPath_eq_one {a b : Γ.V} (p : Γ.Path a b)
 /-- Tree darts represent the identity. -/
 @[simp] theorem loop_eq_one {e : Γ.E} (he : e ∈ T.darts) : T.loop v e = 1 :=
   T.basedPath_eq_one v _ (by simpa using he)
+
+/-- The based class of a path is the product of the tree loops of its darts. -/
+theorem basedPath_eq_prod_loop {a b : Γ.V} (p : Γ.Path a b) :
+    T.basedPath v p = ((Path.darts Γ p).map (T.loop v)).prod := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [← Quiver.Path.comp_toPath_eq_cons, basedPath_comp, basedPath_toPath, ih,
+      Path.darts_comp, Path.darts_toPath, List.map_append, List.prod_append, List.map_singleton,
+      List.prod_singleton]
+
+/-- The class of a closed path is the product of the tree loops of its darts. -/
+theorem ofPath_eq_prod_loop (p : Γ.Path v v) :
+    PathGroup.ofPath p = ((Path.darts Γ p).map (T.loop v)).prod := by
+  rw [← T.basedPath_self, basedPath_eq_prod_loop]
+
+/-- Change of spanning tree: the tree loop of a dart relative to `T'` is the product of the tree
+loops relative to `T` of the darts on the `T'`-path to its source, of the dart itself, and of
+the darts on the `T'`-path back from its target. -/
+theorem loop_eq_prod_loop (T' : Γ.SpanningTree) (e : Γ.E) :
+    T'.loop v e = ((Path.darts Γ (T'.path v (Γ.src e))).map (T.loop v)).prod * T.loop v e *
+      ((Path.darts Γ (T'.path (Γ.tgt e) v)).map (T.loop v)).prod := by
+  rw [T'.loop_def, T.ofPath_eq_prod_loop]
+  simp [mul_assoc]
 
 end
 end TauCeti.SerreGraph.SpanningTree
