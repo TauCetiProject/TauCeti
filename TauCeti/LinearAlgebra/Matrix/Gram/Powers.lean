@@ -127,7 +127,7 @@ theorem gramFactorMultiIndex_comp_swap {ι κ : Type*} [Fintype ι]
 
 /-- Summing `gramFactorMultiIndex c (i, k)` across columns `k` recovers the row-and-column
 total of `c` at `i`. -/
-theorem sum_snd_gramFactorMultiIndex {ι κ : Type*} [Fintype ι] [Fintype κ]
+theorem sum_gramFactorMultiIndex_prodMk {ι κ : Type*} [Fintype ι] [Fintype κ]
     (c : ι × ι → κ → ℕ) (i : ι) :
     ∑ k : κ, gramFactorMultiIndex c (i, k) =
       ∑ j : ι, ((∑ k : κ, c (i, j) k) + ∑ k : κ, c (j, i) k) := by
@@ -137,7 +137,7 @@ theorem sum_snd_gramFactorMultiIndex {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- For compositions `c q ∈ Finset.piAntidiag (s q) (n q)`, the row sum of `gramFactorMultiIndex c`
 at `i` equals the symmetric vertex degree `∑ j, (n (i, j) + n (j, i))`. -/
-theorem sum_snd_gramFactorMultiIndex_of_mem_piFinset {ι κ : Type*} [Fintype ι] [Fintype κ]
+theorem sum_gramFactorMultiIndex_prodMk_of_mem_piFinset {ι κ : Type*} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] {s : ι × ι → Finset κ} {n : ι × ι → ℕ}
     {c : ι × ι → κ → ℕ}
     (hc : c ∈ Fintype.piFinset fun q ↦ Finset.piAntidiag (s q) (n q)) (i : ι) :
@@ -147,7 +147,7 @@ theorem sum_snd_gramFactorMultiIndex_of_mem_piFinset {ι κ : Type*} [Fintype ι
     rw [← Finset.sum_subset (Finset.subset_univ (s q))
       fun k _ hk ↦ Finset.eq_zero_of_notMem_of_mem_piAntidiag hk hcq]
     exact (Finset.mem_piAntidiag.mp hcq).1
-  rw [sum_snd_gramFactorMultiIndex]
+  rw [sum_gramFactorMultiIndex_prodMk]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [hsum (i, j), hsum (j, i)]
 
 /-- The total degree of `gramFactorMultiIndex c` is twice the sum of all entries of `c`. -/
@@ -155,7 +155,7 @@ theorem sum_gramFactorMultiIndex {ι κ : Type*} [Fintype ι] [Fintype κ]
     (c : ι × ι → κ → ℕ) :
     ∑ rk : ι × κ, gramFactorMultiIndex c rk = 2 * ∑ q : ι × ι, ∑ k : κ, c q k := by
   rw [Fintype.sum_prod_type]
-  simp_rw [sum_snd_gramFactorMultiIndex, Finset.sum_add_distrib]
+  simp_rw [sum_gramFactorMultiIndex_prodMk, Finset.sum_add_distrib]
   have hswap : (∑ x : ι, ∑ j : ι, ∑ k : κ, c (j, x) k) =
       ∑ x : ι, ∑ j : ι, ∑ k : κ, c (x, j) k := Finset.sum_comm
   rw [hswap, ← two_mul, Fintype.sum_prod_type]
@@ -168,7 +168,7 @@ theorem sum_gramFactorMultiIndex_of_mem_piFinset {ι κ : Type*} [Fintype ι] [F
     (hc : c ∈ Fintype.piFinset fun q ↦ Finset.piAntidiag (s q) (n q)) :
     ∑ rk : ι × κ, gramFactorMultiIndex c rk = 2 * ∑ q : ι × ι, n q := by
   rw [Fintype.sum_prod_type]
-  simp_rw [sum_snd_gramFactorMultiIndex_of_mem_piFinset hc, Finset.sum_add_distrib]
+  simp_rw [sum_gramFactorMultiIndex_prodMk_of_mem_piFinset hc, Finset.sum_add_distrib]
   have hswap : (∑ x : ι, ∑ j : ι, n (j, x)) = ∑ x : ι, ∑ j : ι, n (x, j) := Finset.sum_comm
   rw [hswap, ← two_mul, Fintype.sum_prod_type]
 

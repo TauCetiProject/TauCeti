@@ -198,9 +198,10 @@ theorem integral_prod_pow_partialCorrelationGram_pi_betaMeasure
   rw [integral_const_mul, integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure ha,
     ite_eq_left fun _ ↦ le_of_gramFactorMultiIndex_ne_zero hc]
 
-/-- For a Gram law built from independent sigma-finite negation-invariant partial correlations,
-any vertex `i` whose symmetric exponent sum `∑ j, (n (i, j) + n (j, i))` is odd forces the mixed
-entry moment `∫ R, (∏ q, R q.1 q.2 ^ n q)` to vanish. -/
+/-- Under the pushforward of a product of independent sigma-finite negation-invariant marginals
+by `partialCorrelationGram`, any vertex `i` whose symmetric exponent sum
+`∑ j, (n (i, j) + n (j, i))` is odd forces the Bochner integral `∫ R, (∏ q, R q.1 q.2 ^ n q)`
+to vanish. Nonintegrable integrals are totalized to zero, so this does not assert integrability. -/
 theorem integral_prod_pow_apply_map_partialCorrelationGram_pi_eq_zero_of_odd
     (μ : strictLowerTriangle p → Measure ℝ) [∀ ij, SigmaFinite (μ ij)]
     [∀ ij, (μ ij).IsNegInvariant] {n : Fin p × Fin p → ℕ} {i : Fin p}
