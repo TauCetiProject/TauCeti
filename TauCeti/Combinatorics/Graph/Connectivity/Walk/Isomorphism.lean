@@ -20,6 +20,7 @@ reachability, including after deleting a transported edge set.
 
 ## Main definitions
 
+* `Graph.Iso.bidirectedHomEquiv`: the induced equivalence between corresponding bidirected arrows.
 * `Graph.Iso.toPrefunctor`: the induced prefunctor between bidirected arrow families.
 * `Graph.Iso.mapPath`: transport of directed walks of the bidirected family.
 * `Graph.Iso.mapWalk`: transport of edge-labelled multigraph walks.
@@ -68,6 +69,30 @@ theorem mapHom_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
         g.mapHom (f.mapHom a) := by
   apply Subtype.ext
   simp [mapHom]
+
+/-- The equivalence between bidirected arrows induced by a graph isomorphism. It sends an arrow
+to the arrow of the corresponding edge between the corresponding vertices. -/
+def bidirectedHomEquiv (f : Iso G H) (x y : V(G)) :
+    G.BidirectedHom x y ≃ H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y) where
+  toFun := f.mapHom
+  invFun b := ⟨f.edgeEquiv.symm ⟨b.1, b.2.edge_mem⟩,
+    (f.map_isLink_iff (f.edgeEquiv.symm ⟨b.1, b.2.edge_mem⟩) x y).1 (by simpa using b.2)⟩
+  left_inv a := Subtype.ext (by simp)
+  right_inv b := Subtype.ext (by simp)
+
+/-- The isomorphism of bidirected arrows is arrow transport along the graph isomorphism. -/
+@[simp]
+theorem bidirectedHomEquiv_apply (f : Iso G H) {x y : V(G)} (a : G.BidirectedHom x y) :
+    f.bidirectedHomEquiv x y a = f.mapHom a :=
+  (rfl)
+
+/-- The underlying edge of the inverse image of a bidirected arrow is the inverse image of its
+edge. -/
+@[simp]
+theorem bidirectedHomEquiv_symm_apply_fst (f : Iso G H) {x y : V(G)}
+    (b : H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y)) :
+    ((f.bidirectedHomEquiv x y).symm b).1 = f.edgeEquiv.symm ⟨b.1, b.2.edge_mem⟩ :=
+  (rfl)
 
 /-- A graph isomorphism as a prefunctor between the two bidirected arrow families. -/
 def toPrefunctor (f : Iso G H) :

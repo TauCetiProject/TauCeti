@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
+public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Isomorphism
@@ -17,7 +18,8 @@ public import TauCeti.Combinatorics.Graph.Simple
 A multigraph isomorphism transports subsets of the actual vertices and edges by its two
 underlying equivalences. This transport sends an edge cut to the edge cut of the transported
 vertex side, and consequently preserves edge cuts, bridges, and bonds. It also preserves the
-absence of cycles, hence multigraph forests.
+absence of cycles, hence multigraph forests. For finite edge sets, it preserves weighted cut
+capacities and their aggregation by unordered pairs of vertices.
 
 Isomorphisms also preserve local and global edge- and vertex-connectivity and their numerical
 invariants. The edge statements retain edge identities, including loops and parallel edges;
@@ -33,13 +35,14 @@ isomorphism is an exact inverse.
 
 public section
 
-open Set
+open Finset Set
 
-universe u v u' v'
+universe u v u' v' w
 
 namespace Graph
 
 variable {α : Type u} {β : Type v} {α' : Type u'} {β' : Type v'}
+variable {K : Type w}
 variable {G : Graph α β} {H : Graph α' β'}
 
 namespace Iso
@@ -52,6 +55,31 @@ theorem edgeEquiv_mem_edgeCut_mapVertexSet_iff (f : Iso G H) (S : Set α)
   obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
   rw [(f.map_isLink hxy).mem_edgeCut_iff, hxy.mem_edgeCut_iff]
   simp
+
+/-! ### Cut capacities -/
+
+/-- A graph isomorphism preserves the capacity of every cut once the edge capacities are
+relabelled along it. -/
+theorem edgeCutCapacity_map [Fintype E(G)] [Fintype E(H)] [AddCommMonoid K] (f : Iso G H)
+    (c : E(G) → K) (S : Finset V(G)) :
+    H.edgeCutCapacity (c ∘ f.edgeEquiv.symm) (S.map f.vertexEquiv.toEmbedding) =
+      G.edgeCutCapacity c S := by
+  classical
+  rw [edgeCutCapacity_def, edgeCutCapacity_def, coe_map, Equiv.coe_toEmbedding,
+    ← mapVertexSet_image_val]
+  exact (Fintype.sum_equiv f.edgeEquiv _ _ fun e ↦ by
+    simp [f.edgeEquiv_mem_edgeCut_mapVertexSet_iff]).symm
+
+/-- A graph isomorphism preserves the aggregated capacity of every unordered pair of actual
+vertices once the edge capacities are relabelled along it. -/
+theorem pairCapacity_map [Fintype E(G)] [Fintype E(H)] [AddCommMonoid K] (f : Iso G H)
+    (c : E(G) → K) (p : Sym2 V(G)) :
+    H.pairCapacity (c ∘ f.edgeEquiv.symm) (p.map f.vertexEquiv) = G.pairCapacity c p := by
+  classical
+  rw [pairCapacity_def, pairCapacity_def]
+  exact (Fintype.sum_equiv f.edgeEquiv _ _ fun e ↦ by
+    simp [Sym2.isDiag_map f.vertexEquiv.injective,
+      (Sym2.map.injective f.vertexEquiv.injective).eq_iff]).symm
 
 /-- Transporting an edge cut gives the edge cut of the transported vertex side. -/
 theorem mapEdgeSet_edgeCut (f : Iso G H) (S : Set α) :
