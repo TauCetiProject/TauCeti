@@ -225,7 +225,7 @@ theorem hasFDerivAt_integral_of_contMDiffOn (hu : IsOpen u) (hz₀ : z₀ ∈ u)
       MeasurableSet.univ (measure_ne_top μ univ) subset_rfl hg.continuousOn
       (fun a _ ↦ hdiff a) (continuousOn_fderiv_of_contMDiffOn hu hg)
 
-omit [I.Boundaryless] in
+omit [I.Boundaryless] [T2Space N] in
 /-- **Exterior derivative under the integral sign.** For a family of flat differential forms
 `φ · a` on a normed space, depending on a parameter `a` in a compact manifold carrying a finite
 measure `μ`, and jointly `C¹` in the point and the parameter on `u × N` for an open set `u ∋ z₀`,
@@ -236,7 +236,7 @@ theorem extDeriv_integral_of_contMDiffOn [CompleteSpace F] {k : ℕ}
     (hφ : ContMDiffOn (𝓘(ℝ, E).prod J) 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F) 1 (uncurry φ) (u ×ˢ univ)) :
     extDeriv (fun z ↦ ∫ a, φ z a ∂μ) z₀ = ∫ a, extDeriv (fun z ↦ φ z a) z₀ ∂μ := by
   have hint : Integrable (fun a ↦ fderiv ℝ (fun z ↦ φ z a) z₀) μ :=
-    integrableOn_univ.1 <| ContinuousOn.integrableOn_compact isCompact_univ <|
+    integrableOn_univ.1 <| ContinuousOn.integrableOn_compact' isCompact_univ MeasurableSet.univ <|
       (continuousOn_fderiv_of_contMDiffOn hu hφ).comp (continuousOn_const.prodMk continuousOn_id)
         fun a _ ↦ ⟨hz₀, mem_univ a⟩
   simp only [extDeriv, (hasFDerivAt_integral_of_contMDiffOn hu hz₀ hφ).fderiv,
