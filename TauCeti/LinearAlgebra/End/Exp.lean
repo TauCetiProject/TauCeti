@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.Algebra.Module.BigOperators
+import TauCeti.RingTheory.Nilpotent.Exp.Basic
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Algebra.Tower
 
@@ -56,6 +57,8 @@ commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
   endomorphisms intertwines their exponentials.
 * `Module.End.locallyNilpotentExp_eq_exp`: for nilpotent `f` the exponential is
   `IsNilpotent.exp f`.
+* `Module.End.map_exp`: an additive map intertwining two nilpotent endomorphisms intertwines
+  their exponentials `IsNilpotent.exp`.
 * `Module.End.restrictScalars_exp`: scalar restriction commutes with `IsNilpotent.exp`.
 * `Module.End.exp_apply_mem_of_forall_mem`: `IsNilpotent.exp` of an endomorphism preserves every
   submodule stable under it.
@@ -226,6 +229,18 @@ theorem locallyNilpotentExp_eq_exp (hnil : IsNilpotent f) :
     IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
   simp only [LinearMap.smul_apply]
 
+/-- **Naturality of Mathlib's exponential.** An additive map `g` with `g ∘ f = f' ∘ g` carries
+`IsNilpotent.exp f` to `IsNilpotent.exp f'` for nilpotent `f` and `f'`. The two endomorphisms may
+be linear over different semirings. -/
+theorem map_exp {S N F : Type*} [Semiring S] [AddCommGroup N] [Module S N] [Module ℚ N]
+    [FunLike F M N] [AddMonoidHomClass F M N] {f' : Module.End S N} (hnil : IsNilpotent f)
+    (hnil' : IsNilpotent f') (g : F) (hg : Function.Semiconj g f f') (x : M) :
+    g (IsNilpotent.exp f x) = IsNilpotent.exp f' (g x) := by
+  rw [← LinearMap.congr_fun (locallyNilpotentExp_eq_exp f hnil) x,
+    ← LinearMap.congr_fun (locallyNilpotentExp_eq_exp f' hnil') (g x), LinearEquiv.coe_coe,
+    LinearEquiv.coe_coe]
+  exact map_locallyNilpotentExp f _ _ g hg x
+
 end Module.End
 
 /-!
@@ -271,22 +286,15 @@ theorem exp_bilinear_of_leibniz
   have hm : D₃ ∘ₗ m = m ∘ₗ (DL + DR) := by
     ext
     simp [DL, DR, m, h]
-  -- Over a commutative semiring, naturality of `Module.End.locallyNilpotentExp` replaces
-  -- Mathlib's `Module.End.commute_exp_left_of_commute`, which needs a commutative ring.
-  have hc : exp D₃ ∘ₗ m = m ∘ₗ exp (DL + DR) := by
-    refine LinearMap.ext fun z ↦ ?_
-    have e₁ := LinearMap.congr_fun (Module.End.locallyNilpotentExp_eq_exp (DL + DR) h_nil) z
-    have e₃ := LinearMap.congr_fun (Module.End.locallyNilpotentExp_eq_exp D₃ h₃) (m z)
-    rw [LinearEquiv.coe_coe] at e₁ e₃
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, ← e₁, ← e₃]
-    exact (Module.End.map_locallyNilpotentExp (DL + DR) _ _ m
-      (fun w ↦ (LinearMap.congr_fun hm w).symm) z).symm
+  -- Over a commutative semiring, `Module.End.map_exp` replaces Mathlib's
+  -- `Module.End.commute_exp_left_of_commute`, which needs a commutative ring.
+  have he := Module.End.map_exp (DL + DR) h_nil h₃ m
+    (fun w ↦ (LinearMap.congr_fun hm w).symm) (x ⊗ₜ[R] y)
   have hl : exp DL = (exp D₂).lTensor M :=
     (h₂.map_exp (Module.End.lTensorAlgHom R N M)).symm
   have hr : exp DR = (exp D₁).rTensor N :=
     (h₁.map_exp (Module.End.rTensorAlgHom R M N)).symm
-  have he := LinearMap.congr_fun hc (x ⊗ₜ[R] y)
-  simpa [exp_add_of_commute h_comm h_nilL h_nilR, hl, hr, m] using he
+  simpa [exp_add_of_commute h_comm h_nilL h_nilR, hl, hr, m] using he.symm
 
 end LinearMap
 
@@ -307,11 +315,9 @@ theorem restrictScalars_exp (D : Module.End S M) :
     (IsNilpotent.exp D).restrictScalars R = IsNilpotent.exp (D.restrictScalars R) := by
   by_cases hD : IsNilpotent D
   · simpa only [restrictScalarsRingHom_apply] using hD.map_exp (restrictScalarsRingHom R S M)
-  · have hD' : ¬IsNilpotent (D.restrictScalars R) := isNilpotent_restrictScalars_iff.not.2 hD
-    rw [IsNilpotent.exp, IsNilpotent.exp,
-      Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hD),
-      Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hD'), Finset.range_zero,
-      Finset.sum_empty, Finset.sum_empty, LinearMap.restrictScalars_zero]
+  · rw [IsNilpotent.exp_eq_zero_of_not_isNilpotent hD,
+      IsNilpotent.exp_eq_zero_of_not_isNilpotent (isNilpotent_restrictScalars_iff.not.2 hD),
+      LinearMap.restrictScalars_zero]
 
 end RestrictScalars
 
@@ -361,16 +367,21 @@ noncomputable def expAlgEquiv (D : Module.End R A)
       (LinearMap.exp_bilinear_of_leibniz (LinearMap.mul R A) D D D hder hD hD hD))
     ((Module.End.isUnit_iff _).mp hD.isUnit_exp)
 
+/-- The automorphism acts by Mathlib's exponential. -/
+theorem expAlgEquiv_apply (D : Module.End R A)
+    (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) (a : A) :
+    D.expAlgEquiv hder hD a = IsNilpotent.exp D a :=
+  -- By definition. `AlgEquiv.ofBijective_apply` cannot rewrite it: the `map_mul` field is the
+  -- `LinearMap.mul` form of `LinearMap.exp_bilinear_of_leibniz`, equal to `f (x * y) = f x * f y`
+  -- only after unfolding `LinearMap.mul`.
+  (rfl)
+
 /-- The underlying map of the automorphism is Mathlib's exponential. -/
 @[simp]
 theorem expAlgEquiv_toLinearMap (D : Module.End R A)
     (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) :
-    (D.expAlgEquiv hder hD : A →ₗ[R] A) = IsNilpotent.exp D := (rfl)
-
-/-- The automorphism acts by Mathlib's exponential. -/
-theorem expAlgEquiv_apply (D : Module.End R A)
-    (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) (a : A) :
-    D.expAlgEquiv hder hD a = IsNilpotent.exp D a := (rfl)
+    (D.expAlgEquiv hder hD : A →ₗ[R] A) = IsNilpotent.exp D :=
+  LinearMap.ext (expAlgEquiv_apply D hder hD)
 
 /-- The inverse acts by the exponential of the negative endomorphism. -/
 theorem expAlgEquiv_symm_apply (D : Module.End R A)
@@ -413,7 +424,9 @@ theorem restrictScalars_expAlgEquiv (D : Module.End S A)
       Module.End.expAlgEquiv (D.restrictScalars R) (fun a b => hder a b)
         ((isNilpotent_restrictScalars_iff (R := R) (D := D)).2 hD) := by
   ext a
-  exact LinearMap.congr_fun (restrictScalars_exp (R := R) D) a
+  rw [AlgEquiv.restrictScalars_apply, expAlgEquiv_apply, ← LinearMap.restrictScalars_apply R,
+    restrictScalars_exp]
+  exact (expAlgEquiv_apply _ _ _ a).symm
 
 end RestrictScalars
 

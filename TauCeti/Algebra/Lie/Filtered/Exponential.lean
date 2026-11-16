@@ -89,16 +89,9 @@ theorem factor_quotientExpLieAction {k l : ℕ} (h : k ≤ l) (x : L)
       (F.quotientExpLieAction d ℒ l x a) =
         F.quotientExpLieAction d ℒ k x
           (Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1)) a) := by
-  let f := (Ideal.Quotient.factorₐ R (F.antitone (Nat.add_le_add_right h 1))).toLinearMap
-  have hc : (F.quotientLieAction d ℒ k x).comp f =
-      f.comp (F.quotientLieAction d ℒ l x) := by
-    ext q
-    exact (F.factor_quotientLieAction d ℒ h x q).symm
-  simpa only [f, quotientExpLieAction_apply, LinearMap.comp_apply,
-    AlgHom.toLinearMap_apply, Ideal.Quotient.factorₐ_apply] using
-    (LinearMap.congr_fun (Module.End.commute_exp_left_of_commute
-      (F.isNilpotent_quotientLieAction d ℒ l x)
-      (F.isNilpotent_quotientLieAction d ℒ k x) hc) a).symm
+  rw [quotientExpLieAction_apply, quotientExpLieAction_apply]
+  exact Module.End.map_exp _ (F.isNilpotent_quotientLieAction d ℒ l x)
+    (F.isNilpotent_quotientLieAction d ℒ k x) _ (F.factor_quotientLieAction d ℒ h x) a
 
 end Decomposition
 

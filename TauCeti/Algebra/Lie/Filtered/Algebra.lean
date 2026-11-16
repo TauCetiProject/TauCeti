@@ -66,6 +66,8 @@ theorem quotientLieAction_eq_conjAlgEquiv (k : ℕ) (x : L) :
       (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)) :
         (A ⧸ F.toSubmodule R (k + 1)) ≃ₗ[R] A ⧸ F.ideal (k + 1)).conjAlgEquiv R
         (PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k x) :=
+  -- By definition. Rewriting cannot unfold it: the composite is well typed only because
+  -- `F.toSubmodule R (k + 1)` unfolds to `(F.ideal (k + 1)).restrictScalars R`.
   (rfl)
 
 /-- Evaluation transports the scalar-restricted quotient representation by conjugation. -/
@@ -74,16 +76,22 @@ theorem quotientLieAction_apply (k : ℕ) (x : L) (q : A ⧸ F.ideal (k + 1)) :
       (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)))
         (PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R)
           (F.toSubmodule_antitone R) k x
-          ((Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).symm q)) := (rfl)
+          ((Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).symm q)) :=
+  -- By definition of `LinearEquiv.conjAlgEquiv`; as in `quotientLieAction_eq_conjAlgEquiv`,
+  -- rewriting is blocked by the unfolding of `F.toSubmodule R (k + 1)`.
+  (rfl)
 
 /-- Quotient representatives are acted on by the original Lie action. -/
 @[simp]
 theorem quotientLieAction_mk (k : ℕ) (x : L) (a : A) :
     F.quotientLieAction d ℒ k x (Ideal.Quotient.mk _ a) =
       Ideal.Quotient.mk _ ⁅x, a⁆ := by
-  rw [quotientLieAction_apply, ← Ideal.Quotient.mk_eq_mk]
-  exact congrArg _ (PositiveDegrees.quotientLieAction_mk d ℒ (F.toSubmodule R)
-    (F.toSubmodule_antitone R) k x a)
+  rw [quotientLieAction_apply, ← Ideal.Quotient.mk_eq_mk,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk]
+  -- `F.toSubmodule R (k + 1)` unfolds to `(F.ideal (k + 1)).restrictScalars R`
+  -- (`toSubmodule_apply`), so this representative is the one acted on by `PositiveDegrees`.
+  exact (congrArg _ (PositiveDegrees.quotientLieAction_mk d ℒ (F.toSubmodule R)
+    (F.toSubmodule_antitone R) k x a)).trans (Submodule.Quotient.restrictScalarsEquiv_mk _ _ _)
 
 /-- The finite-order operator retains the Leibniz rule. -/
 theorem quotientLieAction_mul [IsDerivationAction L A]
@@ -141,6 +149,8 @@ theorem truncatedLieAction_eq_conjAlgEquiv (k : ℕ) (x : d.truncatedLie ℒ k) 
         (A ⧸ F.toSubmodule R (k + 1)) ≃ₗ[R] A ⧸ F.ideal (k + 1)).conjAlgEquiv R
         (PositiveDegrees.truncatedLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R)
           (F.toSubmodule_zero R) k x) :=
+  -- By definition. Rewriting cannot unfold it: the composite is well typed only because
+  -- `F.toSubmodule R (k + 1)` unfolds to `(F.ideal (k + 1)).restrictScalars R`.
   (rfl)
 
 /-- The truncated representation agrees with the quotient action on Lie representatives. -/

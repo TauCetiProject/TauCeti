@@ -60,7 +60,7 @@ theorem toSubmodule_apply (R : Type*) [Semiring R] [Module R A] [IsScalarTower R
 /-- Scalar restriction preserves the decreasing order of the filtration. -/
 theorem toSubmodule_antitone (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] :
     Antitone (F.toSubmodule R) :=
-  fun _ _ h => F.antitone h
+  fun _ _ h => Submodule.restrictScalars_mono R (F.antitone h)
 
 /-- The zeroth scalar-restricted filtration term is the whole coefficient module. -/
 theorem toSubmodule_zero (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] :
