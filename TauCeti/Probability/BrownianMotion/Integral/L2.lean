@@ -263,84 +263,10 @@ theorem integral_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥
   simpa only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     innerSL_apply_apply, one, L2.inner_indicatorConstLp_one, setIntegral_univ, zero_apply] using h
 
-private theorem stronglyMeasurable_indicator_Ioc_predictable (s t : ℝ≥0) {ξ : Ω → ℝ}
-    (hξ : StronglyMeasurable[ℱ s] ξ) : StronglyMeasurable[ℱ.predictable]
-      (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1) := by
-  have h1 : StronglyMeasurable[ℱ.predictable]
-      (Function.uncurry (Finance.simpleHolding (fun k ↦ if k = 0 then s else t) 1 (fun _ ↦ ξ))) :=
-    Finance.isStronglyPredictable_simpleHolding
-      (fun i hi ↦ by obtain rfl := Nat.lt_one_iff.1 hi; simpa using hξ)
-  convert h1 using 1; ext ⟨r, ω⟩; simp [Function.uncurry_apply_pair, Finance.simpleHolding_def]
-
-private theorem memLp_indicator_Ioc_predictableMeasure [IsFiniteMeasure P] (T s t : ℝ≥0)
-    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P) :
-    MemLp (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1) 2
-      (ℱ.predictableMeasure P T) :=
-  (Finance.memLp_simpleHolding_predictableMeasure (ℱ := ℱ) (P := P) (p := 2)
-    (τ := fun k ↦ if k = 0 then s else t) (n := 1) (a := fun _ ↦ ξ)
-    (fun i hi ↦ by obtain rfl := Nat.lt_one_iff.1 hi; simpa using hξ) (fun _ _ ↦ hξ₂) T).ae_eq
-    (.of_forall fun p ↦ by rw [Function.uncurry_apply_pair, Finance.simpleHolding_def]; simp)
-
-private theorem norm_indicator_Ioc_toLp_sq_le [IsFiniteMeasure P] (T s t : ℝ≥0) {η : Ω → ℝ}
-    (hη : StronglyMeasurable[ℱ s] η) (hη₂ : MemLp η 2 P) :
-    ‖(memLp_indicator_Ioc_predictableMeasure T s t hη hη₂).toLp
-      (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ η p.2) p.1)‖ ^ 2 ≤
-      (timeMeasure T).real univ * ∫ ω, η ω ^ 2 ∂P := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have htr := ℱ.integral_predictableMeasure P
-    ((stronglyMeasurable_indicator_Ioc_predictable s t hη).pow 2) T
-  dsimp only [Pi.pow_apply] at htr
-  rw [(memLp_indicator_Ioc_predictableMeasure T s t hη hη₂).norm_toLp_sq]
-  simp_rw [Real.norm_eq_abs, sq_abs]; rw [htr]
-  have hdom : Integrable (fun p : ℝ≥0 × Ω ↦ η p.2 ^ 2) ((timeMeasure T).prod P) :=
-    hη₂.integrable_sq.comp_snd _
-  refine (integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _) hdom
-    (.of_forall fun p ↦ by by_cases hp : p.1 ∈ Ioc s t <;> simp [hp, sq_nonneg])).trans ?_
-  rw [integral_prod _ hdom]; simp [integral_const]
-
-private theorem coeFn_sum_indicatorConstLp_Ioc_prod [IsFiniteMeasure P] (T s t : ℝ≥0)
-    {S : Finset ℝ} {A : ℝ → Set Ω} (hA : ∀ c, MeasurableSet[ℱ s] (A c)) :
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    ⇑(∑ c ∈ S, indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t (hA c))
-      (measure_ne_top (ℱ.predictableMeasure P T) _) c) =ᵐ[ℱ.predictableMeasure P T]
-      fun p ↦ (Ioc s t).indicator (fun _ ↦ ∑ c ∈ S, (A c).indicator (fun _ ↦ c) p.2) p.1 := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  filter_upwards [Lp.coeFn_fun_finsetSum S fun c ↦ indicatorConstLp 2
-      (measurableSet_predictable_Ioc_prod s t (hA c))
-      (measure_ne_top (ℱ.predictableMeasure P T) _) c,
-    (ae_ball_iff S.countable_toSet).2 fun c _ ↦ indicatorConstLp_coeFn
-      (μ := ℱ.predictableMeasure P T) (p := 2) (hs := measurableSet_predictable_Ioc_prod s t (hA c))
-      (hμs := measure_ne_top _ _) (c := c)] with p hsum hc
-  rw [hsum]
-  by_cases hp : p.1 ∈ Ioc s t
-  · simp only [indicator_of_mem hp]
-    exact Finset.sum_congr rfl fun c hcS ↦ by
-      rw [hc c hcS]; by_cases hω : p.2 ∈ A c <;> simp [hp, hω]
-  · simp only [indicator_of_notMem hp]
-    exact Finset.sum_eq_zero fun c hcS ↦ by rw [hc c hcS]; simp [hp]
-
-private theorem coeFn_l2Integral_sum_indicatorConstLp_Ioc_prod
-    (hW : IsFilteredPreBrownianReal ℱ W P) (T s t : ℝ≥0)
-    {S : Finset ℝ} {A : ℝ → Set Ω} (hA : ∀ c, MeasurableSet[ℱ s] (A c)) :
-    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    hW.l2Integral T (∑ c ∈ S, indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t (hA c))
-      (measure_ne_top (ℱ.predictableMeasure P T) _) c) =ᵐ[P]
-      fun ω ↦ (∑ c ∈ S, (A c).indicator (fun _ ↦ c) ω) * (W (max s (min t T)) ω - W s ω) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  rw [map_sum]
-  filter_upwards [Lp.coeFn_fun_finsetSum S fun c ↦ hW.l2Integral T
-      (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t (hA c)) (measure_ne_top _ _) c),
-    (ae_ball_iff S.countable_toSet).2 fun c _ ↦
-      hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T s t (hA c) c] with ω hsum hc
-  rw [hsum, Finset.sum_mul]
-  exact Finset.sum_congr rfl fun c hcS ↦ hc c hcS
-
 private theorem coeFn_l2Integral_indicator_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     (T s t : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    hW.l2Integral T ((memLp_indicator_Ioc_predictableMeasure T s t hξ hξ₂).toLp
+    hW.l2Integral T ((ℱ.memLp_indicator_Ioc_predictableMeasure P T s t hξ hξ₂).toLp
       (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1)) =ᵐ[P]
       fun ω ↦ ξ ω * (W (max s (min t T)) ω - W s ω) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
@@ -352,58 +278,65 @@ private theorem coeFn_l2Integral_indicator_Ioc (hW : IsFilteredPreBrownianReal �
     Finset.stronglyMeasurable_fun_sum _ fun c _ ↦ stronglyMeasurable_const.indicator (hA n c)
   have hξn_Lp (n : ℕ) : MemLp (ξn n) 2 P :=
     memLp_finsetSum _ fun c _ ↦ (memLp_const c).indicator (ℱ.le s _ (hA n c)).nullMeasurableSet
-  have hlim : Tendsto (fun n ↦ eLpNorm (ξn n - ξ) 2 P) atTop (𝓝 0) :=
-    hlim_trim.congr fun n ↦ eLpNorm_trim (ℱ.le s) ((hξn_m n).sub hξ)
   have hd_sq : Tendsto (fun n ↦ ∫ ω, (ξn n ω - ξ ω) ^ 2 ∂P) atTop (𝓝 0) := by
+    have hlim : Tendsto (fun n ↦ eLpNorm (ξn n - ξ) 2 P) atTop (𝓝 0) :=
+      hlim_trim.congr fun n ↦ eLpNorm_trim (ℱ.le s) ((hξn_m n).sub hξ)
     simpa only [Pi.zero_apply, norm_zero, zero_pow two_ne_zero, integral_zero, Pi.sub_apply,
       Real.norm_eq_abs, sq_abs] using tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub MemLp.zero
       (fun n ↦ (hξn_Lp n).sub hξ₂) (by simpa only [sub_zero] using hlim)
-  let f := (memLp_indicator_Ioc_predictableMeasure T s t hξ hξ₂).toLp
-    (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1)
-  let g (n : ℕ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-    ∑ c ∈ S n, indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t (hA n c))
-      (measure_ne_top _ _) c
+  have hmem := ℱ.memLp_indicator_Ioc_predictableMeasure P T s t hξ hξ₂
+  let f := hmem.toLp (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1)
+  let g (n : ℕ) : Lp ℝ 2 (ℱ.predictableMeasure P T) := ∑ c ∈ S n, indicatorConstLp 2
+    (measurableSet_predictable_Ioc_prod s t (hA n c)) (measure_ne_top _ _) c
   have hg_f : Tendsto g atTop (𝓝 f) := by
     refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
-    have hsq : Tendsto (fun n ↦ ‖g n - f‖ ^ 2) atTop (𝓝 0) :=
-      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-        (by simpa using hd_sq.const_mul ((timeMeasure T).real univ)) (fun _ ↦ sq_nonneg _)
-        fun n ↦ by
-        have hsub := memLp_indicator_Ioc_predictableMeasure T s t ((hξn_m n).sub hξ)
-          ((hξn_Lp n).sub hξ₂)
-        have heq : g n - f = hsub.toLp
-            (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ (ξn n - ξ) p.2) p.1) := by
-          refine Lp.ext ?_
-          filter_upwards [Lp.coeFn_sub (g n) f, coeFn_sum_indicatorConstLp_Ioc_prod T s t (hA n),
-            (memLp_indicator_Ioc_predictableMeasure T s t hξ hξ₂).coeFn_toLp,
-            hsub.coeFn_toLp] with p hp hgn hf0 hsub0
-          rw [Pi.sub_apply] at hp; rw [hp, hgn, hf0, hsub0]
-          by_cases hp' : p.1 ∈ Ioc s t <;> simp [hp', ξn]
-        exact heq ▸ norm_indicator_Ioc_toLp_sq_le T s t ((hξn_m n).sub hξ) ((hξn_Lp n).sub hξ₂)
+    have h0 : Tendsto (fun n ↦ (timeMeasure T).real (Ioc s t) * ∫ ω, (ξn n ω - ξ ω) ^ 2 ∂P)
+        atTop (𝓝 0) := by simpa using hd_sq.const_mul ((timeMeasure T).real (Ioc s t))
+    have hsq : Tendsto (fun n ↦ ‖g n - f‖ ^ 2) atTop (𝓝 0) := h0.congr fun n ↦ by
+      have hsub := ℱ.memLp_indicator_Ioc_predictableMeasure P T s t ((hξn_m n).sub hξ)
+        ((hξn_Lp n).sub hξ₂)
+      have heq : g n - f = hsub.toLp
+          (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ (ξn n - ξ) p.2) p.1) := by
+        refine Lp.ext ?_
+        filter_upwards [Lp.coeFn_sub (g n) f,
+          coeFn_sum_indicatorConstLp_prod (p := 2) (S n) (Ioc s t)
+            (fun c ↦ measurableSet_predictable_Ioc_prod s t (hA n c)) (fun _ ↦ measure_ne_top _ _)
+            (fun c ↦ c), hmem.coeFn_toLp, hsub.coeFn_toLp] with p hp hgn hf0 hsub0
+        rw [Pi.sub_apply] at hp; rw [hp, hgn, hf0, hsub0]
+        by_cases hp' : p.1 ∈ Ioc s t <;> simp [hp', ξn]
+      rw [heq]; simpa only [ENNReal.toReal_ofNat, Real.rpow_two, Pi.sub_apply, Real.norm_eq_abs,
+        sq_abs] using (ℱ.norm_toLp_indicator_Ioc_rpow P two_ne_zero ENNReal.ofNat_ne_top T s t
+          ((hξn_m n).sub hξ) ((hξn_Lp n).sub hξ₂)).symm
     simpa only [Real.sqrt_zero, Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
-  let target := (hW.memLp_mul_sub (le_max_left s (min t T)) hξ hξ₂).toLp
-    (fun ω ↦ ξ ω * (W (max s (min t T)) ω - W s ω))
+  have htar := hW.memLp_mul_sub (le_max_left s (min t T)) hξ hξ₂
+  let target := htar.toLp (fun ω ↦ ξ ω * (W (max s (min t T)) ω - W s ω))
   have hIg : Tendsto (fun n ↦ hW.l2Integral T (g n)) atTop (𝓝 target) := by
     refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
     have h0 : Tendsto (fun n ↦ (∫ ω, (ξn n ω - ξ ω) ^ 2 ∂P) * ((max s (min t T) : ℝ) - s))
         atTop (𝓝 0) := by simpa using hd_sq.mul_const ((max s (min t T) : ℝ) - s)
     have hsq : Tendsto (fun n ↦ ‖hW.l2Integral T (g n) - target‖ ^ 2) atTop (𝓝 0) :=
       h0.congr fun n ↦ by
+        have hgn_int : hW.l2Integral T (g n) =ᵐ[P]
+            fun ω ↦ ξn n ω * (W (max s (min t T)) ω - W s ω) := by
+          rw [map_sum]
+          filter_upwards [Lp.coeFn_fun_finsetSum (S n) fun c ↦ hW.l2Integral T (indicatorConstLp 2
+              (measurableSet_predictable_Ioc_prod s t (hA n c)) (measure_ne_top _ _) c),
+            (ae_ball_iff (S n).countable_toSet).2 fun c _ ↦
+              hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T s t (hA n c) c] with ω hsum hc
+          rw [hsum, Finset.sum_mul]; exact Finset.sum_congr rfl fun c hcS ↦ hc c hcS
         have hdiff := hW.memLp_mul_sub (le_max_left s (min t T))
           ((hξn_m n).sub hξ) ((hξn_Lp n).sub hξ₂)
         have heq : hW.l2Integral T (g n) - target = hdiff.toLp
             (fun ω ↦ (ξn n - ξ) ω * (W (max s (min t T)) ω - W s ω)) := by
           refine Lp.ext ?_
-          filter_upwards [Lp.coeFn_sub (hW.l2Integral T (g n)) target,
-            hW.coeFn_l2Integral_sum_indicatorConstLp_Ioc_prod T s t (hA n),
-            (hW.memLp_mul_sub (le_max_left s (min t T)) hξ hξ₂).coeFn_toLp,
-            hdiff.coeFn_toLp] with ω hsub hgn htar hdiff0
-          rw [Pi.sub_apply] at hsub; rw [hsub, hgn, htar, hdiff0]; dsimp [ξn, Pi.sub_apply]; ring
+          filter_upwards [Lp.coeFn_sub (hW.l2Integral T (g n)) target, hgn_int,
+            htar.coeFn_toLp, hdiff.coeFn_toLp] with ω hsub hgn htar0 hdiff0
+          rw [Pi.sub_apply] at hsub; rw [hsub, hgn, htar0, hdiff0]; dsimp [Pi.sub_apply]; ring
         rw [heq, hdiff.norm_toLp_sq]; simp_rw [Real.norm_eq_abs, sq_abs]
         exact (hW.integral_sq_mul_sub (le_max_left s (min t T)) ((hξn_m n).sub hξ)).symm
     simpa only [Real.sqrt_zero, Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
   exact tendsto_nhds_unique (((hW.l2Integral T).continuous.tendsto _).comp hg_f) hIg ▸
-    (hW.memLp_mul_sub (le_max_left s (min t T)) hξ hξ₂).coeFn_toLp
+    htar.coeFn_toLp
 
 /-- On any nondecreasing trading grid with square-integrable left-measurable heights, the
 predictable `L²` Brownian integral at horizon `T` agrees almost everywhere with the elementary
@@ -417,16 +350,15 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
       Finance.simpleGains τ n a W T := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have hms := Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T
+  have hmi (i : Fin n) := ℱ.memLp_indicator_Ioc_predictableMeasure P T (τ i) (τ (i + 1))
+    (ha i i.2) (ha₂ i i.2)
   let term (i : Fin n) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-    (memLp_indicator_Ioc_predictableMeasure T (τ i) (τ (i + 1)) (ha i i.2) (ha₂ i i.2)).toLp
-      (fun p ↦ (Ioc (τ i) (τ (i + 1))).indicator (fun _ ↦ a i p.2) p.1)
-  have hsum : (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).toLp
-      (Function.uncurry (Finance.simpleHolding τ n a)) = ∑ i : Fin n, term i := by
+    (hmi i).toLp (fun p ↦ (Ioc (τ i) (τ (i + 1))).indicator (fun _ ↦ a i p.2) p.1)
+  have hsum : hms.toLp (Function.uncurry (Finance.simpleHolding τ n a)) = ∑ i : Fin n, term i := by
     refine Lp.ext ?_
-    filter_upwards [(Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).coeFn_toLp,
-      Lp.coeFn_fun_finsetSum Finset.univ term, ae_all_iff.2 fun i : Fin n ↦
-        (memLp_indicator_Ioc_predictableMeasure T (τ i) (τ (i + 1)) (ha i i.2)
-          (ha₂ i i.2)).coeFn_toLp] with p hp hfin hterm
+    filter_upwards [hms.coeFn_toLp, Lp.coeFn_fun_finsetSum Finset.univ term,
+      ae_all_iff.2 fun i : Fin n ↦ (hmi i).coeFn_toLp] with p hp hfin hterm
     rw [hp, Function.uncurry_apply_pair, Finance.simpleHolding_def, hfin,
       ← Fin.sum_univ_eq_sum_range]
     exact Finset.sum_congr rfl fun i _ ↦ (hterm i).symm

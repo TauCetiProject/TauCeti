@@ -21,7 +21,8 @@ their native stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
-Pathwise set membership up to the random time also passes to the stopped process. Neither
+Pathwise set membership up to the random time also passes to the stopped process, and stopping
+at a constant finite time freezes a process and commutes with other random stopping times. Neither
 fact requires a stopping-time or measurability assumption.
 -/
 
@@ -121,6 +122,22 @@ theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
     stoppedProcess u τ ⊥ = u ⊥ := by
   ext ω
   exact stoppedProcess_eq_of_le (by simp)
+
+/-- Stopping a process at a constant finite time `s` freezes it at `s`. -/
+@[simp] theorem stoppedProcess_const_coe {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    (u : ι → Ω → E) (s : ι) :
+    stoppedProcess u (fun _ ↦ (s : WithTop ι)) = fun t ↦ u (min t s) := by
+  ext t ω; rw [stoppedProcess, ← WithTop.coe_min]; rfl
+
+/-- Stopping a process frozen at a fixed date `s` equals evaluating the stopped process at
+`min s t`. -/
+theorem stoppedProcess_const_min {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    (u : ι → Ω → E) (τ : Ω → WithTop ι) (s : ι) :
+    stoppedProcess (fun r ↦ u (min s r)) τ = fun t ↦ stoppedProcess u τ (min s t) := by
+  have h : (fun r ↦ u (min s r)) = stoppedProcess u (fun _ ↦ (s : WithTop ι)) := by
+    ext r ω; simp [min_comm]
+  rw [h, stoppedProcess_stoppedProcess, inf_comm, ← stoppedProcess_stoppedProcess,
+    stoppedProcess_const_coe]; ext t ω; rw [min_comm]
 
 variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → E} {s : Set Ω}

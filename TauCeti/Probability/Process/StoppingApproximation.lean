@@ -310,6 +310,14 @@ theorem dyadicStopIndex_le (d : ℕ) (T : ℝ≥0) (u : WithTop ℝ≥0) :
         (le_min_iff.1 ((dyadicGrid_count d T).symm.trans_le (dyadicGrid_mono d T hge))).1
       rw [min_eq_right hge, dyadicGrid_count, min_eq_left hT]
 
+/-- Evaluating any process at `dyadicGrid d T (dyadicStopIndex d T (τ ω))` equals the process
+stopped at `dyadicCeilTime d ∘ τ` at horizon `T`. -/
+theorem eval_dyadicGrid_dyadicStopIndex {Ω E : Type*} (X : ℝ≥0 → Ω → E)
+    (d : ℕ) (T : ℝ≥0) (τ : Ω → WithTop ℝ≥0) (ω : Ω) :
+    X (dyadicGrid d T (dyadicStopIndex d T (τ ω))) ω =
+      stoppedProcess X (fun ω ↦ dyadicCeilTime d (τ ω)) T ω := by
+  rw [dyadicGrid_dyadicStopIndex, stoppedProcess]
+
 /-- For `k < dyadicCount d T`, the left endpoint `dyadicGrid d T k` lies strictly before
 `dyadicCeilTime d u` if and only if `k < dyadicStopIndex d T u`. -/
 theorem dyadicGrid_lt_dyadicCeilTime_iff (d : ℕ) (T : ℝ≥0) (u : WithTop ℝ≥0)

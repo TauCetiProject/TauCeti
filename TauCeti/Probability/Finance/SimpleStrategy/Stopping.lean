@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 public import TauCeti.Probability.Process.StoppingApproximation
 import TauCeti.Probability.Finance.SimpleStrategy.Associativity
+import TauCeti.Probability.Process.Stopping
 
 /-!
 # Stopping simple trading strategies at dyadic ceiling times
@@ -69,19 +70,13 @@ theorem simpleGains_dyadicGrid_ite_lt (d : ℕ) (T : ℝ≥0) (τ : Ω → WithT
       X s ω = ∑ k ∈ range K, (X (min (dyadicGrid d T (k + 1)) s) ω -
         X (min (dyadicGrid d T k) s) ω) := by
     rw [simpleGains_def, ← hfilter, sum_filter]
-    refine sum_congr rfl fun k hk ↦ ?_
-    simp only [dyadicGrid_lt_dyadicCeilTime_iff d T (τ ω) (mem_range.1 hk), K]
-    split_ifs <;> simp
-  have hminK : min (dyadicGrid d T K) s =
-      (min (s : WithTop ℝ≥0) (dyadicCeilTime d (τ ω))).untopA := by
-    rw [dyadicGrid_dyadicStopIndex]
-    cases dyadicCeilTime d (τ ω) with
-    | top => rw [min_eq_left le_top, min_eq_left le_top, WithTop.untopA, WithTop.untopD_coe,
-        WithTop.untopD_coe, min_eq_right hs]
-    | coe u => rw [← WithTop.coe_min, ← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe,
-        WithTop.untopD_coe, min_right_comm, min_eq_right hs, min_comm]
+    exact sum_congr rfl fun k hk ↦ by
+      simp only [dyadicGrid_lt_dyadicCeilTime_iff d T (τ ω) (mem_range.1 hk), K]; split_ifs <;> simp
   rw [hcongr, sum_range_sub (fun k ↦ X (min (dyadicGrid d T k) s) ω), dyadicGrid_zero,
-    min_eq_left (zero_le : 0 ≤ s), hminK, stoppedProcess]
+    min_eq_left (zero_le : 0 ≤ s)]
+  congr 1
+  rw [min_comm, eval_dyadicGrid_dyadicStopIndex (fun r ↦ X (min s r)), stoppedProcess_const_min]
+  simp only [min_eq_left hs]
 
 /-- Stopping a left-measurable simple strategy at the dyadic ceiling `dyadicCeilTime d ∘ τ` of a raw
 stopping time `τ` is represented throughout `[0, T]` — both for its holdings and for its elementary
@@ -128,13 +123,10 @@ theorem exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime {τ : Ω 
     rw [hbi, norm_mul]
     exact (mul_le_mul hu_le ha_le (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
   · rcases eq_or_lt_of_le (zero_le : 0 ≤ s) with rfl | hs0
-    · have hzero {m : ℕ} {f : ℕ → ℝ≥0} {v : ℕ → Ω → ℝ} : simpleHolding f m v 0 ω = 0 := by
-        rw [simpleHolding_def]
-        exact sum_eq_zero fun _ _ ↦ indicator_of_notMem (fun (h : 0 ∈ Ioc _ _) ↦ not_lt_zero h.1) _
-      simp [hzero]
+    · simp only [simpleHolding_def, Set.mem_Ioc, not_lt_zero, false_and, not_false_eq_true,
+        indicator_of_notMem, sum_const_zero, ite_self]
     · rw [hhold, sum_product, ← simpleHolding_mul_eq_sum,
-        simpleHolding_dyadicGrid_ite_lt d T τ ⟨hs0, hs⟩]
-      split_ifs <;> simp
+        simpleHolding_dyadicGrid_ite_lt d T τ ⟨hs0, hs⟩]; split_ifs <;> simp
   · rw [hgains, sum_product,
       ← simpleGains_simpleGains_eq_sum hg ((dyadicGrid_mono d T).monotoneOn _),
       simpleGains_dyadicGrid_ite_lt d T τ hs, simpleGains_of_le hg zero_le, sub_zero]
