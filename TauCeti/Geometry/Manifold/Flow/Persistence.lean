@@ -70,8 +70,8 @@ open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
-variable {E H M F G N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+variable {E H M F G N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] [TopologicalSpace G]
   {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N] [T2Space N]
@@ -87,7 +87,7 @@ family of vector fields, and let `g` be `C¹` at `p` with `dg_p (v a₀ p) ≠ 0
 is a local section through `p` transverse to `v a₀`. Then each `x` near `p` reaches the section
 under the flow of each `v a` with `a` near `a₀`, at a time `σ (a, x)`, and the point reached tends
 to `p` as `(a, x)` tends to `(a₀, p)`. -/
-theorem exists_eventually_flowOf_mem_level_and_tendsto {g : M → ℝ} {p : M}
+theorem exists_eventually_flowOf_mem_level_and_tendsto [CompleteSpace E] {g : M → ℝ} {p : M}
     (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v a₀ p) ≠ 0) :
     ∃ σ : N × M → ℝ, (∀ᶠ z in 𝓝 (a₀, p), (σ z, z.2) ∈ flowDomain (v z.1) ∧
       g (flowOf (v z.1) (σ z) z.2) = g p) ∧
@@ -114,6 +114,8 @@ theorem exists_eventually_flowOf_mem_level_and_tendsto {g : M → ℝ} {p : M}
     rw [flowTransition_self, hflow0] at h
     refine (continuous_snd.tendsto _).comp h |>.congr fun ⟨a, x⟩ ↦ ?_
     rw [comp_apply, flowTransition_apply, flowOf_verticalField (hv.apply_param a)]
+
+variable [FiniteDimensional ℝ E]
 
 /-- **Closed orbits near a nondegenerate closed orbit are nondegenerate.** Let `v` be a jointly
 `C¹` family of vector fields, and let `p` return to itself at time `T₀` under the flow of `v a₀`.
