@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.MvPolynomial.Initial.Degeneration
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Monic
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Weight
-import TauCeti.RingTheory.MvPolynomial.ToricIdeal.HilbertFunction
 
 /-!
 # Flat weight presentations and nonmonic SAGBI degenerations
@@ -136,7 +135,7 @@ theorem weightInitialIdeal_ker_aeval
     (RingHom.ker (aeval (R := R) c)).weightInitialIdeal d = RingHom.ker (aeval (R := R) g) := by
   rw [← Ideal.map_constantCoeff_weightReesIdeal (RingHom.ker (aeval (R := R) c)) d,
     weightReesIdeal_ker_aeval_eq_span hc hg hJ hr hQ hQc,
-    map_constantCoeff_span_weightHomogenization hr hQ, ← hJ]
+    map_constantCoeff_span_weightHomogenization_sub hr hQ, ← hJ]
 
 /-- **Presentation kernel from bounded weight certificates.** Under bounded relation certificates,
 the lifted relations `r j - Q j` generate `RingHom.ker (aeval c)`. -/
@@ -167,13 +166,15 @@ theorem weightReesAevalLift_surjective {A : Subalgebra R (MvPolynomial σ R)}
     letI := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
     Function.Surjective (weightReesAevalLift hcA hc) := by
   let := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+  let := coeffSubalgebra.algebra (weightFiltration R w) (one_mem_weightFiltration_one R w)
   have hAeq : A = Algebra.adjoin R (Set.range c) :=
     le_antisymm hA (Algebra.adjoin_le (Set.range_subset_iff.mpr hcA))
   intro y
   have hy : ((A.weightReesInclusion w y : weightReesAlgebra R w) : (MvPolynomial σ R)[X]) ∈
       (weightReesAeval c d).range := by
     rw [← A.map_weightReesAlgebra_eq_range_weightReesAeval w hAeq hc hg hJ hr hQ hQc]
-    exact ⟨y, y.2, (A.coe_weightReesInclusion w y).symm⟩
+    exact Subalgebra.mem_map.mpr
+      ⟨y, y.2, by rw [Polynomial.coe_mapAlgHom, A.coe_weightReesInclusion]⟩
   obtain ⟨f, hf⟩ := (weightReesAeval c d).mem_range.mp hy
   refine ⟨f, A.weightReesInclusion_injective w (Subtype.ext ?_)⟩
   rwa [A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift]
@@ -253,7 +254,8 @@ theorem quotientSpanWeightHomogenizationEquiv_symm_monomial
       (coeffSubalgebra.monomial (A.weightFiltration w) (d i) ⟨c i, hcAi⟩ hci) =
       Ideal.Quotient.mk _ (Polynomial.C (X i : MvPolynomial ι R)) := by
   let := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
-  rw [AlgEquiv.symm_apply_eq, quotientSpanWeightHomogenizationEquiv_mk, weightReesAevalLift_C_X]
+  rw [AlgEquiv.symm_apply_eq, quotientSpanWeightHomogenizationEquiv_mk, weightReesAevalLift_C,
+    aeval_X]
 
 attribute [local instance] Polynomial.algebra in
 @[simp]
@@ -319,12 +321,11 @@ theorem range_weightReesAeval_monicNormalize (b : ι → MvPolynomial σ k) (d :
     (weightReesAeval (fun i ↦ m.monicNormalize (b i)) d).range = (weightReesAeval b d).range := by
   classical
   let a : ι → k := fun i ↦ if b i = 0 then 1 else m.leadingCoeff (b i)
-  let aInv : ι → k := fun i ↦ if b i = 0 then 1 else (m.leadingCoeff (b i))⁻¹
-  have ha : ∀ i, a i * aInv i = 1 := fun i ↦ by
-    dsimp only [a, aInv]
+  have ha : ∀ i, IsUnit (a i) := fun i ↦ by
+    dsimp only [a]
     split_ifs with hb
-    · exact mul_one 1
-    · exact mul_inv_cancel₀ (m.leadingCoeff_ne_zero_iff.mpr hb)
+    · exact isUnit_one
+    · exact (m.leadingCoeff_ne_zero_iff.mpr hb).isUnit
   have hsmul : (fun i ↦ a i • m.monicNormalize (b i)) = b := funext fun i ↦ by
     dsimp only [a]
     split_ifs with hb
@@ -626,7 +627,7 @@ theorem quotientSpanWeightHomogenizationRescaleEquiv_symm_monomial
         ⟨b i, hbAi⟩ hbi) = Ideal.Quotient.mk _ (Polynomial.C (X i : MvPolynomial ι k)) := by
   let := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
   rw [AlgEquiv.symm_apply_eq, quotientSpanWeightHomogenizationRescaleEquiv_mk,
-    weightReesAevalLift_C_X]
+    weightReesAevalLift_C, aeval_X]
 
 attribute [local instance] Polynomial.algebra in
 @[simp]

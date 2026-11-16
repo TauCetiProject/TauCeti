@@ -35,9 +35,7 @@ in `ℕ`, only finitely many elements of `S` have a given degree, so these are f
 * `TauCeti.aeval_single_mem_gradeBy`: the image of a polynomial of weight `n` has degree `n`.
 * `TauCeti.map_aeval_single_weightedHomogeneousSubmodule`: if the `a i` generate `M`, the
   polynomials of weight `n` are mapped onto the homogeneous component of `R[M]` of degree `n`.
-* `TauCeti.isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal`,
-  `TauCeti.isHomogeneous_toricIdeal`: binomials in the toric ideal, and the toric ideal itself, are
-  homogeneous for the weights `deg (a i)`.
+* `TauCeti.isHomogeneous_toricIdeal`: the toric ideal is homogeneous for the weights `deg (a i)`.
 * `TauCeti.mapWeightedHomogeneousSubmoduleToricIdealEquivGradeBy`: the image of the polynomials of
   weight `n` in the quotient by the toric ideal is the homogeneous component of `R[S]` of
   degree `n`.
@@ -94,24 +92,6 @@ end CommSemiring
 section CommRing
 
 variable (R : Type*) [CommRing R]
-
-variable {R} in
-/-- A binomial in the toric ideal of `a` is weighted homogeneous for the pulled-back weights
-`deg ∘ a`. -/
-theorem isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
-    {a : ι → M} {deg : M →+ D} {u v : ι →₀ ℕ}
-    (h : monomial u (1 : R) - monomial v 1 ∈ toricIdeal R a) :
-    (monomial u (1 : R) - monomial v 1).IsWeightedHomogeneous (deg ∘ a)
-      (Finsupp.weight (deg ∘ a) u) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim (monomial u (1 : R) - monomial v 1) 0]
-    exact isWeightedHomogeneous_zero R _ _
-  have huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v :=
-    monomial_sub_monomial_mem_toricIdeal_iff.1 h
-  have hw (x : ι →₀ ℕ) : Finsupp.weight (deg ∘ a) x = deg (Finsupp.linearCombination ℕ a x) :=
-    Finsupp.weight_comp_eq_apply_linearCombination deg a x
-  exact (isWeightedHomogeneous_monomial _ _ _ rfl).sub
-    (isWeightedHomogeneous_monomial _ _ _ (by rw [hw, hw, huv]))
 
 /-- The toric ideal of `a` is homogeneous for the grading of `MvPolynomial ι R` by the weights
 `deg (a i)`, for every degree `deg : M →+ D`. -/

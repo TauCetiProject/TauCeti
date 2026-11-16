@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+import Mathlib.Algebra.Polynomial.Eval.Subring
 
 /-!
-# Extending scalars of algebra maps to the polynomial ring
+# Algebra homomorphisms on polynomial rings
 
 An `R[X]`-algebra map is determined over `R` by the image of `X`. Conversely, an `R`-algebra map
 between `R[X]`-algebras (forming towers `R → R[X] → A`) that fixes the image of `X` is already an
 `R[X]`-algebra map (`AlgHom.toPolynomialAlgHom`).
+
+A polynomial belongs to the range of `Polynomial.mapAlgHom f` if and only if each of its
+coefficients lies in the range of `f` (`Polynomial.mem_mapAlgHom_range`).
 -/
 
 public section
@@ -47,3 +51,16 @@ theorem restrictScalars_toPolynomialAlgHom (φ : A →ₐ[R] B)
   AlgHom.ext (toPolynomialAlgHom_apply φ h)
 
 end AlgHom
+
+namespace Polynomial
+
+/-- A polynomial over `B` lies in the range of `Polynomial.mapAlgHom f` if and only if each of its
+coefficients lies in the range of `f`. -/
+theorem mem_mapAlgHom_range {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+    [Algebra R A] [Algebra R B] {f : A →ₐ[R] B} (p : B[X]) :
+    p ∈ (Polynomial.mapAlgHom f).range ↔ ∀ n, p.coeff n ∈ f.range := by
+  simpa only [AlgHom.mem_range, RingHom.mem_rangeS, Polynomial.coe_mapAlgHom,
+    Polynomial.coe_mapRingHom, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
+    Polynomial.mem_map_rangeS f.toRingHom (p := p)
+
+end Polynomial

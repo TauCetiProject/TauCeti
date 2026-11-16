@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Rees
 public import TauCeti.RingTheory.MvPolynomial.Subalgebra.Degeneration
-import Mathlib.Algebra.Polynomial.Eval.Subring
+import TauCeti.Algebra.Polynomial.AlgHom
 
 /-!
 # Bounded expressions and the induced weight Rees algebra
@@ -167,12 +167,8 @@ theorem range_weightReesAeval_eq_inf
     (weightReesAeval c d).range =
       weightReesAlgebra R w ⊓ (Polynomial.mapAlgHom (aeval c)).range := by
   ext f
-  have hmap : f ∈ (Polynomial.mapAlgHom (R := R) (aeval c)).range ↔
-      ∀ n, f.coeff n ∈ Algebra.adjoin R (Set.range c) := by
-    rw [← aeval_range]
-    exact Polynomial.mem_map_rangeS (aeval c : MvPolynomial ι R →ₐ[R] MvPolynomial σ R).toRingHom
   rw [mem_range_weightReesAeval_iff hc hg hJ hr hQ hQc, Algebra.mem_inf,
-    mem_coeffSubalgebra_iff, hmap]
+    mem_coeffSubalgebra_iff, Polynomial.mem_mapAlgHom_range, aeval_range]
   exact forall_and.trans and_comm
 
 end TauCeti.MvPolynomial
@@ -199,12 +195,7 @@ theorem map_weightReesAlgebra_eq_range_weightReesAeval
   rw [A.map_weightReesAlgebra, range_weightReesAeval_eq_inf hc hg hJ hr hQ hQc]
   congr 1
   ext p
-  have hv' : p ∈ (Polynomial.mapAlgHom A.val).range ↔ ∀ n, p.coeff n ∈ A.val.range :=
-    Polynomial.mem_map_rangeS A.val.toRingHom
-  rw [Subalgebra.range_val] at hv'
-  have hc' : p ∈ (Polynomial.mapAlgHom (aeval c)).range ↔
-      ∀ n, p.coeff n ∈ (aeval (R := R) c).range :=
-    Polynomial.mem_map_rangeS (aeval (R := R) c).toRingHom
-  rw [hv', hc', aeval_range, hA]
+  rw [Polynomial.mem_mapAlgHom_range, Polynomial.mem_mapAlgHom_range, Subalgebra.range_val,
+    aeval_range, hA]
 
 end Subalgebra
