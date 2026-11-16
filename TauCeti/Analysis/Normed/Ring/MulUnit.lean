@@ -92,8 +92,8 @@ end IsNormMulUnit
 
 /-- Along a contractive monoid homomorphism `φ`, scaling `b` by the image of a multiplicative unit
 `u` with `‖u‖ * c = 1` puts `φ u * b` in the closed unit ball precisely when `‖b‖ ≤ c`. -/
-theorem norm_map_unit_mul_le_one_iff {F : Type*} [FunLike F R S] [MonoidHomClass F R S]
-    (u : Rˣ) (hu : IsNormMulUnit (u : R)) {c : ℝ} (hc : ‖(u : R)‖ * c = 1)
+theorem _root_.Units.norm_map_unit_mul_le_one_iff {F : Type*} [FunLike F R S]
+    [MonoidHomClass F R S] (u : Rˣ) (hu : IsNormMulUnit (u : R)) {c : ℝ} (hc : ‖(u : R)‖ * c = 1)
     {φ : F} (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (b : S) :
     ‖φ (u : R) * b‖ ≤ 1 ↔ ‖b‖ ≤ c := by
   have hc_eq : c = ‖(u : R)‖⁻¹ := eq_inv_of_mul_eq_one_right hc

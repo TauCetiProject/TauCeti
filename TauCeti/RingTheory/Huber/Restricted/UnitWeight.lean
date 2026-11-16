@@ -98,7 +98,7 @@ theorem IsPseudoUniformizer.isWeightBounded_units_iff_norm_le {k : ℕ} {R S : T
   rw [isWeightBounded_singleton_iff_forall_isPowerBounded]
   exact forall_congr' fun i ↦
     (hϖ.isPowerBounded_iff_norm_le_one hpow).trans
-      (norm_map_unit_mul_le_one_iff (u i) (hu i) (hc i) hφ (a i))
+      ((u i).norm_map_unit_mul_le_one_iff (hu i) (hc i) hφ (a i))
 
 /-- **Equivalence of unit weight bounds and norm bounds into a normed field.** Along a contractive
 homomorphism into a normed field, weight-boundedness at multiplicative-unit weights `uᵢ` with
@@ -110,7 +110,7 @@ theorem isWeightBounded_units_iff_norm_le {k : ℕ} {R K : Type*} [SeminormedCom
   rw [isWeightBounded_singleton_iff_forall_isPowerBounded]
   exact forall_congr' fun i ↦
     isPowerBounded_iff_norm_le_one.trans
-      (norm_map_unit_mul_le_one_iff (u i) (hu i) (hc i) hφ (a i))
+      ((u i).norm_map_unit_mul_le_one_iff (hu i) (hc i) hφ (a i))
 
 end WeightBounds
 

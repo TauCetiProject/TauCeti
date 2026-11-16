@@ -292,7 +292,9 @@ theorem weightedMapCompletionEquiv_symm_apply (e : A ≃+* B) (he : Continuous e
 the canonical image of `weightedC S hS (e a)`. Provided alongside
 `TauCeti.Huber.weightedMapCompletionEquiv_apply` because `he : Continuous e` is typed on `⇑e`
 rather than `⇑(e : A →+* B)`, preventing `simp` from chaining `weightedMapCompletion_coe` without
-explicit `φ` instantiation. -/
+explicit `φ` instantiation; `high` priority ensures this fires before
+`weightedMapCompletionEquiv_apply` rewrites the head to `weightedMapCompletion`. -/
+@[simp high]
 theorem weightedMapCompletionEquiv_coe_weightedC (e : A ≃+* B) (he : Continuous e)
     (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
     (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
@@ -309,7 +311,8 @@ theorem weightedMapCompletionEquiv_coe_weightedC (e : A ≃+* B) (he : Continuou
 /-- `TauCeti.Huber.weightedMapCompletionEquiv` maps the canonical image of `weightedX T hT i` to
 the canonical image of `weightedX S hS i`; see
 `TauCeti.Huber.weightedMapCompletionEquiv_coe_weightedC` for why this is stated separately from
-`TauCeti.Huber.weightedMapCompletionEquiv_apply`. -/
+`TauCeti.Huber.weightedMapCompletionEquiv_apply` at `high` `simp` priority. -/
+@[simp high]
 theorem weightedMapCompletionEquiv_coe_weightedX (e : A ≃+* B) (he : Continuous e)
     (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
     (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
