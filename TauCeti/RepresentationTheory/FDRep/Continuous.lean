@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.FullSubcategory
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Algebra.Category.FGModuleCat.Zero
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.RepresentationTheory.FDRep.Basic
 
@@ -115,12 +116,9 @@ instance [ContinuousAdd k] : (isContinuous k G).IsClosedUnderBinaryProducts :=
 object and `TauCeti.ContFDRep k G` has a zero object. -/
 instance : (isContinuous k G).ContainsZero where
   exists_zero := ⟨0, isZero_zero _, fun f v => by
-    -- The identity of the zero object is its zero endomorphism; evaluate both at `v`. (`id_zero`
-    -- is excluded so that `simp` unfolds `𝟙 0` to the identity map rather than to `0`.)
-    have hv : v = 0 := by
-      simpa [-id_zero] using
-        LinearMap.congr_fun congr(($((isZero_zero (FDRep k G)).eq_of_src (𝟙 _) 0)).hom.hom.hom) v
-    simp only [hv, map_zero]
+    have : Subsingleton (0 : FDRep k G).V := FGModuleCat.isZero_iff_subsingleton.mp
+      ((Action.forget _ _).map_isZero (isZero_zero (FDRep k G)))
+    simp only [Subsingleton.elim v 0, map_zero]
     exact continuous_const⟩
 
 /-- The trivial one-dimensional representation, the tensor unit, is continuous. -/

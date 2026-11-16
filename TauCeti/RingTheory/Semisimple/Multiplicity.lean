@@ -594,18 +594,25 @@ variable {k A M P : Type*} [Field k] [Ring A] [Algebra k A]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P]
 
-/-- Two finite products of simple modules contain equally many copies of a simple module `S`,
-finite-dimensional over `k`, when the maps out of `S` into them span spaces of equal dimension. -/
-private theorem natCard_eq_natCard_of_finrank_linearMap_eq {S : Type*} [AddCommGroup S]
-    [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S] [FiniteDimensional k S]
+/-- Two modules that are finite products of simple modules have the same Jordan-Hölder
+multiplicity of a module `S` isomorphic to a simple submodule `T` of a module finite-dimensional
+over `k`, when the maps out of `T` into them span spaces of equal dimension. -/
+private theorem jordanHolderMultiplicity_eq_of_finrank_linearMap_eq [IsNoetherian A M]
+    [IsArtinian A M] [IsNoetherian A P] [IsArtinian A P]
     {ι κ : Type*} [Finite ι] [Finite κ] {N : ι → Type*} [∀ i, AddCommGroup (N i)]
     [∀ i, Module k (N i)] [∀ i, Module A (N i)] [∀ i, IsScalarTower k A (N i)]
     [∀ i, IsSimpleModule A (N i)] {Q : κ → Type*} [∀ j, AddCommGroup (Q j)]
     [∀ j, Module k (Q j)] [∀ j, Module A (Q j)] [∀ j, IsScalarTower k A (Q j)]
     [∀ j, IsSimpleModule A (Q j)] (eM : M ≃ₗ[A] ∀ i, N i) (eP : P ≃ₗ[A] ∀ j, Q j)
-    (h : Module.finrank k (S →ₗ[A] M) = Module.finrank k (S →ₗ[A] P)) :
-    Nat.card {i // Nonempty (S ≃ₗ[A] N i)} = Nat.card {j // Nonempty (S ≃ₗ[A] Q j)} := by
-  refine Nat.eq_of_mul_eq_mul_right (finrank_end_pos (k := k) (A := A) (S := S)) ?_
+    {S R : Type*} [AddCommGroup S] [Module A S] [AddCommGroup R] [Module k R] [Module A R]
+    [IsScalarTower k A R] [FiniteDimensional k R] {T : Submodule A R} [IsSimpleModule A T]
+    (e : S ≃ₗ[A] T) (h : Module.finrank k (T →ₗ[A] M) = Module.finrank k (T →ₗ[A] P)) :
+    jordanHolderMultiplicity A M S = jordanHolderMultiplicity A P S := by
+  have : FiniteDimensional k T := .of_injective (T.subtype.restrictScalars k) Subtype.val_injective
+  rw [jordanHolderMultiplicity_congr e, jordanHolderMultiplicity_congr e,
+    jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard,
+    jordanHolderMultiplicity_eq_of_linearEquiv eP, jordanHolderMultiplicity_pi_eq_natCard]
+  refine Nat.eq_of_mul_eq_mul_right (finrank_end_pos (k := k) (A := A) (S := T)) ?_
   rw [← eM.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
     ← eP.finrank_linearMap_eq_natCard_mul_finrank_end (k := k), h]
 
@@ -637,21 +644,11 @@ theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_finrank_linearMap_eq
   by_cases hSM' : ∃ i, Nonempty (S ≃ₗ[A] SM i)
   · obtain ⟨i, ⟨e⟩⟩ := hSM'
     have := hSM i
-    have : FiniteDimensional k (SM i) :=
-      .of_injective ((SM i).subtype.restrictScalars k) Subtype.val_injective
-    rw [jordanHolderMultiplicity_congr e, jordanHolderMultiplicity_congr e,
-      jordanHolderMultiplicity_eq_of_linearEquiv epM, jordanHolderMultiplicity_pi_eq_natCard,
-      jordanHolderMultiplicity_eq_of_linearEquiv epP, jordanHolderMultiplicity_pi_eq_natCard]
-    exact natCard_eq_natCard_of_finrank_linearMap_eq epM epP (hM (SM i))
+    exact jordanHolderMultiplicity_eq_of_finrank_linearMap_eq epM epP e (hM (SM i))
   by_cases hSP' : ∃ j, Nonempty (S ≃ₗ[A] SP j)
   · obtain ⟨j, ⟨e⟩⟩ := hSP'
     have := hSP j
-    have : FiniteDimensional k (SP j) :=
-      .of_injective ((SP j).subtype.restrictScalars k) Subtype.val_injective
-    rw [jordanHolderMultiplicity_congr e, jordanHolderMultiplicity_congr e,
-      jordanHolderMultiplicity_eq_of_linearEquiv epM, jordanHolderMultiplicity_pi_eq_natCard,
-      jordanHolderMultiplicity_eq_of_linearEquiv epP, jordanHolderMultiplicity_pi_eq_natCard]
-    exact natCard_eq_natCard_of_finrank_linearMap_eq epM epP (hP (SP j))
+    exact jordanHolderMultiplicity_eq_of_finrank_linearMap_eq epM epP e (hP (SP j))
   -- Otherwise `S` is a factor of neither module.
   push Not at hSM' hSP'
   rw [jordanHolderMultiplicity_eq_of_linearEquiv epM, jordanHolderMultiplicity_pi_eq_natCard,
