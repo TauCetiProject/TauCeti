@@ -67,34 +67,18 @@ theorem topologicalNerve.coarseAugmentation_app_apply (Δ : SimplexCategoryᵒ�
 
 namespace fatClassifyingSpace
 
-/-- The augmentation of the semi-simplicial topological nerve by the isomorphism class of a
-vertex, obtained by whiskering `TauCeti.topologicalNerve.coarseAugmentation`. -/
-def coarseAugmentation :
-    SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C ⟶
-      (Functor.const _).obj (TopCat.of (Quotient (isIsomorphicSetoid C))) :=
-  Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
-    (topologicalNerve.coarseAugmentation hs)
-
-/-- The semi-simplicial coarse augmentation is the whiskered simplicial coarse augmentation. -/
-theorem coarseAugmentation_eq :
-    coarseAugmentation hs =
-      Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
-        (topologicalNerve.coarseAugmentation hs) := (rfl)
-
-/-- The coarse augmentation reads the class of the first vertex. -/
-@[simp↓]
-theorem coarseAugmentation_app_apply (m : SemiSimplexCategoryᵒᵖ)
-    (F : (SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj m) :
-    (coarseAugmentation hs).app m F = Quotient.mk (isIsomorphicSetoid C) (F.obj 0) := (rfl)
-
 /-- The coarse projection from the fat classifying space to the actual orbit quotient
 of objects, with its quotient topology. -/
 def coarseMap : fatClassifyingSpace C ⟶ TopCat.of (Quotient (isIsomorphicSetoid C)) :=
-  fatRealization.augment (coarseAugmentation hs)
+  fatRealization.augment
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+      (topologicalNerve.coarseAugmentation hs))
 
 /-- The coarse projection is induced by the coarse augmentation of the topological nerve. -/
 theorem coarseMap_eq_augment :
-    coarseMap hs = fatRealization.augment (coarseAugmentation hs) := (rfl)
+    coarseMap hs = fatRealization.augment
+      (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+        (topologicalNerve.coarseAugmentation hs)) := (rfl)
 
 /-- A point of a simplex projects to the class of its first vertex. By
 `ComposableArrows.quotient_mk_obj`, this is also the class of every other vertex. -/
@@ -105,8 +89,10 @@ theorem coarseMap_ι (m : SemiSimplexCategory)
     (t : SemiSimplexCategory.toTop.obj m) :
     coarseMap hs (fatRealization.ι _ m (F, t)) =
       Quotient.mk (isIsomorphicSetoid C) (F.obj 0) :=
-  (fatRealization.augment_ι (coarseAugmentation hs) m F t).trans
-    (coarseAugmentation_app_apply hs (op m) F)
+  (fatRealization.augment_ι
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+      (topologicalNerve.coarseAugmentation hs)) m F t).trans
+    (topologicalNerve.coarseAugmentation_app_apply hs _ F)
 
 /-- Every orbit occurs as the projection of a vertex in the fat classifying space. -/
 theorem coarseMap_surjective : Function.Surjective (coarseMap hs) := by
@@ -126,12 +112,13 @@ theorem isQuotientMap_coarseMap
     intro i j hij
     -- A zero-string has only one vertex and one arrow, namely its unit.
     simpa [ComposableArrows.totalArrow_def, ComposableArrows.mk₀] using hu
-  apply fatRealization.isQuotientMap_augment (coarseAugmentation hs) (SemiSimplexCategory.mk 0)
-  have heq : ((coarseAugmentation hs).app (op (SemiSimplexCategory.mk 0))) ∘
+  let ε := Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+    (topologicalNerve.coarseAugmentation hs)
+  apply fatRealization.isQuotientMap_augment ε (SemiSimplexCategory.mk 0)
+  have heq : (ε.app (op (SemiSimplexCategory.mk 0))) ∘
       ComposableArrows.mk₀ = Quotient.mk (isIsomorphicSetoid C) :=
-    funext fun x ↦ coarseAugmentation_app_apply hs _ _
-  exact IsQuotientMap.of_comp h₀ ((coarseAugmentation hs).app _).hom.continuous
-    (heq.symm ▸ isQuotientMap_quot_mk)
+    funext fun x ↦ topologicalNerve.coarseAugmentation_app_apply hs _ _
+  exact IsQuotientMap.of_comp h₀ (ε.app _).hom.continuous (heq.symm ▸ isQuotientMap_quot_mk)
 
 end fatClassifyingSpace
 

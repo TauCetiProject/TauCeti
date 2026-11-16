@@ -79,9 +79,8 @@ theorem isQuotientMap_sigma :
 theorem isOpen_iff {s : Set X.geometricRealization} : IsOpen s ↔ ∀ n, IsOpen (ι X n ⁻¹' s) := by
   rw [← (isQuotientMap_sigma X).isOpen_preimage, isOpen_sigma_iff]; rfl
 
-theorem isClosed_iff {s : Set X.geometricRealization} :
-    IsClosed s ↔ ∀ n, IsClosed (ι X n ⁻¹' s) := by
-  simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
+theorem isClosed_iff {s : Set X.geometricRealization} : IsClosed s ↔ ∀ n, IsClosed (ι X n ⁻¹' s) :=
+  by simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
 
 theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : X.geometricRealization → Z} :
     Continuous g ↔ ∀ n, Continuous (g ∘ ι X n) := by
@@ -102,16 +101,20 @@ section Desc
 
 variable {X}
 
+section DescFun
+
+variable {Z : Type*} (g : ∀ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ → Z)
+  (hg : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌),
+    g m (X.map f.op x, t) = g n (x, toTop.map f t))
+
 /-- Set-level universal property of the geometric realization. -/
-def descFun {Z : Type*} (g : ∀ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ → Z)
-    (hg : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌),
-      g m (X.map f.op x, t) = g n (x, toTop.map f t)) : X.geometricRealization → Z :=
+def descFun : X.geometricRealization → Z :=
   Quot.lift (fun p ↦ g p.1 p.2) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
 
-@[simp] theorem descFun_ι {Z : Type*} (g : ∀ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ → Z)
-    (hg : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌),
-      g m (X.map f.op x, t) = g n (x, toTop.map f t))
-    (n : ℕ) (p : X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) : descFun g hg (ι X n p) = g n p := (rfl)
+@[simp] theorem descFun_ι (n : ℕ) (p : X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :
+    descFun g hg (ι X n p) = g n p := (rfl)
+
+end DescFun
 
 variable {Z : Type*} [TopologicalSpace Z] (g : ∀ n : ℕ, C(X _⦋n⦌ × toTop.{u}.obj ⦋n⦌, Z))
   (hg : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋m⦌),
@@ -154,48 +157,49 @@ end geometricRealization
   obj := geometricRealization
   map := geometricRealization.map
 
+open SemiSimplexCategory (toSimplexCategory)
+
 /-- The canonical quotient comparison map `‖X‖ ⟶ |X|` from the fat realization of the underlying
 semi-simplicial space to the thin geometric realization, collapsing degenerate simplices. -/
 def fatToGeometricRealization :
-    TauCeti.fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ X) ⟶
-      X.geometricRealization :=
+    TauCeti.fatRealization (toSimplexCategory.op ⋙ X) ⟶ X.geometricRealization :=
   TopCat.ofHom <| TauCeti.fatRealization.desc (Z := X.geometricRealization)
-    (fun m ↦ geometricRealization.ι X (SemiSimplexCategory.toSimplexCategory.obj m).len)
-    fun _ _ f x t ↦ geometricRealization.ι_map X (SemiSimplexCategory.toSimplexCategory.map f) x t
-
-namespace geometricRealization
+    (fun m ↦ geometricRealization.ι X (toSimplexCategory.obj m).len)
+    fun _ _ f x t ↦ geometricRealization.ι_map X (toSimplexCategory.map f) x t
 
 @[simp↓] theorem fatToGeometricRealization_ι (m : SemiSimplexCategory)
-    (x : (SemiSimplexCategory.toSimplexCategory.op ⋙ X).obj (op m))
-    (t : SemiSimplexCategory.toTop.{u}.obj m) :
+    (x : (toSimplexCategory.op ⋙ X).obj (op m)) (t : SemiSimplexCategory.toTop.{u}.obj m) :
     X.fatToGeometricRealization (TauCeti.fatRealization.ι _ m (x, t)) =
-      ι X (SemiSimplexCategory.toSimplexCategory.obj m).len (x, t) :=
+      geometricRealization.ι X (toSimplexCategory.obj m).len (x, t) :=
   TauCeti.fatRealization.desc_ι _ _ m (x, t)
 
 /-- The comparison map `‖X‖ ⟶ |X|` is a quotient map: `|X|` is a topological quotient of `‖X‖`. -/
-theorem isQuotientMap_fatToGeometricRealization : IsQuotientMap X.fatToGeometricRealization := by
-  let j : (Σ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) →
-      TauCeti.fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ X) :=
-    fun p ↦ TauCeti.fatRealization.ι _ (SemiSimplexCategory.mk p.1) p.2
-  have hj : Continuous j := continuous_sigma fun n ↦
-    (TauCeti.fatRealization.ι (SemiSimplexCategory.toSimplexCategory.op ⋙ X) (.mk n)).continuous
-  have heq : X.fatToGeometricRealization ∘ j = fun p ↦ ι X p.1 p.2 :=
+theorem isQuotientMap_fatToGeometricRealization : IsQuotientMap X.fatToGeometricRealization :=
+  have heq : X.fatToGeometricRealization ∘ (fun p : Σ n : ℕ, X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ ↦
+      TauCeti.fatRealization.ι (toSimplexCategory.op ⋙ X) (.mk p.1) p.2) =
+      fun p ↦ geometricRealization.ι X p.1 p.2 :=
     funext fun ⟨n, x, t⟩ ↦ fatToGeometricRealization_ι X (.mk n) x t
-  exact IsQuotientMap.of_comp hj X.fatToGeometricRealization.hom.continuous
-    (heq.symm ▸ isQuotientMap_sigma X)
+  IsQuotientMap.of_comp
+    (continuous_sigma fun n ↦
+      (TauCeti.fatRealization.ι (toSimplexCategory.op ⋙ X) (.mk n)).continuous)
+    X.fatToGeometricRealization.hom.continuous
+    (heq.symm ▸ geometricRealization.isQuotientMap_sigma X)
 
 /-- The comparison map `‖X‖ ⟶ |X|` is surjective. -/
 theorem fatToGeometricRealization_surjective : Function.Surjective X.fatToGeometricRealization :=
   (isQuotientMap_fatToGeometricRealization X).surjective
 
 /-- The comparison map `‖X‖ ⟶ |X|` is natural in the simplicial space `X`. -/
-@[reassoc (attr := simp)] theorem map_comp_fatToGeometricRealization
+@[reassoc (attr := simp)] theorem fatRealization_map_comp_fatToGeometricRealization
     {X Y : SimplicialObject TopCat.{u}} (φ : X ⟶ Y) :
-    TauCeti.fatRealization.map (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op φ) ≫
-      Y.fatToGeometricRealization = X.fatToGeometricRealization ≫ map φ := by
+    TauCeti.fatRealization.map (Functor.whiskerLeft toSimplexCategory.op φ) ≫
+      Y.fatToGeometricRealization = X.fatToGeometricRealization ≫ geometricRealization.map φ := by
   ext ⟨n⟩ x t; simp only [TopCat.coe_comp, Function.comp_apply, TauCeti.fatRealization.map_ι,
     fatToGeometricRealization_ι, Functor.whiskerLeft_app, Functor.op_obj,
-    SemiSimplexCategory.toSimplexCategory_obj, SimplexCategory.len_mk]; exact (map_ι φ n x t).symm
+    SemiSimplexCategory.toSimplexCategory_obj, SimplexCategory.len_mk]
+  exact (geometricRealization.map_ι φ n x t).symm
+
+namespace geometricRealization
 
 section Augment
 
@@ -223,8 +227,7 @@ theorem isQuotientMap_augment (ε : X ⟶ (Functor.const _).obj Z) {n : ℕ}
 @[reassoc (attr := simp)] theorem fatToGeometricRealization_comp_augment
     (ε : X ⟶ (Functor.const _).obj Z) :
     X.fatToGeometricRealization ≫ augment ε =
-      TauCeti.fatRealization.augment
-        (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op ε) := by
+      TauCeti.fatRealization.augment (Functor.whiskerLeft toSimplexCategory.op ε) := by
   ext ⟨n⟩ x t; simp only [TopCat.coe_comp, Function.comp_apply, fatToGeometricRealization_ι,
     TauCeti.fatRealization.augment_ι, Functor.whiskerLeft_app, Functor.op_obj,
     SemiSimplexCategory.toSimplexCategory_obj, SimplexCategory.len_mk]; exact augment_ι ε n x t
@@ -233,13 +236,12 @@ end Augment
 
 section Homotopy
 
-variable {X} {Y : SimplicialObject TopCat.{u}}
+variable {X} {Y : SimplicialObject TopCat.{u}} (φ : unitInterval → (X ⟶ Y))
+  (hφ : ∀ n : ℕ, Continuous fun p : unitInterval × X _⦋n⦌ ↦ (φ p.1).app (op ⦋n⦌) p.2)
 
 /-- A `[0, 1]`-family `φ s : X ⟶ Y` jointly continuous in `s` and the simplex in each degree
 induces a homotopy `(s, [x, t]) ↦ [φ s x, t]` from `|φ 0|` to `|φ 1|`. -/
-def homotopy (φ : unitInterval → (X ⟶ Y))
-    (hφ : ∀ n : ℕ, Continuous fun p : unitInterval × X _⦋n⦌ ↦ (φ p.1).app (op ⦋n⦌) p.2) :
-    ContinuousMap.Homotopy (map (φ 0)).hom (map (φ 1)).hom where
+def homotopy : ContinuousMap.Homotopy (map (φ 0)).hom (map (φ 1)).hom where
   toFun p := map (φ p.1) p.2
   continuous_toFun := (isQuotientMap_sigma X).continuous_lift_prod_right <| by
     have : Continuous fun q : Σ n : ℕ, (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) × unitInterval ↦
@@ -252,9 +254,7 @@ def homotopy (φ : unitInterval → (X ⟶ Y))
   map_zero_left _ := rfl
   map_one_left _ := rfl
 
-@[simp] theorem homotopy_apply_ι (φ : unitInterval → (X ⟶ Y))
-    (hφ : ∀ n : ℕ, Continuous fun p : unitInterval × X _⦋n⦌ ↦ (φ p.1).app (op ⦋n⦌) p.2)
-    (s : unitInterval) (n : ℕ) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) :
+@[simp] theorem homotopy_apply_ι (s : unitInterval) (n : ℕ) (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) :
     homotopy φ hφ (s, ι X n (x, t)) = ι Y n ((φ s).app (op ⦋n⦌) x, t) := (rfl)
 
 end Homotopy
@@ -269,11 +269,14 @@ theorem range_map : range (map φ) = {p | ∃ n y t, ι X n (φ.app (op ⦋n⦌)
   ext p; refine ⟨?_, fun ⟨n, y, t, hp⟩ ↦ ⟨ι Y n (y, t), hp⟩⟩
   rintro ⟨q, rfl⟩; obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q; exact ⟨n, y, t, rfl⟩
 
+section PartialInv
+
+variable (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)))
+  (hsat : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌),
+    X.map f.op x ∈ range (φ.app (op ⦋m⦌)) → x ∈ range (φ.app (op ⦋n⦌)))
+
 open scoped Classical in
-private def partialInv (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)))
-    (hsat : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌),
-      X.map f.op x ∈ range (φ.app (op ⦋m⦌)) → x ∈ range (φ.app (op ⦋n⦌))) :
-    X.geometricRealization → Option Y.geometricRealization :=
+private def partialInv : X.geometricRealization → Option Y.geometricRealization :=
   descFun (fun n p ↦ if hx : p.1 ∈ range (φ.app (op ⦋n⦌)) then some (ι Y n (hx.choose, p.2))
     else none) fun _ _ f x t ↦ by
     dsimp only; split_ifs with hx' hx hx
@@ -284,14 +287,14 @@ private def partialInv (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n�
     · obtain ⟨y, rfl⟩ := hx; exact absurd ⟨Y.map f.op y, NatTrans.naturality_apply φ f.op y⟩ hx'
     · rfl
 
-private theorem partialInv_map (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)))
-    (hsat : ∀ ⦃m n : ℕ⦄ (f : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌),
-      X.map f.op x ∈ range (φ.app (op ⦋m⦌)) → x ∈ range (φ.app (op ⦋n⦌)))
-    (q : Y.geometricRealization) : partialInv hinj hsat (map φ q) = some q := by
+private theorem partialInv_map (q : Y.geometricRealization) :
+    partialInv hinj hsat (map φ q) = some q := by
   obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q; simp only [map_ι, partialInv, descFun_ι]
   split_ifs with hx
   · rw [hinj n hx.choose_spec]
   · exact absurd ⟨y, rfl⟩ hx
+
+end PartialInv
 
 /-- **Open restriction for thin geometric realization.** If `φ : Y ⟶ X` is levelwise an open
 embedding and backwards-closed along simplicial operators, then `|φ| : |Y| ⟶ |X|` is an open

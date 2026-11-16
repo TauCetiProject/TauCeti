@@ -122,8 +122,7 @@ theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_ι :
     TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) =
       range (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
-  rw [TauCeti.fatClassifyingSpace.coarseMap_eq_augment,
-    TauCeti.fatClassifyingSpace.coarseAugmentation_eq, TauCeti.fatClassifyingSpaceMap_eq]
+  rw [TauCeti.fatClassifyingSpace.coarseMap_eq_augment, TauCeti.fatClassifyingSpaceMap_eq]
   exact TauCeti.fatRealization.preimage_augment_eq_range_map _ fun m ↦ by
     simpa only [Functor.whiskerLeft_app] using
       P.range_topologicalNerveMap_ι hs (SemiSimplexCategory.toSimplexCategory.op.obj m)
