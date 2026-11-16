@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
+import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Bounded and power-bounded elements of normed rings
@@ -244,15 +245,13 @@ theorem powerBoundedSubring.isUnit_iff_norm_eq_one {x : powerBoundedSubring K} :
   rw [isUnit_iff_dvd_one, powerBoundedSubring.dvd_iff_norm_le, OneMemClass.coe_one, norm_one]
   exact (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.2)).ge_iff_eq
 
-private theorem valued_v_eq_valuation (x : K) : Valued.v x = NormedField.valuation x := rfl
-
 /-- The power-bounded subring `K°` of an ultrametric normed field coincides as a subring of `K`
 with its valuation ring `𝒪[K]`. -/
 theorem powerBoundedSubring_eq_integer : powerBoundedSubring K = 𝒪[K] := by
   ext x
   rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, Valuation.mem_integer_iff,
-    valued_v_eq_valuation, NormedField.valuation_apply, ← NNReal.coe_le_coe, coe_nnNorm,
-    NNReal.coe_one]
+    TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply, ← NNReal.coe_le_coe,
+    coe_nnNorm, NNReal.coe_one]
 
 /-- The canonical ring isomorphism `K° ≃+* 𝒪[K]` between the power-bounded subring and the
 valuation ring of an ultrametric normed field. -/
@@ -261,11 +260,14 @@ noncomputable def powerBoundedSubringEquivInteger : powerBoundedSubring K ≃+* 
 
 @[simp]
 theorem coe_powerBoundedSubringEquivInteger (x : powerBoundedSubring K) :
-    (powerBoundedSubringEquivInteger x : K) = x := (rfl)
+    (powerBoundedSubringEquivInteger x : K) = x :=
+  RingEquiv.coe_subringCongr_apply _ x
 
 @[simp]
 theorem coe_powerBoundedSubringEquivInteger_symm (c : 𝒪[K]) :
-    (powerBoundedSubringEquivInteger.symm c : K) = c := (rfl)
+    (powerBoundedSubringEquivInteger.symm c : K) = c := by
+  rw [powerBoundedSubringEquivInteger, RingEquiv.subringCongr_symm,
+    RingEquiv.coe_subringCongr_apply]
 
 /-- The power-bounded subring `K°` of an ultrametric normed field is a local ring. -/
 instance isLocalRing_powerBoundedSubring : IsLocalRing (powerBoundedSubring K) :=

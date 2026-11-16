@@ -56,7 +56,7 @@ are retained throughout.
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §3.8.1,
-  Proposition 7, and §6.3.4, Lemma 1.
+  Proposition 7.
 -/
 
 public section
@@ -213,7 +213,7 @@ theorem supSeminorm_eq_iSup_minpoly_coeff_rpow (hB : IsAffinoidAlgebra K B) [IsD
     fun _ ↦ TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hf
 
 /-- **Multiplicativity of the supremum seminorm under torsion-free integral scalar
-multiplication** [BGR, 6.3.4/1]. Let `B` be an affinoid algebra which is integral and torsion-free
+multiplication.** Let `B` be an affinoid algebra which is integral and torsion-free
 over an integrally closed domain `A`. If right multiplication by `a : A` scales the supremum
 seminorm on `A` (for instance when `A` is a Tate algebra), then
 `|a • f|sup = |a|sup * |f|sup` for every `f : B`. -/

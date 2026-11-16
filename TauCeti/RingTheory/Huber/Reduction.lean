@@ -85,9 +85,17 @@ def CanonicalReduction.ringEquiv (e : A ≃+* B) (he : Continuous e)
 theorem CanonicalReduction.ringEquiv_mk (e : A ≃+* B) (he : Continuous e)
     (he' : Continuous e.symm) (a : powerBoundedSubring A) :
     CanonicalReduction.ringEquiv e he he' (Ideal.Quotient.mk _ a) =
-      Ideal.Quotient.mk _ (powerBoundedSubringEquiv e he he' a) := (rfl)
+      Ideal.Quotient.mk _ (powerBoundedSubringEquiv e he he' a) :=
+  Ideal.quotientEquiv_mk _ _ _ _ a
 
 @[simp]
+theorem CanonicalReduction.ringEquiv_symm_mk (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (b : powerBoundedSubring B) :
+    (CanonicalReduction.ringEquiv e he he').symm (Ideal.Quotient.mk _ b) =
+      Ideal.Quotient.mk _ ((powerBoundedSubringEquiv e he he').symm b) :=
+  (CanonicalReduction.ringEquiv e he he').symm_apply_eq.mpr <| by
+    rw [CanonicalReduction.ringEquiv_mk, RingEquiv.apply_symm_apply]
+
 theorem CanonicalReduction.ringEquiv_symm (e : A ≃+* B) (he : Continuous e)
     (he' : Continuous e.symm) :
     (CanonicalReduction.ringEquiv e he he').symm =
@@ -173,24 +181,32 @@ noncomputable def canonicalReductionAlgEquivResidueField : CanonicalReduction K 
 @[simp]
 theorem coe_canonicalReductionAlgEquivResidueField :
     ⇑(canonicalReductionAlgEquivResidueField (K := K)) =
-      ⇑(canonicalReductionRingEquivResidueField (K := K)) := (rfl)
+      ⇑(canonicalReductionRingEquivResidueField (K := K)) :=
+  funext fun _ ↦ AlgEquiv.ofRingEquiv_apply _ _
+
+@[simp]
+theorem coe_canonicalReductionAlgEquivResidueField_symm :
+    ⇑(canonicalReductionAlgEquivResidueField (K := K)).symm =
+      ⇑(canonicalReductionRingEquivResidueField (K := K)).symm :=
+  funext fun _ ↦ AlgEquiv.ofRingEquiv_symm_apply _ _
 
 @[simp]
 theorem toRingEquiv_canonicalReductionAlgEquivResidueField :
     (canonicalReductionAlgEquivResidueField (K := K) : CanonicalReduction K ≃+* 𝓀[K]) =
-      canonicalReductionRingEquivResidueField := (rfl)
+      canonicalReductionRingEquivResidueField := by
+  ext x
+  simp [coe_canonicalReductionAlgEquivResidueField]
 
-@[simp]
 theorem canonicalReductionAlgEquivResidueField_mk (x : powerBoundedSubring K) :
     canonicalReductionAlgEquivResidueField (Ideal.Quotient.mk _ x) =
       residue 𝒪[K] (powerBoundedSubringEquivInteger x) :=
   (AlgEquiv.ofRingEquiv_apply _ _).trans (canonicalReductionRingEquivResidueField_mk x)
 
-@[simp]
 theorem canonicalReductionAlgEquivResidueField_symm_residue (c : 𝒪[K]) :
     canonicalReductionAlgEquivResidueField.symm (residue 𝒪[K] c) =
       Ideal.Quotient.mk _ (powerBoundedSubringEquivInteger.symm c) :=
-  canonicalReductionRingEquivResidueField_symm_residue c
+  (AlgEquiv.ofRingEquiv_symm_apply _ _).trans
+    (canonicalReductionRingEquivResidueField_symm_residue c)
 
 end Algebra
 

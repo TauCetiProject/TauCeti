@@ -318,7 +318,7 @@ theorem finite_reductionMap_restrictedSquareSubst :
     ((restrictedSquareSubst ϖ hϖ).reductionMap isAffinoidAlgebra_tate
       isAffinoidAlgebra_tate).Finite :=
   (restrictedSquareSubst ϖ hϖ).finite_reductionMap isAffinoidAlgebra_tate isAffinoidAlgebra_tate
-    (restrictedSquareSubst_finite ϖ hϖ)
+    (restrictedSquareSubst_finite ϖ hϖ).to_isIntegral
 
 end Reduction
 

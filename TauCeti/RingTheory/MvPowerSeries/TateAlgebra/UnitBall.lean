@@ -502,7 +502,7 @@ of reduction (`mem_ker_restrictedReduction`). -/
 theorem isTopologicallyNilpotent_iff_norm_lt_one {f : T} : IsTopologicallyNilpotent f ↔ ‖f‖ < 1 :=
   isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun f n _ ↦ norm_pow f n
 
-/-- **The canonical reduction of `K⟨X⟩` is the polynomial algebra `𝓀[K][X]`** [BGR, 5.1.3/1]. -/
+/-- **The canonical reduction of `K⟨X⟩` is the polynomial algebra `𝓀[K][X]`.** -/
 noncomputable def canonicalReductionAlgEquiv :
     Huber.CanonicalReduction T ≃ₐ[𝓀[K]] MvPolynomial σ 𝓀[K] :=
   let e₀ : Huber.powerBoundedSubring T ≃+* T° :=
@@ -523,7 +523,8 @@ noncomputable def canonicalReductionAlgEquiv :
       rw [Huber.algebraMap_canonicalReduction_residue, RingEquiv.trans_apply,
         Ideal.quotientEquiv_mk, restrictedReductionQuotientEquiv_mk]
       have he₀ : e₀ (Huber.integerToPowerBounded K T c) = ⟨algebraMap K T c, hc⟩ :=
-        Subtype.ext (Huber.coe_integerToPowerBounded c)
+        Subtype.ext ((RingEquiv.coe_subringCongr_apply _ _).trans
+          (Huber.coe_integerToPowerBounded c))
       rw [he₀, restrictedReduction_algebraMap c hc, MvPolynomial.algebraMap_eq]
 
 @[simp]
