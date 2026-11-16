@@ -193,14 +193,14 @@ theorem edgeReachability_le_degree {u v : V} (huv : u ≠ v) [Fintype (G.neighbo
   ENat.forall_natCast_le_iff_le.mp fun _ hk ↦
     ((isEdgeReachable_iff_le_edgeReachability.mpr hk).le_degree huv)
 
-/-- On a finite vertex type, local edge reachability is `⊤` exactly on the diagonal. -/
+/-- When `u` has finite degree, the local edge reachability from `u` is `⊤` exactly at `u`
+itself. In particular, on a finite or locally finite graph it is `⊤` exactly on the diagonal. -/
 @[simp]
-theorem edgeReachability_eq_top_iff [Finite V] {u v : V} :
+theorem edgeReachability_eq_top_iff {u v : V} [Finite (G.neighborSet u)] :
     G.edgeReachability u v = ⊤ ↔ u = v := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ edgeReachability_self u⟩
   by_contra huv
-  let _ := Fintype.ofFinite V
-  classical
+  let _ := Fintype.ofFinite (G.neighborSet u)
   exact ENat.natCast_ne_top (G.degree u)
     (top_le_iff.1 (h ▸ G.edgeReachability_le_degree huv))
 
