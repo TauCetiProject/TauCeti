@@ -96,17 +96,6 @@ noncomputable def finitePresentationEquivalenceMod :
   ObjectProperty.equivalenceMod (finiteProjectiveModules_le_categoryTheory_isProjective R)
     (presented_finiteProjectiveModules R).symm
 
-/-- The regular module `R`, as a finitely generated projective `R`-module. -/
-@[expose] def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2
-    ⟨inferInstanceAs (Module.Finite R R), inferInstanceAs (Module.Projective R R)⟩⟩
-
-/-- The underlying module of `TauCeti.finiteProjectiveModulesRegular R` is `R`. -/
-@[simp]
-theorem finiteProjectiveModulesRegular_obj :
-    (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
-  (rfl)
-
 /-- The functor of `finitePresentationEquivalenceMod` is `M ↦ (-, M)|_{proj R}`. -/
 noncomputable def finitePresentationEquivalenceModCompιIso :
     (finitePresentationEquivalenceMod R).functor ⋙ (isFinitelyPresentedFunctor _).ι ≅
