@@ -403,17 +403,16 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
       (fun μ : Weight K L M ↦ (genWeightSpace M μ).toSubmodule)
       (fun ν : Weight K L N ↦ (genWeightSpace N ν).toSubmodule)
       (isInternal_genWeightSpace K L M) (isInternal_genWeightSpace K L N)
-  let S := {p : Weight K L M × Weight K L N //
-    (p.1 : Dual K L) + (p.2 : Dual K L) = χ}
+  let S := {p : Weight K L M × Weight K L N // (p.1 : L → K) + (p.2 : L → K) = χ}
   have hindep : iSupIndep fun p : S ↦ A p :=
     hint.submodule_iSupIndep.comp Subtype.val_injective
-  have hspace := genWeightSpace_toSubmodule_tensorProduct (M := M) (N := N) χ
-  rw [← LieSubmodule.finrank_toSubmodule]
-  rw [hspace, finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
+  rw [← LieSubmodule.finrank_toSubmodule, genWeightSpace_tensorProduct_eq_iSup_weight,
+    finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
+  -- The weight pairs summing to `χ` as linear forms are those summing to `χ` as functions.
   rw [← Finset.sum_subtype
     (s := (Finset.univ : Finset (Weight K L M × Weight K L N)).filter fun p ↦
       (p.1 : Dual K L) + (p.2 : Dual K L) = χ)
-    (fun p ↦ by simp) (fun p ↦ finrank K (A p)), Finset.sum_filter]
+    (fun p ↦ by simp [← DFunLike.coe_fn_eq]) (fun p ↦ finrank K (A p)), Finset.sum_filter]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
   by_cases hp : (p.1 : Dual K L) + (p.2 : Dual K L) = χ
   · simp only [hp, ite_true]
@@ -421,8 +420,8 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
     -- `finrank`; restating the goal makes those instances use the displayed `map₂` submodule.
     change finrank K (Submodule.map₂ (TensorProduct.mk K M N)
       (genWeightSpace M p.1).toSubmodule (genWeightSpace N p.2).toSubmodule) = _
-    rw [Submodule.finrank_map₂_mk]
-    rfl
+    rw [Submodule.finrank_map₂_tensorProductMk, LieSubmodule.finrank_toSubmodule,
+      LieSubmodule.finrank_toSubmodule]
   · simp only [hp, ite_false]
 
 /-- **Multiplicativity of formal characters.** The formal character of a tensor product is the
