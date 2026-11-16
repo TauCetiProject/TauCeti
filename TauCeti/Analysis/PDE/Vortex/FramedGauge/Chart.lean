@@ -25,7 +25,8 @@ whose `L²` function is real almost everywhere (`TauCeti.Vortex.mem_realPhaseSpa
 `TauCeti.Vortex.isClosed_realPhaseSpace`); it is complete. By the Sobolev embedding each real
 phase `F` has a unique continuous real representative, which depends linearly on `F`
 (`TauCeti.Vortex.realPhaseSpace.phase`, `TauCeti.Vortex.realPhaseSpace.coeFn_toLp_inclusion`,
-`TauCeti.Vortex.realPhaseSpace.phase_eq_of_ae_eq`).
+`TauCeti.Vortex.realPhaseSpace.phase_eq_of_ae_eq`), and every continuous real function in `H^s`
+is the representative of a real phase (`TauCeti.Vortex.realPhaseSpace.exists_phase_eq`).
 
 **The exponential.** The map `TauCeti.Vortex.expGauge hs : F ↦ exp (i F)` from real phases to
 `G_s` is a group homomorphism from the additive group of real phases
@@ -124,6 +125,15 @@ theorem mem_realPhaseSpace {hs : 0 ≤ s} {F : H^{s}(ℂ)} :
 theorem isClosed_realPhaseSpace (hs : 0 ≤ s) : IsClosed (realPhaseSpace hs : Set H^{s}(ℂ)) :=
   ContinuousLinearMap.isClosed_ker (imInclusionCLM hs)
 
+/-- An `L²` function in `H^s(ℂ)` that is almost everywhere real defines a real phase. -/
+theorem toBesselPotentialSpace_mem_realPhaseSpace (hs : 0 ≤ s) {v : Lp ℂ 2 (volume : Measure ℂ)}
+    (hv : MemSobolev s 2 (v : 𝓢'(ℂ, ℂ))) {f : ℂ → ℝ} (hvf : v =ᵐ[volume] fun z ↦ (f z : ℂ)) :
+    hv.toBesselPotentialSpace ∈ realPhaseSpace hs := by
+  refine mem_realPhaseSpace.2 ?_
+  rw [toLp_inclusion_toBesselPotentialSpace hs hv rfl]
+  filter_upwards [hvf] with z hz
+  simp [hz]
+
 instance instCompleteSpaceRealPhaseSpace (hs : 0 ≤ s) : CompleteSpace (realPhaseSpace hs) :=
   (isClosed_realPhaseSpace hs).completeSpace_coe
 
@@ -221,6 +231,19 @@ theorem phase_eq_of_ae_eq (F : realPhaseSpace (zero_le_one.trans hs.le)) {f : �
       fun z ↦ (f z : ℂ)) :
     phase hs F = f :=
   re_contRep_eq_of_ae_eq hs F hf h
+
+/-- **Every continuous real `H^s` function is the continuous representative of a real phase.** -/
+theorem exists_phase_eq {f : ℂ → ℝ} (hf : Continuous f) (hfs : f ∈ realSobolevFunctions ℂ s 2) :
+    ∃ F : realPhaseSpace (zero_le_one.trans hs.le), phase hs F = f := by
+  have h₀ := zero_le_one.trans hs.le
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hfs
+  have hvf : ofRealCLM.compLp u =ᵐ[volume] fun z ↦ (f z : ℂ) := by
+    filter_upwards [ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u, huf] with z h₁ h₂
+    rw [h₁, ofRealCLM_apply, h₂]
+  refine ⟨⟨hu.toBesselPotentialSpace, toBesselPotentialSpace_mem_realPhaseSpace h₀ hu hvf⟩,
+    phase_eq_of_ae_eq hs _ hf ?_⟩
+  rw [toLp_inclusion_toBesselPotentialSpace h₀ hu rfl]
+  exact hvf
 
 /-- A real phase is determined by its continuous real representative. -/
 theorem phase_injective : Function.Injective (phase hs) := by
@@ -372,39 +395,35 @@ theorem exists_memSobolev_ae_eq_arg_and_norm_le :
 
 /-- **Every element of `G_s` near the identity is an exponential, with a norm bound.** There is
 `δ > 0` such that every `u ∈ G_s` with `‖u - 1‖_{H^s} < δ` is `exp (i F)` for a real phase `F`
-with `‖F‖_{H^s} ≤ 2 ‖u - 1‖_{H^s}`; the phase is `arg u`. -/
+with `‖F‖_{H^s} ≤ 2 ‖u - 1‖_{H^s}`; the phase is `arg u` almost everywhere. -/
 theorem exists_expGauge_eq_and_norm_le :
     ∃ δ, 0 < δ ∧ ∀ u : SobolevTopologicalGaugeGroup hs, ‖subOne u‖ < δ →
       ∃ F : realPhaseSpace (zero_le_one.trans hs.le), expGauge hs F = u ∧ ‖F‖ ≤ 2 * ‖subOne u‖ := by
   have h₀ := zero_le_one.trans hs.le
   obtain ⟨C, hC, harg⟩ := exists_memSobolev_ae_eq_arg_and_norm_le (hs := hs)
-  obtain ⟨C₂, hC₂, hsup⟩ := exists_norm_coe_sub_one_le_mul_norm_subOne (hs := hs)
-  refine ⟨(2 * C + C₂ + 1)⁻¹, by positivity, fun u hu ↦ ?_⟩
+  refine ⟨(2 * C + 1)⁻¹, by positivity, fun u hu ↦ ?_⟩
   set R := ‖subOne u‖
   have hR : 0 ≤ R := norm_nonneg _
-  have hδ : (2 * C + C₂ + 1) * R < 1 := by
-    have := mul_lt_mul_of_pos_left hu (by positivity : (0 : ℝ) < 2 * C + C₂ + 1)
+  have hδ : (2 * C + 1) * R < 1 := by
+    have := mul_lt_mul_of_pos_left hu (by positivity : (0 : ℝ) < 2 * C + 1)
     rwa [mul_inv_cancel₀ (by positivity)] at this
-  -- The gauge is within distance `1` of `1` everywhere, so `arg u` is continuous.
-  have hcont : Continuous fun z ↦ arg ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
-    continuousOn_arg.comp_continuous (continuous_coe_toSubgroup u) fun z ↦ by
-      simpa using mem_slitPlane_of_norm_lt_one ((hsup u z).trans_lt (by nlinarith))
   -- The phase `arg u` is a real phase with norm at most `2 ‖u - 1‖`.
   obtain ⟨F, hFu, hF, hbound⟩ := harg u (by nlinarith)
-  have hFmem : hF.toBesselPotentialSpace ∈ realPhaseSpace (zero_le_one.trans hs.le) := by
-    refine mem_realPhaseSpace.2 ?_
-    rw [toLp_inclusion_toBesselPotentialSpace h₀ hF rfl]
-    filter_upwards [hFu] with z hz
-    simp [hz]
-  set Φ : realPhaseSpace (zero_le_one.trans hs.le) := ⟨hF.toBesselPotentialSpace, hFmem⟩
-  have hphase : phase hs Φ = fun z ↦ arg ((toSubgroup hs u : ℂ → Circle) z : ℂ) := by
-    refine phase_eq_of_ae_eq hs Φ hcont ?_
-    rw [toLp_inclusion_toBesselPotentialSpace h₀ hF rfl]
-    exact hFu
+  set Φ : realPhaseSpace h₀ :=
+    ⟨hF.toBesselPotentialSpace, toBesselPotentialSpace_mem_realPhaseSpace h₀ hF hFu⟩
   refine ⟨Φ, ?_, ?_⟩
-  · refine (toSubgroup hs).injective (Subtype.ext (funext fun z ↦ ?_))
-    rw [expGauge_apply, hphase]
-    exact Circle.exp_arg _
+  · -- `exp (i Φ)` and `u` are continuous and agree almost everywhere, where `Φ = arg u`.
+    have hΦ := coeFn_toLp_inclusion hs Φ
+    rw [toLp_inclusion_toBesselPotentialSpace h₀ hF rfl] at hΦ
+    have hae : (fun z ↦ (Circle.exp (phase hs Φ z) : ℂ)) =ᵐ[volume]
+        fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) := by
+      filter_upwards [hΦ, hFu] with z h₁ h₂
+      rw [ofReal_injective (h₁.symm.trans h₂), Circle.exp_arg]
+    have heq := (continuous_subtype_val.comp (Circle.exp.continuous.comp
+      (continuous_phase hs Φ))).ae_eq_iff_eq volume (continuous_coe_toSubgroup u) |>.1 hae
+    refine (toSubgroup hs).injective (Subtype.ext (funext fun z ↦ Subtype.ext ?_))
+    rw [expGauge_apply]
+    exact congrFun heq z
   · calc ‖Φ‖ = ‖hF.toBesselPotentialSpace‖ := rfl
       _ ≤ (1 - C * R)⁻¹ * R := hbound
       _ ≤ 2 * R := by
