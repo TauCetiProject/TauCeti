@@ -190,6 +190,29 @@ private theorem exists_eq_comp_time {a b : ℝ} (hab : a < b) {g g' : ℝ → �
       (by rw [hut, time_slabMk])), fun p ↦ by simp [u], spatialFDerivL_mk ..,
     fun p ↦ by rw [timeDerivL_mk, hut]⟩
 
+open Real in
+/-- The first two derivatives of the smooth transition function `ψ`, rescaled to a length scale
+`s > 0`, are bounded by the matching powers of `s⁻¹`: `|s⁻¹ ψ'(x)| ≤ L / s` and
+`|s⁻¹ ψ''(x) s⁻¹| ≤ L / s²`, for a constant `L` independent of `s`. These are the derivatives of
+`ψ (x / s)` and `s⁻¹ ψ' (x / s)`. -/
+private theorem exists_forall_abs_inv_mul_deriv_smoothTransition_le :
+    ∃ L : ℝ, 0 ≤ L ∧ ∀ {s : ℝ}, 0 < s → ∀ x,
+      |s⁻¹ * deriv smoothTransition x| ≤ L / s ∧
+        |s⁻¹ * (deriv (deriv smoothTransition) x * s⁻¹)| ≤ L / s / s := by
+  obtain ⟨L₁, hL₁⟩ := smoothTransition.exists_forall_norm_deriv_le
+  obtain ⟨L₂, hL₂⟩ := smoothTransition.exists_forall_norm_deriv_deriv_le
+  refine ⟨max L₁ L₂, (norm_nonneg _).trans ((hL₁ 0).trans (le_max_left _ _)),
+    fun {s} hs x ↦ ⟨?_, ?_⟩⟩
+  · have h := (hL₁ x).trans (le_max_left L₁ L₂)
+    rw [Real.norm_eq_abs] at h
+    rw [abs_mul, abs_inv, abs_of_pos hs, inv_mul_eq_div]
+    gcongr
+  · have h := (hL₂ x).trans (le_max_right L₁ L₂)
+    rw [Real.norm_eq_abs] at h
+    rw [abs_mul, abs_mul, abs_inv, abs_of_pos hs,
+      show ∀ y : ℝ, s⁻¹ * (y * s⁻¹) = y / s / s from fun y ↦ by field_simp]
+    gcongr
+
 /-- **Time cutoffs.** For `α ≤ 2` there is a constant `C` such that on every slab `E × [a, b]` and
 for every `s > 0` there is a map `χ` of the time alone, in the order-two parabolic Hölder space,
 vanishing up to time `s`, equal to one from time `2 s` on, with values in `[0, 1]`, with
@@ -208,7 +231,7 @@ theorem exists_timeCutoff (hα : α ≤ 2) :
         (nnHolderNorm α (timeDerivL χ : slab (E := E) a b → ℝ) : ℝ) ≤
           C * s ^ (-(1 + (α : ℝ) / 2)) := by
   open Real in
-  obtain ⟨L, hL₀, hL⟩ := smoothTransition.exists_forall_abs_inv_mul_deriv_le
+  obtain ⟨L, hL₀, hL⟩ := exists_forall_abs_inv_mul_deriv_smoothTransition_le
   refine ⟨3 * L + 2, by positivity, fun {a b} hab {s} hs ↦ ?_⟩
   -- The cutoff is `t ↦ ψ (t / s - 1)`, with derivative `t ↦ s⁻¹ ψ' (t / s - 1)`.
   set g₀ : ℝ → ℝ := fun t ↦ smoothTransition (t / s - 1)

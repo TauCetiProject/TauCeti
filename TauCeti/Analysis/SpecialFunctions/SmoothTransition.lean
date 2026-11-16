@@ -62,8 +62,6 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
 * `Real.smoothTransition.exists_forall_norm_deriv_le` and
   `Real.smoothTransition.exists_forall_norm_deriv_deriv_le`: the first two derivatives are bounded.
 * `Real.smoothTransition.differentiable_deriv`: the derivative is differentiable.
-* `Real.smoothTransition.exists_forall_abs_inv_mul_deriv_le`: the first two derivatives, rescaled
-  to a length scale `s`, are bounded by `L / s` and `L / s²`.
 * `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
   `0 ≤ C` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
@@ -181,27 +179,6 @@ theorem exists_forall_norm_deriv_deriv_le :
 /-- The derivative of the smooth transition function is differentiable. -/
 theorem differentiable_deriv : Differentiable ℝ (deriv smoothTransition) :=
   (contDiff_infty_iff_deriv.1 smoothTransition.contDiff).2.differentiable (by simp)
-
-/-- The first two derivatives of the smooth transition function `ψ`, rescaled to a length scale
-`s > 0`, are bounded by the matching powers of `s⁻¹`: `|s⁻¹ ψ'(x)| ≤ L / s` and
-`|s⁻¹ ψ''(x) s⁻¹| ≤ L / s²`, for a constant `L` independent of `s`. These are the derivatives of
-`ψ (x / s)` and `s⁻¹ ψ' (x / s)`. -/
-theorem exists_forall_abs_inv_mul_deriv_le : ∃ L : ℝ, 0 ≤ L ∧ ∀ {s : ℝ}, 0 < s → ∀ x,
-    |s⁻¹ * deriv smoothTransition x| ≤ L / s ∧
-      |s⁻¹ * (deriv (deriv smoothTransition) x * s⁻¹)| ≤ L / s / s := by
-  obtain ⟨L₁, hL₁⟩ := exists_forall_norm_deriv_le
-  obtain ⟨L₂, hL₂⟩ := exists_forall_norm_deriv_deriv_le
-  refine ⟨max L₁ L₂, (norm_nonneg _).trans ((hL₁ 0).trans (le_max_left _ _)),
-    fun {s} hs x ↦ ⟨?_, ?_⟩⟩
-  · have h := (hL₁ x).trans (le_max_left L₁ L₂)
-    rw [Real.norm_eq_abs] at h
-    rw [abs_mul, abs_inv, abs_of_pos hs, inv_mul_eq_div]
-    gcongr
-  · have h := (hL₂ x).trans (le_max_right L₁ L₂)
-    rw [Real.norm_eq_abs] at h
-    rw [abs_mul, abs_mul, abs_inv, abs_of_pos hs,
-      show ∀ y : ℝ, s⁻¹ * (y * s⁻¹) = y / s / s from fun y ↦ by field_simp]
-    gcongr
 
 /-- A bound for the error term of a smooth transition rescaled by `a`: if `M` bounds the
 derivative of the smooth transition function `ψ`, `0 ≤ C` and `|y| ≤ C |t|`, then
