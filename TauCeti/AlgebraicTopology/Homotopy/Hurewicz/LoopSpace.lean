@@ -20,8 +20,8 @@ For `n ≥ 1` this is the Hurewicz theorem
 (`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`), which needs nothing of `ΩX` beyond
 its connectivity. In degree one the Hurewicz map identifies `H₁` only with the abelianization of
 `π₁`, and the statement holds because the fundamental group of a loop space is commutative: the
-loop-space shift identifies it with `π₂(X, x)`
-(`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom_of_commute`). So the criterion holds
+loop-space shift identifies it with `π₂(X, x)` (`HomotopyGroup.mul_comm_pathLoopSpace`,
+`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom_of_commute`). So the criterion holds
 uniformly in the degree for loop spaces, which is the form in which it applies to iterated loop
 spaces, such as the double loop spaces of spheres.
 
@@ -56,10 +56,7 @@ theorem isIso_hurewicz_loopSpace_iff_bijective_zmultiplesHom {n : ℕ}
   | zero =>
     have := (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).2
       (hX 0 one_pos)
-    refine isIso_hurewicz_iff_bijective_zmultiplesHom_of_commute (fun a b ↦ ?_) p
-    -- The loop-space shift is an injective homomorphism into the commutative group `π₂(X, x)`.
-    refine (pathLoopSpaceMulEquiv 0).injective ?_
-    rw [_root_.map_mul, _root_.map_mul, mul_comm]
+    exact isIso_hurewicz_iff_bijective_zmultiplesHom_of_commute (mul_comm_pathLoopSpace 0) p
   | succ n => exact isIso_hurewicz_iff_bijective_zmultiplesHom hX p
 
 end HomotopyGroup

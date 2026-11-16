@@ -234,8 +234,9 @@ theorem isIso_hurewicz_iff_bijective_zmultiplesHom_abelianization [PathConnected
 /-- **The Hurewicz class of a loop generates exactly when its homotopy class does**, for a
 path-connected space whose fundamental group is commutative, such as a path-connected loop space:
 the Hurewicz class of a loop `p` is an isomorphism `ℤ ≅ H₁(X; ℤ)` exactly when the class of `p`
-generates `π₁(X, x)` freely. This is the degree-one case of
-`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`. -/
+generates `π₁(X, x)` freely. This is the degree-one analogue of
+`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`, under the extra hypothesis that
+`π₁(X, x)` is commutative. -/
 theorem isIso_hurewicz_iff_bijective_zmultiplesHom_of_commute [PathConnectedSpace X]
     (hX : ∀ a b : HomotopyGroup (Fin 1) X x, a * b = b * a) (p : Ω^ (Fin 1) X x) :
     IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p) ↔
