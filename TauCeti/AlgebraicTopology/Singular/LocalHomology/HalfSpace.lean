@@ -245,12 +245,9 @@ space charted on the half-space `{x | 0 ≤ f x}`, a topological `n`-manifold wi
 every compact `A ⊆ M`, `Hₖ(M, M ∖ A)` vanishes for `k > n`. -/
 theorem isZero_localHomology_of_isCompact_halfSpace [ChartedSpace ↥{x : E | 0 ≤ f x} M]
     (hf : f ≠ 0) (hn : finrank ℝ E = n) {A : Set M} (hA : IsCompact A) {k : ℕ} (hk : n < k) :
-    IsZero (localHomology N A k) := by
-  have : LocallyCompactSpace ↥{x : E | 0 ≤ f x} :=
-    (isClosed_le continuous_const f.continuous).locallyCompactSpace
-  have := ChartedSpace.locallyCompactSpace ↥{x : E | 0 ≤ f x} M
-  exact isZero_localHomology_of_isCompact_of_forall_mem_nhds N
-    (fun x ↦ ⟨_, chart_source_mem_nhds _ x, fun B hB hBc k hk ↦
+    IsZero (localHomology N A k) :=
+  isZero_localHomology_of_isCompact_of_forall_mem_nhds N
+    (fun x ↦ ⟨_, chart_source_mem_nhds _ x, fun _ hB hBc _ hk ↦
       isZero_localHomology_of_subset_source_halfSpace N hf hn _ hBc hB hk⟩) hA hk
 
 /-- **Local homology of a compact subset of a manifold with boundary vanishes above the
