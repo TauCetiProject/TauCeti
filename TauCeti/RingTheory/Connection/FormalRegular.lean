@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
-public import TauCeti.LinearAlgebra.Matrix.PowerSeries
 public import TauCeti.RingTheory.Derivation.Determinant
 public import TauCeti.RingTheory.PowerSeries.Derivative
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Regular formal connections and gauge classification by the constant-term fibre
@@ -40,43 +39,50 @@ transformations of regular formal connections:
    (`Matrix.eq_of_map_derivative_eq_mul_sub_mul_of_map_constantCoeff_eq`), so taking the constant
    term is injective on gauge transformations carrying `A` to `B`
    (`Matrix.GeneralLinearGroup.regularGauge_constantCoeff_injective`). Moreover, when
-   `A.trace = B.trace`, the Abel–Jacobi–Liouville formula forces `(g : Matrix n n R⟦X⟧).det` to be
-   constant (`Matrix.GeneralLinearGroup.det_eq_C_of_regularGauge_eq`), so `SL_n`-valued initial
-   frames lift to `SL_n`-valued gauge transformations.
+   `A.trace = B.trace`, the Abel–Jacobi–Liouville formula forces any square solution `M` to have
+   constant determinant (`Matrix.det_eq_C_of_map_derivative_eq_mul_sub_mul`,
+   `Matrix.GeneralLinearGroup.det_eq_C_of_regularGauge_eq`), so a gauge transformation between
+   equal-trace connection matrices has determinant `1` if and only if its constant term does
+   (`Matrix.GeneralLinearGroup.det_eq_one_iff_of_regularGauge_eq`).
 2. **Existence and classification over `ℚ`-algebras (`Algebra ℚ R`).** Over any (possibly
    nonreduced) `ℚ`-algebra `R`, dividing the recursion by `k + 1` constructs the unique solution
    `Matrix.sylvesterSeries A B M₀` with prescribed constant term `M₀ : Matrix m n R`. Uniqueness
    promotes coefficientwise properties to algebraic laws without re-entering the recursion:
-   `Matrix.sylvesterLinearEquiv` identifies the `R`-submodule `Matrix.sylvesterSubmodule A B` of
-   horizontal morphisms with `Matrix m n R`; `Matrix.sylvesterSeries_mul` shows that horizontal
-   extension commutes with matrix multiplication, upgrading `Matrix.sylvesterEndAlgEquiv` to an
-   `R`-algebra isomorphism on horizontal endomorphisms; and
+   `Matrix.sylvesterLinearEquiv` identifies the `R`-submodule
+   `(derivative (R := R)).sylvesterSubmodule A B` (`Derivation.sylvesterSubmodule`) of horizontal
+   morphisms with `Matrix m n R`; `Matrix.sylvesterSeries_mul` shows that horizontal extension
+   commutes with matrix multiplication, upgrading `Matrix.sylvesterEndAlgEquiv` to an `R`-algebra
+   isomorphism on `(derivative (R := R)).sylvesterEndSubalgebra A`
+   (`Derivation.sylvesterEndSubalgebra`); and
    `Matrix.GeneralLinearGroup.regularGaugeOfConstantCoeff` pairs `sylvesterSeries A B g₀` with
    `sylvesterSeries B A g₀⁻¹` inside `GL n R⟦X⟧`. Consequently, evaluating at `X = 0` is a
    bijection from `{g : GL n R⟦X⟧ // g.regularGauge A = B}` onto `GL n R`
    (`Matrix.GeneralLinearGroup.regularGaugeEquivConstantCoeff` and
-   `Matrix.GeneralLinearGroup.regularGauge_constantCoeff_bijective`), and restricts to a group
+   `Matrix.GeneralLinearGroup.regularGauge_constantCoeff_bijective`) and restricts to a group
    isomorphism on gauge stabilizers (`Matrix.GeneralLinearGroup.regularGaugeStabilizerMulEquiv`).
-3. **Concrete specializations and sharpness.** For `1 × 1` matrices (`n = Unit`) with `A = 1` and
-   `B = 0`, the horizontal frame with initial value `g₀` is `C (g₀ () ()) * PowerSeries.exp R`
-   (`Matrix.GeneralLinearGroup.regularGaugeOfConstantCoeff_unit_one_zero_apply`). For a square-zero
-   scalar `ε` (`ε * ε = 0`, e.g. in `DualNumber ℚ`), the horizontal frame for `A = scalar n (C ε)`
-   is `g₀.map C * (1 + (C ε * X) • 1)`
-   (`Matrix.GeneralLinearGroup.regularGaugeOfConstantCoeff_scalar_sq_zero`). Over any commutative
-   ring of characteristic `p > 1`, the scalar matrix `(1 + X ^ p) • 1` has constant term `1` and
-   fixes `0` under `regularGauge` while differing from `1`, showing that torsion-freeness is
-   essential (`Matrix.GeneralLinearGroup.exists_regularGauge_zero_eq_zero_of_charP`).
+3. **Concrete specializations and sharpness.** For a constant scalar connection
+   `A = Matrix.scalar n (C a)` with `B = 0`, horizontal extension scales `M₀.map C` by
+   `PowerSeries.rescale a (PowerSeries.exp R)` (`Matrix.sylvesterSeries_scalar_zero`), specializing
+   on `1 × 1` matrices (`n = Unit`, `a = 1`) to `C (g₀ () ()) * PowerSeries.exp R`
+   (`Matrix.GeneralLinearGroup.regularGaugeOfConstantCoeff_unit_one_zero_apply`) and for a
+   square-zero scalar `ε` (`ε * ε = 0`, e.g. in `DualNumber ℚ`) to
+   `(g₀ : Matrix n n R).map C * (1 + (C ε * X) • 1)`
+   (`Matrix.GeneralLinearGroup.coe_regularGaugeOfConstantCoeff_scalar_sq_zero`). Conversely, over
+   any commutative ring failing `[HasUniqueDiv R]` and any nonempty index type `n`, there exists a
+   nontrivial `g : GL n R⟦X⟧` with constant term `1` that fixes every connection matrix under
+   `regularGauge` (`Matrix.GeneralLinearGroup.exists_regularGauge_eq_self_of_not_hasUniqueDiv`, and
+   in characteristic `p > 1`,
+   `Matrix.GeneralLinearGroup.exists_regularGauge_zero_eq_zero_of_charP`), showing that
+   `[HasUniqueDiv R]` is sharp.
 
 ## Main definitions
 
-* `Matrix.sylvesterSubmodule`: the `R`-submodule of matrices `M : Matrix m n R⟦X⟧` satisfying
-  `M.map d⁄dX = M * A - B * M`.
 * `Matrix.sylvesterSeries`: the unique formal power-series matrix solving
   `M.map d⁄dX = M * A - B * M` with constant term `M₀`, over a `ℚ`-algebra `R`.
 * `Matrix.sylvesterLinearEquiv`: the `R`-linear isomorphism
-  `Matrix.sylvesterSubmodule A B ≃ₗ[R] Matrix m n R`.
-* `Matrix.sylvesterEndSubalgebra`, `Matrix.sylvesterEndAlgEquiv`: the `R`-subalgebra of horizontal
-  endomorphisms of `d⁄dX + A` and its `R`-algebra isomorphism with `Matrix n n R`.
+  `(derivative (R := R)).sylvesterSubmodule A B ≃ₗ[R] Matrix m n R`.
+* `Matrix.sylvesterEndAlgEquiv`: the `R`-algebra isomorphism
+  `(derivative (R := R)).sylvesterEndSubalgebra A ≃ₐ[R] Matrix n n R`.
 * `Matrix.GeneralLinearGroup.regularGauge`: the left gauge action `g * A * g⁻¹ - g.map d⁄dX * g⁻¹`
   of `GL n R⟦X⟧` on regular connection matrices `Matrix n n R⟦X⟧`.
 * `Matrix.GeneralLinearGroup.regularGaugeOfConstantCoeff`: the unique gauge transformation carrying
@@ -91,19 +97,26 @@ transformations of regular formal connections:
 
 * `Matrix.eq_of_map_derivative_eq_mul_sub_mul_of_map_constantCoeff_eq`: uniqueness of solutions to
   `M.map d⁄dX = M * A - B * M` with given constant term under `[HasUniqueDiv R]`.
-* `Matrix.sylvesterSeries_mul`, `Matrix.map_sylvesterSeries`: horizontal extension preserves matrix
-  multiplication and commutes with base change along any ring homomorphism between `ℚ`-algebras.
-* `Matrix.GeneralLinearGroup.det_eq_C_of_regularGauge_eq`: gauge transformations between connection
-  matrices of equal trace have constant determinant under `[HasUniqueDiv R]`.
-* `Matrix.GeneralLinearGroup.regularGauge_constantCoeff_injective`: injectivity of the constant-term
-  map on gauge transformations under `[HasUniqueDiv R]`.
+* `Matrix.det_eq_C_of_map_derivative_eq_mul_sub_mul`,
+  `Matrix.GeneralLinearGroup.det_eq_C_of_regularGauge_eq`: Sylvester solutions and gauge
+  transformations between connection matrices of equal trace have constant determinant under
+  `[HasUniqueDiv R]`.
+* `Matrix.sylvesterSeries_mul`, `Matrix.map_sylvesterSeries`, `Matrix.sylvesterSeries_scalar_zero`:
+  horizontal extension preserves matrix multiplication, commutes with base change along any ring
+  homomorphism between `ℚ`-algebras, and has closed form `rescale a (exp R) • M₀.map C` on constant
+  scalar connections.
+* `Matrix.GeneralLinearGroup.regularGauge_constantCoeff_injective`,
+  `Matrix.GeneralLinearGroup.exists_regularGauge_eq_self_of_not_hasUniqueDiv`: `[HasUniqueDiv R]` is
+  necessary and sufficient (for nonempty `n`) for injectivity of the constant-term map on gauge
+  transformations.
 * `Matrix.GeneralLinearGroup.regularGauge_constantCoeff_bijective`: over any `ℚ`-algebra `R`, taking
   the constant term is a bijection from gauge transformations carrying `A` to `B` onto `GL n R`.
 
 ## References
 
 * E. Frenkel and D. Gaitsgory, *Local geometric Langlands correspondence and affine Kac–Moody
-  algebras*, Algebraic Geometry and Number Theory, Progr. Math. 253 (2006), Lemma 4.4.2, pp. 40–41.
+  algebras*, Algebraic Geometry and Number Theory, Progr. Math. 253 (2006), pp. 69–260;
+  `arXiv:math/0508382v3`, Lemma 4.4.2, pp. 40–41.
 * E. Frenkel, *Langlands Correspondence for Loop Groups*, Cambridge Studies in Advanced Mathematics
   103 (2007), §1.2 and §3.5.
 -/
@@ -153,7 +166,8 @@ theorem eq_zero_of_map_derivative_eq_mul_sub_mul_of_map_constantCoeff_eq_zero
 
 /-- **Uniqueness for the formal matrix Sylvester differential equation.** Over a commutative ring
 `R` with `[HasUniqueDiv R]`, two solutions `M, N : Matrix m n R⟦X⟧` of
-`X.map d⁄dX = X * A - B * X` with the same constant-term matrix at `X = 0` are equal. -/
+`M.map d⁄dX = M * A - B * M` and `N.map d⁄dX = N * A - B * N` with the same constant-term matrix at
+`X = 0` are equal. -/
 theorem eq_of_map_derivative_eq_mul_sub_mul_of_map_constantCoeff_eq
     {A : Matrix n n R⟦X⟧} {B : Matrix m m R⟦X⟧} {M N : Matrix m n R⟦X⟧}
     (hM : M.map d⁄dX = M * A - B * M) (hN : N.map d⁄dX = N * A - B * N)
@@ -161,46 +175,31 @@ theorem eq_of_map_derivative_eq_mul_sub_mul_of_map_constantCoeff_eq
     M = N := by
   refine sub_eq_zero.mp
     (eq_zero_of_map_derivative_eq_mul_sub_mul_of_map_constantCoeff_eq_zero (A := A) (B := B) ?_ ?_)
-  · have hsub : (M - N).map d⁄dX = M.map d⁄dX - N.map d⁄dX :=
-      Matrix.ext fun i j => map_sub (derivative (R := R)) (M i j) (N i j)
-    rw [hsub, hM, hN, Matrix.sub_mul, Matrix.mul_sub]
+  · rw [Matrix.map_sub _ (map_sub (derivative (R := R))), hM, hN, Matrix.sub_mul, Matrix.mul_sub]
     abel
-  · exact Matrix.ext fun i j => by
-      have hij := congrArg (fun X : Matrix m n R => X i j) h0
-      simpa [sub_eq_zero] using hij
+  · rw [Matrix.map_sub _ (map_sub constantCoeff), h0, sub_self]
+
+/-- **Constant determinant for equal-trace Sylvester solutions.** Over a commutative ring `R` with
+`[HasUniqueDiv R]`, if `M : Matrix n n R⟦X⟧` satisfies `M.map d⁄dX = M * A - B * M` and
+`A.trace = B.trace`, then `M.det` is the constant power series `C (M.map constantCoeff).det`. -/
+theorem det_eq_C_of_map_derivative_eq_mul_sub_mul [DecidableEq n]
+    {A B M : Matrix n n R⟦X⟧} (hM : M.map d⁄dX = M * A - B * M) (htr : A.trace = B.trace) :
+    M.det = C (M.map constantCoeff).det := by
+  refine PowerSeries.derivative.ext ?_ ?_
+  · rw [(derivative (R := R)).map_det_eq_zero_of_map_eq_mul_sub_mul_of_trace_eq hM htr,
+      derivative_C]
+  · rw [constantCoeff_C, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+
+/-- Under `[HasUniqueDiv R]`, `M.map d⁄dX = M * A - B * M`, and `A.trace = B.trace`, a square
+matrix `M : Matrix n n R⟦X⟧` has determinant `1` if and only if its constant-term matrix at `X = 0`
+has determinant `1`. -/
+theorem det_eq_one_iff_of_map_derivative_eq_mul_sub_mul [DecidableEq n]
+    {A B M : Matrix n n R⟦X⟧} (hM : M.map d⁄dX = M * A - B * M) (htr : A.trace = B.trace) :
+    M.det = 1 ↔ (M.map constantCoeff).det = 1 := by
+  rw [det_eq_C_of_map_derivative_eq_mul_sub_mul hM htr]
+  exact ⟨fun h => by simpa using congrArg constantCoeff h, fun h => by rw [h, map_one]⟩
 
 end Uniqueness
-
-section Submodule
-
-variable {m n R : Type*} [CommRing R] [Fintype m] [Fintype n]
-
-/-- **Submodule of horizontal morphisms** from `d⁄dX + A` to `d⁄dX + B`: rectangular matrices
-`M : Matrix m n R⟦X⟧` satisfying `M.map d⁄dX = M * A - B * M`, over any commutative ring `R`. -/
-noncomputable def sylvesterSubmodule (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧) :
-    Submodule R (Matrix m n R⟦X⟧) where
-  carrier := {M | M.map d⁄dX = M * A - B * M}
-  add_mem' {M N} hM hN := by
-    have hadd : (M + N).map d⁄dX = M.map d⁄dX + N.map d⁄dX :=
-      Matrix.ext fun i j => map_add (derivative (R := R)) (M i j) (N i j)
-    rw [Set.mem_ofPred_eq, hadd, hM, hN, Matrix.add_mul, Matrix.mul_add]
-    abel
-  zero_mem' := by
-    have hzero : (0 : Matrix m n R⟦X⟧).map d⁄dX = 0 :=
-      Matrix.ext fun _ _ => map_zero (derivative (R := R))
-    rw [Set.mem_ofPred_eq, hzero, Matrix.zero_mul, Matrix.mul_zero, sub_self]
-  smul_mem' r {M} hM := by
-    have hsmul : (r • M).map d⁄dX = r • M.map d⁄dX :=
-      Matrix.ext fun i j => Derivation.map_smul (derivative (R := R)) r (M i j)
-    rw [Set.mem_ofPred_eq, hsmul, hM, smul_sub, Matrix.smul_mul, Matrix.mul_smul]
-
-@[simp]
-theorem mem_sylvesterSubmodule_iff {A : Matrix n n R⟦X⟧} {B : Matrix m m R⟦X⟧}
-    {M : Matrix m n R⟦X⟧} :
-    M ∈ sylvesterSubmodule A B ↔ M.map d⁄dX = M * A - B * M :=
-  Iff.rfl
-
-end Submodule
 
 section Existence
 
@@ -251,10 +250,8 @@ theorem map_coeff_succ_sylvesterSeries (A : Matrix n n R⟦X⟧) (B : Matrix m m
         ∑ p ∈ Finset.range (k + 1),
           ((sylvesterSeries A B M₀).map (coeff p) * A.map (coeff (k - p)) -
             B.map (coeff (k - p)) * (sylvesterSeries A B M₀).map (coeff p)) := by
-  rw [map_coeff_sylvesterSeries_eq, sylvesterSeriesCoeff,
-    Finset.sum_attach (Finset.range (k + 1)) fun p =>
-      sylvesterSeriesCoeff A B M₀ p * A.map (coeff (k - p)) -
-        B.map (coeff (k - p)) * sylvesterSeriesCoeff A B M₀ p]
+  rw [map_coeff_sylvesterSeries_eq, sylvesterSeriesCoeff]
+  conv_rhs => rw [← Finset.sum_attach]
   simp only [map_coeff_sylvesterSeries_eq]
 
 /-- `Matrix.sylvesterSeries A B M₀` satisfies `M.map d⁄dX = M * A - B * M`. -/
@@ -268,10 +265,8 @@ theorem map_derivative_sylvesterSeries (A : Matrix n n R⟦X⟧) (B : Matrix m m
     have hk : (k + 1 : R) = algebraMap ℚ R (k + 1 : ℚ) := by simp
     rw [hk, mul_comm, ← Algebra.smul_def, smul_smul,
       mul_inv_cancel₀ (Nat.cast_add_one_ne_zero k), one_smul]
-  have hc : coeff (k + 1) (sylvesterSeries A B M₀ i j) =
-      ((sylvesterSeries A B M₀).map (coeff (k + 1))) i j := rfl
-  rw [Matrix.map_apply, coeff_derivative, hc, map_coeff_succ_sylvesterSeries, Matrix.smul_apply,
-    hcast, Matrix.sum_apply]
+  rw [Matrix.map_apply, coeff_derivative, ← Matrix.map_apply (f := coeff (k + 1)),
+    map_coeff_succ_sylvesterSeries, Matrix.smul_apply, hcast, Matrix.sum_apply]
   simp only [Matrix.sub_apply, Matrix.mul_apply, Matrix.map_apply, map_sub, map_sum, coeff_mul,
     Finset.sum_sub_distrib]
   congr 1
@@ -281,7 +276,7 @@ theorem map_derivative_sylvesterSeries (A : Matrix n n R⟦X⟧) (B : Matrix m m
   · rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun r _ => ?_
     rw [← Finset.Nat.sum_antidiagonal_swap, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-    rfl
+    simp only [Prod.fst_swap, Prod.snd_swap]
 
 /-- **Existence and uniqueness characterization of `Matrix.sylvesterSeries`.** Over a `ℚ`-algebra
 `R`, `M = sylvesterSeries A B M₀` if and only if `M.map d⁄dX = M * A - B * M` and
@@ -299,36 +294,12 @@ theorem eq_sylvesterSeries_iff {A : Matrix n n R⟦X⟧} {B : Matrix m m R⟦X�
   exact ⟨map_derivative_sylvesterSeries A B M₀, map_constantCoeff_sylvesterSeries A B M₀⟩
 
 @[simp]
-theorem sylvesterSeries_zero (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧) :
-    sylvesterSeries A B 0 = 0 := by
-  symm
-  rw [eq_sylvesterSeries_iff]
-  exact ⟨(sylvesterSubmodule A B).zero_mem, Matrix.ext fun _ _ => by simp⟩
-
-theorem sylvesterSeries_add (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧)
-    (M₀ N₀ : Matrix m n R) :
-    sylvesterSeries A B (M₀ + N₀) = sylvesterSeries A B M₀ + sylvesterSeries A B N₀ := by
-  symm
-  rw [eq_sylvesterSeries_iff]
-  refine ⟨(sylvesterSubmodule A B).add_mem
-    (map_derivative_sylvesterSeries A B M₀) (map_derivative_sylvesterSeries A B N₀), ?_⟩
-  exact Matrix.ext fun i j => by simp
-
-theorem sylvesterSeries_smul (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧)
-    (r : R) (M₀ : Matrix m n R) :
-    sylvesterSeries A B (r • M₀) = r • sylvesterSeries A B M₀ := by
-  symm
-  rw [eq_sylvesterSeries_iff]
-  refine ⟨(sylvesterSubmodule A B).smul_mem r (map_derivative_sylvesterSeries A B M₀), ?_⟩
-  exact Matrix.ext fun i j => by simp [Algebra.smul_def, PowerSeries.algebraMap_eq]
-
-@[simp]
 theorem sylvesterSeries_self_one [DecidableEq n] (A : Matrix n n R⟦X⟧) :
     sylvesterSeries A A 1 = 1 := by
   symm
   rw [eq_sylvesterSeries_iff]
   refine ⟨by simp [Derivation.map_matrix_one (derivative (R := R))], ?_⟩
-  simpa using (constantCoeff (R := R)).mapMatrix.map_one
+  exact Matrix.map_one constantCoeff (map_zero _) (map_one _)
 
 /-- **Multiplicativity of horizontal extension.** Extending `M₀ : Matrix l m R` from `B` to `C` and
 `N₀ : Matrix m n R` from `A` to `B` and multiplying the resulting formal power-series matrices gives
@@ -339,7 +310,7 @@ theorem sylvesterSeries_mul {l : Type*} [Fintype l] (A : Matrix n n R⟦X⟧) (B
   rw [eq_sylvesterSeries_iff]
   refine ⟨(derivative (R := R)).map_matrix_mul_of_map_eq_mul_sub_mul
     (map_derivative_sylvesterSeries B C M₀) (map_derivative_sylvesterSeries A B N₀), ?_⟩
-  exact Matrix.ext fun i j => by simp [Matrix.mul_apply]
+  rw [Matrix.map_mul, map_constantCoeff_sylvesterSeries, map_constantCoeff_sylvesterSeries]
 
 /-- **Functoriality of `Matrix.sylvesterSeries` under base change.** Any ring homomorphism
 `f : R →+* S` between `ℚ`-algebras intertwines `Matrix.sylvesterSeries`, without requiring an
@@ -353,27 +324,32 @@ theorem map_sylvesterSeries {S : Type*} [CommRing S] [Algebra ℚ S] (f : R →+
   · have hder : ((sylvesterSeries A B M₀).map (PowerSeries.map f)).map d⁄dX =
         ((sylvesterSeries A B M₀).map d⁄dX).map (PowerSeries.map f) :=
       Matrix.ext fun i j => PowerSeries.derivative_map (sylvesterSeries A B M₀ i j) f
-    rw [hder, map_derivative_sylvesterSeries]
-    exact Matrix.ext fun i j => by simp [Matrix.mul_apply]
+    rw [hder, map_derivative_sylvesterSeries, Matrix.map_sub _ (map_sub (PowerSeries.map f)),
+      Matrix.map_mul, Matrix.map_mul]
   · simp only [Matrix.map_apply]
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
       constantCoeff_sylvesterSeries_apply]
 
 /-- **Horizontal morphisms are classified by their constant term at `X = 0`.** Over a `ℚ`-algebra
 `R`, taking the constant-term matrix is an `R`-linear isomorphism from
-`Matrix.sylvesterSubmodule A B` onto `Matrix m n R`. -/
+`(derivative (R := R)).sylvesterSubmodule A B` onto `Matrix m n R`. -/
 noncomputable def sylvesterLinearEquiv (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧) :
-    sylvesterSubmodule A B ≃ₗ[R] Matrix m n R where
+    (derivative (R := R)).sylvesterSubmodule A B ≃ₗ[R] Matrix m n R where
   toFun M := M.1.map constantCoeff
-  invFun M₀ := ⟨sylvesterSeries A B M₀, map_derivative_sylvesterSeries A B M₀⟩
-  left_inv M := Subtype.ext ((eq_sylvesterSeries_iff.mpr ⟨M.2, rfl⟩).symm)
+  invFun M₀ :=
+    ⟨sylvesterSeries A B M₀,
+      (derivative (R := R)).mem_sylvesterSubmodule_iff.mpr (map_derivative_sylvesterSeries A B M₀)⟩
+  left_inv M :=
+    Subtype.ext
+      ((eq_sylvesterSeries_iff.mpr ⟨(derivative (R := R)).mem_sylvesterSubmodule_iff.mp M.2,
+        rfl⟩).symm)
   right_inv M₀ := map_constantCoeff_sylvesterSeries A B M₀
-  map_add' M N := Matrix.ext fun i j => by simp
-  map_smul' r M := Matrix.ext fun i j => by simp [Algebra.smul_def, PowerSeries.algebraMap_eq]
+  map_add' M N := Matrix.map_add constantCoeff (map_add constantCoeff) M.1 N.1
+  map_smul' r M := Matrix.map_smul constantCoeff r (fun x => PowerSeries.constantCoeff_smul x r) M.1
 
 @[simp]
 theorem sylvesterLinearEquiv_apply (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧)
-    (M : sylvesterSubmodule A B) :
+    (M : (derivative (R := R)).sylvesterSubmodule A B) :
     sylvesterLinearEquiv A B M = M.1.map constantCoeff :=
   (rfl)
 
@@ -383,65 +359,72 @@ theorem coe_sylvesterLinearEquiv_symm (A : Matrix n n R⟦X⟧) (B : Matrix m m 
     ((sylvesterLinearEquiv A B).symm M₀ : Matrix m n R⟦X⟧) = sylvesterSeries A B M₀ :=
   (rfl)
 
+@[simp]
+theorem sylvesterSeries_zero (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧) :
+    sylvesterSeries A B 0 = 0 := by
+  simpa only [coe_sylvesterLinearEquiv_symm, Submodule.coe_zero] using
+    congrArg Subtype.val (sylvesterLinearEquiv A B).symm.map_zero
+
+theorem sylvesterSeries_add (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧)
+    (M₀ N₀ : Matrix m n R) :
+    sylvesterSeries A B (M₀ + N₀) = sylvesterSeries A B M₀ + sylvesterSeries A B N₀ := by
+  simpa only [coe_sylvesterLinearEquiv_symm, Submodule.coe_add] using
+    congrArg Subtype.val ((sylvesterLinearEquiv A B).symm.map_add M₀ N₀)
+
+theorem sylvesterSeries_smul (A : Matrix n n R⟦X⟧) (B : Matrix m m R⟦X⟧)
+    (r : R) (M₀ : Matrix m n R) :
+    sylvesterSeries A B (r • M₀) = r • sylvesterSeries A B M₀ := by
+  simpa only [coe_sylvesterLinearEquiv_symm, SetLike.val_smul] using
+    congrArg Subtype.val ((sylvesterLinearEquiv A B).symm.map_smul r M₀)
+
+/-- **Closed-form exponential solution for a constant scalar connection.** Over a `ℚ`-algebra `R`,
+extending `M₀ : Matrix m n R` from `Matrix.scalar n (C a)` to `0` scales `M₀.map C` by
+`PowerSeries.rescale a (PowerSeries.exp R)` (`exp(a X)`). -/
+theorem sylvesterSeries_scalar_zero [DecidableEq n] (a : R) (M₀ : Matrix m n R) :
+    sylvesterSeries (Matrix.scalar n (C a)) 0 M₀ =
+      PowerSeries.rescale a (PowerSeries.exp R) • M₀.map C := by
+  symm
+  rw [eq_sylvesterSeries_iff]
+  refine ⟨?_, ?_⟩
+  · ext i j
+    simp [Matrix.scalar_apply, PowerSeries.derivative_rescale, PowerSeries.derivative_exp,
+      mul_assoc, mul_comm, mul_left_comm]
+  · ext i j
+    simp [← coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_rescale]
+
 end Existence
 
 section Endomorphisms
-
-/-- **Subalgebra of horizontal endomorphisms** of the regular formal connection `d⁄dX + A`: square
-matrices `M : Matrix n n R⟦X⟧` satisfying `M.map d⁄dX = M * A - A * M`, over any commutative ring
-`R`. -/
-noncomputable def sylvesterEndSubalgebra {n R : Type*} [CommRing R] [Fintype n] [DecidableEq n]
-    (A : Matrix n n R⟦X⟧) : Subalgebra R (Matrix n n R⟦X⟧) where
-  carrier := {M | M.map d⁄dX = M * A - A * M}
-  mul_mem' {M N} hM hN :=
-    (derivative (R := R)).map_matrix_mul_of_map_eq_mul_sub_mul hM hN
-  one_mem' := by
-    rw [Set.mem_ofPred_eq, Derivation.map_matrix_one (derivative (R := R)), one_mul, mul_one,
-      sub_self]
-  add_mem' {M N} hM hN := (sylvesterSubmodule A A).add_mem hM hN
-  zero_mem' := (sylvesterSubmodule A A).zero_mem
-  algebraMap_mem' r := by
-    have hder : (algebraMap R (Matrix n n R⟦X⟧) r).map d⁄dX = 0 :=
-      Matrix.ext fun i j => by
-        by_cases hij : i = j <;> simp [Algebra.algebraMap_eq_smul_one, hij]
-    have hcomm :
-        algebraMap R (Matrix n n R⟦X⟧) r * A - A * algebraMap R (Matrix n n R⟦X⟧) r = 0 :=
-      sub_eq_zero.mpr (Algebra.commutes r A)
-    rw [Set.mem_ofPred_eq, hder, hcomm]
-
-@[simp]
-theorem mem_sylvesterEndSubalgebra_iff {n R : Type*} [CommRing R] [Fintype n] [DecidableEq n]
-    {A M : Matrix n n R⟦X⟧} :
-    M ∈ sylvesterEndSubalgebra A ↔ M.map d⁄dX = M * A - A * M :=
-  Iff.rfl
 
 /-- **Horizontal endomorphisms of a regular formal connection form an `R`-algebra isomorphic to
 `Matrix n n R`** via evaluation at `X = 0`, over any `ℚ`-algebra `R`. -/
 noncomputable def sylvesterEndAlgEquiv {n R : Type*} [CommRing R] [Algebra ℚ R]
     [Fintype n] [DecidableEq n] (A : Matrix n n R⟦X⟧) :
-    sylvesterEndSubalgebra A ≃ₐ[R] Matrix n n R where
-  toFun M := M.1.map constantCoeff
-  invFun M₀ := ⟨sylvesterSeries A A M₀, map_derivative_sylvesterSeries A A M₀⟩
-  left_inv M := Subtype.ext ((eq_sylvesterSeries_iff.mpr ⟨M.2, rfl⟩).symm)
-  right_inv M₀ := map_constantCoeff_sylvesterSeries A A M₀
-  map_mul' M N := Matrix.ext fun i j => by simp [Matrix.mul_apply]
-  map_add' M N := Matrix.ext fun i j => by simp
-  commutes' r := Matrix.ext fun i j => by
-    simp only [Matrix.map_apply, Subalgebra.coe_algebraMap]
-    rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one]
-    by_cases hij : i = j <;> simp [Algebra.smul_def, PowerSeries.algebraMap_eq, hij]
+    (derivative (R := R)).sylvesterEndSubalgebra A ≃ₐ[R] Matrix n n R :=
+  AlgEquiv.ofLinearEquiv
+    (((derivative (R := R)).sylvesterEndSubalgebraLinearEquiv A).trans (sylvesterLinearEquiv A A))
+    (by simp [Matrix.map_one constantCoeff (map_zero _) (map_one _)])
+    (fun M N => by simp [Matrix.map_mul])
+
+theorem toLinearEquiv_sylvesterEndAlgEquiv {n R : Type*} [CommRing R] [Algebra ℚ R]
+    [Fintype n] [DecidableEq n] (A : Matrix n n R⟦X⟧) :
+    (sylvesterEndAlgEquiv A).toLinearEquiv =
+      ((derivative (R := R)).sylvesterEndSubalgebraLinearEquiv A).trans
+        (sylvesterLinearEquiv A A) :=
+  (rfl)
 
 @[simp]
 theorem sylvesterEndAlgEquiv_apply {n R : Type*} [CommRing R] [Algebra ℚ R]
-    [Fintype n] [DecidableEq n] (A : Matrix n n R⟦X⟧) (M : sylvesterEndSubalgebra A) :
-    sylvesterEndAlgEquiv A M = M.1.map constantCoeff :=
-  (rfl)
+    [Fintype n] [DecidableEq n] (A : Matrix n n R⟦X⟧)
+    (M : (derivative (R := R)).sylvesterEndSubalgebra A) :
+    sylvesterEndAlgEquiv A M = M.1.map constantCoeff := by
+  simp [sylvesterEndAlgEquiv]
 
 @[simp]
 theorem coe_sylvesterEndAlgEquiv_symm {n R : Type*} [CommRing R] [Algebra ℚ R]
     [Fintype n] [DecidableEq n] (A : Matrix n n R⟦X⟧) (M₀ : Matrix n n R) :
-    ((sylvesterEndAlgEquiv A).symm M₀ : Matrix n n R⟦X⟧) = sylvesterSeries A A M₀ :=
-  (rfl)
+    ((sylvesterEndAlgEquiv A).symm M₀ : Matrix n n R⟦X⟧) = sylvesterSeries A A M₀ := by
+  simp [sylvesterEndAlgEquiv]
 
 end Endomorphisms
 
@@ -478,14 +461,14 @@ theorem regularGauge_mul (h g : GeneralLinearGroup n R⟦X⟧) (A : Matrix n n R
   (derivative (R := R)).matrixGauge_mul h g A
 
 @[simp]
-theorem regularGauge_inv_cancel_left (g : GeneralLinearGroup n R⟦X⟧) (A : Matrix n n R⟦X⟧) :
+theorem regularGauge_inv_regularGauge (g : GeneralLinearGroup n R⟦X⟧) (A : Matrix n n R⟦X⟧) :
     g⁻¹.regularGauge (g.regularGauge A) = A :=
-  (derivative (R := R)).matrixGauge_inv_cancel_left g A
+  (derivative (R := R)).matrixGauge_inv_matrixGauge g A
 
 @[simp]
-theorem regularGauge_inv_cancel_right (g : GeneralLinearGroup n R⟦X⟧) (A : Matrix n n R⟦X⟧) :
+theorem regularGauge_regularGauge_inv (g : GeneralLinearGroup n R⟦X⟧) (A : Matrix n n R⟦X⟧) :
     g.regularGauge (g⁻¹.regularGauge A) = A :=
-  (derivative (R := R)).matrixGauge_inv_cancel_right g A
+  (derivative (R := R)).matrixGauge_matrixGauge_inv g A
 
 /-- **Frame dictionary for regular formal connections**: `g⁻¹ A g + g⁻¹ (dg/dX)` equals the left
 gauge action `(g⁻¹).regularGauge A`. -/
@@ -516,16 +499,18 @@ theorem map_regularGauge {S : Type*} [CommRing S] (f : R →+* S)
 
 /-- **Stabilizer subgroup** of a connection matrix `A` under `regularGauge`. -/
 noncomputable def regularGaugeStabilizer (A : Matrix n n R⟦X⟧) :
-    Subgroup (GeneralLinearGroup n R⟦X⟧) where
-  carrier := {g | g.regularGauge A = A}
-  mul_mem' {h g} hh hg := by rw [Set.mem_ofPred_eq, regularGauge_mul, hg, hh]
-  one_mem' := regularGauge_one A
-  inv_mem' {g} hg := regularGauge_inv_eq_iff.mpr hg
+    Subgroup (GeneralLinearGroup n R⟦X⟧) :=
+  (derivative (R := R)).matrixGaugeStabilizer A
+
+theorem regularGaugeStabilizer_eq_matrixGaugeStabilizer (A : Matrix n n R⟦X⟧) :
+    regularGaugeStabilizer A = (derivative (R := R)).matrixGaugeStabilizer A :=
+  (rfl)
 
 @[simp]
 theorem mem_regularGaugeStabilizer_iff {A : Matrix n n R⟦X⟧} {g : GeneralLinearGroup n R⟦X⟧} :
-    g ∈ regularGaugeStabilizer A ↔ g.regularGauge A = A :=
-  Iff.rfl
+    g ∈ regularGaugeStabilizer A ↔ g.regularGauge A = A := by
+  rw [regularGaugeStabilizer_eq_matrixGaugeStabilizer, Derivation.mem_matrixGaugeStabilizer_iff,
+    regularGauge_eq_matrixGauge]
 
 end Gauge
 
@@ -544,7 +529,7 @@ theorem regularGauge_constantCoeff_injective (A B : Matrix n n R⟦X⟧) :
   refine Subtype.ext (Units.ext ?_)
   refine Matrix.eq_of_map_derivative_eq_mul_sub_mul_of_map_constantCoeff_eq
     (regularGauge_eq_iff.mp hg₁) (regularGauge_eq_iff.mp hg₂) ?_
-  exact Matrix.ext fun i j => congrArg (fun u : GeneralLinearGroup n R => u i j) h0
+  simpa only [GeneralLinearGroup.val_map_apply] using congrArg Units.val h0
 
 /-- **Constant determinant for equal-trace regular gauge transformations.** If
 `g.regularGauge A = B` and `A.trace = B.trace`, then `(g : Matrix n n R⟦X⟧).det` is the constant
@@ -553,20 +538,17 @@ theorem det_eq_C_of_regularGauge_eq {g : GeneralLinearGroup n R⟦X⟧} {A B : M
     (hg : g.regularGauge A = B) (htr : A.trace = B.trace) :
     (g : Matrix n n R⟦X⟧).det = C ((g.map constantCoeff : GeneralLinearGroup n R) :
       Matrix n n R).det := by
-  refine PowerSeries.derivative.ext ?_ ?_
-  · rw [(derivative (R := R)).leibniz_det_eq_zero_of_matrixGauge_eq hg htr, derivative_C]
-  · rw [constantCoeff_C, RingHom.map_det]
-    rfl
+  rw [GeneralLinearGroup.val_map_apply]
+  exact Matrix.det_eq_C_of_map_derivative_eq_mul_sub_mul (regularGauge_eq_iff.mp hg) htr
 
-/-- Under `g.regularGauge A = B` and `A.trace = B.trace`, `g` has determinant `1` over `R⟦X⟧`
-(hence defines an `SL_n(R⟦X⟧)` gauge transformation) if and only if its constant term at `X = 0` has
-determinant `1` over `R`. -/
+/-- Under `g.regularGauge A = B` and `A.trace = B.trace`, `g` has determinant `1` over `R⟦X⟧` if
+and only if its constant term at `X = 0` has determinant `1` over `R`. -/
 theorem det_eq_one_iff_of_regularGauge_eq {g : GeneralLinearGroup n R⟦X⟧} {A B : Matrix n n R⟦X⟧}
     (hg : g.regularGauge A = B) (htr : A.trace = B.trace) :
     (g : Matrix n n R⟦X⟧).det = 1 ↔
       ((g.map constantCoeff : GeneralLinearGroup n R) : Matrix n n R).det = 1 := by
-  rw [det_eq_C_of_regularGauge_eq hg htr]
-  exact ⟨fun h => by simpa using congrArg constantCoeff h, fun h => by rw [h, map_one]⟩
+  rw [GeneralLinearGroup.val_map_apply]
+  exact Matrix.det_eq_one_iff_of_map_derivative_eq_mul_sub_mul (regularGauge_eq_iff.mp hg) htr
 
 end TorsionFree
 
@@ -607,12 +589,12 @@ theorem regularGauge_regularGaugeOfConstantCoeff (A B : Matrix n n R⟦X⟧)
 theorem map_constantCoeff_regularGaugeOfConstantCoeff (A B : Matrix n n R⟦X⟧)
     (g₀ : GeneralLinearGroup n R) :
     (regularGaugeOfConstantCoeff A B g₀).map (constantCoeff (R := R)) = g₀ :=
-  Units.ext (Matrix.map_constantCoeff_sylvesterSeries A B (g₀ : Matrix n n R))
+  Units.ext <| by simp
 
 @[simp]
 theorem regularGaugeOfConstantCoeff_self_one (A : Matrix n n R⟦X⟧) :
     regularGaugeOfConstantCoeff A A 1 = 1 :=
-  Units.ext (Matrix.sylvesterSeries_self_one A)
+  Units.ext <| by simp
 
 /-- **Groupoid composition law for `regularGaugeOfConstantCoeff`.** Composing the gauge
 transformation from `A` to `B` over `g₀` with that from `B` to `C` over `h₀` yields the gauge
@@ -621,7 +603,7 @@ theorem regularGaugeOfConstantCoeff_mul (A B C : Matrix n n R⟦X⟧)
     (h₀ g₀ : GeneralLinearGroup n R) :
     regularGaugeOfConstantCoeff B C h₀ * regularGaugeOfConstantCoeff A B g₀ =
       regularGaugeOfConstantCoeff A C (h₀ * g₀) :=
-  Units.ext (Matrix.sylvesterSeries_mul A B C (h₀ : Matrix n n R) (g₀ : Matrix n n R))
+  Units.ext <| by simp [Matrix.sylvesterSeries_mul]
 
 /-- **Base change of `regularGaugeOfConstantCoeff`** along any ring homomorphism `f : R →+* S`
 between `ℚ`-algebras. -/
@@ -630,7 +612,7 @@ theorem map_regularGaugeOfConstantCoeff {S : Type*} [CommRing S] [Algebra ℚ S]
     (regularGaugeOfConstantCoeff A B g₀).map (PowerSeries.map f) =
       regularGaugeOfConstantCoeff (A.map (PowerSeries.map f)) (B.map (PowerSeries.map f))
         (g₀.map f) :=
-  Units.ext (Matrix.map_sylvesterSeries f A B (g₀ : Matrix n n R))
+  Units.ext <| by simp [Matrix.map_sylvesterSeries]
 
 /-- Uniqueness characterization of `regularGaugeOfConstantCoeff`:
 `g = regularGaugeOfConstantCoeff A B g₀` if and only if `g.regularGauge A = B` and
@@ -687,8 +669,10 @@ theorem regularGauge_constantCoeff_bijective (A B : Matrix n n R⟦X⟧) :
 evaluating at `X = 0` is a group isomorphism from the gauge stabilizer of `A` onto `GL n R`. -/
 noncomputable def regularGaugeStabilizerMulEquiv (A : Matrix n n R⟦X⟧) :
     regularGaugeStabilizer A ≃* GeneralLinearGroup n R :=
-  { regularGaugeEquivConstantCoeff A A with
-    map_mul' h g := (GeneralLinearGroup.map (constantCoeff (R := R))).map_mul h.1 g.1 }
+  MulEquiv.mk
+    ((Equiv.subtypeEquivRight fun _ => mem_regularGaugeStabilizer_iff).trans
+      (regularGaugeEquivConstantCoeff A A))
+    fun h g => (GeneralLinearGroup.map (constantCoeff (R := R))).map_mul h.1 g.1
 
 @[simp]
 theorem regularGaugeStabilizerMulEquiv_apply (A : Matrix n n R⟦X⟧)
@@ -714,111 +698,80 @@ theorem regularGaugeOfConstantCoeff_unit_one_zero_apply {R : Type*} [CommRing R]
     (g₀ : GeneralLinearGroup Unit R) :
     regularGaugeOfConstantCoeff (1 : Matrix Unit Unit R⟦X⟧) 0 g₀ () () =
       C (g₀ () ()) * PowerSeries.exp R := by
-  have hM : Matrix.sylvesterSeries (1 : Matrix Unit Unit R⟦X⟧) 0 (g₀ : Matrix Unit Unit R) =
-      Matrix.of fun _ _ => C (g₀ () ()) * PowerSeries.exp R := by
-    symm
-    rw [Matrix.eq_sylvesterSeries_iff]
-    exact ⟨Matrix.ext fun ⟨⟩ ⟨⟩ => by simp [PowerSeries.derivative_exp],
-      Matrix.ext fun ⟨⟩ ⟨⟩ => by simp⟩
-  exact congrArg (fun M : Matrix Unit Unit R⟦X⟧ => M () ()) hM
-
-private theorem unipotentLinearGauge_mul_eq_one {n R : Type*} [CommRing R]
-    [Fintype n] [DecidableEq n] {f : R⟦X⟧} (hf : f * f = 0) :
-    (1 + f • (1 : Matrix n n R⟦X⟧)) * (1 - f • (1 : Matrix n n R⟦X⟧)) = 1 := by
-  simp only [mul_sub, add_mul, one_mul, mul_one, Matrix.mul_smul, smul_smul, hf, zero_smul]
-  abel
-
-/-- Unipotent linear frame `1 + (C ε * X) • 1` associated to a square-zero scalar `ε` (`ε * ε = 0`)
-over any commutative ring `R`. -/
-noncomputable def unipotentLinearGauge {n R : Type*} [CommRing R] [Fintype n] [DecidableEq n]
-    {ε : R} (hε : ε * ε = 0) : GeneralLinearGroup n R⟦X⟧ where
-  val := 1 + (C ε * X : R⟦X⟧) • (1 : Matrix n n R⟦X⟧)
-  inv := 1 - (C ε * X : R⟦X⟧) • (1 : Matrix n n R⟦X⟧)
-  val_inv := unipotentLinearGauge_mul_eq_one <| by
-    calc (C ε * X : R⟦X⟧) * (C ε * X) = C (ε * ε) * (X * X) := by rw [map_mul]; ring
-      _ = 0 := by simp [hε]
-  inv_val := by
-    simpa [sub_eq_add_neg, neg_smul] using
-      unipotentLinearGauge_mul_eq_one (n := n) (f := -(C ε * X : R⟦X⟧)) <| by
-        calc (-(C ε * X : R⟦X⟧)) * -(C ε * X) = C (ε * ε) * (X * X) := by rw [map_mul]; ring
-          _ = 0 := by simp [hε]
-
-@[simp]
-theorem coe_unipotentLinearGauge {n R : Type*} [CommRing R] [Fintype n] [DecidableEq n]
-    {ε : R} (hε : ε * ε = 0) :
-    (unipotentLinearGauge (n := n) hε : Matrix n n R⟦X⟧) =
-      1 + (C ε * X : R⟦X⟧) • (1 : Matrix n n R⟦X⟧) :=
-  (rfl)
-
-/-- Over any commutative ring `R`, for a square-zero element `ε` (`ε * ε = 0`), the unipotent frame
-`g₀.map C * (1 + (C ε * X) • 1)` gauges `Matrix.scalar n (C ε)` to `0`. -/
-theorem regularGauge_map_C_mul_unipotentLinearGauge {n R : Type*} [CommRing R]
-    [Fintype n] [DecidableEq n] {ε : R} (hε : ε * ε = 0) (g₀ : GeneralLinearGroup n R) :
-    (g₀.map C * unipotentLinearGauge hε).regularGauge (Matrix.scalar n (C ε)) = 0 := by
-  rw [regularGauge_eq_iff, Units.val_mul, (derivative (R := R)).map_matrix_mul]
-  have hC : ((g₀.map C : GeneralLinearGroup n R⟦X⟧) : Matrix n n R⟦X⟧).map d⁄dX = 0 :=
-    Matrix.ext fun i j => by simp
-  have hu : (unipotentLinearGauge (n := n) hε : Matrix n n R⟦X⟧).map d⁄dX =
-      (C ε : R⟦X⟧) • (1 : Matrix n n R⟦X⟧) :=
-    Matrix.ext fun i j => by
-      by_cases hij : i = j <;> simp [hij]
-  have hsq : (C ε * X : R⟦X⟧) * C ε = 0 := by
-    calc
-      (C ε * X : R⟦X⟧) * C ε = C (ε * ε) * X := by rw [map_mul]; ring
-      _ = 0 := by simp [hε]
-  have hsc : Matrix.scalar n (C ε : R⟦X⟧) = (C ε : R⟦X⟧) • (1 : Matrix n n R⟦X⟧) :=
-    Matrix.ext fun i j => by
-      by_cases hij : i = j <;> simp [hij]
-  rw [hC, hu, Matrix.zero_mul, zero_add, Matrix.zero_mul, sub_zero, coe_unipotentLinearGauge, hsc,
-    Matrix.mul_assoc]
-  congr 1
-  rw [add_mul, one_mul, Matrix.smul_mul, Matrix.mul_smul, one_mul, smul_smul, hsq, zero_smul,
-    add_zero]
+  have h1 : (1 : Matrix Unit Unit R⟦X⟧) = Matrix.scalar Unit (C (1 : R)) := by simp
+  have hM := congrArg (fun M : Matrix Unit Unit R⟦X⟧ => M () ())
+    (h1 ▸ Matrix.sylvesterSeries_scalar_zero (m := Unit) (n := Unit) (1 : R)
+      (g₀ : Matrix Unit Unit R))
+  simpa [PowerSeries.rescale_one, mul_comm] using hM
 
 /-- **Horizontal frame over nonreduced `ℚ`-algebras** (such as `DualNumber ℚ` with
 `ε = DualNumber.eps`): for `ε * ε = 0`, the unique gauge transformation carrying
-`Matrix.scalar n (C ε)` to `0` with constant term `g₀` is `g₀.map C * (1 + (C ε * X) • 1)`. -/
-theorem regularGaugeOfConstantCoeff_scalar_sq_zero {n R : Type*} [CommRing R] [Algebra ℚ R]
+`Matrix.scalar n (C ε)` to `0` with constant term `g₀` has underlying matrix
+`(g₀ : Matrix n n R).map C * (1 + (C ε * X) • 1)`. -/
+theorem coe_regularGaugeOfConstantCoeff_scalar_sq_zero {n R : Type*} [CommRing R] [Algebra ℚ R]
     [Fintype n] [DecidableEq n] {ε : R} (hε : ε * ε = 0) (g₀ : GeneralLinearGroup n R) :
-    regularGaugeOfConstantCoeff (Matrix.scalar n (C ε)) 0 g₀ =
-      g₀.map C * unipotentLinearGauge hε := by
-  symm
-  rw [eq_regularGaugeOfConstantCoeff_iff]
-  refine ⟨regularGauge_map_C_mul_unipotentLinearGauge hε g₀, ?_⟩
-  rw [map_mul]
-  have hg₀ : (g₀.map (C (R := R))).map (constantCoeff (R := R)) = g₀ :=
-    Units.ext <| Matrix.ext fun i j => by simp
-  have hu : (unipotentLinearGauge (n := n) hε).map (constantCoeff (R := R)) = 1 :=
-    Units.ext <| Matrix.ext fun i j => by
-      by_cases hij : i = j <;> simp [hij]
-  rw [hg₀, hu, mul_one]
+    (regularGaugeOfConstantCoeff (Matrix.scalar n (C ε)) 0 g₀ : Matrix n n R⟦X⟧) =
+      (g₀ : Matrix n n R).map C * (1 + (C ε * X : R⟦X⟧) • 1) := by
+  have hexp : PowerSeries.rescale ε (PowerSeries.exp R) = 1 + C ε * X := by
+    ext k
+    rcases k with _ | _ | k
+    · simp
+    · simp [PowerSeries.coeff_rescale, PowerSeries.coeff_exp]
+    · have hpow : ε ^ (k + 2) = 0 := by rw [pow_succ, pow_succ, mul_assoc, hε, mul_zero]
+      simp [PowerSeries.coeff_rescale, hpow]
+  rw [coe_regularGaugeOfConstantCoeff, Matrix.sylvesterSeries_scalar_zero, hexp, add_smul, one_smul,
+    mul_add, mul_one, Matrix.mul_smul, mul_one]
+
+/-- **Sharp converse of constant-term uniqueness for `regularGauge`.** Over a commutative ring `R`
+failing `[HasUniqueDiv R]` and a nonempty index type `n`, there exists a nontrivial `g : GL n R⟦X⟧`
+with constant term `1` that fixes every connection matrix under `regularGauge`. -/
+theorem exists_regularGauge_eq_self_of_not_hasUniqueDiv
+    {n R : Type*} [CommRing R] [Fintype n] [DecidableEq n] [Nonempty n] (h : ¬ HasUniqueDiv R) :
+    ∃ g : GeneralLinearGroup n R⟦X⟧,
+      (∀ A : Matrix n n R⟦X⟧, g.regularGauge A = A) ∧
+        g.map (constantCoeff (R := R)) = 1 ∧ g ≠ 1 := by
+  rw [hasUniqueDiv_iff] at h
+  unfold Function.Injective at h
+  push Not at h
+  obtain ⟨p, hp0, x, y, hxy, hne⟩ := h
+  set c : R := x - y
+  have hc0 : c ≠ 0 := sub_ne_zero.mpr hne
+  have hpc : (p : R) * c = 0 := by
+    rw [← nsmul_eq_mul, smul_sub, hxy, sub_self]
+  have hu : IsUnit (1 + C c * X ^ p : R⟦X⟧) :=
+    PowerSeries.isUnit_iff_constantCoeff.mpr (by simp [hp0])
+  have hd : d⁄dX (1 + C c * X ^ p : R⟦X⟧) = 0 := by
+    have hcp : C c * (p : R⟦X⟧) = 0 := by
+      rw [← map_natCast C p, ← map_mul, mul_comm, hpc, map_zero]
+    simp [← mul_assoc, hcp]
+  refine ⟨GeneralLinearGroup.scalar n hu.unit, fun A => ?_, ?_, ?_⟩
+  · have hsc : (Matrix.scalar n (hu.unit : R⟦X⟧)).map d⁄dX = 0 := by
+      simp [Matrix.scalar_apply, IsUnit.unit_spec, hd]
+    have hcomm : Matrix.scalar n (hu.unit : R⟦X⟧) * A = A * Matrix.scalar n (hu.unit : R⟦X⟧) :=
+      Matrix.scalar_comm _ (Commute.all _) _
+    rw [regularGauge_eq_iff, GeneralLinearGroup.coe_scalar, hsc, hcomm, sub_self]
+  · have hu0 : Units.map (constantCoeff (R := R) : R⟦X⟧ →* R) hu.unit = 1 :=
+      Units.ext <| by simp [IsUnit.unit_spec, hp0]
+    rw [GeneralLinearGroup.map_scalar, hu0, map_one]
+  · intro hg
+    obtain ⟨i⟩ := ‹Nonempty n›
+    have hcoeff := congrArg (fun u : GeneralLinearGroup n R⟦X⟧ => coeff p (u i i)) hg
+    exact hc0 (by simpa [hp0] using hcoeff)
 
 /-- **Failure of constant-term uniqueness in positive characteristic.** Over a commutative ring `R`
-of characteristic `p > 1` and nonempty index type `n`, the scalar matrix `(1 + X ^ p) • 1` in
-`GL n R⟦X⟧` gauges `0` to `0` and has constant term `1`, yet is distinct from `1`. -/
+of characteristic `p > 1` and a nonempty index type `n`, there exists `g : GL n R⟦X⟧` with
+`g.regularGauge 0 = 0`, constant term `1`, and `g ≠ 1`. -/
 theorem exists_regularGauge_zero_eq_zero_of_charP
     {n R : Type*} [CommRing R] [Fintype n] [DecidableEq n] [Nonempty n]
     (p : ℕ) [CharP R p] (hp : 1 < p) :
     ∃ g : GeneralLinearGroup n R⟦X⟧,
       g.regularGauge 0 = 0 ∧ g.map (constantCoeff (R := R)) = 1 ∧ g ≠ 1 := by
   have : Nontrivial R := CharP.nontrivial_of_char_ne_one (by omega)
-  have hp0 : p ≠ 0 := by omega
-  have hu : IsUnit (1 + X ^ p : R⟦X⟧) :=
-    PowerSeries.isUnit_iff_constantCoeff.mpr (by simp [hp0])
-  have hd : d⁄dX (1 + X ^ p : R⟦X⟧) = 0 := by
-    rw [map_add, derivative_one, derivative_X_pow, CharP.cast_eq_zero, map_zero, zero_mul,
-      add_zero]
-  refine ⟨GeneralLinearGroup.scalar n hu.unit, ?_, ?_, ?_⟩
-  · have hsc : (Matrix.scalar n (hu.unit : R⟦X⟧)).map d⁄dX = 0 := by
-      simp [Matrix.scalar_apply, IsUnit.unit_spec, hd]
-    rw [regularGauge_eq_iff, GeneralLinearGroup.coe_scalar, hsc, Matrix.mul_zero,
-      Matrix.zero_mul, sub_self]
-  · refine Units.ext <| Matrix.ext fun i j => ?_
-    by_cases hij : i = j <;> simp [hij, hp0]
-  · intro h
-    obtain ⟨i⟩ := ‹Nonempty n›
-    have hcoeff := congrArg (fun u : GeneralLinearGroup n R⟦X⟧ => coeff p (u i i)) h
-    simp [hp0] at hcoeff
+  have hnot : ¬ HasUniqueDiv R := fun hdiv =>
+    one_ne_zero <| hdiv.nsmul_right_injective (by omega : p ≠ 0)
+      (by simp [nsmul_eq_mul, CharP.cast_eq_zero])
+  obtain ⟨g, hA, h0, hne⟩ := exists_regularGauge_eq_self_of_not_hasUniqueDiv (n := n) hnot
+  exact ⟨g, hA 0, h0, hne⟩
 
 end Examples
 

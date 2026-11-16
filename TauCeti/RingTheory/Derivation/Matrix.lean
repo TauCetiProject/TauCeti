@@ -22,19 +22,24 @@ entries.
 Consequently, if rectangular matrices `M` and `N` satisfy the linear intertwining (Sylvester)
 differential equations `M.map D = M * Q - S * M` and `N.map D = N * P - Q * N`, then their product
 `M * N` satisfies `(M * N).map D = (M * N) * P - S * (M * N)`
-(`Derivation.map_matrix_mul_of_map_eq_mul_sub_mul`). Specializing to `M = N` with `P = Q = S = -B`
-shows that if `D` acts on a square matrix `M` as the commutator with `B`, then it acts on every
-power `M ^ m` as the commutator with `B` and kills every trace `(M ^ m).trace`.
+(`Derivation.map_matrix_mul_of_map_eq_mul_sub_mul`), giving an `R`-submodule
+`Derivation.sylvesterSubmodule` of intertwining matrices and an `R`-subalgebra
+`Derivation.sylvesterEndSubalgebra` of horizontal endomorphisms. Specializing to `M = N` with
+`P = Q = S = -B` shows that if `D` acts on a square matrix `M` as the commutator with `B`, then it
+acts on every power `M ^ m` as the commutator with `B` and kills every trace `(M ^ m).trace`.
 
-On the general linear group `GL n A`, differentiating `g⁻¹ * g = 1` expresses the entrywise
-derivative of `g⁻¹` as `-g⁻¹ * g.map D * g⁻¹` (`Derivation.map_matrix_inv`), so the right
-logarithmic derivative `D.matrixRightLogDeriv g = g.map D * g⁻¹` satisfies the nonabelian 1-cocycle
-law `D.matrixRightLogDeriv (h * g) = D.matrixRightLogDeriv h + h * D.matrixRightLogDeriv g * h⁻¹`
-(`Derivation.matrixRightLogDeriv_mul`). Twisting conjugation by this cocycle defines the left gauge
-action `D.matrixGauge g M = g * M * g⁻¹ - g.map D * g⁻¹` of `GL n A` on connection matrices
-`d + M`, characterized by the linear differential equation `g.map D = g * M - N * g`
-(`Derivation.matrixGauge_eq_iff`) and compatible with base change along ring homomorphisms
-intertwining two derivations (`Derivation.map_matrixGauge`).
+On the general linear group `GL n A` over a commutative semiring `A`, the Leibniz rule for matrix
+products shows that the right logarithmic derivative `D.matrixRightLogDeriv g = g.map D * g⁻¹`
+satisfies the nonabelian 1-cocycle law
+`D.matrixRightLogDeriv (h * g) = D.matrixRightLogDeriv h + h * D.matrixRightLogDeriv g * h⁻¹`
+(`Derivation.matrixRightLogDeriv_mul`). Over a commutative ring `A`, differentiating `g⁻¹ * g = 1`
+expresses `(g⁻¹).map D` as `-g⁻¹ * g.map D * g⁻¹` (`Derivation.map_matrix_inv`), feeding
+`Derivation.matrixRightLogDeriv_inv` and `Derivation.matrixGauge_inv`. Twisting conjugation by the
+right logarithmic derivative defines the left gauge action
+`D.matrixGauge g M = g * M * g⁻¹ - g.map D * g⁻¹` of `GL n A` on connection matrices `D + M`, with
+stabilizer subgroup `Derivation.matrixGaugeStabilizer`, characterized by the linear differential
+equation `g.map D = g * M - N * g` (`Derivation.matrixGauge_eq_iff`) and compatible with base change
+along ring homomorphisms intertwining two derivations (`Derivation.map_matrixGauge`).
 
 Finally, let `S` be an `A`-algebra with a basis `b`, and let `D'` be a derivation of `S` extending
 `D`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`. Then `D'` acts on
@@ -46,8 +51,13 @@ multiplication by `D' s` plus the commutator of the matrix of `s` with `Γ`.
 
 * `Derivation.matrixRightLogDeriv`: the right logarithmic derivative `g.map D * g⁻¹` for
   `g : GL n A`.
+* `Derivation.sylvesterSubmodule`: the `R`-submodule of rectangular matrices `M : Matrix m n A`
+  solving `M.map D = M * P - Q * M`.
+* `Derivation.sylvesterEndSubalgebra`: the `R`-subalgebra of square matrices `M : Matrix n n A`
+  solving `M.map D = M * P - P * M`.
 * `Derivation.matrixGauge`: the left gauge action `g * M * g⁻¹ - g.map D * g⁻¹` of `GL n A` on
   connection matrices `Matrix n n A`.
+* `Derivation.matrixGaugeStabilizer`: the stabilizer subgroup of `M` under `Derivation.matrixGauge`.
 
 ## Main results
 
@@ -74,6 +84,14 @@ namespace Derivation
 
 variable {R A : Type*} [CommSemiring R]
 
+/-- A derivation applied entrywise to the identity matrix vanishes. -/
+@[simp]
+theorem map_matrix_one {M n : Type*} [CommSemiring A] [AddCommMonoid M] [Algebra R A]
+    [Module A M] [Module R M] [DecidableEq n] (D : Derivation R A M) :
+    (1 : Matrix n n A).map D = 0 := by
+  ext i j
+  by_cases hij : i = j <;> simp [hij]
+
 section CommSemiring
 
 variable [CommSemiring A] [Algebra R A] (D : Derivation R A A)
@@ -86,12 +104,6 @@ theorem map_matrix_mul {l m n : Type*} [Fintype m] (M : Matrix l m A) (N : Matri
   simp only [Matrix.map_apply, Matrix.mul_apply, Matrix.add_apply, map_sum, leibniz, smul_eq_mul,
     ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun k _ ↦ by ring
-
-/-- A derivation applied entrywise to the identity matrix vanishes. -/
-@[simp]
-theorem map_matrix_one {n : Type*} [DecidableEq n] : (1 : Matrix n n A).map D = 0 := by
-  ext i j
-  by_cases hij : i = j <;> simp [hij]
 
 section RightLogDeriv
 
@@ -122,11 +134,7 @@ theorem matrixRightLogDeriv_mul (h g : Matrix.GeneralLinearGroup n A) :
     D.matrixRightLogDeriv (h * g) =
       D.matrixRightLogDeriv h + (h : Matrix n n A) * D.matrixRightLogDeriv g *
         (↑h⁻¹ : Matrix n n A) := by
-  rw [matrixRightLogDeriv_def, matrixRightLogDeriv_def, matrixRightLogDeriv_def, Units.val_mul,
-    mul_inv_rev, Units.val_mul, map_matrix_mul, add_mul]
-  congr 1
-  · simp [Matrix.mul_assoc]
-  · simp [Matrix.mul_assoc]
+  simp [matrixRightLogDeriv_def, map_matrix_mul, add_mul, Matrix.mul_assoc]
 
 @[simp]
 theorem matrixRightLogDeriv_scalar (u : Aˣ) :
@@ -156,6 +164,71 @@ theorem map_matrix_mul_of_map_eq_mul_sub_mul {l m n : Type*} [Fintype l] [Fintyp
   rw [map_matrix_mul, hM, hN, Matrix.sub_mul, Matrix.mul_sub]
   simp only [Matrix.mul_assoc]
   abel
+
+/-- **Submodule of Sylvester-intertwining matrices** from `D + P` to `D + Q`: rectangular matrices
+`M : Matrix m n A` satisfying `M.map D = M * P - Q * M`. -/
+def sylvesterSubmodule {m n : Type*} [Fintype m] [Fintype n]
+    (P : Matrix n n A) (Q : Matrix m m A) : Submodule R (Matrix m n A) where
+  carrier := {M | M.map D = M * P - Q * M}
+  add_mem' {M N} hM hN := by
+    rw [Set.mem_ofPred_eq, Matrix.map_add _ (map_add D), hM, hN, Matrix.add_mul, Matrix.mul_add]
+    abel
+  zero_mem' := by
+    rw [Set.mem_ofPred_eq, Matrix.map_zero _ D.map_zero, Matrix.zero_mul, Matrix.mul_zero,
+      sub_self]
+  smul_mem' r {M} hM := by
+    rw [Set.mem_ofPred_eq, Matrix.map_smul _ r (D.map_smul r), hM, smul_sub, Matrix.smul_mul,
+      Matrix.mul_smul]
+
+@[simp]
+theorem mem_sylvesterSubmodule_iff {m n : Type*} [Fintype m] [Fintype n]
+    {P : Matrix n n A} {Q : Matrix m m A} {M : Matrix m n A} :
+    M ∈ D.sylvesterSubmodule P Q ↔ M.map D = M * P - Q * M :=
+  Iff.rfl
+
+/-- **Subalgebra of horizontal endomorphisms** of `D + P`: square matrices `M : Matrix n n A`
+satisfying `M.map D = M * P - P * M`. -/
+def sylvesterEndSubalgebra {n : Type*} [Fintype n] [DecidableEq n] (P : Matrix n n A) :
+    Subalgebra R (Matrix n n A) :=
+  (D.sylvesterSubmodule P P).toSubalgebra
+    (by simp)
+    (fun {M N} hM hN => D.map_matrix_mul_of_map_eq_mul_sub_mul hM hN)
+
+@[simp]
+theorem mem_sylvesterEndSubalgebra_iff {n : Type*} [Fintype n] [DecidableEq n]
+    {P M : Matrix n n A} :
+    M ∈ D.sylvesterEndSubalgebra P ↔ M.map D = M * P - P * M :=
+  Iff.rfl
+
+@[simp]
+theorem toSubmodule_sylvesterEndSubalgebra {n : Type*} [Fintype n] [DecidableEq n]
+    (P : Matrix n n A) :
+    (D.sylvesterEndSubalgebra P).toSubmodule = D.sylvesterSubmodule P P :=
+  Submodule.toSubalgebra_toSubmodule _ _ _
+
+/-- The natural `R`-linear equivalence between `D.sylvesterEndSubalgebra P` and
+`D.sylvesterSubmodule P P`. -/
+def sylvesterEndSubalgebraLinearEquiv {n : Type*} [Fintype n] [DecidableEq n]
+    (P : Matrix n n A) :
+    D.sylvesterEndSubalgebra P ≃ₗ[R] D.sylvesterSubmodule P P where
+  toFun M := ⟨M.1, D.mem_sylvesterSubmodule_iff.mpr (D.mem_sylvesterEndSubalgebra_iff.mp M.2)⟩
+  invFun M := ⟨M.1, D.mem_sylvesterEndSubalgebra_iff.mpr (D.mem_sylvesterSubmodule_iff.mp M.2)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_sylvesterEndSubalgebraLinearEquiv {n : Type*} [Fintype n] [DecidableEq n]
+    (P : Matrix n n A) (M : D.sylvesterEndSubalgebra P) :
+    (D.sylvesterEndSubalgebraLinearEquiv P M : Matrix n n A) = M :=
+  (rfl)
+
+@[simp]
+theorem coe_sylvesterEndSubalgebraLinearEquiv_symm {n : Type*} [Fintype n] [DecidableEq n]
+    (P : Matrix n n A) (M : D.sylvesterSubmodule P P) :
+    ((D.sylvesterEndSubalgebraLinearEquiv P).symm M : Matrix n n A) = M :=
+  (rfl)
 
 end Sylvester
 
@@ -234,19 +307,17 @@ theorem matrixGauge_one (M : Matrix n n A) :
 `D.matrixGauge (h * g) M = D.matrixGauge h (D.matrixGauge g M)`. -/
 theorem matrixGauge_mul (h g : Matrix.GeneralLinearGroup n A) (M : Matrix n n A) :
     D.matrixGauge (h * g) M = D.matrixGauge h (D.matrixGauge g M) := by
-  rw [matrixGauge_eq_conj_sub_matrixRightLogDeriv, matrixGauge_eq_conj_sub_matrixRightLogDeriv,
-    matrixGauge_eq_conj_sub_matrixRightLogDeriv, matrixRightLogDeriv_mul, Units.val_mul,
-    mul_inv_rev, Units.val_mul, mul_sub, sub_mul]
-  simp only [Matrix.mul_assoc]
+  simp only [matrixGauge_eq_conj_sub_matrixRightLogDeriv, matrixRightLogDeriv_mul, Units.val_mul,
+    mul_inv_rev, mul_sub, sub_mul, Matrix.mul_assoc]
   abel
 
 @[simp]
-theorem matrixGauge_inv_cancel_left (g : Matrix.GeneralLinearGroup n A) (M : Matrix n n A) :
+theorem matrixGauge_inv_matrixGauge (g : Matrix.GeneralLinearGroup n A) (M : Matrix n n A) :
     D.matrixGauge g⁻¹ (D.matrixGauge g M) = M := by
   rw [← matrixGauge_mul, inv_mul_cancel, matrixGauge_one]
 
 @[simp]
-theorem matrixGauge_inv_cancel_right (g : Matrix.GeneralLinearGroup n A) (M : Matrix n n A) :
+theorem matrixGauge_matrixGauge_inv (g : Matrix.GeneralLinearGroup n A) (M : Matrix n n A) :
     D.matrixGauge g (D.matrixGauge g⁻¹ M) = M := by
   rw [← matrixGauge_mul, mul_inv_cancel, matrixGauge_one]
 
@@ -261,8 +332,8 @@ theorem matrixGauge_inv (g : Matrix.GeneralLinearGroup n A) (M : Matrix n n A) :
 
 theorem matrixGauge_inv_eq_iff {g : Matrix.GeneralLinearGroup n A} {M N : Matrix n n A} :
     D.matrixGauge g⁻¹ N = M ↔ D.matrixGauge g M = N :=
-  ⟨fun h ↦ by rw [← h, matrixGauge_inv_cancel_right],
-    fun h ↦ by rw [← h, matrixGauge_inv_cancel_left]⟩
+  ⟨fun h ↦ by rw [← h, matrixGauge_matrixGauge_inv],
+    fun h ↦ by rw [← h, matrixGauge_inv_matrixGauge]⟩
 
 /-- **Linear differential equation characterization of a gauge transformation**: `g` gauges `M` to
 `N` if and only if `g` satisfies the Sylvester differential equation `g.map D = g * M - N * g`. -/
@@ -273,7 +344,9 @@ theorem matrixGauge_eq_iff {g : Matrix.GeneralLinearGroup n A} {M N : Matrix n n
   · intro h
     have hmul := congrArg (· * (g : Matrix n n A)) h
     simp only [matrixGauge_def, sub_mul, Matrix.mul_assoc, Units.inv_mul, mul_one] at hmul
-    exact sub_eq_iff_eq_add.mp hmul ▸ by abel
+    rw [sub_eq_iff_eq_add] at hmul
+    rw [hmul]
+    abel
   · intro h
     rw [matrixGauge_def, h, sub_mul]
     simp [Matrix.mul_assoc]
@@ -287,13 +360,23 @@ theorem map_matrixGauge {R' B : Type*} [CommSemiring R'] [CommRing B] [Algebra R
   have hmap : ((g : Matrix n n A).map D).map φ = ((g.map φ : Matrix.GeneralLinearGroup n B) :
       Matrix n n B).map D' := by
     ext i j
-    exact hφ (g i j)
+    simp [hφ]
   have hinv : (↑g⁻¹ : Matrix n n A).map φ = (↑(g.map φ)⁻¹ : Matrix n n B) := by
-    rw [← (Matrix.GeneralLinearGroup.map φ).map_inv]
-    rfl
-  rw [matrixGauge_def, ← RingHom.mapMatrix_apply, map_sub, map_mul, map_mul, map_mul]
-  simp only [RingHom.mapMatrix_apply, hmap, hinv, matrixGauge_def]
-  rfl
+    rw [← (Matrix.GeneralLinearGroup.map φ).map_inv, Matrix.GeneralLinearGroup.val_map_apply]
+  rw [matrixGauge_def, matrixGauge_def, Matrix.map_sub _ (map_sub φ), Matrix.map_mul,
+    Matrix.map_mul, Matrix.map_mul, hmap, hinv, Matrix.GeneralLinearGroup.val_map_apply]
+
+/-- **Stabilizer subgroup** of a connection matrix `M` under `Derivation.matrixGauge`. -/
+def matrixGaugeStabilizer (M : Matrix n n A) : Subgroup (Matrix.GeneralLinearGroup n A) where
+  carrier := {g | D.matrixGauge g M = M}
+  mul_mem' {h g} hh hg := by rw [Set.mem_ofPred_eq, matrixGauge_mul, hg, hh]
+  one_mem' := D.matrixGauge_one M
+  inv_mem' {g} hg := D.matrixGauge_inv_eq_iff.mpr hg
+
+@[simp]
+theorem mem_matrixGaugeStabilizer_iff {M : Matrix n n A} {g : Matrix.GeneralLinearGroup n A} :
+    g ∈ D.matrixGaugeStabilizer M ↔ D.matrixGauge g M = M :=
+  Iff.rfl
 
 end Gauge
 

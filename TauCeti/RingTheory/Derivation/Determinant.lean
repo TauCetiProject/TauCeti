@@ -74,15 +74,21 @@ the Sylvester differential equation `M.map D = M * P - Q * M` over any commutati
 theorem leibniz_det_of_map_eq_mul_sub_mul {n : Type*} [Fintype n] [DecidableEq n]
     {M P Q : Matrix n n A} (hM : M.map D = M * P - Q * M) :
     D M.det = M.det * (P.trace - Q.trace) := by
-  rw [leibniz_det, hM, mul_sub, trace_sub, ← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul,
-    Matrix.one_mul, trace_smul, ← Matrix.mul_assoc, trace_mul_cycle M.adjugate Q M, mul_adjugate,
-    Matrix.smul_mul, Matrix.one_mul, trace_smul, smul_eq_mul, smul_eq_mul, mul_sub]
+  rw [leibniz_det, hM, mul_sub, trace_sub, ← Matrix.mul_assoc, adjugate_mul, ← Matrix.mul_assoc,
+    trace_mul_cycle M.adjugate Q M, mul_adjugate]
+  simp [mul_sub]
 
 /-- **Liouville's formula**: if `M.map D = M * P`, then `D M.det = M.det * P.trace`. -/
 theorem leibniz_det_of_map_eq_mul {n : Type*} [Fintype n] [DecidableEq n]
     {M P : Matrix n n A} (hM : M.map D = M * P) :
     D M.det = M.det * P.trace := by
   simpa using D.leibniz_det_of_map_eq_mul_sub_mul (Q := 0) (by simpa using hM)
+
+/-- If `M` satisfies `M.map D = M * P - Q * M` and `P.trace = Q.trace`, then `D M.det = 0`. -/
+theorem map_det_eq_zero_of_map_eq_mul_sub_mul_of_trace_eq {n : Type*} [Fintype n] [DecidableEq n]
+    {M P Q : Matrix n n A} (hM : M.map D = M * P - Q * M) (htr : P.trace = Q.trace) :
+    D M.det = 0 := by
+  rw [D.leibniz_det_of_map_eq_mul_sub_mul hM, htr, sub_self, mul_zero]
 
 /-- If `g : GL n A` gauges `P` to `Q` along `D`, then `D (det g) = det g * (tr P - tr Q)`. -/
 theorem leibniz_det_of_matrixGauge_eq {n : Type*} [Fintype n] [DecidableEq n]
@@ -92,11 +98,11 @@ theorem leibniz_det_of_matrixGauge_eq {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- A gauge transformation between connection matrices of equal trace has determinant killed by
 `D`. -/
-theorem leibniz_det_eq_zero_of_matrixGauge_eq {n : Type*} [Fintype n] [DecidableEq n]
+theorem map_det_eq_zero_of_matrixGauge_eq_of_trace_eq {n : Type*} [Fintype n] [DecidableEq n]
     {g : Matrix.GeneralLinearGroup n A} {P Q : Matrix n n A} (h : D.matrixGauge g P = Q)
     (htr : P.trace = Q.trace) :
-    D (g : Matrix n n A).det = 0 := by
-  rw [D.leibniz_det_of_matrixGauge_eq h, htr, sub_self, mul_zero]
+    D (g : Matrix n n A).det = 0 :=
+  D.map_det_eq_zero_of_map_eq_mul_sub_mul_of_trace_eq ((D.matrixGauge_eq_iff).mp h) htr
 
 variable {S : Type*} [CommRing S] [Algebra A S] [Algebra R S] (D' : Derivation R S S)
   (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
