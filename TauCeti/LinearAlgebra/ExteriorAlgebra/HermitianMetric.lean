@@ -29,13 +29,24 @@ The form `h.exteriorAlgebraGram` is characterized by two properties:
 * **exterior multiplication by `x` is adjoint to contraction by `h(x, ·)`**:
   `h.exteriorAlgebraGram (x ∧ s) t = h.exteriorAlgebraGram s (h(x, ·) ⌋ t)`.
 
-From these two identities follow the two fundamental properties of the exterior Gram pairing:
+From these two identities follow the global properties of the exterior Gram pairing:
 
 * **Orthogonality of distinct degrees**: `⋀[R]^p M` and `⋀[R]^q M` are orthogonal whenever `p ≠ q`,
-  so pairing against a `p`-vector depends only on the degree-`p` homogeneous component.
+  so pairing against a `p`-vector depends only on the degree-`p` homogeneous projection.
 * **Gram-determinant formula**: in every degree `p` (including degree zero, where the empty
   determinant is `1`, and top degree),
   `h.exteriorAlgebraGram (x₀ ∧ ⋯ ∧ x_{p-1}) (y₀ ∧ ⋯ ∧ y_{p-1}) = det (h (xᵢ, yⱼ))`.
+* **Functoriality and `σ`-symmetry**: linear maps preserving `h` preserve `h.exteriorAlgebraGram`,
+  and when `σ` is involutive and `h` is `σ`-symmetric, so are `h.exteriorAlgebraGram` and
+  `h.exteriorPowerGram p`.
+
+These are the identities behind the creation and annihilation operators of a Fock space: in the
+spinor module `⋀ W` of a complex structure, the Clifford action of a vector is a sum of a creation
+and an annihilation operator, and their adjointness makes Clifford multiplication by a real vector
+skew-Hermitian. Moreover, the degree scaling `T_r`, which multiplies the `p`-th exterior power by
+`r ^ p`, has adjoint `T_{σ r}` for `h.exteriorAlgebraGram`, so pulling `h.exteriorAlgebraGram` back
+along `T_r` multiplies it by `(σ r * r) ^ p` on `⋀[R]^p M`; this is how the metrics of differently
+normalized Fock actions compare.
 
 In degree two, `h.exteriorAlgebraGram (x₁ ∧ x₂) (y₁ ∧ y₂) = h x₁ y₁ * h x₂ y₂ - h x₁ y₂ * h x₂ y₁`.
 Any tensor-square form `T` on `M ⊗[R] M` with `T (a ⊗ b) (c ⊗ d) = h a c * h b d` instead satisfies
@@ -45,10 +56,10 @@ Any tensor-square form `T` on `M ⊗[R] M` with `T (a ⊗ b) (c ⊗ d) = h a c *
 
 When `M` has a finite ordered basis `b`, the form `Matrix.toLinearMapₛₗ₂ σ b.ExteriorAlgebra
 b.ExteriorAlgebra 1` making the increasing wedge basis orthonormal equals
-`(Matrix.toLinearMapₛₗ₂ σ b b 1).exteriorAlgebraGram`. In particular, over a commutative star ring
-`R`, the Hermitian form `H = Matrix.toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra
-b.ExteriorAlgebra 1` depends only on `h = Matrix.toLinearMapₛₗ₂ (starRingEnd R) b b 1`, makes
-distinct degrees orthogonal, and evaluates on pure wedges as the Gram determinant of `h`.
+`(Matrix.toLinearMapₛₗ₂ σ b b 1).exteriorAlgebraGram`. Thus `H = Matrix.toLinearMapₛₗ₂ σ
+b.ExteriorAlgebra b.ExteriorAlgebra 1` depends only on `h = Matrix.toLinearMapₛₗ₂ σ b b 1`, makes
+distinct degrees orthogonal, satisfies creation–contraction and degree-scaling adjointness, and
+evaluates on pure wedges as the Gram determinant of `h`.
 
 ## Main definitions
 
@@ -58,7 +69,8 @@ distinct degrees orthogonal, and evaluates on pure wedges as the Gram determinan
 
 ## Main results
 
-* `LinearMap.exteriorAlgebraGram_ι_mul_left`: creation by `x` is adjoint to contraction by `h x`.
+* `LinearMap.exteriorAlgebraGram_ι_mul_left` and `LinearMap.exteriorAlgebraGram_ι_mul_right`:
+  creation by `x` and contraction by `h x` are mutually adjoint.
 * `LinearMap.eq_exteriorAlgebraGram_iff`: universal characterization by vacuum pairing and
   creation–contraction adjointness.
 * `LinearMap.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower`: distinct exterior degrees are
@@ -67,18 +79,28 @@ distinct degrees orthogonal, and evaluates on pure wedges as the Gram determinan
   Gram-determinant formula in every degree `p`.
 * `LinearMap.apply_sub_tmul_swap_eq_two_mul_exteriorAlgebraGram`: the antisymmetrized tensor-square
   pairing is twice the degree-two exterior Gram determinant.
+* `LinearMap.exteriorAlgebraGram_map_map`: linear maps preserving `h` preserve
+  `h.exteriorAlgebraGram`.
+* `LinearMap.exteriorAlgebraGram_degreeScaling_left` and
+  `LinearMap.exteriorAlgebraGram_degreeScaling_degreeScaling_of_mem_exteriorPower`: degree-scaling
+  adjointness `T_r` vs `T_{σ r}` and `(σ r * r) ^ p` rescaling on `⋀[R]^p M`.
+* `LinearMap.IsSymm.exteriorAlgebraGram` and `LinearMap.IsSymm.exteriorPowerGram`: `σ`-symmetry
+  passes to the exterior algebra and exterior powers for any involutive `σ`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_eq_exteriorAlgebraGram`: the wedge-basis form of `b` is the
   exterior Gram form of the basis form of `b`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_left`, `ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_right`,
-  `ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti`, and
-  `ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower`: adjointness, Gram-determinant
-  formula, and degree orthogonality for the wedge-basis form.
+  `ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti`,
+  `ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower`,
+  `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_left`, and
+  `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower`: adjointness,
+  Gram-determinant formula, degree orthogonality, and degree scaling for the wedge-basis form.
 
 ## References
 
 * W. Greub, *Multilinear Algebra*, 2nd ed., Springer (1978), Chapter 5.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), §2.2.4.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds* (online author edition, `Lectures.pdf`),
+  §2.2.4.
 -/
 
 public section
@@ -93,70 +115,74 @@ section ExteriorAlgebraGram
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {σ : R →+* R}
 
-/-- Local wrapper equipping linear forms on `⋀ M` with the `σ`-twisted `R`-module structure, so
-`CliffordAlgebra.foldr` can construct a `σ`-semilinear map out of `⋀ M` without competing `Module`
-instances. -/
-private structure ExteriorGramDual (σ : R →+* R) (M : Type*) [AddCommGroup M] [Module R M] where
-  toDual : _root_.ExteriorAlgebra R M →ₗ[R] R
+/-- Local type synonym equipping linear forms on `⋀ M` with the `σ`-twisted `R`-module structure,
+so `CliffordAlgebra.foldr` can construct a `σ`-semilinear map out of `⋀ M` without competing
+`Module` instances. -/
+private def ExteriorGramDual (_σ : R →+* R) (M : Type*) [AddCommGroup M] [Module R M] : Type _ :=
+  _root_.ExteriorAlgebra R M →ₗ[R] R
 
-private instance : AddCommGroup (ExteriorGramDual σ M) where
-  zero := ⟨0⟩
-  add φ ψ := ⟨φ.toDual + ψ.toDual⟩
-  neg φ := ⟨-φ.toDual⟩
-  sub φ ψ := ⟨φ.toDual - ψ.toDual⟩
-  nsmul n φ := ⟨n • φ.toDual⟩
-  zsmul n φ := ⟨n • φ.toDual⟩
-  add_assoc _ _ _ := congrArg ExteriorGramDual.mk (add_assoc _ _ _)
-  zero_add _ := congrArg ExteriorGramDual.mk (zero_add _)
-  add_zero _ := congrArg ExteriorGramDual.mk (add_zero _)
-  nsmul_zero _ := congrArg ExteriorGramDual.mk (zero_smul _ _)
-  nsmul_succ n φ := congrArg ExteriorGramDual.mk (succ_nsmul φ.toDual n)
-  zsmul_zero' _ := congrArg ExteriorGramDual.mk (zero_smul _ _)
-  zsmul_succ' n φ := congrArg ExteriorGramDual.mk (SubNegMonoid.zsmul_succ' n φ.toDual)
-  zsmul_neg' n φ := congrArg ExteriorGramDual.mk (SubNegMonoid.zsmul_neg' n φ.toDual)
-  sub_eq_add_neg _ _ := congrArg ExteriorGramDual.mk (sub_eq_add_neg _ _)
-  neg_add_cancel _ := congrArg ExteriorGramDual.mk (neg_add_cancel _)
-  add_comm _ _ := congrArg ExteriorGramDual.mk (add_comm _ _)
+private instance : AddCommGroup (ExteriorGramDual σ M) :=
+  inferInstanceAs (AddCommGroup (_root_.ExteriorAlgebra R M →ₗ[R] R))
 
-private instance : SMul R (ExteriorGramDual σ M) where
-  smul r φ := ⟨σ r • φ.toDual⟩
+private instance : Module R (ExteriorGramDual σ M) :=
+  Module.compHom (_root_.ExteriorAlgebra R M →ₗ[R] R) σ
 
-private instance : Module R (ExteriorGramDual σ M) where
-  one_smul φ := by
-    cases φ
-    exact congrArg ExteriorGramDual.mk (LinearMap.ext fun t ↦ by simp [HSMul.hSMul, SMul.smul])
-  mul_smul r s φ := by
-    cases φ
-    exact congrArg ExteriorGramDual.mk
-      (LinearMap.ext fun t ↦ by simp [HSMul.hSMul, SMul.smul, mul_assoc])
-  smul_zero r := congrArg ExteriorGramDual.mk (smul_zero _)
-  smul_add r φ ψ := congrArg ExteriorGramDual.mk (smul_add _ _ _)
-  add_smul r s φ :=
-    congrArg ExteriorGramDual.mk (LinearMap.ext fun t ↦ by simp [HSMul.hSMul, SMul.smul, add_mul])
-  zero_smul φ :=
-    congrArg ExteriorGramDual.mk (LinearMap.ext fun t ↦ by simp [HSMul.hSMul, SMul.smul])
+private def toExteriorGramDual (φ : _root_.ExteriorAlgebra R M →ₗ[R] R) : ExteriorGramDual σ M := φ
+
+private def ofExteriorGramDual (φ : ExteriorGramDual σ M) : _root_.ExteriorAlgebra R M →ₗ[R] R := φ
+
+private theorem ofExteriorGramDual_toExteriorGramDual (φ : _root_.ExteriorAlgebra R M →ₗ[R] R) :
+    ofExteriorGramDual (σ := σ) (toExteriorGramDual (σ := σ) φ) = φ := rfl
+
+private theorem ofExteriorGramDual_injective :
+    Function.Injective (ofExteriorGramDual (σ := σ) (M := M)) := fun _ _ h ↦ h
+
+private theorem ofExteriorGramDual_zero :
+    ofExteriorGramDual (0 : ExteriorGramDual σ M) = 0 := rfl
+
+private theorem ofExteriorGramDual_add (φ ψ : ExteriorGramDual σ M) :
+    ofExteriorGramDual (φ + ψ) = ofExteriorGramDual φ + ofExteriorGramDual ψ := rfl
+
+private theorem ofExteriorGramDual_smul (r : R) (φ : ExteriorGramDual σ M) :
+    ofExteriorGramDual (r • φ) = σ r • ofExteriorGramDual φ := rfl
 
 /-- One creation–contraction adjointness step in `ExteriorGramDual`: send `φ` to
 `t ↦ φ (h x ⌋ t)`. -/
 private def exteriorGramStep (h : M →ₛₗ[σ] M →ₗ[R] R) :
     M →ₗ[R] ExteriorGramDual σ M →ₗ[R] ExteriorGramDual σ M where
   toFun x :=
-    { toFun φ := ⟨φ.toDual.comp (contractLeft (Q := (0 : QuadraticForm R M)) (h x))⟩
-      map_add' φ ψ := congrArg ExteriorGramDual.mk (LinearMap.add_comp _ _ _)
-      map_smul' r φ := congrArg ExteriorGramDual.mk (LinearMap.smul_comp _ _ _) }
+    { toFun φ := toExteriorGramDual
+        ((ofExteriorGramDual φ).comp (contractLeft (Q := (0 : QuadraticForm R M)) (h x)))
+      map_add' φ ψ := ofExteriorGramDual_injective (LinearMap.add_comp _ _ _)
+      map_smul' r φ := ofExteriorGramDual_injective (LinearMap.smul_comp _ _ _) }
   map_add' x y := by
-    ext ⟨φ⟩ : 1
-    exact congrArg ExteriorGramDual.mk (by ext t; simp)
+    ext φ : 1
+    exact ofExteriorGramDual_injective (by ext t; simp [ofExteriorGramDual_add,
+      ofExteriorGramDual_toExteriorGramDual])
   map_smul' r x := by
-    ext ⟨φ⟩ : 1
-    exact congrArg ExteriorGramDual.mk (by ext t; simp)
+    ext φ : 1
+    exact ofExteriorGramDual_injective (by ext t; simp [ofExteriorGramDual_smul,
+      ofExteriorGramDual_toExteriorGramDual])
 
 /-- Applying `exteriorGramStep h x` twice vanishes by `contractLeft_contractLeft`. -/
 private theorem exteriorGramStep_self (h : M →ₛₗ[σ] M →ₗ[R] R) (x : M)
     (φ : ExteriorGramDual σ M) :
     exteriorGramStep h x (exteriorGramStep h x φ) = (0 : QuadraticForm R M) x • φ := by
   rw [_root_.zero_apply, zero_smul]
-  exact congrArg ExteriorGramDual.mk (by ext t; simp [exteriorGramStep, contractLeft_contractLeft])
+  exact ofExteriorGramDual_injective (by
+    ext t
+    simp [exteriorGramStep, ofExteriorGramDual_zero, ofExteriorGramDual_toExteriorGramDual,
+      contractLeft_contractLeft])
+
+/-- Left-multiplication induction principle on `ExteriorAlgebra R M`, mirroring
+`CliffordAlgebra.left_induction` directly in terms of `ExteriorAlgebra.ι R`. -/
+private theorem exteriorAlgebra_left_induction {C : _root_.ExteriorAlgebra R M → Prop}
+    (algebraMap : ∀ r : R, C (Algebra.algebraMap R _ r))
+    (add : ∀ x y, C x → C y → C (x + y))
+    (ι_mul : ∀ x s, C s → C (_root_.ExteriorAlgebra.ι R x * s))
+    (s : _root_.ExteriorAlgebra R M) : C s :=
+  CliffordAlgebra.left_induction (Q := (0 : QuadraticForm R M)) algebraMap add
+    (fun s x hs ↦ ι_mul x s hs) s
 
 /-- **The basis-free exterior Gram form** of a `σ`-sesquilinear form `h : M →ₛₗ[σ] M →ₗ[R] R`: the
 unique `σ`-sesquilinear form on `ExteriorAlgebra R M` satisfying
@@ -165,23 +191,20 @@ unique `σ`-sesquilinear form on `ExteriorAlgebra R M` satisfying
 def exteriorAlgebraGram (h : M →ₛₗ[σ] M →ₗ[R] R) :
     _root_.ExteriorAlgebra R M →ₛₗ[σ] _root_.ExteriorAlgebra R M →ₗ[R] R where
   toFun s :=
-    (CliffordAlgebra.foldr (0 : QuadraticForm R M) (exteriorGramStep h)
-      (exteriorGramStep_self h) ⟨_root_.ExteriorAlgebra.algebraMapInv.toLinearMap⟩ s).toDual
-  map_add' s₁ s₂ :=
-    congrArg ExteriorGramDual.toDual (LinearMap.map_add _ s₁ s₂)
-  map_smul' r s :=
-    congrArg ExteriorGramDual.toDual (LinearMap.map_smul _ r s)
+    ofExteriorGramDual (CliffordAlgebra.foldr (0 : QuadraticForm R M) (exteriorGramStep h)
+      (exteriorGramStep_self h)
+      (toExteriorGramDual _root_.ExteriorAlgebra.algebraMapInv.toLinearMap) s)
+  map_add' s₁ s₂ := by
+    rw [map_add, ofExteriorGramDual_add]
+  map_smul' r s := by
+    rw [LinearMap.map_smul, ofExteriorGramDual_smul]
 
 /-- Pairing the vacuum on the left extracts the degree-zero scalar component. -/
 @[simp]
 theorem exteriorAlgebraGram_one_left (h : M →ₛₗ[σ] M →ₗ[R] R)
     (t : _root_.ExteriorAlgebra R M) :
     h.exteriorAlgebraGram 1 t = _root_.ExteriorAlgebra.algebraMapInv t := by
-  -- Unfold `exteriorAlgebraGram` on `1` to evaluate `CliffordAlgebra.foldr` at the identity.
-  change (CliffordAlgebra.foldr (0 : QuadraticForm R M) (exteriorGramStep h)
-    (exteriorGramStep_self h) ⟨_root_.ExteriorAlgebra.algebraMapInv.toLinearMap⟩ 1).toDual t = _
-  rw [CliffordAlgebra.foldr_one]
-  rfl
+  simp [exteriorAlgebraGram, ofExteriorGramDual_toExteriorGramDual]
 
 /-- Pairing a scalar on the left multiplies the constant term of the right argument by `σ r`. -/
 @[simp]
@@ -194,17 +217,11 @@ theorem exteriorAlgebraGram_algebraMap_left (h : M →ₛₗ[σ] M →ₗ[R] R) 
 
 /-- **Exterior multiplication is adjoint to contraction**: for any `σ`-sesquilinear form `h` on
 `M`, `h.exteriorAlgebraGram (x ∧ s) t = h.exteriorAlgebraGram s (h x ⌋ t)`. -/
-@[simp]
 theorem exteriorAlgebraGram_ι_mul_left (h : M →ₛₗ[σ] M →ₗ[R] R) (x : M)
     (s t : _root_.ExteriorAlgebra R M) :
     h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ι R x * s) t =
       h.exteriorAlgebraGram s (contractLeft (Q := (0 : QuadraticForm R M)) (h x) t) := by
-  -- `ExteriorAlgebra.ι R` is definitionally `CliffordAlgebra.ι 0`, where `foldr_mul` steps once.
-  change (CliffordAlgebra.foldr (0 : QuadraticForm R M) (exteriorGramStep h)
-    (exteriorGramStep_self h) ⟨_root_.ExteriorAlgebra.algebraMapInv.toLinearMap⟩
-      (CliffordAlgebra.ι (0 : QuadraticForm R M) x * s)).toDual t = _
-  rw [CliffordAlgebra.foldr_mul, CliffordAlgebra.foldr_ι]
-  rfl
+  simp [exteriorAlgebraGram, exteriorGramStep, ofExteriorGramDual_toExteriorGramDual]
 
 /-- Pairing a single generator on the left takes the constant term of the contraction by `h x`. -/
 theorem exteriorAlgebraGram_ι_left (h : M →ₛₗ[σ] M →ₗ[R] R) (x : M)
@@ -220,27 +237,17 @@ theorem exteriorAlgebraGram_ι_left (h : M →ₛₗ[σ] M →ₗ[R] R) (x : M)
 theorem exteriorAlgebraGram_ι_ι (h : M →ₛₗ[σ] M →ₗ[R] R) (x y : M) :
     h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ι R x) (_root_.ExteriorAlgebra.ι R y) =
       h x y := by
-  rw [exteriorAlgebraGram_ι_left]
-  -- View `ExteriorAlgebra.ι R y` as `CliffordAlgebra.ι 0 y` so `contractLeft_ι` applies.
-  change _root_.ExteriorAlgebra.algebraMapInv
-    (contractLeft (Q := (0 : QuadraticForm R M)) (h x)
-      (CliffordAlgebra.ι (0 : QuadraticForm R M) y)) = h x y
-  rw [contractLeft_ι, AlgHom.commutes]
-  rfl
+  rw [exteriorAlgebraGram_ι_left, contractLeft_ι, AlgHom.commutes, Algebra.algebraMap_self_apply]
 
 /-- Pairing the vacuum on the right applies `σ` to the constant term of the left argument. -/
 @[simp]
 theorem exteriorAlgebraGram_one_right (h : M →ₛₗ[σ] M →ₗ[R] R)
     (s : _root_.ExteriorAlgebra R M) :
     h.exteriorAlgebraGram s 1 = σ (_root_.ExteriorAlgebra.algebraMapInv s) := by
-  induction s using CliffordAlgebra.left_induction with
+  induction s using exteriorAlgebra_left_induction with
   | algebraMap r => simp
   | add x y hx hy => simp [hx, hy]
-  | ι_mul s x _ =>
-    -- Express `CliffordAlgebra.ι 0` as `ExteriorAlgebra.ι R` before `simp`.
-    change h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ι R x * s) 1 =
-      σ (_root_.ExteriorAlgebra.algebraMapInv (_root_.ExteriorAlgebra.ι R x * s))
-    simp
+  | ι_mul x s _ => simp [exteriorAlgebraGram_ι_mul_left]
 
 /-- Pairing a scalar on the right multiplies `σ` of the constant term of `s` by `r`. -/
 @[simp]
@@ -264,28 +271,21 @@ theorem eq_exteriorAlgebraGram_iff (h : M →ₛₗ[σ] M →ₗ[R] R)
   · rintro rfl
     exact ⟨by simp, fun y t ↦ by simp, h.exteriorAlgebraGram_ι_mul_left⟩
   · have hvac (t : _root_.ExteriorAlgebra R M) : H 1 t = h.exteriorAlgebraGram 1 t := by
-      induction t using CliffordAlgebra.left_induction with
+      induction t using exteriorAlgebra_left_induction with
       | algebraMap r =>
         rw [Algebra.algebraMap_eq_smul_one, map_smul, map_smul, hone,
           exteriorAlgebraGram_one_left, map_one]
       | add x y hx hy => rw [map_add, map_add, hx, hy]
-      | ι_mul t y _ =>
-        -- Express `CliffordAlgebra.ι 0` as `ExteriorAlgebra.ι R` to apply `hzero`.
-        change H 1 (_root_.ExteriorAlgebra.ι R y * t) =
-          h.exteriorAlgebraGram 1 (_root_.ExteriorAlgebra.ι R y * t)
-        simp [hzero]
+      | ι_mul y t _ => simp [hzero]
     refine LinearMap.ext fun s ↦ ?_
-    induction s using CliffordAlgebra.left_induction with
+    induction s using exteriorAlgebra_left_induction with
     | algebraMap r =>
       refine LinearMap.ext fun t ↦ ?_
       rw [Algebra.algebraMap_eq_smul_one, map_smulₛₗ, map_smulₛₗ, LinearMap.smul_apply,
         LinearMap.smul_apply, hvac]
     | add x y hx hy => rw [map_add, map_add, hx, hy]
-    | ι_mul s x hs =>
+    | ι_mul x s hs =>
       refine LinearMap.ext fun t ↦ ?_
-      -- Express `CliffordAlgebra.ι 0` as `ExteriorAlgebra.ι R` to apply `hadj`.
-      change H (_root_.ExteriorAlgebra.ι R x * s) t =
-        h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ι R x * s) t
       rw [hadj, exteriorAlgebraGram_ι_mul_left, hs]
 
 /-! ### Degree orthogonality and the Gram-determinant formula -/
@@ -342,50 +342,44 @@ theorem exteriorAlgebraGram_sum_of_mem_exteriorPower (h : M →ₛₗ[σ] M →�
 
 /-- Pairing a `p`-vector on the left against an arbitrary multivector depends only on the
 degree-`p` homogeneous projection of the right argument. -/
-theorem exteriorAlgebraGram_gradedProj_right (h : M →ₛₗ[σ] M →ₗ[R] R) {p : ℕ}
+theorem exteriorAlgebraGram_proj_right (h : M →ₛₗ[σ] M →ₗ[R] R) {p : ℕ}
     {s : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (t : _root_.ExteriorAlgebra R M) :
     h.exteriorAlgebraGram s (GradedRing.proj (fun q ↦ ⋀[R]^q M) p t) =
       h.exteriorAlgebraGram s t := by
-  classical
-  let d := DirectSum.decompose (fun q ↦ ⋀[R]^q M) t
-  conv_rhs => rw [← DirectSum.sum_support_decompose (fun q ↦ ⋀[R]^q M) t]
-  simp only [GradedRing.proj_apply, map_sum]
-  by_cases hp : p ∈ d.support
-  · symm
-    refine Finset.sum_eq_single p (fun q _ hqp ↦ ?_) (fun hp' ↦ absurd hp hp')
-    exact h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower hqp.symm hs (d q).2
-  · have hzero : (d p : _root_.ExteriorAlgebra R M) = 0 := by
-      simpa [d, DFinsupp.mem_support_toFun] using hp
-    rw [hzero, map_zero]
-    symm
-    exact Finset.sum_eq_zero fun q hq ↦
-      h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower (by rintro rfl; exact hp hq) hs (d q).2
+  induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
+  | zero => simp
+  | homogeneous x =>
+    rename_i q
+    by_cases hpq : p = q
+    · subst hpq
+      rw [GradedRing.proj_apply, DirectSum.decompose_of_mem_same (fun q ↦ ⋀[R]^q M) x.2]
+    · rw [GradedRing.proj_apply, DirectSum.decompose_of_mem_ne (fun q ↦ ⋀[R]^q M) x.2 (Ne.symm hpq),
+        map_zero, h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower hpq hs x.2]
+  | add t₁ t₂ ht₁ ht₂ => rw [map_add, map_add, map_add, ht₁, ht₂]
 
 /-- Pairing an arbitrary multivector on the left against a `p`-vector on the right depends only on
 the degree-`p` homogeneous projection of the left argument. -/
-theorem exteriorAlgebraGram_gradedProj_left (h : M →ₛₗ[σ] M →ₗ[R] R) {p : ℕ}
+theorem exteriorAlgebraGram_proj_left (h : M →ₛₗ[σ] M →ₗ[R] R) {p : ℕ}
     (s : _root_.ExteriorAlgebra R M) {t : _root_.ExteriorAlgebra R M} (ht : t ∈ ⋀[R]^p M) :
     h.exteriorAlgebraGram (GradedRing.proj (fun q ↦ ⋀[R]^q M) p s) t =
       h.exteriorAlgebraGram s t := by
-  classical
-  let d := DirectSum.decompose (fun q ↦ ⋀[R]^q M) s
-  conv_rhs => rw [← DirectSum.sum_support_decompose (fun q ↦ ⋀[R]^q M) s]
-  simp only [GradedRing.proj_apply, map_sum h.exteriorAlgebraGram, LinearMap.sum_apply]
-  by_cases hp : p ∈ d.support
-  · symm
-    refine Finset.sum_eq_single p (fun q _ hqp ↦ ?_) (fun hp' ↦ absurd hp hp')
-    exact h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower hqp (d q).2 ht
-  · have hzero : (d p : _root_.ExteriorAlgebra R M) = 0 := by
-      simpa [d, DFinsupp.mem_support_toFun] using hp
-    rw [hzero, map_zero, LinearMap.zero_apply]
-    symm
-    exact Finset.sum_eq_zero fun q hq ↦
-      h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower (by rintro rfl; exact hp hq) (d q).2 ht
+  induction s using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
+  | zero => simp
+  | homogeneous x =>
+    rename_i q
+    by_cases hpq : p = q
+    · subst hpq
+      rw [GradedRing.proj_apply, DirectSum.decompose_of_mem_same (fun q ↦ ⋀[R]^q M) x.2]
+    · rw [GradedRing.proj_apply, DirectSum.decompose_of_mem_ne (fun q ↦ ⋀[R]^q M) x.2 (Ne.symm hpq),
+        map_zero, LinearMap.zero_apply,
+        h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower (Ne.symm hpq) x.2 ht]
+  | add s₁ s₂ hs₁ hs₂ =>
+    rw [map_add, map_add, LinearMap.add_apply, map_add, LinearMap.add_apply, hs₁, hs₂]
 
 /-- **The Gram-determinant formula** in every degree `p` (including degree zero, where the empty
 determinant is `1`, and top degree):
 `h.exteriorAlgebraGram (x₀ ∧ ⋯ ∧ x_{p-1}) (y₀ ∧ ⋯ ∧ y_{p-1}) = det (h (xᵢ, yⱼ))`. -/
-@[simp]
+@[simp↓]
 theorem exteriorAlgebraGram_ιMulti (h : M →ₛₗ[σ] M →ₗ[R] R) {p : ℕ} (x y : Fin p → M) :
     h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ιMulti R p x)
         (_root_.ExteriorAlgebra.ιMulti R p y) =
@@ -398,7 +392,9 @@ theorem exteriorAlgebraGram_ιMulti (h : M →ₛₗ[σ] M →ₗ[R] R) {p : ℕ
       Matrix.det_succ_row_zero (Matrix.of fun i j ↦ h (x i) (y j))]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [map_smul, ih, smul_eq_mul]
-    rfl
+    simp only [Matrix.of_apply]
+    refine congrArg (_ * ·) (congrArg Matrix.det (Matrix.ext fun i k ↦ ?_))
+    simp [Matrix.vecTail, Fin.removeNth_apply]
 
 /-- Explicit `2 × 2` Gram-determinant formula in exterior degree two. -/
 theorem exteriorAlgebraGram_ι_mul_ι (h : M →ₛₗ[σ] M →ₗ[R] R) (x₁ x₂ y₁ y₂ : M) :
@@ -409,7 +405,7 @@ theorem exteriorAlgebraGram_ι_mul_ι (h : M →ₛₗ[σ] M →ₗ[R] R) (x₁ 
       _root_.ExteriorAlgebra.ιMulti R 2 ![u₁, u₂] := by
     simp [_root_.ExteriorAlgebra.ιMulti_succ_apply, _root_.ExteriorAlgebra.ιMulti_zero_apply]
   rw [h₂ x₁ x₂, h₂ y₁ y₂, exteriorAlgebraGram_ιMulti, Matrix.det_fin_two]
-  rfl
+  simp
 
 /-- **Degree-two comparison with the antisymmetrized tensor square**: any `σ`-sesquilinear form `T`
 on `M ⊗[R] M` factoring on pure tensors as `T (a ⊗ b) (c ⊗ d) = h a c * h b d` pairs the
@@ -424,8 +420,9 @@ theorem apply_sub_tmul_swap_eq_two_mul_exteriorAlgebraGram (h : M →ₛₗ[σ] 
   simp only [map_sub, LinearMap.sub_apply, hT, exteriorAlgebraGram_ι_mul_ι]
   ring
 
-/-- For an `h`-orthonormal pair `w₁, w₂`, the wedge `w₁ ∧ w₂` has Gram self-pairing `1`, whereas
-the antisymmetrized tensor `w₁ ⊗ w₂ - w₂ ⊗ w₁` has tensor-square self-pairing `2`. -/
+/-- For an `h`-orthonormal pair `w₁, w₂`, the wedge `w₁ ∧ w₂` has Gram self-pairing `1` (see
+`LinearMap.apply_sub_tmul_swap_eq_two_mul_exteriorAlgebraGram` for the factor-of-`2` comparison with
+`w₁ ⊗ w₂ - w₂ ⊗ w₁`). -/
 theorem exteriorAlgebraGram_ι_mul_ι_self_of_orthonormal (h : M →ₛₗ[σ] M →ₗ[R] R) {w₁ w₂ : M}
     (hw₁ : h w₁ w₁ = 1) (hw₂ : h w₂ w₂ = 1) (h₁₂ : h w₁ w₂ = 0) :
     h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ι R w₁ * _root_.ExteriorAlgebra.ι R w₂)
@@ -435,7 +432,7 @@ theorem exteriorAlgebraGram_ι_mul_ι_self_of_orthonormal (h : M →ₛₗ[σ] M
 /-- **Top-degree Gram determinant against a rank-`n` basis**: for `b : Basis (Fin n) R M` and two
 `n`-tuples `x, y : Fin n → M`, the exterior Gram pairing of their wedges factors as
 `σ (b.det x) * b.det y` times the Gram determinant of the basis `b`. -/
-theorem exteriorAlgebraGram_ιMulti_eq_det_mul_det (h : M →ₛₗ[σ] M →ₗ[R] R) {n : ℕ}
+theorem exteriorAlgebraGram_ιMulti_eq_map_det_mul_det_mul_det (h : M →ₛₗ[σ] M →ₗ[R] R) {n : ℕ}
     (b : Module.Basis (Fin n) R M) (x y : Fin n → M) :
     h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ιMulti R n x)
         (_root_.ExteriorAlgebra.ιMulti R n y) =
@@ -449,9 +446,9 @@ theorem exteriorAlgebraGram_ιMulti_eq_det_mul_det (h : M →ₛₗ[σ] M →ₗ
     exteriorAlgebraGram_ιMulti, smul_eq_mul]
   ring
 
-/-! ### Hermitian symmetry, functoriality, and degree scaling -/
+/-! ### Symmetry, functoriality, and degree scaling -/
 
-/-- For an involutive `σ`, if `h` is `σ`-Hermitian (`σ (h x y) = h y x`), then so is
+/-- For an involutive `σ`, if `h` is `σ`-symmetric (`σ (h x y) = h y x`), then so is
 `h.exteriorAlgebraGram`: `σ (h.exteriorAlgebraGram s t) = h.exteriorAlgebraGram t s`. -/
 theorem map_exteriorAlgebraGram_swap (h : M →ₛₗ[σ] M →ₗ[R] R) (hσ : Function.Involutive σ)
     (hh : ∀ x y, σ (h x y) = h y x) (s t : _root_.ExteriorAlgebra R M) :
@@ -487,31 +484,40 @@ theorem map_exteriorAlgebraGram_swap (h : M →ₛₗ[σ] M →ₗ[R] R) (hσ : 
   | smul r s _ hs =>
     rw [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, map_mul, hσ r, map_smul, smul_eq_mul, hs]
 
-/-- **Contraction is adjoint to exterior multiplication on the right** when `σ` is involutive and
-`h` is `σ`-Hermitian: `h.exteriorAlgebraGram s (x ∧ t) = h.exteriorAlgebraGram (h x ⌋ s) t`. -/
-theorem exteriorAlgebraGram_ι_mul_right (h : M →ₛₗ[σ] M →ₗ[R] R) (hσ : Function.Involutive σ)
-    (hh : ∀ x y, σ (h x y) = h y x) (x : M) (s t : _root_.ExteriorAlgebra R M) :
+/-- **The exterior Gram form of a `σ`-symmetric sesquilinear form is `σ`-symmetric** for any
+involutive ring endomorphism `σ`. -/
+theorem IsSymm.exteriorAlgebraGram [RingHomInvPair σ σ] {h : M →ₛₗ[σ] M →ₗ[R] R}
+    (hh : h.IsSymm) : h.exteriorAlgebraGram.IsSymm :=
+  isSymm_def.mpr <|
+    h.map_exteriorAlgebraGram_swap (fun _ ↦ RingHomInvPair.comp_apply_eq₂) fun x y ↦ hh.eq x y
+
+/-- **Contraction is adjoint to exterior multiplication on the right** whenever
+`∀ y, σ (h x y) = h y x`: `h.exteriorAlgebraGram s (x ∧ t) = h.exteriorAlgebraGram (h x ⌋ s) t`. -/
+theorem exteriorAlgebraGram_ι_mul_right (h : M →ₛₗ[σ] M →ₗ[R] R) {x : M}
+    (hh : ∀ y, σ (h x y) = h y x) (s t : _root_.ExteriorAlgebra R M) :
     h.exteriorAlgebraGram s (_root_.ExteriorAlgebra.ι R x * t) =
       h.exteriorAlgebraGram (contractLeft (Q := (0 : QuadraticForm R M)) (h x) s) t := by
-  rw [← hσ (h.exteriorAlgebraGram s _), h.map_exteriorAlgebraGram_swap hσ hh,
-    exteriorAlgebraGram_ι_mul_left, ← h.map_exteriorAlgebraGram_swap hσ hh, hσ]
+  induction s using exteriorAlgebra_left_induction generalizing t with
+  | algebraMap r =>
+    simp [exteriorAlgebraGram_algebraMap_left, contractLeft_algebraMap]
+  | add s₁ s₂ hs₁ hs₂ =>
+    simp only [map_add, LinearMap.add_apply, hs₁, hs₂]
+  | ι_mul y s hs =>
+    rw [exteriorAlgebraGram_ι_mul_left, contractLeft_ι_mul, map_sub, map_smul, hs,
+      contractLeft_ι_mul, map_sub, map_smulₛₗ, LinearMap.sub_apply, LinearMap.smul_apply,
+      exteriorAlgebraGram_ι_mul_left, smul_eq_mul, smul_eq_mul, hh y]
 
 /-- **Linear maps preserving `h` preserve the exterior Gram form** on all of `⋀ M`. -/
 theorem exteriorAlgebraGram_map_map (h : M →ₛₗ[σ] M →ₗ[R] R) (h' : N →ₛₗ[σ] N →ₗ[R] R)
     (f : M →ₗ[R] N) (hf : ∀ x y, h' (f x) (f y) = h x y) (s t : _root_.ExteriorAlgebra R M) :
     h'.exteriorAlgebraGram (_root_.ExteriorAlgebra.map f s) (_root_.ExteriorAlgebra.map f t) =
       h.exteriorAlgebraGram s t := by
-  induction s using CliffordAlgebra.left_induction generalizing t with
+  induction s using exteriorAlgebra_left_induction generalizing t with
   | algebraMap r =>
     simp [exteriorAlgebraGram_algebraMap_left]
   | add s₁ s₂ hs₁ hs₂ =>
     simp only [map_add, LinearMap.add_apply, hs₁, hs₂]
-  | ι_mul s x hs =>
-    -- Express `CliffordAlgebra.ι 0` as `ExteriorAlgebra.ι R` before pushing `map f` across `x ∧ s`.
-    change h'.exteriorAlgebraGram
-        (_root_.ExteriorAlgebra.map f (_root_.ExteriorAlgebra.ι R x * s))
-        (_root_.ExteriorAlgebra.map f t) =
-      h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ι R x * s) t
+  | ι_mul x s hs =>
     have hfx : h' (f x) ∘ₗ f = h x := LinearMap.ext (hf x)
     rw [map_mul, _root_.ExteriorAlgebra.map_apply_ι, exteriorAlgebraGram_ι_mul_left,
       _root_.ExteriorAlgebra.contractLeft_map, hfx, hs, exteriorAlgebraGram_ι_mul_left]
@@ -522,18 +528,14 @@ theorem exteriorAlgebraGram_degreeScaling_left (h : M →ₛₗ[σ] M →ₗ[R] 
     (s t : _root_.ExteriorAlgebra R M) :
     h.exteriorAlgebraGram (degreeScaling r s) t =
       h.exteriorAlgebraGram s (degreeScaling (Units.map σ.toMonoidHom r) t) := by
-  induction s using CliffordAlgebra.left_induction generalizing t with
+  induction s using exteriorAlgebra_left_induction generalizing t with
   | algebraMap c =>
     rw [AlgEquiv.commutes, exteriorAlgebraGram_algebraMap_left,
       exteriorAlgebraGram_algebraMap_left, _root_.ExteriorAlgebra.degreeScaling_apply,
       _root_.ExteriorAlgebra.algebraMapInv_map]
   | add s₁ s₂ hs₁ hs₂ =>
     simp only [map_add, LinearMap.add_apply, hs₁, hs₂]
-  | ι_mul s x hs =>
-    -- Express `CliffordAlgebra.ι 0` as `ExteriorAlgebra.ι R` to apply `degreeScaling_ι`.
-    change h.exteriorAlgebraGram (degreeScaling r (_root_.ExteriorAlgebra.ι R x * s)) t =
-      h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ι R x * s)
-        (degreeScaling (Units.map σ.toMonoidHom r) t)
+  | ι_mul x s hs =>
     rw [map_mul, degreeScaling_ι, smul_mul_assoc, map_smulₛₗ, LinearMap.smul_apply,
       exteriorAlgebraGram_ι_mul_left, hs, exteriorAlgebraGram_ι_mul_left,
       _root_.ExteriorAlgebra.degreeScaling_contractLeft]
@@ -547,62 +549,26 @@ theorem exteriorAlgebraGram_degreeScaling_degreeScaling_of_mem_exteriorPower
     (hs : s ∈ ⋀[R]^p M) (t : _root_.ExteriorAlgebra R M) :
     h.exteriorAlgebraGram (degreeScaling r s) (degreeScaling r t) =
       (σ r * r) ^ p * h.exteriorAlgebraGram s t := by
-  classical
-  rw [degreeScaling_of_mem_exteriorPower r hs, map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul]
-  -- On pure wedges of degree `p`, `degreeScaling r` on the right scales each factor by `r`.
-  rw [← h.exteriorAlgebraGram_gradedProj_right hs (degreeScaling r t),
-    ← h.exteriorAlgebraGram_gradedProj_right hs t]
-  have hproj : GradedRing.proj (fun q ↦ ⋀[R]^q M) p (degreeScaling r t) =
-      (r : R) ^ p • GradedRing.proj (fun q ↦ ⋀[R]^q M) p t := by
-    let d := DirectSum.decompose (fun q ↦ ⋀[R]^q M) t
-    conv_lhs => rw [← DirectSum.sum_support_decompose (fun q ↦ ⋀[R]^q M) t]
-    simp only [map_sum, GradedRing.proj_apply]
-    by_cases hp : p ∈ d.support
-    · rw [Finset.sum_eq_single p]
-      · have hdp : (d p : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^p M := (d p).2
-        have hsmul : (r : R) ^ p • (d p : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^p M :=
-          Submodule.smul_mem _ _ hdp
-        rw [degreeScaling_of_mem_exteriorPower r hdp,
-          DirectSum.decompose_of_mem_same (fun q ↦ ⋀[R]^q M) hsmul]
-      · intro q _ hqp
-        have hdq : (d q : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^q M := (d q).2
-        have hmem : degreeScaling r (d q : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^q M := by
-          rw [degreeScaling_of_mem_exteriorPower r hdq]
-          exact Submodule.smul_mem _ _ hdq
-        exact DirectSum.decompose_of_mem_ne (fun q ↦ ⋀[R]^q M) hmem hqp
-      · intro hp'
-        exact absurd hp hp'
-    · have hzero : (d p : _root_.ExteriorAlgebra R M) = 0 := by
-        simpa [d, DFinsupp.mem_support_toFun] using hp
-      rw [hzero, smul_zero]
-      refine Finset.sum_eq_zero fun q hq ↦ ?_
-      have hdq : (d q : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^q M := (d q).2
-      have hmem : degreeScaling r (d q : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^q M := by
-        rw [degreeScaling_of_mem_exteriorPower r hdq]
-        exact Submodule.smul_mem _ _ hdq
-      exact DirectSum.decompose_of_mem_ne (fun q ↦ ⋀[R]^q M) hmem (by rintro rfl; exact hp hq)
-  rw [hproj, map_smul, smul_eq_mul, map_pow]
-  ring
+  have hs' : degreeScaling r s ∈ ⋀[R]^p M := by
+    rw [degreeScaling_of_mem_exteriorPower r hs]
+    exact Submodule.smul_mem _ _ hs
+  induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
+  | zero => simp
+  | homogeneous x =>
+    rename_i q
+    by_cases hpq : p = q
+    · subst hpq
+      rw [degreeScaling_of_mem_exteriorPower r hs, degreeScaling_of_mem_exteriorPower r x.2,
+        map_smul, map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul, map_pow]
+      ring
+    · have hx' : degreeScaling r (x : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^q M := by
+        rw [degreeScaling_of_mem_exteriorPower r x.2]
+        exact Submodule.smul_mem _ _ x.2
+      rw [h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower hpq hs' hx',
+        h.exteriorAlgebraGram_eq_zero_of_mem_exteriorPower hpq hs x.2, mul_zero]
+  | add t₁ t₂ ht₁ ht₂ => rw [map_add, map_add, map_add, ht₁, ht₂, mul_add]
 
 end ExteriorAlgebraGram
-
-section StarExteriorAlgebraGram
-
-variable {R M : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M]
-
-/-- Over a commutative star ring, swapping the arguments of `h.exteriorAlgebraGram` conjugates its
-value whenever `h` is Hermitian. -/
-theorem star_exteriorAlgebraGram_apply (h : M →ₗ⋆[R] M →ₗ[R] R) (hh : h.IsSymm)
-    (s t : _root_.ExteriorAlgebra R M) :
-    star (h.exteriorAlgebraGram s t) = h.exteriorAlgebraGram t s :=
-  h.map_exteriorAlgebraGram_swap star_involutive (fun x y ↦ hh.eq x y) s t
-
-/-- **The exterior Gram form of a Hermitian form is Hermitian.** -/
-theorem IsSymm.exteriorAlgebraGram {h : M →ₗ⋆[R] M →ₗ[R] R} (hh : h.IsSymm) :
-    h.exteriorAlgebraGram.IsSymm :=
-  isSymm_def.mpr (h.star_exteriorAlgebraGram_apply hh)
-
-end StarExteriorAlgebraGram
 
 section ExteriorPowerGram
 
@@ -613,13 +579,13 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {σ : R →+* 
 homogeneous submodule `⋀[R]^p M`. -/
 def exteriorPowerGram (h : M →ₛₗ[σ] M →ₗ[R] R) (p : ℕ) :
     (⋀[R]^p M) →ₛₗ[σ] (⋀[R]^p M) →ₗ[R] R :=
-  (h.exteriorAlgebraGram.comp (⋀[R]^p M).subtype).compl₂ (⋀[R]^p M).subtype
+  h.exteriorAlgebraGram.domRestrict₁₂ (⋀[R]^p M) (⋀[R]^p M)
 
 /-- `h.exteriorPowerGram p` evaluates as `h.exteriorAlgebraGram` on the underlying multivectors. -/
 theorem exteriorPowerGram_apply (h : M →ₛₗ[σ] M →ₗ[R] R) (p : ℕ) (s t : ⋀[R]^p M) :
     h.exteriorPowerGram p s t =
       h.exteriorAlgebraGram (s : _root_.ExteriorAlgebra R M) (t : _root_.ExteriorAlgebra R M) :=
-  (rfl)
+  h.exteriorAlgebraGram.domRestrict₁₂_apply (⋀[R]^p M) (⋀[R]^p M) s t
 
 /-- **The Gram-determinant formula on `⋀[R]^p M`**:
 `h.exteriorPowerGram p (x₀ ∧ ⋯ ∧ x_{p-1}) (y₀ ∧ ⋯ ∧ y_{p-1}) = det (h (xᵢ, yⱼ))`. -/
@@ -642,18 +608,12 @@ theorem eq_exteriorPowerGram_iff (h : M →ₛₗ[σ] M →ₗ[R] R) (p : ℕ)
   refine exteriorPower.linearMap_ext (AlternatingMap.ext fun y ↦ ?_)
   simpa using hB x y
 
+/-- **The exterior-power Gram form of a `σ`-symmetric sesquilinear form is `σ`-symmetric.** -/
+theorem IsSymm.exteriorPowerGram [RingHomInvPair σ σ] {h : M →ₛₗ[σ] M →ₗ[R] R}
+    (hh : h.IsSymm) (p : ℕ) : (h.exteriorPowerGram p).IsSymm :=
+  hh.exteriorAlgebraGram.domRestrict (⋀[R]^p M)
+
 end ExteriorPowerGram
-
-section StarExteriorPowerGram
-
-variable {R M : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M]
-
-/-- **The exterior-power Gram form of a Hermitian form is Hermitian.** -/
-theorem IsSymm.exteriorPowerGram {h : M →ₗ⋆[R] M →ₗ[R] R} (hh : h.IsSymm) (p : ℕ) :
-    (h.exteriorPowerGram p).IsSymm :=
-  isSymm_def.mpr fun s t ↦ h.star_exteriorAlgebraGram_apply hh s t
-
-end StarExteriorPowerGram
 
 end LinearMap
 
@@ -715,6 +675,79 @@ theorem toLinearMapₛₗ₂_eq_exteriorAlgebraGram (σ : R →+* R) :
     LinearMap.sum_apply, LinearMap.smul_apply, toLinearMapₛₗ₂_one_basis_eq_coord,
     toLinearMapₛₗ₂_ι_basis_mul_of_ringHom]
 
+/-- **The vacuum is a unit vector**: `H 1 1 = 1` for the `σ`-sesquilinear form making the wedge
+basis orthonormal.
+
+Not `@[simp]`: `Matrix.toLinearMapₛₗ₂_apply` already expands the left-hand side. -/
+theorem toLinearMapₛₗ₂_apply_one_one (σ : R →+* R) :
+    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+      (1 : Matrix (Finset I) (Finset I) R) 1 1 = 1 := by
+  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, LinearMap.exteriorAlgebraGram_one_left, map_one]
+
+/-- **Exterior multiplication is adjoint to contraction**: for the `σ`-sesquilinear form `h` making
+`b` orthonormal and the form `H` making the wedge basis orthonormal,
+`H (x ∧ s) t = H s (h(x, ·) ⌋ t)`. -/
+theorem toLinearMapₛₗ₂_ι_mul_left (σ : R →+* R) (x : M) (s t : _root_.ExteriorAlgebra R M) :
+    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) (_root_.ExteriorAlgebra.ι R x * s) t =
+      toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) s
+        (contractLeft (Q := (0 : QuadraticForm R M))
+          (toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) x) t) := by
+  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, LinearMap.exteriorAlgebraGram_ι_mul_left]
+
+/-- **Contraction is adjoint to exterior multiplication** for any involutive `σ`: for the
+`σ`-sesquilinear form `h` making `b` orthonormal and the form `H` making the wedge basis
+orthonormal, `H s (x ∧ t) = H (h(x, ·) ⌋ s) t`. -/
+theorem toLinearMapₛₗ₂_ι_mul_right (σ : R →+* R) [RingHomInvPair σ σ] (x : M)
+    (s t : _root_.ExteriorAlgebra R M) :
+    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) s (_root_.ExteriorAlgebra.ι R x * t) =
+      toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R)
+        (contractLeft (Q := (0 : QuadraticForm R M))
+          (toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) x) s) t := by
+  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram]
+  refine LinearMap.exteriorAlgebraGram_ι_mul_right _ (fun y ↦ ?_) s t
+  simp only [toLinearMapₛₗ₂_one_apply, map_sum, map_mul, RingHomInvPair.comp_apply_eq₂, mul_comm]
+
+/-- **The `σ`-sesquilinear form of `⋀ M` depends only on the `σ`-sesquilinear form of `M`**: if two
+finite ordered bases `b` and `b'` of `M` induce the same `σ`-sesquilinear form on `M`, then their
+wedge bases induce the same `σ`-sesquilinear form on `⋀ M`. -/
+theorem toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq (σ : R →+* R) {I' : Type*} [Fintype I']
+    [LinearOrder I'] (b' : Module.Basis I' R M)
+    (h : toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) =
+      toLinearMapₛₗ₂ σ b' b' (1 : Matrix I' I' R)) :
+    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) =
+      toLinearMapₛₗ₂ σ b'.ExteriorAlgebra b'.ExteriorAlgebra
+        (1 : Matrix (Finset I') (Finset I') R) := by
+  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, toLinearMapₛₗ₂_eq_exteriorAlgebraGram, h]
+
+/-- **The adjoint of the degree scaling by `r` is the degree scaling by `σ r`**: for the form `H`
+making the wedge basis orthonormal, `H (T_r s) t = H s (T_{σ r} t)`. -/
+theorem toLinearMapₛₗ₂_degreeScaling_left (σ : R →+* R) (r : Rˣ)
+    (s t : _root_.ExteriorAlgebra R M) :
+    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) t =
+      toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) s
+        (degreeScaling (Units.map σ.toMonoidHom r) t) := by
+  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, LinearMap.exteriorAlgebraGram_degreeScaling_left]
+
+/-- **The degree scaling rescales the metric on each exterior power**: for the form `H` making the
+wedge basis orthonormal and `s` in the `p`-th exterior power, `H (T_r s) (T_r t)` is
+`(σ r * r) ^ p` times `H s t`. -/
+theorem toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower (σ : R →+* R) (r : Rˣ)
+    {p : ℕ} {s : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M)
+    (t : _root_.ExteriorAlgebra R M) :
+    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) (degreeScaling r t) =
+      (σ (r : R) * r) ^ p * toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) s t := by
+  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram,
+    LinearMap.exteriorAlgebraGram_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs]
+
 /-- **Distinct exterior degrees are orthogonal** for the wedge-basis `σ`-sesquilinear form. -/
 theorem toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower (σ : R →+* R) {p q : ℕ} (hpq : p ≠ q)
     {s t : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (ht : t ∈ ⋀[R]^q M) :
@@ -746,83 +779,5 @@ theorem toLinearMapₛₗ₂_exteriorPower_eq_exteriorPowerGram (σ : R →+* R)
   simp [Matrix.one_apply, Subtype.coe_inj]
 
 end SesquilinearBasis
-
-section HermitianBasis
-
-variable {R M I : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M]
-  [Fintype I] [LinearOrder I] (b : Module.Basis I R M)
-
-/-- **The vacuum is a unit vector**: `H 1 1 = 1` for the Hermitian form making the wedge basis
-orthonormal.
-
-Not `@[simp]`: `Matrix.toLinearMapₛₗ₂_apply` already expands the left-hand side. -/
-theorem toLinearMapₛₗ₂_apply_one_one :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-      (1 : Matrix (Finset I) (Finset I) R) 1 1 = 1 := by
-  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, LinearMap.exteriorAlgebraGram_one_left, map_one]
-
-/-- **Exterior multiplication is adjoint to contraction**: for the Hermitian form `h` making `b`
-orthonormal and the form `H` making the wedge basis orthonormal,
-`H (x ∧ s) t = H s (h(x, ·) ⌋ t)`. -/
-theorem toLinearMapₛₗ₂_ι_mul_left (x : M) (s t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) (_root_.ExteriorAlgebra.ι R x * s) t =
-      toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s
-        (contractLeft (Q := (0 : QuadraticForm R M))
-          (toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x) t) := by
-  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, LinearMap.exteriorAlgebraGram_ι_mul_left]
-
-/-- **Contraction is adjoint to exterior multiplication**: for the Hermitian form `h` making `b`
-orthonormal and the form `H` making the wedge basis orthonormal,
-`H s (x ∧ t) = H (h(x, ·) ⌋ s) t`. -/
-theorem toLinearMapₛₗ₂_ι_mul_right (x : M) (s t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s (_root_.ExteriorAlgebra.ι R x * t) =
-      toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R)
-        (contractLeft (Q := (0 : QuadraticForm R M))
-          (toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x) s) t := by
-  rw [← star_toLinearMapₛₗ₂_one_apply, toLinearMapₛₗ₂_ι_mul_left, star_toLinearMapₛₗ₂_one_apply]
-
-/-- **The Hermitian form of `⋀ M` depends only on the Hermitian form of `M`**: if two finite
-ordered bases `b` and `b'` of `M` are orthonormal for the same Hermitian form, then their wedge
-bases are orthonormal for the same Hermitian form on `⋀ M`. -/
-theorem toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq {I' : Type*} [Fintype I'] [LinearOrder I']
-    (b' : Module.Basis I' R M)
-    (h : toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) =
-      toLinearMapₛₗ₂ (starRingEnd R) b' b' (1 : Matrix I' I' R)) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) =
-      toLinearMapₛₗ₂ (starRingEnd R) b'.ExteriorAlgebra b'.ExteriorAlgebra
-        (1 : Matrix (Finset I') (Finset I') R) := by
-  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, toLinearMapₛₗ₂_eq_exteriorAlgebraGram, h]
-
-/-- **The adjoint of the degree scaling by `r` is the degree scaling by `star r`**: for the form `H`
-making the wedge basis orthonormal, `H (T_r s) t = H s (T_{star r} t)`. -/
-theorem toLinearMapₛₗ₂_degreeScaling_left (r : Rˣ) (s t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) t =
-      toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s (degreeScaling (star r) t) := by
-  have hr : Units.map (starRingEnd R).toMonoidHom r = star r := by
-    ext
-    rfl
-  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram, LinearMap.exteriorAlgebraGram_degreeScaling_left, hr]
-
-/-- **The degree scaling rescales the metric on each exterior power**: for the form `H` making the
-wedge basis orthonormal and `s` in the `p`-th exterior power, `H (T_r s) (T_r t)` is
-`(star r * r) ^ p` times `H s t`. -/
-theorem toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower (r : Rˣ) {p : ℕ}
-    {s : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) (degreeScaling r t) =
-      (star (r : R) * r) ^ p * toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s t := by
-  rw [toLinearMapₛₗ₂_eq_exteriorAlgebraGram,
-    LinearMap.exteriorAlgebraGram_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs]
-  rfl
-
-end HermitianBasis
 
 end ExteriorAlgebra
