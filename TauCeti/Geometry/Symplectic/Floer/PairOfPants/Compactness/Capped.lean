@@ -46,8 +46,9 @@ gives a threshold `δ > 0` such that every sequence of solutions for parameters 
 areas at most `A` and images of an open `Ω ⊆ D` in a compact `K ⊆ V`, has a subsequence whose
 parameters converge to some `R₀ ∈ C` and which converges locally uniformly on `Ω` off a finite set
 `Z` of bubbling points, with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`. The regularity of the limit, the
-bubbles at the points of `Z`, the behaviour near the pole `∞`, and the long-neck end `R → ∞` of
-the family are not treated here.
+bubbles at the points of `Z` and the behaviour near the pole `∞` are not treated here. The
+long-neck end `R → ∞` of the family is in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`.
 
 ## References
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndShift
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
@@ -53,7 +54,9 @@ structures are (`TauCeti.Floer.tames_cappedAlmostComplex`,
   (`TauCeti.Floer.cappedAlmostComplex_cylindricalEndLift_of_mem_Icc`).
 * Beyond the neck it is the structure for `L = 0` translated by `L` along the end
   (`TauCeti.Floer.cappedAlmostComplex_cylindricalEndLift_add_endSign_mul`), so the PSS plane
-  pieces do not depend on the neck length.
+  pieces do not depend on the neck length. In the coordinate of `ℂ`, it is the structure for
+  `L = 0` read through the translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q L`, at
+  the center of the end and beyond the neck (`TauCeti.Floer.cappedAlmostComplex_endShift`).
 * It is smooth jointly in `r`, `L`, the point `w ∈ ℂ`, including the poles `0` and `1`, and the
   parameter `x` (`TauCeti.Floer.contMDiff_cappedAlmostComplex`).
 
@@ -311,6 +314,26 @@ theorem cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (h₀ : ω.Compat
     smoothTransition.one_of_one_le h₁L, smoothTransition.one_of_one_le h₁,
     Complex.add_im, Complex.ofReal_im, add_zero]
   ring_nf
+
+/-- **The PSS plane pieces in coordinates independent of the neck length.** If `J q` has period one
+in `t`, then at the center `c_q` of the end `q`, its pole for an input end, and at every point
+beyond the neck, where the signed longitudinal coordinate is at least `2`, the capped structure with
+neck length `L ≥ 0` at the translate `TauCeti.ThricePuncturedSphere.Puncture.endShift q L w` is the
+structure with `L = 0` at `w`. -/
+theorem cappedAlmostComplex_endShift (h₀ : ω.Compatible J₀) (hJp : Function.Periodic (J q) 1)
+    (r : ℝ) (hL : 0 ≤ L) {w : ℂ} (hw : w = q.endCenter ∨ 2 ≤ q.endSign * (q.endCoord w).re)
+    (x : M) :
+    cappedAlmostComplex h₀ J hJ r L (q.endShift L w) x = cappedAlmostComplex h₀ J hJ r 0 w x := by
+  rcases hw with rfl | hw
+  · -- Both structures are `J₀` at the center `0` or `1`, which lies outside every truncation.
+    have h (L' : ℝ) := cappedAlmostComplex_eq_base_of_notMem_truncation (J := J) (hJ := hJ) h₀ r
+      (notMem_truncation_of_eq_zero_or_eq_one q.endCenter_eq_zero_or_eq_one (L' + 3)) x
+    rw [endShift_endCenter, h, h]
+  · have hc : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h ↦ by
+      rw [h, mul_zero] at hw
+      norm_num at hw
+    have key := cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (hJ := hJ) h₀ hJp r hL hw x
+    rwa [cylindricalEndLift_add_endSign_mul, q.cylindricalEndLift_endCoord hc] at key
 
 /-- **The structure is the pair-of-pants structure up to the necks.** For `r ≥ 1`, at points where
 the signed longitudinal coordinate of every end is at most `L + 2`, such as the points of the
