@@ -22,18 +22,21 @@ on the model vector spaces themselves), transported along the identity homeomorp
 `BoundarylessModel.homeomorph I M` and `BoundarylessModel.homeomorph J N` to copies of `M` and
 `N` charted on `E` and `F`. No smooth structure is involved.
 
-For a subset `A` of a surface identified with the closed unit disc of `ℂ` by a mere
-homeomorphism `e`, the points of the ambient interior of `A` are those sent into the open unit
-disc, and the points of the ambient frontier of `A` those sent to the unit circle.
+For a subset `A` of a surface without boundary (charted on a boundaryless two-dimensional
+model), identified with the closed unit disc of `ℂ` by a mere homeomorphism `e`, the points of
+the ambient interior of `A` are those sent into the open unit disc, and the points of the ambient
+frontier of `A` those sent to the unit circle.
 
 ## Main results
 
 * `Homeomorph.coe_apply_mem_interior_iff_of_boundaryless` and
   `Homeomorph.coe_apply_mem_frontier_iff_of_boundaryless`: invariance of interior and frontier
   points.
+* `Homeomorph.dist_apply_lt_iff_mem_interior` and
+  `Homeomorph.dist_apply_eq_iff_mem_frontier`: the case of a closed ball of nonzero radius.
 * `Homeomorph.norm_apply_lt_one_iff_mem_interior` and
   `Homeomorph.norm_apply_eq_one_iff_mem_frontier`: the case of a topological closed disk in a
-  surface.
+  surface without boundary.
 
 ## References
 
@@ -66,8 +69,8 @@ theorem coe_apply_mem_interior_iff_of_boundaryless (e : A ≃ₜ B) (hEF : finra
   let b := BoundarylessModel.homeomorph J N
   have h := ((a.image A).symm.trans (e.trans (b.image B))).coe_apply_mem_interior_iff
     (E := E) (F := F) hEF (a.image A x)
-  simp only [Homeomorph.trans_apply, Homeomorph.symm_apply_apply] at h
-  change b (e x : N) ∈ interior (b '' B) ↔ a (x : M) ∈ interior (a '' A) at h
+  simp only [Homeomorph.trans_apply, Homeomorph.symm_apply_apply,
+    Homeomorph.image_apply_coe] at h
   rwa [← a.image_interior, ← b.image_interior, b.injective.mem_set_image,
     a.injective.mem_set_image] at h
 
@@ -81,26 +84,46 @@ theorem coe_apply_mem_frontier_iff_of_boundaryless (e : A ≃ₜ B) (hEF : finra
   simp only [frontier, mem_sdiff, subset_closure (e x).2, subset_closure x.2, true_and,
     e.coe_apply_mem_interior_iff_of_boundaryless I J hEF]
 
-omit [FiniteDimensional ℝ E] in
 include I in
-/-- A subset `A` of a surface, identified with the closed unit disc of `ℂ` by a homeomorphism
-`e`, has as ambient interior points exactly the points sent into the open unit disc. -/
-theorem norm_apply_lt_one_iff_mem_interior (e : A ≃ₜ Metric.closedBall (0 : ℂ) 1)
-    (hE : finrank ℝ E = 2) (x : A) : ‖(e x : ℂ)‖ < 1 ↔ (x : M) ∈ interior A := by
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
-  have h := e.coe_apply_mem_interior_iff_of_boundaryless I 𝓘(ℝ, ℂ)
-    (hE.trans Complex.finrank_real_complex.symm) x
-  rwa [interior_closedBall (0 : ℂ) one_ne_zero, Metric.mem_ball, dist_zero_right] at h
+/-- A subset of a manifold charted on a boundaryless model, homeomorphic to a closed ball
+of nonzero radius in a finite-dimensional real normed space of the same dimension, has as
+ambient interior points exactly the points sent into the open ball. -/
+theorem dist_apply_lt_iff_mem_interior {c : F} {r : ℝ} (e : A ≃ₜ Metric.closedBall c r)
+    (hr : r ≠ 0) (hEF : finrank ℝ E = finrank ℝ F) (x : A) :
+    dist (e x : F) c < r ↔ (x : M) ∈ interior A := by
+  have h := e.coe_apply_mem_interior_iff_of_boundaryless I 𝓘(ℝ, F) hEF x
+  rwa [interior_closedBall c hr, Metric.mem_ball] at h
+
+include I in
+/-- A subset of a manifold charted on a boundaryless model, homeomorphic to a closed ball
+of nonzero radius in a finite-dimensional real normed space of the same dimension, has as
+ambient frontier points exactly the points sent to the sphere. -/
+theorem dist_apply_eq_iff_mem_frontier {c : F} {r : ℝ} (e : A ≃ₜ Metric.closedBall c r)
+    (hr : r ≠ 0) (hEF : finrank ℝ E = finrank ℝ F) (x : A) :
+    dist (e x : F) c = r ↔ (x : M) ∈ frontier A := by
+  have h := e.coe_apply_mem_frontier_iff_of_boundaryless I 𝓘(ℝ, F) hEF x
+  rwa [frontier_closedBall c hr, Metric.mem_sphere] at h
 
 omit [FiniteDimensional ℝ E] in
 include I in
-/-- A subset `A` of a surface, identified with the closed unit disc of `ℂ` by a homeomorphism
-`e`, has as ambient frontier points exactly the points sent to the unit circle. -/
+/-- A subset `A` of a surface without boundary (charted on a boundaryless two-dimensional
+model), identified with the closed unit disc of `ℂ` by a homeomorphism `e`, has as ambient
+interior points exactly the points sent into the open unit disc. -/
+theorem norm_apply_lt_one_iff_mem_interior (e : A ≃ₜ Metric.closedBall (0 : ℂ) 1)
+    (hE : finrank ℝ E = 2) (x : A) : ‖(e x : ℂ)‖ < 1 ↔ (x : M) ∈ interior A := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  simpa only [dist_zero_right] using
+    e.dist_apply_lt_iff_mem_interior I one_ne_zero (hE.trans Complex.finrank_real_complex.symm) x
+
+omit [FiniteDimensional ℝ E] in
+include I in
+/-- A subset `A` of a surface without boundary (charted on a boundaryless two-dimensional
+model), identified with the closed unit disc of `ℂ` by a homeomorphism `e`, has as ambient
+frontier points exactly the points sent to the unit circle. -/
 theorem norm_apply_eq_one_iff_mem_frontier (e : A ≃ₜ Metric.closedBall (0 : ℂ) 1)
     (hE : finrank ℝ E = 2) (x : A) : ‖(e x : ℂ)‖ = 1 ↔ (x : M) ∈ frontier A := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
-  have h := e.coe_apply_mem_frontier_iff_of_boundaryless I 𝓘(ℝ, ℂ)
-    (hE.trans Complex.finrank_real_complex.symm) x
-  rwa [frontier_closedBall (0 : ℂ) one_ne_zero, Metric.mem_sphere, dist_zero_right] at h
+  simpa only [dist_zero_right] using
+    e.dist_apply_eq_iff_mem_frontier I one_ne_zero (hE.trans Complex.finrank_real_complex.symm) x
 
 end Homeomorph
