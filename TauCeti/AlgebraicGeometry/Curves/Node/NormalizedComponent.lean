@@ -7,16 +7,12 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Curves.Basic
-public import TauCeti.AlgebraicGeometry.Curves.Node.Blowup
 public import TauCeti.AlgebraicGeometry.Curves.Node.Normalization
-public import TauCeti.AlgebraicGeometry.Scheme.Regular.Components
+public import TauCeti.AlgebraicGeometry.Scheme.Components
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
 import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
-import TauCeti.AlgebraicGeometry.Blowup.Pullback
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.SchematicDensity
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
-import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
 /-!
@@ -31,14 +27,19 @@ surjective modification `ν : Bl X ⟶ X` that restricts to an isomorphism over 
 This file develops the component geometry of `Bl X` and relates it to `X` without assuming `K` is
 separably closed:
 
-* **Density of the smooth preimage**: `ν ⁻¹' Smooth(X/K)` is dense in `Bl X`, being the complement
-  of the exceptional effective Cartier divisor
-  (`AlgebraicGeometry.Scheme.dense_preimage_smoothLocus_blowupToBase`), and `ν` is injective on it
-  (`AlgebraicGeometry.Scheme.injOn_preimage_smoothLocus_blowupToBase`).
-* **Bijection on irreducible components**: pushing forward along `ν` identifies
-  `irreducibleComponents (Bl X)` with `irreducibleComponents X`
-  (`AlgebraicGeometry.Scheme.irreducibleComponentsBlowupEquiv`). When `X` is proper over `K`, there
-  are finitely many components
+* **Smooth-locus density, injectivity, and lifts over arbitrary bases**: for any syntomic relative
+  curve `X` over a commutative ring `R`, `ν ⁻¹' Smooth(X/R)` is dense in `Bl X`, being the
+  complement of the exceptional effective Cartier divisor
+  (`AlgebraicGeometry.Scheme.dense_preimage_smoothLocus_blowupToBase`), `ν` is injective on it
+  (`AlgebraicGeometry.Scheme.injOn_preimage_smoothLocus_blowupToBase`), `ν` is an isomorphism when
+  `X / R` is smooth (`AlgebraicGeometry.Scheme.isIso_blowupToBase_singularLocus_of_smooth`), and
+  every morphism `s : T ⟶ X` landing in `Smooth(X/R)` lifts uniquely to `Bl X`
+  (`AlgebraicGeometry.Scheme.blowupSingularLocusLift`, built from
+  `AlgebraicGeometry.Scheme.IdealSheafData.blowupLift`).
+* **Bijection on irreducible components**: for a nodal curve `X` over a field `K`, pushing forward
+  along `ν` identifies `irreducibleComponents (Bl X)` with `irreducibleComponents X`
+  (`AlgebraicGeometry.Scheme.irreducibleComponentsBlowupEquiv`). When `X` is quasi-compact over
+  `K`, there are finitely many components
   (`AlgebraicGeometry.Scheme.finite_irreducibleComponents_blowup_singularLocus`).
 * **Normalized component curves**: each `v : irreducibleComponents (Bl X)` is clopen in the regular
   scheme `Bl X`; equipped with its open-subscheme structure
@@ -48,18 +49,22 @@ separably closed:
   proper over `K`, each normalized component is an `IsCurveOver K` whose `H¹(C_v, 𝒪)` is
   finite-dimensional over `K`, so its cohomological genus `(X.normalizedComponent hnodal v).genus K`
   is defined.
-* **Lifting smooth markings and base change**: any morphism `s : T ⟶ X` landing in the smooth locus
-  of `X / K` lifts canonically to `Bl X` (`AlgebraicGeometry.Scheme.markingLift`), and base change
-  along a field extension `L / K` induces a pullback square on the normalization
-  (`AlgebraicGeometry.Scheme.blowupSingularLocusMap`) as well as on individual normalized components
-  when `K` is separably closed (`AlgebraicGeometry.Scheme.exists_isPullback_normalizedComponent`).
+* **Base change of normalized components**: combining the base-change morphism
+  `TauCeti.AlgebraicGeometry.blowupSingularLocusMap` (built from
+  `AlgebraicGeometry.Scheme.IdealSheafData.blowupMap`) with
+  `TauCeti.AlgebraicGeometry.exists_isPullback_componentOpen`, base change along a field extension
+  `L / K` with geometrically irreducible `Spec L ⟶ Spec K` (in particular whenever `K` is separably
+  closed) induces a pullback square on each normalized component
+  (`TauCeti.AlgebraicGeometry.exists_isPullback_normalizedComponent`).
 
 ## References
 
 * [The Stacks Project, Tag 0C46](https://stacks.math.columbia.edu/tag/0C46): nodal curves and
   separation of branches.
-* [The Stacks Project, Tag 02OG](https://stacks.math.columbia.edu/tag/02OG): universal property of
-  blowing up.
+* [The Stacks Project, Tag 0806](https://stacks.math.columbia.edu/tag/0806) and
+  [Tag 0805](https://stacks.math.columbia.edu/tag/0805) (in Section
+  [Tag 01OF](https://stacks.math.columbia.edu/tag/01OF)): universal property and flat base change
+  of blowing up.
 -/
 
 public section
@@ -72,44 +77,31 @@ universe u
 
 namespace AlgebraicGeometry.Scheme
 
-variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
+section Syntomic
 
-/-- Over any field, the preimage of the smooth locus of a nodal curve is dense in the blowup of its
-singular subscheme: it is the complement of the exceptional Cartier divisor. -/
-theorem dense_preimage_smoothLocus_blowupToBase
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
-    letI := hnodal.syntomic
-    Dense ((X.singularLocus K).blowupToBase ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X)) := by
-  have := hnodal.syntomic
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have := X.isFinite_blowupToBase_singularLocus hnodal
-  let I := X.singularLocus K
-  let ν := I.blowupToBase
-  have : IsLocallyNoetherian I.blowup := LocallyOfFiniteType.isLocallyNoetherian ν
-  have : IsSchemeTheoreticallyDominant (Scheme.Opens.ι (I.comap ν).support.compl) :=
-    I.isEffectiveCartier_comap_blowupToBase.isSchemeTheoreticallyDominant_support_compl_ι
-  have hdr : Dense (Set.range (Scheme.Opens.ι (I.comap ν).support.compl)) :=
-    (Scheme.Opens.ι (I.comap ν).support.compl).denseRange
-  rw [Scheme.Opens.range_ι] at hdr
-  have hset : ((I.comap ν).support.compl : Set I.blowup) =
-      ν ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
+variable {R : Type u} [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
+  [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R))]
+
+/-- For any syntomic relative curve over a commutative ring `R`, the preimage of the smooth locus is
+dense in the blowup of its singular subscheme: it is the complement of the exceptional effective
+Cartier divisor. -/
+theorem dense_preimage_smoothLocus_blowupToBase :
+    Dense ((X.singularLocus R).blowupToBase ⁻¹' ((X ↘ Spec (.of R)).smoothLocus : Set X)) := by
+  let I := X.singularLocus R
+  have hset : ((I.comap I.blowupToBase).support.compl : Set I.blowup) =
+      I.blowupToBase ⁻¹' ((X ↘ Spec (.of R)).smoothLocus : Set X) := by
     ext y
-    rw [TopologicalSpace.Closeds.coe_compl, Set.mem_compl_iff, SetLike.mem_coe,
-      IdealSheafData.support_comap, ← SetLike.mem_coe, TopologicalSpace.Closeds.coe_preimage,
-      Set.mem_preimage, Set.mem_preimage, SetLike.mem_coe,
-      X.mem_support_singularLocus_iff_notMem_smoothLocus, not_not, SetLike.mem_coe]
-  rwa [hset] at hdr
+    simp [I]
+  exact hset ▸ I.isEffectiveCartier_comap_blowupToBase.dense_support_compl
 
-/-- The blowup of the singular subscheme of a nodal curve is injective on the preimage of the
-smooth locus, over which it restricts to an isomorphism. -/
-theorem injOn_preimage_smoothLocus_blowupToBase
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
-    letI := hnodal.syntomic
-    Set.InjOn (X.singularLocus K).blowupToBase
-      ((X.singularLocus K).blowupToBase ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X)) := by
-  have := hnodal.syntomic
-  let ν := (X.singularLocus K).blowupToBase
-  let U := (X ↘ Spec (.of K)).smoothLocus
+/-- For any syntomic relative curve over a commutative ring `R`, the blowup of the singular
+subscheme is injective on the preimage of the smooth locus, over which it restricts to an
+isomorphism. -/
+theorem injOn_preimage_smoothLocus_blowupToBase :
+    Set.InjOn (X.singularLocus R).blowupToBase
+      ((X.singularLocus R).blowupToBase ⁻¹' ((X ↘ Spec (.of R)).smoothLocus : Set X)) := by
+  let ν := (X.singularLocus R).blowupToBase
+  let U := (X ↘ Spec (.of R)).smoothLocus
   have : IsIso (ν ∣_ U) := X.isIso_blowupToBase_singularLocus_restrict_smoothLocus
   have hinj : Function.Injective ((ν ⁻¹ᵁ U).ι ≫ ν) := by
     rw [← morphismRestrict_ι]
@@ -117,8 +109,168 @@ theorem injOn_preimage_smoothLocus_blowupToBase
   intro y₁ hy₁ y₂ hy₂ heq
   let q₁ : (ν ⁻¹ᵁ U).toScheme := ⟨y₁, hy₁⟩
   let q₂ : (ν ⁻¹ᵁ U).toScheme := ⟨y₂, hy₂⟩
-  have hsub : ((ν ⁻¹ᵁ U).ι ≫ ν) q₁ = ((ν ⁻¹ᵁ U).ι ≫ ν) q₂ := heq
+  have hsub : ((ν ⁻¹ᵁ U).ι ≫ ν) q₁ = ((ν ⁻¹ᵁ U).ι ≫ ν) q₂ := by
+    rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, Scheme.Opens.ι_apply, Scheme.Opens.ι_apply]
+    exact heq
   exact congrArg Subtype.val (hinj hsub)
+
+/-- On a smooth syntomic relative curve, the blowup of the singular subscheme is an isomorphism. -/
+theorem isIso_blowupToBase_singularLocus_of_smooth [Smooth (X ↘ Spec (.of R))] :
+    IsIso (X.singularLocus R).blowupToBase := by
+  rw [IdealSheafData.isIso_blowupToBase_iff, (X.singularLocus_eq_top_iff_smooth (R := R)).mpr ‹_›]
+  exact IdealSheafData.isEffectiveCartier_top X
+
+/-! ### Lifting morphisms landing in the smooth locus -/
+
+private theorem isEffectiveCartier_comap_singularLocus_of_range_subset_smoothLocus
+    {T : Scheme.{u}} {s : T ⟶ X} (hs : Set.range s ⊆ (X ↘ Spec (.of R)).smoothLocus) :
+    ((X.singularLocus R).comap s).IsEffectiveCartier := by
+  have htop : (X.singularLocus R).comap s = ⊤ := by
+    refine ((X.singularLocus R).comap_eq_top_iff s).mpr ?_
+    ext t
+    simpa using hs ⟨t, rfl⟩
+  rw [htop]
+  exact IdealSheafData.isEffectiveCartier_top T
+
+/-- A morphism into a syntomic relative curve `X` whose image lies in the smooth locus lifts
+canonically to the blowup of the singular subscheme, because the singular subscheme pulls back to
+the unit ideal sheaf. -/
+def blowupSingularLocusLift {T : Scheme.{u}} (s : T ⟶ X)
+    (hs : Set.range s ⊆ (X ↘ Spec (.of R)).smoothLocus) :
+    T ⟶ (X.singularLocus R).blowup :=
+  (X.singularLocus R).blowupLift s
+    (X.isEffectiveCartier_comap_singularLocus_of_range_subset_smoothLocus hs)
+
+@[reassoc (attr := simp)]
+theorem blowupSingularLocusLift_blowupToBase {T : Scheme.{u}} (s : T ⟶ X)
+    (hs : Set.range s ⊆ (X ↘ Spec (.of R)).smoothLocus) :
+    X.blowupSingularLocusLift s hs ≫ (X.singularLocus R).blowupToBase = s :=
+  (X.singularLocus R).blowupLift_blowupToBase _ _
+
+/-- Uniqueness of `blowupSingularLocusLift`: any morphism into `(X.singularLocus R).blowup` lifting
+`s` equals `X.blowupSingularLocusLift s hs`. -/
+theorem eq_blowupSingularLocusLift {X : Scheme.{u}} [X.Over (Spec (.of R))]
+    [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R))] {T : Scheme.{u}} {s : T ⟶ X}
+    (hs : Set.range s ⊆ (X ↘ Spec (.of R)).smoothLocus)
+    {g : T ⟶ (X.singularLocus R).blowup}
+    (hg : g ≫ (X.singularLocus R).blowupToBase = s) :
+    g = X.blowupSingularLocusLift s hs :=
+  (X.singularLocus R).eq_blowupLift
+    (X.isEffectiveCartier_comap_singularLocus_of_range_subset_smoothLocus hs) hg
+
+/-- Precomposing `blowupSingularLocusLift` with `h : T' ⟶ T` yields the lift of `h ≫ s`. -/
+@[reassoc]
+theorem comp_blowupSingularLocusLift {T' T : Scheme.{u}} (h : T' ⟶ T) (s : T ⟶ X)
+    (hs : Set.range s ⊆ (X ↘ Spec (.of R)).smoothLocus)
+    (hhs : Set.range (h ≫ s) ⊆ (X ↘ Spec (.of R)).smoothLocus :=
+      (Set.range_comp_subset_range h s).trans hs) :
+    h ≫ X.blowupSingularLocusLift s hs = X.blowupSingularLocusLift (h ≫ s) hhs :=
+  eq_blowupSingularLocusLift hhs (by simp)
+
+end Syntomic
+
+/-! ### Irreducible components of the normalization of a nodal curve -/
+
+section Nodal
+
+variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
+
+/-- Distinct irreducible components of `(X.singularLocus K).blowup` cannot have nested images in `X`
+because every component meets the dense open preimage of the smooth locus, where `blowupToBase` is
+injective. -/
+private theorem eq_of_image_blowupToBase_subset
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    {v w : letI := hnodal.syntomic; irreducibleComponents (X.singularLocus K).blowup}
+    (hsub : letI := hnodal.syntomic
+      (X.singularLocus K).blowupToBase '' (v : Set (X.singularLocus K).blowup) ⊆
+        (X.singularLocus K).blowupToBase '' (w : Set (X.singularLocus K).blowup)) :
+    v = w := by
+  have := hnodal.syntomic
+  let Bl := (X.singularLocus K).blowup
+  let ν := (X.singularLocus K).blowupToBase
+  have : IsRegular Bl := X.isRegular_blowup_singularLocus hnodal
+  obtain ⟨y, hy_v, hy_U⟩ := (X.dense_preimage_smoothLocus_blowupToBase (R := K)).inter_open_nonempty
+    (v : Set Bl) (isOpen_of_mem_irreducibleComponents_of_isDomain_stalk v.2) v.2.1.nonempty
+  obtain ⟨z, hz_w, hzy⟩ := hsub ⟨y, hy_v, rfl⟩
+  have hz_U : z ∈ ν ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
+    rw [Set.mem_preimage, hzy]
+    exact hy_U
+  have hzeq : z = y := X.injOn_preimage_smoothLocus_blowupToBase hz_U hy_U hzy
+  exact (componentOf_eq_iff.mpr hy_v).symm.trans (componentOf_eq_iff.mpr (hzeq ▸ hz_w))
+
+/-- Every irreducible component of `X` is the image under `blowupToBase` of an irreducible component
+of `(X.singularLocus K).blowup`. -/
+private theorem exists_eq_image_blowupToBase_of_mem_irreducibleComponents
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    {Z : Set X} (hZ : Z ∈ irreducibleComponents X) :
+    letI := hnodal.syntomic
+    ∃ w : irreducibleComponents (X.singularLocus K).blowup,
+      Z = (X.singularLocus K).blowupToBase '' (w : Set (X.singularLocus K).blowup) := by
+  have := hnodal.syntomic
+  let Bl := (X.singularLocus K).blowup
+  let ν := (X.singularLocus K).blowupToBase
+  have : IsRegular Bl := X.isRegular_blowup_singularLocus hnodal
+  have : IsFinite ν := X.isFinite_blowupToBase_singularLocus hnodal
+  have : Surjective ν := X.surjective_blowupToBase_singularLocus hnodal
+  obtain ⟨x, hxZ⟩ := hZ.1.nonempty
+  obtain ⟨W, hW, hxW, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top x)
+  have : IsAffine W.toScheme := hW
+  have : IsProper (ν ∣_ W) :=
+    MorphismProperty.of_isPullback (isPullback_morphismRestrict ν W).flip inferInstance
+  have : Surjective (ν ∣_ W) :=
+    MorphismProperty.of_isPullback (isPullback_morphismRestrict ν W).flip inferInstance
+  have : CompactSpace (ν ⁻¹ᵁ W).toScheme := QuasiCompact.compactSpace_of_compactSpace (ν ∣_ W)
+  have : IsNoetherian (ν ⁻¹ᵁ W).toScheme := {}
+  have hfin : (irreducibleComponents (ν ⁻¹ᵁ W).toScheme).Finite :=
+    TopologicalSpace.NoetherianSpace.finite_irreducibleComponents
+  have hZ' : IsIrreducible (W.ι ⁻¹' Z) :=
+    hZ.1.preimage W.ι.isOpenEmbedding ⟨x, hxZ, ⟨⟨x, hxW⟩, rfl⟩⟩
+  have hcov : W.ι ⁻¹' Z ⊆ ⋃ C ∈ hfin.toFinset, (ν ∣_ W) '' C := by
+    intro u hu
+    obtain ⟨q, rfl⟩ := (ν ∣_ W).surjective u
+    exact Set.mem_biUnion (hfin.mem_toFinset.mpr (irreducibleComponent_mem_irreducibleComponents q))
+      ⟨q, mem_irreducibleComponent, rfl⟩
+  obtain ⟨C, hC_mem, hZC⟩ := isIrreducible_iff_sUnion_isClosed.mp hZ'
+    (hfin.toFinset.image fun C ↦ (ν ∣_ W) '' C)
+    (fun T hT ↦ by
+      obtain ⟨C, hC, rfl⟩ := Finset.mem_image.mp hT
+      exact (ν ∣_ W).isClosedMap C
+        (isClosed_of_mem_irreducibleComponents C (hfin.mem_toFinset.mp hC)))
+    (by simpa only [Finset.coe_image, Set.sUnion_image, Finset.mem_coe] using hcov)
+  obtain ⟨C, hC_fin, rfl⟩ := Finset.mem_image.mp hC_mem
+  have hC : C ∈ irreducibleComponents (ν ⁻¹ᵁ W).toScheme := hfin.mem_toFinset.mp hC_fin
+  obtain ⟨q₀, hq₀⟩ := hC.1.nonempty
+  let w : irreducibleComponents Bl := componentOf Bl ((ν ⁻¹ᵁ W).ι q₀)
+  have hCw : (ν ⁻¹ᵁ W).ι '' C ⊆ (w : Set Bl) := by
+    rw [coe_componentOf]
+    exact (hC.1.image _ (ν ⁻¹ᵁ W).ι.continuous.continuousOn).isConnected.isPreconnected
+      |>.subset_connectedComponent ⟨q₀, hq₀, rfl⟩
+  have hZW : Z ∩ (W : Set X) ⊆ ν '' (w : Set Bl) := by
+    rintro z ⟨hzZ, hzW⟩
+    let zW : W.toScheme := ⟨z, hzW⟩
+    have hzWZ : zW ∈ W.ι ⁻¹' Z := by
+      rwa [Set.mem_preimage, Scheme.Opens.ι_apply]
+    obtain ⟨q, hqC, hqz⟩ := hZC hzWZ
+    refine ⟨(ν ⁻¹ᵁ W).ι q, hCw ⟨q, hqC, rfl⟩, ?_⟩
+    have hcomm := congrArg (fun f : (ν ⁻¹ᵁ W).toScheme ⟶ X ↦ f q) (morphismRestrict_ι ν W)
+    simpa only [zW, Scheme.Hom.comp_apply, hqz, Scheme.Opens.ι_apply] using hcomm.symm
+  have hZsub : Z ⊆ ν '' (w : Set Bl) :=
+    (subset_closure_inter_of_isPreirreducible_of_isOpen hZ.1.2 W.isOpen ⟨x, hxZ, hxW⟩).trans
+      (closure_minimal hZW (ν.isClosedMap w.1 (isClosed_of_mem_irreducibleComponents w.1 w.2)))
+  exact ⟨w, hZsub.antisymm (hZ.2 (w.2.1.image ν ν.continuous.continuousOn) hZsub)⟩
+
+private theorem image_blowupToBase_mem_irreducibleComponents
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (v : letI := hnodal.syntomic; irreducibleComponents (X.singularLocus K).blowup) :
+    letI := hnodal.syntomic
+    (X.singularLocus K).blowupToBase '' (v : Set (X.singularLocus K).blowup) ∈
+      irreducibleComponents X := by
+  have := hnodal.syntomic
+  let ν := (X.singularLocus K).blowupToBase
+  obtain ⟨Z, hZ, hvZ⟩ := exists_mem_irreducibleComponents_subset_of_isIrreducible _
+    (v.2.1.image ν ν.continuous.continuousOn)
+  obtain ⟨w, rfl⟩ := X.exists_eq_image_blowupToBase_of_mem_irreducibleComponents hnodal hZ
+  rwa [X.eq_of_image_blowupToBase_subset hnodal hvZ]
 
 /-- **Irreducible components of the normalization match those of the nodal curve.** Pushing forward
 along the finite surjective blowup `ν : Bl X ⟶ X` defines a bijection between the irreducible
@@ -126,102 +278,14 @@ components of `Bl X` and the irreducible components of `X`, over any ground fiel
 def irreducibleComponentsBlowupEquiv
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
     letI := hnodal.syntomic
-    irreducibleComponents (X.singularLocus K).blowup ≃ irreducibleComponents X := by
+    irreducibleComponents (X.singularLocus K).blowup ≃ irreducibleComponents X :=
   letI := hnodal.syntomic
-  let Bl := (X.singularLocus K).blowup
-  let ν := (X.singularLocus K).blowupToBase
-  let U := (X ↘ Spec (.of K)).smoothLocus
-  have : IsRegular Bl := X.isRegular_blowup_singularLocus hnodal
-  have : IsFinite ν := X.isFinite_blowupToBase_singularLocus hnodal
-  have : Surjective ν := X.surjective_blowupToBase_singularLocus hnodal
-  have hclosed : IsClosedMap ν := ν.isClosedMap
-  -- 1. Distinct components of `Bl` have distinct images because every component meets the dense
-  --    open `ν ⁻¹' U`, where `ν` is injective.
-  have hinj_sub {v w : irreducibleComponents Bl} (hsub : ν '' (v : Set Bl) ⊆ ν '' (w : Set Bl)) :
-      v = w := by
-    obtain ⟨y, hy_v, hy_U⟩ := (X.dense_preimage_smoothLocus_blowupToBase hnodal).inter_open_nonempty
-      (v : Set Bl) (IsRegular.isOpen_of_mem_irreducibleComponents v.2) v.2.1.nonempty
-    obtain ⟨z, hz_w, hzy⟩ := hsub ⟨y, hy_v, rfl⟩
-    have hz_U : z ∈ ν ⁻¹' (U : Set X) := by
-      rw [Set.mem_preimage, hzy]
-      exact hy_U
-    have hzeq : z = y := X.injOn_preimage_smoothLocus_blowupToBase hnodal hz_U hy_U hzy
-    exact (IsRegular.componentOf_eq_iff.mpr hy_v).symm.trans
-      (IsRegular.componentOf_eq_iff.mpr (hzeq ▸ hz_w))
-  -- 2. Every irreducible component `Z` of `X` is the image of some component of `Bl`: restrict to
-  --    an affine chart `W` meeting `Z`, whose preimage in `Bl` is Noetherian and therefore has
-  --    finitely many irreducible components covering `Z ∩ W`.
-  have hsurj (Z : Set X) (hZ : Z ∈ irreducibleComponents X) :
-      ∃ w : irreducibleComponents Bl, Z = ν '' (w : Set Bl) := by
-    obtain ⟨x, hxZ⟩ := hZ.1.nonempty
-    obtain ⟨W, hW, hxW, -⟩ := exists_isAffineOpen_mem_and_subset
-      (TopologicalSpace.Opens.mem_top x)
-    have : IsAffine W.toScheme := hW
-    have : IsProper (ν ∣_ W) :=
-      MorphismProperty.of_isPullback (isPullback_morphismRestrict ν W).flip inferInstance
-    have : Surjective (ν ∣_ W) :=
-      MorphismProperty.of_isPullback (isPullback_morphismRestrict ν W).flip inferInstance
-    have : CompactSpace (ν ⁻¹ᵁ W).toScheme := QuasiCompact.compactSpace_of_compactSpace (ν ∣_ W)
-    have : IsNoetherian (ν ⁻¹ᵁ W).toScheme := {}
-    have hfin : (irreducibleComponents (ν ⁻¹ᵁ W).toScheme).Finite :=
-      TopologicalSpace.NoetherianSpace.finite_irreducibleComponents
-    have hZ' : IsIrreducible (W.ι ⁻¹' Z) :=
-      hZ.1.preimage W.ι.isOpenEmbedding ⟨x, hxZ, ⟨⟨x, hxW⟩, rfl⟩⟩
-    have hcov : W.ι ⁻¹' Z ⊆ ⋃ C ∈ hfin.toFinset, (ν ∣_ W) '' C := by
-      intro u hu
-      obtain ⟨q, rfl⟩ := (ν ∣_ W).surjective u
-      exact Set.mem_biUnion
-        (hfin.mem_toFinset.mpr (irreducibleComponent_mem_irreducibleComponents q))
-        ⟨q, mem_irreducibleComponent, rfl⟩
-    obtain ⟨C, hC_mem, hZC⟩ := isIrreducible_iff_sUnion_isClosed.mp hZ'
-      (hfin.toFinset.image fun C ↦ (ν ∣_ W) '' C)
-      (fun T hT ↦ by
-        obtain ⟨C, hC, rfl⟩ := Finset.mem_image.mp hT
-        exact (ν ∣_ W).isClosedMap C
-          (isClosed_of_mem_irreducibleComponents C (hfin.mem_toFinset.mp hC)))
-      (by simpa only [Finset.coe_image, Set.sUnion_image, Finset.mem_coe] using hcov)
-    obtain ⟨C, hC_fin, rfl⟩ := Finset.mem_image.mp hC_mem
-    have hC : C ∈ irreducibleComponents (ν ⁻¹ᵁ W).toScheme := hfin.mem_toFinset.mp hC_fin
-    obtain ⟨q₀, hq₀⟩ := hC.1.nonempty
-    let w : irreducibleComponents Bl := IsRegular.componentOf Bl ((ν ⁻¹ᵁ W).ι q₀)
-    have hCw : (ν ⁻¹ᵁ W).ι '' C ⊆ (w : Set Bl) := by
-      rw [IsRegular.coe_componentOf]
-      exact (hC.1.image _ (ν ⁻¹ᵁ W).ι.continuous.continuousOn).isConnected.isPreconnected
-        |>.subset_connectedComponent ⟨q₀, hq₀, rfl⟩
-    -- Extend `Z ∩ W ⊆ ν '' w` to `Z ⊆ ν '' w` by irreducibility of `Z`.
-    have hZW : Z ∩ (W : Set X) ⊆ ν '' (w : Set Bl) := by
-      rintro z ⟨hzZ, hzW⟩
-      let zW : W.toScheme := ⟨z, hzW⟩
-      have hzWZ : zW ∈ W.ι ⁻¹' Z := hzZ
-      obtain ⟨q, hqC, hqz⟩ := hZC hzWZ
-      refine ⟨(ν ⁻¹ᵁ W).ι q, hCw ⟨q, hqC, rfl⟩, ?_⟩
-      have hcomm := congrArg (fun f : (ν ⁻¹ᵁ W).toScheme ⟶ X ↦ f q) (morphismRestrict_ι ν W)
-      simpa only [zW, Scheme.Hom.comp_apply, hqz, Scheme.Opens.ι_apply] using hcomm.symm
-    have hZsub : Z ⊆ ν '' (w : Set Bl) := by
-      have hcl_w : IsClosed (ν '' (w : Set Bl)) :=
-        hclosed w.1 (isClosed_of_mem_irreducibleComponents w.1 w.2)
-      rcases isIrreducible_iff_sUnion_isClosed.mp hZ.1 {ν '' (w : Set Bl), (W : Set X)ᶜ}
-        (by simp [hcl_w, W.isOpen.isClosed_compl])
-        (fun z hz ↦ by
-          by_cases hzW : z ∈ (W : Set X)
-          · exact Set.mem_sUnion.mpr ⟨ν '' (w : Set Bl), by simp, hZW ⟨hz, hzW⟩⟩
-          · exact Set.mem_sUnion.mpr ⟨(W : Set X)ᶜ, by simp, hzW⟩) with
-        ⟨T, hT, hZT⟩
-      simp only [Finset.mem_insert, Finset.mem_singleton] at hT
-      rcases hT with rfl | rfl
-      · exact hZT
-      · exact absurd hxW (hZT hxZ)
-    exact ⟨w, hZsub.antisymm (hZ.2 (w.2.1.image ν ν.continuous.continuousOn) hZsub)⟩
-  -- 3. Combine injectivity on inclusions and surjectivity to conclude every `ν '' v` is maximal
-  --    irreducible in `X`.
-  have himg_mem (v : irreducibleComponents Bl) : ν '' (v : Set Bl) ∈ irreducibleComponents X := by
-    obtain ⟨Z, hZ, hvZ⟩ := exists_mem_irreducibleComponents_subset_of_isIrreducible _
-      (v.2.1.image ν ν.continuous.continuousOn)
-    obtain ⟨w, rfl⟩ := hsurj Z hZ
-    rwa [hinj_sub hvZ]
-  exact Equiv.ofBijective (fun v ↦ ⟨ν '' (v : Set Bl), himg_mem v⟩)
-    ⟨fun v w h ↦ hinj_sub (congrArg Subtype.val h).le,
-      fun ⟨Z, hZ⟩ ↦ (hsurj Z hZ).imp fun w hw ↦ Subtype.ext hw.symm⟩
+  Equiv.ofBijective
+    (fun v ↦ ⟨(X.singularLocus K).blowupToBase '' (v : Set (X.singularLocus K).blowup),
+      X.image_blowupToBase_mem_irreducibleComponents hnodal v⟩)
+    ⟨fun _ _ h ↦ X.eq_of_image_blowupToBase_subset hnodal (congrArg Subtype.val h).le,
+      fun ⟨_, hZ⟩ ↦ (X.exists_eq_image_blowupToBase_of_mem_irreducibleComponents hnodal hZ).imp
+        fun _ hw ↦ Subtype.ext hw.symm⟩
 
 @[simp]
 theorem coe_irreducibleComponentsBlowupEquiv
@@ -232,9 +296,9 @@ theorem coe_irreducibleComponentsBlowupEquiv
       (X.singularLocus K).blowupToBase '' (v : Set (X.singularLocus K).blowup) :=
   (rfl)
 
-/-- On a proper nodal curve over any field, the blowup of the singular subscheme has finitely many
-irreducible components. -/
-theorem finite_irreducibleComponents_blowup_singularLocus [IsProper (X ↘ Spec (.of K))]
+/-- On a quasi-compact nodal curve over any field, the blowup of the singular subscheme has finitely
+many irreducible components. -/
+theorem finite_irreducibleComponents_blowup_singularLocus [QuasiCompact (X ↘ Spec (.of K))]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
     letI := hnodal.syntomic
     Finite (irreducibleComponents (X.singularLocus K).blowup) := by
@@ -260,7 +324,7 @@ theorem nonempty_irreducibleComponents_blowup_singularLocus [Nonempty X]
   have := X.surjective_blowupToBase_singularLocus hnodal
   obtain ⟨x⟩ := (inferInstance : Nonempty X)
   obtain ⟨y, -⟩ := (X.singularLocus K).blowupToBase.surjective x
-  exact ⟨IsRegular.componentOf (X.singularLocus K).blowup y⟩
+  exact ⟨componentOf (X.singularLocus K).blowup y⟩
 
 /-! ### Normalized component schemes -/
 
@@ -273,7 +337,7 @@ def normalizedComponent
     Scheme.{u} :=
   letI := hnodal.syntomic
   letI := X.isRegular_blowup_singularLocus hnodal
-  (IsRegular.componentOpen (X.singularLocus K).blowup v).toScheme
+  (componentOpen (X.singularLocus K).blowup v).toScheme
 
 /-- Canonical clopen immersion of a normalized component into the blowup of `Sing(X/K)`. -/
 def normalizedComponentι
@@ -283,7 +347,7 @@ def normalizedComponentι
     X.normalizedComponent hnodal v ⟶ (X.singularLocus K).blowup :=
   letI := hnodal.syntomic
   letI := X.isRegular_blowup_singularLocus hnodal
-  (IsRegular.componentOpen (X.singularLocus K).blowup v).ι
+  (componentOpen (X.singularLocus K).blowup v).ι
 
 instance isOpenImmersion_normalizedComponentι
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
@@ -292,7 +356,7 @@ instance isOpenImmersion_normalizedComponentι
     IsOpenImmersion (X.normalizedComponentι hnodal v) :=
   letI := hnodal.syntomic
   letI := X.isRegular_blowup_singularLocus hnodal
-  inferInstanceAs (IsOpenImmersion (IsRegular.componentOpen (X.singularLocus K).blowup v).ι)
+  inferInstanceAs (IsOpenImmersion (componentOpen (X.singularLocus K).blowup v).ι)
 
 instance isClosedImmersion_normalizedComponentι
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
@@ -301,7 +365,7 @@ instance isClosedImmersion_normalizedComponentι
     IsClosedImmersion (X.normalizedComponentι hnodal v) :=
   letI := hnodal.syntomic
   letI := X.isRegular_blowup_singularLocus hnodal
-  inferInstanceAs (IsClosedImmersion (IsRegular.componentOpen (X.singularLocus K).blowup v).ι)
+  inferInstanceAs (IsClosedImmersion (componentOpen (X.singularLocus K).blowup v).ι)
 
 @[simp]
 theorem range_normalizedComponentι
@@ -311,8 +375,8 @@ theorem range_normalizedComponentι
     Set.range (X.normalizedComponentι hnodal v) = (v : Set (X.singularLocus K).blowup) := by
   have := hnodal.syntomic
   have := X.isRegular_blowup_singularLocus hnodal
-  exact (Scheme.Opens.range_ι (IsRegular.componentOpen (X.singularLocus K).blowup v)).trans
-    (IsRegular.coe_componentOpen v)
+  exact (Scheme.Opens.range_ι (componentOpen (X.singularLocus K).blowup v)).trans
+    (coe_componentOpen v)
 
 /-- When `Bl X` is irreducible (`v = Set.univ`), `normalizedComponentι` is an isomorphism. -/
 theorem isIso_normalizedComponentι_of_eq_univ
@@ -322,14 +386,9 @@ theorem isIso_normalizedComponentι_of_eq_univ
     letI := hnodal.syntomic
     IsIso (X.normalizedComponentι hnodal v) := by
   have := hnodal.syntomic
-  have := X.isRegular_blowup_singularLocus hnodal
-  have hv_top : IsRegular.componentOpen (X.singularLocus K).blowup v = ⊤ :=
-    TopologicalSpace.Opens.ext
-      (by rw [IsRegular.coe_componentOpen, TopologicalSpace.Opens.coe_top, hv])
-  have aux : ∀ U : (X.singularLocus K).blowup.Opens, U = ⊤ → IsIso U.ι := by
-    rintro _ rfl
-    exact (X.singularLocus K).blowup.topIso.isIso_hom
-  exact aux _ hv_top
+  refine isIso_of_isOpenImmersion_of_opensRange_eq_top _ (TopologicalSpace.Opens.ext ?_)
+  rw [Scheme.Hom.coe_opensRange, X.range_normalizedComponentι hnodal v, hv,
+    TopologicalSpace.Opens.coe_top]
 
 instance instOverNormalizedComponent
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
@@ -353,7 +412,7 @@ instance isRegular_normalizedComponent
     IsRegular (X.normalizedComponent hnodal v) :=
   letI := hnodal.syntomic
   letI := X.isRegular_blowup_singularLocus hnodal
-  inferInstanceAs (IsRegular (IsRegular.componentOpen (X.singularLocus K).blowup v).toScheme)
+  inferInstanceAs (IsRegular (componentOpen (X.singularLocus K).blowup v).toScheme)
 
 instance isIntegral_normalizedComponent
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
@@ -361,7 +420,7 @@ instance isIntegral_normalizedComponent
     IsIntegral (X.normalizedComponent hnodal v) :=
   letI := hnodal.syntomic
   letI := X.isRegular_blowup_singularLocus hnodal
-  inferInstanceAs (IsIntegral (IsRegular.componentOpen (X.singularLocus K).blowup v).toScheme)
+  inferInstanceAs (IsIntegral (componentOpen (X.singularLocus K).blowup v).toScheme)
 
 instance locallyOfFiniteType_normalizedComponent
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
@@ -393,11 +452,11 @@ theorem topologicalKrullDim_normalizedComponent
   have : IsRegular Bl := X.isRegular_blowup_singularLocus hnodal
   have : IsFinite ν := X.isFinite_blowupToBase_singularLocus hnodal
   have : IsIso (ν ∣_ U) := X.isIso_blowupToBase_singularLocus_restrict_smoothLocus
-  let Cv := IsRegular.componentOpen Bl v
+  let Cv := componentOpen Bl v
   let Wv : Bl.Opens := Cv ⊓ (ν ⁻¹ᵁ U)
-  obtain ⟨y, hy_v, hy_U⟩ := (X.dense_preimage_smoothLocus_blowupToBase hnodal).inter_open_nonempty
-    (v : Set Bl) (IsRegular.isOpen_of_mem_irreducibleComponents v.2) v.2.1.nonempty
-  have : Nonempty Wv.toScheme := ⟨⟨y, IsRegular.mem_componentOpen.mpr hy_v, hy_U⟩⟩
+  obtain ⟨y, hy_v, hy_U⟩ := (X.dense_preimage_smoothLocus_blowupToBase (R := K)).inter_open_nonempty
+    (v : Set Bl) (isOpen_of_mem_irreducibleComponents_of_isDomain_stalk v.2) v.2.1.nonempty
+  have : Nonempty Wv.toScheme := ⟨⟨y, mem_componentOpen.mpr hy_v, hy_U⟩⟩
   let iCv : Wv.toScheme ⟶ Cv.toScheme := Bl.homOfLE inf_le_left
   let iU : Wv.toScheme ⟶ (ν ⁻¹ᵁ U).toScheme := Bl.homOfLE inf_le_right
   have hj_eq : Wv.ι ≫ ν = iU ≫ (ν ∣_ U) ≫ U.ι := by
@@ -414,9 +473,9 @@ theorem topologicalKrullDim_normalizedComponent
     ext x
     constructor
     · rintro ⟨⟨z, hz_v, hz_U⟩, rfl⟩
-      exact ⟨⟨z, IsRegular.mem_componentOpen.mp hz_v, rfl⟩, hz_U⟩
+      exact ⟨⟨z, mem_componentOpen.mp hz_v, rfl⟩, hz_U⟩
     · rintro ⟨⟨z, hz_v, rfl⟩, hz_U⟩
-      exact ⟨⟨z, IsRegular.mem_componentOpen.mpr hz_v, hz_U⟩, rfl⟩
+      exact ⟨⟨z, mem_componentOpen.mpr hz_v, hz_U⟩, rfl⟩
   have hpure : IsPureDimensional 1 X :=
     ((pureRelativeDimension_iff_of_field (X ↘ Spec (.of K))).mp inferInstance).2
   dsimp only [normalizedComponent]
@@ -451,148 +510,19 @@ instance finiteDimensional_cohomology_one_normalizedComponent [IsProper (X ↘ S
   finiteDimensional_cohomology_one_trivial_of_isProper K
     (X.topologicalKrullDim_normalizedComponent hnodal v)
 
-/-- A connected smooth nodal curve over a field is smooth of relative dimension one. -/
-theorem smoothOfRelativeDimension_one_of_smooth [ConnectedSpace X] [Smooth (X ↘ Spec (.of K))]
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
-    SmoothOfRelativeDimension 1 (X ↘ Spec (.of K)) := by
-  have := hnodal.syntomic
-  have : IsRegular X := IsRegular.of_smooth (X ↘ Spec (.of K))
-  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-  have hpure : IsPureDimensional 1 X :=
-    ((pureRelativeDimension_iff_of_field (X ↘ Spec (.of K))).mp inferInstance).2
-  have hdim : topologicalKrullDim X = 1 := by
-    rw [(Homeomorph.Set.univ X).symm.isHomeomorph.topologicalKrullDim_eq]
-    exact isPureDimensional_iff.mp hpure Set.univ (by simp [irreducibleComponents_eq_singleton])
-  exact smoothOfRelativeDimension_of_topologicalKrullDim_eq (X ↘ Spec (.of K)) hdim
+end Nodal
 
-/-! ### Smooth markings and their lifts to the normalization -/
+end AlgebraicGeometry.Scheme
 
-/-- A morphism into `X` whose image lies in the smooth locus lifts canonically to the blowup of the
-singular subscheme, because the singular subscheme pulls back to the unit ideal sheaf. -/
-def markingLift (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
-    {T : Scheme.{u}} (s : T ⟶ X)
-    (hs : letI := hnodal.syntomic; Set.range s ⊆ (X ↘ Spec (.of K)).smoothLocus) :
-    letI := hnodal.syntomic
-    T ⟶ (X.singularLocus K).blowup := by
-  letI := hnodal.syntomic
-  refine (X.singularLocus K).blowupLift s ?_
-  have htop : (X.singularLocus K).comap s = ⊤ := by
-    refine ((X.singularLocus K).comap_eq_top_iff s).mpr (TopologicalSpace.Opens.ext ?_)
-    rw [TopologicalSpace.Opens.coe_top, Set.eq_univ_iff_forall]
-    intro t
-    rw [Scheme.Hom.coe_preimage, Set.mem_preimage, TopologicalSpace.Closeds.coe_compl,
-      Set.mem_compl_iff, SetLike.mem_coe, X.mem_support_singularLocus_iff_notMem_smoothLocus,
-      not_not]
-    exact hs ⟨t, rfl⟩
-  rw [htop]
-  exact IdealSheafData.isEffectiveCartier_top T
+/-! ### Base change of normalized components -/
 
-@[reassoc (attr := simp)]
-theorem markingLift_blowupToBase (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
-    {T : Scheme.{u}} (s : T ⟶ X)
-    (hs : letI := hnodal.syntomic; Set.range s ⊆ (X ↘ Spec (.of K)).smoothLocus) :
-    letI := hnodal.syntomic
-    X.markingLift hnodal s hs ≫ (X.singularLocus K).blowupToBase = s := by
-  have := hnodal.syntomic
-  exact (X.singularLocus K).blowupLift_blowupToBase _ _
+namespace TauCeti.AlgebraicGeometry
 
-/-! ### Base change of the normalization and normalized components -/
-
-section BaseChange
-
-private theorem eqToHom_blowupToBase {Y : Scheme.{u}} {J₁ J₂ : Y.IdealSheafData} (h : J₁ = J₂) :
-    eqToHom (congrArg IdealSheafData.blowup h) ≫ J₂.blowupToBase = J₁.blowupToBase := by
-  cases h
-  simp
-
-/-- Canonical base-change morphism `(X'.singularLocus L).blowup ⟶ (X.singularLocus K).blowup`
-induced by a pullback square of nodal curves along a field extension `L / K`. -/
-def blowupSingularLocusMap {K L : Type u} [Field K] [Field L] [Algebra K L]
-    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
-    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
-    {g : X' ⟶ X}
-    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
-    letI := hnodal.syntomic
-    letI := hnodal'.syntomic
-    (X'.singularLocus L).blowup ⟶ (X.singularLocus K).blowup :=
-  letI := hnodal.syntomic
-  letI := hnodal'.syntomic
-  eqToHom (congrArg IdealSheafData.blowup (Scheme.singularLocus_eq_comap_of_isPullback H)) ≫
-    (X.singularLocus K).blowupMap g
-
-@[reassoc (attr := simp)]
-theorem blowupSingularLocusMap_blowupToBase {K L : Type u} [Field K] [Field L] [Algebra K L]
-    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
-    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
-    {g : X' ⟶ X}
-    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
-    letI := hnodal.syntomic
-    letI := hnodal'.syntomic
-    blowupSingularLocusMap hnodal hnodal' H ≫ (X.singularLocus K).blowupToBase =
-      (X'.singularLocus L).blowupToBase ≫ g := by
-  have := hnodal.syntomic
-  have := hnodal'.syntomic
-  dsimp only [blowupSingularLocusMap]
-  rw [Category.assoc, IdealSheafData.blowupMap_blowupToBase, ← Category.assoc,
-    eqToHom_blowupToBase (Scheme.singularLocus_eq_comap_of_isPullback H)]
-
-/-- Blowing up `Sing(X/K)` commutes with base change along any field extension `L / K`. -/
-theorem isPullback_blowupSingularLocusMap {K L : Type u} [Field K] [Field L] [Algebra K L]
-    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
-    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
-    {g : X' ⟶ X}
-    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
-    letI := hnodal.syntomic
-    letI := hnodal'.syntomic
-    IsPullback (X'.singularLocus L).blowupToBase (blowupSingularLocusMap hnodal hnodal' H)
-      g (X.singularLocus K).blowupToBase := by
-  have := hnodal.syntomic
-  have := hnodal'.syntomic
-  have : Flat (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
-    rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
-    infer_instance
-  have : Flat g := MorphismProperty.of_isPullback H.flip inferInstance
-  have hI : X'.singularLocus L = (X.singularLocus K).comap g :=
-    Scheme.singularLocus_eq_comap_of_isPullback H
-  let eBl : (X'.singularLocus L).blowup ≅ ((X.singularLocus K).comap g).blowup :=
-    eqToIso (congrArg IdealSheafData.blowup hI)
-  have heBl : eBl.hom ≫ ((X.singularLocus K).comap g).blowupToBase =
-      (X'.singularLocus L).blowupToBase :=
-    eqToHom_blowupToBase hI
-  exact ((X.singularLocus K).isPullback_blowupMap_of_flat g).of_iso
-    eBl.symm (Iso.refl _) (Iso.refl _) (Iso.refl _)
-    (by simp [eBl, ← heBl]) (by simp [blowupSingularLocusMap, eBl]) (by simp) (by simp)
-
-/-- Composing with the curve structure morphisms exhibits `(X'.singularLocus L).blowup` as the base
-change of `(X.singularLocus K).blowup` along `Spec L ⟶ Spec K`. -/
-theorem isPullback_blowupSingularLocusMap_over {K L : Type u} [Field K] [Field L] [Algebra K L]
-    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
-    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
-    {g : X' ⟶ X}
-    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
-    letI := hnodal.syntomic
-    letI := hnodal'.syntomic
-    IsPullback (blowupSingularLocusMap hnodal hnodal' H)
-      ((X'.singularLocus L).blowupToBase ≫ (X' ↘ Spec (.of L)))
-      ((X.singularLocus K).blowupToBase ≫ (X ↘ Spec (.of K)))
-      (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
-  have := hnodal.syntomic
-  have := hnodal'.syntomic
-  exact (isPullback_blowupSingularLocusMap hnodal hnodal' H).flip.paste_vert H
-
-/-- **Over a separably closed ground field `K`, each normalized component of a base change `X'`
-along any field extension `L / K` is the base change of the corresponding normalized component of
-`X`.** -/
-theorem exists_isPullback_normalizedComponent {K L : Type u} [Field K] [IsSepClosed K]
-    [Field L] [Algebra K L]
+/-- **Under any field extension `L / K` with geometrically irreducible `Spec L ⟶ Spec K` (in
+particular whenever `K` is separably closed), each normalized component of a base change `X'` is the
+base change of the corresponding normalized component of `X`.** -/
+theorem exists_isPullback_normalizedComponent {K L : Type u} [Field K] [Field L] [Algebra K L]
+    [GeometricallyIrreducible (Spec.map (CommRingCat.ofHom (algebraMap K L)))]
     {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
     (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
@@ -604,23 +534,19 @@ theorem exists_isPullback_normalizedComponent {K L : Type u} [Field K] [IsSepClo
     letI := hnodal'.syntomic
     ∃ g_v : X'.normalizedComponent hnodal' v' ⟶
         X.normalizedComponent hnodal
-          (irreducibleComponentsEquivOfIsPullback
-            (isPullback_blowupSingularLocusMap_over hnodal hnodal' H) v'),
+          (irreducibleComponentsEquivOfIsPullback (isPullback_blowupSingularLocusMap_over H) v'),
       g_v ≫ X.normalizedComponentι hnodal _ =
-        X'.normalizedComponentι hnodal' v' ≫ blowupSingularLocusMap hnodal hnodal' H ∧
+        X'.normalizedComponentι hnodal' v' ≫ blowupSingularLocusMap H ∧
       IsPullback g_v
         (X'.normalizedComponent hnodal' v' ↘ Spec (.of L))
         (X.normalizedComponent hnodal
-          (irreducibleComponentsEquivOfIsPullback
-            (isPullback_blowupSingularLocusMap_over hnodal hnodal' H) v') ↘ Spec (.of K))
+          (irreducibleComponentsEquivOfIsPullback (isPullback_blowupSingularLocusMap_over H) v') ↘
+            Spec (.of K))
         (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
   have := hnodal.syntomic
   have := hnodal'.syntomic
   have := X.isRegular_blowup_singularLocus hnodal
   have := X'.isRegular_blowup_singularLocus hnodal'
-  exact IsRegular.exists_isPullback_componentOpen
-    (isPullback_blowupSingularLocusMap_over hnodal hnodal' H) v'
+  exact exists_isPullback_componentOpen (isPullback_blowupSingularLocusMap_over H) v'
 
-end BaseChange
-
-end AlgebraicGeometry.Scheme
+end TauCeti.AlgebraicGeometry

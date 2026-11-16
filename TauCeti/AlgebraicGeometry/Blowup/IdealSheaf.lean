@@ -126,6 +126,13 @@ abbrev blowup : Scheme.{u} :=
 abbrev blowupToBase : I.blowup ⟶ X :=
   I.reesAlgebra.obj.relativeProjToBase
 
+/-- Transporting along an equality of ideal sheaves commutes with `blowupToBase`. -/
+@[reassoc]
+theorem eqToHom_blowupToBase {J₁ J₂ : X.IdealSheafData} (h : J₁ = J₂) :
+    eqToHom (congrArg IdealSheafData.blowup h) ≫ J₂.blowupToBase = J₁.blowupToBase := by
+  cases h
+  simp
+
 /-- The **affine chart of the blowup** over an affine open `U` of `X`: the open immersion of the
 blowup `Proj Γ(X, U)[I(U)t]` of `Spec Γ(X, U)` along `V(I(U))` into the blowup of `X` along
 `V(I)`. Its image is the preimage of `U` (`isPullback_blowupChart`). -/

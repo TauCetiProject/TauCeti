@@ -54,6 +54,9 @@ subschemes.
   inseparable field extension gives a geometrically irreducible morphism of spectra.
 * `TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isSepClosed`: over a separably closed
   field, a morphism from an irreducible affine scheme is geometrically irreducible.
+* `TauCeti.AlgebraicGeometry.irreducibleComponentsEquivOfIsPullback`: base change along a
+  geometrically irreducible universally open morphism induces an equivalence on irreducible
+  components.
 * `TauCeti.AlgebraicGeometry.bijOn_preimage_irreducibleComponents_of_isSepClosed`: over a separably
   closed field, preimage under a base change `X' ⟶ X` to a `K`-algebra with irreducible spectrum is
   a bijection from the irreducible components of `X` to those of `X'`.
@@ -181,6 +184,45 @@ instance geometricallyIrreducible_Spec_of_isSepClosed {K A : Type u} [Field K] [
     exact GeometricallyIrreducible.comp _ _
   exact GeometricallyIrreducible.of_comp_of_surjective p _
 
+/-- Base change along a geometrically irreducible universally open morphism `h : S' ⟶ S` induces an
+equivalence on irreducible components. Over a field `K` that is separably closed, this applies in
+particular to `h = Spec.map (CommRingCat.ofHom (algebraMap K M))` for any `K`-algebra `M` with
+irreducible spectrum. -/
+noncomputable def irreducibleComponentsEquivOfIsPullback
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h) :
+    irreducibleComponents X' ≃ irreducibleComponents X :=
+  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
+  g.irreducibleComponentsEquiv g.isOpenMap
+
+@[simp]
+theorem coe_irreducibleComponentsEquivOfIsPullback
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h)
+    (v' : irreducibleComponents X') :
+    (irreducibleComponentsEquivOfIsPullback H v' : Set X) = g '' (v' : Set X') := by
+  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
+  exact g.irreducibleComponentsEquiv_apply_coe g.isOpenMap v'
+
+@[simp]
+theorem coe_irreducibleComponentsEquivOfIsPullback_symm
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h)
+    (v : irreducibleComponents X) :
+    ((irreducibleComponentsEquivOfIsPullback H).symm v : Set X') = g ⁻¹' (v : Set X) := by
+  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
+  exact g.irreducibleComponentsEquiv_symm_apply_coe g.isOpenMap v
+
+theorem preimage_coe_irreducibleComponentsEquivOfIsPullback
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h)
+    (v' : irreducibleComponents X') :
+    g ⁻¹' (irreducibleComponentsEquivOfIsPullback H v' : Set X) = (v' : Set X') := by
+  rw [← coe_irreducibleComponentsEquivOfIsPullback_symm H, Equiv.symm_apply_apply]
+
 /-- **The irreducible components of a scheme over a separably closed field are geometrically
 irreducible.** Let `X` be a scheme over a separably closed field `K` and `X'` its base change to a
 `K`-algebra `M` with irreducible spectrum, for instance a field extension of `K`, with projection
@@ -191,15 +233,13 @@ theorem bijOn_preimage_irreducibleComponents_of_isSepClosed {K M : Type u} [Fiel
     {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} {f' : X' ⟶ Spec (.of M)} {g : X' ⟶ X}
     (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K M)))) :
     Set.BijOn (g ⁻¹' ·) (irreducibleComponents X) (irreducibleComponents X') := by
-  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
-  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
-  let e := g.irreducibleComponentsEquiv g.isOpenMap
-  refine ⟨fun Z hZ ↦ ?_, fun Z _ W _ h ↦ Set.preimage_injective.mpr g.surjective h,
-    fun Z' hZ' ↦ ⟨e ⟨Z', hZ'⟩, (e ⟨Z', hZ'⟩).2, ?_⟩⟩
-  · have := (e.symm ⟨Z, hZ⟩).2
-    rwa [g.irreducibleComponentsEquiv_symm_apply_coe] at this
-  · dsimp only
-    rw [← g.irreducibleComponentsEquiv_symm_apply_coe g.isOpenMap, e.symm_apply_apply]
+  let e := (irreducibleComponentsEquivOfIsPullback H).symm
+  refine ⟨fun Z hZ ↦ ?_, fun Z hZ W hW h ↦ ?_,
+    fun Z' hZ' ↦ ⟨e.symm ⟨Z', hZ'⟩, (e.symm ⟨Z', hZ'⟩).2,
+      preimage_coe_irreducibleComponentsEquivOfIsPullback H ⟨Z', hZ'⟩⟩⟩
+  · simpa [e] using (e ⟨Z, hZ⟩).2
+  · have h' : (e ⟨Z, hZ⟩ : Set X') = (e ⟨W, hW⟩ : Set X') := by simpa [e] using h
+    exact congrArg Subtype.val (e.injective (Subtype.ext h'))
 
 /-! ### Images and dense opens -/
 

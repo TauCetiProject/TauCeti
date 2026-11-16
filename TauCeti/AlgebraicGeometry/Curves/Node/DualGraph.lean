@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Iso
 public import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
 public import TauCeti.AlgebraicGeometry.Curves.Node.NormalizedComponent
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 import Mathlib.Tactic.FinCases
 import TauCeti.AlgebraicGeometry.FiniteEtale.SepClosed
 import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
@@ -35,29 +36,32 @@ This file assembles those geometric data into a combinatorial `TauCeti.DualGraph
 * **Markings**: each smooth marking lifts uniquely to `Bl X` and records the component containing
   its image (`AlgebraicGeometry.Scheme.marking_dualGraph_eq_iff`).
 * **Connectedness**: topological connectedness of `X` forces the component-node incidence graph to
-  be connected (`AlgebraicGeometry.Scheme.connected_dualGraphEndpoint`).
+  be connected.
 
 All combinatorial invariants of `X.dualGraph` are then read directly off the geometry of `X`: the
 valence of `v` counts the branches (equivalently, the preimages of nodes) lying on `v`
 (`AlgebraicGeometry.Scheme.valence_dualGraph`), and `v` carries no self-node loop if and only if
 the normalization map `ν` is injective on `v`
 (`AlgebraicGeometry.Scheme.forall_endpoint_dualGraph_one_ne_iff_injOn`). When `X` is smooth, the
-dual graph has a single vertex, no edges, and arithmetic genus equal to `X.genus K`
+dual graph has first Betti number zero (`AlgebraicGeometry.Scheme.firstBetti_dualGraph_of_smooth`)
+and arithmetic genus equal to `X.genus K`
 (`AlgebraicGeometry.Scheme.arithmeticGenus_dualGraph_eq_genus_of_smooth`).
 
 Finally, because `Sing(X/K)`, `E`, the irreducible components of `Bl X`, and the genera of proper
 curves are all preserved under base change from a separably closed field `K` to any separably closed
 extension `L / K` (even an inseparable one), base change induces a canonical isomorphism of dual
-graphs (`AlgebraicGeometry.Scheme.dualGraphIsoOfIsPullback`). Specializing to `L = K` yields
+graphs (`TauCeti.AlgebraicGeometry.dualGraphIsoOfIsPullback`, functorial along field towers via
+`TauCeti.AlgebraicGeometry.dualGraphIsoOfIsPullback_trans`). Specializing to `L = K` yields
 isomorphism invariance and functoriality for pointed nodal curves over `K`
-(`AlgebraicGeometry.Scheme.dualGraphIsoOfIso`).
+(`TauCeti.AlgebraicGeometry.dualGraphIsoOfIso`).
 
 ## References
 
 * [The Stacks Project, Tag 0C46](https://stacks.math.columbia.edu/tag/0C46): nodal curves and
   separation of branches.
-* [The Stacks Project, Tag 0E6X](https://stacks.math.columbia.edu/tag/0E6X): semistable and stable
-  curves via rational tails and bridges.
+* [The Stacks Project, Tag 0E6X](https://stacks.math.columbia.edu/tag/0E6X) and
+  [Tag 0E73](https://stacks.math.columbia.edu/tag/0E73): semistable and stable curves via rational
+  tails and bridges.
 * E. Arbarello, M. Cornalba and P. A. Griffiths, *Geometry of Algebraic Curves, Volume II*,
   Chapter X, §2.
 -/
@@ -70,25 +74,41 @@ open CategoryTheory Limits AlgebraicGeometry TauCeti TauCeti.AlgebraicGeometry
 
 universe u v
 
+private theorem isPullback_of_iso_over {K : Type u} [Field K]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of K))]
+    (e : X' ≅ X) (he : e.hom ≫ (X ↘ Spec (.of K)) = X' ↘ Spec (.of K)) :
+    letI : Algebra K K := Algebra.id K
+    IsPullback e.hom (X' ↘ Spec (.of K)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
+  let _ : Algebra K K := Algebra.id K
+  have hSpec_id : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) := by simp
+  rw [hSpec_id]
+  exact IsPullback.of_horiz_isIso ⟨by simp [he]⟩
+
 namespace AlgebraicGeometry.Scheme
+
+/-- Over a commutative ring with finite spectrum (in particular over any field), a quasi-compact
+nodal relative curve has finitely many singular points. -/
+theorem finite_singularLocus_subscheme {R : Type u} [CommRing R] [Finite (Spec (.of R))]
+    (X : Scheme.{u}) [X.Over (Spec (.of R))] [QuasiCompact (X ↘ Spec (.of R))]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) :
+    letI := hnodal.syntomic
+    Finite (X.singularLocus R).subscheme := by
+  have := hnodal.syntomic
+  have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
+  have : Unramified ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
+    hAffine.unramified_singularLocus
+  exact Set.finite_univ_iff.mp
+    (((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))).finite_preimage Set.finite_univ)
 
 section SepClosed
 
 variable {K : Type u} [Field K] [IsSepClosed K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
 
-/-- Over a separably closed field, a proper nodal curve has finitely many singular points. -/
-theorem finite_singularLocus_subscheme [IsProper (X ↘ Spec (.of K))]
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
-    letI := hnodal.syntomic
-    Finite (X.singularLocus K).subscheme := by
-  have := hnodal.syntomic
-  have := X.isFinite_singularLocus_subschemeι_comp hnodal
-  have := X.etale_singularLocus_subschemeι_comp hnodal
-  exact ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))).finite_of_isSepClosed
-
-/-- Over a separably closed field, every singular point of a proper nodal curve has two branches in
-the branch scheme. -/
-theorem natCard_branchFiber_eq_two [IsProper (X ↘ Spec (.of K))]
+/-- Over a separably closed field, every singular point of a nodal curve has two branches in the
+branch scheme. -/
+theorem natCard_branchFiber_eq_two
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
     (e : letI := hnodal.syntomic; (X.singularLocus K).subscheme) :
     letI := hnodal.syntomic
@@ -96,7 +116,6 @@ theorem natCard_branchFiber_eq_two [IsProper (X ↘ Spec (.of K))]
   have := hnodal.syntomic
   have := X.isFinite_branchSchemeToSingularLocus hnodal
   have := X.etale_branchSchemeToSingularLocus hnodal
-  have := X.isFinite_singularLocus_subschemeι_comp hnodal
   have := X.etale_singularLocus_subschemeι_comp hnodal
   exact ((X.branchSchemeToSingularLocus K).natCard_preimage_eq_finrank_of_isSepClosed
     ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) e).trans
@@ -105,19 +124,15 @@ theorem natCard_branchFiber_eq_two [IsProper (X ↘ Spec (.of K))]
 /-- Choice of ordering of the two branches of `X` over a node `e`, used to populate the ordered
 `endpoint : Edge → Fin 2 → Vertex` field of `DualGraph`. All downstream statements pass immediately
 through `sym2_dualGraphEndpoint_eq_of_ne`, which is independent of this ordering. -/
-private def branchFiberEquiv [IsProper (X ↘ Spec (.of K))]
+private def branchFiberEquiv
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
     (e : letI := hnodal.syntomic; (X.singularLocus K).subscheme) :
     letI := hnodal.syntomic
     Fin 2 ≃ {b : X.branchScheme K // X.branchSchemeToSingularLocus K b = e} := by
   letI := hnodal.syntomic
   have := X.isFinite_branchSchemeToSingularLocus hnodal
-  have := X.etale_branchSchemeToSingularLocus hnodal
-  have := X.isFinite_singularLocus_subschemeι_comp hnodal
-  have := X.etale_singularLocus_subschemeι_comp hnodal
-  have : Finite (X.branchScheme K) :=
-    (X.branchSchemeToSingularLocus K ≫ (X.singularLocus K).subschemeι ≫
-      (X ↘ Spec (.of K))).finite_of_isSepClosed
+  have : Finite {b : X.branchScheme K // X.branchSchemeToSingularLocus K b = e} :=
+    ((X.branchSchemeToSingularLocus K).finite_preimage_singleton e).to_subtype
   let _ : Fintype {b : X.branchScheme K // X.branchSchemeToSingularLocus K b = e} :=
     Fintype.ofFinite _
   exact (Fintype.equivFinOfCardEq
@@ -125,19 +140,19 @@ private def branchFiberEquiv [IsProper (X ↘ Spec (.of K))]
 
 /-- Endpoint map of the dual graph of `X`, sending `(e, i)` to the irreducible component of `Bl X`
 containing the `i`-th branch over `e`. -/
-def dualGraphEndpoint [IsProper (X ↘ Spec (.of K))]
+private def dualGraphEndpoint
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
     (e : letI := hnodal.syntomic; (X.singularLocus K).subscheme) (i : Fin 2) :
     letI := hnodal.syntomic
     irreducibleComponents (X.singularLocus K).blowup :=
   letI := hnodal.syntomic
   letI := X.isRegular_blowup_singularLocus hnodal
-  IsRegular.componentOf (X.singularLocus K).blowup
+  componentOf (X.singularLocus K).blowup
     (X.branchSchemeToBlowup K (X.branchFiberEquiv hnodal e i).1)
 
 /-- Whenever `b₀ ≠ b₁` are two branches over the same node `e`, the unordered pair of endpoints of
 `e` is the pair of components of `Bl X` containing `b₀` and `b₁`. -/
-private theorem sym2_dualGraphEndpoint_eq_of_ne [IsProper (X ↘ Spec (.of K))]
+private theorem sym2_dualGraphEndpoint_eq_of_ne
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
     (e : letI := hnodal.syntomic; (X.singularLocus K).subscheme)
     {b₀ b₁ : letI := hnodal.syntomic; X.branchScheme K}
@@ -147,8 +162,8 @@ private theorem sym2_dualGraphEndpoint_eq_of_ne [IsProper (X ↘ Spec (.of K))]
     letI := hnodal.syntomic
     letI := X.isRegular_blowup_singularLocus hnodal
     s(X.dualGraphEndpoint hnodal e 0, X.dualGraphEndpoint hnodal e 1) =
-      s(IsRegular.componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₀),
-        IsRegular.componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₁)) := by
+      s(componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₀),
+        componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₁)) := by
   have := hnodal.syntomic
   have := X.isRegular_blowup_singularLocus hnodal
   let eqv := X.branchFiberEquiv hnodal e
@@ -169,9 +184,50 @@ private theorem sym2_dualGraphEndpoint_eq_of_ne [IsProper (X ↘ Spec (.of K))]
   rw [hswap i₀ i₁ hi]
   simp only [dualGraphEndpoint, eqv, h₀, h₁]
 
-/-- Topological connectedness of a proper nodal curve `X` over a separably closed field forces its
-component-node incidence graph to be connected. -/
-theorem connected_dualGraphEndpoint [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+/-- Two distinct points of `Bl X` mapping to the same point of `X` come from the two branches over
+some node `e` of `Sing(X/K)`, whose unordered endpoints are the components containing those two
+points. -/
+private theorem exists_dualGraphEndpoint_eq_of_blowupToBase_eq
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    {y₁ y₂ : letI := hnodal.syntomic; (X.singularLocus K).blowup}
+    (hne : y₁ ≠ y₂)
+    (heq : letI := hnodal.syntomic
+      (X.singularLocus K).blowupToBase y₁ = (X.singularLocus K).blowupToBase y₂) :
+    letI := hnodal.syntomic
+    letI := X.isRegular_blowup_singularLocus hnodal
+    ∃ e : (X.singularLocus K).subscheme,
+      s(X.dualGraphEndpoint hnodal e 0, X.dualGraphEndpoint hnodal e 1) =
+        s(componentOf (X.singularLocus K).blowup y₁,
+          componentOf (X.singularLocus K).blowup y₂) := by
+  have := hnodal.syntomic
+  have := X.isRegular_blowup_singularLocus hnodal
+  let ν := (X.singularLocus K).blowupToBase
+  have hx_sing : ν y₁ ∈ (X.singularLocus K).support := by
+    rw [X.mem_support_singularLocus_iff_notMem_smoothLocus]
+    intro hxU
+    have hy₂U : y₂ ∈ ν ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
+      rw [Set.mem_preimage, ← heq]
+      exact hxU
+    exact hne (X.injOn_preimage_smoothLocus_blowupToBase hxU hy₂U heq)
+  obtain ⟨e, he⟩ := (IdealSheafData.range_subschemeι (X.singularLocus K)).ge hx_sing
+  have hfib := image_preimage_eq_of_isPullback (X.isPullback_branchScheme K) {e}
+  rw [Set.image_singleton, he] at hfib
+  obtain ⟨b₁, hb₁, hb₁_eq⟩ : y₁ ∈ X.branchSchemeToBlowup K ''
+      (X.branchSchemeToSingularLocus K ⁻¹' {e}) := by
+    rw [hfib]
+    exact rfl
+  obtain ⟨b₂, hb₂, hb₂_eq⟩ : y₂ ∈ X.branchSchemeToBlowup K ''
+      (X.branchSchemeToSingularLocus K ⁻¹' {e}) := by
+    rw [hfib]
+    exact heq.symm
+  have hb_ne : b₁ ≠ b₂ := fun h ↦ hne (hb₁_eq ▸ hb₂_eq ▸ congrArg _ h)
+  refine ⟨e, ?_⟩
+  have hends := X.sym2_dualGraphEndpoint_eq_of_ne hnodal e hb₁ hb₂ hb_ne
+  rwa [hb₁_eq, hb₂_eq] at hends
+
+/-- Topological connectedness of a quasi-compact nodal curve `X` over a separably closed field
+forces its component-node incidence graph to be connected. -/
+private theorem connected_dualGraphEndpoint [QuasiCompact (X ↘ Spec (.of K))] [ConnectedSpace X]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
     letI := hnodal.syntomic
     ∀ v w : irreducibleComponents (X.singularLocus K).blowup,
@@ -191,8 +247,8 @@ theorem connected_dualGraphEndpoint [IsProper (X ↘ Spec (.of K))] [ConnectedSp
   have hfin : (Set.univ : Set (irreducibleComponents Bl)).Finite := Set.finite_univ
   intro v₀ w₀
   by_contra hw₀
-  -- 1. Partition `X` into the union `A` of components reachable from `v₀` and the union `B`
-  --    of the remaining components.
+  -- Partition `X` into the union `A` of components reachable from `v₀` and the union `B` of the
+  -- remaining components; connectedness of `X` produces an intersection point over a node.
   let R : irreducibleComponents Bl → irreducibleComponents Bl → Prop := fun v w ↦
     ∃ e, (X.dualGraphEndpoint hnodal e 0 = v ∧ X.dualGraphEndpoint hnodal e 1 = w) ∨
       (X.dualGraphEndpoint hnodal e 0 = w ∧ X.dualGraphEndpoint hnodal e 1 = v)
@@ -208,10 +264,10 @@ theorem connected_dualGraphEndpoint [IsProper (X ↘ Spec (.of K))] [ConnectedSp
   have hcov : (Set.univ : Set X) ⊆ A ∪ B := by
     intro x _
     obtain ⟨y, rfl⟩ := ν.surjective x
-    let v := IsRegular.componentOf Bl y
+    let v := componentOf Bl y
     by_cases hv : v ∈ S
-    · exact Or.inl (Set.mem_biUnion hv ⟨y, IsRegular.mem_componentOf y, rfl⟩)
-    · exact Or.inr (Set.mem_biUnion hv ⟨y, IsRegular.mem_componentOf y, rfl⟩)
+    · exact Or.inl (Set.mem_biUnion hv ⟨y, mem_componentOf y, rfl⟩)
+    · exact Or.inr (Set.mem_biUnion hv ⟨y, mem_componentOf y, rfl⟩)
   have hA_ne : (Set.univ ∩ A).Nonempty := by
     obtain ⟨y, hy⟩ := v₀.2.1.nonempty
     exact ⟨ν y, Set.mem_univ _, Set.mem_biUnion Relation.ReflTransGen.refl ⟨y, hy, rfl⟩⟩
@@ -224,31 +280,10 @@ theorem connected_dualGraphEndpoint [IsProper (X ↘ Spec (.of K))] [ConnectedSp
   obtain ⟨w, hwS, y₂, hy₂, hy₂_eq⟩ := Set.mem_iUnion₂.mp hxB
   have hvw : v ≠ w := fun h ↦ hwS (h ▸ hvS)
   have hy_ne : y₁ ≠ y₂ := fun h ↦ hvw <|
-    (IsRegular.componentOf_eq_iff.mpr hy₁).symm.trans (IsRegular.componentOf_eq_iff.mpr (h ▸ hy₂))
-  -- Since `y₁ ≠ y₂` map to the same point of `X`, that point cannot lie in the smooth locus, so it
-  -- comes from a node `e` of `Sing(X/K)` whose two branches lie on `v` and `w`.
-  have hx_sing : ν y₁ ∈ (X.singularLocus K).support := by
-    rw [X.mem_support_singularLocus_iff_notMem_smoothLocus]
-    intro hxU
-    have hy₂U : y₂ ∈ ν ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
-      rw [Set.mem_preimage, hy₂_eq]
-      exact hxU
-    exact hy_ne (X.injOn_preimage_smoothLocus_blowupToBase hnodal hxU hy₂U hy₂_eq.symm)
-  obtain ⟨e, he⟩ := (IdealSheafData.range_subschemeι (X.singularLocus K)).ge hx_sing
-  have hfib := image_preimage_eq_of_isPullback (X.isPullback_branchScheme K) {e}
-  rw [Set.image_singleton, he] at hfib
-  have hy₁_br : y₁ ∈ X.branchSchemeToBlowup K '' (X.branchSchemeToSingularLocus K ⁻¹' {e}) := by
-    rw [hfib]
-    exact rfl
-  have hy₂_br : y₂ ∈ X.branchSchemeToBlowup K '' (X.branchSchemeToSingularLocus K ⁻¹' {e}) := by
-    rw [hfib]
-    exact hy₂_eq
-  obtain ⟨b₁, hb₁, hb₁_eq⟩ := hy₁_br
-  obtain ⟨b₂, hb₂, hb₂_eq⟩ := hy₂_br
-  have hb_ne : b₁ ≠ b₂ := fun h ↦ hy_ne (hb₁_eq ▸ hb₂_eq ▸ congrArg _ h)
-  have hends := X.sym2_dualGraphEndpoint_eq_of_ne hnodal e hb₁ hb₂ hb_ne
-  rw [hb₁_eq, hb₂_eq, IsRegular.componentOf_eq_iff.mpr hy₁,
-    IsRegular.componentOf_eq_iff.mpr hy₂] at hends
+    (componentOf_eq_iff.mpr hy₁).symm.trans (componentOf_eq_iff.mpr (h ▸ hy₂))
+  obtain ⟨e, hends⟩ :=
+    X.exists_dualGraphEndpoint_eq_of_blowupToBase_eq hnodal hy_ne hy₂_eq.symm
+  rw [componentOf_eq_iff.mpr hy₁, componentOf_eq_iff.mpr hy₂] at hends
   exact hwS (hvS.tail ⟨e, Sym2.eq_iff.mp hends⟩)
 
 /-- **The dual graph of a proper connected nodal curve over a separably closed field**, equipped
@@ -272,8 +307,8 @@ def dualGraph [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
     Edge := (X.singularLocus K).subscheme
     endpoint := X.dualGraphEndpoint hnodal
     genus := fun v ↦ (X.normalizedComponent hnodal v).genus K
-    marking := fun i ↦ IsRegular.componentOf (X.singularLocus K).blowup
-      (X.markingLift hnodal (s i) (hs i) default)
+    marking := fun i ↦ componentOf (X.singularLocus K).blowup
+      (X.blowupSingularLocusLift (s i) (hs i) default)
     connected := X.connected_dualGraphEndpoint hnodal }
 
 /-- **The unpointed dual graph of a proper connected nodal curve** over a separably closed field. -/
@@ -341,12 +376,11 @@ theorem dualGraphVertexEquiv_marking (i : ι) :
     letI := hnodal.syntomic
     letI := X.isRegular_blowup_singularLocus hnodal
     X.dualGraphVertexEquiv hnodal s hs ((X.dualGraph hnodal s hs).marking i) =
-      IsRegular.componentOf (X.singularLocus K).blowup
-        (X.markingLift hnodal (s i) (hs i) default) :=
+      componentOf (X.singularLocus K).blowup
+        (X.blowupSingularLocusLift (s i) (hs i) default) :=
   (rfl)
 
-@[simp]
-theorem dualGraphVertexEquiv_endpoint (e : (X.dualGraph hnodal s hs).Edge) (i : Fin 2) :
+private theorem dualGraphVertexEquiv_endpoint (e : (X.dualGraph hnodal s hs).Edge) (i : Fin 2) :
     letI := hnodal.syntomic
     X.dualGraphVertexEquiv hnodal s hs ((X.dualGraph hnodal s hs).endpoint e i) =
       X.dualGraphEndpoint hnodal (X.dualGraphEdgeEquiv hnodal s hs e) i :=
@@ -362,21 +396,21 @@ theorem marking_dualGraph_eq_iff (i : ι) (v : (X.dualGraph hnodal s hs).Vertex)
   let ν := (X.singularLocus K).blowupToBase
   have : IsRegular Bl := X.isRegular_blowup_singularLocus hnodal
   rw [← (X.dualGraphVertexEquiv hnodal s hs).injective.eq_iff,
-    X.dualGraphVertexEquiv_marking hnodal s hs i, IsRegular.componentOf_eq_iff,
+    X.dualGraphVertexEquiv_marking hnodal s hs i, componentOf_eq_iff,
     X.coe_dualGraphIrreducibleComponentsEquiv]
-  have hlift : ν (X.markingLift hnodal (s i) (hs i) default) = s i default := by
-    rw [← Scheme.Hom.comp_apply, X.markingLift_blowupToBase]
+  have hlift : ν (X.blowupSingularLocusLift (s i) (hs i) default) = s i default := by
+    rw [← Scheme.Hom.comp_apply, X.blowupSingularLocusLift_blowupToBase]
   refine ⟨fun h ↦ ⟨_, h, hlift⟩, ?_⟩
   rintro ⟨y, hyv, hy_eq⟩
   have hsU : s i default ∈ (X ↘ Spec (.of K)).smoothLocus := hs i ⟨default, rfl⟩
-  have h₁ : X.markingLift hnodal (s i) (hs i) default ∈
+  have h₁ : X.blowupSingularLocusLift (s i) (hs i) default ∈
       ν ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
     rw [Set.mem_preimage, hlift]
     exact hsU
   have h₂ : y ∈ ν ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
     rw [Set.mem_preimage, hy_eq]
     exact hsU
-  rwa [X.injOn_preimage_smoothLocus_blowupToBase hnodal h₁ h₂ (hlift.trans hy_eq.symm)]
+  rwa [X.injOn_preimage_smoothLocus_blowupToBase h₁ h₂ (hlift.trans hy_eq.symm)]
 
 /-- Whenever `b₀ ≠ b₁` are the two branches of `X` over a node `e`, the unordered pair of endpoints
 of `e` in `X.dualGraph` is the pair of components of `Bl X` containing `b₀` and `b₁`. -/
@@ -392,10 +426,15 @@ theorem ends_dualGraph_eq_of_ne
     letI := X.isRegular_blowup_singularLocus hnodal
     (X.dualGraph hnodal s hs).ends e =
       s((X.dualGraphVertexEquiv hnodal s hs).symm
-          (IsRegular.componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₀)),
+          (componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₀)),
         (X.dualGraphVertexEquiv hnodal s hs).symm
-          (IsRegular.componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₁))) := by
-  rw [DualGraph.ends_def]
+          (componentOf (X.singularLocus K).blowup (X.branchSchemeToBlowup K b₁))) := by
+  have := hnodal.syntomic
+  have := X.isRegular_blowup_singularLocus hnodal
+  apply Sym2.map.injective (X.dualGraphVertexEquiv hnodal s hs).injective
+  rw [DualGraph.ends_def, Sym2.map_mk, Sym2.map_mk,
+    X.dualGraphVertexEquiv_endpoint, X.dualGraphVertexEquiv_endpoint,
+    Equiv.apply_symm_apply, Equiv.apply_symm_apply]
   exact X.sym2_dualGraphEndpoint_eq_of_ne hnodal (X.dualGraphEdgeEquiv hnodal s hs e) hb₀ hb₁ hne
 
 /-- A vertex `v` lies on an edge `e` of `X.dualGraph` if and only if one of the branches over `e`
@@ -413,7 +452,7 @@ theorem mem_ends_dualGraph_iff (v : (X.dualGraph hnodal s hs).Vertex)
   let e₀ := X.dualGraphEdgeEquiv hnodal s hs e
   rw [DualGraph.mem_ends_iff]
   simp only [← (X.dualGraphVertexEquiv hnodal s hs).injective.eq_iff,
-    X.dualGraphVertexEquiv_endpoint, dualGraphEndpoint, IsRegular.componentOf_eq_iff]
+    X.dualGraphVertexEquiv_endpoint, dualGraphEndpoint, componentOf_eq_iff]
   refine ⟨fun ⟨i, hi⟩ ↦
       ⟨(X.branchFiberEquiv hnodal e₀ i).1, (X.branchFiberEquiv hnodal e₀ i).2, hi⟩,
     fun ⟨b, hb, hbv⟩ ↦ ⟨(X.branchFiberEquiv hnodal e₀).symm ⟨b, hb⟩, ?_⟩⟩
@@ -446,7 +485,6 @@ theorem valence_dualGraph (v : (X.dualGraph hnodal s hs).Vertex) :
           (X.dualGraphVertexEquiv hnodal s hs v : Set (X.singularLocus K).blowup)} := by
   have := hnodal.syntomic
   have := X.isRegular_blowup_singularLocus hnodal
-  let v₀ := X.dualGraphVertexEquiv hnodal s hs v
   let pairEquivBr : (X.dualGraph hnodal s hs).Edge × Fin 2 ≃ X.branchScheme K :=
     ((X.dualGraphEdgeEquiv hnodal s hs).prodCongr (Equiv.refl (Fin 2))).trans <|
       (Equiv.sigmaEquivProd (X.singularLocus K).subscheme (Fin 2)).symm.trans <|
@@ -459,11 +497,9 @@ theorem valence_dualGraph (v : (X.dualGraph hnodal s hs).Vertex) :
           X.branchSchemeToBlowup K b ∈
             (X.dualGraphVertexEquiv hnodal s hs v : Set (X.singularLocus K).blowup)} :=
     pairEquivBr.subtypeEquiv fun ⟨e, i⟩ ↦ by
-      let e₀ := X.dualGraphEdgeEquiv hnodal s hs e
-      dsimp only [dualGraph, v₀, e₀, dualGraphVertexEquiv, dualGraphEdgeEquiv, pairEquivBr,
-        Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.refl_apply, Equiv.sigmaEquivProd_symm_apply,
-        Equiv.sigmaCongrRight_apply, Equiv.sigmaFiberEquiv_apply]
-      exact IsRegular.componentOf_eq_iff
+      rw [← (X.dualGraphVertexEquiv hnodal s hs).injective.eq_iff,
+        X.dualGraphVertexEquiv_endpoint]
+      simp [pairEquivBr, dualGraphEndpoint, componentOf_eq_iff]
   rw [DualGraph.valence_def, ← Fintype.card_subtype]
   exact Fintype.card_eq_nat_card.trans (Nat.card_congr subEquiv)
 
@@ -486,19 +522,11 @@ theorem valence_dualGraph_eq_natCard_preimage_singularLocus
     have h := image_preimage_eq_of_isPullback (X.isPullback_branchScheme K) Set.univ
     simpa only [Set.preimage_univ, Set.image_univ, IdealSheafData.range_subschemeι] using h
   rw [X.valence_dualGraph hnodal s hs v]
-  refine Nat.card_congr
-    { toFun := fun b ↦ ⟨X.branchSchemeToBlowup K b.1, b.2, by
-        rw [← SetLike.mem_coe, ← Set.mem_preimage, ← hrange]
-        exact ⟨b.1, rfl⟩⟩
-      invFun := fun y ↦
-        have hy : y.1 ∈ Set.range (X.branchSchemeToBlowup K) := by
-          rw [hrange]
-          exact y.2.2
-        ⟨hy.choose, by simpa only [hy.choose_spec] using y.2.1⟩
-      left_inv := fun b ↦ Subtype.ext (hinj (Set.mem_range_self b.1).choose_spec)
-      right_inv := fun y ↦ by
-        have hy : y.1 ∈ Set.range (X.branchSchemeToBlowup K) := hrange ▸ y.2.2
-        exact Subtype.ext hy.choose_spec }
+  exact Nat.card_congr <|
+    ((Equiv.ofInjective (X.branchSchemeToBlowup K) hinj).subtypeEquiv (fun _ ↦ Iff.rfl)).trans
+      ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans
+        (Equiv.subtypeEquivRight fun _ ↦ by
+          rw [hrange, Set.mem_preimage, SetLike.mem_coe, and_comm]))
 
 /-- **A vertex carries no loop in `X.dualGraph` if and only if the normalization map is injective on
 that component** (equivalently, the corresponding irreducible component of `X` has no
@@ -523,45 +551,32 @@ theorem forall_endpoint_dualGraph_one_ne_iff_injOn (v : (X.dualGraph hnodal s hs
     -- over a node, producing a self-loop on `v`.
     intro hnoloop y₁ hy₁ y₂ hy₂ heq
     by_contra hne
-    have hx_sing : ν y₁ ∈ (X.singularLocus K).support := by
-      rw [X.mem_support_singularLocus_iff_notMem_smoothLocus]
-      intro hxU
-      have hy₂U : y₂ ∈ ν ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
-        rw [Set.mem_preimage, ← heq]
-        exact hxU
-      exact hne (X.injOn_preimage_smoothLocus_blowupToBase hnodal hxU hy₂U heq)
-    obtain ⟨e₀, he⟩ := (IdealSheafData.range_subschemeι (X.singularLocus K)).ge hx_sing
-    have hfib := image_preimage_eq_of_isPullback (X.isPullback_branchScheme K) {e₀}
-    rw [Set.image_singleton, he] at hfib
-    obtain ⟨b₁, hb₁, hb₁_eq⟩ : y₁ ∈ X.branchSchemeToBlowup K ''
-        (X.branchSchemeToSingularLocus K ⁻¹' {e₀}) := by
-      rw [hfib]
-      exact rfl
-    obtain ⟨b₂, hb₂, hb₂_eq⟩ : y₂ ∈ X.branchSchemeToBlowup K ''
-        (X.branchSchemeToSingularLocus K ⁻¹' {e₀}) := by
-      rw [hfib]
-      exact heq.symm
-    have hb_ne : b₁ ≠ b₂ := fun h ↦ hne (hb₁_eq ▸ hb₂_eq ▸ congrArg _ h)
+    obtain ⟨e₀, hends₀⟩ := X.exists_dualGraphEndpoint_eq_of_blowupToBase_eq hnodal hne heq
+    rw [componentOf_eq_iff.mpr hy₁, componentOf_eq_iff.mpr hy₂] at hends₀
     let e : (X.dualGraph hnodal s hs).Edge := (X.dualGraphEdgeEquiv hnodal s hs).symm e₀
-    have hends := X.ends_dualGraph_eq_of_ne hnodal s hs e hb₁ hb₂ hb_ne
-    rw [hb₁_eq, hb₂_eq, IsRegular.componentOf_eq_iff.mpr hy₁,
-      IsRegular.componentOf_eq_iff.mpr hy₂] at hends
-    exact hnoloop e hends
+    refine hnoloop e ?_
+    apply Sym2.map.injective (X.dualGraphVertexEquiv hnodal s hs).injective
+    rw [DualGraph.ends_def, Sym2.map_mk, Sym2.map_mk,
+      X.dualGraphVertexEquiv_endpoint, X.dualGraphVertexEquiv_endpoint,
+      Equiv.apply_symm_apply]
+    exact hends₀
   · -- Converse: a self-loop at `e` gives two distinct branches on `v` over the same node.
     intro hinj e hends
-    rw [DualGraph.ends_def] at hends
+    have hends₀ := congrArg (Sym2.map (X.dualGraphVertexEquiv hnodal s hs)) hends
+    rw [DualGraph.ends_def, Sym2.map_mk, Sym2.map_mk,
+      X.dualGraphVertexEquiv_endpoint, X.dualGraphVertexEquiv_endpoint] at hends₀
     let e₀ := X.dualGraphEdgeEquiv hnodal s hs e
     let eqv := X.branchFiberEquiv hnodal e₀
     have h01 : (eqv 0).1 ≠ (eqv 1).1 :=
       fun h ↦ Fin.zero_ne_one (eqv.injective (Subtype.ext h))
     have h0 : X.dualGraphEndpoint hnodal e₀ 0 = v₀ :=
-      (Sym2.eq_iff.mp hends).elim And.left And.left
+      (Sym2.eq_iff.mp hends₀).elim And.left And.left
     have h1 : X.dualGraphEndpoint hnodal e₀ 1 = v₀ :=
-      (Sym2.eq_iff.mp hends).elim And.right And.right
+      (Sym2.eq_iff.mp hends₀).elim And.right And.right
     have hy₀ : X.branchSchemeToBlowup K (eqv 0).1 ∈ (v₀ : Set _) :=
-      IsRegular.componentOf_eq_iff.mp h0
+      componentOf_eq_iff.mp h0
     have hy₁ : X.branchSchemeToBlowup K (eqv 1).1 ∈ (v₀ : Set _) :=
-      IsRegular.componentOf_eq_iff.mp h1
+      componentOf_eq_iff.mp h1
     have hν : ν (X.branchSchemeToBlowup K (eqv 0).1) =
         ν (X.branchSchemeToBlowup K (eqv 1).1) := by
       rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply,
@@ -594,26 +609,16 @@ theorem isRationalBridge_dualGraph_iff (v : (X.dualGraph hnodal s hs).Vertex) :
   rw [DualGraph.isRationalBridge_iff, X.genus_dualGraph, X.valence_dualGraph,
     X.forall_endpoint_dualGraph_one_ne_iff_injOn]
 
-/-- **Validation on smooth curves.** When `X` is smooth, its dual graph has no edges, first Betti
-number zero, and combinatorial arithmetic genus equal to the cohomological genus `X.genus K`. -/
-theorem arithmeticGenus_dualGraph_eq_genus_of_smooth [Smooth (X ↘ Spec (.of K))] :
-    letI := X.smoothOfRelativeDimension_one_of_smooth hnodal
-    letI := finiteDimensional_cohomology_one_trivial_of_smooth K X
-    (X.dualGraph hnodal s hs).firstBetti = 0 ∧
-      (X.dualGraph hnodal s hs).arithmeticGenus = X.genus K := by
+/-- **Validation on smooth curves (first Betti number).** When `X` is smooth, its dual graph has
+first Betti number zero. -/
+theorem firstBetti_dualGraph_of_smooth [Smooth (X ↘ Spec (.of K))] :
+    (X.dualGraph hnodal s hs).firstBetti = 0 := by
   have := hnodal.syntomic
-  let G := X.dualGraph hnodal s hs
-  let Bl := (X.singularLocus K).blowup
-  let ν := (X.singularLocus K).blowupToBase
-  have : IsRegular Bl := X.isRegular_blowup_singularLocus hnodal
   have : IsRegular X := IsRegular.of_smooth (X ↘ Spec (.of K))
   have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-  have := X.smoothOfRelativeDimension_one_of_smooth hnodal
-  have := finiteDimensional_cohomology_one_trivial_of_smooth K X
-  -- 1. Smoothness forces `Sing(X/K) = ⊤`, so the dual graph has 0 edges, 1 vertex, and `b₁ = 0`.
   have hsing_top : X.singularLocus K = ⊤ :=
     (X.singularLocus_eq_top_iff_smooth (R := K)).mpr ‹_›
-  have hempty_edge : IsEmpty G.Edge := by
+  have hempty_edge : IsEmpty (X.dualGraph hnodal s hs).Edge := by
     refine ⟨fun e ↦ ?_⟩
     let e₀ := X.dualGraphEdgeEquiv hnodal s hs e
     have hmem : (X.singularLocus K).subschemeι e₀ ∈ ((X.singularLocus K).support : Set X) := by
@@ -621,52 +626,49 @@ theorem arithmeticGenus_dualGraph_eq_genus_of_smooth [Smooth (X ↘ Spec (.of K)
       exact ⟨e₀, rfl⟩
     rw [(IdealSheafData.support_eq_bot_iff _).mpr hsing_top] at hmem
     exact hmem
-  have hcard_edge : Fintype.card G.Edge = 0 := Fintype.card_eq_zero
+  have hcard_edge : Fintype.card (X.dualGraph hnodal s hs).Edge = 0 := Fintype.card_eq_zero
+  have hcard_vert : Fintype.card (X.dualGraph hnodal s hs).Vertex = 1 := by
+    rw [X.card_vertex_dualGraph hnodal s hs, irreducibleComponents_eq_singleton, Nat.card_unique]
+  rw [DualGraph.firstBetti_def, hcard_edge, hcard_vert]
+
+/-- **Validation on smooth curves (arithmetic genus).** When `X` is smooth, the combinatorial
+arithmetic genus of its dual graph equals the cohomological genus `X.genus K`. -/
+theorem arithmeticGenus_dualGraph_eq_genus_of_smooth [Smooth (X ↘ Spec (.of K))] :
+    letI : SmoothOfRelativeDimension 1 (X ↘ Spec (.of K)) :=
+      (smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension _).mpr
+        ⟨‹_›, letI := hnodal.syntomic; inferInstance⟩
+    letI := finiteDimensional_cohomology_one_trivial_of_smooth K X
+    (X.dualGraph hnodal s hs).arithmeticGenus = X.genus K := by
+  have := hnodal.syntomic
+  let G := X.dualGraph hnodal s hs
+  let Bl := (X.singularLocus K).blowup
+  let ν := (X.singularLocus K).blowupToBase
+  have : IsRegular Bl := X.isRegular_blowup_singularLocus hnodal
+  have : IsRegular X := IsRegular.of_smooth (X ↘ Spec (.of K))
+  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
+  have : SmoothOfRelativeDimension 1 (X ↘ Spec (.of K)) :=
+    (smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension _).mpr ⟨‹_›, inferInstance⟩
+  have := finiteDimensional_cohomology_one_trivial_of_smooth K X
   have hcard_vert : Fintype.card G.Vertex = 1 := by
     rw [X.card_vertex_dualGraph hnodal s hs, irreducibleComponents_eq_singleton, Nat.card_unique]
-  have hb₁ : G.firstBetti = 0 := by
-    rw [DualGraph.firstBetti_def, hcard_edge, hcard_vert]
   obtain ⟨v₀⟩ := G.vertexNonempty
   have huniq : ∀ w : G.Vertex, w = v₀ := fun w ↦ Fintype.card_le_one_iff.mp hcard_vert.le w v₀
   let v₀' : irreducibleComponents Bl := X.dualGraphVertexEquiv hnodal s hs v₀
   have hv₀_univ : (v₀' : Set Bl) = Set.univ :=
     Set.eq_univ_of_forall fun y ↦ by
       have hy := congrArg (X.dualGraphVertexEquiv hnodal s hs)
-        (huniq ((X.dualGraphVertexEquiv hnodal s hs).symm (IsRegular.componentOf Bl y)))
+        (huniq ((X.dualGraphVertexEquiv hnodal s hs).symm (componentOf Bl y)))
       rw [Equiv.apply_symm_apply] at hy
-      exact IsRegular.componentOf_eq_iff.mp hy
-  -- 2. Both `Bl X ⟶ X` and `C_{v₀} ⟶ Bl X` are isomorphisms, identifying the component genus
-  --    with `X.genus K`.
-  have hU_top : (X ↘ Spec (.of K)).smoothLocus = ⊤ :=
-    Scheme.Hom.smoothLocus_eq_top_iff.mpr ‹_›
-  have : IsIso (ν ∣_ (⊤ : X.Opens)) := by
-    rw [← hU_top]
-    exact X.isIso_blowupToBase_singularLocus_restrict_smoothLocus
-  have : IsIso ((ν ⁻¹ᵁ (⊤ : X.Opens)).ι ≫ ν) := by
-    rw [← morphismRestrict_ι]
-    have : IsIso (⊤ : X.Opens).ι := X.topIso.isIso_hom
-    infer_instance
-  have hpre_top : ν ⁻¹ᵁ (⊤ : X.Opens) = ⊤ := rfl
-  have : IsIso ((⊤ : Bl.Opens).ι ≫ ν) := by
-    rwa [← hpre_top]
-  have : IsIso ν := by
-    have : IsIso (⊤ : Bl.Opens).ι := Bl.topIso.isIso_hom
-    exact IsIso.of_isIso_comp_left (⊤ : Bl.Opens).ι ν
+      exact componentOf_eq_iff.mp hy
+  have : IsIso ν := X.isIso_blowupToBase_singularLocus_of_smooth
   have : IsIso (X.normalizedComponentι hnodal v₀') :=
     X.isIso_normalizedComponentι_of_eq_univ hnodal v₀' hv₀_univ
   let g₀ : X.dualGraphComponent hnodal v₀ ⟶ X := X.normalizedComponentι hnodal v₀' ≫ ν
-  let _ : Algebra K K := Algebra.id K
-  have hSpec_id : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) := by simp
-  have hpb : IsPullback g₀
-      (X.dualGraphComponent hnodal v₀ ↘ Spec (.of K))
-      (X ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
-    rw [hSpec_id]
-    exact IsPullback.of_horiz_isIso ⟨by simp [g₀, v₀', ν]⟩
+  have hpb := isPullback_of_iso_over (K := K) (asIso g₀) (by simp [g₀, v₀', ν])
   have hgen : (X.dualGraphComponent hnodal v₀).genus K = X.genus K :=
+    letI : Algebra K K := Algebra.id K
     genus_eq_of_isPullback_of_isProper hpb
-  refine ⟨hb₁, ?_⟩
-  rw [DualGraph.arithmeticGenus_def, hb₁, add_zero,
+  rw [DualGraph.arithmeticGenus_def, X.firstBetti_dualGraph_of_smooth hnodal s hs, add_zero,
     Fintype.sum_eq_single v₀ (fun w hw ↦ absurd (huniq w) hw),
     X.genus_dualGraph hnodal s hs v₀, hgen]
 
@@ -674,9 +676,217 @@ end Invariants
 
 end SepClosed
 
+end AlgebraicGeometry.Scheme
+
 /-! ### Invariance under extensions of separably closed fields and curve isomorphisms -/
 
+namespace TauCeti.AlgebraicGeometry
+
 section BaseChange
+
+private def dualGraphIsoOfIsPullbackVertexEquiv
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L] [Algebra K L]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+    [IsProper (X' ↘ Spec (.of L))] [ConnectedSpace X']
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))))
+    {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of L) ⟶ X'))
+    (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
+    (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus) :
+    (X'.dualGraph hnodal' s' hs').Vertex ≃ (X.dualGraph hnodal s hs).Vertex :=
+  letI := hnodal.syntomic
+  letI := hnodal'.syntomic
+  (X'.dualGraphVertexEquiv hnodal' s' hs').trans <|
+    (irreducibleComponentsEquivOfIsPullback (isPullback_blowupSingularLocusMap_over H)).trans
+      (X.dualGraphVertexEquiv hnodal s hs).symm
+
+private theorem bijective_singularLocus_subschemeMap
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
+    letI := hnodal.syntomic
+    letI := hnodal'.syntomic
+    Function.Bijective
+      ((X'.singularLocus L).subschemeMap (X.singularLocus K) g
+        (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+          (Scheme.singularLocus_eq_comap_of_isPullback H).ge)) := by
+  have := hnodal.syntomic
+  have := hnodal'.syntomic
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  exact bijective_of_isPullback_algebraMap_of_isSepClosed
+    ((Scheme.isPullback_singularLocus_subschemeι H).flip.paste_vert H)
+
+private def dualGraphIsoOfIsPullbackEdgeEquiv
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L] [Algebra K L]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+    [IsProper (X' ↘ Spec (.of L))] [ConnectedSpace X']
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))))
+    {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of L) ⟶ X'))
+    (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
+    (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus) :
+    (X'.dualGraph hnodal' s' hs').Edge ≃ (X.dualGraph hnodal s hs).Edge :=
+  letI := hnodal.syntomic
+  letI := hnodal'.syntomic
+  (X'.dualGraphEdgeEquiv hnodal' s' hs').trans <|
+    (Equiv.ofBijective _ (bijective_singularLocus_subschemeMap hnodal hnodal' H)).trans
+      (X.dualGraphEdgeEquiv hnodal s hs).symm
+
+private theorem bijective_branchSchemeMap
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
+    letI := hnodal.syntomic
+    letI := hnodal'.syntomic
+    Function.Bijective (branchSchemeMap H) := by
+  have := hnodal.syntomic
+  have := hnodal'.syntomic
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  have := X.etale_branchSchemeToSingularLocus hnodal
+  exact bijective_of_isPullback_algebraMap_of_isSepClosed
+    ((isPullback_branchSchemeMap H).paste_vert
+      ((Scheme.isPullback_singularLocus_subschemeι H).flip.paste_vert H))
+
+private theorem dualGraphIsoOfIsPullback_ends_edgeEquiv
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L] [Algebra K L]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+    [IsProper (X' ↘ Spec (.of L))] [ConnectedSpace X']
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))))
+    {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of L) ⟶ X'))
+    (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
+    (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus)
+    (e' : (X'.dualGraph hnodal' s' hs').Edge) :
+    (X.dualGraph hnodal s hs).ends
+        (dualGraphIsoOfIsPullbackEdgeEquiv hnodal hnodal' H s s' hs hs' e') =
+      Sym2.map (dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs')
+        ((X'.dualGraph hnodal' s' hs').ends e') := by
+  have := hnodal.syntomic
+  have := hnodal'.syntomic
+  have := X.isRegular_blowup_singularLocus hnodal
+  have := X'.isRegular_blowup_singularLocus hnodal'
+  let e'₀ := X'.dualGraphEdgeEquiv hnodal' s' hs' e'
+  let eqv' := X'.branchFiberEquiv hnodal' e'₀
+  have h01 : (eqv' 0).1 ≠ (eqv' 1).1 :=
+    fun h ↦ Fin.zero_ne_one (eqv'.injective (Subtype.ext h))
+  have hne_Br : branchSchemeMap H (eqv' 0).1 ≠ branchSchemeMap H (eqv' 1).1 :=
+    fun h ↦ h01 ((bijective_branchSchemeMap hnodal hnodal' H).injective h)
+  have hb (j : Fin 2) :
+      X.branchSchemeToSingularLocus K (branchSchemeMap H (eqv' j).1) =
+        X.dualGraphEdgeEquiv hnodal s hs
+          (dualGraphIsoOfIsPullbackEdgeEquiv hnodal hnodal' H s s' hs hs' e') := by
+    rw [← Scheme.Hom.comp_apply, branchSchemeMap_branchSchemeToSingularLocus H,
+      Scheme.Hom.comp_apply, (eqv' j).2]
+    dsimp only [dualGraphIsoOfIsPullbackEdgeEquiv, e'₀, Equiv.trans_apply]
+    rw [Equiv.apply_symm_apply, Equiv.ofBijective_apply]
+  rw [X.ends_dualGraph_eq_of_ne hnodal s hs _ (hb 0) (hb 1) hne_Br]
+  have hcomp (j : Fin 2) :
+      (X.dualGraphVertexEquiv hnodal s hs).symm
+          (componentOf (X.singularLocus K).blowup
+            (X.branchSchemeToBlowup K (branchSchemeMap H (eqv' j).1))) =
+        dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs'
+          ((X'.dualGraph hnodal' s' hs').endpoint e' j) := by
+    dsimp only [dualGraphIsoOfIsPullbackVertexEquiv, Equiv.trans_apply]
+    rw [X'.dualGraphVertexEquiv_endpoint, Scheme.dualGraphEndpoint,
+      ← Scheme.Hom.comp_apply, branchSchemeMap_branchSchemeToBlowup H, Scheme.Hom.comp_apply,
+      componentOf_apply_of_isPullback (isPullback_blowupSingularLocusMap_over H)]
+  rw [hcomp 0, hcomp 1, DualGraph.ends_def, Sym2.map_mk]
+
+private theorem dualGraphIsoOfIsPullback_genus_vertexEquiv
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L] [Algebra K L]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+    [IsProper (X' ↘ Spec (.of L))] [ConnectedSpace X']
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))))
+    {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of L) ⟶ X'))
+    (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
+    (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus)
+    (v' : (X'.dualGraph hnodal' s' hs').Vertex) :
+    (X.dualGraph hnodal s hs).genus
+        (dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs' v') =
+      (X'.dualGraph hnodal' s' hs').genus v' := by
+  have := hnodal.syntomic
+  have := hnodal'.syntomic
+  let v'₀ := X'.dualGraphVertexEquiv hnodal' s' hs' v'
+  obtain ⟨_, -, H_v⟩ := exists_isPullback_normalizedComponent hnodal hnodal' H v'₀
+  have hv_eq :
+      X.dualGraphVertexEquiv hnodal s hs
+          (dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs' v') =
+        irreducibleComponentsEquivOfIsPullback (isPullback_blowupSingularLocusMap_over H) v'₀ := by
+    dsimp only [dualGraphIsoOfIsPullbackVertexEquiv, v'₀, Equiv.trans_apply]
+    exact Equiv.apply_symm_apply _ _
+  rw [X.genus_dualGraph, X'.genus_dualGraph]
+  have hgen_eq : ∀ u : irreducibleComponents (X.singularLocus K).blowup,
+      u = irreducibleComponentsEquivOfIsPullback (isPullback_blowupSingularLocusMap_over H) v'₀ →
+        (X.normalizedComponent hnodal u).genus K =
+          (X'.normalizedComponent hnodal' v'₀).genus L := by
+    rintro _ rfl
+    exact (genus_eq_of_isPullback_of_isProper H_v).symm
+  exact hgen_eq _ hv_eq
+
+private theorem dualGraphIsoOfIsPullback_vertexEquiv_marking
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L] [Algebra K L]
+    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+    [IsProper (X' ↘ Spec (.of L))] [ConnectedSpace X']
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))))
+    {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of L) ⟶ X'))
+    (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
+    (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus)
+    (hmark : ∀ i, s' i ≫ g = Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫ s i)
+    (i : ι) :
+    dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs'
+        ((X'.dualGraph hnodal' s' hs').marking i) =
+      (X.dualGraph hnodal s hs).marking i := by
+  have := hnodal.syntomic
+  have := hnodal'.syntomic
+  have := X.isRegular_blowup_singularLocus hnodal
+  have := X'.isRegular_blowup_singularLocus hnodal'
+  rw [eq_comm, X.marking_dualGraph_eq_iff hnodal s hs, X.coe_dualGraphIrreducibleComponentsEquiv]
+  let y' : (X'.singularLocus L).blowup := X'.blowupSingularLocusLift (s' i) (hs' i) default
+  have hcomp :
+      X.dualGraphVertexEquiv hnodal s hs
+          (dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs'
+            ((X'.dualGraph hnodal' s' hs').marking i)) =
+        componentOf (X.singularLocus K).blowup (blowupSingularLocusMap H y') := by
+    dsimp only [dualGraphIsoOfIsPullbackVertexEquiv, Equiv.trans_apply]
+    rw [Equiv.apply_symm_apply, X'.dualGraphVertexEquiv_marking]
+    exact (componentOf_apply_of_isPullback (isPullback_blowupSingularLocusMap_over H) y').symm
+  rw [hcomp]
+  refine ⟨blowupSingularLocusMap H y', mem_componentOf (blowupSingularLocusMap H y'), ?_⟩
+  rw [← Scheme.Hom.comp_apply, blowupSingularLocusMap_blowupToBase H, Scheme.Hom.comp_apply]
+  have hy' : (X'.singularLocus L).blowupToBase y' = s' i default := by
+    rw [← Scheme.Hom.comp_apply, X'.blowupSingularLocusLift_blowupToBase]
+  rw [hy', ← Scheme.Hom.comp_apply, hmark i, Scheme.Hom.comp_apply]
+  exact congrArg (s i) (Subsingleton.elim _ default)
 
 /-- **Invariance of the dual graph under extensions of separably closed fields.** Let `L / K` be an
 extension of separably closed fields (possibly inseparable), and let `X'` over `L` be a base change
@@ -695,145 +905,47 @@ def dualGraphIsoOfIsPullback {K L : Type u} [Field K] [IsSepClosed K] [Field L] 
     (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
     (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus)
     (hmark : ∀ i, s' i ≫ g = Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫ s i) :
-    (X'.dualGraph hnodal' s' hs').Iso (X.dualGraph hnodal s hs) := by
-  letI := hnodal.syntomic
-  letI := hnodal'.syntomic
-  let I := X.singularLocus K
-  let I' := X'.singularLocus L
-  letI : IsRegular I.blowup := X.isRegular_blowup_singularLocus hnodal
-  letI : IsRegular I'.blowup := X'.isRegular_blowup_singularLocus hnodal'
-  -- 1. Base change of the normalization `Bl' ⟶ Bl` and bijection of vertices.
-  let g_Bl : I'.blowup ⟶ I.blowup := blowupSingularLocusMap hnodal hnodal' H
-  have hg_Bl_ν : g_Bl ≫ I.blowupToBase = I'.blowupToBase ≫ g :=
-    blowupSingularLocusMap_blowupToBase hnodal hnodal' H
-  have H_Bl0 : IsPullback I'.blowupToBase g_Bl g I.blowupToBase :=
-    isPullback_blowupSingularLocusMap hnodal hnodal' H
-  have H_Bl := isPullback_blowupSingularLocusMap_over hnodal hnodal' H
-  let vertexEquiv : (X'.dualGraph hnodal' s' hs').Vertex ≃ (X.dualGraph hnodal s hs).Vertex :=
-    (X'.dualGraphVertexEquiv hnodal' s' hs').trans <|
-      (irreducibleComponentsEquivOfIsPullback H_Bl).trans
-        (X.dualGraphVertexEquiv hnodal s hs).symm
-  -- 2. Base change of the singular subscheme `Sing(X'/L) ⟶ Sing(X/K)` and bijection of edges.
-  have hI : I' = I.comap g := Scheme.singularLocus_eq_comap_of_isPullback H
-  have hle_I : I ≤ I'.map g := IdealSheafData.le_map_iff_comap_le.mpr hI.ge
-  let g_Sing : I'.subscheme ⟶ I.subscheme := I'.subschemeMap I g hle_I
-  have H_Sing0 : IsPullback I'.subschemeι g_Sing g I.subschemeι :=
-    Scheme.isPullback_singularLocus_subschemeι H
-  have H_Sing : IsPullback g_Sing (I'.subschemeι ≫ (X' ↘ Spec (.of L)))
-      (I.subschemeι ≫ (X ↘ Spec (.of K)))
-      (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
-    H_Sing0.flip.paste_vert H
-  have := X.isFinite_singularLocus_subschemeι_comp hnodal
-  have := X.etale_singularLocus_subschemeι_comp hnodal
-  have hbij_Sing : Function.Bijective g_Sing :=
-    Scheme.Hom.bijective_of_isPullback_algebraMap_of_isSepClosed H_Sing
-  let edgeEquiv : (X'.dualGraph hnodal' s' hs').Edge ≃ (X.dualGraph hnodal s hs).Edge :=
-    (X'.dualGraphEdgeEquiv hnodal' s' hs').trans <|
-      (Equiv.ofBijective g_Sing hbij_Sing).trans (X.dualGraphEdgeEquiv hnodal s hs).symm
-  -- 3. Base change of the branch scheme `E' ⟶ E`, commuting with both `Sing` and `Bl`.
-  have hBr_comm : (X'.branchSchemeToSingularLocus L ≫ g_Sing) ≫ I.subschemeι =
-      (X'.branchSchemeToBlowup L ≫ g_Bl) ≫ I.blowupToBase := by
-    rw [Category.assoc, IdealSheafData.subschemeMap_subschemeι _ _ _ hle_I,
-      ← Category.assoc, X'.branchSchemeToSingularLocus_subschemeι L, Category.assoc,
-      Category.assoc, hg_Bl_ν]
-  let g_Br : X'.branchScheme L ⟶ X.branchScheme K :=
-    (X.isPullback_branchScheme K).lift (X'.branchSchemeToSingularLocus L ≫ g_Sing)
-      (X'.branchSchemeToBlowup L ≫ g_Bl) hBr_comm
-  have hg_Br_sing : g_Br ≫ X.branchSchemeToSingularLocus K =
-      X'.branchSchemeToSingularLocus L ≫ g_Sing :=
-    (X.isPullback_branchScheme K).lift_fst _ _ _
-  have hg_Br_bl : g_Br ≫ X.branchSchemeToBlowup K = X'.branchSchemeToBlowup L ≫ g_Bl :=
-    (X.isPullback_branchScheme K).lift_snd _ _ _
-  have H_Br0 : IsPullback g_Br (X'.branchSchemeToSingularLocus L)
-      (X.branchSchemeToSingularLocus K) g_Sing := by
-    have hout := (X'.isPullback_branchScheme L).flip.paste_horiz H_Bl0.flip
-    rw [← hg_Br_bl, ← IdealSheafData.subschemeMap_subschemeι _ _ _ hle_I] at hout
-    exact IsPullback.of_right hout hg_Br_sing (X.isPullback_branchScheme K).flip
-  have H_Br : IsPullback g_Br
-      (X'.branchSchemeToSingularLocus L ≫ I'.subschemeι ≫ (X' ↘ Spec (.of L)))
-      (X.branchSchemeToSingularLocus K ≫ I.subschemeι ≫ (X ↘ Spec (.of K)))
-      (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
-    H_Br0.paste_vert H_Sing
-  have := X.isFinite_branchSchemeToSingularLocus hnodal
-  have := X.etale_branchSchemeToSingularLocus hnodal
-  have hbij_Br : Function.Bijective g_Br :=
-    Scheme.Hom.bijective_of_isPullback_algebraMap_of_isSepClosed H_Br
-  -- 4. Verify the three compatibility axioms of `DualGraph.Iso`.
-  refine
-    { vertexEquiv := vertexEquiv
-      edgeEquiv := edgeEquiv
-      ends_edgeEquiv := fun e' ↦ ?_
-      genus_vertexEquiv := fun v' ↦ ?_
-      vertexEquiv_marking := fun i ↦ ?_ }
-  · -- Compatibility with unordered endpoints `ends`.
-    let e'₀ := X'.dualGraphEdgeEquiv hnodal' s' hs' e'
-    let eqv' := X'.branchFiberEquiv hnodal' e'₀
-    have h01 : (eqv' 0).1 ≠ (eqv' 1).1 :=
-      fun h ↦ Fin.zero_ne_one (eqv'.injective (Subtype.ext h))
-    have hne_Br : g_Br (eqv' 0).1 ≠ g_Br (eqv' 1).1 :=
-      fun h ↦ h01 (hbij_Br.injective h)
-    have hb₀ : X.branchSchemeToSingularLocus K (g_Br (eqv' 0).1) =
-        X.dualGraphEdgeEquiv hnodal s hs (edgeEquiv e') := by
-      rw [← Scheme.Hom.comp_apply, hg_Br_sing, Scheme.Hom.comp_apply, (eqv' 0).2]
-      rfl
-    have hb₁ : X.branchSchemeToSingularLocus K (g_Br (eqv' 1).1) =
-        X.dualGraphEdgeEquiv hnodal s hs (edgeEquiv e') := by
-      rw [← Scheme.Hom.comp_apply, hg_Br_sing, Scheme.Hom.comp_apply, (eqv' 1).2]
-      rfl
-    rw [X.ends_dualGraph_eq_of_ne hnodal s hs (edgeEquiv e') hb₀ hb₁ hne_Br]
-    have hcomp (j : Fin 2) :
-        (X.dualGraphVertexEquiv hnodal s hs).symm
-            (IsRegular.componentOf I.blowup (X.branchSchemeToBlowup K (g_Br (eqv' j).1))) =
-          vertexEquiv ((X'.dualGraph hnodal' s' hs').endpoint e' j) := by
-      dsimp only [dualGraph, vertexEquiv, e'₀, dualGraphVertexEquiv, dualGraphEdgeEquiv,
-        Equiv.trans_apply, Equiv.refl_apply, Equiv.refl_symm]
-      rw [← Scheme.Hom.comp_apply, hg_Br_bl, Scheme.Hom.comp_apply,
-        IsRegular.componentOf_apply_of_isPullback H_Bl]
-      rfl
-    rw [hcomp 0, hcomp 1, DualGraph.ends_def, Sym2.map_mk]
-  · -- Compatibility with component genera via flat base change of `H¹(C_v, 𝒪)`.
-    let v'₀ := X'.dualGraphVertexEquiv hnodal' s' hs' v'
-    obtain ⟨g_v, -, H_v⟩ := exists_isPullback_normalizedComponent hnodal hnodal' H v'₀
-    have hv_eq : X.dualGraphVertexEquiv hnodal s hs (vertexEquiv v') =
-        irreducibleComponentsEquivOfIsPullback H_Bl v'₀ := by
-      dsimp only [vertexEquiv, v'₀, Equiv.trans_apply]
-      rw [Equiv.apply_symm_apply]
-    rw [X.genus_dualGraph hnodal s hs (vertexEquiv v'), X'.genus_dualGraph hnodal' s' hs' v']
-    have hgen_eq : ∀ u : irreducibleComponents I.blowup,
-        u = irreducibleComponentsEquivOfIsPullback H_Bl v'₀ →
-          (X.normalizedComponent hnodal u).genus K =
-            (X'.normalizedComponent hnodal' v'₀).genus L := by
-      rintro _ rfl
-      exact (genus_eq_of_isPullback_of_isProper H_v).symm
-    exact hgen_eq (X.dualGraphVertexEquiv hnodal s hs (vertexEquiv v')) hv_eq
-  · -- Compatibility with smooth markings.
-    rw [eq_comm, X.marking_dualGraph_eq_iff hnodal s hs]
-    let y' : I'.blowup := X'.markingLift hnodal' (s' i) (hs' i) default
-    have hy' : X'.dualGraphVertexEquiv hnodal' s' hs' ((X'.dualGraph hnodal' s' hs').marking i) =
-        IsRegular.componentOf I'.blowup y' := rfl
-    have hcomp : X.dualGraphVertexEquiv hnodal s hs
-          (vertexEquiv ((X'.dualGraph hnodal' s' hs').marking i)) =
-        IsRegular.componentOf I.blowup (g_Bl y') := by
-      dsimp only [vertexEquiv, Equiv.trans_apply]
-      rw [Equiv.apply_symm_apply, hy']
-      exact (IsRegular.componentOf_apply_of_isPullback H_Bl y').symm
-    rw [X.coe_dualGraphIrreducibleComponentsEquiv, hcomp]
-    refine ⟨g_Bl y', IsRegular.mem_componentOf (g_Bl y'), ?_⟩
-    calc
-      I.blowupToBase (g_Bl y') = (g_Bl ≫ I.blowupToBase) y' := rfl
-      _ = (I'.blowupToBase ≫ g) y' := by rw [hg_Bl_ν]
-      _ = g (I'.blowupToBase y') := rfl
-      _ = g (s' i default) :=
-        congrArg g (congrArg (fun f : Spec (.of L) ⟶ X' ↦ f default)
-          (X'.markingLift_blowupToBase hnodal' (s' i) (hs' i)))
-      _ = (s' i ≫ g) default := rfl
-      _ = (Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫ s i) default := by rw [hmark i]
-      _ = s i default := by
-        rw [Scheme.Hom.comp_apply]
-        exact congrArg (s i) (Subsingleton.elim _ default)
+    (X'.dualGraph hnodal' s' hs').Iso (X.dualGraph hnodal s hs) where
+  vertexEquiv := dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs'
+  edgeEquiv := dualGraphIsoOfIsPullbackEdgeEquiv hnodal hnodal' H s s' hs hs'
+  ends_edgeEquiv := dualGraphIsoOfIsPullback_ends_edgeEquiv hnodal hnodal' H s s' hs hs'
+  genus_vertexEquiv := dualGraphIsoOfIsPullback_genus_vertexEquiv hnodal hnodal' H s s' hs hs'
+  vertexEquiv_marking :=
+    dualGraphIsoOfIsPullback_vertexEquiv_marking hnodal hnodal' H s s' hs hs' hmark
+
+/-- `dualGraphIsoOfIsPullback` acts on vertices via `irreducibleComponentsEquivOfIsPullback` on the
+irreducible components of `Bl X'` and `Bl X`. -/
+@[simp]
+theorem dualGraphVertexEquiv_dualGraphIsoOfIsPullback_vertexEquiv
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L]
+    [Algebra K L] {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+    [IsProper (X' ↘ Spec (.of L))] [ConnectedSpace X']
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    {g : X' ⟶ X}
+    (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))))
+    {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of L) ⟶ X'))
+    (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
+    (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus)
+    (hmark : ∀ i, s' i ≫ g = Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫ s i)
+    (v' : (X'.dualGraph hnodal' s' hs').Vertex) :
+    letI := hnodal.syntomic
+    letI := hnodal'.syntomic
+    X.dualGraphVertexEquiv hnodal s hs
+        ((dualGraphIsoOfIsPullback hnodal hnodal' H s s' hs hs' hmark).vertexEquiv v') =
+      irreducibleComponentsEquivOfIsPullback (isPullback_blowupSingularLocusMap_over H)
+        (X'.dualGraphVertexEquiv hnodal' s' hs' v') := by
+  have := hnodal.syntomic
+  have := hnodal'.syntomic
+  change X.dualGraphVertexEquiv hnodal s hs
+      (dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs' v') = _
+  dsimp only [dualGraphIsoOfIsPullbackVertexEquiv, Equiv.trans_apply]
+  exact Equiv.apply_symm_apply _ _
 
 /-- On edges, `dualGraphIsoOfIsPullback` sends a singular point `e'` of `X'` to the unique singular
-point `e` of `X` beneath `g (e')`. -/
+point `e` of `X` lying beneath `e'` under `g`. -/
 theorem subschemeι_dualGraphIsoOfIsPullback_edgeEquiv
     {K L : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L]
     [Algebra K L] {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
@@ -857,9 +969,12 @@ theorem subschemeι_dualGraphIsoOfIsPullback_edgeEquiv
       g ((X'.singularLocus L).subschemeι (X'.dualGraphEdgeEquiv hnodal' s' hs' e')) := by
   have := hnodal.syntomic
   have := hnodal'.syntomic
-  dsimp only [dualGraphIsoOfIsPullback, Equiv.trans_apply]
+  change (X.singularLocus K).subschemeι
+      (X.dualGraphEdgeEquiv hnodal s hs
+        (dualGraphIsoOfIsPullbackEdgeEquiv hnodal hnodal' H s s' hs hs' e')) = _
+  dsimp only [dualGraphIsoOfIsPullbackEdgeEquiv, Equiv.trans_apply]
   rw [Equiv.apply_symm_apply, Equiv.ofBijective_apply, ← Scheme.Hom.comp_apply,
-    IdealSheafData.subschemeMap_subschemeι, Scheme.Hom.comp_apply]
+    Scheme.IdealSheafData.subschemeMap_subschemeι, Scheme.Hom.comp_apply]
 
 /-- **Geometric characterization of `dualGraphIsoOfIsPullback` on vertices**: it sends a component
 `v'` of `X'` to the unique component `w` of `X` containing the image under `g` of the irreducible
@@ -885,80 +1000,89 @@ theorem vertexEquiv_dualGraphIsoOfIsPullback_eq_iff
         (X.dualGraphIrreducibleComponentsEquiv hnodal s hs w : Set X) := by
   have := hnodal.syntomic
   have := hnodal'.syntomic
-  let I := X.singularLocus K
-  let I' := X'.singularLocus L
-  have : IsRegular I.blowup := X.isRegular_blowup_singularLocus hnodal
-  have : IsRegular I'.blowup := X'.isRegular_blowup_singularLocus hnodal'
-  have hI : I' = I.comap g := Scheme.singularLocus_eq_comap_of_isPullback H
-  let g_Bl : I'.blowup ⟶ I.blowup := blowupSingularLocusMap hnodal hnodal' H
-  have hg_Bl_ν : g_Bl ≫ I.blowupToBase = I'.blowupToBase ≫ g :=
-    blowupSingularLocusMap_blowupToBase hnodal hnodal' H
-  have H_Bl := isPullback_blowupSingularLocusMap_over hnodal hnodal' H
   let iso := dualGraphIsoOfIsPullback hnodal hnodal' H s s' hs hs' hmark
-  let v'₀ := X'.dualGraphVertexEquiv hnodal' s' hs' v'
-  let u₀ := X.dualGraphVertexEquiv hnodal s hs (iso.vertexEquiv v')
-  have hiso_v : X.dualGraphVertexEquiv hnodal s hs (iso.vertexEquiv v') =
-      irreducibleComponentsEquivOfIsPullback H_Bl v'₀ := by
-    dsimp only [iso, dualGraphIsoOfIsPullback, v'₀, Equiv.trans_apply]
-    rw [Equiv.apply_symm_apply]
-  have hsub₀ : g '' (X'.dualGraphIrreducibleComponentsEquiv hnodal' s' hs' v' : Set X') ⊆
+  have himg : g '' (X'.dualGraphIrreducibleComponentsEquiv hnodal' s' hs' v' : Set X') =
       (X.dualGraphIrreducibleComponentsEquiv hnodal s hs (iso.vertexEquiv v') : Set X) := by
-    rw [X'.coe_dualGraphIrreducibleComponentsEquiv, X.coe_dualGraphIrreducibleComponentsEquiv]
-    rintro _ ⟨_, ⟨y', hy', rfl⟩, rfl⟩
-    refine ⟨g_Bl y', ?_, ?_⟩
-    · rw [← IsRegular.componentOf_eq_iff, hiso_v,
-        IsRegular.componentOf_apply_of_isPullback H_Bl, IsRegular.componentOf_eq_iff.mpr hy']
-    · exact congrArg (fun f : I'.blowup ⟶ X ↦ f y') hg_Bl_ν
-  refine ⟨fun h ↦ h ▸ hsub₀, fun hsub ↦ ?_⟩
-  obtain ⟨y', hy'_v', hy'_U'⟩ := (X'.dense_preimage_smoothLocus_blowupToBase hnodal')
-    |>.inter_open_nonempty (v'₀ : Set I'.blowup)
-      (IsRegular.isOpen_of_mem_irreducibleComponents v'₀.2) v'₀.2.1.nonempty
-  have hg_smooth : g (I'.blowupToBase y') ∈ (X ↘ Spec (.of K)).smoothLocus := by
-    by_contra hns
-    have hmem : g (I'.blowupToBase y') ∈ I.support :=
-      (X.mem_support_singularLocus_iff_notMem_smoothLocus _).mpr hns
-    have hsupp : (I'.support : Set X') = ((I.comap g).support : Set X') :=
-      congrArg (fun J : X'.IdealSheafData ↦ (J.support : Set X')) hI
-    have hmem' : I'.blowupToBase y' ∈ I'.support := by
-      rw [← SetLike.mem_coe, hsupp, IdealSheafData.support_comap,
-        TopologicalSpace.Closeds.coe_preimage]
-      exact hmem
-    exact (X'.mem_support_singularLocus_iff_notMem_smoothLocus _).mp hmem' hy'_U'
-  have hx_mem : g (I'.blowupToBase y') ∈
-      g '' (X'.dualGraphIrreducibleComponentsEquiv hnodal' s' hs' v' : Set X') := by
-    rw [X'.coe_dualGraphIrreducibleComponentsEquiv]
-    exact ⟨I'.blowupToBase y', ⟨y', hy'_v', rfl⟩, rfl⟩
-  have h₀ : g (I'.blowupToBase y') ∈ I.blowupToBase '' (u₀ : Set I.blowup) := by
-    rw [← X.coe_dualGraphIrreducibleComponentsEquiv]
-    exact hsub₀ hx_mem
-  have h₁ : g (I'.blowupToBase y') ∈
-      I.blowupToBase '' (X.dualGraphVertexEquiv hnodal s hs w : Set I.blowup) := by
-    rw [← X.coe_dualGraphIrreducibleComponentsEquiv]
-    exact hsub hx_mem
-  obtain ⟨y₀, hy₀, hy₀_eq⟩ := h₀
-  obtain ⟨y₁, hy₁, hy₁_eq⟩ := h₁
-  have hy₀_U : y₀ ∈ I.blowupToBase ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
-    rw [Set.mem_preimage, hy₀_eq]
-    exact hg_smooth
-  have hy₁_U : y₁ ∈ I.blowupToBase ⁻¹' ((X ↘ Spec (.of K)).smoothLocus : Set X) := by
-    rw [Set.mem_preimage, hy₁_eq]
-    exact hg_smooth
-  have hy_eq : y₀ = y₁ :=
-    X.injOn_preimage_smoothLocus_blowupToBase hnodal hy₀_U hy₁_U (hy₀_eq.trans hy₁_eq.symm)
-  apply (X.dualGraphVertexEquiv hnodal s hs).injective
-  exact (IsRegular.componentOf_eq_iff.mpr hy₀).symm.trans
-    (IsRegular.componentOf_eq_iff.mpr (hy_eq ▸ hy₁))
+    rw [X'.coe_dualGraphIrreducibleComponentsEquiv, X.coe_dualGraphIrreducibleComponentsEquiv,
+      dualGraphVertexEquiv_dualGraphIsoOfIsPullback_vertexEquiv,
+      coe_irreducibleComponentsEquivOfIsPullback, ← Set.image_comp, ← Set.image_comp]
+    congr 1
+    ext y'
+    rw [Function.comp_apply, Function.comp_apply, ← Scheme.Hom.comp_apply,
+      ← Scheme.Hom.comp_apply, blowupSingularLocusMap_blowupToBase H]
+  rw [himg]
+  refine ⟨fun h ↦ h ▸ Set.Subset.rfl, fun hsub ↦ ?_⟩
+  let Z₁ := X.dualGraphIrreducibleComponentsEquiv hnodal s hs (iso.vertexEquiv v')
+  let Z₂ := X.dualGraphIrreducibleComponentsEquiv hnodal s hs w
+  exact (X.dualGraphIrreducibleComponentsEquiv hnodal s hs).injective
+    (Subtype.ext (hsub.antisymm (Z₁.2.2 Z₂.2.1 hsub)))
 
-private theorem isPullback_of_iso_over {K : Type u} [Field K]
-    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of K))]
-    (e : X' ≅ X) (he : e.hom ≫ (X ↘ Spec (.of K)) = X' ↘ Spec (.of K)) :
-    letI : Algebra K K := Algebra.id K
-    IsPullback e.hom (X' ↘ Spec (.of K)) (X ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
-  let _ : Algebra K K := Algebra.id K
-  have hSpec_id : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) := by simp
-  rw [hSpec_id]
-  exact IsPullback.of_horiz_isIso ⟨by simp [he]⟩
+/-- **Functoriality of `dualGraphIsoOfIsPullback` along towers of separably closed fields.** Given a
+tower `M / L / K` of separably closed fields and compatible base-change squares `X'' ⟶ X' ⟶ X`,
+the composite base-change isomorphism of dual graphs is the composition of the two step
+isomorphisms. -/
+theorem dualGraphIsoOfIsPullback_trans
+    {K L M : Type u} [Field K] [IsSepClosed K] [Field L] [IsSepClosed L] [Field M] [IsSepClosed M]
+    [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+    {X X' X'' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+    [X''.Over (Spec (.of M))]
+    [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
+    [IsProper (X' ↘ Spec (.of L))] [ConnectedSpace X']
+    [IsProper (X'' ↘ Spec (.of M))] [ConnectedSpace X'']
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (hnodal' : AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of L)))
+    (hnodal'' : AtWorstNodalOfRelativeDimensionOne (X'' ↘ Spec (.of M)))
+    {g₁ : X'' ⟶ X'} {g₂ : X' ⟶ X}
+    (H₁ : IsPullback g₁ (X'' ↘ Spec (.of M)) (X' ↘ Spec (.of L))
+      (Spec.map (CommRingCat.ofHom (algebraMap L M))))
+    (H₂ : IsPullback g₂ (X' ↘ Spec (.of L)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))))
+    {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of L) ⟶ X'))
+    (s'' : ι → (Spec (.of M) ⟶ X''))
+    (hs : ∀ i, Set.range (s i) ⊆ (X ↘ Spec (.of K)).smoothLocus)
+    (hs' : ∀ i, Set.range (s' i) ⊆ (X' ↘ Spec (.of L)).smoothLocus)
+    (hs'' : ∀ i, Set.range (s'' i) ⊆ (X'' ↘ Spec (.of M)).smoothLocus)
+    (hmark₁ : ∀ i, s'' i ≫ g₁ = Spec.map (CommRingCat.ofHom (algebraMap L M)) ≫ s' i)
+    (hmark₂ : ∀ i, s' i ≫ g₂ = Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫ s i)
+    (H₁₂ : IsPullback (g₁ ≫ g₂) (X'' ↘ Spec (.of M)) (X ↘ Spec (.of K))
+      (Spec.map (CommRingCat.ofHom (algebraMap K M))) := (by
+      have hcomp : Spec.map (CommRingCat.ofHom (algebraMap L M)) ≫
+          Spec.map (CommRingCat.ofHom (algebraMap K L)) =
+            Spec.map (CommRingCat.ofHom (algebraMap K M)) := by
+        rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq K L M]
+      simpa only [hcomp] using H₁.paste_horiz H₂))
+    (hmark₁₂ : ∀ i, s'' i ≫ (g₁ ≫ g₂) =
+      Spec.map (CommRingCat.ofHom (algebraMap K M)) ≫ s i := fun i ↦ by
+      rw [← Category.assoc, hmark₁ i, Category.assoc, hmark₂ i, ← Category.assoc, ← Spec.map_comp,
+        ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq K L M]) :
+    dualGraphIsoOfIsPullback hnodal hnodal'' H₁₂ s s'' hs hs'' hmark₁₂ =
+      (dualGraphIsoOfIsPullback hnodal' hnodal'' H₁ s' s'' hs' hs'' hmark₁).trans
+        (dualGraphIsoOfIsPullback hnodal hnodal' H₂ s s' hs hs' hmark₂) := by
+  have := hnodal.syntomic
+  have := hnodal'.syntomic
+  have := hnodal''.syntomic
+  let iso₁ := dualGraphIsoOfIsPullback hnodal' hnodal'' H₁ s' s'' hs' hs'' hmark₁
+  let iso₂ := dualGraphIsoOfIsPullback hnodal hnodal' H₂ s s' hs hs' hmark₂
+  ext x
+  · rw [DualGraph.Iso.trans_vertexEquiv, Equiv.trans_apply,
+      vertexEquiv_dualGraphIsoOfIsPullback_eq_iff]
+    have h₁ := (vertexEquiv_dualGraphIsoOfIsPullback_eq_iff hnodal' hnodal'' H₁ s' s'' hs' hs''
+      hmark₁ x (iso₁.vertexEquiv x)).mp rfl
+    have h₂ := (vertexEquiv_dualGraphIsoOfIsPullback_eq_iff hnodal hnodal' H₂ s s' hs hs'
+      hmark₂ (iso₁.vertexEquiv x) (iso₂.vertexEquiv (iso₁.vertexEquiv x))).mp rfl
+    have hcomp_img :
+        (g₁ ≫ g₂) '' (X''.dualGraphIrreducibleComponentsEquiv hnodal'' s'' hs'' x : Set X'') =
+          g₂ '' (g₁ ''
+            (X''.dualGraphIrreducibleComponentsEquiv hnodal'' s'' hs'' x : Set X'')) := by
+      rw [← Set.image_comp]
+      rfl
+    exact hcomp_img ▸ (Set.image_mono h₁).trans h₂
+  · apply (X.dualGraphEdgeEquiv hnodal s hs).injective
+    apply (X.singularLocus K).subschemeι.isClosedEmbedding.injective
+    rw [DualGraph.Iso.trans_edgeEquiv, Equiv.trans_apply,
+      subschemeι_dualGraphIsoOfIsPullback_edgeEquiv,
+      subschemeι_dualGraphIsoOfIsPullback_edgeEquiv,
+      subschemeι_dualGraphIsoOfIsPullback_edgeEquiv, Scheme.Hom.comp_apply]
 
 private theorem hmark_of_iso_over {K : Type u} [Field K] {X X' : Scheme.{u}}
     (e : X' ≅ X) {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of K) ⟶ X'))
@@ -1034,6 +1158,8 @@ theorem vertexEquiv_dualGraphIsoOfIso_eq_iff {K : Type u} [Field K] [IsSepClosed
   vertexEquiv_dualGraphIsoOfIsPullback_eq_iff hnodal hnodal' (isPullback_of_iso_over e he)
     s s' hs hs' (hmark_of_iso_over e s s' hmark) v' w
 
+/-- The identity isomorphism of a pointed nodal curve induces the identity isomorphism of its dual
+graph. -/
 @[simp]
 theorem dualGraphIsoOfIso_refl {K : Type u} [Field K] [IsSepClosed K]
     {X : Scheme.{u}} [X.Over (Spec (.of K))] [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
@@ -1052,6 +1178,7 @@ theorem dualGraphIsoOfIso_refl {K : Type u} [Field K] [IsSepClosed K]
     rw [DualGraph.Iso.refl_edgeEquiv, Equiv.refl_apply, subschemeι_dualGraphIsoOfIso_edgeEquiv]
     simp [Iso.refl_hom]
 
+/-- `dualGraphIsoOfIso` respects composition of pointed curve isomorphisms. -/
 theorem dualGraphIsoOfIso_trans {K : Type u} [Field K] [IsSepClosed K]
     {X X' X'' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of K))]
     [X''.Over (Spec (.of K))]
@@ -1074,34 +1201,14 @@ theorem dualGraphIsoOfIso_trans {K : Type u} [Field K] [IsSepClosed K]
         (fun i ↦ by rw [Iso.trans_hom, ← Category.assoc, hmark₁ i, hmark₂ i]) =
       (dualGraphIsoOfIso hnodal' hnodal'' e₁ he₁ s' s'' hs' hs'' hmark₁).trans
         (dualGraphIsoOfIso hnodal hnodal' e₂ he₂ s s' hs hs' hmark₂) := by
-  have := hnodal.syntomic
-  have := hnodal'.syntomic
-  have := hnodal''.syntomic
-  let iso₁ := dualGraphIsoOfIso hnodal' hnodal'' e₁ he₁ s' s'' hs' hs'' hmark₁
-  let iso₂ := dualGraphIsoOfIso hnodal hnodal' e₂ he₂ s s' hs hs' hmark₂
-  ext x
-  · rw [DualGraph.Iso.trans_vertexEquiv, Equiv.trans_apply, vertexEquiv_dualGraphIsoOfIso_eq_iff]
-    have h₁ := (vertexEquiv_dualGraphIsoOfIso_eq_iff hnodal' hnodal'' e₁ he₁ s' s'' hs' hs''
-      hmark₁ x (iso₁.vertexEquiv x)).mp rfl
-    have h₂ := (vertexEquiv_dualGraphIsoOfIso_eq_iff hnodal hnodal' e₂ he₂ s s' hs hs'
-      hmark₂ (iso₁.vertexEquiv x) (iso₂.vertexEquiv (iso₁.vertexEquiv x))).mp rfl
-    calc
-      (e₁ ≪≫ e₂).hom '' (X''.dualGraphIrreducibleComponentsEquiv hnodal'' s'' hs'' x : Set X'')
-        = e₂.hom '' (e₁.hom ''
-            (X''.dualGraphIrreducibleComponentsEquiv hnodal'' s'' hs'' x : Set X'')) := by
-          ext z
-          simp [Set.mem_image]
-      _ ⊆ e₂.hom ''
-            (X'.dualGraphIrreducibleComponentsEquiv hnodal' s' hs' (iso₁.vertexEquiv x) : Set X') :=
-          Set.image_mono h₁
-      _ ⊆ (X.dualGraphIrreducibleComponentsEquiv hnodal s hs
-            (iso₂.vertexEquiv (iso₁.vertexEquiv x)) : Set X) := h₂
-  · apply (X.dualGraphEdgeEquiv hnodal s hs).injective
-    apply (X.singularLocus K).subschemeι.isClosedEmbedding.injective
-    rw [DualGraph.Iso.trans_edgeEquiv, Equiv.trans_apply,
-      subschemeι_dualGraphIsoOfIso_edgeEquiv, subschemeι_dualGraphIsoOfIso_edgeEquiv,
-      subschemeι_dualGraphIsoOfIso_edgeEquiv, Iso.trans_hom, Scheme.Hom.comp_apply]
+  let _ : Algebra K K := Algebra.id K
+  have : IsScalarTower K K K := ⟨fun x y z ↦ mul_assoc x y z⟩
+  exact dualGraphIsoOfIsPullback_trans hnodal hnodal' hnodal''
+    (isPullback_of_iso_over e₁ he₁) (isPullback_of_iso_over e₂ he₂)
+    s s' s'' hs hs' hs''
+    (hmark_of_iso_over e₁ s' s'' hmark₁) (hmark_of_iso_over e₂ s s' hmark₂)
 
+/-- `dualGraphIsoOfIso` commutes with symmetry of pointed curve isomorphisms. -/
 theorem dualGraphIsoOfIso_symm {K : Type u} [Field K] [IsSepClosed K]
     {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of K))]
     [IsProper (X ↘ Spec (.of K))] [ConnectedSpace X]
@@ -1117,40 +1224,29 @@ theorem dualGraphIsoOfIso_symm {K : Type u} [Field K] [IsSepClosed K]
         (by rw [← he, Iso.symm_hom, Iso.inv_hom_id_assoc]) s' s hs' hs
         (fun i ↦ by rw [← hmark i, Iso.symm_hom, Category.assoc, e.hom_inv_id, Category.comp_id]) =
       (dualGraphIsoOfIso hnodal hnodal' e he s s' hs hs' hmark).symm := by
-  have := hnodal.syntomic
-  have := hnodal'.syntomic
   have he_symm : e.symm.hom ≫ (X' ↘ Spec (.of K)) = X ↘ Spec (.of K) := by
     rw [← he, Iso.symm_hom, Iso.inv_hom_id_assoc]
   have hmark_symm (i : ι) : s i ≫ e.symm.hom = s' i := by
     rw [← hmark i, Iso.symm_hom, Category.assoc, e.hom_inv_id, Category.comp_id]
   let iso := dualGraphIsoOfIso hnodal hnodal' e he s s' hs hs' hmark
   let iso_symm := dualGraphIsoOfIso hnodal' hnodal e.symm he_symm s' s hs' hs hmark_symm
+  have h_eq_refl : ∀ (e₀ : X ≅ X) (he₀ : e₀.hom ≫ (X ↘ Spec (.of K)) = X ↘ Spec (.of K))
+      (hm₀ : ∀ i, s i ≫ e₀.hom = s i),
+      e₀ = Iso.refl X →
+        dualGraphIsoOfIso hnodal hnodal e₀ he₀ s s hs hs hm₀ =
+          DualGraph.Iso.refl (X.dualGraph hnodal s hs) := by
+    rintro _ _ _ rfl
+    exact dualGraphIsoOfIso_refl hnodal s hs
+  have htrans : iso_symm.trans iso = DualGraph.Iso.refl (X.dualGraph hnodal s hs) :=
+    (dualGraphIsoOfIso_trans hnodal hnodal' hnodal e.symm he_symm e he s s' s hs hs' hs
+      hmark_symm hmark).symm.trans (h_eq_refl (e.symm ≪≫ e) _ _ (Iso.symm_self_id e))
   ext x
-  · rw [DualGraph.Iso.symm_vertexEquiv]
-    apply iso.vertexEquiv.injective
-    rw [iso.vertexEquiv.apply_symm_apply]
-    have h₁ := (vertexEquiv_dualGraphIsoOfIso_eq_iff hnodal' hnodal e.symm he_symm s' s hs' hs
-      hmark_symm x (iso_symm.vertexEquiv x)).mp rfl
-    have h₂ := (vertexEquiv_dualGraphIsoOfIso_eq_iff hnodal hnodal' e he s s' hs hs' hmark
-      (iso_symm.vertexEquiv x) (iso.vertexEquiv (iso_symm.vertexEquiv x))).mp rfl
-    let Z_x := X.dualGraphIrreducibleComponentsEquiv hnodal s hs x
-    let Z_w := X.dualGraphIrreducibleComponentsEquiv hnodal s hs
-      (iso.vertexEquiv (iso_symm.vertexEquiv x))
-    have hsub : (Z_x : Set X) ⊆ (Z_w : Set X) := by
-      intro z hz
-      have hzw : e.hom (e.symm.hom z) ∈ (Z_w : Set X) := h₂ ⟨e.symm.hom z, h₁ ⟨z, hz, rfl⟩, rfl⟩
-      have hid : e.hom (e.symm.hom z) = z := congrArg (fun f : X ⟶ X ↦ f z) e.inv_hom_id
-      rwa [hid] at hzw
-    exact (X.dualGraphIrreducibleComponentsEquiv hnodal s hs).injective <|
-      Subtype.ext (hsub.antisymm (Z_x.2.2 Z_w.2.1 hsub)).symm
-  · rw [DualGraph.Iso.symm_edgeEquiv]
-    apply iso.edgeEquiv.injective
-    apply (X.dualGraphEdgeEquiv hnodal s hs).injective
-    apply (X.singularLocus K).subschemeι.isClosedEmbedding.injective
-    rw [iso.edgeEquiv.apply_symm_apply, subschemeι_dualGraphIsoOfIso_edgeEquiv,
-      subschemeι_dualGraphIsoOfIso_edgeEquiv]
-    exact congrArg (fun f : X ⟶ X ↦
-      f ((X.singularLocus K).subschemeι (X.dualGraphEdgeEquiv hnodal s hs x))) e.inv_hom_id
+  · apply iso.vertexEquiv.injective
+    rw [DualGraph.Iso.symm_vertexEquiv, Equiv.apply_symm_apply]
+    simpa using congrArg (fun φ : (X.dualGraph hnodal s hs).Iso _ ↦ φ.vertexEquiv x) htrans
+  · apply iso.edgeEquiv.injective
+    rw [DualGraph.Iso.symm_edgeEquiv, Equiv.apply_symm_apply]
+    simpa using congrArg (fun φ : (X.dualGraph hnodal s hs).Iso _ ↦ φ.edgeEquiv x) htrans
 
 /-- Base change between separably closed fields preserves the first Betti number of the dual
 graph. -/
@@ -1229,4 +1325,4 @@ theorem isSemistable_dualGraph_iff_of_isPullback
 
 end BaseChange
 
-end AlgebraicGeometry.Scheme
+end TauCeti.AlgebraicGeometry

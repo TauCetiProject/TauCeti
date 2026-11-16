@@ -27,12 +27,17 @@ and so identifies the strict transform of a closed subscheme with a scheme-theor
 * `IsEffectiveCartier.isSchemeTheoreticallyDominant_support_compl_ι`, in the namespace
   `AlgebraicGeometry.Scheme.IdealSheafData`: the inclusion of the complement of an effective
   Cartier divisor is scheme-theoretically dominant.
+* `IsEffectiveCartier.isAffineHom_support_compl_ι` and
+  `IsEffectiveCartier.dense_support_compl`, in the namespace
+  `AlgebraicGeometry.Scheme.IdealSheafData`: the inclusion of the complement of an effective
+  Cartier divisor is an affine morphism (hence quasi-compact) and its underlying set is
+  topologically dense, with no Noetherian or finiteness hypotheses on `X`.
 
 ## References
 
 * [The Stacks Project, Section 01WQ](https://stacks.math.columbia.edu/tag/01WQ), *Effective Cartier
-  divisors*: the lemma that the complement of an effective Cartier divisor is scheme-theoretically
-  dense.
+  divisors*: the lemma that the complement of an effective Cartier divisor is affine and
+  scheme-theoretically dense.
 -/
 
 public section
@@ -78,5 +83,39 @@ theorem IsEffectiveCartier.isSchemeTheoreticallyDominant_support_compl_ι
     (S := Γ(X, X.basicOpen (a x)))).mpr ?_ (hs0.trans (map_zero _).symm)
   rintro ⟨_, n, rfl⟩
   exact ((Commute.isRegular_iff (Commute.all _)).mpr (ha x).isLeftRegular).pow n
+
+/-- **The inclusion of the complement of an effective Cartier divisor is an affine morphism** (and
+in particular quasi-compact): on each affine open where the divisor is cut out by a single section
+`a`, the complement restricts to the affine basic open `D(a)`. -/
+theorem IsEffectiveCartier.isAffineHom_support_compl_ι (hI : I.IsEffectiveCartier) :
+    IsAffineHom (Scheme.Opens.ι I.support.compl) := by
+  let ι := Scheme.Opens.ι I.support.compl
+  refine isAffineHom_of_forall_exists_isAffineOpen ι fun x ↦ ?_
+  obtain ⟨U, hxU, a, -, hUa⟩ := (isEffectiveCartier_iff I).mp hI x
+  refine ⟨U.1, hxU, U.2, ?_⟩
+  rw [← ι.isAffineOpen_iff_of_isOpenImmersion]
+  have himg : ι ''ᵁ ι ⁻¹ᵁ U.1 = X.basicOpen a := by
+    ext y
+    constructor
+    · rintro ⟨⟨z, hzI⟩, hzU, rfl⟩
+      by_contra hza
+      exact hzI ((mem_support_iff_of_mem hzU).mpr
+        (by rw [hUa, Scheme.zeroLocus_span, Scheme.mem_zeroLocus_iff]; simpa using hza))
+    · intro hya
+      have hyU : y ∈ U.1 := X.basicOpen_le a hya
+      have hyI : y ∈ I.support.compl := fun hy ↦ by
+        rw [SetLike.mem_coe, mem_support_iff_of_mem hyU, hUa, Scheme.mem_zeroLocus_iff] at hy
+        exact hy a (Ideal.mem_span_singleton_self a) hya
+      exact ⟨⟨y, hyI⟩, hyU, rfl⟩
+  rw [himg]
+  exact U.2.basicOpen a
+
+/-- **The complement of an effective Cartier divisor is topologically dense** on an arbitrary
+scheme, with no Noetherian or finiteness assumptions. -/
+theorem IsEffectiveCartier.dense_support_compl (hI : I.IsEffectiveCartier) :
+    Dense (I.support.compl : Set X) := by
+  have := hI.isSchemeTheoreticallyDominant_support_compl_ι
+  have := hI.isAffineHom_support_compl_ι
+  simpa only [DenseRange, Scheme.Opens.range_ι] using (Scheme.Opens.ι I.support.compl).denseRange
 
 end AlgebraicGeometry.Scheme.IdealSheafData
