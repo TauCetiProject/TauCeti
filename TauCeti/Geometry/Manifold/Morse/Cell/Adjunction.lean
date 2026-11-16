@@ -170,7 +170,7 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
   obtain ⟨e₁, he₁⟩ := exists_homotopyEquiv_sigmaDiskAdjunctionSpace_of_leftInverse
     (fun p ↦ (ψ p).toOpenPartialHomeomorph) k _ hε.le hball hψ hg hΦ.homotopic.symm
   -- Move the attachment across the collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]`.
-  obtain ⟨r, hr, e, he⟩ :=
+  obtain ⟨r, hr, H⟩ :=
     exists_homotopyEquiv_pushout_comp_sublevelRetraction_of_isCompact_preimage_Icc hf.contMDiff
       hεa (by linarith) hεb hcompact fun x hx hxab ↦ by
         rw [hcrit x hx hxab]
@@ -178,8 +178,9 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
     (relCWBaseInclusion (univ.sigma fun p ↦ (univ : Set (TopCat.disk.{u} (k p)))))
     (isEmbedding_relCWBaseInclusion _) (hasHomotopyExtensionProperty_range_relCWBaseInclusion _)
     (TopCat.ofHom (sigmaDiskAttachingMap α)) e₁ he₁
+  rw [← TopCat.ofHom_comp] at H
   refine ⟨ε, hε, hεa, hεb, ψ, hψd, hψp, hball, hψ, r, hr, ?_⟩
   rw [ContinuousMap.sigmaDiskAttachingMap_comp]
-  exact ⟨e, he⟩
+  exact H
 
 end TauCeti

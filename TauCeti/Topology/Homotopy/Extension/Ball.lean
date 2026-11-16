@@ -43,6 +43,8 @@ hypothesis of the compression lemma for CW complexes.
 
 * `TauCeti.ballRadialDen`, `TauCeti.ballRadialProjection`: the shared radial denominator and
   projection in ambient coordinates, also used for the bottom-and-sides deformation of cubes.
+* `TauCeti.ballRadialDen_pos`, `TauCeti.continuous_ballRadialDen`: the denominator is positive
+  and continuous.
 * `TauCeti.ballRadialProjection_spec`, `TauCeti.ballRadialProjection_eq_self`,
   `TauCeti.ballRadialProjection_fst_le`: the projection lands on the bottom and sides, fixes that
   subspace and does not raise heights.
@@ -89,6 +91,18 @@ private lemma ballRadialProjection_den_pos (p : I × closedBall (0 : E) 1) :
     0 < max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) :=
   lt_of_lt_of_le (by have := p.1.2.2; linarith) (le_max_left _ _)
 
+omit [NormedSpace ℝ E] in
+/-- The radial denominator is positive. -/
+theorem ballRadialDen_pos (p : I × closedBall (0 : E) 1) : 0 < ballRadialDen p := by
+  rw [ballRadialDen_def]
+  exact ballRadialProjection_den_pos p
+
+omit [NormedSpace ℝ E] in
+/-- The radial denominator is continuous. -/
+theorem continuous_ballRadialDen : Continuous (ballRadialDen (E := E)) := by
+  rw [show ballRadialDen (E := E) = _ from funext ballRadialDen_def]
+  fun_prop
+
 /-- Radial projection of the cylinder over the closed unit ball away from the point at height `2`
 on its axis, written in the ambient coordinates `ℝ × E`. The scale factor is the smaller of the
 factors needed to reach the bottom face and the side of the cylinder. Taking the maximum in the
@@ -102,9 +116,8 @@ theorem ballRadialProjection_def (p : I × closedBall (0 : E) 1) :
         (2 / ballRadialDen p) • (p.2 : E)) := (rfl)
 
 theorem continuous_ballRadialProjection : Continuous (ballRadialProjection (E := E)) := by
-  have hd : Continuous fun p : I × closedBall (0 : E) 1 =>
-      max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) := by fun_prop
-  have hne p := (ballRadialProjection_den_pos (E := E) p).ne'
+  have hd := continuous_ballRadialDen (E := E)
+  have hne p := (ballRadialDen_pos (E := E) p).ne'
   exact (continuous_const.sub ((by fun_prop : Continuous fun p : I × closedBall (0 : E) 1 =>
     2 * (2 - (p.1 : ℝ))).div hd hne)).prodMk
       ((continuous_const.div hd hne).smul (by fun_prop))
@@ -225,16 +238,14 @@ theorem hasHomotopyExtensionProperty_setOf_eq_one {D : Set X} {ρ : X → ℝ}
   -- radial projection.
   let c : I × D → ℝ := fun q ↦ 2 / ballRadialDen (p q)
   have hc_apply (q : I × D) : c q = 2 / ballRadialDen (p q) := rfl
-  have hc0 (q : I × D) : 0 ≤ c q := div_nonneg zero_le_two (ballRadialProjection_den_pos _).le
+  have hc0 (q : I × D) : 0 ≤ c q := div_nonneg zero_le_two (ballRadialDen_pos _).le
   have hcρ (q : I × D) : c q * ρ q.2 = (ballRadialProjection (p q)).2 := by
     rw [ballRadialProjection_def, smul_eq_mul, ← hρD_apply]
   have hcρ1 (q : I × D) : c q * ρ q.2 ≤ 1 := by
     rw [hcρ]
     exact (Real.le_norm_self _).trans (mem_closedBall_zero_iff.1 (ballRadialProjection_spec _).2.1)
-  have hcc : Continuous c := continuous_const.div
-    ((by fun_prop : Continuous fun q : I × closedBall (0 : ℝ) 1 ↦
-      max (2 - (q.1 : ℝ)) (2 * ‖(q.2 : ℝ)‖)).comp hpc)
-    fun q ↦ (ballRadialProjection_den_pos (p q)).ne'
+  have hcc : Continuous c := continuous_const.div (continuous_ballRadialDen.comp hpc)
+    fun q ↦ (ballRadialDen_pos (p q)).ne'
   have hφD' (q : I × D) := hφD q.2 q.2.2 (c q) (hc0 q) (hcρ1 q)
   let r : C(I × D, I × D) :=
     ⟨fun q ↦ (⟨(ballRadialProjection (p q)).1, (ballRadialProjection_spec (p q)).1⟩,

@@ -324,7 +324,9 @@ theorem exists_homotopyEquiv_pushout_negativeDiscBundle [SecondCountableTopology
       (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)))
     (IsEmbedding.inclusion (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε))
     (h.hasHomotopyExtensionProperty_negativeSphereBundle hn hfs hdim g ε) (TopCat.ofHom α) e₁ he₁
-  exact ⟨ε, hε, hεa, hεb, hD, α, r, hα, hr, E, hE⟩
+  refine ⟨ε, hε, hεa, hεb, hD, α, r, hα, hr, ?_⟩
+  rw [TopCat.ofHom_comp]
+  exact ⟨E, hE⟩
 
 end IsNondegenerateCriticalSubmanifold
 

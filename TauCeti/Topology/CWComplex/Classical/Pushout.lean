@@ -190,8 +190,8 @@ theorem exists_homotopyEquiv_relCWAdjunctionSpace (e : Z ≃ₕ Z') (C : Set X) 
         pushout.inr (relCWBaseInclusion C) (TopCat.ofHom (e.toFun.comp a)) (e z)) ∧
       ∀ z, E.symm (pushout.inr (relCWBaseInclusion C) (TopCat.ofHom (e.toFun.comp a)) z) =
         pushout.inr (relCWBaseInclusion C) (TopCat.ofHom a) (e.symm z) := by
-  -- `TopCat.ofHom (e.toFun.comp a)` is `TopCat.ofHom a ≫ TopCat.ofHom e.toFun` by definition.
-  exact e.exists_homotopyEquiv_pushout _ (isEmbedding_relCWBaseInclusion C)
+  have h := e.exists_homotopyEquiv_pushout _ (isEmbedding_relCWBaseInclusion C)
     (hasHomotopyExtensionProperty_range_relCWBaseInclusion C) (TopCat.ofHom a)
+  rwa [← TopCat.ofHom_comp] at h
 
 end ContinuousMap.HomotopyEquiv
