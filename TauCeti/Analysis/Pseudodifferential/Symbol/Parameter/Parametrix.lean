@@ -29,9 +29,15 @@ resolvent `(A - z)⁻¹`, before their asymptotic summation.
   (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_leftParametrix`) and
   `∑_{j + k = N} sharpTerm a bⱼ k = δ_{N,0}`
   (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrix`).
-* `TauCeti.ParameterSymbol.leftParametrix_shiftedLaplacian_succ`: for the symbol of `s - Δ - z`,
-  which does not depend on the position, the correction terms vanish and the left parametrix is
-  the resolvent symbol `((s + ‖ξ‖²) - z)⁻¹` alone.
+* `TauCeti.ParameterSymbol.leftParametrix_succ_eq_zero_of_spatialDeriv_eq_zero`: for a symbol
+  that does not depend on the position, such as the symbol of `s - Δ - z`
+  (`TauCeti.ParameterSymbol.leftParametrix_shiftedLaplacian_succ`), the correction terms vanish
+  and the left parametrix is the inverse symbol alone.
+
+The definition and closed form of `TauCeti.ParameterSymbol.sharpTerm` follow
+`TauCeti.HomogeneousSymbol.sharpTerm` and `TauCeti.Symbol.sharpTerm`, and the parametrix
+recursions adapt `TauCeti.ClassicalSymbol.leftInverseTerms` and
+`TauCeti.ClassicalSymbol.rightInverseTerms` to the parameter-dependent class.
 
 ## References
 
@@ -97,17 +103,25 @@ private theorem coefficient_sharpTerm_congr {k k' : ℕ} (h : k = k')
   subst h
   rfl
 
+/-- Differentiating the derivative of `f` in the coordinate direction `j` along a word is
+differentiating `f` along the word extended by `j`. -/
+private theorem coordinateDeriv_eq_append_singleton {A : Type*} [NormedAddCommGroup A]
+    [NormedSpace ℝ A] {f g : CoordinateSpace n → A} (w : List (Fin n)) (j : Fin n)
+    (h : ∀ y, g y = fderiv ℝ f y (EuclideanSpace.single j 1)) :
+    coordinateDeriv w g = coordinateDeriv (w ++ [j]) f := by
+  rw [coordinateDeriv_append]
+  congr 1
+  funext y
+  rw [h, coordinateDeriv_cons, coordinateDeriv_nil]
+
 /-- At a spectral parameter in `Λ`, a frequency derivative along a word of the frequency
 derivative `∂_{ξ_j} b` is the frequency derivative of `b` along the word extended by `j`. -/
 private theorem coordinateDeriv_frequencyDeriv (b : ParameterSymbol n Λ W U m')
     (w : List (Fin n)) (j : Fin n) {x : CoordinateSpace n} {z : ℂ} (hz : z ∈ Λ) :
     coordinateDeriv w
         (fun η => (b.frequencyDeriv (EuclideanSpace.single j 1)).coefficient ((x, η), z)) =
-      coordinateDeriv (w ++ [j]) (fun η => b.coefficient ((x, η), z)) := by
-  rw [coordinateDeriv_append]
-  congr 1
-  funext η
-  simp [coefficient_frequencyDeriv _ _ _ _ hz, coordinateDeriv_cons]
+      coordinateDeriv (w ++ [j]) (fun η => b.coefficient ((x, η), z)) :=
+  coordinateDeriv_eq_append_singleton w j fun η => coefficient_frequencyDeriv b _ x η hz
 
 /-- At a spectral parameter in `Λ`, a spatial derivative along a word of the spatial derivative
 `∂_{x_j} a` is the spatial derivative of `a` along the word extended by `j`. -/
@@ -115,11 +129,8 @@ private theorem coordinateDeriv_spatialDeriv (a : ParameterSymbol n Λ V W m) (w
     (j : Fin n) {ξ : CoordinateSpace n} {z : ℂ} (hz : z ∈ Λ) :
     coordinateDeriv w
         (fun y => (a.spatialDeriv (EuclideanSpace.single j 1)).coefficient ((y, ξ), z)) =
-      coordinateDeriv (w ++ [j]) (fun y => a.coefficient ((y, ξ), z)) := by
-  rw [coordinateDeriv_append]
-  congr 1
-  funext y
-  simp [coefficient_spatialDeriv _ _ _ _ hz, coordinateDeriv_cons]
+      coordinateDeriv (w ++ [j]) (fun y => a.coefficient ((y, ξ), z)) :=
+  coordinateDeriv_eq_append_singleton w j fun y => coefficient_spatialDeriv a _ y ξ hz
 
 /-- **Closed form of the composition terms.** At a spectral parameter in `Λ`, `sharpTerm b a k` is
 `((-i)ᵏ / k!) ∑_{|w| = k} ∂_ξ^w b ∘ ∂_x^w a`, the sum over the words `w` of length `k` in the
@@ -152,14 +163,11 @@ theorem sharpTerm_zero_right (b : ParameterSymbol n Λ W U m') (k : ℕ) :
     b.sharpTerm (0 : ParameterSymbol n Λ V W m) k = 0 := by
   induction k generalizing m' b with
   | zero => exact ext_of_mem fun x ξ z _ => by simp
-  | succ k ih =>
-    have h0 (v : CoordinateSpace n) : (0 : ParameterSymbol n Λ V W m).spatialDeriv v = 0 :=
-      ext_of_mem fun x ξ z hz => by simp [coefficient_spatialDeriv _ _ _ _ hz]
-    simp [sharpTerm_succ, h0, ih]
+  | succ k ih => simp [sharpTerm_succ, ih]
 
 /-- If the right factor does not depend on the position, the terms with derivatives vanish: only
 the pointwise composition `sharpTerm b a 0 = b ∘ a` remains of the formal composition. -/
-theorem sharpTerm_succ_of_forall_spatialDeriv_eq_zero (b : ParameterSymbol n Λ W U m')
+theorem sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero (b : ParameterSymbol n Λ W U m')
     {a : ParameterSymbol n Λ V W m} (ha : ∀ v, a.spatialDeriv v = 0) (k : ℕ) :
     b.sharpTerm a (k + 1) = 0 := by
   simp [sharpTerm_succ, ha]
@@ -214,13 +222,11 @@ theorem sum_coefficient_sharpTerm_leftParametrix (ha : a.IsElliptic) (N : ℕ)
     (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
     ∑ j ∈ range (N + 1), ((a.leftParametrix ha j).sharpTerm a (N - j)).coefficient ((x, ξ), z) =
       if N = 0 then ContinuousLinearMap.id ℂ V else 0 := by
+  have h := (ha.isInvertible x ξ z hz).inverse_comp_self
   rcases N with _ | N
-  · simpa using coefficient_inverse_comp_coefficient ha x ξ hz
-  rw [Finset.sum_range_succ, coefficient_sharpTerm_congr (Nat.sub_self (N + 1)),
-    coefficient_sharpTerm_zero, coefficient_leftParametrix_succ, ContinuousLinearMap.neg_comp,
-    ContinuousLinearMap.comp_assoc, ← coefficient_inverse a ha,
-    coefficient_inverse_comp_coefficient ha x ξ hz]
-  simp
+  · simpa using h
+  rw [Finset.sum_range_succ, coefficient_sharpTerm_congr (Nat.sub_self (N + 1))]
+  simp [coefficient_leftParametrix_succ, ContinuousLinearMap.comp_assoc, h]
 
 /-- The orders of the summands in the recursion for the right parametrix. -/
 private theorem rightParametrix_order_le (N : ℕ) (j : Fin (N + 1)) :
@@ -266,27 +272,32 @@ theorem sum_coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) (N : ℕ)
     (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
     ∑ j ∈ range (N + 1), (a.sharpTerm (a.rightParametrix ha j) (N - j)).coefficient ((x, ξ), z) =
       if N = 0 then ContinuousLinearMap.id ℂ W else 0 := by
+  have h := (ha.isInvertible x ξ z hz).self_comp_inverse
   rcases N with _ | N
-  · simpa using coefficient_comp_coefficient_inverse ha x ξ hz
-  rw [Finset.sum_range_succ, coefficient_sharpTerm_congr (Nat.sub_self (N + 1)),
-    coefficient_sharpTerm_zero, coefficient_rightParametrix_succ, ContinuousLinearMap.comp_neg,
-    ← ContinuousLinearMap.comp_assoc, ← coefficient_inverse a ha,
-    coefficient_comp_coefficient_inverse ha x ξ hz]
-  simp
+  · simpa using h
+  rw [Finset.sum_range_succ, coefficient_sharpTerm_congr (Nat.sub_self (N + 1))]
+  simp [coefficient_rightParametrix_succ, ← ContinuousLinearMap.comp_assoc, h]
+
+/-- For a symbol that does not depend on the position, the correction terms of the left
+parametrix vanish: it consists of the inverse symbol alone. -/
+theorem leftParametrix_succ_eq_zero_of_spatialDeriv_eq_zero (ha : a.IsElliptic)
+    (h : ∀ v, a.spatialDeriv v = 0) (N : ℕ) : a.leftParametrix ha (N + 1) = 0 := by
+  refine ext_of_mem fun x ξ z _ => ?_
+  have hterm : ∀ j ∈ range (N + 1),
+      ((a.leftParametrix ha j).sharpTerm a (N + 1 - j)).coefficient ((x, ξ), z) = 0 :=
+    fun j hj => by
+      rw [coefficient_sharpTerm_congr (show N + 1 - j = N - j + 1 by grind),
+        sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero _ h]
+      simp
+  simp [coefficient_leftParametrix_succ, Finset.sum_eq_zero hterm]
 
 /-- For the symbol of `s - Δ - z`, which does not depend on the position, the correction terms of
 the left parametrix vanish: it consists of the resolvent symbol `((s + ‖ξ‖²) - z)⁻¹` alone
 (`TauCeti.ParameterSymbol.coefficient_inverse_shiftedLaplacian`). -/
 theorem leftParametrix_shiftedLaplacian_succ {s : ℝ}
     (h : (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).IsElliptic) (N : ℕ) :
-    (shiftedLaplacian V s).leftParametrix h (N + 1) = 0 := by
-  refine ext_of_mem fun x ξ z _ => ?_
-  have hterm : ∀ j ∈ range (N + 1), (((shiftedLaplacian V s).leftParametrix h j).sharpTerm
-      (shiftedLaplacian V s) (N + 1 - j)).coefficient ((x, ξ), z) = 0 := fun j hj => by
-    rw [coefficient_sharpTerm_congr (show N + 1 - j = N - j + 1 by grind),
-      sharpTerm_succ_of_forall_spatialDeriv_eq_zero _ (spatialDeriv_shiftedLaplacian s)]
-    simp
-  simp [coefficient_leftParametrix_succ, Finset.sum_eq_zero hterm]
+    (shiftedLaplacian V s).leftParametrix h (N + 1) = 0 :=
+  leftParametrix_succ_eq_zero_of_spatialDeriv_eq_zero h (spatialDeriv_shiftedLaplacian s) N
 
 end ParameterSymbol
 
