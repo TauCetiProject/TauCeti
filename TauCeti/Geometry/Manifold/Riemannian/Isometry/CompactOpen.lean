@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Smooth
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Topology
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
@@ -163,6 +164,82 @@ private theorem contDiffAt_chart_edist_sq_param {x : M} {y : N}
 
 end ChartEdistSqParam
 
+section ChartEdistSqPullback
+
+open TauCeti
+
+/-- Pulling back a squared-distance map along a metric equivalence `e : M ≃ᵢ N` replaces the
+centres `yN i` by `e.symm (yN i)`. -/
+private theorem IsometryEquiv.edist_sq_symm_eq {M N ι : Type*}
+    [PseudoEMetricSpace M] [PseudoEMetricSpace N] (e : M ≃ᵢ N) {yN : ι → N}
+    {f : N → ι → ℝ} {s : Set N} (hf : ∀ q ∈ s, f q = fun i ↦ (edist (yN i) q).toReal ^ 2)
+    {q : M} (hq : e q ∈ s) :
+    (fun i ↦ (edist (e.symm (yN i)) q).toReal ^ 2) = f (e q) := by
+  rw [hf (e q) hq]
+  ext i
+  have hiso : edist (yN i) (e q) = edist (e.symm (yN i)) q := by
+    simpa only [e.apply_symm_apply] using e.edist_eq (e.symm (yN i)) q
+  rw [hiso]
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
+  {N : Type*} [PseudoEMetricSpace N] [ChartedSpace H' N]
+
+/-- Near `(e₀, z₀)`, the pulled-back centre coordinates `ξ e i = extChartAt I (e₀.symm (yN i))
+(e.symm (yN i))` vary continuously at `e₀`, and the squared-distance pullback formula reproduces
+`extChartAt J y (e ((extChartAt I x).symm z))`. -/
+private theorem IsometryEquiv.eventually_chart_edist_sq_param (e₀ : M ≃ᵢ N) {x : M} {y : N}
+    (z₀ : (extChartAt I x).target) {d : ℕ} {yN : Fin d → N}
+    {Φ : PartialDiffeomorph J 𝓘(ℝ, Fin d → ℝ) N (Fin d → ℝ) ∞}
+    (he₀p₀_src : e₀ ((extChartAt I x).symm z₀) ∈ Φ.source)
+    (hΦ_sub : Φ.source ⊆ (extChartAt J y).source)
+    (hΦ_eq : ∀ q ∈ Φ.source, Φ q = fun i ↦ (edist (yN i) q).toReal ^ 2) :
+    let a₀ : Fin d → M := fun i ↦ e₀.symm (yN i)
+    let ξ : (M ≃ᵢ N) → Fin d → E := fun e i ↦ extChartAt I (a₀ i) (e.symm (yN i))
+    ContinuousAt ξ e₀ ∧
+      ∀ᶠ q : (M ≃ᵢ N) × (extChartAt I x).target in 𝓝 (e₀, z₀),
+        q.1 ((extChartAt I x).symm q.2) ∈ (extChartAt J y).source ∧
+          extChartAt J y (q.1 ((extChartAt I x).symm q.2)) =
+            extChartAt J y (Φ.symm fun i ↦
+              (edist ((extChartAt I (a₀ i)).symm (ξ q.1 i))
+                ((extChartAt I x).symm q.2)).toReal ^ 2) := by
+  intro a₀ ξ
+  have hsymm_cont (i : Fin d) : Continuous (fun e : M ≃ᵢ N ↦ e.symm (yN i)) :=
+    IsometryEquiv.continuous_iff.1 IsometryEquiv.continuous_symm (yN i)
+  have hξ_cont : ContinuousAt ξ e₀ :=
+    continuousAt_pi.2 fun i ↦
+      (continuousAt_extChartAt (a₀ i)).comp_of_eq (hsymm_cont i).continuousAt rfl
+  -- Keep `(e, z)` in a product neighbourhood where `e ((extChartAt I x).symm z) ∈ Φ.source` and
+  -- each pulled-back centre `e.symm (yN i)` stays in the chart around `a₀ i`.
+  have heval_cont : Continuous (fun p : (M ≃ᵢ N) × (extChartAt I x).target ↦
+      p.1 ((extChartAt I x).symm p.2)) :=
+    continuous_fst.eval (((continuousOn_extChartAt_symm x).domRestrict).comp continuous_snd)
+  obtain ⟨Ue₁, Uz, hUe₁o, hUzo, he₀Ue₁, hz₀Uz, hUeUz⟩ :=
+    isOpen_prod_iff.1 (Φ.open_source.preimage heval_cont) e₀ z₀ he₀p₀_src
+  set Ue : Set (M ≃ᵢ N) :=
+    Ue₁ ∩ ⋂ i : Fin d, (fun e : M ≃ᵢ N ↦ e.symm (yN i)) ⁻¹' (extChartAt I (a₀ i)).source
+  have hUeo : IsOpen Ue := hUe₁o.inter <| isOpen_iInter_of_finite fun i ↦
+    (isOpen_extChartAt_source (a₀ i)).preimage (hsymm_cont i)
+  have he₀Ue : e₀ ∈ Ue := ⟨he₀Ue₁, mem_iInter.2 fun i ↦ mem_extChartAt_source (a₀ i)⟩
+  refine ⟨hξ_cont, ?_⟩
+  filter_upwards [(hUeo.prod hUzo).mem_nhds ⟨he₀Ue, hz₀Uz⟩] with ⟨e, z⟩ ⟨he, hz⟩
+  have hmemΦ : e ((extChartAt I x).symm z) ∈ Φ.source := hUeUz (mk_mem_prod he.1 hz)
+  refine ⟨hΦ_sub hmemΦ, ?_⟩
+  have hct : (fun i ↦
+      (edist ((extChartAt I (a₀ i)).symm (ξ e i)) ((extChartAt I x).symm z)).toReal ^ 2) =
+      Φ (e ((extChartAt I x).symm z)) := by
+    rw [← e.edist_sq_symm_eq hΦ_eq hmemΦ]
+    ext i
+    simp only [ξ, (extChartAt I (a₀ i)).left_inv (mem_iInter.1 he.2 i)]
+  rw [hct]
+  exact congrArg (extChartAt J y) (Φ.left_inv hmemΦ).symm
+
+end ChartEdistSqPullback
+
 section WeakWhitney
 
 open TauCeti TauCeti.Manifold
@@ -194,72 +271,38 @@ private theorem IsometryEquiv.exists_contDiffAt_chart_param (e₀ : M ≃ᵢ N) 
         q.1 ((extChartAt I x).symm q.2) ∈ (extChartAt J y).source ∧
           extChartAt J y (q.1 ((extChartAt I x).symm q.2)) = Fmap (q.2, ξ q.1) := by
   set p₀ : M := (extChartAt I x).symm z₀
-  obtain ⟨r, hr, WM, hWM_nhds, hWM⟩ :=
+  obtain ⟨r, -, WM, hWM_nhds, hWM⟩ :=
     exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M) p₀
   obtain ⟨WMo, hWMo_sub, hWMo_open, hp₀WMo⟩ := mem_nhds_iff.1 hWM_nhds
-  have hr2 : 0 < ENNReal.ofReal (r / 2) := ENNReal.ofReal_pos.2 (half_pos hr)
   -- Pick a squared-distance chart `Φ` on `N` around `e₀ p₀` inside `(extChartAt J y).source` whose
-  -- centres `yN i` pull back under `e₀.symm` into `WMo ∩ eball p₀ (r / 2)`.
-  have hsN : (e₀.toHomeomorph '' (WMo ∩ eball p₀ (ENNReal.ofReal (r / 2)))) ∩
-      (extChartAt J y).source ∈ 𝓝 (e₀ p₀) := by
-    refine inter_mem ?_ ((isOpen_extChartAt_source y).mem_nhds he₀z₀)
-    exact e₀.toHomeomorph.isOpenMap.image_mem_nhds
-      ((hWMo_open.inter Metric.isOpen_eball).mem_nhds ⟨hp₀WMo, Metric.mem_eball_self hr2⟩)
+  -- centres `yN i` pull back under `e₀.symm` into the uniformly normal neighbourhood `WMo`.
+  have hsN : (e₀.toHomeomorph '' WMo) ∩ (extChartAt J y).source ∈ 𝓝 (e₀ p₀) :=
+    inter_mem (e₀.toHomeomorph.isOpenMap.image_mem_nhds (hWMo_open.mem_nhds hp₀WMo))
+      ((isOpen_extChartAt_source y).mem_nhds he₀z₀)
   set d := Module.finrank ℝ F
   obtain ⟨yN, Φ, hyN_mem, he₀p₀_src, hΦ_sub, hΦ_eq⟩ :=
     exists_partialDiffeomorph_pi_toReal_edist_sq (I := J) (M := N) (e₀ p₀) hsN
   set a₀ : Fin d → M := fun i ↦ e₀.symm (yN i)
   have ha₀_mem (i : Fin d) : a₀ i ∈ WMo ∧ edist (a₀ i) p₀ < ENNReal.ofReal r := by
-    obtain ⟨⟨q, ⟨hqW, hqball⟩, hqe⟩, -⟩ := hyN_mem i
+    obtain ⟨⟨q, hqW, hqe⟩, -⟩ := hyN_mem i
     have hqa : q = a₀ i := by simp [a₀, ← hqe]
-    refine ⟨hqa ▸ hqW, (hqa ▸ Metric.mem_eball.1 hqball).trans ?_⟩
-    exact (ENNReal.ofReal_lt_ofReal_iff hr).2 (half_lt_self hr)
+    have haW : a₀ i ∈ WMo := hqa ▸ hqW
+    have hball := (hWM (a₀ i) (hWMo_sub haW)).2 (hWMo_sub hp₀WMo)
+    rw [(hWM (a₀ i) (hWMo_sub haW)).1.image_riemannianExp_ball subset_rfl, Metric.mem_eball']
+      at hball
+    exact ⟨haW, hball⟩
   let Fmap : E × (Fin d → E) → F := fun q ↦
     extChartAt J y (Φ.symm fun i ↦
       (edist ((extChartAt I (a₀ i)).symm (q.2 i)) ((extChartAt I x).symm q.1)).toReal ^ 2)
   let ξ : (M ≃ᵢ N) → Fin d → E := fun e i ↦ extChartAt I (a₀ i) (e.symm (yN i))
-  have hcoord₀ : (fun i ↦ (edist (a₀ i) p₀).toReal ^ 2) = Φ (e₀ p₀) := by
-    rw [hΦ_eq (e₀ p₀) he₀p₀_src]
-    ext i
-    have hiso : edist (yN i) (e₀ p₀) = edist (a₀ i) p₀ := by
-      simpa only [a₀, e₀.apply_symm_apply] using e₀.edist_eq (e₀.symm (yN i)) p₀
-    rw [hiso]
+  -- Combine joint smoothness of `Fmap` with continuity of `ξ` and local agreement.
   have hF_smooth : ContDiffAt ℝ ∞ Fmap ((z₀ : E), ξ e₀) :=
     contDiffAt_chart_edist_sq_param z₀ hWMo_open (fun q hq ↦ (hWM q (hWMo_sub hq)).1) ha₀_mem
-      he₀p₀_src he₀z₀ hcoord₀
-  have hsymm_cont (i : Fin d) : Continuous (fun e : M ≃ᵢ N ↦ e.symm (yN i)) :=
-    IsometryEquiv.continuous_iff.1 IsometryEquiv.continuous_symm (yN i)
-  have hξ_cont : ContinuousAt ξ e₀ :=
-    continuousAt_pi.2 fun i ↦
-      (continuousAt_extChartAt (a₀ i)).comp_of_eq (hsymm_cont i).continuousAt rfl
-  have heval_cont : Continuous (fun p : (M ≃ᵢ N) × (extChartAt I x).target ↦
-      p.1 ((extChartAt I x).symm p.2)) :=
-    continuous_fst.eval (((continuousOn_extChartAt_symm x).domRestrict).comp continuous_snd)
-  obtain ⟨Ue₁, Uz, hUe₁o, hUzo, he₀Ue₁, hz₀Uz, hUeUz⟩ :=
-    isOpen_prod_iff.1 (Φ.open_source.preimage heval_cont) e₀ z₀ he₀p₀_src
-  set Ue : Set (M ≃ᵢ N) :=
-    Ue₁ ∩ ⋂ i : Fin d, (fun e : M ≃ᵢ N ↦ e.symm (yN i)) ⁻¹' (extChartAt I (a₀ i)).source
-  have hUeo : IsOpen Ue := hUe₁o.inter <| isOpen_iInter_of_finite fun i ↦
-    (isOpen_extChartAt_source (a₀ i)).preimage (hsymm_cont i)
-  have he₀Ue : e₀ ∈ Ue := ⟨he₀Ue₁, mem_iInter.2 fun i ↦ mem_extChartAt_source (a₀ i)⟩
-  refine ⟨d, Fmap, ξ, hξ_cont, hF_smooth, ?_⟩
-  filter_upwards [(hUeo.prod hUzo).mem_nhds ⟨he₀Ue, hz₀Uz⟩] with ⟨e, z⟩ ⟨he, hz⟩
-  have hmemΦ : e ((extChartAt I x).symm z) ∈ Φ.source := hUeUz (mk_mem_prod he.1 hz)
-  refine ⟨(hΦ_sub hmemΦ).2, ?_⟩
-  have hct : (fun i ↦
-      (edist ((extChartAt I (a₀ i)).symm (ξ e i)) ((extChartAt I x).symm z)).toReal ^ 2) =
-      Φ (e ((extChartAt I x).symm z)) := by
-    rw [hΦ_eq _ hmemΦ]
-    ext i
-    have hi_src : e.symm (yN i) ∈ (extChartAt I (a₀ i)).source := mem_iInter.1 he.2 i
-    simp only [ξ, (extChartAt I (a₀ i)).left_inv hi_src]
-    have hiso : edist (yN i) (e ((extChartAt I x).symm z)) =
-        edist (e.symm (yN i)) ((extChartAt I x).symm z) := by
-      simpa only [e.apply_symm_apply] using e.edist_eq (e.symm (yN i)) ((extChartAt I x).symm z)
-    rw [hiso]
-  dsimp only [Fmap]
-  rw [hct]
-  exact congrArg (extChartAt J y) (Φ.left_inv hmemΦ).symm
+      he₀p₀_src he₀z₀ (e₀.edist_sq_symm_eq hΦ_eq he₀p₀_src)
+  obtain ⟨hξ_cont, hagree⟩ :=
+    e₀.eventually_chart_edist_sq_param (I := I) (J := J) z₀ he₀p₀_src
+      (hΦ_sub.trans inter_subset_right) hΦ_eq
+  exact ⟨d, Fmap, ξ, hξ_cont, hF_smooth, hagree⟩
 
 /-- Promoting a metric equivalence `e : M ≃ᵢ N` between smooth boundaryless Riemannian manifolds
 to a smooth map `C^∞⟮I, M; J, N⟯` is continuous from the compact-open topology to the weak Whitney
@@ -274,8 +317,10 @@ theorem IsometryEquiv.continuous_toContMDiffMap :
   obtain ⟨d, Fmap, ξ, hξ, hF, hagree⟩ :=
     e₀.exists_contDiffAt_chart_param (I := I) (J := J) z₀ (h₀ z₀ hz₀).1
   refine (hagree.mono fun _ h ↦ h.1).and ?_
-  exact (hF.continuousAt_iteratedFDerivWithin_extChartAt hξ
-    (hagree.mono fun _ h ↦ h.2) m hm).eventually (hV.mem_nhds (h₀ z₀ hz₀).2)
+  exact (hF.continuousAt_iteratedFDerivWithin_partial
+    (g := fun e : M ≃ᵢ N ↦ extChartAt J y ∘ e ∘ (extChartAt I x).symm)
+    (uniqueDiffOn_extChartAt_target x) hξ (hagree.mono fun _ h ↦ h.2) m hm).eventually
+    (hV.mem_nhds (h₀ z₀ hz₀).2)
 
 variable [CompactSpace M]
 
@@ -366,19 +411,18 @@ end WeakWhitney
 section CompactWeakWhitney
 
 open TauCeti
-open scoped TauCeti.RiemannianIsometryWeakWhitney
+open scoped TauCeti.DiffeomorphWeakWhitney TauCeti.RiemannianIsometryWeakWhitney
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [CompactSpace M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
 /-- **Compactness of the space of Riemannian isometries in the weak Whitney topology.** When `M` is
 a compact Hausdorff smooth boundaryless Riemannian manifold, `RiemannianIsometry I J M N` (and in
@@ -389,15 +433,20 @@ theorem TauCeti.RiemannianIsometry.compactSpace_weakWhitney :
   | inl => infer_instance
   | inr h =>
     obtain ⟨Φ₀⟩ := h
-    have : CompactSpace N := Φ₀.toDiffeomorph.toHomeomorph.compactSpace
-    have : T2Space N := Φ₀.toDiffeomorph.toHomeomorph.symm.isEmbedding.t2Space
-    have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
-      (V := fun x : M ↦ TangentSpace I x)
-    have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := ∞) (F := F)
-      (V := fun y : N ↦ TangentSpace J y)
-    let : EMetricSpace M := .ofRiemannianMetric I M
-    let : EMetricSpace N := .ofRiemannianMetric J N
-    exact (TauCeti.RiemannianIsometry.isometryEquivHomeomorph I J M N).symm.compactSpace
+    have : CompactSpace (Isom I M) := by
+      have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+        (F := E) (V := fun x : M ↦ TangentSpace I x)
+      let : EMetricSpace M := .ofRiemannianMetric I M
+      exact (TauCeti.RiemannianIsometry.isometryEquivHomeomorph I I M M).symm.compactSpace
+    have hcont : Continuous (fun Ψ : Isom I M ↦ Ψ.trans Φ₀) :=
+      RiemannianIsometry.continuous_weakWhitney_iff.2 <|
+        (Diffeomorph.continuous_trans.comp
+          (RiemannianIsometry.isEmbedding_toDiffeomorph.continuous.prodMk
+            (continuous_const (y := Φ₀.toDiffeomorph)))).congr
+          fun Ψ ↦ Diffeomorph.ext fun x ↦ by simp
+    have hsurj : Surjective (fun Ψ : Isom I M ↦ Ψ.trans Φ₀) := fun Φ ↦
+      ⟨Φ.trans Φ₀.symm, by ext x; simp⟩
+    exact ⟨by rw [← hsurj.range_eq]; exact isCompact_range hcont⟩
 
 scoped[TauCeti.RiemannianIsometryWeakWhitney] attribute [instance]
   TauCeti.RiemannianIsometry.compactSpace_weakWhitney

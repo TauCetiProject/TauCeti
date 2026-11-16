@@ -12,7 +12,6 @@ public import TauCeti.Topology.MetricSpace.Isometry.Group
 import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Normed.Affine.Isometry.StrictConvex
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
@@ -104,6 +103,74 @@ open Bundle Filter Function Manifold Metric Set TauCeti.Manifold
 open scoped ContDiff ENNReal Manifold NNReal Topology
 
 noncomputable section
+
+/-! ### Differentiable maps preserving distance preserve the Riemannian metric -/
+
+section MetricDerivative
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
+  {N : Type*} [EMetricSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+  [IsRiemannianManifold J N]
+
+namespace MDifferentiableAt
+
+/-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
+neighbourhood of `p`, then `df_p` preserves tangent-vector norms. -/
+theorem norm_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
+    (hf : MDifferentiableAt I J f p) (hedist : ∀ᶠ x in 𝓝 p, edist (f p) (f x) = edist p x)
+    (v : TangentSpace I p) :
+    ‖mfderiv I J f p v‖ = ‖v‖ := by
+  obtain ⟨rM, hrM, hM⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
+  obtain ⟨rN, hrN, hN⟩ := exists_isNormalDomain_ball (I := J) (M := N) (f p)
+  have hΨ := hf.hasFDerivAt_riemannianLog_comp_riemannianExp_zero hN
+  -- Near `0 ∈ T_p M`, `exp_p u` stays in the normal ball at `p`, lands in the normal ball at
+  -- `f p`, and lies where `f` preserves distance from `p`, so `‖log_{f p} (f (exp_p u))‖ = ‖u‖`.
+  have hexp_cont : ContinuousAt (riemannianExp I M p) 0 :=
+    continuousAt_riemannianExp (zero_mem_expDomain p)
+  have hnorm_ev : ∀ᶠ u : TangentSpace I p in 𝓝 0,
+      ‖riemannianLog J N (f p) (Metric.ball 0 rN) (f (riemannianExp I M p u))‖ = ‖u‖ := by
+    have h1 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p), u ∈ Metric.ball (0 : TangentSpace I p) rM :=
+      Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hrM)
+    have h2 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p),
+        edist (f p) (f (riemannianExp I M p u)) = edist p (riemannianExp I M p u) :=
+      hexp_cont.eventually (by rwa [riemannianExp_zero])
+    have h3 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p),
+        f (riemannianExp I M p u) ∈ eball (f p) (ENNReal.ofReal rN) := by
+      have hballN : eball (f p) (ENNReal.ofReal rN) ∈ 𝓝 (f p) :=
+        Metric.isOpen_eball.mem_nhds (Metric.mem_eball_self (ENNReal.ofReal_pos.2 hrN))
+      exact (hf.continuousAt.comp_of_eq hexp_cont (riemannianExp_zero p)).preimage_mem_nhds
+        (by simpa only [comp_apply, riemannianExp_zero] using hballN)
+    filter_upwards [h1, h2, h3] with u hu1 hu2 hu3
+    rw [← hN.toReal_edist_eq_norm_riemannianLog_of_mem_eball subset_rfl hu3, hu2,
+      hM.edist_riemannianExp_eq_of_mem_ball subset_rfl hu1, ← ofReal_norm,
+      ENNReal.toReal_ofReal (norm_nonneg u)]
+  exact hΨ.norm_apply_eq_of_eventually_norm_sub_eq
+    (by simpa [riemannianExp_zero, hN.riemannianLog_self] using hnorm_ev) v
+
+/-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
+neighbourhood of `p`, then `df_p` preserves inner products of tangent vectors. -/
+theorem inner_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
+    (hf : MDifferentiableAt I J f p) (hedist : ∀ᶠ x in 𝓝 p, edist (f p) (f x) = edist p x)
+    (v w : TangentSpace I p) :
+    inner ℝ (mfderiv I J f p v) (mfderiv I J f p w) = inner ℝ v w := by
+  let L : TangentSpace I p →ₗᵢ[ℝ] TangentSpace J (f p) :=
+    { toLinearMap := (mfderiv I J f p).toLinearMap
+      norm_map' := hf.norm_mfderiv_eq_of_eventually_edist_eq hedist }
+  exact L.inner_map_map v w
+
+end MDifferentiableAt
+
+end MetricDerivative
 
 /-! ### Palais's smoothness theorem for distance-preserving maps into complete manifolds -/
 
@@ -238,43 +305,9 @@ theorem contMDiff (hf : Isometry f) : ContMDiff I J ∞ f := by
 between Riemannian manifolds which preserves their Riemannian distances, into a complete
 manifold, preserves inner products of tangent vectors. -/
 theorem inner_mfderiv (hf : Isometry f) (x : M) (v w : TangentSpace I x) :
-    inner ℝ (mfderiv I J f x v) (mfderiv I J f x w) = inner ℝ v w := by
-  obtain ⟨ρ, hρ, -, L, hL⟩ := hf.exists_linearIsometry_apply_riemannianExp_eq (I := I) (J := J) x
-  have heq : f ∘ riemannianExp I M x =ᶠ[𝓝 (0 : TangentSpace I x)]
-      riemannianExp J N (f x) ∘ L :=
-    eventually_of_mem (ball_mem_nhds 0 hρ) fun v hv ↦ hL v hv
-  -- Differentiating `f ∘ exp_x = exp_{f x} ∘ L` at the origin identifies `d f_x` with `L`.
-  have hmf (u : TangentSpace I x) : mfderiv I J f x u = L u := by
-    have h1 : HasMFDerivAt I J f (riemannianExp I M x 0)
-        (mfderiv I J f (riemannianExp I M x 0)) :=
-      ((hf.contMDiff (I := I) (J := J) _).mdifferentiableAt (by simp)).hasMFDerivAt
-    have h2 := ((contMDiffAt_riemannianExp (I := I) (M := M)
-      (zero_mem_expDomain x)).mdifferentiableAt (by simp)).hasMFDerivAt
-    have h3 : HasMFDerivAt 𝓘(ℝ, TangentSpace J (f x)) J (riemannianExp J N (f x)) (L 0)
-        (mfderiv 𝓘(ℝ, TangentSpace J (f x)) J (riemannianExp J N (f x)) (L 0)) := by
-      refine ((contMDiffAt_riemannianExp ?_).mdifferentiableAt (by simp)).hasMFDerivAt
-      rw [map_zero]
-      exact zero_mem_expDomain (f x)
-    have huniq := hasMFDerivAt_unique (h1.comp 0 h2)
-      ((h3.comp 0 (L.toContinuousLinearMap.hasMFDerivAt (x := 0))).congr_of_eventuallyEq_abuse
-        heq)
-    have hu : mfderiv I J f (riemannianExp I M x 0)
-        (mfderiv 𝓘(ℝ, TangentSpace I x) I (riemannianExp I M x) 0 u) =
-        mfderiv 𝓘(ℝ, TangentSpace J (f x)) J (riemannianExp J N (f x)) (L 0) (L u) :=
-      congr($huniq u)
-    rw [mfderiv_riemannianExp_apply_zero] at hu
-    -- Move the base points `exp_x 0 = x` and `L 0 = 0` of the two differentials.
-    have hexp0 (a : TangentSpace J (f x)) (ha : a = 0) (z : TangentSpace J (f x)) :
-        mfderiv 𝓘(ℝ, TangentSpace J (f x)) J (riemannianExp J N (f x)) a z = z := by
-      subst ha
-      exact mfderiv_riemannianExp_apply_zero (f x) z
-    have hf0 (y : M) (hy : y = x) (z : TangentSpace I x) :
-        mfderiv I J f y z = mfderiv I J f x z := by
-      subst hy
-      rfl
-    rw [hf0 _ (riemannianExp_zero x), hexp0 _ (map_zero L)] at hu
-    exact hu
-  rw [hmf, hmf, L.inner_map_map]
+    inner ℝ (mfderiv I J f x v) (mfderiv I J f x w) = inner ℝ v w :=
+  ((hf.contMDiff (I := I) (J := J) x).mdifferentiableAt (by simp))
+    |>.inner_mfderiv_eq_of_eventually_edist_eq (.of_forall (hf.edist_eq x)) v w
 
 end Isometry
 
@@ -298,81 +331,6 @@ variable
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   [IsRiemannianManifold J N]
 
-namespace MDifferentiableAt
-
-/-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
-neighbourhood of `p`, then `df_p` preserves tangent-vector norms. -/
-theorem norm_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
-    (hf : MDifferentiableAt I J f p) (hedist : ∀ᶠ x in 𝓝 p, edist (f p) (f x) = edist p x)
-    (v : TangentSpace I p) :
-    ‖mfderiv I J f p v‖ = ‖v‖ := by
-  obtain ⟨rM, hrM, hM⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
-  obtain ⟨rN, hrN, hN⟩ := exists_isNormalDomain_ball (I := J) (M := N) (f p)
-  set L : N → TangentSpace J (f p) := riemannianLog J N (f p) (Metric.ball 0 rN)
-  set Ψ : TangentSpace I p → TangentSpace J (f p) := (L ∘ f) ∘ riemannianExp I M p
-  have hL : MDifferentiableAt J 𝓘(ℝ, TangentSpace J (f p)) L (f p) :=
-    hN.mdifferentiableAt_riemannianLog hN.self_mem_image
-  have hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 :=
-    (contMDiffAt_riemannianExp (zero_mem_expDomain p)).mdifferentiableAt (by simp)
-  have hLf : MDifferentiableAt I 𝓘(ℝ, TangentSpace J (f p)) (L ∘ f) p := hL.comp p hf
-  have hΨ_diff : DifferentiableAt ℝ Ψ 0 :=
-    mdifferentiableAt_iff_differentiableAt.1 (hLf.comp_of_eq 0 hexp (riemannianExp_zero p))
-  have hfderiv : fderiv ℝ Ψ 0 v = mfderiv I J f p v := by
-    let v₀ : TangentSpace 𝓘(ℝ, TangentSpace I p) (0 : TangentSpace I p) :=
-      (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).symm v
-    calc fderiv ℝ Ψ 0 v
-        = mvfderiv 𝓘(ℝ, TangentSpace I p) Ψ 0 v₀ := by
-            rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
-              ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
-      _ = mvfderiv I (L ∘ f) p (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v₀) :=
-            mvfderiv_comp_apply_of_eq 0 hLf hexp (riemannianExp_zero p) v₀
-      _ = mvfderiv I (L ∘ f) p v :=
-            congrArg (mvfderiv I (L ∘ f) p) <|
-              (congrArg (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0)
-                (NormedSpace.fromTangentSpace_symm_apply (𝕜 := ℝ) (0 : TangentSpace I p) v)).trans
-                (mfderiv_riemannianExp_apply_zero (I := I) p v)
-      _ = mfderiv I J f p v := by
-            rw [mvfderiv_comp_apply p hL hf v, hN.mvfderiv_riemannianLog_self,
-              ContinuousLinearMap.id_apply]
-  -- Near `0 ∈ T_p M`, `exp_p u` stays in the normal ball at `p`, lands in the normal ball at
-  -- `f p`, and lies in the region where `f` preserves distance from `p`, so `‖Ψ u‖ = ‖u‖`.
-  have hexp_cont : ContinuousAt (riemannianExp I M p) 0 :=
-    continuousAt_riemannianExp (zero_mem_expDomain p)
-  have hnorm_ev : ∀ᶠ u : TangentSpace I p in 𝓝 0, ‖Ψ u‖ = ‖u‖ := by
-    have h1 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p), u ∈ Metric.ball (0 : TangentSpace I p) rM :=
-      Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hrM)
-    have h2 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p),
-        edist (f p) (f (riemannianExp I M p u)) = edist p (riemannianExp I M p u) :=
-      hexp_cont.eventually (by rwa [riemannianExp_zero])
-    have h3 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p),
-        f (riemannianExp I M p u) ∈ eball (f p) (ENNReal.ofReal rN) := by
-      have hballN : eball (f p) (ENNReal.ofReal rN) ∈ 𝓝 (f p) :=
-        Metric.isOpen_eball.mem_nhds (Metric.mem_eball_self (ENNReal.ofReal_pos.2 hrN))
-      exact (hf.continuousAt.comp_of_eq hexp_cont (riemannianExp_zero p)).preimage_mem_nhds
-        (by simpa only [comp_apply, riemannianExp_zero] using hballN)
-    filter_upwards [h1, h2, h3] with u hu1 hu2 hu3
-    have hlog := hN.toReal_edist_eq_norm_riemannianLog_of_mem_eball subset_rfl hu3
-    simp only [Ψ, L, comp_apply]
-    rw [← hlog, hu2, hM.edist_riemannianExp_eq_of_mem_ball subset_rfl hu1, ← ofReal_norm,
-      ENNReal.toReal_ofReal (norm_nonneg u)]
-  have hΨ0 : Ψ 0 = 0 := by simpa using hnorm_ev.self_of_nhds
-  rw [← hfderiv]
-  exact hΨ_diff.norm_fderiv_apply_eq_of_eventually_norm_sub_eq
-    (by simpa [hΨ0] using hnorm_ev) v
-
-/-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
-neighbourhood of `p`, then `df_p` preserves inner products of tangent vectors. -/
-theorem inner_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
-    (hf : MDifferentiableAt I J f p) (hedist : ∀ᶠ x in 𝓝 p, edist (f p) (f x) = edist p x)
-    (v w : TangentSpace I p) :
-    inner ℝ (mfderiv I J f p v) (mfderiv I J f p w) = inner ℝ v w := by
-  let L : TangentSpace I p →ₗᵢ[ℝ] TangentSpace J (f p) :=
-    { toLinearMap := (mfderiv I J f p).toLinearMap
-      norm_map' := hf.norm_mfderiv_eq_of_eventually_edist_eq hedist }
-  exact L.inner_map_map v w
-
-end MDifferentiableAt
-
 namespace TauCeti.Manifold
 
 /-- **Local smoothness of metric isometries.** If `f : M → N` restricts to a metric isometry on an
@@ -381,13 +339,12 @@ open neighbourhood `U` of `p` and `f '' U` is a neighbourhood of `f p`, then `f`
 theorem contMDiffAt_of_isometry_domRestrict {f : M → N} {U : Set M} {p : M} (hU : IsOpen U)
     (hp : p ∈ U) (hf : Isometry (U.domRestrict f)) (hfU : f '' U ∈ 𝓝 (f p)) :
     ContMDiffAt I J ∞ f p := by
-  obtain ⟨r, hr, WM, hWM_nhds, hWM⟩ :=
+  obtain ⟨r, -, WM, hWM_nhds, hWM⟩ :=
     exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M) p
   obtain ⟨WM', hWM'_sub, hWM'o, hpWM'⟩ := mem_nhds_iff.1 hWM_nhds
-  set VM : Set M := U ∩ WM' ∩ eball p (ENNReal.ofReal (r / 2))
-  have hr2 : 0 < ENNReal.ofReal (r / 2) := ENNReal.ofReal_pos.2 (half_pos hr)
-  have hVMo : IsOpen VM := (hU.inter hWM'o).inter Metric.isOpen_eball
-  have hpVM : p ∈ VM := ⟨⟨hp, hpWM'⟩, Metric.mem_eball_self hr2⟩
+  set VM : Set M := U ∩ WM'
+  have hVMo : IsOpen VM := hU.inter hWM'o
+  have hpVM : p ∈ VM := ⟨hp, hpWM'⟩
   -- Because `f` is isometric on `U`, the image of `VM` is still a neighbourhood of `f p`.
   obtain ⟨ε, hε, hε_sub⟩ := EMetric.mem_nhds_iff.1 (hVMo.mem_nhds hpVM)
   have hfVM : f '' VM ∈ 𝓝 (f p) := by
@@ -396,28 +353,22 @@ theorem contMDiffAt_of_isometry_domRestrict {f : M → N} {U : Set M} {p : M} (h
     rintro _ ⟨⟨x, hxU, rfl⟩, hdist⟩
     refine mem_image_of_mem f (hε_sub ?_)
     rw [Metric.mem_eball] at hdist ⊢
-    have hiso := hf.edist_eq ⟨x, hxU⟩ ⟨p, hp⟩
-    exact hiso.symm.trans_lt hdist
+    exact (hf.edist_eq ⟨x, hxU⟩ ⟨p, hp⟩).symm.trans_lt hdist
   obtain ⟨yN, Φ, hyN_mem, hfp_src, _, hΦ_eq⟩ :=
     exists_partialDiffeomorph_pi_toReal_edist_sq (I := J) (M := N) (f p) hfVM
   choose a ha_VM hfa using fun i ↦ hyN_mem i
   have ha_norm (i : Fin (Module.finrank ℝ F)) : IsNormalDomain I M (a i) (Metric.ball 0 r) :=
-    (hWM (a i) (hWM'_sub (ha_VM i).1.2)).1
+    (hWM (a i) (hWM'_sub (ha_VM i).2)).1
   have hf_cont : ContinuousOn f U := continuousOn_iff_continuous_domRestrict.2 hf.continuous
   set O : Set M := VM ∩ f ⁻¹' Φ.source
   have hOo : IsOpen O :=
-    (hf_cont.mono fun _ (hz : _ ∈ VM) ↦ hz.1.1).isOpen_inter_preimage hVMo Φ.open_source
+    (hf_cont.mono fun _ (hz : _ ∈ VM) ↦ hz.1).isOpen_inter_preimage hVMo Φ.open_source
   have hpO : p ∈ O := ⟨hpVM, hfp_src⟩
-  have hO_balls : O ⊆ ⋂ i, eball (a i) (ENNReal.ofReal r) := by
-    intro z hz
-    refine mem_iInter.2 fun i ↦ Metric.mem_eball'.2 ?_
-    have ha_ed : edist (a i) p < ENNReal.ofReal (r / 2) := Metric.mem_eball.1 (ha_VM i).2
-    have hz_ed : edist p z < ENNReal.ofReal (r / 2) := Metric.mem_eball'.1 hz.1.2
-    calc edist (a i) z
-        ≤ edist (a i) p + edist p z := edist_triangle _ _ _
-      _ < ENNReal.ofReal (r / 2) + ENNReal.ofReal (r / 2) := ENNReal.add_lt_add ha_ed hz_ed
-      _ = ENNReal.ofReal r := by
-          rw [← ENNReal.ofReal_add (half_pos hr).le (half_pos hr).le, add_halves]
+  -- Uniform normality puts all of `O ⊆ WM` inside the metric ball of radius `r` around each `a i`.
+  have hO_balls : O ⊆ ⋂ i, eball (a i) (ENNReal.ofReal r) := fun z hz ↦
+    mem_iInter.2 fun i ↦ by
+      rw [← (ha_norm i).image_riemannianExp_ball subset_rfl]
+      exact (hWM (a i) (hWM'_sub (ha_VM i).2)).2 (hWM'_sub hz.1.2)
   set coord : M → Fin (Module.finrank ℝ F) → ℝ :=
     fun z i ↦ (edist (a i) z).toReal ^ 2
   have hcoord_smooth : ContMDiffOn I 𝓘(ℝ, Fin (Module.finrank ℝ F) → ℝ) ∞ coord O :=
@@ -425,18 +376,14 @@ theorem contMDiffAt_of_isometry_domRestrict {f : M → N} {U : Set M} {p : M} (h
   have hcoord_eq (z : M) (hz : z ∈ O) : coord z = Φ (f z) := by
     rw [hΦ_eq (f z) hz.2]
     ext i
-    have hiso := hf.edist_eq ⟨a i, (ha_VM i).1.1⟩ ⟨z, hz.1.1.1⟩
+    have hiso := hf.edist_eq ⟨a i, (ha_VM i).1⟩ ⟨z, hz.1.1⟩
     simp only [Set.domRestrict_apply, Subtype.edist_mk_mk, hfa i] at hiso
     simp only [coord, ← hiso]
-  have hmaps : MapsTo coord O Φ.symm.source := fun z hz ↦ by
-    rw [hcoord_eq z hz]
-    exact Φ.map_source hz.2
-  have hcomp : ContMDiffOn I J ∞ (Φ.symm ∘ coord) O :=
-    Φ.symm.contMDiffOn.comp hcoord_smooth hmaps
+  have hmaps : MapsTo coord O Φ.symm.source := fun z hz ↦ hcoord_eq z hz ▸ Φ.map_source hz.2
   have hcongr : EqOn f (Φ.symm ∘ coord) O := fun z hz ↦ by
     simp only [comp_apply, hcoord_eq z hz]
     exact (Φ.left_inv hz.2).symm
-  exact (hcomp.congr hcongr).contMDiffAt (hOo.mem_nhds hpO)
+  exact ((Φ.symm.contMDiffOn.comp hcoord_smooth hmaps).congr hcongr).contMDiffAt (hOo.mem_nhds hpO)
 
 /-- If `f : M → N` restricts to a metric isometry on an open neighbourhood `U` of `p` and
 `f '' U ∈ 𝓝 (f p)`, then `f` is a smooth local diffeomorphism at `p`. -/
@@ -507,14 +454,14 @@ namespace Isometry
 theorem contMDiffAt_of_range_mem_nhds {f : M → N} (hf : Isometry f) {p : M}
     (hr : range f ∈ 𝓝 (f p)) : ContMDiffAt I J ∞ f p :=
   contMDiffAt_of_isometry_domRestrict isOpen_univ (mem_univ p)
-    (hf.comp (fun _ _ ↦ rfl)) (by simpa only [image_univ] using hr)
+    (hf.comp isometry_subtype_coe) (by simpa only [image_univ] using hr)
 
 /-- A metric isometry `f : M → N` whose range is a neighbourhood of `f p` is a smooth local
 diffeomorphism at `p`. -/
 theorem isLocalDiffeomorphAt_of_range_mem_nhds {f : M → N} (hf : Isometry f) {p : M}
     (hr : range f ∈ 𝓝 (f p)) : IsLocalDiffeomorphAt I J ∞ f p :=
   isLocalDiffeomorphAt_of_isometry_domRestrict isOpen_univ (mem_univ p)
-    (hf.comp (fun _ _ ↦ rfl)) (by simpa only [image_univ] using hr)
+    (hf.comp isometry_subtype_coe) (by simpa only [image_univ] using hr)
 
 /-- A metric isometry `f : M → N` with open range is smooth. -/
 theorem contMDiff_of_isOpen_range {f : M → N} (hf : Isometry f) (hr : IsOpen (range f)) :
@@ -530,7 +477,7 @@ theorem isLocalDiffeomorph_of_isOpen_range {f : M → N} (hf : Isometry f)
 theorem isLocalRiemannianIsometry_of_isOpen_range {f : M → N} (hf : Isometry f)
     (hr : IsOpen (range f)) : TauCeti.IsLocalRiemannianIsometry I J f :=
   isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict fun p ↦
-    ⟨univ, isOpen_univ, mem_univ p, hf.comp (fun _ _ ↦ rfl),
+    ⟨univ, isOpen_univ, mem_univ p, hf.comp isometry_subtype_coe,
       by simpa only [image_univ] using hr.mem_nhds (mem_range_self p)⟩
 
 /-- A surjective metric isometry `f : M → N` is smooth. -/
@@ -583,11 +530,6 @@ theorem toRiemannianIsometry_symm (e : M ≃ᵢ N) :
   apply (EquivLike.injective (e.toRiemannianIsometry I J))
   simp
 
-/-- The inverse of the Riemannian isometry of `e` is the Riemannian isometry of `e.symm`. -/
-theorem symm_toRiemannianIsometry (e : M ≃ᵢ N) :
-    (e.toRiemannianIsometry I J).symm = e.symm.toRiemannianIsometry J I :=
-  (e.toRiemannianIsometry_symm (I := I) (J := J)).symm
-
 /-- Evaluating `(e.toRiemannianIsometry I J).symm` agrees with `e.symm`. -/
 @[simp]
 theorem coe_toRiemannianIsometry_symm (e : M ≃ᵢ N) :
@@ -607,7 +549,7 @@ theorem toRiemannianIsometry_refl :
 theorem toIsometryEquiv_toRiemannianIsometry (e : M ≃ᵢ N) :
     ((e.toRiemannianIsometry I J : TauCeti.RiemannianIsometry I J M N) : M ≃ᵢ N) = e := by
   ext x
-  rfl
+  simp
 
 /-- Promoting `1 : M ≃ᵢ M` gives `1 : TauCeti.Isom I M`. -/
 @[simp]
@@ -713,7 +655,7 @@ namespace TauCeti.RiemannianIsometry
 theorem toRiemannianIsometry_toIsometryEquiv (Φ : RiemannianIsometry I J M N) :
     (Φ : M ≃ᵢ N).toRiemannianIsometry I J = Φ := by
   ext x
-  rfl
+  simp
 
 variable (I J M N) in
 /-- **Equivalence between smooth Riemannian isometries and metric equivalences.** -/
@@ -745,7 +687,9 @@ theorem exists_coe_eq_iff_isometry_and_surjective {f : M → N} :
   · let e : M ≃ᵢ N :=
       { toEquiv := Equiv.ofBijective f ⟨hf.injective, hsurj⟩
         isometry_toFun := hf }
-    exact ⟨e.toRiemannianIsometry I J, rfl⟩
+    exact ⟨e.toRiemannianIsometry I J,
+      (IsometryEquiv.coe_toRiemannianIsometry e).trans <|
+        (IsometryEquiv.coe_mk _ _).trans (Equiv.coe_ofBijective f _)⟩
 
 /-- On a compact smooth boundaryless Riemannian manifold, a self-map `f : M → M` is the underlying
 map of a smooth Riemannian self-isometry if and only if it preserves the Riemannian distance. -/
@@ -779,14 +723,14 @@ theorem toEquiv_isometryEquivMulEquiv :
 @[simp low]
 theorem isometryEquivMulEquiv_apply (Φ : Isom I M) :
     isometryEquivMulEquiv I M Φ = (Φ : M ≃ᵢ M) :=
-  (rfl)
+  isometryEquivEquiv_apply Φ
 
 -- See note [hom simp lemma priority]
 /-- `isometryEquivMulEquiv.symm` promotes a self-metric equivalence via `toRiemannianIsometry`. -/
 @[simp low]
 theorem isometryEquivMulEquiv_symm_apply (e : M ≃ᵢ M) :
     (isometryEquivMulEquiv I M).symm e = e.toRiemannianIsometry I I :=
-  (rfl)
+  isometryEquivEquiv_symm_apply e
 
 end TauCeti.RiemannianIsometry
 
