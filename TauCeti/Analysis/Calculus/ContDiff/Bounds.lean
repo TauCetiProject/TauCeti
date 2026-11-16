@@ -43,6 +43,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   map that is `C^n` on an open set, with a nonnegative constant.
 * `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
   of a compactly supported `C^n` map are bounded by one constant.
+* `ContDiff.exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv`: a `C¹` function on
+  `ℝ^ι` whose derivative has compact support has bounded squared gradient.
 * `ContDiffAt.exists_ball_bound_iteratedFDeriv`: on some ball around a point where a map is
   `C^n`, its derivatives of order at most `n` are bounded by one constant.
 * `ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le`: the linear bound on the
@@ -120,6 +122,21 @@ theorem HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff {f : E → F} 
     rcases Nat.lt_or_eq_of_le hi with hi | rfl
     · exact (hN i (by omega) y).trans (le_max_left _ _)
     · exact (hC y).trans (le_max_right _ _)
+
+/-- A `C¹` function `u` on `ℝ^ι` whose derivative has compact support has bounded squared gradient
+`∑ᵢ (∂ᵢ u)²`. -/
+theorem ContDiff.exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv {ι : Type*}
+    [Fintype ι] [DecidableEq ι]
+    {u : (ι → ℝ) → ℝ} (hu : ContDiff ℝ 1 u) (hcs : HasCompactSupport (fderiv ℝ u)) :
+    ∃ K, ∀ x, ∑ i, fderiv ℝ u x (Pi.single i 1) ^ 2 ≤ K := by
+  obtain ⟨B, hB⟩ :=
+    (hu.continuous_fderiv one_ne_zero).norm.bddAbove_range_of_hasCompactSupport hcs.norm
+  refine ⟨Fintype.card ι * B ^ 2, fun x ↦ ?_⟩
+  refine (Finset.sum_le_sum fun i _ ↦ (?_ : _ ≤ B ^ 2)).trans_eq (by simp)
+  rw [← sq_abs, ← Real.norm_eq_abs]
+  refine pow_le_pow_left₀ (norm_nonneg _) (((fderiv ℝ u x).le_opNorm _).trans ?_) 2
+  rw [Pi.norm_single, norm_one, mul_one]
+  exact hB ⟨x, rfl⟩
 
 /-- On some ball around a point `x` at which `f` is `C^n`, the derivatives of order at most `n`
 of `f` are bounded by a single constant. -/
