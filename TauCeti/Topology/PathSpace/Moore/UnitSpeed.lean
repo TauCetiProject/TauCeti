@@ -171,7 +171,7 @@ theorem dist_mk_unitSpeedCircle {δ : ℝ} (hS : ∀ s ∈ S, s ≠ 0 → δ ≤
     (hn : 2 ≤ Real.pi * n * δ) (s t : ℝ) :
     dist (unitSpeedCircle n s : ℂ ⧸ S) (unitSpeedCircle n t) =
       dist (unitSpeedCircle n s) (unitSpeedCircle n t) := by
-  refine QuotientAddGroup.dist_mk_eq_dist fun z hz hz0 ↦ le_trans ?_ (hS z hz hz0)
+  refine QuotientAddGroup.dist_mk_eq_dist fun z hz hz0 ↦ le_trans ?_ (hS z hz (norm_pos_iff.1 hz0))
   have hpos : 0 < Real.pi * n := by
     rcases eq_or_ne n 0 with rfl | hn0
     · norm_num at hn

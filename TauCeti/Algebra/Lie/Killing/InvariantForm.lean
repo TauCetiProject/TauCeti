@@ -8,17 +8,20 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.InvariantForm.Pi
 public import TauCeti.Algebra.Lie.Killing.Perfect
+-- Non-public: this appears only inside proofs, never in the type of an exported declaration.
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # Invariant bilinear forms on a simple Lie algebra are multiples of the Killing form
 
-Let `L` be a finite-dimensional Lie algebra over an algebraically closed field `K` whose adjoint
-module is irreducible (for instance a simple Lie algebra) and whose Killing form is nondegenerate
-(`LieAlgebra.IsKilling`). The Killing form is then a nonzero invariant form on the irreducible
-module `L`, so by `TauCeti.LieModule.exists_eq_smul_of_lieInvariant` every invariant bilinear form
-on `L` is a scalar multiple of it. In particular every invariant form on `L` is symmetric, and the
-invariant symmetric forms `TauCeti.LieModule.invariantForms K L L` are the line spanned by the
-Killing form.
+Let `L` be a Lie algebra over an algebraically closed field `K` whose adjoint module is
+irreducible (for instance a simple Lie algebra) and whose Killing form is nondegenerate
+(`LieAlgebra.IsKilling`); such an `L` is automatically finite-dimensional
+(`TauCeti.finite_of_isKilling`). The Killing form is then a nonzero invariant form on the
+irreducible module `L`, so by `TauCeti.LieModule.exists_eq_smul_of_lieInvariant` every invariant
+bilinear form on `L` is a scalar multiple of it. In particular every invariant form on `L` is
+symmetric, and the invariant symmetric forms `TauCeti.LieModule.invariantForms K L L` are the line
+spanned by the Killing form.
 
 In characteristic zero a finite-dimensional simple Lie algebra is Killing (Cartan's criterion,
 `LieAlgebra.HasTrivialRadical.instIsKilling`), so this covers every finite-dimensional simple Lie
@@ -50,19 +53,20 @@ namespace TauCeti.LieAlgebra
 open _root_.LieAlgebra TauCeti.LieModule
 
 variable {K L : Type*} [Field K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
-variable [FiniteDimensional K L] [_root_.LieModule.IsIrreducible K L L] [IsKilling K L]
+variable [_root_.LieModule.IsIrreducible K L L] [IsKilling K L]
 
 /-- **Every invariant bilinear form on a Lie algebra is a multiple of the Killing form**, for a
-finite-dimensional Lie algebra over an algebraically closed field whose adjoint module is
+Lie algebra over an algebraically closed field whose adjoint module is
 irreducible and whose Killing form is nondegenerate, such as a simple Lie algebra in
 characteristic zero. -/
 theorem exists_eq_smul_killingForm {Φ : LinearMap.BilinForm K L} (hΦ : Φ.lieInvariant L) :
     ∃ c : K, Φ = c • killingForm K L :=
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _f := finite_of_isKilling (R := K) (L := L)
   exists_eq_smul_of_lieInvariant hΦ (_root_.LieModule.traceForm_lieInvariant K L L)
     (IsKilling.killingForm_nondegenerate K L).ne_zero
 
-/-- Every invariant bilinear form on a finite-dimensional Lie algebra over an algebraically closed
+/-- Every invariant bilinear form on a Lie algebra over an algebraically closed
 field whose adjoint module is irreducible and whose Killing form is nondegenerate is symmetric. -/
 theorem isSymm_of_lieInvariant {Φ : LinearMap.BilinForm K L} (hΦ : Φ.lieInvariant L) :
     Φ.IsSymm := by
@@ -70,20 +74,22 @@ theorem isSymm_of_lieInvariant {Φ : LinearMap.BilinForm K L} (hΦ : Φ.lieInvar
   exact (mem_invariantForms_iff.mp (traceForm_mem_invariantForms K L L)).2.smul c
 
 variable (K L) in
-/-- **The invariant symmetric bilinear forms on a finite-dimensional Lie algebra over an
+/-- **The invariant symmetric bilinear forms on a Lie algebra over an
 algebraically closed field whose adjoint module is irreducible and whose Killing form is
 nondegenerate are the line spanned by the Killing form.** -/
 theorem invariantForms_eq_span_killingForm : invariantForms K L L = K ∙ killingForm K L :=
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _f := finite_of_isKilling (R := K) (L := L)
   invariantForms_eq_span_singleton (traceForm_mem_invariantForms K L L)
     (IsKilling.killingForm_nondegenerate K L).ne_zero
 
 variable (K L) in
-/-- The invariant symmetric bilinear forms on a finite-dimensional Lie algebra over an
+/-- The invariant symmetric bilinear forms on a Lie algebra over an
 algebraically closed field whose adjoint module is irreducible and whose Killing form is
 nondegenerate form a one-dimensional space. -/
 theorem finrank_invariantForms_eq_one : finrank K (invariantForms K L L) = 1 := by
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _f := finite_of_isKilling (R := K) (L := L)
   rw [invariantForms_eq_span_killingForm K L]
   exact finrank_span_singleton (V := LinearMap.BilinForm K L)
     (IsKilling.killingForm_nondegenerate K L).ne_zero
@@ -91,7 +97,7 @@ theorem finrank_invariantForms_eq_one : finrank K (invariantForms K L L) = 1 := 
 section Pi
 
 variable {ι : Type*} [Fintype ι] (𝔤 : ι → Type*)
-  [∀ i, LieRing (𝔤 i)] [∀ i, LieAlgebra K (𝔤 i)] [∀ i, FiniteDimensional K (𝔤 i)]
+  [∀ i, LieRing (𝔤 i)] [∀ i, LieAlgebra K (𝔤 i)]
   [∀ i, _root_.LieModule.IsIrreducible K (𝔤 i) (𝔤 i)] [∀ i, IsKilling K (𝔤 i)]
 
 /-- A finite product of simple Killing Lie algebras has one independent invariant symmetric
@@ -99,6 +105,7 @@ form per factor, over an algebraically closed field. -/
 theorem finrank_invariantForms_pi_eq_card :
     finrank K (invariantForms K (∀ i, 𝔤 i) (∀ i, 𝔤 i)) = Fintype.card ι := by
   classical
+  have _f (i : ι) := finite_of_isKilling (R := K) (L := 𝔤 i)
   rw [finrank_invariantForms_pi (fun i ↦ derivedSeries_one_eq_top_of_isKilling K (𝔤 i))]
   simp [finrank_invariantForms_eq_one]
 

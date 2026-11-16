@@ -177,7 +177,7 @@ theorem exists_generator_finrank_adjoin_eq
   have hz : IsIntegral (RatFunc k) z := Algebra.IsIntegral.isIntegral z
   have hz' := hz.of_minpoly_mem_lifts hlift
   refine ⟨z, hgen, hz', minpoly.map_algebraMap hz' hlift, ?_⟩
-  rw [IntermediateField.finrank_adjoin_simple_eq_of_minpoly_mem_lifts hz hlift, hgen,
+  rw [IntermediateField.finrank_adjoin_simple_eq_of_minpoly_mem_lifts hlift, hgen,
     IntermediateField.finrank_top']
 
 end TauCeti.AlgebraicBelyiPair

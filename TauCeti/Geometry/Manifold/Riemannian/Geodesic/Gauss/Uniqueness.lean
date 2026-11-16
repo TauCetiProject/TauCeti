@@ -159,7 +159,7 @@ theorem IsNormalDomain.eqOn_riemannianExp_smul_of_geodesic_pathELength_eq
   have hnorm : ‖u‖ = ‖v‖ := by
     have he : ‖u‖ₑ = ‖v‖ₑ := by
       rw [← hlength, hlen, pathELength_riemannianExp_smul_zero_one h hv]
-    exact enorm_eq_iff_norm_eq.mp he
+    exact eNorm_eq_iff_norm_eq.mp he
   have hu : u ∈ Metric.ball (0 : TangentSpace I p) r := by
     simpa only [Metric.mem_ball, dist_zero_right, hnorm] using hv
   have huv : u = v := h.injOn hu hv (by

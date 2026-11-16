@@ -197,10 +197,12 @@ theorem complexConjugationAt_restrictNormal_of_isComplex [Normal K F] (w : Infin
 /-- The fixed field of a subgroup of the Galois group of a totally complex number field `L`
 over `K` is totally complex as soon as the subgroup contains no complex conjugation of a place of
 `L` ramified over `K`. -/
-theorem isTotallyComplex_fixedField_of_complexConjugationAt_notMem [NumberField K] [NumberField L]
+theorem isTotallyComplex_fixedField_of_complexConjugationAt_notMem [NumberField L]
     [IsTotallyComplex L] (H : Subgroup (L ≃ₐ[K] L))
     (hH : ∀ (w : InfinitePlace L) (hw : w.IsRamified K), complexConjugationAt K w hw ∉ H) :
     IsTotallyComplex (IntermediateField.fixedField H) := ⟨fun v ↦ by
+  have : CharZero K := (algebraMap K L).charZero
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ K L
   rw [← not_isReal_iff_isComplex]
   intro hv
   obtain ⟨w, hw⟩ := InfinitePlace.comap_surjective (K := L) v

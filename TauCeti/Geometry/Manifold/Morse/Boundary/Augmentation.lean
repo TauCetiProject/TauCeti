@@ -138,8 +138,7 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
       mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
     ∑ p ∈ T, (hX.morseTrajectorySlice p q).ncard = 2 := by
   classical
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  obtain ⟨y₁, y₂, hy₁, hy₂, hdisj, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hfd hq hind
+  obtain ⟨y₁, y₂, hy₁, hy₂, hdisj, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hq hind
   set y : Fin 2 → M := ![y₁, y₂] with hy
   have hW' : hX.flow.stableSet q = insert q (⋃ i, hX.flow.orbit (y i)) := by
     ext w
@@ -151,15 +150,15 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
     ⟨Flow.mem_unstableSet.2 (hlim i),
       hW' ▸ mem_insert_of_mem _ (mem_iUnion.2 ⟨i, Flow.mem_orbit_self _ _⟩)⟩
   have haq (i : Fin 2) : a i ≠ q := fun he ↦
-    hyq i (hX.eq_of_mem_unstableSet_inter_stableSet hfd (he ▸ hmem i))
+    hyq i (hX.eq_of_mem_unstableSet_inter_stableSet (he ▸ hmem i))
   have hTa (i : Fin 2) : a i ∈ T := by
     refine (hT _).2 ⟨ha i, le_antisymm manifoldMorseIndex_le_finrank ?_⟩
-    have := hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf (ha i) hq (haq i)
-      (hmem i) (h.span_mtangentConeAt_sup_eq_top (ha i) hq (hmem i))
+    have := hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf (haq i)
+      (hmem i) (h.span_mtangentConeAt_sup_eq_top (hmem i))
     omega
   -- The `i`-th orbit crosses the middle level between `a i` and `q` at the time `τ i`.
   have hcross (i : Fin 2) : ∃ t, f (hX.flow t (y i)) = (f (a i) + f q) / 2 :=
-    (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hfd (haq i)
+    (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet (haq i)
       (hmem i)).exists
   choose τ hτ using hcross
   -- The crossings are distinct, since they lie on the disjoint orbits of `y₁` and `y₂`.
@@ -174,7 +173,7 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
         Finset.sum_congr rfl fun p hp ↦ by
           have hpq : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f)
             (by have := ((hT p).1 hp).2; omega)
-          rw [hX.morseTrajectorySlice_eq_image_of_stableSet_subset hfd hq hpq hW'.subset hmem haq
+          rw [hX.morseTrajectorySlice_eq_image_of_stableSet_subset hpq hW'.subset hmem
             hτ, ncard_image_of_injective _ hz, ← ncard_coe_finset, Finset.coe_filter]
           simp
     _ = (Finset.univ : Finset (Fin 2)).card :=

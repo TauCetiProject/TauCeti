@@ -45,7 +45,8 @@ edge from `s` to `t` could be repeated arbitrarily often in a packing.
   are `k` pairwise internally disjoint `s`–`t` paths.
 
 * `Graph.isVertexReachable_iff_exists_paths`: the same equivalence stated through the
-  vertex-reachability predicate of the underlying simple graph.
+  vertex-reachability predicate of the underlying simple graph, for arbitrary actual vertices `s`
+  and `t`.
 * `Graph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's theorem**: a
   multigraph with finitely many actual vertices, more than `k` of them, is `k`-vertex-connected
   exactly when every two distinct actual vertices, adjacent or not, are joined by `k` distinct
@@ -80,16 +81,6 @@ public section
 open Finset TauCeti
 
 universe u v
-
-open scoped Graph in
-/-- Lifting walks of the underlying simple graph preserves and reflects internal disjointness,
-since the lift keeps every vertex sequence. -/
-@[simp]
-theorem SimpleGraph.Walk.internallyDisjoint_liftToGraph_iff {α : Type u} {β : Type v}
-    {G : Graph α β} {s t : V(G)} {p q : G.toSimpleGraph.Walk s t} :
-    p.liftToGraph.InternallyDisjoint q.liftToGraph ↔ p.InternallyDisjoint q := by
-  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_liftToGraph,
-    List.forall_mem_map, List.mem_map_of_injective Subtype.val_injective, Subtype.val_inj]
 
 namespace Graph
 
@@ -234,19 +225,18 @@ theorem isVertexReachable_of_pairwise_internallyDisjoint {s t : V(G)} {n : ℕ}
   have hle := card_le_encard_of_not_reachable_deleteVerts hP s.property hs ht hn
   exact hX.not_ge (by simpa using hle)
 
-/-- **Menger's theorem for the vertex-reachability predicate.** For distinct nonadjacent actual
-vertices of a multigraph with finitely many actual vertices, `k`-vertex-reachability is equivalent
-to the existence of `k` internally vertex-disjoint native paths. No finite-edge assumption is
-needed. -/
-theorem isVertexReachable_iff_exists_paths [Finite V(G)] {s t : V(G)}
-    (hst : s ≠ t) (hadj : ¬G.Adj s t) (k : ℕ) :
+/-- **Menger's theorem for the vertex-reachability predicate.** For actual vertices `s` and `t` of
+a multigraph with finitely many actual vertices, `k`-vertex-reachability is equivalent to the
+existence of `k` internally vertex-disjoint native paths. For `s = t`, and for adjacent `s` and
+`t`, both sides hold. No finite-edge assumption is needed. -/
+theorem isVertexReachable_iff_exists_paths [Finite V(G)] {s t : V(G)} (k : ℕ) :
     G.IsVertexReachable k s t ↔ ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
       Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
   refine ⟨fun h ↦ ?_, fun ⟨_, _, hP⟩ ↦ isVertexReachable_of_pairwise_internallyDisjoint hP⟩
-  rw [isVertexReachable_iff] at h
-  exact (forall_reachable_deleteVerts_iff_exists_paths
-    (Subtype.val_injective.ne hst) hadj k).mp fun X hs ht hX ↦
-      h (by simpa using hX) (by simpa using hs) (by simpa using ht)
+  -- Lift the paths of the underlying simple graph by choosing an actual edge for each adjacency.
+  obtain ⟨P, hP, hdisj⟩ := (SimpleGraph.isVertexReachable_iff_exists_paths k).1 h
+  exact ⟨fun i ↦ (P i).liftToGraph, fun i ↦ (P i).isPath_liftToGraph_iff.2 (hP i),
+    fun i j hij ↦ SimpleGraph.Walk.internallyDisjoint_liftToGraph_iff.2 (hdisj hij)⟩
 
 /-! ### The global form -/
 

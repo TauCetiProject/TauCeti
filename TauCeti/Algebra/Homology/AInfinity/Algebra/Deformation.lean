@@ -314,8 +314,8 @@ theorem IsDeformationOfOrder.hochschildDifferential_deformationObstruction {n : 
     ∑ i ∈ Finset.range (n + 1), Polynomial.monomial i (D i)
   have hB (i : ℕ) : B.coeff i = D i := by
     by_cases hi : i ≤ n
-    · simp [B, Polynomial.coeff_monomial, Nat.lt_succ_iff.2 hi]
-    · simp [B, Polynomial.coeff_monomial, hi, hD, hφ', gradedCoderiv_zero_left]
+    · simp [B, Finsupp.single_apply, Nat.lt_succ_iff.2 hi]
+    · simp [B, Finsupp.single_apply, hi, hD, hφ', gradedCoderiv_zero_left]
   have hBB (k : ℕ) : (B * B).coeff k = ∑ x ∈ Finset.antidiagonal k, D x.1 ∘ₗ D x.2 := by
     simp only [Polynomial.coeff_mul, hB, Module.End.mul_eq_comp]
   have hBB_eq_zero {k : ℕ} (hk : k ≤ n) : (B * B).coeff k = 0 := by
@@ -323,7 +323,9 @@ theorem IsDeformationOfOrder.hochschildDifferential_deformationObstruction {n : 
   -- Comparing the coefficients of `tⁿ⁺¹` in `(B * B) * B` and `B * (B * B)`, all terms but one
   -- vanish on each side, so `S_{n + 1}` commutes with `D₀`.
   have hcomm : (B * B).coeff (n + 1) * D 0 = D 0 * (B * B).coeff (n + 1) := by
-    have e := congrArg (Polynomial.coeff · (n + 1)) (mul_assoc B B B)
+    have e := congrArg
+      (fun p : Polynomial (Module.End R (ReducedTensorWords R A)) ↦ p.coeff (n + 1))
+      (mul_assoc B B B)
     simp only [Polynomial.coeff_mul (B * B) B, Polynomial.coeff_mul B (B * B)] at e
     rw [Finset.sum_eq_single (n + 1, 0) (fun x hx hne ↦ ?_) (by simp),
       Finset.sum_eq_single (0, n + 1) (fun x hx hne ↦ ?_) (by simp), hB] at e

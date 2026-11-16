@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import Mathlib.LinearAlgebra.Basis.SMul
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Matrix.Symmetric
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Diagonalization of symmetric bilinear forms in every characteristic
@@ -66,7 +63,7 @@ forms are equivalent.
 
 * `LinearMap.BilinForm.iIsOrtho.toMatrix_eq_diagonal`: the Gram matrix in an orthogonal basis
   is the diagonal matrix of its self-pairings.
-* `LinearMap.BilinForm.IsSymm.equivalent_weightedSumSquares_of_iIsOrtho`: an orthogonal basis
+* `LinearMap.BilinForm.iIsOrtho.equivalent_weightedSumSquares`: an orthogonal basis
   identifies the associated quadratic form with a weighted sum of squares.
 * `LinearMap.BilinForm.det_toMatrix_comp`, `LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det`:
   the Gram determinant under a linear map and under a change of basis.
@@ -127,7 +124,6 @@ theorem iIsOrtho.toMatrix_eq_diagonal {R M ι : Type*} [CommSemiring R] [AddComm
 theorem iIsOrtho.apply_basis_left {R M ι : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M} (hb : B.iIsOrtho b)
     (i : ι) (x : M) : B (b i) x = b.repr x i * B (b i) (b i) := by
-  classical
   conv_lhs => rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply, Finsupp.sum,
     map_sum]
   simp_rw [map_smul, smul_eq_mul]
@@ -147,24 +143,26 @@ theorem iIsOrtho.isUnit_det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoi
     IsUnit (B.toMatrix b).det :=
   hb.det_toMatrix ▸ IsUnit.prod_univ_iff.mpr hbu
 
-/-- The quadratic form of a symmetric bilinear form in an orthogonal basis is isometric to
-the diagonal form of its self-pairings. -/
-theorem IsSymm.equivalent_weightedSumSquares_of_iIsOrtho
-    {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
-    [Invertible (2 : R)] {B : LinearMap.BilinForm R M} (hB : B.IsSymm)
-    (b : Module.Basis ι R M)
+/-- The quadratic form of a bilinear form in an orthogonal basis is isometric to the diagonal
+form of its self-pairings. -/
+theorem iIsOrtho.equivalent_weightedSumSquares
+    {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
+    {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
     (hb : B.iIsOrtho b) :
     B.toQuadraticMap.Equivalent
       (QuadraticMap.weightedSumSquares R (fun i ↦ B (b i) (b i))) := by
-  have hassoc : QuadraticMap.associated B.toQuadraticMap = B :=
-    QuadraticMap.associated_left_inverse R hB.eq
-  have horth : (QuadraticMap.associated B.toQuadraticMap).IsOrthoᵢ b := by
-    rw [hassoc]
-    exact LinearMap.isOrthoᵢ_def.mpr (iIsOrtho_def.mp hb)
-  have heq := QuadraticMap.basisRepr_eq_of_iIsOrtho B.toQuadraticMap b horth
-  simp only [BilinMap.toQuadraticMap_apply] at heq
-  rw [← heq]
-  exact ⟨QuadraticMap.isometryEquivBasisRepr B.toQuadraticMap b⟩
+  refine ⟨{ b.equivFun with map_app' := fun x ↦ ?_ }⟩
+  have hx : B x x = ∑ i, b.repr x i * (b.repr x i * B (b i) (b i)) := by
+    calc B x x = B (∑ i, b.repr x i • b i) x := by rw [b.sum_repr]
+      _ = _ := by
+        rw [map_sum, LinearMap.sum_apply]
+        exact Finset.sum_congr rfl fun i _ ↦ by
+          rw [map_smul, LinearMap.smul_apply, hb.apply_basis_left, smul_eq_mul]
+  simp only [QuadraticMap.weightedSumSquares_apply, BilinMap.toQuadraticMap_apply, hx]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, Module.Basis.equivFun_apply,
+      smul_eq_mul]
+    ring
 
 open LinearMap (BilinForm)
 open Module
@@ -237,7 +235,7 @@ be a finite basis of the domain of `C` whose Gram matrix times a symmetric matri
 `π ^ (j + 1)`, and suppose that `H` has even diagonal or that `φ` also carries the self-pairings
 modulo `2 * π ^ (j + 1)`. Then in any bases of the same size, the Gram determinants `d` of `B` and
 `d'` of `C` satisfy `c ^ 2 * d = (1 + 2 π t) * d'` for some `c` and `t`. -/
-theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub [Nontrivial R] {N : Type*}
+theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub {N : Type*}
     [AddCommGroup N] [Module R N] {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm)
     {π : R} (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {ι₀ : Type*} [Fintype ι₀] [DecidableEq ι₀]
     (b₀ : Basis ι₀ R N) {j : ℕ} {H : Matrix ι₀ ι₀ R} (hH : C.toMatrix b₀ * H = π ^ j • 1)
@@ -245,6 +243,8 @@ theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub [Nontrivial R] {N : Type
     (hd : (∀ k, 2 ∣ H k k) ∨ ∀ x, 2 * π ^ (j + 1) ∣ C x x - B (φ x) (φ x))
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι R M) (b' : Basis ι R N) :
     ∃ c t : R, c ^ 2 * (B.toMatrix b).det = (1 + 2 * π * t) * (C.toMatrix b').det := by
+  cases subsingleton_or_nontrivial R
+  · exact ⟨0, 0, Subsingleton.elim _ _⟩
   have hπj : π ^ (j + 1) ∈ nonZeroDivisors R := pow_mem hπ (j + 1)
   -- The pullback of `B` along `φ` is `G' - π ^ (j + 1) • E` for a symmetric matrix `E`.
   choose E hE using fun k l ↦ h₁ (b₀ k) (b₀ l)
@@ -334,8 +334,7 @@ theorem equivalent_toBilin'_diagonal_fin_two {a c a' c' x y z t : R}
   linear_combination (u 0 * v 1 + u 1 * v 0) * horth
 
 /-- Over a local ring in which `2` is a unit, if a value `B u w` of a symmetric bilinear form
-divides every value of the form, then so does one of the self-pairings `B u u`, `B w w` and
-`B (u + w) (u + w)`. -/
+divides every value of the form, then so does some self-pairing `B x x`. -/
 theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
     (hB : B.IsSymm) (h2 : IsUnit (2 : R)) {u w : M} (h : ∀ y z, B u w ∣ B y z) :
     ∃ x, ∀ y z, B x x ∣ B y z := by
@@ -346,14 +345,9 @@ theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
   by_cases htu : IsUnit t
   · exact ⟨w, fun y z ↦ (ht ▸ (Units.mul_right_dvd (u := htu.unit)).mpr dvd_rfl).trans (h y z)⟩
   -- Both `s` and `t` lie in the maximal ideal, so `s + t + 2` is a unit.
-  have hunit : IsUnit (s + t + 2) := by
-    by_contra hn
-    refine (mem_nonunits_iff.mp ?_) h2
-    have := IsLocalRing.nonunits_add (IsLocalRing.nonunits_add hn
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff s).not.mpr hsu)))
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff t).not.mpr htu))
-    have hsum : s + t + 2 + -s + -t = (2 : R) := by ring
-    rwa [hsum] at this
+  have hunit : IsUnit (s + t + 2) := add_comm 2 (s + t) ▸ TauCeti.isUnit_add_of_isUnit_of_not_isUnit
+    h2 (mem_nonunits_iff.mp
+      (IsLocalRing.nonunits_add (mem_nonunits_iff.mpr hsu) (mem_nonunits_iff.mpr htu)))
   have huw : B (u + w) (u + w) = B u w * (s + t + 2) := by
     simp only [map_add, LinearMap.add_apply, hs, ht, hB.eq w u]
     ring

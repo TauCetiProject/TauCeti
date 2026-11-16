@@ -49,8 +49,7 @@ variable {K : Type*} [DivisionSemiring K] [LinearOrder K] [IsStrictOrderedRing K
 
 /-- For a nonnegative step `τ` and `s ≤ t`, the indices in `[⌈s / τ⌉₊, ⌈t / τ⌉₊)` number
 strictly less than `(t - s) / τ + 1`. This holds for both ordinary and truncated subtraction. -/
-theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] [ExistsAddOfLE K]
-    (hτ : 0 ≤ τ) (hst : s ≤ t) :
+theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] (hτ : 0 ≤ τ) (hst : s ≤ t) :
     ((⌈t / τ⌉₊ - ⌈s / τ⌉₊ : ℕ) : K) < (t - s) / τ + 1 := by
   -- For `t < 0` both ceilings vanish.
   rcases lt_or_ge t 0 with ht | ht
@@ -59,15 +58,17 @@ theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] [ExistsAddOfLE K
     exact add_pos_of_nonneg_of_pos
       (div_nonneg (le_tsub_of_add_le_left ((add_zero s).trans_le hst)) hτ) zero_lt_one
   have hle : ⌈s / τ⌉₊ ≤ ⌈t / τ⌉₊ := Nat.ceil_mono (div_le_div_of_nonneg_right hst hτ)
-  have hdiv : (t - s) / τ + s / τ = t / τ := by
-    rw [← add_div, tsub_add_cancel_of_le hst]
+  have hdiv : t / τ ≤ (t - s) / τ + s / τ := by
+    rw [← add_div]
+    exact div_le_div_of_nonneg_right le_tsub_add hτ
   apply (add_lt_add_iff_right (⌈s / τ⌉₊ : K)).mp
   calc
     ((⌈t / τ⌉₊ - ⌈s / τ⌉₊ : ℕ) : K) + ⌈s / τ⌉₊ = (⌈t / τ⌉₊ : K) := by
       rw [← Nat.cast_add, Nat.sub_add_cancel hle]
     _ < t / τ + 1 := Nat.ceil_lt_add_one (div_nonneg ht hτ)
+    _ ≤ (t - s) / τ + s / τ + 1 := by gcongr
     _ ≤ (t - s) / τ + 1 + ⌈s / τ⌉₊ := by
-      rw [← hdiv, add_right_comm]
+      rw [add_right_comm]
       gcongr
       exact Nat.le_ceil _
 
@@ -91,7 +92,7 @@ theorem pairwiseDisjoint_Ico_ceil_div (hτ : 0 < τ) {ι : Type*} {s t : ι → 
 
 /-- For `0 ≤ τ` and `sᵢ ≤ tᵢ` for `k` indices `i`, the union `⋃ᵢ [⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` has at
 most `(∑ᵢ (tᵢ - sᵢ)) / τ + k` elements. The intervals need not be disjoint. -/
-theorem card_biUnion_Ico_ceil_div_le [Sub K] [OrderedSub K] [ExistsAddOfLE K] (hτ : 0 ≤ τ)
+theorem card_biUnion_Ico_ceil_div_le [Sub K] [OrderedSub K] (hτ : 0 ≤ τ)
     {ι : Type*} (I : Finset ι) {s t : ι → K} (hst : ∀ i ∈ I, s i ≤ t i) :
     ((I.biUnion fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : K) ≤
       (∑ i ∈ I, (t i - s i)) / τ + I.card := by
@@ -107,18 +108,12 @@ theorem card_biUnion_Ico_ceil_div_le [Sub K] [OrderedSub K] [ExistsAddOfLE K] (h
 when `n = 0` or `B < 1`. -/
 theorem lt_floor_add_one_mul_floor_div_add_one (hB : 0 < B) (n : ℕ) :
     n < (⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) := by
-  have h1 : (n : K) / B < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) := by
-    simpa using Nat.lt_floor_add_one ((n : K) / B)
-  have h2 : B < ((⌊B⌋₊ + 1 : ℕ) : K) := by
-    simpa using Nat.lt_floor_add_one B
-  refine Nat.cast_lt (α := K).1 ?_
-  calc (n : K)
-      = (n : K) / B * B := (div_mul_cancel₀ (n : K) hB.ne').symm
-    _ < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) * B := mul_lt_mul_of_pos_right h1 hB
-    _ < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) * ((⌊B⌋₊ + 1 : ℕ) : K) :=
-        mul_lt_mul_of_pos_left h2 (Nat.cast_pos.2 (Nat.succ_pos _))
-    _ = (((⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) : ℕ) : K) := by
-        rw [← Nat.cast_mul, Nat.mul_comm]
+  -- Multiply `n / B < ⌊n / B⌋₊ + 1` by `B < ⌊B⌋₊ + 1`; the left side is `n / B * B = n`.
+  have h := mul_lt_mul'' (Nat.lt_floor_add_one ((n : K) / B)) (Nat.lt_floor_add_one B)
+    (div_nonneg n.cast_nonneg hB.le) hB.le
+  rw [div_mul_cancel₀ (n : K) hB.ne'] at h
+  rw [Nat.mul_comm]
+  exact_mod_cast h
 
 /-- For `B > 0` and any `n : ℕ`, `(2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` strictly exceeds `n`: an
 integer interval `[-⌊B⌋₊, ⌊B⌋₊]` with derivative orders up to `⌊n / B⌋₊` has more than `n`

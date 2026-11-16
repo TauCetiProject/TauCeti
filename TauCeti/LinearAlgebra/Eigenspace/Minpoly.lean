@@ -23,6 +23,8 @@ is perfect.
 * `Module.End.minpoly_dvd_prod_X_sub_C_pow_of_iSup_maxGenEigenspace_eq_top`: the minimal
   polynomial of a split endomorphism divides the `finrank`-th power of the product of
   `X - C μ` over its eigenvalues.
+* `Module.End.exists_ne_zero_aeval_apply_eq_zero_of_dvd_minpoly`: a factor of positive degree of
+  the minimal polynomial of `f` has a nonzero vector in the kernel of its evaluation at `f`.
 -/
 
 public section
@@ -56,5 +58,26 @@ theorem minpoly_dvd_prod_X_sub_C_pow_of_iSup_maxGenEigenspace_eq_top {f : End K 
       simp
   | zero => simp
   | add _ _ _ _ h h' => simp only [map_add, h, h', add_zero, LinearMap.zero_apply]
+
+/-- A factor of positive degree of the minimal polynomial of an endomorphism of a
+finite-dimensional space has a nonzero vector in the kernel of its evaluation at the
+endomorphism. -/
+theorem exists_ne_zero_aeval_apply_eq_zero_of_dvd_minpoly {f : End K V} {q : K[X]}
+    (hq : q ∣ minpoly K f) (hdeg : 0 < q.natDegree) : ∃ v : V, v ≠ 0 ∧ aeval f q v = 0 := by
+  obtain ⟨r, hr⟩ := hq
+  by_contra! hinj
+  have hint : IsIntegral K f := .of_finite K f
+  -- If `q(f)` were injective, then `r(f) = 0`, but `r` has smaller degree than `minpoly K f`.
+  have hrf : aeval f r = 0 := by
+    ext x
+    by_contra hx
+    refine hinj _ hx ?_
+    rw [← _root_.mul_apply_eq_comp, ← map_mul, ← hr, minpoly.aeval, LinearMap.zero_apply]
+  have hr0 : r ≠ 0 := by
+    rintro rfl
+    exact minpoly.ne_zero hint (by rw [hr, mul_zero])
+  have hle := natDegree_le_of_dvd (minpoly.dvd K f hrf) hr0
+  rw [hr, natDegree_mul (by rintro rfl; simp at hdeg) hr0] at hle
+  lia
 
 end Module.End

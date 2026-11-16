@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Analysis.Convex.Cone.EndpointVariation
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
@@ -27,6 +29,16 @@ Applied to the constant family at a curve `γ`, with a bump profile around `a`, 
 every curve `σ` through `γ a` as the moving left endpoint of a variation of `γ` with fixed right
 endpoint. Only the regularity of `σ` at `0` is used, and no smooth extension of `σ` is needed.
 
+The curves of these variations may leave a prescribed domain `D ⊆ M`. When a partial
+diffeomorphism `e` onto an open subset of a real normed space identifies `D` with a set stable
+under translation by a convex cone, for instance a translated convex cone or a half-space near a
+corner or a smooth boundary point of `D`, the endpoint variations of
+`TauCeti.exists_contDiffAt_endpointVariation_of_add_mem` read through `e` give variations of a
+curve `γ` in `D ∩ e.source` with prescribed moving left endpoint `σ` and fixed right endpoint.
+Given a filter `l ≤ 𝓝 0`, such as `𝓝[≥] 0`, along which the displacement `e (σ s) - e (σ 0)` of
+the endpoint lies in the cone, the curves of the variation lie in `D` for all `s` eventually
+along `l`. These are the competitors of a curve constrained to `D`.
+
 ## Main definitions and results
 
 * `TauCeti.Manifold.chartEndpointCorrection`: the chart endpoint correction of a family.
@@ -38,6 +50,11 @@ endpoint. Only the regularity of `σ` at `0` is used, and no smooth extension of
 * `TauCeti.Manifold.exists_contMDiffAt_endpointCorrection`: a `C^n` family can be corrected to
   have a prescribed moving left endpoint, with the same central curve, the same right endpoints
   and the same variation field.
+* `TauCeti.Manifold.exists_contMDiffAt_endpointVariation_of_add_mem`: variations with a
+  prescribed moving left endpoint and fixed right endpoint inside a domain that reads, in a
+  partial diffeomorphism, as a set stable under translation by a convex cone.
+* `TauCeti.Manifold.exists_contMDiffAt_coneEndpointVariation`: the case of a domain that reads as
+  a translated convex cone.
 
 ## References
 
@@ -279,5 +296,98 @@ theorem exists_contMDiffAt_endpointCorrection {n : ℕ∞} [IsManifold I n M] (h
       rw [variationField_apply, variationField_apply]
       exact EventuallyEq.curveVelocity_eq
         (Eventually.of_forall fun s ↦ chartEndpointCorrection_of_profile_eq_zero hφt s)
+
+section Domain
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞} {l : Filter ℝ}
+  {γ : ℝ → M} {b : ℝ} {D : Set M} {C : ConvexCone ℝ V}
+
+omit [I.Boundaryless] in
+/-- **Variations with a moving endpoint inside a domain.** Let `e` be a `C^n` partial
+diffeomorphism from `M` to a real normed space `V`, reading a set `D ⊆ M` on its target as a set
+`S ⊆ V` stable under translation by a convex cone `C`. Let `γ` be `C^n` on `[a, b]`, with `a < b`
+and values in `D ∩ e.source`, and let `σ` be `C^n` at `0` with `σ 0 = γ a`. If
+`e (σ s) - e (σ 0) ∈ C` for `s` along a filter `l ≤ 𝓝 0`, there is a variation `G` of `γ`, `C^n`
+along `{0} × [a, b]`, whose curves start at `σ s` for `s` near `0`, all end at `γ b`, and map
+`[a, b]` into `D` for `s` along `l`. -/
+theorem exists_contMDiffAt_endpointVariation_of_add_mem (hl : l ≤ 𝓝 0) (hab : a < b)
+    (e : PartialDiffeomorph I 𝓘(ℝ, V) M V n) {S : Set V} (hS : ∀ x ∈ S, ∀ v ∈ C, x + v ∈ S)
+    (hD : ∀ z ∈ e.target, e.symm z ∈ D ↔ z ∈ S)
+    (hγ : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0)
+    (hγσ : γ a = σ 0) (hγD : MapsTo γ (Icc a b) (D ∩ e.source))
+    (hσC : ∀ᶠ s in l, e (σ s) - e (σ 0) ∈ C) :
+    ∃ G : ℝ → ℝ → M, G 0 = γ ∧
+      (∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ G z.1 z.2) (0, t)) ∧
+      (∀ᶠ s in 𝓝 0, G s a = σ s) ∧ (∀ s, G s b = γ b) ∧
+      ∀ᶠ s in l, MapsTo (G s) (Icc a b) D := by
+  have hσe : σ 0 ∈ e.source := hγσ ▸ (hγD (left_mem_Icc.2 hab.le)).2
+  have hinv {x : M} (hx : x ∈ e.source) : e.symm (e x) = x := e.left_inv hx
+  have hγS : MapsTo (fun t ↦ e (γ t)) (Icc a b) (S ∩ e.target) := fun t ht ↦
+    ⟨(hD _ (e.map_source (hγD ht).2)).1 (by rw [hinv (hγD ht).2]; exact (hγD ht).1),
+      e.map_source (hγD ht).2⟩
+  have hcomp {f : ℝ → M} {t : ℝ} (hf : ContMDiffAt 𝓘(ℝ, ℝ) I n f t) (hft : f t ∈ e.source) :
+      ContDiffAt ℝ n (fun t ↦ e (f t)) t :=
+    contMDiffAt_iff_contDiffAt.1
+      ((e.contMDiffOn.contMDiffAt (e.open_source.mem_nhds hft)).comp t hf)
+  obtain ⟨A, hA0, hA, hAa, hAb, hAS⟩ := exists_contDiffAt_endpointVariation_of_add_mem hl hab hS
+    e.open_target (fun t ht ↦ hcomp (hγ t ht) (hγD ht).2) (hcomp hσ hσe) (congrArg e hγσ) hγS
+    hσC
+  have hG {s : ℝ} (hs : s ≠ 0) (t : ℝ) :
+      update (fun s t ↦ e.symm (A s t)) 0 γ s t = e.symm (A s t) := by
+    rw [update_of_ne hs]
+  refine ⟨update (fun s t ↦ e.symm (A s t)) 0 γ, update_self .., fun t ht ↦ ?_, ?_, fun s ↦ ?_, ?_⟩
+  · have hnear : ∀ᶠ z : ℝ × ℝ in 𝓝 ((0 : ℝ), t), γ z.2 ∈ e.source :=
+      ((hγ t ht).continuousAt.comp (x := ((0 : ℝ), t)) continuousAt_snd).eventually_mem
+        (e.open_source.mem_nhds (hγD ht).2)
+    have htarget : A 0 t ∈ e.target := by
+      rw [hA0]
+      exact e.map_source (hγD ht).2
+    refine ContMDiffAt.congr_of_eventuallyEq (f := fun z : ℝ × ℝ ↦ e.symm (A z.1 z.2)) ?_
+      (hnear.mono fun z hz ↦ ?_)
+    · exact (e.symm.contMDiffOn.contMDiffAt (e.open_target.mem_nhds htarget)).comp (0, t)
+        (contMDiffAt_iff_contDiffAt.2 (hA t ht))
+    · rcases eq_or_ne z.1 0 with hz0 | hz0
+      · simp only [hz0, update_self, hA0, hinv hz]
+      · exact hG hz0 z.2
+  · filter_upwards [hσ.continuousAt.preimage_mem_nhds (e.open_source.mem_nhds hσe)] with s hs
+    rcases eq_or_ne s 0 with rfl | hs0
+    · rw [update_self, hγσ]
+    · rw [hG hs0, hAa, hinv hs]
+  · rcases eq_or_ne s 0 with rfl | hs0
+    · rw [update_self]
+    · rw [hG hs0, hAb, hinv (hγD (right_mem_Icc.2 hab.le)).2]
+  · filter_upwards [hAS] with s hs t ht
+    rcases eq_or_ne s 0 with rfl | hs0
+    · rw [update_self]
+      exact (hγD ht).1
+    · rw [hG hs0]
+      exact (hD _ (hs ht).2).2 (hs ht).1
+
+omit [I.Boundaryless] in
+/-- **Variations with a moving endpoint inside a cone.** Let `e` be a `C^n` partial
+diffeomorphism from `M` to a real normed space `V`, reading a set `D ⊆ M` on its target as the
+translated convex cone `{z | z - e (σ 0) ∈ C}`. Let `γ` be `C^n` on `[a, b]`, with `a < b` and
+values in `D ∩ e.source`, and let `σ` be `C^n` at `0` with `σ 0 = γ a`. If `σ s ∈ D` for `s`
+along a filter `l ≤ 𝓝 0`, there is a variation `G` of `γ`, `C^n` along `{0} × [a, b]`, whose
+curves start at `σ s` for `s` near `0`, all end at `γ b`, and map `[a, b]` into `D` for `s` along
+`l`. -/
+theorem exists_contMDiffAt_coneEndpointVariation (hl : l ≤ 𝓝 0) (hab : a < b)
+    (e : PartialDiffeomorph I 𝓘(ℝ, V) M V n) (hD : ∀ z ∈ e.target, e.symm z ∈ D ↔ z - e (σ 0) ∈ C)
+    (hγ : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0)
+    (hγσ : γ a = σ 0) (hγD : MapsTo γ (Icc a b) (D ∩ e.source)) (hσD : ∀ᶠ s in l, σ s ∈ D) :
+    ∃ G : ℝ → ℝ → M, G 0 = γ ∧
+      (∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ G z.1 z.2) (0, t)) ∧
+      (∀ᶠ s in 𝓝 0, G s a = σ s) ∧ (∀ s, G s b = γ b) ∧
+      ∀ᶠ s in l, MapsTo (G s) (Icc a b) D := by
+  have hσe : σ 0 ∈ e.source := hγσ ▸ (hγD (left_mem_Icc.2 hab.le)).2
+  have hinv {x : M} (hx : x ∈ e.source) : e.symm (e x) = x := e.left_inv hx
+  refine exists_contMDiffAt_endpointVariation_of_add_mem (S := {z | z - e (σ 0) ∈ C}) hl hab e
+    (fun x hx v hv ↦ by simpa only [mem_ofPred_eq, add_sub_right_comm] using C.add_mem hx hv) hD
+    hγ hσ hγσ hγD ?_
+  filter_upwards [hσD, hl (hσ.continuousAt.preimage_mem_nhds (e.open_source.mem_nhds hσe))]
+    with s hs hse
+  exact (hD _ (e.map_source hse)).1 (by rwa [hinv hse])
+
+end Domain
 
 end TauCeti.Manifold

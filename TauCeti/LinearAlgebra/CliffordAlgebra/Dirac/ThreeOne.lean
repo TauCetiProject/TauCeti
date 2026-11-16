@@ -314,6 +314,11 @@ theorem diracVector_timeFirstToNative_mul_add_mul_swap (x y : Fin 4 → ℝ) :
 noncomputable def diracGamma (μ : Fin 4) : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) ℂ :=
   realCliffordWeight 1 3 μ • diracVector (timeFirstToNative (Pi.single μ 1))
 
+/-- The defining formula `Γ^μ = η^{μμ} C(P e_μ)` of the dual-frame Dirac matrices. -/
+theorem diracGamma_def (μ : Fin 4) :
+    diracGamma μ = realCliffordWeight 1 3 μ • diracVector (timeFirstToNative (Pi.single μ 1)) :=
+  (rfl)
+
 /-- `Γ⁰` is the Hermitian pairing `H₀`. -/
 theorem diracGamma_zero : diracGamma 0 = fromBlocks 0 1 1 0 := by
   rw [diracGamma, realCliffordWeight_of_lt (by decide), one_smul,

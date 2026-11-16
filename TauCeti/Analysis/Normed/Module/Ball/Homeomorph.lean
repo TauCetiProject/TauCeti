@@ -62,10 +62,11 @@ open Metric Set Topology
 variable {W : Type*} [SeminormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- The inverse of `unitBall` in explicit radial coordinates. -/
-theorem _root_.Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
-    (Homeomorph.unitBall.symm y : W) =
-      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := by
-  exact (Homeomorph.unitBall_symm_apply y).trans
+theorem Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
+    (Homeomorph.unitBall.symm y : W) = (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
+  -- Compose the explicit formulas as terms: the intermediate subtypes are the source and target
+  -- of the partial homeomorphism rather than `ball 0 1`, so `simp` cannot chain the rewrites.
+  (Homeomorph.unitBall_symm_apply y).trans
     ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
       (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
@@ -226,7 +227,6 @@ theorem coe_cubeHomeomorphClosedBall_symm_apply (z : closedBall (0 : N → ℝ) 
   rw [Homeomorph.apply_symm_apply] at h
   linarith
 
-open unitInterval in
 /-- **The closed unit ball of a finite-dimensional real normed space is a cube.** The closed unit
 ball of a real normed space of finite dimension `k` is homeomorphic to the cube `Iᵏ`. -/
 theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]

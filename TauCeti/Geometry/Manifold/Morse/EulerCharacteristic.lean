@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Algebra.Field.ULift
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
@@ -117,14 +116,9 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (hf : I
         finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj
           (TopCat.of M)) ≡
       finrank k V * (totalCriticalCount I f).toNat [ZMOD 2] := by
-  have hfin := hf.finite_criticalPoints
-  rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn,
-    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hfin.toFinset hfin.coe_toFinset hn,
-    totalCriticalCount_def, hfin.encard_eq_coe_toFinset_card, ENat.toNat_natCast,
-    Finset.card_eq_sum_ones]
-  push_cast
-  refine (Int.ModEq.sum fun x _ ↦ ?_).mul_left _
-  simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x))
+  rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn]
+  exact (toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount
+    hf.finite_criticalPoints hn).symm.mul_left _
 
 /-- Any two Morse functions on a compact boundaryless manifold have numbers of critical points of
 the same parity. -/
@@ -189,12 +183,8 @@ theorem IsMorse.finsum_neg_one_pow_mul_finrank_singularHomology (hf : IsMorse I 
         ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
   rw [finsum_eq_sum_of_support_subset _ (s := Finset.range (finrank ℝ E + 1)) fun i hi ↦ ?_]
   · exact hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V le_rfl
-  -- Above the dimension there are no critical points, so the weak inequality kills homology.
   by_contra hlt
-  have hle := hf.finrank_singularHomology_le V i
-  rw [criticalCount_eq_zero_of_finrank_lt (by simpa using hlt), ENat.toNat_zero, zero_mul,
-    Nat.le_zero] at hle
-  simp [hle] at hi
+  simp [hf.finrank_singularHomology_eq_zero_of_finrank_lt V (by simpa using hlt)] at hi
 
 /-- **The signed critical count is the Euler characteristic.** For a Morse function on a compact
 boundaryless manifold `M` of finite CW type, `∑ᵢ (-1)ⁱ cᵢ = χ(M)`, where `cᵢ` is the number of

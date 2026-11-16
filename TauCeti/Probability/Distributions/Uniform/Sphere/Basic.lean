@@ -108,7 +108,7 @@ and its universal set are empty. -/
 @[simp]
 theorem support_uniformSphereMeasure :
     (uniformSphereMeasure E).support = Set.univ := by
-  rcases subsingleton_or_nontrivial E with hE | hE
+  rcases subsingleton_or_nontrivial E with hE | _
   · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
     rw [hzero, Measure.support_zero]
     exact Set.eq_univ_iff_forall.mpr fun x ↦ isEmptyElim x

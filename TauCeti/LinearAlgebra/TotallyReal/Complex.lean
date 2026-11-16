@@ -326,6 +326,17 @@ theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
   rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
   exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
 
+omit hL in
+/-- If a complex-linear automorphism carries `L` onto a maximal totally real subspace `L'`, then
+`L` is maximal totally real. -/
+theorem of_map_linearEquiv {L' : Submodule ℝ E}
+    (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L')
+    (A : E ≃ₗ[ℂ] E) (h : L' = L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L := by
+  have h' : L'.map ((A.symm : E →ₗ[ℂ] E).restrictScalars ℝ) = L :=
+    (Submodule.map_symm_eq_iff (A.restrictScalars ℝ)).2 h.symm
+  simpa only [h'] using hL'.map_linearEquiv A.symm
+
 /-- A maximal totally real subspace has real dimension equal to the complex dimension of the
 ambient module. -/
 theorem finrank_eq_finrank_complex : finrank ℝ L = finrank ℂ E := by
@@ -352,24 +363,25 @@ theorem det_eq_det_restrict (f : E →ₗ[ℂ] E) (hf : ∀ x ∈ L, f x ∈ L) 
     rw [LinearMap.det_eq_one_of_not_module_finite h2,
       LinearMap.det_eq_one_of_not_module_finite h1, Complex.ofReal_one]
 
-variable [FiniteDimensional ℂ E]
-
-/-- The complex-linear automorphisms act transitively on the maximal totally real subspaces of a
-finite-dimensional complex module. -/
+/-- The complex-linear automorphisms of a complex module act transitively on its maximal totally
+real subspaces; no finite-dimensionality is needed. -/
 theorem exists_linearEquiv_map_eq {L' : Submodule ℝ E}
     (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L') :
     ∃ A : E ≃ₗ[ℂ] E, L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ) = L' := by
-  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
-  have hspan {K : Submodule ℝ E} (c : Basis (Fin (finrank ℂ E)) ℝ K) :
-      Submodule.span ℝ (Set.range (K.subtype ∘ c)) = K := by
-    rw [Set.range_comp, Submodule.span_image, c.span_eq, Submodule.map_subtype_top]
-  let b := Module.finBasisOfFinrankEq ℝ L hL.finrank_eq_finrank_complex
-  let b' := Module.finBasisOfFinrankEq ℝ L' hL'.finrank_eq_finrank_complex
-  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℂ] E, ∀ i, A (b i) = b' i :=
-    ⟨(hL.complexBasis b).equiv (hL'.complexBasis b') (Equiv.refl _), fun i => by
-      simpa using (hL.complexBasis b).equiv_apply i (hL'.complexBasis b') (Equiv.refl _)⟩
+  -- real bases of the two subspaces are complex bases of `E`, so they are indexed by equivalent
+  -- types, and the automorphism matching them carries one subspace onto the other
+  let b := Basis.ofVectorSpace ℝ L
+  let b' := Basis.ofVectorSpace ℝ L'
+  let e := (hL.complexBasis b).indexEquiv (hL'.complexBasis b')
+  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℂ] E, ∀ i, A (b i) = b' (e i) :=
+    ⟨(hL.complexBasis b).equiv (hL'.complexBasis b') e, fun i => by
+      simpa using (hL.complexBasis b).equiv_apply i (hL'.complexBasis b') e⟩
+  have hspan : Submodule.span ℝ (Set.range (L.subtype ∘ b)) = L := by
+    rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
+  have hspan' : Submodule.span ℝ (Set.range (L'.subtype ∘ b')) = L' := by
+    rw [Set.range_comp, Submodule.span_image, b'.span_eq, Submodule.map_subtype_top]
   refine ⟨A, ?_⟩
-  rw [← hspan b, Submodule.map_span, ← Set.range_comp, ← hspan b']
+  rw [← hspan, Submodule.map_span, ← Set.range_comp, ← hspan', ← EquivLike.range_comp _ e]
   congr 2
   funext i
   exact hA i
@@ -417,8 +429,7 @@ theorem IsMaximalTotallyReal.projection_sum_smul {ι : Type*} [Fintype ι]
     conv_lhs => rw [← Complex.re_add_im (c i)]
     rw [add_smul, mul_smul, hr, hr]
   rw [hsplit, map_add,
-    Submodule.projection_apply_of_mem_right hL.isCompl
-      ⟨_, L.sum_mem fun i _ ↦ L.smul_mem _ (hv i), rfl⟩, add_zero,
+    hL.projection_map_of_mem (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i)), add_zero,
     Submodule.projection_apply_of_mem_left hL.isCompl (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i))]
 
 end TauCeti

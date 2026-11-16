@@ -1,22 +1,29 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.LinearAlgebra.Matrix.Symmetric
+import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
-# Equality in the matrix trace bound
+# Matrix trace bounds and their equality case
 
-Completing the square around a scalar matrix characterizes the equality case in the
-Cauchy–Schwarz bound for the trace. No symmetry assumption is needed. This is the finite
-algebraic equality criterion used for the Hessian in sharp eigenvalue estimates.
+For a symmetric matrix, trace Cauchy–Schwarz bounds the square of the trace by the dimension
+times the trace of the square. Completing the square around a scalar matrix characterizes the
+equality case in the Cauchy–Schwarz bound for the trace. This equality criterion needs no
+symmetry assumption and is used for the Hessian in sharp eigenvalue estimates.
+
+Formalization references for the symmetric bounds:
+[lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
+[PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public section
@@ -65,5 +72,33 @@ theorem eq_scalar_of_trace_eq_of_sum_sq_le (A : Matrix ι ι R) (c : R)
   ext i j
   exact sub_eq_zero.mp ((Finset.sum_sq_eq_zero_iff _ _).1
     (hentry i (Finset.mem_univ i)) j (Finset.mem_univ j))
+
+variable {𝕜 : Type*} [CommRing 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+
+/-- The trace of the square of a symmetric matrix controls its diagonal
+square sum. -/
+theorem sum_sq_diag_le_trace_mul_self {ι : Type*} [Fintype ι]
+    {S : Matrix ι ι 𝕜} (hS : S.IsSymm) :
+    (∑ i, S i i ^ 2) ≤ (S * S).trace := by
+  classical
+  simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply]
+  apply Finset.sum_le_sum
+  intro i _
+  have hs : ∀ j, S i j * S j i = S i j ^ 2 := by
+    intro j
+    rw [hS.apply i j, pow_two]
+  simp only [hs]
+  exact Finset.single_le_sum (fun j _ ↦ sq_nonneg (S i j)) (Finset.mem_univ i)
+
+/-- Cauchy--Schwarz for the trace of a symmetric matrix, including the
+zero-dimensional case. -/
+theorem sq_trace_le_card_mul_trace_mul_self {ι : Type*} [Fintype ι]
+    {S : Matrix ι ι 𝕜} (hS : S.IsSymm) :
+    S.trace ^ 2 ≤ (Fintype.card ι : 𝕜) * (S * S).trace := by
+  have hdiag : S.trace ^ 2 ≤ (Fintype.card ι : 𝕜) * ∑ i, S i i ^ 2 := by
+    simpa only [Matrix.trace, Matrix.diag, Finset.card_univ] using
+      (sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i ↦ S i i))
+  exact hdiag.trans (mul_le_mul_of_nonneg_left
+    (sum_sq_diag_le_trace_mul_self hS) (Nat.cast_nonneg _))
 
 end Matrix

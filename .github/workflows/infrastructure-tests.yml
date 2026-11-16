@@ -18,19 +18,17 @@ concurrency:
 
 jobs:
   python-tests:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -44,8 +42,8 @@ jobs:
             scripts/test_duplicate_audit_workflow.py \
             scripts/test_dependency_warm.py \
             scripts/test_lake_cache_probe.py \
-            scripts/test_lake_cache_reuse.py \
             scripts/test_pick_runner.py \
+            scripts/test_nightly_verify.py \
             scripts/test_finalize_batch.py \
             scripts/test_bors_staging_identity.py \
             scripts/test_workflow_pins.py \
@@ -58,6 +56,25 @@ jobs:
         uses: ./.github/actions/checkout-merge-policy
       - name: Infrastructure policy unit tests
         run: bash scripts/run-infrastructure-tests.sh
+
+      - name: Prepare isolated staging contract fixture
+        run: |
+          mkdir staging-contracts
+          cp -a .github staging-contracts/.github
+          cp -a scripts staging-contracts/scripts
+          cp tauceti.toml staging-contracts/tauceti.toml
+
+      - name: Prepare the deployed staging tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          project-directory: staging-contracts
+
+      - name: Check staging lint scope with the deployed implementation
+        run: |
+          git show HEAD:scripts/test_lint_scope.py > staging-contracts/scripts/test_lint_scope.py
+          python3 staging-contracts/scripts/test_lint_scope.py
 
       # The no-stack bot intentionally uses a different Tools release.
       # Test that exact implementation after the general suite, without another runner.
@@ -73,22 +90,18 @@ jobs:
           python3 scripts/test_stack_checkpoint_restore.py
 
   lean-fixtures:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
-      - name: Restore the project-owned Lake workflow test
-        run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
       - name: Install the native checkout fixture sandbox
         run: |
           set -euo pipefail
@@ -122,6 +135,7 @@ jobs:
 
       - name: Audit and Lake regression fixtures
         run: |
+          export ELAN_TOOLCHAIN="$(cat lean-toolchain)"
           LEAN="$(elan which lean)"
           LEAN_SYSROOT="$("$LEAN" --print-prefix)"
           export LEAN LEAN_SYSROOT
@@ -131,24 +145,37 @@ jobs:
           python3 scripts/test_duplicate_declarations.py
           python3 scripts/test_check_imports.py
           python3 scripts/test_ci_checkout.py --integration
-          python3 scripts/test_bulk_unpack_cache.py --integration
-          python3 scripts/test_lake_cache_reuse.py --integration
           python3 scripts/test_lake_cache_publish.py --integration
 
+      - name: Checkout the deployed cache extraction fixture
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          path: staging-cache-tools
+          sparse-checkout: |
+            tauceti_tools/assets/scripts/bulk-unpack-cache.py
+            tauceti_tools/assets/scripts/test_bulk_unpack_cache.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Check cache extraction and native publication with stock Lake
+        run: |
+          export ELAN_TOOLCHAIN="$(cat lean-toolchain)"
+          python3 staging-cache-tools/tauceti_tools/assets/scripts/test_bulk_unpack_cache.py --integration
+
   header-fixtures:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:

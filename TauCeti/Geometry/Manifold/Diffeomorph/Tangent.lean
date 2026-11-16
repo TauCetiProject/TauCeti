@@ -22,12 +22,14 @@ The underlying function is Mathlib's `tangentMap`; no parallel tangent-map API i
 ## Main definitions and results
 
 * `Diffeomorph.tangent`: the tangent lift of a smooth diffeomorphism.
+* `Diffeomorph.tangentHomeomorph`: the tangent map of a `C^n` diffeomorphism, `n ≥ 1`, as a
+  homeomorphism of tangent bundles.
 * `Diffeomorph.tangent_symm`: taking a tangent lift commutes with inversion.
 * `Diffeomorph.tangent_symm_mk`: the inverse tangent lift acts on fibres by `(dh_x)⁻¹`.
 * `Diffeomorph.tangent_refl`: the tangent lift of the identity is the identity.
 * `Diffeomorph.tangent_trans`: taking a tangent lift commutes with composition.
-* `Diffeomorph.tangent_curveVelocityLift`: tangent lifts carry the velocity lift of a
-  differentiable curve to the velocity lift of its image.
+* `Diffeomorph.tangent_curveVelocityLift`: tangent lifts carry the velocity lift of a curve to
+  the velocity lift of its image.
 -/
 
 public section
@@ -103,15 +105,38 @@ theorem tangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
     tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.1))
       ((h.mdifferentiable (by simp)) z.1)
 
-/-- A tangent lift carries the velocity lift of a differentiable curve to the velocity lift of
-the image curve. This is the bundled tangent-map form of the chain rule. -/
-theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {t : 𝕜}
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t) :
-    h.tangent (TauCeti.Manifold.curveVelocityLift I γ t) =
-      TauCeti.Manifold.curveVelocityLift J (h ∘ γ) t := by
-  rw [coe_tangent]
-  exact TauCeti.Manifold.tangentMap_curveVelocityLift
-    ((h.mdifferentiable (by simp)) (γ t)) hγ
+/-- The tangent map of a `C^n` diffeomorphism, `n ≥ 1`, as a homeomorphism of tangent bundles.
+Its value at `(x, v)` is `(h x, mfderiv I J h x v)`, and its inverse is the tangent map of
+`h.symm`. For smooth diffeomorphisms, `Diffeomorph.tangent` upgrades it to a diffeomorphism. -/
+def tangentHomeomorph {n : WithTop ℕ∞} (h : M ≃ₘ^n⟮I, J⟯ N) (hn : 1 ≤ n) :
+    TangentBundle I M ≃ₜ TangentBundle J N where
+  toFun := tangentMap I J h
+  invFun := tangentMap J I h.symm
+  left_inv := h.tangentMap_symm_apply (zero_lt_one.trans_le hn).ne'
+  right_inv := h.tangentMap_apply_symm (zero_lt_one.trans_le hn).ne'
+  continuous_toFun := h.contMDiff.continuous_tangentMap hn
+  continuous_invFun := h.symm.contMDiff.continuous_tangentMap hn
+
+/-- The underlying function of `Diffeomorph.tangentHomeomorph` is Mathlib's `tangentMap`. -/
+@[simp]
+theorem coe_tangentHomeomorph {n : WithTop ℕ∞} (h : M ≃ₘ^n⟮I, J⟯ N) (hn : 1 ≤ n) :
+    ⇑(h.tangentHomeomorph hn) = tangentMap I J h :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.tangentHomeomorph` is the tangent map of the inverse. -/
+@[simp]
+theorem coe_tangentHomeomorph_symm {n : WithTop ℕ∞} (h : M ≃ₘ^n⟮I, J⟯ N) (hn : 1 ≤ n) :
+    ⇑(h.tangentHomeomorph hn).symm = tangentMap J I h.symm :=
+  (rfl)
+
+/-- A tangent lift carries the velocity lift of a curve to the velocity lift of the image curve.
+This is the bundled tangent-map form of the chain rule; if the curve is not differentiable, both
+velocities are the junk value `0`. -/
+theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {t : 𝕜} :
+    h.tangent (curveVelocityLift I γ t) = curveVelocityLift J (h ∘ γ) t := by
+  rw [coe_tangent, curveVelocityLift_apply, curveVelocityLift_apply, curveVelocity_apply,
+    curveVelocity_apply, h.mfderiv_diffeomorph_comp (by simp) γ t]
+  rfl
 
 end Diffeomorph
 

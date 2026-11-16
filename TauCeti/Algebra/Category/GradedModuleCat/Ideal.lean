@@ -170,32 +170,37 @@ theorem hom_ofIdealSpanSingletonHomEquiv_symm_apply {f : A} (hf : IsIdempotentEl
     ((ofIdealSpanSingletonHomEquiv hf hf₀ hI M).symm m).hom a = (a : A) • (m : M) :=
   (rfl)
 
-/-- **The idempotent pieces of `Af` are graded corners.** For idempotents `e` of degree zero and
-`f`, the subspace `e • (Af)ₚ`, viewed inside `A`, is the degree-`p` part `eAf ∩ 𝒜 p` of the corner
-`eAf`. -/
-theorem map_subtype_smul_ofIdeal_span_singleton_piece {e f : A} (he : IsIdempotentElem e)
-    (he₀ : e ∈ 𝒜 0) (hf : IsIdempotentElem f) (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜)
-    (p : ℤ) :
+/-- **The pieces of `Af` cut down by a degree-zero element are graded corners.** For a degree-zero
+element `e` and an element `f` generating a homogeneous left ideal, the subspace `e • (Af)ₚ`,
+viewed inside `A`, is the degree-`p` part `eAf ∩ 𝒜 p` of the corner `eAf`. -/
+theorem map_subtype_smul_ofIdeal_span_singleton_piece {e f : A} (he₀ : e ∈ 𝒜 0)
+    (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) (p : ℤ) :
     (e • (ofIdeal 𝒜 (Ideal.span {f}) hI).grading.piece p).map
         ((Ideal.span {f} : Ideal A).subtype.restrictScalars k) =
       cornerSubmodule k e f ⊓ 𝒜 p := by
   ext y
-  rw [Submodule.mem_map, Submodule.mem_inf, mem_cornerSubmodule_iff k he hf]
+  rw [Submodule.mem_map, Submodule.mem_inf]
   constructor
   · rintro ⟨_, hz, rfl⟩
     obtain ⟨x, hx, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hz
-    have hxf := (mem_span_singleton_iff_mul_eq_self hf).1 x.2
+    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.1 x.2
     rw [LinearMap.restrictScalars_apply, Submodule.subtype_apply, Submodule.coe_smul,
       smul_eq_mul]
-    refine ⟨by rw [mul_assoc, mul_assoc, hxf, ← mul_assoc, he.eq], ?_⟩
+    refine ⟨by rw [← ha, ← mul_assoc]; exact mul_mul_mem_cornerSubmodule k e f a, ?_⟩
     simpa only [zero_add] using SetLike.GradedMul.mul_mem he₀ ((mem_ofIdeal_piece_iff hI).1 hx)
   · rintro ⟨hc, hy⟩
-    have hyf : y ∈ (Ideal.span {f} : Ideal A) :=
-      (mem_span_singleton_iff_mul_eq_self hf).2 (by rw [← hc, mul_assoc, hf.eq])
-    have hey : e * y = y := by rw [← hc, ← mul_assoc, ← mul_assoc, he.eq]
+    have hyf : y ∈ (Ideal.span {f} : Ideal A) := mem_span_singleton_of_mem_cornerSubmodule hc
+    rw [cornerSubmodule_def, LinearMap.mem_range] at hc
+    obtain ⟨a, ha⟩ := hc
+    rw [LinearMap.mulLeftRight_apply] at ha
+    have hw : a * f ∈ (Ideal.span {f} : Ideal A) := Ideal.mem_span_singleton'.2 ⟨a, rfl⟩
+    have hex : e * (DirectSum.decompose 𝒜 (a * f) p : A) = y := by
+      rw [← DirectSum.coe_decompose_mul_of_left_mem_zero 𝒜 he₀, ← mul_assoc, ha,
+        DirectSum.decompose_of_mem_same 𝒜 hy]
     refine ⟨⟨y, hyf⟩, (Submodule.mem_smul_pointwise_iff_exists _ _ _).2
-      ⟨⟨y, hyf⟩, (mem_ofIdeal_piece_iff hI).2 hy, Subtype.ext ?_⟩, rfl⟩
-    rw [Submodule.coe_smul, smul_eq_mul, hey]
+      ⟨⟨_, hI p hw⟩, (mem_ofIdeal_piece_iff hI).2 (SetLike.coe_mem _), Subtype.ext ?_⟩, rfl⟩
+    rw [Submodule.coe_smul, smul_eq_mul]
+    exact hex
 
 end CommRing
 
@@ -206,13 +211,13 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 
 /-- **The graded dimension of `e • Af` is the graded dimension of the corner `eAf`**: the
 coefficient of `qᵖ` is `dim_k(eAf ∩ 𝒜 p)`. -/
-theorem coeff_smulGradedDimension_ofIdeal_span_singleton {e f : A} (he : IsIdempotentElem e)
-    (he₀ : e ∈ 𝒜 0) (hf : IsIdempotentElem f) (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜)
+theorem coeff_smulGradedDimension_ofIdeal_span_singleton {e f : A} (he₀ : e ∈ 𝒜 0)
+    (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜)
     [Module.Finite k (ofIdeal 𝒜 (Ideal.span {f}) hI)] (p : ℤ) :
     ((ofIdeal 𝒜 (Ideal.span {f}) hI).smulGradedDimension e).coeff p =
       Module.finrank k ↥(cornerSubmodule k e f ⊓ 𝒜 p) := by
   rw [coeff_smulGradedDimension,
-    ← map_subtype_smul_ofIdeal_span_singleton_piece he he₀ hf hI p]
+    ← map_subtype_smul_ofIdeal_span_singleton_piece he₀ hI p]
   exact congrArg _ (Submodule.equivMapOfInjective _ Subtype.val_injective _).finrank_eq
 
 end Field

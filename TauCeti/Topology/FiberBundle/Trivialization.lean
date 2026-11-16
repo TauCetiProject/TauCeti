@@ -18,6 +18,9 @@ trivialization over their union, with the same forward and inverse maps on each 
 The coordinate change between two trivializations is jointly continuous in the base point and the
 fibre coordinate over the overlap of their base sets, which makes the transition functions of a
 fibre bundle continuous.
+A map is continuous as soon as every point of the base lies in the base set of a trivialization,
+and the trivializations at the points of the base of a fibre bundle make its projection such a
+locally trivial map.
 Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
 of its base set a trivialization is an equivalence between the fibre and the model fibre.
 
@@ -27,6 +30,9 @@ of its base set a trivialization is an equivalence between the fibre and the mod
   the base set of the trivialization at `v₀.proj`.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
+* `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
+* `FiberBundle.exists_trivialization_mem_baseSet`: the projection of a fibre bundle is locally
+  trivial.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
 * `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
@@ -83,6 +89,33 @@ theorem continuousOn_coordChange (e₁ e₂ : Trivialization F proj) :
   simp only [Function.comp_apply, e₂.coe_coe, ← e₁.mk_coordChange e₂ hp.1.1 hp.1.2 p.2]
 
 end Bundle.Trivialization
+
+namespace TauCeti
+
+/-- A locally trivial map, one for which every point of the base lies in the base set of a
+trivialization, is continuous. -/
+theorem continuous_of_forall_exists_trivialization {B F Z : Type*} [TopologicalSpace B]
+    [TopologicalSpace F] [TopologicalSpace Z] {p : Z → B}
+    (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) : Continuous p :=
+  continuous_iff_continuousAt.2 fun z ↦ by
+    obtain ⟨e, he⟩ := h (p z)
+    exact e.continuousAt_proj (e.mem_source.2 he)
+
+end TauCeti
+
+namespace FiberBundle
+
+variable {B F : Type*} [TopologicalSpace B] [TopologicalSpace F] {E : B → Type*}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+
+variable (F E) in
+/-- The projection of a fibre bundle is locally trivial, through the trivializations at the points
+of the base. -/
+theorem exists_trivialization_mem_baseSet (b : B) :
+    ∃ e : Trivialization F (π F E), b ∈ e.baseSet :=
+  ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
+
+end FiberBundle
 
 /-- A compact subset of a fibre bundle's total space lies over a finite union of the
 chosen trivializing base sets. -/

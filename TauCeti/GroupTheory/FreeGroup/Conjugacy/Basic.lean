@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Algebra.Group.Conj
+public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.Reduce
 
 import Mathlib.Tactic.Group
@@ -32,6 +33,9 @@ rotations of each other.
   exactly when they are rotations of each other.
 * `FreeGroup.isConj_iff_isRotated_reduceCyclically`: the conjugacy criterion for elements of a
   free group.
+* `FreeGroup.length_reduceCyclically_toWord_le_norm_of_isConj` and
+  `FreeGroup.norm_inv_mk_conjugator_mul_mul`: the cyclic reduction has the least length in the
+  conjugacy class.
 
 The explicit cyclic-reduction conjugator uses Mathlib's
 `FreeGroup.reduceCyclically.conj_conjugator_reduceCyclically` from
@@ -152,6 +156,29 @@ theorem not_isCyclicallyReduced_append_append_invRev {w : List (α × Bool)} (hw
       show invRev [f] = [(f.1, !f.2)] by simp [invRev], List.getLast?_concat]
   simpa using h.2 _ hlast f (by simp)
 
+/-- Conjugating a word by a letter `l` whose inverse starts it, or which ends it, gives a word that
+is a rotation of the original. -/
+private theorem exists_isRotated_mk_mul_mk_mul_inv_singleton {u : List (α × Bool)} {l : α × Bool}
+    (h : u.head? = some (l.1, !l.2) ∨ u.getLast? = some l) :
+    ∃ u', u ~r u' ∧ mk [l] * mk u * (mk [l])⁻¹ = mk u' := by
+  rcases h with hhead | hlast
+  · -- The first letter of `u` cancels against `l`: conjugating by `l` rotates `u` once.
+    obtain ⟨u₁, rfl⟩ := List.head?_eq_some_iff.mp hhead
+    refine ⟨u₁ ++ [(l.1, !l.2)], (List.isRotated_concat _ _).symm, ?_⟩
+    have e₁ : mk ((l.1, !l.2) :: u₁) = (mk [l])⁻¹ * mk u₁ := by
+      rw [inv_mk_singleton, mul_mk, List.singleton_append]
+    have e₂ : mk (u₁ ++ [(l.1, !l.2)]) = mk u₁ * (mk [l])⁻¹ := by
+      rw [inv_mk_singleton, mul_mk]
+    rw [e₁, e₂]
+    group
+  · -- The last letter of `u` is `l`: conjugating by `l` rotates `u` back once.
+    obtain ⟨u₀, rfl⟩ := List.getLast?_eq_some_iff.mp hlast
+    refine ⟨l :: u₀, List.isRotated_concat _ _, ?_⟩
+    have e : mk (l :: u₀) = mk [l] * mk u₀ := by
+      rw [mul_mk, List.singleton_append]
+    rw [e, ← mul_mk]
+    group
+
 /-- If conjugating the element of a cyclically reduced word `u` by the element of a reduced word
 `w` gives the element of a cyclically reduced word `v`, then `u` and `v` are rotations of each
 other. -/
@@ -173,28 +200,13 @@ private theorem isRotated_of_mk_mul_mk_mul_inv_eq {w u v : List (α × Bool)}
     rcases u.eq_nil_or_concat' with rfl | ⟨u₀, c, rfl⟩
     · rw [← one_eq_mk, mul_one, mul_inv_cancel, one_eq_mk] at h
       rw [IsReduced.nil.eq_of_mk_eq hv.isReduced h]
-    by_cases hhead : (u₀ ++ [c]).head? = some (l.1, !l.2)
-    · -- The first letter of `u` cancels against `l`: conjugating by `l` rotates `u` once.
-      obtain ⟨u₁, hu₁⟩ := List.head?_eq_some_iff.mp hhead
-      have hrot : u₀ ++ [c] ~r u₁ ++ [(l.1, !l.2)] := by
-        rw [hu₁]
-        exact (List.isRotated_concat _ _).symm
+    by_cases hcancel : (u₀ ++ [c]).head? = some (l.1, !l.2) ∨ (u₀ ++ [c]).getLast? = some l
+    · obtain ⟨u', hrot, hu'⟩ := exists_isRotated_mk_mul_mk_mul_inv_singleton hcancel
       refine hrot.trans (ih hw' (hrot.isCyclicallyReduced_iff.mp hu) ?_)
-      have e₁ : mk ((l.1, !l.2) :: u₁) = (mk [l])⁻¹ * mk u₁ := by
-        rw [inv_mk_singleton, mul_mk, List.singleton_append]
-      have e₂ : mk (u₁ ++ [(l.1, !l.2)]) = mk u₁ * (mk [l])⁻¹ := by
-        rw [inv_mk_singleton, mul_mk]
-      rw [← hconj, hu₁, e₁, e₂]
-      group
-    by_cases hlast : c = l
-    · -- The last letter of `u` cancels against `l⁻¹`: conjugating by `l` rotates `u` back once.
-      subst hlast
-      have hrot : u₀ ++ [c] ~r c :: u₀ := List.isRotated_concat _ _
-      refine hrot.trans (ih hw' (hrot.isCyclicallyReduced_iff.mp hu) ?_)
-      have e : mk (c :: u₀) = mk [c] * mk u₀ := by
-        rw [mul_mk, List.singleton_append]
-      rw [← hconj, e, ← mul_mk]
-      group
+      rw [← hu']
+      exact hconj
+    obtain ⟨hhead, hlast'⟩ := not_or.mp hcancel
+    have hlast : ¬c = l := fun hcl => hlast' (by simp [hcl])
     -- Nothing cancels, so the conjugate is the reduced word `w l u l⁻¹ w⁻¹`, which is not
     -- cyclically reduced.
     exfalso
@@ -226,6 +238,28 @@ theorem isConj_iff_isRotated_reduceCyclically [DecidableEq α] {x y : FreeGroup 
   rw [← mk_toWord (x := x), ← mk_toWord (x := y)] at h
   exact ((isConj_mk_reduceCyclically x.toWord).symm.trans h).trans
     (isConj_mk_reduceCyclically y.toWord)
+
+/-- Conjugate elements of a free group have cyclic reductions of the same length. -/
+theorem length_reduceCyclically_toWord_eq_of_isConj [DecidableEq α] {x y : FreeGroup α}
+    (h : IsConj x y) :
+    (reduceCyclically x.toWord).length = (reduceCyclically y.toWord).length :=
+  (isConj_iff_isRotated_reduceCyclically.mp h).perm.length_eq
+
+/-- The cyclic reduction of an element of a free group is at most as long as each of its
+conjugates. -/
+theorem length_reduceCyclically_toWord_le_norm_of_isConj [DecidableEq α] {x y : FreeGroup α}
+    (h : IsConj x y) : (reduceCyclically x.toWord).length ≤ norm y :=
+  (length_reduceCyclically_toWord_eq_of_isConj h).trans_le (length_reduceCyclically_le y.toWord)
+
+/-- Conjugating an element of a free group by its cyclic-reduction conjugator gives an element
+whose length is that of the cyclic reduction, the least length in the conjugacy class. -/
+theorem norm_inv_mk_conjugator_mul_mul [DecidableEq α] (x : FreeGroup α) :
+    norm ((mk (reduceCyclically.conjugator x.toWord))⁻¹ * x *
+      mk (reduceCyclically.conjugator x.toWord)) = (reduceCyclically x.toWord).length := by
+  have h := mk_conjugator_mul_mk_reduceCyclically x.toWord
+  rw [mk_toWord] at h
+  rw [mul_assoc, ← eq_inv_mul_iff_mul_eq.mpr (mul_inv_eq_iff_eq_mul.mp h), norm, toWord_mk,
+    (reduceCyclically.isCyclicallyReduced isReduced_toWord).isReduced.reduce_eq]
 
 /-- For any letters `a`, `b`, `c` and `d`, the elements `a b` and `c d⁻¹` of a free group are not
 conjugate: the homomorphism to `Multiplicative ℤ` sending every generator to `ofAdd 1` maps them

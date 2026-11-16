@@ -303,8 +303,6 @@ private theorem finSumFinRevEquiv_capCup_val {a b : Fin k} (hab : a ≠ b) (x : 
 /-- `isPlanar_capCup_iff` for a pair `a < b`. -/
 private theorem isPlanar_capCup_iff_of_lt {a b : Fin k} (hab : a < b) :
     (capCup a b).IsPlanar ↔ (a : ℕ) + 1 = b := by
-  have hlt : (a : ℕ) < b := hab
-  have hb := b.isLt
   rw [isPlanar_iff]
   constructor
   · -- A strand starting at a bottom point strictly between `a` and `b` crosses the cap.

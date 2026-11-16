@@ -5,26 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.NoetherianType.Basic
+public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Noetherian
 import TauCeti.Topology.Algebra.Ring.Subring
 
 /-!
-# Noetherian type for Tate rings
+# Noetherian type and Huber's standing class for Tate rings
 
 A Tate ring with a noetherian ring of definition is strongly noetherian. Indeed, a sufficiently
 large positive power of a pseudouniformiser belongs to any open subring, and inverting it
 recovers the ambient ring. Thus a Tate ring with a noetherian open subring is noetherian.
 Apply this to the completed rings of definition of the restricted power-series algebras.
 
-Consequently, on Tate rings the two alternatives defining noetherian type reduce to strong
-noetherianness. Neither completeness nor Hausdorffness of the original ring is needed: the
-power-series algebras in the definition of strong noetherianness are separated completions.
+Consequently, on Tate rings both noetherian type and Huber's standing class reduce to strong
+noetherianness (a discrete Tate ring has `0` as a unit and is the zero ring). Neither completeness
+nor Hausdorffness of the original ring is needed: the power-series algebras in the definition of
+strong noetherianness are separated completions.
 
 ## References
 
 * T. Wedhorn, *Adic Spaces*, §6.7, Remark 6.37(3).
+* R. Huber, *Étale Cohomology of Rigid Analytic Varieties and Adic Spaces*, (1.1.1).
 -/
 
 public section
@@ -56,5 +58,22 @@ theorem IsNoetherianType.isStronglyNoetherian [hA : IsNoetherianType A] :
 theorem isNoetherianType_iff_isStronglyNoetherian :
     IsNoetherianType A ↔ IsStronglyNoetherian A :=
   ⟨fun _ ↦ IsNoetherianType.isStronglyNoetherian, fun _ ↦ inferInstance⟩
+
+/-- For a Tate ring, membership in Huber's standing class implies strong noetherianness. -/
+theorem IsHuberStandard.isStronglyNoetherian [IsHuberStandard A] :
+    IsStronglyNoetherian A :=
+  have := IsHuberStandard.isNoetherianType (A := A)
+  IsNoetherianType.isStronglyNoetherian
+
+/-- On Tate rings, Huber's standing class is equivalent to strong noetherianness. -/
+@[simp]
+theorem isHuberStandard_iff_isStronglyNoetherian :
+    IsHuberStandard A ↔ IsStronglyNoetherian A :=
+  ⟨fun _ ↦ IsHuberStandard.isStronglyNoetherian, fun _ ↦ inferInstance⟩
+
+/-- On Tate rings, Huber's standing class coincides with noetherian type. -/
+theorem isHuberStandard_iff_isNoetherianType :
+    IsHuberStandard A ↔ IsNoetherianType A :=
+  isHuberStandard_iff_isStronglyNoetherian.trans isNoetherianType_iff_isStronglyNoetherian.symm
 
 end TauCeti.Huber

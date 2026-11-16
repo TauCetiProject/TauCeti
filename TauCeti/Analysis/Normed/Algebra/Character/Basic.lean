@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
 import TauCeti.Analysis.Normed.Algebra.Jacobson
-import TauCeti.Analysis.Normed.Algebra.Unitization
+import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 import TauCeti.RingTheory.Jacobson.Spectrum
 
 /-!
@@ -52,13 +52,21 @@ public section
 
 namespace NonUnitalAlgHom
 
-variable {𝕜 A F : Type*} [NormedField 𝕜] [CompleteSpace 𝕜] [NonUnitalNormedRing A]
-  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
-  [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
+variable {𝕜 A F : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [CompleteSpace A] [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
 
-/-- A nonunital character of a Banach algebra is contractive. No continuity is assumed. -/
-theorem norm_apply_le_self (φ : F) (a : A) : ‖φ a‖ ≤ ‖a‖ :=
-  quasispectrum.norm_le_norm_of_mem (apply_mem_quasispectrum φ a)
+/-- A nonunital character of a Banach algebra is contractive. No continuity is assumed, and the
+scalar field need not be complete. -/
+theorem norm_apply_le_self (φ : F) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
+  by_contra! h
+  have hφ : φ a ≠ 0 := fun h0 ↦ (norm_nonneg a).not_gt (by simpa [h0] using h)
+  -- If `‖φ a‖ > ‖a‖`, then `b = (φ a)⁻¹ • a` has norm `< 1` and `φ b = 1`, but the geometric
+  -- series `s` of `b` satisfies `b + b * s = s`, so `1 + φ s = φ s`.
+  have hb : φ ((φ a)⁻¹ • a) = 1 := by simp [hφ]
+  have hbn : ‖(φ a)⁻¹ • a‖ < 1 := by
+    rw [norm_smul, norm_inv]
+    exact (inv_mul_lt_iff₀ (norm_pos_iff.2 hφ)).2 (by simpa using h)
+  simpa [hb] using congrArg φ (add_self_mul_geom_series hbn)
 
 /-- A nonunital character of a Banach algebra is automatically continuous, so `map_continuous`
 applies to it. This is the nonunital counterpart of Mathlib's instance for unital characters. -/

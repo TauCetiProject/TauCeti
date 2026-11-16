@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+import TauCeti.Algebra.Field.LinearFractional
 
 /-!
 # The Möbius-action conjugation at a positive determinant
@@ -32,6 +33,8 @@ unfolded by hand.
 * `UpperHalfPlane.num_sub_smul_mul_denom`: the difference formula
   `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))` for `det g > 0`, with the denominator of
   `g • z` cleared.
+* `UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero`: an upper triangular element
+  `!![a, b; 0, a⁻¹]` of `SL(2, ℝ)` acts on `ℍ` by `τ ↦ a ^ 2 * τ + a * b`.
 * `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
   negates the real part and preserves the imaginary part.
 * `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
@@ -45,6 +48,9 @@ unfolded by hand.
   counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
   `SL(2, ℝ)`-action.
+* `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
+  `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
+  subgroup, so that the law need only be checked on generators.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
 * `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
@@ -70,7 +76,7 @@ public section
 
 open UpperHalfPlane
 
-open scoped MatrixGroups Pointwise
+open scoped MatrixGroups Pointwise ComplexConjugate
 
 namespace UpperHalfPlane
 
@@ -162,6 +168,44 @@ theorem num_sub_smul_mul_denom {g : GL (Fin 2) ℝ} (hg : 0 < (g : Matrix (Fin 2
   simp only [num, denom, Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
   ring
 
+/-- **The displacement between two images under a matrix of positive determinant**: the
+displacement of `g • τ` from `g • z` is that of `τ` from `z` scaled by
+`det g / (denom g τ * denom g z)`. -/
+theorem coe_smul_sub_coe_smul {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) (z τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) - (g • z : ℍ) = g.det.val * ((τ : ℂ) - z) / (denom g τ * denom g z) := by
+  rw [coe_smul_of_det_pos hdet τ, div_sub' (denom_ne_zero g τ), mul_comm (denom g τ),
+    num_sub_smul_mul_denom (by rwa [← Matrix.GeneralLinearGroup.val_det_apply]) z τ, div_div,
+    mul_comm (denom g z), Matrix.GeneralLinearGroup.val_det_apply]
+
+/-- **The displacement from `conj (g • z)` under a matrix of positive determinant**: the
+displacement of `g • τ` from `conj (g • z)` is that of `τ` from `conj z` scaled by
+`det g / (denom g τ * conj (denom g z))`. Since `g` has real entries, its Möbius transformation
+carries `conj z` to `conj (g • z)`, and this is the difference formula at `conj z`. -/
+theorem coe_smul_sub_conj_smul {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) (z τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) - conj ((g • z : ℍ) : ℂ) =
+      g.det.val * ((τ : ℂ) - conj (z : ℂ)) / (denom g τ * conj (denom g z)) := by
+  have hj : conj (denom g z) ≠ 0 := (map_ne_zero _).mpr (denom_ne_zero g z)
+  have hjτ := denom_ne_zero g τ
+  rw [coe_smul_of_det_pos hdet, coe_smul_of_det_pos hdet, map_div₀]
+  simp only [num, denom, map_add, map_mul, Complex.conj_ofReal] at hj hjτ ⊢
+  rw [TauCeti.moebius_sub_moebius hj hjτ]
+  simp [Matrix.det_fin_two]
+
+/-- **An upper triangular element of `SL(2, ℝ)` acts on `ℍ` by a real affine map**: if
+`g = !![a, b; 0, a⁻¹]`, then `g • τ = a ^ 2 * τ + a * b`. This is the explicit form of Mathlib's
+`UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_eq_zero`. -/
+theorem coe_smul_of_apply_zero_one_eq_zero {g : SL(2, ℝ)} (hg : g 1 0 = 0) (τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) = (g 0 0 : ℂ) ^ 2 * τ + g 0 0 * g 0 1 := by
+  have hdet : (g 0 0 : ℂ) * g 1 1 = 1 := by
+    have h := g.det_coe
+    rw [Matrix.det_fin_two, hg, mul_zero, sub_zero] at h
+    exact_mod_cast h
+  have h11 : (g 1 1 : ℂ) ≠ 0 := right_ne_zero_of_mul_eq_one hdet
+  rw [coe_specialLinearGroup_apply, hg]
+  simp only [Algebra.algebraMap_self, RingHom.id_apply, Complex.ofReal_zero, zero_mul, zero_add]
+  field_simp
+  linear_combination (-((g 0 0 : ℂ) * τ + g 0 1)) * hdet
+
 /-- Scalar action invariance for `GL (Fin 2) ℝ`: a matrix that is a scalar multiple of another
 acts identically on `ℍ`, through Mathlib's scalar-matrix action `glScalar_smul`. The scalar is
 necessarily nonzero, since an invertible matrix is not zero. -/
@@ -182,6 +226,33 @@ lemma smul_eq_smul_of_coe_eq_smul {g h : GL (Fin 2) ℝ} {c : ℝ}
   rw [h_mul, mul_smul, glScalar_smul]
 
 end UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+/-- **The subgroup of the transformation law.** The elements `g ∈ SL(2, ℝ)` for which `f`
+satisfies the weight-`k` transformation law `f (g • τ) = denom g τ ^ k * f τ` on all of `ℍ` form
+a subgroup, by the cocycle law of the automorphy factor
+(`Matrix.SpecialLinearGroup.denom_mapGL_mul`). -/
+def transformationLawSubgroup (k : ℤ) (f : ℍ → ℂ) : Subgroup SL(2, ℝ) where
+  carrier := {g | ∀ τ : ℍ, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ}
+  mul_mem' {a b} ha hb τ := by
+    rw [mul_smul, ha, hb, ← mul_assoc, ← mul_zpow, ← Matrix.SpecialLinearGroup.denom_mapGL_mul]
+  one_mem' τ := by simp
+  inv_mem' {a} ha τ := by
+    have h := ha (a⁻¹ • τ)
+    have hd := Matrix.SpecialLinearGroup.denom_mapGL_mul a a⁻¹ τ
+    rw [smul_inv_smul] at h
+    rw [mul_inv_cancel, map_one, denom_one] at hd
+    rw [h, ← mul_assoc, ← mul_zpow, mul_comm (denom (Matrix.SpecialLinearGroup.mapGL ℝ a⁻¹) τ),
+      ← hd, one_zpow, one_mul]
+
+@[simp]
+theorem mem_transformationLawSubgroup {k : ℤ} {f : ℍ → ℂ} {g : SL(2, ℝ)} :
+    g ∈ transformationLawSubgroup k f ↔
+      ∀ τ : ℍ, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ :=
+  Iff.rfl
+
+end TauCeti.UpperHalfPlane
 
 namespace ModularGroup
 
@@ -240,9 +311,6 @@ theorem sq_smul_smul_eq_vadd_S_smul_vadd (g : SL(2, ℤ)) (hc : g 1 0 ≠ 0) (τ
   have hc' : (g 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc
   have hden : (g 1 0 : ℂ) * τ + g 1 1 ≠ 0 := by
     simpa [denom_apply] using denom_ne_zero g τ
-  have hden' : (τ : ℂ) + (g 1 1 : ℂ) / g 1 0 ≠ 0 := by
-    rw [show (τ : ℂ) + (g 1 1 : ℂ) / g 1 0 = (g 1 0 * τ + g 1 1) / g 1 0 by field_simp]
-    exact div_ne_zero hden hc'
   have hS : ((S • (((g 1 1 : ℝ) / g 1 0) +ᵥ τ) : ℍ) : ℂ) = -((τ : ℂ) + (g 1 1 : ℂ) / g 1 0)⁻¹ := by
     rw [modular_S_smul, coe_mk, coe_vadd, inv_neg]
     push_cast

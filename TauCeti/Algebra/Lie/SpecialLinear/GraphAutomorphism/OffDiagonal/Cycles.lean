@@ -139,7 +139,6 @@ private theorem offDiagonalCyclePoint_injective :
       have he : c.val = finDistinctPairsRevSwap (r + 1) d.val := by
         simpa only [offDiagonalCyclePoint, hi0, ite_true, ite_eq_right hj0] using h
       rw [← he] at hs
-      have hc := c.property
       omega
   · by_cases hj0 : j = 0
     · have hc := cycle_lt_of_ne_zero r c i hi0
@@ -147,7 +146,6 @@ private theorem offDiagonalCyclePoint_injective :
       have he : finDistinctPairsRevSwap (r + 1) c.val = d.val := by
         simpa only [offDiagonalCyclePoint, hj0, ite_true, ite_eq_right hi0] using h
       rw [he] at hs
-      have hd := d.property
       omega
     · have hcd : c = d := Subtype.ext ((finDistinctPairsRevSwap (r + 1)).injective (by
         simpa only [offDiagonalCyclePoint, ite_eq_right hi0, ite_eq_right hj0] using h))

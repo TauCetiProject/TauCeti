@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Flow.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
 public import TauCeti.Geometry.Symplectic.Liouville.Scaling
+public import TauCeti.Topology.MetricSpace.InjectiveNeighborhood
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
@@ -31,18 +32,22 @@ is an open interval around `0` whose length varies with `s`. On this domain:
   its differential is injective at every point of `D` (`TauCeti.injective_mfderiv_flowOf_comp`).
   When `S` has one dimension less than `M`, `Φ` is therefore a local diffeomorphism at every point
   of `D` (`TauCeti.isLocalDiffeomorphAt_flowOf_comp`).
-* If moreover `S` is compact and `ι` is injective, then `Φ` is injective and a local
-  diffeomorphism on an open neighbourhood of `{0} × S` in `D`
-  (`TauCeti.exists_isOpen_injOn_flowOf_comp`): it is a diffeomorphism from a collar of
-  `{0} × S` onto an open neighbourhood of the image of `ι`.
+* If moreover `ι` is a topological embedding, then `Φ` is injective and a local diffeomorphism
+  on a collar `{(t, s) | |t| < ε s}` of `{0} × S` inside `D`, whose width `ε` is a positive
+  continuous function on `S` (`TauCeti.exists_continuous_pos_injOn_flowOf_comp`). So `Φ` is a
+  diffeomorphism from this collar onto an open neighbourhood of the image of `ι`. No compactness
+  of `S` is needed, only that `S` and `M` are pseudometrizable, as second countable Hausdorff
+  manifolds are.
+* If `S` is compact and `ι` is injective, the width can be taken constant: `Φ` is injective and a
+  local diffeomorphism on `(-ε, ε) × S` for some `ε > 0`
+  (`TauCeti.exists_pos_injOn_flowOf_comp`).
 
 A hypersurface transverse to the Liouville field of a nondegenerate `dα` carries the contact form
 `ι^* α` (`TauCeti.IsContactType.isContactForm_mpullback`), so for such a hypersurface the local
 Liouville flow map is a local diffeomorphism on its whole domain
 (`TauCeti.isLocalDiffeomorphAt_flowOf_comp_of_isTransverseAlong`). For a complete Liouville field,
 the identity `Φ^* α = eᵗ ι^* α` holds on all of `ℝ × S`
-(`TauCeti.mpullback_globalFlow_comp_eq_symplectization`). Injectivity near `{0} × S` for a
-noncompact embedded hypersurface is not treated here.
+(`TauCeti.mpullback_globalFlow_comp_eq_symplectization`).
 
 ## Main results
 
@@ -52,7 +57,9 @@ noncompact embedded hypersurface is not treated here.
 * `TauCeti.isLocalDiffeomorphAt_flowOf_comp`,
   `TauCeti.isLocalDiffeomorphAt_flowOf_comp_of_isTransverseAlong`: for a hypersurface, `Φ` is a
   local diffeomorphism at every point of `D`.
-* `TauCeti.exists_isOpen_injOn_flowOf_comp`: the collar of a compact hypersurface.
+* `TauCeti.exists_continuous_pos_injOn_flowOf_comp`: the collar of variable width of an embedded
+  hypersurface.
+* `TauCeti.exists_pos_injOn_flowOf_comp`: the collar of uniform width of a compact hypersurface.
 
 ## References
 
@@ -76,12 +83,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
   (hZ : ContMDiff I I.tangent ∞ (T% Z)) {ι : S → M} (hι : ContMDiff J I ∞ ι)
 include hZ hι
-
-/-- The domain `{(t, s) | φₜ(ι s) is defined}` of the local Liouville flow map is open. -/
-private theorem isOpen_setOf_mem_flowDomain_comp :
-    IsOpen {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z} :=
-  (isOpen_flowDomain (hZ.of_le (by simp))).preimage
-    (continuous_fst.prodMk (hι.continuous.comp continuous_snd))
 
 /-- The local flow map `(t, s) ↦ φₜ(ι s)` is smooth near every point of its domain. -/
 private theorem contMDiffAt_flowOf_comp_uncurry {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z) :
@@ -126,7 +127,8 @@ theorem mpullback_flowOf_comp_mextDeriv_apply (hZα : (mextDeriv α.1).interior 
     ((α.contMDiff _).of_le (by simp))]
   -- The two one-forms agree on the open domain of the flow map, a neighbourhood of `p`.
   refine mextDeriv_congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_setOf_mem_flowDomain_comp hZ hι).mem_nhds hp] with q hq
+  filter_upwards [(isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd)).mem_nhds hp] with q hq
   exact mpullback_flowOf_comp_apply_eq_symplectization hZ hι hZα hq
 
 /-- **The local Liouville flow map is an immersion.** Let the smooth vector field `Z` be the
@@ -161,22 +163,24 @@ theorem isLocalDiffeomorphAt_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryl
   have hinj := injective_mfderiv_flowOf_comp hZ hι hZα hα hp
   exact isLocalDiffeomorphAt_of_mfderiv_eq
     (fun q hq ↦ (contMDiffAt_flowOf_comp_uncurry hZ hι hq).contMDiffWithinAt)
-    (isOpen_setOf_mem_flowDomain_comp hZ hι) hp BoundarylessManifold.isInteriorPoint (by simp)
+    (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd)) hp BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearMap.linearEquivOfInjective _ hinj hdim').toContinuousLinearEquiv)
     (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim' w)
 
-/-- **The Liouville collar of a compact hypersurface.** Let the smooth vector field `Z` be the
-Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be a smooth injective map
-from a compact boundaryless manifold of one dimension less, with `ι^* α` a contact form. Then on
-some open neighbourhood `U` of `{0} × S`, contained in the domain of the flow, the local flow map
-`(t, s) ↦ φₜ(ι s)` is injective and a local diffeomorphism, that is, a diffeomorphism of `U` onto
-an open subset of `M`. -/
-theorem exists_isOpen_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless] [CompactSpace S]
+/-- **The Liouville collar of a compact hypersurface has uniform width.** Let the smooth vector
+field `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be a smooth
+injective map from a compact boundaryless manifold of one dimension less, with `ι^* α` a contact
+form. Then for some `ε > 0` the flow `φₜ(ι s)` is defined for `|t| < ε`, and on the collar
+`(-ε, ε) × S` the local flow map `(t, s) ↦ φₜ(ι s)` is injective and a local diffeomorphism, that
+is, a diffeomorphism onto an open subset of `M`. -/
+theorem exists_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless] [CompactSpace S]
     (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.1).interior Z = α.1)
     (hα : (SmoothForm.mpullback ι hι α).IsContactForm) (hιi : Function.Injective ι) :
-    ∃ U : Set (ℝ × S), IsOpen U ∧ {0} ×ˢ univ ⊆ U ∧ U ⊆ {p | (p.1, ι p.2) ∈ flowDomain Z} ∧
-      InjOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) U ∧
-      IsLocalDiffeomorphOn (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) U := by
+    ∃ ε > 0, Ioo (-ε) ε ×ˢ univ ⊆ {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z} ∧
+      InjOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioo (-ε) ε ×ˢ univ) ∧
+      IsLocalDiffeomorphOn (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
+        (Ioo (-ε) ε ×ˢ univ) := by
   have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZ.of_le (by simp)
   set D := {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z}
   have hD : ({0} : Set ℝ) ×ˢ (univ : Set S) ⊆ D := by
@@ -187,12 +191,62 @@ theorem exists_isOpen_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryle
     (f := fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
     (by
       rintro ⟨_, a⟩ ⟨rfl, -⟩ ⟨_, b⟩ ⟨rfl, -⟩ hab
-      simp only [flowOf_zero hZ1] at hab
+      simp only [flowOf_zero Z] at hab
       rw [hιi hab])
     (isCompact_singleton.prod isCompact_univ)
     fun p hp ↦ isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα (hD hp)
-  exact ⟨U ∩ D, hUo.inter (isOpen_setOf_mem_flowDomain_comp hZ hι), subset_inter hsU hD,
-    inter_subset_right, hinj.mono inter_subset_left, fun p ↦ hloc ⟨p, p.2.1⟩⟩
+  -- By the tube lemma, the open set `U ∩ D` contains a product `u × S` with `u` a neighbourhood
+  -- of `0`, and hence a collar of uniform width.
+  obtain ⟨u, v, hu, -, h0u, hSv, huv⟩ := generalized_tube_lemma isCompact_singleton isCompact_univ
+    (hUo.inter (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd))) (subset_inter hsU hD)
+  obtain ⟨ε, hε, hεu⟩ := Metric.isOpen_iff.mp hu 0 (h0u rfl)
+  have hsub : Ioo (-ε) ε ×ˢ (univ : Set S) ⊆ U ∩ D := fun p hp ↦
+    huv ⟨hεu (by simpa [Real.ball_eq_Ioo] using hp.1), hSv (mem_univ _)⟩
+  exact ⟨ε, hε, fun p hp ↦ (hsub hp).2, hinj.mono fun p hp ↦ (hsub hp).1,
+    fun p ↦ hloc ⟨p, (hsub p.2).1⟩⟩
+
+/-- **The Liouville collar of a noncompact hypersurface.** Let the smooth vector field `Z` be the
+Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be a smooth topological
+embedding of a boundaryless manifold of one dimension less, with `ι^* α` a contact form. Then for
+some positive continuous width `ε : S → ℝ` the flow `φₜ(ι s)` is defined for `|t| < ε s`, and on
+the collar `{(t, s) | |t| < ε s}` of `{0} × S` the local flow map `(t, s) ↦ φₜ(ι s)` is injective
+and a local diffeomorphism, that is, a diffeomorphism onto an open subset of `M`.
+
+No compactness of `S` is needed. The embedding hypothesis is necessary: the collar map is a
+homeomorphism onto its open image and restricts to `ι` on `{0} × S`. -/
+theorem exists_continuous_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless]
+    [TopologicalSpace.PseudoMetrizableSpace M] [TopologicalSpace.PseudoMetrizableSpace S]
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.1).interior Z = α.1)
+    (hα : (SmoothForm.mpullback ι hι α).IsContactForm) (hιe : Topology.IsInducing ι) :
+    ∃ ε : C(S, ℝ), (∀ s, 0 < ε s) ∧
+      {p : ℝ × S | |p.1| < ε p.2} ⊆ {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z} ∧
+      InjOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) {p : ℝ × S | |p.1| < ε p.2} ∧
+      IsLocalDiffeomorphOn (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
+        {p : ℝ × S | |p.1| < ε p.2} := by
+  have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZ.of_le (by simp)
+  set D := {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z}
+  have hloc : IsLocalDiffeomorphOn (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) D :=
+    fun p ↦ isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα p.2
+  -- The section `s ↦ (0, s)` is mapped to `ι`, which induces the topology of `S`; so the flow map
+  -- is an open embedding on an open neighbourhood `U ⊆ D` of `{0} × S`.
+  obtain ⟨U, hUo, hsU, hUD, hemb⟩ :=
+    hloc.isLocalHomeomorphOn.exists_isOpenEmbedding_near_section
+      (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+        (hι.continuous.comp continuous_snd)) (s := fun y : S ↦ ((0 : ℝ), y))
+      (by
+        rintro _ ⟨y, rfl⟩
+        exact mem_flowDomain_zero hZ1 (ι y))
+      (continuous_const.prodMk continuous_id) Prod.snd continuous_snd (fun _ ↦ rfl)
+      (by simpa only [Function.comp_def, flowOf_zero] using hιe)
+  -- A pseudometrizable space is normal and paracompact, so `U` contains a tube of positive
+  -- continuous width.
+  let := TopologicalSpace.pseudoMetrizableSpacePseudoMetric S
+  obtain ⟨ε, hε, hεU⟩ := hUo.exists_continuous_pos_forall_abs_lt fun y ↦ hsU ⟨y, rfl⟩
+  have hsub : {p : ℝ × S | |p.1| < ε p.2} ⊆ U := fun p hp ↦ hεU p.2 p.1 hp
+  refine ⟨ε, hε, hsub.trans hUD, fun p hp q hq hpq ↦ ?_, fun p ↦ hloc ⟨p, hUD (hsub p.2)⟩⟩
+  exact congrArg Subtype.val
+    (hemb.injective (a₁ := ⟨p, hsub hp⟩) (a₂ := ⟨q, hsub hq⟩) hpq)
 
 /-- **The Liouville collar of a transverse hypersurface is locally diffeomorphic.** Let the smooth
 vector field `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, with `dα`

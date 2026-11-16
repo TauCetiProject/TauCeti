@@ -335,19 +335,28 @@ variable {α β 𝕜 E F : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSp
 `eLpNorm` form. -/
 theorem eLpNorm_apply_le_of_norm_le (T : Lp E r μ →L[𝕜] Lp F s ν) {M : ℝ≥0} (hT : ‖T‖ ≤ M)
     (f : Lp E r μ) : eLpNorm (T f) s ν ≤ M * eLpNorm f r μ := by
-  rw [← Lp.enorm_def, ← Lp.enorm_def]
+  rw [← Lp.eNorm_def, ← Lp.eNorm_def]
   refine T.le_of_opENorm_le ?_ f
   rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
   exact ENNReal.ofReal_le_ofReal hT
 
 /-- A bound for `T : Lʳ → Lˢ`, `r < ∞`, from `Lᵖ` to `L^q`, `1 ≤ p < ∞`, on simple functions in
-`Lʳ` passes to every `f ∈ Lʳ ∩ Lᵖ`, for any finite constant `C`. -/
+`Lʳ` passes to every `f ∈ Lʳ ∩ Lᵖ`, for any constant `C`. -/
 theorem eLpNorm_apply_le_of_forall_simpleFunc [MeasurableSpace E] [BorelSpace E] (hr : r ≠ ∞)
-    (T : Lp E r μ →L[𝕜] Lp F s ν) (hp1 : 1 ≤ p) (hp : p ≠ ∞) {C : ℝ≥0∞} (hC : C ≠ ∞)
+    (T : Lp E r μ →L[𝕜] Lp F s ν) (hp1 : 1 ≤ p) (hp : p ≠ ∞) {C : ℝ≥0∞}
     (h : ∀ (g : SimpleFunc α E) (hg : MemLp g r μ), eLpNorm (T (hg.toLp g)) q ν ≤
       C * eLpNorm g p μ)
     (f : Lp E r μ) (hf : MemLp f p μ) : eLpNorm (T f) q ν ≤ C * eLpNorm f p μ := by
   have hfm := Lp.aestronglyMeasurable f
+  -- If `C = ∞`, the bound is trivial unless `eLpNorm f p μ = 0`, that is `f = 0`.
+  by_cases hC : C = ∞
+  · rcases eq_or_ne (eLpNorm f p μ) 0 with h0 | h0
+    · have hf0 : f = 0 := Lp.ext (((eLpNorm_eq_zero_iff
+        (zero_lt_one.trans_le hp1).ne').1 h0).trans (Lp.coeFn_zero E r μ).symm)
+      rw [hf0, map_zero, eLpNorm_congr_ae (Lp.coeFn_zero F s ν), eLpNorm_zero]
+      exact zero_le
+    · rw [hC, ENNReal.top_mul h0]
+      exact le_top
   set φ := hfm.mk f
   have hφ : Measurable φ := hfm.stronglyMeasurable_mk.measurable
   have := hfm.stronglyMeasurable_mk.separableSpace_range_union_singleton (b := 0)

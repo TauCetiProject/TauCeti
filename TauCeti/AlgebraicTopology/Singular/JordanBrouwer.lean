@@ -213,14 +213,16 @@ def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
     reducedSingularHomologySphereIso M
       ((EuclideanSpace.basisFun (ULift.{w} (Fin (i + finrank ℝ E + 1))) ℝ).reindex Equiv.ulift)
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Jordan–Brouwer separation theorem.** The complement of the image of a continuous injection
-of the unit sphere of a finite-dimensional real normed space `E` into the unit sphere of a real
+of the unit sphere of a real normed space `E` into the unit sphere of a real
 normed space of dimension `dim E + 1` has exactly two path components (Hatcher,
 *Algebraic Topology*, Corollary 2B.2). -/
 theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hc : Continuous h) (hi : Function.Injective h) :
     Nat.card (ZerothHomotopy ↥(range h)ᶜ) = 2 := by
   classical
+  have : FiniteDimensional ℝ E := finiteDimensional_of_injective_sphere hEF hi
   let K := ULift.{w} ℚ
   let e := reducedSingularHomologySphereComplRangeSphereIso (ModuleCat.of K K) (i := 0)
     (by rw [hEF, zero_add]) hc hi
@@ -241,14 +243,16 @@ theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = 
   rw [← Nat.card_congr (Equiv.optionSubtypeNe (ZerothHomotopy.mk x)), Finite.card_option,
     Nat.card_unique]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Jordan–Brouwer separation theorem, connected-component form.** The complement of the
-image of a continuous injection of the unit sphere of a finite-dimensional real normed space `E`
-into the unit sphere of a real normed space of dimension `dim E + 1` has exactly two connected
-components. The complement is an open subset of a manifold, so its connected components are its
-path components. -/
+image of a continuous injection of the unit sphere of a real normed space `E` into the unit sphere
+of a real normed space of dimension `dim E + 1` has exactly two connected components. The
+complement is an open subset of a manifold, so its connected components are its path
+components. -/
 theorem natCard_connectedComponents_sphere_compl_range_eq_two
     (hEF : finrank ℝ F = finrank ℝ E + 1) (hc : Continuous h) (hi : Function.Injective h) :
     Nat.card (ConnectedComponents ↥(range h)ᶜ) = 2 := by
+  have : FiniteDimensional ℝ E := finiteDimensional_of_injective_sphere hEF hi
   -- The unit sphere of `F` is homeomorphic to the Euclidean one, which is a manifold.
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) := ⟨by simp⟩
@@ -260,11 +264,13 @@ theorem natCard_connectedComponents_sphere_compl_range_eq_two
   rw [Nat.card_congr connectedComponentsEquivZerothHomotopy]
   exact natCard_zerothHomotopy_sphere_compl_range_eq_two hEF hc hi
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Jordan–Brouwer separation theorem, connected form.** The complement of the image of a
-continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
+continuous injection of the unit sphere of a real normed space `E` into the unit
 sphere of a real normed space of dimension `dim E + 1` is not preconnected. -/
 theorem not_isPreconnected_compl_range_sphere (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hc : Continuous h) (hi : Function.Injective h) : ¬ IsPreconnected (range h)ᶜ := by
+  have : FiniteDimensional ℝ E := finiteDimensional_of_injective_sphere hEF hi
   intro hconn
   have := isPreconnected_iff_preconnectedSpace.mp hconn
   have hle : Nat.card (ConnectedComponents ↥(range h)ᶜ) ≤ 1 := by

@@ -8,14 +8,17 @@ module
 public import TauCeti.Probability.Distributions.Stable.DensityConvolution
 import Mathlib.MeasureTheory.Measure.Portmanteau
 import TauCeti.Analysis.Convolution.Positivity
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.Distributions.Stable.Approximation.Centering
 import TauCeti.Probability.Distributions.Stable.Compensation
 import TauCeti.Probability.Distributions.Stable.SmallJump.Limit
 
 /-!
-# Support and density positivity of stable laws
+# Support, singularity, and density positivity of stable laws
 
-A positive-scale stable law has topological support all of `ℝ`, except in the fully skewed
+A zero-scale stable law is a Dirac mass at its location, so its support is the corresponding
+singleton and it is singular with respect to Lebesgue measure. A positive-scale stable law has
+topological support all of `ℝ`, except in the fully skewed
 cases of shape below one. Those are supported on a half-line ending at the `S₁` location
 `d = stableS1Location α β s m`: on `[d, ∞)` at skewness `1`, and on `(-∞, d]` at skewness `-1`.
 In particular, fully skewed laws of shape at least one have full support, even though all of
@@ -39,6 +42,8 @@ even before either density is known to be positive in the interior of its suppor
 
 ## Main results
 
+* `TauCeti.Probability.support_stableMeasure_zero_scale` and
+  `TauCeti.Probability.mutuallySingular_stableMeasure_zero_scale` describe the atomic boundary.
 * `TauCeti.Probability.support_stableMeasure_of_abs_lt_one` and
   `TauCeti.Probability.support_stableMeasure_of_one_le` give full topological support.
 * `TauCeti.Probability.support_stableMeasure_one_of_lt_one` and
@@ -69,14 +74,32 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0}
 
+/-! ### Zero-scale boundary -/
+
+/-- A valid zero-scale stable law has topological support equal to its singleton location. -/
+theorem support_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (m : ℝ) :
+    (stableMeasure α β 0 m).support = {m} := by
+  rw [stableMeasure_zero_scale hα hβ, Measure.support_dirac, closure_singleton]
+
+/-- Every zero-scale stable measure is singular with respect to Lebesgue measure. For invalid
+shape or skewness parameters, this is the singularity of the zero measure. -/
+theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
+    stableMeasure α β 0 m ⟂ₘ volume := by
+  by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  · rw [stableMeasure_zero_scale h.1 h.2]
+    exact mutuallySingular_dirac m volume
+  · rw [stableMeasure_of_not_valid h]
+    exact Measure.MutuallySingular.zero_left
+
 /-! ### Reduction to the standardized law -/
 
-/-- A positive-scale non-Gaussian stable law is the affine image of the standardized law, so its
-support is the affine image of the standardized support. -/
-private theorem support_stableMeasure_eq_image (hs : 0 < s) (m : ℝ) :
+/-- Every stable measure is the affine image of the scale-one, location-zero measure of the same
+shape and skewness, including at zero scale, for the Gaussian shape `α = 2` and for invalid
+parameters. Its support is therefore the affine image of the standardized support. -/
+private theorem support_stableMeasure_eq_image (m : ℝ) :
     (stableMeasure α β s m).support =
       (fun x ↦ m + (s : ℝ) * x) '' (stableMeasure α β 1 0).support := by
-  rw [← stableMeasure_one_zero_map_affine, support_map_affine (NNReal.coe_pos.2 hs).ne']
+  rw [← stableMeasure_one_zero_map_affine, support_map_affine]
 
 /-- Full support of the standardized non-Gaussian law gives full support at every positive
 scale and location, and the Gaussian shape always has full support. -/
@@ -89,7 +112,7 @@ private theorem support_stableMeasure_eq_univ_of_standard (hα : α ∈ Ioc 0 2)
     apply eq_univ_of_univ_subset
     simpa only [Measure.support_eq_univ] using
       (gaussianReal_absolutelyContinuous' m (by positivity : 2 * s ^ 2 ≠ 0)).support_mono
-  · rw [support_stableMeasure_eq_image hs, h htwo.ne, image_univ]
+  · rw [support_stableMeasure_eq_image, h htwo.ne, image_univ]
     exact range_eq_univ.mpr fun y ↦ ⟨(y - m) / s, by
       field_simp [(NNReal.coe_pos.2 hs).ne']
       ring⟩
@@ -137,7 +160,7 @@ private theorem mem_support_standardStableMeasure_of_eventually (hα : α ∈ Io
     (existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ (hr n)).exists
   -- The small-jump factors converge weakly to the point mass at zero.
   have hball := ProbabilityMeasure.le_liminf_measure_open_of_tendsto
-    (tendsto_smallJumpFactor_dirac hα hβ hr hrlim hρ) (Metric.isOpen_ball (x := 0) (ε := δ))
+    (tendsto_smallJumpFactor_dirac hα hrlim hρ) (Metric.isOpen_ball (x := 0) (ε := δ))
   have hpos : ∀ᶠ n in atTop, 0 < (ρ n : Measure ℝ) (Metric.ball 0 δ) := by
     refine eventually_lt_of_lt_liminf (lt_of_lt_of_le ?_ hball)
     simp [Metric.mem_ball, hδ]
@@ -252,7 +275,7 @@ half-line `[d, ∞)` starting at its `S₁` location `d`. -/
 @[simp]
 theorem support_stableMeasure_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s) (m : ℝ) :
     (stableMeasure α 1 s m).support = Ici (stableS1Location α 1 s m) := by
-  rw [support_stableMeasure_eq_image hs, support_standardStableMeasure_one_of_lt_one hα,
+  rw [support_stableMeasure_eq_image, support_standardStableMeasure_one_of_lt_one hα,
     ← image_image (m + ·) ((s : ℝ) * ·), image_mul_left_Ici (NNReal.coe_pos.2 hs),
     image_const_add_Ici, stableS1Location_of_ne_one hα.2.ne, stableS1Location_of_ne_one hα.2.ne]
   congr 1
@@ -267,7 +290,7 @@ theorem support_stableMeasure_neg_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 <
   have hneg : (stableMeasure α 1 s (-m)).map (fun x ↦ 0 + -1 * x) =
       stableMeasure α (-1) s m := by
     simp
-  rw [← hneg, support_map_affine (by norm_num), support_stableMeasure_one_of_lt_one hα hs]
+  rw [← hneg, support_map_affine, support_stableMeasure_one_of_lt_one hα hs]
   simp only [zero_add, neg_one_mul, image_neg_Ici, stableS1Location_of_ne_one hα.2.ne]
   congr 1
   ring

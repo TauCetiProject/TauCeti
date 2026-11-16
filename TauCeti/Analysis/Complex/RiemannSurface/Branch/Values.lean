@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Ramification
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
+import TauCeti.Data.Set.Restrict
 public import Mathlib.Topology.Covering.Basic
 
 /-!
@@ -175,8 +176,7 @@ cardinality equal to the analytic degree of the original map. -/
 theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : Set Y}
     (hS : f.branchValues ⊆ S) (y : ↥Sᶜ) :
     ((Sᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f := by
-  rw [← Set.ncard_image_of_injective _ Subtype.val_injective,
-    Set.image_val_preimage_restrictPreimage, Set.image_singleton,
+  rw [Set.ncard_preimage_restrictPreimage, Set.image_singleton,
     Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
   exact (f.card_fiber_eq_degree_iff y).2 fun hy ↦ y.property (hS hy)
 

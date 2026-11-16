@@ -95,9 +95,11 @@ theorem eventually_finite_root_eq_iff_on_hyperplane
       have hl0 : (P p).coeff d ≠ 0 :=
         hl hp0 ▸ mul_ne_zero (pow_ne_zero _ (sub_ne_zero.mpr hp0)) hvp
       exact mul_left_cancel₀ hl0 ((hp hp0).1.trans (hp hp0).2.symm)
-    have hfull := (dense_univ.prod (dense_compl_singleton y₀)).eventuallyEq_nhds
-      hf.eventually_continuousAt hg.eventually_continuousAt
-      (eventually_nhdsWithin_iff.mpr (by simpa using heq))
+    have hfull : f =ᶠ[𝓝 (x₀, y₀)] g := Filter.EventuallyEq.eventuallyEq_nhds_of_closure_mem_nhds
+      (s := univ ×ˢ {y₀}ᶜ) (eventually_nhdsWithin_iff.mpr (by simpa using heq))
+      ((dense_univ (X := E)).prod (dense_compl_singleton y₀) |>.closure_eq ▸ univ_mem)
+      (hf.eventually_continuousAt.mono fun _ h ↦ h.continuousWithinAt)
+      (hg.eventually_continuousAt.mono fun _ h ↦ h.continuousWithinAt)
     filter_upwards [hslice.eventually hfull] with x hx
     exact iff_of_true hx hfull.self_of_nhds
   -- The difference theorem only uses the two selected unscaled branches.

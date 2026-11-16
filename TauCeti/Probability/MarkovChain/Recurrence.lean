@@ -15,12 +15,14 @@ A state of a Markov kernel is recurrent if the chain started there returns at a 
 time almost surely, and transient otherwise. Recurrence is equivalent to divergence of
 the diagonal Green function, and is constant on communicating classes. The mean return
 time is the extended nonnegative expectation of the first return time; it is at least one,
-and infinite at a transient state.
+equals the sum of the pre-return tail probabilities when singletons are measurable, and is
+infinite at a transient state.
 
 Every state reachable from a recurrent state is recurrent and hits the original state
 almost surely. Consequently a recurrent communicating class is closed. In an irreducible
-chain with a recurrent state, every state is hit almost surely from every initial law, and on
-a countable state space almost every path visits every state infinitely often. These results
+chain with a recurrent state, every state is hit almost surely from every initial law, and almost
+every path visits every state infinitely often; countability of the state space follows from
+irreducibility with measurable singletons. These results
 supply the state-classification input to coupling arguments.
 
 On a finite nonempty state space some state is recurrent: the chain spends its infinitely many
@@ -92,33 +94,67 @@ theorem one_le_meanReturnTime : 1 ≤ κ.meanReturnTime x := by
       have h := le_hittingAfter (u := fun n (ω : ℕ → S) => ω n) (s := {x}) (n := 1) ω
       exact_mod_cast ENat.natCast_le_toENNReal.2 h
 
-variable [MeasurableSingletonClass S]
+/-- Congruence in the kernel argument of `Kernel.meanReturnTime`. -/
+theorem meanReturnTime_congr {κ η : Kernel S S} [IsMarkovKernel κ] [IsMarkovKernel η]
+    (h : κ = η) (x : S) :
+    κ.meanReturnTime x = η.meanReturnTime x := by
+  subst h
+  rfl
+
+/-- The mean return time of any state is strictly positive. -/
+theorem meanReturnTime_pos (κ : Kernel S S) [IsMarkovKernel κ] (x : S) :
+    0 < κ.meanReturnTime x :=
+  zero_lt_one.trans_le κ.one_le_meanReturnTime
+
+/-- The mean return time of any state is nonzero. -/
+theorem meanReturnTime_ne_zero (κ : Kernel S S) [IsMarkovKernel κ] (x : S) :
+    κ.meanReturnTime x ≠ 0 :=
+  (κ.meanReturnTime_pos x).ne'
 
 /-- **A transient state has infinite mean return time.** The chain started there fails to return
 with positive probability, and the first return time is infinite on that event. -/
 theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanReturnTime x = ∞ := by
-  have hT : Measurable (hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1) :=
-    (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-      (f := Filtration.piLE (X := fun _ : ℕ => S)) (measurableSet_singleton x)).measurable'
-  have hE : MeasurableSet {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} :=
-    (measurableSet_singleton ⊤).preimage hT |>.compl
-  refine lintegral_eq_top_of_measure_eq_top_ne_zero
-    (Measurable.of_discrete.comp hT).aemeasurable ?_
-  -- The integrand takes the value `∞` exactly where the first return is missing.
-  have hset : {ω | ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω) = ∞} =
-      {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤}ᶜ :=
-    Set.ext fun ω => by
-      simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_not]
-      exact ENat.toENNReal_eq_top
-  rw [hset, prob_compl_eq_one_sub hE]
-  have hlt := isTransient_iff_return_probability_lt_one.mp hx
-  exact (tsub_pos_of_lt hlt).ne'
+  set μ := markovChainLaw (Measure.dirac x) κ
+  set A := {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤}
+  -- The failure set is only null-measurable, so work with a measurable superset of `A`.
+  have hlt : μ (toMeasurable μ A) < 1 := by
+    rw [measure_toMeasurable]
+    exact isTransient_iff_return_probability_lt_one.mp hx
+  have hpos : 0 < μ (toMeasurable μ A)ᶜ := by
+    rw [prob_compl_eq_one_sub (measurableSet_toMeasurable μ A)]
+    exact tsub_pos_of_lt hlt
+  refine eq_top_iff.mpr ?_
+  calc (⊤ : ℝ≥0∞) = ∫⁻ ω, (toMeasurable μ A)ᶜ.indicator (fun _ => (∞ : ℝ≥0∞)) ω ∂μ := by
+        rw [lintegral_indicator_const (measurableSet_toMeasurable μ A).compl]
+        exact (ENNReal.top_mul hpos.ne').symm
+    _ ≤ κ.meanReturnTime x := lintegral_mono fun ω => by
+      by_cases hω : ω ∈ (toMeasurable μ A)ᶜ
+      · -- Off `A` the first return is missing, so its value is `∞`.
+        have hωA : ω ∉ A := fun h => hω (subset_toMeasurable μ A h)
+        rw [Set.indicator_of_mem hω]
+        simp only [A, Set.mem_ofPred_eq, not_not] at hωA
+        exact (ENat.toENNReal_eq_top.mpr hωA).ge
+      · rw [Set.indicator_of_notMem hω]
+        exact zero_le
 
+variable [MeasurableSingletonClass S]
+
+omit [MeasurableSingletonClass S] in
 /-- Finite extended mean return time implies almost-sure return. -/
 theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
     κ.IsRecurrent x := by
   by_contra hx
   exact h ((isTransient_iff.mpr hx).meanReturnTime_eq_top)
+
+/-- **Tail-sum formula for the mean return time.** -/
+theorem meanReturnTime_eq_tsum (κ : Kernel S S) [IsMarkovKernel κ] (x : S) :
+    κ.meanReturnTime x =
+      ∑' n : ℕ, markovChainLaw (Measure.dirac x) κ
+        {ω | (n : WithTop ℕ) < hittingAfter (fun k ω => ω k) {x} 1 ω} := by
+  have hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => S))
+      (hittingAfter (fun k (ω : ℕ → S) => ω k) {x} 1) :=
+    Filtration.adapted_piLE.isStoppingTime_hittingAfter (measurableSet_singleton x)
+  exact lintegral_enat_eq_tsum _ fun n => Filtration.le _ n _ (hτ.measurableSet_gt n)
 
 /-- A state is recurrent exactly when its diagonal Green function is infinite. -/
 theorem isRecurrent_iff_tsum_eq_top :
@@ -160,10 +196,8 @@ theorem IsRecurrent.ae_hittingAfter_ne_top_of_reaches (hx : κ.IsRecurrent x)
     ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ,
       hittingAfter (fun n ω => ω n) {x} 0 ω ≠ ⊤ := by
   obtain ⟨n, hn⟩ := (reaches_def x y).mp hxy
-  have hE : MeasurableSet {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 0 ω ≠ ⊤} :=
-    ((measurableSet_singleton ⊤).preimage
-      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-        (f := Filtration.piLE (X := fun _ : ℕ => S)) (measurableSet_singleton x)).measurable').compl
+  have hE := TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top
+    (measurableSet_singleton x) 0
   -- Infinitely many visits imply a visit after time `n`. Disintegrating the future law then
   -- gives almost-sure entrance from `y`, since `y` has positive mass at time `n`.
   have hshift : ∀ᵐ ω ∂(markovChainLaw (Measure.dirac x) κ).map (shift S)^[n],
@@ -194,7 +228,7 @@ theorem IsRecurrent.reaches_of_reaches (hx : κ.IsRecurrent x) (hxy : κ.Reaches
   have havoid : ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ, ∀ n, ω n ≠ x :=
     ae_all_iff.mpr fun n => ae_iff.mpr (by simpa using hzero n)
   have hhit := hx.ae_hittingAfter_ne_top_of_reaches hxy
-  have : ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ, False := by
+  have : ∀ᵐ _ ∂markovChainLaw (Measure.dirac y) κ, False := by
     filter_upwards [havoid, hhit] with ω hω hH
     exact hH (hittingAfter_eq_top_iff.mpr fun n _ => hω n)
   exact (Filter.Eventually.exists this).elim fun _ h => h
@@ -229,10 +263,7 @@ theorem IsRecurrent.ae_hittingAfter_ne_top_of_isIrreducible [IsIrreducible Measu
     ∀ a b : S, κ.Reaches a b)
   rw [Measure.markovChainLaw_eq_comp]
   apply Measure.ae_comp_of_ae_ae
-    (((measurableSet_singleton ⊤).preimage
-      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-        (f := Filtration.piLE (X := fun _ : ℕ => S))
-        (measurableSet_singleton y)).measurable').compl)
+    (TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0)
   exact Filter.Eventually.of_forall fun z => by
     rw [markovChainKernel_apply]
     exact (hx.of_reaches (hreaches x z)).ae_hittingAfter_ne_top (hreaches z y)
@@ -242,17 +273,17 @@ theorem isRecurrent_iff_isRecurrent [IsIrreducible Measure.count κ] (x y : S) :
     κ.IsRecurrent x ↔ κ.IsRecurrent y :=
   Communicates.isRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
 
-/-- In an irreducible chain with a recurrent state on a countable state space, from any initial
-measure, almost every path visits every state infinitely often. -/
-theorem IsRecurrent.ae_forall_infinite_setOf_eq [Countable S] [IsIrreducible Measure.count κ]
+/-- In an irreducible chain with a recurrent state, from any initial measure, almost every path
+visits every state infinitely often. The state space is automatically countable by
+`countable_of_isIrreducible_count`. -/
+theorem IsRecurrent.ae_forall_infinite_setOf_eq [IsIrreducible Measure.count κ]
     (hx : κ.IsRecurrent x) (ν : Measure S) :
     ∀ᵐ ω ∂markovChainLaw ν κ, ∀ y, {n | ω n = y}.Infinite := by
+  have := countable_of_isIrreducible_count (κ := κ)
   have hS : MeasurableSet {ω : ℕ → S | ∀ y, {n | ω n = y}.Infinite} := by
-    simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (ω : ℕ → S) => ω n),
-      lt_top_iff_ne_top, Set.ofPred_forall]
-    exact MeasurableSet.iInter fun y => MeasurableSet.iInter fun k =>
-      measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
-        (measurableSet_singleton y) k
+    rw [Set.ofPred_forall]
+    exact MeasurableSet.iInter fun y => measurableSet_setOf_infinite_setOf_eq
+      (fun n => measurable_pi_apply n) (measurableSet_singleton y)
   rw [Measure.markovChainLaw_eq_comp]
   refine Measure.ae_comp_of_ae_ae hS (Filter.Eventually.of_forall fun w => ?_)
   rw [markovChainKernel_apply]

@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.FDeriv.Det
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
 

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Levy.Basic
-public import TauCeti.Analysis.SpecialFunctions.Erf
+public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import Mathlib.Probability.CDF
-import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
+import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.InverseGamma.Cdf
 

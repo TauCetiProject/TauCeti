@@ -31,6 +31,9 @@ vector-space curvature (`TauCeti.SymplecticForm.hamiltonianCurvature_constSmooth
   (`TauCeti.SmoothTwoForm.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt`), and its
   integrated curvature along any map is at most the sum of its integrals over the images of the
   end strips (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_le_sum_endStrip`).
+* If, along a map `u`, the curvature of the pullback of `K` along each end chart is integrable over
+  the strip of its end, the curvature of `K` along `u` is integrable over `S`
+  (`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip`).
 * If the curvature of the pullback of `K` along the end chart is at most `f(s)` on the strip of an
   end, the integrated curvature over the image of the strip is at most `∫ f(s) ds`
   (`TauCeti.SmoothTwoForm.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral`).
@@ -172,6 +175,64 @@ theorem lintegral_enorm_hamiltonianCurvature_le_sum_endStrip (ω : SmoothTwoForm
     _ ≤ _ := lintegral_iUnion_le _ _
     _ = _ := tsum_fintype _
 
+/-- **Integrability of the curvature of a datum supported on the ends.** Let `K` be a perturbation
+one-form on `ℂ` that vanishes wherever the signed longitudinal coordinate of every end is at most
+`1`, and which is differentiable on `S × M`. If, along a map `u`, the curvature of the pullback of
+`K` along the end chart of each end is integrable over the strip of that end, then the curvature of
+`K` along `u` is integrable over `S`. -/
+theorem integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip (ω : SmoothTwoForm I M)
+    (hK : ∀ w, (∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ 1) → ∀ x, K w x = 0)
+    (hKs : ∀ (w : ThricePuncturedSphere) x, MDifferentiableAt (𝓘(ℝ, ℂ).prod I)
+      𝓘(ℝ, ℂ →L[ℝ] ℝ) (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    {u : ℝ × ℝ → M}
+    (hR : ∀ q : Puncture, IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (perturbationPullback (endChart q) (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal)
+      (perturbationPullback (endChart q) (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag)
+      z (u (endChart q z))) (endStrip q)) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+      thricePuncturedSphereReal := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  -- The datum is differentiable jointly, hence separately, in the domain and target points.
+  have hKd {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) (v : ℂ) :
+      DifferentiableAt ℝ (fun w' ↦ K w' x v) w :=
+    ((hKs ⟨w, hw⟩ x).comp (f := fun w' : ℂ ↦ (w', x)) w
+      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)).differentiableAt.clm_apply
+        (differentiableAt_const v)
+  have hKx {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) (v : ℂ) :
+      MDifferentiableAt I 𝓘(ℝ) (fun y ↦ K w y v) x :=
+    ((hKs ⟨w, hw⟩ x).comp (f := fun y : M ↦ (w, y)) x
+      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)).clm_apply mdifferentiableAt_const
+  -- The datum is differentiable in the domain point, read in real coordinates, at points of `S`.
+  have hdom {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) (x : M) (v : ℂ) :
+      DifferentiableAt ℝ (fun z' ↦ K (Complex.equivRealProdCLM.symm z') x v) z :=
+    (hKd hz x v).comp z Complex.equivRealProdCLM.symm.differentiableAt
+  have himage (q : Puncture) : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+      (endChart q '' endStrip q) := by
+    rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (measurableSet_endStrip q)
+      (fun w _ ↦ (hasFDerivAt_endChart q w).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
+      (injOn_endChart q)]
+    refine (hR q).congr_fun (fun w hw ↦ ?_) (measurableSet_endStrip q)
+    have hS := mem_thricePuncturedSphereReal_iff.1
+      (endChart_mem_thricePuncturedSphereReal (endSign_mul_pos_of_mem_endStrip hw))
+    rw [smul_eq_mul, abs_of_pos (det_fderiv_endChart_pos q w)]
+    exact ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := w)
+      (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
+      (contDiff_endChart q 2).contDiffAt (hdom hS _ 1) (hdom hS _ _) (hKx hS _ 1) (hKx hS _ _)
+  -- Off the images of the strips every signed longitudinal coordinate is at most `1/2`.
+  refine (integrableOn_finite_iUnion.2 himage).of_forall_sdiff_eq_zero
+    isOpen_thricePuncturedSphereReal.measurableSet fun z ⟨hzS, hzA⟩ ↦ ?_
+  refine ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt hK hzS (fun q ↦ ?_) (u z)
+  by_contra! h
+  exact hzA (mem_iUnion.2 ⟨q, mem_image_endChart hzS (by linarith)⟩)
+
 /-- **The curvature of data of the form `P(±s) h(t) dt` on an end.** If the datum `K`, pulled back
 along the end lift of `q`, is `P(±s) h(t) dt` on the part `±s > 0` of the end, then the curvature
 of its pullback along the end chart is `±P'(±s) h(t)` there. -/
@@ -268,13 +329,13 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : SmoothTw
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ ≤
       (∫⁻ s, ‖deriv P (q.endSign * s)‖ₑ) * ENNReal.ofReal B := by
   have hm : Measurable fun s ↦ ‖deriv P (q.endSign * s)‖ₑ * ENNReal.ofReal B :=
-    ((measurable_deriv P).comp (measurable_const.mul measurable_id)).enorm.mul_const _
+    ((measurable_deriv P).comp (measurable_const.mul measurable_id)).eNorm.mul_const _
   refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral hKd hKx hm
     (fun z hz x ↦ ?_) u).trans_eq (lintegral_mul_const' _ _ ENNReal.ofReal_ne_top)
   rw [ω.hamiltonianCurvature_perturbationPullback_endChart_of_eq hK
-    (endSign_mul_pos_of_mem_endStrip hz) (hP _) (hh _ _), enorm_mul, enorm_mul,
-    Real.enorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,
-    Real.enorm_eq_ofReal_abs (h _ _)]
+    (endSign_mul_pos_of_mem_endStrip hz) (hP _) (hh _ _), eNorm_mul, eNorm_mul,
+    Real.eNorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,
+    Real.eNorm_eq_ofReal_abs (h _ _)]
   gcongr
   exact hB _ _
 

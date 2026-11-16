@@ -124,7 +124,7 @@ variable {F : Formation G}
 /-- `H²` of a finite normal layer of a class formation has exactly `[K : F]` elements. -/
 theorem natCard_H2 (cf : ClassFormation F) (L : NormalLayer G) :
     Nat.card (L.H F 2) = L.degree :=
-  AddCircle.natCard_eq_of_injective_of_range_eq_torsionBy (1 : ℚ) L.degree_pos (cf.inv_injective L)
+  AddCircle.natCard_eq_of_injective_of_range_eq_torsionBy (1 : ℚ) (cf.inv_injective L)
     (cf.range_inv L)
 
 /-- There is exactly one class of invariant `1 / [K : F]`. -/
@@ -181,7 +181,6 @@ theorem addOrderOf_fundamentalClass (cf : ClassFormation F) (L : NormalLayer G) 
 
 /-! ### The fundamental class in Tate degree two -/
 
--- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 /-- The **Tate fundamental class** of a finite normal layer: the fundamental class `u_{K/F}`
 transported from ordinary `H²(Γ, C)` to Tate cohomology in degree `2` along the canonical
 identification `NormalLayer.tateHIsoH` of positive-degree Tate cohomology with ordinary

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
@@ -26,14 +27,17 @@ in coordinates as its conjugate by the fibre equivalence of the trivialization, 
 isomorphism, so that coordinate expressions of algebraic expressions in fibre endomorphisms are
 the same algebraic expressions in their coordinate expressions.
 `ContinuousLinearMap.isInvertible_inCoordinates_iff` reads invertibility of a fibre map
-off its coordinate expression, `ContinuousLinearMap.inCoordinates_comp` reads a composite
+off its coordinate expression, and `ContinuousLinearMap.hasLeftInverse_inCoordinates_iff` reads
+split injectivity (a continuous linear left inverse) the same way.
+`ContinuousLinearMap.inCoordinates_comp` reads a composite
 of fibre maps as the composite of their coordinate expressions, and
 `ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
 identity map and scalar multiples in a compatible target vector-bundle structure, and
 `ContinuousLinearMap.inCoordinates_finset_sum` reads finite sums of fibre maps.
 `ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
 and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
-a fibre map off its coordinate expression.
+a fibre map off its coordinate expression, and `ContinuousLinearMap.range_inCoordinates`
+identifies the coordinate range with the trivialized range.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
@@ -295,6 +299,22 @@ theorem isInvertible_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x →L
     (inCoordinates F V F' W x₀ x y₀ y ϕ).IsInvertible ↔ ϕ.IsInvertible := by
   rw [inCoordinates_eq hx hy, isInvertible_equiv_comp, isInvertible_comp_equiv]
 
+/-- In trivializations whose base sets contain the two fibre base points, a continuous linear
+map between fibres has a continuous linear left inverse exactly when its coordinate expression
+does. -/
+theorem hasLeftInverse_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x →L[𝕜] W y}
+    (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    (inCoordinates F V F' W x₀ x y₀ y ϕ).HasLeftInverse ↔ ϕ.HasLeftInverse := by
+  rw [inCoordinates_eq hx hy]
+  refine ⟨fun h ↦ ?_, fun h ↦
+    (h.comp (ContinuousLinearEquiv.hasLeftInverse _)).continuousLinearEquivalence_comp⟩
+  -- Drop the target equivalence, then undo the source equivalence.
+  refine (h.of_comp.comp_continuousLinearEquivalence
+    (f₀ := (trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx)).congr ?_
+  ext v
+  simp only [comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+
 end Inverse
 
 section Conj
@@ -355,19 +375,24 @@ theorem mem_range_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).base
   exact (((trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx).symm.surjective.exists
     (p := fun u ↦ ϕ u = ((trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy).symm w)).symm
 
+/-- In trivializations whose base sets contain the two fibre base points, the range of the
+coordinate expression of a fibre map is the image of its range under the trivialization of the
+target bundle at the target base point. -/
+theorem range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    (inCoordinates F V F' W x₀ x y₀ y ϕ).range =
+      ϕ.range.map (((trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy).toLinearEquiv :
+        W y →ₗ[𝕜] F') := by
+  ext w
+  rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv]
+  simp [Trivialization.continuousLinearEquivAt_symm_apply]
+
 /-- In trivializations whose base sets contain the two fibre base points, the coordinate
 expression of a fibre map has the rank of the map. -/
 theorem finrank_range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
     (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
     Module.finrank 𝕜 (inCoordinates F V F' W x₀ x y₀ y ϕ).range = Module.finrank 𝕜 ϕ.range := by
-  let Ly := (trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy
-  -- The coordinate range is the image of `range ϕ` under the trivialization of `W` at `y`.
-  have h : (inCoordinates F V F' W x₀ x y₀ y ϕ).range =
-      ϕ.range.map (Ly.toLinearEquiv : W y →ₗ[𝕜] F') := by
-    ext w
-    rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv]
-    simp [Ly, Trivialization.continuousLinearEquivAt_symm_apply]
-  rw [h, LinearEquiv.finrank_map_eq]
+  rw [range_inCoordinates hx hy, LinearEquiv.finrank_map_eq]
 
 end KerRange
 

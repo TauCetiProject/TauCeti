@@ -81,7 +81,7 @@ theorem _root_.ContDiff.eventually_exists_cutoff_diffeomorph_of_contDiffAt
         dsimp [B]
         nlinarith
       norm_num only [NNReal.coe_div, NNReal.coe_one, NNReal.coe_ofNat] at ⊢
-      linarith
+      linarith only [hbound, hsum, hεB]
     · rw [fderiv_cutoff_perturbation_eq_id_of_notMem_tsupport hx, sub_self, norm_zero]
       positivity
   -- The derivative bound gives a global diffeomorphism.

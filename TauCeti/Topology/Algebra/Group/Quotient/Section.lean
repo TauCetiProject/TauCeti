@@ -27,13 +27,13 @@ is discrete, so `Quotient.out` supplies such a section.
 
 public section
 
-namespace TauCeti
+namespace Subgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- **Normalizing a continuous section.** If `s` is a continuous section of `G → G ⧸ H`, then so is
 `t x = s x * (s ⟦1⟧)⁻¹`, and `t ⟦1⟧ = 1`. -/
-theorem _root_.Subgroup.exists_continuous_section_one_eq_one_of_section [ContinuousMul G]
+theorem exists_continuous_section_one_eq_one_of_section [ContinuousMul G]
     (H : Subgroup G) (s : G ⧸ H → G) (hs_cont : Continuous s)
     (hs_sec : ∀ x : G ⧸ H, (QuotientGroup.mk (s x) : G ⧸ H) = x) :
     ∃ t : G ⧸ H → G, Continuous t ∧ (∀ x : G ⧸ H, (QuotientGroup.mk (t x) : G ⧸ H) = x) ∧
@@ -49,7 +49,7 @@ variable [IsTopologicalGroup G]
 `G → G ⧸ H`, then every `g : G` factors as `g = w g * r g` with `w g ∈ H`, where `w` is
 `H`-equivariant, `r g` depends only on the right coset `H * g`, both `w` and `r` are continuous, and
 the factorization is normalized: `w 1 = 1`. -/
-theorem _root_.Subgroup.exists_continuous_rightCosetFactorization_of_section (H : Subgroup G)
+theorem exists_continuous_rightCosetFactorization_of_section (H : Subgroup G)
     (s : G ⧸ H → G) (hs_cont : Continuous s)
     (hs_sec : ∀ x : G ⧸ H, (QuotientGroup.mk (s x) : G ⧸ H) = x) :
     ∃ (w : G → H) (r : G → G), Continuous w ∧ Continuous r ∧
@@ -78,7 +78,7 @@ topological group `G`, every `g : G` factors as `g = w g * r g` with `w g ∈ H`
 `H`-equivariant, `r g` depends only on the right coset `H * g`, both `w` and `r` are continuous, and
 `w 1 = 1`. No compactness is needed: the coset space `G ⧸ H` is discrete, so the choice of
 representatives `Quotient.out` is already a continuous section. -/
-theorem _root_.Subgroup.exists_continuous_rightCosetFactorization_of_isOpen (H : Subgroup G)
+theorem exists_continuous_rightCosetFactorization_of_isOpen (H : Subgroup G)
     (hH : IsOpen (H : Set G)) :
     ∃ (w : G → H) (r : G → G), Continuous w ∧ Continuous r ∧
       (∀ g : G, (w g : G) * r g = g) ∧
@@ -88,4 +88,4 @@ theorem _root_.Subgroup.exists_continuous_rightCosetFactorization_of_isOpen (H :
   H.exists_continuous_rightCosetFactorization_of_section Quotient.out
     continuous_of_discreteTopology QuotientGroup.out_eq'
 
-end TauCeti
+end Subgroup

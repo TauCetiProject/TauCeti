@@ -133,8 +133,6 @@ private theorem _root_.Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_di
   let ψ : (ι → ℝ) → ι → ℂ := fun x j ↦ (x j : ℂ)
   have hψ : Tendsto ψ (𝓝 a) (𝓝 ac) :=
     (continuous_pi fun j ↦ Complex.continuous_ofReal.comp (continuous_apply j)).tendsto a
-  have hψ0 : Tendsto (fun x ↦ (ψ x, (0 : ℂ))) (𝓝 a) (𝓝 (ac, 0)) :=
-    hψ.prodMk_nhds tendsto_const_nhds
   -- The complex transverse plane slices of `p` in direction `v`.
   let P : (ι → ℂ) → MvPolynomial (Fin 2) ℂ := fun z ↦
     MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)

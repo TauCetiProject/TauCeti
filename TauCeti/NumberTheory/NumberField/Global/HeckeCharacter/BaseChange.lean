@@ -52,7 +52,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace NumberField.InfinitePlace.Completion
-open scoped NumberField NumberField.LiesOver
+open scoped NumberField
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 

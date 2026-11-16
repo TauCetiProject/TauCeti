@@ -144,7 +144,7 @@ theorem sum_smul_zeroSumSimpleRoot {x : Fin (n + 1) → ℚ}
     (hx : x ∈ singleParityCheckCode ℚ (Fin (n + 1))) :
     ∑ k : Fin n, (∑ j ∈ Iic k.castSucc, x j) • zeroSumSimpleRoot n k = x := by
   rw [mem_singleParityCheckCode] at hx
-  refine (sub_eq_zero.mp (eq_zero_of_forall_sum_Iic_eq_zero n fun k ↦ ?_)).symm
+  refine (sub_eq_zero.mp (eq_zero_of_forall_sum_Iic_eq_zero fun k ↦ ?_)).symm
   simp only [Pi.sub_apply, sum_sub_distrib]
   induction k using Fin.lastCases with
   | last =>

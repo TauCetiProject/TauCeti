@@ -190,10 +190,10 @@ The differential of an isometry carries the Levi-Civita derivative of a differen
 field along `γ` to the derivative of the transported field along `f ∘ γ`.
 
 The hypothesis `hV` expresses differentiability of the tangent field in local bundle
-coordinates. -/
+coordinates. Where `s` does not have unique derivatives at `t`, both sides take the junk value
+`0`. -/
 theorem mfderiv_alongCurveWithin (hf : IsLocalRiemannianIsometry I J f)
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
-    (hs : UniqueDiffWithinAt ℝ s t)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     (hV : DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ V (γ t)) s t) :
@@ -201,13 +201,15 @@ theorem mfderiv_alongCurveWithin (hf : IsLocalRiemannianIsometry I J f)
         (alongCurveWithin (leviCivitaConnection I M) γ V s t) =
       alongCurveWithin (leviCivitaConnection J N) (f ∘ γ)
         (fun r ↦ mfderiv I J f (γ r) (V r)) s t := by
-  have hfV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (f ∘ γ)
-        (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
-    hf.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv (by simp) hγ hV
-  refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (f (γ t)) ?_
-  ext Y hY
-  exact inner_mfderiv_alongCurveWithin_eq hf hs hγ hV hfV hY
+  by_cases hs : UniqueDiffWithinAt ℝ s t
+  · have hfV : DifferentiableWithinAt ℝ
+        (sectionCoord (F := F) (f ∘ γ)
+          (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
+      hf.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv (by simp) hγ hV
+    refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (f (γ t)) ?_
+    ext Y hY
+    exact inner_mfderiv_alongCurveWithin_eq hf hs hγ hV hfV hY
+  · simp [alongCurveWithin_of_not_uniqueDiffWithinAt _ _ _ hs]
 
 /-- The unrestricted form of naturality of covariant differentiation along a curve under a
 local Riemannian isometry. -/
@@ -219,7 +221,7 @@ theorem mfderiv_alongCurve (hf : IsLocalRiemannianIsometry I J f)
       alongCurve (leviCivitaConnection J N) (f ∘ γ)
         (fun r ↦ mfderiv I J f (γ r) (V r)) t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
-  exact hf.mfderiv_alongCurveWithin uniqueDiffWithinAt_univ hγ.mdifferentiableWithinAt
+  exact hf.mfderiv_alongCurveWithin hγ.mdifferentiableWithinAt
     hV.differentiableWithinAt
 
 end TauCeti.IsLocalRiemannianIsometry

@@ -157,9 +157,12 @@ theorem comp_add_const (h : IsEVISolution lam φ u) (hs : 0 ≤ s) :
 /-- The evolution variational inequality bounds the difference quotients of `d(u ·, y)² / 2`
 eventually from the right: for `t > 0` and any real `r > c - λ d(u t, y)² / 2`, where `c` bounds
 `φ y - φ (u t)`, the difference quotients at `t` are eventually less than `r`. -/
-theorem eventually_slope_lt (h : IsEVISolution lam φ u) (hy : φ y ≠ ⊤) (ht : 0 < t) {c : ℝ}
+theorem eventually_slope_lt (h : IsEVISolution lam φ u) (ht : 0 < t) {c : ℝ}
     (hc : φ y - φ (u t) ≤ c) {r : ℝ} (hr : c - lam * (dist (u t) y ^ 2 / 2) < r) :
     ∀ᶠ s in 𝓝[>] t, slope (fun r ↦ dist (u r) y ^ 2 / 2) t s < r := by
+  have hy : φ y ≠ ⊤ := fun h0 ↦ by
+    rw [h0, EReal.top_sub (h.apply_ne_top ht)] at hc
+    exact absurd hc (by simp)
   have hL := (h.limsup_slope_add_le hy ht).trans hc
   rw [← EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _)),
     ← EReal.coe_sub] at hL
@@ -168,7 +171,7 @@ theorem eventually_slope_lt (h : IsEVISolution lam φ u) (hy : φ y ≠ ⊤) (ht
 
 /-- Grönwall's inequality for `d(u ·, y)² / 2` on an interval `[s, t]` of positive times along
 which `c` bounds `φ y - φ (u r)`. -/
-private theorem le_gronwallBound (h : IsEVISolution lam φ u) (hy : φ y ≠ ⊤) (hs : 0 < s)
+private theorem le_gronwallBound (h : IsEVISolution lam φ u) (hs : 0 < s)
     (hst : s ≤ t) {c : ℝ} (hc : ∀ r ∈ Ico s t, φ y - φ (u r) ≤ c) :
     dist (u t) y ^ 2 / 2 ≤ gronwallBound (dist (u s) y ^ 2 / 2) (-lam) c (t - s) := by
   have hu : ContinuousOn u (Icc s t) :=
@@ -177,17 +180,17 @@ private theorem le_gronwallBound (h : IsEVISolution lam φ u) (hy : φ y ≠ ⊤
     (f' := fun r ↦ c - lam * (dist (u r) y ^ 2 / 2))
     (by fun_prop) (fun r hr q hq ↦ ?_) le_rfl (fun r _ ↦ le_of_eq (by ring)) t ⟨hst, le_rfl⟩
   have hr0 : 0 < r := hs.trans_le hr.1
-  exact (h.eventually_slope_lt hy hr0 (hc r hr) hq).frequently.mono fun z hz ↦ by
+  exact (h.eventually_slope_lt hr0 (hc r hr) hq).frequently.mono fun z hz ↦ by
     rwa [slope_def_field, div_eq_inv_mul] at hz
 
 /-- The integrated form of the evolution variational inequality on an interval of positive
 times. -/
 private theorem exp_mul_dist_sq_sub_le_of_pos (h : IsEVISolution lam φ u)
-    (hφ : AntitoneOn (fun t ↦ φ (u t)) (Ioi 0)) (hy : φ y ≠ ⊤) (hs : 0 < s) (hst : s ≤ t) {c : ℝ}
+    (hφ : AntitoneOn (fun t ↦ φ (u t)) (Ioi 0)) (hs : 0 < s) (hst : s ≤ t) {c : ℝ}
     (hc : φ y - φ (u t) ≤ c) :
     exp (lam * (t - s)) * (dist (u t) y ^ 2 / 2) - dist (u s) y ^ 2 / 2 ≤
       (∫ r in 0..(t - s), exp (lam * r)) * c := by
-  have hg := h.le_gronwallBound hy hs hst fun r hr ↦
+  have hg := h.le_gronwallBound hs hst fun r hr ↦
     (EReal.sub_le_sub le_rfl (hφ (hs.trans_le hr.1) (hs.trans_le hst) hr.2.le)).trans hc
   have := mul_le_mul_of_nonneg_left hg (exp_pos (lam * (t - s))).le
   rw [exp_mul_gronwallBound_neg] at this
@@ -220,7 +223,7 @@ theorem antitoneOn (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) :
         by_contra hle
         exact hrS ⟨⟨haS.1.1.trans har.le, hr.2.le⟩, not_lt.1 hle⟩
       exact haS.2.trans this.le
-  have hg := h.le_gronwallBound (h.apply_ne_top ha) ha hat (c := 0) fun r hr ↦
+  have hg := h.le_gronwallBound ha hat (c := 0) fun r hr ↦
     EReal.sub_nonpos.2 (hgt r hr)
   simp only [dist_self, zero_pow two_ne_zero, zero_div, gronwallBound_ε0_δ0] at hg
   have hdist : dist (u t) (u a) = 0 := by nlinarith [dist_nonneg (x := u t) (y := u a)]
@@ -231,7 +234,7 @@ theorem antitoneOn (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) :
   have hlt' : (φ (u a)).toReal < (φ (u t)).toReal := by
     rw [← EReal.coe_lt_coe_iff, hpa, hpt]
     exact haS.2.trans_lt hlt
-  have hev := h.eventually_slope_lt (y := u a) (h.apply_ne_top ha) ht
+  have hev := h.eventually_slope_lt (y := u a) ht
     (c := (φ (u a)).toReal - (φ (u t)).toReal) (by rw [EReal.coe_sub, hpa, hpt])
     (r := ((φ (u a)).toReal - (φ (u t)).toReal) / 2) (by rw [hdist]; linarith)
   obtain ⟨z, hz, htz⟩ := (hev.and self_mem_nhdsWithin).exists
@@ -240,12 +243,12 @@ theorem antitoneOn (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) :
   linarith
 
 /-- **The integrated evolution variational inequality.** For an `EVI_λ` solution `u` of a lower
-semicontinuous energy, a point `y` with `φ y ≠ ⊤`, times `0 ≤ s ≤ t` and a real bound
+semicontinuous energy, a point `y`, times `0 ≤ s ≤ t` and a real bound
 `φ y - φ (u t) ≤ c`,
 
 `(e^{λ(t-s)}/2) d(u t, y)² - (1/2) d(u s, y)² ≤ E_λ(t - s) c`, where `E_λ(T) = ∫₀ᵀ e^{λr} dr`. -/
 theorem exp_mul_dist_sq_sub_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ)
-    (hy : φ y ≠ ⊤) (hs : 0 ≤ s) (hst : s ≤ t) {c : ℝ} (hc : φ y - φ (u t) ≤ c) :
+    (hs : 0 ≤ s) (hst : s ≤ t) {c : ℝ} (hc : φ y - φ (u t) ≤ c) :
     exp (lam * (t - s)) * (dist (u t) y ^ 2 / 2) - dist (u s) y ^ 2 / 2 ≤
       (∫ r in 0..(t - s), exp (lam * r)) * c := by
   rcases hs.eq_or_lt with rfl | hs
@@ -261,27 +264,26 @@ theorem exp_mul_dist_sq_sub_le (h : IsEVISolution lam φ u) (hφ : LowerSemicont
     refine ContinuousWithinAt.closure_le hcl (f := fun s ↦ exp (lam * (t - s)) *
         (dist (u t) y ^ 2 / 2) - dist (u s) y ^ 2 / 2)
       (g := fun s ↦ (∫ r in 0..(t - s), exp (lam * r)) * c) ?_ ?_
-      (fun s hs ↦ exp_mul_dist_sq_sub_le_of_pos h (h.antitoneOn hφ) hy hs.1 hs.2 hc)
+      (fun s hs ↦ exp_mul_dist_sq_sub_le_of_pos h (h.antitoneOn hφ) hs.1 hs.2 hc)
     · exact ((by fun_prop : Continuous fun s ↦ exp (lam * (t - s)) *
         (dist (u t) y ^ 2 / 2)).continuousWithinAt).sub hcont
     · have hE : Continuous fun T ↦ ∫ r in 0..T, exp (lam * r) :=
         intervalIntegral.continuous_primitive (fun _ _ ↦ (by fun_prop : Continuous fun r ↦
           exp (lam * r)).intervalIntegrable _ _) 0
       exact ((hE.comp (continuous_sub_left t)).mul continuous_const).continuousWithinAt
-  · exact exp_mul_dist_sq_sub_le_of_pos h (h.antitoneOn hφ) hy hs hst hc
+  · exact exp_mul_dist_sq_sub_le_of_pos h (h.antitoneOn hφ) hs hst hc
 
 /-- **The energy regularization estimate.** For an `EVI_λ` solution `u` of a lower semicontinuous
-energy, a point `y` with `φ y ≠ ⊤` and a time `t > 0`,
+energy, a point `y` and a time `t > 0` (trivially true when `φ y = ⊤`),
 
 `φ (u t) ≤ φ y + (d(u 0, y)² - e^{λt} d(u t, y)²) / (2 E_λ(t))`, where `E_λ(t) = ∫₀ᵗ e^{λr} dr`. -/
-theorem apply_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) (hy : φ y ≠ ⊤)
-    (ht : 0 < t) :
+theorem apply_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) (ht : 0 < t) :
     φ (u t) ≤ φ y + (((dist (u 0) y ^ 2 - exp (lam * t) * dist (u t) y ^ 2) /
       (2 * ∫ r in 0..t, exp (lam * r)) : ℝ) : EReal) := by
   have hE := integral_exp_mul_pos lam ht
   have hint : ∀ c : ℝ, φ y - φ (u t) ≤ c → exp (lam * t) * (dist (u t) y ^ 2 / 2) -
       dist (u 0) y ^ 2 / 2 ≤ (∫ r in 0..t, exp (lam * r)) * c := fun c hc ↦ by
-    simpa using h.exp_mul_dist_sq_sub_le hφ hy le_rfl ht.le hc
+    simpa using h.exp_mul_dist_sq_sub_le hφ le_rfl ht.le hc
   lift φ (u t) to ℝ using ⟨h.apply_ne_top ht, h.apply_ne_bot ht⟩ with p hp
   induction hφy : φ y using EReal.rec with
   | bot =>
@@ -290,7 +292,7 @@ theorem apply_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) (hy
     have := hint (L / (∫ r in 0..t, exp (lam * r)) - 1) (by simp [hφy])
     rw [mul_sub, mul_div_cancel₀ _ hE.ne'] at this
     linarith
-  | top => exact absurd hφy hy
+  | top => rw [EReal.top_add_coe]; exact le_top
   | coe q =>
     have := hint (q - p) (by rw [hφy]; exact (EReal.coe_sub q p).ge)
     rw [← EReal.coe_add, EReal.coe_le_coe_iff, ← sub_le_iff_le_add', le_div_iff₀ (by positivity)]
@@ -298,11 +300,11 @@ theorem apply_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) (hy
 
 /-- The energy regularization estimate on an interval starting at any nonnegative time. -/
 theorem apply_le_of_nonneg (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ)
-    (hy : φ y ≠ ⊤) (hs : 0 ≤ s) (hst : s < t) :
+    (hs : 0 ≤ s) (hst : s < t) :
     φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) * dist (u t) y ^ 2) /
       (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal) := by
   simpa only [zero_add, sub_add_cancel] using
-    (h.comp_add_const hs).apply_le hφ hy (sub_pos.2 hst)
+    (h.comp_add_const hs).apply_le hφ (sub_pos.2 hst)
 
 end IsEVISolution
 
@@ -391,7 +393,7 @@ theorem isEVISolution_iff_apply_le (hφ : LowerSemicontinuous φ) :
         φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) * dist (u t) y ^ 2) /
           (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal) := by
   refine ⟨fun h ↦ ⟨h.continuousOn, fun _ ht ↦ h.apply_ne_top ht,
-    fun _ ht ↦ h.apply_ne_bot ht, fun _ hy _ _ hs hst ↦ h.apply_le_of_nonneg hφ hy hs hst⟩, ?_⟩
+    fun _ ht ↦ h.apply_ne_bot ht, fun _ _ _ _ hs hst ↦ h.apply_le_of_nonneg hφ hs hst⟩, ?_⟩
   rintro ⟨hu, htop, hbot, hreg⟩
   exact isEVISolution_of_apply_le hφ hu htop hbot hreg
 
@@ -414,7 +416,7 @@ private theorem eventually_slope_dist_sq_lt (hu : IsEVISolution lam φ u)
   have hcu : ContinuousAt u t := hu.continuousOn.continuousAt (Ici_mem_nhds ht)
   have hcv : ContinuousAt v t := hv.continuousOn.continuousAt (Ici_mem_nhds ht)
   -- The evolution variational inequality for `v`, tested at `u t`.
-  have h₁ := hv.eventually_slope_lt (y := u t) (hu.apply_ne_top ht) ht (c := pu - pv)
+  have h₁ := hv.eventually_slope_lt (y := u t) ht (c := pu - pv)
     (by rw [hpu, hpv]; exact (EReal.coe_sub _ _).ge) (r := pu - pv - lam * A + ε)
     (by rw [dist_comm, ← hA]; linarith)
   -- Lower semicontinuity of the energy along `u` at `t`.
@@ -444,7 +446,7 @@ private theorem eventually_slope_dist_sq_lt (hu : IsEVISolution lam φ u)
   have hqz : φ (u z) = qz := (EReal.coe_toReal (hu.apply_ne_top hz0) (hu.apply_ne_bot hz0)).symm
   rw [hqz, EReal.coe_lt_coe_iff] at h₂
   -- The integrated inequality for `u` on `[t, z]`, tested at `v z`.
-  have h₅ := hu.exp_mul_dist_sq_sub_le hφ (hv.apply_ne_top hz0) ht.le hz.le (c := pv - qz) <| by
+  have h₅ := hu.exp_mul_dist_sq_sub_le hφ (y := v z) ht.le hz.le (c := pv - qz) <| by
     rw [hqz, EReal.coe_sub, ← hpv]
     exact EReal.sub_le_sub ((hv.antitoneOn hφ) ht hz0 hz.le) le_rfl
   have hEpos := integral_exp_mul_pos lam hzt

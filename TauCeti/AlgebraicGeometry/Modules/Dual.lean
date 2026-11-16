@@ -94,6 +94,14 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_apply
   rw [Scheme.Modules.dualHomUnitEquiv, ExactPairing.homUnitEquiv_apply,
     exactPairingOfIsIsoDualTensorIhom_coevaluation]
 
+/-- The zero functional on the dual corresponds to the zero section of `M`. -/
+@[simp high]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_zero :
+    Scheme.Modules.dualHomUnitEquiv M 0 = 0 := by
+  let _ : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
+  simp only [Scheme.Modules.dualHomUnitEquiv_apply, MonoidalPreadditive.zero_whiskerRight,
+    Limits.comp_zero, Limits.zero_comp]
+
 /-- The functional on the dual of `M` of a global section `s` is evaluation at `s`. -/
 @[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_symm_apply

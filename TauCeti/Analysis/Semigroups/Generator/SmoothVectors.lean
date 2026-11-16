@@ -73,7 +73,7 @@ theorem IsSmoothVector.realOperator {x : X} (hx : S.IsSmoothVector x) {t : ℝ}
     : S.IsSmoothVector (S.realOperator t x) := by
   intro n
   simpa only [S.realOperator_def, Real.toNNReal_coe] using
-    S.realOperator_mem_domainPow t.toNNReal.coe_nonneg (hx n)
+    S.realOperator_mem_domainPow (hx n)
 
 /-- Membership in `D(Aⁿ)` gives `Cⁿ` regularity of the orbit on the nonnegative half-line. -/
 theorem contDiffOn_realOperator_of_mem_domainPow (n : ℕ) {x : X}

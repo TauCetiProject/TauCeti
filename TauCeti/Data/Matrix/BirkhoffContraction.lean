@@ -102,10 +102,9 @@ theorem hilbertProjectiveDist_le {x y : ι → ℝ} {C : ℝ}
   Real.iSup_le (fun i ↦ Real.iSup_le (h i) hC) hC
 
 /-- Hilbert's projective metric is nonnegative: the diagonal cross ratios have logarithm `0`. -/
-theorem hilbertProjectiveDist_nonneg [Finite ι] (x y : ι → ℝ) :
+theorem hilbertProjectiveDist_nonneg (x y : ι → ℝ) :
     0 ≤ hilbertProjectiveDist x y :=
-  Real.iSup_nonneg fun i ↦ le_ciSup_of_le (Set.finite_range _).bddAbove i <| by
-    rw [mul_comm (y i), log_div_self]
+  Real.iSup_nonneg fun i ↦ Real.iSup_nonneg' ⟨i, by rw [mul_comm (y i), log_div_self]⟩
 
 /-- Every vector is at Hilbert distance `0` from itself. -/
 @[simp]
@@ -169,6 +168,23 @@ theorem hilbertProjectiveDist_mul_left {w : ι → ℝ} (hw : ∀ i, w i ≠ 0) 
   refine iSup_congr fun i ↦ iSup_congr fun j ↦ congrArg log ?_
   rw [← mul_div_mul_left (x i * y j) (y i * x j) (mul_ne_zero (hw i) (hw j))]
   ring
+
+/-- A common diagonal scaling does not increase Hilbert's projective metric, whatever the scaling
+vector: a vanishing scaling entry makes the cross ratio `0 / 0 = 0`. -/
+theorem hilbertProjectiveDist_mul_left_le [Finite ι] (w x y : ι → ℝ) :
+    hilbertProjectiveDist (w * x) (w * y) ≤ hilbertProjectiveDist x y := by
+  refine hilbertProjectiveDist_le (fun i j ↦ ?_) (hilbertProjectiveDist_nonneg x y)
+  simp only [Pi.mul_apply]
+  by_cases hw : w i * w j = 0
+  · have h₁ : w i * x i * (w j * y j) = 0 := by linear_combination (x i * y j) * hw
+    rw [h₁, zero_div, log_zero]
+    exact hilbertProjectiveDist_nonneg x y
+  · have h₂ : w i * x i * (w j * y j) / (w i * y i * (w j * x j)) =
+        x i * y j / (y i * x j) := by
+      rw [← mul_div_mul_left (x i * y j) (y i * x j) hw]
+      ring
+    rw [h₂]
+    exact log_le_hilbertProjectiveDist x y i j
 
 /-- Taking entrywise inverses does not change Hilbert's projective metric. -/
 @[simp]
@@ -239,12 +255,12 @@ theorem log_le_projectiveDiameter (K : Matrix ι κ ℝ) (i i' : ι) (j j' : κ)
       le_ciSup (Set.finite_range fun j' ↦
         hilbertProjectiveDist (fun i ↦ K i j) (fun i ↦ K i j')).bddAbove j'
 
-omit [Finite κ] in
+omit [Finite ι] [Finite κ] in
 /-- The projective diameter of a matrix is nonnegative. -/
 theorem projectiveDiameter_nonneg (K : Matrix ι κ ℝ) : 0 ≤ K.projectiveDiameter :=
   Real.iSup_nonneg fun _ ↦ Real.iSup_nonneg fun _ ↦ hilbertProjectiveDist_nonneg _ _
 
-omit [Finite κ] in
+omit [Finite ι] [Finite κ] in
 /-- Birkhoff's contraction factor `tanh (K.projectiveDiameter / 4)` is nonnegative. -/
 theorem tanh_projectiveDiameter_div_four_nonneg (K : Matrix ι κ ℝ) :
     0 ≤ tanh (K.projectiveDiameter / 4) := by
@@ -260,31 +276,39 @@ theorem projectiveDiameter_le {K : Matrix ι κ ℝ} {C : ℝ}
     K.projectiveDiameter ≤ C :=
   Real.iSup_le (fun j ↦ Real.iSup_le (fun j' ↦ hilbertProjectiveDist_le (h · · j j') hC) hC) hC
 
-/-- The projective diameter of a positive two-by-two kernel is the absolute logarithm of its
-cross ratio. -/
-theorem projectiveDiameter_fin_two {K : Matrix (Fin 2) (Fin 2) ℝ}
-    (hK : ∀ i j, 0 < K i j) :
+/-- The projective diameter of a two-by-two kernel is the absolute logarithm of its cross ratio.
+If an entry vanishes, every logarithmic cross ratio is `0` by the conventions `a / 0 = 0` and
+`Real.log 0 = 0` (or because the cross ratio is `1`), and both sides are `0`. -/
+theorem projectiveDiameter_fin_two (K : Matrix (Fin 2) (Fin 2) ℝ) :
     K.projectiveDiameter = |log (K 0 0 * K 1 1 / (K 0 1 * K 1 0))| := by
-  have hlog (i i' j j' : Fin 2) :
-      log (K i j * K i' j' / (K i j' * K i' j)) =
-        log (K i j) + log (K i' j') - (log (K i j') + log (K i' j)) := by
-    rw [log_div (mul_pos (hK i j) (hK i' j')).ne'
-      (mul_pos (hK i j') (hK i' j)).ne', log_mul (hK i j).ne' (hK i' j').ne',
-      log_mul (hK i j').ne' (hK i' j).ne']
-  rw [hlog]
-  apply le_antisymm
-  · apply projectiveDiameter_le _ (abs_nonneg _)
-    intro i i' j j'
+  by_cases hK : ∀ i j, K i j ≠ 0
+  · have hlog (i i' j j' : Fin 2) :
+        log (K i j * K i' j' / (K i j' * K i' j)) =
+          log (K i j) + log (K i' j') - (log (K i j') + log (K i' j)) := by
+      rw [log_div (mul_ne_zero (hK i j) (hK i' j')) (mul_ne_zero (hK i j') (hK i' j)),
+        log_mul (hK i j) (hK i' j'), log_mul (hK i j') (hK i' j)]
     rw [hlog]
-    fin_cases i <;> fin_cases i' <;> fin_cases j <;> fin_cases j' <;>
-      dsimp <;> linarith [le_abs_self (log (K 0 0) + log (K 1 1) -
-        (log (K 0 1) + log (K 1 0))), neg_le_abs (log (K 0 0) + log (K 1 1) -
-        (log (K 0 1) + log (K 1 0)))]
-  · rw [abs_le]
-    have h₁ := log_le_projectiveDiameter K 0 1 1 0
-    have h₂ := log_le_projectiveDiameter K 0 1 0 1
-    rw [hlog] at h₁ h₂
-    constructor <;> linarith
+    apply le_antisymm
+    · apply projectiveDiameter_le _ (abs_nonneg _)
+      intro i i' j j'
+      rw [hlog]
+      fin_cases i <;> fin_cases i' <;> fin_cases j <;> fin_cases j' <;>
+        dsimp <;> linarith [le_abs_self (log (K 0 0) + log (K 1 1) -
+          (log (K 0 1) + log (K 1 0))), neg_le_abs (log (K 0 0) + log (K 1 1) -
+          (log (K 0 1) + log (K 1 0)))]
+    · rw [abs_le]
+      have h₁ := log_le_projectiveDiameter K 0 1 1 0
+      have h₂ := log_le_projectiveDiameter K 0 1 0 1
+      rw [hlog] at h₁ h₂
+      constructor <;> linarith
+  · push Not at hK
+    obtain ⟨a, b, hab⟩ := hK
+    have h0 (i i' j j' : Fin 2) : log (K i j * K i' j' / (K i j' * K i' j)) = 0 := by
+      fin_cases a <;> fin_cases b <;> fin_cases i <;> fin_cases i' <;> fin_cases j <;>
+        fin_cases j' <;> simp_all [mul_comm]
+    rw [h0 0 1 0 1, abs_zero]
+    exact le_antisymm (projectiveDiameter_le (fun i i' j j' ↦ (h0 i i' j j').le) le_rfl)
+      (projectiveDiameter_nonneg K)
 
 omit [Finite ι] [Finite κ] in
 /-- The projective diameter of a matrix whose entries lie between `m > 0` and `M` is at most
@@ -408,7 +432,7 @@ private theorem log_cross_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K 
   have hβ := mulVec_nonneg (fun i j ↦ (hK i j).le) hv
   have hcross := mulVec_mul_mulVec_le hK hu hv i i'
   rw [← add_halves K.projectiveDiameter, exp_add, ← sq] at hcross
-  have key := log_birkhoff_cross_ratio_le (R := M / m) (hα i) (hβ i) (hα i') (hβ i')
+  have key := log_birkhoff_cross_ratio_le (R := M / m) (hα i) (hβ i) (hβ i')
     ((one_le_div hm).2 hmM.le) (one_le_exp (by linarith [projectiveDiameter_nonneg K])) hcross
   -- `(M / m) • α + β = (M - m) / m • K *ᵥ x` and `α + β = (M - m) • K *ᵥ y`
   have hcongr : ∀ i, M / m * (K *ᵥ (x - m • y)) i + (K *ᵥ (M • y - x)) i =
