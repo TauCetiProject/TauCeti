@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Set.Finite.Basic
 public import TauCeti.Computability.SingleOracle.Code
+-- Proving `toSingleOracleCode_prefixDom` requires the private equations of `toSingleOracleCode`.
+import all TauCeti.Computability.SingleOracle.Code
 import Mathlib.Order.Interval.Finset.Nat
 import TauCeti.Data.PFun.Basic
 
@@ -216,111 +218,76 @@ theorem prefixDom_inj {c d : Nat.Partrec.Code} : c.prefixDom = d.prefixDom ↔ c
 theorem prefixDom_injective : Function.Injective prefixDom :=
   fun _ _ => prefixDom_inj.1
 
+/-- Translating `c.prefixDom` into a query-free single-oracle program yields the single-oracle
+prefix-convergence compilation of `c.toSingleOracleCode`. -/
+@[simp]
+theorem toSingleOracleCode_prefixDom (c : Nat.Partrec.Code) :
+    c.prefixDom.toSingleOracleCode = c.toSingleOracleCode.prefixDom := by
+  simp only [prefixDom, TauCeti.Oracle.Single.Code.prefixDom, toSingleOracleCode]
+
+/-- Relative to every oracle, `c.prefixDom` and `c.toSingleOracleCode.prefixDom` compute the same
+partial function. -/
+@[simp]
+theorem eval_toSingleOracleCode_prefixDom (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
+    TauCeti.Oracle.Single.Code.eval O c.toSingleOracleCode.prefixDom = c.prefixDom.eval := by
+  rw [← toSingleOracleCode_prefixDom, TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+
 /-- `c.prefixDom` outputs `0` on `x` precisely when `c` halts on every `k ≤ x`. -/
 theorem mem_eval_prefixDom {c : Nat.Partrec.Code} {x y : ℕ} :
     y ∈ c.prefixDom.eval x ↔ (∀ k ≤ x, (c.eval k).Dom) ∧ y = 0 := by
-  have hz : zero.eval = fun _ => Part.some 0 := rfl
-  have hl : left.eval = fun n => Part.some n.unpair.1 := rfl
-  have hr : right.eval = fun n => Part.some n.unpair.2 := rfl
-  have hs : succ.eval = fun n => Part.some (n + 1) := rfl
-  have hpair (cf cg : Nat.Partrec.Code) (n : ℕ) :
-      (pair cf cg).eval n = Nat.pair <$> cf.eval n <*> cg.eval n := rfl
-  have hcomp (cf cg : Nat.Partrec.Code) (n : ℕ) :
-      (comp cf cg).eval n = cg.eval n >>= cf.eval := rfl
-  have hinput (n : ℕ) : (pair zero (pair left right)).eval n = Part.some (Nat.pair 0 n) := by
-    simp [hpair, hz, hl, hr, Seq.seq]
-  have hbase : (comp zero c).eval 0 = (c.eval 0).map fun _ => 0 := by
-    rw [hcomp, hz]
-    exact Part.bind_some_eq_map _ _
-  have hstep (k i : ℕ) :
-      (comp zero (comp c (comp succ (comp left right)))).eval (Nat.pair 0 (Nat.pair k i)) =
-        (c.eval (k + 1)).map fun _ => 0 := by
-    simp [hcomp, hr, hl, hs, hz, Part.bind_eq_bind, PFun.some_bind, Part.bind_some_eq_map]
-  rw [prefixDom, hcomp, hinput, PFun.some_bind]
-  induction x generalizing y with
-  | zero =>
-    rw [eval_prec_zero, hbase, Part.mem_map_iff]
-    simp [Part.dom_iff_mem, eq_comm]
-  | succ x ih =>
-    rw [eval_prec_succ]
-    refine (Part.mem_bind_iff).trans ?_
-    constructor
-    · rintro ⟨i, hi, hy⟩
-      obtain ⟨hprev, rfl⟩ := ih.1 hi
-      rw [hstep, Part.mem_map_iff] at hy
-      obtain ⟨z, hz', hy⟩ := hy
-      refine ⟨fun k hk => ?_, hy.symm⟩
-      rcases Nat.of_le_succ hk with hle | rfl
-      · exact hprev k hle
-      · exact Part.dom_iff_mem.2 ⟨z, hz'⟩
-    · rintro ⟨hall, rfl⟩
-      obtain ⟨z, hz'⟩ := Part.dom_iff_mem.1 (hall (x + 1) le_rfl)
-      refine ⟨0, ih.2 ⟨fun k hk => hall k (Nat.le_succ_of_le hk), rfl⟩, ?_⟩
-      rw [hstep, Part.mem_map_iff]
-      exact ⟨z, hz', rfl⟩
+  rw [← eval_toSingleOracleCode_prefixDom default,
+    ← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode default]
+  exact TauCeti.Oracle.Single.Code.mem_eval_prefixDom
 
 /-- Exact partial evaluation of `c.prefixDom` for an ordinary code `c`. -/
 theorem eval_prefixDom (c : Nat.Partrec.Code) (x : ℕ) :
     c.prefixDom.eval x = Part.assert (∀ k ≤ x, (c.eval k).Dom) fun _ => Part.some 0 := by
-  ext y
-  simp [mem_eval_prefixDom, Part.mem_assert_iff]
-
-/-- Relative to every oracle, `c.prefixDom` and `c.toSingleOracleCode.prefixDom` compute the same
-partial function. -/
-theorem eval_toSingleOracleCode_prefixDom (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
-    TauCeti.Oracle.Single.Code.eval O c.toSingleOracleCode.prefixDom = c.prefixDom.eval := by
-  have hc (k : ℕ) : TauCeti.Oracle.Single.Code.eval O c.toSingleOracleCode k = c.eval k :=
-    congrFun (TauCeti.Oracle.Single.Code.eval_toSingleOracleCode O c) k
-  ext x y
-  simp [TauCeti.Oracle.Single.Code.eval_prefixDom, eval_prefixDom, hc]
+  rw [← eval_toSingleOracleCode_prefixDom default,
+    ← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode default]
+  exact TauCeti.Oracle.Single.Code.eval_prefixDom default c.toSingleOracleCode x
 
 /-- `c.prefixDom` halts on `x` if and only if `c` halts on every `k ≤ x`. -/
 @[simp]
 theorem dom_eval_prefixDom (c : Nat.Partrec.Code) (x : ℕ) :
     (c.prefixDom.eval x).Dom ↔ ∀ k ≤ x, (c.eval k).Dom := by
-  simp [eval_prefixDom, Part.assert]
+  rw [← eval_toSingleOracleCode_prefixDom default,
+    ← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode default]
+  exact TauCeti.Oracle.Single.Code.dom_eval_prefixDom default c.toSingleOracleCode x
 
 /-- The domain of `c.prefixDom` is downward closed. -/
 theorem dom_eval_prefixDom_of_le {c : Nat.Partrec.Code} {x y : ℕ} (hxy : x ≤ y)
-    (hy : (c.prefixDom.eval y).Dom) : (c.prefixDom.eval x).Dom :=
-  (dom_eval_prefixDom c x).2 fun k hk => (dom_eval_prefixDom c y).1 hy k (hk.trans hxy)
-
-private theorem eval_toSingleOracleCode_none (c : Nat.Partrec.Code) (k : ℕ) :
-    TauCeti.Oracle.Single.Code.eval (fun _ => Part.none) c.toSingleOracleCode k = c.eval k :=
-  congrFun (TauCeti.Oracle.Single.Code.eval_toSingleOracleCode (fun _ => Part.none) c) k
-
-private theorem eval_toSingleOracleCode_prefixDom_none (c : Nat.Partrec.Code) (x : ℕ) :
-    TauCeti.Oracle.Single.Code.eval (fun _ => Part.none) c.toSingleOracleCode.prefixDom x =
-      c.prefixDom.eval x :=
-  congrFun (eval_toSingleOracleCode_prefixDom (fun _ => Part.none) c) x
+    (hy : (c.prefixDom.eval y).Dom) : (c.prefixDom.eval x).Dom := by
+  rw [← eval_toSingleOracleCode_prefixDom default] at hy ⊢
+  exact TauCeti.Oracle.Single.Code.dom_eval_prefixDom_of_le hxy hy
 
 /-- If `c` diverges at some input, then the domain of `c.prefixDom` is the finite initial segment
 `Set.Iio m` below the first divergence point `m`. -/
 theorem exists_dom_eval_prefixDom_eq_Iio {c : Nat.Partrec.Code} (h : ∃ k, ¬(c.eval k).Dom) :
     ∃ m, ¬(c.eval m).Dom ∧ (∀ k < m, (c.eval k).Dom) ∧
       {x | (c.prefixDom.eval x).Dom} = Set.Iio m := by
-  simpa only [eval_toSingleOracleCode_none, eval_toSingleOracleCode_prefixDom_none] using
-    TauCeti.Oracle.Single.Code.exists_dom_eval_prefixDom_eq_Iio (O := fun _ => Part.none)
-      (c := c.toSingleOracleCode) (by simpa only [eval_toSingleOracleCode_none] using h)
+  rw [← eval_toSingleOracleCode_prefixDom default]
+  rw [← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode default] at h ⊢
+  exact TauCeti.Oracle.Single.Code.exists_dom_eval_prefixDom_eq_Iio h
 
 /-- The domain of `c.prefixDom` is all of `ℕ` if and only if `c` is total. -/
 theorem dom_eval_prefixDom_eq_univ_iff {c : Nat.Partrec.Code} :
     {x | (c.prefixDom.eval x).Dom} = Set.univ ↔ ∀ k, (c.eval k).Dom := by
-  simpa only [eval_toSingleOracleCode_none, eval_toSingleOracleCode_prefixDom_none] using
-    TauCeti.Oracle.Single.Code.dom_eval_prefixDom_eq_univ_iff
-      (O := fun _ => Part.none) (c := c.toSingleOracleCode)
+  rw [← eval_toSingleOracleCode_prefixDom default,
+    ← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode default]
+  exact TauCeti.Oracle.Single.Code.dom_eval_prefixDom_eq_univ_iff
 
 /-- The domain of `c.prefixDom` is finite if and only if `c` diverges at some input. -/
 theorem finite_dom_eval_prefixDom_iff {c : Nat.Partrec.Code} :
     {x | (c.prefixDom.eval x).Dom}.Finite ↔ ∃ k, ¬(c.eval k).Dom := by
-  simpa only [eval_toSingleOracleCode_none, eval_toSingleOracleCode_prefixDom_none] using
-    TauCeti.Oracle.Single.Code.finite_dom_eval_prefixDom_iff
-      (O := fun _ => Part.none) (c := c.toSingleOracleCode)
+  rw [← eval_toSingleOracleCode_prefixDom default,
+    ← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode default]
+  exact TauCeti.Oracle.Single.Code.finite_dom_eval_prefixDom_iff
 
 /-- The domain of `c.prefixDom` is infinite if and only if `c` halts on every input. -/
 theorem infinite_dom_eval_prefixDom_iff {c : Nat.Partrec.Code} :
     {x | (c.prefixDom.eval x).Dom}.Infinite ↔ ∀ k, (c.eval k).Dom := by
-  classical
-  rw [Set.Infinite, finite_dom_eval_prefixDom_iff, not_exists_not]
+  rw [← eval_toSingleOracleCode_prefixDom default,
+    ← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode default]
+  exact TauCeti.Oracle.Single.Code.infinite_dom_eval_prefixDom_iff
 
 end Nat.Partrec.Code
