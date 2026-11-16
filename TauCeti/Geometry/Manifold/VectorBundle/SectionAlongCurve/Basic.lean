@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Coordinates of vector-bundle sections along curves
@@ -18,6 +19,8 @@ reading.
 ## Main definitions and results
 
 * `TauCeti.Manifold.sectionCoord`: the coordinate reading of a section along a curve.
+* `TauCeti.Manifold.continuousWithinAt_sectionCoord` and `continuousAt_sectionCoord`: continuity
+  of the coordinate reading in any trivialization containing the base point.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for that
   reading within a parameter set.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord_sum`: finite sums of sections with
@@ -108,7 +111,24 @@ theorem sectionCoord_comp (φ : 𝕜 → 𝕜) (x : M) :
   ext t
   simp only [sectionCoord_apply, Function.comp_apply]
 
-/-! ### Differentiability of the coordinate reading -/
+/-! ### Continuity and differentiability of the coordinate reading -/
+
+/-- A continuous section along a curve has continuous coordinates in any canonical
+trivialization whose base set contains the current base point, also within a parameter set. -/
+theorem continuousWithinAt_sectionCoord {s : Set 𝕜} {x : M} {t : 𝕜}
+    (h : ContinuousWithinAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousWithinAt (sectionCoord (F := F) γ W x) s t :=
+  (((trivializationAt F V x).tendsto_mk_nhds_mk_iff 𝕜 hx).1 h.tendsto).2
+
+/-- A continuous section along a curve has continuous coordinates in any canonical
+trivialization whose base set contains the current base point. -/
+theorem continuousAt_sectionCoord {x : M} {t : 𝕜}
+    (h : ContinuousAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousAt (sectionCoord (F := F) γ W x) t := by
+  rw [← continuousWithinAt_univ]
+  exact continuousWithinAt_sectionCoord γ W h.continuousWithinAt hx
 
 /-- A finite sum of sections along a curve whose coordinate readings are differentiable within
 `s` at `t` again has a coordinate reading differentiable within `s` at `t`. -/

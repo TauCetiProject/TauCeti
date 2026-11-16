@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Intrinsic map variation of the Floer equation
@@ -25,7 +27,9 @@ variation field is the actual parameter velocity of the family, and the intercha
 parameter and domain derivatives follows from torsion-freeness and joint `C²` regularity.
 Domain-dependent coefficients are allowed; coefficients are held fixed during this map
 variation. No Floer equation, compatibility of the connection with `J`, or metric is required.
-This is a pointwise formula, not a Sobolev or Fredholm assertion.
+This is a pointwise formula, not a Sobolev or Fredholm assertion. The bundle differentiability
+result also allows arbitrary parameter-dependent coefficients, with regularity required only
+of their pullbacks along the map family.
 
 The operator is written with partial curve velocities, so its definition does not depend on
 any choice of connection. For a differentiable map, `floerOperator_eq` identifies it with the
@@ -188,6 +192,58 @@ theorem floerLinearization_add
 
 end Algebra
 
+omit [FiniteDimensional ℝ E] in
+/-- For a jointly `C²` map family and arbitrary parameter-dependent coefficients, the Floer
+operator is differentiable into the tangent bundle whenever the endomorphisms and Hamiltonian
+vector fields pulled back along the parameter curve are differentiable there. No ambient
+regularity of the coefficient fields or connection is required. -/
+theorem mdifferentiableAt_floerOperator_family (ω : SmoothTwoForm I M)
+    (J : ℝ → ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
+    (Ks Kt : ℝ → ℝ × ℝ → M → ℝ) {u : ℝ → ℝ × ℝ → M} {q : ℝ} {z : ℝ × ℝ}
+    (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (q, z))
+    (hJ : MDifferentiableAt 𝓘(ℝ, ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] E))
+      (fun a ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (u a z) (J a z (u a z))) q)
+    (hKs : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent
+      (fun a ↦ TotalSpace.mk' E (u a z) (ω.hamiltonianVectorField (Ks a z) (u a z))) q)
+    (hKt : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent
+      (fun a ↦ TotalSpace.mk' E (u a z) (ω.hamiltonianVectorField (Kt a z) (u a z))) q) :
+    MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent
+      (fun a ↦ TotalSpace.mk' E (u a z) (ω.floerOperator (J a) (Ks a) (Kt a) (u a) z)) q := by
+  have hγ := ((mdifferentiableAt_totalSpace _ _).1 hKt).1
+  have hVs := (hu.contMDiffAt_prod_fst_slice.contMDiffAt_curveVelocity_snd_slice
+    (f := fun a s ↦ u a (s, z.2)) (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hVt := (hu.contMDiffAt_prod_snd_slice.contMDiffAt_curveVelocity_snd_slice
+    (f := fun a t ↦ u a (z.1, t)) (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hΔs := hVs.sub_sectionAlong hKs
+  have hΔt := hVt.sub_sectionAlong hKt
+  have hJΔt := hJ.clm_bundle_apply hΔt
+  have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u q z)
+  apply (differentiableAt_sectionCoord_iff _ _ hγ hbase).1
+  simpa only [floerOperator_def, sectionCoord_add] using!
+    (differentiableAt_sectionCoord _ _ hΔs hbase).add
+      (differentiableAt_sectionCoord _ _ hJΔt hbase)
+
+omit [FiniteDimensional ℝ E] in
+/-- For a jointly `C²` map family, if `J z` and the Hamiltonian vector fields of `Ks z` and
+`Kt z` are differentiable at `u q z`, the fixed-coefficient Floer operator is differentiable
+as a map into the tangent bundle along the parameter curve. -/
+theorem mdifferentiableAt_floerOperator (ω : SmoothTwoForm I M)
+    (J : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
+    (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ → ℝ × ℝ → M} {q : ℝ} {z : ℝ × ℝ}
+    (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (q, z))
+    (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u q z))
+    (hKs : MDiffAt (T% (ω.hamiltonianVectorField (Ks z))) (u q z))
+    (hKt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u q z)) :
+    MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent
+      (fun a ↦ TotalSpace.mk' E (u a z) (ω.floerOperator J Ks Kt (u a) z)) q := by
+  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun a ↦ u a z) q := (hu.comp q
+    (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
+      (by norm_num)
+  exact ω.mdifferentiableAt_floerOperator_family (fun _ ↦ J) (fun _ ↦ Ks) (fun _ ↦ Kt)
+    hu (hJ.comp q hγ) (hKs.comp q hγ) (hKt.comp q hγ)
+
 /-- **Intrinsic first variation of the Floer operator.** For a jointly `C²` map family and a
 torsion-free target connection, the covariant parameter derivative of the nonlinear operator
 is its map-direction linearization on the actual parameter velocity. Only differentiability
@@ -208,24 +264,16 @@ theorem alongCurve_floerOperator (ω : SmoothTwoForm I M)
   let γ := fun a ↦ u a z
   let Vs := fun a ↦ curveVelocity I (fun s ↦ u a (s, z.2)) z.1
   let Vt := fun a ↦ curveVelocity I (fun t ↦ u a (z.1, t)) z.2
-  have hs : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun p : ℝ × ℝ ↦ u p.1 (p.2, z.2)) (q, z.1) :=
-    hu.comp (q, z.1) (contMDiff_iff_contDiff.mpr (by fun_prop :
-      ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (p.2, z.2))))).contMDiffAt
-  have ht : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun p : ℝ × ℝ ↦ u p.1 (z.1, p.2)) (q, z.2) :=
-    hu.comp (q, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
-      ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (z.1, p.2))))).contMDiffAt
-  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ q :=
-    (hu.comp q (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
-      (by norm_num)
+  have hs := hu.contMDiffAt_prod_fst_slice
+  have ht := hu.contMDiffAt_prod_snd_slice
+  have hVs' := (hs.contMDiffAt_curveVelocity_snd_slice (f := fun a s ↦ u a (s, z.2))
+    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hVt' := (ht.contMDiffAt_curveVelocity_snd_slice (f := fun a t ↦ u a (z.1, t))
+    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hγ := ((mdifferentiableAt_totalSpace _ _).1 hVt').1
   have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u q z)
-  have hVs := hs.differentiableAt_sectionCoord_curveVelocity_snd
-    (f := fun a s ↦ u a (s, z.2)) hbase
-  have hVt := ht.differentiableAt_sectionCoord_curveVelocity_snd
-    (f := fun a t ↦ u a (z.1, t)) hbase
-  have hVs' := (differentiableAt_sectionCoord_iff γ Vs hγ hbase).1 hVs
-  have hVt' := (differentiableAt_sectionCoord_iff γ Vt hγ hbase).1 hVt
+  have hVs := differentiableAt_sectionCoord γ Vs hVs' hbase
+  have hVt := differentiableAt_sectionCoord γ Vt hVt' hbase
   have hXs := hKs.comp q hγ
   have hXt := hKt.comp q hγ
   have hΔs := hVs'.sub_sectionAlong hXs

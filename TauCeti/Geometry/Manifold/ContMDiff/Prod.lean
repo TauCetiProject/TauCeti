@@ -28,6 +28,8 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
 * `contMDiffOn_prod_modelWithCornersSelf_iff`, `contMDiffAt_prod_modelWithCornersSelf_iff`: the
   same bridge for `C^n` maps on a set and at a point.
+* `ContMDiffAt.contMDiffAt_prod_fst_slice`, `ContMDiffAt.contMDiffAt_prod_snd_slice`: fixing
+  one of the last two factors of a three-factor product preserves joint regularity.
 * `TauCeti.contMDiff_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffOn_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffAt_prod_prod_modelWithCornersSelf_iff`: the same bridge on the left factor of
@@ -72,6 +74,30 @@ theorem contMDiffAt_prod_modelWithCornersSelf_iff {x : E₁ × E₂} :
     ContMDiffAt (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f x ↔
       ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' n f x := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+section Slices
+
+variable {E₃ : Type*} [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃]
+
+/-- Fixing the last factor of a three-factor family preserves joint regularity in
+its first two factors. -/
+theorem ContMDiffAt.contMDiffAt_prod_fst_slice {f : E₁ → E₂ × E₃ → M}
+    {q : E₁} {z : E₂ × E₃}
+    (hf : ContMDiffAt 𝓘(𝕜, E₁ × (E₂ × E₃)) I' n (Function.uncurry f) (q, z)) :
+    ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' n (fun p : E₁ × E₂ ↦ f p.1 (p.2, z.2)) (q, z.1) :=
+  hf.comp (q, z.1) (contMDiff_iff_contDiff.mpr (by fun_prop :
+    ContDiff 𝕜 n (fun p : E₁ × E₂ ↦ (p.1, (p.2, z.2))))).contMDiffAt
+
+/-- Fixing the middle factor of a three-factor family preserves joint regularity in
+its first and last factors. -/
+theorem ContMDiffAt.contMDiffAt_prod_snd_slice {f : E₁ → E₂ × E₃ → M}
+    {q : E₁} {z : E₂ × E₃}
+    (hf : ContMDiffAt 𝓘(𝕜, E₁ × (E₂ × E₃)) I' n (Function.uncurry f) (q, z)) :
+    ContMDiffAt 𝓘(𝕜, E₁ × E₃) I' n (fun p : E₁ × E₃ ↦ f p.1 (z.1, p.2)) (q, z.2) :=
+  hf.comp (q, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
+    ContDiff 𝕜 n (fun p : E₁ × E₃ ↦ (p.1, (z.1, p.2))))).contMDiffAt
+
+end Slices
 
 namespace TauCeti
 
