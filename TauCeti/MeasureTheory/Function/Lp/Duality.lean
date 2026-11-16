@@ -44,7 +44,11 @@ For functions with values in an inner product space, paired by `∫ ⟪h, g⟫`,
 a version for `q < ∞` that does not assume `h ∈ L^q` in advance: the test functions are bounded
 and vanish off a set of finite measure, and the extremal function `|h| ^ (q - 2) h` is truncated
 where `h` is large and outside a spanning set of a σ-finite measure. This is the form needed to
-prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality.
+prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality. When the pairings
+can only be computed against integrable simple functions, as for the complex interpolation spaces
+of the Lebesgue couple, the inner product version tests against those instead: first for
+`h ∈ L^q`, then, on a σ-finite measure space, for the truncations of an arbitrary `h` to the
+sets where it is bounded inside a spanning set.
 
 The integral Hölder bounds apply to arbitrary functions, using the convention that `eLpNorm`
 is `∞` outside the almost everywhere strongly measurable functions.
@@ -64,9 +68,17 @@ is `∞` outside the almost everywhere strongly measurable functions.
   isometry `L^q(μ) → L^q'(μ)*`.
 * `MeasureTheory.Lp.toDual_indicatorConstLp`: the value of the pairing at an indicator function.
 * `TauCeti.enorm_integral_inner_le`: Hölder's inequality `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q`.
+* `TauCeti.enorm_integral_inner_comm`: `‖∫ ⟪u, v⟫‖ = ‖∫ ⟪v, u⟫‖`.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
   finite-measure support, without assuming `h ∈ L^q`.
+* `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes `⟪h, g⟫`
+  integrable for `h ∈ L^q` and `g ∈ L^{q'}`.
+* `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top`,
+  `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_simpleFunc_le`:
+  the duality bound for `q < ∞` for inner product space valued functions, against integrable
+  simple test functions, for `h ∈ L^q` and, on a σ-finite measure space, without assuming
+  `h ∈ L^q`.
 
 ## References
 
@@ -101,6 +113,13 @@ theorem enorm_integral_inner_le {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGro
         simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm_of_pos (fun a b => ⟪a, b⟫_𝕜) 1
           continuous_inner (ae_of_all _ fun x => by simpa using norm_inner_le_norm (u x) (v x))
           zero_lt_one
+
+/-- Swapping the arguments of the pairing `∫ ⟪u, v⟫` conjugates it, so its norm is unchanged. -/
+theorem enorm_integral_inner_comm {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
+    [InnerProductSpace 𝕜 H] (u v : α → H) :
+    ‖∫ x, ⟪u x, v x⟫_𝕜 ∂μ‖ₑ = ‖∫ x, ⟪v x, u x⟫_𝕜 ∂μ‖ₑ := by
+  rw [← RCLike.eNorm_conj, ← integral_conj]
+  simp_rw [inner_conj_symm]
 
 end TauCeti
 
@@ -360,6 +379,127 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     (fun N => (hh'.indicator (measurableSet_spanningSets_inter_norm_le hh' N)).aestronglyMeasurable)
     hh'.aestronglyMeasurable
     (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
+
+/-- Hölder's inequality makes the pairing `x ↦ ⟪h x, g x⟫` integrable for `h ∈ L^q` and
+`g ∈ L^{q'}`. For `q = q' = 2` this is `MeasureTheory.MemLp.integrable_inner`. -/
+theorem MemLp.integrable_inner_of_holderConjugate {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace 𝕜 H] {q q' : ℝ≥0∞} [q.HolderConjugate q'] {h g : α → H}
+    (hh : MemLp h q μ) (hg : MemLp g q' μ) : Integrable (fun x => ⟪h x, g x⟫_𝕜) μ :=
+  memLp_one_iff_integrable.1 <| hh.of_bilin (fun a b => ⟪a, b⟫_𝕜) 1 hg continuous_inner
+    (ae_of_all _ fun x => by simpa [← NNReal.coe_le_coe] using norm_inner_le_norm (h x) (g x))
+
+/-- The extremal test function of a simple function `φ ∈ L^q`, `q < ∞`: the integrable simple
+function `g = |φ| ^ (q - 2) φ`, with `⟪φ, g⟫ = |φ| ^ q` and `‖g‖_{q'} ≤ ‖φ‖_q ^ (q - 1)`. -/
+private theorem exists_simpleFunc_inner_eq_rpow {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace 𝕜 H] {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q'] (hq : q ≠ ∞)
+    {φ : SimpleFunc α H} (hφ : MemLp φ q μ) :
+    ∃ g : SimpleFunc α H, Integrable g μ ∧ MemLp g q' μ ∧
+      eLpNorm g q' μ ≤ eLpNorm φ q μ ^ (q.toReal - 1) ∧
+      ∀ x, ⟪φ x, g x⟫_𝕜 = ((‖φ x‖ ^ q.toReal : ℝ) : 𝕜) := by
+  have hr1 : 1 ≤ q.toReal := by simpa using ENNReal.toReal_mono hq hqq.one_le
+  set g : SimpleFunc α H := φ.map fun c => ((‖c‖ ^ (q.toReal - 2) : ℝ) : 𝕜) • c
+  have hgX : eLpNorm g q' μ ≤ eLpNorm φ q μ ^ (q.toReal - 1) :=
+    eLpNorm_le_eLpNorm_rpow_toReal_sub_one hq g.aestronglyMeasurable (ae_of_all _ fun x => by
+      simpa [g] using norm_ofReal_rpow_sub_two_smul_le (𝕜 := 𝕜) q.toReal (φ x))
+  -- The extremal function vanishes where `φ` does, so it has finite-measure support.
+  refine ⟨g, SimpleFunc.FinMeasSupp.integrable ?_, memLp_iff.2 (hgX.trans_lt
+    (ENNReal.rpow_lt_top_of_nonneg (by linarith) hφ.eLpNorm_lt_top.ne)), hgX, fun x => ?_⟩
+  · exact ((SimpleFunc.memLp_iff_finMeasSupp hqq.ne_zero hq).1 hφ).map (by simp)
+  · simpa [g] using inner_ofReal_rpow_sub_two_smul (𝕜 := 𝕜) (by linarith : q.toReal ≠ 0) (φ x)
+
+/-- **Norming by simple functions, inner product version, `q < ∞`.** Let `q < ∞` and `q'` be
+Hölder conjugate. If `h ∈ L^q` with values in an inner product space satisfies
+`‖∫ ⟪h, g⟫‖ ≤ C ‖g‖_{q'}` for every integrable simple function `g`, then `‖h‖_q ≤ C`. -/
+theorem MemLp.eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
+    {h : α → H} (hh : MemLp h q μ) (hq : q ≠ ∞) {C : ℝ≥0∞}
+    (hC : ∀ g : SimpleFunc α H, Integrable g μ →
+      ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ ≤ C * eLpNorm g q' μ) :
+    eLpNorm h q μ ≤ C := by
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
+  have hε2 : (ε : ℝ≥0∞) / 2 ≠ 0 := by simp [hε.ne']
+  -- Approximate `h` by a simple function `φ` and test against the extremal function of `φ`.
+  obtain ⟨φ, hφ, hφmem⟩ := hh.exists_simpleFunc_eLpNorm_sub_lt hq hε2
+  obtain ⟨g, hgint, hgmem, hgX, hφg⟩ := exists_simpleFunc_inner_eq_rpow (𝕜 := 𝕜) (q' := q') hq hφmem
+  set X := eLpNorm φ q μ
+  have hX : X ≠ ∞ := hφmem.eLpNorm_lt_top.ne
+  -- The pairing of `φ` with its extremal function is `‖φ‖_q ^ q`.
+  have hXr : X ^ q.toReal ≤ ‖∫ x, ⟪φ x, g x⟫_𝕜 ∂μ‖ₑ := by
+    simp_rw [hφg]
+    exact (hφmem.eLpNorm_rpow_toReal_eq_enorm_integral (𝕜 := 𝕜) hqq.ne_zero hq).le
+  -- Replacing `φ` by `h` costs at most `‖h - φ‖_q ‖g‖_{q'}`.
+  have hsplit : ‖∫ x, ⟪φ x, g x⟫_𝕜 ∂μ‖ₑ ≤ (C + ε / 2) * X ^ (q.toReal - 1) := by
+    have heq : ∫ x, ⟪φ x, g x⟫_𝕜 ∂μ =
+        ∫ x, ⟪h x, g x⟫_𝕜 ∂μ - ∫ x, ⟪h x - φ x, g x⟫_𝕜 ∂μ := by
+      rw [← integral_sub (hh.integrable_inner_of_holderConjugate hgmem)
+        ((hh.sub hφmem).integrable_inner_of_holderConjugate hgmem)]
+      congr 1 with x
+      rw [inner_sub_left, sub_sub_cancel]
+    calc ‖∫ x, ⟪φ x, g x⟫_𝕜 ∂μ‖ₑ
+        ≤ ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ + ‖∫ x, ⟪h x - φ x, g x⟫_𝕜 ∂μ‖ₑ := by
+          rw [heq]
+          exact eNorm_sub_le
+      _ ≤ C * eLpNorm g q' μ + eLpNorm (h - ⇑φ) q μ * eLpNorm g q' μ :=
+          add_le_add (hC g hgint) (TauCeti.enorm_integral_inner_le (u := h - ⇑φ))
+      _ ≤ (C + ε / 2) * X ^ (q.toReal - 1) := by
+          rw [← add_mul]
+          gcongr
+  -- Hence `‖φ‖_q ≤ C + ε / 2`, and `‖h‖_q ≤ ‖φ‖_q + ε / 2`.
+  have hXle : X ≤ C + ε / 2 := ENNReal.le_of_rpow_le_mul_rpow_sub_one hX (hXr.trans hsplit)
+  calc eLpNorm h q μ = eLpNorm ((h - ⇑φ) + ⇑φ) q μ := by simp
+    _ ≤ eLpNorm (h - ⇑φ) q μ + X := eLpNorm_add_le hqq.one_le
+    _ ≤ ε / 2 + (C + ε / 2) := by gcongr
+    _ = C + ε := by rw [add_comm, add_assoc, ENNReal.add_halves]
+
+/-- **Norming by simple functions, inner product version.** On a σ-finite measure space, let
+`q < ∞` and `q'` be Hölder conjugate. If an almost everywhere strongly measurable `h` with values
+in an inner product space satisfies `‖∫ ⟪h, g⟫‖ ≤ C ‖g‖_{q'}` for every integrable simple function
+`g`, then `‖h‖_q ≤ C`.
+
+Unlike `MemLp.eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top`, `h` is not assumed to lie
+in `L^q`: the bound is first proved for the truncations of `h` to the sets where it is bounded
+inside a spanning set of the measure, which lie in `L^q`. -/
+theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_simpleFunc_le {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [SigmaFinite μ] {q q' : ℝ≥0∞}
+    [hqq : q.HolderConjugate q'] (hq : q ≠ ∞) {h : α → H} (hh : AEStronglyMeasurable h μ)
+    {C : ℝ≥0∞}
+    (hC : ∀ g : SimpleFunc α H, Integrable g μ →
+      ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ ≤ C * eLpNorm g q' μ) :
+    eLpNorm h q μ ≤ C := by
+  set h' := hh.mk h
+  have hh' : StronglyMeasurable h' := hh.stronglyMeasurable_mk
+  rw [eLpNorm_congr_ae hh.ae_eq_mk]
+  refine Lp.eLpNorm_le_of_ae_tendsto (u := Filter.atTop)
+    (f := fun N => (spanningSets μ N ∩ {x | ‖h' x‖ ≤ N}).indicator h')
+    (Filter.Eventually.of_forall fun N => ?_)
+    (fun N => (hh'.indicator (measurableSet_spanningSets_inter_norm_le hh' N)).aestronglyMeasurable)
+    hh'.aestronglyMeasurable
+    (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
+  -- The truncation `1_S h` lies in `L^q`; testing it against `g` tests `h` against `1_S g`.
+  set S := spanningSets μ N ∩ {x | ‖h' x‖ ≤ N}
+  have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le hh' N
+  have hmem : MemLp (S.indicator h') q μ := by
+    refine (memLp_top_of_bound (hh'.indicator hS).aestronglyMeasurable N
+      (ae_of_all _ fun x => ?_)).mono_exponent_of_measure_support_ne_top
+      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _)
+      (measure_spanningSets_lt_top μ N).ne le_top
+    by_cases hx : x ∈ S
+    · simpa [Set.indicator_of_mem hx] using hx.2
+    · simp [Set.indicator_of_notMem hx]
+  refine hmem.eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top (𝕜 := 𝕜) (q' := q') hq
+    fun g hg => ?_
+  calc ‖∫ x, ⟪S.indicator h' x, g x⟫_𝕜 ∂μ‖ₑ = ‖∫ x, ⟪h x, g.restrict S x⟫_𝕜 ∂μ‖ₑ := by
+        congr 1
+        refine integral_congr_ae ?_
+        filter_upwards [hh.ae_eq_mk] with x hx
+        rw [g.restrict_apply hS]
+        by_cases hxS : x ∈ S <;> simp [hxS, hx, h']
+    _ ≤ C * eLpNorm (g.restrict S) q' μ :=
+        hC _ (by rw [g.coe_restrict hS]; exact hg.indicator hS)
+    _ ≤ C * eLpNorm g q' μ := by
+        rw [g.coe_restrict hS]
+        gcongr
+        exact eLpNorm_indicator_le _ hS.nullMeasurableSet
 
 end MeasureTheory
 
