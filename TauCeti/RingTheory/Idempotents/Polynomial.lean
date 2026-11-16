@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
+import Mathlib.Algebra.Polynomial.Inductions
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.Idempotents.Jacobson
@@ -24,8 +25,9 @@ polynomial over `R ⧸ I` produce lifts of idempotents.
 
 For an idempotent `b` of a possibly noncommutative `R`-algebra, a polynomial `Q` satisfies
 `Q(b) b = Q(1) b` and `Q(b) (1 - b) = Q(0) (1 - b)` (`IsIdempotentElem.aeval_mul_self`,
-`IsIdempotentElem.aeval_mul_one_sub`). If an ideal `I` acts by zero on `B`, evaluation at elements
-of `B` sees only reductions modulo `I` (`Ideal.aeval_eq_of_map_eq`,
+`IsIdempotentElem.aeval_mul_one_sub`), and if `b` commutes with `u` and `Q(0) = 0`, then
+`Q(u b) = Q(u) b` (`IsIdempotentElem.aeval_mul_of_commute`). If an ideal `I` acts by zero on `B`,
+evaluation at elements of `B` sees only reductions modulo `I` (`Ideal.aeval_eq_of_map_eq`,
 `Ideal.algebraMap_eq_one_of_mk_eq_one`).
 -/
 
@@ -83,6 +85,42 @@ theorem aeval_mul_one_sub (hb : IsIdempotentElem b) (Q : R[X]) :
   rw [aeval_comp, map_sub, map_one, aeval_X, sub_sub_cancel, eval_comp, eval_sub, eval_one,
     eval_X, sub_self] at h
   exact h
+
+end IsIdempotentElem
+
+namespace IsIdempotentElem
+
+/-- For an idempotent `b` commuting with `u`, evaluating a polynomial `p` with `p(0) = 0` at
+`u * b` gives `p(u) * b`. -/
+theorem aeval_mul_of_commute {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B] {b u : B}
+    (hb : IsIdempotentElem b) (hub : Commute u b) {p : R[X]} (hp0 : p.coeff 0 = 0) :
+    aeval (u * b) p = aeval u p * b := by
+  have hmul_left (q : R[X]) : b * aeval (u * b) q = b * aeval u q := by
+    induction q using Polynomial.induction_on' with
+    | add q₁ q₂ h₁ h₂ => rw [map_add, map_add, mul_add, mul_add, h₁, h₂]
+    | monomial n a =>
+      rw [aeval_monomial, aeval_monomial]
+      cases n with
+      | zero => simp only [pow_zero]
+      | succ n =>
+        rw [hub.mul_pow, hb.pow_succ_eq, ← mul_assoc, ← Algebra.commutes a b,
+          mul_assoc (algebraMap R B a), ← mul_assoc b, ← (hub.pow_left (n + 1)).eq,
+          mul_assoc (u ^ (n + 1)), hb.eq, (hub.pow_left (n + 1)).eq,
+          ← mul_assoc (algebraMap R B a), Algebra.commutes a b, mul_assoc]
+  have hXp : X * p.divX = p := by
+    simpa only [hp0, map_zero, add_zero] using X_mul_divX_add p
+  have hcomm_divX : Commute (aeval u p.divX) b := by
+    induction p.divX using Polynomial.induction_on' with
+    | add q₁ q₂ h₁ h₂ => rw [map_add]; exact h₁.add_left h₂
+    | monomial n a =>
+      rw [aeval_monomial]
+      exact Commute.mul_left (Algebra.commutes a b) (hub.pow_left n)
+  calc aeval (u * b) p = aeval (u * b) (X * p.divX) := by rw [hXp]
+    _ = u * (b * aeval (u * b) p.divX) := by rw [map_mul, aeval_X, mul_assoc]
+    _ = u * (b * aeval u p.divX) := by rw [hmul_left]
+    _ = u * (aeval u p.divX * b) := by rw [hcomm_divX.eq]
+    _ = aeval u (X * p.divX) * b := by rw [map_mul, aeval_X, mul_assoc]
+    _ = aeval u p * b := by rw [hXp]
 
 end IsIdempotentElem
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
@@ -13,8 +14,9 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 A bounded unital ring homomorphism `f : R →+* S` extends the matrix of an operator
 `C₀(J, R) →L[R] C₀(I, R)` coefficientwise to an operator over `S`. Null columns and a
 uniform entry bound ensure that the extended matrix defines a continuous linear map.
-The construction respects identities, addition, scalar multiplication and composition,
-including composition of coefficient homomorphisms. Its matrix characterizes it uniquely.
+The construction respects identities, addition, scalar multiplication, composition and
+polynomial evaluation, including composition of coefficient homomorphisms. Its matrix
+characterizes it uniquely.
 Over Tate target scalars it is Lipschitz in operator norm, so it preserves operator-norm sums
 and sends the closure of the polynomials in an endomorphism `u` into the closure of the
 polynomials in its extension.
@@ -170,6 +172,21 @@ theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
+
+/-- Coefficient extension commutes with polynomial evaluation on endomorphisms. -/
+@[simp]
+theorem mapCoeffs_aeval (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (p : Polynomial R) :
+    (Polynomial.aeval u p).mapCoeffs f hf =
+      Polynomial.aeval (u.mapCoeffs f hf) (p.map f) := by
+  let ψ : (C₀(J, R) →L[R] C₀(J, R)) →+* (C₀(J, S) →L[S] C₀(J, S)) :=
+    { toFun v := v.mapCoeffs f hf
+      map_one' := mapCoeffs_one f hf
+      map_mul' v w := mapCoeffs_mul v w f hf
+      map_zero' := mapCoeffs_zero f hf
+      map_add' v w := mapCoeffs_add v w f hf }
+  exact Polynomial.map_aeval_eq_aeval_map (ψ := ψ) (φ := f)
+    (RingHom.ext fun r ↦ by simp [ψ, Algebra.algebraMap_eq_smul_one]) p u
 
 section Topology
 
