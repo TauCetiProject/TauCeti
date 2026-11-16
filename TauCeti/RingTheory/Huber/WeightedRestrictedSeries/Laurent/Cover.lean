@@ -70,8 +70,7 @@ theorem laurentCoverLeIdeal_def (f : A) :
     laurentCoverLeIdeal A f =
       Ideal.span
         {weightedC _ isWeightFamily_one_weight f -
-          weightedX _ isWeightFamily_one_weight 0} :=
-  by rfl
+          weightedX _ isWeightFamily_one_weight 0} := by rfl
 
 /-- Membership in the principal relation ideal defining the piece `{|f| ≤ 1}`. -/
 theorem mem_laurentCoverLeIdeal_iff (f : A) {a : R₁} :
@@ -89,8 +88,7 @@ theorem laurentCoverGeIdeal_def (f : A) :
     laurentCoverGeIdeal A f =
       Ideal.span
         {1 - weightedC _ isWeightFamily_one_weight f *
-          weightedX _ isWeightFamily_one_weight 0} :=
-  by rfl
+          weightedX _ isWeightFamily_one_weight 0} := by rfl
 
 /-- Membership in the principal relation ideal defining the piece `{|f| ≥ 1}`. -/
 theorem mem_laurentCoverGeIdeal_iff (f : A) {a : R₁} :
@@ -109,8 +107,7 @@ noncomputable def laurentCoverOverlapIdeal (f : A) : Ideal R± :=
 theorem laurentCoverOverlapIdeal_def (f : A) :
     laurentCoverOverlapIdeal A f =
       Ideal.span {algebraMap A R± f -
-        Ideal.Quotient.mk (laurentIdeal A) (weightedX _ isWeightFamily_one_weight 0)} :=
-  by rfl
+        Ideal.Quotient.mk (laurentIdeal A) (weightedX _ isWeightFamily_one_weight 0)} := by rfl
 
 /-- Membership in the principal relation ideal defining the overlap. -/
 theorem mem_laurentCoverOverlapIdeal_iff (f : A) {a : R±} :
@@ -198,8 +195,7 @@ theorem laurentCoverLeToOverlap_mk (f : A) (a : R₁) :
       Ideal.Quotient.mk (laurentCoverOverlapIdeal A f)
         (Ideal.Quotient.mk (laurentIdeal A)
           (weightedRename Fin.castSuccEmb isWeightFamily_one_weight
-            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
-  by
+            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) := by
     have h := DFunLike.congr_fun
       (Ideal.Quotient.liftₐ_comp (laurentCoverLeIdeal A f) (laurentCoverLeMap A f)
         (fun _ ha ↦ (RingHom.mem_ker).1 (laurentCoverLeIdeal_le_ker A f ha))) a
@@ -218,8 +214,7 @@ theorem laurentCoverGeToOverlap_mk (f : A) (a : R₁) :
       Ideal.Quotient.mk (laurentCoverOverlapIdeal A f)
         (Ideal.Quotient.mk (laurentIdeal A)
           (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight
-            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
-  by
+            isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) := by
     have h := DFunLike.congr_fun
       (Ideal.Quotient.liftₐ_comp (laurentCoverGeIdeal A f) (laurentCoverGeMap A f)
         (fun _ ha ↦ (RingHom.mem_ker).1 (laurentCoverGeIdeal_le_ker A f ha))) a
@@ -307,7 +302,6 @@ private theorem laurentDiff_pieceRelations (f : A) (u : R₂) :
   rw [hu']
   simp only [map_add, map_mul]
   have hXY := mk_weightedX_zero_mul_mk_weightedX_one A
-  ring_nf at hXY ⊢
   linear_combination hXY *
     Ideal.Quotient.mk (laurentIdeal A)
       (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight

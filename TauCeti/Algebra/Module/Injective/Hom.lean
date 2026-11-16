@@ -13,8 +13,9 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 
 A map into an injective module factors through `f` exactly when it vanishes on
 `ker f`. In particular, precomposition with `f` has image the kernel of restriction
-to `ker f`. This applies to presenting maps that are not monomorphisms, as occur in
-projective presentations over non-hereditary algebras. As a further consequence, an
+to `ker f`, so restriction identifies its cokernel with `Hom(ker f, I)`
+(`LinearMap.cokernelEquivDualKer`). This applies to presenting maps that are not monomorphisms,
+as occur in projective presentations over non-hereditary algebras. As a further consequence, an
 annihilator inclusion characterizes the existence of a linear map with one prescribed value.
 -/
 
@@ -52,6 +53,23 @@ theorem range_lcomp_eq_ker_lcomp_ker_subtype (f : P →ₗ[R] Q) :
   ext g
   simp only [mem_range, mem_ker, lcomp_apply', exists_comp_eq_iff_ker_le,
     le_ker_iff_comp_subtype_eq_zero]
+
+/-- **`Hom` into an injective module turns kernels into cokernels.** Restriction to `ker f`
+identifies the cokernel of precomposition with `f` with `Hom_R(ker f, I)`. It is surjective
+since `I` is injective, and its kernel is the image of precomposition with `f`. -/
+noncomputable def cokernelEquivDualKer {S : Type*} [Ring S] [Module S I] [SMulCommClass R S I]
+    (f : P →ₗ[R] Q) : ((P →ₗ[R] I) ⧸ range (f.lcomp S I)) ≃ₗ[S] (ker f →ₗ[R] I) :=
+  Submodule.quotEquivOfEq _ _ (range_lcomp_eq_ker_lcomp_ker_subtype f) ≪≫ₗ
+    ((ker f).subtype.lcomp S I).quotKerEquivOfSurjective fun u ↦
+      Module.Injective.extension_property R I (ker f) P (ker f).subtype
+        (ker f).injective_subtype u
+
+@[simp]
+theorem cokernelEquivDualKer_mk {S : Type*} [Ring S] [Module S I] [SMulCommClass R S I]
+    (f : P →ₗ[R] Q) (u : P →ₗ[R] I) :
+    cokernelEquivDualKer (S := S) f (Submodule.Quotient.mk u) = u.comp (ker f).subtype := by
+  simp only [cokernelEquivDualKer, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk]
+  exact quotKerEquivOfSurjective_apply_mk _ _ u
 
 variable {N : Type*} [AddCommGroup N] [Module R N]
   [Module k N] [SMulCommClass R k N] [CompatibleSMul N I k R]

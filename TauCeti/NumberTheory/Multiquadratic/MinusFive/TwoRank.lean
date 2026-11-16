@@ -42,7 +42,7 @@ factors as `(-4) · 5` into two prime discriminants, so two rational primes rami
 `2-rank Cl = t - 1 = 1`. This corroborates `NumberField.classNumber ℚ(√-5) = 2` (`Cl ≅ ℤ/2ℤ`). -/
 theorem twoRank_eq_one_of_minpoly_eq_X_sq_add_five
     (hmin : minpoly ℤ θ = X ^ 2 - C (-5 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) = 1 := by
+    ClassGroup.twoRank (𝓞 K) = 1 := by
   have hsf : Squarefree (-5 : ℤ) := (Int.prime_iff_natAbs_prime.mpr (by decide)).squarefree
   have hs : ∀ P ∈ ({-4, 5} : Finset ℤ), IsPrimeDiscriminant P := by
     intro P hP
@@ -64,7 +64,7 @@ class-group `2`-rank `1`. Not `@[simp]`: the `@[simp]` lemma `twoRank_def` unfol
 side `twoRank _`, so this closed form is not in simp-normal form (`simpNF` rejects it), unlike the
 non-unfolded `classNumber` companion. -/
 theorem twoRank_adjoinRoot_sqrt_neg_five_eq_one :
-    TauCeti.ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (-5 : ℚ)))) = 1 := by
+    ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (-5 : ℚ)))) = 1 := by
   obtain ⟨θ, hmin, hgen⟩ := NumberField.exists_minpoly_eq_X_sq_add_five_and_adjoin_eq_top
   exact twoRank_eq_one_of_minpoly_eq_X_sq_add_five hmin hgen
 

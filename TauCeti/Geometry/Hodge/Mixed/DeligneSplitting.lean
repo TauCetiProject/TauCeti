@@ -202,7 +202,7 @@ theorem map_latticeConj_deligneSplitting (p q : ℤ) :
           ⨆ j : ℕ, mhs.F (q - (j : ℤ) - 1) ⊓ mhs.WC (p + q - (j : ℤ) - 2)) := by
   have hinj : Function.Injective (latticeConj hℂ) := (latticeConj_involutive hℂ).injective
   rw [deligneSplitting_def]
-  simp only [Submodule.map_inf _ hinj, Submodule.map_sup, Submodule.map_iSup, conjF_conjF,
+  simp only [Submodule.map_inf _ hinj, Submodule.map_sup, Submodule.map_iSup, map_conjF,
     ← conjF_def, WC_conj]
 
 end MixedHodgeStructure

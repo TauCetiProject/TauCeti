@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.HigherOrder
+import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Composition
 import TauCeti.Analysis.Sobolev.Wkp.ContDiffRepresentative
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 
 /-!
-# Smoothness of continuous weak solutions of semilinear equations
+# Smoothness of weak solutions of semilinear equations
 
 Let `Ω ⊆ ℝⁿ` be open with `n ≤ 3`, let `a` be a uniformly elliptic coefficient field whose entries
 are smooth on `Ω`, let `A` and `C` be smooth on `Ω` and let `Φ : ℝ → ℝ` be smooth. This file
@@ -28,7 +29,14 @@ and continuity means that `u` agrees almost everywhere on `Ω` with a function `
 Some a priori control of `u` is needed: for `u ∈ H¹(Ω)` the function `Φ(u)` need not even be
 locally integrable, and the weak form only makes sense once it is. Continuity is the form in which
 the first regularity step, which estimates the nonlinearity for the particular `Φ` at hand,
-provides this control. The model case is Taubes's reduced vortex equation
+provides this control.
+Alternatively, local square integrability of `A Φ(u) + C` gives continuity by De Giorgi's theorem,
+then a smooth representative by
+`UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunctionₗ_eq`.
+On relatively compact balls, density extends the test-function equation to all `H¹₀` tests,
+so the same bootstrap applies without a global integrability assumption. This is useful for
+exponential nonlinearities once exponential integrability has been established.
+The model case is Taubes's reduced vortex equation
 `Δw = h (exp (2w) - 1) / 8 + k` in the plane, the Euler–Lagrange equation of
 `TauCeti.Vortex.taubesFunctional`, whose weak solutions are continuous because Trudinger's
 inequality controls `exp (2w)`. In the weak form above it reads `a = 1`, `A = -h / 8`,
@@ -51,10 +59,17 @@ exactly when `W^{2,2} ⊆ C⁰`.
 
 * `TauCeti.PDE.UniformlyEllipticOn.contDiffOn_of_energyFormH1_eq`: a continuous weak solution of
   `-∂ᵢ(aⁱʲ ∂ⱼu) = A(x) Φ(u) + C(x)` in dimension at most three is smooth.
+* `TauCeti.PDE.UniformlyEllipticOn.contDiffOn_of_forall_energyFormH1_ofTestFunctionₗ_eq`: the
+  same regularity from the equation tested only against compactly supported smooth functions.
+* `UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunctionₗ_eq`:
+  local square integrability of the forcing gives a smooth representative of a semilinear weak
+  solution, without assuming continuity.
 
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.1 and §9.1.
+* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Theorems 8.22 and 8.24.
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Birkhäuser, 1980, Chapter III, §4.
 * C. H. Taubes, *Arbitrary N-vortex solutions to the first order Ginzburg–Landau equations*,
   Comm. Math. Phys. 72 (1980), 277–292.
@@ -63,7 +78,7 @@ exactly when `W^{2,2} ⊆ C⁰`.
 public section
 
 open MeasureTheory Metric Module Set TopologicalSpace
-open scoped ContDiff Topology
+open scoped ContDiff Distributions Topology
 
 namespace TauCeti
 
@@ -191,6 +206,83 @@ theorem UniformlyEllipticOn.contDiffOn_of_energyFormH1_eq [DecidableEq ι]
       · obtain ⟨U, hU⟩ := hstep hV hVΩ
         exact ⟨Wkp.lowerOrder (j + 2) U, by rwa [← Wkp.value_succ]⟩
   exact contDiffOn_infty.2 fun j => (key j).1
+
+/-- **Semilinear regularity from test functions.** In dimension at most three, let `a` be
+uniformly elliptic on `Ω` with smooth entries, and let `A`, `C` and `Φ` be smooth. Then a
+continuous representative of a weak solution of `-div(a ∇u) = A Φ(u) + C` is smooth. It
+suffices to test the equation against compactly supported smooth functions; no global
+integrability of the nonlinear forcing is required. -/
+theorem UniformlyEllipticOn.contDiffOn_of_forall_energyFormH1_ofTestFunctionₗ_eq [DecidableEq ι]
+    (hι : Fintype.card ι < 4) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ a x i j) Omega)
+    {A C : EuclideanSpace ℝ ι → ℝ} (hA : ContDiffOn ℝ ∞ A Omega) (hC : ContDiffOn ℝ ∞ C Omega)
+    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {u : W1p volume Omega 2} {w : EuclideanSpace ℝ ι → ℝ}
+    (hw : ContinuousOn w Omega)
+    (huw : (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] w)
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+      ∫ x in Omega, (A x * Φ (w x) + C x) * φ x) :
+    ContDiffOn ℝ ∞ w Omega := by
+  refine contDiffOn_of_locally_contDiffOn fun x hx ↦ ?_
+  obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
+  let B : Opens (EuclideanSpace ℝ ι) := ⟨ball x r, isOpen_ball⟩
+  have hBΩ : B ≤ Omega := ball_subset_closedBall.trans hrΩ
+  have haB := ha.mono_set hBΩ
+  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0)
+    (beta := 0) (gamma := 0) haB.upper_nonneg
+    ((continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦
+      ((hsmooth i j).continuousOn.mono hBΩ)).aestronglyMeasurable B.isOpen.measurableSet)
+    aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _ hy η ξ ↦ haB.upper_bound hy η ξ) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
+  have hf : MemLp (fun y ↦ A y * Φ (w y) + C y) 2 (volume.restrict B) :=
+    ContinuousOn.memLp_restrict_of_subset_isCompact
+      (((hA.continuousOn.mul (hΦ.continuous.comp_continuousOn hw)).add hC.continuousOn).mono hrΩ)
+      (isCompact_closedBall x r) B.isOpen.measurableSet ball_subset_closedBall 2
+  have huB := forall_energyFormH1_restrictL_eq_setIntegral hBΩ hcoeff hu hf
+  have hwB := haB.contDiffOn_of_energyFormH1_eq hι
+    (fun i j ↦ (hsmooth i j).mono hBΩ) (hA.mono hBΩ) (hC.mono hBΩ) hΦ (hw.mono hBΩ)
+    ((W1p.value_restrictL_ae hBΩ u).trans
+      (ae_restrict_of_ae_restrict_of_subset hBΩ huw)) huB
+  exact ⟨B, B.isOpen, mem_ball_self hr, hwB.mono inter_subset_right⟩
+
+/-- **Smooth representatives of semilinear weak solutions.** In dimension at most three,
+let `a` be uniformly elliptic with smooth entries, and let `A`, `C` and `Φ` be smooth. If
+`u ∈ H¹(Ω)` solves `-div(a ∇u) = A Φ(u) + C` against compactly supported smooth functions and
+the nonlinear forcing is square integrable on every compact subset of `Ω`, then `u` has a
+smooth representative on `Ω`. Continuity or boundedness of `u` is not assumed. -/
+theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunctionₗ_eq
+    [DecidableEq ι] (hι : Fintype.card ι < 4)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ a x i j) Omega)
+    {A C : EuclideanSpace ℝ ι → ℝ} (hA : ContDiffOn ℝ ∞ A Omega) (hC : ContDiffOn ℝ ∞ C Omega)
+    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {u : W1p volume Omega 2}
+    (hf : ∀ K, IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      MemLp (fun x ↦ A x * Φ (W1p.value u x) + C x) 2 (volume.restrict K))
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+      ∫ x in Omega, (A x * Φ (W1p.value u x) + C x) * φ x) :
+    ∃ w : EuclideanSpace ℝ ι → ℝ, ContDiffOn ℝ ∞ w Omega ∧
+      (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] w := by
+  classical
+  cases isEmpty_or_nonempty ι with
+  | inl h =>
+    -- A zero-dimensional model space is a singleton, so every function is constant.
+    have heq : (W1p.value u : EuclideanSpace ℝ ι → ℝ) = fun _ ↦ W1p.value u 0 :=
+      funext fun y ↦ congrArg (W1p.value u) (Subsingleton.elim y 0)
+    exact ⟨W1p.value u, heq ▸ contDiffOn_const, Filter.EventuallyEq.rfl⟩
+  | inr h =>
+    let w := TauCeti.MeasureTheory.preciseRepresentative volume
+      (W1p.value u : EuclideanSpace ℝ ι → ℝ)
+    have hmeas : AEStronglyMeasurable a (volume.restrict Omega) :=
+      (continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ (hsmooth i j).continuousOn)
+        |>.aestronglyMeasurable Omega.isOpen.measurableSet
+    have hw : ContinuousOn w Omega := continuousOn_preciseRepresentative_of_forall_memLp
+      (r := 2) le_rfl (by exact_mod_cast hι) ha hmeas hf hu
+    have huw : (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] w :=
+      W1p.ae_eq_preciseRepresentative u
+    refine ⟨w, ha.contDiffOn_of_forall_energyFormH1_ofTestFunctionₗ_eq hι hsmooth hA hC hΦ
+      hw huw (fun φ ↦ (hu φ).trans ?_), huw⟩
+    exact integral_congr_ae (huw.mono fun x hx ↦ by dsimp only; rw [hx])
 
 end PDE
 
