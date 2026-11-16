@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
 public import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Bernstein numbers
@@ -29,6 +30,15 @@ injective on `M`, so `A(M)` again has rank `n + 1`. An operator of rank at most 
 nonzero vector of every subspace of rank `n + 1`, and the identity has gain `1` on every nonzero
 subspace.
 
+Unlike approximation, Gelfand, Kolmogorov and Hilbert numbers, the Bernstein numbers are neither
+multiplicative nor additive over `ℝ` or `ℂ`. On a finite index type `ι`, the identity map
+`ℓ₂(ι) → ℓ_∞(ι)` has `bₙ ≤ (√(n + 1))⁻¹` because every `(n + 1)`-dimensional subspace of `ℓ_∞(ι)`
+contains a unit-ball vector attaining norm `1` on at least `n + 1` coordinates, while over `ℝ` or
+`ℂ` the reverse identity `ℓ_∞(ι) → ℓ₂(ι)` has `bₙ ≤ √(card ι / (n + 1))` by testing the
+reproducing-kernel vectors of an orthonormal basis at each coordinate. Factoring `id : ℓ₂³ → ℓ₂³`
+through `ℓ_∞³` at `m = n = 1` refutes multiplicativity, and Pietsch's `71`-dimensional block
+anti-diagonal combination on `ℓ₂⁷¹ × ℓ_∞⁷¹` at `m = n = 35` refutes additivity.
+
 The source spaces are normed, since the gain divides by the norm of the source vector; the
 target spaces may be seminormed.
 
@@ -41,15 +51,25 @@ target spaces may be seminormed.
   every subspace of rank `n + 1` bounds `bₙ(T)` from above.
 * `ContinuousLinearMap.bernsteinNumber_comp_comp_le`: `bₙ(B T A) ≤ ‖B‖ bₙ(T) ‖A‖`.
 * `ContinuousLinearMap.bernsteinNumber_id`: `bₙ(id_E) = 1` when `n` is below the rank of `E`.
+* `ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_le`:
+  `bₙ(ℓ₂(ι) → ℓ_∞(ι)) ≤ (√(n + 1))⁻¹`.
+* `ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_symm_le`:
+  `bₙ(ℓ_∞(ι) → ℓ₂(ι)) ≤ √(card ι / (n + 1))` over `ℝ` or `ℂ`.
 * `TauCeti.SNumbers.isStrictSNumberSequence_bernstein`: the Bernstein numbers form a strict
   s-number sequence.
+* `TauCeti.SNumbers.not_multiplicative_bernstein`: the Bernstein family is not multiplicative over
+  `ℝ` or `ℂ`.
+* `TauCeti.SNumbers.not_additive_bernstein`: the Bernstein family is not additive over `ℝ` or `ℂ`.
 
 ## References
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4,
   Theorems 4.5 and 4.6.
+* A. Pietsch, *Bad properties of the Bernstein numbers*, Studia Math. 184 (2008), 263–269,
+  Theorem 3.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
-  `SNumbers/Bernstein.lean`: an earlier Lean formalization of the Bernstein numbers.
+  `SNumbers/Bernstein.lean` and `SNumbers/Examples/IdentityL2Linfty.lean`: an earlier Lean
+  formalization of the Bernstein numbers and the `ℓ₂ ↔ ℓ_∞` identity bounds.
 -/
 
 public section
@@ -257,11 +277,136 @@ theorem bernsteinNumber_id {n : ℕ} (hn : (n : Cardinal) < Module.rank 𝕜 E) 
   exact (ContinuousLinearMap.id 𝕜 E).le_bernsteinNumber_of_rank_eq (by exact_mod_cast hM)
     fun x _ ↦ by simp
 
+/-- **Upper bound for `ℓ₂ → ℓ_∞`.** On a finite index type `ι`, the identity map
+`EuclideanSpace 𝕜 ι →L[𝕜] (ι → 𝕜)` has `n`-th Bernstein number at most `(√(n + 1))⁻¹`: every
+`(n + 1)`-dimensional subspace contains a sup-norm unit-ball vector attaining norm `1` on at
+least `n + 1` coordinates, whose `ℓ₂` norm is at least `√(n + 1)`. -/
+theorem bernsteinNumber_piLp_continuousLinearEquiv_le
+    {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Fintype ι] (n : ℕ) :
+    (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜) :
+      EuclideanSpace 𝕜 ι →L[𝕜] ι → 𝕜).bernsteinNumber n ≤ (NNReal.sqrt (n + 1))⁻¹ := by
+  classical
+  let e : EuclideanSpace 𝕜 ι ≃L[𝕜] ι → 𝕜 := PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜)
+  refine bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_
+  let M' : Submodule 𝕜 (ι → 𝕜) := M.map e.toLinearEquiv.toLinearMap
+  have hrankM' : Module.rank 𝕜 M' = n + 1 :=
+    (M.equivMapOfInjective _ e.injective).rank_eq.symm.trans hM
+  have hfinM' : Module.finrank 𝕜 M' = n + 1 := by
+    rw [Module.finrank, hrankM', ← Nat.cast_add_one, Cardinal.toNat_natCast]
+  obtain ⟨y, hyM', hy1, hcard⟩ := M'.exists_mem_norm_le_one_le_ncard_norm_eq_one
+  rw [hfinM'] at hcard
+  obtain ⟨x, hxM, rfl⟩ := hyM'
+  let S : Set ι := {i : ι | ‖e x i‖ = 1}
+  have hcardS : n + 1 ≤ S.ncard := hcard
+  obtain ⟨i₀, hi₀⟩ := S.nonempty_of_ncard_ne_zero ((Nat.succ_pos n).trans_le hcardS).ne'
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    simp [S] at hi₀
+  have hex : ‖(e : EuclideanSpace 𝕜 ι →L[𝕜] ι → 𝕜) x‖₊ ≤ 1 := by
+    exact_mod_cast (pi_norm_le_iff_of_nonneg zero_le_one).mpr hy1
+  let s : Finset ι := S.toFinset
+  have hs : s.card = S.ncard := (Set.ncard_eq_toFinset_card' S).symm
+  have hsq : (n + 1 : ℝ≥0) ≤ ‖x‖₊ ^ 2 := by
+    rw [PiLp.nnNorm_eq_of_L2, NNReal.sq_sqrt]
+    calc (n + 1 : ℝ≥0) ≤ (s.card : ℝ≥0) := by exact_mod_cast hs ▸ hcardS
+      _ = ∑ _i ∈ s, (1 : ℝ≥0) := by simp
+      _ ≤ ∑ i ∈ s, ‖x i‖₊ ^ 2 := Finset.sum_le_sum fun i hi ↦ by
+          have hi1 : ‖x i‖₊ = 1 := Subtype.ext (Set.mem_toFinset.mp hi)
+          simp [hi1]
+      _ ≤ ∑ i : ι, ‖x i‖₊ ^ 2 := Finset.sum_le_univ_sum_of_nonneg fun _ ↦ zero_le
+  have hsqrt : NNReal.sqrt (n + 1) ≤ ‖x‖₊ := NNReal.sqrt_le_iff_le_sq.mpr hsq
+  have hpos : 0 < NNReal.sqrt (n + 1) := NNReal.sqrt_pos.mpr (by positivity)
+  refine ⟨x, hxM, hx0, hex.trans ?_⟩
+  calc (1 : ℝ≥0)
+      = (NNReal.sqrt (n + 1))⁻¹ * NNReal.sqrt (n + 1) := (inv_mul_cancel₀ hpos.ne').symm
+    _ ≤ (NNReal.sqrt (n + 1))⁻¹ * ‖x‖₊ := by gcongr
+
+/-- **Upper bound for `ℓ_∞ → ℓ₂`.** On a finite index type `ι` over `ℝ` or `ℂ`, the identity map
+`(ι → 𝕜) →L[𝕜] EuclideanSpace 𝕜 ι` has `n`-th Bernstein number at most `√(card ι / (n + 1))`:
+summing the reproducing-kernel vectors of an orthonormal basis of an `(n + 1)`-dimensional subspace
+across `k : ι` bounds the squared coercivity constant by `card ι / (n + 1)`. -/
+theorem bernsteinNumber_piLp_continuousLinearEquiv_symm_le
+    {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] (n : ℕ) :
+    ((PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜)).symm :
+      (ι → 𝕜) →L[𝕜] EuclideanSpace 𝕜 ι).bernsteinNumber n ≤
+      NNReal.sqrt (Fintype.card ι / (n + 1)) := by
+  let e : EuclideanSpace 𝕜 ι ≃L[𝕜] ι → 𝕜 := PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜)
+  refine bernsteinNumber_le_iff.mpr fun M hM d hd ↦ ?_
+  let M₂ : Submodule 𝕜 (EuclideanSpace 𝕜 ι) := M.map e.symm.toLinearEquiv.toLinearMap
+  have hrankM₂ : Module.rank 𝕜 M₂ = n + 1 :=
+    (M.equivMapOfInjective _ e.symm.injective).rank_eq.symm.trans hM
+  have : FiniteDimensional 𝕜 M₂ := Module.rank_lt_aleph0_iff.mp
+    (by rw [hrankM₂, ← Nat.cast_add_one]; exact Cardinal.natCast_lt_aleph0)
+  have hfinM₂ : Module.finrank 𝕜 M₂ = n + 1 := by
+    rw [Module.finrank, hrankM₂, ← Nat.cast_add_one, Cardinal.toNat_natCast]
+  let v := stdOrthonormalBasis 𝕜 M₂
+  let c (k : ι) : EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 M₂)) :=
+    WithLp.toLp 2 fun j ↦ starRingEnd 𝕜 ((v j : EuclideanSpace 𝕜 ι) k)
+  let w (k : ι) : M₂ := v.repr.symm (c k)
+  let x (k : ι) : EuclideanSpace 𝕜 ι := w k
+  have hexM (k : ι) : e (x k) ∈ M := by
+    obtain ⟨y, hyM, hy⟩ := (w k).2
+    have hyeq : e (x k) = y := by
+      change e (w k) = y
+      rw [← hy]
+      exact e.apply_symm_apply y
+    exact hyeq ▸ hyM
+  have hx_norm (k : ι) : ‖x k‖ ^ 2 = ∑ j, ‖(v j : EuclideanSpace 𝕜 ι) k‖ ^ 2 := by
+    change ‖(w k : EuclideanSpace 𝕜 ι)‖ ^ 2 = _
+    rw [Submodule.norm_coe, show ‖w k‖ = ‖c k‖ from v.repr.symm.norm_map (c k),
+      PiLp.norm_sq_eq_of_L2]
+    simp [c]
+  have hx_coord (k : ι) : ‖x k‖ ^ 2 ≤ ‖e (x k)‖ := by
+    have hsum_w : x k = ∑ j, (c k) j • (v j : EuclideanSpace 𝕜 ι) := by
+      have hw : w k = ∑ j, (c k) j • v j := (v.sum_repr_symm (c k)).symm
+      exact (congrArg Subtype.val hw).trans (Submodule.coe_sum M₂ _ _)
+    have heval : e (x k) k = ((‖x k‖ ^ 2 : ℝ) : 𝕜) := by
+      calc e (x k) k
+          = e (∑ j, (c k) j • (v j : EuclideanSpace 𝕜 ι)) k := by rw [hsum_w]
+        _ = ∑ j, ((‖(v j : EuclideanSpace 𝕜 ι) k‖ ^ 2 : ℝ) : 𝕜) := by
+            rw [map_sum, Finset.sum_apply]
+            refine Finset.sum_congr rfl fun j _ ↦ ?_
+            simp [c, e, RCLike.conj_mul]
+        _ = ((‖x k‖ ^ 2 : ℝ) : 𝕜) := by rw [hx_norm k]; push_cast; rfl
+    calc ‖x k‖ ^ 2 = |‖x k‖ ^ 2| := (abs_of_nonneg (sq_nonneg _)).symm
+      _ = ‖((‖x k‖ ^ 2 : ℝ) : 𝕜)‖ := (RCLike.norm_ofReal _).symm
+      _ = ‖e (x k) k‖ := by rw [heval]
+      _ ≤ ‖e (x k)‖ := norm_le_pi_norm (e (x k)) k
+  have hdk (k : ι) : (d : ℝ) ^ 2 * ‖x k‖ ^ 2 ≤ 1 := by
+    have hsymm : e.symm (e (x k)) = x k := e.symm_apply_apply (x k)
+    have hd_real : (d : ℝ) * ‖e (x k)‖ ≤ ‖x k‖ := by
+      have h := NNReal.coe_le_coe.mpr (hd (e (x k)) (hexM k))
+      simpa [e] using h.trans_eq (congrArg norm hsymm)
+    have hdx : (d : ℝ) * ‖x k‖ ^ 2 ≤ ‖x k‖ :=
+      (mul_le_mul_of_nonneg_left (hx_coord k) d.2).trans hd_real
+    rcases eq_or_lt_of_le (norm_nonneg (x k)) with h0 | hpos
+    · rw [← h0]; norm_num
+    · have h1 : (d : ℝ) * ‖x k‖ ≤ 1 :=
+        le_of_mul_le_mul_right (by simpa [sq, mul_assoc] using hdx) hpos
+      calc (d : ℝ) ^ 2 * ‖x k‖ ^ 2 = ((d : ℝ) * ‖x k‖) ^ 2 := by ring
+        _ ≤ 1 ^ 2 := pow_le_pow_left₀ (by positivity) h1 2
+        _ = 1 := one_pow 2
+  have hsum_norm : ∑ k : ι, ‖x k‖ ^ 2 = (n + 1 : ℝ) := by
+    simp_rw [hx_norm]
+    rw [Finset.sum_comm]
+    have hv1 : ∀ j, ∑ k : ι, ‖(v j : EuclideanSpace 𝕜 ι) k‖ ^ 2 = 1 := fun j ↦ by
+      rw [← PiLp.norm_sq_eq_of_L2, Submodule.norm_coe, v.orthonormal.1 j, one_pow]
+    simp [hv1, hfinM₂]
+  have hd_sum_real : (d : ℝ) ^ 2 * (n + 1 : ℝ) ≤ Fintype.card ι := by
+    calc (d : ℝ) ^ 2 * (n + 1 : ℝ) = (d : ℝ) ^ 2 * ∑ k : ι, ‖x k‖ ^ 2 := by rw [hsum_norm]
+      _ = ∑ k : ι, (d : ℝ) ^ 2 * ‖x k‖ ^ 2 := Finset.mul_sum _ _ _
+      _ ≤ ∑ _k : ι, (1 : ℝ) := Finset.sum_le_sum fun k _ ↦ hdk k
+      _ = Fintype.card ι := by simp
+  have hd_sum : d ^ 2 * (n + 1 : ℝ≥0) ≤ Fintype.card ι := by exact_mod_cast hd_sum_real
+  exact NNReal.le_sqrt_iff_sq_le.mpr ((le_div_iff₀ (by positivity)).mpr hd_sum)
+
 end ContinuousLinearMap
 
 universe u
 
 namespace TauCeti.SNumbers
+
+section NontriviallyNormedField
 
 variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 
@@ -281,5 +426,138 @@ theorem isStrictSNumberSequence_bernstein : IsStrictSNumberSequence (bernstein (
     (fun S T n ↦ S.bernsteinNumber_add_le T n) (fun B T A n ↦ B.bernsteinNumber_comp_comp_le T A n)
     ContinuousLinearMap.bernsteinNumber_eq_zero_of_rank_le
     fun _ hn ↦ ContinuousLinearMap.bernsteinNumber_id hn
+
+/-- Bernstein numbers satisfy the s-number axioms over every nontrivially normed field. -/
+theorem isSNumberSequence_bernstein : IsSNumberSequence (bernstein (𝕜 := 𝕜)) :=
+  isStrictSNumberSequence_bernstein.toIsSNumberSequence
+
+end NontriviallyNormedField
+
+/-- **Bernstein numbers are not multiplicative.** Over `ℝ` or `ℂ`, the factorization
+`id : ℓ₂³ → ℓ_∞³ → ℓ₂³` gives
+`1 = b₂(id) > √(3 / 2) · (√2)⁻¹ ≥ b₁(ℓ_∞³ → ℓ₂³) b₁(ℓ₂³ → ℓ_∞³)`. -/
+theorem not_multiplicative_bernstein {𝕜 : Type u} [RCLike 𝕜] :
+    ¬ Multiplicative (bernstein (𝕜 := 𝕜)) := by
+  intro hmul
+  let e : EuclideanSpace 𝕜 (Fin 3) ≃L[𝕜] (Fin 3 → 𝕜) :=
+    PiLp.continuousLinearEquiv 2 𝕜 (fun _ : Fin 3 ↦ 𝕜)
+  let T : EuclideanSpace 𝕜 (Fin 3) →L[𝕜] (Fin 3 → 𝕜) := e
+  let S : (Fin 3 → 𝕜) →L[𝕜] EuclideanSpace 𝕜 (Fin 3) := e.symm
+  have hcomp : S ∘L T = ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin 3)) := by
+    ext x; simp [S, T]
+  have hid : bernstein (S ∘L T) (1 + 1) = 1 := by
+    rw [hcomp]
+    exact isStrictSNumberSequence_bernstein.normalize 2
+  have hT : bernstein T 1 ≤ (NNReal.sqrt 2)⁻¹ := by
+    simpa [T, one_add_one_eq_two] using
+      ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_le (𝕜 := 𝕜) (ι := Fin 3) 1
+  have hS : bernstein S 1 ≤ NNReal.sqrt (3 / 2) := by
+    simpa [S, one_add_one_eq_two] using
+      ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_symm_le
+        (𝕜 := 𝕜) (ι := Fin 3) 1
+  have hle : (1 : ℝ≥0) ≤ NNReal.sqrt (3 / 2) * (NNReal.sqrt 2)⁻¹ :=
+    hid ▸ (hmul S T 1 1).trans (mul_le_mul' hS hT)
+  have hsq : (1 : ℝ≥0) ^ 2 ≤ (NNReal.sqrt (3 / 2) * (NNReal.sqrt 2)⁻¹) ^ 2 :=
+    pow_le_pow_left₀ zero_le hle 2
+  rw [one_pow, mul_pow, inv_pow, NNReal.sq_sqrt, NNReal.sq_sqrt] at hsq
+  have hsq_real : (1 : ℝ) ≤ (3 : ℝ) / 2 * ((2 : ℝ)⁻¹) := by exact_mod_cast hsq
+  norm_num at hsq_real
+
+/-- **Bernstein numbers are not additive** (Pietsch 2008, Theorem 3). Over `ℝ` or `ℂ`, a block
+anti-diagonal sum of `ℓ₂⁷¹ → ℓ_∞⁷¹` and `(9 : 𝕜)⁻¹` times `ℓ_∞⁷¹ → ℓ₂⁷¹` on `ℓ₂⁷¹ × ℓ_∞⁷¹` acts as
+scalar multiplication by `(3 : 𝕜)⁻¹` on a `71`-dimensional graph subspace, giving
+`b₇₀(S + T) ≥ 3⁻¹` while `b₃₅(S) + b₃₅(T) ≤ 6⁻¹ + 9⁻¹ √(71 / 36) < 3⁻¹`. -/
+theorem not_additive_bernstein {𝕜 : Type u} [RCLike 𝕜] :
+    ¬ Additive (bernstein (𝕜 := 𝕜)) := by
+  intro hadd
+  let E₂ := EuclideanSpace 𝕜 (Fin 71)
+  let Einf := Fin 71 → 𝕜
+  let e : E₂ ≃L[𝕜] Einf := PiLp.continuousLinearEquiv 2 𝕜 (fun _ : Fin 71 ↦ 𝕜)
+  let T₀ : E₂ →L[𝕜] Einf := e
+  let S₀ : Einf →L[𝕜] E₂ := e.symm
+  let S : (E₂ × Einf) →L[𝕜] (E₂ × Einf) :=
+    (ContinuousLinearMap.inr 𝕜 E₂ Einf) ∘L T₀ ∘L (ContinuousLinearMap.fst 𝕜 E₂ Einf)
+  let T₁ : (E₂ × Einf) →L[𝕜] (E₂ × Einf) :=
+    (ContinuousLinearMap.inl 𝕜 E₂ Einf) ∘L S₀ ∘L (ContinuousLinearMap.snd 𝕜 E₂ Einf)
+  let T : (E₂ × Einf) →L[𝕜] (E₂ × Einf) := (9 : 𝕜)⁻¹ • T₁
+  have hsqrt36 : NNReal.sqrt (35 + 1) = 6 := NNReal.sqrt_eq_iff_eq_sq.mpr (by norm_num)
+  have hinr : ‖ContinuousLinearMap.inr 𝕜 E₂ Einf‖₊ ≤ 1 := by
+    exact_mod_cast ContinuousLinearMap.norm_inr_le_one 𝕜 E₂ Einf
+  have hfst : ‖ContinuousLinearMap.fst 𝕜 E₂ Einf‖₊ ≤ 1 :=
+    ContinuousLinearMap.opNNNorm_le_bound _ 1 fun p ↦ by
+      simp only [ContinuousLinearMap.coe_fst', one_mul]
+      exact_mod_cast (le_max_left ‖p.1‖ ‖p.2‖ : ‖p.1‖ ≤ ‖p‖)
+  have hinl : ‖ContinuousLinearMap.inl 𝕜 E₂ Einf‖₊ ≤ 1 := by
+    exact_mod_cast ContinuousLinearMap.norm_inl_le_one 𝕜 E₂ Einf
+  have hsnd : ‖ContinuousLinearMap.snd 𝕜 E₂ Einf‖₊ ≤ 1 :=
+    ContinuousLinearMap.opNNNorm_le_bound _ 1 fun p ↦ by
+      simp only [ContinuousLinearMap.coe_snd', one_mul]
+      exact_mod_cast (le_max_right ‖p.1‖ ‖p.2‖ : ‖p.2‖ ≤ ‖p‖)
+  have hS : bernstein S 35 ≤ 6⁻¹ := by
+    have hT₀ : T₀.bernsteinNumber 35 ≤ 6⁻¹ := by
+      simpa [T₀, hsqrt36] using
+        ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_le
+          (𝕜 := 𝕜) (ι := Fin 71) 35
+    calc bernstein S 35
+        ≤ ‖ContinuousLinearMap.inr 𝕜 E₂ Einf‖₊ * T₀.bernsteinNumber 35 *
+            ‖ContinuousLinearMap.fst 𝕜 E₂ Einf‖₊ :=
+          ContinuousLinearMap.bernsteinNumber_comp_comp_le _ _ _ 35
+      _ ≤ 1 * 6⁻¹ * 1 := mul_le_mul' (mul_le_mul' hinr hT₀) hfst
+      _ = 6⁻¹ := by norm_num
+  have hT : bernstein T 35 ≤ 9⁻¹ * NNReal.sqrt (71 / 36) := by
+    have hS₀ : S₀.bernsteinNumber 35 ≤ NNReal.sqrt (71 / 36) := by
+      have h := ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_symm_le
+        (𝕜 := 𝕜) (ι := Fin 71) 35
+      convert h using 2
+      norm_num
+    have hT₁ : bernstein T₁ 35 ≤ NNReal.sqrt (71 / 36) := by
+      calc bernstein T₁ 35
+          ≤ ‖ContinuousLinearMap.inl 𝕜 E₂ Einf‖₊ * S₀.bernsteinNumber 35 *
+              ‖ContinuousLinearMap.snd 𝕜 E₂ Einf‖₊ :=
+            ContinuousLinearMap.bernsteinNumber_comp_comp_le _ _ _ 35
+        _ ≤ 1 * NNReal.sqrt (71 / 36) * 1 := mul_le_mul' (mul_le_mul' hinl hS₀) hsnd
+        _ = NNReal.sqrt (71 / 36) := by simp
+    have h9 : ‖(9 : 𝕜)⁻¹‖₊ = (9 : ℝ≥0)⁻¹ := Subtype.ext (by simp)
+    rw [show bernstein T 35 = ‖(9 : 𝕜)⁻¹‖₊ * bernstein T₁ 35 from
+      isSNumberSequence_bernstein.smul (9 : 𝕜)⁻¹ T₁ 35, h9]
+    gcongr
+  -- Restrict `S + T` to the `71`-dimensional graph `{(x, 3 e x)}`, where it acts as
+  -- `(3 : 𝕜)⁻¹ • ·`.
+  let φ : E₂ →ₗ[𝕜] E₂ × Einf := LinearMap.id.prod ((3 : 𝕜) • e.toLinearEquiv.toLinearMap)
+  have hφ_inj : Function.Injective φ := fun _ _ hxy ↦ congrArg Prod.fst hxy
+  let M : Submodule 𝕜 (E₂ × Einf) := LinearMap.range φ
+  have hrankM : Module.rank 𝕜 M = (35 + 35 : ℕ) + 1 := by
+    have hφ_rank : Module.rank 𝕜 M = Module.rank 𝕜 E₂ :=
+      Cardinal.lift_inj.mp (lift_rank_range_of_injective φ hφ_inj)
+    rw [hφ_rank, e.toLinearEquiv.rank_eq, ← Module.finrank_eq_rank, Module.finrank_pi,
+      Fintype.card_fin]
+    norm_num
+  have h3 : ‖(3 : 𝕜)⁻¹‖₊ = (3 : ℝ≥0)⁻¹ := Subtype.ext (by simp)
+  have hST : (3 : ℝ≥0)⁻¹ ≤ bernstein (S + T) (35 + 35) := by
+    refine (S + T).le_bernsteinNumber_of_rank_eq hrankM ?_
+    rintro _ ⟨x, rfl⟩
+    have hact : (S + T) (φ x) = (3 : 𝕜)⁻¹ • φ x := by
+      apply Prod.ext
+      · change (0 : E₂) + (9 : 𝕜)⁻¹ • S₀ ((3 : 𝕜) • e x) = (3 : 𝕜)⁻¹ • x
+        rw [zero_add, map_smul, show S₀ (e x) = x from e.symm_apply_apply x, smul_smul]
+        congr 1
+        norm_num
+      · change e x + (9 : 𝕜)⁻¹ • (0 : Einf) = (3 : 𝕜)⁻¹ • (3 : 𝕜) • e x
+        rw [smul_zero, add_zero, smul_smul]
+        symm
+        convert one_smul 𝕜 (e x)
+        norm_num
+    rw [hact, nnNorm_smul, h3]
+  have h1 : (3 : ℝ≥0)⁻¹ ≤ 6⁻¹ + 9⁻¹ * NNReal.sqrt (71 / 36) :=
+    hST.trans ((hadd S T 35 35).trans (add_le_add hS hT))
+  have h2 : (3 : ℝ≥0) ≤ 3 / 2 + NNReal.sqrt (71 / 36) := by
+    calc (3 : ℝ≥0) = 9 * 3⁻¹ := by norm_num
+      _ ≤ 9 * (6⁻¹ + 9⁻¹ * NNReal.sqrt (71 / 36)) := by gcongr
+      _ = 3 / 2 + NNReal.sqrt (71 / 36) := by rw [mul_add, ← mul_assoc]; norm_num
+  have hle_sqrt : (3 / 2 : ℝ≥0) ≤ NNReal.sqrt (71 / 36) :=
+    le_of_add_le_add_left (a := 3 / 2) (by convert h2 using 1; norm_num)
+  rw [NNReal.le_sqrt_iff_sq_le] at hle_sqrt
+  have hle_real : ((3 : ℝ) / 2) ^ 2 ≤ (71 : ℝ) / 36 := by exact_mod_cast hle_sqrt
+  norm_num at hle_real
 
 end TauCeti.SNumbers

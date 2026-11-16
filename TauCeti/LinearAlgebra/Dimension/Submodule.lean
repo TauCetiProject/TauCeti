@@ -18,7 +18,9 @@ finite-dimensional space whose dimensions sum to more than the ambient dimension
 nontrivially, as do three subspaces whose dimensions sum to more than twice the ambient dimension,
 and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
-`m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
+`m`-dimensional space has codimension at most the codimension of `W`, and the same holds for
+cardinal codimension over any ring; intersecting two submodules with free quotients adds their
+codimensions at most. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
 of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
 finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
@@ -209,6 +211,35 @@ theorem lift_rank_le_of_disjoint_ker [Ring 𝕜] {M : Type u} {N : Type v}
     Cardinal.lift.{v} (Module.rank 𝕜 V) ≤ Cardinal.lift.{u} f.rank := by
   apply (f.rangeRestrict.domRestrict V).lift_rank_le_of_injective
   simpa only [LinearMap.injective_domRestrict_iff, LinearMap.ker_rangeRestrict] using h
+
+/-- Pulling a submodule back along a linear map does not increase its codimension, since
+`M ⧸ W.comap f` embeds into `N ⧸ W`. -/
+theorem lift_rank_quotient_comap_le [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    (f : M →ₗ[𝕜] N) (W : Submodule 𝕜 N) :
+    Cardinal.lift.{v} (Module.rank 𝕜 (M ⧸ W.comap f)) ≤
+      Cardinal.lift.{u} (Module.rank 𝕜 (N ⧸ W)) := by
+  refine LinearMap.lift_rank_le_of_injective ((W.comap f).mapQ W f le_rfl) ?_
+  rw [← LinearMap.ker_eq_bot, ker_mapQ, mkQ_map_self]
+
+/-- The same-universe form of `Submodule.lift_rank_quotient_comap_le`. -/
+theorem rank_quotient_comap_le [Ring 𝕜] {M N : Type u}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    (f : M →ₗ[𝕜] N) (W : Submodule 𝕜 N) :
+    Module.rank 𝕜 (M ⧸ W.comap f) ≤ Module.rank 𝕜 (N ⧸ W) := by
+  simpa only [Cardinal.lift_id] using lift_rank_quotient_comap_le f W
+
+/-- The codimension of the intersection of two submodules with free quotients is at most the sum
+of their codimensions, since `E ⧸ (M ⊓ N)` embeds into `(E ⧸ M) × (E ⧸ N)`. -/
+theorem rank_quotient_inf_le [Ring 𝕜] [StrongRankCondition 𝕜] {E : Type u}
+    [AddCommGroup E] [Module 𝕜 E] (M N : Submodule 𝕜 E)
+    [Module.Free 𝕜 (E ⧸ M)] [Module.Free 𝕜 (E ⧸ N)] :
+    Module.rank 𝕜 (E ⧸ (M ⊓ N)) ≤ Module.rank 𝕜 (E ⧸ M) + Module.rank 𝕜 (E ⧸ N) := by
+  have hker : M ⊓ N ≤ LinearMap.ker (M.mkQ.prod N.mkQ) := by
+    rw [LinearMap.ker_prod, ker_mkQ, ker_mkQ]
+  refine (LinearMap.rank_le_of_injective ((M ⊓ N).liftQ (M.mkQ.prod N.mkQ) hker) ?_).trans_eq ?_
+  · rw [← LinearMap.ker_eq_bot, ker_liftQ, LinearMap.ker_prod, ker_mkQ, ker_mkQ, mkQ_map_self]
+  · simp [_root_.rank_prod]
 
 /-- The rank of a product of free submodules is the sum of their ranks. -/
 theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : Type v}
