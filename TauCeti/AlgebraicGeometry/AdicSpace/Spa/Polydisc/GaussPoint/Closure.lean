@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.Valuation.Continuous.Valued
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+import TauCeti.RingTheory.Huber.Restricted.GaussValuation
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
@@ -60,8 +61,6 @@ unconditionally.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.coe_weightedGaussValuation_normedField`: the unit-radius Gauss
-  valuation agrees with `MvPowerSeries.gaussNorm` at unit polyradius.
 * `TauCeti.ValuationSpectrum.isUnitGaussPoint_iff_eq_unitGaussPoint`: `unitGaussPoint n K` is the
   unique point satisfying `IsUnitGaussPoint`.
 * `TauCeti.ValuationSpectrum.unitGaussPoint_one_eq_gaussPoint`: in dimension `1`,
@@ -134,48 +133,6 @@ section UnitGaussPoint
 open scoped NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K]
-
-/-- The unit-radius Gauss valuation extending `NormedField.valuation` has real value equal to the
-Gauss norm of `restrictedMvPowerSeriesGaussEquiv f`. -/
-theorem coe_weightedGaussValuation_normedField_eq_norm (n : ℕ)
-    (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (weightedGaussValuation n (Valued.isContinuous_v (R := K)) f : ℝ) =
-      ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  refine le_antisymm ?_ ?_
-  · obtain ⟨ν, hν⟩ := exists_coeff_eq_weightedGaussValuation
-      (Valued.isContinuous_v (R := K)) (f := f)
-    rw [← hν, ← coe_restrictedMvPowerSeriesGaussEquiv]
-    exact MvPowerSeries.norm_coeff_le_norm (restrictedMvPowerSeriesGaussEquiv f) ν
-  · obtain ⟨ν, hν⟩ := MvPowerSeries.exists_norm_coeff_eq_norm
-      (restrictedMvPowerSeriesGaussEquiv f)
-    rw [← hν, coe_restrictedMvPowerSeriesGaussEquiv]
-    exact NNReal.coe_le_coe.mpr
-      (coeff_le_weightedGaussValuation (Valued.isContinuous_v (R := K)) f ν)
-
-/-- **The unit-radius Gauss valuation agrees with `MvPowerSeries.gaussNorm` at unit polyradius.** -/
-theorem coe_weightedGaussValuation_normedField (n : ℕ)
-    (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (weightedGaussValuation n (Valued.isContinuous_v (R := K)) f : ℝ) =
-      MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (f : MvPowerSeries (Fin n) K) := by
-  rw [coe_weightedGaussValuation_normedField_eq_norm, MvPowerSeries.norm_eq_gaussNorm,
-    coe_restrictedMvPowerSeriesGaussEquiv]
-
-/-- Every power-bounded restricted series over an ultrametric normed field has unit-radius Gauss
-valuation at most `1`. -/
-theorem weightedGaussValuation_le_one_of_mem_powerBoundedSubring (n : ℕ)
-    {f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight}
-    (hf : f ∈ powerBoundedSubring _) :
-    weightedGaussValuation n (Valued.isContinuous_v (R := K)) f ≤ 1 := by
-  refine (weightedGaussValuation_le_iff _).mpr fun ν ↦ ?_
-  by_cases hnt : ∃ c : K, 1 < ‖c‖
-  · let : NontriviallyNormedField K := ⟨hnt⟩
-    rw [← weightedSubring_powerBoundedSubring_eq n, mem_weightedSubring, mem_weightedNhd] at hf
-    have hcoeff : MvPowerSeries.coeff ν (f : MvPowerSeries (Fin n) K) ∈ powerBoundedSubring K := by
-      simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using hf ν
-    exact NNReal.coe_le_coe.mp (isPowerBounded_iff_norm_le_one.mp
-      (mem_powerBoundedSubring.mp hcoeff))
-  · push Not at hnt
-    exact NNReal.coe_le_coe.mp (hnt _)
 
 /-- **The unit Gauss point of the closed polydisc `closedPolydisc n K`**: the point of
 `Spa (K⟨T₁, …, Tₙ⟩, K⟨T₁, …, Tₙ⟩°)` defined by the unit-radius Gauss valuation
@@ -552,16 +509,12 @@ theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
   have heval_s : evalAtHom a.1 a.2 s = a.1 0 ^ q - a.1 0 := by simp [s, T₀]
   let b : Valued.integer K :=
     powerBoundedSubringEquivInteger K ⟨a.1 0, mem_powerBoundedSubring.mpr (a.2 0)⟩
-  have hmem_max : b ^ q - b ∈ IsLocalRing.maximalIdeal (Valued.integer K) :=
-    (IsLocalRing.residue_eq_zero_iff (b ^ q - b)).mp <| by
-      rw [map_sub, map_pow, FiniteField.pow_card, sub_self]
-  rw [← map_topologicallyNilpotentIdeal_powerBoundedSubringEquivInteger K, Ideal.map_coe,
-    ← Ideal.comap_symm, Ideal.mem_comap, mem_topologicallyNilpotentIdeal,
-    coe_powerBoundedSubringEquivInteger_symm, IsTopologicallyNilpotent,
-    tendsto_pow_atTop_nhds_zero_iff_norm_lt_one] at hmem_max
+  have hres : IsLocalRing.residue (Valued.integer K) (b ^ q - b) = 0 := by
+    rw [map_sub, map_pow, FiniteField.pow_card, sub_self]
   have hlt : ‖evalAtHom a.1 a.2 s‖ < 1 := by
     simpa only [heval_s, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, b,
-      coe_powerBoundedSubringEquivInteger] using hmem_max
+      coe_powerBoundedSubringEquivInteger] using
+      Valued.integer.residue_eq_zero_iff_norm_lt_one.mp hres
   exact hlt.not_ge h1le
 
 end FiniteResidueField

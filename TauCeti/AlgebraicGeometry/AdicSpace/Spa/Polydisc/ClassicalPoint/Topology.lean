@@ -221,24 +221,15 @@ section DimensionZero
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-omit [CompleteSpace K] in
-/-- In dimension `0`, every restricted power series in `K⟨⟩` is constant. -/
-private theorem eq_weightedC_coeff_zero
-    (f : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    f = weightedC _ isWeightFamily_one_weight
-      (MvPowerSeries.coeff 0 (f : MvPowerSeries (Fin 0) K)) := by
-  refine Subtype.ext (MvPowerSeries.ext fun ν ↦ ?_)
-  have hν : ν = 0 := Subsingleton.elim ν 0
-  subst hν
-  simp
-
 /-- **In dimension `0`, every point of `closedPolydisc 0 K` is the unique classical point.** -/
 theorem eq_classicalPoint_zero (x : spa (powerBoundedSubring K)) (v : closedPolydisc 0 K) :
     v = classicalPoint x Fin.elim0 (fun i ↦ i.elim0) := by
+  let e := weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set K))
+  have he : ∀ a : K, e.symm a = weightedC _ isWeightFamily_one_weight a := fun a ↦
+    Subtype.ext (by simp [e])
   refine Subtype.ext (ext' fun f g ↦ ?_)
-  conv_lhs => rw [eq_weightedC_coeff_zero f, eq_weightedC_coeff_zero g]
-  conv_rhs => rw [eq_weightedC_coeff_zero f, eq_weightedC_coeff_zero g]
-  rw [closedPolydisc_vle_weightedC_iff, classicalPoint_vle, evalAtHom_weightedC,
+  rw [← e.symm_apply_apply f, ← e.symm_apply_apply g, he, he,
+    closedPolydisc_vle_weightedC_iff, classicalPoint_vle, evalAtHom_weightedC,
     evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.2]
 
 /-- In dimension `0`, `closedPolydisc 0 K` has at most one point (indeed exactly one whenever
