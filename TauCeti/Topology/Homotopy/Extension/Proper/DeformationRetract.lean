@@ -71,7 +71,7 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic
     ∃ r : C(X, A), IsProperMap r ∧ (∀ a : A, r a = a) ∧
       ∃ G : r.Homotopy g, IsProperMap G := by
   obtain ⟨G₀, hG₀p, hG₀_zero, hG₀_mem⟩ :=
-    hA.exists_extension g hg H.toContinuousMap hH fun a ↦ H.apply_zero a
+    hA.exists_extension g hg H.toContinuousMap hH fun a ↦ by simp
   let G' : g.Homotopy ⟨fun x ↦ G₀ (1, x), by fun_prop⟩ :=
     { toContinuousMap := G₀, map_zero_left := hG₀_zero, map_one_left := fun _ ↦ rfl }
   refine ⟨⟨fun x ↦ G₀ (1, x), by fun_prop⟩, G'.isProperMap_right hG₀p, fun a ↦ ?_,
@@ -88,12 +88,10 @@ theorem HasProperHomotopyExtensionProperty.exists_homotopyRel_isProperMap_of_ret
     ∃ H : (ContinuousMap.id X).HomotopyRel ((subtypeVal A).comp r) A, IsProperMap H := by
   let ir : C(X, X) := (subtypeVal A).comp r
   have hir : IsProperMap ir := K.isProperMap_left hK
-  have hA' : IsClosed A := by
-    have hrange : range ir = A := by
-      ext x
-      exact ⟨fun ⟨x', hx'⟩ ↦ hx' ▸ (r x').2,
-        fun hx ↦ ⟨x, congrArg Subtype.val (hr ⟨x, hx⟩)⟩⟩
-    exact hrange ▸ hir.isClosed_range
+  have hval : (subtypeVal A : A → X) = Subtype.val := funext (subtypeVal_apply A)
+  have hA' : IsClosed A := isProperMap_subtypeVal_iff.1
+    (hval ▸ (HasProperHomotopyInverse.of_deformationRetraction
+      (fun a ↦ by simpa using hr a) hK).isProperMap)
   let F : (ContinuousMap.id X).Homotopy ir := K.symm
   have hF : IsProperMap F := K.isProperMap_symm hK
   let G : ir.Homotopy ir :=
@@ -105,7 +103,7 @@ theorem HasProperHomotopyExtensionProperty.exists_homotopyRel_isProperMap_of_ret
   -- Run `F` from `id_X` to `incl ∘ r`, followed by `F.symm` precomposed with the proper idempotent
   -- `incl ∘ r`; on `A`, which `r` fixes, the second half retraces the first.
   refine hA.exists_homotopyRel_isProperMap_of_retracing hA' hF hG fun t x hx ↦ ?_
-  have hrx : ir x = x := congrArg Subtype.val (hr ⟨x, hx⟩)
+  have hrx : ir x = x := by simp [ir, hr ⟨x, hx⟩]
   simp [G, F, hrx]
 
 /-- **A proper cofibration whose inclusion has a proper homotopy inverse is a proper strong
@@ -127,14 +125,18 @@ theorem properStrongDeformationRetract_of_inverse
       ∃ H : (ContinuousMap.id X).HomotopyRel
         ((ContinuousMap.subtypeVal A).comp r) A,
         IsProperMap H := by
+  have hval : (subtypeVal A : A → X) = Subtype.val := funext (subtypeVal_apply A)
+  have hcomp : Subtype.val ∘ (g : X → A) = ((subtypeVal A).comp g : X → X) := by
+    ext x
+    simp
   have hg : IsProperMap g :=
-    isProperMap_of_comp_of_inj g.continuous continuous_subtype_val (K.isProperMap_left hK)
-      Subtype.val_injective
+    isProperMap_of_comp_of_inj g.continuous continuous_subtype_val
+      (hcomp ▸ K.isProperMap_left hK) Subtype.val_injective
   obtain ⟨r, hrp, hr, G, hGp⟩ := hA.exists_proper_retraction_homotopic g hg H hH
   let K₁ : ((subtypeVal A).comp r).Homotopy ((subtypeVal A).comp g) :=
     (Homotopy.refl (subtypeVal A)).comp G
   have hK₁ : IsProperMap K₁ :=
-    Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hincl) hGp
+    Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 (hval.symm ▸ hincl)) hGp
   exact ⟨r, hrp, hr, hA.exists_homotopyRel_isProperMap_of_retraction hr
     (K₁.trans K) (K₁.isProperMap_trans hK₁ hK)⟩
 
@@ -146,12 +148,14 @@ theorem HasProperHomotopyExtensionProperty.hasProperHomotopyInverse_subtypeVal_i
     (subtypeVal A).HasProperHomotopyInverse ↔
       IsClosed A ∧ ∃ r : C(X, A), IsProperMap r ∧ (∀ a : A, r a = a) ∧
         ∃ H : (ContinuousMap.id X).HomotopyRel ((subtypeVal A).comp r) A, IsProperMap H := by
+  have hval : (subtypeVal A : A → X) = Subtype.val := funext (subtypeVal_apply A)
   refine ⟨fun hf ↦ by
     obtain ⟨g, -, H, K, hH, hK⟩ := hf.exists_inverse
-    exact ⟨isProperMap_subtypeVal_iff.1 hf.isProperMap,
-      properStrongDeformationRetract_of_inverse A hA hf.isProperMap g H K hH hK⟩,
+    exact ⟨isProperMap_subtypeVal_iff.1 (hval ▸ hf.isProperMap),
+      properStrongDeformationRetract_of_inverse A hA (hval ▸ hf.isProperMap) g H K hH hK⟩,
     fun ⟨_, _, _, hr, H, hH⟩ ↦
-      HasProperHomotopyInverse.of_deformationRetraction hr
-        (K := H.toHomotopy.symm) (H.toHomotopy.isProperMap_symm hH)⟩
+      HasProperHomotopyInverse.of_deformationRetraction (fun a ↦ by simpa using hr a)
+        (K := H.toHomotopy.symm)
+        (H.toHomotopy.isProperMap_symm (by rwa [HomotopyWith.coe_toHomotopy]))⟩
 
 end TauCeti

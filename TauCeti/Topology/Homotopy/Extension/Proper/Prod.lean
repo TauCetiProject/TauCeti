@@ -89,6 +89,23 @@ theorem isProperMap_ofRetraction_deformation {r : C(I × X, I × X)} (hrp : IsPr
   funext p
   exact ofRetraction_deformation hr hr' hA p
 
+/-- Ultrafilter convergence for an NDR deformation evaluated at a `projIcc`-rescaled time
+`s z * projIcc 0 1 zero_le_one (v z / N.control (q z))`. -/
+private lemma exists_tendsto_of_tendsto_deformation_mul_projIcc {Z : Type*} [TopologicalSpace Z]
+    (N : NDRPair A) (hN : IsProperMap N.deformation) {s : Z → I} {v : Z → I} {q : Z → X}
+    (hs : Continuous s) (hv : Continuous v) (hq : Continuous q) {𝒰 : Ultrafilter Z} {x₀ : X}
+    (hw : Tendsto (fun z ↦ N.deformation
+      (s z * projIcc 0 1 zero_le_one ((v z : ℝ) / N.control (q z)), q z)) 𝒰 (𝓝 x₀)) :
+    ∃ x₁, Tendsto q 𝒰 (𝓝 x₁) ∧
+      ∀ z₁ : Z, q z₁ = x₁ → (𝒰 : Filter Z) ≤ 𝓝 z₁ →
+        N.deformation (s z₁ * projIcc 0 1 zero_le_one ((v z₁ : ℝ) / N.control (q z₁)), q z₁) = x₀ :=
+  hN.exists_tendsto_of_tendsto_apply_prodMk
+    (fun t₁ t₂ _ hx ↦ (N.deformation_of_mem t₁ hx).trans (N.deformation_of_mem t₂ hx).symm)
+    (q := q) (φ := fun z ↦ s z * projIcc 0 1 zero_le_one ((v z : ℝ) / N.control (q z)))
+    (fun _ hz ↦ hs.continuousAt.mul
+      (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff hv hq hz))
+    hw
+
 /-- If the deformation of an NDR pair `N` is proper, then so is its cylinder deformation
 `N.cylinderDeformation : I × (I × X) → I × X`. -/
 theorem isProperMap_cylinderDeformation (N : NDRPair A) (hN : IsProperMap N.deformation) :
@@ -97,20 +114,14 @@ theorem isProperMap_cylinderDeformation (N : NDRPair A) (hN : IsProperMap N.defo
   refine ⟨N.cylinderDeformation.continuous, fun 𝒰 ⟨t₀, x₀⟩ hw ↦ ?_⟩
   rw [nhds_prod_eq, tendsto_prod_iff'] at hw
   have hw₂ := hw.2.congr fun w : I × (I × X) ↦ N.cylinderDeformation_snd w.1 w.2.1 w.2.2
-  obtain ⟨x₁, hx₁, hx₁_eq⟩ := hN.exists_tendsto_of_tendsto_apply_prodMk
-    (fun t₁ t₂ _ hx ↦ (N.deformation_of_mem t₁ hx).trans (N.deformation_of_mem t₂ hx).symm)
-    (q := fun w : I × (I × X) ↦ w.2.2)
-    (φ := fun w ↦ w.1 * projIcc 0 1 zero_le_one ((w.2.1 : ℝ) / N.control w.2.2))
-    (fun _ hw' ↦ continuous_fst.continuousAt.mul
-      (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff
-        (by fun_prop) (by fun_prop) hw'))
-    hw₂
+  obtain ⟨x₁, hx₁, hx₁_eq⟩ := N.exists_tendsto_of_tendsto_deformation_mul_projIcc hN
+    continuous_fst (by fun_prop) (by fun_prop) hw₂
   obtain ⟨s₁, -, hs₁⟩ := isCompact_univ.ultrafilter_le_nhds (Ultrafilter.map Prod.fst 𝒰) (by simp)
   obtain ⟨t₁, -, ht₁⟩ := isCompact_univ.ultrafilter_le_nhds
     (Ultrafilter.map (fun w : I × (I × X) ↦ w.2.1) 𝒰) (by simp)
-  have hle : (𝒰 : Filter (I × (I × X))) ≤ 𝓝 (s₁, t₁, x₁) := by
-    rw [nhds_prod_eq, nhds_prod_eq, le_prod]
-    exact ⟨hs₁, le_prod.2 ⟨ht₁, hx₁⟩⟩
+  rw [Ultrafilter.coe_map] at hs₁ ht₁
+  have hle : (𝒰 : Filter (I × (I × X))) ≤ 𝓝 (s₁, t₁, x₁) :=
+    tendsto_id'.1 (Tendsto.prodMk_nhds hs₁ (Tendsto.prodMk_nhds ht₁ hx₁))
   have ht₀_eq : (N.cylinderDeformation (s₁, t₁, x₁)).1 = t₀ :=
     tendsto_nhds_unique
       (((continuous_fst.comp N.cylinderDeformation.continuous).tendsto _).mono_left hle) hw.1
@@ -132,13 +143,18 @@ theorem isProperMap_cylinderRetraction (N : NDRPair A) (hN : IsProperMap N.defor
 /-- The subset of an NDR pair with proper deformation has the proper homotopy extension property. -/
 protected theorem hasProperHomotopyExtensionProperty (N : NDRPair A)
     (hN : IsProperMap N.deformation) :
-    HasProperHomotopyExtensionProperty A :=
-  hasProperHomotopyExtensionProperty_of_retraction N.isClosed
+    HasProperHomotopyExtensionProperty A := by
+  have hval : ((ContinuousMap.subtypeVal (cylinderExtensionDomain A)).comp N.cylinderRetraction :
+      I × X → I × X) = Subtype.val ∘ N.cylinderRetraction := by
+    funext z
+    simp
+  refine hasProperHomotopyExtensionProperty_of_retraction
     (r := (ContinuousMap.subtypeVal _).comp N.cylinderRetraction)
-    ((isClosed_cylinderExtensionDomain N.isClosed).isProperMap_subtypeVal.comp
+    (hval ▸ (isClosed_cylinderExtensionDomain N.isClosed).isProperMap_subtypeVal.comp
       (N.isProperMap_cylinderRetraction hN))
     (fun z ↦ (N.cylinderRetraction z).2)
-    fun z hz ↦ congrArg Subtype.val (N.cylinderRetraction_apply_coe ⟨z, hz⟩)
+    fun z hz ↦ ?_
+  simpa using congrArg Subtype.val (N.cylinderRetraction_apply_coe ⟨z, hz⟩)
 
 /-- If two NDR pairs `N` and `M` have proper deformations, then so does their product `N.prod M`. -/
 theorem isProperMap_prod_deformation {Y : Type v} [TopologicalSpace Y] {B : Set Y}
@@ -152,26 +168,14 @@ theorem isProperMap_prod_deformation {Y : Type v} [TopologicalSpace Y] {B : Set 
     congrArg Prod.fst (N.prod_deformation_apply M w.1 w.2.1 w.2.2)
   have hw₂ := hw.2.congr fun w : I × (X × Y) ↦
     congrArg Prod.snd (N.prod_deformation_apply M w.1 w.2.1 w.2.2)
-  obtain ⟨x₁, hx₁, hx₁_eq⟩ := hN.exists_tendsto_of_tendsto_apply_prodMk
-    (fun t₁ t₂ _ hx ↦ (N.deformation_of_mem t₁ hx).trans (N.deformation_of_mem t₂ hx).symm)
-    (q := fun w : I × (X × Y) ↦ w.2.1)
-    (φ := fun w ↦ w.1 * projIcc 0 1 zero_le_one ((M.control w.2.2 : ℝ) / N.control w.2.1))
-    (fun _ hw' ↦ continuous_fst.continuousAt.mul
-      (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff
-        (by fun_prop) (by fun_prop) hw'))
-    hw₁
-  obtain ⟨y₁, hy₁, hy₁_eq⟩ := hM.exists_tendsto_of_tendsto_apply_prodMk
-    (fun t₁ t₂ _ hy ↦ (M.deformation_of_mem t₁ hy).trans (M.deformation_of_mem t₂ hy).symm)
-    (q := fun w : I × (X × Y) ↦ w.2.2)
-    (φ := fun w ↦ w.1 * projIcc 0 1 zero_le_one ((N.control w.2.1 : ℝ) / M.control w.2.2))
-    (fun _ hw' ↦ continuous_fst.continuousAt.mul
-      (M.control.continuousAt_projIcc_div_of_notMem M.control_eq_zero_iff
-        (by fun_prop) (by fun_prop) hw'))
-    hw₂
+  obtain ⟨x₁, hx₁, hx₁_eq⟩ := N.exists_tendsto_of_tendsto_deformation_mul_projIcc hN
+    continuous_fst (by fun_prop) (by fun_prop) hw₁
+  obtain ⟨y₁, hy₁, hy₁_eq⟩ := M.exists_tendsto_of_tendsto_deformation_mul_projIcc hM
+    continuous_fst (by fun_prop) (by fun_prop) hw₂
   obtain ⟨t₁, -, ht₁⟩ := isCompact_univ.ultrafilter_le_nhds (Ultrafilter.map Prod.fst 𝒰) (by simp)
-  have hle : (𝒰 : Filter (I × (X × Y))) ≤ 𝓝 (t₁, x₁, y₁) := by
-    rw [nhds_prod_eq, nhds_prod_eq, le_prod]
-    exact ⟨ht₁, le_prod.2 ⟨hx₁, hy₁⟩⟩
+  rw [Ultrafilter.coe_map] at ht₁
+  have hle : (𝒰 : Filter (I × (X × Y))) ≤ 𝓝 (t₁, x₁, y₁) :=
+    tendsto_id'.1 (Tendsto.prodMk_nhds ht₁ (Tendsto.prodMk_nhds hx₁ hy₁))
   refine ⟨(t₁, x₁, y₁), ?_, hle⟩
   rw [prod_deformation_apply]
   exact Prod.ext (hx₁_eq (t₁, x₁, y₁) rfl hle) (hy₁_eq (t₁, x₁, y₁) rfl hle)
@@ -216,20 +220,18 @@ extension property in `I^N`. -/
 theorem hasProperHomotopyExtensionProperty_cubeBoundary {N : Type*} [Finite N] :
     HasProperHomotopyExtensionProperty (Cube.boundary N) :=
   hasHomotopyExtensionProperty_cubeBoundary.hasProperHomotopyExtensionProperty
-    Cube.isClosed_boundary
 
 /-- Every singleton `{t₀}` in the unit interval `I` (in particular `{0}` and `{1}`) has the proper
 homotopy extension property. -/
 theorem hasProperHomotopyExtensionProperty_singleton_unitInterval (t₀ : I) :
     HasProperHomotopyExtensionProperty ({t₀} : Set I) :=
   (hasHomotopyExtensionProperty_singleton_unitInterval t₀).hasProperHomotopyExtensionProperty
-    isClosed_singleton
 
 /-- The endpoints `{0, 1}` of the unit interval have the proper homotopy extension property in
 `I`. -/
 theorem hasProperHomotopyExtensionProperty_zero_one :
     HasProperHomotopyExtensionProperty ({0, 1} : Set I) :=
-  hasHomotopyExtensionProperty_zero_one.hasProperHomotopyExtensionProperty (toFinite _).isClosed
+  hasHomotopyExtensionProperty_zero_one.hasProperHomotopyExtensionProperty
 
 /-- **The cylinder on a closed proper cofibration**: if a closed subset `A ⊆ X` has the proper
 homotopy extension property, then so does `{0, 1} × X ∪ I × A ⊆ I × X`. -/
@@ -292,6 +294,9 @@ private lemma isProperMap_retraceBoundary {X : Type u} {Y : Type v}
     {G : f₁.Homotopy f₂} (hG : IsProperMap G) (hretrace : ∀ t, ∀ x ∈ A, G (t, x) = F (σ t, x)) :
     IsProperMap (retraceBoundary (A := A) (f₂ := f₂) F) := by
   let B : Set (I × X) := ({0, 1} : Set I) ×ˢ (univ : Set X) ∪ univ ×ˢ A
+  have hB : IsClosed B :=
+    ((toFinite ({0, 1} : Set I)).isClosed.prod isClosed_univ).union (isClosed_univ.prod hA)
+  -- Cover `I × B` by the two end slices (`t = 0`, `t = 1`) and the wall (`x ∈ A`).
   let C : Fin 3 → Set (I × B) := fun i ↦
     match i with
     | ⟨0, _⟩ => {q | q.2.1.1 = 0}
@@ -308,41 +313,31 @@ private lemma isProperMap_retraceBoundary {X : Type u} {Y : Type v}
     · exact mem_iUnion.2 ⟨0, h0⟩
     · exact mem_iUnion.2 ⟨1, h1⟩
     · exact mem_iUnion.2 ⟨2, hx⟩
+  -- Proper inclusion `ι : I × B ↪ I × (I × X)` and projection `I × B → X`.
+  let ι : I × B → I × (I × X) := Prod.map id Subtype.val
+  have hι : IsProperMap ι := isProperMap_id.prodMap hB.isProperMap_subtypeVal
+  have hproj : IsProperMap (Prod.snd ∘ Prod.snd ∘ ι) :=
+    isProperMap_snd_of_compactSpace.comp (isProperMap_snd_of_compactSpace.comp hι)
   rw [isProperMap_iff_domRestrict_of_iUnion_eq_univ hC hcov]
   rintro ⟨_ | _ | _ | n, hn⟩
-  · let e₀ : I × X ≃ₜ C 0 :=
-      { toFun := fun p ↦ ⟨(p.1, ⟨(0, p.2), Or.inl ⟨Or.inl rfl, mem_univ p.2⟩⟩), rfl⟩
-        invFun := fun q ↦ (q.1.1, q.1.2.1.2)
-        left_inv := fun _ ↦ rfl
-        right_inv := fun q ↦ Subtype.ext (Prod.ext rfl (Subtype.ext (Prod.ext q.2.symm rfl)))
-        continuous_toFun := by fun_prop
-        continuous_invFun := by fun_prop }
-    rw [← e₀.comp_isProperMap_iff']
-    convert (F.isProperMap_left hF).comp (isProperMap_snd_of_compactSpace (X := I)) using 1
-    funext ⟨s, x⟩
-    simp [retraceBoundary, e₀]
-  · let e₁ : I × X ≃ₜ C 1 :=
-      { toFun := fun p ↦ ⟨(p.1, ⟨(1, p.2), Or.inl ⟨Or.inr rfl, mem_univ p.2⟩⟩), rfl⟩
-        invFun := fun q ↦ (q.1.1, q.1.2.1.2)
-        left_inv := fun _ ↦ rfl
-        right_inv := fun q ↦ Subtype.ext (Prod.ext rfl (Subtype.ext (Prod.ext q.2.symm rfl)))
-        continuous_toFun := by fun_prop
-        continuous_invFun := by fun_prop }
-    rw [← e₁.comp_isProperMap_iff']
-    convert (G.isProperMap_right hG).comp (isProperMap_snd_of_compactSpace (X := I)) using 1
-    funext ⟨s, x⟩
-    simp [retraceBoundary, e₁]
-  · let e₂ : (I × I) × A ≃ₜ C 2 :=
-      { toFun := fun p ↦ ⟨(p.1.1, ⟨(p.1.2, p.2.1), Or.inr ⟨mem_univ p.1.2, p.2.2⟩⟩), p.2.2⟩
-        invFun := fun q ↦ ((q.1.1, q.1.2.1.1), ⟨q.1.2.1.2, q.2⟩)
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl
-        continuous_toFun := by fun_prop
-        continuous_invFun := by fun_prop }
-    rw [← e₂.comp_isProperMap_iff']
-    convert hF.comp (continuous_retraceTime.isProperMap.prodMap hA.isProperMap_subtypeVal) using 1
-    funext ⟨⟨s, t⟩, a⟩
-    exact retraceBoundary_of_mem F G hretrace (e₂ ((s, t), a)) a.2
+  · have h₀ : (C 0).domRestrict (retraceBoundary (A := A) (f₂ := f₂) F) =
+        (C 0).domRestrict (f₀ ∘ Prod.snd ∘ Prod.snd ∘ ι) := by
+      funext q; have hq : q.1.2.1.1 = 0 := q.2; simp [retraceBoundary, ι, hq]
+    exact h₀ ▸ ((F.isProperMap_left hF).comp hproj).restrict (hC 0)
+  · have h₁ : (C 1).domRestrict (retraceBoundary (A := A) (f₂ := f₂) F) =
+        (C 1).domRestrict (f₂ ∘ Prod.snd ∘ Prod.snd ∘ ι) := by
+      funext q; have hq : q.1.2.1.1 = 1 := q.2; simp [retraceBoundary, ι, hq]
+    exact h₁ ▸ ((G.isProperMap_right hG).comp hproj).restrict (hC 1)
+  · have h₂ : (C 2).domRestrict (retraceBoundary (A := A) (f₂ := f₂) F) =
+        (C 2).domRestrict (F ∘ Prod.map (Function.uncurry retraceTime) id ∘
+          (Homeomorph.prodAssoc I I X).symm ∘ ι) := by
+      funext ⟨⟨s, ⟨⟨t, x⟩, hb⟩⟩, hx⟩
+      simp only [domRestrict_apply, Function.comp_apply, ι, Prod.map_apply, id_eq,
+        ← Homeomorph.coe_symm_toEquiv, Homeomorph.prodAssoc_toEquiv, Equiv.prodAssoc_symm_apply,
+        Function.uncurry_apply_pair]
+      exact retraceBoundary_of_mem F G hretrace (s, ⟨(t, x), hb⟩) hx
+    exact h₂ ▸ (hF.comp ((continuous_retraceTime.isProperMap.prodMap isProperMap_id).comp
+      ((Homeomorph.prodAssoc I I X).symm.isProperMap.comp hι))).restrict (hC 2)
   · omega
 
 /-- **Proper retracing**: if `F : f₀.Homotopy f₁` and `G : f₁.Homotopy f₂` are proper homotopies

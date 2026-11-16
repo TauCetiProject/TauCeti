@@ -597,15 +597,9 @@ private noncomputable def ndrPairSingletonUnitInterval (t₀ : I) : NDRPair ({t�
     abs_sub_le_iff.2 ⟨by linarith [x.2.2, t₀.2.1], by linarith [t₀.2.2, x.2.1]⟩⟩, by fun_prop⟩
   control_eq_zero_iff x := by
     simp [← Subtype.coe_inj, sub_eq_zero]
-  deformation := ⟨fun p ↦ ⟨(σ p.1 : ℝ) * p.2 + p.1 * t₀,
-    add_nonneg (mul_nonneg (σ p.1).2.1 p.2.2.1) (mul_nonneg p.1.2.1 t₀.2.1),
-    by nlinarith [(σ p.1).2.1, p.1.2.1, p.2.2.2, t₀.2.2, coe_symm_eq p.1]⟩, by fun_prop⟩
-  deformation_zero x := by ext; simp
-  deformation_of_mem s x hx := by
-    obtain rfl : x = t₀ := hx
-    ext
-    simp only [ContinuousMap.coe_mk, coe_symm_eq]
-    ring
+  deformation := ⟨fun p ↦ Icc.convexComb p.2 t₀ p.1, by fun_prop⟩
+  deformation_zero := by simp
+  deformation_of_mem s x hx := by simp [mem_singleton_iff.1 hx]
   deformation_one_mem := by simp
 
 /-- Every singleton `{t₀}` in the unit interval `I` has the homotopy extension property. -/

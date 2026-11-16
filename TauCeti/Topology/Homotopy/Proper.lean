@@ -61,8 +61,10 @@ variable {f₀ f₁ f₂ g₀ g₁ : C(X, Y)}
 
 /-- Every time slice `F.curry t` of a proper homotopy `F : I × X → Y` is proper. -/
 theorem isProperMap_curry (F : Homotopy f₀ f₁) (hF : IsProperMap F) (t : I) :
-    IsProperMap (F.curry t) :=
-  hF.comp (isProperMap_prodMk_left t)
+    IsProperMap (F.curry t) := by
+  have h : (F.curry t : X → Y) = F ∘ Prod.mk t := by ext x; simp
+  rw [h]
+  exact hF.comp (isProperMap_prodMk_left t)
 
 /-- The initial map of a proper homotopy is proper. -/
 theorem isProperMap_left (F : Homotopy f₀ f₁) (hF : IsProperMap F) : IsProperMap f₀ := by
@@ -74,14 +76,19 @@ theorem isProperMap_right (F : Homotopy f₀ f₁) (hF : IsProperMap F) : IsProp
 
 /-- The constant homotopy on `f` is proper if and only if `f` is proper. -/
 @[simp]
-theorem isProperMap_refl_iff {f : C(X, Y)} : IsProperMap (Homotopy.refl f) ↔ IsProperMap f :=
-  ⟨(Homotopy.refl f).isProperMap_left, fun hf ↦ hf.comp isProperMap_snd_of_compactSpace⟩
+theorem isProperMap_refl_iff {f : C(X, Y)} : IsProperMap (Homotopy.refl f) ↔ IsProperMap f := by
+  refine ⟨(Homotopy.refl f).isProperMap_left, fun hf ↦ ?_⟩
+  have h : (Homotopy.refl f : I × X → Y) = f ∘ Prod.snd := by ext ⟨t, x⟩; simp
+  rw [h]
+  exact hf.comp isProperMap_snd_of_compactSpace
 
 /-- Reversing a homotopy preserves and reflects properness. -/
 @[simp]
 theorem isProperMap_symm_iff {F : Homotopy f₀ f₁} : IsProperMap F.symm ↔ IsProperMap F := by
   let e : I × X ≃ₜ I × X := unitInterval.symmHomeomorph.prodCongr (.refl X)
-  exact e.comp_isProperMap_iff' (f := F)
+  have h : (F.symm : I × X → Y) = F ∘ e := by ext ⟨t, x⟩; simp [e]
+  rw [h]
+  exact e.comp_isProperMap_iff'
 
 /-- Reversing a proper homotopy gives a proper homotopy. -/
 theorem isProperMap_symm {F : Homotopy f₀ f₁} (hF : IsProperMap F) : IsProperMap F.symm :=
@@ -90,8 +97,9 @@ theorem isProperMap_symm {F : Homotopy f₀ f₁} (hF : IsProperMap F) : IsPrope
 /-- Casting endpoint equalities on a homotopy preserves and reflects properness. -/
 @[simp]
 theorem isProperMap_cast_iff {F : Homotopy f₀ f₁} (h₀ : f₀ = g₀) (h₁ : f₁ = g₁) :
-    IsProperMap (F.cast h₀ h₁) ↔ IsProperMap F :=
-  (Iff.rfl)
+    IsProperMap (F.cast h₀ h₁) ↔ IsProperMap F := by
+  have h : (F.cast h₀ h₁ : I × X → Y) = F := by ext ⟨t, x⟩; simp
+  rw [h]
 
 /-- Homeomorphism of `I × X` onto the lower half `{p | p.1 ≤ 1 / 2}` of the cylinder. -/
 @[simps!]
@@ -100,24 +108,6 @@ private noncomputable def leftHalfHomeomorph (X : Type*) [TopologicalSpace X] :
   toFun q := ⟨(⟨(q.1 : ℝ) / 2, by constructor <;> linarith [q.1.2.1, q.1.2.2]⟩, q.2),
     by dsimp; linarith [q.1.2.2]⟩
   invFun p := (⟨2 * (p.1.1 : ℝ), by constructor <;> linarith [p.1.1.2.1, p.2]⟩, p.1.2)
-  left_inv q := by
-    ext
-    · dsimp; ring
-    · rfl
-  right_inv p := by
-    ext
-    · dsimp; ring
-    · rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-/-- Homeomorphism of `I × X` onto the upper half `{p | 1 / 2 ≤ p.1}` of the cylinder. -/
-@[simps!]
-private noncomputable def rightHalfHomeomorph (X : Type*) [TopologicalSpace X] :
-    I × X ≃ₜ {p : I × X // 1 / 2 ≤ (p.1 : ℝ)} where
-  toFun q := ⟨(⟨((q.1 : ℝ) + 1) / 2, by constructor <;> linarith [q.1.2.1, q.1.2.2]⟩, q.2),
-    by dsimp; linarith [q.1.2.1]⟩
-  invFun p := (⟨2 * (p.1.1 : ℝ) - 1, by constructor <;> linarith [p.1.1.2.2, p.2]⟩, p.1.2)
   left_inv q := by
     ext
     · dsimp; ring
@@ -138,32 +128,31 @@ theorem isProperMap_trans_iff {F : Homotopy f₀ f₁} {G : Homotopy f₁ f₂} 
   have hs : IsClosed s := isClosed_le (by fun_prop) continuous_const
   have ht : IsClosed t := isClosed_le continuous_const (by fun_prop)
   have hst : s ∪ t = univ := by ext p; exact ⟨fun _ ↦ trivial, fun _ ↦ le_total (p.1 : ℝ) (1 / 2)⟩
-  rw [hs.isProperMap_iff_domRestrict_of_union_eq_univ ht hst,
-    ← (leftHalfHomeomorph X).comp_isProperMap_iff',
-    ← (rightHalfHomeomorph X).comp_isProperMap_iff']
-  have hleft : s.domRestrict (F.trans G) ∘ leftHalfHomeomorph X = F := by
-    ext ⟨u, x⟩
-    have hu : ((u : ℝ) / 2) ≤ 1 / 2 := by linarith [u.2.2]
-    simp only [Function.comp_apply, domRestrict_apply, leftHalfHomeomorph_apply_coe, trans_apply,
-      dite_eq_left hu]
-    congr 1
-    ext
-    · dsimp; ring
-    · rfl
-  have hright : t.domRestrict (F.trans G) ∘ rightHalfHomeomorph X = G := by
-    ext ⟨u, x⟩
-    simp only [Function.comp_apply, domRestrict_apply, rightHalfHomeomorph_apply_coe, trans_apply]
-    split_ifs with hu
-    · have hu0 : u = 0 := Subtype.ext (le_antisymm (by rw [Icc.coe_zero]; linarith) u.2.1)
-      subst hu0
-      have h1 : (⟨2 * (((0 : I) + 1 : ℝ) / 2), by norm_num⟩ : I) = 1 :=
-        Subtype.ext (by simp)
-      rw [h1, apply_one, ← G.apply_zero]
-    · congr 1
+  have hleft : ∀ {g₀ g₁ g₂ : C(X, Y)} (F' : Homotopy g₀ g₁) (G' : Homotopy g₁ g₂),
+      IsProperMap (s.domRestrict (F'.trans G')) ↔ IsProperMap F' := by
+    intro g₀ g₁ g₂ F' G'
+    rw [← (leftHalfHomeomorph X).comp_isProperMap_iff']
+    have hcomp : s.domRestrict (F'.trans G') ∘ leftHalfHomeomorph X = F' := by
+      ext ⟨u, x⟩
+      have hu : ((u : ℝ) / 2) ≤ 1 / 2 := by linarith [u.2.2]
+      simp only [Function.comp_apply, domRestrict_apply, leftHalfHomeomorph_apply_coe, trans_apply,
+        dite_eq_left hu]
+      congr 1
       ext
       · dsimp; ring
       · rfl
-  rw [hleft, hright]
+    rw [hcomp]
+  rw [hs.isProperMap_iff_domRestrict_of_union_eq_univ ht hst, hleft F G]
+  -- Transfer the upper half `{p | 1 / 2 ≤ p.1}` to the lower half via interval reversal.
+  let e : s ≃ₜ t := (unitInterval.symmHomeomorph.prodCongr (.refl X)).subtype fun ⟨u, x⟩ ↦ by
+    simp only [s, t, mem_ofPred_eq, Homeomorph.coe_prodCongr, Prod.map_apply,
+      unitInterval.symmHomeomorph_apply, unitInterval.coe_symm_eq]
+    constructor <;> intro h <;> linarith
+  have hright : t.domRestrict (F.trans G) ∘ e = s.domRestrict (G.symm.trans F.symm) := by
+    ext ⟨⟨u, x⟩, hu⟩
+    have hsymm := congrFun (congrArg DFunLike.coe (Homotopy.symm_trans F G)) (u, x)
+    simpa [e, Homotopy.symm_apply] using hsymm
+  rw [← e.comp_isProperMap_iff', hright, hleft G.symm F.symm, isProperMap_symm_iff]
 
 /-- Concatenating two proper homotopies gives a proper homotopy. -/
 theorem isProperMap_trans {F : Homotopy f₀ f₁} {G : Homotopy f₁ f₂}
@@ -178,26 +167,23 @@ section Comp
 theorem isProperMap_comp {f₀ f₁ : C(X, Y)} {g₀ g₁ : C(Y, Z)} {G : Homotopy g₀ g₁}
     {F : Homotopy f₀ f₁} (hG : IsProperMap G) (hF : IsProperMap F) :
     IsProperMap (G.comp F) := by
-  -- Factor `(t, x) ↦ (t, F (t, x))` through the closed graph-like diagonal `p ↦ (p.1, p)`.
-  have hd : IsProperMap (fun p : I × X ↦ (p.1, p)) := by
-    refine isProperMap_of_isClosedMap_of_inj (continuous_fst.prodMk continuous_id)
-      (fun _ _ h ↦ (Prod.mk.inj h).2) fun C hC ↦ ?_
-    have himg : (fun p : I × X ↦ (p.1, p)) '' C =
-        {q : I × (I × X) | q.1 = q.2.1} ∩ (univ ×ˢ C) := by
-      ext ⟨t, p⟩
-      simp only [mem_image, Prod.mk.injEq, mem_inter_iff, mem_ofPred_eq, mem_prod, mem_univ,
-        true_and]
-      exact ⟨fun ⟨p', hp', ht, hp⟩ ↦ ⟨by rw [← ht, hp], hp ▸ hp'⟩,
-        fun ⟨ht, hp⟩ ↦ ⟨p, hp, ht.symm, rfl⟩⟩
-    rw [himg]
-    exact (isClosed_eq continuous_fst (continuous_fst.comp continuous_snd)).inter
-      (isClosed_univ.prod hC)
-  exact hG.comp ((isProperMap_id.prodMap hF).comp hd)
+  have h : (G.comp F : I × X → Z) =
+      G ∘ Prod.map id F ∘ Homeomorph.prodAssoc I I X ∘ Prod.map (fun t : I ↦ (t, t)) id := by
+    ext ⟨t, x⟩
+    simp [Homeomorph.prodAssoc]
+  rw [h]
+  exact hG.comp ((isProperMap_id.prodMap hF).comp
+    ((Homeomorph.prodAssoc I I X).isProperMap.comp
+      ((continuous_id.prodMk continuous_id).isProperMap.prodMap isProperMap_id)))
 
 /-- Precomposing a proper homotopy with a proper continuous map gives a proper homotopy. -/
 theorem isProperMap_compContinuousMap {g₀ g₁ : C(Y, Z)} {G : Homotopy g₀ g₁} {f : C(X, Y)}
-    (hG : IsProperMap G) (hf : IsProperMap f) : IsProperMap (G.compContinuousMap f) :=
-  isProperMap_comp hG (isProperMap_refl_iff.2 hf)
+    (hG : IsProperMap G) (hf : IsProperMap f) : IsProperMap (G.compContinuousMap f) := by
+  have h : (G.compContinuousMap f : I × X → Z) = G.comp (Homotopy.refl f) := by
+    ext ⟨t, x⟩
+    simp
+  rw [h]
+  exact isProperMap_comp hG (isProperMap_refl_iff.2 hf)
 
 end Comp
 
@@ -209,31 +195,44 @@ variable {f₀ f₁ f₂ g₀ g₁ : C(X, Y)} {S : Set X}
 
 /-- The constant relative homotopy on `f` is proper if and only if `f` is proper. -/
 @[simp]
-theorem isProperMap_refl_iff {f : C(X, Y)} : IsProperMap (HomotopyRel.refl f S) ↔ IsProperMap f :=
-  Homotopy.isProperMap_refl_iff
+theorem isProperMap_refl_iff {f : C(X, Y)} :
+    IsProperMap (HomotopyRel.refl f S) ↔ IsProperMap f := by
+  have h : (HomotopyRel.refl f S : I × X → Y) = Homotopy.refl f := by ext ⟨t, x⟩; simp
+  rw [h]
+  exact Homotopy.isProperMap_refl_iff
 
 /-- Reversing a relative homotopy preserves and reflects properness. -/
 @[simp]
-theorem isProperMap_symm_iff {F : HomotopyRel f₀ f₁ S} : IsProperMap F.symm ↔ IsProperMap F :=
-  Homotopy.isProperMap_symm_iff
+theorem isProperMap_symm_iff {F : HomotopyRel f₀ f₁ S} : IsProperMap F.symm ↔ IsProperMap F := by
+  have h : (F.symm : I × X → Y) = F.toHomotopy.symm := by ext ⟨t, x⟩; simp
+  rw [h, Homotopy.isProperMap_symm_iff, HomotopyWith.coe_toHomotopy]
 
 /-- Casting endpoint equalities on a relative homotopy preserves and reflects properness. -/
 @[simp]
 theorem isProperMap_cast_iff {F : HomotopyRel f₀ f₁ S} (h₀ : f₀ = g₀) (h₁ : f₁ = g₁) :
-    IsProperMap (F.cast h₀ h₁) ↔ IsProperMap F :=
-  (Iff.rfl)
+    IsProperMap (F.cast h₀ h₁) ↔ IsProperMap F := by
+  have h : (F.cast h₀ h₁ : I × X → Y) = F := by ext ⟨t, x⟩; simp
+  rw [h]
 
 /-- Concatenating two relative homotopies is proper if and only if both factors are proper. -/
 @[simp]
 theorem isProperMap_trans_iff {F : HomotopyRel f₀ f₁ S} {G : HomotopyRel f₁ f₂ S} :
-    IsProperMap (F.trans G) ↔ IsProperMap F ∧ IsProperMap G :=
-  Homotopy.isProperMap_trans_iff
+    IsProperMap (F.trans G) ↔ IsProperMap F ∧ IsProperMap G := by
+  have h : (F.trans G : I × X → Y) = F.toHomotopy.trans G.toHomotopy := by
+    ext ⟨t, x⟩
+    simp only [HomotopyRel.trans_apply, Homotopy.trans_apply, HomotopyWith.coe_toHomotopy]
+  rw [h, Homotopy.isProperMap_trans_iff, HomotopyWith.coe_toHomotopy, HomotopyWith.coe_toHomotopy]
 
 /-- Postcomposing a proper relative homotopy with a proper continuous map gives a proper relative
 homotopy. -/
 theorem isProperMap_compContinuousMap {F : f₀.HomotopyRel f₁ S} {g : C(Y, Z)}
-    (hF : IsProperMap F) (hg : IsProperMap g) : IsProperMap (F.compContinuousMap g) :=
-  Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hg) hF
+    (hF : IsProperMap F) (hg : IsProperMap g) : IsProperMap (F.compContinuousMap g) := by
+  have h : (F.compContinuousMap g : I × X → Z) = (Homotopy.refl g).comp F.toHomotopy := by
+    ext ⟨t, x⟩
+    simp
+  rw [h]
+  exact Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hg)
+    (by rwa [HomotopyWith.coe_toHomotopy])
 
 end HomotopyRel
 
@@ -289,10 +288,10 @@ theorem comp {f : C(X, Y)} {g : C(Y, Z)} (hg : g.HasProperHomotopyInverse)
   obtain ⟨g', hg', Hg, Hg', hHg, hHg'⟩ := hg.exists_inverse
   let L₁ : Homotopy ((f'.comp g').comp (g.comp f)) (f'.comp f) :=
     ((Homotopy.refl f').comp (Hg.compContinuousMap f)).cast
-      (by ext; rfl) (by ext; rfl)
+      (by ext; simp) (by ext; simp)
   let R₁ : Homotopy ((g.comp f).comp (f'.comp g')) (g.comp g') :=
     ((Homotopy.refl g).comp (Hf'.compContinuousMap g')).cast
-      (by ext; rfl) (by ext; rfl)
+      (by ext; simp) (by ext; simp)
   have hL₁ : IsProperMap L₁ := by
     dsimp only [L₁]
     rw [Homotopy.isProperMap_cast_iff]
@@ -332,17 +331,13 @@ then both `i` and `r` are automatically proper and `i` has a proper homotopy inv
 theorem of_deformationRetraction {i : C(Y, X)} {r : C(X, Y)} (hri : Function.LeftInverse r i)
     {K : (i.comp r).Homotopy (ContinuousMap.id X)} (hK : IsProperMap K) :
     i.HasProperHomotopyInverse := by
-  have hir : IsProperMap (i.comp r) := K.isProperMap_left hK
+  have hir : IsProperMap (i ∘ r) := by
+    rw [← ContinuousMap.coe_comp]
+    exact K.isProperMap_left hK
   have hrp : IsProperMap r :=
     isProperMap_of_comp_of_inj r.continuous i.continuous hir hri.injective
-  have hi : IsProperMap i := by
-    refine isProperMap_of_isClosedMap_of_inj i.continuous hri.injective fun C hC ↦ ?_
-    have himg : i '' C = (i.comp r) '' (r ⁻¹' C) := by
-      ext x
-      exact ⟨fun ⟨y, hy, hx⟩ ↦ ⟨i y, by simpa [hri y] using hy, by simpa [hri y] using hx⟩,
-        fun ⟨x', hx', hx⟩ ↦ ⟨r x', hx', hx⟩⟩
-    rw [himg]
-    exact hir.isClosedMap _ (hC.preimage r.continuous)
+  have hi : IsProperMap i :=
+    isProperMap_of_comp_of_surj r.continuous i.continuous hir hri.surjective
   refine .intro hi r hrp
     ((Homotopy.refl (ContinuousMap.id Y)).cast (ContinuousMap.ext fun y ↦ (hri y).symm) rfl) K
     ?_ hK
@@ -356,16 +351,12 @@ end ContinuousMap
 /-- A homeomorphism is a proper homotopy equivalence, with constant homotopies: these are the
 projections `I × X → X` and `I × Y → Y`, which are proper as `I` is compact. -/
 theorem Homeomorph.hasProperHomotopyInverse {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (e : X ≃ₜ Y) : (e : C(X, Y)).HasProperHomotopyInverse := by
-  refine .intro e.isProperMap e.symm e.symm.isProperMap
-    ((ContinuousMap.Homotopy.refl _).cast rfl e.symm_comp_toContinuousMap)
-    ((ContinuousMap.Homotopy.refl _).cast rfl e.toContinuousMap_comp_symm) ?_ ?_
-  · rw [ContinuousMap.Homotopy.isProperMap_cast_iff, ContinuousMap.Homotopy.isProperMap_refl_iff,
-      ContinuousMap.coe_comp]
-    exact e.symm.isProperMap.comp e.isProperMap
-  · rw [ContinuousMap.Homotopy.isProperMap_cast_iff, ContinuousMap.Homotopy.isProperMap_refl_iff,
-      ContinuousMap.coe_comp]
-    exact e.isProperMap.comp e.symm.isProperMap
+    [TopologicalSpace Y] (e : X ≃ₜ Y) : (e : C(X, Y)).HasProperHomotopyInverse :=
+  ContinuousMap.HasProperHomotopyInverse.of_deformationRetraction (r := e.symm)
+    (fun x ↦ by simp)
+    (K := (ContinuousMap.Homotopy.refl (ContinuousMap.id Y)).cast
+      e.toContinuousMap_comp_symm.symm rfl)
+    (by simp [isProperMap_id])
 
 /-- The identity map is a proper homotopy equivalence. -/
 theorem ContinuousMap.HasProperHomotopyInverse.id (X : Type*) [TopologicalSpace X] :

@@ -159,8 +159,9 @@ theorem IsProperMap.exists_tendsto_of_tendsto_apply_prodMk {T : Type*} [Topologi
     (hw₀ : Tendsto (fun z ↦ h (φ z, q z)) 𝒰 (𝓝 w₀)) :
     ∃ y₁, Tendsto q 𝒰 (𝓝 y₁) ∧
       ∀ z₁ : Z, q z₁ = y₁ → (𝒰 : Filter Z) ≤ 𝓝 z₁ → h (φ z₁, q z₁) = w₀ := by
-  have hmap : Tendsto h (Ultrafilter.map (fun z ↦ (φ z, q z)) 𝒰) (𝓝 w₀) :=
-    tendsto_map'_iff.2 hw₀
+  have hmap : Tendsto h (Ultrafilter.map (fun z ↦ (φ z, q z)) 𝒰) (𝓝 w₀) := by
+    rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    exact hw₀
   obtain ⟨⟨t₁, y₁⟩, hty₁, hle⟩ := hh.ultrafilter_le_nhds_of_tendsto hmap
   rw [Ultrafilter.coe_map, nhds_prod_eq, ← Tendsto, tendsto_prod_iff'] at hle
   refine ⟨y₁, hle.2, fun z₁ hqz₁ hz₁ ↦ ?_⟩
@@ -227,11 +228,8 @@ theorem isProperMap_iff_domRestrict_of_iUnion_eq_univ {ι : Type*} [Finite ι] {
   refine ⟨fun hf i ↦ hf.restrict (hs i), fun hall ↦ ?_⟩
   have hpre (D : Set Y) :
       f ⁻¹' D = ⋃ i, ((↑) : s i → X) '' ((s i).domRestrict f ⁻¹' D) := by
-    ext x
-    simp only [Set.mem_preimage, Set.mem_iUnion, Set.mem_image, Subtype.exists,
-      Set.domRestrict_apply, exists_and_right, exists_eq_right]
-    exact ⟨fun hx ↦ let ⟨i, hi⟩ := Set.mem_iUnion.1 (hcov ▸ Set.mem_univ x); ⟨i, hi, hx⟩,
-      fun ⟨_, _, hx⟩ ↦ hx⟩
+    simp_rw [Set.domRestrict_eq, Set.preimage_comp, Subtype.image_preimage_coe, ← Set.iUnion_inter,
+      hcov, Set.univ_inter]
   refine isProperMap_iff_isClosedMap_and_compact_fibers.2 ⟨?_, ?_, ?_⟩
   · refine continuous_iff_isClosed.2 fun D hD ↦ ?_
     rw [hpre]
@@ -239,12 +237,7 @@ theorem isProperMap_iff_domRestrict_of_iUnion_eq_univ {ι : Type*} [Finite ι] {
       (hs i).isClosedEmbedding_subtypeVal.isClosedMap _ (hD.preimage (hall i).continuous)
   · intro E hE
     have himg : f '' E = ⋃ i, (s i).domRestrict f '' (((↑) : s i → X) ⁻¹' E) := by
-      ext y
-      simp only [Set.mem_image, Set.mem_iUnion, Subtype.exists, Set.mem_preimage,
-        Set.domRestrict_apply]
-      exact ⟨fun ⟨x, hx, hxy⟩ ↦
-        let ⟨i, hi⟩ := Set.mem_iUnion.1 (hcov ▸ Set.mem_univ x); ⟨i, x, hi, hx, hxy⟩,
-        fun ⟨_, x, _, hx, hxy⟩ ↦ ⟨x, hx, hxy⟩⟩
+      simp_rw [Set.image_domRestrict, ← Set.image_iUnion, ← Set.inter_iUnion, hcov, Set.inter_univ]
     rw [himg]
     exact isClosed_iUnion_of_finite fun i ↦
       (hall i).isClosedMap _ (hE.preimage continuous_subtype_val)
@@ -258,9 +251,7 @@ then `f : X → Y` is proper if and only if its restrictions to `s` and to `t` a
 theorem _root_.IsClosed.isProperMap_iff_domRestrict_of_union_eq_univ {s t : Set X} (hs : IsClosed s)
     (ht : IsClosed t) (hst : s ∪ t = Set.univ) :
     IsProperMap f ↔ IsProperMap (s.domRestrict f) ∧ IsProperMap (t.domRestrict f) := by
-  have hcov : (⋃ b : Bool, cond b s t) = Set.univ := by
-    ext x
-    simpa [Bool.exists_bool, or_comm] using Set.eq_univ_iff_forall.1 hst x
+  have hcov : (⋃ b : Bool, cond b s t) = Set.univ := Set.union_eq_iUnion.symm.trans hst
   rw [isProperMap_iff_domRestrict_of_iUnion_eq_univ (fun b ↦ by cases b <;> assumption) hcov,
     Bool.forall_bool, Bool.cond_true, Bool.cond_false, and_comm]
 

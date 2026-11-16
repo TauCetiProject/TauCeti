@@ -107,30 +107,11 @@ theorem HasProperHomotopyExtensionProperty.exists_extension
       ∀ (t : I) (a : A), K (t, a) = H (t, a) :=
   h f hf H hH h0
 
-/-- Homeomorphism of `X` onto the bottom slice `{q ∈ cylinderExtensionDomain A | q.1 = 0}`. -/
-private def cylinderBottomHomeomorph (A : Set X) :
-    X ≃ₜ {q : cylinderExtensionDomain A // q.1.1 = 0} where
-  toFun x := ⟨⟨((0 : I), x), zero_mem_cylinderExtensionDomain x⟩, rfl⟩
-  invFun q := q.1.1.2
-  left_inv _ := rfl
-  right_inv q := Subtype.ext (Subtype.ext (Prod.ext q.2.symm rfl))
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-/-- Homeomorphism of `I × A` onto the wall `{q ∈ cylinderExtensionDomain A | q.2 ∈ A}`. -/
-private def cylinderWallHomeomorph (A : Set X) :
-    I × A ≃ₜ {q : cylinderExtensionDomain A // q.1.2 ∈ A} where
-  toFun p := ⟨⟨(p.1, p.2.1), mem_cylinderExtensionDomain_of_mem p.2.2⟩, p.2.2⟩
-  invFun q := (q.1.1.1, ⟨q.1.1.2, q.2⟩)
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
 /-- A proper retraction of `I × X` onto `{0} × X ∪ I × A` solves every proper homotopy extension
-problem for a closed subset `A ⊆ X`, with values in a space in any universe. -/
+problem for `A ⊆ X`, with values in a space in any universe. Closedness of `A` follows
+automatically from properness of `r`. -/
 theorem exists_proper_homotopy_extension_of_retraction {Y : Type v} [TopologicalSpace Y]
-    (hA : IsClosed A) {r : C(I × X, I × X)} (hrp : IsProperMap r)
+    {r : C(I × X, I × X)} (hrp : IsProperMap r)
     (hr : ∀ p, r p ∈ cylinderExtensionDomain A)
     (hr' : ∀ p ∈ cylinderExtensionDomain A, r p = p)
     (f : C(X, Y)) (hf : IsProperMap f) (H : C(I × A, Y)) (hH : IsProperMap H)
@@ -138,8 +119,18 @@ theorem exists_proper_homotopy_extension_of_retraction {Y : Type v} [Topological
     ∃ K : C(I × X, Y), IsProperMap K ∧ (∀ x, K (0, x) = f x) ∧
       ∀ (t : I) (a : A), K (t, a) = H (t, a) := by
   classical
-  -- Glue `f` and `H` on `J = {0} × X ∪ I × A`; the two pieces form a closed cover of `J`
-  -- homeomorphic to `X` and to `I × A`, so the glued map is both continuous and proper.
+  -- Closedness of `{0} × X ∪ I × A` and of `A` follows from properness of the retraction `r`.
+  have hrange : range r = cylinderExtensionDomain A := by
+    ext q
+    exact ⟨fun ⟨p, hp⟩ ↦ hp ▸ hr p, fun hq ↦ ⟨q, hr' q hq⟩⟩
+  have hdom : IsClosed (cylinderExtensionDomain A) := hrange ▸ hrp.isClosed_range
+  have hA : IsClosed A := by
+    have hpre : (Prod.mk (1 : I)) ⁻¹' cylinderExtensionDomain A = A := by
+      ext x
+      simp [mem_cylinderExtensionDomain_iff]
+    exact hpre ▸ hdom.preimage (.prodMk_right 1)
+  -- Glue `f` and `H` on `J = {0} × X ∪ I × A`; the bottom slice and wall form a closed cover of `J`
+  -- on which the glued map restricts to proper maps.
   let g₀ : cylinderExtensionDomain A → Y := fun q ↦
     if h : q.1.2 ∈ A then H (q.1.1, ⟨q.1.2, h⟩) else f q.1.2
   let C₀ : Set (cylinderExtensionDomain A) := {q | q.1.1 = 0}
@@ -147,17 +138,29 @@ theorem exists_proper_homotopy_extension_of_retraction {Y : Type v} [Topological
   have hC₀ : IsClosed C₀ := (isClosed_singleton (x := (0 : I))).preimage (by fun_prop)
   have hC₁ : IsClosed C₁ := hA.preimage (by fun_prop)
   have hcov : C₀ ∪ C₁ = univ := eq_univ_of_forall fun q ↦ mem_cylinderExtensionDomain_iff.1 q.2
+  have hinc : IsProperMap ((↑) : cylinderExtensionDomain A → I × X) := hdom.isProperMap_subtypeVal
   have hg₀ : IsProperMap g₀ := by
-    rw [hC₀.isProperMap_iff_domRestrict_of_union_eq_univ hC₁ hcov,
-      ← (cylinderBottomHomeomorph A).comp_isProperMap_iff',
-      ← (cylinderWallHomeomorph A).comp_isProperMap_iff']
+    rw [hC₀.isProperMap_iff_domRestrict_of_union_eq_univ hC₁ hcov]
     refine ⟨?_, ?_⟩
-    · convert hf using 1
-      ext x
-      by_cases hx : x ∈ A <;> simp [g₀, cylinderBottomHomeomorph, hx, h0]
-    · convert hH using 1
-      ext ⟨t, a⟩
-      simp [g₀, cylinderWallHomeomorph, a.2]
+    · have h₀ : C₀.domRestrict g₀ = (f ∘ Prod.snd) ∘ C₀.domRestrict Subtype.val := by
+        funext ⟨q, hq⟩
+        have hq0 : q.1.1 = 0 := hq
+        by_cases hx : q.1.2 ∈ A <;> simp [g₀, hq0, hx, h0]
+      rw [h₀]
+      exact (hf.comp isProperMap_snd_of_compactSpace).comp (hinc.restrict hC₀)
+    · let φ : C₁ → I × A := fun q ↦ (q.1.1.1, ⟨q.1.1.2, q.2⟩)
+      have hφ_comp : Prod.map id Subtype.val ∘ φ = C₁.domRestrict Subtype.val := by
+        funext q
+        simp [φ]
+      have hφ : IsProperMap φ :=
+        isProperMap_of_comp_of_inj (by fun_prop) (continuous_id.prodMap continuous_subtype_val)
+          (hφ_comp ▸ hinc.restrict hC₁) (Function.injective_id.prodMap Subtype.val_injective)
+      have h₁ : C₁.domRestrict g₀ = H ∘ φ := by
+        funext ⟨q, hq⟩
+        have hx : q.1.2 ∈ A := hq
+        simp [g₀, φ, hx]
+      rw [h₁]
+      exact hH.comp hφ
   let r₀ : I × X → cylinderExtensionDomain A := fun p ↦ ⟨r p, hr p⟩
   have hr₀ : IsProperMap r₀ :=
     isProperMap_of_comp_of_inj (r.continuous.subtype_mk hr) continuous_subtype_val hrp
@@ -167,13 +170,13 @@ theorem exists_proper_homotopy_extension_of_retraction {Y : Type v} [Topological
       simp [g₀, r₀, hr' _ (zero_mem_cylinderExtensionDomain x), hx, h0]
   · simp [g₀, r₀, hr' _ (mem_cylinderExtensionDomain_of_mem a.2), a.2]
 
-/-- A closed subset onto whose cylinder extension domain the cylinder properly retracts has the
-proper homotopy extension property. -/
-theorem hasProperHomotopyExtensionProperty_of_retraction (hA : IsClosed A) {r : C(I × X, I × X)}
+/-- A subset onto whose cylinder extension domain the cylinder properly retracts has the proper
+homotopy extension property. -/
+theorem hasProperHomotopyExtensionProperty_of_retraction {r : C(I × X, I × X)}
     (hrp : IsProperMap r) (hr : ∀ p, r p ∈ cylinderExtensionDomain A)
     (hr' : ∀ p ∈ cylinderExtensionDomain A, r p = p) :
     HasProperHomotopyExtensionProperty A :=
-  fun f hf H hH h0 ↦ exists_proper_homotopy_extension_of_retraction hA hrp hr hr' f hf H hH h0
+  fun f hf H hH h0 ↦ exists_proper_homotopy_extension_of_retraction hrp hr hr' f hf H hH h0
 
 /-- Every clopen subset has the proper homotopy extension property. -/
 theorem _root_.IsClopen.hasProperHomotopyExtensionProperty (hA : IsClopen A) :
@@ -189,27 +192,19 @@ theorem _root_.IsClopen.hasProperHomotopyExtensionProperty (hA : IsClopen A) :
   have hrp : IsProperMap r := by
     rw [hs.isProperMap_iff_domRestrict_of_union_eq_univ ht hst]
     refine ⟨?_, ?_⟩
-    · convert hs.isProperMap_subtypeVal using 1
-      funext p
-      have hp : p.1.2 ∈ A := p.2
-      simp [r, hp]
-    · let e : I × ↥Aᶜ ≃ₜ t :=
-        { toFun := fun q ↦ ⟨(q.1, q.2.1), q.2.2⟩
-          invFun := fun p ↦ (p.1.1, ⟨p.1.2, p.2⟩)
-          left_inv := fun _ ↦ rfl
-          right_inv := fun _ ↦ rfl
-          continuous_toFun := by fun_prop
-          continuous_invFun := by fun_prop }
-      rw [← e.comp_isProperMap_iff']
-      have hcomp : t.domRestrict r ∘ e =
-          (Prod.mk (0 : I)) ∘ ((↑) : ↥Aᶜ → X) ∘ (Prod.snd : I × ↥Aᶜ → ↥Aᶜ) := by
-        funext ⟨u, x⟩
-        have hx : (x : X) ∉ A := x.2
-        simp [r, e, hx]
-      rw [hcomp]
-      exact (isProperMap_prodMk_left (0 : I)).comp
-        (hA.compl.isClosed.isProperMap_subtypeVal.comp isProperMap_snd_of_compactSpace)
-  apply hasProperHomotopyExtensionProperty_of_retraction hA.isClosed (r := ⟨r, hrp.continuous⟩) hrp
+    · have h₀ : s.domRestrict r = Subtype.val := by
+        funext p
+        have hp : p.1.2 ∈ A := p.2
+        simp [r, hp]
+      rw [h₀]
+      exact hs.isProperMap_subtypeVal
+    · have h₁ : t.domRestrict r = t.domRestrict (Prod.mk (0 : I) ∘ Prod.snd) := by
+        funext p
+        have hp : p.1.2 ∉ A := p.2
+        simp [r, hp]
+      rw [h₁]
+      exact ((isProperMap_prodMk_left (0 : I)).comp isProperMap_snd_of_compactSpace).restrict ht
+  apply hasProperHomotopyExtensionProperty_of_retraction (r := ⟨r, hrp.continuous⟩) hrp
   · intro p
     by_cases h : p.2 ∈ A <;> simp [r, h, mem_cylinderExtensionDomain_iff]
   · rintro ⟨u, x⟩ hp
@@ -238,12 +233,19 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_retraction
     ⟨fun x ↦ ⟨((0 : I), x), zero_mem_cylinderExtensionDomain x⟩, by fun_prop⟩
   let H₀ : C(I × A, cylinderExtensionDomain A) :=
     ⟨fun q ↦ ⟨(q.1, q.2.1), mem_cylinderExtensionDomain_of_mem q.2.2⟩, by fun_prop⟩
+  have hf₀_comp : Subtype.val ∘ (f₀ : X → cylinderExtensionDomain A) = Prod.mk (0 : I) := by
+    funext x
+    simp [f₀]
   have hf₀ : IsProperMap f₀ :=
     isProperMap_of_comp_of_inj f₀.continuous continuous_subtype_val
-      (isProperMap_prodMk_left (0 : I)) Subtype.val_injective
+      (hf₀_comp ▸ isProperMap_prodMk_left (0 : I)) Subtype.val_injective
+  have hH₀_comp : Subtype.val ∘ (H₀ : I × A → cylinderExtensionDomain A) =
+      Prod.map id Subtype.val := by
+    funext ⟨t, a⟩
+    simp [H₀]
   have hH₀ : IsProperMap H₀ :=
     isProperMap_of_comp_of_inj H₀.continuous continuous_subtype_val
-      (isProperMap_id.prodMap hA.isProperMap_subtypeVal) Subtype.val_injective
+      (hH₀_comp ▸ isProperMap_id.prodMap hA.isProperMap_subtypeVal) Subtype.val_injective
   obtain ⟨K, hKp, hK₀, hK₁⟩ := h.exists_extension f₀ hf₀ H₀ hH₀ fun _ ↦ rfl
   refine ⟨⟨fun p ↦ (K p : I × X), continuous_subtype_val.comp K.continuous⟩,
     (isClosed_cylinderExtensionDomain hA).isProperMap_subtypeVal.comp hKp, fun p ↦ (K p).2, ?_⟩
@@ -259,7 +261,7 @@ theorem hasProperHomotopyExtensionProperty_iff_exists_proper_retraction (hA : Is
       ∃ r : C(I × X, I × X), IsProperMap r ∧ (∀ p, r p ∈ cylinderExtensionDomain A) ∧
         ∀ p ∈ cylinderExtensionDomain A, r p = p :=
   ⟨fun h ↦ h.exists_proper_retraction hA,
-    fun ⟨_, hrp, hr, hr'⟩ ↦ hasProperHomotopyExtensionProperty_of_retraction hA hrp hr hr'⟩
+    fun ⟨_, hrp, hr, hr'⟩ ↦ hasProperHomotopyExtensionProperty_of_retraction hrp hr hr'⟩
 
 /-- For a closed subset, the proper homotopy extension property extends proper homotopies with
 values in a space in any universe. -/
@@ -270,7 +272,7 @@ theorem HasProperHomotopyExtensionProperty.exists_extension_of_isClosed (hA : Is
     ∃ K : C(I × X, Y), IsProperMap K ∧ (∀ x, K (0, x) = f x) ∧
       ∀ (t : I) (a : A), K (t, a) = H (t, a) :=
   let ⟨_, hrp, hr, hr'⟩ := h.exists_proper_retraction hA
-  exists_proper_homotopy_extension_of_retraction hA hrp hr hr' f hf H hH h0
+  exists_proper_homotopy_extension_of_retraction hrp hr hr' f hf H hH h0
 
 /-- Bundled proper homotopy extension for a closed subset `A ⊆ X`: a proper homotopy starting at
 `f.restrict A` extends to a proper homotopy starting at `f`, with target in any universe. -/
@@ -281,7 +283,8 @@ theorem HasProperHomotopyExtensionProperty.exists_homotopy_of_restrict (hA : IsC
     ∃ (f' : C(X, Y)) (K : f.Homotopy f'), IsProperMap K ∧
       ∀ (t : I) (a : A), K (t, a) = H (t, a) := by
   obtain ⟨K, hKp, hK₀, hK₁⟩ :=
-    h.exists_extension_of_isClosed hA f hf H.toContinuousMap hH fun a ↦ H.apply_zero a
+    h.exists_extension_of_isClosed hA f hf H.toContinuousMap hH fun a ↦
+      (H.apply_zero a).trans (f.restrict_apply A a)
   exact ⟨⟨fun x ↦ K (1, x), by fun_prop⟩,
     { toContinuousMap := K, map_zero_left := hK₀, map_one_left := fun _ ↦ rfl }, hKp, hK₁⟩
 
@@ -293,39 +296,62 @@ theorem HasProperHomotopyExtensionProperty.hasHomotopyExtensionProperty
   let ⟨_, _, hr, hr'⟩ := h.exists_proper_retraction hA
   hasHomotopyExtensionProperty_of_retraction hA hr hr'
 
-/-- On a compact Hausdorff space, every closed subset with the ordinary homotopy extension property
-also has the proper homotopy extension property. -/
+/-- On a compact Hausdorff space, every subset with the ordinary homotopy extension property also
+has the proper homotopy extension property. -/
 theorem HasHomotopyExtensionProperty.hasProperHomotopyExtensionProperty
-    [CompactSpace X] [T2Space X] (h : HasHomotopyExtensionProperty A) (hA : IsClosed A) :
+    [CompactSpace X] [T2Space X] (h : HasHomotopyExtensionProperty A) :
     HasProperHomotopyExtensionProperty A :=
   let ⟨r, hr, hr'⟩ := h.exists_retraction
-  hasProperHomotopyExtensionProperty_of_retraction hA r.continuous.isProperMap hr hr'
+  hasProperHomotopyExtensionProperty_of_retraction r.continuous.isProperMap hr hr'
 
 /-- On a compact Hausdorff space, the proper and ordinary homotopy extension properties coincide
 for closed subsets. -/
 theorem hasProperHomotopyExtensionProperty_iff_hasHomotopyExtensionProperty
     [CompactSpace X] [T2Space X] (hA : IsClosed A) :
     HasProperHomotopyExtensionProperty A ↔ HasHomotopyExtensionProperty A :=
-  ⟨fun h ↦ h.hasHomotopyExtensionProperty hA, fun h ↦ h.hasProperHomotopyExtensionProperty hA⟩
+  ⟨fun h ↦ h.hasHomotopyExtensionProperty hA, fun h ↦ h.hasProperHomotopyExtensionProperty⟩
+
+/-- **Proper cofibrations compose along closed embeddings.** If `j : X → X'` is a closed embedding
+whose range has the proper homotopy extension property in `X'`, and `A` has the proper homotopy
+extension property in `X`, then `j '' A` has the proper homotopy extension property in `X'`. -/
+theorem HasProperHomotopyExtensionProperty.image_of_isClosedEmbedding
+    {X' : Type u} [TopologicalSpace X'] (h : HasProperHomotopyExtensionProperty A) {j : X → X'}
+    (hj : IsClosedEmbedding j) (hj' : HasProperHomotopyExtensionProperty (range j)) :
+    HasProperHomotopyExtensionProperty (j '' A) := by
+  intro Y _ f hf H hH h0
+  let eA : A ≃ₜ ↥(j '' A) := hj.isEmbedding.homeomorphImage A
+  have heA : ∀ a : A, (eA a : X') = j a := fun a ↦ by
+    simp [eA, IsEmbedding.homeomorphImage, Homeomorph.setCongr]
+  obtain ⟨K, hKp, hK₀, hK₁⟩ :=
+    h (f.comp ⟨j, hj.continuous⟩) (hf.comp hj.isProperMap)
+      (H.comp ((Homeomorph.refl I).prodCongr eA))
+      (hH.comp ((Homeomorph.refl I).prodCongr eA).isProperMap)
+      fun a ↦ by simpa [heA] using h0 (eA a)
+  let ej : X ≃ₜ ↥(range j) := hj.isEmbedding.toHomeomorph
+  obtain ⟨K', hK'p, hK'₀, hK'₁⟩ :=
+    hj' f hf (K.comp ((Homeomorph.refl I).prodCongr ej.symm))
+      (hKp.comp ((Homeomorph.refl I).prodCongr ej.symm).isProperMap)
+      fun y ↦ by
+        obtain ⟨_, x, rfl⟩ := y
+        simpa [ej] using hK₀ x
+  refine ⟨K', hK'p, hK'₀, fun t b ↦ ?_⟩
+  obtain ⟨_, a, ha, rfl⟩ := b
+  rw [hK'₁ t ⟨j a, mem_range_self a⟩]
+  have hK_eq : (K.comp ((Homeomorph.refl I).prodCongr ej.symm : C(I × ↥(range j), I × X)))
+      (t, (⟨j a, mem_range_self a⟩ : ↥(range j))) = K (t, a) := by
+    simp [ej]
+  rw [hK_eq, hK₁ t ⟨a, ha⟩]
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, Homeomorph.coe_prodCongr,
+    Prod.map_apply, Homeomorph.refl_apply]
+  exact congrArg (fun z ↦ H (t, z)) (Subtype.ext (heA ⟨a, ha⟩))
 
 /-- The proper homotopy extension property transports along a homeomorphism within the same
 universe, with no closedness assumption on `A`. -/
 theorem HasProperHomotopyExtensionProperty.image {X' : Type u} [TopologicalSpace X']
     (h : HasProperHomotopyExtensionProperty A) (e : X ≃ₜ X') :
-    HasProperHomotopyExtensionProperty (e '' A) := by
-  intro Y _ f hf H hH h0
-  let eA : A ≃ₜ ↥(e '' A) := e.image A
-  obtain ⟨K, hKp, hK₀, hK₁⟩ :=
-    h (f.comp e) (hf.comp e.isProperMap)
-      (H.comp ((Homeomorph.refl I).prodCongr eA))
-      (hH.comp ((Homeomorph.refl I).prodCongr eA).isProperMap)
-      fun a ↦ h0 (eA a)
-  refine ⟨K.comp ((Homeomorph.refl I).prodCongr e.symm),
-    hKp.comp ((Homeomorph.refl I).prodCongr e.symm).isProperMap, fun x' ↦ ?_, fun t b ↦ ?_⟩
-  · simpa using hK₀ (e.symm x')
-  · obtain ⟨_, a, ha, rfl⟩ := b
-    have hK_eq : (K.comp ((Homeomorph.refl I).prodCongr e.symm)) (t, e a) = K (t, a) := by simp
-    exact hK_eq.trans ((hK₁ t ⟨a, ha⟩).trans (congrArg (fun z ↦ H (t, z)) (Subtype.ext rfl)))
+    HasProperHomotopyExtensionProperty (e '' A) :=
+  h.image_of_isClosedEmbedding e.isClosedEmbedding
+    (e.range_coe.symm ▸ hasProperHomotopyExtensionProperty_univ)
 
 /-- For a closed subset, the proper homotopy extension property transports along a homeomorphism
 into a space in any universe. -/
@@ -334,7 +360,7 @@ theorem HasProperHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [Top
     HasProperHomotopyExtensionProperty (e '' A) := by
   obtain ⟨r, hrp, hr, hr'⟩ := h.exists_proper_retraction hA
   let E : I × X ≃ₜ I × X' := (Homeomorph.refl I).prodCongr e
-  apply hasProperHomotopyExtensionProperty_of_retraction (e.isClosedMap A hA)
+  apply hasProperHomotopyExtensionProperty_of_retraction
     (r := ((E : C(I × X, I × X')).comp r).comp E.symm)
     (E.isProperMap.comp (hrp.comp E.symm.isProperMap))
   · intro q
@@ -349,36 +375,5 @@ theorem HasProperHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [Top
       · exact Or.inl h0
       · exact Or.inr (by simpa using ha)
     simp [E, hr' _ hq']
-
-/-- **Proper cofibrations compose along closed embeddings.** If `j : X → X'` is a closed embedding
-whose range has the proper homotopy extension property in `X'`, and `A` has the proper homotopy
-extension property in `X`, then `j '' A` has the proper homotopy extension property in `X'`. -/
-theorem HasProperHomotopyExtensionProperty.image_of_isClosedEmbedding
-    {X' : Type u} [TopologicalSpace X'] (h : HasProperHomotopyExtensionProperty A) {j : X → X'}
-    (hj : IsClosedEmbedding j) (hj' : HasProperHomotopyExtensionProperty (range j)) :
-    HasProperHomotopyExtensionProperty (j '' A) := by
-  intro Y _ f hf H hH h0
-  let eA : A ≃ₜ ↥(j '' A) :=
-    (hj.isEmbedding.comp IsEmbedding.subtypeVal).toHomeomorph.trans
-      (Homeomorph.setCongr (by simp [range_comp]))
-  obtain ⟨K, hKp, hK₀, hK₁⟩ :=
-    h (f.comp ⟨j, hj.continuous⟩) (hf.comp hj.isProperMap)
-      (H.comp ((Homeomorph.refl I).prodCongr eA))
-      (hH.comp ((Homeomorph.refl I).prodCongr eA).isProperMap)
-      fun a ↦ h0 (eA a)
-  let ej : X ≃ₜ ↥(range j) := hj.isEmbedding.toHomeomorph
-  obtain ⟨K', hK'p, hK'₀, hK'₁⟩ :=
-    hj' f hf (K.comp ((Homeomorph.refl I).prodCongr ej.symm))
-      (hKp.comp ((Homeomorph.refl I).prodCongr ej.symm).isProperMap)
-      fun y ↦ by
-        obtain ⟨_, x, rfl⟩ := y
-        simpa [ej] using hK₀ x
-  refine ⟨K', hK'p, hK'₀, fun t b ↦ ?_⟩
-  obtain ⟨_, a, ha, rfl⟩ := b
-  rw [hK'₁ t ⟨j a, mem_range_self a⟩]
-  have hej : ej.symm ⟨j a, mem_range_self a⟩ = a := ej.symm_apply_eq.2 (Subtype.ext rfl)
-  have hK_eq : (K.comp ((Homeomorph.refl I).prodCongr ej.symm : C(I × ↥(range j), I × X)))
-      (t, (⟨j a, mem_range_self a⟩ : ↥(range j))) = K (t, a) := by simp [hej]
-  exact hK_eq.trans ((hK₁ t ⟨a, ha⟩).trans (congrArg (fun z ↦ H (t, z)) (Subtype.ext rfl)))
 
 end TauCeti
