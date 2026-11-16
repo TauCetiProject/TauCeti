@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
+public import TauCeti.Probability.PointProcess.Poisson.Construction
 public import TauCeti.Probability.RandomMeasure.Law
 
 /-!
@@ -19,7 +20,8 @@ We first compute the joint law of counts on any finite disjoint measurable famil
 requiring finite intensity: an infinite-intensity coordinate has the point mass at infinity.
 This handles mixed finite and infinite coordinates and the empty family. The evaluation
 uniqueness theorem for random measures then identifies the entire law. No topology,
-integer-valued carrier, or finiteness of the total intensity is required.
+integer-valued carrier, or finiteness of the total intensity is required. For σ-finite
+intensity, the unique law is `Measure.poissonLaw`.
 
 ## References
 
@@ -95,5 +97,15 @@ theorem IsPoissonRandomMeasure.identDistrib (h : IsPoissonRandomMeasure P N Λ)
     h.measurable.aemeasurable h'.measurable.aemeasurable).2
   intro n A hA hd
   exact (h.hasLaw_eval_pi hA hd).map_eq.trans (h'.hasLaw_eval_pi hA hd).map_eq.symm
+
+/-- Every Poisson random measure with σ-finite intensity has `Measure.poissonLaw` as its law. -/
+theorem IsPoissonRandomMeasure.map_eq_poissonLaw [SigmaFinite Λ]
+    (h : IsPoissonRandomMeasure P N Λ) : P.map N = Λ.poissonLaw :=
+  (h.identDistrib Λ.isPoissonRandomMeasure_poissonLaw).map_eq.trans Measure.map_id
+
+/-- Every Poisson random measure with σ-finite intensity has law `Measure.poissonLaw`. -/
+theorem IsPoissonRandomMeasure.hasLaw_poissonLaw [SigmaFinite Λ]
+    (h : IsPoissonRandomMeasure P N Λ) : HasLaw N Λ.poissonLaw P :=
+  ⟨h.measurable.aemeasurable, h.map_eq_poissonLaw⟩
 
 end TauCeti.Probability

@@ -276,4 +276,31 @@ theorem isPoissonRandomMeasure_smul_dirac (r : ℝ≥0) (x : X) :
         (hasLaw_dirac_of_ae_eq (P := poissonMeasure r)
           (X := fun _ : ℕ => (0 : ℝ≥0∞)) Filter.EventuallyEq.rfl)
 
+/-- A random measure is Poisson with zero intensity if and only if it is measurable on a
+probability space and almost surely equals the zero measure. No topology or countable
+generation of the location space is required. -/
+theorem isPoissonRandomMeasure_zero_iff :
+    IsPoissonRandomMeasure P N 0 ↔
+      Measurable N ∧ IsProbabilityMeasure P ∧ ∀ᵐ ω ∂P, N ω = 0 := by
+  refine ⟨fun h => ⟨h.measurable, h.isProbabilityMeasure, ?_⟩, ?_⟩
+  · filter_upwards [h.ae_eq_zero (A := Set.univ) rfl] with ω hω
+    exact Measure.measure_univ_eq_zero.mp hω
+  · rintro ⟨hN, hP, h0⟩
+    let := hP
+    refine isPoissonRandomMeasure_iff.mpr ⟨hN, ?_, ?_⟩
+    · intro n A _ _
+      have heval (i : Fin n) : (fun ω => N ω (A i)) =ᵐ[P] fun _ => (0 : ℝ≥0∞) :=
+        h0.mono fun ω hω => by simp [hω]
+      refine ⟨iIndepFun_of_ae_eq_const_outside_subsingleton (s := ∅)
+        Set.subsingleton_empty (fun i _ => ⟨0, heval i⟩), fun i => ?_⟩
+      simpa only [FunLike.coe_zero, Pi.zero_apply, ENNReal.toNNReal_zero, poissonMeasure_zero,
+        Measure.map_dirac, Nat.cast_zero] using hasLaw_dirac_of_ae_eq (heval i)
+    · intro A _ htop
+      exact False.elim (ENNReal.zero_ne_top htop)
+
+/-- A Poisson random measure with zero intensity is almost surely the zero measure. -/
+theorem IsPoissonRandomMeasure.ae_eq_zero_measure (h : IsPoissonRandomMeasure P N 0) :
+    ∀ᵐ ω ∂P, N ω = 0 :=
+  (isPoissonRandomMeasure_zero_iff.mp h).2.2
+
 end TauCeti.Probability

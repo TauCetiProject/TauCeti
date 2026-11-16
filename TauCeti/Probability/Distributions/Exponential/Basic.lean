@@ -534,4 +534,22 @@ theorem isProbabilityMeasure_nnrealExpMeasure {r : ℝ} (hr : 0 < r) :
   rw [nnrealExpMeasure_def]
   infer_instance
 
+/-- Coercing `nnrealExpMeasure r` back into `ℝ` recovers `expMeasure r`, for every rate. -/
+@[simp]
+theorem map_coe_nnrealExpMeasure (r : ℝ) :
+    (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ) = expMeasure r := by
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_real measurable_real_toNNReal]
+  calc
+    (expMeasure r).map (((↑) : ℝ≥0 → ℝ) ∘ Real.toNNReal) = (expMeasure r).map id :=
+      Measure.map_congr ((ae_pos_expMeasure r).mono fun x hx => Real.coe_toNNReal x hx.le)
+    _ = expMeasure r := Measure.map_id
+
+/-- Coercing `nnrealExpMeasure r` into `ℝ≥0∞` agrees with pushing `expMeasure r` forward by
+`ENNReal.ofReal`, for every rate. -/
+@[simp]
+theorem map_ofNNReal_nnrealExpMeasure (r : ℝ) :
+    (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ≥0∞) = (expMeasure r).map ENNReal.ofReal := by
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_ennreal measurable_real_toNNReal]
+  rfl
+
 end TauCeti.Probability
