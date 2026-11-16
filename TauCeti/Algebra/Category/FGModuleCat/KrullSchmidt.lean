@@ -29,9 +29,9 @@ finite length has a local endomorphism ring (`FGModuleCat.isLocalRing_end_of_ind
 
 Over a left Artinian ring `A`, for instance an Artin algebra, finitely generated modules have finite
 length, so `mod A = FGModuleCat A` is a Krull-Schmidt category
-(`FGModuleCat.isKrullSchmidt_of_isArtinianRing`): every finitely generated module is a finite
-biproduct of finitely generated indecomposable modules in `FGModuleCat A`
-(`FGModuleCat.exists_indecomposable_iso_biproduct`).
+(`FGModuleCat.isKrullSchmidt_of_isArtinianRing`). More generally, every finitely generated
+Artinian module is a finite biproduct of finitely generated indecomposable modules in
+`FGModuleCat A` (`FGModuleCat.exists_indecomposable_iso_biproduct`).
 -/
 
 public section
@@ -87,18 +87,19 @@ instance isKrullSchmidt_of_isArtinianRing [IsArtinianRing A] :
     IsKrullSchmidt (FGModuleCat.{w} A) :=
   (ObjectProperty.fullSubcategoryCongr ModuleCat.isFiniteLength_eq_isFG).isKrullSchmidt
 
-open TauCeti in
-/-- Over a left Artinian ring, every finitely generated module is isomorphic, in `FGModuleCat A`, to
-a finite biproduct of finitely generated indecomposable modules. -/
-theorem exists_indecomposable_iso_biproduct [IsArtinianRing A] (X : FGModuleCat.{w} A) :
+/-- Every finitely generated Artinian module, for instance any finitely generated module over a left
+Artinian ring, is isomorphic, in `FGModuleCat A`, to a finite biproduct of finitely generated
+indecomposable modules. -/
+theorem exists_indecomposable_iso_biproduct (X : FGModuleCat.{w} A) [IsArtinian A X.obj] :
     ∃ (n : ℕ) (F : Fin n → FGModuleCat.{w} A), (∀ j, Indecomposable (F j).obj) ∧
       Nonempty (X ≅ ⨁ F) := by
-  obtain ⟨n, F, hF, e⟩ := IsKrullSchmidt.exists_iso_biproduct X
-  refine ⟨n, F, fun j ↦ ?_, e⟩
-  have := hF j
-  -- The endomorphism ring is the same in `ModuleCat A`.
-  have : IsLocalRing (End (F j).obj) :=
-    ((ObjectProperty.fullyFaithfulι _).ringEquivEnd (F j)).isLocalRing
-  exact indecomposable_of_isLocalRing_end
+  obtain ⟨n, Q, hQ, ⟨d⟩⟩ := TauCeti.exists_indecomposable_iso_biproduct X.obj
+  -- Each summand is a quotient of `X`, hence finitely generated.
+  let F (j : Fin n) : FGModuleCat.{w} A := ⟨Q j, (ModuleCat.isFG_iff _).mpr
+    (Module.Finite.of_surjective (d.hom ≫ biproduct.π Q j).hom
+      ((ModuleCat.epi_iff_surjective _).mp inferInstance))⟩
+  -- The inclusion into `ModuleCat A` preserves the biproduct.
+  exact ⟨n, F, hQ, ⟨(ObjectProperty.fullyFaithfulι _).preimageIso
+    (d ≪≫ ((ObjectProperty.ι _).mapBiproduct F).symm)⟩⟩
 
 end FGModuleCat

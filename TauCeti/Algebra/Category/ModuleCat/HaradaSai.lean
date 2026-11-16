@@ -192,45 +192,47 @@ theorem ofSequence_map_eq_zero_of_length_le {M : ℕ → ModuleCat.{v} A}
 open Opposite in
 /-- **The Harada–Sai lemma for descending chains.** Let `G : ℕᵒᵖ ⥤ ModuleCat A` be a descending
 chain of modules whose links `G.obj (op (i + 1)) ⟶ G.obj (op i)` are not isomorphisms, between
-indecomposable modules of length at most `b`. Then the composite `G.obj (op n) ⟶ G.obj (op 0)` of
-the first `n` links is zero once `n ≥ 2 ^ b - 1`. -/
+indecomposable modules of length at most `b`. Then every composite `G.obj (op j) ⟶ G.obj (op i)` of
+at least `2 ^ b - 1` links is zero. -/
 theorem map_op_eq_zero_of_length_le {G : ℕᵒᵖ ⥤ ModuleCat.{v} A}
     (hG : ∀ i, Indecomposable (G.obj (op i))) (hlen : ∀ i, Module.length A (G.obj (op i)) ≤ b)
-    (hf : ∀ i, ¬ IsIso (G.map (homOfLE (Nat.le_add_right i 1)).op)) {n : ℕ}
-    (hn : 2 ^ b - 1 ≤ n) : G.map (homOfLE (Nat.zero_le n)).op = 0 := by
+    (hf : ∀ i, ¬ IsIso (G.map (homOfLE (Nat.le_add_right i 1)).op)) {i j : ℕ} (φ : i ⟶ j)
+    (hij : i + (2 ^ b - 1) ≤ j) : G.map φ.op = 0 := by
   classical
-  -- Read the first `n` links backwards, continued by zero morphisms.
-  let g (i : ℕ) : G.obj (op (n - i)) ⟶ G.obj (op (n - (i + 1))) :=
-    if i < n then G.map (homOfLE (by omega : n - (i + 1) ≤ n - i)).op else 0
+  -- Read the first `j` links backwards, continued by zero morphisms.
+  let g (k : ℕ) : G.obj (op (j - k)) ⟶ G.obj (op (j - (k + 1))) :=
+    if k < j then G.map (homOfLE (by omega : j - (k + 1) ≤ j - k)).op else 0
   have hlink (k m : ℕ) (h : k ≤ m) (hm : m = k + 1) : ¬ IsIso (G.map (homOfLE h).op) := by
     subst hm
     exact hf k
-  have hg (i : ℕ) : ¬ IsIso (g i) := by
-    by_cases hi : i < n
-    · simp only [g, hi, ↓reduceIte]
-      exact hlink (n - (i + 1)) (n - i) _ (by omega)
-    · simp only [g, hi, ↓reduceIte]
+  have hg (k : ℕ) : ¬ IsIso (g k) := by
+    by_cases hk : k < j
+    · simp only [g, hk, ↓reduceIte]
+      exact hlink (j - (k + 1)) (j - k) _ (by omega)
+    · simp only [g, hk, ↓reduceIte]
       intro h
-      exact (hG (n - i)).1 ((Limits.IsZero.iff_id_eq_zero _).mpr
-        ((IsIso.hom_inv_id (0 : G.obj (op (n - i)) ⟶ G.obj (op (n - (i + 1))))).symm.trans
+      exact (hG (j - k)).1 ((Limits.IsZero.iff_id_eq_zero _).mpr
+        ((IsIso.hom_inv_id (0 : G.obj (op (j - k)) ⟶ G.obj (op (j - (k + 1))))).symm.trans
           Limits.zero_comp))
-  have hcomp (j : ℕ) (hj : j ≤ n) : (Functor.ofSequence g).map (homOfLE (Nat.zero_le j)) =
-      G.map (homOfLE (by omega : n - j ≤ n)).op := by
-    induction j with
-    | zero => exact ((Functor.ofSequence g).map_id 0).trans (G.map_id _).symm
-    | succ j ih =>
-      have h : homOfLE (Nat.zero_le (j + 1)) = homOfLE (Nat.zero_le j) ≫ homOfLE (Nat.le_succ j) :=
-        rfl
-      rw [h, Functor.map_comp, ih (by omega), Functor.ofSequence_map_homOfLE_succ]
-      have hjn : j < n := by omega
-      simp only [g, hjn, ↓reduceIte]
+  have hcomp (m : ℕ) (hm : m ≤ j) : (Functor.ofSequence g).map (homOfLE (Nat.zero_le m)) =
+      G.map (homOfLE (by omega : j - m ≤ j)).op := by
+    induction m with
+    -- `(Functor.ofSequence g).obj m` is `G.obj (op (j - m))` by definition.
+    | zero => simp; rfl
+    | succ m ih =>
+      have hmj : m < j := by omega
+      rw [← homOfLE_comp (Nat.zero_le m) (Nat.le_succ m), Functor.map_comp, ih (by omega),
+        Functor.ofSequence_map_homOfLE_succ]
+      simp only [g, hmj, ↓reduceIte]
       exact (G.map_comp _ _).symm
-  have h0 := ofSequence_map_eq_zero_of_length_le g (fun i ↦ hG _) (fun i ↦ hlen _) hg hn
-  rw [hcomp n le_rfl] at h0
-  have key (m : ℕ) (h : m ≤ n) (hm : m = 0) (h' : G.map (homOfLE h).op = 0) :
-      G.map (homOfLE (Nat.zero_le n)).op = 0 := by
+  have h0 := ofSequence_map_eq_zero_of_length_le g (fun k ↦ hG _) (fun k ↦ hlen _) hg
+    (by omega : 2 ^ b - 1 ≤ j - i)
+  rw [hcomp (j - i) (by omega)] at h0
+  -- The composite of the first `j - i` links read backwards ends at `j - (j - i) = i`.
+  have key (m : ℕ) (h : m ≤ j) (hm : m = i) (h' : G.map (homOfLE h).op = 0) :
+      G.map φ.op = 0 := by
     subst hm
-    exact h'
+    rwa [Subsingleton.elim φ (homOfLE h)]
   exact key _ _ (by omega) h0
 
 end Chain
