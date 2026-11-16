@@ -340,33 +340,41 @@ open scoped Pointwise
 
 section TopologicalModule
 
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+variable {𝕜 E : Type*} [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [ContinuousAdd E]
   {C : Set E} {c : E}
 
 /-- For a point `c` of the intrinsic interior of `C`, the displacements `v` in the direction of
 the affine span of `C` with `c + v ∈ C` form a neighbourhood of `0`. -/
-theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C) :
-    {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} ∈ 𝓝 0 := by
+theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior 𝕜 C) :
+    {v : (affineSpan 𝕜 C).direction | c + (v : E) ∈ C} ∈ 𝓝 0 := by
   obtain ⟨y, hy, rfl⟩ := hc
   -- Translating the direction by `y` is a continuous map into the affine span sending `0` to `y`.
-  let φ : (affineSpan ℝ C).direction → affineSpan ℝ C :=
+  let φ : (affineSpan 𝕜 C).direction → affineSpan 𝕜 C :=
     fun v ↦ ⟨(v : E) + y, by simpa using AffineSubspace.vadd_mem_of_mem_direction v.2 y.2⟩
-  have hφ : Continuous φ := (by fun_prop : Continuous fun v : (affineSpan ℝ C).direction ↦
+  have hφ : Continuous φ := (by fun_prop : Continuous fun v : (affineSpan 𝕜 C).direction ↦
     (v : E) + y).subtype_mk _
   have hφ0 : φ 0 = y := Subtype.ext (zero_add _)
   refine Filter.mem_of_superset
     (hφ.continuousAt.preimage_mem_nhds (hφ0 ▸ isOpen_interior.mem_nhds hy)) fun v hv ↦ ?_
   simpa [φ, add_comm] using interior_subset hv
 
-variable [ContinuousSMul ℝ E]
+variable [TopologicalSpace 𝕜] [ContinuousSMul 𝕜 E]
 
 /-- From a point `c` of the intrinsic interior of `C`, every sufficiently small move `ε • v` along
 a direction `v` of the affine span of `C` stays in `C`. -/
-theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
-    {v : E} (hv : v ∈ (affineSpan ℝ C).direction) : ∀ᶠ ε in 𝓝 (0 : ℝ), c + ε • v ∈ C := by
-  have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
-  simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
+theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior 𝕜 C)
+    {v : E} (hv : v ∈ (affineSpan 𝕜 C).direction) : ∀ᶠ ε in 𝓝 (0 : 𝕜), c + ε • v ∈ C := by
+  have hcont : Continuous fun ε : 𝕜 ↦ (ε • ⟨v, hv⟩ : (affineSpan 𝕜 C).direction) := by fun_prop
+  simpa using (hcont.tendsto' 0 0 (zero_smul 𝕜 _)).eventually
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
+
+end TopologicalModule
+
+section TopologicalRealModule
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E]
+  [ContinuousSMul ℝ E] {C : Set E} {c : E}
 
 /-- An affine function which is nonnegative on a set `C` and vanishes at an intrinsic interior
 point `c` of `C` vanishes on all of `C`. -/
@@ -385,7 +393,7 @@ theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg :
   rw [hgε, hgc] at h
   nlinarith [hg y hy, mem_Ioi.1 hεpos]
 
-end TopologicalModule
+end TopologicalRealModule
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {C : Set E} {c : E}
 

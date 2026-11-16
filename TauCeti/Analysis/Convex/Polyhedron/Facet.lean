@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.Polyhedron.Direction
 public import Mathlib.Analysis.Convex.Intrinsic
-import TauCeti.Analysis.Convex.Exposed
+import TauCeti.Analysis.Convex.Polyhedron.Boundary
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Order.Minimal
 import TauCeti.LinearAlgebra.Dual.Lemmas
@@ -29,10 +29,11 @@ strict inequalities and `TauCeti.vectorSpan_active_eq` to identify each facet di
 Its relative dimension follows from `Module.Dual.finrank_ker_inf_add_one`.
 The selected indices belong to the input family, so their original normal and offset data are
 preserved. The thinning and active-row witnesses need neither a topology nor finite dimension.
-The facet dimension formulas and facet coverage assume that the parent direction is
+The continuous irredundant presentation additionally retains exposedness, without finite
+dimension. The facet dimension formulas and facet coverage assume that the parent direction is
 finite-dimensional. With continuous scalar multiplication the intrinsic frontier is the union of
-all nonempty proper exposed subsets, without finite dimension. In the finite-dimensional case it
-is also the union of the nonempty exposed facets.
+its nonempty exposed facets. General proper-exposed boundary characterizations belong to
+`TauCeti.Analysis.Convex.Polyhedron.Boundary`.
 -/
 
 public section
@@ -92,23 +93,26 @@ theorem exists_affine_subfamily_with_exterior_witness [Finite ι] (f : ι → (V
   exact ⟨x, hx, hj, fun l hl => hother l
     (Finset.mem_erase.mpr ⟨fun e => hl (Subtype.ext e), l.property⟩)⟩
 
-/-- For a nonempty finite relative presentation with an exterior violation witness for every
+/-- For a finite relative presentation with an exterior violation witness for every
 row, each row has a feasible point where only it is active. The active face direction is its
 linear kernel inside the parent direction, and the row is nonzero on that direction. -/
 theorem single_active_of_exterior_witness [Finite ι] (g : ι → (V →ᵃ[ℝ] ℝ))
-    (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, g j x ≤ 0}) (hne : P.Nonempty)
+    (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, g j x ≤ 0})
     (hw : ∀ j, ∃ x ∈ affineSpan ℝ P, 0 < g j x ∧ ∀ l ≠ j, g l x ≤ 0) :
     ∀ j, (∃ p ∈ P, g j p = 0 ∧ ∀ l ≠ j, g l p < 0) ∧
       vectorSpan ℝ {p ∈ P | g j p = 0} = vectorSpan ℝ P ⊓ (g j).linear.ker ∧
       ¬ vectorSpan ℝ P ≤ (g j).linear.ker := by
   classical
+  intro j
+  have hne : P.Nonempty := by
+    obtain ⟨x, hxA, _, _⟩ := hw j
+    exact (affineSpan_nonempty ℝ).mp ⟨x, hxA⟩
   let A := affineSpan ℝ P
   have hconv : Convex ℝ P := by
     have hc := A.convex.inter (convex_iInter fun j => (convex_Iic (0 : ℝ)).affine_preimage (g j))
     convert hc using 1
     ext p
-    simpa only [A, SetLike.mem_coe, Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter,
-      Set.mem_preimage, Set.mem_Iic] using Set.ext_iff.mp hf p
+    simpa [A] using Set.ext_iff.mp hf p
   obtain ⟨q, hq, hqzero⟩ := hconv.exists_mem_zero_iff_forall hne g
     (fun j y hy => (hf ▸ hy).2 j)
   have hqstrict (j : ι) : g j q < 0 := by
@@ -117,7 +121,6 @@ theorem single_active_of_exterior_witness [Finite ι] (g : ι → (V →ᵃ[ℝ]
     have heq : P.EqOn (g j) (AffineMap.const ℝ V 0) := by
       simpa only [Set.EqOn, AffineMap.const_apply] using (hqzero j).mp hz
     exact hx.ne' ((AffineMap.eqOn_affineSpan heq hxA).trans (AffineMap.const_apply _ _ _ _))
-  intro j
   obtain ⟨x, hxA, hxj, hxother⟩ := hw j
   obtain ⟨p, hseg, hpj, hpstrict⟩ :=
     exists_mem_openSegment_single_active g j hqstrict hxj hxother
@@ -137,70 +140,69 @@ theorem single_active_of_exterior_witness [Finite ι] (g : ι → (V →ᵃ[ℝ]
   rw [hset, direction_affineSpan] at hspan
   refine ⟨⟨p, hpP, hpj, hpstrict⟩, hspan, fun h => ?_⟩
   have hv : (g j).linear (p -ᵥ q) = 0 := h (vsub_mem_vectorSpan ℝ hpP hq)
-  rw [AffineMap.linear_apply_vsub, hpj, vsub_eq_sub, zero_sub, neg_eq_zero] at hv
-  exact (hqstrict j).ne hv
+  rw [AffineMap.linear_apply_vsub] at hv
+  have hgq : g j q = 0 := by simpa [hpj] using hv
+  exact (hqstrict j).ne hgq
 
-/-- Thin a finite relative half-space presentation to its own rows, retaining a strict
-single-active witness, its face-direction kernel identity and non-containment for each row. -/
+/-- A finite subfamily `S` of `f` still presents `P` within its affine span. Each `j ∈ S`
+has a point of `P` where `j` is active and every other retained row in `S` is strictly negative.
+The face direction is the row kernel within the parent direction, and `vectorSpan ℝ P`
+is not contained in `(f j).linear.ker`. -/
 theorem exists_irredundant_affine_subfamily [Finite ι] (f : ι → (V →ᵃ[ℝ] ℝ))
     (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0}) :
     ∃ S : Finset ι, P = {x | x ∈ affineSpan ℝ P ∧ ∀ j ∈ S, f j x ≤ 0} ∧
       ∀ j : S, (∃ p ∈ P, f j p = 0 ∧ ∀ l : S, l ≠ j → f l p < 0) ∧
         vectorSpan ℝ {p ∈ P | f j p = 0} = vectorSpan ℝ P ⊓ (f j).linear.ker ∧
         ¬ vectorSpan ℝ P ≤ (f j).linear.ker := by
-  rcases P.eq_empty_or_nonempty with rfl | hne
-  · exact ⟨∅, by simp, by simp⟩
   obtain ⟨S, hS, hw⟩ := exists_affine_subfamily_with_exterior_witness f hf
-  refine ⟨S, hS, single_active_of_exterior_witness (fun j : S => f j) ?_ hne hw⟩
+  refine ⟨S, hS, single_active_of_exterior_witness (fun j : S => f j) ?_ hw⟩
   simpa only [Subtype.forall] using hS
 
 variable [TopologicalSpace V]
 
-/-- A relative frontier point satisfies the given finite family of inequalities, with
-at least one original row active at that point. -/
-theorem mem_and_exists_eq_zero_of_mem_intrinsicFrontier [Finite ι] (g : ι → (V →ᴬ[ℝ] ℝ))
-    (hpres : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, g j x ≤ 0}) {x : V}
-    (hx : x ∈ intrinsicFrontier ℝ P) : x ∈ P ∧ ∃ j, g j x = 0 := by
-  let A := affineSpan ℝ P
-  obtain ⟨a, ha, rfl⟩ := mem_intrinsicFrontier.mp hx
-  have hcarrier : ((↑) ⁻¹' P : Set A) = ⋂ j, {y : A | g j (y : V) ≤ 0} := by
-    ext y
-    simp only [Set.mem_preimage, Set.mem_iInter, Set.mem_ofPred_eq]
-    exact (Set.ext_iff.mp hpres _).trans (and_iff_right y.property)
-  have hclosed : IsClosed ((↑) ⁻¹' P : Set A) := hcarrier ▸ isClosed_iInter fun j =>
-    isClosed_le ((g j).continuous.comp continuous_subtype_val) continuous_const
-  have hxP := hclosed.frontier_subset ha
-  refine ⟨hxP, ?_⟩
-  by_contra! hn
-  let U : Set A := {y | ∀ j, g j (y : V) < 0}
-  have hU : IsOpen U := by
-    simp only [U, Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun j =>
-      isOpen_lt ((g j).continuous.comp continuous_subtype_val) continuous_const
-  have haU : a ∈ U := fun j => lt_of_le_of_ne ((Set.ext_iff.mp hpres _).mp hxP |>.2 j) (hn j)
-  have hUP : U ⊆ ((↑) ⁻¹' P : Set A) := fun y hy =>
-    (Set.ext_iff.mp hpres _).mpr ⟨y.property, fun j => (hy j).le⟩
-  exact ha.2 (interior_mono hUP (by rwa [hU.interior_eq]))
-
 variable [IsTopologicalAddGroup V]
 
-/-- The zero locus of one row of a relative half-space presentation exposes a subset
-of its carrier. -/
-theorem isExposed_setOf_eq_zero_of_relative_presentation (f : ι → (V →ᴬ[ℝ] ℝ))
-    (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0}) (j : ι) :
-    IsExposed ℝ P {x ∈ P | f j x = 0} := by
-  have hsub : P ⊆ {x | ∀ l, f l x ≤ 0} := fun x hx => ((Set.ext_iff.mp hf x).mp hx).2
-  convert (isExposed_setOf_active f {j}).inter_of_subset hsub using 1
-  ext x
-  simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Finset.mem_singleton, forall_eq]
-  exact ⟨fun h => ⟨⟨hsub h.1, h.2⟩, h.1⟩, fun h => ⟨h.2, h.1.2⟩⟩
+/-- Thin a finite continuous relative presentation, keeping the same selected rows and their
+exposed faces, witnesses active only among the selected rows, face-direction kernels
+and non-containment of the parent direction in each row kernel.
+No finite-dimensionality assumption is needed. -/
+theorem exists_irredundant_subfamily [Finite ι] (f : ι → (V →ᴬ[ℝ] ℝ))
+    (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0}) :
+    ∃ S : Finset ι, P = {x | x ∈ affineSpan ℝ P ∧ ∀ j ∈ S, f j x ≤ 0} ∧
+      ∀ j : S, IsExposed ℝ P {x ∈ P | f j x = 0} ∧
+        (∃ p ∈ P, f j p = 0 ∧ ∀ l : S, l ≠ j → f l p < 0) ∧
+        vectorSpan ℝ {x ∈ P | f j x = 0} = vectorSpan ℝ P ⊓ (f j).toAffineMap.linear.ker ∧
+        ¬ vectorSpan ℝ P ≤ (f j).toAffineMap.linear.ker := by
+  obtain ⟨S, hS, hrows⟩ := exists_irredundant_affine_subfamily (fun j => (f j).toAffineMap)
+    (by simpa only [ContinuousAffineMap.coe_toAffineMap] using hf)
+  simp only [ContinuousAffineMap.coe_toAffineMap] at hS hrows
+  exact ⟨S, hS, fun j => ⟨(f j).isExposed_setOf_eq_of_le
+    (fun y hy => ((Set.ext_iff.mp hf y).mp hy).2 j), hrows j⟩⟩
+
+/-- A polyhedron has an irredundant continuous presentation within its affine span.
+The single chosen presentation retains strict witnesses, face kernels and non-containment,
+without a finite-dimensionality assumption. -/
+theorem IsConvexPolyhedron.exists_irredundant_presentation (hP : IsConvexPolyhedron P) :
+    ∃ (ι : Type) (_ : Fintype ι) (g : ι → (V →ᴬ[ℝ] ℝ)),
+      P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, g j x ≤ 0} ∧
+      ∀ j, IsExposed ℝ P {x ∈ P | g j x = 0} ∧
+        (∃ p ∈ P, g j p = 0 ∧ ∀ l ≠ j, g l p < 0) ∧
+        vectorSpan ℝ {x ∈ P | g j x = 0} = vectorSpan ℝ P ⊓ (g j).toAffineMap.linear.ker ∧
+        ¬ vectorSpan ℝ P ≤ (g j).toAffineMap.linear.ker := by
+  obtain ⟨_, f, hf⟩ := isConvexPolyhedron_iff.mp hP
+  have hrel : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0} := by
+    rw [Set.ofPred_and, SetLike.setOfPred_mem_eq, ← hf]
+    exact (Set.inter_eq_right.mpr (subset_affineSpan ℝ P)).symm
+  obtain ⟨S, hS, hrows⟩ := exists_irredundant_subfamily f hrel
+  exact ⟨S, inferInstance, fun j => f j, by simpa only [Subtype.forall] using hS, hrows⟩
 
 section FiniteDimension
 
 variable [FiniteDimensional ℝ (vectorSpan ℝ P)]
 
-/-- Select facets from a specified finite presentation, retaining the original functionals
-and their labels. Each retained row is uniquely active somewhere on its facet. -/
+/-- Select a subfamily `S` which still presents `P`, retaining the input functionals and labels.
+Each retained row is active at a point of `P` where every other retained row in `S` is strict.
+Its active face is exposed and has relative codimension one. -/
 theorem exists_facet_subfamily [Finite ι] (f : ι → (V →ᴬ[ℝ] ℝ))
     (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0}) :
     ∃ S : Finset ι, P = {x | x ∈ affineSpan ℝ P ∧ ∀ j ∈ S, f j x ≤ 0} ∧
@@ -209,19 +211,18 @@ theorem exists_facet_subfamily [Finite ι] (f : ι → (V →ᴬ[ℝ] ℝ))
         vectorSpan ℝ {x ∈ P | f j x = 0} = vectorSpan ℝ P ⊓ (f j).toAffineMap.linear.ker ∧
         ¬ vectorSpan ℝ P ≤ (f j).toAffineMap.linear.ker ∧
         finrank ℝ (vectorSpan ℝ {x ∈ P | f j x = 0}) + 1 = finrank ℝ (vectorSpan ℝ P) := by
-  obtain ⟨S, hS, hrows⟩ := exists_irredundant_affine_subfamily (fun j => (f j).toAffineMap)
-    (by simpa only [ContinuousAffineMap.coe_toAffineMap] using hf)
-  simp only [ContinuousAffineMap.coe_toAffineMap] at hS hrows
+  obtain ⟨S, hS, hrows⟩ := exists_irredundant_subfamily f hf
   refine ⟨S, hS, fun j => ?_⟩
-  obtain ⟨hw, hk, hn⟩ := hrows j
-  refine ⟨isExposed_setOf_eq_zero_of_relative_presentation f hf j, hw, hk, hn, ?_⟩
+  obtain ⟨he, hw, hk, hn⟩ := hrows j
+  refine ⟨he, hw, hk, hn, ?_⟩
   rw [hk, inf_comm]
   exact Module.Dual.finrank_ker_inf_add_one hn
 
 namespace IsConvexPolyhedron
 
-/-- A polyhedron has a finite presentation inside its affine span by exposed facets.
-At each retained row a witness satisfies every other retained inequality strictly. -/
+/-- A polyhedron has a finite presentation `g` inside its affine span by exposed facets.
+For each row, a point of the polyhedron makes that row active while satisfying every other
+inequality of `g` strictly. -/
 theorem exists_facet_presentation (hP : IsConvexPolyhedron P) :
     ∃ (ι : Type) (_ : Fintype ι) (g : ι → (V →ᴬ[ℝ] ℝ)),
       P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, g j x ≤ 0} ∧
@@ -230,20 +231,20 @@ theorem exists_facet_presentation (hP : IsConvexPolyhedron P) :
         vectorSpan ℝ {x ∈ P | g j x = 0} = vectorSpan ℝ P ⊓ (g j).toAffineMap.linear.ker ∧
         ¬ vectorSpan ℝ P ≤ (g j).toAffineMap.linear.ker ∧
         finrank ℝ (vectorSpan ℝ {x ∈ P | g j x = 0}) + 1 = finrank ℝ (vectorSpan ℝ P) := by
-  obtain ⟨_, f, hf⟩ := isConvexPolyhedron_iff.mp hP
-  have hrel : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0} := by
-    change P = (affineSpan ℝ P : Set V) ∩ {x | ∀ j, f j x ≤ 0}
-    rw [← hf]
-    exact (Set.inter_eq_right.mpr (subset_affineSpan ℝ P)).symm
-  obtain ⟨S, hS, hrows⟩ := exists_facet_subfamily f hrel
-  exact ⟨S, inferInstance, fun j => f j, by simpa only [Subtype.forall] using hS, hrows⟩
+  obtain ⟨ι, hι, g, hg, hrows⟩ := hP.exists_irredundant_presentation
+  refine ⟨ι, hι, g, hg, fun j => ?_⟩
+  obtain ⟨he, hw, hk, hn⟩ := hrows j
+  refine ⟨he, hw, hk, hn, ?_⟩
+  rw [hk, inf_comm]
+  exact Module.Dual.finrank_ker_inf_add_one hn
 
 /-- Every relative frontier point lies on an exposed face of relative codimension one. -/
 theorem exists_facet_of_mem_intrinsicFrontier (hP : IsConvexPolyhedron P) {x : V}
     (hx : x ∈ intrinsicFrontier ℝ P) : ∃ F, IsExposed ℝ P F ∧ x ∈ F ∧
       finrank ℝ (vectorSpan ℝ F) + 1 = finrank ℝ (vectorSpan ℝ P) := by
   obtain ⟨_, _, g, hpres, hrows⟩ := hP.exists_facet_presentation
-  obtain ⟨hxp, j, hj⟩ := mem_and_exists_eq_zero_of_mem_intrinsicFrontier g hpres hx
+  obtain ⟨j, _, hxp, hj⟩ :=
+    Set.mem_iUnion₂.mp (intrinsicFrontier_subset_iUnion_active g hpres hx)
   exact ⟨_, (hrows j).1, ⟨hxp, hj⟩, (hrows j).2.2.2.2⟩
 
 variable [ContinuousSMul ℝ V]
@@ -269,42 +270,5 @@ theorem intrinsicFrontier_eq_sUnion_facets (hP : IsConvexPolyhedron P) :
 end IsConvexPolyhedron
 
 end FiniteDimension
-
-namespace IsConvexPolyhedron
-
-variable [ContinuousSMul ℝ V]
-
-/-- In a topological real module, without a finite-dimensionality assumption, the relative
-boundary of a polyhedron consists of points on nonempty proper exposed subsets. -/
-theorem mem_intrinsicFrontier_iff_exists_isExposed_ne (hP : IsConvexPolyhedron P) {x : V} :
-    x ∈ intrinsicFrontier ℝ P ↔ ∃ F, IsExposed ℝ P F ∧ F.Nonempty ∧ F ≠ P ∧ x ∈ F := by
-  refine ⟨fun hx => ?_, fun ⟨_, hF, _, hne, hxF⟩ => hF.subset_intrinsicFrontier hne hxF⟩
-  obtain ⟨_, f, hf⟩ := isConvexPolyhedron_iff.mp hP
-  have hrel : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0} := by
-    change P = (affineSpan ℝ P : Set V) ∩ {x | ∀ j, f j x ≤ 0}
-    rw [← hf]
-    exact (Set.inter_eq_right.mpr (subset_affineSpan ℝ P)).symm
-  obtain ⟨S, hS, hrows⟩ := exists_irredundant_affine_subfamily (fun j => (f j).toAffineMap)
-    (by simpa only [ContinuousAffineMap.coe_toAffineMap] using hrel)
-  simp only [ContinuousAffineMap.coe_toAffineMap] at hS hrows
-  have hpres : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j : S, f j x ≤ 0} := by
-    simpa only [Subtype.forall] using hS
-  obtain ⟨hxp, j, hj⟩ := mem_and_exists_eq_zero_of_mem_intrinsicFrontier (fun j : S => f j) hpres hx
-  refine ⟨_, isExposed_setOf_eq_zero_of_relative_presentation f hrel j,
-    ⟨x, hxp, hj⟩, ?_, ⟨hxp, hj⟩⟩
-  intro he
-  obtain ⟨_, hk, hn⟩ := hrows j
-  rw [he] at hk
-  exact hn (inf_eq_left.mp hk.symm)
-
-/-- Without a finite-dimensionality assumption, the relative boundary is the union of
-all nonempty proper exposed subsets. -/
-theorem intrinsicFrontier_eq_sUnion_isExposed_ne (hP : IsConvexPolyhedron P) :
-    intrinsicFrontier ℝ P = ⋃₀ {F | IsExposed ℝ P F ∧ F.Nonempty ∧ F ≠ P} := by
-  ext x
-  simpa only [Set.mem_sUnion, Set.mem_ofPred_eq, and_assoc] using
-    hP.mem_intrinsicFrontier_iff_exists_isExposed_ne (x := x)
-
-end IsConvexPolyhedron
 
 end TauCeti
