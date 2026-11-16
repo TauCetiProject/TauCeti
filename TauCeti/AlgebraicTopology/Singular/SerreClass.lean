@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.SerreClass
 public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.CategoryTheory.Abelian.SerreClass.MorphismProperty
 
 /-!
 # Singular homology of pairs modulo a Serre class
@@ -77,12 +78,10 @@ lemma isIso_homologyMap_fst_of_isIso (n : ℕ)
     (hsnd' : ∀ m, m + 1 = n → Mono (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m)) :
     IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
   -- This is the case of the Serre class of zero objects.
-  have h := isoModSerre_homologyMap_fst R IsZero f n (ObjectProperty.epiModSerre_of_epi _ _)
-    (ObjectProperty.isoModSerre_of_isIso _ _) (ObjectProperty.isoModSerre_of_isIso _ _)
+  exact (ObjectProperty.isoModSerre_isZero_iff _).1 <| isoModSerre_homologyMap_fst R IsZero f n
+    (ObjectProperty.epiModSerre_of_epi _ _) (ObjectProperty.isoModSerre_of_isIso _ _)
+    (ObjectProperty.isoModSerre_of_isIso _ _)
     fun m hm ↦ have := hsnd' m hm; ObjectProperty.monoModSerre_of_mono _ _
-  have := Preadditive.mono_of_isZero_kernel _ h.1
-  have := Preadditive.epi_of_isZero_cokernel _ h.2
-  exact isIso_of_mono_of_epi _
 
 /-- A map of pairs `f : (X, ∅) ⟶ (X', ∅)` whose subspaces are empty induces an isomorphism modulo
 a Serre class `Q` on `Hₙ(X) ⟶ Hₙ(X')` if it induces one on `Hₙ(X, ∅) ⟶ Hₙ(X', ∅)`. Only the target

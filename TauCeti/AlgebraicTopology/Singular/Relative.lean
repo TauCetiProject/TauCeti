@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
-public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj

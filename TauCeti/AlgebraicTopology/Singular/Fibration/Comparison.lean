@@ -502,13 +502,9 @@ theorem isIso_singularHomologyMap_of_commSq {B' : _root_.TopCat.{u}} {p' : E' �
     IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
       (ModuleCat.of R R)).map f) := by
   -- This is the case of the Serre class of zero modules.
-  have h := isoModSerre_singularHomologyMap_of_commSq hp hp' R IsZero IsZero le_rfl sq hg k
-    fun b q hq ↦
-      have := hfib b q hq
-      ⟨isZero_kernel_of_mono _, isZero_cokernel_of_epi _⟩
-  have := Preadditive.mono_of_isZero_kernel _ h.1
-  have := Preadditive.epi_of_isZero_cokernel _ h.2
-  exact isIso_of_mono_of_epi _
+  exact (ObjectProperty.isoModSerre_isZero_iff _).1 <|
+    isoModSerre_singularHomologyMap_of_commSq hp hp' R IsZero IsZero le_rfl sq hg k
+      fun b q hq ↦ (ObjectProperty.isoModSerre_isZero_iff _).2 (hfib b q hq)
 
 /-- **A Serre fibration whose fibres have the homology of a point is a homology isomorphism.** Let
 `p : E ⟶ B` be a Serre fibration such that, for every `b : B`, the map from the fibre `p⁻¹(b)` to a

@@ -44,12 +44,31 @@ public section
 
 open CategoryTheory Limits ComposableArrows Abelian
 
+universe v u
+
 namespace HomologicalComplex.HomologySequence
 
-variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι}
+variable {C : Type u} {ι : Type*} [Category.{v} C] [Abelian C] {c : ComplexShape ι}
   {S₁ S₂ : ShortComplex (HomologicalComplex C c)} (φ : S₁ ⟶ S₂)
   (hS₁ : S₁.ShortExact) (hS₂ : S₂.ShortExact)
   (P : ObjectProperty C) [P.IsSerreClass]
+
+/-- The localization of `C` with respect to a Serre class `P` is an exact functor to an abelian
+category which sends exactly the monomorphisms and epimorphisms modulo `P` to monomorphisms and
+epimorphisms. -/
+private lemma exists_exact_functor :
+    ∃ (D : Type u) (_ : Category.{max u v} D) (_ : Abelian D) (L : C ⥤ D) (_ : L.Additive)
+      (_ : PreservesFiniteLimits L) (_ : PreservesFiniteColimits L),
+      (∀ ⦃X Y : C⦄ (f : X ⟶ Y), Mono (L.map f) ↔ P.monoModSerre f) ∧
+      ∀ ⦃X Y : C⦄ (f : X ⟶ Y), Epi (L.map f) ↔ P.epiModSerre f := by
+  let L := P.isoModSerre.Q
+  let := Localization.preadditive L P.isoModSerre
+  have := Localization.functor_additive L P.isoModSerre
+  let := ObjectProperty.SerreClassLocalization.abelian L P
+  exact ⟨_, _, _, L, inferInstance, ObjectProperty.SerreClassLocalization.preservesFiniteLimits L P,
+    ObjectProperty.SerreClassLocalization.preservesFiniteColimits L P,
+    fun _ _ ↦ ObjectProperty.SerreClassLocalization.mono_map_iff L P,
+    fun _ _ ↦ ObjectProperty.SerreClassLocalization.epi_map_iff L P⟩
 
 include hS₁ hS₂
 
@@ -62,14 +81,8 @@ lemma monoModSerre_homologyMap_τ₂ (j : ι)
     (h₃ : P.monoModSerre (homologyMap φ.τ₃ j)) :
     P.monoModSerre (homologyMap φ.τ₂ j) := by
   -- Pass to the abelian localization `L`, which is exact.
-  let L := P.isoModSerre.Q
-  let := Localization.preadditive L P.isoModSerre
-  have := Localization.functor_additive L P.isoModSerre
-  let := ObjectProperty.SerreClassLocalization.abelian L P
-  have := ObjectProperty.SerreClassLocalization.preservesFiniteLimits L P
-  have := ObjectProperty.SerreClassLocalization.preservesFiniteColimits L P
-  simp only [← ObjectProperty.SerreClassLocalization.mono_map_iff L P,
-    ← ObjectProperty.SerreClassLocalization.epi_map_iff L P] at h₁ h₂ h₃ ⊢
+  obtain ⟨D, _, _, L, _, _, _, hmono, hepi⟩ := exists_exact_functor P
+  simp only [← hmono, ← hepi] at h₁ h₂ h₃ ⊢
   by_cases hj : ∃ i, c.Rel i j
   · obtain ⟨i, hij⟩ := hj
     -- The image of the exact sequence `H_i(X₃) ⟶ H_j(X₁) ⟶ H_j(X₂) ⟶ H_j(X₃)`.
@@ -93,14 +106,8 @@ lemma epiModSerre_homologyMap_τ₂ (j : ι)
     (h₃ : ∀ k, c.Rel j k → P.monoModSerre (homologyMap φ.τ₁ k)) :
     P.epiModSerre (homologyMap φ.τ₂ j) := by
   -- Pass to the abelian localization `L`, which is exact.
-  let L := P.isoModSerre.Q
-  let := Localization.preadditive L P.isoModSerre
-  have := Localization.functor_additive L P.isoModSerre
-  let := ObjectProperty.SerreClassLocalization.abelian L P
-  have := ObjectProperty.SerreClassLocalization.preservesFiniteLimits L P
-  have := ObjectProperty.SerreClassLocalization.preservesFiniteColimits L P
-  simp only [← ObjectProperty.SerreClassLocalization.mono_map_iff L P,
-    ← ObjectProperty.SerreClassLocalization.epi_map_iff L P] at h₁ h₂ h₃ ⊢
+  obtain ⟨D, _, _, L, _, _, _, hmono, hepi⟩ := exists_exact_functor P
+  simp only [← hmono, ← hepi] at h₁ h₂ h₃ ⊢
   by_cases hj : ∃ k, c.Rel j k
   · obtain ⟨k, hjk⟩ := hj
     -- The image of the exact sequence `H_j(X₁) ⟶ H_j(X₂) ⟶ H_j(X₃) ⟶ H_k(X₁)`.
