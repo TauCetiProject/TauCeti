@@ -126,7 +126,7 @@ theorem mem_diagonalPoints_iff {K : Type u} [CommRing K] {g : points r K} :
 theorem coe_weightTorusPoints_mem_diagonalTorus (K : Type u) [CommRing K] (s : Fin r → Kˣ) :
     (weightTorusPoints r K s : Matrix.GeneralLinearGroup (Fin (r + 1)) K) ∈
       diagonalTorus K (r + 1) := by
-  rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
+  rw [coe_weightTorusPoints]
   exact mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩
 
 /-- The partial products of a determinant-one diagonal tuple give an explicit preimage under the
@@ -135,7 +135,7 @@ theorem coe_weightTorusPoints_partialProd {K : Type u} [CommRing K]
     (t : Fin (r + 1) → Kˣ) (ht : ∏ i, t i = 1) :
     (weightTorusPoints r K (fun i : Fin r ↦ Fin.partialProd t i.succ.castSucc) :
         Matrix.GeneralLinearGroup (Fin (r + 1)) K) = diagGL t := by
-  rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
+  rw [coe_weightTorusPoints]
   congr 1
   exact funext (torusCharacter_partialProd r t ht)
 
@@ -162,8 +162,7 @@ theorem centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_weig
       (hcomm.map (points r K).subtype).map (Units.coeHom _)
     have hd : d = weightTorusPoints r K s := rfl
     rw [hd] at hmatrix
-    rw [coe_weightTorusPoints,
-      UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe] at hmatrix
+    rw [coe_weightTorusPoints, diagGL_coe] at hmatrix
     apply apply_eq_zero_of_commute_diagonal hmatrix
     rw [weightChar_apply, weightChar_apply] at hs
     exact fun h ↦ hs (Units.ext h)
