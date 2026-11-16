@@ -151,9 +151,8 @@ variable (R M) in
 theorem natCard_foxColorings_of_zero_crossings (D : PDCode 0) :
     Nat.card (D.foxColorings R M) = Nat.card M ^ D.crossinglessComponentCount := by
   rw [foxColorings_eq_top_of_zero_crossings, Nat.card_congr Submodule.topEquiv.toEquiv,
-    Nat.card_fun, Nat.card_sum,
-    Nat.card_eq_fintype_card (α := Fin (4 * 0)), Nat.card_eq_fintype_card (α := Fin _),
-    Fintype.card_fin, Fintype.card_fin, Nat.mul_zero, Nat.zero_add]
+    Nat.card_fun]
+  simp
 
 end PDCode
 

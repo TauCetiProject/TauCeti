@@ -162,13 +162,9 @@ variable (R M) in
 as negation. -/
 def foxColoringLift (D : OrientedPDCode n) :
     D.foxColorings R M →ₗ[R] (D.AlexanderModule →+ M) where
-  toFun v := (toAlexanderHom D v).toAddMonoidHom
-  map_add' v w := AddMonoidHom.ext fun x ↦
-    congrArg (fun f : D.AlexanderModule →ₗ[ℤ[T;T⁻¹]] M ↦ f x)
-      ((alexanderHomEquiv R M D).map_add v w)
-  map_smul' c v := AddMonoidHom.ext fun x ↦
-    congrArg (fun f : D.AlexanderModule →ₗ[ℤ[T;T⁻¹]] M ↦ f x)
-      ((alexanderHomEquiv R M D).map_smul c v)
+  toFun v := (alexanderHomEquiv R M D v).toAddMonoidHom
+  map_add' v w := AddMonoidHom.ext fun x ↦ by simp [(alexanderHomEquiv R M D).map_add]
+  map_smul' c v := AddMonoidHom.ext fun x ↦ by simp [(alexanderHomEquiv R M D).map_smul]
 
 /-- Evaluating the additive lift agrees with evaluating the linear lift. -/
 private theorem foxColoringLift_eq_toAlexanderHom (D : OrientedPDCode n)
@@ -177,14 +173,14 @@ private theorem foxColoringLift_eq_toAlexanderHom (D : OrientedPDCode n)
   (rfl)
 
 /-- The lift takes each Alexander generator to its colour. -/
-@[simp↓]
+@[simp]
 theorem foxColoringLift_alexanderGenerator (D : OrientedPDCode n) (v : D.foxColorings R M)
     (g : Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :
     D.foxColoringLift R M v (D.alexanderGenerator g) = v.1 g := by
   rw [foxColoringLift_eq_toAlexanderHom, toAlexanderHom_alexanderGenerator]
 
 /-- The lift takes Laurent scalar multiplication to evaluation at `t = -1`. -/
-@[simp↓]
+@[simp]
 theorem foxColoringLift_smul (D : OrientedPDCode n) (v : D.foxColorings R M)
     (a : ℤ[T;T⁻¹]) (x : D.AlexanderModule) :
     D.foxColoringLift R M v (a • x) =
@@ -235,37 +231,29 @@ variable (R M) in
 intertwine `t` with negation (`TauCeti.OrientedPDCode.mem_range_foxColoringLift_iff`): the lift is
 an `R`-linear equivalence onto its range, whose inverse labels each generator by its image. -/
 def foxColoringsNegOneHomEquiv (D : OrientedPDCode n) :
-    D.foxColorings R M ≃ₗ[R] LinearMap.range (D.foxColoringLift R M) where
-  toFun v := ⟨D.foxColoringLift R M v, LinearMap.mem_range_self _ v⟩
-  map_add' v w := Subtype.ext (map_add _ v w)
-  map_smul' c v := Subtype.ext (map_smul _ c v)
-  invFun f := ofAlexanderHom D (linearOfNegOneHom D f.1 (mem_range_foxColoringLift_iff.1 f.2))
-  left_inv v := Subtype.ext <| funext fun g ↦ by
-    simp only [ofAlexanderHom_apply, linearOfNegOneHom_apply, foxColoringLift_alexanderGenerator]
-  right_inv f := Subtype.ext <| AddMonoidHom.ext fun x ↦ by
-    simp only [foxColoringLift_eq_toAlexanderHom, toAlexanderHom_ofAlexanderHom,
-      linearOfNegOneHom_apply]
+    D.foxColorings R M ≃ₗ[R] LinearMap.range (D.foxColoringLift R M) :=
+  LinearEquiv.ofInjective (D.foxColoringLift R M) (D.foxColoringLift_injective R M)
 
 /-- The homomorphism equivalence sends a colouring to its lift. -/
-@[simp↓]
+@[simp]
 theorem foxColoringsNegOneHomEquiv_apply (D : OrientedPDCode n) (v : D.foxColorings R M) :
     (foxColoringsNegOneHomEquiv R M D v : D.AlexanderModule →+ M) = D.foxColoringLift R M v :=
   (rfl)
 
-/-- The inverse homomorphism equivalence labels each generator by its image. -/
-@[simp↓]
-theorem foxColoringsNegOneHomEquiv_symm_apply (D : OrientedPDCode n)
-    (f : LinearMap.range (D.foxColoringLift R M))
-    (g : Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :
-    ((foxColoringsNegOneHomEquiv R M D).symm f).1 g = f.1 (D.alexanderGenerator g) :=
-  (rfl)
-
 /-- The lift of the colouring labelled by an additive homomorphism is that homomorphism. -/
-@[simp↓]
+@[simp]
 theorem foxColoringLift_foxColoringsNegOneHomEquiv_symm (D : OrientedPDCode n)
     (f : LinearMap.range (D.foxColoringLift R M)) :
     D.foxColoringLift R M ((foxColoringsNegOneHomEquiv R M D).symm f) = f :=
-  congrArg Subtype.val ((foxColoringsNegOneHomEquiv R M D).apply_symm_apply f)
+  LinearEquiv.ofInjective_symm_apply (D.foxColoringLift R M) f
+
+/-- The inverse homomorphism equivalence labels each generator by its image. -/
+@[simp]
+theorem foxColoringsNegOneHomEquiv_symm_apply (D : OrientedPDCode n)
+    (f : LinearMap.range (D.foxColoringLift R M))
+    (g : Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :
+    ((foxColoringsNegOneHomEquiv R M D).symm f).1 g = f.1 (D.alexanderGenerator g) := by
+  rw [← foxColoringLift_alexanderGenerator, foxColoringLift_foxColoringsNegOneHomEquiv_symm]
 
 variable (R M) in
 /-- A `ℤ[T;T⁻¹]`-linear equivalence of Alexander modules induces an `R`-linear equivalence of Fox
@@ -278,7 +266,7 @@ def foxColoringsEquivOfAlexanderModuleEquiv {D : OrientedPDCode n} {D' : Oriente
   alexanderHomEquiv R M D ≪≫ₗ LinearEquiv.congrLeft M R e ≪≫ₗ (alexanderHomEquiv R M D').symm
 
 /-- Transport evaluates the original lift on the inverse image of each generator. -/
-@[simp↓]
+@[simp]
 theorem foxColoringsEquivOfAlexanderModuleEquiv_apply
     {D : OrientedPDCode n} {D' : OrientedPDCode m}
     (e : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D'.AlexanderModule) (v : D.foxColorings R M)
@@ -289,7 +277,7 @@ theorem foxColoringsEquivOfAlexanderModuleEquiv_apply
     foxColoringLift_eq_toAlexanderHom]
 
 /-- Identity transport fixes every Fox colouring. -/
-@[simp↓]
+@[simp]
 theorem foxColoringsEquivOfAlexanderModuleEquiv_refl (D : OrientedPDCode n) :
     foxColoringsEquivOfAlexanderModuleEquiv R M (LinearEquiv.refl ℤ[T;T⁻¹] D.AlexanderModule) =
       LinearEquiv.refl R (D.foxColorings R M) := by
@@ -297,18 +285,17 @@ theorem foxColoringsEquivOfAlexanderModuleEquiv_refl (D : OrientedPDCode n) :
   simp [foxColoringsEquivOfAlexanderModuleEquiv_apply]
 
 /-- Reversing the Alexander equivalence reverses the colouring equivalence. -/
-@[simp↓]
+@[simp]
 theorem foxColoringsEquivOfAlexanderModuleEquiv_symm
     {D : OrientedPDCode n} {D' : OrientedPDCode m}
     (e : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D'.AlexanderModule) :
     (foxColoringsEquivOfAlexanderModuleEquiv R M e).symm =
       foxColoringsEquivOfAlexanderModuleEquiv R M e.symm := by
   ext v g
-  simp [foxColoringsEquivOfAlexanderModuleEquiv, alexanderHomEquiv, ofAlexanderHom_apply,
-    foxColoringLift_eq_toAlexanderHom]
+  simp [foxColoringsEquivOfAlexanderModuleEquiv, alexanderHomEquiv, ofAlexanderHom_apply]
 
 /-- Lifting a transported colouring precomposes its lift with the inverse Alexander equivalence. -/
-@[simp↓]
+@[simp]
 theorem foxColoringLift_foxColoringsEquivOfAlexanderModuleEquiv
     {D : OrientedPDCode n} {D' : OrientedPDCode m}
     (e : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D'.AlexanderModule) (v : D.foxColorings R M)
@@ -319,7 +306,7 @@ theorem foxColoringLift_foxColoringsEquivOfAlexanderModuleEquiv
     alexanderHomEquiv, toAlexanderHom_ofAlexanderHom]
 
 /-- Transporting a colouring twice is transport along the composite Alexander equivalence. -/
-@[simp↓]
+@[simp]
 theorem foxColoringsEquivOfAlexanderModuleEquiv_foxColoringsEquivOfAlexanderModuleEquiv
     {k : ℕ} {D : OrientedPDCode n} {D' : OrientedPDCode m} {D'' : OrientedPDCode k}
     (e : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D'.AlexanderModule)
@@ -330,7 +317,7 @@ theorem foxColoringsEquivOfAlexanderModuleEquiv_foxColoringsEquivOfAlexanderModu
   Subtype.ext <| funext fun g ↦ by simp
 
 /-- Colouring transport composition agrees with Alexander equivalence composition. -/
-@[simp↓]
+@[simp]
 theorem foxColoringsEquivOfAlexanderModuleEquiv_trans
     {k : ℕ} {D : OrientedPDCode n} {D' : OrientedPDCode m} {D'' : OrientedPDCode k}
     (e : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]] D'.AlexanderModule)
