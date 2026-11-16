@@ -7,13 +7,16 @@ module
 
 public import TauCeti.GroupTheory.GraphOfGroups.AGraph.Comparison
 import TauCeti.Algebra.Group.Subgroup.Map
-import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # The auxiliary moves on `𝔸`-graphs
 
 Kapovich, Weidmann and Myasnikov define three moves that change the labels of an `𝔸`-graph `B`
-without changing its underlying graph, and that do not change the represented subgroup.
+without changing its underlying graph. A conjugation move conjugates the represented subgroup by
+its element at the base vertex, so it preserves the subgroup when that element lies in the vertex
+group of `B` there, for instance when the move is admissible with respect to the base vertex. A
+Bass–Serre move by a family taking the same value on a dart and on its reverse, and a simple
+adjustment by elements of the vertex groups of `B`, preserve the represented subgroup.
 
 * The conjugation move A0 at a vertex `u` by `g ∈ A_[u]` replaces `B_u` by `g B_u g⁻¹` and the
   label `f_α` of every dart `f` issuing from `u` by `g f_α`; the label `f_ω` of a dart ending at `u`
@@ -50,8 +53,9 @@ and `1` elsewhere.
   groups preserves the represented subgroup.
 * `TauCeti.GraphOfGroups.AGraph.isFolded_conj_iff`,
   `TauCeti.GraphOfGroups.AGraph.isFolded_bassSerre_iff` and
-  `TauCeti.GraphOfGroups.AGraph.isFolded_adjust_iff`: the moves, under the same conditions,
-  preserve foldedness.
+  `TauCeti.GraphOfGroups.AGraph.isFolded_adjust_iff`: every conjugation move, a Bass–Serre move by
+  a family taking the same value on a dart and on its reverse, and a simple adjustment by elements
+  of the vertex groups preserve foldedness.
 * `TauCeti.GraphOfGroups.AGraph.complexity_conj`: a conjugation move preserves the complexity.
 
 ## References
@@ -70,21 +74,6 @@ namespace TauCeti
 namespace GraphOfGroups
 
 namespace AGraph
-
-/-- The preimage of the conjugate of a subgroup by the image of `x` is the conjugate by `x` of the
-preimage. -/
-private theorem comap_map_conj {G H : Type*} [Group G] [Group H] (φ : H →* G) (T : Subgroup G)
-    (x : H) : (T.map (MulAut.conj (φ x)).toMonoidHom).comap φ =
-      (T.comap φ).map (MulAut.conj x).toMonoidHom := by
-  ext y
-  rw [Subgroup.mem_comap, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, Subgroup.mem_comap,
-    MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
-
-/-- Conjugating a subgroup by one of its elements does not change it. -/
-private theorem map_conj_eq_self {G : Type*} [Group G] {S : Subgroup G} {x : G} (hx : x ∈ S) :
-    S.map (MulAut.conj x).toMonoidHom = S := by
-  rw [MulEquiv.toMonoidHom_eq_coe, TauCeti.map_conj_eq_conj_smul]
-  exact Subgroup.conj_smul_eq_self_of_mem hx
 
 variable {Γ : SerreGraph.{u, v}} {𝔸 : GraphOfGroups.{u, v, w, x} Γ} {v₀ : Γ.V}
   (B : AGraph.{u, v, w, x, u', v'} 𝔸 v₀)
@@ -211,7 +200,7 @@ preserves the represented subgroup; this covers the moves A0 admissible with res
 vertex, with `g_{u₀} = 1` (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A0). -/
 theorem subgroup_conj_of_mem (hg : g B.base ∈ B.grp B.base) : (B.conj g).subgroup = B.subgroup := by
   rw [subgroup_conj]
-  exact map_conj_eq_self (B.cast_vertexHom_nil_mem_subgroup hg)
+  exact Subgroup.map_conj_eq_self_of_mem (B.cast_vertexHom_nil_mem_subgroup hg)
 
 /-- A conjugation move preserves finiteness. -/
 @[simp] theorem isFinite_conj_iff : (B.conj g).IsFinite ↔ B.IsFinite := by
@@ -333,7 +322,7 @@ edge group as `[f]`. -/
 variable {B c} in
 /-- After a Bass–Serre move by a family taking the same value on a dart and on its reverse, the
 label `f_ω` of a dart `f` is `ω_[f](c_f) f_ω`. -/
-private theorem labelω_bassSerre_of_rev (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast
+theorem labelω_bassSerre_of_rev (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast
     (M := 𝔸.edgeGroup) ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm
       (c f)) (f : B.graph.E) :
     (B.bassSerre c).labelω f = 𝔸.ω (B.typ.mapE f) (c f) * B.labelω f := by
@@ -412,7 +401,7 @@ theorem IsFolded.bassSerre (hB : B.IsFolded) (hc : ∀ f, c (B.graph.rev f) = Mu
     rw [grpSrc_bassSerre, grpTgt_bassSerre, bassSerre_labelα, labelω_bassSerre_of_rev hc,
       mul_inv_rev, inv_inv, ← Subgroup.map_conj_map_conj, ← Subgroup.map_conj_map_conj]
     simp only [bassSerre_typ]
-    rw [comap_map_conj, comap_map_conj, hB.comap_eq f]
+    rw [Subgroup.comap_map_conj, Subgroup.comap_map_conj, hB.comap_eq f]
 
 /-- A Bass–Serre move by a family taking the same value on a dart and on its reverse preserves
 foldedness (Kapovich, Weidmann and Myasnikov, Lemma 4.16 (1)). -/
@@ -550,8 +539,9 @@ theorem IsFolded.adjust (hB : B.IsFolded) (ha : ∀ f, a f ∈ B.grpSrc f) :
       simp only [MulEquiv.cast_apply, cast_cast] at this ⊢
       exact B.cast_mem_grp rfl this
     rw [grpSrc_adjust, grpTgt_adjust, adjust_labelα, labelω_adjust, mul_inv_rev,
-      ← Subgroup.map_conj_map_conj, ← Subgroup.map_conj_map_conj, map_conj_eq_self (inv_mem (ha f)),
-      map_conj_eq_self (inv_mem h₂)]
+      ← Subgroup.map_conj_map_conj, ← Subgroup.map_conj_map_conj,
+      Subgroup.map_conj_eq_self_of_mem (inv_mem (ha f)),
+      Subgroup.map_conj_eq_self_of_mem (inv_mem h₂)]
     exact hB.comap_eq f
 
 /-- A simple adjustment by elements of the vertex groups preserves foldedness (Kapovich, Weidmann

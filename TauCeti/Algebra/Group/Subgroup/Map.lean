@@ -54,6 +54,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
+* `Subgroup.comap_map_conj`: the preimage of a conjugate subgroup is the conjugate of the
+  preimage.
+* `Subgroup.map_conj_eq_self_of_mem`: conjugation by an element of a subgroup fixes it.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`, `QuotientAddGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N`
@@ -366,6 +369,20 @@ theorem _root_.Subgroup.map_conj_map_conj (R : Subgroup G) (g h : G) :
       R.map (MulAut.conj (h * g)).toMonoidHom := by
   simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
     ← MulEquiv.toMonoidHom_trans, ← MulAut.mul_def, ← map_mul]
+
+/-- The preimage under a homomorphism `f` of the conjugate of `R` by `f g` is the conjugate by `g`
+of the preimage of `R`. -/
+theorem _root_.Subgroup.comap_map_conj (R : Subgroup H) (f : G →* H) (g : G) :
+    (R.map (MulAut.conj (f g)).toMonoidHom).comap f =
+      (R.comap f).map (MulAut.conj g).toMonoidHom := by
+  ext x
+  rw [Subgroup.mem_comap, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, Subgroup.mem_comap,
+    MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
+
+/-- Conjugating a subgroup by one of its own elements does not change it. -/
+theorem _root_.Subgroup.map_conj_eq_self_of_mem {R : Subgroup G} {g : G} (hg : g ∈ R) :
+    R.map (MulAut.conj g).toMonoidHom = R :=
+  Subgroup.mem_normalizer_iff_map_conj_eq.mp (Subgroup.le_normalizer hg)
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.
