@@ -37,6 +37,7 @@ inclusion.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.memLp_exp_neg_mul_abs`: it lies in every `Lᵖ`.
 * `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
 * `TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs`: the same evaluation as a lower Lebesgue integral
   of `c * exp (-(a * |·|))`.
@@ -137,6 +138,24 @@ theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
   simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
     (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
+
+/-- The two-sided exponential lies in every `Lᵖ` space of the line when `0 < a`. -/
+theorem memLp_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
+    MemLp (fun x : ℝ ↦ Real.exp (-(a * |x|))) p := by
+  have hm : AEStronglyMeasurable (fun x : ℝ ↦ Real.exp (-(a * |x|))) :=
+    (by fun_prop : Continuous fun x : ℝ ↦ Real.exp (-(a * |x|))).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · refine memLp_top_of_bound hm 1 (.of_forall fun x ↦ ?_)
+    rw [Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_le_one_iff, neg_nonpos]
+    positivity
+  -- The `p`-th power of the two-sided exponential is the two-sided exponential of rate `p a`.
+  refine (integrable_norm_rpow_iff hm hp0 hptop).1 ((integrable_exp_neg_mul_abs
+    (mul_pos (ENNReal.toReal_pos hp0 hptop) ha)).congr (.of_forall fun x ↦ ?_))
+  simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
+  congr 1
+  ring
 
 /-- The two-sided exponential `exp (-(a * |x|))` has integral `2 / a` when `0 < a`. -/
 theorem integral_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
