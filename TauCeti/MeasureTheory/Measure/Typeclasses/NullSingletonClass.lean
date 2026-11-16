@@ -27,7 +27,7 @@ variable {α : Type*} [MeasurableSpace α]
 
 /-- The zero measure assigns zero mass to every singleton. -/
 instance instNullSingletonClassZero : NullSingletonClass (0 : Measure α) :=
-  ⟨fun _ ↦ rfl⟩
+  ⟨fun _ ↦ by simp⟩
 
 /-- The sum of two measures with null singletons has null singletons. -/
 instance instNullSingletonClassAdd {μ ν : Measure α} [NullSingletonClass μ]
