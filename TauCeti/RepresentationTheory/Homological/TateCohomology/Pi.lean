@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.TrivialityCriterion
-public import TauCeti.RepresentationTheory.Pi
+public import TauCeti.RepresentationTheory.Pi.Basic
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
