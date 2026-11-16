@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -351,59 +352,55 @@ theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
       (0, (trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
         ).continuousLinearMapAt 𝕜 v.proj (fiberHessian L v w)) := by
   have hn1 : 1 + 1 ≤ n := by simpa [one_add_one_eq_two] using hn
-  set eC := trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
-  have hxC : v.proj ∈ eC.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
-  let B : (E →L[𝕜] 𝕜) →L[𝕜] (E →L[𝕜] 𝕜) := eC.continuousLinearMapAt 𝕜 v.proj
   -- The line through `v` in its fibre, in the direction `w`.
   let γ : 𝕜 → TangentBundle I M := fun r ↦ TotalSpace.mk' E v.proj (v.2 + r • w)
   have hγ : HasMFDerivAt 𝓘(𝕜) I.tangent γ 0 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
       ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj w)) :=
     TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul (F := E) (V := TangentSpace I) v.proj v.2 w
   have hγ0 : γ 0 = v := by simp [γ]
+  -- The fibre `TangentSpace I v.proj` is `E` by definition: `a₀` and `b` are `v.2` and `w` read
+  -- as vectors of `E`, so that `HasFDerivAt.hasLineDerivAt` on `E` applies to them.
+  let a₀ : E := v.2
+  let b : E := w
   -- On the fibre through `v`, the Legendre map is the derivative `D` of the restricted
-  -- Lagrangian, whose own derivative at `v` is the fibre Hessian.
+  -- Lagrangian, whose own derivative at `v` is the fibre Hessian `Hs`, read on `E`.
   let D : E → E →L[𝕜] 𝕜 := fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj u))
-  let Hs : E →L[𝕜] E →L[𝕜] 𝕜 := fiberHessian L v
-  have hD : HasFDerivAt D Hs (id v.2 : E) :=
+  let Hs : E →L[𝕜] E →L[𝕜] 𝕜 := fderiv 𝕜 D a₀
+  have hD : HasFDerivAt D Hs a₀ :=
     (((contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
       ).fderiv_right (m := 1) hn1).differentiable one_ne_zero _).hasFDerivAt
-  have hline : HasDerivAt (fun r : 𝕜 ↦ D (v.2 + r • w)) (Hs w) 0 := by
-    have h1 : HasDerivAt (fun r : 𝕜 ↦ (id v.2 : E) + r • (id w : E)) (id w : E) 0 := by
-      have h := ((hasDerivAt_id' (0 : 𝕜)).smul_const (id w : E)).const_add (id v.2 : E)
-      rwa [one_smul] at h
-    have h2 : HasFDerivAt D Hs ((id v.2 : E) + (0 : 𝕜) • (id w : E)) := by
-      rwa [zero_smul, add_zero]
-    -- Elaborating the chain rule against the goal would look for a norm on `T_x M`; build it on
-    -- the model space `E` first, then match it with the goal through `T_x M = E`.
-    have h := h2.comp_hasDerivAt (0 : 𝕜) h1
-    exact h
-  -- So the Legendre map sends the line to a line of covectors, with velocity `(0, B (Hs w))`.
+  -- `HasLineDerivAt` unfolds to the derivative at `0` along the line `r ↦ a₀ + r • b`.
+  have hline : HasDerivAt (fun r : 𝕜 ↦ D (a₀ + r • b)) (Hs b) 0 := hD.hasLineDerivAt b
+  -- The Legendre map sends the line to the curve of covectors `r ↦ D (a₀ + r • b)` in the fibre
+  -- over `v.proj`. The step after `legendreMap_def` is `rfl` because `TangentSpace I v.proj` is
+  -- `E`.
+  have hcurve : legendreMap L ∘ γ =
+      fun r : 𝕜 ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) v.proj (D (a₀ + r • b)) := by
+    funext r
+    rw [Function.comp_apply, legendreMap_def]
+    rfl
+  -- The velocity of this curve at `0` is `(0, ∂²L/∂v∂v w)` in the bundle chart.
   have hFLγ : HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L ∘ γ) 0
-      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), B (Hs w))) := by
-    have hcoord : (fun r : 𝕜 ↦ (eC ((legendreMap L ∘ γ) r)).2) =
-        fun r ↦ B (D (v.2 + r • w)) :=
-      funext fun r ↦ (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) eC hxC _).symm
-    -- The base point of the line of covectors is `v.proj` by definition.
-    have hproj : ((legendreMap L ∘ γ) 0).proj = v.proj := rfl
-    rw [TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff]
-    refine ⟨(FiberBundle.continuousAt_totalSpace _ _).2 ⟨continuousAt_const, ?_⟩,
-      hasDerivAt_const (0 : 𝕜) (extChartAt I v.proj v.proj), ?_⟩
-    · rw [hproj, hcoord]
-      exact B.continuous.continuousAt.comp hline.continuousAt
-    · rw [hproj, hcoord]
-      exact B.hasFDerivAt.comp_hasDerivAt (0 : 𝕜) hline
+      ((ContinuousLinearMap.inr 𝕜 E (E →L[𝕜] 𝕜)).comp
+        (ContinuousLinearMap.toSpanSingleton 𝕜 (Hs b))) := by
+    rw [hcurve]
+    exact CotangentBundle.hasMFDerivAt_mk (I := I) v.proj hline.hasFDerivAt.hasMFDerivAt
   have hTγ : HasMFDerivAt I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) (γ 0) T := by
     rw [hγ0, ← hT]
     exact ((contMDiff_legendreMap (m := 1) hL hn1 v).mdifferentiableAt one_ne_zero).hasMFDerivAt
-  -- Both `T` composed with the velocity of the line and the velocity of the line of covectors
+  -- Both `T` composed with the velocity of the line and the velocity of the curve of covectors
   -- are the derivative of `legendreMap L ∘ γ` at `0`.
   have hEq : T.comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
         ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj w)) =
-      (1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), eC.continuousLinearMapAt 𝕜 v.proj (fiberHessian L v w)) :=
+      (ContinuousLinearMap.inr 𝕜 E (E →L[𝕜] 𝕜)).comp
+        (ContinuousLinearMap.toSpanSingleton 𝕜 (Hs b)) :=
     (hTγ.comp 0 hγ).mfderiv.symm.trans hFLγ.mfderiv
   have h := DFunLike.congr_fun hEq 1
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
-    one_apply_eq_self, one_smul] using h
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
+    one_apply_eq_self, one_smul, ContinuousLinearMap.inr_apply,
+    ContinuousLinearMap.toSpanSingleton_apply] at h
+  rw [CotangentBundle.continuousLinearMapAt_trivializationAt_self, fiberHessian_def]
+  exact h
 
 /-- **The derivative of the energy on vertical vectors.** The derivative of the energy along the
 vertical vector at `v` with fibre direction `u` is `Hess_v(u, v)`. The vertical vector is the
