@@ -107,13 +107,14 @@ private theorem cup_gradedComm_add_one (M N : Rep k G) {p q r : ℤ} (hq : 0 ≤
   -- The braiding commutes with the connecting maps of the tensor products of the shifting sequence
   -- with `M` on either side.
   have hδ := (ConcreteCategory.congr_hom (_root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact N M)
+    (dimensionShiftUpSES_tensorLeft_shortExact N M)
     (haveI := hD.epi_g; Rep.shortExact_map_tensorRight_of_leftInverse hD.exact M
       (leftInverse_coindBotUnit N))
     (ShortComplex.mapNatTrans _ (BraidedCategory.tensorLeftIsoTensorRight M).hom) r)
     (cup M (dimensionShiftUp N) p q r h x y)).symm
   simp only [ModuleCat.comp_apply, ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃,
-    BraidedCategory.tensorLeftIsoTensorRight_hom_app] at hδ
+    BraidedCategory.tensorLeftIsoTensorRight_hom_app, dimensionShiftUpSES_X₁,
+    dimensionShiftUpSES_X₃] at hδ
   rw [cup_dimensionShiftUpIso_hom M N hq h rfl, map_zsmul_unit, tensorDimensionShiftUpIso_hom,
     ← hδ, ih, map_zsmul_unit, δ_cup_of_leftInverse hD (leftInverse_coindBotUnit N) M
       (by omega : q + p = r) y x, dimensionShiftUpIso_hom, smul_smul, ← Int.negOnePow_add]
@@ -143,8 +144,7 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
   -- sequence with `M` on either side.
   have hδ := (ConcreteCategory.congr_hom (_root_.TateCohomology.δ_naturality
     (haveI := hD.epi_g; Rep.shortExact_map_tensorRight_of_leftInverse hD.exact M hρ)
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact N M)
+    (dimensionShiftDownSES_tensorLeft_shortExact N M)
     (ShortComplex.mapNatTrans _ (BraidedCategory.tensorLeftIsoTensorRight M).inv) r)
     (cup N M q p r (by omega) y x)).symm
   simp only [ModuleCat.comp_apply, ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃,

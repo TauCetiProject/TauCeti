@@ -137,7 +137,7 @@ private theorem cup_δ_of_leftInverse_of_nonneg (M : Rep k G) {S : ShortComplex 
       ((tateCohomologyFunctor (n + 1)).map_id _)
   have h₁ := _root_.TateCohomology.δ_naturality hS hD Φ q
   have h₂ := _root_.TateCohomology.δ_naturality hMS
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact S.X₁ M)
+    (dimensionShiftUpSES_tensorLeft_shortExact S.X₁ M)
     Ψ n
   rw [e₁, Category.comp_id] at h₁
   rw [e₂, Category.comp_id] at h₂
@@ -160,8 +160,7 @@ private theorem cup_δ_of_rightInverse_of_neg (M : Rep k G) {S : ShortComplex (R
   let Φ := fromDimensionShiftDownSES hS hs
   -- The connecting maps of the dimension-shifting sequence and of `S`, and of their tensor
   -- products with `M`, are related through `Φ`, which is the identity on the last terms.
-  let Ψ : (ShortComplex.mk (dimensionShiftDownι S.X₃) (indBotCounit S.X₃)
-      (dimensionShiftDownι_comp_indBotCounit S.X₃)).map (tensorLeft M) ⟶ S.map (tensorLeft M) :=
+  let Ψ : (dimensionShiftDownSES S.X₃).map (tensorLeft M) ⟶ S.map (tensorLeft M) :=
     (tensorLeft M).mapShortComplex.map Φ
   -- `Φ.τ₃` is the identity by construction.
   have e₁ : (tateCohomologyFunctor q).map Φ.τ₃ = 𝟙 _ :=
@@ -171,8 +170,7 @@ private theorem cup_δ_of_rightInverse_of_neg (M : Rep k G) {S : ShortComplex (R
       ((tateCohomologyFunctor n).map_id _)
   have h₁ := _root_.TateCohomology.δ_naturality hD hS Φ q
   have h₂ := _root_.TateCohomology.δ_naturality
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact S.X₃ M) hMS Ψ n
+    (dimensionShiftDownSES_tensorLeft_shortExact S.X₃ M) hMS Ψ n
   rw [e₁, Category.id_comp] at h₁
   rw [e₂, Category.id_comp] at h₂
   rw [← h₁, ← h₂, ModuleCat.comp_apply, ModuleCat.comp_apply, ← dimensionShiftDownIso_hom,

@@ -108,8 +108,7 @@ private theorem cup_assoc_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0
   -- On the left, the associator commutes with the connecting maps.
   have hL := map_associator_δ M N (S := ShortComplex.mk (coindBotUnit P) (dimensionShiftUpπ P)
       (coindBotUnit_comp_dimensionShiftUpπ P))
-    (by simpa only [dimensionShiftUpSES_def] using
-      dimensionShiftUpSES_tensorLeft_shortExact P (M ⊗ N))
+    (dimensionShiftUpSES_tensorLeft_shortExact P (M ⊗ N))
     (haveI := hN.epi_g; Rep.shortExact_map_tensorLeft_of_leftInverse hN.exact M
       (Rep.leftInverse_whiskerLeft N (coindBotUnit P) (leftInverse_coindBotUnit P))) r
     (cup (M ⊗ N) (dimensionShiftUp P) (p + q) s r h (cup M N p q (p + q) rfl x y) z)
@@ -158,8 +157,7 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
   -- `δ ((x ∪ y) ∪ z) = (-1)^(p + q) (x ∪ y) ∪ δ z` by the definition of the cup product.
   have hL := map_associator_δ M N (S := ShortComplex.mk (dimensionShiftDownι P) (indBotCounit P)
       (dimensionShiftDownι_comp_indBotCounit P))
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact P (M ⊗ N)) hMN r
+    (dimensionShiftDownSES_tensorLeft_shortExact P (M ⊗ N)) hMN r
     (cup (M ⊗ N) P (p + q) s r h (cup M N p q (p + q) rfl x y) z)
   have hT := congrArg ((p + q).negOnePow • ·)
     (cup_dimensionShiftDownIso_hom (M ⊗ N) P hs h rfl (cup M N p q (p + q) rfl x y) z)
