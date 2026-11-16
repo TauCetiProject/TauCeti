@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
@@ -75,7 +76,8 @@ theorem fourierMultiplierCLM_apply_apply_of_even {g : E → ℂ} (hg : g.Even) (
     fourierMultiplierCLM F g u f = u (SchwartzMap.fourierMultiplierCLM ℂ g f) := by
   by_cases hgt : g.HasTemperateGrowth
   swap
-  · simp [hgt, SchwartzMap.fourierMultiplierCLM_apply, SchwartzMap.smulLeftCLM]
+  · simp [hgt, SchwartzMap.fourierMultiplierCLM_apply,
+      SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgt]
   rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourierMultiplierCLM_apply]
   congr 1
   have key : (SchwartzMap.smulLeftCLM ℂ g (𝓕⁻ f) : E → ℂ) =
@@ -138,8 +140,7 @@ theorem isVanishingOn_fourier_fourierMultiplierCLM {g : E → ℂ} {s : Set E}
       by_cases hξ : ξ ∈ s
       · rw [hgs ξ hξ, zero_smul]
       · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hξ (hψ h), smul_zero]
-    · -- Without temperate growth, `SchwartzMap.smulLeftCLM` is zero by definition.
-      simp [SchwartzMap.smulLeftCLM, hg]
+    · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
   rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_apply_apply,
     h, map_zero]
 
