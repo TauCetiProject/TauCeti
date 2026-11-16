@@ -56,8 +56,8 @@ symbols of degree `m`.
 * `TauCeti.HomogeneousSymbol.isElliptic_lineMap_normalize`: the straight line from `a` to its
   normalization consists of elliptic symbols.
 * `TauCeti.HomogeneousSymbol.normalize_eq_self`: a symbol with `a† a = ‖ξ‖ ^ (2 m)` is its own
-  normalization; `TauCeti.HomogeneousSymbol.adjoint_normalize`: normalization commutes with
-  pointwise adjoints.
+  normalization; `TauCeti.HomogeneousSymbol.adjoint_normalize`: when `W` is also
+  finite-dimensional, normalization commutes with pointwise adjoints.
 
 ## References
 
@@ -299,8 +299,8 @@ theorem normalize_eq_self (h : ∀ x ξ, ξ ≠ 0 →
 
 end CompleteSpace
 
-/-- Normalization commutes with pointwise adjoints: `(‖ξ‖ ^ m U)† = ‖ξ‖ ^ m U†` is the
-normalization of `a†`, whose polar factor is `U†`. -/
+/-- When `W` is also finite-dimensional, normalization commutes with pointwise adjoints:
+`(‖ξ‖ ^ m U)† = ‖ξ‖ ^ m U†` is the normalization of `a†`, whose polar factor is `U†`. -/
 theorem adjoint_normalize [FiniteDimensional ℂ W] {m : ℝ} (a : HomogeneousSymbol X E V W m)
     (ha : a.IsElliptic) :
     (a.normalize ha).adjoint = a.adjoint.normalize (isElliptic_adjoint_iff.mpr ha) := by
