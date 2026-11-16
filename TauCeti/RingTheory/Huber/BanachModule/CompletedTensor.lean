@@ -182,8 +182,7 @@ end Uniformity
 
 section LeftActionTopology
 
-variable (A : Type*) [CommRing A] [TopologicalSpace A]
-  (S : Type*) [Semiring S]
+variable (A : Type*) [CommRing A] [TopologicalSpace A] (S : Type*) [Semiring S]
   (V : Type*) [AddCommGroup V] [Module A V] [Module S V] [SMulCommClass A S V]
   [TopologicalSpace V] [ContinuousConstSMul S V]
   (W : Type*) [AddCommGroup W] [Module A W] [TopologicalSpace W]
@@ -192,38 +191,32 @@ omit [TopologicalSpace A] [TopologicalSpace V] [ContinuousConstSMul S V] [Topolo
 /-- A commuting action of `S` on `V` acts by `A`-linear endomorphisms on `V ⊗[A] W`. -/
 private def leftSMulLinearMap (s : S) : V ⊗[A] W →ₗ[A] V ⊗[A] W :=
   TensorProduct.map
-    { toFun := (s • ·)
-      map_add' := smul_add s
-      map_smul' := fun a v ↦ (smul_comm a s v).symm }
+    { toFun := (s • ·), map_add' := smul_add s, map_smul' := fun a v ↦ (smul_comm a s v).symm }
     LinearMap.id
 
 omit [TopologicalSpace A] [TopologicalSpace V] [ContinuousConstSMul S V] [TopologicalSpace W] in
 private theorem leftSMulLinearMap_apply (s : S) (z : V ⊗[A] W) :
-    leftSMulLinearMap A S V W s z = s • z := by
-  induction z using TensorProduct.inductionOn with
-  | tmul v w => rfl
-  | add x y hx hy => rw [map_add, smul_add, hx, hy]
+    leftSMulLinearMap A S V W s z = s • z :=
+  TensorProduct.inductionOn z (fun _ _ ↦ rfl) fun _ _ hx hy ↦ by rw [map_add, smul_add, hx, hy]
 
 /-- Constant scalar multiplication by `S` on the first factor is continuous for the tensor
 topology on `V ⊗[A] W`. -/
 theorem continuousConstSMul_banachTensorTopology :
     @ContinuousConstSMul S (V ⊗[A] W) (banachTensorTopology A V W) _ := by
-  let _ : TopologicalSpace (V ⊗[A] W) := banachTensorTopology A V W
-  have _ : NonarchimedeanAddGroup (V ⊗[A] W) := nonarchimedeanAddGroup_banachTensorTopology A V W
-  have _ : ContinuousSMul A (V ⊗[A] W) := continuousSMul_banachTensorTopology A V W
-  refine ⟨fun s ↦ ?_⟩
-  have hcont : Continuous (leftSMulLinearMap A S V W s) :=
-    (continuous_banachTensorTopology_iff _).mpr <|
-      ((continuous_tmul_banachTensorTopology A V W).comp
-        ((continuous_const_smul s).prodMap continuous_id)).congr fun _ ↦ rfl
-  exact hcont.congr (leftSMulLinearMap_apply A S V W s)
+  let _ := banachTensorTopology A V W
+  have _ := nonarchimedeanAddGroup_banachTensorTopology A V W
+  have _ := continuousSMul_banachTensorTopology A V W
+  exact ⟨fun s ↦ ((continuous_banachTensorTopology_iff _).mpr <|
+    ((continuous_tmul_banachTensorTopology A V W).comp
+      ((continuous_const_smul s).prodMap continuous_id)).congr fun _ ↦ rfl).congr
+    (leftSMulLinearMap_apply A S V W s)⟩
 
 /-- Constant scalar multiplication by `S` on the first factor is uniformly continuous for the
 additive uniformity of the tensor topology on `V ⊗[A] W`. -/
 theorem uniformContinuousConstSMul_banachTensorUniformSpace :
     @UniformContinuousConstSMul S (V ⊗[A] W) (banachTensorUniformSpace A V W) _ := by
-  let _ : UniformSpace (V ⊗[A] W) := banachTensorUniformSpace A V W
-  have _ : IsUniformAddGroup (V ⊗[A] W) := isUniformAddGroup_banachTensorUniformSpace A V W
+  let _ := banachTensorUniformSpace A V W
+  have _ := isUniformAddGroup_banachTensorUniformSpace A V W
   have _ : ContinuousConstSMul S (V ⊗[A] W) :=
     (banachTensorUniformSpace_toTopologicalSpace A V W).symm ▸
       continuousConstSMul_banachTensorTopology A S V W
@@ -239,8 +232,7 @@ variable (A : Type*) [CommRing A] [TopologicalSpace A]
 
 namespace TensorUniformity
 
-/-- The uniformity of the tensor topology, scoped on the algebraic tensor product so that the
-bodies of `CompletedTensor` instances contain no private references across module boundaries. -/
+/-- The tensor-topology uniformity, scoped so `CompletedTensor` instances stay public. -/
 noncomputable scoped instance tensorUniformSpace : UniformSpace (V ⊗[A] W) :=
   banachTensorUniformSpace A V W
 
@@ -267,8 +259,7 @@ open scoped TensorUniformity
 
 /-- **The completed tensor product** `V ⊗̂_A W`: the separated completion of `V ⊗[A] W` for the
 additive uniformity of the tensor topology `banachTensorTopology A V W`. -/
--- `@[expose]` lets `CompletedTensor.instModule` and `CompletedTensor.leftModule` reduce to the
--- same `Completion.instModule` cross-module when `S = A`, avoiding a `Module` diamond.
+-- `@[expose]` keeps `instModule` and `leftModule` defeq cross-module when `S = A`.
 @[expose] def CompletedTensor := Completion (V ⊗[A] W)
 
 namespace CompletedTensor
@@ -613,16 +604,14 @@ end FiniteProjective
 
 section LeftModule
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A]
-  {S : Type*} [Semiring S]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] {S : Type*} [Semiring S]
   {V : Type*} [AddCommGroup V] [Module A V] [Module S V] [SMulCommClass A S V]
   [TopologicalSpace V] [ContinuousConstSMul S V]
   {W : Type*} [AddCommGroup W] [Module A W] [TopologicalSpace W]
 
-/-- **Left module structure on `V ⊗̂_A W`.** A semiring `S` acting on `V` by continuous `A`-linear
-maps acts on `V ⊗̂_A W` via the first tensor factor. Registered at low priority so that when `S = A`
-typeclass search finds `CompletedTensor.instModule` immediately, while both remain definitionally
-equal. -/
+/-- **Left module structure on `V ⊗̂_A W`.** A commuting continuous `S`-action on `V` extends to
+`V ⊗̂_A W` via the first factor; low priority keeps `CompletedTensor.instModule` preferred when
+`S = A` (while both remain definitionally equal). -/
 noncomputable instance (priority := low) leftModule : Module S (CompletedTensor A V W) :=
   inferInstanceAs (Module S (Completion (V ⊗[A] W)))
 
@@ -638,15 +627,13 @@ instance (priority := low) instSMulCommClassLeft :
     SMulCommClass A S (CompletedTensor A V W) :=
   inferInstanceAs (SMulCommClass A S (Completion (V ⊗[A] W)))
 
-instance (priority := low) instSMulCommClassRight :
-    SMulCommClass S A (CompletedTensor A V W) :=
+instance (priority := low) instSMulCommClassRight : SMulCommClass S A (CompletedTensor A V W) :=
   .symm A S (CompletedTensor A V W)
 
 /-- `toCompletion` is `S`-semilinear with respect to the left `S`-action on `V`. -/
 @[simp]
 theorem toCompletion_smul (s : S) (x : V ⊗[A] W) :
-    toCompletion A V W (s • x) = s • toCompletion A V W x :=
-  Completion.coe_smul s x
+    toCompletion A V W (s • x) = s • toCompletion A V W x := Completion.coe_smul s x
 
 /-- Scalar multiplication by `s : S` on `V ⊗̂_A W` acts on the first tensor factor. -/
 @[simp]
@@ -658,12 +645,11 @@ theorem smul_tmul' (s : S) (v : V) (w : W) :
 agree on all elementary tensors `v ⊗ w`. -/
 theorem ext_left {M : Type*} [AddCommGroup M] [Module S M] [TopologicalSpace M] [T2Space M]
     {f g : CompletedTensor A V W →L[S] M}
-    (h : ∀ v w, f (tmul A V W v w) = g (tmul A V W v w)) : f = g := by
-  refine ContinuousLinearMap.ext fun z ↦ (denseRange_toCompletion A V W).induction_on z
-    (isClosed_eq f.continuous g.continuous) fun x ↦ ?_
-  induction x using TensorProduct.inductionOn with
-  | tmul v w => simpa using h v w
-  | add x y hx hy => simp only [map_add, hx, hy]
+    (h : ∀ v w, f (tmul A V W v w) = g (tmul A V W v w)) : f = g :=
+  ContinuousLinearMap.ext fun z ↦ (denseRange_toCompletion A V W).induction_on z
+    (isClosed_eq f.continuous g.continuous) fun x ↦
+    TensorProduct.inductionOn x (fun v w ↦ by simpa using h v w) fun _ _ hx hy ↦ by
+      simp only [map_add, hx, hy]
 
 end LeftModule
 
