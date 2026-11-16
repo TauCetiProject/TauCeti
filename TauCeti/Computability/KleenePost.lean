@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.BitString
-public import TauCeti.Computability.SingleOracle.Probe
 public import TauCeti.Computability.Jump.Decide
 import TauCeti.Computability.RecursiveIn
-import TauCeti.Data.PFun.Basic
 
 /-!
 # The Kleene–Post theorem
@@ -38,12 +36,11 @@ Odd stage `s = 2 * e + 1` applies the symmetric step to satisfy `B ≠ Φ_e^A`. 
 strings strictly lengthen at every step, every coordinate is covered, the partial stage-union
 oracles `bitChainOracle stageA` and `bitChainOracle stageB` have total domain `Set.univ` and
 coincide with `kleenePostSetA.oracle` and `kleenePostSetB.oracle`, and `(∅ : Set ℕ).jump` computes
-both limit sets. Note that this oracle-assisted construction produces sets Turing reducible to
-`(∅ : Set ℕ).jump`, not c.e. sets.
+both limit sets. Unlike the Friedberg–Muchnik theorem, this oracle-assisted construction only
+establishes Turing reducibility to `(∅ : Set ℕ).jump` rather than c.e. membership.
 
-The final section characterizes both satisfaction regimes on the limit sets and exhibits concrete
-programs illustrating convergent disagreement (`Code.zero` and `Code.oracle`) versus permanent
-divergence (`Code.comp (Code.diagonalProbe 0 0) Code.succ`).
+The final section characterizes both satisfaction regimes (convergent disagreement and permanent
+divergence) on `kleenePostSetA` and `kleenePostSetB`.
 
 ## Main definitions
 
@@ -55,13 +52,10 @@ divergence (`Code.comp (Code.diagonalProbe 0 0) Code.succ`).
 
 ## Main results
 
-* `TauCeti.KleenePost.computableIn_jump_hasConvergentExt`,
-  `TauCeti.KleenePost.computableIn_jump_toOption_findConvergentExt`,
-  `TauCeti.KleenePost.computableIn_jump_diagStep`,
-  `TauCeti.KleenePost.computableIn_jump_stage`: every jump `Z.jump` decides convergent-extension
-  existence and computes the diagonal step and stage sequence.
+* `TauCeti.KleenePost.computableIn_jump_diagStep`, `TauCeti.KleenePost.computableIn_jump_stage`:
+  every jump `Z.jump` computes the diagonal step and stage sequence.
 * `TauCeti.KleenePost.exists_mem_eval_and_oracle_ne_of_hasConvergentExt`,
-  `TauCeti.KleenePost.eval_eq_none_of_not_hasConvergentExt`,
+  `TauCeti.KleenePost.eval_eq_none_and_notMem_of_not_hasConvergentExt`,
   `TauCeti.KleenePost.eval_ne_oracle_of_extendsBits_diagStep`: diagonal forcing in the convergent
   and permanently divergent regimes, and the combined disagreement theorem.
 * `TauCeti.dom_bitChainOracle_stageA_eq_univ`, `TauCeti.dom_bitChainOracle_stageB_eq_univ`,
@@ -91,22 +85,7 @@ namespace TauCeti
 
 namespace KleenePost
 
-/-! ### Deciding c.e. extension searches and one diagonal forcing step -/
-
-/-- Every jump `Z.jump` decides whether `c` has a convergent binary extension over `β` at `x`. -/
-theorem computableIn_jump_hasConvergentExt (Z : Set ℕ)
-    [DecidablePred fun q : Code × ℕ × List Bool => Code.HasConvergentExt q.1 q.2.1 q.2.2] :
-    ComputableIn {Z.jump.oracle}
-      fun q : Code × ℕ × List Bool => decide (Code.HasConvergentExt q.1 q.2.1 q.2.2) :=
-  Code.rePred_hasConvergentExt.computableIn_jump Z
-
-/-- Every jump `Z.jump` computes the option-valued totalization of `Code.findConvergentExt`:
-`some (δ, d)` when a convergent extension exists and `none` when every extension diverges. -/
-theorem computableIn_jump_toOption_findConvergentExt (Z : Set ℕ)
-    [∀ q : Code × ℕ × List Bool, Decidable (Code.findConvergentExt q.1 q.2.1 q.2.2).Dom] :
-    ComputableIn {Z.jump.oracle}
-      fun q : Code × ℕ × List Bool => (Code.findConvergentExt q.1 q.2.1 q.2.2).toOption :=
-  Code.partrec_findConvergentExt.computableIn_jump_toOption Z
+/-! ### One diagonal forcing step -/
 
 open Classical in
 /-- **One diagonal forcing step** against program `c` at witness coordinate `α.length`:
@@ -119,8 +98,9 @@ noncomputable def diagStep (c : Code) (α β : List Bool) : List Bool × List Bo
   | some (δ, d) => (α ++ [decide (d.output = 0)], β ++ δ ++ [false])
   | none => (α ++ [false], β ++ [false])
 
-/-- In the convergent regime, `diagStep` flips the output bit at `α.length` and commits `δ`
-followed by `false` on the monitored side. -/
+/-- In the convergent regime, `diagStep` sets the bit at `α.length` to `decide (d.output = 0)`
+(forcing `X.oracle α.length` to disagree with `d.output`) and commits `δ` followed by `false` on
+the monitored side. -/
 theorem diagStep_of_mem_findConvergentExt {c : Code} {α β δ : List Bool} {d : Code.Halt}
     (h : (δ, d) ∈ Code.findConvergentExt c α.length β) :
     diagStep c α β = (α ++ [decide (d.output = 0)], β ++ δ ++ [false]) := by
@@ -196,12 +176,16 @@ theorem exists_mem_eval_and_oracle_ne_of_hasConvergentExt {c : Code} {α β : Li
   by_cases h0 : d.output = 0 <;> simp [h0, Ne.symm]
 
 /-- **Permanent divergence.** When `¬Code.HasConvergentExt c α.length β`, `Code.eval Y.oracle c
-α.length = Part.none` for every set `Y` extending `(diagStep c α β).2`. -/
-theorem eval_eq_none_of_not_hasConvergentExt {c : Code} {α β : List Bool}
-    (h : ¬Code.HasConvergentExt c α.length β) {Y : Set ℕ}
-    (hY : Y.ExtendsBits (diagStep c α β).2) :
-    Code.eval Y.oracle c α.length = Part.none :=
-  Code.not_hasConvergentExt_iff.1 h Y (hY.of_prefix (prefix_snd_diagStep c α β))
+α.length = Part.none` for every set `Y` extending `β`, while every set `X` extending
+`(diagStep c α β).1` satisfies `α.length ∉ X` and `X.oracle α.length = Part.some 0`. -/
+theorem eval_eq_none_and_notMem_of_not_hasConvergentExt {c : Code} {α β : List Bool}
+    (h : ¬Code.HasConvergentExt c α.length β) {X Y : Set ℕ}
+    (hX : X.ExtendsBits (diagStep c α β).1) (hY : Y.ExtendsBits β) :
+    Code.eval Y.oracle c α.length = Part.none ∧ α.length ∉ X ∧
+      X.oracle α.length = Part.some 0 := by
+  rw [diagStep_of_not_hasConvergentExt h] at hX
+  have hxnot : α.length ∉ X := by simpa using (Set.extendsBits_concat.1 hX).2
+  exact ⟨Code.not_hasConvergentExt_iff.1 h Y hY, hxnot, by simp [hxnot]⟩
 
 /-- **Diagonal forcing theorem.** For every program `c`, pair `(α, β)`, and sets `X, Y` extending
 the two outputs of `diagStep c α β`, `Code.eval Y.oracle c α.length ≠ X.oracle α.length`. -/
@@ -213,7 +197,8 @@ theorem eval_ne_oracle_of_extendsBits_diagStep {c : Code} {α β : List Bool} {X
     obtain ⟨heval, hne⟩ := hy hX hY
     rw [Part.eq_some_iff.2 heval]
     exact hne.symm
-  · rw [eval_eq_none_of_not_hasConvergentExt h hY]
+  · rw [(eval_eq_none_and_notMem_of_not_hasConvergentExt h hX
+      (hY.of_prefix (prefix_snd_diagStep c α β))).1]
     simp
 
 /-- Every jump `Z.jump` computes `diagStep` uniformly in `(c, α, β)`. -/
@@ -226,7 +211,7 @@ theorem computableIn_jump_diagStep (Z : Set ℕ) :
   have hfind : ComputableIn {Z.jump.oracle}
       fun p : Code × List Bool × List Bool =>
         (Code.findConvergentExt p.1 p.2.1.length p.2.2).toOption :=
-    (computableIn_jump_toOption_findConvergentExt Z).comp hq.computableIn
+    (Code.partrec_findConvergentExt.computableIn_jump_toOption Z).comp hq.computableIn
   have hnone : Primrec fun r : (Code × List Bool × List Bool) × Option (List Bool × Code.Halt) =>
       (r.1.2.1 ++ [false], r.1.2.2 ++ [false]) :=
     (list_concat.comp (fst.comp (snd.comp fst)) (const false)).pair
@@ -262,6 +247,34 @@ noncomputable def stageStep (s : ℕ) (st : List Bool × List Bool) : List Bool 
   else
     diagStep (ofNat Code s.div2) st.1 st.2
 
+/-- Unfolding `stageStep`. -/
+theorem stageStep_def (s : ℕ) (st : List Bool × List Bool) :
+    stageStep s st =
+      bif s.bodd then
+        (diagStep (ofNat Code s.div2) st.2 st.1).swap
+      else
+        diagStep (ofNat Code s.div2) st.1 st.2 :=
+  (rfl)
+
+/-- At stage `0`, `stageStep` runs `diagStep` for `ofNat Code 0` on `(st.1, st.2)`. -/
+@[simp]
+theorem stageStep_zero (st : List Bool × List Bool) :
+    stageStep 0 st = diagStep (ofNat Code 0) st.1 st.2 :=
+  (rfl)
+
+/-- At an even stage `2 * e`, `stageStep` runs `diagStep` for `ofNat Code e` on `(st.1, st.2)`. -/
+@[simp]
+theorem stageStep_two_mul (e : ℕ) (st : List Bool × List Bool) :
+    stageStep (2 * e) st = diagStep (ofNat Code e) st.1 st.2 := by
+  simp [stageStep, Nat.bodd_mul, Nat.div2_val]
+
+/-- At an odd stage `2 * e + 1`, `stageStep` runs `diagStep` for `ofNat Code e` on `(st.2, st.1)`
+and swaps the output pair. -/
+@[simp]
+theorem stageStep_two_mul_add_one (e : ℕ) (st : List Bool × List Bool) :
+    stageStep (2 * e + 1) st = (diagStep (ofNat Code e) st.2 st.1).swap := by
+  simp [stageStep, Nat.bodd_mul, Nat.div2_val]
+
 /-- **Stage recursion of the Kleene–Post construction.** Stage `0` begins at `([], [])`; even stage
 `2 * e` diagonalizes `A` against `ofNat Code e` relative to `B`, and odd stage `2 * e + 1` swaps
 the sides to diagonalize `B` against `ofNat Code e` relative to `A`. -/
@@ -274,18 +287,9 @@ noncomputable def stage : ℕ → List Bool × List Bool
 theorem stage_zero : stage 0 = ([], []) :=
   (rfl)
 
-/-- Even stage transition `2 * e → 2 * e + 1`: `diagStep` acts directly on `(stage (2 * e)).1`
-against `(stage (2 * e)).2`. -/
-theorem stage_two_mul_succ (e : ℕ) :
-    stage (2 * e + 1) = diagStep (ofNat Code e) (stage (2 * e)).1 (stage (2 * e)).2 := by
-  simp [stage, stageStep, Nat.bodd_mul, Nat.div2_val]
-
-/-- Odd stage transition `2 * e + 1 → 2 * e + 2`: `diagStep` acts on `(stage (2 * e + 1)).2`
-against `(stage (2 * e + 1)).1` and swaps the resulting pair. -/
-theorem stage_two_mul_add_one_succ (e : ℕ) :
-    stage (2 * e + 1 + 1) =
-      (diagStep (ofNat Code e) (stage (2 * e + 1)).2 (stage (2 * e + 1)).1).swap := by
-  simp [stage, stageStep, Nat.bodd_mul, Nat.div2_val]
+/-- Stage `s + 1` applies `stageStep s` to `stage s`. -/
+theorem stage_succ (s : ℕ) : stage (s + 1) = stageStep s (stage s) :=
+  (rfl)
 
 /-- The binary initial segment of `kleenePostSetA` at stage `s`. -/
 noncomputable def stageA (s : ℕ) : List Bool :=
@@ -295,9 +299,72 @@ noncomputable def stageA (s : ℕ) : List Bool :=
 noncomputable def stageB (s : ℕ) : List Bool :=
   (stage s).2
 
+/-- Unfolding `stageA`. -/
+theorem stageA_def (s : ℕ) : stageA s = (stage s).1 :=
+  (rfl)
+
+/-- Unfolding `stageB`. -/
+theorem stageB_def (s : ℕ) : stageB s = (stage s).2 :=
+  (rfl)
+
+/-- The first component of `stage s` is `stageA s`. -/
+@[simp]
+theorem fst_stage (s : ℕ) : (stage s).1 = stageA s :=
+  (rfl)
+
+/-- The second component of `stage s` is `stageB s`. -/
+@[simp]
+theorem snd_stage (s : ℕ) : (stage s).2 = stageB s :=
+  (rfl)
+
 /-- `stage s` pairs `stageA s` and `stageB s`. -/
 theorem stage_eq_pair (s : ℕ) : stage s = (stageA s, stageB s) :=
   (rfl)
+
+/-- `stageA` starts at the empty binary string. -/
+@[simp]
+theorem stageA_zero : stageA 0 = [] :=
+  (rfl)
+
+/-- `stageB` starts at the empty binary string. -/
+@[simp]
+theorem stageB_zero : stageB 0 = [] :=
+  (rfl)
+
+/-- Even stage transition `2 * e → 2 * e + 1`: `diagStep` acts directly on `stageA (2 * e)`
+against `stageB (2 * e)`. -/
+theorem stage_two_mul_succ (e : ℕ) :
+    stage (2 * e + 1) = diagStep (ofNat Code e) (stageA (2 * e)) (stageB (2 * e)) := by
+  rw [stage_succ, stageStep_two_mul, fst_stage, snd_stage]
+
+/-- Odd stage transition `2 * e + 1 → 2 * e + 2`: `diagStep` acts on `stageB (2 * e + 1)`
+against `stageA (2 * e + 1)` and swaps the resulting pair. -/
+theorem stage_two_mul_add_one_succ (e : ℕ) :
+    stage (2 * e + 1 + 1) =
+      (diagStep (ofNat Code e) (stageB (2 * e + 1)) (stageA (2 * e + 1))).swap := by
+  rw [stage_succ, stageStep_two_mul_add_one, fst_stage, snd_stage]
+
+/-- Even stage transition for `stageA`. -/
+theorem stageA_two_mul_succ (e : ℕ) :
+    stageA (2 * e + 1) = (diagStep (ofNat Code e) (stageA (2 * e)) (stageB (2 * e))).1 :=
+  congrArg Prod.fst (stage_two_mul_succ e)
+
+/-- Even stage transition for `stageB`. -/
+theorem stageB_two_mul_succ (e : ℕ) :
+    stageB (2 * e + 1) = (diagStep (ofNat Code e) (stageA (2 * e)) (stageB (2 * e))).2 :=
+  congrArg Prod.snd (stage_two_mul_succ e)
+
+/-- Odd stage transition for `stageA`. -/
+theorem stageA_two_mul_add_one_succ (e : ℕ) :
+    stageA (2 * e + 1 + 1) =
+      (diagStep (ofNat Code e) (stageB (2 * e + 1)) (stageA (2 * e + 1))).2 :=
+  congrArg Prod.fst (stage_two_mul_add_one_succ e)
+
+/-- Odd stage transition for `stageB`. -/
+theorem stageB_two_mul_add_one_succ (e : ℕ) :
+    stageB (2 * e + 1 + 1) =
+      (diagStep (ofNat Code e) (stageB (2 * e + 1)) (stageA (2 * e + 1))).1 :=
+  congrArg Prod.snd (stage_two_mul_add_one_succ e)
 
 /-- Every jump `Z.jump` computes `stageStep` uniformly in `(s, st)`. -/
 theorem computableIn_jump_stageStep (Z : Set ℕ) :
@@ -336,11 +403,6 @@ theorem computableIn_jump_stage (Z : Set ℕ) : ComputableIn {Z.jump.oracle} sta
   | zero => rfl
   | succ s ih => rw [stage, ← ih]
 
-/-- Stage `s + 1` applies `stageStep s` to `stage s`. -/
-@[simp]
-theorem stage_succ (s : ℕ) : stage (s + 1) = stageStep s (stage s) :=
-  (rfl)
-
 /-- Every jump `Z.jump` computes `stageA`. -/
 theorem computableIn_jump_stageA (Z : Set ℕ) : ComputableIn {Z.jump.oracle} stageA :=
   fst.computableIn.comp (computableIn_jump_stage Z)
@@ -348,16 +410,6 @@ theorem computableIn_jump_stageA (Z : Set ℕ) : ComputableIn {Z.jump.oracle} st
 /-- Every jump `Z.jump` computes `stageB`. -/
 theorem computableIn_jump_stageB (Z : Set ℕ) : ComputableIn {Z.jump.oracle} stageB :=
   snd.computableIn.comp (computableIn_jump_stage Z)
-
-/-- `stageA` starts at the empty binary string. -/
-@[simp]
-theorem stageA_zero : stageA 0 = [] :=
-  (rfl)
-
-/-- `stageB` starts at the empty binary string. -/
-@[simp]
-theorem stageB_zero : stageB 0 = [] :=
-  (rfl)
 
 /-- `stageA` is prefix-monotone from each stage to the next. -/
 theorem stageA_prefix_succ (s : ℕ) : stageA s <+: stageA (s + 1) := by
@@ -415,6 +467,26 @@ theorem kleenePostSetA_def : kleenePostSetA = bitLimit KleenePost.stageA :=
 theorem kleenePostSetB_def : kleenePostSetB = bitLimit KleenePost.stageB :=
   (rfl)
 
+/-- `x ∈ kleenePostSetA` iff `(stageA s)[x]? = some true` at some stage `s`. -/
+theorem mem_kleenePostSetA {x : ℕ} :
+    x ∈ kleenePostSetA ↔ ∃ s, (KleenePost.stageA s)[x]? = some true :=
+  mem_bitLimit
+
+/-- `x ∈ kleenePostSetB` iff `(stageB s)[x]? = some true` at some stage `s`. -/
+theorem mem_kleenePostSetB {x : ℕ} :
+    x ∈ kleenePostSetB ↔ ∃ s, (KleenePost.stageB s)[x]? = some true :=
+  mem_bitLimit
+
+/-- At any stage `s` covering `x`, `x ∈ kleenePostSetA` iff `(stageA s)[x]? = some true`. -/
+theorem mem_kleenePostSetA_iff_getElem?_of_lt {s x : ℕ} (hx : x < (KleenePost.stageA s).length) :
+    x ∈ kleenePostSetA ↔ (KleenePost.stageA s)[x]? = some true :=
+  mem_bitLimit_iff_getElem?_of_lt KleenePost.stageA_prefix_succ hx
+
+/-- At any stage `s` covering `x`, `x ∈ kleenePostSetB` iff `(stageB s)[x]? = some true`. -/
+theorem mem_kleenePostSetB_iff_getElem?_of_lt {s x : ℕ} (hx : x < (KleenePost.stageB s).length) :
+    x ∈ kleenePostSetB ↔ (KleenePost.stageB s)[x]? = some true :=
+  mem_bitLimit_iff_getElem?_of_lt KleenePost.stageB_prefix_succ hx
+
 /-- `kleenePostSetA` extends `stageA s` at every stage `s`. -/
 theorem extendsBits_kleenePostSetA (s : ℕ) : kleenePostSetA.ExtendsBits (KleenePost.stageA s) :=
   extendsBits_bitLimit KleenePost.stageA_prefix_succ s
@@ -426,12 +498,12 @@ theorem extendsBits_kleenePostSetB (s : ℕ) : kleenePostSetB.ExtendsBits (Kleen
 /-- **Totality of the `stageA` partial stage-union oracle.** -/
 theorem dom_bitChainOracle_stageA_eq_univ :
     PFun.Dom (bitChainOracle KleenePost.stageA) = Set.univ :=
-  dom_bitChainOracle_eq_univ fun x => ⟨x + 1, KleenePost.lt_length_stageA_succ x⟩
+  dom_bitChainOracle_eq_univ_iff.2 fun x => ⟨x + 1, KleenePost.lt_length_stageA_succ x⟩
 
 /-- **Totality of the `stageB` partial stage-union oracle.** -/
 theorem dom_bitChainOracle_stageB_eq_univ :
     PFun.Dom (bitChainOracle KleenePost.stageB) = Set.univ :=
-  dom_bitChainOracle_eq_univ fun x => ⟨x + 1, KleenePost.lt_length_stageB_succ x⟩
+  dom_bitChainOracle_eq_univ_iff.2 fun x => ⟨x + 1, KleenePost.lt_length_stageB_succ x⟩
 
 /-- **Coherence and totality identify `bitChainOracle stageA` with `kleenePostSetA.oracle`.** -/
 theorem bitChainOracle_stageA_eq_oracle :
@@ -478,8 +550,8 @@ theorem eval_ne_oracle_kleenePostSetA (c : Code) :
       kleenePostSetA.oracle (KleenePost.stageA (2 * encode c)).length := by
   have hA := extendsBits_kleenePostSetA (2 * encode c + 1)
   have hB := extendsBits_kleenePostSetB (2 * encode c + 1)
-  simp only [KleenePost.stageA, KleenePost.stageB, KleenePost.stage_two_mul_succ,
-    ofNat_encode] at hA hB ⊢
+  rw [KleenePost.stageA_two_mul_succ, ofNat_encode] at hA
+  rw [KleenePost.stageB_two_mul_succ, ofNat_encode] at hB
   exact KleenePost.eval_ne_oracle_of_extendsBits_diagStep hA hB
 
 /-- **Odd diagonal requirements.** For every oracle program `c`, `c` relative to `kleenePostSetA`
@@ -489,8 +561,8 @@ theorem eval_ne_oracle_kleenePostSetB (c : Code) :
       kleenePostSetB.oracle (KleenePost.stageB (2 * encode c + 1)).length := by
   have hA := extendsBits_kleenePostSetA (2 * encode c + 1 + 1)
   have hB := extendsBits_kleenePostSetB (2 * encode c + 1 + 1)
-  simp only [KleenePost.stageA, KleenePost.stageB, KleenePost.stage_two_mul_add_one_succ,
-    Prod.fst_swap, Prod.snd_swap, ofNat_encode] at hA hB ⊢
+  rw [KleenePost.stageA_two_mul_add_one_succ, ofNat_encode] at hA
+  rw [KleenePost.stageB_two_mul_add_one_succ, ofNat_encode] at hB
   exact KleenePost.eval_ne_oracle_of_extendsBits_diagStep hB hA
 
 /-- `kleenePostSetA` is not Turing reducible to `kleenePostSetB`. -/
@@ -578,7 +650,7 @@ theorem exists_incomparable_turingDegrees_mem_Ioo :
     incomparable_degree_kleenePostSetA_kleenePostSetB.1,
     incomparable_degree_kleenePostSetA_kleenePostSetB.2⟩
 
-/-! ### Satisfaction regimes and concrete examples -/
+/-! ### Satisfaction regimes -/
 
 namespace KleenePost
 
@@ -592,7 +664,8 @@ theorem exists_mem_eval_and_oracle_kleenePostSetA_ne_of_hasConvergentExt {c : Co
       kleenePostSetA.oracle (stageA (2 * encode c)).length ≠ Part.some y := by
   have hA := extendsBits_kleenePostSetA (2 * encode c + 1)
   have hB := extendsBits_kleenePostSetB (2 * encode c + 1)
-  simp only [stageA, stageB, stage_two_mul_succ, ofNat_encode] at hA hB h ⊢
+  rw [stageA_two_mul_succ, ofNat_encode] at hA
+  rw [stageB_two_mul_succ, ofNat_encode] at hB
   obtain ⟨y, hy⟩ := exists_mem_eval_and_oracle_ne_of_hasConvergentExt h
   exact ⟨y, hy hA hB⟩
 
@@ -606,76 +679,38 @@ theorem eval_eq_none_and_notMem_kleenePostSetA_of_not_hasConvergentExt {c : Code
       (stageA (2 * encode c)).length ∉ kleenePostSetA ∧
       kleenePostSetA.oracle (stageA (2 * encode c)).length = Part.some 0 := by
   have hA := extendsBits_kleenePostSetA (2 * encode c + 1)
-  have hB := extendsBits_kleenePostSetB (2 * encode c + 1)
-  simp only [stageA, stageB, stage_two_mul_succ, ofNat_encode] at hA hB h
-  have heval : Code.eval kleenePostSetB.oracle c (stage (2 * encode c)).1.length = Part.none :=
-    eval_eq_none_of_not_hasConvergentExt h hB
-  rw [diagStep_of_not_hasConvergentExt h] at hA
-  have hxnot : (stageA (2 * encode c)).length ∉ kleenePostSetA := by
-    simpa [stageA] using (Set.extendsBits_concat.1 hA).2
-  exact ⟨heval, hxnot, by simp [hxnot]⟩
+  rw [stageA_two_mul_succ, ofNat_encode] at hA
+  exact eval_eq_none_and_notMem_of_not_hasConvergentExt h hA
+    (extendsBits_kleenePostSetB (2 * encode c))
 
-/-- **Example (convergent query-free program).** `Code.zero` has a convergent binary extension over
-every `β` at every input `x` (already with empty suffix `[]` at fuel `x + 1`). -/
-theorem hasConvergentExt_zero (x : ℕ) (β : List Bool) : Code.HasConvergentExt Code.zero x β := by
-  rw [Code.hasConvergentExt_def]
-  refine ⟨[], x + 1, ?_⟩
-  rw [List.append_nil, Option.isSome_iff_exists]
-  exact ⟨⟨0, 0⟩, Code.evaln_succ_zero_eq_some.2 ⟨Nat.le_refl _, rfl⟩⟩
+/-- **General convergent-disagreement regime on `kleenePostSetB`.** When `c` has a convergent
+extension over `stageA (2 * encode c + 1)` at witness `x = (stageB (2 * encode c + 1)).length`,
+`Code.eval kleenePostSetA.oracle c x` halts at some `y` and `kleenePostSetB.oracle x` disagrees
+with `Part.some y`. -/
+theorem exists_mem_eval_and_oracle_kleenePostSetB_ne_of_hasConvergentExt {c : Code}
+    (h : Code.HasConvergentExt c (stageB (2 * encode c + 1)).length (stageA (2 * encode c + 1))) :
+    ∃ y : ℕ, y ∈ Code.eval kleenePostSetA.oracle c (stageB (2 * encode c + 1)).length ∧
+      kleenePostSetB.oracle (stageB (2 * encode c + 1)).length ≠ Part.some y := by
+  have hA := extendsBits_kleenePostSetA (2 * encode c + 1 + 1)
+  have hB := extendsBits_kleenePostSetB (2 * encode c + 1 + 1)
+  rw [stageA_two_mul_add_one_succ, ofNat_encode] at hA
+  rw [stageB_two_mul_add_one_succ, ofNat_encode] at hB
+  obtain ⟨y, hy⟩ := exists_mem_eval_and_oracle_ne_of_hasConvergentExt h
+  exact ⟨y, hy hB hA⟩
 
-/-- At the witness `x = (stageA (2 * encode Code.zero)).length`, `Code.zero` converges to `0`
-relative to `kleenePostSetB` and the convergent branch places `x ∈ kleenePostSetA`. -/
-theorem eval_zero_and_mem_kleenePostSetA :
-    let x := (stageA (2 * encode Code.zero)).length
-    Code.eval kleenePostSetB.oracle Code.zero x = Part.some 0 ∧
-      x ∈ kleenePostSetA ∧ kleenePostSetA.oracle x = Part.some 1 := by
-  intro x
-  obtain ⟨y, hy, hne⟩ :=
-    exists_mem_eval_and_oracle_kleenePostSetA_ne_of_hasConvergentExt (hasConvergentExt_zero _ _)
-  obtain rfl : y = 0 := by simpa [Code.eval_zero] using hy
-  have hx : x ∈ kleenePostSetA := by
-    by_contra hx
-    exact hne (by simp [x, hx])
-  exact ⟨Code.eval_zero x, hx, by simp [hx]⟩
-
-/-- **Example (convergent oracle query).** `Code.oracle` always has a convergent binary extension
-over `β` at `x`, obtained by padding `β` with `false` bits past coordinate `x`. -/
-theorem hasConvergentExt_oracle (x : ℕ) (β : List Bool) :
-    Code.HasConvergentExt Code.oracle x β := by
-  let δ := List.replicate (x + 1 - β.length) false
-  have hx : x < (β ++ δ).length := by simp [δ]; omega
-  rw [Code.hasConvergentExt_def]
-  refine ⟨δ, x + 1, ?_⟩
-  rw [Option.isSome_iff_exists]
-  exact ⟨⟨(β ++ δ)[x].toNat, x + 1⟩,
-    Code.evaln_succ_oracle_eq_some.2 ⟨Nat.le_refl _, _, Code.bitAnswers_of_lt hx, rfl⟩⟩
-
-/-- At the witness `x = (stageA (2 * encode Code.oracle)).length` for the identity reduction
-`Code.oracle`, `kleenePostSetA` and `kleenePostSetB` have opposite membership bits. -/
-theorem mem_kleenePostSetA_iff_notMem_kleenePostSetB_at_oracle :
-    let x := (stageA (2 * encode Code.oracle)).length
-    (x ∈ kleenePostSetA ↔ x ∉ kleenePostSetB) := by
-  intro x
-  have hne := eval_ne_oracle_kleenePostSetA Code.oracle
-  simp only [Code.eval_oracle] at hne
-  by_cases hA : x ∈ kleenePostSetA <;> by_cases hB : x ∈ kleenePostSetB <;> simp_all [x]
-
-/-- **Example (permanent divergence).** `Code.comp (Code.diagonalProbe 0 0) Code.succ` evaluates
-`Code.diagonalProbe 0 0` at `x + 1 ≠ 0`, so it diverges (`Part.none`) at every input relative to
-every oracle and has no convergent binary extension over any `β`. -/
-theorem not_hasConvergentExt_comp_diagonalProbe_succ (x : ℕ) (β : List Bool) :
-    ¬Code.HasConvergentExt (Code.comp (Code.diagonalProbe 0 0) Code.succ) x β :=
-  Code.not_hasConvergentExt_iff.2 fun _ _ => by simp
-
-/-- At the witness coordinate for `Code.comp (Code.diagonalProbe 0 0) Code.succ`, the requirement
-is met by permanent divergence: evaluation equals `Part.none` and `x ∉ kleenePostSetA`. -/
-theorem eval_comp_diagonalProbe_succ_and_notMem_kleenePostSetA :
-    let c := Code.comp (Code.diagonalProbe 0 0) Code.succ
-    let x := (stageA (2 * encode c)).length
-    Code.eval kleenePostSetB.oracle c x = Part.none ∧
-      x ∉ kleenePostSetA ∧ kleenePostSetA.oracle x = Part.some 0 :=
-  eval_eq_none_and_notMem_kleenePostSetA_of_not_hasConvergentExt
-    (not_hasConvergentExt_comp_diagonalProbe_succ _ _)
+/-- **General permanent-divergence regime on `kleenePostSetB`.** When `c` has no convergent
+extension over `stageA (2 * encode c + 1)` at witness `x = (stageB (2 * encode c + 1)).length`,
+`Code.eval kleenePostSetA.oracle c x = Part.none` and the default extension places
+`x ∉ kleenePostSetB` (`kleenePostSetB.oracle x = Part.some 0`). -/
+theorem eval_eq_none_and_notMem_kleenePostSetB_of_not_hasConvergentExt {c : Code}
+    (h : ¬Code.HasConvergentExt c (stageB (2 * encode c + 1)).length (stageA (2 * encode c + 1))) :
+    Code.eval kleenePostSetA.oracle c (stageB (2 * encode c + 1)).length = Part.none ∧
+      (stageB (2 * encode c + 1)).length ∉ kleenePostSetB ∧
+      kleenePostSetB.oracle (stageB (2 * encode c + 1)).length = Part.some 0 := by
+  have hB := extendsBits_kleenePostSetB (2 * encode c + 1 + 1)
+  rw [stageB_two_mul_add_one_succ, ofNat_encode] at hB
+  exact eval_eq_none_and_notMem_of_not_hasConvergentExt h hB
+    (extendsBits_kleenePostSetA (2 * encode c + 1))
 
 end KleenePost
 

@@ -43,7 +43,7 @@ theorem replicate_prefix_of_append_cons_eq {x y : α} (hxy : x ≠ y) {l t r : L
 
 /-- Along a prefix-monotone sequence of lists `σs`, any two terms defining index `x` assign the
 same entry there. -/
-theorem getElem?_eq_of_forall_prefix_succ {σs : ℕ → List α}
+theorem eq_of_forall_prefix_succ_of_getElem?_eq_some {σs : ℕ → List α}
     (hpref : ∀ s, σs s <+: σs (s + 1)) {s₁ s₂ x : ℕ} {b₁ b₂ : α}
     (h₁ : (σs s₁)[x]? = some b₁) (h₂ : (σs s₂)[x]? = some b₂) : b₁ = b₂ := by
   have hle : ∀ {m n}, m ≤ n → σs m <+: σs n := by

@@ -66,8 +66,9 @@ This file develops the three components of that finite-extension machinery:
   **extension-or-permanent-divergence alternative**.
 * `TauCeti.Oracle.Single.Code.partrec_findConvergentExt`,
   `TauCeti.Oracle.Single.Code.rePred_hasConvergentExt`: effectivity of convergent-extension search.
-* `TauCeti.dom_bitChainOracle_eq_univ`, `TauCeti.bitChainOracle_eq_oracle_bitLimit`,
-  `TauCeti.forall_extendsBits_iff_eq_bitLimit`, `TauCeti.turingReducible_bitLimit_of_computableIn`:
+* `TauCeti.dom_bitChainOracle_iff`, `TauCeti.dom_bitChainOracle_eq_univ_iff`,
+  `TauCeti.bitChainOracle_eq_oracle_bitLimit`, `TauCeti.forall_extendsBits_iff_eq_bitLimit`,
+  `TauCeti.recursiveIn_bitChainOracle`, `TauCeti.turingReducible_bitLimit_of_computableIn`:
   totality, uniqueness, and Turing reducibility of the limit of a coherent covering bit chain.
 
 ## References
@@ -95,12 +96,22 @@ theorem extendsBits_def (A : Set ℕ) (σ : List Bool) :
     A.ExtendsBits σ ↔ ∀ ⦃z : ℕ⦄ ⦃b : Bool⦄, σ[z]? = some b → (z ∈ A ↔ b = true) :=
   Iff.rfl
 
+/-- If `A` extends `σ` and `σ[z]? = some b`, then `z ∈ A ↔ b = true`. -/
+theorem ExtendsBits.mem_iff {A : Set ℕ} {σ : List Bool} (hA : A.ExtendsBits σ)
+    {z : ℕ} {b : Bool} (hz : σ[z]? = some b) : z ∈ A ↔ b = true :=
+  hA hz
+
+/-- If `A` extends `σ` and `z < σ.length`, then `z ∈ A ↔ σ[z] = true`. -/
+theorem ExtendsBits.mem_iff_getElem {A : Set ℕ} {σ : List Bool} (hA : A.ExtendsBits σ)
+    {z : ℕ} (hz : z < σ.length) : z ∈ A ↔ σ[z] = true :=
+  hA (List.getElem?_eq_getElem hz)
+
 /-- `A` extends `σ` exactly when membership in `A` at every index `z < σ.length` matches `σ[z]`. -/
 theorem extendsBits_iff_getElem {A : Set ℕ} {σ : List Bool} :
     A.ExtendsBits σ ↔ ∀ (z : ℕ) (hz : z < σ.length), z ∈ A ↔ σ[z] = true := by
   constructor
   · intro h z hz
-    exact h (List.getElem?_eq_getElem hz)
+    exact h.mem_iff_getElem hz
   · intro h z b hz
     obtain ⟨hlt, rfl⟩ := List.getElem?_eq_some_iff.1 hz
     exact h z hlt
@@ -147,6 +158,12 @@ theorem extendsBits_concat {A : Set ℕ} {σ : List Bool} {b : Bool} :
     obtain rfl : b' = b := by simpa using hz.symm
     simpa using h
   | succ z => simp at hz
+
+/-- Extending a singleton binary string `[b]` means matching `b` at coordinate `0`. -/
+@[simp]
+theorem extendsBits_singleton {A : Set ℕ} {b : Bool} :
+    A.ExtendsBits [b] ↔ (0 ∈ A ↔ b = true) := by
+  simpa using extendsBits_concat (A := A) (σ := []) (b := b)
 
 /-- At an address where `σ[z]? = some b`, the characteristic function `A.indicator 1` of any set
 `A` extending `σ` equals `b.toNat`. -/
@@ -200,19 +217,44 @@ theorem bitAnswers_def (σ : List Bool) (z : ℕ) : bitAnswers σ z = (σ[z]?).m
   (rfl)
 
 /-- The empty binary string supplies no oracle answers. -/
-@[simp]
 theorem bitAnswers_nil (z : ℕ) : bitAnswers [] z = none :=
   (rfl)
 
+/-- `bitAnswers σ z = none` iff `z` is at or beyond `σ.length`. -/
+@[simp]
+theorem bitAnswers_eq_none_iff {σ : List Bool} {z : ℕ} :
+    bitAnswers σ z = none ↔ σ.length ≤ z := by
+  simp [bitAnswers]
+
 /-- Beyond `σ.length`, `bitAnswers σ` answers `none`. -/
+@[simp]
 theorem bitAnswers_eq_none_of_le {σ : List Bool} {z : ℕ} (hz : σ.length ≤ z) :
-    bitAnswers σ z = none := by
-  simp [bitAnswers, List.getElem?_eq_none hz]
+    bitAnswers σ z = none :=
+  bitAnswers_eq_none_iff.2 hz
 
 /-- Below `σ.length`, `bitAnswers σ` answers `some σ[z].toNat`. -/
+@[simp]
 theorem bitAnswers_of_lt {σ : List Bool} {z : ℕ} (hz : z < σ.length) :
     bitAnswers σ z = some σ[z].toNat := by
   simp [bitAnswers, hz]
+
+/-- `bitAnswers σ z` is defined iff `z < σ.length`. -/
+@[simp]
+theorem isSome_bitAnswers (σ : List Bool) (z : ℕ) :
+    (bitAnswers σ z).isSome = decide (z < σ.length) := by
+  by_cases hz : z < σ.length
+  · simp [hz]
+  · simp [hz, Nat.le_of_not_lt hz]
+
+/-- `bitAnswers σ z = some y` iff `σ` defines a bit `b` at `z` with `b.toNat = y`. -/
+theorem bitAnswers_eq_some_iff {σ : List Bool} {z y : ℕ} :
+    bitAnswers σ z = some y ↔ ∃ b : Bool, σ[z]? = some b ∧ b.toNat = y :=
+  Option.map_eq_some_iff
+
+/-- When `σ[z]? = some b`, `bitAnswers σ z = some b.toNat`. -/
+theorem bitAnswers_of_getElem? {σ : List Bool} {z : ℕ} {b : Bool} (h : σ[z]? = some b) :
+    bitAnswers σ z = some b.toNat := by
+  simp [bitAnswers, h]
 
 /-- Prefix extension preserves all answers below the shorter string's length. -/
 theorem bitAnswers_of_prefix {σ τ : List Bool} (hστ : σ <+: τ) {z : ℕ} (hz : z < σ.length) :
@@ -353,12 +395,39 @@ theorem exists_prefix_mem_eval_or_forall_eval_eq_none (c : Code) (x : ℕ) (β :
   · exact Or.inl (hasConvergentExt_iff_exists_prefix.1 h)
   · exact Or.inr (not_hasConvergentExt_iff.1 h)
 
+/-- `Code.zero` has a convergent binary extension over every `β` at every input `x` (already with
+empty suffix `[]` at fuel `x + 1`). -/
+theorem hasConvergentExt_zero (x : ℕ) (β : List Bool) : HasConvergentExt zero x β := by
+  rw [hasConvergentExt_def]
+  refine ⟨[], x + 1, ?_⟩
+  rw [List.append_nil, Option.isSome_iff_exists]
+  exact ⟨⟨0, 0⟩, evaln_succ_zero_eq_some.2 ⟨Nat.le_refl _, rfl⟩⟩
+
+/-- `Code.oracle` has a convergent binary extension over every `β` at every input `x`, obtained by
+padding `β` with `false` bits past coordinate `x`. -/
+theorem hasConvergentExt_oracle (x : ℕ) (β : List Bool) : HasConvergentExt oracle x β := by
+  let δ := List.replicate (x + 1 - β.length) false
+  have hx : x < (β ++ δ).length := by simp [δ]; omega
+  rw [hasConvergentExt_def]
+  refine ⟨δ, x + 1, ?_⟩
+  rw [Option.isSome_iff_exists]
+  exact ⟨⟨(β ++ δ)[x].toNat, x + 1⟩,
+    evaln_succ_oracle_eq_some.2 ⟨Nat.le_refl _, _, bitAnswers_of_lt hx, rfl⟩⟩
+
 /-- Partial recursive search for a finite binary suffix `δ` and halting record `d` witnessing a
 convergent run of `c` at `x` over `β ++ δ`. -/
 def findConvergentExt (c : Code) (x : ℕ) (β : List Bool) : Part (List Bool × Halt) :=
   Nat.rfindOpt fun n =>
     (decode (α := List Bool × ℕ) n).bind fun p =>
       (evaln (bitAnswers (β ++ p.1)) p.2 c x).map fun d => (p.1, d)
+
+/-- Unfolding `findConvergentExt`. -/
+theorem findConvergentExt_def (c : Code) (x : ℕ) (β : List Bool) :
+    findConvergentExt c x β =
+      Nat.rfindOpt fun n =>
+        (decode (α := List Bool × ℕ) n).bind fun p =>
+          (evaln (bitAnswers (β ++ p.1)) p.2 c x).map fun d => (p.1, d) :=
+  (rfl)
 
 /-- `findConvergentExt` is partial recursive uniformly in `(c, x, β)`. -/
 theorem partrec_findConvergentExt :
@@ -397,16 +466,37 @@ theorem rePred_hasConvergentExt :
     REPred fun q : Code × ℕ × List Bool => HasConvergentExt q.1 q.2.1 q.2.2 :=
   partrec_findConvergentExt.dom_re.of_eq fun _ => dom_findConvergentExt_iff
 
+/-- `w ∈ findConvergentExt c x β` iff `w` comes from the least code `n` decoding to `(w.1, k)` for
+which `evaln (bitAnswers (β ++ w.1)) k c x = some w.2`. -/
+theorem mem_findConvergentExt_iff {c : Code} {x : ℕ} {β : List Bool} {w : List Bool × Halt} :
+    w ∈ findConvergentExt c x β ↔
+      ∃ n k, decode (α := List Bool × ℕ) n = some (w.1, k) ∧
+        evaln (bitAnswers (β ++ w.1)) k c x = some w.2 ∧
+        ∀ m < n, ∀ δ j, decode (α := List Bool × ℕ) m = some (δ, j) →
+          evaln (bitAnswers (β ++ δ)) j c x = none := by
+  rw [findConvergentExt, Nat.rfindOpt, Part.mem_bind_iff]
+  constructor
+  · rintro ⟨n, hn, hw⟩
+    obtain ⟨-, hmin⟩ := Nat.mem_rfind.1 hn
+    simp only [Part.mem_coe, Option.mem_def, Option.bind_eq_some_iff, Option.map_eq_some_iff] at hw
+    obtain ⟨⟨δ, k⟩, hdec, d, hd, hpair⟩ := hw
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj hpair.symm
+    refine ⟨n, k, hdec, hd, fun m hm δ' j hdecm => ?_⟩
+    have hfalse := hmin hm
+    simpa [hdecm] using hfalse
+  · rintro ⟨n, k, hdec, hd, hmin⟩
+    refine ⟨n, Nat.mem_rfind.2 ⟨by simp [hdec, hd], fun {m} hm => ?_⟩, by simp [hdec, hd]⟩
+    cases hdecm : decode (α := List Bool × ℕ) m with
+    | none => simp
+    | some p => simp [hmin m hm p.1 p.2 hdecm]
+
 /-- Every output `(δ, d)` of `findConvergentExt c x β` comes from a successful run of `evaln`
 against `bitAnswers (β ++ δ)` at some fuel `k`. -/
 theorem exists_evaln_of_mem_findConvergentExt {c : Code} {x : ℕ} {β : List Bool}
     {w : List Bool × Halt} (hw : w ∈ findConvergentExt c x β) :
     ∃ k : ℕ, evaln (bitAnswers (β ++ w.1)) k c x = some w.2 := by
-  obtain ⟨n, hn⟩ := Nat.rfindOpt_spec hw
-  simp only [Option.mem_def, Option.bind_eq_some_iff, Option.map_eq_some_iff] at hn
-  obtain ⟨⟨δ, k⟩, -, d, hd, hpair⟩ := hn
-  obtain ⟨rfl, rfl⟩ := Prod.mk.inj hpair.symm
-  exact ⟨k, hd⟩
+  obtain ⟨_, k, -, hk, -⟩ := mem_findConvergentExt_iff.1 hw
+  exact ⟨k, hk⟩
 
 /-- If `w ∈ findConvergentExt c x β`, then `w.2.output ∈ eval Y.oracle c x` for every set `Y`
 extending `β ++ w.1`. -/
@@ -441,7 +531,6 @@ def bitChainOracle (σs : ℕ → List Bool) : ℕ →. ℕ :=
   fun x => Nat.rfindOpt fun s => Code.bitAnswers (σs s) x
 
 /-- Evaluating `bitChainOracle` at `x`. -/
-@[simp]
 theorem bitChainOracle_apply (σs : ℕ → List Bool) (x : ℕ) :
     bitChainOracle σs x = Nat.rfindOpt fun s => Code.bitAnswers (σs s) x :=
   (rfl)
@@ -451,7 +540,7 @@ theorem extendsBits_bitLimit {σs : ℕ → List Bool} (hpref : ∀ s, σs s <+:
     (bitLimit σs).ExtendsBits (σs s) := by
   intro x b hxs
   rw [mem_bitLimit]
-  exact ⟨fun ⟨t, hxt⟩ => List.getElem?_eq_of_forall_prefix_succ hpref hxs hxt,
+  exact ⟨fun ⟨t, hxt⟩ => List.eq_of_forall_prefix_succ_of_getElem?_eq_some hpref hxs hxt,
     fun hb => ⟨s, hb ▸ hxs⟩⟩
 
 /-- Along a prefix-monotone sequence, at any stage `s` covering `x`, `x ∈ bitLimit σs` iff
@@ -470,39 +559,54 @@ theorem notMem_bitLimit_iff_getElem?_of_lt {σs : ℕ → List Bool}
   rw [mem_bitLimit_iff_getElem?_of_lt hpref hx, List.getElem?_eq_getElem hx]
   cases (σs s)[x] <;> simp
 
-/-- **Coordinate coverage implies totality of `bitChainOracle` at `x`.** -/
-theorem dom_bitChainOracle {σs : ℕ → List Bool} (hcovers : ∀ x, ∃ s, x < (σs s).length) (x : ℕ) :
-    (bitChainOracle σs x).Dom := by
-  obtain ⟨s, hs⟩ := hcovers x
-  exact Nat.rfindOpt_dom.2 ⟨s, (σs s)[x].toNat, Code.bitAnswers_of_lt hs⟩
+/-- `bitChainOracle σs` is defined at `x` iff some stage `σs s` covers coordinate `x`. -/
+@[simp]
+theorem dom_bitChainOracle_iff {σs : ℕ → List Bool} {x : ℕ} :
+    (bitChainOracle σs x).Dom ↔ ∃ s, x < (σs s).length := by
+  rw [bitChainOracle_apply, Nat.rfindOpt_dom]
+  constructor
+  · rintro ⟨s, y, hy⟩
+    obtain ⟨b, hb, -⟩ := Code.bitAnswers_eq_some_iff.1 hy
+    exact ⟨s, (List.getElem?_eq_some_iff.1 hb).1⟩
+  · rintro ⟨s, hs⟩
+    exact ⟨s, (σs s)[x].toNat, Code.bitAnswers_of_lt hs⟩
 
-/-- **Totality of the partial stage-union oracle.** If every coordinate is covered at some stage,
-then `bitChainOracle σs` has total domain `Set.univ`. -/
-theorem dom_bitChainOracle_eq_univ {σs : ℕ → List Bool} (hcovers : ∀ x, ∃ s, x < (σs s).length) :
-    PFun.Dom (bitChainOracle σs) = Set.univ :=
-  Set.eq_univ_of_forall (dom_bitChainOracle hcovers)
+/-- Along a prefix-monotone chain of binary strings, `y ∈ bitChainOracle σs x` iff some stage
+supplies `Code.bitAnswers (σs s) x = some y`. -/
+theorem mem_bitChainOracle_iff {σs : ℕ → List Bool} (hpref : ∀ s, σs s <+: σs (s + 1))
+    {x y : ℕ} :
+    y ∈ bitChainOracle σs x ↔ ∃ s, Code.bitAnswers (σs s) x = some y := by
+  have hle : ∀ {m n}, m ≤ n → σs m <+: σs n := by
+    intro m n h
+    induction h with
+    | refl => exact List.prefix_rfl
+    | step _ ih => exact ih.trans (hpref _)
+  exact Nat.rfindOpt_mono fun {a m n} hmn hm => by
+    obtain ⟨b, hb, rfl⟩ := Code.bitAnswers_eq_some_iff.1 hm
+    exact (Code.bitAnswers_of_prefix (hle hmn) (List.getElem?_eq_some_iff.1 hb).1).trans hm
+
+/-- **Totality of the partial stage-union oracle.** `bitChainOracle σs` has total domain `Set.univ`
+iff every coordinate is covered at some stage. -/
+theorem dom_bitChainOracle_eq_univ_iff {σs : ℕ → List Bool} :
+    PFun.Dom (bitChainOracle σs) = Set.univ ↔ ∀ x, ∃ s, x < (σs s).length := by
+  simp only [Set.eq_univ_iff_forall, PFun.Dom, Set.mem_ofPred_eq, dom_bitChainOracle_iff]
 
 /-- **Coherence and totality identify `bitChainOracle σs` with `(bitLimit σs).oracle`.** -/
 theorem bitChainOracle_eq_oracle_bitLimit {σs : ℕ → List Bool}
     (hpref : ∀ s, σs s <+: σs (s + 1)) (hcovers : ∀ x, ∃ s, x < (σs s).length) :
     bitChainOracle σs = (bitLimit σs).oracle := by
   ext x y
+  rw [mem_bitChainOracle_iff hpref]
   constructor
-  · intro hy
-    obtain ⟨s, hs⟩ := Nat.rfindOpt_spec hy
-    simp only [Option.mem_def, Code.bitAnswers_def, Option.map_eq_some_iff] at hs
-    obtain ⟨b, hb, rfl⟩ := hs
+  · rintro ⟨s, hs⟩
+    obtain ⟨b, hb, rfl⟩ := Code.bitAnswers_eq_some_iff.1 hs
     rw [(extendsBits_bitLimit hpref s).oracle_eq_some_toNat hb]
     exact Part.mem_some _
   · intro hy
-    obtain ⟨z, hz⟩ := Part.dom_iff_mem.1 (dom_bitChainOracle hcovers x)
-    obtain ⟨s, hs⟩ := Nat.rfindOpt_spec hz
-    simp only [Option.mem_def, Code.bitAnswers_def, Option.map_eq_some_iff] at hs
-    obtain ⟨b, hb, rfl⟩ := hs
-    have hy' : y = b.toNat := by
-      rw [(extendsBits_bitLimit hpref s).oracle_eq_some_toNat hb, Part.mem_some_iff] at hy
-      exact hy
-    exact hy' ▸ hz
+    obtain ⟨s, hs⟩ := hcovers x
+    have hget := List.getElem?_eq_getElem hs
+    rw [(extendsBits_bitLimit hpref s).oracle_eq_some_toNat hget, Part.mem_some_iff] at hy
+    exact ⟨s, hy ▸ Code.bitAnswers_of_lt hs⟩
 
 /-- **Uniqueness of the limit set.** Along a prefix-monotone chain covering every coordinate, a set
 `A` extends `σs s` for every `s` if and only if `A = bitLimit σs`. -/
@@ -522,41 +626,24 @@ theorem existsUnique_extendsBits {σs : ℕ → List Bool}
   ⟨bitLimit σs, extendsBits_bitLimit hpref,
     fun _ hA => (forall_extendsBits_iff_eq_bitLimit hpref hcovers).1 hA⟩
 
+/-- **Oracle-computability of `bitChainOracle`.** If `σs : ℕ → List Bool` is computable in `O`,
+then `bitChainOracle σs` is recursive in `O`. -/
+theorem recursiveIn_bitChainOracle {O : Set (ℕ →. ℕ)} {σs : ℕ → List Bool}
+    (hσs : ComputableIn O σs) : RecursiveIn O (bitChainOracle σs) :=
+  RecursiveIn.rfindOpt <|
+    Code.primrec₂_bitAnswers.computableIn.comp
+      ((hσs.comp ComputableIn.snd).pair ComputableIn.fst)
+
 /-- **Computing the limit characteristic function from the stages.** If a prefix-monotone covering
 sequence `σs : ℕ → List Bool` is computable in `O`, then the characteristic function of
 `bitLimit σs` is computable in `O`: search for the first stage `s` covering `x` and read its bit. -/
 theorem computableIn_indicator_bitLimit {O : Set (ℕ →. ℕ)} {σs : ℕ → List Bool}
     (hpref : ∀ s, σs s <+: σs (s + 1)) (hcovers : ∀ x, ∃ s, x < (σs s).length)
     (hσs : ComputableIn O σs) :
-    ComputableIn O ((bitLimit σs).indicator 1 : ℕ → ℕ) := by
-  have hans : ComputableIn O fun n : ℕ => Code.bitAnswers (σs n.unpair.2) n.unpair.1 :=
-    Code.primrec₂_bitAnswers.computableIn.comp
-      ((hσs.comp (ComputableIn.snd.comp ComputableIn.unpair)).pair
-        (ComputableIn.fst.comp ComputableIn.unpair))
-  have htest : Nat.RecursiveIn O
-      fun n => Part.some (cond (Code.bitAnswers (σs n.unpair.2) n.unpair.1).isSome 0 1) :=
-    RecursiveIn.iff_nat.1 <|
-      (Primrec.cond option_isSome (const 0) (const 1)).computableIn.comp hans
-  have hval : Nat.RecursiveIn O
-      fun n => Part.some ((Code.bitAnswers (σs n.unpair.2) n.unpair.1).getD 0) :=
-    RecursiveIn.iff_nat.1 <| (option_getD.comp Primrec.id (const 0)).computableIn.comp hans
-  refine RecursiveIn.iff_nat.2 <|
-    (hval.comp (Nat.RecursiveIn.pair Nat.Primrec.id.recursiveIn htest.rfind)).of_eq_tot fun x => ?_
-  have hdom : (Nat.rfind fun s =>
-      (fun m => decide (m = 0)) <$>
-        Part.some (cond (Code.bitAnswers (σs (Nat.pair x s).unpair.2)
-          (Nat.pair x s).unpair.1).isSome 0 1)).Dom := by
-    obtain ⟨s, hs⟩ := hcovers x
-    exact Nat.rfind_dom.2 ⟨s, by simp [Code.bitAnswers_of_lt hs], fun _ => by simp⟩
-  obtain ⟨s₀, hs₀⟩ := Part.dom_iff_mem.1 hdom
-  have hsome : (Code.bitAnswers (σs s₀) x).isSome = true := by
-    have := (Nat.mem_rfind.1 hs₀).1
-    cases h : (Code.bitAnswers (σs s₀) x).isSome <;> simp [h] at this ⊢
-  obtain ⟨y, hy⟩ := Option.isSome_iff_exists.1 hsome
-  obtain ⟨b, hb, rfl⟩ := Option.map_eq_some_iff.1 hy
-  have hind := (extendsBits_bitLimit hpref s₀).indicator_eq_toNat hb
-  rw [Part.eq_some_iff.2 hs₀]
-  simp [Seq.seq, Code.bitAnswers, hb, hind]
+    ComputableIn O ((bitLimit σs).indicator 1 : ℕ → ℕ) :=
+  (recursiveIn_bitChainOracle hσs).of_eq fun x =>
+    (congrFun (bitChainOracle_eq_oracle_bitLimit hpref hcovers) x).trans
+      ((bitLimit σs).oracle_apply x)
 
 /-- **Turing reducibility of `bitLimit σs`.** If a prefix-monotone covering sequence `σs` is
 computable in `{g}`, then `(bitLimit σs).oracle` is Turing reducible to `g`. -/
