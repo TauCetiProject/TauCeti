@@ -5,24 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Ellipticity.Basic
+public import TauCeti.Analysis.PDE.Ellipticity.RadialCoefficient
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import Mathlib.Analysis.Matrix.MeasurableSpace
 import TauCeti.Analysis.Sobolev.Wkp.NormRpow
 
 /-!
 # `W^{2,p}` regularity fails for a discontinuous coefficient
 
-For `b ≥ 0` let `a = TauCeti.PDE.radialCoefficient b` be the coefficient field on `ℝⁿ`
+For `b ≥ 0` let `a = TauCeti.PDE.radialCoefficient 1 b` be the coefficient field on `ℝⁿ`
 
 `a(x) = I + b x̂ x̂ᵀ`, where `x̂ = x / ‖x‖`,
 
 whose eigenvalue in the radial direction `x̂` is `1 + b` and in the directions orthogonal to `x`
-is `1`. It is measurable, symmetric and uniformly elliptic with constants `1` and `1 + b`, and
-for `n ≥ 2` and `b ≠ 0` it has no limit at the origin. In the plane it is `1 + b` times Meyers'
-coefficient field `TauCeti.PDE.meyersCoefficient μ` with `μ² = 1 / (1 + b)`, the corresponding
-counterexample for divergence-form equations. Away from the origin the power
-`u(x) = ‖x‖ ^ γ` satisfies
+is `1`. It is measurable, symmetric and uniformly elliptic with constants `1` and `1 + b`
+(`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`), and for `n ≥ 2` and `b ≠ 0` it has no
+limit at the origin (`TauCeti.PDE.not_exists_tendsto_radialCoefficient`). In the plane it is
+`1 + b` times Meyers' coefficient field `TauCeti.PDE.meyersCoefficient μ` with
+`μ² = 1 / (1 + b)`, the corresponding counterexample for divergence-form equations. Away from the
+origin the power `u(x) = ‖x‖ ^ γ` satisfies
 
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = γ (n + γ - 2 + b (γ - 1)) ‖x‖ ^ (γ - 2)`,
 
@@ -43,11 +43,6 @@ oscillation. The ellipticity ratio `1 + b` of the counterexample tends to infini
 
 ## Main declarations
 
-* `TauCeti.PDE.radialCoefficient`: the coefficient field `I + b x̂ x̂ᵀ`.
-* `TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`: for `b ≥ 0` it is uniformly elliptic with
-  constants `1` and `1 + b`.
-* `TauCeti.PDE.not_exists_tendsto_radialCoefficient`: for `n ≥ 2` and `b ≠ 0` it has no limit at
-  the origin.
 * `TauCeti.PDE.ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq`: the non-divergence
   operator applied to an element of `W^{2,p}` equal to `‖x‖ ^ γ`, with its weak Hessian.
 * `TauCeti.PDE.exists_radialCoefficient_not_exists_wkp`: for `1 ≤ p₀ < p < ∞` with `p₀ < n` and
@@ -76,121 +71,10 @@ namespace PDE
 
 variable {n : ℕ} {b γ : ℝ}
 
-/-- The coefficient field `a(x) = I + b x xᵀ / ‖x‖²` on `ℝⁿ`. Its eigenvalue in the radial
-direction `x` is `1 + b` and in the directions orthogonal to `x` is `1`. At the origin, where the
-direction is undefined, it is `I`. -/
-def radialCoefficient (b : ℝ) (x : EuclideanSpace ℝ (Fin n)) : Matrix (Fin n) (Fin n) ℝ :=
-  1 + (b / ‖x‖ ^ 2) • Matrix.vecMulVec x x
-
-/-- Unfolding `TauCeti.PDE.radialCoefficient`. -/
-theorem radialCoefficient_apply (x : EuclideanSpace ℝ (Fin n)) :
-    radialCoefficient b x = 1 + (b / ‖x‖ ^ 2) • Matrix.vecMulVec x x :=
-  (rfl)
-
-/-- The entries of `TauCeti.PDE.radialCoefficient`: `aᵢⱼ(x) = δᵢⱼ + b xᵢ xⱼ / ‖x‖²`. -/
-theorem radialCoefficient_apply_apply (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    radialCoefficient b x i j = (if i = j then 1 else 0) + b / ‖x‖ ^ 2 * (x i * x j) := by
-  simp [radialCoefficient, Matrix.one_apply, Matrix.vecMulVec_apply]
-
-/-- The radial coefficient is symmetric. -/
-theorem isSymm_radialCoefficient (x : EuclideanSpace ℝ (Fin n)) :
-    (radialCoefficient b x).IsSymm := by
-  ext i j
-  simp only [Matrix.transpose_apply, radialCoefficient_apply_apply, eq_comm (a := i),
-    mul_comm (x i)]
-
-/-- The bilinear form of the radial coefficient:
-`ηᵀ a(x) ξ = ⟪η, ξ⟫ + b ⟪η, x⟫ ⟪x, ξ⟫ / ‖x‖²`. -/
-theorem dotProduct_radialCoefficient_mulVec (x η ξ : EuclideanSpace ℝ (Fin n)) :
-    η ⬝ᵥ (radialCoefficient b x *ᵥ ξ) =
-      ⟪η, ξ⟫_ℝ + b / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ) := by
-  simp only [dotProduct, Matrix.mulVec, radialCoefficient_apply_apply, add_mul, ite_mul,
-    one_mul, zero_mul, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true,
-    mul_add, PiLp.inner_apply, RCLike.inner_apply, conj_trivial, Finset.mul_sum]
-  congr 1
-  · exact Finset.sum_congr rfl fun i _ => mul_comm _ _
-  · rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    ring
-
-/-- For `b ≥ 0`, the radial coefficient is uniformly elliptic with constants `1` and `1 + b`, so
-its ellipticity ratio is `1 + b`. -/
-theorem uniformlyEllipticOn_radialCoefficient (hb : 0 ≤ b) (Ω : Set (EuclideanSpace ℝ (Fin n))) :
-    UniformlyEllipticOn Ω (radialCoefficient b) 1 (1 + b) := by
-  refine UniformlyEllipticOn.of_bounds one_pos (by linarith) (fun x _ ξ => ?_)
-    (fun x _ η ξ => ?_)
-  · rw [Matrix.toQuadraticForm'_apply, dotProduct_radialCoefficient_mulVec,
-      real_inner_self_eq_norm_sq, real_inner_comm x ξ]
-    have : 0 ≤ b / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) :=
-      mul_nonneg (div_nonneg hb (by positivity)) (mul_self_nonneg _)
-    linarith
-  · have hcx : b / ‖x‖ ^ 2 * ‖x‖ ^ 2 ≤ b := by
-      rcases eq_or_ne ‖x‖ 0 with h | h
-      · simp [h, hb]
-      · rw [div_mul_cancel₀ _ (pow_ne_zero 2 h)]
-    rw [dotProduct_radialCoefficient_mulVec]
-    calc |⟪η, ξ⟫_ℝ + b / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ)|
-        ≤ ‖η‖ * ‖ξ‖ + b / ‖x‖ ^ 2 * ((‖η‖ * ‖x‖) * (‖x‖ * ‖ξ‖)) := by
-          refine (abs_add_le _ _).trans (add_le_add (abs_real_inner_le_norm _ _) ?_)
-          rw [abs_mul, abs_mul, abs_of_nonneg (div_nonneg hb (by positivity))]
-          exact mul_le_mul_of_nonneg_left (mul_le_mul (abs_real_inner_le_norm _ _)
-            (abs_real_inner_le_norm _ _) (abs_nonneg _) (by positivity))
-            (div_nonneg hb (by positivity))
-      _ = (1 + b / ‖x‖ ^ 2 * ‖x‖ ^ 2) * ‖η‖ * ‖ξ‖ := by ring
-      _ ≤ (1 + b) * ‖η‖ * ‖ξ‖ := by gcongr
-
-/-- The radial coefficient is strongly measurable. -/
-theorem stronglyMeasurable_radialCoefficient :
-    StronglyMeasurable (radialCoefficient (n := n) b) := by
-  have : Measurable (radialCoefficient (n := n) b) := by
-    unfold radialCoefficient
-    fun_prop
-  -- The matrix space is metrizable through its underlying function type.
-  exact Measurable.stronglyMeasurable (β := Fin n → Fin n → ℝ) this
-
-/-- **The radial coefficient is discontinuous at the origin.** For `n ≥ 2` and `b ≠ 0` it has no
-limit at the origin: along the ray through `e₀` its entry `a₀₀` is `1 + b`, and along the ray
-through `e₁` it is `1`. -/
-theorem not_exists_tendsto_radialCoefficient (hn : 2 ≤ n) (hb : b ≠ 0) :
-    ¬ ∃ L, Tendsto (radialCoefficient (n := n) b) (𝓝[≠] 0) (𝓝 L) := by
-  rintro ⟨L, hL⟩
-  set i₀ : Fin n := ⟨0, by omega⟩
-  set i₁ : Fin n := ⟨1, by omega⟩
-  have hne : i₁ ≠ i₀ := by simp [i₀, i₁, Fin.ext_iff]
-  -- Along the ray `t ↦ t eⱼ`, `t > 0`, the entry `a₀₀` is constant.
-  have key : ∀ j : Fin n, L i₀ i₀ = 1 + (if j = i₀ then b else 0) := by
-    intro j
-    have hray : Tendsto (fun t : ℝ => t • EuclideanSpace.single j (1 : ℝ)) (𝓝[>] 0)
-        (𝓝[≠] (0 : EuclideanSpace ℝ (Fin n))) := by
-      refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-      · simpa using ((continuous_id.smul continuous_const).tendsto (0 : ℝ)).mono_left
-          (nhdsWithin_le_nhds (s := Ioi 0) (a := (0 : ℝ)))
-          (f := fun t : ℝ => t • EuclideanSpace.single j (1 : ℝ))
-      · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-        simp [ht.ne']
-    have hent : Tendsto (fun t : ℝ => radialCoefficient b (t • EuclideanSpace.single j 1) i₀ i₀)
-        (𝓝[>] 0) (𝓝 (L i₀ i₀)) :=
-      ((continuous_id.matrix_elem i₀ i₀).tendsto L).comp (hL.comp hray)
-    refine tendsto_nhds_unique hent (tendsto_const_nhds.congr' ?_)
-    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-    rw [radialCoefficient_apply_apply, norm_smul, PiLp.norm_single, norm_one, mul_one,
-      Real.norm_of_nonneg ht.le]
-    simp only [PiLp.smul_apply, PiLp.single_apply, smul_eq_mul, ite_true]
-    by_cases hj : j = i₀
-    · subst hj
-      simp only [ite_true, mul_one]
-      field_simp
-    · simp [hj, Ne.symm hj]
-  have h := (key i₀).symm.trans (key i₁)
-  simp only [ite_true, hne, ite_false, add_zero] at h
-  exact hb (by linarith)
-
 /-- The double sum of the radial coefficient against a matrix of the form
 `A δᵢⱼ + B xᵢ xⱼ`. -/
 private theorem sum_radialCoefficient_mul (x : EuclideanSpace ℝ (Fin n)) (A B : ℝ) :
-    ∑ i, ∑ j, radialCoefficient b x i j * (A * (if i = j then 1 else 0) + B * (x i * x j)) =
+    ∑ i, ∑ j, radialCoefficient 1 b x i j * (A * (if i = j then 1 else 0) + B * (x i * x j)) =
       n * A + (B + b / ‖x‖ ^ 2 * A) * ‖x‖ ^ 2 + b / ‖x‖ ^ 2 * B * (‖x‖ ^ 2) ^ 2 := by
   have hsq : ∑ i, x i * x i = ‖x‖ ^ 2 := by
     rw [EuclideanSpace.real_norm_sq_eq]
@@ -216,14 +100,14 @@ and let `W ∈ W^{2,p}(Ω)` be equal to `‖x‖ ^ γ`. Then, with its weak Hess
 
 `∑ᵢⱼ aᵢⱼ(x) ⟪D²W eᵢ, eⱼ⟫ = γ (n + γ - 2 + b (γ - 1)) ‖x‖ ^ (γ - 2)`
 
-almost everywhere on `Ω`, for the radial coefficient `a = TauCeti.PDE.radialCoefficient b`. -/
+almost everywhere on `Ω`, for the radial coefficient `a = TauCeti.PDE.radialCoefficient 1 b`. -/
 theorem ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq (hγ : 2 - (n : ℝ) < γ)
     {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens (EuclideanSpace ℝ (Fin n))}
     (W : Wkp volume Ω p 2)
     (hW : Wkp.value 2 W =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin n)))]
       fun x => ‖x‖ ^ γ) :
     ∀ᵐ x ∂volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin n))),
-      ∑ i, ∑ j, radialCoefficient b x i j *
+      ∑ i, ∑ j, radialCoefficient 1 b x i j *
         ⟪Wkp.iteratedGradient 1 W x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
         γ * (n + γ - 2 + b * (γ - 1)) * ‖x‖ ^ (γ - 2) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -255,7 +139,7 @@ theorem ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq (hγ : 2 - (n : �
       simp [inner_add_left, EuclideanSpace.inner_single_right]
     · simp [inner_add_left, EuclideanSpace.inner_single_right, h, Ne.symm h]
   rw [hx]
-  calc _ = ∑ i, ∑ j, radialCoefficient b x i j * (γ * ‖x‖ ^ (γ - 2) * (if i = j then 1 else 0) +
+  calc _ = ∑ i, ∑ j, radialCoefficient 1 b x i j * (γ * ‖x‖ ^ (γ - 2) * (if i = j then 1 else 0) +
         γ * (γ - 2) * ‖x‖ ^ (γ - 4) * (x i * x j)) :=
         Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by
           rw [hentry]
@@ -307,7 +191,7 @@ private theorem exists_exponent_lt_of_lt (hn : 2 ≤ n) {p₀ p : ℝ≥0∞} (h
 
 /-- **`W^{2,p}` regularity fails for discontinuous coefficients.** Let `n ≥ 2` and
 `1 ≤ p₀ < p < ∞` with `p₀ < n` and `n / 2 < p`. Then there are `b > 0` and `0 < γ < 1` such that,
-for the coefficient field `a = TauCeti.PDE.radialCoefficient b`, uniformly elliptic with constants
+for the coefficient field `a = TauCeti.PDE.radialCoefficient 1 b`, uniformly elliptic with constants
 `1` and `1 + b` (`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`) but discontinuous at the
 origin (`TauCeti.PDE.not_exists_tendsto_radialCoefficient`), and for every bounded open
 `Ω ⊆ ℝⁿ` containing the origin, the function `‖x‖ ^ γ` lies in `W^{2,p₀}(Ω)` and solves
@@ -322,7 +206,7 @@ theorem exists_radialCoefficient_not_exists_wkp (hn : 2 ≤ n) {p₀ p : ℝ≥0
         Wkp.value 2 W =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin n)))]
           (fun x => ‖x‖ ^ γ) ∧
         ∀ᵐ x ∂volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin n))),
-          ∑ i, ∑ j, radialCoefficient b x i j * ⟪Wkp.iteratedGradient 1 W x
+          ∑ i, ∑ j, radialCoefficient 1 b x i j * ⟪Wkp.iteratedGradient 1 W x
             (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0) ∧
       ¬ ∃ W : Wkp volume Ω p 2,
         Wkp.value 2 W =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin n)))]

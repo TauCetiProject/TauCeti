@@ -21,10 +21,10 @@ let `s` be real. Away from the origin the power `u(x) = ‖x‖ ^ s` has the Hes
 
 of size comparable to `‖x‖ ^ (s - 2)`: its trace is `s (d + s - 2) ‖x‖ ^ (s - 2)`. This file
 shows that for `s > 2 - d` the classical Hessian is the weak Hessian across the origin
-(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow`), and that for `s ≠ 0`, on a
-bounded open set `Ω` containing the origin, `u` lies in `W^{2,p}(Ω)`, `1 ≤ p < ∞`, exactly when
-`(s - 2) p > -d` (`TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`). For `s < 2` this is the
-range `p < d / (2 - s)`.
+(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow`), and that for `s ≠ 0` with
+`s > 2 - d`, on a bounded open set `Ω` containing the origin, `u` lies in `W^{2,p}(Ω)`,
+`1 ≤ p < ∞`, exactly when `(s - 2) p > -d` (`TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`).
+For `s < 2` this is the range `p < d / (2 - s)`.
 
 The weak first derivatives are the classical ones by `TauCeti.hasWeakFDerivOn_norm_rpow`. The
 coordinates `s ‖x‖ ^ (s - 2) ⟪x, v⟫` of the gradient are weakly differentiable with their
