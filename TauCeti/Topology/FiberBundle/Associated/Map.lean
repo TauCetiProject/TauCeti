@@ -139,36 +139,22 @@ theorem totalSpaceMap_injective (f : F →[G] F') (hf : Function.Injective f) :
   simp only [totalSpaceMap, TotalSpace.mk_inj] at h
   rw [map_injective f hf b h]
 
-/-- An inducing equivariant fibre map induces an inducing map of associated total spaces. -/
-theorem isInducing_totalSpaceMap (f : F →[G] F') (hf : IsInducing f) :
-    IsInducing (totalSpaceMap (P := P) f) := by
-  have hq := isOpenQuotientMap_totalSpaceMk_mk G P F
-  have hq' := isOpenQuotientMap_totalSpaceMk_mk G P F'
-  refine ⟨le_antisymm (continuous_totalSpaceMap f hf.continuous).le_induced fun U hU ↦ ?_⟩
-  -- The preimage of `U` in `P × F` is pulled back from an open set `W'` of `P × F'`, and the
-  -- image of `W'` in the associated bundle of `F'` cuts out `U`.
-  obtain ⟨W', hW', hW⟩ := (IsInducing.id.prodMap hf).isOpen_iff.1 (hU.preimage hq.continuous)
-  refine isOpen_induced_iff.2 ⟨_, hq'.isOpenMap _ hW', Set.ext fun y ↦ ?_⟩
-  obtain ⟨⟨⟨b, p⟩, v⟩, rfl⟩ := hq.surjective y
-  simp only [Set.mem_preimage, Set.mem_image, totalSpaceMap_mk]
-  constructor
-  · rintro ⟨w, hw, hwy⟩
-    obtain ⟨g, rfl⟩ :=
-      (totalSpaceMk_mk_eq_iff (x := ((⟨b, p⟩ : TotalSpace G P), f v)) (y := w)).1 hwy.symm
-    have hx : ((⟨b, op g • p⟩ : TotalSpace G P), g⁻¹ • v) ∈ Prod.map id f ⁻¹' W' := by
-      simpa only [Set.mem_preimage, Prod.map_apply, id_eq, map_smul] using hw
-    rw [hW, Set.mem_preimage] at hx
-    simpa only [mk_smul_inv_smul] using hx
-  · intro hy
-    have hx : ((⟨b, p⟩ : TotalSpace G P), v) ∈ Prod.map id f ⁻¹' W' := by
-      rw [hW]
-      exact hy
-    exact ⟨_, hx, rfl⟩
-
 /-- An equivariant embedding of fibres induces an embedding of associated total spaces. -/
 theorem isEmbedding_totalSpaceMap (f : F →[G] F') (hf : IsEmbedding f) :
-    IsEmbedding (totalSpaceMap (P := P) f) :=
-  ⟨isInducing_totalSpaceMap f hf.isInducing, totalSpaceMap_injective f hf.injective⟩
+    IsEmbedding (totalSpaceMap (P := P) f) := by
+  -- Both total spaces are open quotients of `P × F` and `P × F'`, and the image of `P × F` is
+  -- saturated, since the orbit of `(p, f v)` is the image of the orbit of `(p, v)`.
+  refine isEmbedding_of_isOpenQuotientMap_of_isInducing (Prod.map id f) (totalSpaceMap f)
+    (fun x : TotalSpace G P × F ↦
+      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)))
+    (fun x : TotalSpace G P × F' ↦
+      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F' (AssociatedBundle G P F')))
+    (funext fun x ↦ totalSpaceMap_mk f x.1.2 x.2) (IsInducing.id.prodMap hf.isInducing)
+    (isOpenQuotientMap_totalSpaceMk_mk G P F).isQuotientMap
+    (isOpenQuotientMap_totalSpaceMk_mk G P F') (totalSpaceMap_injective f hf.injective) ?_
+  rintro y ⟨_, ⟨⟨p, v⟩, rfl⟩, hy⟩
+  obtain ⟨g, rfl⟩ := totalSpaceMk_mk_eq_iff.1 hy
+  exact ⟨(⟨p.proj, op g • p.2⟩, g⁻¹ • v), by simp only [Prod.map_apply, id_eq, map_smul]⟩
 
 /-- An equivariant homeomorphism induces a homeomorphism of associated total spaces. -/
 def homeomorph (f : F ≃ₜ F') (hf : ∀ (g : G) v, f (g • v) = g • f v) :

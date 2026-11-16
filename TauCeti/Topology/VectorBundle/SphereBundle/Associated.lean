@@ -103,14 +103,8 @@ unit sphere bundle of `P ×_G F`, by `[p, v] ↦ [p, v]`
 def sphereBundleHomeomorph :
     TotalSpace (sphere (0 : F) 1) (AssociatedBundle G P (sphere (0 : F) 1)) ≃ₜ
       sphereBundle F (AssociatedBundle G P F) :=
-  ((isEmbedding_totalSpaceMap _ Sphere.isEmbedding_subtypeMulActionHom).codRestrict _
-    fun x ↦ range_totalSpaceMap_subtypeMulActionHom G P F ▸
-      mem_range_self x).toHomeomorphOfSurjective fun y ↦ by
-    obtain ⟨x, hx⟩ : (y : TotalSpace F (AssociatedBundle G P F)) ∈
-        range (totalSpaceMap (P := P) (Sphere.subtypeMulActionHom G F 1)) := by
-      rw [range_totalSpaceMap_subtypeMulActionHom G P F]
-      exact y.2
-    exact ⟨x, Subtype.ext hx⟩
+  (isEmbedding_totalSpaceMap _ Sphere.isEmbedding_subtypeMulActionHom).toHomeomorph.trans
+    (Homeomorph.setCongr (range_totalSpaceMap_subtypeMulActionHom G P F))
 
 /-- The homeomorphism `sphereBundleHomeomorph` is the map induced by the inclusion of the unit
 sphere. -/
@@ -118,8 +112,7 @@ theorem coe_sphereBundleHomeomorph_apply
     (x : TotalSpace (sphere (0 : F) 1) (AssociatedBundle G P (sphere (0 : F) 1))) :
     (sphereBundleHomeomorph G P F x : TotalSpace F (AssociatedBundle G P F)) =
       totalSpaceMap (Sphere.subtypeMulActionHom G F 1) x := by
-  rw [sphereBundleHomeomorph]
-  exact congrArg Subtype.val (IsEmbedding.toHomeomorphOfSurjective_apply _ _ x)
+  (rfl)
 
 /-- The homeomorphism `sphereBundleHomeomorph` sends `[p, v]` to `[p, v]`. -/
 @[simp]
