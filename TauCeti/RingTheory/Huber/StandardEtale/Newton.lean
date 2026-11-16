@@ -147,10 +147,12 @@ theorem weightedEval_sub_mem_pow_smul
   have htaylor := weightedEval_sub_weightedEval_sub_sum_mem_pow_smul P hϖ hg_res hg₀
     (t := t) (x := t) (x' := u) (a := 0) (b := m) (Nat.zero_le _) (fun _ ↦ by simp) hu
   rw [zero_add] at htaylor
-  let gu : P.ringOfDefinition := ⟨_, weightedEval_mem_ringOfDefinition P hg_res hg₀ u⟩
-  let gt : P.ringOfDefinition := ⟨_, weightedEval_mem_ringOfDefinition P hg_res hg₀ t⟩
-  let lin : P.ringOfDefinition := ∑ l, ⟨_, weightedEval_mem_ringOfDefinition P
-    (hg_res.pderiv_one_weight l) (MvPowerSeries.coeff_pderiv_mem hg₀ l) t⟩ * (u l - t l)
+  let gu : P.ringOfDefinition :=
+    ⟨_, weightedEval_mem P.isClosed_ringOfDefinition (φ := RingHom.id C) hg₀ fun i ↦ (u i).2⟩
+  let gt : P.ringOfDefinition :=
+    ⟨_, weightedEval_mem P.isClosed_ringOfDefinition (φ := RingHom.id C) hg₀ fun i ↦ (t i).2⟩
+  let lin : P.ringOfDefinition := ∑ l, ⟨_, weightedEval_mem P.isClosed_ringOfDefinition
+    (φ := RingHom.id C) (MvPowerSeries.coeff_pderiv_mem hg₀ l) fun i ↦ (t i).2⟩ * (u l - t l)
   have hrem : ϖ ^ m ∣ (gu - gt) - lin :=
     (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp
       (by convert htaylor using 1; simp only [gu, gt, lin]; push_cast; rfl)
@@ -189,9 +191,9 @@ theorem exists_mul_jacobian_eq_pow_smul_of_dvd [T0Space C]
     Matrix.of fun i j ↦
       ⟨weightedEval (RingHom.id C) (fun l ↦ (x l : C))
           (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) C)),
-        weightedEval_mem_ringOfDefinition P
-          ((mem_weightedRestrictedSubring.mp (F i).2).pderiv_one_weight j)
-          (MvPowerSeries.coeff_pderiv_mem (mem_tateSeriesPlus_iff.mp (hF i)) j) x⟩
+        weightedEval_mem P.isClosed_ringOfDefinition
+          (MvPowerSeries.coeff_pderiv_mem (mem_tateSeriesPlus_iff.mp (hF i)) j)
+          fun l ↦ (x l).2⟩
   have hJdiff (i j) : ϖ ^ (k + 1) ∣ J₀ u i j - J₀ t i j :=
     (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp <| by
       simpa only [J₀, Matrix.of_apply, AddSubgroupClass.coe_sub, Subring.coe_pow,
