@@ -18,7 +18,10 @@ cogenerator condition, this gives biduality without requiring the original modul
 projective. The principal application is Matlis duality over a complete local ring.
 
 The argument uses Mathlib's `LinearEquiv.piRing` to identify the dual of a finite free
-module, and `Module.Injective.extension_property` to dualize an injection.
+module, and `Module.Injective.extension_property` to dualize an injection. When evaluation
+identifies a module `N` with its double dual (possibly over a commuting scalar semiring `S` acting
+on `E`), precomposition `LinearMap.lcomp` is bijective on morphisms into `N`
+(`TauCeti.bijective_lcomp_of_evalEquiv`).
 
 ## References
 
@@ -60,6 +63,41 @@ open LinearMap
 section Semiring
 
 variable {R : Type u} [CommSemiring R] {E : Type v} [AddCommMonoid E] [Module R E]
+
+/-- If evaluation identifies `N` with its double `E`-dual for a commuting scalar action `S` on `E`,
+then precomposition `(M →ₗ[R] N) → ((N →ₗ[R] E) →ₗ[S] (M →ₗ[R] E))` is bijective for every
+`R`-module `M`. No injectivity or finiteness hypothesis is needed. -/
+theorem bijective_lcomp_of_evalEquiv (S : Type*) [Semiring S] [Module S E]
+    [SMulCommClass R S E] [SMulCommClass S R E] {M : Type w} [AddCommMonoid M] [Module R M]
+    {N : Type z} [AddCommMonoid N] [Module R N]
+    (e : N ≃ₗ[R] ((N →ₗ[R] E) →ₗ[S] E)) (he : ∀ (n : N) (φ : N →ₗ[R] E), e n φ = φ n) :
+    Function.Bijective (fun f : M →ₗ[R] N ↦ f.lcomp S E) := by
+  constructor
+  · intro f₁ f₂ hf
+    refine LinearMap.ext fun m ↦ e.injective (LinearMap.ext fun φ ↦ ?_)
+    rw [he, he]
+    exact LinearMap.congr_fun (LinearMap.congr_fun hf φ) m
+  · intro g
+    let evalG : M →ₗ[R] ((N →ₗ[R] E) →ₗ[S] E) :=
+      { toFun m :=
+          { toFun φ := g φ m
+            map_add' φ₁ φ₂ := by simp
+            map_smul' s φ := by simp }
+        map_add' m₁ m₂ := LinearMap.ext fun φ ↦ by simp
+        map_smul' r m := LinearMap.ext fun φ ↦ by simp }
+    refine ⟨e.symm.toLinearMap.comp evalG, ?_⟩
+    ext φ m
+    have h := congrArg (fun ψ : (N →ₗ[R] E) →ₗ[S] E ↦ ψ φ) (e.apply_symm_apply (evalG m))
+    simpa only [lcomp_apply, comp_apply, LinearEquiv.coe_coe, he, evalG, coe_mk,
+      AddHom.coe_mk] using h
+
+/-- If evaluation `N → Hom_R(Hom_R(N, E), E)` is bijective, then precomposition
+`(M →ₗ[R] N) → ((N →ₗ[R] E) →ₗ[R] (M →ₗ[R] E))` is bijective for every `R`-module `M`. -/
+theorem bijective_lcomp_of_bijective_applyₗ {M : Type w} [AddCommMonoid M] [Module R M]
+    {N : Type z} [AddCommMonoid N] [Module R N]
+    (hN : Function.Bijective (applyₗ : N →ₗ[R] (N →ₗ[R] E) →ₗ[R] E)) :
+    Function.Bijective (fun f : M →ₗ[R] N ↦ f.lcomp R E) :=
+  bijective_lcomp_of_evalEquiv R (LinearEquiv.ofBijective applyₗ hN) fun _ _ ↦ rfl
 
 /-- If every endomorphism of `E` is scalar, evaluation into the double `E`-dual of a finite
 free module is surjective. -/
