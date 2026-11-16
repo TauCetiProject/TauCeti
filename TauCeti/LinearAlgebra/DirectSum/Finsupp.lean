@@ -22,6 +22,8 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
 * `finsuppTensorFinsupp'_mapDomain`: the identification of the tensor product of two spaces of
   finitely supported functions with functions on the product of the index types is natural in the
   index types.
+* `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor`: a linear map on a
+  space with a product basis whose coefficients satisfy the Leibniz rule is `d₁ ⊗ 1 + 1 ⊗ d₂`.
 -/
 
 public section
@@ -49,7 +51,7 @@ end TensorProduct
 
 section FinsuppTensorFinsupp
 
-variable {R : Type*} [CommSemiring R] {α β α' β' : Type*}
+variable {R : Type*} [CommSemiring R] {α β α' β' σ : Type*}
 
 /-- The identification `(α →₀ R) ⊗ (β →₀ R) ≃ (α × β →₀ R)` is natural in the index types: the
 tensor product of two pushforwards is the pushforward along the product map. -/
@@ -62,5 +64,32 @@ theorem finsuppTensorFinsupp'_mapDomain (g₁ : α → α') (g₂ : β → β') 
       Finsupp.lmapDomain R R (Prod.map g₁ g₂) ∘ₗ (finsuppTensorFinsupp' R α β).toLinearMap := by
     ext; simp [Finsupp.mapDomain_single]
   exact congr($h (c ⊗ₜ d))
+
+/-- **Leibniz maps on a product basis.** Let `e : σ ≃ α × β` identify `σ →₀ R` with
+`(α →₀ R) ⊗[R] (β →₀ R)`. If the coefficient of `(a', b')` in `d (a, b)` is the coefficient of `b'`
+in `d₂ b` when `a = a'` plus the coefficient of `a'` in `d₁ a` when `b = b'`, then `d` corresponds
+to `d₁ ⊗ 1 + 1 ⊗ d₂` under this identification. This is the chain-level Künneth formula for
+complexes with a basis, without Koszul sign. -/
+theorem domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor [DecidableEq α]
+    [DecidableEq β] (e : σ ≃ α × β) {d : (σ →₀ R) →ₗ[R] σ →₀ R}
+    {d₁ : (α →₀ R) →ₗ[R] α →₀ R} {d₂ : (β →₀ R) →ₗ[R] β →₀ R}
+    (h : ∀ a a' b b', d (Finsupp.single (e.symm (a, b)) 1) (e.symm (a', b')) =
+      (if a = a' then d₂ (Finsupp.single b 1) b' else 0) +
+        if b = b' then d₁ (Finsupp.single a 1) a' else 0) :
+    ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap ∘ₗ d =
+      (d₁.rTensor (β →₀ R) + d₂.lTensor (α →₀ R)) ∘ₗ
+        ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap := by
+  refine Finsupp.lhom_ext' fun s ↦ LinearMap.ext_ring ?_
+  obtain ⟨⟨a, b⟩, rfl⟩ := e.symm.surjective s
+  apply (finsuppTensorFinsupp' R α β).injective
+  ext ⟨a', b'⟩
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, Finsupp.lsingle_apply,
+    LinearEquiv.trans_apply, Finsupp.domLCongr_apply, Finsupp.domCongr_apply,
+    LinearEquiv.apply_symm_apply, Finsupp.equivMapDomain_apply, h, LinearMap.coe_add,
+    Finsupp.equivMapDomain_single, Equiv.apply_symm_apply,
+    finsuppTensorFinsupp'_symm_single_eq_tmul_single_one, Pi.add_apply, LinearMap.rTensor_tmul,
+    LinearMap.lTensor_tmul, map_add, Finsupp.coe_add, finsuppTensorFinsupp'_apply_apply,
+    Finsupp.single_apply, mul_ite, mul_one, mul_zero, ite_mul, one_mul, zero_mul]
+  exact add_comm _ _
 
 end FinsuppTensorFinsupp
