@@ -12,10 +12,10 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Matrix.PosDef
--- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
-import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+-- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Order.Field
 
 /-!
@@ -158,20 +158,13 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module 𝕜 E]
   [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] {L : E →L[𝕜] E →L[𝕜] 𝕜}
 
-/-- In finite dimensions the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`. -/
-private theorem finrank_dual_eq :
-    Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finrank 𝕜 E := by
-  rw [← LinearEquiv.finrank_eq
-    (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
-  exact Subspace.dual_finrank_eq
-
 /-- In finite dimensions an injective continuous linear map into the dual is invertible: injectivity
 makes it a linear equivalence onto its range, and the dual has the same finite dimension as the
 space, so that range is everything. -/
 theorem _root_.ContinuousLinearMap.isInvertible_of_injective
     (hinj : Function.Injective L) : L.IsInvertible :=
   ⟨((L : E →ₗ[𝕜] E →L[𝕜] 𝕜).linearEquivOfInjective hinj
-    finrank_dual_eq.symm).toContinuousLinearEquiv, rfl⟩
+    ContinuousLinearMap.dual_finrank_eq.symm).toContinuousLinearEquiv, rfl⟩
 
 /-- In finite dimensions a surjective continuous linear map into the dual is invertible: the dual
 has the same finite dimension as the space, so surjectivity forces injectivity. -/
@@ -179,7 +172,7 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
     (hsurj : Function.Surjective L) : L.IsInvertible :=
   ContinuousLinearMap.isInvertible_of_injective
     ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (V₂ := E →L[𝕜] 𝕜)
-      finrank_dual_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
+      ContinuousLinearMap.dual_finrank_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
 
 /-- In finite dimensions, a continuous linear map into the dual whose bilinear form is
 left-separating is invertible. This is the musical isomorphism of a nondegenerate metric. -/

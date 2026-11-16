@@ -34,10 +34,14 @@ pullback metric on `T_x M` (`TauCeti.starProjection_orthogonalNormalSpace_eq_sub
 It is a `C^m` self-map of `f *ᵖ TN` near every point where `f` is `C^n` with injective
 differential, for `m + 1 ≤ n` and a `C^m` metric
 (`TauCeti.contMDiffAt_starProjection_orthogonalNormalSpace`,
-`TauCeti.contMDiff_starProjection_orthogonalNormalSpace`).
+`TauCeti.contMDiff_starProjection_orthogonalNormalSpace`). The smoothness is that of the projection
+onto `(range df)ᗮ`, `ContMDiffAt.starProjection_orthogonal_range_mfderiv` in
+`TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection`.
 
 For a `C^n` immersion with `m + 1 ≤ n` into a finite-dimensional manifold, the normal spaces have
-`C^m` local frames (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace`). With the
+`C^m` local frames (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace`), the ranges
+of the normal projection, a `C^m` constant-rank fibrewise map, by the criterion
+`TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`. With the
 subspace topology of `f *ᵖ TN` they form a `C^m` vector bundle `ν_f` of rank `dim N - dim M`
 (`TauCeti.orthogonalNormalFiberBundle`, `TauCeti.orthogonalNormalVectorBundle`,
 `TauCeti.orthogonalNormalContMDiffVectorBundle`). The fibre bundle structure is a definition,
@@ -239,7 +243,9 @@ variable {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
 /-- **The normal projection is smooth.** If `f` is `C^n` at `p.proj` with injective
 differential there, `m + 1 ≤ n` and the ambient metric is `C^m`, then orthogonal projection onto
 the normal spaces is a `C^m` self-map of the pulled-back tangent bundle `f *ᵖ TN` at `p`. Both
-the base point and the ambient vector may vary. -/
+the base point and the ambient vector may vary. This is
+`ContMDiffAt.starProjection_orthogonal_range_mfderiv`, since the normal projection is the projection
+onto `(range df)ᗮ`. -/
 theorem contMDiffAt_starProjection_orthogonalNormalSpace {f : K}
     {p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J))} (hf : ContMDiffAt I J n f p.proj)
     (hinj : Function.Injective (mfderiv I J f p.proj)) (hm : m + 1 ≤ n) :
@@ -275,7 +281,9 @@ variable [FiniteDimensional ℝ V] {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifo
 
 /-- **Local frames of the normal bundle.** For a `C^n` immersion `f` with `m + 1 ≤ n`, a `C^m`
 ambient metric and `dim N = dim M + r`, the normal spaces have `C^m` local frames of size `r` in
-the pulled-back tangent bundle `f *ᵖ TN`. By
+the pulled-back tangent bundle `f *ᵖ TN`: they are the ranges of the normal projection, a `C^m`
+fibrewise map of constant rank `r`, so this is
+`TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`. By
 `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` they form a `C^m` subbundle
 `ν_f` of `f *ᵖ TN`. -/
 theorem hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace {r : ℕ} {f : K}
