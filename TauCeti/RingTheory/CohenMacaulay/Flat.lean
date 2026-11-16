@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.CohenMacaulay.Ring
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import Mathlib.RingTheory.KrullDimension.Field
 import Mathlib.RingTheory.PolynomialAlgebra
 import Mathlib.RingTheory.RegularLocalRing.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
@@ -41,6 +42,8 @@ over themselves (Stacks, Definition 10.103.12 (0AAH)).
 
 * `Module.isCohenMacaulay_self_iff_of_flat`: for a flat local homomorphism `R → S` of Noetherian
   local rings, `S` is Cohen–Macaulay if and only if `R` and the closed fibre `S ⧸ 𝔪_R S` are.
+* `Module.isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq`: when in addition
+  `𝔪_R S = 𝔪_S`, `S` is Cohen–Macaulay if and only if `R` is.
 * `Module.isCohenMacaulay_localization_atPrime_of_flat`: for a flat Noetherian `R`-algebra `S` and
   a prime `q` of `S` over `p`, the local ring `S_q` is Cohen–Macaulay when `R_p` is and the local
   ring of the fibre `κ(p) ⊗[R] S` at the point corresponding to `q` is.
@@ -106,6 +109,24 @@ theorem isCohenMacaulay_self_iff_of_flat :
   omega
 
 end Local
+
+/-- Along a flat homomorphism `R → S` of local rings with `S` Noetherian under which the maximal
+ideal of `R` generates the maximal ideal of `S`, `S` is Cohen–Macaulay if and only if `R` is: the
+closed fibre is the residue field of `S`, which is Cohen–Macaulay of dimension zero. -/
+theorem isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq {R S : Type u} [CommRing R]
+    [CommRing S] [Algebra R S] [IsLocalRing R] [IsLocalRing S] [IsNoetherianRing S]
+    [Module.Flat R S] (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+    IsCohenMacaulay S S ↔ IsCohenMacaulay R R := by
+  have : IsLocalHom (algebraMap R S) := ((local_hom_tfae (algebraMap R S)).out 1 3).mpr h.le
+  have : Module.FaithfullyFlat R S := .of_flat_of_isLocalHom
+  have : IsNoetherianRing R := IsNoetherianRing.of_faithfullyFlat S
+  rw [isCohenMacaulay_self_iff_of_flat (R := R) (S := S), h]
+  let : Field (S ⧸ maximalIdeal S) := Ideal.Quotient.field (maximalIdeal S)
+  have hfib : IsCohenMacaulay S (S ⧸ maximalIdeal S) :=
+    (isCohenMacaulay_iff_isCohenMacaulay_of_surjective
+      (Ideal.Quotient.mk_surjective (I := maximalIdeal S))).mpr
+      isCohenMacaulay_of_krullDimLE_zero
+  exact and_iff_left hfib
 
 section Global
 
