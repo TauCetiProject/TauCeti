@@ -91,6 +91,10 @@ and proves:
   (`TauCeti.ClassicalSymbol.isElliptic_add_iff`), and the inverse of the principal symbol is the
   unique homogeneous symbol of degree `-m` inverting it at every nonzero frequency
   (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`).
+* `TauCeti.ClassicalSymbol.pointwiseAdjoint`: between Hilbert spaces, the pointwise adjoint
+  `(x, ξ) ↦ a(x, ξ)†` of a classical symbol is classical of the same order, with the pointwise
+  adjoints of the homogeneous terms of `a` as its terms. This is not the symbol of the formal
+  adjoint of the operator, whose lower order terms also involve derivatives of the symbol.
 
 ## References
 
@@ -1178,6 +1182,77 @@ theorem isElliptic_iff_forall_isCompact {a : ClassicalSymbol n V W m} :
       (h {x} isCompact_singleton).imp fun _ ↦ .imp fun _ hC ξ ↦ hC x rfl ξ⟩
 
 end Elliptic
+
+/-! ### The pointwise adjoint -/
+
+section PointwiseAdjoint
+
+open ContinuousLinearMap (adjointRealCLM adjointRealCLM_apply)
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- The pointwise adjoint `(x, ξ) ↦ a(x, ξ)†` of a classical symbol between Hilbert spaces: a
+classical symbol of the same order, whose homogeneous terms are the pointwise adjoints of those of
+`a`. Its quantization is not the formal adjoint of `Op(a)`; that is the quantization of
+`TauCeti.ClassicalSymbol.adjoint`, of which `a†` is the leading term. -/
+def pointwiseAdjoint (a : ClassicalSymbol n V W m) : ClassicalSymbol n W V m where
+  toSymbol := a.toSymbol.map adjointRealCLM
+  term j := (a.term j).adjoint
+  exists_remainder' := ⟨default, fun N => ⟨(a.remainder default N).map adjointRealCLM, fun p => by
+    simp [map_sub, map_sum, map_smul, adjointRealCLM_apply]⟩⟩
+
+variable (a b : ClassicalSymbol n V W m)
+
+@[simp]
+theorem toSymbol_pointwiseAdjoint : a.pointwiseAdjoint.toSymbol = a.toSymbol.map adjointRealCLM :=
+  (rfl)
+
+@[simp]
+theorem term_pointwiseAdjoint (j : ℕ) : a.pointwiseAdjoint.term j = (a.term j).adjoint :=
+  (rfl)
+
+/-- The principal symbol of `a†` is the pointwise adjoint of the principal symbol of `a`. -/
+@[simp]
+theorem principal_pointwiseAdjoint : a.pointwiseAdjoint.principal = a.principal.adjoint := by
+  ext1
+  funext z
+  simp
+
+@[simp]
+theorem pointwiseAdjoint_pointwiseAdjoint : a.pointwiseAdjoint.pointwiseAdjoint = a :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_zero : (0 : ClassicalSymbol n V W m).pointwiseAdjoint = 0 :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_add : (a + b).pointwiseAdjoint = a.pointwiseAdjoint + b.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_neg : (-a).pointwiseAdjoint = -a.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_sub : (a - b).pointwiseAdjoint = a.pointwiseAdjoint - b.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+/-- The pointwise adjoint is conjugate linear. -/
+@[simp]
+theorem pointwiseAdjoint_smul (c : ℂ) :
+    (c • a).pointwiseAdjoint = (starRingEnd ℂ c) • a.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by
+    simpa [adjointRealCLM_apply] using map_smulₛₗ ContinuousLinearMap.adjoint c _
+
+/-- The pointwise adjoint `a†` is elliptic exactly when `a` is. -/
+@[simp]
+theorem isElliptic_pointwiseAdjoint_iff : a.pointwiseAdjoint.IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_pointwiseAdjoint, HomogeneousSymbol.isElliptic_adjoint_iff,
+    isElliptic_def]
+
+end PointwiseAdjoint
 
 /-! ### The homogeneous terms as a linear map -/
 

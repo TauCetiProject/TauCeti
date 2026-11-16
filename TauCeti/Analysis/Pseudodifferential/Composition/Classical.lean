@@ -166,31 +166,21 @@ section Sharp
 variable [CompleteSpace W] [CompleteSpace U]
 
 /-- The remainder of the composition symbol of classical symbols after `N` terms has order
-`m' + m - N`: it is the remainder of the composition expansion after `N` terms, plus the remainder
-after `N - k` homogeneous terms of each term `sharpTerm a b k`, `k < N`. -/
+`m' + m - N`: `a # b` is the asymptotic sum of the classical terms `sharpTerm a b k`
+(`TauCeti.ClassicalSymbol.ofAsymptoticSum`), whose term of degree `m' + m - j` is that of the
+formal composition `sharpTerms a.term b.term`. -/
 private theorem exists_remainder_sharp (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
     (hb : b.toSymbol.HasCompactSpatialSupport) (χ : FrequencyCutoff (CoordinateSpace n))
     (N : ℕ) :
     ∃ r : Symbol n V U (m' + m - N), ∀ p, r.coefficient p =
       (a.toSymbol.sharp b.toSymbol hb).coefficient p -
         ∑ j ∈ range N, χ p.2 • (sharpTerms a.term b.term j).coefficient p := by
-  -- The remainder of `sharpTerm a b k` after `N - k` terms has order `m' + m - N` for `k ≤ N`,
-  -- and order `m' + m - k ≤ m' + m - N` for `k > N`.
-  have hord (k : ℕ) : m' + m - k - ((N - k : ℕ) : ℝ) ≤ m' + m - N := by
-    have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
-    linarith
-  refine ⟨a.toSymbol.sharpRemainder b.toSymbol hb N +
-    ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.sharpTerm b k).remainder χ (N - k)),
-    fun p => ?_⟩
-  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Symbol.coefficient_sharpRemainder, Pi.add_apply, Pi.sub_apply, Finset.sum_apply,
-    coefficient_remainder, toSymbol_sharpTerm, coefficient_sharpTerms_eq_sum_term_sharpTerm,
-    Finset.smul_sum,
-    Finset.sum_sub_distrib]
-  -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
-  rw [Finset.sum_range_diag_flip N
-    fun k i => χ p.2 • ((a.sharpTerm b k).term i).coefficient p]
-  abel
+  obtain ⟨r, hr⟩ := (ofAsymptoticSum (a.toSymbol.sharp b.toSymbol hb) (a.sharpTerm b) <|
+    Symbol.isAsymptoticSum_iff.2 fun N ↦
+      ⟨a.toSymbol.sharpRemainder b.toSymbol hb N, by simp⟩).exists_remainder χ N
+  refine ⟨r, fun p => ?_⟩
+  simp only [hr, toSymbol_ofAsymptoticSum, term_ofAsymptoticSum, coefficient_asymptoticSumTerms,
+    coefficient_sharpTerms_eq_sum_term_sharpTerm]
 
 /-- **The composition of classical symbols is classical.** For classical symbols `a` of order
 `m'` and `b` of order `m`, with `b` of compact spatial support, the composition symbol `a # b`,
