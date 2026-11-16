@@ -31,14 +31,15 @@ Agreement of the eigenvalues at the primes alone does not see `a_{p²}`, and the
 `HeckeRing.GL2.Newform.eq_of_forall_notMem_prime_eigenvalue_eq`, keeps its nebentypus hypothesis.
 What the primes do see is the Petersson adjoint relation `a_p = χ(p) · conj a_p` at a good prime
 (`HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_mul_conj`): wherever `a_p ≠ 0` it pins
-`χ(p) = a_p / conj a_p`. So for newforms `f`, `g` whose eigenvalues agree at almost all primes,
-the quotient `ψ` of their nebentypes satisfies `ψ(p) a_p(f) = a_p(f)` at almost all primes: it is
-a self-twist of `f` on the prime coefficients. By the parity lemma `ψ` is also even when `f` and
-`g` have the same weight. So the nebentypes agree unless `f` has a nontrivial even self-twist.
+`χ(p) = a_p / conj a_p`. So for good Hecke eigenforms `f`, `g` (newforms, for instance) whose
+eigenvalues agree at almost all primes, the quotient `ψ` of their nebentypes satisfies
+`ψ(p) a_p(f) = a_p(f)` at almost all primes: it is a self-twist of `f` on the prime coefficients.
+By the parity lemma `ψ` is also even when `f` and `g` have the same weight. So the nebentypes
+agree unless `f` has a nontrivial even self-twist.
 
 ## Main results
 
-All in the namespace `HeckeRing.GL2.Newform`:
+In the namespace `HeckeRing.GL2.Newform`:
 
 * `eventually_dirichletLift_apply_prime_eq_of_forall_notMem_qExpansion_coeff_eq`: newforms whose
   coefficients agree at the good indices outside a finite set have nebentypes agreeing at all but
@@ -51,10 +52,14 @@ All in the namespace `HeckeRing.GL2.Newform`:
   outside a finite set.
 * `level_eq_and_coe_eq_of_forall_notMem_qExpansion_coeff_eq`: across levels, such newforms have the
   same level and are the same function.
-* `eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_prime_eq`: for newforms
-  whose eigenvalues agree at almost all primes, the quotient of the nebentypes is a self-twist of
-  the prime coefficients.
-* `even_changeLevel_inv_mul_changeLevel`: for newforms of the same weight this quotient is even.
+
+In the namespace `HeckeRing.GL2.EigenformAwayFromLevel`:
+
+* `eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_prime_eq`: for good
+  Hecke eigenforms whose eigenvalues agree at almost all primes, the quotient of the nebentypes is
+  a self-twist of the prime coefficients.
+* `even_changeLevel_inv_mul_changeLevel`: for good Hecke eigenforms of the same weight this
+  quotient is even.
 
 ## References
 
@@ -164,24 +169,31 @@ theorem level_eq_and_coe_eq_of_forall_notMem_qExpansion_coeff_eq (f : Newform N 
     ← g.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpM]
   exact h ⟨p, hp.pos⟩ hpN hpM hpS
 
+end Newform
+
 /-! ### Agreement at the primes alone -/
 
+namespace EigenformAwayFromLevel
+
+variable {N M : ℕ} [NeZero N] [NeZero M] {k : ℤ}
+
 /-- **The quotient of the nebentypes is a self-twist on the prime coefficients.** Let `f` and `g`
-be newforms of levels `N` and `M` whose eigenvalues agree at every prime `p ∤ N M` outside a
-finite set, and let `L ≠ 0` be a common multiple of `N` and `M`. Then the quotient `ψ = χ_f⁻¹ χ_g`
-of their nebentypes, lifted to level `L`, satisfies `ψ(p) a_p(f) = a_p(f)` at all but finitely
-many primes `p`: at those primes the twist of `f` by `ψ` has the same coefficient as `f`. At a
-large prime with `a_p(f) ≠ 0` this is `χ_f(p) = χ_g(p)`
-(`EigenformAwayFromLevel.χ_unitOfCoprime_eq_of_eigenvalue_eq`), and it is trivial where
-`a_p(f) = 0`. -/
+be good Hecke eigenforms of levels `N` and `M` whose eigenvalues agree at every prime `p ∤ N M`
+outside a finite set, and let `L ≠ 0` be a common multiple of `N` and `M`. Then the quotient
+`ψ = χ_f⁻¹ χ_g` of their zero-extended nebentypes, lifted to level `L`, satisfies
+`ψ(p) a_p(f) = a_p(f)` at all but finitely many primes `p`: at those primes the twist of `f` by
+`ψ` has the same coefficient as `f`. At a large prime with `λ_p(f) ≠ 0` this is
+`χ_f(p) = χ_g(p)` (`EigenformAwayFromLevel.χ_unitOfCoprime_eq_of_eigenvalue_eq`), and where
+`λ_p(f) = 0` both sides vanish since `a_p(f) = λ_p(f) a_1(f)`. For a newform the zero-extended
+nebentypus `MulChar.ofUnitHom f.χ` is `Newform.dirichletLift`. -/
 theorem eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_prime_eq {L : ℕ}
-    [NeZero L] {k' : ℤ} (f : Newform N k) (g : Newform M k') (hN : N ∣ L) (hM : M ∣ L)
-    {S : Finset ℕ}
+    [NeZero L] {k' : ℤ} (f : EigenformAwayFromLevel N k) (g : EigenformAwayFromLevel M k')
+    (hN : N ∣ L) (hM : M ∣ L) {S : Finset ℕ}
     (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : p.Coprime N) (hpM : p.Coprime M), p ∉ S →
       f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpM) :
     ∀ᶠ p : ℕ in cofinite, p.Prime →
-      ((DirichletCharacter.changeLevel hN f.dirichletLift)⁻¹ *
-        DirichletCharacter.changeLevel hM g.dirichletLift) p *
+      ((DirichletCharacter.changeLevel hN (MulChar.ofUnitHom f.χ))⁻¹ *
+        DirichletCharacter.changeLevel hM (MulChar.ofUnitHom g.χ)) p *
         (qExpansion 1 f.toCuspForm).coeff p = (qExpansion 1 f.toCuspForm).coeff p := by
   filter_upwards [S.eventually_cofinite_notMem,
     (Nat.cofinite_eq_atTop ▸ eventually_gt_atTop L : ∀ᶠ p : ℕ in cofinite, L < p)]
@@ -190,35 +202,36 @@ theorem eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_pr
   have hpL : p.Coprime L := Nat.coprime_of_lt_prime (NeZero.ne L) hLp hp
   have hpN := hpL.coprime_dvd_right hN
   have hpM := hpL.coprime_dvd_right hM
-  have hcoeff := f.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpN
+  have hcoeff := f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one ⟨p, hp.pos⟩ hpN
   rw [PNat.mk_coe] at hcoeff
   rw [hcoeff]
   by_cases h0 : f.eigenvalue ⟨p, hp.pos⟩ hpN = 0
-  · rw [h0, mul_zero]
-  have hχ := EigenformAwayFromLevel.χ_unitOfCoprime_eq_of_eigenvalue_eq f.toEigenformAwayFromLevel
-    g.toEigenformAwayFromLevel hp hpN hpM (h p hp hpN hpM hpS) h0
+  · rw [h0, zero_mul, mul_zero]
+  have hχ := χ_unitOfCoprime_eq_of_eigenvalue_eq f g hp hpN hpM (h p hp hpN hpM hpS) h0
   rw [MulChar.mul_apply, MulChar.inv_apply_eq_inv',
     DirichletCharacter.changeLevel_natCast_of_coprime hN _ hpL,
     DirichletCharacter.changeLevel_natCast_of_coprime hM _ hpL,
-    f.dirichletLift_apply_of_coprime hpN, g.dirichletLift_apply_of_coprime hpM, ← hχ,
-    inv_mul_cancel₀ (Units.ne_zero _), one_mul]
+    ← ZMod.coe_unitOfCoprime p hpN, ← ZMod.coe_unitOfCoprime p hpM, MulChar.ofUnitHom_coe,
+    MulChar.ofUnitHom_coe, ← hχ, inv_mul_cancel₀ (Units.ne_zero _), one_mul]
 
-/-- **The quotient of the nebentypes of two newforms of the same weight is even.** By the parity
-lemma (`TauCeti.char_neg_one_of_mem_cuspFormCharSpace`) the nebentypes of newforms `f` and `g`
-of weight `k` both take the value `(-1)^k` at `-1`, so the quotient `χ_f⁻¹ χ_g` of their
-nebentypes, lifted to any common multiple `L` of the levels, is even. -/
-theorem even_changeLevel_inv_mul_changeLevel {L : ℕ} (f : Newform N k) (g : Newform M k)
-    (hN : N ∣ L) (hM : M ∣ L) :
-    ((DirichletCharacter.changeLevel hN f.dirichletLift)⁻¹ *
-      DirichletCharacter.changeLevel hM g.dirichletLift).Even := by
-  have hpar {N : ℕ} [NeZero N] (f : Newform N k) : f.dirichletLift (-1) = (-1 : ℂ) ^ k := by
-    rw [← Units.val_one, ← Units.val_neg, dirichletLift_def, MulChar.ofUnitHom_coe]
+/-- **The quotient of the nebentypes of two good Hecke eigenforms of the same weight is even.** By
+the parity lemma (`TauCeti.char_neg_one_of_mem_cuspFormCharSpace`) the nebentypes of good Hecke
+eigenforms `f` and `g` of weight `k` both take the value `(-1)^k` at `-1`, so the quotient
+`χ_f⁻¹ χ_g` of their zero-extended nebentypes, lifted to any common multiple `L` of the levels, is
+even. -/
+theorem even_changeLevel_inv_mul_changeLevel {L : ℕ} (f : EigenformAwayFromLevel N k)
+    (g : EigenformAwayFromLevel M k) (hN : N ∣ L) (hM : M ∣ L) :
+    ((DirichletCharacter.changeLevel hN (MulChar.ofUnitHom f.χ))⁻¹ *
+      DirichletCharacter.changeLevel hM (MulChar.ofUnitHom g.χ)).Even := by
+  have hpar {N : ℕ} [NeZero N] (f : EigenformAwayFromLevel N k) :
+      MulChar.ofUnitHom f.χ (-1) = (-1 : ℂ) ^ k := by
+    rw [← Units.val_one, ← Units.val_neg, MulChar.ofUnitHom_coe]
     exact TauCeti.char_neg_one_of_mem_cuspFormCharSpace f.mem_charSpace f.ne_zero
   rw [DirichletCharacter.Even, MulChar.mul_apply, MulChar.inv_apply_eq_inv',
     DirichletCharacter.changeLevel_apply_neg_one, DirichletCharacter.changeLevel_apply_neg_one,
     hpar f, hpar g]
   exact inv_mul_cancel₀ (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero))
 
-end Newform
+end EigenformAwayFromLevel
 
 end HeckeRing.GL2
