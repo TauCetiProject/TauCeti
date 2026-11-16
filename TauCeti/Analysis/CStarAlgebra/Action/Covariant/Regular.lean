@@ -166,6 +166,18 @@ section Nondegenerate
 
 variable {α ρ μ}
 
+omit [IsTopologicalGroup G] [MeasurableSpace G] [BorelSpace G] in
+/-- If `‖e α_r(b) - α_r(b)‖ ≤ δ`, then `‖ρ(α_{r⁻¹}(e)) ρ(b) w - ρ(b) w‖ ≤ δ ‖w‖`. -/
+private theorem norm_sub_le_mul_norm_of_norm_mul_sub_le {e b : A} {w : H} {r : G} {δ : ℝ}
+    (h : ‖e * α r b - α r b‖ ≤ δ) : ‖ρ (α r⁻¹ e) (ρ b w) - ρ b w‖ ≤ δ * ‖w‖ := by
+  -- `ρ(α_{r⁻¹}(e)) ρ(b) w - ρ(b) w = ρ(α_{r⁻¹}(e α_r(b) - α_r(b))) w`.
+  have hsub : ρ (α r⁻¹ e) (ρ b w) - ρ b w = ρ (α r⁻¹ (e * α r b - α r b)) w := by
+    simp [map_sub, map_mul, inv_apply_apply]
+  rw [hsub]
+  exact (ContinuousLinearMap.le_opNorm _ _).trans <| mul_le_mul_of_nonneg_right
+    (((NonUnitalStarAlgHom.norm_apply_le ρ _).trans (StarAlgEquiv.norm_map _ _).le).trans h)
+    (norm_nonneg w)
+
 /-- Along an increasing approximate unit `e`, the regular coefficient operators `π(e)` converge
 on the vector `r ↦ 𝟙_t(r) ρ(b) w` when `t` is compact: there `π(e)` acts by
 `r ↦ 𝟙_t(r) ρ(α_{r⁻¹}(e α_r(b))) w`, and `e α_r(b) → α_r(b)` uniformly for `r ∈ t`. -/
@@ -191,18 +203,11 @@ private theorem tendsto_regular_coefficient_indicatorConstLp [PartialOrder A] {l
           with r h₁ h₂ h₃ h₄
         rw [h₁, Pi.sub_apply, h₂, h₃, h₄]
         by_cases hr : r ∈ t
-        · -- `ρ(α_{r⁻¹}(e)) ρ(b) w - ρ(b) w = ρ(α_{r⁻¹}(e α_r(b) - α_r(b))) w`.
-          have hsub : ρ (α r⁻¹ e) (ρ b w) - ρ b w = ρ (α r⁻¹ (e * α r b - α r b)) w := by
-            simp [map_sub, map_mul, inv_apply_apply]
-          have hdist := he (α r b) ⟨r, hr, rfl⟩
+        · have hdist := he (α r b) ⟨r, hr, rfl⟩
           rw [id, dist_comm, dist_eq_norm] at hdist
-          simp only [Set.indicator_of_mem hr, hsub, Real.norm_eq_abs,
+          simp only [Set.indicator_of_mem hr, Real.norm_eq_abs,
             abs_of_nonneg (by positivity : 0 ≤ ε / (C + 1) * ‖w‖)]
-          calc ‖ρ (α r⁻¹ (e * α r b - α r b)) w‖ ≤ ‖e * α r b - α r b‖ * ‖w‖ :=
-                (ContinuousLinearMap.le_opNorm _ _).trans <| mul_le_mul_of_nonneg_right
-                  ((NonUnitalStarAlgHom.norm_apply_le ρ _).trans (StarAlgEquiv.norm_map _ _).le)
-                  (norm_nonneg w)
-            _ ≤ ε / (C + 1) * ‖w‖ := by gcongr
+          exact norm_sub_le_mul_norm_of_norm_mul_sub_le hdist.le
         · simp [Set.indicator_of_notMem hr]
     _ = ε / (C + 1) * C := by
         rw [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, Real.norm_eq_abs,
@@ -212,52 +217,61 @@ private theorem tendsto_regular_coefficient_indicatorConstLp [PartialOrder A] {l
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
         nlinarith
 
-/-- The regular coefficient representation induced by a nondegenerate representation `ρ` is
-nondegenerate. -/
-theorem isNondegenerate_regular_coefficient (hρ : ρ.IsNondegenerate) :
-    (regular α ρ μ).coefficient.IsNondegenerate := by
+/-- Vectors `r ↦ 𝟙_t(r) v` with `t` of finite measure lie in the closed span of the ranges of the
+regular coefficient operators of a nondegenerate representation. -/
+private theorem indicatorConstLp_mem_topologicalClosure_span (hρ : ρ.IsNondegenerate)
+    {t : Set G} (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (v : H) :
+    indicatorConstLp 2 ht hμt v ∈
+      (Submodule.span ℂ (⋃ a, Set.range ((regular α ρ μ).coefficient a))).topologicalClosure := by
   let := CStarAlgebra.spectralOrder A
   have := CStarAlgebra.spectralOrderedRing A
   set M := (Submodule.span ℂ (⋃ a, Set.range ((regular α ρ μ).coefficient a))).topologicalClosure
   have hM : IsClosed (M : Set (Lp H 2 μ)) := Submodule.isClosed_topologicalClosure _
-  -- Vectors `r ↦ 𝟙_t(r) v` with `t` compact lie in `M`: first for `v = ρ(b) w`, then for all `v`
-  -- by density of the span of the vectors `ρ(b) w`.
-  have hcompact {t : Set G} (ht : MeasurableSet t) (htc : IsCompact t) (hμt : μ t ≠ ∞) (v : H) :
-      indicatorConstLp 2 ht hμt v ∈ M := by
+  -- For compact `K`: first for `v = ρ(b) w`, then for all `v` by density of the span of the
+  -- vectors `ρ(b) w`.
+  have hcompact {K : Set G} (hK : MeasurableSet K) (hKc : IsCompact K) (hμK : μ K ≠ ∞) :
+      indicatorConstLp 2 hK hμK v ∈ M := by
     let L : H →L[ℂ] Lp H 2 μ := LinearMap.mkContinuous
-      { toFun := indicatorConstLp 2 ht hμt
+      { toFun := indicatorConstLp 2 hK hμK
         map_add' _ _ := indicatorConstLp_add.symm
-        map_smul' := indicatorConstLp_smul ht hμt }
-      (μ.real t ^ (1 / (2 : ℝ≥0∞).toReal))
+        map_smul' := indicatorConstLp_smul hK hμK }
+      (μ.real K ^ (1 / (2 : ℝ≥0∞).toReal))
       fun v => by simp [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, mul_comm]
     have hspan : Submodule.span ℂ (⋃ a, Set.range (ρ a)) ≤ M.comap (L : H →ₗ[ℂ] Lp H 2 μ) := by
       refine Submodule.span_le.2 fun _ hv => ?_
       obtain ⟨b, w, rfl⟩ := Set.mem_iUnion.1 hv
       have := (CStarAlgebra.increasingApproximateUnit A).neBot
       have hmem (e : A) :
-          (regular α ρ μ).coefficient e (indicatorConstLp 2 ht hμt (ρ b w)) ∈ M :=
+          (regular α ρ μ).coefficient e (indicatorConstLp 2 hK hμK (ρ b w)) ∈ M :=
         Submodule.le_topologicalClosure _ <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, _, rfl⟩
       exact hM.mem_of_tendsto (tendsto_regular_coefficient_indicatorConstLp
-        (CStarAlgebra.increasingApproximateUnit A) ht htc hμt b w) (.of_forall hmem)
+        (CStarAlgebra.increasingApproximateUnit A) hK hKc hμK b w) (.of_forall hmem)
     exact (hM.preimage L.continuous).closure_subset_iff.2 hspan
       (NonUnitalStarAlgHom.isNondegenerate_iff_dense.1 hρ v)
-  -- Approximating a measurable set of finite measure from inside by compact sets, every
-  -- `r ↦ 𝟙_s(r) v` lies in `M`, and these span a dense subspace of `L²(G, H)`.
-  rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
-    eq_top_iff]
-  refine fun f _ => Lp.induction ENNReal.ofNat_ne_top (· ∈ M) (fun v s hs hμs => ?_)
-    (fun _ _ _ _ _ hf hg => M.add_mem hf hg) hM f
+  -- In general, approximate `t` from inside by compact sets.
   choose K hKs hKc hKcl hK using fun n : ℕ =>
-    hs.exists_isCompact_isClosed_sdiff_lt hμs.ne (ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top n))
-  have hμK (n : ℕ) : μ (K n) ≠ ∞ := ne_top_of_le_ne_top hμs.ne (measure_mono (hKs n))
-  rw [Lp.simpleFunc.coe_indicatorConst]
+    ht.exists_isCompact_isClosed_sdiff_lt hμt (ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top n))
+  have hμK (n : ℕ) : μ (K n) ≠ ∞ := ne_top_of_le_ne_top hμt (measure_mono (hKs n))
   refine hM.mem_of_tendsto (tendsto_indicatorConstLp_set (l := atTop)
     (ht := fun n => (hKcl n).measurableSet) (hμt := hμK) ENNReal.ofNat_ne_top ?_)
-    (.of_forall fun n => hcompact _ (hKc n) (hμK n) v)
+    (.of_forall fun n => hcompact _ (hKc n) (hμK n))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     ENNReal.tendsto_inv_nat_nhds_zero (fun _ => zero_le) fun n => ?_
   rw [symmDiff_of_le (hKs n)]
   exact (hK n).le
+
+/-- The regular coefficient representation induced by a nondegenerate representation `ρ` is
+nondegenerate. -/
+theorem isNondegenerate_regular_coefficient (hρ : ρ.IsNondegenerate) :
+    (regular α ρ μ).coefficient.IsNondegenerate := by
+  set M := (Submodule.span ℂ (⋃ a, Set.range ((regular α ρ μ).coefficient a))).topologicalClosure
+  -- Every `r ↦ 𝟙_s(r) v` lies in `M`, and these span a dense subspace of `L²(G, H)`.
+  rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
+    eq_top_iff]
+  refine fun f _ => Lp.induction ENNReal.ofNat_ne_top (· ∈ M) (fun v s hs hμs => ?_)
+    (fun _ _ _ _ _ hf hg => M.add_mem hf hg) (Submodule.isClosed_topologicalClosure _) f
+  rw [Lp.simpleFunc.coe_indicatorConst]
+  exact indicatorConstLp_mem_topologicalClosure_span hρ hs hμs.ne v
 
 /-- For a measure positive on nonempty open sets, such as a Haar measure, the regular coefficient
 representation induced by `ρ` is nondegenerate exactly when `ρ` is. -/
