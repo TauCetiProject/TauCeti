@@ -33,10 +33,27 @@ namespace TauCeti.SomosFour
 def initialMatrix : Matrix (Fin 4) (Fin 4) ℤ :=
   !![0, -1, 2, -1; 1, 0, -3, 2; -2, 3, 0, -1; 1, -2, 1, 0]
 
+/-- The entries of the initial exchange matrix in the column convention. -/
+theorem initialMatrix_apply (i j : Fin 4) :
+    initialMatrix i j =
+      !![(0 : ℤ), -1, 2, -1; 1, 0, -3, 2; -2, 3, 0, -1; 1, -2, 1, 0] i j := by
+  rfl
+
 /-- The sequence obtained by mutating once in each direction in cyclic order. -/
 def exchangeMatrix : ℕ → Matrix (Fin 4) (Fin 4) ℤ
   | 0 => initialMatrix
   | n + 1 => matrixMutation (Function.Embedding.refl _) (exchangeMatrix n) (n : Fin 4)
+
+/-- The initial term of the cyclic exchange-matrix sequence. -/
+@[simp]
+theorem exchangeMatrix_zero : exchangeMatrix 0 = initialMatrix := by
+  rfl
+
+/-- The next exchange matrix mutates the preceding matrix in the next cyclic direction. -/
+theorem exchangeMatrix_succ (n : ℕ) :
+    exchangeMatrix (n + 1) =
+      matrixMutation (Function.Embedding.refl _) (exchangeMatrix n) (n : Fin 4) := by
+  rfl
 
 private theorem mutation_initial (i j : Fin 4) :
     matrixMutation (Function.Embedding.refl _) initialMatrix 0 i j =
@@ -48,7 +65,7 @@ private theorem mutation_initial (i j : Fin 4) :
 theorem exchangeMatrix_eq_submatrix (n : ℕ) :
     exchangeMatrix n = initialMatrix.submatrix (· - (n : Fin 4)) (· - (n : Fin 4)) := by
   induction n with
-  | zero => ext i j; simp [exchangeMatrix]
+  | zero => ext i j; simp
   | succ n ih =>
     let k : Fin 4 := n
     let f : Fin 4 → Fin 4 := (· - k)
@@ -58,12 +75,11 @@ theorem exchangeMatrix_eq_submatrix (n : ℕ) :
         (matrixMutation (Function.Embedding.refl (Fin 4)) initialMatrix (f k)).submatrix f f := by
       solve_by_elim [matrixMutation_submatrix, hf]
     ext i j
-    rw [exchangeMatrix, ih]
-    change matrixMutation _ (initialMatrix.submatrix f f) k i j = _
-    rw [hm]
+    rw [exchangeMatrix_succ, ih, hm]
     simp [Matrix.submatrix_apply, f, k, mutation_initial, sub_sub]
 
 /-- The entire exchange-matrix sequence has period four. -/
+@[simp]
 theorem exchangeMatrix_add_four (n : ℕ) : exchangeMatrix (n + 4) = exchangeMatrix n := by
   rw [exchangeMatrix_eq_submatrix, exchangeMatrix_eq_submatrix]
   simp
