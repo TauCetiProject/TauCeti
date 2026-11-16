@@ -116,12 +116,12 @@ theorem geometricallyReduced_coordinateRing_iff
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- The coordinate ring of `D(G)` over `k` is the group algebra `k[G]`.
     have : IsReduced (MonoidAlgebra k G) := h.isReduced
-    exact (MonoidAlgebra.isReduced_iff_forall_pow_eq_one k G p).mp this
+    exact (MonoidAlgebra.isReduced_iff_forall_pow_eq_one_imp_eq_one k G p).mp this
   · rw [geometricallyReducedCommHopfAlgProperty_iff]
     intro K _ _
     have : ExpChar K p := expChar_of_injective_algebraMap (algebraMap k K).injective p
     have : IsReduced (MonoidAlgebra K G) :=
-      (MonoidAlgebra.isReduced_iff_forall_pow_eq_one K G p).mpr h
+      (MonoidAlgebra.isReduced_iff_forall_pow_eq_one_imp_eq_one K G p).mpr h
     let φ := coordinateRingBaseChangeEquiv k G K
     exact isReduced_of_injective φ.toRingHom φ.injective
 

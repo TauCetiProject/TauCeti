@@ -8,12 +8,11 @@ module
 public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.RingTheory.Nilpotent.Defs
+import Mathlib.Algebra.Algebra.Rat
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Reduced
 import Mathlib.RingTheory.Localization.FractionRing
-import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 import TauCeti.Algebra.MonoidAlgebra.Reduced
-import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Frobenius on monoid algebras and reduced group algebras
@@ -26,9 +25,9 @@ injective on `R` and on `M`, and this decides when `R[M]` is reduced.
 For a commutative ring `R` of prime characteristic `p`, the monoid algebra `R[M]` is reduced
 exactly when `R` is reduced and the `p`-th power map of `M` is injective. In characteristic zero
 there is no condition on the monoid when it is a group: the group algebra of a commutative group
-over a reduced `ℚ`-algebra is reduced, by extension of scalars from `ℚ`. Together these give the
-criterion over a domain `R` of exponential characteristic `p`: the group algebra `R[G]` of a
-commutative group `G` is reduced exactly when `G` has no `p`-torsion.
+over a reduced `ℚ`-algebra is reduced (`MonoidAlgebra.isReduced_of_algebraRat`). Together these
+give the criterion over a domain `R` of exponential characteristic `p`: the group algebra `R[G]`
+of a commutative group `G` is reduced exactly when `G` has no `p`-torsion.
 
 For a field `k` this is the algebraic form of the statement that the diagonalizable group with
 character group `G` is geometrically reduced, equivalently smooth when `G` is finitely generated,
@@ -45,11 +44,9 @@ exactly when `G` has no `p`-torsion.
 * `MonoidAlgebra.isReduced_iff_isReduced_and_pow_injective`: in prime characteristic `p`, the
   monoid algebra `R[M]` is reduced exactly when `R` is reduced and the `p`-th power map of `M`
   is injective.
-* `MonoidAlgebra.isReduced_of_algebraRat`: the group algebra of a commutative group over a
-  reduced `ℚ`-algebra is reduced.
-* `MonoidAlgebra.isReduced_iff_forall_pow_eq_one`: over a domain of exponential characteristic
-  `p`, the group algebra of a commutative group is reduced exactly when the group has no
-  `p`-torsion.
+* `MonoidAlgebra.isReduced_iff_forall_pow_eq_one_imp_eq_one`: over a domain of exponential
+  characteristic `p`, the group algebra of a commutative group is reduced exactly when the group
+  has no `p`-torsion.
 
 ## References
 
@@ -93,11 +90,13 @@ variable {R M : Type*} [CommRing R] [CommMonoid M] (p : ℕ)
 a reduced ring is injective when the `p`-th power map of the monoid is injective. -/
 theorem pow_expChar_injective [IsReduced R] [ExpChar R p]
     (hM : Function.Injective fun m : M ↦ m ^ p) : Function.Injective fun x : R[M] ↦ x ^ p := by
-  have h : (fun x : R[M] ↦ x ^ p) =
-      map (frobenius R p : R →+ R) ∘ mapDomain (powMonoidHom p : M →* M) :=
-    funext fun x ↦ (mapRingHom_frobenius_mapDomainRingHom_powMonoidHom p x).symm
-  rw [h]
-  exact (map_injective _ (frobenius_inj R p)).comp (mapDomain_injective hM)
+  have hpow : ⇑(powMonoidHom p : M →* M) = fun m ↦ m ^ p := funext (powMonoidHom_apply p)
+  intro x y hxy
+  beta_reduce at hxy
+  rw [← mapRingHom_frobenius_mapDomainRingHom_powMonoidHom p x,
+    ← mapRingHom_frobenius_mapDomainRingHom_powMonoidHom p y, coe_mapRingHom,
+    mapDomainRingHom_apply, mapDomainRingHom_apply, hpow] at hxy
+  exact mapDomain_injective hM (map_injective _ (frobenius_inj R p) hxy)
 
 /-- **A commutative monoid algebra in prime characteristic `p` is reduced exactly when its
 coefficient ring is reduced and the `p`-th power map of the monoid is injective.** -/
@@ -120,31 +119,23 @@ section Group
 
 variable (R : Type*) [CommRing R] (G : Type*) [CommGroup G] (p : ℕ)
 
-/-- The group algebra of a commutative group over a reduced `ℚ`-algebra is reduced: it is the
-extension of scalars of the rational group algebra, which is reduced because `ℚ` is formally
-real, and `ℚ` is perfect. -/
-theorem isReduced_of_algebraRat [Algebra ℚ R] [IsReduced R] : IsReduced R[G] :=
-  isReduced_of_injective (scalarTensorEquiv ℚ R (M := G)).symm
-    (scalarTensorEquiv ℚ R (M := G)).symm.injective
-
 /-- **The group algebra of a commutative group over a domain of exponential characteristic `p`
 is reduced exactly when the group has no `p`-torsion.** In characteristic zero, where `p = 1`,
 the condition is empty and every such group algebra is reduced. -/
-theorem isReduced_iff_forall_pow_eq_one [IsDomain R] [ExpChar R p] :
+theorem isReduced_iff_forall_pow_eq_one_imp_eq_one [IsDomain R] [ExpChar R p] :
     IsReduced R[G] ↔ ∀ g : G, g ^ p = 1 → g = 1 := by
   rcases ‹ExpChar R p› with _ | hp
   · have : CharZero (FractionRing R) :=
       charZero_of_injective_algebraMap (IsFractionRing.injective R (FractionRing R))
-    have := isReduced_of_algebraRat (FractionRing R) G
     exact iff_of_true
       (isReduced_of_injective (mapRingHom G (algebraMap R (FractionRing R)))
         (map_injective _ (IsFractionRing.injective R (FractionRing R))))
       fun g hg ↦ (pow_one g).symm.trans hg
   · have : Fact p.Prime := ⟨hp⟩
     rw [isReduced_iff_isReduced_and_pow_injective p, and_iff_right (inferInstance : IsReduced R)]
-    exact injective_iff_map_eq_one (powMonoidHom p : G →* G)
+    have hpow : ⇑(powMonoidHom p : G →* G) = fun g ↦ g ^ p := funext (powMonoidHom_apply p)
+    simpa only [hpow] using injective_iff_map_eq_one (powMonoidHom p : G →* G)
 
 end Group
-
 
 end MonoidAlgebra

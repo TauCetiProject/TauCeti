@@ -8,10 +8,12 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.Algebra.Ring.IsFormallyReal
 public import Mathlib.RingTheory.Nilpotent.Basic
+import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
-# Group algebras over formally real rings are reduced
+# Group algebras over formally real rings and over reduced `ℚ`-algebras are reduced
 
 Let `R` be a formally real commutative semiring, such as `ℕ`, `ℤ`, `ℚ` or `ℝ`, and let `G` be a
 commutative group. Inversion on `G` induces the ring involution `σ` of `R[G]` with
@@ -24,6 +26,10 @@ If `x ^ 2 = 0`, then `y = x * σ x` satisfies `y * σ y = x ^ 2 * σ x ^ 2 = 0`,
 `G` is needed, and `G` may have torsion: for instance `ℤ[G]` is reduced for every commutative
 group `G`.
 
+Extending scalars from `ℚ`, which is formally real and perfect, the group algebra `R[G]` is
+reduced for every reduced `ℚ`-algebra `R` (`MonoidAlgebra.isReduced_of_algebraRat`), although
+such an `R`, for instance `ℂ`, need not be formally real.
+
 ## References
 
 * D. S. Passman, *The Algebraic Structure of Group Rings*, Wiley, 1977: the trace-form argument
@@ -33,6 +39,8 @@ group `G`.
 public section
 
 namespace MonoidAlgebra
+
+section IsFormallyReal
 
 variable {R G : Type*} [CommSemiring R] [IsFormallyReal R] [CommGroup G]
 
@@ -66,5 +74,22 @@ instance isReduced_of_isFormallyReal : IsReduced (MonoidAlgebra R G) := by
     generalize mapDomainRingEquiv R (MulEquiv.inv G) x = y
     simp [show x * y * (y * x) = x ^ 2 * y ^ 2 by ring, hx]
   exact eq_zero_of_coeff_mul_mapDomainRingEquiv_inv_one (by simp [hy])
+
+end IsFormallyReal
+
+section AlgebraRat
+
+variable {R G : Type*} [CommRing R] [Algebra ℚ R] [IsReduced R] [CommGroup G]
+
+/-- The group algebra of a commutative group over a reduced `ℚ`-algebra is reduced. -/
+@[to_additive (dont_translate := R)
+/-- The group algebra of a commutative additive group over a reduced `ℚ`-algebra is reduced. -/]
+instance isReduced_of_algebraRat : IsReduced (MonoidAlgebra R G) :=
+  -- `R[G]` is the extension of scalars `R ⊗[ℚ] ℚ[G]` of the rational group algebra, which is
+  -- reduced because `ℚ` is formally real; the tensor product is reduced because `ℚ` is perfect.
+  isReduced_of_injective (scalarTensorEquiv ℚ R (M := G)).symm
+    (scalarTensorEquiv ℚ R (M := G)).symm.injective
+
+end AlgebraRat
 
 end MonoidAlgebra
