@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Set.Prod
+import TauCeti.Logic.Function.Fiber
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Fin
@@ -52,6 +54,11 @@ coinfiniteness from this counting invariant.
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
 sides are `0` when `S` is infinite or `n = 0`.
+
+The fibre of the first pullback projection has the same `Set.ncard` as the original fibre
+(`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
+transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
+identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
 -/
 
 public section
@@ -201,3 +208,19 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
     Fin.range_succAbove, ← sdiff_eq]
 
 end Set
+
+/-- The fibre of `Function.Pullback.fst` over `a` has the same `Set.ncard` as the fibre of `q`
+over `f a`. Both sides are zero for infinite fibres. -/
+@[simp]
+theorem Function.Pullback.ncard_preimage_fst_singleton {A B C : Type*}
+    {f : A → B} {q : C → B} (a : A) :
+    ((Function.Pullback.fst : f.Pullback q → A) ⁻¹' {a}).ncard =
+      (q ⁻¹' {f a}).ncard :=
+  Set.ncard_congr' (Function.Pullback.fstPreimageEquiv a)
+
+/-- An equivalence onto `p ⁻¹' U` commuting with projections preserves `Set.ncard` of the fibres
+over `y ∈ U`. Both sides are zero for infinite fibres. -/
+theorem Equiv.ncard_fiber_eq_of_preimage {A X Y : Type*} {p : X → Y} {q : A → Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y} (hy : y ∈ U) :
+    (q ⁻¹' {y}).ncard = (p ⁻¹' {y}).ncard :=
+  Set.ncard_congr' (k.fiberEquivOfPreimage hk hy)
