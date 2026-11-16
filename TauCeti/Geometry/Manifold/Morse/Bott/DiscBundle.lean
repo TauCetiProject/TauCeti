@@ -508,13 +508,20 @@ theorem isCompact_negativeDiscBundle [T2Space S] [CompactSpace S]
   obtain ⟨hs, ht, hσ⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
   set gR := g.toRiemannianMetric
   -- The rays `a ↦ (a u, a w)`, `a ∈ [0, 1]`, join each normal vector to the compact zero section.
-  obtain ⟨m, hm, -, hmK⟩ := exists_pos_setOf_add_two_mul_lt_subset_and_isCompact hs.continuous
-    ht.continuous (h.negSq_nonneg hn gR) (h.posSq_nonneg hn gR)
+  obtain ⟨m, hm, -, hmK⟩ := exists_pos_setOf_lt_subset_and_isCompact
     (isCompact_range (Bundle.contMDiff_zeroSection (n := ∞) (IB := J) _ _).continuous) isOpen_univ
-    (subset_univ _) (fun x hs ht ↦ ⟨x.proj, h.eq_zeroSection_of_negSq_eq_zero hn gR x hs ht⟩)
-    (h.rescale hn gR) hσ.continuous (fun a b x ↦ h.negSq_rescale hn gR x a b)
-    (fun a b x ↦ h.posSq_rescale hn gR x a b) (h.rescale_one_one hn gR)
-    (fun x ↦ ⟨x.proj, (h.rescale_zero_zero hn gR x).symm⟩)
+    (subset_univ _) (hs.continuous.add (continuous_const.mul ht.continuous))
+    (q := fun x ↦ h.negSq hn gR x + 2 * h.posSq hn gR x) (fun x hx ↦ ⟨x.proj,
+      h.eq_zeroSection_of_negSq_eq_zero hn gR x
+        (by linarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])
+        (by linarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])⟩)
+    (fun a ↦ h.rescale hn gR a a) (fun x ↦ (hσ.continuous.comp ((continuous_id.prodMk
+      continuous_id).prodMk continuous_const)).continuousOn)
+    (fun a ha x ↦ by
+      have ha2 : a ^ 2 ≤ 1 := pow_le_one₀ ha.1 ha.2
+      rw [h.negSq_rescale, h.posSq_rescale]
+      nlinarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])
+    (h.rescale_one_one hn gR) (fun x ↦ ⟨x.proj, (h.rescale_zero_zero hn gR x).symm⟩)
   have hD : IsClosed (h.negativeDiscBundle hn P gR ε) := by
     rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR ε]
     exact (isClosed_eq ht.continuous continuous_const).inter
