@@ -118,8 +118,9 @@ followed by the inclusion of that sphere into the sphere bundle. -/
 @[simp]
 theorem stiefelBundleSphereFamily_fiberIncl (b : B) (x : stiefel (E b) 3) :
     stiefelBundleSphereFamily F E (StiefelBundle.fiberIncl F E 3 b x) =
-      (sphereBundleFiberIncl F E b).comp (stiefelSphereFamily x) :=
-  (rfl)
+      (sphereBundleFiberIncl F E b).comp (stiefelSphereFamily x) := by
+  rw [StiefelBundle.fiberIncl_apply]
+  rfl
 
 /-- **The family `σ` lies over the projection to the first vector**: the north pole of the
 two-sphere of `(q, u, v)` goes to `q`. -/
@@ -127,8 +128,10 @@ two-sphere of `(q, u, v)` goes to `q`. -/
 theorem stiefelBundleSphereFamily_apply_north (p : StiefelBundle F E 3) :
     stiefelBundleSphereFamily F E p Sphere2.north = StiefelBundle.sphereProj F 3 0 p := by
   rw [stiefelBundleSphereFamily_apply, stiefelSphereFamily_apply_north]
+  have h := StiefelBundle.sphereProj_fiberIncl (F := F) 0 p.proj p.frame
   -- `p` is the frame `p.frame` of the fibre over `p.proj`, by structure eta.
-  exact (StiefelBundle.sphereProj_fiberIncl 0 p.proj p.frame).symm
+  rw [StiefelBundle.fiberIncl_apply] at h
+  exact h.symm
 
 variable (F E) in
 /-- The family `σ` is a map over the sphere bundle `S(E)`, from the projection `V₃(E) → S(E)` to

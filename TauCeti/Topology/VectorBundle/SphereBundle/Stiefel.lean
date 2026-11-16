@@ -24,10 +24,9 @@ isometric equivalences.
 
 Each vector of a frame is a point of the unit sphere bundle `S(E)` (`TauCeti.sphereBundle`), which
 gives the projections `TauCeti.StiefelBundle.sphereProj i : V_k(E) → S(E)`. For `k = n + 1` and
-`i = 0` this is the bundle over `S(E)` whose fibre over a unit vector `q ∈ S(E_b)` is the space of
-orthonormal `n`-frames of `q^⊥ ⊆ E_b`, the tangent space at `q` of the sphere `S(E_b)` through
-`q`: so `V_{n+1}(E) → S(E)` is the bundle of orthonormal `n`-frames of the vertical tangent bundle
-of `S(E) → B`. Its fibre over `q` is the image of the frames of `q^⊥` under
+`i = 0` this is a map `V_{n+1}(E) → S(E)` whose fibre over a unit vector `q ∈ S(E_b)` is the
+space of orthonormal `n`-frames of `q^⊥ ⊆ E_b`, the tangent space at `q` of the sphere `S(E_b)`
+through `q`: the fibre over `q` is the image of the frames of `q^⊥` under
 `TauCeti.stiefelFrameIncl` (`TauCeti.StiefelBundle.range_fiberIncl_comp_stiefelFrameIncl`).
 
 No condition is imposed on the fibre metric here: the topology is read in the total space, and
@@ -88,6 +87,17 @@ theorem mk_eq_mk_iff {b : B} {x y : stiefel (E b) k} :
   · rintro rfl
     rfl
 
+/-- Two frames are equal when their base points are equal and their vectors, read in the total
+space of `E`, are equal. -/
+@[ext]
+theorem ext {p q : StiefelBundle F E k} (hproj : p.proj = q.proj)
+    (hframe : ∀ i, (⟨p.proj, (p.frame : Fin k → E p.proj) i⟩ : TotalSpace F E) =
+      ⟨q.proj, (q.frame : Fin k → E q.proj) i⟩) : p = q := by
+  obtain ⟨b, x⟩ := p
+  obtain ⟨b', y⟩ := q
+  obtain rfl : b = b' := hproj
+  exact mk_eq_mk_iff.2 (Subtype.ext (funext fun i ↦ TotalSpace.mk_inj.1 (hframe i)))
+
 variable [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)]
 
 /-- The topology of the Stiefel bundle: the coarsest topology for which the base point and each
@@ -133,10 +143,8 @@ section Fiber
 
 variable (F E k) [TopologicalSpace F] [FiberBundle F E]
 
-/-- The inclusion `V_k(E_b) → V_k(E)` of the orthonormal `k`-frames of the fibre over `b`. Its body
-is exposed so that the frame of an included point is, by definition, a frame of the fibre over
-`b`, as `TauCeti.StiefelBundle.frame_fiberIncl` states. -/
-@[expose] def fiberIncl (b : B) : C(stiefel (E b) k, StiefelBundle F E k) where
+/-- The inclusion `V_k(E_b) → V_k(E)` of the orthonormal `k`-frames of the fibre over `b`. -/
+def fiberIncl (b : B) : C(stiefel (E b) k, StiefelBundle F E k) where
   toFun x := ⟨b, x⟩
   continuous_toFun := continuous_iff.2 ⟨continuous_const, fun i ↦
     (FiberBundle.continuous_totalSpaceMk F E b).comp
@@ -144,12 +152,11 @@ is exposed so that the frame of an included point is, by definition, a frame of 
 
 variable {F E k}
 
-@[simp]
-theorem proj_fiberIncl (b : B) (x : stiefel (E b) k) : (fiberIncl F E k b x).proj = b :=
+theorem fiberIncl_apply (b : B) (x : stiefel (E b) k) : fiberIncl F E k b x = ⟨b, x⟩ :=
   (rfl)
 
 @[simp]
-theorem frame_fiberIncl (b : B) (x : stiefel (E b) k) : (fiberIncl F E k b x).frame = x :=
+theorem proj_fiberIncl (b : B) (x : stiefel (E b) k) : (fiberIncl F E k b x).proj = b :=
   (rfl)
 
 variable (F E k)
