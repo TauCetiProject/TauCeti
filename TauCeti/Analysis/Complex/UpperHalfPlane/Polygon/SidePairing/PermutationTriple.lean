@@ -48,16 +48,13 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
 
-private theorem finRotate_eq_addRight_one : finRotate n = Equiv.addRight (1 : Fin n) :=
-  Equiv.ext fun i ↦ finRotate_apply i
-
 /-- **The permutation triple of a side pairing.** Its three components are the side involution
 `σ.pair`, the vertex-cycle permutation `σ.next`, and `(finRotate n)⁻¹`. -/
 def toPermutationTriple : PermutationTriple n where
   σ0 := σ.pair
   σ1 := σ.next
   σinf := (finRotate n)⁻¹
-  product_eq_one := Equiv.ext fun i ↦ by simp [Perm.mul_apply, finRotate_eq_addRight_one]
+  product_eq_one := Equiv.ext fun i ↦ by simp [Perm.mul_apply, Perm.inv_def]
 
 /-- The edge component `σ0` of `σ.toPermutationTriple` is `σ.pair`. -/
 @[simp] theorem toPermutationTriple_σ0 : σ.toPermutationTriple.σ0 = σ.pair := (rfl)

@@ -299,15 +299,18 @@ theorem map_smul_edgeArc_ne_selfPairedSideFixedPoint (i : Fin n) {u : ℝ} (hu :
     σ.map_smul_geodesicLine_of_pair_eq hii] at h
   linarith [geodesicLine_injective _ h, hmid hii]
 
-/-- On a self-paired side `i`, the image of `Ioo (-1) 1` under `σ.edgeArc i` is disjoint from its
-image under `σ.map i`. -/
-theorem map_smul_edgeArc_ne_edgeArc_of_pair_eq {i : Fin n} (hi : σ.pair i = i) {u v : ℝ}
+/-- The image of `Ioo (-1) 1` under `σ.edgeArc i` is disjoint from its image under `σ.map i`. -/
+theorem map_smul_edgeArc_ne_edgeArc (i : Fin n) {u v : ℝ}
     (hu : u ∈ Ioo (-1) 1) (hv : v ∈ Ioo (-1) 1) :
     σ.map i • σ.edgeArc i u ≠ σ.edgeArc i v := by
   intro h
+  obtain ⟨hsu, -, hmidu⟩ := σ.edgeArc_props i hu
+  obtain ⟨hsv, hnev, hmidv⟩ := σ.edgeArc_props i hv
+  have hi : σ.pair i = i :=
+    (P.eq_of_mem_side_of_mem_side hsv (hnev i) (hnev (i + 1))
+      (h ▸ σ.map_smul_mem_side hsu)).symm
   rw [edgeArc, edgeArc, σ.map_smul_geodesicLine_of_pair_eq hi] at h
-  linarith [geodesicLine_injective _ h, (σ.edgeArc_props i hu).2.2 hi,
-    (σ.edgeArc_props i hv).2.2 hi]
+  linarith [geodesicLine_injective _ h, hmidu hi, hmidv hi]
 
 /-- Every point of `P.side j` away from its finite endpoints lies on `σ.edgeArc j '' Ioo (-1) 1`,
 equals `σ.selfPairedSideFixedPoint ⟨j, hj⟩`, or is sent into `σ.edgeArc j '' Ioo (-1) 1` by

@@ -154,29 +154,6 @@ private theorem eventually_parabolaMap_horodisc {Q : ConvexPolygon n}
   obtain ⟨i, hi, hAi⟩ := by simpa only [mem_iUnion, mem_ofPred_eq] using hmemU
   exact ⟨i, by by_contra hne'; exact hAi.not_ge (hwj i hne' z rfl hi), hAi⟩
 
-private theorem tendsto_geodesicLine_atBot_coe {g : PSL(2, ℝ)} {x : ℝ}
-    (hg : g • ((0 : ℝ) : OnePoint ℝ) = (x : OnePoint ℝ)) :
-    Tendsto (fun t : ℝ ↦ (geodesicLine g t : ℂ)) atBot (𝓝 (x : ℂ)) := by
-  induction g using QuotientGroup.induction_on with | H a =>
-  rw [OnePoint.pslMk_smul, OnePoint.smul_some_eq_ite] at hg
-  split_ifs at hg with h0
-  · exact absurd hg (OnePoint.infty_ne_coe x)
-  · simp only [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, mul_zero, zero_add] at h0 hg
-    have hexp : Tendsto (fun t : ℝ ↦ (⟨0, Real.exp t⟩ : ℂ)) atBot (𝓝 0) := by
-      have h : (fun t : ℝ ↦ (⟨0, Real.exp t⟩ : ℂ)) = fun t ↦ (Real.exp t : ℂ) * Complex.I :=
-        funext fun t ↦ by rw [Complex.mk_eq_add_mul_I, Complex.ofReal_zero, zero_add]
-      rw [h]
-      simpa using ((Complex.continuous_ofReal.tendsto 0).comp Real.tendsto_exp_atBot).mul_const
-        Complex.I
-    have hlin (c d : ℝ) :
-        Tendsto (fun t : ℝ ↦ (c : ℂ) * ⟨0, Real.exp t⟩ + d) atBot (𝓝 (d : ℂ)) := by
-      simpa using (tendsto_const_nhds.mul hexp).add tendsto_const_nhds
-    have hdiv := (hlin (a 0 0) (a 0 1)).div (hlin (a 1 0) (a 1 1)) (Complex.ofReal_ne_zero.2 h0)
-    rw [← Complex.ofReal_div, OnePoint.coe_injective hg] at hdiv
-    exact hdiv.congr fun t ↦ by
-      simp [geodesicLine_def, UpperHalfPlane.pslMk_smul,
-        UpperHalfPlane.coe_specialLinearGroup_apply]
-
 private theorem mk_sq_mem_closure_parabolaMap_image_carrier {Q : ConvexPolygon n} {i : Fin n}
     {x : ℝ} (hx : Q.vertex i = .inr (x : OnePoint ℝ)) :
     (⟨x, x ^ 2⟩ : ℂ) ∈ closure (parabolaMap '' Q.carrier) := by
@@ -204,11 +181,8 @@ private theorem mem_parabolaMap_image_carrier_of_mem_closure {Q : ConvexPolygon 
   have hf := isOpenEmbedding_parabolaMap
   obtain ⟨z, rfl⟩ : w ∈ range parabolaMap := by rwa [range_parabolaMap]
   refine ⟨z, ?_, rfl⟩
-  rw [← Q.isClosed_carrier.closure_eq, mem_closure_iff_nhds]
-  intro U hU
-  obtain ⟨_, ⟨z'', hz'', heq⟩, z', hz', rfl⟩ :=
-    (mem_closure_iff_nhds.1 hw) (parabolaMap '' U) (hf.isOpenMap.image_mem_nhds hU)
-  exact ⟨z', hf.injective heq ▸ hz'', hz'⟩
+  rw [← hf.isOpenMap.preimage_closure_image hf.injective hf.continuous Q.carrier Q.isClosed_carrier]
+  exact hw
 
 private theorem exists_smul_vertex_eq_infty (Q : ConvexPolygon n) :
     ∃ gQ : Fin n → PSL(2, ℝ), ∀ j η, Q.vertex j = .inr η → gQ j • η = ∞ := by
@@ -278,12 +252,24 @@ private def equivClosureParabolaMapImage :
         OnePoint.coe_injective (Sum.inr.inj ((hx ⟨j, hjP⟩).symm.trans hj))
       exact ⟨.inr ⟨j, hjP⟩, Subtype.ext (by simp [toCls, hxj, ← hw'])⟩
 
+private theorem coe_equivClosureParabolaMapImage_inl (z : P.carrier) :
+    (equivClosureParabolaMapImage P h₀ hQne x hx (.inl z) : ℂ) = parabolaMap (h₀ • (z : ℍ)) :=
+  rfl
+
+private theorem coe_equivClosureParabolaMapImage_inr (i : {i : Fin n // (P.vertex i).isRight}) :
+    (equivClosureParabolaMapImage P h₀ hQne x hx (.inr i) : ℂ) = ⟨x i, (x i) ^ 2⟩ :=
+  rfl
+
 private theorem isOpenEmbedding_equivClosureParabolaMapImage_inl :
     IsOpenEmbedding (fun z : P.carrier ↦
       equivClosureParabolaMapImage P h₀ hQne x hx (.inl z)) := by
   set Q := h₀ • P
   have hf := isOpenEmbedding_parabolaMap
-  refine ⟨Topology.IsEmbedding.subtypeVal.of_comp_iff.1
+  have hcomp : (Subtype.val : closure (parabolaMap '' Q.carrier) → ℂ) ∘
+      (fun z : P.carrier ↦ equivClosureParabolaMapImage P h₀ hQne x hx (.inl z)) =
+      fun z : P.carrier ↦ parabolaMap (h₀ • (z : ℍ)) :=
+    funext (coe_equivClosureParabolaMapImage_inl P h₀ hQne x hx)
+  refine ⟨Topology.IsEmbedding.subtypeVal.of_comp_iff.1 <| hcomp.symm ▸
     ((hf.isEmbedding.comp (Homeomorph.smul h₀).isEmbedding).comp .subtypeVal), ?_⟩
   have hrange : range (fun z : P.carrier ↦ equivClosureParabolaMapImage P h₀ hQne x hx (.inl z)) =
       (Subtype.val : closure (parabolaMap '' Q.carrier) → ℂ) ⁻¹' range parabolaMap := by
@@ -291,12 +277,14 @@ private theorem isOpenEmbedding_equivClosureParabolaMapImage_inl :
     simp only [mem_range, mem_preimage, range_parabolaMap, mem_ofPred_eq]
     constructor
     · rintro ⟨z, hz⟩
-      have hval : parabolaMap (h₀ • (z : ℍ)) = w := congrArg Subtype.val hz
+      have hval : parabolaMap (h₀ • (z : ℍ)) = w := by
+        rw [← coe_equivClosureParabolaMapImage_inl P h₀ hQne x hx z, hz]
       exact hval ▸ sq_re_lt_im_parabolaMap (h₀ • (z : ℍ))
     · intro hlt
       obtain ⟨z, hz, rfl⟩ := mem_parabolaMap_image_carrier_of_mem_closure hw hlt
-      exact ⟨⟨h₀⁻¹ • z, (smul_mem_smul_set_iff (a := h₀)).1 (by simpa [Q] using hz)⟩,
-        Subtype.ext (by change parabolaMap (h₀ • (h₀⁻¹ • z)) = parabolaMap z; simp)⟩
+      refine ⟨⟨h₀⁻¹ • z, (smul_mem_smul_set_iff (a := h₀)).1 (by simpa [Q] using hz)⟩,
+        Subtype.ext ?_⟩
+      rw [coe_equivClosureParabolaMapImage_inl, smul_inv_smul]
   rw [hrange]
   exact hf.isOpen_range.preimage continuous_subtype_val
 
@@ -324,8 +312,9 @@ private theorem eventually_horodisc_of_equivClosureParabolaMapImage
     by_cases hji : j = i.1
     · exact (hj (hji ▸ hx i)).elim
     · simp [A, hji]
-  have hval_i : (φCls.symm (e (.inr i)) : ℂ) = ⟨x i, (x i) ^ 2⟩ :=
-    congrArg Subtype.val (φCls.symm_apply_apply (eCls (.inr i)))
+  have hval_i : (φCls.symm (e (.inr i)) : ℂ) = ⟨x i, (x i) ^ 2⟩ := by
+    rw [Equiv.trans_apply, Homeomorph.coe_toEquiv, φCls.symm_apply_apply,
+      coe_equivClosureParabolaMapImage_inr]
   have hpull : Tendsto (fun u : Y ↦ (φCls.symm u : ℂ)) (𝓝 (e (.inr i))) (𝓝 ⟨x i, (x i) ^ 2⟩) :=
     hval_i ▸ continuous_subtype_val.continuousAt.comp (φCls.symm.continuous.tendsto _)
   have hsep : ∀ᶠ u in 𝓝 (e (.inr i)),
@@ -341,8 +330,9 @@ private theorem eventually_horodisc_of_equivClosureParabolaMapImage
   · exact Or.inl rfl
   · rcases hsurj : e.symm u with z | j
     · have huz : e (.inl z) = u := by rw [← hsurj, e.apply_symm_apply]
-      have hval_z : (φCls.symm u : ℂ) = parabolaMap (h₀ • (z : ℍ)) :=
-        huz ▸ congrArg Subtype.val (φCls.symm_apply_apply (eCls (.inl z)))
+      have hval_z : (φCls.symm u : ℂ) = parabolaMap (h₀ • (z : ℍ)) := by
+        rw [← huz, Equiv.trans_apply, Homeomorph.coe_toEquiv, φCls.symm_apply_apply,
+          coe_equivClosureParabolaMapImage_inl]
       obtain ⟨k, hk, hAk⟩ := hu (h₀ • z) (by simp [z.2]) hval_z.symm
       obtain rfl : k = i.1 := Q.vertex_injective (hk.trans (hx i).symm)
       simp only [A, g', Function.update_self, mul_smul, inv_smul_smul] at hAk
@@ -386,26 +376,29 @@ theorem exists_equiv_closedBall (P : ConvexPolygon n) :
     exact ⟨x, hQξ.trans (congrArg _ hx.symm)⟩
   choose x hx using hideal
   let φCls : closure s ≃ₜ closedBall (0 : ℂ) 1 :=
-    (φ.isEmbedding.homeomorphImage (closure s)).trans (Homeomorph.setCongr hφcl)
-  refine ⟨(equivClosureParabolaMapImage P h₀ hQne x hx).trans φCls.toEquiv,
+    φ.subtype fun w ↦ by rw [← hφcl, φ.injective.mem_set_image]
+  let e := (equivClosureParabolaMapImage P h₀ hQne x hx).trans φCls.toEquiv
+  have he_inl (z : P.carrier) : (e (.inl z) : ℂ) = φ (parabolaMap (h₀ • (z : ℍ))) := by
+    simp [e, φCls, coe_equivClosureParabolaMapImage_inl]
+  have he_inr (i : {i : Fin n // (P.vertex i).isRight}) :
+      (e (.inr i) : ℂ) = φ ⟨x i, (x i) ^ 2⟩ := by
+    simp [e, φCls, coe_equivClosureParabolaMapImage_inr]
+  refine ⟨e,
     φCls.isOpenEmbedding.comp (isOpenEmbedding_equivClosureParabolaMapImage_inl P h₀ hQne x hx),
     fun z ↦ ?_, fun z ↦ ?_, fun i ↦ ?_,
     fun i {ξ g} hξ hgξ B ↦
       eventually_horodisc_of_equivClosureParabolaMapImage P h₀ hQne x hx φCls i hξ hgξ B⟩
   · have hQcar : Q.carrier = ⇑(Homeomorph.smul h₀) '' P.carrier :=
       (P.carrier_smul h₀).trans Set.image_smul.symm
-    change φ (parabolaMap (h₀ • (z : ℍ))) ∈ ball (0 : ℂ) 1 ↔ _
-    rw [← hφint, φ.injective.mem_set_image, ← mem_preimage,
+    rw [he_inl, ← hφint, φ.injective.mem_set_image, ← mem_preimage,
       hf.isOpenMap.preimage_interior_eq_interior_preimage hf.continuous,
       hf.injective.preimage_image, hQcar, ← (Homeomorph.smul h₀).image_interior]
     exact (Homeomorph.smul h₀).injective.mem_set_image
-  · change φ (parabolaMap (h₀ • (z : ℍ))) ∈ sphere (0 : ℂ) 1 ↔ _
-    rw [← hφfr, φ.injective.mem_set_image, ← mem_preimage,
+  · rw [he_inl, ← hφfr, φ.injective.mem_set_image, ← mem_preimage,
       hf.isOpenMap.preimage_frontier_eq_frontier_preimage hf.continuous,
       hf.injective.preimage_image, Q.frontier_carrier, mem_iUnion]
     simp_rw [Q, side_smul, smul_mem_smul_set_iff]
-  · change φ ⟨x i, (x i) ^ 2⟩ ∈ sphere (0 : ℂ) 1
-    rw [← hφfr, φ.injective.mem_set_image]
+  · rw [he_inr, ← hφfr, φ.injective.mem_set_image]
     refine ⟨mk_sq_mem_closure_parabolaMap_image_carrier (hx i), fun hint ↦ ?_⟩
     obtain ⟨z, -, hz⟩ := interior_subset hint
     exact lt_irrefl _ (hz ▸ sq_re_lt_im_parabolaMap z)

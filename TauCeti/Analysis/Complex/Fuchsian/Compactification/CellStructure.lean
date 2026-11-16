@@ -15,6 +15,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Identificatio
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Side.EdgeArc
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Topology.MetricSpace.Pseudo.Pi
+import TauCeti.Topology.Path.Extend.Ioo
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
@@ -210,31 +211,29 @@ private theorem vertexZeroCell_mem_zeroCells (i : Fin n) :
 
 /-! ### The `1`-cells -/
 
-private def edgeMap1D (i : Fin n) (u : ℝ) : Γ.CompactifiedQuotient :=
-  if u ∈ Ioo (-1 : ℝ) 1 then ofQuotient (π (σ.edgeArc i u))
-  else if u ≤ 0 then σ.vertexZeroCell hmap hlf i
-  else if hi : σ.pair i = i then ofQuotient (π (σ.selfPairedSideFixedPoint ⟨i, hi⟩))
-  else σ.vertexZeroCell hmap hlf (i + 1)
+private def edgeMap1D (i : Fin n) : ℝ → Γ.CompactifiedQuotient :=
+  extendIoo (-1 : ℝ) 1 (σ.vertexZeroCell hmap hlf i)
+    (if hi : σ.pair i = i then ofQuotient (π (σ.selfPairedSideFixedPoint ⟨i, hi⟩))
+      else σ.vertexZeroCell hmap hlf (i + 1))
+    (fun u ↦ ofQuotient (π (σ.edgeArc i u)))
 
 private def edgeMap (i : Fin n) (x : Fin 1 → ℝ) : Γ.CompactifiedQuotient :=
   σ.edgeMap1D hmap hlf i (x 0)
 
-private theorem mem_ball_fin_one_iff {x : Fin 1 → ℝ} :
-    x ∈ ball (0 : Fin 1 → ℝ) 1 ↔ x 0 ∈ Ioo (-1 : ℝ) 1 := by
-  rw [Pi.ball_unique, mem_preimage, Function.eval, Fin.default_eq_zero, Real.ball_eq_Ioo]; norm_num
-
 private theorem edgeMap_of_mem_ball (i : Fin n) {x : Fin 1 → ℝ} (hx : x ∈ ball 0 1) :
     σ.edgeMap hmap hlf i x = ofQuotient (π (σ.edgeArc i (x 0))) := by
-  rw [edgeMap, edgeMap1D, ite_eq_left (mem_ball_fin_one_iff.1 hx)]
+  rw [Pi.mem_ball_unique, Fin.default_eq_zero, Pi.zero_apply, Real.ball_eq_Ioo, zero_sub, zero_add]
+    at hx
+  rw [edgeMap, edgeMap1D, extendIoo_apply_of_mem_Ioo hx]
 
 private theorem image_edgeMap_ball (i : Fin n) :
     σ.edgeMap hmap hlf i '' ball 0 1 =
       (fun u ↦ ofQuotient (π (σ.edgeArc i u))) '' Ioo (-1) 1 := by
-  ext q
-  refine ⟨fun ⟨x, hx, h⟩ ↦ ⟨x 0, mem_ball_fin_one_iff.1 hx,
-      (σ.edgeMap_of_mem_ball hmap hlf i hx).symm.trans h⟩,
-    fun ⟨u, hu, h⟩ ↦ ⟨fun _ ↦ u, mem_ball_fin_one_iff.2 hu,
-      (σ.edgeMap_of_mem_ball hmap hlf i (mem_ball_fin_one_iff.2 hu)).trans h⟩⟩
+  have h : σ.edgeMap hmap hlf i = σ.edgeMap1D hmap hlf i ∘ Function.eval 0 := rfl
+  rw [h, image_comp, Pi.ball_unique, Fin.default_eq_zero,
+    image_preimage_eq _ (Function.surjective_eval _), Pi.zero_apply, Real.ball_eq_Ioo, zero_sub,
+    zero_add]
+  exact EqOn.image_eq fun _ hu ↦ extendIoo_apply_of_mem_Ioo hu
 
 private theorem edgeMap_mem_zeroCells (i : Fin n) {x : Fin 1 → ℝ} (hx : x ∈ sphere 0 1) :
     σ.edgeMap hmap hlf i x ∈ σ.zeroCells Γ := by
@@ -242,23 +241,22 @@ private theorem edgeMap_mem_zeroCells (i : Fin n) {x : Fin 1 → ℝ} (hx : x �
   simp only [Fin.default_eq_zero, Pi.zero_apply, mem_sphere_zero_iff_norm, Real.norm_eq_abs,
     abs_eq zero_le_one] at hx
   rcases hx with h1 | h1
-  · simp only [edgeMap, edgeMap1D, h1, mem_Ioo, lt_self_iff_false, and_false, ↓reduceIte,
-      show ¬ (1 : ℝ) ≤ 0 by norm_num]
+  · rw [edgeMap, h1, edgeMap1D, extendIoo_apply_of_left_lt_of_right_le (by norm_num) le_rfl]
     split_ifs with hi
     exacts [Or.inl (Or.inr ⟨⟨i, hi⟩, rfl⟩), σ.vertexZeroCell_mem_zeroCells hmap hlf (i + 1)]
-  · simp only [edgeMap, edgeMap1D, h1, mem_Ioo, lt_self_iff_false, false_and, ↓reduceIte,
-      show (-1 : ℝ) ≤ 0 by norm_num]
+  · rw [edgeMap, h1, edgeMap1D, extendIoo_apply_of_le_left le_rfl]
     exact σ.vertexZeroCell_mem_zeroCells hmap hlf i
 
 include hdisj in
 private theorem injOn_edgeMap (i : Fin n) : InjOn (σ.edgeMap hmap hlf i) (ball 0 1) := by
   intro x hx y hy h
   rw [σ.edgeMap_of_mem_ball hmap hlf i hx, σ.edgeMap_of_mem_ball hmap hlf i hy] at h
-  have hxu := mem_ball_fin_one_iff.1 hx; have hyu := mem_ball_fin_one_iff.1 hy
-  rcases σ.edgeArc_eq_or_of_mk_eq hmap hdisj hxu hyu (ofQuotient_injective h).symm with
-    ⟨-, heq⟩ | ⟨hi, heq⟩
+  rw [Pi.mem_ball_unique, Fin.default_eq_zero, Pi.zero_apply, Real.ball_eq_Ioo, zero_sub, zero_add]
+    at hx hy
+  rcases σ.edgeArc_eq_or_of_mk_eq hmap hdisj hx hy (ofQuotient_injective h).symm with
+    ⟨-, heq⟩ | ⟨-, heq⟩
   · ext k; rw [Subsingleton.elim k 0, heq]
-  · exact (σ.map_smul_edgeArc_ne_edgeArc_of_pair_eq hi.symm hxu hyu heq.symm).elim
+  · exact (σ.map_smul_edgeArc_ne_edgeArc i hx hy heq.symm).elim
 
 include hdisj in
 private theorem disjoint_image_edgeMap_ball {i j : σ.SideRepresentative} (hij : i ≠ j) :
@@ -271,45 +269,24 @@ private theorem disjoint_image_edgeMap_ball {i j : σ.SideRepresentative} (hij :
   · have hj := j.2; rw [heq, σ.pair_pair] at hj
     exact hij (Subtype.ext (heq.trans (le_antisymm hj i.2)).symm)
 
-private theorem continuousOn_Icc_of_tendsto {α : Type*} [TopologicalSpace α] {f : ℝ → α}
-    (ho : ContinuousOn f (Ioo (-1) 1))
-    (hl : Filter.Tendsto f (𝓝[Ioo (-1) 1] (-1)) (𝓝 (f (-1))))
-    (hr : Filter.Tendsto f (𝓝[Ioo (-1) 1] 1) (𝓝 (f 1))) :
-    ContinuousOn f (Icc (-1) 1) := by
-  intro u hu
-  rcases eq_or_lt_of_le hu.1 with rfl | h1
-  · exact (continuousWithinAt_Icc_iff_Ici (by norm_num)).2 <|
-      continuousWithinAt_Ioi_iff_Ici.1 <| (continuousWithinAt_Ioo_iff_Ioi (by norm_num)).1 hl
-  · rcases eq_or_lt_of_le hu.2 with rfl | h2
-    · exact (continuousWithinAt_Icc_iff_Iic (by norm_num)).2 <|
-        continuousWithinAt_Iio_iff_Iic.1 <| (continuousWithinAt_Ioo_iff_Iio (by norm_num)).1 hr
-    · exact (ho.continuousAt (Ioo_mem_nhds h1 h2)).continuousWithinAt
-
 private theorem continuousOn_edgeMap [DiscreteTopology Γ] (i : Fin n) :
     ContinuousOn (σ.edgeMap hmap hlf i) (closedBall 0 1) := by
+  have hlt : (-1 : ℝ) < 1 := by norm_num
   have hq : Continuous (fun z : ℍ ↦ ofQuotient (π z)) :=
     continuous_ofQuotient.comp continuous_quotient_mk'
-  have heq (c : ℝ) : σ.edgeMap1D hmap hlf i =ᶠ[𝓝[Ioo (-1) 1] c]
-      fun u ↦ ofQuotient (π (σ.edgeArc i u)) :=
-    Filter.mem_of_superset self_mem_nhdsWithin fun _ hu ↦ ite_eq_left hu
-  have ho : ContinuousOn (σ.edgeMap1D hmap hlf i) (Ioo (-1) 1) :=
-    (hq.comp_continuousOn (σ.continuousOn_edgeArc i)).congr fun _ hu ↦ ite_eq_left hu
-  have hl : Filter.Tendsto (σ.edgeMap1D hmap hlf i) (𝓝[Ioo (-1) 1] (-1))
-      (𝓝 (σ.edgeMap1D hmap hlf i (-1))) := by
-    rw [show σ.edgeMap1D hmap hlf i (-1) = σ.vertexZeroCell hmap hlf i by simp [edgeMap1D]]
-    refine Filter.Tendsto.congr' (heq (-1)).symm ?_
+  have hl : Filter.Tendsto (fun u ↦ ofQuotient (π (σ.edgeArc i u))) (𝓝[>] (-1))
+      (𝓝 (σ.vertexZeroCell hmap hlf i)) := by
+    rw [← nhdsWithin_Ioo_eq_nhdsGT hlt]
     rcases hp : P.vertex i with v | ξ
     · rw [σ.vertexZeroCell_of_eq_inl hmap hlf hp]
       exact (hq.tendsto v).comp (σ.tendsto_edgeArc_neg_one_of_eq_inl hp)
     · obtain ⟨D, hcell, hgξ⟩ := σ.exists_cuspDatum_vertexZeroCell hmap hlf hp
       rw [hcell]; exact (tendsto_ofQuotient_quotientMk_nhds_ofCusp D).comp
         (σ.tendsto_edgeArc_neg_one_atImInfty_of_eq_inr hp hgξ)
-  have hr : Filter.Tendsto (σ.edgeMap1D hmap hlf i) (𝓝[Ioo (-1) 1] 1)
-      (𝓝 (σ.edgeMap1D hmap hlf i 1)) := by
-    refine Filter.Tendsto.congr' (heq 1).symm ?_
-    rw [show σ.edgeMap1D hmap hlf i 1 =
-        if hi : σ.pair i = i then ofQuotient (π (σ.selfPairedSideFixedPoint ⟨i, hi⟩))
-        else σ.vertexZeroCell hmap hlf (i + 1) by simp [edgeMap1D]]
+  have hr : Filter.Tendsto (fun u ↦ ofQuotient (π (σ.edgeArc i u))) (𝓝[<] 1)
+      (𝓝 (if hi : σ.pair i = i then ofQuotient (π (σ.selfPairedSideFixedPoint ⟨i, hi⟩))
+        else σ.vertexZeroCell hmap hlf (i + 1))) := by
+    rw [← nhdsWithin_Ioo_eq_nhdsLT hlt]
     split_ifs with hi
     · exact (hq.tendsto _).comp (σ.tendsto_edgeArc_one_of_pair_eq hi)
     · rcases hq' : P.vertex (i + 1) with w | η
@@ -318,10 +295,11 @@ private theorem continuousOn_edgeMap [DiscreteTopology Γ] (i : Fin n) :
       · obtain ⟨D, hcell, hgη⟩ := σ.exists_cuspDatum_vertexZeroCell hmap hlf hq'
         rw [hcell]; exact (tendsto_ofQuotient_quotientMk_nhds_ofCusp D).comp
           (σ.tendsto_edgeArc_one_atImInfty_of_eq_inr hi hq' hgη)
-  exact (continuousOn_Icc_of_tendsto ho hl hr).comp (continuous_apply 0).continuousOn fun _ hx ↦ by
-    rw [Pi.closedBall_unique, mem_preimage, Function.eval, Fin.default_eq_zero,
-      Real.closedBall_eq_Icc] at hx
-    simpa using hx
+  refine (continuousOn_Icc_extendIoo hlt (hq.comp_continuousOn (σ.continuousOn_edgeArc i))
+    hl hr).comp (continuous_apply 0).continuousOn fun _ hx ↦ ?_
+  rw [Pi.mem_closedBall_unique, Fin.default_eq_zero, Pi.zero_apply, Real.closedBall_eq_Icc,
+    zero_sub, zero_add] at hx
+  exact hx
 
 private theorem mem_zeroCells_or_exists_edgeMap_of_mem_side {j : Fin n} {z : ℍ}
     (hz : z ∈ P.side j) :
