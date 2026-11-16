@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Amenable.Quotient
 public import TauCeti.GroupTheory.Amenable.Subgroup
 
 /-!
@@ -34,6 +35,8 @@ the iterated mean is left invariant when `n` and `m` are.
   section of `φ` is left invariant when `φ.ker ≤ ψ.range`.
 * `TauCeti.Amenable.of_ker_le_range`: if `φ.ker ≤ ψ.range` and `K`, `Q` are amenable, then `G` is
   amenable.
+* `TauCeti.amenable_iff_ker_of_surjective`: a discrete group with a surjective homomorphism
+  `φ` onto a discrete group `Q` is amenable exactly when `φ.ker` and `Q` are.
 * `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
   amenable exactly when `N` and `G ⧸ N` are.
 
@@ -171,15 +174,20 @@ theorem Amenable.of_ker_le_range [Amenable K] [Amenable Q] (ψ : K →* G) (φ :
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := φ.range)
   exact ⟨⟨_, hn.extension hm (φ.ker_rangeRestrict ▸ h) (Function.surjInv_eq hφ)⟩⟩
 
+/-- A discrete group `G` with a surjective homomorphism `φ` onto a discrete group `Q` is amenable
+exactly when the kernel of `φ` and `Q` are amenable. -/
+theorem amenable_iff_ker_of_surjective {φ : G →* Q} (hφ : Function.Surjective φ) :
+    Amenable G ↔ Amenable φ.ker ∧ Amenable Q :=
+  ⟨fun _ => ⟨inferInstance, .of_denseRange ⟨φ, continuous_of_discreteTopology⟩ hφ.denseRange⟩,
+    fun ⟨_, _⟩ => .of_ker_le_range φ.ker.subtype φ (by simp)⟩
+
 /-- A discrete group with a normal subgroup `N` is amenable exactly when `N` and `G ⧸ N` are
 amenable. -/
 theorem amenable_iff_subgroup_quotient (N : Subgroup G) [N.Normal] :
     Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) := by
   have := QuotientGroup.discreteTopology (isOpen_discrete (N : Set G))
-  refine ⟨fun _ => ⟨inferInstance, ?_⟩, fun ⟨_, _⟩ =>
+  exact ⟨fun _ => ⟨inferInstance, inferInstance⟩, fun ⟨_, _⟩ =>
     .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
-  exact .of_denseRange ⟨QuotientGroup.mk' N, continuous_of_discreteTopology⟩
-    (QuotientGroup.mk'_surjective N).denseRange
 
 /-- A discrete group is amenable when it has an amenable normal subgroup with amenable
 quotient. -/
