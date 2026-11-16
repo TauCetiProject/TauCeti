@@ -140,15 +140,15 @@ def boostConcordance (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
   SmoothEmbedding.Concordance.ofDiffeotopies le_rfl _ _ K
 
 /-- The boost concordance at `(w, t)`: the boosts of the sphere and of the circle at the time
-`SmoothEmbedding.Concordance.collaredSmoothTransitionUnit t`, applied around `K`. -/
+`collaredSmoothTransitionUnit t`, applied around `K`. -/
 @[simp]
 theorem boostConcordance_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) (p : Circle × ℝ) :
     boostConcordance ι a K p =
       (sphereBoostDiffeotopy (n := n) (m := ∞) ι.norm_map_I a
-        (SmoothEmbedding.Concordance.collaredSmoothTransitionUnit p.2,
+        (collaredSmoothTransitionUnit p.2,
           K (circleBoostDiffeotopy (m := ∞) (-a)
-            (SmoothEmbedding.Concordance.collaredSmoothTransitionUnit p.2, p.1))), p.2) :=
+            (collaredSmoothTransitionUnit p.2, p.1))), p.2) :=
   SmoothEmbedding.Concordance.ofDiffeotopies_apply le_rfl _ _ K p
 
 /-- **A boosted knot is concordant to the knot**, through the boost concordance. -/
