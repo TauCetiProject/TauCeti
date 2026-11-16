@@ -409,9 +409,9 @@ lemma _root_.CuspForm.coe_levelRaise_toModularForm [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     (CuspForm.levelRaise d hle f : ModularForm 𝒢' k) =
       ModularForm.levelRaise d hle (f : ModularForm 𝒢 k) := by
-  refine _root_.ModularForm.ext fun τ ↦ ?_
-  rw [ModularFormClass.coe_modularForm]
-  exact congrFun (by rw [CuspForm.coe_levelRaise, ModularForm.coe_levelRaise]; rfl) τ
+  refine DFunLike.coe_injective ?_
+  rw [ModularFormClass.coe_modularForm, CuspForm.coe_levelRaise, ModularForm.coe_levelRaise,
+    ModularFormClass.coe_modularForm]
 
 /-- The underlying function of the level-raise of a cusp form is that of the level-raise of the
 cusp form read as a modular form. -/
