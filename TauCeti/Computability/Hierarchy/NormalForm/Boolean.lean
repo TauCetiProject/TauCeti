@@ -19,8 +19,10 @@ arithmetical normal forms (`NormalFormCode`):
   quantifier prefix and arity, unpairing all bound variables simultaneously.
 
 Every transformation is proved primitive recursive on `NormalFormCode` without depending on the
-oracle, preserves semantic validity (`NormalFormCode.IsValid Z`), and satisfies its exact semantic
-equation relative to every oracle `Z`.
+oracle. For valid operands — and, in the case of `and` and `or`, when the operands have matching
+quantifier prefixes and arities — each transformation preserves semantic validity
+(`NormalFormCode.IsValid Z`) and satisfies its exact semantic equation relative to every oracle `Z`
+(on tuples of the declared arity and on variable lists of that length).
 
 ## References
 
@@ -253,7 +255,7 @@ private theorem eval_and_or_unpair_aux (p : QuantifierPrefix) (R₁ R₂ : List 
         R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
       p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂) := by
   classical
-  induction p using QuantifierPrefix.evalRec generalizing xs₁ xs₂ xs with
+  induction p using QuantifierPrefix.eval_induction generalizing xs₁ xs₂ xs with
   | zero => simp
   | sigma_zero =>
     simp only [QuantifierPrefix.eval_sigma_zero, QuantifierPrefix.depth_sigma, Nat.zero_add,

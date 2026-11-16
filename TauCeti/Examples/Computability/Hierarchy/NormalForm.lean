@@ -29,6 +29,15 @@ example : (QuantifierPrefix.sigma 1).addExists = .sigma 1 ∧
     (QuantifierPrefix.pi 0).dual = .sigma 0 := by
   simp
 
+-- Semantic characterization of quantifier addition (including same-polarity contraction).
+example (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List ℕ)
+    (Z : Set ℕ) (S : ℕ × ℕ → Prop) (hS : p.IsClass Z S) :
+    (p.addExists.Eval (fun l => R (p.expandExists l)) xs ↔ ∃ y, p.Eval R (y :: xs)) ∧
+    (p.addForall.Eval (fun l => R (p.expandForall l)) xs ↔ ∀ y, p.Eval R (y :: xs)) ∧
+    p.addExists.IsClass Z (fun x => ∃ y, S (x, y)) ∧
+    p.addForall.IsClass Z (fun x => ∀ y, S (x, y)) :=
+  ⟨by simp, by simp, hS.exists_nat, hS.forall_nat⟩
+
 -- A concrete valid oracle-dependent Δ⁰₀ code querying whether `encode [x] ∈ Z`.
 example (Z : Set ℕ) :
     let nf : NormalFormCode := ⟨.zero, 1, Code.oracle⟩

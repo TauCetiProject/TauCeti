@@ -17,12 +17,14 @@ depth zero.
 
 This module provides:
 * the hierarchy partial order `p ≤ q ↔ p = q ∨ p.depth < q.depth` with least element `zero`;
-* prefix operations (`depth`, `dual`, `ofSigma`, `ofPi`, `addExists`, `addForall`) together with
-  a `Primcodable` instance and primitive-recursiveness certificates;
+* prefix operations (`depth`, `dual`, `ofSigma`, `ofPi`, `addExists`, `addForall`,
+  `expandExists`, `expandForall`) together with a `Primcodable` instance and
+  primitive-recursiveness certificates;
 * `QuantifierPrefix.Eval`, evaluating a prefix on a matrix predicate of variable lists, along with
-  duality, pulling out bound-variable-independent connectives, and dropping dummy variables;
+  duality, quantifier addition with same-polarity contraction (`eval_addExists`, `eval_addForall`),
+  pulling out bound-variable-independent connectives, and dropping dummy variables;
 * `QuantifierPrefix.IsClass`, matching each prefix to the corresponding arithmetical pointclass
-  `IsSigma` or `IsPi`.
+  `IsSigma` or `IsPi`, together with closure under `addExists` and `addForall`.
 
 ## References
 
@@ -197,6 +199,98 @@ theorem dual_addExists (p : QuantifierPrefix) : p.addExists.dual = p.dual.addFor
 @[simp]
 theorem dual_addForall (p : QuantifierPrefix) : p.addForall.dual = p.dual.addExists := by
   cases p <;> rfl
+
+/-- Adapt a variable list from `p.addExists` to `p` with one extra free variable: when
+`p = .sigma n`, the outermost bound variable (at index `n`) is unpaired into two variables to
+undo same-polarity contraction; otherwise the list is unchanged. -/
+def expandExists : QuantifierPrefix → List ℕ → List ℕ
+  | .zero, l => l
+  | .sigma n, l =>
+    match l.drop n with
+    | [] => l
+    | w :: rest => l.take n ++ w.unpair.1 :: w.unpair.2 :: rest
+  | .pi _, l => l
+
+/-- Adapt a variable list from `p.addForall` to `p` with one extra free variable: when
+`p = .pi n`, the outermost bound variable (at index `n`) is unpaired into two variables to undo
+same-polarity contraction; otherwise the list is unchanged. -/
+def expandForall (p : QuantifierPrefix) (l : List ℕ) : List ℕ :=
+  p.dual.expandExists l
+
+/-- `expandExists` leaves variable lists unchanged at depth zero. -/
+@[simp]
+theorem expandExists_zero (l : List ℕ) : expandExists .zero l = l := (rfl)
+
+/-- `expandExists` leaves variable lists unchanged for universal prefixes. -/
+@[simp]
+theorem expandExists_pi (n : ℕ) (l : List ℕ) : expandExists (.pi n) l = l := (rfl)
+
+/-- On an existential prefix `sigma n`, `expandExists` unpairs the element at index `n`. -/
+theorem expandExists_sigma_append {n : ℕ} {bs xs : List ℕ} {w : ℕ} (hbs : bs.length = n) :
+    expandExists (.sigma n) (bs ++ w :: xs) = bs ++ w.unpair.1 :: w.unpair.2 :: xs := by
+  simp [expandExists, hbs]
+
+/-- On an existential prefix `sigma n`, `expandExists` leaves lists of length at most `n`
+unchanged. -/
+theorem expandExists_sigma_of_length_le {n : ℕ} {l : List ℕ} (hl : l.length ≤ n) :
+    expandExists (.sigma n) l = l := by
+  simp [expandExists, List.drop_eq_nil_of_le hl]
+
+/-- `expandForall` leaves variable lists unchanged at depth zero. -/
+@[simp]
+theorem expandForall_zero (l : List ℕ) : expandForall .zero l = l := (rfl)
+
+/-- `expandForall` leaves variable lists unchanged for existential prefixes. -/
+@[simp]
+theorem expandForall_sigma (n : ℕ) (l : List ℕ) : expandForall (.sigma n) l = l := (rfl)
+
+/-- On a universal prefix `pi n`, `expandForall` unpairs the element at index `n`. -/
+theorem expandForall_pi_append {n : ℕ} {bs xs : List ℕ} {w : ℕ} (hbs : bs.length = n) :
+    expandForall (.pi n) (bs ++ w :: xs) = bs ++ w.unpair.1 :: w.unpair.2 :: xs :=
+  expandExists_sigma_append hbs
+
+/-- On a universal prefix `pi n`, `expandForall` leaves lists of length at most `n` unchanged. -/
+theorem expandForall_pi_of_length_le {n : ℕ} {l : List ℕ} (hl : l.length ≤ n) :
+    expandForall (.pi n) l = l :=
+  expandExists_sigma_of_length_le hl
+
+/-- Dualizing the prefix exchanges `expandExists` with `expandForall`. -/
+@[simp]
+theorem expandExists_dual (p : QuantifierPrefix) (l : List ℕ) :
+    p.dual.expandExists l = p.expandForall l := (rfl)
+
+/-- Dualizing the prefix exchanges `expandForall` with `expandExists`. -/
+@[simp]
+theorem expandForall_dual (p : QuantifierPrefix) (l : List ℕ) :
+    p.dual.expandForall l = p.expandExists l := by
+  cases p <;> rfl
+
+/-- Length relation for `expandExists` on lists containing at least `p.addExists.depth`
+variables. -/
+theorem length_expandExists {p : QuantifierPrefix} {l : List ℕ}
+    (hl : p.addExists.depth ≤ l.length) :
+    (p.expandExists l).length + p.addExists.depth = l.length + p.depth + 1 := by
+  cases p with
+  | zero => simp
+  | pi n => simp [Nat.add_assoc]
+  | sigma n =>
+    simp only [addExists_sigma, depth_sigma] at hl ⊢
+    have hlt : n < l.length := Nat.lt_of_succ_le hl
+    have hdrop : l.drop n = l[n] :: l.drop (n + 1) := List.drop_eq_getElem_cons hlt
+    have hlen : (expandExists (.sigma n) l).length = l.length + 1 := by
+      simp only [expandExists, hdrop, List.length_append, List.length_take, List.length_cons,
+        List.length_drop]
+      omega
+    omega
+
+/-- Length relation for `expandForall` on lists containing at least `p.addForall.depth`
+variables. -/
+theorem length_expandForall {p : QuantifierPrefix} {l : List ℕ}
+    (hl : p.addForall.depth ≤ l.length) :
+    (p.expandForall l).length + p.addForall.depth = l.length + p.depth + 1 := by
+  have hl' : p.dual.addExists.depth ≤ l.length := by
+    simpa [← dual_addForall] using hl
+  simpa [← dual_addForall] using length_expandExists hl'
 
 /-- Hierarchy inclusion order on quantifier prefixes: `p ≤ q` holds when `p = q` or
 `p.depth < q.depth`. At each positive depth `n + 1`, `sigma n` and `pi n` are incomparable. -/
@@ -377,6 +471,33 @@ theorem primrec_addForall : Primrec addForall :=
     (primrec_pi.comp Primrec.snd).to₂).of_eq fun p => by
       cases p <;> rfl
 
+/-- `expandExists` is primitive recursive. -/
+theorem primrec₂_expandExists : Primrec₂ expandExists := by
+  have hsigma :
+      Primrec₂ fun (a : QuantifierPrefix × List ℕ) (n : ℕ) =>
+        match a.2.drop n with
+        | [] => a.2
+        | w :: rest => a.2.take n ++ w.unpair.1 :: w.unpair.2 :: rest := by
+    refine (Primrec.list_casesOn
+      (Primrec.list_drop.comp Primrec.snd (Primrec.snd.comp Primrec.fst))
+      (Primrec.snd.comp Primrec.fst)
+      (Primrec.list_append.comp
+        (Primrec.list_take.comp (Primrec.snd.comp Primrec.fst)
+          (Primrec.snd.comp (Primrec.fst.comp Primrec.fst)))
+        (Primrec.list_cons.comp
+          (Primrec.fst.comp (Primrec.unpair.comp (Primrec.fst.comp Primrec.snd)))
+          (Primrec.list_cons.comp
+            (Primrec.snd.comp (Primrec.unpair.comp (Primrec.fst.comp Primrec.snd)))
+            (Primrec.snd.comp Primrec.snd)))).to₂).to₂.of_eq fun a n => ?_
+    cases a.2.drop n <;> rfl
+  exact (primrec_casesOn Primrec.fst Primrec.snd hsigma
+    (Primrec.snd.comp Primrec.fst).to₂).to₂.of_eq fun p l => by
+      cases p <;> rfl
+
+/-- `expandForall` is primitive recursive. -/
+theorem primrec₂_expandForall : Primrec₂ expandForall :=
+  (primrec₂_expandExists.comp (primrec_dual.comp Primrec.fst) Primrec.snd).to₂
+
 /-! ### Quantifier evaluation on variable lists -/
 
 /-- Evaluate an alternating quantifier prefix on a matrix predicate `R : List ℕ → Prop` and free
@@ -421,33 +542,33 @@ theorem eval_pi_succ (n : ℕ) (R : List ℕ → Prop) (xs : List ℕ) :
   rw [Eval]
 
 -- Simultaneous depth induction for `sigma n` and `pi n`, avoiding repeated mutual inductions.
-private theorem eval_sigma_pi_rec (P : QuantifierPrefix → Prop)
+private theorem eval_sigma_pi_induction (P : QuantifierPrefix → Prop)
     (hs0 : P (.sigma 0)) (hp0 : P (.pi 0))
     (hss : ∀ n, P (.pi n) → P (.sigma (n + 1)))
     (hps : ∀ n, P (.sigma n) → P (.pi (n + 1))) :
     ∀ n, P (.sigma n) ∧ P (.pi n)
   | 0 => ⟨hs0, hp0⟩
   | n + 1 =>
-    let ⟨hs, hp⟩ := eval_sigma_pi_rec P hs0 hp0 hss hps n
+    let ⟨hs, hp⟩ := eval_sigma_pi_induction P hs0 hp0 hss hps n
     ⟨hss n hp, hps n hs⟩
 
 /-- Induction principle following the recursive structure of `Eval`. -/
-theorem evalRec {motive : QuantifierPrefix → Prop}
+theorem eval_induction {motive : QuantifierPrefix → Prop}
     (zero : motive .zero) (sigma_zero : motive (.sigma 0)) (pi_zero : motive (.pi 0))
     (sigma_succ : ∀ n, motive (.pi n) → motive (.sigma (n + 1)))
     (pi_succ : ∀ n, motive (.sigma n) → motive (.pi (n + 1)))
     (p : QuantifierPrefix) : motive p := by
   cases p with
   | zero => exact zero
-  | sigma n => exact (eval_sigma_pi_rec motive sigma_zero pi_zero sigma_succ pi_succ n).1
-  | pi n => exact (eval_sigma_pi_rec motive sigma_zero pi_zero sigma_succ pi_succ n).2
+  | sigma n => exact (eval_sigma_pi_induction motive sigma_zero pi_zero sigma_succ pi_succ n).1
+  | pi n => exact (eval_sigma_pi_induction motive sigma_zero pi_zero sigma_succ pi_succ n).2
 
 /-- `Eval p R xs` depends only on the values of `R` on lists `bs ++ xs` with
 `bs.length = p.depth`, even across distinct free-variable tails. -/
 theorem eval_congr_append {p : QuantifierPrefix} {R₁ R₂ : List ℕ → Prop} {xs₁ xs₂ : List ℕ}
     (h : ∀ bs : List ℕ, bs.length = p.depth → (R₁ (bs ++ xs₁) ↔ R₂ (bs ++ xs₂))) :
     p.Eval R₁ xs₁ ↔ p.Eval R₂ xs₂ := by
-  induction p using evalRec generalizing xs₁ xs₂ with
+  induction p using eval_induction generalizing xs₁ xs₂ with
   | zero => simpa using h [] rfl
   | sigma_zero =>
     simp only [eval_sigma_zero]
@@ -474,7 +595,7 @@ nonempty. -/
 @[simp]
 theorem eval_const_iff (p : QuantifierPrefix) (P : Prop) (xs : List ℕ) :
     p.Eval (fun _ => P) xs ↔ P := by
-  induction p using evalRec generalizing xs with
+  induction p using eval_induction generalizing xs with
   | zero => simp
   | sigma_zero => simp
   | pi_zero => simp
@@ -484,7 +605,7 @@ theorem eval_const_iff (p : QuantifierPrefix) (P : Prop) (xs : List ℕ) :
 /-- Negating an evaluated prefix dualizes the prefix and negates the matrix. -/
 theorem not_eval_iff (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List ℕ) :
     ¬p.Eval R xs ↔ p.dual.Eval (fun l => ¬R l) xs := by
-  induction p using evalRec generalizing xs with
+  induction p using eval_induction generalizing xs with
   | zero => simp
   | sigma_zero => simp
   | pi_zero => simp
@@ -495,7 +616,7 @@ theorem not_eval_iff (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List �
 conjunction, since `ℕ` is nonempty. -/
 theorem eval_and_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => P ∧ R l) xs ↔ P ∧ p.Eval R xs := by
-  induction p using evalRec generalizing xs with
+  induction p using eval_induction generalizing xs with
   | zero => simp
   | sigma_zero => simp [exists_and_left]
   | pi_zero =>
@@ -512,7 +633,7 @@ disjunction. -/
 theorem eval_or_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => P ∨ R l) xs ↔ P ∨ p.Eval R xs := by
   classical
-  induction p using evalRec generalizing xs with
+  induction p using eval_induction generalizing xs with
   | zero => simp
   | sigma_zero =>
     simp only [eval_sigma_zero]
@@ -543,6 +664,46 @@ underlying predicate on `xs`. -/
 theorem eval_drop_iff (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => R (l.drop p.depth)) xs ↔ R xs :=
   (eval_congr_append fun bs hbs => by simp [hbs]).trans (eval_const_iff p (R xs) xs)
+
+/-- Semantic characterization of `addExists`: evaluating `p.addExists` on a matrix adapted by
+`p.expandExists` prepends an existential quantifier to `p.Eval`, contracting with a leading
+existential block when `p = .sigma n`. -/
+@[simp]
+theorem eval_addExists (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List ℕ) :
+    p.addExists.Eval (fun l => R (p.expandExists l)) xs ↔ ∃ y, p.Eval R (y :: xs) := by
+  cases p with
+  | zero => simp
+  | pi n => simp
+  | sigma n =>
+    cases n with
+    | zero =>
+      simp only [addExists_sigma, eval_sigma_zero]
+      have h : ∀ w : ℕ, expandExists (.sigma 0) (w :: xs) = w.unpair.1 :: w.unpair.2 :: xs :=
+        fun w => expandExists_sigma_append (bs := []) rfl
+      simp only [h]
+      rw [Nat.pairEquiv.symm.exists_congr_left]
+      simpa using (exists_comm (p := fun y₀ y => R (y₀ :: y :: xs)))
+    | succ n =>
+      simp only [addExists_sigma, eval_sigma_succ]
+      have h (w : ℕ) :
+          Eval (.pi n) (fun l => R (expandExists (.sigma (n + 1)) l)) (w :: xs) ↔
+            Eval (.pi n) R (w.unpair.1 :: w.unpair.2 :: xs) :=
+        eval_congr_append fun bs hbs => by
+          rw [expandExists_sigma_append (by simpa using hbs)]
+      refine (exists_congr h).trans ?_
+      rw [Nat.pairEquiv.symm.exists_congr_left]
+      simpa using (exists_comm (p := fun y₀ y => Eval (.pi n) R (y₀ :: y :: xs)))
+
+/-- Semantic characterization of `addForall`: evaluating `p.addForall` on a matrix adapted by
+`p.expandForall` prepends a universal quantifier to `p.Eval`, contracting with a leading universal
+block when `p = .pi n`. -/
+@[simp]
+theorem eval_addForall (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List ℕ) :
+    p.addForall.Eval (fun l => R (p.expandForall l)) xs ↔ ∀ y, p.Eval R (y :: xs) := by
+  classical
+  have h := eval_addExists p.dual (fun l => ¬R l) xs
+  rw [← dual_addForall, ← not_eval_iff] at h
+  simpa [← not_eval_iff] using h.not
 
 /-! ### Associated arithmetical pointclasses -/
 
@@ -633,6 +794,26 @@ theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primco
         have hnm : n + 2 ≤ m + 1 := hlt
         exact h.sigma_succ.of_le hnm
       | pi m => exact h.of_le hlt.le
+
+/-- Adding an existential number quantifier lands in `p.addExists.IsClass Z`, contracting with a
+leading existential block when `p` is already existential. -/
+theorem IsClass.exists_nat {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
+    {R : α × ℕ → Prop} (h : p.IsClass Z R) :
+    p.addExists.IsClass Z (fun x => ∃ y, R (x, y)) := by
+  cases p with
+  | zero => exact isSigma_succ_iff.2 ⟨R, isPi_zero_iff.2 h, fun _ => Iff.rfl⟩
+  | sigma _ => exact IsSigma.exists_nat h
+  | pi _ => exact isSigma_succ_iff.2 ⟨R, h, fun _ => Iff.rfl⟩
+
+/-- Adding a universal number quantifier lands in `p.addForall.IsClass Z`, contracting with a
+leading universal block when `p` is already universal. -/
+theorem IsClass.forall_nat {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
+    {R : α × ℕ → Prop} (h : p.IsClass Z R) :
+    p.addForall.IsClass Z (fun x => ∀ y, R (x, y)) := by
+  cases p with
+  | zero => exact isPi_succ_iff.2 ⟨R, h, fun _ => Iff.rfl⟩
+  | sigma _ => exact isPi_succ_iff.2 ⟨R, h, fun _ => Iff.rfl⟩
+  | pi _ => exact IsPi.forall_nat h
 
 end QuantifierPrefix
 

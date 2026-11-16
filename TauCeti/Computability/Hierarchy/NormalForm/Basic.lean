@@ -248,7 +248,7 @@ private theorem isClass_eval_of_valid {Z : Set ℕ} {p : QuantifierPrefix} {k : 
     (Primrec.vector_get'.comp
       (Primrec.vector_cons.comp Primrec.snd (Primrec.vector_ofFn'.comp Primrec.fst))).of_eq
       fun a => funext fun i => Fin.cases (by simp) (by simp) i
-  induction p using QuantifierPrefix.evalRec generalizing k with
+  induction p using QuantifierPrefix.eval_induction generalizing k with
   | zero =>
     rw [QuantifierPrefix.isClass_zero]
     have h0 := isSigma_zero_matrix (Z := Z) (k := k) (c := c) (fun l hl => hc l (by simp [hl]))
@@ -337,7 +337,7 @@ private theorem exists_code_of_isClass {Z : Set ℕ} {p : QuantifierPrefix} {k :
     (((Primrec.vector_get'.comp (Primrec.vector_tail.comp Primrec.vector_ofFn')).of_eq fun v =>
       funext fun i => by simp [Fin.tail]).pair
       (Primrec.fin_app.comp Primrec.id (Primrec.const 0))).computableIn
-  induction p using QuantifierPrefix.evalRec generalizing k with
+  induction p using QuantifierPrefix.eval_induction generalizing k with
   | zero =>
     obtain ⟨c, hval, hsem⟩ := exists_code_of_isSigma_zero (QuantifierPrefix.isClass_zero.1 hP)
     exact ⟨c, fun l hl => hval l (by simpa using hl), fun x => by simpa using hsem x⟩
