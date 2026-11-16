@@ -54,6 +54,9 @@ identities of weak derivatives. For a general measure these are adjoint identiti
 * `TauCeti.dist_integral_trace_fderiv_mul_le`: the pairing `∫ div φ * u` of `C¹` vector fields
   supported in a fixed set `K` with a function integrable on `K` depends continuously on
   `Dφ` in the uniform norm.
+* `TauCeti.continuousOn_trace_fderiv`, `TauCeti.integrable_mul_trace_fderiv`: the divergence
+  `tr (DV)` of a `C¹` vector field is continuous, and integrable against a compactly supported
+  continuous weight.
 
 ## References
 
@@ -158,6 +161,23 @@ theorem _root_.TestFunction.integral_divergenceCLM_eq_zero [BorelSpace E] [μ.Is
     simpa using hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := v) (1 : ℝ)
   simpa using h.integral_divergenceCLM_smul_eq_neg_integral φ
 
+omit [MeasurableSpace E] in
+/-- The trace of the derivative of a vector field `V` is continuous on a set where `V` is `C¹`. -/
+theorem continuousOn_trace_fderiv {V : E → E} {s : Set E} (hV : ∀ x ∈ s, ContDiffAt ℝ 1 V x) :
+    ContinuousOn (fun x => LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) s := fun x hx => by
+  simpa only [Function.comp_def, traceCLM_apply] using ((traceCLM ℝ E).continuous.continuousAt.comp
+    ((hV x hx).fderiv_right (m := 0) le_rfl).continuousAt).continuousWithinAt
+
+/-- If `χ` is continuous with compact support inside an open set `U` on which the vector field `V`
+is `C¹`, then `χ tr (DV)` is integrable. This is the integrability of the right-hand side of the
+weak divergence identity for a classical derivative. -/
+theorem integrable_mul_trace_fderiv [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
+    {U : Set E} (hU : IsOpen U) {χ : E → ℝ} {V : E → E} (hχ : Continuous χ)
+    (hχc : HasCompactSupport χ) (hχU : tsupport χ ⊆ U) (hV : ∀ x ∈ U, ContDiffAt ℝ 1 V x) :
+    Integrable (fun x => χ x * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) μ :=
+  ((hχ.continuousOn.mul (continuousOn_trace_fderiv hV)).continuous_of_tsupport_subset hU
+    (tsupport_mul_subset_left.trans hχU)).integrable_of_hasCompactSupport hχc.mul_right
+
 /-- Vector fields supported in a fixed set `K` whose derivatives are uniformly close have
 close divergence pairings `∫ div φ * u dμ` with a function `u` integrable on `K`. The constant is
 the norm of the trace times `∫_K |u| dμ`. (If the two pairings are not integrable, both are `0`.) -/
@@ -169,9 +189,8 @@ theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → �
       (∫ x, LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) * u x ∂μ) ≤
       ‖traceCLM ℝ E‖ * ε * ∫ x in K, ‖u x‖ ∂μ := by
   have hdiv {h : E → E} (hh : ContDiff ℝ 1 h) :
-      Continuous fun x => LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) := by
-    simpa [Function.comp_def] using
-      (traceCLM ℝ E).continuous.comp (hh.continuous_fderiv one_ne_zero)
+      Continuous fun x => LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) :=
+    continuousOn_univ.mp (continuousOn_trace_fderiv fun x _ => hh.contDiffAt)
   -- Both integrands vanish off `K`, where `u` is integrable.
   have hvan {h : E → E} (hhK : tsupport h ⊆ K) (x : E) (hx : x ∉ K) :
       LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) * u x = 0 := by

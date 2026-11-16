@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
-# The fundamental theorem of calculus for nonnegative derivatives
+# Supplements to the fundamental theorem of calculus
 
 Mathlib's `intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le` evaluates `∫ x in a..b, f x` as
 `F b - F a` for an antiderivative `F` that is continuous on `[a, b]`, provided `f` is interval
@@ -24,9 +24,13 @@ integral equation `x(t) - x(0) = ∫₀ᵗ Y` over a single period `[0, T]`, whe
 It also records that along a loop `f` (with `f a = f b`) the integral of `B (f x) (f' x)` for a
 continuous bilinear map `B` is unchanged by subtracting a constant from `f`, because `∫ f' = 0`.
 
+Finally, the primitive `u ↦ ∫ t in a..u, f t` of a function continuous on `[a, b]` has derivative
+`f x` at every point `x` of the open interval `(a, b)`.
+
 ## Main declarations
 
 * `TauCeti.intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg`
+* `ContinuousOn.integral_hasDerivAt_of_mem_Ioo`
 * `TauCeti.hasDerivAt_of_periodic_of_sub_eq_integral`
 * `ContinuousLinearMap.intervalIntegral_apply_apply_eq_sub_const`
 -/
@@ -51,6 +55,17 @@ theorem integral_eq_sub_of_hasDerivAt_of_le_of_nonneg {F f : ℝ → ℝ} {a b :
       (_root_.intervalIntegral.integrableOn_deriv_of_nonneg hF hd hf))
 
 end intervalIntegral
+
+/-- **FTC-1 on an open interval.** If `f` is continuous on `[a, b]`, then its primitive
+`u ↦ ∫ t in a..u, f t` has derivative `f x` at every interior point `x ∈ (a, b)`. -/
+theorem _root_.ContinuousOn.integral_hasDerivAt_of_mem_Ioo {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} {a b x : ℝ} (hf : ContinuousOn f (Icc a b))
+    (hx : x ∈ Ioo a b) : HasDerivAt (fun u ↦ ∫ t in a..u, f t) (f x) x :=
+  _root_.intervalIntegral.integral_hasDerivAt_right
+    ((hf.mono (by simpa [uIcc_of_le hx.1.le] using Icc_subset_Icc_right hx.2.le)
+      ).intervalIntegrable)
+    ((hf.mono Ioo_subset_Icc_self).stronglyMeasurableAtFilter isOpen_Ioo x hx)
+    ((hf.mono Ioo_subset_Icc_self).continuousAt (isOpen_Ioo.mem_nhds hx))
 
 /-- **Periodic solutions of an integral equation.** Let `x` and a continuous `Y` be `T`-periodic,
 with `T > 0`. If `x t - x 0 = ∫₀ᵗ Y` for every `t ∈ [0, T]`, then `x` has derivative `Y t` at every

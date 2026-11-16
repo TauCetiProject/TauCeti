@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Topology.FiberBundle.Separation
 
@@ -275,7 +276,7 @@ theorem eval₂_self (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I
 theorem eval₂_swap (φ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     φ.eval₂ x v w = -φ.eval₂ x w v := by
-  simpa [eval₂] using (φ.1 x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
+  simpa [eval₂] using (φ.1 x).apply_vecCons_swap w v
 
 @[simp]
 theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
