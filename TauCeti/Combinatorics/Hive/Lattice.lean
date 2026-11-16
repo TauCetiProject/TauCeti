@@ -600,16 +600,8 @@ theorem isRhombus_chart_left {n i j : ℕ} (hij : i < j) (hj : j < n) :
       (Vertex.chart n (i + 1) j (by omega) (by omega))
       (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))
       (Vertex.chart n i (j + 1) (by omega) (by omega)) := by
-  let v : Fin 3 → ℤ := ![0, 1, -1]
-  let w : Fin 3 → ℤ := ![-1, 1, 0]
-  have hv : IsUnitStep v := by norm_num [isUnitStep_iff, v, Fin.sum_univ_three]
-  have hw : IsUnitStep w := by norm_num [isUnitStep_iff, w, Fin.sum_univ_three]
-  apply (isRhombus_of_hasStep_iff hv hw ?_ ?_ ?_).mpr
-    (by norm_num [v, w, Fin.sum_univ_three])
-  all_goals
-    rw [hasStep_iff]
-    intro k
-    fin_cases k <;> simp [Vertex.chart, v, w] <;> omega
+  convert (isRhombus_ofYZ_step (n := n) (y := i) (z := n - j - 1)
+    (by omega)).rotate.swap_opposite using 1 <;> ext <;> simp <;> omega
 
 /-- The triangular-chart rhombus with obtuse corners `(i + 1, j)` and `(i + 1, j + 1)`. -/
 theorem isRhombus_chart_right {n i j : ℕ} (hij : i < j) (hj : j < n) :
@@ -617,16 +609,8 @@ theorem isRhombus_chart_right {n i j : ℕ} (hij : i < j) (hj : j < n) :
       (Vertex.chart n i j (by omega) (by omega))
       (Vertex.chart n (i + 1) (j + 1) (by omega) (by omega))
       (Vertex.chart n (i + 2) (j + 1) (by omega) (by omega)) := by
-  let v : Fin 3 → ℤ := ![0, -1, 1]
-  let w : Fin 3 → ℤ := ![-1, 0, 1]
-  have hv : IsUnitStep v := by norm_num [isUnitStep_iff, v, Fin.sum_univ_three]
-  have hw : IsUnitStep w := by norm_num [isUnitStep_iff, w, Fin.sum_univ_three]
-  apply (isRhombus_of_hasStep_iff hv hw ?_ ?_ ?_).mpr
-    (by norm_num [v, w, Fin.sum_univ_three])
-  all_goals
-    rw [hasStep_iff]
-    intro k
-    fin_cases k <;> simp [Vertex.chart, v, w] <;> omega
+  convert (isRhombus_chart_left (n := n) (i := j - i - 1) (j := j)
+    (by omega) hj).reflect using 1 <;> ext <;> simp <;> omega
 
 /-- The third triangular-chart orientation, with obtuse corners `(i, j + 1)` and
 `(i + 1, j + 1)`. -/
