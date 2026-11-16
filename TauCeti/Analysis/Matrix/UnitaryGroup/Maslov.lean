@@ -10,6 +10,7 @@ public import Mathlib.Basic.Real.Sign
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.Basic.Real.Sign
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.Topology.Circle.Degree
 
@@ -61,8 +62,6 @@ It also gives the localization axiom of Robbin and Salamon for diagonal symmetri
 `A t = diag (a_j t)` (`Matrix.UnitaryGroup.maslovIndex_eq_sum_sign_of_diagonal_arctan`): the
 graph `{x + i A x}` of `A t` has the frame `diag (e^{i arctan (a_j t)})`, and the index of the path
 of graphs is `∑ j, (sign (a_j 1) - sign (a_j 0)) / 2`, half the change of the signature of `A`.
-This uses that `⌊x / c⌋ + ⌈x / c⌉ = sign x` for `|x| < c`
-(`TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt`).
 
 The index is natural under the real orthogonal group, which preserves `ℝⁿ`: moving a path of
 frames by a fixed real orthogonal matrix does not change it
@@ -95,28 +94,6 @@ public section
 
 open Complex Polynomial
 open scoped unitInterval
-
-namespace TauCeti
-
-/-- For `|x| < c`, the count `⌊x / c⌋ + ⌈x / c⌉` is the sign of `x`. -/
-theorem floor_add_ceil_div_eq_sign_of_abs_lt {x c : ℝ} (hc : 0 < c) (h : |x| < c) :
-    ((⌊x / c⌋ + ⌈x / c⌉ : ℤ) : ℝ) = Real.sign x := by
-  have hlo : -1 < x / c := by rw [lt_div_iff₀ hc]; linarith [neg_abs_le x]
-  have hhi : x / c < 1 := by rw [div_lt_iff₀ hc]; linarith [le_abs_self x]
-  rcases lt_trichotomy x 0 with hneg | rfl | hpos
-  · have hneg' : x / c < 0 := div_neg_of_neg_of_pos hneg hc
-    rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_neg hneg]
-    norm_num
-  · simp
-  · have hpos' : 0 < x / c := div_pos hpos hc
-    rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_pos hpos]
-    norm_num
-
-end TauCeti
 
 namespace Matrix
 
@@ -457,7 +434,7 @@ theorem maslovIndex_eq_sum_sign_of_diagonal_arctan {U V : unitaryGroup n ℂ} (�
   -- Since `|arctan a| < π / 2`, the half-integer count of `arctan a` is `sign a / 2`.
   have key (b : ℝ) : ((⌊Real.arctan b / Real.pi⌋ + ⌈Real.arctan b / Real.pi⌉ : ℤ) : ℝ) / 2 =
       Real.sign b / 2 := by
-    rw [TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt Real.pi_pos (abs_lt.2
+    rw [TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt (abs_lt.2
       ⟨by linarith [Real.neg_pi_div_two_lt_arctan b, Real.pi_pos],
         by linarith [Real.arctan_lt_pi_div_two b, Real.pi_pos]⟩)]
     rcases lt_trichotomy b 0 with hb | rfl | hb

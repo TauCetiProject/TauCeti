@@ -419,7 +419,7 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
   -- Since `|α_j / 2π| < 1`, the count `⌊α_j / 2π⌋ + ⌈α_j / 2π⌉` is `sign α_j`.
   simp only [Set.Icc.coe_one, mul_one, Set.Icc.coe_zero, mul_zero, zero_div, Int.floor_zero,
     Int.ceil_zero, add_zero, Int.cast_zero, sub_zero]
-  exact floor_add_ceil_div_eq_sign_of_abs_lt (by positivity) (hα j)
+  exact floor_add_ceil_div_eq_sign_of_abs_lt (hα j)
 
 end GLSymplectic
 
