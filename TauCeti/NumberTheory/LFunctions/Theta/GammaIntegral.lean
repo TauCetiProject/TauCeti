@@ -35,7 +35,10 @@ This is the gamma integral contributed by one unit orbit of lattice points when 
 of an ideal lattice is integrated over the cone above a fundamental domain for the units (Hecke's
 integral representation of a partial zeta function). The integrand is integrable
 (`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), as the interchange of the
-lattice sum with the integral requires.
+lattice sum with the integral requires. At positive parameters its norm is its value at `Re s`
+(`TauCeti.LFunctions.ofReal_norm_archGaussian_mul_archNorm_cpow`), so its integral over any set
+of parameters is the real part of the integral at `Re s`
+(`TauCeti.LFunctions.setIntegral_norm_archGaussian_mul_archNorm_cpow`).
 
 ## References
 
@@ -167,5 +170,28 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
     _ = _ := by
         rw [Finset.prod_mul_distrib, prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
           ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
+
+/-- At a positive parameter `y`, the norm of the Gaussian against `N(y)^(s/2)` is its value at
+`Re s`; this dominates the integrand at `s` by the one at `Re s`. -/
+theorem ofReal_norm_archGaussian_mul_archNorm_cpow {y : realSpace K} (hy : ∀ w, 0 < y w) :
+    (‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ : ℂ) =
+      archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2) := by
+  have hN := archNorm_pos hy
+  have hσ : (s.re : ℂ) / 2 = ((s.re / 2 : ℝ) : ℂ) := by push_cast; ring
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hN, hσ, ← ofReal_cpow hN.le, archGaussian_apply,
+    ← ofReal_mul, norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, div_ofNat_re]
+
+/-- The integral of the norm of the Gaussian against `N(y)^(s/2)` over a set `S` of parameters is
+the real part of the integral over `S` at `Re s`, since `dy / y` is concentrated on the positive
+orthant. -/
+theorem setIntegral_norm_archGaussian_mul_archNorm_cpow (S : Set (realSpace K)) :
+    ∫ y in S, ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ ∂archHaar K =
+      (∫ y in S, archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2) ∂archHaar K).re := by
+  have h : ∫ y in S, archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2) ∂archHaar K =
+      ∫ y in S, (‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ : ℂ) ∂archHaar K := by
+    refine integral_congr_ae ?_
+    filter_upwards [ae_restrict_of_ae ae_archHaar_pos] with y hy
+    exact (ofReal_norm_archGaussian_mul_archNorm_cpow hy).symm
+  rw [h, integral_complex_ofReal, ofReal_re]
 
 end TauCeti.LFunctions
