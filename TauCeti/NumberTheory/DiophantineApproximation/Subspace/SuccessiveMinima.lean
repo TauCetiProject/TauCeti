@@ -61,7 +61,8 @@ bound. The uniformity in `c` is what lets exponent families that move with `Q` b
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press (2006),
   Theorem C.2.11, Corollary 7.5.8 and §7.5.
 * A version of these bounds is formalized in Ralf Stephan's `rwst/Subspace-Theorems`
-  (Apache 2.0), file `DiophantineApproximation/FieldMinkowski.lean`.
+  (Apache 2.0): the product bounds in `DiophantineApproximation/FieldMinkowski.lean`, and the
+  confinement of each minimum in `DiophantineApproximation/MinimaBounds.lean`.
 -/
 
 public section
@@ -368,9 +369,7 @@ linearly independent at every infinite place and at every place of `S₀`, and a
 a level `Q₀ > 0` such that for every exponent family `c` with `approxAbsWeight S₀ c ≤ A`, every
 `Q ≥ Q₀` and every `l < #ι`, the `l`-th successive minimum over `K` of `approxDomain S₀ L c Q` is at
 least `Q ^ (-B)`, where `B = #ι · (A + 1) / [K : ℚ]`. The level `Q₀` depends on `A` but not on `c`.
-
-The bound comes from the product formula: a nonzero point of the lattice in a dilate `t • B` of
-the body has a nonzero coordinate, which cannot be small at every place. -/
+-/
 theorem exists_pos_forall_rpow_le_successiveMinimum {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
@@ -405,11 +404,7 @@ independent at every infinite place and at every place of `S₀`, and a bound `A
 `Q₀ > 0` such that for every exponent family `c` with `approxAbsWeight S₀ c ≤ A`, every `Q ≥ Q₀`
 and every `l < #ι`, the `l`-th successive minimum over `K` of `approxDomain S₀ L c Q` lies between
 `Q ^ (-B)` and `Q ^ B`, where `B = #ι · (A + 1) / [K : ℚ]`. The level `Q₀` depends on `A` but not
-on `c`.
-
-Minkowski's second theorem bounds only the product of the minima; the upper bound on each one
-follows from it once every other minimum is replaced by its lower bound
-(`TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum`). -/
+on `c`. -/
 theorem exists_pos_forall_rpow_le_successiveMinimum_le {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
