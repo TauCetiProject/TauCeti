@@ -21,10 +21,12 @@ Small real examples for `TauCeti.CompositionLift.originalSet` and
 * For `g x = x ^ 2` and the decreasing outer function `h y = 1 - y`, the pair `(0, 1)` lies in the
   lift although `0` is not originally feasible, so the projection identity needs `h` monotone.
 * On `[-1, 1]` with `g x = x ^ 2`, `h = id` and budget one, minimising `-x` attains `-1` on both
-  sets. Restricting heights to `y ≤ 1/4`, so that `g` no longer maps `D` into the height domain,
-  moves the attained minimum of the lift to `-1/2`: the height domain must contain the graph.
-* On the open interval `(0, 1)` with trivial constraints, the objective `x` attains no minimum on
-  either set, so transferring attainment does not create it.
+  sets: the minimisers are feasible and `IsMinOn` holds there. Restricting heights to `y ≤ 1/4`,
+  so that `g` no longer maps `D` into the height domain, moves the attained minimum of the lift to
+  `-1/2`: the height domain must contain the graph.
+* For the empty domain both sets are empty, so neither problem has a feasible minimum.
+* On the open interval `(0, 1)` with trivial constraints, the objective `x` has infimum zero on
+  both sets but attains no minimum on either, so transferring attainment does not create it.
 -/
 
 public section
@@ -62,20 +64,39 @@ theorem fst_image_liftedSet_sq_one_sub_ne :
   zero_notMem_originalSet_sq_one_sub
     (h ▸ ⟨((0 : ℝ), (1 : ℝ)), mk_zero_one_mem_liftedSet_sq_one_sub, rfl⟩)
 
-/-- On `[-1, 1]`, the objective `-x` attains its minimum `-1` subject to `x ^ 2 ≤ 1` at `x = 1`. -/
+/-- On `[-1, 1]`, the point `x = 1` satisfies `x ^ 2 ≤ 1`. -/
+theorem one_mem_originalSet_Icc_sq :
+    (1 : ℝ) ∈ originalSet (Icc (-1) 1) (fun x : ℝ => x ^ 2) id 1 := by
+  norm_num
+
+/-- On `[-1, 1]`, the objective `-x` is minimised subject to `x ^ 2 ≤ 1` at `x = 1`. Together with
+`one_mem_originalSet_Icc_sq`, the minimum `-1` is attained there. -/
 theorem isMinOn_neg_originalSet_Icc_sq :
     IsMinOn (fun x : ℝ => -x) (originalSet (Icc (-1) 1) (fun x : ℝ => x ^ 2) id 1) 1 :=
   isMinOn_iff.2 fun _ hx => neg_le_neg (mem_originalSet.1 hx).1.2
 
-/-- The same minimum is attained on the lift at the graph point `(1, 1)`. -/
+/-- The graph point `(1, 1)` lies in the lift of `x ^ 2 ≤ 1` on `[-1, 1]`. -/
+theorem mk_one_one_mem_liftedSet_Icc_sq :
+    ((1 : ℝ), (1 : ℝ)) ∈ liftedSet (Icc (-1) 1) univ (fun x : ℝ => x ^ 2) id 1 := by
+  norm_num
+
+/-- The objective `-x` is minimised on the lift at the graph point `(1, 1)`. Together with
+`mk_one_one_mem_liftedSet_Icc_sq`, the same minimum `-1` is attained there. -/
 theorem isMinOn_neg_liftedSet_Icc_sq :
     IsMinOn ((fun x : ℝ => -x) ∘ Prod.fst)
       (liftedSet (Icc (-1) 1) univ (fun x : ℝ => x ^ 2) id 1) ((1 : ℝ), (1 : ℝ)) :=
   (isMinOn_comp_fst_liftedSet_iff (mapsTo_univ _ _) (monotone_id.monotoneOn _) _ _).2
     isMinOn_neg_originalSet_Icc_sq
 
-/-- Restricting the heights to `y ≤ 1/4` gives a lift whose attained minimum of `-x` is `-1/2`,
-at `(1/2, 1/4)`. Here `x ↦ x ^ 2` does not map `[-1, 1]` into the height domain. -/
+/-- With heights restricted to `y ≤ 1/4`, the pair `(1/2, 1/4)` lies in the lift. -/
+theorem mk_half_quarter_mem_liftedSet_Icc_sq_Iic :
+    ((1 / 2 : ℝ), (1 / 4 : ℝ)) ∈
+      liftedSet (Icc (-1) 1) (Iic (1 / 4)) (fun x : ℝ => x ^ 2) id 1 := by
+  norm_num
+
+/-- Restricting the heights to `y ≤ 1/4` gives a lift on which `-x` is minimised at `(1/2, 1/4)`.
+Together with `mk_half_quarter_mem_liftedSet_Icc_sq_Iic`, the attained minimum is `-1/2`. Here
+`x ↦ x ^ 2` does not map `[-1, 1]` into the height domain. -/
 theorem isMinOn_neg_liftedSet_Icc_sq_Iic :
     IsMinOn ((fun x : ℝ => -x) ∘ Prod.fst)
       (liftedSet (Icc (-1) 1) (Iic (1 / 4)) (fun x : ℝ => x ^ 2) id 1)
@@ -94,6 +115,38 @@ theorem one_notMem_fst_image_liftedSet_Icc_sq_Iic :
   have : p.1 ^ 2 ≤ 1 / 4 := hxy.trans hy
   rw [hp1] at this
   norm_num at this
+
+/-- For the empty domain the original set is empty. -/
+theorem originalSet_empty_sq : originalSet (∅ : Set ℝ) (fun x : ℝ => x ^ 2) id 1 = ∅ := by
+  ext x
+  simp
+
+/-- For the empty domain the lift is empty as well. -/
+theorem liftedSet_empty_sq : liftedSet (∅ : Set ℝ) univ (fun x : ℝ => x ^ 2) id 1 = ∅ :=
+  (liftedSet_eq_empty_iff (mapsTo_univ _ _) (monotone_id.monotoneOn _)).2 originalSet_empty_sq
+
+/-- For the empty domain the lift has no feasible minimum. -/
+theorem not_exists_isMinOn_liftedSet_empty_sq :
+    ¬∃ p ∈ liftedSet (∅ : Set ℝ) univ (fun x : ℝ => x ^ 2) id 1,
+      IsMinOn (id ∘ Prod.fst) (liftedSet (∅ : Set ℝ) univ (fun x : ℝ => x ^ 2) id 1) p := by
+  simp [liftedSet_empty_sq]
+
+/-- On the open interval `(0, 1)` with trivial constraints, the objective `x` has infimum zero on
+the original set. -/
+theorem isGLB_id_originalSet_Ioo :
+    IsGLB (id '' originalSet (Ioo (0 : ℝ) 1) (fun _ => (0 : ℝ)) (fun _ => (0 : ℝ)) 0) 0 := by
+  have : originalSet (Ioo (0 : ℝ) 1) (fun _ => (0 : ℝ)) (fun _ => (0 : ℝ)) 0 = Ioo 0 1 := by
+    ext x
+    simp
+  rw [image_id, this]
+  exact isGLB_Ioo zero_lt_one
+
+/-- Hence the objective has infimum zero on the lift of the same problem. -/
+theorem isGLB_id_comp_fst_liftedSet_Ioo :
+    IsGLB ((id ∘ Prod.fst) '' liftedSet (Ioo (0 : ℝ) 1) univ (fun _ => (0 : ℝ))
+      (fun _ => (0 : ℝ)) 0) 0 := by
+  rw [image_comp_fst_liftedSet (mapsTo_univ _ _) monotoneOn_const]
+  exact isGLB_id_originalSet_Ioo
 
 /-- On the open interval `(0, 1)` with trivial constraints, the objective `x` attains no minimum
 on the original set. -/
