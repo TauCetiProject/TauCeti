@@ -9,6 +9,7 @@ public import TauCeti.Probability.Process.Poisson.Characterization
 public import TauCeti.Probability.Process.Poisson.Simplicity
 public import TauCeti.Probability.Process.Poisson.Filtered
 public import TauCeti.Probability.Independence.Process.HasIndepIncrements
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Probability.Independence.Filtration
 
 /-!
@@ -112,30 +113,11 @@ theorem HasIndepIncrements.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO
       (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
         (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
       (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) := by
-  have h1_iff :
-      (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
-          (fun h : ℝ≥0 ↦ (h : ℝ)) ↔
-        Tendsto (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} / h) (𝓝[>] 0) (𝓝 (r : ℝ)) := by
-    have hz : ∀ᶠ h : ℝ≥0 in 𝓝[>] 0,
-        (h : ℝ) = 0 → P.real {ω | N h ω = 1} - (r : ℝ) * h = 0 := by
-      filter_upwards [self_mem_nhdsWithin] with h hh hzero
-      exact absurd hzero (NNReal.coe_pos.mpr hh).ne'
-    rw [isLittleO_iff_tendsto' hz]
-    have hcongr : (fun h : ℝ≥0 ↦ (P.real {ω | N h ω = 1} - (r : ℝ) * h) / (h : ℝ)) =ᶠ[𝓝[>] 0]
-        fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} / h - r := by
-      filter_upwards [self_mem_nhdsWithin] with h hh
-      have : (h : ℝ) ≠ 0 := (NNReal.coe_pos.mpr hh).ne'
-      field_simp
-    rw [tendsto_congr' hcongr]
-    exact ⟨fun h ↦ by simpa using h.add_const (r : ℝ),
-      fun h ↦ by simpa using h.sub_const (r : ℝ)⟩
-  have h2_iff :
-      (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) ↔
-        Tendsto (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω} / h) (𝓝[>] 0) (𝓝 0) := by
-    refine isLittleO_iff_tendsto' ?_
-    filter_upwards [self_mem_nhdsWithin] with h hh hzero
-    exact absurd hzero (NNReal.coe_pos.mpr hh).ne'
-  rw [hN.hasLaw_sub_poissonMeasure_iff_stationary_small_time h0 hmono r, h1_iff, h2_iff]
+  have hne : ∀ᶠ h : ℝ≥0 in 𝓝[>] 0, (h : ℝ) ≠ 0 :=
+    Eventually.mono self_mem_nhdsWithin fun _ hh ↦ (NNReal.coe_pos.mpr hh).ne'
+  rw [hN.hasLaw_sub_poissonMeasure_iff_stationary_small_time h0 hmono r,
+    isLittleO_sub_mul_iff_tendsto_div hne,
+    isLittleO_iff_tendsto' (hne.mono fun _ hx ↦ by simp [hx])]
 
 end ProbabilityTheory
 
@@ -175,7 +157,7 @@ a pairwise almost surely nondecreasing natural-valued process `N` is a rate-`r` 
 relative to `ℱ` (after casting to `ℝ`) if and only if it is adapted to `ℱ`, starts at zero
 almost surely, has `ℱ`-independent stationary increments, and satisfies
 `P(N h = 1) - r * h = o(h)` and `P(N h ≥ 2) = o(h)` as `h ↓ 0`. -/
-theorem isFilteredPoissonProcess_cast_iff_stationary_isLittleO [IsProbabilityMeasure P]
+theorem isFilteredPoissonProcess_natCast_iff_stationary_isLittleO [IsProbabilityMeasure P]
     (ℱ : Filtration ℝ≥0 mΩ) {r : ℝ≥0}
     (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
     IsFilteredPoissonProcess ℱ r (fun t ω ↦ (N t ω : ℝ)) P ↔
@@ -186,7 +168,7 @@ theorem isFilteredPoissonProcess_cast_iff_stationary_isLittleO [IsProbabilityMea
       (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
         (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
       (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) := by
-  rw [isFilteredPoissonProcess_cast_iff ℱ hmono]
+  rw [isFilteredPoissonProcess_natCast_iff ℱ]
   constructor
   · rintro ⟨hadapt, h0, hlaw, hind_sub⟩
     have hind : HasIndepIncrements N P := hadapt.hasIndepIncrements hind_sub
@@ -203,7 +185,7 @@ theorem isFilteredPoissonProcess_cast_iff_stationary_isLittleO [IsProbabilityMea
 measurable, pairwise almost surely nondecreasing natural-valued process `N`, its real cast is a
 rate-`r` Poisson process relative to its natural filtration if and only if `N 0 = 0` almost
 surely, `N` has stationary independent increments, and the `o(h)` microscopic limits hold. -/
-theorem isFilteredPoissonProcess_natural_cast_iff_stationary_isLittleO {r : ℝ≥0}
+theorem isFilteredPoissonProcess_natural_natCast_iff_stationary_isLittleO {r : ℝ≥0}
     (hN : ∀ t, Measurable (N t))
     (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
     IsFilteredPoissonProcess
@@ -215,7 +197,7 @@ theorem isFilteredPoissonProcess_natural_cast_iff_stationary_isLittleO {r : ℝ�
       (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
         (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
       (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) := by
-  rw [isFilteredPoissonProcess_natural_cast_iff hN hmono]
+  rw [isFilteredPoissonProcess_natural_natCast_iff hN]
   exact and_congr_right fun h0 ↦ and_congr_right fun hind ↦
     hind.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO h0 hmono r
 

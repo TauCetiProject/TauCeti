@@ -25,7 +25,7 @@ process characterizes equality in law of almost surely boundedly finite random m
 including realizations on different sample spaces.
 
 The floored cumulative-count maps `μ ↦ (t ↦ ⌊(μ (Iic t)).toNNReal⌋₊)` and
-`μ ↦ (t ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊)` are measurable on all measures on `ℝ≥0`, and yield
+`μ ↦ (t ↦ ⌊(μ (Ioc a t)).toNNReal⌋₊)` are measurable on all measures on `ℝ≥0`, and yield
 monotone right-continuous natural-valued paths for every locally finite measure without assuming
 integrality.
 
@@ -171,10 +171,10 @@ theorem measurable_natFloor_measure_Iic :
   measurable_pi_iff.2 fun _ ↦
     (Measure.measurable_coe measurableSet_Iic).ennreal_toNNReal.nat_floor
 
-/-- Mapping a measure on `ℝ≥0` to its floored counts on `(0, t]` is measurable into `ℝ≥0 → ℕ`
+/-- Mapping a measure on `ℝ≥0` to its floored counts on `(a, t]` is measurable into `ℝ≥0 → ℕ`
 with the product σ-algebra, without finiteness or integrality assumptions. -/
-theorem measurable_natFloor_measure_Ioc :
-    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
+theorem measurable_natFloor_measure_Ioc (a : ℝ≥0) :
+    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc a t)).toNNReal⌋₊ :=
   measurable_pi_iff.2 fun _ ↦
     (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
 
@@ -210,23 +210,16 @@ theorem isRightContinuous_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMe
     (Nat.floor_lt (zero_le (a := _))).2 (by simpa [Nat.cast_add, Nat.cast_one] using hs_lt)
   omega
 
-/-- For a locally finite measure on `ℝ≥0`, the floored counts on `(0, t]` are monotone in `t`. -/
-theorem monotone_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
-    Monotone fun t : ℝ≥0 ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
-  have : IsLocallyFiniteMeasure (μ.restrict (Ioi 0)) :=
-    isLocallyFiniteMeasure_of_le Measure.restrict_le_self
-  have hrest (t : ℝ≥0) : (μ.restrict (Ioi 0)) (Iic t) = μ (Ioc 0 t) := by
-    rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
-  simpa only [hrest] using (μ.restrict (Ioi 0)).monotone_natFloor_Iic
+/-- For a locally finite measure on `ℝ≥0` and any cutoff `a`, the floored counts on `(a, t]` are
+monotone in `t`. -/
+theorem monotone_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] (a : ℝ≥0) :
+    Monotone fun t : ℝ≥0 ↦ ⌊(μ (Ioc a t)).toNNReal⌋₊ := by
+  simpa only [μ.restrict_Ioi_apply_Iic a] using (μ.restrict (Ioi a)).monotone_natFloor_Iic
 
-/-- For a locally finite measure on `ℝ≥0`, the floored counts on `(0, t]` are right-continuous
-in `t`. -/
-theorem isRightContinuous_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
-    IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
-  have : IsLocallyFiniteMeasure (μ.restrict (Ioi 0)) :=
-    isLocallyFiniteMeasure_of_le Measure.restrict_le_self
-  have hrest (t : ℝ≥0) : (μ.restrict (Ioi 0)) (Iic t) = μ (Ioc 0 t) := by
-    rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
-  simpa only [hrest] using (μ.restrict (Ioi 0)).isRightContinuous_natFloor_Iic
+/-- For a locally finite measure on `ℝ≥0` and any cutoff `a`, the floored counts on `(a, t]` are
+right-continuous in `t`. -/
+theorem isRightContinuous_natFloor_Ioc (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] (a : ℝ≥0) :
+    IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Ioc a t)).toNNReal⌋₊ := by
+  simpa only [μ.restrict_Ioi_apply_Iic a] using (μ.restrict (Ioi a)).isRightContinuous_natFloor_Iic
 
 end MeasureTheory.Measure
