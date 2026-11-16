@@ -24,12 +24,9 @@ import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
 import TauCeti.Algebra.Category.ModuleCat.Connected
 import TauCeti.Algebra.Category.ModuleCat.HaradaSai
-import TauCeti.Algebra.Category.ModuleCat.Injective.LeftAlmostSplit
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
 import TauCeti.CategoryTheory.AlmostSplit.Finiteness
-import TauCeti.CategoryTheory.AlmostSplit.Irreducible
-import TauCeti.CategoryTheory.AlmostSplit.Minimal
 import TauCeti.CategoryTheory.Generator.Biproduct
 import TauCeti.CategoryTheory.Preadditive.CentralIdempotent
 import TauCeti.CategoryTheory.Preadditive.Radical.Basic
@@ -42,10 +39,11 @@ Let `A` be an Artinian ring, and `S` a nonempty class of finitely generated inde
 finitely generated indecomposable modules in both directions; the unions of components of the
 Auslander–Reiten quiver are exactly such classes. **Auslander's theorem** says that if the lengths
 of the modules in `S` are bounded, `A` is connected, and the modules in `S` that are not injective,
-respectively not projective, in `FGModuleCat A` have source and sink maps in `FGModuleCat A`, then
-`S` contains every finitely generated indecomposable module, and `A` is representation-finite.
-Over a finite-dimensional algebra the source and sink maps come from the almost-split sequences,
-and the hypothesis disappears (`TauCeti.forall_prop_and_isRepresentationFinite_of_length_le`).
+respectively not projective, in `FGModuleCat A` are the sources of left almost split maps,
+respectively the targets of right almost split maps, in `FGModuleCat A`, then `S` contains every
+finitely generated indecomposable module, and `A` is representation-finite. Over a
+finite-dimensional algebra these maps come from the almost-split sequences, and the hypothesis
+disappears (`TauCeti.forall_prop_and_isRepresentationFinite_of_length_le`).
 
 The argument has three steps, all in `FGModuleCat A`.
 
@@ -53,7 +51,7 @@ The argument has three steps, all in `FGModuleCat A`.
   biproduct of finitely generated indecomposable modules whose components are irreducible
   (`FGModuleCat.exists_isLeftAlmostSplit_biproduct`), and dually a sink map
   (`FGModuleCat.exists_isRightAlmostSplit_biproduct`): at a module that is not injective,
-  respectively not projective, this is the assumed source, respectively sink, map, and at injective
+  respectively not projective, the assumed almost split map is made minimal, and at injective
   and projective modules they are `N ⟶ N ⧸ soc N` and `rad P ⟶ P`.
 * A nonzero morphism from a module in `S` to a finitely generated indecomposable module outside
   `S` factors through such a source map, giving a nonzero composite with an irreducible map that
@@ -75,9 +73,6 @@ The argument has three steps, all in `FGModuleCat A`.
 
 ## Main results
 
-* `FGModuleCat.exists_isLeftAlmostSplit_biproduct` and
-  `FGModuleCat.exists_isRightAlmostSplit_biproduct`: source and sink maps with irreducible
-  components.
 * `TauCeti.eq_zero_of_length_le_of_prop_of_not_prop` and
   `TauCeti.eq_zero_of_length_le_of_not_prop_of_prop`: the morphisms between a class of finitely
   generated indecomposable modules of bounded length closed under irreducible maps and a finitely
@@ -99,90 +94,6 @@ public section
 open CategoryTheory CategoryTheory.Limits TauCeti
 
 universe u v w
-
-namespace FGModuleCat
-
-variable {A : Type v} [Ring A] [IsArtinianRing A] [Small.{w} A]
-
-/-- **Source maps.** Let `A` be an Artinian ring, and `X` a finitely generated indecomposable
-module that, unless it is injective in `FGModuleCat A`, has a left minimal left almost split map in
-`FGModuleCat A`. Then `X` has a left minimal left almost split map into a finite biproduct of
-finitely generated indecomposable modules, each of whose components is irreducible. -/
-theorem exists_isLeftAlmostSplit_biproduct {X : FGModuleCat.{w} A} (hX : Indecomposable X.obj)
-    (hsrc : ¬ Injective X → ∃ (E : FGModuleCat.{w} A) (i : X ⟶ E), IsLeftAlmostSplit i ∧
-      ∀ u : E ⟶ E, i ≫ u = i → IsIso u) :
-    ∃ (n : ℕ) (F : Fin n → FGModuleCat.{w} A) (i : X ⟶ ⨁ F),
-      (∀ j, Indecomposable (F j).obj) ∧ IsLeftAlmostSplit i ∧
-        (∀ u : ⨁ F ⟶ ⨁ F, i ≫ u = i → IsIso u) ∧
-          ∀ j, IsIrreducibleMorphism (i ≫ biproduct.π F j) := by
-  -- A left minimal left almost split map.
-  obtain ⟨E, f, hf, hmin⟩ : ∃ (E : FGModuleCat.{w} A) (f : X ⟶ E), IsLeftAlmostSplit f ∧
-      ∀ u : E ⟶ E, f ≫ u = f → IsIso u := by
-    by_cases hinj : Injective X
-    · -- By Baer's criterion `X` is an injective module, with the source map `X ⟶ X ⧸ soc X`.
-      have := moduleInjective_of_injective X
-      have : Injective X.obj := Module.injective_object_of_injective_module A X
-      have : IsLocalRing (End X.obj) := (indecomposable_iff_isLocalRing_end X.obj
-        (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)).mp hX
-      obtain ⟨S, -, hS⟩ := exists_isAtom_isLeftAlmostSplit_ofHom_mkQ (N := X.obj)
-      let q : X ⟶ of A (X ⧸ S) := ObjectProperty.homMk (ModuleCat.ofHom S.mkQ)
-      have : Epi q := (ObjectProperty.ι _).epi_of_epi_map
-        ((ModuleCat.epi_iff_surjective _).mpr S.mkQ_surjective)
-      refine ⟨_, q, (ObjectProperty.ι _).isLeftAlmostSplit_of_map q hS, fun u hu ↦ ?_⟩
-      rw [(cancel_epi q).mp (hu.trans (Category.comp_id _).symm)]
-      infer_instance
-    · exact hsrc hinj
-  obtain ⟨n, F, hF, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct E
-  refine ⟨n, F, f ≫ e.hom, hF, hf.comp_iso e.hom, fun u hu ↦ ?_, fun j ↦ ?_⟩
-  · -- Left minimality is invariant under the isomorphism `e`.
-    have := hmin (e.hom ≫ u ≫ e.inv) (by
-      rw [← Category.assoc, ← Category.assoc, hu, Category.assoc, e.hom_inv_id, Category.comp_id])
-    simpa using (inferInstance : IsIso (e.inv ≫ (e.hom ≫ u ≫ e.inv) ≫ e.hom))
-  · have hrad := comp_mem_jacobsonRadical_right hf.mem_jacobsonRadical (e.hom ≫ biproduct.π F j)
-    rw [Category.assoc]
-    exact hf.isIrreducibleMorphism_comp_of_isSplitEpi hmin _ fun _ ↦ (hF j).1
-      ((ObjectProperty.ι _).map_isZero (isZero_of_isSplitEpi_of_mem_jacobsonRadical hrad))
-
-/-- **Sink maps.** Let `A` be an Artinian ring, and `X` a finitely generated indecomposable module
-that, unless it is projective in `FGModuleCat A`, has a right minimal right almost split map in
-`FGModuleCat A`. Then `X` has a right minimal right almost split map out of a finite biproduct of
-finitely generated indecomposable modules, each of whose components is irreducible. -/
-theorem exists_isRightAlmostSplit_biproduct {X : FGModuleCat.{w} A} (hX : Indecomposable X.obj)
-    (hsink : ¬ Projective X → ∃ (E : FGModuleCat.{w} A) (p : E ⟶ X), IsRightAlmostSplit p ∧
-      ∀ u : E ⟶ E, u ≫ p = p → IsIso u) :
-    ∃ (n : ℕ) (F : Fin n → FGModuleCat.{w} A) (p : ⨁ F ⟶ X),
-      (∀ j, Indecomposable (F j).obj) ∧ IsRightAlmostSplit p ∧
-        (∀ u : ⨁ F ⟶ ⨁ F, u ≫ p = p → IsIso u) ∧
-          ∀ j, IsIrreducibleMorphism (biproduct.ι F j ≫ p) := by
-  have : IsLocalRing (End X) := isLocalRing_end_of_indecomposable hX
-  -- A right minimal right almost split map.
-  obtain ⟨E, g, hg, hmin⟩ : ∃ (E : FGModuleCat.{w} A) (g : E ⟶ X), IsRightAlmostSplit g ∧
-      ∀ u : E ⟶ E, u ≫ g = g → IsIso u := by
-    by_cases hproj : Projective X
-    · -- `X` is a projective module, with the sink map `rad X ⟶ X`.
-      have := moduleProjective_of_projective X
-      have : IsLocalRing (End X.obj) :=
-        ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).isLocalRing
-      have : IsLocalRing (Module.End A X) := X.obj.endRingEquiv.isLocalRing
-      let r : of A (Module.jacobson A X) ⟶ X := ofHom (Module.jacobson A X).subtype
-      have : Mono r := (ObjectProperty.ι _).mono_of_mono_map
-        ((ModuleCat.mono_iff_injective _).mpr (Module.jacobson A X).injective_subtype)
-      refine ⟨_, r, isRightAlmostSplit_ofHom_subtype_jacobson A X, fun u hu ↦ ?_⟩
-      rw [(cancel_mono r).mp (hu.trans (Category.id_comp _).symm)]
-      infer_instance
-    · exact hsink hproj
-  obtain ⟨n, F, hF, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct E
-  refine ⟨n, F, e.inv ≫ g, hF, hg.iso_comp e.inv, fun u hu ↦ ?_, fun j ↦ ?_⟩
-  · -- Right minimality is invariant under the isomorphism `e`.
-    have := hmin (e.hom ≫ u ≫ e.inv) (by
-      rw [Category.assoc, Category.assoc, hu, e.hom_inv_id_assoc])
-    simpa using (inferInstance : IsIso (e.inv ≫ (e.hom ≫ u ≫ e.inv) ≫ e.hom))
-  · have hrad := comp_mem_jacobsonRadical_left (biproduct.ι F j ≫ e.inv) hg.mem_jacobsonRadical
-    rw [← Category.assoc]
-    exact hg.isIrreducibleMorphism_comp_of_isSplitMono hmin _ fun _ ↦ (hF j).1
-      ((ObjectProperty.ι _).map_isZero (isZero_of_isSplitMono_of_mem_jacobsonRadical hrad))
-
-end FGModuleCat
 
 namespace TauCeti
 
@@ -209,13 +120,13 @@ private theorem ofSequence_map_eq_zero_of_prop (M : ℕ → FGModuleCat.{w} A)
 
 /-- **Morphisms out of a class of bounded length.** Let `A` be an Artinian ring, and `S` a class of
 finitely generated indecomposable modules of bounded length, closed under isomorphism, whose
-members that are not injective in `FGModuleCat A` have left minimal left almost split maps in
+members that are not injective in `FGModuleCat A` have left almost split maps in
 `FGModuleCat A`. If `S` contains the target of every irreducible map of `FGModuleCat A` out of one
 of its members into a finitely generated indecomposable module, then every morphism from a module
 in `S` to a finitely generated indecomposable module outside `S` is zero. -/
 theorem eq_zero_of_length_le_of_prop_of_not_prop
     (hsrc : ∀ N, S N → ¬ Injective N → ∃ (E : FGModuleCat.{w} A) (i : N ⟶ E),
-      IsLeftAlmostSplit i ∧ ∀ u : E ⟶ E, i ≫ u = i → IsIso u)
+      IsLeftAlmostSplit i)
     (hirr : ∀ {X Y : FGModuleCat.{w} A} (f : X ⟶ Y), IsIrreducibleMorphism f →
       Indecomposable Y.obj → S X → S Y)
     {X Y : FGModuleCat.{w} A} (hX : S X) (hY : Indecomposable Y.obj) (hSY : ¬ S Y) (f : X ⟶ Y) :
@@ -238,13 +149,13 @@ theorem eq_zero_of_length_le_of_prop_of_not_prop
 
 /-- **Morphisms into a class of bounded length.** Let `A` be an Artinian ring, and `S` a class of
 finitely generated indecomposable modules of bounded length, closed under isomorphism, whose
-members that are not projective in `FGModuleCat A` have right minimal right almost split maps in
-`FGModuleCat A`. If `S` contains the source of every irreducible map of `FGModuleCat A` from a
+members that are not projective in `FGModuleCat A` are the targets of right almost split maps
+in `FGModuleCat A`. If `S` contains the source of every irreducible map of `FGModuleCat A` from a
 finitely generated indecomposable module into one of its members, then every morphism from a
 finitely generated indecomposable module outside `S` to a module in `S` is zero. -/
 theorem eq_zero_of_length_le_of_not_prop_of_prop
     (hsink : ∀ M, S M → ¬ Projective M → ∃ (E : FGModuleCat.{w} A) (p : E ⟶ M),
-      IsRightAlmostSplit p ∧ ∀ u : E ⟶ E, u ≫ p = p → IsIso u)
+      IsRightAlmostSplit p)
     (hirr : ∀ {X Y : FGModuleCat.{w} A} (f : X ⟶ Y), IsIrreducibleMorphism f →
       Indecomposable X.obj → S Y → S X)
     {X Y : FGModuleCat.{w} A} (hX : Indecomposable X.obj) (hSX : ¬ S X) (hY : S Y) (f : X ⟶ Y) :
@@ -281,17 +192,17 @@ variable {A : Type v} [Ring A] [IsArtinianRing A] [Small.{w} A]
 `S` a nonempty class of finitely generated indecomposable `A`-modules, closed under isomorphism
 and under irreducible maps of `FGModuleCat A` between finitely generated indecomposable modules in
 both directions. Suppose that the members of `S` that are not injective, respectively not
-projective, in `FGModuleCat A` have left minimal left almost split maps, respectively right minimal
-right almost split maps, in `FGModuleCat A`. If the lengths of the modules in `S` are bounded, then
+projective, in `FGModuleCat A` have left almost split maps out of them, respectively right almost
+split maps into them, in `FGModuleCat A`. If the lengths of the modules in `S` are bounded, then
 `S` contains every finitely generated indecomposable module, and `A` is representation-finite. -/
 theorem forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAlmostSplit
     (hA : centralIdempotents A ⊆ {0, 1})
     (S : ObjectProperty (FGModuleCat.{w} A)) [S.IsClosedUnderIsomorphisms]
     (hS : ∀ X, S X → Indecomposable X.obj)
     (hsrc : ∀ N, S N → ¬ Injective N → ∃ (E : FGModuleCat.{w} A) (i : N ⟶ E),
-      IsLeftAlmostSplit i ∧ ∀ u : E ⟶ E, i ≫ u = i → IsIso u)
+      IsLeftAlmostSplit i)
     (hsink : ∀ M, S M → ¬ Projective M → ∃ (E : FGModuleCat.{w} A) (p : E ⟶ M),
-      IsRightAlmostSplit p ∧ ∀ u : E ⟶ E, u ≫ p = p → IsIso u)
+      IsRightAlmostSplit p)
     (hirr : ∀ {X Y : FGModuleCat.{w} A} (f : X ⟶ Y), IsIrreducibleMorphism f →
       Indecomposable X.obj → Indecomposable Y.obj → (S X ↔ S Y))
     (hne : ∃ X, S X) (b : ℕ) (hb : ∀ X, S X → Module.length A X.obj ≤ b) :
@@ -374,20 +285,14 @@ theorem forall_prop_and_isRepresentationFinite_of_length_le (hA : centralIdempot
       exact FGModuleCat.injective_of_moduleInjective N
     obtain ⟨E, _, f, _, _, hE, -, hseq⟩ :=
       ModuleCat.exists_isAlmostSplit_of_not_injective k N.obj (hS N hN) hinj'
-    refine ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk f,
-      (ObjectProperty.ι _).isLeftAlmostSplit_of_map _ hseq.isLeftAlmostSplit_f, fun u hu ↦ ?_⟩
-    have : IsIso ((ObjectProperty.ι _).map u) :=
-      hseq.isIso_of_f_comp_eq u.hom (congrArg (ObjectProperty.ι _).map hu)
-    exact isIso_of_fully_faithful (ObjectProperty.ι _) u
+    exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk f,
+      (ObjectProperty.ι _).isLeftAlmostSplit_of_map _ hseq.isLeftAlmostSplit_f⟩
   · have hproj' : ¬ Projective M.obj := fun _ ↦ hproj <| by
       have := ModuleCat.projective_of_module_projective (R := A) M.obj
       exact FGModuleCat.projective_of_moduleProjective A M
     obtain ⟨E, _, p, _, hE, hseq⟩ :=
       ModuleCat.exists_isAlmostSplit_arTranslate k M.obj (hS M hM) hproj'
-    refine ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk p,
-      (ObjectProperty.ι _).isRightAlmostSplit_of_map _ hseq.isRightAlmostSplit_g, fun u hu ↦ ?_⟩
-    have : IsIso ((ObjectProperty.ι _).map u) :=
-      hseq.isIso_of_comp_g_eq u.hom (congrArg (ObjectProperty.ι _).map hu)
-    exact isIso_of_fully_faithful (ObjectProperty.ι _) u
+    exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk p,
+      (ObjectProperty.ι _).isRightAlmostSplit_of_map _ hseq.isRightAlmostSplit_g⟩
 
 end TauCeti
