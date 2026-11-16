@@ -46,6 +46,11 @@ matrices of determinant one; this is the input for computing `K₁` of these rin
 
 * `TauCeti.commutator_elementarySubgroup_self`: `⁅E n A, E n A⁆ = E n A` when `3 ≤ card n`.
 * `TauCeti.elementarySubgroup_le_commutator`: `E n A ≤ ⁅GL n A, GL n A⁆` when `3 ≤ card n`.
+* `TauCeti.mem_center_iff_forall_commute_transvectionUnit`: with two distinct indices, a matrix
+  is central exactly when it commutes with every elementary matrix.
+* `TauCeti.mem_centralizer_elementarySubgroup_iff`, `TauCeti.centralizer_elementarySubgroup`:
+  with two distinct indices, the centralizer of `E n A` in `GL n A` consists of the invertible
+  scalar matrices with central entry, and is the center of `GL n A`.
 * `Equiv.map_reindexGL_elementarySubgroup`: relabelling the indices preserves the elementary
   subgroup.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
@@ -138,6 +143,49 @@ theorem elementarySubgroup_le_commutator (hn : 3 ≤ Fintype.card n) :
     elementarySubgroup n A ≤ commutator (GL n A) := by
   rw [← commutator_elementarySubgroup_self hn]
   exact Subgroup.commutator_mono le_top le_top
+
+/-! ## The centralizer of the elementary subgroup -/
+
+/-- When there are two distinct indices, a square matrix is central exactly when it commutes with
+every elementary matrix `1 + a Eᵢⱼ`, `i ≠ j`. This is the matrix form of Mathlib's
+`LinearMap.commute_transvections_iff_of_basis`, over a possibly noncommutative ring. -/
+theorem mem_center_iff_forall_commute_transvectionUnit [Nontrivial n] {M : Matrix n n A} :
+    M ∈ Set.center (Matrix n n A) ↔
+      ∀ (i j : n) (hij : i ≠ j) (a : A), Commute (transvectionUnit hij a : Matrix n n A) M := by
+  refine ⟨fun hM i j hij a ↦ ((Semigroup.mem_center_iff.1 hM) _), fun hM ↦ ?_⟩
+  -- Commuting with `1 + Eᵢⱼ` makes `M` a scalar matrix `c`, and commuting with `1 + a Eᵢⱼ`
+  -- then forces `c a = a c`.
+  have hsingle (i j : n) (hij : i ≠ j) (a : A) : Commute (single i j a) M := by
+    simpa [coe_transvectionUnit_eq_one_add_single] using
+      (hM i j hij a).sub_left (Commute.one_left M)
+  obtain ⟨c, rfl⟩ := mem_range_scalar_of_commute_single fun i j hij ↦ hsingle i j hij 1
+  rw [center_eq_scalar_image]
+  refine ⟨c, Semigroup.mem_center_iff.2 fun a ↦ ?_, rfl⟩
+  obtain ⟨i, j, hij⟩ := exists_pair_ne n
+  simpa [hij] using congr($((hsingle i j hij a).eq) i j)
+
+/-- **The centralizer of the elementary subgroup** of `GL n A`, when there are two distinct
+indices: an invertible matrix commutes with every elementary matrix exactly when it is a scalar
+matrix whose entry is central in `A`. -/
+theorem mem_centralizer_elementarySubgroup_iff [Nontrivial n] {g : GL n A} :
+    g ∈ Subgroup.centralizer (elementarySubgroup n A : Set (GL n A)) ↔
+      (g : Matrix n n A) ∈ scalar n '' Set.center A := by
+  rw [← center_eq_scalar_image]
+  refine ⟨fun hg ↦ mem_center_iff_forall_commute_transvectionUnit.2 fun i j hij a ↦ ?_,
+    fun hg ↦ Subgroup.center_le_centralizer _ <| Subgroup.mem_center_iff.2 fun h ↦
+      Units.ext (Semigroup.mem_center_iff.1 hg h)⟩
+  exact congrArg Units.val
+    (Subgroup.mem_centralizer_iff.1 hg _ (transvectionUnit_mem_elementarySubgroup hij a))
+
+/-- When there are two distinct indices, the centralizer of the elementary subgroup of `GL n A`
+is the center of `GL n A`. -/
+@[simp]
+theorem centralizer_elementarySubgroup [Nontrivial n] :
+    Subgroup.centralizer (elementarySubgroup n A : Set (GL n A)) = Subgroup.center (GL n A) := by
+  refine le_antisymm (fun g hg ↦ Subgroup.mem_center_iff.2 fun h ↦ ?_)
+    (Subgroup.center_le_centralizer _)
+  rw [mem_centralizer_elementarySubgroup_iff, ← center_eq_scalar_image] at hg
+  exact Units.ext (Semigroup.mem_center_iff.1 hg (h : Matrix n n A))
 
 /-! ## Block matrices -/
 
