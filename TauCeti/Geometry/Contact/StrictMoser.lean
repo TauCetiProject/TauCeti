@@ -793,9 +793,10 @@ of which the strict Moser vector field vanishes at all times, and let `U ⊆ ℝ
 on which `h_t` solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` and which
 contains `(u, x)` for every `x ∈ K` and every time `u` between `s` and `t`. Then there is a smooth
 partial diffeomorphism `φ` of `M`, whose source and target are open neighbourhoods of `K`, which
-fixes every point of `K` and pulls `α_t` back to `α_s` on its source. It is the restriction of the
-strict Moser partial isotopy `TauCeti.SmoothForm.strictMoserPartialDiffeomorph` to the points
-whose trajectories stay in `U`. Neither `K` nor `M` need be compact, and `K` need not be
+fixes every point of `K` and pulls `α_t` back to `α_s` on its source. The proof takes `φ` to be
+the restriction of the strict Moser partial isotopy
+`TauCeti.SmoothForm.strictMoserPartialDiffeomorph` to the points whose trajectories stay in `U`;
+the statement does not record this. Neither `K` nor `M` need be compact, and `K` need not be
 closed. -/
 theorem exists_partialDiffeomorph_mpullback_eq {K : Set M}
     (hK : ∀ x ∈ K, ∀ u, α.strictMoserVectorField h u x = 0) {U : Set (ℝ × M)} (hU : IsOpen U)
