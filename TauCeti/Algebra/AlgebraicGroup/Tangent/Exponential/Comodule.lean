@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Nilpotent.Exp
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Exponential
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Kernel
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Basic
 
 /-!
 # Exponential points on comodules
@@ -23,9 +23,7 @@ coaction intertwines these two actions, `coact (d • m) = (id ⊗ D) (coact m)`
 When `H` is a commutative Hopf algebra that is also a `ℚ`-algebra and `M` is a `ℚ`-module, the
 exponential point `exp d = ε ∘ exp D` acts on `m ∈ M` by the truncated exponential series of
 `differential d`, and when `differential d` is nilpotent on `M` the linear action of `exp d` is the
-operator exponential `IsNilpotent.exp (differential d)`. Conversely, in any faithful representation
-with a finite basis, nilpotence of `differential d` makes the tangent matrix in `GLₙ` nilpotent and
-so forces `D` to be locally nilpotent on `H`.
+operator exponential `IsNilpotent.exp (differential d)`.
 
 ## Main declarations
 
@@ -33,17 +31,13 @@ so forces `D` to be locally nilpotent on `H`.
   intertwines `Comodule.differential d` and its powers with `Bialgebra.leftInvariantDerivation d`.
 * `TauCeti.Comodule.pow_differential_apply`: `(differential d ^ n) m` contracts the coaction against
   `ε ∘ Dⁿ`.
-* `TauCeti.Comodule.exists_pow_differential_apply_eq_zero` and
-  `TauCeti.Comodule.isNilpotent_differential_of_finite`: local nilpotence of `D` implies local
-  nilpotence of `differential d`, and nilpotence on finitely generated comodules.
+* `exists_pow_differential_apply_eq_zero_of_forall_exists_iterate_leftInvariantDerivation_eq_zero`
+  and `isNilpotent_differential_of_finite_of_forall_exists_iterate_leftInvariantDerivation_eq_zero`
+  in `TauCeti.Comodule`: local nilpotence of `D` implies local nilpotence of `differential d`, and
+  nilpotence on finitely generated comodules.
 * `TauCeti.Comodule.basePointsRepresentation_expPoint_apply_eq_sum` and
   `TauCeti.Comodule.basePointsRepresentation_expPoint`: `Bialgebra.expPoint d hd` acts on `M` by the
   exponential series of `differential d`.
-* `TauCeti.HopfIdeal.toConv_expPoint_mem_quotientPointsSubgroup`: the exponential point of a
-  subgroup tangent vector lies in the closed subgroup.
-* `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential`: a
-  surjective coordinate representation with nilpotent differentiated action makes `D` locally
-  nilpotent.
 
 ## References
 
@@ -95,11 +89,10 @@ theorem pow_differential_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H 
       LinearMap.tensorComponent
         (Coalgebra.counit (R := R) ∘ₗ (Bialgebra.leftInvariantDerivation d).toLinearMap ^ n)
         (coact (R := R) (C := H) m) := by
-  have hcounit := congrArg (TensorProduct.rid R M)
-    (lTensor_counit_coact (R := R) (C := H) (((differential (R := R) (H := H) d) ^ n) m))
-  rw [TensorProduct.rid_tmul, one_smul] at hcounit
-  rw [← hcounit, coact_pow_differential, ← LinearMap.lTensor_comp_apply,
-    LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [← rid_lTensor_counit_coact (R := R) (C := H)
+      (((differential (R := R) (H := H) (M := M) d) ^ n) m),
+    coact_pow_differential, ← LinearMap.lTensor_comp_apply, LinearMap.tensorComponent_def,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
 
 omit [Comodule R H M] in
 /-- Any tensor in `M ⊗ H` is annihilated in its `H`-factor by a uniform iterate of a locally
@@ -122,7 +115,8 @@ private theorem exists_lTensor_pow_leftInvariantDerivation_eq_zero
       rw [map_add, hNx k (le_of_max_le_left hk), hNy k (le_of_max_le_right hk), add_zero]⟩
 
 /-- **Local nilpotence passes from the invariant derivation to every comodule.** -/
-theorem exists_pow_differential_apply_eq_zero
+theorem
+    exists_pow_differential_apply_eq_zero_of_forall_exists_iterate_leftInvariantDerivation_eq_zero
     {d : Derivation R H (Bialgebra.CounitAlgebra R H R)}
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (m : M) :
     ∃ n, ((differential (R := R) (H := H) (M := M) d) ^ n) m = 0 := by
@@ -134,13 +128,16 @@ theorem exists_pow_differential_apply_eq_zero
 
 /-- **On a finitely generated comodule, a locally nilpotent invariant derivation induces a
 nilpotent differentiated operator.** -/
-theorem isNilpotent_differential_of_finite [Module.Finite R M]
+theorem isNilpotent_differential_of_finite_of_forall_exists_iterate_leftInvariantDerivation_eq_zero
+    [Module.Finite R M]
     {d : Derivation R H (Bialgebra.CounitAlgebra R H R)}
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) :
     IsNilpotent (differential (R := R) (H := H) (M := M) d) := by
   classical
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
-  choose n hn using exists_pow_differential_apply_eq_zero (M := M) hd
+  choose n hn using
+    exists_pow_differential_apply_eq_zero_of_forall_exists_iterate_leftInvariantDerivation_eq_zero
+      (M := M) hd
   refine ⟨s.sup n, LinearMap.ext fun m ↦ ?_⟩
   have hm : m ∈ Submodule.span R (s : Set M) := hs.symm ▸ Submodule.mem_top
   rw [LinearMap.zero_apply]
@@ -217,12 +214,8 @@ theorem basePointsRepresentation_expPoint_apply_eq_sum
   obtain ⟨N, hN⟩ := tensorComponent_expPoint_eq_sum hd (coact (R := R) (C := H) m)
   rw [hbase, hN (max N k) (le_max_left N k)]
   simp_rw [← pow_differential_apply]
-  rw [← Finset.sum_range_add_sum_Ico _ (le_max_right N k)]
-  suffices ∑ i ∈ Finset.Ico k (max N k),
-      (i.factorial : ℚ)⁻¹ • ((differential (R := R) (H := H) (M := M) d) ^ i) m = 0 by
-    rw [this, add_zero]
-  refine Finset.sum_eq_zero fun i hi ↦ ?_
-  rw [Module.End.pow_map_zero_of_le (Finset.mem_Ico.mp hi).1 hm, smul_zero]
+  exact (differential (R := R) (H := H) (M := M) d).sum_range_smul_pow_apply_eq_of_le _ hm
+    (le_max_right N k)
 
 /-- **On a comodule where the differentiated operator is nilpotent, the exponential point acts by
 the operator exponential `IsNilpotent.exp`.** -/
@@ -242,42 +235,3 @@ theorem basePointsRepresentation_expPoint
 end Exponential
 
 end TauCeti.Comodule
-
-namespace TauCeti.HopfIdeal
-
-variable {R H : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H] [Algebra ℚ H]
-
-/-- **The exponential point of a subgroup tangent vector lies in the closed subgroup.** -/
-theorem toConv_expPoint_mem_quotientPointsSubgroup (I : HopfIdeal R H)
-    {d : Derivation R H (Bialgebra.CounitAlgebra R H R)} (hd : d ∈ I.lieSubalgebra (B := R))
-    (hD : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) :
-    toConv (Bialgebra.expPoint d hD) ∈
-      CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I
-        (CommAlgCat.of R R) := by
-  rw [← Bialgebra.expPointAt_one]
-  exact I.expPointAt_mem_quotientPointsSubgroup hd hD (1 : R)
-
-end TauCeti.HopfIdeal
-
-namespace Derivation
-
-open TauCeti
-
-variable {R H M : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
-variable [AddCommGroup M] [Module R M] [Comodule R H M] {n : ℕ}
-
-/-- **Nilpotence in a faithful representation forces local nilpotence of the invariant derivation.**
-If the coordinate map of a finite basis `b` is surjective and `Comodule.differential d` is
-nilpotent on `M`, then `Bialgebra.leftInvariantDerivation d` is locally nilpotent on `H`. -/
-theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (b : Module.Basis (Fin n) R M)
-    (hf : Function.Surjective (Comodule.coordinateBialgHom (H := H) b))
-    (hd : IsNilpotent (Comodule.differential (R := R) (H := H) (M := M) d)) :
-    ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 := by
-  refine BialgHom.exists_iterate_leftInvariantDerivation_eq_zero_of_surjective
-    (Comodule.coordinateBialgHom (H := H) b) hf d
-    (GeneralLinear.exists_iterate_leftInvariantDerivation_eq_zero n _ ?_)
-  rw [d.tangentMatrix_comp_coordinateBialgHom b]
-  exact hd.map (LinearMap.toMatrixAlgEquiv b).toRingHom
-
-end Derivation

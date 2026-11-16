@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrder
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
+import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 
 /-!
 # The closure order on orbits of vectors
@@ -24,7 +27,9 @@ and even distinct closures. The *closure order* on orbits,
   `O ≤ O'` if and only if `O ⊆ closure O'`,
 
 is therefore a partial order. An orbit lies strictly below another exactly when its vectors lie
-in the boundary `closure O' \ O'`, and then it has strictly smaller dimension.
+in the boundary `closure O' \ O'`, and then it has strictly smaller dimension. Moreover, any
+polynomial function in `Sym(M*)` that vanishes on every rational translate of `v` also vanishes at
+every vector whose orbit lies below the orbit of `v`.
 
 Applied to the adjoint representation of `G` on its Lie algebra, this is the closure order on
 adjoint orbits, in particular on nilpotent orbits.
@@ -40,6 +45,9 @@ adjoint orbits, in particular on nilpotent orbits.
   `v`, and strictly below when `w` lies in its boundary.
 * `TauCeti.Comodule.VectorOrbit.strictMono_topologicalKrullDim_image`: strictly smaller orbits
   have strictly smaller dimension.
+* `lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero` in
+  `TauCeti.Comodule.VectorOrbit`: polynomials vanishing on all rational translates of `v` vanish
+  at every `w` with `mk w ≤ mk v`.
 
 ## References
 
@@ -135,6 +143,75 @@ theorem strictMono_topologicalKrullDim_image :
   beta_reduce
   rw [image_mk, image_mk]
   exact Comodule.topologicalKrullDim_range_projectiveOrbitMap_lt _ _ (mk_lt_mk_iff.mp h)
+
+/-- **Polynomials vanishing on a rational orbit vanish on its closure.** Over an algebraically
+closed field, if the rational orbit of `w` lies in the closure of the rational orbit of `v`, and a
+polynomial `p ∈ Sym(M*)` vanishes on `g • v` for every rational point `g ∈ G(k)`, then `p` vanishes
+at `w`. -/
+theorem lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero
+    {v w : M} (h : (mk w : VectorOrbit k H M) ≤ mk v)
+    {p : SymmetricAlgebra k (Module.Dual k M)}
+    (hp : ∀ g : WithConv (H →ₐ[k] k),
+      SymmetricAlgebra.lift (Module.Dual.eval k M (basePointsRepresentation M g v)) p = 0) :
+    SymmetricAlgebra.lift (Module.Dual.eval k M w) p = 0 := by
+  classical
+  -- Homogenize `p` to degree `d` against the trivial projective coordinate `t` on `M × k`.
+  let 𝒜_M := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)
+  let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
+  let F := SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap
+  let t : SymmetricAlgebra k (Module.Dual k (M × k)) :=
+    SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)
+  let d : ℕ := (DirectSum.decompose 𝒜_M p).support.sup id + 1
+  let P : SymmetricAlgebra k (Module.Dual k (M × k)) :=
+    ∑ i ∈ (DirectSum.decompose 𝒜_M p).support,
+      F (DirectSum.decompose 𝒜_M p i : SymmetricAlgebra k (Module.Dual k M)) * t ^ (d - i)
+  have hP : P ∈ 𝒜 d := by
+    refine Submodule.sum_mem _ fun i hi ↦ ?_
+    have hid : i ≤ d :=
+      (Finset.le_sup (f := id) hi).trans (Nat.le_succ _)
+    have hFi : F (DirectSum.decompose 𝒜_M p i : SymmetricAlgebra k (Module.Dual k M)) ∈ 𝒜 i :=
+      TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _ (SetLike.coe_mem _)
+    have ht : t ^ (d - i) ∈ 𝒜 (d - i) :=
+      Submodule.pow_mem_pow _ (LinearMap.mem_range_self _ (LinearMap.snd k M k)) (d - i)
+    have hmul := SetLike.mul_mem_graded hFi ht
+    rwa [Nat.add_sub_of_le hid] at hmul
+  have heval (u : M) :
+      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P =
+        SymmetricAlgebra.lift (Module.Dual.eval k M u) p := by
+    have hF : (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).comp F =
+        SymmetricAlgebra.lift (Module.Dual.eval k M u) := by
+      ext φ
+      simp [F]
+    have ht : SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) t = 1 := by simp [t]
+    conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜_M p]
+    simp only [P, map_sum, map_mul, map_pow, ht, one_pow, mul_one]
+    exact Finset.sum_congr rfl fun i _ ↦ DFunLike.congr_fun hF _
+  have hrange : Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v)) ⊆ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ := by
+    rintro _ ⟨x, rfl⟩
+    refine (denseRange_kernelPoint (k := k) (A := H)).induction_on
+      (p := fun x ↦ projectiveOrbitMap (H := H) ((v, 1) : M × k)
+        (Module.isUnimodular_mk_one v) x ∈ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ) x
+      ((Proj.basicOpen 𝒜 P).isOpen.isClosed_compl.preimage
+        (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+          (Module.isUnimodular_mk_one v)).continuous) ?_
+    intro g
+    rw [Set.mem_compl_iff, SetLike.mem_coe, Proj.mem_basicOpen, not_not]
+    have hmem := (mem_projectiveOrbitMap_kernelPoint_iff ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v) (WithConv.toConv g) hP).mpr
+    rw [WithConv.ofConv_toConv] at hmem
+    exact hmem (by rw [basePointsRepresentation_prodTrivial, heval]; exact hp (WithConv.toConv g))
+  have hw_mem : projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
+      (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ :=
+    closure_minimal hrange (Proj.basicOpen 𝒜 P).isOpen.isClosed_compl (mk_le_mk_iff.mp h)
+  rw [Set.mem_compl_iff, SetLike.mem_coe, Proj.mem_basicOpen, not_not] at hw_mem
+  have h1 : (1 : WithConv (H →ₐ[k] k)).ofConv = Bialgebra.counitAlgHom k H := by
+    ext
+    simp [AlgHom.convOne_def]
+  rw [← h1] at hw_mem
+  have h0 := (mem_projectiveOrbitMap_kernelPoint_iff ((w, 1) : M × k)
+    (Module.isUnimodular_mk_one w) 1 hP).mp hw_mem
+  simpa [heval] using h0
 
 end VectorOrbit
 
