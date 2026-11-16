@@ -29,7 +29,8 @@ unitary group:
 * `exp(i0ω(D)) = 1` and `exp(i(s + t)ω(D)) = exp(isω(D)) exp(itω(D))`;
 * each operator preserves the `L²` norm and the inner product, and its adjoint is the operator at
   time `-t`;
-* `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`;
+* `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`, and `(t, f) ↦ exp(itω(D)) f` is jointly
+  continuous;
 * each operator commutes with every `L²` Fourier multiplier.
 
 Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
@@ -44,7 +45,8 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
 * `TauCeti.phasePropagator_zero`, `TauCeti.phasePropagator_add`: the group law.
 * `TauCeti.norm_phasePropagator_apply`, `TauCeti.inner_phasePropagator_apply`,
   `TauCeti.adjoint_phasePropagator`: unitarity.
-* `TauCeti.continuous_phasePropagator_apply`: strong continuity.
+* `TauCeti.continuous_phasePropagator_apply`, `TauCeti.continuous_phasePropagator_uncurry`: strong
+  continuity and joint continuity.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 
 ## References
@@ -280,5 +282,13 @@ theorem phaseGroup_apply (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
 theorem isUnitary_phaseGroup : (phaseGroup E F ω).IsUnitary :=
   Semigroups.StronglyContinuousGroup.IsUnitary.intro fun t f g ↦
     inner_phasePropagator_apply ω t f g
+
+/-- **Joint strong continuity**: `(t, f) ↦ exp(itω(D)) f` is continuous on `ℝ × L²`. -/
+theorem continuous_phasePropagator_uncurry :
+    Continuous fun p : ℝ × Lp F 2 (volume : Measure E) ↦ phasePropagator F ω p.1 p.2 :=
+  continuous_iff_continuousAt.2 fun _ ↦ by
+    rw [ContinuousAt]
+    simpa only [phaseGroup_apply] using (phaseGroup E F ω).tendsto_apply
+      continuous_fst.continuousAt continuous_snd.continuousAt
 
 end TauCeti
