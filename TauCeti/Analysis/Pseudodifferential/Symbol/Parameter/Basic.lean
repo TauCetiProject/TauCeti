@@ -735,6 +735,17 @@ theorem smul_spatialDeriv (c : ℂ) (a : ParameterSymbol n Λ V W m) (v : Coordi
       fderiv_const_smul (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz)]
 
 @[simp]
+theorem neg_spatialDeriv (a : ParameterSymbol n Λ V W m) (v : CoordinateSpace n) :
+    (-a).spatialDeriv v = -a.spatialDeriv v :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz, coefficient_neg, fderiv_neg]
+
+@[simp]
+theorem sub_spatialDeriv (a b : ParameterSymbol n Λ V W m) (v : CoordinateSpace n) :
+    (a - b).spatialDeriv v = a.spatialDeriv v - b.spatialDeriv v := by
+  simp [sub_eq_add_neg]
+
+@[simp]
 theorem spatialDeriv_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m)
     (v : CoordinateSpace n) : (inclusion h a).spatialDeriv v = inclusion h (a.spatialDeriv v) :=
   ext_of_mem fun x ξ z hz => by
@@ -759,6 +770,17 @@ theorem smul_frequencyDeriv (c : ℂ) (a : ParameterSymbol n Λ V W m) (w : Coor
   ext_of_mem fun x ξ z hz => by
     simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz,
       fderiv_const_smul (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz)]
+
+@[simp]
+theorem neg_frequencyDeriv (a : ParameterSymbol n Λ V W m) (w : CoordinateSpace n) :
+    (-a).frequencyDeriv w = -a.frequencyDeriv w :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz, coefficient_neg, fderiv_neg]
+
+@[simp]
+theorem sub_frequencyDeriv (a b : ParameterSymbol n Λ V W m) (w : CoordinateSpace n) :
+    (a - b).frequencyDeriv w = a.frequencyDeriv w - b.frequencyDeriv w := by
+  simp [sub_eq_add_neg]
 
 @[simp]
 theorem frequencyDeriv_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m)

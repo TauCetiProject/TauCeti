@@ -22,17 +22,17 @@ resolvent `(A - z)⁻¹`, before their asymptotic summation.
 * `TauCeti.ParameterSymbol.sharpTerm b a k`: the parameter-dependent symbol
   `((-i)ᵏ / k!) ∑_{|w| = k} ∂_ξ^w b ∘ ∂_x^w a` of order `m' + m - k`, summed over the words `w` of
   length `k` in the coordinate directions (`TauCeti.ParameterSymbol.coefficient_sharpTerm`).
-* `TauCeti.ParameterSymbol.leftParametrix`, `TauCeti.ParameterSymbol.rightParametrix`: for a
-  symbol `a` of order `m` elliptic with parameter, symbols `bⱼ` of order `-m - j` with
+* `TauCeti.ParameterSymbol.leftParametrixTerms`, `TauCeti.ParameterSymbol.rightParametrixTerms`:
+  for a symbol `a` of order `m` elliptic with parameter, symbols `bⱼ` of order `-m - j` with
   `b₀ = a⁻¹` that solve the formal composition equations
   `∑_{j + k = N} sharpTerm bⱼ a k = δ_{N,0}`
-  (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_leftParametrix`) and
+  (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_leftParametrixTerms`) and
   `∑_{j + k = N} sharpTerm a bⱼ k = δ_{N,0}`
-  (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrix`).
-* `TauCeti.ParameterSymbol.leftParametrix_succ_eq_zero_of_spatialDeriv_eq_zero`: for a symbol
+  (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrixTerms`).
+* `TauCeti.ParameterSymbol.leftParametrixTerms_succ_eq_zero_of_spatialDeriv_eq_zero`: for a symbol
   that does not depend on the position, such as the symbol of `s - Δ - z`
-  (`TauCeti.ParameterSymbol.leftParametrix_shiftedLaplacian_succ`), the correction terms vanish
-  and the left parametrix is the inverse symbol alone.
+  (`TauCeti.ParameterSymbol.leftParametrixTerms_shiftedLaplacian_succ_eq_zero`), the correction
+  terms vanish and the left parametrix is the inverse symbol alone.
 
 The definition and closed form of `TauCeti.ParameterSymbol.sharpTerm` follow
 `TauCeti.HomogeneousSymbol.sharpTerm` and `TauCeti.Symbol.sharpTerm`, and the parametrix
@@ -103,17 +103,6 @@ private theorem coefficient_sharpTerm_congr {k k' : ℕ} (h : k = k')
   subst h
   rfl
 
-/-- Differentiating the derivative of `f` in the coordinate direction `j` along a word is
-differentiating `f` along the word extended by `j`. -/
-private theorem coordinateDeriv_eq_append_singleton {A : Type*} [NormedAddCommGroup A]
-    [NormedSpace ℝ A] {f g : CoordinateSpace n → A} (w : List (Fin n)) (j : Fin n)
-    (h : ∀ y, g y = fderiv ℝ f y (EuclideanSpace.single j 1)) :
-    coordinateDeriv w g = coordinateDeriv (w ++ [j]) f := by
-  rw [coordinateDeriv_append]
-  congr 1
-  funext y
-  rw [h, coordinateDeriv_cons, coordinateDeriv_nil]
-
 /-- At a spectral parameter in `Λ`, a frequency derivative along a word of the frequency
 derivative `∂_{ξ_j} b` is the frequency derivative of `b` along the word extended by `j`. -/
 private theorem coordinateDeriv_frequencyDeriv (b : ParameterSymbol n Λ W U m')
@@ -177,7 +166,7 @@ theorem sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero (b : ParameterSymbol n Λ
 variable [CompleteSpace V]
 
 /-- The orders of the summands in the recursion for the left parametrix. -/
-private theorem leftParametrix_order_le (N : ℕ) (j : Fin (N + 1)) :
+private theorem leftParametrixTerms_order_le (N : ℕ) (j : Fin (N + 1)) :
     -m - (j : ℕ) + m - ((N + 1 - j : ℕ) : ℝ) ≤ -((N + 1 : ℕ) : ℝ) := by
   rw [Nat.cast_sub j.isLt.le]
   push_cast
@@ -187,49 +176,51 @@ private theorem leftParametrix_order_le (N : ℕ) (j : Fin (N + 1)) :
 parameter, with `bⱼ` of order `-m - j`: `b₀ = a⁻¹` and
 `b_{N+1} = -(∑_{j ≤ N} sharpTerm bⱼ a (N + 1 - j)) ∘ a⁻¹`. They solve the formal composition
 equations `∑_{j + k = N} sharpTerm bⱼ a k = δ_{N,0}`
-(`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_leftParametrix`). -/
-def leftParametrix (a : ParameterSymbol n Λ V W m) (ha : a.IsElliptic) :
+(`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_leftParametrixTerms`). -/
+def leftParametrixTerms (a : ParameterSymbol n Λ V W m) (ha : a.IsElliptic) :
     (N : ℕ) → ParameterSymbol n Λ W V (-m - N)
   | 0 => inclusion (by simp) (a.inverse ha)
   | N + 1 => inclusion (le_of_eq (by push_cast; ring))
-      (-((∑ j : Fin (N + 1), inclusion (leftParametrix_order_le N j)
-        ((leftParametrix a ha j).sharpTerm a (N + 1 - j))).comp (a.inverse ha)))
+      (-((∑ j : Fin (N + 1), inclusion (leftParametrixTerms_order_le N j)
+        ((leftParametrixTerms a ha j).sharpTerm a (N + 1 - j))).comp (a.inverse ha)))
 decreasing_by exact j.isLt
 
 variable {a : ParameterSymbol n Λ V W m}
 
 /-- The leading term of the left parametrix is the inverse symbol. -/
 @[simp]
-theorem coefficient_leftParametrix_zero (ha : a.IsElliptic)
+theorem coefficient_leftParametrixTerms_zero (ha : a.IsElliptic)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
-    (a.leftParametrix ha 0).coefficient p = (a.coefficient p).inverse := by
-  simp [leftParametrix]
+    (a.leftParametrixTerms ha 0).coefficient p = (a.coefficient p).inverse := by
+  simp [leftParametrixTerms]
 
-theorem coefficient_leftParametrix_succ (ha : a.IsElliptic) (N : ℕ)
+theorem coefficient_leftParametrixTerms_succ (ha : a.IsElliptic) (N : ℕ)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
-    (a.leftParametrix ha (N + 1)).coefficient p =
-      -((∑ j ∈ range (N + 1), ((a.leftParametrix ha j).sharpTerm a (N + 1 - j)).coefficient p) ∘L
+    (a.leftParametrixTerms ha (N + 1)).coefficient p =
+      -((∑ j ∈ range (N + 1),
+          ((a.leftParametrixTerms ha j).sharpTerm a (N + 1 - j)).coefficient p) ∘L
         (a.coefficient p).inverse) := by
-  rw [leftParametrix]
+  rw [leftParametrixTerms]
   simp [Fin.sum_univ_eq_sum_range
-    (fun j => ((a.leftParametrix ha j).sharpTerm a (N + 1 - j)).coefficient p)]
+    (fun j => ((a.leftParametrixTerms ha j).sharpTerm a (N + 1 - j)).coefficient p)]
 
 /-- **The formal left parametrix with parameter.** For a symbol `a` of order `m` elliptic with
-parameter, the symbols `bⱼ = a.leftParametrix ha j` of order `-m - j` solve the formal composition
-equations: `∑_{j + k = N} sharpTerm bⱼ a k` is the identity for `N = 0` and vanishes for `N ≥ 1`,
-at every spectral parameter in `Λ`. -/
-theorem sum_coefficient_sharpTerm_leftParametrix (ha : a.IsElliptic) (N : ℕ)
+parameter, the symbols `bⱼ = a.leftParametrixTerms ha j` of order `-m - j` solve the formal
+composition equations: `∑_{j + k = N} sharpTerm bⱼ a k` is the identity for `N = 0` and vanishes
+for `N ≥ 1`, at every spectral parameter in `Λ`. -/
+theorem sum_coefficient_sharpTerm_leftParametrixTerms (ha : a.IsElliptic) (N : ℕ)
     (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
-    ∑ j ∈ range (N + 1), ((a.leftParametrix ha j).sharpTerm a (N - j)).coefficient ((x, ξ), z) =
+    ∑ j ∈ range (N + 1),
+        ((a.leftParametrixTerms ha j).sharpTerm a (N - j)).coefficient ((x, ξ), z) =
       if N = 0 then ContinuousLinearMap.id ℂ V else 0 := by
   have h := (ha.isInvertible x ξ z hz).inverse_comp_self
   rcases N with _ | N
   · simpa using h
   rw [Finset.sum_range_succ, coefficient_sharpTerm_congr (Nat.sub_self (N + 1))]
-  simp [coefficient_leftParametrix_succ, ContinuousLinearMap.comp_assoc, h]
+  simp [coefficient_leftParametrixTerms_succ, ContinuousLinearMap.comp_assoc, h]
 
 /-- The orders of the summands in the recursion for the right parametrix. -/
-private theorem rightParametrix_order_le (N : ℕ) (j : Fin (N + 1)) :
+private theorem rightParametrixTerms_order_le (N : ℕ) (j : Fin (N + 1)) :
     m + (-m - (j : ℕ)) - ((N + 1 - j : ℕ) : ℝ) ≤ -((N + 1 : ℕ) : ℝ) := by
   rw [Nat.cast_sub j.isLt.le]
   push_cast
@@ -240,64 +231,66 @@ variable (a) in
 parameter, with `bⱼ` of order `-m - j`: `b₀ = a⁻¹` and
 `b_{N+1} = -a⁻¹ ∘ ∑_{j ≤ N} sharpTerm a bⱼ (N + 1 - j)`. They solve the formal composition
 equations `∑_{j + k = N} sharpTerm a bⱼ k = δ_{N,0}`
-(`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrix`). -/
-def rightParametrix (ha : a.IsElliptic) : (N : ℕ) → ParameterSymbol n Λ W V (-m - N)
+(`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrixTerms`). -/
+def rightParametrixTerms (ha : a.IsElliptic) : (N : ℕ) → ParameterSymbol n Λ W V (-m - N)
   | 0 => inclusion (by simp) (a.inverse ha)
   | N + 1 => inclusion (le_of_eq (by push_cast; ring))
-      (-((a.inverse ha).comp (∑ j : Fin (N + 1), inclusion (rightParametrix_order_le N j)
-        (a.sharpTerm (rightParametrix ha j) (N + 1 - j)))))
+      (-((a.inverse ha).comp (∑ j : Fin (N + 1), inclusion (rightParametrixTerms_order_le N j)
+        (a.sharpTerm (rightParametrixTerms ha j) (N + 1 - j)))))
 decreasing_by exact j.isLt
 
 /-- The leading term of the right parametrix is the inverse symbol. -/
 @[simp]
-theorem coefficient_rightParametrix_zero (ha : a.IsElliptic)
+theorem coefficient_rightParametrixTerms_zero (ha : a.IsElliptic)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
-    (a.rightParametrix ha 0).coefficient p = (a.coefficient p).inverse := by
-  simp [rightParametrix]
+    (a.rightParametrixTerms ha 0).coefficient p = (a.coefficient p).inverse := by
+  simp [rightParametrixTerms]
 
-theorem coefficient_rightParametrix_succ (ha : a.IsElliptic) (N : ℕ)
+theorem coefficient_rightParametrixTerms_succ (ha : a.IsElliptic) (N : ℕ)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
-    (a.rightParametrix ha (N + 1)).coefficient p =
+    (a.rightParametrixTerms ha (N + 1)).coefficient p =
       -((a.coefficient p).inverse ∘L
-        ∑ j ∈ range (N + 1), (a.sharpTerm (a.rightParametrix ha j) (N + 1 - j)).coefficient p) := by
-  rw [rightParametrix]
+        ∑ j ∈ range (N + 1),
+          (a.sharpTerm (a.rightParametrixTerms ha j) (N + 1 - j)).coefficient p) := by
+  rw [rightParametrixTerms]
   simp [Fin.sum_univ_eq_sum_range
-    (fun j => (a.sharpTerm (a.rightParametrix ha j) (N + 1 - j)).coefficient p)]
+    (fun j => (a.sharpTerm (a.rightParametrixTerms ha j) (N + 1 - j)).coefficient p)]
 
 /-- **The formal right parametrix with parameter.** For a symbol `a` of order `m` elliptic with
-parameter, the symbols `bⱼ = a.rightParametrix ha j` of order `-m - j` solve the formal composition
-equations: `∑_{j + k = N} sharpTerm a bⱼ k` is the identity for `N = 0` and vanishes for `N ≥ 1`,
-at every spectral parameter in `Λ`. -/
-theorem sum_coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) (N : ℕ)
+parameter, the symbols `bⱼ = a.rightParametrixTerms ha j` of order `-m - j` solve the formal
+composition equations: `∑_{j + k = N} sharpTerm a bⱼ k` is the identity for `N = 0` and vanishes
+for `N ≥ 1`, at every spectral parameter in `Λ`. -/
+theorem sum_coefficient_sharpTerm_rightParametrixTerms (ha : a.IsElliptic) (N : ℕ)
     (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
-    ∑ j ∈ range (N + 1), (a.sharpTerm (a.rightParametrix ha j) (N - j)).coefficient ((x, ξ), z) =
+    ∑ j ∈ range (N + 1),
+        (a.sharpTerm (a.rightParametrixTerms ha j) (N - j)).coefficient ((x, ξ), z) =
       if N = 0 then ContinuousLinearMap.id ℂ W else 0 := by
   have h := (ha.isInvertible x ξ z hz).self_comp_inverse
   rcases N with _ | N
   · simpa using h
   rw [Finset.sum_range_succ, coefficient_sharpTerm_congr (Nat.sub_self (N + 1))]
-  simp [coefficient_rightParametrix_succ, ← ContinuousLinearMap.comp_assoc, h]
+  simp [coefficient_rightParametrixTerms_succ, ← ContinuousLinearMap.comp_assoc, h]
 
 /-- For a symbol that does not depend on the position, the correction terms of the left
 parametrix vanish: it consists of the inverse symbol alone. -/
-theorem leftParametrix_succ_eq_zero_of_spatialDeriv_eq_zero (ha : a.IsElliptic)
-    (h : ∀ v, a.spatialDeriv v = 0) (N : ℕ) : a.leftParametrix ha (N + 1) = 0 := by
+theorem leftParametrixTerms_succ_eq_zero_of_spatialDeriv_eq_zero (ha : a.IsElliptic)
+    (h : ∀ v, a.spatialDeriv v = 0) (N : ℕ) : a.leftParametrixTerms ha (N + 1) = 0 := by
   refine ext_of_mem fun x ξ z _ => ?_
   have hterm : ∀ j ∈ range (N + 1),
-      ((a.leftParametrix ha j).sharpTerm a (N + 1 - j)).coefficient ((x, ξ), z) = 0 :=
+      ((a.leftParametrixTerms ha j).sharpTerm a (N + 1 - j)).coefficient ((x, ξ), z) = 0 :=
     fun j hj => by
       rw [coefficient_sharpTerm_congr (show N + 1 - j = N - j + 1 by grind),
         sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero _ h]
       simp
-  simp [coefficient_leftParametrix_succ, Finset.sum_eq_zero hterm]
+  simp [coefficient_leftParametrixTerms_succ, Finset.sum_eq_zero hterm]
 
 /-- For the symbol of `s - Δ - z`, which does not depend on the position, the correction terms of
 the left parametrix vanish: it consists of the resolvent symbol `((s + ‖ξ‖²) - z)⁻¹` alone
 (`TauCeti.ParameterSymbol.coefficient_inverse_shiftedLaplacian`). -/
-theorem leftParametrix_shiftedLaplacian_succ {s : ℝ}
+theorem leftParametrixTerms_shiftedLaplacian_succ_eq_zero {s : ℝ}
     (h : (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).IsElliptic) (N : ℕ) :
-    (shiftedLaplacian V s).leftParametrix h (N + 1) = 0 :=
-  leftParametrix_succ_eq_zero_of_spatialDeriv_eq_zero h (spatialDeriv_shiftedLaplacian s) N
+    (shiftedLaplacian V s).leftParametrixTerms h (N + 1) = 0 :=
+  leftParametrixTerms_succ_eq_zero_of_spatialDeriv_eq_zero h (spatialDeriv_shiftedLaplacian s) N
 
 end ParameterSymbol
 
