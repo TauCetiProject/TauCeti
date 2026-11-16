@@ -331,6 +331,7 @@ theorem isHomogeneous_comul_dualNumberIntegerGrade :
       (dualNumberIntegerGrade R)
       ((dualNumberIntegerInternalGrading R).tensorProduct
         (dualNumberIntegerInternalGrading R)).piece 2 := by
+  -- `dualNumberIntegerInternalGrading` is opaque across modules, so transport via `_piece`.
   let _ : GradedAlgebra (dualNumberIntegerInternalGrading R).piece :=
     (dualNumberIntegerInternalGrading_piece R).symm ▸ dualNumberIntegerGradedAlgebra R
   rw [← dualNumberIntegerInternalGrading_piece R]

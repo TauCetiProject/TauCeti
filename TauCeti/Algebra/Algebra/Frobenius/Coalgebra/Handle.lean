@@ -10,32 +10,21 @@ public import TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Basic
 /-!
 # Converse perfectness, dual-basis expansions, and the handle element
 
-This file completes the correspondence between perfect trace pairings and Frobenius coalgebras from
+Completes the correspondence between perfect trace pairings and Frobenius coalgebras from
 `TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Basic`, and develops dual-basis and handle identities.
+For a unital Frobenius coalgebra `A` over `R`, the trace pairing `(a, b) ↦ ε (a * b)` is perfect
+without associativity or commutativity. When `A` is commutative, `A` is cocommutative; when `A` is
+also finite and projective over `R`, `TauCeti.perfPairTraceEquivFrobeniusCoalgebra` gives a
+bijection between perfect traces and Frobenius coalgebras. On an associative Frobenius algebra,
+`Coalgebra.handleOp R A = mul' ∘ comul` acts by multiplication by the central element
+`Coalgebra.handleElem R A = mul' (comul 1)`, whose counit on a commutative Frobenius algebra with
+finite basis of size `n` is `n`.
 
-For a unital `R`-algebra `A` with `Coalgebra.IsFrobenius R A`, the pairing `(a, b) ↦ ε (a * b)` is
-perfect (`Coalgebra.IsFrobenius.isPerfPair_mul_compr₂_counit`), without associativity or
-commutativity of `A`. When `A` is commutative, every Frobenius coalgebra is cocommutative
-(`Coalgebra.IsFrobenius.instIsCocomm`), and when `A` is also finite and projective over `R`,
-`TauCeti.perfPairTraceEquivFrobeniusCoalgebra` packages reconstruction and counit extraction as a
-bijection between perfect traces and Frobenius coalgebra structures on `A`.
+## Main definitions and results
 
-The **handle operator** `Coalgebra.handleOp R A = mul' ∘ comul` and **handle element**
-`Coalgebra.handleElem R A = mul' (comul 1)` represent attaching a handle in 2D TQFT and foam
-evaluation. On an associative Frobenius algebra, `handleOp R A` acts by multiplication on either
-side by the central element `handleElem R A`; on a commutative Frobenius algebra with a finite basis
-of size `n`, `handleElem R A` is the sum of dual-basis products and its counit is `n`.
-
-## Main definitions
-
-* `TauCeti.perfPairTraceEquivFrobeniusCoalgebra`: bijection between perfect trace functionals and
-  Frobenius coalgebra structures on a finite projective commutative `R`-algebra.
-* `Coalgebra.handleOp`, `Coalgebra.handleElem`: `mul' ∘ comul` and `mul' (comul 1)`.
-
-## Main results
-
-* `Coalgebra.IsFrobenius.isPerfPair_mul_compr₂_counit`, `Coalgebra.IsFrobenius.instIsCocomm`.
-* `Coalgebra.IsFrobenius.comul_eq_sum_traceDualBasis`,
+* `TauCeti.perfPairTraceEquivFrobeniusCoalgebra`, `Coalgebra.handleOp`, `Coalgebra.handleElem`.
+* `Coalgebra.IsFrobenius.isPerfPair_mul_compr₂_counit`, `Coalgebra.IsFrobenius.instIsCocomm`,
+  `Coalgebra.IsFrobenius.comul_eq_sum_traceDualBasis`,
   `Coalgebra.IsFrobenius.comul_one_eq_sum_traceDualBasis`.
 * `Coalgebra.handleOp_apply_eq_mul_handleElem`, `Coalgebra.commute_handleElem`,
   `Coalgebra.iterate_handleOp_apply`, `Coalgebra.handleElem_eq_sum_mul_traceDualBasis`,

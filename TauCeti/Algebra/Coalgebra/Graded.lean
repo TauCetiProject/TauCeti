@@ -153,26 +153,18 @@ theorem CoalgEquiv.isHomogeneous_counit_iff (e : A ≃ₗc[R] B)
     (CoalgHomClass.counit_comp_apply e) d
 
 private theorem CoalgEquiv.isHomogeneous_comul_imp (e : A ≃ₗc[R] B)
-    (he : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) 𝒜 ℬ 0)
-    (hsymm : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) ℬ 𝒜 0) {d : ℤ}
-    (hA : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
-      ((InternalGrading.ofDecomposition 𝒜).tensorProduct
-        (InternalGrading.ofDecomposition 𝒜)).piece d) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) ℬ
-      ((InternalGrading.ofDecomposition ℬ).tensorProduct
-        (InternalGrading.ofDecomposition ℬ)).piece d := by
-  let GA := InternalGrading.ofDecomposition 𝒜; let GB := InternalGrading.ofDecomposition ℬ
-  have he' : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) GA.piece GB.piece 0 := by
-    simpa [GA, GB] using he
-  have hsymm' : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) GB.piece GA.piece 0 := by
-    simpa [GA, GB] using hsymm
-  have hA' : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) GA.piece
-      (GA.tensorProduct GA).piece d := by simpa [GA] using hA
+    (GA : InternalGrading R A ℤ) (GB : InternalGrading R B ℤ)
+    (he : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) GA.piece GB.piece 0)
+    (hsymm : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) GB.piece GA.piece 0) {d : ℤ}
+    (hA : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) GA.piece
+      (GA.tensorProduct GA).piece d) :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) GB.piece
+      (GB.tensorProduct GB).piece d := by
   have hB_eq : Coalgebra.comul (R := R) (A := B) =
       _root_.TensorProduct.map (LinearMap.ofClass e) (LinearMap.ofClass e) ∘ₗ
         Coalgebra.comul (R := R) (A := A) ∘ₗ LinearMap.ofClass e.symm :=
     LinearMap.ext fun _ => by simp [CoalgHomClass.map_comp_comul_apply]
-  rw [hB_eq]; simpa [GB] using (he'.tensorProduct he').comp (hA'.comp hsymm')
+  rw [hB_eq]; simpa using (he.tensorProduct he).comp (hA.comp hsymm)
 
 /-- A degree-zero coalgebra equivalence between internally `ℤ`-graded coalgebras preserves
 homogeneity of the coproduct at any degree `d`. -/
@@ -188,12 +180,15 @@ theorem CoalgEquiv.isHomogeneous_comul_iff (e : A ≃ₗc[R] B)
   have hcoe : (e : A ≃ₗ[R] B).toLinearMap = LinearMap.ofClass e := by ext; rfl
   have hcoe_symm : (e : A ≃ₗ[R] B).symm.toLinearMap = LinearMap.ofClass e.symm := by ext; rfl
   have hsymm_symm : LinearMap.ofClass e.symm.symm = LinearMap.ofClass e := by ext; rfl
-  have hsymm : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) ℬ 𝒜 0 := by
-    have he_GA : TauCeti.LinearMap.IsHomogeneous (e : A ≃ₗ[R] B).toLinearMap GA.piece GB.piece
-        0 := by rw [hcoe]; simpa [GA, GB] using he_hom
-    rw [← hcoe_symm]; simpa [GA, GB] using he_GA.linearEquiv_symm
-  exact ⟨e.isHomogeneous_comul_imp 𝒜 ℬ he_hom hsymm,
-    e.symm.isHomogeneous_comul_imp ℬ 𝒜 hsymm (hsymm_symm ▸ he_hom)⟩
+  have he' : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e) GA.piece GB.piece 0 := by
+    simpa [GA, GB] using he_hom
+  have hsymm' : TauCeti.LinearMap.IsHomogeneous (LinearMap.ofClass e.symm) GB.piece GA.piece 0 :=
+    hcoe_symm ▸ (hcoe.symm ▸ he').linearEquiv_symm
+  exact ⟨fun h => by
+      simpa [GA, GB] using e.isHomogeneous_comul_imp GA GB he' hsymm' (by simpa [GA] using h),
+    fun h => by
+      simpa [GA, GB] using e.symm.isHomogeneous_comul_imp GB GA hsymm' (hsymm_symm ▸ he')
+        (by simpa [GB] using h)⟩
 
 end Equiv
 
@@ -287,11 +282,9 @@ theorem Coalgebra.isHomogeneous_comul_baseChange (𝒜 : ℤ → Submodule R A)
   refine GA.tensorProduct_piece_le GA (C := (target.restrictScalars R).comap φ)
     (fun p a₁ ha₁ a₂ ha₂ => ?_) (hΔ.map_mem ha)
   rw [InternalGrading.ofDecomposition_piece] at ha₁ ha₂
-  have h1 : (1 : S) ⊗ₜ[R] a₁ ∈ GSA.piece p := by
-    simpa [GSA] using Submodule.tmul_mem_baseChange_of_mem (1 : S) ha₁
-  have h2 : (1 : S) ⊗ₜ[R] a₂ ∈ GSA.piece (n + d - p) := by
-    simpa [GSA] using Submodule.tmul_mem_baseChange_of_mem (1 : S) ha₂
-  simpa [φ, target] using GSA.tmul_mem_tensorProduct GSA h1 h2
+  simpa [φ, target] using GSA.tmul_mem_tensorProduct GSA (p := p) (q := n + d - p)
+    (by simpa [GSA] using Submodule.tmul_mem_baseChange_of_mem (1 : S) ha₁)
+    (by simpa [GSA] using Submodule.tmul_mem_baseChange_of_mem (1 : S) ha₂)
 
 /-- Extending scalars along a `ℤ`-graded commutative `R`-algebra `S`: if the counit of `A` has
 degree `d` into `trivialGrading R R`, then the `S`-linear counit of `S ⊗[R] A` viewed over `R` is

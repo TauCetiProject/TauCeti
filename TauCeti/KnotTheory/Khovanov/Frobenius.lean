@@ -154,8 +154,7 @@ theorem traceDualBasis_dualNumberBasis_apply (i : Fin 2) :
 /-- The handle element `m (Δ 1)` of the Khovanov Frobenius algebra is `2 • ε`. -/
 @[simp]
 theorem handleElem_eq : Coalgebra.handleElem R R[ε] = (2 : R) • (ε : R[ε]) := by
-  rw [← Coalgebra.handleOp_one, Coalgebra.handleOp_apply, comul_one, map_add,
-    LinearMap.mul'_apply, LinearMap.mul'_apply, one_mul, mul_one, two_smul]
+  simp [Coalgebra.handleElem_def, comul_one, two_smul]
 
 /-- Evaluating the Khovanov counit on the handle element gives `2`. -/
 theorem counit_handleElem_eq_two :

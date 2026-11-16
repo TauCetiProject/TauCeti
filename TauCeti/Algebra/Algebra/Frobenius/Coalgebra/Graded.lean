@@ -12,19 +12,14 @@ public import TauCeti.RingTheory.GradedAlgebra.TensorProduct
 /-!
 # Graded Frobenius coalgebras
 
-This file develops the degree theory of `ℤ`-graded Frobenius coalgebras on top of
-`TauCeti.Algebra.Coalgebra.Graded`.
-
-On a `ℤ`-graded Frobenius coalgebra `A` over a commutative semiring `R`, the counit has degree `-d`
-into `TauCeti.trivialGrading R R` iff the coproduct has degree `d` into the total-degree tensor
-grading (`Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul`), without
-commutativity or projectivity assumptions on `A`. Consequently, `Coalgebra.handleOp R A` has degree
-`d`, `Coalgebra.handleElem R A ∈ 𝒜 d`, and trace-dual basis elements lie in `𝒜 (d - deg i)`. With
-`TauCeti.Algebra.Coalgebra.Graded`, this gives closure under counit-preserving degree-zero algebra
-equivalences, tensor products, and trivially graded scalar extensions; for `ℤ`-graded base algebras
-`S`, `TauCeti.Algebra.Coalgebra.Graded` proves `R`-linear counit homogeneity and this file proves
-the total degree of the scalar-extended handle element
-(`Coalgebra.handleElem_baseChange_mem_tensorProduct`).
+Develops the degree theory of `ℤ`-graded Frobenius coalgebras on top of
+`TauCeti.Algebra.Coalgebra.Graded`. On a `ℤ`-graded Frobenius coalgebra `A` over a commutative
+semiring `R` (without commutativity or projectivity), the counit has degree `-d` into
+`TauCeti.trivialGrading R R` iff the coproduct has degree `d` into the total-degree tensor grading;
+hence `Coalgebra.handleOp R A` has degree `d`, `Coalgebra.handleElem R A ∈ 𝒜 d`, and trace-dual
+basis elements lie in `𝒜 (d - deg i)`. With `TauCeti.Algebra.Coalgebra.Graded`, this gives closure
+under counit-preserving degree-zero algebra equivalences, tensor products, and trivially graded
+scalar extensions, plus total degree of the scalar-extended handle element over `ℤ`-graded bases.
 
 ## Main results
 

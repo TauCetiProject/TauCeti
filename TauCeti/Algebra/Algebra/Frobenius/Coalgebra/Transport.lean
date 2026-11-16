@@ -16,33 +16,26 @@ public import TauCeti.Algebra.Coalgebra.BaseChange
 /-!
 # Transport, tensor products, and scalar extension of Frobenius coalgebras
 
-This file shows that the Frobenius coalgebra interface, reconstructed coproducts, dual bases, and
-handle elements are compatible with algebra equivalences, tensor products, and scalar extensions.
+Shows that the Frobenius coalgebra interface, reconstructed coproducts, dual bases, and handle
+elements are compatible with multiplicative coalgebra maps, algebra equivalences, tensor products,
+and scalar extensions. Any surjective multiplicative coalgebra homomorphism (preserving counit and
+comultiplication) pushes `Coalgebra.IsFrobenius` forward, any multiplicative coalgebra homomorphism
+intertwines `Coalgebra.handleOp`, any unital multiplicative coalgebra homomorphism preserves
+`Coalgebra.handleElem`, and any counit-preserving `e : A ≃ₐ[R] B` between Frobenius coalgebras
+upgrades to `e.toFrobeniusCoalgEquiv : A ≃ₗc[R] B`. For an `R`-algebra `S`, a Frobenius
+`S`-coalgebra `A`, and a Frobenius `R`-coalgebra `B`, `A ⊗[R] B` satisfies
+`Coalgebra.IsFrobenius S (A ⊗[R] B)` (covering both `S = R` and `A = S`), compatibly with
+`TensorProduct.dualDistrib`, `Module.Dual.baseChange`, `LinearMap.frobeniusCoalgebra`,
+`LinearMap.traceDualBasis`, and `Coalgebra.handleElem`.
 
-1. **Homomorphisms and trace-preserving algebra equivalences.** Any surjective linear map preserving
-   multiplication and comultiplication pushes `Coalgebra.IsFrobenius` forward
-   (`Coalgebra.IsFrobenius.of_surjective`), any multiplicative coalgebra map intertwines
-   `Coalgebra.handleOp`, and any unital multiplicative coalgebra map preserves
-   `Coalgebra.handleElem`. Any counit-preserving `e : A ≃ₐ[R] B` between Frobenius coalgebras
-   upgrades to `e.toFrobeniusCoalgEquiv : A ≃ₗc[R] B`.
-2. **Heterogeneous tensor products and scalar extension.** For an `R`-algebra `S`, a Frobenius
-   `S`-coalgebra `A`, and a Frobenius `R`-coalgebra `B`, `A ⊗[R] B` satisfies
-   `Coalgebra.IsFrobenius S (A ⊗[R] B)` (`TensorProduct.instIsFrobenius`), covering both `S = R` and
-   `A = S`, compatibly with `TensorProduct.dualDistrib`, `Module.Dual.baseChange`,
-   `LinearMap.frobeniusCoalgebra`, `LinearMap.traceDualBasis`, and `Coalgebra.handleElem`.
+## Main definitions and results
 
-## Main definitions
-
-* `AlgEquiv.toFrobeniusCoalgEquiv`, `LinearMap.frobeniusCoalgEquivOfAlgEquiv`.
-* `TensorProduct.instIsFrobenius`: `Coalgebra.IsFrobenius S (A ⊗[R] B)`.
-
-## Main results
-
-* `Coalgebra.IsFrobenius.of_surjective`, `Coalgebra.map_handleOp`, `Coalgebra.map_handleElem`.
-* `LinearMap.isPerfPair_mul_compr₂_comp_iff`, `LinearMap.traceDualBasis_map`.
+* `AlgEquiv.toFrobeniusCoalgEquiv`, `LinearMap.frobeniusCoalgEquivOfAlgEquiv`,
+  `TensorProduct.instIsFrobenius`.
+* `Coalgebra.IsFrobenius.of_surjective`, `Coalgebra.map_handleOp`, `Coalgebra.map_handleElem`,
+  `LinearMap.isPerfPair_mul_compr₂_comp_iff`, `LinearMap.traceDualBasis_map`.
 * `Coalgebra.handleOp_tensorProduct_tmul`, `Coalgebra.handleElem_tensorProduct`,
-  `Coalgebra.handleElem_baseChange`.
-* `LinearMap.isPerfPair_mul_compr₂_dualDistrib_tmul`,
+  `Coalgebra.handleElem_baseChange`, `LinearMap.isPerfPair_mul_compr₂_dualDistrib_tmul`,
   `LinearMap.frobeniusCoalgebra_dualDistrib_tmul`, `LinearMap.traceDualBasis_tensorProduct`,
   `LinearMap.isPerfPair_mul_compr₂_dualBaseChange`, `LinearMap.frobeniusCoalgebra_dualBaseChange`,
   `LinearMap.traceDualBasis_baseChange`.
@@ -70,8 +63,8 @@ variable {R A B F : Type*} [CommSemiring R]
   [CoalgebraStruct R A] [CoalgebraStruct R B] [FunLike F A B] [MulHomClass F A B]
   [CoalgHomClass F R A B]
 
-/-- A surjective linear map that preserves multiplication and comultiplication pushes
-`Coalgebra.IsFrobenius` forward. -/
+/-- A surjective multiplicative coalgebra homomorphism (preserving counit and comultiplication)
+pushes `Coalgebra.IsFrobenius` forward. -/
 theorem Coalgebra.IsFrobenius.of_surjective [Coalgebra.IsFrobenius R A] (f : F)
     (hf : Function.Surjective f) : Coalgebra.IsFrobenius R B := by
   let φ : A →ₗ[R] B := LinearMap.ofClass f
@@ -89,8 +82,8 @@ theorem Coalgebra.IsFrobenius.of_surjective [Coalgebra.IsFrobenius R A] (f : F)
   obtain ⟨a₁, rfl⟩ := hf b₁; obtain ⟨a₂, rfl⟩ := hf b₂
   rw [hleft, hright, Coalgebra.IsFrobenius.left_eq_right]
 
-/-- Any linear map preserving multiplication and comultiplication intertwines the handle
-operator. -/
+/-- Any multiplicative coalgebra homomorphism (preserving counit and comultiplication) intertwines
+the handle operator. -/
 theorem Coalgebra.map_handleOp (f : F) (a : A) :
     f (Coalgebra.handleOp R A a) = Coalgebra.handleOp R B (f a) := by
   rw [Coalgebra.handleOp_apply, Coalgebra.handleOp_apply, ← CoalgHomClass.map_comp_comul_apply f a]
@@ -98,8 +91,8 @@ theorem Coalgebra.map_handleOp (f : F) (a : A) :
 
 end MulCoalgHom
 
-/-- Any unital linear map preserving multiplication and comultiplication maps the handle element of
-the source to that of the target. -/
+/-- Any unital multiplicative coalgebra homomorphism (preserving counit and comultiplication) maps
+the handle element of the source to that of the target. -/
 theorem Coalgebra.map_handleElem {R A B F : Type*} [CommSemiring R]
     [NonAssocSemiring A] [NonAssocSemiring B] [Module R A] [Module R B]
     [SMulCommClass R A A] [IsScalarTower R A A] [SMulCommClass R B B] [IsScalarTower R B B]
@@ -125,10 +118,11 @@ namespace AlgEquiv
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
   [Coalgebra R A] [Coalgebra R B] [Coalgebra.IsFrobenius R A] [Coalgebra.IsFrobenius R B]
-  (e : A ≃ₐ[R] B)
+  (e : A ≃ₐ[R] B) (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a)
 
-private theorem toFrobeniusCoalgEquiv_map_comp_comul
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) :
+include he
+
+private theorem toFrobeniusCoalgEquiv_map_comp_comul :
     TensorProduct.map e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap ∘ₗ
         Coalgebra.comul (R := R) =
       Coalgebra.comul (R := R) ∘ₗ e.toLinearEquiv.toLinearMap := by
@@ -152,35 +146,26 @@ private theorem toFrobeniusCoalgEquiv_map_comp_comul
 /-- **A counit-preserving algebra isomorphism between Frobenius coalgebras is a coalgebra
 isomorphism**: without assuming commutativity of `A` or `B`, preserving multiplication and counit
 forces preservation of comultiplication. -/
-def toFrobeniusCoalgEquiv
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) : A ≃ₗc[R] B :=
+def toFrobeniusCoalgEquiv : A ≃ₗc[R] B :=
   { e.toLinearEquiv with
     counit_comp := LinearMap.ext he, map_comp_comul := toFrobeniusCoalgEquiv_map_comp_comul e he }
 
-@[simp] theorem coe_toFrobeniusCoalgEquiv
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) :
-    ⇑(e.toFrobeniusCoalgEquiv he) = e := (rfl)
+@[simp] theorem coe_toFrobeniusCoalgEquiv : ⇑(e.toFrobeniusCoalgEquiv he) = e := (rfl)
 
-@[simp] theorem toFrobeniusCoalgEquiv_apply
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) (a : A) :
-    e.toFrobeniusCoalgEquiv he a = e a := (rfl)
+@[simp] theorem toFrobeniusCoalgEquiv_apply (a : A) : e.toFrobeniusCoalgEquiv he a = e a := (rfl)
 
-@[simp] theorem toFrobeniusCoalgEquiv_symm_apply
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) (b : B) :
+@[simp] theorem toFrobeniusCoalgEquiv_symm_apply (b : B) :
     (e.toFrobeniusCoalgEquiv he).symm b = e.symm b := (rfl)
 
-@[simp] theorem linearMapOfClass_toFrobeniusCoalgEquiv
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) :
+@[simp] theorem linearMapOfClass_toFrobeniusCoalgEquiv :
     LinearMap.ofClass (e.toFrobeniusCoalgEquiv he) = e.toLinearMap := by ext; rfl
 
-@[simp] theorem linearMapOfClass_toFrobeniusCoalgEquiv_symm
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) :
+@[simp] theorem linearMapOfClass_toFrobeniusCoalgEquiv_symm :
     LinearMap.ofClass (e.toFrobeniusCoalgEquiv he).symm = e.symm.toLinearMap := by ext; rfl
 
 /-- A counit-preserving algebra isomorphism between Frobenius coalgebras intertwines their handle
 operators. -/
-theorem map_handleOp_of_counit_eq
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) (a : A) :
+theorem map_handleOp_of_counit_eq (a : A) :
     e (Coalgebra.handleOp R A a) = Coalgebra.handleOp R B (e a) := by
   have hcomul := CoalgHomClass.map_comp_comul_apply (e.toFrobeniusCoalgEquiv he) a
   simp only [linearMapOfClass_toFrobeniusCoalgEquiv, toFrobeniusCoalgEquiv_apply] at hcomul
@@ -189,9 +174,7 @@ theorem map_handleOp_of_counit_eq
 
 /-- A counit-preserving algebra isomorphism between Frobenius coalgebras maps the handle element of
 `A` to that of `B`. -/
-theorem map_handleElem_of_counit_eq
-    (he : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) :
-    e (Coalgebra.handleElem R A) = Coalgebra.handleElem R B := by
+theorem map_handleElem_of_counit_eq : e (Coalgebra.handleElem R A) = Coalgebra.handleElem R B := by
   simpa using e.map_handleOp_of_counit_eq he 1
 
 end AlgEquiv
@@ -265,13 +248,11 @@ variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [NonUnitalNonAssocSemiring B] [Module R B] [SMulCommClass R B B] [IsScalarTower R B B]
   [CoalgebraStruct S A] [CoalgebraStruct R B]
 
-private theorem TensorProduct.isFrobenius_left_tmul (a₁ a₂ : A) (b₁ b₂ : B) :
-    haveI : SMulCommClass R S A := IsScalarTower.to_smulCommClass
+private theorem TensorProduct.isFrobenius_left_tmul [SMulCommClass R S A] (a₁ a₂ : A) (b₁ b₂ : B) :
     Coalgebra.IsFrobenius.left S (A ⊗[R] B) ((a₁ ⊗ₜ[R] b₁) ⊗ₜ[S] (a₂ ⊗ₜ[R] b₂)) =
       AlgebraTensorModule.tensorTensorTensorComm R S R S A A B B
         (Coalgebra.IsFrobenius.left S A (a₁ ⊗ₜ[S] a₂) ⊗ₜ[R]
           Coalgebra.IsFrobenius.left R B (b₁ ⊗ₜ[R] b₂)) := by
-  have : SMulCommClass R S A := IsScalarTower.to_smulCommClass
   simp only [Coalgebra.IsFrobenius.left_def, LinearMap.comp_apply, LinearMap.rTensor_tmul,
     TensorProduct.comul_tmul]
   induction Coalgebra.comul (R := S) a₁ using TensorProduct.inductionOn with
@@ -280,13 +261,11 @@ private theorem TensorProduct.isFrobenius_left_tmul (a₁ a₂ : A) (b₁ b₂ :
       simp_all [tmul_add, add_tmul]
   | add u v hu hv => simp only [add_tmul, map_add, hu, hv]
 
-private theorem TensorProduct.isFrobenius_right_tmul (a₁ a₂ : A) (b₁ b₂ : B) :
-    haveI : SMulCommClass R S A := IsScalarTower.to_smulCommClass
+private theorem TensorProduct.isFrobenius_right_tmul [SMulCommClass R S A] (a₁ a₂ : A) (b₁ b₂ : B) :
     Coalgebra.IsFrobenius.right S (A ⊗[R] B) ((a₁ ⊗ₜ[R] b₁) ⊗ₜ[S] (a₂ ⊗ₜ[R] b₂)) =
       AlgebraTensorModule.tensorTensorTensorComm R S R S A A B B
         (Coalgebra.IsFrobenius.right S A (a₁ ⊗ₜ[S] a₂) ⊗ₜ[R]
           Coalgebra.IsFrobenius.right R B (b₁ ⊗ₜ[R] b₂)) := by
-  have : SMulCommClass R S A := IsScalarTower.to_smulCommClass
   simp only [Coalgebra.IsFrobenius.right_def, LinearMap.comp_apply, LinearMap.lTensor_tmul,
     TensorProduct.comul_tmul]
   induction Coalgebra.comul (R := S) a₂ using TensorProduct.inductionOn with

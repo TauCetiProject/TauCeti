@@ -199,8 +199,7 @@ is a Frobenius functional (`TauCeti.isFrobeniusFunctional_two_smul_sndHom_int`).
 theorem not_isPerfPair_mul_compr₂_two_smul_sndHom_int :
     ¬ ((LinearMap.mul ℤ (DualNumber ℤ)).compr₂
       ((2 : ℤ) • TrivSqZeroExt.sndHom ℤ ℤ)).IsPerfPair := fun h => by
-  have hu := (dualNumberBasis ℤ).isUnit_det_of_isPerfPair (dualNumberBasis ℤ) _ h
-  rw [det_toMatrix₂_mul_compr₂_two_smul_sndHom_int, Int.isUnit_iff] at hu; omega
+  simpa [Int.isUnit_iff] using (isPerfPair_mul_compr₂_smul_sndHom_iff ℤ 2).mp h
 
 end CommRing
 
