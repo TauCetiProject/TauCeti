@@ -29,7 +29,7 @@ convergence. Continuity on the initial compact time interval absorbs that interv
 No adapted metric or positivity of the Hessian is required, so a trajectory may converge to a
 saddle. For Morse functions, convergence alone supplies the nondegenerate critical point:
 `IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient` proves criticality of the limit,
-and `TauCeti.IsMorse.exists_riemannianEDist_le_exp_of_tendsto_neg_mgradient` gives the distance
+and `TauCeti.IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient` gives the distance
 bound.
 
 The comparison with the maximal curve moves the time origin to time `1`, which lies in the
@@ -149,7 +149,7 @@ private theorem eventually_riemannianEDist_neg_mgradient
 satisfies an exponential bound on its Riemannian extended distance to that point, for every
 nonnegative time and not only eventually. No metric space structure on `M` is assumed. The limit
 may be a saddle. -/
-theorem IsMIntegralCurveOn.exists_riemannianEDist_le_exp_of_tendsto_neg_mgradient
+theorem IsMIntegralCurveOn.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient
     (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0)) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hp : IsManifoldNondegenerateCriticalPoint I f p) (hconv : Tendsto γ atTop (𝓝 p)) :
     ∃ C > 0, ∃ c > 0, ∀ t ≥ 0,
@@ -189,13 +189,13 @@ namespace TauCeti
 /-- A convergent prescribed forward trajectory of a Morse function satisfies an exponential bound
 on its Riemannian extended distance to the limit, for every nonnegative time. No compact trap,
 criticality hypothesis on the limit or metric space structure on `M` needs to be supplied. -/
-theorem IsMorse.exists_riemannianEDist_le_exp_of_tendsto_neg_mgradient
+theorem IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient
     (hf : IsMorse I f) (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0))
     (hconv : Tendsto γ atTop (𝓝 p)) :
     ∃ C > 0, ∃ c > 0, ∀ t ≥ 0,
       Manifold.riemannianEDist I (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_num)
-  exact hγ.exists_riemannianEDist_le_exp_of_tendsto_neg_mgradient hf2
+  exact hγ.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient hf2
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
       (hγ.mem_criticalPoints_of_tendsto_neg_mgradient hf2 hconv)) hconv
 
