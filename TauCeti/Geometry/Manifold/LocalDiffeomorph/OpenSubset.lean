@@ -16,7 +16,9 @@ Mathlib's `OpenPartialHomeomorph.restrOpen` shrinks the source of an open partia
 to its intersection with an open set. This file provides the same operation for Mathlib's
 `PartialDiffeomorph`: the restriction is still `C^n` in both directions, because both of its
 domains are subsets of the original ones. It is used to make charts small, for example to make
-finitely many charts centred at distinct points pairwise disjoint.
+finitely many charts centred at distinct points pairwise disjoint. A partial diffeomorphism of `M`
+also restricts to a partial diffeomorphism of any nonempty open subset of `M`, the analogue of
+Mathlib's `OpenPartialHomeomorph.subtypeRestr`.
 
 A partial diffeomorphism is also a diffeomorphism between its source and its target, each an open
 subset carrying the charts Mathlib restricts to it. This is the analogue for partial
@@ -33,6 +35,8 @@ subset can be carried, near any point of its source, to the ambient manifold.
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
+* `PartialDiffeomorph.subtypeRestr`: the restriction of a partial diffeomorphism to a nonempty open
+  subset, as a partial diffeomorphism of that subset.
 * `PartialDiffeomorph.contMDiffOn_toOpenPartialHomeomorph_restrOpen` and its `symm` version: the
   restrictions of the underlying open partial homeomorphism to an open set are smooth.
 * `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
@@ -137,6 +141,53 @@ theorem contMDiffOn_toOpenPartialHomeomorph_restrOpen_symm {V : Set M} (hV : IsO
     exact inter_subset_left
   rw [OpenPartialHomeomorph.coe_restrOpen_symm, Φ.coe_toOpenPartialHomeomorph_symm]
   exact Φ.symm.contMDiffOn.mono htarget
+
+/-- The restriction of a partial diffeomorphism of `M` to a nonempty open subset `U` of `M`, as a
+partial diffeomorphism of `U` carrying the charts that Mathlib restricts to it. This is the
+counterpart for partial diffeomorphisms of Mathlib's `OpenPartialHomeomorph.subtypeRestr`; its
+source is the preimage of `Φ.source` in `U`. -/
+noncomputable def subtypeRestr (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    PartialDiffeomorph I J U N n where
+  toPartialEquiv := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).toPartialEquiv
+  open_source := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).open_source
+  open_target := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).open_target
+  contMDiffOn_toFun := by
+    change ContMDiffOn I J n (Φ.toOpenPartialHomeomorph.subtypeRestr hU)
+      (Φ.toOpenPartialHomeomorph.subtypeRestr hU).source
+    rw [OpenPartialHomeomorph.subtypeRestr_coe, OpenPartialHomeomorph.subtypeRestr_source]
+    exact Φ.contMDiffOn.comp contMDiff_subtype_val.contMDiffOn fun _ hx ↦ hx
+  contMDiffOn_invFun := fun x hx ↦ by
+    refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff ..).mp ?_
+    exact (Φ.contMDiffOn_invFun.mono (Φ.toOpenPartialHomeomorph.subtypeRestr_target_subset hU)
+      x hx).congr_of_mem (Φ.toOpenPartialHomeomorph.subtypeRestr_symm_eqOn hU).symm hx
+
+/-- The source of the restriction to `U` is the preimage of `Φ.source` in `U`. -/
+@[simp]
+theorem subtypeRestr_source (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    (Φ.subtypeRestr U hU).source = Subtype.val ⁻¹' Φ.source :=
+  Φ.toOpenPartialHomeomorph.subtypeRestr_source hU
+
+/-- The target of the restriction to `U` consists of the points of `Φ.target` whose preimage
+lies in `U`. -/
+@[simp]
+theorem subtypeRestr_target (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    (Φ.subtypeRestr U hU).target = Φ.target ∩ Φ.symm ⁻¹' U := by
+  change (Φ.toOpenPartialHomeomorph.subtypeRestr hU).target = _
+  rw [OpenPartialHomeomorph.subtypeRestr_def, OpenPartialHomeomorph.trans_target,
+    TopologicalSpace.Opens.openPartialHomeomorphSubtypeCoe_target]
+  rfl
+
+/-- The restriction to `U` evaluates as `Φ`. -/
+@[simp]
+theorem subtypeRestr_apply (U : TopologicalSpace.Opens M) (hU : Nonempty U) (x : U) :
+    Φ.subtypeRestr U hU x = Φ x :=
+  congrFun (Φ.toOpenPartialHomeomorph.subtypeRestr_coe hU) x
+
+/-- On its target, the inverse of the restriction to `U` is the inverse of `Φ`, read in `U`. -/
+theorem coe_subtypeRestr_symm_apply (U : TopologicalSpace.Opens M) (hU : Nonempty U) {y : N}
+    (hy : y ∈ (Φ.subtypeRestr U hU).target) :
+    ((Φ.subtypeRestr U hU).symm y : M) = Φ.symm y :=
+  (Φ.toOpenPartialHomeomorph.subtypeRestr_symm_eqOn hU hy).symm
 
 /-- A partial diffeomorphism is a diffeomorphism between its source and its target, as open
 subsets of `M` and `N`. -/
