@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.GraphAutomorphism.Coordinates
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.Algebra.Lie.Orthogonal.Basic
+import TauCeti.Algebra.Lie.SkewAdjoint.BlockDiagonal
+import TauCeti.Algebra.Lie.SkewAdjoint.Compression
 
 /-!
 # Restriction and extension for the type-D graph involution
@@ -24,6 +26,8 @@ open Matrix LieAlgebra.Orthogonal
 
 namespace TauCeti
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 variable {I : Type*} [DecidableEq I] [Fintype I] (c : I)
   (A : Type*) [CommRing A] [Invertible (2 : A)]
 
@@ -33,47 +37,39 @@ private theorem typeDGraphInclusion_transpose_mul_form :
   simpa only [Matrix.transpose_mul, Matrix.transpose_transpose, isSymm_JD.eq, isSymm_JB.eq] using
     congrArg Matrix.transpose (typeDGraphInclusion_form_transport c A)
 
+private theorem typeDGraphAntiInclusion_transpose_mul_form :
+    (typeDGraphAntiInclusion c A)ᵀ * JD I A =
+      (-2 : A) • (1 : Matrix Unit Unit A) * typeDGraphAntiProjection c A := by
+  simpa only [Matrix.transpose_mul, Matrix.transpose_transpose, isSymm_JD.eq,
+    Matrix.transpose_smul, Matrix.transpose_one] using
+    congrArg Matrix.transpose (typeDGraphAntiInclusion_form_transport c A)
+
+/- In the three membership proofs below, `typeD` and `typeB` are by definition the Lie
+subalgebras of matrices skew-adjoint for `JD` and `JB`, which is the form in which
+`mul_mul_mem_skewAdjointMatricesLieSubalgebra` states membership. -/
+
 private theorem typeDGraphRestriction_mem (X : typeD I A) :
     typeDGraphProjection c A * (X : Matrix (I ⊕ I) (I ⊕ I) A) *
-      typeDGraphInclusion c A ∈ typeB {i : I // i ≠ c} A := by
-  have hX := X.property
-  simp only [typeD, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair] at hX
-  simp only [typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair]
-  calc
-    _ = (typeDGraphInclusion c A)ᵀ * (X : Matrix (I ⊕ I) (I ⊕ I) A)ᵀ *
-        ((typeDGraphProjection c A)ᵀ * JB {i : I // i ≠ c} A) := by
-      simp only [Matrix.transpose_mul, Matrix.mul_assoc]
-    _ = (typeDGraphInclusion c A)ᵀ *
-        ((X : Matrix (I ⊕ I) (I ⊕ I) A)ᵀ * JD I A) * typeDGraphInclusion c A := by
-      rw [← typeDGraphInclusion_form_transport]
-      simp only [Matrix.mul_assoc]
-    _ = (typeDGraphInclusion c A)ᵀ *
-        (JD I A * (-(X : Matrix (I ⊕ I) (I ⊕ I) A))) * typeDGraphInclusion c A := by
-      rw [hX]
-    _ = _ := by
-      simp only [← Matrix.mul_assoc, typeDGraphInclusion_transpose_mul_form,
-        Matrix.mul_neg, Matrix.neg_mul]
+      typeDGraphInclusion c A ∈ typeB {i : I // i ≠ c} A :=
+  mul_mul_mem_skewAdjointMatricesLieSubalgebra (typeDGraphInclusion_transpose_mul_form c A)
+    (typeDGraphInclusion_form_transport c A) X.property
 
 private theorem typeDGraphExtension_mem (Y : typeB {i : I // i ≠ c} A) :
-    typeDGraphInclusion c A * Y.val * typeDGraphProjection c A ∈ typeD I A := by
-  have hY := Y.property
-  simp only [typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair] at hY
-  simp only [typeD, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair]
-  calc
-    _ = (typeDGraphProjection c A)ᵀ *
-        ((Y : Matrix _ _ A)ᵀ * JB {i : I // i ≠ c} A) * typeDGraphProjection c A := by
-      simp only [Matrix.transpose_mul, Matrix.mul_assoc,
-        typeDGraphInclusion_transpose_mul_form]
-    _ = (typeDGraphProjection c A)ᵀ *
-        (JB {i : I // i ≠ c} A * (-(Y : Matrix _ _ A))) * typeDGraphProjection c A := by
-      rw [hY]
-    _ = _ := by
-      simp only [← Matrix.mul_assoc, ← typeDGraphInclusion_form_transport,
-        Matrix.mul_neg, Matrix.neg_mul]
+    typeDGraphInclusion c A * Y.val * typeDGraphProjection c A ∈ typeD I A :=
+  mul_mul_mem_skewAdjointMatricesLieSubalgebra (typeDGraphInclusion_form_transport c A).symm
+    (typeDGraphInclusion_transpose_mul_form c A).symm Y.property
+
+/-- The compression of a native even orthogonal operator to the anti-invariant line vanishes:
+the line has the regular norm `-2`, so its skew-adjoint Lie algebra is zero. -/
+private theorem typeDGraphAntiProjection_mul_mul_antiInclusion (X : typeD I A) :
+    typeDGraphAntiProjection c A * X.val * typeDGraphAntiInclusion c A = 0 := by
+  have hmem := mul_mul_mem_skewAdjointMatricesLieSubalgebra
+    (typeDGraphAntiInclusion_transpose_mul_form c A)
+    (typeDGraphAntiInclusion_form_transport c A) X.property
+  rwa [Matrix.skewAdjointMatricesLieSubalgebra_eq_bot_of_subsingleton _
+    (isUnit_of_invertible (2 : A)).isRegular
+    (fun _ => by simpa using (isUnit_of_invertible (2 : A)).neg.isRegular),
+    LieSubalgebra.mem_bot] at hmem
 
 private theorem typeDGraphExtension_mul
     (Y Z : Matrix (Unit ⊕ {i : I // i ≠ c} ⊕ {i : I // i ≠ c})
@@ -194,41 +190,18 @@ private theorem typeDGraphAntiProjection_mul_fixed_mul_inclusion (X : typeD I A)
 theorem typeDGraphFixed_mul_antiInclusion (X : typeD I A)
     (hX : typeDGraphLieEquiv c A X = X) :
     X.val * typeDGraphAntiInclusion c A = 0 := by
-  let a := typeDGraphAntiProjection c A * X.val * typeDGraphAntiInclusion c A
-  have hsplit : X.val * typeDGraphAntiInclusion c A = typeDGraphAntiInclusion c A * a := by
-    calc
-      _ = typeDGraphInclusion c A *
-          (typeDGraphProjection c A * X.val * typeDGraphAntiInclusion c A) +
-            typeDGraphAntiInclusion c A * a := by
-        simpa only [a, Matrix.mul_assoc] using
-          (typeDGraphInclusion_mul_projection_mul_add c A
-            (X.val * typeDGraphAntiInclusion c A)).symm
-      _ = _ := by
-        rw [typeDGraphProjection_mul_fixed_mul_antiInclusion c A X hX,
-          Matrix.mul_zero, zero_add]
-  have hskew := X.property
-  simp only [typeD, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair] at hskew
-  have hsandwich := congrArg (fun M : Matrix (I ⊕ I) (I ⊕ I) A =>
-    (typeDGraphAntiInclusion c A)ᵀ * M * typeDGraphAntiInclusion c A) hskew
-  have ha : aᵀ * ((typeDGraphAntiInclusion c A)ᵀ * JD I A *
-      typeDGraphAntiInclusion c A) =
-      -(((typeDGraphAntiInclusion c A)ᵀ * JD I A * typeDGraphAntiInclusion c A) * a) := by
-    have h : (X.val * typeDGraphAntiInclusion c A)ᵀ * JD I A *
-        typeDGraphAntiInclusion c A =
-        -((typeDGraphAntiInclusion c A)ᵀ * JD I A *
-          (X.val * typeDGraphAntiInclusion c A)) := by
-      simpa only [Matrix.transpose_mul, Matrix.mul_assoc, Matrix.mul_neg,
-        Matrix.neg_mul] using hsandwich
-    rw [hsplit] at h
-    simpa only [Matrix.transpose_mul, Matrix.mul_assoc] using h
-  have hat : aᵀ = a := by ext i j; cases i; cases j; rfl
-  rw [hat, typeDGraphAntiInclusion_gram] at ha
-  simp only [Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, Matrix.one_mul] at ha
-  have ha0 : a = 0 :=
-    (isUnit_of_invertible (2 : A)).neg.smul_eq_zero.mp
-      (eq_zero_of_eq_neg_of_invertible_two (R := A) ha)
-  rw [hsplit, ha0, Matrix.mul_zero]
+  calc
+    _ = typeDGraphInclusion c A *
+        (typeDGraphProjection c A * X.val * typeDGraphAntiInclusion c A) +
+          typeDGraphAntiInclusion c A *
+            (typeDGraphAntiProjection c A * X.val * typeDGraphAntiInclusion c A) := by
+      simpa only [Matrix.mul_assoc] using
+        (typeDGraphInclusion_mul_projection_mul_add c A
+          (X.val * typeDGraphAntiInclusion c A)).symm
+    _ = _ := by
+      rw [typeDGraphProjection_mul_fixed_mul_antiInclusion c A X hX,
+        typeDGraphAntiProjection_mul_mul_antiInclusion, Matrix.mul_zero, Matrix.mul_zero,
+        add_zero]
 
 /-- Extension recovers every fixed native even orthogonal operator from its restriction. -/
 theorem typeDGraphExtension_restriction (X : typeD I A)
