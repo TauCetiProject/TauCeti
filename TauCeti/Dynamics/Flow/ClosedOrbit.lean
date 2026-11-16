@@ -613,9 +613,7 @@ theorem minimalPeriod_eq_period_div_multiplicity (γ : ClosedOrbit ϕ) :
 theorem period_mem_zmultiples_minimalPeriod (γ : ClosedOrbit ϕ) :
     γ.period ∈ AddSubgroup.zmultiples γ.minimalPeriod :=
   AddSubgroup.mem_zmultiples_iff.2
-    ⟨(γ.multiplicity : ℕ), by
-      rw [natCast_zsmul, nsmul_eq_mul]
-      exact γ.multiplicity_mul_minimalPeriod⟩
+    ⟨(γ.multiplicity : ℕ), by simpa [nsmul_eq_mul] using γ.multiplicity_mul_minimalPeriod⟩
 
 /-- The reparametrization group of `γ` is the kernel of the covering map
 `AddCircle γ.period →+ AddCircle γ.minimalPeriod`. -/
@@ -663,13 +661,8 @@ instance finite_reparamGroup (γ : ClosedOrbit ϕ) : Finite γ.reparamGroup :=
 /-- The reparametrization group of `γ` is trivial if and only if `γ` is primitive. -/
 theorem reparamGroup_eq_bot_iff {γ : ClosedOrbit ϕ} :
     γ.reparamGroup = ⊥ ↔ γ.IsPrimitive := by
-  rw [reparamGroup_def, AddSubgroup.zmultiples_eq_bot]
-  constructor
-  · intro h
-    rw [isPrimitive_iff_multiplicity_eq_one, ← PNat.coe_eq_one_iff,
-      ← γ.addOrderOf_coe_minimalPeriod, h, addOrderOf_zero]
-  · intro h
-    rw [← isPrimitive_iff.1 h, AddCircle.coe_period]
+  rw [AddSubgroup.eq_bot_iff_card, γ.natCard_reparamGroup, PNat.coe_eq_one_iff,
+    ← isPrimitive_iff_multiplicity_eq_one]
 
 /-- The reparametrization group of the underlying primitive closed orbit is trivial. -/
 @[simp]
@@ -727,29 +720,23 @@ theorem zmodAddEquivReparamGroup_one (γ : ClosedOrbit ϕ) :
 @[simp]
 theorem zmodAddEquivReparamGroup_symm_apply_zsmul (γ : ClosedOrbit ϕ) (i : ℤ)
     (hmem : i • (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamGroup) :
-    γ.zmodAddEquivReparamGroup.symm ⟨i • (γ.minimalPeriod : AddCircle γ.period), hmem⟩ = i := by
-  rw [AddEquiv.symm_apply_eq]
-  ext
-  rw [Subtype.coe_mk, coe_zmodAddEquivReparamGroup_intCast, ← AddCircle.coe_zsmul, zsmul_eq_mul]
+    γ.zmodAddEquivReparamGroup.symm ⟨i • (γ.minimalPeriod : AddCircle γ.period), hmem⟩ = i :=
+  γ.zmodAddEquivReparamGroup.symm_apply_eq.2 (γ.zmodAddEquivReparamGroup_intCast i).symm
 
 /-- The inverse of `zmodAddEquivReparamGroup` sends `n • [γ.minimalPeriod]` to
 `(n : ZMod γ.multiplicity)`. -/
 @[simp]
 theorem zmodAddEquivReparamGroup_symm_apply_nsmul (γ : ClosedOrbit ϕ) (n : ℕ)
     (hmem : n • (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamGroup) :
-    γ.zmodAddEquivReparamGroup.symm ⟨n • (γ.minimalPeriod : AddCircle γ.period), hmem⟩ = n := by
-  rw [AddEquiv.symm_apply_eq]
-  ext
-  rw [Subtype.coe_mk, zmodAddEquivReparamGroup_natCast]
+    γ.zmodAddEquivReparamGroup.symm ⟨n • (γ.minimalPeriod : AddCircle γ.period), hmem⟩ = n :=
+  γ.zmodAddEquivReparamGroup.symm_apply_eq.2 (γ.zmodAddEquivReparamGroup_natCast n).symm
 
 /-- The inverse of `zmodAddEquivReparamGroup` sends the generator `[γ.minimalPeriod]` to `1`. -/
 @[simp]
 theorem zmodAddEquivReparamGroup_symm_apply_coe_minimalPeriod (γ : ClosedOrbit ϕ)
     (hmem : (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamGroup) :
-    γ.zmodAddEquivReparamGroup.symm ⟨(γ.minimalPeriod : AddCircle γ.period), hmem⟩ = 1 := by
-  rw [AddEquiv.symm_apply_eq]
-  ext
-  rw [Subtype.coe_mk, zmodAddEquivReparamGroup_one]
+    γ.zmodAddEquivReparamGroup.symm ⟨(γ.minimalPeriod : AddCircle γ.period), hmem⟩ = 1 :=
+  γ.zmodAddEquivReparamGroup.symm_apply_eq.2 γ.zmodAddEquivReparamGroup_one.symm
 
 /-- The canonical injection `ZMod γ.multiplicity →+ AddCircle γ.period` onto `γ.reparamGroup`. -/
 def reparam (γ : ClosedOrbit ϕ) : ZMod γ.multiplicity →+ AddCircle γ.period :=
@@ -847,14 +834,8 @@ theorem circleMap_vadd (γ : PeriodicTrajectory ϕ) (s : ℝ) (θ : AddCircle γ
 @[simp]
 theorem range_circleMap (γ : PeriodicTrajectory ϕ) :
     Set.range γ.circleMap = ϕ.orbit γ.point := by
-  ext y
-  rw [mem_orbit_iff]
-  constructor
-  · rintro ⟨θ, rfl⟩
-    induction θ using QuotientAddGroup.induction_on with
-    | H t => exact ⟨t, (γ.circleMap_coe t).symm⟩
-  · rintro ⟨t, rfl⟩
-    exact ⟨t, γ.circleMap_coe t⟩
+  rw [← QuotientAddGroup.mk_surjective.range_comp]
+  exact Set.ext fun y ↦ by simp [Function.comp_def, mem_orbit_iff]
 
 /-- The period of `γ.iterate k` is an integer multiple of `γ.period`. -/
 theorem period_iterate_mem_zmultiples (γ : PeriodicTrajectory ϕ) (k : ℕ+) :
@@ -949,40 +930,23 @@ theorem circleMap_eq_iff (γ : PeriodicTrajectory ϕ) (θ θ' : AddCircle γ.per
       ∃ j : ZMod (ClosedOrbit.mk γ).multiplicity, θ' = θ + γ.reparam j := by
   induction θ using QuotientAddGroup.induction_on with | H t => ?_
   induction θ' using QuotientAddGroup.induction_on with | H t' => ?_
-  rw [circleMap_coe, circleMap_coe]
   have hdiff : ϕ t γ.point = ϕ t' γ.point ↔ t' - t ∈ ϕ.periods γ.point := by
-    rw [mem_periods]
-    constructor
-    · intro h
-      calc ϕ (t' - t) γ.point = ϕ (-t) (ϕ t' γ.point) := by rw [sub_eq_neg_add, ϕ.map_add]
-        _ = ϕ (-t) (ϕ t γ.point) := by rw [h]
-        _ = γ.point := ϕ.map_neg_apply_map t γ.point
-    · intro h
-      calc ϕ t γ.point = ϕ t (ϕ (t' - t) γ.point) := by rw [h]
-        _ = ϕ t' γ.point := by rw [← ϕ.map_add, add_sub_cancel]
-  rw [hdiff, ϕ.periods_eq_zmultiples_minimalPeriod γ.exists_apply_ne,
-    AddSubgroup.mem_zmultiples_iff]
-  constructor
-  · rintro ⟨k, hk⟩
-    refine ⟨k, ?_⟩
-    rw [reparam_intCast, ← AddCircle.coe_add, eq_comm]
-    congr 1
-    rw [zsmul_eq_mul] at hk
-    linarith
-  · rintro ⟨j, hj⟩
-    obtain ⟨k, rfl⟩ := ZMod.intCast_surjective j
+    rw [mem_periods, sub_eq_neg_add, ϕ.map_add]
+    exact ⟨fun h ↦ by rw [← h, ϕ.map_neg_apply_map],
+      fun h ↦ by simpa [ϕ.map_apply_map_neg] using congrArg (ϕ t) h.symm⟩
+  rw [circleMap_coe, circleMap_coe, hdiff,
+    ϕ.periods_eq_zmultiples_minimalPeriod γ.exists_apply_ne, AddSubgroup.mem_zmultiples_iff]
+  refine ⟨fun ⟨k, hk⟩ ↦ ⟨k, ?_⟩, fun ⟨j, hj⟩ ↦ ?_⟩
+  · rw [reparam_intCast, ← AddCircle.coe_add, eq_comm]
+    exact congrArg QuotientAddGroup.mk (by rw [zsmul_eq_mul] at hk; linarith)
+  · obtain ⟨k, rfl⟩ := ZMod.intCast_surjective j
     rw [reparam_intCast, ← AddCircle.coe_add, QuotientAddGroup.eq_iff_sub_mem] at hj
     obtain ⟨m, hm⟩ := AddSubgroup.mem_zmultiples_iff.1 hj
-    rw [zsmul_eq_mul] at hm
     obtain ⟨n, hn⟩ := (ϕ.apply_eq_self_iff_exists_zsmul γ.exists_apply_ne).1 γ.apply_period
-    rw [zsmul_eq_mul] at hn
+    rw [zsmul_eq_mul] at hm hn
     refine ⟨k + m * n, ?_⟩
-    rw [zsmul_eq_mul]
-    calc ((k + m * n : ℤ) : ℝ) * ϕ.minimalPeriod γ.point
-        = (k : ℝ) * ϕ.minimalPeriod γ.point + (m : ℝ) * ((n : ℤ) * ϕ.minimalPeriod γ.point) := by
-          push_cast; ring
-      _ = (k : ℝ) * ϕ.minimalPeriod γ.point + m * γ.period := by rw [hn]
-      _ = t' - t := by linarith
+    rw [zsmul_eq_mul, Int.cast_add, Int.cast_mul, add_mul, mul_assoc, hn]
+    linarith
 
 /-- Shifting the parameter by `γ.reparam j` leaves `γ.circleMap` unchanged. -/
 @[simp]
@@ -1001,12 +965,9 @@ theorem circleMap_eq_point_iff (γ : PeriodicTrajectory ϕ) (θ : AddCircle γ.p
 /-- A rotation `δ : AddCircle γ.period` fixes `γ.circleMap` pointwise if and only if `δ` lies in
 the reparametrization subgroup `Set.range γ.reparam`. -/
 theorem forall_circleMap_add_eq_iff (γ : PeriodicTrajectory ϕ) (δ : AddCircle γ.period) :
-    (∀ θ, γ.circleMap (θ + δ) = γ.circleMap θ) ↔ δ ∈ Set.range γ.reparam := by
-  constructor
-  · intro h
-    exact (γ.circleMap_eq_point_iff δ).1 (by simpa using h 0)
-  · rintro ⟨j, rfl⟩ θ
-    exact γ.circleMap_add_reparam θ j
+    (∀ θ, γ.circleMap (θ + δ) = γ.circleMap θ) ↔ δ ∈ Set.range γ.reparam :=
+  ⟨fun h ↦ (γ.circleMap_eq_point_iff δ).1 (by simpa using h 0),
+    fun ⟨j, hj⟩ θ ↦ hj ▸ γ.circleMap_add_reparam θ j⟩
 
 /-- Given a base marker `θ₀` over `x`, translation by `γ.reparam j` identifies
 `ZMod (ClosedOrbit.mk γ).multiplicity` bijectively and cyclically with the fiber
@@ -1032,9 +993,8 @@ theorem coe_zmodEquivPreimageCircleMap_apply (γ : PeriodicTrajectory ϕ) {x : �
 @[simp]
 theorem zmodEquivPreimageCircleMap_zero (γ : PeriodicTrajectory ϕ) {x : α}
     {θ₀ : AddCircle γ.period} (hθ₀ : γ.circleMap θ₀ = x) :
-    γ.zmodEquivPreimageCircleMap hθ₀ 0 = ⟨θ₀, hθ₀⟩ := by
-  ext
-  simp
+    γ.zmodEquivPreimageCircleMap hθ₀ 0 = ⟨θ₀, hθ₀⟩ :=
+  Subtype.ext (by simp)
 
 /-- Applying `γ.reparam` to `(γ.zmodEquivPreimageCircleMap hθ₀).symm u` recovers the phase shift
 `(u : AddCircle γ.period) - θ₀`. -/
@@ -1042,37 +1002,31 @@ theorem zmodEquivPreimageCircleMap_zero (γ : PeriodicTrajectory ϕ) {x : α}
 theorem reparam_zmodEquivPreimageCircleMap_symm_apply (γ : PeriodicTrajectory ϕ) {x : α}
     {θ₀ : AddCircle γ.period} (hθ₀ : γ.circleMap θ₀ = x)
     (u : {θ : AddCircle γ.period // γ.circleMap θ = x}) :
-    γ.reparam ((γ.zmodEquivPreimageCircleMap hθ₀).symm u) = (u : AddCircle γ.period) - θ₀ := by
-  have h := congrArg Subtype.val ((γ.zmodEquivPreimageCircleMap hθ₀).apply_symm_apply u)
-  rw [coe_zmodEquivPreimageCircleMap_apply] at h
-  exact eq_sub_of_add_eq' h
+    γ.reparam ((γ.zmodEquivPreimageCircleMap hθ₀).symm u) = (u : AddCircle γ.period) - θ₀ :=
+  eq_sub_of_add_eq' <| congrArg Subtype.val ((γ.zmodEquivPreimageCircleMap hθ₀).apply_symm_apply u)
 
 /-- The inverse of `zmodEquivPreimageCircleMap` sends the base marker `θ₀` to `0`. -/
 @[simp]
 theorem zmodEquivPreimageCircleMap_symm_self (γ : PeriodicTrajectory ϕ) {x : α}
     {θ₀ : AddCircle γ.period} (hθ₀ : γ.circleMap θ₀ = x) :
-    (γ.zmodEquivPreimageCircleMap hθ₀).symm ⟨θ₀, hθ₀⟩ = 0 := by
-  rw [Equiv.symm_apply_eq, zmodEquivPreimageCircleMap_zero]
+    (γ.zmodEquivPreimageCircleMap hθ₀).symm ⟨θ₀, hθ₀⟩ = 0 :=
+  Equiv.symm_apply_eq _ |>.2 (γ.zmodEquivPreimageCircleMap_zero hθ₀).symm
 
 /-- The inverse of `zmodEquivPreimageCircleMap` sends `θ₀ + γ.reparam j` to `j`. -/
 @[simp]
 theorem zmodEquivPreimageCircleMap_symm_add_reparam (γ : PeriodicTrajectory ϕ) {x : α}
     {θ₀ : AddCircle γ.period} (hθ₀ : γ.circleMap θ₀ = x)
     (j : ZMod (ClosedOrbit.mk γ).multiplicity) (h : γ.circleMap (θ₀ + γ.reparam j) = x) :
-    (γ.zmodEquivPreimageCircleMap hθ₀).symm ⟨θ₀ + γ.reparam j, h⟩ = j := by
-  rw [Equiv.symm_apply_eq]
-  ext
-  simp
+    (γ.zmodEquivPreimageCircleMap hθ₀).symm ⟨θ₀ + γ.reparam j, h⟩ = j :=
+  Equiv.symm_apply_eq _ |>.2 <| Subtype.ext (γ.coe_zmodEquivPreimageCircleMap_apply hθ₀ j).symm
 
 /-- Each point of the closed orbit has finitely many preimages under `γ.circleMap`. -/
 theorem finite_preimage_circleMap_singleton (γ : PeriodicTrajectory ϕ) (x : α) :
     (γ.circleMap ⁻¹' {x}).Finite := by
-  by_cases hx : x ∈ ϕ.orbit γ.point
-  · rw [← γ.range_circleMap] at hx
-    obtain ⟨θ₀, hθ₀⟩ := hx
+  by_cases hx : x ∈ Set.range γ.circleMap
+  · obtain ⟨θ₀, hθ₀⟩ := hx
     exact Finite.of_equiv _ (γ.zmodEquivPreimageCircleMap hθ₀)
-  · rw [← γ.range_circleMap] at hx
-    rw [Set.preimage_singleton_eq_empty.2 hx]
+  · rw [Set.preimage_singleton_eq_empty.2 hx]
     exact Set.finite_empty
 
 /-- Each point on the closed orbit has exact cardinality `(ClosedOrbit.mk γ).multiplicity` of
@@ -1082,31 +1036,22 @@ theorem ncard_preimage_circleMap_singleton (γ : PeriodicTrajectory ϕ) {x : α}
     (γ.circleMap ⁻¹' {x}).ncard = (ClosedOrbit.mk γ).multiplicity := by
   rw [ClosedOrbit.support_mk, ← γ.range_circleMap] at hx
   obtain ⟨θ₀, hθ₀⟩ := hx
-  refine (Nat.card_coe_set_eq _).symm.trans ?_
-  exact (Nat.card_congr (γ.zmodEquivPreimageCircleMap hθ₀).symm).trans (Nat.card_zmod _)
+  exact (Nat.card_coe_set_eq _).symm.trans <|
+    (Nat.card_congr (γ.zmodEquivPreimageCircleMap hθ₀).symm).trans (Nat.card_zmod _)
 
 /-- The circle parametrization of `γ` is injective if and only if `ClosedOrbit.mk γ` is
 primitive. -/
 theorem circleMap_injective_iff_isPrimitive (γ : PeriodicTrajectory ϕ) :
     Function.Injective γ.circleMap ↔ (ClosedOrbit.mk γ).IsPrimitive := by
   rw [ClosedOrbit.isPrimitive_iff_multiplicity_eq_one]
-  constructor
-  · intro hinj
-    have hcard := γ.ncard_preimage_circleMap_singleton (x := γ.point)
-      (by rw [ClosedOrbit.support_mk, ← γ.range_circleMap]; exact ⟨0, γ.circleMap_zero⟩)
-    have hpre : γ.circleMap ⁻¹' {γ.point} = {0} := by
-      ext θ
-      rw [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_singleton_iff, ← γ.circleMap_zero]
-      exact hinj.eq_iff
-    rw [hpre, Set.ncard_singleton] at hcard
-    exact PNat.coe_inj.1 hcard.symm
-  · intro hm θ θ' hθ
-    obtain ⟨j, hj⟩ := (γ.circleMap_eq_iff θ θ').1 hθ
-    have hsub : Subsingleton (ZMod (ClosedOrbit.mk γ).multiplicity) := by
-      rw [hm, PNat.one_coe]
-      infer_instance
-    have hj0 : j = 0 := Subsingleton.elim j 0
-    simp [hj, hj0]
+  refine ⟨fun hinj ↦ ?_, fun hm θ θ' hθ ↦ ?_⟩
+  · have h1 : (1 : ZMod (ClosedOrbit.mk γ).multiplicity) = 0 := by
+      simpa using hinj (γ.circleMap_add_reparam 0 1)
+    exact PNat.coe_eq_one_iff.1 (ZMod.one_eq_zero_iff.1 h1)
+  · obtain ⟨j, rfl⟩ := (γ.circleMap_eq_iff θ θ').1 hθ
+    have : Subsingleton (ZMod (ClosedOrbit.mk γ).multiplicity) := by
+      rw [hm, PNat.one_coe]; infer_instance
+    simp [Subsingleton.elim j 0]
 
 end T1Space
 
