@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Augmentation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # The augmentation of the integral Morse complex
@@ -332,13 +331,10 @@ theorem trajectorySign_eq_neg_of_notMem_orbit (hf : IsMorse 𝓘(ℝ, E) f)
   obtain ⟨a₁, a₂, κ, hκ0, ha₁0, hκ, ha₁, ha₂⟩ := exists_unstableFrame_eq_of_morseIndex_eq_one hf hφp
     hp hy₁ hy₂ (hX.ne_zero_of_mfderiv_ne_zero hy₁₀) (hX.ne_zero_of_mfderiv_ne_zero hy₂₀) hne
   -- Bases of the line of coordinates of negative weight at `p`, along `-a₁` and `-a₂`.
-  have : Subsingleton (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) := by rw [hp]; infer_instance
-  obtain ⟨C₁, hC₁⟩ : ∃ C : Module.Basis (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) ℝ
-      ({i // φp.weight i < 0} → ℝ), ∀ j, C j = -a₁ :=
-    ⟨basisOfLinearIndependentOfCardEqFinrank' (fun _ ↦ -a₁)
-      ((linearIndependent_subsingleton_index_iff _).2 fun _ ↦ neg_ne_zero.2 ha₁0)
-      (by rw [Fintype.card_fin, hrank, hp]),
-      fun j ↦ by rw [coe_basisOfLinearIndependentOfCardEqFinrank']⟩
+  have : Unique (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) := by rw [hp]; infer_instance
+  set C₁ := FiniteDimensional.basisSingleton (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) hrank (-a₁)
+    (neg_ne_zero.2 ha₁0)
+  have hC₁ (j) : C₁ j = -a₁ := FiniteDimensional.basisSingleton_apply _ _ _ _ j
   set C₂ := C₁.unitsSMul fun _ ↦ Units.mk0 κ hκ0.ne with hC₂def
   have hC₂ (j) : C₂ j = -a₂ := by
     rw [hC₂def, Module.Basis.unitsSMul_apply, hC₁, Units.smul_def, Units.val_mk0, smul_neg, hκ]
