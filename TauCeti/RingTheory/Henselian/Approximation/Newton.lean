@@ -238,16 +238,9 @@ private theorem det_mul_colon_mem_newtonEliminatorIdeal [DecidableEq σ] (t : R)
     · simp [Finsupp.single_eq_of_ne (Ne.symm hkj)]
   have hvsum (φ : ι → R) :
       v.sum (fun k c ↦ φ k * c) = ∑ j : s, φ (col j) * (MvPolynomial.eval a g * u j) := by
-    suffices hfin : ∀ t : Finset s,
-        (∑ j ∈ t, Finsupp.single (col j) (MvPolynomial.eval a g * u j)).sum (fun k c ↦ φ k * c) =
-          ∑ j ∈ t, φ (col j) * (MvPolynomial.eval a g * u j) from hfin Finset.univ
-    intro t
-    induction t using Finset.induction_on with
-    | empty => simp
-    | insert j t hjt ih =>
-      rw [Finset.sum_insert hjt, Finset.sum_insert hjt,
-        Finsupp.sum_add_index' (fun _ ↦ mul_zero _) (fun _ _ _ ↦ mul_add _ _ _),
-        Finsupp.sum_single_index (mul_zero _), ih]
+    dsimp only [v]
+    rw [← Finsupp.sum_finsetSum_index (fun _ ↦ mul_zero _) (fun _ _ _ ↦ mul_add _ _ _)]
+    simp [Finsupp.sum_single_index]
   have hdet : MvPolynomial.eval a
       (Matrix.det (Matrix.of fun i j : s ↦ MvPolynomial.pderiv (col j) (f i))) = J.det := by
     simpa only [J, RingHom.mapMatrix_apply, Matrix.map, Matrix.of_apply] using

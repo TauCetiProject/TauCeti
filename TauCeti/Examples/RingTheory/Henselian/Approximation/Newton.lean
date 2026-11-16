@@ -58,13 +58,11 @@ example :
     infer_instance
   let f : Unit → MvPolynomial Unit ℤ := fun _ ↦ X () ^ 2 - C 9
   let a : Unit → ℤ := fun _ ↦ 3
-  have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f := by
-    have hp : pderiv () (f ()) = 2 * X () := by
-      simp only [f, map_sub, pderiv_C]
-      simp
-    have h1 := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {()}
-    rw [jacobianMinorsIdeal_singleton_mul_colon f () (by simp [Set.range_unique])] at h1
-    exact hp ▸ h1 (Ideal.subset_span ⟨(), rfl⟩)
+  have hp : pderiv () (f ()) = 2 * X () := by
+    simp only [f, map_sub, pderiv_C]
+    simp
+  have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f :=
+    hp ▸ pderiv_mem_elkikJacobianIdeal f () () (by simp [Set.range_unique])
   have ha : Ideal.span (Set.range f) ≤
       RingHom.ker (MvPolynomial.eval a) ⊔ (filtrationIdeal (6 : ℤ) ⊥ 3).map C := by
     rw [Ideal.span_le]
@@ -93,13 +91,11 @@ example :
       b () ^ 2 - completionMap 3 ⊤ 7 = 0 := by
   let f : Unit → MvPolynomial Unit ℤ := fun _ ↦ X () ^ 2 - C 7
   let a : Unit → ℤ := fun _ ↦ 4
-  have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f := by
-    have hp : pderiv () (f ()) = 2 * X () := by
-      simp only [f, map_sub, pderiv_C]
-      simp
-    have h1 := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {()}
-    rw [jacobianMinorsIdeal_singleton_mul_colon f () (by simp [Set.range_unique])] at h1
-    exact hp ▸ h1 (Ideal.subset_span ⟨(), rfl⟩)
+  have hp : pderiv () (f ()) = 2 * X () := by
+    simp only [f, map_sub, pderiv_C]
+    simp
+  have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f :=
+    hp ▸ pderiv_mem_elkikJacobianIdeal f () () (by simp [Set.range_unique])
   have hjac : (3 : ℤ) ^ 0 ∈ (elkikJacobianIdeal f).map (MvPolynomial.eval a) ⊔
       filtrationIdeal 3 ⊤ (2 - 0) := by
     have hu : MvPolynomial.eval a (C (-1) * (2 * X ())) ∈
@@ -127,13 +123,11 @@ example :
         b () ^ 2 - completionMap 2 ⊤ 17 = 0 := by
   let f : Unit → MvPolynomial Unit ℤ := fun _ ↦ X () ^ 2 - C 17
   let a : Unit → ℤ := fun _ ↦ 1
-  have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f := by
-    have hp : pderiv () (f ()) = 2 * X () := by
-      simp only [f, map_sub, pderiv_C]
-      simp
-    have h1 := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {()}
-    rw [jacobianMinorsIdeal_singleton_mul_colon f () (by simp [Set.range_unique])] at h1
-    exact hp ▸ h1 (Ideal.subset_span ⟨(), rfl⟩)
+  have hp : pderiv () (f ()) = 2 * X () := by
+    simp only [f, map_sub, pderiv_C]
+    simp
+  have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f :=
+    hp ▸ pderiv_mem_elkikJacobianIdeal f () () (by simp [Set.range_unique])
   have hjac : (2 : ℤ) ^ 1 ∈ (elkikJacobianIdeal f).map (MvPolynomial.eval a) ⊔
       filtrationIdeal 2 ⊤ (4 - 1) := by
     refine Ideal.mem_sup_left ?_
@@ -170,10 +164,8 @@ example :
   have hspan : Ideal.span (Set.range f) ≤ Ideal.span {f 0} := by
     rw [Ideal.span_le, Set.range_subset_iff, Fin.forall_fin_two]
     exact ⟨Ideal.subset_span rfl, hf1 ▸ Ideal.mul_mem_left _ _ (Ideal.subset_span rfl)⟩
-  have hderiv : pderiv () (f 0) ∈ elkikJacobianIdeal f := by
-    have h1 := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {0}
-    rw [jacobianMinorsIdeal_singleton_mul_colon f 0 hspan] at h1
-    exact h1 (Ideal.subset_span ⟨(), rfl⟩)
+  have hderiv : pderiv () (f 0) ∈ elkikJacobianIdeal f :=
+    pderiv_mem_elkikJacobianIdeal f 0 () hspan
   have hjac :
       T ^ 0 ∈ (elkikJacobianIdeal f).map (MvPolynomial.eval a) ⊔ Ideal.span {T ^ (1 - 0)} := by
     refine Ideal.mem_sup_left ?_
@@ -200,10 +192,8 @@ example :
       (9 : ℤ) ∣ b 0 ^ 2 + b 0 - 3 := by
   let f : Unit → MvPolynomial ℕ ℤ := fun _ ↦ X 0 ^ 2 + X 0 - C 3
   let a : ℕ → ℤ := fun _ ↦ 0
-  have hderiv : pderiv 0 (f ()) ∈ elkikJacobianIdeal f := by
-    have h1 := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {()}
-    rw [jacobianMinorsIdeal_singleton_mul_colon f () (by simp [Set.range_unique])] at h1
-    exact h1 (Ideal.subset_span ⟨0, rfl⟩)
+  have hderiv : pderiv 0 (f ()) ∈ elkikJacobianIdeal f :=
+    pderiv_mem_elkikJacobianIdeal f () 0 (by simp [Set.range_unique])
   have hjac : (3 : ℤ) ^ 0 ∈ (elkikJacobianIdeal f).map (MvPolynomial.eval a) ⊔
       filtrationIdeal 3 ⊤ (1 - 0) := by
     refine Ideal.mem_sup_left ?_
@@ -249,13 +239,11 @@ example :
   intro f a
   refine ⟨?_, ?_, ?_⟩
   · norm_num [f, a, filtrationIdeal_def, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
-  · have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f := by
-      have hp : pderiv () (f ()) = 2 * X () := by
-        simp only [f, map_sub, pderiv_C]
-        simp
-      have h1 := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {()}
-      rw [jacobianMinorsIdeal_singleton_mul_colon f () (by simp [Set.range_unique])] at h1
-      exact hp ▸ h1 (Ideal.subset_span ⟨(), rfl⟩)
+  · have hp : pderiv () (f ()) = 2 * X () := by
+      simp only [f, map_sub, pderiv_C]
+      simp
+    have hderiv : (2 * X () : MvPolynomial Unit ℤ) ∈ elkikJacobianIdeal f :=
+      hp ▸ pderiv_mem_elkikJacobianIdeal f () () (by simp [Set.range_unique])
     have hev : MvPolynomial.eval a (2 * X ()) = (2 : ℤ) ^ 1 := by norm_num [a]
     exact hev ▸ Ideal.mem_map_of_mem _ hderiv
   · rintro ⟨b, hb⟩
