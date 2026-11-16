@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Equivalence
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Graded exact categories
@@ -296,11 +297,6 @@ structure GradedExactEquiv {C : Type u₁} {D : Type u₂}
 attribute [instance] GradedExactEquiv.functor_additive
 
 namespace GradedExactEquiv
-
-/-- Helper for the `eqToHom` lemmas below: after unfolding, an `eqToHom` between objects that are
-definitionally equal but not syntactically equal remains, and it is the identity. -/
-private theorem eqToHom_self_comp {D : Type*} [Category D] {Y Z : D} (h : Y = Y) (f : Y ⟶ Z) :
-    eqToHom h ≫ f = f := by simp
 
 variable {C : Type u₁} {D : Type u₂} {K : Type u₃}
 variable [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]

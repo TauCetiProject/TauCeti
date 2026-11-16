@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.CategoryTheory.ObjectProperty.FactorsThrough
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Relative injectives in an exact category
@@ -194,11 +195,6 @@ structure EnoughInjectives (E : ExactStructure C) : Prop where
   presentation : ∀ X : C, Nonempty (E.InjectivePresentation X)
 
 namespace InjectivePresentation
-
-/-- Helper for the `eqToHom` lemmas below: after unfolding, an `eqToHom` between objects that are
-definitionally equal but not syntactically equal remains, and it is the identity. -/
-private theorem eqToHom_self_comp {D : Type*} [Category D] {Y Z : D} (h : Y = Y) (f : Y ⟶ Z) :
-    eqToHom h ≫ f = f := by simp
 
 /-- The tautological injective presentation in the split exact structure. -/
 noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation X where

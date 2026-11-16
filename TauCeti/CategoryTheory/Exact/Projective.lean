@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.Resolution.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Relative projectives in an exact category, and the horseshoe lemma
@@ -289,11 +290,6 @@ structure EnoughProjectives (E : ExactStructure C) : Prop where
   presentation : ∀ X : C, Nonempty (E.ProjectivePresentation X)
 
 namespace ProjectivePresentation
-
-/-- Helper for the `eqToHom` lemmas below: after unfolding, an `eqToHom` between objects that are
-definitionally equal but not syntactically equal remains, and it is the identity. -/
-private theorem eqToHom_self_comp {D : Type*} [Category D] {Y Z : D} (h : Y = Y) (f : Y ⟶ Z) :
-    eqToHom h ≫ f = f := by simp
 
 section Functor
 
