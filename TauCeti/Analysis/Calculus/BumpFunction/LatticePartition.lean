@@ -13,6 +13,7 @@ import Mathlib.Analysis.PSeries
 import Mathlib.Data.Pi.Interval
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.InfiniteSum.PiProd
 
 /-!
@@ -44,7 +45,9 @@ The construction is a product of one-dimensional bumps
   if their centres differ by at most one in every coordinate.
 * `TauCeti.latticeWeight`: the summable weight `∏ᵢ (1 + |dᵢ|)⁻²` on `ℤⁿ`, which dominates the
   lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` uniformly in `x`
-  (`TauCeti.tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le`).
+  (`TauCeti.tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le`). Moving `x` by at most one
+  changes these weights by at most the factor `4ⁿ`
+  (`TauCeti.one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one`).
 * `TauCeti.contDiff_latticeBump_sub`, `TauCeti.hasTemperateGrowth_latticeBump_sub`: the
   translates `χ(· - j)` are smooth and of temperate growth, and
   `TauCeti.exists_norm_iteratedFDeriv_latticeBump_sub_le` bounds their derivatives independently
@@ -341,6 +344,24 @@ theorem one_add_norm_sub_latticePoint_sq_pow_inv_le (x : EuclideanSpace ℝ (Fin
     div_le_div_iff₀ hy hP, one_mul]
   exact hprod
 
+/-- Within distance one of `x`, the weight `(1 + ‖y - j‖²)⁻ⁿ` is at most `4ⁿ` times its value
+at `x`. -/
+theorem one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one
+    {x y : EuclideanSpace ℝ (Fin n)} (hy : dist y x ≤ 1) (j : Fin n → ℤ) :
+    ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤ 4 ^ n * ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹ := by
+  have e (v : EuclideanSpace ℝ (Fin n)) :
+      (1 + ‖v‖ ^ 2) ^ (-(2 * n : ℝ) / 2) = ((1 + ‖v‖ ^ 2) ^ n)⁻¹ := by
+    rw [neg_div, mul_div_cancel_left₀ _ two_ne_zero, Real.rpow_neg (by positivity),
+      Real.rpow_natCast]
+  have h4 : (2 : ℝ) ^ |-(2 * n : ℝ)| = 4 ^ n := by
+    rw [abs_neg, abs_of_nonneg (by positivity), show (2 * n : ℝ) = ((2 * n : ℕ) : ℝ) by
+      push_cast; ring, Real.rpow_natCast, pow_mul]
+    norm_num
+  have hyx : ‖y - latticePoint j - (x - latticePoint j)‖ ≤ 1 := by
+    rwa [sub_sub_sub_cancel_right, ← dist_eq_norm]
+  have h := one_add_norm_sq_rpow_le_of_norm_sub_le_one hyx (-(2 * n : ℝ))
+  rwa [e, e, h4] at h
+
 /-- The lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` converge. -/
 theorem summable_one_add_norm_sub_latticePoint_sq_pow_inv (x : EuclideanSpace ℝ (Fin n)) :
     Summable fun j : Fin n → ℤ ↦ ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹ :=
@@ -364,9 +385,9 @@ theorem tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le (x : EuclideanSpace ℝ
 /-- The derivatives of `latticeBump n` are bounded. -/
 theorem exists_norm_iteratedFDeriv_latticeBump_le (k : ℕ) :
     ∃ B, ∀ y, ‖iteratedFDeriv ℝ k (latticeBump n) y‖ ≤ B :=
-  ((contDiff_latticeBump (n := n) (k := ⊤)).continuous_iteratedFDeriv
-    (by exact_mod_cast le_top)).bounded_above_of_compact_support
-    (hasCompactSupport_latticeBump.iteratedFDeriv k)
+  let ⟨B, _, hB⟩ := hasCompactSupport_latticeBump.exists_bound_iteratedFDeriv
+    (contDiff_latticeBump (n := n)) k
+  ⟨B, hB k le_rfl⟩
 
 /-- The integer translates of `latticeBump n` have derivatives bounded independently of the
 translation. -/

@@ -11,7 +11,6 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -321,6 +320,31 @@ private theorem norm_coordinateDeriv_coordSub_le {z x : CoordinateSpace n} {r : 
     · rw [coordinateDeriv_const _ hs, Pi.zero_apply, norm_zero]
       exact zero_le_one.trans (le_max_right _ _)
 
+/-- Multiplying a symbol `a` by a symbol `b(x, ξ) = f(x)` of the position whose coordinate
+derivatives at `x` are bounded by `B s` keeps the symbol estimates of `a` at `(x, ξ)`. -/
+private theorem norm_mixedDeriv_comp_le_of_coefficient_eq {b : Symbol n W W 0}
+    {f : CoordinateSpace n → W →L[ℂ] W} (hbf : ∀ p, b.coefficient p = f p.1) (a : Symbol n V W m)
+    {x ξ : CoordinateSpace n} {B : List (Fin n) → ℝ} (hB0 : ∀ s, 0 ≤ B s)
+    (hB : ∀ s, ‖coordinateDeriv s f x‖ ≤ B s) {D : List (Fin n) → List (Fin n) → ℝ}
+    (hD : ∀ s t, ‖mixedDeriv s t a.coefficient x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
+    (α β : List (Fin n)) :
+    ‖mixedDeriv α β (b.comp a).coefficient x ξ‖ ≤
+      max ((β.sublists'.revzip.map fun t =>
+        (α.sublists'.revzip.map fun s => B s.1 * D s.2 t.2).sum).sum) 0 *
+        (1 + ‖ξ‖ ^ 2) ^ ((0 + m - β.length) / 2) := by
+  have hC (s t : List (Fin n)) : ‖mixedDeriv s t b.coefficient x ξ‖ ≤
+      B s * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - t.length) / 2) := by
+    rcases eq_or_ne t [] with rfl | ht
+    · rw [funext hbf, mixedDeriv_nil_comp_fst f]
+      simpa using hB s
+    · rw [funext hbf, mixedDeriv_comp_fst f s ht, norm_zero]
+      exact mul_nonneg (hB0 s) (by positivity)
+  rw [funext (coefficient_comp b a)]
+  refine (norm_mixedDeriv_comp_le (m' := 0) (C := fun s _ ↦ B s) b.contDiff_coefficient
+    a.contDiff_coefficient hC hD α β).trans ?_
+  gcongr
+  exact le_max_left _ _
+
 /-- Multiplying the members of a ball family by the `j`-th coordinate of the displacement from
 their centres gives a ball family. -/
 private theorem IsBallFamily.comp_coordSubSymbol (hc : IsBallFamily z r c) (j : Fin n) :
@@ -331,30 +355,13 @@ private theorem IsBallFamily.comp_coordSubSymbol (hc : IsBallFamily z r c) (j : 
     (α.sublists'.revzip.map fun s => max r 1 * D s.2 t.2).sum).sum
   refine ⟨max K 0, fun i x ξ ↦ ?_⟩
   beta_reduce
-  rw [funext (coefficient_comp (coordSubSymbol (z i) j) (c i))]
   rcases le_or_gt (dist x (z i)) r with hx | hx
-  · have hC (s t : List (Fin n)) :
-        ‖mixedDeriv s t (coordSubSymbol (W := W) (z i) j).coefficient x ξ‖ ≤
-          max r 1 * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - t.length) / 2) := by
-      have hco : (coordSubSymbol (W := W) (z i) j).coefficient =
-          fun p ↦ (p.1 - z i) j • ContinuousLinearMap.id ℂ W :=
-        funext (coefficient_coordSubSymbol _ _)
-      rcases eq_or_ne t [] with rfl | ht
-      · rw [hco, mixedDeriv_nil_comp_fst
-          (fun y : CoordinateSpace n ↦ (y - z i) j • ContinuousLinearMap.id ℂ W)]
-        simpa using norm_coordinateDeriv_coordSub_le hx j s
-      · rw [hco, mixedDeriv_comp_fst
-          (fun y : CoordinateSpace n ↦ (y - z i) j • ContinuousLinearMap.id ℂ W) s ht, norm_zero]
-        positivity
-    refine (norm_mixedDeriv_comp_le (m' := 0) (C := fun _ _ ↦ max r 1)
-      (coordSubSymbol (z i) j).contDiff_coefficient (c i).contDiff_coefficient hC
-      (fun s t ↦ hD s t i x ξ) α β).trans ?_
-    rw [zero_add]
-    gcongr
-    exact le_max_left _ _
-  · rw [mixedDeriv_eq_zero_of_eventually (by
-      filter_upwards [hc.eventually_eq_zero i hx] with y hy ξ'
-      simp [hy ξ']) α β ξ, norm_zero]
+  · exact norm_mixedDeriv_comp_le_of_coefficient_eq (b := coordSubSymbol (z i) j)
+      (f := fun y ↦ (y - z i) j • ContinuousLinearMap.id ℂ W) (coefficient_coordSubSymbol (z i) j)
+      (c i) (fun _ ↦ zero_le_one.trans (le_max_right _ _)) (norm_coordinateDeriv_coordSub_le hx j)
+      (fun s t ↦ hD s t i x ξ) α β
+  · rw [funext (coefficient_comp (coordSubSymbol (z i) j) (c i)), mixedDeriv_eq_zero_of_eventually
+      (by filter_upwards [hc.eventually_eq_zero i hx] with y hy ξ'; simp [hy ξ']) α β ξ, norm_zero]
     positivity
 
 /-- Cutting a uniform symbol off by smooth functions `φᵢ`, vanishing outside the closed balls of
@@ -378,35 +385,18 @@ private theorem isBallFamily_ofSpatial_comp (z : ι → CoordinateSpace n) (r : 
       (ContinuousLinearMap.norm_id_le (𝕜 := ℂ) (E := W)) (norm_nonneg t)
   set K := (β.sublists'.revzip.map fun t =>
     (α.sublists'.revzip.map fun s => max (B s.1.length) 0 * D s.2 t.2).sum).sum
-  refine ⟨max K 0, fun i x ξ ↦ ?_⟩
-  beta_reduce
-  rw [funext (coefficient_comp _ a)]
-  have hC (s t : List (Fin n)) : ‖mixedDeriv s t
-      (ofSpatial (fun x ↦ φ i x • ContinuousLinearMap.id ℂ W)
-        ((hφ i).smul contDiff_const)).coefficient x ξ‖ ≤
-        max (B s.length) 0 * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - t.length) / 2) := by
-    have hco : (ofSpatial (fun x ↦ φ i x • ContinuousLinearMap.id ℂ W)
-        ((hφ i).smul contDiff_const)).coefficient = fun p ↦ L (φ i p.1) :=
-      funext fun p ↦ by simp [L]
-    rcases eq_or_ne t [] with rfl | ht
-    · rw [hco, mixedDeriv_nil_comp_fst (fun y ↦ L (φ i y))]
-      have hLφ : ContDiff ℝ ∞ (L ∘ φ i) := L.contDiff.comp (hφ i)
-      calc ‖coordinateDeriv s (fun y ↦ L (φ i y)) x‖
-          ≤ ‖iteratedFDeriv ℝ s.length (L ∘ φ i) x‖ :=
-            norm_coordinateDeriv_le s (hLφ.of_le (by exact_mod_cast le_top)) x
-        _ ≤ ‖L‖ * ‖iteratedFDeriv ℝ s.length (φ i) x‖ :=
-            L.norm_iteratedFDeriv_comp_left (hφ i).contDiffAt (by exact_mod_cast le_top)
-        _ ≤ 1 * max (B s.length) 0 := mul_le_mul hL ((hB _ i x).trans (le_max_left _ _))
-            (norm_nonneg _) zero_le_one
-        _ = _ := by simp
-    · rw [hco, mixedDeriv_comp_fst (fun y ↦ L (φ i y)) s ht, norm_zero]
-      positivity
-  refine (norm_mixedDeriv_comp_le (m' := 0) (C := fun s _ ↦ max (B s.length) 0)
-    (ofSpatial _ ((hφ i).smul contDiff_const)).contDiff_coefficient a.contDiff_coefficient hC
-    (fun s t ↦ hD s t x ξ) α β).trans ?_
-  rw [zero_add]
-  gcongr
-  exact le_max_left _ _
+  refine ⟨max K 0, fun i x ξ ↦ norm_mixedDeriv_comp_le_of_coefficient_eq
+    (f := fun y ↦ L (φ i y)) (B := fun s ↦ max (B s.length) 0) (fun p ↦ by simp [L]) a
+    (fun _ ↦ le_max_right _ _) (fun s ↦ ?_) (fun s t ↦ hD s t x ξ) α β⟩
+  have hLφ : ContDiff ℝ ∞ (L ∘ φ i) := L.contDiff.comp (hφ i)
+  calc ‖coordinateDeriv s (fun y ↦ L (φ i y)) x‖
+      ≤ ‖iteratedFDeriv ℝ s.length (L ∘ φ i) x‖ :=
+        norm_coordinateDeriv_le s (hLφ.of_le (by exact_mod_cast le_top)) x
+    _ ≤ ‖L‖ * ‖iteratedFDeriv ℝ s.length (φ i) x‖ :=
+        L.norm_iteratedFDeriv_comp_left (hφ i).contDiffAt (by exact_mod_cast le_top)
+    _ ≤ 1 * max (B s.length) 0 := mul_le_mul hL ((hB _ i x).trans (le_max_left _ _))
+        (norm_nonneg _) zero_le_one
+    _ = _ := one_mul _
 
 end BallFamily
 
@@ -787,26 +777,10 @@ theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.I
     (hfam.hasCompactSpatialSupport j)
   set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦
     ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹
-  -- Within distance one of `x` the weight is at most `4ⁿ` times its value at `x` (Peetre).
-  have hw (x y : CoordinateSpace n) (hy : y ∈ ball x 1) (j : Fin n → ℤ) :
-      w j y ≤ 4 ^ n * w j x := by
-    have hyx : ‖y - latticePoint j - (x - latticePoint j)‖ ≤ 1 := by
-      rw [sub_sub_sub_cancel_right, ← dist_eq_norm]
-      exact (mem_ball.1 hy).le
-    have e (v : CoordinateSpace n) :
-        (1 + ‖v‖ ^ 2) ^ (-(2 * n : ℝ) / 2) = ((1 + ‖v‖ ^ 2) ^ n)⁻¹ := by
-      rw [neg_div, mul_div_cancel_left₀ _ two_ne_zero, Real.rpow_neg (by positivity),
-        Real.rpow_natCast]
-    have h4 : (2 : ℝ) ^ |-(2 * n : ℝ)| = 4 ^ n := by
-      rw [abs_neg, abs_of_nonneg (by positivity), show (2 * n : ℝ) = ((2 * n : ℕ) : ℝ) by
-        push_cast; ring, Real.rpow_natCast, pow_mul]
-      norm_num
-    have h := one_add_norm_sq_rpow_le_of_norm_sub_le_one hyx (-(2 * n : ℝ))
-    rwa [e, e, h4] at h
   obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient F w (fun _ _ ↦ by positivity)
     (fun x ↦ ⟨fun j ↦ 4 ^ n * w j x,
       (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
-      fun j y hy ↦ hw x y hy j⟩)
+      fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one (mem_ball.1 hy).le j⟩)
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
     (hfam.exists_norm_mixedDeriv_sharp_le hp)
   have hord : m' + (0 + m) = m' + m := by ring
