@@ -56,6 +56,8 @@ and translation sections and `n = ω`, `Q` is a complex manifold and `t : Q → 
   centre of the disc.
 * `TauCeti.range_torusFamilyCyclicQuotientProjection`: for `0 ≤ r`, its image is the disc of
   radius `r ^ m`.
+* `TauCeti.continuous_torusFamilyCyclicQuotientProjection`: the coordinate `t` is continuous for any
+  cyclic affine action lifting the rotations.
 * `TauCeti.contMDiff_torusFamilyCyclicQuotientProjection`: for a free action with `C^n` data it is
   `C^n`; for holomorphic data it is holomorphic.
 
@@ -179,6 +181,18 @@ theorem range_torusFamilyCyclicQuotientProjection (hr : 0 ≤ r) :
     obtain ⟨x, hx⟩ := torusFamilyProjection_surjective P
       ⟨u, mem_rootsOfUnityBall.2 (mem_ball_zero_iff.1 hu)⟩
     exact ⟨Quotient.mk _ x, by rw [torusFamilyCyclicQuotientProjection_mk, hx]⟩
+
+/-- The descended coordinate `t = z ^ m` on the cyclic quotient is continuous for any affine action
+lifting the rotations, without continuity hypotheses on the periods or cocycle. -/
+theorem continuous_torusFamilyCyclicQuotientProjection [TopologicalSpace E] :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    Continuous (torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  rw [torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift]
+  exact continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
+    (continuous_subtype_val.pow m)
 
 /-! ### Holomorphy of the coordinate `t` -/
 
