@@ -171,21 +171,25 @@ theorem contMDiffExtend_zero {x : M} : contMDiffExtend I F (0 : V x) = 0 :=
   map_zero (contMDiffExtendₗ I F V x)
 
 /-- `FiberBundle.contMDiffExtend I F` is additive in the fibre vector. -/
+@[simp]
 theorem contMDiffExtend_add {x : M} (v w : V x) :
     contMDiffExtend I F (v + w) = contMDiffExtend I F v + contMDiffExtend I F w :=
   map_add (contMDiffExtendₗ I F V x) v w
 
 /-- `FiberBundle.contMDiffExtend I F` commutes with real scalar multiplication. -/
+@[simp]
 theorem contMDiffExtend_smul {x : M} (c : ℝ) (v : V x) :
     contMDiffExtend I F (c • v) = c • contMDiffExtend I F v :=
   map_smul (contMDiffExtendₗ I F V x) c v
 
 /-- `FiberBundle.contMDiffExtend I F` commutes with negation. -/
+@[simp]
 theorem contMDiffExtend_neg {x : M} (v : V x) :
     contMDiffExtend I F (-v) = -contMDiffExtend I F v :=
   map_neg (contMDiffExtendₗ I F V x) v
 
 /-- `FiberBundle.contMDiffExtend I F` commutes with subtraction. -/
+@[simp]
 theorem contMDiffExtend_sub {x : M} (v w : V x) :
     contMDiffExtend I F (v - w) = contMDiffExtend I F v - contMDiffExtend I F w :=
   map_sub (contMDiffExtendₗ I F V x) v w
