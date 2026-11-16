@@ -7,7 +7,8 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
-public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
+public import Mathlib.NumberTheory.ModularForms.QExpansion
+public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.ModularForms.Bounds
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
@@ -17,21 +18,21 @@ import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Bounds
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Dimension
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Bounds
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Dimension
+import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # The sharp non-cuspidal abscissa of convergence
 
 Let `Γ` be a subgroup of `GL₂(ℝ)` containing the image of `Γ₁(N)`, such as `Γ₁(N)` or `Γ₀(N)`.
-For every modular form of weight `k` on `Γ`, the L-series `∑ aₙ n^(-s)` of its `q`-expansion
-coefficients converges absolutely for `Re s > k` (Diamond–Shurman, Proposition 5.9.1), and for
-`k > 0` coincides on `Re s > k` with Mathlib's `ModularForm.L`. This sharpens the bound `k + 1`
-that `aₙ = O(nᵏ)` gives for every arithmetic subgroup
-(`ModularForm.abscissaOfAbsConv_qExpansion_coeff_le`).
+For every modular form of weight `k` on `Γ`, the L-series `∑ aₙ n^(-s)` of its period-`1`
+`q`-expansion coefficients (`qExpansion 1 f`) converges absolutely for `Re s > k`
+(Diamond–Shurman, Proposition 5.9.1). This sharpens the bound `k + 1` that `aₙ = O(nᵏ)` gives for
+every arithmetic subgroup (`ModularForm.abscissaOfAbsConv_qExpansion_coeff_le`).
 
-A form on `Γ` restricts to a form on `Γ₁(N)` with the same `q`-expansion and (when `Γ` is
-arithmetic) the same `ModularForm.L` (`ModularForm.L_congr`), and `Γ₁(N)` has strict cusp width `1`
-at `∞`. On `Γ₁(N)` the proof splits by weight:
+A form on `Γ` restricts to a form on `Γ₁(N)` with the same period-`1` `q`-expansion
+(`qExpansion 1 f`), and `Γ₁(N)` has strict cusp width `1` at `∞`. On `Γ₁(N)` the proof splits by
+weight:
 
 * In weight `k ≤ 0` every positive `q`-expansion coefficient vanishes
   (`ModularForm.abscissaOfAbsConv_qExpansion_coeff_eq_bot_of_weight_nonpos`), so the abscissa is
@@ -62,18 +63,15 @@ In weights one and two the estimate `aₙ = O(n^(k-1))` is false (the divisor su
 ## Main results
 
 * `TauCeti.isBigO_qExpansion_coeff_of_mem_cuspFormSubmodule`: cusp forms on `Γ₁(N)` of weight
-  `m ≥ 2` have coefficients `O(n^(m-1))`.
-* `TauCeti.ModularFormClass.qExpansion_isBigO_of_Gamma1_le`: the coefficient bound
+  `m ≥ 2` have period-`1` `q`-expansion coefficients `O(n^(m-1))`.
+* `TauCeti.ModularFormClass.qExpansion_isBigO_of_Gamma1_le`: the period-`1` coefficient bound
   `aₙ = O(n^(k-1))` in weight `k ≥ 3`.
-* `TauCeti.ModularFormClass.qExpansion_isBigO_rpow_of_Gamma1_le`: the coefficient bound
+* `TauCeti.ModularFormClass.qExpansion_isBigO_rpow_of_Gamma1_le`: the period-`1` coefficient bound
   `aₙ = O(n^(k-1+ε))` for every `ε > 0`, in weight `k ≥ 2`.
 * `TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`: in every weight
-  `k`, the abscissa of absolute convergence of the coefficient L-series is at most `k`, giving
-  absolute convergence on `Re s > k`
+  `k`, the abscissa of absolute convergence of the period-`1` `q`-expansion coefficient L-series
+  (`qExpansion 1 f`) is at most `k`, giving absolute convergence on `Re s > k`
   (`TauCeti.ModularFormClass.LSeriesSummable_qExpansion_coeff_of_Gamma1_le`).
-* `TauCeti.ModularFormClass.LSeries_qExpansion_coeff_eq_of_Gamma1_le` and
-  `TauCeti.ModularFormClass.hasSum_L_of_Gamma1_le`: in positive weight `k > 0`, the coefficient
-  L-series and plain Dirichlet series on `Re s > k` equal `ModularForm.L hk f s`.
 
 ## References
 
@@ -245,9 +243,9 @@ theorem qExpansion_isBigO_rpow_of_Gamma1_le (hΓ : (Gamma1 N).map (mapGL ℝ) �
     exact Real.rpow_le_rpow_of_exponent_le hn' (by linarith)
 
 /-- **The sharp non-cuspidal abscissa** (Diamond–Shurman, Proposition 5.9.1): if `Γ` contains
-`Γ₁(N)`, then for every modular form of weight `k` on `Γ` the L-series of its `q`-expansion
-coefficients has abscissa of absolute convergence at most `k` (in nonpositive weight `k ≤ 0`, the
-abscissa is `⊥`). -/
+`Γ₁(N)`, then for every modular form of weight `k` on `Γ` the L-series of its period-`1`
+`q`-expansion coefficients (`qExpansion 1 f`) has abscissa of absolute convergence at most `k`
+(in nonpositive weight `k ≤ 0`, the abscissa is `⊥`). -/
 theorem abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le
     (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ) [ModularFormClass F Γ k] (f : F) :
     LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ ((k : ℝ) : EReal) := by
@@ -261,7 +259,7 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le
   · let f₁ := _root_.ModularForm.restrict hΓ (ModularFormClass.modularForm f)
     have hcoe : ⇑f₁ = ⇑f := by ext; simp [f₁]
     rw [← hcoe]
-    simpa using abscissaOfAbsConv_qExpansion_coeff_Gamma1_one f₁
+    simpa only [Int.cast_one, EReal.coe_one] using abscissaOfAbsConv_qExpansion_coeff_Gamma1_one f₁
   · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
     have hε : 0 < (y - k) / 2 := by linarith
     refine LSeriesSummable_of_isBigO_rpow (x := k + (y - k) / 2)
@@ -269,47 +267,15 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le
     have hexp : (k : ℝ) + (y - k) / 2 - 1 = k - 1 + (y - k) / 2 := by ring
     simpa only [hexp] using qExpansion_isBigO_rpow_of_Gamma1_le hΓ hk2 hε f
 
-/-- If `Γ` contains `Γ₁(N)`, the L-series of the `q`-expansion coefficients of a modular form of
-weight `k` on `Γ` converges absolutely on the half-plane `Re s > k`. -/
+/-- If `Γ` contains `Γ₁(N)`, the L-series of the period-`1` `q`-expansion coefficients
+(`qExpansion 1 f`) of a modular form of weight `k` on `Γ` converges absolutely on the
+half-plane `Re s > k`. -/
 theorem LSeriesSummable_qExpansion_coeff_of_Gamma1_le
     (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ) [ModularFormClass F Γ k] (f : F) {s : ℂ}
-    (hs : k < s.re) :
+    (hs : (k : ℝ) < s.re) :
     LSeriesSummable (fun n ↦ (qExpansion 1 f).coeff n) s :=
   LSeriesSummable_of_abscissaOfAbsConv_lt_re
     ((abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le hΓ f).trans_lt (mod_cast hs))
-
-/-- On the half-plane `Re s > k`, for any arithmetic subgroup `Γ` containing `Γ₁(N)` and positive
-weight `k > 0`, the `q`-expansion coefficient L-series of `f` equals `ModularForm.L hk f s`. -/
-theorem LSeries_qExpansion_coeff_eq_of_Gamma1_le [Γ.IsArithmetic]
-    (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ) (hk : 0 < k) [ModularFormClass F Γ k] (f : F) {s : ℂ}
-    (hs : k < s.re) :
-    LSeries (fun n ↦ (qExpansion 1 f).coeff n) s = _root_.ModularForm.L hk f s := by
-  let f₁ := _root_.ModularForm.restrict hΓ (ModularFormClass.modularForm f)
-  have hcoe : (f₁ : ℍ → ℂ) = f := by ext; simp [f₁]
-  have hsk : s ≠ k := fun h ↦ hs.ne' (by simpa using congrArg Complex.re h)
-  have habs : LSeries.abscissaOfAbsConv
-      (fun n ↦ (qExpansion (((Gamma1 N).map (mapGL ℝ)).strictWidthInfty) f₁).coeff n) < s.re := by
-    rw [strictWidthInfty_Gamma1]
-    exact (abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le le_rfl f₁).trans_lt (mod_cast hs)
-  have h := _root_.ModularForm.LSeries_qExpansion_coeff_eq_of_abscissaOfAbsConv_lt_re hk f₁
-    (Or.inl hsk) habs
-  rwa [strictWidthInfty_Gamma1, Complex.ofReal_one, Complex.one_cpow, one_mul, hcoe,
-    _root_.ModularForm.L_congr hk hcoe] at h
-
-/-- On the half-plane `Re s > k`, for any arithmetic subgroup `Γ` containing `Γ₁(N)` and positive
-weight `k > 0`, the plain Dirichlet series `∑ aₙ / n ^ s` converges to `ModularForm.L hk f s`. -/
-theorem hasSum_L_of_Gamma1_le [Γ.IsArithmetic]
-    (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ) (hk : 0 < k) [ModularFormClass F Γ k] (f : F) {s : ℂ}
-    (hs : k < s.re) :
-    HasSum (fun n : ℕ ↦ (qExpansion 1 f).coeff n / (n : ℂ) ^ s) (_root_.ModularForm.L hk f s) := by
-  have hs0 : s ≠ 0 := by
-    rintro rfl
-    simp only [Complex.zero_re] at hs
-    have : (0 : ℝ) < k := mod_cast hk
-    linarith
-  have hsum := (LSeriesSummable_qExpansion_coeff_of_Gamma1_le hΓ f hs).LSeriesHasSum
-  rw [LSeries_qExpansion_coeff_eq_of_Gamma1_le hΓ hk f hs] at hsum
-  rwa [LSeriesHasSum, funext (LSeries.term_of_ne_zero' hs0 _)] at hsum
 
 end ModularFormClass
 
