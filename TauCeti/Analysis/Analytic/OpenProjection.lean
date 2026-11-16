@@ -17,10 +17,10 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Polynomial.GCD
+import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.RealRoots.Ordered
 import TauCeti.Analysis.Polynomial.SimpleRoots.Covering
 import TauCeti.Analysis.Polynomial.Subresultant
-import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.RingTheory.Polynomial.Subresultant.GCD
 import TauCeti.Topology.Algebra.Polynomial.Basic
 import TauCeti.Topology.Maps.DomRestrict
@@ -70,35 +70,13 @@ locus `{P = 0 ∧ δ k = 0}` into a cylinder over a set with open projection.
 public section
 
 open Filter Function Polynomial Set Topology
-open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff monicOfCoeff_coeff coeff_monicOfCoeff
-  coeff_monicOfCoeff_self natDegree_monicOfCoeff eval_monicOfCoeff continuous_coeff_monicOfCoeff)
+open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff monicOfCoeff_coeff
+  natDegree_monicOfCoeff eval_monicOfCoeff continuous_coeff_monicOfCoeff
+  analyticAt_coeff_monicOfCoeff)
 
 namespace TauCeti
 
 section Helpers
-
-/-- Each coefficient of `monicOfCoeff (fun i ↦ c i x)` is analytic wherever the lower coefficients
-`c i` are analytic. -/
-private theorem analyticAt_coeff_monicOfCoeff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {d : ℕ} {c : Fin d → E → ℝ} {x₀ : E} (hc : ∀ i, AnalyticAt ℝ (c i) x₀) (j : ℕ) :
-    AnalyticAt ℝ (fun x ↦ (monicOfCoeff fun i ↦ c i x).coeff j) x₀ := by
-  rcases lt_trichotomy j d with hj | rfl | hj
-  · exact (hc ⟨j, hj⟩).congr
-      (Eventually.of_forall fun x ↦ (coeff_monicOfCoeff (fun i ↦ c i x) ⟨j, hj⟩).symm)
-  · exact analyticAt_const.congr (Eventually.of_forall fun _ ↦ (coeff_monicOfCoeff_self _).symm)
-  · exact (analyticAt_const (v := (0 : ℝ))).congr (Eventually.of_forall fun _ ↦
-      (coeff_eq_zero_of_natDegree_lt ((natDegree_monicOfCoeff _).trans_lt hj)).symm)
-
-/-- The principal subresultant coefficient of `monicOfCoeff c` and its derivative at formal bounds
-`d` and `d - 1` is analytic wherever the lower coefficients `c i` are analytic. -/
-private theorem analyticAt_psc_monicOfCoeff_derivative {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {d : ℕ} {c : Fin d → E → ℝ} {x₀ : E} (hc : ∀ i, AnalyticAt ℝ (c i) x₀)
-    (j : ℕ) :
-    AnalyticAt ℝ (fun x ↦ psc (monicOfCoeff fun i ↦ c i x)
-      (monicOfCoeff fun i ↦ c i x).derivative d (d - 1) j) x₀ := by
-  refine analyticAt_psc (fun i _ ↦ analyticAt_coeff_monicOfCoeff hc i) (fun i _ ↦ ?_) j
-  simp_rw [coeff_derivative]
-  exact (analyticAt_coeff_monicOfCoeff hc (i + 1)).mul analyticAt_const
 
 /-- Over an open locus where the principal subresultant coefficients of `monicOfCoeff a` and its
 derivative vanish below `k` and the `k`-th one is nonzero, the real zero set has open
@@ -115,7 +93,7 @@ private theorem isOpenMap_domRestrict_fst_monicOfCoeff_psc_ne_zero {E : Type*}
   let P : E → ℝ[X] := fun x ↦ monicOfCoeff fun i ↦ a i x
   let δ : ℕ → E → ℝ := fun j x ↦ psc (P x) (P x).derivative d (d - 1) j
   have hδk_an : AnalyticOnNhd ℝ (δ k) U :=
-    fun x hx ↦ analyticAt_psc_monicOfCoeff_derivative (fun i ↦ ha i x hx) k
+    fun x hx ↦ analyticAt_psc_monicOfCoeff_derivative (fun i ↦ ha i x hx) d (d - 1) k
   have hU'_open : IsOpen {x ∈ U | δ k x ≠ 0} :=
     isOpen_iff_mem_nhds.2 fun x ⟨hxU, hxδ⟩ ↦
       inter_mem (hU.mem_nhds hxU) ((hδk_an x hxU).continuousAt.eventually_ne hxδ)
@@ -195,21 +173,6 @@ private theorem exists_lt_psc_monicOfCoeff_derivative_not_eventuallyEq_zero {E :
   refine ⟨k, interior {x | (∀ i, AnalyticAt ℝ (a i) x) ∧ ∀ j < k, δ j x = 0}, hk_lt,
     isOpen_interior, mem_interior_iff_mem_nhds.2 (ha_nhd.and hlt),
     fun i x hx ↦ (interior_subset hx).1 i, hk_ne, fun x hx ↦ (interior_subset hx).2⟩
-
-/-- If `monicOfCoeff c` (of degree `p`) and `Q` (`Q.natDegree ≤ p`) share a root `s`, their
-fixed-bound resultant `psc (monicOfCoeff c) Q p p 0` vanishes. -/
-private theorem psc_monicOfCoeff_zero_eq_zero_of_common_root {p : ℕ} {c : Fin p → ℝ} {Q : ℝ[X]}
-    (hQ : Q.natDegree ≤ p) {s : ℝ} (hR : (monicOfCoeff c).eval s = 0) (hQs : Q.eval s = 0) :
-    psc (monicOfCoeff c) Q p p 0 = 0 := by
-  have hdvd : X - C s ∣ EuclideanDomain.gcd (monicOfCoeff c) Q :=
-    EuclideanDomain.dvd_gcd (dvd_iff_isRoot.2 hR) (dvd_iff_isRoot.2 hQs)
-  have hgcd0 : EuclideanDomain.gcd (monicOfCoeff c) Q ≠ 0 :=
-    fun h ↦ (monic_monicOfCoeff c).ne_zero (EuclideanDomain.gcd_eq_zero_iff.1 h).1
-  have hpos : 0 < (EuclideanDomain.gcd (monicOfCoeff c) Q).natDegree := by
-    have h1 := natDegree_le_of_dvd hdvd hgcd0
-    rw [natDegree_X_sub_C] at h1
-    omega
-  exact psc_eq_zero_of_lt_natDegree_gcd (natDegree_monicOfCoeff c).le hQ hpos
 
 /-- For `δ : (Fin (m + 1) → ℝ) → ℝ` analytic at `0`, vanishing at `0`, and not identically zero
 near `0`, a linear coordinate change `L : ((Fin m → ℝ) × ℝ) ≃L[ℝ] Fin (m + 1) → ℝ` makes `δ ∘ L`
@@ -346,36 +309,8 @@ private theorem exists_resultant_eliminator {m d : ℕ}
         (R y).eval s * q' ((y, t), s) + (Q (y, t)).eval s := h1
     rw [hP0, hRs, zero_mul, zero_add] at h1'
     exact h1'.symm
-  exact psc_monicOfCoeff_zero_eq_zero_of_common_root (hQ_deg (y, t)) hRs hQs
-
-/-- Combining an open-projection subset `s₁` with a base-pulled-back open-projection zero set
-`{g = 0}` yields open `Prod.fst` projection for `{q ∈ W | f q * g q = 0}`. -/
-private theorem isOpenMap_domRestrict_fst_mul_of_cover {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] {W s₁ : Set (X × ℝ)} (hW : IsOpen W)
-    (hs₁ : IsOpenMap (s₁.domRestrict Prod.fst)) {Z_m : Set (Y × ℝ)}
-    (hZ_m : IsOpenMap (Z_m.domRestrict Prod.fst)) {π : X → Y} (hπ : Continuous π)
-    {f g : X × ℝ → ℝ} (hg_iff : ∀ q ∈ W, g q = 0 ↔ (π q.1, q.2) ∈ Z_m)
-    (hs₁_sub : ∀ q ∈ s₁, q ∈ W → f q = 0)
-    (hcover : ∀ q ∈ W, f q = 0 → q ∈ s₁ ∨ g q = 0) :
-    IsOpenMap ({q ∈ W | f q * g q = 0}.domRestrict Prod.fst) := by
-  have hZg : IsOpenMap ({q ∈ W | g q = 0}.domRestrict Prod.fst) := by
-    have hset : {q ∈ W | g q = 0} = Prod.map π id ⁻¹' Z_m ∩ W := by
-      ext q
-      exact ⟨fun ⟨hqW, hg0⟩ ↦ ⟨(hg_iff q hqW).1 hg0, hqW⟩,
-        fun ⟨hZ, hqW⟩ ↦ ⟨hqW, (hg_iff q hqW).2 hZ⟩⟩
-    rw [hset]
-    exact (hZ_m.domRestrict_fst_preimage_prodMap_id hπ).domRestrict_inter hW
-  have hunion : {q ∈ W | f q * g q = 0} = (s₁ ∩ W) ∪ {q ∈ W | g q = 0} := by
-    ext q
-    refine ⟨fun ⟨hqW, hfg⟩ ↦ ?_, fun h ↦ ?_⟩
-    · rcases mul_eq_zero.1 hfg with hf0 | hg0
-      · exact (hcover q hqW hf0).imp (fun hs ↦ ⟨hs, hqW⟩) fun hg0 ↦ ⟨hqW, hg0⟩
-      · exact Or.inr ⟨hqW, hg0⟩
-    · rcases h with ⟨hs, hqW⟩ | ⟨hqW, hg0⟩
-      · exact ⟨hqW, mul_eq_zero_of_left (hs₁_sub q hs hqW) _⟩
-      · exact ⟨hqW, mul_eq_zero_of_right _ hg0⟩
-  rw [hunion]
-  exact (hs₁.domRestrict_inter hW).domRestrict_union hZg
+  exact psc_zero_eq_zero_of_isRoot (natDegree_monicOfCoeff _).le (hQ_deg (y, t))
+    (Or.inl (monic_monicOfCoeff _).ne_zero) hRs hQs
 
 /-- Inductive step at `(0, 0) : (Fin (m + 1) → ℝ) × ℝ` when `f` has positive vertical order `d` and
 `δ k 0 = 0`. -/
@@ -402,7 +337,8 @@ private theorem exists_isOpenMap_domRestrict_fst_origin_succ_of_psc_zero {m d k 
       IsOpenMap ({q ∈ W | f q * g q = 0}.domRestrict Prod.fst) := by
   let P : (Fin (m + 1) → ℝ) → ℝ[X] := fun x ↦ monicOfCoeff fun i ↦ a i x
   obtain ⟨L, H, N, hH_an, hH_slice, hN, hH_elim⟩ :=
-    exists_resultant_eliminator ha ha0 (analyticAt_psc_monicOfCoeff_derivative ha k) hk_ne hk0
+    exists_resultant_eliminator ha ha0
+      (analyticAt_psc_monicOfCoeff_derivative ha d (d - 1) k) hk_ne hk0
   obtain ⟨r_H, hr_H, hH_ball⟩ := hH_an.exists_ball_analyticOnNhd
   have hΦW₀ : {yts : ((Fin m → ℝ) × ℝ) × ℝ | (L (yts.1.1, yts.2), yts.1.2) ∈ W₀} ∈
       𝓝 ((0, 0), 0) :=
@@ -469,7 +405,7 @@ private theorem exists_isOpenMap_domRestrict_fst_origin_succ_of_psc_ne_zero {m d
   have hδ_open : IsOpen {x ∈ U_a | δ x ≠ 0} :=
     isOpen_iff_mem_nhds.2 fun x ⟨hxU, hxδ⟩ ↦ inter_mem (hU_a.mem_nhds hxU)
       ((analyticAt_psc_monicOfCoeff_derivative (fun i ↦ ha_on i x hxU)
-        k).continuousAt.eventually_ne hxδ)
+        d (d - 1) k).continuousAt.eventually_ne hxδ)
   let W := W₀ ∩ {x ∈ U_a | δ x ≠ 0} ×ˢ univ
   have hW_open : IsOpen W := hW₀_open.inter (hδ_open.prod isOpen_univ)
   refine ⟨fun _ ↦ 1, W, hW_open, ⟨h0W₀, ⟨h0U_a, hk0⟩, trivial⟩,

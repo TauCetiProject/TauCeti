@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Polynomial.CauchyBound
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Normed.Group.Constructions
+import TauCeti.Analysis.Polynomial.SymmetricPower
 
 /-!
-# A root bound in monic coefficient coordinates
+# Analytic and metric properties in monic coefficient coordinates
 
 A root of `TauCeti.Polynomial.monicOfCoeff c` has norm strictly less than
 `‖c‖ + 1`. Thus locally bounded coefficient tuples give locally bounded roots,
@@ -19,6 +22,8 @@ singularities of analytic root branches.
 
 The estimate specializes Mathlib's `Polynomial.IsRoot.norm_lt_cauchyBound`
 (Daniel Weber's formalization of Cauchy's root bound) to the finite coefficient tuple.
+We also record continuity of polynomial evaluation and analyticity of all coefficients
+`j ↦ (monicOfCoeff (c ·)).coeff j` for analytic parameter families `c`.
 -/
 
 public section
@@ -52,5 +57,15 @@ theorem continuousOn_eval_monicOfCoeff {R B : Type*} [CommSemiring R]
   simp_rw [eval_monicOfCoeff]
   exact (hr.pow d).add (continuousOn_finsetSum _ fun i _ =>
     (continuousOn_pi.1 hc i).mul (hr.pow i.val))
+
+/-- Each coefficient of `monicOfCoeff (fun i ↦ c i x)` is analytic at `x₀` whenever the lower
+coefficients `c i` are analytic at `x₀`. -/
+theorem analyticAt_coeff_monicOfCoeff {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {d : ℕ} {c : Fin d → E → 𝕜} {x₀ : E}
+    (hc : ∀ i, AnalyticAt 𝕜 (c i) x₀) (j : ℕ) :
+    AnalyticAt 𝕜 (fun x ↦ (monicOfCoeff fun i ↦ c i x).coeff j) x₀ := by
+  simpa [Function.comp_def] using
+    (analyticAt_linearMap_monicOfCoeff (_root_.Polynomial.lcoeff 𝕜 j) (fun i ↦ c i x₀)).comp
+      (AnalyticAt.pi hc)
 
 end TauCeti.Polynomial

@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 public import TauCeti.RingTheory.Polynomial.Subresultant.Polynomial
 import Mathlib.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.Matrix
+import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 
 /-!
 # Analyticity of subresultant coefficients and resultants
@@ -22,8 +24,9 @@ coefficients depend analytically on a parameter, so do all fixed-bound subresult
   `TauCeti.analyticOn_subresultantCoeff`, `TauCeti.analyticOnNhd_subresultantCoeff`: analyticity of
   `x ↦ (F x).subresultantCoeff (G x) m n j k`.
 * `TauCeti.analyticWithinAt_psc`, `TauCeti.analyticAt_psc`, `TauCeti.analyticOn_psc`,
-  `TauCeti.analyticOnNhd_psc`: analyticity of principal subresultant coefficients
-  `x ↦ (F x).psc (G x) m n j`.
+  `TauCeti.analyticOnNhd_psc`, `TauCeti.analyticAt_psc_monicOfCoeff_derivative`: analyticity of
+  principal subresultant coefficients `x ↦ (F x).psc (G x) m n j`, including for a monic
+  coefficient family and its derivative.
 * `TauCeti.analyticWithinAt_resultant`, `TauCeti.analyticAt_resultant`,
   `TauCeti.analyticOn_resultant`, `TauCeti.analyticOnNhd_resultant`: analyticity of fixed-bound
   resultants `x ↦ (F x).resultant (G x) m n`.
@@ -44,7 +47,7 @@ theorem analyticWithinAt_subresultantCoeff
     (hF : ∀ i ≤ m, AnalyticWithinAt 𝕜 (fun x ↦ (F x).coeff i) s x₀)
     (hG : ∀ i ≤ n, AnalyticWithinAt 𝕜 (fun x ↦ (G x).coeff i) s x₀) (j k : ℕ) :
     AnalyticWithinAt 𝕜 (fun x ↦ (F x).subresultantCoeff (G x) m n j k) s x₀ := by
-  simp_rw [Polynomial.subresultantCoeff_def]
+  simp_rw [_root_.Polynomial.subresultantCoeff_def]
   refine analyticWithinAt_matrix_det fun r c ↦ ?_
   induction c using Fin.addCases with
   | left c =>
@@ -86,7 +89,7 @@ theorem analyticWithinAt_psc
     (hF : ∀ i ≤ m, AnalyticWithinAt 𝕜 (fun x ↦ (F x).coeff i) s x₀)
     (hG : ∀ i ≤ n, AnalyticWithinAt 𝕜 (fun x ↦ (G x).coeff i) s x₀) (j : ℕ) :
     AnalyticWithinAt 𝕜 (fun x ↦ (F x).psc (G x) m n j) s x₀ := by
-  simp_rw [← Polynomial.subresultantCoeff_self]
+  simp_rw [← _root_.Polynomial.subresultantCoeff_self]
   exact analyticWithinAt_subresultantCoeff hF hG j j
 
 /-- A fixed-bound principal subresultant coefficient depends analytically at `x₀` on the input
@@ -95,7 +98,7 @@ theorem analyticAt_psc
     (hF : ∀ i ≤ m, AnalyticAt 𝕜 (fun x ↦ (F x).coeff i) x₀)
     (hG : ∀ i ≤ n, AnalyticAt 𝕜 (fun x ↦ (G x).coeff i) x₀) (j : ℕ) :
     AnalyticAt 𝕜 (fun x ↦ (F x).psc (G x) m n j) x₀ := by
-  simp_rw [← Polynomial.subresultantCoeff_self]
+  simp_rw [← _root_.Polynomial.subresultantCoeff_self]
   exact analyticAt_subresultantCoeff hF hG j j
 
 /-- A fixed-bound principal subresultant coefficient is analytic on `s` when the input polynomial
@@ -114,13 +117,25 @@ theorem analyticOnNhd_psc
     AnalyticOnNhd 𝕜 (fun x ↦ (F x).psc (G x) m n j) s :=
   fun x hx ↦ analyticAt_psc (fun i hi ↦ hF i hi x hx) (fun i hi ↦ hG i hi x hx) j
 
+/-- A fixed-bound principal subresultant coefficient of `monicOfCoeff c` and its derivative is
+analytic at `x₀` whenever the lower coefficients `c i` are analytic at `x₀`. -/
+theorem analyticAt_psc_monicOfCoeff_derivative {d : ℕ} {c : Fin d → E → 𝕜}
+    (hc : ∀ i, AnalyticAt 𝕜 (c i) x₀) (m n j : ℕ) :
+    AnalyticAt 𝕜 (fun x ↦
+      (TauCeti.Polynomial.monicOfCoeff fun i ↦ c i x).psc
+        (TauCeti.Polynomial.monicOfCoeff fun i ↦ c i x).derivative m n j) x₀ := by
+  refine analyticAt_psc (fun i _ ↦ TauCeti.Polynomial.analyticAt_coeff_monicOfCoeff hc i)
+    (fun i _ ↦ ?_) j
+  simp_rw [coeff_derivative]
+  exact (TauCeti.Polynomial.analyticAt_coeff_monicOfCoeff hc (i + 1)).mul analyticAt_const
+
 /-- A fixed-bound resultant depends analytically within `s` at `x₀` on the input polynomial
 coefficients up to `m` and `n`. -/
 theorem analyticWithinAt_resultant
     (hF : ∀ i ≤ m, AnalyticWithinAt 𝕜 (fun x ↦ (F x).coeff i) s x₀)
     (hG : ∀ i ≤ n, AnalyticWithinAt 𝕜 (fun x ↦ (G x).coeff i) s x₀) :
     AnalyticWithinAt 𝕜 (fun x ↦ (F x).resultant (G x) m n) s x₀ := by
-  simp_rw [← Polynomial.psc_zero]
+  simp_rw [← _root_.Polynomial.psc_zero]
   exact analyticWithinAt_psc hF hG 0
 
 /-- A fixed-bound resultant depends analytically at `x₀` on the input polynomial coefficients up
@@ -129,7 +144,7 @@ theorem analyticAt_resultant
     (hF : ∀ i ≤ m, AnalyticAt 𝕜 (fun x ↦ (F x).coeff i) x₀)
     (hG : ∀ i ≤ n, AnalyticAt 𝕜 (fun x ↦ (G x).coeff i) x₀) :
     AnalyticAt 𝕜 (fun x ↦ (F x).resultant (G x) m n) x₀ := by
-  simp_rw [← Polynomial.psc_zero]
+  simp_rw [← _root_.Polynomial.psc_zero]
   exact analyticAt_psc hF hG 0
 
 /-- A fixed-bound resultant is analytic on `s` when the input polynomial coefficients up to `m` and

@@ -32,6 +32,9 @@ solution, by the Bézout identity for the gcd.
 * `Polynomial.psc_eq_zero_of_mul_add_mul_eq_zero`: a nontrivial relation `A * q + B * p = 0` with
   `A` and `B` of degrees below `m - j` and `n - j` forces the principal coefficient at `j` to
   vanish.
+* `Polynomial.psc_eq_zero_of_dvd_of_lt_natDegree`, `Polynomial.psc_zero_eq_zero_of_isRoot`: over an
+  integral domain, a common divisor of degree above `j` (in particular a shared root at `j = 0`)
+  forces the principal subresultant coefficient at `j` to vanish.
 * `Polynomial.psc_eq_zero_of_lt_natDegree_gcd`: the principal coefficients vanish below the
   degree of the gcd.
 * `Polynomial.psc_natDegree_gcd_ne_zero`: the principal coefficient at the degree of the gcd is
@@ -79,6 +82,39 @@ theorem psc_eq_zero_of_mul_add_mul_eq_zero {p q A B : R[X]} {m n j : ℕ}
     simp only [Fin.append_left, Fin.append_right, Pi.zero_apply]
     rw [ofFn_comp_toFn_eq_id_of_degree_lt hA, ofFn_comp_toFn_eq_id_of_degree_lt hB, hAB, coeff_zero]
 
+/-- If a polynomial `g` of degree strictly above `j` divides both `p` and `q` (not both zero), then
+the principal subresultant coefficient at index `j` vanishes at any formal degree bounds dominating
+the actual degrees. -/
+theorem psc_eq_zero_of_dvd_of_lt_natDegree {p q g : R[X]} {m n j : ℕ}
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hne : p ≠ 0 ∨ q ≠ 0)
+    (hp : g ∣ p) (hq : g ∣ q) (hj : j < g.natDegree) :
+    psc p q m n j = 0 := by
+  have hg0 : g ≠ 0 := by
+    rintro rfl
+    simp at hj
+  obtain ⟨p', rfl⟩ := hp
+  obtain ⟨q', rfl⟩ := hq
+  have hdeg : ∀ {r : R[X]} {k : ℕ}, (g * r).natDegree ≤ k → r.degree < (k - j : ℕ) := by
+    intro r k hk
+    rcases eq_or_ne r 0 with rfl | hr
+    · simp
+    · have hmul := natDegree_mul hg0 hr
+      exact (natDegree_lt_iff_degree_lt hr).mp (by omega)
+  refine psc_eq_zero_of_mul_add_mul_eq_zero (A := p') (B := -q') hm hn (hdeg hm)
+    (by rw [degree_neg]; exact hdeg hn) (by ring) ?_
+  rcases hne with hp0 | hq0
+  · exact Or.inl (right_ne_zero_of_mul hp0)
+  · exact Or.inr (neg_ne_zero.mpr (right_ne_zero_of_mul hq0))
+
+/-- If `p` and `q` (not both zero) share a root `s`, their fixed-bound resultant `psc p q m n 0`
+vanishes at any formal degree bounds dominating their degrees. -/
+theorem psc_zero_eq_zero_of_isRoot {p q : R[X]} {m n : ℕ}
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hne : p ≠ 0 ∨ q ≠ 0)
+    {s : R} (hp : p.IsRoot s) (hq : q.IsRoot s) :
+    psc p q m n 0 = 0 :=
+  psc_eq_zero_of_dvd_of_lt_natDegree hm hn hne (dvd_iff_isRoot.mpr hp) (dvd_iff_isRoot.mpr hq)
+    (by simp)
+
 end Domain
 
 section Field
@@ -90,43 +126,12 @@ degree bounds dominating the actual degrees. -/
 theorem psc_eq_zero_of_lt_natDegree_gcd {p q : K[X]}
     {m n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hj : j < (EuclideanDomain.gcd p q).natDegree) : psc p q m n j = 0 := by
-  set g := EuclideanDomain.gcd p q
-  have hg0 : g ≠ 0 := by
-    rintro h
-    rw [h, natDegree_zero] at hj
-    exact absurd hj (Nat.not_lt_zero j)
-  have hpg : g * (p / g) = p :=
-    EuclideanDomain.mul_div_cancel' hg0 (EuclideanDomain.gcd_dvd_left p q)
-  have hqg : g * (q / g) = q :=
-    EuclideanDomain.mul_div_cancel' hg0 (EuclideanDomain.gcd_dvd_right p q)
-  -- The degree of a quotient by `g` drops by `g.natDegree`, so both quotients fit the bounds.
-  have hdeg : ∀ {r : K[X]} {k : ℕ}, r.natDegree ≤ k → g * (r / g) = r →
-      (r / g).degree < (k - j : ℕ) := by
-    intro r k hk hrg
-    rcases eq_or_ne r 0 with rfl | hr
-    · rw [EuclideanDomain.zero_div, degree_zero]
-      exact WithBot.bot_lt_coe _
-    · have hrg0 : r / g ≠ 0 := by
-        rintro h
-        rw [h, mul_zero] at hrg
-        exact hr hrg.symm
-      have := natDegree_mul hg0 hrg0
-      rw [hrg] at this
-      exact (natDegree_lt_iff_degree_lt hrg0).mp (by omega)
-  refine psc_eq_zero_of_mul_add_mul_eq_zero (A := p / g) (B := -(q / g)) hm hn (hdeg hm hpg)
-    (by rw [degree_neg]; exact hdeg hn hqg) ?_ ?_
-  · rw [neg_mul, ← sub_eq_add_neg, sub_eq_zero]
-    calc p / g * q = p / g * (g * (q / g)) := by rw [hqg]
-      _ = q / g * (g * (p / g)) := by ring
-      _ = q / g * p := by rw [hpg]
-  · rcases eq_or_ne p 0 with rfl | hp
-    · have hq : q ≠ 0 := fun h => hg0 (EuclideanDomain.gcd_eq_zero_iff.mpr ⟨rfl, h⟩)
-      refine Or.inr (neg_ne_zero.mpr fun h => hq ?_)
-      rw [h, mul_zero] at hqg
-      exact hqg.symm
-    · refine Or.inl fun h => hp ?_
-      rw [h, mul_zero] at hpg
-      exact hpg.symm
+  have hne : p ≠ 0 ∨ q ≠ 0 := by
+    by_contra! h
+    rw [EuclideanDomain.gcd_eq_zero_iff.mpr h, natDegree_zero] at hj
+    exact Nat.not_lt_zero j hj
+  exact psc_eq_zero_of_dvd_of_lt_natDegree hm hn hne
+    (EuclideanDomain.gcd_dvd_left p q) (EuclideanDomain.gcd_dvd_right p q) hj
 
 /-- At the degree of the gcd, the principal subresultant coefficient is nonzero, provided the left
 bound is the actual degree of the nonzero left polynomial and the right bound dominates the degree

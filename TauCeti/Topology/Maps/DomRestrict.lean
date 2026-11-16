@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.Defs
 public import Mathlib.Topology.Constructions.SumProd
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Topology.Maps.LocalSections
+import TauCeti.Topology.Homeomorph.Fin
 
 /-!
 # Openness of domain restrictions and projections of subsets
@@ -33,9 +35,11 @@ closed under the set-theoretic operations used to assemble stratified families o
   (`Fin.tail`) coordinates.
 * `IsOpenMap.domRestrict_fst_preimage_prodMap_id`,
   `Homeomorph.isOpenMap_preimage_prodMap_domRestrict_fst_iff`,
-  `TauCeti.isOpenMap_domRestrict_tail_preimage_iff`: base change of open first-coordinate
-  projections along continuous maps of the base, invariance under product homeomorphisms, and
-  comparison between `Prod.fst` and `Fin.tail`.
+  `TauCeti.isOpenMap_domRestrict_tail_preimage_iff`,
+  `TauCeti.isOpenMap_domRestrict_fst_mul_of_cover`: base change of open first-coordinate
+  projections along continuous maps of the base, invariance under product homeomorphisms,
+  comparison between `Prod.fst` and `Fin.tail`, and open projection for a product zero set covered
+  by an open-projection piece and a base-pulled-back piece.
 
 ## References
 
@@ -83,25 +87,16 @@ theorem isOpenMap_sUnion_domRestrict {𝒜 : Set (Set X)} {f : X → Y}
 
 end General
 
-/-- Cylinder coordinates `(Fin (n + 1) → Z) ≃ₜ (Fin n → Z) × Z` placing `Fin.tail` first and
-coordinate `0` second. -/
-private def tailHeadHomeomorph (n : ℕ) (Z : Type*) [TopologicalSpace Z] :
-    (Fin (n + 1) → Z) ≃ₜ (Fin n → Z) × Z where
-  toFun v := (Fin.tail v, v 0)
-  invFun p := Fin.cons p.2 p.1
-  left_inv v := Fin.cons_self_tail v
-  right_inv p := by simp
-  continuous_toFun := (continuous_pi fun i ↦ continuous_apply i.succ).prodMk (continuous_apply 0)
-  continuous_invFun := continuous_snd.finCons (A := fun _ ↦ Z) continuous_fst
-
 /-- Pulling back a subset of `(Fin n → Z) × Z` to `Fin (n + 1) → Z` via `v ↦ (Fin.tail v, v 0)`
 turns openness of `Prod.fst` into openness of `Fin.tail`. -/
 theorem isOpenMap_domRestrict_tail_preimage_iff {n : ℕ} {Z : Type*} [TopologicalSpace Z]
     {s : Set ((Fin n → Z) × Z)} :
     IsOpenMap ({v : Fin (n + 1) → Z | (Fin.tail v, v 0) ∈ s}.domRestrict Fin.tail) ↔
       IsOpenMap (s.domRestrict Prod.fst) := by
-  let e := tailHeadHomeomorph n Z
-  have he_symm (p : (Fin n → Z) × Z) : e.symm p = Fin.cons p.2 p.1 := rfl
+  let e : (Fin (n + 1) → Z) ≃ₜ (Fin n → Z) × Z :=
+    (finConsHomeomorph fun _ ↦ Z).symm.trans (Homeomorph.prodComm _ _)
+  have he (v : Fin (n + 1) → Z) : e v = (Fin.tail v, v 0) := by simp [e]
+  have he_symm (p : (Fin n → Z) × Z) : e.symm p = Fin.cons p.2 p.1 := by simp [e]
   rw [isOpenMap_domRestrict_iff, isOpenMap_domRestrict_iff]
   constructor
   · intro h U hU
@@ -111,7 +106,7 @@ theorem isOpenMap_domRestrict_tail_preimage_iff {n : ℕ} {Z : Type*} [Topologic
       ext x
       constructor
       · rintro ⟨v, ⟨hvs, hvU⟩, rfl⟩
-        exact ⟨e v, ⟨hvs, hvU⟩, rfl⟩
+        exact ⟨e v, ⟨by simpa [he] using hvs, hvU⟩, by simp [he]⟩
       · rintro ⟨⟨x, t⟩, ⟨hxs, hxU⟩, rfl⟩
         refine ⟨e.symm (x, t), ?_, by simp [he_symm]⟩
         rw [mem_inter_iff, mem_ofPred_eq, mem_preimage, e.apply_symm_apply]
@@ -125,9 +120,9 @@ theorem isOpenMap_domRestrict_tail_preimage_iff {n : ℕ} {Z : Type*} [Topologic
       ext x
       constructor
       · rintro ⟨v, ⟨hvs, hvV⟩, rfl⟩
-        exact ⟨e v, ⟨hvs, mem_image_of_mem e hvV⟩, rfl⟩
+        exact ⟨e v, ⟨by simpa [he] using hvs, mem_image_of_mem e hvV⟩, by simp [he]⟩
       · rintro ⟨_, ⟨hp, v, hvV, rfl⟩, rfl⟩
-        exact ⟨v, ⟨hp, hvV⟩, rfl⟩
+        exact ⟨v, ⟨by simpa [he] using hp, hvV⟩, by simp [he]⟩
     rw [himg]
     exact h _ (e.isOpenMap V hV)
 
@@ -257,6 +252,35 @@ theorem Homeomorph.isOpenMap_preimage_prodMap_domRestrict_fst_iff {X' Z' : Type*
     ext ⟨a, c⟩
     simp
   rwa [hpre] at h'
+
+/-- Combining an open-projection subset `s` with a base-pulled-back open-projection zero set
+`{g = 0}` yields open `Prod.fst` projection for `{q ∈ W | f q * g q = 0}`. -/
+theorem TauCeti.isOpenMap_domRestrict_fst_mul_of_cover {R : Type*} [MulZeroClass R]
+    [NoZeroDivisors R] {W s : Set (X × Z)} (hW : IsOpen W)
+    (hs : IsOpenMap (s.domRestrict Prod.fst)) {t : Set (Y × Z)}
+    (ht : IsOpenMap (t.domRestrict Prod.fst)) {π : X → Y} (hπ : Continuous π)
+    {f g : X × Z → R} (hg_iff : ∀ q ∈ W, g q = 0 ↔ (π q.1, q.2) ∈ t)
+    (hs_sub : ∀ q ∈ s, q ∈ W → f q = 0)
+    (hcover : ∀ q ∈ W, f q = 0 → q ∈ s ∨ g q = 0) :
+    IsOpenMap ({q ∈ W | f q * g q = 0}.domRestrict Prod.fst) := by
+  have hZg : IsOpenMap ({q ∈ W | g q = 0}.domRestrict Prod.fst) := by
+    have hset : {q ∈ W | g q = 0} = Prod.map π id ⁻¹' t ∩ W := by
+      ext q
+      exact ⟨fun ⟨hqW, hg0⟩ ↦ ⟨(hg_iff q hqW).1 hg0, hqW⟩,
+        fun ⟨htq, hqW⟩ ↦ ⟨hqW, (hg_iff q hqW).2 htq⟩⟩
+    rw [hset]
+    exact (ht.domRestrict_fst_preimage_prodMap_id hπ).domRestrict_inter hW
+  have hunion : {q ∈ W | f q * g q = 0} = (s ∩ W) ∪ {q ∈ W | g q = 0} := by
+    ext q
+    refine ⟨fun ⟨hqW, hfg⟩ ↦ ?_, fun h ↦ ?_⟩
+    · rcases mul_eq_zero.1 hfg with hf0 | hg0
+      · exact (hcover q hqW hf0).imp (fun hqs ↦ ⟨hqs, hqW⟩) fun hg0 ↦ ⟨hqW, hg0⟩
+      · exact Or.inr ⟨hqW, hg0⟩
+    · rcases h with ⟨hqs, hqW⟩ | ⟨hqW, hg0⟩
+      · exact ⟨hqW, mul_eq_zero_of_left (hs_sub q hqs hqW) _⟩
+      · exact ⟨hqW, mul_eq_zero_of_right _ hg0⟩
+  rw [hunion]
+  exact (hs.domRestrict_inter hW).domRestrict_union hZg
 
 end RootNamespaces
 
