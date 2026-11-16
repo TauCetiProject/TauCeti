@@ -177,7 +177,7 @@ private lemma isZero_serreSpectralSequence_page_two_X_of_notMem (R : Type u) [Ri
       set q := (-pq.1 - 2 * pq.2 - 1).toNat
       have hpq_eq : pq = serreBideg d q := by
         ext <;> simp only [serreBideg_fst, serreBideg_snd] <;> lia
-      refine (_root_.ModuleCat.isZero_sigmaObj _ fun j ↦ ?_).of_iso
+      refine ((colimit.isColimit _).isZero_pt (Functor.isZero _ fun ⟨j⟩ ↦ ?_)).of_iso
         (serreSpectralSequenceFirstPageXIsoSigma (univ : Set B) hp R d q pq (by lia) (by lia))
       rcases lt_or_ge d D with hdD | hdD
       · refine hQ d hdD j q ?_
@@ -416,19 +416,36 @@ section SerreFibration
 
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
 
-private lemma finiteCWType_fiber_pullbackFst {B' : _root_.TopCat.{u}} (g : B' ⟶ B)
-    [∀ b, FiniteCWType (p.fiber b)] (b' : B') :
-    FiniteCWType ((_root_.TopCat.pullbackFst g p).fiber b') :=
-  (_root_.TopCat.homeoOfIso (p.fiberPullbackFstIso g b')).finiteCWType
+/-- Pullback of `p : E ⟶ B` along `e.symm : B' → B` for a homotopy equivalence `e : B ≃ₕ B'`. -/
+private def pullbackSymm {B' : Type u} [TopologicalSpace B'] (p : E ⟶ B)
+    (e : ContinuousMap.HomotopyEquiv B B') :=
+  _root_.TopCat.pullbackFst (_root_.TopCat.ofHom e.symm.toFun) p
+
+private instance {B' : Type u} [TopologicalSpace B'] (p : E ⟶ B) [∀ b, FiniteCWType (p.fiber b)]
+    (e : ContinuousMap.HomotopyEquiv B B') (b' : B') :
+    FiniteCWType ((pullbackSymm p e).fiber b') :=
+  (_root_.TopCat.homeoOfIso
+    (p.fiberPullbackFstIso (_root_.TopCat.ofHom e.symm.toFun) b')).finiteCWType
+
+private lemma eulerChar_fiber_pullbackSymm {B' : Type u} [TopologicalSpace B'] (p : E ⟶ B)
+    [∀ b, FiniteCWType (p.fiber b)] (e : ContinuousMap.HomotopyEquiv B B') (b' : B') :
+    eulerChar ((pullbackSymm p e).fiber b') = eulerChar (p.fiber (e.symm b')) :=
+  (_root_.TopCat.homeoOfIso (p.fiberPullbackFstIso (_root_.TopCat.ofHom e.symm.toFun) b') :
+    ((pullbackSymm p e).fiber b') ≃ₜ p.fiber (e.symm b')).eulerChar_eq
 
 include hp in
-/-- Identification of the abutment of `serreSpectralObject` for the pullback of `p` along
-`e.symm : B' ≃ₕ B` with `H_n(E; R)`. -/
+private lemma mem_serreFibrations_pullbackSymm {B' : Type u} [TopologicalSpace B']
+    (e : ContinuousMap.HomotopyEquiv B B') :
+    serreFibrations (pullbackSymm p e) :=
+  mem_serreFibrations_pullbackFst hp (_root_.TopCat.ofHom e.symm.toFun)
+
+include hp in
+/-- Identification of the abutment of `serreSpectralObject` for `pullbackSymm p e` with
+`H_n(E; R)`. -/
 private def pullbackHomotopyEquivAbutmentIso {B' : Type u} [TopologicalSpace B'] [T2Space B']
     [CWComplex (univ : Set B')] (e : ContinuousMap.HomotopyEquiv B B') (R : Type u) [Ring R]
     (n : ℕ) :
-    (serreSpectralObject (univ : Set B')
-        (_root_.TopCat.pullbackFst (_root_.TopCat.ofHom e.symm.toFun) p) R).abutment (-n) ≅
+    (serreSpectralObject (univ : Set B') (pullbackSymm p e) R).abutment (-n) ≅
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
   serreSpectralObjectPullbackAbutmentIso hp R (univ : Set B')
     (g := _root_.TopCat.ofHom e.symm.toFun) e.symm.isWeakHomotopyEquivalence n
@@ -442,11 +459,11 @@ private lemma isZero_singularHomology_of_homotopyEquiv_bounds {B' : Type u} [Top
     (hD : ∀ d ≥ D, IsEmpty (cell (univ : Set B') d))
     (hQ : ∀ d < D, ∀ (j : cell (univ : Set B') d), ∀ q ≥ Q,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
-        ((_root_.TopCat.pullbackFst (_root_.TopCat.ofHom e.symm.toFun) p).fiber (map d j 0))))
+        ((pullbackSymm p e).fiber (map d j 0))))
     {n : ℕ} (hn : D + Q ≤ n) :
     IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
   (isZero_serreSpectralObject_abutment_of_bounds
-    (mem_serreFibrations_pullbackFst hp (_root_.TopCat.ofHom e.symm.toFun)) R hD hQ hn).of_iso
+    (mem_serreFibrations_pullbackSymm hp e) R hD hQ hn).of_iso
     (pullbackHomotopyEquivAbutmentIso hp e R n).symm
 
 include hp in
@@ -458,9 +475,7 @@ theorem finite_singularHomology_of_mem_serreFibrations (R : Type u) [Ring R] [Is
     Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) := by
   obtain ⟨B', _, _, _, _, ⟨e⟩⟩ := FiniteCWType.exists_homotopyEquiv_univ B
-  have := finiteCWType_fiber_pullbackFst (p := p) (_root_.TopCat.ofHom e.symm.toFun)
-  have := finite_serreSpectralObject_abutment
-    (mem_serreFibrations_pullbackFst hp (_root_.TopCat.ofHom e.symm.toFun)) R n
+  have := finite_serreSpectralObject_abutment (mem_serreFibrations_pullbackSymm hp e) R n
   exact .equiv (pullbackHomotopyEquivAbutmentIso hp e R n).toLinearEquiv
 
 include hp in
@@ -472,9 +487,7 @@ theorem eventually_isZero_singularHomology_of_mem_serreFibrations (R : Type u) [
     ∀ᶠ n in Filter.atTop,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) := by
   obtain ⟨B', _, _, _, _, ⟨e⟩⟩ := FiniteCWType.exists_homotopyEquiv_univ B
-  have := finiteCWType_fiber_pullbackFst (p := p) (_root_.TopCat.ofHom e.symm.toFun)
-  obtain ⟨D, Q, hD, hQ⟩ := exists_cell_and_fiber_vanishing_bounds
-    (_root_.TopCat.pullbackFst (_root_.TopCat.ofHom e.symm.toFun) p) R
+  obtain ⟨D, Q, hD, hQ⟩ := exists_cell_and_fiber_vanishing_bounds (pullbackSymm p e) R
   exact Filter.eventually_atTop.2
     ⟨D + Q, fun _ hn ↦ isZero_singularHomology_of_homotopyEquiv_bounds hp e R hD hQ hn⟩
 
@@ -490,16 +503,13 @@ theorem finsum_finrank_singularHomology_of_mem_serreFibrations (k : Type u) [Div
       (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).obj E) =
       eulerChar B * c := by
   obtain ⟨B', _, _, _, _, ⟨e⟩⟩ := FiniteCWType.exists_homotopyEquiv_univ B
-  let g : _root_.TopCat.of B' ⟶ B := _root_.TopCat.ofHom e.symm.toFun
-  let p' := _root_.TopCat.pullbackFst g p
-  have hp' : serreFibrations p' := mem_serreFibrations_pullbackFst hp g
-  have := finiteCWType_fiber_pullbackFst (p := p) g
-  obtain ⟨D, Q, hD, hQ⟩ := exists_cell_and_fiber_vanishing_bounds p' k
+  have hp' := mem_serreFibrations_pullbackSymm hp e
+  obtain ⟨D, Q, hD, hQ⟩ := exists_cell_and_fiber_vanishing_bounds (pullbackSymm p e) k
   -- Compare the total-space Betti sum and the CW base sum through page `2` of the pullback
   -- spectral sequence.
   have habut : ∑ n ∈ Finset.range (D + Q), (-1 : ℤ) ^ n * finrank k
         (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).obj E) =
-      ((serreSpectralSequence (univ : Set B') p' k).page 2).eulerChar := by
+      ((serreSpectralSequence (univ : Set B') (pullbackSymm p e) k).page 2).eulerChar := by
     rw [eulerChar_serreSpectralSequence_page_two_eq_sum_abutment hp' k hD hQ]
     exact Finset.sum_congr rfl fun n _ ↦ by
       rw [(pullbackHomotopyEquivAbutmentIso hp e k n).toLinearEquiv.finrank_eq]
@@ -511,10 +521,9 @@ theorem finsum_finrank_singularHomology_of_mem_serreFibrations (k : Type u) [Div
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   have : _root_.Finite (cell (univ : Set B') d) := FiniteType.finite_cell d
   let _ := Fintype.ofFinite (cell (univ : Set B') d)
-  have hfib (j : cell (univ : Set B') d) : eulerChar (p'.fiber (map d j 0)) = c :=
-    (_root_.TopCat.homeoOfIso (p.fiberPullbackFstIso g (map d j 0))).eulerChar_eq.trans (hc _)
-  simp only [hfib, finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-    Nat.card_eq_fintype_card]
+  rw [finsum_eq_sum_of_fintype, Finset.sum_congr rfl fun j _ ↦
+      (eulerChar_fiber_pullbackSymm p e (map d j 0)).trans (hc _)]
+  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Nat.card_eq_fintype_card]
   ring
 
 include hp in

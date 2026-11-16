@@ -9,10 +9,11 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
+import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+import Mathlib.Order.SuccPred.Int
 import TauCeti.Algebra.Category.FGModuleCat.Exact
 import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
-import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 
 /-!
 # Euler characteristic of spectral sequences and filtered abutments
@@ -183,13 +184,9 @@ theorem finrank_abutmentFiltration_eq_sum_Ico [StrongRankCondition R] [HasRankNu
   | succ q haq ih =>
     have : Module.Finite R (X.abutmentFiltration (q + 1) n) :=
       X.finite_abutmentFiltration_of_forall_finite_cokernel (Int.le_add_one haq) ha hcok
-    have hIco : Finset.Ico a (q + 1) = insert q (Finset.Ico a q) := by
-      ext x
-      simp only [Finset.mem_Ico, Finset.mem_insert]
-      lia
-    rw [hIco, Finset.sum_insert (by simp),
+    rw [← Finset.sum_Ico_add_eq_sum_Ico_add_one haq,
       ← ih (fun i hi ↦ hcok i (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hi)),
-      (X.shortExact_abutmentFiltrationMap q n).moduleCat_finrank_eq_add, add_comm]
+      (X.shortExact_abutmentFiltrationMap q n).moduleCat_finrank_eq_add]
 
 /-- Over a ring satisfying `StrongRankCondition` and `HasRankNullity`, if the filtration of
 `X.abutment n` starts at `0` at `a`, exhausts the abutment at `b ≥ a`, and has finitely generated
@@ -246,10 +243,9 @@ theorem eulerChar_page_eq_sum_abutment {r₀ : ℤ}
   have hmem_s (pq : ℤ × ℤ) : pq ∈ s ↔ pq.1 + pq.2 ∈ I ∧ pq.2 ∈ Finset.Ico a b := by
     constructor
     · intro hpq
-      rcases Finset.mem_image.1 hpq with ⟨⟨n, q⟩, hnq, h⟩
-      rcases Finset.mem_product.1 hnq with ⟨hn, hq⟩
-      rcases Prod.mk.inj h with ⟨hp, rfl⟩
-      exact ⟨by rwa [show pq.1 + pq.2 = n by lia], hq⟩
+      rcases Finset.mem_image.1 hpq with ⟨⟨n, q⟩, hnq, rfl⟩
+      rw [sub_add_cancel]
+      exact Finset.mem_product.1 hnq
     · rintro ⟨hn, hq⟩
       exact Finset.mem_image.2 ⟨(pq.1 + pq.2, pq.2), Finset.mem_product.2 ⟨hn, hq⟩,
         Prod.ext (add_sub_cancel_right pq.1 pq.2) rfl⟩

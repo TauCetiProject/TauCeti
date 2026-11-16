@@ -112,6 +112,6 @@ theorem eulerChar_eq_homologyEulerChar [∀ n, Module.Finite R (K.X n)]
     K.eulerChar = K.homologyEulerChar := by
   obtain ⟨n, hn⟩ := Filter.eventually_atTop.1 hK
   exact K.eulerChar_eq_homologyEulerChar_of_forall_notMem (s := Finset.range (n + 1))
-    (fun i hi ↦ hn i (by simp at hi; lia)) fun _ _ ↦ inferInstance
+    (fun i hi ↦ hn i (by simp only [Finset.mem_range] at hi; lia)) fun _ _ ↦ inferInstance
 
 end ChainComplex

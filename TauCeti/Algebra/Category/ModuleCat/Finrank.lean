@@ -16,11 +16,11 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 # Finrank of zero objects, coproducts, biproducts and short exact sequences in `ModuleCat`
 
 Vanishing and direct sums of objects of `ModuleCat R` are naturally expressed categorically, as
-`CategoryTheory.Limits.IsZero`, coproducts `∐ Z` (`ModuleCat.isZero_sigmaObj`), and biproducts
-`M ⊞ N`, while the dimension counts that consume them speak of `Module.finrank`. This file supplies
-the translations between the two: the ring itself has finrank one (`ModuleCat.finrank_of_self`), a
-zero object has finrank zero, and finrank is additive on biproducts and finite coproducts of finite
-free modules (`ModuleCat.finrank_biprod`, `ModuleCat.finrank_sigmaObj`).
+`CategoryTheory.Limits.IsZero`, coproducts `∐ Z`, and biproducts `M ⊞ N`, while the dimension counts
+that consume them speak of `Module.finrank`. This file supplies the translations between the two:
+the ring itself has finrank one (`ModuleCat.finrank_of_self`), a zero object has finrank zero, and
+finrank is additive on biproducts and finite coproducts of finite free modules
+(`ModuleCat.finrank_biprod`, `ModuleCat.finrank_sigmaObj`).
 
 For short exact sequences in `ModuleCat R`, finite generation of the outer terms passes to the
 middle term over any ring (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finite_X₂`), and over a
@@ -73,11 +73,6 @@ theorem finsum_neg_one_pow_finrank_eq_sum_range {M : ℕ → ModuleCat.{v} R} {N
   simp [finrank_eq_zero_of_isZero (hN n (by simpa using hn))]
 
 end Nontrivial
-
-/-- A coproduct of zero objects in `ModuleCat R` is a zero object. -/
-theorem isZero_sigmaObj {ι : Type*} (Z : ι → ModuleCat.{v} R) [HasCoproduct Z]
-    (h : ∀ i, IsZero (Z i)) : IsZero (∐ Z) :=
-  (IsZero.iff_id_eq_zero _).2 <| Sigma.hom_ext _ _ fun i ↦ (h i).eq_of_src _ _
 
 /-- The finrank of a biproduct of finite free modules is the sum of their finranks. -/
 @[simp]

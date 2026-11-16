@@ -220,6 +220,7 @@ def eulerCharSignsUp'ProdInt {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) :
     rw [hsum, Int.negOnePow_succ, Int.negOnePow_add, Int.negOnePow_even (2 * k) ⟨k, by lia⟩,
       mul_one]
 
+/-- Evaluation of the total-degree Euler characteristic sign on `ComplexShape.up' u`. -/
 lemma eulerCharSignsUp'ProdInt_χ {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) (pq : ℤ × ℤ) :
     (letI := eulerCharSignsUp'ProdInt hu; (ComplexShape.up' u).χ pq) = (pq.1 + pq.2).negOnePow :=
   (rfl)
@@ -231,6 +232,8 @@ instance eulerCharSignsCohomologicalSpectralSequence (r : ℤ) :
     (ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ)).EulerCharSigns :=
   eulerCharSignsUp'ProdInt ⟨0, by lia⟩
 
+/-- The Euler characteristic sign at bidegree `pq` on page `r` of a cohomological spectral sequence
+is `(-1)^(pq.1 + pq.2)`. -/
 @[simp]
 lemma eulerCharSignsCohomologicalSpectralSequence_χ (r : ℤ) (pq : ℤ × ℤ) :
     (ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ)).χ pq = (pq.1 + pq.2).negOnePow :=
