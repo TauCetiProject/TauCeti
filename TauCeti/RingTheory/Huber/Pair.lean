@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
 import TauCeti.RingTheory.Huber.RingOfDefinition
@@ -40,6 +41,8 @@ than selected by a typeclass.
   contains a pseudouniformiser.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.comap_subtype`: the trace `A⁺ ∩ S` of a ring of
+  integral elements on a subring `S` is a ring of integral elements of `S`.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
   `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.instPerfectRingPlus`: the plus ring of a Huber pair on a perfect ring is
@@ -159,6 +162,17 @@ theorem IsRingOfIntegralElements.map {B : Type*} [CommRing B] [TopologicalSpace 
   le_powerBoundedSubring := by
     rw [← map_powerBoundedSubring e he he']
     exact (Subring.gc_map_comap _).monotone_l h.le_powerBoundedSubring
+
+/-- **The trace of a ring of integral elements on a subring.** For a subring `S` of a
+nonarchimedean ring, with the subspace topology, `A⁺ ∩ S` is a ring of integral elements of
+`S`. -/
+theorem IsRingOfIntegralElements.comap_subtype [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) (S : Subring A) :
+    IsRingOfIntegralElements (Aplus.comap S.subtype) where
+  isOpen := h.isOpen.preimage continuous_subtype_val
+  isIntegrallyClosedIn := have := h.isIntegrallyClosedIn; inferInstance
+  le_powerBoundedSubring _ hx := mem_powerBoundedSubring.mpr
+    (S.isPowerBounded_of_isPowerBounded_coe (h.isPowerBounded_of_mem hx))
 
 variable (A) [IsTopologicalRing A] in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the

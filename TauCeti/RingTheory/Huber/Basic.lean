@@ -61,6 +61,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   adjacent powers of `I` agree, the closure of zero in the Huber ring is open.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_mul_mem`: some `Iⁿ`
   multiplies a given element into a given open subring.
+* `TauCeti.Huber.IsPseudoUniformizer.mul` and `TauCeti.Huber.IsPseudoUniformizer.prod`: products
+  of pseudouniformisers over a nonempty finite family are pseudouniformisers.
 * `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
   Huber target Tate.
 * `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing`: a Huber ring is nonarchimedean.
@@ -212,6 +214,26 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     {φ : F} (hφ : Continuous φ) {a : A} (ha : IsPseudoUniformizer a) :
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
+
+section Product
+
+variable {R : Type*} [CommMonoidWithZero R] [TopologicalSpace R] [ContinuousMul R]
+
+/-- **A product of two pseudouniformisers is a pseudouniformiser.** -/
+theorem IsPseudoUniformizer.mul {a b : R} (ha : IsPseudoUniformizer a)
+    (hb : IsPseudoUniformizer b) : IsPseudoUniformizer (a * b) :=
+  have ha' := IsPowerBounded.of_isTopologicallyNilpotent ha.isTopologicallyNilpotent
+  isPseudoUniformizer_iff.mpr
+    ⟨ha.isUnit.mul hb.isUnit, ha'.isTopologicallyNilpotent_mul hb.isTopologicallyNilpotent⟩
+
+/-- **A product over a nonempty finite family of pseudouniformisers is a pseudouniformiser.**
+Nonemptiness is needed: the empty product `1` is a pseudouniformiser only when every
+neighbourhood of `0` contains `1`, which fails in a nontrivial `T₁` monoid. -/
+theorem IsPseudoUniformizer.prod {ι : Type*} {s : Finset ι} (hs : s.Nonempty) {f : ι → R}
+    (hf : ∀ i ∈ s, IsPseudoUniformizer (f i)) : IsPseudoUniformizer (∏ i ∈ s, f i) :=
+  Finset.prod_induction_nonempty f _ (fun _ _ ↦ IsPseudoUniformizer.mul) hs hf
+
+end Product
 
 /-- A *Tate ring* is a Huber ring containing a pseudouniformiser, that is, a topologically
 nilpotent unit. -/
