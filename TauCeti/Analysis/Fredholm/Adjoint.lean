@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.ClosedRange
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Adjoints of Fredholm operators
@@ -37,8 +38,11 @@ surjective, which removes the closure from Mathlib's general identity
 * `ContinuousLinearMap.isClosed_range_adjoint_comp_self_iff` and
   `ContinuousLinearMap.isClosed_range_self_comp_adjoint_iff`: `T† ∘L T` (or `T ∘L T†`) has closed
   range if and only if `T` does.
-* `ContinuousLinearMap.isTopCompl_range_ker_adjoint`: the range of a closed-range operator and the
-  kernel of its adjoint are topological complements.
+* `ContinuousLinearMap.isTopCompl_range_ker_adjoint`,
+  `ContinuousLinearMap.projectionOntoL_range_ker_adjoint_eq_orthogonalProjectionOnto`, and
+  `ContinuousLinearMap.projectionOntoL_ker_adjoint_range_eq_orthogonalProjectionOnto`: the range of
+  a closed-range operator and the kernel of its adjoint are topological complements whose
+  associated projections agree with the Hilbert-space orthogonal projections.
 * `ContinuousLinearMap.rank_adjoint_le_iff`: an operator has rank at most `n` if and only if
   its adjoint does.
 * `ContinuousLinearMap.IsFredholm.adjoint`: the adjoint of a Fredholm operator is Fredholm.
@@ -253,6 +257,31 @@ theorem _root_.ContinuousLinearMap.isTopCompl_range_ker_adjoint {T : E →L[𝕜
   let R := LinearMap.range (T : E →ₗ[𝕜] F)
   have : CompleteSpace R := hT.completeSpace_coe
   exact T.orthogonal_range ▸ R.isTopCompl_orthogonal
+
+/-- For a closed-range operator between Hilbert spaces, the topological projection onto `range T`
+along `ker T†` agrees with the orthogonal projection onto `range T`. -/
+theorem _root_.ContinuousLinearMap.projectionOntoL_range_ker_adjoint_eq_orthogonalProjectionOnto
+    {T : E →L[𝕜] F} (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F))
+    [(LinearMap.range (T : E →ₗ[𝕜] F)).HasOrthogonalProjection] :
+    (LinearMap.range (T : E →ₗ[𝕜] F)).projectionOntoL (LinearMap.ker (T† : F →ₗ[𝕜] E))
+        (T.isTopCompl_range_ker_adjoint hT) =
+      (LinearMap.range (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto := by
+  refine Submodule.projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho
+    (T.isTopCompl_range_ker_adjoint hT) ?_
+  rw [← T.orthogonal_range]
+  exact (LinearMap.range (T : E →ₗ[𝕜] F)).isOrtho_orthogonal_right
+
+/-- For a closed-range operator between Hilbert spaces, the topological projection onto `ker T†`
+along `range T` agrees with the orthogonal projection onto `ker T†`. -/
+theorem _root_.ContinuousLinearMap.projectionOntoL_ker_adjoint_range_eq_orthogonalProjectionOnto
+    {T : E →L[𝕜] F} (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    (LinearMap.ker (T† : F →ₗ[𝕜] E)).projectionOntoL (LinearMap.range (T : E →ₗ[𝕜] F))
+        (T.isTopCompl_range_ker_adjoint hT).symm =
+      (LinearMap.ker (T† : F →ₗ[𝕜] E)).orthogonalProjectionOnto := by
+  refine Submodule.projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho
+    (T.isTopCompl_range_ker_adjoint hT).symm ?_
+  rw [← T.orthogonal_range]
+  exact (LinearMap.range (T : E →ₗ[𝕜] F)).isOrtho_orthogonal_left
 
 /-- An operator of rank at most `n` has an adjoint of rank at most `n`: its range is closed, so
 the range of `T†` is `(ker T)ᗮ`, which `T` maps isomorphically onto the range of `T`. -/

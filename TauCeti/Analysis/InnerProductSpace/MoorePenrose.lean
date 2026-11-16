@@ -49,8 +49,10 @@ equivalence.
 
 * `LinearMap.IsMoorePenroseInverse.unique`: Moore–Penrose inverses are unique. This holds in
   arbitrary inner product spaces.
-* `LinearMap.isMoorePenroseInverse_adjoint_iff`: `B` is a Moore–Penrose inverse of `A` if and
-  only if `B†` is one of `A†`.
+* `LinearMap.isMoorePenroseInverse_adjoint_iff` and
+  `ContinuousLinearMap.isMoorePenroseInverse_adjoint_iff`: `B` is a Moore–Penrose inverse of `A`
+  if and only if `B†` is one of `A†` (for finite-dimensional linear maps and for bounded operators
+  between Hilbert spaces, respectively).
 * `LinearMap.isMoorePenroseInverse_moorePenroseInverse`: the singular-system construction
   satisfies the Penrose equations.
 * `LinearMap.isMoorePenroseInverse_iff_eq_moorePenroseInverse`: the Penrose equations
@@ -308,6 +310,54 @@ theorem moorePenroseInverse_zero : (0 : E →ₗ[𝕜] F).moorePenroseInverse = 
 end Construction
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+open scoped InnerProduct
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- For bounded operators between Hilbert spaces, the Moore–Penrose relation is preserved by taking
+Hilbert adjoints. -/
+theorem isMoorePenroseInverse_adjoint {A : E →L[𝕜] F} {B : F →L[𝕜] E}
+    (h : LinearMap.IsMoorePenroseInverse (A : E →ₗ[𝕜] F) (B : F →ₗ[𝕜] E)) :
+    LinearMap.IsMoorePenroseInverse (A† : F →ₗ[𝕜] E) (B† : E →ₗ[𝕜] F) where
+  comp_comp_self := by
+    have h1 : A ∘L B ∘L A = A := ContinuousLinearMap.coe_inj.mp h.comp_comp_self
+    rw [← ContinuousLinearMap.toLinearMap_comp, ← ContinuousLinearMap.toLinearMap_comp]
+    exact congrArg ContinuousLinearMap.toLinearMap <|
+      calc A† ∘L B† ∘L A† = (A ∘L B ∘L A)† := by simp [ContinuousLinearMap.comp_assoc]
+        _ = A† := congrArg ContinuousLinearMap.adjoint h1
+  comp_comp_self' := by
+    have h2 : B ∘L A ∘L B = B := ContinuousLinearMap.coe_inj.mp h.comp_comp_self'
+    rw [← ContinuousLinearMap.toLinearMap_comp, ← ContinuousLinearMap.toLinearMap_comp]
+    exact congrArg ContinuousLinearMap.toLinearMap <|
+      calc B† ∘L A† ∘L B† = (B ∘L A ∘L B)† := by simp [ContinuousLinearMap.comp_assoc]
+        _ = B† := congrArg ContinuousLinearMap.adjoint h2
+  isSymmetric_comp := by
+    have hBA : IsSelfAdjoint (B ∘L A) :=
+      (B ∘L A).isSelfAdjoint_iff_isSymmetric.mpr h.isSymmetric_comp'
+    have h3 : A† ∘L B† = B ∘L A := (ContinuousLinearMap.adjoint_comp B A).symm.trans hBA.adjoint_eq
+    rw [← ContinuousLinearMap.toLinearMap_comp, h3]
+    exact h.isSymmetric_comp'
+  isSymmetric_comp' := by
+    have hAB : IsSelfAdjoint (A ∘L B) :=
+      (A ∘L B).isSelfAdjoint_iff_isSymmetric.mpr h.isSymmetric_comp
+    have h4 : B† ∘L A† = A ∘L B := (ContinuousLinearMap.adjoint_comp A B).symm.trans hAB.adjoint_eq
+    rw [← ContinuousLinearMap.toLinearMap_comp, h4]
+    exact h.isSymmetric_comp
+
+/-- For bounded operators between Hilbert spaces, `B†` is a Moore–Penrose inverse of `A†` if and
+only if `B` is a Moore–Penrose inverse of `A`. -/
+@[simp]
+theorem isMoorePenroseInverse_adjoint_iff {A : E →L[𝕜] F} {B : F →L[𝕜] E} :
+    LinearMap.IsMoorePenroseInverse (A† : F →ₗ[𝕜] E) (B† : E →ₗ[𝕜] F) ↔
+      LinearMap.IsMoorePenroseInverse (A : E →ₗ[𝕜] F) (B : F →ₗ[𝕜] E) :=
+  ⟨fun h ↦ by simpa using isMoorePenroseInverse_adjoint h, isMoorePenroseInverse_adjoint⟩
+
+end ContinuousLinearMap
 
 namespace Matrix
 
