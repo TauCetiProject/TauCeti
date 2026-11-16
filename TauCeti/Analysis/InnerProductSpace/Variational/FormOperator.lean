@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
 public import TauCeti.Analysis.Semigroups.Generation.Form
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
+import TauCeti.Analysis.Semigroups.Dissipative.Hilbert
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
@@ -26,7 +27,7 @@ is coercive on `V`. This is the situation of the quadratic form of an elliptic o
 `V = H¹₀`, `H = L²`, with `J` the inclusion: the form of `∇*∇ + K` is coercive after adding
 `c > sup (-K)`. This file realizes such a `Q` as an operator on `H`: the partial linear map
 `IsCoercive.formOperator`, defined as `S⁻¹ - c`, where `S` is the solution operator of `B`
-along `J` (`IsCoercive.formSolutionOperator`). Its graph is
+along `J` (`IsCoercive.formSolutionOperator`). When `J` has dense range, its graph is
 
 `{(J u, f) : Q(u, v) = ⟪f, J v⟫ for every v ∈ V}`
 
@@ -74,9 +75,10 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
 
 /-- **The operator of a form coercive after a shift.** For a coercive form `B` along
 `J : V →L[ℝ] H` and a shift `c`, the partial linear map `S⁻¹ - c` on `H`, where `S` is the solution
-operator of `B` along `J`. When `B(u, v) = Q(u, v) + c ⟪J u, J v⟫`, this is the operator
-represented by `Q`: its graph consists of the pairs `(J u, f)` with `Q(u, v) = ⟪f, J v⟫` for
-every `v` (`IsCoercive.mem_graph_formOperator_iff`). -/
+operator of `B` along `J`. When `J` has dense range and
+`B(u, v) = Q(u, v) + c ⟪J u, J v⟫`, this is the operator represented by `Q`: its graph consists
+of the pairs `(J u, f)` with `Q(u, v) = ⟪f, J v⟫` for every `v`
+(`IsCoercive.mem_graph_formOperator_iff`). -/
 def formOperator (hB : IsCoercive B) (J : V →L[ℝ] H) (c : ℝ) : H →ₗ.[ℝ] H :=
   subScalar (-hB.formGenerator J) c
 
@@ -138,8 +140,9 @@ theorem mem_graph_formOperator_iff (hB : IsCoercive B) (hJ : DenseRange J)
     rw [← hB.eq_formSolutionMap J (u := u) fun v ↦ by
       rw [hBQ, hQ, inner_add_left, real_inner_smul_left, hu], hu]
 
-/-- **The form operator does not depend on the shift.** Two coercive shifts `B = Q + c ⟪J·, J·⟫`
-and `B' = Q + c' ⟪J·, J·⟫` of the same form `Q` give the same operator. -/
+/-- **The form operator does not depend on the shift.** When `J` has dense range, two coercive
+shifts `B = Q + c ⟪J·, J·⟫` and `B' = Q + c' ⟪J·, J·⟫` of the same form `Q` give the same
+operator. -/
 theorem formOperator_eq {B' : V →L[ℝ] V →L[ℝ] ℝ} {c' : ℝ} (hB : IsCoercive B)
     (hB' : IsCoercive B') (hJ : DenseRange J) (hBQ : ∀ u v, B u v = Q u v + c * ⟪J u, J v⟫_ℝ)
     (hB'Q : ∀ u v, B' u v = Q u v + c' * ⟪J u, J v⟫_ℝ) :
@@ -149,15 +152,16 @@ theorem formOperator_eq {B' : V →L[ℝ] V →L[ℝ] ℝ} {c' : ℝ} (hB : IsCo
 
 /-- **The form operator is bounded below by `-c`**: `⟪A x, x⟫ ≥ -c ‖x‖²` on its domain. -/
 theorem neg_mul_norm_sq_le_inner_formOperator (hB : IsCoercive B) (hJ : DenseRange J)
-    (hBQ : ∀ u v, B u v = Q u v + c * ⟪J u, J v⟫_ℝ) (x : (hB.formOperator J c).domain) :
+    (x : (hB.formOperator J c).domain) :
     -c * ‖(x : H)‖ ^ 2 ≤ ⟪hB.formOperator J c x, x⟫_ℝ := by
-  obtain ⟨u, hu, hQ⟩ := (hB.mem_graph_formOperator_iff hJ hBQ).1 ((hB.formOperator J c).mem_graph x)
-  have h1 := hQ u
-  have h2 := hBQ u u
-  have h3 := hB.apply_self_nonneg u
-  simp only at hu h1
-  rw [hu, real_inner_self_eq_norm_sq] at h2
-  rw [hu] at h1
+  have hx : (x : H) ∈ (hB.formGenerator J).domain := by
+    simpa only [formOperator_def, subScalar_domain, neg_domain] using x.property
+  have h := (TauCeti.Semigroups.isDissipative_iff_real_inner_nonpos _).1
+    (hB.isDissipative_formGenerator hJ) ⟨x, hx⟩
+  rw [LinearPMap.congr_fun (hB.formOperator_def J c) x.property
+      (by simpa only [subScalar_domain, neg_domain] using hx),
+    subScalar_apply, LinearPMap.neg_apply, inner_sub_left, inner_neg_left,
+    real_inner_smul_left, real_inner_self_eq_norm_sq]
   linarith
 
 /-- **`-c` is a resolvent point of the form operator.** -/
