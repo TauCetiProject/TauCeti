@@ -439,8 +439,7 @@ theorem tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_isStarNormal {α : Type
           A.toCLM)) := by
   refine ⟨fun h ↦ (continuous_toPointwiseConvergenceCLM.tendsto A).comp h, fun h ↦ ?_⟩
   rw [PointwiseConvergenceCLM.tendsto_iff_forall_tendsto] at h
-  -- Evaluation of `toPointwiseConvergenceCLM … T` is definitionally evaluation of `T`.
-  replace h : ∀ x, Tendsto (fun a ↦ (f a).toCLM x) l (𝓝 (A.toCLM x)) := h
+  simp only [ContinuousLinearMap.toPointwiseConvergenceCLM_apply] at h
   exact tendsto_iff_forall_tendsto.2
     ⟨h, ContinuousLinearMap.tendsto_adjoint_apply_of_isStarNormal hf hA h⟩
 
@@ -464,21 +463,17 @@ theorem mem_closure_iff_of_isStarNormal {s : Set (ContinuousLinearMapStrongStar 
     A ∈ closure s ↔ ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E A.toCLM ∈
       closure ((fun B : ContinuousLinearMapStrongStar 𝕜 E E ↦
         ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E B.toCLM) '' s) := by
-  refine ⟨fun h ↦ mem_closure_image continuous_toPointwiseConvergenceCLM.continuousAt h,
-    fun h ↦ ?_⟩
-  set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E
-  have : (𝓝[(fun B ↦ q B.toCLM) '' s] (q A.toCLM)).NeBot := mem_closure_iff_nhdsWithin_neBot.mp h
-  -- Pull the strong approximation back to the strong-star copy along the identity map.
-  have hl : ∀ᶠ (T : E →Lₚₜ[𝕜] E) in 𝓝[(fun B ↦ q B.toCLM) '' s] (q A.toCLM),
-      ofCLM (T : E →L[𝕜] E) ∈ s := by
-    filter_upwards [self_mem_nhdsWithin] with T ⟨B, hB, hT⟩
-    rwa [← hT]
-  -- On the pointwise-convergence copy, `T ↦ q T` is the identity.
-  have hq : Tendsto (fun T : E →Lₚₜ[𝕜] E ↦ q (T : E →L[𝕜] E))
-      (𝓝[(fun B ↦ q B.toCLM) '' s] (q A.toCLM)) (𝓝 (q A.toCLM)) :=
-    tendsto_id.mono_left nhdsWithin_le_nhds
-  exact mem_closure_of_tendsto ((tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_isStarNormal
-    (hl.mono fun T hT ↦ hs _ hT) hA).2 hq) hl
+  -- Pass to the subspace `insert A s`, on which the two topologies agree.
+  have hi := isInducing_restrict_toPointwiseConvergenceCLM_of_isStarNormal
+    (Set.forall_mem_insert.2 ⟨hA, hs⟩)
+  have h := congrArg (⟨A, Set.mem_insert A s⟩ ∈ ·)
+    ((IsInducing.subtypeVal.closure_eq_preimage_closure_image (Subtype.val ⁻¹' s)).symm.trans
+      (hi.closure_eq_preimage_closure_image _))
+  simp only [Set.mem_preimage, Subtype.image_preimage_coe,
+    Set.inter_eq_right.2 (Set.subset_insert A s), Set.image_domRestrict,
+    Set.inter_eq_left.2 (Set.subset_insert A s),
+    Set.domRestrict_apply] at h
+  exact Iff.of_eq h
 
 end Normal
 
