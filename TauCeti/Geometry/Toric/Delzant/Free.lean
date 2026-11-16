@@ -117,8 +117,7 @@ theorem forall_isSmoothVertex_iff_forall_eq_zero_of_vadd_eq_self (hi : IsIntegra
     (∀ y ∈ (facetPolyhedron i u c).extremePoints ℝ, IsSmoothVertex i u c y) ↔
       ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x : delzantLevel i u c, θ +ᵥ x = x → θ = 0 := by
   have := hi.finiteDimensional
-  have hc : IsCompact (facetPolyhedron i u c) :=
-    Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron hb
+  have hc := isCompact_facetPolyhedron_of_isBounded hb
   refine ⟨fun hv θ hθ x hx ↦ ?_, fun h y hy ↦ ?_⟩
   · -- The facets active at the moment value of `x` are active at a smooth vertex.
     obtain ⟨y, hy⟩ := mem_delzantLevel_iff.1 x.2
@@ -169,9 +168,9 @@ theorem forall_eq_zero_of_vadd_eq_self_nsmul_iff (hi : IsIntegralLattice i) (hm 
   refine ⟨fun h ↦ ⟨fun j ↦ ?_, fun y hy ↦ (h y hy).2⟩, fun h y hy ↦ ⟨fun j _ ↦ h.1 j, h.2 y hy⟩⟩
   -- The facet `j` meets `Δ`, so it is active at some vertex.
   obtain ⟨y, hy, hjy⟩ := hj j
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset
-    (Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron hb) hy
-  exact (h v hv).1 j (hsub hjy)
+  obtain ⟨v, hv, hjv⟩ :=
+    exists_mem_extremePoints_mem_activeSet (isCompact_facetPolyhedron_of_isBounded hb) hy hjy
+  exact (h v hv).1 j hjv
 
 /-- **Unit labels on a Delzant polytope.** For a Delzant polytope, the kernel torus of the
 labelled normals `m j • u j`, with support constants `m j * c j`, acts freely on its level exactly

@@ -272,6 +272,11 @@ theorem isSmoothVertex_iff_span_eq_top [Finite ι] {x : StrongDual ℝ V} :
   · rw [← Set.image_eq_range, hspan]
   · rwa [Fintype.card_eq_nat_card, Nat.card_coe_set_eq]
 
+/-- A bounded facet polyhedron is compact. -/
+theorem isCompact_facetPolyhedron_of_isBounded [FiniteDimensional ℝ V]
+    (hb : Bornology.IsBounded (facetPolyhedron i u c)) : IsCompact (facetPolyhedron i u c) :=
+  Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron hb
+
 /-- Every point `x` of a compact facet polyhedron lies on the face cut out by its active
 constraints, and this face contains a vertex: the constraints active at `x` are active at some
 vertex. -/
@@ -287,6 +292,14 @@ theorem exists_mem_extremePoints_activeSet_subset (hc : IsCompact (facetPolyhedr
       isClosed_eq (continuous_facetPairing i u j) continuous_const
   obtain ⟨v, hv⟩ := (hc.inter_right hclosed).extremePoints_nonempty ⟨x, hx, Set.Subset.rfl⟩
   exact ⟨v, hF.extremePoints_subset_extremePoints hv, (extremePoints_subset hv).2⟩
+
+/-- A constraint active at a point of a compact facet polyhedron is active at some vertex. -/
+theorem exists_mem_extremePoints_mem_activeSet (hc : IsCompact (facetPolyhedron i u c))
+    {x : StrongDual ℝ V} (hx : x ∈ facetPolyhedron i u c) {j : ι}
+    (hj : j ∈ activeSet (facetPairing i u) c x) :
+    ∃ v ∈ (facetPolyhedron i u c).extremePoints ℝ, j ∈ activeSet (facetPairing i u) c v := by
+  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hc hx
+  exact ⟨v, hv, hsub hj⟩
 
 namespace IsDelzant
 
@@ -305,7 +318,7 @@ variable [FiniteDimensional ℝ V]
 
 /-- A Delzant polytope is compact. -/
 theorem isCompact : IsCompact (facetPolyhedron i u c) :=
-  Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron hΔ.isBounded
+  isCompact_facetPolyhedron_of_isBounded hΔ.isBounded
 
 /-- A Delzant polytope has a vertex. -/
 theorem extremePoints_nonempty : ((facetPolyhedron i u c).extremePoints ℝ).Nonempty :=
@@ -315,8 +328,7 @@ theorem extremePoints_nonempty : ((facetPolyhedron i u c).extremePoints ℝ).Non
 theorem exists_mem_extremePoints_mem_activeSet (j : ι) :
     ∃ x ∈ (facetPolyhedron i u c).extremePoints ℝ, j ∈ activeSet (facetPairing i u) c x := by
   obtain ⟨x, hx, hxj⟩ := hΔ.irredundant j
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
-  exact ⟨v, hv, hsub (hxj ▸ mem_singleton j)⟩
+  exact Toric.exists_mem_extremePoints_mem_activeSet hΔ.isCompact hx (hxj ▸ mem_singleton j)
 
 /-- The facet normals of a Delzant polytope are primitive lattice vectors. -/
 theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
@@ -433,6 +445,7 @@ section Label
 variable (m : ι → ℕ)
 
 /-- The pairing with a labelled normal `m j • u j` is `m j` times the pairing with `u j`. -/
+@[simp]
 theorem facetPairing_nsmul (j : ι) :
     facetPairing i (fun j ↦ m j • u j) j = (m j : ℝ) • facetPairing i u j := by
   ext y
@@ -442,6 +455,7 @@ variable {m}
 
 /-- Labelling the normals by nonzero `m j` and scaling the support constants accordingly does not
 change the active facets. -/
+@[simp]
 theorem activeSet_nsmul (hm : ∀ j, m j ≠ 0) (y : StrongDual ℝ V) :
     activeSet (facetPairing i (fun j ↦ m j • u j)) (fun j ↦ m j * c j) y =
       activeSet (facetPairing i u) c y := by
@@ -460,6 +474,7 @@ theorem facetPolyhedron_nsmul (hm : ∀ j, m j ≠ 0) :
 /-- **Smooth vertices of a labelled presentation.** A point is a smooth vertex for the labelled
 normals `m j • u j` exactly when it is a smooth vertex for `u` and every facet active there has
 label one. -/
+@[simp]
 theorem isSmoothVertex_nsmul_iff (hm : ∀ j, m j ≠ 0) {y : StrongDual ℝ V} :
     IsSmoothVertex i (fun j ↦ m j • u j) (fun j ↦ m j * c j) y ↔
       (∀ j ∈ activeSet (facetPairing i u) c y, m j = 1) ∧ IsSmoothVertex i u c y := by
@@ -489,9 +504,9 @@ theorem isDelzant_nsmul_iff [FiniteDimensional ℝ V] (hm : ∀ j, m j ≠ 0) :
     have hm1 (j : ι) : m j = 1 := by
       -- The facet `j` is the only constraint active at some point, hence active at some vertex.
       obtain ⟨y, hy, hjy⟩ := hirr.1 hj j
-      obtain ⟨v, hv', hsub⟩ := exists_mem_extremePoints_activeSet_subset
-        (Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron hb) hy
-      exact ((isSmoothVertex_nsmul_iff hm).1 (hv v hv')).1 j (hsub (hjy ▸ mem_singleton j))
+      obtain ⟨v, hv', hjv⟩ := exists_mem_extremePoints_mem_activeSet
+        (isCompact_facetPolyhedron_of_isBounded hb) hy (hjy ▸ mem_singleton j)
+      exact ((isSmoothVertex_nsmul_iff hm).1 (hv v hv')).1 j hjv
     exact ⟨hm1, hb, fun y hy ↦ ((isSmoothVertex_nsmul_iff hm).1 (hv y hy)).2, hirr.1 hj⟩
   · rintro ⟨h1, hb, hv, hj⟩
     exact ⟨hP ▸ hb, fun y hy ↦ (isSmoothVertex_nsmul_iff hm).2 ⟨fun j _ ↦ h1 j, hv y (hP ▸ hy)⟩,
