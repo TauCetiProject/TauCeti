@@ -386,7 +386,7 @@ private theorem norm_exchangeMap_bounds (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (y :
   exact ⟨by linarith, by linarith, by linarith⟩
 
 /-- `Φ_c` preserves the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
-theorem exchangeMap_mem_iff (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (y : ℝ × ℝ) :
+theorem exchangeMap_mem_thricePuncturedSphereReal_iff (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (y : ℝ × ℝ) :
     exchangeMap c y ∈ thricePuncturedSphereReal ↔ y ∈ thricePuncturedSphereReal := by
   simp only [mem_thricePuncturedSphereReal_iff]
   set w := Complex.equivRealProdCLM.symm y
@@ -403,7 +403,7 @@ theorem exchangeMap_mem_iff (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (y : ℝ × ℝ)
 theorem image_exchangeMap_thricePuncturedSphereReal (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) :
     exchangeMap c '' thricePuncturedSphereReal = thricePuncturedSphereReal := by
   have h : thricePuncturedSphereReal = exchangeMap c ⁻¹' thricePuncturedSphereReal :=
-    Set.ext fun y ↦ (exchangeMap_mem_iff hc₀ hc₁ y).symm
+    Set.ext fun y ↦ (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ y).symm
   conv_lhs => rw [h]
   exact Set.image_preimage_eq _ (surjective_exchangeMap (abs_le.2 ⟨by linarith, hc₁⟩))
 
@@ -509,7 +509,7 @@ theorem contMDiffOn_comp_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
     {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) :
     ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
   hu.comp ((contDiff_exchangeMap c).of_le one_le_two).contMDiff.contMDiffOn
-    fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+    fun w hw ↦ (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 hw
 
 /-- If `u` is `C¹` on `S`, then it is differentiable at the image under `Φ_c` of every point of
 `S`. -/
@@ -517,7 +517,7 @@ theorem mdifferentiableAt_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
     {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal) :
     MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (exchangeMap c w) :=
-  have hS := (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  have hS := (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 hw
   ((hu.mdifferentiableOn one_ne_zero) _ hS).mdifferentiableAt
     (isOpen_thricePuncturedSphereReal.mem_nhds hS)
 
@@ -558,7 +558,7 @@ theorem floerEnergyDensity_comp_exchangeMap (ω : SmoothTwoForm I M)
         (fun z x ↦ K₁ (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K₁ (Complex.equivRealProdCLM.symm z) x Complex.I)
         u (exchangeMap c w) := by
-  have hS := (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  have hS := (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 hw
   rw [← (perturbationPullback_exchangeMap_stdComplexLine hpull).1,
     ← (perturbationPullback_exchangeMap_stdComplexLine hpull).2]
   exact ω.floerEnergyDensity_perturbationPullback
@@ -590,7 +590,7 @@ theorem integral_floerEnergyDensity_image_exchangeMap (ω : SmoothTwoForm I M)
         (u ∘ exchangeMap c) z := by
   have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
   have hS {w : ℝ × ℝ} (hw : w ∈ s) : exchangeMap c w ∈ thricePuncturedSphereReal :=
-    (exchangeMap_mem_iff hc₀ hc₁ w).2 (hsS hw)
+    (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 (hsS hw)
   rw [ω.integral_floerEnergyDensity_image hs (injective_exchangeMap hc).injOn
     (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
@@ -641,7 +641,7 @@ theorem integral_hamiltonianCurvature_image_exchangeMap (ω : SmoothTwoForm I M)
         z ((u ∘ exchangeMap c) z) := by
   have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
   have hS {w : ℝ × ℝ} (hw : w ∈ s) : exchangeMap c w ∈ thricePuncturedSphereReal :=
-    (exchangeMap_mem_iff hc₀ hc₁ w).2 (hsS hw)
+    (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 (hsS hw)
   rw [ω.integral_hamiltonianCurvature_image hs (injective_exchangeMap hc).injOn
     (fun w _ ↦ (contDiff_exchangeMap c).contDiffAt)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)

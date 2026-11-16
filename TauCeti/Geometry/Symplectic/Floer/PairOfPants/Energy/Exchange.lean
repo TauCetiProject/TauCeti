@@ -546,7 +546,8 @@ theorem integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
           z (u z) := by
   -- The map `u ∘ Φ_c` is `C²` on `S`, and the energy identity of the pair of pants applies to it.
   have hv : ContDiffOn ℝ 2 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
-    hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+    hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦
+      (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 hw
   have h := integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hv hR
   have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
@@ -613,7 +614,7 @@ theorem sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbatio
   -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
   have hv : ContinuousOn (u ∘ exchangeMap c) thricePuncturedSphereReal :=
     hu.comp (contDiff_exchangeMap c).continuous.continuousOn
-      fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+      fun w hw ↦ (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 hw
   have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
     Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
