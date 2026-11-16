@@ -115,6 +115,90 @@ theorem exists_cartier_coe_polynomial_eq (q r : ℕ) (hq : q ≠ 0) (P : Polynom
     have := (Nat.div_lt_iff_lt_mul (Nat.pos_of_ne_zero hq)).mp hlt
     nlinarith
 
+/-- If `i + j = q * n + r` with `r < q`, then the residues of `i` and `j` modulo `q` add up to
+`r` modulo `q`, and the quotients of `i` and `j` by `q` add up to `n` with the carry. -/
+private theorem add_mod_mod_eq_and_div_add_div_add_div_eq {q r n i j : ℕ} (hr : r < q)
+    (h : i + j = q * n + r) :
+    (i % q + j % q) % q = r ∧ i / q + j / q + (i % q + j % q) / q = n := by
+  have hr' : (i % q + j % q) % q = r := by
+    rw [← Nat.add_mod, h]
+    simp [Nat.mod_eq_of_lt hr]
+  refine ⟨hr', Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_of_lt hr) ?_⟩
+  have := Nat.div_add_mod (i % q + j % q) q
+  have := Nat.div_add_mod i q
+  have := Nat.div_add_mod j q
+  rw [hr'] at *
+  rw [mul_add, mul_add]
+  omega
+
+/-- **Cartier components of a product.** At an actual residue `r`, the Cartier component of
+`F * G` collects the products of the components of `F` and `G` whose residues add up to `r`
+modulo `q`, shifted by `X` when the residues carry past `q`. -/
+theorem cartier_mul (q r : ℕ) (hr : r < q) (F G : PowerSeries R) :
+    cartier R q r (F * G) = ∑ a ∈ Finset.range q, ∑ b ∈ Finset.range q,
+      if (a + b) % q = r then X ^ ((a + b) / q) * (cartier R q a F * cartier R q b G)
+      else 0 := by
+  classical
+  have hq : 0 < q := Nat.zero_lt_of_lt hr
+  ext n
+  rw [coeff_cartier, coeff_mul, ← Finset.sum_fiberwise_of_maps_to
+    (g := fun p : ℕ × ℕ ↦ (p.1 % q, p.2 % q)) (t := Finset.range q ×ˢ Finset.range q)
+    fun p _ ↦ Finset.mem_product.2 ⟨Finset.mem_range.2 (Nat.mod_lt _ hq),
+      Finset.mem_range.2 (Nat.mod_lt _ hq)⟩, Finset.sum_product, map_sum]
+  refine Finset.sum_congr rfl fun a ha ↦ ?_
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun b hb ↦ ?_
+  rw [Finset.mem_range] at ha hb
+  have key : ∀ p ∈ {p ∈ Finset.antidiagonal (q * n + r) | (p.1 % q, p.2 % q) = (a, b)},
+      (a + b) % q = r ∧ p.1 / q + p.2 / q + (a + b) / q = n := by
+    intro p hp
+    simp only [Finset.mem_filter, Finset.mem_antidiagonal, Prod.mk.injEq] at hp
+    rw [← hp.2.1, ← hp.2.2]
+    exact add_mod_mod_eq_and_div_add_div_add_div_eq hr hp.1
+  split_ifs with hab
+  · rw [coeff_X_pow_mul']
+    split_ifs with hc
+    · rw [coeff_mul]
+      refine Finset.sum_nbij' (fun p ↦ (p.1 / q, p.2 / q)) (fun p ↦ (q * p.1 + a, q * p.2 + b))
+        (fun p hp ↦ ?_) (fun p hp ↦ ?_) (fun p hp ↦ ?_) (fun p _ ↦ ?_) (fun p hp ↦ ?_)
+      · have := (key p hp).2
+        rw [Finset.mem_antidiagonal]
+        omega
+      · rw [Finset.mem_antidiagonal] at hp
+        have h3 := Nat.div_add_mod (a + b) q
+        have h : q * (p.1 + p.2 + (a + b) / q) = q * n := by
+          rw [show p.1 + p.2 + (a + b) / q = n by omega]
+        rw [hab] at h3
+        rw [mul_add, mul_add] at h
+        simp [Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb]
+        omega
+      · simp only [Finset.mem_filter, Prod.mk.injEq] at hp
+        have h1 := Nat.div_add_mod p.1 q
+        have h2 := Nat.div_add_mod p.2 q
+        rw [hp.2.1] at h1
+        rw [hp.2.2] at h2
+        ext <;> simp <;> omega
+      · simp [Nat.mul_add_div hq, Nat.div_eq_of_lt ha, Nat.div_eq_of_lt hb]
+      · simp only [Finset.mem_filter, Prod.mk.injEq] at hp
+        rw [coeff_cartier, coeff_cartier, ← hp.2.1, ← hp.2.2, Nat.div_add_mod, Nat.div_add_mod]
+    · exact Finset.sum_eq_zero fun p hp ↦
+        (hc ((key p hp).2 ▸ Nat.le_add_left _ _)).elim
+  · exact Finset.sum_eq_zero fun p hp ↦ (hab (key p hp).1).elim
+
+/-- The even part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
+even part of `F * G` is `F₀ G₀ + X F₁ G₁`. -/
+theorem cartier_two_zero_mul (F G : PowerSeries R) :
+    cartier R 2 0 (F * G) =
+      cartier R 2 0 F * cartier R 2 0 G + X * (cartier R 2 1 F * cartier R 2 1 G) := by
+  simp [cartier_mul 2 0 two_pos, Finset.sum_range_succ]
+
+/-- The odd part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
+odd part of `F * G` is `F₀ G₁ + F₁ G₀`. -/
+theorem cartier_two_one_mul (F G : PowerSeries R) :
+    cartier R 2 1 (F * G) =
+      cartier R 2 0 F * cartier R 2 1 G + cartier R 2 1 F * cartier R 2 0 G := by
+  simp [cartier_mul 2 1 one_lt_two, Finset.sum_range_succ]
+
 end Semiring
 
 section CommSemiring
@@ -208,40 +292,6 @@ theorem cartier_X_pow_mul_expand (q r m : ℕ) (hq : q ≠ 0) (hr : r < q) (F : 
     simp [expand_X, ← pow_mul, mul_right_comm, ← pow_add, Nat.div_add_mod]
   rw [hm, cartier_expand_mul q r hq hr]
   simp [X_pow_eq, cartier_monomial _ _ _ hr]
-
-/-- **Cartier components of a product.** At an actual residue `r`, the Cartier component of
-`F * G` collects the products of the components of `F` and `G` whose residues add up to `r`
-modulo `q`, shifted by `X` when the residues carry past `q`. -/
-theorem cartier_mul (q r : ℕ) (hr : r < q) (F G : PowerSeries R) :
-    cartier R q r (F * G) = ∑ a ∈ Finset.range q, ∑ b ∈ Finset.range q,
-      if (a + b) % q = r then X ^ ((a + b) / q) * (cartier R q a F * cartier R q b G)
-      else 0 := by
-  have hq : q ≠ 0 := Nat.ne_zero_of_lt hr
-  have hF := sum_X_pow_mul_expand_cartier q hq F
-  have hG := sum_X_pow_mul_expand_cartier q hq G
-  calc cartier R q r (F * G)
-      = cartier R q r ((∑ a ∈ Finset.range q, X ^ a * expand q hq (cartier R q a F)) *
-          ∑ b ∈ Finset.range q, X ^ b * expand q hq (cartier R q b G)) := by rw [← hF, ← hG]
-    _ = _ := by
-      simp_rw [Finset.sum_mul_sum, map_sum]
-      refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b _ ↦ ?_
-      rw [← cartier_X_pow_mul_expand q r (a + b) hq hr, map_mul (expand q hq), pow_add]
-      congr 1
-      ring
-
-/-- The even part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
-even part of `F * G` is `F₀ G₀ + X F₁ G₁`. -/
-theorem cartier_two_zero_mul (F G : PowerSeries R) :
-    cartier R 2 0 (F * G) =
-      cartier R 2 0 F * cartier R 2 0 G + X * (cartier R 2 1 F * cartier R 2 1 G) := by
-  simp [cartier_mul 2 0 two_pos, Finset.sum_range_succ]
-
-/-- The odd part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
-odd part of `F * G` is `F₀ G₁ + F₁ G₀`. -/
-theorem cartier_two_one_mul (F G : PowerSeries R) :
-    cartier R 2 1 (F * G) =
-      cartier R 2 0 F * cartier R 2 1 G + cartier R 2 1 F * cartier R 2 0 G := by
-  simp [cartier_mul 2 1 one_lt_two, Finset.sum_range_succ]
 
 /-- The even part of `F(-X)` is the even part of `F`, evaluated at `X`. -/
 @[simp]

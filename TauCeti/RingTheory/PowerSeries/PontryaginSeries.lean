@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Cartier
-import TauCeti.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
@@ -192,7 +191,8 @@ theorem coeff_succ_pontryaginSeries_mul (P Q : R⟦X⟧) (k : ℕ) :
 /-- **The `2`-torsion of the Pontryagin Whitney correction.** If the odd coefficients of `P` are
 annihilated by `2`, then twice the difference between an even coefficient of `P * Q` and the
 convolution of the even coefficients of `P` and `Q` vanishes. The difference itself need not
-vanish, so the even parts multiply cleanly only after inverting `2`. -/
+vanish, so the even parts multiply cleanly once `2` is a non-zero-divisor (for instance after
+inverting `2`). -/
 theorem twice_even_product_correction_eq_zero (P Q : R⟦X⟧)
     (hodd : ∀ j : ℕ, 2 * coeff (2 * j + 1) P = 0) (k : ℕ) :
     2 * (coeff (2 * k) (P * Q) -
@@ -254,8 +254,6 @@ theorem pontryaginSeries_rescale_neg_one_prod_map_one_add_C_mul_X_mul_self (s : 
     refine Multiset.map_congr rfl fun x _ ↦ ?_
     rw [map_neg, expand_X, map_pow]
     ring
-  have h' := congrArg (rescale (-1 : R)) (expand_injective 2 two_ne_zero
-    ((expand_rescale_pontryaginSeries_rescale_neg_one_mul_self c).trans hc))
-  simpa only [rescale_neg_one_rescale_neg_one] using h'
+  rw [hc, pontryaginSeries_expand_two, rescale_neg_one_rescale_neg_one]
 
 end PowerSeries
