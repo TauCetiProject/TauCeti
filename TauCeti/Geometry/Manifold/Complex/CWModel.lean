@@ -48,8 +48,8 @@ When `f : M → ℝ` is smooth, proper, bounded below, and everywhere strongly `
 without assuming `f` is Morse — strong-Whitney Morse perturbation
 (`TauCeti.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt_sub_compl`) produces
 a smooth proper bounded-below strongly `q`-pseudoconvex Morse exhaustion `g` within uniform `C⁰`
-distance `1` of `f` (agreeing with `f` near any closed set on a neighbourhood of which `f` is
-already Morse). The sublevel-compatible CW exhaustion of `g` therefore has regular sublevels
+distance `1` of `f` (agreeing with `f` near any closed set on which `f` is already Morse). The
+sublevel-compatible CW exhaustion of `g` therefore has regular sublevels
 `{g ≤ a k}` sandwiched between `{f ≤ a k - 1}` and `{f ≤ a k + 1}`, and `M` has the homotopy type
 of a finite-dimensional Hausdorff CW complex with no cells above dimension `n + q`
 (`TauCeti.exists_cwComplex_subcomplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt_sub_compl`,
@@ -266,19 +266,17 @@ variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [Fi
 
 /-- **Relative perturbed CW exhaustion of a smooth strongly `q`-pseudoconvex exhaustion.** Let
 `f : M → ℝ` be a smooth, proper, bounded-below, everywhere strongly `q`-pseudoconvex function on a
-Hausdorff complex manifold `M` of complex dimension `n`, already Morse on an open neighbourhood `V`
-of a closed set `C`. Then there exist a smooth proper bounded-below strongly `q`-pseudoconvex Morse
-exhaustion `g` within `C⁰` distance `1` of `f` (agreeing with `f` near `C`), a regular exhaustion
-`a 0 < a 1 < ⋯` for `g`, and a finite-dimensional Hausdorff CW homotopy model `h : X ≃ₕ M`
-exhausted by finite CW subcomplexes `W k ≃ₕ {g ≤ a k}` with
-`{f ≤ a k - 1} ⊆ {g ≤ a k} ⊆ {f ≤ a k + 1}`, `MapsTo h.symm {f ≤ a k - 1} (W k)`, and no cells in
-dimensions strictly above `n + q`. -/
+Hausdorff complex manifold `M` of complex dimension `n`, already Morse on a closed set `C`. Then
+there exist a smooth proper bounded-below strongly `q`-pseudoconvex Morse exhaustion `g` within
+`C⁰` distance `1` of `f` (agreeing with `f` near `C`), a regular exhaustion `a 0 < a 1 < ⋯` for
+`g`, and a finite-dimensional Hausdorff CW homotopy model `h : X ≃ₕ M` exhausted by finite CW
+subcomplexes `W k ≃ₕ {g ≤ a k}` with `{f ≤ a k - 1} ⊆ {g ≤ a k} ⊆ {f ≤ a k + 1}`,
+`MapsTo h.symm {f ≤ a k - 1} (W k)`, and no cells in dimensions strictly above `n + q`. -/
 theorem
     exists_cwComplex_subcomplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt_sub_compl
     {q : ℕ} {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
     (hbdd : BddBelow (range f)) (hq : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
-    (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
+    {C : Set M} (hC : IsClosed C) (hfC : IsMorseOn 𝓘(ℝ, E) f C) :
     ∃ (g : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X)
       (_ : T2Space X) (_ : CWComplex (univ : Set X))
       (W : ℕ → CWComplex.Subcomplex (univ : Set X))
@@ -301,7 +299,7 @@ theorem
   have : IsManifold 𝓘(ℂ, E) ∞ M := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
   obtain ⟨g, hgm, hgp, hg_bdd, hg_pos, -, hgf, hgs⟩ :=
     exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt_sub_compl hf hp hbdd hq
-      hC hV hCV hfV
+      hC hfC
   obtain ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, -, -, hWmono, hW0, hWuniv, hWfin,
       hfd, hhW, hsymm, hcell, -, hempty, hWempty⟩ :=
     hgm.exists_cwComplex_subcomplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt hgp hg_bdd
@@ -330,7 +328,7 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStronglyPseud
   obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, -, -, -, -, -, hfd, -,
       -, -, -, -, hempty, -⟩ :=
     exists_cwComplex_subcomplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt_sub_compl
-      hf hp hbdd hq isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      hf hp hbdd hq isClosed_empty isMorseOn_empty
   exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
 
 /-- **CW homotopy model of a smooth strictly plurisubharmonic exhaustion.** Every Hausdorff complex
