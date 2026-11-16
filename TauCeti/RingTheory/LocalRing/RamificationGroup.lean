@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Ring.Action.End
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
+public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.Pointwise
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
@@ -34,7 +35,9 @@ extension of nonarchimedean local fields is the case `G = L ≃ₐ[K] L`, `S = �
 
 Mathlib's `Ideal.inertia` already names `{σ | ∀ x, σ • x - x ∈ I}` for an ideal `I`; the content
 here is the family it forms as `I` runs through the powers of the maximal ideal, together with the
-integer indexing that Herbrand theory uses.
+integer indexing that Herbrand theory uses. The coset-maximizer lemmas for `lowerIndex` adapt
+`TauCeti/NumberTheory/LocalField/Herbrand/Quotient.lean`, and `LowerJump` adapts
+`TauCeti/NumberTheory/LocalField/RamificationGroup.lean`.
 
 ## Main definitions
 
@@ -88,8 +91,9 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow`: along an
   equivariant homomorphism of local rings inducing isomorphisms `S ⧸ 𝔪 ^ n ≃ T ⧸ 𝔪 ^ n`, such as
   the inclusion of a discrete valuation ring into its completion, the ramification groups are the
-  preimages of each other; `ramificationGroup_integralClosure_eq_comap_autCongr` specializes ring
-  isomorphism transport to algebra equivalences on `integralClosure`.
+  preimages of each other; `AlgEquiv.ramificationGroup_integralClosure_eq_comap_autCongr` and
+  `TauCeti.IsLocalRing.ramificationGroup_fixedPoints_integralClosure_eq_comap` specialize ring
+  isomorphism transport to algebra equivalences and Galois fixed fields on `integralClosure`.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
@@ -98,7 +102,7 @@ integer indexing that Herbrand theory uses.
 
 ## References
 
-* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §1.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §1 and §3 (Lemma 4).
 -/
 
 public section
@@ -432,16 +436,21 @@ theorem lowerIndex_coe_subgroup {H : Subgroup G} (h : H) :
     lowerIndex S (h : G) = lowerIndex S h := by
   simp only [lowerIndex_def, Subgroup.smul_def]
 
+/-- If `i_G(g h) ≤ i_G(g)`, then `i_G(g h) = min (i_G(h), i_G(g))`. -/
+theorem lowerIndex_mul_eq_min_of_le {g h : G} (hgh : lowerIndex S (g * h) ≤ lowerIndex S g) :
+    lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) := by
+  have h₁ := min_le_lowerIndex_mul (S := S) g h
+  have h₂ := min_le_lowerIndex_mul (S := S) g⁻¹ (g * h)
+  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right hgh] at h₂
+  exact le_antisymm (le_min h₂ hgh) (min_comm (lowerIndex S g) _ ▸ h₁)
+
 /-- If `g` has maximal lower index in its coset `g H`, then `i_G(g h) = min (i_H(h), i_G(g))` for
 every `h ∈ H`. -/
 theorem lowerIndex_mul_of_forall_le {H : Subgroup G} (g : G)
     (hg : ∀ h : H, lowerIndex S (g * h) ≤ lowerIndex S g) (h : H) :
     lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) := by
   rw [← lowerIndex_coe_subgroup h]
-  have h₁ := min_le_lowerIndex_mul (S := S) g (h : G)
-  have h₂ := min_le_lowerIndex_mul (S := S) g⁻¹ (g * h)
-  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right (hg h)] at h₂
-  exact le_antisymm (le_min h₂ (hg h)) (min_comm (lowerIndex S g) _ ▸ h₁)
+  exact lowerIndex_mul_eq_min_of_le (hg h)
 
 variable (S) in
 /-- Every coset `g H` of a finite subgroup `H ≤ G` contains an element of largest lower index. -/
@@ -745,23 +754,18 @@ theorem ramificationGroup_eq_comap_of_comap_maximalIdeal_pow (φ : G →* H) (f 
 ramification group on `S` is the preimage under `φ` of the corresponding group on `T`. -/
 theorem ramificationGroup_eq_comap_of_ringEquiv {φ : G →* H} {e : S ≃+* T}
     (he : ∀ (g : G) (x : S), e (g • x) = φ g • e x) (i : ℤ) :
-    ramificationGroup G S i = (ramificationGroup H T i).comap φ := by
-  have hpow : ∀ n : ℕ, (maximalIdeal T ^ n).comap (e : S →+* T) = maximalIdeal S ^ n := fun n ↦ by
-    rw [Ideal.comap_coe, ← Ideal.map_symm e, Ideal.map_pow, map_ringEquiv_maximalIdeal]
-  ext σ; rw [Subgroup.mem_comap, mem_ramificationGroup_iff, mem_ramificationGroup_iff]
-  exact ⟨fun h y ↦ by simpa only [← hpow, Ideal.mem_comap, RingHom.coe_coe, map_sub, he,
-      e.apply_symm_apply] using h (e.symm y),
-    fun h x ↦ by simpa only [← hpow, Ideal.mem_comap, RingHom.coe_coe, map_sub, he] using h (e x)⟩
-
+    ramificationGroup G S i = (ramificationGroup H T i).comap φ :=
+  ramificationGroup_eq_comap_of_comap_maximalIdeal_pow φ (e : S →+* T) he
+    (fun n ↦ by rw [Ideal.comap_coe, ← Ideal.map_symm e, Ideal.map_pow, map_ringEquiv_maximalIdeal])
+    (fun _ y ↦ ⟨e.symm y, by simp⟩) i
 /-- If `e : G →* H` is compatible with the actions on `S`, then `G_i = (H_i).comap e`. -/
 theorem ramificationGroup_eq_comap_of_smul_eq {e : G →* H} {S : Type*} [CommRing S] [IsLocalRing S]
     [MulSemiringAction G S] [MulSemiringAction H S] (he : ∀ (g : G) (x : S), g • x = e g • x)
     (i : ℤ) : ramificationGroup G S i = (ramificationGroup H S i).comap e := by
   ext g; simp [mem_ramificationGroup_iff, he g]
-
 /-- `e : E ≃ₐ[K] E'` over `A` pulls back lower ramification groups on `integralClosure`. -/
-theorem ramificationGroup_integralClosure_eq_comap_autCongr {A K E E' : Type*} [CommRing A]
-    [CommRing K] [CommRing E] [CommRing E'] [Algebra A K] [Algebra K E] [Algebra A E]
+theorem _root_.AlgEquiv.ramificationGroup_integralClosure_eq_comap_autCongr {A K E E' : Type*}
+    [CommRing A] [CommRing K] [CommRing E] [CommRing E'] [Algebra A K] [Algebra K E] [Algebra A E]
     [IsScalarTower A K E] [Algebra K E'] [Algebra A E'] [IsScalarTower A K E']
     [IsLocalRing (integralClosure A E)] [IsLocalRing (integralClosure A E')] (e : E ≃ₐ[K] E')
     (i : ℤ) : ramificationGroup (E ≃ₐ[K] E) (integralClosure A E) i =
@@ -770,6 +774,19 @@ theorem ramificationGroup_integralClosure_eq_comap_autCongr {A K E E' : Type*} [
   ramificationGroup_eq_comap_of_ringEquiv
     (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv)
     (fun _ _ ↦ Subtype.ext <| by simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]) i
+/-- `IsGalois.normalAutEquivQuotient H` pulls back lower ramification groups from
+`integralClosure A (fixedField H)` to `FixedPoints.subalgebra A (integralClosure A L) H`. -/
+theorem ramificationGroup_fixedPoints_integralClosure_eq_comap (A : Type*) {K L : Type*}
+    [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L]
+    [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
+    [IsLocalRing (integralClosure A L)] (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (i : ℤ) :
+    ramificationGroup ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) i =
+      (ramificationGroup (IntermediateField.fixedField H ≃ₐ[K] IntermediateField.fixedField H)
+        (integralClosure A (IntermediateField.fixedField H)) i).comap
+          (IsGalois.normalAutEquivQuotient H : _ →* _) :=
+  ramificationGroup_eq_comap_of_ringEquiv
+    (e := (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv)
+    (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv_smul A H) i
 
 end Comap
 
@@ -830,26 +847,23 @@ theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft 
 
 variable {G S} in
 /-- Any two points in `(m, m + 1]` have the same real-indexed ramification group. -/
-theorem ramificationGroupReal_eq_of_mem_Ioc {m : ℤ} {u t : ℝ} (h₂ : u ≤ m + 1)
-    (ht₁ : (m : ℝ) < t) (ht₂ : t ≤ u) :
+theorem ramificationGroupReal_eq_of_mem_Ioc {m : ℤ} {t u : ℝ} (ht : t ∈ Set.Ioc (m : ℝ) (m + 1))
+    (hu : u ∈ Set.Ioc (m : ℝ) (m + 1)) :
     ramificationGroupReal G S t = ramificationGroupReal G S u := by
-  have heq {x : ℝ} (h₁ : (m : ℝ) < x) (hx : x ≤ m + 1) :=
-    ramificationGroupReal_eq_of_sub_one_lt_of_le G S (i := m + 1) (by push_cast; linarith)
-      (by push_cast; linarith)
-  exact (heq ht₁ (ht₂.trans h₂)).trans (heq (ht₁.trans_le ht₂) h₂).symm
+  have heq {x : ℝ} (hx : x ∈ Set.Ioc (m : ℝ) (m + 1)) :=
+    ramificationGroupReal_eq_of_sub_one_lt_of_le G S (i := m + 1) (u := x)
+      (by push_cast; linarith [hx.1]) (by push_cast; linarith [hx.2])
+  exact (heq ht).trans (heq hu).symm
 
 /-- A **lower break** of the ramification filtration: `G_v < G_u` for every `v > u`. -/
 def LowerJump (u : ℝ) : Prop :=
   ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u
-
 theorem lowerJump_iff (u : ℝ) : LowerJump G S u ↔
     ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u := Iff.rfl
-
 variable {G S} in
 theorem LowerJump.neg_one_le {u : ℝ} (hu : LowerJump G S u) : -1 ≤ u := by
   by_contra! hlt; have h := hu (-1) hlt
   simp [ramificationGroupReal_eq_top_of_le_neg_one G S, hlt.le] at h
-
 variable {G S} in
 /-- Every lower break is an integer `i ≥ -1`. -/
 theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 ≤ i ∧ u = i :=
@@ -857,7 +871,6 @@ theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 
     (eq_or_lt_of_le (Int.le_ceil u)).resolve_right fun hlt ↦ by
       have h := hu ⌈u⌉ hlt; rw [ramificationGroupReal_intCast, ← ramificationGroupReal_def] at h
       exact h.false⟩
-
 /-- An integer `i` is a lower break if and only if `G_{i+1} < G_i`. -/
 @[simp] theorem lowerJump_intCast_iff (i : ℤ) :
     LowerJump G S i ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i :=

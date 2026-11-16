@@ -108,8 +108,7 @@ theorem addVal_algebraMap {S T : Type*} [CommRing S] [CommRing T] [IsDomain S] [
     hπ.not_isUnit (isUnit_of_map_unit (algebraMap S T) π (by simp [hπe, h]))
   by_cases hx : x = 0; · simp [hx, he, nsmul_eq_mul, ENat.mul_top (Nat.cast_ne_zero.2 he0)]
   obtain ⟨n, u, rfl⟩ := eq_unit_mul_pow_irreducible hx hπ
-  rw [addVal_def' u hπ n, he, map_mul, map_pow, addVal_mul,
-    addVal_eq_zero_iff.2 (u.isUnit.map (algebraMap S T)), zero_add, addVal_pow, hπe,
-    addVal_def' v hϖ e, nsmul_eq_mul, nsmul_eq_mul, mul_comm]
+  rw [addVal_def' u hπ n, he]
+  simp [addVal_eq_zero_iff.2 (u.isUnit.map _), hπe, addVal_def' v hϖ e, nsmul_eq_mul, mul_comm]
 
 end TauCeti.IsDiscreteValuationRing

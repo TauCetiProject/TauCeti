@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
@@ -27,6 +28,9 @@ on units. This is the semilocal counterpart of Mathlib's
 `IsLocalRing.surjective_units_map_of_local_ringHom`; it needs no unit reflection. By the Chinese
 remainder theorem a lift of a unit can be corrected by an element of the kernel so that it avoids
 every maximal ideal.
+
+If `algebraMap A B` reflects units, then so does `algebraMap A S` for every subalgebra `S` of `B`
+(`Subalgebra.instIsLocalHomAlgebraMap`).
 
 For a surjection of local rings `A → A'`, the image of the maximal ideal of `A` has radical the
 maximal ideal of `A'` (`TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`): the closed
@@ -83,6 +87,16 @@ theorem surjective_units_map_of_surjective [_root_.Finite (MaximalSpectrum R)] (
   exact ⟨hunit.unit, Units.ext (by simp [ha, hfb, mem_ker.mp hk])⟩
 
 end RingHom
+
+namespace Subalgebra
+
+/-- If `algebraMap A B` reflects units, then so does `algebraMap A S` for every subalgebra `S`
+of `B`. -/
+instance instIsLocalHomAlgebraMap {A B : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
+    [IsLocalHom (algebraMap A B)] (S : Subalgebra A B) : IsLocalHom (algebraMap A S) :=
+  ⟨fun a ha ↦ isUnit_of_map_unit (algebraMap A B) a (ha.map S.val)⟩
+
+end Subalgebra
 
 namespace TauCeti.IsLocalRing
 

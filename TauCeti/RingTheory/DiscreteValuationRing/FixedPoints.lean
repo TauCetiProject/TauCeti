@@ -15,10 +15,13 @@ public import TauCeti.RingTheory.LocalRing.FixedPoints
 
 When a monoid `G` acts by ring endomorphisms on a DVR `B`, choosing a nonzero element of minimal
 additive valuation in any nonzero ideal shows `FixedPoints.subring B G` and
-`FixedPoints.subalgebra A B G` are PIDs. When `G` is a finite group — or when `B` lies locally over
-a local ring `A` with `(maximalIdeal A).map (algebraMap A B) ≠ ⊥`, e.g. faithfully over a DVR `A` —
-the fixed ring is not a field and hence is a DVR, transferring `IsDiscreteValuationRing` to
-`integralClosure A (IntermediateField.fixedField H)` for finite `H ≤ Gal(L/K)`.
+`FixedPoints.subalgebra A B G` are PIDs. When `B` is integral over `FixedPoints.subalgebra A B G`
+(in particular when `G` is a finite group), or when `G` acts by `A`-algebra endomorphisms
+(`SMulCommClass G A B`) over a local ring `A` with `IsLocalHom (algebraMap A B)` and
+`(maximalIdeal A).map (algebraMap A B) ≠ ⊥` (e.g. faithfully over a DVR `A`),
+`FixedPoints.subalgebra A B G` is not a field and hence is a DVR; this transfers
+`IsDiscreteValuationRing` to `FixedPoints.subring B G` (for finite `G`) and to
+`integralClosure A (IntermediateField.fixedField H)` for any subgroup `H ≤ Gal(L/K)`.
 -/
 
 public section
@@ -57,16 +60,23 @@ instance instIsPrincipalIdealRingFixedPointsSubalgebra {A B G : Type*} [CommSemi
   IsPrincipalIdealRing.of_surjective (fixedPointsSubringEquivSubalgebra A B G).toRingHom
     (fixedPointsSubringEquivSubalgebra A B G).surjective
 
+/-- If a DVR `B` is integral over `FixedPoints.subalgebra A B G` for a monoid `G`, then
+`FixedPoints.subalgebra A B G` is a DVR. -/
+theorem isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral {A B G : Type*}
+    [CommRing A] [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B]
+    [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
+    [Algebra.IsIntegral (FixedPoints.subalgebra A B G) B] :
+    _root_.IsDiscreteValuationRing (FixedPoints.subalgebra A B G) where
+  not_a_field' hbot := _root_.IsDiscreteValuationRing.not_isField B <|
+    (Algebra.IsIntegral.isField_iff_isField (R := FixedPoints.subalgebra A B G) (S := B)
+      (FaithfulSMul.algebraMap_injective _ B)).mp (isField_iff_maximalIdeal_eq.2 hbot)
 /-- The fixed-point subalgebra of a DVR under a finite group action is a DVR. -/
 instance instIsDiscreteValuationRingFixedPointsSubalgebra {A B G : Type*} [CommRing A] [CommRing B]
     [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B] [Group G] [Finite G]
     [MulSemiringAction G B] [SMulCommClass G A B] :
-    _root_.IsDiscreteValuationRing (FixedPoints.subalgebra A B G) where
-  not_a_field' hbot := _root_.IsDiscreteValuationRing.not_isField B
-    (((Algebra.IsInvariant.isIntegral (FixedPoints.subalgebra A B G) B G).isField_iff_isField
-      (FaithfulSMul.algebraMap_injective (FixedPoints.subalgebra A B G) B)).mp
-      (isField_iff_maximalIdeal_eq.2 hbot))
-
+    _root_.IsDiscreteValuationRing (FixedPoints.subalgebra A B G) :=
+  have := Algebra.IsInvariant.isIntegral (FixedPoints.subalgebra A B G) B G
+  isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
 /-- The fixed-point subring of a DVR under a finite group action is a DVR. -/
 instance instIsDiscreteValuationRingFixedPointsSubring {B G : Type*} [CommRing B] [IsDomain B]
     [_root_.IsDiscreteValuationRing B] [Group G] [Finite G] [MulSemiringAction G B] :
@@ -85,27 +95,26 @@ theorem isDiscreteValuationRing_fixedPoints_subalgebra_of_map_maximalIdeal_ne_bo
     have hmem := map_nonunit (algebraMap A (FixedPoints.subalgebra A B G)) a ha
     rw [hbot, Ideal.mem_bot] at hmem
     simp [IsScalarTower.algebraMap_apply A (FixedPoints.subalgebra A B G) B, hmem]
-
 /-- When a DVR `B` lies locally and faithfully over a DVR `A`, `FixedPoints.subalgebra A B G` is a
 DVR for any monoid `G`. -/
-theorem isDiscreteValuationRing_fixedPoints_subalgebra_of_isLocalHom {A B G : Type*} [CommRing A]
-    [IsDomain A] [_root_.IsDiscreteValuationRing A] [CommRing B] [IsDomain B]
+theorem isDiscreteValuationRing_fixedPoints_subalgebra_of_isDiscreteValuationRing {A B G : Type*}
+    [CommRing A] [IsDomain A] [_root_.IsDiscreteValuationRing A] [CommRing B] [IsDomain B]
     [_root_.IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)]
     [FaithfulSMul A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] :
     _root_.IsDiscreteValuationRing (FixedPoints.subalgebra A B G) :=
-  isDiscreteValuationRing_fixedPoints_subalgebra_of_map_maximalIdeal_ne_bot fun h ↦ by
-    obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible A
-    have hmem : algebraMap A B ϖ ∈ (maximalIdeal A).map (algebraMap A B) :=
-      Ideal.mem_map_of_mem _ ((mem_maximalIdeal _).2 (mem_nonunits_iff.2 hϖ.not_isUnit))
-    rw [h, Ideal.mem_bot] at hmem
-    exact hϖ.ne_zero (FaithfulSMul.algebraMap_injective A B (hmem.trans (map_zero _).symm))
+  isDiscreteValuationRing_fixedPoints_subalgebra_of_map_maximalIdeal_ne_bot
+    (Ideal.map_ne_bot_of_ne_bot (_root_.IsDiscreteValuationRing.not_a_field A))
 
-/-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)` is finite, then
+/-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)`, then
 `integralClosure A (fixedField H)` is a DVR. -/
 instance instIsDiscreteValuationRingIntegralClosureFixedField {A K L : Type*} [CommRing A]
     [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
-    [_root_.IsDiscreteValuationRing (integralClosure A L)] {H : Subgroup (L ≃ₐ[K] L)} [Finite H] :
+    [_root_.IsDiscreteValuationRing (integralClosure A L)] {H : Subgroup (L ≃ₐ[K] L)} :
     _root_.IsDiscreteValuationRing (integralClosure A (fixedField H)) :=
+  have : Algebra.IsIntegral (FixedPoints.subalgebra A (integralClosure A L) H)
+      (integralClosure A L) := Algebra.IsIntegral.tower_top A
+  have := isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
+    (A := A) (B := integralClosure A L) (G := H)
   _root_.IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
     (fixedPointsSubalgebraIntegralClosureEquiv A H)
 

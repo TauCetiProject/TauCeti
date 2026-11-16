@@ -42,50 +42,37 @@ open IsLocalRing MeasureTheory Set intervalIntegral
 namespace TauCeti.IsLocalRing
 
 section Defs
-
 variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
 /-- The **Herbrand function** `φ(u) = ∫_0^u #G_t / #G_0 dt` (meaningful on `[-1, ∞)`). -/
 def herbrandFun (u : ℝ) : ℝ :=
   ∫ t in (0 : ℝ)..u,
     (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0)
-
 theorem herbrandFun_def (u : ℝ) : herbrandFun G S u = ∫ t in (0 : ℝ)..u,
     (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) := (rfl)
-
 /-- The **inverse Herbrand function** `ψ(v) = sInf {u : ℝ | v ≤ φ(u)}`. -/
 def inverseHerbrandFun (v : ℝ) : ℝ := sInf {u : ℝ | v ≤ herbrandFun G S u}
-
 theorem inverseHerbrandFun_def (v : ℝ) :
     inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} := (rfl)
-
 /-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of `G` acting on `S`. -/
 def upperRamificationGroup (v : ℝ) : Subgroup G :=
   ramificationGroupReal G S (inverseHerbrandFun G S v)
-
 theorem upperRamificationGroup_def (v : ℝ) :
     upperRamificationGroup G S v = ramificationGroupReal G S (inverseHerbrandFun G S v) := (rfl)
-
 variable {G S} in
 @[simp] theorem mem_upperRamificationGroup_iff {v : ℝ} {σ : G} : σ ∈ upperRamificationGroup G S v ↔
     σ ∈ ramificationGroupReal G S (inverseHerbrandFun G S v) := Iff.rfl
-
 instance instNormalUpperRamificationGroup (v : ℝ) : (upperRamificationGroup G S v).Normal := by
   rw [upperRamificationGroup_def]; infer_instance
-
 @[simp] theorem herbrandFun_zero : herbrandFun G S 0 = 0 := by rw [herbrandFun_def, integral_same]
-
 /-- An **upper break** of the ramification filtration: `G^v < G^u` for every `v > u`. -/
 def UpperJump (u : ℝ) : Prop :=
   ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u
-
 theorem upperJump_iff (u : ℝ) : UpperJump G S u ↔
     ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u := Iff.rfl
-
 end Defs
 
 section Transport
-
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
   {H : Type*} [Group H] {T : Type*} [CommRing T] [IsLocalRing T] [MulSemiringAction H T]
 
@@ -96,13 +83,11 @@ theorem herbrandFun_eq_of_ramificationGroup_eq_comap {φ : G →* H} (hφ : Func
   have hcard (i : ℤ) : Nat.card (ramificationGroup G S i) = Nat.card (ramificationGroup H T i) :=
     Nat.card_congr ((Equiv.ofBijective φ hφ).subtypeEquiv fun _ ↦ by rw [he i]; rfl)
   simp only [herbrandFun_def, ramificationGroupReal_def, hcard]
-
 /-- A bijective `φ : G →* H` pulling back lower groups preserves `inverseHerbrandFun`. -/
 theorem inverseHerbrandFun_eq_of_ramificationGroup_eq_comap {φ : G →* H} (hφ : Function.Bijective φ)
     (he : ∀ i : ℤ, ramificationGroup G S i = (ramificationGroup H T i).comap φ) (v : ℝ) :
     inverseHerbrandFun G S v = inverseHerbrandFun H T v := by
   simp only [inverseHerbrandFun_def, herbrandFun_eq_of_ramificationGroup_eq_comap hφ he]
-
 /-- A bijective `φ : G →* H` pulling back lower groups pulls back `upperRamificationGroup`. -/
 theorem upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap {φ : G →* H}
     (hφ : Function.Bijective φ)
@@ -115,14 +100,12 @@ theorem upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap {φ : G �
 theorem herbrandFun_eq_of_smul_eq {φ : G →* H} (hφ : Function.Bijective φ) [MulSemiringAction H S]
     (he : ∀ (g : G) (x : S), g • x = φ g • x) (u : ℝ) : herbrandFun G S u = herbrandFun H S u :=
   herbrandFun_eq_of_ramificationGroup_eq_comap hφ (ramificationGroup_eq_comap_of_smul_eq he) u
-
 /-- Two groups linked by a bijective action-compatible homomorphism share `inverseHerbrandFun`. -/
 theorem inverseHerbrandFun_eq_of_smul_eq {φ : G →* H} (hφ : Function.Bijective φ)
     [MulSemiringAction H S] (he : ∀ (g : G) (x : S), g • x = φ g • x) (v : ℝ) :
     inverseHerbrandFun G S v = inverseHerbrandFun H S v :=
   inverseHerbrandFun_eq_of_ramificationGroup_eq_comap hφ
     (ramificationGroup_eq_comap_of_smul_eq he) v
-
 /-- A bijective action-compatible map pulls back `upperRamificationGroup`. -/
 theorem upperRamificationGroup_eq_comap_of_smul_eq {φ : G →* H} (hφ : Function.Bijective φ)
     [MulSemiringAction H S] (he : ∀ (g : G) (x : S), g • x = φ g • x) (v : ℝ) :
@@ -131,49 +114,62 @@ theorem upperRamificationGroup_eq_comap_of_smul_eq {φ : G →* H} (hφ : Functi
     (ramificationGroup_eq_comap_of_smul_eq he) v
 
 section IntegralClosure
-
 variable {A K E E' : Type*} [CommRing A] [CommRing K] [CommRing E] [CommRing E'] [Algebra A K]
   [Algebra K E] [Algebra A E] [IsScalarTower A K E] [Algebra K E'] [Algebra A E']
   [IsScalarTower A K E'] [IsLocalRing (integralClosure A E)] [IsLocalRing (integralClosure A E')]
-
 /-- `e : E ≃ₐ[K] E'` over `A` preserves `herbrandFun` on `integralClosure`. -/
-theorem herbrandFun_integralClosure_eq_of_algEquiv (e : E ≃ₐ[K] E') (u : ℝ) :
+theorem _root_.AlgEquiv.herbrandFun_integralClosure_eq_of_algEquiv (e : E ≃ₐ[K] E') (u : ℝ) :
     herbrandFun (E ≃ₐ[K] E) (integralClosure A E) u =
       herbrandFun (E' ≃ₐ[K] E') (integralClosure A E') u :=
   herbrandFun_eq_of_ramificationGroup_eq_comap e.autCongr.bijective
-    (ramificationGroup_integralClosure_eq_comap_autCongr e) u
-
+    e.ramificationGroup_integralClosure_eq_comap_autCongr u
 /-- `e : E ≃ₐ[K] E'` over `A` preserves `inverseHerbrandFun` on `integralClosure`. -/
-theorem inverseHerbrandFun_integralClosure_eq_of_algEquiv (e : E ≃ₐ[K] E') (v : ℝ) :
-    inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v =
+theorem _root_.AlgEquiv.inverseHerbrandFun_integralClosure_eq_of_algEquiv (e : E ≃ₐ[K] E')
+    (v : ℝ) : inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v =
       inverseHerbrandFun (E' ≃ₐ[K] E') (integralClosure A E') v :=
   inverseHerbrandFun_eq_of_ramificationGroup_eq_comap e.autCongr.bijective
-    (ramificationGroup_integralClosure_eq_comap_autCongr e) v
-
+    e.ramificationGroup_integralClosure_eq_comap_autCongr v
 /-- Conjugation `e.autCongr` pulls back `upperRamificationGroup` on `integralClosure`. -/
-theorem upperRamificationGroup_integralClosure_eq_comap_autCongr (e : E ≃ₐ[K] E') (v : ℝ) :
-    upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v =
+theorem _root_.AlgEquiv.upperRamificationGroup_integralClosure_eq_comap_autCongr (e : E ≃ₐ[K] E')
+    (v : ℝ) : upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v =
       (upperRamificationGroup (E' ≃ₐ[K] E') (integralClosure A E') v).comap
         (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) :=
   upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap e.autCongr.bijective
-    (ramificationGroup_integralClosure_eq_comap_autCongr e) v
-
+    e.ramificationGroup_integralClosure_eq_comap_autCongr v
 end IntegralClosure
 
+section FixedField
+open _root_.IntermediateField
+variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L]
+  [Algebra A L] [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
+  [IsLocalRing (integralClosure A L)]
+/-- `herbrandFun` of `Gal(L/K) ⧸ H` on `(integralClosure A L)^H` agrees with that on
+`integralClosure A (fixedField H)`. -/
+theorem herbrandFun_fixedPoints_integralClosure (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (u : ℝ) :
+    herbrandFun ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) u =
+      herbrandFun (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H)) u :=
+  herbrandFun_eq_of_ramificationGroup_eq_comap (IsGalois.normalAutEquivQuotient H).bijective
+    (ramificationGroup_fixedPoints_integralClosure_eq_comap A H) u
+/-- `inverseHerbrandFun` of `Gal(L/K) ⧸ H` on `(integralClosure A L)^H` agrees with that on
+`integralClosure A (fixedField H)`. -/
+theorem inverseHerbrandFun_fixedPoints_integralClosure (H : Subgroup (L ≃ₐ[K] L)) [H.Normal]
+    (v : ℝ) :
+    inverseHerbrandFun ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) v =
+      inverseHerbrandFun (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H)) v :=
+  inverseHerbrandFun_eq_of_ramificationGroup_eq_comap (IsGalois.normalAutEquivQuotient H).bijective
+    (ramificationGroup_fixedPoints_integralClosure_eq_comap A H) v
+end FixedField
 end Transport
 
 section Finite
-
 variable (G : Type*) [Group G] [Finite G] (S : Type*) [CommRing S] [IsLocalRing S]
   [MulSemiringAction G S]
 
 private def herbrandDensity (t : ℝ) : ℝ :=
   (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0)
-
 private theorem herbrandDensity_antitone : Antitone (herbrandDensity G S) := fun _ _ hst ↦ by
   unfold herbrandDensity; gcongr
   exact Subgroup.card_le_of_le (ramificationGroupReal_antitone G S hst)
-
 private theorem herbrandFun_sub (a b : ℝ) :
     herbrandFun G S b - herbrandFun G S a = ∫ t in a..b, herbrandDensity G S t :=
   integral_interval_sub_left (herbrandDensity_antitone G S).intervalIntegrable
@@ -187,14 +183,13 @@ theorem herbrandFun_sub_of_forall_eq {a b : ℝ} (hab : a ≤ b) {H : Subgroup G
   rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
   refine integral_congr_ae (Filter.Eventually.of_forall fun t ht ↦ ?_)
   rw [uIoc_of_le hab] at ht; rw [herbrandDensity, h t ht.1 ht.2]
-
 /-- On any subinterval `[a, b] ⊆ [i - 1, i]`, `herbrandFun` is affine of slope `#G_i / #G_0`. -/
-theorem herbrandFun_sub_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ) - 1 ≤ a) (hab : a ≤ b) (hb : b ≤ i) :
+theorem herbrandFun_sub_of_sub_one_le_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ) - 1 ≤ a) (hab : a ≤ b)
+    (hb : b ≤ i) :
     herbrandFun G S b - herbrandFun G S a =
       (b - a) * (Nat.card (ramificationGroup G S i) / Nat.card (ramificationGroup G S 0)) :=
   herbrandFun_sub_of_forall_eq G S hab fun _ ht₁ ht₂ ↦
     ramificationGroupReal_eq_of_sub_one_lt_of_le G S (ha.trans_lt ht₁) (ht₂.trans hb)
-
 private theorem div_sub_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
     (b - a) / Nat.card (ramificationGroup G S 0) ≤ herbrandFun G S b - herbrandFun G S a := by
   rw [herbrandFun_sub, div_eq_mul_inv, ← smul_eq_mul, ← intervalIntegral.integral_const]
@@ -207,11 +202,9 @@ private theorem div_sub_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
 theorem herbrandFun_strictMono : StrictMono (herbrandFun G S) := fun a b hab ↦ by
   linarith [div_sub_le_herbrandFun_sub G S hab.le,
     div_pos (sub_pos.2 hab) (Nat.cast_pos.2 (Nat.card_pos (α := ramificationGroup G S 0)))]
-
 /-- The Herbrand function is continuous on `ℝ`. -/
 @[fun_prop] theorem continuous_herbrandFun : Continuous (herbrandFun G S) :=
   continuous_primitive (fun _ _ ↦ (herbrandDensity_antitone G S).intervalIntegrable) 0
-
 /-- Slopes of `herbrandFun` over adjacent intervals decrease. -/
 theorem herbrandFun_slope_anti_adjacent {u v w : ℝ} (huv : u < v) (hvw : v < w) :
     (herbrandFun G S w - herbrandFun G S v) / (w - v) ≤
@@ -225,21 +218,18 @@ theorem herbrandFun_slope_anti_adjacent {u v w : ℝ} (huv : u < v) (hvw : v < w
     exact integral_mono_on huv.le intervalIntegrable_const
       (herbrandDensity_antitone G S).intervalIntegrable fun _ ht ↦ herbrandDensity_antitone G S ht.2
   exact ((div_le_iff₀' (sub_pos.2 hvw)).2 h₁).trans ((le_div_iff₀' (sub_pos.2 huv)).2 h₂)
-
 /-- The Herbrand function is concave on `ℝ`. -/
 theorem concaveOn_herbrandFun : ConcaveOn ℝ univ (herbrandFun G S) :=
   concaveOn_iff_slope_anti_adjacent.2
     ⟨convex_univ, fun _ _ _ _ _ huv hvw ↦ herbrandFun_slope_anti_adjacent G S huv hvw⟩
 
 /-- On `[-1, 0]`, `herbrandFun` is the identity. -/
-theorem herbrandFun_eq_self_of_mem_Icc {u : ℝ} (h₁ : -1 ≤ u) (h₀ : u ≤ 0) :
+theorem herbrandFun_eq_self_of_neg_one_le_of_nonpos {u : ℝ} (h₁ : -1 ≤ u) (h₀ : u ≤ 0) :
     herbrandFun G S u = u := by
-  have h := herbrandFun_sub_of_le G S (i := 0) (by simpa using h₁) h₀ (by simp)
+  have h := herbrandFun_sub_of_sub_one_le_of_le G S (i := 0) (by simpa using h₁) h₀ (by simp)
   rw [div_self (by exact_mod_cast Nat.card_pos.ne'), herbrandFun_zero] at h; linarith
-
 @[simp] theorem herbrandFun_neg_one : herbrandFun G S (-1) = -1 :=
-  herbrandFun_eq_self_of_mem_Icc G S le_rfl (by norm_num)
-
+  herbrandFun_eq_self_of_neg_one_le_of_nonpos G S le_rfl (by norm_num)
 /-- Below `-1`, `herbrandFun` is affine of slope `#G / #G_0` passing through `(-1, -1)`. -/
 theorem herbrandFun_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
     herbrandFun G S u = -1 + (u + 1) * (Nat.card G / Nat.card (ramificationGroup G S 0)) := by
@@ -248,11 +238,12 @@ theorem herbrandFun_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
   rw [herbrandFun_neg_one, Nat.card_congr Subgroup.topEquiv.toEquiv] at h; linarith
 
 /-- On `[m, m + 1]` (`m : ℕ`), `φ(u) = (#G_1 + ⋯ + #G_m + (u - m) #G_{m+1}) / #G_0`. -/
-theorem herbrandFun_of_mem_Icc (m : ℕ) {u : ℝ} (h₁ : (m : ℝ) ≤ u) (h₂ : u ≤ m + 1) :
+theorem herbrandFun_of_natCast_le_of_le_add_one (m : ℕ) {u : ℝ} (h₁ : (m : ℝ) ≤ u)
+    (h₂ : u ≤ m + 1) :
     herbrandFun G S u = (∑ i ∈ Finset.Icc 1 m, (Nat.card (ramificationGroup G S i) : ℝ) +
       (u - m) * Nat.card (ramificationGroup G S (m + 1 : ℕ))) /
         Nat.card (ramificationGroup G S 0) := by
-  have hs := herbrandFun_sub_of_le G S (i := (m + 1 : ℕ)) (by push_cast; linarith) h₁
+  have hs := herbrandFun_sub_of_sub_one_le_of_le G S (i := (m + 1 : ℕ)) (by push_cast; linarith) h₁
     (by push_cast; linarith)
   induction m generalizing u with
   | zero =>
@@ -260,17 +251,14 @@ theorem herbrandFun_of_mem_Icc (m : ℕ) {u : ℝ} (h₁ : (m : ℝ) ≤ u) (h�
     rw [Finset.Icc_eq_empty (by norm_num), Finset.sum_empty]; linear_combination hs
   | succ k ih =>
     have hk := ih (u := (k + 1 : ℕ)) (by push_cast; linarith) (by push_cast; linarith)
-      (herbrandFun_sub_of_le G S (i := (k + 1 : ℕ)) (by push_cast; linarith)
+      (herbrandFun_sub_of_sub_one_le_of_le G S (i := (k + 1 : ℕ)) (by push_cast; linarith)
         (by push_cast; linarith) (by push_cast; linarith))
-    rw [Finset.sum_Icc_succ_top (by omega)]; rw [hk] at hs; push_cast at hs ⊢
-    linear_combination hs
-
+    rw [Finset.sum_Icc_succ_top (by omega)]; rw [hk] at hs; push_cast at hs ⊢; linear_combination hs
 /-- At a natural number `m`, `φ(m) = (∑ i ∈ Icc 1 m, #G_i) / #G_0`. -/
 theorem herbrandFun_natCast (m : ℕ) : herbrandFun G S m =
     (∑ i ∈ Finset.Icc 1 m, (Nat.card (ramificationGroup G S i) : ℝ)) /
       Nat.card (ramificationGroup G S 0) := by
-  simp [herbrandFun_of_mem_Icc G S m le_rfl (by linarith)]
-
+  simp [herbrandFun_of_natCast_le_of_le_add_one G S m le_rfl (by linarith)]
 /-- At a nonnegative integer `m`, `φ(m) = (∑ i ∈ Icc 1 m.toNat, #G_i) / #G_0`. -/
 theorem herbrandFun_intCast_of_nonneg {m : ℤ} (hm : 0 ≤ m) : herbrandFun G S m =
     (∑ i ∈ Finset.Icc 1 m.toNat, (Nat.card (ramificationGroup G S i) : ℝ)) /
@@ -292,17 +280,15 @@ theorem herbrandFun_surjective : Function.Surjective (herbrandFun G S) := fun y 
 
 private def herbrandRealOrderIso : ℝ ≃o ℝ :=
   StrictMono.orderIsoOfSurjective _ (herbrandFun_strictMono G S) (herbrandFun_surjective G S)
-
 private theorem inverseHerbrandFun_eq_symm (v : ℝ) :
     inverseHerbrandFun G S v = (herbrandRealOrderIso G S).symm v := by
   rw [inverseHerbrandFun_def, (Set.ext fun _ ↦ (herbrandRealOrderIso G S).symm_apply_le.symm :
     {u : ℝ | v ≤ herbrandFun G S u} = Ici ((herbrandRealOrderIso G S).symm v)), csInf_Ici]
 
-/-- `herbrandFun` is a right inverse to `inverseHerbrandFun`. -/
+/-- `herbrandFun` is a left inverse to `inverseHerbrandFun` (`φ (ψ v) = v`). -/
 @[simp] theorem herbrandFun_inverseHerbrandFun (v : ℝ) :
     herbrandFun G S (inverseHerbrandFun G S v) = v := by
   rw [inverseHerbrandFun_eq_symm]; exact (herbrandRealOrderIso G S).apply_symm_apply v
-
 /-- `inverseHerbrandFun` is a left inverse to `herbrandFun`. -/
 @[simp] theorem inverseHerbrandFun_herbrandFun (u : ℝ) :
     inverseHerbrandFun G S (herbrandFun G S u) = u := by
@@ -311,39 +297,32 @@ private theorem inverseHerbrandFun_eq_symm (v : ℝ) :
 /-- `inverseHerbrandFun` is strictly increasing on `ℝ`. -/
 theorem inverseHerbrandFun_strictMono : StrictMono (inverseHerbrandFun G S) := by
   simpa [funext (inverseHerbrandFun_eq_symm G S)] using (herbrandRealOrderIso G S).symm.strictMono
-
 /-- `inverseHerbrandFun` is continuous on `ℝ`. -/
 @[fun_prop] theorem continuous_inverseHerbrandFun : Continuous (inverseHerbrandFun G S) := by
   simpa [funext (inverseHerbrandFun_eq_symm G S)] using (herbrandRealOrderIso G S).symm.continuous
-
 @[simp] theorem inverseHerbrandFun_zero : inverseHerbrandFun G S 0 = 0 := by
   simpa using inverseHerbrandFun_herbrandFun G S 0
-
 @[simp] theorem inverseHerbrandFun_neg_one : inverseHerbrandFun G S (-1) = -1 := by
   simpa using inverseHerbrandFun_herbrandFun G S (-1)
 
 /-- On `[-1, 0]`, `inverseHerbrandFun` is the identity. -/
-theorem inverseHerbrandFun_eq_self_of_mem_Icc {v : ℝ} (h₁ : -1 ≤ v) (h₀ : v ≤ 0) :
+theorem inverseHerbrandFun_eq_self_of_neg_one_le_of_nonpos {v : ℝ} (h₁ : -1 ≤ v) (h₀ : v ≤ 0) :
     inverseHerbrandFun G S v = v :=
-  (herbrandFun_strictMono G S).injective <| by simp [herbrandFun_eq_self_of_mem_Icc G S h₁ h₀]
+  (herbrandFun_strictMono G S).injective <| by
+    simp [herbrandFun_eq_self_of_neg_one_le_of_nonpos G S h₁ h₀]
 
 @[simp] theorem herbrandFun_le_herbrandFun_iff {u v : ℝ} :
     herbrandFun G S u ≤ herbrandFun G S v ↔ u ≤ v := (herbrandFun_strictMono G S).le_iff_le
-
 @[simp] theorem herbrandFun_lt_herbrandFun_iff {u v : ℝ} :
     herbrandFun G S u < herbrandFun G S v ↔ u < v := (herbrandFun_strictMono G S).lt_iff_lt
-
 @[simp] theorem herbrandFun_inj {u v : ℝ} :
     herbrandFun G S u = herbrandFun G S v ↔ u = v := (herbrandFun_strictMono G S).injective.eq_iff
-
 @[simp] theorem inverseHerbrandFun_le_inverseHerbrandFun_iff {u v : ℝ} :
     inverseHerbrandFun G S u ≤ inverseHerbrandFun G S v ↔ u ≤ v :=
   (inverseHerbrandFun_strictMono G S).le_iff_le
-
 @[simp] theorem inverseHerbrandFun_lt_inverseHerbrandFun_iff {u v : ℝ} :
     inverseHerbrandFun G S u < inverseHerbrandFun G S v ↔ u < v :=
   (inverseHerbrandFun_strictMono G S).lt_iff_lt
-
 @[simp] theorem inverseHerbrandFun_inj {u v : ℝ} :
     inverseHerbrandFun G S u = inverseHerbrandFun G S v ↔ u = v :=
   (inverseHerbrandFun_strictMono G S).injective.eq_iff
@@ -352,17 +331,14 @@ theorem inverseHerbrandFun_eq_self_of_mem_Icc {v : ℝ} (h₁ : -1 ≤ v) (h₀ 
 theorem le_inverseHerbrandFun_iff {u v : ℝ} :
     u ≤ inverseHerbrandFun G S v ↔ herbrandFun G S u ≤ v := by
   rw [← herbrandFun_le_herbrandFun_iff G S, herbrandFun_inverseHerbrandFun]
-
 /-- Upper-bound adjunction `ψ(v) ≤ u ↔ v ≤ φ(u)`. -/
 theorem inverseHerbrandFun_le_iff {u v : ℝ} :
     inverseHerbrandFun G S v ≤ u ↔ v ≤ herbrandFun G S u := by
   rw [← herbrandFun_le_herbrandFun_iff G S, herbrandFun_inverseHerbrandFun]
-
 /-- Strict lower-bound adjunction `u < ψ(v) ↔ φ(u) < v`. -/
 theorem lt_inverseHerbrandFun_iff {u v : ℝ} :
     u < inverseHerbrandFun G S v ↔ herbrandFun G S u < v := by
   rw [← herbrandFun_lt_herbrandFun_iff G S, herbrandFun_inverseHerbrandFun]
-
 /-- Strict upper-bound adjunction `ψ(v) < u ↔ v < φ(u)`. -/
 theorem inverseHerbrandFun_lt_iff {u v : ℝ} :
     inverseHerbrandFun G S v < u ↔ v < herbrandFun G S u := by
@@ -370,61 +346,43 @@ theorem inverseHerbrandFun_lt_iff {u v : ℝ} :
 
 @[simp] theorem neg_one_le_herbrandFun_iff {u : ℝ} : -1 ≤ herbrandFun G S u ↔ -1 ≤ u := by
   rw [← inverseHerbrandFun_le_iff, inverseHerbrandFun_neg_one]
-
 @[simp] theorem herbrandFun_le_neg_one_iff {u : ℝ} : herbrandFun G S u ≤ -1 ↔ u ≤ -1 := by
   rw [← le_inverseHerbrandFun_iff, inverseHerbrandFun_neg_one]
-
 @[simp] theorem neg_one_lt_herbrandFun_iff {u : ℝ} : -1 < herbrandFun G S u ↔ -1 < u :=
   lt_iff_lt_of_le_iff_le (herbrandFun_le_neg_one_iff G S)
-
 @[simp] theorem herbrandFun_lt_neg_one_iff {u : ℝ} : herbrandFun G S u < -1 ↔ u < -1 :=
   lt_iff_lt_of_le_iff_le (neg_one_le_herbrandFun_iff G S)
-
 @[simp] theorem herbrandFun_eq_neg_one_iff {u : ℝ} : herbrandFun G S u = -1 ↔ u = -1 :=
   (herbrandFun_strictMono G S).injective.eq_iff' (herbrandFun_neg_one G S)
-
 @[simp] theorem herbrandFun_nonneg_iff {u : ℝ} : 0 ≤ herbrandFun G S u ↔ 0 ≤ u := by
   rw [← inverseHerbrandFun_le_iff, inverseHerbrandFun_zero]
-
 @[simp] theorem herbrandFun_nonpos_iff {u : ℝ} : herbrandFun G S u ≤ 0 ↔ u ≤ 0 := by
   rw [← le_inverseHerbrandFun_iff, inverseHerbrandFun_zero]
-
 @[simp] theorem herbrandFun_pos_iff {u : ℝ} : 0 < herbrandFun G S u ↔ 0 < u :=
   lt_iff_lt_of_le_iff_le (herbrandFun_nonpos_iff G S)
-
 @[simp] theorem herbrandFun_neg_iff {u : ℝ} : herbrandFun G S u < 0 ↔ u < 0 :=
   lt_iff_lt_of_le_iff_le (herbrandFun_nonneg_iff G S)
-
 @[simp] theorem herbrandFun_eq_zero_iff {u : ℝ} : herbrandFun G S u = 0 ↔ u = 0 :=
   (herbrandFun_strictMono G S).injective.eq_iff' (herbrandFun_zero G S)
 
 @[simp] theorem neg_one_le_inverseHerbrandFun_iff {v : ℝ} :
     -1 ≤ inverseHerbrandFun G S v ↔ -1 ≤ v := (le_inverseHerbrandFun_iff G S).trans (by simp)
-
 @[simp] theorem inverseHerbrandFun_le_neg_one_iff {v : ℝ} :
     inverseHerbrandFun G S v ≤ -1 ↔ v ≤ -1 := (inverseHerbrandFun_le_iff G S).trans (by simp)
-
 @[simp] theorem neg_one_lt_inverseHerbrandFun_iff {v : ℝ} :
     -1 < inverseHerbrandFun G S v ↔ -1 < v := (lt_inverseHerbrandFun_iff G S).trans (by simp)
-
 @[simp] theorem inverseHerbrandFun_lt_neg_one_iff {v : ℝ} :
     inverseHerbrandFun G S v < -1 ↔ v < -1 := (inverseHerbrandFun_lt_iff G S).trans (by simp)
-
 @[simp] theorem inverseHerbrandFun_eq_neg_one_iff {v : ℝ} :
     inverseHerbrandFun G S v = -1 ↔ v = -1 := by rw [← herbrandFun_inj G S]; simp
-
 @[simp] theorem inverseHerbrandFun_nonneg_iff {v : ℝ} : 0 ≤ inverseHerbrandFun G S v ↔ 0 ≤ v := by
   rw [le_inverseHerbrandFun_iff, herbrandFun_zero]
-
 @[simp] theorem inverseHerbrandFun_nonpos_iff {v : ℝ} : inverseHerbrandFun G S v ≤ 0 ↔ v ≤ 0 := by
   rw [inverseHerbrandFun_le_iff, herbrandFun_zero]
-
 @[simp] theorem inverseHerbrandFun_pos_iff {v : ℝ} : 0 < inverseHerbrandFun G S v ↔ 0 < v :=
   lt_iff_lt_of_le_iff_le (inverseHerbrandFun_nonpos_iff G S)
-
 @[simp] theorem inverseHerbrandFun_neg_iff {v : ℝ} : inverseHerbrandFun G S v < 0 ↔ v < 0 :=
   lt_iff_lt_of_le_iff_le (inverseHerbrandFun_nonneg_iff G S)
-
 @[simp] theorem inverseHerbrandFun_eq_zero_iff {v : ℝ} : inverseHerbrandFun G S v = 0 ↔ v = 0 :=
   (inverseHerbrandFun_strictMono G S).injective.eq_iff' (inverseHerbrandFun_zero G S)
 
@@ -435,28 +393,24 @@ def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) where
   left_inv u := Subtype.ext (inverseHerbrandFun_herbrandFun G S u)
   right_inv v := Subtype.ext (herbrandFun_inverseHerbrandFun G S v)
   map_rel_iff' := (herbrandFun_strictMono G S).le_iff_le
-
 @[simp] theorem coe_herbrandOrderIso_apply (u : Ici (-1 : ℝ)) :
     (herbrandOrderIso G S u : ℝ) = herbrandFun G S u := (rfl)
-
 @[simp] theorem coe_herbrandOrderIso_symm_apply (v : Ici (-1 : ℝ)) :
     ((herbrandOrderIso G S).symm v : ℝ) = inverseHerbrandFun G S v := (rfl)
 
 /-- When inertia is trivial (`G_0 = ⊥`), `herbrandFun` is the identity on `[-1, ∞)`. -/
 theorem herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot (h0 : ramificationGroup G S 0 = ⊥)
     {u : ℝ} (hu : -1 ≤ u) : herbrandFun G S u = u := by
-  rcases le_or_gt u 0 with hu0 | hu0; · exact herbrandFun_eq_self_of_mem_Icc G S hu hu0
+  rcases le_or_gt u 0 with hu0 | hu0; · exact herbrandFun_eq_self_of_neg_one_le_of_nonpos G S hu hu0
   have h := herbrandFun_sub_of_forall_eq G S hu0.le (H := ⊥) fun t ht _ ↦ eq_bot_iff.2
     ((ramificationGroupReal_antitone G S ht.le).trans
       (by rw [← Int.cast_zero, ramificationGroupReal_intCast, h0]))
   rw [h0, div_self (by exact_mod_cast Nat.card_pos.ne'), herbrandFun_zero] at h; linarith
-
 /-- When inertia is trivial (`G_0 = ⊥`), `inverseHerbrandFun` is the identity on `[-1, ∞)`. -/
 theorem inverseHerbrandFun_eq_self_of_ramificationGroup_zero_eq_bot
     (h0 : ramificationGroup G S 0 = ⊥) {v : ℝ} (hv : -1 ≤ v) : inverseHerbrandFun G S v = v := by
   conv_lhs => rw [← herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot G S h0 hv]
   exact inverseHerbrandFun_herbrandFun G S v
-
 /-- When inertia is trivial (`G_0 = ⊥`), `G^v = ⊥` for every `v > -1`. -/
 theorem upperRamificationGroup_eq_bot_of_ramificationGroup_zero_eq_bot
     (h0 : ramificationGroup G S 0 = ⊥) {v : ℝ} (hv : -1 < v) :
@@ -467,22 +421,29 @@ theorem upperRamificationGroup_eq_bot_of_ramificationGroup_zero_eq_bot
   exact eq_bot_iff.2 ((ramificationGroup_antitone G S
     (Int.le_ceil_iff.2 (by simpa using hv))).trans h0.le)
 
+omit [Finite G] in
 @[simp] theorem herbrandFun_of_subsingleton [Subsingleton G] (u : ℝ) : herbrandFun G S u = u := by
   rcases le_total (-1) u with hu | hu
   · exact herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot G S (Subsingleton.elim _ _) hu
   · have : Unique G := uniqueOfSubsingleton 1
     have : Unique (ramificationGroup G S 0) := uniqueOfSubsingleton 1
     rw [herbrandFun_of_le_neg_one G S hu, Nat.card_unique, Nat.card_unique]; push_cast; ring
-
+omit [Finite G] in
 @[simp] theorem inverseHerbrandFun_of_subsingleton [Subsingleton G] (v : ℝ) :
     inverseHerbrandFun G S v = v := by simpa using inverseHerbrandFun_herbrandFun G S v
 
-private theorem inverseHerbrandFun_natCast_eq_floor (n : ℕ) :
-    inverseHerbrandFun G S n = ⌊inverseHerbrandFun G S n⌋₊ := by
+/-- The **integral inverse Herbrand function** `ψℕ : ℕ → ℕ` (`coe_psiNat`). -/
+def psiNat (n : ℕ) : ℕ := ⌊inverseHerbrandFun G S n⌋₊
+omit [Finite G] in
+theorem psiNat_def (n : ℕ) : psiNat G S n = ⌊inverseHerbrandFun G S n⌋₊ := by rfl
+
+/-- For every `n : ℕ`, `inverseHerbrandFun G S n` is the natural number `psiNat G S n`. -/
+@[simp] theorem coe_psiNat (n : ℕ) : (psiNat G S n : ℝ) = inverseHerbrandFun G S n := by
+  rw [psiNat_def]
   set u := inverseHerbrandFun G S n; set m := ⌊u⌋₊
   set g : ℤ → ℕ := fun i ↦ Nat.card (ramificationGroup G S i)
   have hm₁ : (m : ℝ) ≤ u := Nat.floor_le ((inverseHerbrandFun_nonneg_iff G S).2 (Nat.cast_nonneg n))
-  have hφ := herbrandFun_of_mem_Icc G S m hm₁ (Nat.lt_floor_add_one u).le
+  have hφ := herbrandFun_of_natCast_le_of_le_add_one G S m hm₁ (Nat.lt_floor_add_one u).le
   rw [herbrandFun_inverseHerbrandFun, eq_div_iff (by exact_mod_cast Nat.card_pos.ne')] at hφ
   have hdvd (i : ℤ) (hi : i ≤ (m + 1 : ℕ)) : g (m + 1 : ℕ) ∣ g i :=
     Subgroup.card_dvd_of_le (ramificationGroup_antitone G S hi)
@@ -496,17 +457,7 @@ private theorem inverseHerbrandFun_natCast_eq_floor (n : ℕ) :
     (by rw [← hcR]; linarith : (u - m) * g (m + 1 : ℕ) = g (m + 1 : ℕ) * c).trans (mul_comm _ _)
   have : 0 ≤ c ∧ c < 1 := ⟨by exact_mod_cast (hcu ▸ sub_nonneg.2 hm₁ : (0 : ℝ) ≤ c),
     by exact_mod_cast (hcu ▸ by linarith [Nat.lt_floor_add_one u] : (c : ℝ) < 1)⟩
-  rw [(by omega : c = 0), Int.cast_zero, sub_eq_zero] at hcu; exact hcu
-
-/-- The **integral inverse Herbrand function** `ψℕ : ℕ → ℕ` (`coe_psiNat`). -/
-def psiNat (n : ℕ) : ℕ := ⌊inverseHerbrandFun G S n⌋₊
-
-omit [Finite G] in
-theorem psiNat_def (n : ℕ) : psiNat G S n = ⌊inverseHerbrandFun G S n⌋₊ := by rfl
-
-/-- For every `n : ℕ`, `inverseHerbrandFun G S n` is the natural number `psiNat G S n`. -/
-@[simp] theorem coe_psiNat (n : ℕ) : (psiNat G S n : ℝ) = inverseHerbrandFun G S n :=
-  (inverseHerbrandFun_natCast_eq_floor G S n).symm
+  rw [(by omega : c = 0), Int.cast_zero, sub_eq_zero] at hcu; exact hcu.symm
 
 /-- Arithmetic characterization: `ψℕ(n) = m ↔ #G_1 + ⋯ + #G_m = n · #G_0`. -/
 theorem psiNat_eq_iff {n m : ℕ} : psiNat G S n = m ↔
@@ -514,17 +465,13 @@ theorem psiNat_eq_iff {n m : ℕ} : psiNat G S n = m ↔
       n * Nat.card (ramificationGroup G S 0) := by
   rw [← Nat.cast_inj (R := ℝ), coe_psiNat, ← herbrandFun_inj G S, herbrandFun_inverseHerbrandFun,
     eq_comm, herbrandFun_natCast, div_eq_iff (by exact_mod_cast Nat.card_pos.ne')]; norm_cast
-
 /-- Upper-bound characterization `ψℕ(n) ≤ m ↔ (n : ℝ) ≤ φ(m)`. -/
 theorem psiNat_le_iff {n m : ℕ} : psiNat G S n ≤ m ↔ (n : ℝ) ≤ herbrandFun G S m := by
   rw [← Nat.cast_le (α := ℝ), coe_psiNat, inverseHerbrandFun_le_iff]
-
 @[simp] theorem psiNat_zero : psiNat G S 0 = 0 := (psiNat_eq_iff G S).2 (by simp)
-
 /-- The integral inverse Herbrand function `ψℕ` is strictly increasing. -/
 theorem psiNat_strictMono : StrictMono (psiNat G S) := fun _ _ h ↦ by
   rw [← Nat.cast_lt (α := ℝ)]; simp [h]
-
 /-- For every `n : ℕ`, `n ≤ ψℕ(n)`. -/
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat G S n := (psiNat_strictMono G S).id_le n
 
@@ -546,31 +493,25 @@ theorem self_le_psiNat (n : ℕ) : n ≤ psiNat G S n := (psiNat_strictMono G S)
 @[simp] theorem upperRamificationGroup_herbrandFun (u : ℝ) :
     upperRamificationGroup G S (herbrandFun G S u) = ramificationGroupReal G S u := by
   rw [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun]
-
 /-- At `n : ℕ`, the upper ramification group `G^n` equals the lower group `G_{ψℕ(n)}`. -/
 theorem upperRamificationGroup_natCast (n : ℕ) :
     upperRamificationGroup G S n = ramificationGroup G S (psiNat G S n) := by
   rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast, ramificationGroupReal_intCast]
-
 /-- The upper ramification filtration is decreasing. -/
 theorem upperRamificationGroup_antitone : Antitone (upperRamificationGroup G S) :=
   fun _ _ h ↦ ramificationGroupReal_antitone G S ((inverseHerbrandFun_strictMono G S).monotone h)
-
 /-- On `[-1, 0]`, the upper and lower ramification filtrations agree. -/
-theorem upperRamificationGroup_eq_ramificationGroupReal_of_mem_Icc {v : ℝ} (h₁ : -1 ≤ v)
-    (h₀ : v ≤ 0) : upperRamificationGroup G S v = ramificationGroupReal G S v := by
-  rw [upperRamificationGroup_def, inverseHerbrandFun_eq_self_of_mem_Icc G S h₁ h₀]
-
+theorem upperRamificationGroup_eq_ramificationGroupReal_of_neg_one_le_of_nonpos {v : ℝ}
+    (h₁ : -1 ≤ v) (h₀ : v ≤ 0) : upperRamificationGroup G S v = ramificationGroupReal G S v := by
+  rw [upperRamificationGroup_def, inverseHerbrandFun_eq_self_of_neg_one_le_of_nonpos G S h₁ h₀]
 @[simp] theorem upperRamificationGroup_zero :
     upperRamificationGroup G S 0 = ramificationGroup G S 0 := by
   rw [upperRamificationGroup_def, inverseHerbrandFun_zero, ← Int.cast_zero,
     ramificationGroupReal_intCast]
-
 /-- Below `-1`, the upper ramification group is the full group `⊤`. -/
 theorem upperRamificationGroup_eq_top_of_le_neg_one {v : ℝ} (hv : v ≤ -1) :
     upperRamificationGroup G S v = ⊤ :=
   ramificationGroupReal_eq_top_of_le_neg_one G S ((inverseHerbrandFun_le_neg_one_iff G S).2 hv)
-
 @[simp] theorem upperRamificationGroup_neg_one : upperRamificationGroup G S (-1) = ⊤ :=
   upperRamificationGroup_eq_top_of_le_neg_one G S le_rfl
 
@@ -581,7 +522,6 @@ theorem iInf_upperRamificationGroup_eq_ker [IsNoetherianRing S] :
   refine le_antisymm (le_iInf fun i ↦ (iInf_le _ (herbrandFun G S i)).trans_eq (by simp))
     (le_iInf fun _ ↦ ?_)
   rw [upperRamificationGroup_def, ramificationGroupReal_def]; exact iInf_le _ _
-
 /-- For a finite group `G` acting faithfully on Noetherian `S`, `⨅ v, G^v = ⊥`. -/
 theorem iInf_upperRamificationGroup_eq_bot [IsNoetherianRing S] [FaithfulSMul G S] :
     ⨅ v : ℝ, upperRamificationGroup G S v = ⊥ := by
@@ -595,7 +535,6 @@ theorem exists_forall_upperRamificationGroup_eq_ker [IsNoetherianRing S] :
   refine ⟨herbrandFun G S N, fun _ hv ↦ ?_⟩
   rw [upperRamificationGroup_def, ramificationGroupReal_def]
   exact hN _ (Int.le_ceil_iff.2 (by linarith [(le_inverseHerbrandFun_iff G S).2 hv]))
-
 /-- For a finite group `G` acting faithfully on Noetherian `S`, `G^v = ⊥` for large `v`. -/
 theorem exists_forall_upperRamificationGroup_eq_bot [IsNoetherianRing S] [FaithfulSMul G S] :
     ∃ V : ℝ, ∀ v : ℝ, V ≤ v → upperRamificationGroup G S v = ⊥ := by
@@ -616,12 +555,10 @@ theorem subgroupOf_upperRamificationGroup (H : Subgroup G) (u : ℝ) :
   · simpa using h (herbrandFun G S v) (herbrandFun_strictMono G S huv)
   · rw [upperRamificationGroup_herbrandFun, upperRamificationGroup_def]
     exact h _ ((lt_inverseHerbrandFun_iff G S).2 huv)
-
 /-- `inverseHerbrandFun G S v` is a lower break if and only if `v` is an upper break. -/
 @[simp] theorem lowerJump_inverseHerbrandFun_iff (v : ℝ) :
     LowerJump G S (inverseHerbrandFun G S v) ↔ UpperJump G S v := by
   simpa using (upperJump_herbrandFun_iff G S (inverseHerbrandFun G S v)).symm
-
 variable {G S} in
 /-- Every upper break of a finite group action is at least `-1`. -/
 theorem UpperJump.neg_one_le {v : ℝ} (hv : UpperJump G S v) : -1 ≤ v :=
