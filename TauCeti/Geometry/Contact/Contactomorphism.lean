@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Geometry.Contact.Transition
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # Contactomorphisms
@@ -43,7 +45,10 @@ back to `c α`. It is a contactomorphism for every `c ≠ 0`, it preserves the c
 when `c > 0`, and it is strict exactly when `c = 1`
 (`TauCeti.isContactomorphism_innerProductContactForm_of_coe_eq`,
 `TauCeti.preservesCoorientation_innerProductContactForm_iff_of_coe_eq`,
-`TauCeti.isStrictContactomorphism_innerProductContactForm_iff_of_coe_eq`).
+`TauCeti.isStrictContactomorphism_innerProductContactForm_iff_of_coe_eq`). Likewise, any `C^n`
+(`2 ≤ n`) partial diffeomorphism into `V × V × ℝ` pulling `dz - ⟪p, dq⟫` back to `α` straightens
+the Reeb vector field of `α` to `(0, 0, 1)` on its source
+(`TauCeti.SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq`).
 
 ## Main definitions
 
@@ -65,6 +70,9 @@ when `c > 0`, and it is strict exactly when `c = 1`
   `PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff`: a partial
   diffeomorphism restricts to a strict contactomorphism between its open source and target if and
   only if it pulls the target one-form back to the source one-form on its source.
+* `TauCeti.SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq`: a `C^n`
+  (`2 ≤ n`) partial diffeomorphism into `V × V × ℝ` pulling `dz - ⟪p, dq⟫` back to `α` straightens
+  `α.reebVectorField` to `(0, 0, 1)` on its source.
 * `TauCeti.exists_isContactomorphism_not_preservesCoorientation`,
   `TauCeti.exists_preservesCoorientation_not_isStrictContactomorphism`: the three notions differ.
 
@@ -78,9 +86,11 @@ public section
 
 noncomputable section
 
-open scoped ContDiff Manifold InnerProductSpace
+open scoped ContDiff Manifold InnerProductSpace Topology
 
 open TauCeti
+
+section
 
 variable {E H M F H' N G H'' P : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -319,12 +329,12 @@ theorem IsStrictContactomorphism.symm (h : e.IsStrictContactomorphism α β) :
 
 /-- The differential of a strict contactomorphism carries the Reeb vector field of `α` to the Reeb
 vector field of `β`. -/
-theorem IsStrictContactomorphism.mfderiv_reebVectorField [FiniteDimensional ℝ E]
+theorem IsStrictContactomorphism.mfderiv_reebVectorField
     (h : e.IsStrictContactomorphism α β) (hβ : β.IsContactForm) (x : M) :
     mfderiv I J e x (α.reebVectorField x) = β.reebVectorField (e x) := by
   subst h
   exact hβ.mfderiv_reebVectorField_mpullback e e.contMDiff
-    (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) x
+    (e.isInvertible_mfderiv (by simp)).bijective
 
 end Diffeomorph
 
@@ -341,31 +351,13 @@ theorem isStrictContactomorphism_toDiffeomorphSourceTarget_iff
         (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
         (SmoothForm.mpullback Subtype.val contMDiff_subtype_val β) ↔
       ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.1 (e x) ![mfderiv I J e x v] = α.1 x ![v] := by
-  let U : TopologicalSpace.Opens M := ⟨e.source, e.open_source⟩
-  let W : TopologicalSpace.Opens N := ⟨e.target, e.open_target⟩
-  have hcomp : (Subtype.val : W → N) ∘ e.toDiffeomorphSourceTarget = e ∘ (Subtype.val : U → M) :=
-    funext fun x ↦ e.toDiffeomorphSourceTarget_apply_coe x
-  have hpull (x : U) (v : TangentSpace I x) :
-      (SmoothForm.mpullback e.toDiffeomorphSourceTarget e.toDiffeomorphSourceTarget.contMDiff
-        (SmoothForm.mpullback (Subtype.val : W → N) contMDiff_subtype_val β)).1 x ![v] =
-        β.1 (e x) ![mfderiv I J e x (Manifold.tangentSpaceOpenEquiv x v)] := by
-    have he : MDifferentiableAt I J e x := e.mdifferentiableAt (n := ∞) (by simp) x.2
-    rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_apply_one, hcomp, Function.comp_apply,
-      mfderiv_comp x he ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)),
-      ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
-  have hrhs (x : U) (v : TangentSpace I x) :
-      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val α).1 x ![v] =
-        α.1 x ![Manifold.tangentSpaceOpenEquiv x v] := by
-    rw [SmoothForm.mpullback_apply_one, Manifold.mfderiv_subtype_val,
-      ContinuousLinearEquiv.coe_coe]
-  rw [Diffeomorph.isStrictContactomorphism_def, Subtype.ext_iff, funext_iff]
-  refine ⟨fun h x hx w ↦ ?_, fun h x ↦ ContinuousAlternatingMap.ext_fin_one fun v ↦ ?_⟩
-  · let x' : U := ⟨x, hx⟩
-    let v : TangentSpace I x' := (Manifold.tangentSpaceOpenEquiv x').symm w
-    have hv := congrArg (fun A ↦ A ![v]) (h x')
-    rwa [hpull, hrhs, ContinuousLinearEquiv.apply_symm_apply] at hv
-  · rw [hpull, hrhs]
-    exact h x.1 x.2 _
+  rw [Diffeomorph.isStrictContactomorphism_def, Subtype.ext_iff, SmoothForm.coe_mpullback,
+    SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    e.mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val_eq_iff (by simp)]
+  refine forall₂_congr fun x _ ↦
+    ⟨fun h v ↦ ?_, fun h ↦ ContinuousAlternatingMap.ext_fin_one fun v ↦ ?_⟩
+  · simpa only [mpullback_apply_one] using congrArg (fun A ↦ A ![v]) h
+  · simpa only [mpullback_apply_one] using h v
 
 /-- For a partial diffeomorphism into a normed space, `e.toDiffeomorphSourceTarget` is a strict
 contactomorphism between the restrictions of `α` and `β` if and only if `mvfderiv I e` pulls `β`
@@ -382,9 +374,13 @@ theorem isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff
 
 end PartialDiffeomorph
 
+end
+
 /-! ### The standard contact form -/
 
 namespace TauCeti
+
+section
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
@@ -458,5 +454,36 @@ theorem exists_preservesCoorientation_not_isStrictContactomorphism :
     ?_⟩
   rw [isStrictContactomorphism_innerProductContactForm_iff_of_coe_eq he]
   norm_num
+
+end
+
+/-- **Reeb straightening in a strict Darboux chart.** If a `C^n` (`2 ≤ n`) partial diffeomorphism
+`chart` from `M` into `V × V × ℝ` pulls the standard contact form `dz - ⟪p, dq⟫` back to `α` on
+`chart.source`, then at every `x ∈ chart.source` the differential of `chart` sends
+`α.reebVectorField x` to `(0, 0, 1)`. Neither finite-dimensionality nor global contactness of `α`
+is needed. -/
+theorem SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq
+    {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] {α : SmoothForm I M ℝ 1} {n : WithTop ℕ∞}
+    {chart : PartialDiffeomorph I 𝓘(ℝ, V × V × ℝ) M (V × V × ℝ) n} (hn : 2 ≤ n)
+    (hchart : ∀ x ∈ chart.source, ∀ v : TangentSpace I x,
+      (innerProductContactForm V).1 (chart x) ![mvfderiv I chart x v] = α.1 x ![v])
+    {x : M} (hx : x ∈ chart.source) :
+    mvfderiv I chart x (α.reebVectorField x) = (0, 0, 1) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hc : IsContactFormAt (innerProductContactForm V).1 (chart x) :=
+    SmoothForm.isContactForm_iff_forall_isContactFormAt.1
+      (isContactForm_innerProductContactForm V) (chart x)
+  have hpull : ∀ᶠ y in 𝓝 x, ∀ v : TangentSpace I y,
+      (innerProductContactForm V).1 (chart y) ![mfderiv I 𝓘(ℝ, V × V × ℝ) chart y v] =
+        α.1 y ![v] := by
+    filter_upwards [chart.open_source.mem_nhds hx] with y hy v
+    simpa only [mvfderiv_apply_eq_mfderiv_apply] using hchart y hy v
+  rw [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    hc.mfderiv_reebVectorField_eq
+      (((chart.contMDiffOn x hx).contMDiffAt (chart.open_source.mem_nhds hx)).of_le hn)
+      (chart.isInvertible_mfderiv hn0 hx).bijective hpull,
+    fromTangentSpace_reebVectorField_innerProductContactForm]
 
 end TauCeti

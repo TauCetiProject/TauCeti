@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Contact.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Topology.Algebra.Module.BilinearForm
-import TauCeti.Topology.Algebra.Module.Contact
 
 /-!
 # The continuous symplectization form of a covector and a two-form
@@ -22,10 +21,7 @@ if the symplectization form of `α` and `dα` at `x` is invertible
 (`TauCeti.isInvertible_symplectizationFormCLM_iff`,
 `TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`), by
 `TauCeti.isContactFormAt_modelSpace_iff_isContact` and
-`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. Since contactness of a continuous
-covector/bilinear-form family is open (`TauCeti.isOpen_setOf_isContact`), a one-form of class `C¹`
-at `x` that is a contact form at `x` remains a contact form on a neighbourhood of `x`
-(`TauCeti.IsContactFormAt.eventually`).
+`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`.
 
 This is the linear algebra of the contact Moser method: pairing a conformal factor and a vector
 field with `𝕜 × V` turns the contact Moser equations into a Moser contraction equation for the
@@ -39,8 +35,6 @@ symplectization form.
 * `TauCeti.isInvertible_symplectizationFormCLM_iff`,
   `TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`: invertibility characterization of
   contactness at a point.
-* `TauCeti.IsContactFormAt.eventually`: openness of the pointwise contact condition for `C¹`
-  one-forms on a finite-dimensional space.
 
 ## References
 
@@ -50,8 +44,7 @@ symplectization form.
 
 public section
 
-open Filter
-open scoped Manifold Topology
+open scoped Manifold
 
 namespace ContinuousAlternatingMap
 
@@ -111,28 +104,5 @@ theorem IsContactFormAt.isInvertible_symplectizationFormCLM
     {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V} (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x) :
     ((α x).symplectizationFormCLM (extDeriv α x)).IsInvertible :=
   isInvertible_symplectizationFormCLM_iff.2 hc
-
-/-- **Openness of the contact condition.** On a finite-dimensional real normed space, a one-form
-that is `C¹` at `x` and is a contact form at `x` remains a contact form on a neighbourhood of
-`x`. -/
-theorem IsContactFormAt.eventually {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V}
-    (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x) (hα : ContDiffAt ℝ 1 α x) :
-    ∀ᶠ y in 𝓝 x, IsContactFormAt (I := 𝓘(ℝ, V)) α y := by
-  simp only [isContactFormAt_modelSpace_iff_isContact] at hc ⊢
-  have hopen : IsOpen {p : (V [⋀^Fin 1]→L[ℝ] ℝ) × (V [⋀^Fin 2]→L[ℝ] ℝ) |
-      Module.Dual.IsContact (ContinuousAlternatingMap.toDual p.1 : V →ₗ[ℝ] ℝ)
-        (ContinuousAlternatingMap.flatL ℝ V ℝ p.2).toLinearMap₁₂} :=
-    isOpen_setOf_isContact
-      (fun v ↦ by
-        simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply]
-        exact (ContinuousAlternatingMap.apply ℝ V ℝ (![v] : Fin 1 → V)).continuous.comp
-          continuous_fst)
-      (fun v w ↦ by
-        simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
-          ContinuousAlternatingMap.flatL_apply_apply]
-        exact (ContinuousAlternatingMap.apply ℝ V ℝ (![v, w] : Fin 2 → V)).continuous.comp
-          continuous_snd)
-  exact (hα.continuousAt.prodMk
-    (contDiffAt_extDeriv hα (r := 0) (by simp)).continuousAt).eventually (hopen.mem_nhds hc)
 
 end TauCeti
