@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
-public import TauCeti.Geometry.Manifold.Immersion.Differential
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 
 /-!
@@ -208,12 +208,9 @@ variable {𝕂 : Type*} [RCLike 𝕂] [NormedSpace 𝕂 E] [NormedSpace 𝕂 F]
 manifold with finite-dimensional model, is a `C^n` smooth embedding for `1 ≤ n`: the bundle
 projection is a smooth left inverse. -/
 theorem isSmoothEmbedding_zeroSection (hn : 1 ≤ n) :
-    Manifold.IsSmoothEmbedding J (J.prod 𝓘(𝕂, F)) n (zeroSection F W) := by
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  exact ⟨(contMDiff_zeroSection 𝕂 W).isImmersion_of_leftInverse hn
-      (fun _ ↦ (contMDiff_proj (n := n) W).mdifferentiableAt hn0) fun _ ↦ rfl,
-    Function.LeftInverse.isEmbedding (f := π F W) (g := zeroSection F W) (fun _ ↦ rfl)
-      (FiberBundle.continuous_proj F W) (contMDiff_zeroSection (IB := J) (n := n) 𝕂 W).continuous⟩
+    Manifold.IsSmoothEmbedding J (J.prod 𝓘(𝕂, F)) n (zeroSection F W) :=
+  (contMDiff_zeroSection 𝕂 W).isSmoothEmbedding_of_leftInverse hn
+    ((contMDiff_proj (n := n) W).of_le hn) fun _ ↦ rfl
 
 end Embedding
 
