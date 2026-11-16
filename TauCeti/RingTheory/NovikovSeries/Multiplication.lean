@@ -404,6 +404,23 @@ theorem single_pow [Semiring R] (g : H) (r : R) (n : ℕ) :
   | zero => simp
   | succ n ih => rw [pow_succ, ih, single_mul_single, succ_nsmul, pow_succ]
 
+/-- **A constant series is a unit exactly when its coefficient is.** The constant series `r e^0`
+is invertible in the Novikov ring exactly when `r` is invertible in the coefficient ring, even
+though the Novikov ring need not be a field or a domain. -/
+@[simp]
+theorem isUnit_single_zero_iff [Semiring R] {r : R} :
+    IsUnit (single 0 r : NovikovSeries R H N) ↔ IsUnit r := by
+  constructor
+  · rintro ⟨u, hu⟩
+    have h₁ := congrArg (coeff · 0) u.mul_inv
+    have h₂ := congrArg (coeff · 0) u.inv_mul
+    simp only [hu, coeff_single_zero_mul, coeff_mul_single_zero, one_def,
+      coeff_single_same] at h₁ h₂
+    exact isUnit_iff_exists.2 ⟨_, h₁, h₂⟩
+  · rintro ⟨u, rfl⟩
+    refine ⟨⟨single 0 u, single 0 ↑u⁻¹, ?_, ?_⟩, rfl⟩ <;>
+      simp only [single_mul_single, add_zero, Units.mul_inv, Units.inv_mul, single_zero_one]
+
 end AddMonoid
 
 section AddCommMonoid

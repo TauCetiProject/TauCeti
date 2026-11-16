@@ -285,6 +285,24 @@ theorem coordinates_symm_apply (r : ∀ i, P i) (b : ι → NovikovSeries R H N)
     (i : ι) (p : P i) :
     ((coordinates hF r).symm b).val ⟨i, p⟩ = (b i).coeff (p -ᵥ r i) := (rfl)
 
+/-- In lift coordinates, the point mass `x` at a generator `p` of the orbit `i` is the monomial
+`x e^(p -ᵥ r i)` in the orbit `i`, and zero in every other orbit. -/
+@[simp]
+theorem coordinates_single [DecidableEq (Σ i, P i)] [DecidableEq ι] (r : ∀ i, P i) (i : ι)
+    (p : P i) (x : R) :
+    coordinates hF r (single ⟨i, p⟩ x) = Pi.single i (NovikovSeries.single (p -ᵥ r i) x) := by
+  ext j h
+  rw [coordinates_coeff, single_val]
+  by_cases hji : j = i
+  · subst j
+    rw [Pi.single_eq_same]
+    by_cases hh : h = p -ᵥ r i
+    · rw [hh, vsub_vadd, Pi.single_eq_same, NovikovSeries.coeff_single_same]
+    · rw [NovikovSeries.coeff_single_of_ne hh, Pi.single_eq_of_ne]
+      exact fun e => hh (by rw [← sigma_mk_injective e, vadd_vsub])
+  · rw [Pi.single_eq_of_ne (fun e => hji (congrArg Sigma.fst e)), Pi.single_eq_of_ne hji,
+      NovikovSeries.coeff_zero]
+
 /-- The potential cutoff in an orbit is the period cutoff measured from its chosen lift. -/
 theorem coordinates_coeff_eq_zero_iff (r : ∀ i, P i) (a : NovikovModule R F) (C : ℝ) :
     (∀ i h, N h < F ⟨i, r i⟩ - C → (coordinates hF r a i).coeff h = 0) ↔
