@@ -12,11 +12,14 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 public import TauCeti.RingTheory.GradedAlgebra.Degree.Width
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Algebra.Module.Torsion.Free
+import Mathlib.Algebra.MonoidAlgebra.MapDomain
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.Algebra.MonoidAlgebra.Support
 import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.UniqueProds.TorsionFree
-import TauCeti.Algebra.MonoidAlgebra.MapDomain
+import TauCeti.Algebra.MonoidAlgebra.Units
 
 /-!
 # Relative primality along independent cyclic directions in lattice Laurent rings
@@ -121,6 +124,19 @@ theorem weight_sub_eq_of_dvd_of_support_subset_zmultiples {a : L} {P D : R[L]}
   simp only [w, AddMonoidHom.sub_apply, AddMonoidHom.smul_apply, zsmul_eq_mul, Int.cast_id] at hsub
   exact sub_eq_zero.mp hsub
 
+private theorem repr_sub_smul_eq_of_dvd_of_support_subset_zmultiples {ι : Type*}
+    (B : Module.Basis ι ℤ L) (j : ι) {a : L} {P D : R[L]}
+    (hP : P ≠ 0) (hsupp : (P.coeff.support : Set L) ⊆ AddSubgroup.zmultiples a)
+    (hDP : D ∣ P) {x y : L} (hx : x ∈ D.coeff.support) (hy : y ∈ D.coeff.support) :
+    B.repr (x - y) j • a = B.repr a j • (x - y) := by
+  apply B.repr.injective
+  ext i
+  have hid := weight_sub_eq_of_dvd_of_support_subset_zmultiples hP hsupp hDP
+    (B.coord i).toAddMonoidHom (B.coord j).toAddMonoidHom hx hy
+  simp only [LinearMap.toAddMonoidHom_coe, Module.Basis.coord_apply] at hid
+  simp only [map_zsmul, Finsupp.smul_apply, zsmul_eq_mul, Int.cast_id]
+  linarith
+
 private theorem subsingleton_support_of_dvd_of_linearIndependent_free [Module.Free ℤ L]
     {a b : L} (hab : LinearIndependent ℤ ![a, b]) {P Q D : R[L]}
     (hP : P ≠ 0) (hQ : Q ≠ 0)
@@ -136,25 +152,12 @@ private theorem subsingleton_support_of_dvd_of_linearIndependent_free [Module.Fr
   obtain ⟨j₀, hj₀⟩ := Finsupp.support_nonempty_iff.mpr hne
   set c : ℤ := B.repr (x - y) j₀
   have hc : c ≠ 0 := Finsupp.mem_support_iff.mp hj₀
-  have ha_eq : c • a = B.repr a j₀ • (x - y) := by
-    apply B.repr.injective
-    ext i
-    have hid := weight_sub_eq_of_dvd_of_support_subset_zmultiples hP hPa hDP
-      (B.coord i).toAddMonoidHom (B.coord j₀).toAddMonoidHom hx hy
-    simp only [LinearMap.toAddMonoidHom_coe, Module.Basis.coord_apply] at hid
-    simp only [map_zsmul, Finsupp.smul_apply, zsmul_eq_mul, Int.cast_id, c]
-    linarith
-  have hb_eq : c • b = B.repr b j₀ • (x - y) := by
-    apply B.repr.injective
-    ext i
-    have hid := weight_sub_eq_of_dvd_of_support_subset_zmultiples hQ hQb hDQ
-      (B.coord i).toAddMonoidHom (B.coord j₀).toAddMonoidHom hx hy
-    simp only [LinearMap.toAddMonoidHom_coe, Module.Basis.coord_apply] at hid
-    simp only [map_zsmul, Finsupp.smul_apply, zsmul_eq_mul, Int.cast_id, c]
-    linarith
+  have ha_eq : c • a = B.repr a j₀ • (x - y) :=
+    repr_sub_smul_eq_of_dvd_of_support_subset_zmultiples B j₀ hP hPa hDP hx hy
+  have hb_eq : c • b = B.repr b j₀ • (x - y) :=
+    repr_sub_smul_eq_of_dvd_of_support_subset_zmultiples B j₀ hQ hQb hDQ hx hy
   have hrel : (c * B.repr b j₀) • a + (-(c * B.repr a j₀)) • b = 0 := by
-    rw [mul_comm c, mul_smul, ha_eq, neg_smul, mul_comm c, mul_smul, hb_eq,
-      smul_smul, smul_smul, mul_comm (B.repr b j₀), add_neg_cancel]
+    linear_combination (norm := module) (B.repr b j₀) • ha_eq - (B.repr a j₀) • hb_eq
   have haj₀ : B.repr a j₀ = 0 := by
     have h2 := (LinearIndependent.pair_iff.mp hab _ _ hrel).2
     rcases mul_eq_zero.mp (neg_eq_zero.mp h2) with hc0 | ha0
@@ -164,31 +167,12 @@ private theorem subsingleton_support_of_dvd_of_linearIndependent_free [Module.Fr
   exact hc (LinearIndependent.pair_iff.mp hab c 0 hca).1
 
 omit [NoZeroDivisors R] [HasUniqueDiv L] in
-private theorem exists_mapDomain_subtype {M : Submodule ℤ L} {f : R[L]}
-    (hf : (f.coeff.support : Set L) ⊆ M) :
-    ∃ f₀ : R[M], mapDomainRingHom R M.subtype.toAddMonoidHom f₀ = f ∧
-      ∀ m : M, f₀.coeff m = f.coeff m.1 := by
-  obtain ⟨f₀, hf₀⟩ := (mem_range_mapDomain_iff (f := (Subtype.val : M → L))
-    Subtype.val_injective f).mpr fun x hx ↦ ⟨⟨x, hf hx⟩, rfl⟩
-  refine ⟨f₀, ?_, fun m ↦ ?_⟩
-  · rwa [mapDomainRingHom_apply]
-  · rw [← hf₀, coeff_mapDomain]
-    exact (Finsupp.mapDomain_apply_of_injective Subtype.val_injective f₀.coeff m).symm
-
-omit [NoZeroDivisors R] [HasUniqueDiv L] in
-private theorem mapDomainRingHom_subtype_injective (M : Submodule ℤ L) :
-    Function.Injective (mapDomainRingHom R M.subtype.toAddMonoidHom) := fun _ _ h ↦ by
-  rw [← coeff_inj]
-  exact Finsupp.mapDomain_injective Subtype.val_injective (congrArg coeff h)
-
-omit [NoZeroDivisors R] [HasUniqueDiv L] in
-private theorem support_subset_zmultiples_of_coeff {M : Submodule ℤ L} {a₀ : M}
-    {P₀ : R[M]} {P : R[L]} (hcoeff : ∀ m : M, P₀.coeff m = P.coeff m.1)
-    (hPa : (P.coeff.support : Set L) ⊆ AddSubgroup.zmultiples a₀.1) :
-    (P₀.coeff.support : Set M) ⊆ AddSubgroup.zmultiples a₀ := fun x hx ↦ by
+private theorem support_subset_zmultiples_comapDomain {M : Submodule ℤ L} {a₀ : M}
+    {P : R[L]} (hPa : (P.coeff.support : Set L) ⊆ AddSubgroup.zmultiples a₀.1) :
+    ((comapDomain (Subtype.val : M → L) Subtype.val_injective P).coeff.support : Set M) ⊆
+      AddSubgroup.zmultiples a₀ := fun x hx ↦ by
   have hxP : x.1 ∈ P.coeff.support := by
-    rw [Finsupp.mem_support_iff, ← hcoeff x]
-    exact Finsupp.mem_support_iff.mp hx
+    simpa [Finsupp.mem_support_iff] using hx
   obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.mp (hPa hxP)
   exact AddSubgroup.mem_zmultiples_iff.mpr ⟨n, Subtype.ext hn⟩
 
@@ -213,30 +197,47 @@ theorem subsingleton_support_of_dvd_of_linearIndependent {a b : L}
   have hsub (T : Finset L) (hT : T ⊆ S) : (T : Set L) ⊆ M :=
     (Finset.coe_subset.mpr hT).trans Submodule.subset_span
   have hDM : (D.coeff.support : Set L) ⊆ M := hsub D.coeff.support (by grind)
-  obtain ⟨P₀, hP₀_map, hP₀_coeff⟩ := exists_mapDomain_subtype (hsub P.coeff.support (by grind))
-  obtain ⟨Q₀, hQ₀_map, hQ₀_coeff⟩ := exists_mapDomain_subtype (hsub Q.coeff.support (by grind))
-  obtain ⟨D₀, hD₀_map, hD₀_coeff⟩ := exists_mapDomain_subtype hDM
-  obtain ⟨U₀, hU₀_map, -⟩ := exists_mapDomain_subtype (hsub U.coeff.support (by grind))
-  obtain ⟨V₀, hV₀_map, -⟩ := exists_mapDomain_subtype (hsub V.coeff.support (by grind))
+  have hmap_comap {f : R[L]} (hf : (f.coeff.support : Set L) ⊆ M) :
+      mapDomain M.subtype.toAddMonoidHom
+        (comapDomain (Subtype.val : M → L) Subtype.val_injective f) = f :=
+    mapDomain_comapDomain (fun x hx ↦ ⟨⟨x, hf hx⟩, rfl⟩) Subtype.val_injective
+  let P₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective P
+  let Q₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective Q
+  let D₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective D
+  let U₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective U
+  let V₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective V
+  have hP₀_map : mapDomain M.subtype.toAddMonoidHom P₀ = P :=
+    hmap_comap (hsub P.coeff.support (by grind))
+  have hQ₀_map : mapDomain M.subtype.toAddMonoidHom Q₀ = Q :=
+    hmap_comap (hsub Q.coeff.support (by grind))
+  have hD₀_map : mapDomain M.subtype.toAddMonoidHom D₀ = D := hmap_comap hDM
+  have hU₀_map : mapDomain M.subtype.toAddMonoidHom U₀ = U :=
+    hmap_comap (hsub U.coeff.support (by grind))
+  have hV₀_map : mapDomain M.subtype.toAddMonoidHom V₀ = V :=
+    hmap_comap (hsub V.coeff.support (by grind))
   let a₀ : M := ⟨a, Submodule.subset_span (by simp [S])⟩
   let b₀ : M := ⟨b, Submodule.subset_span (by simp [S])⟩
   have hab₀ : LinearIndependent ℤ ![a₀, b₀] := by
     rw [LinearIndependent.pair_iff] at hab ⊢
     exact fun s t hst ↦ hab s t (by simpa [a₀, b₀] using congrArg Subtype.val hst)
-  have hP₀ : P₀ ≠ 0 := by rintro rfl; exact hP (by simpa using hP₀_map.symm)
-  have hQ₀ : Q₀ ≠ 0 := by rintro rfl; exact hQ (by simpa using hQ₀_map.symm)
-  have hDP₀ : D₀ ∣ P₀ := ⟨U₀, mapDomainRingHom_subtype_injective M
-    (by rw [map_mul, hD₀_map, hU₀_map, hP₀_map, hPU])⟩
-  have hDQ₀ : D₀ ∣ Q₀ := ⟨V₀, mapDomainRingHom_subtype_injective M
-    (by rw [map_mul, hD₀_map, hV₀_map, hQ₀_map, hQV])⟩
+  have hP₀ : P₀ ≠ 0 := fun h0 ↦ hP (by simpa [h0] using hP₀_map.symm)
+  have hQ₀ : Q₀ ≠ 0 := fun h0 ↦ hQ (by simpa [h0] using hQ₀_map.symm)
+  have hDP₀ : D₀ ∣ P₀ := ⟨U₀, mapDomain_injective Subtype.val_injective
+    (by simpa only [LinearMap.toAddMonoidHom_coe, Submodule.coe_subtype] using
+      (hP₀_map.trans hPU).trans ((mapDomain_mul M.subtype.toAddMonoidHom D₀ U₀).trans
+        (congrArg₂ (· * ·) hD₀_map hU₀_map)).symm)⟩
+  have hDQ₀ : D₀ ∣ Q₀ := ⟨V₀, mapDomain_injective Subtype.val_injective
+    (by simpa only [LinearMap.toAddMonoidHom_coe, Submodule.coe_subtype] using
+      (hQ₀_map.trans hQV).trans ((mapDomain_mul M.subtype.toAddMonoidHom D₀ V₀).trans
+        (congrArg₂ (· * ·) hD₀_map hV₀_map)).symm)⟩
   have hsub₀ := subsingleton_support_of_dvd_of_linearIndependent_free hab₀ hP₀ hQ₀
-    (support_subset_zmultiples_of_coeff hP₀_coeff hPa)
-    (support_subset_zmultiples_of_coeff hQ₀_coeff hQb) hDP₀ hDQ₀
+    (support_subset_zmultiples_comapDomain hPa)
+    (support_subset_zmultiples_comapDomain hQb) hDP₀ hDQ₀
   intro x hx y hy
   have hx₀ : (⟨x, hDM hx⟩ : M) ∈ (D₀.coeff.support : Set M) := by
-    simpa [Finsupp.mem_support_iff, hD₀_coeff] using hx
+    simpa [D₀, Finsupp.mem_support_iff] using hx
   have hy₀ : (⟨y, hDM hy⟩ : M) ∈ (D₀.coeff.support : Set M) := by
-    simpa [Finsupp.mem_support_iff, hD₀_coeff] using hy
+    simpa [D₀, Finsupp.mem_support_iff] using hy
   exact congrArg Subtype.val (hsub₀ hx₀ hy₀)
 
 /-- **Relative primality along independent cyclic directions.** Let `P, Q : R[L]` be nonzero with
@@ -257,7 +258,8 @@ theorem isRelPrime_of_support_subset_zmultiples {a b : L}
     rw [zero_mul] at hPU
     exact hP hPU
   obtain ⟨x₀, hx₀⟩ := Finsupp.support_nonempty_iff.mpr (mt coeff_eq_zero.mp hD0)
-  have hD_eq : D = single x₀ (D.coeff x₀) := by
+  set r : R := D.coeff x₀
+  have hD_eq : D = single x₀ r := by
     ext y
     classical
     rw [coeff_single, Finsupp.single_apply]
@@ -267,15 +269,13 @@ theorem isRelPrime_of_support_subset_zmultiples {a b : L}
     · by_contra hy0
       exact hxy (hsub (Finsupp.mem_support_iff.mpr hy0) hx₀).symm
   obtain ⟨m, hm⟩ := hunit
-  have hcoeff : P.coeff m = D.coeff x₀ * U.coeff (-x₀ + m) := by
-    rw [hPU]
-    nth_rw 1 [hD_eq]
+  have hcoeff : P.coeff m = r * U.coeff (-x₀ + m) := by
+    rw [hPU, hD_eq]
     exact coeff_single_mul_eq_mul_coeff (-x₀ + m) (fun y _ ↦ eq_neg_add_iff_add_eq.symm)
-  have huD : IsUnit (D.coeff x₀) := isUnit_of_dvd_unit ⟨U.coeff (-x₀ + m), hcoeff⟩ hm
-  obtain ⟨u, hu⟩ := huD
-  rw [hD_eq, ← hu]
-  exact isUnit_iff_exists.mpr ⟨single (-x₀) ((u⁻¹ : Rˣ) : R),
-    by simp [single_mul_single, one_def], by simp [single_mul_single, one_def]⟩
+  have huD : IsUnit r := isUnit_of_dvd_unit ⟨U.coeff (-x₀ + m), hcoeff⟩ hm
+  have : Nontrivial R := ⟨⟨r, 0, Finsupp.mem_support_iff.mp hx₀⟩⟩
+  rw [hD_eq]
+  exact (isUnit_single_iff x₀ r).mpr ⟨AddGroup.isAddUnit x₀, huD⟩
 
 omit [NoZeroDivisors R] in
 private theorem prod_one_add_single_support_and_coeff_zero {ι : Type*} (s : Finset ι)

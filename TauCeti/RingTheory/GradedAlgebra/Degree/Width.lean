@@ -295,7 +295,7 @@ theorem trailingPart_of_mem {x : A} {i : ℤ} (hx : x ∈ 𝒜 i) : trailingPart
   · rw [trailingPart_def, minDegree_of_mem 𝒜 hx hx0, decompose_of_mem_same 𝒜 hx]
 
 /-- Any homogeneous element has width zero. -/
-theorem width_of_mem {x : A} {i : ℤ} (hx : x ∈ 𝒜 i) : width 𝒜 x = 0 := by
+theorem width_eq_zero_of_mem {x : A} {i : ℤ} (hx : x ∈ 𝒜 i) : width 𝒜 x = 0 := by
   rcases eq_or_ne x 0 with rfl | hx0
   · simp
   · rw [width_def, maxDegree_of_mem 𝒜 hx hx0, minDegree_of_mem 𝒜 hx hx0, sub_self]
@@ -304,13 +304,13 @@ theorem width_of_mem {x : A} {i : ℤ} (hx : x ∈ 𝒜 i) : width 𝒜 x = 0 :=
 theorem mem_grade_maxDegree_of_width_eq_zero {x : A} (h : width 𝒜 x = 0) :
     x ∈ 𝒜 (maxDegree 𝒜 x) := by
   have hmin : minDegree 𝒜 x = maxDegree 𝒜 x := (sub_eq_zero.mp h).symm
-  set y := decompose 𝒜 x (maxDegree 𝒜 x)
+  set y := decompose 𝒜 x (maxDegree 𝒜 x) with hy
   have hdec : decompose 𝒜 x = DirectSum.of (fun i ↦ 𝒜 i) (maxDegree 𝒜 x) y := by
     ext i : 1
     rcases lt_trichotomy i (maxDegree 𝒜 x) with hlt | rfl | hgt
     · rw [decompose_eq_zero_of_lt_minDegree 𝒜 (hmin.symm ▸ hlt),
         DirectSum.of_eq_of_ne _ _ _ hlt.ne]
-    · simp only [DirectSum.of_eq_same]; rfl
+    · rw [DirectSum.of_eq_same, ← hy]
     · rw [decompose_eq_zero_of_maxDegree_lt 𝒜 hgt, DirectSum.of_eq_of_ne _ _ _ hgt.ne']
   have hx : x = (y : A) := by
     calc x = (decompose 𝒜).symm (decompose 𝒜 x) := ((decompose 𝒜).symm_apply_apply x).symm
@@ -323,7 +323,7 @@ homogeneous. -/
 @[simp]
 theorem width_eq_zero_iff {x : A} : width 𝒜 x = 0 ↔ SetLike.IsHomogeneousElem 𝒜 x :=
   ⟨fun h ↦ ⟨maxDegree 𝒜 x, mem_grade_maxDegree_of_width_eq_zero 𝒜 h⟩,
-    fun ⟨_, hi⟩ ↦ width_of_mem 𝒜 hi⟩
+    fun ⟨_, hi⟩ ↦ width_eq_zero_of_mem 𝒜 hi⟩
 
 /-- An element equals its greatest homogeneous part if and only if it is homogeneous. -/
 theorem leadingPart_eq_self_iff {x : A} :
@@ -338,8 +338,12 @@ theorem trailingPart_eq_self_iff {x : A} :
     fun ⟨_, hi⟩ ↦ trailingPart_of_mem 𝒜 hi⟩
 
 /-- Ultrametric upper bound for `maxDegree` on nonzero sums. -/
-theorem maxDegree_add_le {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x + y ≠ 0) :
+theorem maxDegree_add_le {x y : A} (hxy : x + y ≠ 0) :
     maxDegree 𝒜 (x + y) ≤ max (maxDegree 𝒜 x) (maxDegree 𝒜 y) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
   have hle : (decomposeLaurent 𝒜 (x + y)).supDegree posDeg ≤
       (decomposeLaurent 𝒜 x).supDegree posDeg ⊔ (decomposeLaurent 𝒜 y).supDegree posDeg := by
     rw [map_add]
@@ -348,8 +352,12 @@ theorem maxDegree_add_le {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x + y �
     posDeg, ← WithBot.coe_max, WithBot.coe_le_coe] at hle
 
 /-- Ultrametric lower bound for `minDegree` on nonzero sums. -/
-theorem le_minDegree_add {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x + y ≠ 0) :
+theorem le_minDegree_add {x y : A} (hxy : x + y ≠ 0) :
     min (minDegree 𝒜 x) (minDegree 𝒜 y) ≤ minDegree 𝒜 (x + y) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
   have hle : (decomposeLaurent 𝒜 (x + y)).supDegree negDeg ≤
       (decomposeLaurent 𝒜 x).supDegree negDeg ⊔ (decomposeLaurent 𝒜 y).supDegree negDeg := by
     rw [map_add]
@@ -359,8 +367,10 @@ theorem le_minDegree_add {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x + y �
   omega
 
 /-- Strict inequality of greatest degrees determines `maxDegree` of a sum. -/
-theorem maxDegree_add_eq_left {x y : A} (hx : x ≠ 0) (hy : y ≠ 0)
+theorem maxDegree_add_eq_left {x y : A} (hx : x ≠ 0)
     (h : maxDegree 𝒜 y < maxDegree 𝒜 x) : maxDegree 𝒜 (x + y) = maxDegree 𝒜 x := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [add_zero]
   have hlt : (decomposeLaurent 𝒜 y).supDegree posDeg <
       (decomposeLaurent 𝒜 x).supDegree posDeg := by
     rwa [supDegree_posDeg_eq 𝒜 hy, supDegree_posDeg_eq 𝒜 hx, posDeg, WithBot.coe_lt_coe]
@@ -371,13 +381,15 @@ theorem maxDegree_add_eq_left {x y : A} (hx : x ≠ 0) (hy : y ≠ 0)
   rw [maxDegree, maxDegree, heq]
 
 /-- Strict inequality of greatest degrees determines `maxDegree` of a sum. -/
-theorem maxDegree_add_eq_right {x y : A} (hx : x ≠ 0) (hy : y ≠ 0)
+theorem maxDegree_add_eq_right {x y : A} (hy : y ≠ 0)
     (h : maxDegree 𝒜 x < maxDegree 𝒜 y) : maxDegree 𝒜 (x + y) = maxDegree 𝒜 y := by
-  rw [add_comm, maxDegree_add_eq_left 𝒜 hy hx h]
+  rw [add_comm, maxDegree_add_eq_left 𝒜 hy h]
 
 /-- Strict inequality of least degrees determines `minDegree` of a sum. -/
-theorem minDegree_add_eq_left {x y : A} (hx : x ≠ 0) (hy : y ≠ 0)
+theorem minDegree_add_eq_left {x y : A} (hx : x ≠ 0)
     (h : minDegree 𝒜 x < minDegree 𝒜 y) : minDegree 𝒜 (x + y) = minDegree 𝒜 x := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [add_zero]
   have hlt : (decomposeLaurent 𝒜 y).supDegree negDeg <
       (decomposeLaurent 𝒜 x).supDegree negDeg := by
     rw [supDegree_negDeg_eq 𝒜 hy, supDegree_negDeg_eq 𝒜 hx, negDeg, WithBot.coe_lt_coe]
@@ -389,9 +401,9 @@ theorem minDegree_add_eq_left {x y : A} (hx : x ≠ 0) (hy : y ≠ 0)
   rw [minDegree, minDegree, heq]
 
 /-- Strict inequality of least degrees determines `minDegree` of a sum. -/
-theorem minDegree_add_eq_right {x y : A} (hx : x ≠ 0) (hy : y ≠ 0)
+theorem minDegree_add_eq_right {x y : A} (hy : y ≠ 0)
     (h : minDegree 𝒜 y < minDegree 𝒜 x) : minDegree 𝒜 (x + y) = minDegree 𝒜 y := by
-  rw [add_comm, minDegree_add_eq_left 𝒜 hy hx h]
+  rw [add_comm, minDegree_add_eq_left 𝒜 hy h]
 
 end Decomposition
 
@@ -486,8 +498,10 @@ theorem coe_decompose_mul_minDegree_add (x y : A) :
     coeff_decomposeLaurent, coeff_decomposeLaurent, ← trailingPart_def, ← trailingPart_def]
 
 /-- Subadditivity of `maxDegree` on nonzero products in any `ℤ`-graded ring. -/
-theorem maxDegree_mul_le {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x * y ≠ 0) :
+theorem maxDegree_mul_le {x y : A} (hxy : x * y ≠ 0) :
     maxDegree 𝒜 (x * y) ≤ maxDegree 𝒜 x + maxDegree 𝒜 y := by
+  have hx : x ≠ 0 := left_ne_zero_of_mul hxy
+  have hy : y ≠ 0 := right_ne_zero_of_mul hxy
   have hle : (decomposeLaurent 𝒜 (x * y)).supDegree posDeg ≤
       (decomposeLaurent 𝒜 x).supDegree posDeg + (decomposeLaurent 𝒜 y).supDegree posDeg := by
     rw [decomposeLaurent_mul 𝒜 𝒜]
@@ -496,8 +510,10 @@ theorem maxDegree_mul_le {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x * y �
     posDeg, ← WithBot.coe_add, WithBot.coe_le_coe] at hle
 
 /-- Superadditivity of `minDegree` on nonzero products in any `ℤ`-graded ring. -/
-theorem le_minDegree_mul {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x * y ≠ 0) :
+theorem le_minDegree_mul {x y : A} (hxy : x * y ≠ 0) :
     minDegree 𝒜 x + minDegree 𝒜 y ≤ minDegree 𝒜 (x * y) := by
+  have hx : x ≠ 0 := left_ne_zero_of_mul hxy
+  have hy : y ≠ 0 := right_ne_zero_of_mul hxy
   have hle : (decomposeLaurent 𝒜 (x * y)).supDegree negDeg ≤
       (decomposeLaurent 𝒜 x).supDegree negDeg + (decomposeLaurent 𝒜 y).supDegree negDeg := by
     rw [decomposeLaurent_mul 𝒜 𝒜]
@@ -507,10 +523,10 @@ theorem le_minDegree_mul {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x * y �
   omega
 
 /-- Subadditivity of `width` on nonzero products in any `ℤ`-graded ring. -/
-theorem width_mul_le {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x * y ≠ 0) :
+theorem width_mul_le {x y : A} (hxy : x * y ≠ 0) :
     width 𝒜 (x * y) ≤ width 𝒜 x + width 𝒜 y := by
-  have hmax := maxDegree_mul_le 𝒜 hx hy hxy
-  have hmin := le_minDegree_mul 𝒜 hx hy hxy
+  have hmax := maxDegree_mul_le 𝒜 hxy
+  have hmin := le_minDegree_mul 𝒜 hxy
   rw [width_def, width_def, width_def]
   omega
 
@@ -525,7 +541,7 @@ variable {A σ : Type*} [Semiring A] [NoZeroDivisors A] [SetLike σ A] [AddSubmo
 theorem maxDegree_mul {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) :
     maxDegree 𝒜 (x * y) = maxDegree 𝒜 x + maxDegree 𝒜 y := by
   have hxy : x * y ≠ 0 := mul_ne_zero hx hy
-  refine le_antisymm (maxDegree_mul_le 𝒜 hx hy hxy) (le_maxDegree_of_decompose_ne_zero 𝒜 ?_)
+  refine le_antisymm (maxDegree_mul_le 𝒜 hxy) (le_maxDegree_of_decompose_ne_zero 𝒜 ?_)
   rw [coe_decompose_mul_maxDegree_add]
   exact mul_ne_zero ((leadingPart_ne_zero 𝒜).mpr hx) ((leadingPart_ne_zero 𝒜).mpr hy)
 
@@ -533,7 +549,7 @@ theorem maxDegree_mul {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) :
 theorem minDegree_mul {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) :
     minDegree 𝒜 (x * y) = minDegree 𝒜 x + minDegree 𝒜 y := by
   have hxy : x * y ≠ 0 := mul_ne_zero hx hy
-  refine le_antisymm (minDegree_le_of_decompose_ne_zero 𝒜 ?_) (le_minDegree_mul 𝒜 hx hy hxy)
+  refine le_antisymm (minDegree_le_of_decompose_ne_zero 𝒜 ?_) (le_minDegree_mul 𝒜 hxy)
   rw [coe_decompose_mul_minDegree_add]
   exact mul_ne_zero ((trailingPart_ne_zero 𝒜).mpr hx) ((trailingPart_ne_zero 𝒜).mpr hy)
 

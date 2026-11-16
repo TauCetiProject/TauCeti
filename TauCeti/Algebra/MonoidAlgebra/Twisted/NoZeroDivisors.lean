@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
-import Mathlib.LinearAlgebra.Basis.Bilinear
 
 /-!
 # Nonzero divisors in twisted monoid algebras
@@ -24,8 +23,6 @@ has no zero divisors.
 
 ## Main results
 
-* `TauCeti.TwistedMonoidAlgebra.repr_mul`: coordinate formula for products in the canonical basis
-  `TwistedMonoidAlgebra.basis`.
 * `TauCeti.TwistedMonoidAlgebra.repr_mul_apply_mul_of_uniqueMul`: a uniquely represented product of
   support elements carries coordinate `x_{g₀} * y_{h₀} * α g₀ h₀`.
 * `TauCeti.TwistedMonoidAlgebra.instNoZeroDivisors`: `NoZeroDivisors (twistedMonoidAlgebra k G α)`
@@ -41,31 +38,6 @@ open Finsupp
 section Coordinates
 
 variable {k G : Type*} [CommSemiring k] [Monoid G] {α : G → G → kˣ} [IsFactorSet α]
-
-@[simp]
-theorem repr_of (g : G) : (basis k G α).repr (of g) = single g 1 := by
-  rw [← basis_apply, Module.Basis.repr_self]
-
-@[simp]
-theorem repr_one : (basis k G α).repr (1 : twistedMonoidAlgebra k G α) = single 1 1 := by
-  rw [← of_one, repr_of]
-
-/-- Coordinate expansion of a product in `twistedMonoidAlgebra k G α` with respect to
-`TwistedMonoidAlgebra.basis`. -/
-theorem repr_mul (x y : twistedMonoidAlgebra k G α) :
-    (basis k G α).repr (x * y) =
-      ((basis k G α).repr x).sum fun g xg ↦
-        ((basis k G α).repr y).sum fun h yh ↦
-          single (g * h) (xg * yh * (α g h : k)) := by
-  let B : twistedMonoidAlgebra k G α →ₗ[k] twistedMonoidAlgebra k G α →ₗ[k] (G →₀ k) :=
-    (LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ (basis k G α).repr.toLinearMap
-  have hB : B x y =
-      ((basis k G α).repr x).sum fun g xg ↦
-        ((basis k G α).repr y).sum fun h yh ↦ xg • yh • B (basis k G α g) (basis k G α h) :=
-    (LinearMap.sum_repr_mul_repr_mul (b₁' := basis k G α) (b₂' := basis k G α) x y).symm
-  simpa only [B, LinearMap.compr₂_apply, LinearMap.mul_apply', LinearEquiv.coe_coe,
-    basis_apply, of_mul_of, map_smul, repr_of, smul_single, smul_eq_mul, mul_one,
-    ← mul_assoc, mul_right_comm _ _ (α _ _ : k)] using hB
 
 /-- If `(g₀, h₀)` is the unique pair in the supports of `x` and `y` with product `g₀ * h₀`, then
 the `(g₀ * h₀)`-coordinate of `x * y` is `x_{g₀} * y_{h₀} * α g₀ h₀`. -/

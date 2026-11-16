@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
-import TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors
 
 /-!
 # Internal weight grading of twisted monoid algebras
@@ -64,6 +63,7 @@ theorem gradeBy_eq_span_range {M : Type*} (f : G → M) (m : M) :
       Submodule.span k (Set.range fun g : {g : G // f g = m} ↦
         (of g.1 : twistedMonoidAlgebra k G α)) := by
   simp only [gradeBy, Set.image_eq_range]
+  -- `↑{g : G | f g = m}` is definitionally `{g : G // f g = m}`.
   rfl
 
 variable {k G α}
