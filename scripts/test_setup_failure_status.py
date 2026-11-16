@@ -25,6 +25,8 @@ FAKE_GH = r"""import json, os, sys
 args = sys.argv[1:]
 method = args[args.index('--method') + 1]
 path = next(arg for arg in args if arg.startswith('repos/'))
+with open(os.environ['REQUESTS'], 'a') as log:
+    log.write(f'{method} {path}\n')
 if method == 'POST':
     with open(os.environ['POSTS'], 'a') as output:
         output.write(json.dumps({'path': path, 'payload': json.load(sys.stdin)}) + '\n')
@@ -33,7 +35,7 @@ elif path.endswith('/actions/runs/9'):
     response = {'id': 9, 'run_attempt': 1, 'conclusion': None,
                 'run_started_at': '2026-11-16T00:00:00Z'}
 elif path.endswith('/pulls/42'):
-    response = {'head': {'sha': 'a' * 40}, 'base': {'ref': 'main'}}
+    response = {'state': 'open', 'head': {'sha': 'a' * 40}, 'base': {'ref': 'main'}}
 elif '/commits/' in path and '/statuses?' in path:
     response = []
 else:
@@ -66,12 +68,14 @@ class Contract(unittest.TestCase):
 
 class Report(unittest.TestCase):
     def run_report(self, setup_failed, *, batch=False):
-        head, base, tested, tree = 'a' * 40, 'b' * 40, 'c' * 40, 'd' * 40
+        head, base, tree = 'a' * 40, 'b' * 40, 'd' * 40
+        # A batch builds its frozen candidate unchanged, so T is H.
+        mode, tested = ('frozen-candidate', head) if batch else ('pr-integration', 'c' * 40)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'gate').symlink_to(ROOT)
             (root / 'tested-integration.json').write_text(json.dumps(dict(
-                schema=1, mode='pr-integration', head_sha=head, base_sha=base,
+                schema=1, mode=mode, head_sha=head, base_sha=base,
                 tested_sha=tested, tested_tree=tree, pin_resolution='merged')))
             fake = root / 'bin'
             fake.mkdir()
@@ -87,14 +91,16 @@ class Report(unittest.TestCase):
             script = script.replace('CI_STATUS_MAX_WAIT=600', 'CI_STATUS_MAX_WAIT=0')
             env = dict(os.environ, PATH=str(fake) + os.pathsep + os.environ['PATH'],
                        RUNNER_TEMP=str(root), RAW_HEAD=head, CAPTURED_BASE=base,
-                       CANDIDATE_MODE='pr-integration', TESTED_SHA=tested, TESTED_TREE=tree,
-                       POSTS=str(root / 'posts'), GITHUB_OUTPUT=str(root / 'output'),
-                       GITHUB_REPOSITORY='o/r', GITHUB_RUN_ID='9', GITHUB_RUN_ATTEMPT='1',
-                       IS_BATCH='false', SETUP_FAILED=setup_failed)
+                       CANDIDATE_MODE=mode, TESTED_SHA=tested, TESTED_TREE=tree,
+                       POSTS=str(root / 'posts'), REQUESTS=str(root / 'requests'),
+                       GITHUB_OUTPUT=str(root / 'output'), GITHUB_REPOSITORY='o/r',
+                       GITHUB_RUN_ID='9', GITHUB_RUN_ATTEMPT='1',
+                       IS_BATCH='true' if batch else 'false', SETUP_FAILED=setup_failed)
             result = subprocess.run(['bash', '-e', '-c', script], cwd=root, env=env,
                                     capture_output=True, text=True)
-            posts = root / 'posts'
+            posts, requests = root / 'posts', root / 'requests'
             lines = posts.read_text().splitlines() if posts.exists() else []
+            self.requests = requests.read_text().splitlines() if requests.exists() else []
             return result, {p['payload']['context']: p['payload'] for p in map(json.loads, lines)}
 
     def test_pr_setup_failure_posts_pending_build_and_green_scope(self):
@@ -105,12 +111,14 @@ class Report(unittest.TestCase):
         self.assertNotIn('shim', posts['build']['description'])
         self.assertEqual(posts['scope']['state'], 'success')
         self.assertEqual(posts['bump-guard']['state'], 'success')
+        self.assertIn('GET repos/o/r/pulls/42', self.requests)
 
     def test_batch_setup_failure_stays_terminal(self):
         result, posts = self.run_report('elan install', batch=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(posts['build']['state'], 'failure', result.stderr)
         self.assertIn('runner setup failed (elan install)', posts['build']['description'])
+        self.assertFalse([r for r in self.requests if '/pulls/' in r], self.requests)
 
     def test_without_setup_failure_a_skipped_build_is_still_a_failure(self):
         _, posts = self.run_report('')
