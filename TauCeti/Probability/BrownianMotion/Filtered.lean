@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Process.Adapted
 import TauCeti.Probability.Independence.Filtration
@@ -33,9 +34,10 @@ produce a new Brownian motion.
   filtration.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
   `W_t - W_s` has law `N(0, t - s)`.
-* `ProbabilityTheory.IsPreBrownianReal.integral_sq_sub_of_le` and
-  `ProbabilityTheory.IsPreBrownianReal.integral_pow_four_sub_of_le`: second and fourth moments
-  of increments; the centered square is square integrable with mean zero and second moment
+* `ProbabilityTheory.IsPreBrownianReal.integral_sq_sub_of_le`,
+  `ProbabilityTheory.IsPreBrownianReal.integral_pow_four_sub_of_le`, and
+  `ProbabilityTheory.IsPreBrownianReal.integral_pow_two_mul_sub`: second, fourth, and general even
+  moments of increments; the centered square is square integrable with mean zero and second moment
   twice the squared interval length.
 * `ProbabilityTheory.IsPreBrownianReal.integral_sq_sub_sub_eq_zero`: the centered square
   of an increment has mean zero.
@@ -50,7 +52,7 @@ produce a new Brownian motion.
 public section
 
 open MeasureTheory ProbabilityTheory
-open scoped NNReal ENNReal
+open scoped Nat NNReal ENNReal
 
 namespace TauCeti.Probability
 
@@ -185,6 +187,15 @@ theorem integral_pow_four_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0}
       integral_sub_pow_four_gaussianReal 0 (t - s)
   simpa only [Function.comp_apply, Pi.sub_apply] using
     ((hB.hasLaw_sub_of_le hst).integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)).trans hm
+
+/-- Every even moment `(B s - B t) ^ (2 m)` of a pre-Brownian increment equals
+`(2 m - 1)‼ * dist s t ^ m`, regardless of the order of `s` and `t`. -/
+theorem integral_pow_two_mul_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) (m : ℕ) :
+    ∫ ω, (B s ω - B t ω) ^ (2 * m) ∂P = (2 * m - 1 : ℕ)‼ * dist s t ^ m := by
+  have h := (hB.hasLaw_sub s t).integral_comp (f := fun x : ℝ ↦ x ^ (2 * m)) (by fun_prop)
+  have hm := TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal 0 (nndist s t) m
+  simp only [sub_zero, coe_nndist] at hm
+  simpa only [Function.comp_apply, Pi.sub_apply, mul_comm] using h.trans hm
 
 /-- The square of every Brownian increment is square integrable, in either time order. -/
 theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
