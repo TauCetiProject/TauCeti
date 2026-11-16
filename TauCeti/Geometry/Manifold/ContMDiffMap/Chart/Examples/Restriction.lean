@@ -92,9 +92,9 @@ theorem not_continuous_restrict_Ioo_manifoldStrongWhitney {n : ℕ∞} :
   have hψ : ψ (1 / (j + 2)) = 1 := ψ.one_of_mem_closedBall <| by
     rw [Metric.mem_closedBall, dist_zero_right, Real.norm_of_nonneg (by positivity)]
     exact (one_div_add_two_mem_Ioo j).2.le
-  have h := StrongCkControl.mem_ball_ofPoints.mp hδ j
-  rw [coe_zero, Pi.zero_apply, sub_zero, restrict_apply, coe_smul, Pi.smul_apply,
-    smul_eq_mul] at h
+  have h : ‖(δ • u).restrict U₀ (point j)‖ < 1 / (j + 2) := by
+    simpa using StrongCkControl.mem_ball_ofPoints.mp hδ j
+  rw [restrict_apply, coe_smul, Pi.smul_apply, smul_eq_mul] at h
   rw [point, coeFn_mk, hψ, mul_one, Real.norm_of_nonneg hδpos.le] at h
   linarith
 

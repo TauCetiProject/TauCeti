@@ -269,13 +269,15 @@ theorem mem_ball_ofPoints {ι : Type u} {x : ι → M} {hx : LocallyFinite fun i
     {ε : ι → ℝ} {hε : ∀ i, 0 < ε i} {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
     g ∈ (ofPoints (I := I) (n := n) x hx ε hε).ball f ↔ ∀ i, ‖g (x i) - f (x i)‖ < ε i := by
   refine mem_ball.trans <| forall_congr' fun (i : ι) ↦ ?_
+  -- `ofPoints` is not exposed, so its field projections have no `rfl` simp lemmas outside this
+  -- module; unfold them here to the point, its singleton coordinate set, order `0` and `ε i`.
   change chartCkSeminorm (x i) ⟨{⟨_, mem_extChartAt_target (x i)⟩}, isCompact_singleton⟩ 0
     (by simp) (g - f) < ε i ↔ _
   rw [chartCkSeminorm_lt_iff _ _ _ _ _ (hε i)]
   have hval : ‖chartIteratedFDeriv (g - f) (x i) 0 (by simp)
       ⟨_, mem_extChartAt_target (x i)⟩‖ = ‖g (x i) - f (x i)‖ := by
-    rw [chartIteratedFDeriv_self_target_apply, norm_iteratedFDerivWithin_zero, Function.comp_apply,
-      extChartAt_to_inv, coe_sub, Pi.sub_apply]
+    rw [chartIteratedFDeriv_self_target_apply, norm_iteratedFDerivWithin_zero]
+    simp
   refine ⟨fun h ↦ hval ▸ h 0 le_rfl _ rfl, fun h m hm z hz ↦ ?_⟩
   obtain rfl := Nat.le_zero.mp hm
   obtain rfl := mem_singleton_iff.mp hz
@@ -450,8 +452,7 @@ private theorem exists_strongCkControl_forall_const_notMem_ball [SigmaCompactSpa
   refine ⟨.ofPoints (fun j : ULift.{u} ℕ ↦ x j.down) hfin (fun j ↦ 1 / (j.down + 1))
     fun _ ↦ Nat.one_div_pos_of_nat, fun v hv hmem ↦ ?_⟩
   obtain ⟨j, hj⟩ := exists_nat_one_div_lt (norm_pos_iff.mpr hv)
-  have hlt := StrongCkControl.mem_ball_ofPoints.mp hmem ⟨j⟩
-  rw [const_apply, coe_zero, Pi.zero_apply, sub_zero] at hlt
+  have hlt : ‖v‖ < 1 / (j + 1) := by simpa using StrongCkControl.mem_ball_ofPoints.mp hmem ⟨j⟩
   exact hj.not_gt hlt
 
 /-- **On a noncompact manifold the strong Whitney topology is strictly finer than the weak one.**
