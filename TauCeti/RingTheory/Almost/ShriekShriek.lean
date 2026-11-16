@@ -211,6 +211,10 @@ noncomputable def map (f : R →ₐ[V] R') : S.Shriek R →ₙₐ[V] S.Shriek R'
     simp only [tmul_mul_tmul, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
       LinearEquiv.symm_apply_apply, LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, map_mul]
 
+theorem map_apply (f : R →ₐ[V] R') (z : S.Shriek R) :
+    map S f z = equiv S R' (f.toLinearMap.lTensor S.tilde ((equiv S R).symm z)) :=
+  (rfl)
+
 @[simp]
 theorem map_tmul (f : R →ₐ[V] R') (t : S.tilde) (r : R) :
     map S f (equiv S R (t ⊗ₜ r)) = equiv S R' (t ⊗ₜ f r) := by
@@ -262,11 +266,10 @@ multiplication `m~ → V`. Its image is the ideal of relations of `R_!!`
 noncomputable def shriekShriekRel : S.tilde →ₗ[V] Unitization V (S.Shriek R) where
   toFun t := Unitization.inl (S.tildeMul t) - (equiv S R (t ⊗ₜ 1) : Unitization V (S.Shriek R))
   map_add' s t := by
-    rw [map_add, Unitization.inl_add, add_tmul, map_add, Unitization.inr_add]
+    simp only [map_add, add_tmul, Unitization.inl_add, Unitization.inr_add]
     abel
   map_smul' v t := by
-    rw [map_smul, Unitization.inl_smul, ← smul_tmul', map_smul, Unitization.inr_smul,
-      RingHom.id_apply, smul_sub]
+    simp [smul_sub, ← smul_tmul', Unitization.inl_smul, -smul_eq_mul]
 
 theorem shriekShriekRel_apply (t : S.tilde) :
     S.shriekShriekRel R t =
@@ -601,8 +604,9 @@ theorem shriekShriekCounit_comp_shriekShriekMap (f : R →ₐ[V] R') :
 theorem shriekShriekMap_bijective_of_isAlmostIso {f : R →ₐ[V] R'}
     (hf : S.IsAlmostIso f.toLinearMap) : Function.Bijective (S.shriekShriekMap f) := by
   have hb : Function.Bijective (Shriek.map S f) := by
-    have := hf.lTensor_bijective
-    exact (equiv S R').bijective.comp (this.comp (equiv S R).symm.bijective)
+    rw [show ⇑(Shriek.map S f) = equiv S R' ∘ f.toLinearMap.lTensor S.tilde ∘ (equiv S R).symm
+      from funext (Shriek.map_apply S f)]
+    exact (equiv S R').bijective.comp (hf.lTensor_bijective.comp (equiv S R).symm.bijective)
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨x, rfl⟩ := ShriekShriek.mk_surjective S R x
     -- `x = (v, z)` maps to the relation `(t, -t ⊗ 1)` of `R'_!!`, so `z = -t ⊗ 1` already in `R_!`.
