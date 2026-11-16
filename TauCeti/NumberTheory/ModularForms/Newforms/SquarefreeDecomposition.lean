@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Newforms.CoprimeFilter.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.CharacterSpace
 import Mathlib.Data.Nat.Squarefree
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
 # The squarefree decomposition of a form with vanishing coprime coefficients
