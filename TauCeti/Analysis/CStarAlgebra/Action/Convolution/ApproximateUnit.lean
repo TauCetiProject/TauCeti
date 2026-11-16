@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
-import TauCeti.Analysis.Normed.Ring.ApproximateUnit
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Integral.PeakFunction
 import Mathlib.Topology.UniformSpace.HeineCantor
@@ -168,8 +168,10 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
     refine ⟨r, (hiV (subset_tsupport _ fun h0 => hr (by simp [h0]))).2, t, subset_tsupport _ ht,
       rfl⟩
   · -- Both `α r (g (r⁻¹ * s))` and `e * g s` are `δ`-close to `g s`, and `‖e‖ ≤ 1`.
-    refine norm_mul_sub_le_two_mul hien (hunif r (hiV hr) s) ?_
-    simpa [dist_eq_norm, norm_sub_rev] using (hie (g s) (mem_range_self s)).le
+    have h₂ : ‖e * g s - g s‖ ≤ δ := by
+      simpa [dist_eq_norm, norm_sub_rev] using (hie (g s) (mem_range_self s)).le
+    linarith [norm_mul_sub_le_left e (α r (g (r⁻¹ * s))) (g s) (g s),
+      mul_le_mul hien (hunif r (hiV hr) s) (norm_nonneg _) zero_le_one]
 
 /-- **Right approximation.** Let `φ i` be eventually nonnegative real functions of unit integral
 whose supports shrink to the identity, and let `lA` be an increasing approximate unit of `A`.
