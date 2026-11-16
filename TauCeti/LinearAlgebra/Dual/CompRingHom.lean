@@ -8,8 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Defs
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
-import Mathlib.LinearAlgebra.TensorProduct.Basis
-import Mathlib.LinearAlgebra.TensorProduct.Pi
+import TauCeti.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
 # Transporting the coefficients of linear forms
@@ -26,9 +25,11 @@ including for rectangular systems of forms. The determinant of a
 square system is mapped by the homomorphism. These facts allow a system of independent
 algebraic linear forms to be extended to a larger coefficient field and then conjugated.
 
-The construction uses Mathlib's `Module.Basis.constr`; independence is transferred through
-the coefficient equivalences using `linearIndependent_algebraMap_comp_iff` or extension
-of a linearly independent family to a basis followed by `Module.Basis.baseChange`.
+The construction uses Mathlib's `Module.Basis.constr`; independence is transferred to the
+coefficient vectors of the forms and then through Mathlib's
+`linearIndependent_algebraMap_comp_iff` or, for a field source,
+`TauCeti.linearIndependent_algebraMap_comp_iff_of_field`, which adapts Oliver Nash's proof in
+Mathlib's `Mathlib/LinearAlgebra/LinearIndependent/BaseChange.lean`.
 
 ## References
 
@@ -92,17 +93,17 @@ theorem compRingHom_apply_fun_comp (L : Dual R (ι → R)) (f : R →+* S) (x : 
 
 /-- Evaluation commutes with a bundled homomorphism acting on the coordinates. -/
 @[simp]
-theorem compRingHom_coe_apply_comp {F : Type*} [FunLike F R S] [RingHomClass F R S]
+theorem compRingHom_toRingHom_apply_comp {F : Type*} [FunLike F R S] [RingHomClass F R S]
     (L : Dual R (ι → R)) (f : F) (x : ι → R) :
     L.compRingHom (f : R →+* S) (f ∘ x) = f (L x) := by
   simpa only [RingHom.coe_coe] using L.compRingHom_apply_comp (f : R →+* S) x
 
 /-- Evaluation commutes with a bundled homomorphism applied to each coordinate. -/
 @[simp]
-theorem compRingHom_coe_apply_fun_comp {F : Type*} [FunLike F R S] [RingHomClass F R S]
+theorem compRingHom_toRingHom_apply_fun_comp {F : Type*} [FunLike F R S] [RingHomClass F R S]
     (L : Dual R (ι → R)) (f : F) (x : ι → R) :
     L.compRingHom (f : R →+* S) (fun i ↦ f (x i)) = f (L x) :=
-  L.compRingHom_coe_apply_comp f x
+  L.compRingHom_toRingHom_apply_comp f x
 
 /-- Transport along the identity leaves a form unchanged. -/
 @[simp]
@@ -171,23 +172,24 @@ theorem compRingHom_inj_of_injective {L M : Dual R (ι → R)} {f : R →+* S}
 
 end Semiring
 
-section DivisionRing
+section SimpleRing
 
-variable {R S ι : Type*} [DivisionRing R] [Semiring S] [Nontrivial S] [Finite ι]
+variable {R S ι : Type*} [Ring R] [IsSimpleRing R] [Semiring S] [Nontrivial S] [Finite ι]
 
-/-- Coefficient transport from a division ring detects the zero form. -/
+/-- Coefficient transport from a simple ring, such as a division ring, detects the zero form. -/
 @[simp]
 theorem compRingHom_eq_zero_iff {L : Dual R (ι → R)} {f : R →+* S} :
     L.compRingHom f = 0 ↔ L = 0 :=
   compRingHom_eq_zero_iff_of_injective f.injective
 
-/-- Coefficient transport from a division ring detects equality of forms. -/
+/-- Coefficient transport from a simple ring, such as a division ring, detects equality of
+forms. -/
 @[simp]
 theorem compRingHom_inj {L M : Dual R (ι → R)} {f : R →+* S} :
     L.compRingHom f = M.compRingHom f ↔ L = M :=
   compRingHom_inj_of_injective f.injective
 
-end DivisionRing
+end SimpleRing
 
 section Ring
 
@@ -210,7 +212,7 @@ end Ring
 
 section CommSemiring
 
-variable {R S ι : Type*} [CommSemiring R] [CommSemiring S] [Finite ι]
+variable {R S ι κ : Type*} [CommSemiring R] [CommSemiring S] [Finite ι]
 
 /-- Transport applies the coefficient homomorphism to scalars. -/
 @[simp]
@@ -218,6 +220,17 @@ theorem compRingHom_smul (L : Dual R (ι → R)) (f : R →+* S) (a : R) :
     (a • L).compRingHom f = f a • L.compRingHom f := by
   classical
   exact (Pi.basisFun S ι).ext fun i ↦ by simp [smul_eq_mul]
+
+/-- A family of forms on a finite coordinate module is linearly independent exactly when the
+family of their coefficient vectors, the values on the standard basis, is. -/
+theorem linearIndependent_iff_apply_basisFun {L : κ → Dual R (ι → R)} :
+    LinearIndependent R L ↔ LinearIndependent R (fun i j ↦ L i (Pi.basisFun R ι j)) := by
+  let e : Dual R (ι → R) ≃ₗ[R] (ι → R) := ((Pi.basisFun R ι).constr R).symm
+  have he : (fun i j ↦ L i (Pi.basisFun R ι j)) = e ∘ L := by
+    ext
+    simp [e]
+  rw [he]
+  exact (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).symm
 
 end CommSemiring
 
@@ -321,23 +334,12 @@ independence of forms. The system need not be square, nor have finitely many for
 theorem linearIndependent_compRingHom_iff_of_injective [IsDomain S]
     {L : κ → Dual R (ι → R)} {f : R →+* S} (hf : Function.Injective f) :
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
-  classical
-  cases nonempty_fintype ι
   let := f.toAlgebra
-  let : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hf
-  let eR : Dual R (ι → R) ≃ₗ[R] (ι → R) := ((Pi.basisFun R ι).constr R).symm
-  let eS : Dual S (ι → S) ≃ₗ[S] (ι → S) := ((Pi.basisFun S ι).constr S).symm
-  have hcoeff : (fun i ↦ eS ((L i).compRingHom f)) =
-      fun i ↦ algebraMap R S ∘ eR (L i) := by
-    ext i j
-    simp [eR, eS, RingHom.algebraMap_toAlgebra]
-  calc
-    _ ↔ LinearIndependent S (fun i ↦ eS ((L i).compRingHom f)) :=
-      (eS.toLinearMap.linearIndependent_iff_of_injOn eS.injective.injOn).symm
-    _ ↔ LinearIndependent R (fun i ↦ eR (L i)) := by
-      rw [hcoeff]
-      exact linearIndependent_algebraMap_comp_iff
-    _ ↔ _ := eR.toLinearMap.linearIndependent_iff_of_injOn eR.injective.injOn
+  have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hf
+  rw [linearIndependent_iff_apply_basisFun, linearIndependent_iff_apply_basisFun]
+  simp only [compRingHom_basisFun]
+  rw [← f.algebraMap_toAlgebra]
+  exact linearIndependent_algebraMap_comp_iff
 
 end CommRing
 
@@ -349,36 +351,11 @@ variable {R S ι κ : Type*} [Field R] [CommSemiring S] [Nontrivial S] [Finite �
 @[simp]
 theorem linearIndependent_compRingHom_iff {L : κ → Dual R (ι → R)} {f : R →+* S} :
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
-  classical
-  cases nonempty_fintype ι
   let := f.toAlgebra
-  let : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 f.injective
-  let eR : Dual R (ι → R) ≃ₗ[R] (ι → R) := ((Pi.basisFun R ι).constr R).symm
-  let eS : Dual S (ι → S) ≃ₗ[S] (ι → S) := ((Pi.basisFun S ι).constr S).symm
-  have hcoeff : (fun i ↦ eS ((L i).compRingHom f)) =
-      fun i ↦ algebraMap R S ∘ eR (L i) := by
-    ext i j
-    simp [eR, eS, RingHom.algebraMap_toAlgebra]
-  calc
-    _ ↔ LinearIndependent S (fun i ↦ eS ((L i).compRingHom f)) :=
-      (eS.toLinearMap.linearIndependent_iff_of_injOn eS.injective.injOn).symm
-    _ ↔ LinearIndependent R (fun i ↦ eR (L i)) := by
-      rw [hcoeff]
-      constructor
-      · intro h
-        change LinearIndependent S (Pi.algebraMap ι R S ∘ fun i ↦ eR (L i)) at h
-        exact (h.restrict_scalars' R).of_comp
-      · intro h
-        let I : Set (ι → R) := h.linearIndepOn_id.extend (Set.subset_univ _)
-        let b : Module.Basis I R (ι → R) := .extend h.linearIndepOn_id
-        let b' := (b.baseChange S).map (TensorProduct.piScalarRight R S S ι)
-        let v (i : κ) : I := ⟨eR (L i), h.linearIndepOn_id.subset_extend _ (Set.mem_range_self i)⟩
-        have hv : b' ∘ v = fun i ↦ algebraMap R S ∘ eR (L i) := by
-          ext
-          simp [b', b, v, Module.Basis.extend, Algebra.algebraMap_eq_smul_one]
-        rw [← hv]
-        exact b'.linearIndependent.comp v (fun i j hij ↦ h.injective (congrArg Subtype.val hij))
-    _ ↔ _ := eR.toLinearMap.linearIndependent_iff_of_injOn eR.injective.injOn
+  rw [linearIndependent_iff_apply_basisFun, linearIndependent_iff_apply_basisFun]
+  simp only [compRingHom_basisFun]
+  rw [← f.algebraMap_toAlgebra]
+  exact TauCeti.linearIndependent_algebraMap_comp_iff_of_field
 
 end Field
 
