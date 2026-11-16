@@ -129,6 +129,10 @@ theorem cosyzygyZeroIso_inv : hS.cosyzygyZeroIso.inv = cokernel.π (S.map' 0 1) 
 theorem π_cosyzygyZeroIso_hom : cokernel.π (S.map' 0 1) ≫ hS.cosyzygyZeroIso.hom = 𝟙 _ := by
   rw [← hS.cosyzygyZeroIso_inv, Iso.inv_hom_id]
 
+@[reassoc (attr := simp)]
+theorem cosyzygyZeroIso_hom_π : hS.cosyzygyZeroIso.hom ≫ cokernel.π (S.map' 0 1) = 𝟙 _ := by
+  rw [← hS.cosyzygyZeroIso_inv, Iso.hom_inv_id]
+
 /-- The `(i + 1)`-st cosyzygy is the cokernel of the embedding of the `i`-th one. -/
 noncomputable def cosyzygySuccIso (i : ℕ) (hi : i < n := by valid) :
     S.cosyzygy (i + 1) ≅ cokernel (hS.cosyzygyι i) :=
