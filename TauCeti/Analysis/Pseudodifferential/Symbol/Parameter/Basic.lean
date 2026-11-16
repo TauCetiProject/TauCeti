@@ -42,6 +42,9 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
   structure of each class;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
   order `m' + m`;
+* `TauCeti.ParameterSymbol.spatialDeriv`, `TauCeti.ParameterSymbol.frequencyDeriv`: a derivative
+  in a position direction keeps the order `m`, and a derivative in a frequency direction lowers it
+  to `m - 1`;
 * `TauCeti.ParameterSymbol.inverse`: **uniform inverse estimates**. If `a` has order `m` and is
   elliptic with parameter (`TauCeti.ParameterSymbol.IsElliptic`: it is invertible, with
   `‖a⁻¹‖ ≤ C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (-m)`), its pointwise inverse has order `-m`;
@@ -402,6 +405,53 @@ private theorem bounds_continuousLinearMap
     · simpa using (h₁ ξ z hz).trans hC
     · simpa [iteratedFDeriv_const_of_ne] using mul_nonneg (le_max_right C 0) hw
 
+/-- The derivative in a direction `e` that the dilations scale by `t ^ d` lowers the order by `d`:
+`d = 0` for a position direction, `d = 1` for a frequency direction. -/
+private theorem Bounds.fderiv_apply (hΛ : IsOpen Λ) (hf : ContDiffOn ℝ ∞ f (univ ×ˢ Λ))
+    (hb : Bounds Λ m f) {e : (CoordinateSpace n × CoordinateSpace n) × ℂ} {d : ℕ}
+    (he : ∀ t : ℝ, parameterDilation n t e = t ^ d • e) :
+    Bounds Λ (m - d) (fun p => fderiv ℝ f p e) := fun K hK k => by
+  obtain ⟨C, hC, hf'⟩ := hb K hK (k + 1)
+  refine ⟨‖e‖ * C, mul_nonneg (norm_nonneg e) hC, fun x hx ξ z hz => ?_⟩
+  have ht := parameterWeight_pos ξ z
+  have htd : 0 < parameterWeight ξ z ^ d := pow_pos ht d
+  obtain ⟨hU, h0, hgT⟩ := contDiffOn_comp_dilation hΛ hf (p := ((x, ξ), z)) hz
+    (parameterWeight ξ z)
+  -- With `g` the pullback of `f` along the dilation, `fderiv f · e = t⁻ᵈ • fderiv g · e`.
+  let L : ((((CoordinateSpace n × CoordinateSpace n) × ℂ) →L[ℝ] A) →L[ℝ] A) :=
+    (parameterWeight ξ z ^ d)⁻¹ • ContinuousLinearMap.apply ℝ A e
+  have hL : ‖L‖ ≤ (parameterWeight ξ z ^ d)⁻¹ * ‖e‖ := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun φ => ?_
+    simp only [L, smul_apply, ContinuousLinearMap.apply_apply, norm_smul,
+      norm_inv, norm_pow, Real.norm_eq_abs, abs_of_pos ht]
+    rw [mul_assoc, mul_comm ‖e‖]
+    exact mul_le_mul_of_nonneg_left (φ.le_opNorm e) (by positivity)
+  have hev : (fun v => fderiv ℝ f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v) e)
+      =ᶠ[𝓝 0] fun v => L (fderiv ℝ
+        (fun w => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) w)) v) := by
+    filter_upwards [hU.mem_nhds h0] with v hv
+    have hdf : DifferentiableAt ℝ f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v) :=
+      (hf.contDiffAt ((isOpen_univ.prod hΛ).mem_nhds hv)).differentiableAt (by simp)
+    have hg : HasFDerivAt (fun w => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) w))
+        ((fderiv ℝ f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v)).comp
+          (parameterDilation n (parameterWeight ξ z))) v :=
+      hdf.hasFDerivAt.comp v ((parameterDilation n (parameterWeight ξ z)).hasFDerivAt.const_add _)
+    rw [hg.fderiv]
+    simp [L, he, smul_smul, inv_mul_cancel₀ htd.ne']
+  have hd : ContDiffAt ℝ ∞
+      (fderiv ℝ fun w => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) w)) 0 :=
+    (hgT.fderiv_of_isOpen hU (by simp)).contDiffAt (hU.mem_nhds h0)
+  have h₁ := hf' x hx ξ z hz
+  rw [parameterIteratedFDeriv_mk_eq, ← norm_iteratedFDeriv_fderiv] at h₁
+  rw [parameterIteratedFDeriv_mk_eq, (hev.iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds]
+  refine (L.norm_iteratedFDeriv_comp_left hd (by exact_mod_cast le_top)).trans ?_
+  rw [Real.rpow_sub ht, Real.rpow_natCast]
+  calc ‖L‖ * ‖iteratedFDeriv ℝ k
+          (fderiv ℝ fun w => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) w)) 0‖
+      ≤ (parameterWeight ξ z ^ d)⁻¹ * ‖e‖ * (C * parameterWeight ξ z ^ m) :=
+        mul_le_mul hL h₁ (norm_nonneg _) (by positivity)
+    _ = ‖e‖ * C * (parameterWeight ξ z ^ m / parameterWeight ξ z ^ d) := by ring
+
 end Estimates
 
 /-! ### Strongly parameter-dependent symbols -/
@@ -531,6 +581,11 @@ instance : Module ℂ (ParameterSymbol n Λ V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → ParameterSymbol n Λ V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (AddMonoidHom.mk' coefficient coefficient_add) a s
+
 end Module
 
 /-- A parameter-dependent symbol of order `m` has every order `m' ≥ m`, since the weight is at
@@ -571,6 +626,168 @@ def comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) :
 theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
     (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) := (rfl)
+
+/-! ### Derivatives in the position and frequency directions -/
+
+/-- The coefficient is differentiable at every point with spectral parameter in `Λ`. -/
+theorem differentiableAt_coefficient (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    DifferentiableAt ℝ a.coefficient p :=
+  (a.contDiffOn_coefficient.contDiffAt
+    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)).differentiableAt (by simp)
+
+open scoped Classical in
+/-- The derivative of the coefficient in a direction `e` that the dilations scale by `t ^ d`, a
+parameter-dependent symbol of order `m - d`. -/
+private def fderivApply (a : ParameterSymbol n Λ V W m)
+    (e : (CoordinateSpace n × CoordinateSpace n) × ℂ) (d : ℕ)
+    (he : ∀ t : ℝ, parameterDilation n t e = t ^ d • e) : ParameterSymbol n Λ V W (m - d) where
+  coefficient p := if p.2 ∈ Λ then fderiv ℝ a.coefficient p e else 0
+  contDiffOn_coefficient :=
+    ((a.contDiffOn_coefficient.fderiv_of_isOpen (isOpen_univ.prod Λ.isOpen) (by simp)).clm_apply
+      (contDiffOn_const (c := e))).congr fun p hp => by simp [SetLike.mem_coe.1 hp.2]
+  coefficient_of_notMem p hp := by simp [hp]
+  exists_bound := by
+    refine (Bounds.fderiv_apply Λ.isOpen a.contDiffOn_coefficient a.exists_bound he).congr
+      fun p hp => ?_
+    filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp] with q hq
+    have hq' : q.2 ∈ Λ := hq
+    simp [hq']
+
+/-- The derivative `∂_v a` of a parameter-dependent symbol in the position direction `v`. It has
+the same order `m`: the dilations do not scale the position directions. -/
+def spatialDeriv (a : ParameterSymbol n Λ V W m) (v : CoordinateSpace n) :
+    ParameterSymbol n Λ V W m :=
+  inclusion (by simp) (a.fderivApply ((v, 0), 0) 0 fun t => by simp)
+
+/-- The derivative `∂_w a` of a parameter-dependent symbol in the frequency direction `w`. It has
+order `m - 1`: each frequency derivative gains one order. -/
+def frequencyDeriv (a : ParameterSymbol n Λ V W m) (w : CoordinateSpace n) :
+    ParameterSymbol n Λ V W (m - 1) :=
+  inclusion (by simp) (a.fderivApply ((0, w), 0) 1 fun t => by simp)
+
+theorem coefficient_spatialDeriv_eq_fderiv (a : ParameterSymbol n Λ V W m) (v : CoordinateSpace n)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (a.spatialDeriv v).coefficient ((x, ξ), z) = fderiv ℝ a.coefficient ((x, ξ), z) ((v, 0), 0) :=
+  by simp [spatialDeriv, fderivApply, hz]
+
+theorem coefficient_frequencyDeriv_eq_fderiv (a : ParameterSymbol n Λ V W m)
+    (w : CoordinateSpace n) (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (a.frequencyDeriv w).coefficient ((x, ξ), z) =
+      fderiv ℝ a.coefficient ((x, ξ), z) ((0, w), 0) :=
+  by simp [frequencyDeriv, fderivApply, hz]
+
+/-- At a spectral parameter in `Λ`, the derivative of the coefficient along a map `g` into the
+position-frequency space is the derivative of the coefficient in the direction `g'`. -/
+private theorem fderiv_coefficient_comp (a : ParameterSymbol n Λ V W m) {z : ℂ} (hz : z ∈ Λ)
+    {g : CoordinateSpace n → CoordinateSpace n × CoordinateSpace n}
+    {g' : CoordinateSpace n →L[ℝ] CoordinateSpace n × CoordinateSpace n} {y : CoordinateSpace n}
+    (hg : HasFDerivAt g g' y) (v : CoordinateSpace n) :
+    fderiv ℝ (fun u => a.coefficient (g u, z)) y v = fderiv ℝ a.coefficient (g y, z) (g' v, 0) := by
+  have h : HasFDerivAt (fun u => a.coefficient (g u, z))
+      ((fderiv ℝ a.coefficient (g y, z)).comp ((ContinuousLinearMap.inl ℝ _ ℂ).comp g')) y :=
+    (a.differentiableAt_coefficient (p := (g y, z)) hz).hasFDerivAt.comp y
+      ((hasFDerivAt_prodMk_left (𝕜 := ℝ) (g y) z).comp y hg)
+  rw [h.fderiv]
+  simp
+
+/-- The spatial derivative is the partial derivative in the position. -/
+@[simp]
+theorem coefficient_spatialDeriv (a : ParameterSymbol n Λ V W m) (v : CoordinateSpace n)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (a.spatialDeriv v).coefficient ((x, ξ), z) =
+      fderiv ℝ (fun y => a.coefficient ((y, ξ), z)) x v := by
+  rw [coefficient_spatialDeriv_eq_fderiv a v x ξ hz,
+    a.fderiv_coefficient_comp hz (hasFDerivAt_prodMk_left (𝕜 := ℝ) x ξ)]
+  simp
+
+/-- The frequency derivative is the partial derivative in the frequency. -/
+@[simp]
+theorem coefficient_frequencyDeriv (a : ParameterSymbol n Λ V W m) (w : CoordinateSpace n)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (a.frequencyDeriv w).coefficient ((x, ξ), z) =
+      fderiv ℝ (fun η => a.coefficient ((x, η), z)) ξ w := by
+  rw [coefficient_frequencyDeriv_eq_fderiv a w x ξ hz,
+    a.fderiv_coefficient_comp hz (hasFDerivAt_prodMk_right (𝕜 := ℝ) x ξ)]
+  simp
+
+/-! The spatial and frequency derivatives are linear in the symbol and commute with the
+inclusions between orders. -/
+
+@[simp]
+theorem zero_spatialDeriv (v : CoordinateSpace n) :
+    (0 : ParameterSymbol n Λ V W m).spatialDeriv v = 0 :=
+  ext_of_mem fun x ξ z hz => by simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz]
+
+@[simp]
+theorem add_spatialDeriv (a b : ParameterSymbol n Λ V W m) (v : CoordinateSpace n) :
+    (a + b).spatialDeriv v = a.spatialDeriv v + b.spatialDeriv v :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz,
+      fderiv_add (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz)
+        (b.differentiableAt_coefficient (p := ((x, ξ), z)) hz)]
+
+@[simp]
+theorem smul_spatialDeriv (c : ℂ) (a : ParameterSymbol n Λ V W m) (v : CoordinateSpace n) :
+    (c • a).spatialDeriv v = c • a.spatialDeriv v :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz,
+      fderiv_const_smul (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz)]
+
+@[simp]
+theorem neg_spatialDeriv (a : ParameterSymbol n Λ V W m) (v : CoordinateSpace n) :
+    (-a).spatialDeriv v = -a.spatialDeriv v :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz, coefficient_neg, fderiv_neg]
+
+@[simp]
+theorem sub_spatialDeriv (a b : ParameterSymbol n Λ V W m) (v : CoordinateSpace n) :
+    (a - b).spatialDeriv v = a.spatialDeriv v - b.spatialDeriv v := by
+  simp [sub_eq_add_neg]
+
+@[simp]
+theorem spatialDeriv_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m)
+    (v : CoordinateSpace n) : (inclusion h a).spatialDeriv v = inclusion h (a.spatialDeriv v) :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz, coefficient_inclusion]
+
+@[simp]
+theorem zero_frequencyDeriv (w : CoordinateSpace n) :
+    (0 : ParameterSymbol n Λ V W m).frequencyDeriv w = 0 :=
+  ext_of_mem fun x ξ z hz => by simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz]
+
+@[simp]
+theorem add_frequencyDeriv (a b : ParameterSymbol n Λ V W m) (w : CoordinateSpace n) :
+    (a + b).frequencyDeriv w = a.frequencyDeriv w + b.frequencyDeriv w :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz,
+      fderiv_add (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz)
+        (b.differentiableAt_coefficient (p := ((x, ξ), z)) hz)]
+
+@[simp]
+theorem smul_frequencyDeriv (c : ℂ) (a : ParameterSymbol n Λ V W m) (w : CoordinateSpace n) :
+    (c • a).frequencyDeriv w = c • a.frequencyDeriv w :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz,
+      fderiv_const_smul (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz)]
+
+@[simp]
+theorem neg_frequencyDeriv (a : ParameterSymbol n Λ V W m) (w : CoordinateSpace n) :
+    (-a).frequencyDeriv w = -a.frequencyDeriv w :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz, coefficient_neg, fderiv_neg]
+
+@[simp]
+theorem sub_frequencyDeriv (a b : ParameterSymbol n Λ V W m) (w : CoordinateSpace n) :
+    (a - b).frequencyDeriv w = a.frequencyDeriv w - b.frequencyDeriv w := by
+  simp [sub_eq_add_neg]
+
+@[simp]
+theorem frequencyDeriv_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m)
+    (w : CoordinateSpace n) :
+    (inclusion h a).frequencyDeriv w = inclusion (sub_le_sub_right h 1) (a.frequencyDeriv w) :=
+  ext_of_mem fun x ξ z hz => by
+    simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz, coefficient_inclusion]
 
 /-! ### Parameter-ellipticity and the inverse -/
 
@@ -783,6 +1000,12 @@ theorem coefficient_inverse_shiftedLaplacian [CompleteSpace V] {s : ℝ}
       (((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z)⁻¹ • ContinuousLinearMap.id ℂ V := by
   rw [coefficient_inverse, coefficient_shiftedLaplacian s x ξ hz,
     ContinuousLinearMap.inverse_smul, ContinuousLinearMap.inverse_id]
+
+/-- The symbol of `s - Δ - z` does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_shiftedLaplacian (s : ℝ) (v : CoordinateSpace n) :
+    (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).spatialDeriv v = 0 :=
+  ext_of_mem fun x ξ z hz => by simp [coefficient_spatialDeriv _ _ _ _ hz, hz]
 
 end ParameterSymbol
 
