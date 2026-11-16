@@ -19,8 +19,7 @@ through the injective comparison with function germs. The two pullbacks agree wh
 Pullback along a map with a local analytic inverse, such as a chart, is bijective
 (`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
 (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
-(`stalkPullback_comp_extChartAt_bijective`,
-`OpenPartialHomeomorph.holomorphicStalkPullback_comp_bijective`), which identifies a stalk of a
+(`OpenPartialHomeomorph.holomorphicStalkPullback_comp_bijective`), which identifies a stalk of a
 manifold or chart domain with a stalk of its model
 (`OpenPartialHomeomorph.holomorphicStalkEquiv`,
 `OpenPartialHomeomorph.holomorphicStalkEquivModel`).
@@ -276,23 +275,3 @@ theorem holomorphicStalkEquivModel_apply [FiniteDimensional ℂ E] (e : OpenPart
   (rfl)
 
 end OpenPartialHomeomorph
-
-namespace TauCeti.holomorphicStructureSheaf
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
-  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I ω X]
-  {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- Pullback along the extended chart at `x`, followed by a continuous linear equivalence `e` of
-the model onto a complex normed space `V`, is bijective on holomorphic stalks. The equivalence
-lets the model stalk live in `Type` even when the model space `E` does not. -/
-theorem stalkPullback_comp_extChartAt_bijective (x : X) (e : E ≃L[ℂ] V) :
-    Function.Bijective (stalkPullback (J := 𝓘(ℂ, V)) (f := e ∘ extChartAt I x) (a := x)
-      (((chartAt H x).open_source.eventually_mem (mem_chart_source H x)).mono fun _ hy ↦
-        e.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hy))) :=
-  -- `extChartAt I x` is definitionally `(chartAt H x).extend I`.
-  (chartAt H x).holomorphicStalkPullback_comp_bijective
-    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x) e
-
-end TauCeti.holomorphicStructureSheaf
