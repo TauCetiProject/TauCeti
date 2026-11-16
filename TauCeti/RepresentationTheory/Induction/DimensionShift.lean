@@ -8,7 +8,6 @@ module
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
-public import Mathlib.Algebra.Homology.ShortComplex.FunctorEquivalence
 public import TauCeti.RepresentationTheory.Induction.TrivialSubgroup
 
 /-!
