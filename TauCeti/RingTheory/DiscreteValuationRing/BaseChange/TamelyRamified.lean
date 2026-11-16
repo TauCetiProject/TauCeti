@@ -10,9 +10,10 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
-import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Kummer
+import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Kummer
 import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer
 import TauCeti.RingTheory.IntegralClosure.TensorProduct
@@ -28,17 +29,16 @@ to `A`, then every field factor `L'` of `K' ⊗[K] L`, presented by a surjective
 the tamely ramified half).
 
 Geometrically, this is the codimension-one local stalk input to pullback stability of covers that
-are tamely ramified with respect to a divisor on normal schemes (Stacks, Lemma 58.31.5 (0EYD)).
+are tamely ramified with respect to a divisor on normal schemes (Stacks, Lemma 58.31.1 (0EYD)).
 
 ## Usage notes
 
 * The homomorphism `A → A'` is not required to be local (`IsLocalHom` is not assumed); only
   compatibility with the fraction-field extension `K → K'` (`[IsScalarTower A A' K']` and
   `[IsScalarTower A K K']`) is used.
-* `[FiniteDimensional K' L']` and `[Algebra.IsSeparable K' L']` are not assumed on the target
-  factor `L'`: finite-dimensionality over `K'` is deduced from `Function.Surjective φ`, and
-  separability of `L' / K'` is not needed in the proof (and holds automatically via
-  `AlgHom.finiteDimensional_and_isSeparable_of_surjective`).
+* `[FiniteDimensional K' L']` and `[Algebra.IsSeparable K' L']` follow from `Function.Surjective φ`
+  via `AlgHom.finiteDimensional_and_isSeparable_of_surjective_tensorProduct`, so they are not
+  assumed on the target factor `L'`.
 
 ## Main results
 
@@ -48,7 +48,7 @@ are tamely ramified with respect to a divisor on normal schemes (Stacks, Lemma 5
 ## References
 
 * [Stacks Project, Lemma 15.116.9](https://stacks.math.columbia.edu/tag/0EXY).
-* [Stacks Project, Lemma 58.31.5](https://stacks.math.columbia.edu/tag/0EYD).
+* [Stacks Project, Lemma 58.31.1](https://stacks.math.columbia.edu/tag/0EYD).
 -/
 
 public section
@@ -79,6 +79,10 @@ private theorem etale_integralClosure_adjoin_of_tame
       Module.Finite (integralClosure A K⟮α₁⟯)
         (integralClosure (integralClosure A K⟮α₁⟯) L⟮α₁⟯) := by
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α₁).toAlgebra
+  -- `integralClosure A K⟮α₁⟯` is a `Subalgebra A K⟮α₁⟯`, so `Subsemiring` scalar-restriction
+  -- instances otherwise search through a non-existent `K⟮α₁⟯`-action on the upper integral closure
+  -- and time out instead of finding `Algebra.toModule` / `Algebra.toSMul` (which also match the
+  -- `Subalgebra.algebra'` instance in the statement).
   let : Module (integralClosure A K⟮α₁⟯)
       (integralClosure (integralClosure A K⟮α₁⟯) L⟮α₁⟯) := Algebra.toModule
   let : SMul (integralClosure A K⟮α₁⟯)
@@ -88,10 +92,7 @@ private theorem etale_integralClosure_adjoin_of_tame
   obtain ⟨hDVR, hunr⟩ := h.isUnramifiedWRT_adjoin_root (K := K) hπ hα₁ hdvd
   have := hDVR
   have hαK : AdjoinSimple.gen K α₁ ^ e = algebraMap A K⟮α₁⟯ π :=
-    (algebraMap K⟮α₁⟯ E').injective <| by
-      rw [map_pow, AdjoinSimple.algebraMap_gen, hα₁,
-        IsScalarTower.algebraMap_apply A K K⟮α₁⟯, ← IsScalarTower.algebraMap_apply K K⟮α₁⟯ E',
-        ← IsScalarTower.algebraMap_apply A K E']
+    AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hα₁
   have hdeg := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ hαK
     (_root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α₁)
   have : FiniteDimensional K K⟮α₁⟯ := Module.finite_of_finrank_pos (hdeg ▸ he)
@@ -102,7 +103,7 @@ private theorem etale_integralClosure_adjoin_of_tame
   have hintL : IsIntegral L α₁ :=
     (IsIntegral.of_pow he (hα₁ ▸ isIntegral_algebraMap (R := A))).tower_top
   have hsurj := TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K L hintL
-  obtain ⟨_, _⟩ := AlgHom.finiteDimensional_and_isSeparable_of_surjective
+  obtain ⟨_, _⟩ := AlgHom.finiteDimensional_and_isSeparable_of_surjective_tensorProduct
     (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K L α₁) hsurj
   have hFin : Module.Finite (integralClosure A K⟮α₁⟯)
       (integralClosure (integralClosure A K⟮α₁⟯) L⟮α₁⟯) :=
@@ -148,9 +149,7 @@ private theorem isUnramifiedWRT_of_standardTameCover_tensor
     { toRingHom := ψT₀.toRingHom
       commutes' := fun a'₁ ↦ by simp [ψT₀, T, ψS'_A₁] }
   have hψT (s : S') (b : B_E) : ψT (s ⊗ₜ[A₁] b) = ψS' s * gB_ring b := by
-    simp only [ψT, ψT₀, AlgHom.coe_mk, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-    rw [Algebra.TensorProduct.lift_tmul]
-    rfl
+    simp [ψT, ψT₀, T, ψS'_A₁, gB]
   let χ : K'₁ ⊗[A'₁] T →ₐ[K'₁] E' :=
     Algebra.TensorProduct.lift (Algebra.ofId K'₁ E') ψT fun _ _ ↦ .all _ _
   have hχ : Function.Surjective χ := fun z ↦
@@ -252,10 +251,7 @@ private theorem exists_ringHom_standardTameCover_of_pow_eq
   have hα₁ : α₁ ^ e = algebraMap A E' π := by
     rw [← hψs, ← map_pow, hs, AlgHom.commutes]
   have hαK : AdjoinSimple.gen K α₁ ^ e = algebraMap A K⟮α₁⟯ π :=
-    (algebraMap K⟮α₁⟯ E').injective <| by
-      rw [map_pow, AdjoinSimple.algebraMap_gen, hα₁,
-        IsScalarTower.algebraMap_apply A K K⟮α₁⟯, ← IsScalarTower.algebraMap_apply K K⟮α₁⟯ E',
-        ← IsScalarTower.algebraMap_apply A K E']
+    AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hα₁
   have hgenK := _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top (F := K) α₁
   let ιA₁E' : integralClosure A K⟮α₁⟯ →ₐ[A] E' :=
     ((K⟮α₁⟯).val.restrictScalars A).comp (integralClosure A K⟮α₁⟯).val
@@ -296,10 +292,7 @@ private theorem isUnramifiedWRT_kummer_of_compositum
   have he_pos : 0 < e := Nat.pos_of_ne_zero (by rintro rfl; simp at heA')
   have : IsScalarTower A L E' := .to₁₃₄ A K L E'
   have hβK' : AdjoinSimple.gen K' β₁ ^ e = algebraMap A' K'⟮β₁⟯ ϖ :=
-    (algebraMap K'⟮β₁⟯ E').injective <| by
-      rw [map_pow, AdjoinSimple.algebraMap_gen, hβ₁,
-        IsScalarTower.algebraMap_apply A' K' K'⟮β₁⟯, ← IsScalarTower.algebraMap_apply K' K'⟮β₁⟯ E',
-        ← IsScalarTower.algebraMap_apply A' K' E']
+    AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hβ₁
   have hgenβ' := _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top (F := K') β₁
   have hDVR' :=
     IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
@@ -417,7 +410,7 @@ theorem IsTamelyRamifiedWRT.baseChange (h : IsTamelyRamifiedWRT A L) (φ : K' �
   have heA' : IsUnit (e : A') := by simpa using heA.map (algebraMap A A')
   have he_pos : 0 < e := Nat.pos_of_ne_zero (by rintro rfl; simp at heA)
   let Ω' := AlgebraicClosure L'
-  have : IsScalarTower A' K' Ω' := .to₁₂₄ A' K' L' Ω'
+  have : IsScalarTower A' L' Ω' := .to₁₃₄ A' K' L' Ω'
   obtain ⟨β', hβ'⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap A' Ω' ϖ) he_pos
   obtain ⟨γ', hγ'⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap A' Ω' (u : A')) he_pos
   let F' := _root_.IntermediateField.adjoin L' ({β', γ'} : Set Ω')
@@ -425,15 +418,9 @@ theorem IsTamelyRamifiedWRT.baseChange (h : IsTamelyRamifiedWRT A L) (φ : K' �
   let β₁ : F' := ⟨β', subset_adjoin L' ({β', γ'} : Set Ω') (by simp)⟩
   let γ₁ : F' := ⟨γ', subset_adjoin L' ({β', γ'} : Set Ω') (by simp)⟩
   have hβ₁ : β₁ ^ e = algebraMap A' F' ϖ :=
-    (algebraMap F' Ω').injective <| by
-      rw [map_pow, IntermediateField.algebraMap_apply, hβ',
-        IsScalarTower.algebraMap_apply A' L' F', ← IsScalarTower.algebraMap_apply L' F' Ω',
-        ← IsScalarTower.algebraMap_apply A' L' Ω']
+    IntermediateField.pow_eq_algebraMap_iff.mpr hβ'
   have hγ₁ : γ₁ ^ e = algebraMap A' F' (u : A') :=
-    (algebraMap F' Ω').injective <| by
-      rw [map_pow, IntermediateField.algebraMap_apply, hγ',
-        IsScalarTower.algebraMap_apply A' L' F', ← IsScalarTower.algebraMap_apply L' F' Ω',
-        ← IsScalarTower.algebraMap_apply A' L' Ω']
+    IntermediateField.pow_eq_algebraMap_iff.mpr hγ'
   exact isTamelyRamifiedWRT_of_kummer_compositum h φ hπ hϖ hπ_eq hdvd heA' hβ₁ hγ₁
     (mem_subring_compositum φ hφ
       (IsIntegral.of_pow he_pos (hβ' ▸ isIntegral_algebraMap (R := A'))).tower_top.isAlgebraic

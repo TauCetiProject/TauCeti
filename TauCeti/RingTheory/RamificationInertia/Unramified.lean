@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RamificationInertia.Ramification
+public import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
 # Unramifiedness and separability at one prime
@@ -57,13 +58,14 @@ theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_quotient
 of `(S ⧸ q) / (R ⧸ maximalIdeal R)` is equivalent to separability of
 `ResidueField (Localization.AtPrime q) / ResidueField R`. -/
 theorem isSeparable_quotient_iff_residueField [IsLocalRing R] (q : Ideal S) [q.IsMaximal]
-    [q.LiesOver (IsLocalRing.maximalIdeal R)]
-    [IsLocalHom (algebraMap R (Localization.AtPrime q))] :
+    [q.LiesOver (IsLocalRing.maximalIdeal R)] :
     letI := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
     letI := Ideal.Quotient.field q
+    letI := Localization.AtPrime.isLocalHom_algebraMap_of_liesOver (R := R) q
     Algebra.IsSeparable (R ⧸ IsLocalRing.maximalIdeal R) (S ⧸ q) ↔
       Algebra.IsSeparable (IsLocalRing.ResidueField R)
         (IsLocalRing.ResidueField (Localization.AtPrime q)) := by
+  have := Localization.AtPrime.isLocalHom_algebraMap_of_liesOver (R := R) q
   let := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
   let := Ideal.Quotient.field q
   let eR : (R ⧸ IsLocalRing.maximalIdeal R) ≃+* IsLocalRing.ResidueField R :=

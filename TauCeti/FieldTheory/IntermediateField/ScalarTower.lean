@@ -22,6 +22,8 @@ field, as a `k`-algebra.
   `E` of `L / K` and a semiring `k` acting compatibly on `K` and `L`.
 * `IntermediateField.le_of_isScalarTower`: an intermediate field `E` lies in an intermediate
   field `E'` as soon as some algebra structure of `E'` over `E` is compatible with `L`.
+* `IntermediateField.pow_eq_algebraMap_iff`: an element `x` of `E` satisfies
+  `x ^ n = algebraMap R E r` if and only if `(x : L) ^ n = algebraMap R L r`.
 * `IntermediateField.restrictScalarsAlgEquiv`: an intermediate field `E` of `L / L'` and its
   restriction of scalars `E.restrictScalars K` are the same field over `K`.
 -/
@@ -38,6 +40,15 @@ instance instIsScalarTower {k K L : Type*} [Semiring k] [Field K] [Field L]
     [SMul k K] [Module k L] [Algebra K L] [IsScalarTower k K L]
     (E : IntermediateField K L) : IsScalarTower k E L :=
   IsScalarTower.to₁₃₄ k K E L
+
+/-- An element `x` of an intermediate field `E` of `L / K` has `n`-th power `algebraMap R E r` in
+`E` if and only if `(x : L)` has `n`-th power `algebraMap R L r` in `L`. -/
+theorem pow_eq_algebraMap_iff {R K L : Type*} [CommSemiring R] [Field K] [Field L]
+    [Algebra R K] [Algebra R L] [Algebra K L] [IsScalarTower R K L]
+    {E : IntermediateField K L} {x : E} {n : ℕ} {r : R} :
+    x ^ n = algebraMap R E r ↔ (x : L) ^ n = algebraMap R L r := by
+  rw [← (algebraMap E L).injective.eq_iff, map_pow, algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply R E L]
 
 /-- If `E'` is an algebra over `E` compatibly with their inclusions in `L`, then `E ≤ E'`: every
 `x ∈ E` is the image in `L` of `algebraMap E E' x ∈ E'`. -/

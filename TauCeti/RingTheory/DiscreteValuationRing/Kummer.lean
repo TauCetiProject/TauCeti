@@ -12,6 +12,7 @@ import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 import TauCeti.RingTheory.LocalRing.Roots
@@ -456,18 +457,10 @@ theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteD
     (hn : IsUnit (n : A ⧸ maximalIdeal A)) (hβ : β ^ n = algebraMap A E π)
     (h : Algebra.IsUnramifiedWRT (integralClosure A K⟮β⟯) E) :
     Algebra.IsTamelyRamifiedWRT A L := by
-  have _ : n ≠ 0 := by
-    rintro rfl
-    simp at hn
-  have : IsScalarTower A L E := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A K L, ← IsScalarTower.algebraMap_apply K L E,
-      ← IsScalarTower.algebraMap_apply A K E]
-  have : IsScalarTower A K⟮β⟯ E := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A K K⟮β⟯, ← IsScalarTower.algebraMap_apply K K⟮β⟯ E,
-      ← IsScalarTower.algebraMap_apply A K E]
+  have : IsScalarTower A L E := .to₁₃₄ A K L E
   -- Inside `K(β)`, the generator is an `n`-th root of `π` generating everything, so `09EV` applies.
-  have hβ' : AdjoinSimple.gen K β ^ n = algebraMap A K⟮β⟯ π := (algebraMap K⟮β⟯ E).injective (by
-    rw [map_pow, AdjoinSimple.algebraMap_gen, hβ, ← IsScalarTower.algebraMap_apply])
+  have hβ' : AdjoinSimple.gen K β ^ n = algebraMap A K⟮β⟯ π :=
+    AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hβ
   have hgen : K⟮AdjoinSimple.gen K β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
   have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hβ' hgen
   -- `K(β)` is a Kummer extension of degree `n`, invertible in the residue field: it is tame.
