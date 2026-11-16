@@ -46,4 +46,18 @@ theorem Indep.eventuallyMeasurableSpace_left (h : Indep m₁ m₂ P) :
     Indep (eventuallyMeasurableSpace m₁ (ae P)) m₂ P :=
   h.symm.eventuallyMeasurableSpace_right.symm
 
+/-- Independence of a pullback sigma-algebra from a sigma-algebra is preserved when passing to
+`NullMeasurableSpace Ω P` under `P.completion`. -/
+theorem Indep.completion_comap {α : Type*} [MeasurableSpace α] {X : Ω → α}
+    (h : Indep (.comap X inferInstance) m₂ P) :
+    @Indep (NullMeasurableSpace Ω P)
+      (.comap (fun ω : NullMeasurableSpace Ω P ↦ X ω) inferInstance) m₂
+      (eventuallyMeasurableSpace mΩ (ae P)) P.completion := by
+  -- `NullMeasurableSpace Ω P` is definitionally `Ω` with ambient measurable space
+  -- `eventuallyMeasurableSpace mΩ (ae P)`, leaving preimages of `X` and `P` evaluations unchanged.
+  exact (@Indep_iff (NullMeasurableSpace Ω P)
+      (.comap (fun ω : NullMeasurableSpace Ω P ↦ X ω) inferInstance) m₂
+      (eventuallyMeasurableSpace mΩ (ae P)) P.completion).mpr
+    ((Indep_iff (.comap X inferInstance) m₂ P).mp h)
+
 end ProbabilityTheory

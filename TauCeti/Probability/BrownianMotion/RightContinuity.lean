@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import TauCeti.Probability.Process.Filtration.Natural
-import TauCeti.Probability.Independence.CondExp
 import TauCeti.Probability.Independence.Limit
 
 /-!
@@ -35,18 +34,6 @@ noncomputable section
 
 open MeasureTheory Filter Set
 open scoped NNReal Topology
-
-namespace TauCeti
-
-/-- Coordinatewise measurability makes the whole future-increment process measurable.
-No probability law or path regularity is required. -/
-theorem measurable_shift_sub {Ω ι E : Type*} [MeasurableSpace Ω] [Add ι]
-    [MeasurableSpace E] [Sub E] [MeasurableSub₂ E] {W : ι → Ω → E}
-    (hmeas : ∀ t, Measurable (W t)) (s : ι) :
-    Measurable (fun ω v => W (s + v) ω - W s ω) :=
-  measurable_pi_iff.2 fun v => (hmeas (s + v)).sub (hmeas s)
-
-end TauCeti
 
 namespace ProbabilityTheory.IsBrownianReal
 
@@ -102,48 +89,16 @@ theorem rightCont_natural_le_nullAugment (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) (s : ℝ≥0) :
     (Filtration.natural W hmeas).rightCont s ≤
       (Filtration.natural W hmeas).nullAugment P s := by
-  classical
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let ℱ := Filtration.natural W hmeas
-  let mFuture := MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance
-  -- Restore the ambient instance: mFuture is also eligible for measurable-space synthesis.
-  let : MeasurableSpace Ω := mΩ
-  have hfuture : mFuture ≤ mΩ :=
-    (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s).comap_le
-  have hle : ℱ.rightCont s ≤ ℱ s ⊔ mFuture :=
-    (ℱ.rightCont_le_of_lt (lt_add_one s)).trans
-      (Filtration.natural_le_sup_comap_shift W hmeas s (s + 1))
-  intro A hA
-  rw [Filtration.measurableSet_nullAugment_iff]
-  have hAi : Integrable (A.indicator (fun _ => (1 : ℝ))) P :=
-    (integrable_const 1).indicator (ℱ.rightCont.le s A hA)
-  have hcond := (hW.indep_shift_rightCont_natural hmeas s).symm
-    |>.condExp_eq_of_le_of_stronglyMeasurable_sup (ℱ.le_rightCont s) (ℱ.rightCont.le s)
-      hfuture ((stronglyMeasurable_const.indicator hA).mono hle) hAi
-  have heq : P[A.indicator (fun _ => (1 : ℝ)) | ℱ s] =ᵐ[P]
-      A.indicator (fun _ => (1 : ℝ)) :=
-    hcond.symm.trans (Filter.EventuallyEq.of_eq
-      (condExp_of_stronglyMeasurable (ℱ.rightCont.le s)
-        (stronglyMeasurable_const.indicator hA) hAi))
-  refine ⟨{ω | 1 / 2 < P[A.indicator (fun _ => (1 : ℝ)) | ℱ s] ω},
-    measurableSet_lt measurable_const stronglyMeasurable_condExp.measurable, ?_⟩
-  filter_upwards [heq] with ω hω
-  simp only [hω]
-  by_cases hωA : ω ∈ A <;> norm_num [hωA]
+  exact Filtration.rightCont_natural_le_nullAugment_of_indep_shift hmeas
+    (hW.indep_shift_rightCont_natural hmeas s)
 
 /-- The null-augmented natural filtration of Brownian motion is right-continuous. This uses
 the completed ambient space of `Filtration.nullAugment`; no completeness of `P` is assumed. -/
 theorem isRightContinuous_nullAugment_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) :
-    ((Filtration.natural W hmeas).nullAugment P).IsRightContinuous := by
-  constructor
-  intro s
-  rw [Filtration.rightCont_nullAugment_apply]
-  intro A hA
-  rw [Filtration.measurableSet_nullAugment_iff] at hA ⊢
-  obtain ⟨B, hB, hAB⟩ := hA
-  obtain ⟨C, hC, hBC⟩ := (Filtration.measurableSet_nullAugment_iff _ P s B).mp
-    (hW.rightCont_natural_le_nullAugment hmeas s B hB)
-  exact ⟨C, hC, hAB.trans hBC⟩
+    ((Filtration.natural W hmeas).nullAugment P).IsRightContinuous :=
+  Filtration.isRightContinuous_nullAugment_of_rightCont_le
+    (hW.rightCont_natural_le_nullAugment hmeas)
 
 end ProbabilityTheory.IsBrownianReal

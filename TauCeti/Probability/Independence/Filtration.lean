@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.Independence.BoundedContinuousFunction
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
 import TauCeti.MeasureTheory.Group.Arithmetic
+import TauCeti.Probability.Independence.Limit
 import TauCeti.Probability.Independence.Sup
+import TauCeti.Probability.Process.Filtration.RightCont
 
 /-!
 # Increments independent of the past
@@ -24,13 +27,18 @@ file derives the consequences that do not depend on the law of the increments.
   on `[s, u]` and on `[u, t]` give an increment independent of the past on `[s, t]`.
 * `MeasureTheory.Adapted.hasIndepIncrements`: increments independent of the past are independent
   increments in the sense of `ProbabilityTheory.HasIndepIncrements`.
-* `MeasureTheory.Adapted.indep_comap_sub_Ici`: increments independent of the past make the whole
-  future increment process `(X t - X s)_{t ≥ s}` independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_sub_Ici`, `MeasureTheory.Adapted.indep_comap_shift`: increments
+  independent of the past make the whole future increment process `(X t - X s)_{t ≥ s}` (and the
+  shifted increment process `(X (s + u) - X s)_u`) independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_sub_rightCont`,
+  `MeasureTheory.Adapted.indep_comap_shift_rightCont`: almost-sure right-hand sequential limits
+  upgrade increment and future-shift independence from `ℱ` to `ℱ.rightCont`.
 -/
 
 public section
 
-open MeasureTheory
+open Filter MeasureTheory
+open scoped Topology
 
 namespace MeasureTheory.Adapted
 
@@ -136,5 +144,76 @@ theorem indep_comap_sub_Ici (hX : Adapted ℱ X)
     exact iSup₂_le fun t ht ↦
       le_iSup₂_of_le (t : ι) (Finset.mem_map_of_mem _ ht) le_rfl
   · exact iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
+
+/-- On a canonically ordered additive time index (such as `ℝ≥0` or `ℕ`), if the increments of an
+adapted process are independent of the past, then the shifted future increment process
+`(X (s + u) - X s)_u` is independent of `ℱ s`. -/
+theorem indep_comap_shift [Add ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) (s : ι) :
+    Indep (.comap (fun ω u ↦ X (s + u) ω - X s ω) inferInstance) (ℱ s) μ := by
+  refine indep_of_indep_of_le_left (hX.indep_comap_sub_Ici hindep s) ?_
+  have hg : Measurable fun (z : Set.Ici s → E) (u : ι) ↦
+      z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩ :=
+    measurable_pi_iff.mpr fun _ ↦ measurable_pi_apply _
+  have hcomp : (fun ω u ↦ X (s + u) ω - X s ω) =
+      (fun (z : Set.Ici s → E) (u : ι) ↦ z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩) ∘
+        fun ω (t : Set.Ici s) ↦ X t ω - X s ω :=
+    rfl
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  exact MeasurableSpace.comap_mono hg.comap_le
+
+end MeasureTheory.Adapted
+
+namespace MeasureTheory.Adapted
+
+open ProbabilityTheory
+
+/-- If the increments of an adapted process are independent of `ℱ` and at time `s` there exists a
+sequence `u n > s` converging to `s` along which `X (u n)` converges to `X s` almost surely, then
+the increment `X t - X s` (`s ≤ t`) is independent of the right-continuous past `ℱ.rightCont s`. -/
+theorem indep_comap_sub_rightCont {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
+    {ℱ : Filtration ι mΩ} [TopologicalSpace E] [AddGroup E] [ContinuousSub E]
+    [MeasurableSpace E] [BorelSpace E] [HasOuterApproxClosed E] [MeasurableSub₂ E]
+    {X : ι → Ω → E} (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ)
+    {s t : ι} (hst : s ≤ t)
+    (hlim : ∃ u : ℕ → ι, (∀ n, s < u n) ∧ Tendsto u atTop (𝓝 s) ∧
+      ∀ᵐ ω ∂μ, Tendsto (fun n ↦ X (u n) ω) atTop (𝓝 (X s ω))) :
+    Indep (.comap (X t - X s) inferInstance) (ℱ.rightCont s) μ := by
+  rcases hst.eq_or_lt with rfl | hst
+  · have hzero : X s - X s = fun _ ↦ (0 : E) := funext fun _ ↦ sub_self _
+    rw [hzero, MeasurableSpace.comap_const]
+    exact indep_bot_left (ℱ.rightCont s)
+  · obtain ⟨u, hsu, hutend, hae⟩ := hlim
+    let v : ℕ → ι := fun n ↦ min t (u n)
+    have hind (n : ℕ) : Indep (ℱ.rightCont s) (.comap (X t - X (v n)) inferInstance) μ :=
+      indep_of_indep_of_le_left (hindep (min_le_left t (u n))).symm
+        (ℱ.rightCont_le_of_lt (lt_min hst (hsu n)))
+    have hev : ∀ᶠ n in atTop, v n = u n :=
+      (hutend.eventually (gt_mem_nhds hst)).mono fun _ hn ↦ min_eq_right hn.le
+    refine (indep_comap_of_ae_tendsto (ℱ.rightCont.le s)
+      (fun n ↦ (hX.measurable.sub hX.measurable).aemeasurable)
+      (hX.measurable.sub hX.measurable).aemeasurable hind ?_).symm
+    filter_upwards [hae] with ω hω
+    exact tendsto_const_nhds.sub (hω.congr' (hev.mono fun _ hn ↦ by rw [← hn]))
+
+/-- If the increments of an adapted process are independent of `ℱ` and at every time `r` there
+exists a sequence `u n > r` converging to `r` along which `X (u n)` converges to `X r` almost
+surely, then at every time `s` the entire future increment process `(X (s + v) - X s)_v` is
+independent of `ℱ.rightCont s`. -/
+theorem indep_comap_shift_rightCont {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
+    [Add ι] [CanonicallyOrderedAdd ι] {ℱ : Filtration ι mΩ}
+    [TopologicalSpace E] [AddGroup E] [ContinuousSub E]
+    [MeasurableSpace E] [BorelSpace E] [HasOuterApproxClosed E] [MeasurableSub₂ E]
+    {X : ι → Ω → E} (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ)
+    (hlim : ∀ r : ι, ∃ u : ℕ → ι, (∀ n, r < u n) ∧ Tendsto u atTop (𝓝 r) ∧
+      ∀ᵐ ω ∂μ, Tendsto (fun n ↦ X (u n) ω) atTop (𝓝 (X r ω)))
+    (s : ι) :
+    Indep (.comap (fun ω v ↦ X (s + v) ω - X s ω) inferInstance) (ℱ.rightCont s) μ :=
+  Adapted.indep_comap_shift (fun i ↦ (hX i).mono (ℱ.le_rightCont i) le_rfl)
+    (fun _ _ hrt ↦ hX.indep_comap_sub_rightCont hindep hrt (hlim _)) s
 
 end MeasureTheory.Adapted

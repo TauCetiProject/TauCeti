@@ -5,38 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.HittingTime
+public import TauCeti.Probability.Process.SimpleCountingPath
 public import TauCeti.Probability.Process.Poisson.Augmentation
-public import TauCeti.Topology.Order.Cadlag
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Probability.Distributions.Poisson.SmallRate
+import TauCeti.Probability.HasLaw
+import TauCeti.Probability.Process.MonotoneAE
+import TauCeti.Probability.Process.Poisson.Microscopic
 
 /-!
-# Pathwise simple counting paths and regularization of filtered Poisson processes
+# Regularization of filtered Poisson processes
 
-`TauCeti.Probability.IsSimpleCountingPath` packages the pathwise regularity of a standard counting
-trajectory `f : ℝ≥0 → ℕ`: it starts at `0`, is monotone and right-continuous, and has jumps from the
-left of size at most `1` at every positive time. From these four properties it follows that `f` is
-càdlàg, continuous at `0`, has only finitely many discontinuities on each bounded interval `[0, T]`,
-satisfies `leftLim f t + 1 = f t` at every discontinuity, and attains each level `c` exactly at its
-first hitting time of `Set.Ici c`, which strictly precedes the hit of `c + 1`.
+`IsFilteredPoissonProcess.exists_isSimpleCountingPath_version` constructs from any filtered Poisson
+process `N` a measurable `ℕ`-valued modification `M` such that *every* sample path `M · ω` (not
+merely almost every path) satisfies `TauCeti.Probability.IsSimpleCountingPath`—so it is càdlàg,
+continuous at `0`, has only finitely many discontinuities on each interval `[0, T]`, jumps by `+1`
+at every discontinuity, and attains each level `c` at any finite first hitting time of `Set.Ici c`,
+which then strictly precedes the hit of `c + 1`—while `(M t · : ℝ) =ᵐ[P] N t` at every time `t` and
+`(t, ω) ↦ (M t ω : ℝ)` is a filtered Poisson process of the same rate on
+`ℱ.ambientNullAugmentation P` (hence also on `(ℱ.ambientNullAugmentation P).rightCont` via
+`IsFilteredPoissonProcess.rightCont`).
 
-On the probabilistic side, `IsFilteredPoissonProcess.exists_isSimpleCountingPath_version` constructs
-from any filtered Poisson process `N` a measurable `ℕ`-valued modification `M` such that *every*
-sample path `M · ω` (not merely almost every path) is a simple counting path,
-`(M t · : ℝ) =ᵐ[P] N t` at every time `t`, and `(t, ω) ↦ (M t ω : ℝ)` is a filtered Poisson process
-of the same rate on `ℱ.ambientNullAugmentation P` (hence also on
-`(ℱ.ambientNullAugmentation P).rightCont` via `IsFilteredPoissonProcess.rightCont`).
+Conversely, if `M : ℝ≥0 → Ω → ℕ` already has real cast a filtered Poisson process and almost surely
+right-continuous paths, `ae_monotone_of_isRightContinuous` and
+`ae_isSimpleCountingPath_of_isRightContinuous` show that almost every trajectory of `M` is monotone
+and in fact a simple counting path.
 
-The construction restricts `N` to dyadic times `j / 2 ^ m`, isolates an explicit measurable event of
-full measure on which dyadic samples are natural-valued, monotone, zero near `0`, and jump by at
+The regularization restricts `N` to dyadic times `j / 2 ^ m`, isolates an explicit measurable event
+of full measure on which dyadic samples are natural-valued, monotone, zero near `0`, and jump by at
 most `1` across overlapping double cells `[k / 2 ^ m, (k + 2) / 2 ^ m]`, and defines `M t ω` as the
 right-hand dyadic infimum on that event and `0` outside it.
 
 ## References
 
 * P. E. Protter, *Stochastic Integration and Differential Equations*, second edition, Springer,
-  2005, Chapter I, §3, Theorem 31.
+  2005, Chapter I, §3, and §4, Theorem 30.
 * O. Kallenberg, *Foundations of Modern Probability*, third edition, Springer, 2021, Theorem 15.2.
 -/
 
@@ -45,144 +48,31 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Real Set
 open scoped NNReal ENNReal Topology
 
-namespace TauCeti.Probability
-
-/-! ### Simple counting paths -/
-
-/-- A trajectory `f : ℝ≥0 → ℕ` is a **simple counting path** if it starts at `0`, is monotone and
-right-continuous, and jumps from the left by at most `1` at every positive time. -/
-structure IsSimpleCountingPath (f : ℝ≥0 → ℕ) : Prop where
-  /-- The count at time `0` is `0`. -/
-  apply_zero : f 0 = 0
-  /-- The count is nondecreasing in time. -/
-  monotone : Monotone f
-  /-- The count is right-continuous at every time. -/
-  isRightContinuous : IsRightContinuous f
-  /-- At every positive time `t`, some strictly earlier time `s < t` satisfies `f t ≤ f s + 1`. -/
-  le_add_one ⦃t : ℝ≥0⦄ : 0 < t → ∃ s < t, f t ≤ f s + 1
-
-namespace IsSimpleCountingPath
-
-/-- The identically zero path is a simple counting path. -/
-@[simp]
-theorem zero : IsSimpleCountingPath 0 where
-  apply_zero := rfl
-  monotone := monotone_const
-  isRightContinuous _ := tendsto_const_nhds
-  le_add_one _ ht := ⟨0, ht, by simp⟩
-
-/-- Every simple counting path is càdlàg. -/
-theorem isCadlag {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) : IsCadlag f :=
-  hf.monotone.isCadlag hf.isRightContinuous
-
-/-- Coercing a simple counting path to `ℝ` preserves the càdlàg property. -/
-theorem isCadlag_real {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) :
-    IsCadlag fun t ↦ (f t : ℝ) := by
-  have hc : Continuous (Nat.cast : ℕ → ℝ) := continuous_of_discreteTopology
-  have hmono : Monotone fun t ↦ (f t : ℝ) := fun _ _ h ↦ Nat.cast_le.mpr (hf.monotone h)
-  exact hmono.isCadlag fun t ↦ hc.continuousAt.tendsto.comp (hf.isRightContinuous t)
-
-/-- A simple counting path is continuous at `0`. -/
-theorem continuousAt_zero {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) : ContinuousAt f 0 :=
-  hf.isRightContinuous.continuousAt_of_isBot fun _ ↦ zero_le
-
-/-- A simple counting path has only finitely many discontinuities on each interval `[0, T]`. -/
-theorem finite_Iic_not_continuousAt {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) (T : ℝ≥0) :
-    {t ∈ Iic T | ¬ ContinuousAt f t}.Finite := by
-  have hIic : (Iic T : Set ℝ≥0) = Icc 0 T := by
-    ext t
-    simp
-  rw [hIic]
-  exact hf.monotone.finite_Icc_not_continuousAt 0 T
-
-/-- At every discontinuity of a simple counting path, its left limit is one below its current
-value. Positivity of `t` is automatic because a simple counting path is continuous at `0`. -/
-theorem leftLim_add_one_eq_of_not_continuousAt {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f)
-    {t : ℝ≥0} (ht : ¬ ContinuousAt f t) :
-    leftLim f t + 1 = f t := by
-  have ht0 : 0 < t := pos_iff_ne_zero.mpr fun h ↦ ht (h ▸ hf.continuousAt_zero)
-  exact hf.monotone.leftLim_add_one_eq_of_not_continuousAt hf.isRightContinuous ht
-    (hf.le_add_one ht0)
-
-/-- A simple counting path hits a positive level `c` only at a strictly positive time. -/
-theorem hittingAfter_Ici_pos {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
-    (hf : IsSimpleCountingPath (M · ω)) {c : ℕ} (hc : 0 < c) :
-    0 < hittingAfter M (Ici c) 0 ω :=
-  isClosed_Ici.lt_hittingAfter_of_isRightContinuous hf.isRightContinuous
-    (by simp [hf.apply_zero, hc.ne'])
-
-/-- At a finite hitting time of `Set.Ici c`, a simple counting path takes the exact value `c`. -/
-theorem apply_untopA_hittingAfter_Ici {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
-    (hf : IsSimpleCountingPath (M · ω)) {c : ℕ}
-    (hfin : hittingAfter M (Ici c) 0 ω ≠ ⊤) :
-    M (hittingAfter M (Ici c) 0 ω).untopA ω = c := by
-  refine hf.isRightContinuous.apply_untopA_hittingAfter_Ici_of_le_add_one
-    (by simp [hf.apply_zero]) (fun t ht ↦ ?_) hfin
-  obtain ⟨s, hst, hfs⟩ := hf.le_add_one ht
-  exact ⟨s, ⟨zero_le, hst⟩, hfs⟩
-
-/-- Along a simple counting path, any finite hitting time of `Set.Ici c` strictly precedes the
-hitting time of `Set.Ici (c + 1)`. -/
-theorem hittingAfter_Ici_lt_succ {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
-    (hf : IsSimpleCountingPath (M · ω)) {c : ℕ}
-    (hfin : hittingAfter M (Ici c) 0 ω ≠ ⊤) :
-    hittingAfter M (Ici c) 0 ω < hittingAfter M (Ici (c + 1)) 0 ω := by
-  refine hf.isRightContinuous.hittingAfter_Ici_lt_succ_of_le_add_one
-    (by simp [hf.apply_zero]) (fun t ht ↦ ?_) hfin
-  obtain ⟨s, hst, hfs⟩ := hf.le_add_one ht
-  exact ⟨s, ⟨zero_le, hst⟩, hfs⟩
-
-end IsSimpleCountingPath
-
-/-! ### Floor laws and integer-valuedness of Poisson increments -/
-
-/-- Taking the natural floor of a real random variable with law `Po(ℝ, r)` recovers the native
-Poisson law `Po(r)` on `ℕ`. -/
-theorem hasLaw_natFloor_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) :
-    HasLaw (fun ω ↦ ⌊X ω⌋₊) Po(r) P := by
-  have hc : Measurable (Nat.cast : ℕ → ℝ) := continuous_of_discreteTopology.measurable
-  have hmap : Po(ℝ, r).map Nat.floor = Po(r) := by
-    rw [Measure.map_map Nat.measurable_floor hc]
-    simp [Function.comp_def]
-  simpa only [Function.comp_def, hmap] using
-    (hasLaw_map Nat.measurable_floor.aemeasurable).comp hX
-
-/-- A real random variable with law `Po(ℝ, r)` almost surely takes natural-number values. -/
-theorem ae_exists_nat_eq_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) :
-    ∀ᵐ ω ∂P, ∃ n : ℕ, X ω = n := by
-  have hc : Measurable (Nat.cast : ℕ → ℝ) := continuous_of_discreteTopology.measurable
-  have hm : MeasurableSet (range (Nat.cast : ℕ → ℝ))ᶜ :=
-    (countable_range (Nat.cast : ℕ → ℝ)).measurableSet.compl
-  rw [ae_iff]
-  have hpre : {ω | ¬ ∃ n : ℕ, X ω = n} = X ⁻¹' (range (Nat.cast : ℕ → ℝ))ᶜ := by
-    ext ω
-    simp [eq_comm]
-  rw [hpre, ← Measure.map_apply_of_aemeasurable hX.aemeasurable hm, hX.map_eq,
-    Measure.map_apply hc hm]
-  convert measure_empty (μ := Po(r))
-  ext n
-  simp
-
-namespace IsFilteredPoissonProcess
+namespace TauCeti.Probability.IsFilteredPoissonProcess
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {α : ℝ≥0} {N : ℝ≥0 → Ω → ℝ} {P : Measure Ω}
 
-/-- At each fixed time `t`, `N t` almost surely takes natural-number values. -/
-theorem ae_exists_nat_eq (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
-    ∀ᵐ ω ∂P, ∃ n : ℕ, N t ω = n :=
-  ae_exists_nat_eq_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_eval t)
+/-- Almost-sure right-continuity of a natural-valued filtered Poisson process implies almost-sure
+monotonicity of its sample paths. -/
+theorem ae_monotone_of_isRightContinuous {M : ℝ≥0 → Ω → ℕ}
+    (h : IsFilteredPoissonProcess ℱ α (fun t ω ↦ (M t ω : ℝ)) P)
+    (hrc : ∀ᵐ ω ∂P, IsRightContinuous (M · ω)) :
+    ∀ᵐ ω ∂P, Monotone (M · ω) :=
+  ae_monotone_of_ae_le_of_isRightContinuous
+    (fun _ _ hst ↦ (h.ae_le hst).mono fun _ ↦ Nat.cast_le.mp) hrc
 
-/-- Between any two fixed times `s ≤ t`, a filtered Poisson process is almost surely nondecreasing.
--/
-theorem ae_le (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ≥0} (hst : s ≤ t) :
-    ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
-  filter_upwards [ae_exists_nat_eq_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_sub hst)] with ω
-    ⟨n, hn⟩
-  have hsub : N t ω - N s ω = n := hn
-  linarith [Nat.cast_nonneg (α := ℝ) n]
+/-- Almost-sure right-continuity upgrades a natural-valued filtered Poisson process to have almost
+surely simple counting paths. -/
+theorem ae_isSimpleCountingPath_of_isRightContinuous {M : ℝ≥0 → Ω → ℕ}
+    (h : IsFilteredPoissonProcess ℱ α (fun t ω ↦ (M t ω : ℝ)) P)
+    (hrc : ∀ᵐ ω ∂P, IsRightContinuous (M · ω)) :
+    ∀ᵐ ω ∂P, IsSimpleCountingPath (M · ω) := by
+  have hmono := h.ae_monotone_of_isRightContinuous hrc
+  have hjump := ae_count_le_add_one_of_hasLaw_sub_poissonMeasure (P := P) (N := M) hmono α
+    fun s t _ ↦ h.hasLaw_sub_nat s t
+  filter_upwards [h.eval_zero_ae_eq_zero, hmono, hrc, hjump] with ω h0 hm hr hj
+  exact ⟨Nat.cast_eq_zero.mp h0, hm, hr, hj⟩
 
 /-- For any times `s` and `t`, the probability that `N t - N s` exceeds `1` is at most
 `(α * (t - s)) ^ 2 / 2` (using truncated subtraction on `ℝ≥0` when `t ≤ s`). -/
@@ -190,13 +80,11 @@ theorem measure_sub_gt_one_le (h : IsFilteredPoissonProcess ℱ α N P) (s t : �
     P {ω | 1 < N t ω - N s ω} ≤ (((α * (t - s)) ^ 2 / 2 : ℝ≥0) : ℝ≥0∞) := by
   rcases le_total s t with hst | hts
   · have := h.isProbabilityMeasure
-    have hfloor := hasLaw_natFloor_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_sub hst)
+    have hfloor := (h.hasLaw_sub hst).natFloor_of_map_natCast
     have hae : ({ω | 1 < N t ω - N s ω} : Set Ω) =ᵐ[P] {ω | 2 ≤ ⌊(N t - N s) ω⌋₊} := by
-      filter_upwards [ae_exists_nat_eq_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_sub hst)] with ω
-        ⟨n, hn⟩
-      change 1 < N t ω - N s ω ↔ 2 ≤ ⌊N t ω - N s ω⌋₊
-      have hsub : N t ω - N s ω = n := hn
-      rw [hsub, Nat.floor_natCast, show (1 : ℝ) = ((1 : ℕ) : ℝ) by norm_num, Nat.cast_lt]
+      filter_upwards [(h.hasLaw_sub hst).ae_exists_nat_eq_of_map_natCast] with ω ⟨n, hn⟩
+      rw [Pi.sub_apply] at hn
+      simp only [Pi.sub_apply, hn, Nat.floor_natCast, Nat.one_lt_cast]
       omega
     have hreal : P.real {ω | 1 < N t ω - N s ω} ≤ ((α * (t - s) : ℝ≥0) : ℝ) ^ 2 / 2 := by
       rw [measureReal_congr hae, hfloor.measureReal_eq (p := fun n ↦ 2 ≤ n) .of_discrete]
@@ -206,7 +94,8 @@ theorem measure_sub_gt_one_le (h : IsFilteredPoissonProcess ℱ α N P) (s t : �
         (ofReal_measureReal (measure_ne_top P _)).symm
       _ ≤ ENNReal.ofReal (((α * (t - s) : ℝ≥0) : ℝ) ^ 2 / 2) := ENNReal.ofReal_le_ofReal hreal
       _ = (((α * (t - s)) ^ 2 / 2 : ℝ≥0) : ℝ≥0∞) := by
-        rw [← NNReal.coe_pow, ← NNReal.coe_ofNat, ← NNReal.coe_div, ENNReal.ofReal_coe_nnreal]
+        norm_cast
+        exact ENNReal.ofReal_coe_nnreal
   · have hzero : P {ω | 1 < N t ω - N s ω} = 0 := by
       have hae : ∀ᵐ ω ∂P, ¬ (1 < N t ω - N s ω) :=
         (h.ae_le hts).mono fun _ hle hgt ↦ by linarith
@@ -230,27 +119,31 @@ private lemma dyadicTime_strictMono (m : ℕ) : StrictMono (dyadicTime m) := fun
 private lemma dyadicTime_add_two_sub (m k : ℕ) :
     dyadicTime m (k + 2) - dyadicTime m k = 2 * (2⁻¹ : ℝ≥0) ^ m := by
   have hadd : dyadicTime m (k + 2) = dyadicTime m k + 2 * (2⁻¹ : ℝ≥0) ^ m := by
-    simp only [dyadicTime, Nat.cast_add, Nat.cast_ofNat, div_eq_mul_inv, inv_pow]
+    simp only [dyadicTime, div_eq_mul_inv, inv_pow]
+    push_cast
     ring
   rw [hadd, add_tsub_cancel_left]
 
 private lemma dyadicTime_floor_le (m : ℕ) (t : ℝ≥0) :
     dyadicTime m ⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ ≤ t := by
-  rw [← NNReal.coe_le_coe, dyadicTime, NNReal.coe_div, NNReal.coe_natCast, NNReal.coe_pow,
-    NNReal.coe_ofNat, div_le_iff₀ (by positivity)]
+  rw [← NNReal.coe_le_coe, dyadicTime]
+  push_cast
+  rw [div_le_iff₀ (by positivity)]
   exact Nat.floor_le (by positivity)
 
 private lemma lt_dyadicTime_floor_add_one (m : ℕ) (t : ℝ≥0) :
     t < dyadicTime m (⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ + 1) := by
-  rw [← NNReal.coe_lt_coe, dyadicTime, NNReal.coe_div, NNReal.coe_natCast, NNReal.coe_pow,
-    NNReal.coe_ofNat, lt_div_iff₀ (by positivity), Nat.cast_add, Nat.cast_one]
+  rw [← NNReal.coe_lt_coe, dyadicTime]
+  push_cast
+  rw [lt_div_iff₀ (by positivity)]
   exact Nat.lt_floor_add_one _
 
 private lemma dyadicTime_floor_add_one_sub_le (m : ℕ) (t : ℝ≥0) :
     dyadicTime m (⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ + 1) - t ≤ (2⁻¹ : ℝ≥0) ^ m := by
   have hstep : dyadicTime m (⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ + 1) =
       dyadicTime m ⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ + (2⁻¹ : ℝ≥0) ^ m := by
-    simp only [dyadicTime, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, inv_pow]
+    simp only [dyadicTime, div_eq_mul_inv, inv_pow]
+    push_cast
     ring
   exact (tsub_le_tsub_left (dyadicTime_floor_le m t) _).trans_eq
     (by rw [hstep, add_tsub_cancel_left])
@@ -312,18 +205,14 @@ private lemma ae_dyadic_double_cell_le_one (h : IsFilteredPoissonProcess ℱ α 
     simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
     have hnn : (((T + 1) * 2 ^ m : ℕ) : ℝ≥0) * ((α * (2 * (2⁻¹ : ℝ≥0) ^ m)) ^ 2 / 2) =
         (2 * (T + 1) * α ^ 2) * (2⁻¹ : ℝ≥0) ^ m := by
-      have h2 : (2 : ℝ≥0) ^ m * (2⁻¹ : ℝ≥0) ^ m = 1 := by
-        rw [← mul_pow, mul_inv_cancel₀ two_ne_zero, one_pow]
-      rw [div_eq_mul_inv, Nat.cast_mul, Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]
-      calc
-        ((T : ℝ≥0) + 1) * 2 ^ m * ((α * (2 * (2⁻¹ : ℝ≥0) ^ m)) ^ 2 * 2⁻¹) =
-            2 * ((T : ℝ≥0) + 1) * α ^ 2 * ((2 : ℝ≥0) ^ m * (2⁻¹ : ℝ≥0) ^ m) *
-              (2⁻¹ : ℝ≥0) ^ m * (2 * 2⁻¹) := by ring
-        _ = (2 * (T + 1) * α ^ 2) * (2⁻¹ : ℝ≥0) ^ m := by
-          rw [h2, mul_inv_cancel₀ two_ne_zero, mul_one, mul_one]
+      push_cast
+      simp only [inv_pow]
+      field_simp
     exact le_of_eq <| by
-      rw [← ENNReal.coe_natCast, ← ENNReal.coe_mul, hnn, ENNReal.coe_mul, ENNReal.coe_pow,
-        ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat]
+      norm_cast
+      rw [hnn]
+      push_cast
+      rfl
   have hsum : (∑' m, P (bad m)) ≠ ∞ := by
     refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hbad)
     rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric_two]
@@ -442,7 +331,8 @@ private lemma dyadicReg_le_add_one {ω : Ω} (hω : IsDyadicGood N ω) ⦃t : �
     have hst : dyadicTime m (j - 1) < t :=
       (dyadicTime_strictMono m (by omega : j - 1 < j)).trans_le (dyadicTime_floor_le m t)
     have htk2 : t < dyadicTime m (j - 1 + 2) := by
-      simpa only [show j - 1 + 2 = j + 1 by omega] using lt_dyadicTime_floor_add_one m t
+      convert lt_dyadicTime_floor_add_one m t using 2
+      omega
     refine ⟨dyadicTime m (j - 1), hst, ?_⟩
     exact (dyadicReg_le_of_lt hω htk2).trans
       ((floor_dyadicTime_add_two_le hω (hm (j - 1) (by omega))).trans
@@ -457,25 +347,17 @@ private lemma isSimpleCountingPath_dyadicReg (ω : Ω) :
       rw [dyadicTime_one]
       positivity
     exact Nat.eq_zero_of_le_zero ((dyadicReg_le_of_lt hω hpos).trans_eq (by simp [hm]))
-  · have hzero : (dyadicReg N · ω) = 0 := funext fun t ↦ dyadicReg_of_not_good hω t
-    rw [hzero]
-    exact IsSimpleCountingPath.zero
+  · simp [dyadicReg_of_not_good hω]
 
 private lemma dyadicReg_ae_eq (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
     (fun ω ↦ (dyadicReg N t ω : ℝ)) =ᵐ[P] N t := by
-  let u : ℕ → ℝ≥0 := fun n ↦ dyadicTime n (⌊(t : ℝ) * (2 : ℝ) ^ n⌋₊ + 1)
-  have hsum : (∑' n, ((u n - t : ℝ≥0) : ℝ≥0∞)) ≠ ∞ := by
-    refine ne_top_of_le_ne_top (by norm_num : (2 : ℝ≥0∞) ≠ ∞) ?_
-    rw [← ENNReal.tsum_geometric_two]
-    exact tsum_le_tsum fun n ↦
-      (ENNReal.coe_le_coe.mpr (dyadicTime_floor_add_one_sub_le n t)).trans_eq
-        (by simp only [ENNReal.coe_pow, ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat])
   have habove : ∀ᵐ ω ∂P, ∀ p : {p : ℕ × ℕ // t < dyadicTime p.1 p.2},
       N t ω ≤ N (dyadicTime p.val.1 p.val.2) ω :=
     ae_all_iff.mpr fun p ↦ h.ae_le p.property.le
   filter_upwards [ae_isDyadicGood h, h.ae_exists_nat_eq t, habove,
-    h.ae_eventually_eval_eq_of_tsum_sub_ne_top
-      (fun n ↦ (lt_dyadicTime_floor_add_one n t).le) hsum] with ω hω ⟨c, hc⟩ hle hev
+    h.ae_eventually_eval_eq_of_sub_le_two_inv_pow
+      (fun n ↦ (lt_dyadicTime_floor_add_one n t).le)
+      (fun n ↦ dyadicTime_floor_add_one_sub_le n t)] with ω hω ⟨c, hc⟩ hle hev
   obtain ⟨n, hn⟩ := hev.exists
   have hupper : dyadicReg N t ω ≤ c := by
     refine (dyadicReg_le_of_lt hω (lt_dyadicTime_floor_add_one n t)).trans_eq ?_
@@ -508,6 +390,4 @@ theorem exists_isSimpleCountingPath_version (h : IsFilteredPoissonProcess ℱ α
   exact h.ambientNullAugmentation.congr (fun t ↦ (hadapt t).stronglyMeasurable)
     fun t ↦ (dyadicReg_ae_eq h t).symm
 
-end IsFilteredPoissonProcess
-
-end TauCeti.Probability
+end TauCeti.Probability.IsFilteredPoissonProcess

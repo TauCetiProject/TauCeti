@@ -7,11 +7,17 @@ module
 
 public import Mathlib.Probability.Process.HittingTime
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.WithTop
+public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Instances.NNReal.Lemmas
 
 /-!
-# Countable descriptions of continuous level hits
+# Countable descriptions of open-set and level hits
+
+For any right-continuous path on nonnegative time, the first hit of an open set can be computed
+using any dense family of sampling times, making open-set hitting times ambient-measurable for
+everywhere right-continuous processes and almost-everywhere measurable under almost-sure
+right-continuity.
 
 For a continuous real path on nonnegative time, the first hit of a closed upper level is the
 supremum of the first strict hits of levels approaching it from below. Each strict hit can in
@@ -53,6 +59,40 @@ theorem hittingAfter_eq_iInf {ι Ω E : Type*} [ConditionallyCompleteLinearOrder
 
 end MeasureTheory
 
+namespace IsRightContinuous
+
+open scoped Classical in
+/-- Hits of an open set by a right-continuous path can be computed from any dense family of
+sampling times. In particular, a countable dense family suffices. -/
+theorem hittingAfter_eq_iInf_of_isOpen {Ω E κ : Type*} [TopologicalSpace E]
+    {X : ℝ≥0 → Ω → E} {ω : Ω} (hf : IsRightContinuous (fun t ↦ X t ω)) {U : Set E}
+    (hU : IsOpen U) {d : κ → ℝ≥0} (hd : DenseRange d) :
+    hittingAfter X U 0 ω =
+      ⨅ k, if X (d k) ω ∈ U then (d k : WithTop ℝ≥0) else ⊤ := by
+  classical
+  rw [hittingAfter_eq_iInf]
+  apply le_antisymm
+  · refine le_iInf fun k ↦ ?_
+    split_ifs with hk
+    · exact iInf₂_le (d k) ⟨bot_le, hk⟩
+    · exact le_top
+  · refine le_iInf fun t ↦ le_iInf fun ht ↦ ?_
+    refine le_of_forall_gt fun b hb ↦ ?_
+    obtain ⟨v, htv, hvb⟩ := WithTop.lt_iff_exists_coe_btwn.1 hb
+    have htv' : t < v := WithTop.coe_lt_coe.1 htv
+    obtain ⟨w, htw, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' htv').1
+      (hf t (hU.mem_nhds ht.2))
+    obtain ⟨k, hk⟩ := hd.exists_mem_open isOpen_Ioo (nonempty_Ioo.2 (lt_min htw htv'))
+    have hkv : (d k : WithTop ℝ≥0) ≤ (v : WithTop ℝ≥0) :=
+      WithTop.coe_le_coe.2 (hk.2.trans_le (min_le_right _ _)).le
+    have hUk : X (d k) ω ∈ U := hsub ⟨hk.1, hk.2.trans_le (min_le_left _ _)⟩
+    have hsample : (⨅ j, if X (d j) ω ∈ U then (d j : WithTop ℝ≥0) else ⊤) ≤
+        (d k : WithTop ℝ≥0) :=
+      (iInf_le _ k).trans_eq (ite_eq_left hUk)
+    exact hsample.trans_lt (hkv.trans_lt hvb)
+
+end IsRightContinuous
+
 namespace Continuous
 
 variable {Ω : Type*} {X : ℝ≥0 → Ω → ℝ} {ω : Ω} {c : ℝ} {θ : ℕ → ℝ}
@@ -75,36 +115,6 @@ theorem eventually_lt_hittingAfter_Ici (hf : Continuous (fun t ↦ X t ω))
   exact WithTop.coe_le_coe.2 (le_of_not_gt fun hvb ↦
     (hn.trans_le hv.2).not_ge (hmax ⟨bot_le, hvb.le⟩))
 
-open scoped Classical in
-/-- Hits of an open set by a continuous path can be computed from any dense family of
-sampling times. In particular, a countable dense family suffices. -/
-theorem hittingAfter_eq_iInf_of_isOpen {E κ : Type*} [TopologicalSpace E]
-    {X : ℝ≥0 → Ω → E} (hf : Continuous (fun t ↦ X t ω)) {U : Set E} (hU : IsOpen U)
-    {d : κ → ℝ≥0} (hd : DenseRange d) :
-    hittingAfter X U 0 ω =
-      ⨅ k, if X (d k) ω ∈ U then (d k : WithTop ℝ≥0) else ⊤ := by
-  classical
-  rw [hittingAfter_eq_iInf]
-  apply le_antisymm
-  · refine le_iInf fun k ↦ ?_
-    split_ifs with hk
-    · exact iInf₂_le (d k) ⟨bot_le, hk⟩
-    · exact le_top
-  · refine le_iInf fun t ↦ le_iInf fun ht ↦ ?_
-    refine le_of_forall_gt fun b hb ↦ ?_
-    obtain ⟨v, htv, hvb⟩ := WithTop.lt_iff_exists_coe_btwn.1 hb
-    have htv' : t < v := WithTop.coe_lt_coe.1 htv
-    obtain ⟨k, hk⟩ := hd.exists_mem_open
-      ((isOpen_Iio (a := v)).inter (hU.preimage hf)) ⟨t, htv', ht.2⟩
-    have hkv : (d k : WithTop ℝ≥0) ≤ (v : WithTop ℝ≥0) :=
-      WithTop.coe_le_coe.2 hk.1.le
-    have hsample : (⨅ j, if X (d j) ω ∈ U then (d j : WithTop ℝ≥0) else ⊤) ≤
-        (d k : WithTop ℝ≥0) := by
-      calc
-        _ ≤ (if X (d k) ω ∈ U then (d k : WithTop ℝ≥0) else ⊤) := iInf_le _ k
-        _ = (d k : WithTop ℝ≥0) := ite_eq_left hk.2
-    exact hsample.trans_lt (hkv.trans_lt hvb)
-
 /-- Closed upper-level hits are limits of hits of levels approaching from below. No
 monotonicity of the levels and no finiteness of the limiting hitting time are required. -/
 theorem tendsto_hittingAfter_Ici (hf : Continuous (fun t ↦ X t ω)) (hθc : ∀ n, θ n ≤ c)
@@ -126,7 +136,8 @@ theorem hittingAfter_Ici_eq_iSup_iInf {κ : Type*} (hf : Continuous (fun t ↦ X
   classical
   have hsample (a : ℝ) : hittingAfter X (Ioi a) 0 ω =
       ⨅ k, if a < X (d k) ω then (d k : WithTop ℝ≥0) else ⊤ := by
-    simpa only [mem_Ioi] using hf.hittingAfter_eq_iInf_of_isOpen (U := Ioi a) isOpen_Ioi hd
+    simpa only [mem_Ioi] using
+      hf.isRightContinuous.hittingAfter_eq_iInf_of_isOpen (U := Ioi a) isOpen_Ioi hd
   simp_rw [← hsample]
   apply le_antisymm
   · refine le_of_tendsto (hf.tendsto_hittingAfter_Ici (fun n ↦ (hθc n).le) hθ) ?_
@@ -138,6 +149,45 @@ theorem hittingAfter_Ici_eq_iSup_iInf {κ : Type*} (hf : Continuous (fun t ↦ X
 end Continuous
 
 namespace TauCeti.Probability
+
+section Open
+
+variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} [TopologicalSpace E] [MeasurableSpace E]
+  [OpensMeasurableSpace E] {X : ℝ≥0 → Ω → E}
+
+/-- For any open target `U`, there is an ambient-measurable representative which agrees with the
+native hitting time `hittingAfter X U 0` on every right-continuous path. -/
+theorem exists_measurable_eq_hittingAfter_of_isOpen (hX : ∀ t, Measurable (X t))
+    {U : Set E} (hU : IsOpen U) :
+    ∃ τ : Ω → WithTop ℝ≥0, Measurable τ ∧
+      ∀ ω, IsRightContinuous (fun t ↦ X t ω) → τ ω = hittingAfter X U 0 ω := by
+  classical
+  let d : ℕ → ℝ≥0 := TopologicalSpace.denseSeq ℝ≥0
+  refine ⟨fun ω ↦ ⨅ k, if X (d k) ω ∈ U then (d k : WithTop ℝ≥0) else ⊤, ?_, ?_⟩
+  · exact Measurable.iInf fun k ↦
+      measurable_const.ite (hX (d k) hU.measurableSet) measurable_const
+  · intro ω hω
+    exact (hω.hittingAfter_eq_iInf_of_isOpen hU (TopologicalSpace.denseRange_denseSeq ℝ≥0)).symm
+
+/-- Open-set hits of an everywhere right-continuous process with measurable evaluations are
+ambient-measurable. -/
+theorem measurable_hittingAfter_of_isOpen_of_isRightContinuous (hX : ∀ t, Measurable (X t))
+    (hrc : ∀ ω, IsRightContinuous (fun t ↦ X t ω)) {U : Set E} (hU : IsOpen U) :
+    Measurable (hittingAfter X U 0) := by
+  obtain ⟨τ, hτ, heq⟩ := exists_measurable_eq_hittingAfter_of_isOpen hX hU
+  have h : τ = hittingAfter X U 0 := funext fun ω ↦ heq ω (hrc ω)
+  rwa [h] at hτ
+
+/-- Open-set hits of a process with measurable evaluations and almost-surely right-continuous paths
+are almost-everywhere measurable, even on an incomplete ambient space. -/
+theorem aemeasurable_hittingAfter_of_isOpen_of_isRightContinuous {P : Measure Ω}
+    (hX : ∀ t, Measurable (X t)) (hrc : ∀ᵐ ω ∂P, IsRightContinuous (fun t ↦ X t ω))
+    {U : Set E} (hU : IsOpen U) :
+    AEMeasurable (hittingAfter X U 0) P := by
+  obtain ⟨τ, hτ, heq⟩ := exists_measurable_eq_hittingAfter_of_isOpen hX hU
+  exact hτ.aemeasurable.congr (hrc.mono fun ω hω ↦ heq ω hω)
+
+end Open
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {X : ℝ≥0 → Ω → ℝ}
 

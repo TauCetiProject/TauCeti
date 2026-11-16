@@ -19,7 +19,9 @@ set is attained whenever it is finite, and is strictly after the starting time w
 value lies outside the target. For monotone right-continuous paths, hitting a closed upper ray
 `Set.Ici c` by time `t` reduces to `c ≤ X t` at the single endpoint `t`, making the closed-ray hit
 a stopping time on any raw filtration without second-countability, local compactness, right
-continuity, or completion assumptions. When a natural-valued right-continuous path starts at or
+continuity, or completion assumptions. Likewise, hitting a clopen set along an everywhere
+right-continuous adapted process on a densely ordered separable time axis is a stopping time on any
+raw filtration. When a natural-valued right-continuous path starts at or
 below `c` and jumps by at most one from earlier times, each finite closed-ray hit is attained with
 exact value `c` and strictly precedes the next level hit.
 
@@ -75,13 +77,6 @@ theorem exists_hittingAfter_eq_of_isRightContinuous (hs : IsClosed s)
       exact ⟨v, hsub ⟨hu₀v, hvz⟩, hvA.2⟩
     exact hs.mem_of_frequently_of_tendsto hfreq (hX u₀)
 
-/-- A continuous path attains its first entrance into a closed set, if that entrance is
-finite. The returned time is at least the declared starting time. -/
-theorem exists_hittingAfter_eq (hs : IsClosed s)
-    (hX : Continuous (X · ω)) (hfinite : hittingAfter X s a ω ≠ ⊤) :
-    ∃ u : ι, hittingAfter X s a ω = u ∧ a ≤ u ∧ X u ω ∈ s :=
-  hs.exists_hittingAfter_eq_of_isRightContinuous hX.isRightContinuous hfinite
-
 /-- At a finite closed-set entrance of a right-continuous path, the path lies in the target set. -/
 theorem hittingAfter_mem_of_isRightContinuous_of_ne_top (hs : IsClosed s)
     (hX : IsRightContinuous (X · ω)) (hfinite : hittingAfter X s a ω ≠ ⊤) :
@@ -102,12 +97,6 @@ theorem hittingAfter_le_iff_of_isRightContinuous (hs : IsClosed s)
     exact ⟨u, ⟨hau, WithTop.coe_le_coe.mp (hu ▸ h)⟩, hus⟩
   · rintro ⟨u, hu, hus⟩
     exact (hittingAfter_le_of_mem hu.1 hus).trans (WithTop.coe_le_coe.mpr hu.2)
-
-/-- For a continuous path and a closed target, entrance by time `t` means that an
-actual hit occurs between the starting time and `t`, including both endpoints. -/
-theorem hittingAfter_le_iff (hs : IsClosed s) (hX : Continuous (X · ω)) :
-    hittingAfter X s a ω ≤ t ↔ ∃ u ∈ Icc a t, X u ω ∈ s :=
-  hs.hittingAfter_le_iff_of_isRightContinuous hX.isRightContinuous
 
 /-- If a right-continuous path starts outside a closed set, its first entrance occurs strictly
 after the starting time. -/
@@ -152,7 +141,8 @@ theorem apply_untopA_hittingAfter_Ici_of_le_add_one {X : ι → Ω → ℕ} {a :
       notMem_of_lt_hittingAfter (hu ▸ WithTop.coe_lt_coe.mpr hsu) has
     exact hfs.trans hlt
 
-/-- Under the same right-continuity and unit-jump hypotheses, a finite hit of `Set.Ici c` strictly
+/-- If a natural-valued right-continuous path starts at most at `c` (`X a ω ≤ c`) and jumps by at
+most one from strictly earlier times in `[a, t)`, then any finite hit of `Set.Ici c` strictly
 precedes the hit of `Set.Ici (c + 1)`. -/
 theorem hittingAfter_Ici_lt_succ_of_le_add_one {X : ι → Ω → ℕ} {a : ι} {ω : Ω} {c : ℕ}
     (hrc : IsRightContinuous (X · ω)) (ha : X a ω ≤ c)
@@ -212,6 +202,49 @@ theorem Adapted.isStoppingTime_hittingAfter_Ici_of_monotone_of_isRightContinuous
     ext ω
     simp [(hrc ω).hittingAfter_Ici_le_iff_of_monotone (hmono ω), hat]
 
+/-- First entrance into a clopen set `s` by an adapted process with everywhere right-continuous
+paths on a densely ordered separable time axis is a stopping time on any raw filtration. Neither
+compact intervals, right-continuity of the filtration, nor completeness is required. -/
+theorem Adapted.isStoppingTime_hittingAfter_of_isClopen_of_isRightContinuous
+    [DenselyOrdered ι] [TopologicalSpace.SeparableSpace ι]
+    [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {s : Set E}
+    (hX : Adapted ℱ X) (hrc : ∀ ω, IsRightContinuous (X · ω)) (hs : IsClopen s) (a : ι) :
+    IsStoppingTime ℱ (hittingAfter X s a) := by
+  have : Nonempty ι := ⟨a⟩
+  let q : ℕ → ι := TopologicalSpace.denseSeq ι
+  have hdense : DenseRange q := TopologicalSpace.denseRange_denseSeq ι
+  intro t
+  by_cases hat : a ≤ t
+  · have heq : {ω | hittingAfter X s a ω ≤ t} =
+        X t ⁻¹' s ∪ ⋃ (n : ℕ) (_ : q n ∈ Icc a t), X (q n) ⁻¹' s := by
+      ext ω
+      simp only [mem_ofPred_eq, hs.isClosed.hittingAfter_le_iff_of_isRightContinuous (hrc ω),
+        mem_union, mem_preimage, mem_iUnion, exists_prop]
+      constructor
+      · rintro ⟨u, ⟨hau, hut⟩, hus⟩
+        rcases hut.eq_or_lt with rfl | hut
+        · exact Or.inl hus
+        · obtain ⟨u', hu', huu'⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hut).mp
+            ((hrc ω u) (hs.isOpen.mem_nhds hus))
+          obtain ⟨n, hn⟩ := hdense.exists_mem_open isOpen_Ioo (nonempty_Ioo.mpr (lt_min hu' hut))
+          exact Or.inr ⟨n, ⟨hau.trans hn.1.le, (hn.2.trans_le (min_le_right _ _)).le⟩,
+            huu' ⟨hn.1, hn.2.trans_le (min_le_left _ _)⟩⟩
+      · rintro (hts | ⟨n, hqn, hns⟩)
+        · exact ⟨t, ⟨hat, le_rfl⟩, hts⟩
+        · exact ⟨q n, hqn, hns⟩
+    rw [heq]
+    exact (hX t hs.isOpen.measurableSet).union
+      (.iUnion fun n ↦ .iUnion fun hqn ↦
+        ((hX (q n)).mono (ℱ.mono hqn.2) le_rfl) hs.isOpen.measurableSet)
+  · have heq : {ω | hittingAfter X s a ω ≤ t} = ∅ := by
+      ext ω
+      simp only [mem_ofPred_eq, hs.isClosed.hittingAfter_le_iff_of_isRightContinuous (hrc ω),
+        mem_empty_iff_false, iff_false, not_exists, not_and]
+      exact fun u hu _ ↦ hat (hu.1.trans hu.2)
+    rw [heq]
+    exact @MeasurableSet.empty Ω (ℱ t)
+
 section Stopping
 
 variable [PseudoEMetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
@@ -246,7 +279,7 @@ theorem Adapted.isStoppingTime_hittingAfter_of_isClosed (hX : Adapted ℱ X)
         infEDist (X u ω) s) (a := ω)).symm
     convert hm (measurableSet_singleton 0) using 1
     ext ω
-    rw [mem_ofPred_eq, hs.hittingAfter_le_iff (hc ω)]
+    rw [mem_ofPred_eq, hs.hittingAfter_le_iff_of_isRightContinuous (hc ω).isRightContinuous]
     simp only [mem_preimage, mem_singleton_iff]
     constructor
     · rintro ⟨u, hu, hus⟩
@@ -261,8 +294,9 @@ theorem Adapted.isStoppingTime_hittingAfter_of_isClosed (hX : Adapted ℱ X)
       exact ⟨u, u.property, (mem_iff_infEDist_zero_of_closed hs).mpr hu⟩
   · have heq : {ω | hittingAfter X s a ω ≤ t} = ∅ := by
       ext ω
-      simp only [mem_ofPred_eq, hs.hittingAfter_le_iff (hc ω), mem_empty_iff_false,
-        iff_false, not_exists, not_and]
+      simp only [mem_ofPred_eq,
+        hs.hittingAfter_le_iff_of_isRightContinuous (hc ω).isRightContinuous,
+        mem_empty_iff_false, iff_false, not_exists, not_and]
       exact fun u hu _ ↦ hat (hu.1.trans hu.2)
     rw [heq]
     exact @MeasurableSet.empty Ω (ℱ t)
