@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.SimpleGraph.Staircase
 import TauCeti.GroupTheory.Perm.ParityRetract
+import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
@@ -72,7 +73,7 @@ private theorem oddPerm_mul (σ τ : S3) : oddPerm (σ * τ) = xor (oddPerm σ) 
     rcases Int.units_eq_one_or (Equiv.Perm.sign τ) with hτ | hτ <;> simp [hσ, hτ, Units.ext_iff]
 
 /-- `t01` is a transposition. -/
-private theorem t01_isSwap : t01.IsSwap := ⟨0, 1, by decide, rfl⟩
+private theorem t01_isSwap : t01.IsSwap := Equiv.Perm.swap_isSwap_iff.mpr (by decide)
 
 /-- The parity retraction onto `{1, t01}` moves `2` points on odd permutations and none on even
 ones. -/
