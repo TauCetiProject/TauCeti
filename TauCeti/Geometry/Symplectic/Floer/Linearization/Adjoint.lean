@@ -238,12 +238,6 @@ theorem apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add
   simp only [map_add, add_apply, sub_apply, neg_apply, comp_apply, flip_apply]
   abel
 
-omit [FiniteDimensional ℝ V] in
-/-- `w ↦ J(w, u w)` is `C¹` at `z` when `J` is `C¹` at `(z, u z)` and `u` is `C¹` at `z`. -/
-private theorem contDiffAt_comp_graph (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hu : ContDiffAt ℝ 1 u z) : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z :=
-  hJ.comp (f := fun w ↦ (w, u w)) z (contDiffAt_id.prodMk hu)
-
 /-- **Continuity of the formal adjoint.** Let `u` and the covector field `η` be `C¹` at `z`, and
 let the coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at `(z, u z)`. Then the
 formal adjoint `D^* η` is continuous at `z`. -/
@@ -254,7 +248,7 @@ theorem continuousAt_floerLinearizationAdjoint
     (hη : ContDiffAt ℝ 1 η z) :
     ContinuousAt (ω.floerLinearizationAdjoint J Ks Kt u η) z := by
   have hA : ContDiffAt ℝ 1 (fun w ↦ (η w).comp (J w (u w))) z :=
-    hη.clm_comp (contDiffAt_comp_graph hJ hu)
+    hη.clm_comp (hJ.comp₂ contDiffAt_id hu)
   rw [show ω.floerLinearizationAdjoint J Ks Kt u η = _ from
     funext (ω.floerLinearizationAdjoint_def J Ks Kt u η)]
   exact (((hη.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const).neg.sub
@@ -278,7 +272,7 @@ theorem integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_
   set A : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ (η w).comp (J w (u w))
   set C := ω.floerLinearizationCoeff J Ks Kt u
   have hA (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 A z :=
-    (hη z hz).clm_comp (contDiffAt_comp_graph (hJ z hz) (hu z hz))
+    (hη z hz).clm_comp ((hJ z hz).comp₂ contDiffAt_id (hu z hz))
   -- The pairings of `η`, `A` and their derivatives with `ξ` and its derivatives are integrable:
   -- each is continuous on the support of `ξ`, which is compact.
   have hdξ (v : ℝ × ℝ) {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) :
