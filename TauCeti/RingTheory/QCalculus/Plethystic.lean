@@ -21,35 +21,14 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 
 This file develops the elementary plethystic toolkit on power series with Laurent-series
 coefficients `(A⸨X⸩)⟦X⟧` (writing `q` for the inner Laurent variable and `t` for the outer
-power-series variable):
+power-series variable), directly via formal power-series substitution without general `λ`-rings:
 
-* `PowerSeries.adamsExpand R n`: the combined Adams substitution `ψ ^ n` on `(R⸨X⸩)⟦X⟧` sending
-  `q ↦ q ^ n` (via `LaurentSeries.expand`) and `t ↦ t ^ n` (via `PowerSeries.expand`).
-* `PowerSeries.plethysticLogSum F`: the plethystic logarithmic sum
-  `∑_{n ≥ 1} ψ ^ n (F) / n`, whose `t ^ k` coefficient only involves `1 ≤ n ≤ k`.
-* `PowerSeries.plethysticExp F`: the plethystic exponential
-  `PE(F) = exp (∑_{n ≥ 1} ψ ^ n (F) / n)`.
-
-The construction operates directly by formal power-series substitution without general
-`λ`-ring theory.
-
-## Main results
-
-* `PowerSeries.adamsExpand_one`, `PowerSeries.adamsExpand_adamsExpand`: functoriality
-  `ψ ^ 1 = id` and `ψ ^ m ∘ ψ ^ n = ψ ^ (m * n)`.
-* `PowerSeries.adamsExpand_C_const`, `PowerSeries.adamsExpand_C_single_mul_X_pow`: `ψ ^ n` fixes
-  constants and sends `r q ^ i t ^ j` to `r q ^ (n i) t ^ (n j)`.
-* `PowerSeries.plethysticExp_zero`, `PowerSeries.constantCoeff_plethysticExp`,
-  `PowerSeries.plethysticExp_add`, `PowerSeries.plethysticExp_neg_mul`: `PE(0) = 1`,
-  `constantCoeff (PE(F)) = 1`, `PE(F + G) = PE(F) PE(G)`, and `PE(-F) PE(F) = 1`.
-* `PowerSeries.adamsExpand_plethysticExp`: Adams compatibility
-  `ψ ^ m (PE(F)) = PE(ψ ^ m (F))`.
-* `PowerSeries.plethysticExp_single_mul_X_pow_mul`,
-  `PowerSeries.plethysticExp_neg_single_mul_X_pow`: for `j ≠ 0`,
-  `PE(q ^ i t ^ j) * (1 - q ^ i t ^ j) = 1` and `PE(-q ^ i t ^ j) = 1 - q ^ i t ^ j`.
-* `PowerSeries.exists_map_eq_plethysticExp`, `PowerSeries.existsUnique_map_eq_plethysticExp`:
-  integrality of `PE(F)` for `F ∈ (ℤ⸨X⸩)⟦X⟧`, proved by reducing to finite products at each
-  pair of `q`-adic and `t`-adic precisions.
+* `PowerSeries.adamsExpand R n`: combined Adams substitution `ψ ^ n` sending `q ↦ q ^ n`
+  (`LaurentSeries.expand`) and `t ↦ t ^ n` (`PowerSeries.expand`).
+* `PowerSeries.plethysticLogSum F`: `∑_{n ≥ 1} ψ ^ n (F) / n`, whose `t ^ k` coefficient depends
+  only on `1 ≤ n ≤ k`.
+* `PowerSeries.plethysticExp F`: `PE(F) = exp (∑_{n ≥ 1} ψ ^ n (F) / n)`, satisfying additivity-to-
+  multiplicativity, Adams compatibility, monomial product formulas, and integrality over `ℤ⸨X⸩⟦X⟧`.
 
 ## References
 
@@ -93,16 +72,14 @@ theorem adamsExpand_apply (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
   (rfl)
 
 /-- The `t ^ (n * k)` coefficient of `ψ ^ n (F)` is `LaurentSeries.expand R n (coeff k F)`. -/
-@[simp]
-theorem coeff_adamsExpand_mul (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) (k : ℕ) :
+@[simp] theorem coeff_adamsExpand_mul (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) (k : ℕ) :
     coeff ((n : ℕ) * k) (adamsExpand R n F) = LaurentSeries.expand R n (coeff k F) := by
-  rw [adamsExpand_apply, coeff_expand_mul, coeff_map]
-  rfl
+  rw [adamsExpand_apply, coeff_expand_mul, coeff_map]; rfl
 
 /-- Coefficients of `ψ ^ n (F)` at `t`-exponents not divisible by `n` vanish. -/
 theorem coeff_adamsExpand_of_not_dvd (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) {k : ℕ} (hk : ¬ (n : ℕ) ∣ k) :
-    coeff k (adamsExpand R n F) = 0 := by
-  rw [adamsExpand_apply, coeff_expand_of_not_dvd (n : ℕ) n.ne_zero _ hk]
+    coeff k (adamsExpand R n F) = 0 :=
+  coeff_expand_of_not_dvd (n : ℕ) n.ne_zero _ hk
 
 /-- The `[q ^ (n * i) t ^ (n * k)]` coefficient of `ψ ^ n (F)` equals `[q ^ i t ^ k] F`. -/
 theorem coeff_coeff_adamsExpand_mul (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) (k : ℕ) (i : ℤ) :
@@ -110,11 +87,9 @@ theorem coeff_coeff_adamsExpand_mul (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) (k : ℕ)
   rw [coeff_adamsExpand_mul, LaurentSeries.coeff_expand_mul]
 
 /-- `ψ ^ n` acts on `t`-constants by `LaurentSeries.expand R n`. -/
-@[simp]
-theorem adamsExpand_C (n : ℕ+) (c : R⸨X⸩) :
+@[simp] theorem adamsExpand_C (n : ℕ+) (c : R⸨X⸩) :
     adamsExpand R n (C c) = C (LaurentSeries.expand R n c) := by
-  rw [adamsExpand_apply, map_C, expand_C]
-  rfl
+  rw [adamsExpand_apply, map_C, expand_C]; rfl
 
 /-- `ψ ^ n` fixes scalar constants `C (HahnSeries.C r)`. -/
 theorem adamsExpand_C_const (n : ℕ+) (r : R) :
@@ -122,31 +97,26 @@ theorem adamsExpand_C_const (n : ℕ+) (r : R) :
   rw [adamsExpand_C, HahnSeries.C_apply, LaurentSeries.expand_single, mul_zero]
 
 /-- `ψ ^ n` sends `t` to `t ^ n`. -/
-@[simp]
-theorem adamsExpand_X (n : ℕ+) :
+@[simp] theorem adamsExpand_X (n : ℕ+) :
     adamsExpand R n (X : (R⸨X⸩)⟦X⟧) = X ^ (n : ℕ) := by
   rw [adamsExpand_apply, map_X, expand_X]
 
 /-- `ψ ^ n` sends the monomial `r q ^ i t ^ j` to `r q ^ (n i) t ^ (n j)`. -/
-@[simp]
-theorem adamsExpand_C_single_mul_X_pow (n : ℕ+) (i : ℤ) (r : R) (j : ℕ) :
+@[simp] theorem adamsExpand_C_single_mul_X_pow (n : ℕ+) (i : ℤ) (r : R) (j : ℕ) :
     adamsExpand R n (C (single i r) * X ^ j) =
       C (single ((n : ℤ) * i) r) * X ^ ((n : ℕ) * j) := by
   rw [map_mul, adamsExpand_C, LaurentSeries.expand_single, map_pow, adamsExpand_X, ← pow_mul]
 
 /-- The `t`-constant term of `ψ ^ n (F)` is `LaurentSeries.expand R n (constantCoeff F)`. -/
-@[simp]
-theorem constantCoeff_adamsExpand (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
+@[simp] theorem constantCoeff_adamsExpand (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
     constantCoeff (adamsExpand R n F) = LaurentSeries.expand R n (constantCoeff F) := by
   rw [← coeff_zero_eq_constantCoeff_apply, ← mul_zero (n : ℕ), coeff_adamsExpand_mul,
     coeff_zero_eq_constantCoeff_apply]
 
 variable (R) in
 /-- `ψ ^ 1` is the identity algebra homomorphism. -/
-@[simp]
-theorem adamsExpand_one : adamsExpand R 1 = AlgHom.id R (R⸨X⸩)⟦X⟧ := by
-  ext F k i
-  simpa using coeff_coeff_adamsExpand_mul 1 F k i
+@[simp] theorem adamsExpand_one : adamsExpand R 1 = AlgHom.id R (R⸨X⸩)⟦X⟧ := by
+  ext F k i; simpa using coeff_coeff_adamsExpand_mul 1 F k i
 
 /-- Functoriality of combined Adams dilation: `ψ ^ m (ψ ^ n (F)) = ψ ^ (m * n) (F)`. -/
 theorem adamsExpand_adamsExpand (m n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
@@ -154,7 +124,7 @@ theorem adamsExpand_adamsExpand (m n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
   have hcomp :
       (LaurentSeries.expand R m).toRingHom.comp (LaurentSeries.expand R n).toRingHom =
         (LaurentSeries.expand R (m * n)).toRingHom :=
-    RingHom.ext fun x ↦ LaurentSeries.expand_expand m n x
+    RingHom.ext (LaurentSeries.expand_expand m n)
   rw [adamsExpand_apply, adamsExpand_apply, adamsExpand_apply,
     map_expand (n : ℕ) n.ne_zero (LaurentSeries.expand R m).toRingHom,
     ← expand_mul (m : ℕ) m.ne_zero (n : ℕ) n.ne_zero, ← RingHom.comp_apply,
@@ -181,7 +151,7 @@ theorem map_adamsExpand {S : Type*} [CommRing S] (φ : R →+* S) (n : ℕ+) (F 
   have hcomp :
       (HahnSeries.mapRingHom φ).comp (LaurentSeries.expand R n).toRingHom =
         (LaurentSeries.expand S n).toRingHom.comp (HahnSeries.mapRingHom φ) :=
-    RingHom.ext fun x ↦ mapRingHom_laurentExpand φ n x
+    RingHom.ext (mapRingHom_laurentExpand φ n)
   rw [adamsExpand_apply, adamsExpand_apply, map_expand, ← RingHom.comp_apply,
     ← PowerSeries.map_comp, ← RingHom.comp_apply, ← PowerSeries.map_comp, hcomp]
 
@@ -193,23 +163,20 @@ theorem adamsExpand_subst_exp {A : Type*} [CommRing A] [Algebra ℚ A] (n : ℕ+
   have hsub' : HasSubst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) := by
     obtain ⟨m, hm⟩ := hG
     refine ⟨m, ?_⟩
-    have hm' : constantCoeff G ^ m = 0 := hm
-    have hpow : constantCoeff (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) ^ m = 0 := by
-      rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
-        ← map_pow, hm', map_zero]
-    exact hpow
-  have hmap : PowerSeries.map (LaurentSeries.expand A n).toRingHom
-        ((PowerSeries.exp A⸨X⸩).subst G) =
-      (PowerSeries.map (LaurentSeries.expand A n).toRingHom (PowerSeries.exp A⸨X⸩)).subst
-        (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) :=
-    PowerSeries.map_subst hG (PowerSeries.exp A⸨X⸩)
-  have hexp : PowerSeries.expand (n : ℕ) n.ne_zero
-        ((PowerSeries.exp A⸨X⸩).subst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G)) =
-      (PowerSeries.exp A⸨X⸩).subst
-        (PowerSeries.expand (n : ℕ) n.ne_zero
-          (PowerSeries.map (LaurentSeries.expand A n).toRingHom G)) :=
-    PowerSeries.expand_subst (n : ℕ) n.ne_zero hsub' (PowerSeries.exp A⸨X⸩)
-  rw [adamsExpand_apply, hmap, PowerSeries.map_exp, hexp, ← adamsExpand_apply]
+    suffices constantCoeff (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) ^ m = 0 from
+      this
+    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
+      ← map_pow]
+    exact (congrArg _ hm).trans (map_zero _)
+  calc adamsExpand A n ((PowerSeries.exp A⸨X⸩).subst G)
+      = PowerSeries.expand (n : ℕ) n.ne_zero
+          ((PowerSeries.exp A⸨X⸩).subst
+            (PowerSeries.map (LaurentSeries.expand A n).toRingHom G)) := by
+        rw [adamsExpand_apply]
+        exact congrArg _ ((PowerSeries.map_subst hG (PowerSeries.exp A⸨X⸩)).trans
+          (by rw [PowerSeries.map_exp]; rfl))
+    _ = (PowerSeries.exp A⸨X⸩).subst (adamsExpand A n G) :=
+        PowerSeries.expand_subst (n : ℕ) n.ne_zero hsub' (PowerSeries.exp A⸨X⸩)
 
 end AdamsExpand
 
@@ -226,18 +193,15 @@ noncomputable def plethysticLogSum (F : (A⸨X⸩)⟦X⟧) : (A⸨X⸩)⟦X⟧ :
     ∑ n ∈ range k, ((n + 1 : ℕ) : ℚ)⁻¹ • coeff k (adamsExpand A n.succPNat F)
 
 /-- Coefficient formula for `PowerSeries.plethysticLogSum`. -/
-@[simp]
-theorem coeff_plethysticLogSum (F : (A⸨X⸩)⟦X⟧) (k : ℕ) :
+@[simp] theorem coeff_plethysticLogSum (F : (A⸨X⸩)⟦X⟧) (k : ℕ) :
     coeff k (plethysticLogSum F) =
       ∑ n ∈ range k, ((n + 1 : ℕ) : ℚ)⁻¹ • coeff k (adamsExpand A n.succPNat F) :=
   coeff_mk k _
 
 /-- The `t`-constant term of `plethysticLogSum F` is `0`. -/
-@[simp]
-theorem constantCoeff_plethysticLogSum (F : (A⸨X⸩)⟦X⟧) :
+@[simp] theorem constantCoeff_plethysticLogSum (F : (A⸨X⸩)⟦X⟧) :
     constantCoeff (plethysticLogSum F) = 0 := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_plethysticLogSum]
-  simp
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_plethysticLogSum]; simp
 
 /-- For any truncation `N ≥ k`, the `t ^ k` coefficient of `plethysticLogSum F` equals the sum over
 `n < N` whenever `k ≠ 0` (or `constantCoeff F = 0`). -/
@@ -247,32 +211,23 @@ theorem coeff_plethysticLogSum_eq_sum_range_of_le (F : (A⸨X⸩)⟦X⟧) {k N :
       ∑ n ∈ range N, ((n + 1 : ℕ) : ℚ)⁻¹ • coeff k (adamsExpand A n.succPNat F) := by
   rw [coeff_plethysticLogSum]
   refine Finset.sum_subset (range_mono hN) fun n _ hn ↦ ?_
-  have hkn : k < n + 1 := by simp only [mem_range, not_lt] at hn; omega
-  rcases hk with hk | hF
-  · have hndvd : ¬ (n.succPNat : ℕ) ∣ k := Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero hk) hkn
-    rw [coeff_adamsExpand_of_not_dvd n.succPNat F hndvd, smul_zero]
-  · rcases eq_or_ne k 0 with rfl | hk0
-    · rw [coeff_zero_eq_constantCoeff_apply, constantCoeff_adamsExpand, hF, map_zero, smul_zero]
-    · have hndvd : ¬ (n.succPNat : ℕ) ∣ k := Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero hk0) hkn
-      rw [coeff_adamsExpand_of_not_dvd n.succPNat F hndvd, smul_zero]
+  rcases eq_or_ne k 0 with rfl | hk0
+  · rw [coeff_zero_eq_constantCoeff_apply, constantCoeff_adamsExpand, hk.resolve_left (by simp),
+      map_zero, smul_zero]
+  · have hkn : k < n + 1 := by simp only [mem_range, not_lt] at hn; omega
+    rw [coeff_adamsExpand_of_not_dvd n.succPNat F
+      (Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero hk0) hkn), smul_zero]
 
-@[simp]
-theorem plethysticLogSum_zero : plethysticLogSum (0 : (A⸨X⸩)⟦X⟧) = 0 := by
-  apply PowerSeries.ext
-  intro k
-  simp
+@[simp] theorem plethysticLogSum_zero : plethysticLogSum (0 : (A⸨X⸩)⟦X⟧) = 0 := by
+  apply PowerSeries.ext; intro k; simp
 
 theorem plethysticLogSum_add (F G : (A⸨X⸩)⟦X⟧) :
     plethysticLogSum (F + G) = plethysticLogSum F + plethysticLogSum G := by
-  apply PowerSeries.ext
-  intro k
-  simp [Finset.sum_add_distrib, smul_add]
+  apply PowerSeries.ext; intro k; simp [Finset.sum_add_distrib, smul_add]
 
 theorem plethysticLogSum_neg (F : (A⸨X⸩)⟦X⟧) :
     plethysticLogSum (-F) = -plethysticLogSum F := by
-  apply PowerSeries.ext
-  intro k
-  simp [Finset.sum_neg_distrib]
+  apply PowerSeries.ext; intro k; simp [Finset.sum_neg_distrib]
 
 theorem plethysticLogSum_sub (F G : (A⸨X⸩)⟦X⟧) :
     plethysticLogSum (F - G) = plethysticLogSum F - plethysticLogSum G := by
@@ -280,85 +235,64 @@ theorem plethysticLogSum_sub (F G : (A⸨X⸩)⟦X⟧) :
 
 theorem plethysticLogSum_nsmul (m : ℕ) (F : (A⸨X⸩)⟦X⟧) :
     plethysticLogSum (m • F) = m • plethysticLogSum F := by
-  apply PowerSeries.ext
-  intro k
+  apply PowerSeries.ext; intro k
   simp only [coeff_plethysticLogSum, map_nsmul, Finset.smul_sum]
   exact Finset.sum_congr rfl fun _ _ ↦ smul_comm _ _ _
 
 theorem plethysticLogSum_zsmul (m : ℤ) (F : (A⸨X⸩)⟦X⟧) :
     plethysticLogSum (m • F) = m • plethysticLogSum F := by
-  apply PowerSeries.ext
-  intro k
+  apply PowerSeries.ext; intro k
   simp only [coeff_plethysticLogSum, map_zsmul, Finset.smul_sum]
   exact Finset.sum_congr rfl fun _ _ ↦ smul_comm _ _ _
 
 /-- Combined Adams dilation commutes with `plethysticLogSum`. -/
 theorem adamsExpand_plethysticLogSum (m : ℕ+) (F : (A⸨X⸩)⟦X⟧) :
     adamsExpand A m (plethysticLogSum F) = plethysticLogSum (adamsExpand A m F) := by
-  apply PowerSeries.ext
-  intro k
+  apply PowerSeries.ext; intro k
   rcases eq_or_ne k 0 with rfl | hk0
   · simp [coeff_zero_eq_constantCoeff_apply]
   by_cases hmd : (m : ℕ) ∣ k
   · obtain ⟨d, rfl⟩ := hmd
-    have hdle : d ≤ (m : ℕ) * d := Nat.le_mul_of_pos_left d m.pos
     rw [coeff_adamsExpand_mul, coeff_plethysticLogSum, map_sum, coeff_plethysticLogSum]
-    refine Finset.sum_subset_zero_on_sdiff (range_mono hdle) (fun n hn ↦ ?_) (fun n _ ↦ ?_)
+    refine Finset.sum_subset_zero_on_sdiff (range_mono (Nat.le_mul_of_pos_left d m.pos))
+      (fun n hn ↦ ?_) (fun n _ ↦ ?_)
     · simp only [mem_sdiff, mem_range, not_lt] at hn
-      have hndvd : ¬ ((n.succPNat * m : ℕ+) : ℕ) ∣ (m : ℕ) * d := by
-        have hlt : (m : ℕ) * d < (n + 1) * (m : ℕ) := by
-          rw [mul_comm (n + 1)]
-          exact Nat.mul_lt_mul_of_pos_left (by omega) m.pos
-        exact Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero hk0) hlt
-      rw [adamsExpand_adamsExpand, coeff_adamsExpand_of_not_dvd (n.succPNat * m) F hndvd,
-        smul_zero]
+      have hlt : (m : ℕ) * d < (n + 1) * (m : ℕ) := by
+        rw [mul_comm (n + 1)]; exact Nat.mul_lt_mul_of_pos_left (by omega) m.pos
+      rw [adamsExpand_adamsExpand, coeff_adamsExpand_of_not_dvd (n.succPNat * m) F
+        (Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero hk0) hlt), smul_zero]
     · rw [map_rat_smul (LaurentSeries.expand A m), ← coeff_adamsExpand_mul m,
         adamsExpand_adamsExpand, adamsExpand_adamsExpand, mul_comm m]
   · rw [coeff_adamsExpand_of_not_dvd m _ hmd, coeff_plethysticLogSum]
     symm
     refine Finset.sum_eq_zero fun n _ ↦ ?_
-    have hndvd : ¬ ((n.succPNat * m : ℕ+) : ℕ) ∣ k := fun h ↦
-      hmd (dvd_trans (dvd_mul_left _ _) h)
-    rw [adamsExpand_adamsExpand, coeff_adamsExpand_of_not_dvd (n.succPNat * m) F hndvd, smul_zero]
+    rw [adamsExpand_adamsExpand, coeff_adamsExpand_of_not_dvd (n.succPNat * m) F
+      (fun h ↦ hmd (dvd_trans (dvd_mul_left _ _) h)), smul_zero]
 
 /-- Coefficientwise ring homomorphisms between `ℚ`-algebras commute with `plethysticLogSum`. -/
 theorem map_plethysticLogSum (φ : A →+* B) (F : (A⸨X⸩)⟦X⟧) :
     PowerSeries.map (HahnSeries.mapRingHom φ) (plethysticLogSum F) =
       plethysticLogSum (PowerSeries.map (HahnSeries.mapRingHom φ) F) := by
-  apply PowerSeries.ext
-  intro k
+  apply PowerSeries.ext; intro k
   simp only [coeff_map, coeff_plethysticLogSum, map_sum]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  rw [map_rat_smul (HahnSeries.mapRingHom φ), ← coeff_map, map_adamsExpand]
+  exact Finset.sum_congr rfl fun n _ ↦ by
+    rw [map_rat_smul (HahnSeries.mapRingHom φ), ← coeff_map, map_adamsExpand]
 
 /-- The **plethystic exponential** `PE(F) = exp (∑_{n ≥ 1} ψ ^ n (F) / n)` on `(A⸨X⸩)⟦X⟧`. -/
 noncomputable def plethysticExp (F : (A⸨X⸩)⟦X⟧) : (A⸨X⸩)⟦X⟧ :=
   (PowerSeries.exp A⸨X⸩).subst (plethysticLogSum F)
 
-@[simp]
-theorem plethysticExp_zero : plethysticExp (0 : (A⸨X⸩)⟦X⟧) = 1 := by
-  rw [plethysticExp, plethysticLogSum_zero, ← map_zero (C (R := A⸨X⸩))]
-  apply PowerSeries.ext
-  intro k
-  rw [coeff_subst_eq_sum_range _ (by simp)]
-  rcases k with _ | k
-  · simp
-  · rw [coeff_one, ite_eq_right (fun h ↦ absurd h (Nat.succ_ne_zero k))]
-    refine Finset.sum_eq_zero fun d _ ↦ ?_
-    rcases d with _ | d
-    · simp
-    · simp [zero_pow (Nat.succ_ne_zero d)]
-
-@[simp]
-theorem constantCoeff_plethysticExp (F : (A⸨X⸩)⟦X⟧) :
+@[simp] theorem constantCoeff_plethysticExp (F : (A⸨X⸩)⟦X⟧) :
     constantCoeff (plethysticExp F) = 1 :=
   constantCoeff_subst_exp (constantCoeff_plethysticLogSum F)
 
 /-- The formal logarithm of `PE(F)` is `plethysticLogSum F`. -/
-@[simp]
-theorem logOf_plethysticExp (F : (A⸨X⸩)⟦X⟧) :
+@[simp] theorem logOf_plethysticExp (F : (A⸨X⸩)⟦X⟧) :
     logOf (plethysticExp F) = plethysticLogSum F :=
   logOf_subst_exp (constantCoeff_plethysticLogSum F)
+
+@[simp] theorem plethysticExp_zero : plethysticExp (0 : (A⸨X⸩)⟦X⟧) = 1 :=
+  (logOf_inj (constantCoeff_plethysticExp 0) constantCoeff_one).mp (by simp)
 
 /-- **Additivity-to-multiplicativity**: `PE(F + G) = PE(F) * PE(G)`. -/
 theorem plethysticExp_add (F G : (A⸨X⸩)⟦X⟧) :
@@ -373,8 +307,7 @@ theorem plethysticExp_sum {ι : Type*} (s : Finset ι) (f : ι → (A⸨X⸩)⟦
   classical
   induction s using Finset.induction_on with
   | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.sum_insert ha, Finset.prod_insert ha, plethysticExp_add, ih]
+  | insert a s ha ih => rw [Finset.sum_insert ha, Finset.prod_insert ha, plethysticExp_add, ih]
 
 /-- `PE(-F) * PE(F) = 1`. -/
 theorem plethysticExp_neg_mul (F : (A⸨X⸩)⟦X⟧) :
@@ -399,35 +332,29 @@ theorem adamsExpand_plethysticExp (m : ℕ+) (F : (A⸨X⸩)⟦X⟧) :
 theorem map_plethysticExp (φ : A →+* B) (F : (A⸨X⸩)⟦X⟧) :
     PowerSeries.map (HahnSeries.mapRingHom φ) (plethysticExp F) =
       plethysticExp (PowerSeries.map (HahnSeries.mapRingHom φ) F) := by
-  have hsub : HasSubst (plethysticLogSum F) :=
-    HasSubst.of_constantCoeff_zero' (constantCoeff_plethysticLogSum F)
-  have hmap : PowerSeries.map (HahnSeries.mapRingHom φ)
-        ((PowerSeries.exp A⸨X⸩).subst (plethysticLogSum F)) =
-      (PowerSeries.map (HahnSeries.mapRingHom φ) (PowerSeries.exp A⸨X⸩)).subst
-        (PowerSeries.map (HahnSeries.mapRingHom φ) (plethysticLogSum F)) :=
-    PowerSeries.map_subst hsub (PowerSeries.exp A⸨X⸩)
-  rw [plethysticExp, hmap, PowerSeries.map_exp, map_plethysticLogSum, plethysticExp]
+  rw [plethysticExp, plethysticExp, ← map_plethysticLogSum]
+  exact (PowerSeries.map_subst
+    (HasSubst.of_constantCoeff_zero' (constantCoeff_plethysticLogSum F))
+    (PowerSeries.exp A⸨X⸩)).trans (by rw [PowerSeries.map_exp]; rfl)
 
 /-- The `t ^ k` coefficient of `PE(F)` only depends on the coefficients `coeff j F` for
 `1 ≤ j ≤ k`. -/
 theorem coeff_plethysticExp_eq_of_coeff_eq {F₁ F₂ : (A⸨X⸩)⟦X⟧} {k : ℕ}
     (h : ∀ j, 1 ≤ j → j ≤ k → coeff j F₁ = coeff j F₂) :
     coeff k (plethysticExp F₁) = coeff k (plethysticExp F₂) := by
-  have hlog : ∀ j ≤ k, coeff j (plethysticLogSum F₁) = coeff j (plethysticLogSum F₂) := by
-    intro j hj
+  have hdiff : ∀ j ≤ k, coeff j (plethysticLogSum (F₁ - F₂)) = 0 := fun j hj ↦ by
+    rw [plethysticLogSum_sub, map_sub, sub_eq_zero]
     rcases eq_or_ne j 0 with rfl | hj0
     · simp [coeff_zero_eq_constantCoeff_apply]
     rw [coeff_plethysticLogSum, coeff_plethysticLogSum]
     refine Finset.sum_congr rfl fun n _ ↦ ?_
     by_cases hd : (n.succPNat : ℕ) ∣ j
     · obtain ⟨d, rfl⟩ := hd
-      have hd1 : 1 ≤ d := Nat.pos_of_ne_zero (right_ne_zero_of_mul hj0)
-      have hdk : d ≤ k := le_trans (Nat.le_mul_of_pos_left d n.succPNat.pos) hj
-      rw [coeff_adamsExpand_mul n.succPNat, coeff_adamsExpand_mul n.succPNat, h d hd1 hdk]
+      rw [coeff_adamsExpand_mul n.succPNat, coeff_adamsExpand_mul n.succPNat,
+        h d (Nat.pos_of_ne_zero (right_ne_zero_of_mul hj0))
+          (le_trans (Nat.le_mul_of_pos_left d n.succPNat.pos) hj)]
     · rw [coeff_adamsExpand_of_not_dvd n.succPNat F₁ hd,
         coeff_adamsExpand_of_not_dvd n.succPNat F₂ hd]
-  have hdiff : ∀ j ≤ k, coeff j (plethysticLogSum (F₁ - F₂)) = 0 := fun j hj ↦ by
-    rw [plethysticLogSum_sub, map_sub, hlog j hj, sub_self]
   obtain ⟨E', hE'⟩ := X_dvd_iff.mpr (by simp : constantCoeff (PowerSeries.exp A⸨X⸩ - 1) = 0)
   have hsub : HasSubst (plethysticLogSum (F₁ - F₂)) :=
     HasSubst.of_constantCoeff_zero' (constantCoeff_plethysticLogSum _)
@@ -438,17 +365,15 @@ theorem coeff_plethysticExp_eq_of_coeff_eq {F₁ F₂ : (A⸨X⸩)⟦X⟧} {k : 
   have hpe_zero : ∀ j ≤ k, coeff j (plethysticExp (F₁ - F₂) - 1) = 0 := fun j hj ↦ by
     rw [hpe_sub, coeff_mul]
     refine Finset.sum_eq_zero fun x hx ↦ ?_
-    have hle : x.1 ≤ k := le_trans (Nat.le_of_add_right_le (mem_antidiagonal.mp hx).le) hj
-    rw [hdiff x.1 hle, zero_mul]
+    rw [hdiff x.1 (le_trans (Nat.le_of_add_right_le (mem_antidiagonal.mp hx).le) hj), zero_mul]
   have hsplit : plethysticExp F₁ =
       plethysticExp F₂ + plethysticExp F₂ * (plethysticExp (F₁ - F₂) - 1) := by
     rw [mul_sub, mul_one, add_sub_cancel, ← plethysticExp_add, add_sub_cancel]
   rw [hsplit, map_add, coeff_mul]
   suffices ∑ x ∈ antidiagonal k, coeff x.1 (plethysticExp F₂) *
       coeff x.2 (plethysticExp (F₁ - F₂) - 1) = 0 by rw [this, add_zero]
-  refine Finset.sum_eq_zero fun x hx ↦ ?_
-  have hle : x.2 ≤ k := Nat.le_of_add_left_le (mem_antidiagonal.mp hx).le
-  rw [hpe_zero x.2 hle, mul_zero]
+  exact Finset.sum_eq_zero fun x hx ↦ by
+    rw [hpe_zero x.2 (Nat.le_of_add_left_le (mem_antidiagonal.mp hx).le), mul_zero]
 
 /-! ### Monomial plethystic formulas -/
 
@@ -457,38 +382,27 @@ expansion of `∑_{n ≥ 1} (q ^ i) ^ n t ^ n / n`. -/
 theorem plethysticLogSum_single_mul_X_pow (i : ℤ) {j : ℕ} (hj : j ≠ 0) :
     plethysticLogSum (C (single i (1 : A)) * X ^ j) =
       PowerSeries.expand j hj (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (single i (1 : A)) ^ n) := by
-  apply PowerSeries.ext
-  intro k
+  apply PowerSeries.ext; intro k
   rw [coeff_plethysticLogSum, coeff_expand]
   by_cases hjk : j ∣ k
   · obtain ⟨d, rfl⟩ := hjk
     rw [ite_eq_left ⟨d, rfl⟩, Nat.mul_div_cancel_left d (Nat.pos_of_ne_zero hj), coeff_mk]
     rcases d with _ | d
     · simp
-    · rw [Finset.sum_eq_single d]
-      · have hmul : (d.succPNat : ℕ) * j = j * (d + 1) := by
-          simp [mul_comm]
+    · rw [Finset.sum_eq_single_of_mem d (mem_range.mpr (lt_of_lt_of_le (Nat.lt_succ_self d)
+          (Nat.le_mul_of_pos_left (d + 1) (Nat.pos_of_ne_zero hj))))]
+      · have hmul : (d.succPNat : ℕ) * j = j * (d + 1) := by simp [mul_comm]
         rw [adamsExpand_C_single_mul_X_pow, hmul, coeff_C_mul_X_pow, ite_eq_left rfl,
           HahnSeries.single_pow, one_pow, nsmul_eq_mul]
         simp
       · intro n _ hnd
-        have hne : j * (d + 1) ≠ (n.succPNat : ℕ) * j := by
-          intro heq
-          have : d + 1 = n + 1 :=
-            Nat.mul_right_cancel (Nat.pos_of_ne_zero hj) ((mul_comm (d + 1) j).trans heq)
-          omega
+        have hne : j * (d + 1) ≠ (n.succPNat : ℕ) * j := fun heq ↦ hnd <| by
+          have h := Nat.mul_right_cancel (Nat.pos_of_ne_zero hj) ((mul_comm (d + 1) j).trans heq)
+          simp only [Nat.succPNat_coe] at h; omega
         rw [adamsExpand_C_single_mul_X_pow, coeff_C_mul_X_pow, ite_eq_right hne, smul_zero]
-      · intro hdnot
-        exfalso
-        apply hdnot
-        rw [mem_range]
-        exact lt_of_lt_of_le (Nat.lt_succ_self d)
-          (Nat.le_mul_of_pos_left (d + 1) (Nat.pos_of_ne_zero hj))
   · rw [ite_eq_right hjk]
     refine Finset.sum_eq_zero fun n _ ↦ ?_
-    have hne : k ≠ (n.succPNat : ℕ) * j := fun heq ↦ hjk ⟨n + 1, by
-      have : k = (n + 1) * j := heq
-      linarith⟩
+    have hne : k ≠ (n.succPNat : ℕ) * j := fun heq ↦ hjk ⟨n + 1, by simp [heq, mul_comm]⟩
     rw [adamsExpand_C_single_mul_X_pow, coeff_C_mul_X_pow, ite_eq_right hne, smul_zero]
 
 /-- Formal logarithm of `1 - c X ^ j` (`j ≠ 0`) as the `j`-fold expansion of
@@ -498,39 +412,36 @@ private theorem logOf_one_sub_C_mul_X_pow {R : Type*} [CommRing R] [Algebra ℚ 
     logOf (1 - C c * X ^ j) =
       PowerSeries.expand j hj (PowerSeries.mk fun n ↦ -(algebraMap ℚ R (n : ℚ)⁻¹ * c ^ n)) := by
   have hsub : HasSubst (-(C c * X) : R⟦X⟧) := HasSubst.of_constantCoeff_zero' (by simp)
-  have hbase := congrArg (PowerSeries.expand j hj) (logOf_one_sub_C_mul_X c)
-  have hexp : PowerSeries.expand j hj ((PowerSeries.log R).subst (-(C c * X))) =
-      (PowerSeries.log R).subst (PowerSeries.expand j hj (-(C c * X))) :=
-    PowerSeries.expand_subst j hj hsub (PowerSeries.log R)
   have h1 : (1 - C c * X - 1 : R⟦X⟧) = -(C c * X) := by ring
   have h2 : (1 - C c * X ^ j - 1 : R⟦X⟧) = -(C c * X ^ j) := by ring
+  have hbase := congrArg (PowerSeries.expand j hj) (logOf_one_sub_C_mul_X c)
   rw [logOf_eq, h1] at hbase
-  rw [logOf_eq, h2, ← expand_X j hj, ← expand_C j hj, ← map_mul, ← map_neg, ← hexp, hbase]
-  congr 1
-  apply PowerSeries.ext
-  intro n
+  rw [logOf_eq, h2, ← expand_X j hj, ← expand_C j hj, ← map_mul, ← map_neg]
+  refine (PowerSeries.expand_subst j hj hsub (PowerSeries.log R)).symm.trans (hbase.trans ?_)
+  congr 1; apply PowerSeries.ext; intro n
   rw [coeff_mk, coeff_mk, Algebra.smul_def, mul_neg]
+
+/-- Scalar multiplication by `ℚ` via `algebraMap ℚ A⸨X⸩` agrees with coefficientwise `•`. -/
+private theorem algebraMap_rat_mul_laurent {R : Type*} [CommRing R] [Algebra ℚ R]
+    (q : ℚ) (x : R⸨X⸩) : algebraMap ℚ R⸨X⸩ q * x = q • x := by
+  ext r
+  rw [HahnSeries.algebraMap_apply', IsScalarTower.algebraMap_apply ℚ R R⟦X⟧,
+    ← PowerSeries.C_eq_algebraMap, HahnSeries.ofPowerSeries_C, HahnSeries.C_apply,
+    HahnSeries.single_zero_mul_eq_smul, HahnSeries.coeff_smul, HahnSeries.coeff_smul]
+  simp [Algebra.smul_def]
 
 /-- **Monomial plethystic exponential**: for `j ≠ 0`,
 `PE(q ^ i t ^ j) * (1 - q ^ i t ^ j) = 1`. -/
 theorem plethysticExp_single_mul_X_pow_mul (i : ℤ) {j : ℕ} (hj : j ≠ 0) :
     plethysticExp (C (single i (1 : A)) * X ^ j) * (1 - C (single i (1 : A)) * X ^ j) = 1 := by
   let c : A⸨X⸩ := single i (1 : A)
-  have h1 : constantCoeff (1 - C c * X ^ j) = 1 := by simp [hj]
   refine (logOf_inj (by simp [hj]) constantCoeff_one).mp ?_
-  rw [logOf_mul (constantCoeff_plethysticExp _) h1, logOf_plethysticExp, logOf_one,
+  rw [logOf_mul (constantCoeff_plethysticExp _) (by simp [hj]), logOf_plethysticExp, logOf_one,
     plethysticLogSum_single_mul_X_pow i hj, logOf_one_sub_C_mul_X_pow (R := A⸨X⸩) c hj]
-  apply PowerSeries.ext
-  intro k
+  apply PowerSeries.ext; intro k
   rw [map_add, coeff_expand, coeff_expand, map_zero]
   split_ifs with hjk
-  · rw [coeff_mk, coeff_mk]
-    ext r
-    rw [HahnSeries.coeff_add, HahnSeries.coeff_zero, HahnSeries.coeff_smul, HahnSeries.coeff_neg,
-      HahnSeries.algebraMap_apply', IsScalarTower.algebraMap_apply ℚ A A⟦X⟧,
-      ← PowerSeries.C_eq_algebraMap, HahnSeries.ofPowerSeries_C, HahnSeries.C_apply,
-      HahnSeries.single_zero_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul,
-      ← Algebra.smul_def, add_neg_cancel]
+  · rw [coeff_mk, coeff_mk, algebraMap_rat_mul_laurent, add_neg_cancel]
   · simp
 
 /-- **Negative monomial plethystic exponential**: for `j ≠ 0`,
@@ -540,17 +451,14 @@ theorem plethysticExp_neg_single_mul_X_pow (i : ℤ) {j : ℕ} (hj : j ≠ 0) :
   have hu : IsUnit (plethysticExp (C (single i (1 : A)) * X ^ j)) :=
     isUnit_iff_constantCoeff.mpr (by simp)
   apply hu.mul_left_cancel
-  rw [mul_comm (plethysticExp (C (single i (1 : A)) * X ^ j)),
-    plethysticExp_neg_mul, plethysticExp_single_mul_X_pow_mul i hj]
+  rw [mul_comm (plethysticExp _), plethysticExp_neg_mul, plethysticExp_single_mul_X_pow_mul i hj]
 
 /-- `PE(t) * (1 - t) = 1`. -/
-theorem plethysticExp_X_mul :
-    plethysticExp (X : (A⸨X⸩)⟦X⟧) * (1 - X) = 1 := by
+theorem plethysticExp_X_mul : plethysticExp (X : (A⸨X⸩)⟦X⟧) * (1 - X) = 1 := by
   simpa using plethysticExp_single_mul_X_pow_mul (A := A) 0 one_ne_zero
 
 /-- `PE(-t) = 1 - t`. -/
-theorem plethysticExp_neg_X :
-    plethysticExp (-X : (A⸨X⸩)⟦X⟧) = 1 - X := by
+theorem plethysticExp_neg_X : plethysticExp (-X : (A⸨X⸩)⟦X⟧) = 1 - X := by
   simpa using plethysticExp_neg_single_mul_X_pow (A := A) 0 one_ne_zero
 
 /-- The `t ^ k` coefficient of `plethysticLogSum (-t)` is `-(k : ℚ)⁻¹ • 1`. -/
@@ -577,6 +485,15 @@ private theorem coeff_laurent_mul_eq_zero_of_lt {R : Type*} [Semiring R] {x y : 
   have hp2 : N ≤ p.2 := not_lt.mp fun h ↦ hp.2.1 (hy p.2 h)
   omega
 
+/-- The constant series `1` satisfies every slope-`m` Laurent support bound. -/
+private theorem slope_bound_one {R : Type*} [CommRing R] {m : ℤ} :
+    ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a (1 : (R⸨X⸩)⟦X⟧)).coeff s = 0 := by
+  rintro (_ | a) s hs
+  · simp only [Nat.cast_zero, zero_mul] at hs
+    rw [coeff_zero_eq_constantCoeff_apply, map_one, HahnSeries.coeff_one]
+    exact ite_eq_right (ne_of_lt hs)
+  · simp
+
 /-- Closure of the slope-`m` Laurent support bound under multiplication in `(R⸨X⸩)⟦X⟧`. -/
 private theorem slope_bound_mul {R : Type*} [CommRing R] {m : ℤ} {G₁ G₂ : (R⸨X⸩)⟦X⟧}
     (h₁ : ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a G₁).coeff s = 0)
@@ -587,8 +504,7 @@ private theorem slope_bound_mul {R : Type*} [CommRing R] {m : ℤ} {G₁ G₂ : 
   refine Finset.sum_eq_zero fun x hx ↦ ?_
   have hab : (x.1 : ℤ) * m + (x.2 : ℤ) * m = (a : ℤ) * m := by
     have : x.1 + x.2 = a := mem_antidiagonal.mp hx
-    push_cast [← this]
-    ring
+    push_cast [← this]; ring
   exact coeff_laurent_mul_eq_zero_of_lt (h₁ x.1) (h₂ x.2) (hab ▸ hs)
 
 /-- Closure of the slope-`m` Laurent support bound under natural powers in `(R⸨X⸩)⟦X⟧`. -/
@@ -596,16 +512,15 @@ private theorem slope_bound_pow {R : Type*} [CommRing R] {m : ℤ} {G : (R⸨X�
     (hG : ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a G).coeff s = 0) (n : ℕ) :
     ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a (G ^ n)).coeff s = 0 := by
   induction n with
-  | zero =>
-    intro a s hs
-    rcases a with _ | a
-    · simp only [pow_zero, Nat.cast_zero, zero_mul] at hs ⊢
-      rw [coeff_zero_eq_constantCoeff_apply, map_one, HahnSeries.coeff_one]
-      exact ite_eq_right (ne_of_lt hs)
-    · simp
-  | succ n ih =>
-    rw [pow_succ]
-    exact slope_bound_mul ih hG
+  | zero => simpa using slope_bound_one (R := R) (m := m)
+  | succ n ih => rw [pow_succ]; exact slope_bound_mul ih hG
+
+/-- Mapping an integral monomial `q ^ i t ^ j` along `ℤ → ℚ`. -/
+private theorem map_C_single_mul_X_pow (i : ℤ) (j : ℕ) :
+    PowerSeries.map (HahnSeries.mapRingHom (Int.castRingHom ℚ)) (C (single i (1 : ℤ)) * X ^ j) =
+      C (single i (1 : ℚ)) * X ^ j := by
+  rw [map_mul, map_C, map_pow, map_X]
+  congr 2; ext r; simp [HahnSeries.coeff_single]
 
 /-- Integral geometric series `(1 - q ^ i t ^ j)⁻¹` in `(ℤ⸨X⸩)⟦X⟧` matching `PE(q ^ i t ^ j)`
 over `ℚ` and satisfying the slope-`m` Laurent support bound. -/
@@ -620,39 +535,29 @@ private theorem exists_inv_one_sub_single_mul_X_pow (i : ℤ) {j : ℕ} (hj : j 
   have hU_mul : U * (1 - C (single i (1 : ℤ)) * X ^ j) = 1 := by
     have h1 : (PowerSeries.mk fun d ↦ single ((d : ℤ) * i) (1 : ℤ)) *
         (1 - C (single i (1 : ℤ)) * X) = 1 := by
-      apply PowerSeries.ext
-      intro d
-      rcases d with _ | d
+      apply PowerSeries.ext; rintro (_ | d)
       · simp
-      · simp only [mul_sub, mul_one, map_sub, mul_left_comm _ (C _), coeff_C_mul,
-          coeff_mk, coeff_one, Nat.succ_ne_zero, ↓reduceIte]
+      · simp only [mul_sub, mul_one, map_sub, mul_left_comm _ (C _), coeff_C_mul, coeff_mk,
+          coeff_one, Nat.succ_ne_zero, ↓reduceIte]
         rw [mul_comm _ X, coeff_succ_X_mul, coeff_mk, HahnSeries.single_mul_single, one_mul]
         have : i + (d : ℤ) * i = ((d + 1 : ℕ) : ℤ) * i := by push_cast; ring
         rw [this, sub_self]
     simpa [U, map_mul, map_sub, (PowerSeries.expand j hj).map_one, expand_C, expand_X] using
       congrArg (PowerSeries.expand j hj) h1
   refine ⟨U, ?_, ?_⟩
-  · have hsing_map : PowerSeries.map ι (C (single i (1 : ℤ)) * X ^ j) =
-        C (single i (1 : ℚ)) * X ^ j := by
-      rw [map_mul, map_C, map_pow, map_X]
-      congr 2
-      ext r
-      simp [ι, HahnSeries.coeff_single]
-    have hunit : IsUnit (1 - C (single i (1 : ℚ)) * X ^ j) :=
+  · have hunit : IsUnit (1 - C (single i (1 : ℚ)) * X ^ j) :=
       isUnit_iff_constantCoeff.mpr (by simp [hj])
     apply hunit.mul_right_cancel
     have hmap := congrArg (PowerSeries.map ι) hU_mul
-    rw [map_mul, map_sub, map_one, hsing_map] at hmap
+    rw [map_mul, map_sub, map_one, map_C_single_mul_X_pow] at hmap
     rw [hmap, plethysticExp_single_mul_X_pow_mul i hj]
   · intro a s hs
     rw [coeff_expand]
     split_ifs with hd
     · rw [coeff_mk, HahnSeries.coeff_single]
       refine ite_eq_right fun hEq ↦ ?_
-      have hda : ((a / j : ℕ) : ℤ) ≤ a := by exact_mod_cast Nat.div_le_self a j
-      have h1 : (a : ℤ) * m ≤ ((a / j : ℕ) : ℤ) * m := by nlinarith
-      have h2 : ((a / j : ℕ) : ℤ) * m ≤ ((a / j : ℕ) : ℤ) * i := by nlinarith
-      omega
+      have : ((a / j : ℕ) : ℤ) ≤ a := by exact_mod_cast Nat.div_le_self a j
+      nlinarith
     · simp
 
 /-- Integral realization and slope-`m` support bound for `PE(z • (q ^ i t ^ j))`. -/
@@ -663,35 +568,22 @@ private theorem exists_plethysticExp_zsmul_single (i : ℤ) {j : ℕ} (hj : j �
         plethysticExp (PowerSeries.map (HahnSeries.mapRingHom (Int.castRingHom ℚ))
           (z • (C (single i (1 : ℤ)) * X ^ j))) ∧
       ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a G).coeff s = 0 := by
-  let ι : ℤ⸨X⸩ →+* ℚ⸨X⸩ := HahnSeries.mapRingHom (Int.castRingHom ℚ)
-  have hsing_map : PowerSeries.map ι (C (single i (1 : ℤ)) * X ^ j) =
-      C (single i (1 : ℚ)) * X ^ j := by
-    rw [map_mul, map_C, map_pow, map_X]
-    congr 2
-    ext r
-    simp [ι, HahnSeries.coeff_single]
   have hV_bound : ∀ a : ℕ, ∀ s < (a : ℤ) * m,
-      (coeff a (1 - C (single i (1 : ℤ)) * X ^ j)).coeff s = 0 := by
-    intro a s hs
-    rw [map_sub, coeff_one, coeff_C_mul_X_pow, HahnSeries.coeff_sub]
-    rcases eq_or_ne a 0 with rfl | h0
-    · simp only [Nat.cast_zero, zero_mul] at hs
-      rw [ite_eq_left rfl, ite_eq_right (Ne.symm hj), HahnSeries.coeff_one,
-        ite_eq_right (ne_of_lt hs), HahnSeries.coeff_zero, sub_zero]
-    · rw [ite_eq_right h0, HahnSeries.coeff_zero, zero_sub]
-      by_cases ha : a = j
-      · subst ha
-        have hj1 : (1 : ℤ) ≤ a := by exact_mod_cast Nat.pos_of_ne_zero hj
-        have hjm : (a : ℤ) * m ≤ i := by nlinarith
-        rw [ite_eq_left rfl, HahnSeries.coeff_single, ite_eq_right (by omega), neg_zero]
-      · rw [ite_eq_right ha, HahnSeries.coeff_zero, neg_zero]
+      (coeff a (1 - C (single i (1 : ℤ)) * X ^ j)).coeff s = 0 := fun a s hs ↦ by
+    rw [map_sub, HahnSeries.coeff_sub, slope_bound_one a s hs, zero_sub, coeff_C_mul_X_pow]
+    split_ifs with ha
+    · subst ha
+      have : (1 : ℤ) ≤ a := by exact_mod_cast Nat.pos_of_ne_zero hj
+      rw [HahnSeries.coeff_single, ite_eq_right (by nlinarith), neg_zero]
+    · simp
   rcases Int.eq_nat_or_neg z with ⟨n, rfl | rfl⟩
   · obtain ⟨U, hU_map, hU_bound⟩ := exists_inv_one_sub_single_mul_X_pow i hj hm hi
     refine ⟨U ^ n, ?_, slope_bound_pow hU_bound n⟩
-    rw [map_pow, hU_map, ← plethysticExp_nsmul, natCast_zsmul, map_nsmul, hsing_map]
+    rw [map_pow, hU_map, ← plethysticExp_nsmul, natCast_zsmul, map_nsmul, map_C_single_mul_X_pow]
   · refine ⟨(1 - C (single i (1 : ℤ)) * X ^ j) ^ n, ?_, slope_bound_pow hV_bound n⟩
-    rw [neg_smul, natCast_zsmul, map_neg, map_nsmul, hsing_map, ← smul_neg, plethysticExp_nsmul,
-      plethysticExp_neg_single_mul_X_pow i hj, map_pow, map_sub, map_one, hsing_map]
+    rw [neg_smul, natCast_zsmul, map_neg, map_nsmul, map_C_single_mul_X_pow, ← smul_neg,
+      plethysticExp_nsmul, plethysticExp_neg_single_mul_X_pow i hj, map_pow, map_sub, map_one,
+      map_C_single_mul_X_pow]
 
 /-- Integral realization and slope-`m` support bound for a finite integral double polynomial
 supported in `1 ≤ j ≤ k` and `m ≤ i < N`. -/
@@ -703,38 +595,25 @@ private theorem exists_plethysticExp_lo (F : (ℤ⸨X⸩)⟦X⟧) (k : ℕ) {m N
         plethysticExp (PowerSeries.map (HahnSeries.mapRingHom (Int.castRingHom ℚ)) Flo) ∧
       ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a Glo).coeff s = 0 := by
   intro Flo
-  let ι : ℤ⸨X⸩ →+* ℚ⸨X⸩ := HahnSeries.mapRingHom (Int.castRingHom ℚ)
   have hFlo_eq : Flo = ∑ p ∈ Icc 1 k ×ˢ Ico m N,
       ((coeff p.1 F).coeff p.2) • (C (single p.2 (1 : ℤ)) * X ^ p.1) := by
     rw [Finset.sum_product]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp only [map_sum, Finset.sum_mul]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    symm
-    rw [← smul_mul_assoc, ← map_zsmul, zsmul_eq_mul,
-      ← map_intCast (HahnSeries.C : ℤ →+* ℤ⸨X⸩), HahnSeries.C_apply,
-      HahnSeries.single_mul_single, zero_add, mul_one, Int.cast_id]
+    rw [← smul_mul_assoc, ← map_zsmul, zsmul_eq_mul, ← map_intCast (HahnSeries.C : ℤ →+* ℤ⸨X⸩),
+      HahnSeries.C_apply, HahnSeries.single_mul_single, zero_add, mul_one, Int.cast_id]
   rw [hFlo_eq]
-  have hterm : ∀ p ∈ Icc 1 k ×ˢ Ico m N, ∃ G : (ℤ⸨X⸩)⟦X⟧,
-      PowerSeries.map ι G =
-        plethysticExp (PowerSeries.map ι
-          (((coeff p.1 F).coeff p.2) • (C (single p.2 (1 : ℤ)) * X ^ p.1))) ∧
-      ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a G).coeff s = 0 := fun p hp ↦ by
-    rw [mem_product, mem_Icc, mem_Ico] at hp
-    exact exists_plethysticExp_zsmul_single p.2 (by omega) _ hm hp.2.1
-  choose Gp hGp using hterm
+  choose Gp hGp using fun p (hp : p ∈ Icc 1 k ×ˢ Ico m N) ↦
+    exists_plethysticExp_zsmul_single p.2 (j := p.1)
+      (by rw [mem_product, mem_Icc] at hp; omega) ((coeff p.1 F).coeff p.2) hm
+      (mem_Ico.mp (mem_product.mp hp).2).1
   refine ⟨∏ p ∈ (Icc 1 k ×ˢ Ico m N).attach, Gp p.1 p.2, ?_, ?_⟩
   · rw [map_prod, map_sum, plethysticExp_sum, ← Finset.prod_attach (Icc 1 k ×ˢ Ico m N)]
     exact Finset.prod_congr rfl fun p _ ↦ (hGp p.1 p.2).1
-  · refine Finset.prod_induction (f := fun (p : { x // x ∈ Icc 1 k ×ˢ Ico m N }) ↦ Gp p.1 p.2)
+  · exact Finset.prod_induction (f := fun (p : { x // x ∈ Icc 1 k ×ˢ Ico m N }) ↦ Gp p.1 p.2)
       (fun (G : (ℤ⸨X⸩)⟦X⟧) ↦ ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a G).coeff s = 0)
-      (fun _ _ h₁ h₂ ↦ slope_bound_mul h₁ h₂) ?_ fun p _ ↦ (hGp p.1 p.2).2
-    intro a s hs
-    rcases a with _ | a
-    · simp only [Nat.cast_zero, zero_mul] at hs
-      rw [coeff_zero_eq_constantCoeff_apply, map_one, HahnSeries.coeff_one]
-      exact ite_eq_right (ne_of_lt hs)
-    · simp
+      (fun _ _ h₁ h₂ ↦ slope_bound_mul h₁ h₂) slope_bound_one fun p _ ↦ (hGp p.1 p.2).2
 
 /-- If every positive `t`-coefficient of `F` vanishes below `q`-degree `N > 0`, then every
 positive `t`-coefficient of `plethysticLogSum F` vanishes below `q`-degree `N`. -/
@@ -748,13 +627,12 @@ private theorem coeff_plethysticLogSum_eq_zero_of_lt {F : (ℚ⸨X⸩)⟦X⟧} {
   suffices (coeff a (adamsExpand ℚ n.succPNat F)).coeff s = 0 by rw [this, smul_zero]
   by_cases hda : (n.succPNat : ℕ) ∣ a
   · obtain ⟨d, rfl⟩ := hda
-    have hd1 : 1 ≤ d := Nat.pos_of_ne_zero (right_ne_zero_of_mul (Nat.ne_of_gt ha))
     rw [coeff_adamsExpand_mul n.succPNat]
     by_cases hds : ((n.succPNat : ℕ) : ℤ) ∣ s
     · obtain ⟨u, rfl⟩ := hds
       rw [LaurentSeries.coeff_expand_mul]
-      have hn1 : (1 : ℤ) ≤ (n.succPNat : ℕ) := by exact_mod_cast n.succPNat.pos
-      exact hF d hd1 u (by nlinarith)
+      have : (1 : ℤ) ≤ (n.succPNat : ℕ) := by exact_mod_cast n.succPNat.pos
+      exact hF d (Nat.pos_of_ne_zero (right_ne_zero_of_mul (Nat.ne_of_gt ha))) u (by nlinarith)
     · exact LaurentSeries.coeff_expand_of_not_dvd n.succPNat _ hds
   · rw [coeff_adamsExpand_of_not_dvd n.succPNat F hda, HahnSeries.coeff_zero]
 
@@ -789,9 +667,8 @@ private theorem coeff_plethysticExp_eq_zero_of_lt {F : (ℚ⸨X⸩)⟦X⟧} {N :
   refine Finset.sum_eq_zero fun d _ ↦ ?_
   rcases d with _ | d
   · rw [pow_zero, coeff_one, ite_eq_right (Nat.ne_of_gt ha), smul_zero, HahnSeries.coeff_zero]
-  · rw [smul_eq_mul, coeff_exp, HahnSeries.algebraMap_apply', ← PowerSeries.C_eq_algebraMap,
-      HahnSeries.ofPowerSeries_C, HahnSeries.C_apply, HahnSeries.single_zero_mul_eq_smul,
-      HahnSeries.coeff_smul, hLpow (d + 1) (Nat.succ_pos d) a ha s hs, smul_zero]
+  · rw [smul_eq_mul, coeff_exp, algebraMap_rat_mul_laurent, HahnSeries.coeff_smul,
+      hLpow (d + 1) (Nat.succ_pos d) a ha s hs, smul_zero]
 
 /-- Subtracting the `q`-window `m ≤ i < N` from the first `k` positive `t`-coefficients of `F`
 produces a series whose coefficients all vanish below `q`-degree `N`. -/
@@ -813,10 +690,9 @@ private theorem coeff_hiTail_eq_zero_of_lt (F : (ℤ⸨X⸩)⟦X⟧) (k : ℕ) {
     by_cases hsm : s < m
     · rw [hmle a hj s hsm, Finset.sum_eq_zero (fun i hi ↦ by
         rw [HahnSeries.coeff_single, ite_eq_right (by rw [mem_Ico] at hi; omega)]), sub_zero]
-    · rw [Finset.sum_eq_single s]
+    · rw [Finset.sum_eq_single_of_mem s (mem_Ico.mpr ⟨not_lt.mp hsm, hs⟩)]
       · simp
       · intro i _ his; rw [HahnSeries.coeff_single, ite_eq_right his.symm]
-      · intro hsnot; exact absurd (mem_Ico.mpr ⟨not_lt.mp hsm, hs⟩) hsnot
   · simp
 
 /-- Multiplying a slope-`m` bounded series `G₁` by a series `G₂` with constant term `1` and
@@ -828,21 +704,13 @@ private theorem coeff_mul_eq_left_of_slope_bound {G₁ G₂ : (ℚ⸨X⸩)⟦X�
     (h₂0 : constantCoeff G₂ = 1)
     (h₂ : ∀ a, 1 ≤ a → ∀ s < N, (coeff a G₂).coeff s = 0) :
     (coeff k (G₁ * G₂)).coeff r = (coeff k G₁).coeff r := by
-  rw [coeff_mul, HahnSeries.coeff_sum, Finset.sum_eq_single (k, 0)]
+  rw [coeff_mul, HahnSeries.coeff_sum,
+    Finset.sum_eq_single_of_mem (k, 0) (mem_antidiagonal.mpr (add_zero k))]
   · rw [coeff_zero_eq_constantCoeff_apply, h₂0, mul_one]
   · intro x hx hne
-    have hx2 : 1 ≤ x.2 := by
-      have := mem_antidiagonal.mp hx
-      rcases eq_or_ne x.2 0 with h0 | h0
-      · exfalso; apply hne; ext <;> omega
-      · exact Nat.pos_of_ne_zero h0
-    have hxa : x.1 ≤ k := Nat.le_of_add_right_le (mem_antidiagonal.mp hx).le
-    have hbound : r < (x.1 : ℤ) * m + N := by
-      have hkm : (k : ℤ) * m ≤ (x.1 : ℤ) * m := by nlinarith
-      linarith
-    exact coeff_laurent_mul_eq_zero_of_lt (h₁ x.1) (h₂ x.2 hx2) hbound
-  · intro hnot
-    exact absurd (mem_antidiagonal.mpr (add_zero k)) hnot
+    have hsum := mem_antidiagonal.mp hx
+    have hx2 : 1 ≤ x.2 := Nat.pos_of_ne_zero fun h0 ↦ hne (Prod.ext (by omega) h0)
+    exact coeff_laurent_mul_eq_zero_of_lt (h₁ x.1) (h₂ x.2 hx2) (by nlinarith)
 
 /-- Truncating an integral series `F` to degrees `1 ≤ j ≤ k` preserves the `t ^ k` coefficient of
 `PE(F)` over `ℚ`. -/
@@ -854,10 +722,9 @@ private theorem coeff_plethysticExp_eq_trunc (F : (ℤ⸨X⸩)⟦X⟧) (k : ℕ)
   refine coeff_plethysticExp_eq_of_coeff_eq fun j hj1 hjk ↦ ?_
   rw [coeff_map, coeff_map, map_sum]
   simp only [coeff_C_mul_X_pow]
-  rw [Finset.sum_eq_single j]
+  rw [Finset.sum_eq_single_of_mem j (mem_Icc.mpr ⟨hj1, hjk⟩)]
   · simp
   · intro l _ hlj; simp [hlj.symm]
-  · intro hjnot; exact absurd (mem_Icc.mpr ⟨hj1, hjk⟩) hjnot
 
 /-- **Integrality over `ℚ`**: for any `F : (ℤ⸨X⸩)⟦X⟧`, `PE(F)` has integral coefficients, i.e.
 lies in the image of `(ℤ⸨X⸩)⟦X⟧ → (ℚ⸨X⸩)⟦X⟧`. -/
@@ -868,10 +735,7 @@ private theorem exists_map_eq_plethysticExp_rat (F : (ℤ⸨X⸩)⟦X⟧) :
   let ι : ℤ⸨X⸩ →+* ℚ⸨X⸩ := HahnSeries.mapRingHom (Int.castRingHom ℚ)
   suffices hmem : ∀ k : ℕ, coeff k (plethysticExp (PowerSeries.map ι F)) ∈ ι.rangeS by
     choose g hg using hmem
-    refine ⟨PowerSeries.mk g, ?_⟩
-    apply PowerSeries.ext
-    intro k
-    rw [coeff_map, coeff_mk, hg k]
+    exact ⟨PowerSeries.mk g, PowerSeries.ext fun k ↦ by rw [coeff_map, coeff_mk, hg k]⟩
   intro k
   rw [HahnSeries.mem_map_rangeS]
   intro r
@@ -880,26 +744,23 @@ private theorem exists_map_eq_plethysticExp_rat (F : (ℤ⸨X⸩)⟦X⟧) :
   have hm0 : m ≤ 0 := Finset.sum_nonpos fun j _ ↦ min_le_left _ _
   have hmle : ∀ j ∈ Icc 1 k, ∀ i < m, (coeff j F).coeff i = 0 := fun j hj i hi ↦ by
     have hsub : m - min 0 (coeff j F).order ≤ 0 := by
-      rw [← Finset.sum_erase_eq_sub hj]
-      exact Finset.sum_nonpos fun l _ ↦ min_le_left _ _
+      rw [← Finset.sum_erase_eq_sub hj]; exact Finset.sum_nonpos fun l _ ↦ min_le_left _ _
     exact HahnSeries.coeff_eq_zero_of_lt_order (lt_of_lt_of_le hi (by omega))
   let N : ℤ := max 1 (r - (k : ℤ) * m + 1)
-  have hNpos : 0 < N := lt_of_lt_of_le zero_lt_one (le_max_left _ _)
   let Flo : (ℤ⸨X⸩)⟦X⟧ :=
     ∑ j ∈ Icc 1 k, C (∑ i ∈ Ico m N, single i ((coeff j F).coeff i)) * X ^ j
   let Fhi : (ℤ⸨X⸩)⟦X⟧ :=
     ∑ j ∈ Icc 1 k, C (coeff j F - ∑ i ∈ Ico m N, single i ((coeff j F).coeff i)) * X ^ j
   have hFsplit : (∑ j ∈ Icc 1 k, C (coeff j F) * X ^ j) = Flo + Fhi := by
-    dsimp [Flo, Fhi]
     rw [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [← add_mul, ← map_add, add_sub_cancel]
   obtain ⟨Glo, hGlo_map, hGlo_bound⟩ := exists_plethysticExp_lo F k (N := N) hm0
-  have hEhi_van := coeff_plethysticExp_eq_zero_of_lt hNpos (coeff_hiTail_eq_zero_of_lt F k hmle)
+  have hEhi_van := coeff_plethysticExp_eq_zero_of_lt (N := N)
+    (lt_of_lt_of_le zero_lt_one (le_max_left 1 _)) (coeff_hiTail_eq_zero_of_lt F k (N := N) hmle)
   have hlo_q : ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a (PowerSeries.map ι Glo)).coeff s = 0 :=
     fun a s hs ↦ by rw [coeff_map, HahnSeries.coeff_mapRingHom, hGlo_bound a s hs, map_zero]
   have hrbound : r < (k : ℤ) * m + N := by
-    have := le_max_right (1 : ℤ) (r - (k : ℤ) * m + 1)
-    linarith
+    have := le_max_right (1 : ℤ) (r - (k : ℤ) * m + 1); linarith
   rw [hFsplit, map_add, plethysticExp_add, ← hGlo_map,
     coeff_mul_eq_left_of_slope_bound hm0 hrbound hlo_q (constantCoeff_plethysticExp _) hEhi_van,
     coeff_map, HahnSeries.coeff_mapRingHom]
@@ -913,11 +774,10 @@ theorem exists_map_eq_plethysticExp {A : Type*} [CommRing A] [Algebra ℚ A] (F 
         plethysticExp (PowerSeries.map (HahnSeries.mapRingHom (Int.castRingHom A)) F) := by
   obtain ⟨G, hG⟩ := exists_map_eq_plethysticExp_rat F
   refine ⟨G, ?_⟩
-  have hcomp : (algebraMap ℚ A).comp (Int.castRingHom ℚ) = Int.castRingHom A :=
-    RingHom.ext fun z ↦ by simp
   have hmap := congrArg (PowerSeries.map (HahnSeries.mapRingHom (algebraMap ℚ A))) hG
-  rw [map_plethysticExp, ← RingHom.comp_apply, ← PowerSeries.map_comp,
-    ← RingHom.comp_apply, ← PowerSeries.map_comp, ← HahnSeries.mapRingHom_comp, hcomp] at hmap
+  rw [map_plethysticExp, ← RingHom.comp_apply, ← PowerSeries.map_comp, ← RingHom.comp_apply,
+    ← PowerSeries.map_comp, ← HahnSeries.mapRingHom_comp,
+    RingHom.eq_intCast' ((algebraMap ℚ A).comp (Int.castRingHom ℚ))] at hmap
   exact hmap
 
 /-- Over any nontrivial `ℚ`-algebra, the integral lift `G : (ℤ⸨X⸩)⟦X⟧` of `PE(F)` is unique. -/
@@ -929,15 +789,11 @@ theorem existsUnique_map_eq_plethysticExp {A : Type*} [CommRing A] [Algebra ℚ 
   obtain ⟨G, hG⟩ := exists_map_eq_plethysticExp (A := A) F
   refine ⟨G, hG, fun G' hG' ↦ ?_⟩
   have hinjZ : Function.Injective (Int.castRingHom A) := by
-    have hcomp : (algebraMap ℚ A).comp (Int.castRingHom ℚ) = Int.castRingHom A :=
-      RingHom.ext fun z ↦ by simp
-    rw [← hcomp]
+    rw [← RingHom.eq_intCast' ((algebraMap ℚ A).comp (Int.castRingHom ℚ))]
     exact (RingHom.injective (algebraMap ℚ A)).comp Int.cast_injective
-  have hinj : Function.Injective (HahnSeries.mapRingHom (Int.castRingHom A) : ℤ⸨X⸩ →+* A⸨X⸩) :=
-    HahnSeries.mapRingHom_injective hinjZ
-  apply PowerSeries.ext
-  intro k
-  exact hinj (by simpa [coeff_map] using congrArg (coeff k) (hG'.trans hG.symm))
+  apply PowerSeries.ext; intro k
+  exact HahnSeries.mapRingHom_injective hinjZ
+    (by simpa [coeff_map] using congrArg (coeff k) (hG'.trans hG.symm))
 
 end Integrality
 
