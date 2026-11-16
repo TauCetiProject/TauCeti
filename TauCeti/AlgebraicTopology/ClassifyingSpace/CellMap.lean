@@ -245,22 +245,22 @@ Milnor's join. -/
 @[simp]
 theorem universalGSpaceCellularMap_id :
     (MonoidHom.id G).universalGSpaceCellularMap = 𝟙 _ := by
-  apply ConcreteCategory.hom_ext
+  apply TopCat.ext
   intro x
   apply Subtype.ext
-  exact congrArg (fun f : C(universalGSpace G, universalGSpace G) ↦ f x.1)
-    universalGSpaceMap_id
+  grind [universalGSpaceCellularMap_apply, universalGSpaceMap_id, CategoryTheory.id_apply,
+    ContinuousMap.id_apply]
 
 /-- Universal-subset cellular maps of Milnor joins respect composition of homomorphisms. -/
 @[simp]
 theorem universalGSpaceCellularMap_comp {K : Type u} [MulOne K] (ψ : H →* K) (φ : G →* H) :
     (ψ.comp φ).universalGSpaceCellularMap =
       φ.universalGSpaceCellularMap ≫ ψ.universalGSpaceCellularMap := by
-  apply ConcreteCategory.hom_ext
+  apply TopCat.ext
   intro x
   apply Subtype.ext
-  exact congrArg (fun f : C(universalGSpace G, universalGSpace K) ↦ f x.1)
-    (universalGSpaceMap_comp ψ φ)
+  grind [universalGSpaceCellularMap_apply, universalGSpaceMap_comp, CategoryTheory.comp_apply,
+    ContinuousMap.comp_apply]
 
 end Cellular
 

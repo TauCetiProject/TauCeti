@@ -26,10 +26,11 @@ standard complex and inhomogeneous bar complex whose forward maps are natural in
 homomorphisms (`universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality` and
 `universalGSpaceCellularBarHomotopyEquiv_hom_naturality`).
 
-Transporting `MonoidHom.universalGSpaceCellularComplexMap` to the bundled projective resolutions
-gives `MonoidHom.universalGSpaceCellularResolutionMap`, which respects identity and composition and
-lies over the identity of `k` (`universalGSpaceCellularResolutionMap_f_zero_comp_π`) without
-assuming restriction preserves projective representations.
+Because `TauCeti.universalGSpaceCellularResolution` has `TauCeti.universalGSpaceCellularComplex` as
+its underlying chain complex, `MonoidHom.universalGSpaceCellularComplexMap` acts directly on the
+geometric cellular projective resolutions and lies over the identity of `k`
+(`universalGSpaceCellularComplexMap_f_zero_comp_π`) without assuming restriction preserves
+projective representations.
 
 ## References
 
@@ -217,116 +218,43 @@ theorem universalGSpaceCellularBarHomotopyEquiv_hom_naturality (φ : G →* H) :
     universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality_assoc,
     φ.barComplex_isoStandardComplex_inv_naturality, Category.assoc]
 
-/-- The equivariant chain map on the bundled geometric cellular projective resolutions induced by
-`MonoidHom.universalGSpaceMap`. -/
-def universalGSpaceCellularResolutionMap (φ : G →* H) :
-    (universalGSpaceCellularResolution k G).complex ⟶
-      ((Rep.resFunctor φ).mapHomologicalComplex _).obj
-        (universalGSpaceCellularResolution k H).complex :=
-  eqToHom (universalGSpaceCellularResolution_complex k G) ≫
-    φ.universalGSpaceCellularComplexMap ≫
-    eqToHom (congrArg ((Rep.resFunctor φ).mapHomologicalComplex _).obj
-      (universalGSpaceCellularResolution_complex k H).symm)
-
-/-- `universalGSpaceCellularResolutionMap` is `universalGSpaceCellularComplexMap` transported
-along `universalGSpaceCellularResolution_complex`. -/
-theorem universalGSpaceCellularResolutionMap_def (φ : G →* H) :
-    φ.universalGSpaceCellularResolutionMap (k := k) =
-      eqToHom (universalGSpaceCellularResolution_complex k G) ≫
-        φ.universalGSpaceCellularComplexMap ≫
-        eqToHom (congrArg ((Rep.resFunctor φ).mapHomologicalComplex _).obj
-          (universalGSpaceCellularResolution_complex k H).symm) :=
-  (rfl)
-
-/-- In degree `n` the geometric cellular projective-resolution map is
-`universalGSpaceCellularRepMap`, up to the canonical resolution-term transports. -/
-@[simp]
-theorem universalGSpaceCellularResolutionMap_f (φ : G →* H) (n : ℕ) :
-    (φ.universalGSpaceCellularResolutionMap (k := k)).f n =
-      eqToHom (by
-          rw [universalGSpaceCellularResolution_complex, universalGSpaceCellularComplex_X]) ≫
-        φ.universalGSpaceCellularRepMap n ≫
-        eqToHom (by
-          rw [Functor.mapHomologicalComplex_obj_X, universalGSpaceCellularResolution_complex,
-            universalGSpaceCellularComplex_X]) := by
-  simp [universalGSpaceCellularResolutionMap_def]
-
-/-- The identity homomorphism induces the identity map on geometric cellular projective
-resolutions. -/
-@[simp]
-theorem universalGSpaceCellularResolutionMap_id :
-    (MonoidHom.id G).universalGSpaceCellularResolutionMap (k := k) =
-      𝟙 (universalGSpaceCellularResolution k G).complex :=
-  -- Restriction along `MonoidHom.id G` fixes `universalGSpaceCellularComplex k G` at default
-  -- transparency; term-mode `Eq.trans` avoids `rw`'s implicit-transparency check on the codomain.
-  (congrArg (fun f ↦ eqToHom (universalGSpaceCellularResolution_complex k G) ≫ f ≫
-      eqToHom (universalGSpaceCellularResolution_complex k G).symm)
-    (universalGSpaceCellularComplexMap_id (k := k) (G := G))).trans <|
-    (congrArg (eqToHom (universalGSpaceCellularResolution_complex k G) ≫ ·)
-      (Category.id_comp _)).trans <|
-      (eqToHom_trans _ _).trans (eqToHom_refl _ _)
-
-/-- Geometric cellular projective-resolution maps respect composition of group homomorphisms. -/
-@[simp]
-theorem universalGSpaceCellularResolutionMap_comp {K : Type u} [Group K]
-    (ψ : H →* K) (φ : G →* H) :
-    (ψ.comp φ).universalGSpaceCellularResolutionMap (k := k) =
-      φ.universalGSpaceCellularResolutionMap ≫
-        ((Rep.resFunctor φ).mapHomologicalComplex _).map
-          ψ.universalGSpaceCellularResolutionMap := by
-  simp only [universalGSpaceCellularResolutionMap_def, universalGSpaceCellularComplexMap_comp,
-    Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp]
-  -- Unfolding `Rep.resFunctor` identifies restriction along `ψ.comp φ` with sequential
-  -- restriction along `ψ` then `φ`, so the trailing `eqToHom` transports agree by proof
-  -- irrelevance.
-  rfl
-
-/-- **The geometric cellular projective-resolution map lies over the identity of `k`.** No
+/-- **The equivariant cellular chain map on Milnor's join lies over the identity of `k`.** No
 hypothesis on restriction preserving projective objects is needed. -/
 @[reassoc]
-theorem universalGSpaceCellularResolutionMap_f_zero_comp_π (φ : G →* H) :
-    (φ.universalGSpaceCellularResolutionMap (k := k)).f 0 ≫
+theorem universalGSpaceCellularComplexMap_f_zero_comp_π (φ : G →* H) :
+    (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
         (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
       (universalGSpaceCellularResolution k G).π.f 0 := by
-  let βG : (universalGSpaceCellularResolution k G).complex ⟶ Rep.barComplex k G :=
-    eqToHom (universalGSpaceCellularResolution_complex k G) ≫
-      (universalGSpaceCellularBarHomotopyEquiv k G).hom
-  let βH : (universalGSpaceCellularResolution k H).complex ⟶ Rep.barComplex k H :=
-    eqToHom (universalGSpaceCellularResolution_complex k H) ≫
-      (universalGSpaceCellularBarHomotopyEquiv k H).hom
-  have hsq : φ.universalGSpaceCellularResolutionMap ≫
-      ((Rep.resFunctor φ).mapHomologicalComplex _).map βH =
-        βG ≫ TauCeti.Rep.barComplex.resChainMap φ := by
-    simp only [universalGSpaceCellularResolutionMap_def, βG, βH, Functor.map_comp,
-      eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-      universalGSpaceCellularBarHomotopyEquiv_hom_naturality]
-  have hπG : (universalGSpaceCellularResolution k G).π = βG ≫ (Rep.barResolution k G).π := by
-    rw [universalGSpaceCellularResolution_π, ← universalGSpaceCellularBarHomotopyEquiv_comp_π]
-    exact (Category.assoc _ _ _).symm
-  have hπH : (universalGSpaceCellularResolution k H).π = βH ≫ (Rep.barResolution k H).π := by
-    rw [universalGSpaceCellularResolution_π, ← universalGSpaceCellularBarHomotopyEquiv_comp_π]
-    exact (Category.assoc _ _ _).symm
-  have hπG₀ : (universalGSpaceCellularResolution k G).π.f 0 =
-      βG.f 0 ≫ (Rep.barResolution k G).π.f 0 :=
-    (HomologicalComplex.congr_hom hπG 0).trans (HomologicalComplex.comp_f _ _ 0)
-  have hmapH : (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
-      (Rep.resFunctor φ).map (βH.f 0) ≫
-        (Rep.resFunctor φ).map ((Rep.barResolution k H).π.f 0) :=
-    (congrArg (Rep.resFunctor φ).map
-      ((HomologicalComplex.congr_hom hπH 0).trans (HomologicalComplex.comp_f _ _ 0))).trans
-      ((Rep.resFunctor φ).map_comp _ _)
-  -- The restricted trivial representation of `H` agrees with the trivial representation of `G`
-  -- by unfolding `Rep.resFunctor`, so the outer equality is assembled in term mode.
-  exact (congrArg ((φ.universalGSpaceCellularResolutionMap (k := k)).f 0 ≫ ·) hmapH).trans <|
-    (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ (Rep.resFunctor φ).map ((Rep.barResolution k H).π.f 0))
-        ((HomologicalComplex.comp_f _ _ 0).symm.trans
-          ((HomologicalComplex.congr_hom hsq 0).trans
-            (HomologicalComplex.comp_f _ _ 0)))).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg (βG.f 0 ≫ ·)
-            (TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π φ)).trans
-            hπG₀.symm
+  have h :
+      (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
+          (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
+        (universalGSpaceCellularComplexIso k G).hom.f 0 ≫
+          ((φ.universalGSpaceCellMulActionHom 0).toRepRes ≫
+            (Rep.resFunctor φ).map
+              (permutationAugmentation k H
+                ((indexedJoin fun _ : ℕ => H).RealizationCell 0))) := by
+    calc
+      (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
+          (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0)
+        = (φ.universalGSpaceCellularComplexMap (k := k) ≫
+              ((Rep.resFunctor φ).mapHomologicalComplex _).map
+                (universalGSpaceCellularComplexIso k H).hom).f 0 ≫
+            (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0) := by
+          simp -proj [universalGSpaceCellularResolution_π]
+      _ = ((universalGSpaceCellularComplexIso k G).hom ≫ φ.universalGSpaceChainMap).f 0 ≫
+            (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0) := by
+          rw [φ.universalGSpaceCellularComplexIso_naturality]
+      _ = _ := by
+          simp only [HomologicalComplex.comp_f, universalGSpaceChainMap_f,
+            universalGSpaceChainHom, universalGSpaceAugmentation_f_zero]
+          exact Category.assoc _ _ _
+  -- `Rep.res φ (Rep.trivial k H k)` and `Rep.trivial k G k` agree after unfolding
+  -- `Rep.trivial`, which `MulActionHom.toRepRes_comp_permutationAugmentation` bridges.
+  exact h.trans <|
+    (congrArg ((universalGSpaceCellularComplexIso k G).hom.f 0 ≫ ·)
+      (MulActionHom.toRepRes_comp_permutationAugmentation _)).trans <| by
+      simp only [universalGSpaceCellularResolution_π, HomologicalComplex.comp_f,
+        universalGSpaceAugmentation_f_zero]
+      rfl
 
 end MonoidHom

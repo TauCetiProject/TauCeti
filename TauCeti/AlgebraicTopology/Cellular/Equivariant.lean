@@ -170,16 +170,10 @@ def cellularActionRepMap (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of C'}
   Rep.ofHom
     { toLinearMap := (cellularChainGroupMap C C' hf M n).hom
       isIntertwining' g := by
-        have hcongr : ∀ {f₁ f₂ : TopCat.of C ⟶ TopCat.of C'}
-            (hf₁ : IsCellular C C' f₁) (hf₂ : IsCellular C C' f₂), f₁ = f₂ →
-            cellularChainGroupMap C C' hf₁ M n =
-              cellularChainGroupMap C C' hf₂ M n := by
-          rintro _ _ _ _ rfl
-          rfl
         have h₁ := cellularChainGroupMap_comp C C (hcell g) C' hf M n
         have h₂ := cellularChainGroupMap_comp C C' hf C' (hcell' (φ g)) M n
-        have h₃ := hcongr (IsCellular.comp C C (hcell g) hf)
-          (IsCellular.comp C C' hf (hcell' (φ g))) (hcomm g)
+        have h₃ := cellularChainGroupMap_congr C C' (IsCellular.comp C C (hcell g) hf)
+          (IsCellular.comp C C' hf (hcell' (φ g))) (hcomm g) M n
         simpa only [Rep.res_obj_ρ, MonoidHom.comp_apply, cellularActionRepresentation_apply,
           ModuleCat.hom_comp] using congrArg ModuleCat.Hom.hom (h₁.symm.trans (h₃.trans h₂)) }
 
@@ -237,10 +231,11 @@ def cellularActionComplexMap (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of C'}
         (cellularActionComplex_X C' ρ' hcell' hone' hmul' M n).symm)
   comm' i j hij := by
     subst i
-    rw [Functor.mapHomologicalComplex_obj_d, cellularActionComplex_d, cellularActionComplex_d,
-      Functor.map_comp, Functor.map_comp, eqToHom_map, eqToHom_map]
-    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-      cellularActionRepMap_comp_cellularActionDifferential_assoc]
+    -- `-proj` keeps the `abbrev` `(Rep.resFunctor φ).map` unreduced so `Functor.map_comp` and
+    -- `eqToHom_map` apply before reducing to `Rep.resMap`.
+    simp -proj [eqToHom_map,
+      cellularActionRepMap_comp_cellularActionDifferential_assoc C ρ hcell hone hmul
+        C' ρ' hcell' hone' hmul' φ hf hcomm M j]
 
 /-- The degree-`n` component of `cellularActionComplexMap` is `cellularActionRepMap`, up to the
 canonical cellular-term transports. -/
@@ -350,14 +345,12 @@ theorem cellularActionComplexMap_comp (ψ : H →* K) (φ : G →* H)
           (cellularActionComplexMap C' ρ' hcell' hone' hmul' C'' ρ'' hcell'' hone'' hmul''
             ψ hg hcommg M) := by
   ext n : 1
-  rw [cellularActionComplexMap_f, HomologicalComplex.comp_f, cellularActionComplexMap_f,
-    Functor.mapHomologicalComplex_map_f, cellularActionComplexMap_f,
-    Functor.map_comp, Functor.map_comp, eqToHom_map, eqToHom_map,
+  -- `-proj` keeps `(Rep.resFunctor _).map` unreduced so `Functor.map_comp` and `eqToHom_map`
+  -- fire; `Rep.resFunctor` is an `abbrev`, so restriction along `ψ.comp φ` agrees with sequential
+  -- restriction along `ψ` then `φ` on objects.
+  simp -proj [eqToHom_map,
     cellularActionRepMap_comp C ρ hcell hone hmul C' ρ' hcell' hone' hmul'
       C'' ρ'' hcell'' hone'' hmul'' ψ φ hf hg hcommf hcommg hcommgf M n]
-  -- `Rep.resFunctor` is an `abbrev`, so restriction along `ψ.comp φ` agrees with sequential
-  -- restriction along `ψ` then `φ` and `simp` cancels the `eqToHom` transports directly.
-  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
 end Map
 

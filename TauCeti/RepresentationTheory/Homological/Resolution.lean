@@ -51,8 +51,10 @@ defined through `Ext`, with an explicit map on inhomogeneous cochains.
   bar and standard resolutions on basis elements.
 * `TauCeti.Rep.standardComplex.εToSingle₀_f_zero`: the augmentation of the standard complex in
   degree `0` is `Rep.standardComplex.ε`.
-* `TauCeti.Rep.standardResolution_π_f_zero_single` and
-  `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations on basis elements.
+* `TauCeti.Rep.standardResolution_π`, `TauCeti.Rep.barResolution_π`,
+  `TauCeti.Rep.standardResolution_π_f_zero_single`, and
+  `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations of the standard and bar
+  resolutions and their values on basis elements.
 * `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π`: the chain map lies over the identity of `k`.
 * `MonoidHom.barComplex_isoStandardComplex_hom_naturality` and
   `MonoidHom.barComplex_isoStandardComplex_inv_naturality`: Mathlib's isomorphism between the bar
@@ -126,6 +128,23 @@ theorem diagonalSuccIsoFree_hom_hom_single (m : ℕ) (y : Fin (m + 1) → G) (r 
     (fun i : Fin m ↦ (y i.castSucc)⁻¹ * y i.succ) (y 0) r
   rw [Fin.partialProd_left_inv y] at hinv
   rw [← hinv, Rep.hom_inv_apply]
+
+-- Not `@[simp]`: downstream lemmas (`standardResolution_π_f_zero_single`,
+-- `barResolution_π_f_zero_single`, `barComplex.resChainMap_f_zero_comp_π`) state augmentation
+-- identities in terms of `(standardResolution k G).π` and `(barResolution k G).π`, matching
+-- Mathlib's `@[simps complex]` on `Rep.barResolution`.
+/-- The augmentation of `Rep.standardResolution` is `Rep.standardComplex.εToSingle₀`. -/
+theorem standardResolution_π (k G : Type u) [CommRing k] [Group G] :
+    (_root_.Rep.standardResolution k G).π = _root_.Rep.standardComplex.εToSingle₀ k G :=
+  (rfl)
+
+/-- The augmentation of `Rep.barResolution` is `(Rep.barComplex.isoStandardComplex k G).hom`
+followed by `Rep.standardComplex.εToSingle₀ k G`. -/
+theorem barResolution_π (k G : Type u) [CommRing k] [Group G] :
+    (_root_.Rep.barResolution k G).π =
+      (_root_.Rep.barComplex.isoStandardComplex k G).hom ≫
+        _root_.Rep.standardComplex.εToSingle₀ k G :=
+  (rfl)
 
 /-- The augmentation of the standard resolution sends a basis element with coefficient `r` to
 `r`. -/
