@@ -456,6 +456,16 @@ private def twistedChainSkeletonBasePairToComplex (m : ℕ) :
       (eqToHom (skeletonSystem_eq_pullback C L m)) ≫
     TopPair.twistedChainComplexMap (skeletonBasePairToComplex C m) L
 
+/-- `twistedChainSkeletonBasePairToComplex` starts with the isomorphism of relative twisted chains
+given by the coefficient identification. -/
+private lemma twistedChainSkeletonBasePairToComplex_eq (m : ℕ) :
+    twistedChainSkeletonBasePairToComplex C L m =
+      ((skeletonBasePair C m).twistedChainComplexCoefficientIso
+          (eqToIso (skeletonSystem_eq_pullback C L m))).hom ≫
+        TopPair.twistedChainComplexMap (skeletonBasePairToComplex C m) L :=
+  congrArg (· ≫ _) (TopPair.twistedChainComplexCoefficientIso_hom (skeletonBasePair C m)
+    (eqToIso (skeletonSystem_eq_pullback C L m))).symm
+
 private lemma homologyMap_twistedChainSkeletonBasePairToSucc (n k : ℕ) :
     HomologicalComplex.homologyMap (twistedChainSkeletonBasePairToSucc C L n) k =
       twistedHomologySkeletonBasePairToSucc C L n k :=
@@ -566,18 +576,12 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
       hι, ← LocalCoefficientSystem.range_twistedChainComplexMap_subtypeVal_f]
     exact hc _ fun x hx ↦
       skeletonLT_mono (by exact_mod_cast (by lia : d ≤ m + 1)) (hd ⟨x, hx, rfl⟩)
-  have hφ : (skeletonBasePair C m).twistedChainComplexCoefficientMap
-      (eqToHom (skeletonSystem_eq_pullback C L m).symm) ≫
-        twistedChainSkeletonBasePairToComplex C L m =
+  let e := (skeletonBasePair C m).twistedChainComplexCoefficientIso
+    (eqToIso (skeletonSystem_eq_pullback C L m))
+  have hφ : e.inv ≫ twistedChainSkeletonBasePairToComplex C L m =
       TopPair.twistedChainComplexMap (skeletonBasePairToComplex C m) L := by
-    -- The two coefficient identifications are `eqToHom`s between systems on the ambient space of
-    -- `skeletonBasePair C m`, which is `skeletonObj C (m + 1)` only after unfolding, hence `erw`.
-    rw [twistedChainSkeletonBasePairToComplex]
-    erw [← TopPair.twistedChainComplexCoefficientMap_comp_assoc, eqToHom_trans, eqToHom_refl,
-      TopPair.twistedChainComplexCoefficientMap_id, Category.id_comp]
-  refine ⟨d, ((skeletonBasePair C m).twistedChainComplexCoefficientMap
-    (eqToHom (skeletonSystem_eq_pullback C L m).symm)).f k
-      (((skeletonBasePair C m).twistedChainComplexπ _).f k c'), ?_⟩
+    rw [twistedChainSkeletonBasePairToComplex_eq, e.inv_hom_id_assoc]
+  refine ⟨d, (e.inv.f k) (((skeletonBasePair C m).twistedChainComplexπ _).f k c'), ?_⟩
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, hφ]
   exact (TopPair.twistedChainComplexMap_f_twistedChainComplexπ_f_apply
     (skeletonBasePairToComplex C m) L c').trans
@@ -620,22 +624,15 @@ private lemma twistedChainSkeletonBasePairToComplex_f_injective (m k : ℕ) :
     rw [skeletonBasePairToComplex_fst]
     exact (TopCat.mono_iff_injective _).2
       (Set.inclusion_injective (skeletonLT C ((m + 1 : ℕ) : ℕ∞)).subset_complex)
-  rw [twistedChainSkeletonBasePairToComplex, HomologicalComplex.comp_f, ModuleCat.hom_comp]
+  rw [twistedChainSkeletonBasePairToComplex_eq, HomologicalComplex.comp_f, ModuleCat.hom_comp]
   refine (TopPair.twistedChainComplexMap_f_injective (skeletonBasePairToComplex C m) L ?_
     k).comp ?_
   · -- A point of the skeleton lying in `X⁻¹` as a point of the complex lies in `X⁻¹`.
     rintro x ⟨b, hb⟩
     rw [skeletonBasePairToComplex_fst] at hb
     exact ⟨b, Subtype.ext (congrArg Subtype.val hb :)⟩
-  · -- The coefficient identification has an inverse. As in `hφ` of
-    -- `exists_twistedChainSkeletonBasePairToComplex_f_eq`, the composite is computed by `erw`.
-    let e := (skeletonBasePair C m).twistedChainComplexCoefficientMap
-      (eqToHom (skeletonSystem_eq_pullback C L m).symm)
-    refine Function.LeftInverse.injective (g := (e.f k).hom) fun a ↦ ?_
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f]
-    erw [← TopPair.twistedChainComplexCoefficientMap_comp, eqToHom_trans, eqToHom_refl,
-      TopPair.twistedChainComplexCoefficientMap_id]
-    rfl
+  · -- The coefficient identification is an isomorphism of complexes, so injective in each degree.
+    exact (ConcreteCategory.bijective_of_isIso _).1
 
 /-- **Homology of the whole pair from a skeleton, with local coefficients.** For every relative CW
 complex, with no dimension bound, the inclusion `(Xᵐ, X⁻¹) ⟶ (C, X⁻¹)` induces an isomorphism
