@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Bott
 import TauCeti.Analysis.Calculus.ContDiff.Shear
-import TauCeti.Analysis.Calculus.Morse.CriticalPointContinuation
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
