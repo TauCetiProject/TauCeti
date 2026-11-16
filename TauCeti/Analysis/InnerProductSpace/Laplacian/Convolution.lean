@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convolution
-public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -42,8 +42,8 @@ space, this holds everywhere.
 * `HasCompactSupport.laplacian_convolution_right`: `Δ (f ⋆[L, μ] g) = f ⋆[L, μ] Δ g`.
 * `TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`: if `-ΔK = δ` in the sense of
   distributions, then `-Δ (K ⋆ f) = f` for every `C²` function `f` with compact support.
-* `TauCeti.reflectTranslateTestFunction`: the reflected translate `t ↦ ρ (y - t)` as a test
-  function on `Ω`, with its Laplacian `TauCeti.laplacian_reflectTranslateTestFunction`.
+* `TauCeti.laplacian_reflectTranslateTestFunction`: the Laplacian of the reflected translate
+  `t ↦ ρ (y - t)` is `t ↦ Δρ (y - t)`.
 * `TauCeti.laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq`: if `Δu = v` in the sense
   of distributions on `Ω` and `ρ` is smooth with compact support, then
   `Δ (ρ ⋆ u) y = (ρ ⋆ v) y` whenever `y - t ∈ Ω` for every `t` in the support of `ρ`.
@@ -53,34 +53,6 @@ public section
 
 open ContinuousLinearMap InnerProductSpace Laplacian MeasureTheory
 open scoped ContDiff Convolution Distributions
-
-namespace TauCeti
-
-section ReflectTranslate
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] {Ω : TopologicalSpace.Opens E}
-
-/-- The reflected translate `t ↦ ρ (y - t)` of a smooth compactly supported function `ρ`, as a
-test function on `Ω`; this needs `y - t ∈ Ω` for every `t` in the support of `ρ`. Its pairing with
-a function `u` is the convolution `(ρ ⋆ u) y`. -/
-def reflectTranslateTestFunction (ρ : E → F) (y : E)
-    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) :
-    𝓓(Ω, F) :=
-  ⟨ρ ∘ Homeomorph.subLeft y, hρ.comp (contDiff_const.sub contDiff_id),
-    hρc.comp_homeomorph _, fun t ht ↦ by
-      simpa using hy _ (tsupport_comp_subset_preimage ρ (Homeomorph.subLeft y).continuous ht)⟩
-
-/-- The reflected translate of `ρ` about `y` takes the value `ρ (y - t)` at `t`. -/
-@[simp]
-theorem reflectTranslateTestFunction_apply (ρ : E → F) (y : E)
-    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω)
-    (t : E) : reflectTranslateTestFunction ρ y hρ hρc hy t = ρ (y - t) :=
-  (rfl)
-
-end ReflectTranslate
-
-end TauCeti
 
 variable {E E₀ E' F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant]

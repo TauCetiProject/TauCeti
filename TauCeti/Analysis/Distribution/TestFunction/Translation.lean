@@ -27,6 +27,8 @@ invariance of weak derivatives and distributional variation.
 * `TauCeti.lineDeriv_translateTestFunction`: directional derivatives commute with translation.
 * `TauCeti.exists_testFunction_eq_intervalIntegral`: segment averages of a test function are test
   functions.
+* `TauCeti.reflectTranslateTestFunction`: the reflected translate `t ↦ ρ (y - t)` of a smooth
+  compactly supported function, as a test function on `Omega`.
 -/
 
 public section
@@ -116,5 +118,22 @@ theorem exists_testFunction_eq_intervalIntegral
     exact hy (hΦC y hyC)
   exact ⟨⟨Φ, hΦs, HasCompactSupport.intro hCc hΦC,
     (closure_minimal hsupp hCc.isClosed).trans hCO⟩, fun _ => rfl⟩
+
+/-- The reflected translate `t ↦ ρ (y - t)` of a smooth compactly supported function `ρ`, as a
+test function on `Omega`; this needs `y - t ∈ Omega` for every `t` in the support of `ρ`. Its
+pairing with a function `u` is the convolution `(ρ ⋆ u) y`. -/
+def reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega) :
+    𝓓(Omega, F) :=
+  ⟨ρ ∘ Homeomorph.subLeft y, hρ.comp (contDiff_const.sub contDiff_id),
+    hρc.comp_homeomorph _, fun t ht ↦ by
+      simpa using hy _ (tsupport_comp_subset_preimage ρ (Homeomorph.subLeft y).continuous ht)⟩
+
+/-- The reflected translate of `ρ` about `y` takes the value `ρ (y - t)` at `t`. -/
+@[simp]
+theorem reflectTranslateTestFunction_apply (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega)
+    (t : E) : reflectTranslateTestFunction ρ y hρ hρc hy t = ρ (y - t) :=
+  (rfl)
 
 end TauCeti
