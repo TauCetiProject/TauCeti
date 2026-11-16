@@ -97,7 +97,7 @@ theorem rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere (hcont : Continuou
     hinj.congr (hγθ.symm.mono Ioo_subset_Icc_self)
   have hclosed' : circleMap c r (θ a) = circleMap c r (θ b) :=
     (hγθ (left_mem_Icc.2 hab.le)).trans
-      ((hcont.apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere hab hinj himage).trans
+      ((hcont.apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere hab.le hinj himage).trans
         (hγθ (right_mem_Icc.2 hab.le)).symm)
   have hcirc (s : Set ℝ) : ContinuousOn (circleMap c r) s := (continuous_circleMap c r).continuousOn
   rw [← rectifiableSignedArea_congr hγθ]

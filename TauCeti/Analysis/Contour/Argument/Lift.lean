@@ -559,10 +559,12 @@ private theorem strictAntiOn_Icc_of_strictAntiOn_Ioo {θ : ℝ → ℝ} {a b : �
 on `(a, b)` is strictly monotone on `[a, b]` with a total turn of at most one full turn, or
 strictly antitone with a total turn of at most one full turn. -/
 theorem strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi {θ : ℝ → ℝ} {a b : ℝ}
-    {c : ℂ} {r : ℝ} (hθ : ContinuousOn θ (Icc a b)) (hab : a < b)
+    {c : ℂ} {r : ℝ} (hθ : ContinuousOn θ (Icc a b)) (hab : a ≤ b)
     (hinj : InjOn (circleMap c r ∘ θ) (Ioo a b)) :
     (StrictMonoOn θ (Icc a b) ∧ θ b ≤ θ a + 2 * π) ∨
       (StrictAntiOn θ (Icc a b) ∧ θ a ≤ θ b + 2 * π) := by
+  rcases hab.eq_or_lt with rfl | hab
+  · exact Or.inl ⟨(subsingleton_Icc_of_ge le_rfl).strictMonoOn θ, by linarith [Real.pi_pos]⟩
   have hθinj : InjOn θ (Ioo a b) := fun s hs t ht h ↦ hinj hs ht (by simp [h])
   -- A turn of more than `2π` would repeat a point of `(a, b)`: two angles differing by `2π` are
   -- both attained strictly inside the interval.
@@ -617,7 +619,7 @@ theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ �
     have h₂ : a + 2 * (b - a) / 3 ∈ Ioo a b := ⟨by linarith, by linarith⟩
     exact (by linarith : a + (b - a) / 3 ≠ a + 2 * (b - a) / 3) (hinj h₁ h₂ (by simp))
   -- A turn of less than `2π` could not close up.
-  rcases hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab hinj with
+  rcases hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab.le hinj with
     ⟨hmono, hle⟩ | ⟨hanti, hle⟩
   · have hlt := hmono (left_mem_Icc.2 hab.le) (right_mem_Icc.2 hab.le) hab
     refine Or.inl ⟨hmono.monotoneOn, hle.antisymm (not_lt.1 fun h ↦ ?_)⟩
@@ -629,8 +631,10 @@ theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ �
 /-- A continuous parametrization of a circle on `[a, b]` that is injective on `(a, b)` is closed:
 its angle function turns by exactly one full turn. -/
 theorem apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ} {r : ℝ}
-    (hγ : ContinuousOn γ (Icc a b)) (hab : a < b) (hinj : InjOn γ (Ioo a b))
+    (hγ : ContinuousOn γ (Icc a b)) (hab : a ≤ b) (hinj : InjOn γ (Ioo a b))
     (himage : γ '' Icc a b = sphere c r) : γ a = γ b := by
+  rcases hab.eq_or_lt with rfl | hab
+  · rfl
   have hmaps : MapsTo γ (Icc a b) (sphere c r) := fun t ht ↦ by
     rw [← himage]
     exact mem_image_of_mem γ ht
@@ -651,7 +655,7 @@ theorem apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere {γ : ℝ → ℂ} {a b :
     hinj.congr (hθγ.symm.mono Ioo_subset_Icc_self)
   -- A turn of less than `2π` would miss a point of the circle.
   have hturn : θ b = θ a + 2 * π ∨ θ a = θ b + 2 * π := by
-    rcases hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab hinj' with
+    rcases hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab.le hinj' with
       ⟨hmono, hle⟩ | ⟨hanti, hle⟩
     · refine Or.inl (hle.antisymm (not_lt.1 fun h ↦ ?_))
       obtain ⟨t, ht, htφ⟩ : circleMap c r (θ b + (θ a + 2 * π - θ b) / 2) ∈ γ '' Icc a b := by
