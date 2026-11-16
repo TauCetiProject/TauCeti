@@ -131,19 +131,6 @@ theorem morseBrokenTrajectoryStratum_eq_morseTrajectoryRecords (x : Fin 2 → M)
   · rintro ⟨y, hy, hw⟩
     exact ⟨fun _ ↦ y, hy, hw⟩
 
-/-- Along a trajectory from `a` to `b`, every value of `f` other than `f a` lies strictly between
-`f b` and `f a`. If `a = b` the trajectory is the constant one at `a`. -/
-private theorem mem_Ioo_of_apply_flow_ne {a b z : M}
-    (hz : z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (t : ℝ)
-    (hne : f (hX.flow t z) ≠ f a) : f (hX.flow t z) ∈ Ioo (f b) (f a) := by
-  by_cases hab : a = b
-  · subst hab
-    rw [hX.eq_of_mem_unstableSet_inter_stableSet hz,
-      hX.flow_apply_of_mfderiv_eq_zero (hX.mfderiv_eq_zero_of_mem_stableSet hz.2)] at hne
-    exact (hne rfl).elim
-  · exact hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab
-      (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hz)
-
 /-- In a record along a chain whose levels avoid the critical values of the chain, the point on a
 level strictly between `f (x (j + 1))` and `f (x j)` lies on the component from `x j` to
 `x (j + 1)`. -/
