@@ -342,8 +342,7 @@ theorem mpullback_orbitTorus_wedge_timeForm :
           (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ))) =
       SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
         (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
-  have he : orbitTorus φ h = Prod.map id (closedOrbit φ h) := funext (orbitTorus_apply h)
-  simp only [he]
+  simp only [orbitTorus_eq_prodMap]
   rw [SmoothForm.mpullback_wedge,
     SmoothForm.mpullback_prodMap_mpullback_fst contMDiff_id (contMDiff_closedOrbit h),
     SmoothForm.mpullback_id, LinearMap.id_apply,
