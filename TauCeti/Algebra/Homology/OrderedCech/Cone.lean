@@ -150,18 +150,21 @@ private lemma single_homotopy_d_of_notMem {p : ℕ} {s : Finset ι} (hs : #s = p
     single F p s ≫ homotopy F v hF p (p + 1) ≫ F.orderedCechComplex.d (p + 1) p =
       single F p s - coneFace F v hF p s := by
   have hne : s.Nonempty := card_pos.1 (by omega)
+  -- The term of `v` in the differential of `F(s ∪ {v})` carries the sign of the homotopy twice.
+  have hsign : ((-1 : ℤ) ^ #{k ∈ s | k < v} * (-1) ^ #{j ∈ insert v s | j < v}) = 1 := by
+    simp only [filter_insert, lt_irrefl, ↓reduceIte]
+    rw [← pow_add, ← two_mul, (even_two_mul _).neg_one_pow]
   rw [← Category.assoc, single_homotopy F v hF _ hs, Preadditive.zsmul_comp, Category.assoc,
-    single_d F (by rw [card_insert_of_notMem hc, hs]), sum_insert hc, Preadditive.comp_add,
-    smul_add, coneFace, sub_eq_add_neg, ← sum_neg_distrib, Preadditive.comp_sum, Finset.smul_sum,
-    Preadditive.comp_zsmul, smul_smul, filter_insert]
-  simp only [lt_irrefl, ↓reduceIte]
-  rw [← pow_add, ← two_mul, (even_two_mul _).neg_one_pow, one_smul,
-    map_single_congr F _ (subset_insert v s) (erase_insert hc), ← Category.assoc,
+    single_d F (by rw [card_insert_of_notMem hc, hs]), sum_insert hc, coneFace, sub_eq_add_neg,
+    ← sum_neg_distrib]
+  simp only [Preadditive.comp_add, Preadditive.comp_sum, Preadditive.comp_zsmul, smul_add,
+    Finset.smul_sum, smul_smul, hsign, one_smul]
+  rw [map_single_congr F _ (subset_insert v s) (erase_insert hc), ← Category.assoc,
     cone_map F v hF hne, Category.id_comp]
   congr 1
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   have hck : v ≠ k := fun h ↦ hc (h ▸ hk)
-  rw [Preadditive.comp_zsmul, smul_smul, neg_one_pow_card_filter_lt_mul_insert hc hk, neg_smul,
+  rw [neg_one_pow_card_filter_lt_mul_insert hc hk, neg_smul,
     map_single_congr F _ (insert_subset_insert v (erase_subset k s)) (erase_insert_of_ne hck)]
 
 private lemma single_homotopy_of_mem {p : ℕ} {s : Finset ι} (hs : #s = p + 1) (hc : v ∈ s) :

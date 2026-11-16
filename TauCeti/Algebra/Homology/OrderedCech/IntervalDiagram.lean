@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Interval.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
@@ -623,7 +622,7 @@ variable {D : Type u} [Category.{v} D] [Abelian D] [HasCoproducts.{w} D] [Finite
 quasi-isomorphism on every column of the flag complexes. -/
 lemma quasiIso_flagComplexMap_f (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] (p : ℕ) :
     QuasiIso ((flagComplexMap α).f p) := by
-  have : Fintype (LinearExtension S) := @Fintype.ofFinite S _
+  have : Fintype (LinearExtension S) := Fintype.ofFinite _
   have (s : Finset (LinearExtension S)) : QuasiIso ((flagFunctorMap α).app (op s)) :=
     HomologicalComplex.quasiIso_of_isColimit_cofan (coproductIsCoproduct _)
       (coproductIsCoproduct _) (fun h : ULift.{w} (PLift (IsFlag s)) ↦
@@ -656,6 +655,10 @@ theorem quasiIso_totalMap (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] : QuasiIso
     -- `HomologicalComplex₂.ιTotal_totalFlipIso_f_hom` states the sign with types that agree with
     -- the goal only up to unfolding the total complex, so the sign is moved with `erw`.
     erw [Linear.units_smul_comp, ιTotal_totalMap, Linear.comp_units_smul]
+    rw [HomologicalComplex₂.flipFunctor_map_f_f]
+    -- The two sides now differ only in the types of the morphisms, where one side still writes
+    -- the objects of the flag complexes through `HomologicalComplex₂.flip`; they agree by
+    -- definition.
     rfl
   rw [← quasiIso_iff_comp_left
       (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom, hcomm]
