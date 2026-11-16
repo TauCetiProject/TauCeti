@@ -80,7 +80,7 @@ theorem eq_augmentation_of_isNormal_of_isSolvable_of_three_le
   let _ : Invertible (2 : k) := invertibleOfNonzero (NeZero.ne _)
   let _ : IsReduced H := isReduced_of_smooth k H
   let _ : ConnectedSpace (PrimeSpectrum H) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k H
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace
       (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k n)
   let _ : Nonempty (Fin n) := ⟨⟨0, by omega⟩⟩
   let _ : IsSimpleOrder (Subcomodule k H (Fin n → k)) :=

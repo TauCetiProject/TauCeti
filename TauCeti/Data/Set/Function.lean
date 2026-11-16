@@ -14,6 +14,8 @@ public import Mathlib.Data.Set.Function
   injective on their union.
 * `Set.MapsTo.image_eq_of_involutive`: an involution mapping a set into itself maps it onto
   itself.
+* `Set.MapsTo.image_inter_eq_preimage_of_involutive`: such an involution carries `s ∩ t` onto
+  `s ∩ f ⁻¹' t`.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 -/
@@ -34,6 +36,12 @@ theorem InjOn.union_of_disjoint_image (hs : InjOn f s) (ht : InjOn f t)
 theorem MapsTo.image_eq_of_involutive {f : α → α} {s : Set α} (hf : Function.Involutive f)
     (h : MapsTo f s s) : f '' s = s :=
   h.image_subset.antisymm fun x hx => ⟨f x, h hx, hf x⟩
+
+/-- An involution mapping a set `s` into itself carries `s ∩ t` onto `s ∩ f ⁻¹' t`. -/
+theorem MapsTo.image_inter_eq_preimage_of_involutive {f : α → α} {s : Set α}
+    (hf : Function.Involutive f) (h : MapsTo f s s) : f '' (s ∩ t) = s ∩ f ⁻¹' t := by
+  have hs : f ⁻¹' s = s := by rw [← hf.image_eq_preimage_symm, h.image_eq_of_involutive hf]
+  rw [hf.image_eq_preimage_symm, preimage_inter, hs]
 
 end Set
 
