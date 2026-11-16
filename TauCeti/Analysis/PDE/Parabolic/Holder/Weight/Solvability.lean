@@ -76,13 +76,7 @@ variable {α : ℝ≥0} {T : ℝ≥0}
 
 section Solution
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {hα₀ : 0 < α} {hα₁ : α < 1} {hT : (0 : ℝ) < T}
-  {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-  {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-  {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-  {ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-    lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ}
-  {dℓ : ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {dℓ : ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
   {d2ℓ : ι → ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
 
 /-- **The weighted Cauchy problem.** Let `w = exp ℓ` be a spatial weight whose logarithm `ℓ` is
@@ -93,8 +87,14 @@ may be unbounded. Let `v ∈ C_b^{2+α,1+α/2}` and `u = w v`, and let `f ∈ C_
 `v(·, 0) = g`, that is, the image of `(f, g)` under the inverse of the initial-data isomorphism of
 `P_w`. Hence the Cauchy problem whose data divided by `w` lie in `C_b^{α,α/2}` and `C_b^{2,α}` has
 exactly one solution `u` with `u / w ∈ C_b^{2+α,1+α/2}`. -/
-theorem eq_euclideanInitialDataCLE_symm_iff_exp_mul {ℓ : EuclideanSpace ℝ ι → ℝ}
-    (hℓ : ContDiff ℝ 2 ℓ) (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+theorem eq_euclideanInitialDataCLE_symm_iff_exp_mul (hα₀ : 0 < α) (hα₁ : α < 1)
+    (hT : (0 : ℝ) < T) {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    {ℓ : EuclideanSpace ℝ ι → ℝ} (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
     (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
       (EuclideanSpace.single j 1) = d2ℓ i j x)
     (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
@@ -146,8 +146,7 @@ theorem existsUnique_exp_mul (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ)
   have key (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT)
       (u : EuclideanSpace ℝ ι → ℝ → ℝ)
       (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s)) :=
-    eq_euclideanInitialDataCLE_symm_iff_exp_mul (hα₀ := hα₀) (hα₁ := hα₁) (b := b) (c := c)
-      (ha := ha) hℓ hdℓ hd2ℓ v hu f g
+    eq_euclideanInitialDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ v hu f g
   refine ⟨_, fun u hu ↦ (key _ u hu).1 rfl, fun v hv ↦ ?_⟩
   have hext (y : EuclideanSpace ℝ ι) (s : Icc (0 : ℝ) T) :
       exp (ℓ y) * timeExtension hT.le v y s = exp (ℓ y) * v (slabMk y s) := by
