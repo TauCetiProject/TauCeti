@@ -30,7 +30,11 @@ exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C
 ## Main results
 
 * `ZMod.natCast_gcd_two`: `gcd(2, n)` and `n` agree modulo two.
-* `ZMod.val_eq_ite_mod_two`: `a.val = if a ≠ 0 then 1 else 0` for `a : ZMod 2`.
+* `ZMod.val_eq_ite_mod_two` and `ZMod.eq_one_of_ne_zero`: for `a : ZMod 2`,
+  `a.val = if a ≠ 0 then 1 else 0` and `a ≠ 0 → a = 1`.
+* `ZMod.neg_one_pow_val`, `ZMod.one_add_neg_one_pow_val`, and `ZMod.neg_one_pow_val_inj`:
+  evaluation, indicator identity `1 + (-1) ^ a.val = if a = 0 then 2 else 0`, and injectivity of
+  `a ↦ (-1 : R) ^ a.val` for `a : ZMod 2`.
 * `ZMod.isUnit_two_mul_add`: `2c + u` is a unit in `ℤ/2^n` when `u` is.
 * `ZMod.not_isUnit_two_mul`: `2c` is not a unit in `ℤ/2^{k+1}`.
 * `ZMod.eq_two_mul_or_eq_two_mul_add_one`: every element of `ℤ/n` is even or odd.
@@ -51,6 +55,41 @@ theorem natCast_gcd_two (n : ℕ) : ((Nat.gcd 2 n : ℕ) : ZMod 2) = n := by
 theorem val_eq_ite_mod_two (a : ZMod 2) : a.val = if a ≠ 0 then 1 else 0 := by
   revert a
   decide
+
+/-- A nonzero residue modulo two is `1`. -/
+theorem eq_one_of_ne_zero {a : ZMod 2} (ha : a ≠ 0) : a = 1 :=
+  Fin.eq_one_of_ne_zero a ha
+
+/-- For `a : ZMod 2`, the sign `(-1) ^ a.val` in a ring is `1` at `0` and `-1` at `1`. -/
+theorem neg_one_pow_val {R : Type*} [Ring R] (a : ZMod 2) :
+    (-1 : R) ^ a.val = if a = 0 then 1 else -1 := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp [val_eq_ite_mod_two]
+  · simp [val_eq_ite_mod_two, ha]
+
+/-- For `a : ZMod 2`, `1 + (-1) ^ a.val` is `2` at `0` and `0` at `1`. -/
+theorem one_add_neg_one_pow_val {R : Type*} [Ring R] (a : ZMod 2) :
+    (1 : R) + (-1 : R) ^ a.val = if a = 0 then 2 else 0 := by
+  rw [neg_one_pow_val]
+  split_ifs
+  · exact one_add_one_eq_two
+  · exact add_neg_cancel 1
+
+/-- Over a ring in which `2 ≠ 0`, the sign `(-1) ^ a.val` determines `a : ZMod 2`. -/
+@[simp]
+theorem neg_one_pow_val_inj {R : Type*} [Ring R] [NeZero (2 : R)] {a b : ZMod 2} :
+    (-1 : R) ^ a.val = (-1 : R) ^ b.val ↔ a = b := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have h1 : (1 : R) ≠ -1 := fun h1 ↦ NeZero.ne (2 : R) <| by
+    rw [← one_add_one_eq_two]
+    nth_rw 2 [h1]
+    exact add_neg_cancel 1
+  rw [neg_one_pow_val, neg_one_pow_val] at h
+  by_cases ha : a = 0 <;> by_cases hb : b = 0
+  · exact ha.trans hb.symm
+  · simp [ha, hb, h1] at h
+  · simp [ha, hb, h1.symm] at h
+  · exact (eq_one_of_ne_zero ha).trans (eq_one_of_ne_zero hb).symm
 
 variable {n : ℕ}
 

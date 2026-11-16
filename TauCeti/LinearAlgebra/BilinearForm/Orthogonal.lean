@@ -88,8 +88,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
   `LinearMap.BilinForm.finrank_le_two_mul_finrank_of_orthogonal_le`: dimension lower bounds for
   orthogonal complements of an arbitrary bilinear form.
-* `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal`: a totally isotropic subspace
-  of a nondegenerate bilinear space has at most half the ambient dimension.
+* `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal` and
+  `LinearMap.BilinForm.eq_orthogonal_iff_two_mul_finrank_eq`: an isotropic subspace of a
+  nondegenerate bilinear space has at most half the ambient dimension, with equality exactly when
+  it equals its orthogonal complement.
 * `LinearMap.two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective`: the same bound for a
   subspace on which an injective bilinear map with values in a line vanishes.
 * `LinearMap.mem_of_apply_eq_zero_of_two_mul_finrank_eq`: such a subspace of exactly half the
@@ -708,6 +710,15 @@ theorem two_mul_finrank_le_finrank_of_le_orthogonal (hB : B.Nondegenerate) {W : 
   have hle := Submodule.finrank_le W
   omega
 
+/-- An isotropic subspace `W ≤ B.orthogonal W` of a finite-dimensional nondegenerate bilinear space
+equals its orthogonal complement if and only if its dimension is half the ambient dimension. -/
+theorem eq_orthogonal_iff_two_mul_finrank_eq (hB : B.Nondegenerate) {W : Submodule K V}
+    (h : W ≤ B.orthogonal W) : W = B.orthogonal W ↔ 2 * finrank K W = finrank K V := by
+  have horth := B.finrank_orthogonal hB W
+  have hle := Submodule.finrank_le W
+  exact ⟨fun heq ↦ by rw [← heq] at horth; omega,
+    fun h2 ↦ Submodule.eq_of_le_of_finrank_eq h (by omega)⟩
+
 /-- The orthogonal complement of the span of a hyperbolic pair has codimension two. -/
 theorem IsAlt.finrank_orthogonal_span_pair_add_two (hB : B.IsAlt) {e f : V} (hfe : B f e = 1) :
     finrank K (B.orthogonal (Submodule.span K {e, f})) + 2 = finrank K V := by
@@ -828,7 +839,7 @@ theorem mem_of_apply_eq_zero_of_two_mul_finrank_eq {K V Q : Type*} [Field K] [Ad
   have hle : W ≤ B.orthogonal W := fun v hv ↦ (BilinForm.mem_orthogonal_iff).2 fun w hw ↦ by
     simp [B, hW v hv w hw]
   have heq : W = B.orthogonal W :=
-    Submodule.eq_of_le_of_finrank_eq hle (by rw [BilinForm.finrank_orthogonal hB.flip]; omega)
+    (BilinForm.eq_orthogonal_iff_two_mul_finrank_eq hB.flip hle).mpr hdim
   rw [heq, BilinForm.mem_orthogonal_iff]
   intro b hb
   simp [B, ha b hb]

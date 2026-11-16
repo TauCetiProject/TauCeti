@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -27,12 +28,15 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
   whose eigenvalue does not square to `1` (in the sense of regularity of `μ² - 1`) is isotropic.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
-* `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
-  equivalence of the kernels of polarization against corresponding vectors.
-* `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
-  `QuadraticMap.IsometryEquiv.trans_apply`: basic evaluation and involution lemmas for isometric
-  equivalences.
-* `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.IsometryEquiv.polarKernelEquiv` and
+  `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence restricts to an
+  equivalence of polar kernels and transports polar-orthogonal complements.
+* `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`,
+  `QuadraticMap.IsometryEquiv.trans_apply`, and `QuadraticMap.IsometryEquiv.ofEq`: basic evaluation,
+  involution, and equality-cast constructors for isometric equivalences.
+* `QuadraticMap.IsometryEquiv.nondegenerate_iff` and
+  `QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff`: nondegeneracy of a quadratic map and of
+  its polar bilinear form are invariant under isometry.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -152,6 +156,27 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
     (((e.polarKernelEquiv x).symm y : LinearMap.ker (Q₁.polarBilin x)) : M₁) = e.symm y :=
   e.toLinearEquiv.ofSubmodules_symm_apply (e.map_polarKernel x) y
 
+/-- An isometric equivalence maps the polar-orthogonal complement of a submodule `U` onto the
+polar-orthogonal complement of `U.map e.toLinearMap`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) (U : Submodule R M₁) :
+    (LinearMap.BilinForm.orthogonal Q₁.polarBilin U).map e.toLinearMap =
+      LinearMap.BilinForm.orthogonal Q₂.polarBilin (U.map e.toLinearMap) := by
+  ext y
+  simp only [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
+    polarBilin_apply_apply, IsometryEquiv.coe_symm_toLinearEquiv, IsometryEquiv.coe_toLinearEquiv]
+  constructor
+  · intro hy z hz
+    rw [← e.symm.polar_apply z y]
+    exact hy (e.symm z) hz
+  · intro hy x hx
+    rw [← e.polar_apply x (e.symm y), e.apply_symm_apply]
+    exact hy (e x) (by simpa using hx)
+
 /-- The identity isometric equivalence acts as the identity on vectors. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.refl_apply {R : Type u} {M : Type v} {N : Type w}
@@ -178,6 +203,38 @@ theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type 
     {Q₃ : QuadraticMap R M₃ N} (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) (x : M₁) :
     f.trans g x = g (f x) :=
   rfl
+
+/-- The identity isometric equivalence between equal quadratic maps. -/
+def _root_.QuadraticMap.IsometryEquiv.ofEq {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂) : Q₁.IsometryEquiv Q₂ where
+  toLinearEquiv := LinearEquiv.refl R M
+  map_app' _ := h ▸ rfl
+
+/-- `QuadraticMap.IsometryEquiv.ofEq` acts as the identity on vectors. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.ofEq_apply {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂) (x : M) :
+    IsometryEquiv.ofEq h x = x :=
+  (rfl)
+
+/-- The inverse of `QuadraticMap.IsometryEquiv.ofEq h` is
+`QuadraticMap.IsometryEquiv.ofEq h.symm`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.ofEq_symm {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {Q₁ Q₂ : QuadraticMap R M N} (h : Q₁ = Q₂) :
+    (IsometryEquiv.ofEq h).symm = IsometryEquiv.ofEq h.symm :=
+  DFunLike.ext _ _ fun _ ↦ rfl
+
+/-- At `rfl`, `QuadraticMap.IsometryEquiv.ofEq` is `QuadraticMap.IsometryEquiv.refl`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.ofEq_rfl {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {Q : QuadraticMap R M N} :
+    IsometryEquiv.ofEq (rfl : Q = Q) = IsometryEquiv.refl Q :=
+  DFunLike.ext _ _ fun _ ↦ rfl
 
 /-- Nondegeneracy of a quadratic map is invariant under an isometric equivalence. -/
 theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
@@ -207,6 +264,34 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     apply Cardinal.lift_le_one_iff.mp
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
+
+/-- Pushing `Q₁.polarBilin` forward along an isometric equivalence `e : Q₁.IsometryEquiv Q₂` gives
+`Q₂.polarBilin`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.congr_polarBilin
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (e : Q₁.IsometryEquiv Q₂) :
+    LinearMap.BilinForm.congr e.toLinearEquiv Q₁.polarBilin = Q₂.polarBilin :=
+  LinearMap.BilinForm.ext fun _ _ ↦ by simp
+
+/-- Nondegeneracy of the polar bilinear form is invariant under an isometric equivalence. -/
+theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (e : Q₁.IsometryEquiv Q₂) :
+    Q₁.polarBilin.Nondegenerate ↔ Q₂.polarBilin.Nondegenerate := by
+  rw [← e.congr_polarBilin]
+  exact (LinearMap.BilinForm.nondegenerate_congr_iff e.toLinearEquiv).symm
+
+/-- Equivalent quadratic forms have simultaneously nondegenerate polar bilinear forms. -/
+theorem _root_.QuadraticMap.Equivalent.nondegenerate_polarBilin_iff
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (h : Q₁.Equivalent Q₂) :
+    Q₁.polarBilin.Nondegenerate ↔ Q₂.polarBilin.Nondegenerate :=
+  let ⟨e⟩ := h
+  e.nondegenerate_polarBilin_iff
 
 section Neg
 
