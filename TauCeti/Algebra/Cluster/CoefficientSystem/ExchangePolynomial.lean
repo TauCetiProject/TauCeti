@@ -87,15 +87,8 @@ def reverse (H : ExchangePolynomial 𝕂) : ExchangePolynomial 𝕂 where
 theorem reverse_coeff (H : ExchangePolynomial 𝕂) (l : Fin (H.reverse.degree + 1)) :
     H.reverse.coeff l = H.coeff (l.cast (by rw [reverse_degree])).rev := (rfl)
 
-@[simp]
-theorem reverse_reverse (H : ExchangePolynomial 𝕂) : H.reverse.reverse = H := by
+@[simp] theorem reverse_reverse (H : ExchangePolynomial 𝕂) : H.reverse.reverse = H := by
   ext l <;> simp [Fin.cast_rev]
-
-theorem unit_reverse_zero (H : ExchangePolynomial 𝕂) :
-    H.reverse.isUnit_coeff_zero.unit = H.isUnit_coeff_last.unit := by simp
-
-theorem unit_reverse_last (H : ExchangePolynomial 𝕂) :
-    H.reverse.isUnit_coeff_last.unit = H.isUnit_coeff_zero.unit := by simp
 
 /-- Variable dilation `H(κ T)` by a unit `κ : 𝕂ˣ`, multiplying the `l`-th coefficient by `κ ^ l`. -/
 def dilate (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) : ExchangePolynomial 𝕂 where
@@ -118,9 +111,6 @@ theorem dilate_coeff (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) (l : Fin ((H.di
 @[simp]
 theorem dilate_dilate (H : ExchangePolynomial 𝕂) (κ₁ κ₂ : 𝕂ˣ) :
     (H.dilate κ₁).dilate κ₂ = H.dilate (κ₁ * κ₂) := by ext l <;> simp [mul_assoc, mul_pow]
-
-theorem unit_dilate_zero (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
-    (H.dilate κ).isUnit_coeff_zero.unit = H.isUnit_coeff_zero.unit := by simp
 
 @[simp]
 theorem unit_dilate_last (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
@@ -159,22 +149,18 @@ theorem unit_scale_last (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
 /-- Unit scaling acts freely on exchange polynomials because the constant coefficient is a unit. -/
 theorem scale_right_injective (H : ExchangePolynomial 𝕂) : Function.Injective H.scale := by
   intro e₁ e₂ h
-  simpa only [unit_scale_zero, mul_left_inj] using
-    congrArg (fun P ↦ P.isUnit_coeff_zero.unit) h
+  simpa only [unit_scale_zero, mul_left_inj] using congrArg (fun P ↦ P.isUnit_coeff_zero.unit) h
 
-@[simp]
-theorem scale_inj (H : ExchangePolynomial 𝕂) {e₁ e₂ : 𝕂ˣ} : H.scale e₁ = H.scale e₂ ↔ e₁ = e₂ :=
-  (scale_right_injective H).eq_iff
+@[simp] theorem scale_right_inj (H : ExchangePolynomial 𝕂) {e₁ e₂ : 𝕂ˣ} :
+    H.scale e₁ = H.scale e₂ ↔ e₁ = e₂ := (scale_right_injective H).eq_iff
 
-@[simp]
-theorem scale_eq_self_iff (H : ExchangePolynomial 𝕂) {e : 𝕂ˣ} : H.scale e = H ↔ e = 1 :=
-  ⟨fun h ↦ H.scale_inj.mp (h.trans H.scale_one.symm), fun h ↦ h ▸ H.scale_one⟩
+@[simp] theorem scale_eq_self_iff (H : ExchangePolynomial 𝕂) {e : 𝕂ˣ} : H.scale e = H ↔ e = 1 :=
+  ⟨fun h ↦ H.scale_right_inj.mp (h.trans H.scale_one.symm), fun h ↦ h ▸ H.scale_one⟩
 
-theorem scale_dilate (H : ExchangePolynomial 𝕂) (e κ : 𝕂ˣ) :
+theorem dilate_scale (H : ExchangePolynomial 𝕂) (e κ : 𝕂ˣ) :
     (H.scale e).dilate κ = (H.dilate κ).scale e := by ext l <;> simp [mul_assoc]
 
-@[simp]
-theorem reverse_scale (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
+@[simp] theorem reverse_scale (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
     (H.scale e).reverse = H.reverse.scale e := by ext l <;> simp [Fin.cast_rev]
 
 /-- Reversing `H(κ T)` yields `κ^r` times the dilation of `H.reverse` by `κ⁻¹`. -/
@@ -182,10 +168,7 @@ theorem reverse_dilate (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
     (H.dilate κ).reverse = (H.reverse.dilate κ⁻¹).scale (κ ^ H.degree) := by
   ext l; · simp
   have hl : l.val ≤ H.degree := Nat.lt_succ_iff.mp (by simpa using l.isLt)
-  have hκ : κ ^ (H.degree - l.val) = κ ^ H.degree * (κ⁻¹) ^ l.val := by
-    rw [← Nat.add_sub_of_le hl, pow_add, inv_pow, mul_comm (κ ^ l.val), mul_inv_cancel_right,
-      Nat.add_sub_cancel_left]
-  simp [Fin.cast_rev, Fin.val_rev, Nat.add_sub_add_right, hκ, mul_assoc, mul_comm]
+  simp [Fin.cast_rev, Fin.val_rev, Nat.add_sub_add_right, pow_sub κ hl, mul_assoc, mul_comm]
 
 /-! ### Dilation factors -/
 
@@ -197,16 +180,13 @@ noncomputable def dilationFactor (H : ExchangePolynomial 𝕂) (b : ℤ) : 𝕂�
 theorem dilationFactor_def (H : ExchangePolynomial 𝕂) (b : ℤ) :
     H.dilationFactor b = H.isUnit_coeff_last.unit ^ b⁺ * H.isUnit_coeff_zero.unit ^ (-b⁻) := (rfl)
 
-@[simp]
-theorem dilationFactor_zero (H : ExchangePolynomial 𝕂) : H.dilationFactor 0 = 1 := by
+@[simp] theorem dilationFactor_zero (H : ExchangePolynomial 𝕂) : H.dilationFactor 0 = 1 := by
   simp [dilationFactor]
 
 /-- Reversing `H` and negating `b` inverts the dilation factor. -/
-@[simp]
-theorem dilationFactor_reverse (H : ExchangePolynomial 𝕂) (b : ℤ) :
+@[simp] theorem dilationFactor_reverse (H : ExchangePolynomial 𝕂) (b : ℤ) :
     H.reverse.dilationFactor b = (H.dilationFactor (-b))⁻¹ := by
-  rw [dilationFactor_def, dilationFactor_def, unit_reverse_last, unit_reverse_zero]
-  simp [posPart_neg, negPart_neg]
+  simp [dilationFactor_def, posPart_neg, negPart_neg]
 
 /-- Scaling `H` by `e` multiplies its dilation factor at `b` by `e ^ b`. -/
 @[simp]
@@ -222,6 +202,15 @@ theorem dilationFactor_scale (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) (b : ℤ
 def IsEndpointOne (H : ExchangePolynomial 𝕂) : Prop :=
   H.coeff 0 = 1 ∧ H.coeff (Fin.last H.degree) = 1
 
+theorem isEndpointOne_iff {H : ExchangePolynomial 𝕂} :
+    H.IsEndpointOne ↔ H.coeff 0 = 1 ∧ H.coeff (Fin.last H.degree) = 1 := Iff.rfl
+
+protected theorem IsEndpointOne.coeff_zero {H : ExchangePolynomial 𝕂} (h : H.IsEndpointOne) :
+    H.coeff 0 = 1 := h.1
+
+protected theorem IsEndpointOne.coeff_last {H : ExchangePolynomial 𝕂} (h : H.IsEndpointOne) :
+    H.coeff (Fin.last H.degree) = 1 := h.2
+
 protected theorem IsEndpointOne.reverse {H : ExchangePolynomial 𝕂} (h : H.IsEndpointOne) :
     H.reverse.IsEndpointOne := ⟨by simp [h.2], by simp [h.1]⟩
 
@@ -229,26 +218,23 @@ protected theorem IsEndpointOne.dilationFactor {H : ExchangePolynomial 𝕂} (h 
     (b : ℤ) : H.dilationFactor b = 1 := by
   have h0 : H.isUnit_coeff_zero.unit = 1 := Units.ext (by simp [h.1])
   have hr : H.isUnit_coeff_last.unit = 1 := Units.ext (by simp [h.2])
-  rw [dilationFactor_def, h0, hr]
-  simp
+  simp [dilationFactor_def, h0, hr]
 
 /-- The binary exchange polynomial `1 + T` of degree `1`. -/
 def binary : ExchangePolynomial 𝕂 := ⟨1, Nat.one_pos, fun _ ↦ 1, isUnit_one, isUnit_one⟩
 
 @[simp] theorem binary_degree : (binary : ExchangePolynomial 𝕂).degree = 1 := (rfl)
 
-@[simp]
-theorem binary_coeff (l : Fin ((binary : ExchangePolynomial 𝕂).degree + 1)) :
+@[simp] theorem binary_coeff (l : Fin ((binary : ExchangePolynomial 𝕂).degree + 1)) :
     (binary : ExchangePolynomial 𝕂).coeff l = 1 := (rfl)
 
-@[simp]
-theorem reverse_binary : (binary : ExchangePolynomial 𝕂).reverse = binary := by ext l <;> simp
+@[simp] theorem reverse_binary : (binary : ExchangePolynomial 𝕂).reverse = binary := by
+  ext l <;> simp
 
 theorem isEndpointOne_binary : (binary : ExchangePolynomial 𝕂).IsEndpointOne := ⟨rfl, rfl⟩
 
-@[simp]
-theorem dilationFactor_binary (b : ℤ) : (binary : ExchangePolynomial 𝕂).dilationFactor b = 1 :=
-  isEndpointOne_binary.dilationFactor b
+@[simp] theorem dilationFactor_binary (b : ℤ) :
+    (binary : ExchangePolynomial 𝕂).dilationFactor b = 1 := isEndpointOne_binary.dilationFactor b
 
 /-- The degree-one binomial `1 + y T` associated with a unit `y : 𝕂ˣ`. -/
 def binomial (y : 𝕂ˣ) : ExchangePolynomial 𝕂 where
@@ -260,8 +246,7 @@ def binomial (y : 𝕂ˣ) : ExchangePolynomial 𝕂 where
 
 @[simp] theorem binomial_degree (y : 𝕂ˣ) : (binomial y).degree = 1 := (rfl)
 
-@[simp]
-theorem binomial_coeff (y : 𝕂ˣ) (l : Fin ((binomial y).degree + 1)) :
+@[simp] theorem binomial_coeff (y : 𝕂ˣ) (l : Fin ((binomial y).degree + 1)) :
     (binomial y).coeff l = if l.val = 0 then 1 else (y : 𝕂) := (rfl)
 
 @[simp] theorem binomial_one : binomial (1 : 𝕂ˣ) = binary := by ext l <;> simp
@@ -270,17 +255,15 @@ theorem reverse_binomial (y : 𝕂ˣ) : (binomial y).reverse = (binomial y⁻¹)
   ext l; · simp
   match l with | ⟨0, _⟩ | ⟨1, _⟩ => simp [Fin.val_rev]
 
-@[simp]
-theorem dilate_binomial (y κ : 𝕂ˣ) : (binomial y).dilate κ = binomial (y * κ) := by
+@[simp] theorem dilate_binomial (y κ : 𝕂ˣ) : (binomial y).dilate κ = binomial (y * κ) := by
   ext l; · simp
   match l with | ⟨0, _⟩ | ⟨1, _⟩ => simp
 
-@[simp]
-theorem dilationFactor_binomial (y : 𝕂ˣ) (b : ℤ) : (binomial y).dilationFactor b = y ^ b⁺ := by
+@[simp] theorem dilationFactor_binomial (y : 𝕂ˣ) (b : ℤ) :
+    (binomial y).dilationFactor b = y ^ b⁺ := by
   have h0 : (binomial y).isUnit_coeff_zero.unit = 1 := Units.ext (by simp)
   have h1 : (binomial y).isUnit_coeff_last.unit = y := Units.ext (by simp)
-  rw [dilationFactor_def, h0, h1]
-  simp
+  rw [dilationFactor_def, h0, h1]; simp
 
 /-! ### Functoriality and coefficient sums -/
 
@@ -292,103 +275,63 @@ def map (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) : ExchangePolynom
   isUnit_coeff_zero := H.isUnit_coeff_zero.map f
   isUnit_coeff_last := H.isUnit_coeff_last.map f
 
-@[simp]
-theorem map_degree (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) : (H.map f).degree = H.degree := (rfl)
+@[simp] theorem map_degree (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) :
+    (H.map f).degree = H.degree := (rfl)
 
-@[simp]
-theorem map_coeff (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) (l : Fin ((H.map f).degree + 1)) :
+@[simp] theorem map_coeff (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂)
+    (l : Fin ((H.map f).degree + 1)) :
     (H.map f).coeff l = f (H.coeff (l.cast (by rw [map_degree]))) := (rfl)
 
-@[simp]
-theorem map_id (H : ExchangePolynomial 𝕂) : H.map (MonoidWithZeroHom.id 𝕂) = H := by ext l <;> simp
+@[simp] theorem map_id (H : ExchangePolynomial 𝕂) : H.map (MonoidWithZeroHom.id 𝕂) = H := by
+  ext l <;> simp
 
-@[simp]
-theorem map_map (g : 𝕂' →*₀ 𝕂'') (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) :
+@[simp] theorem map_map (g : 𝕂' →*₀ 𝕂'') (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) :
     (H.map f).map g = H.map (g.comp f) := by ext l <;> simp
 
-@[simp]
-theorem map_reverse (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) :
+@[simp] theorem map_reverse (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) :
     H.reverse.map f = (H.map f).reverse := by ext l <;> simp [Fin.cast_rev]
 
-@[simp]
-theorem map_scale (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
+@[simp] theorem map_scale (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
     (H.scale e).map f = (H.map f).scale (Units.map f.toMonoidHom e) := by ext l <;> simp
 
-@[simp]
-theorem map_dilate (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
+@[simp] theorem map_dilate (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
     (H.dilate κ).map f = (H.map f).dilate (Units.map f.toMonoidHom κ) := by
   ext l <;> simp [← map_pow]
 
-@[simp]
-theorem map_dilationFactor (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) (b : ℤ) :
+@[simp] theorem dilationFactor_map (f : 𝕂 →*₀ 𝕂') (H : ExchangePolynomial 𝕂) (b : ℤ) :
     (H.map f).dilationFactor b = Units.map f.toMonoidHom (H.dilationFactor b) := by
   have h0 : (H.map f).isUnit_coeff_zero.unit = Units.map f.toMonoidHom H.isUnit_coeff_zero.unit :=
     Units.ext (by simp)
   have hr : (H.map f).isUnit_coeff_last.unit = Units.map f.toMonoidHom H.isUnit_coeff_last.unit :=
     Units.ext (by simp)
-  rw [dilationFactor_def, dilationFactor_def, h0, hr]
-  simp
+  rw [dilationFactor_def, dilationFactor_def, h0, hr]; simp
 
-@[simp]
-theorem map_binary (f : 𝕂 →*₀ 𝕂') : (binary : ExchangePolynomial 𝕂).map f = binary := by
+@[simp] theorem map_binary (f : 𝕂 →*₀ 𝕂') : (binary : ExchangePolynomial 𝕂).map f = binary := by
   ext l <;> simp
 
-@[simp]
-theorem map_binomial (f : 𝕂 →*₀ 𝕂') (y : 𝕂ˣ) :
+@[simp] theorem map_binomial (f : 𝕂 →*₀ 𝕂') (y : 𝕂ˣ) :
     (binomial y).map f = binomial (Units.map f.toMonoidHom y) := by
   ext l; · simp
   match l with | ⟨0, _⟩ | ⟨1, _⟩ => simp
 
-/-- Reindex a degree-indexed sum between two exchange polynomials of equal formal degree. -/
-theorem sum_congr_degree {M : Type*} [AddCommMonoid M]
-    {H₁ : ExchangePolynomial 𝕂} {H₂ : ExchangePolynomial 𝕂'} (hd : H₁.degree = H₂.degree)
-    {f₁ : Fin (H₁.degree + 1) → M} {f₂ : Fin (H₂.degree + 1) → M}
-    (hf : ∀ l, f₁ l = f₂ (l.cast (congrArg (· + 1) hd))) :
-    ∑ l, f₁ l = ∑ l, f₂ l :=
-  Fintype.sum_equiv (finCongr (congrArg (· + 1) hd)) f₁ f₂ hf
-
-/-- Reindex a degree-indexed sum between two exchange polynomials of equal formal degree along
-`Fin.rev`. -/
-theorem sum_congr_degree_rev {M : Type*} [AddCommMonoid M]
-    {H₁ : ExchangePolynomial 𝕂} {H₂ : ExchangePolynomial 𝕂'} (hd : H₁.degree = H₂.degree)
-    {f₁ : Fin (H₁.degree + 1) → M} {f₂ : Fin (H₂.degree + 1) → M}
-    (hf : ∀ l, f₁ l = f₂ (l.cast (congrArg (· + 1) hd)).rev) :
-    ∑ l, f₁ l = ∑ l, f₂ l :=
-  (sum_congr_degree hd hf).trans (Equiv.sum_comp Fin.revPerm f₂)
-
-/-- Reindex a sum over `Fin (H.degree + 1)` to `Fin (n + 1)` along `hd : H.degree = n`. -/
-theorem sum_of_degree_eq {M : Type*} [AddCommMonoid M] (H : ExchangePolynomial 𝕂) {n : ℕ}
-    (hd : H.degree = n) (g : Fin (H.degree + 1) → M) :
-    ∑ l, g l = ∑ l : Fin (n + 1), g (l.cast (congrArg (· + 1) hd.symm)) := by
-  subst hd; rfl
-
-/-- Evaluate a degree-indexed sum over an exchange polynomial of formal degree `1` on its two
-endpoint indices. -/
-theorem sum_of_degree_eq_one {M : Type*} [AddCommMonoid M] (H : ExchangePolynomial 𝕂)
-    (hd : H.degree = 1) (g : Fin (H.degree + 1) → M) :
-    ∑ l, g l = g 0 + g (Fin.last H.degree) := by
-  rw [H.sum_of_degree_eq hd, Fin.univ_succ, Finset.sum_cons, Finset.sum_map, Finset.univ_unique,
-    Finset.sum_singleton]
-  exact congr_arg₂ (· + ·) (congrArg g (Fin.ext (by simp))) (congrArg g (Fin.ext (by simp [hd])))
-
 theorem sum_reverse_coeff {M : Type*} [AddCommMonoid M] (H : ExchangePolynomial 𝕂) (g : 𝕂 → M) :
     ∑ l, g (H.reverse.coeff l) = ∑ l, g (H.coeff l) :=
-  sum_congr_degree_rev H.reverse_degree fun _ ↦ by simp
+  Fintype.sum_equiv ((finCongr (by simp)).trans Fin.revPerm) _ _ fun _ ↦ by simp
 
 theorem sum_scale_coeff {M : Type*} [AddCommMonoid M] (H : ExchangePolynomial 𝕂)
     (u : 𝕂ˣ) (g : 𝕂 → M) :
     ∑ l, g ((H.scale u).coeff l) = ∑ l, g ((u : 𝕂) * H.coeff l) :=
-  sum_congr_degree (H.scale_degree u) fun _ ↦ by simp
+  Fintype.sum_equiv (finCongr (by simp)) _ _ fun _ ↦ by simp
 
 theorem sum_dilate_coeff {M : Type*} [AddCommMonoid M] (H : ExchangePolynomial 𝕂)
     (κ : 𝕂ˣ) (g : 𝕂 → M) :
     ∑ l, g ((H.dilate κ).coeff l) = ∑ l, g ((κ : 𝕂) ^ l.val * H.coeff l) :=
-  sum_congr_degree (H.dilate_degree κ) fun _ ↦ by simp [mul_comm]
+  Fintype.sum_equiv (finCongr (by simp)) _ _ fun _ ↦ by simp [mul_comm]
 
 theorem sum_map_coeff {M : Type*} [AddCommMonoid M] (f : 𝕂 →*₀ 𝕂')
     (H : ExchangePolynomial 𝕂) (g : 𝕂' → M) :
     ∑ l, g ((H.map f).coeff l) = ∑ l, g (f (H.coeff l)) :=
-  sum_congr_degree (H.map_degree f) fun _ ↦ by simp
+  Fintype.sum_equiv (finCongr (by simp)) _ _ fun _ ↦ by simp
 
 /-- Over a nontrivial commutative semiring with trivial additive units, the sum of all
 coefficients of an exchange polynomial is nonzero because its constant coefficient is a unit. -/

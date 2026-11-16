@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Cluster.CoefficientSystem.Basic
 
+import Mathlib.Algebra.GroupWithZero.Units.Lemmas
+
 /-!
 # Homomorphisms of coefficient systems
 
@@ -32,14 +34,14 @@ structure Hom {𝕂 𝕂' : Type*} [CommMonoidWithZero 𝕂] [CommMonoidWithZero
   /-- Compatibility with the scalar maps into `R`. -/
   toScalar_comp : c'.toScalar.comp toMonoidWithZeroHom = c.toScalar
   /-- The underlying map intertwines the normalizers of exchange polynomials. -/
-  map_normalizer : ∀ H : ExchangePolynomial 𝕂,
+  normalizer_map : ∀ H : ExchangePolynomial 𝕂,
     c'.normalizer (H.map toMonoidWithZeroHom) =
       Units.map toMonoidWithZeroHom.toMonoidHom (c.normalizer H)
 
 /-- Reinterpret a homomorphism of coefficient systems as a morphism of monoids with zero. -/
 add_decl_doc Hom.toMonoidWithZeroHom
 
-attribute [simp] Hom.map_normalizer
+attribute [simp] Hom.normalizer_map
 
 namespace Hom
 
@@ -75,7 +77,7 @@ theorem coe_mk (f : 𝕂 →*₀ 𝕂') (h₁ : c'.toScalar.comp f = c.toScalar)
     ⇑(Hom.mk f h₁ h₂) = f := (rfl)
 
 @[simp]
-theorem toScalar_apply (f : c.Hom c') (x : 𝕂) : c'.toScalar (f x) = c.toScalar x :=
+theorem toScalar_comp_apply (f : c.Hom c') (x : 𝕂) : c'.toScalar (f x) = c.toScalar x :=
   DFunLike.congr_fun f.toScalar_comp x
 
 /-- Homomorphisms of coefficient systems commute with polynomial normalization. -/
@@ -89,7 +91,7 @@ variable (c) in
 protected def id : c.Hom c where
   toMonoidWithZeroHom := MonoidWithZeroHom.id 𝕂
   toScalar_comp := MonoidWithZeroHom.comp_id c.toScalar
-  map_normalizer _ := Units.ext (by simp)
+  normalizer_map _ := Units.ext (by simp)
 
 @[simp] theorem coe_id : ⇑(Hom.id c) = _root_.id := (rfl)
 @[simp] theorem toMonoidWithZeroHom_id : (Hom.id c).toMonoidWithZeroHom = MonoidWithZeroHom.id 𝕂 :=
@@ -99,8 +101,8 @@ protected def id : c.Hom c where
 def comp (g : c'.Hom c'') (f : c.Hom c') : c.Hom c'' where
   toMonoidWithZeroHom := g.toMonoidWithZeroHom.comp f.toMonoidWithZeroHom
   toScalar_comp := by rw [← MonoidWithZeroHom.comp_assoc, g.toScalar_comp, f.toScalar_comp]
-  map_normalizer H := by
-    rw [← ExchangePolynomial.map_map, g.map_normalizer, f.map_normalizer]
+  normalizer_map H := by
+    rw [← ExchangePolynomial.map_map, g.normalizer_map, f.normalizer_map]
     exact Units.ext (by simp)
 
 @[simp] theorem coe_comp (g : c'.Hom c'') (f : c.Hom c') : ⇑(g.comp f) = g ∘ f := (rfl)
@@ -122,7 +124,12 @@ def toTrivial (c : CoefficientSystem 𝕂 R)
     c.Hom (CoefficientSystem.trivial R) where
   toMonoidWithZeroHom := c.toScalar
   toScalar_comp := by simp
-  map_normalizer H := by simp [h H]
+  normalizer_map H := by simp [h H]
+
+@[simp]
+theorem coe_toTrivial (c : CoefficientSystem 𝕂 R)
+    (h : ∀ H, Units.map c.toScalar.toMonoidHom (c.normalizer H) = 1) :
+    ⇑(toTrivial c h) = c.toScalar := (rfl)
 
 @[simp]
 theorem toMonoidWithZeroHom_toTrivial (c : CoefficientSystem 𝕂 R)
@@ -143,12 +150,15 @@ noncomputable def ofSemifield (ψ : F →+* F') (hφ : φ'.comp ψ.toMonoidWithZ
     (CoefficientSystem.ofSemifield φ).Hom (CoefficientSystem.ofSemifield φ') where
   toMonoidWithZeroHom := ψ.toMonoidWithZeroHom
   toScalar_comp := by simpa using hφ
-  map_normalizer H := by
+  normalizer_map H := by
     ext
     rw [val_ofSemifield_normalizer, Units.coe_map, val_ofSemifield_normalizer,
       H.sum_map_coeff ψ.toMonoidWithZeroHom fun x ↦ x]
-    simpa [← map_sum] using inv_eq_of_mul_eq_one_right
-      (by rw [← map_mul, mul_inv_cancel₀ H.sum_coeff_ne_zero, map_one])
+    simp [← map_sum]
+
+@[simp]
+theorem coe_ofSemifield (ψ : F →+* F') (hφ : φ'.comp ψ.toMonoidWithZeroHom = φ) :
+    ⇑(ofSemifield ψ hφ) = ψ := (rfl)
 
 @[simp]
 theorem toMonoidWithZeroHom_ofSemifield (ψ : F →+* F') (hφ : φ'.comp ψ.toMonoidWithZeroHom = φ) :
@@ -162,7 +172,7 @@ protected theorem IsNormalized.map {𝕂 𝕂' R : Type*} [CommMonoidWithZero �
     [CommMonoidWithZero 𝕂'] [CommSemiring R] {c : CoefficientSystem 𝕂 R}
     {c' : CoefficientSystem 𝕂' R} {H : ExchangePolynomial 𝕂} (h : c.IsNormalized H)
     (f : c.Hom c') : c'.IsNormalized (H.map f.toMonoidWithZeroHom) := by
-  rw [c'.isNormalized_iff, f.map_normalizer, (c.isNormalized_iff).mp h, map_one]
+  rw [c'.isNormalized_iff, f.normalizer_map, (c.isNormalized_iff).mp h, map_one]
 
 end CoefficientSystem
 

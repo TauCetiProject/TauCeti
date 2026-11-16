@@ -119,6 +119,12 @@ theorem binary_polynomial (B : ExchangeMatrix row) (k : K) :
 /-- Binary exchange data: `H_k = 1 + T` (`ExchangePolynomial.binary`) in every direction. -/
 def IsBinary (d : ExchangeData 𝕂 row) : Prop := ∀ k, d.polynomial k = ExchangePolynomial.binary
 
+theorem isBinary_iff {d : ExchangeData 𝕂 row} :
+    d.IsBinary ↔ ∀ k, d.polynomial k = ExchangePolynomial.binary := Iff.rfl
+
+protected theorem IsBinary.apply {d : ExchangeData 𝕂 row} (hd : d.IsBinary) (k : K) :
+    d.polynomial k = ExchangePolynomial.binary := hd k
+
 @[simp]
 theorem isBinary_binary (B : ExchangeMatrix row) : (binary (𝕂 := 𝕂) B).IsBinary := fun _ ↦ rfl
 
@@ -129,10 +135,20 @@ def valueAtOne (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K
 theorem valueAtOne_def (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
     d.valueAtOne c k = ∑ l, c.toScalar ((d.polynomial k).coeff l) := (rfl)
 
+theorem valueAtOne_of_binomial (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) {k : K}
+    (y : 𝕂ˣ) (hk : d.polynomial k = ExchangePolynomial.binomial y) :
+    d.valueAtOne c k = 1 + c.toScalar (y : 𝕂) := by
+  rw [valueAtOne_def, hk, ← Fin.sum_congr' _ (by simp : 2 = _), Fin.sum_univ_two]
+  simp
+
+theorem valueAtOne_of_binary (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) {k : K}
+    (hk : d.polynomial k = ExchangePolynomial.binary) : d.valueAtOne c k = 2 := by
+  rw [d.valueAtOne_of_binomial c 1 (hk.trans ExchangePolynomial.binomial_one.symm),
+    Units.val_one, map_one, one_add_one_eq_two]
+
 protected theorem IsBinary.valueAtOne {d : ExchangeData 𝕂 row} (hd : d.IsBinary)
-    (c : CoefficientSystem 𝕂 R) (k : K) : d.valueAtOne c k = 2 := by
-  rw [valueAtOne_def, (d.polynomial k).sum_of_degree_eq_one (by simp [hd k])]
-  simp [ExchangePolynomial.coeff_eq_of_eq (hd k), one_add_one_eq_two]
+    (c : CoefficientSystem 𝕂 R) (k : K) : d.valueAtOne c k = 2 :=
+  d.valueAtOne_of_binary c (hd k)
 
 end Basic
 
@@ -171,8 +187,7 @@ theorem coeff_mutatedPolynomial_self (c : CoefficientSystem 𝕂 R) (d : Exchang
     (k : K) (l : Fin ((d.mutatedPolynomial c k k).degree + 1)) :
     (d.mutatedPolynomial c k k).coeff l = (d.polynomial k).coeff (l.cast (by simp)).rev := by
   rw [ExchangePolynomial.coeff_eq_of_eq (mutatedPolynomial_self c d k) l,
-    ExchangePolynomial.reverse_coeff]
-  rfl
+    ExchangePolynomial.reverse_coeff, Fin.cast_cast]
 
 theorem coeff_mutatedPolynomial_of_ne (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
     {k j : K} (hj : j ≠ k) (l : Fin ((d.mutatedPolynomial c k j).degree + 1)) :
@@ -272,7 +287,7 @@ theorem mutation_mutation {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 
   · set κ := (d.polynomial k).dilationFactor (d.dividedColumn j (row k))
     have hscale : (c.normalize ((d.polynomial j).dilate κ)).dilate κ⁻¹ =
         (d.polynomial j).scale (c.normalizer ((d.polynomial j).dilate κ)) := by
-      simp [c.normalize_def, ExchangePolynomial.scale_dilate]
+      simp [c.normalize_def, ExchangePolynomial.dilate_scale]
     simp [mutatedPolynomial_of_ne _ _ hj, κ, hscale, (hd.apply j).normalize_eq]
 
 @[simp]
@@ -322,7 +337,7 @@ protected theorem IsBinary.mutation {c : CoefficientSystem 𝕂 R} {d : Exchange
   · rw [mutation_polynomial, mutatedPolynomial_of_ne c d hj, hd k, hd j,
       ExchangePolynomial.dilationFactor_binary, ExchangePolynomial.dilate_one, hc.normalize_eq]
 
-theorem binary_mutation {c : CoefficientSystem 𝕂 R}
+theorem mutation_binary {c : CoefficientSystem 𝕂 R}
     (hc : c.IsNormalized ExchangePolynomial.binary) (B : ExchangeMatrix row) (k : K) :
     (binary (𝕂 := 𝕂) B).mutation c k = binary (B.mutation k) := by
   ext : 1; · rfl
@@ -381,10 +396,8 @@ private theorem normalizedMutation_involutive (c : CoefficientSystem 𝕂 R) (k 
 
 private theorem val_foldl_normalizedMutation (c : CoefficientSystem 𝕂 R)
     (s : {d : ExchangeData 𝕂 row // d.IsNormalized c}) (w : List K) :
-    (w.foldl (normalizedMutation c) s).val = s.val.mutationWord c w := by
-  induction w generalizing s with
-  | nil => rfl
-  | cons k _ ih => exact ih (normalizedMutation c s k)
+    (w.foldl (normalizedMutation c) s).val = s.val.mutationWord c w :=
+  (List.foldl_hom Subtype.val fun _ _ ↦ rfl).symm
 
 /-- Reversing a mutation word undoes its action on normalized exchange data. -/
 theorem mutationWord_mutationWord_reverse {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
@@ -449,13 +462,19 @@ protected theorem IsNormalized.map {c : CoefficientSystem 𝕂 R} {c' : Coeffici
     (d.map f.toMonoidWithZeroHom).IsNormalized c' :=
   isNormalized_iff.mpr fun k ↦ by simpa only [map_polynomial] using (hd.apply k).map f
 
+theorem valueAtOne_map_of_toScalar_comp {c : CoefficientSystem 𝕂 R}
+    {c' : CoefficientSystem 𝕂' R} {ψ : 𝕂 →*₀ 𝕂'} (hψ : c'.toScalar.comp ψ = c.toScalar)
+    (d : ExchangeData 𝕂 row) (k : K) :
+    (d.map ψ).valueAtOne c' k = d.valueAtOne c k := by
+  rw [valueAtOne_def, valueAtOne_def, map_polynomial,
+    (d.polynomial k).sum_map_coeff ψ c'.toScalar]
+  exact Finset.sum_congr rfl fun _ _ ↦ DFunLike.congr_fun hψ _
+
 @[simp]
 theorem valueAtOne_map {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R}
     (f : c.Hom c') (d : ExchangeData 𝕂 row) (k : K) :
-    (d.map f.toMonoidWithZeroHom).valueAtOne c' k = d.valueAtOne c k := by
-  rw [valueAtOne_def, valueAtOne_def, map_polynomial,
-    (d.polynomial k).sum_map_coeff f.toMonoidWithZeroHom c'.toScalar]
-  exact Finset.sum_congr rfl fun _ _ ↦ f.toScalar_apply _
+    (d.map f.toMonoidWithZeroHom).valueAtOne c' k = d.valueAtOne c k :=
+  d.valueAtOne_map_of_toScalar_comp f.toScalar_comp k
 
 /-- Homomorphisms of coefficient systems commute with state mutation. -/
 @[simp]
@@ -673,9 +692,8 @@ private theorem b2_mutation_eq {d d' : ExchangeData ℚ≥0 (Function.Embedding.
     refine ExchangePolynomial.ext (by simp [hdeg]) fun l ↦ ?_
     rw [ExchangePolynomial.coeff_eq_of_eq (congrFun (mutation_polynomial b2Sys d k) m) l,
       coeff_mutatedPolynomial_ofSemifield_of_ne _ d hm]
-    have hcast {b c} (h₁ : _ = b) (h₂ : b = c) : (l.cast h₁).cast h₂ = l.cast (h₁.trans h₂) := rfl
     have h := hne (l.cast (by simp))
-    simp only [Function.Embedding.refl_apply, Fin.val_cast, hcast] at h ⊢
+    simp only [Function.Embedding.refl_apply, Fin.val_cast, Fin.cast_cast] at h ⊢
     exact h
 
 private theorem b2Step0 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ a₁' b₁' c₁' : ℚ≥0}
@@ -691,8 +709,7 @@ private theorem b2Step0 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ a₁' b₁' c₁' 
     have hm : m.val < 2 := by simpa using m.isLt
     rcases m with ⟨_ | _ | m, _⟩ <;> simp [Fin.rev] at hm ⊢
   · dsimp only
-    rw [((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 1).sum_of_degree_eq (n := 2) (by simp),
-      Fin.sum_univ_three]
+    rw [← Fin.sum_congr' _ (by simp : 3 = _), Fin.sum_univ_three]
     have hl : l.val < 3 := by simpa using l.isLt
     rcases l with ⟨_ | _ | _ | l, _⟩ <;> simp at hl
     all_goals first | omega | (cases ε <;> simp_all [Fin.last])
@@ -710,8 +727,7 @@ private theorem b2Step1 (ε : Bool) {a₀ b₀ a₁ b₁ c₁ a₀' b₀' : ℚ�
     rcases m with ⟨_ | _ | _ | m, _⟩ <;> simp at hm
     all_goals first | omega | simp [Fin.rev]
   · dsimp only
-    rw [((mkB2 ε a₀ b₀ a₁ b₁ c₁ ha₀ hb₀ ha₁ hc₁).polynomial 0).sum_of_degree_eq (n := 1) (by simp),
-      Fin.sum_univ_two]
+    rw [← Fin.sum_congr' _ (by simp : 2 = _), Fin.sum_univ_two]
     have hl : l.val < 2 := by simpa using l.isLt
     rcases l with ⟨_ | _ | l, _⟩ <;> cases ε <;> simp_all [Fin.last]
 
@@ -738,14 +754,13 @@ example :
     rw [funext_iff, Fin.forall_fin_two]
     exact ⟨ExchangePolynomial.ext rfl fun l ↦ by fin_cases l <;> rfl,
       ExchangePolynomial.ext rfl fun l ↦ by fin_cases l <;> rfl⟩
-  rw [hd₀, show c = b2Sys from rfl]
+  rw [hd₀]; dsimp only [c]
   have hd : s₀.IsNormalized b2Sys := by
     rw [hs₀, isNormalized_iff, Fin.forall_fin_two]; refine ⟨?_, ?_⟩
-    · rw [CoefficientSystem.isNormalized_ofSemifield_iff,
-        ((mkB2 true _ _ _ _ _).polynomial 0).sum_of_degree_eq (n := 1) (by simp), Fin.sum_univ_two]
+    · rw [CoefficientSystem.isNormalized_ofSemifield_iff, ← Fin.sum_congr' _ (by simp : 2 = _),
+        Fin.sum_univ_two]
       simp; norm_num
-    · rw [CoefficientSystem.isNormalized_ofSemifield_iff,
-        ((mkB2 true _ _ _ _ _).polynomial 1).sum_of_degree_eq (n := 2) (by simp),
+    · rw [CoefficientSystem.isNormalized_ofSemifield_iff, ← Fin.sum_congr' _ (by simp : 3 = _),
         Fin.sum_univ_three]
       simp; norm_num
   set s₁ := mkB2 false (2 / 3) (1 / 3) (3 / 15) (8 / 15) (4 / 15)
@@ -761,8 +776,9 @@ example :
   have hmid₂ : t₂.mutation b2Sys 1 = mid := b2Step1 true
   have hmid : s₀.mutationWord b2Sys [0, 1, 0] = s₀.mutationWord b2Sys [1, 0, 1] := by
     simp only [mutationWord_cons, mutationWord_nil, hs₁, hs₂, hmid₁, ht₁, ht₂, hmid₂]
-  rw [show ([0, 1, 0, 1, 0, 1] : List (Fin 2)) = [0, 1, 0] ++ ([1, 0, 1] : List (Fin 2)).reverse
-    from rfl, mutationWord_append, hmid]
+  have hword : ([0, 1, 0, 1, 0, 1] : List (Fin 2)) =
+      [0, 1, 0] ++ ([1, 0, 1] : List (Fin 2)).reverse := by simp
+  rw [hword, mutationWord_append, hmid]
   exact mutationWord_mutationWord_reverse hd [1, 0, 1]
 
 end B2PeriodicityExample

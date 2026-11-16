@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import TauCeti.Algebra.Cluster.CoefficientSystem.ExchangePolynomial
 
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Field.Rat
 import Mathlib.Algebra.Order.Ring.NNRat
 
@@ -179,6 +178,12 @@ theorem ofTransversal_toScalar (toScalar : 𝕂 →*₀ R) (G : Subgroup 𝕂ˣ)
     (htrans : ∀ H : ExchangePolynomial 𝕂, ∃! u : G, H.scale u.val ∈ S) :
     (ofTransversal toScalar G S hrev htrans).toScalar = toScalar := (rfl)
 
+theorem ofTransversal_normalizer (toScalar : 𝕂 →*₀ R) (G : Subgroup 𝕂ˣ)
+    (S : Set (ExchangePolynomial 𝕂)) (hrev : ∀ ⦃H⦄, H ∈ S → H.reverse ∈ S)
+    (htrans : ∀ H : ExchangePolynomial 𝕂, ∃! u : G, H.scale u.val ∈ S)
+    (H : ExchangePolynomial 𝕂) :
+    (ofTransversal toScalar G S hrev htrans).normalizer H = ((htrans H).choose : 𝕂ˣ) := (rfl)
+
 theorem ofTransversal_normalizer_mem (toScalar : 𝕂 →*₀ R) (G : Subgroup 𝕂ˣ)
     (S : Set (ExchangePolynomial 𝕂)) (hrev : ∀ ⦃H⦄, H ∈ S → H.reverse ∈ S)
     (htrans : ∀ H : ExchangePolynomial 𝕂, ∃! u : G, H.scale u.val ∈ S)
@@ -192,10 +197,11 @@ theorem isNormalized_ofTransversal_iff (toScalar : 𝕂 →*₀ R) (G : Subgroup
     (htrans : ∀ H : ExchangePolynomial 𝕂, ∃! u : G, H.scale u.val ∈ S)
     {H : ExchangePolynomial 𝕂} :
     (ofTransversal toScalar G S hrev htrans).IsNormalized H ↔ H ∈ S := by
+  rw [isNormalized_iff, ofTransversal_normalizer]
   refine ⟨fun h ↦ ?_, fun hS ↦ ?_⟩
   · have hmem : H.scale ((htrans H).choose : 𝕂ˣ) ∈ S := (htrans H).choose_spec.1
-    rwa [show ((htrans H).choose : 𝕂ˣ) = 1 from h, H.scale_one] at hmem
-  · exact congrArg Subtype.val ((htrans H).choose_spec.2 1 (by simpa using hS)).symm
+    rwa [h, H.scale_one] at hmem
+  · simpa using congrArg Subtype.val ((htrans H).choose_spec.2 1 (by simpa using hS)).symm
 
 /-- A coefficient system is uniquely recovered from its scalar map, its normalizer subgroup, and
 its set of normalized polynomials. -/
@@ -293,11 +299,7 @@ example : ¬ ∀ H : ExchangePolynomial ℚ≥0,
   intro h
   let u2 : ℚ≥0ˣ := Units.mk0 (2 : ℚ≥0) (by simp)
   have h2 := congrArg Units.val (inv_inj.mp (h (ExchangePolynomial.binomial u2)))
-  rw [ExchangePolynomial.unit_reverse_zero] at h2
-  have h0 : ((ExchangePolynomial.binomial u2).isUnit_coeff_zero.unit : ℚ≥0) = 1 := by simp
-  have h1 : ((ExchangePolynomial.binomial u2).isUnit_coeff_last.unit : ℚ≥0) = 2 := by simp [u2]
-  rw [h0, h1] at h2
-  simp at h2
+  simp [u2] at h2
 
 /-- Over `ℚ≥0`, the constant map `ν(H) = 2` violates `ν(ν(H') H) * ν(H') = ν(H)`. -/
 example :
