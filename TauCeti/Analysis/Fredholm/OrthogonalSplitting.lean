@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.ConstantNullity
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 
 /-!
 # Orthogonal kernel projections and right inverses of Fredholm families
@@ -26,20 +27,21 @@ family `κ x : V →L[𝕜] E` on a fixed finite-dimensional inner product space
 `V` whose range is `ker (T x)` at the parameters of constant nullity. With `A = ι ∘ κ x`, the
 projection is
 
-`π x = κ x (A† A)⁻¹ A† ι`,
+`π x = κ x (A† A)⁻¹ A† ι`
 
-where the Gram operator `A† A` of `V` is invertible as long as `A` is injective, which is an open
-condition. Since inversion is continuous on the units of the complete normed ring `V →L[𝕜] V`,
-`π x` is continuous in `x`. It fixes `ker (T x)` and `ι (e - π x e)` is orthogonal to
-`ι (ker (T x))`. When `T x₀` is onto, so is every `T x` near `x₀`, with a continuous family of
-right inverses `R x` (`ContinuousLinearMap.IsFredholm.exists_continuousOn_splitting`), and
-`Q x = (1 - π x) R x` is the right inverse with values in the `ι`-orthogonal complement of the
-kernel. Every `e ∈ E` then splits as `e = π x e + Q x (T x e)`.
+(`ContinuousLinearMap.gramProjection`), where the Gram operator `A† A` of `V` is invertible as
+long as `A` is injective, which is an open condition. Since inversion is continuous on the units of
+the complete normed ring `V →L[𝕜] V`, `π x` is continuous in `x`. It fixes `ker (T x)` and
+`ι (e - π x e)` is orthogonal to `ι (ker (T x))`. When `T x₀` is onto, so is every `T x` near
+`x₀`, with a continuous family of right inverses `R x`
+(`ContinuousLinearMap.IsFredholm.exists_continuousOn_splitting`), and `Q x = (1 - π x) R x` is
+the right inverse with values in the `ι`-orthogonal complement of the kernel. Every `e ∈ E` then
+splits as `e = π x e + Q x (T x e)`.
 
-Over `ℝ`, a `C^n` family has `C^n` projections and right inverses, since the adjoint is then a
+Over `ℝ`, a `C^n` family has `C^n` projections and right inverses, since the adjoint is a real
 continuous linear map of operators (`ContinuousLinearMap.adjointRealCLM`) and inversion is
-analytic. Over `ℂ` the projection depends on `κ x` conjugate-linearly as well, so only its
-continuity is stated.
+analytic. Over `ℂ` the projection depends on `κ x` conjugate-linearly as well, so it is not
+complex-differentiable, and the `C^n` statements are made for real families.
 
 For the gauge-fixed operator of a plane vortex or of the linearized Seiberg–Witten equations on
 a Sobolev space, these are the kernel projections and right inverses on `L²`-orthogonal
@@ -71,94 +73,6 @@ open Function Module Set Topology Filter
 open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
-
-section Gram
-
-variable {𝕜 E H V : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
-
-/-- The projection `κ (A† A)⁻¹ A† ι` with `A = ι κ`, onto the range of `κ` along the
-`ι`-orthogonal complement of that range. -/
-private noncomputable def gramProjection (ι : E →L[𝕜] H) (κ : V →L[𝕜] E) : E →L[𝕜] E :=
-  κ ∘L Ring.inverse (adjoint (ι ∘L κ) ∘L (ι ∘L κ)) ∘L adjoint (ι ∘L κ) ∘L ι
-
-private theorem gramProjection_apply (ι : E →L[𝕜] H) (κ : V →L[𝕜] E) (e : E) :
-    gramProjection ι κ e =
-      κ (Ring.inverse (adjoint (ι ∘L κ) ∘L (ι ∘L κ)) (adjoint (ι ∘L κ) (ι e))) :=
-  (rfl)
-
-private theorem gramProjection_apply_apply {ι : E →L[𝕜] H} {κ : V →L[𝕜] E}
-    (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (v : V) :
-    gramProjection ι κ (κ v) = κ v := by
-  have h : (Ring.inverse (adjoint (ι ∘L κ) ∘L (ι ∘L κ)) * (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) v =
-      v := by
-    rw [Ring.inverse_mul_cancel _ hG]; rfl
-  rw [gramProjection_apply]
-  exact congrArg κ h
-
-private theorem inner_sub_gramProjection_apply {ι : E →L[𝕜] H} {κ : V →L[𝕜] E}
-    (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (e : E) (v : V) :
-    ⟪ι (e - gramProjection ι κ e), ι (κ v)⟫_𝕜 = 0 := by
-  set A := ι ∘L κ
-  have h : ((adjoint A ∘L A) * Ring.inverse (adjoint A ∘L A)) (adjoint A (ι e)) =
-      adjoint A (ι e) := by
-    rw [Ring.mul_inverse_cancel _ hG]; rfl
-  rw [mul_apply_eq_comp, ContinuousLinearMap.comp_apply] at h
-  have hAv : ι (κ v) = A v := rfl
-  rw [hAv, ← adjoint_inner_left, map_sub, map_sub, gramProjection_apply]
-  exact (congrArg (⟪·, v⟫_𝕜) (sub_eq_zero.2 h.symm)).trans (inner_zero_left _)
-
-/-- Where `A† A` is invertible and `κ` has range `K`, the projection `κ (A† A)⁻¹ A† ι` is the
-projection onto `K` along the `ι`-orthogonal complement of `K`. -/
-private theorem gramProjection_spec {ι : E →L[𝕜] H} {κ : V →L[𝕜] E} {K : Submodule 𝕜 E}
-    (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (hK : κ.range = K) :
-    (∀ e, gramProjection ι κ e ∈ K) ∧ (∀ k ∈ K, gramProjection ι κ k = k) ∧
-      ∀ e, ∀ k ∈ K, ⟪ι (e - gramProjection ι κ e), ι k⟫_𝕜 = 0 := by
-  subst hK
-  refine ⟨fun e ↦ LinearMap.mem_range_self _ _, fun k hk ↦ ?_, fun e k hk ↦ ?_⟩
-  · obtain ⟨v, rfl⟩ := hk
-    exact gramProjection_apply_apply hG v
-  · obtain ⟨v, rfl⟩ := hk
-    exact inner_sub_gramProjection_apply hG e v
-
-/-- The projection `κ (A† A)⁻¹ A† ι` depends continuously on `κ` where `A† A` is invertible. -/
-private theorem continuousAt_gramProjection (ι : E →L[𝕜] H) {κ₀ : V →L[𝕜] E}
-    (hG : IsUnit (adjoint (ι ∘L κ₀) ∘L (ι ∘L κ₀))) :
-    ContinuousAt (gramProjection ι) κ₀ := by
-  have hA : Continuous fun κ : V →L[𝕜] E ↦ ι ∘L κ := (compL 𝕜 V E H ι).continuous
-  have hA' : Continuous fun κ : V →L[𝕜] E ↦ adjoint (ι ∘L κ) :=
-    (adjoint : (V →L[𝕜] H) ≃ₗᵢ⋆[𝕜] (H →L[𝕜] V)).continuous.comp hA
-  obtain ⟨u, hu⟩ := hG
-  have hinv : ContinuousAt (fun κ : V →L[𝕜] E ↦
-      Ring.inverse (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) κ₀ := by
-    refine ContinuousAt.comp (g := Ring.inverse) ?_ (hA'.clm_comp hA).continuousAt
-    rw [← hu]
-    exact NormedRing.inverse_continuousAt u
-  exact continuousAt_id.clm_comp (hinv.clm_comp (hA'.continuousAt.clm_comp continuousAt_const))
-
-end Gram
-
-/-- Over `ℝ`, the projection `κ (A† A)⁻¹ A† ι` is a smooth function of `κ` where `A† A` is
-invertible. -/
-private theorem contDiffAt_gramProjection {E H V : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {n : WithTop ℕ∞}
-    (ι : E →L[ℝ] H) {κ₀ : V →L[ℝ] E} (hG : IsUnit (adjoint (ι ∘L κ₀) ∘L (ι ∘L κ₀))) :
-    ContDiffAt ℝ n (gramProjection ι) κ₀ := by
-  have hA : ContDiff ℝ n fun κ : V →L[ℝ] E ↦ ι ∘L κ := (compL ℝ V E H ι).contDiff
-  have hA' : ContDiff ℝ n fun κ : V →L[ℝ] E ↦ adjoint (ι ∘L κ) := by
-    simpa only [Function.comp_def, adjointRealCLM_apply] using
-      (adjointRealCLM (𝕜 := ℝ) (V := V) (W := H)).contDiff.comp hA
-  obtain ⟨u, hu⟩ := hG
-  have hinv : ContDiffAt ℝ n (fun κ : V →L[ℝ] E ↦
-      Ring.inverse (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) κ₀ := by
-    refine ContDiffAt.comp (g := Ring.inverse) κ₀ ?_ (hA'.clm_comp hA).contDiffAt
-    rw [← hu]
-    exact contDiffAt_ringInverse ℝ u
-  exact contDiffAt_id.clm_comp (hinv.clm_comp (hA'.contDiffAt.clm_comp contDiffAt_const))
 
 section Family
 
@@ -204,10 +118,16 @@ private theorem orthogonal_ker_projection_of_ker_parametrization {X : Type*} [To
       (Units.isOpen.preimage hGc), ⟨hx₀U, ?_⟩, fun x hx ↦ ⟨hx.2, fun hker ↦ ?_⟩⟩
   · exact (isUnit_adjoint_comp_self_iff _).2
       (hι.comp (((hκker x₀ hx₀U rfl).1).comp (euclideanEquiv _).injective))
-  refine gramProjection_spec hx.2 ?_
-  rw [← (hκker x hx.1 hker).2]
-  exact LinearMap.range_comp_of_range_eq_top _
-    (LinearEquiv.range (euclideanEquiv (T x₀).ker).toLinearEquiv)
+  have hK : (κ x ∘L eL).range = (T x).ker := by
+    rw [← (hκker x hx.1 hker).2]
+    exact LinearMap.range_comp_of_range_eq_top _
+      (LinearEquiv.range (euclideanEquiv (T x₀).ker).toLinearEquiv)
+  rw [← hK]
+  refine ⟨gramProjection_apply_mem_range ι _, fun k hk ↦ ?_, fun e k hk ↦ ?_⟩
+  · obtain ⟨v, rfl⟩ := hk
+    exact gramProjection_apply_apply hx.2 v
+  · obtain ⟨v, rfl⟩ := hk
+    exact inner_sub_gramProjection_apply hx.2 e v
 
 omit [CompleteSpace E] [CompleteSpace F] [CompleteSpace H] in
 /-- The pointwise half of the right inverse theorems: from a projection `π` onto the kernel of
@@ -264,6 +184,27 @@ private theorem surjective_of_splitting (hT₀ : IsFredholm (T x₀)) (hsurj : S
   exact ⟨hTR, (hW x hx.2).2
     (by rw [LinearMap.range_eq_top.2 hsurjx, LinearMap.range_eq_top.2 hsurj])⟩
 
+omit [CompleteSpace E] [CompleteSpace F] [CompleteSpace H] [TopologicalSpace X] in
+/-- The pointwise half of the right inverse theorems for families: where `π x` is the projection
+onto `ker (T x)` along its `ι`-orthogonal complement at constant nullity and `R x` is a right
+inverse of `T x` at constant nullity, `T x` is onto and `R x - π x R x` is the right inverse with
+values in that complement. -/
+private theorem orthogonal_rightInverse_of_projection {ι : E →L[𝕜] H} (hι : Injective ι)
+    {U₁ U₂ W : Set X} {π : X → E →L[𝕜] E} {R : X → F →L[𝕜] E}
+    (hπker : ∀ x ∈ U₁, finrank 𝕜 (T x).ker = finrank 𝕜 (T x₀).ker →
+      (∀ e, π x e ∈ (T x).ker) ∧ (∀ k ∈ (T x).ker, π x k = k) ∧
+        ∀ e, ∀ k ∈ (T x).ker, ⟪ι (e - π x e), ι k⟫_𝕜 = 0)
+    (hW : ∀ x ∈ U₂ ∩ W, (∀ y, T x (R x y) = y) ∧ finrank 𝕜 (T x).ker = finrank 𝕜 (T x₀).ker) :
+    ∀ x ∈ U₁ ∩ (U₂ ∩ W), Surjective (T x) ∧
+      (∀ e, π x e ∈ (T x).ker) ∧ (∀ k ∈ (T x).ker, π x k = k) ∧
+      (∀ e, ∀ k ∈ (T x).ker, ⟪ι (e - π x e), ι k⟫_𝕜 = 0) ∧
+      (∀ y, T x ((R x - π x ∘L R x) y) = y) ∧
+      (∀ y, ∀ k ∈ (T x).ker, ⟪ι ((R x - π x ∘L R x) y), ι k⟫_𝕜 = 0) ∧
+      ∀ e, π x e + (R x - π x ∘L R x) (T x e) = e := fun x hx ↦ by
+  obtain ⟨hTR, hker⟩ := hW x hx.2
+  obtain ⟨hmem, hfix, horth⟩ := hπker x hx.1 hker
+  exact ⟨fun y ↦ ⟨R x y, hTR y⟩, hmem, hfix, horth, orthogonal_rightInverse_spec hι hmem horth hTR⟩
+
 /-- **Orthogonal kernel projections of a Fredholm family move continuously.** Let `T` be
 continuous on an open set `s` and Fredholm at `x₀ ∈ s`, and let `ι : E →L[𝕜] H` be injective, into
 a Hilbert space. Near `x₀` there is a continuous family of operators `π x : E →L[𝕜] E` which, at
@@ -311,12 +252,9 @@ theorem IsFredholm.exists_continuousOn_orthogonal_rightInverse (ι : E →L[𝕜
     surjective_of_splitting hT₀ hsurj (hT.continuousAt (hs.mem_nhds hx₀)) hx₀U₂ hRP
   refine ⟨U₁ ∩ (U₂ ∩ W), inter_subset_left.trans hU₁s, hU₁.inter (hU₂.inter hWo),
     ⟨hx₀U₁, hx₀U₂, hx₀W⟩, π, fun x ↦ R x - π x ∘L R x, hπ.mono inter_subset_left, ?_,
-    fun x hx ↦ ?_⟩
-  · have hR' : ContinuousOn R (U₁ ∩ (U₂ ∩ W)) := hR.mono fun x hx ↦ hx.2.1
-    exact hR'.sub ((hπ.mono inter_subset_left).clm_comp hR')
-  obtain ⟨hTR, hker⟩ := hW x hx.2
-  obtain ⟨hmem, hfix, horth⟩ := hπker x hx.1 hker
-  exact ⟨fun y ↦ ⟨R x y, hTR y⟩, hmem, hfix, horth, orthogonal_rightInverse_spec hι hmem horth hTR⟩
+    orthogonal_rightInverse_of_projection hι hπker hW⟩
+  have hR' : ContinuousOn R (U₁ ∩ (U₂ ∩ W)) := hR.mono fun x hx ↦ hx.2.1
+  exact hR'.sub ((hπ.mono inter_subset_left).clm_comp hR')
 
 end Family
 
@@ -370,12 +308,9 @@ theorem IsFredholm.exists_contDiffOn_orthogonal_rightInverse (ι : E →L[ℝ] H
     (hT.continuousOn.continuousAt (hs.mem_nhds hx₀)) hx₀U₂ hRP
   refine ⟨U₁ ∩ (U₂ ∩ W), inter_subset_left.trans hU₁s, hU₁.inter (hU₂.inter hWo),
     ⟨hx₀U₁, hx₀U₂, hx₀W⟩, π, fun x ↦ R x - π x ∘L R x, hπ.mono inter_subset_left, ?_,
-    fun x hx ↦ ?_⟩
-  · have hR' : ContDiffOn ℝ n R (U₁ ∩ (U₂ ∩ W)) := hR.mono fun x hx ↦ hx.2.1
-    exact hR'.sub ((hπ.mono inter_subset_left).clm_comp hR')
-  obtain ⟨hTR, hker⟩ := hW x hx.2
-  obtain ⟨hmem, hfix, horth⟩ := hπker x hx.1 hker
-  exact ⟨fun y ↦ ⟨R x y, hTR y⟩, hmem, hfix, horth, orthogonal_rightInverse_spec hι hmem horth hTR⟩
+    orthogonal_rightInverse_of_projection hι hπker hW⟩
+  have hR' : ContDiffOn ℝ n R (U₁ ∩ (U₂ ∩ W)) := hR.mono fun x hx ↦ hx.2.1
+  exact hR'.sub ((hπ.mono inter_subset_left).clm_comp hR')
 
 end RealFamily
 

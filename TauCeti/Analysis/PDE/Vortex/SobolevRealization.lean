@@ -23,7 +23,7 @@ import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 
 /-!
-# The gauge-fixed vortex operator on `H¹` has finite-dimensional kernel and closed range
+# The gauge-fixed vortex operator on `H¹`: kernel, range and orthogonal splittings
 
 At a field `x = (b₁, b₂, p, q)`, the gauge-fixed vortex operator `L_x = d₀* ⊕ d₁`
 (`TauCeti.Vortex.gaugeFixedOperator`) is a first-order operator with constant leading part and
@@ -85,7 +85,8 @@ the general statement for Fredholm families,
 `ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_rightInverse`, applied to the
 Lipschitz family `a ↦ L_a` and the inclusion into `L²`. Composed with a family of vortex
 coefficients continuous in `L∞`, it gives continuous kernel projections and right inverses along
-that family.
+that family, provided the realization is onto at those coefficients; that surjectivity is not
+proved here.
 
 ## References
 
@@ -493,12 +494,13 @@ theorem isClosed_range_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
 
 /-- **The `L²`-orthogonal kernel projections and right inverses of `L_x : H¹ → L²` move
 continuously with the coefficient.** Let `a₀` be an `L∞` class at which the realization is onto
-with a finite-dimensional kernel, as it is at a plane vortex. Near `a₀` in `L∞`, every realization
-`L_a` is onto, and there are families of operators `π a` on `H¹(ℂ)⁴` and `Q a : L² → H¹(ℂ)⁴`,
-continuous in `a` for the operator norms, such that `π a` is the projection onto the kernel of
-`L_a` along its `L²`-orthogonal complement, `Q a` is a right inverse of `L_a` whose values are
-`L²`-orthogonal to that kernel, and every `y` splits as `y = π a y + Q a (L_a y)`. The `L²`
-pairing on `H¹(ℂ)⁴` is taken through the inclusion `sobolevFieldValues`. -/
+with a finite-dimensional kernel, as is expected at a plane vortex; surjectivity there is not
+proved here. Near `a₀` in `L∞`, every realization `L_a` is onto, and there are families of
+operators `π a` on `H¹(ℂ)⁴` and `Q a : L² → H¹(ℂ)⁴`, continuous in `a` for the operator norms,
+such that `π a` is the projection onto the kernel of `L_a` along its `L²`-orthogonal complement,
+`Q a` is a right inverse of `L_a` whose values are `L²`-orthogonal to that kernel, and every `y`
+splits as `y = π a y + Q a (L_a y)`. The `L²` pairing on `H¹(ℂ)⁴` is taken through the inclusion
+`sobolevFieldValues`. -/
 theorem exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator
     {a₀ : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
     (hsurj : Function.Surjective (sobolevGaugeFixedOperator a₀))

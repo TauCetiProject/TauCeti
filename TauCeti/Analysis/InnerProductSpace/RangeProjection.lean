@@ -27,12 +27,25 @@ to the derivative of an immersion into a Euclidean space, this says that the tan
 hence the normal spaces, of an immersed submanifold vary smoothly. Neither result needs `V` to be
 complete: the formula is applied after embedding `V` into its completion.
 
+Similarly, for an operator `ι : E →L[𝕜] V` into a Hilbert space, for instance the inclusion of a
+Sobolev space into `L²`, and `κ : F →L[𝕜] E` with `A = ι κ`, the operator `κ (A† A)⁻¹ A† ι` is
+the projection of `E` onto the range of `κ` along its `ι`-orthogonal complement. It depends
+continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
+
 ## Main results
 
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
   `B B†`.
+* `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`, with
+  `ContinuousLinearMap.continuousAt_gramLeftInverse` and
+  `ContinuousLinearMap.contDiffAt_gramLeftInverse`.
+* `ContinuousLinearMap.gramProjection`: the projection `κ (A† A)⁻¹ A† ι` onto the range of `κ`
+  along its `ι`-orthogonal complement (`ContinuousLinearMap.gramProjection_apply_apply`,
+  `ContinuousLinearMap.inner_sub_gramProjection_apply`), continuous and real `C^n` in `κ`
+  (`ContinuousLinearMap.continuousAt_gramProjection`,
+  `ContinuousLinearMap.contDiffAt_gramProjection`).
 * `LinearMap.finrank_orthogonal_range_of_injective`: the dimension of the orthogonal
   complement of the range of an injective operator.
 * `Submodule.starProjection_inverse_apply`: if the compression to `W` of the orthogonal projection
@@ -59,11 +72,26 @@ section Adjoint
 
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace V]
 
--- Internal factor of the Gram projection formula, shared by the continuity and smoothness proofs.
-private noncomputable def gramLeftInverse (A : F →L[𝕜] V) : V →L[𝕜] F :=
+/-- The left inverse `(A† A)⁻¹ A†` of an operator `A` whose Gram operator `A† A` is invertible
+(`ContinuousLinearMap.gramLeftInverse_comp_self`). Its composite with `A` on the left is the
+orthogonal projection onto the range of `A` (`ContinuousLinearMap.starProjection_range_eq`). -/
+noncomputable def gramLeftInverse (A : F →L[𝕜] V) : V →L[𝕜] F :=
   Ring.inverse (adjoint A ∘L A) ∘L adjoint A
 
-private theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
+/-- `(A† A)⁻¹ A†` is a left inverse of `A` when `A† A` is invertible. -/
+theorem gramLeftInverse_comp_self {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
+    gramLeftInverse A ∘L A = 1 := by
+  rw [gramLeftInverse, comp_assoc, ← mul_def, Ring.inverse_mul_cancel _ hA]
+
+/-- `A† A (A† A)⁻¹ A† = A†` when `A† A` is invertible: `v - A (A† A)⁻¹ A† v` lies in the kernel
+of `A†`. -/
+theorem adjoint_comp_self_comp_gramLeftInverse {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
+    adjoint A ∘L A ∘L gramLeftInverse A = adjoint A := by
+  rw [gramLeftInverse, ← comp_assoc, ← comp_assoc, ← mul_def (adjoint A ∘L A),
+    Ring.mul_inverse_cancel _ hA, one_def, id_comp]
+
+/-- The left inverse `(A† A)⁻¹ A†` depends continuously on `A` where `A† A` is invertible. -/
+theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
     (hA : IsUnit (adjoint A ∘L A)) :
     ContinuousAt (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) A := by
   have ha : ContinuousAt (adjoint : (F →L[𝕜] V) → V →L[𝕜] F) A :=
@@ -74,7 +102,9 @@ private theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
   exact (hi.comp (f := fun B : F →L[𝕜] V ↦ adjoint B ∘L B)
     (ha.clm_comp continuousAt_id)).clm_comp ha
 
-private theorem contDiffAt_gramLeftInverse
+/-- The left inverse `(A† A)⁻¹ A†` is a real `C^n` function of `A` where `A† A` is invertible, also
+for complex operators. -/
+theorem contDiffAt_gramLeftInverse
     [NormedSpace ℝ F] [NormedSpace ℝ V]
     {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) A := by
@@ -111,6 +141,68 @@ theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry
   rw [starProjection_range_eq (h ▸ isUnit_one), h, Ring.inverse_one, one_def, id_comp]
 
 end Adjoint
+
+section GramProjection
+
+open scoped InnerProductSpace
+
+variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace V]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The projection `κ (A† A)⁻¹ A† ι` with `A = ι κ`, for an operator `ι : E →L[𝕜] V` into a Hilbert
+space and `κ : F →L[𝕜] E`. Where `A† A` is invertible, it projects `E` onto the range of `κ` along
+the `ι`-orthogonal complement of that range (`ContinuousLinearMap.gramProjection_apply_apply`,
+`ContinuousLinearMap.inner_sub_gramProjection_apply`). -/
+noncomputable def gramProjection (ι : E →L[𝕜] V) (κ : F →L[𝕜] E) : E →L[𝕜] E :=
+  κ ∘L gramLeftInverse (ι ∘L κ) ∘L ι
+
+/-- The projection `κ (A† A)⁻¹ A† ι` takes values in the range of `κ`. -/
+theorem gramProjection_apply_mem_range (ι : E →L[𝕜] V) (κ : F →L[𝕜] E) (e : E) :
+    gramProjection ι κ e ∈ κ.range :=
+  LinearMap.mem_range_self _ _
+
+/-- The projection `κ (A† A)⁻¹ A† ι` fixes the range of `κ` when `A† A` is invertible. -/
+theorem gramProjection_apply_apply {ι : E →L[𝕜] V} {κ : F →L[𝕜] E}
+    (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (v : F) :
+    gramProjection ι κ (κ v) = κ v := by
+  rw [gramProjection, comp_apply, comp_apply, ← comp_apply ι κ, ← comp_apply (gramLeftInverse _),
+    gramLeftInverse_comp_self hG, one_apply_eq_self]
+
+/-- When `A† A` is invertible, `ι (e - κ (A† A)⁻¹ A† ι e)` is orthogonal to the image under `ι` of
+the range of `κ`. -/
+theorem inner_sub_gramProjection_apply {ι : E →L[𝕜] V} {κ : F →L[𝕜] E}
+    (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (e : E) (v : F) :
+    ⟪ι (e - gramProjection ι κ e), ι (κ v)⟫_𝕜 = 0 := by
+  have h := congr($(adjoint_comp_self_comp_gramLeftInverse hG) (ι e))
+  rw [comp_apply, comp_apply] at h
+  rw [← comp_apply ι κ, ← adjoint_inner_left, map_sub, gramProjection, comp_apply, comp_apply,
+    ← comp_apply ι κ, map_sub, h, sub_self, inner_zero_left]
+
+/-- The projection `κ (A† A)⁻¹ A† ι` depends continuously on `κ` where `A† A` is invertible. -/
+theorem continuousAt_gramProjection (ι : E →L[𝕜] V) {κ₀ : F →L[𝕜] E}
+    (hG : IsUnit (adjoint (ι ∘L κ₀) ∘L (ι ∘L κ₀))) :
+    ContinuousAt (gramProjection ι) κ₀ := by
+  have hA : Continuous fun κ : F →L[𝕜] E ↦ ι ∘L κ := (compL 𝕜 F E V ι).continuous
+  unfold gramProjection
+  exact continuousAt_id.clm_comp
+    (((continuousAt_gramLeftInverse hG).comp hA.continuousAt).clm_comp continuousAt_const)
+
+/-- The projection `κ (A† A)⁻¹ A† ι` is a real `C^n` function of `κ` where `A† A` is invertible,
+also for complex operators. -/
+theorem contDiffAt_gramProjection [NormedSpace ℝ F] [NormedSpace ℝ V] [NormedSpace ℝ E]
+    (ι : E →L[𝕜] V) {κ₀ : F →L[𝕜] E} (hG : IsUnit (adjoint (ι ∘L κ₀) ∘L (ι ∘L κ₀)))
+    {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n (gramProjection ι) κ₀ := by
+  have hA : ContDiff ℝ n fun κ : F →L[𝕜] E ↦ ι ∘L κ :=
+    ((compL 𝕜 F E V ι).restrictScalars ℝ).contDiff
+  have hL := (contDiffAt_gramLeftInverse hG (n := n)).comp κ₀ hA.contDiffAt
+  have hLι : ContDiffAt ℝ n (fun κ : F →L[𝕜] E ↦ gramLeftInverse (ι ∘L κ) ∘L ι) κ₀ :=
+    ((((compL 𝕜 E V F).flip ι).restrictScalars ℝ).contDiff.contDiffAt.comp κ₀ hL)
+  unfold gramProjection
+  exact (((compL 𝕜 E F E).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp κ₀
+    contDiffAt_id).clm_apply hLι
+
+end GramProjection
 
 section Range
 
