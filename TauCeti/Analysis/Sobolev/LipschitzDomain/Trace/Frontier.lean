@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.SurfaceMeasure
-public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Kernel
+import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 
 /-!
 # The boundary trace of a bounded Lipschitz domain

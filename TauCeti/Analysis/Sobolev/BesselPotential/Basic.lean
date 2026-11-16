@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
