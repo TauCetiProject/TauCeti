@@ -43,7 +43,7 @@ whenever `y` is a weak solution of `L_x y = f` (`integral_inner_fun_smul_gaugeFi
 For the weight `w = exp(c ρ)` the commutator is `σ(dw) y = c σ(dρ) (w y)`, a multiplication of
 `w y` by a matrix whose entries are constant multiples of the derivatives `⟪z, e⟫ / ρ(z)` of `ρ`.
 These have bounded derivatives of every order
-(`TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le`), so the
+(`TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half`), so the
 multiplication preserves `H^j` (`mulVec_mem_sobolevFields_natCast`). Starting from
 `w y ∈ L²`, which the weighted `L²` estimate supplies, the unweighted bootstrap applied to `w y`
 then raises its regularity one step at a time up to `H^(k+1)`.
@@ -149,8 +149,8 @@ private theorem contDiff_weightCoeff (c : ℝ) (i j : Fin 4) : ContDiff ℝ ∞ 
 private theorem exists_norm_iteratedFDeriv_weightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :
     ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (weightCoeff c i j) z‖ ≤ M :=
   have ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists fun n _ ↦
-    exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le
-      (c • symbolDirection i j) n
+    exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half
+      (c • symbolDirection i j) le_rfl n
   ⟨M, (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM).1, hM⟩
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
