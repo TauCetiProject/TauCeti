@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Minpoly
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
