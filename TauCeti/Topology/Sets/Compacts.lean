@@ -18,7 +18,9 @@ monotone and functorial in `f`. It is the operation through which the cohomology
 supports of a space, a colimit over its compact subsets, is contravariant in proper maps. It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
 with compact supports covariant in open embeddings. Finally, a compact set lies in one member of a
-directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`).
+directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`), and a compact set
+is a compact neighbourhood of `K` exactly when `K` lies in its interior
+(`TopologicalSpace.Compacts.mem_compactNhds_iff_subset_interior`).
 -/
 
 public section
@@ -65,5 +67,12 @@ lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens 
     ∃ i, (K : Set α) ⊆ U i :=
   K.isCompact.elim_directed_cover (fun i ↦ (U i : Set α)) (fun i ↦ (U i).isOpen)
     (fun x _ ↦ by simp [← Opens.coe_iSup, hcover]) (hU.mono_comp _ fun _ _ h ↦ h)
+
+/-- A compact set `L` is a compact neighbourhood of `K` exactly when `K` lies in the interior of
+`L`. -/
+lemma mem_compactNhds_iff_subset_interior {K L : Compacts α} :
+    L ∈ K.compactNhds ↔ (K : Set α) ⊆ interior L := by
+  rw [subset_interior_iff_mem_nhdsSet, mem_nhdsSet_iff_forall]
+  exact Subtype.forall
 
 end TopologicalSpace.Compacts
