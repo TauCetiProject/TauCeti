@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.B
 public import TauCeti.NumberTheory.ModularForms.Newforms.Fields
 import TauCeti.NumberTheory.DirichletCharacter.PrimeValues
 import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
-import TauCeti.NumberTheory.ModularForms.Parity
 
 /-!
 # Strong multiplicity one without a nebentypus hypothesis
@@ -29,12 +28,14 @@ nebentypus.
 
 Agreement of the eigenvalues at the primes alone does not see `a_{p²}`, and the prime form,
 `HeckeRing.GL2.Newform.eq_of_forall_notMem_prime_eigenvalue_eq`, keeps its nebentypus hypothesis.
-What the primes do see is the Petersson adjoint relation `a_p = χ(p) · conj a_p` at a good prime
-(`HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_mul_conj`): wherever `a_p ≠ 0` it pins
-`χ(p) = a_p / conj a_p`. So for good Hecke eigenforms `f`, `g` (newforms, for instance) whose
-eigenvalues agree at almost all primes, the quotient `ψ` of their nebentypes satisfies
-`ψ(p) a_p(f) = a_p(f)` at almost all primes: it is a self-twist of `f` on the prime coefficients.
-By the parity lemma `ψ` is also even when `f` and `g` have the same weight. So the nebentypes
+What the primes do see is the Petersson adjoint relation `λ_p = χ(p) · conj λ_p` for the
+eigenvalue at a good prime (`HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_mul_conj`):
+wherever `λ_p ≠ 0` it pins `χ(p) = λ_p / conj λ_p`. So for good Hecke eigenforms `f`, `g`
+(newforms, for instance) whose eigenvalues agree at almost all primes, the quotient `ψ` of their
+nebentypes satisfies `ψ(p) a_p(f) = a_p(f)` at almost all primes: it is a self-twist of `f` on
+the prime coefficients.
+By the parity lemma `ψ` is also even when `f` and `g` have the same weight
+(`HeckeRing.GL2.EigenformAwayFromLevel.even_changeLevel_inv_mul_changeLevel`). So the nebentypes
 agree unless `f` has a nontrivial even self-twist.
 
 ## Main results
@@ -58,8 +59,6 @@ In the namespace `HeckeRing.GL2.EigenformAwayFromLevel`:
 * `eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_prime_eq`: for good
   Hecke eigenforms whose eigenvalues agree at almost all primes, the quotient of the nebentypes is
   a self-twist of the prime coefficients.
-* `even_changeLevel_inv_mul_changeLevel`: for good Hecke eigenforms of the same weight this
-  quotient is even.
 
 ## References
 
@@ -213,24 +212,6 @@ theorem eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_pr
     DirichletCharacter.changeLevel_natCast_of_coprime hM _ hpL,
     ← ZMod.coe_unitOfCoprime p hpN, ← ZMod.coe_unitOfCoprime p hpM, MulChar.ofUnitHom_coe,
     MulChar.ofUnitHom_coe, ← hχ, inv_mul_cancel₀ (Units.ne_zero _), one_mul]
-
-/-- **The quotient of the nebentypes of two good Hecke eigenforms of the same weight is even.** By
-the parity lemma (`TauCeti.char_neg_one_of_mem_cuspFormCharSpace`) the nebentypes of good Hecke
-eigenforms `f` and `g` of weight `k` both take the value `(-1)^k` at `-1`, so the quotient
-`χ_f⁻¹ χ_g` of their zero-extended nebentypes, lifted to any common multiple `L` of the levels, is
-even. -/
-theorem even_changeLevel_inv_mul_changeLevel {L : ℕ} (f : EigenformAwayFromLevel N k)
-    (g : EigenformAwayFromLevel M k) (hN : N ∣ L) (hM : M ∣ L) :
-    ((DirichletCharacter.changeLevel hN (MulChar.ofUnitHom f.χ))⁻¹ *
-      DirichletCharacter.changeLevel hM (MulChar.ofUnitHom g.χ)).Even := by
-  have hpar {N : ℕ} [NeZero N] (f : EigenformAwayFromLevel N k) :
-      MulChar.ofUnitHom f.χ (-1) = (-1 : ℂ) ^ k := by
-    rw [← Units.val_one, ← Units.val_neg, MulChar.ofUnitHom_coe]
-    exact TauCeti.char_neg_one_of_mem_cuspFormCharSpace f.mem_charSpace f.ne_zero
-  rw [DirichletCharacter.Even, MulChar.mul_apply, MulChar.inv_apply_eq_inv',
-    DirichletCharacter.changeLevel_apply_neg_one, DirichletCharacter.changeLevel_apply_neg_one,
-    hpar f, hpar g]
-  exact inv_mul_cancel₀ (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero))
 
 end EigenformAwayFromLevel
 

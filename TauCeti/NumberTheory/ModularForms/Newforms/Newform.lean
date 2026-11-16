@@ -9,7 +9,9 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Composite
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Action
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.NumberTheory.ModularForms.Parity
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
@@ -48,6 +50,8 @@ that the character, the eigenvalue system and the analytic invariants travel wit
 
 * `HeckeRing.GL2.EigenformAwayFromLevel.ext`, `HeckeRing.GL2.Newform.ext`: the bundled data is
   determined by the underlying cusp form.
+* `HeckeRing.GL2.EigenformAwayFromLevel.even_changeLevel_inv_mul_changeLevel`: the quotient of
+  the zero-extended nebentypes of two good Hecke eigenforms of the same weight is even.
 * `HeckeRing.GL2.Newform.qExpansion_coeff_one`: the normalisation `a₁ = 1` as a simp lemma.
 * `HeckeRing.GL2.Newform.injective_qExpansion_coeff_pnat`: a newform is determined by its
   Fourier coefficients `aₙ`, `n ≥ 1`.
@@ -128,6 +132,24 @@ theorem ext {f g : EigenformAwayFromLevel N k} (h : f.toCuspForm = g.toCuspForm)
     smul_left_injective ℂ hx ((eigf n hn).symm.trans (eigg n hn))
   subst hae
   rfl
+
+/-- **The quotient of the nebentypes of two good Hecke eigenforms of the same weight is even.** By
+the parity lemma (`TauCeti.char_neg_one_of_mem_cuspFormCharSpace`) the nebentypes of good Hecke
+eigenforms `f` and `g` of weight `k` both take the value `(-1)^k` at `-1`, so the quotient
+`χ_f⁻¹ χ_g` of their zero-extended nebentypes, lifted to any common multiple `L` of the levels, is
+even. -/
+theorem even_changeLevel_inv_mul_changeLevel {M L : ℕ} [NeZero M]
+    (f : EigenformAwayFromLevel N k) (g : EigenformAwayFromLevel M k) (hN : N ∣ L) (hM : M ∣ L) :
+    ((DirichletCharacter.changeLevel hN (MulChar.ofUnitHom f.χ))⁻¹ *
+      DirichletCharacter.changeLevel hM (MulChar.ofUnitHom g.χ)).Even := by
+  have hpar {N : ℕ} [NeZero N] (f : EigenformAwayFromLevel N k) :
+      MulChar.ofUnitHom f.χ (-1) = (-1 : ℂ) ^ k := by
+    rw [← Units.val_one, ← Units.val_neg, MulChar.ofUnitHom_coe]
+    exact TauCeti.char_neg_one_of_mem_cuspFormCharSpace f.mem_charSpace f.ne_zero
+  rw [DirichletCharacter.Even, MulChar.mul_apply, MulChar.inv_apply_eq_inv',
+    DirichletCharacter.changeLevel_apply_neg_one, DirichletCharacter.changeLevel_apply_neg_one,
+    hpar f, hpar g]
+  exact inv_mul_cancel₀ (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero))
 
 end EigenformAwayFromLevel
 
