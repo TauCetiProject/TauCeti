@@ -700,6 +700,27 @@ lemma mkQuotient_comp_quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H
     mkQuotient H I ≫ quotientMap I J f h = f ≫ mkQuotient K J :=
   mkQuotient_comp_liftQuotient _ _ _
 
+/-- Along the identity morphism, the induced quotient morphism is the quotient-to-quotient
+morphism of the inclusion `I ≤ J`. -/
+@[simp]
+lemma quotientMap_id (I J : HopfIdeal R H) (h : I.map (𝟙 H : H ⟶ H).hom ≤ J) :
+    quotientMap I J (𝟙 H) h = quotientMapOfLe H (by rwa [← HopfIdeal.map_id I]) := by
+  apply mkQuotient_hom_ext
+  rw [mkQuotient_comp_quotientMap, mkQuotient_comp_quotientMapOfLe, Category.id_comp]
+
+/-- Induced quotient morphisms compose along composites of morphisms. -/
+@[simp]
+lemma quotientMap_comp {L : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
+    (J : HopfIdeal R K) (M : HopfIdeal R L) (f : H ⟶ K) (g : K ⟶ L)
+    (hf : I.map f.hom ≤ J) (hg : J.map g.hom ≤ M) :
+    quotientMap I J f hf ≫ quotientMap J M g hg =
+      quotientMap I M (f ≫ g) (by
+        rw [hom_comp, ← HopfIdeal.map_map]
+        exact (HopfIdeal.map_mono g.hom hf).trans hg) := by
+  apply mkQuotient_hom_ext
+  rw [mkQuotient_comp_quotientMap_assoc, mkQuotient_comp_quotientMap,
+    mkQuotient_comp_quotientMap, Category.assoc]
+
 end CommHopfAlgCat
 
 end CommHopfAlgebras
@@ -927,6 +948,28 @@ lemma mkQuotient_comp_quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H
   apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
     (_root_.CommHopfAlgCat.{v} R)).map_injective
   exact CommHopfAlgCat.mkQuotient_comp_quotientMap I J f.hom h
+
+/-- Along the identity morphism, the finite-type induced quotient morphism is the
+quotient-to-quotient morphism of the inclusion `I ≤ J`. -/
+@[simp]
+lemma quotientMap_id (I J : HopfIdeal R H) (h : I.map (toBialgHom (𝟙 H)) ≤ J) :
+    quotientMap I J (𝟙 H) h = quotientMapOfLe H (by rwa [← HopfIdeal.map_id I]) := by
+  apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+    (_root_.CommHopfAlgCat.{v} R)).map_injective
+  exact CommHopfAlgCat.quotientMap_id I J h
+
+/-- Finite-type induced quotient morphisms compose along composites of morphisms. -/
+@[simp]
+lemma quotientMap_comp {L : FiniteTypeCommHopfAlgCat.{u, v} R} (I : HopfIdeal R H)
+    (J : HopfIdeal R K) (M : HopfIdeal R L) (f : H ⟶ K) (g : K ⟶ L)
+    (hf : I.map (toBialgHom f) ≤ J) (hg : J.map (toBialgHom g) ≤ M) :
+    quotientMap I J f hf ≫ quotientMap J M g hg =
+      quotientMap I M (f ≫ g) (by
+        rw [toBialgHom_comp, ← HopfIdeal.map_map]
+        exact (HopfIdeal.map_mono (toBialgHom g) hf).trans hg) := by
+  apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+    (_root_.CommHopfAlgCat.{v} R)).map_injective
+  exact CommHopfAlgCat.quotientMap_comp I J M f.hom g.hom hf hg
 
 end TauCeti.FiniteTypeCommHopfAlgCat
 

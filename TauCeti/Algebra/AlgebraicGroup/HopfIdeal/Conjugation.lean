@@ -366,6 +366,15 @@ theorem quotientConjugationIso_hom_apply (I J : HopfIdeal R H) (g : WithConv (H 
     toBialgHom (I.quotientConjugationIso J g hJ).hom y = I.quotientConjugationEquiv J g hJ y :=
   (rfl)
 
+/-- The inverse of the finite-type coordinate isomorphism of conjugation acts by the inverse of
+the bialgebra equivalence `HopfIdeal.quotientConjugationEquiv`. -/
+@[simp]
+theorem quotientConjugationIso_inv_apply (I J : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
+    (hJ : J = I.conjugate g) (y : quotient H I) :
+    toBialgHom (I.quotientConjugationIso J g hJ).inv y =
+      (I.quotientConjugationEquiv J g hJ).symm y :=
+  (rfl)
+
 end HopfIdeal
 
 namespace CommHopfAlgCat

@@ -298,6 +298,25 @@ theorem componentGroupMap_rationalComponentMap (I : HopfIdeal k H) (J : HopfIdea
   mapComponentGroup_rationalComponentMap_of_mk _ (toBialgHom f) (quotientMap_mk I J f h) _ _
     (BialgHom.mapDomain_apply _ _)
 
+/-- Along the identity morphism, the induced map of component groups is the identity. -/
+@[simp]
+theorem componentGroupMap_id (I : HopfIdeal k H) (h : I.map (toBialgHom (𝟙 H)) ≤ I) :
+    componentGroupMap I I (𝟙 H) h = MonoidHom.id I.ComponentGroup := by
+  rw [componentGroupMap, quotientMap_id, quotientMapOfLe_refl, mapComponentGroup_id]
+
+/-- Induced maps of component groups compose contravariantly along composites of
+homomorphisms. -/
+@[simp]
+theorem componentGroupMap_comp {L : FiniteTypeCommHopfAlgCat.{u, u} k} (I : HopfIdeal k H)
+    (J : HopfIdeal k K) (M : HopfIdeal k L) (f : H ⟶ K) (g : K ⟶ L)
+    (hf : I.map (toBialgHom f) ≤ J) (hg : J.map (toBialgHom g) ≤ M) :
+    (componentGroupMap I J f hf).comp (componentGroupMap J M g hg) =
+      componentGroupMap I M (f ≫ g) (by
+        rw [toBialgHom_comp, ← HopfIdeal.map_map]
+        exact (HopfIdeal.map_mono (toBialgHom g) hf).trans hg) := by
+  rw [componentGroupMap, componentGroupMap, componentGroupMap, ← mapComponentGroup_comp,
+    quotientMap_comp]
+
 /-- **Surjectivity of component group maps.** Let `φ : G' → G` be a homomorphism of affine groups
 whose coordinate map is injective, so that `φ` is surjective on rational points, and suppose the
 closed subgroup `N'` cut out by `J` is the scheme-theoretic inverse image of the closed subgroup
