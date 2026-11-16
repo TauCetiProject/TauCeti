@@ -146,6 +146,13 @@ theorem normalHessian_apply_self_neg_of_mem_negativeNormalSpace
   LinearMap.BilinForm.apply_self_neg_of_mem_relativeSpectralSubspace_Iio
     (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
 
+/-- The normal Hessian is negative semidefinite on the negative normal space. -/
+theorem normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace
+    (hv : v ∈ h.negativeNormalSpace hn g s) : h.normalHessian hn s v v ≤ 0 := by
+  rcases eq_or_ne v 0 with rfl | hv0
+  · simp
+  · exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv hv0).le
+
 /-- **The normal Hessian is positive definite on the positive normal space.** -/
 theorem normalHessian_apply_self_pos_of_mem_positiveNormalSpace
     (hv : v ∈ h.positiveNormalSpace hn g s) (hv0 : v ≠ 0) : 0 < h.normalHessian hn s v v :=
