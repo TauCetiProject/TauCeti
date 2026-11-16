@@ -292,6 +292,59 @@ theorem eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (hp : 1 ≤
     _ = 2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
         rw [eLpNorm_comp_measurePreserving hg hρ, hnorm, two_mul]
 
+/-- **The odd reflection of an `Lᵖ` vector field.** Let `U` be a measurable set mapped into itself
+by the hyperplane reflection `ρ`, whose linear part is `R = (ℝ ∙ ν)ᗮ.reflection`, and let `H` be
+measurable. If `G ∈ Lᵖ(U ∩ H)` is a vector field, then its odd reflection
+`x ↦ 1_H G x - R (1_H G (ρ x))` lies in `Lᵖ(U)`. This is the reflection that carries a divergence
+datum `div G` of an equation on `U ∩ H` to the reflected equation on `U`. -/
+theorem memLp_indicator_sub_reflection_indicator_comp_hyperplaneReflection {G : F → F}
+    (hHm : MeasurableSet H) (hUm : MeasurableSet U)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) (hG : MemLp G p (μ.restrict (U ∩ H))) :
+    MemLp (fun x => H.indicator G x -
+      (ℝ ∙ ν)ᗮ.reflection (H.indicator G (hyperplaneReflection ν c x))) p (μ.restrict U) := by
+  have hg : MemLp (H.indicator G) p (μ.restrict U) := by
+    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
+      Set.inter_comm]
+    exact hG
+  have hgρ := hg.comp_measurePreserving (measurePreserving_restrict_hyperplaneReflection hU hUm)
+  exact hg.sub (hgρ.of_le ((ℝ ∙ ν)ᗮ.reflection.continuous.comp_aestronglyMeasurable
+    hgρ.aestronglyMeasurable) (ae_of_all _ fun x => (LinearIsometryEquiv.norm_map _ _).le))
+
+/-- **The norm of the odd reflection of a vector field.** Let `U` be a measurable set mapped into
+itself by the hyperplane reflection `ρ`, with linear part `R = (ℝ ∙ ν)ᗮ.reflection`, let `H` be
+measurable and let `1 ≤ p`. The odd reflection `x ↦ 1_H G x - R (1_H G (ρ x))` of a vector field
+`G` has `Lᵖ(U)` norm at most `2 ‖G‖_{Lᵖ(U ∩ H)}`. -/
+theorem eLpNorm_indicator_sub_reflection_indicator_comp_hyperplaneReflection_le {G : F → F}
+    (hp : 1 ≤ p) (hHm : MeasurableSet H) (hUm : MeasurableSet U)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) :
+    eLpNorm (fun x => H.indicator G x -
+      (ℝ ∙ ν)ᗮ.reflection (H.indicator G (hyperplaneReflection ν c x))) p (μ.restrict U) ≤
+      2 * eLpNorm G p (μ.restrict (U ∩ H)) := by
+  by_cases hG : AEStronglyMeasurable G (μ.restrict (U ∩ H))
+  swap
+  · simp [eLpNorm_of_not_aestronglyMeasurable hG]
+  have hρ := measurePreserving_restrict_hyperplaneReflection (μ := μ) hU hUm
+  have hg : AEStronglyMeasurable (H.indicator G) (μ.restrict U) := by
+    rw [aestronglyMeasurable_indicator_iff hHm, Measure.restrict_restrict hHm, Set.inter_comm]
+    exact hG
+  have hnorm : eLpNorm (H.indicator G) p (μ.restrict U) = eLpNorm G p (μ.restrict (U ∩ H)) := by
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict hHm.nullMeasurableSet,
+      Measure.restrict_restrict hHm, Set.inter_comm]
+  -- The linear part `R` is an isometry, so the reflected summand has the norm of `1_H G ∘ ρ`.
+  have hR : eLpNorm (fun x => (ℝ ∙ ν)ᗮ.reflection (H.indicator G (hyperplaneReflection ν c x))) p
+      (μ.restrict U) = eLpNorm (H.indicator G ∘ hyperplaneReflection ν c) p (μ.restrict U) :=
+    eLpNorm_congr_norm_ae ((ℝ ∙ ν)ᗮ.reflection.continuous.comp_aestronglyMeasurable
+      (hg.comp_measurePreserving hρ)) (hg.comp_measurePreserving hρ)
+      (ae_of_all _ fun x => LinearIsometryEquiv.norm_map _ _)
+  calc eLpNorm (fun x => H.indicator G x -
+        (ℝ ∙ ν)ᗮ.reflection (H.indicator G (hyperplaneReflection ν c x))) p (μ.restrict U)
+      ≤ eLpNorm (H.indicator G) p (μ.restrict U) + eLpNorm
+          (fun x => (ℝ ∙ ν)ᗮ.reflection (H.indicator G (hyperplaneReflection ν c x))) p
+            (μ.restrict U) :=
+        eLpNorm_sub_le hp
+    _ = 2 * eLpNorm G p (μ.restrict (U ∩ H)) := by
+        rw [hR, eLpNorm_comp_measurePreserving hg hρ, hnorm, two_mul]
+
 end OddReflection
 
 end TauCeti

@@ -64,6 +64,9 @@ the restriction of `φ - φ ∘ ρ`, which lies in `H¹₀(U ∩ H)`; so it equa
   of a weak solution vanishing on the flat boundary is a weak solution of the reflected equation.
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral`: the
   same for a right-hand side `f ∈ L²(U ∩ H)`, which is reflected oddly.
+* The same for a right-hand side `f + ∂ᵢFⁱ` with `f, F ∈ L²(U ∩ H)`, where the field `F` is
+  reflected oddly together with its direction, `x ↦ 1_H F x - R (1_H F (ρ x))`:
+  `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_inner`
 * `TauCeti.PDE.UniformlyEllipticOn.reflectPrincipal`: the reflected principal coefficient is
   uniformly elliptic and bounded with the constants of `a`, and
   `TauCeti.PDE.norm_reflectDrift_le` and `TauCeti.PDE.norm_reflectDensity_le`: the reflected
@@ -468,6 +471,42 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL (hν : ν �
   exact (energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0 _).trans (congrArg _
     (W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ).symm)
 
+/-- **Odd reflection of a weak solution with a right-hand side `f + div F`.** Let
+`H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, with
+linear part `R`, and let `U` be open with `ρ U ⊆ U`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let
+its restriction to `U ∩ H` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f + ∂ᵢFⁱ` with
+`f ∈ L²(U ∩ H)` and `F ∈ L²(U ∩ H; ℝⁿ)`, that is
+`a(u, v) = ∫_{U ∩ H} f v - ∫_{U ∩ H} ⟪F, ∇v⟫` for every `v ∈ H¹₀(U ∩ H)`. If the reflected
+coefficients are bounded on `U`, then the odd reflection `u - u ∘ ρ` is a weak solution on `U` of
+the equation with the reflected coefficients, the odd reflection `x ↦ 1_H f x - 1_H f (ρ x)` of
+`f` as scalar datum and the odd reflection `x ↦ 1_H F x - R (1_H F (ρ x))` of the field `F` as
+divergence datum, tested against `H¹₀(U)`. -/
+theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_inner
+    (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
+    (hcoeff : MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x) (reflectDrift ν c₀ b x)
+      (reflectDensity ν c₀ c x)) ⊤ (mu.restrict U))
+    {u : W1p mu U 2} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict (U ⊓ H)))
+    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hF : MemLp F 2 (mu.restrict (U ⊓ H)))
+    (hu : ∀ v : W1p0 mu (U ⊓ H) 2,
+      energyFormH1 a b c (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u) (v : W1p mu (U ⊓ H) 2) =
+        ∫ x in U ⊓ H, f x * W1p.value (v : W1p mu (U ⊓ H) 2) x ∂mu -
+          ∫ x in U ⊓ H, ⟪F x, W1p.gradient (v : W1p mu (U ⊓ H) 2) x⟫_ℝ ∂mu)
+    (φ : W1p0 mu U 2) :
+    energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c)
+        (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (φ : W1p mu U 2) =
+      ∫ x in U, ((H : Set (EuclideanSpace ℝ ι)).indicator f x -
+        (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) *
+          W1p.value (φ : W1p mu U 2) x ∂mu -
+        ∫ x in U, ⟪(H : Set (EuclideanSpace ℝ ι)).indicator F x -
+          (ℝ ∙ ν)ᗮ.reflection ((H : Set (EuclideanSpace ℝ ι)).indicator F
+            (hyperplaneReflection ν c₀ x)), W1p.gradient (φ : W1p mu U 2) x⟫_ℝ ∂mu := by
+  rw [energyFormH1_sub_left hcoeff, energyFormH1_reflectPrincipal_compHyperplaneReflectionL hν hU,
+    ← energyFormH1_sub_right hcoeff, energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0,
+    ← W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ, hu,
+    W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL _ hH hU hf,
+    W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL _ hH hU hF]
+
 /-- **Odd reflection of a weak solution with a right-hand side.** Let `H = {x | c₀ < ⟪x, ν⟫}`
 with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, and let `U` be open with
 `ρ U ⊆ U`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a weak
@@ -490,10 +529,11 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegr
       ∫ x in U, ((H : Set (EuclideanSpace ℝ ι)).indicator f x -
         (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) *
           W1p.value (φ : W1p mu U 2) x ∂mu := by
-  rw [energyFormH1_sub_left hcoeff, energyFormH1_reflectPrincipal_compHyperplaneReflectionL hν hU,
-    ← energyFormH1_sub_right hcoeff, energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0,
-    ← W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ, hu,
-    W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL _ hH hU hf]
+  have h := energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_inner
+    hν hH hU hcoeff hu0 hf (F := 0) MemLp.zero
+    (fun v => by simp only [hu v, Pi.zero_apply, inner_zero_left, integral_zero, sub_zero]) φ
+  simpa only [Set.indicator_zero', Pi.zero_apply, map_zero, sub_zero, inner_zero_left,
+    integral_zero] using h
 
 end WeakSolution
 
