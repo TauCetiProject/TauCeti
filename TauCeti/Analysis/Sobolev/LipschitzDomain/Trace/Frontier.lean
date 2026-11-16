@@ -92,7 +92,7 @@ def W1p.lipschitzChartFrontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
     W1p volume Ω p →L[ℝ] Lp ℝ p ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
       (frontier (Ω : Set (WithLp 2 (ℝ × E))))) :=
   (extendByZeroLpₗᵢ ℝ (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E)))
-      (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)
+      (measurableSet_frontier_inter_preimage_normalCylinder _ e a b).nullMeasurableSet
       inter_subset_left).toContinuousLinearMap.comp <|
     ((Lp.compMeasurePreservingₗᵢ ℝ (fun x => (e x).snd)
         (e.measurable_snd_apply.measurePreserving _)).toContinuousLinearMap.comp
@@ -128,7 +128,7 @@ theorem W1p.lipschitzChartFrontierTrace_ae_eq (hp : p ≠ (∞ : ℝ≥0∞))
         h.map_snd_euclideanHausdorffMeasure_frontier_inter_le g)] with x hx hx'
     rw [Lp.compMeasurePreservingₗᵢ_apply]
     exact hx.trans hx'
-  refine (coeFn_extendByZeroLpₗᵢ ℝ hpatch inter_subset_left _).trans ?_
+  refine (coeFn_extendByZeroLpₗᵢ ℝ hpatch.nullMeasurableSet inter_subset_left _).trans ?_
   exact ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq hpatch).1 hcomp)
 
 /-- **A local chart trace on the frontier of a function continuous up to the boundary.** If
