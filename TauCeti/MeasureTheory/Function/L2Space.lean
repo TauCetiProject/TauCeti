@@ -21,10 +21,11 @@ import TauCeti.Algebra.Order.Ring.PosPart.Sq
 The pointwise inner product of two square-integrable functions with values in an inner product
 space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L2.integrable_inner`);
 this file gives the form for functions satisfying `MemLp f 2 μ`, which is how second-moment
-hypotheses on random vectors are usually stated, together with the special case of a quadratic
-form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
-squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
-integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`).
+hypotheses on random vectors are usually stated, and its Hölder form for `f ∈ Lᵖ` and `g ∈ L^q`
+with `1/p + 1/q = 1` (`MeasureTheory.MemLp.integrable_inner_of_holderTriple`), together with the
+special case of a quadratic form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
+Likewise the weighted squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially
+bounded weight `V` is integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -76,6 +77,14 @@ theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp 
   (L2.integrable_inner (𝕜 := 𝕜) (hf.toLp f) (hg.toLp g)).congr <| by
     filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x hfx hgx
     rw [hfx, hgx]
+
+/-- **Hölder's inequality for the inner product**: the pointwise inner product of `f ∈ Lᵖ` and
+`g ∈ L^q` with `1/p + 1/q = 1` is integrable. For `p = q = 2` this is
+`MeasureTheory.MemLp.integrable_inner`. -/
+theorem MemLp.integrable_inner_of_holderTriple {p q : ℝ≥0∞} [p.HolderTriple q 1] {f g : α → E}
+    (hf : MemLp f p μ) (hg : MemLp g q μ) : Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
+  memLp_one_iff_integrable.1 (hf.of_bilin (fun v w ↦ ⟪v, w⟫_𝕜) 1 hg continuous_inner
+    (ae_of_all _ fun x ↦ by simpa using nnNorm_inner_le_nnNorm (𝕜 := 𝕜) (f x) (g x)))
 
 /-- The quadratic form of a matrix on a square-integrable Euclidean-valued function is
 integrable. -/
