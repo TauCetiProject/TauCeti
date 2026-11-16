@@ -160,7 +160,7 @@ private theorem exists_sq_add_mul_add_eq_zero_of_sq_eq (hx2 : x ^ 2 = algebraMap
     (hs : s ≠ 0) (ht : 2 * b = s * t) (hbc : b ^ 2 - a = s ^ 2 * c) :
     ∃ ω : 𝒪[L], (ω : L) = (x - algebraMap K L b) / algebraMap K L s ∧
       ω ^ 2 + algebraMap 𝒪[K] 𝒪[L] t * ω + algebraMap 𝒪[K] 𝒪[L] c = 0 := by
-  set y := (x - algebraMap K L b) / algebraMap K L s with hy_def
+  set y := (x - algebraMap K L b) / algebraMap K L s
   have hsL : algebraMap K L s ≠ 0 := (_root_.map_ne_zero _).mpr hs
   have hsy : algebraMap K L s * y = x - algebraMap K L b := mul_div_cancel₀ _ hsL
   have hy : y ^ 2 + algebraMap K L t * y + algebraMap K L c = 0 := by

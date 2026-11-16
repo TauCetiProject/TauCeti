@@ -398,16 +398,16 @@ its norm; the empty sum has norm zero. -/
 theorem nnnorm_sum_single [DecidableEq I] (s : Finset I) (b : I → β) :
     ‖∑ i ∈ s, single i (b i)‖₊ = s.sup fun i ↦ ‖b i‖₊ := by
   refine le_antisymm ?_ (Finset.sup_le fun i hi ↦ ?_)
-  · rw [← NNReal.coe_le_coe, coe_nnnorm, norm_le (NNReal.coe_nonneg _)]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm, norm_le (NNReal.coe_nonneg _)]
     intro j
     rw [sum_single_apply]
     split_ifs with hj
     · exact NNReal.coe_le_coe.2 (Finset.le_sup (f := fun i ↦ ‖b i‖₊) hj)
     · simp
-  · rw [← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
     simpa [sum_single_apply, hi] using norm_coe_le_norm (∑ i ∈ s, single i (b i)) i
 
-/-- A family vanishing outside a finite set `s` has `nnnorm` equal to the maximum over `s`. -/
+/-- A family vanishing outside a finite set `s` has `nnNorm` equal to the maximum over `s`. -/
 theorem nnnorm_eq_sup_of_forall_eq_zero {s : Finset I} {f : C₀(I, β)}
     (hf : ∀ i ∉ s, f i = 0) :
     ‖f‖₊ = s.sup fun i ↦ ‖f i‖₊ := by

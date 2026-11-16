@@ -44,6 +44,10 @@ of projective space.
 
 * `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
   not vanish form an open set.
+* `ContinuousLinearEquiv.mapProjectivization`: a continuous semilinear equivalence
+  `V ≃SL[σ] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ L W`.
+* `Projectivization.continuousAt_linearProjection`: the map induced by a linear map depends
+  jointly continuously on the linear map and the point, where it is defined.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
   points, two nonzero vectors span the same line iff all the `2 × 2` minors
   `f v * g w - f w * g v` vanish.
@@ -51,6 +55,8 @@ of projective space.
   points.
 * `Projectivization.instCompactSpace`: `ℙ 𝕜 V` is compact for a finite-dimensional normed space
   `V` over `ℝ` or `ℂ`.
+* `Projectivization.isClosedEmbedding_map`: over `ℝ` or `ℂ`, the map induced by an injective
+  linear map out of a finite-dimensional normed space is a closed embedding.
 * `Projectivization.instSecondCountableTopology`: `ℙ K V` is second countable when `V` is.
 * `Projectivization.pathConnectedSpace_of_one_lt_rank`: `ℙ K V` is path-connected when `V` has
   real dimension greater than one, for any division ring `K`.
@@ -58,7 +64,9 @@ of projective space.
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
-  homeomorphism from `U_i` onto `Fin n → K`.
+  homeomorphism from `U_i` onto `Fin n → K`, with
+  `Projectivization.isOpenEmbedding_affineChart_symm` showing that its inverse is an open
+  embedding.
 * `Projectivization.interAffineOpenHomeomorph`: the affine chart identifies the part `X ∩ U_i` of a
   set `X` with its image in `Fin n → K`.
 -/
@@ -86,7 +94,94 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
   ext v
   simp [mk'_eq_mk]
 
+section MapProjectivization
+
+variable {L W : Type*} [DivisionRing L] [AddCommGroup W] [Module L W] [TopologicalSpace W]
+  {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- A continuous semilinear equivalence `V ≃SL[σ] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ L W`,
+sending the line spanned by `v` to the line spanned by `e v`. -/
+def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃SL[σ] W) :
+    ℙ K V ≃ₜ ℙ L W where
+  toFun := map (e : V →ₛₗ[σ] W) e.injective
+  invFun := map (e.symm : W →ₛₗ[σ'] V) e.symm.injective
+  left_inv p := by
+    induction p using ind with | h v hv => simp [map_mk]
+  right_inv p := by
+    induction p using ind with | h v hv => simp [map_mk]
+  continuous_toFun := continuous_map _ e.continuous
+  continuous_invFun := continuous_map _ e.symm.continuous
+
+/-- The homeomorphism `ContinuousLinearEquiv.mapProjectivization` is `Projectivization.map`. -/
+theorem _root_.ContinuousLinearEquiv.coe_mapProjectivization (e : V ≃SL[σ] W) :
+    ⇑e.mapProjectivization = map (e : V →ₛₗ[σ] W) e.injective :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_mk (e : V ≃SL[σ] W) (v : V)
+    (hv : v ≠ 0) :
+    e.mapProjectivization (mk K v hv) = mk L (e v) ((map_ne_zero_iff e e.injective).2 hv) :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm (e : V ≃SL[σ] W) :
+    e.mapProjectivization.symm = e.symm.mapProjectivization :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm_apply_apply (e : V ≃SL[σ] W)
+    (p : ℙ K V) : e.symm.mapProjectivization (e.mapProjectivization p) = p :=
+  e.mapProjectivization.symm_apply_apply p
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_apply_symm_apply (e : V ≃SL[σ] W)
+    (p : ℙ L W) : e.mapProjectivization (e.symm.mapProjectivization p) = p :=
+  e.mapProjectivization.apply_symm_apply p
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_refl :
+    (ContinuousLinearEquiv.refl K V).mapProjectivization = Homeomorph.refl (ℙ K V) := by
+  ext p
+  induction p using ind with | h v hv => simp
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [DivisionRing M]
+    [AddCommGroup U] [Module M U] [TopologicalSpace U] {τ : L →+* M} {τ' : M →+* L}
+    {ρ : K →+* M} {ρ' : M →+* K} [RingHomInvPair τ τ'] [RingHomInvPair τ' τ]
+    [RingHomInvPair ρ ρ'] [RingHomInvPair ρ' ρ] [RingHomCompTriple σ τ ρ]
+    [RingHomCompTriple τ' σ' ρ'] (e₁ : V ≃SL[σ] W) (e₂ : W ≃SL[τ] U) :
+    (e₁.trans e₂).mapProjectivization = e₁.mapProjectivization.trans e₂.mapProjectivization := by
+  ext p
+  induction p using ind with | h v hv => simp
+
+end MapProjectivization
+
 variable [ContinuousConstSMul Kˣ V]
+
+/-- **The map induced by a linear map depends continuously on the linear map.** For a family of
+linear maps `G t` such that `G t v` depends jointly continuously on `t` and `v`, the point
+`linearProjection (G t) y` depends continuously on `(t, y)` at every `(t₀, y₀)` with `y₀` in the
+domain `linearProjectionDomain (G t₀)`. -/
+theorem continuousAt_linearProjection {T W : Type*} [TopologicalSpace T] [AddCommGroup W]
+    [Module K W] [TopologicalSpace W] [T1Space W] [Nonempty (ℙ K W)] {G : T → V →ₗ[K] W}
+    (hG : Continuous fun p : T × V ↦ G p.1 p.2) {t₀ : T} {y₀ : ℙ K V}
+    (hy₀ : y₀ ∈ linearProjectionDomain (G t₀)) :
+    ContinuousAt (fun p : T × ℙ K V ↦ linearProjection (G p.1) p.2) (t₀, y₀) := by
+  have hq : IsOpenQuotientMap (Prod.map id (mk' K) : T × {v : V // v ≠ 0} → T × ℙ K V) :=
+    IsOpenQuotientMap.id.prodMap isOpenQuotientMap_mk'
+  obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective y₀
+  rw [show (t₀, mk' K v) = Prod.map id (mk' K) (t₀, v) from rfl, ← hq.continuousAt_comp_iff]
+  -- On the open set of pairs `(t, v)` with `G t v ≠ 0`, the composite is `(t, v) ↦ [G t v]`.
+  have hGv : Continuous fun x : T × {v : V // v ≠ 0} ↦ G x.1 x.2 :=
+    hG.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+  let U := (fun x : T × {v : V // v ≠ 0} ↦ G x.1 x.2) ⁻¹' {0}ᶜ
+  have hx : (t₀, v) ∈ U := by
+    simpa [U, mk'_eq_mk, mk_mem_linearProjectionDomain_iff] using hy₀
+  refine ContinuousOn.continuousAt ?_ ((isOpen_compl_singleton.preimage hGv).mem_nhds hx)
+  rw [continuousOn_iff_continuous_domRestrict]
+  refine (continuous_mk (K := K) (hGv.comp continuous_subtype_val) fun x : U ↦ x.2).congr
+    fun x ↦ ?_
+  simp [mk'_eq_mk, linearProjection_mk _ _ x.2]
 
 /-- Projective space is second countable when the vector space is. -/
 instance instSecondCountableTopology [SecondCountableTopology V] :
@@ -164,6 +259,13 @@ instance instCompactSpace [FiniteDimensional 𝕜 V] : CompactSpace (ℙ 𝕜 V)
     (continuous_mk continuous_subtype_val _) fun x ↦ ?_
   obtain ⟨v, -, hv, rfl⟩ := exists_norm_eq_one_mk_eq x
   exact ⟨⟨v, mem_sphere_zero_iff_norm.2 hv⟩, rfl⟩
+
+/-- Over `ℝ` or `ℂ`, the map of projective spaces induced by an injective linear map out of a
+finite-dimensional normed space is a closed embedding, since projective space is compact. -/
+theorem isClosedEmbedding_map [FiniteDimensional 𝕜 V] {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace 𝕜 W] (f : V →ₗ[𝕜] W) (hf : Function.Injective f) :
+    IsClosedEmbedding (map f hf) :=
+  (continuous_map hf f.continuous_of_finiteDimensional).isClosedEmbedding (map_injective f hf)
 
 end RCLike
 
@@ -274,6 +376,12 @@ theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
 theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
     ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
   (rfl)
+
+/-- The inverse of the standard affine chart is an open embedding onto `affineOpen i`. -/
+theorem isOpenEmbedding_affineChart_symm (i : Fin (n + 1)) :
+    IsOpenEmbedding (affineChart (K := K) i).symm :=
+  coe_affineOpenPartialHomeomorph_symm (K := K) i ▸
+    (affineOpenPartialHomeomorph (K := K) i).symm.isOpenEmbedding (by simp)
 
 /-- **The affine part of a subset of projective space.** The standard affine chart at the
 coordinate `i` restricts to a homeomorphism from the part `X ∩ U_i` of a set `X` inside the affine

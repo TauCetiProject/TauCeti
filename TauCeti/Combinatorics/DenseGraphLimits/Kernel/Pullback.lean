@@ -31,7 +31,7 @@ the cut norm already dominates every `[0, 1]`-test integral with no loss of cons
 factor of `4` (`cutNormSigned_le_four_mul_cutNorm`) and give only a comparison, not an equality;
 the sharp `abs_testIntegral_le_cutNorm` is what makes the invariance exact.
 
-This is the analytic gate in front of the arbitrary-carrier triangle inequality for the cut
+This is the analytic input to the arbitrary-carrier triangle inequality for the cut
 distance (Janson, Lemma 6.5). There a coupling of three carriers is built over the middle one, and
 the two outer cut norms have to be compared with cut norms computed on the glued space along its
 coordinate projections; those projections are measure preserving, and the comparison needed is
@@ -50,8 +50,6 @@ exactly the direction proved here. The triangle inequality itself is not proved 
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §4 and Lemma 6.5.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §8.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the cut norm and its full basic
-  API, as the prerequisite named there for the arbitrary-carrier triangle inequality.
 -/
 
 public section

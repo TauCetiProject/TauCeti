@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.Multiplicity
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
+import TauCeti.NumberTheory.NumberField.AutomorphismAction
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Primary elements of `ℤ[ζ_p]`
@@ -36,7 +38,12 @@ Eisenstein integers `ℤ[ω]` used in cubic reciprocity. Its content is for `ℚ
 
 The predicate does not depend on the choice of `ζ`
 (`IsPrimitiveRoot.isEisensteinPrimary_toInteger_iff`), and being prime to `λ` is the same as being
-prime to `p` (`IsPrimitiveRoot.isCoprime_toInteger_sub_one_iff_isCoprime_natCast`).
+prime to `p` (`IsPrimitiveRoot.isCoprime_toInteger_sub_one_iff_isCoprime_natCast`). Primary elements
+are closed under negation, powers and finite products, and ring homomorphisms preserve the
+normalization. Automorphisms preserve it even when the chosen root is kept fixed. A primary
+element has norm prime to `p`, and no nontrivial power `ζ ^ i`, with `i < p`, takes a primary
+element to another primary element. These facts allow primary normalization to be used in
+multiplicative identities between cyclotomic integers.
 
 ## References
 
@@ -79,6 +86,40 @@ theorem IsEisensteinPrimary.mul (hx : IsEisensteinPrimary ζ x) (hy : IsEisenste
   push_cast
   linear_combination y * hs + (a + (ζ - 1) ^ 2 * s) * ht
 
+/-- Negating a primary element preserves the primary normalization. -/
+theorem IsEisensteinPrimary.neg (hx : IsEisensteinPrimary ζ x) :
+    IsEisensteinPrimary ζ (-x) := by
+  obtain ⟨hc, a, ha⟩ := hx
+  refine ⟨hc.neg_left, -a, ?_⟩
+  simpa [sub_eq_add_neg, add_comm] using ha.neg_right
+
+/-- Negation does not change whether an element is primary. -/
+@[simp]
+theorem isEisensteinPrimary_neg_iff :
+    IsEisensteinPrimary ζ (-x) ↔ IsEisensteinPrimary ζ x :=
+  ⟨fun h ↦ by simpa only [neg_neg] using h.neg, IsEisensteinPrimary.neg⟩
+
+/-- Powers of a primary element are primary. -/
+theorem IsEisensteinPrimary.pow (hx : IsEisensteinPrimary ζ x) (n : ℕ) :
+    IsEisensteinPrimary ζ (x ^ n) := by
+  induction n with
+  | zero => simp
+  | succ n ih => simpa [pow_succ] using ih.mul hx
+
+/-- Finite products of primary elements are primary. -/
+theorem IsEisensteinPrimary.prod {ι : Type*} {s : Finset ι} {f : ι → R}
+    (h : ∀ i ∈ s, IsEisensteinPrimary ζ (f i)) :
+    IsEisensteinPrimary ζ (∏ i ∈ s, f i) :=
+  Finset.prod_induction f _ (fun _ _ hx hy ↦ hx.mul hy) isEisensteinPrimary_one h
+
+/-- Ring homomorphisms preserve the primary congruence and coprimality conditions. -/
+theorem IsEisensteinPrimary.map {S : Type*} [CommRing S]
+    (hx : IsEisensteinPrimary ζ x) (f : R →+* S) :
+    IsEisensteinPrimary (f ζ) (f x) := by
+  obtain ⟨hc, a, ha⟩ := hx
+  refine ⟨by simpa using hc.map f, a, ?_⟩
+  simpa using map_dvd f ha
+
 end TauCeti
 
 namespace IsPrimitiveRoot
@@ -96,6 +137,30 @@ theorem isEisensteinPrimary_toInteger_iff [NeZero p] {η : K} (hη : IsPrimitive
   rw [isEisensteinPrimary_iff, isEisensteinPrimary_iff, ← hu,
     isCoprime_mul_unit_right_right u.isUnit, mul_pow, ← Units.val_pow_eq_pow_val]
   simp only [Units.mul_right_dvd]
+
+section Galois
+
+variable [CharZero K] [NeZero p]
+
+/-- The primary normalization of algebraic integers is invariant under automorphisms. -/
+@[simp]
+theorem isEisensteinPrimary_smul_iff (σ : Gal(K/ℚ)) {α : 𝓞 K} :
+    IsEisensteinPrimary hζ.toInteger (σ • α) ↔ IsEisensteinPrimary hζ.toInteger α := by
+  have transport (τ : Gal(K/ℚ)) {x : 𝓞 K}
+      (hx : IsEisensteinPrimary hζ.toInteger x) :
+      IsEisensteinPrimary hζ.toInteger (τ • x) := by
+    let hη := hζ.map_of_injective τ.injective
+    have he : τ • hζ.toInteger = hη.toInteger := by
+      apply RingOfIntegers.coe_injective
+      exact (algebraMap_smul_eq_apply τ hζ.toInteger).trans
+        ((congrArg τ hζ.coe_toInteger).trans hη.coe_toInteger.symm)
+    have h : IsEisensteinPrimary (τ • hζ.toInteger) (τ • x) :=
+      hx.map (MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) τ)
+    rw [he] at h
+    exact (hζ.isEisensteinPrimary_toInteger_iff hη).mpr h
+  exact ⟨fun h ↦ by simpa using transport σ⁻¹ h, transport σ⟩
+
+end Galois
 
 variable [NumberField K] [IsCyclotomicExtension {p} ℚ K]
 
@@ -124,6 +189,16 @@ theorem exists_toInteger_sub_one_sq_dvd_sub_intCast_add_intCast_mul [NeZero p] (
   ring
 
 variable [hp : Fact p.Prime]
+
+omit [IsCyclotomicExtension {p} ℚ K] in
+/-- An algebraic integer primary with respect to a primitive `p`-th root has norm prime to `p`. -/
+theorem absNorm_span_singleton_coprime_of_isEisensteinPrimary {α : 𝓞 K}
+    (hα : IsEisensteinPrimary hζ.toInteger α) :
+    (Ideal.absNorm (Ideal.span {α})).Coprime p := by
+  apply Ideal.absNorm_coprime_of_isCoprime_span_natCast
+  rw [Ideal.isCoprime_span_singleton_iff]
+  exact hα.1.pow_right.of_isCoprime_of_dvd_right
+    (associated_zeta_sub_one_pow_prime p hζ).symm.dvd
 
 /-- For an odd prime `p`, an integer is divisible by `(ζ - 1) ^ 2` in `ℤ[ζ_p]` if and only if it
 is divisible by `p`. -/
@@ -273,5 +348,21 @@ theorem existsUnique_isEisensteinPrimary_toInteger_pow_mul (hp2 : p ≠ 2) {x : 
   refine ⟨-b / a, by field_simp; ring, fun c hc ↦ ?_⟩
   field_simp
   linear_combination hc
+
+/-- For a primary integer, the only primary multiple by `ζ ^ i`, with `i < p`,
+is the integer itself. -/
+theorem isEisensteinPrimary_toInteger_pow_mul_iff_eq_zero (hp2 : p ≠ 2)
+    {α : 𝓞 K} (hα : IsEisensteinPrimary hζ.toInteger α) {i : ℕ} (hi : i < p) :
+    IsEisensteinPrimary hζ.toInteger (hζ.toInteger ^ i * α) ↔ i = 0 := by
+  obtain ⟨c, _, hu⟩ := hζ.existsUnique_isEisensteinPrimary_toInteger_pow_mul hp2
+    (hζ.isCoprime_toInteger_sub_one_iff.mp hα.1)
+  constructor
+  · intro h
+    have hz : (0 : ZMod p) = c := hu 0 (by simpa using hα)
+    have hi' : (i : ZMod p) = c := hu i (by simpa [ZMod.val_natCast, Nat.mod_eq_of_lt hi] using h)
+    have : (i : ZMod p) = 0 := hi'.trans hz.symm
+    exact Nat.eq_zero_of_dvd_of_lt ((ZMod.natCast_eq_zero_iff i p).mp this) hi
+  · rintro rfl
+    simpa using hα
 
 end IsPrimitiveRoot

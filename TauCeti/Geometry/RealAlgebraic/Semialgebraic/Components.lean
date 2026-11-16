@@ -105,7 +105,7 @@ theorem IsLocallySemialgebraic.locallyFinite_connectedComponentIn
     (hs.semialgebraicAt x).exists_finite_image_connectedComponentIn (V := univ) univ_mem
   refine ⟨U, hUo.mem_nhds hxU, (hfin.preimage Subtype.val_injective.injOn).subset ?_⟩
   rintro C ⟨y, hyC, hyU⟩
-  obtain ⟨z, hz, hzC⟩ := C.property
+  obtain ⟨z, _, hzC⟩ := C.property
   have hy : y ∈ _root_.connectedComponentIn s z := hzC ▸ hyC
   exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩,
     (connectedComponentIn_eq hy).symm.trans hzC⟩

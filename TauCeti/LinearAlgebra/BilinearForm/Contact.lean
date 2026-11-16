@@ -429,6 +429,15 @@ theorem reebVector_smul_bilinForm {c : K} (hc : c ≠ 0) :
   unfold reebVector
   rw [hp]
 
+/-- The zero covector has no Reeb vector, since it takes no vector to `1`, so its Reeb vector is
+the junk value `0`. -/
+@[simp]
+theorem reebVector_zero : (0 : Module.Dual K V).reebVector B = 0 := by
+  classical
+  rw [reebVector, dite_eq_right_iff]
+  rintro ⟨r, hr, -⟩
+  simp at hr
+
 /-- Two vectors on which a contact covector takes the value `1`, both `B`-orthogonal to its
 kernel, are equal. -/
 private theorem IsContact.eq_of_apply_eq_one (h : a.IsContact B) {r r' : V} (hr : a r = 1)
@@ -531,7 +540,7 @@ theorem IsContact.reebVector_notMem_ker (h : a.IsContact B) :
 `V = ker a ⊕ K r`. -/
 theorem IsContact.isCompl_ker_span_reebVector (h : a.IsContact B) :
     IsCompl (LinearMap.ker a) (K ∙ a.reebVector B) := by
-  refine isCompl_ker_of_disjoint_of_ne_bot h.ne_zero ?_ (by simpa using h.reebVector_ne_zero)
+  refine isCompl_ker_of_disjoint_of_ne_bot ?_ (by simpa using h.reebVector_ne_zero)
   rw [Submodule.disjoint_def]
   rintro v hv hvr
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 hvr
@@ -552,15 +561,27 @@ theorem IsContact.reebVector_comp_linearEquiv_compl₁₂ {V' : Type*} [AddCommG
   · simp [h.apply_reebVector]
   · simpa using h.apply_reebVector_of_apply_eq_zero (by simpa using hw)
 
-/-- **Rescaling law for the Reeb vector**, pointwise. Let `a` be contact for `B`, let `c ≠ 0`,
-and let `B'` be a bilinear form with `B' v w = c B v w - l w a v` for `w ∈ ker a`. This is the
-situation of the contact form `f α`, where `c = f x`, `l = df_x` and `B' = d(f α)_x`. Then the Reeb
-vector of `c a` for `B'` is `c⁻¹ r + y`, where `r` is the Reeb vector of `a` for `B` and `y` is the
-unique vector of `ker a` with `B y w = l w / c ^ 2` for all `w ∈ ker a`. -/
-theorem IsContact.reebVector_smul_eq_inv_smul_add_iff (h : a.IsContact B) {c : K} (hc : c ≠ 0)
+/-- **Rescaling law for the Reeb vector**, pointwise. Let `a` be contact for `B`, let `c` be a
+scalar, and let `B'` be a bilinear form with `B' v w = c B v w - l w a v` for `w ∈ ker a`. This is
+the situation of the contact form `f α`, where `c = f x`, `l = df_x` and `B' = d(f α)_x`. Then the
+Reeb vector of `c a` for `B'` is `c⁻¹ r + y`, where `r` is the Reeb vector of `a` for `B` and `y` is
+the unique vector of `ker a` with `B y w = l w / c ^ 2` for all `w ∈ ker a`. For `c = 0` both sides
+say `y = 0`, by the junk values `0⁻¹ = 0`, `l w / 0 = 0` and the Reeb vector of the zero covector
+being `0`. -/
+theorem IsContact.reebVector_smul_eq_inv_smul_add_iff (h : a.IsContact B) {c : K}
     {l : Module.Dual K V} (hB' : ∀ v w, a w = 0 → B' v w = c * B v w - l w * a v) (y : V) :
     (c • a).reebVector B' = c⁻¹ • a.reebVector B + y ↔
       a y = 0 ∧ ∀ w, a w = 0 → B y w = l w / c ^ 2 := by
+  by_cases hc : c = 0
+  · subst hc
+    rw [zero_smul, reebVector_zero, inv_zero, zero_smul, zero_add, eq_comm]
+    simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, div_zero]
+    refine ⟨fun hy ↦ ?_, fun ⟨hy, hB0⟩ ↦ ?_⟩
+    · subst hy
+      simp
+    · have := h.nondegenerate_restrict.1 ⟨y, LinearMap.mem_ker.2 hy⟩ fun w ↦ by
+        simpa using hB0 w w.2
+      exact congrArg Subtype.val this
   have h' : (c • a).IsContact B' := by
     rw [isContact_smul_iff hc, isContact_congr (B' := c • B) fun v w hv hw ↦ by
       rw [hB' v w hw, hv, mul_zero, sub_zero, LinearMap.smul_apply, LinearMap.smul_apply,

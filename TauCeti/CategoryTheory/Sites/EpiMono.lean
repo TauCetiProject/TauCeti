@@ -60,14 +60,14 @@ section Mono
 variable {D : Type*} [Category D] {J : GrothendieckTopology D}
   {C : Type*} [Category C] {FC : C → C → Type*} {CC : C → Type*}
   [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
-  [HasWeakSheafify J C] [HasPullbacks C]
+  [HasPullbacks C]
   [PreservesLimitsOfShape WalkingCospan (forget C)] {F G : Sheaf J C}
 
 /-- A monomorphism of sheaves of a concrete category, whose forgetful functor preserves pullbacks,
 is injective on sections over every object. -/
 theorem injective_app_of_mono (f : F ⟶ G) [Mono f] (W : Dᵒᵖ) :
     Function.Injective (f.hom.app W) := by
-  have : Mono f.hom := inferInstance
+  have : Mono f.hom := (sheafToPresheaf J C).map_mono f
   have : Mono (f.hom.app W) := inferInstance
   exact ConcreteCategory.injective_of_mono_of_preservesPullback (f.hom.app W)
 

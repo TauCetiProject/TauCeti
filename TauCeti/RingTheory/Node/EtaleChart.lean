@@ -236,27 +236,17 @@ theorem _root_.Module.Basis.exists_etale_mul_eq_quadratic_of_point [Algebra.Smoo
   let ψ : W' →ₐ[W] K := IsLocalization.Away.liftAlgHom d (f := ψ₁) hψd.isUnit
   have hψ (w : W₁) : ψ (algebraMap W₁ W' w) = ψ₁ w :=
     IsLocalization.Away.lift_eq d (g := ψ₁.toRingHom) hψd.isUnit w
-  let s := algebraMap W₁ W' s₁
-  let t := algebraMap W₁ W' t₁
   refine ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, ψ,
-    s, t, ?_, ?_, ?_, ?_⟩
+    algebraMap W₁ W' s₁, algebraMap W₁ W' t₁, ?_, ?_, ?_, ?_⟩
   · rw [hψ]
     simp [s₁, hψ₁, hp, hq]
   · rw [hψ]
     simp [t₁, hψ₁, hp, hq]
-  · simp only [s, t, ← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
-  -- `ds, dt` is a basis of `Ω[W'⁄A]`: its determinant in the basis `dp, dq` is the unit `d`.
-  let bW' := kaehlerBasisOfFormallyEtale A W₁ W' bW₁
-  have hdet : bW'.det ![D A W' s, D A W' t] = algebraMap W₁ W' d := by
-    rw [← kaehlerBasisOfFormallyEtale_det_map]
-    congr 1
-    ext i
-    fin_cases i <;> simp [s, t]
-  obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
-    (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
+  · simp only [← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
   have : Algebra.Smooth A W₁ := .comp A W W₁
-  have : Algebra.Smooth A W' := .comp A W₁ W'
-  exact etale_aeval_of_basis ![s, t] (.mk hli hspan.ge) fun i ↦ by fin_cases i <;> simp
+  convert bW₁.etale_aeval_localization_away_det ![s₁, t₁] d rfl using 3
+  ext i
+  fin_cases i <;> rfl
 
 /-- **A split nondegenerate binary quadratic form in étale coordinates is étale locally a product
 of étale coordinates.** Let `W` be a smooth `A`-algebra and `p, q ∈ W` elements whose

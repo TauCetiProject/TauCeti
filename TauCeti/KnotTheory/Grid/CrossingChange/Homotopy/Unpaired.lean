@@ -161,9 +161,7 @@ theorem exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites
     {F : GridHexagonCompositeDecomposition a C.turnRow t x z}
     (hF : F ∈ G.crossingChangeUnpairedHexagonComposites C t x z) :
     ∃ D : GridPentagonPairDecomposition a C.turnRow a t x z,
-      (D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
-        D.second ∈ ((G.swapColumns a b).pentagons (C.withTurnRow t) D.middle z).disjSum
-          ((G.swapColumns a b).initialPentagons (C.withTurnRow t) D.middle z)) ∧
+      D ∈ G.pentagonPairDecompositions C (C.withTurnRow t) x z ∧
       (D.first.isLeft = D.second.isLeft ∧
           D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition ∨
         D.first.isLeft ≠ D.second.isLeft ∧
@@ -177,7 +175,6 @@ theorem exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites
     (X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX)
     (X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX)
     (mem_crossingChangeCommutationHexagons_iff_XSet_inter_eq hX)
-    (cutColumn_X_mem_toGridRectangle_coveredSquares_of_disjoint_crossingChangeAnnulusSquares hX)
     ((mem_crossingChangeHexagonCompositeDecompositions_iff_mem_disjSum F).mp hFc)
     (fun F' hF' => hnot F'
       ((mem_crossingChangeHexagonCompositeDecompositions_iff_mem_disjSum F').mpr hF'))

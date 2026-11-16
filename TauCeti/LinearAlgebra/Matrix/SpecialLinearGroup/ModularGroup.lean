@@ -105,3 +105,20 @@ theorem vecMul_map_modularGroup_T {R : Type u} [Ring R] (r : Fin 2 → R) :
   fin_cases i <;> simp [ModularGroup.coe_T, vecMul, dotProduct, Fin.sum_univ_two]
 
 end TauCeti.Matrix.SpecialLinearGroup
+
+namespace TauCeti.ModularGroup
+
+open _root_.ModularGroup
+
+/-- `S² = -I` in the integral modular group. -/
+@[simp]
+theorem S_sq : S ^ 2 = (-1 : SL(2, ℤ)) :=
+  Subtype.ext (by simpa [pow_two] using S_mul_S_eq)
+
+/-- `S⁴ = I` in the integral modular group. -/
+theorem S_pow_four : S ^ 4 = (1 : SL(2, ℤ)) := by
+  calc
+    S ^ 4 = (S ^ 2) ^ 2 := pow_mul S 2 2
+    _ = 1 := by rw [S_sq]; decide
+
+end TauCeti.ModularGroup

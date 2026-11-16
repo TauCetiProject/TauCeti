@@ -29,7 +29,7 @@ they form a π-system containing arbitrarily small neighbourhoods of every point
 
 The hypotheses on the state space are topological, not standard Borel: a second-countable
 topology whose open sets are measurable is all the argument uses. In particular a Polish space
-with its Borel σ-algebra qualifies, which is the form in which the roadmap states the result.
+with its Borel σ-algebra qualifies.
 
 ## Main results
 
@@ -41,7 +41,6 @@ produced first, is `deFinetti_empiricalMeasure` in `DeFinetti/EmpiricalMeasure.l
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 6, weak empirical-measure convergence.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005), §1.1.
 
 No material is adapted from `cameronfreer/exchangeability`, which does not treat empirical measures.

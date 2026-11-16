@@ -238,7 +238,7 @@ theorem isCompact_keplerBoundPhaseSpace_preimage_singleton [FiniteDimensional �
     IsCompact ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
       (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
       {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) := by
-  obtain ⟨hq, hE, hℓ⟩ := x.2
+  obtain ⟨_, hE, hℓ⟩ := x.2
   rw [Subtype.isCompact_iff]
   convert isCompact_setOf_centralForceHamiltonian_kepler_eq b hm hκ hE hℓ using 1
   ext y
@@ -257,9 +257,7 @@ private theorem poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace
         contMDiff_subtype_val (stdSymplecticForm (V := V)).constSmooth)
       (fun y ↦ (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘ Subtype.val) y i)
       (fun y ↦ (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘ Subtype.val) y j) x = 0 :=
-  poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b (W := keplerBoundPhaseSpace b m κ)
-    ((differentiableOn_const _).div differentiableOn_id fun _ hr ↦ ne_of_gt hr)
-    (fun _ hy ↦ hy.1) i j x
+  poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b i j x
 
 /-- **The Kepler flows are complete on the bound phase space.** For `m, κ > 0`, with the
 restriction of the standard symplectic form, the Hamiltonian vector fields of the energy and of the
@@ -272,19 +270,14 @@ theorem isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace
       fun y ↦ (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘ Subtype.val) y i) := by
   have hσ := (SymplecticForm.isNondegenerate_constSmooth
     (stdSymplecticForm (V := V))).mpullback_subtype_val (keplerBoundPhaseSpace b m κ)
-  have hF := contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b (m := m) (κ := κ)
-  have hFi (j : Fin 2) := contMDiff_pi_module_iff.1 hF j
-  have hv := hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) ((hFi i).of_le (by simp))
-  rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
-  intro x
-  refine maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt)
-    (isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ x) fun t ht ↦ funext fun j ↦ ?_
-  -- Both integrals are first integrals of each other, so the curves stay in the level of `x`.
-  have hfirst := SmoothTwoForm.isFirstIntegral_iff.2
-    (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b (m := m) (κ := κ) j i)
-  exact hfirst.apply_maximalIntegralCurve hσ ((hFi i).of_le (by simp))
-    ((hFi j).mdifferentiable (by simp)) ht
+  have hFi (j : Fin 2) := contMDiff_pi_module_iff.1
+    (contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b (m := m) (κ := κ)) j
+  -- Both integrals are first integrals of each other, so the curves stay in compact levels.
+  exact hσ.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
+    ((hFi i).of_le (by simp)) (isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ)
+    (fun j ↦ SmoothTwoForm.isFirstIntegral_iff.2
+      (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b (m := m) (κ := κ) j i))
+    fun j ↦ (hFi j).mdifferentiable (by simp)
 
 /-! ### Liouville tori -/
 
@@ -303,8 +296,7 @@ theorem nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace [FiniteDimensiona
   refine ((SymplecticForm.isSymplectic_constSmooth _).mpullback_subtype_val
     (keplerBoundPhaseSpace b m κ)).nonempty_homeomorph_unitAddTorus
     (contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b)
-    (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b)
-    (isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace b hm hκ) (fun y hy ↦ ?_)
+    (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b) (fun y hy ↦ ?_)
     ?_ ((isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ
       x).connectedComponentIn x)
   · -- A state of the level has the energy and angular momentum of `x`, so it is regular.

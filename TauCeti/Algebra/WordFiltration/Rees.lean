@@ -61,7 +61,7 @@ noncomputable def reesSymbol : Rees f →ₐ[R] AssociatedGraded f := by
     rw [← mk_one_eq_gradedOne]
     congr 1
     apply Subtype.ext
-    exact Polynomial.coeff_one_zero
+    exact AddMonoidAlgebra.coeff_one_zero
   have hm {i j} (a : coeffSubalgebra.grade (wordFiltration f) i)
       (b : coeffSubalgebra.grade (wordFiltration f) j) :
       c (i + j) (GradedMonoid.GMul.mul

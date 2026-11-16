@@ -38,6 +38,8 @@ inverse of the restriction isomorphism.
 public section
 
 open CategoryTheory
+open SheafOfModules (pushforwardExteriorPowerComparison
+  pushforwardExteriorPowerComparison_app_val_app_mk)
 
 namespace TauCeti.SheafOfModules
 

@@ -24,7 +24,7 @@ Together these two statements are what charts the symmetric power of a surface. 
 distinct points `z₁, …, z_k` of multiplicities `n₁, …, n_k` has a neighbourhood in `Sym^n(Σ)`
 homeomorphic to `Sym^{n₁}(U₁) × ⋯ × Sym^{n_k}(U_k)` for disjoint coordinate discs `U_j ∋ z_j`, and
 each factor is an open subspace of affine space by
-`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`. These local products give `Sym^g(Σ)` its
+`Sym.isOpenEmbedding_coeffEquiv_comp_map`. These local products give `Sym^g(Σ)` its
 complex structure, after Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1); the charted structure itself is
 in `TauCeti/Geometry/Manifold/SymmetricPower.lean`.

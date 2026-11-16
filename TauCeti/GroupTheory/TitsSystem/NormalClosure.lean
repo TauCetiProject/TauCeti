@@ -147,6 +147,7 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
     · exact h
     -- A perfect commutative group is trivial.
     have : IsMulCommutative P := Subgroup.center_eq_top_iff.mp h
+    have := Group.IsPerfect.subsingleton_of_isMulCommutative (G := P)
     intro x _
     rw [Subsingleton.elim x 1]
     exact one_mem _
@@ -154,7 +155,7 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
   have hZ : T.subgroupB.normalCore ≤ Subgroup.centralizer (P : Set G) :=
     Subgroup.le_centralizer_iff.mpr (Subgroup.normalClosure_le_normal
       (Subgroup.le_centralizer_iff.mp (TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot
-        (T.subgroupB.normalCore_le.trans hBU) hZU)))
+        (T.subgroupB.normalCore_le.trans hBU) Subgroup.le_normalizer_of_normal hZU)))
   exact Subgroup.mem_centralizer_iff.mp (hZ (Subgroup.mem_subgroupOf.mp hx)) y y.2
 
 /-- **Tits's simplicity criterion for the normal closure of `U`.** Under the hypotheses of

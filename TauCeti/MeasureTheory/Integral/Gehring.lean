@@ -225,7 +225,7 @@ and the reverse Hölder inequality holds from `B` to `B'`. If `b ε + ε ^ q ≤
 `B'` is controlled by the parts of `g` and `h ^ q` on `B'` above the height `ε t`. -/
 private theorem measure_mul_rpow_le_of_le_setLAverage {μ : Measure α} {q : ℝ} (hq : 1 < q)
     {b ε : ℝ≥0∞} (hε : b * ε + ε ^ q ≤ 2⁻¹) {g h : α → ℝ≥0∞} {B B' : Set α}
-    (hg : AEMeasurable g (μ.restrict B')) (hB' : μ B' ≠ ∞) {t : ℝ≥0∞} (ht : t ≠ ∞)
+    (hB' : μ B' ≠ ∞) {t : ℝ≥0∞} (ht : t ≠ ∞)
     (hlow : t ^ q ≤ ⨍⁻ x in B, g x ^ q ∂μ) (hup : ⨍⁻ x in B', g x ^ q ∂μ ≤ t ^ q)
     (hRH : ⨍⁻ x in B, g x ^ q ∂μ ≤ b * (⨍⁻ x in B', g x ∂μ) ^ q + ⨍⁻ x in B', h x ^ q ∂μ) :
     μ B' * t ^ q ≤ 2 * (b * t ^ (q - 1) * ∫⁻ x in B', {x | ε * t < g x}.indicator g x ∂μ +
@@ -234,7 +234,7 @@ private theorem measure_mul_rpow_le_of_le_setLAverage {μ : Measure α} {q : ℝ
   set A := ⨍⁻ x in B', g x ∂μ
   -- Jensen's inequality bounds the average of `g` by `t`, so `A ^ q ≤ t ^ (q - 1) A`.
   have hA : A ≤ t := by
-    have := (rpow_laverage_le_laverage_rpow hg hq.le).trans hup
+    have := (rpow_laverage_le_laverage_rpow hq.le).trans hup
     exact (ENNReal.rpow_le_rpow_iff hq0).1 this
   have hAq : A ^ q ≤ t ^ (q - 1) * A := by
     calc A ^ q = A ^ (q - 1) * A ^ (1 : ℝ) := by
@@ -289,7 +289,7 @@ private theorem exists_gehring_constants {q : ℝ} (hq : 1 < q) (b : ℝ≥0) (d
       ∃ δ₀ : ℝ, 0 < δ₀ ∧ ∀ δ, 0 < δ → δ ≤ δ₀ →
         2 * ENNReal.ofReal (4 ^ d) *
           (b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1)) ≤ 2⁻¹ := by
-  have hq0 : 0 < q := one_pos.trans hq
+  have _hq0 : 0 < q := one_pos.trans hq
   have hb : (0 : ℝ) ≤ b := b.2
   set e : ℝ := (4 * ((b : ℝ) + 1))⁻¹ with he
   have he0 : 0 < e := by positivity
@@ -306,7 +306,7 @@ private theorem exists_gehring_constants {q : ℝ} (hq : 1 < q) (b : ℝ≥0) (d
     simpa (disch := positivity) only [ENNReal.ofReal_add, ENNReal.ofReal_mul,
       ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_rpow_of_pos, ENNReal.ofReal_inv_of_pos,
       ENNReal.ofReal_ofNat] using h
-  set D : ℝ := 4 ^ d with hD
+  set D : ℝ := 4 ^ d with _hD
   have hD0 : 0 < D := by positivity
   have heq0 : 0 < e ^ q := Real.rpow_pos_of_pos he0 q
   refine ⟨min 1 ((q - 1) * e ^ q / (4 * D * (b + 1))),
@@ -408,7 +408,7 @@ private theorem setLIntegral_indicator_rpow_le {q : ℝ} (hq : 1 < q) {b ε : �
   have hq0 : 0 < q := one_pos.trans hq
   set ρm := (s - r) / 16 with hρm
   have hρm0 : 0 < ρm := by rw [hρm]; linarith
-  set G : E → ℝ≥0∞ := fun x => g x ^ q with hGdef
+  set G : E → ℝ≥0∞ := fun x => g x ^ q with _hGdef
   -- The radii at which the average of `g ^ q` over `B(x, ρ)` exceeds `t ^ q`.
   set S : E → Set ℝ := fun x => {ρ | 0 < ρ ∧ ρ ≤ ρm ∧ t ^ q < ⨍⁻ y in ball x ρ, G y ∂μ}
   have hsub : ∀ x ∈ ball x₀ r, ∀ ρ, ρ ≤ 8 * ρm → ball x ρ ⊆ ball x₀ s := by
@@ -470,7 +470,7 @@ private theorem setLIntegral_indicator_rpow_le {q : ℝ} (hq : 1 < q) {b ε : �
       gcongr
       exact hρbig a ha.1 ha.2 _ (by linarith [hS.1]) (by linarith [hS.2.1])
     have hstopb := measure_mul_rpow_le_of_le_setLAverage hq hε (B := ball a (ρ a))
-      (B' := ball a (2 * ρ a)) hg.aemeasurable measure_ball_lt_top.ne ht hS.2.2.le
+      (B' := ball a (2 * ρ a)) measure_ball_lt_top.ne ht hS.2.2.le
       (hρbig a ha.1 ha.2 _ le_rfl (by linarith [hS.2.1]))
       (hRH a (ρ a) hS.1 ((hsub a ha.1 _ (by linarith [hS.2.1])).trans hsubR))
     calc _ ≤ t ^ q * μ (ball a (4 * (2 * ρ a))) := hint
@@ -544,14 +544,14 @@ private theorem setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ�
     simp only [mem_ofPred_eq, ← div_eq_mul_inv]
     rw [ENNReal.lt_div_iff_mul_lt (Or.inl hε0) (Or.inl hεtop), mul_comm]
   -- The pointwise bound on the distribution function of `g` with respect to `ν`.
-  set A : ℝ → ℝ≥0∞ := fun t => ν {x | ENNReal.ofReal t < ENNReal.ofReal t₀}
+  set A : ℝ → ℝ≥0∞ := fun t => ν {_x | ENNReal.ofReal t < ENNReal.ofReal t₀}
   set N₁ : ℝ → ℝ≥0∞ := fun t => ν₁ {x | ENNReal.ofReal t < g x * ε⁻¹}
   set N₂ : ℝ → ℝ≥0∞ := fun t => ν₂ {x | ENNReal.ofReal t < h x * ε⁻¹}
   have hpt : ∀ t, 0 < t → ν {x | ENNReal.ofReal t < g x} ≤
       A t + K * (b * ENNReal.ofReal t ^ (q - 1) * N₁ t + N₂ t) := by
     intro t ht
     rcases lt_or_ge t t₀ with htt | htt
-    · have : {x : E | ENNReal.ofReal t < ENNReal.ofReal t₀} = univ :=
+    · have : {_x : E | ENNReal.ofReal t < ENNReal.ofReal t₀} = univ :=
         eq_univ_of_forall fun _ => (ENNReal.ofReal_lt_ofReal_iff (ht.trans htt)).2 htt
       calc ν {x | ENNReal.ofReal t < g x} ≤ A t := by
             simp only [A, this]
@@ -708,7 +708,7 @@ private theorem setLAverage_rpow_add_le_of_setLIntegral_le {q δ : ℝ} (hq : 0 
   set d := finrank ℝ E
   set β : ℝ := d * δ / q
   set C := C₀ * 2 ^ d * (32 ^ β + K) with hCdef
-  have hC : 0 ≤ C := by positivity
+  have _hC : 0 ≤ C := by positivity
   -- The measures of the two balls, as real numbers.
   set m := μ (ball x₀ (R / 2))
   have hm0 : m ≠ 0 := (measure_ball_pos μ x₀ (by positivity)).ne'
@@ -729,7 +729,7 @@ private theorem setLAverage_rpow_add_le_of_setLIntegral_le {q δ : ℝ} (hq : 0 
     rw [← measure_mul_setLAverage _ hB₀, hav, hB₀eq, ← ENNReal.ofReal_mul (by positivity),
       ENNReal.toReal_ofReal (by positivity)]
   set Ihr := (∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ).toReal
-  have hIhr : 0 ≤ Ihr := ENNReal.toReal_nonneg
+  have _hIhr : 0 ≤ Ihr := ENNReal.toReal_nonneg
   have havh : ⨍⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ = ENNReal.ofReal (Ihr / (2 ^ d * mr)) := by
     rw [setLAverage_eq, hB₀eq, ENNReal.ofReal_div_of_pos (by positivity), ENNReal.ofReal_toReal hIh]
   have h32 : (16 * R) ^ β * (R / 2) ^ (-β) = 32 ^ β := by
@@ -742,7 +742,7 @@ private theorem setLAverage_rpow_add_le_of_setLIntegral_le {q δ : ℝ} (hq : 0 
     rw [show (q + δ) / q = δ / q + 1 by field_simp; ring, Real.rpow_add' ha (by positivity),
       Real.rpow_one]
   set P := a ^ ((q + δ) / q)
-  have hP0 : 0 ≤ P := by positivity
+  have _hP0 : 0 ≤ P := by positivity
   -- Reduce to an inequality between real numbers.
   rw [setLAverage_eq, hav, havh, ENNReal.div_le_iff hm0 hmtop, ← ENNReal.ofReal_toReal hmtop]
   simp (disch := positivity) only [ENNReal.ofReal_rpow_of_nonneg, ← ENNReal.ofReal_add,

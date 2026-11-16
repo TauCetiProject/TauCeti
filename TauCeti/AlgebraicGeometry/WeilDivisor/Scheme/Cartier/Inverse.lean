@@ -130,15 +130,15 @@ theorem orderAt_eq_of_restrict_eq_rationalUnitClass (D : CartierDivisor X)
 
 /-- A Cartier divisor has order zero at every codimension-one point where it vanishes locally. -/
 theorem orderAt_eq_zero_of_restrict_eq_zero (D : CartierDivisor X)
-    (x : CodimensionOnePoint X) (U : X.Opens) [Nonempty U] (hx : (x : X) ∈ U)
+    (x : CodimensionOnePoint X) (U : X.Opens) (hx : (x : X) ∈ U)
     (hD : D |_ U = 0) : D.orderAt x = 0 := by
+  let _ : Nonempty U := ⟨⟨x, hx⟩⟩
   simpa only [map_zero] using
     orderAt_eq_of_restrict_eq_rationalUnitClass D x U hx 0 (by simpa using hD)
 
 /-- The zero Cartier divisor has order zero at every codimension-one point. -/
 @[simp]
 theorem orderAt_zero (x : CodimensionOnePoint X) : (0 : CartierDivisor X).orderAt x = 0 := by
-  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, by simp⟩⟩
   apply orderAt_eq_zero_of_restrict_eq_zero 0 x ⊤ (by simp)
   simp
 

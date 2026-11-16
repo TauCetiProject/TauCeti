@@ -120,8 +120,7 @@ theorem exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero [FiniteDimensional �
   choose γ hγ hγ₀ hγ₁ using fun y : M ↦ exists_contMDiff_curve (I := I) (n := ⊤) x₀ y
   set f : M → F := fun y ↦ pathIntegral φ (γ y) 0 1 with hf_def
   -- Near each point `x`, `f` differs by a constant from a local primitive `g` of `φ`.
-  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
-    (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
+  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const (f := f) fun x ↦ ?_
   obtain ⟨g, hg, hdg, hδ⟩ := exists_local_primitive_pathIntegral_eq_add_sub hr hφ
     (Eventually.of_forall fun y ↦ congrFun hclosed y) (hγ x) (hγ₀ x) (hγ₁ x)
   refine ⟨g, f x - g x, hg, ?_, hdg⟩

@@ -111,6 +111,12 @@ theorem demushkinWordNeTwo_def (q n : ℕ) (x : ℕ → H) :
       x 0 ^ q * ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i)) (x (2 * i + 1))).prod :=
   (rfl)
 
+/-- At rank zero the `q ≠ 2` word is `x₁ ^ q`: the commutator product is empty. -/
+@[simp]
+theorem demushkinWordNeTwo_zero (q : ℕ) (x : ℕ → H) :
+    demushkinWordNeTwo q 0 x = x 0 ^ q := by
+  simp [demushkinWordNeTwo_def]
+
 /-- At `q = 0` and rank two the word is the single commutator `(x₁, x₂)`, the surface relation of
 `ℤ_p × ℤ_p`. -/
 @[simp]
@@ -182,6 +188,11 @@ theorem demushkinWordTwoOdd_eq_demushkinWordTwoOddTop (f n : ℕ) {x : ℕ → H
 /-- At rank one the odd word at level `f = ∞` is `x₁²`: the commutator product is empty. -/
 @[simp]
 theorem demushkinWordTwoOddTop_one (x : ℕ → H) : demushkinWordTwoOddTop 1 x = x 0 ^ 2 := by
+  simp [demushkinWordTwoOddTop_def]
+
+/-- At rank zero the odd word at level `f = ∞` is `x₁²`: the commutator product is empty. -/
+@[simp]
+theorem demushkinWordTwoOddTop_zero (x : ℕ → H) : demushkinWordTwoOddTop 0 x = x 0 ^ 2 := by
   simp [demushkinWordTwoOddTop_def]
 
 /-- The odd word `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on `2m + 1` letters is `x₁²` times

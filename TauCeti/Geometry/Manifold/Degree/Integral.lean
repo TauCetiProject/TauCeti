@@ -146,10 +146,10 @@ private theorem integrableTopForm_and_integralTopForm_sheet [T2Space M]
   -- Change variables according to the orientation sign on the sheet.
   rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o') hx with h | h
   · rw [h, Int.cast_one, one_mul]
-    exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe hmd
+    exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe
       (fun z hz ↦ orientationSign_eq_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
   · rw [h, Int.cast_neg, Int.cast_one, neg_one_mul]
-    exact e.integralTopForm_of_eq_mpullback_of_isOrientationReversingAt hfe hmd
+    exact e.integralTopForm_of_eq_mpullback_of_isOrientationReversingAt hfe
       (fun z hz ↦ orientationSign_eq_neg_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
 
 /-- **The integral formula for the degree near a regular value.** Let `f : M → N` be a `C¹` map
@@ -168,9 +168,9 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [C
   classical
   -- Split `f^*φ` into its parts on the sheets of the stack of records over `y`, change variables
   -- on each sheet according to the orientation sign there, and sum.
-  set s := (hy.finite_preimage rfl hf one_ne_zero).toFinset
+  set s := (hy.finite_preimage rfl hf.continuous).toFinset
   have hs (x : M) : x ∈ s ↔ f x = y := by simp [s]
-  obtain ⟨e, hxe, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
+  obtain ⟨e, -, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
     exists_stack_of_records o o' hf hy s hs
   refine ⟨V, hV, fun φ hφ hφV ↦ ?_⟩
   set K := _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ

@@ -219,9 +219,12 @@ Algebraic closure is not needed here: by Schur's lemma the intertwiners between 
 irreducibles already form a subsingleton over any field. -/
 @[simp]
 theorem characterPairing_ofCharacter_eq_zero {V W : Type*} [AddCommGroup V] [Module k V]
-    [AddCommGroup W] [Module k W] [Invertible (Nat.card G : k)] (ρ : Representation k G V)
+    [AddCommGroup W] [Module k W] (ρ : Representation k G V)
     (σ : Representation k G W) [ρ.IsIrreducible] [σ.IsIrreducible]
     (h : IsEmpty (σ.Equiv ρ)) : characterPairing (ofCharacter ρ) (ofCharacter σ) = 0 := by
+  by_cases hG : (Nat.card G : k) = 0
+  · rw [characterPairing_ofCharacter, hG, inv_zero, zero_mul]
+  have := invertibleOfNonzero hG
   have := ρ.asModuleEquiv.finiteDimensional
   have := σ.asModuleEquiv.finiteDimensional
   rw [characterPairing_ofCharacter_eq_finrank ρ σ, Module.finrank_zero_of_subsingleton,
@@ -256,9 +259,12 @@ theorem characterPairing_ofFDRep_self [Invertible (Nat.card G : k)] [IsAlgClosed
 Algebraic closure is not needed here: by Schur's lemma the morphism space between
 non-isomorphic simple objects is already zero-dimensional over any field. -/
 @[simp]
-theorem characterPairing_ofFDRep_eq_zero [Invertible (Nat.card G : k)]
+theorem characterPairing_ofFDRep_eq_zero
     (V W : FDRep k G) [CategoryTheory.Simple V] [CategoryTheory.Simple W] (h : IsEmpty (V ≅ W)) :
     characterPairing (ofFDRep V) (ofFDRep W) = 0 := by
+  by_cases hG : (Nat.card G : k) = 0
+  · rw [characterPairing_ofFDRep, hG, inv_zero, zero_mul]
+  have := invertibleOfNonzero hG
   rw [characterPairing_ofFDRep_eq_finrank V W,
     CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k fun i => h.elim i.symm,
     Nat.cast_zero]

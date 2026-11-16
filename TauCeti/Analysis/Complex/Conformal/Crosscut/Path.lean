@@ -10,6 +10,7 @@ public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Complex.Conformal.Crosscut.EndpointLimit
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Endpoints
 import TauCeti.Analysis.Complex.Conformal.ClusterSet
+import TauCeti.Order.Interval.Set.Injective
 import TauCeti.Topology.Path.Extend.Ioo
 
 /-!
@@ -36,12 +37,12 @@ Write
 The open interval `Ioo a b` parametrises `ball c r ∩ sphere ζ ρ`. At every point of its frontier,
 the endpoint-limit theorem gives a limit of `f` along the crosscut. Composing with `circleMap`
 turns those into limits of the angular composite `g = f ∘ circleMap ζ ρ` at `a` and at `b`, which
-is exactly the data `TauCeti.Path.ofContinuousOnIoo` of `TauCeti/Topology/Path/Extend/Ioo.lean`
+is exactly the data `Path.ofContinuousOnIoo` of `TauCeti/Topology/Path/Extend/Ioo.lean`
 consumes: a function continuous on an open interval with a limit at each end traces a path between
 those two limits, whose range is the closure of the curve
-(`TauCeti.Path.range_ofContinuousOnIoo`) and which follows `g` along
+(`Path.range_ofContinuousOnIoo`) and which follows `g` along
 `AffineMap.lineMap a b : [0, 1] → [a, b]` in the interior
-(`TauCeti.Path.ofContinuousOnIoo_apply_of_mem_Ioo`). All the holomorphy is spent before that
+(`Path.ofContinuousOnIoo_apply_of_mem_Ioo`). All the holomorphy is spent before that
 point, in producing the two endpoint limits.
 
 This construction does not need injectivity. When `f` is injective on the disc, a companion
@@ -50,7 +51,8 @@ be identified. Interior injectivity uses only the injectivity of `f`, Mathlib's
 `Complex.injOn_circleMap_of_abs_sub_le`, the fact that `b - a < 2π`, and the injectivity of
 `AffineMap.lineMap a b`; the last step, that a curve injective on the interior and avoiding both
 endpoint values there can repeat only between its endpoints, is
-`TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` of the same file.
+`TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` of
+`TauCeti/Order/Interval/Set/Injective.lean`.
 
 ## Main result
 
@@ -74,21 +76,19 @@ open scoped Real
 
 variable {f : ℂ → ℂ} {c ζ : ℂ} {r ρ : ℝ}
 
-/-- **At any angle landing on the closed crosscut, the limit is reached along both approaches.**
+/-- **At any angle, the limit is reached along both approaches.**
 The limit of `f` along the crosscut at `circleMap ζ ρ θ` is also the limit of the angular
 composite `θ ↦ f (circleMap ζ ρ θ)` along `Ioo a b`.
 
-The angle `θ` is constrained only through `he`: it may be any angle whose point lies on the closed
-crosscut, not merely one of the two endpoints. The frontier case is all that is used. -/
-private theorem exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap
-    (hζ : dist ζ c = r) (hρ : 0 < ρ) (hρr : ρ < 2 * r)
+The angle `θ` is unconstrained, not merely one of the two endpoints; only the two endpoints are
+used below. -/
+private theorem exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (hζ : dist ζ c = r)
     (hf : DifferentiableOn ℂ f (ball c r))
     (hfin : circleImageLength f (ball c r) ζ ρ ≠ ⊤) {a b θ : ℝ}
-    (hcrosscut : ball c r ∩ sphere ζ ρ = circleMap ζ ρ '' Ioo a b)
-    (he : circleMap ζ ρ θ ∈ closedBall c r ∩ sphere ζ ρ) :
+    (hcrosscut : ball c r ∩ sphere ζ ρ = circleMap ζ ρ '' Ioo a b) :
     ∃ v, Tendsto f (𝓝[ball c r ∩ sphere ζ ρ] (circleMap ζ ρ θ)) (𝓝 v) ∧
       Tendsto (fun θ => f (circleMap ζ ρ θ)) (𝓝[Ioo a b] θ) (𝓝 v) := by
-  obtain ⟨v, hv⟩ := exists_tendsto_nhdsWithin_ball_inter_sphere hζ hρ hρr hf hfin he
+  obtain ⟨v, hv⟩ := exists_tendsto_nhdsWithin_ball_inter_sphere hζ hf hfin
   have hcircle : Tendsto (circleMap ζ ρ) (𝓝[Ioo a b] θ)
       (𝓝[circleMap ζ ρ '' Ioo a b] (circleMap ζ ρ θ)) :=
     (continuous_circleMap ζ ρ).continuousAt.continuousWithinAt.tendsto_nhdsWithin_image
@@ -133,21 +133,17 @@ theorem exists_path_range_eq_closure_image_ball_inter_sphere (hζ : dist ζ c = 
   have hab : a < b := by simp only [a, b]; linarith
   have hcrosscut : ball c r ∩ sphere ζ ρ = circleMap ζ ρ '' Ioo a b := by
     simpa only [a, b, φ] using ball_inter_sphere_eq_circleMap_image_Ioo hζ hρ hρr
-  have hclosedCrosscut : closedBall c r ∩ sphere ζ ρ = circleMap ζ ρ '' Icc a b := by
-    simpa only [a, b, φ] using closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr
   have hmaps : MapsTo (circleMap ζ ρ) (Ioo a b) (ball c r) := fun θ hθ =>
     (hcrosscut.ge ⟨θ, hθ, rfl⟩).1
   have hgcont : ContinuousOn g (Ioo a b) := fun θ hθ => by
     simpa only [Function.comp_def] using (hf.continuousOn _ (hmaps hθ)).comp
       (continuous_circleMap ζ ρ).continuousAt.continuousWithinAt hmaps
   -- The endpoint-limit theorem at the two ends of the arc, read both along the crosscut and along
-  -- the angle: the latter is what `TauCeti.Path.ofContinuousOnIoo` consumes.
+  -- the angle: the latter is what `Path.ofContinuousOnIoo` consumes.
   obtain ⟨u, hu, huangle⟩ :=
-    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap hζ hρ hρr hf hfin hcrosscut
-      (hclosedCrosscut.ge ⟨a, left_mem_Icc.mpr hab.le, rfl⟩)
+    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (θ := a) hζ hf hfin hcrosscut
   obtain ⟨v, hv, hvangle⟩ :=
-    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap hζ hρ hρr hf hfin hcrosscut
-      (hclosedCrosscut.ge ⟨b, right_mem_Icc.mpr hab.le, rfl⟩)
+    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (θ := b) hζ hf hfin hcrosscut
   rw [nhdsWithin_Ioo_eq_nhdsGT hab] at huangle
   rw [nhdsWithin_Ioo_eq_nhdsLT hab] at hvangle
   refine ⟨u, v, Path.ofContinuousOnIoo hab hgcont huangle hvangle, ?_, ?_, ?_, ?_⟩
@@ -290,8 +286,10 @@ theorem exists_path_range_eq_closure_image_ball_inter_sphere_of_injOn
     simpa only [Path.target] using hvfrontier
   have himageOpen : IsOpen (f '' ball c r) :=
     isOpen_image_of_differentiableOn_of_injOn isOpen_ball hf hinj
-  have hγsimple := eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo
-    (himageOpen.frontier_eq ▸ hγzero).2 (himageOpen.frontier_eq ▸ hγone).2 hγmem hγinj
+  have hγsimple : ∀ ⦃x y : unitInterval⦄, γ x = γ y → x = y ∨ (x = 0 ∧ y = 1) ∨ (x = 1 ∧ y = 0) :=
+    fun _ _ => eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo
+      (himageOpen.frontier_eq ▸ hγzero).2 (himageOpen.frontier_eq ▸ hγone).2 hγmem hγinj
+      ⟨unitInterval.nonneg', unitInterval.le_one'⟩ ⟨unitInterval.nonneg', unitInterval.le_one'⟩
   exact ⟨u, v, γ, hγrange, hu, hv, hufrontier, hvfrontier, hγsimple, hγformula⟩
 
 end TauCeti

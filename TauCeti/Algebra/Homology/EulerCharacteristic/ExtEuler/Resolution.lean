@@ -173,6 +173,7 @@ theorem extEuler_eq_homEuler
       rw [homEuler_step, ← ih]
       omega
 
+omit [HasExt.{w} C] in
 /-- The alternating Hom dimension is the same along any two finite resolutions of `X` taken along
 object properties whose objects are projective and have finite-dimensional Hom spaces into `Y`. -/
 theorem homEuler_eq_homEuler {P' : ObjectProperty C}
@@ -183,6 +184,7 @@ theorem homEuler_eq_homEuler {P' : ObjectProperty C}
     (hproj' : P' ≤ (ExactStructure.abelian C).isProjective)
     (hHom' : ∀ Z, P' Z → FiniteDimensional k (Z ⟶ Y)) :
     r.homEuler k Y = s.homEuler k Y := by
+  have : HasExt.{max u v} C := HasExt.standard C
   rw [← r.extEuler_eq_homEuler hproj hHom, ← s.extEuler_eq_homEuler hproj' hHom']
 
 end ExactStructure.FiniteResolution

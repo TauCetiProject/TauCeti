@@ -184,7 +184,7 @@ theorem IsLocallySpectralMap.isSpectralMap_restrict {f : X → Y} (hf : IsLocall
 
 /-- The identity map is locally spectral. -/
 theorem isLocallySpectralMap_id : IsLocallySpectralMap (id : X → X) := by
-  refine ⟨continuous_id, fun U V hUV hUo hVo hUs hVs ↦ ?_⟩
+  refine ⟨continuous_id, fun U V hUV hUo _ hUs hVs ↦ ?_⟩
   let _ : SpectralSpace U := hUs
   let _ : SpectralSpace V := hVs
   have hemb : IsOpenEmbedding (Set.inclusion hUV) :=

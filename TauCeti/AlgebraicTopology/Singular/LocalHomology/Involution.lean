@@ -173,7 +173,7 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
       TopPair.singularHomologyMap (interPairToComplPair hapU ≫ ofSubsetMap a haP) R n) := by
     refine singularHomology_inter_hom_ext R hcov (fun _ h ↦ h.1) (fun _ h ↦ h.2) n ?_ ?_
     · rw [Preadditive.add_comp, Linear.smul_comp, Category.assoc, Category.assoc,
-        ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
+        ← singularHomologyMap_comp, ← singularHomologyMap_comp,
         interPairToComplPair_comp_ofSubsetMap_id, ht, Category.assoc,
         singularHomologyMap_interPairToComplPair_comp_ofSubsetMap_comp_eq_zero R ha hapU haP,
         comp_zero, smul_zero, add_zero]
@@ -181,8 +181,8 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
           = (s ≫ TopPair.singularHomologyMap (ofSubsetMap a haP) R n) ≫
               TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1)) R n ≫
                 TopPair.singularHomologyMap (complSingletonMap ha) R n := by
-            rw [Category.assoc, ← TopPair.singularHomologyMap_comp,
-              ← TopPair.singularHomologyMap_comp, haρ]
+            rw [Category.assoc, ← singularHomologyMap_comp,
+              ← singularHomologyMap_comp, haρ]
         _ = ε • (t ≫ TopPair.singularHomologyMap (excisionMap U {p}ᶜ) R n ≫
               TopPair.singularHomologyMap (complSingletonMap ha) R n) := by
             rw [hs, Linear.smul_comp, reassoc_of% ht]
@@ -191,13 +191,13 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
                 (interPairToComplPair hapU ≫ ofSubsetMap a haP) R n)) ≫
               TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.2)) R n := by
             conv_rhs => rw [Preadditive.add_comp, Linear.smul_comp, Category.assoc,
-              Category.assoc, ← TopPair.singularHomologyMap_comp,
-              ← TopPair.singularHomologyMap_comp,
+              Category.assoc, ← singularHomologyMap_comp,
+              ← singularHomologyMap_comp,
               singularHomologyMap_interPairToComplPair_comp_eq_zero R hapU, comp_zero, zero_add,
               Category.assoc, hρa, ← Category.assoc, interPairToComplPair_comp_ofSubsetMap_id,
-              TopPair.singularHomologyMap_comp]
+              singularHomologyMap_comp]
   rw [hdec, Preadditive.add_comp, Linear.smul_comp, Category.assoc, Category.assoc,
-    ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
+    ← singularHomologyMap_comp, ← singularHomologyMap_comp,
     interPairToComplPair_comp_ofSubsetMap hapU f hfP hfU, Category.assoc,
     interPairToComplPair_comp_ofSubsetMap_comp_ofSubsetMap hapU f hf haP hfP hfU, add_smul,
     one_smul]

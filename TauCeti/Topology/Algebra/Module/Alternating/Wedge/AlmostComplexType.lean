@@ -115,7 +115,7 @@ end ContinuousAlternatingMap
 
 namespace ContinuousLinearMap
 
-variable [ContinuousConstSMul ℝ F₁] [ContinuousConstSMul ℝ F₂] {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
+variable {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
   {hμ : Continuous (uncurry fun x y ↦ μ x y)} {J : V →L[ℝ] V}
 
 /-- For `J² = -1` and a complex-bilinear pairing, the type-`(P,Q)` component of a paired wedge

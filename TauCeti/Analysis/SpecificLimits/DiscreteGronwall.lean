@@ -125,12 +125,22 @@ theorem sq_le_mul_one_add_div_pow_of_sq_le_mul_sub {D d e : ℕ → ℝ} {τ τ'
   linarith [hQ n]
 
 /-- **Exponential decay from a fixed-step contraction.** Let `E` be nonincreasing on `[s₀, ∞)`,
-with `E s₀ ≥ 0`, and suppose that `E (s + T) ≤ q E s` for every `s ≥ s₀`, where `T > 0` and
-`0 < q ≤ 1`. Then `E s ≤ (E s₀ / q) exp ((log q / T) (s - s₀))` for every `s ≥ s₀`. -/
-theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hT : 0 < T) (hq : 0 < q)
+with `E s₀ ≥ 0`, and suppose that `E (s + T) ≤ q E s` for every `s ≥ s₀`, where `0 < q ≤ 1`. Then
+`E s ≤ (E s₀ / q) exp ((log q / T) (s - s₀))` for every `s ≥ s₀`. -/
+theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hq : 0 < q)
     (hq1 : q ≤ 1) (hE : AntitoneOn E (Set.Ici s₀)) (h0 : 0 ≤ E s₀)
     (hstep : ∀ s, s₀ ≤ s → E (s + T) ≤ q * E s) {s : ℝ} (hs : s₀ ≤ s) :
     E s ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) := by
+  rcases le_or_gt T 0 with hT | hT
+  · -- For `T ≤ 0` the exponent is nonnegative and monotonicity alone suffices.
+    have h1 : 1 ≤ Real.exp (Real.log q / T * (s - s₀)) :=
+      Real.one_le_exp (mul_nonneg (div_nonneg_of_nonpos (Real.log_nonpos hq.le hq1) hT)
+        (sub_nonneg.2 hs))
+    calc E s ≤ E s₀ := hE (Set.mem_Ici.2 le_rfl) (Set.mem_Ici.2 hs) hs
+      _ ≤ E s₀ / q := le_div_self h0 hq hq1
+      _ = E s₀ / q * 1 := (mul_one _).symm
+      _ ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
+        mul_le_mul_of_nonneg_left h1 (div_nonneg h0 hq.le)
   have hk (k : ℕ) : E (s₀ + k * T) ≤ q ^ k * E s₀ := by
     induction k with
     | zero => simp

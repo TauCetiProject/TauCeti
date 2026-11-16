@@ -17,6 +17,8 @@ generalized loops `Ω^ N X x ≃ₜ Ω^ N Y y`.
 
 ## Main declarations
 
+* `GenLoop.genLoopEquivOfUnique_apply`, `GenLoop.genLoopEquivOfUnique_symm_apply`: evaluation of
+  Mathlib's bijection `genLoopEquivOfUnique` and its inverse.
 * `GenLoop.homeomorphOfUnique`: `Ω^ N X x ≃ₜ Ω X x` for `N` a singleton.
 * `Homeomorph.genLoopHomeomorph`: `Ω^ N X x ≃ₜ Ω^ N Y y` from `e : X ≃ₜ Y` with `e x = y`.
 -/
@@ -28,6 +30,19 @@ open scoped unitInterval Topology Topology.Homotopy
 namespace GenLoop
 
 variable {N X : Type*} [TopologicalSpace X] {x : X}
+
+/-- Mathlib's `genLoopEquivOfUnique` reads a one-dimensional generalized loop along the diagonal. -/
+@[simp]
+theorem genLoopEquivOfUnique_apply (N : Type*) [Unique N] (p : Ω^ N X x) (t : I) :
+    genLoopEquivOfUnique N p t = p fun _ => t :=
+  (rfl)
+
+/-- The inverse of Mathlib's `genLoopEquivOfUnique` evaluates a loop at the only coordinate of a
+cube. -/
+@[simp]
+theorem genLoopEquivOfUnique_symm_apply (N : Type*) [Unique N] (γ : Ω X x) (t : I^N) :
+    (genLoopEquivOfUnique N).symm γ t = γ (t default) :=
+  (rfl)
 
 /-- Mathlib's bijection `genLoopEquivOfUnique` between the one-dimensional generalized loops at
 `x` and the loop space `Ω X x`, upgraded to a homeomorphism for the compact-open topologies. -/

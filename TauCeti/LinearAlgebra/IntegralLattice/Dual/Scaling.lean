@@ -36,8 +36,6 @@ with this equivalence.
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 2, compatibility of dual lattices with
-  scaling.
 -/
 
 public section

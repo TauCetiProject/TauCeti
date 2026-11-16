@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -40,6 +40,10 @@ rewrites the right-hand side as a difference of actions of the two loops, in fiv
   to `[0, 1] × ℝ`
   (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`). When `v`
   is a cap of `γ_b`, `w # v` is a cap of `γ_a`, and the energy is the drop of the capped action.
+  For an `s`-dependent family `G_z` (see continuation cylinders below) the two actions are taken
+  for the Hamiltonians `G(a, ·)` and `G(b, ·)` at the two ends and the integrated curvature is
+  subtracted
+  (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral`).
 * For an arbitrary form, such as the symplectic form of a closed symplectic manifold, the actions
   depend on caps. For a disc `D` bounding `γ_a`, the map `u` glued to `D` is a disc `D ⋆ u` bounding
   `γ_b`, and the energy is `A_H(γ_b, D ⋆ u) - A_H(γ_a, D)` for the capped action
@@ -113,12 +117,17 @@ compactness and counting of continuation cylinders are not treated here.
 
 ## Main results
 
+* `TauCeti.Floer.neg_setIntegral_fderiv_linearHomotopy_le`: the integrated curvature of a linear
+  homotopy with a monotone profile along a map is bounded below by `-(β(b) - β(a)) ∫₀¹ B` for
+  `H₀ - H₁ ≤ B`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_zero_left`: the energy of a
   map over `[a, b] × [0, 1]` for a perturbation `K = G_z dt`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`: the energy of a
   map over `[a, b] × [0, 1]` for a cylindrical perturbation.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`: the energy
   of a cylinder is the drop of the capped action, for any nondegenerate form.
+* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral`:
+  the same for a perturbation `K = G_z dt`, corrected by the curvature.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction`: the capped action
   decreases along Floer cylinders.
 * `IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_sub_sub_integral`,
@@ -188,6 +197,36 @@ theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M →
     (hβ.comp contDiff_fst).contMDiff.comp contMDiff_fst
   exact ((contMDiff_uncurry_comp_snd hH₀).add (hs.smul ((contMDiff_uncurry_comp_snd hH₁).sub
     (contMDiff_uncurry_comp_snd hH₀)))).congr fun p ↦ linearHomotopy_def β p.1 p.2
+
+/-- **The integrated curvature of a linear homotopy along a map.** Let `H₀` and `H₁` be `C¹`
+time-dependent Hamiltonians on a manifold, `β` a monotone `C¹` profile and `u` a continuous map.
+If `H₀ - H₁ ≤ B` along `u` on `[a, b] × [0, 1]` for a function `B` integrable on `[0, 1]`, then
+minus the integral of the `s`-derivative `∂_s H(u) = β'(s) (H₁ - H₀)(t, u)` of the linear homotopy
+`H = H₀ + β(s) (H₁ - H₀)` over the rectangle is at most `(β(b) - β(a)) ∫₀¹ B`. -/
+theorem neg_setIntegral_fderiv_linearHomotopy_le {H₀ H₁ : ℝ → M → ℝ}
+    (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₀))
+    (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₁)) {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β)
+    (hβm : Monotone β) {u : ℝ × ℝ → M} (hu : Continuous u) {a b : ℝ} (hab : a ≤ b)
+    {B : ℝ → ℝ} (hB : IntegrableOn B (Icc 0 1))
+    (hHB : ∀ z ∈ Icc a b ×ˢ Icc 0 1, H₀ z.2 (u z) - H₁ z.2 (u z) ≤ B z.2) :
+    -∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w (u z)) z
+        stdComplexLineReal ≤
+      (β b - β a) * ∫ t in Icc 0 1, B t := by
+  have hd {K : ℝ → M → ℝ} (hK : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry K)) (t : ℝ) (x : M) :
+      DifferentiableAt ℝ (fun t ↦ K t x) t :=
+    (contMDiff_iff_contDiff.mp (hK.comp (contMDiff_id.prodMk contMDiff_const))).differentiable
+      one_ne_zero t
+  have hcurv (z : ℝ × ℝ) :
+      fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w (u z)) z stdComplexLineReal =
+        deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)) :=
+    fderiv_linearHomotopy_stdComplexLineReal (hd hH₀ _ _) (hd hH₁ _ _)
+  simp only [hcurv]
+  have hp : Continuous fun z : ℝ × ℝ ↦ (z.2, u z) := continuous_snd.prodMk hu
+  have hle := neg_mul_setIntegral_le_setIntegral_deriv_mul
+    (f := fun z ↦ H₁ z.2 (u z) - H₀ z.2 (u z)) hβ hβm hab
+    ((hH₁.continuous.comp hp).sub (hH₀.continuous.comp hp)).continuousOn hB
+    fun z hz ↦ by linarith [hHB z hz]
+  linarith
 
 end TauCeti.Floer
 
@@ -270,6 +309,35 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   rw [hω.integral_floerEnergyDensity_zero_left (Floer.contMDiff_uncurry_comp_snd hH) hu hab]
   simp [fderiv_cylindrical_apply_stdComplexLineReal]
 
+/-- **The energy of a Floer cylinder for a perturbation without `ds` component, with caps.** Let
+`G_z`, `z = (s, t)`, be a `C¹` family of Hamiltonians on a finite-dimensional manifold with a
+nondegenerate two-form, `u` a `C¹` map, and `v` an arbitrary `C¹` map with `v (0, ·) = γ_b`, where
+`γ_b = u(b, ·)`. Rescaling `[a, b]` to `[0, 1]` makes `u` a map `w` from `γ_a = u(a, ·)` to `γ_b`,
+glued to `v` as `w # v` (`TauCeti.rectangleTrans`). For the perturbation `K = G_z dt` the Floer
+energy of `u` over `[a, b] × [0, 1]` is `A_{G(a, ·)}(γ_a, w # v) - A_{G(b, ·)}(γ_b, v)` minus the
+integral of the curvature `∂_s G` along `u`, for the action `TauCeti.cylinderAction` of a loop
+measured against a map, the two actions being taken for the Hamiltonians at the two ends. When `v`
+is a cap of `γ_b`, `w # v` is a cap of `γ_a`. Neither weak exactness nor closedness of `ω` is
+needed. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral
+    (hω : ω.IsNondegenerate) (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = u (b, t)) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
+      cylinderAction ω.1 (fun t ↦ G (a, t))
+          (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
+        cylinderAction ω.1 (fun t ↦ G (b, t)) v -
+        ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
+  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  -- Rescale `[a, b]` to `[0, 1]` to view `u` as a cylinder from `γ_a` to `γ_b`.
+  have hw := hu.comp (contMDiff_prodMap_affine (n := 1) a b)
+  rw [hω.integral_floerEnergyDensity_zero_left hG hu hab,
+    cylinderAction_rectangleTrans hω₀ _ hw hv fun t ↦ by simp [hv₀],
+    cylinderAction_def, cylinderAction_def,
+    rectangleIntegral_comp_prodMap_affine hω₀ hu a b 0 1]
+  simp only [Function.comp_apply, Prod.map_apply, id_eq, mul_zero, add_zero, hv₀]
+  ring
+
 /-- **The energy of a Floer cylinder is the drop of the capped action.** Let `ω` be a
 nondegenerate two-form on a finite-dimensional manifold, `H` a `C¹` time-dependent Hamiltonian
 and `u` a `C¹` map. Let `v` be an arbitrary `C¹` map with `v (0, ·) = γ_b`, where
@@ -287,23 +355,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
       cylinderAction ω.1 H (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
         cylinderAction ω.1 H v := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  -- Rescale `[a, b]` to `[0, 1]` to view `u` as a cylinder from `γ_a` to `γ_b`.
-  let σ : ℝ → ℝ := fun s ↦ a + (b - a) * s
-  have hσ (s : ℝ) : HasDerivAt σ (b - a) s := by
-    have h := ((hasDerivAt_id s).const_mul (b - a)).const_add a
-    rwa [mul_one] at h
-  have hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ Prod.map σ id) :=
-    hu.comp (((contDiff_const.add (contDiff_const.mul contDiff_id)).prodMap contDiff_id).contMDiff)
-  have hrect : rectangleIntegral ω.1 (u ∘ Prod.map σ id) (0, 0) (1, 1) =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) := by
-    rw [rectangleIntegral_comp_prodMap hω₀ hu (fun s _ ↦ hσ s) continuousOn_const]
-    simp [σ]
-  have h := cylinderAction_rectangleTrans_sub hω₀ H hw hv fun t ↦ by simp [σ, hv₀]
-  simp only [Function.comp_apply, Prod.map_apply, id_eq, σ, hrect] at h
-  rw [hω.integral_floerEnergyDensity_cylindrical hH hu hab, h]
-  simp only [mul_zero, add_zero, mul_one, add_sub_cancel]
-  ring
+  rw [hω.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral
+    (Floer.contMDiff_uncurry_comp_snd hH) hu hab hv hv₀]
+  simp [fderiv_cylindrical_apply_stdComplexLineReal]
 
 /-- **The energy of a Floer cylinder for an `s`-dependent perturbation.** Let `ω` be a
 nondegenerate weakly exact two-form on a finite-dimensional manifold, `G_z`, `z = (s, t)`, a `C¹`
@@ -636,23 +690,7 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_
         (β b - β a) * ∫ t in Icc 0 1, B t := by
   have h := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe
     (Floer.contMDiff_uncurry_linearHomotopy hβ hH₀ hH₁) hu hper hab hv J hJ hfloer
-  -- It remains to bound `-∫ ∂_s G(u) = ∫ β'(s) (H₀ - H₁)(t, u)` by `(∫ β') (∫ B)`.
-  have hd {K : ℝ → M → ℝ} (hK : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry K)) (t : ℝ) (x : M) :
-      DifferentiableAt ℝ (fun t ↦ K t x) t :=
-    (contMDiff_iff_contDiff.mp (hK.comp (contMDiff_id.prodMk contMDiff_const))).differentiable
-      one_ne_zero t
-  have hcurv (z : ℝ × ℝ) :
-      fderiv ℝ (fun w ↦ Floer.linearHomotopy β H₀ H₁ w (u z)) z stdComplexLineReal =
-        deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)) :=
-    Floer.fderiv_linearHomotopy_stdComplexLineReal (hβ.differentiable one_ne_zero z.1)
-      (hd hH₀ _ _) (hd hH₁ _ _)
-  simp only [hcurv] at h
-  have hp : Continuous fun z : ℝ × ℝ ↦ (z.2, u z) := continuous_snd.prodMk hu.continuous
-  have hle := neg_mul_setIntegral_le_setIntegral_deriv_mul
-    (f := fun z ↦ H₁ z.2 (u z) - H₀ z.2 (u z)) hβ hβm hab
-    ((hH₁.continuous.comp hp).sub (hH₀.continuous.comp hp)).continuousOn hB
-    fun z hz ↦ by linarith [hHB z hz]
-  linarith
+  linarith [Floer.neg_setIntegral_fderiv_linearHomotopy_le hH₀ hH₁ hβ hβm hu.continuous hab hB hHB]
 
 /-- **The action shift of a continuation cylinder.** Let `ω` be a nondegenerate weakly exact
 two-form on a finite-dimensional manifold, and `H₀` and `H₁` `C¹` time-dependent Hamiltonians with
@@ -685,12 +723,9 @@ theorem
   have h := hω.contractibleLoopAction_le_contractibleLoopAction_add_of_linearHomotopy hωe hH₀ hH₁
     (smoothTransition.contDiff (n := 1)) smoothTransition.monotone hu hper
     (ha.trans (zero_le_one.trans hb)) hv J hJ hfloer hhi fun z hz ↦ hh z.2 hz.2 (u z)
-  -- At the two ends the homotopy is `H₀` and `H₁`.
-  have hA : (fun t ↦ Floer.continuationHomotopy H₀ H₁ (a, t)) = H₀ :=
-    funext fun t ↦ funext (Floer.continuationHomotopy_of_nonpos (z := (a, t)) ha)
-  have hB : (fun t ↦ Floer.continuationHomotopy H₀ H₁ (b, t)) = H₁ :=
-    funext fun t ↦ funext (Floer.continuationHomotopy_of_one_le (z := (b, t)) hb)
-  simpa [← Floer.continuationHomotopy_eq_linearHomotopy, hA, hB,
+  simpa [← Floer.continuationHomotopy_eq_linearHomotopy,
+    Floer.continuationHomotopy_eq_left_of_nonpos ha,
+    Floer.continuationHomotopy_eq_right_of_one_le hb,
     smoothTransition.zero_of_nonpos ha, smoothTransition.one_of_one_le hb] using h
 
 end Energy

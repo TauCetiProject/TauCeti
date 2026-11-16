@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 /-!
 # Rescaling continuous linear equivalences
 
-A continuous linear equivalence `T : E ≃L[𝕜] F` over a field can be multiplied by a nonzero
+A continuous linear equivalence `T : E ≃L[𝕜] F` over a semifield can be multiplied by a nonzero
 scalar `d`; the result is again a continuous linear equivalence, whose inverse is `d⁻¹ • T⁻¹`.
 The construction uses Mathlib's `ContinuousLinearEquiv.equivOfInverse'`.
 
@@ -23,8 +23,8 @@ public section
 
 namespace ContinuousLinearEquiv
 
-variable {𝕜 E F : Type*} [Field 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousConstSMul 𝕜 E]
+variable {𝕜 E F : Type*} [Semifield 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousConstSMul 𝕜 E]
   [ContinuousConstSMul 𝕜 F]
 
 /-- Rescaling a continuous linear equivalence by a nonzero scalar `d` gives a continuous linear
@@ -39,7 +39,7 @@ end ContinuousLinearEquiv
 
 namespace ContinuousLinearMap
 
-variable {𝕜 M M₂ : Type*} [Field 𝕜]
+variable {𝕜 M M₂ : Type*} [Semifield 𝕜]
   [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
   [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
 

@@ -121,8 +121,7 @@ theorem exists_isFinitePresentation_isIso_restrict_of_quasiSeparatedSpace
     inferInstance
   have : N'.IsFinitePresentation :=
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
-      (((restrictFunctorComp X.topIso.inv (⊤ : X.Opens).ι).app N').symm ≪≫
-        (restrictFunctorCongr (X.toIso_inv_ι)).app N' ≪≫ restrictFunctorId.app N') this
+      ((restrictFunctorInvCompHomIso X.topIso.symm).app N') this
   exact ⟨N', this, i, hi⟩
 
 /-- **Extension of morphisms from finitely presented modules.** Let `j : U ⟶ X` be a

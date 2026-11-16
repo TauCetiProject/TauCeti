@@ -139,16 +139,13 @@ theorem primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq {P Q n x y 
     (hP : IsPrimeDiscriminant P) (hQ : IsEvenPrimeDiscriminant P → Q % 4 = 1)
     (hcop : IsCoprime n P) (h : 4 * n = x ^ 2 - P * Q * y ^ 2) :
     primeDiscriminantCharFun P n = 1 := by
-  rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, hp, hodd, rfl⟩
+  rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, -, hodd, rfl⟩
   · exact primeDiscriminantCharFun_eq_one_of_isEvenPrimeDiscriminant_of_four_mul_eq_sq_sub_mul_sq
       hP (hQ hP) ((isCoprime_evenPrimeDiscriminant_iff_not_two_dvd hP).mp hcop) h
-  · have hp2 : p ≠ 2 := by have := Nat.odd_iff.mp hodd; omega
-    have hpd : (p : ℤ) ∣ oddPrimeDiscriminant p * Q :=
-      (dvd_oddPrimeDiscriminant_iff.mpr dvd_rfl).mul_right Q
+  · have hpP : (p : ℤ) ∣ oddPrimeDiscriminant p := dvd_oddPrimeDiscriminant_iff.mpr dvd_rfl
     rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd]
-    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq hp hp2 hpd
-      (oddPrimeDiscriminant_dvd_iff.mpr.mt
-        ((prime_oddPrimeDiscriminant_iff.mpr hp).coprime_iff_not_dvd.mp hcop.symm)) h
+    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq (hpP.mul_right Q)
+      (Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_right hpP)) h
 
 /-! ### The genus characters of a fundamental discriminant -/
 

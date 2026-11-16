@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.DoubleDual
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
+import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Functoriality
+import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 
@@ -29,8 +31,9 @@ into `WeakSpace 𝕜 F`; this lets weak compactness reuse Mathlib's `IsCompactOp
   operators are stable under sums, scalar multiples and composition with bounded operators.
 * `IsCompactOperator.isWeaklyCompact`: compact operators are weakly compact.
 * `ContinuousLinearMap.isWeaklyCompact_id_iff`: the identity is weakly compact exactly on a
-  reflexive space; on an infinite-dimensional reflexive space it is weakly compact but not
-  compact.
+  reflexive space.
+* `ContinuousLinearMap.isWeaklyCompact_id_and_not_isCompactOperator_id`: on an
+  infinite-dimensional reflexive space the identity is weakly compact but not compact.
 * `ContinuousLinearMap.isWeaklyCompact_iff_range_subset`: **Gantmacher's criterion**, `T` is
   weakly compact iff its bidual adjoint `T**` takes values in the canonical image of `F`.
 * `ContinuousLinearMap.isWeaklyCompact_precomp_iff`: **Gantmacher's theorem**, an operator into
@@ -283,7 +286,7 @@ theorem IsWeaklyCompact.of_precomp [CompleteSpace F] {T : E →L[𝕜] F}
     rw [LinearMap.coe_range]
     exact (inclusionInDoubleDualLi 𝕜 (E := F)).isometry.isUniformInducing.isComplete_range.isClosed
   by_contra hΦ
-  obtain ⟨ψ, hψS, hψ⟩ := Submodule.exists_dual_forall_mem_eq_zero_ne_zero (𝕜 := 𝕜) hS
+  obtain ⟨ψ, hψS, hψ⟩ := Submodule.exists_dual_forall_mem_eq_zero_eq_one (𝕜 := 𝕜) hS
     (x := ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.precomp 𝕜 T) Φ)
     (by simpa [S] using hΦ)
   obtain ⟨g, hg⟩ := hT.range_precomp_precomp_subset ⟨ψ, rfl⟩
@@ -295,7 +298,7 @@ theorem IsWeaklyCompact.of_precomp [CompleteSpace F] {T : E →L[𝕜] F}
     exact hψS _ (LinearMap.mem_range_self _ (T x))
   have h := congrArg (fun Ψ ↦ Ψ Φ) hg
   simp only [hg0, precomp_apply, comp_apply, map_zero] at h
-  exact hψ h.symm
+  exact one_ne_zero (hψ.symm.trans h.symm)
 
 /-- **Gantmacher's theorem.** An operator into a Banach space is weakly compact iff its adjoint
 is weakly compact. -/

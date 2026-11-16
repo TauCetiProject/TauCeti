@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Poincare
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period
+public import TauCeti.LinearAlgebra.Matrix.TransposeLattice
 import Mathlib.Algebra.Group.Subgroup.Finsupp
 
 /-!
@@ -49,7 +50,13 @@ The angle map and its pullback of the symplectic form are treated in
 
 ## Main results
 
-All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
+* `TauCeti.fderiv_apply_eq_of_hasFDerivAt_action`: the differential of an action function,
+  `dA = (2π)⁻¹ ∑ⱼ λⱼ dcⱼ`, evaluated on a vector.
+* `TauCeti.contDiffOn_action_of_hasFDerivAt`: an action map is one degree smoother than its periods.
+* `TauCeti.injective_fderiv_action_of_hasFDerivAt`: the action map of linearly independent periods
+  has injective derivative.
+
+The remaining results are in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 
 * `fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`: the period one-forms are closed.
 * `exists_forall_hasFDerivAt_of_mem_hamiltonianFlowStabilizer`: on a convex open set, a period
@@ -74,6 +81,54 @@ open ContinuousLinearMap (proj)
 open scoped Manifold ContDiff Matrix
 
 namespace TauCeti
+
+/-- **The differential of an action function.** If `f` has differential
+`(2π)⁻¹ ∑ⱼ vⱼ dcⱼ` at `c`, then `df_c(w) = (2π)⁻¹ (v ⬝ᵥ w)`. -/
+theorem fderiv_apply_eq_of_hasFDerivAt_action {ι : Type*} [Fintype ι] {f : (ι → ℝ) → ℝ}
+    {v c : ι → ℝ} (hf : HasFDerivAt f ((2 * π)⁻¹ • ∑ j, v j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
+    (w : ι → ℝ) :
+    fderiv ℝ f c w = (2 * π)⁻¹ * (v ⬝ᵥ w) := by
+  rw [hf.fderiv]
+  simp [dotProduct, Finset.mul_sum, mul_comm]
+
+section ActionMap
+
+variable {ι : Type*} [Fintype ι] {D : Set (ι → ℝ)} {p : ι → (ι → ℝ) → ι → ℝ}
+  {A : (ι → ℝ) → ι → ℝ}
+
+/-- **Action maps are one degree smoother than their periods.** If the components of
+`A : (ι → ℝ) → (ι → ℝ)` have differentials `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` on an open set `D`, and the
+vectors `λ⁽ⁱ⁾` are `Cⁿ` on `D`, then `A` is `Cⁿ⁺¹` on `D`. -/
+theorem contDiffOn_action_of_hasFDerivAt {n : ℕ∞} (hDo : IsOpen D)
+    (hp : ∀ i, ContDiffOn ℝ n (p i) D)
+    (hA : ∀ c ∈ D, ∀ i, HasFDerivAt (fun c ↦ A c i)
+      ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) :
+    ContDiffOn ℝ (n + 1) A D := by
+  refine contDiffOn_pi.2 fun i ↦ (contDiffOn_succ_iff_fderiv_of_isOpen hDo).2
+    ⟨fun c hc ↦ (hA c hc i).differentiableAt.differentiableWithinAt, by simp, ?_⟩
+  refine ContDiffOn.congr ?_ fun c hc ↦ (hA c hc i).fderiv
+  exact (ContDiffOn.sum fun j _ ↦ (contDiffOn_pi.1 (hp i) j).smul_const
+    (F := (ι → ℝ) →L[ℝ] ℝ) (proj j)).const_smul _
+
+/-- **Action maps of independent periods are immersions.** If the components of
+`A : (ι → ℝ) → (ι → ℝ)` have differentials `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` at `c`, and the vectors
+`λ⁽ⁱ⁾ c` are linearly independent, then the derivative of `A` at `c` is injective. -/
+theorem injective_fderiv_action_of_hasFDerivAt {c : ι → ℝ}
+    (hli : LinearIndependent ℝ fun i ↦ p i c)
+    (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
+      ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) :
+    Injective (fderiv ℝ A c) := by
+  classical
+  have hL (w : ι → ℝ) : fderiv ℝ A c w = (2 * π)⁻¹ • (Matrix.of fun i j ↦ p i c j) *ᵥ w := by
+    rw [(hasFDerivAt_pi.2 hA).fderiv]
+    ext i
+    simp [Matrix.mulVec, dotProduct, Finset.mul_sum]
+  have hP := Matrix.mulVec_injective_iff_isUnit.2 (Matrix.linearIndependent_row_iff_isUnit.1 hli)
+  intro w w' h
+  rw [hL, hL] at h
+  exact hP (smul_right_injective _ (by positivity) h)
+
+end ActionMap
 
 namespace SmoothTwoForm
 
@@ -160,10 +215,12 @@ the connected component of `x` in its level `F⁻¹(F x)` be compact and consist
 there are functions `λ⁽ⁱ⁾` and a map `A : (ι → ℝ) → (ι → ℝ)`, a local diffeomorphism at `F x`,
 such that for every `c` near `F x`:
 
+* the functions `λ⁽ⁱ⁾` are smooth at `c`;
 * the vectors `λ⁽ⁱ⁾ c` are linearly independent and generate the period lattice of `s c`;
 * the differential of `Aᵢ` at `c` is `(2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ(c) dcⱼ`;
-* a vector `v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`,
-  so that the period lattice is `2π (DA)ᵀ ℤⁿ`.
+* the period lattice of `s c` is the transpose lattice `2π (DA_c)ᵀ ℤⁿ`
+  (`ContinuousLinearMap.transposeLattice`): a vector `v` is a period of `s c` exactly when
+  `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`.
 
 The components `Aᵢ` are the action variables of the Liouville–Arnold theorem. -/
 theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card ι = finrank ℝ E)
@@ -173,13 +230,13 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
     (hsx : s (F x) = x) (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s t) (hFs : ∀ c ∈ t, F (s c) = c) :
     ∃ (p : ι → (ι → ℝ) → ι → ℝ) (A : (ι → ℝ) → ι → ℝ),
       IsLocalDiffeomorphAt 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞ A (F x) ∧ ∀ᶠ c in 𝓝 (F x),
-        LinearIndependent ℝ (fun i ↦ p i c) ∧
+        (∀ i, ContDiffAt ℝ ∞ (p i) c) ∧ LinearIndependent ℝ (fun i ↦ p i c) ∧
         hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
           AddSubgroup.closure (range fun i ↦ p i c) ∧
         (∀ i, HasFDerivAt (fun c ↦ A c i)
           ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) ∧
-        ∀ v, v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) ↔
-          ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A c i) c w := by
+        hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
+          ((2 * π) • fderiv ℝ A c).transposeLattice := by
   classical
   obtain ⟨p, hp⟩ := hσ.exists_hamiltonianFlowStabilizer_section_eq_closure_of_isCompact hF hcomm
     hc hdim hreg hK ht hxt hsx hs hFs
@@ -192,61 +249,39 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
     (fun c hc ↦ hFs c (hball hc).2) ((hpi i).differentiableOn (by simp))
     (fun c hc ↦ (hball hc).1.2.2 ▸ AddSubgroup.subset_closure (mem_range_self i))
   choose A hA using hA
-  set α : ι → (ι → ℝ) → (ι → ℝ) →L[ℝ] ℝ :=
-    fun i c ↦ (2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ) with hα
-  have hB (c : ι → ℝ) (hc : c ∈ D) :
-      HasFDerivAt (fun c i ↦ A i c) (ContinuousLinearMap.pi fun i ↦ α i c) c :=
-    hasFDerivAt_pi.2 fun i ↦ hA i c hc
   refine ⟨p, fun c i ↦ A i c, ?_, eventually_of_mem (Metric.ball_mem_nhds _ hε)
-    fun c hc ↦ ⟨(hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc, fun v ↦ ?_⟩⟩
+    fun c hc ↦ ⟨(hball hc).1.1, (hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc, ?_⟩⟩
   swap
-  · -- The periods are the integral combinations of the `p i c`, and `dAᵢ = (2π)⁻¹ ⟨p i c, ·⟩`.
+  · -- The periods are the integral combinations of the `p i c`, and `2π dAᵢ = ⟨p i c, ·⟩`.
     have hd (i : ι) (w : ι → ℝ) :
-        fderiv ℝ (fun c ↦ A i c) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) := by
-      rw [(hA i c hc).fderiv]
-      simp [dotProduct, Finset.mul_sum]
-    simp_rw [hd, (hball hc).1.2.2, AddSubgroup.mem_closure_range_iff_of_fintype]
+        ((2 * π) • fderiv ℝ (fun c i ↦ A i c) c) w i = p i c ⬝ᵥ w := by
+      rw [(hasFDerivAt_pi.2 fun i ↦ hA i c hc).fderiv]
+      simp [dotProduct, Finset.mul_sum, ← mul_assoc, pi_ne_zero]
+    ext v
+    simp_rw [ContinuousLinearMap.mem_transposeLattice, hd, (hball hc).1.2.2,
+      AddSubgroup.mem_closure_range_iff_of_fintype]
     constructor
     · rintro ⟨n, rfl⟩
       refine ⟨n, fun w ↦ ?_⟩
-      rw [sum_dotProduct, Finset.mul_sum]
+      rw [sum_dotProduct]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
       rw [← Int.cast_smul_eq_zsmul ℝ, smul_dotProduct, smul_eq_mul]
-      field_simp
     · rintro ⟨n, hn⟩
       refine ⟨n, funext fun k ↦ ?_⟩
       have h := hn (Pi.single k 1)
       simp only [dotProduct_single, mul_one] at h
-      rw [h, Finset.sum_apply, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [Pi.smul_apply, zsmul_eq_mul]
-      field_simp
-  -- The action map is smooth on `D`, since its derivative is.
-  have hαs (i : ι) : ContDiffOn ℝ ∞ (α i) D := by
-    have h1 (j : ι) : ContDiffOn ℝ ∞ (fun c ↦ p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) D :=
-      (contDiffOn_pi.1 (hpi i) j).smul_const (F := (ι → ℝ) →L[ℝ] ℝ) (proj j)
-    exact (ContDiffOn.sum fun j _ ↦ h1 j).const_smul _
-  have hBs : ContDiffOn ℝ ∞ (fun c i ↦ A i c) D := by
-    refine contDiffOn_pi.2 fun i ↦ (contDiffOn_infty_iff_fderiv_of_isOpen Metric.isOpen_ball).2
-      ⟨fun c hc ↦ (hA i c hc).differentiableAt.differentiableWithinAt, ?_⟩
-    exact (hαs i).congr fun c hc ↦ (hA i c hc).fderiv
-  -- Its derivative at `F x` is `(2π)⁻¹` times the matrix with rows the periods `p i (F x)`, which
-  -- is invertible since these rows are linearly independent.
-  have hx := hball (Metric.mem_ball_self hε)
-  set L := ContinuousLinearMap.pi fun i ↦ α i (F x) with hL
-  have hL' (w : ι → ℝ) : L w = (2 * π)⁻¹ • (Matrix.of fun i j ↦ p i (F x) j) *ᵥ w := by
-    ext i
-    simp [hL, hα, Matrix.mulVec, dotProduct, Finset.mul_sum]
-  have hinj : Injective L := by
-    have hM := Matrix.mulVec_injective_iff_isUnit.2
-      (Matrix.linearIndependent_row_iff_isUnit.1 hx.1.2.1)
-    intro w w' h
-    rw [hL', hL'] at h
-    exact hM (smul_right_injective _ (by positivity) h)
-  set e := (LinearEquiv.ofInjectiveEndo (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) hinj).toContinuousLinearEquiv
+      simp [h]
+  -- The action map is smooth on `D`, since its derivative is, and its derivative at `F x` is
+  -- injective, since the periods `p i (F x)` are linearly independent.
+  have hBs : ContDiffOn ℝ ∞ (fun c i ↦ A i c) D :=
+    contDiffOn_action_of_hasFDerivAt Metric.isOpen_ball hpi fun c hc i ↦ hA i c hc
+  have hinj := injective_fderiv_action_of_hasFDerivAt (A := fun c i ↦ A i c)
+    (hball (Metric.mem_ball_self hε)).1.2.1 fun i ↦ hA i (F x) (Metric.mem_ball_self hε)
+  set e := (LinearEquiv.ofInjectiveEndo (fderiv ℝ (fun c i ↦ A i c) (F x) :
+    (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) hinj).toContinuousLinearEquiv
   refine isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_iff_contDiffOn.2 hBs) Metric.isOpen_ball
     (Metric.mem_ball_self hε) BoundarylessManifold.isInteriorPoint (by simp) (e := e) ?_
-  rw [mfderiv_eq_fderiv, (hB _ (Metric.mem_ball_self hε)).fderiv]
+  rw [mfderiv_eq_fderiv]
   rfl
 
 end IsSymplectic

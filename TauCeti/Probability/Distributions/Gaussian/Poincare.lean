@@ -61,7 +61,6 @@ private theorem hasDerivAt_interp (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤
       (∫ p, f p.1 * (deriv f (cos θ * p.1 + sin θ * p.2) * (-sin θ * p.1 + cos θ * p.2))
         ∂(Measure.prod γ γ)) θ := by
   have hc : Continuous f := hf.continuous
-  have hc' : Continuous (deriv f) := hf.continuous_deriv le_rfl
   have hA0 : 0 ≤ A := (abs_nonneg _).trans (hA 0)
   have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
@@ -102,7 +101,6 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
         ∂(Measure.prod γ γ) =
       -sin θ * ∫ p, deriv f p.1 * deriv f (cos θ * p.1 + sin θ * p.2) ∂(Measure.prod γ γ) := by
   have hc : Continuous f := hf.continuous
-  have hc' : Continuous (deriv f) := hf.continuous_deriv le_rfl
   have hA0 : 0 ≤ A := (abs_nonneg _).trans (hA 0)
   have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
   obtain ⟨c, hcdef⟩ : ∃ c, c = cos θ := ⟨_, rfl⟩
@@ -165,7 +163,6 @@ private theorem integral_deriv_mul_deriv_rot_le {f : ℝ → ℝ} {B : ℝ}
     (hf : ContDiff ℝ 1 f) (hB : ∀ x, |deriv f x| ≤ B) (θ : ℝ) :
     ∫ p, deriv f p.1 * deriv f (cos θ * p.1 + sin θ * p.2) ∂(Measure.prod γ γ) ≤
       ∫ x, deriv f x ^ 2 ∂γ := by
-  have hc' : Continuous (deriv f) := hf.continuous_deriv le_rfl
   have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
   let D := ∫ x, deriv f x ^ 2 ∂γ
   have hD : D = ∫ x, deriv f x ^ 2 ∂γ := rfl
@@ -214,7 +211,6 @@ theorem variance_le_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (hf : ContD
   obtain ⟨A, hA⟩ := hfb
   obtain ⟨B, hB⟩ := hdb
   have hc : Continuous f := hf.continuous
-  have hA0 : 0 ≤ A := (abs_nonneg _).trans (hA 0)
   obtain ⟨D, hD⟩ : ∃ D, D = ∫ x, deriv f x ^ 2 ∂γ := ⟨_, rfl⟩
   rw [← hD]
   let ψ : ℝ → ℝ := fun θ =>

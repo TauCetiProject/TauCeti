@@ -63,12 +63,12 @@ variable (hX : IsAdaptedPseudoGradient f X)
 /-- **A one-dimensional stable manifold consists of two trajectories.** If the critical point `x`
 has Morse index `n - 1`, its stable manifold `W^s(x)` is `x` together with the orbits of two points
 `y₁` and `y₂` different from `x`, and these two orbits are disjoint. -/
-theorem exists_stableSet_eq_insert_union_orbit (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem exists_stableSet_eq_insert_union_orbit
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f x + 1 = finrank ℝ E) :
     ∃ y₁ y₂ : M, y₁ ≠ x ∧ y₂ ≠ x ∧ Disjoint (hX.flow.orbit y₁) (hX.flow.orbit y₂) ∧
       hX.flow.stableSet x = insert x (hX.flow.orbit y₁ ∪ hX.flow.orbit y₂) := by
-  obtain ⟨φ, δ, hemb, hrange, h0, -, hsmul⟩ := hX.exists_stableParam hf hx
+  obtain ⟨φ, δ, hemb, hrange, h0, -, hsmul⟩ := hX.exists_stableParam hx
   set ι := hX.stableParam φ δ
   have hinj : Injective ι := hemb.isEmbedding.injective
   -- The stable subspace of the chart is a line, spanned by some `v ≠ 0`.
@@ -118,7 +118,7 @@ theorem exists_unstableSet_eq_insert_union_orbit (hf : IsMorse 𝓘(ℝ, E) f)
   have hsum := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   obtain ⟨y₁, y₂, h₁, h₂, hdisj, hW⟩ := (hX.neg hf).exists_stableSet_eq_insert_union_orbit
-    (hf.neg.contMDiff.mdifferentiable (by simp)) (mfderiv_neg_eq_zero_iff.2 hx) (by omega)
+    (mfderiv_neg_eq_zero_iff.2 hx) (by omega)
   rw [← hX.unstableSet_eq_stableSet_neg hf, hX.neg_flow hf, Flow.orbit_reverse,
     Flow.orbit_reverse] at hW
   rw [hX.neg_flow hf, Flow.orbit_reverse, Flow.orbit_reverse] at hdisj

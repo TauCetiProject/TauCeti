@@ -17,12 +17,12 @@ file identifies the deck transformation group of that cover.
 
 The antipodal map is always a deck transformation, and it is never the identity because no
 unit vector is its own negative. Both facts are unconditional, and come from
-`TauCeti.Deck.IsQuotientCoveringMap.toDeckHom`, which turns an element of the acting group of
+`IsQuotientCoveringMap.toDeckHom`, which turns an element of the acting group of
 a quotient covering map into a deck transformation, together with its injectivity
-`TauCeti.Deck.IsQuotientCoveringMap.toDeckHom_injective`.
+`IsQuotientCoveringMap.toDeckHom_injective`.
 
 For `1 ≤ n` the sphere is connected, so a deck transformation is determined by its value at a
-single point, and `TauCeti.Deck.IsQuotientCoveringMap.deckMulEquiv` identifies the whole deck
+single point, and `IsQuotientCoveringMap.deckMulEquiv` identifies the whole deck
 group with the two-element acting group:
 
   `deck (mk n) ≃* ℤˣ`.
@@ -64,7 +64,7 @@ variable (n : ℕ)
 /-- The antipodal map, as a deck transformation of the cover `Sⁿ → RPⁿ`. It is translation by
 the nontrivial integer unit. -/
 def antipode : deck (mk n) :=
-  IsQuotientCoveringMap.toDeckHom (isQuotientCoveringMap_mk n) (-1)
+  (isQuotientCoveringMap_mk n).toDeckHom (-1)
 
 /-- On points, the antipodal deck transformation negates. -/
 @[simp]
@@ -94,15 +94,14 @@ trivial, and translation is injective because the antipodal action is free. -/
 @[simp]
 theorem antipode_ne_one : antipode n ≠ 1 := by
   intro hone
-  rw [antipode, ← map_one (IsQuotientCoveringMap.toDeckHom (isQuotientCoveringMap_mk n))]
-    at hone
-  exact absurd (IsQuotientCoveringMap.toDeckHom_injective _ hone) (by decide)
+  rw [antipode, ← map_one (isQuotientCoveringMap_mk n).toDeckHom] at hone
+  exact absurd ((isQuotientCoveringMap_mk n).toDeckHom_injective hone) (by decide)
 
 /-- **The deck group of the antipodal cover `Sⁿ → RPⁿ` is the two-element group `ℤˣ`**, for
 `1 ≤ n`. The isomorphism sends an integer unit to the corresponding antipodal translation. -/
 def deckMulEquiv (hn : 1 ≤ n) : ℤˣ ≃* deck (mk n) :=
   letI := connectedSpace_euclideanSphere (m := n + 1) (by omega)
-  IsQuotientCoveringMap.deckMulEquiv (isQuotientCoveringMap_mk n)
+  (isQuotientCoveringMap_mk n).deckMulEquiv
 
 /-- On points, the deck-group isomorphism is the antipodal action. -/
 @[simp]

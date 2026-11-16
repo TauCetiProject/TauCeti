@@ -65,7 +65,7 @@ theorem log_eq_sum {a : A} {n : ℕ} (hn : (a - 1) ^ n = 0) :
   classical
   rw [log_def]
   apply sum_subset (range_mono (TauCeti.nilpotencyClass_le_of_pow_eq_zero hn))
-  intro i hi hni
+  intro i _ hni
   rw [mem_range, not_lt] at hni
   rw [pow_eq_zero_of_le hni (pow_nilpotencyClass ⟨n, hn⟩), smul_zero]
 
@@ -83,8 +83,6 @@ theorem map_log {B F : Type*} [Ring B] [Module ℚ B]
   obtain ⟨n, hn⟩ := ha
   have hn' : (f a - 1) ^ n = 0 := by simpa using congrArg f hn
   simp [log_eq_sum hn, log_eq_sum hn', map_rat_smul]
-
-variable [IsScalarTower ℚ A A] [SMulCommClass ℚ A A]
 
 /-- The finite logarithm of a unipotent element is nilpotent. -/
 theorem isNilpotent_log {a : A} (ha : IsNilpotent (a - 1)) : IsNilpotent (log a) := by
@@ -230,9 +228,9 @@ theorem Commute.nilpotentLog {A : Type*} [Ring A] [Algebra ℚ A] {a b : A}
     (h : Commute a b) : Commute (IsNilpotent.log a) (IsNilpotent.log b) := by
   rw [IsNilpotent.log_def, IsNilpotent.log_def]
   apply Commute.sum_left
-  intro i hi
+  intro i _
   apply Commute.sum_right
-  intro j hj
+  intro j _
   have hab : Commute (a - 1) (b - 1) :=
     (h.sub_left (Commute.one_left b)).sub_right (Commute.one_right (a - 1))
   exact ((hab.pow_pow i j).smul_left _).smul_right _

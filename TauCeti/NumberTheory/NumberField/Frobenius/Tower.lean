@@ -109,6 +109,20 @@ theorem isArithFrobAt_int_of_absNorm_eq {p : ℕ}
   rw [Ideal.natCard_quotient_under_of_liesOver (n := p) Q]
   exact hx
 
+omit [NumberField K] [NumberField M] in
+/-- A Galois tower `K ⊆ M ⊆ L` with an arithmetic Frobenius `σ ∈ Gal(L/K)` at `Q` has an
+arithmetic Frobenius `τ ∈ Gal(L/M)` at `Q`. The lower fields need no number-field hypothesis:
+they inherit it from `L`. -/
+private theorem exists_isArithFrobAt_tower {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    ∃ τ : L ≃ₐ[M] L, IsArithFrobAt (𝓞 M) τ Q := by
+  have : IsGalois M L := IsGalois.tower_top_of_isGalois K M L
+  have : CharZero K := RingHom.charZero (algebraMap K L)
+  have : NumberField K := NumberField.of_tower ℚ L K
+  have : CharZero M := RingHom.charZero (algebraMap M L)
+  have : NumberField M := NumberField.of_tower ℚ L M
+  exact exists_isArithFrobAt M Q hσ.ne_bot
+
+omit [NumberField K] [NumberField M] in
 /-- **Raising the base field raises the Frobenius to the residue degree.** For number fields
 `K ⊆ M ⊆ L` with `L / K` and `L / M` Galois and `Q` a prime of `𝓞 L` unramified over `𝓞 K`, the
 restriction to `Gal(L/K)` of an arithmetic Frobenius `τ ∈ Gal(L/M)` at `Q` is the
@@ -123,6 +137,10 @@ theorem restrictScalars_eq_pow_inertiaDeg [Algebra.IsUnramifiedAt (𝓞 K) Q]
     {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q)
     {τ : L ≃ₐ[M] L} (hτ : IsArithFrobAt (𝓞 M) τ Q) :
     AlgEquiv.restrictScalars K τ = σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K) := by
+  have : CharZero K := RingHom.charZero (algebraMap K L)
+  have : NumberField K := NumberField.of_tower ℚ L K
+  have : CharZero M := RingHom.charZero (algebraMap M L)
+  have : NumberField M := NumberField.of_tower ℚ L M
   have _ : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hσ.ne_bot inferInstance
   have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
   have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
@@ -159,6 +177,7 @@ theorem restrictScalars_eq_pow_inertiaDeg [Algebra.IsUnramifiedAt (𝓞 K) Q]
     simpa [MulAction.subgroup_smul_def, Ideal.Quotient.eq] using hcong x
   exact congrArg Subtype.val (Ideal.stabilizerHom_injective_of_isUnramifiedAt Q key)
 
+omit [NumberField K] [NumberField M] in
 /-- **The relative Frobenius restricts to exactly that power.** An element of `Gal(L/M)` is an
 arithmetic Frobenius at `Q` precisely when its restriction to `Gal(L/K)` is the
 `f(𝔓/𝔭)`-th power of a fixed arithmetic Frobenius `σ ∈ Gal(L/K)` at `Q`.
@@ -171,9 +190,8 @@ theorem isArithFrobAt_iff_restrictScalars_eq_pow_inertiaDeg
     {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) (τ : L ≃ₐ[M] L) :
     IsArithFrobAt (𝓞 M) τ Q ↔
       AlgEquiv.restrictScalars K τ = σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K) := by
-  have : IsGalois M L := IsGalois.tower_top_of_isGalois K M L
   refine ⟨restrictScalars_eq_pow_inertiaDeg hσ, fun h ↦ ?_⟩
-  obtain ⟨τ₀, hτ₀⟩ := exists_isArithFrobAt M Q hσ.ne_bot
+  obtain ⟨τ₀, hτ₀⟩ := exists_isArithFrobAt_tower (M := M) hσ
   have : τ = τ₀ := AlgEquiv.restrictScalars_injective K
     (h.trans (restrictScalars_eq_pow_inertiaDeg hσ hτ₀).symm)
   exact this ▸ hτ₀
@@ -192,6 +210,7 @@ theorem restrictScalars_arithFrobAt_eq_pow_inertiaDeg [IsGalois M L] (Q : Ideal 
   restrictScalars_eq_pow_inertiaDeg (IsArithFrobAt.arithFrobAt (𝓞 K) (L ≃ₐ[K] L) Q)
     (IsArithFrobAt.arithFrobAt (𝓞 M) (L ≃ₐ[M] L) Q)
 
+omit [NumberField K] in
 /-- **The tower formula, in the form the Artin symbol consumes.** For number fields `K ⊆ M ⊆ L`
 with `L / K` and `L / M` Galois, a prime `Q` of `𝓞 L` with `𝔓 = Q ∩ 𝓞 M` and `𝔭 = Q ∩ 𝓞 K`, and
 `𝔭` unramified in `L`, every arithmetic Frobenius `σ ∈ Gal(L/K)` at `Q` has `σ ^ f(𝔓/𝔭)` as the
@@ -199,8 +218,8 @@ image in `Gal(L/K)` of an arithmetic Frobenius at `Q` in `Gal(L/M)`.
 
 The unramifiedness hypothesis is phrased for all primes above `𝔭`, matching the argument that
 `NumberField.artinSymbol` takes; only its value at `Q` is used. -/
-theorem exists_isArithFrobAt_pow_inertiaDeg (M : Type*) [Field M] [NumberField M]
-    [Algebra K M] [Algebra M L] [IsScalarTower K M L] [IsGalois M L]
+theorem exists_isArithFrobAt_pow_inertiaDeg (M : Type*) [Field M]
+    [Algebra K M] [Algebra M L] [IsScalarTower K M L]
     (Q : Ideal (𝓞 L)) [Q.IsPrime]
     (𝔓 : Ideal (𝓞 M)) (𝔭 : Ideal (𝓞 K))
     (hQM : Q.under (𝓞 M) = 𝔓) (hQK : Q.under (𝓞 K) = 𝔭)
@@ -211,20 +230,21 @@ theorem exists_isArithFrobAt_pow_inertiaDeg (M : Type*) [Field M] [NumberField M
   subst hQM
   subst hQK
   have _ : Algebra.IsUnramifiedAt (𝓞 K) Q := hur Q
-  obtain ⟨τ, hτ⟩ := exists_isArithFrobAt M Q hσ.ne_bot
+  obtain ⟨τ, hτ⟩ := exists_isArithFrobAt_tower (M := M) hσ
   exact ⟨τ, hτ, restrictScalars_eq_pow_inertiaDeg hσ hτ⟩
 
+omit [NumberField K] [NumberField M] in
 /-- **The power of the Frobenius fixes the intermediate field.** Even though `M / K` need not be
 normal, and `σ` therefore need not preserve `M`, its `f(𝔓/𝔭)`-th power fixes `M` pointwise: it is
 the image of an element of `Gal(L/M)`. -/
 theorem pow_inertiaDeg_apply_algebraMap [Algebra.IsUnramifiedAt (𝓞 K) Q]
     {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) (y : M) :
     (σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K)) (algebraMap M L y) = algebraMap M L y := by
-  have : IsGalois M L := IsGalois.tower_top_of_isGalois K M L
-  obtain ⟨τ, hτ⟩ := exists_isArithFrobAt M Q hσ.ne_bot
+  obtain ⟨τ, hτ⟩ := exists_isArithFrobAt_tower (M := M) hσ
   rw [← restrictScalars_eq_pow_inertiaDeg hσ hτ]
   exact τ.commutes y
 
+omit [NumberField K] [NumberField M] in
 /-- **At residue degree one the restricted Frobenius does not move.** If `𝔓 = Q ∩ 𝓞 M` has
 residue degree one over `𝓞 K`, then the restriction to `Gal(L/K)` of an arithmetic Frobenius of
 `Gal(L/M)` at `Q` is the arithmetic Frobenius of `Gal(L/K)` at `Q` itself.
@@ -239,7 +259,7 @@ theorem restrictScalars_eq_of_inertiaDeg_eq_one [Algebra.IsUnramifiedAt (𝓞 K)
     AlgEquiv.restrictScalars K τ = σ := by
   rw [restrictScalars_eq_pow_inertiaDeg hσ hτ, hf, pow_one]
 
-omit [IsGalois K L] in
+omit [IsGalois K L] [NumberField K] [NumberField M] in
 /-- **A relative Frobenius at residue degree one restricts to an absolute one.**  If `Q ∩ 𝓞 M`
 has residue degree one over `𝓞 K`, then the restriction to `Gal(L/K)` of an arithmetic Frobenius
 of `Gal(L/M)` at `Q` is itself an arithmetic Frobenius at `Q` over `𝓞 K`.
@@ -251,6 +271,10 @@ theorem isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one
     {τ : L ≃ₐ[M] L} (hτ : IsArithFrobAt (𝓞 M) τ Q)
     (hf : (Q.under (𝓞 M)).inertiaDeg (𝓞 K) = 1) :
     IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q := by
+  have : CharZero K := RingHom.charZero (algebraMap K L)
+  have : NumberField K := NumberField.of_tower ℚ L K
+  have : CharZero M := RingHom.charZero (algebraMap M L)
+  have : NumberField M := NumberField.of_tower ℚ L M
   have _ : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hτ.ne_bot inferInstance
   have _ : (Q.under (𝓞 M)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q
   have _ : (Q.under (𝓞 K)).IsMaximal := isMaximal_under_of_isIntegral_of_isMaximal Q

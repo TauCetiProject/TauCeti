@@ -255,14 +255,9 @@ theorem rightTrace_unit (a : 𝟙_ C ⟶ 𝟙_ C) : rightTrace a = a := by
 
 end Unit
 
-section Linear
+section Zero
 
-variable [Preadditive C] [MonoidalPreadditive C]
-
-/-- The left trace is additive. -/
-@[simp]
-theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f + leftTrace g := by
-  simp [leftTrace_def]
+variable [HasZeroMorphisms C]
 
 /-- The left trace of zero is zero. -/
 @[simp]
@@ -273,6 +268,27 @@ theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
 @[simp]
 theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
   rw [← leftTrace_id, id_zero, leftTrace_zero]
+
+/-- The right trace of zero is zero. -/
+@[simp]
+theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
+  simp [rightTrace_def]
+
+/-- The zero object has right pivotal dimension zero. -/
+@[simp]
+theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
+  rw [← rightTrace_id, id_zero, rightTrace_zero]
+
+end Zero
+
+section Linear
+
+variable [Preadditive C] [MonoidalPreadditive C]
+
+/-- The left trace is additive. -/
+@[simp]
+theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f + leftTrace g := by
+  simp [leftTrace_def]
 
 /-- The left trace commutes with finite sums. -/
 @[simp]
@@ -298,16 +314,6 @@ theorem leftTrace_sub {X : C} (f g : X ⟶ X) : leftTrace (f - g) = leftTrace f 
 theorem rightTrace_add {X : C} (f g : X ⟶ X) :
     rightTrace (f + g) = rightTrace f + rightTrace g := by
   simp [rightTrace_def]
-
-/-- The right trace of zero is zero. -/
-@[simp]
-theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
-  simp [rightTrace_def]
-
-/-- The zero object has right pivotal dimension zero. -/
-@[simp]
-theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
-  rw [← rightTrace_id, id_zero, rightTrace_zero]
 
 /-- The right trace commutes with finite sums. -/
 @[simp]

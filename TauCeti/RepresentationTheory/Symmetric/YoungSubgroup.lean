@@ -29,9 +29,6 @@ blocks being all the labels but the last one and the last one alone.
 
 The construction uses Mathlib's `finSigmaFinEquiv` to enumerate the consecutive blocks and
 `DomMulAct.stabilizerMulEquiv` to decompose their stabilizer.
-
-The consecutive-block design and the principal declaration signatures follow
-`TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md` and its `Suggested.lean`.
 -/
 
 public section

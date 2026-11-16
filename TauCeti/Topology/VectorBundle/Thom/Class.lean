@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Linear
-public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair
+public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Trivialization
@@ -54,7 +54,7 @@ top degree is determined by those restrictions
 
 The Thom pair of the trivial bundle is that of the product bundle `B × F`
 (`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
-`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair`. With coefficients `Hom(C(-; R), M)` for
+`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic`. With coefficients `Hom(C(-; R), M)` for
 `k`-modules `R` and `M`, `R` projective, this gives the two facts about a trivializable bundle that
 the gluing uses: `Hⁿ(E, E₀) = 0` for `n < r`
 (`Bundle.Trivialization.isZero_singularCohomology_thomPair`), and a class of `Hʳ(E, E₀)`, for
@@ -372,17 +372,11 @@ theorem exists_singularCohomology_thomPairOver_fiber {C : Type u} [Category.{v} 
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) n u =
         TopPair.singularCohomologyMap
           (e.continuousLinearEquivAt 𝕜 b (hW hb)).complZeroPairIso.hom n g := by
-  -- The projection `(W × F, W × (F ∖ {0})) ⟶ (F, F ∖ {0})` onto the fibre pair.
-  let proj : prodThomPair W F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
-    TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
-  have hproj (w : W) : prodThomPairFiberMap F w ≫ proj = 𝟙 _ :=
-    TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ by
-      -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-      erw [CategoryTheory.comp_apply, prodThomPairFiberMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
-      rfl)
-  refine ⟨TopPair.singularCohomologyMap ((e.thomPairOverIso 𝕜 hW).hom ≫ proj) n g, fun b hb ↦ ?_⟩
+  refine ⟨TopPair.singularCohomologyMap ((e.thomPairOverIso 𝕜 hW).hom ≫ prodThomPairSnd W F) n g,
+    fun b hb ↦ ?_⟩
   rw [← TopPair.singularCohomologyMap_comp_apply,
-    e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc 𝕜 hW hb, hproj, Category.comp_id]
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc 𝕜 hW hb,
+    prodThomPairFiberMap_comp_prodThomPairSnd, Category.comp_id]
 
 end ThomPairOverFiber
 

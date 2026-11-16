@@ -137,17 +137,21 @@ theorem tsum_centralBinom_mul_pow_eq_top_iff (q : ℝ≥0) :
 
 /-- The even-time return series of a nearest-neighbor walk is infinite exactly
 for the symmetric step law. Deterministic steps (`p = 0` or `p = 1`) are included. -/
-theorem tsum_centralBinom_mul_mul_one_sub_pow_eq_top_iff (p : ℝ≥0) (hp : p ≤ 1) :
+theorem tsum_centralBinom_mul_mul_one_sub_pow_eq_top_iff (p : ℝ≥0) :
     (∑' n : ℕ, (n.centralBinom : ℝ≥0∞) * ((p * (1 - p) : ℝ≥0) : ℝ≥0∞) ^ n) = ∞ ↔
       p = 1 / 2 := by
   rw [tsum_centralBinom_mul_pow_eq_top_iff]
-  rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_sub hp]
   constructor
   · intro h
+    have hp : p ≤ 1 := by
+      by_contra hp
+      simp [tsub_eq_zero_of_le (not_le.1 hp).le] at h
+    rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_sub hp] at h
     have h' : (1 : ℝ) / 4 ≤ (p : ℝ) * (1 - p) := by exact_mod_cast h
     have heq : (p : ℝ) = 1 / 2 := by nlinarith [sq_nonneg ((p : ℝ) - 1 / 2)]
     exact NNReal.coe_injective (by simpa using heq)
   · rintro rfl
+    rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_sub (by norm_num)]
     norm_num
 
 end NNReal
