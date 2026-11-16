@@ -11,29 +11,21 @@ public import Mathlib.Probability.ProductMeasure
 /-!
 # Haar measure instances for infinite product probability measures
 
-Given an arbitrary family of probability measures `μ : ∀ i, Measure (G i)` on measurable spaces or
-topological groups `G i`, Kolmogorov's infinite product measure `MeasureTheory.Measure.infinitePi μ`
-on `Π i, G i` inherits translation invariance, inversion invariance, positivity on nonempty open
-sets, and the `IsHaarMeasure` typeclass from its factors.
-
-This generalizes `MeasureTheory.Measure.pi.isHaarMeasure` (which requires `[Fintype ι]`) to infinite
-products of compact groups equipped with probability Haar measures — the everywhere-integral factor
-in restricted products of locally compact groups.
+Given a family of probability measures `μ : ∀ i, Measure (G i)` on measurable spaces or topological
+groups `G i`, Kolmogorov's infinite product `MeasureTheory.Measure.infinitePi μ` on `Π i, G i`
+inherits left, right, and inversion invariance, positivity on nonempty open sets, and
+`IsHaarMeasure`, generalizing `MeasureTheory.Measure.pi.isHaarMeasure` beyond `[Fintype ι]`.
 
 ## Main declarations
 
 * `MeasureTheory.Measure.infinitePi.isMulLeftInvariant`,
-  `MeasureTheory.Measure.infinitePi.isAddLeftInvariant`: left invariance of `Measure.infinitePi μ`.
-* `MeasureTheory.Measure.infinitePi.isMulRightInvariant`,
-  `MeasureTheory.Measure.infinitePi.isAddRightInvariant`: right invariance of
+  `MeasureTheory.Measure.infinitePi.isMulRightInvariant`,
+  `MeasureTheory.Measure.infinitePi.isInvInvariant` (and additive counterparts): invariance of
   `Measure.infinitePi μ`.
-* `MeasureTheory.Measure.infinitePi.isInvInvariant`,
-  `MeasureTheory.Measure.infinitePi.isNegInvariant`: inversion invariance of `Measure.infinitePi μ`.
-* `MeasureTheory.Measure.infinitePi.isOpenPosMeasure`: positivity of `Measure.infinitePi μ` on
-  nonempty open subsets of `Π i, G i`.
+* `MeasureTheory.Measure.infinitePi.isOpenPosMeasure`: positivity on nonempty open subsets of
+  `Π i, G i`.
 * `MeasureTheory.Measure.infinitePi.isHaarMeasure`,
-  `MeasureTheory.Measure.infinitePi.isAddHaarMeasure`: `Measure.infinitePi μ` is a Haar measure on
-  `Π i, G i` when each `μ i` is a probability Haar measure.
+  `MeasureTheory.Measure.infinitePi.isAddHaarMeasure`: Haar measure instances on `Π i, G i`.
 
 ## References
 

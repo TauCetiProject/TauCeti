@@ -10,19 +10,12 @@ public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 /-!
 # Coordinate boxes in restricted products
 
-For a restricted product `Πʳ i, [R i, A i]_[𝓕]` and a family of subsets `C : ∀ i, Set (R i)`, the
-coordinate box `RestrictedProduct.box C` is `{x | ∀ i, x i ∈ C i}`, i.e. the preimage of
-`Set.univ.pi C` under coercion to the ambient product `Π i, R i`.
+For a restricted product `Πʳ i, [R i, A i]_[𝓕]` and `C : ∀ i, Set (R i)`, the coordinate box
+`RestrictedProduct.box C` is `{x | ∀ i, x i ∈ C i}`, i.e. the preimage of `Set.univ.pi C` under
+coercion to `Π i, R i`.
 
-In the cofinite restricted product `Πʳ i, [R i, A i]`, a box of open sets `C i` with `A i ⊆ C i`
-for all but finitely many `i` is open (`RestrictedProduct.isOpen_box_of_eventually_subset`). For an
-arbitrary filter `𝓕`, a box of closed sets is closed (`RestrictedProduct.isClosed_box`), and a box
-of compact sets with `C i ⊆ A i` along `𝓕` is compact (`RestrictedProduct.isCompact_box`).
-When every reference set `A i` is open, open boxes `box C` satisfying `C i = A i` cofinitely form a
-topological basis of `Πʳ i, [R i, A i]` (`RestrictedProduct.isTopologicalBasis_open_box`).
-
-The openness and compactness proofs for coordinate boxes (`isOpen_box_of_eventually_subset`,
-`isOpen_box`, `isCompact_box`) are adapted from the FLT project (`ImperialCollegeLondon/FLT`, file
+The openness and compactness proofs (`isOpen_box_of_eventually_subset`, `isOpen_box`,
+`isCompact_box`) are adapted from the FLT project (`ImperialCollegeLondon/FLT`, file
 `TopologicalSpace.lean`, source commit `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0`, FLT PR #1088,
 Apache 2.0), whose source file credits Matthew Jasper, Kevin Buzzard, Bhavik Mehta, Ruben Van de
 Velde, Bryan Wang Peng Jun, and Pietro Monticone, via
@@ -34,7 +27,7 @@ Velde, Bryan Wang Peng Jun, and Pietro Monticone, via
   box `{x | ∀ i, x i ∈ C i}` in `Πʳ i, [R i, A i]_[𝓕]`.
 * `RestrictedProduct.preimage_map_box`, `RestrictedProduct.preimage_mul_left_box`,
   `RestrictedProduct.preimage_mul_right_box`, `RestrictedProduct.preimage_inv_box`: preimages of
-  coordinate boxes under coordinatewise maps, translations, and inversion.
+  coordinate boxes under maps, translations, and inversion.
 * `RestrictedProduct.isOpen_box_of_eventually_subset`, `RestrictedProduct.isOpen_box`,
   `RestrictedProduct.isClosed_box`, `RestrictedProduct.isCompact_box`: openness, closedness, and
   compactness of coordinate boxes.
@@ -61,20 +54,17 @@ section SetAlgebra
 variable {ι : Type*} {R : ι → Type*} {A : ∀ i, Set (R i)} {𝓕 𝓖 : Filter ι}
 
 /-- The coordinate box `{x | ∀ i, x i ∈ C i}` in a restricted product `Πʳ i, [R i, A i]_[𝓕]`. -/
-def box (C : ∀ i, Set (R i)) : Set (Πʳ i, [R i, A i]_[𝓕]) :=
-  {x | ∀ i, x i ∈ C i}
+def box (C : ∀ i, Set (R i)) : Set (Πʳ i, [R i, A i]_[𝓕]) := {x | ∀ i, x i ∈ C i}
 
 /-- Definitional unfolding of `RestrictedProduct.box`. -/
 theorem box_def (C : ∀ i, Set (R i)) :
-    (box C : Set (Πʳ i, [R i, A i]_[𝓕])) = {x | ∀ i, x i ∈ C i} :=
-  (rfl)
+    (box C : Set (Πʳ i, [R i, A i]_[𝓕])) = {x | ∀ i, x i ∈ C i} := (rfl)
 
 /-- An element of a restricted product belongs to `box C` if and only if each coordinate `x i`
 belongs to `C i`. -/
 @[simp, grind =]
 theorem mem_box {C : ∀ i, Set (R i)} {x : Πʳ i, [R i, A i]_[𝓕]} :
-    x ∈ box C ↔ ∀ i, x i ∈ C i :=
-  Iff.rfl
+    x ∈ box C ↔ ∀ i, x i ∈ C i := Iff.rfl
 
 /-- The coordinate box with `Set.univ` in every factor is the whole restricted product. -/
 @[simp]
@@ -84,10 +74,7 @@ theorem box_univ : (box (fun _ ↦ Set.univ) : Set (Πʳ i, [R i, A i]_[𝓕])) 
 /-- A coordinate box with an empty factor is empty. -/
 theorem box_eq_empty_of_eq_empty {C : ∀ i, Set (R i)} {i : ι} (hi : C i = ∅) :
     (box C : Set (Πʳ j, [R j, A j]_[𝓕])) = ∅ :=
-  eq_empty_of_forall_notMem fun x hx ↦ by
-    have hxi := hx i
-    rw [hi] at hxi
-    exact hxi
+  eq_empty_of_forall_notMem fun x hx ↦ by simpa [hi] using hx i
 
 /-- When `C i ⊆ A i` along `𝓕`, `box C` is nonempty if and only if every factor `C i` is
 nonempty. -/
@@ -96,9 +83,7 @@ theorem nonempty_box_iff_of_eventually_subset {C : ∀ i, Set (R i)}
     (box C : Set (Πʳ i, [R i, A i]_[𝓕])).Nonempty ↔ ∀ i, (C i).Nonempty := by
   refine ⟨fun ⟨x, hx⟩ i ↦ ⟨x i, hx i⟩, fun hne ↦ ?_⟩
   choose f hf using hne
-  refine ⟨⟨f, ?_⟩, hf⟩
-  filter_upwards [hCA] with i hi
-  exact hi (hf i)
+  exact ⟨⟨f, hCA.mono fun i hi ↦ hi (hf i)⟩, hf⟩
 
 /-- Coordinate boxes are monotone in their factors. -/
 theorem box_mono {C D : ∀ i, Set (R i)} (h : ∀ i, C i ⊆ D i) :
@@ -109,32 +94,25 @@ theorem box_mono {C D : ∀ i, Set (R i)} (h : ∀ i, C i ⊆ D i) :
 @[simp]
 theorem box_inter (C D : ∀ i, Set (R i)) :
     (box (fun i ↦ C i ∩ D i) : Set (Πʳ i, [R i, A i]_[𝓕])) = box C ∩ box D := by
-  ext x
-  exact forall_and
+  ext; exact forall_and
 
 /-- Intersection of an indexed family of coordinate boxes is the box of coordinatewise
 intersections. -/
 theorem box_iInter {κ : Sort*} (C : κ → ∀ i, Set (R i)) :
     (box (fun i ↦ ⋂ k, C k i) : Set (Πʳ i, [R i, A i]_[𝓕])) = ⋂ k, box (C k) := by
-  ext x
-  simp only [mem_box, mem_iInter]
-  exact forall_comm
+  ext; simp only [mem_box, mem_iInter]; exact forall_comm
 
 /-- The coordinate box `box C` is the preimage of `Set.univ.pi C` under coercion to `Π i, R i`. -/
 @[simp]
 theorem preimage_coe_univ_pi (C : ∀ i, Set (R i)) :
-    ((↑) : Πʳ i, [R i, A i]_[𝓕] → Π i, R i) ⁻¹' (univ.pi C) = box C := by
-  ext x
-  simp
+    ((↑) : Πʳ i, [R i, A i]_[𝓕] → Π i, R i) ⁻¹' (univ.pi C) = box C := by ext; simp
 
 /-- Pulling a coordinate box back along a filter-refinement inclusion gives the box with the same
 factors. -/
 @[simp]
 theorem preimage_inclusion_box (h : 𝓕 ≤ 𝓖) (C : ∀ i, Set (R i)) :
     inclusion R A h ⁻¹' (box C : Set (Πʳ i, [R i, A i]_[𝓕])) =
-      (box C : Set (Πʳ i, [R i, A i]_[𝓖])) := by
-  ext
-  simp
+      (box C : Set (Πʳ i, [R i, A i]_[𝓖])) := by ext; simp
 
 /-- Pulling a coordinate box back along `RestrictedProduct.map` gives the box of coordinatewise
 preimages. -/
@@ -142,9 +120,7 @@ preimages. -/
 theorem preimage_map_box {S : ι → Type*} {B : ∀ i, Set (S i)}
     (φ : ∀ i, R i → S i) (hφ : ∀ᶠ i in 𝓕, MapsTo (φ i) (A i) (B i)) (D : ∀ i, Set (S i)) :
     RestrictedProduct.map φ hφ ⁻¹' (box D : Set (Πʳ i, [S i, B i]_[𝓕])) =
-      (box (fun i ↦ φ i ⁻¹' D i) : Set (Πʳ i, [R i, A i]_[𝓕])) := by
-  ext x
-  simp
+      (box (fun i ↦ φ i ⁻¹' D i) : Set (Πʳ i, [R i, A i]_[𝓕])) := by ext; simp
 
 /-- The range of `structureMap` (the everywhere-restricted subspace) is `box A`. -/
 theorem range_structureMap_eq_box :
@@ -158,17 +134,14 @@ theorem image_inclusion_box_of_principal {S : Set ι} (hS : 𝓕 ≤ 𝓟 S) {C 
     inclusion R A hS '' (box C : Set (Πʳ i, [R i, A i]_[𝓟 S])) = box C := by
   ext x
   simp only [mem_image, mem_box]
-  refine ⟨?_, fun hx ↦ ?_⟩
-  · rintro ⟨_, hy, rfl⟩ i
-    exact hy i
-  · exact ⟨⟨x, eventually_principal.mpr fun i hi ↦ hCA i hi (hx i)⟩, hx, rfl⟩
+  exact ⟨fun ⟨_, hy, h⟩ ↦ h ▸ hy,
+    fun hx ↦ ⟨⟨x, eventually_principal.mpr fun i hi ↦ hCA i hi (hx i)⟩, hx, rfl⟩⟩
 
 /-- The coordinate box of coordinate singletons `{x i}` is the singleton `{x}`. -/
 @[simp]
 theorem box_singleton (x : Πʳ i, [R i, A i]_[𝓕]) :
     (box (fun i ↦ ({x i} : Set (R i))) : Set (Πʳ i, [R i, A i]_[𝓕])) = {x} := by
-  ext y
-  simp [RestrictedProduct.ext_iff]
+  ext; simp [RestrictedProduct.ext_iff]
 
 /-- When `A i` is nontrivial frequently along `𝓕`, no singleton `{x}` can be written as a coordinate
 box `box C` whose factors satisfy `C i = A i` eventually along `𝓕`. -/
@@ -184,13 +157,11 @@ theorem not_exists_eventually_eq_box_eq_singleton (hA : ∃ᶠ i in 𝓕, (A i).
   let y : Πʳ i, [R i, A i]_[𝓕] :=
     ⟨Function.update (⇑x) i₀ z, x.eventually.mono fun i hi ↦ by
       by_cases h : i = i₀
-      · subst h
-        simpa using hzA
+      · subst h; simpa using hzA
       · simpa [h] using hi⟩
   have hyC : y ∈ box C := mem_box.mpr fun i ↦ by
     by_cases h : i = i₀
-    · subst h
-      simpa [y, hi₀_eq] using hzA
+    · subst h; simpa [y, hi₀_eq] using hzA
     · simpa [y, h] using hxC i
   have hyx : y = x := mem_singleton_iff.mp (hCx ▸ hyC)
   exact hzx (by simpa [y] using congr_arg (fun w : Πʳ i, [R i, A i]_[𝓕] ↦ w i₀) hyx)
@@ -207,32 +178,25 @@ variable {B : ∀ i, S i} {𝓕 : Filter ι}
 /-- Preimage of a coordinate box under left translation `(g + ·)` in a restricted product. -/]
 theorem preimage_mul_left_box [∀ i, Mul (R i)] [∀ i, MulMemClass (S i) (R i)]
     (g : Πʳ i, [R i, B i]_[𝓕]) (C : ∀ i, Set (R i)) :
-    (g * ·) ⁻¹' (box C : Set (Πʳ i, [R i, B i]_[𝓕])) =
-      box fun i ↦ (g i * ·) ⁻¹' C i := by
-  ext x
-  simp
+    (g * ·) ⁻¹' (box C : Set (Πʳ i, [R i, B i]_[𝓕])) = box fun i ↦ (g i * ·) ⁻¹' C i := by
+  ext; simp
 
 /-- Preimage of a coordinate box under right multiplication `(· * g)` in a restricted product. -/
 @[to_additive (attr := simp)
 /-- Preimage of a coordinate box under right translation `(· + g)` in a restricted product. -/]
 theorem preimage_mul_right_box [∀ i, Mul (R i)] [∀ i, MulMemClass (S i) (R i)]
     (g : Πʳ i, [R i, B i]_[𝓕]) (C : ∀ i, Set (R i)) :
-    (· * g) ⁻¹' (box C : Set (Πʳ i, [R i, B i]_[𝓕])) =
-      box fun i ↦ (· * g i) ⁻¹' C i := by
-  ext x
-  simp
+    (· * g) ⁻¹' (box C : Set (Πʳ i, [R i, B i]_[𝓕])) = box fun i ↦ (· * g i) ⁻¹' C i := by
+  ext; simp
 
 /-- Preimage of a coordinate box under inversion in a restricted product.
 
 Not a `simp` lemma because `Set.inv_preimage` rewrites `Inv.inv ⁻¹' s` to `s⁻¹` when `Pointwise`
 is imported. -/
 @[to_additive /-- Preimage of a coordinate box under negation in a restricted product. -/]
-theorem preimage_inv_box [∀ i, Inv (R i)] [∀ i, InvMemClass (S i) (R i)]
-    (C : ∀ i, Set (R i)) :
-    Inv.inv ⁻¹' (box C : Set (Πʳ i, [R i, B i]_[𝓕])) =
-      box fun i ↦ Inv.inv ⁻¹' C i := by
-  ext x
-  simp
+theorem preimage_inv_box [∀ i, Inv (R i)] [∀ i, InvMemClass (S i) (R i)] (C : ∀ i, Set (R i)) :
+    Inv.inv ⁻¹' (box C : Set (Πʳ i, [R i, B i]_[𝓕])) = box fun i ↦ Inv.inv ⁻¹' C i := by
+  ext; simp
 
 end Algebra
 
@@ -243,9 +207,8 @@ variable [∀ i, TopologicalSpace (R i)]
 
 /-- For any filter `𝓕`, a coordinate box of closed sets is closed in `Πʳ i, [R i, A i]_[𝓕]`. -/
 theorem isClosed_box {C : ∀ i, Set (R i)} (hC : ∀ i, IsClosed (C i)) :
-    IsClosed (box C : Set (Πʳ i, [R i, A i]_[𝓕])) := by
-  rw [← preimage_coe_univ_pi]
-  exact (isClosed_set_pi fun i _ ↦ hC i).preimage continuous_coe
+    IsClosed (box C : Set (Πʳ i, [R i, A i]_[𝓕])) :=
+  preimage_coe_univ_pi C ▸ (isClosed_set_pi fun i _ ↦ hC i).preimage continuous_coe
 
 /-- In a cofinite restricted product, a coordinate box of open sets `C i` containing `A i` at all
 but finitely many indices is open. -/
@@ -254,8 +217,7 @@ theorem isOpen_box_of_eventually_subset {C : ∀ i, Set (R i)} (hC : ∀ i, IsOp
     IsOpen (box C : Set (Πʳ i, [R i, A i])) := by
   simp_rw +instances [topologicalSpace_eq_iSup cofinite, isOpen_iSup_iff, isOpen_coinduced]
   intro T hT
-  -- On each principal stage `𝓟 T` (`T` cofinite), membership in `C i` is automatic on
-  -- `{i | A i ⊆ C i} ∩ T`, leaving only finitely many open coordinate conditions.
+  -- On `𝓟 T` (`T` cofinite), membership in `C i` is automatic on `{i | A i ⊆ C i} ∩ T`.
   have hfin : ({i | A i ⊆ C i} ∩ T)ᶜ.Finite := mem_cofinite.mp (hAC.and (le_principal_iff.mp hT))
   convert (isOpen_set_pi hfin fun i _ ↦ hC i).preimage continuous_coe using 1
   ext y
@@ -277,13 +239,12 @@ theorem isOpen_box {C : ∀ i, Set (R i)} (hC : ∀ i, IsOpen (C i))
 theorem isCompact_box {C : ∀ i, Set (R i)} (hC : ∀ i, IsCompact (C i))
     (hCA : ∀ᶠ i in 𝓕, C i ⊆ A i) :
     IsCompact (box C : Set (Πʳ i, [R i, A i]_[𝓕])) := by
-  let S : Set ι := {i | C i ⊆ A i}
-  have hS : 𝓕 ≤ 𝓟 S := le_principal_iff.mpr hCA
-  have hK : IsCompact (((↑) : Πʳ i, [R i, A i]_[𝓟 S] → Π i, R i) ⁻¹' univ.pi C) := by
+  have hS : 𝓕 ≤ 𝓟 {i | C i ⊆ A i} := le_principal_iff.mpr hCA
+  have hK : IsCompact (box C : Set (Πʳ i, [R i, A i]_[𝓟 {i | C i ⊆ A i}])) := by
+    rw [← preimage_coe_univ_pi]
     refine isEmbedding_coe_of_principal.isCompact_preimage' (isCompact_univ_pi hC) ?_
     rw [range_coe_principal]
     exact fun x hx i hi ↦ hi (hx i trivial)
-  rw [preimage_coe_univ_pi] at hK
   rw [← image_inclusion_box_of_principal hS fun _ hi ↦ hi]
   exact hK.image (continuous_inclusion hS)
 
@@ -307,40 +268,26 @@ theorem exists_box_subset_of_isOpen {U : Set (Πʳ i, [R i, A i])} {x : Πʳ i, 
   let S : Set ι := {i | x i ∈ A i}
   have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr x.eventually
   let x₀ : Πʳ i, [R i, A i]_[𝓟 S] := ⟨x, eventually_principal.mpr fun _ hi ↦ hi⟩
-  have hU₀ : IsOpen (inclusion R A hS ⁻¹' U) := hU.preimage (continuous_inclusion hS)
-  obtain ⟨V, hV, hpreV⟩ := isEmbedding_coe_of_principal.isOpen_iff.mp hU₀
+  obtain ⟨V, hV, hpreV⟩ := isEmbedding_coe_of_principal.isOpen_iff.mp
+    (hU.preimage (continuous_inclusion hS))
   have hxU₀ : x₀ ∈ inclusion R A hS ⁻¹' U := hxU
   obtain ⟨F, W, hW, hFW⟩ := isOpen_pi_iff.mp hV _ (hpreV ▸ hxU₀)
   let C : ∀ i, Set (R i) := fun i ↦
     (if i ∈ F then W i else univ) ∩ (if i ∈ S then A i else univ)
   have hCopen (i : ι) (hAi : IsOpen (A i)) : IsOpen (C i) := by
-    refine IsOpen.inter ?_ ?_ <;> split_ifs
-    · exact (hW i ‹_›).1
-    · exact isOpen_univ
-    · exact hAi
-    · exact isOpen_univ
+    refine IsOpen.inter ?_ ?_ <;> split_ifs with h
+    exacts [(hW i h).1, isOpen_univ, hAi, isOpen_univ]
   have hCA : ∀ᶠ i in cofinite, C i = A i := by
     filter_upwards [x.eventually, F.finite_toSet.compl_mem_cofinite] with i hiS hiF
-    have hiF' : i ∉ F := Finset.mem_coe.not.mp hiF
-    simp [C, S, hiS, hiF']
-  refine ⟨C, hCopen, hCA, ?_, ?_⟩
+    simp [C, S, hiS, Finset.mem_coe.not.mp hiF]
+  refine ⟨C, hCopen, hCA, ?_, fun y hy ↦ ?_⟩
   · refine mem_box.mpr fun i ↦ ⟨?_, ?_⟩ <;> split_ifs with h
-    · exact (hW i h).2
-    · trivial
-    · exact Set.mem_ofPred.mp h
-    · trivial
-  · intro y hy
-    have hyS (i : ι) (hiS : i ∈ S) : y i ∈ A i := by
-      have hyi := (mem_box.mp hy i).2
-      simpa [hiS] using hyi
+    exacts [(hW i h).2, trivial, Set.mem_ofPred.mp h, trivial]
+  · have hyS (i : ι) (hiS : i ∈ S) : y i ∈ A i := by simpa [hiS] using (mem_box.mp hy i).2
     let y₀ : Πʳ i, [R i, A i]_[𝓟 S] := mk y (eventually_principal.mpr hyS)
     have hyF : (y₀ : Π i, R i) ∈ (F : Set ι).pi W := fun i hiF ↦ by
-      rw [mk_apply]
-      have hyi := (mem_box.mp hy i).1
-      simpa [Finset.mem_coe.mp hiF] using hyi
-    have hyU₀ : y₀ ∈ inclusion R A hS ⁻¹' U := by
-      rw [← hpreV]
-      exact hFW hyF
+      rw [mk_apply]; simpa [Finset.mem_coe.mp hiF] using (mem_box.mp hy i).1
+    have hyU₀ : y₀ ∈ inclusion R A hS ⁻¹' U := hpreV ▸ hFW hyF
     exact hyU₀
 
 /-- When every reference set `A i` is open in `R i`, the open boxes `box C` with `C i` open and
@@ -349,12 +296,10 @@ theorem isTopologicalBasis_open_box (hA : ∀ i, IsOpen (A i)) :
     TopologicalSpace.IsTopologicalBasis
       {s : Set (Πʳ i, [R i, A i]) | ∃ C : ∀ i, Set (R i),
         (∀ i, IsOpen (C i)) ∧ (∀ᶠ i in cofinite, C i = A i) ∧ s = box C} := by
-  refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
-  · rintro _ ⟨C, hC, hCA, rfl⟩
-    exact isOpen_box hC hCA
-  · intro x U hxU hU
-    obtain ⟨C, hCopen, hCA, hxC, hCU⟩ := exists_box_subset_of_isOpen hU hxU
-    exact ⟨box C, ⟨C, fun i ↦ hCopen i (hA i), hCA, rfl⟩, hxC, hCU⟩
+  refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds
+    (fun _ ⟨_, hC, hCA, h⟩ ↦ h ▸ isOpen_box hC hCA) fun x U hxU hU ↦ ?_
+  obtain ⟨C, hCopen, hCA, hxC, hCU⟩ := exists_box_subset_of_isOpen hU hxU
+  exact ⟨box C, ⟨C, fun i ↦ hCopen i (hA i), hCA, rfl⟩, hxC, hCU⟩
 
 end Topology
 

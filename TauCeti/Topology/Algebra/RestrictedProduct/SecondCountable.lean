@@ -12,26 +12,19 @@ import Mathlib.Logic.Equiv.List
 # Second countability of restricted products
 
 For a countable index type `ι` and second-countable spaces `R i`, every principal stage
-`Πʳ i, [R i, A i]_[𝓟 S]` embeds into the countable product `Π i, R i` and is therefore second
-countable without any hypothesis on the reference sets `A i`.
-
-When each `A i` is open in `R i`, the cofinite restricted product `Πʳ i, [R i, A i]` is covered by
-the countably many open subspaces indexed by finite sets `T : Finset ι`, namely the ranges of the
-principal inclusions `inclusion R A _ : Πʳ i, [R i, A i]_[𝓟 Tᶜ] → Πʳ i, [R i, A i]`. Since each
-principal inclusion is an open embedding from a second-countable space, `Πʳ i, [R i, A i]` is
-second countable as well.
-
-No algebraic structure on the factors `R i` is needed, so the instances apply simultaneously to
-restricted products of topological spaces, groups, additive groups, and rings.
+`Πʳ i, [R i, A i]_[𝓟 S]` embeds into `Π i, R i` and is therefore second countable. When each `A i`
+is open, `Πʳ i, [R i, A i]` is covered by the countably many open ranges of the principal
+inclusions indexed by `T : Finset ι`, so it is also second countable.
 
 ## Main declarations
 
-* `RestrictedProduct.instSecondCountableTopologyOfPrincipal`: every principal restricted product of
-  countably many second-countable spaces is second countable.
-* `RestrictedProduct.secondCountableTopology_of_cofinite`: a cofinite restricted product of
-  countably many second-countable spaces with open reference sets is second countable.
-* `RestrictedProduct.instSecondCountableTopology`: the corresponding typeclass instance under
-  `[Fact (∀ i, IsOpen (A i))]`.
+* `RestrictedProduct.instSecondCountableTopologyOfPrincipal`,
+  `RestrictedProduct.instSecondCountableTopologyOfTop`,
+  `RestrictedProduct.instSecondCountableTopologyOfBot`: second countability of principal, top, and
+  bottom stages.
+* `RestrictedProduct.secondCountableTopology_of_cofinite`,
+  `RestrictedProduct.instSecondCountableTopology`: second countability of `Πʳ i, [R i, A i]` when
+  each `A i` is open.
 
 ## References
 
@@ -74,18 +67,14 @@ theorem secondCountableTopology_of_cofinite (hAopen : ∀ i, IsOpen (A i)) :
   classical
   have hT (T : Finset ι) : (cofinite : Filter ι) ≤ 𝓟 (T : Set ι)ᶜ :=
     le_principal_iff.mpr T.finite_toSet.compl_mem_cofinite
-  let U : Finset ι → Set (Πʳ i, [R i, A i]) := fun T ↦ range (inclusion R A (hT T))
-  have hU_sc (T : Finset ι) : SecondCountableTopology (U T) :=
+  have hU_sc (T : Finset ι) : SecondCountableTopology (range (inclusion R A (hT T))) :=
     (isOpenEmbedding_inclusion_principal hAopen (hT T)).isEmbedding.toHomeomorph.symm
       |>.secondCountableTopology
-  have hU_open (T : Finset ι) : IsOpen (U T) :=
-    (isOpenEmbedding_inclusion_principal hAopen (hT T)).isOpen_range
-  have hU_cover : ⋃ T : Finset ι, U T = univ := by
-    refine eq_univ_of_forall fun x ↦ mem_iUnion.mpr ?_
-    refine ⟨(mem_cofinite.mp x.eventually).toFinset, ?_⟩
-    exact exists_inclusion_eq_of_eventually R A _
-      (eventually_principal.mpr fun i hi ↦ by simpa [Set.Finite.mem_toFinset] using hi)
-  exact TopologicalSpace.secondCountableTopology_of_countable_cover hU_open hU_cover
+  refine TopologicalSpace.secondCountableTopology_of_countable_cover
+    (fun T : Finset ι ↦ (isOpenEmbedding_inclusion_principal hAopen (hT T)).isOpen_range) ?_
+  refine eq_univ_of_forall fun x ↦ mem_iUnion.mpr ⟨(mem_cofinite.mp x.eventually).toFinset, ?_⟩
+  exact exists_inclusion_eq_of_eventually R A _
+    (eventually_principal.mpr fun i hi ↦ by simpa [Set.Finite.mem_toFinset] using hi)
 
 /-- A cofinite restricted product of countably many second-countable spaces relative to open
 reference sets is second countable. -/
