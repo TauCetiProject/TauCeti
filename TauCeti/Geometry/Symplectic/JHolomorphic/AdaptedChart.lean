@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import TauCeti.Analysis.Calculus.AdaptedChart
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
-public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Analysis.Calculus.NormalExtension
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Complex.Module
@@ -39,18 +39,21 @@ as soon as `u` is `J`-holomorphic at `a`. Only `u` and `J ∘ u` enter `Φ`, not
 `u`, so for `u` and `J` of class `C^ℓ` the coordinates are of class `C^ℓ`.
 
 * **Existence.** By the inverse function theorem `Φ` restricts to a `C^ℓ` partial homeomorphism
-  around `(a₀, 0)` with `C^ℓ` inverse (`TauCeti.exists_holomorphicAdaptedChart`). Every further
-  statement holds for an arbitrary such partial homeomorphism, so the chart may be shrunk freely.
-* **Flattening.** The chart sends a point of its source into the disc exactly when the point
-  lies on the zero section
-  (`OpenPartialHomeomorph.isImage_of_coe_eq_holomorphicNormalExtension`).
+  around `(a₀, 0)` with `C^ℓ` inverse (`TauCeti.exists_holomorphicAdaptedChart`). Flattening and
+  the structure along the disc hold for an arbitrary such partial homeomorphism, so for them the
+  chart may be shrunk freely.
+* **Flattening.** Since `Φ` is a normal extension
+  (`TauCeti.holomorphicNormalExtension_eq_normalExtension`), the chart sends a point of its
+  source into the disc exactly when the point lies on the zero section
+  (`OpenPartialHomeomorph.isImage_of_coe_eq_normalExtension`).
 * **The structure along the disc.** The structure read in the chart,
   `e.pullbackEnd J (a, w) = DΦ⁻¹ ∘ J(Φ (a, w)) ∘ DΦ`, is `i` on the zero section
   (`OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`).
-* **Normal control.** For `u` and `J` of class `C²` the structure read in the chart is `C¹`, so it
-  differs from `i` by at most a constant times the normal coordinate:
-  `‖e.pullbackEnd J (a, w) - i‖ ≤ C ‖w‖` near `(a₀, 0)`
-  (`TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`). Consequently the normal
+* **Normal control.** For `u` and `J` of class `C²` there is an adapted chart in which the
+  structure read in the chart is `C¹`, so it differs from `i` by at most a constant times the
+  normal coordinate: `‖e.pullbackEnd J (a, w) - i‖ ≤ C ‖w‖` near `(a₀, 0)`
+  (`TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`). The bound is proved for
+  the chart this theorem produces, not for an arbitrary adapted chart. Consequently the normal
   component `b` of a pseudoholomorphic disc `(a, b)` written in these coordinates satisfies the
   differential inequality `‖∂ₛb + i ∂ₜb‖ ≤ C ‖b‖ ‖∂ₜ(a, b)‖`
   (`TauCeti.norm_snd_add_I_smul_snd_le` with `ε = C ‖b‖`), which is what makes the similarity
@@ -67,7 +70,8 @@ In the integrable model, `V = ℂ × N` with the structure `i`, the disc `a ↦ 
 * `TauCeti.hasFDerivAt_holomorphicNormalExtension_zero` and
   `TauCeti.coprod_holomorphicNormalFrame_apply_I_smul`: the derivative along the zero section and
   its complex linearity.
-* `TauCeti.exists_holomorphicAdaptedChart`: the adapted chart.
+* `TauCeti.exists_holomorphicAdaptedChart`: the adapted chart, obtained from
+  `TauCeti.exists_openPartialHomeomorph_normalExtension`.
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`: in the chart, the
   structure is standard along the disc.
 * `TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`: the normal Lipschitz control.
@@ -96,7 +100,8 @@ variable {V N : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddComm
 `Θ_a = ½ (W - J(u a) ∘ W ∘ i)` of a real-linear frame `W : N →L[ℝ] V`, for the structure `i` on
 `N` and `J(u a)` on `V` (`TauCeti.coe_holomorphicNormalFrame`). Where `J(u a)² = -1` it
 intertwines `i` with `J(u a)` (`TauCeti.apply_holomorphicNormalFrame_apply`), and it equals `W`
-where `W` already does (`TauCeti.holomorphicNormalFrame_eq_self`). -/
+where `W` already intertwines `i` with `J(u a)` and `J(u a)² = -1`
+(`TauCeti.holomorphicNormalFrame_eq_self`). -/
 def holomorphicNormalFrame (J : V → V →L[ℝ] V) (u : ℂ → V) (W : N →L[ℝ] V) (a : ℂ) :
     N →L[ℝ] V :=
   (2 : ℝ)⁻¹ • (W - (J (u a)).comp (W.comp (I • ContinuousLinearMap.id ℝ N)))
@@ -104,6 +109,7 @@ def holomorphicNormalFrame (J : V → V →L[ℝ] V) (u : ℂ → V) (W : N →L
 variable {J : V → V →L[ℝ] V} {u : ℂ → V} {W : N →L[ℝ] V} {a : ℂ}
 
 /-- `Θ_a w = ½ (W w - J(u a) (W (i w)))`. -/
+@[simp]
 theorem holomorphicNormalFrame_apply (J : V → V →L[ℝ] V) (u : ℂ → V) (W : N →L[ℝ] V) (a : ℂ)
     (w : N) :
     holomorphicNormalFrame J u W a w = (2 : ℝ)⁻¹ • (W w - J (u a) (W (I • w))) := by
@@ -115,7 +121,7 @@ theorem coe_holomorphicNormalFrame (J : V → V →L[ℝ] V) (u : ℂ → V) (W 
     (holomorphicNormalFrame J u W a : N →ₗ[ℝ] V) =
       complexLinearPart ((I • ContinuousLinearMap.id ℝ N : N →L[ℝ] N) : N →ₗ[ℝ] N)
         (J (u a) : V →ₗ[ℝ] V) W :=
-  LinearMap.ext fun w ↦ by simp [holomorphicNormalFrame_apply]
+  LinearMap.ext fun w ↦ by simp
 
 /-- **The normal frame is complex-linear.** Where `J(u a)² = -1`, the frame `Θ_a` intertwines
 multiplication by `i` with `J(u a)`. -/
@@ -163,6 +169,12 @@ frame of `W`. Its local inverse near an immersed point is the chart of coordinat
 def holomorphicNormalExtension (J : V → V →L[ℝ] V) (u : ℂ → V) (W : N →L[ℝ] V) : ℂ × N → V :=
   normalExtension u (holomorphicNormalFrame J u W)
 
+/-- Express the adapted extension through its complex-linear normal frame. -/
+theorem holomorphicNormalExtension_eq_normalExtension (J : V → V →L[ℝ] V) (u : ℂ → V)
+    (W : N →L[ℝ] V) :
+    holomorphicNormalExtension J u W = normalExtension u (holomorphicNormalFrame J u W) := by
+  rfl
+
 /-- `Φ (a, w) = u a + Θ_a w`. -/
 @[simp]
 theorem holomorphicNormalExtension_apply (J : V → V →L[ℝ] V) (u : ℂ → V) (W : N →L[ℝ] V)
@@ -180,10 +192,8 @@ on a set containing `u (U)`. -/
 theorem contDiffOn_holomorphicNormalExtension {U : Set ℂ} {Ω : Set V} {n : ℕ∞ω}
     (hu : ContDiffOn ℝ n u U) (hJ : ContDiffOn ℝ n J Ω) (huΩ : MapsTo u U Ω) (W : N →L[ℝ] V) :
     ContDiffOn ℝ n (holomorphicNormalExtension J u W) (U ×ˢ univ) := by
-  have hfst : MapsTo (Prod.fst : ℂ × N → ℂ) (U ×ˢ univ) U := fun _ hp ↦ hp.1
-  exact ((hu.comp contDiffOn_fst hfst).add
-    (((contDiffOn_holomorphicNormalFrame hu hJ huΩ W).comp contDiffOn_fst hfst).clm_apply
-      contDiffOn_snd)).congr fun p _ ↦ holomorphicNormalExtension_apply J u W p
+  rw [holomorphicNormalExtension_eq_normalExtension]
+  exact contDiffOn_normalExtension hu (contDiffOn_holomorphicNormalFrame hu hJ huΩ W)
 
 /-- **The derivative along the zero section.** At `(a, 0)` the adapted extension has derivative
 `(α, ω) ↦ du_a α + Θ_a ω`; this needs only continuity of `J` at `u a`. -/
@@ -222,13 +232,7 @@ theorem exists_holomorphicAdaptedChart [CompleteSpace V] [CompleteSpace N] {U : 
     ∃ e : OpenPartialHomeomorph (ℂ × N) V, ⇑e = holomorphicNormalExtension J u W ∧
       (a₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
       ContDiffOn ℝ ℓ e e.source ∧ ContDiffOn ℝ ℓ e.symm e.target := by
-  have hΦ : ContDiffOn ℝ ℓ (holomorphicNormalExtension J u W) (U ×ˢ univ) :=
-    contDiffOn_holomorphicNormalExtension hu hJ huΩ W
-  have hs : IsOpen ((U ×ˢ univ) ∩ holomorphicNormalExtension J u W ⁻¹' Ω) :=
-    hΦ.continuousOn.isOpen_inter_preimage (hU.prod isOpen_univ) hΩ
-  have hmem : (a₀, (0 : N)) ∈ (U ×ˢ univ) ∩ holomorphicNormalExtension J u W ⁻¹' Ω :=
-    ⟨⟨ha₀, mem_univ _⟩, by
-      simpa only [mem_preimage, holomorphicNormalExtension_zero] using (huΩ ha₀)⟩
+  have hΦ := contDiffOn_holomorphicNormalExtension hu hJ huΩ W
   have hℓ0 : ℓ ≠ 0 := by rintro rfl; exact absurd hℓ (by simp)
   have hdu : HasFDerivAt u (fderiv ℝ u a₀) a₀ :=
     ((hu.differentiableOn hℓ0).differentiableAt
@@ -237,16 +241,11 @@ theorem exists_holomorphicAdaptedChart [CompleteSpace V] [CompleteSpace N] {U : 
   have hD : fderiv ℝ (holomorphicNormalExtension J u W) (a₀, 0) = (fderiv ℝ u a₀).coprod W := by
     rw [(hasFDerivAt_holomorphicNormalExtension_zero hdu hJc W).fderiv,
       holomorphicNormalFrame_eq_self hsq hW]
-  obtain ⟨e, he, hx, hsub, hsymm⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph
-    (hΦ.mono inter_subset_left) hs hmem hℓ
-    (e := ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.mpr hbij.1)
+  rw [holomorphicNormalExtension_eq_normalExtension] at hΦ hD ⊢
+  exact exists_openPartialHomeomorph_normalExtension hU hΩ ha₀ (huΩ ha₀) hℓ hΦ
+    (L := ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.mpr hbij.1)
       (LinearMap.range_eq_top.mpr hbij.2))
     (by rw [ContinuousLinearEquiv.coe_ofBijective, hD])
-  refine ⟨e, he, hx, fun p hp ↦ (hsub hp).1, fun y hy ↦ ?_, ?_, hsymm⟩
-  · rw [← e.right_inv hy, he]
-    exact (hsub (e.map_target hy)).2
-  · rw [he]
-    exact hΦ.mono fun p hp ↦ (hsub hp).1
 
 end TauCeti
 
@@ -257,29 +256,6 @@ open TauCeti
 variable {V N : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup N]
   [NormedSpace ℂ N] {J : V → V →L[ℝ] V} {u : ℂ → V} {W : N →L[ℝ] V}
   {e : OpenPartialHomeomorph (ℂ × N) V}
-
-/-- An adapted chart inverts the disc on the zero section of its source. -/
-theorem symm_apply_of_coe_eq_holomorphicNormalExtension
-    (he : ⇑e = holomorphicNormalExtension J u W) {a : ℂ} (ha : (a, 0) ∈ e.source) :
-    e.symm (u a) = (a, 0) := by
-  rw [← holomorphicNormalExtension_zero J u W a, ← he, e.left_inv ha]
-
-/-- **Flattening.** A point of the source of an adapted chart is sent into the disc
-`u {a | (a, 0) ∈ e.source}` exactly when it lies on the zero section. -/
-theorem isImage_of_coe_eq_holomorphicNormalExtension
-    (he : ⇑e = holomorphicNormalExtension J u W) :
-    e.IsImage {p | p.2 = 0} (u '' {a | (a, 0) ∈ e.source}) := by
-  intro p hp
-  constructor
-  · rintro ⟨a, ha, hap⟩
-    have h : e (a, 0) = e p := by rw [he, holomorphicNormalExtension_zero, hap, he]
-    exact (congrArg Prod.snd (e.injOn ha hp h)).symm
-  · intro h0
-    have hp' : p = (p.1, 0) := Prod.ext rfl h0
-    refine ⟨p.1, ?_, ?_⟩
-    · rw [mem_ofPred_eq, ← hp']
-      exact hp
-    · rw [hp', he, holomorphicNormalExtension_zero]
 
 /-- **The structure is standard along the disc.** At a point `(a, 0)` of the source of an
 adapted chart where `u` satisfies the Cauchy–Riemann equation and `J(u a)² = -1`, the structure
@@ -333,9 +309,8 @@ theorem exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le [CompleteSpace V]
   have hstd (a : ℂ) (ha : (a, 0) ∈ e.source) :
       e.pullbackEnd J (a, 0) = I • ContinuousLinearMap.id ℝ (ℂ × N) := by
     have haU : a ∈ U := (hsU ha).1
-    have hut : u a ∈ e.target := by
-      rw [← holomorphicNormalExtension_zero J u W a, ← he]
-      exact e.map_source ha
+    have hut : u a ∈ e.target := e.mem_target_of_coe_eq_normalExtension
+      (he.trans (holomorphicNormalExtension_eq_normalExtension J u W)) ha
     exact e.pullbackEnd_of_coe_eq_holomorphicNormalExtension he ha
       ((hu.differentiableOn hℓ0).differentiableAt (hU.mem_nhds haU))
       (hJ.continuousOn.continuousAt (hΩ.mem_nhds (huΩ haU))) (hsq a haU) (hCR a haU)
