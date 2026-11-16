@@ -11,9 +11,11 @@ public import Mathlib.LinearAlgebra.Finsupp.Defs
 /-!
 # Flattening finitely supported sequences of finite tuples
 
-`TauCeti.flattenFinsupp 𝕜 k` embeds `ℕ →₀ (Fin k → 𝕜)` linearly into `ℕ →₀ 𝕜` via Cantor pairing
-`(n, i) ↦ Nat.pair n i.1`, sending sequences supported in `Finset.range N` into
-`Finset.range (max N k ^ 2)`.
+`TauCeti.flattenFinsupp 𝕜 k` embeds `ℕ →₀ (Fin k → 𝕜)` linearly into `ℕ →₀ 𝕜` via Mathlib's
+square-shell pairing function `(n, i) ↦ Nat.pair n i.1`, sending sequences supported in
+`Finset.range N` into `Finset.range (max N k ^ 2)`. This flattens countable families of finite-rank
+block coordinates on vector bundles into `ℕ →₀ 𝕜`-valued classifying coordinates while preserving
+uniform initial-segment support bounds.
 -/
 
 public noncomputable section
@@ -24,17 +26,18 @@ private theorem pair_fin_injective (k : ℕ) :
   have h := congrArg Nat.unpair hpq; rw [Nat.unpair_pair, Nat.unpair_pair, Prod.mk.injEq] at h
   exact Prod.ext h.1 (Fin.ext h.2)
 
-/-- Flatten `ℕ →₀ (Fin k → 𝕜)` into `ℕ →₀ 𝕜` via `Finsupp.mapRange.linearEquiv`,
-`(Finsupp.curryLinearEquiv 𝕜).symm`, and `Finsupp.lmapDomain` along `(n, i) ↦ Nat.pair n i.1`. -/
+/-- The `𝕜`-linear injection sending `f : ℕ →₀ (Fin k → 𝕜)` to the finitely supported sequence
+with value `f n i` at `Nat.pair n i.1` and `0` outside `{Nat.pair n i.1 | n : ℕ, i : Fin k}`. -/
 def flattenFinsupp (𝕜 : Type*) [Semiring 𝕜] (k : ℕ) : (ℕ →₀ (Fin k → 𝕜)) →ₗ[𝕜] (ℕ →₀ 𝕜) :=
   (Finsupp.lmapDomain 𝕜 𝕜 fun p : ℕ × Fin k ↦ Nat.pair p.1 p.2.1).comp <|
     (Finsupp.curryLinearEquiv 𝕜).symm.toLinearMap.comp
       (Finsupp.mapRange.linearEquiv (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin k)).symm).toLinearMap
 theorem flattenFinsupp_apply_pair {𝕜 : Type*} [Semiring 𝕜] (k : ℕ) (f : ℕ →₀ (Fin k → 𝕜))
     (n : ℕ) (i : Fin k) : flattenFinsupp 𝕜 k f (Nat.pair n i.1) = f n i := by
-  simp only [flattenFinsupp, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    Finsupp.lmapDomain_apply]
-  rw [Finsupp.mapDomain_apply_of_injective (pair_fin_injective k) _ (n, i)]; rfl
+  simpa [flattenFinsupp] using
+    Finsupp.mapDomain_apply_of_injective (pair_fin_injective k)
+      ((Finsupp.curryLinearEquiv 𝕜).symm
+        (Finsupp.mapRange.linearEquiv (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin k)).symm f)) (n, i)
 @[simp] theorem flattenFinsupp_apply {𝕜 : Type*} [Semiring 𝕜] (k : ℕ) (f : ℕ →₀ (Fin k → 𝕜))
     (m : ℕ) :
     flattenFinsupp 𝕜 k f m = if h : m.unpair.2 < k then f m.unpair.1 ⟨m.unpair.2, h⟩ else 0 := by

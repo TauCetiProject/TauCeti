@@ -8,19 +8,23 @@ module
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.Finsupp.Defs
+import Mathlib.Order.Preorder.Finite
 
 /-!
-# Linear maps induced by permutations of the index type
+# Linear maps induced by index maps on finitely supported functions
 
-A permutation `π` of `α` induces the linear endomorphism `Finsupp.lmapDomain M R π` of `α →₀ M`,
-which moves the coefficient at `a` to `π a`. This file records that the powers of this
-endomorphism are induced by the powers of `π`, together with injectivity of affine combinations of
-`Finsupp.lmapDomain` maps along strictly monotone shifts or disjoint-range injections.
+An index map `s : α → β` induces `Finsupp.lmapDomain M R s : (α →₀ M) →ₗ[R] (β →₀ M)`, sending the
+coefficient at `a` to `s a` (summed on fibres). This file records that powers of a permutation
+endomorphism `Finsupp.lmapDomain M R π` agree with powers of `π`, together with injectivity over
+torsion-free modules of affine combinations `(1 - c) • id + c • lmapDomain M R s` along injective
+inflationary shifts (`∀ a, a ≤ s a`) and of nontrivial linear combinations of `Finsupp.lmapDomain`
+maps along disjoint-range injections.
 
 ## Main results
 
 * `Equiv.Perm.lmapDomain_pow`: `lmapDomain M R π ^ n = lmapDomain M R (π ^ n)`.
-* `Finsupp.one_sub_smul_id_add_smul_lmapDomain_injective` and
+* `Finsupp.one_sub_smul_id_add_smul_lmapDomain_injective`,
+  `Finsupp.smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective`, and
   `Finsupp.one_sub_smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective`.
 -/
 
@@ -43,10 +47,11 @@ end Equiv.Perm
 namespace Finsupp
 
 /-- Over a torsion-free module `M`, `(1 - c) • id + c • lmapDomain M R s` is injective for any
-strictly monotone inflationary shift `s : α → α` (`∀ a, a ≤ s a`). -/
+injective inflationary shift `s : α → α` (`∀ a, a ≤ s a`) on a partial order `α`. -/
 theorem one_sub_smul_id_add_smul_lmapDomain_injective
-    {α R M : Type*} [LinearOrder α] [CommRing R] [IsCancelMulZero R] [AddCommGroup M] [Module R M]
-    [Module.IsTorsionFree R M] {s : α → α} (hs : StrictMono s) (hle : ∀ a, a ≤ s a) (c : R) :
+    {α R M : Type*} [PartialOrder α] [CommRing R] [IsCancelMulZero R] [AddCommGroup M] [Module R M]
+    [Module.IsTorsionFree R M] {s : α → α} (hs : Function.Injective s) (hle : ∀ a, a ≤ s a)
+    (c : R) :
     Function.Injective
       ((1 - c) • (LinearMap.id : (α →₀ M) →ₗ[R] (α →₀ M)) + c • lmapDomain M R s) := by
   intro u w huw; let v : α →₀ M := u - w
@@ -54,25 +59,45 @@ theorem one_sub_smul_id_add_smul_lmapDomain_injective
     by rw [map_sub, huw, sub_self]
   suffices hv0 : v = 0 from sub_eq_zero.1 hv0
   by_contra hv0
-  let m := v.support.max' (support_nonempty_iff.2 hv0)
-  have hvm : v m ≠ 0 := mem_support_iff.1 (Finset.max'_mem _ _)
+  obtain ⟨m, hm⟩ := v.support.exists_maximal (support_nonempty_iff.2 hv0)
+  have hvm : v m ≠ 0 := mem_support_iff.1 hm.prop
   rcases (hle m).eq_or_lt with h_eq | h_lt
   · have heval := congrArg (· m) hv
     have hmap : mapDomain s v m = v m :=
-      (congrArg (mapDomain s v) h_eq).trans (mapDomain_apply_of_injective hs.injective v m)
-    simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.id_apply, coe_add, coe_smul,
-      Pi.add_apply, Pi.smul_apply, zero_apply, lmapDomain_apply, hmap, ← add_smul,
-      sub_add_cancel, one_smul] at heval
-    exact hvm heval
+      (congrArg (mapDomain s v) h_eq).trans (mapDomain_apply_of_injective hs v m)
+    exact hvm (by simpa [hmap, ← add_smul] using heval)
   · by_cases hc : c = 0
     · exact hv0 (by simpa [hc] using hv)
     · have heval := congrArg (· (s m)) hv
       have hv_sm : v (s m) = 0 := notMem_support_iff.1 fun hsm ↦
-        (lt_irrefl m) (h_lt.trans_le (Finset.le_max' _ _ hsm))
-      simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.id_apply, coe_add, coe_smul,
-        Pi.add_apply, Pi.smul_apply, zero_apply, lmapDomain_apply, hv_sm, smul_zero, zero_add,
-        mapDomain_apply_of_injective hs.injective v m] at heval
-      exact hvm ((smul_eq_zero.1 heval).resolve_left hc)
+        (ne_of_lt h_lt) (hm.eq_of_le hsm h_lt.le)
+      have hcvm : c • v m = 0 := by
+        simpa [hv_sm, mapDomain_apply_of_injective hs] using heval
+      exact hvm ((smul_eq_zero.1 hcvm).resolve_left hc)
+
+/-- Over a torsion-free module `N`,
+`a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁` is injective whenever `f₀, f₁`
+are injective, `s₀, s₁` are injective with disjoint ranges, and `a ≠ 0 ∨ b ≠ 0`. -/
+theorem smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
+    {α₀ α₁ β R M N : Type*} [CommSemiring R] [IsCancelMulZero R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [Module.IsTorsionFree R N] {s₀ : α₀ → β} {s₁ : α₁ → β}
+    (hs₀ : Function.Injective s₀) (hs₁ : Function.Injective s₁)
+    (hdisj : Disjoint (Set.range s₀) (Set.range s₁)) {f₀ : M →ₗ[R] (α₀ →₀ N)}
+    {f₁ : M →ₗ[R] (α₁ →₀ N)} (hf₀ : Function.Injective f₀) (hf₁ : Function.Injective f₁)
+    {a b : R} (hab : a ≠ 0 ∨ b ≠ 0) :
+    Function.Injective
+      (a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) := fun v w hvw ↦ by
+  rcases hab with ha | hb
+  · refine hf₀ <| Finsupp.ext fun x ↦ smul_right_injective N ha ?_
+    have heval := congrArg (· (s₀ x)) hvw
+    have hs₁_zero (u : α₁ →₀ N) : mapDomain s₁ u (s₀ x) = 0 :=
+      mapDomain_of_notMem_range u _ (Set.disjoint_left.1 hdisj ⟨x, rfl⟩)
+    simpa [hs₁_zero, mapDomain_apply_of_injective hs₀] using heval
+  · refine hf₁ <| Finsupp.ext fun x ↦ smul_right_injective N hb ?_
+    have heval := congrArg (· (s₁ x)) hvw
+    have hs₀_zero (u : α₀ →₀ N) : mapDomain s₀ u (s₁ x) = 0 :=
+      mapDomain_of_notMem_range u _ (Set.disjoint_right.1 hdisj ⟨x, rfl⟩)
+    simpa [hs₀_zero, mapDomain_apply_of_injective hs₁] using heval
 
 /-- Any affine combination `(1 - c) • (lmapDomain N R s₀).comp f₀ + c • (lmapDomain N R s₁).comp f₁`
 of injective linear maps followed by disjoint-range coordinate embeddings is injective. -/
@@ -83,17 +108,9 @@ theorem one_sub_smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
     (hdisj : Disjoint (Set.range s₀) (Set.range s₁)) {f₀ : M →ₗ[R] (α₀ →₀ N)}
     {f₁ : M →ₗ[R] (α₁ →₀ N)} (hf₀ : Function.Injective f₀) (hf₁ : Function.Injective f₁) (c : R) :
     Function.Injective
-      ((1 - c) • (lmapDomain N R s₀).comp f₀ + c • (lmapDomain N R s₁).comp f₁) := fun v w hvw ↦ by
+      ((1 - c) • (lmapDomain N R s₀).comp f₀ + c • (lmapDomain N R s₁).comp f₁) := by
   by_cases hc : c = 0
-  · subst hc; refine hf₀ ((mapDomain_injective hs₀) ?_)
-    simpa only [sub_zero, one_smul, zero_smul, add_zero, LinearMap.comp_apply, lmapDomain_apply]
-      using hvw
-  · refine hf₁ <| Finsupp.ext fun a ↦ smul_right_injective N hc ?_
-    have heval := congrArg (· (s₁ a)) hvw
-    have hs₀_zero (u : α₀ →₀ N) : mapDomain s₀ u (s₁ a) = 0 :=
-      mapDomain_of_notMem_range u _ (Set.disjoint_right.1 hdisj ⟨a, rfl⟩)
-    simpa only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.comp_apply, coe_add,
-      coe_smul, Pi.add_apply, Pi.smul_apply, lmapDomain_apply, hs₀_zero, smul_zero, zero_add,
-      mapDomain_apply_of_injective hs₁] using heval
+  · subst hc; intro v w hvw; exact hf₀ ((mapDomain_injective hs₀) (by simpa using hvw))
+  · exact smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective hs₀ hs₁ hdisj hf₀ hf₁ (.inr hc)
 
 end Finsupp

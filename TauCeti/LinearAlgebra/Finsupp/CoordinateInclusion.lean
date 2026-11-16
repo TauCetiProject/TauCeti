@@ -59,6 +59,13 @@ theorem range_coordinateInclusion (n : ℕ) :
   simpa [coordinateInclusion, LinearMap.range_comp, Fin.range_val] using
     Finsupp.lmapDomain_supported R R (Fin.val : Fin n → ℕ) univ
 
+/-- Every vector in the image of `coordinateInclusion n` has support contained in
+`Finset.range n`. -/
+theorem support_coordinateInclusion_subset_range (n : ℕ) (v : Fin n → R) :
+    (coordinateInclusion n v).support ⊆ Finset.range n := fun _ hi ↦
+  Finset.mem_range.2 <| lt_of_not_ge fun hni ↦
+    Finsupp.mem_support_iff.1 hi (coordinateInclusion_apply_of_le v hni)
+
 /-- A finitely supported function whose support lies in `Finset.range n` is recovered by restricting
 to `Fin n` and applying `coordinateInclusion n`. -/
 theorem coordinateInclusion_of_support_subset_range {n : ℕ} {v : ℕ →₀ R}

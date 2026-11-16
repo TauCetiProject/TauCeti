@@ -12,18 +12,23 @@ public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Pullback
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.Instances.Matrix
 import Mathlib.Analysis.Normed.Operator.Bilinear
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # The universal tautological bundle over the infinite Grassmannian
 
-For a field `𝕜` and `k : ℕ`, `TauCeti.infiniteGrassmannian.Tautological 𝕜 k` equips each plane
-`W : TauCeti.infiniteGrassmannian 𝕜 k` with the canonical `𝕜`-module topology and embeds the total
-space into `infiniteGrassmannian 𝕜 k × (ℕ → 𝕜)` (`isEmbedding_totalSpaceEmbed`,
-`continuous_totalSpace_iff`). Over `[IsTopologicalDivisionRing 𝕜] [T1Space 𝕜]` it is a rank-`k`
-`FiberBundle` over the coordinate-minor charts `chartDomain u` (`u : Fin k ↪ ℕ`); over
-`[NontriviallyNormedField 𝕜]` it is a `VectorBundle`, functorial under ambient injections
-(`mapTautologicalHomeomorph`) and finite-stage inclusions (`toInfiniteTautologicalHomeomorph`).
+For a field `𝕜` and `k : ℕ`, `TauCeti.infiniteGrassmannian.Tautological 𝕜 k` is the universal
+rank-`k` bundle over `TauCeti.infiniteGrassmannian 𝕜 k` whose pullbacks classify rank-`k` vector
+bundles (`TauCeti.Topology.Grassmannian.Infinite.Classification`). Each plane carries the canonical
+`𝕜`-module topology, and the total space embeds into `infiniteGrassmannian 𝕜 k × (ℕ → 𝕜)`
+(`isEmbedding_totalSpaceEmbed`, `continuous_totalSpace_iff`). Over
+`[IsTopologicalDivisionRing 𝕜] [T1Space 𝕜]` it is a rank-`k` `FiberBundle` over the
+coordinate-minor charts `chartDomain u` (`u : Fin k ↪ ℕ`), functorial under ambient injections
+(`mapTautologicalHomeomorph`); over `[NontriviallyNormedField 𝕜]` it is a `VectorBundle`, and over
+`[RCLike 𝕜]` its pullback along finite-stage inclusions agrees with the finite Grassmannian bundle
+(`finiteGrassmannian.toInfiniteTautologicalHomeomorph`).
 
 ## References
 
@@ -161,10 +166,9 @@ private theorem chartLinearMap_stageFrameBasis_symm (u : Fin k ↪ ℕ) {n : ℕ
     (f : finiteFullRankFrame 𝕜 k n) (c : Fin k → 𝕜) :
     chartLinearMap u (toInfinite (frameSpan f)) ((stageFrameBasis f).equivFun.symm c) =
       frameCoordMatrix u f *ᵥ c := by
-  ext j; rw [Module.Basis.equivFun_symm_apply, map_sum, Finset.sum_apply, Matrix.mulVec, dotProduct]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_smul, Pi.smul_apply, chartLinearMap_apply, val_stageFrameBasis_apply,
-    frameCoordMatrix, Matrix.of_apply, smul_eq_mul, mul_comm]
+  rw [Module.Basis.equivFun_symm_apply, map_sum]
+  ext j
+  simp [Matrix.mulVec, dotProduct, val_stageFrameBasis_apply, frameCoordMatrix, mul_comm]
 
 private theorem toInfinite_frameSpan_mem_chartDomain_iff (u : Fin k ↪ ℕ) {n : ℕ}
     (f : finiteFullRankFrame 𝕜 k n) :
@@ -248,8 +252,8 @@ def chartEquiv (u : Fin k ↪ ℕ) {W : infiniteGrassmannian 𝕜 k} (hW : W ∈
   (LinearEquiv.ofBijective (chartLinearMap u W) hW).toContinuousLinearEquivOfIsModuleTopology
 @[simp] theorem chartEquiv_apply (u : Fin k ↪ ℕ) {W : infiniteGrassmannian 𝕜 k}
     (hW : W ∈ chartDomain u) (v : Tautological 𝕜 k W) :
-    chartEquiv u hW v = chartLinearMap u W v := by
-  rw [chartEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]; rfl
+    chartEquiv u hW v = chartLinearMap u W v :=
+  congrFun (LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology _) v
 @[simp] theorem chartLinearMap_chartEquiv_symm (u : Fin k ↪ ℕ) {W : infiniteGrassmannian 𝕜 k}
     (hW : W ∈ chartDomain u) (v : Fin k → 𝕜) :
     chartLinearMap u W ((chartEquiv u hW).symm v) = v := by
@@ -297,7 +301,7 @@ private def chartComp (u : Fin k ↪ ℕ) {F : Type*} [AddCommMonoid F] [Module 
 private theorem chartComp_apply_of_mem (u : Fin k ↪ ℕ) {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
     (ψ : (ℕ →₀ 𝕜) →ₗ[𝕜] F) {W : infiniteGrassmannian 𝕜 k} (hW : W ∈ chartDomain u)
     (v : Fin k → 𝕜) : chartComp u ψ W v = ψ (((chartEquiv u hW).symm v).val) := by
-  rw [chartComp, dite_eq_left hW]; rfl
+  simp [chartComp, hW]
 open Classical in
 private def chartSymm (u : Fin k ↪ ℕ) (W : infiniteGrassmannian 𝕜 k) (v : Fin k → 𝕜) :
     Tautological 𝕜 k W := if hW : W ∈ chartDomain u then (chartEquiv u hW).symm v else 0
@@ -315,15 +319,6 @@ theorem isOpen_chartDomain {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [
 section FiberBundle
 variable {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalDivisionRing 𝕜] [T1Space 𝕜]
   {k : ℕ}
-omit [T1Space 𝕜] in
-private theorem continuousOn_inv_frameCoordMatrix (u : Fin k ↪ ℕ) (n : ℕ) :
-    ContinuousOn (fun f : finiteFullRankFrame 𝕜 k n ↦ (frameCoordMatrix u f)⁻¹)
-      {f | IsUnit (frameCoordMatrix u f)} := fun f hf ↦ by
-  have hinv : ContinuousAt Ring.inverse (frameCoordMatrix u f).det :=
-    (funext Ring.inverse_eq_inv : (Ring.inverse : 𝕜 → 𝕜) = Inv.inv) ▸
-      continuousAt_inv₀ (((Matrix.isUnit_iff_isUnit_det _).1 hf).ne_zero)
-  exact ((continuousAt_matrix_inv _ hinv).comp
-    (continuous_frameCoordMatrix u n).continuousAt).continuousWithinAt
 
 private theorem continuousOn_chartComp_stage (u : Fin k ↪ ℕ) {F : Type*} [AddCommMonoid F]
     [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [ContinuousSMul 𝕜 F]
@@ -335,20 +330,20 @@ private theorem continuousOn_chartComp_stage (u : Fin k ↪ ℕ) {F : Type*} [Ad
     (Set.ext (toInfinite_frameSpan_mem_chartDomain_iff u) :
       (frameSpan ⁻¹' (toInfinite ⁻¹' chartDomain (𝕜 := 𝕜) u) : Set (finiteFullRankFrame 𝕜 k n)) =
         {f | IsUnit (frameCoordMatrix u f)})]
-  have hinv := continuousOn_inv_frameCoordMatrix (𝕜 := 𝕜) u n
+  have hinv : ContinuousOn (fun f : finiteFullRankFrame 𝕜 k n ↦ (frameCoordMatrix u f)⁻¹)
+      {f | IsUnit (frameCoordMatrix u f)} := fun f hf ↦
+    ((continuous_frameCoordMatrix u n).continuousAt.matrix_inv
+      ((Matrix.isUnit_iff_isUnit_det _).1 hf).ne_zero).continuousWithinAt
   have hψn : Continuous (ψ.comp (coordinateInclusion n)) := LinearMap.continuous_on_pi _
   refine (continuousOn_finsetSum Finset.univ fun i _ ↦
-    (((continuous_apply r).comp_continuousOn ((continuous_apply i).comp_continuousOn hinv)).smul
+    (((continuous_id.matrix_elem i r).comp_continuousOn hinv).smul
       (hψn.comp ((continuous_apply i).comp continuous_subtype_val)).continuousOn)).congr
     fun f hf ↦ ?_
   have hf' := (toInfinite_frameSpan_mem_chartDomain_iff u f).2 hf
-  dsimp only [Function.comp_def]
-  rw [chartComp_apply_of_mem u ψ hf', chartEquiv_symm_stageFrameBasis u f hf',
+  rw [Function.comp_apply, chartComp_apply_of_mem u ψ hf', chartEquiv_symm_stageFrameBasis u f hf',
     Module.Basis.equivFun_symm_apply, ← Tautological.subtype_apply, map_sum, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [Tautological.subtype_apply, map_smul, val_stageFrameBasis_apply,
-    LinearMap.comp_apply, Matrix.mulVec, dotProduct, Pi.single_apply, mul_ite, mul_one, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]; rfl
+  simp [Function.comp_apply, val_stageFrameBasis_apply, Matrix.mulVec, dotProduct, Pi.single_apply]
 
 private theorem continuousOn_chartComp_eval (u : Fin k ↪ ℕ) {F : Type*} [AddCommMonoid F]
     [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [ContinuousSMul 𝕜 F]
@@ -396,7 +391,8 @@ def trivialization (u : Fin k ↪ ℕ) :
     refine continuousOn_fst.prodMk (continuousOn_pi.2 fun m ↦
       (continuousOn_chartComp_prod u (Finsupp.lapply m)).congr fun q hq ↦ ?_)
     dsimp only [Function.comp_def, totalSpaceEmbed]
-    rw [chartSymm, dite_eq_left hq.1, chartComp_apply_of_mem u (Finsupp.lapply m) hq.1]; rfl
+    rw [chartSymm, dite_eq_left hq.1, chartComp_apply_of_mem u (Finsupp.lapply m) hq.1,
+      Finsupp.lapply_apply]
   baseSet := chartDomain u
   open_baseSet := isOpen_chartDomain u
   source_eq := rfl
@@ -417,6 +413,8 @@ instance isLinear_trivialization (u : Fin k ↪ ℕ) : (trivialization (𝕜 := 
   linear W _ := (chartLinearMap u W).isLinear
 
 variable (𝕜 k) in
+/-- The rank-`k` fiber-bundle structure on `Tautological 𝕜 k` given by the coordinate-projection
+trivializations `trivialization u` over `chartDomain u` (`u : Fin k ↪ ℕ`). -/
 instance : FiberBundle (Fin k → 𝕜) (Tautological 𝕜 k) where
   totalSpaceMk_isInducing' := isInducing_totalSpaceMk
   trivializationAtlas' := range (trivialization (𝕜 := 𝕜) (k := k))
@@ -435,7 +433,8 @@ theorem mem_trivializationAtlas_tautological_iff
     {e : Trivialization (Fin k → 𝕜) (π (Fin k → 𝕜) (Tautological 𝕜 k))} :
     e ∈ FiberBundle.trivializationAtlas (Fin k → 𝕜) (Tautological 𝕜 k) ↔
       ∃ u : Fin k ↪ ℕ, trivialization u = e := Iff.rfl
-/-- The preferred local trivialization of `Tautological 𝕜 k` at `W` is `chartIndex W`. -/
+/-- The preferred local trivialization of `Tautological 𝕜 k` at `W` is
+`trivialization (chartIndex W)`. -/
 @[simp] theorem trivializationAt_tautological (W : infiniteGrassmannian 𝕜 k) :
     trivializationAt (Fin k → 𝕜) (Tautological 𝕜 k) W = trivialization (chartIndex W) := (rfl)
 
@@ -455,6 +454,44 @@ theorem continuous_linearMap_totalSpace {F : Type*} [AddCommMonoid F] [Module �
   have hq_base : q.proj ∈ chartDomain u := by rwa [e.mem_source, trivialization_baseSet] at hq
   dsimp only [Function.comp_def]
   rw [trivialization_apply, chartComp_apply_of_mem u ψ hq_base, chartEquiv_symm_chartLinearMap]
+
+/-- `Tautological 𝕜 k` is bundle-homeomorphic to its pullback along `mapContinuousMap φ hφ`. -/
+def mapTautologicalHomeomorph (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) :
+    TotalSpace (Fin k → 𝕜) (Tautological 𝕜 k) ≃ₜ
+      TotalSpace (Fin k → 𝕜) ((mapContinuousMap (k := k) φ hφ : _ → _) *ᵖ (Tautological 𝕜 k)) where
+  toFun p := TotalSpace.mk' (Fin k → 𝕜) p.proj (mapTautologicalEquiv φ hφ p.proj p.2)
+  invFun p := TotalSpace.mk' (Fin k → 𝕜) p.proj ((mapTautologicalEquiv φ hφ p.proj).symm p.2)
+  left_inv := fun ⟨W, v⟩ ↦ congrArg (TotalSpace.mk W)
+    ((mapTautologicalEquiv φ hφ W).symm_apply_apply v)
+  right_inv := fun ⟨W, w⟩ ↦ congrArg (TotalSpace.mk W)
+    ((mapTautologicalEquiv φ hφ W).apply_symm_apply w)
+  continuous_toFun := Pullback.continuous_iff.2 ⟨FiberBundle.continuous_proj _ _,
+    continuous_totalSpace_iff.2
+      ⟨(continuous_map φ hφ).comp (FiberBundle.continuous_proj _ _), fun m ↦
+        (continuous_linearMap_totalSpace (k := k) ((Finsupp.lapply m).comp φ)).congr fun p ↦ by
+          simp⟩⟩
+  continuous_invFun := continuous_totalSpace_iff.2
+    ⟨Pullback.continuous_proj (Fin k → 𝕜) (Tautological 𝕜 k)
+      (mapContinuousMap (k := k) φ hφ : _ → _),
+      fun m ↦
+        ((continuous_linearMap_totalSpace (k := k) ((Finsupp.lapply m).comp φ.leftInverse)).comp
+          (Pullback.continuous_lift (Fin k → 𝕜) (Tautological 𝕜 k)
+            (mapContinuousMap (k := k) φ hφ : _ → _))).congr fun ⟨W, w⟩ ↦ by
+          have hw : φ ((mapTautologicalEquiv φ hφ W).symm w).val = w.val :=
+            (val_mapTautologicalEquiv φ hφ W _).symm.trans
+              (congrArg Tautological.val ((mapTautologicalEquiv φ hφ W).apply_symm_apply w))
+          simp [← hw, LinearMap.leftInverse_apply_of_inj (LinearMap.ker_eq_bot.2 hφ)]⟩
+
+@[simp] theorem mapTautologicalHomeomorph_apply
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
+    (p : TotalSpace (Fin k → 𝕜) (Tautological 𝕜 k)) : mapTautologicalHomeomorph φ hφ p =
+      TotalSpace.mk' (Fin k → 𝕜) p.proj (mapTautologicalEquiv φ hφ p.proj p.2) := (rfl)
+
+@[simp] theorem mapTautologicalHomeomorph_symm_apply
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) (p : TotalSpace (Fin k → 𝕜)
+      ((mapContinuousMap (k := k) φ hφ : _ → _) *ᵖ (Tautological 𝕜 k))) :
+    (mapTautologicalHomeomorph φ hφ).symm p =
+      TotalSpace.mk' (Fin k → 𝕜) p.proj ((mapTautologicalEquiv φ hφ p.proj).symm p.2) := (rfl)
 end FiberBundle
 
 section VectorBundle
@@ -476,38 +513,12 @@ private theorem continuousOn_coordChangeL_trivialization (u u' : Fin k ↪ ℕ) 
   exact Finset.sum_congr rfl fun r _ ↦ map_smul _ (v r) (Pi.single r 1)
 
 variable (𝕜 k) in
+/-- The rank-`k` `𝕜`-vector-bundle structure on `Tautological 𝕜 k` over a nontrivially normed
+field `𝕜`. -/
 instance : VectorBundle 𝕜 (Fin k → 𝕜) (Tautological 𝕜 k) where
   trivialization_linear' := by rintro _ ⟨u, rfl⟩; exact isLinear_trivialization u
   continuousOn_coordChange' := by
     rintro _ _ ⟨u, rfl⟩ ⟨u', rfl⟩; exact continuousOn_coordChangeL_trivialization u u'
-
-/-- Over a complete normed field, `Tautological 𝕜 k` is bundle-homeomorphic to its pullback along
-`mapContinuousMap φ hφ`. -/
-def mapTautologicalHomeomorph [CompleteSpace 𝕜]
-    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) :
-    TotalSpace (Fin k → 𝕜) (Tautological 𝕜 k) ≃ₜ
-      TotalSpace (Fin k → 𝕜) ((mapContinuousMap (k := k) φ hφ : _ → _) *ᵖ (Tautological 𝕜 k)) :=
-  bundleHomeomorph (E₁ := Tautological 𝕜 k)
-    (E₂ := (mapContinuousMap (k := k) φ hφ : _ → _) *ᵖ (Tautological 𝕜 k))
-    (mapTautologicalEquiv φ hφ) <| Pullback.continuous_iff.2 ⟨FiberBundle.continuous_proj _ _,
-      continuous_totalSpace_iff.2
-        ⟨(continuous_map φ hφ).comp (FiberBundle.continuous_proj _ _), fun m ↦
-          (continuous_linearMap_totalSpace (k := k) ((Finsupp.lapply m).comp φ)).congr fun p ↦ by
-            rw [LinearMap.comp_apply, Finsupp.lapply_apply,
-              ← val_mapTautologicalEquiv φ hφ p.proj p.2]; rfl⟩⟩
-@[simp] theorem mapTautologicalHomeomorph_apply [CompleteSpace 𝕜]
-    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
-    (p : TotalSpace (Fin k → 𝕜) (Tautological 𝕜 k)) : mapTautologicalHomeomorph φ hφ p =
-      TotalSpace.mk' (Fin k → 𝕜) p.proj (mapTautologicalEquiv φ hφ p.proj p.2) :=
-  bundleHomeomorph_apply (E₁ := Tautological 𝕜 k)
-    (E₂ := (mapContinuousMap (k := k) φ hφ : _ → _) *ᵖ (Tautological 𝕜 k)) _ _ p
-@[simp] theorem mapTautologicalHomeomorph_symm_apply [CompleteSpace 𝕜]
-    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) (p : TotalSpace (Fin k → 𝕜)
-      ((mapContinuousMap (k := k) φ hφ : _ → _) *ᵖ (Tautological 𝕜 k))) :
-    (mapTautologicalHomeomorph φ hφ).symm p =
-      TotalSpace.mk' (Fin k → 𝕜) p.proj ((mapTautologicalEquiv φ hφ p.proj).symm p.2) :=
-  bundleHomeomorph_symm_apply (E₁ := Tautological 𝕜 k)
-    (E₂ := (mapContinuousMap (k := k) φ hφ : _ → _) *ᵖ (Tautological 𝕜 k)) _ _ p
 end VectorBundle
 end infiniteGrassmannian
 
@@ -549,7 +560,8 @@ def toInfiniteTautologicalHomeomorph : TotalSpace (Fin k → 𝕜) (Tautological
             (coordinateInclusion n))).comp ((PiLp.continuous_ofLp 2 _).comp
               (continuous_snd.comp (isEmbedding_totalSpace_range _ _).continuous))).congr fun p ↦ by
                 simp only [Function.comp_apply, LinearMap.comp_apply, Finsupp.lapply_apply]
-                rw [← val_toInfiniteTautologicalEquiv p.proj p.2]; rfl⟩⟩
+                exact DFunLike.congr_fun
+                  (val_toInfiniteTautologicalEquiv p.proj p.2).symm m⟩⟩
 @[simp] theorem toInfiniteTautologicalHomeomorph_apply
     (p : TotalSpace (Fin k → 𝕜) (Tautological 𝕜 k n)) :
     toInfiniteTautologicalHomeomorph 𝕜 k n p =

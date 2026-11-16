@@ -21,9 +21,12 @@ coordinates** (`TauCeti.IsClassifyingCoordinates`) when every ambient coordinate
 Unlike mere pointwise finite support in `ℕ →₀ 𝕜`, uniform local containment in `Finset.range N`
 makes `x ↦ LinearMap.range (j x)` factor locally through `finiteGrassmannian 𝕜 k N`, ensuring
 continuity into the direct-limit topology of `infiniteGrassmannian 𝕜 k` (`classifyContinuousMap`,
-`classifyTautologicalHomeomorph`) and feeding `Classification.lean`. Existence holds over
-paracompact normal bases (`exists_isClassifyingCoordinates`,
-`PartitionOfUnity.isClassifyingCoordinates_weightedFrameCoordinates`).
+`classifyTautologicalHomeomorph`) and feeding `Classification.lean`. Over a complete nontrivially
+normed `ℝ`-algebra field, every finite-rank vector bundle over a paracompact normal base admits
+classifying coordinates (`exists_isClassifyingCoordinates`), while over `RCLike 𝕜`, given
+`PartitionOfUnity`-weighted orthonormal frame coordinates flatten directly into
+`IsClassifyingCoordinates` (`PartitionOfUnity.isClassifyingCoordinates_weightedFrameCoordinates`)
+via `IsClassifyingCoordinates.of_flattenFinsupp`.
 
 ## References
 
@@ -90,13 +93,28 @@ theorem postcomp [IsTopologicalSemiring 𝕜] (hj : IsClassifyingCoordinates �
     rw [coordinateInclusion_of_support_subset_range (hq q.2)]
   locally_supported x := by
     obtain ⟨N, hN⟩ := hj.locally_supported x
-    have hfg : ((⊤ : Submodule 𝕜 (Fin N → 𝕜)).map (φ.comp (coordinateInclusion N))).FG :=
-      (Module.Finite.iff_fg.1 inferInstance).map _
-    obtain ⟨M, hM⟩ := hfg.exists_le_supported_Iio
-    refine ⟨M, hN.mono fun y hy v r hr ↦ Finset.mem_range.2 ?_⟩
-    rw [LinearMap.comp_apply, ← coordinateInclusion_of_support_subset_range (hy v)] at hr
-    exact hM ⟨fun i : Fin N ↦ j y v i.1, trivial, rfl⟩ hr
+    obtain ⟨M, hM⟩ := Finsupp.exists_support_map_subset_range φ N
+    exact ⟨M, hN.mono fun y hy v ↦ hM (j y v) (hy v)⟩
   injective x := hφ.comp (hj.injective x)
+
+/-- Flattening fibrewise injective block coordinates `E x →ₗ[𝕜] (ℕ →₀ (Fin r → 𝕜))` with
+continuous coordinate entries and local `Finset.range` block support yields
+`IsClassifyingCoordinates`. -/
+theorem of_flattenFinsupp {r : ℕ} {j₀ : ∀ x, E x →ₗ[𝕜] (ℕ →₀ (Fin r → 𝕜))}
+    (hcont : ∀ (n : ℕ) (i : Fin r), Continuous fun p : TotalSpace F E ↦ j₀ p.proj p.2 n i)
+    (hsupp : ∀ x : X, ∃ N : ℕ, ∀ᶠ y in 𝓝 x, ∀ v : E y, (j₀ y v).support ⊆ Finset.range N)
+    (hinj : ∀ x : X, Injective (j₀ x)) :
+    IsClassifyingCoordinates 𝕜 F E (fun x ↦ (flattenFinsupp 𝕜 r).comp (j₀ x)) where
+  continuous_coord m := by
+    by_cases hr : m.unpair.2 < r
+    · exact (hcont m.unpair.1 ⟨m.unpair.2, hr⟩).congr fun _ ↦ by
+        simp [flattenFinsupp_apply, hr]
+    · exact (continuous_const (y := (0 : 𝕜))).congr fun _ ↦ by
+        simp [flattenFinsupp_apply, hr]
+  locally_supported x := by
+    obtain ⟨N, hN⟩ := hsupp x
+    exact ⟨max N r ^ 2, hN.mono fun y hy v ↦ support_flattenFinsupp_subset_range (hy v)⟩
+  injective x := (flattenFinsupp_injective 𝕜 r).comp (hinj x)
 end Operations
 
 section Classify
@@ -137,11 +155,14 @@ private theorem frameSpan_localFrame_eq (hj : IsClassifyingCoordinates 𝕜 F E 
     Fintype.linearIndependent_iff.1 b.linearIndependent g <| hL <| by
       rw [map_sum, map_zero, ← (coordinateInclusion (R := 𝕜) N).map_zero, ← hg, map_sum]
       exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, map_smul, hinc]
+  have hspan : Submodule.map (coordinateInclusion (R := 𝕜) N) (Submodule.span 𝕜 (range f)) =
+      LinearMap.range L := by
+    rw [Submodule.map_span, ← range_comp,
+      (funext hinc : coordinateInclusion (R := 𝕜) N ∘ f = L ∘ b), range_comp, ← Submodule.map_span,
+      b.span_eq, Submodule.map_top]
   refine ⟨hlin, Subtype.ext ?_⟩
-  rw [finiteGrassmannian.coe_toInfinite, finiteGrassmannian.coe_frameSpan, Subtype.coe_mk,
-    coe_classify, Submodule.map_span, ← range_comp,
-    (funext hinc : coordinateInclusion (R := 𝕜) N ∘ f = L ∘ b), range_comp, ← Submodule.map_span,
-    b.span_eq, Submodule.map_top, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
+  rw [finiteGrassmannian.coe_toInfinite, finiteGrassmannian.coe_frameSpan, hj.coe_classify hk y]
+  exact hspan.trans (LinearMap.range_comp_of_range_eq_top (j y) (LinearEquiv.range _))
 
 /-- The classifying map of `IsClassifyingCoordinates` is continuous. -/
 @[fun_prop] theorem continuous_classify (hj : IsClassifyingCoordinates 𝕜 F E j)
@@ -207,15 +228,17 @@ theorem classifyContinuousMap_compLinearEquiv
       hΦ_cont).classifyContinuousMap hk' = hj.classifyContinuousMap hk :=
   ContinuousMap.ext (hj.classify_compLinearEquiv Φ hΦ_cont hk hk')
 @[simp] theorem classify_postcomp (hj : IsClassifyingCoordinates 𝕜 F E j)
-    (hπ : Continuous (π F E)) (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
     (hk : Module.finrank 𝕜 F = k) (x : X) :
-    (hj.postcomp hπ φ hφ).classify hk x = infiniteGrassmannian.map φ hφ (hj.classify hk x) :=
+    (hj.postcomp (FiberBundle.continuous_proj F E) φ hφ).classify hk x =
+      infiniteGrassmannian.map φ hφ (hj.classify hk x) :=
   Subtype.ext (by simp [LinearMap.range_comp])
 @[simp] theorem classifyContinuousMap_postcomp (hj : IsClassifyingCoordinates 𝕜 F E j)
-    (hπ : Continuous (π F E)) (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
-    (hk : Module.finrank 𝕜 F = k) : (hj.postcomp hπ φ hφ).classifyContinuousMap hk =
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
+    (hk : Module.finrank 𝕜 F = k) :
+    (hj.postcomp (FiberBundle.continuous_proj F E) φ hφ).classifyContinuousMap hk =
       (infiniteGrassmannian.mapContinuousMap φ hφ).comp (hj.classifyContinuousMap hk) :=
-  ContinuousMap.ext (hj.classify_postcomp hπ φ hφ hk)
+  ContinuousMap.ext (hj.classify_postcomp φ hφ hk)
 
 /-- Over a complete scalar field, `j x` identifies `E x` with `Tautological 𝕜 k (classify hk x)`. -/
 def classifyTautologicalEquiv [CompleteSpace 𝕜] (hj : IsClassifyingCoordinates 𝕜 F E j)
@@ -251,8 +274,8 @@ def classifyTautologicalHomeomorph (hj : IsClassifyingCoordinates 𝕜 F E j)
     (hj.classifyTautologicalEquiv hk) <| Bundle.Pullback.continuous_iff.2
       ⟨FiberBundle.continuous_proj F E, infiniteGrassmannian.continuous_totalSpace_iff.2
         ⟨(hj.classifyContinuousMap hk).continuous.comp (FiberBundle.continuous_proj F E),
-          fun m ↦ (hj.continuous_coord m).congr fun p ↦ by
-            rw [← hj.val_classifyTautologicalEquiv hk p.proj p.2]; rfl⟩⟩
+          fun m ↦ (hj.continuous_coord m).congr fun p ↦
+            DFunLike.congr_fun (hj.val_classifyTautologicalEquiv hk p.proj p.2).symm m⟩⟩
 @[simp] theorem classifyTautologicalHomeomorph_apply (hj : IsClassifyingCoordinates 𝕜 F E j)
     (hk : Module.finrank 𝕜 F = k) (p : TotalSpace F E) :
     hj.classifyTautologicalHomeomorph hk p =
@@ -283,9 +306,11 @@ theorem cylinderLinearMap_def (p : I × X) : cylinderLinearMap j₀ j₁ p =
     (v : (((ContinuousMap.snd : C(I × X, X)) : I × X → X) *ᵖ E) p) : cylinderLinearMap j₀ j₁ p v =
       (1 - algebraMap ℝ 𝕜 p.1.1) • j₀ p.2 v + (algebraMap ℝ 𝕜 p.1.1) • j₁ p.2 v := (rfl)
 @[simp] theorem cylinderLinearMap_zero (x : X) : cylinderLinearMap j₀ j₁ (0, x) = j₀ x := by
-  ext v m; simp; rfl
+  change (1 - algebraMap ℝ 𝕜 0) • j₀ x + (algebraMap ℝ 𝕜 0) • j₁ x = j₀ x
+  rw [map_zero, sub_zero, one_smul, zero_smul, add_zero]
 @[simp] theorem cylinderLinearMap_one (x : X) : cylinderLinearMap j₀ j₁ (1, x) = j₁ x := by
-  ext v m; simp; rfl
+  change (1 - algebraMap ℝ 𝕜 1) • j₀ x + (algebraMap ℝ 𝕜 1) • j₁ x = j₁ x
+  rw [map_one, sub_self, zero_smul, one_smul, zero_add]
 end Algebraic
 
 /-- Linearly interpolating classifying coordinates `j₀, j₁` yields classifying coordinates on
@@ -308,8 +333,10 @@ theorem cylinderInterp {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜] [I
         (continuous_const (y := (1 : 𝕜)))).congr fun _ ↦ (Algebra.algebraMap_eq_smul_one _).symm
     exact ((((continuous_const (y := (1 : 𝕜))).sub ht).mul
       ((hj₀.continuous_coord m).comp lift_cyl)).add
-        (ht.mul ((hj₁.continuous_coord m).comp lift_cyl))).congr fun ⟨⟨_, _⟩, _⟩ ↦ by
-          simp [Pullback.lift, Algebra.smul_def]; rfl
+        (ht.mul ((hj₁.continuous_coord m).comp lift_cyl))).congr fun ⟨⟨t, x⟩, v⟩ ↦
+          ((Finsupp.add_apply ((1 - algebraMap ℝ 𝕜 t.1) • j₀ x v)
+            ((algebraMap ℝ 𝕜 t.1) • j₁ x v) m).trans
+              (congrArg₂ (· + ·) (smul_eq_mul _ _) (smul_eq_mul _ _))).symm
   locally_supported p := by
     obtain ⟨N₀, hN₀⟩ := hj₀.locally_supported p.2; obtain ⟨N₁, hN₁⟩ := hj₁.locally_supported p.2
     refine ⟨max N₀ N₁, Filter.mem_of_superset
@@ -337,8 +364,10 @@ def homotopyOfLinearCombinationInjective
     (hk : Module.finrank 𝕜 F = k) :
     (hj₀.classifyContinuousMap hk).Homotopy (hj₁.classifyContinuousMap hk) where
   toContinuousMap := (hj₀.cylinderInterp hj₁ hinj).classifyContinuousMap hk
-  map_zero_left _ := Subtype.ext (by simp; rfl)
-  map_one_left _ := Subtype.ext (by simp; rfl)
+  map_zero_left x := Subtype.ext <| ((hj₀.cylinderInterp hj₁ hinj).coe_classify hk (0, x)).trans <|
+    (congrArg LinearMap.range (cylinderLinearMap_zero j₀ j₁ x)).trans (hj₀.coe_classify hk x).symm
+  map_one_left x := Subtype.ext <| ((hj₀.cylinderInterp hj₁ hinj).coe_classify hk (1, x)).trans <|
+    (congrArg LinearMap.range (cylinderLinearMap_one j₀ j₁ x)).trans (hj₁.coe_classify hk x).symm
 @[simp] theorem homotopyOfLinearCombinationInjective_toContinuousMap
     (hj₀ : IsClassifyingCoordinates 𝕜 F E j₀) (hj₁ : IsClassifyingCoordinates 𝕜 F E j₁)
     (hinj : ∀ (t : I) (x : X),
@@ -401,26 +430,21 @@ theorem exists_isClassifyingCoordinates [CompleteSpace 𝕜] [ParacompactSpace X
   have := he_lin
   obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate isClosed_univ
     (fun n ↦ (e n).baseSet) (fun n ↦ (e n).open_baseSet) (fun x _ ↦ he_cov.ge (mem_univ x))
-  let b := Module.finBasis 𝕜 F; let j₀ := partitionBlockCoordinates ρ e b
-  refine ⟨fun x ↦ (flattenFinsupp 𝕜 (Module.finrank 𝕜 F)).comp (j₀ x), fun m ↦ ?_, fun x ↦ ?_,
-    fun x ↦ ?_⟩
-  · by_cases hk : m.unpair.2 < Module.finrank 𝕜 F
-    · exact (continuous_partitionBlockCoordinates_apply ρ e hρ b
-        m.unpair.1 ⟨m.unpair.2, hk⟩).congr fun _ ↦ by simp [j₀, flattenFinsupp_apply, hk]
-    · exact (continuous_const (y := (0 : 𝕜))).congr fun _ ↦ by simp [flattenFinsupp_apply, hk]
+  let b := Module.finBasis 𝕜 F
+  refine ⟨_, IsClassifyingCoordinates.of_flattenFinsupp
+    (continuous_partitionBlockCoordinates_apply ρ e hρ b) (fun x ↦ ?_) fun x ↦ ?_⟩
   · classical
-    refine ⟨max ((ρ.fintsupport x).sup id + 1) (Module.finrank 𝕜 F) ^ 2,
-      (ρ.eventually_finsupport_subset x).mono fun y hy v ↦
-        support_flattenFinsupp_subset_range fun n hn ↦ Finset.mem_range.2 ?_⟩
+    refine ⟨(ρ.fintsupport x).sup id + 1,
+      (ρ.eventually_finsupport_subset x).mono fun y hy v n hn ↦ Finset.mem_range.2 ?_⟩
     have hn_supp : n ∈ ρ.finsupport y := (ρ.mem_finsupport y).2 fun (h0 : ρ n y = 0) ↦
-      Finsupp.mem_support_iff.1 hn (by simp [j₀, h0])
+      Finsupp.mem_support_iff.1 hn (by simp [h0])
     exact Nat.lt_succ_of_le (Finset.le_sup (f := id) (hy hn_supp))
   · let w : ℕ → X → 𝕜 := fun n y ↦ algebraMap ℝ 𝕜 (ρ n y)
     have hwsupp : ∀ n, tsupport (w n) ⊆ (e n).baseSet := fun n ↦
       (tsupport_comp_subset (map_zero (algebraMap ℝ 𝕜)) (ρ n)).trans (hρ n)
     obtain ⟨n, hn⟩ := ρ.exists_pos (mem_univ x)
     have hwn : w n x ≠ 0 := (map_ne_zero (algebraMap ℝ 𝕜)).2 hn.ne'
-    exact (flattenFinsupp_injective 𝕜 _).comp fun v v' hvv' ↦
+    exact fun v v' hvv' ↦
       weightedTrivializationMap_injective e w (hwsupp n (subset_tsupport _ hwn)) hwn
         (funext fun m ↦ b.equivFun.injective (congrArg (· m) hvv'))
 end PartitionBlock
@@ -443,17 +467,13 @@ theorem _root_.PartitionOfUnity.isClassifyingCoordinates_weightedFrameCoordinate
         (ρ.weightedFrameCoordinates e c b x)) := by
   intro coords
   have hcoords_cont : Continuous coords := (PiLp.continuous_ofLp 2 _).comp b.repr.continuous
-  refine ⟨fun m ↦ ?_, fun x ↦ ?_, fun x ↦ ?_⟩
-  · by_cases hr : m.unpair.2 < r
-    · exact ((continuous_apply ⟨m.unpair.2, hr⟩).comp
-        (hcoords_cont.comp (ρ.continuous_weightedFrameCoordinates_apply e c b he m.unpair.1))).congr
-          fun _ ↦ by simp [flattenFinsupp_apply, hr]
-    · exact (continuous_const (y := (0 : 𝕜))).congr fun _ ↦ by simp [flattenFinsupp_apply, hr]
-  · obtain ⟨N, hN⟩ := ρ.locally_support_weightedFrameCoordinates_range c b e x
-    exact ⟨max N r ^ 2, hN.mono fun y hy v ↦ support_flattenFinsupp_subset_range
-      ((Finsupp.support_mapRange (f := coords) (hf := map_zero coords)).trans (hy v))⟩
-  · exact (flattenFinsupp_injective 𝕜 r).comp <|
-      (Finsupp.mapRange.linearEquiv coords).injective.comp
-        (ρ.weightedFrameCoordinates_injective e c b (mem_univ x))
+  exact IsClassifyingCoordinates.of_flattenFinsupp
+    (fun n i ↦ (continuous_apply i).comp
+      (hcoords_cont.comp (ρ.continuous_weightedFrameCoordinates_apply e c b he n)))
+    (fun x ↦ let ⟨N, hN⟩ := ρ.locally_support_weightedFrameCoordinates_range c b e x
+      ⟨N, hN.mono fun y hy v ↦
+        (Finsupp.support_mapRange (f := coords) (hf := map_zero coords)).trans (hy v)⟩)
+    fun x ↦ (Finsupp.mapRange.linearEquiv coords).injective.comp
+      (ρ.weightedFrameCoordinates_injective e c b (mem_univ x))
 end Existence
 end TauCeti
