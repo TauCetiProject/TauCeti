@@ -123,12 +123,6 @@ theorem homogeneousLittlewoodPaleyBlock_apply (j : ℤ) (u : 𝓢'(E, F)) :
       fourierMultiplierCLM F (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) u :=
   (rfl)
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The dyadic cutoffs, viewed as complex-valued symbols, have temperate growth. -/
-private theorem hasTemperateGrowth_ofReal_littlewoodPaley (j : ℤ) :
-    (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
-  fun_prop
-
 /-- For `j ≥ 1` the homogeneous block `Pⱼ` is the inhomogeneous block `Δⱼ`. -/
 theorem homogeneousLittlewoodPaleyBlock_natCast {j : ℕ} (hj : j ≠ 0) :
     homogeneousLittlewoodPaleyBlock F φ j = littlewoodPaleyBlock F φ j := by
@@ -149,10 +143,9 @@ theorem sum_homogeneousLittlewoodPaleyBlock_Ioc {a b : ℤ} (hab : a ≤ b) :
     ring
   have hadd := fourierMultiplierCLM_add (F := F)
     (Function.HasTemperateGrowth.sum (s := Finset.Ioc a b) fun j _ ↦
-      hasTemperateGrowth_ofReal_littlewoodPaley φ j)
-    (φ.coe_lowPassSchwartz (zpow_ne_zero a two_ne_zero) ▸
-      (φ.lowPassSchwartz (zpow_ne_zero a two_ne_zero)).hasTemperateGrowth)
-  rw [hsum, fourierMultiplierCLM_sum F fun j _ ↦ hasTemperateGrowth_ofReal_littlewoodPaley φ j]
+      φ.hasTemperateGrowth_ofReal_littlewoodPaley j)
+    (φ.hasTemperateGrowth_ofReal_apply_inv_smul (2 ^ a))
+  rw [hsum, fourierMultiplierCLM_sum F fun j _ ↦ φ.hasTemperateGrowth_ofReal_littlewoodPaley j]
     at hadd
   simp_rw [homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
   exact eq_sub_of_add_eq hadd.symm
@@ -174,7 +167,7 @@ theorem homogeneousLittlewoodPaleyBlock_lineDerivOp (j : ℤ) (m : E) (u : 𝓢'
     homogeneousLittlewoodPaleyBlock F φ j (∂_{m} u) =
       ∂_{m} (homogeneousLittlewoodPaleyBlock F φ j u) := by
   rw [homogeneousLittlewoodPaleyBlock_apply, homogeneousLittlewoodPaleyBlock_apply,
-    lineDerivOp_fourierMultiplierCLM (hasTemperateGrowth_ofReal_littlewoodPaley φ j)]
+    lineDerivOp_fourierMultiplierCLM (φ.hasTemperateGrowth_ofReal_littlewoodPaley j)]
 
 open Distribution in
 /-- **Blocks off the spectrum vanish.** If the Fourier transform of `u` vanishes on a set
@@ -204,8 +197,8 @@ theorem homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock
   rw [homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM,
     homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM,
     fourierMultiplierCLM_compL_fourierMultiplierCLM
-      (hasTemperateGrowth_ofReal_littlewoodPaley φ' k)
-      (hasTemperateGrowth_ofReal_littlewoodPaley φ j)]
+      (φ'.hasTemperateGrowth_ofReal_littlewoodPaley k)
+      (φ.hasTemperateGrowth_ofReal_littlewoodPaley j)]
   congr 1
   funext ξ
   simp [mul_comm]
@@ -331,20 +324,13 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le :
       ∃ g : Lp F p (volume : Measure E),
         homogeneousLittlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧ ‖g‖ ≤ C * ‖f‖ := by
   refine ⟨∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ)) x‖, fun {p} _ j f ↦ ?_⟩
-  -- The cutoff `ψⱼ`, as a complex Schwartz function.
-  set σ : 𝓢(E, ℂ) := φ.littlewoodPaleyPiece (m := fun _ ↦ (1 : ℂ)) contDiffOn_const j
-  have hσ : (σ : E → ℂ) = fun ξ ↦ (φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) := by
-    funext ξ
-    rw [ContDiffBump.littlewoodPaleyPiece_apply,
-      ← φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply, Complex.real_smul, mul_one]
-  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
-  refine ⟨g, ?_, ?_⟩
-  · rw [← hg, homogeneousLittlewoodPaleyBlock_apply]
-    congr 2
-    funext ξ
-    simp [σ]
-  · rwa [hσ, TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))
-      (inv_ne_zero (zpow_ne_zero j two_ne_zero))] at hgf
+  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le (φ.littlewoodPaleySchwartz j) f
+  rw [φ.coe_littlewoodPaleySchwartz] at hg hgf
+  refine ⟨g, hg, ?_⟩
+  -- The kernel of `Pⱼ` is the `L¹`-normalised dilate of the kernel of `P₀`.
+  simp_rw [φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j] at hgf
+  rwa [TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))
+    (inv_ne_zero (zpow_ne_zero j two_ne_zero))] at hgf
 
 /-- **Low-pass truncations of `Lᵖ` functions are small in `L^∞`.** There is `C`, depending only on
 `φ` and `p`, such that for every `R > 0` and every `f ∈ Lᵖ`, the truncation

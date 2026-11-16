@@ -703,6 +703,12 @@ Schwartz functions and on tempered distributions. -/
 theorem hasTemperateGrowth_littlewoodPaley (j : ℤ) : (φ.littlewoodPaley j).HasTemperateGrowth :=
   (φ.hasCompactSupport_littlewoodPaley j).hasTemperateGrowth (φ.contDiff_littlewoodPaley j)
 
+/-- The Littlewood–Paley cutoffs, viewed as complex-valued symbols, have temperate growth, so they
+are Fourier multipliers on Schwartz functions and on tempered distributions. -/
+theorem hasTemperateGrowth_ofReal_littlewoodPaley (j : ℤ) :
+    (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
+  fun_prop
+
 /-- **Derivative bounds for the Littlewood–Paley cutoffs.** The `k`-th derivative of `ψⱼ` is
 bounded by `B / 2^{jk}`, with `B` independent of `j`. -/
 theorem exists_norm_iteratedFDeriv_littlewoodPaley_le (k : ℕ) :

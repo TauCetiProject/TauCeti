@@ -118,22 +118,13 @@ open TemperedDistribution
 band-limited functions. -/
 private def bump : ContDiffBump (0 : E) := ⟨2, 3, two_pos, by norm_num⟩
 
-/-- The symbol `ξ ↦ χ (R⁻¹ • ξ)`, equal to one on the ball of radius `2 R`, as a Schwartz
-function. -/
-private def cutoff {R : ℝ} (hR : 0 < R) : 𝓢(E, ℂ) :=
-  (bump : ContDiffBump (0 : E)).lowPassSchwartz hR.ne'
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem cutoff_apply {R : ℝ} (hR : 0 < R) (ξ : E) :
-    cutoff hR ξ = ((bump : ContDiffBump (0 : E)) (R⁻¹ • ξ) : ℂ) :=
-  ContDiffBump.lowPassSchwartz_apply _ hR.ne' ξ
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The cutoff at scale `R` equals one outside a closed set disjoint from the closed ball of
 radius `R`. -/
 private theorem tsupport_cutoff_sub_one_subset {R : ℝ} (hR : 0 < R) :
-    tsupport (⇑(cutoff (E := E) hR) - 1) ⊆ (closedBall 0 R)ᶜ := by
-  have hsupp : Function.support (⇑(cutoff (E := E) hR) - 1) ⊆ (ball 0 (2 * R))ᶜ := by
+    tsupport (⇑((bump (E := E)).lowPassSchwartz hR.ne') - 1) ⊆ (closedBall 0 R)ᶜ := by
+  have hsupp :
+      Function.support (⇑((bump (E := E)).lowPassSchwartz hR.ne') - 1) ⊆ (ball 0 (2 * R))ᶜ := by
     intro ξ hξ hball
     apply hξ
     have : R⁻¹ • ξ ∈ closedBall (0 : E) 2 := by
@@ -141,7 +132,7 @@ private theorem tsupport_cutoff_sub_one_subset {R : ℝ} (hR : 0 < R) :
       rw [mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
       rw [inv_mul_le_iff₀ hR]
       linarith
-    simp [cutoff_apply, bump.one_of_mem_closedBall this]
+    simp [bump.one_of_mem_closedBall this]
   refine (closure_minimal hsupp isOpen_ball.isClosed_compl).trans ?_
   refine Set.compl_subset_compl.2 (closedBall_subset_ball ?_)
   linarith
@@ -149,9 +140,10 @@ private theorem tsupport_cutoff_sub_one_subset {R : ℝ} (hR : 0 < R) :
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The cutoff at scale `R` is the dilation of the cutoff at scale `1`. -/
 private theorem cutoff_eq_comp {R : ℝ} (hR : 0 < R) :
-    ⇑(cutoff (E := E) hR) = fun ξ ↦ cutoff (E := E) one_pos (R⁻¹ • ξ) := by
+    ⇑((bump (E := E)).lowPassSchwartz hR.ne') =
+      fun ξ ↦ (bump (E := E)).lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
   ext ξ
-  simp [cutoff_apply]
+  simp
 
 variable [CompleteSpace F]
 
@@ -181,12 +173,13 @@ theorem exists_eq_and_norm_le_of_isVanishingOn_fourier {p q : ℝ≥0∞} [hp : 
         ENNReal.toReal_one]
     rw [div_eq_mul_inv, this]
     ring
-  refine ⟨(eLpNorm (𝓕⁻ (cutoff (E := E) one_pos : E → ℂ)) r volume).toReal,
+  refine ⟨(eLpNorm (𝓕⁻ ((bump (E := E)).lowPassSchwartz one_ne_zero : E → ℂ)) r volume).toReal,
     ENNReal.toReal_nonneg, fun {R} hR f hf ↦ ?_⟩
   obtain ⟨g, hg, -, hgf⟩ :=
-    exists_fourierMultiplierCLM_toTemperedDistribution_eq (cutoff hR) f hr hpqr
+    exists_fourierMultiplierCLM_toTemperedDistribution_eq (bump.lowPassSchwartz hR.ne') f hr hpqr
   refine ⟨g, ?_, ?_⟩
-  · rw [← hg, fourierMultiplierCLM_eq_self_of_isVanishingOn hf (cutoff hR).hasTemperateGrowth
+  · rw [← hg, fourierMultiplierCLM_eq_self_of_isVanishingOn hf
+      (bump.lowPassSchwartz hR.ne').hasTemperateGrowth
       (tsupport_cutoff_sub_one_subset hR)]
   · rw [cutoff_eq_comp hR, eLpNorm_fourierInv_comp_inv_smul _ hR, ENNReal.toReal_mul,
       ENNReal.toReal_ofReal (by positivity), hrexp] at hgf
@@ -195,12 +188,13 @@ theorem exists_eq_and_norm_le_of_isVanishingOn_fourier {p q : ℝ≥0∞} [hp : 
 /-- The symbol `ξ ↦ 2πi ⟪ξ, m⟫ χ (R⁻¹ • ξ)` of `∂_m` composed with the reproducing multiplier
 at scale `R`. -/
 private def derivSymbol {R : ℝ} (hR : 0 < R) (m : E) : 𝓢(E, ℂ) :=
-  (2 * Real.pi * Complex.I) • SchwartzMap.smulLeftCLM ℂ (inner ℝ · m) (cutoff hR)
+  (2 * Real.pi * Complex.I) • SchwartzMap.smulLeftCLM ℂ (inner ℝ · m) (bump.lowPassSchwartz hR.ne')
 
 omit [MeasurableSpace E] [BorelSpace E] in
 private theorem coe_derivSymbol {R : ℝ} (hR : 0 < R) (m : E) :
     ⇑(derivSymbol hR m) =
-      (2 * Real.pi * Complex.I) • (⇑(cutoff hR) * fun ξ ↦ ((inner ℝ ξ m : ℝ) : ℂ)) := by
+      (2 * Real.pi * Complex.I) •
+        (⇑(bump.lowPassSchwartz hR.ne') * fun ξ ↦ ((inner ℝ ξ m : ℝ) : ℂ)) := by
   ext ξ
   simp [derivSymbol, SchwartzMap.smulLeftCLM_apply_apply (g := (inner ℝ · m)) (by fun_prop),
     mul_comm]
@@ -209,12 +203,12 @@ private theorem coe_derivSymbol {R : ℝ} (hR : 0 < R) (m : E) :
 the kernel `∂_m 𝓕⁻ χ` at scale `1`, which is bounded by `‖m‖ ‖D 𝓕⁻ χ‖`. -/
 private theorem toReal_eLpNorm_fourierInv_derivSymbol_le {R : ℝ} (hR : 0 < R) (m : E) :
     (eLpNorm (𝓕⁻ (derivSymbol hR m : E → ℂ)) 1 volume).toReal ≤
-      (eLpNorm (fderiv ℝ (𝓕⁻ (cutoff (E := E) one_pos) : 𝓢(E, ℂ))) 1 volume).toReal * R *
-        ‖m‖ := by
-  set K : 𝓢(E, ℂ) := 𝓕⁻ (cutoff (E := E) one_pos)
+      (eLpNorm (fderiv ℝ (𝓕⁻ ((bump (E := E)).lowPassSchwartz one_ne_zero) : 𝓢(E, ℂ))) 1
+        volume).toReal * R * ‖m‖ := by
+  set K : 𝓢(E, ℂ) := 𝓕⁻ ((bump (E := E)).lowPassSchwartz one_ne_zero)
   have hscale : ⇑(derivSymbol hR m) = fun ξ ↦ ((R : ℂ) • derivSymbol one_pos m) (R⁻¹ • ξ) := by
     ext ξ
-    simp [coe_derivSymbol, cutoff_apply, real_inner_smul_left]
+    simp [coe_derivSymbol, real_inner_smul_left]
     have hRc : (R : ℂ) ≠ 0 := by exact_mod_cast hR.ne'
     field_simp
   have hK : 𝓕⁻ (derivSymbol one_pos m) = ∂_{m} K :=
@@ -256,10 +250,11 @@ theorem exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier :
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : E,
       ∃ g : Lp F p (volume : Measure E), ∂_{m} (f : 𝓢'(E, F)) = g ∧
         ‖g‖ ≤ C * R * ‖m‖ * ‖f‖ := by
-  refine ⟨(eLpNorm (fderiv ℝ (𝓕⁻ (cutoff (E := E) one_pos) : 𝓢(E, ℂ))) 1 volume).toReal,
+  refine ⟨(eLpNorm (fderiv ℝ (𝓕⁻ ((bump (E := E)).lowPassSchwartz one_ne_zero) : 𝓢(E, ℂ))) 1
+      volume).toReal,
     ENNReal.toReal_nonneg, fun {p} _ {R} hR f hf m ↦ ?_⟩
   have hinner : (fun ξ : E ↦ ((inner ℝ ξ m : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hσ := (cutoff (E := E) hR).hasTemperateGrowth
+  have hσ := ((bump (E := E)).lowPassSchwartz hR.ne').hasTemperateGrowth
   -- `∂_m f` is the multiplier with symbol `derivSymbol hR m`.
   have hdist : ∂_{m} (f : 𝓢'(E, F)) =
       fourierMultiplierCLM F (derivSymbol hR m) (f : 𝓢'(E, F)) := by
