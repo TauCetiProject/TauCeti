@@ -179,6 +179,16 @@ theorem arrows_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
   | nil => simp [comp]
   | cons p' e ih => simp [comp, ← List.append_assoc, ← ih]
 
+/-- Pushing a walk along a prefunctor maps its arrows, in order, along the prefunctor. -/
+theorem _root_.Prefunctor.arrows_mapPath {W : Type*} {R : W → W → Type*}
+    (φ : @Prefunctor V ⟨Q⟩ W ⟨R⟩) {s t : V} (p : ArrowWalk Q s t) :
+    ArrowWalk.arrows (Q := R) (@Prefunctor.mapPath V ⟨Q⟩ W ⟨R⟩ φ s t p) =
+      p.arrows.map fun a ↦ ⟨@Prefunctor.obj V ⟨Q⟩ W ⟨R⟩ φ a.1,
+        @Prefunctor.obj V ⟨Q⟩ W ⟨R⟩ φ a.2.1, @Prefunctor.map V ⟨Q⟩ W ⟨R⟩ φ _ _ a.2.2⟩ := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih]
+
 @[simp]
 theorem length_arrows {s t : V} (p : ArrowWalk Q s t) : p.arrows.length = p.length := by
   induction p with
