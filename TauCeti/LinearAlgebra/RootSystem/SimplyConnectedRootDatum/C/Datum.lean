@@ -273,13 +273,13 @@ private lemma typeCRoot_typeCReflectionIdx (i j : TypeCIndex n) :
     typeCRoot j - (typeCRoot j ⬝ᵥ typeCCoroot i) • typeCRoot i
       = typeCRoot (typeCReflectionIdx i j) := by
   rw [typeCReflectionIdx, typeCRoot_typeCMk (typeCReflectionIdx_pair_ne i j)]
-  exact pairRoot_reflection (typeCSnd_ne_signedNeg_typeCFst i) (typeCFst j) (typeCSnd j)
+  exact pairRoot_reflection (typeCFst i) (typeCSnd i) (typeCFst j) (typeCSnd j)
 
 private lemma typeCCoroot_typeCReflectionIdx (i j : TypeCIndex n) :
     typeCCoroot j - (typeCRoot i ⬝ᵥ typeCCoroot j) • typeCCoroot i
       = typeCCoroot (typeCReflectionIdx i j) := by
   rw [typeCReflectionIdx, typeCCoroot_typeCMk (typeCReflectionIdx_pair_ne i j)]
-  exact pairCoroot_reflection (typeCSnd_ne_signedNeg_typeCFst i) (typeCFst j) (typeCSnd j)
+  exact pairCoroot_reflection (typeCFst i) (typeCSnd i) (typeCFst j) (typeCSnd j)
 
 private lemma typeCReflectionIdx_involutive (i : TypeCIndex n) :
     Involutive (typeCReflectionIdx i) := by
