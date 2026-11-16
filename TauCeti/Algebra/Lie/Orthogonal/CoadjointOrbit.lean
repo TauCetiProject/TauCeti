@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
-import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
 
 /-!
@@ -131,34 +131,28 @@ variable (n R) in
 restriction of `TauCeti.orthogonalAdjointRepresentation` to `SO(n) ≤ O(n)`. -/
 def specialOrthogonalAdjointRepresentation :
     Representation R (specialOrthogonalGroup n R) (so n R) :=
-  letI := starRingOfComm (R := R)
-  (orthogonalAdjointRepresentation n R).comp
-    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup)
+  (orthogonalAdjointRepresentation n R).comp specialOrthogonalGroup.toOrthogonalGroup
 
 @[simp]
 theorem coe_specialOrthogonalAdjointRepresentation_apply (g : specialOrthogonalGroup n R)
     (A : so n R) :
     (specialOrthogonalAdjointRepresentation n R g A : Matrix n n R) =
-      (g : Matrix n n R) * A * (g : Matrix n n R)ᵀ :=
-  (rfl)
+      (g : Matrix n n R) * A * (g : Matrix n n R)ᵀ := by
+  simp [specialOrthogonalAdjointRepresentation]
 
 variable (n R) in
 /-- The **coadjoint representation** of `SO(n)` on the dual of `so(n)`, the restriction of
 `TauCeti.orthogonalCoadjointRepresentation` to `SO(n) ≤ O(n)`. -/
 def specialOrthogonalCoadjointRepresentation :
     Representation R (specialOrthogonalGroup n R) (Dual R (so n R)) :=
-  letI := starRingOfComm (R := R)
-  (orthogonalCoadjointRepresentation n R).comp
-    (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup)
+  (orthogonalCoadjointRepresentation n R).comp specialOrthogonalGroup.toOrthogonalGroup
 
 theorem specialOrthogonalCoadjointRepresentation_apply_apply (g : specialOrthogonalGroup n R)
     (ν : Dual R (so n R)) (A : so n R) :
     specialOrthogonalCoadjointRepresentation n R g ν A =
       ν (specialOrthogonalAdjointRepresentation n R g⁻¹ A) := by
-  let := starRingOfComm (R := R)
-  rw [specialOrthogonalCoadjointRepresentation, specialOrthogonalAdjointRepresentation,
-    MonoidHom.comp_apply, orthogonalCoadjointRepresentation_apply_apply, ← map_inv,
-    MonoidHom.comp_apply]
+  simp [specialOrthogonalCoadjointRepresentation, specialOrthogonalAdjointRepresentation,
+    orthogonalCoadjointRepresentation_apply_apply]
 
 /-! ### `SO(3)` in the coordinates of the hat map -/
 

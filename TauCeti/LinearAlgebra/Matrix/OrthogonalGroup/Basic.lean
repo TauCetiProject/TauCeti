@@ -19,12 +19,15 @@ occur as soon as the index type is nonempty: the diagonal reflection negating on
 orthogonal matrix of determinant `-1`.
 
 Permutation matrices are orthogonal, and a matrix is orthogonal exactly when it preserves the dot
-product. The columns of an orthogonal matrix are orthonormal for the dot product. For a trivial
-star operation the unitary elements of the general linear group are the orthogonal matrices.
+product. The columns of an orthogonal matrix are orthonormal for the dot product. The special
+orthogonal group includes into the orthogonal group as a monoid hom, and in both groups the inverse
+is the transpose. For a trivial star operation the unitary elements of the general linear group
+are the orthogonal matrices.
 
 ## Main definitions
 
 * `TauCeti.orthogonalDiagonalReflection`: the diagonal orthogonal matrix negating one coordinate.
+* `Matrix.specialOrthogonalGroup.toOrthogonalGroup`: the inclusion `SO(n) →* O(n)`.
 
 ## Main declarations
 
@@ -137,14 +140,30 @@ theorem coe_orthogonalGroup_inv {n R : Type*} [Fintype n] [DecidableEq n] [CommR
   left_inv_eq_right_inv (congrArg Subtype.val (inv_mul_cancel A))
     ((mem_orthogonalGroup_iff _ _).1 A.2)
 
+/-- The inclusion `SO(n) →* O(n)` of the special orthogonal group into the orthogonal group.
+Mathlib defines `Matrix.orthogonalGroup` and `Matrix.specialOrthogonalGroup` as abbreviations for
+`Matrix.unitaryGroup` and `Matrix.specialUnitaryGroup` under the trivial star `starRingOfComm`, so
+this is `Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup` for that star. It leaves the
+underlying matrix unchanged (`Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup`). -/
+def specialOrthogonalGroup.toOrthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] : specialOrthogonalGroup n R →* orthogonalGroup n R :=
+  letI := starRingOfComm (R := R)
+  Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup
+
+@[simp]
+theorem specialOrthogonalGroup.coe_toOrthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] (A : specialOrthogonalGroup n R) :
+    (specialOrthogonalGroup.toOrthogonalGroup A : Matrix n n R) = A := by
+  let := starRingOfComm (R := R)
+  exact Submonoid.coe_inclusion specialUnitaryGroup_le_unitaryGroup A
+
 /-- The inverse of a special orthogonal matrix is its transpose. -/
 @[simp]
 theorem coe_specialOrthogonalGroup_inv {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
     (A : specialOrthogonalGroup n R) :
     ((A⁻¹ : specialOrthogonalGroup n R) : Matrix n n R) = (A : Matrix n n R)ᵀ := by
-  let := starRingOfComm (R := R)
-  rw [← Submonoid.coe_inclusion specialUnitaryGroup_le_unitaryGroup, map_inv,
-    coe_orthogonalGroup_inv, Submonoid.coe_inclusion]
+  rw [← specialOrthogonalGroup.coe_toOrthogonalGroup A⁻¹, map_inv, coe_orthogonalGroup_inv,
+    specialOrthogonalGroup.coe_toOrthogonalGroup]
 
 end Matrix
 
