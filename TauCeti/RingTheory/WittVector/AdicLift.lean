@@ -11,54 +11,60 @@ public import Mathlib.RingTheory.WittVector.Complete
 public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 
 import Mathlib.LinearAlgebra.SModEq.Pow
+import TauCeti.Algebra.CharP.Quotient
+import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 import TauCeti.RingTheory.Perfect.Basic
+import TauCeti.RingTheory.Perfection
 
 /-!
 # Ring homomorphisms out of the Witt vectors of a perfect ring
 
 Let `k` be a perfect ring of characteristic `p`, and let `A` be a commutative ring which is
-`I`-adically complete for an ideal `I` containing `p`. Every ring homomorphism
-`φ : k →+* A ⧸ I` lifts to a unique ring homomorphism `WittVector.adicLift I φ : 𝕎 k →+* A` whose
-reduction modulo `I` is `φ` applied to the `0`-th Witt coordinate. Thus ring homomorphisms
-`𝕎 k →+* A` correspond to ring homomorphisms `k →+* A ⧸ I` (`WittVector.adicLiftEquiv`).
+`I`-adically complete for an ideal `I` containing `p`. Every ring homomorphism `φ : k →+* A ⧸ I`
+lifts to a unique ring homomorphism `TauCeti.WittVector.adicLift I φ : 𝕎 k →+* A` whose reduction
+modulo `I` is `φ` applied to the `0`-th Witt coordinate. Thus ring homomorphisms `𝕎 k →+* A`
+correspond to ring homomorphisms `k →+* A ⧸ I` (`TauCeti.WittVector.adicLiftEquiv`).
 
 In particular, if `π : A →+* k` is surjective and `A` is complete for the ideal `ker π`, for
 instance a complete local ring with residue field `k`, then there is exactly one ring homomorphism
-`𝕎 k →+* A` over `k` (`WittVector.existsUnique_comp_eq_constantCoeff`). This is the canonical
-`𝕎 k`-algebra structure on such a ring, used for instance to compare deformations over complete
-local rings with residue field `k` with maps out of power series rings over `𝕎 k`.
+`𝕎 k →+* A` over `k` (`TauCeti.WittVector.existsUnique_comp_eq_constantCoeff`). This is the
+canonical `𝕎 k`-algebra structure on such a ring, used for instance to compare deformations over
+complete local rings with residue field `k` with maps out of power series rings over `𝕎 k`.
 
 The construction follows that of Fontaine's map in `Mathlib.RingTheory.Perfectoid.FontaineTheta`,
-which is the case of the ideal `(p)`. If `p ∈ I` and the Witt coordinates of `x : 𝕎 A` lie in
-`I`, then its `n`-th ghost component lies in `I ^ (n + 1)`
-(`WittVector.ghostComponent_mem_pow_of_coeff_mem`). Hence the `n`-th ghost component, reduced
-modulo `I ^ (n + 1)`, descends to `WittVector.ghostComponentModPow I hpI n : 𝕎 (A ⧸ I) →+* A ⧸ I ^
-(n + 1)`. Precomposing with `𝕎` of `φ` and of the inverse of the `n`-th power of Frobenius on `k`
-gives compatible ring homomorphisms `𝕎 k →+* A ⧸ I ^ (n + 1)`, whose limit is `adicLift I φ`.
-On a Teichmüller representative `[x]` it is the limit of the powers `aₙ ^ p ^ n` of lifts `aₙ`
-of `φ (x ^ (1 / p ^ n))` (`WittVector.adicLift_teichmuller_sModEq`), that is, Mathlib's
-multiplicative Teichmüller map `Perfection.teichmuller₀` (`WittVector.adicLift_teichmuller`).
+which is the case of the ideal `(p)`. If `p ∈ I` and the Witt coordinates of `x : 𝕎 A` lie in `I`,
+then its `n`-th ghost component lies in `I ^ (n + 1)`
+(`TauCeti.WittVector.ghostComponent_mem_pow_of_coeff_mem`). Hence the `n`-th ghost component,
+reduced modulo `I ^ (n + 1)`, descends to
+`TauCeti.WittVector.ghostComponentModPow I hpI n : 𝕎 (A ⧸ I) →+* A ⧸ I ^ (n + 1)`. Precomposing with
+`𝕎` of `φ` and of the inverse of the `n`-th power of Frobenius on `k` gives compatible ring
+homomorphisms `𝕎 k →+* A ⧸ I ^ (n + 1)`, whose limit is `adicLift I φ`. On a Teichmüller
+representative `[x]` it is the limit of the powers `aₙ ^ p ^ n` of lifts `aₙ` of
+`φ (x ^ (1 / p ^ n))` (`TauCeti.WittVector.adicLift_teichmuller_sModEq`), that is, Mathlib's
+multiplicative Teichmüller map `Perfection.teichmuller₀`
+(`TauCeti.WittVector.adicLift_teichmuller`).
 
 Uniqueness holds under the weaker hypothesis that `A` is `I`-adically Hausdorff: two ring
-homomorphisms `𝕎 k →+* A` which agree modulo `I` agree on `[x] = [x ^ (1 / p ^ n)] ^ p ^ n`
-modulo `I ^ (n + 1)`, and Teichmüller expansions then show that they agree modulo `I ^ (n + 1)`
-everywhere (`WittVector.eq_of_mk_comp_eq`).
+homomorphisms `𝕎 k →+* A` which agree modulo `I` agree on `[x] = [x ^ (1 / p ^ n)] ^ p ^ n` modulo
+`I ^ (n + 1)`, and Teichmüller expansions then show that they agree modulo `I ^ (n + 1)` everywhere
+(`TauCeti.WittVector.eq_of_mk_comp_eq`).
 
 ## Main definitions
 
-* `WittVector.ghostComponentModPow I hpI n`: the `n`-th ghost component `𝕎 (A ⧸ I) →+*
+* `TauCeti.WittVector.ghostComponentModPow I hpI n`: the `n`-th ghost component `𝕎 (A ⧸ I) →+*
   A ⧸ I ^ (n + 1)`, for `p ∈ I`.
-* `WittVector.adicLift I φ`: the lift `𝕎 k →+* A` of `φ : k →+* A ⧸ I`.
-* `WittVector.adicLiftEquiv I hpI`: the bijection `(k →+* A ⧸ I) ≃ (𝕎 k →+* A)`.
+* `TauCeti.WittVector.adicLift I φ`: the lift `𝕎 k →+* A` of `φ : k →+* A ⧸ I`.
+* `TauCeti.WittVector.adicLiftEquiv I hpI`: the bijection `(k →+* A ⧸ I) ≃ (𝕎 k →+* A)`.
 
 ## Main results
 
-* `WittVector.mk_comp_adicLift`: `adicLift I φ` reduces to `φ ∘ constantCoeff` modulo `I`.
-* `WittVector.eq_adicLift`: it is the only ring homomorphism with this property.
-* `WittVector.eq_of_mk_comp_eq`: ring homomorphisms `𝕎 k →+* A` to an `I`-adically Hausdorff
-  ring are determined by their reductions modulo `I`.
-* `WittVector.comp_adicLift`, `WittVector.adicLift_comp_map`: naturality in `A` and in `k`.
-* `WittVector.existsUnique_comp_eq_constantCoeff`: existence and uniqueness of a ring
+* `TauCeti.WittVector.mk_comp_adicLift`: `adicLift I φ` reduces to `φ ∘ constantCoeff` modulo `I`.
+* `TauCeti.WittVector.eq_adicLift`: it is the only ring homomorphism with this property.
+* `TauCeti.WittVector.eq_of_mk_comp_eq`: ring homomorphisms `𝕎 k →+* A` to an `I`-adically
+  Hausdorff ring are determined by their reductions modulo `I`.
+* `TauCeti.WittVector.comp_adicLift`, `TauCeti.WittVector.adicLift_comp_map`: naturality in `A`
+  and in `k`.
+* `TauCeti.WittVector.existsUnique_comp_eq_constantCoeff`: existence and uniqueness of a ring
   homomorphism `𝕎 k →+* A` over `k`, for `A` complete along the kernel of `π : A →+* k`.
 
 ## References
@@ -72,7 +78,9 @@ public section
 
 noncomputable section
 
-namespace WittVector
+namespace TauCeti.WittVector
+
+open _root_.WittVector
 
 variable {p : ℕ} [hp : Fact p.Prime] {A : Type*} [CommRing A] {I : Ideal A}
 
@@ -123,24 +131,11 @@ theorem ghostComponentModPow_teichmuller_mk (hpI : (p : A) ∈ I) (n : ℕ) (a :
 
 variable {k : Type*} [CommRing k] [CharP k p] [PerfectRing k p]
 
-omit hp [PerfectRing k p] in
-/-- A ring homomorphism from a ring of characteristic `p` to `A ⧸ I` forces `p ∈ I`. -/
-private theorem natCast_mem_of_ringHom (φ : k →+* A ⧸ I) : (p : A) ∈ I :=
-  Ideal.Quotient.eq_zero_iff_mem.mp <| by
-    rw [map_natCast, ← map_natCast φ, CharP.cast_eq_zero, map_zero]
-
-omit hp in
-/-- `p` is nilpotent modulo `I ^ n` when `p ∈ I`. -/
-private theorem isNilpotent_natCast_quotient_pow (hpI : (p : A) ∈ I) (n : ℕ) :
-    IsNilpotent (p : A ⧸ I ^ n) :=
-  ⟨n, by rw [← map_natCast (Ideal.Quotient.mk (I ^ n)), ← map_pow,
-    Ideal.Quotient.eq_zero_iff_mem]; exact Ideal.pow_mem_pow hpI n⟩
-
 variable (I) in
 /-- The reduction of `adicLift I φ` modulo `I ^ (n + 1)`: the composite of `𝕎` of `φ` after the
 inverse of the `n`-th power of Frobenius with `ghostComponentModPow I _ n`. -/
 private def adicLiftModPow (φ : k →+* A ⧸ I) (n : ℕ) : 𝕎 k →+* A ⧸ I ^ (n + 1) :=
-  (ghostComponentModPow I (natCast_mem_of_ringHom φ) n).comp
+  (ghostComponentModPow I (Ideal.natCast_mem_of_ringHom_charP p φ) n).comp
     (map (φ.comp (iterateFrobeniusEquiv k p n).symm.toRingHom))
 
 private theorem adicLiftModPow_teichmuller (φ : k →+* A ⧸ I) (n : ℕ) (x : k) {a : A}
@@ -152,8 +147,9 @@ private theorem adicLiftModPow_teichmuller (φ : k →+* A ⧸ I) (n : ℕ) (x :
 private theorem factorPowSucc_comp_adicLiftModPow (φ : k →+* A ⧸ I) (n : ℕ) :
     (Ideal.Quotient.factorPowSucc I (n + 1)).comp (adicLiftModPow I φ (n + 1)) =
       adicLiftModPow I φ n := by
-  refine eq_of_apply_teichmuller_eq _ _
-    (isNilpotent_natCast_quotient_pow (natCast_mem_of_ringHom φ) (n + 1)) fun x ↦ ?_
+  refine eq_of_apply_teichmuller_eq _ _ (map_natCast (Ideal.Quotient.mk (I ^ (n + 1))) p ▸
+    Ideal.Quotient.isNilpotent_mk_pow_of_mem (Ideal.natCast_mem_of_ringHom_charP p φ) (n + 1))
+    fun x ↦ ?_
   obtain ⟨a, ha⟩ :=
     Ideal.Quotient.mk_surjective (φ ((iterateFrobeniusEquiv k p (n + 1)).symm x))
   have ha' : Ideal.Quotient.mk I (a ^ p) = φ ((iterateFrobeniusEquiv k p n).symm x) := by
@@ -193,7 +189,7 @@ theorem mk_adicLift (φ : k →+* A ⧸ I) (x : 𝕎 k) :
     congr($this x)
   have hp0 : (p : A ⧸ I) = 0 := by
     rw [← map_natCast (Ideal.Quotient.mk I), Ideal.Quotient.eq_zero_iff_mem]
-    exact natCast_mem_of_ringHom φ
+    exact Ideal.natCast_mem_of_ringHom_charP p φ
   refine eq_of_apply_teichmuller_eq _ _ ⟨1, by rw [pow_one, hp0]⟩ fun y ↦ ?_
   obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (φ y)
   have h := adicLift_teichmuller_sModEq φ (n := 0) (x := y) (a := a)
@@ -201,6 +197,8 @@ theorem mk_adicLift (φ : k →+* A ⧸ I) (x : 𝕎 k) :
   rw [zero_add, pow_one, pow_zero, pow_one, SModEq.idealQuotientMk] at h
   simp [h, ha]
 
+/-- The reduction of `adicLift I φ` modulo `I` is `φ.comp constantCoeff`; this is the bundled form
+of `mk_adicLift`. -/
 theorem mk_comp_adicLift (φ : k →+* A ⧸ I) :
     (Ideal.Quotient.mk I).comp (adicLift I φ) = φ.comp constantCoeff :=
   RingHom.ext (mk_adicLift φ)
@@ -215,7 +213,9 @@ theorem eq_of_mk_comp_eq [IsHausdorff I A] (hpI : (p : A) ∈ I) {f g : 𝕎 k �
   rw [smul_eq_mul, Ideal.mul_top, SModEq.idealQuotientMk]
   suffices (Ideal.Quotient.mk (I ^ n)).comp f = (Ideal.Quotient.mk (I ^ n)).comp g from
     congr($this x)
-  refine eq_of_apply_teichmuller_eq _ _ (isNilpotent_natCast_quotient_pow hpI n) fun x ↦ ?_
+  refine eq_of_apply_teichmuller_eq _ _
+    (map_natCast (Ideal.Quotient.mk (I ^ n)) p ▸ Ideal.Quotient.isNilpotent_mk_pow_of_mem hpI n)
+    fun x ↦ ?_
   -- `[x] = [y] ^ p ^ n` for the `p ^ n`-th root `y` of `x`, and `f [y] ≡ g [y]` modulo `I`.
   set y := (iterateFrobeniusEquiv k p n).symm x
   have hx : teichmuller p x = teichmuller p y ^ p ^ n := by
@@ -231,22 +231,17 @@ theorem eq_of_mk_comp_eq [IsHausdorff I A] (hpI : (p : A) ∈ I) {f g : 𝕎 k �
 applied to the `0`-th Witt coordinate. -/
 theorem eq_adicLift (φ : k →+* A ⧸ I) {f : 𝕎 k →+* A}
     (hf : (Ideal.Quotient.mk I).comp f = φ.comp constantCoeff) : f = adicLift I φ :=
-  eq_of_mk_comp_eq (natCast_mem_of_ringHom φ) (hf.trans (mk_comp_adicLift φ).symm)
+  eq_of_mk_comp_eq (Ideal.natCast_mem_of_ringHom_charP p φ) (hf.trans (mk_comp_adicLift φ).symm)
 
 /-- `adicLift I φ` sends a Teichmüller representative `[x]` to Mathlib's multiplicative
-Teichmüller lift of the element of `Perfection (A ⧸ I) p` determined by `φ x`. -/
+Teichmüller lift of `Perfection.lift p k (A ⧸ I) φ x`, the element of `Perfection (A ⧸ I) p` whose
+`n`-th coordinate is `φ (x ^ (1 / p ^ n))`. -/
 theorem adicLift_teichmuller [CharP (A ⧸ I) p] (φ : k →+* A ⧸ I) (x : k) :
     adicLift I φ (teichmuller p x) =
       Perfection.teichmuller₀ p I (Perfection.lift p k (A ⧸ I) φ x) := by
   refine (Perfection.teichmuller₀_spec fun n ↦ ?_).symm
   obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (φ ((iterateFrobeniusEquiv k p n).symm x))
-  refine ⟨a, ?_, (adicLift_teichmuller_sModEq φ ha).symm⟩
-  -- the `n`-th coordinate of `Perfection.lift p k (A ⧸ I) φ x` is `φ (x ^ (1 / p ^ n))`
-  rw [ha]
-  conv_rhs => rw [← (iterateFrobeniusEquiv k p n).apply_symm_apply x, coe_iterateFrobeniusEquiv,
-    coe_iterateFrobenius, RingHom.map_iterate_frobenius,
-    Perfection.coeff_iterate_frobenius' _ _ _ le_rfl, Nat.sub_self, ← RingHom.comp_apply,
-    ← Perfection.lift_symm_apply, Equiv.symm_apply_apply]
+  exact ⟨a, by rw [ha, Perfection.coeff_lift_apply], (adicLift_teichmuller_sModEq φ ha).symm⟩
 
 omit [IsAdicComplete I A] in
 /-- The reduction modulo `I` of a ring homomorphism `f : 𝕎 k →+* A`, which factors through the
@@ -293,7 +288,8 @@ theorem adicLiftEquiv_symm_apply (hpI : (p : A) ∈ I) (f : 𝕎 k →+* A) (x :
   residueHom_apply hpI f x
 
 /-- `adicLift` is natural in the complete ring: a ring homomorphism `g : A →+* B` with
-`g (I) ⊆ J` carries `adicLift I φ` to the lift of the reduction of `φ` modulo `J`. -/
+`g (I) ⊆ J` carries `adicLift I φ` to the lift along `J` of `φ` followed by the map
+`A ⧸ I →+* B ⧸ J` induced by `g`. -/
 theorem comp_adicLift {B : Type*} [CommRing B] (J : Ideal B) [IsAdicComplete J B]
     (g : A →+* B) (hg : I ≤ J.comap g) (φ : k →+* A ⧸ I) :
     g.comp (adicLift I φ) = adicLift J ((Ideal.quotientMap J g hg).comp φ) := by
@@ -328,4 +324,4 @@ theorem existsUnique_comp_eq_constantCoeff {π : A →+* k} (hπ : Function.Surj
     rw [RingHom.comp_apply, he, ← RingHom.comp_apply π, hf]
     simp
 
-end WittVector
+end TauCeti.WittVector
