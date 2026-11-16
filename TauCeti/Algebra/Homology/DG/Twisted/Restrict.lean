@@ -490,22 +490,6 @@ variable [AddCommGroup Γ] [LinearOrder Γ] [IsOrderedAddMonoid Γ]
   {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
   {mS : TwistingCocycle 𝒜 d S indS} {actP : P → Γ} {actQ : Q → Γ} {actS : S → Γ}
 
-/-- **Action shifts add under composition.** If `ν₁` raises the action by at most `δ₁` and `ν₂`
-by at most `δ₂`, their composite raises it by at most `δ₁ + δ₂`. -/
-theorem comp_ν_eq_zero_of_add_lt [GradedAlgebra 𝒜] (h : IsDGAlgebra 𝒜 d)
-    (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mS) {δ₁ δ₂ : Γ}
-    (h₁ : ∀ x y, actP x + δ₁ < actQ y → ν₁.ν x y = 0)
-    (h₂ : ∀ y z, actQ y + δ₂ < actS z → ν₂.ν y z = 0) {x : P} {z : S}
-    (hxz : actP x + (δ₁ + δ₂) < actS z) : (ν₁.comp h ν₂).ν x z = 0 := by
-  rw [comp_ν, Matrix.mul_apply]
-  refine Finset.sum_eq_zero fun y _ ↦ ?_
-  by_cases hxy : actP x + δ₁ < actQ y
-  · rw [Matrix.of_apply, h₁ x y hxy, zero_mul]
-  · have : actQ y + δ₂ < actS z := by
-      calc actQ y + δ₂ ≤ actP x + δ₁ + δ₂ := by gcongr; exact not_lt.1 hxy
-        _ < actS z := by rwa [add_assoc]
-    rw [Matrix.of_apply, Matrix.of_apply, h₂ y z this, mul_zero]
-
 /-- If the continuation cocycle `ν` raises the action by at most `δ`, it never leaves the
 generators of action `< a + δ` from those of action `< a`. -/
 theorem ν_eq_zero_of_mem_setOf_lt (ν : ContinuationCocycle mP mQ) {δ : Γ}
