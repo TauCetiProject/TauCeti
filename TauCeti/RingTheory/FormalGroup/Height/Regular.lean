@@ -121,6 +121,8 @@ theorem landweberSequence_zero (F : FormalGroup R) (p : ℕ) :
     F.landweberSequence p 0 = [] :=
   (rfl)
 
+-- Not `@[simp]`: fails `simpNF` on `landweberSequence_one` and expands `n + 1` before outer
+-- `@[simp]` lemmas (`ofList_landweberSequence`, `take_landweberSequence`, etc.) can fire.
 theorem landweberSequence_succ (F : FormalGroup R) (p n : ℕ) :
     F.landweberSequence p (n + 1) =
       F.landweberSequence p n ++ [PowerSeries.coeff (p ^ n) (F.nsmulSeries p)] := by
@@ -132,6 +134,7 @@ theorem landweberSequence_one (F : FormalGroup R) (p : ℕ) :
     F.landweberSequence p 1 = [(p : R)] := by
   simp [landweberSequence]
 
+@[simp]
 theorem landweberSequence_two (F : FormalGroup R) (p : ℕ) :
     F.landweberSequence p 2 = [(p : R), PowerSeries.coeff p (F.nsmulSeries p)] := by
   simp [landweberSequence_succ]
@@ -329,6 +332,9 @@ section Functoriality
 variable {R S M N : Type*} [CommRing R] [CommRing S]
   [AddCommGroup M] [Module R M] [AddCommGroup N]
 
+/-- **Coordinate-change invariance of weak regularity.** Applying a formal coordinate change
+`φ • F` to a commutative formal group law `F` preserves and reflects weak regularity of its
+Landweber sequence of length `n` at a prime `p` on any `R`-module `M`. -/
 @[simp]
 theorem isWeaklyRegular_landweberSequence_smul_iff (φ : TauCeti.FormalCoordinate R)
     (F : FormalGroup R) [F.IsComm] {p : ℕ} (hp : p.Prime) (n : ℕ) :
@@ -336,12 +342,18 @@ theorem isWeaklyRegular_landweberSequence_smul_iff (φ : TauCeti.FormalCoordinat
       IsWeaklyRegular M (F.landweberSequence p n) :=
   ((smulIso φ F).isWeaklyRegular_landweberSequence_iff hp M n).symm
 
+/-- **Coordinate-change invariance of regularity.** Applying a formal coordinate change `φ • F` to
+a commutative formal group law `F` preserves and reflects regularity of its Landweber sequence of
+length `n` at a prime `p` on any `R`-module `M`. -/
 @[simp]
 theorem isRegular_landweberSequence_smul_iff (φ : TauCeti.FormalCoordinate R)
     (F : FormalGroup R) [F.IsComm] {p : ℕ} (hp : p.Prime) (n : ℕ) :
     IsRegular M ((φ • F).landweberSequence p n) ↔ IsRegular M (F.landweberSequence p n) :=
   ((smulIso φ F).isRegular_landweberSequence_iff hp M n).symm
 
+/-- **Coordinate-change invariance of Landweber regularity.** A module `M` is Landweber regular
+for the coordinate-changed commutative formal group law `φ • F` if and only if it is Landweber
+regular for `F`. -/
 @[simp]
 theorem isLandweberRegular_smul_iff (φ : TauCeti.FormalCoordinate R)
     (F : FormalGroup R) [F.IsComm] :

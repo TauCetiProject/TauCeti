@@ -250,6 +250,8 @@ noncomputable def quotientSpanImageEquiv (hprec : WellFounded prec) (hf : IsTria
 
 /-- On a representative polynomial, `quotientSpanImageEquiv` applies `(hf.algEquiv hprec).symm`
 and discards the variables in `s`. -/
+-- Not `@[simp]`: fails `simpNF` on `quotientSpanImageEquiv_mk_apply_of_notMem` (`killCompl` has no
+-- `@[simp]` rule on `X i`) and breaks `AlgEquiv.symm_apply_apply` on `Ideal.Quotient.mk _ p`.
 theorem quotientSpanImageEquiv_mk (hprec : WellFounded prec) (hf : IsTriangular prec f)
     (s : Set σ) (p : MvPolynomial σ R) :
     hf.quotientSpanImageEquiv hprec s (Ideal.Quotient.mk _ p) =

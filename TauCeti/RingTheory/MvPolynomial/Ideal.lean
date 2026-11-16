@@ -285,6 +285,8 @@ noncomputable def quotientSpanXImageEquiv :
 variable {R s}
 
 /-- On a representative polynomial, `quotientSpanXImageEquiv` discards the variables in `s`. -/
+-- Not `@[simp]`: fails `simpNF` on `quotientSpanXImageEquiv_mk_X_of_notMem` (`killCompl` has no
+-- `@[simp]` rule on `X i`) and breaks `AlgEquiv.symm_apply_apply` on `Ideal.Quotient.mk _ p`.
 theorem quotientSpanXImageEquiv_mk (p : MvPolynomial σ R) :
     quotientSpanXImageEquiv R s (Ideal.Quotient.mk _ p) =
       killCompl (Subtype.val_injective (p := (· ∉ s))) p :=
@@ -300,6 +302,8 @@ theorem quotientSpanXImageEquiv_mk_X_of_notMem {i : σ} (hi : i ∉ s) :
 
 /-- The inverse of `quotientSpanXImageEquiv` embeds polynomials in the remaining variables via
 `rename Subtype.val` and projects to the quotient. -/
+-- Not `@[simp]`: fails `simpNF` on `quotientSpanXImageEquiv_symm_X` and breaks
+-- `AlgEquiv.apply_symm_apply` under `simp`.
 theorem quotientSpanXImageEquiv_symm_apply (q : MvPolynomial {i : σ // i ∉ s} R) :
     (quotientSpanXImageEquiv R s).symm q = Ideal.Quotient.mk _ (rename Subtype.val q) :=
   (rfl)
