@@ -9,41 +9,46 @@ public import Mathlib.GroupTheory.FixedPointFree
 public import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.FiniteField
-public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
-import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.Ideal.Prime
 import Mathlib.RingTheory.Nilpotent.Lemmas
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 import TauCeti.Algebra.AlgebraicGroup.Connected.Irreducible
+import TauCeti.Algebra.AlgebraicGroup.Frobenius.Differential
 import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Map
+import TauCeti.Algebra.Bialgebra.Quotient
+import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
 import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 import TauCeti.GroupTheory.FixedSubgroup.Lang
 import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 import TauCeti.RingTheory.Noetherian.RingHom
-import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import TauCeti.RingTheory.Spectrum.Prime.Topology
+import TauCeti.RingTheory.TensorProduct.Reduced
 import TauCeti.Topology.Constructible.Basic
 
 /-!
-# Lang's theorem for smooth connected algebraic groups
+# Lang's theorem for connected algebraic groups
 
-For a smooth connected finite-type affine algebraic group `G = Spec H` over an algebraically closed
-field `K`, every endomorphism `F = Spec φ` of `G` whose differential at the identity vanishes has a
+For a connected finite-type affine algebraic group `G = Spec H` over an algebraically closed field
+`K`, every endomorphism `F = Spec φ` of `G` whose differential at the identity vanishes has a
 surjective Lang map `g ↦ g⁻¹ * F(g)` on `G(K)` (`TauCeti.Lang.surjective_inv_mul_mapDomain`).
+Smoothness is not required: over an algebraically closed field `K`, passing to the reduced quotient
+`H ⧸ (HopfIdeal.reduction K H).toIdeal` preserves `K`-points, connectedness, finite type, and
+vanishing of the differential, reducing to the case of a Noetherian integral domain.
 
-The proof avoids explicit comultiplication coordinates by working in the convolution group of
-algebra-valued points:
+In the integral-domain case, the proof avoids explicit comultiplication coordinates by working in
+the convolution group of algebra-valued points:
 
 1. For each `a ∈ G(K)`, the twisted Lang morphism `x ↦ x * a * F(x)⁻¹` is represented by the
    coordinate endomorphism `TauCeti.Lang.twistedLangAlgHom φ a`. Precomposing with left translation
-   by `a⁻¹` produces an identity-preserving endomorphism whose differential at the identity
-   agrees with that of conjugation by `a⁻¹`, hence is an isomorphism on the cotangent space at the
+   by `a⁻¹` produces an identity-preserving endomorphism whose differential at the identity agrees
+   with that of conjugation by `a⁻¹`, hence is an isomorphism on the cotangent space at the
    identity.
 2. Since `H` is a Noetherian integral domain, surjectivity on the residue field and cotangent space
    implies injectivity of the twisted Lang comorphism (`TauCeti.Lang.twistedLangAlgHom_injective`)
@@ -54,13 +59,17 @@ algebra-valued points:
    `x₁, x₂ ∈ G(K)` with `x₁ * F(x₁)⁻¹ = x₂ * a * F(x₂)⁻¹`; then `g = x₁⁻¹ * x₂` satisfies
    `g⁻¹ * F(g) = a`.
 
-Over a finite field `F` of cardinality `q`, the geometric Frobenius `id ⊗ Frob` on `K ⊗[F] H`
-has zero differential (`TauCeti.FiniteField.derivationComp_geometricFrobeniusBialgHom`). Applying
-the general theorem to the base change of a smooth geometrically connected finite-type affine group
-scheme over `F` yields Lang's theorem (`TauCeti.Lang.surjective_inv_mul_frobeniusPoints` and
-`TauCeti.Lang.lang_surjective`), together with surjectivity on `F`-rational points for exact
-sequences with smooth geometrically connected kernel
-(`TauCeti.Lang.surjective_rationalPoints_of_exact`).
+Over a finite field `F` of cardinality `q`, every positive iterate of the geometric Frobenius
+`id ⊗ Frob` on `K ⊗[F] H` has zero differential
+(`TauCeti.FiniteField.derivationComp_geometricFrobeniusBialgHom_eq_zero`). Applying the general
+theorem to the base change of a geometrically connected finite-type affine group scheme over `F`
+yields Lang's theorem for every positive iterate `n ≠ 0`
+(`TauCeti.Lang.surjective_inv_mul_frobeniusPoints`,
+`TauCeti.Lang.surjective_commutatorMap_frobeniusPoints`, and `TauCeti.Lang.lang_surjective`),
+vanishing of non-abelian Galois `H¹` for finite extensions `L / F`
+(`TauCeti.Lang.exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue`), and surjectivity on
+`F`-rational points for exact sequences with geometrically connected finite-type kernel
+(`TauCeti.Lang.mapDomain_surjective_of_surjective_of_range_eq_ker`).
 
 ## Main definitions
 
@@ -71,19 +80,24 @@ sequences with smooth geometrically connected kernel
 
 * `TauCeti.Lang.twistedLangAlgHom_injective`: for a zero-differential bialgebra endomorphism of a
   Noetherian integral-domain Hopf algebra over a field, every twisted Lang comorphism is injective.
-* `TauCeti.Lang.surjective_inv_mul_mapDomain`: over an algebraically closed field, any
-  zero-differential endomorphism of a smooth connected finite-type group has surjective Lang map.
-* `TauCeti.FiniteField.derivationComp_geometricFrobeniusBialgHom`: the geometric Frobenius
-  `id ⊗ Frob` has zero differential.
-* `TauCeti.Lang.surjective_inv_mul_frobeniusPoints` and `TauCeti.Lang.lang_surjective`: Lang's
-  theorem for smooth geometrically connected finite-type affine group schemes over finite fields.
-* `TauCeti.Lang.surjective_rationalPoints_of_exact`: an exact sequence on geometric points whose
-  kernel is smooth and geometrically connected over a finite field `F` is surjective on `F`-points.
+* `TauCeti.Lang.surjective_inv_mul_mapDomain` and `TauCeti.Lang.surjective_commutatorMap_mapDomain`:
+  over an algebraically closed field, any zero-differential endomorphism of a connected finite-type
+  group has surjective Lang map.
+* `TauCeti.Lang.surjective_inv_mul_frobeniusPoints`,
+  `TauCeti.Lang.surjective_commutatorMap_frobeniusPoints`, and `TauCeti.Lang.lang_surjective`:
+  Lang's theorem for geometrically connected finite-type affine group schemes over finite fields
+  and positive iterates of the Frobenius.
+* `TauCeti.Lang.exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue`: vanishing of non-abelian
+  Galois 1-cocycles `H¹(F, H) = 1` over finite extensions of a finite field.
+* `TauCeti.Lang.mapDomain_surjective_of_surjective_of_range_eq_ker`: an exact sequence on geometric
+  points whose kernel is geometrically connected of finite type over a finite field `F` is
+  surjective on `F`-points.
 
 ## References
 
 * S. Lang, *Algebraic groups over finite fields*, Amer. J. Math. 78 (1956), 555–563.
-* J. S. Milne, *Algebraic Groups* (2017), Proposition 27.54, Corollary 27.55, and Corollary 27.56.
+* J. S. Milne, *Algebraic Groups*, version 2.00 (2015), Proposition 27.54, Corollary 27.55, and
+  Corollary 27.56, pp. 487–488.
 -/
 
 public section
@@ -93,42 +107,7 @@ open scoped TensorProduct
 
 universe u v w
 
-namespace TauCeti
-
-/-! ### Zero differential of the geometric Frobenius -/
-
-namespace FiniteField
-
-/-- The differential of the geometric Frobenius `id ⊗ Frob` on a base change `K ⊗[F] H` vanishes
-identically: every `K`-derivation annihilates `q`-th powers because `q = |F|` is zero in `K`. -/
-theorem derivationComp_geometricFrobeniusBialgHom
-    (F : Type u) [Field F] [Fintype F]
-    (K : Type w) [CommSemiring K] [Algebra F K]
-    (H : Type v) [CommSemiring H] [_root_.Bialgebra F H]
-    {B : Type*} [Semiring B] [Algebra K B] :
-    TauCeti.derivationComp (B := B) (geometricFrobeniusBialgHom F K H) = 0 := by
-  have hcardF : (Fintype.card F : F) = 0 := by
-    have : CharP F (ringChar F) := ringChar.charP F
-    obtain ⟨n, _, hq⟩ := _root_.FiniteField.card F (ringChar F)
-    rw [hq, Nat.cast_pow, CharP.cast_eq_zero F (ringChar F), zero_pow n.pos.ne']
-  have hcardK : (Fintype.card F : K) = 0 := by
-    rw [← map_natCast (algebraMap F K), hcardF, map_zero]
-  ext d x : 2
-  rw [TauCeti.derivationComp_apply, LinearMap.zero_apply, zero_apply]
-  induction x using TensorProduct.inductionOn with
-  | add y z hy hz => rw [map_add, map_add, hy, hz, add_zero]
-  | tmul s h =>
-    have htmul :
-        (geometricFrobeniusBialgHom F K H : K ⊗[F] H →ₐ[K] K ⊗[F] H) (s ⊗ₜ[F] h) =
-          s • (((1 : K) ⊗ₜ[F] h) ^ Fintype.card F) := by
-      rw [BialgHom.coe_toAlgHom, geometricFrobeniusBialgHom_tmul, Algebra.TensorProduct.tmul_pow,
-        one_pow, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-    rw [htmul, Derivation.map_smul, d.leibniz_pow (a := (1 : K) ⊗ₜ[F] h) (Fintype.card F),
-      ← Nat.cast_smul_eq_nsmul K, hcardK, zero_smul, smul_zero]
-
-end FiniteField
-
-namespace Lang
+namespace TauCeti.Lang
 
 /-! ### Twisted Lang comorphisms and their differential -/
 
@@ -201,8 +180,7 @@ private theorem counit_comp_twistedLangAtId (φ : H →ₐc[K] H) (a : WithConv 
     (_root_.Bialgebra.counitAlgHom K H).comp (twistedLangAtId φ a) =
       _root_.Bialgebra.counitAlgHom K H := by
   have hone : toConv (_root_.Bialgebra.counitAlgHom K H) = (1 : WithConv (H →ₐ[K] K)) := by
-    rw [AlgHom.convOne_def]
-    exact congrArg toConv (by ext x; simp)
+    rw [← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom, toConv_ofConv]
   apply toConv_injective
   have hcomp := toConv_comp_twistedLangAtId φ a (toConv (_root_.Bialgebra.counitAlgHom K H))
   rw [ofConv_toConv] at hcomp
@@ -226,7 +204,8 @@ private theorem derivation_comp_twistedLangAtId (φ : H →ₐc[K] H)
     rw [← tangentKerMap_apply_val]
     have hker : tangentKerMap (B := K) φ ψ = 1 := by
       dsimp only [ψ]
-      rw [tangentKerMap_derivationMulEquivTangentKer, toAdd_ofAdd, hφ, LinearMap.zero_apply]
+      rw [tangentKerMap_derivationMulEquivTangentKer, toAdd_ofAdd, hφ, LinearMap.zero_apply,
+        ofAdd_zero]
       exact map_one (derivationMulEquivTangentKer K H K)
     rw [hker, Subgroup.coe_one]
   have hcomp := toConv_comp_twistedLangAtId_of_mapDomain_eq_one φ a ψ.val hφψ
@@ -279,12 +258,7 @@ theorem twistedLangAlgHom_injective [IsNoetherianRing H] [IsDomain H]
     (a : WithConv (H →ₐ[K] K)) :
     Function.Injective (twistedLangAlgHom φ a) := by
   let I : Ideal H := Bialgebra.AugmentationIdeal K H
-  have hI_ne_top : I ≠ ⊤ := by
-    intro htop
-    have h1 : (1 : H) ∈ I := htop.symm ▸ Submodule.mem_top
-    have hzero : (1 : K) = 0 := by
-      simpa only [I, Bialgebra.AugmentationIdeal, RingHom.mem_ker, map_one] using h1
-    exact one_ne_zero hzero
+  have hI_ne_top : I ≠ ⊤ := RingHom.ker_ne_top (_root_.Bialgebra.counitAlgHom K H : H →+* K)
   have hcounit := counit_comp_twistedLangAtId φ a
   have hfI : I ≤ I.comap (twistedLangAtId φ a) := by
     intro x hx
@@ -312,25 +286,32 @@ theorem twistedLangAlgHom_injective [IsNoetherianRing H] [IsDomain H]
   intro x y hxy
   obtain ⟨x', rfl⟩ := (HopfAlgebra.leftTranslationAlgEquiv a⁻¹).surjective x
   obtain ⟨y', rfl⟩ := (HopfAlgebra.leftTranslationAlgEquiv a⁻¹).surjective y
-  exact congrArg (HopfAlgebra.leftTranslationAlgEquiv a⁻¹) (hinj_atId hxy)
+  have hxy' : twistedLangAtId φ a x' = twistedLangAtId φ a y' := by
+    simpa only [twistedLangAtId, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply] using hxy
+  exact congrArg (HopfAlgebra.leftTranslationAlgEquiv a⁻¹) (hinj_atId hxy')
 
-/-- Each twisted Lang comorphism is of finite type and its induced map on `PrimeSpectrum H` has
-image with dense interior. -/
-private theorem twistedLangAlgHom_finiteType_and_dense_interior
-    [Algebra.FiniteType K H] [IsDomain H] [IsNoetherianRing H]
+/-- Each twisted Lang comorphism of a finite-type Hopf algebra is of finite type. -/
+private theorem twistedLangAlgHom_finiteType [Algebra.FiniteType K H]
+    (φ : H →ₐc[K] H) (a : WithConv (H →ₐ[K] K)) :
+    (twistedLangAlgHom φ a).FiniteType :=
+  RingHom.FiniteType.of_comp_finiteType (f := algebraMap K H)
+    (g := (twistedLangAlgHom φ a).toRingHom)
+    ((twistedLangAlgHom φ a).comp_algebraMap.symm ▸
+      RingHom.finiteType_algebraMap.mpr (inferInstance : Algebra.FiniteType K H))
+
+/-- For a zero-differential bialgebra endomorphism of a finite-type integral-domain Hopf algebra,
+the spectral image of each twisted Lang comorphism has dense interior. -/
+private theorem dense_interior_range_comap_twistedLangAlgHom
+    [Algebra.FiniteType K H] [IsDomain H]
     (φ : H →ₐc[K] H) (hφ : TauCeti.derivationComp (B := K) φ = 0)
     (a : WithConv (H →ₐ[K] K)) :
-    (twistedLangAlgHom φ a).toRingHom.FiniteType ∧
-      Dense (interior (Set.range (PrimeSpectrum.comap (twistedLangAlgHom φ a).toRingHom))) := by
-  have hft : (twistedLangAlgHom φ a).toRingHom.FiniteType :=
-    RingHom.FiniteType.of_comp_finiteType (f := algebraMap K H)
-      (g := (twistedLangAlgHom φ a).toRingHom)
-      ((twistedLangAlgHom φ a).comp_algebraMap.symm ▸
-        RingHom.finiteType_algebraMap.mpr (inferInstance : Algebra.FiniteType K H))
-  have hfp := RingHom.FinitePresentation.of_finiteType.mp hft
+    Dense (interior (Set.range (PrimeSpectrum.comap (twistedLangAlgHom φ a).toRingHom))) := by
+  have : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing K H
+  have hfp : (twistedLangAlgHom φ a).toRingHom.FinitePresentation :=
+    AlgHom.FinitePresentation.of_finiteType.mp (twistedLangAlgHom_finiteType φ a)
   have hd : DenseRange (PrimeSpectrum.comap (twistedLangAlgHom φ a).toRingHom) :=
     RingHom.denseRange_comap_of_injective _ (twistedLangAlgHom_injective φ hφ a)
-  exact ⟨hft, (PrimeSpectrum.isConstructible_range_comap hfp).dense_interior hd⟩
+  exact (PrimeSpectrum.isConstructible_range_comap hfp).dense_interior hd
 
 end Injectivity
 
@@ -339,30 +320,36 @@ end Injectivity
 section AlgClosed
 
 variable {K : Type u} [Field K] [IsAlgClosed K]
-variable {H : Type v} [CommRing H] [_root_.HopfAlgebra K H]
-  [Algebra.FiniteType K H] [Algebra.Smooth K H] [ConnectedSpace (PrimeSpectrum H)]
 
-/-- **General Lang's theorem**: for a smooth connected finite-type affine algebraic group `Spec H`
-over an algebraically closed field `K`, every endomorphism `F = Spec φ` with zero differential at
-the identity has surjective Lang map `g ↦ g⁻¹ * F(g)` on `K`-points. -/
-theorem surjective_inv_mul_mapDomain (φ : H →ₐc[K] H)
-    (hφ : TauCeti.derivationComp (B := K) φ = 0) :
+/-- A `K`-rational point `y` lying in the spectral image of `twistedLangAlgHom φ b` lifts to a
+`K`-point `x` satisfying `y = x * b * F(x)⁻¹` in the convolution group. -/
+private theorem exists_toConv_eq_mul_mul_inv_mapDomain_of_mem_range_comap
+    {H : Type v} [CommRing H] [_root_.HopfAlgebra K H] [Algebra.FiniteType K H]
+    (φ : H →ₐc[K] H) (b : WithConv (H →ₐ[K] K)) (y : H →ₐ[K] K)
+    (hy : AlgHom.kernelPoint y ∈
+      Set.range (PrimeSpectrum.comap (twistedLangAlgHom φ b).toRingHom)) :
+    ∃ x : WithConv (H →ₐ[K] K), toConv y = x * b * (BialgHom.mapDomain φ x)⁻¹ := by
+  obtain ⟨P, hP⟩ := hy
+  have hP' : PrimeSpectrum.comap (twistedLangAlgHom φ b).toRingHom P =
+      ⟨RingHom.ker y.toRingHom, RingHom.ker_isPrime y.toRingHom⟩ := by
+    apply PrimeSpectrum.ext
+    exact (congrArg PrimeSpectrum.asIdeal hP).trans (AlgHom.kernelPoint_asIdeal y)
+  obtain ⟨x, hx⟩ := _root_.AlgHom.exists_comp_eq_of_comap_eq_ker (twistedLangAlgHom φ b)
+    (twistedLangAlgHom_finiteType φ b) y P hP'
+  refine ⟨toConv x, ?_⟩
+  have h := toConv_comp_twistedLangAlgHom φ b (toConv x)
+  rw [ofConv_toConv, hx, Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply] at h
+  exact h
+
+/-- Integral-domain case of `surjective_inv_mul_mapDomain`. -/
+private theorem surjective_inv_mul_mapDomain_of_isDomain
+    {H : Type v} [CommRing H] [_root_.HopfAlgebra K H] [Algebra.FiniteType K H] [IsDomain H]
+    (φ : H →ₐc[K] H) (hφ : TauCeti.derivationComp (B := K) φ = 0) :
     Function.Surjective fun g : WithConv (H →ₐ[K] K) =>
       g⁻¹ * BialgHom.mapDomain φ g := by
-  -- Smooth + connected finite-type Hopf algebra over `K` is a Noetherian integral domain.
-  have : IrreducibleSpace (PrimeSpectrum H) :=
-    _root_.CommHopfAlgCat.irreducibleSpace_primeSpectrum_of_connectedSpace K
-      (_root_.CommHopfAlgCat.of K H)
-  have : IsReduced H := isReduced_of_smooth K H
-  have hnil : (nilradical H).IsPrime :=
-    PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp ‹_›
-  rw [nilradical_eq_zero, Ideal.zero_eq_bot] at hnil
-  have : IsDomain H := IsDomain.of_bot_isPrime H
-  have : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing K H
-  -- Intersect the dense open interiors of the images of the twisted Lang maps for `1` and `a`.
   intro a
-  obtain ⟨hft₁, hU₁⟩ := twistedLangAlgHom_finiteType_and_dense_interior φ hφ 1
-  obtain ⟨hft₂, hU₂⟩ := twistedLangAlgHom_finiteType_and_dense_interior φ hφ a
+  have hU₁ := dense_interior_range_comap_twistedLangAlgHom φ hφ 1
+  have hU₂ := dense_interior_range_comap_twistedLangAlgHom φ hφ a
   let U₁ := interior (Set.range (PrimeSpectrum.comap (twistedLangAlgHom φ 1).toRingHom))
   let U₂ := interior (Set.range (PrimeSpectrum.comap (twistedLangAlgHom φ a).toRingHom))
   have hopen : IsOpen (U₁ ∩ U₂) := isOpen_interior.inter isOpen_interior
@@ -370,44 +357,73 @@ theorem surjective_inv_mul_mapDomain (φ : H →ₐc[K] H)
   have hne : (U₁ ∩ U₂).Nonempty := (hU₁.inter_of_isOpen_left hU₂ isOpen_interior).nonempty
   obtain ⟨y, hy₁, hy₂⟩ :=
     (denseRange_kernelPoint (k := K) (A := H)).exists_mem_open hopen hne
-  -- Lift the common rational point `y` along both twisted Lang morphisms.
-  have lift_point : ∀ (b : WithConv (H →ₐ[K] K)),
-      (twistedLangAlgHom φ b).toRingHom.FiniteType →
-      AlgHom.kernelPoint y ∈
-        interior (Set.range (PrimeSpectrum.comap (twistedLangAlgHom φ b).toRingHom)) →
-      ∃ x : H →ₐ[K] K, x.comp (twistedLangAlgHom φ b) = y := by
-    intro b hft hb
-    obtain ⟨P, hP⟩ := interior_subset hb
-    have hP' : PrimeSpectrum.comap (twistedLangAlgHom φ b).toRingHom P =
-        ⟨RingHom.ker y.toRingHom, RingHom.ker_isPrime y.toRingHom⟩ := by
-      apply PrimeSpectrum.ext
-      exact (congrArg PrimeSpectrum.asIdeal hP).trans (AlgHom.kernelPoint_asIdeal y)
-    exact _root_.AlgHom.exists_comp_eq_of_comap_eq_ker (twistedLangAlgHom φ b) hft y P hP'
-  obtain ⟨x₁, hx₁⟩ := lift_point 1 hft₁ hy₁
-  obtain ⟨x₂, hx₂⟩ := lift_point a hft₂ hy₂
-  have hofId : AlgHom.mapValue (H := H) (Algebra.ofId K K) a = a :=
-    ofConv_injective (by ext h; simp)
-  have heq₁ : toConv y = toConv x₁ * (BialgHom.mapDomain φ (toConv x₁))⁻¹ := by
-    have h := toConv_comp_twistedLangAlgHom φ 1 (toConv x₁)
-    rw [ofConv_toConv, hx₁, map_one, mul_one] at h
-    exact h
-  have heq₂ : toConv y = toConv x₂ * a * (BialgHom.mapDomain φ (toConv x₂))⁻¹ := by
-    have h := toConv_comp_twistedLangAlgHom φ a (toConv x₂)
-    rw [ofConv_toConv, hx₂, hofId] at h
-    exact h
-  -- Solve `g⁻¹ * F(g) = a` with `g = x₁⁻¹ * x₂`.
-  have hrel := heq₁.symm.trans heq₂
-  refine ⟨(toConv x₁)⁻¹ * toConv x₂, ?_⟩
+  obtain ⟨x₁, hx₁⟩ :=
+    exists_toConv_eq_mul_mul_inv_mapDomain_of_mem_range_comap φ 1 y (interior_subset hy₁)
+  obtain ⟨x₂, hx₂⟩ :=
+    exists_toConv_eq_mul_mul_inv_mapDomain_of_mem_range_comap φ a y (interior_subset hy₂)
+  rw [mul_one] at hx₁
+  have hrel := hx₁.symm.trans hx₂
+  refine ⟨x₁⁻¹ * x₂, ?_⟩
   dsimp only
   rw [mul_inv_rev, inv_inv, map_mul, map_inv]
   calc
-    (toConv x₂)⁻¹ * toConv x₁ * ((BialgHom.mapDomain φ (toConv x₁))⁻¹ *
-        BialgHom.mapDomain φ (toConv x₂))
-      = (toConv x₂)⁻¹ * (toConv x₁ * (BialgHom.mapDomain φ (toConv x₁))⁻¹) *
-          BialgHom.mapDomain φ (toConv x₂) := by simp only [mul_assoc]
-    _ = (toConv x₂)⁻¹ * (toConv x₂ * a * (BialgHom.mapDomain φ (toConv x₂))⁻¹) *
-          BialgHom.mapDomain φ (toConv x₂) := by rw [hrel]
+    x₂⁻¹ * x₁ * ((BialgHom.mapDomain φ x₁)⁻¹ * BialgHom.mapDomain φ x₂)
+      = x₂⁻¹ * (x₁ * (BialgHom.mapDomain φ x₁)⁻¹) * BialgHom.mapDomain φ x₂ := by
+          simp only [mul_assoc]
+    _ = x₂⁻¹ * (x₂ * a * (BialgHom.mapDomain φ x₂)⁻¹) * BialgHom.mapDomain φ x₂ := by rw [hrel]
     _ = a := by simp only [mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one]
+
+variable {H : Type v} [CommRing H] [_root_.HopfAlgebra K H]
+  [Algebra.FiniteType K H] [ConnectedSpace (PrimeSpectrum H)]
+
+/-- **General Lang's theorem**: for a connected finite-type affine algebraic group `Spec H` over an
+algebraically closed field `K`, every endomorphism `F = Spec φ` with zero differential at the
+identity has surjective Lang map `g ↦ g⁻¹ * F(g)` on `K`-points. -/
+theorem surjective_inv_mul_mapDomain (φ : H →ₐc[K] H)
+    (hφ : TauCeti.derivationComp (B := K) φ = 0) :
+    Function.Surjective fun g : WithConv (H →ₐ[K] K) =>
+      g⁻¹ * BialgHom.mapDomain φ g := by
+  let I := HopfIdeal.reduction K H
+  have hI : I.toIdeal = nilradical H := HopfIdeal.reduction_toIdeal K H
+  let q : H →ₐc[K] H ⧸ I.toIdeal := Bialgebra.Quotient.mkBialgHom I.toIdeal
+  have hq : Function.Surjective q := Bialgebra.Quotient.mkBialgHom_surjective I.toIdeal
+  have : Algebra.FiniteType K (H ⧸ I.toIdeal) :=
+    Algebra.FiniteType.of_surjective (Ideal.Quotient.mkₐ K I.toIdeal)
+      (Ideal.Quotient.mkₐ_surjective K I.toIdeal)
+  have hIrrH : IrreducibleSpace (PrimeSpectrum H) :=
+    _root_.CommHopfAlgCat.irreducibleSpace_primeSpectrum_of_connectedSpace K
+      (_root_.CommHopfAlgCat.of K H)
+  have : I.toIdeal.IsPrime := hI ▸ PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp hIrrH
+  have hker : I.toIdeal ≤ RingHom.ker (q.comp φ).toAlgHom.toRingHom := by
+    intro x hx
+    have hnilx : IsNilpotent x := mem_nilradical.mp (hI ▸ hx)
+    exact (hnilx.map (q.comp φ).toAlgHom.toRingHom).eq_zero
+  let φ_red : H ⧸ I.toIdeal →ₐc[K] H ⧸ I.toIdeal :=
+    Bialgebra.Quotient.liftBialgHom I.toIdeal (q.comp φ) hker
+  have hφ_comp : φ_red.comp q = q.comp φ :=
+    Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom I.toIdeal (q.comp φ) hker
+  have hφ_red : TauCeti.derivationComp (B := K) φ_red = 0 := by
+    ext d : 1
+    apply TauCeti.derivationComp_injective_of_surjective q hq
+    rw [LinearMap.zero_apply, map_zero, ← LinearMap.comp_apply, ← TauCeti.derivationComp_comp,
+      hφ_comp, TauCeti.derivationComp_comp, hφ, LinearMap.comp_apply, LinearMap.zero_apply]
+  have hsurj_red := surjective_inv_mul_mapDomain_of_isDomain φ_red hφ_red
+  intro a
+  have ha_ker : ∀ x ∈ I.toIdeal, a.ofConv x = 0 := fun x hx =>
+    ((mem_nilradical.mp (hI ▸ hx)).map a.ofConv.toRingHom).eq_zero
+  let a_red : WithConv ((H ⧸ I.toIdeal) →ₐ[K] K) :=
+    toConv (Ideal.Quotient.liftₐ I.toIdeal a.ofConv ha_ker)
+  have ha_red : BialgHom.mapDomain (A := K) q a_red = a := by
+    rw [BialgHom.mapDomain_apply, ofConv_toConv, Bialgebra.Quotient.mkBialgHom_toAlgHom,
+      Ideal.Quotient.liftₐ_comp, toConv_ofConv]
+  obtain ⟨g_red, hg_red⟩ := hsurj_red a_red
+  refine ⟨BialgHom.mapDomain (A := K) q g_red, ?_⟩
+  have hcomm : BialgHom.mapDomain (A := K) φ (BialgHom.mapDomain (A := K) q g_red) =
+      BialgHom.mapDomain (A := K) q (BialgHom.mapDomain (A := K) φ_red g_red) := by
+    rw [← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp, ← hφ_comp, BialgHom.mapDomain_comp,
+      MonoidHom.comp_apply]
+  dsimp only at hg_red ⊢
+  rw [hcomm, ← map_inv, ← map_mul, hg_red, ha_red]
 
 /-- Commutator-map (`g ↦ g / F(g)`) form of `surjective_inv_mul_mapDomain`. -/
 theorem surjective_commutatorMap_mapDomain (φ : H →ₐc[K] H)
@@ -425,78 +441,175 @@ section FiniteField
 variable {F : Type u} [Field F] [Fintype F]
 variable {K : Type w} [Field K] [Algebra F K] [IsAlgClosed K]
 
-/-- **Lang's theorem** (unbundled form): for a smooth geometrically connected finite-type affine
-group scheme `Spec H` over a finite field `F` and an algebraically closed extension `K / F`, the
-Lang map `g ↦ g⁻¹ * F(g)` of the `|F|`-Frobenius is surjective on `K`-points. -/
+/-- **Lang's theorem** (unbundled form): for a geometrically connected finite-type affine group
+scheme `Spec H` over a finite field `F`, an algebraically closed extension `K / F`, and any
+positive integer `n ≠ 0`, the Lang map `g ↦ g⁻¹ * F^n(g)` of the `|F|^n`-Frobenius is surjective
+on `K`-points. -/
 theorem surjective_inv_mul_frobeniusPoints {H : Type v} [CommRing H] [_root_.HopfAlgebra F H]
-    [Algebra.FiniteType F H] [Algebra.Smooth F H]
+    [Algebra.FiniteType F H] {n : ℕ} (hn : n ≠ 0)
     (hconn : geometricallyConnectedCommHopfAlgProperty F (_root_.CommHopfAlgCat.of F H)) :
     Function.Surjective fun g : WithConv (H →ₐ[F] K) =>
-      g⁻¹ * FiniteField.frobeniusPoints F 1 g := by
+      g⁻¹ * FiniteField.frobeniusPoints F n g := by
   have : ConnectedSpace (PrimeSpectrum (K ⊗[F] H)) :=
     (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_baseChange F K
       (_root_.CommHopfAlgCat.of F H)).mp hconn
-  have hsurj := surjective_inv_mul_mapDomain
-    (FiniteField.geometricFrobeniusBialgHom F K H)
-    (FiniteField.derivationComp_geometricFrobeniusBialgHom F K H)
+  let ψ : K ⊗[F] H →ₐc[K] K ⊗[F] H := FiniteField.geometricFrobeniusBialgHom F K H
+  let iter : ℕ → (K ⊗[F] H →ₐc[K] K ⊗[F] H) :=
+    fun k => Nat.rec (BialgHom.id K _) (fun _ f => ψ.comp f) k
+  have hder : TauCeti.derivationComp (B := K) (iter n) = 0 := by
+    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+    change TauCeti.derivationComp (B := K) (ψ.comp (iter m)) = 0
+    rw [TauCeti.derivationComp_comp,
+      FiniteField.derivationComp_geometricFrobeniusBialgHom_eq_zero, LinearMap.comp_zero]
+  have hsurj := surjective_inv_mul_mapDomain (iter n) hder
   let e := AlgHom.baseChangePointsMulEquiv (k := F) (K := K) (A := H) (R := K)
+  have hcomm : ∀ (k : ℕ) (g' : WithConv (K ⊗[F] H →ₐ[K] K)),
+      e.symm (BialgHom.mapDomain (A := K) (iter k) g') =
+        FiniteField.frobeniusPoints F k (e.symm g') := by
+    intro k
+    induction k with
+    | zero =>
+      intro g'
+      simp [iter]
+    | succ k ih =>
+      intro g'
+      change e.symm (BialgHom.mapDomain (A := K) (ψ.comp (iter k)) g') = _
+      rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply, ih]
+      have h1 : e.symm (BialgHom.mapDomain (A := K) ψ g') =
+          FiniteField.frobeniusPoints F 1 (e.symm g') :=
+        DFunLike.congr_fun
+          (FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom
+            (K := F) (k := K) (H := H) (R := K)) g'
+      rw [h1, ← MonoidHom.comp_apply, ← FiniteField.frobeniusPoints_add]
   intro a
   obtain ⟨g', hg'⟩ := hsurj (e a)
   refine ⟨e.symm g', ?_⟩
-  have hcomm : e.symm (BialgHom.mapDomain (A := K)
-      (FiniteField.geometricFrobeniusBialgHom F K H) g') =
-      FiniteField.frobeniusPoints F 1 (e.symm g') :=
-    DFunLike.congr_fun
-      (FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom
-        (K := F) (k := K) (H := H) (R := K)) g'
   have hsymm := congrArg e.symm hg'
   rw [map_mul, map_inv, e.symm_apply_apply] at hsymm
-  exact (congrArg ((e.symm g')⁻¹ * ·) hcomm.symm).trans hsymm
+  exact (congrArg ((e.symm g')⁻¹ * ·) (hcomm n g').symm).trans hsymm
 
-/-- Commutator-map (`g ↦ g / F(g)`) form of Lang's theorem over a finite field. -/
+/-- Commutator-map (`g ↦ g / F^n(g)`) form of Lang's theorem over a finite field. -/
 theorem surjective_commutatorMap_frobeniusPoints {H : Type v} [CommRing H] [_root_.HopfAlgebra F H]
-    [Algebra.FiniteType F H] [Algebra.Smooth F H]
+    [Algebra.FiniteType F H] {n : ℕ} (hn : n ≠ 0)
     (hconn : geometricallyConnectedCommHopfAlgProperty F (_root_.CommHopfAlgCat.of F H)) :
     Function.Surjective (MonoidHom.commutatorMap
-      (FiniteField.frobeniusPoints F 1 (H := H) (A := K))) :=
+      (FiniteField.frobeniusPoints F n (H := H) (A := K))) :=
   (MonoidHom.surjective_inv_mul_iff_surjective_commutatorMap _).mp
-    (surjective_inv_mul_frobeniusPoints hconn)
+    (surjective_inv_mul_frobeniusPoints hn hconn)
 
-/-- **Lang's theorem**: for a smooth geometrically connected finite-type group over a finite field
-`F`, an algebraically closed extension `K / F`, and the `|F|`-power Frobenius `σ : K →ₐ[F] K`,
-the Lang map `g ↦ g⁻¹ * σ(g)` is surjective on `H(K)`. -/
+/-- **Lang's theorem**: for a geometrically connected finite-type group over a finite field `F`,
+an algebraically closed extension `K / F`, and the `|F|`-power Frobenius `σ : K →ₐ[F] K`, the Lang
+map `g ↦ g⁻¹ * σ(g)` is surjective on `H(K)`. -/
 theorem lang_surjective (H : FiniteTypeCommHopfAlgCat.{u, v} F)
-    (hsm : smoothCommHopfAlgProperty F H.obj)
     (hconn : geometricallyConnectedCommHopfAlgProperty F H.obj)
     (σ : K →ₐ[F] K) (hσ : ∀ z, σ z = z ^ Fintype.card F) :
     Function.Surjective fun g : WithConv (H →ₐ[F] K) =>
       g⁻¹ * toConv (σ.comp g.ofConv) := by
-  have : Algebra.Smooth F H := (smoothCommHopfAlgProperty_iff H.obj).mp hsm
   have hF : ∀ g : WithConv (H →ₐ[F] K),
-      toConv (σ.comp g.ofConv) = FiniteField.frobeniusPoints F 1 g := by
-    intro g
-    apply ofConv_injective
-    ext h
-    rw [ofConv_toConv, AlgHom.comp_apply, hσ, FiniteField.frobeniusPoints_apply_apply, pow_one,
-      Nat.card_eq_fintype_card]
-  simpa only [hF] using surjective_inv_mul_frobeniusPoints (F := F) (K := K) (H := H) hconn
+      toConv (σ.comp g.ofConv) = FiniteField.frobeniusPoints F 1 g :=
+    FiniteField.toConv_comp_eq_frobeniusPoints σ (fun z => by rw [pow_one, hσ z])
+  simpa only [hF] using
+    surjective_inv_mul_frobeniusPoints (F := F) (K := K) (H := H) one_ne_zero hconn
 
 end FiniteField
+
+/-! ### Galois cohomology vanishing and rational-point lifting -/
+
+section GaloisCohomology
+
+/-- **Vanishing of non-abelian Galois `H¹` over a finite field** (`H¹(F, H) = 1`, Lang's theorem):
+for a geometrically connected finite-type affine group scheme `Spec H` over a field `F` and a finite
+field extension `L / F`, every Galois 1-cocycle `c : (L ≃ₐ[F] L) → WithConv (H →ₐ[F] L)` is a
+coboundary `γ ↦ b⁻¹ * γ(b)`. -/
+theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
+    {F : Type u} [Field F]
+    {L : Type w} [Field L] [Finite L] [Algebra F L]
+    {H : Type v} [CommRing H] [_root_.HopfAlgebra F H] [Algebra.FiniteType F H]
+    (hconn : geometricallyConnectedCommHopfAlgProperty F (_root_.CommHopfAlgCat.of F H))
+    (c : (L ≃ₐ[F] L) → WithConv (H →ₐ[F] L))
+    (hc : ∀ γ δ, c (γ * δ) = c γ * AlgHom.mapValue γ.toAlgHom (c δ)) :
+    ∃ b : WithConv (H →ₐ[F] L), ∀ γ, c γ = b⁻¹ * AlgHom.mapValue γ.toAlgHom b := by
+  have : Finite F := Finite.of_injective _ (algebraMap F L).injective
+  have : Fintype F := Fintype.ofFinite F
+  have : Fintype L := Fintype.ofFinite L
+  let K := AlgebraicClosure L
+  let ι : L →ₐ[F] K := IsScalarTower.toAlgHom F L K
+  let φ : L ≃ₐ[F] L := _root_.FiniteField.frobeniusAlgEquivOfAlgebraic F L
+  have hc1 : c 1 = 1 := by
+    have h1 := hc 1 1
+    have h1id : (1 : L ≃ₐ[F] L).toAlgHom = AlgHom.id F L := AlgHom.ext fun _ => rfl
+    rw [mul_one, h1id, AlgHom.mapValue_id, MonoidHom.id_apply] at h1
+    exact mul_eq_left.mp h1.symm
+  have hιφ : ∀ (k : ℕ) (x : WithConv (H →ₐ[F] L)),
+      AlgHom.mapValue ι (AlgHom.mapValue (φ ^ k).toAlgHom x) =
+        FiniteField.frobeniusPoints F k (AlgHom.mapValue ι x) := by
+    intro k x
+    have hφk : AlgHom.mapValue (φ ^ k).toAlgHom x = FiniteField.frobeniusPoints F k x := by
+      rw [AlgHom.mapValue_apply]
+      exact FiniteField.toConv_comp_eq_frobeniusPoints (φ ^ k).toAlgHom (fun z => by
+        have hit := congrFun (_root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate F L k) z
+        simpa [AlgEquiv.coe_pow] using hit) x
+    rw [hφk]
+    exact DFunLike.congr_fun (FiniteField.mapValue_comp_frobeniusPoints ι k) x
+  obtain ⟨bK, hbK⟩ :=
+    surjective_inv_mul_frobeniusPoints (F := F) (K := K) (H := H) one_ne_zero hconn
+      (AlgHom.mapValue ι (c φ))
+  dsimp only at hbK
+  have hiter : ∀ k : ℕ,
+      bK⁻¹ * FiniteField.frobeniusPoints F k bK = AlgHom.mapValue ι (c (φ ^ k)) := by
+    intro k
+    induction k with
+    | zero =>
+      rw [FiniteField.frobeniusPoints_zero, MonoidHom.id_apply, inv_mul_cancel, pow_zero, hc1,
+        map_one]
+    | succ k ih =>
+      have hιφ1 : AlgHom.mapValue ι (AlgHom.mapValue φ.toAlgHom (c (φ ^ k))) =
+          FiniteField.frobeniusPoints F 1 (AlgHom.mapValue ι (c (φ ^ k))) := by
+        simpa only [pow_one] using hιφ 1 (c (φ ^ k))
+      rw [pow_succ', hc, map_mul, hιφ1, ← ih, ← hbK]
+      simp only [map_mul, map_inv, mul_assoc, mul_inv_cancel_left]
+      rw [← MonoidHom.comp_apply, ← FiniteField.frobeniusPoints_add, add_comm 1 k]
+  have hfix : FiniteField.frobeniusPoints F (Module.finrank F L) bK = bK := by
+    have hpow1 : φ ^ Module.finrank F L = 1 := by
+      rw [← _root_.FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic F L, pow_orderOf_eq_one]
+    have h := hiter (Module.finrank F L)
+    rw [hpow1, hc1, map_one] at h
+    exact (inv_mul_eq_one.mp h).symm
+  have hmem : bK ∈ (AlgHom.mapValue (H := H) ι).range := by
+    rw [MonoidHom.mem_range, ← MonoidHom.mem_mrange,
+      AlgHom.mem_mrange_mapValue_iff ι.toRingHom.injective]
+    intro h
+    have hcard : Nat.card L = Nat.card F ^ Module.finrank F L := by
+      rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+      exact Module.card_eq_pow_finrank (K := F) (V := L)
+    have hpowL : bK.ofConv h ^ Nat.card L = bK.ofConv h := by
+      rw [hcard, ← FiniteField.frobeniusPoints_apply_apply, hfix]
+    have hrange := (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap (K := L) (L := K)
+      (bK.ofConv h)).mp hpowL
+    simpa [ι, IsScalarTower.coe_toAlgHom'] using hrange
+  obtain ⟨b, hb⟩ := hmem
+  refine ⟨b, fun γ => ?_⟩
+  obtain ⟨n, rfl⟩ := (_root_.FiniteField.bijective_frobeniusAlgEquivOfAlgebraic_pow F L).2 γ
+  apply AlgHom.mapValue_injective ι.toRingHom.injective
+  rw [map_mul, map_inv, hιφ n.1, hb]
+  exact (hiter n.1).symm
+
+end GaloisCohomology
 
 section RationalPoints
 
 variable {F : Type u} [Field F] [Finite F]
 variable {K : Type w} [Field K] [Algebra F K] [IsAlgClosed K]
 
-/-- **Surjectivity on rational points for exact sequences with smooth connected kernel**
-(a consequence of Lang's theorem / `H¹(F, H₃) = 1`): if `Spec H₃ → Spec H₂ → Spec H₁` is exact
-at `Spec H₂` and surjective at `Spec H₁` on `K`-points over an algebraically closed extension
-`K / F`, and `Spec H₃` is smooth and geometrically connected of finite type over `F`, then
-`Spec H₂(F) → Spec H₁(F)` is surjective. -/
-theorem surjective_rationalPoints_of_exact
-    {H₁ H₂ H₃ : Type*} [CommRing H₁] [CommRing H₂] [CommRing H₃]
+/-- **Surjectivity on rational points for exact sequences with connected kernel** (a consequence
+of Lang's theorem / `H¹(F, H₃) = 1`): if `Spec H₃ → Spec H₂ → Spec H₁` is exact at `Spec H₂` and
+surjective at `Spec H₁` on `K`-points over an algebraically closed extension `K / F`, and
+`Spec H₃` is geometrically connected of finite type over `F`, then `Spec H₂(F) → Spec H₁(F)` is
+surjective. -/
+theorem mapDomain_surjective_of_surjective_of_range_eq_ker
+    {H₁ H₂ H₃ : Type*} [Semiring H₁] [Semiring H₂] [CommRing H₃]
     [_root_.HopfAlgebra F H₁] [_root_.HopfAlgebra F H₂] [_root_.HopfAlgebra F H₃]
-    [Algebra.FiniteType F H₃] [Algebra.Smooth F H₃]
+    [Algebra.FiniteType F H₃]
     (hconn : geometricallyConnectedCommHopfAlgProperty F (_root_.CommHopfAlgCat.of F H₃))
     (φ : H₁ →ₐc[F] H₂) (ψ : H₂ →ₐc[F] H₃)
     (hsurj : Function.Surjective (BialgHom.mapDomain (A := K) φ))
@@ -515,13 +628,11 @@ theorem surjective_rationalPoints_of_exact
       (FiniteField.frobeniusPoints F 1)
       (fun g => DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints φ 1) g)
       (fun t => (DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints ψ 1) t).symm)
-      hsurj (surjective_commutatorMap_frobeniusPoints (K := K) hconn) hyK
+      hsurj (surjective_commutatorMap_frobeniusPoints (K := K) one_ne_zero hconn) hyK
   refine ⟨e₂.symm ⟨xK, hxK_fix⟩, e₁.injective (Subtype.ext ?_)⟩
   rw [FiniteField.coe_rationalPointsMulEquiv_mapDomain, e₂.apply_symm_apply]
   exact hxK_map
 
 end RationalPoints
 
-end Lang
-
-end TauCeti
+end TauCeti.Lang

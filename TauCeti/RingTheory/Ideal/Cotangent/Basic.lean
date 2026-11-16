@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Extension.Basic
+public import TauCeti.RingTheory.Ideal.Maps
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Cotangent spaces of ideals and kernels
@@ -17,12 +19,21 @@ over `R ⧸ I`. Conversely, elements of an ideal `I` of `A` whose images span th
 `A`, then its cotangent space is finite over `R`. The main case is an augmentation
 `f : A →ₐ[R] R`, whose kernel is the augmentation ideal.
 
+For a ring homomorphism `f : R →+* S` carrying an ideal `I` into `J`, surjectivity on
+`R ⧸ I → S ⧸ J` and on the conormal pieces `I ⧸ I ^ 2 → J ⧸ J ^ 2` propagates to every graded piece
+`I ^ n ⧸ I ^ (n + 1) → J ^ n ⧸ J ^ (n + 1)` (`RingHom.exists_mem_pow_sub_mem_pow_succ`) and hence
+to every infinitesimal quotient `R ⧸ I ^ n → S ⧸ J ^ n` (`RingHom.quotientMap_pow_surjective`).
+
 ## Main declarations
 
 * `Ideal.span_range_toCotangent_eq_top`: the classes of generators of `I` span `I ⧸ I²` over
   `R ⧸ I`.
 * `Ideal.le_span_sup_sq_of_span_toCotangent_eq_top`: elements whose images span the cotangent
   space generate the ideal modulo its square.
+* `RingHom.exists_mem_pow_sub_mem_pow_succ`: surjectivity modulo `J` and on `I ⧸ I ^ 2 → J ⧸ J ^ 2`
+  implies surjectivity on every graded piece `I ^ n ⧸ I ^ (n + 1) → J ^ n ⧸ J ^ (n + 1)`.
+* `RingHom.quotientMap_pow_surjective`: surjectivity modulo `J` and on `I ⧸ I ^ 2 → J ⧸ J ^ 2`
+  implies surjectivity of `Ideal.quotientMap (J ^ n) f _` for every `n`.
 * `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
   cotangent space over the base.
 * `AlgHom.finite_cotangent_ker`: the noetherian specialization.
@@ -79,6 +90,81 @@ theorem le_span_sup_sq_of_span_toCotangent_eq_top (I : Ideal A) {ι : Type*} {f 
 end
 
 end Ideal
+
+namespace RingHom
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- Surjectivity of a ring homomorphism `f : R →+* S` with `I ≤ J.comap f` on `R ⧸ I → S ⧸ J`
+and on `I ⧸ I ^ 2 → J ⧸ J ^ 2` implies surjectivity on every graded piece
+`I ^ n ⧸ I ^ (n + 1) → J ^ n ⧸ J ^ (n + 1)`. -/
+theorem exists_mem_pow_sub_mem_pow_succ {I : Ideal R} {J : Ideal S} (f : R →+* S)
+    (hf : I ≤ J.comap f)
+    (hquot : Function.Surjective (Ideal.quotientMap J f hf))
+    (hcot : ∀ y ∈ J, ∃ x ∈ I, y - f x ∈ J ^ 2) :
+    ∀ n : ℕ, ∀ y ∈ J ^ n, ∃ x ∈ I ^ n, y - f x ∈ J ^ (n + 1)
+  | 0, y, _ => by
+    obtain ⟨x, hx⟩ := Ideal.exists_sub_mem_of_surjective_quotientMap hquot y
+    exact ⟨x, by simp, by simpa using hx⟩
+  | 1, y, hy => by
+    simpa only [pow_one] using hcot y (by simpa only [pow_one] using hy)
+  | n + 2, y, hy => by
+    have ih := f.exists_mem_pow_sub_mem_pow_succ hf hquot hcot (n + 1)
+    rw [pow_succ] at hy
+    refine Submodule.mul_induction_on hy (fun a ha b hb => ?_) (fun u v hu hv => ?_)
+    · obtain ⟨u, hu, hau⟩ := ih a ha
+      obtain ⟨v, hv, hbv⟩ := hcot b hb
+      refine ⟨u * v, pow_succ I (n + 1) ▸ Ideal.mul_mem_mul hu hv, ?_⟩
+      have hdecomp : a * b - f (u * v) = (a - f u) * b + f u * (b - f v) := by
+        rw [map_mul]
+        ring
+      rw [hdecomp]
+      refine Ideal.add_mem _ ?_ ?_
+      · rw [pow_succ]
+        exact Ideal.mul_mem_mul hau hb
+      · have hfu : f u ∈ J ^ (n + 1) := Ideal.pow_le_comap_pow hf (n + 1) hu
+        have hpow : J ^ (n + 1) * J ^ 2 = J ^ (n + 3) := by
+          rw [← pow_add]
+        rw [← hpow]
+        exact Ideal.mul_mem_mul hfu hbv
+    · obtain ⟨x₁, hx₁, hy₁⟩ := hu
+      obtain ⟨x₂, hx₂, hy₂⟩ := hv
+      refine ⟨x₁ + x₂, Ideal.add_mem _ hx₁ hx₂, ?_⟩
+      have hdecomp : (u + v) - f (x₁ + x₂) = (u - f x₁) + (v - f x₂) := by
+        rw [map_add]
+        ring
+      rw [hdecomp]
+      exact Ideal.add_mem _ hy₁ hy₂
+
+/-- A ring homomorphism `f : R →+* S` with `I ≤ J.comap f` that is surjective on `R ⧸ I → S ⧸ J`
+and on `I ⧸ I ^ 2 → J ⧸ J ^ 2` is surjective on `R ⧸ I ^ n → S ⧸ J ^ n` for every `n`. -/
+theorem quotientMap_pow_surjective {I : Ideal R} {J : Ideal S} (f : R →+* S)
+    (hf : I ≤ J.comap f)
+    (hquot : Function.Surjective (Ideal.quotientMap J f hf))
+    (hcot : ∀ y ∈ J, ∃ x ∈ I, y - f x ∈ J ^ 2) (n : ℕ) :
+    Function.Surjective (Ideal.quotientMap (J ^ n) f (Ideal.pow_le_comap_pow hf n)) := by
+  have hstep : ∀ k : ℕ, ∀ y : S, ∃ x : R, y - f x ∈ J ^ k := by
+    intro k
+    induction k with
+    | zero => intro y; exact ⟨0, by simp⟩
+    | succ k ih =>
+      intro y
+      obtain ⟨x₁, hx₁⟩ := ih y
+      obtain ⟨x₂, -, hx₂⟩ :=
+        f.exists_mem_pow_sub_mem_pow_succ hf hquot hcot k (y - f x₁) hx₁
+      refine ⟨x₁ + x₂, ?_⟩
+      have hdecomp : y - f (x₁ + x₂) = (y - f x₁) - f x₂ := by
+        rw [map_add]
+        ring
+      rwa [hdecomp]
+  intro q
+  obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective q
+  obtain ⟨x, hx⟩ := hstep n y
+  refine ⟨Ideal.Quotient.mk (I ^ n) x, ?_⟩
+  rw [Ideal.quotientMap_mk, Ideal.Quotient.eq]
+  simpa only [neg_sub] using (J ^ n).neg_mem hx
+
+end RingHom
 
 namespace AlgHom
 
