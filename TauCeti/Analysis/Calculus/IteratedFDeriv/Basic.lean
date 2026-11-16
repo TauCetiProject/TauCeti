@@ -21,7 +21,10 @@ derivative on three directions gives the three-times curried Fréchet derivative
 (`TauCeti.iteratedFDeriv_three_apply`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
 curried bilinear maps, and the corresponding exact comparison for differences of second
-derivatives, which transfers Hölder bounds between the two forms of the second derivative.
+derivatives, which transfers Hölder bounds between the two forms of the second derivative
+(`TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two`). The same holds for the second
+iterated derivative of the `k`-th iterated derivative and the `(k + 2)`-th iterated derivative
+(`TauCeti.holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff`).
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
 `ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
 to a finite order have a common bound
@@ -112,6 +115,43 @@ theorem holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two {C r : ℝ≥0} {s : S
     HolderOnWith C r (fderiv 𝕜 (fderiv 𝕜 f)) s ↔ HolderOnWith C r (iteratedFDeriv 𝕜 2 f) s := by
   simp only [HolderOnWith, ← continuousMultilinearCurryFin2_iteratedFDeriv_two,
     LinearIsometryEquiv.edist_map]
+
+/-- Differences of the second iterated derivative of the `k`-th iterated derivative of `f` have
+the same norm as differences of the `(k + 2)`-th iterated derivative of `f`, without
+differentiability assumptions: the two differ by a pair of currying isometries. -/
+theorem norm_iteratedFDeriv_two_iteratedFDeriv_sub (f : E → F) (k : ℕ) (x y : E) :
+    ‖iteratedFDeriv 𝕜 2 (iteratedFDeriv 𝕜 k f) x - iteratedFDeriv 𝕜 2 (iteratedFDeriv 𝕜 k f) y‖ =
+      ‖iteratedFDeriv 𝕜 (k + 2) f x - iteratedFDeriv 𝕜 (k + 2) f y‖ := by
+  -- The spaces are given explicitly: unifying them against the instances carried by the currying
+  -- isometries otherwise fails.
+  set e₁ : (E [×k + 1]→L[𝕜] F) ≃ₗᵢ[𝕜] E →L[𝕜] E [×k]→L[𝕜] F :=
+    continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (k + 1) => E) F
+  set e₂ : (E [×k + 2]→L[𝕜] F) ≃ₗᵢ[𝕜] E →L[𝕜] E [×k + 1]→L[𝕜] F :=
+    continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (k + 2) => E) F
+  have h₁ : fderiv 𝕜 (iteratedFDeriv 𝕜 k f) = e₁ ∘ iteratedFDeriv 𝕜 (k + 1) f := by
+    funext z
+    simp [iteratedFDeriv_succ_eq_comp_left, e₁]
+  have h₂ (z : E) :
+      fderiv 𝕜 (iteratedFDeriv 𝕜 (k + 1) f) z = e₂ (iteratedFDeriv 𝕜 (k + 2) f z) := by
+    simp [iteratedFDeriv_succ_eq_comp_left (n := k + 1), e₂]
+  have h₃ (z : E) : fderiv 𝕜 (e₁ ∘ iteratedFDeriv 𝕜 (k + 1) f) z =
+      e₁.toLinearIsometry.toContinuousLinearMap.comp (fderiv 𝕜 (iteratedFDeriv 𝕜 (k + 1) f) z) :=
+    LinearIsometryEquiv.comp_fderiv (𝕜 := 𝕜) (E := E [×k + 1]→L[𝕜] F)
+      (F := E →L[𝕜] E [×k]→L[𝕜] F) (G := E) (iso := e₁) (f := iteratedFDeriv 𝕜 (k + 1) f) (x := z)
+  rw [← norm_fderiv_fderiv_sub, h₁, h₃, h₃, h₂, h₂, ← ContinuousLinearMap.comp_sub,
+    ← LinearIsometryEquiv.map_sub]
+  refine (ContinuousLinearMap.opNorm_ext _
+    (e₂ (iteratedFDeriv 𝕜 (k + 2) f x - iteratedFDeriv 𝕜 (k + 2) f y)) fun v =>
+      e₁.norm_map _).trans ?_
+  exact e₂.norm_map _
+
+/-- The second iterated derivative of the `k`-th iterated derivative of `f` is `r`-Hölder with
+constant `C` on a set exactly when the `(k + 2)`-th iterated derivative of `f` is. -/
+theorem holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff {C r : ℝ≥0} {s : Set E} (f : E → F)
+    (k : ℕ) :
+    HolderOnWith C r (iteratedFDeriv 𝕜 2 (iteratedFDeriv 𝕜 k f)) s ↔
+      HolderOnWith C r (iteratedFDeriv 𝕜 (k + 2) f) s := by
+  simp only [HolderOnWith, edist_dist, dist_eq_norm, norm_iteratedFDeriv_two_iteratedFDeriv_sub]
 
 /-- The `i`-th iterated derivative of the `m`-th iterated derivative of `f` has the same norm as
 the `(i + m)`-th iterated derivative of `f`. -/
