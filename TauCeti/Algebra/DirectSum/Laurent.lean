@@ -57,6 +57,25 @@ theorem coeff_decomposeLaurent (x : A) (i : ℤ) :
     · simp [← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.coeff_single,
         DirectSum.of_eq_of_ne _ _ _ (Ne.symm h), h]
 
+/-- `decomposeLaurent ℳ` is injective, as its coefficients recover all homogeneous components. -/
+theorem decomposeLaurent_injective : Function.Injective (decomposeLaurent ℳ) := by
+  intro x y h
+  apply (decompose ℳ).injective
+  ext i : 1
+  apply Subtype.ext
+  simpa using congrArg (fun p : A[T;T⁻¹] ↦ p.coeff i) h
+
+@[simp]
+theorem decomposeLaurent_inj {x y : A} : decomposeLaurent ℳ x = decomposeLaurent ℳ y ↔ x = y :=
+  (decomposeLaurent_injective ℳ).eq_iff
+
+@[simp]
+theorem decomposeLaurent_eq_zero {x : A} : decomposeLaurent ℳ x = 0 ↔ x = 0 :=
+  map_eq_zero_iff _ (decomposeLaurent_injective ℳ)
+
+theorem decomposeLaurent_ne_zero {x : A} : decomposeLaurent ℳ x ≠ 0 ↔ x ≠ 0 :=
+  map_ne_zero_iff _ (decomposeLaurent_injective ℳ)
+
 variable {τ : Type*} [SetLike τ A] [AddSubmonoidClass τ A]
     (𝒜 : ℤ → τ) [Decomposition 𝒜] [SetLike.GradedSMul 𝒜 ℳ]
 
