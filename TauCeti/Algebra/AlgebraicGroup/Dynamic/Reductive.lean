@@ -191,7 +191,7 @@ theorem parabolicDefiningHopfIdeal_eq_bot_iff_of_charZero (hH : reductiveCommHop
       Derivation.mem_nontrivialAdjointWeights.mpr ⟨by simpa using hn.ne, hne⟩
     rw [hH.nontrivialAdjointWeights_eq_empty l hl] at hmem
     exact hmem
-  have := geometricallyConnectedCommHopfAlgProperty.connectedSpace k H.obj hH.geometricallyConnected
+  have := geometricallyConnectedCommHopfAlgProperty.connectedSpace hH.geometricallyConnected
   exact l.parabolicDefiningHopfIdeal_eq_bot_of_adjointWeightSpace_neg_eq_bot hneg
 
 end Lie

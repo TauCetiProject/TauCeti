@@ -62,6 +62,8 @@ injective on sections, and functorial in the divisor.
   their values outside a closed discrete set.
 * `TauCeti.RiemannSurface.divisorSheafMapOfLE_app_injective`, `divisorSheafMapOfLE_refl` and
   `divisorSheafMapOfLE_comp`: the inclusions are injective and functorial.
+* `TauCeti.RiemannSurface.finrank_divisorSheaf_zero`: `h⁰(0) = 1` on a compact connected
+  Riemann surface.
 
 ## References
 
@@ -521,6 +523,15 @@ theorem divisorSheafZeroIso_inv_app_apply (U : Opens X)
     (no_index (divisorSheafSectionsEquiv 0 U ((divisorSheafZeroIso X).inv.hom.app (op U) s))).1 =
       s :=
   (rfl)
+
+/-- **`h⁰(0) = 1`.** On a compact connected Riemann surface the global sections of `𝒪_0` form a
+one-dimensional complex vector space. -/
+@[simp]
+theorem finrank_divisorSheaf_zero [CompactSpace X] [ConnectedSpace X] :
+    Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 :=
+  (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
+    (op ⊤)).toLinearEquiv.finrank_eq.trans
+      (holomorphicStructureSheafModules.finrank_globalSections 𝓘(ℂ) X)
 
 end Zero
 

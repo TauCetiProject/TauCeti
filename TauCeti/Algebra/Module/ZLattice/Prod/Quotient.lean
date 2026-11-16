@@ -85,7 +85,7 @@ theorem span_toAddSubgroup'_comap_inl_eq_top [CompactSpace ((Multiplicative V ×
     rintro ⟨v⟩
     exact ⟨Quotient.mk'' (Multiplicative.ofAdd v, 1), rfl⟩
   have : CompactSpace (V ⧸ P) := hsurj.compactSpace hcont
-  have hP := AddSubgroup.span_eq_top_of_compactSpace_quotient P
+  have hP := AddSubgroup.span_eq_top_of_compactSpace_quotient (𝕜 := ℝ) P
   -- If the image of `Γ` in `K` has `m` elements, then `m • P ⊆ Λ`.
   set m := Nat.card (Γ.map (MonoidHom.snd (Multiplicative V) K))
   have hm : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
