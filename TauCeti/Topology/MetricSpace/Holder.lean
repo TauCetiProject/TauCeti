@@ -466,13 +466,14 @@ theorem edist_le_eHolderNorm_mul {X Y : Type*} [MetricSpace X] [PseudoEMetricSpa
 `α β`-Hölder seminorm of `f ∘ g` is at most `nnHolderNorm α f * nnHolderNorm β g ^ α`. For a
 `K`-Lipschitz `g` (`β = 1`) the factor is at most `K ^ α`.
 
-No metric is needed: in a pseudo-extended metric space the infimum defining `eHolderNorm` need not
-be attained, so the proof bounds the seminorm of `f ∘ g` by `C * D ^ α` for every pair of Hölder
-constants `C` of `f` and `D` of `g` (`HolderWith.comp`) and passes to the infimum. -/
+The spaces `X'`, `X` and `Z` may be pseudo-extended metric spaces: no separation is needed. -/
 theorem MemHolder.nnHolderNorm_comp_le {X' X Z : Type*} [PseudoEMetricSpace X']
     [PseudoEMetricSpace X] [PseudoEMetricSpace Z] {α β : ℝ≥0} {f : X → Z} (hf : MemHolder α f)
     {g : X' → X} (hg : MemHolder β g) :
     nnHolderNorm (α * β) (f ∘ g) ≤ nnHolderNorm α f * nnHolderNorm β g ^ (α : ℝ) := by
+  -- The infimum defining `eHolderNorm` need not be attained, so bound the seminorm of `f ∘ g` by
+  -- `C * D ^ α` for every pair of Hölder constants `C` of `f` and `D` of `g` (`HolderWith.comp`)
+  -- and pass to the infimum.
   have key : eHolderNorm (α * β) (f ∘ g) ≤ eHolderNorm α f * eHolderNorm β g ^ (α : ℝ) := by
     obtain ⟨C, hC⟩ := hf
     obtain ⟨D, hD⟩ := hg
