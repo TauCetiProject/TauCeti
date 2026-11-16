@@ -25,17 +25,19 @@ establishes that uniqueness theorem without completeness assumptions on the inne
 together with its operator-level and spectral consequences:
 
 * **Scalar factorization through Euclidean space**
-  (`ContinuousLinearMap.exists_comp_comp_eq_smul_id`). For a bounded operator `T : H₁ →L[𝕜] H₂`
-  between seminormed inner product spaces over `𝕜` (`ℝ` or `ℂ`) and every `0 ≤ c < aₙ(T)`, there
-  exist contractions `A : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] H₁` and
-  `B : H₂ →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))` with `B ∘L T ∘L A = c • id`. Passing to
-  `T.completion` preserves `aₙ(T)` (`ContinuousLinearMap.singularValue_completion`); the converse
-  min–max localization on the complete space `Completion H₁`
-  (`TauCeti.HasMinMaxLowerBound.of_completeSpace`) supplies an `(n + 1)`-dimensional subspace on
-  which `T.completion` is `s`-coercive for some `s > c`, approximating an isometric embedding into
-  `H₁` via `ContinuousLinearMap.denseRange_comp` and rescaling gives a contraction `A` on which `T`
-  remains `c`-coercive, and Douglas factorization (`ContinuousLinearMap.factorThru`) in
-  `Completion H₂` constructs the contraction `B`.
+  (`ContinuousLinearMap.exists_comp_comp_eq_smul_id`,
+  `ContinuousLinearMap.singularValue_le_of_forall_comp_comp_eq_smul_id`). For a bounded operator
+  `T : H₁ →L[𝕜] H₂` between seminormed inner product spaces over `𝕜` (`ℝ` or `ℂ`) and every
+  `0 ≤ c < aₙ(T)`, there exist contractions `A : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] H₁` and
+  `B : H₂ →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))` with `B ∘L T ∘L A = c • id`; consequently,
+  `aₙ(T) ≤ a` whenever every contraction factorization `B ∘L T ∘L A = α • id` satisfies
+  `‖α‖₊ ≤ a`. Passing to `T.completion` preserves `aₙ(T)`
+  (`ContinuousLinearMap.singularValue_completion`); the converse min–max localization on the
+  complete space `Completion H₁` (`TauCeti.HasMinMaxLowerBound.of_completeSpace`) supplies an
+  `(n + 1)`-dimensional subspace on which `T.completion` is `s`-coercive for some `s > c`,
+  approximating an isometric embedding into `H₁` via `ContinuousLinearMap.denseRange_comp` and
+  rescaling gives a contraction `A` on which `T` remains `c`-coercive, and Douglas factorization
+  (`ContinuousLinearMap.factorThru`) in `Completion H₂` constructs the contraction `B`.
 * **Uniqueness of s-number sequences** (`TauCeti.SNumbers.IsSNumberSequence.eq_singularValue`).
   Every s-number sequence `s` satisfies `s T n ≤ aₙ(T)` on all normed spaces
   (`TauCeti.SNumbers.IsSNumberSequence.le_singularValue`); conversely, for any `c < aₙ(T)` the
@@ -185,9 +187,11 @@ theorem exists_comp_comp_eq_smul_id (T : H₁ →L[𝕜] H₂) (n : ℕ) {c : �
   calc B ∘L T ∘L A = (T₀.factorThru S) ∘L S := by simp only [B, S, comp_assoc]
     _ = T₀ := factorThru_comp ⟨1, hbound⟩
 
-/-- Common lower-bound step deducing `aₙ(T) ≤ a` from scalar factorizations of `α • id` on
-`EuclideanSpace 𝕜 (Fin (n + 1))` through `T`. -/
-private theorem singularValue_le_of_smul_id_le (T : H₁ →L[𝕜] H₂) (n : ℕ) {a : ℝ≥0}
+/-- **Approximation-number bound from scalar factorizations.** For a bounded linear map
+`T : H₁ →L[𝕜] H₂` between seminormed inner product spaces over `ℝ` or `ℂ`, if every contraction
+factorization `B ∘L T ∘L A = α • id` on `EuclideanSpace 𝕜 (Fin (n + 1))` satisfies `‖α‖₊ ≤ a`, then
+`T.singularValue n ≤ a`. Neither `H₁` nor `H₂` need be complete or Hausdorff. -/
+theorem singularValue_le_of_forall_comp_comp_eq_smul_id (T : H₁ →L[𝕜] H₂) (n : ℕ) {a : ℝ≥0}
     (h : ∀ (α : 𝕜) (A : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] H₁)
       (B : H₂ →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))),
       ‖A‖₊ ≤ 1 → ‖B‖₊ ≤ 1 →
@@ -291,7 +295,7 @@ Bernstein numbers coincide with the approximation numbers across arbitrary unive
 theorem bernsteinNumber_eq_singularValue (T : H₁ →L[𝕜] H₂) (n : ℕ) :
     T.bernsteinNumber n = T.singularValue n := by
   refine le_antisymm (le_singularValue_iff.mpr fun R hR ↦ ?_)
-    (T.singularValue_le_of_smul_id_le n fun α A B hA hB hfac ↦ ?_)
+    (T.singularValue_le_of_forall_comp_comp_eq_smul_id n fun α A B hA hB hfac ↦ ?_)
   · simpa [bernsteinNumber_eq_zero_of_rank_le hR] using R.bernsteinNumber_add_le (T - R) n
   · have hb := TauCeti.SNumbers.isStrictSNumberSequence_bernstein (𝕜 := 𝕜).toIsSNumberSequence
     calc ‖α‖₊
@@ -321,7 +325,7 @@ theorem IsSNumberSequence.eq_singularValue {s : SNumberFamily 𝕜} (hs : IsSNum
     [NormedAddCommGroup H₂] [InnerProductSpace 𝕜 H₂]
     (T : H₁ →L[𝕜] H₂) (n : ℕ) : s T n = T.singularValue n := by
   refine (hs.le_singularValue T n).antisymm
-    (T.singularValue_le_of_smul_id_le n fun α A B hA hB hfac ↦ ?_)
+    (T.singularValue_le_of_forall_comp_comp_eq_smul_id n fun α A B hA hB hfac ↦ ?_)
   calc ‖α‖₊
       = s (α • ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) n := by
         rw [hs.smul, hs.normalize, mul_one]
