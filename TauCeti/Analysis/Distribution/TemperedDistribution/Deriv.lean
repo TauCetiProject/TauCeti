@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+import TauCeti.Analysis.Distribution.DerivNotation
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -26,6 +27,10 @@ Schwartz function also commutes with a continuous real-linear map applied to its
 * `TemperedDistribution.laplacian_eq_lineDerivOp_one_I`: `Δ f = ∂₁² f + ∂₂² f` on `ℂ`.
 * `TemperedDistribution.lineDerivOp_toTemperedDistributionCLM_postcompCLM`:
   `∂_v (L ∘ f) = L ∘ ∂_v f` for a Schwartz function `f` viewed as a tempered distribution.
+* `TemperedDistribution.iteratedLineDerivOp_apply_apply`: an iterated derivative of order `n`
+  pairs as `(∂^m f) u = (-1)^n f (∂^m' u)`, with the directions `m'` of `m` in reverse order.
+* `TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq`: iterated derivatives
+  of a Schwartz function agree with those of its tempered distribution.
 -/
 
 public section
@@ -49,6 +54,15 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢'(ℂ, F)) :
     Δ f = ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} f) + ∂_{Complex.I} (∂_{Complex.I} f) := by
   simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
 
+/-- **Iterated derivatives of tempered distributions by duality.** An iterated derivative of
+order `n` of a tempered distribution pairs with a Schwartz function `u` as `(-1)^n` times the
+distribution paired with the iterated derivative of `u` in the reversed directions. -/
+@[simp]
+theorem iteratedLineDerivOp_apply_apply (f : 𝓢'(E, F)) {n : ℕ} (m : Fin n → E) (u : 𝓢(E, ℂ)) :
+    ∂^{m} f u = (-1 : ℂ) ^ n • f (∂^{m ∘ Fin.rev} u) :=
+  LineDeriv.pairing_iteratedLineDerivOp (fun (f : 𝓢'(E, F)) u ↦ f u)
+    (fun _ _ _ ↦ by rw [lineDerivOp_apply_apply, map_neg]) m f u
+
 variable [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] [FiniteDimensional ℝ E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -58,5 +72,15 @@ theorem lineDerivOp_toTemperedDistributionCLM_postcompCLM (L : G →L[ℝ] F) (f
     ∂_{m} (toTemperedDistributionCLM E F μ (f.postcompCLM L)) =
       toTemperedDistributionCLM E F μ ((∂_{m} f).postcompCLM L) := by
   rw [lineDerivOp_toTemperedDistributionCLM_eq, TauCeti.lineDerivOp_postcompCLM]
+
+/-- Iterated derivatives of the tempered distribution given by a Schwartz function are those of
+the function. -/
+theorem iteratedLineDerivOp_toTemperedDistributionCLM_eq (f : 𝓢(E, F)) {n : ℕ} (m : Fin n → E) :
+    ∂^{m} (toTemperedDistributionCLM E F μ f) = toTemperedDistributionCLM E F μ (∂^{m} f) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, ih, lineDerivOp_toTemperedDistributionCLM_eq,
+      LineDeriv.iteratedLineDerivOp_succ_left]
 
 end TemperedDistribution
