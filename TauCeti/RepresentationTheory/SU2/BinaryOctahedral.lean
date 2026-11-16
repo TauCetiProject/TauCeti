@@ -154,7 +154,8 @@ private theorem even_coords_of_mem {v w : Fin 4 → ℤ} (hv : v ∈ binaryTetra
     (hw : w ∈ binaryOctahedralCosetCoords) :
     ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
       Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK :=
-  (by decide : ∀ v ∈ binaryTetrahedralCoords, ∀ w ∈ binaryOctahedralCosetCoords,
+  (by rw [binaryTetrahedralCoords_eq]; decide : ∀ v ∈ binaryTetrahedralCoords,
+    ∀ w ∈ binaryOctahedralCosetCoords,
     ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
       Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) v hv w hw
 
@@ -344,11 +345,8 @@ order sixteen is the quaternion `(1 + i) / √2`. -/
 theorem coe_binaryDihedralRotation_four_eq_toComplexMatrix :
     (binaryDihedralRotation 4 : Matrix (Fin 2) (Fin 2) ℂ) =
       toComplexMatrix ⟨1 / √2, 1 / √2, 0, 0⟩ := by
-  have h : √2 / 2 = 1 / √2 := by
-    rw [eq_div_iff (Real.sqrt_ne_zero'.mpr two_pos), div_mul_eq_mul_div,
-      Real.mul_self_sqrt zero_le_two, div_self two_ne_zero]
   rw [coe_binaryDihedralRotation_eq_toComplexMatrix, Nat.cast_ofNat, Real.cos_pi_div_four,
-    Real.sin_pi_div_four, h]
+    Real.sin_pi_div_four, Real.sqrt_div_self']
 
 @[simp]
 theorem binaryDihedralRotation_four_mem_binaryOctahedralSubgroup :
