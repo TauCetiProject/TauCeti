@@ -13,9 +13,9 @@ public import Mathlib.Order.Extension.Linear
 
 Mathlib's `LinearExtension S` is a copy of a partially ordered type `S` carrying a chosen linear
 order which extends the order of `S`, with the monotone identity map `toLinearExtension`. This file
-adds the identity map back, `TauCeti.ofLinearExtension`, which is not monotone, so that an element
-of the linear extension can be compared in the original order of `S`, and records that the linear
-extension of a finite type is finite.
+adds the identity map back, `TauCeti.ofLinearExtension`, which need not be monotone, so that an
+element of the linear extension can be compared in the original order of `S`, and records that the
+linear extension of a finite type is finite.
 -/
 
 public section
@@ -29,7 +29,7 @@ section LinearExtension
 variable {S : Type w} [PartialOrder S]
 
 /-- The identity map from the linear extension `LinearExtension S` back to `S`, inverse to
-`toLinearExtension`. It is not monotone. -/
+`toLinearExtension`. It need not be monotone. -/
 def ofLinearExtension : LinearExtension S → S := fun a ↦ a
 
 @[simp]
