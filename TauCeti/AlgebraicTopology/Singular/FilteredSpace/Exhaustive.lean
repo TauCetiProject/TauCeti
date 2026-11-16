@@ -80,8 +80,6 @@ theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
     ∃ q, x ∈ LinearMap.range ((singularChainFiltration M X q).arrow.f m).hom := by
   by_cases hm : ∃ n : ℕ, ComplexShape.embeddingDownNat.f n = m
   · obtain ⟨n, hn⟩ := hm
-    have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} k)) :=
-      preservesSmallestFilteredColimits_of_preservesFilteredColimits _
     -- In degree `n` the singular chains of `Y` are the filtered colimit of those of the `X q`,
     -- because a singular simplex has compact image.
     have hc := isColimitOfPreserves

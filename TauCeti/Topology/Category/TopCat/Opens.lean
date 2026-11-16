@@ -21,7 +21,8 @@ of its preimage.
 For opens `V ≤ W` of `X`, an open `Q` of `W` pulled back to `V` along the inclusion and pushed
 forward to `X` lies in the image of `Q` in `X`. The inclusion of `V` into `W` is an open embedding,
 and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` lying in an open set
-`U` is the image of a compact subset of `U`.
+`U` is the image of a compact subset of `U`. The inclusions of the open subsets of `X` form a cocone
+with apex `X`, compatible with the inclusions between them.
 
 ## Main results
 
@@ -34,6 +35,11 @@ and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` ly
   embedding.
 * `TopologicalSpace.Opens.exists_compacts_map_inclusion'_eq`: a compact subset of `X` lying in an
   open set `U` is the image of a compact subset of `U` under its inclusion.
+
+## Main definitions
+
+* `TopologicalSpace.Opens.inclusionCocone`: the inclusions `TopologicalSpace.Opens.inclusion'` of
+  the open subsets of `X`, as a cocone with apex `X` over `TopologicalSpace.Opens.toTopCat X`.
 -/
 
 public section
@@ -76,6 +82,15 @@ lemma isOpenEmbedding_toTopCat_map {V W : Opens X} (h : V ⟶ W) :
 lemma toTopCat_map_comp_inclusion' {V W : Opens X} (h : V ⟶ W) :
     (toTopCat X).map h ≫ inclusion' W = inclusion' V :=
   rfl
+
+variable (X) in
+/-- The inclusions `inclusion' V` of the open subsets `V` of `X`, as a cocone with apex `X` over the
+functor `toTopCat X`. -/
+-- Its point and legs must compute, so that its whiskerings have the inclusions as legs on the nose.
+@[expose, simps]
+def inclusionCocone : Limits.Cocone (toTopCat X) where
+  pt := X
+  ι := { app V := inclusion' V }
 
 /-- A compact subset of `X` lying in an open set `U` is the image of a compact subset of `U`. -/
 lemma exists_compacts_map_inclusion'_eq {U : Opens X} {K : Compacts X} (hK : (K : Set X) ⊆ U) :
