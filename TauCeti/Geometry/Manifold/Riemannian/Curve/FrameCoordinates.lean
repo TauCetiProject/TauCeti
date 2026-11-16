@@ -19,7 +19,7 @@ number `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` is the coordinate of the velocity `
 (`TauCeti.Manifold.frameVelocityCoordinates`). When `s` is a local frame of a surface, orthonormal
 at `γ t`, it determines the velocity, `γ' = Re z • s₀ + Im z • s₁`, and has the same norm, so it
 vanishes only where the velocity does. It is periodic along a periodic curve, continuous along a
-`C¹` curve for a continuous metric, and `C¹` along a `C²` curve for a `C¹` frame and metric.
+`C¹` curve for a continuous metric, and `C^k` along a `C^(k+1)` curve for a `C^k` frame and metric.
 
 For a regular periodic `C¹` curve inside the domain of a frame orthonormal along it, the unit
 coordinates `z / ‖z‖` form a loop in the unit circle `Circle`, the unit tangent read in the frame
@@ -32,7 +32,7 @@ angle of this loop, the unit tangent is `T = cos θ s₀ + sin θ s₁`.
 * `TauCeti.Manifold.norm_frameVelocityCoordinates`: the coordinates have the norm of the velocity.
 * `TauCeti.Manifold.periodic_frameVelocityCoordinates`: periodicity along periodic curves.
 * `TauCeti.Manifold.continuous_frameVelocityCoordinates`: continuity along `C¹` curves.
-* `TauCeti.Manifold.contDiff_frameVelocityCoordinates`: `C¹` regularity along `C²` curves.
+* `TauCeti.Manifold.contDiff_frameVelocityCoordinates`: `C^k` regularity along `C^(k+1)` curves.
 * `TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`: the unit tangent loop in
   the frame.
 
@@ -171,33 +171,34 @@ theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
 
 end Continuous
 
-variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)]
+variable {k : ℕ∞ω} [IsManifold I 1 M]
+  [IsContMDiffRiemannianBundle I k E (TangentSpace I : M → Type _)]
 
-/-- For `C¹` tangent fields on a set and a `C¹` metric, the frame coordinates of the
-velocity of a `C²` curve in that set are `C¹`. -/
+/-- For `C^k` tangent fields on a set and a `C^k` metric, the frame coordinates of the
+velocity of a `C^(k+1)` curve in that set are `C^k`. -/
 theorem contDiff_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace I x}
-    {u : Set M} (hs : ∀ i, ContMDiffOn I I.tangent 1 (fun x ↦ TotalSpace.mk' E x (s i x)) u)
-    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (hγu : ∀ t, γ t ∈ u) :
-    ContDiff ℝ 1 (frameVelocityCoordinates s γ) := by
+    {u : Set M} (hs : ∀ i, ContMDiffOn I I.tangent k (fun x ↦ TotalSpace.mk' E x (s i x)) u)
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I (k + 1) γ) (hγu : ∀ t, γ t ∈ u) :
+    ContDiff ℝ k (frameVelocityCoordinates s γ) := by
   have hw := ContMDiffOn.contMDiffOn_curveVelocityLiftWithin hγ.contMDiffOn
-    (m := 1) (by norm_num) uniqueMDiffOn_univ
+    (m := k) le_rfl uniqueMDiffOn_univ
   rw [curveVelocityLiftWithin_univ] at hw
-  have hv : ContMDiff 𝓘(ℝ) I.tangent 1
+  have hv : ContMDiff 𝓘(ℝ) I.tangent k
       (fun t ↦ TotalSpace.mk' E (γ t) (curveVelocity I γ t)) :=
     (contMDiffOn_univ.mp hw).congr fun t ↦ (curveVelocityLift_apply γ t).symm
-  have hframe (i : Fin 2) : ContMDiff 𝓘(ℝ) I.tangent 1
+  have hframe (i : Fin 2) : ContMDiff 𝓘(ℝ) I.tangent k
       (fun t ↦ TotalSpace.mk' E (γ t) (s i (γ t))) :=
-    (hs i).comp_contMDiff (hγ.of_le one_le_two) hγu
-  have hi (i : Fin 2) : ContDiff ℝ 1 (fun t ↦ inner ℝ (s i (γ t)) (curveVelocity I γ t)) := by
-    have hh := @ContMDiff.inner_bundle E _ _ H _ I 1 M _ _ E _ _
+    (hs i).comp_contMDiff (hγ.of_le le_self_add) hγu
+  have hi (i : Fin 2) : ContDiff ℝ k (fun t ↦ inner ℝ (s i (γ t)) (curveVelocity I γ t)) := by
+    have hh := @ContMDiff.inner_bundle E _ _ H _ I k M _ _ E _ _
       (fun x : M ↦ TangentSpace I x) _
       (fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
       (fun x ↦ inferInstanceAs (InnerProductSpace ℝ (TangentSpace I x))) _ _
       ℝ _ _ ℝ _ 𝓘(ℝ) ℝ _ _
-      (inferInstance : IsContMDiffRiemannianBundle I 1 E (TangentSpace I))
+      (inferInstance : IsContMDiffRiemannianBundle I k E (TangentSpace I))
       γ (fun t ↦ s i (γ t)) (fun t ↦ curveVelocity I γ t) (hframe i) hv
     exact contMDiff_iff_contDiff.mp hh
-  have h : ContDiff ℝ 1 (fun t ↦
+  have h : ContDiff ℝ k (fun t ↦
       (inner ℝ (s 0 (γ t)) (curveVelocity I γ t) : ℂ) +
         (inner ℝ (s 1 (γ t)) (curveVelocity I γ t) : ℂ) * Complex.I) :=
     (Complex.ofRealCLM.contDiff.comp (hi 0)).add
