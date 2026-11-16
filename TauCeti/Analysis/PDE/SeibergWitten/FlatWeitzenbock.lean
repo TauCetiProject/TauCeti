@@ -13,7 +13,6 @@ public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
@@ -197,7 +196,7 @@ theorem differentiableAt_spinorCovariantDeriv_apply (hψ : DifferentiableAt ℝ 
 
 /-- The covariant derivative commutes with constant complex-linear maps and with finite sums:
 `∇_v (∑ₖ fₖ gₖ) = ∑ₖ fₖ (∇_v gₖ)`. -/
-private theorem spinorCovariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype κ]
+theorem spinorCovariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype κ]
     (f : κ → Module.End ℂ W)
     {g : κ → V → W} (hg : ∀ k, DifferentiableAt ℝ (g k) x) (v : V) :
     spinorCovariantDeriv b (fun y ↦ ∑ k, f k (g k y)) x v =
@@ -325,7 +324,7 @@ theorem flatDirac_flatDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hψ : ContDiffAt �
 end Dirac
 
 /-- The covariant derivative of a field vanishing near `x` vanishes at `x`. -/
-private theorem spinorCovariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
+theorem spinorCovariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
     spinorCovariantDeriv b φ x = 0 := by
   ext v
   simp [spinorCovariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
