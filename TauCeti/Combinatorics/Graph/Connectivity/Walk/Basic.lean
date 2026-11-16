@@ -561,6 +561,10 @@ theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
 theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup :=
   hp
 
+-- The append criteria and trail projections below are adapted from
+-- `SimpleGraph.Walk.isTrail_append`, `SimpleGraph.Walk.isPath_append`, and
+-- `SimpleGraph.Walk.isPath_append'` in `Mathlib.Combinatorics.SimpleGraph.Paths`.
+
 /-- A concatenation is a trail exactly when both parts are trails and use disjoint edge
 identities. -/
 @[simp]
