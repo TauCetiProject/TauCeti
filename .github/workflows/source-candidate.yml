@@ -16,12 +16,10 @@ jobs:
   candidate:
     # Deployment remains a separate, explicit operation. Unset is inert.
     if: ${{ vars.TAUCETI_MIXED_QUEUE_CI_ENABLED == 'true' }}
-    # TODO(review-size): placeholder pin to the unmerged TauCetiTools PR 276 head. Must equal
-    # harness_revision in .tauceti/ci-source.json; replace both with the merge commit.
-    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@2eb8a492167ab649b142fd02395ce8188d79368b
+    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@abf810bf5064bf549ba76fac568da9d1dbb32362
     with:
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: 2eb8a492167ab649b142fd02395ce8188d79368b
+      tools_ref: abf810bf5064bf549ba76fac568da9d1dbb32362
       project_ref: ${{ github.workflow_sha }}
       lean_root: TauCeti
       roadmap_dir: TauCetiRoadmap

@@ -183,18 +183,15 @@ jobs:
             /scripts/
             /tauceti.toml
 
-      # TODO(review-size): placeholder pin to the unmerged TauCetiTools PR 276 head, which adds
-      # `ci_git.py review-size`. Replace every 2eb8a492... in this file, source-candidate.yml and
-      # .tauceti/ci-source.json with that PR's merge commit on TauCetiTools main before merging.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2eb8a492167ab649b142fd02395ce8188d79368b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@abf810bf5064bf549ba76fac568da9d1dbb32362
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2eb8a492167ab649b142fd02395ce8188d79368b
+          tools-ref: abf810bf5064bf549ba76fac568da9d1dbb32362
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@2eb8a492167ab649b142fd02395ce8188d79368b
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@abf810bf5064bf549ba76fac568da9d1dbb32362
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1326,7 +1323,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@2eb8a492167ab649b142fd02395ce8188d79368b
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@abf810bf5064bf549ba76fac568da9d1dbb32362
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1690,14 +1687,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2eb8a492167ab649b142fd02395ce8188d79368b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@abf810bf5064bf549ba76fac568da9d1dbb32362
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2eb8a492167ab649b142fd02395ce8188d79368b
+          tools-ref: abf810bf5064bf549ba76fac568da9d1dbb32362
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@2eb8a492167ab649b142fd02395ce8188d79368b
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@abf810bf5064bf549ba76fac568da9d1dbb32362
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
