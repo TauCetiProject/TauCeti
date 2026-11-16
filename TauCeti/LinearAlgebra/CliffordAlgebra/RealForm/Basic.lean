@@ -93,6 +93,7 @@ unfolding.
 * `TauCeti.equivalent_realSignatureForm_realCliffordForm`: the orthogonal-sum and coordinate
   presentations of the real normal form are isometric.
 * `TauCeti.nondegenerate_realCliffordForm`: the signature forms are nondegenerate.
+* `TauCeti.realCliffordForm_ne_zero`: the signature forms of positive dimension are nonzero.
 * `TauCeti.isOrtho_realCliffordForm_single`: distinct coordinate lines are orthogonal.
 * `TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`: the compact signature form is the
   standard real sum-of-squares form.
@@ -200,6 +201,14 @@ weight of its coordinate: `1` at the first `p` coordinates and `-1` at the last 
 theorem realCliffordForm_apply_single (p q : ℕ) (i : Fin (p + q)) (x : ℝ) :
     realCliffordForm p q (Pi.single i x) = realCliffordWeight p q i * x ^ 2 := by
   simp [realCliffordForm, Pi.single_apply, _root_.sq]
+
+/-- A signature form in positive dimension is nonzero: it takes the value `±1` on the first
+coordinate vector. -/
+theorem realCliffordForm_ne_zero (p q : ℕ) (h : p + q ≠ 0) : realCliffordForm p q ≠ 0 := by
+  intro hQ
+  have h₀ := realCliffordForm_apply_single p q ⟨0, Nat.pos_of_ne_zero h⟩ 1
+  rw [hQ, zero_apply, one_pow, mul_one] at h₀
+  exact realCliffordWeight_ne_zero p q _ h₀.symm
 
 /-- Distinct coordinate lines are orthogonal for the signature form. -/
 theorem isOrtho_realCliffordForm_single {p q : ℕ} {i j : Fin (p + q)} (hij : i ≠ j) (x y : ℝ) :
