@@ -19,14 +19,15 @@ nonnegative degrees, and `Z⁰` is the object it resolves. An injective resoluti
 `M`, with `Z⁰ = M`, is the basic example.
 
 A map of complexes `φ : I ⟶ J` with tails restricts to maps of cycles `Zᵏ ⟶ Z'ᵏ`
-(`TauCeti.ExactStructure.TailData.cyclesMap`). When the terms of `I` are projective:
+(`TauCeti.ExactStructure.TailData.cyclesMap`). Going down in degree:
 
 * if the map of cycles in degree `k + 1` lifts along the deflation `Jᵏ ↠ Z'ᵏ⁺¹`, then the map in
-  degree `k` factors through the projective object `Iᵏ`: correct `φᵏ` by the lift. In particular,
-  if the map in degree `k + 1` factors through a projective object, so does the map in degree `k`;
-* if `φ` is eventually null-homotopic, the homotopy lifts the map of cycles in a high degree along
-  a deflation of `J`, so the map of cycles in degree `0` factors through a projective object.
-  No condition on the terms of `J` is needed.
+  degree `k` factors through the inflation `Zᵏ ↣ Iᵏ`: correct `φᵏ` by the lift. If `Iᵏ` is
+  projective and the map in degree `k + 1` factors through a projective object, it lifts, so the
+  map in degree `k` factors through the projective object `Iᵏ`;
+* if the terms of `I` are projective and `φ` is eventually null-homotopic, the homotopy lifts the
+  map of cycles in a high degree along a deflation of `J`, so the map of cycles in degree `0`
+  factors through a projective object. No condition on the terms of `J` is needed.
 
 Conversely, maps of cycles lift to maps of complexes when `I` vanishes in negative degrees. A
 family of maps `Iᵏ ⟶ Jᵏ` commuting with the differentials in high degrees extends downwards to a map
@@ -49,7 +50,7 @@ Frobenius exact category, applied to injective resolutions, whose terms are then
 
 ## Main results
 
-* `TauCeti.ExactStructure.TailData.factorsThrough_cyclesMap_of_comp_p` and
+* `TauCeti.ExactStructure.TailData.exists_i_comp_eq_cyclesMap_of_comp_p` and
   `TauCeti.ExactStructure.TailData.factorsThrough_cyclesMap_of_succ`: the downward step.
 * `TauCeti.ExactStructure.TailData.factorsThrough_cyclesMap_zero_of_isEventuallyNullHomotopic`:
   an eventually null-homotopic map out of a complex of projectives restricts in degree `0` to a map
@@ -61,9 +62,9 @@ Frobenius exact category, applied to injective resolutions, whose terms are then
   every map of cycles in degree `n` is the map of cycles of a map of complexes, for source terms
   projective below `n` and target terms injective from `n` on.
 * `TauCeti.ExactStructure.TailData.acyclic_mappingCone_ι`: `I` resolves `Z⁰`.
-* `TauCeti.ExactStructure.TailData.exists_iso_Z`: a map to `I` from a complex vanishing above
-  degree `k + 1`, invertible in degree `k` and monic in degree `k + 1`, identifies its top term
-  with the cycles `Zᵏ⁺¹`.
+* `TauCeti.ExactStructure.TailData.exists_iso_Z`: a map of complexes `j : T ⟶ I`, invertible in
+  degree `k`, monic in degree `k + 1` and with `jᵏ⁺¹` landing in the cycles `Zᵏ⁺¹`, identifies
+  `Tᵏ⁺¹` with `Zᵏ⁺¹`.
 
 ## Implementation notes
 
@@ -225,16 +226,15 @@ theorem cyclesMap_sub (ψ : I ⟶ J) (k : ℕ) :
     tI.cyclesMap tJ (φ - ψ) k = tI.cyclesMap tJ φ k - tI.cyclesMap tJ ψ k := by
   rw [sub_eq_add_neg, cyclesMap_add, cyclesMap_neg, ← sub_eq_add_neg]
 
-/-- **The downward step**: if `Iᵏ` is projective and the map of cycles in degree `k + 1` lifts
-along the deflation `Jᵏ ↠ Z'ᵏ⁺¹`, then the map of cycles in degree `k` factors through `Iᵏ`. -/
-theorem factorsThrough_cyclesMap_of_comp_p (k : ℕ) (hI : E.isProjective (I.X k))
-    (u : tI.Z (k + 1) ⟶ J.X k) (hu : u ≫ tJ.p k = tI.cyclesMap tJ φ (k + 1)) :
-    E.isProjective.FactorsThrough (tI.cyclesMap tJ φ k) := by
+/-- **The downward step**: if the map of cycles in degree `k + 1` lifts along the deflation
+`Jᵏ ↠ Z'ᵏ⁺¹`, then the map of cycles in degree `k` factors through the inflation `Zᵏ ↣ Iᵏ`. -/
+theorem exists_i_comp_eq_cyclesMap_of_comp_p (k : ℕ) (u : tI.Z (k + 1) ⟶ J.X k)
+    (hu : u ≫ tJ.p k = tI.cyclesMap tJ φ (k + 1)) :
+    ∃ v : I.X k ⟶ tJ.Z k, tI.i k ≫ v = tI.cyclesMap tJ φ k := by
   -- The correction of `φᵏ` by the lift vanishes after `Jᵏ ↠ Z'ᵏ⁺¹`, so lands in the cycles.
   have hg : (φ.f k - tI.p k ≫ u) ≫ tJ.p k = 0 := by
     rw [Preadditive.sub_comp, Category.assoc, hu, p_cyclesMap, sub_self]
-  refine (ObjectProperty.factorsThrough_iff _ _).2
-    ⟨I.X k, hI, tI.i k, tJ.liftZ k _ hg, ?_⟩
+  refine ⟨tJ.liftZ k _ hg, ?_⟩
   rw [← cancel_mono (tJ.i k), cyclesMap_i, Category.assoc, liftZ_i, Preadditive.comp_sub,
     tI.zero_assoc, zero_comp, sub_zero]
 
@@ -245,9 +245,10 @@ theorem factorsThrough_cyclesMap_of_succ (k : ℕ) (hI : E.isProjective (I.X k))
     E.isProjective.FactorsThrough (tI.cyclesMap tJ φ k) := by
   obtain ⟨P, hP, u, v, huv⟩ := (ObjectProperty.factorsThrough_iff _ _).1 h
   -- Lift `v` along the deflation `Jᵏ ↠ Z'ᵏ⁺¹`, out of the projective `P`.
-  exact tI.factorsThrough_cyclesMap_of_comp_p tJ φ k hI
+  obtain ⟨w, hw⟩ := tI.exists_i_comp_eq_cyclesMap_of_comp_p tJ φ k
     (u ≫ hP.factorThru (E.isDeflation_g (tJ.conflation k)) v)
     (by rw [Category.assoc, hP.factorThru_comp, huv])
+  exact hw ▸ ObjectProperty.factorsThrough_comp _ hI _ _
 
 /-- If the terms of `I` below degree `n` are projective and the map of cycles in degree `n` factors
 through a projective object, so does the map of cycles in degree `0`. -/
@@ -271,15 +272,17 @@ theorem factorsThrough_cyclesMap_zero_of_isEventuallyNullHomotopic
   obtain ⟨j, hj⟩ : ∃ j : ℕ, n ≤ j := ⟨n.toNat, Int.self_le_toNat n⟩
   -- In degree `j + 1`, the homotopy equation restricted to the cycles lifts the map of cycles
   -- along `Jʲ ↠ Z'ʲ⁺¹`; then apply the downward steps.
-  refine tI.factorsThrough_cyclesMap_zero_of_factorsThrough tJ φ j (fun k _ ↦ hI k)
-    (tI.factorsThrough_cyclesMap_of_comp_p tJ φ j (hI j)
-      (tI.i (j + 1) ≫ z.v ((j + 1 : ℕ) : ℤ) j (by push_cast; lia)) ?_)
-  symm
-  rw [← cancel_mono (tJ.i (j + 1)), cyclesMap_i, Category.assoc, Category.assoc, tJ.fac,
-    hz _ (by push_cast; lia), δ_v (-1) 0 (by lia) z _ _ (add_zero _) j
-      (((j + 1 : ℕ) : ℤ) + 1) (by push_cast; lia) rfl, Int.negOnePow_zero, one_smul,
-    Preadditive.comp_add, tI.i_d_assoc, zero_comp, add_zero]
-  rfl
+  have hu : (tI.i (j + 1) ≫ z.v ((j + 1 : ℕ) : ℤ) j (by push_cast; lia)) ≫ tJ.p j =
+      tI.cyclesMap tJ φ (j + 1) := by
+    symm
+    rw [← cancel_mono (tJ.i (j + 1)), cyclesMap_i, Category.assoc, Category.assoc, tJ.fac,
+      hz _ (by push_cast; lia), δ_v (-1) 0 (by lia) z _ _ (add_zero _) j
+        (((j + 1 : ℕ) : ℤ) + 1) (by push_cast; lia) rfl, Int.negOnePow_zero, one_smul,
+      Preadditive.comp_add, tI.i_d_assoc, zero_comp, add_zero]
+    rfl
+  obtain ⟨w, hw⟩ := tI.exists_i_comp_eq_cyclesMap_of_comp_p tJ φ j _ hu
+  exact tI.factorsThrough_cyclesMap_zero_of_factorsThrough tJ φ j (fun k _ ↦ hI k)
+    (hw ▸ ObjectProperty.factorsThrough_comp _ (hI j) _ _)
 
 section Extension
 
@@ -437,8 +440,9 @@ theorem cyclesMap_zero_eq_of_homotopy [J.IsStrictlyGE 0] (Φ : I ⟶ J) (f : tI.
     (h : Homotopy (tI.ι ≫ Φ) ((HomologicalComplex.single C (.up ℤ) 0).map f ≫ tJ.ι)) :
     tI.cyclesMap tJ Φ 0 = f := by
   -- Homotopic maps out of an object in degree `0` agree in degree `0`.
-  have h0 := CochainComplex.f_eq_of_homotopy_of_single (neg_add_cancel 1)
-    (J.isZero_of_isStrictlyGE 0 (-1) (by lia)) h
+  have h0 := h.f_eq_of_dFrom_eq_zero_of_dTo_eq_zero (i := 0)
+    ((HomologicalComplex.isZero_single_obj_X _ 0 _ _ (by simp)).eq_of_tgt _ _)
+    ((J.isZero_of_isStrictlyGE 0 _ (by simp)).eq_of_src _ _)
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ι_f_zero, ι_f_zero,
     HomologicalComplex.single_map_f_self, Category.assoc, Category.assoc, Category.assoc,
     Iso.inv_hom_id_assoc, cancel_epi] at h0
@@ -503,18 +507,13 @@ theorem acyclic_mappingCone_ι [I.IsStrictlyGE 0] :
 
 end Resolution
 
-/-- **The top term of a truncation is an object of cycles.** Let `j : T ⟶ I` map a complex
-vanishing above degree `k + 1` to `I`, invertible in degree `k` and monic in degree `k + 1`, with
-`Tᵏ ⟶ Tᵏ⁺¹` an epimorphism.
-Then `j` identifies the top term `Tᵏ⁺¹` with the cycles `Zᵏ⁺¹`. -/
-theorem exists_iso_Z {T : CochainComplex C ℤ} (k : ℕ) [T.IsStrictlyLE ((k + 1 : ℕ) : ℤ)]
-    (j : T ⟶ I) [IsIso (j.f k)] [Mono (j.f ((k + 1 : ℕ) : ℤ))]
-    [Epi (T.d k ((k + 1 : ℕ) : ℤ))] :
+/-- **The top term of a truncation is an object of cycles.** Let `j : T ⟶ I` be invertible in
+degree `k` and monic in degree `k + 1`, with `jᵏ⁺¹` landing in the cycles: `jᵏ⁺¹ ≫ pᵏ⁺¹ = 0`.
+Then `j` identifies `Tᵏ⁺¹` with the cycles `Zᵏ⁺¹`. -/
+theorem exists_iso_Z {T : CochainComplex C ℤ} (k : ℕ) (j : T ⟶ I) [IsIso (j.f k)]
+    [Mono (j.f ((k + 1 : ℕ) : ℤ))] (hjp : j.f ((k + 1 : ℕ) : ℤ) ≫ tI.p (k + 1) = 0) :
     ∃ θ : T.X ((k + 1 : ℕ) : ℤ) ≅ tI.Z (k + 1), θ.hom ≫ tI.i (k + 1) = j.f ((k + 1 : ℕ) : ℤ) := by
   -- `jᵏ⁺¹` lands in the cycles, giving `θ`; the inverse `ψ` is induced by `(jᵏ)⁻¹ ≫ d`.
-  have hjp : j.f ((k + 1 : ℕ) : ℤ) ≫ tI.p (k + 1) = 0 := by
-    rw [← cancel_mono (tI.i (k + 1 + 1)), Category.assoc, tI.fac, zero_comp, j.comm,
-      (T.isZero_of_isStrictlyLE ((k + 1 : ℕ) : ℤ) _ (by lia)).eq_of_tgt (T.d _ _) 0, zero_comp]
   let θ : T.X ((k + 1 : ℕ) : ℤ) ⟶ tI.Z (k + 1) := tI.liftZ (k + 1) _ hjp
   have hθ : θ ≫ tI.i (k + 1) = j.f ((k + 1 : ℕ) : ℤ) := tI.liftZ_i _ _ _
   have hd : T.d k ((k + 1 : ℕ) : ℤ) ≫ θ = j.f k ≫ tI.p k := by
@@ -526,11 +525,11 @@ theorem exists_iso_Z {T : CochainComplex C ℤ} (k : ℕ) [T.IsStrictlyLE ((k + 
         ← j.comm, IsIso.inv_hom_id_assoc]
       exact tI.i_d k)
   have hψ : tI.p k ≫ ψ = inv (j.f k) ≫ T.d k ((k + 1 : ℕ) : ℤ) := tI.p_descZ _ _ _
-  have hθψ : θ ≫ ψ = 𝟙 _ := by
-    rw [← cancel_epi (T.d k ((k + 1 : ℕ) : ℤ)), reassoc_of% hd, hψ, IsIso.hom_inv_id_assoc,
-      Category.comp_id]
   have hψθ : ψ ≫ θ = 𝟙 _ := by
     rw [← cancel_epi (tI.p k), reassoc_of% hψ, hd, IsIso.inv_hom_id_assoc, Category.comp_id]
+  have hθψ : θ ≫ ψ = 𝟙 _ := by
+    rw [← cancel_mono (j.f ((k + 1 : ℕ) : ℤ)), Category.assoc, ← hθ, reassoc_of% hψθ,
+      Category.id_comp]
   exact ⟨⟨θ, ψ, hθψ, hψθ⟩, hθ⟩
 
 end TailData

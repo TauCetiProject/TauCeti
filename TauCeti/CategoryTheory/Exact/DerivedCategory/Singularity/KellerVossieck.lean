@@ -105,7 +105,7 @@ private instance (M : C) : IsIso ((PlusDerivedCategory.Q E).map (resHom hF M)) :
           (HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 0 M)) ⟶ resPlus hF M)) :=
     Localization.inverts _ E.acyclicPlus.trW _ ((E.acyclicPlus_trW_iff _).2
       (E.homotopyAcyclic_trW_quotient_map _
-        (hF.enoughInjectives.stalkTailData M).acyclic_mappingCone_ι))
+        (hF.enoughInjectives.acyclic_mappingCone_stalkResolutionι M)))
   rw [Functor.map_comp]
   infer_instance
 
@@ -202,10 +202,11 @@ private theorem cyclesMap_zero_eq {M N : C} (f : M ⟶ N)
     (h : resHom hF M ≫ ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map φ) =
       (HomotopyCategory.Bounded.toPlus C).map
         ((HomotopyCategory.Bounded.singleFunctor C 0).map f) ≫ resHom hF N) :
-    (hF.enoughInjectives.stalkTailData M).cyclesMap (hF.enoughInjectives.stalkTailData N) φ 0 =
-      f :=
-  (hF.enoughInjectives.stalkTailData M).cyclesMap_zero_eq_of_homotopy
-    (hF.enoughInjectives.stalkTailData N) φ f (_root_.HomotopyCategory.homotopyOfEq _ _
+    (hF.enoughInjectives.stalkTailDataZZeroIso M).inv ≫
+      (hF.enoughInjectives.stalkTailData M).cyclesMap (hF.enoughInjectives.stalkTailData N) φ 0 ≫
+        (hF.enoughInjectives.stalkTailDataZZeroIso N).hom = f :=
+  hF.enoughInjectives.cyclesMap_stalkTailData_zero_eq_of_homotopy φ f
+    (_root_.HomotopyCategory.homotopyOfEq _ _
       ((toPlus_map_comp_resHom_eq_iff hF f φ).1 h.symm).symm)
 
 include hF in
@@ -214,12 +215,21 @@ vanishes in the singularity category factors through a projective object. -/
 theorem mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero {M N : C} (f : M ⟶ N)
     (hf : E.singleToSingularity.map f = 0) : f ∈ E.projectiveStableIdeal.hom M N := by
   let hE := hF.enoughInjectives
-  obtain ⟨K, hK, a, g, hag⟩ := E.exists_Q_map_eq_comp_of_singleToSingularity_map_eq_zero f hf
-  obtain ⟨φ, hnull, hφ⟩ := exists_isEventuallyNullHomotopic hF f K hK a g hag
+  rw [singleToSingularity_eq] at hf
+  -- In `Dᵇ(E)`, `f` factors through an object of `Kᵇ(proj E)`.
+  obtain ⟨W, hW, a, g, hag⟩ := (ObjectProperty.factorsThrough_iff _ _).1
+    ((ObjectProperty.TrWLocalization.map_eq_zero_iff_factorsThrough E.boundedProjective
+      (SingularityCategory.Q E)
+      ((BoundedDerivedCategory.Q E).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f))).1
+        hf)
+  obtain ⟨K, hK, ⟨e⟩⟩ := (E.boundedProjective_iff W).1 hW
+  obtain ⟨φ, hnull, hφ⟩ := exists_isEventuallyNullHomotopic hF f K hK (a ≫ e.hom) (e.inv ≫ g)
+    (by simpa using hag.symm)
   rw [mem_projectiveStableIdeal_iff, ← cyclesMap_zero_eq hF f φ hφ]
-  exact (hE.stalkTailData M).factorsThrough_cyclesMap_zero_of_isEventuallyNullHomotopic
+  exact (((hE.stalkTailData M).factorsThrough_cyclesMap_zero_of_isEventuallyNullHomotopic
     (hE.stalkTailData N) φ
-    (fun k ↦ (hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X M k)) hnull
+    (fun k ↦ (hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X M k))
+      hnull).comp_right _).comp_left _
 
 include hF in
 /-- The terms of a complex mapping to a complex of injectives by isomorphisms are projective. -/
@@ -245,12 +255,15 @@ private theorem exists_truncation_stalk (M : C) (k : ℕ) :
     CochainComplex.isStrictlyLE_of_le _ 0 (k : ℤ) (by lia)
   obtain ⟨T, j, r', hr'j, hiso, hmono, hTle, hge, hcone⟩ :=
     exists_truncation_of_acyclic_mappingCone (hE.stalkResolutionι M)
-      ((hE.stalkTailData M).acyclic_mappingCone_ι) (k : ℤ)
+      (hE.acyclic_mappingCone_stalkResolutionι M) (k : ℤ)
   have : T.IsStrictlyLE ((k + 1 : ℕ) : ℤ) := hTle
   have := hiso k le_rfl
   have : Mono (j.f ((k + 1 : ℕ) : ℤ)) := hmono
-  have : Epi (T.d k ((k + 1 : ℕ) : ℤ)) := epi_d_of_acyclic_mappingCone (k : ℤ) r' hcone
-  obtain ⟨θ, hθ⟩ := (hE.stalkTailData M).exists_iso_Z k j
+  -- `T` vanishes above degree `k + 1`, so `jᵏ⁺¹` lands in the cycles.
+  obtain ⟨θ, hθ⟩ := (hE.stalkTailData M).exists_iso_Z k j (by
+    rw [← cancel_mono ((hE.stalkTailData M).i (k + 1 + 1)), Category.assoc, TailData.fac,
+      zero_comp, j.comm, (T.isZero_of_isStrictlyLE ((k + 1 : ℕ) : ℤ) _ (by lia)).eq_of_tgt
+        (T.d _ _) 0, zero_comp])
   refine ⟨T, j, r', θ, (CochainComplex.bounded_iff C T).2 ⟨_, _, hge 0 inferInstance, hTle⟩,
     hTle, hr'j, hθ, hcone, fun l hl ↦ ?_⟩
   have := hiso l (by lia)
@@ -345,8 +358,9 @@ private theorem toPlus_map_comp_resHom {M N : C} {T : CochainComplex C ℤ}
     (hr'j : r' ≫ j = hF.enoughInjectives.stalkResolutionι M)
     (Φ : hF.enoughInjectives.stalkResolution M ⟶ hF.enoughInjectives.stalkResolution N)
     (f : M ⟶ N)
-    (hf : (hF.enoughInjectives.stalkTailData M).cyclesMap (hF.enoughInjectives.stalkTailData N) Φ
-      0 = f) :
+    (hf : (hF.enoughInjectives.stalkTailDataZZeroIso M).inv ≫
+      (hF.enoughInjectives.stalkTailData M).cyclesMap (hF.enoughInjectives.stalkTailData N) Φ 0 ≫
+        (hF.enoughInjectives.stalkTailDataZZeroIso N).hom = f) :
     (HomotopyCategory.Bounded.toPlus C).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f) ≫
         resHom hF N =
       (HomotopyCategory.Bounded.toPlus C).map ((singleFunctorObjIsoMk 0 M).hom ≫
@@ -354,8 +368,7 @@ private theorem toPlus_map_comp_resHom {M N : C} {T : CochainComplex C ℤ}
         (ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (j ≫ Φ)) :
           (HomotopyCategory.Bounded.toPlus C).obj (HomotopyCategory.Bounded.mk T hT) ⟶
             resPlus hF N) := by
-  have h := (hF.enoughInjectives.stalkTailData M).single_map_comp_ι
-    (hF.enoughInjectives.stalkTailData N) Φ
+  have h := hF.enoughInjectives.single_map_comp_stalkResolutionι Φ
   rw [hf] at h
   -- The right-hand side is `resHom ≫ Φ`, since `r' ≫ j` is the resolution map.
   have hR : (HomotopyCategory.Bounded.toPlus C).map ((singleFunctorObjIsoMk 0 M).hom ≫
@@ -446,7 +459,8 @@ theorem singleToSingularity_map_surjective (M N : C) :
       (PlusDerivedCategory.Q E).map (resHom hF N))
   obtain ⟨g', hg'⟩ := (_root_.HomotopyCategory.quotient C (.up ℤ)).map_surjective g.hom
   obtain ⟨Φ, hΦ⟩ := exists_ιTop_comp_eq hF k (j k) (θ k) (hθ k) g'
-  refine ⟨(hE.stalkTailData M).cyclesMap (hE.stalkTailData N) Φ 0, ?_⟩
+  refine ⟨(hE.stalkTailDataZZeroIso M).inv ≫
+    (hE.stalkTailData M).cyclesMap (hE.stalkTailData N) Φ 0 ≫ (hE.stalkTailDataZZeroIso N).hom, ?_⟩
   have hgJ : (HomotopyCategory.Bounded.toPlus C).map (sT k) ≫
       ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (j k ≫ Φ)) = g := by
     apply ObjectProperty.hom_ext
@@ -546,8 +560,9 @@ private noncomputable def sgIsoOfTruncation {L T : CochainComplex C ℤ}
 include hF in
 /-- The object of cycles `Zᵏ⁺¹` of the injective resolution of `M`, placed in degree `k + 1`, is
 isomorphic to `M` in the singularity category. -/
-private theorem nonempty_sg_stalkZ_iso (M : C) (k : ℕ) :
-    Nonempty (sg E ((k + 1 : ℕ) : ℤ) (hF.enoughInjectives.stalkZ M (k + 1)) ≅ sg E 0 M) := by
+private theorem nonempty_sg_Z_iso (M : C) (k : ℕ) :
+    Nonempty (sg E ((k + 1 : ℕ) : ℤ) ((hF.enoughInjectives.stalkTailData M).Z (k + 1)) ≅
+      sg E 0 M) := by
   obtain ⟨T, -, r', θ, hTb, hTle, -, -, hcone, hTproj⟩ := exists_truncation_stalk hF M k
   have : T.IsStrictlyLE ((k + 1 : ℕ) : ℤ) := hTle
   exact ⟨(BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E).mapIso
@@ -559,16 +574,18 @@ private theorem nonempty_sg_stalkZ_iso (M : C) (k : ℕ) :
 include hF in
 /-- Every object is, in the stable category, isomorphic to the object of cycles `Zᵗ` of the
 injective resolution of some object. -/
-private theorem exists_stalkZ_iso (t : ℕ) (Z : C) : ∃ M : C,
-    Nonempty (E.projectiveStableFunctor.obj (hF.enoughInjectives.stalkZ M t) ≅
+private theorem exists_Z_iso (t : ℕ) (Z : C) : ∃ M : C,
+    Nonempty (E.projectiveStableFunctor.obj ((hF.enoughInjectives.stalkTailData M).Z t) ≅
       E.projectiveStableFunctor.obj Z) := by
   -- Take `t`-fold stable loops: `Zᵗ⁺¹` is the suspension of `Zᵗ`.
   induction t generalizing Z with
-  | zero => exact ⟨Z, ⟨Iso.refl _⟩⟩
+  | zero =>
+    exact ⟨Z, ⟨E.projectiveStableFunctor.mapIso (hF.enoughInjectives.stalkTailDataZZeroIso Z)⟩⟩
   | succ t ih =>
     obtain ⟨M, ⟨e⟩⟩ := ih (hF.enoughProjectives.loopObj Z)
     exact ⟨M, ⟨hF.projectiveStableIsoSuspensionObj
-      (hF.enoughInjectives.injectivePresentation _) ≪≫
+      ((hF.enoughInjectives.stalkTailData M).injectivePresentation t
+        (hF.enoughInjectives.isInjective_stalkResolution_X M t)) ≪≫
         eqToIso (hF.stableSuspension_obj_projectiveStableFunctor_obj _).symm ≪≫
           hF.stableSuspension.mapIso (e ≪≫ eqToIso
             (hF.enoughProjectives.stableLoop_obj_projectiveStableFunctor_obj Z).symm) ≪≫
@@ -609,8 +626,8 @@ theorem essSurj_singleToSingularity : E.singleToSingularity.EssSurj where
     obtain ⟨L, rfl⟩ := _root_.HomotopyCategory.quotient_obj_surjective X₀
     have hL : CochainComplex.bounded C L := (HomotopyCategory.bounded_quotient_obj_iff _).1 hX₀
     obtain ⟨k, Z, ⟨e⟩⟩ := exists_sg_iso_of_bounded hF L hL
-    obtain ⟨M, ⟨e'⟩⟩ := exists_stalkZ_iso hF (k + 1) Z
-    obtain ⟨e''⟩ := nonempty_sg_stalkZ_iso hF M k
+    obtain ⟨M, ⟨e'⟩⟩ := exists_Z_iso hF (k + 1) Z
+    obtain ⟨e''⟩ := nonempty_sg_Z_iso hF M k
     exact ⟨M, ⟨eqToIso (E.singleToSingularity_obj M) ≪≫ e''.symm ≪≫ sgIsoOfStableIso _ e' ≪≫
       e.symm ≪≫ e₀⟩⟩
 
