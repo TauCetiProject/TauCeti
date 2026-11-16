@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.IdempotentRange
 public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 
 /-!
@@ -157,7 +158,8 @@ private theorem nonempty_continuousLinearEquiv_range {F : Type*} [NormedAddCommG
     (hF : finrank ℝ F + Fintype.card ι = finrank ℝ E) (x : X) :
     Nonempty (F ≃L[ℝ] (complementProjection f x).range) :=
   ⟨ContinuousLinearEquiv.ofFinrankEq (by
-    rw [complementProjection, Submodule.range_starProjection, (ho x).finrank_orthogonal_span]
+    rw [complementProjection, Submodule.range_starProjection,
+      (ho x).linearIndependent.finrank_orthogonal_span]
     omega)⟩
 
 end Complement

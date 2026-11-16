@@ -111,13 +111,6 @@ theorem starProjection_apply_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule �
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hw
   simp [inner_sum, inner_smul_right, inner_sub_left, hv.inner_left_fintype]
 
-/-- The orthogonal projection onto the orthogonal complement of the span `U` of a finite
-orthonormal family is `x ↦ x - ∑ᵢ ⟪vᵢ, x⟫ vᵢ`. -/
-theorem starProjection_orthogonal_apply_eq_sub_sum (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
-    [U.HasOrthogonalProjection] (hU : Submodule.span 𝕜 (Set.range v) = U) (x : E) :
-    Uᗮ.starProjection x = x - ∑ i, ⟪v i, x⟫_𝕜 • v i := by
-  simp [Submodule.starProjection_orthogonal', hv.starProjection_apply_eq_sum hU]
-
 omit [Fintype ι] in
 /-- The orthogonal projection onto the spans `U x` of a continuous family of finite orthonormal
 families `f x` depends continuously on `x`. -/
@@ -131,15 +124,6 @@ theorem continuous_starProjection [Finite ι] [FiniteDimensional 𝕜 E] {X : Ty
   refine continuous_clm_apply.2 fun w ↦ ?_
   simp only [fun x ↦ (ho x).starProjection_apply_eq_sum (hU x) w]
   exact continuous_finsetSum _ fun i _ ↦ by fun_prop
-
-/-- The orthogonal complement of the span of a finite orthonormal family `v` has dimension
-`dim E - card ι`. -/
-theorem finrank_orthogonal_span [FiniteDimensional 𝕜 E] (hv : Orthonormal 𝕜 v) :
-    Module.finrank 𝕜 (Submodule.span 𝕜 (Set.range v))ᗮ =
-      Module.finrank 𝕜 E - Fintype.card ι := by
-  have h := (Submodule.span 𝕜 (Set.range v)).finrank_add_finrank_orthogonal
-  rw [finrank_span_eq_card hv.linearIndependent] at h
-  omega
 
 /-- The orthogonal projection onto the span `U` of a finite orthonormal family is its frame
 operator, synthesis after analysis. -/
