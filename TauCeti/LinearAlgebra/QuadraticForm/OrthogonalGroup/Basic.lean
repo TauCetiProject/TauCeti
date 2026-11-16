@@ -250,13 +250,6 @@ theorem orthogonalGroup_neg {R : Type u} {M : Type v} {N : Type w} [CommRing R]
   ext g
   simp
 
-@[simp]
-theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv {R : Type u} {M : Type v} {N : Type w}
-    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    (Q : QuadraticMap R M N) (f : QuadraticMap.orthogonalGroup Q) :
-    (QuadraticMap.orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
-  LinearEquiv.ext <| congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv Q f)
-
 end TauCeti
 
 namespace QuadraticMap.IsometryEquiv
@@ -336,7 +329,6 @@ theorem orthogonalGroupCongr_symm
     e.orthogonalGroupCongr.symm = e.symm.orthogonalGroupCongr := by
   ext g m
   simp
-  rfl
 
 end Congr
 
@@ -474,6 +466,13 @@ end QuadraticMap
 end TauCeti
 
 namespace QuadraticMap
+
+@[simp]
+theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv {R : Type*} {M : Type*} {N : Type*}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (Q : QuadraticMap R M N) (f : TauCeti.QuadraticMap.orthogonalGroup Q) :
+    (TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
+  LinearEquiv.ext <| congrFun (TauCeti.QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv Q f)
 
 section Neg
 
@@ -739,7 +738,6 @@ theorem specialOrthogonalGroupCongr_symm
     e.specialOrthogonalGroupCongr.symm = e.symm.specialOrthogonalGroupCongr := by
   ext g m
   simp
-  rfl
 
 end SpecialCongr
 
@@ -1090,7 +1088,7 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
   intro _
   rw [reflection_map_apply e v x, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv e.symm,
     ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
-    toLinearEquiv_orthogonalGroupEquivIsometryEquiv,
+    _root_.QuadraticMap.toLinearEquiv_orthogonalGroupEquivIsometryEquiv,
     coe_orthogonalGroupEquivIsometryEquiv]
 
 end ReflectionMap
