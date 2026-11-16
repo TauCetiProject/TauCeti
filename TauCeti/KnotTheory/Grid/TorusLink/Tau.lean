@@ -21,10 +21,10 @@ grid sits in the *top* Alexander degree; the book's value `τ(T_{p,q}) = (p - 1)
 for the positive torus knot, and `τ` changes sign under taking the mirror image; the knot this
 grid presents is the mirror image of that one.
 
-The two smallest knot instances are the `5 × 5` trefoil grid, with `τ = -1`
-(`GridDiagram.tau_torusLink_one_two`), and the `7 × 7` grid of the `(3, 4)` torus knot, with
-`τ = -3` (`GridDiagram.tau_torusLink_two_three`). The unknot grids are the torus link grids with
-`q = 0`, so every unknot grid has `τ = 0` (`GridDiagram.tau_unknot`).
+By `simp` using `GridDiagram.tau_torusLink`, the `5 × 5` trefoil grid (`p = 1`, `q = 2`) has
+`τ = -1` and the `7 × 7` grid of the `(3, 4)` torus knot (`p = 2`, `q = 3`) has `τ = -3`. The
+unknot grids are the torus link grids with `q = 0`, so every unknot grid has `τ = 0`
+(`GridDiagram.tau_unknot`).
 
 These are statements about the diagrams: reading them as values of the concordance invariant of
 the presented knots requires the invariance of `GH⁻` under grid moves, which is not established
@@ -34,8 +34,6 @@ here.
 
 * `TauCeti.GridDiagram.two_mul_tau_torusLink` and `TauCeti.GridDiagram.tau_torusLink`:
   `2 τ(torusLink p q) = -p q` and `τ(torusLink p q) = -(p q / 2)` on a torus knot grid.
-* `TauCeti.GridDiagram.tau_torusLink_one_two`, `TauCeti.GridDiagram.tau_torusLink_two_three`:
-  `τ = -1` on the `5 × 5` trefoil grid and `τ = -3` on the `7 × 7` grid of the `(3, 4)` torus knot.
 * `TauCeti.GridDiagram.tau_unknot`: `τ = 0` on every unknot grid.
 
 ## References
@@ -67,14 +65,6 @@ theorem tau_torusLink :
     hG.tau K = -((p * q / 2 : ℕ) : ℤ) := by
   have h₂ := two_mul_tau_torusLink hG K
   omega
-
-/-- On the `5 × 5` trefoil grid, `τ = -1`. -/
-theorem tau_torusLink_one_two : ((isKnot_torusLink_iff 1 2).mpr (by decide)).tau K = -1 := by
-  simp
-
-/-- On the `7 × 7` grid of the `(3, 4)` torus knot, `τ = -3`. -/
-theorem tau_torusLink_two_three : ((isKnot_torusLink_iff 2 3).mpr (by decide)).tau K = -3 := by
-  simp
 
 /-- **`τ` of an unknot grid is zero**: the unknot grids are the torus link grids with `q = 0`. -/
 @[simp]
