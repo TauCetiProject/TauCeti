@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Chow.OpenRestriction
 import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+import TauCeti.AlgebraicGeometry.Chow.DivisorClass
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
@@ -28,10 +29,6 @@ Proposition 1.8; [Stacks, Lemma 42.19.3](https://stacks.math.columbia.edu/tag/02
 cycle-level sequence is `Chow.range_cyclesPushforward_eq_ker_cyclesRestrict`; what is added here is
 the behaviour of rational equivalence under restriction to `U` and under closure in `X`.
 
-* `Chow.RatEquivFamily.cycle_mem_cyclesOfDimension`: over a field, the cycle
-  `Σ_a (i_a)_* div(r_a)` of a family of integral closed subschemes of dimension `n + 1` with
-  rational functions is an `n`-cycle, by the dimension formula on each member: a rational function
-  only has zeros and poles at points of codimension one.
 * `Chow.RatEquivFamily.restrict k j F`: the family `(W_a ∩ U, r_a|_{W_a ∩ U})` on `U` obtained by
   intersecting the members of a family on `X` with `U`, discarding those disjoint from `U`. Its
   cycle is the restriction of the cycle of `F` (`Chow.RatEquivFamily.cycle_restrict`), since
@@ -60,61 +57,9 @@ namespace TauCeti.AlgebraicGeometry.Chow
 variable (k : Type u) [Field k] {X U V : Scheme.{u}}
   [X.Over (Spec (.of k))] [LocallyOfFiniteType (X ↘ Spec (.of k))]
 
-include k in
-/-- An open immersion into a scheme locally of finite type over a field preserves the dimension of
-points; the source is given the structure over the field induced from the target. -/
-private lemma height_apply_of_isOpenImmersion' (j : U ⟶ X) [IsOpenImmersion j] (u : U) :
-    height (j u) = height u := by
-  let : U.Over (Spec (.of k)) := ⟨j ≫ X ↘ Spec (.of k)⟩
-  have : LocallyOfFiniteType (U ↘ Spec (.of k)) :=
-    inferInstanceAs (LocallyOfFiniteType (j ≫ X ↘ Spec (.of k)))
-  have : j.IsOver (Spec (.of k)) := ⟨rfl⟩
-  exact height_apply_of_isOpenImmersion k j u
-
 namespace RatEquivFamily
 
 variable {n : ℤ}
-
-include k in
-/-- **Over a field, rational equivalences are `n`-cycles.** For a scheme locally of finite type over
-a field, the cycle `Σ_a (i_a)_* div(r_a)` of a family of integral closed subschemes of dimension
-`n + 1` with nonzero rational functions is an `n`-cycle: a rational function on `W_a` only has zeros
-and poles at points of codimension one, which by the dimension formula have dimension `n`. -/
-lemma cycle_mem_cyclesOfDimension [IsLocallyNoetherian X] (F : RatEquivFamily X n) :
-    F.cycle ∈ cyclesOfDimension X n := by
-  rw [mem_cyclesOfDimension_iff]
-  intro x hx
-  rw [Function.mem_support, cycle_apply] at hx
-  obtain ⟨a, ha⟩ : ∃ a, F.component a x ≠ 0 := by
-    by_contra! h
-    exact hx (finsum_eq_zero_of_forall_eq_zero h)
-  by_cases hxa : x ∈ Set.range (F.i a)
-  swap
-  · exact absurd (F.component_apply_eq_zero_of_notMem_range a hxa) ha
-  obtain ⟨y, rfl⟩ := hxa
-  rw [component_apply] at ha
-  have hy : coheight y = 1 := by
-    by_contra hy
-    exact ha (Scheme.ord_eq_zero_of_coheight_neq_one hy _)
-  -- the dimension formula on `W_a`, which is locally of finite type over `k` through `X`
-  let : (F.W a).Over (Spec (.of k)) := ⟨F.i a ≫ X ↘ Spec (.of k)⟩
-  have : LocallyOfFiniteType (F.W a ↘ Spec (.of k)) :=
-    inferInstanceAs (LocallyOfFiniteType (F.i a ≫ X ↘ Spec (.of k)))
-  have hgen := coheight_add_height_eq_topologicalKrullDim k (genericPoint (F.W a))
-  have hpt := coheight_add_height_eq_topologicalKrullDim k y
-  rw [coheight_eq_zero.mpr (Scheme.isMax_iff_eq_genericPoint.mpr rfl)] at hgen
-  obtain ⟨m, hm, hmn⟩ := mem_pointsOfDimension.mp (F.genericPoint_mem a)
-  rw [hm, ← hpt, hy] at hgen
-  have h1 : (1 : ℕ∞) + height y = m := by
-    have h := hgen.symm
-    norm_cast at h
-    simpa using h
-  obtain ⟨d, hd⟩ : ∃ d : ℕ, height y = d :=
-    ⟨_, (ENat.natCast_toNat fun h ↦ by simp [h] at h1).symm⟩
-  rw [hd] at h1
-  have h2 : 1 + d = m := by exact_mod_cast h1
-  refine mem_pointsOfDimension.mpr ⟨d, by rw [Scheme.Hom.height_apply_eq_height, hd], ?_⟩
-  omega
 
 section Restrict
 
@@ -139,7 +84,7 @@ noncomputable def restrict : RatEquivFamily U n where
     have : Nonempty ↥(pullback (F.i a.1) j) := a.2
     have := isIntegral_pullback j F a.1
     rw [mem_pointsOfDimension, ← Scheme.Hom.height_apply_eq_height (pullback.snd (F.i a.1) j),
-      ← height_apply_of_isOpenImmersion' k j, ← Scheme.Hom.comp_apply, ← pullback.condition,
+      ← height_apply_of_isOpenImmersion k j, ← Scheme.Hom.comp_apply, ← pullback.condition,
       Scheme.Hom.comp_apply, genericPoint_eq_of_isOpenImmersion, Scheme.Hom.height_apply_eq_height]
     exact mem_pointsOfDimension.mp (F.genericPoint_mem a.1)
   r a :=
@@ -214,7 +159,7 @@ noncomputable def closure : RatEquivFamily X n where
   genericPoint_mem b := by
     rw [mem_pointsOfDimension, ← Scheme.Hom.height_apply_eq_height (G.i b ≫ j).imageι,
       ← genericPoint_eq_of_isOpenImmersion (G.i b ≫ j).toImage, ← Scheme.Hom.comp_apply,
-      Scheme.Hom.toImage_imageι, Scheme.Hom.comp_apply, height_apply_of_isOpenImmersion' k j,
+      Scheme.Hom.toImage_imageι, Scheme.Hom.comp_apply, height_apply_of_isOpenImmersion k j,
       Scheme.Hom.height_apply_eq_height]
     exact mem_pointsOfDimension.mp (G.genericPoint_mem b)
   r b := Units.map (inv (G.i b ≫ j).toImage.functionFieldMap).hom (G.r b)
@@ -273,9 +218,7 @@ end RatEquivFamily
 
 section ChowGroup
 
-variable [U.Over (Spec (.of k))] [V.Over (Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
-  [LocallyOfFiniteType (V ↘ Spec (.of k))] (j : U ⟶ X) [IsOpenImmersion j]
-  [j.IsOver (Spec (.of k))] [IsLocallyNoetherian X] [IsLocallyNoetherian U] {n : ℤ}
+variable (j : U ⟶ X) [IsOpenImmersion j] [IsLocallyNoetherian X] [IsLocallyNoetherian U] {n : ℤ}
 
 /-- Restriction of cycles to an open subscheme preserves rational equivalence: the restriction of
 `Σ_a (i_a)_* div r_a` is the cycle of the restricted family. -/
@@ -307,8 +250,8 @@ lemma restrict_id : restrict k (𝟙 X) = AddMonoidHom.id (ChowGroup X n) := by
   simp [cyclesRestrict_id]
 
 /-- Restriction of Chow groups is functorial: `(j' ≫ j)^* = j'^* ∘ j^*`. -/
-lemma restrict_comp [IsLocallyNoetherian V] (j' : V ⟶ U) [IsOpenImmersion j']
-    [j'.IsOver (Spec (.of k))] :
+lemma restrict_comp [U.Over (Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
+    [IsLocallyNoetherian V] (j' : V ⟶ U) [IsOpenImmersion j'] :
     restrict k (j' ≫ j) = (restrict k j').comp (restrict k j : ChowGroup X n →+ _) := by
   ext α
   simp [cyclesRestrict_comp]
