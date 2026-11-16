@@ -290,9 +290,9 @@ theorem exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction
   · have h := hext ((0, 0), Submodule.Quotient.mk u)
     rw [hG, hF] at h
     simp only [ZeroMemClass.coe_zero, map_zero, zero_add] at h
-    have hu := (ReducedSpace.mk_eq_zero_iff (u := s (Submodule.Quotient.mk u) - u)).1 (by
-      rw [Submodule.Quotient.mk_sub, hs', sub_self])
-    rwa [h, ← Submodule.coe_sub, ← ω.orthogonal_orthogonal (LinearMap.range ρ)]
+    have hu := ReducedSpace.mk_eq_mk_iff.1 (hs' (Submodule.Quotient.mk u))
+    rw [ω.orthogonal_orthogonal] at hu
+    rwa [h]
 
 end SymplecticForm
 
