@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
-public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Seminorm
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 
 /-!
@@ -38,8 +38,9 @@ Sobolev functions and density results comparing different domains are not proved
   derivatives on the whole space.
 * `TauCeti.wkp0Submodule` and `TauCeti.Wkp0`: the closure of the test functions in `W^{k,p}(Ω)`
   and its complete normed-space type.
-* `TauCeti.Wkp0.ofTestFunctionₗ` and `TauCeti.Wkp0.lowerOrderL`: the dense test-function
-  inclusion and the lower-order projection with zero-boundary codomains.
+* `TauCeti.Wkp0.ofTestFunctionₗ`, `TauCeti.Wkp0.lowerOrderL`, and `TauCeti.Wkp0.toOrderL`: the
+  dense test-function inclusion, the lower-order projection, and general order truncation with
+  zero-boundary codomains.
 * `TauCeti.wkp0Submodule_subset_of_isClosed`: the closure induction principle used to extend a
   closed property from test functions to `W^{k,p}_0(Ω)`.
 
@@ -327,6 +328,30 @@ theorem Wkp.enorm_iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega
   filter_upwards [iteratedGradientTestFunctionLp_apply_ae (mu := mu) p k phi] with x hx
   rw [hx, iteratedGradientTestFunction_def, norm_iteratedGradientChain, norm_norm]
 
+/-- Truncating an embedded test function from order `k` to order `j` yields its embedding at order
+`j`. -/
+theorem Wkp.toOrderL_ofTestFunctionₗ {j k : ℕ} (h : j ≤ k) (phi : 𝓓(Omega, ℝ)) :
+    Wkp.toOrderL (mu := mu) (p := p) h (Wkp.ofTestFunctionₗ k phi) = Wkp.ofTestFunctionₗ j phi :=
+  Wkp.ext j (by rw [Wkp.value_toOrderL, Wkp.value_ofTestFunctionₗ, Wkp.value_ofTestFunctionₗ])
+
+/-- For an embedded test function `φ ∈ 𝓓(Ω, ℝ)`, the `j`th Sobolev seminorm equals the ambient
+`Lᵖ` norm of its `j`th classical derivative `iteratedFDeriv ℝ j φ`. -/
+theorem Wkp.seminorm_ofTestFunctionₗ {j k : ℕ} (h : j ≤ k) (phi : 𝓓(Omega, ℝ)) :
+    Wkp.seminorm k j h (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi) =
+      lpNorm (iteratedFDeriv ℝ j (phi : E → ℝ)) p mu := by
+  cases j with
+  | zero =>
+      rw [Wkp.seminorm_zero_apply, Lp.norm_def, ← Lp.eNorm_def, Wkp.enorm_value_ofTestFunctionₗ,
+        lpNorm]
+      congr 2
+      exact (eLpNorm_congr_norm_ae
+        ((phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable)
+        phi.continuous.aestronglyMeasurable
+        (.of_forall fun x => norm_iteratedFDeriv_zero)).symm
+  | succ j =>
+      rw [Wkp.seminorm_succ_apply, Wkp.toOrderL_ofTestFunctionₗ, Lp.norm_def, ← Lp.eNorm_def,
+        Wkp.enorm_iteratedGradient_ofTestFunctionₗ, lpNorm]
+
 /-- The test-function embedding into `W^{k,p}(Ω)` is injective. -/
 theorem Wkp.ofTestFunctionₗ_injective (k : ℕ) :
     Function.Injective (Wkp.ofTestFunctionₗ (mu := mu) (Omega := Omega) (p := p) k) := by
@@ -446,6 +471,93 @@ theorem Wkp0.lowerOrderL_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
   apply Subtype.ext
   rw [Wkp0.coe_lowerOrderL, Wkp0.coe_ofTestFunctionₗ, Wkp0.coe_ofTestFunctionₗ,
     Wkp.lowerOrder_ofTestFunctionₗ]
+
+/-- Order truncation preserves the zero-boundary subspace `W^{k,p}_0(Ω)`. -/
+theorem Wkp.toOrderL_mem_wkp0Submodule {j k : ℕ} (h : j ≤ k) {u : Wkp mu Omega p k}
+    (hu : u ∈ wkp0Submodule mu Omega p k) :
+    Wkp.toOrderL h u ∈ wkp0Submodule mu Omega p j := by
+  refine wkp0Submodule_subset_of_isClosed k
+    ((wkp0Submodule mu Omega p j).isClosed.preimage (Wkp.toOrderL h).continuous)
+    (fun phi => ?_) hu
+  rw [Set.mem_preimage, Wkp.toOrderL_ofTestFunctionₗ h]
+  exact Wkp.ofTestFunctionₗ_mem_wkp0Submodule j phi
+
+/-- Continuous linear order truncation `W^{k,p}_0(Ω) →L[ℝ] W^{j,p}_0(Ω)` on zero-boundary Sobolev
+spaces, obtained by restricting `TauCeti.Wkp.toOrderL`. -/
+def Wkp0.toOrderL {j k : ℕ} (h : j ≤ k) : Wkp0 mu Omega p k →L[ℝ] Wkp0 mu Omega p j :=
+  (Wkp.toOrderL h).restrict fun _ => Wkp.toOrderL_mem_wkp0Submodule h
+
+/-- Coercing `TauCeti.Wkp0.toOrderL` to the ambient Sobolev space gives `TauCeti.Wkp.toOrderL`. -/
+@[simp]
+theorem Wkp0.coe_toOrderL {j k : ℕ} (h : j ≤ k) (u : Wkp0 mu Omega p k) :
+    (Wkp0.toOrderL h u : Wkp mu Omega p j) = Wkp.toOrderL h (u : Wkp mu Omega p k) :=
+  ContinuousLinearMap.coe_restrict_apply _ u
+
+/-- Truncating from order `k` to order `k` on `W^{k,p}_0(Ω)` is the identity. -/
+@[simp]
+theorem Wkp0.toOrderL_self {k : ℕ} (h : k ≤ k) :
+    Wkp0.toOrderL (mu := mu) (Omega := Omega) (p := p) h = ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext fun u => Subtype.ext <| by
+    rw [Wkp0.coe_toOrderL, ContinuousLinearMap.id_apply, Wkp.toOrderL_self_apply]
+
+/-- Truncating by a single order on `W^{k,p}_0(Ω)` is `TauCeti.Wkp0.lowerOrderL`. -/
+theorem Wkp0.toOrderL_succ_self (k : ℕ) (h : k ≤ k + 1) :
+    Wkp0.toOrderL (mu := mu) (Omega := Omega) (p := p) h = Wkp0.lowerOrderL k :=
+  ContinuousLinearMap.ext fun u => Subtype.ext <| by
+    rw [Wkp0.coe_toOrderL, Wkp.toOrderL_succ_self_apply, Wkp0.coe_lowerOrderL]
+
+/-- Successive truncations on zero-boundary Sobolev spaces compose to a single truncation. -/
+@[simp]
+theorem Wkp0.toOrderL_comp_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
+    (Wkp0.toOrderL (mu := mu) (Omega := Omega) (p := p) hij).comp (Wkp0.toOrderL hjk) =
+      Wkp0.toOrderL (hij.trans hjk) :=
+  ContinuousLinearMap.ext fun u => Subtype.ext <| by
+    simp only [ContinuousLinearMap.comp_apply, Wkp0.coe_toOrderL, Wkp.toOrderL_toOrderL]
+
+/-- Applying successive truncations on `W^{k,p}_0(Ω)` equals truncating in one step. -/
+@[simp]
+theorem Wkp0.toOrderL_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (u : Wkp0 mu Omega p k) :
+    Wkp0.toOrderL hij (Wkp0.toOrderL hjk u) = Wkp0.toOrderL (hij.trans hjk) u := by
+  rw [← ContinuousLinearMap.comp_apply, Wkp0.toOrderL_comp_toOrderL]
+
+/-- Order truncation on `W^{k,p}_0(Ω)` is injective. -/
+theorem Wkp0.toOrderL_injective {j k : ℕ} (h : j ≤ k) :
+    Function.Injective (Wkp0.toOrderL (mu := mu) (Omega := Omega) (p := p) h) := fun _ _ huv =>
+  Subtype.ext <| Wkp.toOrderL_injective h <| by
+    have hcoe := congrArg Subtype.val huv
+    rwa [Wkp0.coe_toOrderL, Wkp0.coe_toOrderL] at hcoe
+
+/-- Two elements of `W^{k,p}_0(Ω)` have equal order-`j` truncations if and only if they are
+equal. -/
+@[simp]
+theorem Wkp0.toOrderL_inj {j k : ℕ} (h : j ≤ k) {u v : Wkp0 mu Omega p k} :
+    Wkp0.toOrderL h u = Wkp0.toOrderL h v ↔ u = v :=
+  (Wkp0.toOrderL_injective h).eq_iff
+
+/-- An order truncation on `W^{k,p}_0(Ω)` vanishes if and only if the element vanishes. -/
+@[simp]
+theorem Wkp0.toOrderL_eq_zero_iff {j k : ℕ} (h : j ≤ k) {u : Wkp0 mu Omega p k} :
+    Wkp0.toOrderL h u = 0 ↔ u = 0 :=
+  (Wkp0.toOrderL h).map_eq_zero_iff (Wkp0.toOrderL_injective h)
+
+/-- Order truncation on `W^{k,p}_0(Ω)` does not increase the Sobolev graph norm. -/
+theorem Wkp0.norm_toOrderL_apply_le {j k : ℕ} (h : j ≤ k) (u : Wkp0 mu Omega p k) :
+    ‖Wkp0.toOrderL h u‖ ≤ ‖u‖ := by
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, Wkp0.coe_toOrderL]
+  exact Wkp.norm_toOrderL_apply_le h (u : Wkp mu Omega p k)
+
+/-- The operator norm of `TauCeti.Wkp0.toOrderL` is at most `1`. -/
+theorem Wkp0.opNorm_toOrderL_le {j k : ℕ} (h : j ≤ k) :
+    ‖Wkp0.toOrderL (mu := mu) (Omega := Omega) (p := p) h‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    simpa only [one_mul] using Wkp0.norm_toOrderL_apply_le h u
+
+/-- Truncating a test function in `W^{k,p}_0(Ω)` gives its embedding in `W^{j,p}_0(Ω)`. -/
+theorem Wkp0.toOrderL_ofTestFunctionₗ {j k : ℕ} (h : j ≤ k) (phi : 𝓓(Omega, ℝ)) :
+    Wkp0.toOrderL (mu := mu) (p := p) h (Wkp0.ofTestFunctionₗ k phi) = Wkp0.ofTestFunctionₗ j phi :=
+  Subtype.ext <| by
+    rw [Wkp0.coe_toOrderL, Wkp0.coe_ofTestFunctionₗ, Wkp0.coe_ofTestFunctionₗ,
+      Wkp.toOrderL_ofTestFunctionₗ]
 
 /-- `W^{k,p}_0(Ω)` is complete in the iterated graph norm. -/
 instance (k : ℕ) : CompleteSpace (Wkp0 mu Omega p k) :=

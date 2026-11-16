@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Seminorm
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 
 /-!
@@ -255,5 +255,51 @@ theorem restrictL_one (hU : U ≤ Omega) :
   -- `Wkp … 1` goal; the equation is chained on instead.
   refine Eq.trans ?_ (W1p.value_restrictL hU u).symm
   simpa only [value_one] using value_restrictL hU 1 u
+
+/-- Order truncation commutes with restriction to an open subdomain. -/
+theorem toOrderL_restrictL (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    toOrderL h (restrictL hU k u) = restrictL hU j (toOrderL h u) :=
+  ext j (by rw [value_toOrderL, value_restrictL, value_restrictL, value_toOrderL])
+
+/-- Bundled form of `TauCeti.Wkp.toOrderL_restrictL`: order truncation and subdomain restriction
+commute as continuous linear maps. -/
+theorem toOrderL_comp_restrictL (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) :
+    (toOrderL (mu := mu) (p := p) h).comp (restrictL hU k) =
+      (restrictL hU j).comp (toOrderL h) :=
+  ContinuousLinearMap.ext (toOrderL_restrictL hU h)
+
+/-- Restricting `u ∈ W^{k,p}(Ω)` to an open subdomain `U ≤ Ω` restricts each intermediate weak
+derivative field via `Lp.LpToLpOfMeasureLeSMul`. -/
+theorem iteratedGradient_toOrderL_restrictL (hU : U ≤ Omega) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p k) :
+    iteratedGradient j (toOrderL h (restrictL hU k u)) =
+      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
+        simpa only [one_smul] using
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
+        (iteratedGradient j (toOrderL h u)) := by
+  rw [toOrderL_restrictL, iteratedGradient_restrictL]
+
+/-- Restricting to an open subdomain keeps every intermediate weak derivative field unchanged
+almost everywhere on the subdomain. -/
+theorem iteratedGradient_toOrderL_restrictL_ae (hU : U ≤ Omega) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p k) :
+    iteratedGradient j (toOrderL h (restrictL hU k u)) =ᵐ[mu.restrict U]
+      iteratedGradient j (toOrderL h u) := by
+  rw [toOrderL_restrictL]
+  exact iteratedGradient_restrictL_ae hU j (toOrderL h u)
+
+/-- Restricting to an open subdomain `U ≤ Ω` does not increase any Sobolev seminorm. -/
+theorem seminorm_restrictL_le (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    seminorm k j h (restrictL hU k u) ≤ seminorm k j h u := by
+  cases j with
+  | zero =>
+      rw [seminorm_zero_apply, seminorm_zero_apply, ← toOrderL_zero_apply k h,
+        ← toOrderL_zero_apply k h u, toOrderL_restrictL]
+      exact norm_restrictL_le hU 0 (toOrderL h u)
+  | succ j =>
+      rw [seminorm_succ_apply, seminorm_succ_apply, Lp.norm_def, Lp.norm_def,
+        eLpNorm_congr_ae (iteratedGradient_toOrderL_restrictL_ae hU h u)]
+      exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
+        (eLpNorm_mono_measure _ (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
 
 end TauCeti.Wkp

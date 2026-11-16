@@ -326,6 +326,51 @@ theorem compLinearIsometryEquiv_mem_wkp0Submodule_iff (he : MeasurePreserving e 
   simpa [← compLinearIsometryEquiv_symm he hUW he' hWU] using
     compLinearIsometryEquiv_mem_wkp0Submodule he' hWU k hu
 
+/-- Order truncation commutes with transport along a measure-preserving linear isometry. -/
+theorem toOrderL_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) {j k : ℕ} (h : j ≤ k) (u : Wkp ν W p k) :
+    toOrderL h (compLinearIsometryEquiv he hUW k u) =
+      compLinearIsometryEquiv he hUW j (toOrderL h u) := by
+  induction k, h using Nat.le_induction with
+  | base => simp only [toOrderL_self_apply]
+  | succ k hjk ih =>
+      rw [toOrderL_succ_right_apply hjk, lowerOrder_compLinearIsometryEquiv, ih,
+        ← toOrderL_succ_right_apply hjk]
+
+/-- Transporting `u ∈ W^{k,p}(W)` along a measure-preserving linear isometry `e` pulls back every
+intermediate weak derivative field by `(e.iteratedGradientCongr j).symm` almost everywhere. -/
+theorem iteratedGradient_toOrderL_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) {j k : ℕ} (h : j + 1 ≤ k) (u : Wkp ν W p k) :
+    iteratedGradient j (toOrderL h (compLinearIsometryEquiv he hUW k u)) =ᵐ[μ.restrict U]
+      fun x => (e.iteratedGradientCongr j).symm (iteratedGradient j (toOrderL h u) (e x)) := by
+  rw [toOrderL_compLinearIsometryEquiv]
+  exact iteratedGradient_compLinearIsometryEquiv_ae he hUW j (toOrderL h u)
+
+/-- Transport along a measure-preserving linear isometry preserves every Sobolev seminorm. -/
+@[simp]
+theorem seminorm_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) {j k : ℕ} (h : j ≤ k) (u : Wkp ν W p k) :
+    seminorm k j h (compLinearIsometryEquiv he hUW k u) = seminorm k j h u := by
+  have hr : MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
+    hUW ▸ he.restrict_preimage W.isOpen.measurableSet
+  cases j with
+  | zero =>
+      rw [seminorm_zero_apply, seminorm_zero_apply, ← toOrderL_zero_apply k h,
+        ← toOrderL_zero_apply k h u, toOrderL_compLinearIsometryEquiv]
+      exact (compLinearIsometryEquiv he hUW 0).norm_map _
+  | succ j =>
+      rw [seminorm_succ_apply, seminorm_succ_apply]
+      set v := toOrderL h u
+      let g := Lp.compMeasurePreserving e hr (iteratedGradient j v)
+      have hgnorm : ‖g‖ = ‖iteratedGradient j v‖ :=
+        Lp.norm_compMeasurePreserving (iteratedGradient j v) hr
+      rw [← hgnorm, Lp.norm_def, Lp.norm_def]
+      congr 1
+      refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
+      filter_upwards [iteratedGradient_toOrderL_compLinearIsometryEquiv_ae he hUW h u,
+        Lp.coeFn_compMeasurePreserving (iteratedGradient j v) hr] with x hx hgx
+      rw [hx, LinearIsometryEquiv.norm_map, hgx, Function.comp_apply]
+
 end Wkp
 
 end TauCeti

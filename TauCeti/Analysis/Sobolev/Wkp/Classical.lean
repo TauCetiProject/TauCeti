@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Seminorm
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -321,6 +321,36 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (k : ℕ) {f : E → �
   exists_value_ae_eq_of_contDiffOn k (hf.mono (hΩK.trans hKU)) fun i hi =>
     ((ContinuousOn.continuousOn_iteratedFDeriv hf hU (by exact_mod_cast hi)).mono
       hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p
+
+/-- **Intermediate weak derivatives of smooth representatives.** If `u ∈ W^{k,p}(Ω)` has a
+representative `f` that is `C^{j+1}` on `Ω` (`j + 1 ≤ k`), then its weak derivative of order
+`j + 1` agrees almost everywhere on `Ω` with the classical field `iteratedGradientChain f j`.
+Only `C^{j+1}` regularity is required, even when `j + 1 < k`. -/
+theorem Wkp.iteratedGradient_toOrderL_ae_eq_of_contDiffOn {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ (j + 1) f Omega)
+    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    (iteratedGradient j (toOrderL h u) : E → IteratedGradient E j) =ᵐ[mu.restrict Omega]
+      iteratedGradientChain f j := by
+  refine iteratedGradient_ae_eq_of_contDiffOn j (toOrderL h u) hf ?_
+  rw [value_toOrderL]
+  exact hu
+
+/-- **Classical identification of Sobolev seminorms.** If `u ∈ W^{k,p}(Ω)` is represented almost
+everywhere on `Ω` by a function `f` that is `C^j` on `Ω` (`j ≤ k`), then `|u|_{j,p}` equals the
+classical `Lᵖ(Ω)` derivative seminorm `lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega)`. Only
+`C^j` regularity is needed. -/
+theorem Wkp.seminorm_eq_lpNorm_iteratedFDeriv_of_contDiffOn {j k : ℕ} (h : j ≤ k)
+    (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ j f Omega)
+    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    seminorm k j h u = lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega) := by
+  cases j with
+  | zero =>
+      rw [seminorm_zero_apply, ← value_toOrderL h u]
+      exact norm_value_eq_lpNorm_of_contDiffOn 0 (toOrderL h u) hf (by rwa [value_toOrderL])
+  | succ j =>
+      rw [seminorm_succ_apply]
+      exact norm_iteratedGradient_eq_lpNorm_of_contDiffOn j (toOrderL h u) hf
+        (by rwa [value_toOrderL])
 
 end Sobolev
 

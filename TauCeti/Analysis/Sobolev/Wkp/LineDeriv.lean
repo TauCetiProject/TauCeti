@@ -272,6 +272,21 @@ theorem Wkp.lineDerivL_eq_of_hasWeakLineDerivOn {v : E} {k : ℕ} {w : Wkp mu Om
     Wkp.lineDerivL v k w = d :=
   Wkp.eq_of_hasWeakLineDerivOn (Wkp.hasWeakLineDerivOn_lineDerivL v k w) h
 
+/-- Order truncation commutes with weak directional differentiation. -/
+theorem Wkp.toOrderL_lineDerivL (v : E) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p (k + 1)) :
+    Wkp.toOrderL h (Wkp.lineDerivL v k u) =
+      Wkp.lineDerivL v j (Wkp.toOrderL (Nat.succ_le_succ h) u) := by
+  refine (Wkp.lineDerivL_eq_of_hasWeakLineDerivOn ?_).symm
+  rw [Wkp.value_toOrderL, Wkp.value_toOrderL]
+  exact Wkp.hasWeakLineDerivOn_lineDerivL v k u
+
+/-- Bundled form of `TauCeti.Wkp.toOrderL_lineDerivL`: order truncation and weak directional
+differentiation commute as continuous linear maps. -/
+theorem Wkp.toOrderL_comp_lineDerivL (v : E) {j k : ℕ} (h : j ≤ k) :
+    (Wkp.toOrderL (mu := mu) (Omega := Omega) (p := p) h).comp (Wkp.lineDerivL v k) =
+      (Wkp.lineDerivL v j).comp (Wkp.toOrderL (Nat.succ_le_succ h)) :=
+  ContinuousLinearMap.ext (Wkp.toOrderL_lineDerivL v h)
+
 /-! ### From the directional derivatives to `W^{k+1,p}` -/
 
 section Assembly

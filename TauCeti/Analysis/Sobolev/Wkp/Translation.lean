@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Seminorm
 public import TauCeti.Analysis.Sobolev.W1p.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.Analysis.Sobolev.Translation
@@ -267,6 +267,31 @@ theorem translateLIE_add (h₁ h₂ : E) (k : ℕ) :
   intro u
   simpa only [translateLIE_apply, LinearIsometryEquiv.trans_apply] using
     translate_add h₁ h₂ k u
+
+/-- Order truncation commutes with whole-space translation. -/
+theorem toOrderL_translate (v : E) {j k : ℕ} (h : j ≤ k) (u : Wkp mu ⊤ p k) :
+    toOrderL h (translate v k u) = translate v j (toOrderL h u) :=
+  ext j (by rw [value_toOrderL, value_translate, value_translate, value_toOrderL])
+
+/-- Whole-space translation translates every intermediate weak derivative field in `Lᵖ`. -/
+theorem iteratedGradient_toOrderL_translate (v : E) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu ⊤ p k) :
+    iteratedGradient j (toOrderL h (translate v k u)) =
+      (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p v
+        (iteratedGradient j (toOrderL h u)) := by
+  rw [toOrderL_translate, iteratedGradient_translate]
+
+/-- Whole-space translation preserves every Sobolev seminorm. -/
+@[simp]
+theorem seminorm_translate (v : E) {j k : ℕ} (h : j ≤ k) (u : Wkp mu ⊤ p k) :
+    seminorm k j h (translate v k u) = seminorm k j h u := by
+  cases j with
+  | zero =>
+      rw [seminorm_zero_apply, seminorm_zero_apply, value_translate]
+      exact ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p v).norm_map _
+  | succ j =>
+      rw [seminorm_succ_apply, seminorm_succ_apply, iteratedGradient_toOrderL_translate]
+      exact ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p v).norm_map _
 
 end TauCeti.Wkp
 

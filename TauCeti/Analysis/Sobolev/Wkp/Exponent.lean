@@ -34,11 +34,12 @@ is unchanged up to almost everywhere equality.
   the highest weak derivative are their `Lᵖ` copies.
 * `TauCeti.Wkp.value_ofExponentLEL_ae`, `TauCeti.Wkp.iteratedGradient_ofExponentLEL_ae`: the value
   and the highest weak derivative are unchanged.
-* `TauCeti.Wkp.lowerOrder_ofExponentLEL`, `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with
-  the lower-order projection and with restriction.
+* `TauCeti.Wkp.lowerOrder_ofExponentLEL`, `TauCeti.Wkp.toOrderL_ofExponentLEL`,
+  `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with order projections and restriction.
 * `TauCeti.Wkp.ofExponentLEL_injective`: the inclusion is injective.
-* `TauCeti.Wkp.opNorm_ofExponentLEL_le`, `TauCeti.Wkp.norm_ofExponentLEL_apply_le`: the bound
-  `μ(Ω) ^ (1/p - 1/q)` on the operator norm.
+* `TauCeti.Wkp.opNorm_ofExponentLEL_le`, `TauCeti.Wkp.norm_ofExponentLEL_apply_le`,
+  `TauCeti.Wkp.seminorm_ofExponentLEL_le`: the bound `μ(Ω) ^ (1/p - 1/q)` on the operator norm and
+  every Sobolev seminorm.
 
 ## References
 
@@ -236,6 +237,51 @@ theorem restrictL_ofExponentLEL [IsFiniteMeasure (mu.restrict (U : Set E))] (hU 
     (value_restrictL_ae hU k _).symm)
   exact ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
     (value_ofExponentLEL_ae hpq k u).symm
+
+/-- On a domain of finite measure, order truncation commutes with lowering the integrability
+exponent. -/
+theorem toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega q k) :
+    toOrderL h (ofExponentLEL hpq k u) = ofExponentLEL hpq j (toOrderL h u) :=
+  ext j (by rw [value_toOrderL, value_ofExponentLEL, value_ofExponentLEL, value_toOrderL])
+
+/-- Bundled form of `TauCeti.Wkp.toOrderL_ofExponentLEL`: order truncation and exponent lowering
+commute as continuous linear maps. -/
+theorem toOrderL_comp_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) :
+    (toOrderL (mu := mu) (Omega := Omega) h).comp (ofExponentLEL hpq k) =
+      (ofExponentLEL hpq j).comp (toOrderL h) :=
+  ContinuousLinearMap.ext (toOrderL_ofExponentLEL hpq h)
+
+/-- Lowering the exponent on a finite-measure domain sends each intermediate weak derivative field
+to its `Lᵖ` copy via `Lp.ofExponentLEL`. -/
+theorem iteratedGradient_toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega q k) :
+    iteratedGradient j (toOrderL h (ofExponentLEL hpq k u)) =
+      Lp.ofExponentLEL ℝ _ hpq (iteratedGradient j (toOrderL h u)) := by
+  rw [toOrderL_ofExponentLEL, iteratedGradient_ofExponentLEL]
+
+/-- Lowering the exponent does not change any intermediate weak derivative field almost
+everywhere. -/
+theorem iteratedGradient_toOrderL_ofExponentLEL_ae (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega q k) :
+    ⇑(iteratedGradient j (toOrderL h (ofExponentLEL hpq k u))) =ᵐ[mu.restrict Omega]
+      iteratedGradient j (toOrderL h u) := by
+  rw [toOrderL_ofExponentLEL]
+  exact iteratedGradient_ofExponentLEL_ae hpq j (toOrderL h u)
+
+/-- **Change of exponent for Sobolev seminorms.** On a domain of finite measure and for `p ≤ q`,
+every Sobolev seminorm satisfies `|u|_{j,p} ≤ μ(Ω) ^ (1/p - 1/q) |u|_{j,q}`. -/
+theorem seminorm_ofExponentLEL_le (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega q k) :
+    seminorm k j h (ofExponentLEL hpq k u) ≤
+      (mu Omega ^ (1 / p.toReal - 1 / q.toReal)).toReal * seminorm k j h u := by
+  cases j with
+  | zero =>
+      rw [seminorm_zero_apply, seminorm_zero_apply, value_ofExponentLEL,
+        ← Measure.restrict_apply_univ]
+      exact Lp.norm_ofExponentLEL_apply_le (𝕜 := ℝ) hpq (value k u)
+  | succ j =>
+      rw [seminorm_succ_apply, seminorm_succ_apply, iteratedGradient_toOrderL_ofExponentLEL,
+        ← Measure.restrict_apply_univ]
+      exact Lp.norm_ofExponentLEL_apply_le (𝕜 := ℝ) hpq (iteratedGradient j (toOrderL h u))
 
 end Wkp
 
