@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Cube.Dual.Complex
-public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain
+public import TauCeti.Algebra.Homology.UniversalCoefficient.CochainModule
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Resolution.Mirror
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -361,7 +361,7 @@ def khovanovMirrorKronecker :
     D.mirror.khovanovHomology hD' R i j →ₗ[R]
       Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
   (ModuleCat.homLinearEquiv (R := R) (S := R)).toLinearMap ∘ₗ
-    TauCeti.CochainComplex.kronecker R (D.khovanovComplex hD R (-j)) (ModuleCat.of R R) i ∘ₗ
+    (D.khovanovComplex hD R (-j)).kronecker R (ModuleCat.of R R) i ∘ₗ
     (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.toLinearMap
 
 /-- On homology classes of cycles, `khovanovMirrorKronecker` evaluates the mirror cocycle image of
@@ -380,11 +380,11 @@ theorem khovanovMirrorKronecker_homologyπ_apply
           ((D.mirror.khovanovComplex hD' R j).iCycles i z))).hom
         ((D.khovanovComplex hD R (-j)).iCycles (-i) w) := by
   change ((D.khovanovComplex hD R (-j)).homologyπ (-i) ≫
-      TauCeti.CochainComplex.kronecker R (D.khovanovComplex hD R (-j)) (ModuleCat.of R R) i
+      (D.khovanovComplex hD R (-j)).kronecker R (ModuleCat.of R R) i
         ((HomologicalComplex.homologyMap (D.khovanovComplexMirrorIso hD R j hD').hom i)
           ((D.mirror.khovanovComplex hD' R j).homologyπ i z))).hom w = _
   rw [HomologicalComplex.moduleCat_homologyMap_homologyπ,
-    TauCeti.CochainComplex.kronecker_homologyπ, ModuleCat.hom_comp, LinearMap.comp_apply,
+    CochainComplex.kronecker_homologyπ, ModuleCat.hom_comp, LinearMap.comp_apply,
     HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
 
 /-- Over a self-injective commutative coefficient ring `R`, the mirror Kronecker pairing is an
@@ -393,8 +393,7 @@ def khovanovHomologyMirrorDualEquivOfInjective [Injective (ModuleCat.of R R)] :
     D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
       Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
   (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-    ((TauCeti.CochainComplex.kroneckerEquiv R
-      (D.khovanovComplex hD R (-j)) (ModuleCat.of R R) i).trans
+    (((D.khovanovComplex hD R (-j)).kroneckerEquiv R (ModuleCat.of R R) i).trans
       (ModuleCat.homLinearEquiv (R := R) (S := R)))
 
 @[simp]
@@ -420,14 +419,14 @@ def khovanovMirrorExtToHomology :
     Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 →ₗ[R]
       D.mirror.khovanovHomology hD' R i j :=
   (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
-    TauCeti.CochainComplex.extToHomology.{u} R (D.khovanovComplex hD R (-j))
+    CochainComplex.extToHomology.{u} (D.khovanovComplex hD R (-j)) R
       (ModuleCat.of R R) i
 
 /-- **Injectivity on the left** in the mirror Khovanov universal coefficient sequence. -/
 theorem khovanovMirrorExtToHomology_injective :
     Function.Injective (D.khovanovMirrorExtToHomology hD hD' R i j) :=
   (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.injective.comp
-    (TauCeti.CochainComplex.extToHomology_injective i)
+    (CochainComplex.extToHomology_injective i)
 
 /-- **Exactness in the middle** of the mirror Khovanov universal coefficient sequence: the kernel
 of `khovanovMirrorKronecker` is the image of `khovanovMirrorExtToHomology`. -/
@@ -437,8 +436,8 @@ theorem exact_khovanovMirrorExtToHomology_khovanovMirrorKronecker :
   intro x
   simp only [khovanovMirrorKronecker, khovanovMirrorExtToHomology, LinearMap.comp_apply,
     LinearEquiv.coe_coe, LinearEquiv.map_eq_zero_iff,
-    (TauCeti.CochainComplex.exact_extToHomology_kronecker
-      (k := R) (K := D.khovanovComplex hD R (-j)) (Y := ModuleCat.of R R) i) _,
+    (CochainComplex.exact_extToHomology_kronecker
+      (K := D.khovanovComplex hD R (-j)) (k := R) (Y := ModuleCat.of R R) i) _,
     Set.mem_range, LinearEquiv.symm_apply_eq]
 
 /-- Chosen `R`-linear section of `khovanovMirrorKronecker`, extending a linear form on
@@ -447,8 +446,7 @@ def khovanovMirrorKroneckerSection :
     Module.Dual R (D.khovanovHomology hD R (-i) (-j)) →ₗ[R]
       D.mirror.khovanovHomology hD' R i j :=
   (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
-    TauCeti.CochainComplex.kroneckerSection R (D.khovanovComplex hD R (-j))
-      (ModuleCat.of R R) i ∘ₗ
+    (D.khovanovComplex hD R (-j)).kroneckerSection R (ModuleCat.of R R) i ∘ₗ
     (ModuleCat.homLinearEquiv (M := D.khovanovHomology hD R (-i) (-j))
       (N := ModuleCat.of R R) (R := R) (S := R)).symm.toLinearMap
 
@@ -475,8 +473,8 @@ def khovanovHomologyMirrorUniversalCoefficientEquiv :
       Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 ×
         Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
   (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-    ((TauCeti.CochainComplex.universalCoefficientEquiv.{u} R
-      (D.khovanovComplex hD R (-j)) (ModuleCat.of R R) i).trans
+    ((CochainComplex.universalCoefficientEquiv.{u} (D.khovanovComplex hD R (-j)) R
+      (ModuleCat.of R R) i).trans
       (LinearEquiv.prodCongr (LinearEquiv.refl R _)
         (ModuleCat.homLinearEquiv (R := R) (S := R))))
 
@@ -528,8 +526,8 @@ def khovanovHomologyMirrorDualEquivOfProjective
     D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
       Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
   (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-    ((TauCeti.CochainComplex.kroneckerEquivOfProjectiveHomology R
-      (D.khovanovComplex hD R (-j)) (ModuleCat.of R R) i).trans
+    (((D.khovanovComplex hD R (-j)).kroneckerEquivOfProjectiveHomology R
+      (ModuleCat.of R R) i).trans
       (ModuleCat.homLinearEquiv (R := R) (S := R)))
 
 @[simp]
@@ -548,7 +546,7 @@ theorem isZero_khovanovHomology_mirror_of_projective
     [Module.Projective R (D.khovanovHomology hD R (1 - i) (-j))]
     (h : Limits.IsZero (D.khovanovHomology hD R (-i) (-j))) :
     Limits.IsZero (D.mirror.khovanovHomology hD' R i j) :=
-  (TauCeti.CochainComplex.isZero_homology_linearHomComplex_of_projective_homology (k := R)
+  (CochainComplex.isZero_homology_linearHomComplex_of_projective_homology (k := R)
     (Y := ModuleCat.of R R) i h).of_iso (D.khovanovHomologyMirrorIso hD hD' R i j)
 
 end PrincipalIdealRing
@@ -566,7 +564,7 @@ theorem range_khovanovMirrorExtToHomology :
     LinearMap.range (D.khovanovMirrorExtToHomology hD hD' R i j) =
       Submodule.torsion R (D.mirror.khovanovHomology hD' R i j) := by
   rw [khovanovMirrorExtToHomology, LinearMap.range_comp,
-    TauCeti.CochainComplex.range_extToHomology_eq_torsion]
+    CochainComplex.range_extToHomology_eq_torsion]
   ext x
   simp only [Submodule.mem_map, LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq, exists_eq_right,
     Submodule.mem_torsion_iff, Submonoid.smul_def, ← map_smul, LinearEquiv.map_eq_zero_iff]
@@ -621,8 +619,7 @@ theorem finrank_khovanovHomology_mirror :
     Module.finrank R (D.mirror.khovanovHomology hD' R i j) =
       Module.finrank R (D.khovanovHomology hD R (-i) (-j)) :=
   (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.finrank_eq.trans
-    (TauCeti.CochainComplex.finrank_homology_linearHomComplex_single₀
-      (D.khovanovComplex hD R (-j)) i)
+    ((D.khovanovComplex hD R (-j)).finrank_homology_linearHomComplex_single₀ i)
 
 end PrincipalIdealDomain
 
