@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.Dual.Defs
@@ -37,6 +38,10 @@ finite basis it is identified with its dual (`Module.Basis.toDualEquiv`), and ot
 
 ## Main results
 
+* `Module.Basis.dualBasis_reindex`: the dual basis of a reindexed finite basis is the reindexed
+  dual basis.
+* `Module.Basis.det_dualBasis`: the determinant of the dual basis of `e` with respect to the dual
+  basis of `b` is the determinant of `b` with respect to `e`.
 * `TauCeti.Module.dual_finrank_eq`: `finrank R (Dual R M) = finrank R M` for a free module
   `M`.
 -/
@@ -66,6 +71,23 @@ theorem oppositeDualEquiv_apply (b : Basis ι R M) (φ : Module.Dual R M) (i : �
 theorem oppositeDualEquiv_symm_apply_self (b : Basis ι R M) (v : ι → Rᵐᵒᵖ) (i : ι) :
     b.oppositeDualEquiv.symm v (b i) = (v i).unop := by
   simp [oppositeDualEquiv]
+
+/-- The dual basis of a reindexed finite basis is the reindexed dual basis. -/
+@[simp]
+theorem dualBasis_reindex {R M ι ι' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [DecidableEq ι] [Finite ι] [DecidableEq ι'] [Finite ι'] (b : Basis ι R M) (e : ι ≃ ι') :
+    (b.reindex e).dualBasis = b.dualBasis.reindex e :=
+  eq_of_apply_eq fun _ ↦ LinearMap.ext fun _ ↦ by simp
+
+/-- The determinant of the dual basis of `e` with respect to the dual basis of `b` is the
+determinant of `b` with respect to `e`: the matrix of the dual bases is the transpose of the matrix
+of `b` in `e`, the inverse of the matrix of `e` in `b`. -/
+theorem det_dualBasis {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
+    [DecidableEq ι] (b e : Basis ι R M) : b.dualBasis.det e.dualBasis = e.det b := by
+  rw [det_apply, det_apply, ← Matrix.det_transpose]
+  congr 1
+  ext i j
+  simp [toMatrix_apply]
 
 end Module.Basis
 
