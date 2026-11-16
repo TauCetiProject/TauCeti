@@ -147,8 +147,8 @@ variable [Fintype ι]
 omit [Fintype ι] in
 private theorem continuous_complementProjection [Finite ι] [TopologicalSpace X]
     (hf : Continuous f) (ho : ∀ x, Orthonormal ℝ (f x)) : Continuous (complementProjection f) := by
-  change Continuous fun x ↦ complementProjection f x
-  simp only [complementProjection, Submodule.starProjection_orthogonal']
+  unfold complementProjection
+  simp only [Submodule.starProjection_orthogonal']
   exact continuous_const.sub (Orthonormal.continuous_starProjection hf ho fun _ ↦ rfl)
 
 /-- The model fibre `F` is isomorphic to every orthogonal complement. -/
