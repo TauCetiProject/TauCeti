@@ -296,30 +296,20 @@ theorem taylor_refl (f : AInfinityHom AA BB) : (refl f).taylor = 0 := by
   simp only [taylor_def, barHomotopy_refl, LinearMap.comp_zero]
 
 /-- The zero homotopy has zero arity-one component. -/
-@[simp]
-theorem linearHomotopy_refl (f : AInfinityHom AA BB) : (refl f).linearHomotopy = 0 := by
+@[simp] theorem linearHomotopy_refl (f : AInfinityHom AA BB) : (refl f).linearHomotopy = 0 := by
   simp only [linearHomotopy, taylor_refl, LinearMap.zero_comp]
 
 /-- An equality of `A∞` morphisms induces a homotopy with zero bar homotopy. -/
-def ofEq {f g : AInfinityHom AA BB} (h : f = g) : Homotopy f g :=
-  h ▸ refl f
+def ofEq {f g : AInfinityHom AA BB} (h : f = g) : Homotopy f g := h ▸ refl f
 
-@[simp]
-theorem barHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
-    (ofEq h).barHomotopy = 0 := by
-  cases h
-  rfl
+@[simp] theorem barHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
+    (ofEq h).barHomotopy = 0 := by cases h; rfl
 
-@[simp]
-theorem taylor_ofEq {f g : AInfinityHom AA BB} (h : f = g) : (ofEq h).taylor = 0 := by
-  cases h
-  exact taylor_refl f
+@[simp] theorem taylor_ofEq {f g : AInfinityHom AA BB} (h : f = g) : (ofEq h).taylor = 0 := by
+  cases h; exact taylor_refl f
 
-@[simp]
-theorem linearHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
-    (ofEq h).linearHomotopy = 0 := by
-  cases h
-  exact linearHomotopy_refl f
+@[simp] theorem linearHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
+    (ofEq h).linearHomotopy = 0 := by cases h; exact linearHomotopy_refl f
 
 /-- A homotopy from `f` to `g` followed by an `A∞` morphism `k`: a homotopy from `k ∘ f` to
 `k ∘ g`. -/

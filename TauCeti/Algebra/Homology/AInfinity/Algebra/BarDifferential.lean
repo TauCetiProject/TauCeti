@@ -268,21 +268,6 @@ theorem unaryBarDifferential_eq_gradedCoderiv (𝒜 : AInfinityAlgebra R A) :
       (𝒜.differential ∘ₗ ReducedTensorWords.letter R A) 1 := by
   rw [unaryBarDifferential, taylor_comp_ofLetter]
 
-/-- The unary bar differential preserves exact word length, commuting with `lengthProj`. -/
-theorem lengthProj_comp_unaryBarDifferential (𝒜 : AInfinityAlgebra R A)
-    (n : {n : ℕ // 0 < n}) :
-    ReducedTensorWords.lengthProj R A n ∘ₗ 𝒜.unaryBarDifferential =
-      𝒜.unaryBarDifferential ∘ₗ ReducedTensorWords.lengthProj R A n := by
-  rw [unaryBarDifferential_eq_gradedCoderiv]
-  refine ReducedTensorWords.lengthProj_comp_gradedCoderiv (𝒜.grading.shift 1) 1 (a := 1) ?_ rfl
-  refine ReducedTensorWords.linearMap_ext R A fun k x ↦ ?_
-  by_cases hk : k = 1
-  · subst hk
-    rw [LinearMap.comp_apply, ReducedTensorWords.lengthProj_of_self]
-  · rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-      ReducedTensorWords.lengthProj_of_of_ne R A hk, map_zero, map_zero,
-      ReducedTensorWords.letter_of_of_ne_one R A hk, map_zero]
-
 /-- The unary Taylor map `m₁ ∘ letter` has degree one for the suspended grading. -/
 private theorem isHomogeneous_differential_comp_letter (𝒜 : AInfinityAlgebra R A) :
     LinearMap.IsHomogeneous (𝒜.differential ∘ₗ ReducedTensorWords.letter R A)
