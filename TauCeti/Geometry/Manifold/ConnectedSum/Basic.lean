@@ -315,18 +315,52 @@ theorem inl_injective (he₁ : Injective e₁) (he₂ : Injective e₂) : Inject
   rw [← mk_inl, ← mk_inl, mk_eq_mk_iff he₁ he₂] at h
   simpa using h
 
-theorem inr_injective (he₁ : Injective e₁) (he₂ : Injective e₂) : Injective (inr e₁ e₂) := by
+/-- If the first ball is injective, the second punctured summand embeds into the connected sum,
+and a point `e₁ v` of the first summand is recorded as the point `e₂ (inversion 0 1 v)` of the
+second: there is a function on the connected sum recording this. -/
+private theorem exists_eq_some_comp_inr (he₁ : Injective e₁) :
+    ∃ Ψ : ConnectedSum e₁ e₂ → Option N, (∀ y, Ψ (inr e₁ e₂ y) = some y.1) ∧
+      (∀ x v, v ≠ 0 → e₁ v = x.1 → Ψ (inl e₁ e₂ x) = some (e₂ (inversion 0 1 v))) ∧
+      ∀ x, (¬ ∃ v ≠ 0, e₁ v = x.1) → Ψ (inl e₁ e₂ x) = none := by
+  classical
+  let ψ : puncture e₁ ⊕ puncture e₂ → Option N := Sum.elim
+    (fun x ↦ if h : ∃ v ≠ 0, e₁ v = x.1 then some (e₂ (inversion 0 1 h.choose)) else none)
+    fun y ↦ some y.1
+  have hψ : ∀ x v, v ≠ 0 → e₁ v = x.1 → ψ (.inl x) = some (e₂ (inversion 0 1 v)) := by
+    intro x v hv hx
+    have hex : ∃ v ≠ 0, e₁ v = x.1 := ⟨v, hv, hx⟩
+    have hc : hex.choose = v := he₁ (hex.choose_spec.2.trans hx.symm)
+    simp only [ψ, Sum.elim_inl, dite_eq_left hex, hc]
+  refine ⟨Quot.lift ψ ?_, fun y ↦ rfl, hψ, fun x hx ↦ dite_eq_right hx⟩
+  rintro (x | x) (y | y) h
+  · exact h.elim
+  · obtain ⟨v, hv, hx, hy⟩ := h
+    rw [hψ x v hv hx]
+    simp [ψ, hy]
+  · exact h.elim
+  · exact h.elim
+
+theorem inr_injective (he₁ : Injective e₁) : Injective (inr e₁ e₂) := by
+  obtain ⟨Ψ, hΨ, -⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
   intro x y h
-  rw [← mk_inr, ← mk_inr, mk_eq_mk_iff he₁ he₂] at h
-  simpa using h
+  have := congrArg Ψ h
+  rw [hΨ, hΨ] at this
+  exact Subtype.ext (Option.some.inj this)
 
 /-- **The two punctured summands meet along the glued punctured balls**: `x` and `y` are
 identified exactly when `x = e₁ v` and `y = e₂ (inversion 0 1 v)` for some `v ≠ 0`. -/
-theorem inl_eq_inr_iff (he₁ : Injective e₁) (he₂ : Injective e₂) {x : puncture e₁}
-    {y : puncture e₂} :
+theorem inl_eq_inr_iff (he₁ : Injective e₁) {x : puncture e₁} {y : puncture e₂} :
     inl e₁ e₂ x = inr e₁ e₂ y ↔ ∃ v ≠ 0, e₁ v = x ∧ e₂ (inversion 0 1 v) = y := by
-  rw [← mk_inl, ← mk_inr, mk_eq_mk_iff he₁ he₂]
-  simp
+  refine ⟨fun h ↦ ?_, fun ⟨v, hv, hx, hy⟩ ↦ Quot.sound ⟨v, hv, hx, hy⟩⟩
+  obtain ⟨Ψ, hΨ₁, hΨ₂, hΨ₃⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
+  have h' := congrArg Ψ h
+  rw [hΨ₁] at h'
+  by_cases hv : ∃ v ≠ 0, e₁ v = x.1
+  · obtain ⟨v, hv0, hvx⟩ := hv
+    rw [hΨ₂ x v hv0 hvx] at h'
+    exact ⟨v, hv0, hvx, Option.some.inj h'⟩
+  · rw [hΨ₃ x hv] at h'
+    exact absurd h' (by simp)
 
 /-- The glued points determined by a nonzero vector `v`. -/
 theorem inl_eq_inr (v : E) (hx : e₁ v ∈ puncture e₁)
@@ -414,13 +448,13 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
     · rintro ⟨x' | y, hU, hxy⟩
       · rw [mk_inl, mk_inl, (inl_injective h₁.injective h₂.injective).eq_iff] at hxy
         exact Or.inl (hxy ▸ hU)
-      · rw [mk_inl, mk_inr, eq_comm, inl_eq_inr_iff h₁.injective h₂.injective] at hxy
+      · rw [mk_inl, mk_inr, eq_comm, inl_eq_inr_iff h₁.injective] at hxy
         obtain ⟨v, hv, hvx, hvy⟩ := hxy
         exact Or.inr ⟨v, ⟨hv, y, hU, hvy.symm⟩, hvx⟩
     · rintro (hx | ⟨v, ⟨hv, y, hyU, hy⟩, hvx⟩)
       · exact ⟨_, hx, rfl⟩
       · refine ⟨.inr y, hyU, ?_⟩
-        rw [mk_inl, mk_inr, eq_comm, inl_eq_inr_iff h₁.injective h₂.injective]
+        rw [mk_inl, mk_inr, eq_comm, inl_eq_inr_iff h₁.injective]
         exact ⟨v, hv, hvx, hy.symm⟩
   · -- `y` is in the saturation if it is in `U`, or if it is glued to a point of `U₁`; the
     -- gluing read from the second summand is again the inversion, an involution.
@@ -431,17 +465,17 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
     simp only [mem_union, mem_preimage, mem_image, U₁]
     constructor
     · rintro ⟨x | y', hU, hxy⟩
-      · rw [mk_inl, mk_inr, inl_eq_inr_iff h₁.injective h₂.injective] at hxy
+      · rw [mk_inl, mk_inr, inl_eq_inr_iff h₁.injective] at hxy
         obtain ⟨v, hv, hvx, hvy⟩ := hxy
         refine Or.inr ⟨inversion 0 1 v, ⟨by simpa [inversion_eq_center one_ne_zero] using hv, x,
           hU, ?_⟩, hvy⟩
         rw [inversion_inversion (0 : E) one_ne_zero, hvx]
-      · rw [mk_inr, mk_inr, (inr_injective h₁.injective h₂.injective).eq_iff] at hxy
+      · rw [mk_inr, mk_inr, (inr_injective h₁.injective).eq_iff] at hxy
         exact Or.inl (hxy ▸ hU)
     · rintro (hy | ⟨w, ⟨hw, x, hxU, hx⟩, hwy⟩)
       · exact ⟨_, hy, rfl⟩
       · refine ⟨.inl x, hxU, ?_⟩
-        rw [mk_inl, mk_inr, inl_eq_inr_iff h₁.injective h₂.injective]
+        rw [mk_inl, mk_inr, inl_eq_inr_iff h₁.injective]
         refine ⟨inversion 0 1 w, by simpa [inversion_eq_center one_ne_zero] using hw, hx.symm, ?_⟩
         rw [inversion_inversion (0 : E) one_ne_zero, hwy]
 
@@ -456,7 +490,7 @@ theorem isOpenEmbedding_inl (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddin
 theorem isOpenEmbedding_inr (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
     IsOpenEmbedding (inr e₁ e₂) :=
   .of_continuous_injective_isOpenMap (continuous_inr e₁ e₂)
-    (inr_injective h₁.injective h₂.injective)
+    (inr_injective h₁.injective)
     ((isOpenQuotientMap_mk h₁ h₂).isOpenMap.comp isOpenMap_inr)
 
 /-- **The connected sum of `T1` spaces is `T1`**: each point lies in one of the two punctured
@@ -562,7 +596,7 @@ theorem isLocalHomeomorph_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
     exact congrArg _ (inl_injective h₁.injective h₂.injective (by simpa using h))
   · refine key _ isOpen_range_inr ⟨y, rfl⟩ ?_
     rintro _ ⟨y, rfl⟩ _ ⟨y', rfl⟩ h
-    exact congrArg _ (inr_injective h₁.injective h₂.injective (by simpa using h))
+    exact congrArg _ (inr_injective h₁.injective (by simpa using h))
 
 /-- A point of the first summand outside the first ball and a point of the second summand outside
 the second ball are separated by open sets: the complements of the images of the closed unit
@@ -584,7 +618,7 @@ private theorem separated_inl_inr [T2Space M] [T2Space N] [ProperSpace E]
     ⟨x, fun ⟨v, _, hv⟩ ↦ hx ⟨v, hv⟩, rfl⟩, ⟨y, fun ⟨v, _, hv⟩ ↦ hy ⟨v, hv⟩, rfl⟩, ?_⟩
   · refine Set.disjoint_left.2 ?_
     rintro _ ⟨x', hx', rfl⟩ ⟨y', hy', hxy⟩
-    obtain ⟨v, _, hvx, hvy⟩ := (inl_eq_inr_iff h₁.injective h₂.injective).1 hxy.symm
+    obtain ⟨v, _, hvx, hvy⟩ := (inl_eq_inr_iff h₁.injective).1 hxy.symm
     simp only [mem_preimage, mem_compl_iff, ← hvx, ← hvy] at hx' hy'
     refine hy' ⟨_, ?_, rfl⟩
     have hv1 : 1 < ‖v‖ := not_le.1 fun h ↦ hx' ⟨v, by simpa using h, rfl⟩
@@ -601,20 +635,20 @@ private theorem inl_mem_range_inr_of_mem_range (h₁ : IsOpenEmbedding e₁)
   have hy : e₂ (inversion 0 1 v) ∈ puncture e₂ := by
     simpa [h₂.injective.eq_iff, inversion_eq_center one_ne_zero] using hv0
   refine ⟨⟨_, hy⟩, ?_⟩
-  rw [eq_comm, inl_eq_inr_iff h₁.injective h₂.injective]
+  rw [eq_comm, inl_eq_inr_iff h₁.injective]
   exact ⟨v, hv0, hv, rfl⟩
 
 /-- A point of the second summand lies in the first exactly when it is in the punctured second
 ball. -/
 private theorem inr_mem_range_inl_of_mem_range (h₁ : IsOpenEmbedding e₁)
-    (h₂ : IsOpenEmbedding e₂) {y : puncture e₂} (hy : (y : N) ∈ range e₂) :
+    {y : puncture e₂} (hy : (y : N) ∈ range e₂) :
     inr e₁ e₂ y ∈ range (inl e₁ e₂) := by
   obtain ⟨w, hw⟩ := hy
   have hw0 : w ≠ 0 := by rintro rfl; exact y.2 hw.symm
   have hx : e₁ (inversion 0 1 w) ∈ puncture e₁ := by
     simpa [h₁.injective.eq_iff, inversion_eq_center one_ne_zero] using hw0
   refine ⟨⟨_, hx⟩, ?_⟩
-  rw [inl_eq_inr_iff h₁.injective h₂.injective]
+  rw [inl_eq_inr_iff h₁.injective]
   refine ⟨inversion 0 1 w, by simpa [inversion_eq_center one_ne_zero] using hw0, rfl, ?_⟩
   rw [inversion_inversion (0 : E) one_ne_zero, hw]
 
@@ -637,7 +671,7 @@ theorem t2Space [T2Space M] [T2Space N] [ProperSpace E] (h₁ : IsOpenEmbedding 
     obtain ⟨x, rfl⟩ := hp
     obtain ⟨y, rfl⟩ := hq'
     exact separated_inl_inr h₁ h₂ (fun h ↦ hp' (inl_mem_range_inr_of_mem_range h₁ h₂ h))
-      fun h ↦ hq (inr_mem_range_inl_of_mem_range h₁ h₂ h)
+      fun h ↦ hq (inr_mem_range_inl_of_mem_range h₁ h)
   · have hp' : p ∈ range (inr e₁ e₂) := (hcov.symm ▸ mem_univ p).resolve_left hp
     by_cases hq' : q ∈ range (inr e₁ e₂)
     · obtain ⟨y, rfl⟩ := hp'
@@ -647,7 +681,7 @@ theorem t2Space [T2Space M] [T2Space N] [ProperSpace E] (h₁ : IsOpenEmbedding 
     obtain ⟨x, rfl⟩ := hq
     obtain ⟨u, v, hu, hv, hxu, hyv, huv⟩ := separated_inl_inr h₁ h₂
       (fun h ↦ hq' (inl_mem_range_inr_of_mem_range h₁ h₂ h))
-      fun h ↦ hp (inr_mem_range_inl_of_mem_range h₁ h₂ h)
+      fun h ↦ hp (inr_mem_range_inl_of_mem_range h₁ h)
     exact ⟨v, u, hv, hu, hyv, hxu, huv.symm⟩
   · have hp' : p ∈ range (inr e₁ e₂) := (hcov.symm ▸ mem_univ p).resolve_left hp
     have hq' : q ∈ range (inr e₁ e₂) := (hcov.symm ▸ mem_univ q).resolve_left hq
