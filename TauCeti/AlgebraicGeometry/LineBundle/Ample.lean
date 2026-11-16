@@ -35,7 +35,8 @@ on every affine scheme, and so is every torsion class there
 (`LineBundleClass.isAmple_of_pow_eq_one`).
 
 On a quasi-compact scheme, the affine nonvanishing neighbourhoods need only be
-constructed at closed points (`LineBundleClass.isAmple_iff_forall_isClosed`). No common tensor
+constructed at closed points (`LineBundleClass.isAmple_iff_forall_isClosed_singleton`).
+No common tensor
 power is required. Every ample class also admits a finite affine cover by such nonvanishing
 loci (`LineBundleClass.IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`).
 
@@ -51,7 +52,7 @@ loci (`LineBundleClass.IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`).
   then so is `a`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_one_iff`: the structure sheaf is ample
   exactly when `X` is quasi-affine.
-* `TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_iff_forall_isClosed`: on a quasi-compact
+* `LineBundleClass.isAmple_iff_forall_isClosed_singleton`: on a quasi-compact
   scheme, the defining affine nonvanishing neighbourhoods need only cover the closed points.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`:
   finitely many such nonvanishing loci cover a scheme carrying an ample class.
@@ -154,7 +155,7 @@ theorem isAmple_of_pow_eq_one [X.IsQuasiAffine] {a : LineBundleClass X} {n : ℕ
 
 /-- On a quasi-compact scheme, a line-bundle class is ample exactly when every closed
 point has an affine nonvanishing neighbourhood from a section of a positive tensor power. -/
-theorem isAmple_iff_forall_isClosed [CompactSpace X]
+theorem isAmple_iff_forall_isClosed_singleton [CompactSpace X]
     (a : LineBundleClass X) :
     a.IsAmple ↔ ∀ x : X, IsClosed {x} →
       ∃ n : ℕ, 0 < n ∧ ∃ (L : InvertibleSheaf X) (_ : mk L = a ^ n) (s : Γ(L.obj, ⊤)),
@@ -170,7 +171,8 @@ theorem isAmple_iff_forall_isClosed [CompactSpace X]
     obtain ⟨y, hy, hyc⟩ := U.isOpen.isClosed_compl.exists_closed_singleton ⟨x, hxU⟩
     exact hy (Opens.mem_iSup.mpr ⟨⟨y, hyc⟩, hx ⟨y, hyc⟩⟩)
   refine ⟨inferInstance, fun x ↦ ?_⟩
-  obtain ⟨y, hy⟩ := Opens.mem_iSup.mp (show x ∈ U by rw [hU]; trivial)
+  have hxU : x ∈ U := by rw [hU]; exact Opens.mem_top x
+  obtain ⟨y, hy⟩ := Opens.mem_iSup.mp hxU
   exact ⟨n y, hn y, L y, hL y, s y, hy, hs y⟩
 
 /-- An ample class admits a finite affine open cover by nonvanishing loci of sections of
