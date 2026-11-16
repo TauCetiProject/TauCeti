@@ -484,15 +484,6 @@ theorem memHolder_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : �
   rw [← toBoundedContinuousFunction_mixedDerivHolderL f h]
   exact (mixedDerivHolderL r m f).memHolder
 
-/-- The time slices of the fields of order `2 r + m = k - 1` are `(1 + α) / 2`-Hölder. -/
-theorem memHolder_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m + 1 = k) (x : E) :
-    MemHolder ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
-  have hm := (timeSliceL r m f x).memHolder
-  rwa [HolderSpace.coe_toBoundedContinuousFunction,
-    show (timeSliceL r m f x : Icc a b → E [×m]→L[ℝ] F) = fun t ↦ mixedDerivL r m f (slabMk x t)
-      from funext (timeSliceL_apply f h x)] at hm
-
 /-- The time slices of the fields of order `2 r + m = k - 1` are `(1 + α) / 2`-Hölder uniformly in
 space, with constant the norm of the family of slices. -/
 theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
@@ -503,6 +494,12 @@ theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) 
     lp.norm_apply_le_norm ENNReal.top_ne_zero _ x
   rw [← funext (timeSliceL_apply f h x)]
   exact ((timeSliceL r m f x).holderWith_nnnorm).mono hx
+
+/-- The time slices of the fields of order `2 r + m = k - 1` are `(1 + α) / 2`-Hölder. -/
+theorem memHolder_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m + 1 = k) (x : E) :
+    MemHolder ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) :=
+  ⟨_, holderWith_mixedDerivL_slabMk f h x⟩
 
 /-! ### The underlying map -/
 
