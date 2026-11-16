@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.ChordalDist
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
 import TauCeti.Topology.ConnectedComponents
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Null chains and prime ends

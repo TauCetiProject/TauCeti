@@ -22,11 +22,11 @@ invertible nearby, and `deg r = deg s + n`. For `n = 0` this recovers the struct
 The construction is adapted from Mathlib's
 `Mathlib/AlgebraicGeometry/ProjectiveSpectrum/StructureSheaf.lean` (Jujian Zhang), which builds the
 structure sheaf `AlgebraicGeometry.ProjectiveSpectrum.Proj.structureSheaf` through the same
-sequence `IsFraction`, `isFractionPrelocal`, `isLocallyFraction`, a presheaf of commutative rings
-(`AlgebraicGeometry.ProjectiveSpectrum.StructureSheaf.structurePresheafInCommRing`) and its
-comparison with the sheaf of types. Here the construction is adapted to a presheaf of abelian
-groups, and the passage to a presheaf of modules via `PresheafOfModules.ofPresheaf` follows
-`AlgebraicGeometry.moduleStructurePresheaf` in Mathlib's
+sequence `IsFraction`, `isFractionPrelocal`, `isLocallyFraction` and `subsheafToTypes`. Where
+Mathlib then passes to a presheaf of commutative rings
+(`AlgebraicGeometry.ProjectiveSpectrum.StructureSheaf.structurePresheafInCommRing`), the
+construction here uses a presheaf of abelian groups, and the passage to a presheaf of modules via
+`PresheafOfModules.ofPresheaf` follows `AlgebraicGeometry.moduleStructurePresheaf` in Mathlib's
 `Mathlib/AlgebraicGeometry/StructureSheaf.lean` (Johan Commelin, Kim Morrison, Andrew Yang).
 
 The fractions `r / s` form sections `AlgebraicGeometry.Proj.twistingSheaf.const`, and the
@@ -231,12 +231,6 @@ def twistingPresheafInAb (n : ℤ) : (Opens (ProjectiveSpectrum.top 𝒜))ᵒᵖ
   map_id _ := rfl
   map_comp _ _ := rfl
 
-/-- The presheaf of abelian groups `𝒪(n)` has the sheaf of types `𝒪(n)` as underlying presheaf
-of types. -/
-def twistingPresheafInAbCompForget (n : ℤ) :
-    twistingPresheafInAb 𝒜 n ⋙ forget Ab ≅ (twistingSheafInType 𝒜 n).obj :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
-
 /-- The twisting sheaf `𝒪(n)` as a presheaf of modules over the structure sheaf of `Proj`. -/
 def twistingPresheaf (n : ℤ) : PresheafOfModules.{u} (Proj 𝒜).ringCatSheaf.obj :=
   letI (U : (Proj 𝒜).Opensᵒᵖ) :
@@ -258,8 +252,7 @@ fractions `r / s` of homogeneous elements with `deg r = deg s + n`. -/
 def twistingSheaf (n : ℤ) : (Proj 𝒜).Modules where
   val := twistingPresheaf 𝒜 n
   isSheaf := (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget AddCommGrpCat) _).2
-    (TopCat.Presheaf.isSheaf_of_iso (twistingPresheafInAbCompForget 𝒜 n).symm
-      (twistingSheafInType 𝒜 n).2)
+    (twistingSheafInType 𝒜 n).2
 
 namespace twistingSheaf
 
