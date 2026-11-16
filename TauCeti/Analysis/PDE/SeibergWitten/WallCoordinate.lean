@@ -192,18 +192,11 @@ theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub [CompactS
     (ω.1 x) • riemannianVolumeForm o x)
   set P := poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
     (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩)
-  -- Young's inequality `-2 ⟨ρ, ω⟩₂ ≤ ‖ρ‖₂² + ‖ω‖₂²`, from `0 ≤ ‖ρ + ω‖₂² = R + 2 Q + A`.
-  have hQ : -(R + A) ≤ 2 * Q := by
-    have hsq := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o (ρ + ω).1
-    have ht (θ : SmoothForm I M ℝ 2) : θ ∈ compactlySupportedForms I M 2 := by
-      simp [compactlySupportedForms_eq_top]
-    rw [SmoothForm.integralTopForm_inner_add_left o rfl ρ ω (ρ + ω) (.inr (ht _)),
-      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o ρ.1,
-      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o ω.1,
-      SmoothForm.integralTopForm_inner_add_left o rfl ρ ω ρ (.inr (ht _)),
-      SmoothForm.integralTopForm_inner_add_left o rfl ρ ω ω (.inr (ht _)),
-      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o ω.1 ρ.1] at hsq
-    linarith
+  -- Young's inequality `-2 ⟨ρ, ω⟩₂ ≤ ‖ρ‖₂² + ‖ω‖₂²`.
+  have hQ : -(R + A) ≤ 2 * Q :=
+    SmoothForm.neg_add_le_two_mul_integralTopForm_inner o rfl
+      (by simp [compactlySupportedForms_eq_top])
+      (compactlySupportedClosedForms_le_compactlySupportedForms I 2 hω)
   have hR₀ : 0 ≤ R := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o ρ.1
   have hP : P ≤ b := (le_abs_self P).trans hb
   -- `r ≥ 4` from `4 a ≤ r a`, so the coefficient `r / 4 - 1 / 2` of `A ≥ a` is positive. Then

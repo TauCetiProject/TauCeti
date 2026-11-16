@@ -826,6 +826,27 @@ theorem integralTopForm_inner_smul_left (o : Manifold.Orientation I M (Fin m)) (
   rw [Submodule.coe_smul, Pi.smul_apply, LinearMap.map_smul₂, Pi.smul_apply, smul_eq_mul,
     mul_smul]
 
+/-- **Young's inequality for the `L²` pairing**: on an oriented Riemannian manifold of positive
+dimension `m = k + l`, compactly supported smooth `k`-forms satisfy
+`-(∫_M |α|² vol + ∫_M |β|² vol) ≤ 2 ∫_M ⟨α, β⟩ vol`, from `0 ≤ ∫_M |α + β|² vol`. -/
+theorem neg_add_le_two_mul_integralTopForm_inner [NeZero m] (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α β : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k)
+    (hβ : β ∈ compactlySupportedForms I M k) :
+    -(integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •
+        riemannianVolumeForm o x) +
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.1 x) (β.1 x) •
+        riemannianVolumeForm o x)) ≤
+      2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
+        riemannianVolumeForm o x) := by
+  have hsq := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o (α + β).1
+  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.1,
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.1,
+    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
+    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.1 α.1] at hsq
+  linarith
+
 /-! ### Green's formulas and positivity of a Laplacian -/
 
 section Laplacian
