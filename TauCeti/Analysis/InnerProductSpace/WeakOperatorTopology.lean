@@ -101,6 +101,15 @@ theorem isClosed_setOf_isPositive : IsClosed {T : E →WOT[𝕜] E | (toCLM T).I
   exact (isClosed_iInter fun x => isClosed_iInter fun y => isClosed_eq (hr x y) (hl x y)).inter
     (isClosed_iInter fun x => isClosed_le continuous_const (hr x x))
 
+/-- The self-adjoint operators form a weak operator closed set. -/
+theorem isClosed_image_ofCLM_selfAdjoint :
+    IsClosed (ofCLM '' (selfAdjoint (E →L[𝕜] E) : Set (E →L[𝕜] E))) := by
+  convert isClosed_eq (continuous_star (R := E →WOT[𝕜] E)) continuous_id using 1
+  ext T
+  obtain ⟨x, rfl⟩ := ofCLM_surjective T
+  rw [ofCLM_injective.mem_set_image]
+  exact ofCLM_injective.eq_iff.symm
+
 /-- The set of operators above `a` in the Loewner order is weak operator closed. -/
 theorem isClosed_image_ofCLM_Ici {a : E →L[𝕜] E} :
     IsClosed (ofCLM '' Set.Ici a) := by

@@ -52,6 +52,20 @@ theorem continuous_ofPointwiseConvergenceCLM :
   intro x y
   exact y.continuous.comp (continuous_eval_const x)
 
+/-- Any set of operators whose weak operator image is closed also has closed pointwise
+(strong operator) image. -/
+theorem isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM
+    [ContinuousSMul 𝕜₁ E] {s : Set (E →SL[σ] F)} (hs : IsClosed (ofCLM '' s)) :
+    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) := by
+  convert hs.preimage continuous_ofPointwiseConvergenceCLM using 1
+  ext T
+  simp only [Set.mem_image, Set.mem_preimage, ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
+  constructor
+  · rintro ⟨a, ha, h⟩
+    exact ⟨a, ha, congrArg ofCLM h⟩
+  · rintro ⟨a, ha, h⟩
+    exact ⟨a, ha, ofCLM_injective h⟩
+
 end ContinuousLinearMapWOT
 
 namespace Set
