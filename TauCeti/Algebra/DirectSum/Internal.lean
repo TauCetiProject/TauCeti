@@ -462,7 +462,7 @@ private theorem injective_coeLinearMap_iSup_fiber {R M ι κ : Type*} [Semiring 
       projection j x = if degree i = j then (x : M) else 0 := by
     simp only [projection, LinearMap.comp_apply, LinearEquiv.coe_coe,
       decomposeLinearEquiv_apply_coe, toModule_lof]
-    split <;> rfl
+    split <;> simp
   have projection_mem (j k : κ) {x : M} (hx : x ∈ Q k) :
       projection j x = if k = j then x else 0 := by
     dsimp only [Q] at hx
@@ -479,10 +479,10 @@ private theorem injective_coeLinearMap_iSup_fiber {R M ι κ : Type*} [Semiring 
     | of k x =>
         rw [coeLinearMap_of, projection_mem j k x.property]
         simp only [coe_of_apply]
-        split <;> rfl
+        split <;> simp
     | add x y ihx ihy =>
         rw [map_add (coeLinearMap Q), map_add (projection j), ihx, ihy]
-        rfl
+        rw [add_apply, Submodule.coe_add]
   intro x y hxy
   apply ext fun j ↦ Subtype.ext ?_
   exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
