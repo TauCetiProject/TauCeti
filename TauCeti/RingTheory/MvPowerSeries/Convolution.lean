@@ -128,41 +128,34 @@ theorem eq_zero_or_eq_zero_of_convSMul_eq_zero [IsCancelMulZero R] [Module.IsTor
     {f : MvPowerSeries σ R} {a : (σ →₀ ℕ) → E} (h : convSMul f a = 0) :
     f = 0 ∨ a = 0 := by
   classical
-  by_contra! hne
-  obtain ⟨hf, ha⟩ := hne
+  by_contra! ⟨hf, ha⟩
   rcases exists_wellFoundedGT σ with ⟨_, _⟩
   obtain ⟨p, hp⟩ := exists_finsupp_eq_lexOrder_of_ne_zero hf
   have hsup : (toLex '' Function.support a).Nonempty :=
     (Function.support_nonempty_iff.mpr ha).image _
-  let wf : WellFounded (· < · : Lex (σ →₀ ℕ) → Lex (σ →₀ ℕ) → Prop) :=
-    Finsupp.Lex.wellFoundedLT
-  set qLex := wf.min (toLex '' Function.support a) hsup
-  let q : σ →₀ ℕ := ofLex qLex
+  let wf : WellFounded (· < · : Lex (σ →₀ ℕ) → Lex (σ →₀ ℕ) → Prop) := Finsupp.Lex.wellFoundedLT
+  let q : σ →₀ ℕ := ofLex (wf.min (toLex '' Function.support a) hsup)
   have hq_ne : a q ≠ 0 := by
-    have hmem := wf.min_mem (toLex '' Function.support a) hsup
-    simpa only [q, Set.mem_image_equiv, toLex_symm_eq, Function.mem_support] using hmem
-  have hq_min {v : σ →₀ ℕ} (hv : toLex v < toLex q) : a v = 0 := by
-    by_contra hv_ne
-    exact wf.not_lt_min (toLex '' Function.support a)
-      (Set.mem_image_of_mem _ hv_ne) (by simpa only [q, toLex_ofLex] using hv)
+    simpa only [q, Set.mem_image_equiv, toLex_symm_eq, Function.mem_support] using wf.min_mem _ hsup
+  have hq_min {v : σ →₀ ℕ} (hv : toLex v < toLex q) : a v = 0 := by_contra fun hv_ne ↦
+    wf.not_lt_min _ (Set.mem_image_of_mem _ hv_ne) (by simpa only [q, toLex_ofLex] using hv)
   have hsum : convSMul f a (p + q) = coeff p f • a q := by
     rw [convSMul_apply, Finset.sum_eq_single_of_mem (p, q) (by simp)]
     rintro ⟨u, v⟩ huv hne_uv
-    simp only [Finset.mem_antidiagonal] at huv
-    rcases trichotomy_of_add_eq_add (congrArg toLex huv) with htri | htri | htri
-    · exact False.elim (hne_uv (Prod.ext (toLex.injective htri.1) (toLex.injective htri.2)))
-    · have hu : toLex u < lexOrder f := by rw [hp]; exact WithTop.coe_lt_coe.mpr htri
-      rw [coeff_eq_zero_of_lt_lexOrder hu, zero_smul]
+    rcases trichotomy_of_add_eq_add (congrArg toLex (Finset.mem_antidiagonal.mp huv)) with
+      htri | htri | htri
+    · exact (hne_uv (Prod.ext (toLex.injective htri.1) (toLex.injective htri.2))).elim
+    · rw [coeff_eq_zero_of_lt_lexOrder (hp ▸ WithTop.coe_lt_coe.mpr htri), zero_smul]
     · rw [hq_min htri, smul_zero]
-  have hpq : coeff p f • a q = 0 := by rw [← hsum, h, Pi.zero_apply]
-  exact (smul_eq_zero.mp hpq).elim (coeff_ne_zero_of_lexOrder hp.symm) hq_ne
+  exact (smul_eq_zero.mp (by rw [← hsum, h, Pi.zero_apply])).elim
+    (coeff_ne_zero_of_lexOrder hp.symm) hq_ne
 
 @[simp]
 theorem convSMul_eq_zero [IsCancelMulZero R] [Module.IsTorsionFree R E]
     {f : MvPowerSeries σ R} {a : (σ →₀ ℕ) → E} :
     convSMul f a = 0 ↔ f = 0 ∨ a = 0 :=
-  ⟨eq_zero_or_eq_zero_of_convSMul_eq_zero, fun h ↦ h.elim (fun hf ↦ by simp [hf]) fun ha ↦ by
-    simp [ha]⟩
+  ⟨eq_zero_or_eq_zero_of_convSMul_eq_zero,
+    fun h ↦ h.elim (fun hf ↦ by simp [hf]) (fun ha ↦ by simp [ha])⟩
 
 /-- For an `R`-algebra `S` and an `R`-submodule `E ⊆ S` with torsion-free quotient `S ⧸ E`, if
 `f : MvPowerSeries σ R` is nonzero and every coefficient of `map (algebraMap R S) f * g` lies in
@@ -180,11 +173,9 @@ theorem coeff_mem_of_coeff_map_mul_mem {R : Type*} {S : Type*} [CommRing R] [IsC
       Submodule.Quotient.mk_eq_zero]
     convert hfg d using 2
     rw [convSMul_apply, coeff_mul]
-    refine Finset.sum_congr rfl fun pq _ ↦ ?_
-    rw [Algebra.smul_def, coeff_map]
-  have ha0 : (E.mkQ ∘ fun d ↦ coeff d g) = 0 :=
-    (eq_zero_or_eq_zero_of_convSMul_eq_zero hconv).resolve_left hf
-  exact (Submodule.Quotient.mk_eq_zero E).mp (congrFun ha0 t)
+    exact Finset.sum_congr rfl fun _ _ ↦ by rw [Algebra.smul_def, coeff_map]
+  exact (Submodule.Quotient.mk_eq_zero E).mp <|
+    congrFun ((eq_zero_or_eq_zero_of_convSMul_eq_zero hconv).resolve_left hf) t
 
 /-- For an `R`-algebra `S` and an `R`-saturated submodule `E ⊆ S`, if `f : MvPowerSeries σ R` is
 nonzero and every coefficient of `map (algebraMap R S) f * g` lies in `E`, then every coefficient
@@ -196,19 +187,14 @@ theorem coeff_mem_of_coeff_map_mul_mem_of_smul_mem {R : Type*} {S : Type*} [Comm
     coeff t g ∈ E := by
   by_contra ht
   have : Nontrivial R := ⟨1, 0, fun h10 ↦ ht <| by
-    rw [← one_smul R (coeff t g), h10, zero_smul]
-    exact E.zero_mem⟩
-  have : NoZeroDivisors R := ⟨fun {a b} hab ↦ by
-    by_contra! hab'
-    refine ht (hE hab'.2 (hE hab'.1 ?_))
-    rw [← mul_smul, hab, zero_smul]
-    exact E.zero_mem⟩
+    rw [← one_smul R (coeff t g), h10, zero_smul]; exact E.zero_mem⟩
+  have : NoZeroDivisors R := ⟨fun {a b} hab ↦ by_contra fun hab' ↦ by
+    push Not at hab'
+    exact ht (hE hab'.2 (hE hab'.1 (by rw [← mul_smul, hab, zero_smul]; exact E.zero_mem)))⟩
   have : Module.IsTorsionFree R (S ⧸ E) := .of_smul_eq_zero fun r x hrx ↦ by
     obtain ⟨s, rfl⟩ := Submodule.Quotient.mk_surjective E x
-    by_cases hr : r = 0
-    · exact Or.inl hr
-    · exact Or.inr ((Submodule.Quotient.mk_eq_zero E).mpr
-        (hE hr ((Submodule.Quotient.mk_eq_zero E).mp hrx)))
+    exact (eq_or_ne r 0).imp_right fun hr ↦ (Submodule.Quotient.mk_eq_zero E).mpr
+      (hE hr ((Submodule.Quotient.mk_eq_zero E).mp hrx))
   exact ht (coeff_mem_of_coeff_map_mul_mem E hf hfg t)
 
 end MvPowerSeries

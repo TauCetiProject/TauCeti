@@ -115,25 +115,21 @@ private theorem exists_bounded_dual_ne_zero_frobeniusRoot [CompleteSpace K] (p :
     ∃ (φ : Submodule.span K S →ₗ[K] K) (C : ℝ), (∀ y, ‖φ y‖ ≤ C * ‖y‖) ∧ φ x ≠ 0 := by
   by_cases hnt : ∃ a : K, 1 < ‖a‖
   · let : NontriviallyNormedField K := { ‹NormedField K› with non_trivial := hnt }
-    have : SeparatingDual K (Submodule.span K S) :=
-      Submodule.separatingDual_span_of_countable hS
+    have : SeparatingDual K (Submodule.span K S) := Submodule.separatingDual_span_of_countable hS
     obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) hx
     exact ⟨f_dual.toLinearMap, ‖f_dual‖, f_dual.le_opNorm, hf_ne⟩
   · push Not at hnt
-    have hK_eq_one {a : K} (ha : a ≠ 0) : ‖a‖ = 1 := by
-      refine le_antisymm (hnt a) ?_
+    have hK_one {a : K} (ha : a ≠ 0) : ‖a‖ = 1 := le_antisymm (hnt a) <| by
       have hmul := norm_mul a a⁻¹
       rw [mul_inv_cancel₀ ha, norm_one] at hmul
       nlinarith [hnt a⁻¹, norm_nonneg a]
-    have hy_eq_one {y : Submodule.span K S} (hy : y ≠ 0) : ‖y‖ = 1 := by
-      have hval_ne : FrobeniusRoot.val K p e (y : FrobeniusRoot K p e) ≠ 0 :=
-        (map_ne_zero_iff _ (RingHom.injective _)).mpr (Subtype.coe_ne_coe.mpr hy)
-      rw [← Submodule.norm_coe, FrobeniusRoot.norm_def, hK_eq_one hval_ne, Real.one_rpow]
     obtain ⟨φ, hφx⟩ := Module.Projective.exists_dual_ne_zero K hx
     refine ⟨φ, 1, fun y ↦ ?_, hφx⟩
     rcases eq_or_ne y 0 with rfl | hy
     · simp
-    · rw [hy_eq_one hy, mul_one]
+    · have hval : FrobeniusRoot.val K p e (y : FrobeniusRoot K p e) ≠ 0 :=
+        (map_ne_zero_iff _ (RingHom.injective _)).mpr (Subtype.coe_ne_coe.mpr hy)
+      rw [← Submodule.norm_coe, FrobeniusRoot.norm_def, hK_one hval, Real.one_rpow, mul_one]
       exact hnt (φ y)
 
 /-- Since `T = K{X / c}` is integrally closed, extracting formal `p ^ e`-th roots of `y ^ p ^ e ∈ T`
@@ -165,29 +161,26 @@ private theorem exists_frobeniusRoot_integralClosure_map [Finite σ]
         (∀ {y}, y ≠ 0 → ζ y ≠ 0) := by
   intro K' T F T' F' Ψ ι₀
   have : ExpChar F' p := expChar_of_injective_algebraMap (algebraMap K' F').injective p
-  have hΨ_inj : Function.Injective Ψ := frobeniusRootRestrictedHom_injective p e hr
+  have hΨ_inj := frobeniusRootRestrictedHom_injective (K := K) p e hr
   let _ : Algebra F F' := (Ψ.gaussFractionFieldMap hΨ_inj).toAlgebra
   have hF_alg (x : F) : algebraMap F F' x = Ψ.gaussFractionFieldMap hΨ_inj x := rfl
-  let aOf (y : integralClosure T M) : T :=
-    (IsIntegral.exists_algebraMap_eq_iterateFrobenius (A := T) (K := F) p he y.2).choose
-  have haOf (y : integralClosure T M) :
-      algebraMap T F (aOf y) = IsPurelyInseparable.iterateFrobenius F M p he (y : M) :=
-    (IsIntegral.exists_algebraMap_eq_iterateFrobenius (A := T) (K := F) p he y.2).choose_spec
+  choose aOf haOf using fun y : integralClosure T M ↦
+    IsIntegral.exists_algebraMap_eq_iterateFrobenius (A := T) (K := F) p he y.2
   let ζ (y : integralClosure T M) : T' := frobeniusRootRestrictedEquiv p e hr_def (aOf y)
-  have hζ_alg (y : integralClosure T M) : algebraMap T' F' (ζ y) = ι₀ (y : M) := by
-    refine iterateFrobenius_inj F' p e ?_
-    simp only [iterateFrobenius_def]
-    rw [← map_pow, frobeniusRootRestrictedEquiv_pow hr_def hr (aOf y),
-      ← Ψ.gaussFractionFieldMap_algebraMap hΨ_inj, ← hF_alg, haOf, ← AlgHom.commutes ι₀,
-      IsPurelyInseparable.algebraMap_iterateFrobenius F p he (y : M), map_pow]
-  refine ⟨ζ, hζ_alg, fun y₁ y₂ ↦ IsFractionRing.injective T' F' ?_,
-    fun t y ↦ IsFractionRing.injective T' F' ?_, fun {y} hy h0 ↦ hy ?_⟩
-  · rw [map_add, hζ_alg (y₁ + y₂), hζ_alg y₁, hζ_alg y₂, AddMemClass.coe_add, map_add]
-  · rw [map_mul, hζ_alg (t • y), hζ_alg y, Subalgebra.coe_smul, Algebra.smul_def, map_mul,
-      IsScalarTower.algebraMap_apply T F M, AlgHom.commutes, hF_alg,
-      Ψ.gaussFractionFieldMap_algebraMap hΨ_inj]
-  · exact ZeroMemClass.coe_eq_zero.mp <| (map_eq_zero_iff ι₀ ι₀.injective).mp <| by
-      rw [← hζ_alg, h0, map_zero]
+  have hζ_alg (y : integralClosure T M) : algebraMap T' F' (ζ y) = ι₀ (y : M) :=
+    iterateFrobenius_inj F' p e <| by
+      simp only [iterateFrobenius_def]
+      rw [← map_pow, frobeniusRootRestrictedEquiv_pow hr_def hr (aOf y),
+        ← Ψ.gaussFractionFieldMap_algebraMap hΨ_inj, ← hF_alg, haOf, ← AlgHom.commutes ι₀,
+        IsPurelyInseparable.algebraMap_iterateFrobenius F p he (y : M), map_pow]
+  refine ⟨ζ, hζ_alg, fun y₁ y₂ ↦ IsFractionRing.injective T' F' <| by
+      rw [map_add, hζ_alg, hζ_alg, hζ_alg, AddMemClass.coe_add, map_add],
+    fun t y ↦ IsFractionRing.injective T' F' <| by
+      rw [map_mul, hζ_alg, hζ_alg, Subalgebra.coe_smul, Algebra.smul_def, map_mul,
+        IsScalarTower.algebraMap_apply T F M, AlgHom.commutes, hF_alg,
+        Ψ.gaussFractionFieldMap_algebraMap hΨ_inj],
+    fun {y} hy h0 ↦ hy <| ZeroMemClass.coe_eq_zero.mp <| (map_eq_zero_iff ι₀ ι₀.injective).mp <| by
+      rw [← hζ_alg, h0, map_zero]⟩
 
 /-- Clearing denominators of the `b`-coordinates of `y` and descending along
 `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem` shows that any `z ∈ (FrobeniusRoot K p e){X / r}`
@@ -213,20 +206,17 @@ private theorem coeff_mem_of_algebraMap_eq_apply
   classical
   let K' := FrobeniusRoot K p e
   let T := IsRestricted.subring (R := K) c
-  let T' := IsRestricted.subring (R := K') r
-  let F' := GaussFractionField σ K' r
-  let Ψ : T →+* T' := frobeniusRootRestrictedHom p e hr
-  have hΨ_inj : Function.Injective Ψ := frobeniusRootRestrictedHom_injective p e hr
+  let Ψ := frobeniusRootRestrictedHom (K := K) p e hr
+  have hΨ_inj := frobeniusRootRestrictedHom_injective (K := K) p e hr
   have hq : p ^ e ≠ 0 := (pow_pos (expChar_pos K p) e).ne'
   obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finset (nonZeroDivisors T)
     (Finset.univ.image (b.repr y))
   choose a ha using fun j : Fin m ↦ hs (b.repr y j) (Finset.mem_image_of_mem _ (by simp))
-  have hs_ne : (s : T) ≠ 0 := nonZeroDivisors.ne_zero s.2
   have hclear : Ψ s * z = ∑ j, Ψ (a j) * rootG j :=
-    IsFractionRing.injective T' F' <| by
+    IsFractionRing.injective (IsRestricted.subring (R := K') r) (GaussFractionField σ K' r) <| by
       rw [map_mul, hz, ← algebraMap_sum_mul_eq_mul b Ψ rootG ι hι_alg hι_b y s a ha]
   have hexp_ne : _root_.MvPowerSeries.expand (p ^ e) hq ((s : T) : _root_.MvPowerSeries σ K) ≠ 0 :=
-    fun h0 ↦ hΨ_inj.ne hs_ne <| by
+    fun h0 ↦ hΨ_inj.ne (nonZeroDivisors.ne_zero s.2) <| by
       rw [Ψ.map_zero]
       exact Subtype.ext (by rw [coe_frobeniusRootRestrictedHom p e hr (s : T), h0, map_zero]; rfl)
   refine _root_.MvPowerSeries.coeff_mem_of_coeff_map_mul_mem E hexp_ne
@@ -234,13 +224,13 @@ private theorem coeff_mem_of_algebraMap_eq_apply
   have hβ : _root_.MvPowerSeries.map (algebraMap K K')
       (_root_.MvPowerSeries.expand (p ^ e) hq ((s : T) : _root_.MvPowerSeries σ K)) *
         (z : _root_.MvPowerSeries σ K') =
-      ((∑ j, Ψ (a j) * rootG j : T') : _root_.MvPowerSeries σ K') := by
-    rw [← coe_frobeniusRootRestrictedHom p e hr (s : T), ← Subring.coe_mul, hclear]
+      ((∑ j, Ψ (a j) * rootG j : IsRestricted.subring (R := K') r) : _root_.MvPowerSeries σ K') :=
+    by rw [← coe_frobeniusRootRestrictedHom p e hr (s : T), ← Subring.coe_mul, hclear]
   rw [hβ, AddSubmonoidClass.coe_finsetSum, map_sum]
   refine E.sum_mem fun j _ ↦ ?_
   rw [frobeniusRootRestrictedHom_apply]
   exact coeff_restrictedExpand_restrictedMap_mul_mem hq hr
-    (fun x ↦ by rw [one_mul, FrobeniusRoot.norm_algebraMap]) E (a j) (hrootG_mem j) β
+    (fun _ ↦ by rw [one_mul, FrobeniusRoot.norm_algebraMap]) E (a j) (hrootG_mem j) β
 
 end PurelyInseparableHelpers
 
@@ -273,16 +263,13 @@ theorem finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable 
   let e := IsPurelyInseparable.exponent F M
   let q := p ^ e
   have hq : q ≠ 0 := (pow_pos (expChar_pos K p) e).ne'
-  have hqR_ne : (q : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hq
   -- Embed `M` over `F` into `F' = GaussFractionField σ (FrobeniusRoot K p e) r` (`r ^ q = c`).
   let K' := FrobeniusRoot K p e
   let r : σ → ℝ := fun i ↦ c i ^ ((q : ℝ)⁻¹)
-  have hr_fact : ∀ i, Fact (0 < r i) := fun i ↦
-    ⟨Real.rpow_pos_of_pos (Fact.out : 0 < c i) _⟩
+  have hr_fact : ∀ i, Fact (0 < r i) := fun i ↦ ⟨Real.rpow_pos_of_pos (Fact.out : 0 < c i) _⟩
   have hr (i : σ) : r i ^ q = c i := by
-    dsimp only [r, q]
     rw [← Real.rpow_natCast, ← Real.rpow_mul (Fact.out : 0 < c i).le,
-      inv_mul_cancel₀ hqR_ne, Real.rpow_one]
+      inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hq), Real.rpow_one]
   let Ψ := frobeniusRootRestrictedHom (K := K) p e hr
   let _ : Algebra F (GaussFractionField σ K' r) :=
     (Ψ.gaussFractionFieldMap (frobeniusRootRestrictedHom_injective p e hr)).toAlgebra
@@ -292,9 +279,8 @@ theorem finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable 
   obtain ⟨ζ, hζ_alg, hζ_add, hζ_smul, hζ_ne⟩ :=
     exists_frobeniusRoot_integralClosure_map M p e le_rfl (fun _ ↦ rfl) hr ι₀
   -- All coefficients of `ζ y` lie in the countably generated `K`-submodule `E ⊆ K'`.
-  let S : Set K' := Set.range fun idx : Fin m × (σ →₀ ℕ) ↦
-    coeff idx.2 (rootG idx.1 : _root_.MvPowerSeries σ K')
-  let E : Submodule K K' := Submodule.span K S
+  let E : Submodule K K' := Submodule.span K (Set.range fun idx : Fin m × (σ →₀ ℕ) ↦
+    coeff idx.2 (rootG idx.1 : _root_.MvPowerSeries σ K'))
   have hζ_mem (y : integralClosure T M) (α : σ →₀ ℕ) :
       coeff α (ζ y : _root_.MvPowerSeries σ K') ∈ E :=
     coeff_mem_of_algebraMap_eq_apply p e hr b rootG ι₀.toRingHom hι_alg hι_b E
@@ -303,11 +289,13 @@ theorem finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable 
   have : IsNoetherianRing T := isNoetherianRing_isRestricted_subring
   refine (TauCeti.IsIntegralClosure.finite_iff_injective_dual_eval T F M (integralClosure T M)).mpr
     (Module.Dual.injective_eval_iff.mpr fun y₀ hy₀ ↦ ?_)
-  obtain ⟨ν, hν, φ, B, hφ, hπ_ne⟩ :=
+  obtain ⟨ν, hν, φ, _, hφ, hπ_ne⟩ :=
     exists_toSubringDualOfBound_restrictedExpandComponentFamily_ne_zero hq hr E
       (exists_bounded_dual_ne_zero_frobeniusRoot p e (Set.countable_range _))
       (hζ_ne hy₀) (hζ_mem y₀)
   let π := IsRestrictedFamily.toSubringDualOfBound (c := c) φ hφ
+  have h_iso (a : K) : ‖algebraMap K K' a‖ ≤ 1 * ‖a‖ := by
+    rw [one_mul, FrobeniusRoot.norm_algebraMap]
   refine ⟨{
     toFun y := π (restrictedExpandComponentFamily hq hr ν E (ζ y) (hζ_mem y))
     map_add' y₁ y₂ := by
@@ -316,12 +304,9 @@ theorem finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable 
           rw [AddMemClass.coe_add, map_add]; exact E.add_mem (hζ_mem y₁ α) (hζ_mem y₂ α))]
       exact congrArg π (restrictedExpandComponentFamily_congr hq hr ν E (hζ_add y₁ y₂))
     map_smul' t y := by
-      have h_iso (a : K) : ‖algebraMap K K' a‖ ≤ 1 * ‖a‖ := by
-        rw [one_mul, FrobeniusRoot.norm_algebraMap]
-      rw [RingHom.id_apply, ← map_smul,
-        ← restrictedExpandComponentFamily_restrictedExpand_mul hq hr hν h_iso E t (ζ y)
-          (hζ_mem y) (hz_mul := coeff_restrictedExpand_restrictedMap_mul_mem hq hr h_iso E t
-            (hζ_mem y))]
+      rw [RingHom.id_apply, ← map_smul, ← restrictedExpandComponentFamily_restrictedExpand_mul hq hr
+        hν h_iso E t (ζ y) (hζ_mem y)
+        (hz_mul := coeff_restrictedExpand_restrictedMap_mul_mem hq hr h_iso E t (hζ_mem y))]
       exact congrArg π (restrictedExpandComponentFamily_congr hq hr ν E
         ((hζ_smul t y).trans (congrArg (· * ζ y) (frobeniusRootRestrictedHom_apply p e hr t)))) },
     hπ_ne⟩
@@ -393,22 +378,20 @@ example (p : ℕ) [Fact p.Prime] [CharP K p] (i : σ) :
   have : ExpChar (AdjoinRoot P) p := .prime hp_prime
   have hP_deg : P.natDegree = p := by
     rw [natDegree_sub_eq_left_of_natDegree_lt (by simpa using hp_prime.pos), natDegree_X_pow]
-  have hfinrank : Module.finrank F (AdjoinRoot P) = p :=
-    ((AdjoinRoot.powerBasis hP_irr.ne_zero).finrank.trans
-      (AdjoinRoot.powerBasis_dim hP_irr.ne_zero)).trans hP_deg
   -- Since `root P ^ p = xi ∈ F`, `AdjoinRoot P` equals its relative perfect closure over `F`.
-  have hinsep : IsPurelyInseparable F (AdjoinRoot P) := by
-    have htop : Subalgebra.perfectClosure F (AdjoinRoot P) p = ⊤ :=
-      eq_top_iff.mpr <| (AdjoinRoot.adjoinRoot_eq_top (R := F) (f := P)).symm.trans_le <|
-        Algebra.adjoin_le <| Set.singleton_subset_iff.mpr <|
-          Subalgebra.mem_perfectClosure_iff.mpr <| by
-            have h0 := AdjoinRoot.eval₂_root P
-            rw [eval₂_sub, eval₂_X_pow, Polynomial.eval₂_C, sub_eq_zero] at h0
-            exact ⟨1, xi, by rw [pow_one, h0]; rfl⟩
-    exact (isPurelyInseparable_iff_pow_mem F p).mpr fun y ↦
-      Subalgebra.mem_perfectClosure_iff.mp (htop ▸ Algebra.mem_top)
+  have htop : Subalgebra.perfectClosure F (AdjoinRoot P) p = ⊤ :=
+    eq_top_iff.mpr <| (AdjoinRoot.adjoinRoot_eq_top (R := F) (f := P)).symm.trans_le <|
+      Algebra.adjoin_le <| Set.singleton_subset_iff.mpr <| Subalgebra.mem_perfectClosure_iff.mpr <|
+        by
+          have h0 := AdjoinRoot.eval₂_root P
+          rw [eval₂_sub, eval₂_X_pow, Polynomial.eval₂_C, sub_eq_zero] at h0
+          exact ⟨1, xi, by rw [pow_one, h0]; rfl⟩
   exact ⟨AdjoinRoot P, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    hinsep, hfinrank, Ring.IsJapanese.finite_integralClosure F (AdjoinRoot P)⟩
+    (isPurelyInseparable_iff_pow_mem F p).mpr fun _ ↦
+      Subalgebra.mem_perfectClosure_iff.mp (htop ▸ Algebra.mem_top),
+    ((AdjoinRoot.powerBasis hP_irr.ne_zero).finrank.trans
+      (AdjoinRoot.powerBasis_dim hP_irr.ne_zero)).trans hP_deg,
+    Ring.IsJapanese.finite_integralClosure F (AdjoinRoot P)⟩
 
 /-- In arbitrary characteristic (including characteristic `2`), `Y^2 + X_i^2 Y + X_i = 0` defines a
 degree-`2` separable field extension of `GaussFractionField σ K c` in which the integral closure of
@@ -427,38 +410,28 @@ example (i : σ) :
   let xi : F := algebraMap T F ⟨_root_.MvPowerSeries.X i, isRestricted_X c i⟩
   have hxi_ne : xi ≠ 0 := by
     rw [← norm_pos_iff, norm_algebraMap_gaussFractionField_X]; exact Fact.out
-  -- Step 1: `P = X^2 + xi^2 X + xi` is monic of degree `2`, rootless over `F`, irreducible,
-  -- and separable (since `P'(0) = xi^2 ≠ 0`).
   let P : F[X] := Polynomial.X ^ 2 + Polynomial.C (xi ^ 2) * Polynomial.X + Polynomial.C xi
   have hP_deg : P.natDegree = 2 := by dsimp only [P]; compute_degree!
   have hP_monic : P.Monic := by dsimp only [P]; monicity!
-  have hP_irr : Irreducible P :=
-    Polynomial.irreducible_of_degree_le_three_of_not_isRoot (by rw [hP_deg]; decide)
-      (not_isRoot_X_sq_add_C_sq_mul_X_add_C σ K c i)
-  have hP_sep : P.Separable := by
-    rw [separable_iff_derivative_ne_zero hP_irr]
-    exact fun hderiv ↦
-      pow_ne_zero 2 hxi_ne (by simpa [P, eq_comm] using congrArg (Polynomial.eval 0) hderiv)
-  -- Step 2: Conclude separability, dimension `2`, and finite normalization of `AdjoinRoot P`.
+  have hP_irr : Irreducible P := Polynomial.irreducible_of_degree_le_three_of_not_isRoot
+    (by rw [hP_deg]; decide) (not_isRoot_X_sq_add_C_sq_mul_X_add_C σ K c i)
+  have hP_sep : P.Separable := (separable_iff_derivative_ne_zero hP_irr).mpr fun hderiv ↦
+    pow_ne_zero 2 hxi_ne (by simpa [P, eq_comm] using congrArg (Polynomial.eval 0) hderiv)
   have : Fact (Irreducible P) := ⟨hP_irr⟩
-  have : FiniteDimensional F (AdjoinRoot P) := (AdjoinRoot.powerBasis hP_irr.ne_zero).finite
-  have hmin : minpoly F (AdjoinRoot.powerBasis hP_irr.ne_zero).gen = P :=
+  let pb := AdjoinRoot.powerBasis hP_irr.ne_zero
+  have : FiniteDimensional F (AdjoinRoot P) := pb.finite
+  have hmin : minpoly F pb.gen = P :=
     AdjoinRoot.minpoly_powerBasis_gen_of_monic hP_monic hP_irr.ne_zero
-  have hgen_sep : IsSeparable F (AdjoinRoot.powerBasis hP_irr.ne_zero).gen := by
-    rwa [IsSeparable, hmin]
-  have : Algebra.IsSeparable F F⟮(AdjoinRoot.powerBasis hP_irr.ne_zero).gen⟯ :=
+  have hgen_sep : IsSeparable F pb.gen := by rwa [IsSeparable, hmin]
+  have : Algebra.IsSeparable F F⟮pb.gen⟯ :=
     (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable F (AdjoinRoot P)).mpr hgen_sep
-  have hadj_top : F⟮(AdjoinRoot.powerBasis hP_irr.ne_zero).gen⟯ = ⊤ :=
-    IntermediateField.adjoin_eq_top_of_algebra F _
-      (AdjoinRoot.powerBasis hP_irr.ne_zero).adjoin_gen_eq_top
-  have : Algebra.IsSeparable F (AdjoinRoot P) :=
-    AlgEquiv.Algebra.isSeparable
-      ((IntermediateField.equivOfEq hadj_top).trans IntermediateField.topEquiv)
-  have hfinrank : Module.finrank F (AdjoinRoot P) = 2 :=
-    ((AdjoinRoot.powerBasis hP_irr.ne_zero).finrank.trans
-      (AdjoinRoot.powerBasis_dim hP_irr.ne_zero)).trans hP_deg
+  have hadj_top : F⟮pb.gen⟯ = ⊤ :=
+    IntermediateField.adjoin_eq_top_of_algebra F _ pb.adjoin_gen_eq_top
   exact ⟨AdjoinRoot P, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, hfinrank, Ring.IsJapanese.finite_integralClosure F (AdjoinRoot P)⟩
+    AlgEquiv.Algebra.isSeparable ((IntermediateField.equivOfEq hadj_top).trans
+      IntermediateField.topEquiv),
+    (pb.finrank.trans (AdjoinRoot.powerBasis_dim hP_irr.ne_zero)).trans hP_deg,
+    Ring.IsJapanese.finite_integralClosure F (AdjoinRoot P)⟩
 
 end Examples
 

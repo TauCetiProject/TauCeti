@@ -71,23 +71,17 @@ any finitely generated `R`-submodule `N` of a `K`-vector space `V` (without `IsN
 theorem Submodule.injective_dual_eval_of_fg {N : Submodule R V} (hN : N.FG) :
     Function.Injective (Module.Dual.eval R N) := by
   classical
-  rw [Module.Dual.injective_eval_iff]
   obtain ⟨s, hs⟩ := hN
-  intro x hx
-  have hxV : (x : V) ≠ 0 := Subtype.coe_ne_coe.mpr hx
-  have hinjK : Function.Injective (Module.Dual.eval K V) :=
-    (Module.Basis.ofVectorSpace K V).eval_injective
-  obtain ⟨ψ, hψx⟩ := (Module.Dual.injective_eval_iff.mp hinjK) (x : V) hxV
+  refine Module.Dual.injective_eval_iff.mpr fun x hx ↦ ?_
+  obtain ⟨ψ, hψx⟩ := Module.Dual.injective_eval_iff.mp
+    (Module.Basis.ofVectorSpace K V).eval_injective (x : V) (Subtype.coe_ne_coe.mpr hx)
   obtain ⟨d, hd⟩ :=
     IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) (fun y : s ↦ ψ y.1)
   have hmem : ∀ v ∈ N, (d : R) • ψ v ∈ LinearMap.range (Algebra.linearMap R K) := by
-    let W : Submodule R V :=
-      (LinearMap.range (Algebra.linearMap R K)).comap ((d : R) • ψ.restrictScalars R)
-    suffices N ≤ W from fun v hv ↦ this hv
+    suffices N ≤ (LinearMap.range (Algebra.linearMap R K)).comap ((d : R) • ψ.restrictScalars R)
+      from fun _ hv ↦ this hv
     rw [← hs, Submodule.span_le]
-    intro v hv
-    obtain ⟨r, hr⟩ := hd ⟨v, hv⟩
-    exact ⟨r, hr⟩
+    exact fun v hv ↦ hd ⟨v, hv⟩
   let φ : Module.Dual R N :=
     (((d : R) • ψ.restrictScalars R).domRestrict N).codRestrictOfInjective
       (Algebra.linearMap R K) (IsFractionRing.injective R K) fun z ↦ hmem z.1 z.2
@@ -96,8 +90,8 @@ theorem Submodule.injective_dual_eval_of_fg {N : Submodule R V} (hN : N.FG) :
     simpa [φ, Algebra.smul_def] using
       LinearMap.codRestrictOfInjective_comp_apply (((d : R) • ψ.restrictScalars R).domRestrict N)
         (Algebra.linearMap R K) (IsFractionRing.injective R K) (fun z : N ↦ hmem z.1 z.2) x
-  rw [hφ0, map_zero] at hmap
-  exact mul_ne_zero (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.2) hψx hmap.symm
+  exact mul_ne_zero (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.2) hψx
+    (by rwa [hφ0, map_zero, eq_comm] at hmap)
 
 section Noetherian
 
@@ -110,63 +104,46 @@ private theorem fg_of_finrank_le_aux :
       (∀ x : P, x ≠ 0 → ∃ φ : Module.Dual R P, φ x ≠ 0) →
       P.FG
   | 0, P, U, hU, hPU, _ => by
-    have hU0 : U = ⊥ := Submodule.finrank_eq_zero.mp (Nat.le_zero.mp hU)
-    rw [hU0, Submodule.restrictScalars_bot, le_bot_iff] at hPU
+    rw [Submodule.finrank_eq_zero.mp (Nat.le_zero.mp hU), Submodule.restrictScalars_bot,
+      le_bot_iff] at hPU
     exact hPU ▸ Submodule.fg_bot
   | n + 1, P, U, hU, hPU, hsep => by
     by_cases hP0 : P = ⊥
     · exact hP0 ▸ Submodule.fg_bot
     obtain ⟨v₀, hv₀P, hv₀_ne⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hP0
     let x₀ : P := ⟨v₀, hv₀P⟩
-    have hx₀_ne : x₀ ≠ 0 := Subtype.coe_ne_coe.mp hv₀_ne
-    obtain ⟨φ, hφx₀⟩ := hsep x₀ hx₀_ne
+    obtain ⟨φ, hφx₀⟩ := hsep x₀ (Subtype.coe_ne_coe.mp hv₀_ne)
     -- Restrict to `ker φ`, viewed inside `V` as `P'`.
     let P' : Submodule R V := Submodule.map P.subtype (LinearMap.ker φ)
     have hP'_le_P : P' ≤ P := Submodule.map_subtype_le P (LinearMap.ker φ)
     let U' : Submodule K V := Submodule.span K (P' : Set V) ⊓ U
     -- `v₀` cannot lie in the `K`-span of `P'`, since clearing denominators would kill `φ x₀`.
-    have hv₀_notMem : v₀ ∉ Submodule.span K (P' : Set V) := by
-      intro hv₀_span
+    have hv₀_notMem : v₀ ∉ Submodule.span K (P' : Set V) := fun hv₀_span ↦ by
       obtain ⟨m, c, y, hsum⟩ := Submodule.mem_span_set'.mp hv₀_span
-      have hy (i : Fin m) : ∃ z : P, φ z = 0 ∧ (z : V) = (y i : V) := by
-        simpa [P'] using (y i).2
+      have hy (i : Fin m) : ∃ z : P, φ z = 0 ∧ (z : V) = (y i : V) := by simpa [P'] using (y i).2
       choose z hz_ker hz_val using hy
       obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) c
       choose a ha using hs
-      have hsx₀ : (s : R) • x₀ = ∑ i, a i • z i := by
-        apply Subtype.ext
-        rw [SetLike.val_smul, AddSubmonoidClass.coe_finsetSum]
-        calc (s : R) • v₀
-            = (s : R) • ∑ i, c i • (y i : V) := by rw [hsum]
-          _ = ∑ i, ((s : R) • c i) • (z i : V) := by
-              rw [Finset.smul_sum]
-              refine Finset.sum_congr rfl fun i _ ↦ by rw [smul_assoc, hz_val]
-          _ = ∑ i, (a i • z i : P).1 := by
-              refine Finset.sum_congr rfl fun i _ ↦ ?_
-              rw [← ha i, IsScalarTower.algebraMap_smul K, SetLike.val_smul]
+      have hsx₀ : (s : R) • x₀ = ∑ i, a i • z i := Subtype.ext <| by
+        simp only [SetLike.val_smul, AddSubmonoidClass.coe_finsetSum, x₀]
+        rw [← hsum, Finset.smul_sum]
+        refine Finset.sum_congr rfl fun i _ ↦ ?_
+        rw [← smul_assoc, ← hz_val, ← ha i, IsScalarTower.algebraMap_smul K]
       have hkill : (s : R) * φ x₀ = 0 := by
-        calc (s : R) * φ x₀
-            = φ ((s : R) • x₀) := by rw [map_smul, smul_eq_mul]
-          _ = ∑ i, a i * φ (z i) := by simp [hsx₀]
-          _ = 0 := Finset.sum_eq_zero fun i _ ↦ by rw [hz_ker i, mul_zero]
+        rw [← smul_eq_mul, ← map_smul, hsx₀, map_sum]
+        exact Finset.sum_eq_zero fun i _ ↦ by rw [map_smul, hz_ker i, smul_zero]
       exact mul_ne_zero (nonZeroDivisors.ne_zero s.2) hφx₀ hkill
-    have hU'_lt : U' < U := lt_of_le_not_ge inf_le_right fun hle ↦
-      hv₀_notMem ((hle (hPU hv₀P)).1)
-    have hfinrank : Module.finrank K U' ≤ n :=
-      Nat.lt_succ_iff.mp ((Submodule.finrank_lt_finrank_of_lt hU'_lt).trans_le hU)
-    have hP'_le_U' : P' ≤ U'.restrictScalars R := fun v hv ↦
-      ⟨Submodule.subset_span hv, hPU (hP'_le_P hv)⟩
-    have hP'_sep : ∀ z : P', z ≠ 0 → ∃ ψ : Module.Dual R P', ψ z ≠ 0 := fun z hz ↦ by
-      have hzP : Submodule.inclusion hP'_le_P z ≠ 0 :=
-        (map_ne_zero_iff _ (Submodule.inclusion_injective hP'_le_P)).mpr hz
-      obtain ⟨ψ, hψ⟩ := hsep _ hzP
-      exact ⟨ψ.comp (Submodule.inclusion hP'_le_P), hψ⟩
-    have hP'_fg : P'.FG := fg_of_finrank_le_aux n P' U' hfinrank hP'_le_U' hP'_sep
+    have hU'_lt : U' < U := lt_of_le_not_ge inf_le_right fun hle ↦ hv₀_notMem (hle (hPU hv₀P)).1
+    have hP'_fg : P'.FG := fg_of_finrank_le_aux n P' U'
+      (Nat.lt_succ_iff.mp ((Submodule.finrank_lt_finrank_of_lt hU'_lt).trans_le hU))
+      (fun _ hv ↦ ⟨Submodule.subset_span hv, hPU (hP'_le_P hv)⟩)
+      fun z hz ↦
+        let ⟨ψ, hψ⟩ := hsep _ ((map_ne_zero_iff _ (Submodule.inclusion_injective hP'_le_P)).mpr hz)
+        ⟨ψ.comp (Submodule.inclusion hP'_le_P), hψ⟩
     have hker_fg : (LinearMap.ker φ).FG :=
       Submodule.fg_of_fg_map_injective P.subtype P.injective_subtype hP'_fg
-    have htop_fg : (⊤ : Submodule R P).FG :=
+    exact (Submodule.fg_top P).mp <|
       Submodule.fg_of_fg_map_of_fg_inf_ker φ (IsNoetherian.noetherian _) (by simpa using hker_fg)
-    exact (Submodule.fg_top P).mp htop_fg
 
 /-- **Linear-functional finiteness criterion** ([bosch-guntzer-remmert], §4.1, Proposition 4).
 Let `R` be a Noetherian domain with fraction field `K` and `V` a finite-dimensional `K`-vector
@@ -200,11 +177,10 @@ theorem LinearMap.finite_iff_injective_dual_eval_of_injective {M : Type*} [AddCo
   let e : M ≃ₗ[R] LinearMap.range f := LinearEquiv.ofInjective f hf
   rw [Module.Finite.equiv_iff e, Submodule.finite_iff_injective_dual_eval K,
     Module.Dual.injective_eval_iff, Module.Dual.injective_eval_iff]
-  refine ⟨fun h x hx ↦ ?_, fun h y hy ↦ ?_⟩
-  · obtain ⟨φ, hφ⟩ := h (e x) ((map_ne_zero_iff e e.injective).mpr hx)
-    exact ⟨φ.comp e.toLinearMap, hφ⟩
-  · obtain ⟨φ, hφ⟩ := h (e.symm y) ((map_ne_zero_iff e.symm e.symm.injective).mpr hy)
-    exact ⟨φ.comp e.symm.toLinearMap, hφ⟩
+  exact ⟨fun h x hx ↦ let ⟨φ, hφ⟩ := h (e x) ((map_ne_zero_iff e e.injective).mpr hx)
+      ⟨φ.comp e.toLinearMap, hφ⟩,
+    fun h y hy ↦ let ⟨φ, hφ⟩ := h (e.symm y) ((map_ne_zero_iff e.symm e.symm.injective).mpr hy)
+      ⟨φ.comp e.symm.toLinearMap, hφ⟩⟩
 
 /-- If `M` embeds `R`-linearly into a finite-dimensional vector space over `K = Frac(R)` (`R` a
 Noetherian domain) and `Module.Dual R M` separates nonzero points of `M`, then `M` is a finite

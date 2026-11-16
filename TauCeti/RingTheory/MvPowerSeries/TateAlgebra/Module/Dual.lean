@@ -86,12 +86,9 @@ theorem exists_toSubringDual_restrictedExpandComponentFamily_ne_zero
   obtain ⟨ν, hν, μ, hμE_ne⟩ :=
     exists_coeff_restrictedExpandComponentFamily_ne_zero hq hr E hz_ne hz
   obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) hμE_ne
-  refine ⟨ν, hν, f_dual, fun h0 ↦ ?_⟩
-  have hcoeff0 : coeff μ (IsRestrictedFamily.toSubringDual f_dual
-      (restrictedExpandComponentFamily hq hr ν E z hz) : _root_.MvPowerSeries σ K) = 0 := by
-    rw [h0, ZeroMemClass.coe_zero, map_zero]
-  rw [IsRestrictedFamily.coeff_coe_toSubringDual] at hcoeff0
-  exact hf_ne hcoeff0
+  exact ⟨ν, hν, f_dual, fun h0 ↦ hf_ne <| by
+    simpa [h0] using (IsRestrictedFamily.coeff_coe_toSubringDual f_dual
+      (restrictedExpandComponentFamily hq hr ν E z hz) μ).symm⟩
 
 end ComponentDual
 

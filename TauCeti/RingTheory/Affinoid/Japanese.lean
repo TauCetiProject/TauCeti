@@ -101,9 +101,8 @@ theorem finite_of_isIntegralClosure (hA : IsAffinoidAlgebra K A) (B : Type*) [Co
     [IsReduced B] [Algebra A B] [Algebra.EssFiniteType A B]
     (C : Type*) [CommRing C] [Algebra A C] [Algebra C B] [IsScalarTower A C B]
     [IsIntegralClosure C A B] :
-    Module.Finite A C := by
-  have := hA.isNagata
-  exact Ring.IsNagata.finite_of_isIntegralClosure B C
+    Module.Finite A C :=
+  have := hA.isNagata; Ring.IsNagata.finite_of_isIntegralClosure B C
 
 /-- For any affinoid algebra `A` over a complete ultrametric normed field and any reduced
 `A`-algebra `B` essentially of finite type, `_root_.integralClosure A B` is a finite `A`-module. -/
@@ -119,16 +118,14 @@ theorem finite_of_isIntegralClosure_of_isFractionRing [IsReduced A] (hA : IsAffi
     (F : Type*) [CommRing F] [Algebra A F] [IsFractionRing A F]
     (C : Type*) [CommRing C] [Algebra A C] [Algebra C F] [IsScalarTower A C F]
     [IsIntegralClosure C A F] :
-    Module.Finite A C := by
-  have := hA.isNagata
-  exact Ring.IsN1.finite_of_isIntegralClosure F C
+    Module.Finite A C :=
+  have := hA.isNagata; Ring.IsN1.finite_of_isIntegralClosure F C
 
 /-- The normalization `_root_.integralClosure A (FractionRing A)` of a reduced affinoid algebra `A`
 in its canonical total ring of fractions is a finite `A`-module. -/
 theorem finite_integralClosure_fractionRing [IsReduced A] (hA : IsAffinoidAlgebra K A) :
-    Module.Finite A (_root_.integralClosure A (FractionRing A)) := by
-  have := hA.isNagata
-  exact Ring.IsN1.finite_integralClosure_fractionRing
+    Module.Finite A (_root_.integralClosure A (FractionRing A)) :=
+  have := hA.isNagata; Ring.IsN1.finite_integralClosure_fractionRing
 
 end NormedField
 
@@ -144,9 +141,8 @@ theorem of_isIntegralClosure (hA : IsAffinoidAlgebra K A) (B : Type*) [CommRing 
     [Algebra A B] [Algebra.EssFiniteType A B]
     {C : Type*} [CommRing C] [Algebra K C] [Algebra A C] [IsScalarTower K A C]
     [Algebra C B] [IsScalarTower A C B] [IsIntegralClosure C A B] :
-    IsAffinoidAlgebra K C := by
-  have := hA.finite_of_isIntegralClosure B C
-  exact hA.of_finite
+    IsAffinoidAlgebra K C :=
+  have := hA.finite_of_isIntegralClosure B C; hA.of_finite
 
 /-- Over a nontrivially normed complete ultrametric field `K`, the integral closure of an affinoid
 `K`-algebra `A` in any reduced `A`-algebra `B` essentially of finite type (with a compatible
@@ -163,10 +159,10 @@ theorem of_isIntegralClosure_of_isFractionRing [IsReduced A] (hA : IsAffinoidAlg
     (F : Type*) [CommRing F] [Algebra A F] [IsFractionRing A F]
     {C : Type*} [CommRing C] [Algebra K C] [Algebra A C] [IsScalarTower K A C]
     [Algebra C F] [IsScalarTower A C F] [IsIntegralClosure C A F] :
-    IsAffinoidAlgebra K C := by
+    IsAffinoidAlgebra K C :=
   have : IsReduced F := IsLocalization.isReduced (nonZeroDivisors A) F
   have : Algebra.EssFiniteType A F := .of_isLocalization (S := F) (nonZeroDivisors A)
-  exact hA.of_isIntegralClosure F
+  hA.of_isIntegralClosure F
 
 /-- Over a nontrivially normed complete ultrametric field `K`, the normalization
 `_root_.integralClosure A (FractionRing A)` of a reduced affinoid `K`-algebra `A` in its total ring
@@ -216,11 +212,9 @@ example {K : Type*} {A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K
       ∀ Q : Ideal C, [Q.IsPrime] →
         IsDomain (Localization.AtPrime Q) ∧ IsIntegrallyClosed (Localization.AtPrime Q) := by
   refine ⟨hA.finite_integralClosure_fractionRing, hA.integralClosure_fractionRing, fun Q _ ↦ ?_⟩
-  have : IsNoetherianRing A := hA.isNoetherianRing
-  have : IsArtinianRing (FractionRing A) :=
-    IsFractionRing.isArtinianRing_of_isReduced A (FractionRing A)
-  have : IsReduced (FractionRing A) :=
-    IsLocalization.isReduced (nonZeroDivisors A) (FractionRing A)
+  have := hA.isNoetherianRing
+  have := IsFractionRing.isArtinianRing_of_isReduced A (FractionRing A)
+  have := IsLocalization.isReduced (nonZeroDivisors A) (FractionRing A)
   have : IsIntegrallyClosedIn (_root_.integralClosure A (FractionRing A)) (FractionRing A) :=
     IsIntegrallyClosedIn.of_isIntegralClosure (R := A)
   exact ⟨IsIntegrallyClosedIn.isDomain_localization_atPrime (FractionRing A) Q,
