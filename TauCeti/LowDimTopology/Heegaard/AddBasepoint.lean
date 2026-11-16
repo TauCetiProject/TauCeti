@@ -362,14 +362,19 @@ theorem isDomainBetween_addBasepoint_iff {D : Region ⊕ Fin 3 → ℤ} :
     addBasepoint_alphaRight, addBasepoint_betaLeft, addBasepoint_betaRight,
     generatorChain_addBasepointGenerator_inl, generatorChain_addBasepointGenerator_inr,
     Equiv.Perm.sumCongr_symm, Equiv.Perm.sumCongr_apply, Sum.map_inl, Sum.map_inr,
-    Sum.elim_inl, Sum.elim_inr, Function.comp_apply, Equiv.symm_swap]
-  fin_cases i <;> fin_cases j <;> simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one,
-    Nat.cast_zero, Nat.cast_one] <;> constructor
-  all_goals first
-    | rintro ⟨⟨hα, -, h₂⟩, hβ, -, -⟩
-      exact ⟨⟨hα, hβ⟩, by simp at h₂; omega⟩
-    | rintro ⟨⟨hα, hβ⟩, hs⟩
-      refine ⟨⟨hα, ?_, ?_⟩, hβ, ?_, ?_⟩ <;> simp <;> omega
+    Sum.elim_inl, Sum.elim_inr, Function.comp_apply, Equiv.symm_swap, Equiv.swap_apply_left,
+    Equiv.swap_apply_right, Matrix.cons_val_zero, Matrix.cons_val_one]
+  -- On the new arcs the boundary conditions read off the indicators of the new points.
+  have hind : ∀ k : Fin 2,
+      (if k = 1 then (1 : ℤ) else 0) = k ∧ (if k = 0 then (1 : ℤ) else 0) = 1 - k := by
+    decide
+  obtain ⟨hi₁, hi₀⟩ := hind i
+  obtain ⟨hj₁, hj₀⟩ := hind j
+  constructor
+  · rintro ⟨⟨hα, -, h₂⟩, hβ, -, -⟩
+    exact ⟨⟨hα, hβ⟩, by omega⟩
+  · rintro ⟨⟨hα, hβ⟩, hs⟩
+    exact ⟨⟨hα, by omega, by omega⟩, hβ, by omega, by omega⟩
 
 end Domain
 
