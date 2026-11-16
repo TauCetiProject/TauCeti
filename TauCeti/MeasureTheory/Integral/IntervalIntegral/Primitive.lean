@@ -37,6 +37,9 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.tendsto_integral_excise`: excising a symmetric interval around an
+  interior point `c ∈ uIoo a b` from an interval-integrable function recovers the full interval
+  integral as `ε → 0`.
 * `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
   `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
   the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
@@ -58,7 +61,7 @@ used to identify weak derivatives on an interval with ordinary primitives.
 public section
 
 open MeasureTheory Set Filter
-open scoped Interval
+open scoped Interval Topology
 
 namespace TauCeti
 
@@ -95,6 +98,37 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- Symmetric excision around an interior point `c ∈ uIoo a b` of an interval-integrable function
+recovers the full interval integral as `ε → 0`. -/
+theorem tendsto_integral_excise {μ : Measure ℝ} [NullSingletonClass μ]
+    {c : ℝ} (hc : c ∈ uIoo a b) (hf : IntervalIntegrable f μ a b) :
+    Tendsto (fun ε : ℝ ↦ (∫ t in a..(c - ε), f t ∂μ) + ∫ t in (c + ε)..b, f t ∂μ)
+      (𝓝 0) (𝓝 (∫ t in a..b, f t ∂μ)) := by
+  have hcont : ContinuousOn (fun y : ℝ ↦ ∫ t in a..y, f t ∂μ) (uIcc a b) :=
+    _root_.intervalIntegral.continuousOn_primitive_interval' hf left_mem_uIcc
+  have hprim : ContinuousAt (fun y : ℝ ↦ ∫ t in a..y, f t ∂μ) c :=
+    hcont.continuousAt (Icc_mem_nhds hc.1 hc.2)
+  have ha1 : Tendsto (fun ε : ℝ ↦ ∫ t in a..(c - ε), f t ∂μ) (𝓝 0)
+      (𝓝 (∫ t in a..c, f t ∂μ)) :=
+    hprim.tendsto.comp (by simpa using (continuous_sub_left c).tendsto 0)
+  have ha2 : Tendsto (fun ε : ℝ ↦ ∫ t in a..(c + ε), f t ∂μ) (𝓝 0)
+      (𝓝 (∫ t in a..c, f t ∂μ)) :=
+    hprim.tendsto.comp (by simpa using (continuous_const_add c).tendsto 0)
+  have hlim : Tendsto
+      (fun ε : ℝ ↦ (∫ t in a..(c - ε), f t ∂μ) +
+        ((∫ t in a..b, f t ∂μ) - ∫ t in a..(c + ε), f t ∂μ))
+      (𝓝 0) (𝓝 (∫ t in a..b, f t ∂μ)) := by
+    simpa [add_sub_cancel] using ha1.add (tendsto_const_nhds.sub ha2)
+  refine hlim.congr' ?_
+  have hmem : ∀ᶠ ε : ℝ in 𝓝 0, c + ε ∈ uIcc a b :=
+    (by simpa using (continuous_const_add c).tendsto 0 : Tendsto (c + ·) (𝓝 0) (𝓝 c)).eventually
+      (Icc_mem_nhds hc.1 hc.2)
+  filter_upwards [hmem] with ε hε
+  have hsplit := _root_.intervalIntegral.integral_add_adjacent_intervals
+    (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hε))
+    (hf.mono_set (uIcc_subset_uIcc hε right_mem_uIcc))
+  rw [← hsplit, add_sub_cancel_left]
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
 `(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`
