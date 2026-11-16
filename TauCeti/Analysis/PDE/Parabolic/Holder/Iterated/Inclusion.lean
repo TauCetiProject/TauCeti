@@ -124,8 +124,7 @@ private theorem holderWith_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab)
       have hslice := (timeSliceL r m f x).holderWith_nnnorm.mono
         (show ‖timeSliceL r m f x‖₊ ≤ ‖timeSliceL r m f‖₊ from
           lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
-      rwa [show ⇑(timeSliceL r m f x) = fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) from
-        funext (timeSliceL_apply f h x)] at hslice
+      rwa [coe_timeSliceL f h x] at hslice
   have hle := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le
     (D := 2 * ‖mixedDerivL r m f‖₊) hspace htime
     (fun p q ↦ by simpa using (mixedDerivL r m f).dist_le_two_norm p q) hα
@@ -163,7 +162,7 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
     have hholder := holderWith_mixedDerivL_slabMk f (r := r) (m := m) (by omega) hα
     have hK : ((‖mixedDerivL (r + 1) m f‖₊ + 2 * ‖mixedDerivL r m f‖₊ : ℝ≥0) : ℝ) ≤
         3 * ‖f‖ := by
-      rw [NNReal.coe_add, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, NNReal.coe_ofNat]
+      push_cast
       nlinarith [hD (r + 1) m, hD r m]
     refine (lp.norm_le_of_forall_le (C := ‖mixedDerivL r m f‖ + 3 * ‖f‖)
       (by positivity) fun x ↦ ?_).trans (by nlinarith [hD r m])
@@ -171,9 +170,7 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
       (fun t ↦ ?_) ?_).trans (add_le_add le_rfl hK)
     · rw [timeSliceL_apply _ hs, mixedDerivL_ofSucc hα f (by omega)]
       exact (mixedDerivL r m f).norm_coe_le_norm _
-    · rw [show ⇑(timeSliceL r m (ofSucc hα f) x) =
-          fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) from
-        funext fun t ↦ by rw [timeSliceL_apply _ hs, mixedDerivL_ofSucc hα f (by omega)]]
+    · rw [coe_timeSliceL _ hs, mixedDerivL_ofSucc hα f (by omega)]
       exact hholder x
   · rw [timeSliceL_of_ne hs, zero_apply, norm_zero, zero_add]
     by_cases hh : 2 * r + m = k
@@ -181,8 +178,7 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
       have hholder := holderWith_mixedDerivL f (r := r) (m := m) (by omega) hα
       have hK : ((‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
           (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊) : ℝ≥0) : ℝ) ≤ 6 * ‖f‖ := by
-        rw [NNReal.coe_add, NNReal.coe_add, NNReal.coe_add, NNReal.coe_mul, coe_nnNorm,
-          coe_nnNorm, coe_nnNorm, NNReal.coe_ofNat]
+        push_cast
         have := f.norm_timeSliceL_le r m
         nlinarith [hD r (m + 1), hD r m]
       have hcoe : ⇑(mixedDerivHolderL r m (ofSucc hα f)) = mixedDerivL r m f := by
