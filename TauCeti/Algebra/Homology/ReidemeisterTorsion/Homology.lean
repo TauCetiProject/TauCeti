@@ -574,9 +574,8 @@ theorem parityTorsionWithHomology_eq_mul_det (c' : ∀ i, Basis (Fin (n i)) F (C
     parityTorsionWithHomology,
     torsionBracketWithHomology_eq_det_mul c _ _ _ _ _ _ _ _ _ c',
     torsionBracketWithHomology_eq_det_mul c _ _ _ _ _ _ _ _ _ c']
-  have hinv (i : ZMod 2) : (c' i).det (c i) = ((c i).det (c' i))⁻¹ :=
-    eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
-  rw [hinv, hinv, mul_inv, inv_inv]
+  simp only [← (c 0).det_inv (c' 0), ← (c 1).det_inv (c' 1), Units.val_inv_eq_inv_val,
+    IsUnit.unit_spec, mul_inv, inv_inv]
   ring
 
 /-- The basis-change formula for the homology bases: replacing the bases `h i` of the homology
