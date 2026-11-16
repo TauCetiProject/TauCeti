@@ -42,6 +42,13 @@ which is absorbed by the weight `⟨η⟩ ^ (s - 1) ⟨η⟩ = ⟨η⟩ ^ s`.
 
 ## Main results
 
+* `TauCeti.one_add_norm_sq_rpow_mul_norm_two_mul_pi_mul_I_mul_inner_le`: the factor
+  `2 π i ⟪v, η⟫` costs one order of the weight, `⟨η⟩ ^ (s - 1) ‖2 π i ⟪v, η⟫‖ ≤ 2 π ‖v‖ ⟨η⟩ ^ s`.
+* `Distribution.memLp_one_add_norm_sq_rpow_smul_localFourier_lineDerivOp`,
+  `Distribution.memLp_one_add_norm_sq_rpow_smul_localFourier_iteratedLineDerivOp`: if every
+  cutoff supported in `U` makes `⟨η⟩ ^ s T (ψ e_η)` square integrable on a set `Γ`, then every
+  such cutoff makes `⟨η⟩ ^ (s - n) (∂^{m} T) (ψ e_η)` square integrable on `Γ`, for `n`
+  derivatives.
 * `Distribution.IsMicrolocallySobolevAt.lineDerivOp`,
   `Distribution.IsMicrolocallySobolevAt.iteratedLineDerivOp`: if `T` is microlocally `H^s` at
   `(x, ξ)`, then `∂_{v} T` is microlocally `H^(s - 1)` there, and an iterated derivative of order
@@ -54,6 +61,9 @@ which is absorbed by the weight `⟨η⟩ ^ (s - 1) ⟨η⟩ = ⟨η⟩ ^ s`.
   differential operator `P = ∑ i, c i g i ∂^{m i}` of order at most `k`, with smooth real
   coefficients `g i` and complex constants `c i`, maps microlocally `H^s` distributions to
   microlocally `H^(s - k)` ones, so `WF_(s - k)(P T) ⊆ WF_s(T)`.
+* `Distribution.IsMicrolocallySobolevAt.sum_smul_iteratedLineDerivOp`,
+  `Distribution.sobolevWaveFrontSet_sum_smul_iteratedLineDerivOp_subset`: the same for
+  operators `P = ∑ i, c i ∂^{m i}` with constant coefficients.
 * `Distribution.IsLocallySobolevAt.lineDerivOp`,
   `Distribution.IsLocallySobolevAt.iteratedLineDerivOp`,
   `Distribution.IsLocallySobolevAt.sum_smul_smulLeftCLM_iteratedLineDerivOp` and
@@ -75,13 +85,13 @@ noncomputable section
 open Complex Filter MeasureTheory Real Set TopologicalSpace TestFunction LineDeriv
 open scoped Distributions Topology RealInnerProductSpace ContDiff
 
-namespace Distribution
+namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The polynomial factor of `Distribution.localFourier_lineDerivOp` costs one order of the
 Sobolev weight: `⟨η⟩ ^ (s - 1) ‖2 π i ⟪v, η⟫‖ ≤ 2 π ‖v‖ ⟨η⟩ ^ s`. -/
-private theorem weight_mul_norm_two_mul_pi_mul_I_mul_inner_le (s : ℝ) (v η : E) :
+theorem one_add_norm_sq_rpow_mul_norm_two_mul_pi_mul_I_mul_inner_le (s : ℝ) (v η : E) :
     (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤
       2 * π * ‖v‖ * (1 + ‖η‖ ^ 2) ^ (s / 2) := by
   have hn : ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
@@ -99,24 +109,27 @@ private theorem weight_mul_norm_two_mul_pi_mul_I_mul_inner_le (s : ℝ) (v η : 
     _ ≤ 2 * π * ‖v‖ * (1 + ‖η‖ ^ 2) ^ (s / 2) := by
         gcongr
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+end TauCeti
 
-/-- A derivative `∂_{v} T` of a distribution microlocally `H^s` at `(x, ξ)` is microlocally
-`H^(s - 1)` there. -/
-theorem IsMicrolocallySobolevAt.lineDerivOp {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
-    (h : T.IsMicrolocallySobolevAt s x ξ) (v : E) :
-    (∂_{v} T).IsMicrolocallySobolevAt (s - 1) x ξ := by
-  have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 h
-    exact φ.tsupport_subset (subset_tsupport _ hφ)
-  obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hL⟩ := h.exists_nhds_cone
-  -- A cutoff supported in `U`; its derivative is supported in `U` as well.
-  obtain ⟨ψ, hψ, hψx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
-    (inter_mem hU (Ω.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)
-  refine isMicrolocallySobolevAt_iff.2 ⟨ψ, by simp [hψx], Γ, hΓ, hξ, hcone, ?_⟩
-  have h₁ := (hL ψ (hψ.trans inter_subset_left)).norm.const_mul (2 * π * ‖v‖)
-  have h₂ := (hL (∂_{v} ψ)
-    ((tsupport_lineDerivOp_subset ψ v).trans (hψ.trans inter_subset_left))).norm
+namespace Distribution
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- **A derivative costs one order, for all cutoffs at once.** If `⟨η⟩ ^ s` times the localized
+Fourier transform of `T` is square integrable on `Γ` for every cutoff supported in `U`, then
+`⟨η⟩ ^ (s - 1)` times the localized Fourier transform of `∂_{v} T` is square integrable on `Γ`
+for every cutoff supported in `U`. -/
+theorem memLp_one_add_norm_sq_rpow_smul_localFourier_lineDerivOp {s : ℝ} {T : 𝓓'(Ω, ℂ)}
+    {U Γ : Set E} (hT : ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U →
+      MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier ψ η) 2 (volume.restrict Γ))
+    (v : E) {ψ : 𝓓(Ω, ℂ)} (hψ : tsupport ψ ⊆ U) :
+    MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) • (∂_{v} T).localFourier ψ η) 2
+      (volume.restrict Γ) := by
+  have h₁ := (hT ψ hψ).norm.const_mul (2 * π * ‖v‖)
+  have h₂ := (hT (∂_{v} ψ) ((tsupport_lineDerivOp_subset ψ v).trans hψ)).norm
   refine (h₁.add h₂).of_le (((Function.hasTemperateGrowth_one_add_norm_sq_rpow E
     ((s - 1) / 2)).1.continuous.smul
       ((∂_{v} T).continuous_localFourier ψ)).aestronglyMeasurable) (.of_forall fun η ↦ ?_)
@@ -138,11 +151,43 @@ theorem IsMicrolocallySobolevAt.lineDerivOp {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ
     _ ≤ 2 * π * ‖v‖ * (1 + ‖η‖ ^ 2) ^ (s / 2) * ‖T.localFourier ψ η‖ +
           (1 + ‖η‖ ^ 2) ^ (s / 2) * ‖T.localFourier (∂_{v} ψ) η‖ := by
         exact add_le_add (mul_le_mul_of_nonneg_right
-          (weight_mul_norm_two_mul_pi_mul_I_mul_inner_le s v η) (norm_nonneg _))
+          (one_add_norm_sq_rpow_mul_norm_two_mul_pi_mul_I_mul_inner_le s v η) (norm_nonneg _))
           (mul_le_mul_of_nonneg_right hle (norm_nonneg _))
     _ = 2 * π * ‖v‖ * ((1 + ‖η‖ ^ 2) ^ (s / 2) * ‖T.localFourier ψ η‖) +
           (1 + ‖η‖ ^ 2) ^ (s / 2) * ‖T.localFourier (∂_{v} ψ) η‖ := by
         ring
+
+/-- **An iterated derivative of order `n` costs `n` orders, for all cutoffs at once.** If
+`⟨η⟩ ^ s` times the localized Fourier transform of `T` is square integrable on `Γ` for every
+cutoff supported in `U`, then `⟨η⟩ ^ (s - n)` times that of `∂^{m} T` is square integrable on `Γ`
+for every cutoff supported in `U`. -/
+theorem memLp_one_add_norm_sq_rpow_smul_localFourier_iteratedLineDerivOp {s : ℝ}
+    {T : 𝓓'(Ω, ℂ)} {U Γ : Set E} (hT : ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U →
+      MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier ψ η) 2 (volume.restrict Γ))
+    {n : ℕ} (m : Fin n → E) {ψ : 𝓓(Ω, ℂ)} (hψ : tsupport ψ ⊆ U) :
+    MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ ((s - n) / 2) • (∂^{m} T).localFourier ψ η) 2
+      (volume.restrict Γ) := by
+  induction n generalizing ψ with
+  | zero => simpa using hT ψ hψ
+  | succ n ih =>
+    rw [iteratedLineDerivOp_succ_left, Nat.cast_succ, ← sub_sub]
+    exact memLp_one_add_norm_sq_rpow_smul_localFourier_lineDerivOp (fun φ hφ ↦ ih (Fin.tail m) hφ)
+      (m 0) hψ
+
+/-- A derivative `∂_{v} T` of a distribution microlocally `H^s` at `(x, ξ)` is microlocally
+`H^(s - 1)` there. -/
+theorem IsMicrolocallySobolevAt.lineDerivOp {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySobolevAt s x ξ) (v : E) :
+    (∂_{v} T).IsMicrolocallySobolevAt (s - 1) x ξ := by
+  have hx : x ∈ Ω := by
+    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 h
+    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hL⟩ := h.exists_nhds_cone
+  -- A cutoff supported in `U`; its derivative is supported in `U` as well.
+  obtain ⟨ψ, hψ, hψx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
+    (inter_mem hU (Ω.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)
+  exact isMicrolocallySobolevAt_iff.2 ⟨ψ, by simp [hψx], Γ, hΓ, hξ, hcone,
+    memLp_one_add_norm_sq_rpow_smul_localFourier_lineDerivOp hL v (hψ.trans inter_subset_left)⟩
 
 /-- An iterated derivative `∂^{m}` of order `n` of a distribution microlocally `H^s` at `(x, ξ)`
 is microlocally `H^(s - n)` there. -/
@@ -201,6 +246,29 @@ theorem sobolevWaveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset (s :
       (sobolevWaveFrontSet_smulLeftCLM_subset _ _ (hg i)).trans <| inter_subset_left.trans <|
         (sobolevWaveFrontSet_mono (by gcongr; exact hk i hi) _).trans
           (sobolevWaveFrontSet_iteratedLineDerivOp_subset s T (m i))
+
+/-- A linear differential operator `P = ∑ i ∈ t, c i ∂^{m i}` with constant complex coefficients
+and orders `n i ≤ k` maps a distribution microlocally `H^s` at `(x, ξ)` to one microlocally
+`H^(s - k)` there. -/
+theorem IsMicrolocallySobolevAt.sum_smul_iteratedLineDerivOp {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySobolevAt s x ξ) {ι : Type*} (t : Finset ι) (c : ι → ℂ) {n : ι → ℕ}
+    (m : ∀ i, Fin (n i) → E) {k : ℕ} (hk : ∀ i ∈ t, n i ≤ k) :
+    (∑ i ∈ t, c i • ∂^{m i} T).IsMicrolocallySobolevAt (s - k) x ξ :=
+  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsMicrolocallySobolevAt (s - k) x ξ)
+    (fun _ _ ↦ IsMicrolocallySobolevAt.add)
+    (zero_smul ℂ T ▸ (h.mono (sub_le_self _ k.cast_nonneg)).smul 0)
+    fun i hi ↦ ((h.iteratedLineDerivOp (m i)).mono (by gcongr; exact hk i hi)).smul (c i)
+
+/-- **Constant-coefficient operators shift the Sobolev wave front set by their order.** A linear
+differential operator `P = ∑ i ∈ t, c i ∂^{m i}` with constant complex coefficients and orders
+`n i ≤ k` satisfies `WF_(s - k)(P T) ⊆ WF_s(T)`. -/
+theorem sobolevWaveFrontSet_sum_smul_iteratedLineDerivOp_subset (s : ℝ) {ι : Type*}
+    (t : Finset ι) (c : ι → ℂ) {n : ι → ℕ} (m : ∀ i, Fin (n i) → E) {k : ℕ}
+    (hk : ∀ i ∈ t, n i ≤ k) (T : 𝓓'(Ω, ℂ)) :
+    (∑ i ∈ t, c i • ∂^{m i} T).sobolevWaveFrontSet (s - k) ⊆ T.sobolevWaveFrontSet s := by
+  rintro ⟨x, ξ⟩ hp
+  obtain ⟨hx, hξ, hP⟩ := mem_sobolevWaveFrontSet_iff.1 hp
+  exact mem_sobolevWaveFrontSet_iff.2 ⟨hx, hξ, fun h ↦ hP (h.sum_smul_iteratedLineDerivOp t c m hk)⟩
 
 /-! ### Local `H^s` regularity and the `H^s` singular support -/
 
