@@ -19,7 +19,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import Mathlib.LinearAlgebra.Complex.Determinant
-import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
