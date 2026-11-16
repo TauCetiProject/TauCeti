@@ -213,8 +213,18 @@ lemma π₀SHomObj₀StdSimplexEquiv_mk {n : ℕ}
     (x : (sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n], inferInstance⟩) _⦋0⦌) :
     π₀SHomObj₀StdSimplexEquiv n (π₀.mk x) =
       stdSimplex.obj₀Equiv ((SSet.sHomObj₀Iso Δ[n]).hom.app (op ⦋0⦌) x.1) := by
-  change stdSimplex.π₀CoreEquiv n (mapπ₀ (CoreEnriched.sHomObj₀Iso Δ[n]).hom (π₀.mk x)) = _
-  rw [mapπ₀_mk, stdSimplex.π₀CoreEquiv_mk]
+  -- `CatInftyΔ` inherits `sHom` definitionally from `CoreEnriched` as a `FullSubcategory`, and
+  -- `π₀Functor.obj` unfolds to `π₀` at default transparency, so `Equiv.trans_apply` and
+  -- `Iso.toEquiv_apply` are applied directly before rewriting with `mapπ₀_mk` and `π₀CoreEquiv_mk`.
+  have hmap : ((π₀Functor.mapIso (CoreEnriched.sHomObj₀Iso Δ[n])).toEquiv (π₀.mk x) :
+      π₀ ((Δ[n] : SSet.{u}).core : SSet.{u})) =
+      π₀.mk ((CoreEnriched.sHomObj₀Iso Δ[n]).hom.app (op ⦋0⦌) x) :=
+    (Iso.toEquiv_apply (π₀Functor.mapIso (CoreEnriched.sHomObj₀Iso Δ[n])) (π₀.mk x)).trans
+      (by rw [Functor.mapIso_hom, π₀Functor_map]; exact mapπ₀_mk _ _)
+  refine (Equiv.trans_apply (π₀Functor.mapIso (CoreEnriched.sHomObj₀Iso Δ[n])).toEquiv
+    (stdSimplex.π₀CoreEquiv n) (π₀.mk x)).trans
+    ((congrArg (stdSimplex.π₀CoreEquiv n) hmap).trans ?_)
+  rw [stdSimplex.π₀CoreEquiv_mk]
   exact congrArg stdSimplex.obj₀Equiv congr($(CoreEnriched.sHomObj₀Iso_hom_ι Δ[n]).app (op ⦋0⦌) x)
 
 /-- The inverse of `π₀SHomObj₀StdSimplexEquiv n` sends `i : Fin (n + 1)` to the component of the
@@ -225,11 +235,8 @@ lemma π₀SHomObj₀StdSimplexEquiv_symm_apply {n : ℕ} (i : Fin (n + 1)) :
       π₀.mk (X := sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n], inferInstance⟩)
         ⟨(SSet.sHomObj₀Iso Δ[n]).inv.app (op ⦋0⦌) (stdSimplex.obj₀Equiv.symm i),
           mem_core_obj_zero _⟩ := by
-  change mapπ₀ (CoreEnriched.sHomObj₀Iso Δ[n]).inv ((stdSimplex.π₀CoreEquiv n).symm i) = _
-  rw [stdSimplex.π₀CoreEquiv_symm_apply, mapπ₀_mk]
-  exact congrArg π₀.mk (Subtype.ext
-    congr($(CoreEnriched.sHomObj₀Iso_inv_ι Δ[n]).app (op ⦋0⦌)
-      ⟨stdSimplex.obj₀Equiv.symm i, mem_core_obj_zero _⟩))
+  apply (π₀SHomObj₀StdSimplexEquiv.{u} n).injective
+  simp
 
 /-- Unlike `Fun(Δ[0], Δ[n + 1])`, the core functor space `Fun(Δ[0], Δ[n + 1])^≃` in `CatInftyΔ`
 has at least two connected components. -/

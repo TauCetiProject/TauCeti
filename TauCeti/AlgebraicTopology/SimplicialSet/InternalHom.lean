@@ -181,41 +181,50 @@ lemma yonedaEquiv_symm_δ_yonedaEquiv_curry (h : X ⊗ Δ[1] ⟶ Z) (i : Fin 2) 
       curry (X ◁ stdSimplex.δ i ≫ h) := by
   rw [← stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.symm_apply_apply, curry_natural_left]
 
-/-- Auxiliary isomorphism `((ihom Δ[0]).obj X) ≅ X` used to build `SSet.sHomObj₀Iso`. -/
-private def ihomObj₀Iso (X : SSet.{u}) : ((ihom (Δ[0] : SSet.{u})).obj X) ≅ X where
-  hom := lift (stdSimplex.isTerminalObj₀.from _) (𝟙 _) ≫ (ihom.ev (Δ[0] : SSet.{u})).app X
-  inv := curry (snd (Δ[0] : SSet.{u}) X)
-  hom_inv_id := by
-    apply uncurry_injective
-    rw [uncurry_natural_left, uncurry_curry, uncurry_id_eq_ev, whiskerLeft_snd]
-    have h : snd (Δ[0] : SSet.{u}) ((ihom (Δ[0] : SSet.{u})).obj X) ≫
-        lift (stdSimplex.isTerminalObj₀.from _) (𝟙 _) = 𝟙 _ :=
-      CartesianMonoidalCategory.hom_ext _ _ stdSimplex.ext₀ (by simp)
-    rw [← Category.assoc, h, Category.id_comp]
-  inv_hom_id := by
-    rw [← Category.assoc, comp_lift, Category.comp_id,
-      ← Category.id_comp (curry (snd (Δ[0] : SSet.{u}) X)), lift_curry_ihom_ev_app, lift_snd]
-
-/-- The function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`, via evaluation at
-the unique simplex of `Δ[0]` and currying the second projection `Δ[0] ⊗ X ⟶ X`. -/
+/-- The function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`, obtained by
+transporting `Δ[0] ≅ 𝟙_ SSet` along `MonoidalClosed.internalHom` into `MonoidalClosed.unitIsoSelf`.
+Its forward direction evaluates at the unique simplex of `Δ[0]` (`sHomObj₀Iso_hom_app`) and its
+inverse curries the second projection (`sHomObj₀Iso_inv_app_app`). -/
 def sHomObj₀Iso (X : SSet.{u}) : sHom (Δ[0] : SSet.{u}) X ≅ X :=
-  ihomObj₀Iso X
-
-/-- Evaluating `sHomObj₀Iso` on an `m`-simplex of `Fun(Δ[0], X)` evaluates it at the identity of
-`m` and the unique `m`-simplex of `Δ[0]`. -/
-@[simp]
-lemma sHomObj₀Iso_hom_app (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
-    (s : (sHom (Δ[0] : SSet.{u}) X).obj m) :
-    (sHomObj₀Iso X).hom.app m s = s.app m (𝟙 m) (stdSimplex.const 0 0 m) :=
-  congrArg (s.app m (𝟙 m)) (stdSimplex.objEquiv.injective (by ext; simp))
+  (internalHom.mapIso
+    (stdSimplex.isTerminalObj₀.uniqueUpToIso isTerminalTensorUnit).op.symm).app X ≪≫
+    unitIsoSelf X
 
 /-- Evaluating the inverse of `sHomObj₀Iso` on an `m`-simplex `x` of `X` acts along `φ : m ⟶ k` by
 `X.map φ x`, ignoring the `Δ[0]` factor. -/
 @[simp]
 lemma sHomObj₀Iso_inv_app_app (X : SSet.{u}) {m k : SimplexCategoryᵒᵖ} (x : X.obj m) (φ : m ⟶ k)
     (u₀ : (Δ[0] : SSet.{u}).obj k) :
-    ((sHomObj₀Iso X).inv.app m x).app k φ u₀ = X.map φ x :=
-  (rfl)
+    ((sHomObj₀Iso X).inv.app m x).app k φ u₀ = X.map φ x := by
+  have hinv : (sHomObj₀Iso X).inv = curry (snd (Δ[0] : SSet.{u}) X) := by
+    -- Unfolding the composite isomorphism `sHomObj₀Iso` gives `(unitIsoSelf X).inv` followed by
+    -- precomposition `(pre u.hom).app X` along `u : Δ[0] ≅ 𝟙_ SSet` (`rw [Iso.trans_inv]` cannot
+    -- match directly because `sHom`, `internalHom.obj`, and `ihom` only agree at default
+    -- transparency).
+    have h₁ : (unitIsoSelf X).inv ≫
+        (pre (stdSimplex.isTerminalObj₀.uniqueUpToIso isTerminalTensorUnit).hom).app X =
+        curry (snd (Δ[0] : SSet.{u}) X) := by
+      apply uncurry_injective
+      rw [uncurry_pre_app, uncurry_curry, uncurry_eq]
+      have hunit : 𝟙_ SSet.{u} ◁ (unitIsoSelf X).inv ≫ (ihom.ev (𝟙_ SSet.{u})).app X =
+          (λ_ X).hom :=
+        (conjugateEquiv_counit (Adjunction.id (C := SSet.{u}))
+          (ihom.adjunction (𝟙_ SSet.{u})) (leftUnitorNatIso SSet.{u}).hom X).trans
+          (Category.comp_id _)
+      rw [hunit, leftUnitor_hom, whiskerRight_snd]
+    exact h₁
+  rw [hinv]
+  -- In `SSet`, `curry` (`FunctorToTypes.adj`) evaluates `snd Δ[0] X` on `(u₀, X.map φ x)`.
+  rfl
+
+/-- Evaluating `sHomObj₀Iso` on an `m`-simplex of `Fun(Δ[0], X)` evaluates it at the identity of
+`m` and the unique `m`-simplex of `Δ[0]`. -/
+@[simp]
+lemma sHomObj₀Iso_hom_app (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (s : (sHom (Δ[0] : SSet.{u}) X).obj m) :
+    (sHomObj₀Iso X).hom.app m s = s.app m (𝟙 m) (stdSimplex.const 0 0 m) := by
+  obtain ⟨x, rfl⟩ := ((sHomObj₀Iso X).app m).toEquiv.symm.surjective s
+  simp [sHomObj₀Iso_inv_app_app]
 
 /-- On vertices, `sHomObj₀Iso` evaluates a map `Δ[0] ⟶ X` at the unique vertex of `Δ[0]`. -/
 lemma sHomObj₀Iso_hom_app_zero (X : SSet.{u}) (v : (sHom (Δ[0] : SSet.{u}) X) _⦋0⦌) :
@@ -229,13 +238,9 @@ lemma sHomObj₀Iso_hom_app_zero (X : SSet.{u}) (v : (sHom (Δ[0] : SSet.{u}) X)
 picking out `x`. -/
 lemma sHomObj₀Iso_inv_app_zero (X : SSet.{u}) (x : X _⦋0⦌) :
     (sHomObj₀Iso X).inv.app (op ⦋0⦌) x = homEquiv' Δ[0] X (yonedaEquiv.symm x) := by
-  refine Functor.functorHom_ext fun k φ ↦ ?_
-  ext u₀
-  change ((sHomObj₀Iso X).inv.app (op ⦋0⦌) x).app k φ u₀ = (yonedaEquiv.symm x).app k u₀
-  rw [sHomObj₀Iso_inv_app_app]
-  obtain ⟨⟨d⟩⟩ := k
-  rw [← stdSimplex.objEquiv.symm_apply_apply u₀, yonedaEquiv_symm_app_objEquiv_symm]
-  exact congrArg (fun ψ : ⦋d⦌ ⟶ ⦋0⦌ ↦ X.map ψ.op x) (Subsingleton.elim φ.unop _)
+  apply ((sHomObj₀Iso X).app (op ⦋0⦌)).toEquiv.injective
+  simp only [Iso.toEquiv_fun, Iso.app_hom, Iso.inv_hom_id_app_apply, sHomObj₀Iso_hom_app_zero,
+    Equiv.symm_apply_apply, Equiv.apply_symm_apply]
 
 /-- The function complex `Fun(Δ[0], X)` out of the point is connected when `X` is connected. -/
 instance (X : SSet.{u}) [X.IsConnected] : (sHom (Δ[0] : SSet.{u}) X).IsConnected := by
