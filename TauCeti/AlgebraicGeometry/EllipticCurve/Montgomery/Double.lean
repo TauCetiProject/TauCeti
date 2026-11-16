@@ -19,7 +19,8 @@ residue rings.
 `double_coordinates` proves correctness on Mathlib's native point group, including infinity
 and points of order two. Its output is nonzero even when the model is singular, since native
 points are nonsingular. `double_coordinates_of_cross_eq_zero` gives the same result for any nonzero
-representative of a point's coordinate pair.
+representative of a point's coordinate pair, and `double_cross_eq_zero_of_cross_eq_zero` gives the
+cross-difference relation without assuming `D ≠ 0` or `S ≠ 0`.
 
 The proof uses Mathlib's duplication numerator and denominator, in particular
 `WeierstrassCurve.Affine.den_duplication_ne_zero_or_num_duplication_ne_zero` and
@@ -171,6 +172,24 @@ theorem double_coordinates_of_cross_eq_zero (hD : D ≠ 0)
   · rw [Pair.ne_zero_iff] at hn ⊢
     simpa [hc] using hn
   · simp [hx]
+
+/-- Doubling any representative of a native point gives a pair with vanishing cross difference
+with the coordinate pair of `P + P`, without requiring `D ≠ 0`, `S ≠ 0`, or `B ≠ 0`. When `D = 0`
+or `S = 0`, the output is the zero raw pair. -/
+theorem double_cross_eq_zero_of_cross_eq_zero (h : 4 * N = (A + 2) * D)
+    {P : (model A B).toAffine.Point} {S : Pair K}
+    (hSP : S.cross (coordinates A B P) = 0) :
+    (double N D S).cross (coordinates A B (P + P)) = 0 := by
+  by_cases hD : D = 0
+  · have h₀ : double N D S = 0 := by
+      ext
+      · simp [double_x, hD]
+      · rw [double_z_of_relation h, hD]
+        simp
+    simp [h₀]
+  · by_cases hS : S = 0
+    · simp [hS]
+    · exact (double_coordinates_of_cross_eq_zero hD h hS hSP).2
 
 end Field
 

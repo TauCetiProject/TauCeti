@@ -26,8 +26,10 @@ apply to any pair with the stated coordinate relation, not just outputs of a par
 formula.
 
 Divisibility by `p` alone need not give a proper factor: every prime divisor might divide
-the gcd. For positive `n`, a nonzero reduction of the denominator modulo another divisor
-certifies that the gcd is strictly between `1` and `n`.
+the gcd. When the reduced pair is nonzero and `B ≠ 0`, `prime_dvd_gcd_iff_addOrderOf_dvd` gives
+the exact equivalence `p ∣ Nat.gcd R.z.val n ↔ addOrderOf P ∣ m`. For positive `n`, nonvanishing
+of the denominator modulo another divisor—in particular, a prime divisor `q ∣ n` at which a
+point's order fails to divide `m`—certifies that the gcd is strictly between `1` and `n`.
 
 ## References
 
@@ -86,5 +88,32 @@ theorem one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd [NeZero n] (hpn : p ∣ n)
   · exact (R.z.dvd_gcd_val_iff_castHom_eq_zero hpn).mp
       (prime_dvd_gcd_of_addOrderOf_dvd hpn P R hm hR)
   · exact hq
+
+/-- When the reduced pair is nonzero and `B ≠ 0`, the prime `p` divides the denominator gcd
+exactly when the additive order of `P` divides the multiplier `m`. -/
+theorem prime_dvd_gcd_iff_addOrderOf_dvd (hpn : p ∣ n) (hB : B ≠ 0)
+    (P : (model A B).toAffine.Point) (R : Pair (ZMod n))
+    (hR0 : R.map (ZMod.castHom hpn (ZMod p)) ≠ 0)
+    (hR : (R.map (ZMod.castHom hpn (ZMod p))).cross (coordinates A B (m • P)) = 0) :
+    p ∣ Nat.gcd R.z.val n ↔ addOrderOf P ∣ m := by
+  rw [R.z.dvd_gcd_val_iff_castHom_eq_zero hpn, ← Pair.map_z (ZMod.castHom hpn (ZMod p)) R,
+    Pair.z_eq_zero_iff_of_cross_eq_zero hR0 (coordinates_ne_zero hB (m • P)) hR,
+    coordinates_z_eq_zero_iff hB, ← addOrderOf_dvd_iff_nsmul_eq_zero]
+
+/-- If the order of a point modulo `p ∣ n` divides `m` and the order of a point modulo another
+prime `q ∣ n` does not, with a nonzero reduction of `R` and `B' ≠ 0` modulo `q`, then the
+denominator gcd is a proper factor of the positive modulus `n`. -/
+theorem one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd_of_not_dvd [NeZero n] (hpn : p ∣ n)
+    (P : (model A B).toAffine.Point) (R : Pair (ZMod n)) (hmp : addOrderOf P ∣ m)
+    (hRp : (R.map (ZMod.castHom hpn (ZMod p))).cross (coordinates A B (m • P)) = 0)
+    {q : ℕ} [Fact q.Prime] (hqn : q ∣ n) {A' B' : ZMod q} (hB' : B' ≠ 0)
+    (Q : (model A' B').toAffine.Point) (hmq : ¬ addOrderOf Q ∣ m)
+    (hRq0 : R.map (ZMod.castHom hqn (ZMod q)) ≠ 0)
+    (hRq : (R.map (ZMod.castHom hqn (ZMod q))).cross (coordinates A' B' (m • Q)) = 0) :
+    1 < Nat.gcd R.z.val n ∧ Nat.gcd R.z.val n < n := by
+  refine one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd hpn P R hmp hRp hqn ?_
+  rw [ne_eq, ← R.z.dvd_gcd_val_iff_castHom_eq_zero hqn,
+    prime_dvd_gcd_iff_addOrderOf_dvd hqn hB' Q R hRq0 hRq]
+  exact hmq
 
 end TauCeti.Montgomery

@@ -38,6 +38,9 @@ is why `(0, 0)` never denotes a point.
 
 * `TauCeti.Montgomery.Pair.cross_eq_zero_trans`: over a domain, vanishing of the cross difference
   is transitive through a nonzero middle pair.
+* `TauCeti.Montgomery.Pair.x_eq_zero_iff_of_cross_eq_zero` and
+  `TauCeti.Montgomery.Pair.z_eq_zero_iff_of_cross_eq_zero`: over a domain, two nonzero pairs with
+  vanishing cross difference vanish in either field simultaneously.
 * `TauCeti.Montgomery.Pair.cross_eq_zero_iff_exists_smul`: over a field, two nonzero pairs have
   vanishing cross difference exactly when one is a scalar multiple of the other.
 * `TauCeti.Montgomery.Pair.toProj_eq_toProj_iff`: two nonzero pairs define the same point of the
@@ -231,6 +234,28 @@ theorem cross_eq_zero_trans {p q r : Pair R} (hq : q ≠ 0) (hpq : p.cross q = 0
     linear_combination p.x * hqr + r.x * hpq
   · refine mul_left_cancel₀ hz ?_
     linear_combination r.z * hpq + p.z * hqr
+
+/-- Over a domain, two nonzero pairs with vanishing cross difference vanish in their first field
+simultaneously. -/
+theorem x_eq_zero_iff_of_cross_eq_zero {p q : Pair R} (hp : p ≠ 0) (hq : q ≠ 0)
+    (hpq : p.cross q = 0) : p.x = 0 ↔ q.x = 0 := by
+  rw [cross_def, sub_eq_zero] at hpq
+  constructor <;> intro h
+  · have hpz : p.z ≠ 0 := (ne_zero_iff.mp hp).resolve_left (not_not.mpr h)
+    exact (mul_eq_zero.mp (by rw [← hpq, h, zero_mul])).resolve_right hpz
+  · have hqz : q.z ≠ 0 := (ne_zero_iff.mp hq).resolve_left (not_not.mpr h)
+    exact (mul_eq_zero.mp (by rw [hpq, h, zero_mul])).resolve_right hqz
+
+/-- Over a domain, two nonzero pairs with vanishing cross difference vanish in their second field
+simultaneously. -/
+theorem z_eq_zero_iff_of_cross_eq_zero {p q : Pair R} (hp : p ≠ 0) (hq : q ≠ 0)
+    (hpq : p.cross q = 0) : p.z = 0 ↔ q.z = 0 := by
+  rw [cross_def, sub_eq_zero] at hpq
+  constructor <;> intro h
+  · have hpx : p.x ≠ 0 := (ne_zero_iff.mp hp).resolve_right (not_not.mpr h)
+    exact (mul_eq_zero.mp (by rw [hpq, h, mul_zero])).resolve_left hpx
+  · have hqx : q.x ≠ 0 := (ne_zero_iff.mp hq).resolve_right (not_not.mpr h)
+    exact (mul_eq_zero.mp (by rw [← hpq, h, mul_zero])).resolve_left hqx
 
 /-- Over a domain, a scalar multiple of a pair is zero exactly when the scalar or the pair is. -/
 @[simp]
