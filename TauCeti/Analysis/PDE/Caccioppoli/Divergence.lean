@@ -45,7 +45,7 @@ reverse Hölder inequality for `‖∇u‖` behind Meyers' higher integrability 
   balls.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence`: the form
   on concentric balls with the mean of `u` over the larger ball subtracted.
-* `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le`: the form on
+* `TauCeti.PDE.exists_setIntegral_ball_norm_indicator_gradient_sq_le_divergence`: the form on
   concentric balls up to the boundary, for the zero extension of `u ∈ H¹₀(Ω)`.
 
 ## References
@@ -274,32 +274,32 @@ open Filter Metric in
 /-- **The Caccioppoli inequality up to the boundary.** There is `C > 0`, depending only on the
 dimension, such that the following holds for every additive Haar measure `μ`. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let
-`u ∈ H¹₀(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. Then the zero extension
-`u₀` of `u` satisfies, on every ball, which need not lie in `Ω`,
+`u ∈ H¹₀(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. Then the zero
+extensions `1_Ω u` and `1_Ω ∇u` of `u` and of its gradient satisfy, on every ball, which need not
+lie in `Ω`,
 
-`∫_{B(y, ρ)} ‖∇u₀‖² ≤ 2 ((2Λ/λ)² + 1) (C / ρ)² ∫_{B(y, 2ρ)} u₀² + (12/λ²) ∫_{B(y, 2ρ)} ‖1_Ω F‖²`. -/
-theorem exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le :
+`∫_{B(y, ρ)} ‖1_Ω ∇u‖² ≤ 2 ((2Λ/λ)² + 1) (C / ρ)² ∫_{B(y, 2ρ)} (1_Ω u)²`
+`  + (12/λ²) ∫_{B(y, 2ρ)} ‖1_Ω F‖²`. -/
+theorem exists_setIntegral_ball_norm_indicator_gradient_sq_le_divergence :
     ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
       {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
       {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p0 mu Omega 2}
-      {ub : W1p mu ⊤ 2} {y : EuclideanSpace ℝ ι} {ρ : ℝ},
+      {y : EuclideanSpace ℝ ι} {ρ : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) → MemLp F 2 (mu.restrict Omega) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
-      (W1p.value ub : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu]
-        (Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.value (u : W1p mu Omega 2)) →
-      (W1p.gradient ub : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =ᵐ[mu]
-        (Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.gradient (u : W1p mu Omega 2)) →
       0 < ρ →
-      ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu ≤
+      ∫ x in ball y ρ, ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
+          (W1p.gradient (u : W1p mu Omega 2)) x‖ ^ 2 ∂mu ≤
         2 * ((2 * Lam / lam) ^ 2 + 1) * (C / ρ) ^ 2 *
-            ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu
+            ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
+              (W1p.value (u : W1p mu Omega 2)) x‖ ^ 2 ∂mu
           + 12 / lam ^ 2 *
             ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2 ∂mu := by
   obtain ⟨c, hc0, hc⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * c + 1, by positivity, ?_⟩
-  intro mu _ Omega a lam Lam F u ub y ρ h ha hF hu hval hgrad hρ
+  intro mu _ Omega a lam Lam F u y ρ h ha hF hu hρ
   have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   -- A cutoff equal to one on `B(y, ρ)` and supported in `closedBall y (3ρ/2) ⊆ B(y, 2ρ)`.
   obtain ⟨ψ, hψ, hrange, hone, hts, hgradψ, -⟩ := hc y hρ.le (by linarith : ρ < 3 / 2 * ρ)
@@ -314,10 +314,10 @@ theorem exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le :
     exact pow_le_one₀ h0 h1
   have hcacc := h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt (.inr u.2)
   -- The left side: on `B(y, ρ) ∩ Ω` the cutoff is one.
-  have hleft : ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu ≤
+  have hleft : ∫ x in ball y ρ, ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
+        (W1p.gradient (u : W1p mu Omega 2)) x‖ ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient (u : W1p mu Omega 2) x‖ ^ 2 ∂mu := by
-    rw [integral_congr_ae (ae_restrict_of_ae (hgrad.mono fun x hx => by rw [hx])),
-      MeasureTheory.setIntegral_norm_indicator_sq hOm]
+    rw [MeasureTheory.setIntegral_norm_indicator_sq hOm]
     exact MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one
       (Lp.memLp (W1p.gradient (u : W1p mu Omega 2))).norm.integrable_sq
       (ae_of_all _ fun x => sq_nonneg _) (hψ.continuous.pow 2).aestronglyMeasurable
@@ -328,12 +328,13 @@ theorem exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le :
       inter_subset_right
   -- The gradient of the cutoff is supported in `B(y, 2ρ)`.
   have hmid : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value (u : W1p mu Omega 2) x ^ 2 ∂mu ≤
-      ((2 * c + 1) / ρ) ^ 2 * ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu := by
-    have e : ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu =
+      ((2 * c + 1) / ρ) ^ 2 * ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
+        (W1p.value (u : W1p mu Omega 2)) x‖ ^ 2 ∂mu := by
+    have e : ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
+          (W1p.value (u : W1p mu Omega 2)) x‖ ^ 2 ∂mu =
         ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ ball y (2 * ρ),
           W1p.value (u : W1p mu Omega 2) x ^ 2 ∂mu := by
-      rw [integral_congr_ae (ae_restrict_of_ae (hval.mono fun x hx => by rw [hx])),
-        MeasureTheory.setIntegral_norm_indicator_sq hOm, inter_comm]
+      rw [MeasureTheory.setIntegral_norm_indicator_sq hOm, inter_comm]
       simp only [Real.norm_eq_abs, sq_abs]
     rw [e]
     exact W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (u : W1p mu Omega 2) hψ hG hts2
@@ -354,9 +355,12 @@ theorem exists_setIntegral_ball_norm_gradient_extendByZeroL_sq_le :
       exact mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)
     · rw [indicator_of_notMem hx]
       simp [image_eq_zero_of_notMem_tsupport fun hx' => hx (hts2 hx')]
-  calc ∫ x in ball y ρ, ‖W1p.gradient ub x‖ ^ 2 ∂mu
+  calc ∫ x in ball y ρ, ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
+        (W1p.gradient (u : W1p mu Omega 2)) x‖ ^ 2 ∂mu
       ≤ 2 * ((2 * Lam / lam) ^ 2 + 1) *
-          (((2 * c + 1) / ρ) ^ 2 * ∫ x in ball y (2 * ρ), ‖W1p.value ub x‖ ^ 2 ∂mu)
+          (((2 * c + 1) / ρ) ^ 2 *
+            ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
+              (W1p.value (u : W1p mu Omega 2)) x‖ ^ 2 ∂mu)
         + 12 / lam ^ 2 *
           ∫ x in ball y (2 * ρ), ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2 ∂mu :=
         (hleft.trans hcacc).trans (by gcongr)
