@@ -12,8 +12,11 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 # Elementary facts about `dslope`
 
 Elementary divided-slope facts. Away from its base point `dslope` is the plain difference quotient,
-so most of these are statements about a normed field and its norm; only the product rule and the
-germ congruence also involve the value `deriv f a` of `dslope f a` at its base point.
+so symmetry, the unit-quotient lemma, and Taylor's formula are purely statements about a normed
+field and its norm; the linearity lemmas (`dslope_const`, `dslope_zero`, `dslope_const_smul`,
+`dslope_const_mul`, and — assuming differentiability at `a` — `dslope_add` and `dslope_sum`), the
+product rule, and the germ congruence also involve the value `deriv f a` of `dslope f a` at its
+base point.
 
 ## Main results
 
@@ -115,17 +118,19 @@ theorem dslope_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCo
 
 /-- Divided differences commute with scalar multiplication by a constant. -/
 @[simp]
-theorem dslope_const_smul {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] (c : 𝕜) (f : 𝕜 → E) (a : 𝕜) :
+theorem dslope_const_smul {𝕜 𝕝 E : Type*} [NontriviallyNormedField 𝕜] [DivisionSemiring 𝕝]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Module 𝕝 E] [SMulCommClass 𝕜 𝕝 E]
+    [ContinuousConstSMul 𝕝 E] (c : 𝕝) (f : 𝕜 → E) (a : 𝕜) :
     dslope (c • f) a = c • dslope f a := by
   ext b
   rcases eq_or_ne b a with rfl | hb
   · simp [deriv_const_smul_field]
-  · simp [dslope_of_ne _ hb, slope_def_module, smul_sub, smul_comm c]
+  · simp [dslope_of_ne _ hb, slope_def_module, smul_sub, smul_comm _ c]
 
 /-- Divided differences commute with left multiplication by a constant. -/
 @[simp]
-theorem dslope_const_mul {𝕜 : Type*} [NontriviallyNormedField 𝕜] (c : 𝕜) (f : 𝕜 → 𝕜) (a : 𝕜) :
+theorem dslope_const_mul {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NormedDivisionRing 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] (c : 𝕜') (f : 𝕜 → 𝕜') (a : 𝕜) :
     dslope (fun x ↦ c * f x) a = fun x ↦ c * dslope f a x := by
   simpa only [Pi.smul_def, smul_eq_mul] using dslope_const_smul c f a
 

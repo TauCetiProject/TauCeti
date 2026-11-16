@@ -241,11 +241,6 @@ theorem mDeriv_single (f : (Fin n → ℂ) → ℂ) (i : Fin n) (k : ℕ) :
   rw [mDeriv_eq_listDeriv, listDeriv_single (List.nodup_finRange n)]
   simp
 
-/-- The mixed partial derivative of multi-order `eᵢ` is `∂ᵢ`. -/
-theorem mDeriv_single_one (f : (Fin n → ℂ) → ℂ) (i : Fin n) :
-    mDeriv (Pi.single i 1) f = partialDeriv i f :=
-  mDeriv_single f i 1
-
 /-- Splitting off the `i`-th coordinate of a mixed partial derivative of an entire function:
 `D^σ f = ∂ᵢ^{σᵢ} (D^{update σ i 0} f)`. -/
 theorem mDeriv_eq_iterate_partialDeriv_mDeriv_update_zero {f : (Fin n → ℂ) → ℂ}
