@@ -120,6 +120,7 @@ theorem HasFPowerSeriesWithinOnBall.compLinearIsometry {v : E →ₗᵢ[𝕜] F}
   have hr_le : r ≤ r / ‖v.toContinuousLinearMap‖ₑ :=
     (ENNReal.le_div_iff_mul_le (Or.inr hf.r_pos.ne') (Or.inl eNorm_ne_top)).2
       (mul_le_of_le_one_right' hu_le)
+  rw [← LinearIsometry.coe_toContinuousLinearMap] at hf ⊢
   exact (hf.compContinuousLinearMap (u := v.toContinuousLinearMap)).of_le hf.r_pos hr_le
 
 /-- Precomposing a power series on a ball by a linear isometry preserves the convergence radius

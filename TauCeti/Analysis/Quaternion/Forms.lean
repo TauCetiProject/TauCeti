@@ -115,33 +115,39 @@ theorem coe_dq : ⇑dq = (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).
 
 /-- Evaluating `dq` on the coordinate tuple of `q` recovers `q`. -/
 theorem dq_linearEquivTuple (q : ℍ) :
-    dq (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q) = q :=
-  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm_apply_apply q
+    dq (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q) = q := by
+  rw [coe_dq]
+  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm_apply_apply q
 
 /-- Taking the coordinate tuple of `dq x` recovers `x`. -/
 theorem linearEquivTuple_dq (x : Fin 4 → ℝ) :
-    QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) (dq x) = x :=
-  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+    QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) (dq x) = x := by
+  rw [coe_dq]
+  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
 
 /-- The coordinate `1`-form `dq` is injective. -/
-theorem dq_injective : Function.Injective dq :=
-  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.injective
+theorem dq_injective : Function.Injective dq := by
+  rw [coe_dq]
+  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.injective
 
 /-- The coordinate `1`-form `dq` is surjective. -/
-theorem dq_surjective : Function.Surjective dq :=
-  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.surjective
+theorem dq_surjective : Function.Surjective dq := by
+  rw [coe_dq]
+  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.surjective
 
 /-- The Euclidean norm of the quaternion with coordinates `x` is the norm of `x` in
 `EuclideanSpace ℝ (Fin 4)`. -/
 theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
   rw [← _root_.Quaternion.norm_toLp_equivTuple]
   congr 2
+  rw [_root_.Quaternion.equivTuple, ← QuaternionAlgebra.coe_linearEquivTuple]
   exact linearEquivTuple_dq x
 
 /-- Each coordinate of `x` is bounded in absolute value by the Euclidean norm of `dq x`. -/
 theorem abs_apply_le_norm_dq (x : Fin 4 → ℝ) (i : Fin 4) : |x i| ≤ ‖dq x‖ := by
   rw [norm_dq, ← Real.norm_eq_abs]
-  exact PiLp.norm_apply_le (WithLp.toLp 2 x) i
+  have h := PiLp.norm_apply_le (WithLp.toLp 2 x) i
+  rwa [WithLp.ofLp_toLp] at h
 
 /-- Each coordinate difference `|x i - y i|` is bounded by the Euclidean distance
 `‖dq x - dq y‖`. -/
@@ -155,7 +161,7 @@ theorem norm_dq_le_two_mul_of_abs_le {x : Fin 4 → ℝ} {r : ℝ} (h : ∀ i, |
     ‖dq x‖ ≤ 2 * r := by
   have hr : 0 ≤ r := (abs_nonneg (x 0)).trans (h 0)
   have hsq : ‖dq x‖ ^ 2 ≤ (2 * r) ^ 2 := by
-    rw [norm_dq, PiLp.norm_sq_eq_of_L2]
+    rw [norm_dq, PiLp.norm_sq_eq_of_L2, WithLp.ofLp_toLp]
     calc ∑ i : Fin 4, ‖x i‖ ^ 2
       _ ≤ ∑ _ : Fin 4, r ^ 2 := Finset.sum_le_sum fun i _ ↦ by
           rw [Real.norm_eq_abs]
