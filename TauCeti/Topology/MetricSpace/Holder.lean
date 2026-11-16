@@ -52,8 +52,9 @@ points, the form in which Hölder seminorms are written in analysis texts.
 By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
 `α ≤ 1`.
 
-For an `α`-Hölder `f` and a `β`-Hölder `g`, the `α β`-Hölder seminorm of `f ∘ g` is at most the
-seminorm of `f` times the `α`-th power of the seminorm of `g`.
+For an `α`-Hölder `f` and a `β`-Hölder `g` between pseudo-extended metric spaces, the
+`α β`-Hölder seminorm of `f ∘ g` is at most the seminorm of `f` times the `α`-th power of the
+seminorm of `g`.
 
 ## Main declarations
 
@@ -463,12 +464,32 @@ theorem edist_le_eHolderNorm_mul {X Y : Type*} [MetricSpace X] [PseudoEMetricSpa
 
 /-- **The Hölder seminorm of a composition.** If `f` is `α`-Hölder and `g` is `β`-Hölder, then the
 `α β`-Hölder seminorm of `f ∘ g` is at most `nnHolderNorm α f * nnHolderNorm β g ^ α`. For a
-`K`-Lipschitz `g` (`β = 1`) the factor is at most `K ^ α`. -/
-theorem MemHolder.nnHolderNorm_comp_le {X' X Z : Type*} [MetricSpace X'] [MetricSpace X]
-    [EMetricSpace Z] {α β : ℝ≥0} {f : X → Z} (hf : MemHolder α f) {g : X' → X}
-    (hg : MemHolder β g) :
-    nnHolderNorm (α * β) (f ∘ g) ≤ nnHolderNorm α f * nnHolderNorm β g ^ (α : ℝ) :=
-  (hf.holderWith.comp hg.holderWith).nnholderNorm_le
+`K`-Lipschitz `g` (`β = 1`) the factor is at most `K ^ α`.
+
+No metric is needed: in a pseudo-extended metric space the infimum defining `eHolderNorm` need not
+be attained, so the proof bounds the seminorm of `f ∘ g` by `C * D ^ α` for every pair of Hölder
+constants `C` of `f` and `D` of `g` (`HolderWith.comp`) and passes to the infimum. -/
+theorem MemHolder.nnHolderNorm_comp_le {X' X Z : Type*} [PseudoEMetricSpace X']
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Z] {α β : ℝ≥0} {f : X → Z} (hf : MemHolder α f)
+    {g : X' → X} (hg : MemHolder β g) :
+    nnHolderNorm (α * β) (f ∘ g) ≤ nnHolderNorm α f * nnHolderNorm β g ^ (α : ℝ) := by
+  have key : eHolderNorm (α * β) (f ∘ g) ≤ eHolderNorm α f * eHolderNorm β g ^ (α : ℝ) := by
+    obtain ⟨C, hC⟩ := hf
+    obtain ⟨D, hD⟩ := hg
+    have : Nonempty {D // HolderWith D β g} := ⟨⟨D, hD⟩⟩
+    conv_rhs => rw [eHolderNorm, eHolderNorm, iInf_subtype', iInf_subtype',
+      ENNReal.iInf_rpow_of_nonneg α.coe_nonneg]
+    refine ENNReal.le_iInf_mul_iInf ⟨⟨C, hC⟩, ENNReal.coe_ne_top⟩
+      ⟨⟨D, hD⟩, ENNReal.rpow_ne_top_of_nonneg α.coe_nonneg ENNReal.coe_ne_top⟩
+      fun C D ↦ ?_
+    rw [← ENNReal.coe_rpow_of_nonneg _ α.coe_nonneg, ← ENNReal.coe_mul]
+    exact (C.2.comp D.2).eHolderNorm_le
+  have hf' : (nnHolderNorm α f : ℝ≥0∞) = eHolderNorm α f :=
+    ENNReal.coe_toNNReal hf.eHolderNorm_ne_top
+  have hg' : (nnHolderNorm β g : ℝ≥0∞) = eHolderNorm β g :=
+    ENNReal.coe_toNNReal hg.eHolderNorm_ne_top
+  rw [← ENNReal.coe_le_coe, ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ α.coe_nonneg, hf', hg']
+  exact coe_nnHolderNorm_le_eHolderNorm.trans key
 
 /-- The Hölder seminorm is the supremum of the difference quotients
 `edist (f x) (f y) / edist x y ^ r` over pairs of distinct points. -/
