@@ -298,7 +298,7 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_adjoint_le {q : ℝ≥0} 
   have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
   -- Admissibility with `2 < q` and `n ≥ 1` forces `1 / r < 1 / 2`, so `2 ≤ r`.
   have hr : 2 ≤ r :=
-    ENNReal.two_le_of_toReal_inv_lt (ENNReal.HolderConjugate.ne_zero r r') (by nlinarith)
+    ENNReal.two_le_of_toReal_inv_le (ENNReal.HolderConjugate.ne_zero r r') (by nlinarith)
   refine (ContinuousLinearMap.eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm _ h₀ h₁ hr g hg).trans
     (le_of_eq ?_)
   -- Bookkeeping of the constants.
