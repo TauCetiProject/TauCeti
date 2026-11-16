@@ -501,17 +501,8 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {Φ : E → E'}
   -- Replace `Φ` by a map smooth on all of `E` that agrees with it near `supp χ`.
   obtain ⟨Φ', hΦ', -, -, -, heq⟩ :=
     hΦ.exists_contDiff_eventuallyEq_on_isCompact χ.hasCompactSupport Ω.isOpen χ.tsupport_subset
-  have hpush : (Distribution.cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', ℂ)) =
-      Distribution.cutoffPushforwardCLM χ Φ' hΦ'.contDiffOn T := by
-    ext f
-    simp only [cutoffPushforwardCLM_apply]
-    congr 1
-    ext x
-    simp only [cutoffCompCLM_apply]
-    by_cases hx : χ x = 0
-    · simp [hx]
-    · rw [(heq x (subset_tsupport _ hx)).eq_of_nhds]
-  rw [hpush]
+  rw [cutoffPushforwardCLM_congr_map (hΦ' := hΦ'.contDiffOn) T
+    fun x hx => (heq x hx).eq_of_nhds.symm]
   refine isMicrolocallySmoothAt_cutoffPushforwardCLM_of_contDiff hΦ' hy fun x hx hxy => ?_
   rw [(heq x hx.1).fderiv_eq]
   exact h x hx ((heq x hx.1).eq_of_nhds.symm.trans hxy)
