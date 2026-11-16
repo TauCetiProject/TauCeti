@@ -17,7 +17,7 @@ distance is the sum of the absolute differences of their singleton masses. We gi
 and real formulas, together with summability of the real series. No probability normalization
 is required, and the formulas also cover the empty space.
 
-Without any finiteness assumption on either measure, the largest measurable-event excess
+Without any finiteness assumption on either measure, the supremum of measurable-event excesses
 `⨆ A, μ A - ν A` on a countable space with measurable singletons equals the sum of the truncated
 singleton differences `∑' x, (μ {x} - ν {x})`, and the positive set `{x | ν {x} < μ {x}}` attains
 it whenever `ν` gives that set finite mass — in particular unconditionally on any `Fintype`.
@@ -26,9 +26,6 @@ These identities identify total variation distance between distributions on a co
 space with the ℓ¹ distance of their point masses, and event excess with the sum of positive parts
 of singleton differences. We use Mathlib's normalization: the total variation distance between
 probability measures is at most two, not one.
-
-The proof uses Mathlib's `VectorMeasure.variation_apply_singleton` and the decomposition of a
-measure into its singleton masses, rather than constructing a separate discrete distance.
 
 ## Main statements
 
@@ -113,7 +110,7 @@ theorem measure_setOf_lt_sub_eq_tsum_singleton (hν : ν {x | ν {x} < μ {x}} �
     exact tsum_congr hpoint
   rw [hsum, ENNReal.add_sub_cancel_left hν]
 
-/-- On a countable space with measurable singletons, the largest excess `μ A - ν A` over
+/-- On a countable space with measurable singletons, the supremum of `μ A - ν A` over
 measurable events is the sum of the truncated singleton differences `μ {x} - ν {x}`. No
 finiteness hypothesis on `μ` or `ν` is required. -/
 theorem iSup_measure_sub_eq_tsum_singleton :
@@ -159,11 +156,7 @@ theorem measure_setOf_lt_sub_eq_sum_singleton :
     μ {x | ν {x} < μ {x}} - ν {x | ν {x} < μ {x}} = ∑ x, (μ {x} - ν {x}) := by
   classical
   have hν : ν {x | ν {x} < μ {x}} ≠ ∞ := by
-    have hset : {x : α | ν {x} < μ {x}} =
-        ((Finset.univ.filter fun x => ν {x} < μ {x}) : Set α) := by
-      ext x
-      simp
-    rw [hset, ← sum_measure_singleton]
+    rw [← Finset.coe_filter_univ, ← sum_measure_singleton]
     exact (ENNReal.sum_lt_top.2 fun x hx =>
       ((Finset.mem_filter.1 hx).2.trans_le le_top)).ne
   rw [measure_setOf_lt_sub_eq_tsum_singleton hν, tsum_fintype]
