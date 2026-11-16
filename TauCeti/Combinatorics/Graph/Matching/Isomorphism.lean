@@ -5,17 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Incidence.Isomorphism
-public import TauCeti.Combinatorics.Graph.Matching.Capacitated
+public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Matching.Basic
 
 /-!
 # Isomorphism invariance of matchings
 
 A multigraph isomorphism transports sets of actual edges by its edge equivalence. This transport
-preserves and reflects matchings and perfect matchings. Pulling vertex capacities and edge
-multiplicities back along the isomorphism preserves and reflects multiset capacitated matchings.
-Edge identities are part of the isomorphism, so parallel edges and loops are treated exactly as in
-the original graph.
+preserves and reflects matchings and perfect matchings. Edge identities are part of the
+isomorphism, so parallel edges and loops are treated exactly as in the original graph.
 
 Proper edge-colourings are colourings of the line graph, so they are transported by
 `SimpleGraph.coloringCongr` applied to `Graph.Iso.lineGraph`.
@@ -62,21 +60,6 @@ theorem isPerfectMatching_image_iff (f : Iso G H) (M : Set E(G)) :
     ← f.vertexEquiv.forall_congr_right]
   refine and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   simp only [exists_mem_image, map_inc_iff]
-
-/-- Pulling vertex capacities and edge multiplicities back along a graph isomorphism preserves
-and reflects multiset capacitated matchings. -/
-@[simp]
-theorem isCapacitatedMatching_comp_iff [Fintype E(G)] [Fintype E(H)] (f : Iso G H)
-    (b : V(H) → ℕ) (x : E(H) → ℕ) :
-    G.IsCapacitatedMatching (b ∘ f.vertexEquiv) (x ∘ f.edgeEquiv) ↔
-      H.IsCapacitatedMatching b x := by
-  rw [isCapacitatedMatching_def, isCapacitatedMatching_def, ← f.vertexEquiv.forall_congr_right]
-  refine forall_congr' fun v ↦ ?_
-  have hv : ({f.vertexEquiv v} : Finset V(H)) =
-      ({v} : Finset V(G)).map f.vertexEquiv.toEmbedding := by
-    simp
-  rw [hv, f.incidentEdges_map, Finset.sum_map]
-  simp
 
 end Iso
 

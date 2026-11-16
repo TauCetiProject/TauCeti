@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Bipartition
-public import TauCeti.Combinatorics.Graph.Incidence.Isomorphism
 public import TauCeti.Combinatorics.Graph.LineGraph
 
 /-!

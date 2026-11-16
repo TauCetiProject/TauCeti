@@ -16,8 +16,8 @@ and edge types which preserve the link relation. Edge identities are part of the
 notion distinguishes parallel edges and retains loops.
 
 This file supplies identity, inverse, composition, the groupoid laws, transport of ambient
-vertex and edge sets, and preservation of incidence, loops and adjacency for multigraph
-isomorphisms.
+vertex and edge sets, and preservation of incidence, loops, adjacency and the edges at a vertex
+for multigraph isomorphisms.
 
 ## Main definitions
 
@@ -232,7 +232,7 @@ theorem ncard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
 
 /-- Edge-set transport commutes with set difference. -/
 @[simp]
-theorem mapEdgeSet_diff (f : Iso G H) (F F' : Set β) :
+theorem mapEdgeSet_sdiff (f : Iso G H) (F F' : Set β) :
     f.mapEdgeSet (F \ F') = f.mapEdgeSet F \ f.mapEdgeSet F' := by
   ext e
   simp only [mapEdgeSet, mem_sdiff, mem_ofPred_eq]
@@ -390,6 +390,36 @@ theorem map_adj_iff (f : Iso G H) (x y : G.vertexSet) :
   refine ⟨fun ⟨e, he⟩ ↦ ⟨_, (f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) x y).1 ?_⟩,
     fun ⟨e, he⟩ ↦ ⟨_, f.map_isLink he⟩⟩
   simpa using he
+
+/-- A graph isomorphism carries the edges at a vertex to the edges at its image. -/
+@[simp]
+theorem mapEdgeSet_incidenceSet (f : Iso G H) (x : V(G)) :
+    f.mapEdgeSet (G.incidenceSet x) = H.incidenceSet (f.vertexEquiv x) := by
+  ext e
+  by_cases he : e ∈ E(H)
+  · lift e to E(H) using he
+    rw [f.mem_mapEdgeSet_iff, mem_incidenceSet, mem_incidenceSet, ← f.map_inc_iff,
+      Equiv.apply_symm_apply]
+  · exact iff_of_false (fun h ↦ he (f.mapEdgeSet_subset_edgeSet _ h))
+      (fun h ↦ he (H.incidenceSet_subset_edgeSet _ h))
+
+/-- A graph isomorphism carries the loops at a vertex to the loops at its image. -/
+@[simp]
+theorem mapEdgeSet_loopSet (f : Iso G H) (x : V(G)) :
+    f.mapEdgeSet (G.loopSet x) = H.loopSet (f.vertexEquiv x) := by
+  ext e
+  by_cases he : e ∈ E(H)
+  · lift e to E(H) using he
+    rw [f.mem_mapEdgeSet_iff, mem_loopSet, mem_loopSet, ← f.map_isLoopAt_iff,
+      Equiv.apply_symm_apply]
+  · exact iff_of_false (fun h ↦ he (f.mapEdgeSet_subset_edgeSet _ h))
+      (fun h ↦ he ((H.loopSet_subset_incidenceSet _).trans (H.incidenceSet_subset_edgeSet _) h))
+
+/-- A graph isomorphism preserves the extended number of edges at each vertex. -/
+@[simp]
+theorem encard_incidenceSet_vertexEquiv (f : Iso G H) (x : V(G)) :
+    (H.incidenceSet (f.vertexEquiv x)).encard = (G.incidenceSet x).encard := by
+  rw [← f.mapEdgeSet_incidenceSet, f.encard_mapEdgeSet (G.incidenceSet_subset_edgeSet x)]
 
 end Iso
 

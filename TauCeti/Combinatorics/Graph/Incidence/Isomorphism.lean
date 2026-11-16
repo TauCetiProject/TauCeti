@@ -12,11 +12,12 @@ public import TauCeti.Combinatorics.Graph.Isomorphism
 # Isomorphism invariance of multigraph incidence counts
 
 A multigraph isomorphism carries the edges at an actual vertex to the edges at its image, and the
-loops at that vertex to the loops at its image. Consequently it preserves both vertex incidence
-counts, the finite sets of edges internal to or incident with a finite set of actual vertices,
-and the neighbours of one finite set of actual vertices within another. Edge identities are part
-of the isomorphism, so parallel edges and loops are counted exactly as in the original graph, and
-no finiteness is needed for the vertex counts.
+loops at that vertex to the loops at its image (`Graph.Iso.mapEdgeSet_incidenceSet`,
+`Graph.Iso.mapEdgeSet_loopSet`). Consequently it preserves both vertex incidence counts, the
+finite sets of edges internal to or incident with a finite set of actual vertices, and the
+neighbours of one finite set of actual vertices within another. Edge identities are part of the
+isomorphism, so parallel edges and loops are counted exactly as in the original graph, and no
+finiteness is needed for the vertex counts.
 -/
 
 public section
@@ -32,36 +33,6 @@ variable {G : Graph α β} {H : Graph α' β'}
 
 namespace Iso
 
-/-- A graph isomorphism carries the edges at a vertex to the edges at its image. -/
-@[simp]
-theorem mapEdgeSet_incidenceSet (f : Iso G H) (x : V(G)) :
-    f.mapEdgeSet (G.incidenceSet x) = H.incidenceSet (f.vertexEquiv x) := by
-  ext e
-  by_cases he : e ∈ E(H)
-  · lift e to E(H) using he
-    rw [f.mem_mapEdgeSet_iff, mem_incidenceSet, mem_incidenceSet, ← f.map_inc_iff,
-      Equiv.apply_symm_apply]
-  · exact iff_of_false (fun h ↦ he (f.mapEdgeSet_subset_edgeSet _ h))
-      (fun h ↦ he (H.incidenceSet_subset_edgeSet _ h))
-
-/-- A graph isomorphism carries the loops at a vertex to the loops at its image. -/
-@[simp]
-theorem mapEdgeSet_loopSet (f : Iso G H) (x : V(G)) :
-    f.mapEdgeSet (G.loopSet x) = H.loopSet (f.vertexEquiv x) := by
-  ext e
-  by_cases he : e ∈ E(H)
-  · lift e to E(H) using he
-    rw [f.mem_mapEdgeSet_iff, mem_loopSet, mem_loopSet, ← f.map_isLoopAt_iff,
-      Equiv.apply_symm_apply]
-  · exact iff_of_false (fun h ↦ he (f.mapEdgeSet_subset_edgeSet _ h))
-      (fun h ↦ he ((H.loopSet_subset_incidenceSet _).trans (H.incidenceSet_subset_edgeSet _) h))
-
-/-- A graph isomorphism preserves the extended number of edges at each vertex. -/
-@[simp]
-theorem encard_incidenceSet_vertexEquiv (f : Iso G H) (x : V(G)) :
-    (H.incidenceSet (f.vertexEquiv x)).encard = (G.incidenceSet x).encard := by
-  rw [← f.mapEdgeSet_incidenceSet, f.encard_mapEdgeSet (G.incidenceSet_subset_edgeSet x)]
-
 /-- A graph isomorphism preserves the incidence count of each vertex. -/
 @[simp]
 theorem incidenceCount_vertexEquiv (f : Iso G H) (x : V(G)) :
@@ -74,7 +45,7 @@ theorem incidenceCount_vertexEquiv (f : Iso G H) (x : V(G)) :
 theorem nonloopIncidenceCount_vertexEquiv (f : Iso G H) (x : V(G)) :
     H.nonloopIncidenceCount (f.vertexEquiv x) = G.nonloopIncidenceCount x := by
   rw [nonloopIncidenceCount_def, nonloopIncidenceCount_def, ← f.mapEdgeSet_incidenceSet,
-    ← f.mapEdgeSet_loopSet, ← f.mapEdgeSet_diff,
+    ← f.mapEdgeSet_loopSet, ← f.mapEdgeSet_sdiff,
     f.ncard_mapEdgeSet (sdiff_subset.trans (G.incidenceSet_subset_edgeSet x))]
 
 /-- A graph isomorphism carries the neighbours in `T` of `S` to the neighbours in the image of
@@ -109,6 +80,13 @@ theorem internalEdges_map (f : Iso G H) (S : Finset V(G)) :
     refine ⟨f.vertexEquiv x, by simpa using hx, f.vertexEquiv y, by simpa using hy, ?_⟩
     simpa using (f.map_isLink_iff _ _ _).2 he
 
+/-- A graph isomorphism carries the edges internal to a single vertex, namely its loops, to the
+edges internal to its image. -/
+@[simp]
+theorem internalEdges_singleton_vertexEquiv (f : Iso G H) (x : V(G)) :
+    H.internalEdges {f.vertexEquiv x} = (G.internalEdges {x}).map f.edgeEquiv.toEmbedding := by
+  simpa using f.internalEdges_map {x}
+
 /-- A graph isomorphism carries the edges incident with `S` to the edges incident with its
 image. -/
 @[simp]
@@ -124,6 +102,13 @@ theorem incidentEdges_map (f : Iso G H) (S : Finset V(G)) :
   · rintro ⟨x, hx, he⟩
     refine ⟨f.vertexEquiv x, by simpa using hx, ?_⟩
     simpa using (f.map_inc_iff _ _).2 he
+
+/-- A graph isomorphism carries the edges incident with a vertex to the edges incident with its
+image. -/
+@[simp]
+theorem incidentEdges_singleton_vertexEquiv (f : Iso G H) (x : V(G)) :
+    H.incidentEdges {f.vertexEquiv x} = (G.incidentEdges {x}).map f.edgeEquiv.toEmbedding := by
+  simpa using f.incidentEdges_map {x}
 
 end FiniteEdges
 
