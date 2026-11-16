@@ -818,13 +818,13 @@ def ofCkHolderSpace (k : ℕ) (α : ℝ≥0) :
   LinearMap.mkContinuous
     { toFun := ckBesovRepr φ k
       map_add' f g := ext <| by
-        rw [toDistr_add, toDistr_ckBesovRepr, toDistr_ckBesovRepr, toDistr_ckBesovRepr,
-          CkHolderSpace.toBoundedContinuousFunction_add, map_add, Lp.toTemperedDistribution_add]
+        simp only [toDistr_add, toDistr_ckBesovRepr, CkHolderSpace.toBoundedContinuousFunction_add,
+          map_add, Lp.toTemperedDistribution_add]
+      -- A real scalar acts as its complex coercion, for which every map in the chain is linear.
       map_smul' c f := ext <| by
-        rw [RingHom.id_apply, toDistr_ckBesovRepr, CkHolderSpace.toBoundedContinuousFunction_smul,
-          ← Complex.coe_smul c f.toBoundedContinuousFunction, map_smul,
-          Lp.toTemperedDistribution_smul, ← toDistr_ckBesovRepr, ← toDistr_smul,
-          Complex.coe_smul] }
+        simp only [RingHom.id_apply, ← Complex.coe_smul, toDistr_smul, toDistr_ckBesovRepr,
+          CkHolderSpace.toBoundedContinuousFunction_smul, map_smul,
+          Lp.toTemperedDistribution_smul] }
     (2 * ofCkConst (F := F) φ k α) fun f ↦ (exists_toDistr_eq_ckHolderSpace φ k f).choose_spec.2
 
 /-- The element `ofCkHolderSpace F φ k α f` of `𝒞^{k+α}` is the tempered distribution of `f`. -/
@@ -867,15 +867,13 @@ def ofHolderSpace (α : ℝ≥0) : HolderSpace α E F →L[ℝ] BesovSpace F φ 
   LinearMap.mkContinuous
     { toFun := holderBesovRepr φ
       map_add' f g := ext <| by
-        rw [toDistr_add, toDistr_holderBesovRepr, toDistr_holderBesovRepr,
-          toDistr_holderBesovRepr, HolderSpace.toBoundedContinuousFunction_add, map_add,
-          Lp.toTemperedDistribution_add]
+        simp only [toDistr_add, toDistr_holderBesovRepr,
+          HolderSpace.toBoundedContinuousFunction_add, map_add, Lp.toTemperedDistribution_add]
+      -- A real scalar acts as its complex coercion, for which every map in the chain is linear.
       map_smul' c f := ext <| by
-        rw [RingHom.id_apply, toDistr_holderBesovRepr,
-          HolderSpace.toBoundedContinuousFunction_smul,
-          ← Complex.coe_smul c f.toBoundedContinuousFunction, map_smul,
-          Lp.toTemperedDistribution_smul, ← toDistr_holderBesovRepr, ← toDistr_smul,
-          Complex.coe_smul] }
+        simp only [RingHom.id_apply, ← Complex.coe_smul, toDistr_smul, toDistr_holderBesovRepr,
+          HolderSpace.toBoundedContinuousFunction_smul, map_smul,
+          Lp.toTemperedDistribution_smul] }
     (2 * ofHolderConst (F := F) φ α) fun f ↦ (exists_toDistr_eq_holderSpace φ f).choose_spec.2
 
 /-- The element `ofHolderSpace F φ α f` of `𝒞^α` is the tempered distribution of `f`. -/

@@ -144,9 +144,8 @@ theorem integral_norm_rpow_mul_norm_fourierInv_comp_smul (f : E → F) (s : ℝ)
   have hcs : |c| ^ s ≠ 0 := (Real.rpow_pos_of_pos (abs_pos.2 hc) s).ne'
   have h (y : E) : ‖y‖ ^ s * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ =
       (|c ^ finrank ℝ E|⁻¹ * |c| ^ s) * (‖c⁻¹ • y‖ ^ s * ‖𝓕⁻ f (c⁻¹ • y)‖) := by
-    rw [fourierInv_comp_smul f, norm_smul, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs,
-      Real.norm_eq_abs, abs_inv, Real.mul_rpow (by positivity) (norm_nonneg y),
-      Real.inv_rpow (abs_nonneg c)]
+    simp (disch := positivity) only [fourierInv_comp_smul f, norm_smul, norm_inv,
+      Real.norm_eq_abs, abs_abs, Real.mul_rpow, Real.inv_rpow]
     field_simp
   simp_rw [h]
   rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖y‖ ^ s * ‖𝓕⁻ f y‖),
