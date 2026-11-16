@@ -58,22 +58,6 @@ section
 
 variable {R : Type*} [AddCommGroup R]
 
-private theorem coe_affine_eq [PartialOrder R] [IsOrderedAddMonoid R] (β γ : R) :
-    (⇑(affine n β γ) : Vertex n → R) = barycentricLinear 0 0 β γ := funext fun _ => by simp
-private theorem coe_subtriangle_eq [PartialOrder R] [IsOrderedAddMonoid R] (h : Hive (m + k) R)
-    (p : Vertex m) : (⇑(h.subtriangle p) : Vertex k → R) =
-      (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k)) :=
-  funext (h.subtriangle_apply p)
-private theorem coe_rotate_eq [PartialOrder R] [IsOrderedAddMonoid R] (h : Hive n R) :
-    (⇑h.rotate : Vertex n → R) = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate :=
-  funext h.rotate_apply
-private theorem coe_reflect_eq [PartialOrder R] (h : Hive n R) :
-    (⇑h.reflect : Vertex n → R) = fun p => h p.reflect := funext h.reflect_apply
-private theorem coe_ofRhombusConcave_eq [PartialOrder R] [IsOrderedAddMonoid R] (f : Vertex n → R)
-    (hf : IsRhombusConcave f) :
-    (⇑(ofRhombusConcave f hf) : Vertex n → R) = f - fun _ => f (Vertex.cornerA n) :=
-  funext (ofRhombusConcave_apply f hf)
-
 /-- The zero-sum triple of clockwise unit-step edge slopes of `f : Vertex n → R` on a unit triangle
 `T : UnitTriangle n` along `A → B` (`s = 0`), `B → C` (`s = 1`), and `C → A` (`s = 2`). -/
 def triangleGradient (f : Vertex n → R) : UnitTriangle n → Fin 3 → R
@@ -119,7 +103,7 @@ theorem triangleGradient_comp {S F : Type*} [AddCommGroup S] [FunLike F R S]
   ext s; cases T <;> fin_cases s <;> simp [add_nsmul] <;> abel
 @[simp high] theorem triangleGradient_affine [PartialOrder R] [IsOrderedAddMonoid R] (β γ : R)
     (T : UnitTriangle n) : triangleGradient (affine n β γ) T = ![β, γ - β, -γ] := by
-  simp [coe_affine_eq]
+  simp [coe_affine]
 theorem triangleGradient_comp_add (f : Vertex (m + k) → R) (p : Vertex m) (T : UnitTriangle k)
     (s : Fin 3) :
     triangleGradient (fun q => f (p.add q)) T s = triangleGradient f (T.addLeft p) s := by
@@ -128,7 +112,7 @@ theorem triangleGradient_comp_add (f : Vertex (m + k) → R) (p : Vertex m) (T :
 @[simp] theorem triangleGradient_subtriangle [PartialOrder R] [IsOrderedAddMonoid R]
     (h : Hive (m + k) R) (p : Vertex m) (T : UnitTriangle k) (s : Fin 3) :
     triangleGradient (h.subtriangle p) T s = triangleGradient h (T.addLeft p) s := by
-  rw [coe_subtriangle_eq, triangleGradient_sub, triangleGradient_comp_add, triangleGradient_const,
+  rw [coe_subtriangle, triangleGradient_sub, triangleGradient_comp_add, triangleGradient_const,
     sub_zero]
 theorem triangleGradient_comp_rotate (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient (fun p => f p.rotate) T s = triangleGradient f T.rotate (s + 1) := by
@@ -136,14 +120,14 @@ theorem triangleGradient_comp_rotate (f : Vertex n → R) (T : UnitTriangle n) (
 @[simp] theorem triangleGradient_rotate [PartialOrder R] [IsOrderedAddMonoid R] (h : Hive n R)
     (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient h.rotate T s = triangleGradient h T.rotate (s + 1) := by
-  rw [coe_rotate_eq, triangleGradient_sub, triangleGradient_comp_rotate, triangleGradient_const,
+  rw [coe_rotate, triangleGradient_sub, triangleGradient_comp_rotate, triangleGradient_const,
     sub_zero]
 theorem triangleGradient_comp_reflect (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient (fun p => f p.reflect) T s = -triangleGradient f T.reflect s.rev := by
   cases T <;> fin_cases s <;> simp [Fin.rev] <;> abel
 @[simp] theorem triangleGradient_reflect [PartialOrder R] (h : Hive n R) (T : UnitTriangle n)
     (s : Fin 3) : triangleGradient h.reflect T s = -triangleGradient h T.reflect s.rev := by
-  rw [coe_reflect_eq]; exact triangleGradient_comp_reflect h T s
+  rw [coe_reflect]; exact triangleGradient_comp_reflect h T s
 @[simp] theorem triangleGradient_adjacentUp (f : Vertex (m + 2) → R) (s : Vertex m) (i j : Fin 3) :
     triangleGradient f (adjacentUp s i) j =
       f ((adjacentUp s i).vertex (j + 1)) - f ((adjacentUp s i).vertex j) := by
@@ -155,7 +139,7 @@ theorem triangleGradient_adjacentUp_add_one (f : Vertex (m + 2) → R) (s : Vert
     triangleGradient f (adjacentUp s i) (i + 1) =
       triangleGradient f (UnitTriangle.down s) (i + 1) := by
   rw [triangleGradient_adjacentUp, triangleGradient_down, (by fin_cases i <;> rfl : i + 1 + 1 =
-    i + 2), adjacentUp_vertex_add_two, adjacentUp_vertex_add_one]
+    i + 2), vertex_adjacentUp_add_two, vertex_adjacentUp_add_one]
 /-- Across the shared edge of `down s` and `adjacentUp s i` opposite `(down s).vertex i`, the
 `i`-th coordinate of `triangleGradient` jumps by the unit-rhombus slack. -/
 theorem triangleGradient_adjacentUp_sub_down_self (f : Vertex (m + 2) → R) (s : Vertex m)
@@ -164,7 +148,7 @@ theorem triangleGradient_adjacentUp_sub_down_self (f : Vertex (m + 2) → R) (s 
       rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
         ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
   rw [triangleGradient_adjacentUp, triangleGradient_down, rhombusSlack_def,
-    adjacentUp_vertex_add_one]; abel
+    vertex_adjacentUp_add_one]; abel
 /-- Across the shared edge of `down s` and `adjacentUp s i` opposite `(down s).vertex i`, the
 `(i + 2)`-th coordinate of `triangleGradient` jumps by minus the unit-rhombus slack. -/
 theorem triangleGradient_adjacentUp_sub_down_add_two (f : Vertex (m + 2) → R) (s : Vertex m)
@@ -173,7 +157,7 @@ theorem triangleGradient_adjacentUp_sub_down_add_two (f : Vertex (m + 2) → R) 
       -rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
         ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
   rw [triangleGradient_adjacentUp, triangleGradient_down, (by fin_cases i <;> rfl : i + 2 + 1 = i),
-    rhombusSlack_def, adjacentUp_vertex_add_two]; abel
+    rhombusSlack_def, vertex_adjacentUp_add_two]; abel
 
 /-- At size `m + 2`, rhombus concavity over any ordered additive abelian group is completely
 determined by the unit rhombi `isRhombus_adjacent s i` across shared interior unit edges. -/
@@ -233,7 +217,7 @@ theorem triangleAffine_const (c : ℝ) (T : UnitTriangle n) {x : Fin 3 → ℝ}
 theorem triangleAffine_ofRhombusConcave (f : Vertex n → ℝ) (hf : IsRhombusConcave f)
     (T : UnitTriangle n) {x : Fin 3 → ℝ} (hx : ∑ i, x i = (n : ℝ)) :
     triangleAffine (ofRhombusConcave f hf) T x = triangleAffine f T x - f (Vertex.cornerA n) := by
-  rw [coe_ofRhombusConcave_eq, triangleAffine_sub, ContinuousAffineMap.sub_apply,
+  rw [coe_ofRhombusConcave, triangleAffine_sub, ContinuousAffineMap.sub_apply,
     triangleAffine_const _ T hx]
 theorem triangleAffine_addLeft (f : Vertex (m + n) → ℝ) (p : Vertex m) (T : UnitTriangle n)
     (x : Fin 3 → ℝ) : triangleAffine f (T.addLeft p) (p.barycentric + x) =
@@ -242,7 +226,7 @@ theorem triangleAffine_addLeft (f : Vertex (m + n) → ℝ) (p : Vertex m) (T : 
 theorem triangleAffine_subtriangle (h : RealHive (m + k)) (p : Vertex m) (T : UnitTriangle k)
     {x : Fin 3 → ℝ} (hx : ∑ i, x i = (k : ℝ)) : triangleAffine (h.subtriangle p) T x =
       triangleAffine h (T.addLeft p) (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
-  rw [coe_subtriangle_eq, triangleAffine_sub, ContinuousAffineMap.sub_apply,
+  rw [coe_subtriangle, triangleAffine_sub, ContinuousAffineMap.sub_apply,
     ← triangleAffine_addLeft, triangleAffine_const _ T hx]
 theorem triangleAffine_comp_rotate (f : Vertex n → ℝ) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
     triangleAffine (fun p => f p.rotate) T x = triangleAffine f T.rotate (fun k => x (k - 1)) := by
@@ -252,7 +236,7 @@ theorem triangleAffine_comp_rotate (f : Vertex n → ℝ) (T : UnitTriangle n) (
 theorem triangleAffine_rotate (h : RealHive n) (T : UnitTriangle n) {x : Fin 3 → ℝ}
     (hx : ∑ i, x i = (n : ℝ)) : triangleAffine h.rotate T x =
       triangleAffine h T.rotate (fun k => x (k - 1)) - h (Vertex.cornerA n).rotate := by
-  rw [coe_rotate_eq, triangleAffine_sub, ContinuousAffineMap.sub_apply, triangleAffine_comp_rotate,
+  rw [coe_rotate, triangleAffine_sub, ContinuousAffineMap.sub_apply, triangleAffine_comp_rotate,
     triangleAffine_const _ T hx]
 theorem triangleAffine_comp_reflect (f : Vertex n → ℝ) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
     triangleAffine (fun p => f p.reflect) T x = triangleAffine f T.reflect (fun k => x (-k)) := by
@@ -261,7 +245,7 @@ theorem triangleAffine_comp_reflect (f : Vertex n → ℝ) (T : UnitTriangle n) 
     rw [Equiv.neg_apply, UnitTriangle.vertex_reflect, UnitTriangle.weight_reflect_apply]
 theorem triangleAffine_reflect (h : RealHive n) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
     triangleAffine h.reflect T x = triangleAffine h T.reflect (fun k => x (-k)) := by
-  rw [coe_reflect_eq]; exact triangleAffine_comp_reflect h T x
+  rw [coe_reflect]; exact triangleAffine_comp_reflect h T x
 @[simp] theorem triangleAffine_vertex (f : Vertex n → ℝ) (T : UnitTriangle n) (i : Fin 3) :
     triangleAffine f T (T.vertex i).barycentric = f (T.vertex i) := by
   rw [triangleAffine_apply]; fin_cases i <;> simp
@@ -296,7 +280,7 @@ theorem triangleAffine_barycentricLinear (c₀ α β γ : ℝ) (T : UnitTriangle
     (fun i => by simp [A, p, mul_comm]) hx).symm
 theorem triangleAffine_affine (β γ : ℝ) (T : UnitTriangle n) {x : Fin 3 → ℝ}
     (hx : ∑ i, x i = (n : ℝ)) : triangleAffine (affine n β γ) T x = x 1 * β + x 2 * γ := by
-  simpa [coe_affine_eq] using triangleAffine_barycentricLinear (0 : ℝ) 0 β γ T hx
+  simpa [coe_affine] using triangleAffine_barycentricLinear (0 : ℝ) 0 β γ T hx
 
 /-- The `s`-th clockwise perimeter unit-step vector `(-1, 1, 0)`, `(0, -1, 1)`, `(1, 0, -1)`. -/
 def unitStepVec : Fin 3 → (Fin 3 → ℝ)
@@ -341,13 +325,13 @@ theorem interpolate_of_notMem_barycentricSimplex (f : Vertex n → ℝ) {x : Fin
     (hx : x ∉ barycentricSimplex n) : interpolate f x = f (Vertex.cornerA n) := by
   rw [interpolate]; split_ifs with h <;>
     [exact (hx (h.choose.cell_subset_barycentricSimplex h.choose_spec)).elim; rfl]
-@[simp] theorem interpolate_zero_rank (f : Vertex 0 → ℝ) (x : Fin 3 → ℝ) :
+@[simp] theorem interpolate_rank_zero (f : Vertex 0 → ℝ) (x : Fin 3 → ℝ) :
     interpolate f x = f (Vertex.cornerA 0) := by simp [interpolate]
 /-- `interpolate f` extends `f` from the lattice vertices `Vertex n` via `Vertex.barycentric`. -/
 @[simp] theorem interpolate_barycentric (f : Vertex n → ℝ) (p : Vertex n) :
     interpolate f p.barycentric = f p := by
   rcases n with _ | m
-  · rw [interpolate_zero_rank, Subsingleton.elim p (Vertex.cornerA 0)]
+  · rw [interpolate_rank_zero, Subsingleton.elim p (Vertex.cornerA 0)]
   · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸
       barycentric_mem_barycentricSimplex p)
     obtain ⟨i, rfl⟩ := UnitTriangle.mem_range_vertex_of_barycentric_mem_cell hT
@@ -360,11 +344,11 @@ theorem eqOn_interpolate_of_affineOn_cell {f : Vertex n → ℝ} {g : (Fin 3 →
     EqOn g (interpolate f) (barycentricSimplex n) := fun x hx => by
   rcases n with _ | m
   · rw [barycentricSimplex_zero, mem_singleton_iff] at hx
-    rw [hx, ← Vertex.barycentric_cornerA_zero, hg_vert, interpolate_zero_rank]
+    rw [hx, ← Vertex.barycentric_cornerA_zero, hg_vert, interpolate_rank_zero]
   · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
     obtain ⟨A, hA⟩ := hg_aff T; rw [hA hT, interpolate_eq_triangleAffine f hT]
     exact eqOn_triangleAffine_of_vertex
-      (fun i => (hA (T.vertex_barycentric_mem_cell i)).symm.trans (hg_vert _)) hT
+      (fun i => (hA (T.barycentric_vertex_mem_cell i)).symm.trans (hg_vert _)) hT
 /-- Along any unit lattice edge `(a, c)`, `interpolate f` is affine on `[0, 1]`. -/
 theorem interpolate_lineMap_of_isUnitEdge (f : Vertex n → ℝ) {a c : Vertex n} (h : IsUnitEdge a c)
     {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
@@ -415,7 +399,7 @@ theorem interpolate_sub (f g : Vertex n → ℝ) (x : Fin 3 → ℝ) :
   · rfl
 theorem interpolate_ofRhombusConcave (f : Vertex n → ℝ) (hf : IsRhombusConcave f) (x : Fin 3 → ℝ) :
     interpolate (ofRhombusConcave f hf) x = interpolate f x - f (Vertex.cornerA n) := by
-  rw [coe_ofRhombusConcave_eq, interpolate_sub, interpolate_const]
+  rw [coe_ofRhombusConcave, interpolate_sub, interpolate_const]
 theorem interpolate_barycentricLinear (c₀ α β γ : ℝ) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex n) :
     interpolate (barycentricLinear (n := n) c₀ α β γ) x = c₀ + x 0 * α + x 1 * β + x 2 * γ := by
@@ -426,7 +410,7 @@ theorem interpolate_barycentricLinear (c₀ α β γ : ℝ) {x : Fin 3 → ℝ}
       triangleAffine_barycentricLinear _ _ _ _ T (mem_barycentricSimplex_iff.mp hx).2]
 theorem interpolate_affine (β γ : ℝ) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
     interpolate (affine n β γ) x = x 1 * β + x 2 * γ := by
-  simpa [coe_affine_eq] using interpolate_barycentricLinear (n := n) (0 : ℝ) 0 β γ hx
+  simpa [coe_affine] using interpolate_barycentricLinear (n := n) (0 : ℝ) 0 β γ hx
 theorem interpolate_add_barycentricLinear (f : Vertex n → ℝ) (c₀ α β γ : ℝ) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex n) : interpolate (f + barycentricLinear (n := n) c₀ α β γ) x =
       interpolate f x + (c₀ + x 0 * α + x 1 * β + x 2 * γ) := by
@@ -445,12 +429,12 @@ theorem interpolate_comp_add (f : Vertex (m + k) → ℝ) (p : Vertex m) {x : Fi
 theorem interpolate_subtriangle (h : RealHive (m + k)) (p : Vertex m) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex k) : interpolate (h.subtriangle p) x =
       interpolate h (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
-  rw [coe_subtriangle_eq, interpolate_sub, interpolate_comp_add h p hx, interpolate_const]
+  rw [coe_subtriangle, interpolate_sub, interpolate_comp_add h p hx, interpolate_const]
 /-- Compatibility of `interpolate` with clockwise rotation on `barycentricSimplex n`. -/
 theorem interpolate_comp_rotate (f : Vertex n → ℝ) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
     interpolate (fun p => f p.rotate) x = interpolate f (fun k => x (k - 1)) := by
   rcases n with _ | m
-  · rw [interpolate_zero_rank, interpolate_zero_rank,
+  · rw [interpolate_rank_zero, interpolate_rank_zero,
       Subsingleton.elim (Vertex.cornerA 0).rotate (Vertex.cornerA 0)]
   · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
     rw [interpolate_eq_triangleAffine _ hT,
@@ -459,7 +443,7 @@ theorem interpolate_comp_rotate (f : Vertex n → ℝ) {x : Fin 3 → ℝ} (hx :
 /-- Compatibility of `interpolate` with `Hive.rotate` on `barycentricSimplex n`. -/
 theorem interpolate_rotate (h : RealHive n) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
     interpolate h.rotate x = interpolate h (fun k => x (k - 1)) - h (Vertex.cornerA n).rotate := by
-  rw [coe_rotate_eq, interpolate_sub, interpolate_comp_rotate h hx, interpolate_const]
+  rw [coe_rotate, interpolate_sub, interpolate_comp_rotate h hx, interpolate_const]
 /-- Compatibility of `interpolate` with reflection fixing `A = (n, 0, 0)`. -/
 theorem interpolate_comp_reflect (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
     interpolate (fun p => f p.reflect) x = interpolate f (fun k => x (-k)) := by
@@ -474,7 +458,7 @@ theorem interpolate_comp_reflect (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
 /-- Compatibility of `interpolate` with `Hive.reflect`. -/
 theorem interpolate_reflect (h : RealHive n) (x : Fin 3 → ℝ) :
     interpolate h.reflect x = interpolate h (fun k => x (-k)) := by
-  rw [coe_reflect_eq]; exact interpolate_comp_reflect h x
+  rw [coe_reflect]; exact interpolate_comp_reflect h x
 
 /-- Simplicial extension of `f : Vertex n → ℝ` to `EuclideanSpace ℝ (Fin 2)` that is continuous and
 piecewise affine on `planarSimplex n`, defined by pulling `interpolate f` back along
@@ -504,7 +488,7 @@ theorem eqOn_planarInterpolate_of_affineOn_cell {f : Vertex n → ℝ}
 theorem planarInterpolate_of_notMem_planarSimplex (f : Vertex n → ℝ) {u : EuclideanSpace ℝ (Fin 2)}
     (hu : u ∉ planarSimplex n) : planarInterpolate f u = f (Vertex.cornerA n) :=
   interpolate_of_notMem_barycentricSimplex f (mt mem_planarSimplex_iff.mpr hu)
-@[simp] theorem planarInterpolate_zero_rank (f : Vertex 0 → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
+@[simp] theorem planarInterpolate_rank_zero (f : Vertex 0 → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
     planarInterpolate f u = f (Vertex.cornerA 0) := by simp [planarInterpolate]
 /-- Along any unit lattice edge `(a, c)`, `planarInterpolate f` is affine on `[0, 1]`. -/
 theorem planarInterpolate_lineMap_of_isUnitEdge (f : Vertex n → ℝ) {a c : Vertex n}

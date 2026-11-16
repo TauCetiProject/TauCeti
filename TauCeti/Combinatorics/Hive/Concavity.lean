@@ -62,7 +62,7 @@ private theorem rhombusSlack_nonneg_of_concaveOn {f : Vertex n → ℝ} {S : Set
     (hb : b.barycentric ∈ S) (hd : d.barycentric ∈ S) : 0 ≤ rhombusSlack f a b c d := by
   have hmid : (1 / 2 : ℝ) • b.barycentric + (1 / 2 : ℝ) • d.barycentric =
       AffineMap.lineMap a.barycentric c.barycentric (1 / 2 : ℝ) := funext fun k => by
-    have hk := congrFun hr.barycentric_add k
+    have hk := congrFun hr.midpoint_barycentric k
     simp [AffineMap.lineMap_apply_module] at hk ⊢; linarith
   have h := hconc.2 hb hd (by norm_num) (by norm_num) (by norm_num : (1 / 2 : ℝ) + 1 / 2 = 1)
   rw [hmid, interpolate_lineMap_of_isUnitEdge f hr.isUnitEdge_short ⟨by norm_num, by norm_num⟩,
@@ -86,8 +86,8 @@ theorem triangleAffine_adjacentUp_sub_down (f : Vertex (m + 2) → ℝ) (s : Ver
         hj | hj | hj
       · rw [hj]; fin_cases i <;> simp [B, c, triangleAffine_apply, Fin.sum_univ_three,
           vertex_adjacentUp, rhombusSlack_def] <;> ring
-      · rw [hj, adjacentUp_vertex_add_one]; simp [B, show i ≠ i + 2 by fin_cases i <;> decide]
-      · rw [hj, adjacentUp_vertex_add_two]; simp [B, show i ≠ i + 1 by fin_cases i <;> decide]) hx
+      · rw [hj, vertex_adjacentUp_add_one]; simp [B, show i ≠ i + 2 by fin_cases i <;> decide]
+      · rw [hj, vertex_adjacentUp_add_two]; simp [B, show i ≠ i + 1 by fin_cases i <;> decide]) hx
   simp only [B, ContinuousAffineMap.add_apply, ContinuousAffineMap.smul_apply, smul_eq_mul,
     UnitTriangle.weight_down_apply] at hB
   linarith
@@ -118,8 +118,8 @@ theorem concaveOn_adjacentCell_iff (f : Vertex (m + 2) → ℝ) (s : Vertex m) (
       0 ≤ rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
         ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) :=
   ⟨fun hconc => rhombusSlack_nonneg_of_concaveOn hconc (isRhombus_adjacent s i)
-      (mem_adjacentCell_iff.mpr (Or.inl ((adjacentUp s i).vertex_barycentric_mem_cell i)))
-      (mem_adjacentCell_iff.mpr (Or.inr ((UnitTriangle.down s).vertex_barycentric_mem_cell i))),
+      (mem_adjacentCell_iff.mpr (Or.inl ((adjacentUp s i).barycentric_vertex_mem_cell i)))
+      (mem_adjacentCell_iff.mpr (Or.inr ((UnitTriangle.down s).barycentric_vertex_mem_cell i))),
     fun hslack => (((triangleAffine f (adjacentUp s i)).toAffineMap.concaveOn
       (convex_adjacentCell s i)).inf ((triangleAffine f (UnitTriangle.down s)).toAffineMap.concaveOn
       (convex_adjacentCell s i))).congr (eqOn_inf_triangleAffine_adjacentCell hslack).symm⟩
@@ -266,7 +266,7 @@ theorem concaveOn_barycentricSimplex_interpolate_iff (f : Vertex n → ℝ) :
       (barycentric_mem_barycentricSimplex _) (barycentric_mem_barycentricSimplex _), fun hf => ?_⟩
   rcases n with _ | _ | m
   · exact (concaveOn_const (f (Vertex.cornerA 0)) (convex_barycentricSimplex 0)).congr
-      fun x _ => (interpolate_zero_rank f x).symm
+      fun x _ => (interpolate_rank_zero f x).symm
   · exact ((triangleAffine f (UnitTriangle.up (Vertex.cornerA 0))).toAffineMap.concaveOn
       (convex_barycentricSimplex 1)).congr fun _ hx =>
       (interpolate_eq_triangleAffine f (by rwa [UnitTriangle.cell_up_cornerA_zero])).symm

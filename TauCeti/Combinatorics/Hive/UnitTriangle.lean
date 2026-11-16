@@ -72,7 +72,7 @@ theorem sum_barycentric (p : Vertex n) : ∑ i, p.barycentric i = (n : ℝ) := b
   simpa [Fin.sum_univ_three] using congrArg (Nat.cast (R := ℝ)) p.sum_eq
 theorem barycentric_injective : Function.Injective (barycentric (n := n)) := fun _ _ h =>
   ext_coord fun i => Nat.cast_injective (congrFun h i)
-@[simp] theorem barycentric_eq_iff {p q : Vertex n} : p.barycentric = q.barycentric ↔ p = q :=
+@[simp] theorem barycentric_inj {p q : Vertex n} : p.barycentric = q.barycentric ↔ p = q :=
   barycentric_injective.eq_iff
 theorem barycentric_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
     (p.add q).barycentric = p.barycentric + q.barycentric := by ext i; fin_cases i <;> simp
@@ -88,7 +88,7 @@ section
 variable {n m k : ℕ}
 
 /-- Opposite corners of a unit rhombus have the same sum in real barycentric coordinates. -/
-theorem IsRhombus.barycentric_add {a b c d : Vertex n} (hr : IsRhombus a b c d) :
+theorem IsRhombus.midpoint_barycentric {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     a.barycentric + c.barycentric = b.barycentric + d.barycentric := by
   ext k; fin_cases k <;> simp only [Pi.add_apply, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
     Vertex.barycentric_apply, Vertex.coord_zero, Vertex.coord_one, Vertex.coord_two] <;>
@@ -229,7 +229,7 @@ end
 def unitCorner : Fin 3 → Vertex 1
   | ⟨0, _⟩ => ⟨1, 0, 0, rfl⟩ | ⟨1, _⟩ => ⟨0, 1, 0, rfl⟩ | ⟨2, _⟩ => ⟨0, 0, 1, rfl⟩
 
-@[simp] theorem unitCorner_coord (i j : Fin 3) : (unitCorner i).coord j = if i = j then 1 else 0 :=
+@[simp] theorem coord_unitCorner (i j : Fin 3) : (unitCorner i).coord j = if i = j then 1 else 0 :=
   by fin_cases i <;> fin_cases j <;> simp [unitCorner]
 @[simp] theorem unitCorner_x (i : Fin 3) : (unitCorner i).x = if i = 0 then 1 else 0 := by
   fin_cases i <;> rfl
@@ -246,7 +246,7 @@ def unitCorner : Fin 3 → Vertex 1
 def oppUnitCorner : Fin 3 → Vertex 2
   | ⟨0, _⟩ => ⟨0, 1, 1, rfl⟩ | ⟨1, _⟩ => ⟨1, 0, 1, rfl⟩ | ⟨2, _⟩ => ⟨1, 1, 0, rfl⟩
 
-@[simp] theorem oppUnitCorner_coord (i j : Fin 3) :
+@[simp] theorem coord_oppUnitCorner (i j : Fin 3) :
     (oppUnitCorner i).coord j = if i = j then 0 else 1 := by
   fin_cases i <;> fin_cases j <;> simp [oppUnitCorner]
 @[simp] theorem oppUnitCorner_x (i : Fin 3) : (oppUnitCorner i).x = if i = 0 then 0 else 1 := by
@@ -320,9 +320,9 @@ def vertex : UnitTriangle n → Fin 3 → Vertex n
     (up b).vertex i = b.add (unitCorner i) := (rfl)
 @[simp] theorem vertex_down (b : Vertex m) (i : Fin 3) :
     (down b).vertex i = b.add (oppUnitCorner i) := (rfl)
-theorem vertex_coord_up (base : Vertex m) (i j : Fin 3) :
+theorem coord_vertex_up (base : Vertex m) (i j : Fin 3) :
     ((up base).vertex i).coord j = base.coord j + if i = j then 1 else 0 := by fin_cases j <;> simp
-theorem vertex_coord_down (b : Vertex m) (i j : Fin 3) :
+theorem coord_vertex_down (b : Vertex m) (i j : Fin 3) :
     ((down b).vertex i).coord j = b.coord j + if i = j then 0 else 1 := by fin_cases j <;> simp
 theorem vertex_injective (T : UnitTriangle n) : Function.Injective T.vertex := by
   cases T <;> intro i j h <;> fin_cases i <;> fin_cases j <;>
@@ -448,7 +448,7 @@ theorem weight_nonneg {T : UnitTriangle n} {x : Fin 3 → ℝ} (hx : x ∈ T.cel
 theorem weight_le_one {T : UnitTriangle n} {x : Fin 3 → ℝ} (hx : x ∈ T.cell) (i : Fin 3) :
     T.weight i x ≤ 1 :=
   T.sum_weight hx.1.2 ▸ Finset.single_le_sum (fun j _ => hx.2 j) (Finset.mem_univ i)
-theorem vertex_barycentric_mem_cell (T : UnitTriangle n) (i : Fin 3) :
+theorem barycentric_vertex_mem_cell (T : UnitTriangle n) (i : Fin 3) :
     (T.vertex i).barycentric ∈ T.cell :=
   ⟨barycentric_mem_barycentricSimplex _, fun j => by rw [weight_vertex]; split_ifs <;> norm_num⟩
 /-- Every unit-triangle cell is a convex polyhedron. -/
@@ -463,7 +463,7 @@ theorem cell_eq_convexHull (T : UnitTriangle n) :
   Subset.antisymm (fun _ hx => T.sum_weight_smul_vertex hx.1.2 ▸
       (convex_convexHull ℝ _).sum_mem (fun i _ => hx.2 i) (T.sum_weight hx.1.2)
         fun i _ => subset_convexHull ℝ _ ⟨i, rfl⟩)
-    (convexHull_min (by rintro _ ⟨i, rfl⟩; exact T.vertex_barycentric_mem_cell i) T.convex_cell)
+    (convexHull_min (by rintro _ ⟨i, rfl⟩; exact T.barycentric_vertex_mem_cell i) T.convex_cell)
 /-- At size `1`, the single upward unit triangle covers all of `barycentricSimplex 1`. -/
 @[simp] theorem cell_up_cornerA_zero : (up (Vertex.cornerA 0)).cell = barycentricSimplex 1 := by
   ext x; simp only [mem_cell_iff, mem_barycentricSimplex_iff, weight_up_apply, and_iff_left_iff_imp]
@@ -475,7 +475,7 @@ theorem abs_vertex_sub_lt_one_of_weight_pos {T : UnitTriangle n} {x : Fin 3 → 
   have hsum : T.weight 0 x + T.weight 1 x + T.weight 2 x = 1 := by
     simpa [Fin.sum_univ_three, add_assoc] using T.sum_weight hx.1.2
   have h0 := hx.2 0; have h1 := hx.2 1; have h2 := hx.2 2
-  cases T <;> [rw [vertex_coord_up]; rw [vertex_coord_down]] <;> rw [Nat.cast_add, abs_lt] <;>
+  cases T <;> [rw [coord_vertex_up]; rw [coord_vertex_down]] <;> rw [Nat.cast_add, abs_lt] <;>
     constructor <;> fin_cases i <;> fin_cases k <;> simp at hsum hi h0 h1 h2 ⊢ <;> linarith
 /-- Any lattice vertex `p : Vertex n` whose real embedding lies in `T.cell` is one of the three
 vertices of `T`. -/
@@ -575,11 +575,11 @@ theorem vertex_adjacentUp (s : Vertex m) (i j : Fin 3) :
     (adjacentUp s i).weight j x = x j - ((s.coord j : ℝ) + if i = j then 1 else 0) := by
   simp [adjacentUp]
 /-- The `(i + 1)`-th vertex of `adjacentUp s i` coincides with `(down s).vertex (i + 2)`. -/
-theorem adjacentUp_vertex_add_one (s : Vertex m) (i : Fin 3) :
+theorem vertex_adjacentUp_add_one (s : Vertex m) (i : Fin 3) :
     (adjacentUp s i).vertex (i + 1) = (UnitTriangle.down s).vertex (i + 2) :=
   Vertex.ext_coord fun j => by fin_cases i <;> fin_cases j <;> simp [adjacentUp]
 /-- The `(i + 2)`-th vertex of `adjacentUp s i` coincides with `(down s).vertex (i + 1)`. -/
-theorem adjacentUp_vertex_add_two (s : Vertex m) (i : Fin 3) :
+theorem vertex_adjacentUp_add_two (s : Vertex m) (i : Fin 3) :
     (adjacentUp s i).vertex (i + 2) = (UnitTriangle.down s).vertex (i + 1) :=
   Vertex.ext_coord fun j => by fin_cases i <;> fin_cases j <;> simp [adjacentUp]
 /-- The upward triangle `adjacentUp s i` and the downward triangle `down s` form a unit rhombus
@@ -589,7 +589,7 @@ theorem isRhombus_adjacent (s : Vertex m) (i : Fin 3) :
     IsRhombus ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
       ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
   have hv (a b : Vertex (m + 2)) (h : ∀ j, a.coord j = b.coord j := by
-      intro j; simp only [adjacentUp, UnitTriangle.vertex_coord_up, UnitTriangle.vertex_coord_down]
+      intro j; simp only [adjacentUp, UnitTriangle.coord_vertex_up, UnitTriangle.coord_vertex_down]
       fin_cases j <;> simp) : a = b := Vertex.ext_coord h
   fin_cases i
   · convert isRhombus_at_cornerA.add s using 1 <;> exact hv _ _
