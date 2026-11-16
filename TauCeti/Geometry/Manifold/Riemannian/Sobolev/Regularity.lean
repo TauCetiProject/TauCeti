@@ -350,7 +350,8 @@ private theorem memLp_comp_coordEquiv_of_memLp (p : M)
         = ∫⁻ y, (ψ₀ ⁻¹' s).indicator 1 ((coordEquiv E).symm y)
             ∂volume.restrict ((coordEquiv E).symm ⁻¹' ΩE) := by
           rw [hpre]
-          rfl
+          refine lintegral_congr fun y ↦ ?_
+          simp only [ψ, indicator_apply, mem_preimage, Function.comp_apply, Pi.one_apply]
       _ = ∫⁻ z in ΩE, (ψ₀ ⁻¹' s).indicator 1 z ∂(Module.finBasis ℝ E).addHaar :=
           hmp.lintegral_comp_emb hemb _
       _ = ∫⁻ z in ΩE, s.indicator 1 ((extChartAt I p).symm z)
@@ -613,7 +614,8 @@ private theorem nonempty_chartPDEData (p : M) : Nonempty (ChartPDEData (I := I) 
   have ha_pos : ∀ y ∈ K, (chartMatrix (I := I) p y).PosDef := fun y hy ↦
     posDef_chartMatrix p (hKt hy)
   obtain ⟨lam, Lam, hell⟩ :=
-    PDE.exists_uniformlyEllipticOn_of_subset_isCompact_of_posDef hKcomp hΩK ha_cont ha_pos
+    PDE.exists_uniformlyEllipticOn_of_isCompact_of_posDef hKcomp ha_cont ha_pos
+  replace hell := hell.mono_set hΩK
   let : PseudoMetrizableSpace (Matrix (Fin (finrank ℝ E)) (Fin (finrank ℝ E)) ℝ) :=
     inferInstanceAs (PseudoMetrizableSpace (Fin (finrank ℝ E) → Fin (finrank ℝ E) → ℝ))
   have ha_meas : AEStronglyMeasurable (chartMatrix (I := I) p) (volume.restrict (Ω : Set _)) :=
@@ -707,14 +709,8 @@ theorem exists_continuous_ae_eq_of_dirichletForm_eq {r : ℝ≥0} (hr : 2 ≤ r)
   -- In dimension zero, every chart source is a singleton, so `M` is discrete.
   rcases Nat.eq_zero_or_pos (finrank ℝ E) with hdim | hdim
   · have : Subsingleton E := finrank_zero_iff.1 hdim
-    have : DiscreteTopology M := discreteTopology_iff_isOpen_singleton.2 fun p ↦ by
-      have hsrc : (extChartAt I p).source = {p} := by
-        ext x
-        refine ⟨fun hx ↦ (extChartAt I p).injOn hx (mem_extChartAt_source p)
-          (Subsingleton.elim _ _), ?_⟩
-        rintro rfl
-        exact mem_extChartAt_source _
-      exact hsrc ▸ isOpen_extChartAt_source p
+    have : Subsingleton H := I.injective.subsingleton
+    have : DiscreteTopology M := ChartedSpace.discreteTopology H M
     exact ⟨toLp w, continuous_of_discreteTopology, Filter.EventuallyEq.rfl⟩
   have : Nonempty (Fin (finrank ℝ E)) := Fin.pos_iff_nonempty.1 hdim
   -- Glue the continuous representatives found in charts.

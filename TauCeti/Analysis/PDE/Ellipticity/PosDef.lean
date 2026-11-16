@@ -29,8 +29,6 @@ positive-definite matrices on a compact set is uniformly elliptic
   whose quadratic form is strictly positive away from zero is uniformly elliptic there.
 * `TauCeti.PDE.exists_uniformlyEllipticOn_of_isCompact_of_posDef`: the symmetric specialization to
   positive-definite matrices (`Matrix.PosDef`).
-* `TauCeti.PDE.exists_uniformlyEllipticOn_of_subset_isCompact_of_posDef`: restriction to any subset
-  of a compact set on which the matrix field is continuous and positive definite.
 
 ## References
 
@@ -86,14 +84,5 @@ theorem exists_uniformlyEllipticOn_of_isCompact_of_posDef {K : Set X} (hK : IsCo
   have hξ' : ξ.ofLp ≠ 0 := fun h ↦ hξ (by simpa using congrArg (WithLp.toLp 2) h)
   simpa only [Matrix.toQuadraticForm'_apply, star_trivial] using
     (hpos x hx).dotProduct_mulVec_pos hξ'
-
-/-- A matrix field continuous and positive definite on a compact superset `K` of `Ω` is uniformly
-elliptic on `Ω`. -/
-theorem exists_uniformlyEllipticOn_of_subset_isCompact_of_posDef {Ω K : Set X} (hK : IsCompact K)
-    (hΩK : Ω ⊆ K) {a : X → Matrix ι ι ℝ} (ha : ContinuousOn a K)
-    (hpos : ∀ x ∈ K, (a x).PosDef) :
-    ∃ lam Lam : ℝ, UniformlyEllipticOn Ω a lam Lam := by
-  obtain ⟨lam, Lam, h⟩ := exists_uniformlyEllipticOn_of_isCompact_of_posDef hK ha hpos
-  exact ⟨lam, Lam, h.mono_set hΩK⟩
 
 end TauCeti.PDE
