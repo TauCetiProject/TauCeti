@@ -325,6 +325,8 @@ theorem isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber {m : ℕ}
   have ha : a = x := Subtype.ext (by simp [a, hp₀])
   let B := BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
     ⟨sphere (0 : E) 1, a⟩ Sphere2.north
+  -- `Ω^[2] X` is `Ω (Ω X)` by definition (`iteratedLoopSpace` unfolds via `loopSpace^[2]`), so
+  -- `B.symm` is a homeomorphism out of the nested loop space up to this unfolding.
   let Φ : Ω (Ω (sphere (0 : E) 1) a) (Path.refl a) ≃ₜ
       BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x :=
     B.symm.trans ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl)
@@ -334,6 +336,7 @@ theorem isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber {m : ℕ}
     obtain ⟨y, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north z
     refine (twoFieldSphereFamilyFiber_sphereCollapse h hu hv x huv hux hvx p₀ q hp₀ y).trans ?_
     -- Read through `Map_*(S², Sⁿ) ≃ₜ Ω^[2] Sⁿ`, the double loop `σ(q)` is the cube loop `σ(q)`.
+    -- The nested loop `σ(q)` is an element of `Ω^[2] Sⁿ` by the same definitional unfolding.
     have hγ := (congrArg (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph 2 _)
       (B.apply_symm_apply (tangentCircleDoubleLoop hux hvx p₀ q))).symm.trans
       (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace
