@@ -126,7 +126,7 @@ private theorem exists_differentiable_approx {g : ℝ → ℝ} (hg : ContDiff �
   have hF : Differentiable ℂ F :=
     differentiable_intervalIntegral_mul_cexp_neg_mul_sub_sq _
   have hFx (x : ℝ) : F x = (heatKernel t ⋆ g) x := by
-    rw [heatKernel_convolution_eq_intervalIntegral ((subset_tsupport g).trans hgs) hab,
+    rw [heatKernel_convolution_eq_intervalIntegral ((subset_tsupport g).trans hgs),
       ← intervalIntegral.integral_ofReal]
     refine intervalIntegral.integral_congr fun y _ ↦ ?_
     simp only [hA, hc]
