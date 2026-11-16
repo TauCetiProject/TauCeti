@@ -123,7 +123,8 @@ private theorem hasFDerivAt_lhRadius {y : ℝ²} (hy : y 1 ^ 2 < 1) :
     using 1
   ext v
   have hs : √(1 - y 1 ^ 2) ≠ 0 := Real.sqrt_ne_zero'.2 (sub_pos.2 hy)
-  simp
+  simp only [neg_smul, neg_apply, smul_apply, PiLp.proj_apply, smul_eq_mul, nsmul_eq_mul,
+    Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
   field_simp
 
 private theorem contDiffAt_lhVec {y : ℝ²} (hy : y 1 ^ 2 < 1) : ContDiffAt ℝ ∞ lhVec y := by
@@ -149,11 +150,13 @@ private theorem fderiv_lhVec_apply {y : ℝ²} (hy : y 1 ^ 2 < 1) (v : ℝ²) :
   fin_cases i
   · refine (key 0 _ ((hasFDerivAt_lhRadius hy).mul
       (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 0).cos)).trans ?_
-    simp
+    simp only [add_apply, smul_apply, PiLp.proj_apply, smul_eq_mul, Fin.zero_eta,
+      Matrix.cons_val_zero]
     ring
   · refine (key 1 _ ((hasFDerivAt_lhRadius hy).mul
       (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 0).sin)).trans ?_
-    simp
+    simp only [add_apply, smul_apply, PiLp.proj_apply, smul_eq_mul, Fin.mk_one,
+      Matrix.cons_val_zero, Matrix.cons_val_one]
     ring
   · refine (key 2 _ (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 1)).trans ?_
     simp
@@ -166,7 +169,9 @@ private theorem dotProduct_cross_fderiv_lhVec {y : ℝ²} (hy : y 1 ^ 2 < 1) (v 
   have hq : √(1 - y 1 ^ 2) * (y 1 / √(1 - y 1 ^ 2)) = y 1 :=
     mul_div_cancel₀ _ (Real.sqrt_ne_zero'.2 (sub_pos.2 hy))
   rw [fderiv_lhVec_apply hy, fderiv_lhVec_apply hy]
-  simp [lhVec, cross_apply, dotProduct, Fin.sum_univ_three]
+  simp only [lhVec, cross_apply, dotProduct, Fin.sum_univ_three, PiLp.toLp_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
+    Matrix.tail_cons]
   linear_combination (v 0 * w 1 - v 1 * w 0) * (sin (y 0) ^ 2 + cos (y 0) ^ 2) * hs +
     (v 0 * w 1 - v 1 * w 0) * y 1 * (sin (y 0) ^ 2 + cos (y 0) ^ 2) * hq +
     (v 0 * w 1 - v 1 * w 0) * sin_sq_add_cos_sq (y 0)
@@ -363,7 +368,8 @@ private theorem mem_range_sphereLongitudeHeight_zero (y : longitudeHeightStrip (
       Subtype.ext ?_⟩
     ext i
     fin_cases i <;> simp [Real.cos_add_two_pi, Real.sin_add_two_pi]
-  · refine ⟨⟨y, ⟨hy, by linarith [h0.2, Real.pi_pos]⟩, h1⟩, rfl⟩
+  · refine ⟨⟨y, ⟨hy, by linarith [h0.2, Real.pi_pos]⟩, h1⟩, Subtype.ext ?_⟩
+    simp [coe_sphereLongitudeHeight]
 
 /-- The poles of the sphere are null for its area measure. -/
 private theorem liouvilleMeasure_poles :
