@@ -9,9 +9,6 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.Topology.Algebra.Group.Profinite.Order
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
-import Mathlib.GroupTheory.Perm.Cycle.Type
-import Mathlib.NumberTheory.Padics.PadicVal.Basic
-import Mathlib.Topology.Algebra.Group.Subgroup
 import Mathlib.Topology.Separation.Connected
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
@@ -335,7 +332,6 @@ theorem hasUnitProOrder_iff_forall_profiniteOrder_ne_zero :
   refine ⟨fun hU _ hp ↦ hU.isUnit_of_profiniteOrder_ne_zero hp, fun hp N ↦ ?_⟩
   have hn : Nat.card (U ⧸ N.toSubgroup) ≠ 0 := Nat.card_pos.ne'
   refine isUnit_natCast_of_forall_prime_dvd hn fun q hq hqd ↦ ?_
-  have : Fact q.Prime := ⟨hq⟩
   let P : Nat.Primes := ⟨q, hq⟩
   refine hp P fun hzero ↦ ?_
   have hval : (padicValNat q (Nat.card (U ⧸ N.toSubgroup)) : ℕ∞) ≤ 0 := by
@@ -343,8 +339,8 @@ theorem hasUnitProOrder_iff_forall_profiniteOrder_ne_zero :
     exact le_iSup
       (fun M : OpenNormalSubgroup U ↦ (padicValNat P (Nat.card (U ⧸ M.toSubgroup)) : ℕ∞)) N
   have hpos : 1 ≤ padicValNat q (Nat.card (U ⧸ N.toSubgroup)) := by
-    rw [Nat.padicValNat_def]
-    exact one_le_multiplicity_of_dvd hn hqd
+    rw [Nat.padicValNat_def, ← Nat.pow_dvd_iff_le_multiplicity hq.ne_one hn, pow_one]
+    exact hqd
   exact absurd (Nat.cast_le.mpr hpos) (not_le_of_gt (lt_of_le_of_lt hval zero_lt_one))
 
 /-- Supernatural-divisibility form of `TauCeti.hasUnitProOrder_iff_forall_profiniteOrder_ne_zero`:
@@ -415,28 +411,30 @@ theorem _root_.OpenSubgroup.hasUnitProOrder_and_isUnit_index_iff
   ⟨fun ⟨hK, hind⟩ ↦ hK.of_subgroup_of_isUnit_index hind,
     fun hU ↦ ⟨hU.openSubgroup K, hU.isUnit_index_openSubgroup K⟩⟩
 
+private theorem with_compact_openSubgroup [SeparatelyContinuousMul U]
+    {K : OpenSubgroup U} (hKc : IsCompact (K : Set U)) {P : Prop}
+    (h : [SeparatelyContinuousMul K] → [CompactSpace K] → P) : P := by
+  have : SeparatelyContinuousMul K :=
+    Topology.IsInducing.separatelyContinuousMul K.toSubgroup.subtype .subtypeVal
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hKc
+  exact h
+
 /-- If `K` is a compact open subgroup of `G` with invertible pro-order in `A`, then for every open
 subgroup `H` of `G` the relative index `[K : H ∩ K]` is invertible in `A`. -/
 theorem HasUnitProOrder.isUnit_relIndex_openSubgroup [SeparatelyContinuousMul U]
     {K : OpenSubgroup U} (hK : HasUnitProOrder A K) (hKc : IsCompact (K : Set U))
-    (H : OpenSubgroup U) : IsUnit ((H.toSubgroup.relIndex K.toSubgroup) : A) := by
-  have : SeparatelyContinuousMul K :=
-    { continuous_const_mul := ((continuous_const_mul _).comp continuous_subtype_val).subtype_mk _
-      continuous_mul_const := ((continuous_mul_const _).comp continuous_subtype_val).subtype_mk _ }
-  have : CompactSpace K := isCompact_iff_compactSpace.mp hKc
-  exact hK.isUnit_index (H.isOpen.preimage continuous_subtype_val)
+    (H : OpenSubgroup U) : IsUnit ((H.toSubgroup.relIndex K.toSubgroup) : A) :=
+  with_compact_openSubgroup hKc fun {_ _} ↦
+    hK.isUnit_index (H.isOpen.preimage continuous_subtype_val)
 
 /-- If `K` is a compact open subgroup of `G` with invertible pro-order in `A`, then every open
 subgroup `H ≤ K` also has invertible pro-order in `A`. -/
 theorem HasUnitProOrder.mono_openSubgroup [SeparatelyContinuousMul U]
     {H K : OpenSubgroup U} (hK : HasUnitProOrder A K) (hKc : IsCompact (K : Set U))
-    (hHK : H ≤ K) : HasUnitProOrder A H := by
-  have : SeparatelyContinuousMul K :=
-    { continuous_const_mul := ((continuous_const_mul _).comp continuous_subtype_val).subtype_mk _
-      continuous_mul_const := ((continuous_mul_const _).comp continuous_subtype_val).subtype_mk _ }
-  have : CompactSpace K := isCompact_iff_compactSpace.mp hKc
-  exact (Subgroup.hasUnitProOrder_subgroupOf_iff hHK).mp
-    (hK.of_isOpen (H.isOpen.preimage continuous_subtype_val))
+    (hHK : H ≤ K) : HasUnitProOrder A H :=
+  with_compact_openSubgroup hKc fun {_ _} ↦
+    (Subgroup.hasUnitProOrder_subgroupOf_iff hHK).mp
+      (hK.of_isOpen (H.isOpen.preimage continuous_subtype_val))
 
 /-- In a profinite group, invertible pro-order passes to every subgroup `H` in the subspace
 topology. Closedness of `H` is not needed here (it is needed only when `H` must itself be
@@ -781,12 +779,14 @@ theorem hasCofinalUnitProOrder_iff_isUnit_of_isProP {p : ℕ} [Fact p.Prime]
   have : CompactSpace K := isCompact_iff_compactSpace.mp K.isClosed.isCompact
   have hK_inf : Infinite K := by
     refine Infinite.mk fun _ ↦ hnd ?_
-    have h1K : IsOpen ({(1 : K)} : Set K) := isOpen_discrete _
-    have h1U₀ : IsOpen ({(1 : U₀)} : Set U₀) := by
-      simpa using K.isOpen.isOpenMap_subtype_val _ h1K
-    have h1G : IsOpen ({(1 : G)} : Set G) := by
-      simpa using U₀.isOpen.isOpenMap_subtype_val _ h1U₀
-    exact discreteTopology_iff_isOpen_singleton_one.mpr h1G
+    have open_one {X : Type v} [Group X] [TopologicalSpace X] (U : OpenSubgroup X)
+        (h1 : IsOpen ({(1 : U)} : Set U)) : IsOpen ({(1 : X)} : Set X) := by
+      have himg : (Subtype.val : U → X) '' {(1 : U)} = {(1 : X)} := by
+        rw [Set.image_singleton, OneMemClass.coe_one]
+      rw [← himg]
+      exact U.isOpen.isOpenMap_subtype_val _ h1
+    exact discreteTopology_iff_isOpen_singleton_one.mpr
+      (open_one U₀ (open_one K (isOpen_discrete _)))
   exact ((hproP.subgroup K.toSubgroup).hasUnitProOrder_iff).mp hKu
 
 end Cofinal

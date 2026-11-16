@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.GroupTheory.GroupAction.SubMulAction
-import Mathlib.GroupTheory.Perm.Fin
-import Mathlib.LinearAlgebra.Finsupp.Defs
 import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 import TauCeti.Topology.Algebra.Group.Perm
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.UnitProOrder
-import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
 
 /-!
 # Examples and counterexamples for groups of invertible pro-order
