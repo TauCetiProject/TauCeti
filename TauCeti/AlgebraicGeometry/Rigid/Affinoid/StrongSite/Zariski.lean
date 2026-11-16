@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.StrongSite.Basic
-public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Subdomain
+public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.PrincipalLaurent
 
 import TauCeti.RingTheory.Affinoid.Subdomain.Cover
 
@@ -44,21 +44,6 @@ section Zariski
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type u} [CommRing A] [Algebra K A]
 
-/-- A principal Zariski open `D(f)` is exhausted by the rational domains `R(ϖⁿ / f)` for any
-`‖ϖ‖ < 1`. -/
-theorem basicOpen_eq_iUnion_rationalDomain (hA : IsAffinoidAlgebra K A) (f : A)
-    {ϖ : K} (hϖ₁ : ‖ϖ‖ < 1) :
-    (MaximalSpectrum.basicOpen f : Set (MaximalSpectrum A)) =
-      ⋃ n : ℕ, rationalDomain K f (fun _ : Fin 1 ↦ algebraMap K A (ϖ ^ n)) := by
-  ext x
-  simp only [SetLike.mem_coe, MaximalSpectrum.mem_basicOpen, Set.mem_iUnion,
-    mem_rationalDomain, forall_const, pointNorm_algebraMap, norm_pow, ne_eq,
-    hA.pointNorm_eq_zero_iff]
-  refine ⟨fun hx ↦ ?_, fun ⟨_, hx, _⟩ ↦ hx⟩
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one
-    (lt_of_le_of_ne (pointNorm_nonneg f) (Ne.symm (hA.pointNorm_eq_zero_iff.not.mpr hx))) hϖ₁
-  exact ⟨n, hx, hn.le⟩
-
 /-- The rational exhaustion `R(ϖⁿ / f)` of `MaximalSpectrum.basicOpen f` is affinoid-test
 refined. -/
 theorem isAffinoidTestRefined_basicOpen_rationalDomain (f : A) {ϖ : K} (hϖ₁ : ‖ϖ‖ < 1) :
@@ -71,25 +56,14 @@ theorem isAffinoidTestRefined_basicOpen_rationalDomain (f : A) {ϖ : K} (hϖ₁ 
     rw [MaximalSpectrum.mem_basicOpen, IsAffinoidAlgebra.maximalSpectrumComap_asIdeal,
       Ideal.mem_comap] at hy
     exact hB.pointNorm_eq_zero_iff.not.mpr hy
-  obtain ⟨u, hu⟩ := hunit.exists_right_inv
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, ‖ϖ‖ ^ n * supSeminorm K u ≤ 1 := by
-    rcases eq_or_lt_of_le (supSeminorm_nonneg (K := K) u) with h0 | hpos
-    · exact ⟨0, by simp [← h0]⟩
-    · obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr hpos) hϖ₁
-      exact ⟨n, (inv_mul_cancel₀ hpos.ne' ▸ mul_lt_mul_of_pos_right hn hpos).le⟩
+  obtain ⟨n, hn⟩ := hB.exists_pow_le_pointNorm_of_isUnit hunit (norm_nonneg _) hϖ₁
   refine ⟨{AffinoidSubdomain.univ hB}, Set.finite_singleton _, by simp, fun W hW ↦ ?_⟩
   rw [Set.mem_singleton_iff.mp hW, AffinoidSubdomain.coe_univ]
   refine ⟨_, ⟨n, rfl⟩, fun y _ ↦ ?_⟩
   rw [Set.mem_preimage, mem_rationalDomain, hB.pointNorm_maximalSpectrumComap]
   refine ⟨hB.isUnit_iff_forall_pointNorm_ne_zero.mp hunit y, fun _ ↦ ?_⟩
-  rw [hB.pointNorm_maximalSpectrumComap, AlgHom.commutes, pointNorm_algebraMap, norm_pow]
-  have h1 : 1 ≤ pointNorm K y (φ f) * supSeminorm K u := by
-    rw [← pointNorm_one (K := K) (x := y), ← hu, hB.pointNorm_mul]
-    exact mul_le_mul_of_nonneg_left (hB.pointNorm_le_supSeminorm y u) (pointNorm_nonneg _)
-  calc ‖ϖ‖ ^ n ≤ ‖ϖ‖ ^ n * (pointNorm K y (φ f) * supSeminorm K u) :=
-        le_mul_of_one_le_right (pow_nonneg (norm_nonneg _) _) h1
-    _ = pointNorm K y (φ f) * (‖ϖ‖ ^ n * supSeminorm K u) := by ring
-    _ ≤ pointNorm K y (φ f) := mul_le_of_le_one_right (pointNorm_nonneg _) hn
+  simpa only [hB.pointNorm_maximalSpectrumComap, AlgHom.commutes, pointNorm_algebraMap, norm_pow]
+    using hn y
 
 /-- Any Zariski open cover of a subset `U ⊆ Sp A` is affinoid-test refined. -/
 theorem isAffinoidTestRefined_opens_of_subset {U : Set (MaximalSpectrum A)}
@@ -134,22 +108,26 @@ theorem isAffinoidTestRefined_opens_of_subset {U : Set (MaximalSpectrum A)}
 
 namespace StrongAdmissibleOpen
 
+private theorem image_principalLaurent_pow (hA : IsAffinoidAlgebra K A) (f : A) (ϖ : Kˣ) :
+    ((↑) : AffinoidSubdomain K A → Set (MaximalSpectrum A)) ''
+        (Set.range fun n : ℕ ↦ AffinoidSubdomain.principalLaurent hA f (ϖ ^ n)) =
+      Set.range fun n : ℕ ↦ rationalDomain K f (fun _ : Fin 1 ↦ algebraMap K A ((ϖ : K) ^ n)) := by
+  rw [← Set.range_comp]
+  simp only [Function.comp_def, AffinoidSubdomain.coe_principalLaurent_eq_rationalDomain,
+    Units.val_pow_eq_pow_val]
+
 /-- Every principal Zariski open `D(f)` is strong-admissible open [BGR, §9.1.4, Corollary 7]. -/
 noncomputable def basicOpen (hA : IsAffinoidAlgebra K A) (f : A) :
     StrongAdmissibleOpen K A where
   carrier := MaximalSpectrum.basicOpen f
   exists_affinoid_cover := by
     obtain ⟨ϖ, hϖ₀, hϖ₁⟩ := NormedField.exists_norm_lt_one K
-    have htop (n : ℕ) :
-        Ideal.span (insert f (Set.range (fun _ : Fin 1 ↦ algebraMap K A (ϖ ^ n)))) = ⊤ :=
-      Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Set.mem_insert_of_mem _ ⟨0, rfl⟩))
-        ((IsUnit.pow n (Ne.isUnit (norm_pos_iff.mp hϖ₀))).map (algebraMap K A))
-    let S := Set.range fun n : ℕ ↦ AffinoidSubdomain.rational hA (htop n)
-    have himg : ((↑) : AffinoidSubdomain K A → Set (MaximalSpectrum A)) '' S =
-        Set.range fun n : ℕ ↦ rationalDomain K f (fun _ : Fin 1 ↦ algebraMap K A (ϖ ^ n)) := by
-      ext; simp [S]
-    refine ⟨S, ?_, himg ▸ isAffinoidTestRefined_basicOpen_rationalDomain f hϖ₁⟩
-    rw [himg, Set.sUnion_range, ← basicOpen_eq_iUnion_rationalDomain hA f hϖ₁]
+    let π := Units.mk0 ϖ (norm_pos_iff.mp hϖ₀)
+    refine ⟨Set.range (fun n : ℕ ↦ AffinoidSubdomain.principalLaurent hA f (π ^ n)), ?_, ?_⟩
+    · rw [image_principalLaurent_pow, Set.sUnion_range]
+      exact (basicOpen_eq_iUnion_rationalDomain hA f hϖ₁).symm
+    · rw [image_principalLaurent_pow]
+      exact isAffinoidTestRefined_basicOpen_rationalDomain f hϖ₁
 
 @[simp]
 theorem coe_basicOpen (hA : IsAffinoidAlgebra K A) (f : A) :
@@ -182,6 +160,24 @@ private theorem exists_affinoid_cover_opens (hA : IsAffinoidAlgebra K A)
 section Site
 
 variable [hA : Fact (IsAffinoidAlgebra K A)]
+
+/-- The increasing Laurent exhaustion of a principal Zariski open is a strong-admissible cover. -/
+theorem covers_basicOpen_principalLaurent_pow (f : A) (ϖ : Kˣ) (hϖ : ‖(ϖ : K)‖ < 1) :
+    strongGTopology.Covers (basicOpen hA.out f)
+      (Set.range fun n : ℕ ↦
+        (AffinoidSubdomain.principalLaurent hA.out f (ϖ ^ n)).toStrongAdmissibleOpen) := by
+  refine strongGTopology_covers_iff.mpr ⟨?_, ?_⟩
+  · rintro _ ⟨n, rfl⟩
+    intro x hx
+    rw [← SetLike.mem_coe, coe_basicOpen, basicOpen_eq_iUnion_rationalDomain hA.out f hϖ]
+    exact Set.mem_iUnion.mpr ⟨n, by
+      simpa only [← SetLike.mem_coe, AffinoidSubdomain.coe_toStrongAdmissibleOpen,
+        AffinoidSubdomain.coe_principalLaurent_eq_rationalDomain, Units.val_pow_eq_pow_val] using
+        hx⟩
+  · rw [← Set.range_comp]
+    simpa only [Function.comp_def, AffinoidSubdomain.coe_toStrongAdmissibleOpen, coe_basicOpen,
+      AffinoidSubdomain.coe_principalLaurent_eq_rationalDomain, Units.val_pow_eq_pow_val] using
+      isAffinoidTestRefined_basicOpen_rationalDomain f hϖ
 
 /-- Every Zariski open subset of `Sp A` is strong-admissible open [BGR, §9.1.4, Corollary 7]. -/
 noncomputable def ofOpens (U : Opens (MaximalSpectrum A)) : StrongAdmissibleOpen K A :=
