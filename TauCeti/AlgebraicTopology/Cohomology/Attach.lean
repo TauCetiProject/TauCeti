@@ -40,6 +40,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Set Topology TauCeti
+open ContinuousMap.Homotopy (ofApplyZero)
 open scoped unitInterval
 
 universe w v u
@@ -79,21 +80,20 @@ theorem isIso_singularCohomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClo
   let g : P.fst ⟶ Z := Hom.fst f
   have hφS : MapsTo g (range P.map) X := mapsTo_range_map_of_hom f
   -- The deformation of `A` and its extension to `Z` enlarge both subspaces.
-  have hSO' : MapsTo (𝟙 P.fst) (range P.map) O := hSO
+  have hSO' : MapsTo (𝟙 P.fst) (range P.map) O :=
+    ConcreteCategory.coe_id (X := P.fst) ▸ (mapsTo_id _).mono_right hSO
   have hXN : MapsTo (𝟙 Z) X (X ∪ g '' O) := fun _ hz ↦ Or.inl hz
   let G := attachHomotopy hf hX hfX hcover H hHS
   have hA : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (ofSubsetMap (𝟙 P.fst) hSO') n) :=
     isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy hSO'
       (ρ := TopCat.ofHom (H.curry 1))
-      { toContinuousMap := H, map_zero_left := hH₀, map_one_left _ := rfl }
+      (ofApplyZero H hH₀)
       (fun t a ha ↦ (hHS t a ha).symm ▸ ha) hHO (fun a ha ↦ hH₁ a ha) R k M n
   have hZ : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (ofSubsetMap (𝟙 Z) hXN) n) :=
     isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy hXN (ρ := TopCat.ofHom (G.curry 1))
-      { toContinuousMap := G
-        map_zero_left := attachHomotopy_zero hf hX hfX hcover H hHS hH₀
-        map_one_left _ := rfl }
+      (ofApplyZero G (attachHomotopy_zero hf hX hfX hcover H hHS hH₀))
       (fun t _ hz ↦ (attachHomotopy_apply_of_mem hf hX hfX hcover H hHS t hz).symm ▸ hz)
       (fun t _ hz ↦ attachHomotopy_mem_union_image hf hX hfX hcover H hHS hHO t hz)
       (fun _ hz ↦ attachHomotopy_one_mem hf hX hfX hcover H hHS hφS hH₁ hz) R k M n
@@ -118,8 +118,9 @@ theorem isIso_singularCohomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClo
     (isoOfSubsetRange_hom_comp_ofSubsetMap f).symm
   rw [hfe, singularCohomologyMap_comp]
   have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (isoOfSubsetRange P).hom n) :=
-    (singularCohomologyFunctor R k M n).map_isIso (isoOfSubsetRange P).hom.op
+      (isoOfSubsetRange P).hom n) := by
+    rw [← Quiver.Hom.unop_op (isoOfSubsetRange P).hom, ← singularCohomologyFunctor_map]
+    exact (singularCohomologyFunctor R k M n).map_isIso _
   infer_instance
 
 end TopPair

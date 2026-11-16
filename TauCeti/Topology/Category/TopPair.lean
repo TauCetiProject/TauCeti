@@ -383,12 +383,27 @@ noncomputable def isoOfSubsetRange (P : TopPair.{u}) : P ≅ ofSubset (Set.range
   inv_hom_id := hom_ext_of_fst _ (Category.id_comp _)
 
 @[simp]
+lemma isoOfSubsetRange_hom_fst_apply (P : TopPair.{u}) (x : P.fst) :
+    Hom.fst (isoOfSubsetRange P).hom x = x := (rfl)
+
 lemma isoOfSubsetRange_hom_fst (P : TopPair.{u}) : Hom.fst (isoOfSubsetRange P).hom = 𝟙 P.fst :=
   (rfl)
 
 @[simp]
+lemma isoOfSubsetRange_hom_snd_apply (P : TopPair.{u}) (x : P.snd) :
+    (Hom.snd (isoOfSubsetRange P).hom x).1 = P.map x := (rfl)
+
+@[simp]
+lemma isoOfSubsetRange_inv_fst_apply (P : TopPair.{u}) (x : P.fst) :
+    Hom.fst (isoOfSubsetRange P).inv x = x := (rfl)
+
 lemma isoOfSubsetRange_inv_fst (P : TopPair.{u}) : Hom.fst (isoOfSubsetRange P).inv = 𝟙 P.fst :=
   (rfl)
+
+@[simp]
+lemma isoOfSubsetRange_inv_snd_apply (P : TopPair.{u}) (y : (ofSubset (Set.range P.map)).snd) :
+    P.map (Hom.snd (isoOfSubsetRange P).inv y) = y.1 :=
+  congrArg Subtype.val (P.isEmbedding_map.toHomeomorph.apply_symm_apply y)
 
 /-- A map of pairs `f : P ⟶ (X, B)` factors through the isomorphism of `P` with the pair of its
 ambient space and the range of its embedding, as the map of pairs induced by its ambient map. -/

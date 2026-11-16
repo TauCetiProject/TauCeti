@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Attach
 import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
 import TauCeti.Topology.ContinuousMap.Sigma
+import TauCeti.Topology.Homotopy.Sigma
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -249,6 +250,29 @@ private lemma union_range_sigmaCofanIsColimit_desc
   · obtain ⟨a, v, rfl⟩ := mem_iUnion.1 hz
     exact Or.inr ⟨⟨a, v⟩, TopPair.sigmaCofanIsColimit_desc_fst_apply _ f _⟩
 
+/-- The map out of the disjoint union of the disc-sphere pairs which is `f a` on the summand of `a`
+is a closed embedding when the `f a` are, with pairwise disjoint images. -/
+private lemma isClosedEmbedding_fst_sigmaCofanIsColimit_desc [Finite ι]
+    (hf : ∀ a, IsClosedEmbedding (TopPair.Hom.fst (f a)))
+    (hdisj : Pairwise (Disjoint on fun a ↦ range (TopPair.Hom.fst (f a)))) :
+    IsClosedEmbedding (TopPair.Hom.fst (Cofan.IsColimit.desc
+      (TopPair.sigmaCofanIsColimit fun a ↦ discSpherePair (F a) (E a)) f)) := by
+  rw [TopPair.sigmaCofanIsColimit_desc_fst]
+  exact ContinuousMap.isClosedEmbedding_sigma hf hdisj
+
+/-- The map out of the disjoint union of the disc-sphere pairs which is `f a` on the summand of `a`
+sends a point into `X` only if it lies in the disjoint union of the sphere bundles, when each `f a`
+sends a point into `X` only if it lies in the sphere bundle of `Eₐ`. -/
+private lemma mem_range_sigma_map_of_fst_sigmaCofanIsColimit_desc_mem
+    (hfX : ∀ a, ∀ v : discBundle (F a) (E a),
+      TopPair.Hom.fst (f a) v ∈ X → (v : TotalSpace (F a) (E a)) ∈ sphereBundle (F a) (E a))
+    (x : Σ a, discBundle (F a) (E a))
+    (hx : TopPair.Hom.fst (Cofan.IsColimit.desc
+      (TopPair.sigmaCofanIsColimit fun a ↦ discSpherePair (F a) (E a)) f) x ∈ X) :
+    x ∈ range (TopPair.sigma fun a ↦ discSpherePair (F a) (E a)).map :=
+  (TopPair.mem_range_sigma_map _).2 (mem_range_discSpherePair_map.2
+    (hfX _ _ (TopPair.sigmaCofanIsColimit_desc_fst_apply _ f x ▸ hx)))
+
 /-- The vectors of the disjoint union of the disc bundles of norm greater than `1/2`. -/
 private def sigmaOuterCollar : Set (Σ a, discBundle (F a) (E a)) :=
   {x | x.2 ∈ outerCollar (F x.1) (E x.1)}
@@ -266,40 +290,45 @@ variable [∀ a, TopologicalSpace (B a)] [∀ a, NormedAddCommGroup (F a)] [∀ 
   [∀ a b, NormedSpace ℝ (E a b)] [∀ a, FiberBundle (F a) (E a)] [∀ a, VectorBundle ℝ (F a) (E a)]
 
 /-- The radial push `TauCeti.radialPush 2⁻¹` in every fibre of every summand of the disjoint union
-of the disc bundles. -/
+of the disc bundles: the homotopies `discCollar` of the summands, followed by their inclusions,
+glued along the disjoint union. -/
 private def sigmaDiscCollar (hnorm : ∀ a, Continuous fun v : TotalSpace (F a) (E a) ↦ ‖v.2‖) :
-    C(I × Σ a, discBundle (F a) (E a), Σ a, discBundle (F a) (E a)) where
-  toFun p := ⟨p.2.1, discCollar (hnorm p.2.1) (p.1, p.2.2)⟩
-  -- Through `I × Σ a, D(Eₐ) ≃ₜ Σ a, D(Eₐ) × I`, the map is `discCollar ∘ swap` on each summand.
-  continuous_toFun := by
-    have : Continuous fun q : Σ a, discBundle (F a) (E a) × I ↦
-        (⟨q.1, discCollar (hnorm q.1) (q.2.2, q.2.1)⟩ : Σ a, discBundle (F a) (E a)) :=
-      continuous_sigma fun a ↦ continuous_sigmaMk.comp
-        ((discCollar (hnorm a)).continuous.comp continuous_swap)
-    exact this.comp (Homeomorph.sigmaProdDistrib.continuous.comp continuous_swap)
+    C(I × Σ a, discBundle (F a) (E a), Σ a, discBundle (F a) (E a)) :=
+  (ContinuousMap.Homotopy.sigma fun a ↦
+    (ContinuousMap.Homotopy.refl ⟨Sigma.mk a, continuous_sigmaMk⟩).comp
+      (ContinuousMap.Homotopy.ofApplyZero (f := .id _) (discCollar (hnorm a))
+        (discCollar_zero (hnorm a)))).toContinuousMap
 
 section
 
 variable (hnorm : ∀ a, Continuous fun v : TotalSpace (F a) (E a) ↦ ‖v.2‖)
 
+/-- On the summand of `a`, the collar deformation of the disjoint union is that of `D(Eₐ)`. -/
+private lemma sigmaDiscCollar_apply (t : I) (x : Σ a, discBundle (F a) (E a)) :
+    sigmaDiscCollar hnorm (t, x) = ⟨x.1, discCollar (hnorm x.1) (t, x.2)⟩ :=
+  ContinuousMap.Homotopy.sigma_apply (X := fun a ↦ discBundle (F a) (E a)) _ t x.1 x.2
+
 private lemma sigmaDiscCollar_zero (x : Σ a, discBundle (F a) (E a)) :
-    sigmaDiscCollar hnorm (0, x) = x :=
-  Sigma.ext rfl (heq_of_eq (discCollar_zero (hnorm x.1) x.2))
+    sigmaDiscCollar hnorm (0, x) = x := by
+  rw [sigmaDiscCollar_apply, discCollar_zero]
 
 private lemma sigmaDiscCollar_of_mem_range (t : I) {x : Σ a, discBundle (F a) (E a)}
     (hx : x ∈ range (TopPair.sigma fun a ↦ discSpherePair (F a) (E a)).map) :
-    sigmaDiscCollar hnorm (t, x) = x :=
-  Sigma.ext rfl (heq_of_eq (discCollar_of_mem_range (hnorm x.1) t
-    ((TopPair.mem_range_sigma_map _).1 hx)))
+    sigmaDiscCollar hnorm (t, x) = x := by
+  rw [sigmaDiscCollar_apply,
+    discCollar_of_mem_range (hnorm x.1) t ((TopPair.mem_range_sigma_map _).1 hx)]
 
 private lemma sigmaDiscCollar_mem_sigmaOuterCollar (t : I) {x : Σ a, discBundle (F a) (E a)}
-    (hx : x ∈ sigmaOuterCollar) : sigmaDiscCollar hnorm (t, x) ∈ sigmaOuterCollar :=
-  discCollar_mem_outerCollar (hnorm x.1) t hx
+    (hx : x ∈ sigmaOuterCollar) : sigmaDiscCollar hnorm (t, x) ∈ sigmaOuterCollar := by
+  rw [sigmaDiscCollar_apply]
+  exact discCollar_mem_outerCollar (hnorm x.1) t hx
 
 private lemma sigmaDiscCollar_one_mem_range {x : Σ a, discBundle (F a) (E a)}
     (hx : x ∈ sigmaOuterCollar) :
-    sigmaDiscCollar hnorm (1, x) ∈ range (TopPair.sigma fun a ↦ discSpherePair (F a) (E a)).map :=
-  (TopPair.mem_range_sigma_map _).2 (discCollar_one_mem_range (hnorm x.1) hx)
+    sigmaDiscCollar hnorm (1, x) ∈
+      range (TopPair.sigma fun a ↦ discSpherePair (F a) (E a)).map := by
+  rw [sigmaDiscCollar_apply]
+  exact (TopPair.mem_range_sigma_map _).2 (discCollar_one_mem_range (hnorm x.1) hx)
 
 end
 
@@ -320,11 +349,8 @@ private lemma isIso_singularHomologyMap_sigmaCofanIsColimit_desc
       (Cofan.IsColimit.desc (TopPair.sigmaCofanIsColimit fun a ↦ discSpherePair (F a) (E a)) f)
       R n) :=
   TopPair.isIso_singularHomologyMap_of_attach R n _ hX
-    (by
-      rw [TopPair.sigmaCofanIsColimit_desc_fst]
-      exact ContinuousMap.isClosedEmbedding_sigma hf hdisj)
-    (fun x hx ↦ (TopPair.mem_range_sigma_map _).2 (mem_range_discSpherePair_map.2
-      (hfX _ _ (by rwa [TopPair.sigmaCofanIsColimit_desc_fst_apply] at hx))))
+    (isClosedEmbedding_fst_sigmaCofanIsColimit_desc f hf hdisj)
+    (mem_range_sigma_map_of_fst_sigmaCofanIsColimit_desc_mem f hfX)
     (union_range_sigmaCofanIsColimit_desc f hfcover) (isOpen_sigmaOuterCollar hnorm)
     range_sigma_map_subset_sigmaOuterCollar (sigmaDiscCollar hnorm) (sigmaDiscCollar_zero hnorm)
     (fun t _ ↦ sigmaDiscCollar_of_mem_range hnorm t)
@@ -345,11 +371,8 @@ private lemma isIso_singularCohomologyMap_sigmaCofanIsColimit_desc
       (Cofan.IsColimit.desc (TopPair.sigmaCofanIsColimit fun a ↦ discSpherePair (F a) (E a)) f)
       n) :=
   TopPair.isIso_singularCohomologyMap_of_attach R k M n _ hX
-    (by
-      rw [TopPair.sigmaCofanIsColimit_desc_fst]
-      exact ContinuousMap.isClosedEmbedding_sigma hf hdisj)
-    (fun x hx ↦ (TopPair.mem_range_sigma_map _).2 (mem_range_discSpherePair_map.2
-      (hfX _ _ (by rwa [TopPair.sigmaCofanIsColimit_desc_fst_apply] at hx))))
+    (isClosedEmbedding_fst_sigmaCofanIsColimit_desc f hf hdisj)
+    (mem_range_sigma_map_of_fst_sigmaCofanIsColimit_desc_mem f hfX)
     (union_range_sigmaCofanIsColimit_desc f hfcover) (isOpen_sigmaOuterCollar hnorm)
     range_sigma_map_subset_sigmaOuterCollar (sigmaDiscCollar hnorm) (sigmaDiscCollar_zero hnorm)
     (fun t _ ↦ sigmaDiscCollar_of_mem_range hnorm t)

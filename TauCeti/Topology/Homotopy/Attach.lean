@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.UnitInterval
+public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
@@ -22,6 +22,8 @@ This is a topological input of the comparison of the relative homology of the at
 with that of `(A, S)`, when `S` has an open neighbourhood `O` which a deformation of `A` fixing `S`
 pushes into `S`: the thickening `X ∪ φ(O)` is then an open neighbourhood of `X`
 (`Topology.IsClosedEmbedding.isOpen_union_image`) which the extended deformation pushes into `X`.
+Both deformations start at the identity, so they are homotopies from the identity to their
+time-one maps (`ContinuousMap.Homotopy.ofApplyZero`).
 
 ## References
 
@@ -35,6 +37,27 @@ noncomputable section
 
 open Set Topology
 open scoped unitInterval
+
+namespace ContinuousMap.Homotopy
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : C(X, Y)}
+
+/-- A map `H : I × X → Y` which is `f` at time zero, as a homotopy from `f` to its time-one map
+`H.curry 1`. -/
+-- Exposed so that the homotopy applies definitionally as `H`: hypotheses on `H` then discharge
+-- the hypotheses on the homotopy, for instance in `TopPair.isIso_singularHomologyMap_of_attach`.
+@[expose]
+def ofApplyZero (H : C(I × X, Y)) (hH : ∀ x, H (0, x) = f x) : f.Homotopy (H.curry 1) where
+  toContinuousMap := H
+  map_zero_left := hH
+  map_one_left x := (H.curry_apply 1 x).symm
+
+@[simp]
+theorem ofApplyZero_apply (H : C(I × X, Y)) (hH : ∀ x, H (0, x) = f x) (p : I × X) :
+    ofApplyZero H hH p = H p :=
+  (rfl)
+
+end ContinuousMap.Homotopy
 
 namespace TauCeti
 
