@@ -66,7 +66,8 @@ structure.
 * `CliffordAlgebra.det_spinCHalfSpinRep`: `(s, z)` acts with determinant `z²`, and
   `CliffordAlgebra.inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply`: the twisted action is
   unitary.
-* `CliffordAlgebra.spinCGroupHalfSpinRep_comp_halfSpinCliffordMul`,
+* `CliffordAlgebra.spinCGroupHalfSpinRep_comp_halfSpinCliffordMul` (pointwise in `W`:
+  `CliffordAlgebra.ι_apply_spinCGroupHalfSpinRep_apply`),
   `CliffordAlgebra.det_spinCGroupHalfSpinRep` and
   `CliffordAlgebra.inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply`: the descended
   representations of `Spinᶜ(4)` are Clifford equivariant over its rotation, have determinant the
@@ -196,6 +197,17 @@ theorem spinCGroupHalfSpinRep_comp_halfSpinCliffordMul (x : spinCGroup Q hQ₀) 
   rw [spinCGroupHalfSpinRep_mk, spinCGroupHalfSpinRep_mk,
     spinCGroup.toSpecialOrthogonal_mk, coe_spinToSpecialOrthogonal_apply,
     spinCHalfSpinRep_comp_halfSpinCliffordMul]
+
+/-- **Clifford equivariance of `Spinᶜ(4)`, read pointwise in `W`**: for `ψ ∈ W^ε`,
+`c(π(x) v) (ρ^ε(x) ψ) = ρ^{-ε}(x) (c(v) ψ)`. -/
+theorem ι_apply_spinCGroupHalfSpinRep_apply (x : spinCGroup Q hQ₀) (v : V)
+    (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    ρ (ι Q ((spinCGroup.toSpecialOrthogonal Q hQ₀ x : V ≃ₗ[ℝ] V) v))
+        (spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ) =
+      spinCGroupHalfSpinRep o ρ (-ε) hQ₀ x (halfSpinCliffordMul o ρ ε v ψ) := by
+  have h := LinearMap.congr_fun (spinCGroupHalfSpinRep_comp_halfSpinCliffordMul o ρ ε hQ₀ x v) ψ
+  rw [LinearMap.comp_apply, LinearMap.comp_apply] at h
+  rw [h, coe_halfSpinCliffordMul_apply_apply]
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
