@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
+public import TauCeti.Topology.Order.LocalMonotone
 import Mathlib.Algebra.Order.Interval.Set.Group
+import TauCeti.Order.Monotone.Basic
 import TauCeti.Topology.ConnectedComponents
-import TauCeti.Topology.Order.LocalMonotone
 
 /-!
 # Boundary points of compact one-dimensional manifolds
@@ -900,9 +901,10 @@ private theorem isPos_iff_isPos_of_isPreconnected (h𝒪 : IsOrientation 𝒪)
     have hze := hSe hz
     have hzB := disjoint_left.1 hSB hz
     obtain ⟨c, hc, hzc⟩ := h𝒪.cover z hzB
-    exact ⟨⟨fun h ↦ h.2, fun h ↦ ⟨hze, h⟩⟩,
-      ⟨fun ⟨_, c', hc', hzc', h⟩ ↦ (not_isPos_iff h𝒪 hc' hze hzB hzc').2 h,
-        fun h ↦ ⟨hze, c, hc, hzc, (not_isPos_iff h𝒪 hc hze hzB hzc).1 h⟩⟩⟩
+    exact ⟨⟨fun ⟨_, c', hc', hzc', h⟩ ↦ ⟨c', hc', hzc', strictMonoAt_iff.2 h⟩,
+        fun ⟨c', hc', hzc', h⟩ ↦ ⟨hze, c', hc', hzc', strictMonoAt_iff.1 h⟩⟩,
+      ⟨fun ⟨_, c', hc', hzc', h⟩ ↦ (not_isPos_iff h𝒪 hc' hze hzB hzc').2 (strictAntiAt_iff.2 h),
+        fun h ↦ ⟨hze, c, hc, hzc, strictAntiAt_iff.1 ((not_isPos_iff h𝒪 hc hze hzB hzc).1 h)⟩⟩⟩
   have hSAA : S ⊆ A ∪ A' := fun z hz ↦ (em (IsPos 𝒪 e z)).imp ((hmem z hz).1.2) (hmem z hz).2.2
   have key : ∀ z ∈ S, ∀ z' ∈ S, IsPos 𝒪 e z → IsPos 𝒪 e z' := fun z hz z' hz' h ↦ by
     by_contra h'
@@ -991,8 +993,9 @@ private theorem IsArcIn.exists_strictMonoAt_iff_isPos (h𝒪 : IsOrientation �
     Filter.eventually_of_mem hIcc fun s hs ↦ by
       simp only [comp_apply, τ, symm_normalRay_coord (hsub s hs).2]
   obtain ⟨-, -, -, -, hdir⟩ := exists_strictMonoAt_or_strictAntiAt hye hyB hyc
-  rw [strictMonoAt_iff_of_eventuallyEq_comp heq (hτc.continuousAt hIcc) (Or.inl ⟨_, hIcc, hτm⟩)
-    hdir, iff_true_right (show StrictMonoAt τ u from ⟨_, hIcc, hτm⟩), ← isPos_iff h𝒪 hc hye hyB hyc]
+  rw [strictMonoAt_iff_of_eventuallyEq_comp heq (hτc.continuousAt hIcc)
+    (Or.inl (hτm.strictMonoAt hIcc)) hdir, iff_true_right (hτm.strictMonoAt hIcc),
+    ← isPos_iff h𝒪 hc hye hyB hyc]
   exact isPos_iff_isPos_of_isPreconnected h𝒪 h.isPreconnected_diff_boundary
     (fun z hz ↦ (h.mem z hz.1).1) disjoint_sdiff_left ⟨hyK, hyB⟩ ⟨hz₀K, hz₀B⟩
 
@@ -1061,13 +1064,13 @@ private theorem isPos_iff_isPos_iff_strictMonoOn (h𝒪 : IsOrientation 𝒪)
     right_mem_Icc.2 (hu.1.trans hu.2).le, (hu.1.trans hu.2).ne⟩
   have hτinc : StrictMonoAt τ u ↔ StrictMonoOn τ (Icc a b) := by
     rcases hmono with hm | hm
-    · exact iff_of_true ⟨_, hIcc, hm⟩ hm
-    · exact iff_of_false (fun h' ↦ not_strictMonoAt_and_strictAntiAt ⟨h', _, hIcc, hm⟩)
+    · exact iff_of_true (hm.strictMonoAt hIcc) hm
+    · exact iff_of_false (fun h' ↦ not_strictMonoAt_and_strictAntiAt ⟨h', hm.strictAntiAt hIcc⟩)
         fun h' ↦ hab.not_strictMonoOn_and_strictAntiOn ⟨h', hm⟩
   obtain ⟨-, -, -, -, hdir⟩ := exists_strictMonoAt_or_strictAntiAt hye hyB hyc
   have hcomp := strictMonoAt_iff_of_eventuallyEq_comp heq
     ((continuousOn_coord.comp (continuousOn_symm_normalRay htarget) hγe).continuousAt hIcc)
-    (hmono.imp (fun hm ↦ ⟨_, hIcc, hm⟩) fun hm ↦ ⟨_, hIcc, hm⟩) hdir
+    (hmono.imp (·.strictMonoAt hIcc) (·.strictAntiAt hIcc)) hdir
   have hpos' : IsPos 𝒪 e' y ↔ StrictMonoAt (fun s ↦ c (e'.symm (normalRay s))) u := by
     rw [isPos_iff h𝒪 hc hye' hyB hyc, hyu]
   have hpos : IsPos 𝒪 e y ↔ StrictMonoAt (fun s ↦ c (e.symm (normalRay s))) (τ u) :=
@@ -1294,15 +1297,12 @@ oriented manifolds the same count is
 atlas is assumed. -/
 theorem ModelWithCorners.ncard_eq_ncard_boundary_euclideanHalfSpace_one [CompactSpace M]
     [T2Space M] (hcover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source, StrictMonoAt (c' ∘ c.symm) (c x))
     {Bₒ Bᵢ : Set M} (hB : (𝓡∂ 1).boundary M = Bₒ ∪ Bᵢ)
     (hBₒ : ∀ b ∈ Bₒ, ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧
-      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source →
-        ∃ U ∈ 𝓝 s, StrictAntiOn (c ∘ γ) U)
+      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source → StrictAntiAt (c ∘ γ) s)
     (hBᵢ : ∀ b ∈ Bᵢ, ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧
-      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source →
-        ∃ U ∈ 𝓝 s, StrictMonoOn (c ∘ γ) U) :
+      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source → StrictMonoAt (c ∘ γ) s) :
     Bₒ.ncard = Bᵢ.ncard := by
   classical
   -- Bundle the hypotheses as `IsOrientation`, `IsOutward` and `IsInward`, which they unfold.

@@ -139,8 +139,8 @@ private theorem exists_path_of_homeomorph_Ico {x : X} {N : Set X} {ε : ℝ} (h�
     (e : Ico (0 : ℝ) ε ≃ₜ N) (hex : (e ⟨0, left_mem_Ico.2 hε⟩ : X) = x) :
     ∃ γ : ℝ → X, γ 0 = x ∧ ContinuousOn γ (Icc 0 (ε / 2)) ∧ InjOn γ (Icc 0 (ε / 2)) ∧
       ∀ s ∈ Ioo 0 (ε / 2), ∃ t : Ico (0 : ℝ) ε, 0 < (t : ℝ) ∧ γ s = e t ∧
-        ∀ {β : Type} [Preorder β] (f : X → β) (U : Set (Ico (0 : ℝ) ε)), U ∈ 𝓝 t →
-          StrictMonoOn (fun r ↦ f (e r)) U → ∃ V ∈ 𝓝 s, StrictMonoOn (f ∘ γ) V := by
+        ∀ {β : Type} [Preorder β] (f : X → β),
+          StrictMonoAt (fun r ↦ f (e r)) t → StrictMonoAt (f ∘ γ) s := by
   classical
   set γ : ℝ → X := fun r ↦ if h : r ∈ Ico 0 ε then (e ⟨r, h⟩ : X) else x
   have hγ : ∀ r (h : r ∈ Ico 0 ε), γ r = e ⟨r, h⟩ := fun r h ↦ by simp only [γ, h, ↓reduceDIte]
@@ -155,10 +155,11 @@ private theorem exists_path_of_homeomorph_Ico {x : X} {N : Set X} {ε : ℝ} (h�
   · rw [hγ r (hsub hr), hγ r' (hsub hr')] at h
     exact congrArg Subtype.val (e.injective (Subtype.ext h))
   · have hsI : s ∈ Ico 0 ε := ⟨hs.1.le, by linarith [hs.2]⟩
-    refine ⟨⟨s, hsI⟩, hs.1, hγ s hsI, fun f U hU hmono ↦ ?_⟩
+    refine ⟨⟨s, hsI⟩, hs.1, hγ s hsI, fun f hf ↦ ?_⟩
+    obtain ⟨U, hU, hmono⟩ := strictMonoAt_iff.1 hf
     obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype _ _ _).1 hU
-    refine ⟨V ∩ Ioo 0 ε, Filter.inter_mem hV (Ioo_mem_nhds hs.1 (by linarith [hs.2])),
-      fun r hr r' hr' hrr' ↦ ?_⟩
+    refine StrictMonoOn.strictMonoAt (s := V ∩ Ioo 0 ε) (fun r hr r' hr' hrr' ↦ ?_)
+      (Filter.inter_mem hV (Ioo_mem_nhds hs.1 (by linarith [hs.2])))
     have hrI : r ∈ Ico 0 ε := Ioo_subset_Ico_self hr.2
     have hr'I : r' ∈ Ico 0 ε := Ioo_subset_Ico_self hr'.2
     simp only [comp_apply, hγ r hrI, hγ r' hr'I]
@@ -222,14 +223,13 @@ by local homeomorphisms rather than by an atlas, and refines
 theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     {𝒪 : Set (OpenPartialHomeomorph X ℝ)} {Bₒ Bᵢ : Set X}
     (hcover : ∀ x, x ∉ Bₒ → x ∉ Bᵢ → ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source, StrictMonoAt (c' ∘ c.symm) (c x))
     (hBₒ : ∀ x ∈ Bₒ, ∃ N ∈ 𝓝 x, ∃ (ε : ℝ) (hε : 0 < ε) (e : Ico (0 : ℝ) ε ≃ₜ N),
       (e ⟨0, left_mem_Ico.2 hε⟩ : X) = x ∧ ∀ t : Ico (0 : ℝ) ε, 0 < (t : ℝ) → ∀ c ∈ 𝒪,
-        (e t : X) ∈ c.source → ∃ U ∈ 𝓝 t, StrictAntiOn (fun s ↦ c (e s)) U)
+        (e t : X) ∈ c.source → StrictAntiAt (fun s ↦ c (e s)) t)
     (hBᵢ : ∀ x ∈ Bᵢ, ∃ N ∈ 𝓝 x, ∃ (ε : ℝ) (hε : 0 < ε) (e : Ico (0 : ℝ) ε ≃ₜ N),
       (e ⟨0, left_mem_Ico.2 hε⟩ : X) = x ∧ ∀ t : Ico (0 : ℝ) ε, 0 < (t : ℝ) → ∀ c ∈ 𝒪,
-        (e t : X) ∈ c.source → ∃ U ∈ 𝓝 t, StrictMonoOn (fun s ↦ c (e s)) U) :
+        (e t : X) ∈ c.source → StrictMonoAt (fun s ↦ c (e s)) t) :
     Bₒ.ncard = Bᵢ.ncard := by
   have hmodel : ∀ x ∈ Bₒ ∪ Bᵢ, ∃ N ∈ 𝓝 x, ∃ (ε : ℝ) (hε : 0 < ε) (e : Ico (0 : ℝ) ε ≃ₜ N),
       (e ⟨0, left_mem_Ico.2 hε⟩ : X) = x := by
@@ -251,16 +251,15 @@ theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     obtain ⟨γ, hγ0, hγc, hγi, hγe⟩ := exists_path_of_homeomorph_Ico hε e hex
     refine ⟨γ, ε / 2, half_pos hε, hγ0, hγc, hγi, fun s hs c hc hsc ↦ ?_⟩
     obtain ⟨t, ht0, hγt, hcomp⟩ := hγe s hs
-    obtain ⟨U, hU, hanti⟩ := he t ht0 c hc (hγt ▸ hsc)
-    obtain ⟨V, hV, hmono⟩ :=
-      hcomp (fun y ↦ OrderDual.toDual (c y)) U hU (strictMonoOn_toDual_comp_iff.2 hanti)
-    exact ⟨V, hV, strictMonoOn_toDual_comp_iff.1 hmono⟩
+    obtain ⟨U, hU, hanti⟩ := strictAntiAt_iff.1 (he t ht0 c hc (hγt ▸ hsc))
+    obtain ⟨V, hV, hmono⟩ := strictMonoAt_iff.1 <| hcomp (fun y ↦ OrderDual.toDual (c y))
+      ((strictMonoOn_toDual_comp_iff.2 hanti).strictMonoAt hU)
+    exact (strictMonoOn_toDual_comp_iff.1 hmono).strictAntiAt hV
   · obtain ⟨N, -, ε, hε, e, hex, he⟩ := hBᵢ b hb
     obtain ⟨γ, hγ0, hγc, hγi, hγe⟩ := exists_path_of_homeomorph_Ico hε e hex
     refine ⟨γ, ε / 2, half_pos hε, hγ0, hγc, hγi, fun s hs c hc hsc ↦ ?_⟩
     obtain ⟨t, ht0, hγt, hcomp⟩ := hγe s hs
-    obtain ⟨U, hU, hmono⟩ := he t ht0 c hc (hγt ▸ hsc)
-    exact hcomp c U hU hmono
+    exact hcomp c (he t ht0 c hc (hγt ▸ hsc))
 
 end LocalModels
 

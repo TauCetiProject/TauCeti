@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Strict monotonicity near a point
@@ -14,7 +15,8 @@ A function `f` between orders is *strictly monotone at `a`* (`TauCeti.StrictMono
 is strictly monotone on a neighbourhood of `a`, and *strictly antitone at `a`*
 (`TauCeti.StrictAntiAt f a`) when it is strictly antitone on one.
 
-A function cannot be both on a set with two points, so it cannot be both at a point of a densely
+A function cannot be both on a set with two points
+(`Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`), so it cannot be both at a point of a densely
 ordered space without maximum. On a densely ordered conditionally complete linear order, a
 function continuous and injective near `a` is one of the two at `a`, by
 `ContinuousOn.strictMonoOn_of_injOn_Icc'`. If `g = h ∘ τ` near `a`, and each of `τ` at `a` and
@@ -23,8 +25,11 @@ exactly when `h` and `τ` go in the same direction.
 
 ## Main results
 
-* `Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`: no function is both strictly monotone and
-  strictly antitone on a set with two points.
+* `TauCeti.strictMonoAt_iff`, `StrictMonoOn.strictMonoAt`: the definition, and how to obtain the
+  predicate from monotonicity on a neighbourhood; likewise for `StrictAntiAt`.
+* `Filter.EventuallyEq.strictMonoAt_iff`: functions equal near `a` have the same direction at `a`.
+* `TauCeti.StrictMonoAt.comp`: the composite of functions strictly monotone at the right points
+  is strictly monotone; similarly with one or both strictly antitone.
 * `TauCeti.strictMonoAt_or_strictAntiAt`: a function continuous and injective on a neighbourhood
   of `a` is strictly monotone or strictly antitone at `a`.
 * `TauCeti.not_strictMonoAt_and_strictAntiAt`: no function is both at a point.
@@ -35,16 +40,6 @@ public section
 
 open Filter Set Topology
 
-/-- A function is not both strictly monotone and strictly antitone on a set with two points. -/
-theorem Set.Nontrivial.not_strictMonoOn_and_strictAntiOn {α β : Type*} [LinearOrder α]
-    [Preorder β] {f : α → β} {s : Set α} (hs : s.Nontrivial) :
-    ¬(StrictMonoOn f s ∧ StrictAntiOn f s) := by
-  rintro ⟨hm, ha⟩
-  obtain ⟨x, hx, y, hy, hxy⟩ := hs
-  rcases hxy.lt_or_gt with h | h
-  · exact lt_asymm (hm hx hy h) (ha hx hy h)
-  · exact lt_asymm (hm hy hx h) (ha hy hx h)
-
 namespace TauCeti
 
 variable {α β γ : Type*}
@@ -54,12 +49,112 @@ section Defs
 variable [TopologicalSpace α] [Preorder α] [Preorder β]
 
 /-- `f` is strictly monotone at `a`: it is strictly monotone on some neighbourhood of `a`. -/
-@[expose] def StrictMonoAt (f : α → β) (a : α) : Prop := ∃ s ∈ 𝓝 a, StrictMonoOn f s
+def StrictMonoAt (f : α → β) (a : α) : Prop := ∃ s ∈ 𝓝 a, StrictMonoOn f s
 
 /-- `f` is strictly antitone at `a`: it is strictly antitone on some neighbourhood of `a`. -/
-@[expose] def StrictAntiAt (f : α → β) (a : α) : Prop := ∃ s ∈ 𝓝 a, StrictAntiOn f s
+def StrictAntiAt (f : α → β) (a : α) : Prop := ∃ s ∈ 𝓝 a, StrictAntiOn f s
+
+/-- Unfolds `StrictMonoAt`. -/
+theorem strictMonoAt_iff {f : α → β} {a : α} : StrictMonoAt f a ↔ ∃ s ∈ 𝓝 a, StrictMonoOn f s :=
+  Iff.rfl
+
+/-- Unfolds `StrictAntiAt`. -/
+theorem strictAntiAt_iff {f : α → β} {a : α} : StrictAntiAt f a ↔ ∃ s ∈ 𝓝 a, StrictAntiOn f s :=
+  Iff.rfl
+
+/-- A function equal near `a` to one strictly monotone at `a` is strictly monotone at `a`. -/
+theorem StrictMonoAt.congr_of_eventuallyEq {f g : α → β} {a : α} (hf : StrictMonoAt f a)
+    (hfg : f =ᶠ[𝓝 a] g) : StrictMonoAt g a := by
+  obtain ⟨t, ht, hf⟩ := hf
+  exact ⟨t ∩ {x | f x = g x}, inter_mem ht hfg, (hf.mono inter_subset_left).congr fun _ hx ↦ hx.2⟩
+
+/-- A function equal near `a` to one strictly antitone at `a` is strictly antitone at `a`. -/
+theorem StrictAntiAt.congr_of_eventuallyEq {f g : α → β} {a : α} (hf : StrictAntiAt f a)
+    (hfg : f =ᶠ[𝓝 a] g) : StrictAntiAt g a := by
+  obtain ⟨t, ht, hf⟩ := hf
+  exact ⟨t ∩ {x | f x = g x}, inter_mem ht hfg, (hf.mono inter_subset_left).congr fun _ hx ↦ hx.2⟩
 
 end Defs
+
+end TauCeti
+
+section Intro
+
+variable {α β : Type*} [TopologicalSpace α] [Preorder α] [Preorder β] {f : α → β} {s : Set α}
+  {a : α}
+
+/-- A function strictly monotone on a neighbourhood of `a` is strictly monotone at `a`. -/
+theorem StrictMonoOn.strictMonoAt (hf : StrictMonoOn f s) (hs : s ∈ 𝓝 a) :
+    TauCeti.StrictMonoAt f a :=
+  ⟨s, hs, hf⟩
+
+/-- A function strictly antitone on a neighbourhood of `a` is strictly antitone at `a`. -/
+theorem StrictAntiOn.strictAntiAt (hf : StrictAntiOn f s) (hs : s ∈ 𝓝 a) :
+    TauCeti.StrictAntiAt f a :=
+  ⟨s, hs, hf⟩
+
+/-- A strictly monotone function is strictly monotone at every point. -/
+theorem StrictMono.strictMonoAt (hf : StrictMono f) (a : α) : TauCeti.StrictMonoAt f a :=
+  hf.strictMonoOn univ |>.strictMonoAt univ_mem
+
+/-- A strictly antitone function is strictly antitone at every point. -/
+theorem StrictAnti.strictAntiAt (hf : StrictAnti f) (a : α) : TauCeti.StrictAntiAt f a :=
+  hf.strictAntiOn univ |>.strictAntiAt univ_mem
+
+/-- Functions equal near `a` are both or neither strictly monotone at `a`. -/
+theorem Filter.EventuallyEq.strictMonoAt_iff {g : α → β} (hfg : f =ᶠ[𝓝 a] g) :
+    TauCeti.StrictMonoAt f a ↔ TauCeti.StrictMonoAt g a :=
+  ⟨(·.congr_of_eventuallyEq hfg), (·.congr_of_eventuallyEq hfg.symm)⟩
+
+/-- Functions equal near `a` are both or neither strictly antitone at `a`. -/
+theorem Filter.EventuallyEq.strictAntiAt_iff {g : α → β} (hfg : f =ᶠ[𝓝 a] g) :
+    TauCeti.StrictAntiAt f a ↔ TauCeti.StrictAntiAt g a :=
+  ⟨(·.congr_of_eventuallyEq hfg), (·.congr_of_eventuallyEq hfg.symm)⟩
+
+end Intro
+
+namespace TauCeti
+
+variable {α β γ : Type*}
+
+section Comp
+
+variable [TopologicalSpace α] [Preorder α] [TopologicalSpace β] [Preorder β] [Preorder γ]
+  {h : β → γ} {τ : α → β} {a : α}
+
+/-- The composite of a function strictly monotone at `τ a` with a function `τ` continuous and
+strictly monotone at `a` is strictly monotone at `a`. -/
+theorem StrictMonoAt.comp (hh : StrictMonoAt h (τ a)) (hτ : StrictMonoAt τ a)
+    (hτc : ContinuousAt τ a) : StrictMonoAt (h ∘ τ) a := by
+  obtain ⟨⟨V, hV, hhV⟩, ⟨W, hW, hτW⟩⟩ := And.intro hh hτ
+  exact (hhV.comp (hτW.mono inter_subset_left) fun _ hx ↦ hx.2).strictMonoAt
+    (inter_mem hW (hτc.preimage_mem_nhds hV))
+
+/-- The composite of a function strictly monotone at `τ a` with a function `τ` continuous and
+strictly antitone at `a` is strictly antitone at `a`. -/
+theorem StrictMonoAt.comp_strictAntiAt (hh : StrictMonoAt h (τ a)) (hτ : StrictAntiAt τ a)
+    (hτc : ContinuousAt τ a) : StrictAntiAt (h ∘ τ) a := by
+  obtain ⟨⟨V, hV, hhV⟩, ⟨W, hW, hτW⟩⟩ := And.intro hh hτ
+  exact (hhV.comp_strictAntiOn (hτW.mono inter_subset_left) fun _ hx ↦ hx.2).strictAntiAt
+    (inter_mem hW (hτc.preimage_mem_nhds hV))
+
+/-- The composite of a function strictly antitone at `τ a` with a function `τ` continuous and
+strictly monotone at `a` is strictly antitone at `a`. -/
+theorem StrictAntiAt.comp_strictMonoAt (hh : StrictAntiAt h (τ a)) (hτ : StrictMonoAt τ a)
+    (hτc : ContinuousAt τ a) : StrictAntiAt (h ∘ τ) a := by
+  obtain ⟨⟨V, hV, hhV⟩, ⟨W, hW, hτW⟩⟩ := And.intro hh hτ
+  exact (hhV.comp_strictMonoOn (hτW.mono inter_subset_left) fun _ hx ↦ hx.2).strictAntiAt
+    (inter_mem hW (hτc.preimage_mem_nhds hV))
+
+/-- The composite of a function strictly antitone at `τ a` with a function `τ` continuous and
+strictly antitone at `a` is strictly monotone at `a`. -/
+theorem StrictAntiAt.comp (hh : StrictAntiAt h (τ a)) (hτ : StrictAntiAt τ a)
+    (hτc : ContinuousAt τ a) : StrictMonoAt (h ∘ τ) a := by
+  obtain ⟨⟨V, hV, hhV⟩, ⟨W, hW, hτW⟩⟩ := And.intro hh hτ
+  exact (hhV.comp (hτW.mono inter_subset_left) fun _ hx ↦ hx.2).strictMonoAt
+    (inter_mem hW (hτc.preimage_mem_nhds hV))
+
+end Comp
 
 /-- A function continuous and injective on a neighbourhood of `a` is strictly monotone or
 strictly antitone at `a`. -/
@@ -69,14 +164,16 @@ theorem strictMonoAt_or_strictAntiAt [ConditionallyCompleteLinearOrder α] [Topo
     (hc : ContinuousOn f s) (hi : InjOn f s) : StrictMonoAt f a ∨ StrictAntiAt f a := by
   obtain ⟨b, c, hbc, hI, hsub⟩ := exists_Icc_mem_subset_of_mem_nhds hs
   exact ((hc.mono hsub).strictMonoOn_of_injOn_Icc' (hbc.1.trans hbc.2) (hi.mono hsub)).imp
-    (fun h ↦ ⟨_, hI, h⟩) fun h ↦ ⟨_, hI, h⟩
+    (·.strictMonoAt hI) (·.strictAntiAt hI)
 
 /-- A function is not both strictly monotone and strictly antitone at a point of a densely
 ordered space without maximum. -/
 theorem not_strictMonoAt_and_strictAntiAt [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
     [DenselyOrdered α] [NoMaxOrder α] [Preorder β] {f : α → β} {a : α} :
     ¬(StrictMonoAt f a ∧ StrictAntiAt f a) := by
-  rintro ⟨⟨s, hs, hm⟩, t, ht, ha⟩
+  rintro ⟨hm, ha⟩
+  obtain ⟨s, hs, hm⟩ := strictMonoAt_iff.1 hm
+  obtain ⟨t, ht, ha⟩ := strictAntiAt_iff.1 ha
   obtain ⟨u, hau, hsub⟩ := exists_Ico_subset_of_mem_nhds (inter_mem hs ht) (exists_gt a)
   obtain ⟨x, hax, hxu⟩ := exists_between hau
   have hst : (s ∩ t).Nontrivial :=
@@ -93,33 +190,18 @@ theorem strictMonoAt_iff_of_eventuallyEq_comp [LinearOrder α] [TopologicalSpace
     {τ : α → β} {a : α} (hg : g =ᶠ[𝓝 a] h ∘ τ) (hτc : ContinuousAt τ a)
     (hτ : StrictMonoAt τ a ∨ StrictAntiAt τ a) (hh : StrictMonoAt h (τ a) ∨ StrictAntiAt h (τ a)) :
     StrictMonoAt g a ↔ (StrictMonoAt h (τ a) ↔ StrictMonoAt τ a) := by
-  -- Shrink the neighbourhood of `a` so that `τ` maps it into that of `τ a` and `g = h ∘ τ` on it.
-  have key : ∀ {V W}, V ∈ 𝓝 (τ a) → W ∈ 𝓝 a →
-      ∃ W' ∈ 𝓝 a, W' ⊆ W ∧ MapsTo τ W' V ∧ EqOn (h ∘ τ) g W' := fun hV hW ↦
-    ⟨_, inter_mem (inter_mem hW (hτc.preimage_mem_nhds hV)) hg, fun _ hx ↦ hx.1.1,
-      fun _ hx ↦ hx.1.2, fun _ hx ↦ hx.2.symm⟩
+  rw [hg.strictMonoAt_iff]
   have hgτ := not_strictMonoAt_and_strictAntiAt (f := τ) (a := a)
   have hgh := not_strictMonoAt_and_strictAntiAt (f := h) (a := τ a)
-  have hgg := not_strictMonoAt_and_strictAntiAt (f := g) (a := a)
-  rcases hh with ⟨V, hV, hhV⟩ | ⟨V, hV, hhV⟩ <;> rcases hτ with ⟨W, hW, hτW⟩ | ⟨W, hW, hτW⟩ <;>
-    obtain ⟨W', hW', hW'W, hmaps, heq⟩ := key hV hW
-  · have : StrictMonoAt g a := ⟨W', hW', (hhV.comp (hτW.mono hW'W) hmaps).congr heq⟩
-    have : StrictMonoAt h (τ a) := ⟨V, hV, hhV⟩
-    have : StrictMonoAt τ a := ⟨W, hW, hτW⟩
+  have hgg := not_strictMonoAt_and_strictAntiAt (f := h ∘ τ) (a := a)
+  rcases hh with hh | hh <;> rcases hτ with hτ | hτ
+  · have := hh.comp hτ hτc
     tauto
-  · have : StrictAntiAt g a :=
-      ⟨W', hW', (hhV.comp_strictAntiOn (hτW.mono hW'W) hmaps).congr heq⟩
-    have : StrictMonoAt h (τ a) := ⟨V, hV, hhV⟩
-    have : StrictAntiAt τ a := ⟨W, hW, hτW⟩
+  · have := hh.comp_strictAntiAt hτ hτc
     tauto
-  · have : StrictAntiAt g a :=
-      ⟨W', hW', (hhV.comp_strictMonoOn (hτW.mono hW'W) hmaps).congr heq⟩
-    have : StrictAntiAt h (τ a) := ⟨V, hV, hhV⟩
-    have : StrictMonoAt τ a := ⟨W, hW, hτW⟩
+  · have := hh.comp_strictMonoAt hτ hτc
     tauto
-  · have : StrictMonoAt g a := ⟨W', hW', (hhV.comp (hτW.mono hW'W) hmaps).congr heq⟩
-    have : StrictAntiAt h (τ a) := ⟨V, hV, hhV⟩
-    have : StrictAntiAt τ a := ⟨W, hW, hτW⟩
+  · have := hh.comp hτ hτc
     tauto
 
 end TauCeti
