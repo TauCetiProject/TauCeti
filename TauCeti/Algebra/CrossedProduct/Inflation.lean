@@ -166,8 +166,9 @@ inclusions into `Kˢ`, before inflation does not change the cocycle on the absol
 group. -/
 theorem inflate_comap (c : TwoCocycle K L) : (c.comap π ι hπι).inflate M = c.inflate L := by
   ext g k
-  rw [inflate_toFun, comap_toFun, inflate_toFun, π.restrictNormalHom_of_compatible ι hπι hι,
-    π.restrictNormalHom_of_compatible ι hπι hι]
+  rw [inflate_toFun, comap_toFun, inflate_toFun,
+    AlgEquiv.restrictNormalHom_of_compatible π ι hπι hι,
+    AlgEquiv.restrictNormalHom_of_compatible π ι hπι hι]
   simpa using hι (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k))
 
 variable [FiniteDimensional K L] [FiniteDimensional K M]
@@ -204,9 +205,9 @@ theorem val_refine_toFun_restrictNormalHom [Normal K M] (hLM : L ≤ M) (c : Two
         (AlgEquiv.restrictNormalHom M k)) =
       L.val (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k)) := by
   rw [refine_def, comap_toFun,
-    MonoidHom.restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
+    AlgEquiv.restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
       (coe_inclusion hLM),
-    MonoidHom.restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
+    AlgEquiv.restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
       (coe_inclusion hLM),
     Units.coe_map, MonoidHom.coe_ofClass, coe_val, coe_val, coe_inclusion]
 

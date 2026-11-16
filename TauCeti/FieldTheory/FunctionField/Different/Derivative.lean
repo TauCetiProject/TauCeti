@@ -204,8 +204,8 @@ theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u â
     exact_mod_cast (differentExponent_eq_zero_of_finrank_eq_one k F P'
       (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot hgen
         (IntermediateField.mem_bot.mpr
-          (mem_range_algebraMap_of_two_mul_add_eq_zero (Algebra.IsSeparable.isSeparable F z)
-            hz hne)))).le
+          (mem_range_algebraMap_of_isSeparable_of_sq_add_mul_sub_eq_zero_of_two_mul_add_eq_zero
+            (Algebra.IsSeparable.isSeparable F z) hz hne)))).le
   have hÏˆ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
   have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
       2 * z + algebraMap F F' u := by
