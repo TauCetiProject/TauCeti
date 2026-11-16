@@ -61,7 +61,6 @@ theorem torsionWeilBrauerPairing_apply
   (rfl)
 
 /-- The Brauer-valued Weil pairing is annihilated by `m`. -/
-@[simp]
 theorem nsmul_torsionWeilBrauerPairing_eq_zero
     (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
     m • W.torsionWeilBrauerPairing m hm a b = 0 :=
@@ -94,7 +93,6 @@ theorem kerWeilBrauerPairing_apply
   (rfl)
 
 /-- The Brauer-valued isogeny Weil pairing is annihilated by `deg φ`. -/
-@[simp]
 theorem degree_nsmul_kerWeilBrauerPairing_eq_zero
     (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
