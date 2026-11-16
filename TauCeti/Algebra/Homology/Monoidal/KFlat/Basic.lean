@@ -181,6 +181,24 @@ theorem isKFlat_single_of_flat (M : C) (n : ℤ)
   exact (exactAt_shift_iff (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj A)
     (-n) i (-n + i) rfl).2 ((hA _).map (tensorLeft M))
 
+/-- The monoidal unit placed in any integer degree is K-flat. -/
+instance isKFlat_single_tensorUnit (n : ℤ) :
+    IsKFlat ((single C (.up ℤ) n).obj (𝟙_ C)) :=
+  have : PreservesFiniteLimits (tensorLeft (𝟙_ C)) :=
+    preservesFiniteLimits_of_natIso (leftUnitorNatIso C).symm
+  have : PreservesFiniteColimits (tensorLeft (𝟙_ C)) :=
+    preservesFiniteColimits_of_natIso (leftUnitorNatIso C).symm
+  isKFlat_single_of_flat (𝟙_ C) n
+
+/-- The monoidal unit of `CochainComplex C ℤ` is K-flat. -/
+instance isKFlat_tensorUnit
+    [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
+    [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+    [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+    [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃] :
+    (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
+  isKFlat_single_tensorUnit 0
+
 /-- The mapping cone of a morphism between K-flat complexes is K-flat. -/
 instance isKFlat_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) [K.IsKFlat] [L.IsKFlat] :
     (mappingCone φ).IsKFlat := by
