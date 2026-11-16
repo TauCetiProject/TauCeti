@@ -7,11 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Pointwise
 public import Mathlib.Topology.Baire.BaireMeasurable
-public import Mathlib.Topology.Baire.CompleteMetrizable
-public import Mathlib.Topology.Baire.LocallyCompactRegular
-import Mathlib.Analysis.Real.Cardinality
-import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.Topology.Instances.Rat
+import TauCeti.Topology.Algebra.Group.Pointwise
+import TauCeti.Topology.Baire.Lemmas
 
 /-!
 # Pettis's category theorem and automatic continuity of group homomorphisms
@@ -25,21 +22,17 @@ nonmeagre, hence meets `s ∩ (x • s)`.
 From Pettis's theorem follows **automatic continuity** of Baire-measurable and Borel-measurable
 homomorphisms: every group homomorphism `f : G → K` from a Baire topological group `G` to a
 separable topological group `K` whose preimages of open sets have the Baire property is continuous.
-Neither metrizability nor Hausdorffness of `K` is needed: for any open neighbourhood `W` of `1` in
-`K`, the translates `d • W` along a countable dense subset `D ⊆ K` cover `K` (since each
+Neither metrizability nor Hausdorffness of `K` is needed: for any open symmetric neighbourhood `W`
+of `1` in `K`, the translates `d • W` along a countable dense subset `D ⊆ K` cover `K` (since each
 `y • W⁻¹` is open and nonempty), so one preimage `f ⁻¹' (d • W)` is nonmeagre in `G`; translating
 back by a single point of that preimage places it inside a translate of `f ⁻¹' (W⁻¹ * W)`, to which
-Pettis's theorem applies because `W⁻¹ * W` is open.
+Pettis's theorem applies.
 
 Since every Borel set has the Baire property (`MeasurableSet.baireMeasurableSet`) and both
 completely pseudometrizable (in particular Polish) spaces and locally compact Hausdorff spaces are
 Baire spaces, every Borel-measurable homomorphism from a Polish or locally compact Hausdorff group
 to a separable topological group with `OpensMeasurableSpace` (such as a Polish group or a separable
 metrizable Borel group) is automatically continuous.
-
-Finally, a `ℚ`-linear projection along a Hamel basis of `ℝ` over `ℚ` provides an additive
-homomorphism `ℝ →+ ℝ` that is not continuous and hence not Borel-measurable, showing that the
-measurability hypothesis cannot be dropped.
 
 ## Main results
 
@@ -54,8 +47,6 @@ measurability hypothesis cannot be dropped.
   every Borel-measurable group homomorphism from a Baire Borel topological group (in particular any
   Polish group or any locally compact Hausdorff group) to a separable topological group with
   measurable open sets is continuous.
-* `TauCeti.exists_addMonoidHom_not_continuous_and_not_measurable`: there exists a discontinuous,
-  non-Borel additive homomorphism `ℝ →+ ℝ`.
 
 ## References
 
@@ -72,12 +63,6 @@ public section
 open Set Filter MeasureTheory Topology TopologicalSpace
 open scoped Pointwise
 
-/-- Meagreness is invariant under eventual equality modulo the residual filter. -/
-private theorem isMeagre_congr {X : Type*} [TopologicalSpace X] {s t : Set X} (hst : s =ᵇ t) :
-    IsMeagre s ↔ IsMeagre t := by
-  rw [IsMeagre, IsMeagre, ← eventually_mem_set, ← eventually_mem_set]
-  exact eventually_congr hst.compl.mem_iff
-
 namespace BaireMeasurableSet
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [BaireSpace G]
@@ -90,7 +75,7 @@ property and is not meagre, then `s + -s` is a neighbourhood of `0`. -/]
 theorem mul_inv_mem_nhds_one (hs : BaireMeasurableSet s) (hnm : ¬ IsMeagre s) :
     s * s⁻¹ ∈ 𝓝 (1 : G) := by
   obtain ⟨U, hUo, hsU⟩ := hs.residualEq_isOpen
-  have hUnm : ¬ IsMeagre U := fun hU => hnm ((isMeagre_congr hsU).2 hU)
+  have hUnm : ¬ IsMeagre U := fun hU => hnm (hU.congr hsU.symm)
   obtain ⟨u₀, hu₀⟩ := nonempty_of_not_isMeagre hUnm
   have hUU : U * U⁻¹ ∈ 𝓝 (1 : G) := by
     rw [← mul_inv_cancel u₀]
@@ -109,11 +94,10 @@ theorem mul_inv_mem_nhds_one (hs : BaireMeasurableSet s) (hnm : ¬ IsMeagre s) :
   have hinter_ne : (U ∩ φ '' U).Nonempty :=
     ⟨a, ha, b⁻¹, hb, by simp [φ, mul_assoc]⟩
   have hinter_nm : ¬ IsMeagre (s ∩ φ '' s) := fun hm =>
-    not_isMeagre_of_isOpen hinter_open hinter_ne ((isMeagre_congr hinter_eq).1 hm)
+    not_isMeagre_of_isOpen hinter_open hinter_ne (hm.congr hinter_eq)
   obtain ⟨y, hys, z, hzs, hyz⟩ := nonempty_of_not_isMeagre hinter_nm
-  have hzy : a * b * z = y := hyz
   refine mem_mul.2 ⟨y, hys, z⁻¹, Set.inv_mem_inv.2 hzs, ?_⟩
-  simp [← hzy, mul_assoc]
+  simp [← hyz, φ, mul_assoc]
 
 /-- **Pettis's theorem** (division form): if `s` has the Baire property and is not meagre in a
 Baire topological group, then `s / s` is a neighbourhood of `1`. -/
@@ -163,65 +147,34 @@ theorem continuous_of_baireMeasurableSet_preimage_monoidHom (f : F)
   refine continuous_of_continuousAt_one f (continuousAt_def.2 ?_)
   rw [map_one]
   intro V hV
-  -- Choose an open identity neighbourhood `U` with `U * U⁻¹ ⊆ V`, then an open `W ∋ 1` with
-  -- `W⁻¹ * W ⊆ U`.
-  have hmul_inv : Continuous fun p : K × K => p.1 * p.2⁻¹ := continuous_fst.mul continuous_snd.inv
-  have hV11 : (fun p : K × K => p.1 * p.2⁻¹) ⁻¹' V ∈ 𝓝 ((1 : K), (1 : K)) :=
-    hmul_inv.continuousAt.preimage_mem_nhds (by simpa using hV)
-  obtain ⟨U₁, hU₁, U₂, hU₂, hUsub⟩ := mem_nhds_prod_iff.1 hV11
-  obtain ⟨U, hUU₁, hUo, h1U⟩ := mem_nhds_iff.1 (inter_mem hU₁ hU₂)
-  have hUU_sub : U * U⁻¹ ⊆ V := by
-    rintro _ ⟨a, ha, b, hb, rfl⟩
-    rw [Set.mem_inv] at hb
-    simpa using hUsub (mk_mem_prod (hUU₁ ha).1 (hUU₁ hb).2)
-  have hinv_mul : Continuous fun p : K × K => p.1⁻¹ * p.2 := continuous_fst.inv.mul continuous_snd
-  have hU11 : (fun p : K × K => p.1⁻¹ * p.2) ⁻¹' U ∈ 𝓝 ((1 : K), (1 : K)) :=
-    hinv_mul.continuousAt.preimage_mem_nhds (by simpa using hUo.mem_nhds h1U)
-  obtain ⟨W₁, hW₁, W₂, hW₂, hWsub⟩ := mem_nhds_prod_iff.1 hU11
-  obtain ⟨W, hWW, hWo, h1W⟩ := mem_nhds_iff.1 (inter_mem hW₁ hW₂)
-  have hWW_sub : W⁻¹ * W ⊆ U := by
-    rintro _ ⟨a, ha, b, hb, rfl⟩
-    rw [Set.mem_inv] at ha
-    simpa using hWsub (mk_mem_prod (hWW ha).1 (hWW hb).2)
-  -- Cover `K` by countably many translates of `W` along a countable dense subset `D`.
+  obtain ⟨U, hUo, h1U, hUinv, hUU_sub⟩ := exists_open_nhds_one_inv_eq_mul_subset hV
+  obtain ⟨W, hWo, h1W, hWinv, hWW_sub⟩ :=
+    exists_open_nhds_one_inv_eq_mul_subset (hUo.mem_nhds h1U)
   obtain ⟨D, hDc, hDd⟩ := exists_countable_dense K
   have hcover : (⋃ d ∈ D, f ⁻¹' ((d * ·) '' W)) = univ := by
     refine eq_univ_iff_forall.2 fun g => mem_iUnion₂.2 ?_
     have hop : IsOpen ((f g * ·) '' W⁻¹) := (Homeomorph.mulLeft (f g)).isOpenMap W⁻¹ hWo.inv
     have hne : ((f g * ·) '' W⁻¹).Nonempty := ⟨f g, 1, Set.mem_inv.2 (by simpa using h1W), by simp⟩
-    obtain ⟨d, hdW, hdD⟩ := hDd.inter_open_nonempty _ hop hne
-    rcases hdW with ⟨w, hw, rfl⟩
-    rw [Set.mem_inv] at hw
-    exact ⟨f g * w, hdD, w⁻¹, hw, by simp [mul_assoc]⟩
-  -- In the nonempty Baire space `G`, one of the countably many pieces must be nonmeagre.
-  have hnot_all : ¬ ∀ d ∈ D, IsMeagre (f ⁻¹' ((d * ·) '' W)) := fun hall => by
-    have huniv : IsMeagre (univ : Set G) := hcover ▸ isMeagre_biUnion hDc hall
-    exact not_isMeagre_of_isOpen isOpen_univ univ_nonempty huniv
-  push Not at hnot_all
-  obtain ⟨d, _, hd_nm⟩ := hnot_all
+    obtain ⟨d, ⟨w, hw, rfl⟩, hdD⟩ := hDd.inter_open_nonempty _ hop hne
+    exact ⟨f g * w, hdD, w⁻¹, Set.mem_inv.1 hw, by simp [mul_assoc]⟩
+  obtain ⟨d, _, hd_nm⟩ := exists_of_not_isMeagre_biUnion hDc
+    (hcover.symm ▸ not_isMeagre_of_isOpen isOpen_univ univ_nonempty)
   obtain ⟨g₀, w₀, hw₀, hfg₀⟩ := nonempty_of_not_isMeagre hd_nm
-  -- Translate that piece back to `1`: `f ⁻¹' (d • W) ⊆ g₀ • f ⁻¹' U`, so `f ⁻¹' U` is nonmeagre.
   have hsub_tr : f ⁻¹' ((d * ·) '' W) ⊆ (Homeomorph.mulLeft g₀) '' (f ⁻¹' U) := by
     rintro g ⟨w, hw, hfg⟩
-    have hfg₀' : d * w₀ = f g₀ := hfg₀
-    have hfg' : d * w = f g := hfg
     refine ⟨g₀⁻¹ * g, ?_, by simp⟩
-    rw [mem_preimage, map_mul, map_inv, ← hfg₀', ← hfg']
-    have heq : (d * w₀)⁻¹ * (d * w) = w₀⁻¹ * w := by
-      simp [mul_inv_rev, mul_assoc]
+    rw [mem_preimage, map_mul, map_inv, ← hfg₀, ← hfg]
+    have heq : (d * w₀)⁻¹ * (d * w) = w₀⁻¹ * w := by simp [mul_inv_rev, mul_assoc]
     rw [heq]
-    exact hWW_sub (mul_mem_mul (Set.inv_mem_inv.2 hw₀) hw)
-  have hUnm : ¬ IsMeagre (f ⁻¹' U) := fun hm => hd_nm <| by
-    let ψ : G ≃ₜ G := Homeomorph.mulLeft g₀
-    have hpre : f ⁻¹' ((d * ·) '' W) ⊆ ψ.symm ⁻¹' (f ⁻¹' U) := by
-      simpa only [Homeomorph.preimage_symm] using hsub_tr
-    exact IsMeagre.mono hpre (hm.preimage_of_isOpenMap ψ.symm.continuous ψ.symm.isOpenMap)
+    exact hWW_sub (mul_mem_mul (hWinv ▸ Set.inv_mem_inv.2 hw₀) hw)
+  have hUnm : ¬ IsMeagre (f ⁻¹' U) := fun hm =>
+    hd_nm <| IsMeagre.mono hsub_tr ((Homeomorph.mulLeft g₀).isInducing.isMeagre_image hm)
   refine mem_of_superset ((hf U hUo).mul_inv_mem_nhds_one hUnm) ?_
   rintro _ ⟨a, ha, b, hb, rfl⟩
   rw [Set.mem_inv] at hb
   have hfb : f b = (f b⁻¹)⁻¹ := by simp
   rw [mem_preimage, map_mul, hfb]
-  exact hUU_sub (mul_mem_mul ha (Set.inv_mem_inv.2 hb))
+  exact hUU_sub (mul_mem_mul ha (hUinv ▸ Set.inv_mem_inv.2 hb))
 
 /-- **Automatic continuity of Borel-measurable group homomorphisms.** Every Borel-measurable group
 homomorphism from a Baire Borel topological group (in particular any Polish group or any locally
@@ -238,46 +191,5 @@ theorem continuous_of_measurable_monoidHom [MeasurableSpace G] [BorelSpace G]
     (hf hU.measurableSet).baireMeasurableSet
 
 end AutomaticContinuity
-
-/-- **Measurability cannot be dropped in automatic continuity.** A `ℚ`-linear coordinate projection
-along a Hamel basis of `ℝ` over `ℚ` is an additive homomorphism `ℝ →+ ℝ` that is not `ℝ`-linear,
-hence neither continuous nor Borel-measurable. -/
-theorem exists_addMonoidHom_not_continuous_and_not_measurable :
-    ∃ f : ℝ →+ ℝ, ¬ Continuous f ∧ ¬ Measurable f := by
-  let b := Module.Basis.ofVectorSpace ℚ ℝ
-  -- Since `ℝ` is uncountable and `ℚ` is countable, the Hamel basis index type has at least two
-  -- distinct elements.
-  have hnt : Nontrivial (Module.Basis.ofVectorSpaceIndex ℚ ℝ) := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    have : Countable (Module.Basis.ofVectorSpaceIndex ℚ ℝ →₀ ℚ) :=
-      Finsupp.equivFunOnFinite.countable_iff.2 inferInstance
-    have hcnt : Countable ℝ := b.repr.toEquiv.countable_iff.2 this
-    exact not_countable hcnt
-  obtain ⟨i, j, hij⟩ := exists_pair_ne (Module.Basis.ofVectorSpaceIndex ℚ ℝ)
-  let L : ℝ →ₗ[ℚ] ℝ := (Algebra.linearMap ℚ ℝ).comp (b.coord i)
-  let f : ℝ →+ ℝ := L.toAddMonoidHom
-  have hfi : f (b i) = 1 := by
-    simp [f, L, Module.Basis.coord_apply, b.repr_self]
-  have hfj : f (b j) = 0 := by
-    simp [f, L, Module.Basis.coord_apply, b.repr_self, hij.symm]
-  have hnc : ¬ Continuous f := fun hc => by
-    have hmul : ∀ r y : ℝ, f (r * y) = r * f y := fun r y => by
-      have heq : (fun x : ℝ => f (x * y)) = fun x : ℝ => x * f y := by
-        refine Rat.denseRange_cast.equalizer (hc.comp (continuous_mul_const y))
-          (continuous_mul_const (f y)) ?_
-        ext q
-        simpa only [f, Function.comp_apply, LinearMap.toAddMonoidHom_coe, Rat.smul_def] using
-          L.map_smul q y
-      exact congr_fun heq r
-    have hbj : b j = 0 := by
-      calc
-        b j = b j * f (b i) := by rw [hfi, mul_one]
-        _ = f (b j * b i) := (hmul (b j) (b i)).symm
-        _ = f (b i * b j) := by rw [mul_comm]
-        _ = b i * f (b j) := hmul (b i) (b j)
-        _ = 0 := by rw [hfj, mul_zero]
-    exact b.ne_zero j hbj
-  exact ⟨f, hnc, fun hm => hnc (continuous_of_measurable_addMonoidHom f hm)⟩
 
 end TauCeti

@@ -5,25 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
-public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Analysis.InnerProductSpace.StrongUnitary.Basic
+public import TauCeti.MeasureTheory.Constructions.Polish.SeparatesPoints
 
 /-!
 # Borel structure and matrix-coefficient measurability on `StrongUnitary`
 
 This file equips `TauCeti.StrongUnitary 𝕜 H` with its Borel σ-algebra (`borel _`) and `BorelSpace`
-instance, and proves the **matrix-coefficient comparison** (Williams, Lemmas D.20 and D.43).
+instance, and proves the **matrix-coefficient comparison** (Williams, Lemma D.43).
 
-First, on any `StandardBorelSpace` `α`, if a countable family of measurable maps `f i : α → β i`
-into countably separated measurable spaces separates the points of `α`, then `x ↦ (f i x)_i` is a
-measurable injection into the countably separated product `∀ i, β i`; by Lusin–Souslin
-(`Measurable.measurableEmbedding`), it is a measurable embedding, so the `f i` generate the full
-σ-algebra of `α` (`TauCeti.measurableSpace_eq_iSup_comap_of_separatesPoints`).
-
-When `H` is separable, `StrongUnitary 𝕜 H` is Polish, hence a `StandardBorelSpace` (with automatic
-`MeasurableMul₂`, `MeasurableInv`, and `MeasurableSMul₂` instances from Mathlib's Borel-group
-hierarchy). Applying the point-separating generator lemma to the continuous matrix coefficients
+When `H` is separable, `StrongUnitary 𝕜 H` is Polish, hence a `StandardBorelSpace`, with automatic
+`MeasurableMul₂` and `MeasurableInv` instances from Mathlib's Borel-group hierarchy (as well as
+`MeasurableSMul₂ (unitary 𝕜) (StrongUnitary 𝕜 H)` once `[MeasurableSpace 𝕜]` and
+`[OpensMeasurableSpace 𝕜]` are in scope, and `MeasurableSMul₂ Circle (StrongUnitary ℂ H)` once
+`Mathlib.MeasureTheory.Group.Circle` is imported). Applying
+`TauCeti.measurableSpace_eq_iSup_comap_of_separatesPoints` to the continuous matrix coefficients
 `u ↦ ⟪d i, u (d j)⟫_𝕜` along a countable dense family `d : ι → H` shows that these countably many
 coefficients generate the Borel σ-algebra of `StrongUnitary 𝕜 H`, yielding the four-way equivalence
 for any map `φ : X → StrongUnitary 𝕜 H` from a measurable space `X`:
@@ -34,18 +30,15 @@ for any map `φ : X → StrongUnitary 𝕜 H` from a measurable space `X`:
 
 ## Main declarations
 
-* `MeasurableSpace.instCountablySeparatedPi`: countable products of countably separated measurable
-  spaces are countably separated.
-* `TauCeti.measurableSpace_eq_iSup_comap_of_separatesPoints`: a countable point-separating family of
-  measurable maps from a standard Borel space into countably separated spaces generates its
-  σ-algebra.
-* `TauCeti.StrongUnitary.borel_eq_iSup_comap_inner_of_dense`: matrix coefficients along a countable
-  dense family generate the Borel σ-algebra of `StrongUnitary 𝕜 H`.
+* `TauCeti.StrongUnitary.instMeasurableSpace` and `TauCeti.StrongUnitary.instBorelSpace`: the Borel
+  σ-algebra of the strong operator topology on `StrongUnitary 𝕜 H`.
+* `TauCeti.StrongUnitary.measurableSpace_eq_iSup_comap_inner_of_dense`: matrix coefficients along a
+  countable dense family generate the Borel σ-algebra of `StrongUnitary 𝕜 H`.
 * `TauCeti.StrongUnitary.measurable_iff_forall_measurable_apply`,
   `TauCeti.StrongUnitary.measurable_iff_forall_measurable_apply_of_dense`,
   `TauCeti.StrongUnitary.measurable_iff_forall_measurable_inner`, and
   `TauCeti.StrongUnitary.measurable_iff_forall_measurable_inner_of_dense`: the four-way coefficient
-  characterization of Borel measurability into `StrongUnitary 𝕜 H`.
+  and orbit characterization of Borel measurability into `StrongUnitary 𝕜 H`.
 
 ## References
 
@@ -57,60 +50,33 @@ for any map `φ : X → StrongUnitary 𝕜 H` from a measurable space `X`:
 
 public noncomputable section
 
-open MeasurableSpace MeasureTheory Set Topology TopologicalSpace
+open MeasurableSpace MeasureTheory Topology TopologicalSpace
 open scoped InnerProductSpace
 
-/-- A countable product of countably separated measurable spaces is countably separated. -/
-instance MeasurableSpace.instCountablySeparatedPi {ι : Type*} [Countable ι] {β : ι → Type*}
-    [∀ i, MeasurableSpace (β i)] [∀ i, CountablySeparated (β i)] :
-    CountablySeparated (∀ i, β i) := by
-  choose S hSc hSm hS using fun i => exists_countable_separating (β i) MeasurableSet univ
-  refine countablySeparated_def.2 ⟨⟨⋃ i, preimage (fun f : ∀ j, β j => f i) '' S i,
-    countable_iUnion fun i => (hSc i).image _, ?_, ?_⟩⟩
-  · rintro _ ⟨_, ⟨i, rfl⟩, s, hs, rfl⟩
-    exact measurable_pi_apply i (hSm i s hs)
-  · intro f _ g _ hfg
-    funext i
-    exact hS i (f i) (mem_univ _) (g i) (mem_univ _) fun s hs =>
-      hfg _ (mem_iUnion.2 ⟨i, s, hs, rfl⟩)
-
-namespace TauCeti
-
-/-- **Point-separating measurable coordinates generate a standard Borel space** (Williams,
-Lemma D.20). If `α` is a standard Borel space and `f : ∀ i, α → β i` is a countable family of
-measurable maps into countably separated spaces that separates the points of `α`, then the
-σ-algebra of `α` is generated by the family `f`. -/
-theorem measurableSpace_eq_iSup_comap_of_separatesPoints {α ι : Type*} [m : MeasurableSpace α]
-    [StandardBorelSpace α] [Countable ι] {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
-    [∀ i, CountablySeparated (β i)] {f : ∀ i, α → β i} (hf : ∀ i, Measurable (f i))
-    (hsep : ∀ ⦃x y : α⦄, (∀ i, f i x = f i y) → x = y) :
-    m = ⨆ i, MeasurableSpace.comap (f i) inferInstance := by
-  have hemb : MeasurableEmbedding (fun x i => f i x) :=
-    (Measurable.of_eval hf).measurableEmbedding fun x y h => hsep (congrFun h)
-  rw [← hemb.comap_eq, MeasurableSpace.pi, comap_iSup]
-  simp only [comap_comp, Function.comp_def]
-
-namespace StrongUnitary
+namespace TauCeti.StrongUnitary
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
+/-- `StrongUnitary 𝕜 H` is equipped with the Borel σ-algebra of its strong operator topology. -/
 instance instMeasurableSpace : MeasurableSpace (StrongUnitary 𝕜 H) :=
   borel (StrongUnitary 𝕜 H)
 
+/-- The measurable structure on `StrongUnitary 𝕜 H` is its Borel σ-algebra. -/
 instance instBorelSpace : BorelSpace (StrongUnitary 𝕜 H) :=
   ⟨rfl⟩
 
-section Separable
+section Inner
 
-variable [SeparableSpace H] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 
 /-- **Countable dense matrix coefficients generate the Borel σ-algebra of `StrongUnitary 𝕜 H`**
 (Williams, Lemmas D.20 and D.43). -/
-theorem borel_eq_iSup_comap_inner_of_dense {ι : Type*} [Countable ι] {d : ι → H}
+theorem measurableSpace_eq_iSup_comap_inner_of_dense {ι : Type*} [Countable ι] {d : ι → H}
     (hd : DenseRange d) :
     (instMeasurableSpace : MeasurableSpace (StrongUnitary 𝕜 H)) =
       ⨆ (i : ι) (j : ι),
         MeasurableSpace.comap (fun u : StrongUnitary 𝕜 H => ⟪d i, u (d j)⟫_𝕜) inferInstance := by
+  have : SeparableSpace H := .of_denseRange d hd
   have hgen := measurableSpace_eq_iSup_comap_of_separatesPoints
     (α := StrongUnitary 𝕜 H) (ι := ι × ι) (β := fun _ => 𝕜)
     (f := fun p u => ⟪d p.1, u (d p.2)⟫_𝕜)
@@ -125,22 +91,22 @@ theorem borel_eq_iSup_comap_inner_of_dense {ι : Type*} [Countable ι] {d : ι �
       exact ext (congrFun <| hd.equalizer (map_continuous u) (map_continuous v) (funext hd_eq))
   exact hgen.trans iSup_prod
 
-/-- **Coefficient comparison (countable dense subset)** (Williams, Lemma D.43): for separable `H`
-and a countable dense family `d : ι → H`, a map `φ : X → StrongUnitary 𝕜 H` is Borel-measurable if
-and only if every matrix coefficient `x ↦ ⟪d i, φ x (d j)⟫_𝕜` is measurable. -/
+/-- **Coefficient comparison (countable dense subset)** (Williams, Lemma D.43): for a countable
+dense family `d : ι → H`, a map `φ : X → StrongUnitary 𝕜 H` is Borel-measurable if and only if every
+matrix coefficient `x ↦ ⟪d i, φ x (d j)⟫_𝕜` is measurable. -/
 theorem measurable_iff_forall_measurable_inner_of_dense {X ι : Type*} [MeasurableSpace X]
     [Countable ι] {d : ι → H} (hd : DenseRange d) {φ : X → StrongUnitary 𝕜 H} :
     Measurable φ ↔ ∀ i j : ι, Measurable fun x => ⟪d i, φ x (d j)⟫_𝕜 := by
   refine ⟨fun hφ i j => (continuous_const.inner (continuous_eval_const (d j))).measurable.comp hφ,
     fun h => ?_⟩
-  rw [measurable_iff_comap_le, borel_eq_iSup_comap_inner_of_dense hd]
+  rw [measurable_iff_comap_le, measurableSpace_eq_iSup_comap_inner_of_dense hd]
   simp_rw [comap_iSup, iSup_le_iff, comap_comp, Function.comp_def, ← measurable_iff_comap_le]
   exact h
 
 /-- **Coefficient comparison (all matrix coefficients)** (Williams, Lemma D.43): for separable `H`,
 a map `φ : X → StrongUnitary 𝕜 H` is Borel-measurable if and only if every matrix coefficient
 `x ↦ ⟪ξ, φ x η⟫_𝕜` is measurable. -/
-theorem measurable_iff_forall_measurable_inner {X : Type*} [MeasurableSpace X]
+theorem measurable_iff_forall_measurable_inner [SeparableSpace H] {X : Type*} [MeasurableSpace X]
     {φ : X → StrongUnitary 𝕜 H} :
     Measurable φ ↔ ∀ ξ η : H, Measurable fun x => ⟪ξ, φ x η⟫_𝕜 := by
   refine ⟨fun hφ ξ η => (continuous_const.inner (continuous_eval_const η)).measurable.comp hφ,
@@ -148,13 +114,20 @@ theorem measurable_iff_forall_measurable_inner {X : Type*} [MeasurableSpace X]
   obtain ⟨d, hd⟩ := TopologicalSpace.exists_dense_seq H
   exact (measurable_iff_forall_measurable_inner_of_dense hd).2 fun i j => h (d i) (d j)
 
-/-- **Coefficient comparison (dense orbits)** (Williams, Lemma D.43): for separable `H` and a
-countable dense family `d : ι → H`, a map `φ : X → StrongUnitary 𝕜 H` is Borel-measurable if and
-only if every orbit `x ↦ φ x (d i)` is Borel-measurable into `H`. -/
+end Inner
+
+section Apply
+
+variable [MeasurableSpace H] [BorelSpace H]
+
+/-- **Coefficient comparison (dense orbits)** (Williams, Lemma D.43): for a countable dense family
+`d : ι → H`, a map `φ : X → StrongUnitary 𝕜 H` is Borel-measurable if and only if every orbit
+`x ↦ φ x (d i)` is Borel-measurable into `H`. -/
 theorem measurable_iff_forall_measurable_apply_of_dense {X ι : Type*} [MeasurableSpace X]
-    [MeasurableSpace H] [BorelSpace H] [Countable ι] {d : ι → H} (hd : DenseRange d)
-    {φ : X → StrongUnitary 𝕜 H} :
+    [Countable ι] {d : ι → H} (hd : DenseRange d) {φ : X → StrongUnitary 𝕜 H} :
     Measurable φ ↔ ∀ i : ι, Measurable fun x => φ x (d i) := by
+  let : MeasurableSpace 𝕜 := borel 𝕜
+  have : BorelSpace 𝕜 := ⟨rfl⟩
   refine ⟨fun hφ i => (continuous_eval_const (d i)).measurable.comp hφ, fun h => ?_⟩
   exact (measurable_iff_forall_measurable_inner_of_dense hd).2 fun i j =>
     (continuous_const.inner continuous_id).measurable.comp (h j)
@@ -162,15 +135,13 @@ theorem measurable_iff_forall_measurable_apply_of_dense {X ι : Type*} [Measurab
 /-- **Coefficient comparison (all orbits)** (Williams, Lemma D.43): for separable `H`, a map
 `φ : X → StrongUnitary 𝕜 H` is Borel-measurable if and only if every orbit `x ↦ φ x η` is
 Borel-measurable into `H`. -/
-theorem measurable_iff_forall_measurable_apply {X : Type*} [MeasurableSpace X]
-    [MeasurableSpace H] [BorelSpace H] {φ : X → StrongUnitary 𝕜 H} :
+theorem measurable_iff_forall_measurable_apply [SeparableSpace H] {X : Type*} [MeasurableSpace X]
+    {φ : X → StrongUnitary 𝕜 H} :
     Measurable φ ↔ ∀ η : H, Measurable fun x => φ x η := by
   refine ⟨fun hφ η => (continuous_eval_const η).measurable.comp hφ, fun h => ?_⟩
-  exact measurable_iff_forall_measurable_inner.2 fun ξ η =>
-    (continuous_const.inner continuous_id).measurable.comp (h η)
+  obtain ⟨d, hd⟩ := TopologicalSpace.exists_dense_seq H
+  exact (measurable_iff_forall_measurable_apply_of_dense hd).2 fun i => h (d i)
 
-end Separable
+end Apply
 
-end StrongUnitary
-
-end TauCeti
+end TauCeti.StrongUnitary
