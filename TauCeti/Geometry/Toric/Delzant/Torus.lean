@@ -295,8 +295,9 @@ private theorem linearIndepOn_of_forall_mem_ker (hp : p ≠ 0) {s : Set ι}
       ⟨0, by simp [hlc]⟩ j
     have hj' : l j ≠ 0 := hj
     simp only [Pi.smul_apply, smul_eq_mul] at hk
-    field_simp at hk
-    have : (1 : ℤ) = 2 * k := by exact_mod_cast hk
+    have h1 : p / 2 = k * p := by rw [← hk]; field_simp
+    have h2 : (1 : ℝ) * p = 2 * k * p := by linarith
+    have : (1 : ℤ) = 2 * k := by exact_mod_cast mul_right_cancel₀ hp h2
     omega
   exact LinearIndependent.of_comp i.toIntLinearMap (hR.restrict_scalars' ℤ)
 
