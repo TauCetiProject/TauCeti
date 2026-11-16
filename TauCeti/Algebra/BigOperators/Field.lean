@@ -84,9 +84,7 @@ theorem sum_sum_erase_sub_inv_mul_sub_inv_eq_zero {ι K : Type*} [DecidableEq ι
     have hstep (i : ι) : (∑ j ∈ insert a t, ∑ k ∈ (insert a t).erase j, g i j k) =
         (∑ k ∈ t, g i a k) + (∑ j ∈ t, g i j a) + ∑ j ∈ t, ∑ k ∈ t.erase j, g i j k := by
       rw [sum_insert hat, erase_insert hat, add_assoc]
-      congr 1
-      rw [← sum_add_distrib]
-      refine sum_congr rfl fun j hj ↦ ?_
+      refine congrArg _ ((sum_congr rfl fun j hj ↦ ?_).trans sum_add_distrib)
       rw [erase_insert_of_ne (ne_of_mem_of_not_mem hj hat).symm,
         sum_insert fun ha ↦ hat (mem_of_mem_erase ha)]
     change (∑ i ∈ insert a t, ∑ j ∈ insert a t, ∑ k ∈ (insert a t).erase j, g i j k) = 0
@@ -104,16 +102,13 @@ theorem sum_sum_erase_sub_inv_mul_sub_inv_eq_zero {ι K : Type*} [DecidableEq ι
     rw [← sum_add_distrib, ← sum_add_distrib]
     refine sum_eq_zero fun k hk ↦ ?_
     have hkt : k ∈ t := mem_of_mem_erase hk
-    have h_aj : x a - x j ≠ 0 :=
-      sub_ne_zero.2 (hx.ne (mem_insert_self a t) (mem_insert_of_mem hj)
-        (ne_of_mem_of_not_mem hj hat).symm)
-    have h_ak : x a - x k ≠ 0 :=
-      sub_ne_zero.2 (hx.ne (mem_insert_self a t) (mem_insert_of_mem hkt)
-        (ne_of_mem_of_not_mem hkt hat).symm)
-    have h_jk : x j - x k ≠ 0 :=
-      sub_ne_zero.2 (hx.ne (mem_insert_of_mem hj) (mem_insert_of_mem hkt) (ne_of_mem_erase hk).symm)
+    have hne {u v} (hu : u ∈ insert a t) (hv : v ∈ insert a t) (h : u ≠ v) : x u - x v ≠ 0 :=
+      sub_ne_zero.2 (hx.ne hu hv h)
+    have h_aj := hne (mem_insert_self a t) (mem_insert_of_mem hj) (ne_of_mem_of_not_mem hj hat).symm
+    have h_ak := hne (mem_insert_self a t) (mem_insert_of_mem hkt)
+      (ne_of_mem_of_not_mem hkt hat).symm
+    have h_jk := hne (mem_insert_of_mem hj) (mem_insert_of_mem hkt) (ne_of_mem_erase hk).symm
     rw [← neg_sub (x a) (x j), ← neg_sub (x a) (x k), ← neg_sub (x j) (x k)]
-    field_simp [h_aj, h_ak, h_jk]
-    ring
+    field_simp [h_aj, h_ak, h_jk]; ring
 
 end Finset
