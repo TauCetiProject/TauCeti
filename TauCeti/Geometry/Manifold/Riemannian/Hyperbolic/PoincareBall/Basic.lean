@@ -86,7 +86,8 @@ def PoincareBall : Type _ := poincareBallOpens E
 
 /- `PoincareBall E` is a type synonym for `poincareBallOpens E`, so that it carries its own
 Riemannian bundle and Riemannian metric-space instances rather than the Euclidean subspace
-metric. -/
+metric; the `show poincareBallOpens E from ...` terms below unfold this synonym to access the
+open-subset fields and lemmas. -/
 
 namespace PoincareBall
 
@@ -249,6 +250,8 @@ theorem tangentSpaceCastModel_mfderiv_apply
     (v : TangentSpace 𝓘(ℝ, E) x) :
     tangentSpaceCastModel 𝓘(ℝ, F) (f x) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, E) x v) := by
+  -- Read the base point in the open subset `poincareBallOpens E`; both `tangentSpaceOpenEquiv` and
+  -- `tangentSpaceCastModel` act as the identity on the model vector space.
   have hA' : HasFDerivAt A L (show poincareBallOpens E from x).1 := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
     (I := 𝓘(ℝ, E)) (I' := 𝓘(ℝ, F))
@@ -267,8 +270,43 @@ theorem mvfderiv_coe_apply (x : PoincareBall E) (v : TangentSpace 𝓘(ℝ, E) x
   have h1 : mvfderiv 𝓘(ℝ, E) (coe : PoincareBall E → E) x v = (v : E) :=
     TauCeti.Manifold.mvfderiv_subtype_val_apply (U := poincareBallOpens E)
       (show poincareBallOpens E from x) v
+  -- `TangentSpace 𝓘(ℝ, E) x` is a type synonym of `E`, and `tangentSpaceCastModel` is the identity
+  -- on vectors (`Mathlib/Geometry/Manifold/IsManifold/Basic.lean`).
   have h2 : tangentSpaceCastModel 𝓘(ℝ, E) x v = (v : E) := (rfl)
   exact h1.trans h2.symm
+
+/-- The differential of the inclusion `PoincareBall E → E` identifies each tangent space with the
+ambient tangent space through `tangentSpaceCastModel` and `NormedSpace.fromTangentSpace`. -/
+theorem mfderiv_coe (x : PoincareBall E) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (coe : PoincareBall E → E) x =
+      ((tangentSpaceCastModel 𝓘(ℝ, E) x).trans
+        (NormedSpace.fromTangentSpace (x : E)).symm).toContinuousLinearMap := by
+  ext v : 1
+  apply (NormedSpace.fromTangentSpace (x : E)).injective
+  have h := mvfderiv_coe_apply x v
+  rw [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at h
+  simpa using h
+
+/-- Near `x`, the inverse canonical tangent-bundle trivialization of `PoincareBall E` agrees with
+the model-space coordinate identification `tangentSpaceCastModel`. -/
+theorem eventually_symmL_trivializationAt_eq (x : PoincareBall E) :
+    ∀ᶠ y in nhds x, ∀ v : E,
+      (trivializationAt E (TangentSpace 𝓘(ℝ, E)) x).symmL ℝ y v =
+        (tangentSpaceCastModel 𝓘(ℝ, E) y).symm v := by
+  have h := TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
+    (I := 𝓘(ℝ, E)) (show poincareBallOpens E from x)
+  filter_upwards [h] with y hy v
+  apply (tangentSpaceCastModel 𝓘(ℝ, E) y).injective
+  rw [ContinuousLinearEquiv.apply_symm_apply]
+  set w : TangentSpace 𝓘(ℝ, E) y := (trivializationAt E (TangentSpace 𝓘(ℝ, E)) x).symmL ℝ y v
+  -- Both `tangentSpaceCastModel` and `tangentSpaceOpenEquiv` act as the identity on vectors in `E`.
+  have hw : tangentSpaceCastModel 𝓘(ℝ, E) y w = (w : E) := (rfl)
+  have he := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, E))
+    (show poincareBallOpens E from y) w
+  have hy' := hy v
+  rw [TangentBundle.symmL_model_space] at hy'
+  exact hw.trans (he.symm.trans ((congrArg (NormedSpace.fromTangentSpace (y : E)) hy').trans
+    (ContinuousLinearEquiv.apply_symm_apply _ v)))
 
 /-- Reading the differential of a map into `PoincareBall E` in the model space `E` agrees with the
 vector-valued derivative of its composition with `coe`. -/
@@ -279,6 +317,7 @@ theorem tangentSpaceCastModel_mfderiv_coe_comp
     (f : M → PoincareBall E) (x : M) (v : TangentSpace I x) :
     tangentSpaceCastModel 𝓘(ℝ, E) (f x) (mfderiv I 𝓘(ℝ, E) f x v) =
       mvfderiv I (coe ∘ f) x v := by
+  -- `tangentSpaceCastModel` is the identity on the model-space vector underlying `TangentSpace`.
   have h1 : tangentSpaceCastModel 𝓘(ℝ, E) (f x) (mfderiv I 𝓘(ℝ, E) f x v) =
       (mfderiv I 𝓘(ℝ, E) f x v : E) := (rfl)
   have h2 : (mfderiv I 𝓘(ℝ, E) ((Subtype.val : poincareBallOpens E → E) ∘ f) x v : E) =
@@ -410,22 +449,27 @@ private theorem tangentSpaceCastModel_mfderiv_orthogonalMap (A : E ≃ₗᵢ[ℝ
       A (tangentSpaceCastModel 𝓘(ℝ, E) x v) :=
   tangentSpaceCastModel_mfderiv_apply A.toContinuousLinearEquiv.hasFDerivAt (rfl) v
 
-/-- A linear isometry equivalence of `E` restricts to a Riemannian isometry of the Poincaré ball
-fixing the origin. -/
-def orthogonalIsometry (A : E ≃ₗᵢ[ℝ] E) : Isom 𝓘(ℝ, E) (PoincareBall E) where
+private def orthogonalDiffeomorph (A : E ≃ₗᵢ[ℝ] E) :
+    Diffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) (PoincareBall E) (PoincareBall E) ∞ where
   toFun := orthogonalMap A
   invFun := orthogonalMap A.symm
   left_inv x := ext (A.symm_apply_apply (x : E))
   right_inv x := ext (A.apply_symm_apply (x : E))
   contMDiff_toFun := contMDiff_orthogonalMap A
   contMDiff_invFun := contMDiff_orthogonalMap A.symm
+
+private theorem coe_orthogonalDiffeomorph (A : E ≃ₗᵢ[ℝ] E) :
+    ⇑(orthogonalDiffeomorph A) = orthogonalMap A :=
+  (rfl)
+
+/-- A linear isometry equivalence of `E` restricts to a Riemannian isometry of the Poincaré ball
+fixing the origin. -/
+def orthogonalIsometry (A : E ≃ₗᵢ[ℝ] E) : Isom 𝓘(ℝ, E) (PoincareBall E) where
+  toDiffeomorph := orthogonalDiffeomorph A
   inner_mfderiv' x v w := by
-    -- The diffeomorphism under construction has underlying map `orthogonalMap A`.
-    change inner ℝ (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (orthogonalMap A) x v)
-        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (orthogonalMap A) x w) = inner ℝ v w
-    rw [inner_def, inner_def, tangentSpaceCastModel_mfderiv_orthogonalMap,
-      tangentSpaceCastModel_mfderiv_orthogonalMap, coe_orthogonalMap,
-      LinearIsometryEquiv.norm_map, LinearIsometryEquiv.inner_map_map]
+    rw [coe_orthogonalDiffeomorph, inner_def, inner_def,
+      tangentSpaceCastModel_mfderiv_orthogonalMap, tangentSpaceCastModel_mfderiv_orthogonalMap,
+      coe_orthogonalMap, LinearIsometryEquiv.norm_map, LinearIsometryEquiv.inner_map_map]
 
 private theorem coe_orthogonalIsometry (A : E ≃ₗᵢ[ℝ] E) :
     ⇑(orthogonalIsometry A) = orthogonalMap A :=

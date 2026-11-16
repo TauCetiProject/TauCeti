@@ -105,22 +105,11 @@ private theorem inner_mem_Ioo {u : E} (hu : ‖u‖ ≤ 1) (y : PoincareBall E) 
     _ ≤ 1 * ‖(y : E)‖ := mul_le_mul_of_nonneg_right hu (norm_nonneg _)
     _ < 1 := by rw [one_mul]; exact norm_lt_one y
 
-private theorem contDiffAt_two_mul_artanh {s₀ : ℝ} (hs₀ : s₀ ∈ Ioo (-1 : ℝ) 1) :
-    ContDiffAt ℝ 1 (fun s : ℝ ↦ 2 * Real.artanh s) s₀ := by
-  have hsub : 1 - s₀ ≠ 0 := by linarith [hs₀.2]
-  have hdiv : (1 + s₀) / (1 - s₀) ≠ 0 := (div_pos (by linarith [hs₀.1]) (by linarith [hs₀.2])).ne'
-  have hlog : ContDiffAt ℝ 1 (fun s : ℝ ↦ Real.log ((1 + s) / (1 - s))) s₀ :=
-    (((contDiffAt_const.add contDiffAt_id).div (contDiffAt_const.sub contDiffAt_id) hsub)).log hdiv
-  refine hlog.congr_of_eventuallyEq ?_
-  filter_upwards [isOpen_Ioo.mem_nhds hs₀] with s hs
-  rw [Real.artanh_eq_half_log (Ioo_subset_Icc_self hs)]
-  ring
-
 private theorem contMDiff_radialProjection {u : E} (hu : ‖u‖ ≤ 1) :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 1 (radialProjection u) := by
   intro z
   have hg : ContDiffAt ℝ 1 (fun p : E ↦ 2 * Real.artanh (inner ℝ u p)) (z : E) :=
-    (contDiffAt_two_mul_artanh (inner_mem_Ioo hu z)).comp (z : E) (innerSL ℝ u).contDiff.contDiffAt
+    contDiffAt_const.mul ((innerSL ℝ u).contDiff.contDiffAt.artanh (inner_mem_Ioo hu z))
   exact hg.contMDiffAt.comp z (contMDiff_coe.of_le le_top z)
 
 private theorem norm_mvfderiv_radialProjection_le {u : E} (hu : ‖u‖ ≤ 1) (z : PoincareBall E)
@@ -133,8 +122,7 @@ private theorem norm_mvfderiv_radialProjection_le {u : E} (hu : ‖u‖ ≤ 1) (
   have hcomp : radialProjection u = (fun p : E ↦ 2 * Real.artanh (inner ℝ u p)) ∘ coe := rfl
   rw [hcomp, TauCeti.mvfderiv_comp_apply_of_differentiableAt hg.differentiableAt
     (contMDiff_coe.mdifferentiable (by simp) z) v, hg.fderiv, mvfderiv_coe_apply]
-  let w : E := tangentSpaceCastModel 𝓘(ℝ, E) z v
-  change ‖((2 * (1 - inner ℝ u (z : E) ^ 2)⁻¹) • innerSL ℝ u) w‖ ≤ ‖v‖
+  set w : E := tangentSpaceCastModel 𝓘(ℝ, E) z v
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul]
   have hinner_z : |inner ℝ u (z : E)| ≤ ‖(z : E)‖ :=
     (abs_real_inner_le_norm u (z : E)).trans
@@ -282,8 +270,8 @@ theorem dist_eq (x y : PoincareBall E) :
 theorem sinh_half_dist (x y : PoincareBall E) :
     Real.sinh (dist x y / 2) =
       ‖(x : E) - (y : E)‖ / Real.sqrt ((1 - ‖(x : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2)) := by
-  let A : ℝ := ‖(x : E) - (y : E)‖
-  let B : ℝ := (1 - ‖(x : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2)
+  set A : ℝ := ‖(x : E) - (y : E)‖
+  set B : ℝ := (1 - ‖(x : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2)
   have hA : 0 ≤ A := norm_nonneg _
   have hB : 0 < B := mul_pos (one_sub_norm_sq_pos x) (one_sub_norm_sq_pos y)
   have hAB : 0 < A ^ 2 + B := add_pos_of_nonneg_of_pos (sq_nonneg A) hB
@@ -297,7 +285,7 @@ theorem sinh_half_dist (x y : PoincareBall E) :
   have hr_mem : r ∈ Ioo (-1 : ℝ) 1 := ⟨by linarith [div_nonneg hA hsqrtAB.le], hr_lt⟩
   have hhalf : dist x y / 2 = Real.artanh r := by
     rw [dist_eq]
-    dsimp only [r, A, B]
+    dsimp only [r]
     ring
   have h1 : 1 - r ^ 2 = B / (A ^ 2 + B) := by
     dsimp only [r]
@@ -305,7 +293,6 @@ theorem sinh_half_dist (x y : PoincareBall E) :
     field_simp [hAB.ne']
     ring
   have hsqrtB : Real.sqrt B ≠ 0 := (Real.sqrt_pos.2 hB).ne'
-  change Real.sinh (dist x y / 2) = A / Real.sqrt B
   rw [hhalf, Real.sinh_artanh hr_mem, h1, Real.sqrt_div hB.le]
   dsimp only [r]
   field_simp [hsqrtAB.ne', hsqrtB]

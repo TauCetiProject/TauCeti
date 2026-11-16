@@ -11,8 +11,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.PoincareBall.Basic
-import all TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Curvature of the Poincaré ball metric
@@ -70,8 +68,13 @@ private theorem connectionLinear_apply (v w p : E) :
   rw [real_inner_comm v p, real_inner_comm w p]
 
 omit [FiniteDimensional ℝ E] in
+/-- Model-space coordinate representation of `∇ (constantField w) · (constantField v ·)`. -/
+private def connectionModel (v w p : E) : E :=
+  (2 / (1 - ‖p‖ ^ 2)) • connectionLinear v w p
+
+omit [FiniteDimensional ℝ E] in
 private theorem hasFDerivAt_connectionModel (x : PoincareBall E) (v w : E) :
-    HasFDerivAt (fun p : E ↦ (2 / (1 - ‖p‖ ^ 2)) • connectionLinear v w p)
+    HasFDerivAt (connectionModel v w)
       ((2 / (1 - ‖(x : E)‖ ^ 2)) • connectionLinear v w +
         ((4 / (1 - ‖(x : E)‖ ^ 2) ^ 2) • innerSL ℝ (x : E)).smulRight
           (connectionLinear v w (x : E))) (x : E) := by
@@ -92,12 +95,13 @@ private theorem hasFDerivAt_connectionModel (x : PoincareBall E) (v w : E) :
 
 private theorem connection_const_eq (v w : E) :
     (fun y : PoincareBall E ↦ ∇ (constantField w) y (constantField v y)) =
-      fun y : PoincareBall E ↦ (tangentSpaceCastModel J y).symm
-        ((2 / (1 - ‖(y : E)‖ ^ 2)) • connectionLinear v w (y : E)) := by
+      fun y : PoincareBall E ↦
+        (tangentSpaceCastModel J y).symm ((connectionModel v w ∘ coe) y) := by
   funext y
   apply (tangentSpaceCastModel J y).injective
   rw [constantField_apply, leviCivitaConnection_const_apply,
-    ContinuousLinearEquiv.apply_symm_apply, connectionLinear_apply]
+    ContinuousLinearEquiv.apply_symm_apply, Function.comp_apply, connectionModel,
+    connectionLinear_apply]
 
 private theorem second_connection_const (x : PoincareBall E) (u v w : E) :
     tangentSpaceCastModel J x
@@ -106,30 +110,17 @@ private theorem second_connection_const (x : PoincareBall E) (u v w : E) :
         (4 / (1 - ‖(x : E)‖ ^ 2) ^ 2) •
           (inner ℝ (x : E) u • connectionLinear v w (x : E) +
             connectionLinear u (connectionLinear v w (x : E)) (x : E)) := by
-  let S : E → E := fun p ↦ (2 / (1 - ‖p‖ ^ 2)) • connectionLinear v w p
   have hS := hasFDerivAt_connectionModel x v w
-  have hg : MDifferentiableAt J J (S ∘ coe) x :=
+  have hg : MDifferentiableAt J J (connectionModel v w ∘ coe) x :=
     hS.differentiableAt.mdifferentiableAt.comp x (contMDiff_coe.mdifferentiableAt (by simp))
-  rw [connection_const_eq v w, constantField_apply]
-  change tangentSpaceCastModel J x
-    (∇ (fun y ↦ (tangentSpaceCastModel J y).symm ((S ∘ coe) y)) x
-      ((tangentSpaceCastModel J x).symm u)) = _
-  rw [leviCivitaConnection_comp_apply hg u,
-    mvfderiv_comp_apply x hS.differentiableAt.mdifferentiableAt
-      (contMDiff_coe.mdifferentiableAt (by simp))]
-  have hcoe : mfderiv J J (coe : PoincareBall E → E) x =
-      ((tangentSpaceCastModel J x).trans
-        (NormedSpace.fromTangentSpace (coe x)).symm).toContinuousLinearMap :=
-    TauCeti.Manifold.mfderiv_subtype_val (I := J) (show poincareBallOpens E from x)
-  rw [hcoe, mvfderiv_eq_fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.trans_apply, constantField_apply, ContinuousLinearEquiv.apply_symm_apply]
-  change fderiv ℝ S (x : E) u + _ = _
-  rw [hS.fderiv, connectionLinear_apply u]
-  dsimp only [S]
-  simp only [Function.comp_apply, add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-    innerSL_apply_apply, real_inner_smul_right, div_eq_mul_inv, ← inv_pow, smul_add, smul_sub,
-    smul_smul]
+  rw [connection_const_eq v w, constantField_apply, leviCivitaConnection_comp_apply hg u,
+    TauCeti.mvfderiv_comp_apply_of_differentiableAt hS.differentiableAt
+      (contMDiff_coe.mdifferentiableAt (by simp)),
+    mvfderiv_coe_apply, constantField_apply, ContinuousLinearEquiv.apply_symm_apply,
+    hS.fderiv, connectionLinear_apply u]
+  simp only [connectionModel, Function.comp_apply, add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, real_inner_smul_right,
+    div_eq_mul_inv, ← inv_pow, smul_add, smul_sub, smul_smul]
   module
 
 omit [FiniteDimensional ℝ E] in

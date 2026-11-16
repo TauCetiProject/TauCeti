@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.PoincareBall.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
-import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.PoincareBall.Basic
-import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 
 /-!
 # Orthogonal-sphere inversions, homogeneity, and the Cayley isometry of the Poincaré ball
@@ -88,30 +86,34 @@ private theorem coe_ne_center {c : E} (hc : 1 < ‖c‖) (x : PoincareBall E) :
     (x : E) ≠ c := fun h ↦
   ((norm_lt_one x).trans hc).ne (congrArg norm h)
 
+/-- Squared Euclidean norm of sphere inversion: for `y : E`,
+`‖inversion c R y‖² = (R / dist y c)⁴ ‖y - c‖² + 2 (R / dist y c)² ⟪y - c, c⟫ + ‖c‖²`. -/
+private theorem norm_inversion_sq (c : E) (R : ℝ) (y : E) :
+    ‖EuclideanGeometry.inversion c R y‖ ^ 2 =
+      ((R / dist y c) ^ 2) ^ 2 * ‖y - c‖ ^ 2 +
+        2 * (R / dist y c) ^ 2 * inner ℝ (y - c) c + ‖c‖ ^ 2 := by
+  simp only [EuclideanGeometry.inversion_def, vsub_eq_sub, vadd_eq_add]
+  rw [norm_add_sq_real, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_smul_left]
+  ring
+
 /-- Key conformal identity for orthogonal-sphere inversion: if `R² = ‖c‖² - 1` and `y ≠ c`, then
 `1 - ‖inversion c R y‖² = (R / dist y c)² (1 - ‖y‖²)`. -/
 private theorem one_sub_norm_inversion_sq {c y : E} (hc : 1 < ‖c‖) (hy : y ≠ c) :
     1 - ‖EuclideanGeometry.inversion c (Real.sqrt (‖c‖ ^ 2 - 1)) y‖ ^ 2 =
       (Real.sqrt (‖c‖ ^ 2 - 1) / dist y c) ^ 2 * (1 - ‖y‖ ^ 2) := by
-  let R : ℝ := Real.sqrt (‖c‖ ^ 2 - 1)
+  set R : ℝ := Real.sqrt (‖c‖ ^ 2 - 1)
   have hRsq : R ^ 2 = ‖c‖ ^ 2 - 1 := Real.sq_sqrt (norm_sq_sub_one_pos hc).le
   have hd : dist y c ≠ 0 := dist_ne_zero.2 hy
-  let t : ℝ := (R / dist y c) ^ 2
+  set t : ℝ := (R / dist y c) ^ 2
   have ht_mul : t * ‖y - c‖ ^ 2 = ‖c‖ ^ 2 - 1 := by
     dsimp only [t]
     rw [← dist_eq_norm, div_pow, hRsq]
     field_simp [hd]
-  have hinv : EuclideanGeometry.inversion c R y = t • (y - c) + c := (rfl)
-  have hcalc : ‖t • (y - c) + c‖ ^ 2 =
-      t ^ 2 * ‖y - c‖ ^ 2 + 2 * t * inner ℝ (y - c) c + ‖c‖ ^ 2 := by
-    rw [norm_add_sq_real, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_smul_left]
-    ring
   have hsub : ‖y - c‖ ^ 2 = ‖y‖ ^ 2 - 2 * inner ℝ y c + ‖c‖ ^ 2 := norm_sub_sq_real y c
   have hinner : 2 * inner ℝ (y - c) c = ‖y‖ ^ 2 - ‖y - c‖ ^ 2 - ‖c‖ ^ 2 := by
     rw [inner_sub_left, real_inner_self_eq_norm_sq]
     linarith [hsub]
-  change 1 - ‖EuclideanGeometry.inversion c R y‖ ^ 2 = t * (1 - ‖y‖ ^ 2)
-  rw [hinv, hcalc, sq t, mul_assoc t t, ht_mul]
+  rw [norm_inversion_sq, sq t, mul_assoc t t, ht_mul]
   linear_combination ht_mul - t * hinner
 
 private def inversionMap {c : E} (hc : 1 < ‖c‖) (x : PoincareBall E) : PoincareBall E :=
@@ -124,11 +126,11 @@ private def inversionMap {c : E} (hc : 1 < ‖c‖) (x : PoincareBall E) : Poinc
 
 private theorem coe_inversionMap {c : E} (hc : 1 < ‖c‖) (x : PoincareBall E) :
     (inversionMap hc x : E) = EuclideanGeometry.inversion c (Real.sqrt (‖c‖ ^ 2 - 1)) (x : E) :=
-  (rfl)
+  coe_mk _ _
 
 private theorem coe_comp_inversionMap {c : E} (hc : 1 < ‖c‖) :
     coe ∘ inversionMap hc = EuclideanGeometry.inversion c (Real.sqrt (‖c‖ ^ 2 - 1)) ∘ coe :=
-  (rfl)
+  funext (coe_inversionMap hc)
 
 private theorem inversionMap_inversionMap {c : E} (hc : 1 < ‖c‖) (x : PoincareBall E) :
     inversionMap hc (inversionMap hc x) = x :=
@@ -154,22 +156,29 @@ private theorem tangentSpaceCastModel_mfderiv_inversionMap {c : E} (hc : 1 < ‖
   rw [hf.fderiv]
   exact tangentSpaceCastModel_mfderiv_apply hf (coe_comp_inversionMap hc) v
 
-/-- Euclidean inversion in the sphere centred at `c` (`1 < ‖c‖`) of radius `√(‖c‖² - 1)` restricts
-to an involutive Riemannian isometry of `PoincareBall E`. Geometrically, this is hyperbolic
-reflection across the totally geodesic hypersurface cut out by the orthogonal sphere. -/
-def inversion {c : E} (hc : 1 < ‖c‖) : Isom 𝓘(ℝ, E) (PoincareBall E) where
+private def inversionDiffeomorph {c : E} (hc : 1 < ‖c‖) :
+    Diffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) (PoincareBall E) (PoincareBall E) ∞ where
   toFun := inversionMap hc
   invFun := inversionMap hc
   left_inv := inversionMap_inversionMap hc
   right_inv := inversionMap_inversionMap hc
   contMDiff_toFun := contMDiff_inversionMap hc
   contMDiff_invFun := contMDiff_inversionMap hc
+
+private theorem coe_inversionDiffeomorph {c : E} (hc : 1 < ‖c‖) :
+    ⇑(inversionDiffeomorph hc) = inversionMap hc :=
+  (rfl)
+
+/-- Euclidean inversion in the sphere centred at `c` (`1 < ‖c‖`) of radius `√(‖c‖² - 1)` restricts
+to an involutive Riemannian isometry of `PoincareBall E`. Geometrically, this is hyperbolic
+reflection across the totally geodesic hypersurface cut out by the orthogonal sphere. -/
+def inversion {c : E} (hc : 1 < ‖c‖) : Isom 𝓘(ℝ, E) (PoincareBall E) where
+  toDiffeomorph := inversionDiffeomorph hc
   inner_mfderiv' x v w := by
-    change inner ℝ (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (inversionMap hc) x v)
-        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (inversionMap hc) x w) = inner ℝ v w
-    rw [inner_def, inner_def, tangentSpaceCastModel_mfderiv_inversionMap,
-      tangentSpaceCastModel_mfderiv_inversionMap, EuclideanGeometry.inner_fderiv_inversion,
-      coe_inversionMap, one_sub_norm_inversion_sq hc (coe_ne_center hc x)]
+    rw [coe_inversionDiffeomorph, inner_def, inner_def,
+      tangentSpaceCastModel_mfderiv_inversionMap, tangentSpaceCastModel_mfderiv_inversionMap,
+      EuclideanGeometry.inner_fderiv_inversion, coe_inversionMap,
+      one_sub_norm_inversion_sq hc (coe_ne_center hc x)]
     have hR : Real.sqrt (‖c‖ ^ 2 - 1) ≠ 0 := (sqrt_norm_sq_sub_one_pos hc).ne'
     have hd : dist (x : E) c ≠ 0 := dist_ne_zero.2 (coe_ne_center hc x)
     have hden : 1 - ‖(x : E)‖ ^ 2 ≠ 0 := (one_sub_norm_sq_pos x).ne'
@@ -182,7 +191,7 @@ private theorem coe_inversion {c : E} (hc : 1 < ‖c‖) :
 @[simp]
 theorem coe_inversion_apply {c : E} (hc : 1 < ‖c‖) (x : PoincareBall E) :
     (inversion hc x : E) = EuclideanGeometry.inversion c (Real.sqrt (‖c‖ ^ 2 - 1)) (x : E) :=
-  (rfl)
+  coe_inversionMap hc x
 
 /-- Orthogonal-sphere inversions are involutions in the Riemannian isometry group. -/
 @[simp]
@@ -232,7 +241,7 @@ theorem coe_inversionSwapZero_apply {a : PoincareBall E} (ha : a ≠ 0) (x : Poi
     (inversionSwapZero ha x : E) =
       EuclideanGeometry.inversion ((‖(a : E)‖ ^ 2)⁻¹ • (a : E))
         (Real.sqrt (‖(‖(a : E)‖ ^ 2)⁻¹ • (a : E)‖ ^ 2 - 1)) (x : E) :=
-  (rfl)
+  coe_inversion_apply _ x
 
 @[simp]
 theorem inversionSwapZero_mul_self {a : PoincareBall E} (ha : a ≠ 0) :
@@ -248,7 +257,8 @@ theorem inversionSwapZero_inv {a : PoincareBall E} (ha : a ≠ 0) :
 theorem inversionSwapZero_zero {a : PoincareBall E} (ha : a ≠ 0) :
     inversionSwapZero ha 0 = a := by
   ext
-  let c : E := (‖(a : E)‖ ^ 2)⁻¹ • (a : E)
+  rw [coe_inversionSwapZero_apply, coe_zero]
+  set c : E := (‖(a : E)‖ ^ 2)⁻¹ • (a : E)
   have hc : 1 < ‖c‖ := one_lt_norm_inv_sq_smul ha
   have ha0 : ‖(a : E)‖ ≠ 0 := norm_ne_zero_iff.2 (coe_eq_zero.not.2 ha)
   have hc_norm : ‖c‖ = ‖(a : E)‖⁻¹ := by
@@ -256,9 +266,8 @@ theorem inversionSwapZero_zero {a : PoincareBall E} (ha : a ≠ 0) :
     field_simp [ha0]
   have hRsq : Real.sqrt (‖c‖ ^ 2 - 1) ^ 2 = ‖c‖ ^ 2 - 1 :=
     Real.sq_sqrt (norm_sq_sub_one_pos hc).le
-  change EuclideanGeometry.inversion c (Real.sqrt (‖c‖ ^ 2 - 1)) 0 = (a : E)
-  rw [EuclideanGeometry.inversion, dist_zero_left, vsub_eq_sub, zero_sub, vadd_eq_add,
-    div_pow, hRsq]
+  simp only [EuclideanGeometry.inversion_def, vsub_eq_sub, vadd_eq_add]
+  rw [dist_zero_left, zero_sub, div_pow, hRsq]
   have hcoef : (‖c‖ ^ 2 - 1) / ‖c‖ ^ 2 = 1 - ‖(a : E)‖ ^ 2 := by
     rw [hc_norm]
     field_simp [ha0]
@@ -281,13 +290,13 @@ theorem norm_coe_inversionSwapZero {a : PoincareBall E} (ha : a ≠ 0) (y : Poin
     ‖(inversionSwapZero ha y : E)‖ =
       ‖(a : E) - (y : E)‖ /
         Real.sqrt (‖(a : E) - (y : E)‖ ^ 2 + (1 - ‖(a : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2)) := by
-  let c : E := (‖(a : E)‖ ^ 2)⁻¹ • (a : E)
+  set c : E := (‖(a : E)‖ ^ 2)⁻¹ • (a : E)
   have hc : 1 < ‖c‖ := one_lt_norm_inv_sq_smul ha
   have ha0 : ‖(a : E)‖ ≠ 0 := norm_ne_zero_iff.2 (coe_eq_zero.not.2 ha)
   have hc_sq : ‖c‖ ^ 2 = (‖(a : E)‖ ^ 2)⁻¹ := by
     simp only [c, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, inv_pow]
     field_simp [ha0]
-  let D : ℝ := ‖(a : E) - (y : E)‖ ^ 2 + (1 - ‖(a : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2)
+  set D : ℝ := ‖(a : E) - (y : E)‖ ^ 2 + (1 - ‖(a : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2)
   have hD_pos : 0 < D :=
     add_pos_of_nonneg_of_pos (sq_nonneg _) (mul_pos (one_sub_norm_sq_pos a) (one_sub_norm_sq_pos y))
   have hdist_sq : dist (y : E) c ^ 2 = D / ‖(a : E)‖ ^ 2 := by
@@ -300,18 +309,16 @@ theorem norm_coe_inversionSwapZero {a : PoincareBall E} (ha : a ≠ 0) (y : Poin
     rw [norm_sub_sq_real]
     field_simp [ha0]
     ring
-  have hinv_eq : (inversionSwapZero ha y : E) =
-      EuclideanGeometry.inversion c (Real.sqrt (‖c‖ ^ 2 - 1)) (y : E) := (rfl)
   have h1 : 1 - ‖(inversionSwapZero ha y : E)‖ ^ 2 =
       (1 - ‖(a : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2) / D := by
-    rw [hinv_eq, one_sub_norm_inversion_sq hc (coe_ne_center hc y), div_pow,
+    rw [coe_inversionSwapZero_apply, one_sub_norm_inversion_sq hc (coe_ne_center hc y), div_pow,
       Real.sq_sqrt (norm_sq_sub_one_pos hc).le, hc_sq, hdist_sq]
     field_simp [ha0, hD_pos.ne']
   have hsq : ‖(inversionSwapZero ha y : E)‖ ^ 2 = ‖(a : E) - (y : E)‖ ^ 2 / D := by
-    have hsum : ‖(a : E) - (y : E)‖ ^ 2 + (1 - ‖(a : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2) = D := rfl
-    linarith [h1, show ‖(a : E) - (y : E)‖ ^ 2 / D +
-      (1 - ‖(a : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2) / D = 1 by
-      rw [← add_div, hsum, div_self hD_pos.ne']]
+    have hdiv :
+        ‖(a : E) - (y : E)‖ ^ 2 / D + (1 - ‖(a : E)‖ ^ 2) * (1 - ‖(y : E)‖ ^ 2) / D = 1 := by
+      rw [← add_div, div_self hD_pos.ne']
+    linarith [h1, hdiv]
   have hsqrt := congrArg Real.sqrt hsq
   rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_div (sq_nonneg _),
     Real.sqrt_sq (norm_nonneg _)] at hsqrt
@@ -331,8 +338,7 @@ instance isPretransitive_isom :
       · exact ⟨1, RiemannianIsometry.one_apply 0⟩
       · exact ⟨inversionSwapZero hy, inversionSwapZero_zero hy⟩
     refine ⟨g₂ * g₁, ?_⟩
-    change (g₂ * g₁) x = y
-    rw [RiemannianIsometry.mul_apply, hg₁, hg₂]
+    rw [RiemannianIsometry.smul_def, RiemannianIsometry.mul_apply, hg₁, hg₂]
 
 end Inversion
 
@@ -372,27 +378,19 @@ private theorem ball_ne_cayleyCenter (x : PoincareBall P) :
 private theorem one_sub_norm_cayleyInversion_sq {p : P} (hp : p ≠ WithLp.toLp 2 (0, -1)) :
     1 - ‖EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) p‖ ^ 2 =
       4 * p.snd / dist p (WithLp.toLp 2 (0, -1)) ^ 2 := by
-  let c : P := WithLp.toLp 2 (0, -1)
+  set c : P := WithLp.toLp 2 (0, -1)
   have hd : dist p c ≠ 0 := dist_ne_zero.2 hp
-  let t : ℝ := (Real.sqrt 2 / dist p c) ^ 2
+  set t : ℝ := (Real.sqrt 2 / dist p c) ^ 2
   have ht_eq : t = 2 / dist p c ^ 2 := by
     dsimp only [t]
     rw [div_pow, Real.sq_sqrt zero_le_two]
   have ht_mul : t * ‖p - c‖ ^ 2 = 2 := by
     rw [← dist_eq_norm, ht_eq]
     field_simp [hd]
-  have hinv : EuclideanGeometry.inversion c (Real.sqrt 2) p = t • (p - c) + c := (rfl)
-  have hcalc : ‖t • (p - c) + c‖ ^ 2 =
-      t ^ 2 * ‖p - c‖ ^ 2 + 2 * t * inner ℝ (p - c) c + ‖c‖ ^ 2 := by
-    rw [norm_add_sq_real, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_smul_left]
-    ring
   have hinner : inner ℝ (p - c) c = -(p.snd + 1) := by simp [c]
   have hc_norm : ‖c‖ ^ 2 = 1 := norm_cayleyCenter_sq
-  change 1 - ‖EuclideanGeometry.inversion c (Real.sqrt 2) p‖ ^ 2 = 4 * p.snd / dist p c ^ 2
-  rw [hinv, hcalc, hinner, hc_norm]
-  have hlin : 1 - (t ^ 2 * ‖p - c‖ ^ 2 + 2 * t * -(p.snd + 1) + 1) = 2 * t * p.snd := by
-    rw [sq t, mul_assoc t t, ht_mul]
-    ring
+  rw [norm_inversion_sq, hinner, hc_norm, sq t, mul_assoc t t, ht_mul]
+  have hlin : 1 - (t * 2 + 2 * t * -(p.snd + 1) + 1) = 2 * t * p.snd := by ring
   rw [hlin, ht_eq]
   ring
 
@@ -402,8 +400,8 @@ private theorem snd_cayleyInversion {q : P} (hq : q ≠ WithLp.toLp 2 (0, -1)) :
     (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) q).snd =
       (1 - ‖q‖ ^ 2) / dist q (WithLp.toLp 2 (0, -1)) ^ 2 := by
   have hd : dist q (WithLp.toLp 2 (0, -1)) ≠ 0 := dist_ne_zero.2 hq
-  rw [EuclideanGeometry.inversion, div_pow, Real.sq_sqrt zero_le_two]
-  simp only [vsub_eq_sub, vadd_eq_add, WithLp.add_snd, WithLp.smul_snd, WithLp.sub_snd,
+  simp only [EuclideanGeometry.inversion_def, vsub_eq_sub, vadd_eq_add, div_pow,
+    Real.sq_sqrt zero_le_two, WithLp.add_snd, WithLp.smul_snd, WithLp.sub_snd,
     WithLp.toLp_snd, smul_eq_mul]
   have hdist := dist_cayleyCenter_sq q
   field_simp [hd]
@@ -411,13 +409,23 @@ private theorem snd_cayleyInversion {q : P} (hq : q ≠ WithLp.toLp 2 (0, -1)) :
 
 private def cayleyToFun (x : UpperHalfSpace E) : PoincareBall P :=
   mk (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (x : P)) <| by
-    let y : P := EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (x : P)
+    set y : P := EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (x : P)
     have hpos : 0 < 1 - ‖y‖ ^ 2 := by
       dsimp only [y]
-      rw [one_sub_norm_cayleyInversion_sq (upper_ne_cayleyCenter x)]
+      rw [one_sub_norm_cayleyInversion_sq (upper_ne_cayleyCenter x), UpperHalfSpace.snd_coe]
       exact div_pos (mul_pos (by norm_num) (UpperHalfSpace.height_pos x))
         (pow_pos (dist_pos.2 (upper_ne_cayleyCenter x)) 2)
     nlinarith [norm_nonneg y]
+
+private theorem coe_cayleyToFun (x : UpperHalfSpace E) :
+    (cayleyToFun x : P) =
+      EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (x : P) :=
+  coe_mk _ _
+
+private theorem coe_comp_cayleyToFun :
+    coe ∘ cayleyToFun (E := E) =
+      EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) ∘ UpperHalfSpace.coe :=
+  funext coe_cayleyToFun
 
 private def cayleyInvFun (y : PoincareBall P) : UpperHalfSpace E :=
   UpperHalfSpace.mk
@@ -425,30 +433,41 @@ private def cayleyInvFun (y : PoincareBall P) : UpperHalfSpace E :=
     rw [snd_cayleyInversion (ball_ne_cayleyCenter y)]
     exact div_pos (one_sub_norm_sq_pos y) (pow_pos (dist_pos.2 (ball_ne_cayleyCenter y)) 2)
 
+private theorem coe_cayleyInvFun (y : PoincareBall P) :
+    (cayleyInvFun y : P) =
+      EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (y : P) :=
+  UpperHalfSpace.coe_mk _ _
+
+private theorem coe_comp_cayleyInvFun :
+    UpperHalfSpace.coe ∘ cayleyInvFun (E := E) =
+      EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) ∘ coe :=
+  funext coe_cayleyInvFun
+
 private theorem cayleyInvFun_cayleyToFun (x : UpperHalfSpace E) :
     cayleyInvFun (cayleyToFun x) = x :=
-  UpperHalfSpace.ext <|
-    EuclideanGeometry.inversion_inversion _ (Real.sqrt_pos.2 zero_lt_two).ne' (x : P)
+  UpperHalfSpace.ext <| by
+    rw [coe_cayleyInvFun, coe_cayleyToFun,
+      EuclideanGeometry.inversion_inversion _ (Real.sqrt_pos.2 zero_lt_two).ne']
 
 private theorem cayleyToFun_cayleyInvFun (y : PoincareBall P) :
     cayleyToFun (cayleyInvFun y) = y :=
-  ext <| EuclideanGeometry.inversion_inversion _ (Real.sqrt_pos.2 zero_lt_two).ne' (y : P)
+  ext <| by
+    rw [coe_cayleyToFun, coe_cayleyInvFun,
+      EuclideanGeometry.inversion_inversion _ (Real.sqrt_pos.2 zero_lt_two).ne']
 
 private theorem contMDiff_cayleyToFun {n : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, P) 𝓘(ℝ, P) n (cayleyToFun (E := E)) := by
-  refine contMDiff_coe_comp_iff.1 fun x ↦ ?_
-  change ContMDiffAt 𝓘(ℝ, P) 𝓘(ℝ, P) n
-    (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) ∘ UpperHalfSpace.coe) x
-  exact (EuclideanGeometry.contDiffAt_inversion (upper_ne_cayleyCenter x)).contMDiffAt.comp x
-    (UpperHalfSpace.contMDiff_coe.of_le le_top x)
+  refine contMDiff_coe_comp_iff.1 ?_
+  rw [coe_comp_cayleyToFun]
+  exact fun x ↦ (EuclideanGeometry.contDiffAt_inversion (upper_ne_cayleyCenter x)).contMDiffAt.comp
+    x (UpperHalfSpace.contMDiff_coe.of_le le_top x)
 
 private theorem contMDiff_cayleyInvFun {n : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, P) 𝓘(ℝ, P) n (cayleyInvFun (E := E)) := by
-  refine UpperHalfSpace.contMDiff_coe_comp_iff.1 fun y ↦ ?_
-  change ContMDiffAt 𝓘(ℝ, P) 𝓘(ℝ, P) n
-    (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) ∘ coe) y
-  exact (EuclideanGeometry.contDiffAt_inversion (ball_ne_cayleyCenter y)).contMDiffAt.comp y
-    (contMDiff_coe.of_le le_top y)
+  refine UpperHalfSpace.contMDiff_coe_comp_iff.1 ?_
+  rw [coe_comp_cayleyInvFun]
+  exact fun y ↦ (EuclideanGeometry.contDiffAt_inversion (ball_ne_cayleyCenter y)).contMDiffAt.comp
+    y (contMDiff_coe.of_le le_top y)
 
 private theorem tangentSpaceCastModel_mfderiv_cayleyToFun
     (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, P) x) :
@@ -456,21 +475,31 @@ private theorem tangentSpaceCastModel_mfderiv_cayleyToFun
         (mfderiv 𝓘(ℝ, P) 𝓘(ℝ, P) cayleyToFun x v) =
       fderiv ℝ (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2)) (x : P)
         (tangentSpaceCastModel 𝓘(ℝ, P) x v) := by
-  let x₀ : upperHalfSpaceOpens E := x
-  let y₀ : poincareBallOpens P := cayleyToFun x
-  have hf : HasFDerivAt (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2)) _
-      x₀.1 :=
-    EuclideanGeometry.hasFDerivAt_inversion (R := Real.sqrt 2) (upper_ne_cayleyCenter x)
-  have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (I := 𝓘(ℝ, P)) (I' := 𝓘(ℝ, P))
-    (U := upperHalfSpaceOpens E) (V := poincareBallOpens P)
-    (A := EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2))
-    (f := cayleyToFun) (rfl) v
-  rw [hf.hasMFDerivAt.mfderiv, ← hf.fderiv] at h
-  have e₁ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, P)) y₀
-    (mfderiv 𝓘(ℝ, P) 𝓘(ℝ, P) cayleyToFun x v)
-  have e₂ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, P)) x₀ v
-  exact e₁.symm.trans (h.trans (congrArg _ e₂))
+  have hf := EuclideanGeometry.hasFDerivAt_inversion (R := Real.sqrt 2) (upper_ne_cayleyCenter x)
+  have hcoe : MDifferentiableAt 𝓘(ℝ, P) 𝓘(ℝ, P) (UpperHalfSpace.coe : UpperHalfSpace E → P) x :=
+    (UpperHalfSpace.contMDiff_coe x).mdifferentiableAt (by simp)
+  rw [tangentSpaceCastModel_mfderiv_coe_comp, coe_comp_cayleyToFun,
+    TauCeti.mvfderiv_comp_apply_of_differentiableAt hf.differentiableAt hcoe]
+  have hmvf : mvfderiv 𝓘(ℝ, P) (UpperHalfSpace.coe : UpperHalfSpace E → P) x v = (v : P) :=
+    TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt
+      (Filter.EventuallyEq.of_eq (funext fun y ↦ by simp [extChartAt])) v
+  -- `TangentSpace 𝓘(ℝ, P) x` is a type synonym of `P`, and `tangentSpaceCastModel` is the identity
+  -- on vectors (`Mathlib/Geometry/Manifold/IsManifold/Basic.lean`).
+  have hcast : tangentSpaceCastModel 𝓘(ℝ, P) x v = (v : P) := (rfl)
+  rw [hmvf, hcast]
+
+private def cayleyDiffeomorph :
+    Diffeomorph 𝓘(ℝ, P) 𝓘(ℝ, P) (UpperHalfSpace E) (PoincareBall P) ∞ where
+  toFun := cayleyToFun
+  invFun := cayleyInvFun
+  left_inv := cayleyInvFun_cayleyToFun
+  right_inv := cayleyToFun_cayleyInvFun
+  contMDiff_toFun := contMDiff_cayleyToFun
+  contMDiff_invFun := contMDiff_cayleyInvFun
+
+private theorem coe_cayleyDiffeomorph :
+    ⇑(cayleyDiffeomorph (E := E)) = cayleyToFun :=
+  (rfl)
 
 variable (E) in
 /-- **The Cayley Riemannian isometry**: Euclidean inversion in the sphere of radius `√2` centred at
@@ -478,21 +507,12 @@ variable (E) in
 `PoincareBall (WithLp 2 (E × ℝ))`, sending `(0, 1)` to `0`. -/
 def cayleyIsometry :
     RiemannianIsometry 𝓘(ℝ, P) 𝓘(ℝ, P) (UpperHalfSpace E) (PoincareBall P) where
-  toFun := cayleyToFun
-  invFun := cayleyInvFun
-  left_inv := cayleyInvFun_cayleyToFun
-  right_inv := cayleyToFun_cayleyInvFun
-  contMDiff_toFun := contMDiff_cayleyToFun
-  contMDiff_invFun := contMDiff_cayleyInvFun
+  toDiffeomorph := cayleyDiffeomorph
   inner_mfderiv' x v w := by
-    change inner ℝ (mfderiv 𝓘(ℝ, P) 𝓘(ℝ, P) cayleyToFun x v)
-        (mfderiv 𝓘(ℝ, P) 𝓘(ℝ, P) cayleyToFun x w) = inner ℝ v w
-    rw [inner_def, UpperHalfSpace.inner_def, tangentSpaceCastModel_mfderiv_cayleyToFun,
-      tangentSpaceCastModel_mfderiv_cayleyToFun, EuclideanGeometry.inner_fderiv_inversion]
-    have hden : 1 - ‖(cayleyToFun x : P)‖ ^ 2 =
-        4 * UpperHalfSpace.height x / dist (x : P) (WithLp.toLp 2 (0, -1)) ^ 2 :=
-      one_sub_norm_cayleyInversion_sq (upper_ne_cayleyCenter x)
-    rw [hden]
+    rw [coe_cayleyDiffeomorph, inner_def, UpperHalfSpace.inner_def,
+      tangentSpaceCastModel_mfderiv_cayleyToFun, tangentSpaceCastModel_mfderiv_cayleyToFun,
+      EuclideanGeometry.inner_fderiv_inversion, coe_cayleyToFun,
+      one_sub_norm_cayleyInversion_sq (upper_ne_cayleyCenter x), UpperHalfSpace.snd_coe]
     have hd : dist (x : P) (WithLp.toLp 2 (0, -1)) ≠ 0 := dist_ne_zero.2 (upper_ne_cayleyCenter x)
     have hh : UpperHalfSpace.height x ≠ 0 := (UpperHalfSpace.height_pos x).ne'
     have hpow4 : (Real.sqrt 2 / dist (x : P) (WithLp.toLp 2 (0, -1))) ^ 4 =
@@ -506,22 +526,24 @@ def cayleyIsometry :
     rw [hpow4]
     field_simp [hd, hh]
 
+private theorem coe_cayleyIsometry :
+    ⇑(cayleyIsometry E) = cayleyToFun :=
+  (rfl)
+
 @[simp]
 theorem coe_cayleyIsometry_apply (x : UpperHalfSpace E) :
     (cayleyIsometry E x : P) =
       EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (x : P) :=
-  (rfl)
+  coe_cayleyToFun x
 
 @[simp]
 theorem coe_cayleyIsometry_symm_apply (y : PoincareBall P) :
     ((cayleyIsometry E).symm y : P) =
       EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (y : P) := by
-  have h : (cayleyIsometry E).symm y = cayleyInvFun y :=
-    (cayleyIsometry E).toDiffeomorph.injective <| by
-      change cayleyIsometry E ((cayleyIsometry E).symm y) = cayleyToFun (cayleyInvFun y)
-      rw [RiemannianIsometry.apply_symm_apply, cayleyToFun_cayleyInvFun]
-  rw [h]
-  rfl
+  have h : (cayleyIsometry E).symm (cayleyIsometry E (cayleyInvFun y)) = cayleyInvFun y :=
+    RiemannianIsometry.symm_apply_apply _ _
+  rw [coe_cayleyIsometry, cayleyToFun_cayleyInvFun] at h
+  rw [h, coe_cayleyInvFun]
 
 /-- The Cayley isometry sends the base point `(0, 1)` of `UpperHalfSpace E` to the origin `0` of
 `PoincareBall (WithLp 2 (E × ℝ))`. -/
@@ -529,8 +551,9 @@ theorem coe_cayleyIsometry_symm_apply (y : PoincareBall P) :
 theorem cayleyIsometry_mk_zero_one :
     cayleyIsometry E (UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp)) = 0 := by
   ext
-  rw [coe_cayleyIsometry_apply, UpperHalfSpace.coe_mk, coe_zero, EuclideanGeometry.inversion,
-    div_pow, Real.sq_sqrt zero_le_two]
+  rw [coe_cayleyIsometry_apply, UpperHalfSpace.coe_mk, coe_zero]
+  simp only [EuclideanGeometry.inversion_def, vsub_eq_sub, vadd_eq_add, div_pow,
+    Real.sq_sqrt zero_le_two]
   have hnorm : ‖(WithLp.toLp 2 ((0 : E), (1 : ℝ)) : P)‖ ^ 2 = 1 := by
     rw [← real_inner_self_eq_norm_sq]
     simp
@@ -545,11 +568,8 @@ theorem cayleyIsometry_mk_zero_one :
 base point `(0, 1)` of `UpperHalfSpace E`. -/
 @[simp]
 theorem cayleyIsometry_symm_zero :
-    (cayleyIsometry E).symm 0 = UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp) :=
-  (cayleyIsometry E).toDiffeomorph.injective <| by
-    change cayleyIsometry E ((cayleyIsometry E).symm 0) =
-      cayleyIsometry E (UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp))
-    rw [RiemannianIsometry.apply_symm_apply, cayleyIsometry_mk_zero_one]
+    (cayleyIsometry E).symm 0 = UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp) := by
+  rw [← cayleyIsometry_mk_zero_one, RiemannianIsometry.symm_apply_apply]
 
 end Cayley
 

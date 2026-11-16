@@ -99,21 +99,16 @@ theorem contMDiff_radialGeodesic {n : WithTop ℕ∞} {u : E} (hu : ‖u‖ = 1)
   rw [← contMDiff_coe_comp_iff, hcomp, contMDiff_iff_contDiff]
   exact (Real.contDiff_tanh.comp (contDiff_id.div_const 2)).smul contDiff_const
 
-private theorem hasDerivAt_tanh_half (t : ℝ) :
-    HasDerivAt (fun s : ℝ ↦ Real.tanh (s / 2)) ((1 - Real.tanh (t / 2) ^ 2) / 2) t := by
-  have h := (Real.hasDerivAt_tanh (t / 2)).comp t ((hasDerivAt_id t).div_const 2)
-  rw [← Real.one_sub_tanh_sq (t / 2)] at h
-  simp only [Function.comp_def, id_eq] at h
-  convert h using 1
-  ring
-
 /-- The Euclidean derivative of `coe ∘ radialGeodesic hu` at `t` is
 `((1 - tanh (t / 2) ^ 2) / 2) • u`. -/
 theorem hasDerivAt_coe_radialGeodesic {u : E} (hu : ‖u‖ = 1) (t : ℝ) :
     HasDerivAt (fun s : ℝ ↦ (radialGeodesic hu s : E))
       (((1 - Real.tanh (t / 2) ^ 2) / 2) • u) t := by
   simp_rw [coe_radialGeodesic]
-  exact (hasDerivAt_tanh_half t).smul_const u
+  have htanh : HasDerivAt (fun s : ℝ ↦ Real.tanh (s / 2))
+      ((1 - Real.tanh (t / 2) ^ 2) / 2) t := by
+    simpa only [mul_one_div] using ((hasDerivAt_id' (x := t)).div_const 2).tanh'
+  exact htanh.smul_const u
 
 private theorem hasDerivAt_second_radialGeodesic {u : E} (hu : ‖u‖ = 1) (r : ℝ) :
     HasDerivAt (deriv (fun s : ℝ ↦ (radialGeodesic hu s : E)))
@@ -122,9 +117,12 @@ private theorem hasDerivAt_second_radialGeodesic {u : E} (hu : ‖u‖ = 1) (r :
       fun s : ℝ ↦ ((1 - Real.tanh (s / 2) ^ 2) / 2) • u :=
     funext fun s ↦ (hasDerivAt_coe_radialGeodesic hu s).deriv
   rw [hfirst]
+  have htanh : HasDerivAt (fun s : ℝ ↦ Real.tanh (s / 2))
+      ((1 - Real.tanh (r / 2) ^ 2) / 2) r := by
+    simpa only [mul_one_div] using ((hasDerivAt_id' (x := r)).div_const 2).tanh'
   have hsq : HasDerivAt (fun s : ℝ ↦ Real.tanh (s / 2) ^ 2)
       ((2 : ℕ) * Real.tanh (r / 2) ^ (2 - 1) * ((1 - Real.tanh (r / 2) ^ 2) / 2)) r :=
-    (hasDerivAt_tanh_half r).pow 2
+    htanh.pow 2
   have hscalar : HasDerivAt (fun s : ℝ ↦ (1 - Real.tanh (s / 2) ^ 2) / 2)
       (-(Real.tanh (r / 2) * (1 - Real.tanh (r / 2) ^ 2) / 2)) r := by
     convert ((hasDerivAt_const r (1 : ℝ)).sub hsq).div_const 2 using 1
@@ -138,11 +136,11 @@ theorem tangentSpaceCastModel_mfderiv_radialGeodesic_one {u : E} (hu : ‖u‖ =
     tangentSpaceCastModel 𝓘(ℝ, E) (radialGeodesic hu t)
         (mfderiv 𝓘(ℝ) 𝓘(ℝ, E) (radialGeodesic hu) t 1) =
       ((1 - Real.tanh (t / 2) ^ 2) / 2) • u := by
-  rw [tangentSpaceCastModel_mfderiv_coe_comp (radialGeodesic hu) t (1 : TangentSpace 𝓘(ℝ) t),
-    TauCeti.mvfderiv_eq_fderiv_apply]
-  have hf := (hasDerivAt_coe_radialGeodesic hu t).hasFDerivAt.fderiv
-  change fderiv ℝ (fun s : ℝ ↦ (radialGeodesic hu s : E)) t (1 : ℝ) = _
-  rw [hf]
+  -- Mathlib's `One (TangentSpace 𝓘(ℝ) t)` instance defines `1` as `(1 : ℝ)` (`Icc.lean`).
+  have h1 : NormedSpace.fromTangentSpace (𝕜 := ℝ) t 1 = (1 : ℝ) := (rfl)
+  rw [tangentSpaceCastModel_mfderiv_coe_comp, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, h1, Function.comp_def,
+    (hasDerivAt_coe_radialGeodesic hu t).hasFDerivAt.fderiv]
   simp
 
 /-- The velocity of `radialGeodesic hu` at `t` in the model space `E`. -/
@@ -267,7 +265,7 @@ theorem coe_riemannianExp_zero (v : TangentSpace J (0 : PoincareBall E)) :
   by_cases hv : v = 0
   · subst hv
     simp
-  let w : E := tangentSpaceCastModel J 0 v
+  set w : E := tangentSpaceCastModel J 0 v
   have hv_norm : ‖v‖ = 2 * ‖w‖ := by
     simp [w, norm_def]
   have hv0 : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
@@ -284,7 +282,7 @@ theorem coe_riemannianExp_zero (v : TangentSpace J (0 : PoincareBall E)) :
   have hscale : ‖v‖ • v₀ = v := by
     apply (tangentSpaceCastModel J 0).injective
     rw [map_smul, hv₀, smul_smul]
-    dsimp only [u, w]
+    dsimp only [u]
     rw [smul_smul, hv_norm]
     have hc : 2 * ‖w‖ * (1 / 2) * ‖w‖⁻¹ = 1 := by field_simp [hw0]
     rw [hc, one_smul]
@@ -293,7 +291,6 @@ theorem coe_riemannianExp_zero (v : TangentSpace J (0 : PoincareBall E)) :
   rw [hexp, hv_norm]
   dsimp only [u]
   rw [smul_smul]
-  change (Real.tanh (2 * ‖w‖ / 2) * ‖w‖⁻¹) • w = (2 * Real.tanh (2 * ‖w‖ / 2) / (2 * ‖w‖)) • w
   congr 1
   field_simp [hw0]
 
@@ -319,30 +316,24 @@ theorem surjective_riemannianExp_zero :
   intro x
   rcases eq_or_ne x 0 with rfl | hx
   · exact ⟨0, riemannianExp_zero 0⟩
-  have hx0 : ‖(x : E)‖ ≠ 0 := norm_ne_zero_iff.2 (coe_eq_zero.not.2 hx)
-  have hx_mem : ‖(x : E)‖ ∈ Ioo (-1 : ℝ) 1 := ⟨by linarith [norm_nonneg (x : E)], norm_lt_one x⟩
-  have hartanh : 0 ≤ Real.artanh ‖(x : E)‖ := Real.artanh_nonneg (norm_nonneg _)
+  have hx_pos : 0 < ‖(x : E)‖ := norm_pos_iff.2 (coe_eq_zero.not.2 hx)
+  have hx0 : ‖(x : E)‖ ≠ 0 := hx_pos.ne'
+  have hx_mem : ‖(x : E)‖ ∈ Ioo (-1 : ℝ) 1 := ⟨by linarith, norm_lt_one x⟩
+  have hartanh : 0 < Real.artanh ‖(x : E)‖ := Real.artanh_pos ⟨hx_pos, norm_lt_one x⟩
   let v : TangentSpace J (0 : PoincareBall E) :=
     (tangentSpaceCastModel J 0).symm ((Real.artanh ‖(x : E)‖ / ‖(x : E)‖) • (x : E))
   refine ⟨v, ext ?_⟩
   have hv_cast : tangentSpaceCastModel J 0 v = (Real.artanh ‖(x : E)‖ / ‖(x : E)‖) • (x : E) :=
     ContinuousLinearEquiv.apply_symm_apply _ _
   have hv_norm : ‖v‖ = 2 * Real.artanh ‖(x : E)‖ := by
-    rw [norm_def, hv_cast, coe_zero, norm_zero, zero_pow two_ne_zero, sub_zero, div_one,
-      norm_smul, Real.norm_eq_abs, abs_of_nonneg (div_nonneg hartanh (norm_nonneg _))]
-    field_simp [hx0]
+    simp [norm_def, hv_cast, norm_smul, abs_of_nonneg hartanh.le, hx0]
   rw [coe_riemannianExp_zero, hv_cast, hv_norm, smul_smul]
   have hhalf : 2 * Real.artanh ‖(x : E)‖ / 2 = Real.artanh ‖(x : E)‖ := by ring
   rw [hhalf, Real.tanh_artanh hx_mem]
-  rcases hartanh.eq_or_lt with h0 | hpos
-  · exfalso
-    have h := congrArg Real.tanh h0.symm
-    rw [Real.tanh_artanh hx_mem, Real.tanh_zero] at h
-    exact hx0 h
-  · have hc : 2 * ‖(x : E)‖ / (2 * Real.artanh ‖(x : E)‖) *
-        (Real.artanh ‖(x : E)‖ / ‖(x : E)‖) = 1 := by
-      field_simp [hx0, hpos.ne']
-    rw [hc, one_smul]
+  have hc : 2 * ‖(x : E)‖ / (2 * Real.artanh ‖(x : E)‖) *
+      (Real.artanh ‖(x : E)‖ / ‖(x : E)‖) = 1 := by
+    field_simp [hx0, hartanh.ne']
+  rw [hc, one_smul]
 
 end FiniteDimensional
 
