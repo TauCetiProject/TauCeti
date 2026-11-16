@@ -17,9 +17,10 @@ basepoints by a local move: inside a region `R₀`, draw a small `α`-circle and
 meeting in two points `p` and `q`, and put the new basepoint in the lens enclosed by both
 circles. The circles cut out of `R₀` an open disc, which they divide into three new regions, the
 `α`-crescent `C_α` inside the `α`-circle only, the `β`-crescent `C_β` inside the `β`-circle only
-and the lens `L`; what remains of `R₀` is an annulus, whose Euler characteristic is one less. The
-hat complex of the new diagram is the hat complex of the old one tensored with the
-two-dimensional space `W` on `p` and `q` with zero differential, when `R₀` contains a basepoint.
+and the lens `L`; what remains of `R₀` is `R₀` with an open disc removed, whose Euler
+characteristic is one less. The hat complex of the new diagram is the hat complex of the old one
+tensored with the two-dimensional space `W` on `p` and `q` with zero differential, when `R₀`
+contains a basepoint.
 This is the chain-level form of the comparison of Ozsváth, Stipsicz and Szabó, by which each
 additional basepoint tensors the hat homology with a two-dimensional factor. The two
 crescents are the bigons from `p` to `q`; they cancel modulo two, and give the two generators of
@@ -28,9 +29,9 @@ crescents are the bigons from `p` to `q`; they cancel modulo two, and give the t
 This file performs the move on the incidence data `TauCeti.HeegaardRegionSystem`
 (`TauCeti.HeegaardRegionSystem.addBasepoint`). The intersection points become `Point ⊕ Fin 2`,
 with `p = Sum.inr 0` and `q = Sum.inr 1`; the regions become `Region ⊕ Fin 3`, the region label
-`Sum.inl R₀` now standing for the annulus and `Sum.inr 0`, `Sum.inr 1`, `Sum.inr 2` for `C_α`,
-`C_β` and `L`; the new circles are the last `α`- and `β`-curves; and the basepoints become
-`Basepoint ⊕ Unit`. The region Euler characteristics are changed accordingly
+`Sum.inl R₀` now standing for `R₀` with the disc removed and `Sum.inr 0`, `Sum.inr 1`,
+`Sum.inr 2` for `C_α`, `C_β` and `L`; the new circles are the last `α`- and `β`-curves; and the
+basepoints become `Basepoint ⊕ Unit`. The region Euler characteristics are changed accordingly
 (`TauCeti.HeegaardRegionSystem.addBasepointEuler`). A generator of the new diagram is a
 generator `x` of the old one together with one of the two new points
 (`TauCeti.HeegaardRegionSystem.addBasepointGeneratorEquiv`).
@@ -40,12 +41,12 @@ diagram then connects `(x, i)` to `(y, j)` exactly when its restriction to the o
 connects `x` to `y` and `D(C_α) + D(C_β) - D(R₀) - D(L) = j - i`
 (`TauCeti.HeegaardRegionSystem.isDomainBetween_addBasepoint_iff`), and its Maslov index is
 `μ(D|_old) + D(C_α) + D(C_β) + D(L) - D(R₀)`
-(`TauCeti.HeegaardRegionSystem.maslovIndex_addBasepoint`). For the domains counted by the hat
-differential, which vanish on `R₀` and `L`, the first condition forces the crescents to vanish
-when `i = j`, and to be one crescent when `i = 0` and `j = 1`, the restriction then having
-Maslov index zero. So between generators with the same new point the counted domains are those
-of the old diagram, while from `p` to `q` they come in pairs, one for each crescent, and cancel
-modulo two.
+(`TauCeti.HeegaardRegionSystem.maslovIndex_addBasepoint`). When `R₀` contains a basepoint, the
+domains counted by the hat differential vanish on `R₀` and `L`, and the first condition forces
+the crescents to vanish when `i = j`, and to be one crescent when `i = 0` and `j = 1`, the
+restriction then having Maslov index zero. So between generators with the same new point the
+counted domains are those of the old diagram, while from `p` to `q` they come in pairs, one for
+each crescent, and cancel modulo two.
 
 ## Main definitions
 
@@ -93,20 +94,6 @@ open scoped TensorProduct
 
 section Construction
 
-/-- The cycle condition for the curves of the diagram with an added basepoint: the old curves
-keep their cycles and the two new curves exchange the two new points. -/
-private theorem isCycleOn_sumCongr_fiber {σ : Equiv.Perm Point} {f : Point → Fin n}
-    (hσ : ∀ i, σ.IsCycleOn {p | f p = i}) (i : Fin (n + 1)) :
-    (Equiv.Perm.sumCongr σ (Equiv.swap (0 : Fin 2) 1)).IsCycleOn
-      {p | Sum.elim (fun p => (f p).castSucc) (fun _ => Fin.last n) p = i} := by
-  induction i using Fin.lastCases with
-  | last =>
-    convert (isCycleOn_swap_fin_two_fiber (fun _ => 0) 0).sumCongr_inr σ using 2
-    ext (p | k) <;> simp [Fin.castSucc_ne_last]
-  | cast i =>
-    convert (hσ i).sumCongr_inl _ using 2
-    ext (p | k) <;> simp [(Fin.castSucc_ne_last _).symm]
-
 /-- The diagram obtained by adding a basepoint in the region `r₀`. Inside `r₀` a new `α`-circle
 and a new `β`-circle, the last curves, meet in the two new points `Sum.inr 0` and `Sum.inr 1`.
 They bound the three new regions `Sum.inr 0`, `Sum.inr 1` and `Sum.inr 2`, the `α`-crescent
@@ -120,9 +107,9 @@ def addBasepoint (r₀ : Region) :
   alpha := Sum.elim (fun p => (H.alpha p).castSucc) fun _ => Fin.last n
   beta := Sum.elim (fun p => (H.beta p).castSucc) fun _ => Fin.last n
   alphaNext := Equiv.Perm.sumCongr H.alphaNext (Equiv.swap 0 1)
-  alphaNext_isCycleOn := isCycleOn_sumCongr_fiber H.alphaNext_isCycleOn
+  alphaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_swap_fiber H.alphaNext_isCycleOn
   betaNext := Equiv.Perm.sumCongr H.betaNext (Equiv.swap 0 1)
-  betaNext_isCycleOn := isCycleOn_sumCongr_fiber H.betaNext_isCycleOn
+  betaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_swap_fiber H.betaNext_isCycleOn
   alphaLeft := Sum.elim (Sum.inl ∘ H.alphaLeft) ![Sum.inr 0, Sum.inr 2]
   alphaRight := Sum.elim (Sum.inl ∘ H.alphaRight) ![Sum.inl r₀, Sum.inr 1]
   betaLeft := Sum.elim (Sum.inl ∘ H.betaLeft) ![Sum.inr 2, Sum.inr 1]
@@ -580,21 +567,15 @@ theorem hatCoefficient_addBasepoint (hr₀ : r₀ ∈ Set.range H.basepoint) (x 
     rintro ⟨D, k⟩ ⟨E, m⟩ h
     refine Prod.ext (funext fun r => congrFun h (Sum.inl r)) ?_
     simpa [Pi.single_apply, eq_comm] using congrFun h (Sum.inr k.castSucc)
-  obtain rfl | rfl : i = 0 ∨ i = 1 := by fin_cases i <;> simp
-  all_goals obtain rfl | rfl : j = 0 ∨ j = 1 := by fin_cases j <;> simp
-  · simp [hatCoefficient_def, hatDomains_addBasepoint_self _ _ hr₀,
+  by_cases hij : i = j
+  · subst hij
+    simp [hatCoefficient_def, hatDomains_addBasepoint_self _ _ hr₀,
       Set.ncard_image_of_injective _ hinj]
-  · have h : (H.addBasepoint r₀).hatCoefficient (addBasepointEuler χ r₀)
-        (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ y 1) = 0 := by
-      rw [hatCoefficient_def, hatDomains_addBasepoint_zero_one _ _ hr₀,
-        Set.ncard_image_of_injective _ hinj', Set.ncard_prod, Set.ncard_univ, Nat.card_fin,
-        Nat.cast_mul]
-      exact mul_eq_zero_of_right _ (by decide)
-    rw [h]
-    simp
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ : i = 0 ∧ j = 1 ∨ i = 1 ∧ j = 0 := by omega
+  · -- From `p` to `q` each old counted domain gives two, one per crescent, and `2 = 0` mod two.
+    simp [hatCoefficient_def, hatDomains_addBasepoint_zero_one _ _ hr₀,
+      Set.ncard_image_of_injective _ hinj', Set.ncard_prod, CharTwo.two_eq_zero]
   · simp [hatCoefficient_def, hatDomains_addBasepoint_one_zero _ _ hr₀]
-  · simp [hatCoefficient_def, hatDomains_addBasepoint_self _ _ hr₀,
-      Set.ncard_image_of_injective _ hinj]
 
 /-- Each crescent is a domain counted by the hat differential of the diagram with an added
 basepoint from `(x, p)` to `(x, q)`: it has Maslov index one and avoids all basepoints, so `p`
