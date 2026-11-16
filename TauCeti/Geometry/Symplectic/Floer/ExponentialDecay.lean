@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
@@ -78,6 +79,18 @@ exponential convergence of the loops, the full derivative of `u` then converges 
 the derivative `(σ, τ) ↦ τ X_{H_t}(x(t))` of the stationary cylinder over `x`
 (`TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp`).
 
+**Convergence at isolated nondegenerate orbits.** Each of these results assumes that the loops
+converge. The assumption can be dropped: if the derivative of `u` is bounded and the `1`-periodic
+orbits in a compact set containing the image of `u` are isolated, the loops converge to a single
+orbit
+(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`), and on a cylindrical end the
+derivative is bounded (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`). So a
+finite-energy cylindrical end all of whose orbits in that compact set are isolated and nondegenerate
+converges exponentially in `C¹` to the stationary cylinder over one of them
+(`TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp`).
+Isolation is stated separately so that the result applies to a Hamiltonian, such as the time
+reversal of another one, whose evolution is not given as a flow.
+
 Exponential convergence of a Floer solution to its asymptotic orbit, in `C¹`, is what places the
 moduli spaces of Floer cylinders and pairs of pants in weighted Sobolev spaces. The optimal rate
 given by the spectral gap of the asymptotic operator, and the decay of higher derivatives, are
@@ -104,6 +117,9 @@ not treated here.
   decays exponentially at a nondegenerate end.
 * `TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp`: the derivative
   of `u` converges exponentially to the derivative of the stationary cylinder.
+* `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp`: a
+  finite-energy cylindrical end whose orbits are isolated and nondegenerate converges
+  exponentially in `C¹` to the stationary cylinder over one of them.
 
 ## References
 
@@ -816,5 +832,88 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
     _ ≤ (1 + M') * (max C₁ 0 * Real.exp (-(min κ₁ κ₂ * s))) +
         Lx * (max C₂ 0 * Real.exp (-(min κ₁ κ₂ * s))) := by gcongr
     _ = _ := by ring
+
+/-- **Exponential `C¹` convergence at isolated nondegenerate orbits.** Let `H` be a `C³`,
+`1`-periodic Hamiltonian and `J_t(x)` a `1`-periodic family of almost complex structures, `C²` on an
+open set `W ⊆ ℝ × V` containing `ℝ × K` for a compact `K ⊆ V`, and tamed by `ω` on `ℝ × K`. Let `u`
+be a `C³` solution of the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on the
+half-cylinder `s > a`, with `1`-periodic loops in `K` and finite energy. Suppose that every
+`1`-periodic orbit `x` of the Hamiltonian vector field in `K` is isolated, that is, it is the only
+`1`-periodic orbit `y` with `y(0)` close to `x(0)`, and nondegenerate: the propagator of
+`ζ' = dX_{H_t}(x(t)) ζ` has no nonzero fixed vector at time `1`. Then the loops `u(s, ·)` converge
+to a `1`-periodic orbit `x`, exponentially fast in `C¹`: for some `κ > 0` and `C`, eventually
+
+`‖u(s, t) - x(t)‖ + ‖du(s, t) - dt ⊗ X_{H_t}(x(t))‖ ≤ C exp (-κ s)` for every `t`. -/
+theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp
+    (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hK : IsCompact K) (hKW : univ ×ˢ K ⊆ W)
+    (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hiso : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
+        (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H t) (y t)) t) →
+        dist (y 0) (x 0) < ε → y = x)
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
+        v = 0) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
+      ∃ κ > 0, ∃ C, ∀ᶠ s in atTop, ∀ t,
+        ‖u (s, t) - x t‖ + ‖fderiv ℝ u (s, t) -
+          (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+            C * Real.exp (-(κ * s)) := by
+  obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hK
+    (hJ.continuousOn.mono hKW) hJper hJt
+  have hsub : Ioi (a + 1) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ Icc 0 1 :=
+    prod_mono (Ioi_subset_Ioi (by linarith)) le_rfl
+  have hJc (z : ℝ × ℝ) (hz : z ∈ Ioi (a + 1) ×ˢ Icc 0 1) (w : V) :
+      c * ‖w‖ ^ 2 ≤ ω w (J z.2 (u z) w) := (hcM _ _ (huK z.1 (hsub hz).1 z.2) w).1
+  have hJM (z : ℝ × ℝ) (hz : z ∈ Ioi (a + 1) ×ˢ Icc 0 1) (w : V) :
+      ‖J z.2 (u z) w‖ ≤ M * ‖w‖ := (hcM _ _ (huK z.1 (hsub hz).1 z.2) w).2
+  have hu₁ : ContDiffOn ℝ 2 u (Ioi (a + 1) ×ˢ univ) :=
+    (hu.of_le (by norm_num)).mono (prod_mono (Ioi_subset_Ioi (by linarith)) le_rfl)
+  have hE₁ := ne_top_of_le_ne_top hE (lintegral_mono_set hsub)
+  -- Beyond `a + 1` the derivative of `u` is bounded, since the structure is cylindrical.
+  obtain ⟨L, hL⟩ := exists_forall_norm_fderiv_le_of_floer hH hHper hW hJ hJper hK hKW hJt hu hper
+    huK hfloer hE (lt_add_one a)
+  -- The loops converge to a single orbit, since the orbits in `K` are isolated.
+  obtain ⟨x, hxper, hx, hux⟩ := exists_periodic_hasDerivAt_tendstoUniformly_atTop (a := a + 1)
+    (hu₁.of_le (by norm_num)) (fun s hs ↦ hper s (by linarith)) hK
+    (fun s hs ↦ huK s (by linarith))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
+      (by simpa using hH.of_le (by norm_num))).continuous
+    (fun w t ↦ by simp only [hHper t])
+    (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
+      (fun z hz ↦ hfloer z (hsub hz)) hE₁)
+    (fun z hz ↦ hL z (mem_Ioi.1 hz.1).le) fun x hxper hx hxK ↦ by
+      obtain ⟨ε, hε, h⟩ := hiso x hxper hx hxK
+      exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
+  -- The limit orbit lies in `K`, so it is nondegenerate.
+  have hdy := hnd x hxper hx fun t ↦ hK.isClosed.mem_of_tendsto (hux.tendsto_at t)
+    ((eventually_gt_atTop (a + 1)).mono fun s hs ↦ huK s (by linarith) t)
+  -- The loops and the derivative converge exponentially, at possibly different rates.
+  obtain ⟨κ₀, hκ₀, C₀, h₀⟩ := exists_pos_eventually_norm_sub_le_exp (a := a + 1)
+    (J := fun z ↦ J z.2 (u z)) (L := L) (hH.of_le (by norm_num)) hHper hu₁
+    (fun s hs ↦ hper s (by linarith)) hc hJc hJM (fun z hz ↦ hfloer z (hsub hz)) hE₁
+    (fun z hz ↦ ((fderiv ℝ u z).unit_le_opNorm _ (by simp)).trans (hL z (mem_Ioi.1 hz.1).le))
+    hxper hx hdy hux
+  obtain ⟨κ₁, hκ₁, C₁, h₁⟩ := exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp hH hHper hW
+    hJ hJper hK hKW hJt hu hper huK hfloer hE hxper hx hdy hux
+  -- Both bounds hold with one rate and one constant, so their sum is bounded by twice it.
+  obtain ⟨κ, hκ, C, h⟩ := exists_pos_eventually_forall_le_mul_exp (ι := Bool)
+    (f := fun b s t ↦ bif b then ‖fderiv ℝ u (s, t) -
+        (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖
+      else ‖u (s, t) - x t‖)
+    (Bool.forall_bool.2 ⟨⟨κ₀, hκ₀, C₀, h₀⟩, ⟨κ₁, hκ₁, C₁, h₁⟩⟩)
+  refine ⟨x, hxper, hx, κ, hκ, C + C, h.mono fun s hs t ↦ ?_⟩
+  rw [add_mul]
+  exact add_le_add (hs false t) (hs true t)
 
 end TauCeti.SymplecticForm

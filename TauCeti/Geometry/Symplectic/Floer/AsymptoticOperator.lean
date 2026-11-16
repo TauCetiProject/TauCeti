@@ -848,8 +848,7 @@ theorem isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero
 time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz, with `x(0)` a
 nondegenerate fixed point of the time-one map. Then the return map `Ψ(1)` of the linearized
 Hamiltonian equation `ζ' = S_t ζ`, with `S_t = dX_{H_t}(x(t))`, satisfies `det (1 - Ψ(1)) ≠ 0`:
-`Ψ(1)` is the derivative of the time-one map at `x(0)`
-(`fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`), which fixes no nonzero vector. -/
+`Ψ(1)` fixes no nonzero vector (`eq_zero_of_dysonSeriesLeft_apply_eq_self`). -/
 theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt (ω : SymplecticForm V)
     {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
@@ -860,13 +859,10 @@ theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt (ω : Symp
       0 := by
   intro h
   obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).1 (LinearMap.det_eq_zero_iff_ker_ne_bot.1 h)
-  refine hv0 (hnd.eq_zero_of_mfderiv_apply_eq ?_)
-  rw [hnd.mdifferentiableAt.differentiableAt.hasFDerivAt.hasMFDerivAt.mfderiv,
-    ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX hH hx 0 1]
+  refine hv0 (ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hX hH hx hnd ?_)
   have hv' : v - dysonSeriesLeft
       (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = 0 := by
     simpa using hv
-  simp only [zero_add, sub_zero]
   exact (sub_eq_zero.1 hv').symm
 
 /-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
