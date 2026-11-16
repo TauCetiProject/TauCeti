@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.RealInterpolation
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
 # Complex interpolation of the Hilbert scale of Bessel-potential spaces
@@ -32,7 +33,7 @@ Bessel potential `J^w` of complex order (`SchwartzMap.besselPotentialCLM`): the 
   `F z = exp (δ (z - θ)²) J^{(θ - z) (s₁ - s₀)} f`, `δ > 0`
   (`TauCeti.CompatibleCouple.isStripFunction_stripGaussian_smul`), equals `f` at `θ`, and on the
   line `re z = j` its value lies in `H^{s_j}` with norm `|exp (δ (j + i t - θ)²)| ‖f‖_{H^{s_θ}}`.
-  Letting `δ → 0` (`TauCeti.le_of_forall_pos_le_exp_mul`) bounds the interpolation norm of `f` by
+  Letting `δ → 0` (`Real.le_of_forall_pos_le_exp_mul`) bounds the interpolation norm of `f` by
   `‖f‖_{H^{s_θ}}`, and Schwartz functions are dense in `H^{s_θ}`.
 * `[H^{s₀}, H^{s₁}]_θ ⊆ H^{s_θ}`. Let `m = min s₀ s₁`, so that `H^{s₀} + H^{s₁} ⊆ H^m`
   (`TauCeti.CompatibleCouple.besselPotentialSpaceSumToMin`). For an admissible function `F` with
@@ -66,7 +67,7 @@ public section
 noncomputable section
 
 open Complex Filter Set Topology SchwartzMap BesselPotentialSpace
-open TauCeti.Complex.HadamardThreeLines
+open Complex.HadamardThreeLines TauCeti.Complex.HadamardThreeLines
 open scoped BoundedContinuousFunction ENNReal SchwartzMap BesselPotentialSpace ZeroAtInfty
 
 namespace TauCeti
@@ -128,33 +129,38 @@ private def besselTrace (s₀ s₁ θ : ℝ) (hδ : 0 < δ) (f : 𝓢(E, H)) :
   (stripGaussianSMul hδ θ 0 (besselLine s₀ s₁ θ s₀ 0 f),
     stripGaussianSMul hδ θ 1 (besselLine s₀ s₁ θ s₁ 1 f))
 
-private theorem isStripFunction_besselTrace (hδ : 0 < δ) (f : 𝓢(E, H)) :
-    (besselPotentialSpace E H 2 s₀ s₁).IsStripFunction
-      (fun z ↦ stripGaussian δ θ z •
-        (besselPotentialSpace E H 2 s₀ s₁).fstToSum (besselShift s₀ s₁ θ s₀ f z))
-      (besselTrace s₀ s₁ θ hδ f) :=
-  isStripFunction_stripGaussian_smul hδ θ
-    ((besselPotentialSpace E H 2 s₀ s₁).fstToSum.differentiable.comp
-      (differentiable_besselShift s₀ s₁ θ s₀ f)).diffContOnCl
-    (isBounded_iff_forall_norm_le.2
-      ⟨‖toBesselPotentialSpaceCLM (s₀ + (|θ| + 1) * |s₁ - s₀|) 2 f‖, by
-        rintro _ ⟨z, hz, rfl⟩
-        exact ((besselPotentialSpace E H 2 s₀ s₁).norm_fstToSum_le _).trans
-          (norm_besselShift_le s₀ s₁ θ s₀ f hz)⟩)
-    (fun t ↦ by simp [besselLine])
-    fun t ↦ by
-      simp [besselLine, besselShift, besselPotentialSpace_fstToSum_toBesselPotentialSpaceCLM]
+private theorem diffContOnCl_besselShift (f : 𝓢(E, H)) :
+    DiffContOnCl ℂ (fun z ↦ (besselPotentialSpace E H 2 s₀ s₁).fstToSum
+      (besselShift s₀ s₁ θ s₀ f z)) (verticalStrip 0 1) :=
+  ((besselPotentialSpace E H 2 s₀ s₁).fstToSum.differentiable.comp
+    (differentiable_besselShift s₀ s₁ θ s₀ f)).diffContOnCl
+
+private theorem isBounded_image_besselShift (f : 𝓢(E, H)) :
+    Bornology.IsBounded ((fun z ↦ (besselPotentialSpace E H 2 s₀ s₁).fstToSum
+      (besselShift s₀ s₁ θ s₀ f z)) '' verticalClosedStrip 0 1) :=
+  isBounded_iff_forall_norm_le.2
+    ⟨‖toBesselPotentialSpaceCLM (s₀ + (|θ| + 1) * |s₁ - s₀|) 2 f‖, by
+      rintro _ ⟨z, hz, rfl⟩
+      exact ((besselPotentialSpace E H 2 s₀ s₁).norm_fstToSum_le _).trans
+        (norm_besselShift_le s₀ s₁ θ s₀ f hz)⟩
+
+private theorem besselShift_one_add_mul_I (f : 𝓢(E, H)) (t : ℝ) :
+    (besselPotentialSpace E H 2 s₀ s₁).fstToSum (besselShift s₀ s₁ θ s₀ f (1 + t * I)) =
+      (besselPotentialSpace E H 2 s₀ s₁).sndToSum (besselLine s₀ s₁ θ s₁ 1 f t) := by
+  simp [besselLine, besselShift, besselPotentialSpace_fstToSum_toBesselPotentialSpaceCLM]
 
 private theorem besselTrace_mem (hδ : 0 < δ) (f : 𝓢(E, H)) :
     besselTrace s₀ s₁ θ hδ f ∈ (besselPotentialSpace E H 2 s₀ s₁).stripTraces :=
-  mem_stripTraces_iff.2 ⟨_, isStripFunction_besselTrace hδ f⟩
+  stripGaussianSMul_mem_stripTraces hδ θ (diffContOnCl_besselShift f)
+    (isBounded_image_besselShift f) (fun t ↦ by simp [besselLine]) (besselShift_one_add_mul_I f)
 
 private theorem stripEval_besselTrace (hδ : 0 < δ) (hθ : θ ∈ Icc 0 1) (f : 𝓢(E, H)) :
     (besselPotentialSpace E H 2 s₀ s₁).stripEval θ
         ⟨besselTrace s₀ s₁ θ hδ f, besselTrace_mem hδ f⟩ =
-      (besselPotentialSpace E H 2 s₀ s₁).fstToSum (toBesselPotentialSpaceCLM s₀ 2 f) := by
-  rw [stripEval_apply, stripFunction_eq (isStripFunction_besselTrace hδ f) (by simpa using hθ)]
-  simp [besselShift]
+      (besselPotentialSpace E H 2 s₀ s₁).fstToSum (toBesselPotentialSpaceCLM s₀ 2 f) :=
+  (stripEval_stripGaussianSMul hδ hθ (diffContOnCl_besselShift f)
+    (isBounded_image_besselShift f) (fun t ↦ by simp [besselLine])
+    (besselShift_one_add_mul_I f)).trans (by simp [besselShift])
 
 private theorem norm_besselTrace_le (hδ : 0 < δ) (f : 𝓢(E, H)) :
     ‖besselTrace s₀ s₁ θ hδ f‖ ≤
@@ -192,7 +198,7 @@ private theorem toSum_schwartzToComplexMethod (hθ : θ ∈ Icc 0 1) (f : 𝓢(E
 private theorem norm_schwartzToComplexMethod_le (hθ : θ ∈ Icc 0 1) (f : 𝓢(E, H)) :
     ‖schwartzToComplexMethod E H s₀ s₁ hθ f‖ ≤
       ‖toBesselPotentialSpaceCLM ((1 - θ) * s₀ + θ * s₁) 2 f‖ := by
-  refine le_of_forall_pos_le_exp_mul (c := (|θ| + 1) ^ 2) fun δ hδ ↦ ?_
+  refine Real.le_of_forall_pos_le_exp_mul (c := (|θ| + 1) ^ 2) fun δ hδ ↦ ?_
   have h : schwartzToComplexMethod E H s₀ s₁ hθ f =
       ComplexMethodSpace.mk θ ⟨besselTrace s₀ s₁ θ hδ f, besselTrace_mem hδ f⟩ :=
     ComplexMethodSpace.ext <| by
@@ -248,7 +254,6 @@ private theorem norm_besselPotentialSpaceToComplexMethod_le (hθ : θ ∈ Icc 0 
 
 section Reverse
 
-open _root_.Complex.HadamardThreeLines
 open scoped InnerProductSpace ComplexConjugate
 
 private theorem min_le_interp (hθ : θ ∈ Icc 0 1) : min s₀ s₁ ≤ (1 - θ) * s₀ + θ * s₁ := by
