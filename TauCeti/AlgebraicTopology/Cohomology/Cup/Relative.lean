@@ -690,16 +690,14 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f hf) p a)
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g hg) q b) =
       TopPair.singularCohomologyMap (TopPair.ofSubsetMap (f ⊗ₘ g)
-          ((TopCat.mapsTo_tensorHom_preimage_fst f g hf).union_union
-            (TopCat.mapsTo_tensorHom_preimage_snd f g hg))) n
+          (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)) n
         (singularRelativeCross k X' Y' hA' hB' μ p q n h a b) := by
   rw [singularRelativeCross_eq_singularRelativeCupPullback,
     singularRelativeCross_eq_singularRelativeCupPullback,
     TopCat.singularRelativeCupPullback_singularCohomologyMap k _ μ (fst X Y) (snd X Y) f g hA' hB'
       hA hB hf hg _ (Set.union_subset_union (fun _ hx ↦ hf hx) fun _ hx ↦ hg hx),
     TopCat.singularCohomologyMap_singularRelativeCupPullback k _ μ (fst X' Y') (snd X' Y') hA' hB'
-      _ (f ⊗ₘ g) _ ((TopCat.mapsTo_tensorHom_preimage_fst f g hf).union_union
-        (TopCat.mapsTo_tensorHom_preimage_snd f g hg))]
+      _ (f ⊗ₘ g) _ (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)]
   exact DFunLike.congr_fun (DFunLike.congr_fun (TopCat.singularRelativeCupPullback_congr k _ μ
     (tensorHom_fst f g).symm (tensorHom_snd f g).symm hA' hB' _ _ p q n h) a) b
 
