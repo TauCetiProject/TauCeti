@@ -38,8 +38,6 @@ affinoid adic spaces induced by a morphism of Huber pairs of +weakly finite type
 
 * `TauCeti.AdicSpace.LocallyOfPlusWeaklyFiniteType.locallyOfWeaklyFiniteType`: a morphism locally
   of +weakly finite type is locally of weakly finite type.
-* `TauCeti.PreAdicSpace.LocallyOfFiniteType.locallyOfPlusWeaklyFiniteType`: a morphism of adic
-  spaces locally of finite type is locally of +weakly finite type.
 * `TauCeti.AdicSpace.LocallyOfPlusWeaklyFiniteType.of_isOpenImmersion`: open immersions are
   locally of +weakly finite type.
 * `TauCeti.AdicSpace.LocallyOfPlusWeaklyFiniteType.containsIdentities`,
@@ -101,10 +99,10 @@ theorem LocallyOfPlusWeaklyFiniteType.locallyOfWeaklyFiniteType {f : X ⟶ Y}
 
 end AdicSpace
 
-/-- **A morphism of adic spaces locally of finite type is locally of +weakly finite type** (Huber
-1996, §1.2): a morphism of Huber pairs topologically of finite type is of +weakly finite type. -/
-theorem PreAdicSpace.LocallyOfFiniteType.locallyOfPlusWeaklyFiniteType {X Y : AdicSpace.{u}}
-    {f : X ⟶ Y} (hf : PreAdicSpace.LocallyOfFiniteType f.hom) :
+-- Internal helper: a morphism of adic spaces whose underlying pre-adic morphism is locally of
+-- finite type is locally of +weakly finite type.
+private theorem PreAdicSpace.LocallyOfFiniteType.locallyOfPlusWeaklyFiniteType
+    {X Y : AdicSpace.{u}} {f : X ⟶ Y} (hf : PreAdicSpace.LocallyOfFiniteType f.hom) :
     AdicSpace.LocallyOfPlusWeaklyFiniteType f :=
   (AdicSpace.locallyOfPlusWeaklyFiniteType_iff_chartLocally f).mpr <|
     PreAdicSpace.chartLocally_mono (fun _ hφ ↦ hφ.isPlusWeaklyFiniteType)

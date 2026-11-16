@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.MvPolynomial.PDeriv
 import Mathlib.Data.ZMod.Basic
 import Mathlib.NumberTheory.Padics.PadicNumbers
 import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FinitePresentation.Comparison
@@ -15,6 +14,7 @@ import TauCeti.RingTheory.Huber.Padic.Field
 import TauCeti.RingTheory.Huber.Restricted.Noetherian
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Examples for morphisms locally of finite type and locally of finite presentation
@@ -45,7 +45,7 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) :
     LocallyOfFinitePresentation (comapOfPair hS hT φ) ∧
       (ofPair T hT).IsLocallyHuberStandard ∧ (ofPair T hT).IsLocallyNoetherian := by
   intro S T hn _ _ φ hS hT
-  have hlfp := locallyOfFinitePresentation_comapOfPair_of_isTateRing hS hT φ
+  have hlfp := locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian hS hT φ
     (S.isTopologicallyFiniteType_weightedCompletionHom (fun _ ↦ Set.finite_singleton 1)
       isWeightFamily_one_weight)
   exact ⟨hlfp, hlfp.isLocallyHuberStandard_source, hlfp.isLocallyNoetherian_source⟩
@@ -63,7 +63,7 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) (t : Fin n → (Pair.powerBounded ℚ
     LocallyOfFinitePresentation (comapOfPair hT hS ev) := by
   intro S T hn _ _ ev hS hT
   let φ : S.Hom T := S.weightedCompletionHom isWeightFamily_one_weight
-  have hπ := locallyOfFinitePresentation_comapOfPair_of_isTateRing hS hT φ
+  have hπ := locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian hS hT φ
     (S.isTopologicallyFiniteType_weightedCompletionHom (fun _ ↦ Set.finite_singleton 1)
       isWeightFamily_one_weight)
   have hsec : comapOfPair hT hS ev ≫ comapOfPair hS hT φ = 𝟙 (ofPair S hS) := by
@@ -73,7 +73,7 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) (t : Fin n → (Pair.powerBounded ℚ
   have hStdS := (IsLocallyHuberStandard.spa P S.plus
     S.isRingOfIntegralElements.isPowerBounded_of_mem hP (hS.isSheaf P hP)).of_isOpenImmersion
     (ofPairIsoOfPresentation S hS P hP).hom
-  exact .of_comp (hsec.symm ▸ .of_id hStdS) hπ.locallyOfFiniteType
+  exact .of_comp (hsec.symm ▸ .id hStdS) hπ.locallyOfFiniteType
 
 /-- Analytic-locus upgrade for morphisms locally of finite type into a locally noetherian target. -/
 example {X Y : AdicSpace.{u}} {f : X ⟶ Y} (hf : LocallyOfFiniteType f)
@@ -106,50 +106,37 @@ example [TopologicalSpace (MvPolynomial ℕ ℤ)] [DiscreteTopology (MvPolynomia
     (hZ : IsSheafyForEveryPresentation (Pair.discrete ℤ).plus) :
     haveI : IsTopologicalRing (MvPolynomial ℕ ℤ) := DiscreteTopology.topologicalRing
     haveI : IsTopologicalRing ℤ := DiscreteTopology.topologicalRing
-    let aug : MvPolynomial ℕ ℤ →+* ℤ := (MvPolynomial.aeval (fun _ : ℕ ↦ (0 : ℤ))).toRingHom
+    let aug : MvPolynomial ℕ ℤ →+* ℤ := MvPolynomial.constantCoeff
     let φ := Pair.Hom.ofDiscrete aug
     φ.IsTopologicallyFiniteType ∧ LocallyOfFiniteType (comapOfPair hR hZ φ) ∧
       ¬ LocallyOfFinitePresentation (comapOfPair hR hZ φ) := by
-  classical
   have : IsTopologicalRing (MvPolynomial ℕ ℤ) := DiscreteTopology.topologicalRing
   have : IsTopologicalRing ℤ := DiscreteTopology.topologicalRing
   intro aug φ
   have hsurj : Function.Surjective aug := fun m ↦ ⟨MvPolynomial.C m, by simp [aug]⟩
   have hft : φ.toRingHom.FiniteType := by
-    rw [Pair.Hom.toRingHom_ofDiscrete]; exact RingHom.FiniteType.of_surjective aug hsurj
+    rw [Pair.Hom.toRingHom_ofDiscrete]
+    exact RingHom.FiniteType.of_surjective aug hsurj
   refine ⟨Pair.Hom.isTopologicallyFiniteType_iff_finiteType_discrete.mpr hft,
     (locallyOfFiniteType_comapOfPair_discrete_iff hR hZ φ).mpr hft, fun hlfp ↦ ?_⟩
   have hfp : aug.FinitePresentation := by
     simpa [φ] using (locallyOfFinitePresentation_comapOfPair_discrete_iff hR hZ φ).mp hlfp
   let _ : Algebra (MvPolynomial ℕ ℤ) ℤ := aug.toAlgebra
   have : Algebra.FinitePresentation (MvPolynomial ℕ ℤ) ℤ := hfp
-  obtain ⟨s, hs⟩ :=
+  have hfg : (RingHom.ker aug).FG :=
     Algebra.FinitePresentation.ker_fG_of_surjective (Algebra.ofId (MvPolynomial ℕ ℤ) ℤ) hsurj
-  let N : ℕ := (s.biUnion MvPolynomial.vars).sup id + 1
-  have hN_not_mem (g) (hg : g ∈ s) (hNg : N ∈ g.vars) : False := by
-    have hle := Finset.le_sup (f := _root_.id) (Finset.mem_biUnion.mpr ⟨g, hg, hNg⟩)
-    dsimp only [N, _root_.id] at hle; omega
-  have hXN_ker : MvPolynomial.X N ∈ Ideal.span (s : Set (MvPolynomial ℕ ℤ)) := by
-    rw [hs, RingHom.mem_ker]; exact show aug (MvPolynomial.X N) = 0 by simp [aug]
-  have hvan : aug (MvPolynomial.X N) = 0 ∧ aug (MvPolynomial.pderiv N (MvPolynomial.X N)) = 0 := by
-    refine Submodule.span_induction (p := fun f _ ↦ aug f = 0 ∧ aug (MvPolynomial.pderiv N f) = 0)
-      (fun g hg ↦ ⟨RingHom.mem_ker.mp (hs ▸ Submodule.subset_span hg), ?_⟩) ⟨by simp, by simp⟩
-      (fun _ _ _ _ hx hy ↦ ⟨by simp [hx.1, hy.1], by simp [hx.2, hy.2]⟩)
-      (fun _ _ _ hx ↦ ⟨by simp [smul_eq_mul, hx.1],
-        by simp [smul_eq_mul, Derivation.leibniz, hx.1, hx.2]⟩) hXN_ker
-    rw [MvPolynomial.pderiv_eq_zero_of_notMem_vars (hN_not_mem g hg), map_zero]
-  have h1 : aug (MvPolynomial.pderiv N (MvPolynomial.X N)) = 1 := by
-    rw [MvPolynomial.pderiv_X_self, map_one]
-  omega
+  rw [MvPolynomial.ker_constantCoeff] at hfg
+  exact MvPolynomial.not_fg_idealOfVars ℕ ℤ hfg
 
 /-- Empty source: any morphism out of `Spa(0, 0)` is locally of finite presentation. -/
-example {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
-    [CompleteSpace A] [T2Space A] [IsHuberRing A] [Subsingleton A]
-    {S : Pair A} (hS : IsSheafyForEveryPresentation S.plus) {Y : AdicSpace.{u}}
+example {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+    [Subsingleton A] {S : Pair A} (hS : IsSheafyForEveryPresentation S.plus) {Y : AdicSpace.{u}}
     (f : ofPair S hS ⟶ Y) : LocallyOfFinitePresentation f := by
   have : IsEmpty (ofPair S hS).obj := ⟨fun z ↦ by
     have hz := (spa_eq_empty_iff_subsingleton S.plus S.isRingOfIntegralElements).mpr inferInstance
-    obtain ⟨_, hm⟩ := ofPairHomeomorph S hS z; rw [hz] at hm; exact hm⟩
+    obtain ⟨_, hm⟩ := ofPairHomeomorph S hS z
+    rw [hz] at hm
+    exact hm⟩
   exact LocallyOfFinitePresentation.of_isEmpty f
 
 end FinitePresentationChecks
