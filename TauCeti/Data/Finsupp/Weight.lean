@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Data.Nat.Digits.Lemmas
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
@@ -66,9 +67,14 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
+* `Finsupp.injOn_weight_pow`: the base-`B` weights separate exponent vectors with entries
+  strictly below `B`, including the degenerate bases zero and one.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
   finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
   is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
+
+The digit argument for `injOn_weight_pow` adapts Mathlib's private `sum_r_mul_ne` proof in
+`Mathlib/RingTheory/NoetherNormalization.lean`, allowing arbitrary bases and zero variables.
 -/
 
 public section
@@ -300,6 +306,24 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
     simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
       congrArg (· / B) h
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
+
+/-- The base-`B` weight is injective on exponent vectors whose entries are all strictly below
+`B`. This includes bases zero and one and the empty vector. -/
+theorem injOn_weight_pow (m B : ℕ) :
+    Set.InjOn (weight (fun i : Fin m ↦ B ^ i.val)) {μ | ∀ i, μ i < B} := by
+  intro μ hμ ν hν h
+  by_cases hB : 1 < B
+  · apply Finsupp.ext
+    apply congrFun
+    apply List.ofFn_inj.mp
+    apply Nat.ofDigits_inj_of_len_eq hB (by simp)
+      (by simpa using hμ) (by simpa using hν)
+    simpa [Nat.ofDigits_eq_sum_mapIdx, List.mapIdx_eq_ofFn, List.sum_ofFn,
+      weight_apply, Finsupp.sum_fintype, mul_comm] using h
+  · ext i
+    have := hμ i
+    have := hν i
+    omega
 
 /-- The weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` of two-variable exponents is
 finite. It is empty when `B = 0`; otherwise both weights are nonzero. -/
