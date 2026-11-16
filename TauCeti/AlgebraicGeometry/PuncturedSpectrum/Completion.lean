@@ -199,9 +199,15 @@ theorem isPushout_appTop_pullback_puncturedSpectrum_of_flat
   have : QuasiSeparatedSpace V.left := quasiSeparatedSpace_of_quasiSeparated (V.hom ≫ U.ι)
   have hpush := TauCeti.AlgebraicGeometry.isPushout_baseRingToStructurePresheaf_app_of_flat H
     (W := ⊤) isCompact_univ isQuasiSeparated_univ (W' := ⊤) rfl
+  -- `Scheme.Hom.appLE_eq_app` states this with `g ⁻¹ᵁ ⊤` (`Scheme.Hom.preimage_top`, proved by
+  -- `rfl`) and `g.app ⊤` (`appTop` is an abbreviation); `show` supplies the unfolded form because a
+  -- plain `rw` cannot match `⊤` against `?g ⁻¹ᵁ ⊤`.
   rwa [Scheme.baseRingToStructurePresheaf_app_eq_appLE,
     Scheme.baseRingToStructurePresheaf_app_eq_appLE,
-    Scheme.Hom.appLE_top_top, Scheme.Hom.appLE_top_top, Scheme.Hom.appLE_top_top] at hpush
+    show (V.left ↘ Spec (.of A)).appLE ⊤ ⊤ le_top = _ from (V.left ↘ Spec (.of A)).appLE_eq_app,
+    show (pullback.fst V.hom r).appLE ⊤ ⊤ _ = _ from (pullback.fst V.hom r).appLE_eq_app,
+    show (pullback V.hom r ↘ Spec (.of A')).appLE ⊤ ⊤ le_top = _ from
+      (pullback V.hom r ↘ Spec (.of A')).appLE_eq_app] at hpush
 
 omit [Module.Flat A A'] in
 /-- Away from any element `s ∈ 𝔪_{A'}`, the open immersion `V' ⟶ Y'` induced by an identification

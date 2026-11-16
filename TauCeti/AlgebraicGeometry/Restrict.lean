@@ -40,8 +40,6 @@ global functions of the base change.
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
-* `AlgebraicGeometry.Scheme.Hom.appLE_top_top`: on global sections, `f.appLE ⊤ ⊤` agrees with
-  `f.appTop` regardless of the inclusion proof.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
   `Γ(Y, U) ⟶ Γ(X, V)`, whatever the proofs of `V ≤ f ⁻¹ᵁ U`.
 * `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
@@ -183,13 +181,6 @@ theorem HasRingHomProperty.resLE_iff (P : MorphismProperty Scheme.{u})
   rw [HasRingHomProperty.iff_of_isAffine (P := P)]
   exact (HasRingHomProperty.isLocal_ringHomProperty P).respectsIso.arrow_mk_iso_iff
     (arrowResLEAppIso f U V hVU)
-
-/-- On global sections, `f.appLE ⊤ ⊤` agrees with `f.appTop` regardless of the inclusion proof. -/
-theorem Scheme.Hom.appLE_top_top (h : (⊤ : X.Opens) ≤ f ⁻¹ᵁ ⊤ := le_top) :
-    f.appLE ⊤ ⊤ h = f.appTop :=
-  -- `f ⁻¹ᵁ ⊤` is definitionally `⊤`, so `h` agrees with `(Scheme.Hom.preimage_top f).ge` by proof
-  -- irrelevance and `f.app ⊤` is definitionally `f.appTop`.
-  (Scheme.Hom.app_eq_appLE f).symm
 
 /-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
 `f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/
