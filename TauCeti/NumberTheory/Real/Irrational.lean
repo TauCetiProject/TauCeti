@@ -18,9 +18,11 @@ for `p = 2` (`TauCeti.irrational_two_rpow_one_quarter_sq`) — the square of `(p
 is irrational. This supplies the irrational-square condition `Irrational (c ^ 2)` for rank-one
 non-integral lattices `c ℤ ⊆ ℝ` such as `2 ^ (1 / 4) ℤ`.
 
-For an irrational real number `θ`, the only integer solution of `a + b * θ = 0` has
-`a = b = 0` (`Irrational.intCast_add_mul_eq_zero_iff`), and for nonzero `c` the multiple `c * θ`
-is not an integer multiple of `c` (`Irrational.intCast_mul_ne_mul`).
+For an irrational real number `θ`, the only rational or integer solution of `a + b * θ = 0` has
+`a = b = 0` (`Irrational.ratCast_add_mul_eq_zero_iff`, `Irrational.intCast_add_mul_eq_zero_iff`),
+so `(a, b) ↦ a + b * θ` is injective on `ℚ × ℚ` and `ℤ × ℤ` (`Irrational.ratCast_add_mul_eq_iff`,
+`Irrational.intCast_add_mul_eq_iff`), and for nonzero `c` the multiple `c * θ` is not an integer
+multiple of `c` (`Irrational.intCast_mul_ne_mul`).
 
 If `θ₁` or `θ₂` is irrational, an integer matrix of nonzero determinant cannot send `(θ₁, θ₂)`
 into `ℚ²`: for `j ≠ 0` and `a d - b c ≠ 0`, `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)` are not both
@@ -30,8 +32,10 @@ twists of the powers and finite-cover pullbacks of a flat line over a torus with
 
 ## Main statements
 
-* `Irrational.intCast_add_mul_eq_zero_iff`: an integer relation between one and an irrational
-  real number has both coefficients zero.
+* `Irrational.ratCast_add_mul_eq_zero_iff` and `Irrational.intCast_add_mul_eq_zero_iff`: a rational
+  or integer relation between one and an irrational real number has both coefficients zero.
+* `Irrational.ratCast_add_mul_eq_iff` and `Irrational.intCast_add_mul_eq_iff`: `(a, b) ↦ a + b * θ`
+  is injective on `ℚ × ℚ` and on `ℤ × ℤ` when `θ` is irrational.
 * `Irrational.intCast_mul_ne_mul`: for irrational `a` and nonzero `c`, `k * c ≠ c * a` for every
   integer `k`.
 * `TauCeti.irrational_rpow_one_quarter_sq_iff`: for `0 ≤ x`,
@@ -115,6 +119,34 @@ theorem intCast_add_mul_eq_zero_iff {θ : ℝ} (hθ : Irrational θ) {a b : ℤ}
     exact ⟨Int.cast_eq_zero.mp ha, hb⟩
   · rintro ⟨rfl, rfl⟩
     simp only [Int.cast_zero, zero_mul, add_zero]
+
+/-- A rational relation between one and an irrational real number has both coefficients zero. -/
+theorem ratCast_add_mul_eq_zero_iff {θ : ℝ} (hθ : Irrational θ) {q r : ℚ} :
+    (q : ℝ) + (r : ℝ) * θ = 0 ↔ q = 0 ∧ r = 0 := by
+  refine ⟨fun h => ?_, ?_⟩
+  · have hr : r = 0 := by
+      by_contra hn
+      apply (hθ.ratCast_mul hn).ne_rat (-q)
+      push_cast
+      linarith
+    exact ⟨by simpa [hr] using h, hr⟩
+  · rintro ⟨rfl, rfl⟩
+    simp
+
+/-- An irrational real number `θ` makes `(q, r) ↦ q + r * θ` injective on `ℚ × ℚ`. -/
+theorem ratCast_add_mul_eq_iff {θ : ℝ} (hθ : Irrational θ) {q₁ r₁ q₂ r₂ : ℚ} :
+    (q₁ : ℝ) + (r₁ : ℝ) * θ = (q₂ : ℝ) + (r₂ : ℝ) * θ ↔ q₁ = q₂ ∧ r₁ = r₂ := by
+  rw [← sub_eq_zero]
+  have hsub : (q₁ : ℝ) + (r₁ : ℝ) * θ - ((q₂ : ℝ) + (r₂ : ℝ) * θ) =
+      ((q₁ - q₂ : ℚ) : ℝ) + ((r₁ - r₂ : ℚ) : ℝ) * θ := by
+    push_cast
+    ring
+  rw [hsub, hθ.ratCast_add_mul_eq_zero_iff, sub_eq_zero, sub_eq_zero]
+
+/-- An irrational real number `θ` makes `(a, b) ↦ a + b * θ` injective on `ℤ × ℤ`. -/
+theorem intCast_add_mul_eq_iff {θ : ℝ} (hθ : Irrational θ) {a₁ b₁ a₂ b₂ : ℤ} :
+    (a₁ : ℝ) + (b₁ : ℝ) * θ = (a₂ : ℝ) + (b₂ : ℝ) * θ ↔ a₁ = a₂ ∧ b₁ = b₂ := by
+  exact_mod_cast hθ.ratCast_add_mul_eq_iff (q₁ := a₁) (r₁ := b₁) (q₂ := a₂) (r₂ := b₂)
 
 /-- For an irrational real number `a` and a nonzero real number `c`, the multiple `c * a` is not an
 integer multiple of `c`. -/
