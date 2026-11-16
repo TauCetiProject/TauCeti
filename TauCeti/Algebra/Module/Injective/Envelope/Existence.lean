@@ -35,7 +35,9 @@ onto `E` and `E` is injective as a retract of an injective module.
 
 * `LinearMap.exists_isInjectiveEnvelope_submodule`: an embedding into an injective module restricts
   to an injective envelope inside that module.
-* `TauCeti.exists_isInjectiveEnvelope`: every module has an injective envelope.
+* `TauCeti.exists_isInjectiveEnvelope`: every module `M : Type v` over a ring `R` with
+  `[Small.{v} R]` (automatic when `R` and `M` share a universe) has an injective envelope in
+  `Type v`.
 * `TauCeti.moduleInjective_of_maximal_isEssential`: a maximal essential extension of a submodule
   inside an injective module is injective.
 
