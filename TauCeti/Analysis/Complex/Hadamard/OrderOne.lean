@@ -39,11 +39,13 @@ uniformly on the complement of the zeros.
   `TauCeti.OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div`, and
   `TauCeti.OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub`: the partial-fraction expansion of
   the logarithmic derivative; absolute convergence holds at every point for every order below two.
-* `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div`,
+* `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub_iff`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div`,
   `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub`, and
-  `TauCeti.OrderLE.re_logDeriv_eq_add_tsum_add_tsum`: when all zeros lie in a bounded vertical
-  strip `|Re ρ| ≤ B`, `∑_ρ m_ρ Re (1 / ρ)` and `∑_ρ m_ρ Re (1 / (z - ρ))` converge separately for
-  every order below two, splitting `Re (logDeriv f z)` into three terms at order at most one.
+  `TauCeti.OrderLE.re_logDeriv_eq_add_tsum_add_tsum`: for every order below two, summability of
+  `m_ρ * Re (1 / (z - ρ))` is equivalent to summability of `m_ρ * Re (1 / ρ)` (guaranteed in
+  particular when all zeros lie in a bounded vertical strip `|Re ρ| ≤ B`), splitting
+  `Re (logDeriv f z)` into three terms at order at most one.
 
 The examples `exp (c s)` and `1 - s` use `TauCeti.divisorProductOne_cexp_mul` and
 `TauCeti.divisorProductOne_one_sub`.
@@ -401,6 +403,18 @@ theorem OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub (h : OrderLE f 1)
 
 /-! ### Vertical-strip zero location and real-part unpairing -/
 
+/-- For an entire function `f` of order less than two and every `z : ℂ`, the unsubtracted
+real-part series `ρ ↦ m_ρ * Re (1 / (z - ρ))` is summable on the divisor support if and only if
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable. -/
+theorem OrderLE.summable_divisor_toNat_mul_re_one_div_sub_iff {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) (z : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) ↔
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) :=
+  TauCeti.summable_divisor_toNat_mul_re_one_div_sub_iff
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA) z
+
 /-- For an entire function `f` of order less than two whose zeros have bounded real part
 (`|ρ.re| ≤ B`), the real-part series `ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support. -/
 theorem OrderLE.summable_divisor_toNat_mul_re_one_div {A : ℝ} (h : OrderLE f A)
@@ -419,31 +433,32 @@ theorem OrderLE.summable_divisor_toNat_mul_re_one_div_sub {A : ℝ} (h : OrderLE
     (z : ℂ) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) :=
-  TauCeti.summable_divisor_toNat_mul_re_one_div_sub
-    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA)
-    (fun ρ hρ ↦ hre ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')) z
+  (h.summable_divisor_toNat_mul_re_one_div_sub_iff hf hA z).mpr
+    (h.summable_divisor_toNat_mul_re_one_div hf hA hre)
 
-/-- Off the zeros of an entire function `f` of order at most one with `f 0 ≠ 0` whose zeros lie in
-a bounded vertical strip `|ρ.re| ≤ B`, the real part of `logDeriv f z` splits into the separately
-convergent sum `Re (logDeriv f 0) + ∑' ρ, m_ρ * Re (1 / (z - ρ)) + ∑' ρ, m_ρ * Re (1 / ρ)`. -/
+/-- Off the zeros of an entire function `f` of order at most one with `f 0 ≠ 0`, whenever
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support, the real part of `logDeriv f z` splits
+into the separately convergent sum
+`Re (logDeriv f 0) + ∑' ρ, m_ρ * Re (1 / (z - ρ)) + ∑' ρ, m_ρ * Re (1 / ρ)`. -/
 theorem OrderLE.re_logDeriv_eq_add_tsum_add_tsum (h : OrderLE f 1) (hf : Differentiable ℂ f)
-    (hf0 : f 0 ≠ 0) {B : ℝ} (habs : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B) {z : ℂ} (hz : f z ≠ 0) :
+    (hf0 : f 0 ≠ 0)
+    (hinv : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re))
+    {z : ℂ} (hz : f z ≠ 0) :
     (logDeriv f z).re = (logDeriv f 0).re +
       (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
         ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) +
       (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
         ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
   have hc := (h.summable_norm_divisor_mul_one_div_sub_add_one_div hf (by norm_num) z).of_norm
-  have hsub := h.summable_divisor_toNat_mul_re_one_div_sub hf (by norm_num) habs z
-  have hinv := h.summable_divisor_toNat_mul_re_one_div hf (by norm_num) habs
+  have hsub := (h.summable_divisor_toNat_mul_re_one_div_sub_iff hf (by norm_num) z).mpr hinv
   have htsum_re : (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)).re =
       ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
         (((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re +
           ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
-    rw [← Complex.reCLM_apply, ContinuousLinearMap.map_tsum Complex.reCLM hc]
-    refine tsum_congr fun ρ ↦ ?_
-    rw [Complex.reCLM_apply, mul_re, natCast_re, natCast_im, zero_mul, sub_zero, add_re, mul_add]
+    rw [Complex.re_tsum hc]
+    exact tsum_congr fun ρ ↦ by simp; ring
   rw [h.logDeriv_eq_add_tsum hf hf0 hz, add_re, htsum_re, Summable.tsum_add hsub hinv, add_assoc]
 
 /-! ### Examples -/

@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Hadamard.RealPart
+public import TauCeti.Analysis.Complex.Hadamard.OrderOne
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard
 
 /-!
 # Hadamard factorization and retained-zero inequalities for Dirichlet L-functions
@@ -21,7 +22,8 @@ Let `χ` be a primitive Dirichlet character modulo `N`, and write
 conductor `N = 1` it recovers `zetaEntireCompletion`. In all cases `Λ₀` satisfies `Λ₀ 0 ≠ 0`, has
 growth order at most `1`, has all its zeros inside the open critical strip `0 < Re ρ < 1`, and
 obeys the combined functional and conjugation identity `Λ₀ (1 - z) = ε(χ) * conj (Λ₀ (conj z))`.
-Specializing the order-one Hadamard and real-part cancellation theorems gives:
+Specializing `TauCeti.hadamard_of_orderLE_one` and the record-level real-part cancellation theorems
+of `TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard` gives:
 
 * **Hadamard factorization** (`dirichletData_entireCompletion_hadamard`): for every primitive `χ`,
   `Λ₀` factors globally as `exp (a + b * s)` times the multipliable genus-one canonical product over
@@ -65,18 +67,7 @@ namespace TauCeti.LFunctions
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
-/-! ### Hadamard factorization and partial-fraction expansion -/
-
-/-- Explicit Hadamard factorization of a primitive Dirichlet entire completion in terms of
-`TauCeti.divisorProductOne`. -/
-theorem dirichletData_entireCompletion_eq_mul_cexp_logDeriv_mul_divisorProductOne (s : ℂ) :
-    (dirichletData χ hχ).entireCompletion s =
-      (dirichletData χ hχ).entireCompletion 0 *
-        exp (logDeriv (dirichletData χ hχ).entireCompletion 0 * s) *
-        divisorProductOne (dirichletData χ hχ).entireCompletion s :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ).eq_mul_cexp_logDeriv_mul_divisorProductOne
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ) s
+/-! ### Hadamard factorization and real-part cancellation -/
 
 /-- **Hadamard product for primitive Dirichlet completions.** For every primitive Dirichlet
 character `χ`, `(dirichletData χ hχ).entireCompletion` factors globally as `exp (a + b * s)` times
@@ -97,55 +88,6 @@ theorem dirichletData_entireCompletion_hadamard :
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (dirichletData_entireCompletion_zero_ne_zero χ hχ)
 
-/-- The paired partial-fraction series of a primitive Dirichlet entire completion converges
-absolutely at every `s : ℂ`. -/
-theorem summable_norm_divisor_dirichletData_entireCompletion_mul_one_div_sub_add_one_div (s : ℂ) :
-    Summable
-      (fun ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support ↦
-        ‖((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℂ) *
-          (1 / (s - ρ) + 1 / ρ)‖) :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ
-    ).summable_norm_divisor_mul_one_div_sub_add_one_div
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion (by norm_num) s
-
-/-- The reciprocal real-part series `∑' ρ, m_ρ * Re (1 / ρ)` over the zeros of a primitive
-Dirichlet entire completion is summable. -/
-theorem summable_divisor_dirichletData_entireCompletion_toNat_mul_re_one_div :
-    Summable
-      (fun ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support ↦
-        ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℝ) *
-          (1 / (ρ : ℂ)).re) :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ).summable_divisor_toNat_mul_re_one_div_of_re_le
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion (by norm_num)
-    (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).2.le)
-    (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ)
-
-/-- The unsubtracted real-part series `∑' ρ, m_ρ * Re (1 / (s - ρ))` over the zeros of a primitive
-Dirichlet entire completion is summable at every `s : ℂ`. -/
-theorem summable_divisor_dirichletData_entireCompletion_toNat_mul_re_one_div_sub (s : ℂ) :
-    Summable
-      (fun ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support ↦
-        ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℝ) *
-          (1 / (s - ρ)).re) :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ
-    ).summable_divisor_toNat_mul_re_one_div_sub_of_re_le
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion (by norm_num)
-    (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).2.le)
-    (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ) s
-
-/-- Paired partial-fraction expansion of the logarithmic derivative of a primitive Dirichlet entire
-completion off its zeros. -/
-theorem logDeriv_dirichletData_entireCompletion_eq_add_tsum {s : ℂ}
-    (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
-    logDeriv (dirichletData χ hχ).entireCompletion s =
-      logDeriv (dirichletData χ hχ).entireCompletion 0 +
-        ∑' ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support,
-          ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℂ) *
-            (1 / (s - ρ) + 1 / ρ) :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ).logDeriv_eq_add_tsum
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ) hs
-
 /-- **Real-part formula for the Hadamard linear constant.** For every primitive Dirichlet character
 `χ` (real or complex), the real part of `logDeriv (dirichletData χ hχ).entireCompletion 0` equals
 `-∑' ρ, m_ρ * Re (1 / ρ)`. -/
@@ -154,11 +96,10 @@ theorem re_logDeriv_dirichletData_entireCompletion_zero :
       -∑' ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support,
         ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℝ) *
           (1 / (ρ : ℂ)).re :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ).re_logDeriv_zero_eq_neg_tsum
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
-    (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).2.le)
-    (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ)
+  (dirichletData_hasFunctionalEquation χ hχ).re_logDeriv_entireCompletion_zero
+    (dirichletData_hasMeromorphicContinuation χ hχ)
+    (dirichletData_entireCompletion_orderLE_one χ hχ)
+    (fun _ ↦ dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ)
 
 /-- **Cancelled real-part partial-fraction expansion.** Off the zeros of
 `(dirichletData χ hχ).entireCompletion`, its logarithmic derivative has real part
@@ -169,33 +110,10 @@ theorem re_logDeriv_dirichletData_entireCompletion_eq_tsum {s : ℂ}
       ∑' ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support,
         ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℝ) *
           (1 / (s - ρ)).re :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ).re_logDeriv_eq_tsum
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
-    (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).2.le)
-    (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ) hs
-
-/-- On `1 ≤ Re s`, every finite subsum `∑ ρ ∈ S, m_ρ * Re (1 / (s - ρ))` over zeros of a primitive
-Dirichlet entire completion is bounded above by
-`Re (logDeriv (dirichletData χ hχ).entireCompletion s)`. -/
-theorem sum_divisor_dirichletData_entireCompletion_toNat_mul_re_one_div_sub_le_re_logDeriv
-    {s : ℂ} (hs : 1 ≤ s.re) (S : Finset ℂ) :
-    ∑ ρ ∈ S, ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℝ) *
-      (1 / (s - ρ)).re ≤ (logDeriv (dirichletData χ hχ).entireCompletion s).re :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ
-    ).sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
-    (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ)
-    (dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ hs) S
-    fun _ _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).2.le.trans hs
-
-/-- On `1 ≤ Re s`, the real part of the logarithmic derivative of a primitive Dirichlet entire
-completion is nonnegative. -/
-theorem re_logDeriv_dirichletData_entireCompletion_nonneg {s : ℂ} (hs : 1 ≤ s.re) :
-    0 ≤ (logDeriv (dirichletData χ hχ).entireCompletion s).re := by
-  simpa using sum_divisor_dirichletData_entireCompletion_toNat_mul_re_one_div_sub_le_re_logDeriv
-    χ hχ hs ∅
+  (dirichletData_hasFunctionalEquation χ hχ).re_logDeriv_entireCompletion_eq_tsum
+    (dirichletData_hasMeromorphicContinuation χ hχ)
+    (dirichletData_entireCompletion_orderLE_one χ hχ)
+    (fun _ ↦ dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ) hs
 
 end TauCeti.LFunctions
 
@@ -219,7 +137,11 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
   have hσ0 : 0 < (σ : ℂ).re := zero_lt_one.trans_le hσ1
   have hLσ : χ.LFunction σ ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hσ1
   have hfin :=
-    sum_divisor_dirichletData_entireCompletion_toNat_mul_re_one_div_sub_le_re_logDeriv χ hχ hσ1 S
+    (dirichletData_hasFunctionalEquation χ hχ
+      ).sum_divisor_entireCompletion_toNat_mul_re_one_div_sub_le_re_logDeriv
+      (dirichletData_hasMeromorphicContinuation χ hχ)
+      (dirichletData_entireCompletion_orderLE_one χ hχ)
+      (fun _ ↦ dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ) hσ1 S
   have hsum_eq : ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((σ : ℂ) - ρ)).re =
       ∑ ρ ∈ S, ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat :
         ℝ) * (1 / ((σ : ℂ) - ρ)).re := by

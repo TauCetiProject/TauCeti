@@ -100,16 +100,13 @@ theorem natDegree_polarPolynomial :
 theorem dual_polarPolynomial_eval (s : ℂ) :
     d.dual.polarPolynomial.eval s = conj (d.polarPolynomial.eval (conj s)) := by
   classical
-  rw [polarPolynomial_eval, polarPolynomial_eval, map_prod]
-  refine Finset.prod_bij (fun p _ ↦ conj p) ?_ ?_ ?_ ?_
-  · intro p hp
-    simpa using hp
-  · intro p₁ _ p₂ _ h
-    exact (starRingEnd ℂ).injective h
-  · intro q hq
-    exact ⟨conj q, by simpa using hq, Complex.conj_conj q⟩
-  · intro p _
-    simp
+  have hmap : d.dual.polarOrder = d.polarOrder.mapDomain conj := by
+    ext p
+    conv_rhs => rw [← Complex.conj_conj p]
+    rw [dual_polarOrder_apply, Finsupp.mapDomain_apply_of_injective (starRingEnd ℂ).injective]
+  rw [polarPolynomial_def, hmap, Finsupp.prod_mapDomain_index_inj (starRingEnd ℂ).injective,
+    polarPolynomial_eval, map_prod]
+  simp [Finsupp.prod, Polynomial.eval_prod]
 
 /-- Under a functional equation, reflecting the polar polynomial across `1/2` recovers the dual
 polar polynomial up to the sign `(-1) ^ deg(P_d)`. -/
@@ -118,32 +115,20 @@ theorem HasFunctionalEquation.polarPolynomial_eval_one_sub {d : AnalyticLFunctio
     d.polarPolynomial.eval (1 - s) =
       (-1) ^ d.polarPolynomial.natDegree * d.dual.polarPolynomial.eval s := by
   classical
-  have hord : ∀ p : ℂ, d.dual.polarOrder (1 - p) = d.polarOrder p := fun p ↦ by
-    rw [dual_polarOrder_apply, map_sub, map_one, hfe.polarOrder_one_sub_conj]
-  rw [polarPolynomial_eval, polarPolynomial_eval, natDegree_polarPolynomial,
-    ← Finset.prod_pow_eq_pow_sum]
-  have hprod : ∏ p ∈ d.polarOrder.support, (1 - s - p) ^ d.polarOrder p =
-      (∏ p ∈ d.polarOrder.support, (-1 : ℂ) ^ d.polarOrder p) *
-        ∏ p ∈ d.polarOrder.support, (s - (1 - p)) ^ d.polarOrder p := by
-    rw [← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun p _ ↦ ?_
-    rw [← mul_pow]
-    congr 1
-    ring
-  rw [hprod]
+  have hmap : d.dual.polarOrder = d.polarOrder.mapDomain (1 - ·) := by
+    ext p
+    have hord : d.dual.polarOrder (1 - (1 - p)) = d.polarOrder (1 - p) := by
+      rw [dual_polarOrder_apply, map_sub, map_one, hfe.polarOrder_one_sub_conj]
+    conv_rhs => rw [← sub_sub_cancel 1 p]
+    rw [Finsupp.mapDomain_apply_of_injective sub_right_injective, ← hord, sub_sub_cancel]
+  rw [natDegree_polarPolynomial, polarPolynomial_def, polarPolynomial_def, hmap,
+    Finsupp.prod_mapDomain_index_inj sub_right_injective, ← Finset.prod_pow_eq_pow_sum]
+  simp only [Finsupp.prod, Polynomial.eval_prod, Polynomial.eval_pow, Polynomial.eval_sub,
+    Polynomial.eval_X, Polynomial.eval_C, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun p _ ↦ ?_
+  rw [← mul_pow]
   congr 1
-  refine Finset.prod_bij (fun p _ ↦ 1 - p) ?_ ?_ ?_ ?_
-  · intro p hp
-    simpa [hord p] using hp
-  · intro p₁ _ p₂ _ h
-    exact sub_right_injective h
-  · intro q hq
-    refine ⟨1 - q, ?_, sub_sub_cancel 1 q⟩
-    have hq' := hord (1 - q)
-    rw [sub_sub_cancel] at hq'
-    simpa [hq'] using hq
-  · intro p _
-    rw [hord p]
+  ring
 
 /-- The analytic representative of the product of the polar polynomial and the completion.
 At a cleared pole this is the removable extension, not the raw pointwise product. -/
@@ -354,8 +339,9 @@ theorem HasFunctionalEquation.entireCompletion_one_sub_eq_mul_conj_conj
         conj (d.entireCompletion (conj s)) := by
   rw [hfe.entireCompletion_one_sub h, h.dual_entireCompletion]
 
-/-- Reflection across the real axis conjugates the logarithmic derivative of the entire
-completion. -/
+/-- Reflection across the real axis conjugates and dualizes the logarithmic derivative of the
+entire completion, relating `logDeriv d.dual.entireCompletion (conj s)` to
+`conj (logDeriv d.entireCompletion s)`. -/
 theorem HasMeromorphicContinuation.logDeriv_dual_entireCompletion_conj (s : ℂ) :
     logDeriv d.dual.entireCompletion (conj s) = conj (logDeriv d.entireCompletion s) := by
   have hfun : d.dual.entireCompletion = conj ∘ d.entireCompletion ∘ conj :=
@@ -378,19 +364,23 @@ theorem HasFunctionalEquation.logDeriv_entireCompletion_one_sub
   rw [TauCeti.logDeriv_comp_const_sub, logDeriv_const_mul _ _ hc] at h1
   exact neg_eq_iff_eq_neg.mp h1
 
+/-- Under a functional equation, `s ↦ 1 - conj s` preserves zeros of the entire completion. -/
+theorem HasFunctionalEquation.entireCompletion_eq_zero_iff_one_sub_conj
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    d.entireCompletion (1 - conj s) = 0 ↔ d.entireCompletion s = 0 := by
+  have hc : (-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber ≠ 0 :=
+    mul_ne_zero (pow_ne_zero _ (by norm_num))
+      (norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber]))
+  rw [hfe.entireCompletion_one_sub_eq_mul_conj_conj h (conj s), Complex.conj_conj,
+    mul_eq_zero, or_iff_right hc, map_eq_zero]
+
 /-- Under a functional equation, nonvanishing of the entire completion on `1 ≤ Re s` reflects to
 nonvanishing on `Re s ≤ 0`. -/
 theorem HasFunctionalEquation.entireCompletion_ne_zero_of_re_nonpos
     (hfe : d.HasFunctionalEquation) (h1 : ∀ z : ℂ, 1 ≤ z.re → d.entireCompletion z ≠ 0)
-    {s : ℂ} (hs : s.re ≤ 0) : d.entireCompletion s ≠ 0 := by
-  have hsym := hfe.entireCompletion_one_sub_eq_mul_conj_conj h (1 - s)
-  rw [sub_sub_cancel] at hsym
-  rw [hsym]
-  have hc : (-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber]))
-  refine mul_ne_zero hc ((map_ne_zero (starRingEnd ℂ)).mpr ?_)
-  exact h1 (conj (1 - s)) (by simp; linarith)
+    {s : ℂ} (hs : s.re ≤ 0) : d.entireCompletion s ≠ 0 :=
+  mt (hfe.entireCompletion_eq_zero_iff_one_sub_conj h s).mpr <|
+    h1 (1 - conj s) (by simp; linarith)
 
 /-- Under a functional equation, nonvanishing of the entire completion on `1 ≤ Re s` confines all
 zeros of `d.entireCompletion` to the open critical strip `0 < Re ρ < 1`. -/

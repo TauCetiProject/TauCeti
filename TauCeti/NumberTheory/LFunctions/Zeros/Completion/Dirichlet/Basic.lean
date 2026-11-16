@@ -154,14 +154,12 @@ theorem dirichletData_entireCompletion_zero_ne_zero :
   · subst N
     simp [dirichletData_modOne]
   · have hne : χ ≠ 1 := mt hχ.eq_one_iff.mp hN
-    have h1 : (dirichletData χ hχ).entireCompletion 1 ≠ 0 := by
-      intro hz
-      exact DirichletCharacter.LFunction_apply_one_ne_zero hne
+    have h1 : (dirichletData χ hχ).entireCompletion 1 ≠ 0 := fun hz ↦
+      DirichletCharacter.LFunction_apply_one_ne_zero hne
         ((dirichletData_entireCompletion_eq_zero_iff χ hχ hne (s := 1) (by norm_num)).mp hz)
-    intro hz
-    have heq := dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ 0
-    simp only [sub_zero, map_zero, hz, mul_zero] at heq
-    exact h1 heq
+    have h01 := (dirichletData_hasFunctionalEquation χ hχ).entireCompletion_eq_zero_iff_one_sub_conj
+      (dirichletData_hasMeromorphicContinuation χ hχ) 0
+    exact h01.not.mp (by simpa using h1)
 
 /-- All analytic orders of a primitive Dirichlet entire completion are finite. -/
 theorem analyticOrderAt_dirichletData_entireCompletion_ne_top (s : ℂ) :

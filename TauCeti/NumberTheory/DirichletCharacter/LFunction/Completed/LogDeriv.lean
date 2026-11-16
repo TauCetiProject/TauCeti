@@ -95,7 +95,7 @@ theorem norm_logDeriv_gammaFactor_ofReal_le {σ : ℝ} (hσ : σ ∈ Set.Icc 1 2
   rcases χ.even_or_odd with he | ho
   · rw [he.logDeriv_gammaFactor]
     exact norm_logDeriv_Gammaℝ_ofReal_le ⟨hσ.1, by linarith [hσ.2]⟩
-  · rw [ho.logDeriv_gammaFactor, show (σ : ℂ) + 1 = ((σ + 1 : ℝ) : ℂ) by push_cast; rfl]
+  · rw [ho.logDeriv_gammaFactor, ← ofReal_one, ← ofReal_add]
     exact norm_logDeriv_Gammaℝ_ofReal_le ⟨by linarith [hσ.1], by linarith [hσ.2]⟩
 
 variable [NeZero N]
