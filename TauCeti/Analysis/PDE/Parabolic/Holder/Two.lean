@@ -338,7 +338,8 @@ theorem deriv_eq (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b)
       timeDerivL f (slabMk x t) :=
   ((f.hasTimeDerivWithinAt x t).hasDerivAt (Icc_mem_nhds ht.1 ht.2)).deriv
 
-/-- Every time slice is Lipschitz, with the `C^{α,α/2}` norm of the time derivative as constant:
+/-- For each fixed `x`, the map `t ↦ u(x, t)` is Lipschitz, with the `C^{α,α/2}` norm of the time
+derivative as constant:
 `‖u(x, t) - u(x, s)‖ ≤ ‖∂ₜu‖_{C^{α,α/2}} |t - s|`. -/
 theorem norm_apply_slabMk_sub_le (f : ParabolicC2HolderSpace α E F hab) (x : E)
     (t s : Icc a b) :

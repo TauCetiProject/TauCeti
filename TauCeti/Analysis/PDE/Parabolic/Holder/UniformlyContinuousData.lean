@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.Analysis.Holder.UniformContinuous
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
-public import TauCeti.Topology.ContinuousMap.Bounded.UniformContinuous
-import TauCeti.Analysis.Holder.UniformContinuous
 import TauCeti.Analysis.Normed.Group.Submodule
 
 /-!
@@ -75,6 +74,11 @@ private def dataMap : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ :=
   LinearMap.prodMap LinearMap.id toBUC.toLinearMap
 
+@[simp]
+private theorem dataMap_apply (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+    CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) : dataMap d = (d.1, toBUC d.2) :=
+  rfl
+
 private theorem denseRange_dataMap (hα : α ≤ 1) :
     DenseRange (dataMap (α := α) (ι := ι) (T := T)) := by
   rw [dataMap, LinearMap.coe_prodMap, LinearMap.id_coe, ContinuousLinearMap.coe_coe]
@@ -113,8 +117,8 @@ private theorem norm_solutionValue_le
     ‖solutionValue hα₀ hα₁ hT a b c ha d‖ ≤
       Real.exp (‖c‖ * T) * (1 + T) * ‖dataMap d‖ := by
   set u := (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d
-  have hK : ‖d.1‖ ≤ ‖dataMap d‖ := by simp [dataMap]
-  have hM : ‖toBUC d.2‖ ≤ ‖dataMap d‖ := by simp [dataMap]
+  have hK : ‖d.1‖ ≤ ‖dataMap d‖ := by simp
+  have hM : ‖toBUC d.2‖ ≤ ‖dataMap d‖ := by simp
   refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
   have hp := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα₁.le
     (nonneg_quadraticForm ha)
@@ -176,8 +180,18 @@ theorem euclideanCauchySolutionBUC_apply_of_ckHolderSpace
       valueL ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) := by
   have hd : (f, w) = dataMap (f, g) :=
     Prod.ext rfl (Subtype.ext <| BoundedContinuousFunction.ext fun x ↦ by
-      rw [hw, dataMap, LinearMap.prodMap_apply, ContinuousLinearMap.coe_coe, toBUC_apply])
+      rw [hw, dataMap_apply, toBUC_apply])
   rw [hd, euclideanCauchySolutionBUC_dataMap]
+
+/-- The extension agrees with the classical solution on the image `toBUC g` of a bounded `C^{2,α}`
+initial datum `g`. -/
+@[simp]
+theorem euclideanCauchySolutionBUC_toBUC
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, toBUC g) =
+      valueL ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) :=
+  euclideanCauchySolutionBUC_dataMap hα₀ hα₁ hT ha (f, g)
 
 /-- **Uniqueness of the extension.** A continuous linear map on `C_b^{α,α/2} × BUC` that agrees
 with the classical solution operator on `C_b^{2,α}` initial data is `euclideanCauchySolutionBUC`. -/
@@ -195,8 +209,16 @@ theorem eq_euclideanCauchySolutionBUC
     (norm_solutionValue_le hα₀ hα₁ hT ha) L <| LinearMap.ext fun d ↦
       hL d.1 (toBUC d.2) d.2 (toBUC_apply d.2)).symm
 
-/-- The extended solution operator is bounded by `exp (‖c‖ T) (1 + T)`. -/
-private theorem norm_euclideanCauchySolutionBUC_apply_le
+/-- **The supremum bound for the extended solution.** The extended solution operator has operator
+norm at most `exp (‖c‖ T) (1 + T)`. -/
+theorem norm_euclideanCauchySolutionBUC_le :
+    ‖euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha‖ ≤ Real.exp (‖c‖ * T) * (1 + T) :=
+  LinearMap.opNorm_extendOfNorm_le (denseRange_dataMap hα₁.le) (by positivity)
+    (norm_solutionValue_le hα₀ hα₁ hT ha)
+
+/-- **The supremum bound for the extended solution.**
+`‖u‖_∞ ≤ exp (‖c‖ T) (1 + T) max (‖f‖, ‖g‖_∞)`. -/
+theorem norm_euclideanCauchySolutionBUC_apply_le
     (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
     ‖euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha d‖ ≤
@@ -222,8 +244,7 @@ private theorem exists_ckHolderSpace_approx
   · have hsub : euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) -
         valueL ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) =
           euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (0, w - toBUC g) := by
-      rw [← euclideanCauchySolutionBUC_apply_of_ckHolderSpace hα₀ hα₁ hT ha f (toBUC g) g
-        (toBUC_apply g), ← map_sub, Prod.mk_sub_mk, sub_self]
+      rw [← euclideanCauchySolutionBUC_toBUC, ← map_sub, Prod.mk_sub_mk, sub_self]
     have hn := norm_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (b := b) (c := c) ha
       (0, w - toBUC g)
     rw [Prod.norm_def, norm_zero, max_eq_right (norm_nonneg _)] at hn
@@ -313,9 +334,7 @@ theorem euclideanCauchySolutionBUC_apply_slabMk_zero
   · exact isClosed_eq ((continuous_eval_const _).comp
       (euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha).continuous)
       ((continuous_eval_const x).comp (continuous_subtype_val.comp continuous_snd))
-  · rw [euclideanCauchySolutionBUC_dataMap, valueL_apply,
-      euclideanInitialDataCLE_symm_apply_slabMk_zero, dataMap, LinearMap.prodMap_apply,
-      ContinuousLinearMap.coe_coe, toBUC_apply]
+  · simp
 
 /-- **Uniform attainment of the initial datum.** As `t → 0⁺`, the extended solution converges to
 the initial datum uniformly on `ℝⁿ`: `sup_x |u(x, t) - g(x)| → 0`. -/
