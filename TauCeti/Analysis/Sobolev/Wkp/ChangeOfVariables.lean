@@ -68,8 +68,8 @@ boundary values are preserved because `e` is a homeomorphism
 * `TauCeti.Wkp.IsChangeOfVariables.abs_det_fderiv_eq_one`: mutually inverse changes of variables
   with Jacobian determinants at least one in absolute value have Jacobian determinants of absolute
   value one.
-* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL` and
-  `TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_compL`: local zero boundary values move forward,
+* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL` and
+  `TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_w1pCompL`: local zero boundary values move forward,
   and local `W^{2,p}` regularity moves back, along a change of variables.
 
 ## References
@@ -948,8 +948,8 @@ section Local
 from `Ω'` into `Ω ∩ O` with a continuous inverse `Ψ`. If `χ u ∈ W₀^{1,p}(Ω)` for every smooth `χ`
 compactly supported in `O`, then `ψ (u ∘ Φ) ∈ W₀^{1,p}(Ω')` for every smooth `ψ` compactly
 supported in an open `U''` that `Φ` maps into `O`. -/
-theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω' U'' : Opens E}
-    (hΦ : IsChangeOfVariables 1 Ω' (Omega ⊓ O) Φ L c) (hp : p ≠ ⊤) (hΦc : Continuous Φ)
+theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL {Omega O Ω' U'' : Opens E}
+    (hΦ : IsChangeOfVariables 1 Ω' (Omega ⊓ O) Φ L c) (hp : p ≠ ⊤) (hΦc : ContinuousOn Φ U'')
     (hΨ : ContinuousOn Ψ (Omega ⊓ O : Opens E)) (hΨmaps : MapsTo Ψ (Omega ⊓ O : Opens E) Ω')
     (hΨΦ : LeftInvOn Ψ Φ Ω') (hΦU'' : MapsTo Φ U'' O) {u : W1p mu Omega p}
     (hu0 : ∀ χ : E → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ → tsupport χ ⊆ O →
@@ -959,7 +959,7 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω'
     ∃ v : W1p0 mu Ω' p, W1p.value (v : W1p mu Ω' p) =ᵐ[mu.restrict Ω'] fun x => ψ x *
       W1p.value (hΦ.w1pCompL hp (W1p.restrictL inf_le_left u)) x := by
   -- A cutoff `χ`, compactly supported in `O`, equal to one on `Φ (tsupport ψ)`.
-  have hK : IsCompact (Φ '' tsupport ψ) := hψc.isCompact.image hΦc
+  have hK : IsCompact (Φ '' tsupport ψ) := hψc.isCompact.image_of_continuousOn (hΦc.mono hψs)
   obtain ⟨χ, -, hχ, -, hχ1, hχc, hχs, -, -, -⟩ :=
     hK.exists_contDiff_cutoff_with_bounds O.isOpen (hΦU''.mono_left hψs).image_subset
   -- `χ u ∈ W₀^{1,p}(Ω)` restricts to `W₀^{1,p}(Ω ∩ O)` and pulls back to `W₀^{1,p}(Ω')`.
@@ -987,7 +987,7 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω'
 from `Ω'` into `D ⊆ Ω`, and `Ψ` one of order two from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with
 `Φ ∘ Ψ = id` on `Ω ∩ V`. If `u ∘ Φ` is `W^{2,p}` on `Ω' ∩ V''`, then `u` is `W^{2,p}` on
 `Ω ∩ V`. -/
-theorem exists_lowerOrder_eq_restrictL_of_compL {Omega D V Ω' V'' : Opens E} (hp : p ≠ ⊤)
+theorem exists_lowerOrder_eq_restrictL_of_w1pCompL {Omega D V Ω' V'' : Opens E} (hp : p ≠ ⊤)
     (hD : D ≤ Omega) (hVD : Omega ⊓ V ≤ D) (hΦ : IsChangeOfVariables 1 Ω' D Φ L c)
     (hΨ : IsChangeOfVariables 2 (Omega ⊓ V) (Ω' ⊓ V'') Ψ L' c')
     (hΦΨ : RightInvOn Ψ Φ (Omega ⊓ V : Opens E)) {u : W1p mu Omega p}

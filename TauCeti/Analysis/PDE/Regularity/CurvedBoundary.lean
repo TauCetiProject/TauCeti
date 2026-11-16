@@ -48,7 +48,7 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
 * **The flat case.** Near the flat boundary, `u ∘ Φ` is `H²`
   (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_halfSpace`), and
   precomposing with `Ψ`, a change of variables of order two (`TauCeti.Wkp.compL`), carries this
-  back to `u` near the boundary point (`TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_compL`).
+  back to `u` near the boundary point (`TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_w1pCompL`).
 * **Gluing.** On a bounded domain finitely many such neighbourhoods, together with balls inside
   `Ω` where interior regularity applies
   (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`), cover
@@ -155,8 +155,8 @@ private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables [Nonempty 
       (by exact ⟨z, ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩)
       (t := (Omega : Set (EuclideanSpace ℝ ι)) ∩ W)
       (fun x hx => ⟨(hΦmaps hx.1).1, hOW (hΦmaps hx.1).2⟩) ha hK
-  have hu0' := (hΦ'.mono one_le_two).exists_w1p0_value_ae_eq_mul_value_compL
-    ENNReal.ofNat_ne_top hΦc hΨc.continuousOn hΨmaps (fun x _ => hΨΦ x)
+  have hu0' := (hΦ'.mono one_le_two).exists_w1p0_value_ae_eq_mul_value_w1pCompL
+    ENNReal.ofNat_ne_top hΦc.continuousOn hΨc.continuousOn hΨmaps (fun x _ => hΨΦ x)
     (fun x hx => ⟨hΦ.mapsTo (hBU' hx), by rw [mem_preimage, hΨΦ]; exact hx⟩ : MapsTo Φ B'' O)
     (fun χ hχ hχc hχs => hu0 χ hχ hχc (hχs.trans hOW))
   -- `H²` regularity near the flat boundary, on `Ω' ∩ B(y₀, r / 2)`.
@@ -175,7 +175,7 @@ private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables [Nonempty 
     simp only [D, O, V, Opens.coe_inf, Opens.coe_mk, mem_inter_iff, mem_preimage] at hy ⊢
     exact ⟨hy.1, hy.2.1, ball_subset_ball (half_le_self hr.le) hy.2.2⟩
   have hVD : Omega ⊓ V ≤ D := SetLike.coe_subset_coe.mp hVD'
-  obtain ⟨w, hw⟩ := Wkp.exists_lowerOrder_eq_restrictL_of_compL (Omega := Omega) (D := D)
+  obtain ⟨w, hw⟩ := Wkp.exists_lowerOrder_eq_restrictL_of_w1pCompL (Omega := Omega) (D := D)
     (V := V) (Ω' := Ω') (V'' := V'') ENNReal.ofNat_ne_top inf_le_left hVD (hΦ'.mono one_le_two)
     (hΨ.mono_set (hVD.trans hDU) fun y hy => ⟨hΨmaps (hVD' hy), hy.2.2⟩) (fun y _ => hΦΨ y)
     (u := u)
