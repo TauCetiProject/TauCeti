@@ -191,6 +191,19 @@ local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a 
       M.grading :=
   M.gradedSMul
 
+-- Transport the graded actions to the internal gradings used by balanced tensors.
+local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    SetLike.GradedSMul
+      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B a) R)).opposite.piece
+      (InternalGrading.ofDecomposition M.grading).piece := by
+  rw [InternalGrading.ofDecomposition_piece]
+  exact M.gradedSMul
+
+local instance : SetLike.GradedSMul (cubicalChainGrading (MooreLoopSpace B a) R)
+    (InternalGrading.ofDecomposition (pathChainBimodule B a b R).grading).piece := by
+  rw [InternalGrading.ofDecomposition_piece]
+  infer_instance
+
 variable (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
   (δ : MoorePathBetween B a b)
 
@@ -238,6 +251,29 @@ theorem differential_tensorPathChainAct
     (LinearMap.ext fun x ↦ (pathChainToLoopChain_differential δ x).symm)) z
   simp only [LinearMap.comp_apply] at h h'
   rw [tensorPathChainAct, LinearMap.comp_apply, LinearMap.comp_apply, ← h, h']
+
+/-- The map `m ⊗ c ↦ m · ρ(c)` preserves the degree. -/
+theorem tensorPathChainAct_mem {q : ℤ} {z : tensorBimoduleObj M (pathChainBimodule B a b R)}
+    (hz : z ∈ (tensorBimoduleObj M (pathChainBimodule B a b R)).grading q) :
+    tensorPathChainAct M δ z ∈ M.grading q := by
+  simpa only [add_zero] using map_mem_of_tmul (𝒜 := cubicalChainGrading (MooreLoopSpace B a) R)
+    (InternalGrading.ofDecomposition M.grading)
+    (InternalGrading.ofDecomposition (pathChainBimodule B a b R).grading) M.grading
+    (tensorPathChainAct M δ) 0 (fun {p q m c} hm hc ↦ by
+      rw [InternalGrading.ofDecomposition_piece] at hm hc
+      have hρ := pathChainToLoopChain_mem δ hc
+      rw [← InternalGrading.ofDecomposition_piece (cubicalChainGrading (MooreLoopSpace B a) R)]
+        at hρ
+      rw [tensorPathChainAct_tmul, add_zero, add_comm]
+      exact SetLike.GradedSMul.smul_mem
+        ((InternalGrading.op_mem_opposite_piece_iff _ _ _).2 hρ) hm) hz
+
+/-- The map `m ↦ m ⊗ [δ]` preserves the degree. -/
+theorem tensorPathChainPoint_mem {q : ℤ} {m : M} (hm : m ∈ M.grading q) :
+    tensorPathChainPoint M δ m ∈ (tensorBimoduleObj M (pathChainBimodule B a b R)).grading q := by
+  rw [tensorPathChainPoint_apply]
+  simpa only [add_zero] using
+    tmul_mem_tensorBimoduleObj_grading (N := pathChainBimodule B a b R) hm (pathChainPoint_mem δ)
 
 /-- Tensoring with the `0`-chain of `δ` commutes with the differentials. -/
 theorem differential_tensorPathChainPoint (m : M) :
