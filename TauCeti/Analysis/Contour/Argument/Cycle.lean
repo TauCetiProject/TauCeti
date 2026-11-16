@@ -118,7 +118,7 @@ theorem argumentPrinciple_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U :
   -- Off `S` the function is analytic and non-vanishing, so its logarithmic derivative is
   -- holomorphic there; at a point of `S` it is meromorphic, being `deriv f / f`.
   have hdiff : DifferentiableOn ℂ (logDeriv f) (U \ (↑S : Set ℂ)) := fun z hz =>
-    (analyticAt_logDeriv_of_analyticAt (hoff z hz.1 hz.2).1
+    ((hoff z hz.1 hz.2).1.logDeriv
       (hoff z hz.1 hz.2).2).differentiableAt.differentiableWithinAt
   have hmeroL : ∀ s ∈ S, s ∈ U → MeromorphicAt (logDeriv f) s := fun s hs hsU =>
     (hmero s hs hsU).deriv.div (hmero s hs hsU)

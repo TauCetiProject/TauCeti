@@ -22,7 +22,7 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", skip_build=False, label_head="", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, pr_fleet=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", skip_build=False, label_head="", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -33,9 +33,9 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
     needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, namespace_slot=namespace_slot, namespace_cap=namespace_cap, pool=pool)))
-    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot").replace("outputs.namespace-slot", "outputs.namespace_slot")
+    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("inputs.fleet-pr", "inputs.pr_fleet").replace("outputs.hosted-slot", "outputs.hosted_slot").replace("outputs.namespace-slot", "outputs.namespace_slot")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
-                         "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance, skip_build=skip_build, label_head=label_head), "fromJSON": json.loads,
+                         "inputs": SimpleNamespace(pr="7", staging=staging, pr_fleet=pr_fleet, maintenance=maintenance, skip_build=skip_build, label_head=label_head), "fromJSON": json.loads,
                          "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
                          "vars": SimpleNamespace(FLEET_CI_ENABLED="true", PICKER_GITHUB_FALLBACK="true" if hosted_picker else "", STAGING_RUNS_ON=staging_target)})
 
@@ -259,9 +259,12 @@ class PickerWorkflow(unittest.TestCase):
         priority_control = "ubuntu-24.04"
         self.assertEqual(expression(pick["runs-on"]), priority_control)
         self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
-        self.assertEqual(expression(pick["runs-on"], staging=True), [
+        reserved_control = [
             "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
-            "fleet-74773fc7f54d4877add11d80113fe340"])
+            "fleet-74773fc7f54d4877add11d80113fe340"]
+        for flags in ({"staging": True}, {"pr_fleet": True}, {"staging": True, "pr_fleet": True}):
+            with self.subTest(flags=flags):
+                self.assertEqual(expression(pick["runs-on"], **flags), reserved_control)
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
         self.assertFalse(any("create-github-app-token" in s.get("uses", "") for s in pick["steps"]))
         self.assertFalse(any("self_tested.py" in s.get("run", "") for s in pick["steps"]))
