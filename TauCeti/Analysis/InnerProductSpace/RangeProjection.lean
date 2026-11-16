@@ -28,9 +28,10 @@ hence the normal spaces, of an immersed submanifold vary smoothly. Neither resul
 complete: the formula is applied after embedding `V` into its completion.
 
 Similarly, for an operator `ι : E →L[𝕜] V` into a Hilbert space, for instance the inclusion of a
-Sobolev space into `L²`, and `κ : F →L[𝕜] E` with `A = ι κ`, the operator `κ (A† A)⁻¹ A† ι` is
-the projection of `E` onto the range of `κ` along its `ι`-orthogonal complement. It depends
-continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
+Sobolev space into `L²`, and `κ : F →L[𝕜] E` with `A = ι κ`, when the Gram operator `A† A` is
+invertible (for finite-dimensional `F`, when `ι κ` is injective), the operator `κ (A† A)⁻¹ A† ι` is
+the projection of `E` onto the range of `κ` along its `ι`-orthogonal complement. Near such `κ` it
+depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 
 ## Main results
 
@@ -87,8 +88,7 @@ theorem gramLeftInverse_comp_self {A : F →L[𝕜] V} (hA : IsUnit (adjoint A �
 of `A†`. -/
 theorem adjoint_comp_self_comp_gramLeftInverse {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
     adjoint A ∘L A ∘L gramLeftInverse A = adjoint A := by
-  rw [gramLeftInverse, ← comp_assoc, ← comp_assoc, ← mul_def (adjoint A ∘L A),
-    Ring.mul_inverse_cancel _ hA, one_def, id_comp]
+  simp [gramLeftInverse, ← comp_assoc, ← mul_def, Ring.mul_inverse_cancel _ hA, one_def]
 
 /-- The left inverse `(A† A)⁻¹ A†` depends continuously on `A` where `A† A` is invertible. -/
 theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
@@ -165,8 +165,7 @@ theorem gramProjection_apply_mem_range (ι : E →L[𝕜] V) (κ : F →L[𝕜] 
 theorem gramProjection_apply_apply {ι : E →L[𝕜] V} {κ : F →L[𝕜] E}
     (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (v : F) :
     gramProjection ι κ (κ v) = κ v := by
-  rw [gramProjection, comp_apply, comp_apply, ← comp_apply ι κ, ← comp_apply (gramLeftInverse _),
-    gramLeftInverse_comp_self hG, one_apply_eq_self]
+  simpa [gramProjection] using congr(κ ($(gramLeftInverse_comp_self hG) v))
 
 /-- When `A† A` is invertible, `ι (e - κ (A† A)⁻¹ A† ι e)` is orthogonal to the image under `ι` of
 the range of `κ`. -/
@@ -174,9 +173,9 @@ theorem inner_sub_gramProjection_apply {ι : E →L[𝕜] V} {κ : F →L[𝕜] 
     (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (e : E) (v : F) :
     ⟪ι (e - gramProjection ι κ e), ι (κ v)⟫_𝕜 = 0 := by
   have h := congr($(adjoint_comp_self_comp_gramLeftInverse hG) (ι e))
-  rw [comp_apply, comp_apply] at h
-  rw [← comp_apply ι κ, ← adjoint_inner_left, map_sub, gramProjection, comp_apply, comp_apply,
-    ← comp_apply ι κ, map_sub, h, sub_self, inner_zero_left]
+  simp only [comp_apply] at h
+  rw [← comp_apply ι κ, ← adjoint_inner_left]
+  simp [gramProjection, h]
 
 /-- The projection `κ (A† A)⁻¹ A† ι` depends continuously on `κ` where `A† A` is invertible. -/
 theorem continuousAt_gramProjection (ι : E →L[𝕜] V) {κ₀ : F →L[𝕜] E}

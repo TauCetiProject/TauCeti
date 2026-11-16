@@ -23,9 +23,9 @@ continuously on `x`.
 
 The kernels move continuously by
 `ContinuousLinearMap.IsFredholm.exists_continuousOn_ker_parametrization`: there is a continuous
-family `κ x : V →L[𝕜] E` on a fixed finite-dimensional inner product space
-`V` whose range is `ker (T x)` at the parameters of constant nullity. With `A = ι ∘ κ x`, the
-projection is
+family `κ x : ker (T x₀) →L[𝕜] E` whose range is `ker (T x)` at the parameters of constant
+nullity. Reading `κ x` on `V = EuclideanSpace 𝕜 (Fin (finrank 𝕜 (T x₀).ker))` through a linear
+equivalence, so that the Gram operator is defined, and with `A = ι ∘ κ x`, the projection is
 
 `π x = κ x (A† A)⁻¹ A† ι`
 
@@ -49,6 +49,11 @@ complements of the kernel, which move continuously with the solution about which
 
 ## Main results
 
+* `ContinuousLinearMap.rightInverse_sub_comp` and
+  `ContinuousLinearMap.apply_add_apply_apply_eq_self`: for a single operator `T` and `π` with
+  values in its kernel, `R - π R` is a right inverse of `T` whenever `R` is, and when `π` projects
+  along the `ι`-orthogonal complement of the kernel, a right inverse `Q` with values in that
+  complement splits every `e` as `e = π e + Q (T e)`.
 * `ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_ker_projection`: continuous
   projections onto the kernels along their `ι`-orthogonal complements, at the parameters of
   constant nullity.
@@ -129,31 +134,31 @@ private theorem orthogonal_ker_projection_of_ker_parametrization {X : Type*} [To
   · obtain ⟨v, rfl⟩ := hk
     exact inner_sub_gramProjection_apply hx.2 e v
 
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- If `π` takes values in the kernel of `T` and `R` is a right inverse of `T`, then so is
+`R - π R`. -/
+theorem rightInverse_sub_comp {T : E →L[𝕜] F} {π : E →L[𝕜] E} {R : F →L[𝕜] E}
+    (hmem : ∀ e, π e ∈ T.ker) (hR : RightInverse R T) : RightInverse (R - π ∘L R) T := fun y ↦ by
+  have h0 : T (π (R y)) = 0 := LinearMap.mem_ker.1 (hmem (R y))
+  simp [hR y, h0]
+
 omit [CompleteSpace E] [CompleteSpace F] [CompleteSpace H] in
-/-- The pointwise half of the right inverse theorems: from a projection `π` onto the kernel of
-`T` along its `ι`-orthogonal complement and a right inverse `R` of `T`, the right inverse
-`Q = R - π R` takes values in that complement, and `e = π e + Q (T e)`. -/
-private theorem orthogonal_rightInverse_spec {ι : E →L[𝕜] H} (hι : Injective ι)
-    {T : E →L[𝕜] F} {π : E →L[𝕜] E} {R : F →L[𝕜] E} (hmem : ∀ e, π e ∈ T.ker)
-    (horth : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π e), ι k⟫_𝕜 = 0) (hR : ∀ y, T (R y) = y) :
-    (∀ y, T ((R - π ∘L R) y) = y) ∧ (∀ y, ∀ k ∈ T.ker, ⟪ι ((R - π ∘L R) y), ι k⟫_𝕜 = 0) ∧
-      ∀ e, π e + (R - π ∘L R) (T e) = e := by
-  have hQ : ∀ y, T ((R - π ∘L R) y) = y := fun y ↦ by
-    have h0 : T (π (R y)) = 0 := LinearMap.mem_ker.1 (hmem (R y))
-    simp [hR y, h0]
-  have hQorth : ∀ y, ∀ k ∈ T.ker, ⟪ι ((R - π ∘L R) y), ι k⟫_𝕜 = 0 :=
-    fun y k hk ↦ horth (R y) k hk
-  refine ⟨hQ, hQorth, fun e ↦ ?_⟩
+/-- Let `ι` be an injective operator into an inner product space, let `π` take values in the kernel
+of `T` with `ι (e - π e)` orthogonal to `ι` of the kernel, and let `Q` be a right inverse of `T`
+whose values are `ι`-orthogonal to the kernel. Then every `e` splits as `e = π e + Q (T e)`. -/
+theorem apply_add_apply_apply_eq_self {ι : E →L[𝕜] H} (hι : Injective ι) {T : E →L[𝕜] F}
+    {π : E →L[𝕜] E} {Q : F →L[𝕜] E} (hmem : ∀ e, π e ∈ T.ker)
+    (horth : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π e), ι k⟫_𝕜 = 0) (hQ : RightInverse Q T)
+    (hQorth : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q y), ι k⟫_𝕜 = 0) (e : E) : π e + Q (T e) = e := by
   -- The defect `d = e - π e - Q (T e)` lies in the kernel and is `ι`-orthogonal to it.
-  set d := e - π e - (R - π ∘L R) (T e)
+  set d := e - π e - Q (T e)
+  have h0 : T (π e) = 0 := LinearMap.mem_ker.1 (hmem e)
   have hd : d ∈ T.ker := by
-    rw [LinearMap.mem_ker]
-    simp only [d, coe_coe, map_sub, hQ, LinearMap.mem_ker.1 (hmem e), sub_zero, sub_self]
+    simp [d, hQ (T e), h0]
   have hdd : ⟪ι d, ι d⟫_𝕜 = 0 := by
-    have hιd : ι d = ι (e - π e) - ι ((R - π ∘L R) (T e)) := by
-      simp only [d, map_sub]
-    nth_rw 1 [hιd]
-    rw [inner_sub_left, horth e d hd, hQorth _ d hd, sub_zero]
+    have h : ⟪ι (e - π e) - ι (Q (T e)), ι d⟫_𝕜 = 0 := by
+      rw [inner_sub_left, horth e d hd, hQorth _ d hd, sub_zero]
+    rwa [← map_sub] at h
   have : d = 0 := hι (by simpa using hdd)
   exact (sub_eq_zero.1 (by simpa only [d, sub_sub] using this)).symm
 
@@ -203,7 +208,10 @@ private theorem orthogonal_rightInverse_of_projection {ι : E →L[𝕜] H} (hι
       ∀ e, π x e + (R x - π x ∘L R x) (T x e) = e := fun x hx ↦ by
   obtain ⟨hTR, hker⟩ := hW x hx.2
   obtain ⟨hmem, hfix, horth⟩ := hπker x hx.1 hker
-  exact ⟨fun y ↦ ⟨R x y, hTR y⟩, hmem, hfix, horth, orthogonal_rightInverse_spec hι hmem horth hTR⟩
+  have hQorth : ∀ y, ∀ k ∈ (T x).ker, ⟪ι ((R x - π x ∘L R x) y), ι k⟫_𝕜 = 0 :=
+    fun y k hk ↦ horth (R x y) k hk
+  exact ⟨fun y ↦ ⟨R x y, hTR y⟩, hmem, hfix, horth, rightInverse_sub_comp hmem hTR, hQorth,
+    apply_add_apply_apply_eq_self hι hmem horth (rightInverse_sub_comp hmem hTR) hQorth⟩
 
 /-- **Orthogonal kernel projections of a Fredholm family move continuously.** Let `T` be
 continuous on an open set `s` and Fredholm at `x₀ ∈ s`, and let `ι : E →L[𝕜] H` be injective, into
