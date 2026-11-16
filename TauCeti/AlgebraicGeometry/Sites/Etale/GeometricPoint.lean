@@ -122,6 +122,37 @@ def homMk {s₁ s₂ : GeometricPoint S} (φ : Spec (.of s₁.Ω) ⟶ Spec (.of 
     (w : φ ≫ s₂.hom = s₁.hom := by cat_disch) : s₁ ⟶ s₂ :=
   ⟨φ, w⟩
 
+/-- The isomorphism of geometric points given by an isomorphism of spectra over `S`. -/
+noncomputable def isoMk {s₁ s₂ : GeometricPoint S} (e : Spec (.of s₁.Ω) ≅ Spec (.of s₂.Ω))
+    (w : e.hom ≫ s₂.hom = s₁.hom := by cat_disch) : s₁ ≅ s₂ where
+  hom := homMk e.hom w
+  inv := homMk e.inv (by rw [Iso.inv_comp_eq, w])
+  hom_inv_id := by ext1; simp
+  inv_hom_id := by ext1; simp
+
+@[simp]
+lemma isoMk_hom_hom {s₁ s₂ : GeometricPoint S} (e : Spec (.of s₁.Ω) ≅ Spec (.of s₂.Ω))
+    (w : e.hom ≫ s₂.hom = s₁.hom) : (isoMk e w).hom.hom = e.hom :=
+  (rfl)
+
+@[simp]
+lemma isoMk_inv_hom {s₁ s₂ : GeometricPoint S} (e : Spec (.of s₁.Ω) ≅ Spec (.of s₂.Ω))
+    (w : e.hom ≫ s₂.hom = s₁.hom) : (isoMk e w).inv.hom = e.inv :=
+  (rfl)
+
+variable (S) in
+/-- The functor sending a geometric point `(Ω, s)` of `S` to the scheme `Spec Ω`. -/
+@[expose, simps]
+noncomputable def forget : GeometricPoint S ⥤ Scheme.{u} where
+  obj s := Spec (.of s.Ω)
+  map f := f.hom
+
+/-- Two automorphisms in `(Aut s)ᵐᵒᵖ` are equal when their underlying morphisms of spectra are. -/
+@[ext]
+lemma autOp_ext {s : GeometricPoint S} {φ ψ : (Aut s)ᵐᵒᵖ}
+    (h : φ.unop.asIso.hom.hom = ψ.unop.asIso.hom.hom) : φ = ψ :=
+  MulOpposite.unop_injective (Aut.ext (Iso.ext (hom_ext h)))
+
 variable (S) in
 /-- The functor from geometric points of `S` to points of the small étale site of `S`, sending
 `s` to `AlgebraicGeometry.Scheme.pointSmallEtale s.hom`. A morphism `φ : s₁ ⟶ s₂` sends a lift
@@ -171,8 +202,8 @@ lemma ofPoint_hom (x : S) : (ofPoint x).hom =
   rfl
 
 /-- The geometric point `ofPoint x` lies over `x`. -/
-lemma ofPoint_hom_apply (x : S) (y : Spec (.of (ofPoint x).Ω)) : (ofPoint x).hom y = x :=
-  Scheme.fromSpecResidueField_apply x _
+lemma ofPoint_hom_apply (x : S) (y : Spec (.of (ofPoint x).Ω)) : (ofPoint x).hom y = x := by
+  rw [ofPoint_hom, Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply]
 
 /-- A ring endomorphism `g` of `κ(x)ˢᵉᵖ` defines an endomorphism `Spec g` of the geometric point
 `ofPoint x` exactly when it fixes `κ(x)`. -/
@@ -187,21 +218,9 @@ lemma SpecMap_comp_ofPoint_hom_eq_iff (x : S)
 absolute Galois group of `κ(x)`. -/
 noncomputable def ofPointIsoOfAlgEquiv (x : S)
     (σ : SeparableClosure (S.residueField x) ≃ₐ[S.residueField x]
-      SeparableClosure (S.residueField x)) : ofPoint x ≅ ofPoint x where
-  hom := homMk (Spec.map (CommRingCat.ofHom (σ : (ofPoint x).Ω →+* (ofPoint x).Ω)))
-    ((SpecMap_comp_ofPoint_hom_eq_iff x _).mpr
-      (CommRingCat.hom_ext (RingHom.ext σ.commutes)))
-  inv := homMk (Spec.map (CommRingCat.ofHom (σ.symm : (ofPoint x).Ω →+* (ofPoint x).Ω)))
-    ((SpecMap_comp_ofPoint_hom_eq_iff x _).mpr
-      (CommRingCat.hom_ext (RingHom.ext σ.symm.commutes)))
-  hom_inv_id := by
-    ext1
-    simp only [comp_hom, homMk_hom, id_hom, ← Spec.map_comp, ← Spec.map_id]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext σ.apply_symm_apply))
-  inv_hom_id := by
-    ext1
-    simp only [comp_hom, homMk_hom, id_hom, ← Spec.map_comp, ← Spec.map_id]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext σ.symm_apply_apply))
+      SeparableClosure (S.residueField x)) : ofPoint x ≅ ofPoint x :=
+  isoMk (Scheme.Spec.mapIso σ.toRingEquiv.toCommRingCatIso.op)
+    ((SpecMap_comp_ofPoint_hom_eq_iff x _).mpr (CommRingCat.hom_ext (RingHom.ext σ.commutes)))
 
 @[simp]
 lemma ofPointIsoOfAlgEquiv_hom_hom (x : S)
@@ -219,12 +238,6 @@ lemma ofPointIsoOfAlgEquiv_inv_hom (x : S)
       Spec.map (CommRingCat.ofHom (σ.symm : (ofPoint x).Ω →+* (ofPoint x).Ω)) :=
   (rfl)
 
-/-- An isomorphism `φ` of geometric points is the spectrum of a ring isomorphism: the ring maps
-`Spec.preimage φ.inv.hom` and `Spec.preimage φ.hom.hom` are mutually inverse. -/
-lemma preimage_inv_comp_preimage_hom {s₁ s₂ : GeometricPoint S} (φ : s₁ ≅ s₂) :
-    Spec.preimage φ.inv.hom ≫ Spec.preimage φ.hom.hom = 𝟙 _ := by
-  rw [← Spec.preimage_comp, ← comp_hom, φ.hom_inv_id, id_hom, Spec.preimage_id]
-
 /-- The ring endomorphism of `κ(x)ˢᵉᵖ` underlying an endomorphism of the geometric point
 `ofPoint x` fixes `κ(x)`. -/
 lemma algebraMap_comp_preimage_hom (x : S) (f : ofPoint x ⟶ ofPoint x) :
@@ -236,10 +249,8 @@ lemma algebraMap_comp_preimage_hom (x : S) (f : ofPoint x ⟶ ofPoint x) :
 point `ofPoint x`: the ring automorphism of `κ(x)ˢᵉᵖ` whose spectrum it is. -/
 noncomputable def ofPointAutToAlgEquiv (x : S) (φ : Aut (ofPoint x)) :
     SeparableClosure (S.residueField x) ≃ₐ[S.residueField x] SeparableClosure (S.residueField x) :=
-  AlgEquiv.ofRingEquiv (f := RingEquiv.ofRingHom
-    (Spec.preimage φ.asIso.hom.hom).hom (Spec.preimage φ.asIso.inv.hom).hom
-    congr(($(preimage_inv_comp_preimage_hom φ.asIso)).hom)
-    congr(($(preimage_inv_comp_preimage_hom φ.asIso.symm)).hom))
+  AlgEquiv.ofRingEquiv
+    (f := (Scheme.Spec.preimageIso ((forget S).mapIso φ.asIso)).unop.commRingCatIsoToRingEquiv)
     fun r ↦ congr(($(algebraMap_comp_preimage_hom x φ.asIso.hom)).hom r)
 
 @[simp]
@@ -265,17 +276,11 @@ noncomputable def ofPointAutMulEquiv (x : S) :
     ext r
     simp [ofPointIsoOfAlgEquiv_hom_hom]
   right_inv φ := by
-    dsimp only
-    refine MulOpposite.unop_injective (Aut.ext ?_)
-    apply Iso.ext
-    apply hom_ext
+    ext1
     rw [MulOpposite.unop_op, ofPointIsoOfAlgEquiv_hom_hom, ofHom_ofPointAutToAlgEquiv,
       Spec.map_preimage]
   map_mul' σ τ := by
-    apply MulOpposite.unop_injective
-    apply Aut.ext
-    apply Iso.ext
-    apply hom_ext
+    ext1
     simp only [MulOpposite.unop_mul, MulOpposite.unop_op, Aut.mul_asIso, Iso.trans_hom, comp_hom,
       ofPointIsoOfAlgEquiv_hom_hom, ← Spec.map_comp]
     exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext (AlgEquiv.mul_apply σ τ)))

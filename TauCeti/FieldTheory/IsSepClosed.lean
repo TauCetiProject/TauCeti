@@ -51,7 +51,7 @@ its conclusion, so instance search could not find it.
 
 * `IsSeparable.mem_bot_of_isSepClosed`: a separable element of a domain algebra belongs to the
   bottom subalgebra.
-* `IsSepClosed.bijective_comp_algHom`: the embeddings of a separable extension into an extension
+* `IsSepClosed.bijective_toAlgHom_comp`: the embeddings of a separable extension into an extension
   `Ω'` of a separably closed field `Ω` are those into `Ω`.
 * `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`: a quadratic `a X² + b X + c` with `a ≠ 0`
   and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
@@ -76,7 +76,7 @@ theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed 
 `E / K` be a separable extension, `Ω` a separably closed field over `K` and `Ω'` an extension of
 `Ω`. Then composing with `Ω → Ω'` is a bijection from the `K`-embeddings `E → Ω` onto the
 `K`-embeddings `E → Ω'`: the image of `E` in `Ω'` is separable over `Ω`, hence contained in it. -/
-theorem IsSepClosed.bijective_comp_algHom (K E Ω Ω' : Type*) [Field K] [Field E] [Field Ω]
+theorem IsSepClosed.bijective_toAlgHom_comp (K E Ω Ω' : Type*) [Field K] [Field E] [Field Ω]
     [Field Ω'] [Algebra K E] [Algebra K Ω] [Algebra K Ω'] [Algebra Ω Ω'] [IsScalarTower K Ω Ω']
     [IsSepClosed Ω] [Algebra.IsSeparable K E] :
     Function.Bijective ((IsScalarTower.toAlgHom K Ω Ω').comp : (E →ₐ[K] Ω) → (E →ₐ[K] Ω')) := by

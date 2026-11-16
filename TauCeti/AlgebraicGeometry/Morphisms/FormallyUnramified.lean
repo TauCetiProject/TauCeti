@@ -252,7 +252,7 @@ theorem Scheme.Hom.bijective_comp_of_formallyUnramified (f : X ⟶ Y)
   have : IsScalarTower (Y.residueField (f x)) Ω Ω' := .of_algebraMap_eq' rfl
   let a' : X.residueField x →ₐ[Y.residueField (f x)] Ω' :=
     { a.hom with commutes' r := congr($hab r) }
-  obtain ⟨a₂, ha₂⟩ := (IsSepClosed.bijective_comp_algHom _ _ Ω Ω').2 a'
+  obtain ⟨a₂, ha₂⟩ := (IsSepClosed.bijective_toAlgHom_comp _ _ Ω Ω').2 a'
   -- Bundle `a₂` as a morphism out of `κ(x)` itself, so that it composes with `f.residueFieldMap x`.
   obtain ⟨c, hc⟩ : ∃ c : X.residueField x ⟶ .of Ω, ∀ r, c.hom r = a₂ r :=
     ⟨CommRingCat.ofHom (a₂ : X.residueField x →+* Ω), fun _ ↦ rfl⟩
