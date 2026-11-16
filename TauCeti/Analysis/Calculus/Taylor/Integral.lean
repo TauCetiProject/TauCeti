@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.Taylor.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Iterated derivatives along a line and multivariate Taylor remainders
@@ -37,6 +38,8 @@ remainder bound `TauCeti.abs_sub_taylorWithinEval_le` along the segment `[0, 1]`
   is `iteratedFDeriv 𝕜 n f (x + t • y) (fun _ ↦ y)`.
 * `TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le`: Taylor's remainder bound of order `n` along a
   segment `[x, x + y]` between arbitrary real normed spaces.
+* `TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_one_add_norm_sq_rpow`: the Taylor remainder of
+  a function whose next derivative has polynomial growth, `C' ⟨x⟩ ^ t ⟨y⟩ ^ (|t| + n + 1)`.
 * `ContDiffAt.isBigO_sub_sum_iteratedFDeriv` and `ContDiffAt.isBigO_sub_taylor_three`: asymptotic
   `O(‖x' - x‖ ^ (n + 1))` and third-order `O(‖x' - x‖ ^ 4)` Taylor expansions at a point.
 -/
@@ -152,6 +155,43 @@ theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le {f : E → F} {x y : E} {
             mul_le_mul_of_nonneg_right (hM t ht) (pow_nonneg (norm_nonneg y) _)
   rw [htaylor, abs_of_nonneg (norm_nonneg rem)] at hbound
   simpa using hbound
+
+/-- **Taylor's theorem with a weighted remainder.** If the `(n + 1)`-st derivative of `f` grows
+like `‖D^(n + 1) f z‖ ≤ C ⟨z⟩ ^ t`, then by Peetre's inequality `f (x + y)` differs from its
+Taylor polynomial of order `n` at `x` by at most
+`C 2 ^ (|t| / 2) / (n + 1)! ⟨x⟩ ^ t ⟨y⟩ ^ (|t| + n + 1)`,
+where `⟨x⟩ ^ s = (1 + ‖x‖ ^ 2) ^ (s / 2)`. -/
+theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_one_add_norm_sq_rpow {f : E → F} {n : ℕ}
+    (hf : ContDiff ℝ (n + 1) f) {C t : ℝ}
+    (hn : ∀ z, ‖iteratedFDeriv ℝ (n + 1) f z‖ ≤ C * (1 + ‖z‖ ^ 2) ^ (t / 2)) (x y : E) :
+    ‖f (x + y) - ∑ k ∈ Finset.range (n + 1),
+        (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ => y)‖ ≤
+      C * 2 ^ (|t| / 2) / (n + 1)! * (1 + ‖x‖ ^ 2) ^ (t / 2) *
+        (1 + ‖y‖ ^ 2) ^ ((|t| + (n + 1)) / 2) := by
+  have hC : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hn 0)) (by positivity)
+  set w := 1 + ‖y‖ ^ 2
+  -- Peetre's inequality bounds the `(n + 1)`-st derivative along the segment.
+  have hB : ∀ s ∈ Set.Ioo (0 : ℝ) 1, ‖iteratedFDeriv ℝ (n + 1) f (x + s • y)‖ ≤
+      C * (2 ^ (|t| / 2) * w ^ (|t| / 2) * (1 + ‖x‖ ^ 2) ^ (t / 2)) := fun s hs => by
+    refine (hn _).trans (mul_le_mul_of_nonneg_left ?_ hC)
+    refine (one_add_norm_sq_rpow_le_mul_sub t (x + s • y) x).trans ?_
+    gcongr
+    rw [add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hs.1.le]
+    have : s * ‖y‖ ≤ ‖y‖ := mul_le_of_le_one_left (norm_nonneg _) hs.2.le
+    have : 0 ≤ s * ‖y‖ := mul_nonneg hs.1.le (norm_nonneg _)
+    simp only [w]
+    nlinarith
+  refine (TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le (fun _ _ => hf.contDiffAt) hB).trans
+    (le_of_le_of_eq (b := C * (2 ^ (|t| / 2) * w ^ (|t| / 2) * (1 + ‖x‖ ^ 2) ^ (t / 2)) *
+      w ^ (((n + 1 : ℕ) : ℝ) / 2) / (n + 1)!) ?_ ?_)
+  · gcongr
+    exact norm_pow_le_one_add_norm_sq_rpow _ _
+  · have hw : w ^ (|t| / 2) * w ^ (((n + 1 : ℕ) : ℝ) / 2) = w ^ ((|t| + (n + 1)) / 2) := by
+      rw [← Real.rpow_add (by positivity)]
+      push_cast
+      ring_nf
+    rw [← hw]
+    field_simp
 
 /-- **Taylor's theorem of order `n` with `O(‖x' - x‖ ^ (n + 1))` remainder.** If `f` is `C^(n + 1)`
 at `x`, then `f x' - ∑ k ≤ n, (k!)⁻¹ • D^k f(x)(x' - x, …, x' - x) = O(‖x' - x‖ ^ (n + 1))` as
