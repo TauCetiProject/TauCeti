@@ -488,14 +488,18 @@ theorem mem_dropLast_vertices_of_ne {s t v : V} {p : ArrowWalk Q s t} (hv : v �
   rw [← h, List.mem_append, List.mem_singleton] at hv
   exact hv.resolve_right hvt
 
+/-- The vertices after the first of a walk extended by an arrow. -/
+theorem tail_vertices_cons {s x y : V} (p : ArrowWalk Q s x) (e : Q x y) :
+    (cons p e).vertices.tail = p.vertices.tail ++ [y] := by
+  simp [@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p]
+
 /-- The target of a walk of positive length is a vertex after the first. -/
 theorem end_mem_tail_vertices {s t : V} {p : ArrowWalk Q s t} (hp : p.length ≠ 0) :
     t ∈ p.vertices.tail := by
   cases p with
   | nil => exact absurd rfl hp
   | cons p e =>
-    rw [vertices_cons, List.concat_eq_append,
-      List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p)]
+    rw [tail_vertices_cons p e]
     exact List.mem_append_right _ (List.mem_singleton_self _)
 
 /-- The source of a walk of positive length is a vertex before the last. -/
@@ -507,18 +511,30 @@ theorem start_mem_dropLast_vertices {s t : V} {p : ArrowWalk Q s t} (hp : p.leng
   rw [h, List.dropLast_cons_of_ne_nil htail]
   exact List.mem_cons_self
 
+/-- The vertices after the first of a composite walk are those of the first walk followed by
+those of the second. -/
+theorem tail_vertices_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
+    (p.comp p').vertices.tail = p.vertices.tail ++ p'.vertices.tail := by
+  rw [← map_target_arrows, ← map_target_arrows, ← map_target_arrows, arrows_comp, List.map_append]
+
+/-- The vertices before the last of a composite walk are those of the first walk followed by
+those of the second. -/
+theorem dropLast_vertices_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
+    (p.comp p').vertices.dropLast = p.vertices.dropLast ++ p'.vertices.dropLast := by
+  rw [vertices_comp, List.dropLast_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p')]
+
 /-- The vertices of a walk after its first remain vertices after the first when the walk is
 extended. -/
 theorem tail_vertices_subset_tail_vertices_comp {s t x : V} (p : ArrowWalk Q s t)
     (p' : ArrowWalk Q t x) : p.vertices.tail ⊆ (p.comp p').vertices.tail := by
-  rw [← map_target_arrows, ← map_target_arrows, arrows_comp, List.map_append]
+  rw [tail_vertices_comp]
   exact List.subset_append_left _ _
 
 /-- The vertices of a walk before its last remain vertices before the last when the walk is
 prefixed by another walk. -/
 theorem dropLast_vertices_subset_dropLast_vertices_comp {s t x : V} (p : ArrowWalk Q s t)
     (p' : ArrowWalk Q t x) : p'.vertices.dropLast ⊆ (p.comp p').vertices.dropLast := by
-  rw [vertices_comp, List.dropLast_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p')]
+  rw [dropLast_vertices_comp]
   exact List.subset_append_right _ _
 
 /-- The vertices of a contiguous segment of a walk are vertices of the whole walk. -/
@@ -573,21 +589,18 @@ theorem exists_eq_comp_forall_tail_vertices_notMem {A : Set V} {s t : V} (p : Ar
   | nil =>
     obtain ⟨v, hv, hvA⟩ := h
     rw [vertices_nil, List.mem_singleton] at hv
-    exact ⟨s, hv ▸ hvA, nil s, nil s, rfl, by simp⟩
+    exact ⟨s, hv ▸ hvA, nil s, nil s, by simp, by simp⟩
   | @cons x y p e ih =>
-    -- The path recursor exposes the current arrow through its local quiver instance.
-    change Q x y at e
     by_cases hy : y ∈ A
-    · exact ⟨y, hy, cons p e, nil y, rfl, by simp⟩
+    · exact ⟨y, hy, cons p e, nil y, by simp, by simp⟩
     have hp : ∃ v ∈ vertices (Q := Q) p, v ∈ A := by
       obtain ⟨v, hv, hvA⟩ := h
-      rw [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton] at hv
+      simp only [vertices_cons, List.concat_eq_append, List.mem_append,
+        List.mem_singleton] at hv
       exact ⟨v, hv.resolve_right fun hvy ↦ hy (hvy ▸ hvA), hvA⟩
     obtain ⟨a, ha, before, rest, rfl, hrest⟩ := ih hp
-    refine ⟨a, ha, before, cons rest e, rfl, fun v hv ↦ ?_⟩
-    rw [vertices_cons, List.concat_eq_append,
-      List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ rest), List.mem_append,
-      List.mem_singleton] at hv
+    refine ⟨a, ha, before, cons rest e, by simp, fun v hv ↦ ?_⟩
+    rw [tail_vertices_cons, List.mem_append, List.mem_singleton] at hv
     rcases hv with hv | rfl
     · exact hrest v hv
     · exact hy
@@ -602,20 +615,16 @@ theorem exists_eq_comp_forall_dropLast_vertices_notMem {B : Set V} {s t : V}
   | nil =>
     obtain ⟨v, hv, hvB⟩ := h
     rw [vertices_nil, List.mem_singleton] at hv
-    exact ⟨s, hv ▸ hvB, nil s, nil s, rfl, by simp⟩
+    exact ⟨s, hv ▸ hvB, nil s, nil s, by simp, by simp⟩
   | @cons x y p e ih =>
-    -- The path recursor exposes the current arrow through its local quiver instance.
-    change Q x y at e
     by_cases hp : ∃ v ∈ vertices (Q := Q) p, v ∈ B
     · obtain ⟨b, hb, q, after, rfl, hq⟩ := ih hp
-      exact ⟨b, hb, q, cons after e, rfl, hq⟩
+      exact ⟨b, hb, q, cons after e, by simp, hq⟩
     push Not at hp
     obtain ⟨v, hv, hvB⟩ := h
-    rw [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton] at hv
+    simp only [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton] at hv
     obtain rfl := hv.resolve_left fun hv ↦ hp v hv hvB
-    refine ⟨v, hvB, cons p e, nil v, rfl, ?_⟩
-    rw [vertices_cons, List.concat_eq_append, List.dropLast_concat]
-    exact hp
+    exact ⟨v, hvB, cons p e, nil v, by simp, by simpa using hp⟩
 
 /-- The split of a walk at its last vertex in `A` is unique. -/
 theorem comp_inj_of_forall_tail_vertices_notMem {A : Set V} {s a a' t : V}
@@ -627,23 +636,23 @@ theorem comp_inj_of_forall_tail_vertices_notMem {A : Set V} {s a a' t : V}
       a = a' ∧ HEq before before' ∧ HEq rest rest' := by
   constructor
   · intro h
-    induction rest generalizing before' with
+    induction rest with
     | nil =>
       cases rest' with
-      | nil => exact ⟨rfl, heq_of_eq h, HEq.rfl⟩
+      | nil =>
+        simp only [Quiver.Path.comp_nil] at h
+        exact ⟨rfl, heq_of_eq h, HEq.rfl⟩
       | cons r' e' => exact absurd ha (hrest' _ (end_mem_tail_vertices (by simp)))
     | @cons y t r e ih =>
-      -- The path recursor exposes the current arrow through its local quiver instance.
-      change Q y t at e
       cases rest' with
       | nil => exact absurd ha' (hrest _ (end_mem_tail_vertices (by simp)))
       | cons r' e' =>
-        injection h with hy _ hcomp he
+        simp only [Quiver.Path.comp_cons, Quiver.Path.cons.injEq] at h
+        obtain ⟨hy, hcomp, he⟩ := h
         subst hy
         obtain ⟨rfl, hbefore, hr⟩ := ih
-          (fun v hv ↦ hrest v (tail_vertices_subset_tail_vertices_comp r (cons (nil y) e) hv))
-          (fun v hv ↦
-            hrest' v (tail_vertices_subset_tail_vertices_comp r' (cons (nil y) e') hv))
+          (fun v hv ↦ hrest v (by rw [tail_vertices_cons]; exact List.mem_append_left _ hv))
+          (fun v hv ↦ hrest' v (by rw [tail_vertices_cons]; exact List.mem_append_left _ hv))
           (eq_of_heq hcomp)
         obtain rfl := eq_of_heq hr
         obtain rfl := eq_of_heq he
@@ -662,10 +671,12 @@ theorem comp_inj_of_forall_dropLast_vertices_notMem {B : Set V} {s b b' t : V}
     q.comp after = q'.comp after' ↔ b = b' ∧ HEq q q' ∧ HEq after after' := by
   constructor
   · intro h
-    induction after generalizing q' with
+    induction after with
     | nil =>
       cases after' with
-      | nil => exact ⟨rfl, heq_of_eq h, HEq.rfl⟩
+      | nil =>
+        simp only [Quiver.Path.comp_nil] at h
+        exact ⟨rfl, heq_of_eq h, HEq.rfl⟩
       | cons r' e' =>
         simp only [Quiver.Path.comp_nil] at h
         refine absurd hb' (hq _ ?_)
@@ -673,8 +684,6 @@ theorem comp_inj_of_forall_dropLast_vertices_notMem {B : Set V} {s b b' t : V}
         exact dropLast_vertices_subset_dropLast_vertices_comp _ _
           (start_mem_dropLast_vertices (by simp))
     | @cons y t r e ih =>
-      -- The path recursor exposes the current arrow through its local quiver instance.
-      change Q y t at e
       cases after' with
       | nil =>
         simp only [Quiver.Path.comp_nil] at h
@@ -683,9 +692,10 @@ theorem comp_inj_of_forall_dropLast_vertices_notMem {B : Set V} {s b b' t : V}
         exact dropLast_vertices_subset_dropLast_vertices_comp _ _
           (start_mem_dropLast_vertices (by simp))
       | cons r' e' =>
-        injection h with hy _ hcomp he
+        simp only [Quiver.Path.comp_cons, Quiver.Path.cons.injEq] at h
+        obtain ⟨hy, hcomp, he⟩ := h
         subst hy
-        obtain ⟨rfl, hq₁, hr⟩ := ih hq' (eq_of_heq hcomp)
+        obtain ⟨rfl, hq₁, hr⟩ := ih (eq_of_heq hcomp)
         obtain rfl := eq_of_heq hq₁
         obtain rfl := eq_of_heq hr
         obtain rfl := eq_of_heq he

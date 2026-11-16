@@ -223,14 +223,14 @@ private theorem trimToSets_spec_of_eq_comp_comp {a b : V} {p : ArrowWalk Q s t}
   let ⟨ha', hb', _, hq, _⟩ := huniq.mp (h'.symm.trans h)
   ⟨ha', hb', hq⟩
 
-/-- The source of a trimmed walk is the start of any segment of the walk that begins at its last
-vertex in `A` and ends at the first vertex in `B` at or after it. -/
-theorem trimToSetsSource_eq_of_eq_comp_comp {a b : V} {p : ArrowWalk Q s t} (hs : s ∈ A)
-    (ht : t ∈ B) {before : ArrowWalk Q s a} {q : ArrowWalk Q a b} {after : ArrowWalk Q b t}
-    (h : p = before.comp (q.comp after)) (ha : a ∈ A) (hb : b ∈ B)
-    (hA : ∀ z ∈ (q.comp after).vertices.tail, z ∉ A) (hB : ∀ z ∈ q.vertices.dropLast, z ∉ B) :
-    p.trimToSetsSource hs ht = a :=
-  (trimToSets_spec_of_eq_comp_comp hs ht h ha hb hA hB).1
+/-- The source of a trimmed walk is the vertex at which the walk splits at its last vertex in
+`A`. -/
+theorem trimToSetsSource_eq_of_eq_comp {a : V} {p : ArrowWalk Q s t} (hs : s ∈ A) (ht : t ∈ B)
+    {before : ArrowWalk Q s a} {rest : ArrowWalk Q a t} (h : p = before.comp rest) (ha : a ∈ A)
+    (hA : ∀ z ∈ rest.vertices.tail, z ∉ A) : p.trimToSetsSource hs ht = a :=
+  let ⟨_, _, h', hA'⟩ := p.exists_eq_comp_trimToSets_comp hs ht
+  ((comp_inj_of_forall_tail_vertices_notMem (p.trimToSetsSource_mem hs ht) ha hA' hA).mp
+    (h'.symm.trans h)).1
 
 /-- The target of a trimmed walk is the end of any segment of the walk that begins at its last
 vertex in `A` and ends at the first vertex in `B` at or after it. -/
@@ -250,29 +250,29 @@ theorem trimToSets_heq_of_eq_comp_comp {a b : V} {p : ArrowWalk Q s t} (hs : s �
     HEq (p.trimToSets hs ht) q :=
   (trimToSets_spec_of_eq_comp_comp hs ht h ha hb hA hB).2.2
 
-/-- Trimming keeps the source of a walk none of whose vertices after the first lies in `A` and
-none of whose vertices before the last lies in `B`. -/
-theorem trimToSetsSource_eq_of_forall_notMem {p : ArrowWalk Q s t} (hs : s ∈ A) (ht : t ∈ B)
-    (hA : ∀ z ∈ p.vertices.tail, z ∉ A) (hB : ∀ z ∈ p.vertices.dropLast, z ∉ B) :
-    p.trimToSetsSource hs ht = s :=
-  trimToSetsSource_eq_of_eq_comp_comp hs ht (after := nil t)
-    (@Quiver.Path.nil_comp V ⟨Q⟩ _ _ p).symm hs ht hA hB
+/-- Trimming keeps the source of a walk none of whose vertices after the first lies in `A`. -/
+theorem trimToSetsSource_eq_of_forall_tail_vertices_notMem {p : ArrowWalk Q s t} (hs : s ∈ A)
+    (ht : t ∈ B) (hA : ∀ z ∈ p.vertices.tail, z ∉ A) : p.trimToSetsSource hs ht = s :=
+  trimToSetsSource_eq_of_eq_comp hs ht (@Quiver.Path.nil_comp V ⟨Q⟩ _ _ p).symm hs hA
 
-/-- Trimming keeps the target of a walk none of whose vertices after the first lies in `A` and
-none of whose vertices before the last lies in `B`. -/
-theorem trimToSetsTarget_eq_of_forall_notMem {p : ArrowWalk Q s t} (hs : s ∈ A) (ht : t ∈ B)
-    (hA : ∀ z ∈ p.vertices.tail, z ∉ A) (hB : ∀ z ∈ p.vertices.dropLast, z ∉ B) :
-    p.trimToSetsTarget hs ht = t :=
-  trimToSetsTarget_eq_of_eq_comp_comp hs ht (after := nil t)
-    (@Quiver.Path.nil_comp V ⟨Q⟩ _ _ p).symm hs ht hA hB
+/-- Trimming keeps the target of a walk none of whose vertices before the last lies in `B`. -/
+theorem trimToSetsTarget_eq_of_forall_dropLast_vertices_notMem {p : ArrowWalk Q s t}
+    (hs : s ∈ A) (ht : t ∈ B) (hB : ∀ z ∈ p.vertices.dropLast, z ∉ B) :
+    p.trimToSetsTarget hs ht = t := by
+  obtain ⟨before, after, h, -⟩ := p.exists_eq_comp_trimToSets_comp hs ht
+  apply @Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ after
+  by_contra hlen
+  rw [h, dropLast_vertices_comp, dropLast_vertices_comp] at hB
+  exact hB _ (List.mem_append_right _ (List.mem_append_right _ (start_mem_dropLast_vertices hlen)))
+    (p.trimToSetsTarget_mem hs ht)
 
 /-- Trimming leaves unchanged a walk none of whose vertices after the first lies in `A` and none
 of whose vertices before the last lies in `B`. -/
 theorem trimToSets_heq_of_forall_notMem {p : ArrowWalk Q s t} (hs : s ∈ A) (ht : t ∈ B)
     (hA : ∀ z ∈ p.vertices.tail, z ∉ A) (hB : ∀ z ∈ p.vertices.dropLast, z ∉ B) :
     HEq (p.trimToSets hs ht) p :=
-  trimToSets_heq_of_eq_comp_comp hs ht (after := nil t)
-    (@Quiver.Path.nil_comp V ⟨Q⟩ _ _ p).symm hs ht hA hB
+  trimToSets_heq_of_eq_comp_comp hs ht (before := nil s) (after := nil t) (by simp) hs ht
+    (by simpa using hA) hB
 
 /-- A trimmed walk whose source also belongs to the right terminal set is the walk of length
 zero at that source. -/
@@ -286,13 +286,13 @@ theorem trimToSets_heq_nil_of_trimToSetsSource_mem (p : ArrowWalk Q s t) (hs : s
 @[simp]
 theorem trimToSetsSource_nil (hs : s ∈ A) (hs' : s ∈ B) :
     (nil s : ArrowWalk Q s s).trimToSetsSource hs hs' = s :=
-  trimToSetsSource_eq_of_forall_notMem hs hs' (by simp) (by simp)
+  trimToSetsSource_eq_of_forall_tail_vertices_notMem hs hs' (by simp)
 
 /-- Trimming the walk of length zero at a vertex of both terminal sets keeps its target. -/
 @[simp]
 theorem trimToSetsTarget_nil (hs : s ∈ A) (hs' : s ∈ B) :
     (nil s : ArrowWalk Q s s).trimToSetsTarget hs hs' = s :=
-  trimToSetsTarget_eq_of_forall_notMem hs hs' (by simp) (by simp)
+  trimToSetsTarget_eq_of_forall_dropLast_vertices_notMem hs hs' (by simp)
 
 /-- Trimming the walk of length zero at a vertex of both terminal sets leaves it unchanged. -/
 @[simp]
@@ -300,23 +300,20 @@ theorem trimToSets_nil_heq (hs : s ∈ A) (hs' : s ∈ B) :
     HEq ((nil s : ArrowWalk Q s s).trimToSets hs hs') (nil s : ArrowWalk Q s s) :=
   trimToSets_heq_of_forall_notMem hs hs' (by simp) (by simp)
 
-
-/-- Trimming an already trimmed walk keeps its source. -/
+/-- Trimming an already trimmed walk keeps its source, whatever the new right terminal set. -/
 @[simp]
-theorem trimToSetsSource_trimToSets (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B)
-    (hs' : p.trimToSetsSource hs ht ∈ A) (ht' : p.trimToSetsTarget hs ht ∈ B) :
+theorem trimToSetsSource_trimToSets {B' : Set V} (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B)
+    (hs' : p.trimToSetsSource hs ht ∈ A) (ht' : p.trimToSetsTarget hs ht ∈ B') :
     (p.trimToSets hs ht).trimToSetsSource hs' ht' = p.trimToSetsSource hs ht :=
-  trimToSetsSource_eq_of_forall_notMem hs' ht'
-    (fun _ ↦ p.notMem_of_mem_tail_vertices_trimToSets hs ht)
-    fun _ ↦ p.notMem_of_mem_dropLast_vertices_trimToSets hs ht
+  trimToSetsSource_eq_of_forall_tail_vertices_notMem hs' ht'
+    fun _ ↦ p.notMem_of_mem_tail_vertices_trimToSets hs ht
 
-/-- Trimming an already trimmed walk keeps its target. -/
+/-- Trimming an already trimmed walk keeps its target, whatever the new left terminal set. -/
 @[simp]
-theorem trimToSetsTarget_trimToSets (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B)
-    (hs' : p.trimToSetsSource hs ht ∈ A) (ht' : p.trimToSetsTarget hs ht ∈ B) :
+theorem trimToSetsTarget_trimToSets {A' : Set V} (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B)
+    (hs' : p.trimToSetsSource hs ht ∈ A') (ht' : p.trimToSetsTarget hs ht ∈ B) :
     (p.trimToSets hs ht).trimToSetsTarget hs' ht' = p.trimToSetsTarget hs ht :=
-  trimToSetsTarget_eq_of_forall_notMem hs' ht'
-    (fun _ ↦ p.notMem_of_mem_tail_vertices_trimToSets hs ht)
+  trimToSetsTarget_eq_of_forall_dropLast_vertices_notMem hs' ht'
     fun _ ↦ p.notMem_of_mem_dropLast_vertices_trimToSets hs ht
 
 /-- Trimming is idempotent. -/
