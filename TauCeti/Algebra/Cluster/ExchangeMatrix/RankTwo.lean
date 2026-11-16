@@ -18,7 +18,9 @@ Mutation of a skew-symmetrizable matrix on at most two indices negates it. A wor
 by the sign `(-1)^length` and its full mutation class is `{B, -B}`. For arbitrary integer
 matrices on at most two indices, the Cartan companion and every off-diagonal product
 `bᵢⱼ bⱼᵢ` are still invariant. This includes empty and singleton index types.
-The bound at most three throughout this class is equivalent to the bound at the initial matrix.
+Any uniform off-diagonal bound `|b'ᵢⱼ b'ⱼᵢ| ≤ bound` over the mutation class is equivalent
+to the same bound on `|bᵢⱼ bⱼᵢ|` at the initial matrix. In particular, the Fomin–Zelevinsky
+two-finiteness condition uses `bound = 3`.
 These statements concern matrix mutation classes, not finiteness of cluster variables:
 skew-symmetrizable matrices with off-diagonal entry product of absolute value at least four
 also have finite matrix mutation classes on two indices.
@@ -44,17 +46,6 @@ theorem matrixMutation_refl_apply_of_card_le_two_of_ne (hK : Nat.card K ≤ 2)
   rcases Finite.eq_or_eq_of_card_le_two hK hij k with rfl | rfl <;>
     simp [matrixMutation_apply]
 
-/-- Mutation on at most two indices negates a skew-symmetrizable matrix. -/
-theorem matrixMutation_eq_neg_of_card_le_two (hK : Nat.card K ≤ 2)
-    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (k : K) :
-    matrixMutation (Function.Embedding.refl K) B k = -B := by
-  ext i j
-  by_cases hij : i = j
-  · subst j
-    simp only [(h.matrixMutation k).apply_self, Matrix.neg_apply, h.apply_self, neg_zero]
-  · simpa only [Matrix.neg_apply] using
-      matrixMutation_refl_apply_of_card_le_two_of_ne hK B k hij
-
 /-- A single mutation preserves the companion of any matrix on at most two indices. -/
 theorem cartanCompanion_matrixMutation_of_card_le_two (hK : Nat.card K ≤ 2)
     (B : Matrix K K ℤ) (k : K) :
@@ -65,24 +56,6 @@ theorem cartanCompanion_matrixMutation_of_card_le_two (hK : Nat.card K ≤ 2)
     simp
   · simp [hij, matrixMutation_refl_apply_of_card_le_two_of_ne hK B k hij]
 
-/-- On at most two indices a mutation word acts by its length parity. -/
-theorem foldl_matrixMutation_eq_neg_one_pow_length_smul_of_card_le_two (hK : Nat.card K ≤ 2)
-    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (w : List K) :
-    w.foldl (matrixMutation (Function.Embedding.refl K)) B = (-1 : ℤ) ^ w.length • B := by
-  induction w generalizing B with
-  | nil => simp
-  | cons k w ih =>
-    rw [List.foldl_cons, matrixMutation_eq_neg_of_card_le_two hK h, ih h.neg]
-    simp [pow_succ]
-
-/-- Every mutation word on at most two indices reaches the matrix or its negative. -/
-theorem foldl_matrixMutation_eq_or_eq_neg_of_card_le_two (hK : Nat.card K ≤ 2)
-    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (w : List K) :
-    w.foldl (matrixMutation (Function.Embedding.refl K)) B = B ∨
-      w.foldl (matrixMutation (Function.Embedding.refl K)) B = -B := by
-  rw [foldl_matrixMutation_eq_neg_one_pow_length_smul_of_card_le_two hK h]
-  rcases neg_one_pow_eq_or ℤ w.length with hp | hp <;> simp [hp]
-
 /-- Every mutation word preserves the companion of any matrix on at most two indices. -/
 theorem cartanCompanion_foldl_matrixMutation_of_card_le_two (hK : Nat.card K ≤ 2)
     (B : Matrix K K ℤ) (w : List K) :
@@ -92,45 +65,6 @@ theorem cartanCompanion_foldl_matrixMutation_of_card_le_two (hK : Nat.card K ≤
   | nil => rfl
   | cons k w ih =>
     rw [List.foldl_cons, ih, cartanCompanion_matrixMutation_of_card_le_two hK B k]
-
-/-- The complete mutation class on at most two indices consists of the matrix and its
-negative. If there are no indices, these two matrices coincide. -/
-theorem range_foldl_matrixMutation_of_card_le_two (hK : Nat.card K ≤ 2)
-    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) :
-    Set.range (fun w : List K ↦ w.foldl (matrixMutation (Function.Embedding.refl K)) B) =
-      {B, -B} := by
-  ext A
-  constructor
-  · rintro ⟨w, rfl⟩
-    simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
-      foldl_matrixMutation_eq_or_eq_neg_of_card_le_two hK h w
-  · intro hA
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hA
-    rcases hA with rfl | rfl
-    · exact ⟨[], rfl⟩
-    · cases isEmpty_or_nonempty K with
-      | inl h =>
-        exact ⟨[], by ext i; exact (h.false i).elim⟩
-      | inr hne =>
-        obtain ⟨k⟩ := hne
-        exact ⟨[k], by simpa using matrixMutation_eq_neg_of_card_le_two hK h k⟩
-
-/-- A skew-symmetrizable matrix on at most two indices has a finite mutation class,
-independently of its entry sizes. -/
-theorem finite_range_foldl_matrixMutation_of_card_le_two (hK : Nat.card K ≤ 2)
-    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) :
-    (Set.range (fun w : List K ↦
-      w.foldl (matrixMutation (Function.Embedding.refl K)) B)).Finite := by
-  rw [range_foldl_matrixMutation_of_card_le_two hK h]
-  exact (Set.finite_singleton (-B)).insert B
-
-/-- Every mutation word preserves each product of transposed entries when there are at
-most two indices, including the diagonal products. -/
-theorem foldl_matrixMutation_apply_mul_apply_of_card_le_two (hK : Nat.card K ≤ 2)
-    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (w : List K) (i j : K) :
-    w.foldl (matrixMutation (Function.Embedding.refl K)) B i j *
-      w.foldl (matrixMutation (Function.Embedding.refl K)) B j i = B i j * B j i := by
-  rcases foldl_matrixMutation_eq_or_eq_neg_of_card_le_two hK h w with hw | hw <;> simp [hw]
 
 /-- Every mutation word preserves each off-diagonal product of transposed entries of any
 matrix on at most two indices. -/
@@ -180,3 +114,82 @@ theorem forall_abs_foldl_matrixMutation_fin_two_mul_le_iff
   forall_abs_foldl_matrixMutation_mul_le_iff_of_card_le_two_of_ne (by simp) B bound (by decide)
 
 end TauCeti
+
+namespace Matrix.IsSkewSymmetrizer
+
+open TauCeti
+
+variable {K : Type*} [DecidableEq K] [Finite K]
+
+/-- Mutation on at most two indices negates a skew-symmetrizable matrix. -/
+theorem matrixMutation_eq_neg_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2) (k : K) :
+    matrixMutation (Function.Embedding.refl K) B k = -B := by
+  ext i j
+  by_cases hij : i = j
+  · subst j
+    simp only [(h.matrixMutation k).apply_self, Matrix.neg_apply, h.apply_self, neg_zero]
+  · simpa only [Matrix.neg_apply] using
+      matrixMutation_refl_apply_of_card_le_two_of_ne hK B k hij
+
+/-- On at most two indices a mutation word acts on a skew-symmetrizable matrix by its
+length parity. -/
+theorem foldl_matrixMutation_eq_neg_one_pow_length_smul_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2) (w : List K) :
+    w.foldl (matrixMutation (Function.Embedding.refl K)) B = (-1 : ℤ) ^ w.length • B := by
+  induction w generalizing B with
+  | nil => simp
+  | cons k w ih =>
+    rw [List.foldl_cons, h.matrixMutation_eq_neg_of_card_le_two hK, ih h.neg]
+    simp [pow_succ]
+
+/-- Every mutation word sends a skew-symmetrizable matrix on at most two indices to itself or
+its negative. -/
+theorem foldl_matrixMutation_eq_or_eq_neg_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2) (w : List K) :
+    w.foldl (matrixMutation (Function.Embedding.refl K)) B = B ∨
+      w.foldl (matrixMutation (Function.Embedding.refl K)) B = -B := by
+  rw [h.foldl_matrixMutation_eq_neg_one_pow_length_smul_of_card_le_two hK]
+  rcases neg_one_pow_eq_or ℤ w.length with hp | hp <;> simp [hp]
+
+/-- The complete mutation class of a skew-symmetrizable matrix on at most two indices
+consists of the matrix and its negative. If there are no indices, these two matrices coincide. -/
+theorem range_foldl_matrixMutation_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2) :
+    Set.range (fun w : List K ↦ w.foldl (matrixMutation (Function.Embedding.refl K)) B) =
+      {B, -B} := by
+  ext A
+  constructor
+  · rintro ⟨w, rfl⟩
+    simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
+      h.foldl_matrixMutation_eq_or_eq_neg_of_card_le_two hK w
+  · intro hA
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hA
+    rcases hA with rfl | rfl
+    · exact ⟨[], rfl⟩
+    · cases isEmpty_or_nonempty K with
+      | inl h =>
+        exact ⟨[], by ext i; exact (h.false i).elim⟩
+      | inr hne =>
+        obtain ⟨k⟩ := hne
+        exact ⟨[k], by simpa using h.matrixMutation_eq_neg_of_card_le_two hK k⟩
+
+/-- A skew-symmetrizable matrix on at most two indices has a finite mutation class,
+independently of its entry sizes. -/
+theorem finite_range_foldl_matrixMutation_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2) :
+    (Set.range (fun w : List K ↦
+      w.foldl (matrixMutation (Function.Embedding.refl K)) B)).Finite := by
+  rw [h.range_foldl_matrixMutation_of_card_le_two hK]
+  exact (Set.finite_singleton (-B)).insert B
+
+/-- Every mutation word preserves each product of transposed entries of a skew-symmetrizable
+matrix on at most two indices, including the diagonal products. -/
+theorem foldl_matrixMutation_apply_mul_apply_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2)
+    (w : List K) (i j : K) :
+    w.foldl (matrixMutation (Function.Embedding.refl K)) B i j *
+      w.foldl (matrixMutation (Function.Embedding.refl K)) B j i = B i j * B j i := by
+  rcases h.foldl_matrixMutation_eq_or_eq_neg_of_card_le_two hK w with hw | hw <;> simp [hw]
+
+end Matrix.IsSkewSymmetrizer
