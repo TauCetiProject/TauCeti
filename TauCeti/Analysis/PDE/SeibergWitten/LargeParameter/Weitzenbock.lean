@@ -212,31 +212,24 @@ theorem inv_two_smul_cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_add
 /-- **The remainder of the Ginzburg–Landau form is bounded below.** For `χ = φ + β` with
 `P_α φ = φ` and `P_α β = 0`, `r ≥ 0` and any two-form `μ`, the remainder
 `τ = (r / 2) β + (1 / 2) C(iμ) χ` satisfies `Re ⟪χ, τ⟫ ≥ -(√2 / 2) ‖μ‖ ‖χ‖²`. The bound does not
-depend on `r`: the term `(r / 2) β` pairs with `χ` to `(r / 2) ‖β‖² ≥ 0`. -/
+depend on `r`: the term `(r / 2) β` pairs with `χ` to `(r / 2) ‖β‖² ≥ 0`, and the bound on the
+`μ` term is `abs_re_inner_cliffordRestriction_apply_self_le`. -/
 theorem neg_le_re_inner_smul_add_inv_two_smul_cliffordRestriction_apply
     (hφ : cliffordProjection o ρ ω φ = φ) (hβ : cliffordProjection o ρ ω β = 0) {r : ℝ}
     (hr : 0 ≤ r) (μ : ⋀[ℝ]^2 V) :
     -(√2 / 2 * ‖μ‖ * ‖φ + β‖ ^ 2) ≤
       (⟪φ + β, (r / 2) • β + (2⁻¹ : ℝ) • cliffordRestriction o ρ μ (φ + β)⟫_ℂ).re := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   -- The `β` term pairs to `(r / 2) ‖β‖²`.
   have hββ : (⟪φ + β, β⟫_ℂ).re = ‖β‖ ^ 2 := by
     rw [inner_add_left, inner_eq_zero_of_cliffordProjection o hρ hφ hβ, zero_add,
       inner_self_eq_norm_sq_to_K]
     simp [← Complex.ofReal_pow]
-  -- The `μ` term pairs to `4 ⟪q(χ), μ⟫`, bounded by Cauchy–Schwarz and `‖q(χ)‖ = ‖χ‖² / (2 √2)`.
-  have hq := inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl μ (φ + β)
-  have hn := norm_quadraticTwoForm o hQ hkl hρ h₂ (φ + β)
-  have hcs := neg_le_of_abs_le (abs_real_inner_le_norm
-    (quadraticTwoForm o ρ hkl (φ + β) : ⋀[ℝ]^2 V) μ)
-  have hsqrt : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
+  -- The `μ` term pairs to `2 ⟪q(χ), μ⟫`, at least `-(√2 / 2) ‖μ‖ ‖χ‖²`.
+  have hμ := neg_le_of_abs_le
+    (abs_re_inner_cliffordRestriction_apply_self_le o hQ hρ h₂ μ (φ + β))
   simp only [inner_add_right, inner_smul_right_eq_smul, Complex.add_re, Complex.smul_re,
     smul_eq_mul, hββ]
-  rw [Submodule.norm_coe, hn] at hcs
   have hβ0 : 0 ≤ r / 2 * ‖β‖ ^ 2 := by positivity
-  have key : √2 / 2 * ‖μ‖ * ‖φ + β‖ ^ 2 = 2 * (‖φ + β‖ ^ 2 / (2 * √2) * ‖μ‖) := by
-    field_simp
-    linear_combination ‖μ‖ * ‖φ + β‖ ^ 2 * hsqrt
   linarith
 
 end Curvature
