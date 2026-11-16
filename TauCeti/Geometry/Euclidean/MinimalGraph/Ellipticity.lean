@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Tactic.Linarith
 
 /-!
@@ -24,80 +24,89 @@ public noncomputable section
 
 namespace TauCeti.MinimalGraph
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E : Type*}
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The coefficient matrix of the nondivergence minimal graph equation, as a linear map. -/
-def principalOperator (p : E) : E →ₗ[ℝ] E where
-  toFun v := (1 + ‖p‖ ^ 2) • v - (inner ℝ p v) • p
-  map_add' x y := by
-    simp only [inner_add_right, smul_add, add_smul]
-    abel
-  map_smul' r x := by
-    simp only [inner_smul_right, smul_sub, smul_smul, RingHom.id_apply]
-    congr 1
-    ring_nf
+def principalOperator (p : E) : E →ₗ[ℝ] E :=
+  (1 + ‖p‖ ^ 2) • LinearMap.id - (InnerProductSpace.rankOne ℝ p p).toLinearMap
+
+/-- Evaluate the coefficient operator on a vector. -/
+theorem principalOperator_apply (p v : E) :
+    principalOperator p v = (1 + ‖p‖ ^ 2) • v - (inner ℝ p v) • p := by
+  simp [principalOperator, InnerProductSpace.rankOne_apply]
 
 /-- The principal quadratic form of the Euclidean minimal graph equation at gradient `p`. -/
 def principalForm (p v : E) : ℝ :=
   (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 - (inner ℝ p v) ^ 2
 
+/-- The defining formula of the principal quadratic form. -/
+theorem principalForm_def (p v : E) :
+    principalForm p v = (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 - (inner ℝ p v) ^ 2 := (rfl)
+
 /-- The quadratic form is induced by the coefficient operator. -/
 theorem principalForm_eq_inner (p v : E) :
     principalForm p v = inner ℝ (principalOperator p v) v := by
-  change (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 - (inner ℝ p v) ^ 2 =
-    inner ℝ ((1 + ‖p‖ ^ 2) • v - (inner ℝ p v) • p) v
-  rw [inner_sub_left, real_inner_smul_left, real_inner_smul_left,
+  rw [principalForm_def, principalOperator_apply, inner_sub_left,
+    real_inner_smul_left, real_inner_smul_left,
     real_inner_self_eq_norm_sq]
   ring
 
-/-- The gradient is an eigenvector of the coefficient operator with eigenvalue one. -/
+/-- The coefficient operator fixes the gradient, including the zero gradient. -/
+@[simp]
 theorem principalOperator_self (p : E) : principalOperator p p = p := by
-  change (1 + ‖p‖ ^ 2) • p - (inner ℝ p p) • p = p
-  rw [real_inner_self_eq_norm_sq, ← sub_smul]
+  rw [principalOperator_apply, real_inner_self_eq_norm_sq, ← sub_smul]
   convert one_smul ℝ p using 1
   ring_nf
 
-/-- Every direction orthogonal to the gradient has eigenvalue `1 + ‖p‖²`. -/
+/-- The coefficient operator scales vectors orthogonal to the gradient by `1 + ‖p‖²`. -/
 theorem principalOperator_of_orthogonal (p v : E) (h : inner ℝ p v = 0) :
     principalOperator p v = (1 + ‖p‖ ^ 2) • v := by
-  simp [principalOperator, h]
+  simp [principalOperator_apply, h]
 
 /-- The lower ellipticity bound is independent of the gradient. -/
 theorem norm_sq_le_principalForm (p v : E) : ‖v‖ ^ 2 ≤ principalForm p v := by
   have h := real_inner_mul_inner_self_le p v
   rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at h
-  unfold principalForm
+  rw [principalForm_def]
   nlinarith
 
 /-- The upper ellipticity bound at a fixed gradient. -/
 theorem principalForm_le (p v : E) :
     principalForm p v ≤ (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 := by
-  unfold principalForm
+  rw [principalForm_def]
   nlinarith [sq_nonneg (inner ℝ p v)]
 
-/-- The principal symbol is positive on every nonzero tangent direction. -/
-theorem principalForm_pos (p : E) {v : E} (hv : v ≠ 0) : 0 < principalForm p v :=
-  lt_of_lt_of_le (sq_pos_of_pos (norm_pos_iff.mpr hv)) (norm_sq_le_principalForm p v)
-
-/-- The gradient direction has eigenvalue one in the quadratic-form sense. -/
+/-- The principal form evaluated on the gradient is its squared norm. -/
+@[simp]
 theorem principalForm_self (p : E) : principalForm p p = ‖p‖ ^ 2 := by
-  rw [principalForm, real_inner_self_eq_norm_sq]
+  rw [principalForm_def, real_inner_self_eq_norm_sq]
   ring
 
-/-- A direction orthogonal to the gradient has eigenvalue `1 + ‖p‖²` in the
-quadratic-form sense. -/
+/-- On vectors orthogonal to the gradient, the form is `1 + ‖p‖²` times the squared norm. -/
 theorem principalForm_of_orthogonal (p v : E) (h : inner ℝ p v = 0) :
     principalForm p v = (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 := by
-  simp [principalForm, h]
+  simp [principalForm_def, h]
 
 /-- A gradient bound gives uniform ellipticity with ratio at most `1 + M²`. -/
 theorem principalForm_le_of_norm_le (p v : E) {M : ℝ}
-    (hM : 0 ≤ M) (hp : ‖p‖ ≤ M) :
+    (hp : ‖p‖ ≤ M) :
     principalForm p v ≤ (1 + M ^ 2) * ‖v‖ ^ 2 := by
   have hp' : ‖p‖ ^ 2 ≤ M ^ 2 := by nlinarith [norm_nonneg p]
   have hv : 0 ≤ ‖v‖ ^ 2 := sq_nonneg _
   calc
     principalForm p v ≤ (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 := principalForm_le p v
     _ ≤ (1 + M ^ 2) * ‖v‖ ^ 2 := mul_le_mul_of_nonneg_right (by linarith) hv
+
+end Seminormed
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The principal symbol is positive on every nonzero tangent vector. -/
+theorem principalForm_pos (p : E) {v : E} (hv : v ≠ 0) : 0 < principalForm p v :=
+  lt_of_lt_of_le (sq_pos_of_pos (norm_pos_iff.mpr hv)) (norm_sq_le_principalForm p v)
 
 end TauCeti.MinimalGraph
