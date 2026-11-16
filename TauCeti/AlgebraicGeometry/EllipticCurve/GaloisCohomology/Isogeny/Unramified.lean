@@ -114,21 +114,20 @@ theorem mem_unramifiedKerCohomology_iff
     {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
     c ∈ φ.unramifiedKerCohomology ↔
       explicitRes1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) c = 0 :=
-  mem_unramifiedH1_iff
+        (separableClosureInertiaSubgroup K) c = 0 := by
+  rw [unramifiedKerCohomology_eq_unramifiedH1, mem_unramifiedH1_iff]
 
 /-- `φ.unramifiedKerCohomology` is finite, since `(ofIsogeny φ).KerCoeff` is finite. -/
-instance finite_unramifiedKerCohomology : Finite φ.unramifiedKerCohomology :=
-  inferInstanceAs (Finite (unramifiedH1 K (ofIsogeny φ).KerCoeff))
+instance finite_unramifiedKerCohomology : Finite φ.unramifiedKerCohomology := by
+  rw [unramifiedKerCohomology_eq_unramifiedH1]
+  infer_instance
 
 /-- **The unramified cohomology of `E₁[φ]` has the order of the rational kernel `E₁(K)[φ]`.** No
 separability, good-reduction, or residue-characteristic assumption is needed. -/
 theorem natCard_unramifiedKerCohomology_eq_natCard_ker [DecidableEq K] :
-    Nat.card φ.unramifiedKerCohomology = Nat.card (ofIsogeny φ).pointMapHom.ker :=
-  (natCard_unramifiedH1_eq_natCard_H0 K (ofIsogeny φ).KerCoeff).trans
+    Nat.card φ.unramifiedKerCohomology = Nat.card (ofIsogeny φ).pointMapHom.ker := by
+  rw [unramifiedKerCohomology_eq_unramifiedH1]
+  exact (natCard_unramifiedH1_eq_natCard_H0 K (ofIsogeny φ).KerCoeff).trans
     (Nat.card_congr (ofIsogeny φ).kerPointMapEquivInvariants.symm.toEquiv)
 
 /-- Inclusion `E₁[φ] → E₁[deg φ]` carries unramified classes to unramified classes. -/
@@ -220,15 +219,10 @@ theorem kummerMap_mem_unramifiedKerCohomology [DecidableEq K]
     φ.kummerMap P ∈ φ.unramifiedKerCohomology := by
   obtain ⟨Q, hQ⟩ := φ.pointCoeffMap_ofIsogeny_surjective (W₂.basePointCoeff P)
   rw [unramifiedKerCohomology_eq_unramifiedH1, kummerMap_eq_H1pi hQ,
-    QuotientAddGroup.mk'_apply,
-    ← explicitInfl1_descendZ1
-      (N := (inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      ⟨Hom.kummerCocycle hQ, Hom.kummerCocycle_mem_Z1 hQ⟩
-      (fun ⟨_, τ, hτ, hτσ⟩ ↦ hτσ ▸ kummerCocycle_eq_zero_of_mem_inertiaSubgroup hdeg hQ hτ)]
-  exact explicitInfl1_mem_unramifiedH1 _
+    QuotientAddGroup.mk'_apply]
+  exact mk_mem_unramifiedH1_of_forall_mem_inertiaSubgroup
+    (f := ⟨Hom.kummerCocycle hQ, Hom.kummerCocycle_mem_Z1 hQ⟩)
+    fun _ hσ ↦ kummerCocycle_eq_zero_of_mem_inertiaSubgroup hdeg hQ hσ
 
 /-- **At good reduction of `W₁` prime to `deg φ`, the local Kummer image lies in the unramified
 cohomology.** -/

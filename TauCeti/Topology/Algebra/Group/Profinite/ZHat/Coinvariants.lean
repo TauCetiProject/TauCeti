@@ -10,6 +10,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 import Mathlib.GroupTheory.Index
+import TauCeti.Topology.Algebra.ConstMulAction
+import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Topology.Algebra.GroupAction.Discrete
 
 /-!
 # Coinvariants and first continuous cohomology of the profinite integers
@@ -123,14 +126,10 @@ theorem ker_genSubId_eq_fixedPoints :
   ext m
   rw [AddMonoidHom.mem_ker, genSubId_apply, sub_eq_zero, FixedPoints.mem_addSubgroup]
   refine ⟨fun hm g ↦ ?_, fun hm ↦ hm gen⟩
-  have hclosed : IsClosed (MulAction.stabilizer zHat.{u} m : Set zHat.{u}) :=
-    isClosed_singleton.preimage (continuous_id.smul continuous_const)
-  have htop : MulAction.stabilizer zHat.{u} m = ⊤ := eq_top_iff.mpr <| by
-    rw [← topologicalClosure_closure_gen.{u}]
-    refine Subgroup.topologicalClosure_minimal _ ?_ hclosed
-    rw [Subgroup.closure_le]
-    exact Set.singleton_subset_iff.mpr hm
-  exact MulAction.mem_stabilizer_iff.mp (by rw [htop]; trivial)
+  have htop : (⊤ : Subgroup zHat.{u}) ≤ MulAction.stabilizer zHat.{u} m := by
+    rw [← topologicalClosure_zpowers_gen.{u}, ← closedZpowers_def]
+    exact (closedZpowers_le (isClosed_stabilizer (continuous_id.smul continuous_const))).mpr hm
+  exact MulAction.mem_stabilizer_iff.mp (htop (Subgroup.mem_top g))
 
 /-- **For a finite `T₁` (hence discrete) continuous `zHat`-module, the coinvariants and invariants
 have the same order**, as the cokernel and kernel of the endomorphism `genSubId M`. -/
@@ -226,16 +225,13 @@ variable {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
 `modSubgroup d`.** -/
 theorem exists_modSubgroup_smul_eq_self (m : M) :
     ∃ d : ℕ+, ∀ x : zHat.{u}, x ∈ modSubgroup d → x • m = m := by
-  let U : OpenNormalSubgroup zHat.{u} :=
-    { toSubgroup := MulAction.stabilizer zHat.{u} m
-      isOpen' := (isOpen_discrete {m}).preimage (continuous_id.smul continuous_const)
-      isNormal' := ⟨fun n hn g ↦ by rwa [mul_comm g n, mul_inv_cancel_right]⟩ }
+  obtain ⟨U, hU⟩ := exists_openNormalSubgroup_smul_eq_self (G := zHat.{u}) m
   obtain ⟨d, ψ, hψ⟩ := exists_monoidHom_mk_eq_toZMod U
   refine ⟨d, fun x hx ↦ ?_⟩
   rw [mem_modSubgroup] at hx
   have hmk : (x : zHat.{u} ⧸ U.toSubgroup) = 1 := by
     simpa [hx] using hψ (Additive.ofMul x)
-  exact (QuotientGroup.eq_one_iff x).mp hmk
+  exact hU x ((QuotientGroup.eq_one_iff x).mp hmk)
 
 omit [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul zHat.{u} M] in
 /-- The partial geometric sum `∑ j < n, zHat.gen ^ j • m`. -/
@@ -303,6 +299,7 @@ abbrev Coinvariants : Type v :=
   M ⧸ (genSubId.{u} M).range
 
 /-- In the `zHat`-coinvariants of a discrete continuous `zHat`-module, `zHat` acts trivially. -/
+@[simp]
 theorem mk_smul_eq_mk_coinvariants (g : zHat.{u}) (m : M) :
     (QuotientAddGroup.mk (g • m) : Coinvariants.{u} M) = QuotientAddGroup.mk m :=
   QuotientAddGroup.eq.mpr <| by
@@ -424,6 +421,18 @@ theorem h1AddEquivCoinvariants_apply (hM : IsAddTorsion M) (x : H1 zHat.{u} M) :
 theorem h1AddEquivCoinvariants_toAddMonoidHom (hM : IsAddTorsion M) :
     (h1AddEquivCoinvariants.{u} M hM : H1 zHat.{u} M →+ Coinvariants.{u} M) = evalGen.{u} M :=
   (rfl)
+
+/-- Evaluating at `zHat.gen` cancels the inverse of `h1AddEquivCoinvariants`. -/
+@[simp]
+theorem evalGen_h1AddEquivCoinvariants_symm (hM : IsAddTorsion M) (q : Coinvariants.{u} M) :
+    evalGen.{u} M ((h1AddEquivCoinvariants.{u} M hM).symm q) = q :=
+  (h1AddEquivCoinvariants.{u} M hM).apply_symm_apply q
+
+/-- Applying the inverse of `h1AddEquivCoinvariants` to `evalGen M x` recovers `x`. -/
+@[simp]
+theorem h1AddEquivCoinvariants_symm_evalGen (hM : IsAddTorsion M) (x : H1 zHat.{u} M) :
+    (h1AddEquivCoinvariants.{u} M hM).symm (evalGen.{u} M x) = x :=
+  (h1AddEquivCoinvariants.{u} M hM).symm_apply_apply x
 
 variable (M) in
 /-- **For a finite discrete continuous `zHat`-module `M`, `#H¹(zHat, M) = #H⁰(zHat, M)`.** -/

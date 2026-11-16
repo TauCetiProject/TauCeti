@@ -61,11 +61,8 @@ theorem mem_unramifiedTorsionCohomology_iff
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} :
     c ∈ W.unramifiedTorsionCohomology m ↔
       explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) c = 0 :=
-  mem_unramifiedH1_iff
+        (separableClosureInertiaSubgroup K) c = 0 := by
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1, mem_unramifiedH1_iff]
 
 /-- **Unramified classes restrict to unramified classes.** For an extension `L/K` of
 nonarchimedean local fields and a `K`-embedding `τ : Kˢ → Lˢ` of separable closures, restriction
@@ -142,15 +139,10 @@ theorem kummerMap_mem_unramifiedTorsionCohomology
   obtain ⟨Q, hQ⟩ := (W.kummerShortExact m hm).proj_surjective (W.basePointCoeff P)
   rw [kummerShortExact_proj, nsmulAddMonoidHom_apply] at hQ
   rw [unramifiedTorsionCohomology_eq_unramifiedH1, kummerMap_eq_H1pi hm hQ,
-    QuotientAddGroup.mk'_apply,
-    ← explicitInfl1_descendZ1
-      (N := (inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩
-      (fun ⟨_, τ, hτ, hτσ⟩ ↦ hτσ ▸ kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hτ)]
-  exact explicitInfl1_mem_unramifiedH1 _
+    QuotientAddGroup.mk'_apply]
+  exact mk_mem_unramifiedH1_of_forall_mem_inertiaSubgroup
+    (f := ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩)
+    fun _ hσ ↦ kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hσ
 
 open scoped Classical in
 /-- At good reduction away from the multiplier, the local Kummer condition is contained in
