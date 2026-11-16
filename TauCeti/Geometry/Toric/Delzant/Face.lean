@@ -27,9 +27,9 @@ of facets can cut out the same face.
 For a Delzant polytope the sets of facets give a faithful dictionary of the faces, which is the
 combinatorial input to the local models of symplectic toric manifolds over the faces of their
 moment polytopes. The key fact is that a Delzant polytope is *simple*: the normals of the facets
-through any point of `Δ` are among the normals at a vertex, so they are part of a lattice basis
-(`TauCeti.Toric.IsDelzant.linearIndepOn_activeSet`). Consequently, for every set `s` of facets
-with `F_s` nonempty:
+through any point of `Δ` are among the normals at a vertex, so they are linearly independent
+over `ℤ` (`TauCeti.Toric.IsDelzant.linearIndepOn_activeSet`). Consequently, for every set `s` of
+facets with `F_s` nonempty:
 
 * the normals `u j`, `j ∈ s`, are linearly independent, and their real span, the Lie algebra of
   the isotropy subtorus over the face, has dimension `#s`
@@ -266,8 +266,8 @@ theorem exists_activeSet_eq [Finite ι] (hi : IsIntegralLattice i)
   -- `s` and to `1` with the other normals at `v`.
   set w : StrongDual ℝ V := (hvs.edgeBasis hi).equivFun.symm fun k ↦ if (k : ι) ∈ s then 0 else 1
   have hw (k : activeSet (facetPairing i u) c v) :
-      w (i (u k)) = if (k : ι) ∈ s then 0 else 1 := by
-    rw [← hvs.edgeBasis_repr hi, ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+      w (i (u k)) = if (k : ι) ∈ s then 0 else 1 :=
+    hvs.edgeBasis_equivFun_symm_apply hi _ k
   have hw₀ : ∀ j ∈ activeSet (facetPairing i u) c y, 0 ≤ w (i (u j)) := fun j hj ↦ by
     rw [hw ⟨j, hsub hj⟩]
     split_ifs <;> norm_num
@@ -363,10 +363,10 @@ theorem finrank_vectorSpan_facetFace_add_ncard [Finite ι] (hi : IsIntegralLatti
   have hΦ : Function.Surjective Φ := fun f ↦ by
     refine ⟨(hvs.edgeBasis hi).equivFun.symm fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0,
       funext fun j ↦ ?_⟩
-    have := congrFun ((hvs.edgeBasis hi).equivFun.apply_symm_apply
-      fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0) ⟨j, hsub (hys j.2)⟩
-    rw [Module.Basis.equivFun_apply, hvs.edgeBasis_repr hi] at this
-    simpa [Φ, j.2] using this
+    have := hvs.edgeBasis_equivFun_symm_apply hi
+      (fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0) ⟨j, hsub (hys j.2)⟩
+    simp only [j.2, dite_true] at this
+    simpa only [Φ, LinearMap.pi_apply, facetPairing_apply] using this
   have hker : LinearMap.ker Φ = vectorSpan ℝ (facetFace i u c s) := by
     rw [hΔ.vectorSpan_facetFace hi ⟨y, hy, hys⟩, LinearMap.ker_pi]
     ext w
