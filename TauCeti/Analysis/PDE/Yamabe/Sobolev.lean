@@ -23,48 +23,26 @@ import TauCeti.MeasureTheory.Integral.ContinuousMap
 # The Yamabe quotient on the Sobolev space `H¹`
 
 On a closed smooth Riemannian manifold `(M, g)` of dimension `n`, the weak form of the conformal
-Laplacian `L_g = aₙ Δ⁺_g + Scal_g` on the Sobolev space `H¹(M)` (`TauCeti.Manifold.SobolevH1`) is
-the continuous symmetric bilinear form
-
-`E_g(w, v) = aₙ D_g(w, v) + ∫ Scal_g w v dV_g`
-
-(`TauCeti.Yamabe.energyForm`), where `D_g` is the Dirichlet form `SobolevH1.dirichletForm` and the
-scalar-curvature pairing is `SobolevH1.potentialForm`. Dividing `E_g(w, w)` by the critical `Lᵖ`
-moment `(∫ |w| ^ pₙ dV_g) ^ (2 / pₙ)` (`pₙ = 2 n / (n - 2)`) defines the **weak Yamabe quotient**
-`TauCeti.Yamabe.weakYamabeQuotient` on `H¹(M)`.
+Laplacian `L_g = aₙ Δ⁺_g + Scal_g` on `H¹(M)` (`TauCeti.Manifold.SobolevH1`) is the continuous
+symmetric bilinear form `E_g(w, v) = aₙ D_g(w, v) + ∫ Scal_g w v dV_g`
+(`TauCeti.Yamabe.energyForm`). Dividing `E_g(w, w)` by `(∫ |w| ^ pₙ dV_g) ^ (2 / pₙ)`
+(`pₙ = 2 n / (n - 2)`) defines the **weak Yamabe quotient** `TauCeti.Yamabe.weakYamabeQuotient` on
+`H¹(M)`.
 
 In dimension `n > 2`, the critical Sobolev embedding `SobolevH1.toLpOfLE` makes the denominator
-finite and norm-continuous on `H¹(M)` and positive away from `0`. This file establishes the
-variational properties of `weakYamabeQuotient` on `H¹(M)` and identifies its infimum with the
-smooth Yamabe invariant:
-
-* **Isometry and conformal invariance**: `energyForm` and `weakYamabeQuotient` are invariant under
-  pullback along Riemannian isometries (`energyForm_compRiemannianIsometry`,
-  `weakYamabeQuotient_compRiemannianIsometry`) and under the conformal multiplication equivalence
-  `conformalMulEquiv : H¹(WithMetric ĝ) ≃L[ℝ] H¹(WithMetric g)` for `ĝ = u ^ (4 / (n - 2)) g`
-  (`energyForm_conformalMulEquiv`, `weakYamabeQuotient_conformalMulEquiv`), so conformal metrics
-  have the same weak Yamabe quotients and the same weak Yamabe infimum
-  (`image_weakYamabeQuotient_eq_of_mem_conformalClass`,
-  `sInf_weakYamabeQuotient_eq_of_mem_conformalClass`).
-* **First variation and weak Euler–Lagrange equation**: for `w ≠ 0` and `v` in `H¹(M)`,
-  `hasDerivAt_weakYamabeQuotient_add_smul` computes the derivative of `t ↦ Q_g(w + t • v)` at
-  `t = 0`. A nonzero `w ∈ H¹(M)` is stationary along `H¹` perturbations—or equivalently along
-  smooth perturbations `ofSmooth φ`—if and only if it is a weak solution of
-  `L_g w = c |w| ^ (pₙ - 2) w`
-  (`forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq`,
-  `forall_ofSmooth_hasDerivAt_weakYamabeQuotient_iff_exists_energyForm_eq`), with nonnegative
-  specialization `L_g w = c w ^ (pₙ - 1)` and multiplier formula `Q_g(w) = c N(w) ^ (1 - 2 / pₙ)`
-  (`weakYamabeQuotient_eq_of_energyForm_eq`).
-* **Lower bounds, equality of weak and smooth infima, and Aubin's bound**: smooth density and norm
-  continuity extend the scalar-curvature lower bounds from `C¹` functions to `H¹(M)`
+finite, norm-continuous, and positive away from `0`. We establish:
+* **Isometry and conformal invariance** (`energyForm_compRiemannianIsometry`,
+  `weakYamabeQuotient_compRiemannianIsometry`, `conformalMulEquiv`, `energyForm_conformalMulEquiv`,
+  `weakYamabeQuotient_conformalMulEquiv`, `sInf_weakYamabeQuotient_eq_of_mem_conformalClass`);
+* **First variation and weak Euler–Lagrange equation** (`hasDerivAt_weakYamabeQuotient_add_smul`,
+  `forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq`,
+  `forall_ofSmooth_hasDerivAt_weakYamabeQuotient_iff_exists_energyForm_eq`,
+  `weakYamabeQuotient_eq_of_energyForm_eq`);
+* **Lower bounds, equality of weak and smooth infima, and Aubin's bound**
   (`neg_integral_scalarCurvature_negPart_rpow_le_weakYamabeQuotient`,
-  `exists_pos_le_weakYamabeQuotient_of_scalarCurvature_pos`) and identify the infimum of
-  `weakYamabeQuotient` over `{w : H¹(M) | w ≠ 0}` with the infimum of `yamabeQuotient` over nonzero
-  smooth functions and over strictly positive smooth functions
-  (`sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient`,
-  `sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient_pos`). Combining bubble test functions with
-  positive regularization yields Aubin's bound `exists_yamabeQuotient_lt` for strictly positive
-  smooth functions and `sInf_weakYamabeQuotient_le_sphereYamabeConstant` on `H¹(M)`.
+  `sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient`,
+  `sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient_pos`, `exists_yamabeQuotient_lt`,
+  `sInf_weakYamabeQuotient_le_sphereYamabeConstant`).
 
 ## References
 
@@ -116,12 +94,10 @@ theorem energyForm_apply (w v : SobolevH1 I M) :
   rw [energyForm, add_apply, add_apply, smul_apply, smul_apply, smul_eq_mul,
     SobolevH1.potentialForm_apply]
   congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [ContinuousMap.coeFn_toLp (p := ⊤) (𝕜 := ℝ) (riemannianVolume I M)
+  exact integral_congr_ae <| (ContinuousMap.coeFn_toLp (p := ⊤) (𝕜 := ℝ) (riemannianVolume I M)
     ⟨(CovariantDerivative.leviCivitaConnection I M).scalarCurvature,
-      (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous⟩]
-    with x hx
-  rw [scalarCurvatureLp, hx, ContinuousMap.coe_mk]
+      (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous⟩).mono
+    fun x hx ↦ by dsimp only; rw [scalarCurvatureLp, hx, ContinuousMap.coe_mk]
 
 /-- The weak Yamabe energy form is symmetric. -/
 theorem energyForm_comm (w v : SobolevH1 I M) : energyForm I w v = energyForm I v w := by
@@ -132,8 +108,7 @@ theorem energyForm_comm (w v : SobolevH1 I M) : energyForm I w v = energyForm I 
 theorem energyForm_add_self (w v : SobolevH1 I M) :
     energyForm I (w + v) (w + v) =
       energyForm I w w + 2 * energyForm I w v + energyForm I v v := by
-  simp only [map_add, add_apply, energyForm_comm v w]
-  ring
+  simp only [map_add, add_apply, energyForm_comm v w]; ring
 
 /-- On smooth functions `u` and `v`, `energyForm` is the classical Yamabe bilinear energy
 `∫ (aₙ ⟪grad u, grad v⟫ + Scal_g u v) dV_g`. -/
@@ -143,16 +118,14 @@ theorem energyForm_ofSmooth (u v : C^∞⟮I, M; ℝ⟯) :
       ∫ x, (conformalCoefficient (finrank ℝ E) * inner ℝ (mgradient I u x) (mgradient I v x) +
         (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (u x * v x))
         ∂riemannianVolume I M := by
-  have hu1 : ContMDiff I 𝓘(ℝ) 1 u := u.contMDiff.of_le (by simp)
-  have hv1 : ContMDiff I 𝓘(ℝ) 1 v := v.contMDiff.of_le (by simp)
-  have hS : Continuous (CovariantDerivative.leviCivitaConnection I M).scalarCurvature :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
   have h1 : Continuous fun x ↦
       conformalCoefficient (finrank ℝ E) * inner ℝ (mgradient I u x) (mgradient I v x) :=
-    continuous_const.mul (continuous_inner_mgradient hu1 hv1)
+    continuous_const.mul (continuous_inner_mgradient (u.contMDiff.of_le (by simp))
+      (v.contMDiff.of_le (by simp)))
   have h2 : Continuous fun x ↦
       (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (u x * v x) :=
-    hS.mul ((map_continuous u).mul (map_continuous v))
+    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.mul
+      ((map_continuous u).mul (map_continuous v))
   have hpot : ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
       SobolevH1.toLp (SobolevH1.ofSmooth u) x *
       SobolevH1.toLp (SobolevH1.ofSmooth v) x ∂riemannianVolume I M =
@@ -179,41 +152,29 @@ with a smooth test function `φ` in `energyForm` integrates `toLp w` against
 theorem energyForm_ofSmooth_right [I.Boundaryless] (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯) :
     energyForm I w (SobolevH1.ofSmooth φ) =
       ∫ x, SobolevH1.toLp w x * conformalLaplacian I φ x ∂riemannianVolume I M := by
-  have hw_mem : MemLp (SobolevH1.toLp w) 2 (riemannianVolume I M) := Lp.memLp (SobolevH1.toLp w)
-  have hΔ : Continuous fun x ↦ -laplaceBeltrami I φ x :=
-    (continuous_laplaceBeltrami (φ.contMDiff.of_le (by simp))).neg
-  have hSφ : Continuous fun x ↦
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * φ x :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.mul
-      (map_continuous φ)
-  have hΔ2 : MemLp (fun x ↦ -laplaceBeltrami I φ x) 2 (riemannianVolume I M) :=
-    hΔ.memLp_of_hasCompactSupport (.of_compactSpace _)
-  have hSφ2 : MemLp (fun x ↦
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * φ x) 2
-      (riemannianVolume I M) :=
-    hSφ.memLp_of_hasCompactSupport (.of_compactSpace _)
+  have hint {f : M → ℝ} (hf : Continuous f) :
+      Integrable (fun x ↦ SobolevH1.toLp w x * f x) (riemannianVolume I M) :=
+    (Lp.memLp (SobolevH1.toLp w)).integrable_mul
+      (hf.memLp_of_hasCompactSupport (p := 2) (.of_compactSpace _))
   have h1 : Integrable (fun x ↦ conformalCoefficient (finrank ℝ E) *
       (SobolevH1.toLp w x * -laplaceBeltrami I φ x)) (riemannianVolume I M) :=
-    (hw_mem.integrable_mul hΔ2).const_mul _
+    (hint (continuous_laplaceBeltrami (φ.contMDiff.of_le (by simp))).neg).const_mul _
   have h2 : Integrable (fun x ↦ SobolevH1.toLp w x *
       ((CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * φ x))
       (riemannianVolume I M) :=
-    hw_mem.integrable_mul hSφ2
+    hint ((CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.mul
+      (map_continuous φ))
   have hpot : ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
       SobolevH1.toLp w x * SobolevH1.toLp (SobolevH1.ofSmooth φ) x ∂riemannianVolume I M =
       ∫ x, SobolevH1.toLp w x *
         ((CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * φ x)
-        ∂riemannianVolume I M := by
-    refine integral_congr_ae ?_
-    filter_upwards [SobolevH1.toLp_ofSmooth_ae_eq φ] with x hx
-    rw [hx]
-    ring
+        ∂riemannianVolume I M :=
+    integral_congr_ae <| (SobolevH1.toLp_ofSmooth_ae_eq φ).mono fun x hx ↦ by
+      dsimp only; rw [hx]; ring
   rw [energyForm_apply, SobolevH1.dirichletForm_ofSmooth_right, hpot, ← integral_const_mul,
     ← integral_add h1 h2]
-  refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-  dsimp only [Pi.add_apply]
-  rw [conformalLaplacian_def]
-  ring
+  exact integral_congr_ae (Eventually.of_forall fun x ↦ by
+    dsimp only [Pi.add_apply]; rw [conformalLaplacian_def]; ring)
 
 /-- Nonnegative scalar curvature makes `energyForm` nonnegative on the diagonal. -/
 theorem energyForm_self_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
@@ -222,8 +183,7 @@ theorem energyForm_self_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
   rw [energyForm_apply]
   refine add_nonneg (mul_nonneg (conformalCoefficient_nonneg _)
     (SobolevH1.dirichletForm_self_nonneg w)) (integral_nonneg fun x ↦ ?_)
-  dsimp only [Pi.zero_apply]
-  rw [mul_assoc]
+  dsimp only [Pi.zero_apply]; rw [mul_assoc]
   exact mul_nonneg (hS x) (mul_self_nonneg (SobolevH1.toLp w x))
 
 variable (I) in
@@ -240,8 +200,7 @@ theorem weakYamabeQuotient_def (w : SobolevH1 I M) :
     weakYamabeQuotient I w =
       energyForm I w w /
         (∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M) ^
-          (2 / criticalExponent (finrank ℝ E)) :=
-  (rfl)
+          (2 / criticalExponent (finrank ℝ E)) := (rfl)
 
 /-- On smooth functions, `weakYamabeQuotient` agrees with `yamabeQuotient`. -/
 @[simp]
@@ -249,9 +208,8 @@ theorem weakYamabeQuotient_ofSmooth (u : C^∞⟮I, M; ℝ⟯) :
     weakYamabeQuotient I (SobolevH1.ofSmooth u) = yamabeQuotient I u := by
   rw [weakYamabeQuotient_def, yamabeQuotient_def, energyForm_ofSmooth_self]
   congr 2
-  refine integral_congr_ae ?_
-  filter_upwards [SobolevH1.toLp_ofSmooth_ae_eq u] with x hx
-  rw [hx]
+  exact integral_congr_ae <| (SobolevH1.toLp_ofSmooth_ae_eq u).mono fun x hx ↦ by
+    dsimp only; rw [hx]
 
 @[simp]
 theorem weakYamabeQuotient_zero : weakYamabeQuotient I (0 : SobolevH1 I M) = 0 := by
@@ -270,16 +228,16 @@ theorem weakYamabeQuotient_smul (hn : 2 < finrank ℝ E) {w : SobolevH1 I M} {c 
     weakYamabeQuotient I (c • w) = weakYamabeQuotient I w := by
   have hp := criticalExponent_pos hn
   have hnum : energyForm I (c • w) (c • w) = c ^ 2 * energyForm I w w := by
-    simp only [map_smul, smul_apply, smul_eq_mul]
-    ring
+    simp only [map_smul, smul_apply, smul_eq_mul]; ring
   have hden : ∫ x, |SobolevH1.toLp (c • w) x| ^ criticalExponent (finrank ℝ E)
       ∂riemannianVolume I M =
       |c| ^ criticalExponent (finrank ℝ E) *
         ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
     rw [← integral_const_mul]
-    refine integral_congr_ae ?_
-    filter_upwards [map_smul SobolevH1.toLp c w ▸ Lp.coeFn_smul c (SobolevH1.toLp w)] with x hx
-    rw [hx, Pi.smul_apply, smul_eq_mul, abs_mul, Real.mul_rpow (abs_nonneg _) (abs_nonneg _)]
+    exact integral_congr_ae <|
+      (map_smul SobolevH1.toLp c w ▸ Lp.coeFn_smul c (SobolevH1.toLp w)).mono fun x hx ↦ by
+        dsimp only
+        rw [hx, Pi.smul_apply, smul_eq_mul, abs_mul, Real.mul_rpow (abs_nonneg _) (abs_nonneg _)]
   have hc2 : (|c| ^ criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) =
       c ^ 2 := by
     rw [← Real.rpow_mul (abs_nonneg _), mul_div_cancel₀ _ hp.ne', Real.rpow_two, sq_abs]
@@ -297,14 +255,10 @@ theorem continuousAt_weakYamabeQuotient [I.Boundaryless] (hn : 2 < finrank ℝ E
   have hN_cont : Continuous fun v : SobolevH1 I M ↦
       ∫ x, |SobolevH1.toLp v x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M :=
     SobolevH1.continuous_integral_abs_toLp_rpow hn (by linarith) (criticalExponent_def _).le
-  have hN_pos : 0 < ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E)
-      ∂riemannianVolume I M :=
-    (SobolevH1.integral_abs_toLp_rpow_pos_iff hn (criticalExponent_pos hn)
-      (criticalExponent_def _).le).2 hw
-  have hE_cont : Continuous fun v : SobolevH1 I M ↦ energyForm I v v :=
-    (energyForm I).continuous.clm_apply continuous_id
-  exact hE_cont.continuousAt.div (hN_cont.continuousAt.rpow_const (Or.inl hN_pos.ne'))
-    (Real.rpow_pos_of_pos hN_pos _).ne'
+  have hN_pos := (SobolevH1.integral_abs_toLp_rpow_pos_iff hn (criticalExponent_pos hn)
+    (criticalExponent_def _).le).2 hw
+  exact ((energyForm I).continuous.clm_apply continuous_id).continuousAt.div
+    (hN_cont.continuousAt.rpow_const (Or.inl hN_pos.ne')) (Real.rpow_pos_of_pos hN_pos _).ne'
 
 end EnergyAndQuotient
 
@@ -337,10 +291,8 @@ theorem energyForm_compRiemannianIsometry (Φ : RiemannianIsometry I I' M N)
     energyForm I (SobolevH1.compRiemannianIsometry Φ w) (SobolevH1.compRiemannianIsometry Φ v) =
       energyForm I' w v := by
   have hmp := Φ.measurePreserving_riemannianVolume
-  have he := Φ.toDiffeomorph.toHomeomorph.measurableEmbedding
-  rw [energyForm_apply, energyForm_apply, SobolevH1.dirichletForm_compRiemannianIsometry]
-  congr 1
-  rw [← hmp.integral_comp he (fun y ↦
+  rw [energyForm_apply, energyForm_apply, SobolevH1.dirichletForm_compRiemannianIsometry]; congr 1
+  rw [← hmp.integral_comp Φ.toDiffeomorph.toHomeomorph.measurableEmbedding (fun y ↦
     (CovariantDerivative.leviCivitaConnection I' N).scalarCurvature y *
       SobolevH1.toLp w y * SobolevH1.toLp v y)]
   refine integral_congr_ae ?_
@@ -358,15 +310,12 @@ theorem weakYamabeQuotient_compRiemannianIsometry (Φ : RiemannianIsometry I I' 
     (w : SobolevH1 I' N) :
     weakYamabeQuotient I (SobolevH1.compRiemannianIsometry Φ w) = weakYamabeQuotient I' w := by
   have hmp := Φ.measurePreserving_riemannianVolume
-  have he := Φ.toDiffeomorph.toHomeomorph.measurableEmbedding
-  rw [weakYamabeQuotient_def, weakYamabeQuotient_def, energyForm_compRiemannianIsometry]
-  congr 2
-  rw [← hmp.integral_comp he
+  rw [weakYamabeQuotient_def, weakYamabeQuotient_def, energyForm_compRiemannianIsometry]; congr 2
+  rw [← hmp.integral_comp Φ.toDiffeomorph.toHomeomorph.measurableEmbedding
     (fun y ↦ |SobolevH1.toLp w y| ^ criticalExponent (finrank ℝ E))]
-  refine integral_congr_ae ?_
-  filter_upwards [SobolevH1.toLp_compRiemannianIsometry Φ w ▸
-    Lp.coeFn_compMeasurePreserving (SobolevH1.toLp w) hmp] with x hx
-  rw [hx, Function.comp_apply]
+  exact integral_congr_ae <| (SobolevH1.toLp_compRiemannianIsometry Φ w ▸
+    Lp.coeFn_compMeasurePreserving (SobolevH1.toLp w) hmp).mono fun x hx ↦ by
+      dsimp only; rw [hx, Function.comp_apply]
 
 end Isometry
 
@@ -389,10 +338,8 @@ def conformalMulEquiv
     (SobolevH1.mulLeftEquiv
       (ContMDiffMap.comp ⟨u, hu⟩ (WithMetric.diffeomorph g ∞).toContMDiffMap)
       fun x ↦ by
-        -- `ContMDiffMap` is reducible to `Subtype`, so `rw`'s `kabstract` rejects bare `⟨u, hu⟩`.
         change u (WithMetric.diffeomorph g ∞ x) ≠ 0
-        rw [WithMetric.coe_diffeomorph]
-        exact (hu_pos x.ofWithMetric).ne')
+        rw [WithMetric.coe_diffeomorph]; exact (hu_pos x.ofWithMetric).ne')
 
 @[simp]
 theorem conformalMulEquiv_ofSmooth
@@ -434,7 +381,6 @@ theorem toLp_conformalMulEquiv_ae_eq
       (SobolevH1.congrRescale g hf hf_pos w),
     SobolevH1.toLp_congrRescale_ae_eq g hf hf_pos w] with x hx1 hx2
   refine hx1.trans ?_
-  -- `ContMDiffMap` is reducible to `Subtype`, so `rw`'s `kabstract` rejects bare `⟨u, hu⟩`.
   change u (WithMetric.diffeomorph g ∞ x) *
       SobolevH1.toLp (SobolevH1.congrRescale g hf hf_pos w) x = _
   rw [WithMetric.coe_diffeomorph, hx2]
@@ -462,21 +408,16 @@ theorem integral_abs_toLp_conformalMulEquiv_rpow
     (hf := hf) (hf_pos := hf_pos) (fun y ↦ SobolevH1.toLp w (WithMetric.toWithMetric ĝ y))
   simp only [WithMetric.toWithMetric_ofWithMetric, ← criticalExponent_def] at hvol
   rw [hvol]
-  refine integral_congr_ae ?_
-  filter_upwards [toLp_conformalMulEquiv_ae_eq g hu hu_pos w] with x hx
-  rw [hx]
+  exact integral_congr_ae <| (toLp_conformalMulEquiv_ae_eq g hu hu_pos w).mono fun x hx ↦ by
+    dsimp only; rw [hx]
 
 variable [T2Space M] [MeasurableSpace M] [BorelSpace M]
 
-/-- Smooth energy on `WithMetric g` written as an integral over `WithMetric g` using the metric
-`g` on `M`. -/
+/-- Smooth energy on `WithMetric g` written as an integral over `WithMetric g` using `g` on `M`. -/
 private theorem energyForm_ofSmooth_withMetric
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (φ : C^∞⟮I, M; ℝ⟯) :
-    energyForm I
-        (SobolevH1.ofSmooth
-          (φ.comp (WithMetric.diffeomorph g ∞).toContMDiffMap))
-        (SobolevH1.ofSmooth
-          (φ.comp (WithMetric.diffeomorph g ∞).toContMDiffMap)) =
+    energyForm I (SobolevH1.ofSmooth (φ.comp (WithMetric.diffeomorph g ∞).toContMDiffMap))
+        (SobolevH1.ofSmooth (φ.comp (WithMetric.diffeomorph g ∞).toContMDiffMap)) =
       ∫ x, ((letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
           conformalCoefficient (finrank ℝ E) * ‖mgradient I φ x.ofWithMetric‖ ^ 2) +
           g.scalarCurvature x.ofWithMetric * φ x.ofWithMetric ^ 2)
@@ -487,12 +428,9 @@ private theorem energyForm_ofSmooth_withMetric
   let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
   have hcomp : φ.comp (WithMetric.diffeomorph g ∞).toContMDiffMap =
-      φ.comp (WithMetric.riemannianIsometry g).toDiffeomorph.toContMDiffMap := by
-    ext x
-    simp
+      φ.comp (WithMetric.riemannianIsometry g).toDiffeomorph.toContMDiffMap := by ext x; simp
   rw [hcomp, ← SobolevH1.compRiemannianIsometry_ofSmooth, energyForm_compRiemannianIsometry,
-    energyForm_ofSmooth_self,
-    WithMetric.integral_comp_ofWithMetric g fun y ↦
+    energyForm_ofSmooth_self, WithMetric.integral_comp_ofWithMetric g fun y ↦
       conformalCoefficient (finrank ℝ E) * ‖mgradient I φ y‖ ^ 2 + g.scalarCurvature y * φ y ^ 2]
   simp only [g.scalarCurvature_def]
 
@@ -508,27 +446,20 @@ theorem energyForm_conformalMulEquiv_self [I.Boundaryless]
     energyForm I (conformalMulEquiv g hu hu_pos w) (conformalMulEquiv g hu hu_pos w) =
       energyForm I w w := by
   let ĝ := g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos
-  have hcL : Continuous fun z : SobolevH1 I (WithMetric ĝ) ↦
-      energyForm I (conformalMulEquiv g hu hu_pos z) (conformalMulEquiv g hu hu_pos z) :=
-    ((energyForm I).continuous.comp (conformalMulEquiv g hu hu_pos).continuous).clm_apply
-      (conformalMulEquiv g hu hu_pos).continuous
-  have hcR : Continuous fun z : SobolevH1 I (WithMetric ĝ) ↦ energyForm I z z :=
-    (energyForm I).continuous.clm_apply continuous_id
-  refine SobolevH1.induction_on w (isClosed_eq hcL hcR) fun v ↦ ?_
+  refine SobolevH1.induction_on w
+    (isClosed_eq (((energyForm I).continuous.comp
+      (conformalMulEquiv g hu hu_pos).continuous).clm_apply
+      (conformalMulEquiv g hu hu_pos).continuous)
+      ((energyForm I).continuous.clm_apply continuous_id)) fun v ↦ ?_
   let vM : C^∞⟮I, M; ℝ⟯ := v.comp (WithMetric.diffeomorph ĝ ∞).symm.toContMDiffMap
   let uM : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
   let uvM : C^∞⟮I, M; ℝ⟯ := uM * vM
-  have hv : v = vM.comp (WithMetric.diffeomorph ĝ ∞).toContMDiffMap := by
-    ext x
-    simp [vM]
-  have hv' : v.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap =
-      vM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap := by
-    ext x
-    simp [vM]
+  have hv : v = vM.comp (WithMetric.diffeomorph ĝ ∞).toContMDiffMap := by ext x; simp [vM]
   have huv : ContMDiffMap.comp ⟨u, hu⟩ (WithMetric.diffeomorph g ∞).toContMDiffMap *
       v.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap =
       uvM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap := by
-    rw [hv']
+    rw [show v.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap =
+      vM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap by ext x; simp [vM]]
     exact (ContMDiffMap.mul_comp uM vM (WithMetric.diffeomorph g ∞).toContMDiffMap).symm
   have huv_coe : (uvM : M → ℝ) = u * vM := ContMDiffMap.coe_mul uM vM
   rw [conformalMulEquiv_ofSmooth, huv, energyForm_ofSmooth_withMetric g uvM, hv,
@@ -549,10 +480,9 @@ theorem energyForm_conformalMulEquiv [I.Boundaryless]
       energyForm I w v := by
   have hsum := energyForm_conformalMulEquiv_self g hn hu hu_pos (hf := hf) (hf_pos := hf_pos)
     (w + v)
-  have hw := energyForm_conformalMulEquiv_self g hn hu hu_pos (hf := hf) (hf_pos := hf_pos) w
-  have hv := energyForm_conformalMulEquiv_self g hn hu hu_pos (hf := hf) (hf_pos := hf_pos) v
   rw [map_add (conformalMulEquiv g hu hu_pos), energyForm_add_self, energyForm_add_self,
-    hw, hv] at hsum
+    energyForm_conformalMulEquiv_self g hn hu hu_pos (hf := hf) (hf_pos := hf_pos) w,
+    energyForm_conformalMulEquiv_self g hn hu hu_pos (hf := hf) (hf_pos := hf_pos) v] at hsum
   linarith
 
 /-- **Conformal invariance of the weak Yamabe quotient on `H¹`.** On a closed manifold of dimension
@@ -579,16 +509,14 @@ theorem image_weakYamabeQuotient_eq_of_mem_conformalClass [I.Boundaryless]
     (hg' : g' ∈ g.conformalClass) :
     weakYamabeQuotient I '' {w : SobolevH1 I (WithMetric g') | w ≠ 0} =
       weakYamabeQuotient I '' {w : SobolevH1 I (WithMetric g) | w ≠ 0} := by
-  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
   let p := 4 / ((finrank ℝ E : ℝ) - 2)
-  have hp : p ≠ 0 := div_ne_zero four_ne_zero hn'
+  have hp : p ≠ 0 := div_ne_zero four_ne_zero (sub_ne_zero.2 (by exact_mod_cast hn))
   obtain ⟨u, hu, hu_pos, rfl⟩ :=
     (ContMDiffRiemannianMetric.mem_conformalClass_iff_exists_rpow hp).mp hg'
   let Φ := conformalMulEquiv g hu hu_pos
     (hf := hu.rpow_const_of_ne (fun x ↦ (hu_pos x).ne') p)
     (hf_pos := fun x ↦ Real.rpow_pos_of_pos (hu_pos x) p)
-  ext q
-  constructor
+  ext q; constructor
   · rintro ⟨w, hw, rfl⟩
     exact ⟨Φ w, (map_ne_zero_iff Φ Φ.injective).2 hw,
       weakYamabeQuotient_conformalMulEquiv g hn hu hu_pos w⟩
@@ -628,14 +556,11 @@ private theorem hasDerivAt_energyForm_add_smul (w v : SobolevH1 I M) :
       (2 * energyForm I v w) 0 := by
   have hquad (t : ℝ) : energyForm I (w + t • v) (w + t • v) =
       energyForm I w w + t * (2 * energyForm I v w) + t ^ 2 * energyForm I v v := by
-    simp only [energyForm_add_self, map_smul, smul_apply, smul_eq_mul, energyForm_comm w v]
-    ring
+    simp only [energyForm_add_self, map_smul, smul_apply, smul_eq_mul, energyForm_comm w v]; ring
   simp_rw [hquad]
-  have hd := (((hasDerivAt_id (0 : ℝ)).mul_const (2 * energyForm I v w)).const_add
-    (energyForm I w w)).add ((hasDerivAt_pow 2 (0 : ℝ)).mul_const (energyForm I v v))
-  convert hd using 1
-  · funext t
-    simp only [Pi.add_apply, id]
+  convert (((hasDerivAt_id (0 : ℝ)).mul_const (2 * energyForm I v w)).const_add
+    (energyForm I w w)).add ((hasDerivAt_pow 2 (0 : ℝ)).mul_const (energyForm I v v)) using 1
+  · funext t; simp only [Pi.add_apply, id]
   · simp
 
 /-- **First variation of the weak Yamabe quotient on `H¹`.** On a closed manifold of dimension
@@ -656,10 +581,8 @@ theorem hasDerivAt_weakYamabeQuotient_add_smul [I.Boundaryless] (hn : 2 < finran
   set p := criticalExponent (finrank ℝ E)
   set μ := riemannianVolume I M
   have hp : 2 < p := two_lt_criticalExponent hn
-  have hmw : MemLp (SobolevH1.toLp w) (ENNReal.ofReal p) μ :=
-    SobolevH1.memLp_toLp hn (ENNReal.ofReal_le_ofReal (criticalExponent_def _).le) w
-  have hmv : MemLp (SobolevH1.toLp v) (ENNReal.ofReal p) μ :=
-    SobolevH1.memLp_toLp hn (ENNReal.ofReal_le_ofReal (criticalExponent_def _).le) v
+  have hmw := SobolevH1.memLp_toLp hn (ENNReal.ofReal_le_ofReal (criticalExponent_def _).le) w
+  have hmv := SobolevH1.memLp_toLp hn (ENNReal.ofReal_le_ofReal (criticalExponent_def _).le) v
   have hN_eq (t : ℝ) : ∫ x, |SobolevH1.toLp (w + t • v) x| ^ p ∂μ =
       ∫ x, |SobolevH1.toLp w x + t * SobolevH1.toLp v x| ^ p ∂μ := by
     refine integral_congr_ae ?_
@@ -673,29 +596,24 @@ theorem hasDerivAt_weakYamabeQuotient_add_smul [I.Boundaryless] (hn : 2 < finran
   have hN_deriv : HasDerivAt (fun t : ℝ ↦ ∫ x, |SobolevH1.toLp (w + t • v) x| ^ p ∂μ)
       (p * ∫ x, |SobolevH1.toLp w x| ^ (p - 2) * SobolevH1.toLp w x *
         SobolevH1.toLp v x ∂μ) 0 := by
-    simp_rw [hN_eq]
-    exact hmw.hasDerivAt_integral_abs_add_mul_rpow hmv (by linarith)
+    simp_rw [hN_eq]; exact hmw.hasDerivAt_integral_abs_add_mul_rpow hmv (by linarith)
   have h0 : ∫ x, |SobolevH1.toLp (w + (0 : ℝ) • v) x| ^ p ∂μ = N := by simp [N]
-  have hD := hN_deriv.rpow_const (p := 2 / p) (Or.inl (h0 ▸ hN0.ne'))
-  have hQ := (hasDerivAt_energyForm_add_smul w v).div hD
+  have hQ := (hasDerivAt_energyForm_add_smul w v).div
+    (hN_deriv.rpow_const (p := 2 / p) (Or.inl (h0 ▸ hN0.ne')))
     (h0 ▸ (Real.rpow_pos_of_pos hN0 _).ne')
   have hE0 : energyForm I (w + (0 : ℝ) • v) (w + (0 : ℝ) • v) = energyForm I w w := by simp
   rw [h0, hE0] at hQ
   convert hQ using 1
-  · funext t
-    exact weakYamabeQuotient_def I (w + t • v)
-  · have hQw : weakYamabeQuotient I w = energyForm I w w / N ^ (2 / p) :=
-      weakYamabeQuotient_def I w
-    rw [hQw, Real.rpow_sub_one hN0.ne']
-    have hp0 : p ≠ 0 := by linarith
-    dsimp only [μ]
-    field_simp
+  · exact funext fun t ↦ weakYamabeQuotient_def I (w + t • v)
+  · rw [show weakYamabeQuotient I w = energyForm I w w / N ^ (2 / p) from
+      weakYamabeQuotient_def I w, Real.rpow_sub_one hN0.ne']
+    have : p ≠ 0 := by linarith
+    dsimp only [μ]; field_simp
 
 /-- **Multiplier of the weak Euler–Lagrange equation.** In dimension `n > 2`, if `w ∈ H¹(M)`
 satisfies `E_g(w, v) = c ∫ |w| ^ (pₙ - 2) w v dV` for all `v ∈ H¹(M)`, then
 `Q_g(w) = c (∫ |w| ^ pₙ dV) ^ (1 - 2 / pₙ)`. -/
-theorem weakYamabeQuotient_eq_of_energyForm_eq (hn : 2 < finrank ℝ E) {w : SobolevH1 I M}
-    {c : ℝ}
+theorem weakYamabeQuotient_eq_of_energyForm_eq (hn : 2 < finrank ℝ E) {w : SobolevH1 I M} {c : ℝ}
     (h : ∀ v : SobolevH1 I M, energyForm I w v =
       c * ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
         SobolevH1.toLp w x * SobolevH1.toLp v x ∂riemannianVolume I M) :
@@ -705,20 +623,18 @@ theorem weakYamabeQuotient_eq_of_energyForm_eq (hn : 2 < finrank ℝ E) {w : Sob
   have hp := two_lt_criticalExponent hn
   have hww : ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
       SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M =
-      ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
-    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-    dsimp only
-    rw [mul_assoc, ← sq, ← sq_abs, ← Real.rpow_two,
-      ← Real.rpow_add' (abs_nonneg _) (by linarith), sub_add_cancel]
+      ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M :=
+    integral_congr_ae (Eventually.of_forall fun x ↦ by
+      dsimp only
+      rw [mul_assoc, ← sq, ← sq_abs, ← Real.rpow_two,
+        ← Real.rpow_add' (abs_nonneg _) (by linarith), sub_add_cancel])
   rw [weakYamabeQuotient_def, h w, hww]
   rcases (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg (SobolevH1.toLp w x))
     (criticalExponent (finrank ℝ E)) :
       0 ≤ ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E)
         ∂riemannianVolume I M).eq_or_lt with hN | hN
-  · rw [← hN, Real.zero_rpow (by positivity), Real.zero_rpow]
-    · simp
-    · have : 2 / criticalExponent (finrank ℝ E) < 1 := (div_lt_one (by linarith)).2 hp
-      linarith
+  · have : 2 / criticalExponent (finrank ℝ E) < 1 := (div_lt_one (by linarith)).2 hp
+    rw [← hN, Real.zero_rpow (by positivity), Real.zero_rpow (by linarith)]; simp
   · rw [Real.rpow_sub hN, Real.rpow_one, mul_div_assoc]
 
 /-- **Multiplier of the weak Euler–Lagrange equation at unit critical norm.** If `w ∈ H¹(M)` solves
@@ -752,20 +668,39 @@ theorem forall_energyForm_eq_iff_forall_contMDiff_integral_conformalLaplacian_eq
       ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
           SobolevH1.toLp w x * SobolevH1.toLp (SobolevH1.ofSmooth φ) x ∂riemannianVolume I M =
         ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
-          SobolevH1.toLp w x * φ x ∂riemannianVolume I M := by
-    refine integral_congr_ae ?_
-    filter_upwards [SobolevH1.toLp_ofSmooth_ae_eq φ] with x hx
-    rw [hx]
-  constructor
-  · intro h φ
-    rw [← energyForm_ofSmooth_right w φ, h (SobolevH1.ofSmooth φ), hφ_rhs]
-  · intro h v
-    refine SobolevH1.induction_on v
+          SobolevH1.toLp w x * φ x ∂riemannianVolume I M :=
+    integral_congr_ae <| (SobolevH1.toLp_ofSmooth_ae_eq φ).mono fun x hx ↦ by
+      dsimp only; rw [hx]
+  refine ⟨fun h φ ↦ by rw [← energyForm_ofSmooth_right w φ, h (SobolevH1.ofSmooth φ), hφ_rhs],
+    fun h v ↦ SobolevH1.induction_on v
       (isClosed_eq (energyForm I w).continuous
         (continuous_const.mul (SobolevH1.continuous_integral_abs_toLp_rpow_sub_two_mul hn
           (by linarith) (criticalExponent_def _).le w)))
-      fun φ ↦ ?_
-    rw [energyForm_ofSmooth_right w φ, h φ, hφ_rhs]
+      fun φ ↦ by rw [energyForm_ofSmooth_right w φ, h φ, hφ_rhs]⟩
+
+/-- Smooth-direction stationarity implies the weak Euler–Lagrange equation on all of `H¹`. -/
+private theorem exists_energyForm_eq_of_forall_ofSmooth_hasDerivAt [I.Boundaryless]
+    (hn : 2 < finrank ℝ E) {w : SobolevH1 I M} (hw : w ≠ 0)
+    (hcrit : ∀ φ : C^∞⟮I, M; ℝ⟯,
+      HasDerivAt (fun t : ℝ ↦ weakYamabeQuotient I (w + t • SobolevH1.ofSmooth φ)) 0 0) :
+    ∃ c : ℝ, ∀ v : SobolevH1 I M, energyForm I w v =
+      c * ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
+        SobolevH1.toLp w x * SobolevH1.toLp v x ∂riemannianVolume I M := by
+  let p := criticalExponent (finrank ℝ E)
+  let N := ∫ x, |SobolevH1.toLp w x| ^ p ∂riemannianVolume I M
+  have hp := two_lt_criticalExponent hn
+  have hN0 : 0 < N := (SobolevH1.integral_abs_toLp_rpow_pos_iff hn (by linarith)
+    (criticalExponent_def _).le).2 hw
+  have hNp : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
+  let c₀ := weakYamabeQuotient I w * N ^ (2 / p) / N
+  refine ⟨c₀, fun v ↦ SobolevH1.induction_on v
+    (isClosed_eq (energyForm I w).continuous
+      (continuous_const.mul (SobolevH1.continuous_integral_abs_toLp_rpow_sub_two_mul hn
+        (by linarith) (criticalExponent_def _).le w))) fun φ ↦ ?_⟩
+  have h0 := (hasDerivAt_weakYamabeQuotient_add_smul hn hw (SobolevH1.ofSmooth φ)).unique (hcrit φ)
+  have hsub := sub_eq_zero.1 ((mul_eq_zero.1 h0).resolve_left two_ne_zero)
+  rw [energyForm_comm (SobolevH1.ofSmooth φ) w, div_eq_iff hNp.ne'] at hsub
+  rw [hsub]; dsimp only [c₀]; ring
 
 /-- **The weak Euler–Lagrange equation of the Yamabe quotient on `H¹`.** On a closed manifold of
 dimension `n > 2`, a nonzero `w ∈ H¹(M)` has vanishing directional derivative of
@@ -778,43 +713,25 @@ theorem forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq
       ∃ c : ℝ, ∀ v : SobolevH1 I M, energyForm I w v =
         c * ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
           SobolevH1.toLp w x * SobolevH1.toLp v x ∂riemannianVolume I M := by
+  refine ⟨fun h ↦ exists_energyForm_eq_of_forall_ofSmooth_hasDerivAt hn hw
+    fun φ ↦ h (SobolevH1.ofSmooth φ), ?_⟩
+  rintro ⟨c, hc⟩ v
   let p := criticalExponent (finrank ℝ E)
   let N := ∫ x, |SobolevH1.toLp w x| ^ p ∂riemannianVolume I M
   have hp := two_lt_criticalExponent hn
   have hN0 : 0 < N := (SobolevH1.integral_abs_toLp_rpow_pos_iff hn (by linarith)
     (criticalExponent_def _).le).2 hw
   have hNp : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
-  let c₀ := weakYamabeQuotient I w * N ^ (2 / p) / N
-  constructor
-  · intro hcrit
-    refine ⟨c₀, fun v ↦ ?_⟩
-    have h0 := (hasDerivAt_weakYamabeQuotient_add_smul hn hw v).unique (hcrit v)
-    have hsub := sub_eq_zero.1 ((mul_eq_zero.1 h0).resolve_left two_ne_zero)
-    rw [energyForm_comm v w, div_eq_iff hNp.ne'] at hsub
-    calc energyForm I w v
-        = weakYamabeQuotient I w *
-            (∫ x, |SobolevH1.toLp w x| ^ (p - 2) * SobolevH1.toLp w x * SobolevH1.toLp v x
-              ∂riemannianVolume I M) / N * N ^ (2 / p) := hsub
-      _ = c₀ * ∫ x, |SobolevH1.toLp w x| ^ (p - 2) * SobolevH1.toLp w x * SobolevH1.toLp v x
-            ∂riemannianVolume I M := by
-          dsimp only [c₀]
-          ring
-  · rintro ⟨c, hc⟩ v
-    have hpow : N ^ (1 - 2 / p) * N ^ (2 / p) = N := by
-      rw [← Real.rpow_add hN0, sub_add_cancel, Real.rpow_one]
-    have hc₀ : c₀ = c := by
-      dsimp only [c₀]
-      rw [weakYamabeQuotient_eq_of_energyForm_eq hn hc, mul_assoc, hpow,
-        mul_div_cancel_right₀ c hN0.ne']
-    convert hasDerivAt_weakYamabeQuotient_add_smul hn hw v using 1
-    rw [energyForm_comm v w, hc v, ← hc₀]
-    dsimp only [c₀, N, p]
-    have hNne : (∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E)
-        ∂riemannianVolume I M) ≠ 0 := hN0.ne'
-    have hNpne : (∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E)
-        ∂riemannianVolume I M) ^ (2 / criticalExponent (finrank ℝ E)) ≠ 0 := hNp.ne'
-    field_simp
-    ring
+  have hc₀ : weakYamabeQuotient I w * N ^ (2 / p) / N = c := by
+    rw [weakYamabeQuotient_eq_of_energyForm_eq hn hc, mul_assoc,
+      ← Real.rpow_add hN0, sub_add_cancel, Real.rpow_one, mul_div_cancel_right₀ c hN0.ne']
+  convert hasDerivAt_weakYamabeQuotient_add_smul hn hw v using 1
+  rw [energyForm_comm v w, hc v, ← hc₀]
+  have hNne : (∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E)
+      ∂riemannianVolume I M) ≠ 0 := hN0.ne'
+  have hNpne : (∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E)
+      ∂riemannianVolume I M) ^ (2 / criticalExponent (finrank ℝ E)) ≠ 0 := hNp.ne'
+  dsimp only [N, p]; field_simp; ring
 
 /-- **Smooth-direction stationarity suffices on `H¹`.** On a closed manifold of dimension `n > 2`,
 a nonzero `w ∈ H¹(M)` is stationary for `weakYamabeQuotient` along all smooth perturbations
@@ -826,37 +743,10 @@ theorem forall_ofSmooth_hasDerivAt_weakYamabeQuotient_iff_exists_energyForm_eq
         HasDerivAt (fun t : ℝ ↦ weakYamabeQuotient I (w + t • SobolevH1.ofSmooth φ)) 0 0) ↔
       ∃ c : ℝ, ∀ v : SobolevH1 I M, energyForm I w v =
         c * ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
-          SobolevH1.toLp w x * SobolevH1.toLp v x ∂riemannianVolume I M := by
-  constructor
-  · intro hcrit
-    let p := criticalExponent (finrank ℝ E)
-    let N := ∫ x, |SobolevH1.toLp w x| ^ p ∂riemannianVolume I M
-    have hp := two_lt_criticalExponent hn
-    have hN0 : 0 < N := (SobolevH1.integral_abs_toLp_rpow_pos_iff hn (by linarith)
-      (criticalExponent_def _).le).2 hw
-    have hNp : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
-    let c₀ := weakYamabeQuotient I w * N ^ (2 / p) / N
-    refine ⟨c₀, fun v ↦ SobolevH1.induction_on v
-      (isClosed_eq (energyForm I w).continuous
-        (continuous_const.mul (SobolevH1.continuous_integral_abs_toLp_rpow_sub_two_mul hn
-          (by linarith) (criticalExponent_def _).le w)))
-      fun φ ↦ ?_⟩
-    have h0 := (hasDerivAt_weakYamabeQuotient_add_smul hn hw (SobolevH1.ofSmooth φ)).unique
-      (hcrit φ)
-    have hsub := sub_eq_zero.1 ((mul_eq_zero.1 h0).resolve_left two_ne_zero)
-    rw [energyForm_comm (SobolevH1.ofSmooth φ) w, div_eq_iff hNp.ne'] at hsub
-    calc energyForm I w (SobolevH1.ofSmooth φ)
-        = weakYamabeQuotient I w *
-            (∫ x, |SobolevH1.toLp w x| ^ (p - 2) * SobolevH1.toLp w x *
-              SobolevH1.toLp (SobolevH1.ofSmooth φ) x ∂riemannianVolume I M) / N *
-            N ^ (2 / p) := hsub
-      _ = c₀ * ∫ x, |SobolevH1.toLp w x| ^ (p - 2) * SobolevH1.toLp w x *
-            SobolevH1.toLp (SobolevH1.ofSmooth φ) x ∂riemannianVolume I M := by
-          dsimp only [c₀]
-          ring
-  · intro h φ
-    exact (forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq hn hw).2 h
-      (SobolevH1.ofSmooth φ)
+          SobolevH1.toLp w x * SobolevH1.toLp v x ∂riemannianVolume I M :=
+  ⟨exists_energyForm_eq_of_forall_ofSmooth_hasDerivAt hn hw, fun h φ ↦
+    (forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq hn hw).2 h
+      (SobolevH1.ofSmooth φ)⟩
 
 /-- **Weak Euler–Lagrange equation for almost everywhere nonnegative `H¹` functions.** When
 `0 ≤ᵐ toLp w`, criticality of `w ≠ 0` is equivalent to the weak Yamabe equation
@@ -874,11 +764,10 @@ theorem forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq_o
       ∫ x, |SobolevH1.toLp w x| ^ (criticalExponent (finrank ℝ E) - 2) *
           SobolevH1.toLp w x * SobolevH1.toLp v x ∂riemannianVolume I M =
         ∫ x, SobolevH1.toLp w x ^ (criticalExponent (finrank ℝ E) - 1) *
-          SobolevH1.toLp v x ∂riemannianVolume I M := by
-    refine integral_congr_ae ?_
-    filter_upwards [hnn] with x hx
-    rw [abs_of_nonneg hx, ← Real.rpow_add_one' hx (by linarith)]
-    ring_nf
+          SobolevH1.toLp v x ∂riemannianVolume I M :=
+    integral_congr_ae <| hnn.mono fun x hx ↦ by
+      dsimp only [Pi.zero_apply] at hx ⊢
+      rw [abs_of_nonneg hx, ← Real.rpow_add_one' hx (by linarith)]; ring_nf
   simpa only [hae] using
     forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq hn hw
 
@@ -898,8 +787,7 @@ private theorem subsingleton_sobolevH1_of_isEmpty
   ⟨fun w₁ w₂ ↦ by
     have hz (w : SobolevH1 I M) : w = 0 :=
       SobolevH1.induction_on w (isClosed_eq continuous_id continuous_const) fun v ↦ by
-        have hv0 : v = 0 := ContMDiffMap.ext fun x ↦ (IsEmpty.false x).elim
-        rw [hv0, map_zero]
+        rw [show v = 0 from ContMDiffMap.ext fun x ↦ (IsEmpty.false x).elim, map_zero]
     exact (hz w₁).trans (hz w₂).symm⟩
 
 section InvariantAndBounds
@@ -926,11 +814,8 @@ private theorem le_weakYamabeQuotient_of_forall_ofSmooth (hn : 2 < finrank ℝ E
         (gt_mem_nhds (lt_add_of_pos_right _ hε)))
   obtain ⟨_, ⟨hne, hlt⟩, u, rfl⟩ :=
     mem_closure_iff_nhds.1 (SobolevH1.denseRange_ofSmooth w) _ hnhds
-  have hu0 : (u : M → ℝ) ≠ 0 := fun h ↦ hne <| by
-    have : u = 0 := ContMDiffMap.ext (congrFun h)
-    simp [this]
   rw [weakYamabeQuotient_ofSmooth] at hlt
-  exact (hc u hu0).trans_lt hlt
+  exact (hc u fun h ↦ hne <| by simp [show u = 0 from ContMDiffMap.ext (congrFun h)]).trans_lt hlt
 
 /-- **Scalar-curvature lower bound on `H¹`.** On a closed manifold of dimension `n > 2`, every
 `w ∈ H¹(M)` satisfies `Q_g(w) ≥ -‖Scal_g⁻‖_{L^{n/2}}`. -/
@@ -950,11 +835,8 @@ theorem neg_integral_scalarCurvature_negPart_rpow_le_weakYamabeQuotient
 /-- On a closed manifold of dimension `n > 2`, the weak Yamabe quotients of nonzero `H¹` elements
 are bounded below. -/
 theorem bddBelow_image_weakYamabeQuotient (hn : 2 < finrank ℝ E) :
-    BddBelow (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}) := by
-  refine ⟨-(∫ x, ((CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)⁻ ^
-    ((finrank ℝ E : ℝ) / 2) ∂riemannianVolume I M) ^ (2 / (finrank ℝ E : ℝ)), ?_⟩
-  rintro _ ⟨w, -, rfl⟩
-  exact neg_integral_scalarCurvature_negPart_rpow_le_weakYamabeQuotient hn w
+    BddBelow (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}) :=
+  ⟨_, fun _ ⟨w, _, h⟩ ↦ h ▸ neg_integral_scalarCurvature_negPart_rpow_le_weakYamabeQuotient hn w⟩
 
 /-- **Positive scalar curvature bounds the weak Yamabe quotient away from zero.** On a closed
 manifold of dimension `n > 2` with `Scal_g > 0`, there is a constant `C > 0` such that
@@ -974,38 +856,32 @@ theorem sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient (hn : 2 < finrank ℝ E) 
       sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0}) := by
   rcases isEmpty_or_nonempty M with hM | hM
   · have := subsingleton_sobolevH1_of_isEmpty (I := I) (M := M)
-    have hL : {w : SobolevH1 I M | w ≠ 0} = ∅ :=
-      eq_empty_of_forall_notMem fun w hw ↦ hw (Subsingleton.elim w 0)
-    have hR : {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0} = ∅ :=
-      eq_empty_of_forall_notMem fun u hu ↦ hu.2 (Subsingleton.elim u 0)
-    rw [hL, hR, image_empty, image_empty]
+    rw [eq_empty_of_forall_notMem (s := {w : SobolevH1 I M | w ≠ 0})
+        fun w hw ↦ hw (Subsingleton.elim w 0),
+      eq_empty_of_forall_notMem (s := {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0})
+        fun u hu ↦ hu.2 (Subsingleton.elim u 0), image_empty, image_empty]
   let W := weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}
   let S := yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0}
   have hSW : S ⊆ W := by
     rintro _ ⟨u, ⟨hu, hu0⟩, rfl⟩
     let u' : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
-    have hpos : 0 < ∫ x, |SobolevH1.toLp (SobolevH1.ofSmooth u') x| ^
-        criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
-      have heq : ∫ x, |SobolevH1.toLp (SobolevH1.ofSmooth u') x| ^
-          criticalExponent (finrank ℝ E) ∂riemannianVolume I M =
-          ∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
-        refine integral_congr_ae ?_
-        filter_upwards [SobolevH1.toLp_ofSmooth_ae_eq u'] with x hx
-        rw [hx]
-        rfl
-      exact heq ▸ integral_abs_rpow_pos hu.continuous hu0 (criticalExponent_pos hn)
+    have heq : ∫ x, |SobolevH1.toLp (SobolevH1.ofSmooth u') x| ^
+        criticalExponent (finrank ℝ E) ∂riemannianVolume I M =
+        ∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M :=
+      integral_congr_ae <| (SobolevH1.toLp_ofSmooth_ae_eq u').mono fun x hx ↦ by
+        dsimp only; rw [hx]; rfl
     exact ⟨SobolevH1.ofSmooth u',
       (SobolevH1.integral_abs_toLp_rpow_pos_iff hn (criticalExponent_pos hn)
-        (criticalExponent_def _).le).1 hpos,
+        (criticalExponent_def _).le).1
+        (heq ▸ integral_abs_rpow_pos hu.continuous hu0 (criticalExponent_pos hn)),
       weakYamabeQuotient_ofSmooth u'⟩
   have hS_ne : S.Nonempty := ⟨_, ⟨fun _ ↦ 1, ⟨contMDiff_const,
     fun h ↦ one_ne_zero (congrFun h (Classical.arbitrary M))⟩, rfl⟩⟩
   have hbW : BddBelow W := bddBelow_image_weakYamabeQuotient hn
-  have hbS : BddBelow S := hbW.mono hSW
   refine le_antisymm (csInf_le_csInf hbW hS_ne hSW) (le_csInf (hS_ne.mono hSW) ?_)
   rintro _ ⟨w, hw, rfl⟩
   exact le_weakYamabeQuotient_of_forall_ofSmooth hn
-    (fun u hu0 ↦ csInf_le hbS ⟨u, ⟨u.contMDiff, hu0⟩, rfl⟩) hw
+    (fun u hu0 ↦ csInf_le (hbW.mono hSW) ⟨u, ⟨u.contMDiff, hu0⟩, rfl⟩) hw
 
 /-- **Equality of the weak Yamabe infimum and the positive smooth Yamabe infimum.** On a closed
 manifold of dimension `n > 2`, the infimum of `weakYamabeQuotient` over `{w : H¹(M) | w ≠ 0}` equals
@@ -1015,14 +891,13 @@ theorem sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient_pos (hn : 2 < finrank ℝ
       sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x}) := by
   rcases isEmpty_or_nonempty M with hM | hM
   · have := subsingleton_sobolevH1_of_isEmpty (I := I) (M := M)
-    have hL : {w : SobolevH1 I M | w ≠ 0} = ∅ :=
-      eq_empty_of_forall_notMem fun w hw ↦ hw (Subsingleton.elim w 0)
     have hR : {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x} = {0} :=
       Set.ext fun u ↦ ⟨fun _ ↦ Subsingleton.elim u 0,
         fun hu ↦ hu ▸ ⟨contMDiff_const, fun x ↦ hM.elim x⟩⟩
-    have h0 : yamabeQuotient I (0 : M → ℝ) = 0 := by
-      simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯)).symm
-    rw [hL, image_empty, Real.sInf_empty, hR, image_singleton, csInf_singleton, h0]
+    rw [eq_empty_of_forall_notMem (s := {w : SobolevH1 I M | w ≠ 0})
+        fun w hw ↦ hw (Subsingleton.elim w 0),
+      image_empty, Real.sInf_empty, hR, image_singleton, csInf_singleton]
+    simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯))
   · rw [sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient hn,
       ← sInf_yamabeQuotient_pos_eq hn (by simp : (1 : ℕ∞ω) ≤ (∞ : ℕ∞ω))]
 
@@ -1034,17 +909,14 @@ theorem exists_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {ε : ℝ} (hε : 0 < 
       yamabeQuotient I u < sphereYamabeConstant (finrank ℝ E) + ε := by
   rcases isEmpty_or_nonempty M with hM | hM
   · refine ⟨0, contMDiff_const, fun x ↦ hM.elim x, ?_⟩
-    have h0 : yamabeQuotient I (0 : M → ℝ) = 0 := by
-      simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯)).symm
-    rw [h0]
+    rw [show yamabeQuotient I (0 : M → ℝ) = 0 by
+      simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯)).symm]
     exact add_pos (sphereYamabeConstant_pos (by omega)) hε
   obtain ⟨v, hv, -, -, -, hv_pos, hvQ⟩ :=
     exists_contMDiff_hasCompactSupport_yamabeQuotient_lt (I := I) (M := M) hn isOpen_univ
       (univ_nonempty (α := M)) hε
-  have hv0 : v ≠ 0 := fun h ↦ by
-    subst h
-    simp [Real.zero_rpow (criticalExponent_pos hn).ne'] at hv_pos
-  exact exists_contMDiff_pos_yamabeQuotient_lt hn (by simp) hv hv0 hvQ
+  exact exists_contMDiff_pos_yamabeQuotient_lt hn (by simp) hv
+    (fun h ↦ by subst h; simp [Real.zero_rpow (criticalExponent_pos hn).ne'] at hv_pos) hvQ
 
 /-- **Aubin's bound for the smooth Yamabe invariant.** On a closed manifold of dimension `n > 2`,
 the infimum of `yamabeQuotient` over strictly positive smooth functions is at most
@@ -1052,11 +924,9 @@ the infimum of `yamabeQuotient` over strictly positive smooth functions is at mo
 theorem sInf_yamabeQuotient_pos_le_sphereYamabeConstant (hn : 2 < finrank ℝ E) :
     sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x}) ≤
       sphereYamabeConstant (finrank ℝ E) := by
-  have hb : BddBelow (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x}) := by
-    refine ⟨-(∫ x, ((CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)⁻ ^
-      ((finrank ℝ E : ℝ) / 2) ∂riemannianVolume I M) ^ (2 / (finrank ℝ E : ℝ)), ?_⟩
-    rintro _ ⟨u, hu, rfl⟩
-    exact neg_integral_scalarCurvature_negPart_rpow_le_yamabeQuotient hn (hu.1.of_le (by simp))
+  have hb : BddBelow (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x}) :=
+    ⟨_, fun _ ⟨u, hu, h⟩ ↦
+      h ▸ neg_integral_scalarCurvature_negPart_rpow_le_yamabeQuotient hn (hu.1.of_le (by simp))⟩
   refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
   obtain ⟨u, hu, hu_pos, huQ⟩ := exists_yamabeQuotient_lt (I := I) (M := M) hn hε
   exact (csInf_le hb ⟨u, ⟨hu, hu_pos⟩, rfl⟩).trans_lt huQ
