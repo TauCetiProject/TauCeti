@@ -171,13 +171,8 @@ private noncomputable def eigenFrame (B : SymmMatrix n) : unitaryGroup n ℂ :=
     map_ofReal_mem_unitaryGroup B.2.eigenvectorUnitary.2⟩
 
 private theorem eigenFrame_mul_transpose (B : SymmMatrix n) :
-    (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 := by
-  have h := Unitary.coe_mul_star_self B.2.eigenvectorUnitary
-  rw [Unitary.coe_star, star_eq_conjTranspose, conjTranspose_eq_transpose_of_trivial] at h
-  simp only [eigenFrame, ← transpose_map]
-  -- `Matrix.map_mul` at `Complex.ofRealHom`, whose coercion is `(↑)` (`Complex.ofRealHom_eq_coe`).
-  exact (Matrix.map_mul (f := Complex.ofRealHom)).symm.trans <| by
-    rw [h, Matrix.map_one _ (by simp) (by simp)]
+    (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 :=
+  map_ofReal_mul_transpose_eq_one B.2.eigenvectorUnitary.2
 
 /-- The diagonal frames `diag (e^{i arctan (t λⱼ)})` of the graphs of `t D`, for `D` the
 diagonal matrix of eigenvalues of `B`. -/
