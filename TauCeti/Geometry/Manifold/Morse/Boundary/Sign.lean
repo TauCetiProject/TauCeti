@@ -346,7 +346,6 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
     (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
     Bijective (hX.trajectoryComparison φp φq y) := by
   have hne : p ≠ q := by rintro rfl; omega
-  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
   have hcrit := hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy
   have hinj : Injective (hX.trajectoryComparison φp φq y) := by
     refine (injective_iff_map_eq_zero (hX.trajectoryComparison φp φq y)).2 fun v hv ↦ ?_
@@ -359,7 +358,7 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
       rw [hc, map_smul, smul_eq_mul] at h
       exact (mul_eq_zero.1 h).resolve_right (hX.mvfderiv_apply_lt_zero y hcrit).ne
     rw [hc0, zero_smul] at hc
-    exact hX.injective_unstableFrame hφp hT (hc.trans (map_zero _).symm)
+    exact hX.injective_unstableFrame_of_mem hφp hf hy.1 (hc.trans (map_zero _).symm)
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rw [Module.finrank_prod, Module.finrank_self, φp.finrank_negativeWeight_fun,
     φq.finrank_negativeWeight_fun]

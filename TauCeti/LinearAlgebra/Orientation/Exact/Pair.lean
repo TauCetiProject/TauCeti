@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Orientation.Exact.Basic
-import TauCeti.LinearAlgebra.LinearEquiv.Basic
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Two short exact sequences meeting along a line
@@ -146,10 +146,15 @@ private theorem exists_linearEquiv_prod :
       ∀ x v, G (x, v) = Fa (eΦ.symm x) + Fb (eΨ.symm (0, v)) := by
   let s : A' →ₗ[K] T := Fb ∘ₗ eΨ.symm.toLinearMap ∘ₗ LinearMap.inr K K A'
   have hs : Na ∘ₗ s = .id :=
-    LinearMap.ext fun v ↦ eΨ.apply_symm_eq_snd (g := Na ∘ₗ Fb) (fun y ↦ by simp [heΨ]) (0, v)
+    LinearMap.ext fun v ↦ by simpa [s, heΨ] using congrArg Prod.snd (eΨ.apply_symm_apply (0, v))
   let e := hFaNa.splitSurjectiveEquiv hFa ⟨s, hs⟩
-  have hinr : e.1.symm ∘ₗ LinearMap.inr K A A' = s :=
-    congrArg Subtype.val ((hFaNa.splitSurjectiveEquiv hFa).symm_apply_apply ⟨s, hs⟩)
+  -- Mathlib states no lemma for the inverse of `splitSurjectiveEquiv`: by definition it sends a
+  -- splitting `e` to the section `e.1.symm ∘ₗ inr`. The properties `e.2` do not determine this
+  -- section (every section of `Na` gives a splitting), so `hsymm` unfolds the definition once.
+  have hsymm : ((hFaNa.splitSurjectiveEquiv hFa).symm e).1 = e.1.symm ∘ₗ LinearMap.inr K A A' :=
+    rfl
+  have hinr : e.1.symm ∘ₗ LinearMap.inr K A A' = s := by
+    rw [← hsymm, Equiv.symm_apply_apply]
   have he (x v) : e.1.symm (x, v) = Fa x + s v := by
     simp [LinearMap.congr_fun e.2.1 x, ← LinearMap.congr_fun hinr v, ← map_add]
   refine ⟨(eΦ.symm.prodCongr (LinearEquiv.refl K A')).trans e.1.symm, fun x ↦ ?_,
@@ -185,7 +190,7 @@ private theorem ofExact_eq_map_exchangeEquiv_prod {G : ((K × B') × A') ≃ₗ[
   · rw [← Prod.mk.eta (p := eΨ y), hRG, Prod.mk.eta, eΨ.symm_apply_apply, Prod.mk_zero_zero,
       map_zero, map_zero, add_zero]
   · rw [hRG, map_add, hFbNb.apply_apply_eq_zero, zero_add]
-    exact eΦ.apply_symm_eq_snd (g := Nb ∘ₗ Fa) (fun x ↦ by simp [heΦ]) (0, u)
+    simpa [heΦ] using congrArg Prod.snd (eΦ.apply_symm_apply (0, u))
 
 include heΦ heΨ in
 open scoped Classical in
