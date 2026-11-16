@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Injective.MinimalCoresolution
 public import TauCeti.Algebra.Module.Injective.Envelope.Projective
-public import TauCeti.Algebra.Module.Injective.Int
 public import TauCeti.CategoryTheory.Abelian.DominantDimension
 
 /-!
@@ -28,10 +27,7 @@ and a projective injective envelope of a finitely generated module is finitely g
 (`TauCeti.IsInjectiveEnvelope.finite_of_projective`). For an Artin algebra this is the dominant
 dimension of [ARS, §VI.5]. For other rings the established notion asks the terms of the minimal
 injective coresolution to be flat rather than projective (Hoshino); Xi calls it the
-*flat-dominant dimension*. The two differ already for `ℤ`: here `dominantDimension ℤ = 0`
-(`TauCeti.dominantDimension_int`), because a projective and injective `ℤ`-module is zero, while in
-the minimal injective coresolution `0 → ℤ → ℚ → ℚ/ℤ → 0` the module `ℚ` is flat and `ℚ/ℤ` is not,
-so the flat version is `1`. The flat version is not defined here.
+*flat-dominant dimension*. The flat version is not defined here.
 
 ## Main definitions
 
@@ -47,7 +43,6 @@ so the flat version is `1`. The flat version is not defined here.
   injective copresentation by finitely generated projective-injective modules.
 * `TauCeti.dominantDimension_eq_top_of_injective`: a left self-injective ring has dominant
   dimension `⊤`.
-* `TauCeti.dominantDimension_int`: `dominantDimension ℤ = 0`.
 * `ModuleCat.dominantDimension_le_dominantDimension_pi`: `dom.dim M ≤ dom.dim Mⁿ`.
 
 ## References
@@ -132,7 +127,7 @@ which `Γ` has a coresolution `0 → Γ → I⁰ → ⋯ → Iⁿ⁻¹` by proje
 This is the dominant dimension of [ARS, §VI.5] only for Artin algebras
 (`TauCeti.natCast_le_dominantDimension_iff_of_finite`). For other rings the established notion asks
 the terms of the minimal injective coresolution to be flat (Hoshino; Xi's *flat-dominant
-dimension*), and the two differ already for `ℤ` (`TauCeti.dominantDimension_int`). -/
+dimension*). -/
 noncomputable def dominantDimension (Γ : Type u) [Ring Γ] : ℕ∞ :=
   CategoryTheory.dominantDimension (ModuleCat.of Γ Γ)
 
@@ -174,23 +169,5 @@ theorem dominantDimension_eq_top_of_injective (Γ : Type u) [Ring Γ] [Module.In
 theorem dominantDimension_eq_top_of_subsingleton (Γ : Type u) [Ring Γ] [Subsingleton Γ] :
     dominantDimension Γ = ⊤ :=
   (ModuleCat.isZero_of_subsingleton (ModuleCat.of Γ Γ)).dominantDimension_eq_top
-
-/-- **`dominantDimension ℤ = 0`.** A projective and injective `ℤ`-module is zero
-(`Module.subsingleton_of_projective_of_injective_int`), so `ℤ` has no projective-injective
-coresolution with one term. The flat version of the dominant dimension (Hoshino) is `1` for `ℤ`,
-so the two notions differ outside Artin algebras. -/
-@[simp]
-theorem dominantDimension_int : dominantDimension ℤ = 0 := by
-  by_contra h
-  have h1 : ((1 : ℕ) : ℕ∞) ≤ CategoryTheory.dominantDimension (ModuleCat.of ℤ ℤ) :=
-    Order.one_le_iff_ne_zero.2 h
-  obtain ⟨I, ι, hι, ⟨hP, hI⟩⟩ := hasCoresolution_one_iff.1
-    (hasProjectiveInjectiveCoresolution_iff_hasCoresolution.1
-      (natCast_le_dominantDimension_iff.1 h1))
-  have : Module.Projective ℤ I := (IsProjective.iff_projective (R := ℤ) I).2 hP
-  have : Module.Injective ℤ I := Module.injective_module_of_injective_object ℤ I
-  have := Module.subsingleton_of_projective_of_injective_int I
-  have hinj := (ModuleCat.mono_iff_injective ι).1 hι
-  exact one_ne_zero (hinj (Subsingleton.elim (ι.hom 1) (ι.hom 0)))
 
 end TauCeti
