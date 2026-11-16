@@ -735,13 +735,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M] [IsManifold I ∞ M]
   [T2Space M] [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+section C1
+
+variable [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
 /-- If `w ∈ H¹(M)` agrees almost everywhere with a smooth function `u` and solves `D(w, φ) = ∫ f φ`
 for a continuous function `f`, then `w = ofSmooth u` and `-laplaceBeltrami I u x = f x` holds
 pointwise everywhere on `M`. -/
 theorem eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     {w : SobolevH1 I M} {u : C^∞⟮I, M; ℝ⟯} {f : M → ℝ} (hf : Continuous f)
     (hwu : toLp w =ᵐ[riemannianVolume I M] u)
     (hw : ∀ φ : C^∞⟮I, M; ℝ⟯,
@@ -777,10 +783,15 @@ theorem eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
       fun φ hφ _ ↦ horth ⟨φ, hφ⟩
   exact congrFun (Measure.eq_of_ae_eq hzero hdiff_cont continuous_zero) x
 
+end C1
+
 variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-omit [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+
+omit [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M] in
 /-- Smoothness of the chart volume density in coordinates when the Riemannian metric is smooth. -/
 private theorem contDiffOn_chartVolumeDensity_chartInvMap (p : M)
     {s : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))}
@@ -790,8 +801,7 @@ private theorem contDiffOn_chartVolumeDensity_chartInvMap (p : M)
   exact ((contMDiffOn_chartVolumeDensity (I := I) (n := ∞) p).comp
     (contMDiffOn_chartInvMap p hs) (mapsTo_chartInvMap_baseSet p hs)).contDiffOn
 
-omit [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+omit [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M] in
 /-- Smoothness of the coordinate coefficient matrix `chartMatrix p` when the Riemannian metric is
 smooth. -/
 private theorem contDiffOn_chartMatrix (p : M)

@@ -95,8 +95,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [T2Space M] [PreconnectedSpace M] [CompactSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
 /-- Existence of a smooth solution of `Δ⁺φ + K + e^(2φ) = 0` on a closed surface when
 `∫ K dV < 0`, from the variational weak solution. -/
