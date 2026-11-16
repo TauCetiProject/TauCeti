@@ -40,6 +40,9 @@ dependence on some of the other variables and holomorphic dependence on the rest
   `bar∂ g = f` near a point of the domain of `f`.
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_param`: local
   solutions of `bar∂ u = f` depending smoothly on parameters.
+* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param`:
+  global cut-off solutions of `bar∂ u = χ f` holomorphic off `tsupport χ` and in holomorphic
+  parameters.
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_holomorphic_param`:
   local solutions depending smoothly on some parameters and holomorphically on the others.
 
@@ -149,6 +152,26 @@ private theorem contDiffOn_cutoffTransform {f : P → ℂ → F} {s : Set P} (hs
   contDiffOn_integral_sub_inv_smul_with_param hs hχc.isCompact
     (fun p _ _ hz ↦ cutoffFamily_eq_zero f p hz) (contDiffOn_cutoffFamily hs hU hχ hχU hf)
 
+/-- Off the closed support of `χ`, the cut-off transform is holomorphic in the plane variable. -/
+private theorem differentiableOn_cutoffTransform_compl_tsupport {f : P → ℂ → F} {s : Set P}
+    (hs : IsOpen s) (hU : IsOpen U) (hχ : ContDiff ℝ n χ) (hχc : HasCompactSupport χ)
+    (hχU : tsupport χ ⊆ U) (hf : ContDiffOn ℝ n ↿f (s ×ˢ U)) {p : P} (hp : p ∈ s) :
+    DifferentiableOn ℂ (cutoffTransform χ f p) (tsupport χ)ᶜ := by
+  have hcont : Continuous (cutoffFamily χ f p) :=
+    ((contDiffOn_cutoffFamily hs hU hχ hχU hf).comp_contDiff (contDiff_const.prodMk contDiff_id)
+      fun z ↦ mk_mem_prod hp (mem_univ z)).continuous
+  have hsupp : HasCompactSupport (cutoffFamily χ f p) :=
+    .intro hχc.isCompact fun z hz ↦ cutoffFamily_eq_zero f p hz
+  have hts : tsupport (cutoffFamily χ f p) ⊆ tsupport χ :=
+    closure_minimal (fun z hz ↦ subset_tsupport χ fun h0 ↦ hz (by simp [cutoffFamily, h0]))
+      (isClosed_tsupport χ)
+  have hhol := ((differentiableOn_cauchyTransform_compl_tsupport
+    (hcont.integrable_of_hasCompactSupport hsupp)).mono (compl_subset_compl.2 hts)).const_smul
+      (π : ℂ)
+  refine hhol.congr fun w _ ↦ ?_
+  simp only [cutoffTransform, Pi.smul_apply, cauchyTransform_apply, smul_smul,
+    mul_inv_cancel₀ (ofReal_ne_zero.mpr Real.pi_ne_zero), one_smul]
+
 variable [CompleteSpace F]
 
 /-- The cut-off transform solves `bar∂ u = χ f`. -/
@@ -198,6 +221,33 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_param 
   filter_upwards [eventually_nhdsSet_iff_forall.2 hχK] with z hz p hp
   simp [conjWirtingerDeriv_cutoffTransform hn hs hU hχn hχc hχU hf hp, hz]
 
+/-- **Cut-off solutions of `bar∂ u = χ f` with smooth and holomorphic parameters.** Let `f` be a
+family of maps `ℂ → F` indexed by `P × Q`, jointly `Cⁿ` (`1 ≤ n`) on `s ×ˢ U` for open sets
+`s ⊆ P × Q` and `U ⊆ ℂ`, and holomorphic in `q ∈ Q`. For any compactly supported `Cⁿ` cutoff
+`χ : ℂ → ℝ` with `tsupport χ ⊆ U`, some family `u`, jointly `Cⁿ` on `s ×ˢ univ`, satisfies
+`bar∂ (u x) = χ • f x` on `ℂ`, is holomorphic in the plane variable on `(tsupport χ)ᶜ`, and is
+holomorphic in `q` on `s` at every point of `ℂ`. -/
+theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param
+    {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℂ Q] {f : P × Q → ℂ → F} {s : Set (P × Q)}
+    (hn : 1 ≤ n) (hs : IsOpen s) (hU : IsOpen U) (hχ : ContDiff ℝ n χ) (hχc : HasCompactSupport χ)
+    (hχU : tsupport χ ⊆ U) (hf : ContDiffOn ℝ n ↿f (s ×ˢ U))
+    (hfq : ∀ x ∈ s, ∀ z ∈ U, DifferentiableAt ℂ (fun q ↦ f (x.1, q) z) x.2) :
+    ∃ u : P × Q → ℂ → F, ContDiffOn ℝ n ↿u (s ×ˢ univ) ∧
+      (∀ x ∈ s, ∀ w, conjWirtingerDeriv (u x) w 1 = (χ w : ℂ) • f x w) ∧
+      (∀ x ∈ s, DifferentiableOn ℂ (u x) (tsupport χ)ᶜ) ∧
+      ∀ x ∈ s, ∀ w, DifferentiableAt ℂ (fun q ↦ u (x.1, q) w) x.2 := by
+  refine ⟨cutoffTransform χ f, contDiffOn_cutoffTransform hs hU hχ hχc hχU hf,
+    fun _ hx w ↦ conjWirtingerDeriv_cutoffTransform hn hs hU hχ hχc hχU hf hx w,
+    fun _ hx ↦ differentiableOn_cutoffTransform_compl_tsupport hs hU hχ hχc hχU hf hx, ?_⟩
+  -- Freeze the smooth parameter `p` and apply the holomorphic statement to the slice.
+  rintro ⟨p, q⟩ hx w
+  have hι : ContDiff ℝ n fun y : Q × ℂ ↦ ((p, y.1), y.2) :=
+    (contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd
+  exact differentiableAt_cutoffTransform (f := fun q z ↦ f (p, q) z) hn
+    (hs.preimage (Continuous.prodMk_right p)) hU hχ hχc hχU
+    (hf.comp hι.contDiffOn fun y hy ↦ mk_mem_prod hy.1 hy.2)
+    (fun q hq z hz ↦ hfq (p, q) hq z hz) hx w
+
 /-- **Local solutions of `bar∂ u = f` with smooth and holomorphic parameters.** Let `f` be a
 family of maps `ℂ → F` indexed by `P × Q`, for a real normed space `P` and a complex normed space
 `Q`, which is jointly `Cⁿ`, `1 ≤ n`, on `s ×ˢ U` for an open set `s ⊆ P × Q` and an open set
@@ -214,18 +264,12 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_holomo
       (∀ᶠ z in 𝓝ˢ K, ∀ x ∈ s, conjWirtingerDeriv (u x) z 1 = f x z) ∧
       ∀ x ∈ s, ∀ w, DifferentiableAt ℂ (fun q ↦ u (x.1, q) w) x.2 := by
   obtain ⟨χ, hχ, -, hχK, hχc, hχU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
-  have hχn : ContDiff ℝ n χ := hχ.of_le (by exact_mod_cast le_top)
-  refine ⟨cutoffTransform χ f, contDiffOn_cutoffTransform hs hU hχn hχc hχU hf, ?_, ?_⟩
-  · filter_upwards [eventually_nhdsSet_iff_forall.2 hχK] with z hz x hx
-    simp [conjWirtingerDeriv_cutoffTransform hn hs hU hχn hχc hχU hf hx, hz]
-  · -- Freeze the smooth parameter `p` and apply the holomorphic statement to the slice.
-    rintro ⟨p, q⟩ hx w
-    have hι : ContDiff ℝ n fun y : Q × ℂ ↦ ((p, y.1), y.2) :=
-      (contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd
-    exact differentiableAt_cutoffTransform (f := fun q z ↦ f (p, q) z) hn
-      (hs.preimage (Continuous.prodMk_right p)) hU hχn hχc hχU
-      (hf.comp hι.contDiffOn fun y hy ↦ mk_mem_prod hy.1 hy.2)
-      (fun q hq z hz ↦ hfq (p, q) hq z hz) hx w
+  obtain ⟨u, hu_cd, hu_dbar, -, hu_q⟩ :=
+    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param hn hs hU
+      (hχ.of_le (by exact_mod_cast le_top)) hχc hχU hf hfq
+  refine ⟨u, hu_cd, ?_, hu_q⟩
+  filter_upwards [eventually_nhdsSet_iff_forall.2 hχK] with z hz x hx
+  simp [hu_dbar x hx z, hz]
 
 end LocalSolution
 
