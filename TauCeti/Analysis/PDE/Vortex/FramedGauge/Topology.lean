@@ -107,6 +107,11 @@ variable (hs) in
 `sobolevGaugeGroup hs` of `ℂ → Circle`. -/
 def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := MulEquiv.refl _
 
+/-- A Sobolev gauge is continuous as a complex-valued function on the plane. -/
+theorem continuous_coe_toSubgroup (u : SobolevTopologicalGaugeGroup hs) :
+    Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
+  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
+
 /-- **The element `u - 1` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`: its `L²` function is `u - 1`
 (`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
 def subOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
@@ -141,8 +146,7 @@ theorem subOne_injective :
   -- Both gauges are continuous, so almost everywhere equality is equality.
   have hcont (w : SobolevTopologicalGaugeGroup hs) :
       Continuous fun z ↦ ((toSubgroup hs w : ℂ → Circle) z : ℂ) - 1 :=
-    (continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs w).2).1).sub
-      continuous_const
+    (continuous_coe_toSubgroup w).sub continuous_const
   have heq := (hcont u).ae_eq_iff_eq volume (hcont v) |>.1 hae
   apply (toSubgroup hs).injective
   refine Subtype.ext (funext fun z ↦ Subtype.ext ?_)
