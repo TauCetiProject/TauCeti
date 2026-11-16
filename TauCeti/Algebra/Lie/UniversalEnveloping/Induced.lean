@@ -76,8 +76,7 @@ noncomputable def envelopingModule : Module (UniversalEnvelopingAlgebra R L') R 
 
 /-- The action of `U(L')` on `R` through `χ'` is multiplication by the value of the character. -/
 @[simp]
-theorem _root_.UniversalEnvelopingAlgebra.smul_eq_lift_mul
-    (r : UniversalEnvelopingAlgebra R L') (a : R) :
+theorem smul_eq_lift_mul (r : UniversalEnvelopingAlgebra R L') (a : R) :
     letI := χ'.envelopingModule
     r • a = UniversalEnvelopingAlgebra.lift R χ' r * a :=
   (rfl)
@@ -164,7 +163,7 @@ private noncomputable def toQuotient :
   __ := letI := χ.envelopingModule
     BalancedTensorProduct.lift (toQuotientBilin B χ) fun r w a ↦ by
       rw [toQuotientBilin_apply, toQuotientBilin_apply, op_smul_eq_mul_map,
-        _root_.UniversalEnvelopingAlgebra.smul_eq_lift_mul, Submodule.Quotient.mk_smul, mk_mul_map,
+        LieCharacter.smul_eq_lift_mul, Submodule.Quotient.mk_smul, mk_mul_map,
         ← Submodule.Quotient.mk_smul, smul_smul, mul_comm a]
   map_smul' w z := letI := χ.envelopingModule
     BalancedTensorProduct.lift_smul_left U _ _
