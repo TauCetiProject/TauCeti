@@ -93,10 +93,10 @@ private theorem norm_littlewoodPaleyBlock_toDistr_apply_le {φ : ContDiffBump (0
     rw [block_toBesovSpaceCLM, SchwartzMap.norm_toLp]
   -- Hölder's inequality for the pairing of a block of `v` with `Δⱼ f`.
   have hpair (k : ℕ) : ‖littlewoodPaleyBlock F φ k v.toDistr h‖ ≤ ‖u.block j‖ * ‖v.block k‖ := by
-    rw [← coe_block, Lp.toTemperedDistribution_apply, hh, Lp.norm_def, ← ENNReal.toReal_mul,
-      ← toReal_eNorm]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top (h.memLp p volume).eLpNorm_ne_top
-      (Lp.eLpNorm_ne_top _)) TauCeti.enorm_integral_smul_le
+    rw [← coe_block, Lp.toTemperedDistribution_apply]
+    have hle := ENNReal.toReal_mono (ENNReal.mul_ne_top (h.memLp p volume).eLpNorm_ne_top
+      (Lp.eLpNorm_ne_top (v.block k))) (TauCeti.enorm_integral_smul_le (q := p'))
+    simpa [hh, Lp.norm_def] using hle
   -- By almost orthogonality and symmetry, `(Δⱼ v) f = ∑_{j - L ≤ k < j + L} (Δₖ v) (Δⱼ f)`.
   have hsum : littlewoodPaleyBlock F φ j v.toDistr f =
       ∑ k ∈ Finset.Ico (j - L) (j + L), littlewoodPaleyBlock F φ k v.toDistr h := by

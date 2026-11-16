@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.LinearAlgebra.StdBasis
-import Mathlib.Analysis.Normed.Lp.lpHolder
+public import Mathlib.Analysis.Normed.Lp.lpHolder
 import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
@@ -182,6 +182,16 @@ theorem normSeq_apply (f : lp E p) (i : ι) : normSeq f i = ‖f i‖ := rfl
 theorem norm_normSeq (f : lp E p) : ‖normSeq f‖ = ‖f‖ :=
   norm_eq_of_forall_norm_eq fun i ↦ by simp
 
+/-- The coordinates of the Hölder pairing `lp.holderL r B hBK e f` are `B i (e i) (f i)`. -/
+@[simp]
+theorem holderL_apply_apply_coe {𝕜 : Type*} [RCLike 𝕜] {F G : ι → Type*}
+    [∀ i, NormedSpace 𝕜 (E i)] [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace 𝕜 (F i)]
+    [∀ i, NormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)] {q : ℝ≥0∞} (r : ℝ≥0∞)
+    [p.HolderTriple q r] [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    (B : (i : ι) → E i →L[𝕜] F i →L[𝕜] G i) {K : ℝ≥0} (hBK : ∀ i, ‖B i‖ ≤ K) (e : lp E p)
+    (f : lp F q) (i : ι) : holderL r B hBK e f i = B i (e i) (f i) := by
+  rw [holderL, LinearMap.mkContinuous₂_apply, holderₗ_apply_apply_coe]
+
 /-- **Hölder's inequality in `ℓᵖ`, for finite sums.** For Hölder conjugate exponents `p` and `q`,
 every finite sum of `‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖`. Unlike `lp.tsum_mul_le_mul_norm`, this
 allows the exponents `1` and `∞`. -/
@@ -196,7 +206,7 @@ theorem sum_norm_mul_norm_le {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)
   have h1 := sum_rpow_le_norm_rpow (p := 1) (by simp) (P (normSeq f) (normSeq g)) s
   simp only [ENNReal.toReal_one, Real.rpow_one] at h1
   calc ∑ i ∈ s, ‖f i‖ * ‖g i‖ ≤ ∑ i ∈ s, ‖P (normSeq f) (normSeq g) i‖ :=
-        Finset.sum_le_sum fun i _ ↦ Real.le_norm_self _
+        Finset.sum_le_sum fun i _ ↦ by simp [P]
     _ ≤ ‖P‖ * ‖normSeq f‖ * ‖normSeq g‖ := h1.trans (P.le_opNorm₂ _ _)
     _ ≤ 1 * ‖f‖ * ‖g‖ := by
         rw [norm_normSeq, norm_normSeq]
