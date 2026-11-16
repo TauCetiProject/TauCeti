@@ -151,6 +151,14 @@ theorem entry_le (T : LRTableau inner outer μ) (i j : ℕ) : T.1 i j ≤ i := b
     List.count_eq_zero_of_not_mem (by simp; omega)] at hpre
   omega
 
+/-- In a Littlewood–Richardson tableau, row `r` contains no letter strictly larger than `r`. -/
+theorem rowCount_eq_zero_of_lt (T : LRTableau inner outer μ) {r k : ℕ} (h : r < k) :
+    T.1.rowCount r k = 0 := by
+  rw [SkewSemistandardYoungTableau.rowCount_def, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  intro j _ hjk
+  have := T.entry_le r j
+  omega
+
 /-- **The sizes of the shapes of a Littlewood–Richardson tableau add up**: a tableau of shape
 `ν / λ` and content `μ` forces `|ν| = |λ| + |μ|`. -/
 theorem card_eq (T : LRTableau inner outer μ) : outer.card = inner.card + μ.card := by

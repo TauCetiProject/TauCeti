@@ -57,6 +57,8 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
 ## Main results
 
 * `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`.
+* `TauCeti.Hive.isRhombusConcave_iff_ofIJ`, `TauCeti.Hive.le_ofIJ_right`,
+  `TauCeti.Hive.le_ofIJ_left`, `TauCeti.Hive.le_ofIJ_upright`.
 * `TauCeti.Hive.mixedDiff_nonpos_of_isUnitStep`,
   `TauCeti.Hive.counterexampleSeven_nonunit_mixedDiff_pos`.
 * `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`.
@@ -263,6 +265,68 @@ theorem ofRhombusConcave_eq_iff {f₁ f₂ : Vertex n → R}
 end Ordered
 
 end Gauge
+
+/-! ### Three-family `(i, j)`-chart characterization of rhombus concavity -/
+
+section ChartConcavity
+
+/-- **Three-family `(i, j)`-chart characterization of rhombus concavity**: a lattice function
+`f : Vertex n → R` is rhombus-concave iff it satisfies the right-leaning, left-leaning, and
+upright unit-rhombus inequalities in `(i, j)` coordinates. -/
+theorem isRhombusConcave_iff_ofIJ {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
+    (f : Vertex n → R) :
+    IsRhombusConcave f ↔
+      (∀ (i j : ℕ) (hij : i ≤ j) (hjn : j + 2 ≤ n),
+        f (Vertex.ofIJ n i j hij (by omega)) +
+            f (Vertex.ofIJ n (i + 1) (j + 2) (by omega) hjn) ≤
+          f (Vertex.ofIJ n i (j + 1) (by omega) (by omega)) +
+            f (Vertex.ofIJ n (i + 1) (j + 1) (by omega) (by omega))) ∧
+      (∀ (i j : ℕ) (hij : i < j) (hjn : j + 1 ≤ n),
+        f (Vertex.ofIJ n i j hij.le (by omega)) +
+            f (Vertex.ofIJ n (i + 2) (j + 1) (by omega) hjn) ≤
+          f (Vertex.ofIJ n (i + 1) j hij (by omega)) +
+            f (Vertex.ofIJ n (i + 1) (j + 1) (by omega) hjn)) ∧
+      (∀ (i j : ℕ) (hij : i < j) (hjn : j + 1 ≤ n),
+        f (Vertex.ofIJ n (i + 1) j hij (by omega)) +
+            f (Vertex.ofIJ n i (j + 1) (by omega) hjn) ≤
+          f (Vertex.ofIJ n i j hij.le (by omega)) +
+            f (Vertex.ofIJ n (i + 1) (j + 1) (by omega) hjn)) := by
+  rw [isRhombusConcave_def]
+  refine ⟨fun hf => ⟨fun i j hij hjn => hf (isRhombus_ofIJ_right hij hjn),
+    fun i j hij hjn => hf (isRhombus_ofIJ_left hij hjn),
+    fun i j hij hjn => hf (isRhombus_ofIJ_upright hij hjn)⟩, fun ⟨hr, hl, hu⟩ a b c d h => ?_⟩
+  exact h.cases_ofIJ (P := fun a b c d => f b + f d ≤ f a + f c)
+    (fun a _ c _ h' => by rwa [add_comm (f a) (f c)] at h')
+    (fun _ b _ d h' => by rwa [add_comm (f b) (f d)] at h')
+    hr hl hu
+
+variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
+
+/-- Right-leaning `(i, j)`-chart rhombus inequality for a hive `h`. -/
+theorem le_ofIJ_right (h : Hive n R) {i j : ℕ} (hij : i ≤ j) (hjn : j + 2 ≤ n) :
+    h (Vertex.ofIJ n i j hij (by omega)) +
+        h (Vertex.ofIJ n (i + 1) (j + 2) (by omega) hjn) ≤
+      h (Vertex.ofIJ n i (j + 1) (by omega) (by omega)) +
+        h (Vertex.ofIJ n (i + 1) (j + 1) (by omega) (by omega)) :=
+  h.le_of_isRhombus (isRhombus_ofIJ_right hij hjn)
+
+/-- Left-leaning `(i, j)`-chart rhombus inequality for a hive `h`. -/
+theorem le_ofIJ_left (h : Hive n R) {i j : ℕ} (hij : i < j) (hjn : j + 1 ≤ n) :
+    h (Vertex.ofIJ n i j hij.le (by omega)) +
+        h (Vertex.ofIJ n (i + 2) (j + 1) (by omega) hjn) ≤
+      h (Vertex.ofIJ n (i + 1) j hij (by omega)) +
+        h (Vertex.ofIJ n (i + 1) (j + 1) (by omega) hjn) :=
+  h.le_of_isRhombus (isRhombus_ofIJ_left hij hjn)
+
+/-- Upright `(i, j)`-chart rhombus inequality for a hive `h`. -/
+theorem le_ofIJ_upright (h : Hive n R) {i j : ℕ} (hij : i < j) (hjn : j + 1 ≤ n) :
+    h (Vertex.ofIJ n (i + 1) j hij (by omega)) +
+        h (Vertex.ofIJ n i (j + 1) (by omega) hjn) ≤
+      h (Vertex.ofIJ n i j hij.le (by omega)) +
+        h (Vertex.ofIJ n (i + 1) (j + 1) (by omega) hjn) :=
+  h.le_of_isRhombus (isRhombus_ofIJ_upright hij hjn)
+
+end ChartConcavity
 
 /-! ### Monoid structure, nonnegative scaling, affine hives, and subtriangle restriction -/
 

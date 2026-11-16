@@ -264,6 +264,23 @@ theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :
   simp only [shift_apply]
   omega
 
+/-- Shifting a dominant weight `l` by `m` yields a polynomial weight whenever
+`0 ≤ l.detShift + m`. -/
+theorem isPolynomial_shift_of_zero_le_detShift_add (l : DominantWeight n) {m : ℤ}
+    (hm : 0 ≤ l.detShift + m) : (l.shift m).IsPolynomial := fun i => by
+  have h := l.detShift_le i
+  simp only [shift_apply]
+  omega
+
+/-- Shifting a polynomial dominant weight of positive rank by `m` gives a weight whose determinant
+shift is at least `m`. The positive-rank assumption is necessary because `detShift` is `0` at rank
+`0`. -/
+theorem le_detShift_shift_of_isPolynomial {l : DominantWeight (n + 1)} (hl : l.IsPolynomial)
+    (m : ℤ) : m ≤ (l.shift m).detShift := by
+  have hnn : 0 ≤ l.detShift := (isPolynomial_iff_zero_le_detShift l).mp hl
+  rw [detShift_shift]
+  omega
+
 /-- The entries of a dominant weight, truncated to `ℕ`, are still weakly decreasing. -/
 theorem toNat_antitone (l : DominantWeight n) : Antitone fun i => (l.1 i).toNat :=
   fun _ _ h => Int.toNat_le_toNat (l.antitone h)
@@ -359,6 +376,14 @@ variable {n : ℕ}
 length `λᵢ - λₙ`.  Together with `TauCeti.DominantWeight.detShift` it presents `λ` as a
 determinant twist of a polynomial weight. -/
 def detShiftShape (l : DominantWeight n) : YoungDiagram := (l.shift (-l.detShift)).shape
+
+/-- The defining equation of `detShiftShape`: shifting a dominant weight down by its last entry
+has shape `l.detShiftShape`. Because `detShiftShape` is not `@[expose]` in this `module`, this
+lemma makes the identity available to downstream modules. -/
+@[simp]
+theorem shape_shift_neg_detShift (l : DominantWeight n) :
+    (l.shift (-l.detShift)).shape = l.detShiftShape := by
+  rw [detShiftShape]
 
 @[simp]
 theorem rowLen_detShiftShape (l : DominantWeight n) (i : Fin n) :
