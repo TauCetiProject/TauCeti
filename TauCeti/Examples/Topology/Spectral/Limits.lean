@@ -6,15 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.Spectral.Limits.Maps
+import TauCeti.Topology.Spectral.Limits.Detection
+import Mathlib.CategoryTheory.Functor.OfSequence
 import Mathlib.Topology.Order.UpperLowerSetTopology
 
 /-!
-# Checks for maps into spectral limits
+# Checks for maps and finite-stage detection in spectral limits
 
 The constant Sierpiński tower tests the limit criteria without Hausdorffness: the constant-section
 map is spectral, generalizing and a quotient map, and its image contains both distinct points.
 The diagonal into the product of two Sierpiński spaces is not generalizing even though both
 coordinate maps are identities. Thus the cofiltered hypothesis cannot simply be dropped.
+
+The tower of Sierpiński spaces with constant-false transitions tests finite-stage detection:
+the nonempty compact open singleton `{True}` misses the limit and disappears after refinement.
+In particular, the limit projection is not surjective.
 -/
 
 open Set Topology CategoryTheory CategoryTheory.Limits TopCat
@@ -68,5 +74,41 @@ example : GeneralizingMap (id : Prop → Prop) ∧
     (hTF.prod (specializes_refl False))
   have hT : p := (congrArg Prod.fst hp).mpr trivial
   exact (congrArg Prod.snd hp).mp hT
+
+
+/-- A nonempty compact open can disappear in a non-Hausdorff spectral limit, and the
+detection theorem finds a transition where it disappears. -/
+example : ∃ (F : ℕᵒᵖ ⥤ TopCat.{0}) (s : Set (F.obj (Opposite.op 0))),
+    (∀ j, SpectralSpace (F.obj j)) ∧
+    (∀ {i j} (f : i ⟶ j), IsSpectralMap (F.map f)) ∧
+    IsOpen s ∧ IsCompact s ∧ s.Nonempty ∧
+    (limitCone F).π.app (Opposite.op 0) ⁻¹' s = ∅ ∧
+    ¬ Function.Surjective ((limitCone F).π.app (Opposite.op 0)) ∧
+    ∃ (j : ℕᵒᵖ) (f : j ⟶ Opposite.op 0), F.map f ⁻¹' s = ∅ := by
+  let F := Functor.ofOpSequence (X := fun _ : ℕ ↦ TopCat.of Prop) fun _ ↦
+    (TopCat.ofHom ⟨fun _ : Prop ↦ False, continuous_const⟩ : TopCat.of Prop ⟶ TopCat.of Prop)
+  have : ∀ j, SpectralSpace (F.obj j) := fun _ ↦ spectralSpace_prop
+  have : ∀ j, Finite (F.obj j) := fun _ ↦ inferInstanceAs (Finite Prop)
+  have hF : ∀ {i j} (f : i ⟶ j), IsSpectralMap (F.map f) := fun f ↦
+    ⟨(F.map f).hom.continuous, fun _ _ _ ↦ Set.toFinite _ |>.isCompact⟩
+  have hcoord (x : (limitCone F).pt) (n : ℕ) : x.1 (Opposite.op n) = False := by
+    have hx := x.2 (homOfLE (Nat.le_succ n)).op
+    rw [Functor.ofOpSequence_map_homOfLE_succ] at hx
+    exact hx.symm
+  have hempty : (limitCone F).π.app (Opposite.op 0) ⁻¹' ({True} : Set Prop) = ∅ := by
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    intro x hx
+    have hval : (limitCone F).π.app (Opposite.op 0) x = False := hcoord x 0
+    have hx' : (limitCone F).π.app (Opposite.op 0) x = True := hx
+    exact (hval.symm.trans hx').mpr trivial
+  refine ⟨F, {True}, inferInstance, hF, isOpen_singleton_true, isCompact_singleton,
+    singleton_nonempty _, hempty, ?_, ?_⟩
+  · intro hsurj
+    obtain ⟨x, hx⟩ := hsurj True
+    have hTF : True = False := hx.symm.trans (hcoord x 0)
+    exact hTF.mp trivial
+  · exact exists_preimage_eq_of_isLimit F hF _ (limitConeIsLimit F)
+      isOpen_singleton_true isCompact_singleton isOpen_empty isCompact_empty
+      (by simpa using hempty)
 
 end TauCeti

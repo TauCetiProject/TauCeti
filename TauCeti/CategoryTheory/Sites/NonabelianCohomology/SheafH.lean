@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Map
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
 /-!
@@ -39,6 +40,8 @@ short exact sequence follows by comparing it with the injective one.
 * `CategoryTheory.Sheaf.NonabelianH1.equivSheafH_connecting`: it sends the connecting map of
   torsors of lifts to the connecting map `δ` of sheaf cohomology, and `equivSheafH_one` says that
   it is a map of pointed sets.
+* `CategoryTheory.Sheaf.NonabelianH1.equivSheafH_map`: extending the structure group of a torsor
+  along a morphism of abelian sheaves corresponds to the induced map on `H¹`.
 
 ## References
 
@@ -263,6 +266,48 @@ is `0`. -/
 theorem equivSheafH_symm_eq_one_iff {F : Sheaf J AddCommGrpCat.{w}} {z : H F 1} :
     (equivSheafH F).symm z = 1 ↔ z = 0 := by
   rw [← equivSheafH_symm_zero F, (equivSheafH F).symm.apply_eq_iff_eq]
+
+section Naturality
+
+variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
+
+/-- The comparison between torsor classes and `H¹` is natural in the coefficient sheaf:
+extending the structure group along `f` agrees with the cohomological map `H.map f 1`. -/
+@[simp]
+theorem equivSheafH_map {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G)
+    (x : NonabelianH1 ((abelianSheafToGrpSheaf J).obj F)) :
+    equivSheafH G (map ((abelianSheafToGrpSheaf J).map f) x) =
+      H.map f 1 (equivSheafH F x) := by
+  let φ := TauCeti.injectiveCokernelSequenceMap f
+  have hφ : φ.τ₁ = f := TauCeti.injectiveCokernelSequenceMap_τ₁ f
+  have hF := TauCeti.injectiveCokernelSequence_shortExact F
+  have hG := TauCeti.injectiveCokernelSequence_shortExact G
+  -- Every torsor is a torsor of lifts for the chosen injective embedding. Extend `f` to a
+  -- morphism of these short exact sequences and compare their connecting maps.
+  obtain ⟨q, rfl⟩ := surjective_connecting hF x
+  rw [map_connecting_of_comp_eq hF.isGroupExtension hG.isGroupExtension
+    ((abelianSheafToGrpSheaf J).map f) ((abelianSheafToGrpSheaf J).map φ.τ₂)
+    ((abelianSheafToGrpSheaf J).map φ.τ₃)
+    (by
+      rw [← Functor.map_comp, ← Functor.map_comp]
+      exact congrArg _ (by simpa only [hφ] using φ.comm₁₂.symm))
+    (by rw [← Functor.map_comp, ← Functor.map_comp]; exact congrArg _ φ.comm₂₃)
+    _ (H.zeroMulEquivSections _ (.ofAdd (H.map φ.τ₃ 0 q)))
+    (fun U ↦ (H.zeroMulEquivSections_map φ.τ₃ q U).symm)]
+  simp only [equivSheafH_connecting hG, equivSheafH_connecting hF,
+    MulEquiv.symm_apply_apply, toAdd_ofAdd]
+  simpa only [hφ] using H.δ_naturality 0 1 rfl hF hG φ q
+
+/-- The inverse comparison from `H¹` to torsor classes also commutes with change of
+coefficients. -/
+@[simp]
+theorem equivSheafH_symm_map {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G) (x : H F 1) :
+    (equivSheafH G).symm (H.map f 1 x) =
+      map ((abelianSheafToGrpSheaf J).map f) ((equivSheafH F).symm x) := by
+  apply (equivSheafH G).injective
+  simp
+
+end Naturality
 
 end NonabelianH1
 

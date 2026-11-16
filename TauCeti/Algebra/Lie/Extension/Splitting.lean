@@ -44,12 +44,12 @@ open Function Topology LieModule.Cohomology
 
 namespace LieAlgebra.Extension
 
+section Topology
+
 variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   [LieRing M] [LieAlgebra R M] (E : Extension R M L)
 
 variable {s : L →ₗ[R] E.L} (hs : LeftInverse E.proj s) [IsLieAbelian M]
-
-section Topology
 
 variable [TopologicalSpace L] [TopologicalSpace E.L] [IsTopologicalAddGroup E.L]
   [DiscreteTopology E.proj.ker]
