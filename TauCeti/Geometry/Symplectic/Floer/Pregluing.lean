@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # Pre-gluing Floer cylinders broken at an orbit
@@ -40,7 +43,7 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `s > 1` that of `v` at `(s - R, t)`
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
   `TauCeti.SymplecticForm.floerOperator_preglue_of_one_lt`). If `u` and `v` are solutions, the
-  error is supported in the neck.
+  error is supported in the neck (`TauCeti.SymplecticForm.floerOperator_preglue_eq_zero`).
 * **The error on the neck.** On the neck, `‖F(w_R)‖` is bounded by a constant times the
   `C¹` distances of `u` from `x` at `s + R` and of `v` from `x` at `s - R`
   (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le`).
@@ -50,6 +53,13 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`). For solutions `u`
   and `v` this bounds the error on all of `ℝ × [0, 1]` (`TauCeti.SymplecticForm.`
   `exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
+* **The error in `Lᵖ`.** Since the error of two solutions is supported in the neck, which has
+  area `2`, its `Lᵖ` norm on `ℝ × [0, 1]` is also `O(e^{-κ R})`, uniformly in `1 ≤ p ≤ ∞`
+  (`TauCeti.SymplecticForm.`
+  `exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_zero`). This is the
+  form of the error that the Newton iteration in `W^{1,p}` consumes. The error is measurable
+  because the Floer operator of a continuous map is
+  (`TauCeti.SymplecticForm.aestronglyMeasurable_floerOperator_cylindrical`).
 
 Estimates are stated on the fundamental domain `t ∈ [0, 1]` of the cylinder, so no periodicity is
 assumed. The construction is local in the cylindrical coordinates, so it applies equally at a
@@ -66,7 +76,8 @@ right inverse of the linearized operator and the Newton iteration are not treate
 
 public section
 
-open Filter Set Topology Function ContinuousLinearMap
+open Filter Set Topology Function ContinuousLinearMap MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -318,6 +329,26 @@ theorem floerOperator_preglue_of_one_lt (ω : SymplecticForm V) (J : ℝ → V �
   simp only [floerOperator_def, fderiv_preglue_of_one_lt hz, preglue_of_one_le hz.le,
     Prod.snd_sub, sub_zero]
 
+/-- **The pre-gluing error vanishes off the neck.** If `u` and `v` solve the Floer equation on
+`ℝ × [0, 1]`, the Floer operator of the pre-glued map vanishes at every point of `ℝ × [0, 1]`
+outside the neck `[-1, 1] × [0, 1]`. -/
+theorem floerOperator_preglue_eq_zero (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (x : ℝ → V) {u v : ℝ × ℝ → V} (R : ℝ)
+    (huF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
+    (hvF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v z = 0)
+    {z : ℝ × ℝ} (hz : z ∈ univ ×ˢ Icc (0 : ℝ) 1) (hzN : z ∉ Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) :
+    ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z = 0 := by
+  have hz₂ : z.2 ∈ Icc (0 : ℝ) 1 := hz.2
+  rcases lt_or_ge z.1 (-1) with h₁ | h₁
+  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁]
+    exact huF _ ⟨mem_univ _, by simpa using hz₂⟩
+  rcases lt_or_ge 1 z.1 with h₂ | h₂
+  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂]
+    exact hvF _ ⟨mem_univ _, by simpa using hz₂⟩
+  exact absurd ⟨⟨h₁, h₂⟩, hz₂⟩ hzN
+
 /-- **The pointwise pre-gluing error.** Let `x` be an orbit of `X_{H_t}` at `t = z.2`, and write
 `Du = du - (σ, τ) ↦ τ X_{H_t}(x(t))`, and similarly `Dv`. If `‖J_z(w_R z)‖ ≤ M`, `X_{H_t}` is
 `L`-Lipschitz between `x(t)` and `w_R(z)`, and the cutoff derivatives at `±s` are at most `B`, then
@@ -492,15 +523,109 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero
   refine ⟨C', hC'.mono fun R hR z hz ↦ ?_⟩
   have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
     (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
-  rcases lt_or_ge z.1 (-1) with h₁ | h₁
-  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁,
-      huF _ ⟨mem_univ _, by simpa using hz.2⟩, norm_zero]
-    exact hpos
-  rcases lt_or_ge 1 z.1 with h₂ | h₂
-  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂,
-      hvF _ ⟨mem_univ _, by simpa using hz.2⟩, norm_zero]
-    exact hpos
-  exact hR z ⟨⟨h₁, h₂⟩, hz.2⟩
+  by_cases hzN : z ∈ Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1
+  · exact hR z hzN
+  rw [ω.floerOperator_preglue_eq_zero J H x R huF hvF hz hzN, norm_zero]
+  exact hpos
+
+/-- **Measurability of the Floer operator.** For the cylindrical datum `K = H_t dt` with `H`
+jointly `C²` and `J_t(y)` jointly continuous, the Floer operator of a continuous map is almost
+everywhere strongly measurable for every measure on `ℝ × ℝ`: it is a continuous function of the
+point and the two partial derivatives of the map, which are measurable. -/
+theorem aestronglyMeasurable_floerOperator_cylindrical (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H))
+    (hJ : Continuous (uncurry J)) {w : ℝ × ℝ → V} (hw : Continuous w) (μ : Measure (ℝ × ℝ)) :
+    AEStronglyMeasurable (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w) μ := by
+  let : MeasurableSpace V := borel V
+  have : BorelSpace V := ⟨rfl⟩
+  have hX := (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous
+  have hG : Continuous fun q : (ℝ × ℝ) × V × V ↦ q.2.1 +
+      J q.1.2 (w q.1) (q.2.2 - ω.hamiltonianVectorField (H q.1.2) (w q.1)) :=
+    have hpt : Continuous fun q : (ℝ × ℝ) × V × V ↦ (q.1.2, w q.1) :=
+      continuous_fst.snd.prodMk (hw.comp continuous_fst)
+    continuous_snd.fst.add ((hJ.comp hpt).clm_apply (continuous_snd.snd.sub (hX.comp hpt)))
+  have hd (e : ℝ × ℝ) : AEStronglyMeasurable (fun z ↦ fderiv ℝ w z e) μ :=
+    (measurable_fderiv_apply_const ℝ _ e).aestronglyMeasurable
+  refine (hG.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk
+    ((hd stdComplexLineReal).prodMk (hd stdComplexLineImag)))).congr
+      (Eventually.of_forall fun z ↦ ?_)
+  simp [floerOperator_def, hamiltonianVectorField_const]
+
+/-- **The pre-gluing error in `Lᵖ`.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero`,
+with `u` and `v` moreover continuous, for every large gluing parameter `R` the Floer operator of the
+pre-glued map `w_R` has `Lᵖ` norm at most `C' e^{-κ R}` on the strip `ℝ × [0, 1]`, for every
+`1 ≤ p ≤ ∞` with the same constant. Indeed the error is supported in the neck
+`[-1, 1] × [0, 1]`, which has area `2`. -/
+theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_zero
+    (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} {u v : ℝ × ℝ → V} {C κ : ℝ}
+    (hH : ContDiff ℝ 2 (uncurry H)) (hJ : Continuous (uncurry J))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hκ : 0 < κ)
+    (huc : Continuous u) (hvc : Continuous v)
+    (hud : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (s, t))
+    (hu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ C * Real.exp (-(κ * s)))
+    (hdu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ u (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (-(κ * s)))
+    (hvd : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (s, t))
+    (hv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, ‖v (s, t) - x t‖ ≤ C * Real.exp (κ * s))
+    (hdv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ v (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (κ * s))
+    (huF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
+    (hvF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v z = 0) :
+    ∃ C', ∀ᶠ R in atTop, ∀ p : ℝ≥0∞, 1 ≤ p →
+      eLpNorm (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R)) p
+          (volume.restrict (univ ×ˢ Icc (0 : ℝ) 1)) ≤
+        ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
+  obtain ⟨C', hC'⟩ :=
+    ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
+  refine ⟨2 * C', hC'.mono fun R hR p hp ↦ ?_⟩
+  set F := ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R)
+  set S : Set (ℝ × ℝ) := univ ×ˢ Icc (0 : ℝ) 1
+  set N : Set (ℝ × ℝ) := Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1
+  have hN : MeasurableSet N := measurableSet_Icc.prod measurableSet_Icc
+  have hNS : N ⊆ S := prod_mono (subset_univ _) le_rfl
+  have hFm : AEStronglyMeasurable F (volume.restrict N) := by
+    have hρ : Continuous pregluingCutoff := contDiff_pregluingCutoff.continuous (n := 0)
+    have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+    exact ω.aestronglyMeasurable_floerOperator_cylindrical hH hJ (by unfold preglue; fun_prop) _
+  -- The error vanishes off the neck, so its `Lᵖ` norm on the strip is its `Lᵖ` norm on the
+  -- neck, of area `2`.
+  have hS : eLpNorm F p (volume.restrict S) = eLpNorm F p (volume.restrict N) := by
+    have hSm : MeasurableSet S := MeasurableSet.univ.prod measurableSet_Icc
+    calc eLpNorm F p (volume.restrict S) = eLpNorm (N.indicator F) p (volume.restrict S) := by
+          refine eLpNorm_congr_ae ((ae_restrict_iff' hSm).2 (Eventually.of_forall fun z hz ↦ ?_))
+          by_cases hzN : z ∈ N
+          · rw [indicator_of_mem hzN]
+          · rw [indicator_of_notMem hzN]
+            exact ω.floerOperator_preglue_eq_zero J H x R huF hvF hz hzN
+      _ = eLpNorm F p ((volume.restrict S).restrict N) :=
+          eLpNorm_indicator_eq_eLpNorm_restrict hN.nullMeasurableSet
+      _ = eLpNorm F p (volume.restrict N) := by
+          rw [Measure.restrict_restrict hN, inter_eq_left.2 hNS]
+  have hvol : volume.restrict N univ = 2 := by
+    rw [Measure.restrict_apply_univ, Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc,
+      Real.volume_Icc]
+    norm_num
+  -- The exponent `1 / p` is at most `1`, so `2 ^ (1 / p) ≤ 2`.
+  have hexp : p.toReal⁻¹ ≤ 1 := by
+    rcases eq_or_ne p ⊤ with rfl | hpt
+    · simp
+    exact inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hpt hp)
+  rw [hS]
+  calc eLpNorm F p (volume.restrict N) ≤
+        volume.restrict N univ ^ p.toReal⁻¹ * ENNReal.ofReal (C' * Real.exp (-(κ * R))) :=
+        eLpNorm_le_of_ae_bound hFm ((ae_restrict_iff' hN).2 (Eventually.of_forall hR))
+    _ ≤ 2 * ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
+        rw [hvol]
+        gcongr
+        simpa using ENNReal.rpow_le_rpow_of_exponent_le (x := 2) (by norm_num) hexp
+    _ = ENNReal.ofReal (2 * C' * Real.exp (-(κ * R))) := by
+        conv_rhs => rw [mul_assoc, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
 
 end SymplecticForm
 
