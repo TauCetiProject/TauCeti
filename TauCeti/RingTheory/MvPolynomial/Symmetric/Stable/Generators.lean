@@ -230,14 +230,6 @@ theorem stableSchurBasis_repr_stableHsymm (n : ℕ) :
       Finsupp.single (Nat.Partition.indiscrete n) 1 := by
   rw [← stableSchur_indiscrete, stableSchurBasis_repr_stableSchur]
 
-/-- The Schur coordinates of the unit of the symmetric functions: `1 = s_∅` is the basis vector
-of the empty partition. -/
-@[simp]
-theorem stableSchurBasis_repr_stableSymmetricOne :
-    (stableSchurBasis R 0).repr (stableSymmetricOne R) =
-      Finsupp.single (Nat.Partition.indiscrete 0) 1 := by
-  rw [← stableHsymm_zero, stableSchurBasis_repr_stableHsymm]
-
 namespace SymmetricFunction
 
 /-- **The elementary symmetric functions are algebraically independent.** -/
