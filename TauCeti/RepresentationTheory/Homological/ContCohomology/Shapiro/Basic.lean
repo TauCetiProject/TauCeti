@@ -62,7 +62,7 @@ Shapiro image of the rebuilt cochain is then `c` on the nose
 (`TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2`), where a factorization with `w 1 = s`
 would return the conjugate of `c` by `s` instead. Continuity of both cochains, and of the
 primitives of the coboundaries, in their group arguments follows from joint continuity in the group
-arguments and the point of `G`, because `G` is compact (`TauCeti.continuous_of_continuous_uncurry`).
+arguments and the point of `G`, because `G` is compact (`Continuous.of_uncurry_coe`).
 
 ## Main definitions
 
@@ -324,7 +324,7 @@ variable [CompactSpace G]
 theorem coindCochain1_mem_Z1 :
     coindCochain1 w c hw hwmul hccont hccoc ∈ Z1 G (DiscreteCoind G U A) := by
   have hL := continuous_shapiroLift w c hw hccont
-  refine mem_Z1_iff.2 ⟨continuous_of_continuous_uncurry ?_, fun g h => ?_⟩
+  refine mem_Z1_iff.2 ⟨Continuous.of_uncurry_coe ?_, fun g h => ?_⟩
   · simp only [Function.uncurry_def, coindCochain1_apply, ← shapiroLift_apply w c]
     exact (hL.comp (continuous_snd.mul continuous_fst)).sub (hL.comp continuous_snd)
   · refine DiscreteCoind.ext fun x => ?_
@@ -590,7 +590,7 @@ variable [CompactSpace G]
 `U` is a continuous `2`-cocycle of `G` with coefficients in `Coind_U^G A`. -/
 theorem coindCochain2_mem_Z2 (hccoc : groupCohomology.IsCocycle₂ c) :
     coindCochain2 w c hw hwmul hccont ∈ Z2 G (DiscreteCoind G U A) := by
-  refine mem_Z2_iff.2 ⟨continuous_of_continuous_uncurry ?_,
+  refine mem_Z2_iff.2 ⟨Continuous.of_uncurry_coe ?_,
     isCocycle₂_coindCochain2 w c hw hwmul hccont hccoc⟩
   have hg : Continuous fun p : (G × G) × G => p.2 * p.1.1 :=
     continuous_snd.mul (continuous_fst.comp continuous_fst)
@@ -640,7 +640,7 @@ theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
       have h1 : (u : G) * y * g = (u : G) * (y * g) := by group
       rw [h1, hwmul u y, hwmul u (y * g)]
       exact homogeneous1_smul α u (w y) (w (y * g))), ?_, ?_⟩
-  · refine continuous_of_continuous_uncurry ?_
+  · refine Continuous.of_uncurry_coe ?_
     simp only [Function.uncurry_def, DiscreteCoind.mk_apply]
     exact hN.comp (continuous_snd.prodMk (continuous_snd.mul continuous_fst))
   · refine funext fun q => ?_
@@ -674,7 +674,7 @@ theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
       rw [hu]
       exact shapiroPrimitive2_smul w hwmul (f : G × G → DiscreteCoind G U A) u y (y * g)),
     ?_, ?_⟩
-  · refine continuous_of_continuous_uncurry ?_
+  · refine Continuous.of_uncurry_coe ?_
     simp only [Function.uncurry_def, DiscreteCoind.mk_apply]
     exact hN.comp (continuous_snd.prodMk (continuous_snd.mul continuous_fst))
   · refine funext fun q => ?_

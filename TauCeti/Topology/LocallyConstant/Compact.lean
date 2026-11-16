@@ -20,7 +20,7 @@ functions on `X` is locally constant as soon as `Function.uncurry f` is
 (`IsLocallyConstant.of_uncurry`); `IsLocallyConstant.of_uncurry_coe` is the same statement for a
 family of bundled functions, valued in any `FunLike` type. For functions with values in a discrete
 space, local constancy is continuity, so such a family `F : P → C` is continuous, for any topology
-on `C`, as soon as `(p, x) ↦ F p x` is continuous (`TauCeti.continuous_of_continuous_uncurry`).
+on `C`, as soon as `(p, x) ↦ F p x` is continuous (`Continuous.of_uncurry_coe`).
 -/
 
 public section
@@ -59,15 +59,16 @@ theorem of_uncurry_coe [CompactSpace X] {C : Type*} [FunLike C X A] {F : P → C
 
 end IsLocallyConstant
 
-namespace TauCeti
+namespace Continuous
 
 variable {X P A C : Type*} [TopologicalSpace X] [TopologicalSpace P] [TopologicalSpace A]
   [DiscreteTopology A] [TopologicalSpace C] [FunLike C X A]
 
 /-- A family `F : P → C` of bundled functions on a compact space `X`, with values in a discrete
-space `A`, is continuous for any topology on `C` if `(p, x) ↦ F p x` is continuous on `P × X`. -/
-theorem continuous_of_continuous_uncurry [CompactSpace X] {F : P → C}
+space `A`, is continuous for any topology on `C` if `(p, x) ↦ F p x` is continuous on `P × X`.
+This is the continuity form of `IsLocallyConstant.of_uncurry_coe`. -/
+theorem of_uncurry_coe [CompactSpace X] {F : P → C}
     (hF : Continuous (Function.uncurry fun p x ↦ F p x)) : Continuous F :=
   (IsLocallyConstant.of_uncurry_coe ((IsLocallyConstant.iff_continuous _).2 hF)).continuous
 
-end TauCeti
+end Continuous
