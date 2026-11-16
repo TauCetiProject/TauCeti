@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # Irreducible components from a base
@@ -214,8 +215,7 @@ theorem componentEquiv_connectedComponentMk (i : b.support) :
 theorem mem_supp_componentEquiv_symm (C : P.Component) {i : b.support} :
     i ∈ (b.componentEquiv.symm C).supp ↔ (i : ι) ∈ C.supp := by
   rw [SimpleGraph.ConnectedComponent.mem_supp_iff, Equiv.eq_symm_apply,
-    componentEquiv_connectedComponentMk]
-  rfl
+    componentEquiv_connectedComponentMk, SimpleGraph.ConnectedComponent.mem_supp_iff]
 
 /-- A root is attached to a diagram component exactly when it lies in the corresponding irreducible
 component. -/
@@ -278,20 +278,6 @@ section ComponentPairing
 variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   {P : RootPairing ι K M N} [Finite ι] [P.IsRootSystem] (b : P.Base) (C : P.Component)
 
-omit [Finite ι] [P.IsRootSystem] in
-/-- Membership in the additive closure of a family restricted to the indices in `C` with a given
-property, read in an ambient space through a submodule. -/
-private theorem mem_closure_image_preimage_iff {V : Type*} [AddCommGroup V] [Module K V]
-    {p : Submodule K V} {f : C.supp → p} {g : ι → V} (hfg : ∀ i, (f i : V) = g i) {s : Set ι}
-    {x : p} : x ∈ AddSubmonoid.closure (f '' ((↑) ⁻¹' s)) ↔
-      (x : V) ∈ AddSubmonoid.closure (g '' (s ∩ C.supp)) := by
-  have himage : p.subtype '' (f '' ((↑) ⁻¹' s)) = g '' (s ∩ C.supp) := by
-    rw [Set.image_image]
-    simp_rw [Submodule.subtype_apply, hfg]
-    rw [← Set.image_image g Subtype.val, Subtype.image_preimage_coe, Set.inter_comm]
-  rw [← himage, ← AddMonoidHom.map_mclosure]
-  exact (AddSubmonoid.mem_map_iff_mem p.injective_subtype).symm
-
 /-- The **base of the component pairing** of `C` cut out by a base `b`: its simple roots are the
 simple roots of `b` lying in `C`. -/
 noncomputable def componentBase : (P.componentPairing C).Base where
@@ -315,12 +301,13 @@ noncomputable def componentBase : (P.componentPairing C).Base where
   root_mem_or_neg_mem i := by
     rw [Finset.coe_preimage]
     refine (b.root_mem_or_neg_mem i).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
-      exact (mem_closure_image_preimage_iff C (P.coe_componentPairing_root C)).mpr
+      exact (AddSubmonoid.mem_closure_image_preimage_val_iff (P.coe_componentPairing_root C)).mpr
         (mem_closure_root_inter_supp (by simpa using h) (Subtype.prop _))
   coroot_mem_or_neg_mem i := by
     rw [Finset.coe_preimage]
     refine (b.coroot_mem_or_neg_mem i).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
-      exact (mem_closure_image_preimage_iff C (P.coe_componentPairing_coroot C)).mpr
+      exact
+        (AddSubmonoid.mem_closure_image_preimage_val_iff (P.coe_componentPairing_coroot C)).mpr
         (mem_closure_coroot_inter_supp (by simpa using h) (Subtype.prop _))
 
 theorem support_componentBase :
@@ -339,7 +326,7 @@ theorem mem_closure_root_componentBase_iff {x : P.componentSpace C} :
     x ∈ AddSubmonoid.closure ((P.componentPairing C).root '' (b.componentBase C).support) ↔
       (x : M) ∈ AddSubmonoid.closure (P.root '' b.support) := by
   rw [support_componentBase, Finset.coe_preimage,
-    mem_closure_image_preimage_iff C (P.coe_componentPairing_root C)]
+    AddSubmonoid.mem_closure_image_preimage_val_iff (P.coe_componentPairing_root C)]
   exact ⟨fun h ↦ AddSubmonoid.closure_mono (Set.image_mono Set.inter_subset_left) h,
     fun h ↦ mem_closure_root_inter_supp h x.2⟩
 
@@ -349,7 +336,7 @@ theorem mem_closure_coroot_componentBase_iff {x : P.corootComponentSpace C} :
     x ∈ AddSubmonoid.closure ((P.componentPairing C).coroot '' (b.componentBase C).support) ↔
       (x : N) ∈ AddSubmonoid.closure (P.coroot '' b.support) := by
   rw [support_componentBase, Finset.coe_preimage,
-    mem_closure_image_preimage_iff C (P.coe_componentPairing_coroot C)]
+    AddSubmonoid.mem_closure_image_preimage_val_iff (P.coe_componentPairing_coroot C)]
   exact ⟨fun h ↦ AddSubmonoid.closure_mono (Set.image_mono Set.inter_subset_left) h,
     fun h ↦ mem_closure_coroot_inter_supp h x.2⟩
 

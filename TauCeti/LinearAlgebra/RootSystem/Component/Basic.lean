@@ -240,7 +240,7 @@ theorem mem_closure_root_inter_supp [P.IsRootSystem] {C : P.Component} {s : Set 
     refine AddSubmonoid.closure_le.mpr ?_
     rintro _ ⟨k, hk, rfl⟩
     exact Submodule.mem_iSup_of_mem (P.componentOf k)
-      (Submodule.mem_iSup_of_mem hk.2 (root_mem_componentSpace k))
+      (Submodule.mem_iSup_of_mem ((C.mem_supp_iff k).not.mp hk.2) (root_mem_componentSpace k))
   exact Submodule.disjoint_def.mp (iSupIndep_componentSpace C) z hzC (hle hz)
 
 /-- A sum of coroots lying in a coroot component space is a sum of coroots of that component: a
@@ -255,7 +255,7 @@ theorem mem_closure_coroot_inter_supp [P.IsRootSystem] {C : P.Component} {s : Se
     congrArg (fun G : SimpleGraph ι ↦ (G.connectedComponentMk i).supp) P.nonorthogonalGraph_flip
   rw [← hsupp]
   refine P.flip.mem_closure_root_inter_supp hx ?_
-  rwa [componentSpace_def, hsupp]
+  rwa [componentSpace_def, hsupp, flip_root, ← corootComponentSpace_def]
 
 /-- **Component spaces are invariant under every reflection.** The reflection at a root of the
 component preserves its span; the reflection at any other root fixes it pointwise. -/
