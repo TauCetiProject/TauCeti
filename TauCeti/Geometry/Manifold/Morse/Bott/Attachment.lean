@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Morse.Deformation
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Logic.Equiv.PartialEquiv
 import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
 import TauCeti.Topology.ContinuousMap.Glue.DisjointOpen
@@ -734,8 +733,9 @@ private theorem isAttachingTube_image {f : M → ℝ} {c : ℝ} (Θ : PartialDif
     exact exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero Θ hs ht ρ hρ hρd hρs hρt hρ₁
       (hWΘ hx) (by rwa [hΘx t x (hWΘ hx)] at hty)
   · simp only [comp_apply]
-    rw [← Θ.toPartialEquiv.image_sep_of_subset_source hWΘ fun x ↦ s x + 2 * t x ≤ 2 * ε]
-    exact hK.image_of_continuousOn (Θ.contMDiffOn.continuousOn.mono fun x hx ↦ hWΘ hx.1)
+    have hK' : IsCompact ({x | s x + 2 * t x ≤ 2 * ε} ∩ W) := by rw [inter_comm]; exact hK
+    have h := hK'.image_of_continuousOn (Θ.contMDiffOn.continuousOn.mono fun x hx ↦ hWΘ hx.2)
+    rwa [(Θ.toPartialEquiv.leftInvOn.mono hWΘ).image_inter', inter_comm] at h
 
 /-- Rescaling the two parts of a normal form by factors of absolute value at most `1` does not
 increase `s + 2t`. -/
@@ -860,11 +860,12 @@ theorem exists_sublevel_union_iUnion_image_deformation {ι : Type*} [Finite ι] 
           ∑ᶠ j, (Θ j '' W j).indicator (s j ∘ (Θ j).toPartialEquiv.symm) y ≤ ε} =
         ⋃ j, Θ j '' {x | t j x = 0 ∧ s j x ≤ ε} := by
       refine (iUnion_inter {y | _} _).trans (iUnion_congr fun j ↦
-        (sep_ext_iff.2 fun y hy ↦ ?_).trans (((Θ j).toPartialEquiv.image_sep_of_subset_source
-          (hmΘ j) fun x ↦ t j x = 0 ∧ s j x ≤ ε).symm.trans ?_))
+        (sep_ext_iff.2 fun y hy ↦ ?_).trans (((inter_comm _ _).trans
+          (((Θ j).toPartialEquiv.leftInvOn.mono (hmΘ j)).image_inter'
+            (s₁ := {x | t j x = 0 ∧ s j x ≤ ε})).symm).trans ?_))
       · rw [mem_ofPred_eq, finsum_indicator_of_mem hdisj _ hy, finsum_indicator_of_mem hdisj _ hy]
         rfl
-      · exact congrArg _ (Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨hD j x hx, hx⟩⟩)
+      · exact congrArg _ (Set.ext fun x ↦ ⟨fun hx ↦ hx.1, fun hx ↦ ⟨hx, hD j x hx⟩⟩)
     rwa [hset] at key
   · simp only [W, mem_ofPred_eq, hq_def, (hZst j x hx).1, (hZst j x hx).2, mul_zero, add_zero, hm]
 
