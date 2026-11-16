@@ -32,18 +32,19 @@ Both operations compose as the group of orientation-preserving isometries of the
 and conjugate the smooth framed gauge group to itself (`translateFramedVortex_smul`,
 `rotateFramedVortex_smul`), with the gauge composed with the isometry
 (`TauCeti.Vortex.translateFramedGauge`, `TauCeti.Vortex.rotateFramedGauge`). They therefore descend
-to the moduli space (`TauCeti.Vortex.framedVortexModuliTranslate`,
-`TauCeti.Vortex.framedVortexModuliRotate`), where the divisor intertwines them with the maps
-`D ↦ D - a` and `D ↦ u⁻¹ D` of `Sym ℂ m` (`framedVortexModuliEquiv_translate`,
-`framedVortexModuliEquiv_rotate`) and the composition laws persist
-(`framedVortexModuliTranslate_translate`, `framedVortexModuliRotate_rotate`,
-`framedVortexModuliRotate_translate`).
+to the moduli space (`TauCeti.Vortex.translateFramedVortexModuli`,
+`TauCeti.Vortex.rotateFramedVortexModuli`), where the divisor intertwines them with the maps
+`D ↦ D - a` and `D ↦ u⁻¹ D` of `Sym ℂ m` (`framedVortexModuliEquiv_translateFramedVortexModuli`,
+`framedVortexModuliEquiv_rotateFramedVortexModuli`) and the composition laws persist
+(`translateFramedVortexModuli_translateFramedVortexModuli`,
+`rotateFramedVortexModuli_rotateFramedVortexModuli`,
+`rotateFramedVortexModuli_translateFramedVortexModuli`).
 
 By Taubes's uniqueness theorem the gauge orbit of a vortex is fixed by an isometry exactly when its
 divisor is. Hence for `m ≥ 1` a nonzero translation of a framed vortex is never gauge equivalent to
 it (`exists_framedGaugeGroup_smul_eq_translateFramedVortex_iff`), so translations act freely on
-the moduli space (`framedVortexModuliTranslate_eq_self_iff`). A rotation fixes a point of the
-moduli space exactly when it fixes its divisor (`framedVortexModuliRotate_eq_self_iff`); in
+the moduli space (`translateFramedVortexModuli_eq_self_iff`). A rotation fixes a point of the
+moduli space exactly when it fixes its divisor (`rotateFramedVortexModuli_eq_self_iff`); in
 particular a vortex whose zeros all lie at the origin is gauge equivalent to each of its rotations
 (`exists_framedGaugeGroup_smul_eq_rotateFramedVortex_of_framedVortexDivisor_eq_replicate`).
 
@@ -257,7 +258,7 @@ theorem exists_framedGaugeGroup_smul_eq_rotateFramedVortex_of_framedVortexDiviso
 /-! ### The induced maps of the moduli space -/
 
 /-- Translation by `a` of the moduli space of smooth framed degree-`m` vortices. -/
-def framedVortexModuliTranslate (a : ℂ) :
+def translateFramedVortexModuli (a : ℂ) :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) →
       MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) :=
   Quotient.map' (translateFramedVortex a) fun x y h ↦ by
@@ -266,12 +267,12 @@ def framedVortexModuliTranslate (a : ℂ) :
       ⟨translateFramedGauge a u, (translateFramedVortex_smul a u y).symm⟩
 
 @[simp]
-theorem framedVortexModuliTranslate_mk (a : ℂ) (x : framedVortexSubMulAction m) :
-    framedVortexModuliTranslate a (Quotient.mk'' x) = Quotient.mk'' (translateFramedVortex a x) :=
+theorem translateFramedVortexModuli_mk (a : ℂ) (x : framedVortexSubMulAction m) :
+    translateFramedVortexModuli a (Quotient.mk'' x) = Quotient.mk'' (translateFramedVortex a x) :=
   (rfl)
 
 /-- Rotation by `u` of the moduli space of smooth framed degree-`m` vortices. -/
-def framedVortexModuliRotate (u : Circle) :
+def rotateFramedVortexModuli (u : Circle) :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) →
       MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) :=
   Quotient.map' (rotateFramedVortex u) fun x y h ↦ by
@@ -280,83 +281,84 @@ def framedVortexModuliRotate (u : Circle) :
       ⟨rotateFramedGauge u g, (rotateFramedVortex_smul u g y).symm⟩
 
 @[simp]
-theorem framedVortexModuliRotate_mk (u : Circle) (x : framedVortexSubMulAction m) :
-    framedVortexModuliRotate u (Quotient.mk'' x) = Quotient.mk'' (rotateFramedVortex u x) :=
+theorem rotateFramedVortexModuli_mk (u : Circle) (x : framedVortexSubMulAction m) :
+    rotateFramedVortexModuli u (Quotient.mk'' x) = Quotient.mk'' (rotateFramedVortex u x) :=
   (rfl)
 
 /-- **Equivariance of the moduli space under translations.** The divisor carries the
 translation by `a` of the moduli space to the map `D ↦ D - a` of `Sym ℂ m`. -/
 @[simp]
-theorem framedVortexModuliEquiv_translate (a : ℂ)
+theorem framedVortexModuliEquiv_translateFramedVortexModuli (a : ℂ)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliEquiv m (framedVortexModuliTranslate a q) =
+    framedVortexModuliEquiv m (translateFramedVortexModuli a q) =
       (framedVortexModuliEquiv m q).map (· - a) :=
   Quotient.inductionOn' q fun x ↦ by
-    rw [framedVortexModuliTranslate_mk, framedVortexModuliEquiv_mk, framedVortexModuliEquiv_mk,
+    rw [translateFramedVortexModuli_mk, framedVortexModuliEquiv_mk, framedVortexModuliEquiv_mk,
       framedVortexDivisor_translateFramedVortex]
 
 /-- **Equivariance of the moduli space under rotations.** The divisor carries the rotation by `u`
 of the moduli space to the map `D ↦ u⁻¹ D` of `Sym ℂ m`. -/
 @[simp]
-theorem framedVortexModuliEquiv_rotate (u : Circle)
+theorem framedVortexModuliEquiv_rotateFramedVortexModuli (u : Circle)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliEquiv m (framedVortexModuliRotate u q) =
+    framedVortexModuliEquiv m (rotateFramedVortexModuli u q) =
       (framedVortexModuliEquiv m q).map ((u : ℂ)⁻¹ * ·) :=
   Quotient.inductionOn' q fun x ↦ by
-    rw [framedVortexModuliRotate_mk, framedVortexModuliEquiv_mk, framedVortexModuliEquiv_mk,
+    rw [rotateFramedVortexModuli_mk, framedVortexModuliEquiv_mk, framedVortexModuliEquiv_mk,
       framedVortexDivisor_rotateFramedVortex]
 
 @[simp]
-theorem framedVortexModuliTranslate_zero
+theorem translateFramedVortexModuli_zero
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliTranslate 0 q = q :=
+    translateFramedVortexModuli 0 q = q :=
   Quotient.inductionOn' q fun x ↦ by simp
 
 @[simp]
-theorem framedVortexModuliTranslate_translate (a b : ℂ)
+theorem translateFramedVortexModuli_translateFramedVortexModuli (a b : ℂ)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliTranslate a (framedVortexModuliTranslate b q) =
-      framedVortexModuliTranslate (a + b) q :=
+    translateFramedVortexModuli a (translateFramedVortexModuli b q) =
+      translateFramedVortexModuli (a + b) q :=
   Quotient.inductionOn' q fun x ↦ by simp
 
 @[simp]
-theorem framedVortexModuliRotate_one
+theorem rotateFramedVortexModuli_one
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliRotate 1 q = q :=
+    rotateFramedVortexModuli 1 q = q :=
   Quotient.inductionOn' q fun x ↦ by simp
 
 @[simp]
-theorem framedVortexModuliRotate_rotate (u v : Circle)
+theorem rotateFramedVortexModuli_rotateFramedVortexModuli (u v : Circle)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliRotate u (framedVortexModuliRotate v q) =
-      framedVortexModuliRotate (u * v) q :=
+    rotateFramedVortexModuli u (rotateFramedVortexModuli v q) =
+      rotateFramedVortexModuli (u * v) q :=
   Quotient.inductionOn' q fun x ↦ by simp
 
 /-- The semidirect product law on the moduli space: rotating by `u` after translating by `a` is
 translating by `u⁻¹ a` after rotating by `u`. -/
-theorem framedVortexModuliRotate_translate (u : Circle) (a : ℂ)
+theorem rotateFramedVortexModuli_translateFramedVortexModuli (u : Circle) (a : ℂ)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliRotate u (framedVortexModuliTranslate a q) =
-      framedVortexModuliTranslate ((u : ℂ)⁻¹ * a) (framedVortexModuliRotate u q) :=
+    rotateFramedVortexModuli u (translateFramedVortexModuli a q) =
+      translateFramedVortexModuli ((u : ℂ)⁻¹ * a) (rotateFramedVortexModuli u q) :=
   Quotient.inductionOn' q fun x ↦ by
-    simp only [framedVortexModuliTranslate_mk, framedVortexModuliRotate_mk,
+    simp only [translateFramedVortexModuli_mk, rotateFramedVortexModuli_mk,
       rotateFramedVortex_translateFramedVortex]
 
 /-- **Translations act freely on the moduli space of positive degree.** For `m ≥ 1`, the
 translation by `a` fixes a point of the moduli space only for `a = 0`. -/
-theorem framedVortexModuliTranslate_eq_self_iff (hm : 0 < m) (a : ℂ)
+theorem translateFramedVortexModuli_eq_self_iff (hm : 0 < m) (a : ℂ)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliTranslate a q = q ↔ a = 0 :=
+    translateFramedVortexModuli a q = q ↔ a = 0 :=
   Quotient.inductionOn' q fun x ↦ by
-    rw [framedVortexModuliTranslate_mk, ← exists_framedGaugeGroup_smul_eq_translateFramedVortex_iff
+    rw [translateFramedVortexModuli_mk, ← exists_framedGaugeGroup_smul_eq_translateFramedVortex_iff
       hm a x]
     exact Quotient.eq''.trans (MulAction.orbitRel_apply.trans MulAction.mem_orbit_iff)
 
 /-- **Rotations fixing a point of the moduli space** are those fixing its divisor. -/
-theorem framedVortexModuliRotate_eq_self_iff (u : Circle)
+theorem rotateFramedVortexModuli_eq_self_iff (u : Circle)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    framedVortexModuliRotate u q = q ↔
+    rotateFramedVortexModuli u q = q ↔
       (framedVortexModuliEquiv m q).map ((u : ℂ)⁻¹ * ·) = framedVortexModuliEquiv m q := by
-  rw [← framedVortexModuliEquiv_rotate, (framedVortexModuliEquiv m).apply_eq_iff_eq]
+  rw [← framedVortexModuliEquiv_rotateFramedVortexModuli,
+    (framedVortexModuliEquiv m).apply_eq_iff_eq]
 
 end TauCeti.Vortex
