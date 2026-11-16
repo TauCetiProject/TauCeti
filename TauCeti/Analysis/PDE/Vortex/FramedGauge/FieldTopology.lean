@@ -22,10 +22,11 @@ continuous fields of `A_m^s` therefore represent its classes exactly once. They 
 `TauCeti.Vortex.SobolevFieldSpace f m s`, and this file gives it the topology of `A_m^s` as an
 affine Hilbert space: a field `x` is recorded by the four coordinates of `x - x_m` in `H^s(ℂ)`
 (`TauCeti.Vortex.SobolevFieldSpace.subRef`), each the complexification of a real coordinate
-function, and the topology is the one induced by this injective map
-(`TauCeti.Vortex.SobolevFieldSpace.isEmbedding_subRef`). It is Hausdorff.
+function, and the topology is the one induced by this map. For `s > 1` this map is injective
+(`TauCeti.Vortex.SobolevFieldSpace.isEmbedding_subRef`) and the space is Hausdorff
+(`TauCeti.Vortex.SobolevFieldSpace.t2Space`).
 
-For `s > 1`, convergence in this topology is uniform convergence of the fields
+For `s > 1`, convergence in this topology implies uniform convergence of the fields
 (`TauCeti.Vortex.SobolevFieldSpace.tendstoUniformly_of_tendsto`), by the quantitative Sobolev
 embedding `|g(z)| ≤ C ‖g‖_{H^s}` for continuous representatives
 (`TemperedDistribution.tendstoUniformly_of_tendsto_toBesselPotentialSpace`). Two consequences
@@ -134,6 +135,23 @@ private theorem exists_eq_subRef (x : SobolevFieldSpace f m s) (j : Fin 4) :
     (mem_realSobolevFunctions.1 (mem_realSobolevFunctions_sub x j)).choose, hae] with z h₁ h₂
   rw [h₁, Complex.ofRealCLM_apply, h₂]
 
+/-- **The coordinate `subRef x j`** is the `H^s` element of any `L²` function agreeing almost
+everywhere with the complexification of `z ↦ x(z)ⱼ - x_m(z)ⱼ`. -/
+theorem subRef_eq_toBesselPotentialSpace (x : SobolevFieldSpace f m s) (j : Fin 4)
+    {u : Lp ℂ 2 (volume : Measure ℂ)} (hu : MemSobolev s 2 (u : 𝓢'(ℂ, ℂ)))
+    (hae : u =ᵐ[volume] fun z ↦ ((x z j - referenceField f m z j : ℝ) : ℂ)) :
+    subRef x j = hu.toBesselPotentialSpace := by
+  obtain ⟨v, hv, hvx, hvae⟩ := exists_eq_subRef x j
+  obtain rfl : v = u := Lp.ext (hvae.trans hae.symm)
+  exact hvx.symm
+
+/-- The complexified `j`-th coordinate of `x - x_m` is continuous. -/
+private theorem continuous_ofReal_sub (x : SobolevFieldSpace f m s) (j : Fin 4) :
+    Continuous fun z ↦ ((x z j - referenceField f m z j : ℝ) : ℂ) :=
+  Complex.continuous_ofReal.comp
+    (((EuclideanSpace.proj j).continuous.comp x.continuous).sub
+      ((EuclideanSpace.proj j).continuous.comp (contDiff_referenceField f m).continuous))
+
 /-- The `L²` function of `subRef x j` is the complexification of `z ↦ x(z)ⱼ - x_m(z)ⱼ`. -/
 theorem coeFn_toLp_inclusion_subRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) :
     ⇑(inclusion h (subRef x j)).toLp =ᵐ[volume]
@@ -154,12 +172,8 @@ theorem subRef_injective (hs : 1 < s) :
   have hae := (coeFn_toLp_inclusion_subRef h x j).symm.trans
     ((congrArg (fun a ↦ ⇑(inclusion h (a j)).toLp) hxy).eventuallyEq.trans
       (coeFn_toLp_inclusion_subRef h y j))
-  have hcont (w : SobolevFieldSpace f m s) :
-      Continuous fun z ↦ ((w z j - referenceField f m z j : ℝ) : ℂ) :=
-    Complex.continuous_ofReal.comp
-      (((EuclideanSpace.proj j).continuous.comp w.continuous).sub
-        ((EuclideanSpace.proj j).continuous.comp (contDiff_referenceField f m).continuous))
-  have heq := congrFun ((hcont x).ae_eq_iff_eq volume (hcont y) |>.1 hae) z
+  have heq := congrFun
+    ((continuous_ofReal_sub x j).ae_eq_iff_eq volume (continuous_ofReal_sub y j) |>.1 hae) z
   exact sub_left_inj.1 (Complex.ofReal_injective heq)
 
 /-- **The topology of `A_m^s`** on its continuous fields: the topology induced by the coordinates
@@ -188,41 +202,34 @@ theorem tendsto_iff {ι : Type*} {l : Filter ι} {xs : ι → SobolevFieldSpace 
 theorem t2Space (hs : 1 < s) : T2Space (SobolevFieldSpace f m s) :=
   (isEmbedding_subRef hs).t2Space
 
-/-- **Convergence in `A_m^s`, `s > 1`, is uniform convergence of the fields.** -/
+/-- Maps into `EuclideanSpace ℝ κ` converge uniformly when each coordinate does. -/
+private theorem tendstoUniformly_of_forall_apply {ι κ α : Type*} {l : Filter ι}
+    {F : ι → α → EuclideanSpace ℝ κ} {g : α → EuclideanSpace ℝ κ}
+    (h : ∀ j, TendstoUniformly (fun i z ↦ F i z j) (fun z ↦ g z j) l) :
+    TendstoUniformly F g l := by
+  have hpi : TendstoUniformly (fun i z ↦ WithLp.ofLp (F i z)) (fun z ↦ WithLp.ofLp (g z)) l := by
+    have hj : Tendsto (fun i (j : κ) ↦ UniformFun.ofFun fun z ↦ F i z j) l
+        (𝓝 fun j ↦ UniformFun.ofFun fun z ↦ g z j) :=
+      tendsto_pi_nhds.2 fun j ↦ UniformFun.tendsto_iff_tendstoUniformly.2 (h j)
+    exact UniformFun.tendsto_iff_tendstoUniformly.1
+      ((UniformFun.uniformEquivPiComm α fun _ : κ ↦ ℝ).symm.continuous.tendsto _ |>.comp hj)
+  exact (PiLp.uniformContinuous_toLp 2 _).comp_tendstoUniformly hpi
+
+/-- **Convergence in `A_m^s`, `s > 1`, implies uniform convergence of the fields.** -/
 theorem tendstoUniformly_of_tendsto (hs : 1 < s) {ι : Type*} {l : Filter ι}
     {xs : ι → SobolevFieldSpace f m s} {x : SobolevFieldSpace f m s} (h : Tendsto xs l (𝓝 x)) :
     TendstoUniformly (fun i ↦ ⇑(xs i)) x l := by
   have hfin := finrank_real_complex_lt_two_mul hs
-  -- Each coordinate of `x - x_m` converges uniformly, by the Sobolev embedding.
-  have hj (j : Fin 4) : TendstoUniformly (fun i z ↦ ((xs i z j - referenceField f m z j : ℝ) : ℂ))
-      (fun z ↦ ((x z j - referenceField f m z j : ℝ) : ℂ)) l := by
-    choose u hu hux hae using fun i ↦ exists_eq_subRef (xs i) j
-    obtain ⟨v, hv, hvx, hvae⟩ := exists_eq_subRef x j
-    have hcont (w : SobolevFieldSpace f m s) :
-        Continuous fun z ↦ ((w z j - referenceField f m z j : ℝ) : ℂ) :=
-      Complex.continuous_ofReal.comp
-        (((EuclideanSpace.proj j).continuous.comp w.continuous).sub
-          ((EuclideanSpace.proj j).continuous.comp (contDiff_referenceField f m).continuous))
-    refine tendstoUniformly_of_tendsto_toBesselPotentialSpace hfin hu hv ?_
-      (fun i ↦ hcont (xs i)) (hcont x) hae hvae
-    simp only [hux, hvx]
-    exact tendsto_iff.1 h j
-  rw [Metric.tendstoUniformly_iff]
-  intro ε hε
-  have hε2 : 0 < ε / 2 := by positivity
-  filter_upwards [eventually_all.2 fun j ↦ Metric.tendstoUniformly_iff.1 (hj j) _ hε2]
-    with i hi z
-  -- A field whose four coordinates are within `ε / 2` is within `ε`.
-  rw [EuclideanSpace.dist_eq, Real.sqrt_lt' hε]
-  calc ∑ j, dist (x z j) (xs i z j) ^ 2 < ∑ _j : Fin 4, (ε / 2) ^ 2 := by
-        refine Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun j _ ↦ ?_
-        have hd := hi j z
-        rw [Complex.dist_eq, ← Complex.ofReal_sub, sub_sub_sub_cancel_right,
-          Complex.norm_real, Real.norm_eq_abs, ← Real.dist_eq] at hd
-        exact pow_lt_pow_left₀ hd dist_nonneg two_ne_zero
-    _ = ε ^ 2 := by
-        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        ring
+  refine tendstoUniformly_of_forall_apply fun j ↦ ?_
+  -- The `j`-th coordinate of `x - x_m` converges uniformly, by the Sobolev embedding.
+  choose u hu hux hae using fun i ↦ exists_eq_subRef (xs i) j
+  obtain ⟨v, hv, hvx, hvae⟩ := exists_eq_subRef x j
+  have hj := tendstoUniformly_of_tendsto_toBesselPotentialSpace hfin hu hv
+    (by simpa only [hux, hvx] using tendsto_iff.1 h j)
+    (fun i ↦ continuous_ofReal_sub (xs i) j) (continuous_ofReal_sub x j) hae hvae
+  rw [Metric.tendstoUniformly_iff] at hj ⊢
+  simpa only [Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real, ← dist_eq_norm,
+    dist_sub_right] using hj
 
 /-- **Continuity of the divisor on `A_m^s`**, `s > 1`. If fields `xs i` converge to `x` in `A_m^s`,
 and the zero multiplicities of their sections are the counts of `E i` and of `D` in `Sym ℂ m`,
@@ -246,27 +253,26 @@ theorem isClosed_setOf_exists_gaugeTransform_eq {k : ℕ} (hk : 2 < k) :
         gaugeTransform u p.1 = p.2} := by
   set S := {p : SobolevFieldSpace f m k × SobolevFieldSpace f m k |
     ∃ u ∈ sobolevGaugeGroup (s := k + 1) (by norm_cast; omega), gaugeTransform u p.1 = p.2}
+  have : Fact (1 < k) := ⟨by omega⟩
   have hs : (1 : ℝ) < k := by exact_mod_cast (by omega : 1 < k)
-  have h2 : 2 < (k : ℝ) + 1 := by
-    have : (2 : ℝ) < k := by exact_mod_cast hk
-    linarith
   refine closure_subset_iff_isClosed.1 fun p hp ↦ ?_
   -- Approach `p` along the pairs of `S`, indexed by `S` itself.
   have := mem_closure_iff_comap_neBot.1 hp
   set l := comap ((↑) : S → SobolevFieldSpace f m k × SobolevFieldSpace f m k) (𝓝 p)
   have hl : Tendsto ((↑) : S → SobolevFieldSpace f m k × SobolevFieldSpace f m k) l (𝓝 p) :=
     tendsto_comap
-  choose us hus hxy using fun i : S ↦ i.2
   have hconv (q : SobolevFieldSpace f m k × SobolevFieldSpace f m k → SobolevFieldSpace f m k)
       (hq : Continuous q) :
       TendstoLocallyUniformly (fun i : S ↦ ⇑(q i)) (q p) l :=
     (tendstoUniformly_of_tendsto hs ((hq.tendsto p).comp hl)).tendstoLocallyUniformly
-  obtain ⟨v, hvG, hv, -⟩ :=
-    exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly hk
-      (fun i ↦ differentiable_of_mem_sobolevGaugeGroup h2 (hus i)) hxy
-      (hconv Prod.fst continuous_fst) (hconv Prod.snd continuous_snd) p.1.continuous
-      p.2.continuous p.1.mem_framedFieldSpace p.2.mem_framedFieldSpace
-  exact ⟨v, hvG, hv⟩
+  choose us hus hxy using fun i : S ↦ i.2
+  obtain ⟨⟨v, hvG⟩, hv⟩ := mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly hk
+    (xs := fun i : S ↦ ⟨(i : S).1.1, (i : S).1.1.mem_framedFieldSpace⟩)
+    (ys := fun i : S ↦ ⟨(i : S).1.2, (i : S).1.2.mem_framedFieldSpace⟩)
+    (x := ⟨p.1, p.1.mem_framedFieldSpace⟩) (y := ⟨p.2, p.2.mem_framedFieldSpace⟩)
+    (fun i ↦ ⟨⟨us i, hus i⟩, Subtype.ext (hxy i)⟩)
+    (hconv Prod.fst continuous_fst) (hconv Prod.snd continuous_snd) p.1.continuous p.2.continuous
+  exact ⟨v, hvG, congrArg Subtype.val hv⟩
 
 end SobolevFieldSpace
 

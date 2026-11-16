@@ -31,7 +31,7 @@ representative is `C^k`, its derivatives of order `j ≤ k` vanish at infinity, 
 
 `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for all `x` and `j ≤ k`.
 
-In particular, for `2s > n`, convergence in `H^s` is uniform convergence of the continuous
+In particular, for `2s > n`, convergence in `H^s` implies uniform convergence of the continuous
 representatives.
 
 A tempered distribution lying in `H^s` for every real `s` is therefore a smooth function. These
@@ -544,7 +544,8 @@ theorem exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace {s : ℝ} 
   gcongr
   exact Finset.single_le_sum (fun i _ => hc i) (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
 
-/-- **Convergence in `H^s` is uniform convergence of continuous representatives, `s > n / 2`.**
+/-- **Convergence in `H^s` implies uniform convergence of continuous representatives**,
+`s > n / 2`.
 If `L²` functions `u i ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then continuous
 functions `g i` and `g₀` agreeing almost everywhere with `u i` and `v` converge uniformly. -/
 theorem tendstoUniformly_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ E < 2 * s)
