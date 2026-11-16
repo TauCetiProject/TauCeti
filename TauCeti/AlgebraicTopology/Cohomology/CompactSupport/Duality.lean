@@ -437,15 +437,17 @@ theorem injective_dualityMap_of_monotone
   have hij' := ConcreteCategory.congr_hom
     (o.compactSupportCohomologyExtend_dualityMap_of_le hn L h (hU hij)) z
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hj] at hij'
-  -- So the extension of `z` to `U j` vanishes, and hence so does its extension to `M`, since the
-  -- inclusion of `U i` into `M` factors through `U j`.
-  have hiM := (U j).isOpenEmbedding.comp (Opens.isOpenEmbedding_toTopCat_map (homOfLE (hU hij)))
-  rw [← TopCat.compactSupportCohomologyExtend_congr
-      (Opens.toTopCat_map_comp_inclusion' (homOfLE (hU hij))) hiM,
-    TopCat.compactSupportCohomologyExtend_comp
-      (Opens.isOpenEmbedding_toTopCat_map (homOfLE (hU hij)))
-      (U j).isOpenEmbedding p hiM, ConcreteCategory.comp_apply,
-    H j (hij'.trans (map_zero _).symm), map_zero]
+  -- So the extension of `z` to `U j` vanishes, and hence so does its extension to `M`, by
+  -- naturality of the cocone of extensions along `U i ≤ U j`, whose legs and transition maps are
+  -- the extensions on the nose (`compactSupportCohomologyOpensCocone_ι_app`,
+  -- `compactSupportCohomologyOpens_map`).
+  have hw : TopCat.compactSupportCohomologyExtend
+        (Opens.isOpenEmbedding_toTopCat_map (homOfLE (hU hij))) p ≫
+        TopCat.compactSupportCohomologyExtend (U j).isOpenEmbedding p =
+      TopCat.compactSupportCohomologyExtend (U i).isOpenEmbedding p :=
+    (TopCat.compactSupportCohomologyOpensCocone (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L (TopCat.of M)
+      p).w (homOfLE (hU hij))
+  rw [← hw, ConcreteCategory.comp_apply, H j (hij'.trans (map_zero _).symm), map_zero]
 
 /-- **Surjectivity of the duality map is local for directed open covers.** If an oriented
 manifold `M` is the union of an increasing family of open sets `U i`, and the duality map of each
