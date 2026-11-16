@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient.Basic
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
 
 /-!

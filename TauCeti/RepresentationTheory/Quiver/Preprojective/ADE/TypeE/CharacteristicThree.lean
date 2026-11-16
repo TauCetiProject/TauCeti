@@ -6,27 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient.Basic
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
 import Mathlib.Data.List.Rotate
 import Mathlib.Data.ZMod.Basic
 
 /-!
-# A degree-six cyclic class of the `E₆` preprojective algebra in characteristic three
+# A degree-six cyclic class of the `Eₙ` preprojective algebra in characteristic three
 
-Let `x` be the backtrack `3 → 1 → 3` and `y` the backtrack `3 → 2 → 3`.
-The branch-node word `y²x`, represented by the latest-vertex-first list
-`[3, 2, 3, 2, 3, 1, 3]`, survives modulo additive commutators in characteristic three.
-A linear functional supported on ten necklaces of length six detects it.
-The necklace weights annihilate the local preprojective relations and are invariant under
-rotation, so the functional descends to the cyclic quotient. The obstruction transfers to the
-preprojective algebra of every orientation of the Bourbaki-labelled `E₆` diagram.
+Let `x` be the backtrack `3 → 1 → 3` and `y` the backtrack `3 → 2 → 3` in the Bourbaki-labelled
+`E₆` diagram. The branch-node word `y²x`, represented by the latest-vertex-first list
+`[3, 2, 3, 2, 3, 1, 3]`, survives modulo additive commutators in characteristic three. A linear
+functional supported on ten necklaces of length six detects it. The necklace weights annihilate
+the local preprojective relations and are invariant under rotation, so the functional descends to
+the cyclic quotient. Pulling back along the induced-subgraph embedding `E₆ ↪g Eₙ` extends this
+degree-six obstruction to every `Eₙ` with `n ≥ 6` (in particular `E₆`, `E₇`, and `E₈`), and
+bipartite sign rescaling transfers it to the additive preprojective algebra of every orientation.
 
 The quotient-functional construction follows the kernel descent used for the `D₄` Frobenius
 functional in `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective`.
 
 ## References
 
+* P. Etingof and C.-H. Eu, *Hochschild and cyclic homology of preprojective algebras of ADE
+  quivers*, https://arxiv.org/abs/math/0609006.
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   Theorem 1.1 and Proposition 3.2, https://arxiv.org/abs/2301.06757.
 -/
@@ -155,6 +158,8 @@ private theorem e6Weight_sum_neighborSet (v a b c : Fin 6) [Fintype ((G).neighbo
   rw [← Finset.sum_filter, Finset.sum_subtype _
     (p := (· ∈ (G).neighborSet v)) (fun w => by simp)] at h
   exact h
+
+section E6
 
 variable (k : Type*) [CommRing k] [CharP k 3]
 
@@ -425,5 +430,61 @@ theorem exists_mem_preprojectiveGrade_E6_six_notMem_commutatorSubmodule
     rintro C rfl
     exact exists_preprojective_E6_cyclicClass k
   exact @key _ DynkinType.cartanMatrix_E6 o instV instHom
+
+end E6
+
+private def e6Embedding {n : ℕ} (hn : 6 ≤ n) :
+    diagramGraph (CartanMatrix.E 6) ↪g diagramGraph (CartanMatrix.E n) where
+  toEmbedding := Fin.castLEEmb hn
+  map_rel_iff' := by
+    intro i j
+    change (diagramGraph (CartanMatrix.E n)).Adj (Fin.castLE hn i) (Fin.castLE hn j) ↔
+      (diagramGraph (CartanMatrix.E 6)).Adj i j
+    rw [diagramGraph_E_adj, diagramGraph_E_adj]
+    rfl
+
+/-- In characteristic three, the signless preprojective algebra of the Bourbaki-labelled `Eₙ`
+graph, `n ≥ 6`, has a degree-six element which is not a sum of commutators. In particular this
+applies to `E₆`, `E₇`, and `E₈`. -/
+theorem exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule
+    (k : Type*) [CommRing k] [Nontrivial k] {n : ℕ}
+    [∀ v, Fintype ((diagramGraph (CartanMatrix.E n)).neighborSet v)]
+    (hn : 6 ≤ n) (h3 : (3 : k) = 0) :
+    ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n))),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver (diagramGraph (CartanMatrix.E n))) 6 ∧
+        z ∉ commutatorSubmodule k
+          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n)))) := by
+  have : CharP k 3 := (CharP.charP_iff_prime_eq_zero Nat.prime_three).2 h3
+  let inst6 : ∀ v, Fintype ((diagramGraph (CartanMatrix.E 6)).neighborSet v) :=
+    fun v => Fintype.ofFinite _
+  let _ := inst6
+  exact exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_embedding
+    k (e6Embedding hn)
+    ⟨signlessWord k (diagramGraph (CartanMatrix.E 6)) [3, 2, 3, 2, 3, 1, 3],
+      signlessWord_E6_cyclicWord_mem_grade_six k inst6,
+      signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k inst6⟩
+
+/-- In characteristic three, the additive preprojective algebra of every orientation of the
+Bourbaki-labelled `Eₙ` graph, `n ≥ 6`, has a nonzero degree-six cyclic class. -/
+theorem exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule
+    (k : Type*) [CommRing k] [Nontrivial k] {n : ℕ} (hn : 6 ≤ n) (h3 : (3 : k) = 0)
+    (o : Orientation (diagramGraph (CartanMatrix.E n))) :
+    ∃ z : preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o),
+      z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o) 6 ∧
+        z ∉ commutatorSubmodule k
+          (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) := by
+  let _ : ∀ v, Fintype ((diagramGraph (CartanMatrix.E n)).neighborSet v) :=
+    fun v => Fintype.ofFinite _
+  have hnot : ¬ signlessPreprojectiveGrade k (DoubledQuiver (diagramGraph (CartanMatrix.E n))) 6 ≤
+      commutatorSubmodule k
+        (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n)))) := by
+    intro hle
+    obtain ⟨z, hzgrade, hz⟩ :=
+      exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn h3
+    exact hz (hle hzgrade)
+  have hnot' := mt
+    ((eColoring _ (diagramGraph_E_adj (n := n))).preprojectiveGrade_le_commutatorSubmodule_iff
+      k o).mp hnot
+  simpa only [IsConcreteLE.not_le_iff_exists] using hnot'
 
 end TauCeti
