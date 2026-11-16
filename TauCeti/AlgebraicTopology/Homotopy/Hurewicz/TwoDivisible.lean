@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.TwoDivisible
 public import Mathlib.Algebra.Module.ULift
+import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
 
 /-!
 # Mod-two vanishing and the first possible homotopy group
@@ -22,6 +23,10 @@ acyclic space. The Hurewicz equivalence identifies the first possible homotopy g
 integral homology, on which the coefficient exact sequence makes multiplication by two
 bijective. Both adjacent vanishing hypotheses matter: the lower one gives surjectivity,
 and the higher one rules out two-torsion.
+
+The hypotheses can be stated with coefficients in the integer module `ℤ/2`
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two`) or in the field `𝔽₂`
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two`).
 
 ## References
 
@@ -65,5 +70,20 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two
         (TopCat.of X)).toLinearEquiv.toAddEquiv
   exact (h.of_addEquiv e).of_addEquiv
     (HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv hX).symm
+
+/-- If all lower homotopy groups vanish, vanishing of homology with coefficients in the field `𝔽₂`
+in two adjacent higher degrees makes the first possible nonzero homotopy group uniquely
+two-divisible. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two
+    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
+    (hn : Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 2)))
+    (hn' : Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 3))) :
+    IsUniquelyTwoDivisible (Additive (HomotopyGroup (Fin (n + 2)) X x)) := by
+  rw [← singularHomologyFunctor_obj_obj] at hn hn'
+  exact isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two hX
+    (((TopCat.of X).isZero_singularHomology_modTwo_iff' _).2
+      (ModuleCat.isZero_iff_subsingleton.2 hn))
+    (((TopCat.of X).isZero_singularHomology_modTwo_iff' _).2
+      (ModuleCat.isZero_iff_subsingleton.2 hn'))
 
 end TauCeti

@@ -56,6 +56,8 @@ the initial position of the submanifold to the later ones.
   unit speed and moves the point along the time-dependent flow.
 * `TauCeti.isOpen_timeDependentFlowDomain` and `TauCeti.contMDiffOn_timeDependentFlowOf`: the
   domain is open and the flow is jointly `C^n` on it.
+* `TauCeti.mfderiv_timeDependentFlowOf_trans_of_mem`: the chain rule for the two-time
+  composition law.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
@@ -411,6 +413,23 @@ theorem contMDiffOn_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
     (ht.sub hs).prodMk (hs.prodMk contMDiff_snd)
   exact contMDiff_snd.comp_contMDiffOn (hflow.comp hg.contMDiffOn fun _ hp ↦ hp)
 
+/-- In finite dimensions, the maps of the time-dependent flow of a `C^n` field, `1 ≤ n`, from a
+fixed initial time `s` form a family which is jointly `C^n` in the final time and the point at every
+point of the domain. -/
+theorem contMDiffAt_uncurry_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod I) I n (Function.uncurry (timeDependentFlowOf X s)) (t, x) := by
+  have hflow := (contMDiffOn_timeDependentFlowOf hn hX).contMDiffAt
+    ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)
+  have hg : ContMDiffAt (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) n
+      (fun q : ℝ × M ↦ ((s, q.1), q.2)) (t, x) :=
+    ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
+  exact ContMDiffAt.comp (g := fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2)
+    (t, x) hflow hg
+
 section Complete
 
 variable [CompleteSpace E] [IsManifold I 1 M] [BoundarylessManifold I M]
@@ -571,6 +590,46 @@ theorem mem_timeDependentFlowPartialDiffeomorph_target_iff {s t : ℝ} {x : M} :
   (Iff.rfl)
 
 end PartialDiffeomorph
+
+/-- In finite dimensions, each map of the time-dependent flow of a `C¹` field is differentiable at
+every point at which it is defined. -/
+theorem mdifferentiableAt_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
+  (timeDependentFlowPartialDiffeomorph le_rfl hX s t).mdifferentiableAt one_ne_zero h
+
+/-- **The chain rule for the two-time composition law.** In finite dimensions, if the flow of a
+`C¹` field is defined from time `s` to time `t` at `x`, and from time `t` to time `u` at its image,
+then the differential of the flow map from `s` to `u` at `x` is the composite of the differentials
+of the two steps. -/
+theorem mfderiv_timeDependentFlowOf_trans_of_mem [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {u : ℝ} (hst : ((s, t), x) ∈ timeDependentFlowDomain X)
+    (htu : ((t, u), timeDependentFlowOf X s t x) ∈ timeDependentFlowDomain X) :
+    mfderiv I I (timeDependentFlowOf X s u) x =
+      (mfderiv I I (timeDependentFlowOf X t u) (timeDependentFlowOf X s t x)).comp
+        (mfderiv I I (timeDependentFlowOf X s t) x) := by
+  have hdom := isOpen_timeDependentFlowDomain hX
+  have hst' := mdifferentiableAt_timeDependentFlowOf hX hst
+  -- Near `x`, flowing from `s` to `t` and then from `t` to `u` is flowing from `s` to `u`.
+  have h₁ : ∀ᶠ y in 𝓝 x, ((s, t), y) ∈ timeDependentFlowDomain X :=
+    (hdom.preimage (by fun_prop)).mem_nhds hst
+  have h₂ : ∀ᶠ y in 𝓝 x, ((t, u), timeDependentFlowOf X s t y) ∈ timeDependentFlowDomain X :=
+    (continuousAt_const.prodMk hst'.continuousAt).preimage_mem_nhds (hdom.mem_nhds htu)
+  have heq : timeDependentFlowOf X t u ∘ timeDependentFlowOf X s t =ᶠ[𝓝 x]
+      timeDependentFlowOf X s u := by
+    filter_upwards [h₁, h₂] with y hy₁ hy₂
+    exact (timeDependentFlowOf_trans_of_mem hX hy₁ hy₂).2
+  rw [(((mdifferentiableAt_timeDependentFlowOf hX htu).hasMFDerivAt.comp x
+    hst'.hasMFDerivAt).congr_of_eventuallyEq heq.symm).mfderiv]
+  -- The tangent spaces at the two images of `x` are the same model space, and the cast between
+  -- them is the identity.
+  rfl
 
 /-! ### Complete suspensions -/
 
