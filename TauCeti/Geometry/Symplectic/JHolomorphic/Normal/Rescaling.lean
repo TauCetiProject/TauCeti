@@ -11,6 +11,7 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
 import Mathlib.Analysis.Calculus.TaylorIntegral
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Topology.UniformSpace.HeineCantor
 

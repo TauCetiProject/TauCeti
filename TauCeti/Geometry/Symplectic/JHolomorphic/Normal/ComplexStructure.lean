@@ -34,8 +34,8 @@ Together with the Leibniz rule `TauCeti.normalCauchyRiemannLinearization_fun_smu
 Cauchy–Riemann operator on the complex normal fibre. Its failure to commute with `J_N` is the
 Nijenhuis term: when `N_J` vanishes at `u x`, for instance for an integrable `J`, the normal
 operator commutes with `J_N`
-(`TauCeti.normalCauchyRiemannLinearization_clm_of_nijenhuis_eq_zero`). The target `J` need not be
-integrable. These are pointwise statements in local coordinates; global bundles, Sobolev
+(`TauCeti.normalCauchyRiemannLinearization_clm_eq_comp_of_nijenhuis_eq_zero`). The target `J`
+need not be integrable. These are pointwise statements in local coordinates; global bundles, Sobolev
 realizations and Fredholm theory are separate.
 
 ## References
@@ -172,7 +172,7 @@ theorem normalCauchyRiemannLinearization_clm_apply_eq_add_nijenhuis {ξ : U → 
 smooth almost complex structure `K` on `V` whose Nijenhuis tensor vanishes at `u x`, for instance
 an integrable one. At a point where the Cauchy–Riemann defect vanishes, the normal linearization
 commutes with the normal structure: `D_N (J ξ) = J_N ∘ D_N ξ`. -/
-theorem normalCauchyRiemannLinearization_clm_of_nijenhuis_eq_zero {ξ : U → V}
+theorem normalCauchyRiemannLinearization_clm_eq_comp_of_nijenhuis_eq_zero {ξ : U → V}
     (hK : (fun y ↦ (K.toEndomorphism y : V →L[ℝ] V)) =ᶠ[𝓝 (u x)] J)
     (hN : K.nijenhuis (u x) = 0) (hu : DifferentiableAt ℝ u x) (hξ : DifferentiableAt ℝ ξ x)
     (hhol : cauchyRiemannOperator j J u x = 0) :

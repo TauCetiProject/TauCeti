@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Local-coordinate Cauchy–Riemann linearization
@@ -28,10 +29,9 @@ composed with the source structure.
 
 At a point where the defect vanishes, the linearization `D ξ` is anti-linear in the source
 direction when `j² = -1` and `J² = -1` near the image point: `D ξ (j v) = -J (D ξ v)`
-(`cauchyRiemannLinearization_comp_eq_neg_comp`), because each derivative of a family squaring to
-`-1` anticommutes with it (`fderiv_apply_apply_eq_neg_of_eventually_sq`). It is complex linear
-in `ξ` only up to a term of order zero: on the lift `y ↦ J (u y) (ξ y)` it equals `J (D ξ v)`
-plus the coordinate expression of the Nijenhuis tensor of `J` on `du v` and `ξ x`
+(`cauchyRiemannLinearization_comp_eq_neg_comp`). It is complex linear in `ξ` only up to a term
+of order zero: on the lift `y ↦ J (u y) (ξ y)` it equals `J (D ξ v)` plus the coordinate
+expression of the Nijenhuis tensor of `J` on `du v` and `ξ x`
 (`cauchyRiemannLinearization_clm_apply`).
 The geometric linearization follows McDuff–Salamon, *J-holomorphic Curves and Symplectic
 Topology*, Section 3.1. The exchange of map and parameter derivatives uses
@@ -262,28 +262,10 @@ theorem cauchyRiemannLinearization_fun_smul
     smul_apply, smulRight_apply, map_add, map_smul, smul_sub]
   abel
 
-/-- **Derivatives of a square-minus-one family anticommute with it.** If `J y` squares to `-1` for
-`y` near `p`, differentiating `J ∘ J = -1` gives `J' a (J b) = -J (J' a b)` for the derivative
-`J'` of `J` at `p`. Where `J` is not differentiable its derivative is zero, and the identity is
-trivial. -/
-theorem fderiv_apply_apply_eq_neg_of_eventually_sq {J : P → V →L[ℝ] V} {p : P}
-    (hJsq : ∀ᶠ y in 𝓝 p, ∀ w, J y (J y w) = -w) (a : P) (b : V) :
-    fderiv ℝ J p a (J p b) = -J p (fderiv ℝ J p a b) := by
-  by_cases hJ : DifferentiableAt ℝ J p
-  · have hconst : (fun y ↦ (J y).comp (J y)) =ᶠ[𝓝 p] fun _ ↦ -ContinuousLinearMap.id ℝ V := by
-      filter_upwards [hJsq] with y hy
-      ext w
-      simp [hy]
-    have hd := (hJ.hasFDerivAt.clm_comp hJ.hasFDerivAt).unique
-      ((hasFDerivAt_const _ p).congr_of_eventuallyEq hconst)
-    have h := congrArg (fun L : P →L[ℝ] V →L[ℝ] V ↦ L a b) hd
-    simp only [add_apply, comp_apply, compL_apply, flip_apply, zero_apply] at h
-    exact eq_neg_of_add_eq_zero_right h
-  · simp [fderiv_zero_of_not_differentiableAt hJ]
-
 /-- **Anti-linearity of the linearization.** At a point where the Cauchy–Riemann defect vanishes,
 for `j² = -1` and `J² = -1` near `u x`, the linearization satisfies `D ξ (j v) = -J (D ξ v)`.
-Its zeroth-order term cancels because each derivative of `J` anticommutes with `J`. -/
+Its zeroth-order term cancels because each derivative of `J` anticommutes with `J`
+(`TauCeti.fderiv_apply_apply_eq_neg_of_eventually_sq`). -/
 theorem cauchyRiemannLinearization_comp_eq_neg_comp
     {j : U →L[ℝ] U} {J : V → V →L[ℝ] V} {u : U → V} {x : U} (ξ : U → V)
     (hj : ∀ v, j (j v) = -v) (hJsq : ∀ᶠ y in 𝓝 (u x), ∀ w, J y (J y w) = -w)
