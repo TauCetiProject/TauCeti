@@ -47,8 +47,9 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
   coefficients `TopCat.singularCohomologyChainCoefficientMap`.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology, with
-  `TopCat.singularCup_assoc_unit` the commutative-ring case and
-  `TopCat.singularCup_assoc_tensorUnit` the form along the left unitor.
+  `TopCat.singularCup_assoc_unit` the commutative-ring case,
+  `TopCat.singularCup_assoc_tensorUnit` the form along the left unitor and
+  `TopCat.singularCup_rightUnitor_assoc` the right action of unit-coefficient classes.
 * `TopCat.cupCochain_constCochain_left`, `TopCat.cupCochain_constCochain_right`,
   `TopCat.singularCup_constSingularCocycle_left` and
   `TopCat.singularCup_constSingularCocycle_right`: the unit laws.
@@ -320,6 +321,21 @@ lemma singularCup_assoc_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing k] [Li
     X.singularCup k (λ_ _).inv μ m r n h (X.singularCup k (λ_ _).inv μ p q m h₁₂ a b) c =
       X.singularCup k (λ_ _).inv μ p m' n h' a (X.singularCup k (λ_ _).inv μ q r m' h₂₃ b c) :=
   singularCup_assoc X k (by monoidal) hμ h₁₂ h h₂₃ h' a b c
+
+/-- **Associativity of the right action of cohomology with unit coefficients**: for coefficients
+in an object `M`, acted on along the right unitor of `M`, the classes `a ∈ Hᵖ(X; M)`,
+`b ∈ H^q(X; 𝟙)` and `c ∈ H^r(X; 𝟙)` satisfy `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`, with `b ⌣ c` along the
+right unitor of the unit object. This is `TopCat.singularCup_assoc` with both coherence conditions
+discharged. -/
+lemma singularCup_rightUnitor_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {p q r m m' n : ℕ} (h₁₂ : p + q = m) (h : m + r = n) (h₂₃ : q + r = m')
+    (h' : p + m' = n) (a : X.singularCohomology (𝟙_ C) k M p)
+    (b : X.singularCohomology (𝟙_ C) k (𝟙_ C) q) (c : X.singularCohomology (𝟙_ C) k (𝟙_ C) r) :
+    X.singularCup k (λ_ _).inv (ρ_ M).hom m r n h
+        (X.singularCup k (λ_ _).inv (ρ_ M).hom p q m h₁₂ a b) c =
+      X.singularCup k (λ_ _).inv (ρ_ M).hom p m' n h' a
+        (X.singularCup k (λ_ _).inv (ρ_ (𝟙_ C)).hom q r m' h₂₃ b c) :=
+  singularCup_assoc X k (by monoidal) (by monoidal) h₁₂ h h₂₃ h' a b c
 
 /-- **The left unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a left unit, under the hypotheses of
