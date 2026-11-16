@@ -15,6 +15,7 @@ import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Winding.SegmentSum
 import TauCeti.Analysis.Contour.Winding.Number.Periodic
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
+import TauCeti.Topology.Circle.Degree.Disc
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
@@ -146,11 +147,9 @@ theorem windingNumber_comp_circleMap_eq_degree_toBasedLoop {f : ℂ → ℂ} {c 
   have hcirc (θ : ℝ) : circleMap c r θ = c + r * (Circle.exp θ : ℂ) := by
     rw [circleMap, Circle.coe_exp]
   -- The norm of `u ζ` is one, so `f` has no zero on the circle.
-  have hne (θ : ℝ) : γ θ ≠ 0 := by
-    intro h0
-    have h := hu (Circle.exp θ)
-    rw [← hcirc, ← Function.comp_apply (f := f), ← hγdef, h0, zero_div] at h
-    exact Circle.coe_ne_zero _ h
+  have hne (θ : ℝ) : γ θ ≠ 0 :=
+    Circle.ne_zero_of_coe_eq_div_norm (z := u (Circle.exp θ)) <| by
+      simpa only [hγdef, Function.comp_apply, hcirc] using hu (Circle.exp θ)
   have hper : Function.Periodic γ (2 * Real.pi) := fun θ ↦ by
     simp only [hγdef, Function.comp_apply, periodic_circleMap c r θ]
   -- Shift the parameter interval to `[0, 2π]`, then rescale it to `[0, 1]`.
@@ -181,7 +180,6 @@ theorem windingNumber_comp_circleMap_eq_degree_toBasedLoop {f : ℂ → ℂ} {c 
       (hf.comp (contDiff_const.mul contDiff_id)).contDiffOn).congr fun t ht ↦ ?_
     rw [Path.extend_apply Γ (by simpa [uIcc_of_le zero_le_one] using ht), hΓ_apply,
       Function.comp_apply]
-  · rw [ContinuousMap.toBasedLoop_apply, hu, TauCeti.unitToCircle_apply, ← hcirc, sub_zero,
-      hΓ_apply, hγdef, Function.comp_apply]
+  · simp [hu, hΓ_apply, hγdef, hcirc, TauCeti.unitToCircle_apply]
 
 end TauCeti.Contour

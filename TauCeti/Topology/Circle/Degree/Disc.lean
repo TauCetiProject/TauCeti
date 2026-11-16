@@ -44,6 +44,12 @@ open scoped unitInterval
 
 namespace Circle
 
+/-- A point of the circle that is the direction `w / ‖w‖` of a complex number `w` forces
+`w ≠ 0`, since `0 / ‖0‖ = 0` is not on the circle. -/
+theorem ne_zero_of_coe_eq_div_norm {z : Circle} {w : ℂ} (h : (z : ℂ) = w / ‖w‖) : w ≠ 0 := by
+  rintro rfl
+  simp at h
+
 /-- **Homotopy invariance of the degree of direction maps.** Let `F : [0, 1] × S¹ → ℂ` be
 continuous and without zeros. Then the direction maps `ζ ↦ F (0, ζ) / ‖F (0, ζ)‖` and
 `ζ ↦ F (1, ζ) / ‖F (1, ζ)‖` of its two ends have the same degree. -/
@@ -97,7 +103,7 @@ theorem exists_mem_ball_eq_zero_of_degree_toBasedLoop_ne_zero {f : ℂ → ℂ} 
   have hz : c + r * (exp (Complex.arg (z - c)) : ℂ) = z := by
     rw [← heq, dist_eq_norm, coe_exp, Complex.norm_mul_exp_arg_mul_I, add_sub_cancel]
   have h0 := hu (exp (Complex.arg (z - c)))
-  rw [hz, hz₀, zero_div] at h0
-  exact coe_ne_zero _ h0
+  rw [hz] at h0
+  exact ne_zero_of_coe_eq_div_norm h0 hz₀
 
 end Circle
