@@ -171,11 +171,8 @@ theorem cappedExchangeAlmostComplex_of_not (hL : 2 < L) (hc : c ∈ Icc (-1) 2)
   rcases hw with (rfl | rfl) | rfl
   · exact cappedExchangeAlmostComplex_eq_of_norm_le h₀ J hJ hL hc (by rw [norm_zero]; positivity)
   · simpa using cappedExchangeAlmostComplex_endCenter_one h₀ J hJ hL.le hc
-  · refine cappedExchangeAlmostComplex_eq_of_norm_le h₀ J hJ hL hc ?_
-    have h := (norm_sub_endCenter_div_plumbingFactor_le_iff (q := zero)
-      (w := zero.plumbingMap L 1) (by decide) L 1).1
-    rw [plumbingMap_sub_endCenter_div_plumbingFactor, endCenter_zero, sub_zero] at h
-    exact h (by rw [norm_one]; nlinarith [Real.add_one_le_exp (2 * π * 1), Real.pi_pos])
+  · exact cappedExchangeAlmostComplex_eq_of_norm_le h₀ J hJ hL hc
+      (by simpa [endCenter_zero] using (norm_plumbingMap_one_sub_endCenter_lt zero L).le)
 
 /-- **Near the capped puncture the family is the capping structure at `0`.** For `L > 2` and
 `-1 ≤ c ≤ 2`, on the disc `‖w‖ ≤ 1` the member `c` of the family is the capping structure at `0`
@@ -317,7 +314,7 @@ theorem contMDiff_cappedExchangeAlmostComplex {F G N : Type*} [NormedAddCommGrou
     filter_upwards [hf.continuous.norm.continuousAt.eventually
       (lt_mem_nhds (by linarith : 1 / 2 < ‖f y₀‖))] with y hy
     rw [cappedExchangeAlmostComplex_of_re_endCoord_le h₀ J hJ
-      (Floer.re_endCoord_zero_le_half (by linarith) hy.le)]
+      (re_endCoord_zero_le_half (by linarith) hy.le)]
 
 /-! ### Solutions at the end of the family -/
 

@@ -171,7 +171,7 @@ structure: the translated plane part and the plane part at `0` are both `J₀` t
 private theorem exchangeAlmostComplex_eq_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀)
     (hc : c ∈ Icc (-1) 2) (hw : ‖w‖ ≤ 1) (x : M) :
     exchangeAlmostComplex h₀ J hJ c w x = pairOfPantsAlmostComplex h₀ J hJ w x := by
-  have h3 : 3 ≤ 2 * Real.exp (2 * π) := by nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
+  have h3 := three_lt_two_mul_exp_two_pi
   have hwc : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
     have h := norm_sub_le w (c : ℂ)
     rw [Complex.norm_real, Real.norm_eq_abs] at h
@@ -218,7 +218,7 @@ theorem cappedExchangeAlmostComplex_endCenter_one (h₀ : ω.Compatible J₀) (h
   have hn : ‖one.endCenter - (c : ℂ)‖ ≤ 2 * Real.exp (2 * π) := by
     rw [endCenter_one, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
       Real.norm_eq_abs, abs_le]
-    constructor <;> nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi, hc.1, hc.2]
+    constructor <;> linarith [three_lt_two_mul_exp_two_pi, hc.1, hc.2]
   rw [cappedExchangeAlmostComplex_of_re_endCoord_le h₀
       (re_endCoord_zero_le_half hL (by norm_num [endCenter_one])),
     exchangeAlmostComplex_of_norm_le h₀ hn, pairOfPantsAlmostComplex_endCenter]
