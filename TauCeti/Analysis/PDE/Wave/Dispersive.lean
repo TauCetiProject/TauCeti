@@ -518,8 +518,6 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_l
   obtain ⟨C, hC0, hC⟩ :=
     φ.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le
   refine ⟨C, hC0, fun j m hm t f hf ↦ ?_⟩
-  set B := C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
-    (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)
   -- The localized symbol `ψⱼ exp(2πit‖·‖)` as a Schwartz function.
   set σ : 𝓢(E, ℂ) :=
     φ.littlewoodPaleyPiece (contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol (E := E) t) j
@@ -530,29 +528,13 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_l
   -- `W₊(t) Pⱼ` is the multiplier with the Schwartz symbol `σ`.
   have hop : halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) =
       Lp.fourierMultiplierCLM F (σ.toLp ∞) f := by
-    rw [halfWavePropagator_def, phasePropagator_def,
-      Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
-    congr 2
-    apply Lp.ext
-    filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_phaseSymbol sqrtNegLaplacianSymbol t).toLp _)
-      m, (memLp_phaseSymbol (E := E) sqrtNegLaplacianSymbol t).coeFn_toLp, hm,
-      σ.coeFn_toLp ∞] with ξ h₁ h₂ h₃ h₄
-    rw [h₁, Pi.smul_apply', h₂, h₃, h₄, hσ, smul_eq_mul]
-  have hK : ∀ z, ‖𝓕⁻ (σ : E → ℂ) z‖ ≤ B := fun z ↦ by
-    rw [hσ]
-    exact hC j t z
-  have hbound : ∀ᵐ x ∂volume,
-      ‖halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) x‖ ≤ B * ∫ y, ‖f y‖ := by
-    rw [hop]
-    filter_upwards [SchwartzMap.coeFn_fourierMultiplierCLM_toLp σ f] with x hx
-    rw [hx, ← integral_const_mul]
-    refine norm_integral_le_of_norm_le (hf.norm.const_mul _) (Eventually.of_forall fun y ↦ ?_)
-    rw [norm_smul, SchwartzMap.fourierInv_coe]
-    exact mul_le_mul_of_nonneg_right (hK _) (norm_nonneg _)
-  have hB : 0 ≤ B := (norm_nonneg _).trans (hK 0)
-  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_eNorm,
-    ← ofReal_integral_norm_eq_lintegral_eNorm hf, ← ENNReal.ofReal_mul hB]
-  · exact eLpNormEssSup_le_of_ae_bound hbound
-  all_goals exact Lp.aestronglyMeasurable _
+    rw [halfWavePropagator_def]
+    refine phasePropagator_fourierMultiplierCLM_apply_of_ae_eq _ t ?_ f
+    filter_upwards [hm, σ.coeFn_toLp ∞] with ξ h₁ h₂
+    rw [h₂, h₁, hσ]
+  rw [hop]
+  refine σ.eLpNorm_fourierMultiplierCLM_toLp_top_le (fun z ↦ ?_) hf
+  rw [SchwartzMap.fourierInv_coe, hσ]
+  exact hC j t z
 
 end ContDiffBump

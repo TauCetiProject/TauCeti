@@ -56,6 +56,9 @@ Hardy–Littlewood–Sobolev fails, needs the Keel–Tao argument instead.
   `‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^{q'} L^{r'}}`.
 * `TauCeti.exists_enorm_integral_inner_apply_le`: the homogeneous estimate in weak form,
   `|∫ ⟪U(t) f, G(t)⟫ dt| ≤ C A ^ (1 / 2) ‖f‖ ‖G‖_{L^{q'} L^{r'}}`.
+* `TauCeti.enorm_integral_setIntegral_Iio_le_lintegral_lintegral`: the truncation of a double
+  integral to the retarded region `s < t`, which passes from the bilinear estimate to retarded
+  estimates.
 
 ## References
 
@@ -77,6 +80,13 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
   {r r' : ℝ≥0∞} [r'.HolderConjugate r]
+
+/-- An exponent `r ≠ 0` with `1 / r < 1 / 2` satisfies `2 ≤ r`. Along an admissible pair this is
+the fact that the space exponent `r` lies on the `L^r` side of `L²`. -/
+theorem two_le_of_toReal_inv_lt (hr : r ≠ 0) (h : (r⁻¹).toReal < 2⁻¹) : 2 ≤ r := by
+  rw [← ENNReal.inv_le_inv, ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hr),
+    ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
+  exact ENNReal.ofReal_le_ofReal (h.le.trans_eq (by simp))
 
 /-- A single time pairing: Hölder's inequality in space and the decay of `U(s) U(t)*` bound
 `|⟪U(s)* f, U(t)* g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
@@ -164,6 +174,21 @@ theorem exists_lintegral_lintegral_enorm_inner_adjoint_le {p q : ℝ≥0} (hq : 
         gcongr
         exact hC b
     _ = _ := by ring
+
+/-- **The retarded truncation.** The integral of `f s t` over the retarded region `s < t` is
+bounded by the double integral of `‖f s t‖`:
+
+`|∫ ∫_{s < t} f s t ds dt| ≤ ∫∫ |f s t| ds dt`.
+
+With `f s t` a Duhamel pairing, this passes from the bilinear `TT*` estimate to retarded
+estimates. -/
+theorem enorm_integral_setIntegral_Iio_le_lintegral_lintegral {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (f : ℝ → ℝ → V) :
+    ‖∫ t, ∫ s in Set.Iio t, f s t‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ :=
+  calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, f s t‖ₑ := eNorm_integral_le_lintegral_eNorm _
+    _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖f s t‖ₑ :=
+        lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
+    _ ≤ _ := lintegral_mono fun _ ↦ setLIntegral_le_lintegral _ _
 
 variable [NormedSpace ℝ H]
 
