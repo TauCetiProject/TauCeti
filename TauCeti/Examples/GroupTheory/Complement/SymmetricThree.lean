@@ -419,10 +419,10 @@ theorem isLocalComplement_bot_sylow_three (P : Sylow 3 (Perm (Fin 3))) :
   rw [coe_sylow_eq_alternatingGroup]
   exact Subgroup.isLocalComplement_self_left.mpr rfl
 
-/-- Sylow detection (`IsPGroup.exists_isComplement'_iff_sylow`) recovers the existence of a global
-complement of `A₃` in `S₃` from the local complement `⊥` inside `alternatingGroupSylowThree`. -/
+/-- The alternating subgroup `A₃` has a complement in `S₃`. -/
 theorem exists_isComplement'_alternatingGroup_fin_three :
     ∃ D : Subgroup (Perm (Fin 3)), (alternatingGroup (Fin 3)).IsComplement' D :=
+  -- Recover global splitting from the local complement `⊥` in `alternatingGroupSylowThree`.
   (isPGroup_three_alternatingGroup_fin_three.exists_isComplement'_iff_sylow
     alternatingGroupSylowThree).mpr
     ⟨⊥, isLocalComplement_bot_sylow_three alternatingGroupSylowThree⟩
@@ -444,7 +444,7 @@ theorem isComplement'_and_le_normalizer_iff (a : Fin 3) (D : Subgroup (Perm (Fin
     (by rw [card_stabilizer_perm_fin_three, card_stabilizer_perm_fin_three])).symm
 
 /-- `A₃` admits a complement in `S₃` closed under conjugation by every element of
-`stabilizer 2`, via `Subgroup.exists_invariant_complement`. -/
+`stabilizer 2`. -/
 theorem exists_isComplement'_and_stabilizer_two_conj_mem :
     ∃ D : Subgroup (Perm (Fin 3)),
       (alternatingGroup (Fin 3)).IsComplement' D ∧
@@ -460,6 +460,7 @@ theorem exists_isComplement'_and_stabilizer_two_conj_mem :
         ((ConjAct.ofConjAct a : S) : Perm (Fin 3))⁻¹ := by
     rw [MulAction.compHom_smul_def, MonoidHom.comp_apply, MonoidHom.comp_apply,
       Subgroup.subtype_apply, MulEquiv.coe_toMonoidHom, MulAut.smul_def, MulAut.conj_apply]
+  -- Apply `Subgroup.exists_invariant_complement` to `ConjAct (stabilizer 2)` acting on `S₃`.
   obtain ⟨D, hD, hinv⟩ :=
     Subgroup.exists_invariant_complement (A := ConjAct S) (p := 3) (q := 2)
       (alternatingGroup (Fin 3))
@@ -475,13 +476,13 @@ theorem exists_isComplement'_and_stabilizer_two_conj_mem :
   have hmem := hinv (ConjAct.toConjAct (⟨a, ha⟩ : S)) d hd
   rwa [hsmul, ConjAct.ofConjAct_toConjAct] at hmem
 
-/-- `A₃` admits a local complement in `⊤` normalized by `stabilizer 2`, via
-`Subgroup.exists_invariant_local_complement`. -/
+/-- `A₃` admits a local complement in `⊤` normalized by `stabilizer 2`. -/
 theorem exists_isLocalComplement_top_and_stabilizer_two_le_normalizer :
     ∃ D : Subgroup (Perm (Fin 3)),
       (alternatingGroup (Fin 3)).IsLocalComplement D ⊤ ∧
         MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) ≤
           Subgroup.normalizer (D : Set (Perm (Fin 3))) := by
+  -- Apply `Subgroup.exists_invariant_local_complement` with `H = ⊤` and `A = stabilizer 2`.
   refine Subgroup.exists_invariant_local_complement (p := 3) (q := 2)
     (⊤ : Subgroup (Perm (Fin 3))) le_top
     (by rw [(⊤ : Subgroup (Perm (Fin 3))).normalizer_eq_top]; exact le_top)

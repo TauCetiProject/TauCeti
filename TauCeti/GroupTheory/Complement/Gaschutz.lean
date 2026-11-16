@@ -188,7 +188,8 @@ theorem IsComplement'.crossedTransfer_id_apply {D : Subgroup G} (hD : N.IsComple
     (htD : ∀ u, t u ∈ D) (g : G) :
     crossedTransfer N t ht id g = hD.crossedProjection g ^ N.index := by
   have h : N.IsLocalComplement ⊥ N := N.isLocalComplement_bot_self
-  have hc : h.leftProjection = id := funext h.leftProjection_self
+  -- for `H = N`, the inclusion of `N` into `H` in `leftProjection_left` is the identity
+  have hc : h.leftProjection = id := funext h.leftProjection_left
   rw [← hc, h.crossedTransfer_leftProjection_apply t ht hD bot_le htD]
 
 /-- **Gaschütz's splitting theorem.** Let `N` be an abelian normal subgroup of `G` with a local

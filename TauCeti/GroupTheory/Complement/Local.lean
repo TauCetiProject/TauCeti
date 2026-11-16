@@ -376,13 +376,6 @@ theorem leftProjection_restrict [(N.subgroupOf L).Normal] (hNL : N ≤ L) (hLH :
 
 end IsLocalComplement
 
-/-- When the first subgroup is the ambient subgroup itself, the left projection of a local
-complement is the identity. -/
-@[simp]
-theorem IsLocalComplement.leftProjection_self [(H.subgroupOf H).Normal]
-    (h : H.IsLocalComplement K H) (x : H) : h.leftProjection x = x :=
-  h.leftProjection_left x
-
 section Conjugation
 
 variable [N.Normal]
