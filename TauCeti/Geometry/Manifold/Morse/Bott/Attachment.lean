@@ -59,7 +59,7 @@ since `[0, 1]` is compact the deformation is still continuous.
   `f ∘ Θ = c - s + t` given by a partial diffeomorphism `Θ` near a compact core and all small
   `ε > 0`. The tube is the image under `Θ` of a sublevel `{s + 2t < m}`, which for small `m` has
   compact closed sublevels inside the source of `Θ`
-  (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
+  (`TauCeti.exists_pos_setOf_lt_subset_and_isCompact`).
 
 ## References
 
@@ -712,14 +712,12 @@ theorem exists_sublevel_union_image_deformation [LocallyCompactSpace X] [T2Space
   have hq_le (a b : ℝ) (ha : a ^ 2 ≤ 1) (hb : b ^ 2 ≤ 1) (x : X) : q (σ a b x) ≤ q x := by
     simp only [hq_def, hσs, hσt]
     nlinarith [hs₀ x, ht₀ x]
-  -- The rays `a ↦ σ a a x`, `a ∈ [0, 1]`, join each point to the core, with `q` at most `q x`.
-  obtain ⟨m, hm, hmΘ, hmK⟩ := exists_gt_setOf_lt_subset_and_isCompact hZ Θ.open_source hZΘ hq
-    (fun x (hx : s x + 2 * t x ≤ 0) ↦
-      hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
-    fun x ↦ ⟨(fun a ↦ σ a a x) '' Icc 0 1, isPreconnected_Icc.image _
-      (hσ.comp ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
-      ⟨1, ⟨zero_le_one, le_rfl⟩, hσ₁ x⟩, ⟨σ 0 0 x, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, hσZ x⟩,
-      by rintro _ ⟨a, ha, rfl⟩; exact hq_le a a (pow_le_one₀ ha.1 ha.2) (pow_le_one₀ ha.1 ha.2) x⟩
+  -- The rays `a ↦ σ a a x`, `a ∈ [0, 1]`, join each point to `Z` without increasing `q`.
+  obtain ⟨m, hm, hmΘ, hmK⟩ := exists_pos_setOf_lt_subset_and_isCompact hZ Θ.open_source hZΘ hq
+    (fun x hx ↦ hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
+    (fun a ↦ σ a a) (fun x ↦ (hσ.comp ((continuous_id.prodMk continuous_id).prodMk
+      continuous_const)).continuousOn)
+    (fun a ha ↦ hq_le a a (pow_le_one₀ ha.1 ha.2) (pow_le_one₀ ha.1 ha.2)) hσ₁ hσZ
   refine ⟨m / 2, half_pos hm, fun ε hε hcompact hcrit ↦ ?_⟩
   have hεm : 2 * ε < m := by linarith [hε.2]
   have hD (x : X) (ht : t x = 0) (hs : s x ≤ ε) : q x < m := by
