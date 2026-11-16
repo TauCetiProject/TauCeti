@@ -263,24 +263,18 @@ theorem exists_forall_norm_le_of_integral_norm_sub_le {ι Ω E : Type*}
   · exact hm.trans (le_add_of_nonneg_right (div_nonneg hD0 hp.le))
   have ht : 0 < ‖m n‖ - N := by linarith
   -- Markov's inequality does not require the envelope's sublevel set to be measurable.
-  have hle : p ≤ μ {x | ENNReal.ofReal (‖m n‖ - N) ≤ ENNReal.ofReal ‖g n x - m n‖} := by
+  have hle : p ≤ μ {x | ‖m n‖ - N ≤ ‖g n x - m n‖} := by
     refine (min_le_left _ _).trans (measure_mono_ae ?_)
     filter_upwards [hgf n] with x hx hxf
-    apply ENNReal.ofReal_le_ofReal
     have : f x ≤ N := hxf
     have hnorm := norm_sub_norm_le (m n) (g n x)
     rw [norm_sub_rev] at hnorm
     linarith
-  have hmarkov := mul_meas_ge_le_lintegral₀
-    (hint n).norm.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-    (ENNReal.ofReal (‖m n‖ - N))
-  have hbound : ENNReal.ofReal (‖m n‖ - N) * p ≤ ENNReal.ofReal D := by
-    refine (mul_le_mul_of_nonneg_left hle (by positivity)).trans (hmarkov.trans ?_)
-    rw [← ofReal_integral_eq_lintegral_ofReal (hint n).norm
-      (.of_forall fun x ↦ norm_nonneg (g n x - m n))]
-    exact ENNReal.ofReal_le_ofReal (hD n)
-  have hreal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hbound
-  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal ht.le, ENNReal.toReal_ofReal hD0] at hreal
+  have hreal : (‖m n‖ - N) * p.toReal ≤ D :=
+    (mul_le_mul_of_nonneg_left
+      (ENNReal.toReal_mono ((hint n).measure_norm_ge_lt_top ht).ne hle) ht.le).trans <|
+      (mul_meas_ge_le_integral_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
+        (hint n).norm (‖m n‖ - N)).trans (hD n)
   have : ‖m n‖ - N ≤ D / p.toReal := (le_div_iff₀ hp).2 hreal
   linarith
 
