@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
-public import TauCeti.Geometry.Manifold.Degree.Basic
+public import TauCeti.Geometry.Manifold.Degree.Boundaryless
 public import TauCeti.Geometry.Manifold.RegularValue.Fibre
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
+import TauCeti.Geometry.Manifold.ModelTransport.RegularValue
 
 /-!
 # The smooth degree is the homological degree
@@ -35,11 +36,17 @@ differentiability at `x` is used; it already makes `x` isolated in its fibre
 The fibre of a proper map over a regular value `y` is compact and, by this isolation, discrete,
 hence finite (`TauCeti.IsRegularValue.finite_preimage_of_isProperMap`). Summing over it, the
 homological degree of a proper map onto a preconnected manifold is the signed count of preimages
-`degreeAtRegularValue o o' f y` (`TauCeti.Manifold.Orientation.degree_toHomologicalOrientation`).
-For a map between compact manifolds, with `N` preconnected, this reads
+`TauCeti.degreeAtRegularValue o o' f y`
+(`TauCeti.Manifold.Orientation.degree_toHomologicalOrientation`). For a map between compact
+manifolds, with `N` preconnected, this reads
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`
 (`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`), so a degree
-computed by counting preimages with signs computes the image of the fundamental class.
+computed by counting preimages with signs computes the image of the fundamental class. When the
+source `(M, I)` carries an arbitrary boundaryless model on `E`, transporting `o` to
+`TauCeti.BoundarylessModel I M` gives
+`TauCeti.Manifold.Orientation.degree_toBoundarylessModel_toHomologicalOrientation` and
+`TauCeti.Manifold.Orientation.mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul`
+for the homological degree and fundamental class.
 
 ## Main results
 
@@ -50,6 +57,10 @@ computed by counting preimages with signs computes the image of the fundamental 
 * `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`: for a map
   between compact manifolds, with preconnected target, `f_*[M]` is the signed count of preimages
   of a regular value times `[N]`.
+* `TauCeti.Manifold.Orientation.degree_toBoundarylessModel_toHomologicalOrientation` and
+`TauCeti.Manifold.Orientation.mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul`
+  give the corresponding formulas for a source `(M, I)` with an arbitrary boundaryless model on
+  `E`.
 
 ## References
 
@@ -170,6 +181,58 @@ theorem mapFundamentalClass_eq_degreeAtRegularValue_smul [CompactSpace M] [Compa
       degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hE).fundamentalClass hE := by
   rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ _ hE hE,
     degree_toHomologicalOrientation hE o o' f.continuous.isProperMap hy]
+
+end Manifold.Orientation
+
+namespace Manifold.Orientation
+
+variable {H M N E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 1 M]
+  [TopologicalSpace N] [ChartedSpace E N] [T2Space N] [IsManifold 𝓘(ℝ, E) 1 N]
+  {n : ℕ} (hE : finrank ℝ E = n + 1)
+
+/-- **The homological degree across a boundaryless source model.** For a proper map `f : M → N`
+from a boundaryless `C¹` manifold `(M, I)` modelled on `E` onto a preconnected manifold `N`
+modelled on `E` and a regular value `y` of `f`, the homological degree of `f` on
+`BoundarylessModel I M` is `degreeAtRegularValue o o' f y`. -/
+theorem degree_toBoundarylessModel_toHomologicalOrientation [PreconnectedSpace N]
+    (o : Manifold.Orientation I M (Fin (n + 1)))
+    (o' : Manifold.Orientation 𝓘(ℝ, E) N (Fin (n + 1)))
+    {f : C(M, N)} (hf : IsProperMap f) {y : N} (hy : IsRegularValue I 𝓘(ℝ, E) f y) :
+    (o.toBoundarylessModel.toHomologicalOrientation hE).degree
+        (o'.toHomologicalOrientation hE) hE (f.comp (BoundarylessModel.homeomorph I M).symm) =
+      degreeAtRegularValue o o' f y := by
+  have hcoe : ⇑(f.comp (BoundarylessModel.homeomorph I M).symm : C(BoundarylessModel I M, N)) =
+      f ∘ (BoundarylessModel.homeomorph I M).symm := by
+    rw [ContinuousMap.coe_comp, ContinuousMap.coe_ofClass]
+  have hproper : IsProperMap (f.comp (BoundarylessModel.homeomorph I M).symm :
+      C(BoundarylessModel I M, N)) := by
+    rw [hcoe]
+    exact hf.comp (BoundarylessModel.homeomorph I M).symm.isProperMap
+  have hy' : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, E)
+      (f.comp (BoundarylessModel.homeomorph I M).symm : C(BoundarylessModel I M, N)) y := by
+    rw [hcoe]
+    exact (BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff f y).2 hy
+  rw [degree_toHomologicalOrientation hE o.toBoundarylessModel o' hproper hy', hcoe,
+    o.degreeAtRegularValue_toBoundarylessModel o' f y]
+
+/-- **Fundamental-class pushforward across a boundaryless source model.** For a continuous map
+`f : M → N` from a compact oriented boundaryless `C¹` manifold `(M, I, o)` modelled on `E` to a
+compact preconnected oriented `C¹` manifold `(N, 𝓘(ℝ, E), o')` and a regular value `y` of `f`,
+pushing forward the fundamental class of `BoundarylessModel I M` gives
+`degreeAtRegularValue o o' f y • [N]`. -/
+theorem mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul
+    [CompactSpace M] [CompactSpace N] [PreconnectedSpace N]
+    (o : Manifold.Orientation I M (Fin (n + 1)))
+    (o' : Manifold.Orientation 𝓘(ℝ, E) N (Fin (n + 1)))
+    {f : C(M, N)} {y : N} (hy : IsRegularValue I 𝓘(ℝ, E) f y) :
+    (o.toBoundarylessModel.toHomologicalOrientation hE).mapFundamentalClass hE
+        (f.comp (BoundarylessModel.homeomorph I M).symm) =
+      degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hE).fundamentalClass hE := by
+  rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ _ hE hE,
+    o.degree_toBoundarylessModel_toHomologicalOrientation hE o'
+      (ContinuousMap.continuous f).isProperMap hy]
 
 end Manifold.Orientation
 

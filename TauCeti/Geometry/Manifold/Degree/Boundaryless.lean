@@ -5,202 +5,106 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Degree.Homological
-public import TauCeti.Geometry.Manifold.ModelTransport.LinearEquiv
-public import TauCeti.Geometry.Manifold.Orientation.Pullback
+public import TauCeti.Geometry.Manifold.Degree.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Boundaryless
+public import TauCeti.Geometry.Manifold.Orientation.LinearEquiv
 
 /-!
-# Smooth and homological degree across boundaryless manifold models
+# Invariance of smooth mapping degree under source model changes
 
-`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul` identifies the
-pushforward of the homological fundamental class `f_*[M]` with `degreeAtRegularValue o o' f y • [N]`
-when `M` and `N` are both charted directly on the same real inner product space `F`. In geometric
-constructions — such as the great-circle rotation family `Sᵐ × S¹ → Sᵐ⁺¹`, whose domain carries the
-product model `(𝓡 m).prod (𝓡 1)` on `ModelProd` — the source manifold `(M, I)` is boundaryless but
-charted on a general model `(E, H, I)` rather than `𝓘(ℝ, F)`.
+Both orthogonal changes of source model coordinates on a `C¹` manifold `(M, I)` preserve the
+smooth degree counts `TauCeti.degreeAtRegularValue` and `TauCeti.degree` of any map `f : M → N`
+into an oriented `C¹` manifold `(N, J)`:
 
-Given a boundaryless `C¹` manifold `(M, I)` and a continuous linear equivalence `L : E ≃L[ℝ] F`,
-pulling an orientation `o` of `M` back along the inverse of
-`TauCeti.BoundarylessModel.diffeomorphTransContinuousLinearEquiv I L 1` equips the `F`-charted copy
-`BoundarylessModel (I.transContinuousLinearEquiv L) M` with an orientation
-`o.toBoundarylessModel L` having the same regular values and signed preimage counts
-(`Diffeomorph.isRegularValue_comp_right`,
-`Diffeomorph.degreeAtRegularValue_comp_of_isOrientationPreservingAt`,
-`Diffeomorph.degree_comp_of_isOrientationPreservingAt`), and pushing the fundamental class forward
-by `degreeAtRegularValue o o' f y • [N]`.
-
-## Main definitions
-
-* `TauCeti.Manifold.Orientation.toBoundarylessModel`: transport a smooth orientation of a
-  boundaryless manifold `(M, I)` along `L : E ≃L[ℝ] F` to
-  `BoundarylessModel (I.transContinuousLinearEquiv L) M`.
+1. Recharting `I` along a continuous linear equivalence `e : E ≃L[ℝ] F` via
+   `TauCeti.Manifold.Orientation.transContinuousLinearEquiv` (including on manifolds with boundary
+   or corners).
+2. Replacing a boundaryless model `I` on `M` by its vector-space-modelled copy
+   `TauCeti.BoundarylessModel I M` via `TauCeti.Manifold.Orientation.toBoundarylessModel`.
 
 ## Main results
 
-* `TauCeti.BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff`,
-  `TauCeti.Manifold.Orientation.degreeAtRegularValue_toBoundarylessModel`,
-  `TauCeti.Manifold.Orientation.degree_toBoundarylessModel`: recharting the source to
-  `BoundarylessModel` preserves regular values, `degreeAtRegularValue`, and `degree`.
-* `TauCeti.Manifold.Orientation.degree_toBoundarylessModel_toHomologicalOrientation`,
-  `Manifold.Orientation.mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul`:
-  the signed preimage count at a regular value on `(M, I)` computes the homological degree and the
-  pushforward of the fundamental class of its `F`-modelled copy.
+* `TauCeti.Manifold.Orientation.degreeAtRegularValue_transContinuousLinearEquiv`,
+  `TauCeti.Manifold.Orientation.degree_transContinuousLinearEquiv`: recharting the source
+  orientation along `e : E ≃L[ℝ] F` leaves `TauCeti.degreeAtRegularValue` and `TauCeti.degree`
+  unchanged.
+* `TauCeti.Manifold.Orientation.degreeAtRegularValue_toBoundarylessModel`,
+  `TauCeti.Manifold.Orientation.degree_toBoundarylessModel`: recharting a boundaryless source
+  `(M, I)` to `TauCeti.BoundarylessModel I M` leaves `TauCeti.degreeAtRegularValue` and
+  `TauCeti.degree` unchanged.
 -/
 
 public section
 
 noncomputable section
 
-open Function Module Set
+open Function
 open scoped ContDiff Manifold
-
-namespace TauCeti.BoundarylessModel
-
-section RegularValue
-
-variable {𝕜 E F H M G N : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M]
-  [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
-  [TopologicalSpace N] [ChartedSpace G N]
-
-/-- Recharting a boundaryless manifold `(M, I)` to
-`BoundarylessModel (I.transContinuousLinearEquiv L) M` preserves regular values. -/
-@[simp]
-theorem isRegularValue_comp_homeomorph_symm_iff (L : E ≃L[𝕜] F) (f : M → N) (y : N) :
-    IsRegularValue 𝓘(𝕜, F) J
-        (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm) y ↔
-      IsRegularValue I J f y := by
-  simpa only [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm] using
-    (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1
-      ).symm.isRegularValue_comp_right one_ne_zero (f := f) (y := y)
-
-end RegularValue
-
-end TauCeti.BoundarylessModel
 
 namespace TauCeti.Manifold.Orientation
 
-section Smooth
-
-variable {E F H M G N : Type*}
+variable {E F H M F' G N ι : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
+  [TopologicalSpace G] {J : ModelWithCorners ℝ F' G}
   [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
-  {ι : Type*} [Fintype ι]
+  [Fintype ι]
 
-/-- Transport an orientation `o` of a boundaryless `C¹` manifold `(M, I)` along a continuous linear
-equivalence `L : E ≃L[ℝ] F` to the vector-space-modelled copy
-`BoundarylessModel (I.transContinuousLinearEquiv L) M`, by pulling `o` back along the inverse
-identity diffeomorphism. -/
-def toBoundarylessModel (o : Manifold.Orientation I M ι) (L : E ≃L[ℝ] F) :
-    Manifold.Orientation 𝓘(ℝ, F) (BoundarylessModel (I.transContinuousLinearEquiv L) M) ι :=
-  o.pullback
-    (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1).symm.contMDiff
-    (fun _ ↦ (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1
-      ).symm.isInvertible_mfderiv one_ne_zero)
-    (o.card_eq.trans L.toLinearEquiv.finrank_eq)
-
+/-- Recharting the source orientation along a continuous linear equivalence `e : E ≃L[ℝ] F` leaves
+`degreeAtRegularValue` unchanged at every point of `N`. -/
 @[simp]
-theorem toBoundarylessModel_neg (o : Manifold.Orientation I M ι) (L : E ≃L[ℝ] F) :
-    (-o).toBoundarylessModel L = -o.toBoundarylessModel L :=
-  pullback_neg o _ _ _
+theorem degreeAtRegularValue_transContinuousLinearEquiv (o : Manifold.Orientation I M ι)
+    (oN : Manifold.Orientation J N ι) (e : E ≃L[ℝ] F) (f : M → N) (y : N) :
+    degreeAtRegularValue (o.transContinuousLinearEquiv e) oN f y =
+      degreeAtRegularValue o oN f y := by
+  simpa only [e.coe_toTransContinuousLinearEquiv_symm I M, comp_id] using
+    (e.toTransContinuousLinearEquiv (n := 1) I M
+      ).symm.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt one_ne_zero oN
+      (o.isOrientationPreservingAt_id_transContinuousLinearEquiv_symm e) f y
 
-/-- The inverse identity diffeomorphism from `BoundarylessModel (I.transContinuousLinearEquiv L) M`
-to `M` preserves orientation from `o.toBoundarylessModel L` to `o` at every point. -/
-theorem isOrientationPreservingAt_symm_toBoundarylessModel (o : Manifold.Orientation I M ι)
-    (L : E ≃L[ℝ] F) (x : BoundarylessModel (I.transContinuousLinearEquiv L) M) :
-    IsOrientationPreservingAt (o.toBoundarylessModel L) o
-      (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1).symm x :=
-  isOrientationPreservingAt_pullback o _ _ _ x
+/-- Recharting the source orientation along a continuous linear equivalence `e : E ≃L[ℝ] F` leaves
+`degree` unchanged. -/
+@[simp]
+theorem degree_transContinuousLinearEquiv (o : Manifold.Orientation I M ι)
+    (oN : Manifold.Orientation J N ι) (e : E ≃L[ℝ] F) (f : M → N) :
+    degree (o.transContinuousLinearEquiv e) oN f = degree o oN f := by
+  simpa only [e.coe_toTransContinuousLinearEquiv_symm I M, comp_id] using
+    (e.toTransContinuousLinearEquiv (n := 1) I M
+      ).symm.degree_comp_diffeomorph_of_isOrientationPreservingAt one_ne_zero oN
+      (o.isOrientationPreservingAt_id_transContinuousLinearEquiv_symm e) f
 
-/-- Recharting the source `(M, I)` to `BoundarylessModel (I.transContinuousLinearEquiv L) M`
-leaves `degreeAtRegularValue` unchanged. -/
+section Boundaryless
+
+variable [I.Boundaryless]
+
+/-- Replacing a boundaryless source `(M, I)` by `BoundarylessModel I M` leaves
+`degreeAtRegularValue` unchanged at every point of `N`. -/
 @[simp]
 theorem degreeAtRegularValue_toBoundarylessModel (o : Manifold.Orientation I M ι)
-    (oN : Manifold.Orientation J N ι) (L : E ≃L[ℝ] F) (f : M → N) (y : N) :
-    degreeAtRegularValue (o.toBoundarylessModel L) oN
-        (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm) y =
+    (oN : Manifold.Orientation J N ι) (f : M → N) (y : N) :
+    degreeAtRegularValue o.toBoundarylessModel oN
+        (f ∘ (BoundarylessModel.homeomorph I M).symm) y =
       degreeAtRegularValue o oN f y := by
-  simpa only [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm] using
-    (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1
-      ).symm.degreeAtRegularValue_comp_of_isOrientationPreservingAt one_ne_zero oN
-      (o.isOrientationPreservingAt_symm_toBoundarylessModel L) f y
+  simpa only [BoundarylessModel.coe_diffeomorph_symm] using
+    (BoundarylessModel.diffeomorph I (M := M) 1
+      ).symm.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt one_ne_zero oN
+      o.isOrientationPreservingAt_diffeomorph_symm_toBoundarylessModel f y
 
-/-- Recharting the source `(M, I)` to `BoundarylessModel (I.transContinuousLinearEquiv L) M`
-leaves `degree` unchanged. -/
+/-- Replacing a boundaryless source `(M, I)` by `BoundarylessModel I M` leaves `degree`
+unchanged. -/
 @[simp]
 theorem degree_toBoundarylessModel (o : Manifold.Orientation I M ι)
-    (oN : Manifold.Orientation J N ι) (L : E ≃L[ℝ] F) (f : M → N) :
-    degree (o.toBoundarylessModel L) oN
-        (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm) =
+    (oN : Manifold.Orientation J N ι) (f : M → N) :
+    degree o.toBoundarylessModel oN (f ∘ (BoundarylessModel.homeomorph I M).symm) =
       degree o oN f := by
-  simpa only [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm] using
-    (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1
-      ).symm.degree_comp_of_isOrientationPreservingAt one_ne_zero oN
-      (o.isOrientationPreservingAt_symm_toBoundarylessModel L) f
+  simpa only [BoundarylessModel.coe_diffeomorph_symm] using
+    (BoundarylessModel.diffeomorph I (M := M) 1
+      ).symm.degree_comp_diffeomorph_of_isOrientationPreservingAt one_ne_zero oN
+      o.isOrientationPreservingAt_diffeomorph_symm_toBoundarylessModel f
 
-end Smooth
-
-section Homological
-
-variable {E H M F N : Type}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 1 M]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-  [TopologicalSpace N] [ChartedSpace F N] [T2Space N] [IsManifold 𝓘(ℝ, F) 1 N]
-  {n : ℕ} (hF : finrank ℝ F = n + 1)
-
-/-- **Homological degree across boundaryless models.** For a proper map `f : M → N` from a
-boundaryless `C¹` manifold `(M, I)` to a preconnected `C¹` manifold `N` modelled on an inner product
-space `F` of dimension `n + 1`, the homological degree of `f` on the recharted copy
-`BoundarylessModel (I.transContinuousLinearEquiv L) M` equals `degreeAtRegularValue o o' f y` at
-any regular value `y` of `f`. -/
-theorem degree_toBoundarylessModel_toHomologicalOrientation [PreconnectedSpace N]
-    (o : Manifold.Orientation I M (Fin (n + 1)))
-    (o' : Manifold.Orientation 𝓘(ℝ, F) N (Fin (n + 1))) (L : E ≃L[ℝ] F)
-    {f : C(M, N)} (hf : IsProperMap f) {y : N} (hy : IsRegularValue I 𝓘(ℝ, F) f y) :
-    ((o.toBoundarylessModel L).toHomologicalOrientation hF).degree
-        (o'.toHomologicalOrientation hF) hF
-        (f.comp ⟨(BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm,
-          (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm.continuous⟩) =
-      degreeAtRegularValue o o' f y := by
-  let ψ : C(BoundarylessModel (I.transContinuousLinearEquiv L) M, M) :=
-    ⟨(BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm,
-      (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm.continuous⟩
-  have hproper : IsProperMap (f.comp ψ) :=
-    hf.comp (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm.isProperMap
-  have hy' : IsRegularValue 𝓘(ℝ, F) 𝓘(ℝ, F) (f.comp ψ) y :=
-    (BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff (J := 𝓘(ℝ, F)) L f y).2 hy
-  rw [degree_toHomologicalOrientation hF (o.toBoundarylessModel L) o' hproper hy']
-  exact degreeAtRegularValue_toBoundarylessModel o o' L f y
-
-/-- **Fundamental-class pushforward across boundaryless models.** For a continuous map `f : M → N`
-from a compact oriented boundaryless `C¹` manifold `(M, I, o)` to a compact preconnected oriented
-`C¹` manifold `(N, 𝓘(ℝ, F), o')`, recharting `M` via `L : E ≃L[ℝ] F` pushes the fundamental class
-forward to `degreeAtRegularValue o o' f y • [N]` at any regular value `y` of `f`. -/
-theorem mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul
-    [CompactSpace M] [CompactSpace N] [PreconnectedSpace N]
-    (o : Manifold.Orientation I M (Fin (n + 1)))
-    (o' : Manifold.Orientation 𝓘(ℝ, F) N (Fin (n + 1))) (L : E ≃L[ℝ] F)
-    {f : C(M, N)} {y : N} (hy : IsRegularValue I 𝓘(ℝ, F) f y) :
-    ((o.toBoundarylessModel L).toHomologicalOrientation hF).mapFundamentalClass hF
-        (f.comp ⟨(BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm,
-          (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm.continuous⟩) =
-      degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hF).fundamentalClass hF := by
-  have hy' : IsRegularValue 𝓘(ℝ, F) 𝓘(ℝ, F)
-      (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm) y :=
-    (BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff (J := 𝓘(ℝ, F)) L f y).2 hy
-  rw [mapFundamentalClass_eq_degreeAtRegularValue_smul hF (o.toBoundarylessModel L) o' hy']
-  congr 1
-  exact degreeAtRegularValue_toBoundarylessModel o o' L f y
-
-end Homological
+end Boundaryless
 
 end TauCeti.Manifold.Orientation

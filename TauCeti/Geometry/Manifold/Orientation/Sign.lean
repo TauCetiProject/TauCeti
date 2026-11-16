@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
@@ -36,8 +37,9 @@ a composite of differentiable maps is the product of the signs.
   where `f` preserves orientations, reverses them, or has singular derivative.
 * `TauCeti.Manifold.Orientation.orientationSign_comp`: the orientation sign of a composite of
   differentiable maps is the product of the orientation signs.
-* `Diffeomorph.orientationSign_comp_right`: precomposing an arbitrary map with a `C^n`
-  diffeomorphism (`n ≠ 0`) multiplies the orientation sign.
+* `IsLocalDiffeomorphAt.orientationSign_comp`, `Diffeomorph.orientationSign_comp_diffeomorph`:
+  precomposing an arbitrary map with a `C^n` local diffeomorphism or diffeomorphism (`n ≠ 0`)
+  multiplies the orientation sign.
 * `TauCeti.Manifold.Orientation.orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint`: at a
   regular point the orientation sign is `1` or `-1`.
 * `TauCeti.Manifold.Orientation.eventually_orientationSign_eq`: the orientation sign is constant
@@ -235,7 +237,7 @@ end Manifold.Orientation
 
 end TauCeti
 
-namespace Diffeomorph
+section LocalDiffeomorph
 
 open TauCeti TauCeti.Manifold.Orientation
 
@@ -250,28 +252,33 @@ variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Finite
   [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
   {ι : Type*} [Fintype ι] {n : ℕ∞ω}
 
-/-- Precomposing an arbitrary map `f : M → N` with a `C^n` diffeomorphism `Φ` (`n ≠ 0`) multiplies
-the orientation sign by that of `Φ`. Where `f` is not differentiable at `Φ x`, neither `f` nor
-`f ∘ Φ` has invertible derivative, so both sides vanish. -/
-theorem orientationSign_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+/-- Precomposing an arbitrary map `f : M → N` with a `C^n` local diffeomorphism `φ` at `x`
+(`n ≠ 0`) multiplies the orientation sign by that of `φ`. Where `f` is not differentiable at `φ x`,
+neither `f` nor `f ∘ φ` has invertible derivative, so both sides vanish. -/
+theorem IsLocalDiffeomorphAt.orientationSign_comp {φ : M' → M} {x : M'}
+    (hφ : IsLocalDiffeomorphAt I' I n φ x) (hn : n ≠ 0)
     (o' : Manifold.Orientation I' M' ι) (o : Manifold.Orientation I M ι)
-    (oN : Manifold.Orientation J N ι) (f : M → N) (x : M') :
-    orientationSign o' oN (f ∘ Φ) x =
-      orientationSign o oN f (Φ x) * orientationSign o' o Φ x := by
-  by_cases hf : MDifferentiableAt I J f (Φ x)
-  · exact orientationSign_comp hf (Φ.mdifferentiable hn x)
-  · have hnf : ¬(mfderiv I J f (Φ x)).IsInvertible :=
+    (oN : Manifold.Orientation J N ι) (f : M → N) :
+    orientationSign o' oN (f ∘ φ) x =
+      orientationSign o oN f (φ x) * orientationSign o' o φ x := by
+  by_cases hf : MDifferentiableAt I J f (φ x)
+  · exact Manifold.Orientation.orientationSign_comp hf (hφ.mdifferentiableAt hn)
+  · have hnf : ¬(mfderiv I J f (φ x)).IsInvertible :=
       fun hinv ↦ hf (mdifferentiableAt_of_isInvertible_mfderiv hinv)
-    have hncomp : ¬(mfderiv I' J (f ∘ Φ) x).IsInvertible := by
-      intro hinv
-      have hd : MDifferentiableAt I J ((f ∘ Φ) ∘ Φ.symm) (Φ x) := by
-        have hx : MDifferentiableAt I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
-          simpa only [Φ.symm_apply_apply] using mdifferentiableAt_of_isInvertible_mfderiv hinv
-        exact hx.comp (Φ x) (Φ.symm.mdifferentiable hn (Φ x))
-      rw [Function.comp_assoc, ← Φ.coe_toHomeomorph, ← Φ.coe_toHomeomorph_symm,
-        Φ.toHomeomorph.self_comp_symm, Function.comp_id] at hd
-      exact hf hd
+    have hncomp : ¬(mfderiv I' J (f ∘ φ) x).IsInvertible :=
+      fun hinv ↦ ((hφ.mdifferentiableAt_comp_iff hn).not.mpr hf)
+        (mdifferentiableAt_of_isInvertible_mfderiv hinv)
     rw [orientationSign_of_not_isInvertible hncomp, orientationSign_of_not_isInvertible hnf,
       zero_mul]
 
-end Diffeomorph
+/-- Precomposing an arbitrary map `f : M → N` with a `C^n` diffeomorphism `Φ` (`n ≠ 0`) multiplies
+the orientation sign by that of `Φ`. Where `f` is not differentiable at `Φ x`, neither `f` nor
+`f ∘ Φ` has invertible derivative, so both sides vanish. -/
+theorem Diffeomorph.orientationSign_comp_diffeomorph (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    (o' : Manifold.Orientation I' M' ι) (o : Manifold.Orientation I M ι)
+    (oN : Manifold.Orientation J N ι) (f : M → N) (x : M') :
+    orientationSign o' oN (f ∘ Φ) x =
+      orientationSign o oN f (Φ x) * orientationSign o' o Φ x :=
+  (Φ.isLocalDiffeomorph x).orientationSign_comp hn o' o oN f
+
+end LocalDiffeomorph

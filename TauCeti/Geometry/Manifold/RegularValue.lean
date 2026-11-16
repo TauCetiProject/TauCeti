@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -52,8 +55,14 @@ to manifolds, including manifolds with boundary or corners.
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
-* `Diffeomorph.isRegularPoint_comp_right`, `Diffeomorph.isRegularValue_comp_right`: precomposing
-  with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points and regular values.
+* `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`, `IsLocalDiffeomorph.isRegularValue_comp_iff`,
+  `Diffeomorph.isRegularPoint_comp_diffeomorph_iff`,
+  `Diffeomorph.isRegularValue_comp_diffeomorph_iff`: precomposing with a `C^n` local diffeomorphism
+  (surjective, for regular values) or diffeomorphism (`n ≠ 0`) preserves regular points and regular
+  values.
+* `TauCeti.isRegularPoint_transContinuousLinearEquiv_left_iff`,
+  `TauCeti.isRegularValue_transContinuousLinearEquiv_left_iff`: continuous linear changes of
+  source model coordinates preserve regular points and regular values.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -402,9 +411,7 @@ theorem exists_isRegularValue_forall_mem_Ioc {E H M : Type*} [NormedAddCommGroup
     isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (ha x).ne' hx,
     isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hb x).ne hx, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
-end TauCeti
-
-namespace Diffeomorph
+section LocalDiffeomorph
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
@@ -418,24 +425,60 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω}
 
+/-- Precomposing a map with a `C^n` local diffeomorphism at `x` (`n ≠ 0`) preserves regularity at
+`x`. No manifold smoothness or finite-dimensionality assumption is needed. -/
+theorem _root_.IsLocalDiffeomorphAt.isRegularPoint_comp_iff {φ : M' → M} {f : M → N} {x : M'}
+    (hφ : IsLocalDiffeomorphAt I' I n φ x) (hn : n ≠ 0) :
+    IsRegularPoint I' J (f ∘ φ) x ↔ IsRegularPoint I J f (φ x) := by
+  by_cases hf : MDifferentiableAt I J f (φ x)
+  · rw [isRegularPoint_iff, isRegularPoint_iff, mfderiv_comp x hf (hφ.mdifferentiableAt hn)]
+    exact (hφ.isInvertible_mfderiv hn).surjective.of_comp_iff (mfderiv I J f (φ x))
+  · have hcomp : ¬MDifferentiableAt I' J (f ∘ φ) x :=
+      (hφ.mdifferentiableAt_comp_iff hn).not.mpr hf
+    simp [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt hcomp, Function.Surjective]
+
+/-- Precomposing a map with a surjective `C^n` local diffeomorphism (`n ≠ 0`) preserves regular
+values. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue_comp_iff {φ : M' → M} {f : M → N} {y : N}
+    (hφ : IsLocalDiffeomorph I' I n φ) (hsurj : Surjective φ) (hn : n ≠ 0) :
+    IsRegularValue I' J (f ∘ φ) y ↔ IsRegularValue I J f y := by
+  rw [isRegularValue_iff, isRegularValue_iff]
+  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ ((hφ x).isRegularPoint_comp_iff hn).2 (h (φ x) hx)⟩
+  obtain ⟨x, rfl⟩ := hsurj z
+  exact ((hφ x).isRegularPoint_comp_iff hn).1 (h x hz)
+
 /-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points. No manifold
 smoothness or finite-dimensionality assumption is needed. -/
-theorem isRegularPoint_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0) {f : M → N} {x : M'} :
-    TauCeti.IsRegularPoint I' J (f ∘ Φ) x ↔ TauCeti.IsRegularPoint I J f (Φ x) := by
-  refine ⟨fun h ↦ ?_,
-    fun h ↦ h.comp (TauCeti.isRegularPoint_iff.2 (Φ.isInvertible_mfderiv hn).surjective)⟩
-  have hx : TauCeti.IsRegularPoint I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
-    simpa only [Φ.symm_apply_apply] using h
-  simpa only [Function.comp_assoc, ← Φ.coe_toHomeomorph, ← Φ.coe_toHomeomorph_symm,
-    Φ.toHomeomorph.self_comp_symm, Function.comp_id] using
-    hx.comp (TauCeti.isRegularPoint_iff.2 (Φ.symm.isInvertible_mfderiv hn).surjective)
+theorem _root_.Diffeomorph.isRegularPoint_comp_diffeomorph_iff (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    {f : M → N} {x : M'} :
+    IsRegularPoint I' J (f ∘ Φ) x ↔ IsRegularPoint I J f (Φ x) :=
+  (Φ.isLocalDiffeomorph x).isRegularPoint_comp_iff hn
 
 /-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular values. -/
-theorem isRegularValue_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0) {f : M → N} {y : N} :
-    TauCeti.IsRegularValue I' J (f ∘ Φ) y ↔ TauCeti.IsRegularValue I J f y := by
-  rw [TauCeti.isRegularValue_iff, TauCeti.isRegularValue_iff]
-  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ (Φ.isRegularPoint_comp_right hn).2 (h (Φ x) hx)⟩
-  have hz' : (f ∘ Φ) (Φ.symm z) = y := by simpa only [comp_apply, Φ.apply_symm_apply] using hz
-  simpa only [Φ.apply_symm_apply] using (Φ.isRegularPoint_comp_right hn).1 (h (Φ.symm z) hz')
+theorem _root_.Diffeomorph.isRegularValue_comp_diffeomorph_iff (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    {f : M → N} {y : N} :
+    IsRegularValue I' J (f ∘ Φ) y ↔ IsRegularValue I J f y :=
+  Φ.isLocalDiffeomorph.isRegularValue_comp_iff Φ.surjective hn
 
-end Diffeomorph
+/-- A continuous linear change of source model coordinates preserves regular points, including on
+manifolds with boundary or corners. -/
+@[simp]
+theorem isRegularPoint_transContinuousLinearEquiv_left_iff (e : E ≃L[𝕜] E') {f : M → N} {x : M} :
+    IsRegularPoint (I.transContinuousLinearEquiv e) J f x ↔ IsRegularPoint I J f x := by
+  simpa only [e.coe_toTransContinuousLinearEquiv_symm I M, comp_id, id_eq] using
+    (e.toTransContinuousLinearEquiv (n := 1) I M).symm.isRegularPoint_comp_diffeomorph_iff
+      one_ne_zero (J := J) (f := f) (x := x)
+
+/-- A continuous linear change of source model coordinates preserves regular values, including on
+manifolds with boundary or corners. -/
+@[simp]
+theorem isRegularValue_transContinuousLinearEquiv_left_iff (e : E ≃L[𝕜] E') {f : M → N} {y : N} :
+    IsRegularValue (I.transContinuousLinearEquiv e) J f y ↔ IsRegularValue I J f y := by
+  simpa only [e.coe_toTransContinuousLinearEquiv_symm I M, comp_id] using
+    (e.toTransContinuousLinearEquiv (n := 1) I M).symm.isRegularValue_comp_diffeomorph_iff
+      one_ne_zero (J := J) (f := f) (y := y)
+
+end LocalDiffeomorph
+
+end TauCeti

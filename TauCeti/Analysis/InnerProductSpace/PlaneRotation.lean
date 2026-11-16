@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-public import Mathlib.LinearAlgebra.Orientation
-public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.InnerProductSpace.Reflection
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
 /-!
 # Rotations of an isometrically embedded complex plane
@@ -19,28 +16,17 @@ of `E`. Every point `c` of the unit circle rotates that plane by multiplication,
 and this rotation extends to a linear isometry of `E` fixing the orthogonal complement of the
 plane pointwise. These extensions form a homomorphism
 `LinearIsometry.planeRotation ι : Circle →* E ≃ₗᵢ[ℝ] E`, the extension of Mathlib's `rotation` of
-`ℂ` to `E`. Conversely, any orthonormal pair `(u, v)` in `E` defines an isometric embedding
-`LinearIsometry.ofOrthonormalPair : ℂ →ₗᵢ[ℝ] E`, `w ↦ Re w • u + Im w • v`.
+`ℂ` to `E`.
 
 Explicitly, `planeRotation ι c x = x + ι ((c - 1) w)`, where `w = ⟪ι 1, x⟫ + ⟪ι i, x⟫ i` is the
-complex coordinate of the orthogonal projection of `x` onto the plane
-(`LinearIsometry.planeRotation_apply`, `LinearIsometry.toContinuousLinearMap_planeRotation`). The
-rotation `(ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E` depends continuously on the plane
-and angle in the operator-norm topology (`Continuous.planeRotation`), without any
-finite-dimensionality assumption. Each plane rotation has determinant `1`
-(`LinearIsometry.det_toContinuousLinearMap_planeRotation`,
-`LinearIsometry.linearEquiv_det_planeRotation`) and preserves every orientation of `E`
-(`LinearIsometry.orientation_map_planeRotation`). The rotation by `-1` is the half-turn of the
-plane, the reflection across its orthogonal complement (`LinearIsometry.planeRotation_neg_one`),
-and the rotation depends smoothly on the angle and the point
-(`LinearIsometry.contMDiff_planeRotation`). Rotating the plane moves a great circle of the unit
-sphere of `E` along itself; this is how knotted arcs are slid along a great circle and how
-great-circle families on a sphere lift to families of rotations.
+complex coordinate of the orthogonal projection of `x` onto the plane. The rotation by `-1` is the
+half-turn of the plane, the reflection across its orthogonal complement
+(`LinearIsometry.planeRotation_neg_one`), and the rotation depends smoothly on the angle and the
+point (`LinearIsometry.contMDiff_planeRotation`). Rotating the plane moves a great circle of the
+unit sphere of `E` along itself; this is how knotted arcs are slid along a great circle.
 
 ## Main definitions
 
-* `LinearIsometry.ofOrthonormalPair`: the isometric embedding `ℂ →ₗᵢ[ℝ] E` sending `1` to `u` and
-  `i` to `v` for an orthonormal pair `(u, v)`.
 * `LinearIsometry.planeRotation ι`: the rotations of `E` in the plane `ι ℂ`.
 
 ## Main results
@@ -48,15 +34,10 @@ great-circle families on a sphere lift to families of rotations.
 * `LinearIsometry.planeRotation_apply_map`: the rotation by `c` multiplies the plane by `c`.
 * `LinearIsometry.planeRotation_apply_of_mem_orthogonal`: it fixes the orthogonal complement of
   the plane.
-* `LinearIsometry.planeRotation_apply`: explicit expansion in terms of `ι 1` and `ι i`.
-* `Continuous.planeRotation`: the rotation depends continuously on the plane and the angle.
-* `LinearIsometry.det_toContinuousLinearMap_planeRotation`,
-  `LinearIsometry.linearEquiv_det_planeRotation`,
-  `LinearIsometry.orientation_map_planeRotation`: plane rotations have determinant `1` and preserve
-  orientations.
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
   complement.
 * `LinearIsometry.contMDiff_planeRotation`: the rotation is smooth in the angle and the point.
+* `Continuous.planeRotation`: the rotation depends continuously on the plane and the angle.
 -/
 
 public section
@@ -235,142 +216,5 @@ theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X
     (hι.clm_comp (hmul.clm_comp hcoord))).congr fun x ↦ ?_
   ext y
   simp [planeRotation_apply_eq, sub_mul]
-
-/-! ### Explicit operator formula and determinant -/
-
-/-- **Explicit expansion of a plane rotation** in the orthonormal pair `ι 1`, `ι i`. -/
-theorem planeRotation_apply (c : Circle) (x : E) :
-    ι.planeRotation c x =
-      x + ((c : ℂ).re - 1) • (⟪ι 1, x⟫ • ι 1 + ⟪ι I, x⟫ • ι I) +
-        (c : ℂ).im • (⟪ι 1, x⟫ • ι I - ⟪ι I, x⟫ • ι 1) := by
-  rw [planeRotation_apply_eq]
-  set z : ℂ := ((c : ℂ) - 1) * planeCoord ι x
-  have hz : ι z = z.re • ι 1 + z.im • ι I := by
-    have hsplit : z = z.re • (1 : ℂ) + z.im • I := by
-      apply Complex.ext <;> simp
-    conv_lhs => rw [hsplit]
-    rw [map_add, map_smul, map_smul]
-  have hre : z.re = ((c : ℂ).re - 1) * ⟪ι 1, x⟫ - (c : ℂ).im * ⟪ι I, x⟫ := by
-    simp [z, planeCoord_apply]
-  have him : z.im = (c : ℂ).im * ⟪ι 1, x⟫ + ((c : ℂ).re - 1) * ⟪ι I, x⟫ := by
-    simp [z, planeCoord_apply]
-    ring
-  rw [hz, hre, him]
-  module
-
-/-- As a continuous linear map, `planeRotation ι c` is the identity plus a finite-rank operator
-built from `ι 1`, `ι i` and `c`. -/
-theorem toContinuousLinearMap_planeRotation (c : Circle) :
-    ((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E) =
-      ContinuousLinearMap.id ℝ E +
-        ((c : ℂ).re - 1) • ((innerSL ℝ (ι 1)).smulRight (ι 1) +
-          (innerSL ℝ (ι I)).smulRight (ι I)) +
-        (c : ℂ).im • ((innerSL ℝ (ι 1)).smulRight (ι I) -
-          (innerSL ℝ (ι I)).smulRight (ι 1)) := by
-  ext x
-  simp [planeRotation_apply]
-
-private theorem coe_toContinuousLinearEquiv_toLinearMap (e : E ≃ₗᵢ[ℝ] E) :
-    ((e.toContinuousLinearEquiv : E →L[ℝ] E) : E →ₗ[ℝ] E) = (e.toLinearEquiv : E →ₗ[ℝ] E) := by
-  ext
-  simp
-
-/-- **Every plane rotation has determinant `1`** as a continuous linear map: its determinant
-varies continuously on the preconnected circle inside `{1, -1}` and equals `1` at `1`. -/
-@[simp]
-theorem det_toContinuousLinearMap_planeRotation (c : Circle) :
-    ((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E).det = 1 := by
-  let d : Circle → ℝ := fun z ↦ ((ι.planeRotation z).toContinuousLinearEquiv : E →L[ℝ] E).det
-  have hd_cont : Continuous d :=
-    ContinuousLinearMap.continuous_det.comp (continuous_const.planeRotation continuous_id)
-  have hd_mem (z : Circle) : d z ∈ ({1, -1} : Set ℝ) := by
-    refine (abs_eq zero_le_one).1 ?_
-    simpa only [d, ContinuousLinearMap.det, coe_toContinuousLinearEquiv_toLinearMap] using
-      (ι.planeRotation z).abs_det
-  have hd1 : d 1 = 1 := by
-    simp [d, toContinuousLinearMap_planeRotation, ContinuousLinearMap.det]
-  exact (isPreconnected_univ.constant_of_mapsTo
-    ((Set.finite_singleton (-1)).insert 1).isDiscrete hd_cont.continuousOn
-    (fun z _ ↦ hd_mem z) (Set.mem_univ c) (Set.mem_univ 1)).trans hd1
-
-/-- **Every plane rotation has unit determinant `1`** as a linear equivalence. -/
-@[simp]
-theorem linearEquiv_det_planeRotation (c : Circle) :
-    LinearEquiv.det (ι.planeRotation c).toLinearEquiv = 1 := by
-  ext
-  simpa only [LinearEquiv.coe_det, Units.val_one, ContinuousLinearMap.det,
-    coe_toContinuousLinearEquiv_toLinearMap] using ι.det_toContinuousLinearMap_planeRotation c
-
-/-- **Every plane rotation preserves every orientation** of a finite-dimensional real inner product
-space. -/
-@[simp]
-theorem orientation_map_planeRotation {ι' : Type*} [Fintype ι']
-    [FiniteDimensional ℝ E] (hcard : Fintype.card ι' = Module.finrank ℝ E)
-    (o : Orientation ℝ E ι') (c : Circle) :
-    Orientation.map ι' (ι.planeRotation c).toLinearEquiv o = o := by
-  rw [o.map_eq_det_inv_smul _ hcard, ι.linearEquiv_det_planeRotation c, inv_one, one_smul]
-
-/-! ### Plane embeddings from orthonormal pairs -/
-
-section OrthonormalPair
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- **The isometric embedding `ℂ →ₗᵢ[ℝ] E` of an orthonormal pair `(u, v)`**, sending `w` to
-`Re w • u + Im w • v`, so that `1 ↦ u` and `i ↦ v`. -/
-def ofOrthonormalPair {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) :
-    ℂ →ₗᵢ[ℝ] E where
-  toLinearMap := (Complex.reCLM.smulRight u + Complex.imCLM.smulRight v).toLinearMap
-  norm_map' w := by
-    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-    simp only [ContinuousLinearMap.coe_coe, add_apply,
-      ContinuousLinearMap.smulRight_apply, Complex.reCLM_apply, Complex.imCLM_apply,
-      norm_add_sq_real, norm_smul, Real.norm_eq_abs, sq_abs, hu, hv, mul_one,
-      real_inner_smul_left, real_inner_smul_right, huv, mul_zero, Complex.sq_norm,
-      Complex.normSq_apply]
-    ring
-
-@[simp]
-theorem ofOrthonormalPair_apply {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0)
-    (w : ℂ) : ofOrthonormalPair hu hv huv w = w.re • u + w.im • v :=
-  (rfl)
-
-theorem ofOrthonormalPair_one {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) :
-    ofOrthonormalPair hu hv huv 1 = u := by
-  simp
-
-theorem ofOrthonormalPair_I {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) :
-    ofOrthonormalPair hu hv huv I = v := by
-  simp
-
-/-- A vector is orthogonal to the plane of `(u, v)` if and only if it is orthogonal to both `u`
-and `v`. -/
-@[simp]
-theorem mem_orthogonal_range_ofOrthonormalPair_iff {u v x : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1)
-    (huv : ⟪u, v⟫ = 0) :
-    x ∈ (ofOrthonormalPair hu hv huv).rangeᗮ ↔ ⟪u, x⟫ = 0 ∧ ⟪v, x⟫ = 0 := by
-  rw [Submodule.mem_orthogonal]
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, ?_⟩
-  · simpa using h u ⟨1, ofOrthonormalPair_one hu hv huv⟩
-  · simpa using h v ⟨I, ofOrthonormalPair_I hu hv huv⟩
-  · rintro ⟨hux, hvx⟩ _ ⟨w, rfl⟩
-    simp [LinearIsometry.coe_toLinearMap, inner_add_left, real_inner_smul_left, hux, hvx]
-
-/-- If `u` and `v` vary continuously on `X`, then the plane embeddings
-`ofOrthonormalPair (hu x) (hv x) (huv x)` vary continuously in the operator-norm topology. -/
-theorem _root_.Continuous.toContinuousLinearMap_ofOrthonormalPair {X : Type*} [TopologicalSpace X]
-    {u v : X → E} (hu : ∀ x, ‖u x‖ = 1) (hv : ∀ x, ‖v x‖ = 1) (huv : ∀ x, ⟪u x, v x⟫ = 0)
-    (hcu : Continuous u) (hcv : Continuous v) :
-    Continuous fun x ↦ (ofOrthonormalPair (hu x) (hv x) (huv x)).toContinuousLinearMap := by
-  have heq : (fun x ↦ (ofOrthonormalPair (hu x) (hv x) (huv x)).toContinuousLinearMap) =
-      fun x ↦ Complex.reCLM.smulRight (u x) + Complex.imCLM.smulRight (v x) := by
-    funext x
-    ext w
-    simp
-  rw [heq]
-  exact ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.reCLM).continuous.comp hcu).add
-    ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.imCLM).continuous.comp hcv)
-
-end OrthonormalPair
 
 end LinearIsometry
