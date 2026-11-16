@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
@@ -30,6 +31,9 @@ trivial class, and the class `[v]` of a height one prime.
   holds over any domain.
 * `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
   same class, over any domain and any choice of fraction field.
+* `FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul`: over a Dedekind domain with finite
+  quotients and a characteristic-zero fraction field `K`, every invertible fractional ideal `I` can
+  be scaled by a nonzero natural number `m` into a nonzero integral ideal `J` with `J = (m) * I`.
 * `ClassGroup.isPrincipal_mul_iff_of_mk0_eq`: if a nonzero integral ideal `J` and an invertible
   fractional ideal `I` share the same class in `ClassGroup R`, then `𝔟 * J` is principal if and
   only if `𝔟 * I` is principal.
@@ -100,6 +104,40 @@ theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Fie
   rw [hnum, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul]
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- For every invertible fractional ideal `I` of a Dedekind domain with finite quotients and
+characteristic-zero fraction field `K`, there exist a nonzero `m : ℕ` and a nonzero integral ideal
+`J` such that `J = (m) * I`. -/
+theorem FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul [Ring.HasFiniteQuotients R]
+    {K : Type*} [Field K] [CharZero K] [Algebra R K] [IsFractionRing R K]
+    (I : (FractionalIdeal R⁰ K)ˣ) :
+    ∃ (m : ℕ) (hm : m ≠ 0) (J : (Ideal R)⁰),
+      FractionalIdeal.mk0 K J =
+        toPrincipalIdeal R K (Units.mk0 (m : K) (Nat.cast_ne_zero.mpr hm)) * I := by
+  set d : R⁰ := (I : FractionalIdeal R⁰ K).den
+  have hfin : Finite (R ⧸ Ideal.span {(d : R)}) :=
+    Ring.HasFiniteQuotients.finiteQuotient
+      (Ideal.span_singleton_eq_bot.not.mpr (nonZeroDivisors.coe_ne_zero d))
+  set m : ℕ := Nat.card (R ⧸ Ideal.span {(d : R)})
+  have hm : m ≠ 0 := Nat.card_pos.ne'
+  have hm_mem : (m : R) ∈ Ideal.span {(d : R)} := by
+    rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast, ← nsmul_one]
+    exact card_nsmul_eq_zero'
+  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton.mp hm_mem
+  have hmK : (m : K) ≠ 0 := Nat.cast_ne_zero.mpr hm
+  have hm_eq : (m : K) = algebraMap R K q * algebraMap R K (d : R) := by
+    rw [← map_mul, mul_comm, ← hq, map_natCast]
+  have hmul : FractionalIdeal.spanSingleton R⁰ (m : K) * (I : FractionalIdeal R⁰ K) =
+      ((Ideal.span {q} * (I : FractionalIdeal R⁰ K).num : Ideal R) : FractionalIdeal R⁰ K) := by
+    rw [hm_eq, map_mul (FractionalIdeal.spanSingleton R⁰), mul_assoc,
+      FractionalIdeal.den_mul_self_eq_num', ← FractionalIdeal.coeIdeal_span_singleton,
+      ← FractionalIdeal.coeIdeal_mul]
+  have hJ0 : Ideal.span {q} * (I : FractionalIdeal R⁰ K).num ≠ 0 := fun h0 ↦
+    mul_ne_zero (FractionalIdeal.spanSingleton_eq_zero_iff.not.mpr hmK) I.ne_zero
+      (by simp [hmul, h0])
+  refine ⟨m, hm, ⟨Ideal.span {q} * (I : FractionalIdeal R⁰ K).num,
+    mem_nonZeroDivisors_of_ne_zero hJ0⟩, Units.ext ?_⟩
+  rw [FractionalIdeal.coe_mk0, Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0, hmul]
 
 /-- If a nonzero integral ideal `J` and an invertible fractional ideal `I` have the same class in
 `ClassGroup R`, then a nonzero integral ideal `𝔟` has principal product `𝔟 * J` if and only if

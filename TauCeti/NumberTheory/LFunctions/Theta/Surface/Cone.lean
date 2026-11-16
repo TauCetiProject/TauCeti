@@ -162,7 +162,7 @@ theorem mk_smul_realSpace (u : (𝓞 K)ˣ) (y : realSpace K) :
 
 /-- The scoped `(𝓞 K)ˣ ⧸ torsion K` action on `realSpace K` preserves `archNorm`. -/
 @[simp]
-theorem archNorm_smul_realSpace (g : (𝓞 K)ˣ ⧸ torsion K) (y : realSpace K) :
+theorem archNorm_quotientTorsion_smul (g : (𝓞 K)ˣ ⧸ torsion K) (y : realSpace K) :
     archNorm (g • y) = archNorm y :=
   Quotient.inductionOn' g fun u ↦ archNorm_unitScale u y
 

@@ -7,25 +7,19 @@ module
 
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.NumberTheory.NumberField.FractionalIdeal
-public import Mathlib.RingTheory.ClassGroup.Basic
 
 /-!
-# Fractional ideals of a number field: index and denominator clearing
+# The index of one fractional ideal in another
 
 An invertible fractional ideal of a number field `K` is a full `ℤ`-lattice in `K`.  If `J ≤ I` are
 two such ideals, the index of `J` in `I` is the ratio of their absolute norms.  The index is
 computed from the determinant formula `NumberField.det_basisOfFractionalIdeal_eq_absNorm` and
 `AddSubgroup.relIndex_eq_abs_det`.
 
-Every invertible fractional ideal `I` can be scaled by a nonzero natural number `m` into a nonzero
-integral ideal `J` with `J = (m) * I`.
-
 ## Main results
 
 * `NumberField.relIndex_fractionalIdeal_eq_absNorm_div_absNorm`: the index of `J` in `I`, as
   additive subgroups of `K`, is `absNorm J / absNorm I`.
-* `NumberField.exists_mk0_eq_toPrincipalIdeal_natCast_mul`: for any invertible fractional ideal `I`,
-  there exist a nonzero `m : ℕ` and a nonzero integral ideal `J` with `J = (m) * I`.
 -/
 
 public section
@@ -58,33 +52,5 @@ theorem relIndex_fractionalIdeal_eq_absNorm_div_absNorm {I J : (FractionalIdeal 
     ← det_basisOfFractionalIdeal_eq_absNorm K I (e I),
     ← det_basisOfFractionalIdeal_eq_absNorm K J (e J), ← (integralBasis K).det_mul_det (b I) (b J),
     abs_mul, mul_div_cancel_left₀ _ (abs_ne_zero.mpr ((integralBasis K).isUnit_det _).ne_zero)]
-
-/-- For every invertible fractional ideal `I`, there exist a nonzero `m : ℕ` and a nonzero integral
-ideal `J` such that `J = (m) * I`. -/
-theorem exists_mk0_eq_toPrincipalIdeal_natCast_mul (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    ∃ (m : ℕ) (hm : m ≠ 0) (J : (Ideal (𝓞 K))⁰),
-      FractionalIdeal.mk0 K J =
-        toPrincipalIdeal (𝓞 K) K (Units.mk0 (m : K) (Nat.cast_ne_zero.mpr hm)) * I := by
-  set d : (𝓞 K)⁰ := (I : FractionalIdeal (𝓞 K)⁰ K).den
-  set m : ℕ := Ideal.absNorm (Ideal.span {(d : 𝓞 K)})
-  have hm : m ≠ 0 := by
-    rw [ne_eq, Ideal.absNorm_eq_zero_iff, Ideal.span_singleton_eq_bot]
-    exact nonZeroDivisors.coe_ne_zero d
-  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton.mp (Ideal.absNorm_mem (Ideal.span {(d : 𝓞 K)}))
-  have hmK : (m : K) ≠ 0 := Nat.cast_ne_zero.mpr hm
-  have hm_eq : (m : K) = algebraMap (𝓞 K) K q * algebraMap (𝓞 K) K (d : 𝓞 K) := by
-    rw [← map_mul, mul_comm, ← hq, map_natCast]
-  have hmul : FractionalIdeal.spanSingleton (𝓞 K)⁰ (m : K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-      ((Ideal.span {q} * (I : FractionalIdeal (𝓞 K)⁰ K).num : Ideal (𝓞 K)) :
-        FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [hm_eq, map_mul (FractionalIdeal.spanSingleton (𝓞 K)⁰), mul_assoc,
-      FractionalIdeal.den_mul_self_eq_num', ← FractionalIdeal.coeIdeal_span_singleton,
-      ← FractionalIdeal.coeIdeal_mul]
-  have hJ0 : Ideal.span {q} * (I : FractionalIdeal (𝓞 K)⁰ K).num ≠ 0 := fun h0 ↦
-    mul_ne_zero (FractionalIdeal.spanSingleton_eq_zero_iff.not.mpr hmK) I.ne_zero
-      (by simp [hmul, h0])
-  refine ⟨m, hm, ⟨Ideal.span {q} * (I : FractionalIdeal (𝓞 K)⁰ K).num,
-    mem_nonZeroDivisors_of_ne_zero hJ0⟩, Units.ext ?_⟩
-  rw [FractionalIdeal.coe_mk0, Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0, hmul]
 
 end NumberField

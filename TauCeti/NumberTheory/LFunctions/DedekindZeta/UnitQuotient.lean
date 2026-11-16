@@ -11,9 +11,6 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCon
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.TrivialModulus
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-import TauCeti.NumberTheory.NumberField.FractionalIdeal
-import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
-import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 import TauCeti.RingTheory.ClassGroup.Basic
 
 /-!
@@ -154,7 +151,7 @@ theorem hasSum_norm_cpow_fundamentalCone (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
             IsPrincipal (((𝔟 : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) *
               (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)},
           (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) := by
-  obtain ⟨m, hm, J, hJ⟩ := exists_mk0_eq_toPrincipalIdeal_natCast_mul I
+  obtain ⟨m, hm, J, hJ⟩ := FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul I
   set c : ℝ := (m : ℝ) ^ Module.finrank ℚ K
   have hc : 0 < c := pow_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm)) _
   have hc0 : (c : ℂ) ^ (-s) ≠ 0 := by

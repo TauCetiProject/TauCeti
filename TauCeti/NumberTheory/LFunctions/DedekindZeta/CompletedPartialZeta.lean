@@ -57,8 +57,7 @@ equation:
   and `1`, where it has simple poles (taking the canonical normal-form value `0`) with residues
   `-2 a₀` and `2 a₀`, with `a₀ = mellinConstant K = 2^(r₁ + r₂ - 1) R / w` (so
   `2 a₀ = 2^(r₁ + r₂) R / w`).
-* **Functional equation** (`completedPartialZeta_one_sub`,
-  `completedPartialZeta_one_sub_eventuallyEq`): if `J` is the trace dual
+* **Functional equation** (`completedPartialZeta_one_sub`): if `J` is the trace dual
   `FractionalIdeal.dual ℤ ℚ I`, then `completedPartialZeta I (1 - s) = completedPartialZeta J s` for
   all `s : ℂ` (including the canonical normal-form zero values at the poles `0` and `1`), obtained
   from `mellinKernelFEPair_Λ_eq` and `mellinKernel_mixedDual_idealLattice`.
@@ -183,7 +182,7 @@ private theorem hasSum_unitCone_coneOrbitEquiv {E : Type*} [NormedAddCommGroup E
       (∫ y, φ ((archNorm y : ℂ) ^ (s / 2) * archGaussian y (a : mixedSpace K)) ∂archHaar K) := by
   refine ((isFundamentalDomain_unitCone hD).hasSum_setIntegral_smul hφ).congr_fun fun g ↦
     setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y _ ↦ ?_
-  rw [archNorm_smul_realSpace, archGaussian_coneOrbitEquiv]
+  rw [archNorm_quotientTorsion_smul, archGaussian_coneOrbitEquiv]
 
 /-- For `Re s > 1` and a unit fundamental domain `D`, the `L¹` norms on `unitCone D` with respect
 to `archHaar K` of the norm-weighted archimedean Gaussians
@@ -415,8 +414,8 @@ open scoped Classical in
 /-- **Mellin integral representation of `completedPartialZeta`** (Neukirch VII (5.5)): on
 `Re s > 1`, for any unit fundamental domain `D`, `completedPartialZeta I s` is the Mellin transform
 at `s / 2` of `mellinKernel D (idealLattice K I) - mellinConstant K`. -/
-theorem hasMellin_completedPartialZeta {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
+theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
     HasMellin (fun u ↦ mellinKernel D (idealLattice K I) u - mellinConstant K) (s / 2)
       (completedPartialZeta I s) := by
   have hs2 : 1 / 2 < (s / 2).re := by
@@ -434,7 +433,7 @@ theorem completedPartialZeta_eq_mellin {D : Set (realSpace K)} (hD : IsUnitFunda
     (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
     completedPartialZeta I s =
       mellin (fun u ↦ mellinKernel D (idealLattice K I) u - mellinConstant K) (s / 2) :=
-  (hasMellin_completedPartialZeta hD I hs).2.symm
+  (hasMellin_mellinKernel_idealLattice_sub_mellinConstant hD I hs).2.symm
 
 open scoped Classical in
 /-- **Cone integral representation of `completedPartialZeta`**: on `Re s > 1`, for any unit
@@ -598,15 +597,10 @@ theorem completedPartialZeta_one_sub {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
     (s : ℂ) :
     completedPartialZeta I (1 - s) = completedPartialZeta J s := by
   classical
-  have hnf_sub : MeromorphicNFOn (fun z ↦ completedPartialZeta I (1 - z)) univ := fun z _ ↦ by
-    have hderiv : deriv (fun w : ℂ ↦ 1 - w) z ≠ 0 := by
-      rw [deriv_const_sub_id (1 : ℂ)]
-      norm_num
-    exact (meromorphicNFAt_comp_iff_of_deriv_ne_zero (f := completedPartialZeta I)
-      (g := fun w : ℂ ↦ 1 - w) (by fun_prop) hderiv).mpr
-      (meromorphicNFOn_completedPartialZeta I (mem_univ (1 - z)))
-  refine congrFun (eq_of_meromorphicNFOn_of_eqOn_halfPlane (σ := 1) hnf_sub
-    (meromorphicNFOn_completedPartialZeta J) fun z (hz : 1 < z.re) ↦ ?_) s
+  rcases eq_or_ne s 0 with rfl | hs0
+  · simp
+  rcases eq_or_ne s 1 with rfl | hs1
+  · simp
   set D := unitFundamentalDomain K
   have hD : IsUnitFundamentalDomain K D := isUnitFundamentalDomain_unitFundamentalDomain
   have hD' : IsUnitFundamentalDomain K ((traceShift K * ·) '' D⁻¹) :=
@@ -616,25 +610,13 @@ theorem completedPartialZeta_one_sub {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
     rw [← FEPairWithLevel.toWeakFEPair_Λ, ← FEPairWithLevel.toWeakFEPair_Λ]
     refine WeakFEPair.Λ_congr (fun u hu ↦ ?_) (by simp) (by simp) (by simp) (by simp)
     simp [indicator_of_mem hu, mellinKernel_mixedDual_idealLattice hJ D⁻¹ u]
-  have hz0 : z ≠ 0 := ne_zero_of_re_pos (zero_lt_one.trans hz)
-  have hz1 : z ≠ 1 := ne_of_apply_ne re (by simpa using hz.ne')
-  have h1z0 : 1 - z ≠ 0 := sub_ne_zero.mpr hz1.symm
-  have h1z1 : 1 - z ≠ 1 := fun h ↦ hz0 (by linear_combination -h)
-  have hd0 : (1 - z) / 2 ≠ 0 := div_ne_zero h1z0 two_ne_zero
-  have hd1 : (1 - z) / 2 ≠ 1 / 2 := fun h ↦ hz0 (by linear_combination -2 * h)
-  have hsub : 1 / 2 - (1 - z) / 2 = z / 2 := by ring
-  rw [completedPartialZeta_eq_mellinKernelFEPair_Λ hD I h1z0 h1z1,
+  have h1s0 : 1 - s ≠ 0 := sub_ne_zero.mpr hs1.symm
+  have h1s1 : 1 - s ≠ 1 := fun h ↦ hs0 (by linear_combination -h)
+  have hd0 : (1 - s) / 2 ≠ 0 := div_ne_zero h1s0 two_ne_zero
+  have hd1 : (1 - s) / 2 ≠ 1 / 2 := fun h ↦ hs0 (by linear_combination -2 * h)
+  have hsub : 1 / 2 - (1 - s) / 2 = s / 2 := by ring
+  rw [completedPartialZeta_eq_mellinKernelFEPair_Λ hD I h1s0 h1s1,
     mellinKernelFEPair_Λ_eq hD (idealLattice K I) hd0 hd1, hsub, hΛ,
-    completedPartialZeta_eq_mellinKernelFEPair_Λ hD' J hz0 hz1]
-
-/-- **The functional equation of `completedPartialZeta`, as punctured germs.** At every `s : ℂ`,
-`z ↦ completedPartialZeta I (1 - z)` and `completedPartialZeta J` have the same punctured germ when
-`J` is the trace dual of `I`. -/
-theorem completedPartialZeta_one_sub_eventuallyEq {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
-    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
-      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
-    (s : ℂ) :
-    (fun z ↦ completedPartialZeta I (1 - z)) =ᶠ[𝓝[≠] s] completedPartialZeta J :=
-  Filter.Eventually.of_forall (completedPartialZeta_one_sub hJ)
+    completedPartialZeta_eq_mellinKernelFEPair_Λ hD' J hs0 hs1]
 
 end TauCeti.LFunctions
