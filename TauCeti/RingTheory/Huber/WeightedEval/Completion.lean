@@ -229,22 +229,20 @@ theorem existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isL
 variable [Algebra A B]
 
 /-- Evaluation of the completed restricted-series algebra in a complete Hausdorff linearly
-topologised `A`-algebra at an arbitrary tuple `b : Fin k → B`, bundled as an `A`-algebra
-homomorphism (EGA I, Ch. 0, §7.5.3). -/
+topologised `A`-algebra (with `algebraMap A B` continuous at `0`) at `b : Fin k → B`
+(EGA I, Ch. 0, §7.5.3). -/
 noncomputable def weightedEvalCompletionAlgHomOfIsLinearTopology (hT : IsWeightFamily T)
     (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) :
-    Completion (weightedRestrictedSubring T hT) →ₐ[A] B := by
+    Completion (weightedRestrictedSubring T hT) →ₐ[A] B :=
   haveI := IsLinearTopology.isTopologicalRing (R := B)
   haveI := IsLinearTopology.nonarchimedeanRing B
   let φ :=
     weightedEvalHomCompletion hT hA (isWeightBounded_of_isLinearTopology (algebraMap A B) T b)
-  exact
-    { __ := φ
-      toFun := φ
-      commutes' := fun a ↦ by
-        dsimp only [φ]
-        rw [algebraMap_completion_weightedRestrictedSubring_apply,
-          weightedEvalHomCompletion_coe, weightedEvalHom_weightedC] }
+  { __ := φ, toFun := φ,
+    commutes' := fun a ↦ by
+      dsimp only [φ]
+      rw [algebraMap_completion_weightedRestrictedSubring_apply, weightedEvalHomCompletion_coe,
+        weightedEvalHom_weightedC] }
 
 /-- Underlying ring homomorphism of `weightedEvalCompletionAlgHomOfIsLinearTopology`. -/
 @[simp]
@@ -255,9 +253,8 @@ theorem coe_weightedEvalCompletionAlgHomOfIsLinearTopology (hT : IsWeightFamily 
       letI := IsLinearTopology.isTopologicalRing (R := B)
       letI := IsLinearTopology.nonarchimedeanRing B
       weightedEvalHomCompletion hT hA
-        (isWeightBounded_of_isLinearTopology (algebraMap A B) T b) := by
-  ext x
-  rfl
+        (isWeightBounded_of_isLinearTopology (algebraMap A B) T b) :=
+  RingHom.ext fun _ ↦ rfl
 
 /-- On the uncompleted subring, `weightedEvalCompletionAlgHomOfIsLinearTopology` agrees with
 `weightedEvalAlgHomOfIsLinearTopology`. -/
@@ -287,36 +284,31 @@ theorem weightedEvalCompletionAlgHomOfIsLinearTopology_weightedX (hT : IsWeightF
 /-- `weightedEvalCompletionAlgHomOfIsLinearTopology` is continuous. -/
 theorem continuous_weightedEvalCompletionAlgHomOfIsLinearTopology (hT : IsWeightFamily T)
     (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) :
-    Continuous (weightedEvalCompletionAlgHomOfIsLinearTopology hT hA b) := by
-  have := IsLinearTopology.isTopologicalRing (R := B)
-  have := IsLinearTopology.nonarchimedeanRing B
-  exact continuous_weightedEvalHomCompletion hT hA
+    Continuous (weightedEvalCompletionAlgHomOfIsLinearTopology hT hA b) :=
+  letI := IsLinearTopology.isTopologicalRing (R := B)
+  letI := IsLinearTopology.nonarchimedeanRing B
+  continuous_weightedEvalHomCompletion hT hA
     (isWeightBounded_of_isLinearTopology (algebraMap A B) T b)
 
-/-- **Universal property of the completion of `A⟨X⟩_T` for linearly topologised `A`-algebras**
-(EGA I, Ch. 0, §7.5.3). Every tuple `b : Fin k → B` in a complete Hausdorff linearly topologised
-`A`-algebra (with `algebraMap A B` continuous at `0`) determines a unique continuous `A`-algebra
-homomorphism `Completion (weightedRestrictedSubring T hT) →ₐ[A] B` sending each `Xᵢ` to `bᵢ`, with
-no boundedness condition on `b`. -/
+/-- **Universal property of the completion of `A⟨X⟩_T` for complete Hausdorff linearly topologised
+`A`-algebras** (EGA I, Ch. 0, §7.5.3). -/
 theorem existsUnique_continuous_algHom_completion_weightedRestrictedSubring_of_isLinearTopology
     (hT : IsWeightFamily T) (hA : ContinuousAt (algebraMap A B) 0) (b : Fin k → B) :
     ∃! ψ : Completion (weightedRestrictedSubring T hT) →ₐ[A] B,
       Continuous ψ ∧ ∀ i, ψ ((weightedX T hT i : weightedRestrictedSubring T hT) :
-        Completion (weightedRestrictedSubring T hT)) = b i := by
-  have := IsLinearTopology.isTopologicalRing (R := B)
-  have := IsLinearTopology.nonarchimedeanRing B
-  refine ⟨weightedEvalCompletionAlgHomOfIsLinearTopology hT hA b,
+        Completion (weightedRestrictedSubring T hT)) = b i :=
+  letI := IsLinearTopology.isTopologicalRing (R := B)
+  letI := IsLinearTopology.nonarchimedeanRing B
+  ⟨weightedEvalCompletionAlgHomOfIsLinearTopology hT hA b,
     ⟨continuous_weightedEvalCompletionAlgHomOfIsLinearTopology hT hA b,
       weightedEvalCompletionAlgHomOfIsLinearTopology_weightedX hT hA b⟩,
-    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective ?_⟩
-  exact (existsUnique_continuous_ringHom_completion_weightedRestrictedSubring hT hA
-    (isWeightBounded_of_isLinearTopology (algebraMap A B) T b)).unique
-      ⟨hψ, fun a ↦ by
-        rw [← algebraMap_completion_weightedRestrictedSubring_apply]
-        exact ψ.commutes a, hX⟩
-      ⟨continuous_weightedEvalCompletionAlgHomOfIsLinearTopology hT hA b,
-        fun a ↦ by simp,
-        weightedEvalCompletionAlgHomOfIsLinearTopology_weightedX hT hA b⟩
+    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective <|
+      (existsUnique_continuous_ringHom_completion_weightedRestrictedSubring hT hA
+        (isWeightBounded_of_isLinearTopology (algebraMap A B) T b)).unique
+          ⟨hψ, fun a ↦ by
+            rw [← algebraMap_completion_weightedRestrictedSubring_apply]; exact ψ.commutes a, hX⟩
+          ⟨continuous_weightedEvalCompletionAlgHomOfIsLinearTopology hT hA b, fun a ↦ by simp,
+            weightedEvalCompletionAlgHomOfIsLinearTopology_weightedX hT hA b⟩⟩
 
 end LinearTopology
 

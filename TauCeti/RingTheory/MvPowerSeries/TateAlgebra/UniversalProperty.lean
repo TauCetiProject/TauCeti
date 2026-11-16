@@ -229,22 +229,18 @@ theorem mk_restrictedLift_eq_eval₂_isRestrictedReduction [NonarchimedeanRing T
 variable [IsLinearTopology T T] [Algebra R T]
 
 /-- **Continuous `R`-algebra evaluation of Gauss-normed restricted series in a complete Hausdorff
-linearly topologised `R`-algebra** (EGA I, Ch. 0, §7.5.3). When `T` is complete and Hausdorff and
-`algebraMap R T` is continuous, open-ideal neighbourhoods of zero in `T` make every subset bounded
-(`isBounded_of_isLinearTopology`) and every element power-bounded, so arbitrary points
-`b : Fin k → T` (with neither `‖b i‖ ≤ 1` nor an explicit `IsPowerBounded (b i)` hypothesis)
-determine a continuous `R`-algebra homomorphism. -/
+linearly topologised `R`-algebra** (EGA I, Ch. 0, §7.5.3). When `T` is complete and Hausdorff with
+continuous `algebraMap R T`, open-ideal neighbourhoods make every element power-bounded
+(`isBounded_of_isLinearTopology`), so arbitrary `b : Fin k → T` determine a continuous `R`-algebra
+homomorphism. -/
 noncomputable def restrictedLiftAlgHomOfIsLinearTopology (hR : Continuous (algebraMap R T))
     (b : Fin k → T) :
-    IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] T := by
+    IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] T :=
   haveI := IsLinearTopology.isTopologicalRing (R := T)
   haveI := IsLinearTopology.nonarchimedeanRing T
-  let φ := restrictedLift hR (b := b)
-    fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
-  exact
-    { __ := φ
-      toFun := φ
-      commutes' := fun r ↦ restrictedLift_algebraMap hR _ r }
+  let φ := restrictedLift hR (b := b) fun _ ↦
+    isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+  { __ := φ, toFun := φ, commutes' := restrictedLift_algebraMap hR _ }
 
 /-- Underlying ring homomorphism of `restrictedLiftAlgHomOfIsLinearTopology`. -/
 @[simp]
@@ -255,50 +251,45 @@ theorem coe_restrictedLiftAlgHomOfIsLinearTopology (hR : Continuous (algebraMap 
       letI := IsLinearTopology.isTopologicalRing (R := T)
       letI := IsLinearTopology.nonarchimedeanRing T
       restrictedLift hR (b := b) fun _ ↦
-        isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _) := by
-  ext f
-  rfl
+        isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _) :=
+  RingHom.ext fun _ ↦ rfl
 
 /-- `restrictedLiftAlgHomOfIsLinearTopology` sends each variable `Xᵢ` to `bᵢ`. -/
 @[simp]
 theorem restrictedLiftAlgHomOfIsLinearTopology_X (hR : Continuous (algebraMap R T))
     (b : Fin k → T) (i : Fin k) :
-    restrictedLiftAlgHomOfIsLinearTopology hR b ⟨X i, isRestricted_X _ i⟩ = b i := by
-  have := IsLinearTopology.isTopologicalRing (R := T)
-  have := IsLinearTopology.nonarchimedeanRing T
-  exact restrictedLift_X hR (b := b)
-    (fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)) i
+    restrictedLiftAlgHomOfIsLinearTopology hR b ⟨X i, isRestricted_X _ i⟩ = b i :=
+  letI := IsLinearTopology.isTopologicalRing (R := T)
+  letI := IsLinearTopology.nonarchimedeanRing T
+  restrictedLift_X hR (b := b) (fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)) i
 
 /-- `restrictedLiftAlgHomOfIsLinearTopology` is continuous for the Gauss norm topology. -/
 theorem continuous_restrictedLiftAlgHomOfIsLinearTopology (hR : Continuous (algebraMap R T))
     (b : Fin k → T) :
-    Continuous (restrictedLiftAlgHomOfIsLinearTopology hR b) := by
-  have := IsLinearTopology.isTopologicalRing (R := T)
-  have := IsLinearTopology.nonarchimedeanRing T
-  exact continuous_restrictedLift hR (b := b)
-    fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+    Continuous (restrictedLiftAlgHomOfIsLinearTopology hR b) :=
+  letI := IsLinearTopology.isTopologicalRing (R := T)
+  letI := IsLinearTopology.nonarchimedeanRing T
+  continuous_restrictedLift hR (b := b) fun _ ↦
+    isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
 
 /-- **Universal property of Gauss-normed restricted series for complete Hausdorff linearly
-topologised `R`-algebras.** When `T` is complete and Hausdorff with continuous structure map
-`algebraMap R T`, unlike the general topological universal property
-(`existsUnique_continuous_ringHom_isRestricted_subring`, which requires `IsPowerBounded (b i)`) and
-normed evaluation (`RingHom.restrictedEval₂OfBound`, which requires `‖b i‖ ≤ 1`), open-ideal
-neighbourhoods in `T` make every element power-bounded, so arbitrary `b : Fin k → T` extend
-uniquely. -/
+topologised `R`-algebras.** When `T` is complete and Hausdorff with continuous `algebraMap R T`,
+unlike `existsUnique_continuous_ringHom_isRestricted_subring` (`IsPowerBounded (b i)`) and
+`RingHom.restrictedEval₂OfBound` (`‖b i‖ ≤ 1`), open-ideal neighbourhoods make every element
+power-bounded, so arbitrary `b : Fin k → T` extend uniquely. -/
 theorem existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology
     (hR : Continuous (algebraMap R T)) (b : Fin k → T) :
     ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] T,
-      Continuous ψ ∧ ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
-  have := IsLinearTopology.isTopologicalRing (R := T)
-  have := IsLinearTopology.nonarchimedeanRing T
-  refine ⟨restrictedLiftAlgHomOfIsLinearTopology hR b,
+      Continuous ψ ∧ ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i :=
+  letI := IsLinearTopology.isTopologicalRing (R := T)
+  letI := IsLinearTopology.nonarchimedeanRing T
+  ⟨restrictedLiftAlgHomOfIsLinearTopology hR b,
     ⟨continuous_restrictedLiftAlgHomOfIsLinearTopology hR b,
       restrictedLiftAlgHomOfIsLinearTopology_X hR b⟩,
-    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective ?_⟩
-  exact isRestricted_subring_ringHom_ext_of_continuous hψ
-    (continuous_restrictedLiftAlgHomOfIsLinearTopology hR b)
-    (fun r ↦ (ψ.commutes r).trans ((restrictedLiftAlgHomOfIsLinearTopology hR b).commutes r).symm)
-    (fun i ↦ (hX i).trans (restrictedLiftAlgHomOfIsLinearTopology_X hR b i).symm)
+    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
+      hψ (continuous_restrictedLiftAlgHomOfIsLinearTopology hR b)
+      (fun r ↦ (ψ.commutes r).trans ((restrictedLiftAlgHomOfIsLinearTopology hR b).commutes r).symm)
+      fun i ↦ (hX i).trans (restrictedLiftAlgHomOfIsLinearTopology_X hR b i).symm⟩
 
 end LinearTopology
 
