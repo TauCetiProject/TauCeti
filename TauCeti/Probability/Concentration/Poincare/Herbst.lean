@@ -9,6 +9,7 @@ public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Moments.MGFAnalytic
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Moments.SubGaussian.Basic
@@ -221,8 +222,11 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
   have hgK (n : ℕ) (x : E) : ‖fderiv ℝ (g n) x‖ ≤ K :=
     norm_fderiv_le_of_lipschitz ℝ (hglip n)
   have hsub (n : ℕ) := h.hasSubgaussianMGF_of_contDiff (hgs n) (hgn n) (hgK n)
-  obtain ⟨B, hB⟩ := TauCeti.Probability.exists_forall_abs_integral_le_of_hasSubgaussianMGF
-    (fun n ↦ .of_forall (hgf n)) hsub
+  obtain ⟨B, hB⟩ := TauCeti.exists_forall_norm_le_of_integral_norm_sub_le (μ := μ) (NeZero.ne μ)
+    (fun n ↦ .of_forall fun x ↦ by simpa only [Real.norm_eq_abs] using hgf n x)
+    (fun n ↦ (hsub n).integrable)
+    (fun n ↦ by simpa only [Real.norm_eq_abs] using (hsub n).integral_abs_le)
+  simp only [Real.norm_eq_abs] at hB
   -- Fatou's lemma gives every exponential moment of `f`.
   have hexp (t : ℝ) : Integrable (fun x ↦ exp (t * f x)) μ := by
     refine TauCeti.integrable_of_tendsto_of_integral_le
