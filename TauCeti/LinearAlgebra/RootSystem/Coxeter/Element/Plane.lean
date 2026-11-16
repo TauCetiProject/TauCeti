@@ -10,7 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.Irreducible.Defs
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.GroupTheory.Coxeter.CoxeterElement
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.CorootEval
+public import TauCeti.LinearAlgebra.RootSystem.CorootEval
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Bipartite
 public import TauCeti.RepresentationTheory.BaseChange
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
