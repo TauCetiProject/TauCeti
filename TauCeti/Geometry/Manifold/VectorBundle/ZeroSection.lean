@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 
 /-!
@@ -19,7 +21,13 @@ Neither a connection nor a norm on the individual fibres is needed.
 This decomposition lets one compute the total differential of a map out of a vector bundle
 from its restriction to the zero section and its derivatives along the fibres. In particular,
 these are the two parts of the differential of the normal exponential in the tubular
-neighbourhood theorem.
+neighbourhood theorem. A map of vector bundles over the identity of the base which is linear on
+the fibres acts on these splittings by the identity on the base part and by its fibre maps on
+the fibre part (`TauCeti.Bundle.mfderiv_zeroSection_zeroSectionTangentEquiv_symm`).
+
+Over a boundaryless base with finite-dimensional model and fibre, the zero section is a smooth
+embedding (`TauCeti.Bundle.isSmoothEmbedding_zeroSection`), since the bundle projection is a smooth
+left inverse.
 
 The horizontal computation generalizes Mathlib's
 `TangentBundle.tangentMap_tangentBundle_pure`, by Sébastien Gouëzel and Floris van Doorn,
@@ -34,7 +42,7 @@ from tangent bundles to vector bundles. The vertical computation uses the scalar
 public noncomputable section
 
 open Bundle Filter Set
-open scoped Manifold Topology
+open scoped Manifold Topology ContDiff
 
 namespace TauCeti.Bundle
 
@@ -145,5 +153,65 @@ theorem zeroSectionTangentEquiv_symm_eq (b : B) (u : TangentSpace I b) (v : V b)
         (zeroSectionTangentEquiv (I := I) b).symm (0, v) := by
   apply (zeroSectionTangentEquiv (I := I) b).injective
   simp
+
+section FibrewiseLinear
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {V' : B → Type*} [∀ b, AddCommMonoid (V' b)] [∀ b, Module 𝕜 (V' b)]
+  [∀ b, TopologicalSpace (V' b)] [TopologicalSpace (TotalSpace F' V')]
+  [FiberBundle F' V'] [VectorBundle 𝕜 F' V']
+
+/-- A map of vector bundles over the identity of the base which is linear on each fibre,
+`⟨b, v⟩ ↦ ⟨b, φ_b v⟩`, has differential `(u, v) ↦ (u, φ_b v)` at a zero vector, in the canonical
+splittings of the tangent spaces along the zero sections into base and fibre parts. -/
+theorem mfderiv_zeroSection_zeroSectionTangentEquiv_symm {g : TotalSpace F V → TotalSpace F' V'}
+    (φ : ∀ b, V b →ₗ[𝕜] V' b) (hg : ∀ b v, g ⟨b, v⟩ = ⟨b, φ b v⟩) (b : B)
+    (hgd : MDifferentiableAt (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) g (zeroSection F V b))
+    (u : TangentSpace I b) (v : V b) :
+    mfderiv (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) g (zeroSection F V b)
+        ((zeroSectionTangentEquiv (I := I) b).symm (u, v)) =
+      (zeroSectionTangentEquiv (I := I) (F := F') (V := V') b).symm (u, φ b v) := by
+  have hz : g ∘ zeroSection F V = zeroSection F' V' := funext fun b ↦ by
+    simp only [Function.comp_apply, zeroSection, hg, map_zero]
+  -- The scalar line through `v` is carried to the scalar line through `φ_b v`.
+  have hl : g ∘ (fun t : 𝕜 ↦ (⟨b, t • v⟩ : TotalSpace F V)) =
+      fun t : 𝕜 ↦ (⟨b, t • φ b v⟩ : TotalSpace F' V') := funext fun t ↦ by
+    simp only [Function.comp_apply, hg, map_smul]
+  have hline : MDifferentiableAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F))
+      (fun t : 𝕜 ↦ (⟨b, t • v⟩ : TotalSpace F V)) 0 :=
+    (TotalSpace.hasMFDerivAt_smul_curve (⟨b, v⟩ : TotalSpace F V)
+      (hasDerivAt_id' (0 : 𝕜))).mdifferentiableAt
+  have hhor : mfderiv (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) g (zeroSection F V b)
+      (mfderiv I (I.prod 𝓘(𝕜, F)) (zeroSection F V) b u) =
+      mfderiv I (I.prod 𝓘(𝕜, F')) (zeroSection F' V') b u := by
+    rw [← mfderiv_comp_apply b hgd (mdifferentiableAt_zeroSection 𝕜 V), hz]
+  have hver : mfderiv (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) g (zeroSection F V b)
+      ((zeroSectionTangentEquiv (I := I) b).symm (0, v)) =
+      (zeroSectionTangentEquiv (I := I) (F := F') (V := V') b).symm (0, φ b v) := by
+    have h := mfderiv_comp_apply_of_eq (0 : 𝕜) hgd hline (by simp [zeroSection]) (1 : 𝕜)
+    rw [zeroSectionTangentEquiv_symm_inr, zeroSectionTangentEquiv_symm_inr, ← h, hl]
+  rw [zeroSectionTangentEquiv_symm_eq, map_add, hhor, hver]
+  exact (zeroSectionTangentEquiv_symm_eq b u (φ b v)).symm
+
+end FibrewiseLinear
+
+section Embedding
+
+variable {𝕂 : Type*} [RCLike 𝕂] [NormedSpace 𝕂 E] [NormedSpace 𝕂 F]
+  {J : ModelWithCorners 𝕂 E H} [J.Boundaryless] [FiniteDimensional 𝕂 E] [FiniteDimensional 𝕂 F]
+  {W : B → Type*} [∀ b, AddCommMonoid (W b)] [∀ b, Module 𝕂 (W b)]
+  [∀ b, TopologicalSpace (W b)] [TopologicalSpace (TotalSpace F W)]
+  [FiberBundle F W] [VectorBundle 𝕂 F W] {n : ℕ∞ω} [IsManifold J n B]
+  [ContMDiffVectorBundle n F W J]
+
+/-- The zero section of a `C^n` vector bundle with finite-dimensional fibres, over a boundaryless
+manifold with finite-dimensional model, is a `C^n` smooth embedding for `1 ≤ n`: the bundle
+projection is a smooth left inverse. -/
+theorem isSmoothEmbedding_zeroSection (hn : 1 ≤ n) :
+    Manifold.IsSmoothEmbedding J (J.prod 𝓘(𝕂, F)) n (zeroSection F W) :=
+  (contMDiff_zeroSection 𝕂 W).isSmoothEmbedding_of_leftInverse hn
+    ((contMDiff_proj (n := n) W).of_le hn) fun _ ↦ rfl
+
+end Embedding
 
 end TauCeti.Bundle
