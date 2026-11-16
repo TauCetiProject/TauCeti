@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.DirectSum.Finite
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.AlgebraicTopology.Cellular.Projective
 
+import TauCeti.Algebra.Homology.EulerCharacteristic.HomologicalComplex
+
 /-!
 # Euler--Poincaré for cellular chains
 
@@ -29,20 +31,19 @@ draws the numerical and finiteness consequences.
   (`TauCeti.eulerChar_cellularChainComplex`).
 * Over a noetherian ring, the cellular homology in degree `n` of a complex with finitely many
   `n`-cells is finitely generated when `M` is (`TauCeti.finite_cellularHomology`).
-* **Euler--Poincaré.**  Over a division ring, for a finite-dimensional coefficient module `M` and
-  a complex with finitely many cells through degree `n`, the alternating sum of the dimensions of
-  the cellular homology up to degree `n`, when there are no `(n + 1)`-cells, equals `dim M` times
-  the alternating count of the cells of dimension at most `n`
+* **Euler--Poincaré.**  Over any ring satisfying the strong rank condition and rank--nullity (such
+  as a division ring or a commutative domain), for a finitely generated coefficient module `M` and
+  a complex with finitely many cells through degree `n`, the alternating sum of the finranks of
+  the cellular homology up to degree `n`, when there are no `(n + 1)`-cells, equals `finrank k M`
+  times the alternating count of the cells of dimension at most `n`
   (`TauCeti.sum_range_finrank_cellularHomology`).  For a finite complex this is the equality of
-  the homology Euler characteristic of the cellular chain complex with `dim M` times the
-  alternating count of all cells, `dim M · cwEulerChar C`
+  the homology Euler characteristic of the cellular chain complex with `finrank k M` times the
+  alternating count of all cells, `finrank k M · cwEulerChar C`
   (`TauCeti.homologyEulerChar_cellularChainComplex`).
 
 The statements concern the cellular chain complex itself; its identification with singular
-homology is what turns them into statements about the space.  For the ring-level statements
-(`finite_cellularChainGroup`, `finrank_cellularChainGroup`, `finrank_cellularChainComplex_X`,
-`eulerChar_cellularChainComplex`, `finite_cellularHomology`), the coefficient ring may live in an
-arbitrary universe via `TauCeti.moduleCat_ab4OfSize`.
+homology is what turns them into statements about the space.  The coefficient ring `k` may live
+in an arbitrary universe via `TauCeti.moduleCat_ab4OfSize`.
 
 ## References
 
@@ -99,6 +100,13 @@ instance finite_cellularChainGroup [Module.Finite k M] (n : ℕ) [Finite (cell C
     Module.Finite k (cellularChainGroup C M n : ModuleCat k) :=
   .equiv (cellularChainGroupLinearEquiv C M n).symm
 
+/-- The degree-`i` term of the cellular chain complex is finitely generated when `M` is and there
+are finitely many `i`-cells. -/
+theorem finite_cellularChainComplex_X [Module.Finite k M] (i : ℕ) [Finite (cell C i)] :
+    Module.Finite k ((cellularChainComplex C M).X i) := by
+  rw [cellularChainComplex_X]
+  infer_instance
+
 /-- For free coefficients `M`, the cellular chain group in degree `n` satisfies
 `finrank = Nat.card (cell C n) * finrank k M`. No finiteness is assumed: if there are infinitely
 many `n`-cells or `M` is not finitely generated, both sides are `0` by the conventions for
@@ -143,50 +151,86 @@ theorem finite_cellularHomology [IsNoetherianRing k] [Module.Finite k M] (n : �
 
 end Ring
 
-variable {k : Type w} [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
+section RankNullity
 
-/-- The degree-`i` term of the cellular chain complex is finite-dimensional when there are finitely
-many `i`-cells. -/
-theorem finite_cellularChainComplex_X (i : ℕ) [Finite (cell C i)] :
-    Module.Finite k ((cellularChainComplex C M).X i) := by
-  rw [cellularChainComplex_X]
-  infer_instance
+variable {k : Type u} [Ring k] [StrongRankCondition k] [HasRankNullity.{w} k]
+  (M : ModuleCat.{w} k) [Module.Finite k M]
+
+/-- For finitely generated coefficients `M` over a ring satisfying the strong rank condition and
+rank--nullity, if there are finitely many `n`-cells then the cellular chain group in degree `n`
+satisfies `finrank = Nat.card (cell C n) * finrank k M`. -/
+private theorem finrank_cellularChainGroup_of_finite (n : ℕ) [Finite (cell C n)] :
+    finrank k (cellularChainGroup C M n : ModuleCat k) = Nat.card (cell C n) * finrank k M := by
+  let _ : Fintype (cell C n) := Fintype.ofFinite (cell C n)
+  rw [(cellularChainGroupIso C M n).toLinearEquiv.finrank_eq, ModuleCat.finrank_sigma,
+    Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.card_eq_fintype_card]
 
 /-- **Euler--Poincaré for cellular chains.**  For a relative CW complex with finitely many cells
-through degree `n` and a finite-dimensional coefficient module `M`, if there are no `(n + 1)`-cells,
-then the alternating sum of the dimensions of the cellular homology groups in degrees at most `n`
-is `dim M` times the alternating count of the cells of dimension at most `n`. -/
+through degree `n` and a finitely generated coefficient module `M` over a ring satisfying the
+strong rank condition and rank--nullity, if there are no `(n + 1)`-cells, then the alternating sum
+of the finranks of the cellular homology groups in degrees at most `n` is `finrank k M` times the
+alternating count of the cells of dimension at most `n`. -/
 theorem sum_range_finrank_cellularHomology {n : ℕ}
     (hfinite : ∀ i ≤ n, Finite (cell C i)) (hn : IsEmpty (cell C (n + 1))) :
     ∑ i ∈ Finset.range (n + 1),
         (-1 : ℤ) ^ i * finrank k ((cellularChainComplex C M).homology i) =
       finrank k M * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * Nat.card (cell C i) := by
-  have hfinite' : ∀ i ≤ n, Module.Finite k ((cellularChainComplex C M).X i) := by
-    intro i hi
-    let _ := hfinite i hi
-    rw [cellularChainComplex_X]
-    infer_instance
+  have hfinite' : ∀ i ∈ Finset.range (n + 1), Module.Finite k ((cellularChainComplex C M).X i) :=
+    fun i hi ↦
+      have := hfinite i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
+      finite_cellularChainComplex_X C M i
   have hX : IsZero ((cellularChainComplex C M).X (n + 1)) := by
     rw [cellularChainComplex_X]
     exact isZero_cellularChainGroup C (n + 1) M
-  rw [← (cellularChainComplex C M).sum_range_finrank_X_eq_sum_range_finrank_homology hfinite'
-      (hX.eq_of_src _ 0), Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [finrank_cellularChainComplex_X]
+  have hsum := HomologicalComplex.sum_finrank_X_eq_sum_finrank_homology (cellularChainComplex C M)
+    (Finset.range (n + 1)) hfinite'
+    (fun i hi hnot ↦ by
+      by_cases hrel : (ComplexShape.down ℕ).Rel ((ComplexShape.down ℕ).prev i) i
+      · rw [ComplexShape.down_Rel] at hrel
+        have hprev : (ComplexShape.down ℕ).prev i = n + 1 := by
+          have := Finset.mem_range.1 hi
+          have := Finset.mem_range.not.1 hnot
+          lia
+        rw [hprev]
+        exact hX.eq_of_src _ 0
+      · exact (cellularChainComplex C M).shape _ _ hrel)
+    (fun i hi hnot ↦ (cellularChainComplex C M).shape _ _ fun hrel ↦ by
+      rw [ComplexShape.down_Rel] at hrel
+      exact hnot (Finset.mem_range.2 (by have := Finset.mem_range.1 hi; lia)))
+  simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
+    Units.val_one] at hsum
+  rw [← hsum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have := hfinite i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
+  rw [cellularChainComplex_X, finrank_cellularChainGroup_of_finite]
   push_cast
   ring
 
-/-- **Euler--Poincaré for a finite relative CW complex.**  The alternating sum of the dimensions
-of the cellular homology groups of a finite relative CW complex, with coefficients in a
-finite-dimensional module `M`, is `dim M` times the alternating count of its cells. -/
+/-- **Euler--Poincaré for a finite relative CW complex.**  The alternating sum of the finranks of
+the cellular homology groups of a finite relative CW complex, with coefficients in a finitely
+generated module `M` over a ring satisfying the strong rank condition and rank--nullity, is
+`finrank k M` times the alternating count of its cells. -/
 theorem homologyEulerChar_cellularChainComplex [RelCWComplex.Finite C] :
     (cellularChainComplex C M).homologyEulerChar =
       finrank k M * cwEulerChar C := by
-  have (i : ℕ) :=
+  have (i : ℕ) : Module.Finite k ((cellularChainComplex C M).X i) :=
     have := FiniteType.finite_cell (C := C) (D := D) i
     finite_cellularChainComplex_X C M i
-  rw [← ChainComplex.eulerChar_eq_homologyEulerChar _
-      (by simpa only [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M),
-    eulerChar_cellularChainComplex]
+  have hsupp : {i : ℕ | ¬ IsZero ((cellularChainComplex C M).X i)}.Finite := by
+    obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (eventually_isZero_cellularChainGroup C M)
+    exact (Finset.range N).finite_toSet.subset fun i hi ↦ by
+      by_contra h
+      exact hi (by rw [cellularChainComplex_X]; exact hN i (by simpa using h))
+  rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar (cellularChainComplex C M) hsupp,
+    HomologicalComplex.eulerChar, GradedObject.eulerChar, cwEulerChar, mul_finsum]
+  refine finsum_congr fun i ↦ ?_
+  have := FiniteType.finite_cell (C := C) (D := D) i
+  rw [cellularChainComplex_X, finrank_cellularChainGroup_of_finite]
+  simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
+    Units.val_one]
+  push_cast
+  ring
+
+end RankNullity
 
 end TauCeti

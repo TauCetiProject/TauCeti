@@ -91,17 +91,13 @@ theorem finrank_X_eq {R : Type*} [Ring R] [StrongRankCondition R] {ι : Type*}
     finrank R (K.X i) = finrank R (K.homology i) +
       finrank R (LinearMap.range (K.d (c.prev i) i).hom) +
       finrank R (LinearMap.range (K.d i (c.next i)).hom) := by
-  -- The middle term of `K.sc' (c.prev i) i (c.next i)` is `K.X i` by construction.
-  have : Module.Finite R (K.sc' (c.prev i) i (c.next i)).X₂ := ‹Module.Finite R (K.X i)›
-  have hH : finrank R (K.sc' (c.prev i) i (c.next i)).homology +
+  -- The middle term of `K.sc i` is `K.X i` by construction.
+  have : Module.Finite R (K.sc i).X₂ := ‹Module.Finite R (K.X i)›
+  have hH : finrank R (K.homology i) +
       finrank R (LinearMap.range (K.d (c.prev i) i).hom) =
         finrank R (LinearMap.ker (K.d i (c.next i)).hom) :=
-    (K.sc' (c.prev i) i (c.next i)).finrank_homology_add_finrank_range_f
-  have e : K.homology i ≅ (K.sc' (c.prev i) i (c.next i)).homology :=
-    ShortComplex.homologyMapIso (K.isoSc' (c.prev i) i (c.next i) rfl rfl)
-  have hker := (LinearMap.ker (K.d i (c.next i)).hom).finrank_quotient_add_finrank
-  rw [((K.d i (c.next i)).hom).quotKerEquivRange.finrank_eq] at hker
-  rw [← e.toLinearEquiv.finrank_eq] at hH
+    (K.sc i).finrank_homology_add_finrank_range_f
+  have hker := LinearMap.finrank_range_add_finrank_ker (K.d i (c.next i)).hom
   lia
 
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
