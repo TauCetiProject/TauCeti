@@ -297,7 +297,7 @@ omit h₂ hρ hu₀₁ in private theorem coe_flatDirac_normalPerturbationSpinor
 omit h₂ hρ hu₀₁ in private theorem coe_sum_normalPerturbationForm_smul_normalSpinor (x y η : ℂ → E4)
     (p : V) :
     let z := normalCoord e p
-    ((∑ k : Fin 4, cMul(o, ρ) (e k) (normalPerturbationForm e y η p (fun _ ↦ e k) •
+    ((∑ k : Fin 4, cMul(o, ρ, e k, normalPerturbationForm e y η p (fun _ ↦ e k) •
       (I • normalSpinor o ρ e u₀ x p)) : NegSpin(Q, o, ρ)) : W) =
       (((y z 0 : ℂ) * I + (y z 1 : ℂ) * I * I) * Vortex.sectionValue x z) • ρ (ι Q (e 2)) u₀ +
         (((-(η z 0 : ℂ)) * I + (η z 1 : ℂ) * I * I) * Vortex.sectionValue x z) •
@@ -305,12 +305,13 @@ omit h₂ hρ hu₀₁ in private theorem coe_sum_normalPerturbationForm_smul_no
   intro z
   have h1u := h₀ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 0)
   have h3u := h₂₃ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 2)
-  have hδb (k : Fin 4) : (cMul(o, ρ) (e k)
-      (normalPerturbationForm e y η p (fun _ ↦ e k) • (I • normalSpinor o ρ e u₀ x p)) : W) =
+  have hδb (k : Fin 4) : (cMul(o, ρ, e k,
+      normalPerturbationForm e y η p (fun _ ↦ e k) • (I • normalSpinor o ρ e u₀ x p)) : W) =
       ((normalFrameForm e (y z) (η z) (fun _ ↦ e k) : ℂ) * I * Vortex.sectionValue x z) •
         ρ (ι Q (e k)) u₀ := by
     rw [normalPerturbationForm_apply, normalSpinor_apply]; simp only [z, ← Complex.coe_smul,
-      smul_smul, map_smul, Submodule.coe_smul, coe_positiveHalfSpinCliffordMul_apply, ← mul_assoc]
+      smul_smul, map_smul, Submodule.coe_smul, coe_halfSpinCliffordMul_apply_apply,
+      LinearEquiv.coe_ofEq_apply, ← mul_assoc]
   rw [Fin.sum_univ_four, Submodule.coe_add, Submodule.coe_add, Submodule.coe_add, hδb 0, hδb 1,
     hδb 2, hδb 3, h1u, h3u]; simp only [normalFrameForm_apply, orthonormal_iff_ite.1 e.orthonormal,
     smul_smul]; norm_num; module
@@ -322,9 +323,9 @@ theorem linearizedFlatDirac_normalPerturbation (x : ℂ → E4) {y η : ℂ → 
     linearizedFlatDirac o ρ e (normalConnection e x) (normalSpinor o ρ e u₀ x)
         (normalPerturbationForm e y η) (normalPerturbationSpinor o ρ e u₀ y η) p =
       ((2 : ℂ) * ((Vortex.linearizedEquation x y z 1 : ℂ) +
-          (Vortex.linearizedEquation x y z 2 : ℂ) * I)) • cMul(o, ρ) (e 2) u₀ -
+          (Vortex.linearizedEquation x y z 2 : ℂ) * I)) • cMul(o, ρ, e 2, u₀) -
         ((2 : ℂ) * ((Vortex.gaugeFixedAdjoint x η z 2 : ℂ) +
-          (Vortex.gaugeFixedAdjoint x η z 3 : ℂ) * I)) • cMul(o, ρ) (e 0) u₀ := by
+          (Vortex.gaugeFixedAdjoint x η z 3 : ℂ) * I)) • cMul(o, ρ, e 0, u₀) := by
   intro z; have hpy (i : Fin 4) := (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hy
   have hpη (i : Fin 4) := (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hη
   have hc₂ : (fderiv ℝ (Vortex.sectionValue y) z 1 + I * (x z 0 : ℂ) * Vortex.sectionValue y z) +
@@ -345,7 +346,8 @@ theorem linearizedFlatDirac_normalPerturbation (x : ℂ → E4) {y η : ℂ → 
     coe_flatDirac_normalPerturbationSpinor hQ hkl he h₀ h₂₃ hu₀ x hy hη,
     coe_sum_normalPerturbationForm_smul_normalSpinor hQ hkl he h₀ h₂₃ hu₀ x y η p,
     Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul,
-    coe_positiveHalfSpinCliffordMul_apply, coe_positiveHalfSpinCliffordMul_apply, ← hc₂, hc₀]
+    coe_halfSpinCliffordMul_apply_apply, coe_halfSpinCliffordMul_apply_apply,
+    LinearEquiv.coe_ofEq_apply, ← hc₂, hc₀]
   module
 /-- **Eight-real-component normal intertwining theorem**: for any plane field `x : ℂ → ℝ⁴` (with no
 PDE hypothesis on `x`), `gaugeFixedFlatOperator` at the pulled-back background

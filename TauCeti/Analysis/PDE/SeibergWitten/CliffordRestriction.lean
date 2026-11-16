@@ -8,10 +8,9 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Trace.Free
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
--- Private: the trace of a restriction, the odd half-spinor chirality map, and the orthogonality
--- criterion for `Q` are used only inside proofs.
+-- Private: the trace of a restriction and the orthogonality criterion for `Q` are used only
+-- inside proofs.
 import Mathlib.LinearAlgebra.PID
-import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -46,8 +45,6 @@ operator norm of `C` is `‖C(iα)‖ = √2 ‖α‖` on self-dual forms.
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.positiveHalfSpinCliffordMul o ρ v`: odd Clifford multiplication
-  `c(v) : W⁺ →ₗ[ℂ] W⁻` on positive half-spinors.
 * `TauCeti.SeibergWitten.cliffordRestriction o ρ`: the real-linear map `α ↦ C(iα) = i c₂(α)`
   from two-forms to endomorphisms of `W⁺`.
 * `TauCeti.SeibergWitten.cliffordRestrictionEquiv`: in complex dimension two, the restriction of
@@ -118,21 +115,6 @@ private def restrictBivector (x : ⋀[ℝ]^2 V) : Module.End ℂ (positiveHalfSp
 
 private theorem coe_restrictBivector_apply (x : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
     (restrictBivector o ρ x ψ : W) = ρ (bivectorExterior Q x) ψ := rfl
-
-/-- Odd Clifford multiplication `c(v) : W⁺ →ₗ[ℂ] W⁻` on positive half-spinors. -/
-def positiveHalfSpinCliffordMul (v : V) :
-    positiveHalfSpinors o ρ →ₗ[ℂ] Module.End.eigenspace (ρ (chirality Q o)) (-1) where
-  toFun ψ := ⟨ρ (ι Q v) ψ, map_ι_apply_mem_eigenspace_chirality_neg o (ε := 1)
-    (Module.End.mem_eigenspace_iff.2 (by simpa using mem_positiveHalfSpinors.1 ψ.2)) v⟩
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
-
-variable {o ρ} in
-/-- `positiveHalfSpinCliffordMul` acts by Clifford multiplication on the ambient module. -/
-@[simp]
-theorem coe_positiveHalfSpinCliffordMul_apply (v : V) (ψ : positiveHalfSpinors o ρ) :
-    (positiveHalfSpinCliffordMul o ρ v ψ : W) = ρ (ι Q v) ψ :=
-  (rfl)
 
 variable [FiniteDimensional ℂ W]
   (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))

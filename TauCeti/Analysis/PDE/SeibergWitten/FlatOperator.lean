@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
+public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
@@ -58,17 +59,20 @@ scoped notation "PosSpin(" o ", " ρ ")" => (positiveHalfSpinors (o) (ρ))
 /-- Scoped shorthand for the negative half-spinor space `W⁻`. -/
 scoped notation "NegSpin(" Q ", " o ", " ρ ")" =>
   (Module.End.eigenspace ((ρ) (chirality (Q) (o))) (-1))
-/-- Scoped shorthand for odd Clifford multiplication `positiveHalfSpinCliffordMul o ρ`. -/
-scoped notation "cMul(" o ", " ρ ")" => (positiveHalfSpinCliffordMul (o) (ρ))
+/-- Scoped shorthand for odd Clifford multiplication `W⁺ → W⁻` via
+`CliffordAlgebra.halfSpinCliffordMul o ρ 1` and `positiveHalfSpinors_eq_eigenspace`. -/
+scoped notation "cMul(" o ", " ρ ", " v ", " ψ ")" =>
+  (CliffordAlgebra.halfSpinCliffordMul (o) (ρ) 1 (v)
+    (LinearEquiv.ofEq _ _ (CliffordAlgebra.positiveHalfSpinors_eq_eigenspace (o) (ρ)) (ψ)))
 
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
+omit [FiniteDimensional ℂ W] in
 private def cliffordMulRightBilin (T : V →ₗ[ℝ] PosSpin(o, ρ)) :
     V →ₗ[ℝ] V →ₗ[ℝ] NegSpin(Q, o, ρ) :=
-  LinearMap.mk₂ ℝ (fun u v ↦ cMul(o, ρ) u (T v))
-    (fun _ _ _ ↦ Subtype.ext <| by simp [coe_positiveHalfSpinCliffordMul_apply, map_add])
-    (fun _ _ _ ↦ Subtype.ext <| by simp [coe_positiveHalfSpinCliffordMul_apply, map_smul])
-    (fun _ _ _ ↦ by rw [map_add, map_add])
-    (fun _ _ _ ↦ by rw [map_smul, ← Complex.coe_smul, map_smul, Complex.coe_smul])
+  LinearMap.mk₂ ℝ (fun u v ↦ cMul(o, ρ, u, T v))
+    (fun _ _ _ ↦ by rw [map_add, LinearMap.add_apply])
+    (fun _ _ _ ↦ by rw [map_smul, LinearMap.smul_apply])
+    (fun _ _ _ ↦ by simp only [map_add])
+    (fun _ _ _ ↦ by rw [map_smul, ← Complex.coe_smul, map_smul, map_smul, Complex.coe_smul])
 
 omit [FiniteDimensional ℂ W] in
 /-- **Covariant derivative of a positive half-spinor field** `∇_a χ = dχ + i b χ` for `a = i b`. -/
@@ -108,7 +112,7 @@ theorem spinorCovariantDeriv_smul_const (b : V → OneForm(V)) {α : V → ℂ} 
 omit [FiniteDimensional ℂ W] in variable (o ρ e) in
 /-- **The flat chiral Dirac operator** `D_b χ = ∑ₖ c(eₖ) ∇_{b, eₖ} χ : W⁺ → W⁻`. -/
 def flatDirac (b : V → OneForm(V)) (χ : V → PosSpin(o, ρ)) (p : V) : NegSpin(Q, o, ρ) :=
-  ∑ k, cMul(o, ρ) (e k) (spinorCovariantDeriv b χ p (e k))
+  ∑ k, cMul(o, ρ, e k, spinorCovariantDeriv b χ p (e k))
 omit [FiniteDimensional ℂ W] in @[simp] theorem coe_flatDirac (b : V → OneForm(V))
     (χ : V → PosSpin(o, ρ)) (p : V) :
     (flatDirac o ρ e b χ p : W) = ∑ k, ρ (ι Q (e k)) (spinorCovariantDeriv b χ p (e k)) := by
@@ -192,11 +196,11 @@ omit [FiniteDimensional ℂ W] in variable (o ρ e) in
 /-- **Linearized chiral Dirac operator** `D_b ζ + ∑ₖ c(eₖ) (i δb(eₖ) χ)`. -/
 def linearizedFlatDirac (b : V → OneForm(V)) (χ : V → PosSpin(o, ρ))
     (δb : V → OneForm(V)) (ζ : V → PosSpin(o, ρ)) (p : V) : NegSpin(Q, o, ρ) :=
-  flatDirac o ρ e b ζ p + ∑ k, cMul(o, ρ) (e k) (δb p (fun _ ↦ e k) • (I • χ p))
+  flatDirac o ρ e b ζ p + ∑ k, cMul(o, ρ, e k, δb p (fun _ ↦ e k) • (I • χ p))
 omit [FiniteDimensional ℂ W] in theorem linearizedFlatDirac_apply (b : V → OneForm(V))
     (χ : V → PosSpin(o, ρ)) (δb : V → OneForm(V)) (ζ : V → PosSpin(o, ρ)) (p : V) :
     linearizedFlatDirac o ρ e b χ δb ζ p =
-      flatDirac o ρ e b ζ p + ∑ k, cMul(o, ρ) (e k) (δb p (fun _ ↦ e k) • (I • χ p)) := (rfl)
+      flatDirac o ρ e b ζ p + ∑ k, cMul(o, ρ, e k, δb p (fun _ ↦ e k) • (I • χ p)) := (rfl)
 omit [FiniteDimensional ℂ W] in
 /-- `linearizedFlatDirac` is independent of the choice of orthonormal basis of `V`. -/
 theorem linearizedFlatDirac_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 4) ℝ V)
@@ -242,7 +246,9 @@ theorem hasDerivAt_flatDirac (b δb : V → OneForm(V)) {χ ζ : V → PosSpin(o
       (linearizedFlatDirac o ρ e b χ δb ζ p) 0 := by
   have : FiniteDimensional ℝ PosSpin(o, ρ) := FiniteDimensional.trans ℝ ℂ _
   let C (k : Fin 4) : PosSpin(o, ρ) →L[ℝ] NegSpin(Q, o, ρ) :=
-    ((cMul(o, ρ) (e k)).restrictScalars ℝ).toContinuousLinearMap
+    (((halfSpinCliffordMul o ρ 1 (e k)).comp
+      (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)).toLinearMap).restrictScalars
+      ℝ).toContinuousLinearMap
   let d₁ (k : Fin 4) := spinorCovariantDeriv b ζ p (e k) + δb p (fun _ ↦ e k) • (I • χ p)
   let d₂ (k : Fin 4) := δb p (fun _ ↦ e k) • (I • ζ p)
   have hcov (t : ℝ) (k : Fin 4) : spinorCovariantDeriv (b + t • δb) (χ + t • ζ) p (e k) =
