@@ -68,4 +68,32 @@ theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s
     (hs0 : s ≠ 0) : s ∈ slitPlane :=
   mem_slitPlane_of_abs_arg_lt (by linarith) hs0
 
+/-- Since `arg s ∈ (-π, π]`, its half-angle lies in `(-π / 2, π / 2]` and has nonnegative cosine. -/
+theorem cos_arg_div_two_nonneg (s : ℂ) : 0 ≤ Real.cos (s.arg / 2) :=
+  Real.cos_nonneg_of_mem_Icc ⟨by linarith [neg_pi_lt_arg s], by linarith [arg_le_pi s]⟩
+
+/-- On the slit plane `|arg s| < π`, so `cos (arg s / 2) > 0`. -/
+theorem cos_arg_div_two_pos_of_mem_slitPlane {s : ℂ} (hs : s ∈ slitPlane) :
+    0 < Real.cos (s.arg / 2) := by
+  have hlt : s.arg < Real.pi :=
+    lt_of_le_of_ne (arg_le_pi s) (mem_slitPlane_iff_arg.mp hs).1
+  exact Real.cos_pos_of_mem_Ioo ⟨by linarith [neg_pi_lt_arg s], by linarith⟩
+
+/-- Sharp half-angle lower bound for translation by a real `t`:
+`cos (arg s / 2) * (‖s‖ + t) ≤ ‖s + t‖` for every `s : ℂ` and `t : ℝ`. -/
+theorem cos_arg_div_two_mul_norm_add_le_norm_add_ofReal (s : ℂ) (t : ℝ) :
+    Real.cos (s.arg / 2) * (‖s‖ + t) ≤ ‖s + t‖ := by
+  have hsq : ‖s + t‖ ^ 2 = ‖s‖ ^ 2 + 2 * t * s.re + t ^ 2 := by
+    simp only [Complex.sq_norm, normSq_apply, add_re, ofReal_re, add_im, ofReal_im, add_zero]
+    ring
+  have hre : s.re = ‖s‖ * (2 * Real.cos (s.arg / 2) ^ 2 - 1) := by
+    rw [← norm_mul_cos_arg s]
+    conv_lhs => rw [show s.arg = 2 * (s.arg / 2) by ring]
+    rw [Real.cos_two_mul]
+  have hcos_le : Real.cos (s.arg / 2) ^ 2 ≤ 1 := Real.cos_sq_le_one _
+  have hle_sq : (Real.cos (s.arg / 2) * (‖s‖ + t)) ^ 2 ≤ ‖s + t‖ ^ 2 := by
+    rw [hsq, hre]
+    nlinarith [mul_nonneg (sub_nonneg.mpr hcos_le) (sq_nonneg (‖s‖ - t))]
+  nlinarith [norm_nonneg (s + t)]
+
 end Complex

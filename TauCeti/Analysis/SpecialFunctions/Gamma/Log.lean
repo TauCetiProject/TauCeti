@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
+import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.Contractible
 
@@ -112,10 +113,84 @@ theorem logGamma_ofReal {x : ℝ} (hx : 0 < x) :
   have hd2 : d 2 = 0 := by simp [d]
   exact sub_eq_zero.mp (hd.trans hd2)
 
+/-- At `1` the normalized branch vanishes. -/
+@[simp]
+theorem logGamma_one : logGamma 1 = 0 := by
+  simpa using logGamma_ofReal (x := 1) one_pos
+
 /-- At `3` the normalized branch takes the value `log 2`. -/
 @[simp]
 theorem logGamma_three : logGamma 3 = (Real.log 2 : ℂ) := by
   simpa using logGamma_ofReal (x := 3) (by norm_num)
+
+/-- The functional equation of `logGamma` on the slit plane:
+`logGamma (z + 1) = logGamma z + log z`. -/
+theorem logGamma_add_one {z : ℂ} (hz : z ∈ slitPlane) :
+    logGamma (z + 1) = logGamma z + Complex.log z := by
+  have hadd : ∀ w ∈ slitPlane, w + 1 ∈ slitPlane := fun w hw => by
+    refine (mem_slitPlane_iff.mp hw).imp (fun h => ?_) (fun h => by simpa using h)
+    rw [add_re, one_re]
+    linarith
+  let d : ℂ → ℂ := fun w => logGamma (w + 1) - logGamma w - Complex.log w
+  have hd_diff : DifferentiableOn ℂ d slitPlane := by
+    refine ((differentiableOn_logGamma.comp (differentiableOn_id.add (differentiableOn_const 1))
+      (fun w hw => hadd w hw)).sub differentiableOn_logGamma).sub ?_
+    intro w hw
+    exact (Complex.differentiableAt_log hw).differentiableWithinAt
+  have hd_exp : ∀ w ∈ slitPlane, Complex.exp (d w) = 1 := by
+    intro w hw
+    have hw0 : w ≠ 0 := slitPlane_ne_zero hw
+    have hpole : ∀ n : ℕ, w ≠ -(n : ℂ) := by
+      intro n hwn
+      subst hwn
+      have hneg := (Complex.neg_ofReal_mem_slitPlane (x := (n : ℝ))).mp hw
+      exact (Nat.cast_nonneg n).not_gt hneg
+    simp only [d, Complex.exp_sub, exp_logGamma (hadd w hw), exp_logGamma hw,
+      Complex.exp_log hw0, Complex.Gamma_add_one w hw0]
+    have hΓ : Complex.Gamma w ≠ 0 := Complex.Gamma_ne_zero hpole
+    field_simp
+  have hconn : IsPreconnected (d '' slitPlane) :=
+    (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected.image
+      d hd_diff.continuousOn
+  have hd_eq : d z = d 1 :=
+    eq_of_isPreconnected_of_forall_exp_eq_one hconn
+      (by rintro _ ⟨w, hw, rfl⟩; exact hd_exp w hw) ⟨z, hz, rfl⟩ ⟨1, one_mem_slitPlane, rfl⟩
+  have hd1 : d 1 = 0 := by
+    simp only [d, show (1 : ℂ) + 1 = 2 by norm_num, logGamma_two, logGamma_one, Complex.log_one,
+      sub_self]
+  linear_combination hd_eq.trans hd1
+
+/-- Iterated functional equation of `logGamma` on the slit plane:
+`logGamma (z + n) = logGamma z + ∑ j ∈ Finset.range n, log (z + j)`. -/
+theorem logGamma_add_natCast {z : ℂ} (hz : z ∈ slitPlane) (n : ℕ) :
+    logGamma (z + n) = logGamma z + ∑ j ∈ Finset.range n, Complex.log (z + j) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hzn : z + n ∈ slitPlane := by
+      refine (mem_slitPlane_iff.mp hz).imp (fun h => ?_) (fun h => by simpa using h)
+      rw [add_re, natCast_re]
+      positivity
+    rw [Nat.cast_succ, ← add_assoc, logGamma_add_one hzn, ih, Finset.sum_range_succ, add_assoc]
+
+/-- Complex conjugation symmetry of `logGamma` on the slit plane. -/
+theorem logGamma_conj {z : ℂ} (hz : z ∈ slitPlane) :
+    logGamma (starRingEnd ℂ z) = starRingEnd ℂ (logGamma z) := by
+  have hconj_mem : ∀ w ∈ slitPlane, starRingEnd ℂ w ∈ slitPlane := fun w hw => by
+    refine (mem_slitPlane_iff.mp hw).imp (fun h => by simpa using h) (fun h => by simpa using h)
+  let L : ℂ → ℂ := starRingEnd ℂ ∘ logGamma ∘ starRingEnd ℂ
+  have hL_diff : DifferentiableOn ℂ L slitPlane := fun w hw =>
+    (differentiableAt_conj_conj_iff.mpr (differentiableOn_logGamma.differentiableAt
+      (isOpen_slitPlane.mem_nhds (hconj_mem w hw)))).differentiableWithinAt
+  have hL_exp : ∀ w ∈ slitPlane, Complex.exp (L w) = Complex.Gamma w := by
+    intro w hw
+    simp only [L, Function.comp_apply]
+    rw [Complex.exp_conj, exp_logGamma (hconj_mem w hw), Complex.Gamma_conj, Complex.conj_conj]
+  have hL2 : L 2 = 0 := by
+    simp only [L, Function.comp_apply]
+    rw [map_ofNat, logGamma_two, map_zero]
+  have h := eqOn_logGamma hL_diff hL_exp hL2 hz
+  simpa [L] using congrArg (starRingEnd ℂ) h
 
 /-- The derivative of the normalized branch is the digamma function. -/
 theorem deriv_logGamma {z : ℂ} (hz : z ∈ slitPlane) :
