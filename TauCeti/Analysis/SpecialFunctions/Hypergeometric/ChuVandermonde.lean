@@ -56,7 +56,7 @@ theorem ordinaryHypergeometric_neg_nat_one (n : ℕ) (b : K) {c : K}
   refine sum_congr rfl fun k hk => ?_
   have hk' : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
   -- `(c)ₙ = (c)ₖ (c + k)ₙ₋ₖ`, so `(c)ₖ ≠ 0` and the `k`-th term can be cleared.
-  have hadd := ascPochhammer_eval_add c k (n - k)
+  have hadd := ascPochhammer_add_eval c k (n - k)
   rw [Nat.add_sub_of_le hk'] at hadd
   have hck : (ascPochhammer K k).eval c ≠ 0 := by
     intro h

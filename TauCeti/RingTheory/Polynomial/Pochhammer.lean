@@ -61,7 +61,7 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
-* `TauCeti.ascPochhammer_eval_add`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
+* `TauCeti.ascPochhammer_add_eval`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
 * `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
 * `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
 * `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
@@ -324,7 +324,7 @@ section Ascending
 variable {R : Type*}
 
 /-- `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`. -/
-theorem ascPochhammer_eval_add [Semiring R] (x : R) (k m : ℕ) :
+theorem ascPochhammer_add_eval [Semiring R] (x : R) (k m : ℕ) :
     (ascPochhammer R (k + m)).eval x =
       (ascPochhammer R k).eval x * (ascPochhammer R m).eval (x + k) := by
   induction m with
