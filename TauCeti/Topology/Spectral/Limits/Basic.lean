@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Spectral.PatchCriterion
 public import TauCeti.Topology.Spectral.ProConstructible
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
-import Mathlib.Topology.WithTopology
 
 /-!
 # Limits of spectral spaces
@@ -43,13 +42,9 @@ instance spectralSpace_pi {ι : Type*} {X : ι → Type*} [t : ∀ i, Topologica
   have hT0 : T0Space (∀ i, X i) := inferInstance
   let t' : TopologicalSpace (∀ i, X i) :=
     @Pi.topologicalSpace ι X (fun i ↦ constructibleTopology (X i))
-  have hc : @CompactSpace (∀ i, X i) t' := by
-    have hcomp (i) : @CompactSpace (X i) (constructibleTopology (X i)) :=
-      @Function.Surjective.compactSpace (WithConstructibleTopology (X i)) (X i) _
-        (constructibleTopology (X i)) WithTopology.ofTopology
-        (WithTopology.continuous_ofTopology _) inferInstance
-        (WithTopology.ofTopology_surjective _)
-    exact @Pi.compactSpace ι X (fun i ↦ constructibleTopology (X i)) hcomp
+  have hc : @CompactSpace (∀ i, X i) t' :=
+    @Pi.compactSpace ι X (fun i ↦ constructibleTopology (X i))
+      fun _ ↦ compactSpace_constructibleTopology
   refine @spectralSpace_of_isClopen_generateFrom _ _ t' (@Pi.topologicalSpace ι X t) hgen hc ?_ hT0
   rintro U ⟨V, s, hV, rfl⟩
   rw [Set.pi_def]

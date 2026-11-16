@@ -22,6 +22,9 @@ component-generic points are therefore equivalent to bijections on irreducible c
 closure of image. Bijections on component-generic points restrict along open embeddings, and
 can be checked on an open cover of the target and its inverse-image cover of the source; this
 permits component labels obtained on affine charts to be glued.
+
+Binary products of quasi-sober spaces are again quasi-sober: the generic point of an irreducible
+closed subset of `X × Y` is the pair of generic points of the closures of its two projections.
 -/
 
 public section
@@ -73,6 +76,31 @@ theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X
   refine ⟨(genericPoints.ofComponent C).1, (genericPoints.ofComponent C).2, ?_⟩
   exact ((genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent).map
     continuous_subtype_val
+
+/-- The product of two quasi-sober spaces is quasi-sober. -/
+instance QuasiSober.prod {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    [QuasiSober X] [QuasiSober Y] : QuasiSober (X × Y) where
+  sober {Z} hZ hZc := by
+    have hZ₁ : IsIrreducible (Prod.fst '' Z) := hZ.image Prod.fst continuous_fst.continuousOn
+    have hZ₂ : IsIrreducible (Prod.snd '' Z) := hZ.image Prod.snd continuous_snd.continuousOn
+    let x := hZ₁.genericPoint
+    let y := hZ₂.genericPoint
+    have hx : IsGenericPoint x (closure (Prod.fst '' Z)) := hZ₁.isGenericPoint_genericPoint_closure
+    have hy : IsGenericPoint y (closure (Prod.snd '' Z)) := hZ₂.isGenericPoint_genericPoint_closure
+    have hxyZ : (x, y) ∈ Z := by
+      rw [← hZc.closure_eq, mem_closure_iff]
+      intro W hWo hxyW
+      obtain ⟨U, V, hUo, hVo, hxU, hyV, hUV⟩ := isOpen_prod_iff.mp hWo x y hxyW
+      obtain ⟨_, hpU, p, hpZ, rfl⟩ := mem_closure_iff.mp hx.mem U hUo hxU
+      obtain ⟨_, hqV, q, hqZ, rfl⟩ := mem_closure_iff.mp hy.mem V hVo hyV
+      obtain ⟨r, hrZ, hrU, hrV⟩ := hZ.isPreirreducible (Prod.fst ⁻¹' U) (Prod.snd ⁻¹' V)
+        (hUo.preimage continuous_fst) (hVo.preimage continuous_snd) ⟨p, hpZ, hpU⟩ ⟨q, hqZ, hqV⟩
+      exact ⟨r, hUV ⟨hrU, hrV⟩, hrZ⟩
+    refine ⟨(x, y), isGenericPoint_def.mpr <| subset_antisymm
+      (closure_minimal (singleton_subset_iff.mpr hxyZ) hZc) fun p hpZ ↦ ?_⟩
+    exact specializes_iff_mem_closure.mp <| specializes_prod.mpr
+      ⟨hx.specializes (subset_closure ⟨p, hpZ, rfl⟩),
+        hy.specializes (subset_closure ⟨p, hpZ, rfl⟩)⟩
 
 section Maps
 

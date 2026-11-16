@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Spectral.Prod
 public import TauCeti.Topology.Spectral.SpectralMap
 import TauCeti.Topology.Compactness.Compact
 
@@ -172,8 +173,6 @@ theorem IsLocallySpectralSpace.prod (hX : IsLocallySpectralSpace X)
   obtain ⟨U, hUo, hxU, hUs⟩ := hX x
   obtain ⟨V, hVo, hyV, hVs⟩ := hY y
   refine ⟨U ×ˢ V, hUo.prod hVo, ⟨hxU, hyV⟩, ?_⟩
-  have := hUs
-  have := hVs
   let e := Homeomorph.Set.prod U V
   have : CompactSpace (U ×ˢ V : Set (X × Y)) := e.symm.compactSpace
   exact e.isOpenEmbedding.spectralSpace
@@ -349,8 +348,6 @@ topological spaces `X` and `Y`. -/
 theorem isLocallySpectralMap_prodMk_left (y : Y) :
     IsLocallySpectralMap (fun x : X ↦ (x, y)) := by
   refine .of_isSpectralMap_restrict (Continuous.prodMk_left y) fun U V hUV hUo hVo hUs hVs ↦ ?_
-  have := hUs
-  have := hVs
   rw [hUV.isSpectralMap_restrict_iff (Continuous.prodMk_left y).continuousOn hVo]
   intro K hKV hKo hKc
   have hUc : IsCompact U := isCompact_iff_compactSpace.mpr hUs.toCompactSpace
@@ -392,15 +389,18 @@ theorem isLocallySpectralMap_prodMk_right (x : X) :
   refine .of_isSpectralMap_restrict (Continuous.prodMk_right x) fun U V hUV hUo hVo hUs hVs ↦ ?_
   let e : Y × X ≃ₜ X × Y := Homeomorph.prodComm Y X
   let h : (e ⁻¹' V : Set (Y × X)) ≃ₜ V := e.subtype fun _ ↦ Iff.rfl
-  have := hUs
-  have := hVs
   have : CompactSpace (e ⁻¹' V : Set (Y × X)) := h.symm.compactSpace
   have : SpectralSpace (e ⁻¹' V : Set (Y × X)) := h.isOpenEmbedding.spectralSpace
   have hUV' : MapsTo (fun y : Y ↦ (y, x)) U (e ⁻¹' V) := fun u hu ↦ hUV hu
   have hspec := (isLocallySpectralMap_prodMk_left (X := Y) x).isSpectralMap_restrict hUV'
     hUo (hVo.preimage e.continuous)
   have hfact : hUV.restrict (fun y : Y ↦ (x, y)) U V =
-      h ∘ hUV'.restrict (fun y : Y ↦ (y, x)) U (e ⁻¹' V) := rfl
+      h ∘ hUV'.restrict (fun y : Y ↦ (y, x)) U (e ⁻¹' V) := by
+    funext u
+    apply Subtype.ext
+    dsimp only [Function.comp_apply, h]
+    rw [Homeomorph.subtype_apply_coe]
+    simp [e, MapsTo.restrict, Subtype.map]
   rw [hfact]
   exact h.isProperMap.isSpectralMap.comp hspec
 

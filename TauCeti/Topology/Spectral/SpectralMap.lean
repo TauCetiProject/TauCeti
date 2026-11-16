@@ -10,26 +10,28 @@ public import Mathlib.Topology.Constructible
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Spectral.Basic
-import Mathlib.Topology.Spectral.ConstructibleTopology
-import Mathlib.Topology.WithTopology
-import TauCeti.Topology.Spectral.PatchCriterion
 
 /-!
-# A basis criterion for spectral maps, and transport of spectrality along an embedding
+# Spectral maps: basis criteria, product slices, and transport along embeddings
 
-Utilities for spectral spaces and maps. A continuous map is spectral as soon as the preimage
-of every member of some topological **basis** of the target is compact; and a set contained in the
-range of an embedding is spectral exactly when its preimage is.
+Utilities for spectral maps and transport of spectrality. A continuous map is spectral as soon as
+the preimage of every member of some topological **basis** of the target is compact; a surjective
+spectral map transfers quasiseparatedness to its target; coordinate projections (when the other
+factors are compact) and horizontal/vertical product slices `x ↦ (x, y)` and `y ↦ (x, y)` are
+spectral; and a set contained in the range of an embedding is spectral exactly when its preimage is.
 
 The basis criterion first. Spectrality asks for compact preimages of all compact open sets; the
 reduction to a basis is the observation that a compact open set is a *finite* union of basis
 elements — cover it by the basis members it contains and extract a finite subcover — and a finite
-union of compact preimages is compact.
+union of compact preimages is compact. Nothing is assumed of the basis members themselves, not even
+compactness: only their preimages enter the argument. In the intended applications the basis
+members are the distinguished quasi-compact opens of a spectral space (Wedhorn's family `R` for
+`Spv (A, I)`), whose preimages are computed by hand, or a basis of a quotient space.
 
-Nothing is assumed of the basis members themselves, not even compactness: only their preimages
-enter the argument. In the intended applications the basis members are the distinguished
-quasi-compact opens of a spectral space (Wedhorn's family `R` for `Spv (A, I)`), whose preimages
-are computed by hand.
+The product slice maps and the surjective transfer of quasiseparatedness are used when studying
+equivalence relations via their graphs in `X × X`: slicing a graph along a fixed point extracts an
+equivalence class, while a surjective spectral quotient map carries quasiseparatedness to the
+quotient.
 
 Mathlib's `IsSpectralMap` API provides constructors from identities, compositions and embeddings,
 but no criterion that tests spectrality on a basis; this supplies the missing entry point.
@@ -46,8 +48,6 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
   vertical slices into a product are spectral maps.
 * `IsSpectralMap.quasiSeparatedSpace_of_surjective`: a surjective spectral map transfers
   quasiseparatedness to its target.
-* `PrespectralSpace.prod`, `QuasiSeparatedSpace.prod`, `SpectralSpace.prod`: binary products
-  of prespectral, quasiseparated prespectral, and spectral spaces.
 * `Topology.IsEmbedding.spectralSpace_preimage_iff` : a subset of the range of an embedding is
   spectral if and only if its preimage is — the transport step of any "prove it on a subspace"
   argument.
@@ -257,67 +257,6 @@ theorem _root_.IsSpectralMap.quasiSeparatedSpace_of_surjective [QuasiSeparatedSp
     exact ((hf.isCompact_preimage_of_isOpen hUo hUc).inter_of_isOpen
       (hf.isCompact_preimage_of_isOpen hVo hVc) (hUo.preimage hf.continuous)
       (hVo.preimage hf.continuous)).image hf.continuous
-
-/-- The product of two prespectral spaces is prespectral. -/
-instance _root_.PrespectralSpace.prod [PrespectralSpace X] [PrespectralSpace Y] :
-    PrespectralSpace (X × Y) := by
-  refine .of_isTopologicalBasis
-    (PrespectralSpace.isTopologicalBasis.prod PrespectralSpace.isTopologicalBasis) ?_
-  rintro _ ⟨U, ⟨_, hUc⟩, V, ⟨_, hVc⟩, rfl⟩
-  exact hUc.prod hVc
-
-/-- The product of two quasiseparated prespectral spaces is quasiseparated. -/
-theorem _root_.QuasiSeparatedSpace.prod [PrespectralSpace X] [PrespectralSpace Y]
-    [QuasiSeparatedSpace X] [QuasiSeparatedSpace Y] : QuasiSeparatedSpace (X × Y) := by
-  refine QuasiSeparatedSpace.of_isTopologicalBasis
-    (b := fun p : {U : Set X // IsOpen U ∧ IsCompact U} ×
-      {V : Set Y // IsOpen V ∧ IsCompact V} ↦ p.1.1 ×ˢ p.2.1) ?_ ?_
-  · have hb := PrespectralSpace.isTopologicalBasis (X := X) |>.prod
-      (PrespectralSpace.isTopologicalBasis (X := Y))
-    convert hb using 1
-    ext W
-    simp [Set.range, Set.image2, Subtype.exists, eq_comm]
-  · rintro ⟨⟨U₁, hU₁o, hU₁c⟩, ⟨V₁, hV₁o, hV₁c⟩⟩
-      ⟨⟨U₂, hU₂o, hU₂c⟩, ⟨V₂, hV₂o, hV₂c⟩⟩
-    rw [Set.prod_inter_prod]
-    exact (hU₁c.inter_of_isOpen hU₂c hU₁o hU₂o).prod
-      (hV₁c.inter_of_isOpen hV₂c hV₁o hV₂o)
-
-/-- The product of two spectral spaces is spectral. -/
-instance _root_.SpectralSpace.prod [SpectralSpace X] [SpectralSpace Y] :
-    SpectralSpace (X × Y) := by
-  have hb := PrespectralSpace.isTopologicalBasis (X := X) |>.prod
-    (PrespectralSpace.isTopologicalBasis (X := Y))
-  have hgen := hb.eq_generateFrom
-  have hT0 : T0Space (X × Y) := inferInstance
-  let tOrig : TopologicalSpace (X × Y) := inferInstance
-  let t' : TopologicalSpace (X × Y) :=
-    @instTopologicalSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
-  have hcompX : @CompactSpace X (constructibleTopology X) :=
-    @Function.Surjective.compactSpace (WithConstructibleTopology X) X _
-      (constructibleTopology X) WithTopology.ofTopology
-      (WithTopology.continuous_ofTopology _) inferInstance
-      (WithTopology.ofTopology_surjective _)
-  have hcompY : @CompactSpace Y (constructibleTopology Y) :=
-    @Function.Surjective.compactSpace (WithConstructibleTopology Y) Y _
-      (constructibleTopology Y) WithTopology.ofTopology
-      (WithTopology.continuous_ofTopology _) inferInstance
-      (WithTopology.ofTopology_surjective _)
-  have hc : @CompactSpace (X × Y) t' :=
-    @instCompactSpaceProd X Y (constructibleTopology X) (constructibleTopology Y) hcompX hcompY
-  refine @spectralSpace_of_isClopen_generateFrom _ _ t' tOrig hgen hc ?_ hT0
-  rintro _ ⟨U, ⟨hUo, hUc⟩, V, ⟨hVo, hVc⟩, rfl⟩
-  have hU : @IsClopen (X × Y) t' (Prod.fst ⁻¹' U) :=
-    @IsClopen.preimage _ _ t' (constructibleTopology X) _
-      (hUc.isClopen_constructibleTopology_of_isOpen hUo) Prod.fst
-      (@continuous_fst X Y (constructibleTopology X) (constructibleTopology Y))
-  have hV : @IsClopen (X × Y) t' (Prod.snd ⁻¹' V) :=
-    @IsClopen.preimage _ _ t' (constructibleTopology Y) _
-      (hVc.isClopen_constructibleTopology_of_isOpen hVo) Prod.snd
-      (@continuous_snd X Y (constructibleTopology X) (constructibleTopology Y))
-  dsimp only
-  rw [Set.prod_eq]
-  exact @IsClopen.inter (X × Y) t' _ _ hU hV
 
 end TauCeti
 

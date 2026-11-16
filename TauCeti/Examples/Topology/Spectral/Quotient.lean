@@ -45,9 +45,11 @@ example : SpectralSpace (Quotient (⊥ : Setoid Prop)) := by
     exact e.symm.isOpenMap
   exact spectralSpace_quotient_of_isOpenMap hR hs_open
 
-/-- On the empty spectral space, the total relation yields a spectral quotient via the explicit
-basis `{∅}`. -/
-example : SpectralSpace (Quotient (⊤ : Setoid Empty)) := by
+/-- On the empty spectral space, the total relation yields a spectral quotient with spectral and
+generalizing quotient map via the explicit basis `{∅}`. -/
+example : SpectralSpace (Quotient (⊤ : Setoid Empty)) ∧
+    IsSpectralMap (Quotient.mk (⊤ : Setoid Empty)) ∧
+    GeneralizingMap (Quotient.mk (⊤ : Setoid Empty)) := by
   have : QuasiSober Empty := ⟨fun h _ ↦ h.nonempty.elim fun e _ ↦ e.elim⟩
   have : SpectralSpace Empty := {}
   have hR : IsProConstructible {q : Empty × Empty | (⊤ : Setoid Empty) q.1 q.2} := by
@@ -83,7 +85,7 @@ example : SpectralSpace (Quotient (⊤ : Setoid Prop)) ∧
         right_inv := fun _ ↦ rfl }
     exact isOpenMap_fst.comp e.isOpenMap
   have hs_qc : IsSpectralMap fun q : {q : Prop × Prop // (⊤ : Setoid Prop) q.1 q.2} ↦ q.1.1 :=
-    isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal
+    hR.isSpectralMap_fst
   have hs_gen : GeneralizingMap
       fun q : {q : Prop × Prop // (⊤ : Setoid Prop) q.1 q.2} ↦ q.1.1 :=
     hs_qc.isLocallySpectralMap.generalizingMap_of_isOpenMap
@@ -149,11 +151,12 @@ example :
     · exact hnpos.ne' (OnePoint.coe_injective h0n)
 
 /-- Global quasicompactness of the first projection cannot be dropped: on discrete `ℕ` with the
-total relation, the first projection is open and generalizing, yet neither it nor the quotient map
-is spectral. -/
+total relation, the first projection is open, generalizing, and locally spectral, yet neither it
+nor the quotient map is spectral. -/
 example :
     IsOpenMap (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.1.1) ∧
     GeneralizingMap (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.1.1) ∧
+    IsLocallySpectralMap (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.1.1) ∧
     ¬ IsSpectralMap (fun q : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ↦ q.1.1) ∧
     ¬ IsSpectralMap (Quotient.mk (⊤ : Setoid ℕ)) := by
   let e : {q : ℕ × ℕ // (⊤ : Setoid ℕ) q.1 q.2} ≃ₜ ℕ × ℕ :=
@@ -161,9 +164,13 @@ example :
       invFun := fun q ↦ ⟨q, trivial⟩
       left_inv := fun ⟨_, _⟩ ↦ rfl
       right_inv := fun _ ↦ rfl }
-  refine ⟨isOpenMap_fst.comp e.isOpenMap, fun q y hy ↦ ?_, fun h ↦ ?_, fun h ↦ ?_⟩
+  refine ⟨isOpenMap_fst.comp e.isOpenMap, fun q y hy ↦ ?_, ?_, fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain rfl : y = q.1.1 := specializes_iff_eq.mp hy
     exact ⟨q, specializes_rfl, rfl⟩
+  · refine .of_isSpectralMap_restrict (continuous_fst.comp continuous_subtype_val)
+      fun U V hUV _ _ hUs _ ↦
+        ⟨(continuous_fst.comp continuous_subtype_val).continuousOn.mapsToRestrict hUV,
+          fun _ _ _ ↦ (isClosed_discrete _).isCompact⟩
   · have hc := h.isCompact_preimage_of_isOpen (isOpen_discrete {0}) isCompact_singleton
     have hcN : IsCompact (univ : Set ℕ) := by
       convert hc.image (continuous_snd.comp continuous_subtype_val)

@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Spectral.ConstructibleTopology
 public import TauCeti.Topology.Spectral.SpectralMap
 import Mathlib.Topology.WithTopology
+import TauCeti.Topology.Spectral.Prod
 
 /-!
 # Pro-constructible subsets and subspaces
@@ -60,10 +61,11 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   spaces are pro-constructible.
 * `TauCeti.IsProConstructible.isCompact` — a pro-constructible subset of a compact, quasi-sober,
   quasi-separated prespectral space is quasi-compact.
-* `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`, `.prespectralSpace`,
+* `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`, `.isSpectralMap_fst`, `.prespectralSpace`,
   `.quasiSeparatedSpace` — in a quasi-sober, quasi-separated prespectral space, a
-  pro-constructible subspace has a spectral inclusion and is prespectral and quasi-separated.
-  Ambient compactness and T₀ are not needed.
+  pro-constructible subspace has a spectral inclusion (and spectral first projection from a
+  product with a compact quasi-sober quasi-separated prespectral factor) and is prespectral and
+  quasi-separated. Ambient compactness and T₀ are not needed.
 * `TauCeti.IsProConstructible.mem_of_isGenericPoint` — in any topological space, every generic
   point of the closure of a pro-constructible subset belongs to that subset.
 * `TauCeti.IsProConstructible.quasiSober` — a pro-constructible subspace of a quasi-sober
@@ -194,12 +196,7 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
 topology is T₁. -/
 theorem isProConstructible_singleton [PrespectralSpace X] [T0Space X] (x : X) :
     IsProConstructible ({x} : Set X) := by
-  rw [IsProConstructible]
-  have heq : (WithTopology.ofTopology ⁻¹' ({x} : Set X) : Set (WithConstructibleTopology X)) =
-      {WithTopology.toTopology (constructibleTopology X) x} := by
-    ext y
-    exact ⟨fun h ↦ h ▸ rfl, fun h ↦ h ▸ rfl⟩
-  rw [heq]
+  rw [IsProConstructible, WithTopology.preimage_ofTopology, Set.image_singleton]
   exact isClosed_singleton
 
 /-! ### Functoriality -/
@@ -277,6 +274,13 @@ theorem IsProConstructible.isSpectralMap_subtypeVal (hs : IsProConstructible s) 
     rw [Subtype.isCompact_iff, Subtype.image_preimage_coe]
     rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, Set.inter_comm] at hcomp
     exact hcomp
+
+/-- The first projection from a pro-constructible subset of `X × Y` to `X` is spectral when `X`
+and `Y` are quasi-sober, quasi-separated prespectral spaces and `Y` is compact. -/
+theorem IsProConstructible.isSpectralMap_fst [CompactSpace Y] [QuasiSober Y]
+    [PrespectralSpace Y] [QuasiSeparatedSpace Y] {R : Set (X × Y)} (hR : IsProConstructible R) :
+    IsSpectralMap fun q : R ↦ q.1.1 :=
+  isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal
 
 /-- A pro-constructible subspace of a quasi-sober, quasi-separated prespectral space
 has a basis of quasi-compact opens. -/

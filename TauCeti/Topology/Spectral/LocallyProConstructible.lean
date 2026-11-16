@@ -295,7 +295,6 @@ theorem IsLocallySpectralMap.isClosedMap_iff_specializingMap {f : X → Y}
 /-- Every singleton is locally pro-constructible, without any ambient hypothesis on `X`. -/
 theorem isLocallyProConstructible_singleton (x : X) : IsLocallyProConstructible ({x} : Set X) := by
   intro U _ hUs
-  have := hUs
   by_cases hx : x ∈ U
   · convert isProConstructible_singleton (⟨x, hx⟩ : U) using 1
     ext u
@@ -310,7 +309,6 @@ theorem IsLocallyProConstructible.preimage {f : X → Y} {s : Set Y}
     (hs : IsLocallyProConstructible s) (hY : IsLocallySpectralSpace Y)
     (hf : IsLocallySpectralMap f) : IsLocallyProConstructible (f ⁻¹' s) := by
   intro U hUo hUs
-  have := hUs
   have hcharts (x : U) : ∃ (V : Set Y) (W : Set X), W ⊆ U ∩ f ⁻¹' V ∧
       IsOpen V ∧ IsOpen W ∧ x.1 ∈ W ∧ SpectralSpace V ∧ SpectralSpace W := by
     obtain ⟨V, hVo, hfxV, hVs⟩ := isLocallySpectralSpace_iff.mp hY (f x.1)
@@ -330,8 +328,8 @@ theorem IsLocallyProConstructible.preimage {f : X → Y} {s : Set Y}
       (hWs x)).toQuasiSeparatedSpace
   refine isLocallyProConstructible_iff_isProConstructible.mp
     (.of_isOpenCover_of_isProConstructible hO fun x ↦ ?_)
-  have := hVs x
-  have := hWs x
+  have : SpectralSpace (V x) := hVs x
+  have : SpectralSpace (W x) := hWs x
   have hmaps : MapsTo f (W x) (V x) := fun y hy ↦ (hWsub x hy).2
   have hWpc : IsProConstructible ((Subtype.val : W x → X) ⁻¹' (f ⁻¹' s)) :=
     (hs.isProConstructible_preimage (hVo x)).preimage
@@ -339,7 +337,8 @@ theorem IsLocallyProConstructible.preimage {f : X → Y} {s : Set Y}
   let e : O x ≃ₜ W x := IsEmbedding.subtypeVal.homeomorphOfSubsetRange (hWrange x)
   convert hWpc.preimage e.isProperMap.isSpectralMap using 1
   ext y
-  rfl
+  simp only [mem_preimage, e]
+  rw [IsEmbedding.homeomorphOfSubsetRange_apply_coe]
 
 /-- The trace of a locally pro-constructible subset on a spectral open subset is spectral. -/
 theorem IsLocallyProConstructible.spectralSpace_preimage
@@ -365,7 +364,6 @@ theorem IsLocallyProConstructible.isLocallySpectralSpace (hs : IsLocallyProConst
     (hX : IsLocallySpectralSpace X) : IsLocallySpectralSpace s :=
   isLocallySpectralSpace_iff.mpr fun x ↦ by
     obtain ⟨U, hUo, hxU, hUs⟩ := isLocallySpectralSpace_iff.mp hX x.1
-    have := hUs
     exact ⟨(Subtype.val : s → X) ⁻¹' U, hUo.preimage continuous_subtype_val, hxU,
       hs.spectralSpace_preimage hUo⟩
 

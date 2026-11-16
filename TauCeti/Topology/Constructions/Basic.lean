@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Defs
-import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Inseparable
+public import Mathlib.Topology.Homeomorph.Lemmas
+import Mathlib.Topology.Maps.OpenQuotient
 
 /-!
 # Quotients by setoids and fibre products of topological spaces
@@ -19,13 +21,25 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
 
 * `Setoid.image_quotient_mk_compl`: if `s` identifies only points of `t`, the quotient map sends
   the complement of `t` onto the complement of the image of `t`.
-* `Setoid.preimage_image_quotient_mk`, `Setoid.image_snd_preimage_fst`: the `s`-saturation of a set
-  expressed via `Quotient.mk s` and via the two projections of the graph of `s`.
+* `Setoid.preimage_image_quotient_mk`, `Setoid.image_snd_preimage_fst`,
+  `Setoid.image_subtypeVal_preimage_image_quotient_mk_comap`: the `s`-saturation of a set
+  expressed via `Quotient.mk s`, via the two projections of the graph of `s`, and under
+  restriction to a saturated subset.
+* `Setoid.range_quotient_map'_subtypeVal`, `Setoid.isEmbedding_quotient_map'_subtypeVal`:
+  the canonical map `Quotient (s.comap Subtype.val) → Quotient s` has range `Quotient.mk s '' U`,
+  and is a topological embedding when `Quotient.mk s` is open and `U` is `s`-saturated.
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
-* `Setoid.isOpenMap_fst_iff_snd`: by symmetry of `s`, the first projection from its graph is open
-  if and only if the second projection is open.
+* `Setoid.graphSwap`: the coordinate-swap self-homeomorphism of the graph of `s`.
+* `Setoid.isOpenMap_fst_iff_snd`, `Setoid.generalizingMap_fst_iff_snd`: by symmetry of `s`, the
+  first projection from its graph is open (resp. generalizing) if and only if the second
+  projection is.
+* `Setoid.stableUnderGeneralization_saturation`: when the first projection is generalizing, the
+  `s`-saturation preserves stability under generalization.
+* `Setoid.isOpenMap_quotient_mk_comap_subtypeVal`, `Setoid.generalizingMap_fst_comap_subtypeVal`:
+  restricting `s` to an open subset preserves openness of the quotient map and the generalizing
+  property of the first projection.
 * `Setoid.isOpenMap_quotient_mk_iff`: `Quotient.mk s` is an open map if and only if the first
   projection from the graph of `s` is open.
 * `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
@@ -83,6 +97,34 @@ theorem image_snd_preimage_fst (t : Set X) :
   · rintro ⟨x, hxt, hxy⟩
     exact ⟨⟨(x, y), hxy⟩, hxt, rfl⟩
 
+/-- The range of the canonical map `Quotient (s.comap Subtype.val) → Quotient s` is
+`Quotient.mk s '' U`. -/
+theorem range_quotient_map'_subtypeVal (U : Set X) :
+    range (Quotient.map' (Subtype.val : U → X) (s₁ := s.comap Subtype.val) (s₂ := s)
+        fun _ _ h ↦ h) =
+      Quotient.mk s '' U := by
+  ext z
+  constructor
+  · rintro ⟨a, rfl⟩
+    exact Quotient.inductionOn a fun u ↦ ⟨u.1, u.2, rfl⟩
+  · rintro ⟨u, huU, rfl⟩
+    exact ⟨Quotient.mk (s.comap Subtype.val) ⟨u, huU⟩, rfl⟩
+
+/-- For an `s`-saturated subset `U`, pushing forward the restricted saturation of `O ⊆ U` under
+`Subtype.val` recovers the `s`-saturation of `Subtype.val '' O` in `X`. -/
+theorem image_subtypeVal_preimage_image_quotient_mk_comap {U : Set X}
+    (hsat : ∀ ⦃x y⦄, x ∈ U → s x y → y ∈ U) (O : Set U) :
+    Subtype.val '' (Quotient.mk (s.comap Subtype.val) ⁻¹'
+        (Quotient.mk (s.comap Subtype.val) '' O)) =
+      Quotient.mk s ⁻¹' (Quotient.mk s '' (Subtype.val '' O)) := by
+  ext z
+  simp only [preimage_image_quotient_mk, mem_image, mem_ofPred_eq]
+  constructor
+  · rintro ⟨_, ⟨v, hvO, hvz⟩, rfl⟩
+    exact ⟨v.1, ⟨v, hvO, rfl⟩, hvz⟩
+  · rintro ⟨_, ⟨v, hvO, rfl⟩, hvz⟩
+    exact ⟨⟨z, hsat v.2 hvz⟩, ⟨v, hvO, hvz⟩, rfl⟩
+
 variable [TopologicalSpace X]
 
 /-- The image in `Quotient s` of an open set closed under the relation `s` is open. -/
@@ -108,14 +150,115 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     rintro _ y ⟨x, hx, rfl⟩ hxy
     exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
 
+/-- Swapping coordinates restricts to a self-homeomorphism of the graph of `s`. -/
+def graphSwap : {q : X × X // s q.1 q.2} ≃ₜ {q : X × X // s q.1 q.2} :=
+  (Homeomorph.prodComm X X).subtype fun _ ↦ ⟨s.symm, s.symm⟩
+
+@[simp]
+theorem graphSwap_apply (q : {q : X × X // s q.1 q.2}) :
+    s.graphSwap q = ⟨(q.1.2, q.1.1), s.symm q.2⟩ := by
+  rfl
+
+@[simp]
+theorem graphSwap_symm : s.graphSwap.symm = s.graphSwap := by
+  exact Homeomorph.ext fun _ ↦ rfl
+
+@[simp]
+theorem fst_comp_graphSwap :
+    (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ∘ s.graphSwap =
+      fun q : {q : X × X // s q.1 q.2} ↦ q.1.2 := by
+  rfl
+
+@[simp]
+theorem snd_comp_graphSwap :
+    (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) ∘ s.graphSwap =
+      fun q : {q : X × X // s q.1 q.2} ↦ q.1.1 := by
+  rfl
+
 /-- By symmetry of `s`, the first projection from the graph of `s` is open if and only if the
 second projection is open. -/
 theorem isOpenMap_fst_iff_snd :
     IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ↔
-      IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) := by
-  let e : {q : X × X // s q.1 q.2} ≃ₜ {q : X × X // s q.1 q.2} :=
-    (Homeomorph.prodComm X X).subtype fun _ ↦ ⟨s.symm, s.symm⟩
-  exact ⟨fun h ↦ h.comp e.isOpenMap, fun h ↦ h.comp e.symm.isOpenMap⟩
+      IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) :=
+  ⟨fun h ↦ s.fst_comp_graphSwap ▸ h.comp s.graphSwap.isOpenMap,
+    fun h ↦ s.snd_comp_graphSwap ▸ h.comp s.graphSwap.isOpenMap⟩
+
+/-- By symmetry of `s`, the first projection from the graph of `s` is generalizing if and only if
+the second projection is generalizing. -/
+theorem generalizingMap_fst_iff_snd :
+    GeneralizingMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ↔
+      GeneralizingMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) :=
+  ⟨fun h ↦ s.fst_comp_graphSwap ▸ s.graphSwap.isOpenEmbedding.generalizingMap.comp h,
+    fun h ↦ s.snd_comp_graphSwap ▸ s.graphSwap.isOpenEmbedding.generalizingMap.comp h⟩
+
+/-- If the first projection from the graph of `s` is generalizing, then the `s`-saturation of a
+subset stable under generalization is stable under generalization. -/
+theorem stableUnderGeneralization_saturation
+    (hs_gen : GeneralizingMap fun q : {q : X × X // s q.1 q.2} ↦ q.1.1)
+    {t : Set X} (ht : StableUnderGeneralization t) :
+    StableUnderGeneralization {y | ∃ x ∈ t, s x y} := by
+  rw [← s.image_snd_preimage_fst]
+  exact (s.generalizingMap_fst_iff_snd.mp hs_gen).stableUnderGeneralization_image
+    (ht.preimage (continuous_fst.comp continuous_subtype_val))
+
+/-- If `Quotient.mk s` is open and `U` is `s`-saturated, then the canonical map
+`Quotient (s.comap Subtype.val) → Quotient s` is a topological embedding. -/
+theorem isEmbedding_quotient_map'_subtypeVal (hq : IsOpenMap (Quotient.mk s))
+    {U : Set X} (hsat : ∀ ⦃x y⦄, x ∈ U → s x y → y ∈ U) :
+    IsEmbedding (Quotient.map' (Subtype.val : U → X) (s₁ := s.comap Subtype.val) (s₂ := s)
+      fun _ _ h ↦ h) :=
+  isEmbedding_of_isOpenQuotientMap_of_isInducing Subtype.val _
+    (Quotient.mk (s.comap Subtype.val)) (Quotient.mk s) rfl
+    IsEmbedding.subtypeVal.isInducing isQuotientMap_quotient_mk'
+    (.of_isOpenMap_isQuotientMap hq isQuotientMap_quotient_mk')
+    (fun a b hab ↦ Quotient.inductionOn₂ a b
+      (fun _ _ h ↦ Quotient.sound (s := s.comap Subtype.val) (Quotient.exact (s := s) h)) hab)
+    (by
+      rintro z ⟨_, ⟨u, rfl⟩, hzu⟩
+      exact ⟨⟨z, hsat u.2 (Quotient.exact hzu)⟩, rfl⟩)
+
+/-- Restricting a setoid with open quotient map to an open subset preserves openness of the
+quotient map. -/
+theorem isOpenMap_quotient_mk_comap_subtypeVal (hq : IsOpenMap (Quotient.mk s))
+    {U : Set X} (hUo : IsOpen U) :
+    IsOpenMap (Quotient.mk (s.comap (Subtype.val : U → X))) := fun O hOo ↦ by
+  rw [isOpen_coinduced]
+  have hpre : Quotient.mk' ⁻¹'
+      (Quotient.mk (s.comap (Subtype.val : U → X)) '' O) =
+      (Subtype.val : U → X) ⁻¹' (Quotient.mk s ⁻¹' (Quotient.mk s '' (Subtype.val '' O))) := by
+    change Quotient.mk (s.comap (Subtype.val : U → X)) ⁻¹'
+        (Quotient.mk (s.comap (Subtype.val : U → X)) '' O) = _
+    rw [(s.comap Subtype.val).preimage_image_quotient_mk, s.preimage_image_quotient_mk]
+    ext u
+    simp only [mem_ofPred_eq, mem_preimage, mem_image]
+    constructor
+    · rintro ⟨v, hvO, hvu⟩
+      exact ⟨v.1, ⟨v, hvO, rfl⟩, hvu⟩
+    · rintro ⟨_, ⟨v, hvO, rfl⟩, hvu⟩
+      exact ⟨v, hvO, hvu⟩
+  rw [hpre]
+  exact ((hq _ (hUo.isOpenMap_subtype_val O hOo)).preimage continuous_quotient_mk').preimage
+    continuous_subtype_val
+
+/-- Restricting a setoid with generalizing first projection to an open subset preserves the
+generalizing property of the first projection. -/
+theorem generalizingMap_fst_comap_subtypeVal
+    (hs_gen : GeneralizingMap fun q : {q : X × X // s q.1 q.2} ↦ q.1.1)
+    {U : Set X} (hUo : IsOpen U) :
+    GeneralizingMap fun q : {q : U × U // (s.comap Subtype.val) q.1 q.2} ↦ q.1.1 := by
+  intro q u' hu'
+  obtain ⟨p, hp_sp, hp1⟩ := hs_gen (a := ⟨(q.1.1.1, q.1.2.1), q.2⟩)
+    (hu'.map continuous_subtype_val)
+  have hp1' : p.1.1 = u'.1 := hp1
+  have hp2U : p.1.2 ∈ U :=
+    (hp_sp.map (continuous_snd.comp continuous_subtype_val)).mem_open hUo q.1.2.2
+  have hrp : s u'.1 p.1.2 := hp1' ▸ p.2
+  refine ⟨⟨(u', ⟨p.1.2, hp2U⟩), hrp⟩, ?_, rfl⟩
+  refine IsEmbedding.subtypeVal.isInducing.specializes_iff.mp (specializes_prod.2 ⟨?_, ?_⟩)
+  · exact IsEmbedding.subtypeVal.isInducing.specializes_iff.mp <|
+      hp1' ▸ hp_sp.map (continuous_fst.comp continuous_subtype_val)
+  · exact IsEmbedding.subtypeVal.isInducing.specializes_iff.mp <|
+      hp_sp.map (continuous_snd.comp continuous_subtype_val)
 
 end Setoid
 

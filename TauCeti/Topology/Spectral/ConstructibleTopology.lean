@@ -36,6 +36,8 @@ space the constructible topology is totally separated, which makes compact subse
   subset stable under generalization is the intersection of the quasi-compact opens containing it.
 * `IsCompact.isClopen_preimage_ofTopology_of_isOpen`: a quasi-compact open subset is clopen
   in `WithConstructibleTopology X`.
+* `TauCeti.compactSpace_constructibleTopology`: compactness of `constructibleTopology X` directly
+  on `X` (unbundled form of `compactSpace_withConstructibleTopology`).
 * `WithConstructibleTopology.instTotallySeparatedSpace`: the constructible topology of a T₀
   prespectral space is totally separated, hence Hausdorff and totally disconnected. On a spectral
   space it is also compact (`compactSpace_withConstructibleTopology`), so it is profinite.
@@ -160,3 +162,14 @@ instance WithConstructibleTopology.instTotallySeparatedSpace [PrespectralSpace X
   · obtain ⟨V, hVo, hVc, hyV, hxV⟩ :=
       PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact.1 (hUo.not_specializes hx hy)
     exact ⟨_, (hVc.isClopen_preimage_ofTopology_of_isOpen hVo).compl, hxV, fun h ↦ h hyV⟩
+
+/-- On a compact, quasi-sober, quasi-separated prespectral space (in particular a spectral space),
+the constructible topology itself is compact. This is the unbundled form of Mathlib's
+`compactSpace_withConstructibleTopology`. -/
+theorem TauCeti.compactSpace_constructibleTopology [CompactSpace X] [QuasiSober X]
+    [PrespectralSpace X] [QuasiSeparatedSpace X] :
+    @CompactSpace X (constructibleTopology X) :=
+  @Function.Surjective.compactSpace (WithConstructibleTopology X) X _
+    (constructibleTopology X) WithTopology.ofTopology
+    (WithTopology.continuous_ofTopology _) inferInstance
+    (WithTopology.ofTopology_surjective _)
