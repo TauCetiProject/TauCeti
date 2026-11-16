@@ -268,43 +268,43 @@ theorem cuspOfEndpoint_eq_iff {p q : ℤ × ℤ} (hp : p ≠ (0, 0)) (hq : q ≠
      simp [cuspOfEndpoint, hbd, (by exact_mod_cast hbd : (b : ℚ) + d ≠ 0)]]
 
 /-- `evenSL` carries the left endpoint `a / b` to the right endpoint `c / d`. -/
-theorem evenSL_smul_left {a b c d : ℤ} (h : c * b - a * d = 1) :
+@[simp] theorem evenSL_smul_left {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (evenSL h) • cuspOfEndpoint (a, b) = cuspOfEndpoint (c, d) := by
   rw [← sideSL_smul_infty h, evenSL_eq_conj_S_inv, map_mul, map_mul, map_inv _ (sideSL h),
     mul_smul, mul_smul, inv_smul_smul, S_inv_eq_sideSL, sideSL_smul_infty]; simp [cuspOfEndpoint]
 /-- `evenSL` carries the right endpoint `c / d` back to the left endpoint `a / b`. -/
-theorem evenSL_smul_right {a b c d : ℤ} (h : c * b - a * d = 1) :
+@[simp] theorem evenSL_smul_right {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (evenSL h) • cuspOfEndpoint (c, d) = cuspOfEndpoint (a, b) := by
   rw [← sideSL_smul_zero h, evenSL_eq_conj_S_inv, map_mul, map_mul, map_inv _ (sideSL h),
     mul_smul, mul_smul, inv_smul_smul, S_inv_eq_sideSL, sideSL_smul_zero]
   exact sideSL_smul_infty h
 /-- `oddSL` carries `a / b` to the mediant `(a + c) / (b + d)`. -/
-theorem oddSL_smul_left {a b c d : ℤ} (h : c * b - a * d = 1) :
+@[simp] theorem oddSL_smul_left {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (oddSL h) • cuspOfEndpoint (a, b) =
       cuspOfEndpoint (a + c, b + d) := by
   rw [← sideSL_smul_infty h, oddSL_eq_conj_R_inv, map_mul, map_mul, map_inv _ (sideSL h),
     mul_smul, mul_smul, inv_smul_smul, R_inv_eq_sideSL, sideSL_smul_infty]; simp [cuspOfEndpoint]
 /-- `oddSL` carries the mediant `(a + c) / (b + d)` to `c / d`. -/
-theorem oddSL_smul_mediant {a b c d : ℤ} (h : c * b - a * d = 1) :
+@[simp] theorem oddSL_smul_mediant {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (oddSL h) • cuspOfEndpoint (a + c, b + d) =
       cuspOfEndpoint (c, d) := by
   rw [← sideSL_smul_neg_one h, oddSL_eq_conj_R_inv, map_mul, map_mul, map_inv _ (sideSL h),
     mul_smul, mul_smul, inv_smul_smul, R_inv_eq_sideSL, sideSL_smul_neg_one]; simp [cuspOfEndpoint]
 /-- `oddSL` carries `c / d` back to `a / b`. -/
-theorem oddSL_smul_right {a b c d : ℤ} (h : c * b - a * d = 1) :
+@[simp] theorem oddSL_smul_right {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (oddSL h) • cuspOfEndpoint (c, d) = cuspOfEndpoint (a, b) := by
   rw [← sideSL_smul_zero h, oddSL_eq_conj_R_inv, map_mul, map_mul, map_inv _ (sideSL h),
     mul_smul, mul_smul, inv_smul_smul, R_inv_eq_sideSL, sideSL_smul_zero]
   exact sideSL_smul_infty h
 /-- `freeSL` carries `a / b` to `c' / d'`. -/
-theorem freeSL_smul_left {a b c d a' b' c' d' : ℤ}
+@[simp] theorem freeSL_smul_left {a b c d a' b' c' d' : ℤ}
     (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) :
     SpecialLinearGroup.mapGL ℚ (freeSL h h') • cuspOfEndpoint (a, b) = cuspOfEndpoint (c', d') := by
   rw [← sideSL_smul_infty h, freeSL_eq_sideSL_mul_S_inv_mul_inv, map_mul, map_mul,
     map_inv _ (sideSL h), mul_smul, mul_smul, inv_smul_smul, S_inv_eq_sideSL, sideSL_smul_infty]
   simp [cuspOfEndpoint]
 /-- `freeSL` carries `c / d` to `a' / b'`. -/
-theorem freeSL_smul_right {a b c d a' b' c' d' : ℤ}
+@[simp] theorem freeSL_smul_right {a b c d a' b' c' d' : ℤ}
     (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) :
     SpecialLinearGroup.mapGL ℚ (freeSL h h') • cuspOfEndpoint (c, d) = cuspOfEndpoint (a', b') := by
   rw [← sideSL_smul_zero h, freeSL_eq_sideSL_mul_S_inv_mul_inv, map_mul, map_mul,
@@ -418,7 +418,7 @@ theorem rightCusp_def (F : FareySymbol) (i : Fin F.labels.length) :
 @[simp] theorem evenSideSL_smul_rightCusp (F : FareySymbol) (i : Fin F.labels.length) :
     SpecialLinearGroup.mapGL ℚ (F.evenSideSL i) • F.rightCusp i = F.leftCusp i :=
   evenSL_smul_right _
-theorem oddSideSL_smul_leftCusp (F : FareySymbol) (i : Fin F.labels.length) :
+@[simp] theorem oddSideSL_smul_leftCusp (F : FareySymbol) (i : Fin F.labels.length) :
     SpecialLinearGroup.mapGL ℚ (F.oddSideSL i) • F.leftCusp i =
       cuspOfEndpoint ((F.leftEndpoint i).1 + (F.rightEndpoint i).1,
         (F.leftEndpoint i).2 + (F.rightEndpoint i).2) := oddSL_smul_left _
