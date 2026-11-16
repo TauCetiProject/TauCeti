@@ -305,10 +305,7 @@ determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vecto
 theorem exists_det_eq_neg_one [Nontrivial F] [FiniteDimensional ℝ F] :
     ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 := by
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  refine ⟨(ℝ ∙ v)ᗮ.reflection, ?_⟩
-  rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
-    finrank_span_singleton hv]
-  simp
+  exact ⟨(ℝ ∙ v)ᗮ.reflection, linearEquiv_det_reflection_orthogonal_singleton hv⟩
 
 /-- A nontrivial finite-dimensional real inner product space has a linear isometry whose
 underlying continuous linear map has negative determinant, the form taken by the
