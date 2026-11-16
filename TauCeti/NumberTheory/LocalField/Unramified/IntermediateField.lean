@@ -95,6 +95,19 @@ theorem inertiaDegree_eq_zero_iff (L : IntermediateField K (SeparableClosure K))
     simp [h, (inertiaDegree_pos L).ne']
   · simp [h, inertiaDegree_of_not_finite h]
 
+/-- The residue degree divides the field degree, including the infinite case where both vanish. -/
+theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K)) :
+    L.inertiaDegree ∣ Module.finrank K L := by
+  by_cases h : Module.Finite K L
+  · rw [inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    exact ⟨TauCeti.ramificationIndex K L,
+      (ramificationIndex_mul_inertiaDegree K L).symm.trans (mul_comm _ _)⟩
+  · rw [inertiaDegree_of_not_finite h, Module.finrank_of_infinite_dimensional h]
+
 /-- The residue degree is invariant under `K`-algebra equivalence, including the infinite case. -/
 theorem inertiaDegree_eq_of_algEquiv {L M : IntermediateField K (SeparableClosure K)}
     (e : L ≃ₐ[K] M) : L.inertiaDegree = M.inertiaDegree := by
