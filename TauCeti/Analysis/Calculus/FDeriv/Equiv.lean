@@ -46,6 +46,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
+  itself, the derivative at such a point has nonzero determinant.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
   space to itself, `det De(e⁻¹ p) · det De⁻¹(p) = 1` at a point `p` of the target.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
@@ -167,6 +169,16 @@ theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.sou
   ContinuousLinearMap.inverse_eq (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
     (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
 
+/-- An open partial homeomorphism of a space to itself which is differentiable at a point of its
+source, and whose inverse is differentiable at the image point, has a derivative with nonzero
+determinant there. -/
+theorem det_fderiv_ne_zero (e : OpenPartialHomeomorph E E) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).det ≠ 0 := by
+  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hy he hes
+  rw [← hA]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
+
 /-- For an open partial homeomorphism of a space to itself, differentiable at `e⁻¹ p` with inverse
 differentiable at a point `p` of its target, the Jacobian determinants of `e` at `e⁻¹ p` and of
 `e⁻¹` at `p` are reciprocal. -/
@@ -182,13 +194,9 @@ with inverse `C^n` on its target, has a derivative with nonzero determinant at e
 source. -/
 theorem det_fderiv_ne_zero_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
     (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
-    (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 := by
-  have h := e.det_fderiv_mul_det_fderiv_symm (e.map_source hx)
-    ((he.differentiableOn hn).differentiableAt
-      (e.open_source.mem_nhds (e.map_target (e.map_source hx))))
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 :=
+  e.det_fderiv_ne_zero hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
     ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
-  rw [e.left_inv hx] at h
-  exact left_ne_zero_of_mul_eq_one h
 
 /-- For an open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, the Jacobian determinant of the inverse at `e x` is the
