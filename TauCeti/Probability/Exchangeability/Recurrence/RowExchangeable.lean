@@ -426,17 +426,6 @@ private theorem tendsto_prefixLaw_horizonWords_inter_cellWords [IsFiniteMeasure 
       MeasurableSet.of_discrete]
   rfl
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
-/-- The cell preimage of a finite window of the visited successor array read at the cells `τ p`:
-the set of outcomes whose visited successor array has the prescribed entries at those cells. -/
-private theorem preimage_restrict_visitedSuccessorProcess (τ : α × ℕ → α × ℕ)
-    (F : Finset (α × ℕ)) (g : F → α) :
-    (fun ω ↦ F.restrict fun p : α × ℕ ↦ visitedSuccessorProcess X (τ p) ω) ⁻¹' {g} =
-      {ω | ∀ p : F, visitedSuccessorArray (fun n ↦ X n ω) (τ p).1 (τ p).2 = g p} := by
-  ext ω
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
-    visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
-
 /-- **The visited successor array of a recurrent Markov exchangeable process is row
 exchangeable.** Its law is unchanged when the entries of each row are permuted, with a permutation
 chosen separately for each row.
