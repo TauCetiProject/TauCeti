@@ -45,19 +45,19 @@ namespace TauCeti.Probability
 variable {ι α β : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Any finite product of affinely shifted coordinates and their conjugates is
-integrable under a proper complex Gaussian law. -/
+integrable under a proper complex Gaussian law, with independent shifts at each position. -/
 theorem integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure
-    (m c : ι → ℂ) (C : Matrix ι ι ℂ) (s : Finset α) (t : Finset β)
-    (f : α → ι) (g : β → ι) :
-    Integrable (fun z ↦ (∏ i ∈ s, (z (f i) - c (f i))) *
-      ∏ j ∈ t, star (z (g j) - c (g j))) (properComplexGaussianMeasure m C) := by
+    (m : ι → ℂ) (C : Matrix ι ι ℂ) (s : Finset α) (t : Finset β)
+    (f : α → ι) (g : β → ι) (c : α → ℂ) (d : β → ℂ) :
+    Integrable (fun z ↦ (∏ i ∈ s, (z (f i) - c i)) *
+      ∏ j ∈ t, star (z (g j) - d j)) (properComplexGaussianMeasure m C) := by
   classical
   let L : α ⊕ β → (ι → ℂ) →L[ℝ] ℂ := Sum.elim
     (fun i ↦ ContinuousLinearMap.proj (f i))
     (fun j ↦ Complex.conjCLE.toContinuousLinearMap.comp (ContinuousLinearMap.proj (g j)))
-  simpa [L, Finset.prod_disjSum, map_sub, sub_eq_add_neg] using
+  simpa [L, Finset.prod_disjSum, sub_eq_add_neg] using
     IsGaussian.integrable_prod_clm (properComplexGaussianMeasure m C)
-      (s.disjSum t) L (fun i ↦ -L i c)
+      (s.disjSum t) L (Sum.elim (fun i ↦ -c i) (fun j ↦ -star (d j)))
 
 /-- The complex Gaussian contraction recursion with arbitrary affine shifts on the
 remaining factors. A distinguished centered coordinate pairs only with conjugated coordinates. -/
@@ -259,7 +259,8 @@ theorem integral_prod_mul_prod_conj_properComplexGaussianMeasure
         ((∏ i ∈ s \ p, m (f i)) * ∏ j ∈ t \ q, star (m (g j))) *
           ∑ e : p ≃ q, ∏ i : p, C (f i) (g (e i)) := by
   have hterm (p : Finset α) (q : Finset β) :=
-    integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure m m C p q f g
+    integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure m C p q f g
+      (fun i ↦ m (f i)) (fun j ↦ m (g j))
   have hexpand (z : ι → ℂ) :
       (∏ i ∈ s, z (f i)) * (∏ j ∈ t, star (z (g j))) =
         ∑ p ∈ s.powerset, ∑ q ∈ t.powerset,
@@ -311,6 +312,19 @@ theorem integral_prod_norm_sq_sub_properComplexGaussianMeasure
   simp_rw [hp]
   exact integral_prod_mul_prod_conj_sub_properComplexGaussianMeasure_eq_permanent m hC f f
 
+/-- Mixed powers of a standard circular complex Gaussian and its conjugate are integrable,
+including unequal degrees and zero powers. -/
+theorem integrable_pow_mul_conj_pow_properComplexGaussianScalar (n r : ℕ) :
+    Integrable (fun z ↦ z ^ n * conj z ^ r) properComplexGaussianScalar := by
+  rw [properComplexGaussianScalar_def]
+  apply (integrable_map_measure (f := fun z : Unit → ℂ ↦ z ())
+    (g := fun z : ℂ ↦ z ^ n * conj z ^ r) (by fun_prop)
+    (measurable_pi_apply ()).aemeasurable).2
+  simpa [Function.comp_def] using
+    integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+      (fun _ : Unit ↦ (0 : ℂ)) 1 (univ : Finset (Fin n)) (univ : Finset (Fin r))
+      (fun _ ↦ ()) (fun _ ↦ ()) (fun _ ↦ 0) (fun _ ↦ 0)
+
 /-- Mixed moments of a standard circular complex Gaussian: equal degrees give a factorial,
 and unequal degrees give zero. In particular its holomorphic moments of positive degree vanish. -/
 @[simp]
@@ -339,16 +353,16 @@ open scoped ComplexOrder
 variable {Ω ι α β : Type*} [MeasurableSpace Ω] [Fintype ι] [DecidableEq ι]
   {P : Measure Ω} {Z : Ω → ι → ℂ} {m : ι → ℂ} {C : Matrix ι ι ℂ}
 
-/-- Affinely shifted coordinate products and their conjugates are integrable for a random
-vector with a proper complex Gaussian law, on any underlying sample space. -/
+/-- Coordinate products with independent shifts at each position and their conjugates are
+integrable for a random vector with a proper complex Gaussian law, on any sample space. -/
 theorem integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure
-    (hZ : HasLaw Z (properComplexGaussianMeasure m C) P) (c : ι → ℂ)
-    (s : Finset α) (t : Finset β) (f : α → ι) (g : β → ι) :
-    Integrable (fun ω ↦ (∏ i ∈ s, (Z ω (f i) - c (f i))) *
-      ∏ j ∈ t, star (Z ω (g j) - c (g j))) P :=
+    (hZ : HasLaw Z (properComplexGaussianMeasure m C) P)
+    (s : Finset α) (t : Finset β) (f : α → ι) (g : β → ι) (c : α → ℂ) (d : β → ℂ) :
+    Integrable (fun ω ↦ (∏ i ∈ s, (Z ω (f i) - c i)) *
+      ∏ j ∈ t, star (Z ω (g j) - d j)) P :=
   hZ.integrable_comp
     (TauCeti.Probability.integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure
-      m c C s t f g)
+      m C s t f g c d)
 
 /-- The complex Wick formula for a random vector with a proper complex Gaussian law.
 The bijections pair holomorphic with antiholomorphic positions, including repeated coordinates. -/

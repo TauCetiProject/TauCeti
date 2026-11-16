@@ -15,6 +15,10 @@ The permanent expands along any column by deleting that column and each possible
 The minors use the order-preserving maps `Fin.succAbove`. Independent equivalences of the
 row and column indices preserve the permanent. These identities support iterated Gaussian
 covariance contractions.
+
+The column expansion adapts Mathlib's `Matrix.det_succ_column_zero`, `Matrix.det_succ_row`,
+and `Matrix.det_succ_column` in `Mathlib/LinearAlgebra/Matrix/Determinant/Basic.lean`,
+with the alternating signs omitted.
 -/
 
 public section
