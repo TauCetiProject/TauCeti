@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
-import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
-import TauCeti.Analysis.Calculus.Deriv.Antilipschitz
+import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
 import TauCeti.Analysis.PDE.Regularity.Interval
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
@@ -67,13 +66,6 @@ namespace TauCeti.PDE
 
 variable {x₀ x₁ : ℝ} {p : ENNReal} [Fact (1 ≤ p)] {A f F : ℝ → ℝ}
 
-/-- Kirchhoff's potential `Ψ(y) = ∫_0^y A` of a continuous coefficient is `C¹`. -/
-private theorem contDiff_one_intervalIntegral_zero (hA : Continuous A) :
-    ContDiff ℝ 1 fun z ↦ ∫ s in 0..z, A s :=
-  contDiff_one_iff_deriv.2
-    ⟨fun y ↦ (hA.integral_hasStrictDerivAt 0 y).hasDerivAt.differentiableAt,
-      by rw [funext (hA.deriv_integral _ 0)]; exact hA⟩
-
 /-- The primitive `G(r) = ∫_{x₀}^r f + F(r)` of the data is interval integrable on `[x₀, x₁]`. -/
 private theorem intervalIntegrable_intervalIntegral_add (hx : x₀ < x₁)
     (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : IntegrableOn F (Ioo x₀ x₁)) :
@@ -114,7 +106,7 @@ theorem exists_forall_intervalIntegral_intervalRepresentativeL_eq (hx : x₀ < x
   have hac : AbsolutelyContinuousOnInterval ((fun z ↦ ∫ s in 0..z, A s) ∘ v) x₀ t :=
     ((W1p.absolutelyContinuousOnInterval_intervalRepresentativeL hx u).mono
       (uIcc_subset_uIcc left_mem_uIcc htI)).comp_of_contDiffAt fun _ _ ↦
-      (contDiff_one_intervalIntegral_zero hA).contDiffAt
+      (hA.contDiff_one_primitive 0).contDiffAt
   have hne : ∀ᵐ r ∂volume, r ≠ x₁ := by simp [ae_iff, measure_singleton]
   have hderiv : ∀ᵐ r, r ∈ uIoc x₀ (t : ℝ) →
       deriv ((fun z ↦ ∫ s in 0..z, A s) ∘ v) r = k - ((∫ s in x₀..r, f s) + F r) := by
@@ -182,10 +174,8 @@ private theorem exists_absolutelyContinuousOnInterval_and_ae_hasDerivAt (hx : x�
     ∃ (v : ℝ → ℝ) (k : ℝ), AbsolutelyContinuousOnInterval v x₀ x₁ ∧ v x₀ = g₀ ∧ v x₁ = g₁ ∧
       ∀ᵐ r, r ∈ Ioo x₀ x₁ →
         HasDerivAt v ((A (v r))⁻¹ * (k - ((∫ s in x₀..r, f s) + F r))) r := by
-  obtain ⟨g, hg, hgΨ, hglip⟩ := Differentiable.exists_lipschitzWith_inverse_of_le_deriv
-    ((contDiff_one_intervalIntegral_zero hA).differentiable one_ne_zero) hlam fun y ↦ by
-      rw [hA.deriv_integral _ 0]
-      exact hAlam y
+  obtain ⟨g, -, hglip, hgΨ, -, hgd⟩ :=
+    TauCeti.exists_orderIso_contDiff_inverse_intervalIntegral hA hlam hAlam 0
   set G : ℝ → ℝ := fun r ↦ (∫ s in x₀..r, f s) + F r
   have hGi := intervalIntegrable_intervalIntegral_add hx hf hF
   -- The solution `w` of the linear problem, `-w'' = f + F'` with boundary values `Ψ(g₀), Ψ(g₁)`.
@@ -208,9 +198,7 @@ private theorem exists_absolutelyContinuousOnInterval_and_ae_hasDerivAt (hx : x�
     by simp [hw_def, hgΨ _], by simp only [Function.comp_apply, hw₁, hgΨ _], ?_⟩
   -- Away from the null set where `w` is not differentiable, the chain rule applies to `Ψ⁻¹ ∘ w`.
   filter_upwards [hwd] with r hr hrI
-  exact (HasDerivAt.of_local_left_inverse hglip.continuous.continuousAt
-    (hA.integral_hasStrictDerivAt 0 (g (w r))).hasDerivAt (hlam.trans_le (hAlam _)).ne'
-    (Eventually.of_forall hg)).comp r (hr (Icc_subset_uIcc (Ioo_subset_Icc_self hrI)))
+  exact (hgd (w r)).comp r (hr (Icc_subset_uIcc (Ioo_subset_Icc_self hrI)))
 
 /-- **Existence for the quasilinear Dirichlet problem with a coefficient `A(u) ≥ λ`.** The
 solution is represented by the function `Ψ⁻¹ ∘ w` of

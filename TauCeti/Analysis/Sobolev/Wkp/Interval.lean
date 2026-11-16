@@ -233,7 +233,7 @@ theorem exists_firstOrder_mem_w1p0Submodule_and_iteratedGradient_ae_eq
       exact h
   obtain ⟨u, hu⟩ := exists_value_ae_eq_of_forall_hasWeakLineDerivOn (mu := volume)
     (Omega := ⟨Ioo a b, isOpen_Ioo⟩) 1
-    (hvc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p)
+    (TauCeti.intervalIntegral.memLp_primitive hwi (left_mem_Icc.2 hab.le))
     (fun c => c • d) fun c => by
       rw [value_smul]
       simpa using ((hdv.congr_ae_deriv hd.symm).smul_direction c).congr_ae_deriv
@@ -262,11 +262,8 @@ theorem lineDerivL_one_surjective_Ioo (k : ℕ) :
     have hgi : IntegrableOn (value k d : ℝ → ℝ) (Ioo a b) :=
       (Lp.memLp (value k d)).integrable Fact.out
     set v : ℝ → ℝ := fun t => ∫ s in a..t, value k d s
-    have hvc : ContinuousOn v (Icc a b) :=
-      TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hgi
-        (left_mem_Icc.2 hab.le)
     have hvm : MemLp v p (volume.restrict (Ioo a b)) :=
-      hvc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p
+      TauCeti.intervalIntegral.memLp_primitive hgi (left_mem_Icc.2 hab.le)
     have hdv : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ v (value k d) 1 :=
       hasWeakLineDerivOn_intervalIntegral_left hgi
     cases k with

@@ -38,6 +38,7 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `Continuous.contDiff_one_primitive`: the primitive of a continuous function is `C¹`.
 * `TauCeti.intervalIntegral.memLp_primitive`: on a bounded interval `(a, b)`, the primitive based
   at a point of `[a, b]` of a function integrable on `(a, b)` lies in every `Lᵖ(a, b)`.
 * `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
@@ -324,3 +325,11 @@ theorem integral_deriv_smul_primitive_eq_sub_of_le {φ : ℝ → ℝ} (hab : a �
 end intervalIntegral
 
 end TauCeti
+
+/-- The primitive `z ↦ ∫ s in a..z, f s` of a continuous function is `C¹`, with derivative `f`. -/
+theorem Continuous.contDiff_one_primitive {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {f : ℝ → E} (hf : Continuous f) (a : ℝ) :
+    ContDiff ℝ 1 fun z ↦ ∫ s in a..z, f s :=
+  contDiff_one_iff_deriv.2
+    ⟨fun y ↦ (hf.integral_hasStrictDerivAt a y).hasDerivAt.differentiableAt,
+      by rw [funext (hf.deriv_integral _ a)]; exact hf⟩
