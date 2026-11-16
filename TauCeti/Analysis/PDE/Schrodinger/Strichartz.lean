@@ -315,19 +315,6 @@ section TwoPairs
 
 variable {p q p₁ q₁ : ℝ≥0} {r r' r₁ r₁' : ℝ≥0∞} [r'.HolderConjugate r] [r₁'.HolderConjugate r₁]
 
-/-- The dual Strichartz estimate, with `S(-s)` written as the adjoint `S(s)*` of the phase
-propagator `S(s)`. -/
-private theorem enorm_integral_adjoint_schrodingerPropagator_le {a b : ℝ≥0∞} {C : ℝ≥0}
-    (hC : ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
-      Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) →
-      ‖∫ s, schrodingerPropagator ℂ (-s) (F s)‖ₑ ≤ C * eLpNorm (fun s ↦ eLpNorm (F s) a volume) b)
-    (F : ℝ → Lp ℂ 2 (volume : Measure E)) (hF : AEStronglyMeasurable F)
-    (hSF : Integrable (fun s ↦ ((phasePropagator (E := E) ℂ laplacianSymbol s)†) (F s))) :
-    ‖∫ s, ((phasePropagator (E := E) ℂ laplacianSymbol s)†) (F s)‖ₑ ≤
-      C * eLpNorm (fun s ↦ eLpNorm (F s) a volume) b := by
-  simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using
-    hC F hF (by simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using hSF)
-
 /-- **The inhomogeneous Strichartz estimate for the Schrödinger equation** in every dimension `n`,
 in weak form, for two non-endpoint admissible pairs: `2 < q, q₁ < ∞` with `2 / q + n / r = n / 2`
 and `2 / q₁ + n / r₁ = n / 2`, where `p`, `p₁`, `r'` and `r₁'` are the Hölder conjugates of `q`,
@@ -365,12 +352,9 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     inv_one_sub_two_rpow_neg_ne_top (ENNReal.coe_ne_zero.2 hpq₁.ne_zero) hp hpp
   refine ⟨K.toNNReal * C₁ * C, fun F G hF hG hSF hSG ↦ ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
-  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply]
-  exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp
-    (enorm_integral_adjoint_schrodingerPropagator_le hC₁)
-    (enorm_integral_adjoint_schrodingerPropagator_le hC) hF hG
-    (by simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using hSF)
-    (by simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using hSG)
+  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply, ← schrodingerPropagator_def]
+  simp_rw [← adjoint_schrodingerPropagator] at hC₁ hC hSF hSG
+  exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp hC₁ hC hF hG hSF hSG
 
 end TwoPairs
 
