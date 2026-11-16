@@ -17,10 +17,12 @@ import TauCeti.Analysis.Normed.Operator.Compact.Basic
 /-!
 # Covering estimates, total boundedness, and compactness for Gelfand and Kolmogorov numbers
 
-Unlike approximation numbers—whose decay to zero requires the approximation property on general
-Banach targets—both the Kolmogorov numbers `dₙ(T)` and the Gelfand numbers `cₙ(T)` detect total
-boundedness of `T(B_E)` and, when the target is complete, compactness of `T` without any geometric
-assumption on the spaces.
+For approximation numbers `aₙ(T)`, decay `aₙ(T) → 0` implies compactness on Banach targets without
+the approximation property, while the approximation property of the target guarantees `aₙ(T) → 0`
+for every compact operator into it (a converse that fails on general Banach targets). By contrast,
+both the Kolmogorov numbers `dₙ(T)` and the Gelfand numbers `cₙ(T)` detect total boundedness of
+`T(B_E)` and, when the target is complete, compactness of `T` without any geometric assumption on
+the spaces.
 
 * **Covering upper bounds.** An `ε`-cover of `T(B_E)` of cardinality at most `n` bounds `dₙ(T)` by
   `ε * ‖c‖₊` for every scalar `c` with `1 < ‖c‖` (taking the span of the centres), hence by `ε`
@@ -364,42 +366,22 @@ theorem ContinuousLinearMap.gelfandNumber_le_two_mul_of_isCover {T : E →L[𝕜
   refine (T.gelfandNumber_le hrank).trans ?_
   rw [← NNReal.coe_le_coe]
   push_cast
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ ?_
-  by_cases hx0 : ‖(x : E)‖ = 0
-  · have hTx0 : ‖T (x : E)‖ ≤ 0 := by simpa [hx0] using T.le_opNorm (x : E)
-    simpa [← Submodule.norm_coe, hx0] using hTx0
-  · -- Rescale `x` onto the unit sphere so `T u` lies in the covered image `T(B_E)`.
-    let u : E := (‖(x : E)‖⁻¹ : 𝕜) • (x : E)
-    have hu_norm : ‖u‖ = 1 := by
-      simp [u, norm_smul, inv_mul_cancel₀ hx0]
-    have hTu : T u ∈ T '' Metric.closedBall 0 1 :=
-      ⟨u, mem_closedBall_zero_iff.mpr hu_norm.le, rfl⟩
-    obtain ⟨y, hyC, huy⟩ :=
-      Metric.isCover_iff_subset_iUnion_closedBall.mp hcover hTu |> mem_iUnion₂.mp
-    let j : C := ⟨y, hyC⟩
-    have hzero : φ j (T u) = 0 := by
-      have hx_ker : A (x : E) = 0 := x.2
-      have hu_ker : A u = 0 := by simp [u, hx_ker]
-      exact congrFun hu_ker j
-    have hy_le : ‖y‖ ≤ ‖T u - y‖ := by
-      calc ‖y‖ = ‖φ j (y - T u)‖ := by rw [map_sub, hzero, sub_zero, hφ_apply]; simp [j]
-        _ ≤ ‖φ j‖ * ‖y - T u‖ := (φ j).le_opNorm _
-        _ ≤ ‖y - T u‖ := mul_le_of_le_one_left (norm_nonneg _) (hφ j)
-        _ = ‖T u - y‖ := norm_sub_rev _ _
-    have hdist : ‖T u - y‖ ≤ ε := by simpa [Metric.mem_closedBall, dist_eq_norm] using huy
-    have hTu_le : ‖T u‖ ≤ 2 * (ε : ℝ) := by
-      calc ‖T u‖ ≤ ‖T u - y‖ + ‖y‖ := by
-            simpa only [sub_add_cancel] using norm_add_le (T u - y) y
-        _ ≤ 2 * (ε : ℝ) := by linarith
-    have hxu : (x : E) = (‖(x : E)‖ : 𝕜) • u := by
-      have hne : (‖(x : E)‖ : 𝕜) ≠ 0 := by exact_mod_cast hx0
-      simp [u, smul_smul, mul_inv_cancel₀ hne]
-    calc ‖(T ∘L (LinearMap.ker A.toLinearMap).subtypeL) x‖ = ‖T ((‖(x : E)‖ : 𝕜) • u)‖ := by
-          simp [← hxu]
-      _ = ‖x‖ * ‖T u‖ := by simp [map_smul, norm_smul]
-      _ ≤ 2 * (ε : ℝ) * ‖x‖ := by
-          rw [mul_comm ‖x‖]
-          exact mul_le_mul_of_nonneg_right hTu_le (norm_nonneg x)
+  refine ContinuousLinearMap.opNorm_le_of_unit_norm (by positivity) fun x hx ↦ ?_
+  have hTx : T x ∈ T '' Metric.closedBall 0 1 :=
+    ⟨x, mem_closedBall_zero_iff.mpr (by simpa using hx.le), rfl⟩
+  obtain ⟨y, hyC, hxy⟩ :=
+    Metric.isCover_iff_subset_iUnion_closedBall.mp hcover hTx |> mem_iUnion₂.mp
+  let j : C := ⟨y, hyC⟩
+  have hzero : φ j (T x) = 0 := congrFun x.2 j
+  have hy_le : ‖y‖ ≤ ‖T x - y‖ := by
+    calc ‖y‖ = ‖φ j (y - T x)‖ := by rw [map_sub, hzero, sub_zero, hφ_apply]; simp [j]
+      _ ≤ ‖φ j‖ * ‖y - T x‖ := (φ j).le_opNorm _
+      _ ≤ ‖y - T x‖ := mul_le_of_le_one_left (norm_nonneg _) (hφ j)
+      _ = ‖T x - y‖ := norm_sub_rev _ _
+  have hdist : ‖T x - y‖ ≤ ε := by simpa [Metric.mem_closedBall, dist_eq_norm] using hxy
+  calc ‖(T ∘L (LinearMap.ker A.toLinearMap).subtypeL) x‖ = ‖T x‖ := rfl
+    _ ≤ ‖T x - y‖ + ‖y‖ := by simpa only [sub_add_cancel] using norm_add_le (T x - y) y
+    _ ≤ 2 * (ε : ℝ) := by linarith
 
 /-- **Finite-ball covering bound for Gelfand numbers.** Over an `RCLike` scalar field, if `T(B_E)`
 is covered by `s.card ≤ n` closed balls of radius `ε`, then `cₙ(T) ≤ 2 * ε`. -/
