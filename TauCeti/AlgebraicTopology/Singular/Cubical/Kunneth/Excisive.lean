@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Pair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Excision
@@ -45,8 +46,8 @@ Composing the cubical Künneth map of a product of pairs with the comparison iso
 `⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ⟶ Hₙ(X × Y, A × Y ∪ X × B; k)`,
 
 which is natural in both pairs. For open `A` and `B` it is an isomorphism over a commutative
-semisimple ring such as a field, and over any commutative ring when the relative homology of both
-pairs is projective. For instance, for points `x` and `y` of T₁ spaces `X` and `Y`, the subsets
+semisimple ring such as a field, and over any commutative ring when the relative homology of
+`(X, A)` is projective. For instance, for points `x` and `y` of T₁ spaces `X` and `Y`, the subsets
 `X ∖ {x}` and `Y ∖ {y}` are open and `(X ∖ {x}) × Y ∪ X × (Y ∖ {y})` is the complement of
 `(x, y)`, so the local homology of `X × Y` at `(x, y)` is computed from the local homology of the
 factors.
@@ -138,7 +139,8 @@ private theorem isIso_singularHomologyMap_prodLeftToInnerPair (hA : IsOpen A) (h
     obtain ⟨h₁, h₂⟩ := Prod.mk.inj h'
     exact Prod.ext (Subtype.ext h₁) h₂
   · rintro x ⟨b, hb⟩
-    exact ⟨(x.1, ⟨x.2, by simpa using congrArg (fun w ↦ (w.1 : X ⊗ Y).2 ∈ B) hb ▸ b.2⟩), rfl⟩
+    have hx : (b.1 : X ⊗ Y).2 = x.2 := congrArg (fun w ↦ (w.1 : X ⊗ Y).2) hb
+    exact ⟨(x.1, ⟨x.2, hx ▸ b.2⟩), rfl⟩
   · simp only [Fin.forall_fin_two]
     exact ⟨TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA,
       TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB⟩
@@ -174,8 +176,7 @@ private theorem prodComparison_comm₁₂ :
       prodComparisonτ₁ k A B ≫ TopPair.singularChainComplexMap
         (TopTriple.innerToTotal.app (prodUnionTriple A B)) (ModuleCat.of k k) := by
   rw [prodComparisonτ₂, cubicalToSingularRel_naturality_assoc, prodComparisonτ₁, Category.assoc]
-  congr 1
-  simp only [TopPair.singularChainComplexMap, SSetPair.chainComplexMap, ← Functor.map_comp,
+  rw [← TopPair.singularChainComplexMap_comp, ← TopPair.singularChainComplexMap_comp,
     prodLeftMap_comp_prodLeftToTotalPair]
 
 private theorem prodComparison_condition :
@@ -227,7 +228,7 @@ theorem π_cubicalChainComplexProdToSingular :
         TopPair.singularChainComplexMap (prodLeftToPreimageUnion A B) (ModuleCat.of k k) := by
   have h := congrArg (TopPair.singularChainComplexMap · (ModuleCat.of k k))
     (prodLeftToTotalPair_comp_totalToOuter A B)
-  simp only [TopPair.singularChainComplexMap, SSetPair.chainComplexMap, Functor.map_comp] at h
+  rw [TopPair.singularChainComplexMap_comp] at h
   -- The target of the comparison is the outer pair of the triple, which is the pair
   -- `(X × Y, A × Y ∪ X × B)` only up to unfolding, so the steps are composed with `trans`.
   exact (cokernel.π_desc _ _ (prodComparison_condition k A B)).trans
@@ -248,9 +249,7 @@ variable {A B}
 
 /-- **The small-chain theorem for a product of open pairs**: for open `A ⊆ X` and `B ⊆ Y`, the
 comparison `N(P × Q) ⟶ C(X × Y, A × Y ∪ X × B)` of the relative cubical chains of the product of
-the pairs `P = (X, A)` and `Q = (Y, B)` with relative singular chains is a quasi-isomorphism. By the
-five lemma this reduces to excision `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)`, which holds since
-`A × Y` and `X × B` are open in their union. -/
+the pairs `P = (X, A)` and `Q = (Y, B)` with relative singular chains is a quasi-isomorphism. -/
 theorem quasiIso_cubicalChainComplexProdToSingular (hA : IsOpen A) (hB : IsOpen B) :
     QuasiIso (cubicalChainComplexProdToSingular k A B) := by
   have : QuasiIso (TopPair.singularChainComplexMap (prodLeftToInnerPair A B)
@@ -291,13 +290,6 @@ variable (k : Type u) [Ring k] {X Y X' Y' : TopCat.{u}} {A : Set X} {B : Set Y} 
 
 include hg hh
 
-/-- A product of maps carrying `A` into `A'` and `B` into `B'` carries `A × Y ∪ X × B` into
-`A' × Y' ∪ X' × B'`. -/
-theorem mapsTo_tensorHom_preimage_union :
-    Set.MapsTo (g ⊗ₘ h) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
-  (TopCat.mapsTo_tensorHom_preimage_fst g h hg).union_union
-    (TopCat.mapsTo_tensorHom_preimage_snd g h hh)
-
 /-- **Naturality of the comparison** of the cubical chains of a product of pairs with singular
 chains, in maps `g : X ⟶ X'` and `h : Y ⟶ Y'` carrying `A` into `A'` and `B` into `B'`. -/
 @[reassoc]
@@ -305,29 +297,22 @@ theorem cubicalChainComplexProdToSingular_naturality :
     cubicalChainComplexProdMap k (ofSubset A) (ofSubset B) (ofSubsetMap g hg) (ofSubsetMap h hh) ≫
         cubicalChainComplexProdToSingular k A' B' =
       cubicalChainComplexProdToSingular k A B ≫ TopPair.singularChainComplexMap
-        (ofSubsetMap (g ⊗ₘ h) (mapsTo_tensorHom_preimage_union g h hg hh)) (ModuleCat.of k k) := by
+        (ofSubsetMap (g ⊗ₘ h) (TopCat.mapsTo_tensorHom_preimage_union g h hg hh))
+        (ModuleCat.of k k) := by
   have hfst : Hom.fst (prodLeftMap (ofSubsetMap h hh) (Hom.fst (ofSubsetMap g hg))) =
       Hom.fst (ofSubsetMap g hg) ⊗ₘ Hom.fst (ofSubsetMap h hh) :=
     (rfl)
   have hpair : prodLeftMap (ofSubsetMap h hh) (Hom.fst (ofSubsetMap g hg)) ≫
       prodLeftToPreimageUnion A' B' = prodLeftToPreimageUnion A B ≫
-        ofSubsetMap (g ⊗ₘ h) (mapsTo_tensorHom_preimage_union g h hg hh) := by
+        ofSubsetMap (g ⊗ₘ h) (TopCat.mapsTo_tensorHom_preimage_union g h hg hh) := by
     refine hom_ext_of_fst _ ?_
     rw [Hom.fst_comp, Hom.fst_comp, prodLeftToPreimageUnion_fst, prodLeftToPreimageUnion_fst, hfst,
       ofSubsetMap_fst, ofSubsetMap_fst, ofSubsetMap_fst]
     exact (Category.comp_id _).trans (Category.id_comp _).symm
-  have hC : TopPair.singularChainComplexMap (prodLeftMap (ofSubsetMap h hh)
-        (Hom.fst (ofSubsetMap g hg))) (ModuleCat.of k k) ≫
-        TopPair.singularChainComplexMap (prodLeftToPreimageUnion A' B') (ModuleCat.of k k) =
-      TopPair.singularChainComplexMap (prodLeftToPreimageUnion A B) (ModuleCat.of k k) ≫
-        TopPair.singularChainComplexMap
-          (ofSubsetMap (g ⊗ₘ h) (mapsTo_tensorHom_preimage_union g h hg hh))
-          (ModuleCat.of k k) := by
-    simp only [TopPair.singularChainComplexMap, SSetPair.chainComplexMap, ← Functor.map_comp,
-      hpair]
   refine coequalizer.hom_ext ?_
   rw [π_cubicalChainComplexProdMap_assoc, π_cubicalChainComplexProdToSingular,
-    π_cubicalChainComplexProdToSingular_assoc, cubicalToSingularRel_naturality_assoc, hC]
+    π_cubicalChainComplexProdToSingular_assoc, cubicalToSingularRel_naturality_assoc,
+    ← TopPair.singularChainComplexMap_comp, ← TopPair.singularChainComplexMap_comp, hpair]
 
 end Naturality
 
@@ -341,7 +326,7 @@ of the product of the pairs `(X, A)` and `(Y, B)`, read in singular homology thr
 comparison isomorphisms of the factors and the comparison of the cubical chains of the product of
 pairs with singular chains. It is an isomorphism for open `A` and `B` over a field
 (`TauCeti.isIso_singularHomologyKunnethPair_of_isSemisimpleRing`), and over any commutative ring
-when the relative homology of both pairs is projective
+when the relative homology of `(X, A)` is projective
 (`TauCeti.isIso_singularHomologyKunnethPair_of_projective`). -/
 def singularHomologyKunnethPair (n : ℕ) :
     GradedObject.Monoidal.tensorObj
@@ -370,6 +355,32 @@ theorem ι_singularHomologyKunnethPair (p q n : ℕ) (hpq : p + q = n) :
   rw [singularHomologyKunnethPair, GradedObject.Monoidal.ι_tensorHom_assoc,
     ι_cubicalHomologyKunnethPair_assoc]
 
+variable {A B} in
+/-- The cubical cross product of pairs followed by the comparison with singular chains is natural
+in maps `g : X ⟶ X'` and `h : Y ⟶ Y'` carrying `A` into `A'` and `B` into `B'`. -/
+@[reassoc]
+private theorem cubicalCrossProductPair_comp_toSingular_naturality {X' Y' : TopCat.{u}}
+    {A' : Set X'} {B' : Set Y'} (g : X ⟶ X') (h : Y ⟶ Y') (hg : Set.MapsTo g A A')
+    (hh : Set.MapsTo h B B') :
+    HomologicalComplex.tensorHom (cubicalChainComplexMap k (ofSubsetMap g hg))
+        (cubicalChainComplexMap k (ofSubsetMap h hh)) ≫
+      cubicalCrossProductPair k (ofSubset A') (ofSubset B') ≫
+        cubicalChainComplexProdToSingular k A' B' =
+      cubicalCrossProductPair k (ofSubset A) (ofSubset B) ≫
+        cubicalChainComplexProdToSingular k A B ≫ TopPair.singularChainComplexMap
+          (ofSubsetMap (g ⊗ₘ h) (TopCat.mapsTo_tensorHom_preimage_union g h hg hh))
+          (ModuleCat.of k k) := by
+  -- The monoidal product of chain maps is `HomologicalComplex.tensorHom`.
+  have hcross : HomologicalComplex.tensorHom (cubicalChainComplexMap k (ofSubsetMap g hg))
+        (cubicalChainComplexMap k (ofSubsetMap h hh)) ≫
+        cubicalCrossProductPair k (ofSubset A') (ofSubset B') =
+      cubicalCrossProductPair k (ofSubset A) (ofSubset B) ≫
+        cubicalChainComplexProdMap k (ofSubset A) (ofSubset B) (ofSubsetMap g hg)
+          (ofSubsetMap h hh) :=
+    cubicalCrossProductPair_naturality k (ofSubset A) (ofSubset B) (ofSubsetMap g hg)
+      (ofSubsetMap h hh)
+  rw [reassoc_of% hcross, cubicalChainComplexProdToSingular_naturality]
+
 /-- **Naturality of the Künneth map of a product of pairs** in maps `g : X ⟶ X'` and
 `h : Y ⟶ Y'` carrying `A` into `A'` and `B` into `B'`. -/
 @[reassoc]
@@ -380,25 +391,18 @@ theorem singularHomologyKunnethPair_naturality {X' Y' : TopCat.{u}} {A' : Set X'
         (fun q ↦ TopPair.singularHomologyMap (ofSubsetMap h hh) (ModuleCat.of k k) q) n ≫
       singularHomologyKunnethPair k A' B' n =
       singularHomologyKunnethPair k A B n ≫ TopPair.singularHomologyMap
-        (ofSubsetMap (g ⊗ₘ h) (mapsTo_tensorHom_preimage_union g h hg hh))
+        (ofSubsetMap (g ⊗ₘ h) (TopCat.mapsTo_tensorHom_preimage_union g h hg hh))
         (ModuleCat.of k k) n := by
   refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q hpq ↦ ?_
-  -- The monoidal product of chain maps is `HomologicalComplex.tensorHom`.
-  have hcross : HomologicalComplex.tensorHom (cubicalChainComplexMap k (ofSubsetMap g hg))
-        (cubicalChainComplexMap k (ofSubsetMap h hh)) ≫
-        cubicalCrossProductPair k (ofSubset A') (ofSubset B') =
-      cubicalCrossProductPair k (ofSubset A) (ofSubset B) ≫
-        cubicalChainComplexProdMap k (ofSubset A) (ofSubset B) (ofSubsetMap g hg)
-          (ofSubsetMap h hh) :=
-    cubicalCrossProductPair_naturality k (ofSubset A) (ofSubset B) (ofSubsetMap g hg)
-      (ofSubsetMap h hh)
-  have hcomp := cubicalChainComplexProdToSingular_naturality k g h hg hh
+  have hnat := congrArg (homologyMap · n)
+    (cubicalCrossProductPair_comp_toSingular_naturality k g h hg hh)
+  simp only [homologyMap_comp] at hnat
+  -- Move the maps of the factors past the comparison isomorphisms and the homology cross product.
   rw [GradedObject.Monoidal.ι_tensorHom_assoc, ι_singularHomologyKunnethPair,
     ι_singularHomologyKunnethPair_assoc, tensorHom_comp_tensorHom_assoc,
     ← TopPair.singularCubicalHomologyIso_hom_naturality,
-    ← TopPair.singularCubicalHomologyIso_hom_naturality,
-    ← tensorHom_comp_tensorHom_assoc, homologyCross_naturality_assoc, ← homologyMap_comp_assoc,
-    hcross, homologyMap_comp_assoc, ← homologyMap_comp, hcomp, homologyMap_comp]
+    ← TopPair.singularCubicalHomologyIso_hom_naturality, ← tensorHom_comp_tensorHom_assoc,
+    homologyCross_naturality_assoc, hnat]
 
 variable {A B}
 
@@ -410,6 +414,8 @@ theorem isIso_singularHomologyKunnethPair (hA : IsOpen A) (hB : IsOpen B) (n : �
     [IsIso (cubicalHomologyKunnethPair k (ofSubset A) (ofSubset B) n)] :
     IsIso (singularHomologyKunnethPair k A B n) := by
   have := quasiIso_cubicalChainComplexProdToSingular k hA hB
+  -- The `n`-th component of the monoidal product of the isomorphisms of graded objects assembled
+  -- from the comparison isomorphisms is by definition the monoidal product of their components.
   have : IsIso (GradedObject.Monoidal.tensorHom
       (fun p ↦ (TopPair.singularCubicalHomologyIso k (ofSubset A) p).hom)
       (fun q ↦ (TopPair.singularCubicalHomologyIso k (ofSubset B) q).hom) n) :=
@@ -429,23 +435,20 @@ theorem isIso_singularHomologyKunnethPair_of_isSemisimpleRing [IsSemisimpleRing 
   isIso_singularHomologyKunnethPair k hA hB n
 
 /-- **The Künneth theorem for a product of open pairs with projective homology**: for open
-`A ⊆ X` and `B ⊆ Y`, if the relative singular homology modules `Hₚ(X, A; k)` and `H_q(Y, B; k)`
-are all projective, then
-`⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ≅ Hₙ(X × Y, A × Y ∪ X × B; k)`. This applies over `ℤ`
-to the local homology of manifolds, which is free. -/
+`A ⊆ X` and `B ⊆ Y`, if the relative singular homology modules `Hₚ(X, A; k)` are all projective,
+then `⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ≅ Hₙ(X × Y, A × Y ∪ X × B; k)`. No condition is
+placed on the pair `(Y, B)`. This applies over `ℤ` to the local homology of manifolds, which is
+free. -/
 theorem isIso_singularHomologyKunnethPair_of_projective (hA : IsOpen A) (hB : IsOpen B)
-    [hA' : ∀ p, Projective ((ofSubset A).singularHomology (ModuleCat.of k k) p)]
-    [hB' : ∀ q, Projective ((ofSubset B).singularHomology (ModuleCat.of k k) q)] (n : ℕ) :
+    [hA' : ∀ p, Projective ((ofSubset A).singularHomology (ModuleCat.of k k) p)] (n : ℕ) :
     IsIso (singularHomologyKunnethPair k A B n) := by
   have (p : ℕ) : Projective (((ofSubset A).cubicalChainComplex k).homology p) :=
     Projective.of_iso (TopPair.singularCubicalHomologyIso k _ p) (hA' p)
-  have (q : ℕ) : Projective (((ofSubset B).cubicalChainComplex k).homology q) :=
-    Projective.of_iso (TopPair.singularCubicalHomologyIso k _ q) (hB' q)
-  have := ChainComplex.isSplitMono_iCycles_of_projective_homology
-    ((ofSubset A).cubicalChainComplex k)
-  have := ChainComplex.isSplitMono_iCycles_of_projective_homology
-    ((ofSubset B).cubicalChainComplex k)
-  have := isIso_cubicalHomologyKunnethPair k (ofSubset A) (ofSubset B) n
+  have := isIso_homologyKunneth_of_projective ((ofSubset A).cubicalChainComplex k)
+    ((ofSubset B).cubicalChainComplex k) n
+  have : IsIso (cubicalHomologyKunnethPair k (ofSubset A) (ofSubset B) n) := by
+    rw [cubicalHomologyKunnethPair_def]
+    infer_instance
   exact isIso_singularHomologyKunnethPair k hA hB n
 
 end Kunneth

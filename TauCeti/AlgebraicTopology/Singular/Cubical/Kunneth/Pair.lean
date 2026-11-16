@@ -38,11 +38,14 @@ a product of pairs**. Consequently the Künneth map
 pairs.
 
 No hypothesis is placed on the subspaces. When `A` and `B` are open, the homology of `N(P × Q)`
-is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth theorem holds in
-relative singular homology (`TauCeti.singularHomologyKunnethPair`, in
-`TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`). For compact manifolds `M` and
-`N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair `(M × N, ∂M × N ∪ M × ∂N)`, and `N(P × Q)` is
-the complex in which cross products of fundamental chains rel boundary are relative cycles.
+is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth map in relative
+singular homology (`TauCeti.singularHomologyKunnethPair`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`) is an isomorphism over a field
+(`TauCeti.isIso_singularHomologyKunnethPair_of_isSemisimpleRing`) or when the relative homology
+of `(X, A)` is projective (`TauCeti.isIso_singularHomologyKunnethPair_of_projective`). For compact
+manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair `(M × N, ∂M × N ∪ M × ∂N)`,
+and `N(P × Q)` is the complex in which cross products of fundamental chains rel boundary are
+relative cycles.
 
 ## Main definitions
 

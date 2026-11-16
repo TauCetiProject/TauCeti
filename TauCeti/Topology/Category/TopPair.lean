@@ -50,7 +50,8 @@ For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` 
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
-them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`). The product `A × Y` of the subspace
+them, and so their union, into each other (`TopCat.mapsTo_tensorHom_preimage_fst`,
+`TopCat.mapsTo_tensorHom_preimage_union`). The product `A × Y` of the subspace
 `A` with `Y` is homeomorphic to the preimage of `A` under the first projection
 (`TopCat.prodPreimageFstIso`).
 
@@ -534,6 +535,14 @@ lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
     rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_snd,
       ConcreteCategory.comp_apply]
     exact hg hx
+
+/-- The product of two maps carrying `A` into `A'` and `B` into `B'` carries the union of the
+preimages of `A` and `B` under the projections into the union of the preimages of `A'` and
+`B'`. -/
+lemma mapsTo_tensorHom_preimage_union {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
+    (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') :
+    Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
+  (mapsTo_tensorHom_preimage_fst f g hf).union_union (mapsTo_tensorHom_preimage_snd f g hg)
 
 variable (X Y A) in
 /-- The homeomorphism `A × Y ≅ fst⁻¹(A)` between the product of the subspace `A ⊆ X` with `Y`
