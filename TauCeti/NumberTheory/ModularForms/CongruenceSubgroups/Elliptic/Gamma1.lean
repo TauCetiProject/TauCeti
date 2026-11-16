@@ -7,9 +7,10 @@ module
 
 public import TauCeti.NumberTheory.Modular.Stabilizer
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Elliptic.Gamma0
 
 /-!
-# No elliptic points for `Γ₁(N)` at level at least four
+# The elliptic points of `Γ₁(N)`
 
 For `N ≥ 4`, the action of `Γ₁(N)` on the upper half-plane has trivial point
 stabilizers. The same holds for its effective image in `PSL(2, ℝ)`, the group acting
@@ -21,25 +22,45 @@ The central matrices are handled separately: `-I` belongs to `Γ₁(N)` only whe
 between `-2` and `2`, whereas membership in `Γ₁(N)` makes that trace congruent to `2`
 modulo `N`.
 
+The same congruence gives the counts `ε₂` and `ε₃` of the dimension formulas for `Γ₁(N)` at
+every level. A conjugate of `S` has trace `0` and a conjugate of `T⁻¹ S` has trace `-1`, so
+neither lies in `Γ₁(N)` unless `N ∣ 2`, resp. `N ∣ 3`. At the remaining levels `1`, `2` and `3`
+every unit modulo `N` is `±1`, so `Γ₁(N)` and `Γ₀(N)` have the same effective image, and the
+counts are those of `Γ₀(N)`: `ε₂ = 1` exactly at the levels `1` and `2`, and `ε₃ = 1` exactly at
+the levels `1` and `3`.
+
 ## Main results
 
+* `dvd_two_sub_trace_of_mem_Gamma1`: the trace of an element of `Γ₁(N)` is `2` modulo `N`.
 * `eq_one_of_mem_Gamma1_of_smul_eq_self`: only the identity in `Γ₁(N)` fixes a point.
 * `stabilizer_Gamma1_eq_bot`: triviality of the integral point stabilizers.
 * `stabilizer_Gamma1_map_eq_bot`: triviality of the effective real point stabilizers.
+* `map_Gamma1_eq_map_Gamma0`: if every unit modulo `N` is `±1`, then `Γ₁(N)` and `Γ₀(N)` have
+  the same effective image.
+* `card_orderTwoElliptic_Gamma1`, `card_orderThreeElliptic_Gamma1`: the counts `ε₂` and `ε₃` of
+  `Γ₁(N)` at every level.
 
 ## References
 
-* F. Diamond and J. Shurman, *A First Course in Modular Forms*, §2.3.
+* F. Diamond and J. Shurman, *A First Course in Modular Forms*, §§2.3, 3.9.
 -/
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup MulAction UpperHalfPlane CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup MulAction UpperHalfPlane CongruenceSubgroup ModularGroup
 open scoped MatrixGroups
 
 namespace TauCeti
 
 variable {N : ℕ} {γ : SL(2, ℤ)} {z : ℍ}
+
+/-- The trace of an element of `Γ₁(N)` is congruent to `2` modulo `N`. -/
+theorem dvd_two_sub_trace_of_mem_Gamma1 (hγ : γ ∈ Gamma1 N) :
+    (N : ℤ) ∣ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  apply (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp
+  obtain ⟨ha, hd, -⟩ := (Gamma1_mem N γ).mp hγ
+  simp only [Matrix.trace_fin_two, Int.cast_sub, Int.cast_add, Int.cast_ofNat, ha, hd]
+  ring
 
 /-- At level `N ≥ 4`, an element of `Γ₁(N)` fixing a point of the upper half-plane
 is the identity. -/
@@ -48,11 +69,7 @@ theorem eq_one_of_mem_Gamma1_of_smul_eq_self (hN : 4 ≤ N) (hγ : γ ∈ Gamma1
   have hc : γ ∈ Subgroup.center SL(2, ℤ) := by
     by_contra hc
     have ht := ModularGroup.trace_sq_lt_four_of_smul_eq_self_of_not_mem_center hz hc
-    have hdiv : (N : ℤ) ∣ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by
-      apply (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp
-      obtain ⟨ha, hd, -⟩ := (Gamma1_mem N γ).mp hγ
-      simp only [Matrix.trace_fin_two, Int.cast_sub, Int.cast_add, Int.cast_ofNat, ha, hd]
-      ring
+    have hdiv := dvd_two_sub_trace_of_mem_Gamma1 hγ
     have hnonneg : 0 ≤ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by nlinarith
     have hlt : 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace < (N : ℤ) := by
       nlinarith
@@ -92,5 +109,75 @@ theorem stabilizer_Gamma1_map_eq_bot (hN : 4 ≤ N) (z : ℍ) :
   apply Subtype.ext
   simp only [← hγg, eq_one_of_mem_Gamma1_of_smul_eq_self hN hγ hfix, map_one,
     Subgroup.coe_one]
+
+/-- If a conjugate `γ g γ⁻¹` lies in `Γ₁(N)`, then the trace of `g` is congruent to `2` modulo
+`N`. -/
+private theorem dvd_two_sub_trace_of_conj_mem_Gamma1 {g : SL(2, ℤ)}
+    (h : γ * g * γ⁻¹ ∈ Gamma1 N) : (N : ℤ) ∣ 2 - (g : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  have := dvd_two_sub_trace_of_mem_Gamma1 h
+  rwa [coe_mul, coe_mul, Matrix.trace_mul_comm, ← Matrix.mul_assoc, ← coe_mul, inv_mul_cancel,
+    coe_one, Matrix.one_mul] at this
+
+/-- A conjugate of `S`, of trace `0`, lies in `Γ₁(N)` only if `N ∣ 2`. -/
+private theorem conj_S_notMem_Gamma1 (hN : ¬(N : ℤ) ∣ 2) : γ * S * γ⁻¹ ∉ Gamma1 N := fun h ↦
+  hN (by simpa [show ((S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ).trace = 0 by decide] using
+    dvd_two_sub_trace_of_conj_mem_Gamma1 h)
+
+/-- A conjugate of `T⁻¹ S`, of trace `-1`, lies in `Γ₁(N)` only if `N ∣ 3`. -/
+private theorem conj_T_inv_mul_S_notMem_Gamma1 (hN : ¬(N : ℤ) ∣ 3) :
+    γ * (T⁻¹ * S) * γ⁻¹ ∉ Gamma1 N := fun h ↦
+  hN (by simpa [show ((T⁻¹ * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ).trace = -1 by decide]
+    using dvd_two_sub_trace_of_conj_mem_Gamma1 h)
+
+/-- **`Γ₁(N)` and `Γ₀(N)` have the same effective image when every unit modulo `N` is `±1`**, that
+is, at the levels `N ∣ 4` and `N ∣ 6`: an element of `Γ₀(N)` then has diagonal entries both `1` or
+both `-1` modulo `N`, so it or its negative lies in `Γ₁(N)`. -/
+theorem map_Gamma1_eq_map_Gamma0 (hN : ∀ u : (ZMod N)ˣ, u = 1 ∨ u = -1) :
+    (Gamma1 N).map sl2zToPSL2R = (Gamma0 N).map sl2zToPSL2R := by
+  refine le_antisymm (Subgroup.map_mono (Gamma1_in_Gamma0 N)) ?_
+  rintro _ ⟨γ, hγ, rfl⟩
+  have hc : ((γ 1 0 : ℤ) : ZMod N) = 0 := Gamma0_mem.mp hγ
+  have hdet : ((γ 0 0 : ℤ) : ZMod N) * ((γ 1 1 : ℤ) : ZMod N) = 1 := by
+    have h := congrArg (Int.cast : ℤ → ZMod N) γ.det_coe
+    rw [Matrix.det_fin_two] at h
+    push_cast at h
+    rwa [hc, mul_zero, sub_zero] at h
+  rcases hN (Units.mkOfMulEqOne _ _ hdet) with h1 | h1 <;>
+    have ha := congrArg Units.val h1 <;>
+    simp only [Units.val_mkOfMulEqOne, Units.val_one, Units.val_neg] at ha
+  · refine ⟨γ, (Gamma1_mem N γ).mpr ⟨ha, ?_, hc⟩, rfl⟩
+    simpa [ha] using hdet
+  · refine ⟨-γ, (Gamma1_mem N _).mpr ⟨?_, ?_, ?_⟩, sl2zToPSL2R_neg γ⟩
+    · simp [ha]
+    · have hd : ((γ 1 1 : ℤ) : ZMod N) = -1 := by
+        rw [ha] at hdet
+        linear_combination -hdet
+      simp [hd]
+    · simp [hc]
+
+/-- **The count `ε₂(Γ₁(N))`**: `Γ₁(N)` has one elliptic point of order two at the levels `1` and
+`2`, and none at any other level. -/
+theorem card_orderTwoElliptic_Gamma1 :
+    Nat.card {q : orbitRel.Quotient ((Gamma1 N).map sl2zToPSL2R) ℍ //
+      cardStabilizerOnOrbit q = 2} = if N = 1 ∨ N = 2 then 1 else 0 := by
+  split_ifs with hN
+  · rw [map_Gamma1_eq_map_Gamma0 (by rcases hN with rfl | rfl <;> decide),
+      card_orderTwoElliptic_Gamma0]
+    rcases hN with rfl | rfl <;> rw [Nat.card_eq_fintype_card] <;> decide
+  · refine (Gamma1 N).card_orderTwoElliptic_map_eq_zero fun _ ↦ conj_S_notMem_Gamma1 fun h ↦ hN ?_
+    exact (Nat.dvd_prime Nat.prime_two).mp (Int.natCast_dvd_natCast.mp h)
+
+/-- **The count `ε₃(Γ₁(N))`**: `Γ₁(N)` has one elliptic point of order three at the levels `1`
+and `3`, and none at any other level. -/
+theorem card_orderThreeElliptic_Gamma1 :
+    Nat.card {q : orbitRel.Quotient ((Gamma1 N).map sl2zToPSL2R) ℍ //
+      cardStabilizerOnOrbit q = 3} = if N = 1 ∨ N = 3 then 1 else 0 := by
+  split_ifs with hN
+  · rw [map_Gamma1_eq_map_Gamma0 (by rcases hN with rfl | rfl <;> decide),
+      card_orderThreeElliptic_Gamma0]
+    rcases hN with rfl | rfl <;> rw [Nat.card_eq_fintype_card] <;> decide
+  · refine (Gamma1 N).card_orderThreeElliptic_map_eq_zero fun _ ↦
+      conj_T_inv_mul_S_notMem_Gamma1 fun h ↦ hN ?_
+    exact (Nat.dvd_prime Nat.prime_three).mp (Int.natCast_dvd_natCast.mp h)
 
 end TauCeti
