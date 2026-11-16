@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Passage
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
 
 /-!
 # The passage of an adapted pseudo-gradient through a Morse box

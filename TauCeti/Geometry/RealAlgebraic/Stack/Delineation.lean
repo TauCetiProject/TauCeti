@@ -35,7 +35,8 @@ algebraic decomposition by one dimension.
 
 Over a nonempty base the ordered list of root functions of a delineation is the increasing
 enumeration of the real roots of the nonzero members, so a delineation is unique. Delineations
-restrict along continuous maps of bases and reindex along surjections of polynomial labels.
+restrict along continuous maps of bases and reindex along maps of polynomial labels under which
+every root function is still a root of some member.
 
 The main theorem `TauCeti.nonempty_delineation` constructs a delineation over a preconnected base
 from invariant algebraic data: if the coefficients of every member are continuous, every member is
@@ -62,7 +63,10 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
 * `TauCeti.Delineation.instSubsingleton`: over a nonempty base a family has at most one
   delineation.
 * `TauCeti.Delineation.comp`: restriction of a delineation along a continuous map of bases.
-* `TauCeti.Delineation.reindex`: reindexing a delineation along a surjection of polynomial labels.
+* `TauCeti.Delineation.reindex`: reindexing a delineation along a map of polynomial labels under
+  which every root function is still a root of some member.
+* `TauCeti.Delineation.nonempty_of_forall_exists_eq`: a family whose members agree pointwise with
+  those of a delineated family, and conversely, has a delineation.
 * `TauCeti.nonempty_delineation`: existence of a delineation over a preconnected base from
   constant degrees, numbers of distinct complex roots and pairwise gcd degrees.
 * `TauCeti.exists_delineation_of_isRoot_iff`: an ordered continuous enumeration of the real roots
@@ -288,9 +292,10 @@ instance instSubsingleton [Nonempty X] : Subsingleton (Delineation P) where
     obtain rfl : m = m' := funext fun k ↦ funext fun i ↦ (hm k i x).symm.trans (hm' k i x)
     rfl
 
-/-- Reindex a delineation along a surjection of polynomial labels. Surjectivity ensures that
-every section still has positive multiplicity in some member of the reindexed family. -/
-def reindex {κ : Type*} (f : κ → ι) (hf : Surjective f) :
+/-- Reindex a delineation along a map `f` of polynomial labels such that every root function
+still has positive multiplicity in some member of the reindexed family; this holds for instance
+when `f` is surjective. -/
+def reindex {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i) :
     Delineation fun k x ↦ P (f k) x where
   count := D.count
   root := D.root
@@ -299,10 +304,7 @@ def reindex {κ : Type*} (f : κ → ι) (hf : Surjective f) :
   multiplicity k := D.multiplicity (f k)
   rootMultiplicity_root k := D.rootMultiplicity_root (f k)
   exists_root_eq k := D.exists_root_eq (f k)
-  exists_multiplicity_pos i := by
-    obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
-    obtain ⟨l, rfl⟩ := hf k
-    exact ⟨l, hk⟩
+  exists_multiplicity_pos := hf
   eq_zero_or_ne_zero k := D.eq_zero_or_ne_zero (f k)
   natDegree_eq k := D.natDegree_eq (f k)
   signInvariant_sectionSet k := D.signInvariant_sectionSet (f k)
@@ -310,19 +312,19 @@ def reindex {κ : Type*} (f : κ → ι) (hf : Surjective f) :
 
 /-- Reindexing polynomial labels preserves the number of sections. -/
 @[simp]
-theorem reindex_count {κ : Type*} (f : κ → ι) (hf : Surjective f) :
+theorem reindex_count {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i) :
     (D.reindex f hf).count = D.count := (rfl)
 
 /-- Reindexing polynomial labels preserves the ordered root functions. -/
 @[simp]
-theorem reindex_root {κ : Type*} (f : κ → ι) (hf : Surjective f)
+theorem reindex_root {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i)
     (i : Fin (D.reindex f hf).count) (x : X) :
     (D.reindex f hf).root i x = D.root (Fin.cast (D.reindex_count f hf) i) x := (rfl)
 
 /-- Reindexing pulls back the multiplicities along the map of polynomial labels. -/
 @[simp]
-theorem reindex_multiplicity {κ : Type*} (f : κ → ι) (hf : Surjective f) (k : κ)
-    (i : Fin (D.reindex f hf).count) :
+theorem reindex_multiplicity {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i)
+    (k : κ) (i : Fin (D.reindex f hf).count) :
     (D.reindex f hf).multiplicity k i =
       D.multiplicity (f k) (Fin.cast (D.reindex_count f hf) i) := (rfl)
 
@@ -359,6 +361,27 @@ theorem comp_root (f : Y → X) (hf : Continuous f) (i : Fin (D.comp f hf).count
 @[simp]
 theorem comp_multiplicity (f : Y → X) (hf : Continuous f) (k : ι) (i : Fin (D.comp f hf).count) :
     (D.comp f hf).multiplicity k i = D.multiplicity k (Fin.cast (D.comp_count f hf) i) := (rfl)
+
+include D in
+/-- **Transfer to a family with the same members.** If every member of a family `Q` agrees at
+every point with some member of `P`, and every member of `P` with some member of `Q`, then `Q` has
+a delineation. -/
+theorem nonempty_of_forall_exists_eq {κ : Type*} {Q : κ → X → ℝ[X]}
+    (hQP : ∀ l, ∃ k, ∀ x, Q l x = P k x) (hPQ : ∀ k, ∃ l, ∀ x, Q l x = P k x) :
+    Nonempty (Delineation Q) := by
+  -- Over an empty base all families coincide while the multiplicities of `D` are arbitrary, so the
+  -- covering condition of `reindex` is checked at a base point.
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact nonempty_of_isEmpty Q
+  choose g hg using hQP
+  -- a member of `Q` matching a member of `P` with positive multiplicity has it too
+  have hpos (i : Fin D.count) : ∃ l, 0 < D.multiplicity (g l) i := by
+    obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
+    obtain ⟨l, hl⟩ := hPQ k
+    refine ⟨l, ?_⟩
+    rwa [← D.rootMultiplicity_root (g l) i x₀, ← hg l x₀, hl x₀, D.rootMultiplicity_root]
+  obtain rfl : Q = fun l x ↦ P (g l) x := funext fun l ↦ funext (hg l)
+  exact ⟨D.reindex g hpos⟩
 
 end Delineation
 

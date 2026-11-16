@@ -204,7 +204,8 @@ theorem Equivalent.unitValueSet_eq
   rw [mem_unitValueSet, mem_unitValueSet]
   exact e.represents_iff a
 
-/-- A value represented by each factor is represented by their product. -/
+/-- The sum of a value represented by the first factor and a value represented by the second is
+represented by their orthogonal sum. -/
 theorem Represents.prod
     {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
     [Module R M₁] [Module R M₂] [Module R P]

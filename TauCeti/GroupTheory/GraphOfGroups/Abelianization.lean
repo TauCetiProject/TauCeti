@@ -17,6 +17,11 @@ darts outside a spanning tree. Hence its abelianization is free abelian on those
 coordinates of a class are the coordinates of its integral cycle class at the positive darts
 outside the tree, so the free generators correspond to the fundamental cycles of the tree.
 
+Under a change of spanning tree from `T` to `T'`, the free generator of a positive dart outside
+`T` has as free coordinates relative to `T'` the coordinates of the cycle class of its `T`-loop at
+the positive darts outside `T'`. The free coordinates are natural for morphisms carrying the tree
+into a tree and positive darts outside the tree to positive darts outside the tree.
+
 ## Main definitions
 
 * `TauCeti.SerreGraph.SpanningTree.abelianizationEquivFreeAbelianGroup`: the abelianized path
@@ -26,6 +31,10 @@ outside the tree, so the free generators correspond to the fundamental cycles of
 
 * `TauCeti.SerreGraph.SpanningTree.equivFinsupp_abelianizationEquivFreeAbelianGroup`: the free
   coordinates are the coordinates of the cycle class outside the tree.
+* `TauCeti.SerreGraph.SpanningTree.equivFinsupp_abelianizationEquivFreeAbelianGroup_symm_of`:
+  change of spanning tree in free abelian coordinates.
+* `TauCeti.SerreGraph.SpanningTree.abelianizationEquivFreeAbelianGroup_map`: the free abelian
+  coordinates are natural for graph morphisms carrying a spanning tree into a spanning tree.
 
 ## References
 
@@ -77,5 +86,39 @@ theorem equivFinsupp_abelianizationEquivFreeAbelianGroup (hO : Γ.IsOrientation 
   | of e => simp
   | neg _ _ => simp_all
   | add _ _ h₁ h₂ => simp_all
+
+/-- Change of spanning tree in free abelian coordinates: relative to a spanning tree `T'`, the
+free generator of a positive dart `e` outside a spanning tree `T` has as coordinates the
+coordinates of the cycle class of the `T`-loop through `e` at the positive darts outside `T'`. -/
+theorem equivFinsupp_abelianizationEquivFreeAbelianGroup_symm_of (T' : Γ.SpanningTree)
+    (hO : Γ.IsOrientation O) (e : ↥(O \ T.darts)) :
+    FreeAbelianGroup.equivFinsupp _ (T'.abelianizationEquivFreeAbelianGroup v hO
+        ((T.abelianizationEquivFreeAbelianGroup v hO).symm (FreeAbelianGroup.of e))) =
+      Γ.cycleChordCoordinates O T'.darts ℤ (PathGroup.cycleClass hO ℤ (T.loop v e.1)).toAdd := by
+  rw [abelianizationEquivFreeAbelianGroup_symm_of, equivFinsupp_abelianizationEquivFreeAbelianGroup,
+    abelianizationEquivCycle_of]
+
+variable {Δ : SerreGraph} {O' : Set Δ.E} {v}
+
+/-- The free abelian coordinates of the abelianized path group are natural: a morphism carrying a
+spanning tree `T` into a spanning tree `T'`, and the positive darts outside `T` to positive darts
+outside `T'`, acts on free abelian coordinates by the induced map of generators. -/
+theorem abelianizationEquivFreeAbelianGroup_map (T' : Δ.SpanningTree) {w : Δ.V} (f : Γ.Hom Δ)
+    (hO : Γ.IsOrientation O) (hO' : Δ.IsOrientation O') (hT : ∀ e ∈ T.darts, f.mapE e ∈ T'.darts)
+    (hf : Set.MapsTo f.mapE (O \ T.darts) (O' \ T'.darts)) (h : f.mapV v = w)
+    (x : Additive (Group.Abelianization (PathGroup Γ v))) :
+    T'.abelianizationEquivFreeAbelianGroup w hO'
+        ((Group.Abelianization.map (PathGroup.map f h)).toAdditive x) =
+      FreeAbelianGroup.map (Set.MapsTo.restrict f.mapE _ _ hf)
+        (T.abelianizationEquivFreeAbelianGroup v hO x) := by
+  obtain ⟨y, rfl⟩ := (T.abelianizationEquivFreeAbelianGroup v hO).symm.surjective x
+  rw [AddEquiv.apply_symm_apply]
+  induction y using FreeAbelianGroup.induction_on with
+  | zero => simp
+  | of e =>
+    simpa [T.map_loop v f T' hT h] using
+      T'.abelianizationEquivFreeAbelianGroup_loop w hO' (Set.MapsTo.restrict f.mapE _ _ hf e)
+  | neg _ ih => simp_all
+  | add _ _ ih₁ ih₂ => simp_all
 
 end TauCeti.SerreGraph.SpanningTree

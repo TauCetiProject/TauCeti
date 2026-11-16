@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.End.Basic
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.BaseChange
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Isogenies of abelian varieties
@@ -66,9 +67,6 @@ surjective. -/
 lemma isIsogeny_iff {A B : AbelianVariety K} (f : A ⟶ B) :
     IsIsogeny f ↔ IsFinite (Hom.toSchemeHom f) ∧ Surjective (Hom.toSchemeHom f) :=
   by
-    let : MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme) :=
-      MorphismProperty.respectsIso_of_isStableUnderComposition
-        (fun _ _ g (_ : IsIso g) ↦ inferInstance)
     have hcancel (P : MorphismProperty Scheme) [P.RespectsIso] :
         P (eqToHom (Hom.toSchemeFunctor_obj A) ≫ Hom.toSchemeHom f ≫
           eqToHom (Hom.toSchemeFunctor_obj B).symm) ↔ P (Hom.toSchemeHom f) := by

@@ -86,17 +86,9 @@ private theorem IsRecurrent.ae_tendsto_visitCount_succ_div (hy : κ.IsRecurrent 
     (κ.iIndepFun_returnGap hrec).comp _ (fun _ => hcast)
   have hid (k : ℕ) : IdentDistrib (T k) (T 0) P P :=
     ((κ.hasLaw_returnGap hrec k).identDistrib (κ.hasLaw_returnGap hrec 0)).comp hcast
-  have hz : P {x | T 0 x = 0} < 1 := by
-    have hzero : P {x | T 0 x = 0} = 0 := by
-      apply measure_eq_zero_iff_ae_notMem.mpr
-      filter_upwards [hret] with x hx
-      have hpos := returnGap_pos (X := fun n (x : ℕ → α) => x n) (k := 0)
-        (exists_visitCount_of_infinite hx 1)
-      simpa only [Set.mem_ofPred_eq, T, Nat.cast_eq_zero] using hpos.ne'
-    simp [hzero]
   have hmean : (∫⁻ x, (T 0 x : ℝ≥0∞) ∂P) = κ.meanReturnTime y := by
     simpa only [T, ENNReal.coe_natCast] using hy.lintegral_returnGap 0
-  have hLLN := ae_tendsto_renewalCountNat_div (T := T) (fun _ _ h => hi.indepFun h) hid hz
+  have hLLN := ae_tendsto_renewalCountNat_div (T := T) (fun _ _ h => hi.indepFun h) hid
   rw [hmean] at hLLN
   -- The deterministic adapter excludes the initial visit and includes time n.
   filter_upwards [hLLN, hret, h0] with x hx hxret hx0

@@ -23,6 +23,8 @@ The integrability of the pointwise action, for functions rather than `Lᵖ` clas
 
 * `TauCeti.lpBilinearMap`: the continuous bilinear map associated to an `L∞` field.
 * `TauCeti.lpBilinearMap_apply`: its integral characterization.
+* `MeasureTheory.MemLp.smul_mul`: an essentially bounded function `V` gives the essentially
+  bounded field `z ↦ V z • (s, t) ↦ s t` of bilinear forms on `ℝ`.
 -/
 
 public section
@@ -59,5 +61,23 @@ theorem lpBilinearMap_apply (μ : Measure X) (B : Lp (E →L[𝕜] F →L[𝕜] 
   simp [hx]
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- An essentially bounded function `V` gives the essentially bounded field
+`z ↦ V z • (s, t) ↦ s t` of bilinear forms on `ℝ`, the coefficient field of the bilinear form
+`(u, v) ↦ ∫ V u v`. -/
+theorem MemLp.smul_mul {X : Type*} [MeasurableSpace X] {μ : Measure X} {V : X → ℝ}
+    (hV : MemLp V ⊤ μ) : MemLp (fun z ↦ V z • ContinuousLinearMap.mul ℝ ℝ) ⊤ μ := by
+  -- The source and target of the composed map are named explicitly: unification does not
+  -- recover them from the expected type.
+  convert ContinuousLinearMap.comp_memLp' (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
+    (F := ℝ →L[ℝ] ℝ →L[ℝ] ℝ)
+    ((ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.mul ℝ ℝ) :
+      ℝ →L[ℝ] ℝ →L[ℝ] ℝ →L[ℝ] ℝ) hV using 1
+  ext z
+  simp
+
+end MeasureTheory
 
 end

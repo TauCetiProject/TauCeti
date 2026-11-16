@@ -48,7 +48,9 @@ partial sums of a sequence enters an integral against the partial-sum step funct
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` as soon as the
 dominated function is bounded on compact intervals and the dominating one is bounded away from
 zero. This is how an asymptotic estimate becomes an explicit inequality valid at every point,
-which a summation argument can apply at infinitely many points at once.
+which a summation argument can apply at infinitely many points at once. Continuity of both
+functions on the half-line, with a nonvanishing dominating function, is another sufficient
+condition: it covers exponentially decaying majorants such as `exp (-p x)`.
 
 A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
 to zero. This is the form needed to absorb polynomial growth after shifting an index.
@@ -77,6 +79,8 @@ evaluations of elliptic integrals.
   `t → ∞`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
+* `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when `f` and `g`
+  are continuous on `[a, ∞)` and `g` does not vanish there.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -204,6 +208,29 @@ theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ →
         rw [div_mul_eq_mul_div, le_div_iff₀ hc]
         exact mul_le_mul_of_nonneg_left hgx (le_max_right _ _)
       _ ≤ max c₀ (max B 0 / c) * ‖g x‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
+
+/-- **An eventual big-O bound holds on a whole half-line, continuous version.** If `f = O(g)` at
+`atTop`, both functions are continuous on `[a, ∞)` and `g` does not vanish there, then
+`f = O(g)` uniformly on `[a, ∞)`. Unlike `IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero,
+as for an exponentially decaying majorant. -/
+theorem IsBigO.isBigO_principal_Ici_of_continuousOn {E F : Type*} [SeminormedAddGroup E]
+    [NormedAddGroup F] {f : ℝ → E} {g : ℝ → F} {a : ℝ} (h : f =O[atTop] g)
+    (hf : ContinuousOn f (Set.Ici a)) (hg : ContinuousOn g (Set.Ici a))
+    (hg0 : ∀ x ∈ Set.Ici a, g x ≠ 0) :
+    f =O[𝓟 (Set.Ici a)] g := by
+  obtain ⟨c₀, hc₀⟩ := h.bound
+  obtain ⟨b, hb⟩ := eventually_atTop.mp hc₀
+  have hcont : ContinuousOn (fun x ↦ ‖f x‖ / ‖g x‖) (Set.Icc a b) :=
+    (hf.norm.div hg.norm fun x hx ↦ norm_ne_zero_iff.mpr (hg0 x hx)).mono
+      Set.Icc_subset_Ici_self
+  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn hcont
+  refine isBigO_principal.mpr ⟨max c₀ B, fun x hx ↦ ?_⟩
+  have hgx : 0 < ‖g x‖ := norm_pos_iff.mpr (hg0 x hx)
+  rcases le_or_gt b x with hbx | hbx
+  · exact (hb x hbx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hgx.le)
+  · have hBx := hB x ⟨hx, hbx.le⟩
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_le_iff₀ hgx] at hBx
+    exact hBx.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hgx.le)
 
 end Asymptotics
 

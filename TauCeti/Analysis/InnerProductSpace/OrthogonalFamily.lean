@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Algebra.Order.Chebyshev
 
 /-!
@@ -17,10 +16,13 @@ norms, `‖∑ i ∈ s, v i‖² = ∑ i ∈ s, ‖v i‖²`, and passing to the
 convergent series of pairwise orthogonal vectors. Both hold in a seminormed inner product space.
 
 Vectors are pairwise orthogonal exactly when their spans form an `OrthogonalFamily`
-(`orthogonalFamily_span_singleton_iff`). This allows orthogonal-series results for subspaces to
-apply directly to a vector family, including one with zero terms: the span of a zero vector is the
-zero subspace. Normalizing the nonzero vectors of a pairwise orthogonal family gives an orthonormal
-family.
+(`orthogonalFamily_span_singleton_iff`); this equivalence also holds in a seminormed inner product
+space. When the space is normed, it allows orthogonal-series results for subspaces to apply
+directly to a vector family, including one with zero terms: the span of a zero vector is the zero
+subspace. The normed hypothesis is needed there because Mathlib's `OrthogonalFamily` lemmas ask
+each subspace to be a `NormedAddCommGroup`, which a cyclic span is only when the space is normed.
+
+Normalizing the nonzero vectors of a pairwise orthogonal family gives an orthonormal family.
 
 The residue classes modulo `L` give the almost-orthogonal version: if `⟪v i, v j⟫ = 0` whenever
 `i + L ≤ j`, then `‖∑ i ∈ s, v i‖² ≤ L ∑ i ∈ s, ‖v i‖²`
@@ -203,17 +205,24 @@ theorem norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero_nat {v : ℕ → E} {L
   rwa [norm_sq_extend_natCast, tsum_extend_zero Nat.cast_injective,
     tsum_extend_zero Nat.cast_injective] at h
 
+/-- Vectors are pairwise orthogonal exactly when their cyclic spans form an orthogonal family.
+Zero vectors contribute the zero subspace, so no nonzero hypothesis is needed. -/
+@[simp]
+theorem orthogonalFamily_span_singleton_iff {v : ι → E} :
+    OrthogonalFamily 𝕜 (fun i ↦ 𝕜 ∙ v i) (fun i ↦ (𝕜 ∙ v i).subtypeₗᵢ) ↔
+      Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0 := by
+  refine forall₃_congr fun i j _ ↦
+    ⟨fun h ↦ h ⟨v i, Submodule.mem_span_singleton_self _⟩
+      ⟨v j, Submodule.mem_span_singleton_self _⟩, ?_⟩
+  -- Elements of the two spans are scalar multiples `a • v i` and `b • v j`.
+  rintro h ⟨_, hx⟩ ⟨_, hy⟩
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hx
+  obtain ⟨b, rfl⟩ := Submodule.mem_span_singleton.1 hy
+  simp [inner_smul_left, inner_smul_right, h]
+
 end Seminormed
 
 variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- Vectors are pairwise orthogonal exactly when their cyclic spans form an orthogonal family.
-Zero vectors contribute the zero subspace, so no nonzero hypothesis is needed. -/
-theorem orthogonalFamily_span_singleton_iff {v : ι → E} :
-    OrthogonalFamily 𝕜 (fun i ↦ 𝕜 ∙ v i) (fun i ↦ (𝕜 ∙ v i).subtypeₗᵢ) ↔
-      Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0 :=
-  orthogonalFamily_iff_pairwise.trans <| forall₃_congr fun _ _ _ ↦ by
-    simp [Function.onFun, Submodule.isOrtho_span]
 
 /-- **Normalizing an orthogonal family.** If the vectors `vᵢ` are pairwise orthogonal, then the
 normalized nonzero vectors `‖vᵢ‖⁻¹ vᵢ` are orthonormal. -/

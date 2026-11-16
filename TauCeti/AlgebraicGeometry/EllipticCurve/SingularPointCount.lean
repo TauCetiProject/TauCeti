@@ -233,7 +233,7 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_zero_of_c₄_eq_zero [Finite F
     simpa [discrim, WeierstrassCurve.b₂] using
       (pow_eq_zero_iff two_ne_zero).1 (hb ▸ hc.trans hc₄)
   rw [htr, Nat.card_eq_fintype_card, card_rootSet_quadratic_of_discrim_eq_zero one_ne_zero
-    (splits_quadratic_of_discrim_eq_zero one_ne_zero hd0) hd0]
+    (splits_quadratic_of_discrim_eq_zero hd0) hd0]
   norm_num
 
 /-- **The Frobenius trace at a split node is `1`.** A singular model over a finite field with

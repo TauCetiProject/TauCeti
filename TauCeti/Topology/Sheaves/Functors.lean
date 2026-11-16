@@ -13,13 +13,18 @@ public import Mathlib.Topology.Sheaves.Functors
 public import TauCeti.CategoryTheory.Sites.Pullback
 
 /-!
-# The sheaf condition along a homeomorphism
+# Pushforward, pullback, and transport of sheaves on topological spaces
 
 Mathlib's `TopCat.Sheaf.pushforward_sheaf_of_sheaf` says that the pushforward of a sheaf along a
 continuous map is a sheaf. Along a homeomorphism the converse holds as well, since pushing forward
 along the inverse undoes the pushforward. This file records the resulting criterion: a presheaf
 isomorphic to the pushforward of another along a homeomorphism is a sheaf exactly when the other
 is.
+
+For `TopCat.Sheaf.pushforward`, an equality of a continuous map with an identity or a composite
+gives an equality on pushforward objects, and the resulting `eqToHom` transports commute with
+pushforward morphisms, evaluate componentwise as `eqToHom` on sections, and agree on underlying
+presheaves with right whiskering along `Opens.map`.
 
 It also records that the restriction maps of Mathlib's restriction of a sheaf along an open
 embedding, `Topology.IsOpenEmbedding.sheafPullback`, are restriction maps of the original sheaf
@@ -34,6 +39,15 @@ and additivity hold for the pullback along any continuous functor of sites
 
 * `TopCat.Presheaf.isSheaf_iff_of_iso_pushforward`: the sheaf condition transfers along an
   isomorphism with a pushforward along a homeomorphism, in both directions.
+* `TopCat.Sheaf.pushforward_obj_of_eq_id`, `TopCat.Sheaf.pushforward_obj_of_eq_comp`:
+  pushforward of a sheaf along a map equal to an identity or a composite.
+* `TopCat.Sheaf.eqToHom_hom_app`: sections of `eqToHom` between equal sheaves.
+* `TopCat.Sheaf.eqToHom_symm_comp_pushforward_map_of_eq_id`,
+  `TopCat.Sheaf.eqToHom_symm_comp_pushforward_map_of_eq_comp`: naturality of pushforward object
+  transport with respect to sheaf morphisms.
+* `TopCat.Sheaf.eqToHom_hom_comp_whiskerRight_of_eq_id`,
+  `TopCat.Sheaf.eqToHom_hom_eq_whiskerRight_of_eq_comp`: comparison of `eqToHom` on pushforward
+  sheaves with right whiskering along `Opens.map`.
 * `Topology.IsOpenEmbedding.sheafPullback_obj_obj_map`: the restriction maps of the restriction of
   a sheaf along an open embedding.
 * `TopCat.Hom.pullbackConstantSheafIso`: the inverse image of a constant abelian sheaf is
@@ -61,6 +75,78 @@ theorem isSheaf_iff_of_iso_pushforward (h : Y ≅ X) {F : X.Presheaf C} {G : Y.P
     (Sheaf.pushforward_sheaf_of_sheaf h.inv hF)
 
 end TopCat.Presheaf
+
+namespace TopCat.Sheaf
+
+open Opposite
+
+variable {C : Type u} [Category.{v} C] {X Y Z : TopCat.{w}}
+
+/-- Pushing a sheaf forward along a continuous map equal to the identity returns the sheaf
+itself. -/
+theorem pushforward_obj_of_eq_id {f : X ⟶ X} (hf : f = 𝟙 X) (F : X.Sheaf C) :
+    (pushforward C f).obj F = F := by
+  rw [hf]
+  rfl
+
+/-- Pushing a sheaf forward along a continuous map equal to a composite agrees with the iterated
+pushforward. -/
+theorem pushforward_obj_of_eq_comp {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : h = f ≫ g)
+    (F : X.Sheaf C) :
+    (pushforward C h).obj F = (pushforward C g).obj ((pushforward C f).obj F) := by
+  rw [hfg]
+  rfl
+
+/-- On sections over `U`, `eqToHom` between equal sheaves is `eqToHom` of the induced equality of
+section objects. -/
+theorem eqToHom_hom_app {F G : X.Sheaf C} (h : F = G) (U : (Opens X)ᵒᵖ) :
+    (eqToHom h).hom.app U = eqToHom (congrArg (fun S ↦ S.obj.obj U) h) := by
+  subst h
+  rfl
+
+/-- Transporting along `pushforward_obj_of_eq_id` commutes with pushforward of a sheaf
+morphism. -/
+@[reassoc]
+theorem eqToHom_symm_comp_pushforward_map_of_eq_id {f : X ⟶ X} (hf : f = 𝟙 X)
+    {F G : X.Sheaf C} (α : F ⟶ G) :
+    eqToHom (pushforward_obj_of_eq_id hf F).symm ≫ (pushforward C f).map α =
+      α ≫ eqToHom (pushforward_obj_of_eq_id hf G).symm := by
+  subst hf
+  exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- Transporting along `pushforward_obj_of_eq_comp` intertwines pushforward of a sheaf morphism
+along the composite with iterated pushforward. -/
+@[reassoc]
+theorem eqToHom_symm_comp_pushforward_map_of_eq_comp {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z}
+    (hfg : h = f ≫ g) {F G : X.Sheaf C} (α : F ⟶ G) :
+    eqToHom (pushforward_obj_of_eq_comp hfg F).symm ≫ (pushforward C h).map α =
+      (pushforward C g).map ((pushforward C f).map α) ≫
+        eqToHom (pushforward_obj_of_eq_comp hfg G).symm := by
+  subst hfg
+  exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- For a continuous map equal to the identity, the underlying presheaf morphism of `eqToHom` into
+the pushforward cancels right whiskering along `Opens.map`. -/
+@[reassoc]
+theorem eqToHom_hom_comp_whiskerRight_of_eq_id {f : X ⟶ X} (hf : f = 𝟙 X) {F : X.Sheaf C}
+    (hobj : F = (pushforward C f).obj F) (hop : (Opens.map f).op = 𝟭 (Opens X)ᵒᵖ) :
+    (eqToHom hobj).hom ≫ Functor.whiskerRight (eqToHom hop) F.obj = 𝟙 F.obj := by
+  subst hf
+  ext U : 2
+  exact (Category.id_comp _).trans (F.obj.map_id U)
+
+/-- For a continuous map equal to a composite, the underlying presheaf morphism of `eqToHom`
+between the composite and iterated pushforwards is right whiskering along `Opens.map`. -/
+theorem eqToHom_hom_eq_whiskerRight_of_eq_comp {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z}
+    (hfg : h = f ≫ g) {F : X.Sheaf C}
+    (hobj : (pushforward C h).obj F = (pushforward C g).obj ((pushforward C f).obj F))
+    (hop : (Opens.map h).op = (Opens.map g).op ⋙ (Opens.map f).op) :
+    (eqToHom hobj).hom = Functor.whiskerRight (eqToHom hop) F.obj := by
+  subst hfg
+  ext U : 2
+  exact (F.obj.map_id _).symm
+
+end TopCat.Sheaf
 
 namespace Topology.IsOpenEmbedding
 

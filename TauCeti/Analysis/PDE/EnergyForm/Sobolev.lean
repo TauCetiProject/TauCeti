@@ -252,6 +252,14 @@ theorem memLp_energyIntegrand_of_bounds
   exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
     opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
 
+/-- Constant principal coefficients without drift or mass define an essentially bounded field of
+pointwise energy forms. -/
+theorem memLp_energyIntegrand_const_zero_zero (A : Matrix ι ι ℝ) :
+    MemLp (fun x => energyIntegrand ((fun _ => A) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega) := by
+  simpa using memLp_top_const (μ := mu.restrict Omega) (energyIntegrand A 0 0)
+
 /-- Subtracting a constant from the mass coefficient preserves essential boundedness of the
 pointwise energy forms. -/
 theorem memLp_energyIntegrand_mass_sub_const
@@ -334,7 +342,7 @@ theorem jetLpL_apply_ae (u : W1p mu Omega 2) :
 /-- The squared gradient component of the Sobolev jet field is integrable. -/
 theorem integrable_norm_jetField_snd_sq (u : W1p mu Omega 2) :
     Integrable (fun x => ‖(jetField u x).2‖ ^ 2) (mu.restrict Omega) := by
-  simpa only [jetField_apply] using W1p.integrable_norm_gradient_sq u
+  simpa only [jetField_apply] using (Lp.memLp (W1p.gradient u)).norm.integrable_sq
 
 /-- The squared value component of the Sobolev jet field is integrable. -/
 theorem integrable_jetField_fst_sq (u : W1p mu Omega 2) :

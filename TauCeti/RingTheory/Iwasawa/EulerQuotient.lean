@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.Algebra.Module.Torsion.EulerQuotient
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Iwasawa.VerticalBlock
+import TauCeti.RingTheory.Norm.Cokernel
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.PowerSeries.Ideal
@@ -133,7 +134,10 @@ theorem resultant_ne_zero_of_finite_quotSMulTop_elementary {ϖ : O}
   intro j _ hzero
   have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
   rw [← H.norm_mk_coe_eq_resultant] at hzero
-  refine not_finite_iff_infinite.2 (H.infinite_quotSMulTop hzero) ?_
+  refine not_finite_iff_infinite.2
+    (TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero (A := O) (R := O⟦X⟧)
+      (S := O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)}) (r := (G : O⟦X⟧))
+      (by rwa [Ideal.Quotient.algebraMap_eq])) ?_
   -- The cokernel on the horizontal block `j` is a quotient of the cokernel on the whole module.
   let π : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)} :=
     (LinearMap.proj j).comp ((LinearMap.snd O⟦X⟧ _ _).comp (LinearMap.snd O⟦X⟧ _ _))
