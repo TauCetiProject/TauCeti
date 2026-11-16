@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.UniversalCover
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Covering.Complete
 
 /-!
 # The Riemannian universal cover
@@ -23,11 +23,18 @@ For a smooth metric on a smooth Hausdorff manifold, `p` also preserves scalar an
 curvature
 (`Bundle.ContMDiffRiemannianMetric.scalarCurvature_universalCover`,
 `Bundle.ContMDiffRiemannianMetric.sectionalCurvature_universalCover`).
+For a smooth metric on a boundaryless manifold, geodesic completeness is equivalent at
+corresponding points
+(`Bundle.ContMDiffRiemannianMetric.isGeodesicallyCompleteAt_universalCover_iff`).
+If the model is boundaryless and the base is Hausdorff, geodesic completeness at the basepoint
+makes the induced Riemannian distance upstairs complete
+(`Bundle.ContMDiffRiemannianMetric.completeSpace_universalCover`).
 
 ## References
 
 * John M. Lee, *Introduction to Riemannian Manifolds*, second edition, Graduate Texts in
-  Mathematics 176, Springer, 2018, Chapter 2 (Riemannian coverings) and Proposition 7.6.
+  Mathematics 176, Springer, 2018, Chapter 2 (Riemannian coverings), Chapter 6 (completeness)
+  and Proposition 7.6.
 -/
 
 public section
@@ -92,6 +99,54 @@ theorem isLocalRiemannianIsometry_universalCoverProj
       inner_mfderiv := fun z v w ↦ (g.universalCover_inner z v w).symm }
 
 end Metric
+
+section Completeness
+
+variable [IsManifold I ∞ M]
+
+/-- Geodesic completeness for the universal-cover metric at a point is equivalent to geodesic
+completeness for the base metric at its projection. -/
+theorem isGeodesicallyCompleteAt_universalCover_iff [BoundarylessManifold I M]
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (z : UniversalCover x₀) :
+    (letI : RiemannianBundle (fun z : UniversalCover x₀ ↦ TangentSpace I z) :=
+      ⟨(g.universalCover x₀).toRiemannianMetric⟩;
+      TauCeti.Manifold.IsGeodesicallyCompleteAt I (UniversalCover x₀) z) ↔
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      TauCeti.Manifold.IsGeodesicallyCompleteAt I M (proj z)) := by
+  let : RiemannianBundle (fun z : UniversalCover x₀ ↦ TangentSpace I z) :=
+    ⟨(g.universalCover x₀).toRiemannianMetric⟩
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  exact ((g.isLocalRiemannianIsometry_universalCoverProj x₀
+    ).isGeodesicallyCompleteAt_iff_of_isCoveringMap (isCoveringMap x₀) z).symm
+
+/-- Geodesic completeness at the basepoint makes the universal cover complete for the
+Riemannian distance of its pullback metric. -/
+theorem completeSpace_universalCover [I.Boundaryless] [T2Space M]
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x₀ : M)
+    (h : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      TauCeti.Manifold.IsGeodesicallyCompleteAt I M x₀) :
+    letI : RiemannianBundle (fun z : UniversalCover x₀ ↦ TangentSpace I z) :=
+      ⟨(g.universalCover x₀).toRiemannianMetric⟩
+    letI : MetricSpace (UniversalCover x₀) :=
+      haveI := Manifold.locallyCompact_of_finiteDimensional (M := UniversalCover x₀) I
+      haveI := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+        (F := E) (V := fun z : UniversalCover x₀ ↦ TangentSpace I z)
+      TauCeti.MetricSpace.ofRiemannianMetric I (UniversalCover x₀)
+    CompleteSpace (UniversalCover x₀) := by
+  let : RiemannianBundle (fun z : UniversalCover x₀ ↦ TangentSpace I z) :=
+    ⟨(g.universalCover x₀).toRiemannianMetric⟩
+  have := Manifold.locallyCompact_of_finiteDimensional (M := UniversalCover x₀) I
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+    (F := E) (V := fun z : UniversalCover x₀ ↦ TangentSpace I z)
+  let : MetricSpace (UniversalCover x₀) :=
+    TauCeti.MetricSpace.ofRiemannianMetric I (UniversalCover x₀)
+  apply (TauCeti.Manifold.completeSpace_iff_isGeodesicallyCompleteAt
+    (I := I) (basepointLift x₀ : UniversalCover x₀)).2
+  exact (g.isGeodesicallyCompleteAt_universalCover_iff (basepointLift x₀ : UniversalCover x₀)).2
+    (by simpa only [proj_basepointLift] using h)
+
+end Completeness
 
 variable [T2Space M] [IsManifold I ∞ M]
 

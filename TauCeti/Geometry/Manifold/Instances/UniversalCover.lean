@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.AlgebraicTopology.UniversalCover.Group
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
 public import TauCeti.Geometry.Manifold.Instances.Comap
@@ -24,6 +25,7 @@ over the same model. When `X` is a `C^n` manifold, so is its universal cover, an
 a `C^n` local diffeomorphism. A map into the universal cover is `C^n` exactly when it is continuous
 and its composite with the projection is `C^n`. The same pulled-back atlas makes every
 subgroup cover a `C^n` manifold, with a `C^n` local diffeomorphism to the base.
+Universal covers and subgroup covers of boundaryless manifolds are boundaryless.
 
 `TauCeti.Manifold.exists_universalCover` packages the universal cover of a connected, Hausdorff,
 second-countable manifold as a simply connected, Hausdorff, second-countable covering manifold.
@@ -94,6 +96,11 @@ instance instIsManifold [IsManifold I n X] : IsManifold I n (UniversalCover x₀
 theorem isLocalDiffeomorph_proj : IsLocalDiffeomorph I I n (proj : UniversalCover x₀ → X) :=
   (isCoveringMap x₀).isLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap
 
+/-- The universal cover of a boundaryless manifold is boundaryless. -/
+instance instBoundarylessManifold [BoundarylessManifold I X] :
+    BoundarylessManifold I (UniversalCover x₀) :=
+  (isLocalDiffeomorph_proj (I := I) (n := 1) x₀).boundarylessManifold one_ne_zero
+
 /-- The covering projection of the universal cover is `C^n`. -/
 theorem contMDiff_proj : ContMDiff I I n (proj : UniversalCover x₀ → X) :=
   (isCoveringMap x₀).isLocalHomeomorph.contMDiff_chartedSpaceComap
@@ -150,6 +157,11 @@ instance instIsManifoldSubgroupQuotient [IsManifold I n X] :
 theorem isLocalDiffeomorph_subgroupQuotientProj :
     IsLocalDiffeomorph I I n (subgroupQuotientProj x₀ K) :=
   (isCoveringMap_subgroupQuotientProj x₀ K).isLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap
+
+/-- A subgroup cover of a boundaryless manifold is boundaryless. -/
+instance instBoundarylessManifoldSubgroupQuotient [BoundarylessManifold I X] :
+    BoundarylessManifold I (SubgroupQuotient x₀ K) :=
+  (isLocalDiffeomorph_subgroupQuotientProj (I := I) (n := 1) x₀ K).boundarylessManifold one_ne_zero
 
 end SubgroupQuotient
 

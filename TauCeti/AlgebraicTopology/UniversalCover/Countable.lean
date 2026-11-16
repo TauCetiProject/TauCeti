@@ -43,7 +43,7 @@ instance UniversalCover.instSecondCountableTopology [SecondCountableTopology X] 
 
 /-- A locally path-connected, semilocally simply connected, second-countable space has countable
 fundamental group. -/
-theorem countable_fundamentalGroup [SecondCountableTopology X] :
+instance countable_fundamentalGroup [SecondCountableTopology X] :
     Countable (FundamentalGroup X x₀) :=
   have := (UniversalCover.isCoveringMap x₀).countable_fiber x₀
   Countable.of_equiv _ (UniversalCover.fiberEquivFundamentalGroup x₀)
