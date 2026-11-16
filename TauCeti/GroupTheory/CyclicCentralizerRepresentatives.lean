@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.Algebra.Group.Subgroup.Conjugates
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -99,7 +100,8 @@ theorem existsUnique_centralizer_conj_eq_zpowers (hS : IsCyclicCentralizerRepres
   have hzp (x a : G) : zpowers (x * a * x⁻¹) = (zpowers a).map (MulAut.conj x) := by
     simp [MonoidHom.map_zpowers]
   obtain ⟨c, hc⟩ := (centralizer {g}).isCyclic_iff_exists_zpowers_eq.1 hcyc
-  obtain ⟨s, hs, x, hx⟩ := hS.exists_zpowers_conj_eq c (ne_one_of_centralizer_le_zpowers hg hc.ge)
+  obtain ⟨s, hs, x, hx⟩ := hS.exists_zpowers_conj_eq c
+    (ne_one_of_mem_zpowers hg (hc.ge (mem_centralizer_singleton_iff.2 rfl)))
     (centralizer_singleton_eq_zpowers_of_centralizer_le hc.ge)
   have hxs : centralizer {x * g * x⁻¹} = zpowers s := by rw [hcen, ← hc, ← hzp, hx]
   refine ⟨s, ⟨hs, x, hxs⟩, fun t ⟨ht, y, hy⟩ ↦ hS.eq_of_zpowers_conj_eq t ht s hs (x * y⁻¹) ?_⟩
