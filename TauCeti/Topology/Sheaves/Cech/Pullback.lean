@@ -18,10 +18,8 @@ complex of `Q` for the inverse-image family. It uses the native tuple complex,
 including repeated indices and empty intersections. No covering condition is needed.
 
 The map commutes with actual refinement functions, with the homotopies between the maps
-induced by two refinement functions, and with coefficient morphisms; it is contravariantly
-functorial in continuous maps (`TopCat.Hom.cechComplexPullback_id`,
-`TopCat.Hom.cechComplexPullback_comp`) and is an isomorphism when the coefficient morphism is
-(`TopCat.Hom.isIso_cechComplexPullback`).
+induced by two refinement functions, and with coefficient morphisms, and it is an isomorphism when
+the coefficient morphism is (`TopCat.Hom.isIso_cechComplexPullback`).
 Consequently, restriction to an open subspace can be performed before or after a
 refinement. `TopologicalSpace.Opens.cechComplexRestrict` is this restriction map, with the
 presheaf on the subspace obtained by evaluating on its open subsets regarded as opens of the
@@ -153,80 +151,6 @@ theorem cechComplexPullback_naturality {P' : Y.Presheaf A} {Q' : X.Presheaf A}
     cechComplexPullback_comp_comparison_assoc]
   exact ((cechComplexFunctor U).map_comp β α').symm.trans
     ((congrArg (cechComplexFunctor U).map h).trans ((cechComplexFunctor U).map_comp _ _))
-
-private lemma cechComplex_hom_ext {X : TopCat.{u}} {ι : Type u} {U : ι → Opens X}
-    {P : X.Presheaf A} {K : CochainComplex A ℕ} {φ ψ : K ⟶ (cechComplexFunctor U).obj P}
-    (h : ∀ n (c : Fin (n + 1) → ι),
-      φ.f n ≫ Limits.Pi.π (fun b : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (b j)))) c =
-        ψ.f n ≫ Limits.Pi.π (fun b : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (b j)))) c) :
-    φ = ψ := by
-  ext n : 2
-  exact Limits.Pi.hom_ext _ _ fun c ↦ h n c
-
-/-- Pullback along the identity map and identity coefficient morphism is the identity on Čech
-complexes. -/
-@[simp]
-theorem cechComplexPullback_id (X : TopCat.{u}) {ι : Type u} (U : ι → Opens X)
-    (P : X.Presheaf A) :
-    cechComplexPullback (𝟙 X) U (𝟙 P) = 𝟙 ((cechComplexFunctor U).obj P) := by
-  refine cechComplex_hom_ext fun n c ↦ ?_
-  have hpi : (inv (piComparison (Opens.map (𝟙 X)) (fun j ↦ U (c j)))).op =
-      𝟙 (op (∏ᶜ fun j ↦ U (c j))) :=
-    Quiver.Hom.unop_inj (Subsingleton.elim _ _)
-  have hmap : P.map (inv (piComparison (Opens.map (𝟙 X)) (fun j ↦ U (c j)))).op = 𝟙 _ :=
-    (congrArg P.map hpi).trans (P.map_id _)
-  have htail : (NatTrans.id P).app (op (∏ᶜ fun j ↦ U (c j))) ≫
-      P.map (inv (piComparison (Opens.map (𝟙 X)) (fun j ↦ U (c j)))).op = 𝟙 _ :=
-    ((NatTrans.id_app P _ =≫ _).trans (Category.id_comp _)).trans hmap
-  exact (cechComplexPullback_f_π (𝟙 X) U (𝟙 P) n c).trans <|
-    (_ ≫= htail).trans <| (Category.comp_id _).trans (Category.id_comp _).symm
-
-/-- Pullback of Čech complexes is contravariantly functorial in continuous maps. -/
-theorem cechComplexPullback_comp {X Y Z : TopCat.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    {ι : Type u} (U : ι → Opens Z) {P : Z.Presheaf A} {Q : Y.Presheaf A} {S : X.Presheaf A}
-    (β : P ⟶ (TopCat.Presheaf.pushforward A g).obj Q)
-    (α : Q ⟶ (TopCat.Presheaf.pushforward A f).obj S)
-    (γ : P ⟶ (TopCat.Presheaf.pushforward A (f ≫ g)).obj S)
-    (hγ : ∀ V, γ.app V = β.app V ≫ α.app (op ((Opens.map g).obj V.unop))) :
-    cechComplexPullback (f ≫ g) U γ =
-      cechComplexPullback g U β ≫
-        cechComplexPullback f (fun i ↦ (Opens.map g).obj (U i)) α := by
-  refine cechComplex_hom_ext fun n c ↦ ?_
-  have hL := cechComplexPullback_f_π (f ≫ g) U γ n c
-  have hR1 := cechComplexPullback_f_π f (fun i ↦ (Opens.map g).obj (U i)) α n c
-  have hR2 := cechComplexPullback_f_π g U β n c
-  have hR : (cechComplexPullback g U β ≫
-        cechComplexPullback f (fun i ↦ (Opens.map g).obj (U i)) α).f n ≫
-      Limits.Pi.π (fun b : Fin (n + 1) → ι ↦
-        S.obj (op (∏ᶜ fun j ↦ (Opens.map f).obj ((Opens.map g).obj (U (b j)))))) c =
-      Limits.Pi.π _ c ≫ β.app (op (∏ᶜ fun j ↦ U (c j))) ≫
-        Q.map (inv (piComparison (Opens.map g) (fun j ↦ U (c j)))).op ≫
-        α.app (op (∏ᶜ fun j ↦ (Opens.map g).obj (U (c j)))) ≫
-        S.map (inv (piComparison (Opens.map f) (fun j ↦ (Opens.map g).obj (U (c j))))).op := by
-    refine (HomologicalComplex.comp_f _ _ n =≫ _).trans <| (Category.assoc _ _ _).trans <|
-      ((cechComplexPullback g U β).f n ≫= hR1).trans <|
-      (Category.assoc _ _ _).symm.trans <| (hR2 =≫ _).trans <|
-      (Category.assoc _ _ _).trans <| (_ ≫= Category.assoc _ _ _)
-  have hnat : Q.map (inv (piComparison (Opens.map g) (fun j ↦ U (c j)))).op ≫
-        α.app (op (∏ᶜ fun j ↦ (Opens.map g).obj (U (c j)))) =
-      α.app (op ((Opens.map g).obj (∏ᶜ fun j ↦ U (c j)))) ≫
-        S.map ((Opens.map f).map (inv (piComparison (Opens.map g) (fun j ↦ U (c j))))).op :=
-    α.naturality (inv (piComparison (Opens.map g) (fun j ↦ U (c j)))).op
-  have hcomp :
-      ((Opens.map f).map (inv (piComparison (Opens.map g) fun j ↦ U (c j)))).op ≫
-          (inv (piComparison (Opens.map f) fun j ↦ (Opens.map g).obj (U (c j)))).op =
-        (inv (piComparison (Opens.map (f ≫ g)) fun j ↦ U (c j))).op :=
-    Quiver.Hom.unop_inj (Subsingleton.elim _ _)
-  have htail :
-      β.app (op (∏ᶜ fun j ↦ U (c j))) ≫
-        Q.map (inv (piComparison (Opens.map g) (fun j ↦ U (c j)))).op ≫
-        α.app (op (∏ᶜ fun j ↦ (Opens.map g).obj (U (c j)))) ≫
-        S.map (inv (piComparison (Opens.map f) (fun j ↦ (Opens.map g).obj (U (c j))))).op =
-      γ.app (op (∏ᶜ fun j ↦ U (c j))) ≫
-        S.map (inv (piComparison (Opens.map (f ≫ g)) (fun j ↦ U (c j)))).op := by
-    rw [reassoc_of% hnat, ← S.map_comp, hcomp, hγ]
-    exact (Category.assoc _ _ _).symm
-  exact hL.trans (hR.trans (_ ≫= htail)).symm
 
 end TopCat.Hom
 

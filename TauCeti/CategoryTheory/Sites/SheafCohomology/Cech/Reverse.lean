@@ -79,35 +79,21 @@ private def bdry (n m : ℕ) : UChain (n + 1) m →ₗ[ℤ] UChain n m :=
   Finsupp.linearCombination ℤ fun f ↦
     ∑ j : Fin (n + 2), (-1 : ℤ) ^ (j : ℕ) • Finsupp.single (f ∘ j.succAbove) 1
 
-private lemma bdry_single (n m : ℕ) (f : Fin (n + 2) → Fin (m + 1)) :
-    bdry n m (Finsupp.single f 1) =
-      ∑ j : Fin (n + 2), (-1 : ℤ) ^ (j : ℕ) • Finsupp.single (f ∘ j.succAbove) 1 := by
-  simp [bdry]
-
 /-- Postcomposition with the alternating sum of coface maps `Fin.succAbove`: corresponds to
 postcomposition with the Čech differential `d m (m + 1)`. -/
 private def codiff (n m : ℕ) : UChain n m →ₗ[ℤ] UChain n (m + 1) :=
   Finsupp.linearCombination ℤ fun f ↦
     ∑ k : Fin (m + 2), (-1 : ℤ) ^ (k : ℕ) • Finsupp.single (k.succAbove ∘ f) 1
 
-private lemma codiff_single (n m : ℕ) (f : Fin (n + 1) → Fin (m + 1)) :
-    codiff n m (Finsupp.single f 1) =
-      ∑ k : Fin (m + 2), (-1 : ℤ) ^ (k : ℕ) • Finsupp.single (k.succAbove ∘ f) 1 := by
-  simp [codiff]
-
 private lemma bdry_codiff (n m : ℕ) (x : UChain (n + 1) m) :
     bdry n (m + 1) (codiff (n + 1) m x) = codiff n m (bdry n m x) := by
-  induction x using Finsupp.induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | single f c =>
-    have hsc : Finsupp.single f c = c • Finsupp.single f (1 : ℤ) := by simp
-    rw [hsc, map_zsmul, map_zsmul, map_zsmul, map_zsmul]
-    congr 1
-    simp only [bdry_single, codiff_single, map_sum, map_zsmul, Finset.smul_sum, smul_smul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [mul_comm, Function.comp_assoc]
+  change ((bdry n (m + 1)).comp (codiff (n + 1) m)) x = ((codiff n m).comp (bdry n m)) x
+  refine LinearMap.congr_fun (Finsupp.lhom_ext' fun f ↦ LinearMap.ext_ring ?_) x
+  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, bdry, codiff,
+    Finsupp.linearCombination_single, map_sum, map_zsmul, Finset.smul_sum, smul_smul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [mul_comm, Function.comp_assoc]
 
 private lemma succAbove_comp_succAbove {m : ℕ} {k : Fin (m + 3)} {j : Fin (m + 2)}
     (h : (k : ℕ) ≤ j) :
@@ -115,81 +101,60 @@ private lemma succAbove_comp_succAbove {m : ℕ} {k : Fin (m + 3)} {j : Fin (m +
   (congrArg (fun φ ↦ ⇑(SimplexCategory.Hom.toOrderHom φ))
     (SimplexCategory.δ_comp_δ'' (i := k) (j := j) (Fin.le_def.2 h))).symm
 
-private lemma codiff_codiff_single (n m : ℕ) (f : Fin (n + 1) → Fin (m + 1)) :
-    codiff n (m + 1) (codiff n m (Finsupp.single f 1)) = 0 := by
-  simp only [codiff_single, map_sum, map_zsmul, Finset.smul_sum, smul_smul, ← Finset.sum_product']
+private lemma codiff_codiff (n m : ℕ) (x : UChain n m) :
+    codiff n (m + 1) (codiff n m x) = 0 := by
+  change ((codiff n (m + 1)).comp (codiff n m)) x = (0 : UChain n m →ₗ[ℤ] UChain n (m + 2)) x
+  refine LinearMap.congr_fun (Finsupp.lhom_ext' fun f ↦ LinearMap.ext_ring ?_) x
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply, Finsupp.lsingle_apply, codiff,
+    Finsupp.linearCombination_single, map_sum, map_zsmul, Finset.smul_sum, smul_smul,
+    ← Finset.sum_product']
   let S : Finset (Fin (m + 2) × Fin (m + 3)) := {jk | (jk.2 : ℕ) ≤ jk.1}
   rw [Finset.univ_product_univ, ← Finset.sum_add_sum_compl S, add_eq_zero_iff_eq_neg,
     ← Finset.sum_neg_distrib]
   refine Finset.sum_bij'
     (fun jk h ↦ (jk.2.castLT (by have : (jk.2 : ℕ) ≤ jk.1 := (Finset.mem_filter.1 h).2; omega),
       jk.1.succ))
-    (fun jk h ↦ (jk.2.pred fun h0 ↦ by simp [S, h0] at h, jk.1.castSucc)) ?_ ?_ ?_ ?_ ?_
-  · intro jk h
-    simp only [S, Finset.mem_compl, Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_succ,
-      Fin.val_castLT, not_le] at h ⊢
-    omega
-  · intro jk h
-    simp only [S, Finset.mem_compl, Finset.mem_filter, Finset.mem_univ, true_and,
-      Fin.val_castSucc, Fin.val_pred, not_le] at h ⊢
-    omega
-  · intro jk _
-    simp
-  · intro jk _
-    simp
-  · rintro ⟨j, k⟩ h
-    have h' : (k : ℕ) ≤ j := (Finset.mem_filter.1 h).2
-    rw [← Function.comp_assoc, succAbove_comp_succAbove h', Function.comp_assoc, ← neg_smul,
-      Fin.val_succ, Fin.val_castLT, pow_succ]
-    congr 1
-    ring
-
-private lemma codiff_codiff (n m : ℕ) (x : UChain n m) :
-    codiff n (m + 1) (codiff n m x) = 0 := by
-  induction x using Finsupp.induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
-  | single f c =>
-    have hsc : Finsupp.single f c = c • Finsupp.single f (1 : ℤ) := by simp
-    rw [hsc, map_zsmul, map_zsmul, codiff_codiff_single, smul_zero]
+    (fun jk h ↦ (jk.2.pred fun h0 ↦ by simp [S, h0] at h, jk.1.castSucc))
+    (fun jk h ↦ by simp only [S, Finset.mem_compl, Finset.mem_filter, Finset.mem_univ, true_and,
+      Fin.val_succ, Fin.val_castLT, not_le] at h ⊢; omega)
+    (fun jk h ↦ by simp only [S, Finset.mem_compl, Finset.mem_filter, Finset.mem_univ, true_and,
+      Fin.val_castSucc, Fin.val_pred, not_le] at h ⊢; omega)
+    (fun _ _ ↦ by simp) (fun _ _ ↦ by simp) fun ⟨j, k⟩ h ↦ ?_
+  have h' : (k : ℕ) ≤ j := (Finset.mem_filter.1 h).2
+  rw [← Function.comp_assoc, succAbove_comp_succAbove h', Function.comp_assoc, ← neg_smul,
+    Fin.val_succ, Fin.val_castLT, pow_succ]
+  congr 1; ring
 
 /-- The universal reversal chain `(-1) ^ (m * (m + 1) / 2) • [Fin.rev]` in degree `m`. -/
 private def revChain (m : ℕ) : UChain m m :=
   (-1 : ℤ) ^ (m * (m + 1) / 2) • Finsupp.single Fin.rev 1
 
-private lemma revSign_succ (m : ℕ) :
-    (m + 1) * (m + 2) / 2 = m * (m + 1) / 2 + (m + 1) := by
-  have h : (m + 1) * (m + 2) = m * (m + 1) + 2 * (m + 1) := by ring
-  rw [h, Nat.add_mul_div_left _ _ (by omega)]
-
 private lemma bdry_id_eq_codiff_id (m : ℕ) :
     bdry m (m + 1) (Finsupp.single (id : Fin (m + 2) → Fin (m + 2)) 1) =
       codiff m m (Finsupp.single (id : Fin (m + 1) → Fin (m + 1)) 1) := by
-  simp only [bdry_single, codiff_single, Function.id_comp, Function.comp_id]
+  simp [bdry, codiff]
 
 private lemma bdry_revChain (m : ℕ) :
     bdry m (m + 1) (revChain (m + 1)) = codiff m m (revChain m) := by
-  simp only [revChain, map_zsmul, bdry_single, codiff_single, Finset.smul_sum, smul_smul]
+  simp only [revChain, map_zsmul, bdry, codiff, Finsupp.linearCombination_single,
+    Finset.smul_sum, smul_smul, one_mul]
   refine Fintype.sum_equiv ⟨Fin.rev, Fin.rev, Fin.rev_rev, Fin.rev_rev⟩ _ _ fun j ↦ ?_
-  have hcomp : Fin.rev ∘ j.succAbove = j.rev.succAbove ∘ Fin.rev := by
-    funext x
-    exact Fin.rev_succAbove j x
+  have hcomp : Fin.rev ∘ j.succAbove = j.rev.succAbove ∘ Fin.rev := funext (Fin.rev_succAbove j)
+  have hsign : (m + 1) * (m + 2) / 2 = m * (m + 1) / 2 + (m + 1) := by
+    rw [show (m + 1) * (m + 2) = m * (m + 1) + 2 * (m + 1) by ring,
+      Nat.add_mul_div_left _ _ (by omega)]
   dsimp only [Equiv.coe_fn_mk]
-  rw [hcomp, revSign_succ, ← pow_add, ← pow_add]
+  rw [hcomp, hsign, ← pow_add, ← pow_add]
   congr 1
   have hrev : (j.rev : ℕ) = m + 1 - j := by simp [Fin.val_rev]
   have hle : (j : ℕ) ≤ m + 1 := Nat.le_of_lt_succ j.isLt
-  have hexp : m * (m + 1) / 2 + (m + 1) + (j : ℕ) =
-      m * (m + 1) / 2 + (j.rev : ℕ) + 2 * (j : ℕ) := by omega
-  rw [hexp, pow_add, pow_mul, neg_one_sq, one_pow, mul_one]
+  rw [show m * (m + 1) / 2 + (m + 1) + (j : ℕ) =
+      m * (m + 1) / 2 + (j.rev : ℕ) + 2 * (j : ℕ) by omega,
+    pow_add, pow_mul, neg_one_sq, one_pow, mul_one]
 
 /-- Prepending vertex `0 : Fin (m + 1)` to a map `Fin (n + 1) → Fin (m + 1)`. -/
 private def cone₀ (n m : ℕ) : UChain n m →ₗ[ℤ] UChain (n + 1) m :=
   Finsupp.linearCombination ℤ fun f ↦ Finsupp.single (Fin.cons 0 f) 1
-
-private lemma cone₀_single (n m : ℕ) (f : Fin (n + 1) → Fin (m + 1)) :
-    cone₀ n m (Finsupp.single f 1) = Finsupp.single (Fin.cons 0 f) 1 := by
-  simp [cone₀]
 
 private lemma cons_comp_succAbove_succ {n m : ℕ} (f : Fin (n + 2) → Fin (m + 1))
     (j : Fin (n + 2)) :
@@ -203,20 +168,15 @@ private lemma cons_comp_succAbove_succ {n m : ℕ} (f : Fin (n + 2) → Fin (m +
 
 private lemma bdry_cone₀ (n m : ℕ) (x : UChain (n + 1) m) :
     bdry (n + 1) m (cone₀ (n + 1) m x) = x - cone₀ n m (bdry n m x) := by
-  induction x using Finsupp.induction_linear with
-  | zero => simp
-  | add x y hx hy =>
-    simp only [map_add, hx, hy]
-    abel
-  | single f c =>
-    have hsc : Finsupp.single f c = c • Finsupp.single f (1 : ℤ) := by simp
-    rw [hsc, map_zsmul, map_zsmul, map_zsmul, map_zsmul, ← smul_sub]
-    congr 1
-    simp only [cone₀_single, bdry_single, map_sum, map_zsmul]
-    rw [Fin.sum_univ_succ, Fin.val_zero, pow_zero, one_smul, sub_eq_add_neg,
-      ← Finset.sum_neg_distrib]
-    refine congrArg₂ (· + ·) (by simp) (Finset.sum_congr rfl fun j _ ↦ ?_)
-    rw [cons_comp_succAbove_succ, Fin.val_succ, pow_succ, mul_neg_one, neg_smul]
+  change ((bdry (n + 1) m).comp (cone₀ (n + 1) m)) x =
+    (LinearMap.id (R := ℤ) (M := UChain (n + 1) m) - (cone₀ n m).comp (bdry n m)) x
+  refine LinearMap.congr_fun (Finsupp.lhom_ext' fun f ↦ LinearMap.ext_ring ?_) x
+  simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply, Finsupp.lsingle_apply,
+    cone₀, bdry, Finsupp.linearCombination_single, one_smul, map_sum, map_zsmul]
+  rw [Fin.sum_univ_succ, Fin.val_zero, pow_zero, one_smul, sub_eq_add_neg,
+    ← Finset.sum_neg_distrib]
+  refine congrArg₂ (· + ·) (by simp) (Finset.sum_congr rfl fun j _ ↦ ?_)
+  rw [cons_comp_succAbove_succ, Fin.val_succ, pow_succ, mul_neg_one, neg_smul]
 
 /-- The universal chain homotopy between the identity and `revChain`, defined inductively by coning
 at vertex `0`. -/
@@ -225,16 +185,9 @@ private def homotopyChain : ∀ m : ℕ, UChain (m + 1) m
   | m + 1 => cone₀ (m + 1) (m + 1)
       (Finsupp.single id 1 - revChain (m + 1) - codiff (m + 1) m (homotopyChain m))
 
-private lemma homotopyChain_succ (m : ℕ) :
-    homotopyChain (m + 1) = cone₀ (m + 1) (m + 1)
-      (Finsupp.single id 1 - revChain (m + 1) - codiff (m + 1) m (homotopyChain m)) :=
-  rfl
-
 private lemma homotopyChain_zero_spec :
     bdry 0 0 (homotopyChain 0) = Finsupp.single (id : Fin 1 → Fin 1) 1 - revChain 0 := by
-  have hrev : (Fin.rev : Fin 1 → Fin 1) = id := by
-    funext x
-    exact Subsingleton.elim _ _
+  have hrev : (Fin.rev : Fin 1 → Fin 1) = id := funext fun _ ↦ Subsingleton.elim _ _
   simp [homotopyChain, revChain, hrev]
 
 private lemma homotopyChain_spec (m : ℕ) :
@@ -242,22 +195,13 @@ private lemma homotopyChain_spec (m : ℕ) :
       Finsupp.single (id : Fin (m + 2) → Fin (m + 2)) 1 - revChain (m + 1) := by
   induction m with
   | zero =>
-    rw [homotopyChain_succ, bdry_cone₀]
-    have hz : bdry 0 1 (Finsupp.single (id : Fin 2 → Fin 2) 1 - revChain 1 -
-        codiff 1 0 (homotopyChain 0)) = 0 := by
-      rw [map_sub, map_sub, bdry_id_eq_codiff_id, bdry_revChain, bdry_codiff,
-        homotopyChain_zero_spec, map_sub, sub_self]
-    rw [hz, map_zero, sub_zero, sub_add_cancel]
+    rw [homotopyChain.eq_2, bdry_cone₀, map_sub (bdry _ _), map_sub (bdry _ _),
+      bdry_id_eq_codiff_id, bdry_revChain, bdry_codiff, homotopyChain_zero_spec,
+      map_sub (codiff _ _), sub_self, map_zero, sub_zero, sub_add_cancel]
   | succ m ih =>
-    rw [homotopyChain_succ, bdry_cone₀]
-    have hz : bdry (m + 1) (m + 2) (Finsupp.single (id : Fin (m + 3) → Fin (m + 3)) 1 -
-        revChain (m + 2) - codiff (m + 2) (m + 1) (homotopyChain (m + 1))) = 0 := by
-      rw [map_sub, map_sub, bdry_id_eq_codiff_id, bdry_revChain, bdry_codiff, ← map_sub, ← map_sub]
-      have hsub : Finsupp.single (id : Fin (m + 2) → Fin (m + 2)) 1 - revChain (m + 1) -
-          bdry (m + 1) (m + 1) (homotopyChain (m + 1)) = codiff (m + 1) m (homotopyChain m) := by
-        rw [← ih, add_sub_cancel_left]
-      rw [hsub, codiff_codiff]
-    rw [hz, map_zero, sub_zero, sub_add_cancel]
+    rw [homotopyChain.eq_2, bdry_cone₀, map_sub (bdry _ _), map_sub (bdry _ _),
+      bdry_id_eq_codiff_id, bdry_revChain, bdry_codiff, ← map_sub, ← map_sub, ← ih,
+      add_sub_cancel_left, codiff_codiff, map_zero, sub_zero, sub_add_cancel]
 
 /-! ### Evaluation on a Čech complex -/
 
@@ -281,35 +225,26 @@ private lemma elemMap_comp_π {n m : ℕ} (f : Fin (n + 1) → Fin (m + 1)) (b :
 
 private lemma elemMap_id (n : ℕ) :
     elemMap U P (id : Fin (n + 1) → Fin (n + 1)) = 𝟙 _ := by
-  refine Pi.hom_ext _ _ fun b ↦ ?_
-  have hlift : (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (b j)) i) = 𝟙 _ :=
-    Pi.hom_ext _ _ fun i ↦ (Pi.lift_comp_π _ i).trans (Category.id_comp _).symm
-  have hmap : P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (b j)) i).op = 𝟙 _ := by
-    rw [hlift, op_id, P.map_id]
+  refine Pi.hom_ext _ _ fun (b : Fin (n + 1) → ι) ↦ ?_
+  have h : (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (b j)) i) = 𝟙 _ :=
+    Pi.hom_ext _ _ fun i ↦ by simp
   exact (elemMap_comp_π U P id b).trans <|
-    (_ ≫= hmap).trans <| (Category.comp_id _).trans (Category.id_comp _).symm
+    (_ ≫= (congrArg (fun f ↦ P.map f.op) h).trans (P.map_id _)).trans <|
+    (Category.comp_id _).trans (Category.id_comp _).symm
 
 private lemma elemMap_comp {n m k : ℕ} (f : Fin (n + 1) → Fin (m + 1))
     (g : Fin (m + 1) → Fin (k + 1)) :
     elemMap U P f ≫ elemMap U P g = elemMap U P (g ∘ f) := by
-  refine Pi.hom_ext _ _ fun c ↦ ?_
-  have hprod :
-      (Pi.lift fun j : Fin (m + 1) ↦ Pi.π (fun l ↦ U (c l)) (g j)) ≫
-          (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (c (g j))) (f i)) =
-        Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun l ↦ U (c l)) (g (f i)) := by
-    refine Pi.hom_ext _ _ fun i ↦ ?_
-    rw [Category.assoc, Pi.lift_comp_π, Pi.lift_comp_π, Pi.lift_comp_π]
-  have hmap :
-      P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (c (g j))) (f i)).op ≫
-          P.map (Pi.lift fun j : Fin (m + 1) ↦ Pi.π (fun l ↦ U (c l)) (g j)).op =
-        P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun l ↦ U (c l)) (g (f i))).op := by
-    rw [← P.map_comp, ← op_comp, hprod]
-  exact (Category.assoc _ _ _).trans <|
-    (_ ≫= elemMap_comp_π U P g c).trans <|
-      (Category.assoc _ _ _).symm.trans <|
-        (elemMap_comp_π U P f (c ∘ g) =≫ _).trans <|
-          (Category.assoc _ _ _).trans <|
-            (_ ≫= hmap).trans (elemMap_comp_π U P (g ∘ f) c).symm
+  refine Pi.hom_ext _ _ fun (c : Fin (k + 1) → ι) ↦ ?_
+  have h : (Pi.lift fun j : Fin (m + 1) ↦ Pi.π (fun l ↦ U (c l)) (g j)) ≫
+      (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (c (g j))) (f i)) =
+      Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun l ↦ U (c l)) (g (f i)) :=
+    Pi.hom_ext _ _ fun i ↦ by simp
+  exact (Category.assoc _ _ _).trans <| (_ ≫= elemMap_comp_π U P g c).trans <|
+    (Category.assoc _ _ _).symm.trans <| (elemMap_comp_π U P f (c ∘ g) =≫ _).trans <|
+    (Category.assoc _ _ _).trans <|
+    (_ ≫= (P.map_comp _ _).symm.trans (congrArg (fun x ↦ P.map x.op) h)).trans
+    (elemMap_comp_π U P (g ∘ f) c).symm
 
 private lemma d_eq_sum_elemMap (n : ℕ) :
     ((cechComplexFunctor U).obj P).d n (n + 1) =
@@ -321,130 +256,62 @@ private lemma d_eq_sum_elemMap (n : ℕ) :
     (Preadditive.zsmul_comp _ _ _).symm
 
 /-- Evaluate a universal chain `x : UChain n m` as a morphism `Čⁿ(U, P) ⟶ Čᵐ(U, P)`. -/
-private def evalUChain {n m : ℕ} (x : UChain n m) :
-    ((cechComplexFunctor U).obj P).X n ⟶ ((cechComplexFunctor U).obj P).X m :=
-  x.sum fun f c ↦ c • elemMap U P f
-
-private lemma evalUChain_zero (n m : ℕ) : evalUChain U P (0 : UChain n m) = 0 := by
-  simp [evalUChain]
-
-private lemma evalUChain_add {n m : ℕ} (x y : UChain n m) :
-    evalUChain U P (x + y) = evalUChain U P x + evalUChain U P y :=
-  Finsupp.sum_add_index' (fun _ ↦ zero_zsmul _) (fun _ _ _ ↦ add_zsmul _ _ _)
-
-private lemma evalUChain_sub {n m : ℕ} (x y : UChain n m) :
-    evalUChain U P (x - y) = evalUChain U P x - evalUChain U P y := by
-  have h := evalUChain_add U P (x - y) y
-  rw [sub_add_cancel] at h
-  exact eq_sub_of_add_eq h.symm
-
-private lemma evalUChain_zsmul {n m : ℕ} (c : ℤ) (x : UChain n m) :
-    evalUChain U P (c • x) = c • evalUChain U P x := by
-  induction x using Finsupp.induction_linear with
-  | zero => rw [smul_zero, evalUChain_zero, smul_zero]
-  | add x y hx hy => rw [smul_add, evalUChain_add, evalUChain_add, hx, hy, smul_add]
-  | single f d =>
-    simp only [evalUChain, Finsupp.smul_single]
-    rw [Finsupp.sum_single_index (zero_zsmul _), Finsupp.sum_single_index (zero_zsmul _),
-      smul_smul, smul_eq_mul]
-
-private lemma evalUChain_single {n m : ℕ} (f : Fin (n + 1) → Fin (m + 1)) :
-    evalUChain U P (Finsupp.single f 1) = elemMap U P f := by
-  simp [evalUChain]
+private def evalUChain {n m : ℕ} :
+    UChain n m →ₗ[ℤ] (((cechComplexFunctor U).obj P).X n ⟶ ((cechComplexFunctor U).obj P).X m) :=
+  Finsupp.linearCombination ℤ (elemMap U P)
 
 private lemma d_comp_evalUChain {n m : ℕ} (x : UChain (n + 1) m) :
     ((cechComplexFunctor U).obj P).d n (n + 1) ≫ evalUChain U P x =
       evalUChain U P (bdry n m x) := by
-  induction x using Finsupp.induction_linear with
-  | zero => simp [evalUChain_zero]
-  | add x y hx hy =>
-    rw [evalUChain_add, Preadditive.comp_add, hx, hy, map_add, evalUChain_add]
-  | single f c =>
-    have hsc : Finsupp.single f c = c • Finsupp.single f (1 : ℤ) := by simp
-    rw [hsc, evalUChain_zsmul, Preadditive.comp_zsmul, map_zsmul, evalUChain_zsmul]
-    congr 1
-    rw [evalUChain_single, bdry_single, d_eq_sum_elemMap, Preadditive.sum_comp]
-    have hsum : ∀ {s : Finset (Fin (n + 2))} (g : Fin (n + 2) → UChain n m),
-        evalUChain U P (∑ j ∈ s, g j) = ∑ j ∈ s, evalUChain U P (g j) := by
-      intro s g
-      classical
-      induction s using Finset.induction with
-      | empty => simp [evalUChain_zero]
-      | insert a s ha ih => rw [Finset.sum_insert ha, evalUChain_add, ih, Finset.sum_insert ha]
-    rw [hsum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Preadditive.zsmul_comp, elemMap_comp, evalUChain_zsmul, evalUChain_single]
+  change ((Preadditive.leftComp _ (((cechComplexFunctor U).obj P).d n (n + 1))).toIntLinearMap.comp
+      (evalUChain U P)) x = ((evalUChain U P).comp (bdry n m)) x
+  refine LinearMap.congr_fun (Finsupp.lhom_ext' fun f ↦ LinearMap.ext_ring ?_) x
+  simp [evalUChain, bdry, d_eq_sum_elemMap, Preadditive.leftComp, Preadditive.sum_comp,
+    elemMap_comp]
 
 private lemma evalUChain_comp_d {n m : ℕ} (x : UChain n m) :
     evalUChain U P x ≫ ((cechComplexFunctor U).obj P).d m (m + 1) =
       evalUChain U P (codiff n m x) := by
-  induction x using Finsupp.induction_linear with
-  | zero => simp [evalUChain_zero]
-  | add x y hx hy =>
-    rw [evalUChain_add, Preadditive.add_comp, hx, hy, map_add, evalUChain_add]
-  | single f c =>
-    have hsc : Finsupp.single f c = c • Finsupp.single f (1 : ℤ) := by simp
-    rw [hsc, evalUChain_zsmul, Preadditive.zsmul_comp, map_zsmul, evalUChain_zsmul]
-    congr 1
-    rw [evalUChain_single, codiff_single, d_eq_sum_elemMap, Preadditive.comp_sum]
-    have hsum : ∀ {s : Finset (Fin (m + 2))} (g : Fin (m + 2) → UChain n (m + 1)),
-        evalUChain U P (∑ k ∈ s, g k) = ∑ k ∈ s, evalUChain U P (g k) := by
-      intro s g
-      classical
-      induction s using Finset.induction with
-      | empty => simp [evalUChain_zero]
-      | insert a s ha ih => rw [Finset.sum_insert ha, evalUChain_add, ih, Finset.sum_insert ha]
-    rw [hsum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [Preadditive.comp_zsmul, elemMap_comp, evalUChain_zsmul, evalUChain_single]
+  change ((Preadditive.rightComp _ (((cechComplexFunctor U).obj P).d m (m + 1))).toIntLinearMap.comp
+      (evalUChain U P)) x = ((evalUChain U P).comp (codiff n m)) x
+  refine LinearMap.congr_fun (Finsupp.lhom_ext' fun f ↦ LinearMap.ext_ring ?_) x
+  simp [evalUChain, codiff, d_eq_sum_elemMap, Preadditive.rightComp, Preadditive.comp_sum,
+    elemMap_comp]
 
 private lemma elemMap_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) {n m : ℕ}
     (f : Fin (n + 1) → Fin (m + 1)) :
     ((cechComplexFunctor U).map α).f n ≫ elemMap U Q f =
-      elemMap U P f ≫ ((cechComplexFunctor U).map α).f m := by
-  refine Pi.hom_ext _ _ fun b ↦ ?_
-  -- `((cechComplexFunctor U).obj Q).X m` unfolds to the product only semireducibly.
-  refine (Category.assoc _ _ _).trans <|
-    (_ ≫= elemMap_comp_π U Q f b).trans <|
-      (Category.assoc _ _ _).symm.trans <|
-        (cechComplexFunctor_map_f_π U P α n (b ∘ f) =≫ _).trans <|
-          (Category.assoc _ _ _).trans <|
-            (_ ≫= (α.naturality _).symm).trans <|
-              (Category.assoc _ _ _).symm.trans <|
-                ((elemMap_comp_π U P f b).symm =≫ _).trans <|
-                  (Category.assoc _ _ _).trans <|
-                    (_ ≫= (cechComplexFunctor_map_f_π U P α m b).symm).trans
-                      (Category.assoc _ _ _).symm
+      elemMap U P f ≫ ((cechComplexFunctor U).map α).f m :=
+  Pi.hom_ext _ _ fun b ↦
+    (Category.assoc _ _ _).trans <| (_ ≫= elemMap_comp_π U Q f b).trans <|
+    (Category.assoc _ _ _).symm.trans <| (cechComplexFunctor_map_f_π U P α n (b ∘ f) =≫ _).trans <|
+    (Category.assoc _ _ _).trans <| (_ ≫= (α.naturality _).symm).trans <|
+    (Category.assoc _ _ _).symm.trans <| ((elemMap_comp_π U P f b).symm =≫ _).trans <|
+    (Category.assoc _ _ _).trans <| (_ ≫= (cechComplexFunctor_map_f_π U P α m b).symm).trans
+    (Category.assoc _ _ _).symm
 
 private lemma elemMap_comp_cechComplexMap {κ : Type w} {V : κ → C}
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {n m : ℕ}
     (f : Fin (n + 1) → Fin (m + 1)) :
     elemMap V P f ≫ (cechComplexMap P φ).f m =
       (cechComplexMap P φ).f n ≫ elemMap U P f := by
-  refine Pi.hom_ext _ _ fun b ↦ ?_
-  have hprod :
-      (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (b j)) (f i)) ≫
-          Limits.Pi.map (fun i : Fin (n + 1) ↦ φ.φ (b (f i))) =
-        Limits.Pi.map (fun j : Fin (m + 1) ↦ φ.φ (b j)) ≫
-          Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ V (φ.f (b j))) (f i) := by
-    refine Pi.hom_ext _ _ fun i ↦ ?_
-    rw [Category.assoc, Pi.map_π, Pi.lift_comp_π_assoc, Category.assoc, Pi.lift_comp_π, Pi.map_π]
-  have hmap :
-      P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ V (φ.f (b j))) (f i)).op ≫
-          P.map (Limits.Pi.map fun j : Fin (m + 1) ↦ φ.φ (b j)).op =
-        P.map (Limits.Pi.map fun i : Fin (n + 1) ↦ φ.φ (b (f i))).op ≫
-          P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (b j)) (f i)).op := by
-    rw [← P.map_comp, ← P.map_comp, ← op_comp, ← op_comp, hprod]
-  refine (Category.assoc _ _ _).trans <|
-    (_ ≫= cechComplexMap_f_π P φ m b).trans <|
-      (Category.assoc _ _ _).symm.trans <|
-        (elemMap_comp_π V P f (φ.f ∘ b) =≫ _).trans <|
-          (Category.assoc _ _ _).trans <|
-            (_ ≫= hmap).trans <|
-              (Category.assoc _ _ _).symm.trans <|
-                ((cechComplexMap_f_π P φ n (b ∘ f)).symm =≫ _).trans <|
-                  (Category.assoc _ _ _).trans <|
-                    (_ ≫= (elemMap_comp_π U P f b).symm).trans (Category.assoc _ _ _).symm
+  refine Pi.hom_ext _ _ fun (b : Fin (m + 1) → ι) ↦ ?_
+  have h : (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (b j)) (f i)) ≫
+      Limits.Pi.map (fun i : Fin (n + 1) ↦ φ.φ (b (f i))) =
+      Limits.Pi.map (fun j : Fin (m + 1) ↦ φ.φ (b j)) ≫
+        Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ V (φ.f (b j))) (f i) :=
+    Pi.hom_ext _ _ fun i ↦ by simp
+  have hmap : P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ V (φ.f (b j))) (f i)).op ≫
+      P.map (Limits.Pi.map fun j : Fin (m + 1) ↦ φ.φ (b j)).op =
+      P.map (Limits.Pi.map fun i : Fin (n + 1) ↦ φ.φ (b (f i))).op ≫
+        P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (b j)) (f i)).op := by
+    rw [← P.map_comp, ← P.map_comp, ← op_comp, ← op_comp, h]
+  exact (Category.assoc _ _ _).trans <| (_ ≫= cechComplexMap_f_π P φ m b).trans <|
+    (Category.assoc _ _ _).symm.trans <| (elemMap_comp_π V P f (φ.f ∘ b) =≫ _).trans <|
+    (Category.assoc _ _ _).trans <| (_ ≫= hmap).trans <|
+    (Category.assoc _ _ _).symm.trans <| ((cechComplexMap_f_π P φ n (b ∘ f)).symm =≫ _).trans <|
+    (Category.assoc _ _ _).trans <| (_ ≫= (elemMap_comp_π U P f b).symm).trans
+    (Category.assoc _ _ _).symm
 
 end Eval
 
@@ -472,12 +339,12 @@ def cechReverse : cechComplexFunctor (A := A) U ⟶ cechComplexFunctor U where
   app := cechReverseApp U
   naturality P Q α := by
     ext n : 1
-    simp only [HomologicalComplex.comp_f, cechReverseApp, revChain, evalUChain_zsmul,
-      evalUChain_single, Preadditive.comp_zsmul, Preadditive.zsmul_comp, elemMap_naturality]
+    simp [cechReverseApp, revChain, evalUChain, elemMap_naturality]
 
 private lemma cechReverse_app_f (P : Cᵒᵖ ⥤ A) (n : ℕ) :
-    ((cechReverse U).app P).f n = evalUChain U P (revChain n) :=
-  rfl
+    ((cechReverse U).app P).f n = (-1 : ℤ) ^ (n * (n + 1) / 2) • elemMap U P Fin.rev := by
+  change evalUChain U P (revChain n) = _
+  simp [evalUChain, revChain]
 
 /-- On the factor indexed by `a : Fin (n + 1) → ι`, signed tuple reversal applies the sign
 `(-1) ^ (n * (n + 1) / 2)` to the factor indexed by `a ∘ Fin.rev`, restricted along the coordinate
@@ -486,11 +353,8 @@ reversal isomorphism of products. -/
 theorem cechReverse_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a : Fin (n + 1) → ι) :
     ((cechReverse U).app P).f n ≫ Pi.π _ a =
       (-1 : ℤ) ^ (n * (n + 1) / 2) • (Pi.π _ (a ∘ Fin.rev) ≫
-        P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (a j)) i.rev).op) := by
-  have hf : ((cechReverse U).app P).f n =
-      (-1 : ℤ) ^ (n * (n + 1) / 2) • elemMap U P Fin.rev := by
-    rw [cechReverse_app_f, revChain, evalUChain_zsmul, evalUChain_single]
-  exact (hf =≫ _).trans <|
+        P.map (Pi.lift fun i : Fin (n + 1) ↦ Pi.π (fun j ↦ U (a j)) i.rev).op) :=
+  (cechReverse_app_f U P n =≫ _).trans <|
     (Preadditive.zsmul_comp _ _ _).trans (congrArg _ (elemMap_comp_π U P Fin.rev a))
 
 /-- Signed tuple reversal on `Č(U, P)` is an involution. -/
@@ -498,13 +362,10 @@ theorem cechReverse_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a : Fin (n + 1) → 
 theorem cechReverse_app_comp_cechReverse_app (P : Cᵒᵖ ⥤ A) :
     (cechReverse U).app P ≫ (cechReverse U).app P = 𝟙 _ := by
   ext n : 1
-  simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f, cechReverse_app_f, revChain,
-    evalUChain_zsmul, evalUChain_single, Preadditive.zsmul_comp, Preadditive.comp_zsmul, smul_smul,
-    ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul, elemMap_comp]
-  have hrev : (Fin.rev : Fin (n + 1) → Fin (n + 1)) ∘ Fin.rev = id := by
-    funext i
-    exact Fin.rev_rev i
-  rw [hrev, elemMap_id]
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f, cechReverse_app_f,
+    Preadditive.zsmul_comp, Preadditive.comp_zsmul, smul_smul, ← pow_add, ← two_mul, pow_mul,
+    neg_one_sq, one_pow, one_smul, elemMap_comp]
+  rw [show (Fin.rev : Fin (n + 1) → Fin (n + 1)) ∘ Fin.rev = id from funext Fin.rev_rev, elemMap_id]
 
 /-- Signed tuple reversal is an involution on the Čech complex functor. -/
 @[simp]
@@ -521,51 +382,35 @@ theorem cechReverse_app_comp_cechComplexMap {κ : Type w} {V : κ → C} (P : C�
     (cechReverse V).app P ≫ cechComplexMap P φ =
       cechComplexMap P φ ≫ (cechReverse U).app P := by
   ext n : 1
-  simp only [HomologicalComplex.comp_f, cechReverse_app_f, revChain, evalUChain_zsmul,
-    evalUChain_single, Preadditive.zsmul_comp, Preadditive.comp_zsmul, elemMap_comp_cechComplexMap]
+  simp [cechReverse_app_f, elemMap_comp_cechComplexMap]
+
+private def cechReverseHomotopyHom (P : Cᵒᵖ ⥤ A) (i j : ℕ) :
+    ((cechComplexFunctor U).obj P).X i ⟶ ((cechComplexFunctor U).obj P).X j :=
+  if h : j + 1 = i then
+    eqToHom (congrArg ((cechComplexFunctor U).obj P).X h.symm) ≫
+      evalUChain U P (homotopyChain j)
+  else 0
 
 /-- **Signed tuple reversal is chain homotopic to the identity.** The homotopy evaluates the
 universal cone homotopy on `Č(U, P)`. -/
 def cechReverseHomotopy (P : Cᵒᵖ ⥤ A) :
     Homotopy (𝟙 ((cechComplexFunctor U).obj P)) ((cechReverse U).app P) where
-  hom i j :=
-    if h : j + 1 = i then
-      eqToHom (congrArg ((cechComplexFunctor U).obj P).X h.symm) ≫
-        evalUChain U P (homotopyChain j)
-    else 0
-  zero i j hji := dite_eq_right_iff.2 fun h ↦ absurd h hji
+  hom := cechReverseHomotopyHom U P
+  zero _ _ hji := dite_eq_right_iff.2 fun h ↦ absurd h hji
   comm i := by
-    have hd : dNext i (fun i j ↦
-        if h : j + 1 = i then
-          eqToHom (congrArg ((cechComplexFunctor U).obj P).X h.symm) ≫
-            evalUChain U P (homotopyChain j)
-        else 0) = ((cechComplexFunctor U).obj P).d i (i + 1) ≫
-          evalUChain U P (homotopyChain i) := by
-      rw [dNext_eq _ (rfl : (ComplexShape.up ℕ).Rel i (i + 1))]
-      simp only [↓reduceDIte, eqToHom_refl, Category.id_comp]
-    rw [hd]
+    rw [dNext_eq _ (rfl : (ComplexShape.up ℕ).Rel i (i + 1))]
+    simp only [cechReverseHomotopyHom, ↓reduceDIte, eqToHom_refl, Category.id_comp]
     cases i with
     | zero =>
-      have hp : prevD 0 (fun i j ↦
-          if h : j + 1 = i then
-            eqToHom (congrArg ((cechComplexFunctor U).obj P).X h.symm) ≫
-              evalUChain U P (homotopyChain j)
-          else 0) = 0 := by
-        rw [prevD_nat, ((cechComplexFunctor U).obj P).shape 0 0 (by simp), comp_zero]
-      rw [hp, add_zero, d_comp_evalUChain, homotopyChain_zero_spec, evalUChain_sub,
-        evalUChain_single, elemMap_id]
+      rw [prevD_nat, ((cechComplexFunctor U).obj P).shape 0 0 (by simp), comp_zero, add_zero,
+        d_comp_evalUChain, homotopyChain_zero_spec, map_sub, evalUChain,
+        Finsupp.linearCombination_single, one_smul, elemMap_id]
       exact (sub_add_cancel _ _).symm
     | succ m =>
-      have hp : prevD (m + 1) (fun i j ↦
-          if h : j + 1 = i then
-            eqToHom (congrArg ((cechComplexFunctor U).obj P).X h.symm) ≫
-              evalUChain U P (homotopyChain j)
-          else 0) = evalUChain U P (homotopyChain m) ≫
-            ((cechComplexFunctor U).obj P).d m (m + 1) := by
-        rw [prevD_nat, Nat.add_sub_cancel]
-        simp only [↓reduceDIte, eqToHom_refl, Category.id_comp]
-      rw [hp, d_comp_evalUChain, evalUChain_comp_d, ← evalUChain_add, homotopyChain_spec,
-        evalUChain_sub, evalUChain_single, elemMap_id]
+      rw [prevD_nat, Nat.add_sub_cancel]
+      simp only [cechReverseHomotopyHom, ↓reduceDIte, eqToHom_refl, Category.id_comp]
+      rw [d_comp_evalUChain, evalUChain_comp_d, ← map_add, homotopyChain_spec, map_sub,
+        evalUChain, Finsupp.linearCombination_single, one_smul, elemMap_id]
       exact (sub_add_cancel _ _).symm
 
 /-- **Signed tuple reversal induces the identity on Čech cohomology.** -/
