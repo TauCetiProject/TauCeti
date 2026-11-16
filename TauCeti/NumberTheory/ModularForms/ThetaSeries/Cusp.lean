@@ -31,7 +31,9 @@ form, for any group having `∞` as a cusp.
 On the imaginary axis `τ = i y` every term is the positive real number `exp (-π y ‖γ + v‖²)`, so
 `θ_{γ+L}(i y)` is a positive real number and `Θ_L(i y) ≥ 1`. In particular `Θ_L` does not vanish
 there; this is the nonvanishing used to show that the rank of an even unimodular lattice is
-divisible by `8`.
+divisible by `8`. Moreover, for `M ≤ L` every coset of `M` in `L` contributes positively on the
+imaginary axis, so `Θ_M(i y) ≤ Θ_L(i y)` with equality if and only if `M = L`; in particular
+`Θ_M = Θ_L` if and only if `M = L`.
 
 ## Main statements
 
@@ -48,9 +50,13 @@ divisible by `8`.
 * `ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero`: for even `L` the constant term of the
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
-* `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
-  `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
-  `Θ_L ≥ 1`.
+* `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.thetaSeries_eq_ofReal_of_re_eq_zero`,
+  `ZLattice.re_thetaCoset_pos`, `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}`
+  and `Θ_L` are real, `θ_{γ+L} > 0`, and `Θ_L ≥ 1`.
+* `ZLattice.re_thetaSeries_lt_re_thetaSeries_of_lt`,
+  `ZLattice.re_thetaSeries_le_re_thetaSeries_of_le`, `ZLattice.thetaSeries_eq_iff_of_le`: on the
+  imaginary axis `Θ_L` is strictly monotone in `L`, so for `M ≤ L` we have `Θ_M = Θ_L` if and only
+  if `M = L`.
 
 ## References
 
@@ -243,6 +249,12 @@ theorem thetaCoset_eq_ofReal_of_re_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0)
   push_cast
   linear_combination (π * ‖γ + (v : E)‖ ^ 2 * τ.im : ℂ) * I_sq
 
+/-- On the imaginary axis the theta series is real:
+`Θ_L(i y) = ∑_{v ∈ L} exp (-π y ‖v‖²)`. -/
+theorem thetaSeries_eq_ofReal_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries L τ = ((∑' v : L, Real.exp (-(π * τ.im) * ‖(v : E)‖ ^ 2) : ℝ) : ℂ) := by
+  simpa using thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ
+
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-- On the imaginary axis the theta series of `γ + L` has positive real part (and is real, by
@@ -264,5 +276,78 @@ theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSe
   fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
 
 end ImaginaryAxis
+
+section Sublattice
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M L : Submodule ℤ E} [DiscreteTopology L]
+
+/-- On the imaginary axis the theta series is strictly monotone with respect to strict inclusion of
+discrete subgroups: if `M < L`, then `re Θ_M(τ) < re Θ_L(τ)` whenever `re τ = 0`. -/
+theorem re_thetaSeries_lt_re_thetaSeries_of_lt (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re < (thetaSeries L τ).re := by
+  classical
+  have : DiscreteTopology M :=
+    SetLike.isDiscrete_iff_discreteTopology.mp
+      ((SetLike.isDiscrete_iff_discreteTopology.mpr ‹DiscreteTopology L›).mono hML.le)
+  obtain ⟨x, hxL, hxM⟩ := IsConcreteLE.exists_of_lt hML
+  let y : L ⧸ M.submoduleOf L := Submodule.Quotient.mk ⟨x, hxL⟩
+  have hy0 : (0 : L ⧸ M.submoduleOf L) ≠ y := fun h0 => hxM <| by
+    have h : Submodule.Quotient.mk ⟨x, hxL⟩ = (0 : L ⧸ M.submoduleOf L) := h0.symm
+    rwa [Submodule.Quotient.mk_eq_zero, Submodule.submoduleOf, Submodule.mem_comap,
+      Submodule.subtype_apply] at h
+  have hsum := Complex.reCLM.hasSum (hasSum_thetaCoset_out L hML.le τ)
+  have hle := sum_le_hasSum ({0, y} : Finset (L ⧸ M.submoduleOf L))
+    (fun z _ => (re_thetaCoset_pos M _ hτ).le) hsum
+  rw [Finset.sum_pair hy0] at hle
+  simp only [reCLM_apply] at hle
+  have hmem : ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) ∈ M := by
+    have hmk := Submodule.Quotient.mk_out (0 : L ⧸ M.submoduleOf L)
+    rwa [Submodule.Quotient.mk_eq_zero, Submodule.submoduleOf, Submodule.mem_comap,
+      Submodule.subtype_apply] at hmk
+  rw [thetaCoset_of_mem M hmem] at hle
+  linarith [re_thetaCoset_pos M ((Quotient.out y : L) : E) hτ]
+
+/-- On the imaginary axis the theta series is monotone in the subgroup: if `M ≤ L`, then
+`re Θ_M(τ) ≤ re Θ_L(τ)` whenever `re τ = 0`. -/
+theorem re_thetaSeries_le_re_thetaSeries_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
+  rcases hML.eq_or_lt with rfl | hlt
+  · exact le_rfl
+  · exact (re_thetaSeries_lt_re_thetaSeries_of_lt hlt hτ).le
+
+/-- For `M ≤ L`, `Θ_M` and `Θ_L` have the same real part at a point of the imaginary axis if and
+only if `M = L`. -/
+theorem re_thetaSeries_eq_re_thetaSeries_iff_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re = (thetaSeries L τ).re ↔ M = L :=
+  ⟨fun h => hML.eq_or_lt.resolve_right fun hlt =>
+    (re_thetaSeries_lt_re_thetaSeries_of_lt hlt hτ).ne h, fun h => h ▸ rfl⟩
+
+/-- For `M ≤ L`, `Θ_M` and `Θ_L` agree at a point of the imaginary axis if and only if `M = L`. -/
+theorem thetaSeries_eq_iff_of_le_of_re_eq_zero (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries M τ = thetaSeries L τ ↔ M = L := by
+  rw [← re_thetaSeries_eq_re_thetaSeries_iff_of_le hML hτ]
+  refine ⟨congrArg Complex.re, fun h => ?_⟩
+  rw [thetaSeries_eq_ofReal_of_re_eq_zero M hτ, thetaSeries_eq_ofReal_of_re_eq_zero L hτ] at h ⊢
+  rw [ofReal_re, ofReal_re] at h
+  exact congrArg Complex.ofReal h
+
+/-- For a proper subgroup `M < L`, `Θ_M(τ) ≠ Θ_L(τ)` at every point `τ` of the imaginary axis. -/
+theorem thetaSeries_ne_of_lt_of_re_eq_zero (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries M τ ≠ thetaSeries L τ :=
+  mt (thetaSeries_eq_iff_of_le_of_re_eq_zero hML.le hτ).mp hML.ne
+
+/-- For `M ≤ L`, the theta series `Θ_M` and `Θ_L` are equal as functions on `ℍ` if and only if
+`M = L`. -/
+theorem thetaSeries_eq_iff_of_le (hML : M ≤ L) :
+    thetaSeries M = thetaSeries L ↔ M = L :=
+  ⟨fun h => (thetaSeries_eq_iff_of_le_of_re_eq_zero hML UpperHalfPlane.I_re).mp
+    (congrFun h UpperHalfPlane.I), fun h => h ▸ rfl⟩
+
+/-- For a proper subgroup `M < L`, `Θ_M ≠ Θ_L`. -/
+theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L :=
+  mt (thetaSeries_eq_iff_of_le hML.le).mp hML.ne
+
+end Sublattice
 
 end ZLattice
