@@ -30,7 +30,8 @@ transform, relative to `J₀`, of
 
 `(s, t)` are the coordinates of the end at `0` of the pair of pants and `β` is the smooth
 transition. So it is the pair-of-pants structure whose only end structure other than `J₀` is `J` at
-the input `0`, composed with the affine map `w ↦ (w - c) / a`; it is `J₀` off the disc
+the input `0`, composed with the affine map `w ↦ (w - c) / a`
+(`TauCeti.Floer.pairOfPantsAlmostComplex_update_zero`); it is `J₀` off the disc
 `‖w - c‖ < ‖a‖ exp (-2π) / 2`. For finitely many input ends and an output end structure `Jout`, the
 structure `TauCeti.Floer.puncturedSphereAlmostComplex` is the inverse Cayley transform of the sum of
 the Cayley transforms of the input end structures and of the negative plane structure of `Jout`
@@ -134,16 +135,36 @@ theorem cayley_inputEndAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ) (x : 
         J₀.cayley (J (zero.endCoord ((w - c) / a)).im x) := by
   rw [inputEndAlmostComplex, ← h₀.cayleyEquiv_apply_coe, Equiv.apply_symm_apply]
 
+omit [FiniteDimensional ℝ V] in
+/-- The end structures of an input end, `J` at the input `0` and `J₀` at the other ends of the
+pair of pants, are tame when `J₀` and `J` are. -/
+theorem tames_update_zero (h₀ : ω.Tames J₀) (hJ : ∀ t x, ω.Tames (J t x)) (q : Puncture)
+    (t : ℝ) (x : M) : ω.Tames (update (fun _ _ _ => J₀) zero J q t x) :=
+  (forall_update_iff _ fun _ (f : ℝ → M → _) => ∀ t x, ω.Tames (f t x)).2
+    ⟨hJ, fun _ _ _ _ => h₀⟩ q t x
+
+/-- **An input end is a pair of pants with one non-base end.** The pair-of-pants structure whose
+end structure at the input `0` is `J` and whose other end structures are the base structure `J₀`,
+at the point `(w - c) / a`, is the input end structure with center `c` and scale `a` at `w`. -/
+theorem pairOfPantsAlmostComplex_update_zero (h₀ : ω.Compatible J₀)
+    (hJ' : ∀ q t x, ω.Tames (update (fun _ _ _ => J₀) zero J q t x)) (w : ℂ) (x : M) :
+    pairOfPantsAlmostComplex h₀ (update (fun _ _ _ => J₀) zero J) hJ' ((w - c) / a) x =
+      inputEndAlmostComplex h₀ c a J hJ w x := by
+  refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ _ x)
+    (tames_inputEndAlmostComplex h₀ w x) ?_
+  rw [cayley_pairOfPantsAlmostComplex, cayley_inputEndAlmostComplex,
+    Fintype.sum_eq_single zero fun q hq => by
+      simp [update_of_ne hq, AlmostComplexStructure.cayley_self]]
+  simp
+
 /-- The input end structure is `ω`-compatible when the end structures are. -/
 theorem compatible_inputEndAlmostComplex (h₀ : ω.Compatible J₀)
     (hJc : ∀ t x, ω.Compatible (J t x)) (w : ℂ) (x : M) :
     ω.Compatible (inputEndAlmostComplex h₀ c a J hJ w x) := by
-  refine (h₀.cayley_mem_compatibleCayleyBall_iff (tames_inputEndAlmostComplex h₀ w x)).mp ?_
-  rw [cayley_inputEndAlmostComplex]
-  exact h₀.tames.convex_compatibleCayleyBall.smul_mem_of_zero_mem
-    h₀.tames.zero_mem_compatibleCayleyBall
-    ((h₀.cayley_mem_compatibleCayleyBall_iff (hJ _ x)).mpr (hJc _ x))
-    ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
+  rw [← pairOfPantsAlmostComplex_update_zero h₀ (tames_update_zero h₀.tames hJ)]
+  exact compatible_pairOfPantsAlmostComplex h₀
+    ((forall_update_iff _ fun _ (f : ℝ → M → _) => ∀ t x, ω.Compatible (f t x)).2
+      ⟨hJc, fun _ _ _ _ => h₀⟩) _ x
 
 /-- **The support of an input end structure.** It is the base structure `J₀` off the disc
 `‖w - c‖ < ‖a‖ exp (-2π) / 2`. -/
@@ -162,15 +183,16 @@ theorem inputEndAlmostComplex_eq_of_le_norm_sub (h₀ : ω.Compatible J₀) {w :
   rw [smoothTransition.zero_of_nonpos (by linarith), zero_smul]
 
 /-- **The input end structure on its end.** If `J` has period one in `t` and `a ≠ 0`, then at the
-point `c + a φ₀(z)` of the end lift its Cayley transform is `β(Re z - 1) • cayley (J (Im z) x)`. -/
-theorem cayley_inputEndAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀)
-    (hJp : Periodic J 1) (ha : a ≠ 0) (z : ℂ) (x : M) :
+point `c + a φ₀(z)` of the end lift with `Re z > 0` its Cayley transform is
+`β(Re z - 1) • cayley (J (Im z) x)`. -/
+theorem cayley_inputEndAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Compatible J₀)
+    (hJp : Periodic J 1) (ha : a ≠ 0) {z : ℂ} (hz : 0 < z.re) (x : M) :
     J₀.cayley (inputEndAlmostComplex h₀ c a J hJ (c + a * zero.cylindricalEndLift z) x) =
       smoothTransition (z.re - 1) • J₀.cayley (J z.im x) := by
-  obtain ⟨k, hk⟩ := zero.exists_endCoord_cylindricalEndLift z
-  have hp : J (z.im + k) = J z.im := by simpa using hJp.int_mul k z.im
-  rw [cayley_inputEndAlmostComplex, add_sub_cancel_left, mul_div_cancel_left₀ _ ha, hk]
-  simp [hp]
+  rw [← pairOfPantsAlmostComplex_update_zero h₀ (tames_update_zero h₀.tames hJ),
+    add_sub_cancel_left, mul_div_cancel_left₀ _ ha]
+  simpa using cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos (q := zero)
+    (hJ := tames_update_zero h₀.tames hJ) h₀ (by simpa using hJp) (z := z) (by simpa using hz) x
 
 /-- **The input end structure is `J (t)` far out on its end.** If `J` has period one in `t` and
 `a ≠ 0`, then at the point `c + a φ₀(z)` of the end lift with `Re z ≥ 2` the input end structure is
@@ -178,9 +200,10 @@ theorem cayley_inputEndAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J�
 theorem inputEndAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀)
     (hJp : Periodic J 1) (ha : a ≠ 0) {z : ℂ} (hz : 2 ≤ z.re) (x : M) :
     inputEndAlmostComplex h₀ c a J hJ (c + a * zero.cylindricalEndLift z) x = J z.im x := by
-  refine h₀.eq_of_cayley_eq (tames_inputEndAlmostComplex h₀ _ x) (hJ z.im x) ?_
-  rw [cayley_inputEndAlmostComplex_cylindricalEndLift h₀ hJp ha,
-    smoothTransition.one_of_one_le (by linarith), one_smul]
+  rw [← pairOfPantsAlmostComplex_update_zero h₀ (tames_update_zero h₀.tames hJ),
+    add_sub_cancel_left, mul_div_cancel_left₀ _ ha]
+  simpa using pairOfPantsAlmostComplex_cylindricalEndLift (q := zero)
+    (hJ := tames_update_zero h₀.tames hJ) h₀ (by simpa using hJp) (z := z) (by simpa using hz) x
 
 end InputEnd
 
@@ -335,7 +358,7 @@ theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω
   -- The point lies in the disc `‖w - c i‖ < ‖a i‖ / 2` of the input `i`.
   rw [puncturedSphereAlmostComplex_eq_inputEndAlmostComplex h₀
       (norm_add_mul_cylindricalEndLift_sub_lt (c i) ha hz),
-    cayley_inputEndAlmostComplex_cylindricalEndLift h₀ hJp ha]
+    cayley_inputEndAlmostComplex_cylindricalEndLift_of_pos h₀ hJp ha hz]
 
 /-- **The structure is `J i (t)` far out on each input end.** If `J i` has period one in `t` and
 `a i ≠ 0`, then on the part `s ≥ 2` of the input end `i` the structure at the point
