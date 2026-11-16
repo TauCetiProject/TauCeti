@@ -59,7 +59,10 @@ the hat differential lowers it by one modulo the subgroup. The ℚ-valued statem
 case where the subgroup is zero.
 
 The Euler characteristics are not determined by the incidence data, so they are an explicit
-argument `χ`, normalized by `∑ χ(R) - #(α ∩ β) = 2 - 2n`. The left side is the Euler
+argument `χ`. In the singly pointed case the genus-`n` normalization `∑ χ(R) - #(α ∩ β) = 2 - 2n`
+is the hypothesis of
+`IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton`, which
+supplies the self-domain normalization of the grading lemmas. The left side is the Euler
 characteristic of the surface assembled from the regions, the `2 #(α ∩ β)` arcs and the
 intersection points, so this says that the surface has genus `n`, as for a pointed Heegaard
 diagram.
@@ -82,6 +85,8 @@ diagram.
   in a singly pointed diagram of a closed surface of genus `n`, a domain `E` from `x` to `x` has
   `μ(E) - 2 n_z(E)` among the periodic Maslov indices at `x`, the hypothesis of the results
   below.
+* `maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton`: the same statement for
+  every generator and every such domain at once, in the form the results below take it.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq`: modulo the periodic
   Maslov indices, the relative grading is `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` for every domain `D` from `x` to
   `y`.
@@ -199,6 +204,15 @@ theorem IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of
     ((isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains z).mp hE)
   rw [Fintype.sum_subsingleton _ z]
   rwa [map_sub, map_zsmul, maslovIndex_one_eq_two hχ, zsmul_eq_mul, mul_comm] at h
+
+include z hχ in
+/-- In a singly pointed diagram of a closed surface of genus `n`, every domain `E` from a
+generator `x` to itself has `μ(E) - 2 n_z(E)` among the periodic Maslov indices at `x`: the
+hypothesis `hself` of the relative grading lemmas below, in the form they take it. -/
+theorem maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton :
+    ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
+      H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x :=
+  fun _ _ hE => hE.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton z hχ
 
 end SinglyPointed
 

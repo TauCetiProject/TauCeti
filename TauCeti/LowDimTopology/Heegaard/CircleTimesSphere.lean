@@ -363,8 +363,8 @@ theorem relativeGrading_circleTimesSphere_zero :
     (circleTimesSphere 0).relativeGrading ![0, 1, 1] (circleTimesSphereGenerator 0 0)
       (circleTimesSphereGenerator 0 1) = 1 := by
   rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq
-    (fun _ _ hE => hE.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton ()
-      (by decide)) fun _ => maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains 0,
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))
+    fun _ => maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains 0,
     maslovIndex_circleTimesSphere_single_one]
   simp
 
@@ -461,8 +461,7 @@ theorem coe_relativeGrading_circleTimesSphere_one :
       (circleTimesSphereGenerator 1 1) : ℚ ⧸ AddSubgroup.zmultiples (2 : ℚ)) = (1 : ℚ) := by
   rw [← periodicMaslovIndices_circleTimesSphere_one 0,
     (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq
-      fun _ _ hE => hE.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton ()
-        (by decide),
+      (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide)),
     maslovIndex_circleTimesSphere_single_two]
   simp
 

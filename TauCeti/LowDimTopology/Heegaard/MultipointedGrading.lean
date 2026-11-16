@@ -20,10 +20,11 @@ gives `b` spheres, one around each basepoint. For generators `x`, `y` joined by 
 
 `gr(x, y) = μ(D) - 2 ∑ᵢ n_{zᵢ}(D)`,
 
-where `μ` is the combinatorial Maslov index `TauCeti.HeegaardRegionSystem.maslovIndex`. With a
-single basepoint this is the formula of `TauCeti.HeegaardRegionSystem.relativeGrading`, which is
-well defined under the Euler normalization of the whole surface. This file develops the
-multipointed grading on the incidence data `TauCeti.HeegaardRegionSystem`.
+where `μ` is the combinatorial Maslov index `TauCeti.HeegaardRegionSystem.maslovIndex`. This is
+the formula by which `TauCeti.HeegaardRegionSystem.relativeGrading` is defined, for any number of
+basepoints. Its lemmas assume a normalization of the domains from a generator to itself, and this
+file proves that normalization for multipointed diagrams on the incidence data
+`TauCeti.HeegaardRegionSystem`, from the components of `Σ - α`.
 
 The singly pointed argument shows that two domains from `x` to `y` differ by a periodic domain
 plus a multiple of the whole surface, whose Maslov index two cancels its basepoint multiplicity
