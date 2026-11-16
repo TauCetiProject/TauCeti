@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # The standard complex line as a source for constant-structure `J`-holomorphic maps
@@ -45,6 +46,9 @@ energy and elliptic estimates.
   `F : ℝ × ℝ →ₗ[ℝ] V`, `F (0, 1) = J (F (1, 0))`.
 * `TauCeti.IsComplexLinearMap.apply_stdComplexLine`: such an `F` is determined by
   `F (1, 0)`, via `F (s, t) = s • v + t • J v`.
+* `TauCeti.IsComplexLinearMap.det_eq_sq_add_sq`, `TauCeti.IsComplexLinearMap.det_nonneg`: a
+  complex-linear endomorphism of `ℝ × ℝ` is multiplication by `a + b i`, with determinant
+  `a² + b² ≥ 0`.
 * `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLineImag` and
   `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements
   for Frechet derivatives of constant-structure `J`-holomorphic maps.
@@ -265,6 +269,31 @@ lemma symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_pos
     0 < ω (F stdComplexLineReal) (F stdComplexLineImag) := by
   simpa only [AlmostComplexStructure.product_apply_stdComplexLineReal] using
     hF.symplecticForm_apply_apply_pos hω hreal
+
+section Endomorphism
+
+variable {L : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ}
+
+/-- A complex-linear endomorphism of the standard complex line is multiplication by the complex
+number `a + b i` with `(a, b) = L (1, 0)`, so its determinant is `a² + b²`. -/
+theorem det_eq_sq_add_sq
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    LinearMap.det L = (L stdComplexLineReal).1 ^ 2 + (L stdComplexLineReal).2 ^ 2 := by
+  have h := hL.apply_stdComplexLineImag
+  rw [AlmostComplexStructure.product_apply, stdComplexLineImag_eq] at h
+  rw [LinearMap.det_finTwoProd, h, stdComplexLineReal_eq]
+  ring
+
+/-- A complex-linear endomorphism of the standard complex line preserves orientation. -/
+theorem det_nonneg
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    0 ≤ LinearMap.det L := by
+  rw [hL.det_eq_sq_add_sq]
+  positivity
+
+end Endomorphism
 
 end IsComplexLinearMap
 
