@@ -174,6 +174,20 @@ theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
   rw [hcomp, smulLeftCLM_add (hA.continuousLinearMap_comp c) (hB.continuousLinearMap_comp c),
     ContinuousLinearMap.comp_add]
 
+omit [FiniteDimensional ℂ F] [FiniteDimensional ℂ G] in
+/-- The composition `S ∘ T` expanded in the products `b l ∘ a k` of a basis `b` of `G →L[ℂ] H`
+and a basis `a` of `F →L[ℂ] G`. -/
+private theorem comp_eq_sum_coordCLM {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (a : Module.Basis κ ℂ (F →L[ℂ] G)) (b : Module.Basis ι ℂ (G →L[ℂ] H)) (S : G →L[ℂ] H)
+    (T : F →L[ℂ] G) :
+    S.comp T = ∑ lk : ι × κ, (b.coordCLM lk.1 S * a.coordCLM lk.2 T) • (b lk.1).comp (a lk.2) := by
+  ext v
+  conv_lhs => rw [← a.sum_coordCLM_smul T, ← b.sum_coordCLM_smul S]
+  simp only [ContinuousLinearMap.comp_apply, sum_apply, smul_apply, map_sum, map_smul,
+    Finset.smul_sum, smul_smul, Fintype.sum_prod_type]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
+
 /-- **Composition.** For `A : E → (F →L[ℂ] G)` and `B : E → (G →L[ℂ] H)` of temperate growth,
 `B (A u) = (B A) u`, where `B A` is the pointwise composition `x ↦ B x ∘ A x`. -/
 theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[ℂ] G}
@@ -188,24 +202,21 @@ theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[�
   rw [mulLeftCLM_apply_apply_of_eq_sum (Finset.univ : Finset (_ × _))
       (c := fun lk x ↦ b.coordCLM lk.1 (B x) * a.coordCLM lk.2 (A x))
       (fun lk _ ↦ (hcb lk.1).mul (hca lk.2)) (fun lk ↦ (b lk.1).comp (a lk.2))
-      (fun x ↦ by
-        ext v
-        conv_lhs => rw [← a.sum_coordCLM_smul (A x), ← b.sum_coordCLM_smul (B x)]
-        simp only [ContinuousLinearMap.comp_apply, sum_apply, smul_apply, map_sum, map_smul,
-          Finset.smul_sum, smul_smul, Fintype.sum_prod_type]
-        rw [Finset.sum_comm]
-        exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]),
-    Fintype.sum_prod_type]
+      (fun x ↦ comp_eq_sum_coordCLM a b (B x) (A x)), Fintype.sum_prod_type]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
   rw [mulLeftCLM_apply_apply, map_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [ContinuousLinearMap.comp_apply]
-  congr 3
-  ext x
-  rw [SchwartzMap.smulLeftCLM_apply_apply (hca k), SchwartzMap.smulLeftCLM_apply_apply (hcb l),
-    SchwartzMap.smulLeftCLM_apply_apply
-      (g := fun x ↦ b.coordCLM l (B x) * a.coordCLM k (A x))
-      ((hcb l).mul (hca k)), smul_smul, mul_comm, Function.comp_apply, Function.comp_apply]
+  -- Multiplying by the coordinates of `B` and then of `A` is multiplying by their product.
+  have hφ : SchwartzMap.smulLeftCLM ℂ (a.coordCLM k ∘ A)
+        (SchwartzMap.smulLeftCLM ℂ (b.coordCLM l ∘ B) φ) =
+      SchwartzMap.smulLeftCLM ℂ (fun x ↦ b.coordCLM l (B x) * a.coordCLM k (A x)) φ := by
+    ext x
+    simp only [SchwartzMap.smulLeftCLM_apply_apply (hca k),
+      SchwartzMap.smulLeftCLM_apply_apply (hcb l),
+      SchwartzMap.smulLeftCLM_apply_apply (g := fun x ↦ b.coordCLM l (B x) * a.coordCLM k (A x))
+        ((hcb l).mul (hca k)), Function.comp_apply, smul_eq_mul]
+    ring
+  rw [hφ, ContinuousLinearMap.comp_apply]
 
 section InnerProductSpace
 

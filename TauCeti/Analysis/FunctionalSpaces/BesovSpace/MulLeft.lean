@@ -157,10 +157,9 @@ theorem exists_norm_mulLeftCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |s
   calc _ ≤ ∑ k, ‖b k‖ * (C * (‖b.coordCLM k‖ * M)) := by
         refine (norm_sum_le _ _).trans ?_
         refine Finset.sum_le_sum fun k _ ↦ (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-        refine mul_le_mul (norm_postcomp_le _) (hmul _ _ fun n hn x ↦ ?_) (norm_nonneg _)
-          (norm_nonneg _)
-        exact (((b.coordCLM k).restrictScalars ℝ).norm_iteratedFDeriv_comp_left hA.1.contDiffAt
-          (mod_cast le_top)).trans (mul_le_mul_of_nonneg_left (hAM n hn x) (by positivity))
+        exact mul_le_mul (norm_postcomp_le _) (hmul _ _
+          ((b.coordCLM k).norm_iteratedFDeriv_comp_left_le_of_forall_le
+            (hA.1.of_le (mod_cast le_top)) hAM)) (norm_nonneg _) (norm_nonneg _)
     _ = C * (∑ k, ‖b k‖ * ‖b.coordCLM k‖) * M := by
         rw [Finset.mul_sum, Finset.sum_mul]
         exact Finset.sum_congr rfl fun k _ ↦ by ring
