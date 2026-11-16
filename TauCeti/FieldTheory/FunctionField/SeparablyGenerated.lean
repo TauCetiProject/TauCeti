@@ -39,10 +39,11 @@ element (`TauCeti.not_exists_transcendental_and_isSeparable_adjoin_of_pow_eq_add
   and
   `TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_iff_isGeometricallyReduced`:
   a function field has a separating element if and only if it is geometrically reduced.
-* `TauCeti.IsFunctionField.exists_separating_and_isIntegrallyClosedIn_iff_isDomain_tensorProduct`:
-  a function field has a separating element and exact constants if and only if its tensor product
-  with an algebraically closed extension is a domain (and similarly over every field extension,
-  `exists_separating_and_isIntegrallyClosedIn_iff_forall_isDomain_tensorProduct`).
+* `exists_transcendental_isSeparable_adjoin_isIntegrallyClosedIn_iff_isDomain_tensorProduct` and
+  `exists_transcendental_isSeparable_adjoin_isIntegrallyClosedIn_iff_forall_isDomain_tensorProduct`:
+  in `TauCeti.IsFunctionField`, a function field has a separating element and exact constants if
+  and only if its tensor product with an algebraically closed extension (or every field extension)
+  is a domain.
 
 ## References
 
@@ -98,7 +99,8 @@ theorem exists_transcendental_and_isSeparable_adjoin_iff_isGeometricallyReduced
 /-- **Regularity criterion for algebraic function fields via an algebraically closed extension.**
 For an algebraically closed field `L` over `k`, a function field `F / k` admits a separating element
 and has exact constant field `k` if and only if `F ⊗[k] L` is a domain. -/
-theorem exists_separating_and_isIntegrallyClosedIn_iff_isDomain_tensorProduct
+theorem
+    exists_transcendental_isSeparable_adjoin_isIntegrallyClosedIn_iff_isDomain_tensorProduct
     (hF : IsFunctionField k F) (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] :
     (∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F) ∧ IsIntegrallyClosedIn k F ↔
       IsDomain (F ⊗[k] L) := by
@@ -108,7 +110,8 @@ theorem exists_separating_and_isIntegrallyClosedIn_iff_isDomain_tensorProduct
 /-- **Regularity criterion for algebraic function fields via all scalar extensions.** A function
 field `F / k` admits a separating element and has exact constant field `k` if and only if
 `F ⊗[k] K` is a domain for every field extension `K / k`. -/
-theorem exists_separating_and_isIntegrallyClosedIn_iff_forall_isDomain_tensorProduct
+theorem
+    exists_transcendental_isSeparable_adjoin_isIntegrallyClosedIn_iff_forall_isDomain_tensorProduct
     (hF : IsFunctionField k F) :
     (∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F) ∧ IsIntegrallyClosedIn k F ↔
       ∀ (K : Type u) [Field K] [Algebra k K], IsDomain (F ⊗[k] K) := by

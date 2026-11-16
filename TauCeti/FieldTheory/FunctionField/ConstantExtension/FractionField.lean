@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
 public import TauCeti.FieldTheory.Separable.Regular
 public import TauCeti.RingTheory.TensorProduct.FractionRing
-import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Constant extension through the fraction field of a tensor product
@@ -22,8 +21,8 @@ The extension `K/k` need not be algebraic.
 
 The domain hypothesis is available from
 `TauCeti.isDomain_tensorProduct_of_isGeometricallyReduced` for a geometrically reduced
-field with exact constants (automatic when `k` is perfect, and needing neither
-hypothesis when `k` is algebraically closed), and regularity — both exactness of `K`
+field with exact constants (geometric reducedness is automatic when `k` is perfect, and neither
+hypothesis is needed when `k` is algebraically closed), and regularity — both exactness of `K`
 and geometric reducedness over `K` — persists in `FractionRing (F ⊗[k] K)`
 (`TauCeti.isIntegrallyClosedIn_fractionRing_tensorProduct` and
 `TauCeti.isGeometricallyReduced_fractionRing_tensorProduct`). We retain
@@ -42,11 +41,10 @@ scalar maps.
   `TauCeti.finrank_ratFunc_eq_of_isFractionRing_tensorProduct`: compositum generation,
   function-field structure, transcendental and separating parameters, and degrees over `k(x)` and
   `RatFunc k` persist in any fraction field of `F ⊗[k] K`.
-* `TauCeti.IsFunctionField.fractionRing_tensorProduct`,
-  `TauCeti.IsFunctionField.fractionRing_tensorProduct_of_perfectField`, and
+* `TauCeti.IsFunctionField.fractionRing_tensorProduct` and
   `TauCeti.IsFunctionField.fractionRing_tensorProduct_of_isAlgClosed`: `FractionRing (F ⊗[k] K)` is
-  a one-variable function field over `K` when `F/k` is regular, over a perfect base field with
-  exact constants, or unconditionally over an algebraically closed base field.
+  a one-variable function field over `K` when `F/k` is regular (including over a perfect base field
+  with exact constants) or unconditionally over an algebraically closed base field.
 
 ## References
 
@@ -78,16 +76,39 @@ section SpecifiedFractionField
 
 variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
   [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q]
-  [Algebra k Q] [Algebra F Q] [Algebra K Q]
-  [IsScalarTower F (F ⊗[k] K) Q]
-  [IsScalarTower K (F ⊗[k] K) Q] [IsScalarTower k F Q] [IsScalarTower k K Q]
-  [IsFractionRing (F ⊗[k] K) Q]
+  [Algebra F Q] [Algebra K Q]
+  [IsScalarTower F (F ⊗[k] K) Q] [IsScalarTower K (F ⊗[k] K) Q]
+
+/-- The canonical `k`-algebra structure on a fraction field `Q` of `F ⊗[k] K`, induced through
+`k → F ⊗[k] K → Q`. -/
+@[instance_reducible]
+private noncomputable def fractionFieldBaseAlgebra : Algebra k Q :=
+  ((algebraMap (F ⊗[k] K) Q).comp (algebraMap k (F ⊗[k] K))).toAlgebra
+
+/-- The canonical `k`-algebra structure on a fraction field `Q` of `F ⊗[k] K` makes both
+`k → F → Q` and `k → K → Q` scalar towers. -/
+private theorem fractionFieldBase_isScalarTowers :
+    letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+    IsScalarTower k F Q ∧ IsScalarTower k K Q :=
+  letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  ⟨.of_algebraMap_eq fun c ↦ by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+        IsScalarTower.algebraMap_apply k F (F ⊗[k] K),
+        ← IsScalarTower.algebraMap_apply F (F ⊗[k] K) Q],
+    .of_algebraMap_eq fun c ↦ by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+        IsScalarTower.algebraMap_apply k K (F ⊗[k] K),
+        ← IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q]⟩
+
+variable [IsFractionRing (F ⊗[k] K) Q]
 
 /-- A fraction field of a domain tensor product is a one-variable function field
 over the enlarged constants. -/
 theorem IsFunctionField.of_isFractionRing_tensorProduct (hF : IsFunctionField k F) :
-    IsFunctionField K Q :=
-  hF.of_constantCompositum_eq_top_of_linearDisjoint
+    IsFunctionField K Q := by
+  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  exact hF.of_constantCompositum_eq_top_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k))
 
@@ -95,8 +116,10 @@ theorem IsFunctionField.of_isFractionRing_tensorProduct (hF : IsFunctionField k 
 field `Q` of `F ⊗[k] K`. -/
 theorem _root_.Transcendental.algebraMap_of_isFractionRing_tensorProduct {x : F}
     (hx : Transcendental k x) :
-    Transcendental K (algebraMap F Q x) :=
-  (linearDisjoint_of_isFractionRing_tensorProduct (k := k)).transcendental_algebraMap hx
+    Transcendental K (algebraMap F Q x) := by
+  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  exact (linearDisjoint_of_isFractionRing_tensorProduct (k := k)).transcendental_algebraMap hx
 
 include k in
 /-- Separability over a simple parameter persists in any fraction field `Q` of `F ⊗[k] K`: if
@@ -104,6 +127,8 @@ include k in
 theorem isSeparable_adjoin_simple_of_isFractionRing_tensorProduct (x : F)
     [Algebra.IsSeparable k⟮x⟯ F] :
     Algebra.IsSeparable K⟮algebraMap F Q x⟯ Q := by
+  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
   have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (k' := K)
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k) (Q := Q))
     (S := ({x} : Set F))
@@ -112,8 +137,10 @@ theorem isSeparable_adjoin_simple_of_isFractionRing_tensorProduct (x : F)
 /-- Tensor-fraction-field extension of constants preserves the degree over a parameter.
 Neither the constants nor the relative extension need be separable. -/
 theorem finrank_over_adjoin_simple_eq_of_isFractionRing_tensorProduct (x : F) :
-    Module.finrank K⟮algebraMap F Q x⟯ Q = Module.finrank k⟮x⟯ F :=
-  finrank_over_adjoin_simple_eq_of_linearDisjoint
+    Module.finrank K⟮algebraMap F Q x⟯ Q = Module.finrank k⟮x⟯ F := by
+  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  exact finrank_over_adjoin_simple_eq_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) x
 
@@ -128,8 +155,10 @@ theorem isSeparable_ratFunc_of_isFractionRing_tensorProduct
     (hX : algebraMap F Q (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc K) Q RatFunc.X)
     [Algebra.IsSeparable (RatFunc k) F] :
-    Algebra.IsSeparable (RatFunc K) Q :=
-  isSeparable_ratFunc_of_constantCompositum_eq_top (k := k)
+    Algebra.IsSeparable (RatFunc K) Q := by
+  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  exact isSeparable_ratFunc_of_constantCompositum_eq_top (k := k)
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) hX
 
 /-- **Degree over the rational function field is preserved in any fraction field of `F ⊗[k] K`.**
@@ -138,8 +167,10 @@ algebraicity or separability hypothesis on `K / k` or `F / RatFunc k`. -/
 theorem finrank_ratFunc_eq_of_isFractionRing_tensorProduct
     (hX : algebraMap F Q (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc K) Q RatFunc.X) :
-    Module.finrank (RatFunc K) Q = Module.finrank (RatFunc k) F :=
-  finrank_ratFunc_eq_of_linearDisjoint
+    Module.finrank (RatFunc K) Q = Module.finrank (RatFunc k) F := by
+  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  exact finrank_ratFunc_eq_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) hX
 
@@ -161,14 +192,6 @@ theorem IsFunctionField.fractionRing_tensorProduct
     IsFunctionField K (FractionRing (F ⊗[k] K)) := by
   have := isDomain_tensorProduct_of_isGeometricallyReduced hex K
   exact hF.of_isFractionRing_tensorProduct
-
-/-- Over a perfect base field `k`, exactness of `k` in a function field `F` suffices for
-`FractionRing (F ⊗[k] K)` to be a one-variable function field over `K`. -/
-theorem IsFunctionField.fractionRing_tensorProduct_of_perfectField [PerfectField k]
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
-    letI := isDomain_tensorProduct_of_perfectField hex K
-    IsFunctionField K (FractionRing (F ⊗[k] K)) :=
-  hF.fractionRing_tensorProduct K hex
 
 /-- Over an algebraically closed base field `k`, `FractionRing (F ⊗[k] K)` is unconditionally a
 one-variable function field over `K` for every function field `F/k` and field extension `K/k`. -/

@@ -62,8 +62,11 @@ open scoped TensorProduct IntermediateField
 
 namespace TauCeti
 
-variable {k K F F' : Type*} [Field k] [Field K] [Field F] [Field F']
-  [Algebra k K] [Algebra k F] [Algebra k F'] [Algebra K F'] [Algebra F F']
+variable {k K F : Type*} [Field k] [Field K] [Field F] [Algebra k K] [Algebra k F]
+
+section Compositum
+
+variable {F' : Type*} [Field F'] [Algebra k F'] [Algebra K F'] [Algebra F F']
   [IsScalarTower k K F'] [IsScalarTower k F F']
 
 /-- A basis transported to the compositum, with scalars viewed as an extension of `C`. -/
@@ -126,40 +129,6 @@ variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
   [Algebra (RatFunc K) F'] [IsScalarTower K (RatFunc K) F']
   [Algebra (RatFunc k) (RatFunc K)] [IsScalarTower k (RatFunc k) (RatFunc K)]
 
-/-- The multiplication `RatFunc K`-algebra homomorphism `RatFunc K ⊗[RatFunc k] F →ₐ[RatFunc K] F'`,
-built without assuming an external `Algebra (RatFunc k) F'` instance. -/
-private noncomputable def ratFuncParameterLift
-    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
-    (hXF : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc K) F' RatFunc.X) :
-    RatFunc K ⊗[RatFunc k] F →ₐ[RatFunc K] F' :=
-  have hcomm := algebraMap_algebraMap_ratFunc_eq_algebraMap_ratFunc_algebraMap_ratFunc hX hXF
-  letI : Algebra (RatFunc k) F' :=
-    ((algebraMap (RatFunc K) F').comp (algebraMap (RatFunc k) (RatFunc K))).toAlgebra
-  haveI : IsScalarTower (RatFunc k) (RatFunc K) F' := IsScalarTower.of_algebraMap_eq' rfl
-  AlgHom.liftEquiv (RatFunc k) (RatFunc K) F F'
-    { toRingHom := algebraMap F F'
-      commutes' := hcomm }
-
-/-- Multiplication `RatFunc K ⊗[RatFunc k] F → F'` is bijective when `F' = F · K` is linearly
-disjoint over `k` and `F / RatFunc k` is algebraic. -/
-private theorem bijective_ratFuncParameterLift
-    (H : (IsScalarTower.toAlgHom k K F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F K F' = ⊤)
-    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
-    (hXF : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc K) F' RatFunc.X)
-    [Algebra.IsAlgebraic (RatFunc k) F] :
-    Function.Bijective (ratFuncParameterLift hX hXF) := by
-  let _ : Algebra (RatFunc k) F' :=
-    ((algebraMap (RatFunc K) F').comp (algebraMap (RatFunc k) (RatFunc K))).toAlgebra
-  have _ : IsScalarTower (RatFunc k) (RatFunc K) F' := IsScalarTower.of_algebraMap_eq' rfl
-  let b := Module.Basis.ofVectorSpace (RatFunc k) F
-  exact AlgHom.liftEquiv_bijective_of_basis
-    { toRingHom := algebraMap F F'
-      commutes' := algebraMap_algebraMap_ratFunc_eq_algebraMap_ratFunc_algebraMap_ratFunc hX hXF }
-    b (constantExtensionRatFuncBasis H h hXF b) fun i ↦ by simp
-
 /-- **The tensor presentation over the extended rational function field.**
 If `F' = F · K` linearly disjointly over `k`, `F / RatFunc k` is algebraic, and the rational
 variable `X` maps compatibly along `RatFunc k → RatFunc K` and `F → F'`, multiplication gives
@@ -173,8 +142,43 @@ noncomputable def constantExtensionRatFuncTensorEquiv
       algebraMap (RatFunc K) F' RatFunc.X)
     [Algebra.IsAlgebraic (RatFunc k) F] :
     RatFunc K ⊗[RatFunc k] F ≃ₐ[RatFunc K] F' :=
-  AlgEquiv.ofBijective (ratFuncParameterLift hX hXF)
-    (bijective_ratFuncParameterLift H h hX hXF)
+  have hcomm := algebraMap_algebraMap_ratFunc_eq_algebraMap_ratFunc_algebraMap_ratFunc hX hXF
+  letI : Algebra (RatFunc k) F' :=
+    ((algebraMap (RatFunc K) F').comp (algebraMap (RatFunc k) (RatFunc K))).toAlgebra
+  haveI : IsScalarTower (RatFunc k) (RatFunc K) F' := IsScalarTower.of_algebraMap_eq' rfl
+  let φ : F →ₐ[RatFunc k] F' :=
+    { toRingHom := algebraMap F F'
+      commutes' := fun r ↦ by simpa [RingHom.algebraMap_toAlgebra] using hcomm r }
+  let b := Module.Basis.ofVectorSpace (RatFunc k) F
+  AlgEquiv.ofBijective (AlgHom.liftEquiv (RatFunc k) (RatFunc K) F F' φ)
+    (AlgHom.liftEquiv_bijective_of_basis φ b (constantExtensionRatFuncBasis H h hXF b)
+      fun i ↦ by simp [φ])
+
+/-- In any linearly disjoint ambient extension `F'` where `RatFunc.X` maps compatibly, the
+parameter tensor product `RatFunc K ⊗[RatFunc k] F` embeds into `F'` and is therefore a domain. -/
+private theorem isDomain_ratFunc_tensorProduct_of_linearDisjoint
+    (H : (IsScalarTower.toAlgHom k K F').fieldRange.LinearDisjoint F)
+    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
+    (hXF : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc K) F' RatFunc.X) :
+    IsDomain (RatFunc K ⊗[RatFunc k] F) := by
+  have hcomm := algebraMap_algebraMap_ratFunc_eq_algebraMap_ratFunc_algebraMap_ratFunc hX hXF
+  let _ : Algebra (RatFunc k) F' :=
+    ((algebraMap (RatFunc K) F').comp (algebraMap (RatFunc k) (RatFunc K))).toAlgebra
+  have _ : IsScalarTower (RatFunc k) (RatFunc K) F' := IsScalarTower.of_algebraMap_eq' rfl
+  let φ : F →ₐ[RatFunc k] F' :=
+    { toRingHom := algebraMap F F'
+      commutes' := fun r ↦ by simpa [RingHom.algebraMap_toAlgebra] using hcomm r }
+  let b := Module.Basis.ofVectorSpace (RatFunc k) F
+  have hli := H.linearIndependent_ratFunc_algebraMap_comp hXF b.linearIndependent
+  have hlin : (AlgHom.liftEquiv (RatFunc k) (RatFunc K) F F' φ).toLinearMap =
+      φ.toLinearMap.liftBaseChange (RatFunc K) := by
+    ext f
+    simp [AlgHom.liftEquiv_tmul]
+  have hinj : Function.Injective (AlgHom.liftEquiv (RatFunc k) (RatFunc K) F F' φ) := by
+    rw [← AlgHom.coe_toLinearMap, hlin, LinearMap.liftBaseChange_injective_iff _ b]
+    simpa [φ] using hli
+  exact hinj.isDomain (AlgHom.liftEquiv (RatFunc k) (RatFunc K) F F' φ)
 
 /-- On pure tensors, `constantExtensionRatFuncTensorEquiv` multiplies the `RatFunc K` scalar
 and the image of `F` in `F'`. -/
@@ -188,8 +192,7 @@ theorem constantExtensionRatFuncTensorEquiv_tmul
     [Algebra.IsAlgebraic (RatFunc k) F] (r : RatFunc K) (f : F) :
     constantExtensionRatFuncTensorEquiv H h hX hXF (r ⊗ₜ[RatFunc k] f) =
       algebraMap (RatFunc K) F' r * algebraMap F F' f := by
-  simp [constantExtensionRatFuncTensorEquiv, ratFuncParameterLift, AlgHom.liftEquiv_tmul,
-    Algebra.smul_def]
+  simp [constantExtensionRatFuncTensorEquiv, AlgHom.liftEquiv_tmul, Algebra.smul_def]
 
 /-- The inverse of `constantExtensionRatFuncTensorEquiv` sends a product of the two images to a
 pure tensor. -/
@@ -237,6 +240,8 @@ theorem constantExtensionRatFuncTensorEquiv_symm_algebraMap_right
 
 end RatFunc
 
+end Compositum
+
 section FractionField
 
 attribute [local instance] Algebra.TensorProduct.rightAlgebra
@@ -244,9 +249,31 @@ attribute [local instance] Algebra.TensorProduct.rightAlgebra
 
 section SpecifiedFractionField
 
-variable [Algebra (F ⊗[k] K) F']
-  [IsScalarTower F (F ⊗[k] K) F']
-  [IsScalarTower K (F ⊗[k] K) F'] [IsFractionRing (F ⊗[k] K) F']
+variable {F' : Type*} [Field F'] [Algebra K F'] [Algebra F F'] [Algebra (F ⊗[k] K) F']
+  [IsScalarTower F (F ⊗[k] K) F'] [IsScalarTower K (F ⊗[k] K) F']
+
+/-- The canonical `k`-algebra structure on a fraction field `F'` of `F ⊗[k] K`, induced through
+`k → F ⊗[k] K → F'`. -/
+@[instance_reducible]
+private noncomputable def fractionFieldBaseAlgebra : Algebra k F' :=
+  ((algebraMap (F ⊗[k] K) F').comp (algebraMap k (F ⊗[k] K))).toAlgebra
+
+/-- The canonical `k`-algebra structure on a fraction field `F'` of `F ⊗[k] K` makes both
+`k → F → F'` and `k → K → F'` scalar towers. -/
+private theorem fractionFieldBase_isScalarTowers :
+    letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (F' := F')
+    IsScalarTower k F F' ∧ IsScalarTower k K F' :=
+  letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (F' := F')
+  ⟨.of_algebraMap_eq fun c ↦ by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+        IsScalarTower.algebraMap_apply k F (F ⊗[k] K),
+        ← IsScalarTower.algebraMap_apply F (F ⊗[k] K) F'],
+    .of_algebraMap_eq fun c ↦ by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+        IsScalarTower.algebraMap_apply k K (F ⊗[k] K),
+        ← IsScalarTower.algebraMap_apply K (F ⊗[k] K) F']⟩
+
+variable [IsFractionRing (F ⊗[k] K) F']
 
 /-- **A tensor presentation of the fraction field after extension of constants.**
 For any specified fraction field `F'` of the domain `F ⊗[k] K`, and any intermediate
@@ -257,6 +284,9 @@ No algebraicity or separability of `K/k` is required. -/
 noncomputable def _root_.IntermediateField.fractionFieldParameterEquiv (C : IntermediateField k F)
     [Algebra.IsAlgebraic C F] :
     (constantCompositum C K F') ⊗[C] F ≃ₐ[constantCompositum C K F'] F' :=
+  letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (F' := F')
+  haveI := (fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (F' := F')).1
+  haveI := (fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (F' := F')).2
   constantExtensionTensorEquiv (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) C
 
@@ -291,6 +321,9 @@ noncomputable def fractionFieldRatFuncTensorEquiv
       algebraMap (RatFunc K) F' RatFunc.X)
     [Algebra.IsAlgebraic (RatFunc k) F] :
     RatFunc K ⊗[RatFunc k] F ≃ₐ[RatFunc K] F' :=
+  letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (F' := F')
+  haveI := (fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (F' := F')).1
+  haveI := (fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (F' := F')).2
   constantExtensionRatFuncTensorEquiv
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) hX hXF
@@ -303,8 +336,8 @@ theorem fractionFieldRatFuncTensorEquiv_tmul
       algebraMap (RatFunc K) F' RatFunc.X)
     [Algebra.IsAlgebraic (RatFunc k) F] (r : RatFunc K) (f : F) :
     fractionFieldRatFuncTensorEquiv hX hXF (r ⊗ₜ[RatFunc k] f) =
-      algebraMap (RatFunc K) F' r * algebraMap F F' f :=
-  constantExtensionRatFuncTensorEquiv_tmul _ _ hX hXF r f
+      algebraMap (RatFunc K) F' r * algebraMap F F' f := by
+  simp only [fractionFieldRatFuncTensorEquiv, constantExtensionRatFuncTensorEquiv_tmul]
 
 /-- The inverse of `fractionFieldRatFuncTensorEquiv` recovers pure tensors from products. -/
 @[simp]
@@ -315,8 +348,8 @@ theorem fractionFieldRatFuncTensorEquiv_symm_mul
     [Algebra.IsAlgebraic (RatFunc k) F] (r : RatFunc K) (f : F) :
     (fractionFieldRatFuncTensorEquiv hX hXF).symm
         (algebraMap (RatFunc K) F' r * algebraMap F F' f) =
-      r ⊗ₜ[RatFunc k] f :=
-  constantExtensionRatFuncTensorEquiv_symm_mul _ _ hX hXF r f
+      r ⊗ₜ[RatFunc k] f := by
+  simp only [fractionFieldRatFuncTensorEquiv, constantExtensionRatFuncTensorEquiv_symm_mul]
 
 /-- The inverse of `fractionFieldRatFuncTensorEquiv` embeds `K` into the left factor. -/
 @[simp]
@@ -326,8 +359,9 @@ theorem fractionFieldRatFuncTensorEquiv_symm_algebraMap_left
       algebraMap (RatFunc K) F' RatFunc.X)
     [Algebra.IsAlgebraic (RatFunc k) F] (c : K) :
     (fractionFieldRatFuncTensorEquiv hX hXF).symm (algebraMap K F' c) =
-      algebraMap K (RatFunc K) c ⊗ₜ[RatFunc k] 1 :=
-  constantExtensionRatFuncTensorEquiv_symm_algebraMap_left _ _ hX hXF c
+      algebraMap K (RatFunc K) c ⊗ₜ[RatFunc k] 1 := by
+  simp only [fractionFieldRatFuncTensorEquiv,
+    constantExtensionRatFuncTensorEquiv_symm_algebraMap_left]
 
 /-- The inverse of `fractionFieldRatFuncTensorEquiv` embeds `F` into the right factor. -/
 @[simp]
@@ -337,8 +371,9 @@ theorem fractionFieldRatFuncTensorEquiv_symm_algebraMap_right
       algebraMap (RatFunc K) F' RatFunc.X)
     [Algebra.IsAlgebraic (RatFunc k) F] (f : F) :
     (fractionFieldRatFuncTensorEquiv hX hXF).symm (algebraMap F F' f) =
-      1 ⊗ₜ[RatFunc k] f :=
-  constantExtensionRatFuncTensorEquiv_symm_algebraMap_right _ _ hX hXF f
+      1 ⊗ₜ[RatFunc k] f := by
+  simp only [fractionFieldRatFuncTensorEquiv,
+    constantExtensionRatFuncTensorEquiv_symm_algebraMap_right]
 
 /-- The inverse of `fractionFieldRatFuncTensorEquiv` carries a pure tensor `f ⊗ₜ c` from
 `F ⊗[k] K` inside `F'` to `c ⊗ₜ f` in `RatFunc K ⊗[RatFunc k] F`. -/
@@ -384,20 +419,8 @@ theorem isDomain_ratFunc_tensorProduct_of_isDomain_tensorProduct
   have hXF : algebraMap F Q (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc K) Q RatFunc.X :=
     (algebraMap_ratFuncAlgebraOfTranscendental_X hxQ).symm
-  let b := Module.Basis.ofVectorSpace (RatFunc k) F
-  have hli := (linearDisjoint_of_isFractionRing_tensorProduct
-    (k := k)).linearIndependent_ratFunc_algebraMap_comp hXF b.linearIndependent
-  have hconstr : (ratFuncParameterLift (F' := Q) hX hXF).toLinearMap =
-      (b.baseChange (RatFunc K)).constr (RatFunc K) (algebraMap F Q ∘ b) :=
-    (b.baseChange (RatFunc K)).ext fun i ↦ by
-      rw [Module.Basis.constr_basis]
-      simp [ratFuncParameterLift, AlgHom.liftEquiv_tmul]
-  have hinj : Function.Injective (ratFuncParameterLift (F' := Q) hX hXF) := by
-    have : Function.Injective (ratFuncParameterLift (F' := Q) hX hXF).toLinearMap := by
-      rw [hconstr]
-      exact (b.baseChange (RatFunc K)).injective_constr_of_linearIndependent hli
-    exact this
-  exact Function.Injective.isDomain (ratFuncParameterLift (F' := Q) hX hXF).toRingHom hinj
+  exact isDomain_ratFunc_tensorProduct_of_linearDisjoint (F' := Q)
+    (linearDisjoint_of_isFractionRing_tensorProduct (k := k)) hX hXF
 
 /-- **The algebraic parameter tensor product `RatFunc K ⊗[RatFunc k] F` is a field** whenever
 `F ⊗[k] K` is an integral domain, `F / RatFunc k` is algebraic, and `RatFunc.X` maps to

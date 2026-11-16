@@ -35,7 +35,8 @@ Over an arbitrary field `k`, an algebra `A` is geometrically reduced as soon as 
 `A ⊗[k] L`) is reduced for one algebraically closed field `L` over `k`, since the algebraic
 closure of `k` embeds in `L` and the tensor product over a field preserves injections. Conversely,
 over any commutative ring `R`, geometric reducedness is preserved by arbitrary base change
-(`S ⊗[R] A` and `A ⊗[R] S`) and by localization.
+(`S ⊗[R] A` and `A ⊗[R] S`) and by localization, and in particular passes to any total quotient ring
+or `FractionRing` of `A ⊗[R] K`.
 
 ## References
 
@@ -69,19 +70,19 @@ theorem of_isReduced_tensorProduct {k A : Type*} [Field k] [Ring A] [Algebra k A
     (Algebra.TensorProduct.map (IsAlgClosed.lift : AlgebraicClosure k →ₐ[k] L) 1)
     (Module.Flat.rTensor_preserves_injective_linearMap _ (RingHom.injective _))
 
-end Algebra.IsGeometricallyReduced
-
-namespace TauCeti
-
 /-- A `k`-algebra `A` is geometrically reduced as soon as `A ⊗[k] L` is reduced for one
 algebraically closed field `L` over `k`. -/
-theorem isGeometricallyReduced_of_isReduced_tensorProduct {k A : Type*} [Field k] [Ring A]
-    [Algebra k A] (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] [IsReduced (A ⊗[k] L)] :
-    Algebra.IsGeometricallyReduced k A :=
+theorem of_isReduced_tensorProduct' {k A : Type*} [Field k] [Ring A] [Algebra k A]
+    (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] [IsReduced (A ⊗[k] L)] :
+    IsGeometricallyReduced k A :=
   have : IsReduced (L ⊗[k] A) :=
     isReduced_of_injective (Algebra.TensorProduct.comm k L A)
       (Algebra.TensorProduct.comm k L A).injective
-  Algebra.IsGeometricallyReduced.of_isReduced_tensorProduct L
+  of_isReduced_tensorProduct L
+
+end Algebra.IsGeometricallyReduced
+
+namespace TauCeti
 
 /-- Extending the scalars of a reduced algebra by a separable algebraic field extension gives a
 reduced algebra. Neither factor needs to be finite or finitely generated. -/
@@ -200,26 +201,14 @@ instance isGeometricallyReduced_tensorProduct_left {R S A : Type*} [CommRing R] 
   let j : L →ₐ[p.ResidueField] Ω := IsAlgClosed.lift
   let _ : Algebra L Ω := j.toRingHom.toAlgebra
   have : IsScalarTower R L Ω := .of_algebraMap_eq fun r ↦ by
-    symm
-    rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      IsScalarTower.algebraMap_apply R p.ResidueField L, j.commutes,
-      RingHom.algebraMap_toAlgebra, RingHom.comp_apply, Ideal.ResidueField.map_algebraMap,
-      ← IsScalarTower.algebraMap_apply S q.ResidueField Ω,
-      ← IsScalarTower.algebraMap_apply R S Ω]
+    simp [RingHom.algebraMap_toAlgebra, IsScalarTower.algebraMap_apply R p.ResidueField L,
+      IsScalarTower.algebraMap_apply R S Ω, IsScalarTower.algebraMap_apply S q.ResidueField Ω]
   -- `L` is algebraically closed (hence perfect) and `L ⊗[R] A` is reduced by geometric reducedness.
   have : IsReduced (Ω ⊗[R] A) :=
     isReduced_of_injective (Algebra.TensorProduct.cancelBaseChange R L Ω Ω A).symm
       (Algebra.TensorProduct.cancelBaseChange R L Ω Ω A).symm.injective
   exact isReduced_of_injective (Algebra.TensorProduct.cancelBaseChange R S Ω Ω A)
     (Algebra.TensorProduct.cancelBaseChange R S Ω Ω A).injective
-
-attribute [local instance] Algebra.TensorProduct.rightAlgebra in
-/-- Geometric reducedness is preserved by arbitrary commutative base change `A ⊗[R] S` with the
-right `S`-algebra structure. -/
-theorem isGeometricallyReduced_tensorProduct_right {R A : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] [Algebra.IsGeometricallyReduced R A] (S : Type*) [CommRing S] [Algebra R S] :
-    Algebra.IsGeometricallyReduced S (A ⊗[R] S) :=
-  Algebra.IsGeometricallyReduced.of_algEquiv (Algebra.TensorProduct.commRight R S A)
 
 /-- Geometric reducedness over any commutative ring is preserved by localization. -/
 theorem isGeometricallyReduced_of_isLocalization {R A : Type*} [CommRing R] [CommRing A]
@@ -234,5 +223,38 @@ theorem isGeometricallyReduced_of_isLocalization {R A : Type*} [CommRing R] [Com
   have : IsReduced (Q ⊗[R] L) := isReduced_tensorProduct_of_isLocalization M Q L
   exact isReduced_of_injective (Algebra.TensorProduct.comm R L Q)
     (Algebra.TensorProduct.comm R L Q).injective
+
+section RightAlgebra
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+  Algebra.TensorProduct.right_isScalarTower
+
+/-- Geometric reducedness is preserved by arbitrary commutative base change `A ⊗[R] S` with the
+right `S`-algebra structure. -/
+theorem isGeometricallyReduced_tensorProduct_right {R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] [Algebra.IsGeometricallyReduced R A] (S : Type*) [CommRing S] [Algebra R S] :
+    Algebra.IsGeometricallyReduced S (A ⊗[R] S) :=
+  Algebra.IsGeometricallyReduced.of_algEquiv (Algebra.TensorProduct.commRight R S A)
+
+/-- If `A` is a geometrically reduced `R`-algebra and `K` is any commutative `R`-algebra, then any
+total quotient ring `Q` of `A ⊗[R] K` (viewed as a `K`-algebra via the right tensor factor) is
+geometrically reduced over `K`. -/
+theorem isGeometricallyReduced_of_isFractionRing_tensorProduct
+    {R A K Q : Type*} [CommRing R] [CommRing A] [Algebra R A] [Algebra.IsGeometricallyReduced R A]
+    [CommRing K] [Algebra R K] [CommRing Q] [Algebra (A ⊗[R] K) Q] [Algebra K Q]
+    [IsScalarTower K (A ⊗[R] K) Q] [IsFractionRing (A ⊗[R] K) Q] :
+    Algebra.IsGeometricallyReduced K Q :=
+  have := isGeometricallyReduced_tensorProduct_right (R := R) (A := A) K
+  isGeometricallyReduced_of_isLocalization (nonZeroDivisors (A ⊗[R] K)) Q
+
+/-- If `A` is a geometrically reduced `R`-algebra, then `FractionRing (A ⊗[R] K)` is geometrically
+reduced over `K` for every commutative `R`-algebra `K`. -/
+theorem isGeometricallyReduced_fractionRing_tensorProduct
+    (R A K : Type*) [CommRing R] [CommRing A] [Algebra R A] [Algebra.IsGeometricallyReduced R A]
+    [CommRing K] [Algebra R K] :
+    Algebra.IsGeometricallyReduced K (FractionRing (A ⊗[R] K)) :=
+  isGeometricallyReduced_of_isFractionRing_tensorProduct (R := R) (A := A)
+
+end RightAlgebra
 
 end TauCeti

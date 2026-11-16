@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.LinearAlgebra.Basis.Semilinear
 
 /-!
 # Degrees and bases after a linearly disjoint extension of constants
@@ -198,17 +199,17 @@ theorem constantExtensionRatFuncBasis_repr_algebraMap
     (x : F) (i : ι) :
     (constantExtensionRatFuncBasis H h hXF b).repr (algebraMap F F' x) i =
       algebraMap (RatFunc k) (RatFunc k') (b.repr x i) := by
-  have hx : algebraMap F F' x = Finsupp.linearCombination (RatFunc k')
-      (constantExtensionRatFuncBasis H h hXF b)
-      ((b.repr x).mapRange (algebraMap (RatFunc k) (RatFunc k')) (map_zero _)) := by
-    conv_lhs => rw [← b.linearCombination_repr x]
-    rw [Finsupp.linearCombination_apply, Finsupp.linearCombination_apply, map_finsuppSum,
-      Finsupp.sum_mapRange_index (by simp)]
-    refine Finsupp.sum_congr fun j _ ↦ ?_
-    simp only [Algebra.smul_def, map_mul,
-      algebraMap_algebraMap_ratFunc_eq_algebraMap_ratFunc_algebraMap_ratFunc hX hXF,
-      constantExtensionRatFuncBasis_apply]
-  rw [hx, Module.Basis.repr_linearCombination, Finsupp.mapRange_apply]
+  let φ : F →ₛₗ[algebraMap (RatFunc k) (RatFunc k')] F' :=
+    { toFun := algebraMap F F'
+      map_add' := map_add _
+      map_smul' := fun r y ↦ by
+        simp [Algebra.smul_def,
+          algebraMap_algebraMap_ratFunc_eq_algebraMap_ratFunc_algebraMap_ratFunc hX hXF] }
+  have hφ : φ = b.semilinearMap (algebraMap (RatFunc k) (RatFunc k'))
+      (constantExtensionRatFuncBasis H h hXF b) :=
+    b.ext fun j ↦ by simp [φ]
+  simpa [φ] using congrArg ((constantExtensionRatFuncBasis H h hXF b).repr · i)
+    (LinearMap.congr_fun hφ x)
 
 end RatFunc
 

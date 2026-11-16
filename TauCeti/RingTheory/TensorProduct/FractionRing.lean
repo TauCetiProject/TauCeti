@@ -21,10 +21,11 @@ same fraction field must also be compared with localizations or geometric base c
 When `K` is flat over `k` (in particular when `k` is a field), an injective `k`-algebra map
 `f : A →ₐ[k] B` induces an injective `K`-algebra map between any specified total quotient rings
 `QA` of `A ⊗[k] K` and `QB` of `B ⊗[k] K` once `QB` has no zero divisors, characterized uniquely
-by its restriction to `A` and `K`. When the source `E` is a field and `QB` is a domain, injectivity
-of `f : E →ₐ[k] B` is automatic. Isomorphisms of the left factor and permutation of the two
-tensor factors (`A ⊗[k] K` versus `K ⊗[k] A`) induce `K`-algebra isomorphisms of arbitrary total
-quotient rings with no flatness or domain assumption.
+by its restriction to `A` and `K`. When the source `E` is a division ring (in particular a field)
+and `QB` is nontrivial, injectivity of `f : E →ₐ[k] B` is automatic
+(`TauCeti.injective_of_isFractionRing_tensorProduct`). Isomorphisms of the left factor and
+permutation of the two tensor factors (`A ⊗[k] K` versus `K ⊗[k] A`) induce `K`-algebra
+isomorphisms of arbitrary total quotient rings with no flatness or domain assumption.
 
 The right-factor algebra is Mathlib's `Algebra.TensorProduct.rightAlgebra`, installed
 locally together with `right_isScalarTower`; all maps to the fraction field are the
@@ -37,10 +38,11 @@ using `Subalgebra.LinearDisjoint.include_range` and transport along the fraction
 * `TauCeti.adjoin_range_right_eq_top_of_isFractionRing_tensorProduct` and
   `TauCeti.linearDisjoint_of_isFractionRing_tensorProduct`: a fraction field of `F ⊗[k] K` is a
   linearly disjoint compositum of `F` and `K`.
-* `TauCeti.fractionRingTensorMapAlgHom` and `TauCeti.fractionRingTensorFieldMapAlgHom`: the
-  `K`-algebra homomorphism on fraction rings induced by an injective `k`-algebra map on the left
-  factor (automatic when the source is a field), together with its injectivity, functoriality, and
-  uniqueness (`TauCeti.eq_fractionRingTensorMapAlgHom_of_apply_algebraMap`).
+* `TauCeti.fractionRingTensorMapAlgHom` and `TauCeti.injective_of_isFractionRing_tensorProduct`:
+  the `K`-algebra homomorphism on fraction rings induced by an injective `k`-algebra map on the
+  left factor (automatic when the source is a division ring and `QB` is nontrivial), together with
+  its injectivity, functoriality, and uniqueness
+  (`TauCeti.eq_fractionRingTensorMapAlgHom_of_apply_algebraMap`).
 * `TauCeti.fractionRingTensorCongrAlgEquiv` and `TauCeti.fractionRingTensorCommAlgEquiv`: the
   `K`-algebra equivalences on fraction rings induced by an isomorphism `A ≃ₐ[k] B` and by
   swapping `A ⊗[k] K` with `K ⊗[k] A`.
@@ -273,100 +275,20 @@ end Functoriality
 
 section FieldSource
 
-variable {k E B : Type*} (K : Type*) [CommSemiring k] [Field E] [CommRing B] [CommRing K]
-  [Algebra k E] [Algebra k B] [Algebra k K] [Module.Flat k K]
+variable {k E B : Type*} (K : Type*) [CommSemiring k] [DivisionRing E] [CommRing B] [CommRing K]
+  [Algebra k E] [Algebra k B] [Algebra k K]
 
-omit [Module.Flat k K] in
-/-- When `E` is a field and a total quotient ring `QB` of `B ⊗[k] K` is nontrivial, `B` is
-nontrivial and every `k`-algebra map `E →ₐ[k] B` is injective. -/
-private theorem injective_of_isFractionRing_tensorProduct (QB : Type*) [CommRing QB]
+/-- When `E` is a division ring (in particular a field) and a total quotient ring `QB` of
+`B ⊗[k] K` is nontrivial, `B` is nontrivial and every `k`-algebra map `E →ₐ[k] B` is injective. -/
+theorem injective_of_isFractionRing_tensorProduct (QB : Type*) [CommRing QB]
     [Nontrivial QB] [Algebra (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB] (f : E →ₐ[k] B) :
     Function.Injective f := by
   have : Nontrivial (B ⊗[k] K) :=
     (IsFractionRing.nontrivial_iff_nontrivial (B ⊗[k] K) QB).mpr inferInstance
   have : Nontrivial B :=
     (Algebra.TensorProduct.includeLeftRingHom : B →+* B ⊗[k] K).domain_nontrivial
-  exact f.toRingHom.injective
-
-/-- When `K` is flat over `k`, the source `E` is a field, and the target fraction ring `QB` is a
-domain, any `k`-algebra map `f : E →ₐ[k] B` is automatically injective (`B ⊗[k] K` is nontrivial
-since `QB` is) and induces an injective `K`-algebra map `QA →ₐ[K] QB` between fraction rings of
-`E ⊗[k] K` and `B ⊗[k] K`. -/
-noncomputable def fractionRingTensorFieldMapAlgHom (QA QB : Type*)
-    [CommRing QA] [Algebra (E ⊗[k] K) QA] [Algebra K QA]
-    [IsScalarTower K (E ⊗[k] K) QA] [IsFractionRing (E ⊗[k] K) QA]
-    [CommRing QB] [IsDomain QB] [Algebra (B ⊗[k] K) QB] [Algebra K QB]
-    [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
-    (f : E →ₐ[k] B) : QA →ₐ[K] QB :=
-  fractionRingTensorMapAlgHom K QA QB (injective_of_isFractionRing_tensorProduct K QB f)
-
-section FieldApply
-
-variable (QA QB : Type*)
-  [CommRing QA] [Algebra (E ⊗[k] K) QA] [Algebra K QA]
-  [IsScalarTower K (E ⊗[k] K) QA] [IsFractionRing (E ⊗[k] K) QA]
-  [CommRing QB] [IsDomain QB] [Algebra (B ⊗[k] K) QB] [Algebra K QB]
-  [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
-  (f : E →ₐ[k] B)
-
-/-- `fractionRingTensorFieldMapAlgHom` agrees with `fractionRingTensorMapAlgHom` for the
-automatic injectivity of `f : E →ₐ[k] B`. -/
-theorem fractionRingTensorFieldMapAlgHom_eq_fractionRingTensorMapAlgHom
-    (hf : Function.Injective f) :
-    fractionRingTensorFieldMapAlgHom K QA QB f = fractionRingTensorMapAlgHom K QA QB hf := by
-  rfl
-
-/-- On the image of `E ⊗[k] K`, `fractionRingTensorFieldMapAlgHom` acts as `f ⊗ id`. -/
-@[simp]
-theorem fractionRingTensorFieldMapAlgHom_algebraMap_tensorProduct (x : E ⊗[k] K) :
-    fractionRingTensorFieldMapAlgHom K QA QB f (algebraMap (E ⊗[k] K) QA x) =
-      algebraMap (B ⊗[k] K) QB (Algebra.TensorProduct.map f (AlgHom.id k K) x) :=
-  fractionRingTensorMapAlgHom_algebraMap_tensorProduct K QA QB _ x
-
-/-- On the image of the field `E`, `fractionRingTensorFieldMapAlgHom` acts via `f`. -/
-@[simp]
-theorem fractionRingTensorFieldMapAlgHom_algebraMap_left [Algebra E QA]
-    [IsScalarTower E (E ⊗[k] K) QA] [Algebra B QB] [IsScalarTower B (B ⊗[k] K) QB] (a : E) :
-    fractionRingTensorFieldMapAlgHom K QA QB f (algebraMap E QA a) = algebraMap B QB (f a) :=
-  fractionRingTensorMapAlgHom_algebraMap_left K QA QB _ a
-
-/-- The `K`-algebra map induced from a field source `E` is injective. -/
-theorem fractionRingTensorFieldMapAlgHom_injective :
-    Function.Injective (fractionRingTensorFieldMapAlgHom K QA QB f) :=
-  fractionRingTensorMapAlgHom_injective K QA QB _
-
-/-- Any `K`-algebra map `QA →ₐ[K] QB` extending `f` on `E` equals
-`fractionRingTensorFieldMapAlgHom K QA QB f`. -/
-theorem eq_fractionRingTensorFieldMapAlgHom_of_apply_algebraMap [Algebra E QA]
-    [IsScalarTower E (E ⊗[k] K) QA] [Algebra B QB] [IsScalarTower B (B ⊗[k] K) QB]
-    {ψ : QA →ₐ[K] QB} (hE : ∀ a : E, ψ (algebraMap E QA a) = algebraMap B QB (f a)) :
-    ψ = fractionRingTensorFieldMapAlgHom K QA QB f :=
-  eq_fractionRingTensorMapAlgHom_of_apply_algebraMap K QA QB _ hE
-
-end FieldApply
-
-/-- `fractionRingTensorFieldMapAlgHom` sends the identity on `E` to the identity on `QA`. -/
-@[simp]
-theorem fractionRingTensorFieldMapAlgHom_id (QA : Type*) [CommRing QA] [IsDomain QA]
-    [Algebra (E ⊗[k] K) QA] [Algebra K QA] [IsScalarTower K (E ⊗[k] K) QA]
-    [IsFractionRing (E ⊗[k] K) QA] :
-    fractionRingTensorFieldMapAlgHom K QA QA (AlgHom.id k E) = AlgHom.id K QA :=
-  fractionRingTensorMapAlgHom_id K QA _
-
-/-- `fractionRingTensorFieldMapAlgHom` respects composition across field sources. -/
-theorem fractionRingTensorFieldMapAlgHom_comp {F C : Type*} [Field F] [CommRing C]
-    [Algebra k F] [Algebra k C] (QA QB QC : Type*)
-    [CommRing QA] [Algebra (E ⊗[k] K) QA] [Algebra K QA]
-    [IsScalarTower K (E ⊗[k] K) QA] [IsFractionRing (E ⊗[k] K) QA]
-    [CommRing QB] [IsDomain QB] [Algebra (F ⊗[k] K) QB] [Algebra K QB]
-    [IsScalarTower K (F ⊗[k] K) QB] [IsFractionRing (F ⊗[k] K) QB]
-    [CommRing QC] [IsDomain QC] [Algebra (C ⊗[k] K) QC] [Algebra K QC]
-    [IsScalarTower K (C ⊗[k] K) QC] [IsFractionRing (C ⊗[k] K) QC]
-    (f : E →ₐ[k] F) (g : F →ₐ[k] C) :
-    (fractionRingTensorFieldMapAlgHom K QB QC g).comp
-        (fractionRingTensorFieldMapAlgHom K QA QB f) =
-      fractionRingTensorFieldMapAlgHom K QA QC (g.comp f) :=
-  fractionRingTensorMapAlgHom_comp K QA QB QC _ _ _
+  rw [← AlgHom.coe_toRingHom]
+  exact (f : E →+* B).injective
 
 end FieldSource
 
@@ -403,6 +325,21 @@ theorem fractionRingTensorCongrAlgEquiv_algebraMap_tensorProduct (QA QB : Type*)
         (Algebra.TensorProduct.congr e (AlgEquiv.refl : K ≃ₐ[k] K) x) :=
   IsFractionRing.algEquivOfAlgEquiv_algebraMap _ x
 
+/-- On the image of `B ⊗[k] K`, the inverse of `fractionRingTensorCongrAlgEquiv` acts via
+`e.symm ⊗ id`. -/
+@[simp]
+theorem fractionRingTensorCongrAlgEquiv_symm_algebraMap_tensorProduct (QA QB : Type*)
+    [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA]
+    [IsScalarTower K (A ⊗[k] K) QA] [IsFractionRing (A ⊗[k] K) QA]
+    [CommRing QB] [Algebra (B ⊗[k] K) QB] [Algebra K QB]
+    [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
+    (e : A ≃ₐ[k] B) (x : B ⊗[k] K) :
+    (fractionRingTensorCongrAlgEquiv K QA QB e).symm (algebraMap (B ⊗[k] K) QB x) =
+      algebraMap (A ⊗[k] K) QA
+        (Algebra.TensorProduct.congr e.symm (AlgEquiv.refl : K ≃ₐ[k] K) x) :=
+  (fractionRingTensorCongrAlgEquiv K QA QB e).injective
+    (by simp [← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp])
+
 /-- On the image of the left factor `A`, `fractionRingTensorCongrAlgEquiv` acts via `e`. -/
 @[simp]
 theorem fractionRingTensorCongrAlgEquiv_algebraMap_left (QA QB : Type*)
@@ -417,6 +354,21 @@ theorem fractionRingTensorCongrAlgEquiv_algebraMap_left (QA QB : Type*)
   simp [IsScalarTower.algebraMap_apply A (A ⊗[k] K) QA,
     IsScalarTower.algebraMap_apply B (B ⊗[k] K) QB]
 
+/-- On the image of the left factor `B`, the inverse of `fractionRingTensorCongrAlgEquiv` acts via
+`e.symm`. -/
+@[simp]
+theorem fractionRingTensorCongrAlgEquiv_symm_algebraMap_left (QA QB : Type*)
+    [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA] [Algebra A QA]
+    [IsScalarTower K (A ⊗[k] K) QA] [IsScalarTower A (A ⊗[k] K) QA]
+    [IsFractionRing (A ⊗[k] K) QA]
+    [CommRing QB] [Algebra (B ⊗[k] K) QB] [Algebra K QB] [Algebra B QB]
+    [IsScalarTower K (B ⊗[k] K) QB] [IsScalarTower B (B ⊗[k] K) QB]
+    [IsFractionRing (B ⊗[k] K) QB]
+    (e : A ≃ₐ[k] B) (b : B) :
+    (fractionRingTensorCongrAlgEquiv K QA QB e).symm (algebraMap B QB b) =
+      algebraMap A QA (e.symm b) :=
+  (fractionRingTensorCongrAlgEquiv K QA QB e).injective (by simp)
+
 /-- `fractionRingTensorCongrAlgEquiv` sends the identity equivalence on `A` to the identity on
 `QA`. -/
 @[simp]
@@ -430,7 +382,6 @@ theorem fractionRingTensorCongrAlgEquiv_refl (QA : Type*)
   simp
 
 /-- Inverting `fractionRingTensorCongrAlgEquiv` corresponds to inverting `e`. -/
-@[simp]
 theorem fractionRingTensorCongrAlgEquiv_symm (QA QB : Type*)
     [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA]
     [IsScalarTower K (A ⊗[k] K) QA] [IsFractionRing (A ⊗[k] K) QA]
@@ -442,11 +393,9 @@ theorem fractionRingTensorCongrAlgEquiv_symm (QA QB : Type*)
   apply AlgEquiv.coe_toAlgHom_injective
   apply AlgHom.toRingHom_injective
   refine IsLocalization.ringHom_ext (nonZeroDivisors (B ⊗[k] K)) (RingHom.ext fun x ↦ ?_)
-  apply (fractionRingTensorCongrAlgEquiv K QA QB e).injective
-  simp [← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp]
+  simp
 
 /-- `fractionRingTensorCongrAlgEquiv` respects composition of `k`-algebra equivalences. -/
-@[simp]
 theorem fractionRingTensorCongrAlgEquiv_trans {C : Type*} [CommRing C] [Algebra k C]
     (QA QB QC : Type*)
     [CommRing QA] [Algebra (A ⊗[k] K) QA] [Algebra K QA]
@@ -471,7 +420,6 @@ end Congr
 
 /-- As a `K`-algebra homomorphism, `fractionRingTensorCongrAlgEquiv` agrees with
 `fractionRingTensorMapAlgHom` when `K` is flat over `k` and `QB` has no zero divisors. -/
-@[simp]
 theorem fractionRingTensorCongrAlgEquiv_toAlgHom {k A B : Type*} (K QA QB : Type*)
     [CommSemiring k] [CommRing A] [CommRing B] [CommRing K]
     [Algebra k A] [Algebra k B] [Algebra k K] [Module.Flat k K]
