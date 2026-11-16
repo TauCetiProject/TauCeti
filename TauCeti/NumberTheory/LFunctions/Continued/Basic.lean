@@ -149,7 +149,7 @@ theorem meromorphicAt_uncompletedProduct_iff {s : ℂ} :
     exact completed_eq_mul_uncompletedProduct hz
   exact ((hN.meromorphicAt.mul (d.meromorphic_gammaFactor s)).mul hm).congr heq.symm
 
-/-- The raw uncompleted product is meromorphic on the whole plane. -/
+/-- If the completion is globally meromorphic, so is the raw uncompleted product. -/
 @[fun_prop]
 theorem meromorphic_uncompletedProduct (hm : Meromorphic d.completed) :
     Meromorphic d.uncompletedProduct :=
@@ -180,7 +180,8 @@ theorem continuedL_of_not_meromorphic (hm : ¬ Meromorphic d.completed) :
   exact fun h ↦ hm (meromorphic_uncompletedProduct_iff.mp
     (meromorphic_uncompletedProduct_of_meromorphicOn h))
 
-/-- No repair is needed where the raw uncompleted product is analytic. -/
+/-- With a globally meromorphic completion, no repair is needed where the raw
+uncompleted product is analytic. -/
 theorem continuedL_eq_uncompletedProduct_of_analyticAt (hm : Meromorphic d.completed) {s : ℂ}
     (ha : AnalyticAt ℂ d.uncompletedProduct s) :
     d.continuedL s = d.uncompletedProduct s := by
@@ -197,7 +198,8 @@ private theorem continuedL_eventuallyEq_of_meromorphicOn
   rw [continuedL_def, toMeromorphicNFOn_eq_toMeromorphicNFAt hm hz.meromorphicOrderAt_nonneg,
     toMeromorphicNFAt_eq_self.mpr hz.meromorphicNFAt]
 
-/-- Repairing nonnegative-order singularities changes no punctured germ of the raw product. -/
+/-- With a globally meromorphic completion, repairing nonnegative-order singularities
+changes no punctured germ of the raw product. -/
 theorem continuedL_eventuallyEq (hm : Meromorphic d.completed) (s : ℂ) :
     d.continuedL =ᶠ[𝓝[≠] s] d.uncompletedProduct :=
   continuedL_eventuallyEq_of_meromorphicOn (meromorphic_uncompletedProduct hm).meromorphicOn s
@@ -211,8 +213,8 @@ theorem meromorphic_continuedL (d : AnalyticLFunctionData) : Meromorphic d.conti
   · rw [continuedL_of_not_meromorphic hm]
     exact fun _ ↦ analyticAt_const.meromorphicAt
 
-/-- Dividing out the gamma factor subtracts its meromorphic order, even where its
-pole cancels a pole of the completed function. -/
+/-- With a globally meromorphic completion, dividing out the gamma factor subtracts its
+meromorphic order, even where its pole cancels a pole of the completed function. -/
 theorem meromorphicOrderAt_continuedL (hm : Meromorphic d.completed) (s : ℂ) :
     meromorphicOrderAt d.continuedL s =
       meromorphicOrderAt d.completed s - meromorphicOrderAt d.gammaFactor s := by
@@ -244,6 +246,24 @@ theorem analyticAt_continuedL {s : ℂ}
 theorem analyticAt_continuedL_iff (d : AnalyticLFunctionData) (s : ℂ) :
     AnalyticAt ℂ d.continuedL s ↔ 0 ≤ meromorphicOrderAt d.continuedL s :=
   ⟨AnalyticAt.meromorphicOrderAt_nonneg, analyticAt_continuedL⟩
+
+/-- Analyticity of the raw uncompleted product passes to the continued function,
+without any global meromorphy assumption. -/
+theorem analyticAt_continuedL_of_analyticAt_uncompletedProduct {s : ℂ}
+    (ha : AnalyticAt ℂ d.uncompletedProduct s) : AnalyticAt ℂ d.continuedL s := by
+  by_cases hm : Meromorphic d.completed
+  · apply analyticAt_continuedL
+    rw [meromorphicOrderAt_congr (continuedL_eventuallyEq hm s)]
+    exact ha.meromorphicOrderAt_nonneg
+  · rw [continuedL_of_not_meromorphic hm]
+    exact analyticAt_const
+
+/-- Analyticity of the completion passes to the continued uncompleted function,
+without any global meromorphy assumption. -/
+@[fun_prop]
+theorem analyticAt_continuedL_of_analyticAt {s : ℂ} (ha : AnalyticAt ℂ d.completed s) :
+    AnalyticAt ℂ d.continuedL s :=
+  analyticAt_continuedL_of_analyticAt_uncompletedProduct (analyticAt_uncompletedProduct ha)
 
 /-- Away from the recorded poles, `continuedL` equals the raw uncompleted product. -/
 theorem HasMeromorphicContinuation.continuedL_eq (h : d.HasMeromorphicContinuation)
@@ -294,10 +314,8 @@ theorem meromorphicNFOn_continuedL {U : Set ℂ}
 /-- `continuedL` is analytic at every point where the record has no pole. -/
 theorem HasMeromorphicContinuation.analyticAt_continuedL_of_polarOrder_eq_zero
     (h : d.HasMeromorphicContinuation) {s : ℂ}
-    (hs : d.polarOrder s = 0) : AnalyticAt ℂ d.continuedL s := by
-  apply analyticAt_continuedL
-  rw [meromorphicOrderAt_congr (continuedL_eventuallyEq h.meromorphic s)]
-  exact (analyticAt_uncompletedProduct (h.analyticAt s hs)).meromorphicOrderAt_nonneg
+    (hs : d.polarOrder s = 0) : AnalyticAt ℂ d.continuedL s :=
+  analyticAt_continuedL_of_analyticAt (h.analyticAt s hs)
 
 /-- Away from gamma poles, no repair of the raw uncompleted product is needed. -/
 theorem HasMeromorphicContinuation.continuedL_eq_of_gammaFactor_ne_zero
@@ -321,8 +339,8 @@ theorem HasMeromorphicContinuation.completed_eq_mul_continuedL
   rw [h.continuedL_eq_of_gammaFactor_ne_zero hγ]
   exact completed_eq_mul_uncompletedProduct hγ
 
-/-- Putting back the conductor and gamma factors recovers the completed function
-as a punctured germ at every point, including the poles. -/
+/-- With a globally meromorphic completion, putting back the conductor and gamma factors
+recovers the completed function as a punctured germ at every point, including the poles. -/
 theorem completed_eventuallyEq_mul_continuedL (hm : Meromorphic d.completed) (s : ℂ) :
     d.completed =ᶠ[𝓝[≠] s]
       fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (z / 2) * d.gammaFactor z * d.continuedL z := by
@@ -341,7 +359,7 @@ theorem continuedL_eq_of_eventuallyEq {g : ℂ → ℂ} {s : ℂ}
   exact ((ha.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hg).mp heq).eq_of_nhds
 
 /-- With a meromorphic completion and Dirichlet agreement, removing the conductor and gamma
-factors recovers the Dirichlet series, even at a cancelled gamma pole. -/
+factors recovers the Dirichlet series on `Re s > 1`, even at a cancelled gamma pole. -/
 theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreement)
     (hm : Meromorphic d.completed) {s : ℂ} (hs : 1 < s.re) :
     d.continuedL s = LSeries d.coeff s := by
@@ -353,26 +371,30 @@ theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreemen
   have hN := d.conductor_cpow_ne_zero (z / 2)
   exact mul_left_cancel₀ (mul_ne_zero hN hzγ) (hz.symm.trans (hD.completed_eq z hzre))
 
-/-- With Dirichlet agreement and a meromorphic completion, the continued function is analytic
-on `Re s > 1`, including at cancelled gamma poles. -/
+/-- With Dirichlet agreement, the continued function is analytic on `Re s > 1`,
+including at cancelled gamma poles, without any global meromorphy assumption. -/
 theorem HasDirichletAgreement.analyticAt_continuedL (hD : d.HasDirichletAgreement)
-    (hm : Meromorphic d.completed) {s : ℂ} (hs : 1 < s.re) :
-    AnalyticAt ℂ d.continuedL s := by
-  apply (hD.analyticAt_LSeries hm.meromorphicOn hs).congr
-  filter_upwards [continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs)] with z hz
-  exact (hD.continuedL_eq_LSeries hm hz).symm
+    {s : ℂ} (hs : 1 < s.re) : AnalyticAt ℂ d.continuedL s := by
+  by_cases hm : Meromorphic d.completed
+  · apply (hD.analyticAt_LSeries hm.meromorphicOn hs).congr
+    filter_upwards [continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs)] with z hz
+    exact (hD.continuedL_eq_LSeries hm hz).symm
+  · rw [continuedL_of_not_meromorphic hm]
+    exact analyticAt_const
 
-/-- Normalizing the continued function on the whole plane gives the canonical meromorphic
-continuation of its Dirichlet series, including canonical values at poles. -/
+/-- With Dirichlet agreement and a globally meromorphic completion, normalizing the continued
+function on the whole plane gives the canonical meromorphic continuation of its Dirichlet series,
+including canonical values at poles. -/
 theorem HasDirichletAgreement.toMeromorphicNFOn_continuedL (hD : d.HasDirichletAgreement)
     (hm : Meromorphic d.completed) :
     toMeromorphicNFOn d.continuedL Set.univ = meromorphicContinuation 1 (LSeries d.coeff) :=
   (meromorphicContinuation_eq_toMeromorphicNFOn d.meromorphic_continuedL
-    (fun _ hs ↦ hD.analyticAt_continuedL hm hs)
+    (fun _ hs ↦ hD.analyticAt_continuedL hs)
     (fun _ hs ↦ hD.continuedL_eq_LSeries hm hs)).symm
 
-/-- If the completion is in normal form, the continued uncompleted function is exactly the
-canonical meromorphic continuation of its Dirichlet series, also at remaining poles. -/
+/-- With Dirichlet agreement and a completion in normal form on `ℂ`, the continued uncompleted
+function is exactly the canonical meromorphic continuation of its Dirichlet series,
+also at remaining poles. -/
 theorem HasDirichletAgreement.continuedL_eq_meromorphicContinuation
     (hD : d.HasDirichletAgreement) (hNF : MeromorphicNFOn d.completed Set.univ) :
     d.continuedL = meromorphicContinuation 1 (LSeries d.coeff) := by
