@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.Coxeter.Parabolic
 public import TauCeti.GroupTheory.Perm.Poincare
 public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
-import TauCeti.Data.Fin.Basic
 
 /-!
 # Young subgroups as standard parabolic subgroups of `Sₙ`
@@ -33,7 +32,6 @@ minimal left-coset representatives as the permutations strictly increasing on ev
 
 ## Main results
 
-* `TauCeti.youngBlock_mono`: `youngBlock μ` is monotone on `Fin n`.
 * `TauCeti.parabolic_youngParabolicSet_eq_youngSubgroup`: the standard parabolic subgroup of
   `youngParabolicSet μ` in `permCoxeterSystem n` is `youngSubgroup μ`.
 * `TauCeti.length_coe_youngSubgroup`: the Coxeter length of an element of `youngSubgroup μ` is the
@@ -57,29 +55,6 @@ public section
 namespace TauCeti
 
 open BraidGroup
-
-/-- `youngBlocksEquiv μ` orders block coordinates lexicographically: first by block index, then by
-position within the block. -/
-theorem youngBlocksEquiv_lt_youngBlocksEquiv_iff {n : ℕ} (μ : n.Partition)
-    {x y : Σ i : Fin (μ.parts.sort (· ≥ ·)).length, Fin ((μ.parts.sort (· ≥ ·)).get i)} :
-    youngBlocksEquiv μ x < youngBlocksEquiv μ y ↔
-      x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
-  rw [Fin.lt_def, youngBlocksEquiv_apply, youngBlocksEquiv_apply,
-    ← finSigmaFinEquiv_apply (n := fun i => (μ.parts.sort (· ≥ ·)).get i),
-    ← finSigmaFinEquiv_apply (n := fun i => (μ.parts.sort (· ≥ ·)).get i),
-    ← Fin.lt_def, finSigmaFinEquiv_lt_finSigmaFinEquiv_iff]
-
-/-- **The consecutive-block label `youngBlock μ` is monotone.** -/
-theorem youngBlock_mono {n : ℕ} (μ : n.Partition) : Monotone (youngBlock μ) := by
-  intro a b hab
-  obtain ⟨x, rfl⟩ := (youngBlocksEquiv μ).surjective a
-  obtain ⟨y, rfl⟩ := (youngBlocksEquiv μ).surjective b
-  rw [youngBlock_youngBlocksEquiv, youngBlock_youngBlocksEquiv]
-  rcases hab.eq_or_lt with h | h
-  · rw [(youngBlocksEquiv μ).injective h]
-  · rcases (youngBlocksEquiv_lt_youngBlocksEquiv_iff μ).mp h with hlt | ⟨heq, -⟩
-    · exact hlt.le
-    · exact heq.le
 
 /-- **The parabolic index set of a partition `μ` of `n`:** the simple reflection indices
 `i : Fin (n - 1)` whose adjacent strands `strand i` and `strandSucc i` lie in the same consecutive

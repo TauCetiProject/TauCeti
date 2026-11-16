@@ -10,12 +10,14 @@ public import Mathlib.Data.Finite.Perm
 public import Mathlib.Data.List.GetD
 public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.Perm.FiberSubgroup
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Young subgroups of symmetric groups
 
 For a partition `μ` of `n`, this file defines its Young subgroup of `Equiv.Perm (Fin n)`.
-The decreasing parts of `μ` cut `Fin n` into consecutive blocks, and the Young subgroup consists
+The decreasing parts of `μ` cut `Fin n` into consecutive blocks (ordered lexicographically by
+`TauCeti.youngBlocksEquiv`, so `TauCeti.youngBlock` is monotone), and the Young subgroup consists
 exactly of the permutations preserving those blocks.  We identify it with the product of the
 symmetric groups on the individual blocks and compute its cardinality and index.  Counting the
 labels lying in the first `k` blocks recovers the partial sums of the decreasing parts
@@ -59,6 +61,17 @@ theorem youngBlocksEquiv_apply {n : ℕ} (μ : n.Partition)
         (μ.parts.sort (· ≥ ·)).get (Fin.castLE x.1.2.le i) + x.2 := by
   simp [youngBlocksEquiv]
 
+/-- `youngBlocksEquiv μ` orders block coordinates lexicographically: first by block index, then by
+position within the block. -/
+theorem youngBlocksEquiv_lt_youngBlocksEquiv_iff {n : ℕ} (μ : n.Partition)
+    {x y : Σ i : Fin (μ.parts.sort (· ≥ ·)).length, Fin ((μ.parts.sort (· ≥ ·)).get i)} :
+    youngBlocksEquiv μ x < youngBlocksEquiv μ y ↔
+      x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
+  rw [Fin.lt_def, youngBlocksEquiv_apply, youngBlocksEquiv_apply,
+    ← finSigmaFinEquiv_apply (n := fun i => (μ.parts.sort (· ≥ ·)).get i),
+    ← finSigmaFinEquiv_apply (n := fun i => (μ.parts.sort (· ≥ ·)).get i),
+    ← Fin.lt_def, finSigmaFinEquiv_lt_finSigmaFinEquiv_iff]
+
 /-- The block containing an element of `Fin n`. -/
 noncomputable def youngBlock {n : ℕ} (μ : n.Partition) (j : Fin n) :
     Fin (μ.parts.sort (· ≥ ·)).length :=
@@ -71,6 +84,18 @@ theorem youngBlock_youngBlocksEquiv {n : ℕ} (μ : n.Partition)
       Fin ((μ.parts.sort (· ≥ ·)).get i)) :
     youngBlock μ (youngBlocksEquiv μ x) = x.1 := by
   simp [youngBlock]
+
+/-- **The consecutive-block label `youngBlock μ` is monotone.** -/
+theorem youngBlock_mono {n : ℕ} (μ : n.Partition) : Monotone (youngBlock μ) := by
+  intro a b hab
+  obtain ⟨x, rfl⟩ := (youngBlocksEquiv μ).surjective a
+  obtain ⟨y, rfl⟩ := (youngBlocksEquiv μ).surjective b
+  rw [youngBlock_youngBlocksEquiv, youngBlock_youngBlocksEquiv]
+  rcases hab.eq_or_lt with h | h
+  · rw [(youngBlocksEquiv μ).injective h]
+  · rcases (youngBlocksEquiv_lt_youngBlocksEquiv_iff μ).mp h with hlt | ⟨heq, -⟩
+    · exact hlt.le
+    · exact heq.le
 
 /-- The local coordinates in block `i` are equivalent to the fiber of `youngBlock μ` over `i`. -/
 noncomputable def youngBlockEquiv {n : ℕ} (μ : n.Partition)

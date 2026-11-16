@@ -121,74 +121,25 @@ noncomputable instance instFintype (μ : YoungDiagram) : Fintype (RowStandardTab
 
 /-! ### Uniqueness from the row assignment -/
 
-/-- Along a common row assignment, the column index in `u` of the `j`-th entry of a row in `t`
-is at least `j`. -/
-private theorem le_colIndex_of_rowIndex_eq {t u : RowStandardTableau μ}
-    (h : YoungTableau.rowIndex t.toTableau = YoungTableau.rowIndex u.toTableau)
-    (i j : ℕ) (hc : (i, j) ∈ μ) :
-    j ≤ YoungTableau.colIndex u.toTableau (t ⟨(i, j), hc⟩) := by
-  induction j with
-  | zero => exact Nat.zero_le _
-  | succ j ih =>
-    have hc' : (i, j) ∈ μ := μ.up_left_mem le_rfl (Nat.le_succ j) hc
-    have hj := ih hc'
-    set k₁ := t ⟨(i, j), hc'⟩
-    set k₂ := t ⟨(i, j + 1), hc⟩
-    have hlt : k₁ < k₂ := t.row_strict (Nat.lt_succ_self j) hc
-    have hr₁ : YoungTableau.rowIndex u.toTableau k₁ = i := by
-      rw [← congrFun h k₁]
-      exact YoungTableau.rowIndex_apply t.toTableau ⟨(i, j), hc'⟩
-    have hr₂ : YoungTableau.rowIndex u.toTableau k₂ = i := by
-      rw [← congrFun h k₂]
-      exact YoungTableau.rowIndex_apply t.toTableau ⟨(i, j + 1), hc⟩
-    have hc₁ : (i, YoungTableau.colIndex u.toTableau k₁) ∈ μ :=
-      hr₁ ▸ YoungTableau.rowIndex_colIndex_mem u.toTableau k₁
-    have hc₂ : (i, YoungTableau.colIndex u.toTableau k₂) ∈ μ :=
-      hr₂ ▸ YoungTableau.rowIndex_colIndex_mem u.toTableau k₂
-    have hu₁ : u ⟨(i, YoungTableau.colIndex u.toTableau k₁), hc₁⟩ = k₁ :=
-      YoungTableau.rowIndex_colIndex_injective u.toTableau
-        (Prod.ext ((YoungTableau.rowIndex_apply _ _).trans hr₁.symm)
-          (YoungTableau.colIndex_apply _ _))
-    have hu₂ : u ⟨(i, YoungTableau.colIndex u.toTableau k₂), hc₂⟩ = k₂ :=
-      YoungTableau.rowIndex_colIndex_injective u.toTableau
-        (Prod.ext ((YoungTableau.rowIndex_apply _ _).trans hr₂.symm)
-          (YoungTableau.colIndex_apply _ _))
-    by_contra hnot
-    have hcol : YoungTableau.colIndex u.toTableau k₂ ≤ YoungTableau.colIndex u.toTableau k₁ := by
-      omega
-    rcases hcol.eq_or_lt with heq | hcol_lt
-    · have : k₂ = k₁ := by
-        rw [← hu₂, ← hu₁]
-        exact congrArg u (Subtype.ext (Prod.ext rfl heq))
-      exact hlt.ne' this
-    · have hult := u.row_strict hcol_lt hc₁
-      rw [hu₂, hu₁] at hult
-      exact lt_asymm hlt hult
-
 /-- **A row-standard tableau is uniquely determined by the row of each label.** -/
 theorem rowIndex_injective :
     Function.Injective (fun t : RowStandardTableau μ => YoungTableau.rowIndex t.toTableau) := by
   intro t u h
   dsimp only at h
   refine ext fun ⟨⟨i, j⟩, hc⟩ => ?_
-  have h₁ := le_colIndex_of_rowIndex_eq h i j hc
-  set k := t ⟨(i, j), hc⟩
-  have hr : YoungTableau.rowIndex u.toTableau k = i := by
-    rw [← congrFun h k]
-    exact YoungTableau.rowIndex_apply t.toTableau ⟨(i, j), hc⟩
-  have hc' : (i, YoungTableau.colIndex u.toTableau k) ∈ μ :=
-    hr ▸ YoungTableau.rowIndex_colIndex_mem u.toTableau k
-  have hu : u ⟨(i, YoungTableau.colIndex u.toTableau k), hc'⟩ = k :=
-    YoungTableau.rowIndex_colIndex_injective u.toTableau
-      (Prod.ext ((YoungTableau.rowIndex_apply _ _).trans hr.symm)
-        (YoungTableau.colIndex_apply _ _))
-  have h₂ := le_colIndex_of_rowIndex_eq h.symm i (YoungTableau.colIndex u.toTableau k) hc'
-  have hcol : YoungTableau.colIndex t.toTableau k = j :=
-    YoungTableau.colIndex_apply t.toTableau ⟨(i, j), hc⟩
-  rw [hu, hcol] at h₂
-  exact (YoungTableau.rowIndex_colIndex_injective u.toTableau
-    (Prod.ext ((YoungTableau.rowIndex_apply _ _).trans hr.symm)
-      ((YoungTableau.colIndex_apply _ _).trans (le_antisymm h₂ h₁).symm))).symm
+  set s : Finset (Fin μ.card) :=
+    Finset.univ.filter fun y => YoungTableau.rowIndex t.toTableau y = i
+  have hs : s.card = μ.rowLen i := YoungTableau.card_filter_rowIndex_eq t.toTableau i
+  have hrow : ∀ (v : RowStandardTableau μ),
+      YoungTableau.rowIndex v.toTableau = YoungTableau.rowIndex t.toTableau →
+      (fun k : Fin (μ.rowLen i) => v ⟨(i, k.1), YoungDiagram.mem_iff_lt_rowLen.mpr k.2⟩) =
+        s.orderEmbOfFin hs := fun v hv =>
+    Finset.orderEmbOfFin_unique hs
+      (fun k => Finset.mem_filter.mpr
+        ⟨Finset.mem_univ _, by rw [← hv]; exact YoungTableau.rowIndex_apply v.toTableau _⟩)
+      (fun _ _ hlt => v.row_strict (Fin.lt_def.mp hlt) _)
+  exact congrFun ((hrow t rfl).trans (hrow u h.symm).symm)
+    ⟨j, YoungDiagram.mem_iff_lt_rowLen.mp hc⟩
 
 /-- Two row-standard tableaux have the same row assignment exactly when they are equal. -/
 @[simp]

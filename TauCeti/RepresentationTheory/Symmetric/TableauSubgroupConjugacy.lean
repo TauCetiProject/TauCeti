@@ -130,6 +130,16 @@ theorem rowYoungConjugator_relabel {μ : YoungDiagram} (σ : Equiv.Perm (Fin μ.
   have h : relabel σ t = t.trans σ := Equiv.ext fun c => relabel_apply σ t c
   simp only [rowYoungConjugator, Equiv.Perm.mul_def, Equiv.trans_assoc, h]
 
+/-- `rowYoungConjugator` determines the tableau: two `μ`-tableaux with the same conjugator are
+equal. -/
+theorem rowYoungConjugator_injective {μ : YoungDiagram} :
+    Function.Injective (rowYoungConjugator (μ := μ)) := by
+  intro t u h
+  obtain ⟨σ, rfl⟩ := exists_relabel_eq t u
+  have hσ : σ = 1 := mul_right_cancel
+    ((rowYoungConjugator_relabel σ t).symm.trans (h.symm.trans (one_mul _).symm))
+  rw [hσ, relabel_one]
+
 /-- Conjugation by `rowYoungConjugator t` carries the Young subgroup of the shape partition
 onto the row group of `t`. -/
 theorem youngSubgroup_map_conj_eq_rowSubgroup {μ : YoungDiagram} (t : YoungTableau μ) :
