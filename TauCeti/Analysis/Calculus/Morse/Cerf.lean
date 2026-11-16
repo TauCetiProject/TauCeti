@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.BirthDeath
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.FiniteDimension
@@ -44,7 +45,7 @@ every transverse critical point:
 These are the corank-one and speed conditions of a birth–death point. The model family
 `x³ / 3 - t x` of `TauCeti.Analysis.Calculus.Morse.BirthDeath` is transverse at its degenerate
 critical point (`TauCeti.surjective_fderiv_fderiv_birthDeathPotential`), whereas the constant
-family `x³ / 3` is not (`TauCeti.not_surjective_fderiv_fderiv_cube`).
+family `x³ / 3` is not (`TauCeti.not_surjective_fderiv_fderiv_birthDeathPotential_zero`).
 
 Genericity is proved as in `TauCeti.Analysis.Calculus.Morse.Generic`. Subtracting a linear
 functional `a` from every member of the family shifts `G` by the constant `a` and leaves its
@@ -95,14 +96,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E �
 
 /-! ### The derivative of the parametrized differential -/
 
-/-- The parametrized differential `(t, x) ↦ d(f t)_x` of a family that is jointly `C^(n + 1)` is
-`C^n`. -/
-private theorem contDiffAt_fderiv_uncurry {n : ℕ} {z : ℝ × E}
-    (hf : ContDiffAt ℝ (n + 1) (uncurry f) z) :
-    ContDiffAt ℝ n (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) z :=
-  ContDiffAt.fderiv (f := fun w : ℝ × E ↦ f w.1) (g := Prod.snd)
-    (hf.comp (z, z.2) (contDiffAt_fst.fst.prodMk contDiffAt_snd)) contDiffAt_snd le_rfl
-
 /-- Subtracting a functional from every member of a family keeps it jointly `C^n`. -/
 private theorem contDiffAt_uncurry_sub {n : WithTop ℕ∞} {z : ℝ × E}
     (hf : ContDiffAt ℝ n (uncurry f) z) (a : StrongDual ℝ E) :
@@ -114,19 +107,9 @@ private theorem contDiffAt_uncurry_sub {n : WithTop ℕ∞} {z : ℝ × E}
 theorem fderiv_fderiv_apply (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (p : ℝ × E) :
     fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x) p =
       p.1 • deriv (fun s ↦ fderiv ℝ (f s) x) t + fderiv ℝ (fderiv ℝ (f t)) x p.2 := by
-  set G : ℝ × E → StrongDual ℝ E := fun w ↦ fderiv ℝ (f w.1) w.2
-  have hG : HasFDerivAt G (fderiv ℝ G (t, x)) (t, x) :=
-    ((contDiffAt_fderiv_uncurry (n := 1) hf).differentiableAt one_ne_zero).hasFDerivAt
-  -- The two partial derivatives of `G` are the restrictions of its derivative to the axes. The
-  -- composites `G ∘ (·, x)` and `G ∘ (t, ·)` are `s ↦ d(f s)_x` and `d(f t)` by definition of `G`.
-  have hpar : deriv (fun s ↦ fderiv ℝ (f s) x) t = fderiv ℝ G (t, x) ((1 : ℝ), (0 : E)) := by
-    have h := hG.comp_hasDerivAt t (HasDerivAt.prodMk (hasDerivAt_id' t) (hasDerivAt_const t x))
-    exact h.deriv
-  have hfib : fderiv ℝ (fderiv ℝ (f t)) x = fderiv ℝ G (t, x) ∘L ContinuousLinearMap.inr ℝ ℝ E :=
-    (hG.comp x (hasFDerivAt_prodMk_right t x)).fderiv
-  have hp : p = p.1 • ((1 : ℝ), (0 : E)) + ((0 : ℝ), p.2) := by ext <;> simp
-  conv_lhs => rw [hp, map_add, map_smul]
-  rw [hpar, hfib, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply]
+  have hG : DifferentiableAt ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x) :=
+    (hf.fderiv_slice (m := 1) le_rfl).differentiableAt one_ne_zero
+  rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hG, fderiv_eq_smul_deriv]
 
 /-- **Subtracting a functional does not change the derivative of the parametrized differential.**
 Subtracting `a` from every member of the family shifts `(t, x) ↦ d(f t)_x` by the constant `a`
@@ -195,7 +178,7 @@ theorem ae_forall_surjective_fderiv_fderiv_sub [MeasurableSpace (StrongDual ℝ 
     ∀ᵐ a ∂ν, ∀ z ∈ W, fderiv ℝ (fun y ↦ f z.1 y - a y) z.2 = 0 →
       Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (fun y ↦ f w.1 y - a y) w.2) z) := by
   set G : ℝ × E → StrongDual ℝ E := fun w ↦ fderiv ℝ (f w.1) w.2
-  have hG : ∀ z ∈ W, ContDiffAt ℝ 2 G z := fun z hz ↦ contDiffAt_fderiv_uncurry (hf z hz)
+  have hG : ∀ z ∈ W, ContDiffAt ℝ 2 G z := fun z hz ↦ (hf z hz).fderiv_slice (m := 2) le_rfl
   have hnull : ν (G '' (W ∩ {z | ¬ Surjective (fderiv ℝ G z)})) = 0 := by
     refine addHaar_image_criticalPoints_eq_zero ν hG ?_
     rw [Module.finrank_prod, Module.finrank_self, ContinuousLinearMap.dual_finrank_eq]
