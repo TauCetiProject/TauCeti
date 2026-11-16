@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.Flat.Domain
 
 /-!
