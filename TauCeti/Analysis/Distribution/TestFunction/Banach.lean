@@ -222,6 +222,47 @@ theorem toContDiffMapSupportedIn_smul {R : Type*} [Semiring R] [Module R F] [SMu
     toContDiffMapSupportedIn (c • f) = c • toContDiffMapSupportedIn f :=
   (rfl)
 
+@[simp]
+theorem toContDiffMapSupportedIn_zero :
+    toContDiffMapSupportedIn (0 : NormedContDiffMapSupportedIn E F ℓ K) = 0 :=
+  (rfl)
+
+@[simp]
+theorem toContDiffMapSupportedIn_neg (f : NormedContDiffMapSupportedIn E F ℓ K) :
+    toContDiffMapSupportedIn (-f) = -toContDiffMapSupportedIn f :=
+  (rfl)
+
+@[simp]
+theorem toContDiffMapSupportedIn_sub (f g : NormedContDiffMapSupportedIn E F ℓ K) :
+    toContDiffMapSupportedIn (f - g) = toContDiffMapSupportedIn f - toContDiffMapSupportedIn g :=
+  (rfl)
+
+@[simp]
+theorem ofContDiffMapSupportedIn_zero :
+    ofContDiffMapSupportedIn (0 : 𝓓^{ℓ}_{K}(E, F)) = 0 :=
+  (rfl)
+
+@[simp]
+theorem ofContDiffMapSupportedIn_add (f g : 𝓓^{ℓ}_{K}(E, F)) :
+    ofContDiffMapSupportedIn (f + g) = ofContDiffMapSupportedIn f + ofContDiffMapSupportedIn g :=
+  (rfl)
+
+@[simp]
+theorem ofContDiffMapSupportedIn_neg (f : 𝓓^{ℓ}_{K}(E, F)) :
+    ofContDiffMapSupportedIn (-f) = -ofContDiffMapSupportedIn f :=
+  (rfl)
+
+@[simp]
+theorem ofContDiffMapSupportedIn_sub (f g : 𝓓^{ℓ}_{K}(E, F)) :
+    ofContDiffMapSupportedIn (f - g) = ofContDiffMapSupportedIn f - ofContDiffMapSupportedIn g :=
+  (rfl)
+
+@[simp]
+theorem ofContDiffMapSupportedIn_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (c : R) (f : 𝓓^{ℓ}_{K}(E, F)) :
+    ofContDiffMapSupportedIn (c • f) = c • ofContDiffMapSupportedIn f :=
+  (rfl)
+
 /-- Every map of the normed space is `C^ℓ`. -/
 protected theorem contDiff (f : NormedContDiffMapSupportedIn E F ℓ K) : ContDiff ℝ ℓ f :=
   (toContDiffMapSupportedIn f).contDiff
@@ -293,13 +334,13 @@ def continuousLinearEquiv : NormedContDiffMapSupportedIn E F ℓ K ≃L[𝕜] �
   continuous_invFun := continuous_id
 
 @[simp]
-theorem coe_continuousLinearEquiv_apply (f : NormedContDiffMapSupportedIn E F ℓ K) :
-    ⇑(continuousLinearEquiv 𝕜 E F ℓ K f) = f :=
+theorem continuousLinearEquiv_apply (f : NormedContDiffMapSupportedIn E F ℓ K) :
+    continuousLinearEquiv 𝕜 E F ℓ K f = toContDiffMapSupportedIn f :=
   (rfl)
 
 @[simp]
-theorem coe_continuousLinearEquiv_symm_apply (f : 𝓓^{ℓ}_{K}(E, F)) :
-    ⇑((continuousLinearEquiv 𝕜 E F ℓ K).symm f) = f :=
+theorem continuousLinearEquiv_symm_apply (f : 𝓓^{ℓ}_{K}(E, F)) :
+    (continuousLinearEquiv 𝕜 E F ℓ K).symm f = ofContDiffMapSupportedIn f :=
   (rfl)
 
 /-- **Completeness.** The `C^ℓ` maps supported in `K` with values in a Banach space form a Banach
