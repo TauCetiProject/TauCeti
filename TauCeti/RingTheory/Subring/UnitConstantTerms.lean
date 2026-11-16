@@ -76,8 +76,9 @@ private theorem mul_unitConstantTerms (C : Subring R) {z : R}
 /-- The submonoid of elements `(c : C) * (1 + z * w)` with `c : Cˣ` and
 `w ∈ closure (insert z C)`: the elements with a unit constant term in the subring generated
 by `C` and `z`. The normalization hypothesis expresses `C * z ⊆ z * C`; a variable normalizing
-`C` satisfies it. When expansions in `z` have unique coefficients, `c` is the constant
-coefficient; the definition itself requires no independence hypothesis. -/
+`C` satisfies it. When right-coefficient expansions `∑ z ^ i * c_i` with `c_i ∈ C` are
+unique, `c` is the constant coefficient; the definition itself requires no independence
+hypothesis. -/
 def unitConstantTerms (C : Subring R) (z : R)
     (hz : ∀ a ∈ C, ∃ b ∈ C, a * z = z * b) : Submonoid R where
   carrier := {a | ∃ c : Cˣ, ∃ w ∈ closure (insert z (C : Set R)),
