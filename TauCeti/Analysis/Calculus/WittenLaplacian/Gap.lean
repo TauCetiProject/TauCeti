@@ -22,8 +22,10 @@ localization estimate: for every degree `m` that is not the Morse index of a cri
 quadratic form of the Witten Laplacian `Δ_t` (`TauCeti.euclideanWittenLaplacian`) on compactly
 supported `C²` forms of degree `m` is at least `t c ‖φ‖²` for all large `t`
 (`TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`). This is the
-analytic half of Witten's proof of the weak Morse inequalities: in such a degree no form has
-energy below a multiple of `t`.
+linear-in-`t` gap estimate of Witten's proof of the weak Morse inequalities: in such a degree no
+form has energy below a multiple of `t`. The other analytic half, that in a degree `k` the
+low-energy forms span a space of dimension at most the number of critical points of index `k`, is
+not proved here.
 
 The proof splits the quadratic form along a partition of unity by squares
 `J₀² + ∑ₚ (J p)² = 1` (`TauCeti.exists_sq_add_sum_sq_eq_one`), with `J p` supported where `f` is
@@ -36,18 +38,19 @@ independent of `t`.
   (`Filter.EventuallyEq.euclideanWittenLaplacian`) commuting with translations
   (`TauCeti.euclideanWittenLaplacian_comp_add_right`). The harmonic-oscillator gap
   `TauCeti.two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul`
-  then bounds the part of `J p φ` outside the degree of the Morse index of `p` by `2 t c`
+  then bounds the part of `J p φ` other than its component at the multi-index
+  `s₀(p) = {i | a p i < 0}`, whose cardinality is the Morse index of `p`, by `2 t c`
   (`TauCeti.two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_eventuallyEq`).
 * **Away from the critical points** the quadratic form of `J₀ φ` is at least `t² c₀ - t h`
   times its squared norm, by
   `TauCeti.mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul`.
 
 Together these give, for every compactly supported `C²` form `φ` and `t ≥ 0`, a lower bound for
-`∫ ⟨Δ_t φ, φ⟩` by `2 t c ∑ₚ ‖(J p φ)_{≠ ind p}‖² + (t² c₀ - t h) ‖J₀ φ‖² - K ‖φ‖²`
+`∫ ⟨Δ_t φ, φ⟩` by `2 t c ∑ₚ ‖(J p φ)_{≠ s₀(p)}‖² + (t² c₀ - t h) ‖J₀ φ‖² - K ‖φ‖²`
 (`TauCeti.le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one`), where
-`(J p φ)_{≠ ind p}` omits the coefficient of the degree of the Morse index of `p`. In a degree `m`
-that is no Morse index nothing is omitted, and once `t c₀ ≥ 2 c + h` the bound becomes
-`(2 t c - K) ‖φ‖²`
+`(J p φ)_{≠ s₀(p)}` omits the single component indexed by the multi-index `s₀(p)`. For a form of
+degree `m` that is no Morse index this component vanishes, and once `t c₀ ≥ 2 c + h` the bound
+becomes `(2 t c - K) ‖φ‖²`
 (`TauCeti.mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one`).
 
 The exact quadratic models are the Euclidean form of the standard metrics near critical points.
@@ -90,9 +93,10 @@ variable {ι : Type*} [Fintype ι] [LinearOrder ι]
 
 /-- **The harmonic-oscillator gap near a critical point.** Let `φ` be a compactly supported `C²`
 form such that, near every point where `φ` does not vanish, `f` is the translated quadratic model
-`y ↦ b + ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2`. If `c ≤ |aᵢ|` for every `i` and `t ≥ 0`, the part of `φ` outside
-the degree `s₀ = {i | aᵢ < 0}` of the Morse index contributes at least `2 t c` times its squared
-norm to the quadratic form of the Witten Laplacian of `f`. -/
+`y ↦ b + ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2`. If `c ≤ |aᵢ|` for every `i` and `t ≥ 0`, the part of `φ` other than
+its component at the multi-index `s₀ = {i | aᵢ < 0}`, whose cardinality is the Morse index,
+contributes at least `2 t c` times its squared norm to the quadratic form of the Witten Laplacian
+of `f`. -/
 theorem two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_eventuallyEq
     {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} {a p : ι → ℝ} {b t c : ℝ} (ht : 0 ≤ t)
     (hc : ∀ i, c ≤ |a i|) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
@@ -134,10 +138,10 @@ Suppose that near every point where `J p` does not vanish, `f` is the translated
 `y ↦ b p + ∑ᵢ a p i (yᵢ - pᵢ)² / 2` with every `|a p i| ≥ c`, and that `|df|² ≥ c₀` and
 `∑_{i,j} |∂ᵢ∂ⱼf| ≤ h` wherever `J₀ φ` does not vanish. Then for `t ≥ 0`
 
-`2 t c ∑ₚ ‖(J p φ)_{≠ ind p}‖² + (t² c₀ - t h) ‖J₀ φ‖² - K ‖φ‖² ≤ ∫ ⟨Δ_t φ, φ⟩`,
+`2 t c ∑ₚ ‖(J p φ)_{≠ s₀(p)}‖² + (t² c₀ - t h) ‖J₀ φ‖² - K ‖φ‖² ≤ ∫ ⟨Δ_t φ, φ⟩`,
 
-where `(J p φ)_{≠ ind p}` omits the coefficient of the degree `{i | a p i < 0}` of the Morse
-index of `p`, and `‖ψ‖² = ∫ ∑ s, ψ_s²`. -/
+where `(J p φ)_{≠ s₀(p)}` omits the component at the multi-index `s₀(p) = {i | a p i < 0}`, whose
+cardinality is the Morse index of `p`, and `‖ψ‖² = ∫ ∑ s, ψ_s²`. -/
 theorem le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one {f : (ι → ℝ) → ℝ}
     {φ : (ι → ℝ) → Finset ι → ℝ} {P : Finset (ι → ℝ)} {J₀ : (ι → ℝ) → ℝ} {J : (ι → ℝ) → (ι → ℝ) → ℝ}
     {a : (ι → ℝ) → ι → ℝ} {b : (ι → ℝ) → ℝ} {t c c₀ h K : ℝ}
@@ -230,7 +234,7 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_
   have hsq : ∀ (u : (ι → ℝ) → ℝ) x, ∑ s, (u • φ) x s ^ 2 = u x ^ 2 * ∑ s, φ x s ^ 2 := by
     intro u x
     simp only [Pi.smul_apply', Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum]
-  -- In degree `m`, the omitted coefficient of the Morse index degree of each `p` vanishes.
+  -- In degree `m`, the omitted component at the multi-index `{i | a p i < 0}` vanishes.
   have herase : ∀ p ∈ P, ∀ x,
       ∑ s ∈ Finset.univ.erase (Finset.univ.filter fun i ↦ a p i < 0), (J p • φ) x s ^ 2 =
         J p x ^ 2 * ∑ s, φ x s ^ 2 := by
@@ -264,6 +268,21 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_
   simp only [mul_add] at h₂
   linarith
 
+omit [LinearOrder ι] in
+/-- A `C¹` function `u` on `ℝ^ι` whose derivative has compact support has bounded squared gradient
+`∑ᵢ (∂ᵢ u)²`. -/
+theorem exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv [DecidableEq ι]
+    {u : (ι → ℝ) → ℝ} (hu : ContDiff ℝ 1 u) (hcs : HasCompactSupport (fderiv ℝ u)) :
+    ∃ K, ∀ x, ∑ i, fderiv ℝ u x (Pi.single i 1) ^ 2 ≤ K := by
+  obtain ⟨B, hB⟩ :=
+    (hu.continuous_fderiv one_ne_zero).norm.bddAbove_range_of_hasCompactSupport hcs.norm
+  refine ⟨Fintype.card ι * B ^ 2, fun x ↦ ?_⟩
+  refine (Finset.sum_le_sum fun i _ ↦ (?_ : _ ≤ B ^ 2)).trans_eq (by simp)
+  rw [← sq_abs, ← Real.norm_eq_abs]
+  refine pow_le_pow_left₀ (norm_nonneg _) (((fderiv ℝ u x).le_opNorm _).trans ?_) 2
+  rw [Pi.norm_single, norm_one, mul_one]
+  exact hB ⟨x, rfl⟩
+
 /-- **The gap of the Witten Laplacian in a degree that is no Morse index.** Let `f` be a `C²`
 function on `ℝ^ι` and `P` a finite set of points at mutual distance at least `2 r`. Suppose that
 on the ball of radius `r` around each `p ∈ P`, `f` is the quadratic model
@@ -285,20 +304,10 @@ theorem exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
       (∀ x s, φ x s ≠ 0 → s.card = m) →
       t * c * ∫ x, ∑ s, φ x s ^ 2 ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
   obtain ⟨J₀, J, hJ₀, hJ, hJ1, hJr, hJ₀ρ, hJ₀c, hJc⟩ := exists_sq_add_sum_sq_eq_one hρ hρr hP
-  -- A `C¹` function with compactly supported derivative has bounded `∑ᵢ (∂ᵢ u)²`.
-  have hbound : ∀ u : (ι → ℝ) → ℝ, ContDiff ℝ 1 u → HasCompactSupport (fderiv ℝ u) →
-      ∃ K, ∀ x, ∑ i, fderiv ℝ u x (Pi.single i 1) ^ 2 ≤ K := by
-    intro u hu hcs
-    obtain ⟨B, hB⟩ :=
-      (hu.continuous_fderiv one_ne_zero).norm.bddAbove_range_of_hasCompactSupport hcs.norm
-    refine ⟨Fintype.card ι * B ^ 2, fun x ↦ ?_⟩
-    refine (Finset.sum_le_sum fun i _ ↦ (?_ : _ ≤ B ^ 2)).trans_eq (by simp)
-    rw [← sq_abs, ← Real.norm_eq_abs]
-    refine pow_le_pow_left₀ (norm_nonneg _) (((fderiv ℝ u x).le_opNorm _).trans ?_) 2
-    rw [Pi.norm_single, norm_one, mul_one]
-    exact hB ⟨x, rfl⟩
-  obtain ⟨K₀, hK₀⟩ := hbound J₀ (hJ₀.of_le (by simp)) hJ₀c
-  choose K hK using fun p ↦ hbound (J p) ((hJ p).of_le (by simp)) ((hJc p).fderiv (𝕜 := ℝ))
+  obtain ⟨K₀, hK₀⟩ :=
+    exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv (hJ₀.of_le (by simp)) hJ₀c
+  choose K hK using fun p ↦ exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv
+    ((hJ p).of_le (by simp)) ((hJc p).fderiv (𝕜 := ℝ))
   refine ⟨max ((2 * c + h) / c₀) ((K₀ + ∑ p ∈ P, K p) / c), fun t ht φ hφ hφc hφm ↦ ?_⟩
   have ht₁ : 2 * c + h ≤ t * c₀ := (div_le_iff₀ hc₀).1 ((le_max_left _ _).trans ht)
   have ht₂ : K₀ + ∑ p ∈ P, K p ≤ t * c := (div_le_iff₀ hc).1 ((le_max_right _ _).trans ht)
