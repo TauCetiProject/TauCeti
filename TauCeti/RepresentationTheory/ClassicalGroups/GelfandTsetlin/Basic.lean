@@ -260,6 +260,33 @@ theorem abs_le_sum_abs (P : GTPattern n) (i j : ℕ) :
   · rw [P.entry_eq_zero (by omega), abs_zero]
     exact Finset.sum_nonneg fun i' _ => hnn i'
 
+/-! ### Row sums and the weight -/
+
+/-- The sum `λ₀,ⱼ + ⋯ + λⱼ₋₁,ⱼ` of the `j` entries of row `j`; the empty row `j = 0` has sum `0`. -/
+def rowSum (P : GTPattern n) (j : ℕ) : ℤ := ∑ i ∈ Finset.range j, P i j
+
+theorem rowSum_def (P : GTPattern n) (j : ℕ) : P.rowSum j = ∑ i ∈ Finset.range j, P i j := (rfl)
+
+@[simp]
+theorem rowSum_zero (P : GTPattern n) : P.rowSum 0 = 0 := by simp [rowSum]
+
+/-- The row of length `n` is the top row. -/
+theorem rowSum_self (P : GTPattern n) : P.rowSum n = ∑ i, P.topRow i := by
+  simp [rowSum, Fin.sum_univ_eq_sum_range (fun i => P i n)]
+
+/-- The **weight** of a Gelfand-Tsetlin pattern: its `r`-th coordinate is the sum of row `r + 1`
+minus the sum of row `r`, so that the first `j` coordinates add up to the sum of row `j`. -/
+def weight (P : GTPattern n) : Fin n → ℤ := fun r => P.rowSum (r + 1) - P.rowSum r
+
+theorem weight_apply (P : GTPattern n) (r : Fin n) :
+    P.weight r = P.rowSum (r + 1) - P.rowSum r := (rfl)
+
+/-- The weight of a pattern has the same total as its top row. -/
+theorem sum_weight (P : GTPattern n) : ∑ r, P.weight r = ∑ i, P.topRow i := by
+  simp only [weight_apply]
+  rw [← rowSum_self, Fin.sum_univ_eq_sum_range (fun r => P.rowSum (r + 1) - P.rowSum r),
+    Finset.sum_range_sub, rowSum_zero, sub_zero]
+
 /-- There is exactly one empty pattern. -/
 instance : Unique (GTPattern 0) where
   default := ⟨fun _ _ => 0, fun _ => rfl, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
