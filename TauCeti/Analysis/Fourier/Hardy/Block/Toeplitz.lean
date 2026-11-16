@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fourier.Hardy.Block.Basic
 public import TauCeti.Analysis.Fourier.Hardy.BrownHalmos
 public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import TauCeti.Analysis.InnerProductSpace.Compression
+import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Block Toeplitz operators and the block Brown–Halmos theorem
@@ -93,7 +94,7 @@ theorem piLpEquiv_operatorMultiplication_symm_single {r : ℕ} (A : BlockSymbol 
       (Lp.operatorMultiplication 2 A (e.symm (PiLp.single 2 j h))) i,
     Lp.operatorMultiplication_ae (p := 2) A (e.symm (PiLp.single 2 j h)),
     Lp.coeFn_piLpEquiv_symm_single (p := 2) (𝕜 := ℂ) (E := fun _ : Fin r ↦ ℂ) j h,
-    Lp.coeFn_lpSMul (r := 2) (blockSymbolEntry r i j A) h, blockSymbolEntry_ae i j A]
+    Lp.coeFn_lpSMul (r := 2) (blockSymbolEntry r i j A) h, coeFn_blockSymbolEntry i j A]
     with x h₁ h₂ h₃ h₄ h₅
   have hsingle : (PiLp.single 2 j (h x) : EuclideanSpace ℂ (Fin r)) =
       h x • EuclideanSpace.single j (1 : ℂ) := by ext k; simp [EuclideanSpace.single]
@@ -116,7 +117,8 @@ theorem inner_blockHardyBasis_blockToeplitz_blockHardyBasis {r : ℕ} (A : Block
     ⟪blockHardyBasis r (m, i), blockToeplitz r A (blockHardyBasis r (n, j))⟫_ℂ =
       ⟪EuclideanSpace.single i (1 : ℂ),
         fourierCoeff A ((m : ℤ) - n) (EuclideanSpace.single j (1 : ℂ))⟫_ℂ := by
-  rw [inner_blockHardyBasis_apply, piLpEntry_blockToeplitz, inner_hardyBasis_toeplitz_hardyBasis,
+  rw [blockHardyBasis_apply, blockHardyBasis_apply, PiLp.inner_single_left, ← piLpEntry_apply,
+    piLpEntry_blockToeplitz, inner_hardyBasis_toeplitz_hardyBasis,
     inner_single_fourierCoeff_blockSymbol]
 
 /-- Scalar-entry form of `inner_blockHardyBasis_blockToeplitz_blockHardyBasis`. -/
@@ -222,8 +224,10 @@ theorem exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ {r : ℕ}
     rw [inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry,
       inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry]
     congr 1; push_cast; ring
-  · choose a ha using fun i j : Fin r ↦ (exists_toeplitz_eq_iff_inner_hardyBasis_succ _).mpr
-      fun m n ↦ by simpa only [inner_blockHardyBasis_apply] using h m n i j
+  · choose a ha using fun i j : Fin r ↦
+      (exists_toeplitz_eq_iff_inner_hardyBasis_succ (T.piLpEntry i j)).mpr fun m n ↦ by
+        simpa only [blockHardyBasis_apply, PiLp.inner_single_left, piLpEntry_apply] using
+          h m n i j
     refine ⟨∑ i : Fin r, ∑ j : Fin r, blockSymbolSingle r i j (a i j), ?_⟩
     ext f i : 2; rw [blockToeplitz_apply_apply, apply_eq_sum_piLpEntry]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [blockSymbolEntry_sum_blockSymbolSingle, ha i j]

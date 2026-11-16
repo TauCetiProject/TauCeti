@@ -24,19 +24,18 @@ The coordinate spaces may be different seminormed groups, or pseudometric spaces
 distance comparisons.
 
 Every finite `PiLp` vector is the sum of its coordinate `PiLp.single` vectors
-(`PiLp.univ_sum_single`), coordinate placement bundles as a continuous linear map `PiLp.singleCLM`
-(and for finite `ι` and `p ≥ 1`, as a linear isometry `PiLp.singleLI`), and for `0 < p < ∞` the
-`p`-th power of the `PiLp` norm is the sum of the `p`-th powers of the coordinate norms
-(`PiLp.norm_rpow_eq_sum`). Extending a vector of `Lᵖ(ι, E)` by zero
-along an embedding `f : ι ↪ ι'` places its coordinate `i` in the slot `f i`, and the vectors so
-obtained are those whose coordinates outside the range of `f` vanish. In particular, extending a
-vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`,
-places its coordinates in the slots `j < k`; the vectors so obtained are those whose coordinates
-`j ≥ k` vanish. The finite sum against a zero-extended vector reduces to the sum over its original
-coordinates. Over an index type with at most one element, the `Lᵖ` norm is the norm of the
-coordinate. Reindexing the coordinates along the identity bijection is the identity, and any linear
-isometry equivalence into `PiLp p F` restricts to coordinatewise submodules via
-`LinearIsometryEquiv.submodulePiLp`.
+(`PiLp.univ_sum_single`), for finite `ι` and `p ≥ 1` coordinate placement bundles as a linear
+isometry `PiLp.singleLI`, and for `0 < p < ∞` the `p`-th power of the `PiLp` norm is the sum of
+the `p`-th powers of the coordinate norms (`PiLp.norm_rpow_eq_sum`). Extending a vector of
+`Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i` in the slot `f i`,
+and the vectors so obtained are those whose coordinates outside the range of `f` vanish. In
+particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of
+`Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the vectors so obtained
+are those whose coordinates `j ≥ k` vanish. The finite sum against a zero-extended vector reduces
+to the sum over its original coordinates. Over an index type with at most one element, the `Lᵖ`
+norm is the norm of the coordinate. Reindexing the coordinates along the identity bijection is the
+identity, and any linear isometry equivalence into `PiLp p F` restricts to coordinatewise submodules
+via `LinearIsometryEquiv.submodulePiLp`.
 
 ## Source
 
@@ -51,22 +50,6 @@ public section
 open scoped ENNReal
 
 namespace PiLp
-
-section SingleCLM
-variable {ι : Type*} [DecidableEq ι] (p : ℝ≥0∞) {𝕜 : Type*} [Semiring 𝕜] (E : ι → Type*)
-  [∀ i, AddCommGroup (E i)] [∀ i, Module 𝕜 (E i)] [∀ i, TopologicalSpace (E i)]
-
-/-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a continuous linear map. -/
-def singleCLM (i : ι) : E i →L[𝕜] PiLp p E :=
-  (PiLp.continuousLinearEquiv p 𝕜 E).symm.toContinuousLinearMap.comp
-    (ContinuousLinearMap.single 𝕜 E i)
-
-variable {p E}
-
-/-- `PiLp.singleCLM` evaluates as `PiLp.single`. -/
-@[simp] theorem singleCLM_apply (i : ι) (v : E i) :
-    singleCLM (𝕜 := 𝕜) p E i v = single p i v := (rfl)
-end SingleCLM
 
 variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} {E F : ι → Type*}
 
@@ -124,12 +107,14 @@ variable (p E) [Fact (1 ≤ p)] [DecidableEq ι] {𝕜 : Type*} [Semiring 𝕜] 
 /-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a linear isometry. -/
 noncomputable def singleLI (i : ι) : E i →ₗᵢ[𝕜] PiLp p E where
   toLinearMap := (WithLp.linearEquiv p 𝕜 (∀ j, E j)).symm.toLinearMap ∘ₗ LinearMap.single 𝕜 E i
-  norm_map' := norm_single p E i
+  norm_map' v := by simp
 
 variable {p E}
 
 /-- `PiLp.singleLI` evaluates as `PiLp.single`. -/
-@[simp] theorem singleLI_apply (i : ι) (v : E i) : singleLI (𝕜 := 𝕜) p E i v = single p i v := (rfl)
+@[simp] theorem singleLI_apply (i : ι) (v : E i) :
+    singleLI (𝕜 := 𝕜) p E i v = single p i v := by
+  simp [singleLI]
 
 end SingleLI
 

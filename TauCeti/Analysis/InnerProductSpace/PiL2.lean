@@ -64,7 +64,7 @@ Borel measurable structure on the scalar field.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
-  `LinearIsometryEquiv.apply_starProjection_apply`, and
+  `LinearIsometryEquiv.map_starProjection_apply`, and
   `LinearIsometryEquiv.mem_orthogonal_iff_forall_mem_orthogonal`: coordinatewise orthogonal
   projections and orthogonal complements under a linear isometry equivalence into `PiLp 2 F`.
 -/
@@ -591,13 +591,14 @@ orthogonal projection onto each `N i`. -/
   refine ext_inner_left 𝕜 fun w ↦ ?_
   rw [Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.coe_inner,
     ← e.inner_map_map, PiLp.inner_apply, ← e.inner_map_map, PiLp.inner_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_; rw [e.apply_coe_submodulePiLp_symm M N hMN]
-  exact ((N j).inner_orthogonalProjectionOnto_eq_of_mem_left
-    ⟨e w.1 j, (hMN w.1).mp w.2 j⟩ (e x j)).symm
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [e.apply_coe_submodulePiLp_symm M N hMN, PiLp.toLp_apply,
+    Submodule.coe_orthogonalProjectionOnto_apply, ← (N j).inner_starProjection_left_eq_right,
+    (N j).starProjection_eq_self_iff.mpr ((hMN w.1).mp w.2 j)]
 
 /-- If `e : X ≃ₗᵢ[𝕜] PiLp 2 F` characterizes `M` coordinatewise by `N`, then `M.starProjection`
 acts coordinatewise as `(N i).starProjection`. -/
-theorem apply_starProjection_apply (e : X ≃ₗᵢ[𝕜] PiLp 2 F) {M : Submodule 𝕜 X}
+theorem map_starProjection_apply (e : X ≃ₗᵢ[𝕜] PiLp 2 F) {M : Submodule 𝕜 X}
     {N : ∀ i, Submodule 𝕜 (F i)} (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i)
     [M.HasOrthogonalProjection] [∀ i, (N i).HasOrthogonalProjection] (x : X) (i : ι) :
     e (M.starProjection x) i = (N i).starProjection (e x i) := by

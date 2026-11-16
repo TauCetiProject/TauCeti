@@ -143,9 +143,9 @@ theorem eq_sum_piLpSingleLI [DecidableEq ι] (f : Lp (PiLp p E) p μ) :
   (piLpEquiv p 𝕜 E μ).injective <| by simpa only [map_sum, piLpEquiv_piLpSingleLI] using
     (PiLp.univ_sum_single (piLpEquiv p 𝕜 E μ f)).symm
 
-/-- Coordinate evaluation via `piLpEquiv` commutes with heterogeneous `Lp` scalar multiplication. -/
-theorem piLpEquiv_lpSMul {q : ℝ≥0∞} [HolderTriple q p p] (a : Lp 𝕜 q μ) (f : Lp (PiLp p E) p μ)
-    (i : ι) : piLpEquiv p 𝕜 E μ (a • f : Lp (PiLp p E) p μ) i =
+/-- Coordinate evaluation via `piLpEquiv` commutes with `L∞` scalar multiplication. -/
+theorem piLpEquiv_lpSMul (a : Lp 𝕜 ∞ μ) (f : Lp (PiLp p E) p μ) (i : ι) :
+    piLpEquiv p 𝕜 E μ (a • f : Lp (PiLp p E) p μ) i =
       (a • piLpEquiv p 𝕜 E μ f i : Lp (E i) p μ) := Lp.ext <| by
   filter_upwards [coeFn_piLpEquiv_apply (𝕜 := 𝕜) (a • f : Lp (PiLp p E) p μ) i,
     Lp.coeFn_lpSMul (r := p) a f, Lp.coeFn_lpSMul (r := p) a (piLpEquiv p 𝕜 E μ f i),
@@ -165,11 +165,14 @@ theorem piLpEquiv_apply_eq_compLpL (f : Lp (PiLp p E) p μ) (i : ι) :
   filter_upwards [coeFn_piLpEquiv_apply (𝕜 := 𝕜) f i, (PiLp.proj (𝕜 := 𝕜) p E i).coeFn_compLpL f]
     with x h₁ h₂; rw [h₁, h₂, PiLp.proj_apply]
 
-/-- Over a nontrivially normed field, `piLpSingleLI` is `(PiLp.singleCLM p E i).compLpL p μ`. -/
+/-- Over a nontrivially normed field, `piLpSingleLI` is
+`(PiLp.singleLI p E i).toContinuousLinearMap.compLpL p μ`. -/
 theorem piLpSingleLI_apply_eq_compLpL [DecidableEq ι] (i : ι) (h : Lp (E i) p μ) :
-    piLpSingleLI p 𝕜 E μ i h = (PiLp.singleCLM (𝕜 := 𝕜) p E i).compLpL p μ h := Lp.ext <| by
-  filter_upwards [coeFn_piLpSingleLI (𝕜 := 𝕜) i h, (PiLp.singleCLM (𝕜 := 𝕜) p E i).coeFn_compLpL h]
-    with x h₁ h₂; rw [h₁, h₂, PiLp.singleCLM_apply]
+    piLpSingleLI p 𝕜 E μ i h =
+      (PiLp.singleLI (𝕜 := 𝕜) p E i).toContinuousLinearMap.compLpL p μ h := Lp.ext <| by
+  filter_upwards [coeFn_piLpSingleLI (𝕜 := 𝕜) i h,
+    (PiLp.singleLI (𝕜 := 𝕜) p E i).toContinuousLinearMap.coeFn_compLpL h] with x h₁ h₂
+  rw [h₁, h₂, LinearIsometry.coe_toContinuousLinearMap, PiLp.singleLI_apply]
 
 end NontriviallyNormedField
 

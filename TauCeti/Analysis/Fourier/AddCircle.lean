@@ -96,8 +96,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   `n`-th Fourier coefficient to the conjugate of the `(k - n)`-th one.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
-* `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
-  maps.
+* `ContinuousLinearMap.fourierCoeff_comp`, `ContinuousLinearMap.fourierCoeff_compLpL`: Fourier
+  coefficients commute with continuous linear maps on integrable and `Lᵖ` functions.
 * `MeasureTheory.Integrable.fourierCoeff_piLp_apply`, `MeasureTheory.Lp.fourierCoeff_piLp_apply`:
   the `i`-th coordinate of the `n`-th Fourier coefficient of an integrable or `Lᵖ` `PiLp`-valued
   circle function is the `n`-th Fourier coefficient of its `i`-th coordinate.
@@ -327,14 +327,23 @@ theorem _root_.ContinuousLinearMap.fourierCoeff_comp {E F : Type*} [NormedAddCom
     fourierCoeff (fun x ↦ φ (f x)) n = φ (fourierCoeff f n) := by
   simp only [fourierCoeff, ← φ.integral_comp_comm (hf.fourier_smul (-n)), map_smul]
 
+/-- Fourier coefficients commute with `ContinuousLinearMap.compLpL` on `Lᵖ` (`1 ≤ p ≤ ∞`). -/
+theorem _root_.ContinuousLinearMap.fourierCoeff_compLpL {p : ℝ≥0∞} [Fact (1 ≤ p)] {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F]
+    [NormedSpace ℂ F] [CompleteSpace F] (φ : E →L[ℂ] F) (f : Lp E p (haarAddCircle (T := T)))
+    (n : ℤ) :
+    fourierCoeff (φ.compLpL p (haarAddCircle (T := T)) f) n = φ (fourierCoeff f n) := by
+  rw [fourierCoeff_congr_ae (φ.coeFn_compLpL f),
+    φ.fourierCoeff_comp ((Lp.memLp f).integrable Fact.out) n]
+
 /-- The `i`-th coordinate of the `n`-th Fourier coefficient of an integrable `PiLp`-valued function
 on `AddCircle T` is the `n`-th Fourier coefficient of its `i`-th coordinate. -/
 theorem _root_.MeasureTheory.Integrable.fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {q : ℝ≥0∞}
     [Fact (1 ≤ q)] {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
     [∀ i, CompleteSpace (E i)] {f : AddCircle T → PiLp q E}
     (hf : Integrable f (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
-    fourierCoeff f n i = fourierCoeff (fun x ↦ f x i) n :=
-  ((PiLp.proj (𝕜 := ℂ) q E i).fourierCoeff_comp hf n).symm
+    fourierCoeff f n i = fourierCoeff (fun x ↦ f x i) n := by
+  simpa only [PiLp.proj_apply] using ((PiLp.proj (𝕜 := ℂ) q E i).fourierCoeff_comp hf n).symm
 
 /-- The `i`-th coordinate of the `n`-th Fourier coefficient of a `PiLp`-valued `Lᵖ` function on
 `AddCircle T` (`1 ≤ p ≤ ∞`) is the `n`-th Fourier coefficient of its `i`-th coordinate under
@@ -343,9 +352,9 @@ theorem _root_.MeasureTheory.Lp.fourierCoeff_piLp_apply {ι : Type*} [Fintype ι
     [Fact (1 ≤ p)] {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
     [∀ i, CompleteSpace (E i)] (f : Lp (PiLp p E) p (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
     fourierCoeff f n i =
-      fourierCoeff (Lp.piLpEquiv p ℂ E (haarAddCircle (T := T)) f i) n :=
-  (((Lp.memLp f).integrable Fact.out).fourierCoeff_piLp_apply n i).trans
-    (congrFun (fourierCoeff_congr_ae (Lp.coeFn_piLpEquiv_apply (𝕜 := ℂ) f i)).symm n)
+      fourierCoeff (Lp.piLpEquiv p ℂ E (haarAddCircle (T := T)) f i) n := by
+  rw [Lp.piLpEquiv_apply_eq_compLpL, (PiLp.proj (𝕜 := ℂ) p E i).fourierCoeff_compLpL f n,
+    PiLp.proj_apply]
 
 /-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
 theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}
