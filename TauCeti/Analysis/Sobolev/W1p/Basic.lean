@@ -1040,23 +1040,6 @@ theorem W1p.coe_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
       ⟨(u : Sobolev1JetLp mu Omega q).1, Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩ :=
   (rfl)
 
-/-- Lowering the exponent does not change the value of a Sobolev function, as a function. -/
-@[simp]
-theorem W1p.coeFn_value_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
-    ⇑(W1p.value (W1p.ofExponentLE hpq u)) = ⇑(W1p.value u) := by
-  rw [W1p.value_coe, W1p.value_coe, W1p.coe_ofExponentLE,
-    ← Lp.ofExponentLEL_apply (𝕜 := ℝ) hpq, Sobolev1JetLp.value_ofExponentLEL,
-    Lp.coeFn_ofExponentLEL]
-
-/-- Lowering the exponent does not change the weak gradient of a Sobolev function, as a
-function. -/
-@[simp]
-theorem W1p.coeFn_gradient_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
-    ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) = ⇑(W1p.gradient u) := by
-  rw [W1p.gradient_coe, W1p.gradient_coe, W1p.coe_ofExponentLE,
-    ← Lp.ofExponentLEL_apply (𝕜 := ℝ) hpq, Sobolev1JetLp.gradient_ofExponentLEL,
-    Lp.coeFn_ofExponentLEL]
-
 /-- Lowering the exponent sends zero to zero. -/
 @[simp]
 theorem W1p.ofExponentLE_zero (hpq : p ≤ q) :
@@ -1120,6 +1103,19 @@ theorem W1p.gradient_ofExponentLEL (hpq : p ≤ q) (u : W1p mu Omega q) :
     W1p.gradient (W1p.ofExponentLEL hpq u) = Lp.ofExponentLEL ℝ E hpq (W1p.gradient u) := by
   rw [W1p.ofExponentLEL_apply, W1p.gradient_coe, W1p.gradient_coe, W1p.coe_ofExponentLE,
     ← Lp.ofExponentLEL_apply (𝕜 := ℝ) hpq, Sobolev1JetLp.gradient_ofExponentLEL]
+
+/-- Lowering the exponent does not change the value of a Sobolev function, as a function. -/
+@[simp]
+theorem W1p.coeFn_value_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.value (W1p.ofExponentLE hpq u)) = ⇑(W1p.value u) := by
+  rw [← W1p.ofExponentLEL_apply, W1p.value_ofExponentLEL, Lp.coeFn_ofExponentLEL]
+
+/-- Lowering the exponent does not change the weak gradient of a Sobolev function, as a
+function. -/
+@[simp]
+theorem W1p.coeFn_gradient_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) = ⇑(W1p.gradient u) := by
+  rw [← W1p.ofExponentLEL_apply, W1p.gradient_ofExponentLEL, Lp.coeFn_ofExponentLEL]
 
 /-- Lowering the exponent is injective. -/
 theorem W1p.ofExponentLEL_injective (hpq : p ≤ q) :
