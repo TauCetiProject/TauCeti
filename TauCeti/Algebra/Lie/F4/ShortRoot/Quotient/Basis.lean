@@ -295,6 +295,12 @@ theorem f4ShortRootQuotientBasis_thirteen :
       f4ModularChevalleyLieAlgebra ⧸ f4ShortRootSubspace) = 0 :=
   (Submodule.Quotient.mk_eq_zero _).2 (f4ModularRootVector_mem_shortRootSubspace α hα)
 
+/-- `f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short`, stated for the bundled quotient map. -/
+theorem f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short'
+    (α : Fin 48) (hα : f4Length α = 1) :
+    f4ShortRootSubspace.mkQ (f4ModularRootVector α) = 0 :=
+  (Submodule.mkQ_apply _ _).trans (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short α hα)
+
 
 end
 
