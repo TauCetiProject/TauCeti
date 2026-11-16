@@ -318,7 +318,7 @@ private theorem exists_taylor_apply_eq_letter_succ (hℋ : ℋ.IsMinimal)
   -- `φ₀` is a Hochschild cocycle: its differential is the component of length `e + 2` of `δψ`,
   -- which vanishes on the words of length at most `e + 2`.
   have hδφ₀ : ℋ.hochschildDifferential 0 φ₀ = 0 := by
-    rw [hφ₀def, hochschildDifferential_comp_lengthProj_eq hℋ hm]
+    rw [hφ₀def, hochschildDifferential_comp_lengthProj_eq (hℋ.taylor_comp_lengthProj_two hm)]
     exact LinearMap.ext fun z ↦ hδψ _ (lengthProj_mem_filtration R A ⟨e + 2, by omega⟩ z)
   -- The exponential of `χ = -φ₀` is an `A∞` automorphism of `ℋ`.
   set χ := (-1 : R) • φ₀ with hχdef

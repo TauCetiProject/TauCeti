@@ -83,9 +83,6 @@ with the exponential `exp D = ∑ Dʳ / r!`, which is a coalgebra automorphism f
 * `TauCeti.AInfinityAlgebra.commute_barDifferential_coderiv`: the coderivation of a degree-zero
   Hochschild cocycle commutes with the bar differential, and
   `TauCeti.AInfinityAlgebra.isIso_expHom`: its exponential is an `A∞` automorphism.
-* `TauCeti.AInfinityHom.taylor_comp_apply_of_mem_filtration`: composing a morphism with linear
-  part the identity with one that is `letter` on the words of length at most `e` adds their Taylor
-  maps, minus `letter`, on the words of length at most `e + 1`.
 * `TauCeti.AInfinityAlgebra.taylor_expHom_apply_of_mem_filtration`: if the cocycle `φ` vanishes
   on the words of length at most `e`, the Taylor map of its exponential is `letter + φ` on the
   words of length at most `2 e`, and
@@ -171,23 +168,6 @@ theorem taylor_sub_taylor_apply_eq_hochschildDifferential (f : AInfinityHom 𝒜
     AInfinityAlgebra.brace_taylor_apply_eq_of_mem_filtration hψ h
       (filtration_monotone R A hkj hz)] at key
   rw [AInfinityAlgebra.hochschildDifferential_zero_apply, key]
-  abel
-
-/-- **Composing with a morphism that is `letter` to order `e`.**  Let `f : ℬ ⟶ 𝒜` be an `A∞`
-morphism with linear part the identity and `g : 𝒜 ⟶ 𝒞` one whose Taylor map is `letter` on the
-words of length at most `e`.  Then on the words of length at most `e + 1` the Taylor map of `g ∘ f`
-is `f.taylor + g.taylor - letter`: `f` moves such a word by a word of length at most `e`, on which
-`g` is `letter`. -/
-theorem taylor_comp_apply_of_mem_filtration {ℬ 𝒞 : AInfinityAlgebra R A} (g : AInfinityHom 𝒜 𝒞)
-    (f : AInfinityHom ℬ 𝒜) (hf : f.linearPart = LinearMap.id) {e : ℕ}
-    (hg : ∀ w ∈ filtration R A e, g.taylor w = letter R A w) {z : ReducedTensorWords R A}
-    (hz : z ∈ filtration R A (e + 1)) :
-    (g.comp f).taylor z = f.taylor z + g.taylor z - letter R A z := by
-  have hsub : f.barMap z - z ∈ filtration R A e :=
-    f.isCoalgHom_barMap.sub_mem_filtration (LinearMap.ext fun a ↦ by
-      rw [LinearMap.comp_apply, barMap_ofLetter, hf, LinearMap.id_apply]) hz
-  rw [taylor_comp, LinearMap.comp_apply, ← sub_add_cancel (f.barMap z) z, map_add, hg _ hsub,
-    map_sub, taylor_def f, LinearMap.comp_apply]
   abel
 
 /-- The Taylor map of an `A∞` morphism between structures with the same grading differs from
