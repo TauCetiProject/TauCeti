@@ -41,8 +41,9 @@ that `Ai² + Bi²` solves the third-order product differential equation `w''' �
 * `TauCeti.integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow` and
   `TauCeti.integrableOn_cexp_sub_cube_div_twelve_mul_cpow` — absolute Bochner integrability of the
   integrand of DLMF 9.11.4 and all of its `tⁿ` moments on `(0, ∞)`.
-* `TauCeti.airyAi_sq_add_airyBi_sq_eq_integral` and `TauCeti.airyAi_sq_add_airyBi_sq_ofReal` —
-  DLMF 9.11.4 for complex and real arguments.
+* `TauCeti.airyAi_sq_add_airyBi_sq_eq_integral` and
+  `TauCeti.airyAi_sq_add_airyBi_sq_ofReal_eq_integral` — DLMF 9.11.4 for complex and real
+  arguments.
 * `TauCeti.hasSum_airyAi_sq_add_airyBi_sq` — the everywhere convergent Maclaurin series of
   `Ai(z)² + Bi(z)²`, absolutely convergent by `TauCeti.summable_norm_airyAi_sq_add_airyBi_sq`.
 * `TauCeti.four_mul_airyAi_zero_sq` — the origin identity
@@ -501,7 +502,7 @@ theorem airyAi_sq_add_airyBi_sq_eq_integral (z : ℂ) :
 
 /-- **DLMF 9.11.4** on the real axis: for every real `x`, `Ai(x)² + Bi(x)²` is the coercion of
 `π^{−3/2} ∫₀^∞ exp(x t − t³ / 12) t^{−1/2} dt`. -/
-theorem airyAi_sq_add_airyBi_sq_ofReal (x : ℝ) :
+theorem airyAi_sq_add_airyBi_sq_ofReal_eq_integral (x : ℝ) :
     airyAi x ^ 2 + airyBi x ^ 2 =
       ((π ^ (-3 / 2 : ℝ) *
         ∫ t in Ioi (0 : ℝ),
