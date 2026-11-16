@@ -23,6 +23,10 @@ On a product, locally uniform convergence on `U` gives uniform convergence of th
 `t ↦ F k (a, t)` on every compact set `K` with `{a} × K ⊆ U`
 (`TendstoLocallyUniformlyOn.tendstoUniformlyOn_slice_right`).
 
+Uniform bounds tending to zero give uniform convergence: if eventually
+`dist (F k x) (u x) ≤ b k` for all `x`, with `b k → 0`, then `F k → u` uniformly
+(`TauCeti.tendstoUniformly_of_dist_le`).
+
 Conversely, if the values of `F m` at one point of `s` have norms tending to infinity, then no
 subsequence of `F` converges locally uniformly on `s`
 (`TauCeti.not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop`), while dividing a fixed
@@ -84,6 +88,16 @@ theorem TendstoLocallyUniformlyOn.tendstoUniformlyOn_slice_right {δ γ : Type*}
     (hFu.comp (fun t ↦ (a, t)) hKU (by fun_prop))
 
 namespace TauCeti
+
+omit [TopologicalSpace α] in
+/-- Functions `F k` converge uniformly to `u` when, eventually, `dist (F k x) (u x) ≤ b k` for
+all `x`, with bounds `b k` tending to `0`. -/
+theorem tendstoUniformly_of_dist_le {b : ι → ℝ} (hb : Tendsto b l (𝓝 0))
+    (h : ∀ᶠ k in l, ∀ x, dist (F k x) (u x) ≤ b k) : TendstoUniformly F u l := by
+  refine Metric.tendstoUniformly_iff.2 fun δ hδ ↦ ?_
+  filter_upwards [h, hb.eventually (gt_mem_nhds hδ)] with k hk hbk x
+  rw [dist_comm]
+  exact (hk x).trans_lt hbk
 
 /-- If the values of `F m` at a point `z ∈ s` have norms tending to infinity, then no
 subsequence of `F` converges locally uniformly on `s`, since it would converge at `z`. -/
