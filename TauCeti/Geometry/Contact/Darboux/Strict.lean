@@ -162,44 +162,44 @@ private theorem SmoothForm.IsContactForm.exists_reebSlice (hα : α.IsContactFor
   obtain ⟨R₀, hR₀⟩ : ∃ R₀ : E, ℓ R₀ = 1 :=
     ⟨α.reebVectorField x₀, (hℓ _).trans (hα.apply_reebVectorField x₀)⟩
   -- `K = ker ℓ` is a hyperplane, since `ℓ` is onto.
-  have hdim : finrank ℝ (LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) + 1 = finrank ℝ E :=
+  set K : Submodule ℝ E := LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)
+  have hdim : finrank ℝ K + 1 = finrank ℝ E :=
     Module.Dual.finrank_ker_add_one_of_ne_zero fun h ↦
       one_ne_zero (hR₀.symm.trans (LinearMap.congr_fun h R₀))
   -- Vectors of `K` are killed by `α` at `x₀`. The base point is generalized to any `y = x₀` so
   -- that `hK` applies at `ι 0` without rewriting `ι 0` inside the type `TangentSpace I (ι 0)`.
-  have hK (y : M) (hy : y = x₀) (v : E) (hv : v ∈ LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) :
-      α.1 y ![v] = 0 := by
+  have hK (y : M) (hy : y = x₀) (v : E) (hv : v ∈ K) : α.1 y ![v] = 0 := by
     subst hy
     rw [← hℓ]
     exact LinearMap.mem_ker.1 hv
   -- A ball about `y₀` in the chart target, and a cutoff of the identity of `K` into it.
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_extChartAt_target x₀) y₀
     (mem_extChartAt_target x₀)
-  obtain ⟨ρ, hρ, hρid, hρr⟩ :=
-    exists_contDiff_eventuallyEq_id_forall_mem_ball (E := LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) hr
+  obtain ⟨ρ, hρ, hρid, hρr⟩ := exists_contDiff_eventuallyEq_id_forall_mem_ball (E := K) hr
   have hρ0 : ρ 0 = 0 := hρid.eq_of_nhds
-  have hmem (k : LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) : y₀ + (ρ k : E) ∈ e.target :=
+  have hmem (k : K) : y₀ + (ρ k : E) ∈ e.target :=
     hball (by simpa [dist_eq_norm] using hρr k)
-  set ι : LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ) → M :=
-    fun k ↦ e.symm (y₀ + (LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)).subtypeL (ρ k))
-  have hι : ContMDiff 𝓘(ℝ, LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) I ∞ ι :=
+  set ι : K → M := fun k ↦ e.symm (y₀ + K.subtypeL (ρ k))
+  have hι : ContMDiff 𝓘(ℝ, K) I ∞ ι :=
     (contMDiffOn_extChartAt_symm x₀).comp_contMDiff
-      (contDiff_const.add ((LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)).subtypeL.contDiff.comp hρ)).contMDiff
-      hmem
+      (contDiff_const.add (K.subtypeL.contDiff.comp hρ)).contMDiff hmem
   have hι0 : ι 0 = x₀ := by
     simp [ι, hρ0, y₀, e]
   -- Near `0`, `ι` is the chart inverse on the translate of `K`, so `dι₀` is the inclusion.
-  have hloc : ι =ᶠ[𝓝 0] fun k ↦ e.symm (y₀ + (LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)).subtypeL k) := by
+  have hloc : ι =ᶠ[𝓝 0] fun k ↦ e.symm (y₀ + K.subtypeL k) := by
     filter_upwards [hρid] with k hk
     simp only [ι, hk, id]
-  have hd (w : LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) :
-      mfderiv 𝓘(ℝ, LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) I ι 0 w = (w : E) :=
-    DFunLike.congr_fun
-      ((hasMFDerivAt_extChartAt_symm_self_add x₀ _).congr_of_eventuallyEq hloc).mfderiv w
+  have hd (w : K) : mfderiv 𝓘(ℝ, K) I ι 0 w = (w : E) := by
+    have he : HasMFDerivAt 𝓘(ℝ, E) I e.symm (y₀ + K.subtypeL 0) (ContinuousLinearMap.id ℝ E) := by
+      rw [map_zero, add_zero]
+      exact hasMFDerivAt_extChartAt_symm_self x₀
+    have htr := (K.subtypeL.hasFDerivAt (x := 0)).const_add y₀
+    exact DFunLike.congr_fun (((he.comp 0 htr.hasMFDerivAt).congr_mfderiv
+      (ContinuousLinearMap.id_comp _)).congr_of_eventuallyEq hloc).mfderiv w
   refine ⟨_, ι, hι, hι0, hdim, fun w w' h ↦ Subtype.ext ((hd w).symm.trans (h.trans (hd w'))),
     fun ⟨w, hw⟩ ↦ ?_⟩
   -- The Reeb vector takes the value `1` under `α`, while vectors of `K` are in its kernel.
-  have h1 : α.1 (ι 0) ![mfderiv 𝓘(ℝ, LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)) I ι 0 w] = 1 :=
+  have h1 : α.1 (ι 0) ![mfderiv 𝓘(ℝ, K) I ι 0 w] = 1 :=
     (congrArg (fun v ↦ α.1 (ι 0) ![v]) hw).trans (hα.apply_reebVectorField _)
   rw [congrArg (fun v ↦ α.1 (ι 0) ![v]) (hd w), hK _ hι0 _ w.2] at h1
   exact zero_ne_one h1
