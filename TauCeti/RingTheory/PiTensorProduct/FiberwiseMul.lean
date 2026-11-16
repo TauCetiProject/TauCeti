@@ -39,8 +39,9 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 
 ## Main results
 
-* `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`: the values of
-  `PiTensorProduct.productMap` on pure tensors and on the factor inclusions.
+* `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`,
+  `PiTensorProduct.productMap_reindex`: the values of `PiTensorProduct.productMap` on pure tensors
+  and on the factor inclusions, and its invariance under reindexing.
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_id`, `PiTensorProduct.fiberwiseMul_comp`: functoriality in `f`.
@@ -109,6 +110,17 @@ theorem productMap_comp_singleAlgHom [DecidableEq τ] (f : ∀ j, A j →ₐ[R] 
     (productMap f).comp (singleAlgHom j) = f j :=
   AlgHom.ext (productMap_singleAlgHom f j)
 
+/-- `PiTensorProduct.productMap` is invariant under reindexing the factors along a bijection. -/
+@[simp]
+theorem productMap_reindex {τ' : Type*} [Fintype τ'] (e : τ ≃ τ') (f : ∀ j, A j →ₐ[R] S)
+    (x : ⨂[R] j, A j) :
+    productMap (fun k ↦ f (e.symm k)) (reindex R A e x) = productMap f x := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    simp only [map_smul, reindex_tprod, productMap_tprod]
+    exact congrArg (r • ·) (e.symm.prod_comp fun j ↦ f j (a j))
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 end ProductMap
 
 /-- The algebra map `⨂_{i : σ} A (f i) → ⨂_{j : τ} A j` induced by a map `f : σ → τ` of finite
@@ -169,6 +181,10 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 noncomputable def mulAlgHom : (⨂[R] _ : σ, B) →ₐ[R] B :=
   productMap fun _ ↦ AlgHom.id R B
 
+/-- `PiTensorProduct.mulAlgHom` is `PiTensorProduct.productMap` of the identity algebra maps. -/
+theorem mulAlgHom_def :
+    mulAlgHom (R := R) (σ := σ) (B := B) = productMap fun _ ↦ AlgHom.id R B := (rfl)
+
 /-- `PiTensorProduct.mulAlgHom` multiplies the factors of a pure tensor. -/
 @[simp]
 theorem mulAlgHom_tprod (x : σ → B) : mulAlgHom (R := R) (tprod R x) = ∏ i, x i := by
@@ -186,15 +202,8 @@ theorem mulAlgHom_singleAlgHom [DecidableEq σ] (i : σ) (b : B) :
 reindexing the factors along a bijection. -/
 @[simp]
 theorem mulAlgHom_reindex {σ' : Type*} [Fintype σ'] (e : σ ≃ σ') (x : ⨂[R] _ : σ, B) :
-    mulAlgHom (R := R) (reindex R (fun _ ↦ B) e x) = mulAlgHom (R := R) x := by
-  have h : (mulAlgHom (R := R) (σ := σ') (B := B)).toLinearMap ∘ₗ
-      (reindex R (fun _ ↦ B) e).toLinearMap =
-      (mulAlgHom (R := R) (σ := σ) (B := B)).toLinearMap :=
-    ext <| MultilinearMap.ext fun b ↦ by
-      simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
-        LinearEquiv.coe_coe, AlgHom.toLinearMap_apply, reindex_tprod, mulAlgHom_tprod]
-      exact e.symm.prod_comp b
-  exact LinearMap.congr_fun h x
+    mulAlgHom (R := R) (reindex R (fun _ ↦ B) e x) = mulAlgHom (R := R) x :=
+  productMap_reindex e (fun _ ↦ AlgHom.id R B) x
 
 /-- For a constant family, `PiTensorProduct.fiberwiseMul f` sends a pure tensor to the pure tensor
 of the products of its factors over the fibres of `f`. In particular, an index `j` outside the

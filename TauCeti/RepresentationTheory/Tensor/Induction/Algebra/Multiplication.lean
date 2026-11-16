@@ -72,17 +72,15 @@ variable {G : Type v} [Group G] (U : Subgroup G) (s : U.LeftTransversal) [Fintyp
 it sends a pure tensor `⨂ₜ x, m x` to `∏ x : G ⧸ U, r_s(x) • m x`, where
 `r_s = U.leftTransversalRep s`. -/
 noncomputable def tensorInducedMulAlgHom : (⨂[R] _ : G ⧸ U, A) →ₐ[R] A :=
-  PiTensorProduct.mulAlgHom.comp
-    (PiTensorProduct.mapAlgHom fun x : G ⧸ U ↦
-      MulSemiringAction.toAlgHom R A (U.leftTransversalRep s x))
+  PiTensorProduct.productMap fun x : G ⧸ U ↦
+    MulSemiringAction.toAlgHom R A (U.leftTransversalRep s x)
 
-/-- `tensorInducedMulAlgHom` factors as slotwise transversal action via
-`PiTensorProduct.mapAlgHom` followed by `PiTensorProduct.mulAlgHom`. -/
+/-- `tensorInducedMulAlgHom` is `PiTensorProduct.productMap` of the slotwise transversal actions
+`MulSemiringAction.toAlgHom R A (U.leftTransversalRep s x)`. -/
 theorem tensorInducedMulAlgHom_def :
     U.tensorInducedMulAlgHom s R A =
-      PiTensorProduct.mulAlgHom.comp
-        (PiTensorProduct.mapAlgHom fun x : G ⧸ U ↦
-          MulSemiringAction.toAlgHom R A (U.leftTransversalRep s x)) := (rfl)
+      PiTensorProduct.productMap fun x : G ⧸ U ↦
+        MulSemiringAction.toAlgHom R A (U.leftTransversalRep s x) := (rfl)
 
 /-- On a pure tensor, `tensorInducedMulAlgHom` acts on each coset slot by its chosen transversal
 representative and multiplies the results in `A`. -/
@@ -99,9 +97,8 @@ otherwise unfold the factor inclusion first. -/
 theorem tensorInducedMulAlgHom_singleAlgHom [DecidableEq (G ⧸ U)] (x : G ⧸ U) (a : A) :
     U.tensorInducedMulAlgHom s R A (PiTensorProduct.singleAlgHom x a) =
       U.leftTransversalRep s x • a := by
-  rw [tensorInducedMulAlgHom, AlgHom.comp_apply, PiTensorProduct.mapAlgHom_singleAlgHom,
-    PiTensorProduct.mulAlgHom_singleAlgHom]
-  rfl
+  rw [tensorInducedMulAlgHom, PiTensorProduct.productMap_singleAlgHom,
+    MulSemiringAction.toAlgHom_apply]
 
 /-- **Equivariance of Evens' twisted multiplication.** For every `g : G`,
 `U.tensorInducedMulAlgHom s R A` intertwines `U.tensorInducedAlgAut s R A g` with the `G`-action
@@ -118,13 +115,8 @@ theorem tensorInducedMulAlgHom_tensorInducedAlgAut (g : G) (z : ⨂[R] _ : G ⧸
         U.leftTransversalRep s x • ((U.monomialHom s g).left x • m (g⁻¹ • x)) =
           g • (U.leftTransversalRep s (g⁻¹ • x) • m (g⁻¹ • x)) := by
       rw [monomialHom_left, Subgroup.mk_smul, ← mul_smul, transversal_mul_lWord, mul_smul]
-    have hprod :
-        ∏ x : G ⧸ U, g • (U.leftTransversalRep s (g⁻¹ • x) • m (g⁻¹ • x)) =
-          g • ∏ x : G ⧸ U, U.leftTransversalRep s (g⁻¹ • x) • m (g⁻¹ • x) :=
-      (map_prod (MulSemiringAction.toRingHom G A g)
-        (fun x : G ⧸ U ↦ U.leftTransversalRep s (g⁻¹ • x) • m (g⁻¹ • x)) Finset.univ).symm
-    simp_rw [hslot]
-    exact hprod.trans <| congrArg (g • ·)
+    simp_rw [hslot, ← Finset.smul_prod']
+    exact congrArg (g • ·)
       (Equiv.prod_comp (MulAction.toPerm g⁻¹) fun x ↦ U.leftTransversalRep s x • m x)
   | add x y hx hy => simp only [map_add, smul_add, hx, hy]
 
@@ -186,8 +178,10 @@ theorem tensorInducedMulAlgHom_comp_changeTransversal (t : U.LeftTransversal) :
 multiplication `PiTensorProduct.mulAlgHom`. -/
 theorem tensorInducedMulAlgHom_eq_mulAlgHom_of_smul_eq_self (hA : ∀ (g : G) (a : A), g • a = a) :
     U.tensorInducedMulAlgHom s R A = PiTensorProduct.mulAlgHom := by
-  refine AlgHom.toLinearMap_injective <| PiTensorProduct.ext <| MultilinearMap.ext fun m ↦ ?_
-  simp [hA]
+  rw [tensorInducedMulAlgHom_def, PiTensorProduct.mulAlgHom_def]
+  congr 1
+  funext x
+  exact AlgHom.ext fun a ↦ by simp [hA]
 
 /-- On a `G`-fixed element `a : A`, `tensorInducedMulAlgHom` sends the constant pure tensor
 `⨂ₜ _, a` to `a ^ U.index`. -/
@@ -321,11 +315,9 @@ theorem tensorInducedMulAlgHom_transitivity :
   rw [← e.symm.prod_comp]
   simp only [e, Fintype.prod_prod_type]
   refine Finset.prod_congr rfl fun a _ ↦ ?_
-  have hmap := (map_prod (MulSemiringAction.toRingHom G A (U.leftTransversalRep s a))
-    (fun b : U ⧸ V.subgroupOf U ↦ (V.subgroupOf U).leftTransversalRep t b • m a b) Finset.univ)
-  refine hmap.trans (Finset.prod_congr rfl fun b _ ↦ ?_)
-  rw [MulSemiringAction.toRingHom_apply, Subgroup.smul_def, ← mul_smul,
-    compositeTransversal_apply, Equiv.apply_symm_apply]
+  rw [Finset.smul_prod']
+  refine Finset.prod_congr rfl fun b _ ↦ ?_
+  rw [Subgroup.smul_def, ← mul_smul, compositeTransversal_apply, Equiv.apply_symm_apply]
 
 end MultiplicationTransitivity
 
@@ -349,51 +341,65 @@ private noncomputable def modTwoBotQuotEquiv :
   (ZMod.finEquiv 2).toEquiv.trans
     (Multiplicative.ofAdd.trans QuotientGroup.quotientBot.symm.toEquiv)
 
+/-- Canonical `Fintype` structure on `Multiplicative (ZMod 2) ⧸ ⊥` via `modTwoBotQuotEquiv`. -/
+private noncomputable local instance :
+    Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
+  Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
+
+open scoped Classical in
+/-- For any commutative `Multiplicative (ZMod 2)`-algebra `A` over `ℤ`, Evens' twisted
+multiplication for `U = ⊥` sends `a ⊗ b` to `a * (σ • b)`, where `σ = Multiplicative.ofAdd 1`. -/
+private theorem modTwoBot_mul {A : Type*} [CommSemiring A] [Algebra ℤ A]
+    [MulSemiringAction (Multiplicative (ZMod 2)) A]
+    [SMulCommClass (Multiplicative (ZMod 2)) ℤ A] (a b : A) :
+    (⊥ : Subgroup (Multiplicative (ZMod 2))).tensorInducedMulAlgHom modTwoBotTransversal ℤ A
+      (PiTensorProduct.tprod ℤ fun q ↦ if q = QuotientGroup.mk 1 then a else b) =
+      a * (Multiplicative.ofAdd (1 : ZMod 2) • b) := by
+  let σ : Multiplicative (ZMod 2) := Multiplicative.ofAdd 1
+  rw [Subgroup.tensorInducedMulAlgHom_tprod, ← modTwoBotQuotEquiv.prod_comp, Fin.prod_univ_two]
+  have he0 : modTwoBotQuotEquiv 0 = QuotientGroup.mk 1 := by simp [modTwoBotQuotEquiv]
+  have he1 : modTwoBotQuotEquiv 1 = QuotientGroup.mk σ := by simp [modTwoBotQuotEquiv, σ]
+  have hσne : modTwoBotQuotEquiv 1 ≠ QuotientGroup.mk 1 := fun h ↦
+    absurd (modTwoBotQuotEquiv.injective (h.trans he0.symm)) (by decide)
+  have hrep1 : (⊥ : Subgroup (Multiplicative (ZMod 2))).leftTransversalRep modTwoBotTransversal
+      (QuotientGroup.mk 1) = 1 :=
+    Subgroup.leftTransversalRep_mk_of_mem _ modTwoBotTransversal (Set.mem_univ 1)
+  have hrepσ : (⊥ : Subgroup (Multiplicative (ZMod 2))).leftTransversalRep modTwoBotTransversal
+      (QuotientGroup.mk σ) = σ :=
+    Subgroup.leftTransversalRep_mk_of_mem _ modTwoBotTransversal (Set.mem_univ σ)
+  rw [ite_eq_left he0, ite_eq_right hσne, he0, he1, hrep1, hrepσ, one_smul]
+
+section TrivialExample
+
+private noncomputable local instance : MulSemiringAction (Multiplicative (ZMod 2)) ℤ :=
+  MulSemiringAction.compHom ℤ (1 : Multiplicative (ZMod 2) →* (ℤ ≃+* ℤ))
+
 open scoped Classical in
 /-- On `ℤ` with the trivial action of `Multiplicative (ZMod 2)` and `U = ⊥`, twisted
 multiplication on `ℤ ⊗[ℤ] ℤ` sends `a ⊗ b` to `a * b` (in particular, `2 ⊗ 3 ↦ 6` and
 `3 ⊗ 2 ↦ 6`). -/
 private theorem modTwoTrivial_mul (a b : ℤ) :
-    letI : MulSemiringAction (Multiplicative (ZMod 2)) ℤ :=
-      MulSemiringAction.compHom ℤ
-        { toFun := fun _ ↦ RingEquiv.refl ℤ, map_one' := rfl, map_mul' := fun _ _ ↦ rfl }
-    letI : Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
-      Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
     (⊥ : Subgroup (Multiplicative (ZMod 2))).tensorInducedMulAlgHom modTwoBotTransversal ℤ ℤ
       (PiTensorProduct.tprod ℤ fun q ↦
         if q = QuotientGroup.mk 1 then a else b) = a * b := by
-  let _ : MulSemiringAction (Multiplicative (ZMod 2)) ℤ :=
-    MulSemiringAction.compHom ℤ
-      { toFun := fun _ ↦ RingEquiv.refl ℤ, map_one' := rfl, map_mul' := fun _ _ ↦ rfl }
-  let _ : Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
-    Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
-  have htriv : ∀ (g : Multiplicative (ZMod 2)) (n : ℤ), g • n = n := fun _ _ ↦ rfl
-  rw [Subgroup.tensorInducedMulAlgHom_tprod]
-  simp_rw [htriv]
-  rw [← modTwoBotQuotEquiv.prod_comp, Fin.prod_univ_two]
-  have h0 : modTwoBotQuotEquiv 0 = QuotientGroup.mk 1 := by simp [modTwoBotQuotEquiv]
-  have h1 : modTwoBotQuotEquiv 1 ≠ QuotientGroup.mk 1 := fun h ↦
-    absurd (modTwoBotQuotEquiv.injective (h.trans h0.symm)) (by decide)
-  rw [ite_eq_left h0, ite_eq_right h1]
+  rw [modTwoBot_mul, MulAction.compHom_smul_def]
+  simp
 
 open scoped Classical in
 example :
-    letI : MulSemiringAction (Multiplicative (ZMod 2)) ℤ :=
-      MulSemiringAction.compHom ℤ
-        { toFun := fun _ ↦ RingEquiv.refl ℤ, map_one' := rfl, map_mul' := fun _ _ ↦ rfl }
-    letI : Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
-      Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
     let μ :=
       (⊥ : Subgroup (Multiplicative (ZMod 2))).tensorInducedMulAlgHom modTwoBotTransversal ℤ ℤ
     μ (PiTensorProduct.tprod ℤ fun q ↦ if q = QuotientGroup.mk 1 then 2 else 3) = 6 ∧
       μ (PiTensorProduct.tprod ℤ fun q ↦ if q = QuotientGroup.mk 1 then 3 else 2) = 6 :=
   ⟨modTwoTrivial_mul 2 3, modTwoTrivial_mul 3 2⟩
 
+end TrivialExample
+
 /-- Group homomorphism `Multiplicative (ZMod 2) →* (ℤ[X] ≃ₐ[ℤ] ℤ[X])` acting by `X ↦ -X`. -/
 private noncomputable def polyNegXAut :
     Multiplicative (ZMod 2) →* (Polynomial ℤ ≃ₐ[ℤ] Polynomial ℤ) where
   toFun g := Polynomial.algEquivAevalNegX (R := ℤ) ^ g.toAdd.val
-  map_one' := rfl
+  map_one' := by simp
   map_mul' g h := by
     have hsq : Polynomial.algEquivAevalNegX (R := ℤ) ^ 2 = 1 := by
       rw [sq]
@@ -408,52 +414,29 @@ private theorem polyNegXAut_apply (g : Multiplicative (ZMod 2)) :
     polyNegXAut g = Polynomial.algEquivAevalNegX (R := ℤ) ^ g.toAdd.val :=
   rfl
 
+section PolyExample
+
+private noncomputable local instance :
+    MulSemiringAction (Multiplicative (ZMod 2)) (Polynomial ℤ) :=
+  MulSemiringAction.compHom _ polyNegXAut
+
 open scoped Classical in
 /-- On `A = ℤ[X]` with `G = Multiplicative (ZMod 2)` acting by `X ↦ -X` and `U = ⊥`, Evens'
 twisted multiplication sends `p(X) ⊗ q(X)` to `p(X) * q(-X)`. -/
 private theorem modTwoPoly_mul (p q : Polynomial ℤ) :
-    letI : MulSemiringAction (Multiplicative (ZMod 2)) (Polynomial ℤ) :=
-      MulSemiringAction.compHom _ polyNegXAut
-    letI : Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
-      Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
     (⊥ : Subgroup (Multiplicative (ZMod 2))).tensorInducedMulAlgHom modTwoBotTransversal ℤ
       (Polynomial ℤ)
       (PiTensorProduct.tprod ℤ fun c ↦
         if c = QuotientGroup.mk 1 then p else q) =
       p * aeval (-X : Polynomial ℤ) q := by
-  let _ : MulSemiringAction (Multiplicative (ZMod 2)) (Polynomial ℤ) :=
-    MulSemiringAction.compHom _ polyNegXAut
-  let _ : Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
-    Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
-  let σ : Multiplicative (ZMod 2) := Multiplicative.ofAdd 1
-  rw [Subgroup.tensorInducedMulAlgHom_tprod, ← modTwoBotQuotEquiv.prod_comp, Fin.prod_univ_two]
-  have he0 : modTwoBotQuotEquiv 0 = QuotientGroup.mk 1 := by simp [modTwoBotQuotEquiv]
-  have he1 : modTwoBotQuotEquiv 1 = QuotientGroup.mk σ := by simp [modTwoBotQuotEquiv, σ]
-  have hσne : modTwoBotQuotEquiv 1 ≠ QuotientGroup.mk 1 := fun h ↦
-    absurd (modTwoBotQuotEquiv.injective (h.trans he0.symm)) (by decide)
-  have hrep1 : (⊥ : Subgroup (Multiplicative (ZMod 2))).leftTransversalRep modTwoBotTransversal
-      (QuotientGroup.mk 1) = 1 :=
-    Subgroup.leftTransversalRep_mk_of_mem _ modTwoBotTransversal (Set.mem_univ 1)
-  have hrepσ : (⊥ : Subgroup (Multiplicative (ZMod 2))).leftTransversalRep modTwoBotTransversal
-      (QuotientGroup.mk σ) = σ :=
-    Subgroup.leftTransversalRep_mk_of_mem _ modTwoBotTransversal (Set.mem_univ σ)
-  rw [ite_eq_left he0, ite_eq_right hσne, he0, he1, hrep1, hrepσ, one_smul]
-  have hσ : σ • q = aeval (-X : Polynomial ℤ) q := by
-    rw [MulAction.compHom_smul_def, polyNegXAut_apply]
-    have hval : σ.toAdd.val = 1 := rfl
-    rw [hval, pow_one]
-    exact Polynomial.algEquivAevalNegX_apply q
-  rw [hσ]
+  rw [modTwoBot_mul, MulAction.compHom_smul_def, polyNegXAut_apply]
+  simp [ZMod.val_one]
 
 open scoped Classical in
 /-- Concrete check on `ℤ[X]` with `X ↦ -X`: Evens' twisted multiplication sends `X ⊗ 1` to `X`
 and `1 ⊗ X` to `-X`, and swapping the tensor factors by the generator `σ` agrees with `σ` acting
 on the target. -/
 example :
-    letI : MulSemiringAction (Multiplicative (ZMod 2)) (Polynomial ℤ) :=
-      MulSemiringAction.compHom _ polyNegXAut
-    letI : Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
-      Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
     let μ := (⊥ : Subgroup (Multiplicative (ZMod 2))).tensorInducedMulAlgHom
       modTwoBotTransversal ℤ (Polynomial ℤ)
     let z₁ := PiTensorProduct.tprod ℤ
@@ -463,13 +446,11 @@ example :
     let σ : Multiplicative (ZMod 2) := Multiplicative.ofAdd 1
     μ z₁ = X ∧ μ z₂ = -X ∧
       μ ((⊥ : Subgroup (Multiplicative (ZMod 2))).tensorInducedAlgAut
-        modTwoBotTransversal ℤ (Polynomial ℤ) σ z₁) = σ • μ z₁ := by
-  let _ : MulSemiringAction (Multiplicative (ZMod 2)) (Polynomial ℤ) :=
-    MulSemiringAction.compHom _ polyNegXAut
-  let _ : Fintype (Multiplicative (ZMod 2) ⧸ (⊥ : Subgroup (Multiplicative (ZMod 2)))) :=
-    Fintype.ofEquiv (Fin 2) modTwoBotQuotEquiv
-  refine ⟨by simpa using modTwoPoly_mul X 1, by simpa using modTwoPoly_mul 1 X, ?_⟩
-  exact Subgroup.tensorInducedMulAlgHom_tensorInducedAlgAut _ modTwoBotTransversal ℤ
-    (Polynomial ℤ) (Multiplicative.ofAdd 1) _
+        modTwoBotTransversal ℤ (Polynomial ℤ) σ z₁) = σ • μ z₁ :=
+  ⟨by simpa using modTwoPoly_mul X 1, by simpa using modTwoPoly_mul 1 X,
+    Subgroup.tensorInducedMulAlgHom_tensorInducedAlgAut _ modTwoBotTransversal ℤ
+      (Polynomial ℤ) (Multiplicative.ofAdd 1) _⟩
+
+end PolyExample
 
 end Examples

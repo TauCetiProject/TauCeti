@@ -9,11 +9,12 @@ public import TauCeti.RepresentationTheory.Tensor.Induction.Algebra.Multiplicati
 public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Discrete
 
 /-!
-# Tensor-induced discrete `G`-algebras and smooth multiplication
+# Tensor-induced discrete `G`-modules, `G`-algebras, and smooth multiplication
 
-For an open finite-index subgroup `U ≤ G` and a discrete `U`-algebra `A` with continuous `U`-action,
-giving `Subgroup.TensorInduced U s R A` the discrete topology makes it a discrete topological
-`R`-algebra with continuous `G`-action (`Subgroup.TensorInduced.continuousSMul_of_isOpen`).
+For an open finite-index subgroup `U ≤ G` and a discrete `U`-module `A` with continuous `U`-action,
+giving `Subgroup.TensorInduced U s R A` the discrete topology makes it a discrete `R`-module
+(and, when `A` is a `U`-algebra, a discrete topological `R`-algebra) with continuous `G`-action
+(`Subgroup.TensorInduced.continuousSMul_of_isOpen`).
 
 When `A` is a discrete commutative `G`-ring (or `R`-algebra over a discrete commutative ring `R`)
 with continuous `G`-action, Evens' twisted multiplication `a₁ ⊗ ⋯ ⊗ a_l ↦ t₁ a₁ ⋯ t_l a_l` gives
@@ -24,17 +25,17 @@ multiplication in `A`.
 
 ## Main definitions
 
-* `TauCeti.DiscreteRep.tensorInducedAlgebra`: `U.TensorInduced s R A` (given the discrete
-  topology) as an object of `TauCeti.DiscreteRep R G`.
-* `TauCeti.DiscreteRep.tensorInducedAlgebraIso`, `TauCeti.smoothTensorInducedAlgebraIso`:
-  the canonical comparison with `TauCeti.DiscreteRep.tensorInduced` and its smooth counterpart.
+* `TauCeti.DiscreteRep.ofTensorInduced`: `U.TensorInduced s R A` (given the discrete topology) as
+  an object of `TauCeti.DiscreteRep R G`.
+* `TauCeti.DiscreteRep.ofTensorInducedIso`, `TauCeti.smoothOfTensorInducedIso`: the canonical
+  comparison with `TauCeti.DiscreteRep.tensorInduced` and its smooth counterpart.
 * `TauCeti.DiscreteRep.tensorInducedMulHom`, `TauCeti.smoothTensorInducedMulHom`:
   Evens' twisted multiplication as morphisms in `DiscreteRep R G` and `SmoothDiscreteTopRep R G`.
 
 ## Main results
 
-* `Subgroup.TensorInduced.continuousSMul_of_isOpen`, `OpenSubgroup.continuousSMul_tensorInduced`:
-  continuity of the `G`-action on `U.TensorInduced s R A` when equipped with a discrete topology.
+* `Subgroup.TensorInduced.continuousSMul_of_isOpen`: continuity of the `G`-action on
+  `U.TensorInduced s R A` when equipped with a discrete topology.
 * `TauCeti.DiscreteRep.tensorInducedChangeTransversalIso_hom_comp_mulHom`,
   `TauCeti.smoothTensorInducedChangeTransversalIso_hom_comp_mulHom`: twisted multiplication
   commutes with changing the left transversal.
@@ -59,13 +60,13 @@ namespace Subgroup.TensorInduced
 section ContinuousAction
 
 variable {G : Type v} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-  {U : Subgroup G} {s : U.LeftTransversal} [U.FiniteIndex]
-  {R : Type u} {A : Type w} [CommSemiring R] [Semiring A] [Algebra R A]
+  {U : Subgroup G} {s : U.LeftTransversal} [Finite (G ⧸ U)]
+  {R : Type u} {A : Type w} [CommSemiring R] [AddCommMonoid A] [Module R A]
   [TopologicalSpace A] [DiscreteTopology A]
   [TopologicalSpace (U.TensorInduced s R A)] [DiscreteTopology (U.TensorInduced s R A)]
-  [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
+  [DistribMulAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
 
-/-- For an open finite-index subgroup `U ≤ G` and a discrete `U`-semiring `A` with continuous
+/-- For an open finite-index subgroup `U ≤ G` and a discrete `U`-module `A` with continuous
 `U`-action, the tensor-induced `G`-action on `U.TensorInduced s R A` (equipped with a discrete
 topology) is continuous. -/
 theorem continuousSMul_of_isOpen (hU : IsOpen (U : Set G)) :
@@ -73,40 +74,17 @@ theorem continuousSMul_of_isOpen (hU : IsOpen (U : Set G)) :
   refine ⟨continuous_prod_of_discrete_right.mpr fun z ↦ ?_⟩
   let _ : TopologicalSpace (⨂[R] _ : G ⧸ U, A) := ⊥
   have : DiscreteTopology (⨂[R] _ : G ⧸ U, A) := ⟨rfl⟩
-  have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
-  have hc := (Representation.continuous_wreathTensor_apply
+  have hc := U.continuous_tensorInducedRepresentation_apply hU s
     (Representation.ofDistribMulAction R U A)
     (by simpa only [Representation.ofDistribMulAction_apply_apply] using
-      (continuous_smul : Continuous fun p : U × A ↦ p.1 • p.2)) z.toTensor).comp
-    (U.continuous_monomialHom hU s)
+      (continuous_smul : Continuous fun p : U × A ↦ p.1 • p.2)) z.toTensor
   have hof : Continuous (ofTensor : (⨂[R] _ : G ⧸ U, A) → U.TensorInduced s R A) :=
     continuous_of_discreteTopology
-  refine (hof.comp hc).congr fun g ↦ congrArg ofTensor ?_
-  exact ((U.tensorInducedRepresentation_apply s (Representation.ofDistribMulAction R U A)
-    g z.toTensor).symm).trans
-    (U.tensorInducedAlgAut_apply_eq_tensorInducedRepresentation s R A g z.toTensor).symm
+  exact (hof.comp hc).congr fun g ↦ by simp
 
 end ContinuousAction
 
 end Subgroup.TensorInduced
-
-namespace OpenSubgroup
-
-/-- For a finite-index open subgroup `U : OpenSubgroup G` and a discrete `U`-semiring `A` with
-continuous `U`-action, the `G`-action on `U.toSubgroup.TensorInduced s R A` (equipped with a
-discrete topology) is continuous. -/
-theorem continuousSMul_tensorInduced {G : Type v} [Group G] [TopologicalSpace G]
-    [SeparatelyContinuousMul G] (U : OpenSubgroup G) (s : U.toSubgroup.LeftTransversal)
-    [U.toSubgroup.FiniteIndex] (R : Type u) (A : Type w) [CommSemiring R] [Semiring A]
-    [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
-    [TopologicalSpace (U.toSubgroup.TensorInduced s R A)]
-    [DiscreteTopology (U.toSubgroup.TensorInduced s R A)]
-    [MulSemiringAction U.toSubgroup A] [SMulCommClass U.toSubgroup R A]
-    [ContinuousSMul U.toSubgroup A] :
-    ContinuousSMul G (U.toSubgroup.TensorInduced s R A) :=
-  Subgroup.TensorInduced.continuousSMul_of_isOpen U.isOpen'
-
-end OpenSubgroup
 
 namespace TauCeti
 
@@ -114,17 +92,17 @@ attribute [local instance] DiscreteTopology.instContinuousSMul
 
 namespace DiscreteRep
 
-section AlgebraIso
+section OfTensorInduced
 
 variable {G : Type v} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-  (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) [U.FiniteIndex]
+  (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal)
   (R : Type u) [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
-  (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
-  [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
+  (A : Type w) [AddCommGroup A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
 
-/-- The bundled tensor-induced `G`-ring `U.TensorInduced s R A` (equipped with the discrete
+/-- The bundled tensor-induced carrier `U.TensorInduced s R A` (equipped with the discrete
 topology) as a discrete continuous `G`-representation. -/
-@[expose] noncomputable def tensorInducedAlgebra :
+@[expose] noncomputable def ofTensorInduced [Finite (G ⧸ U)] :
     DiscreteRep.{u, v, max u v w} R G :=
   letI : TopologicalSpace (U.TensorInduced s R A) := ⊥
   letI : DiscreteTopology (U.TensorInduced s R A) := ⟨rfl⟩
@@ -133,44 +111,54 @@ topology) as a discrete continuous `G`-representation. -/
     Subgroup.TensorInduced.continuousSMul_of_isOpen hU
   { V := U.TensorInduced s R A }
 
-/-- The underlying carrier of `tensorInducedAlgebra` is `U.TensorInduced s R A`. -/
+/-- The underlying carrier of `ofTensorInduced` is `U.TensorInduced s R A`. -/
 @[simp]
-theorem tensorInducedAlgebra_V :
-    (tensorInducedAlgebra U hU s R A).V = U.TensorInduced s R A := (rfl)
+theorem ofTensorInduced_V [Finite (G ⧸ U)] :
+    (ofTensorInduced U hU s R A).V = U.TensorInduced s R A := (rfl)
 
-/-- The representation carried by `tensorInducedAlgebra` acts by the `G`-action on
+/-- The representation carried by `ofTensorInduced` acts by the `G`-action on
 `U.TensorInduced s R A`. -/
 @[simp]
-theorem tensorInducedAlgebra_ρ_apply (g : G) (z : U.TensorInduced s R A) :
-    (tensorInducedAlgebra U hU s R A).ρ g z = g • z := (rfl)
+theorem ofTensorInduced_ρ_apply [Finite (G ⧸ U)] (g : G) (z : U.TensorInduced s R A) :
+    (ofTensorInduced U hU s R A).ρ g z = g • z := (rfl)
 
 /-- As an object of `DiscreteRep R G`, `U.TensorInduced s R A` is canonically isomorphic to
 `DiscreteRep.tensorInduced U hU s` of `A`. -/
-noncomputable def tensorInducedAlgebraIso :
-    tensorInducedAlgebra U hU s R A ≅ tensorInduced U hU s { V := A } where
-  hom := (Subgroup.TensorInduced.representationEquiv U s R A).toIntertwiningMap
-  inv := (Subgroup.TensorInduced.representationEquiv U s R A).symm.toIntertwiningMap
-  hom_inv_id := Representation.IntertwiningMap.ext <| LinearMap.ext <|
-    (Subgroup.TensorInduced.representationEquiv U s R A).symm_apply_apply
-  inv_hom_id := Representation.IntertwiningMap.ext <| LinearMap.ext <|
-    (Subgroup.TensorInduced.representationEquiv U s R A).apply_symm_apply
+noncomputable def ofTensorInducedIso [U.FiniteIndex] :
+    ofTensorInduced U hU s R A ≅
+      tensorInduced U hU s { V := A, continuousSMulRing := ⟨continuous_of_discreteTopology⟩ } :=
+  mkIso (Subgroup.TensorInduced.representationEquiv U s R A)
 
-/-- The forward map of `tensorInducedAlgebraIso` unwraps `toTensor`. -/
+/-- The forward map of `ofTensorInducedIso` unwraps `toTensor`. -/
 @[simp]
-theorem tensorInducedAlgebraIso_hom_apply (z : U.TensorInduced s R A) :
-    (tensorInducedAlgebraIso U hU s R A).hom.toLinearMap z = z.toTensor :=
-  (Representation.IntertwiningMap.toLinearMap_apply _ _
-    (Subgroup.TensorInduced.representationEquiv U s R A).toIntertwiningMap z).trans (by simp)
+theorem ofTensorInducedIso_hom_apply [U.FiniteIndex] (z : U.TensorInduced s R A) :
+    (ofTensorInducedIso U hU s R A).hom.toLinearMap z = z.toTensor := by
+  let e : (ofTensorInduced U hU s R A).ρ.Equiv
+      (tensorInduced U hU s
+        { V := A, continuousSMulRing := ⟨continuous_of_discreteTopology⟩ }).ρ :=
+    Subgroup.TensorInduced.representationEquiv U s R A
+  exact (LinearMap.congr_fun
+    (congrArg Representation.IntertwiningMap.toLinearMap (mkIso_hom e)) z).trans <|
+    (Representation.IntertwiningMap.toLinearMap_apply _ _ e.toIntertwiningMap z).trans <|
+      (congrFun e.coe_toIntertwiningMap z).trans
+        (Subgroup.TensorInduced.representationEquiv_apply z)
 
-/-- The inverse map of `tensorInducedAlgebraIso` wraps a tensor via `ofTensor`. -/
+/-- The inverse map of `ofTensorInducedIso` wraps a tensor via `ofTensor`. -/
 @[simp]
-theorem tensorInducedAlgebraIso_inv_apply (z : ⨂[R] _ : G ⧸ U, A) :
-    (tensorInducedAlgebraIso U hU s R A).inv.toLinearMap z =
-      Subgroup.TensorInduced.ofTensor z :=
-  (Representation.IntertwiningMap.toLinearMap_apply _ _
-    (Subgroup.TensorInduced.representationEquiv U s R A).symm.toIntertwiningMap z).trans (by simp)
+theorem ofTensorInducedIso_inv_apply [U.FiniteIndex] (z : ⨂[R] _ : G ⧸ U, A) :
+    (ofTensorInducedIso U hU s R A).inv.toLinearMap z =
+      Subgroup.TensorInduced.ofTensor z := by
+  let e : (ofTensorInduced U hU s R A).ρ.Equiv
+      (tensorInduced U hU s
+        { V := A, continuousSMulRing := ⟨continuous_of_discreteTopology⟩ }).ρ :=
+    Subgroup.TensorInduced.representationEquiv U s R A
+  exact (LinearMap.congr_fun
+    (congrArg Representation.IntertwiningMap.toLinearMap (mkIso_inv e)) z).trans <|
+    (Representation.IntertwiningMap.toLinearMap_apply _ _ e.symm.toIntertwiningMap z).trans <|
+      (congrFun e.symm.coe_toIntertwiningMap z).trans
+        (Subgroup.TensorInduced.representationEquiv_symm_apply z)
 
-end AlgebraIso
+end OfTensorInduced
 
 section Multiplication
 
@@ -241,75 +229,81 @@ theorem tensorInducedChangeTransversalIso_hom_comp_mulHom (t : U.LeftTransversal
       tensorInducedMulHom U hU s R A =
       tensorInducedMulHom U hU t R A := by
   let _ : Fintype (G ⧸ U) := U.fintypeQuotientOfFiniteIndex
-  refine Representation.IntertwiningMap.ext (LinearMap.ext fun z ↦ ?_)
-  have hcomp := (LinearMap.congr_fun
-    (DiscreteRep.comp_toLinearMap
-      (tensorInducedChangeTransversalIso U hU s t
-        ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom
-      (tensorInducedMulHom U hU s R A)) z).trans (LinearMap.comp_apply _ _ z)
-  have hct : (tensorInducedChangeTransversalIso U hU s t
-      ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom.toLinearMap z =
-      U.tensorInducedChangeTransversalAlgEquiv s t R A z :=
-    (LinearMap.congr_fun (tensorInducedChangeTransversalIso_hom_toLinearMap U hU s t
-      ({ V := A } : DiscreteRep.{u, v, max u v w} R U)) z).trans
-      ((LinearEquiv.congr_fun (U.tensorInducedChangeTransversal_toLinearEquiv s t
-        ({ V := A } : DiscreteRep.{u, v, max u v w} R U).ρ) z).trans
-        (LinearEquiv.congr_fun
-          (U.tensorInducedChangeTransversalAlgEquiv_toLinearEquiv s t R A).symm z))
-  exact hcomp.trans <|
-    (tensorInducedMulHom_apply U hU s R A _).trans <|
-      (congrArg (U.tensorInducedMulAlgHom s R A) hct).trans <|
-        (U.tensorInducedMulAlgHom_changeTransversal s R A t z).trans
-          (tensorInducedMulHom_apply U hU t R A z).symm
+  refine Representation.IntertwiningMap.ext (LinearMap.ext fun (z : ⨂[R] _ : G ⧸ U, A) ↦ ?_)
+  calc
+    ((tensorInducedChangeTransversalIso U hU s t
+        ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom ≫
+        tensorInducedMulHom U hU s R A).toLinearMap z
+    _ = (tensorInducedMulHom U hU s R A).toLinearMap
+          ((tensorInducedChangeTransversalIso U hU s t
+            ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom.toLinearMap z) := by
+      rw [DiscreteRep.comp_toLinearMap]
+      exact LinearMap.comp_apply _ _ z
+    _ = U.tensorInducedMulAlgHom s R A
+          ((tensorInducedChangeTransversalIso U hU s t
+            ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom.toLinearMap z) :=
+      tensorInducedMulHom_apply U hU s R A _
+    _ = U.tensorInducedMulAlgHom s R A (U.tensorInducedChangeTransversalAlgEquiv s t R A z) := by
+      congr 1
+      rw [tensorInducedChangeTransversalIso_hom_toLinearMap,
+        Subgroup.tensorInducedChangeTransversal_toLinearEquiv,
+        ← Subgroup.tensorInducedChangeTransversalAlgEquiv_toLinearEquiv]
+      exact (congrFun (LinearEquiv.coe_toLinearMap _) z).trans
+        (congrFun (AlgEquiv.coe_toLinearEquiv _) z)
+    _ = U.tensorInducedMulAlgHom t R A z :=
+      U.tensorInducedMulAlgHom_changeTransversal s R A t z
+    _ = (tensorInducedMulHom U hU t R A).toLinearMap z :=
+      (tensorInducedMulHom_apply U hU t R A z).symm
 
 end Multiplication
 
 end DiscreteRep
+
+section SmoothOfTensorInduced
+
+variable {G : Type v} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) [U.FiniteIndex]
+  (R : Type u) [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
+  (A : Type w) [AddCommGroup A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
+
+/-- Smooth counterpart of `DiscreteRep.ofTensorInducedIso`: the smooth discrete object of
+`U.TensorInduced s R A` is isomorphic to smooth tensor induction of `A`. -/
+noncomputable def smoothOfTensorInducedIso :
+    (toSmoothDiscrete R G).obj (DiscreteRep.ofTensorInduced U hU s R A) ≅
+      (toSmoothDiscrete R G).obj
+        (DiscreteRep.tensorInduced U hU s
+          ({ V := A, continuousSMulRing := ⟨continuous_of_discreteTopology⟩ } :
+            DiscreteRep.{u, v, w} R U)) :=
+  (toSmoothDiscrete R G).mapIso (DiscreteRep.ofTensorInducedIso U hU s R A)
+
+/-- `smoothOfTensorInducedIso` is `(toSmoothDiscrete R G).mapIso` of
+`DiscreteRep.ofTensorInducedIso`. -/
+theorem smoothOfTensorInducedIso_def :
+    smoothOfTensorInducedIso U hU s R A =
+      (toSmoothDiscrete R G).mapIso (DiscreteRep.ofTensorInducedIso U hU s R A) := (rfl)
+
+/-- The forward morphism of `smoothOfTensorInducedIso` unwraps `toTensor`. -/
+@[simp]
+theorem smoothOfTensorInducedIso_hom_apply (z : U.TensorInduced s R A) :
+    (smoothOfTensorInducedIso U hU s R A).hom.hom.hom z = z.toTensor :=
+  DiscreteRep.ofTensorInducedIso_hom_apply U hU s R A z
+
+/-- The inverse morphism of `smoothOfTensorInducedIso` wraps a tensor via `ofTensor`. -/
+@[simp]
+theorem smoothOfTensorInducedIso_inv_apply (z : ⨂[R] _ : G ⧸ U, A) :
+    (smoothOfTensorInducedIso U hU s R A).inv.hom.hom z =
+      Subgroup.TensorInduced.ofTensor z :=
+  DiscreteRep.ofTensorInducedIso_inv_apply U hU s R A z
+
+end SmoothOfTensorInduced
 
 section Smooth
 
 variable {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) [U.FiniteIndex]
   (R : Type u) [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
-
-/-- Smooth counterpart of `DiscreteRep.tensorInducedAlgebraIso`: the smooth discrete object of
-`U.TensorInduced s R A` is isomorphic to smooth tensor induction of `A`. -/
-noncomputable def smoothTensorInducedAlgebraIso
-    (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
-    [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A] :
-    (toSmoothDiscrete R G).obj (DiscreteRep.tensorInducedAlgebra U hU s R A) ≅
-      (toSmoothDiscrete R G).obj
-        (DiscreteRep.tensorInduced U hU s ({ V := A } : DiscreteRep.{u, v, w} R U)) :=
-  (toSmoothDiscrete R G).mapIso (DiscreteRep.tensorInducedAlgebraIso U hU s R A)
-
-/-- `smoothTensorInducedAlgebraIso` is `(toSmoothDiscrete R G).mapIso` of
-`DiscreteRep.tensorInducedAlgebraIso`. -/
-theorem smoothTensorInducedAlgebraIso_def
-    (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
-    [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A] :
-    smoothTensorInducedAlgebraIso U hU s R A =
-      (toSmoothDiscrete R G).mapIso (DiscreteRep.tensorInducedAlgebraIso U hU s R A) := (rfl)
-
-/-- The forward morphism of `smoothTensorInducedAlgebraIso` unwraps `toTensor`. -/
-@[simp]
-theorem smoothTensorInducedAlgebraIso_hom_apply
-    (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
-    [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
-    (z : U.TensorInduced s R A) :
-    (smoothTensorInducedAlgebraIso U hU s R A).hom.hom.hom z = z.toTensor :=
-  DiscreteRep.tensorInducedAlgebraIso_hom_apply U hU s R A z
-
-/-- The inverse morphism of `smoothTensorInducedAlgebraIso` wraps a tensor via `ofTensor`. -/
-@[simp]
-theorem smoothTensorInducedAlgebraIso_inv_apply
-    (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
-    [MulSemiringAction U A] [SMulCommClass U R A] [ContinuousSMul U A]
-    (z : ⨂[R] _ : G ⧸ U, A) :
-    (smoothTensorInducedAlgebraIso U hU s R A).inv.hom.hom z =
-      Subgroup.TensorInduced.ofTensor z :=
-  DiscreteRep.tensorInducedAlgebraIso_inv_apply U hU s R A z
-
-variable (A : Type (max u v w)) [CommRing A] [Algebra R A]
+  (A : Type (max u v w)) [CommRing A] [Algebra R A]
   [TopologicalSpace A] [DiscreteTopology A]
   [MulSemiringAction G A] [SMulCommClass G R A] [ContinuousSMul G A]
 
@@ -375,25 +369,14 @@ theorem smoothTensorInducedChangeTransversalIso_hom_comp_mulHom (t : U.LeftTrans
         ((toSmoothDiscrete R U).obj ({ V := A } : DiscreteRep.{u, v, max u v w} R U))).hom ≫
       smoothTensorInducedMulHom U hU s R A =
       smoothTensorInducedMulHom U hU t R A := by
-  -- `smoothTensorInducedChangeTransversalIso` is not exposed, so identify its forward map with
-  -- `(toSmoothDiscrete R G).map` of the discrete comparison on pure tensors before transporting.
-  have hhom :
-      (smoothTensorInducedChangeTransversalIso U hU s t
-          ((toSmoothDiscrete R U).obj ({ V := A } : DiscreteRep.{u, v, max u v w} R U))).hom =
-        (toSmoothDiscrete R G).map
-          (DiscreteRep.tensorInducedChangeTransversalIso U hU s t
-            ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom := by
-    refine ObjectProperty.hom_ext _ (TopRep.hom_ext (DFunLike.ext _ _ (LinearMap.congr_fun
-      (PiTensorProduct.ext (MultilinearMap.ext fun m ↦ ?_)))))
-    exact (LinearMap.compMultilinearMap_apply _ _ m).trans <|
-      (smoothTensorInducedChangeTransversalIso_hom_apply_tprod U hU s t _ m).trans <|
-        (DiscreteRep.tensorInducedChangeTransversalIso_hom_apply_tprod U hU s t _ m).symm.trans <|
-          (toSmoothDiscrete_map_hom_hom_apply R G _ _).symm.trans
-            (LinearMap.compMultilinearMap_apply _ _ m).symm
-  exact (congrArg (· ≫ smoothTensorInducedMulHom U hU s R A) hhom).trans <|
-    ((toSmoothDiscrete R G).map_comp _ _).symm.trans <|
-      congrArg (toSmoothDiscrete R G).map
-        (DiscreteRep.tensorInducedChangeTransversalIso_hom_comp_mulHom U hU s R A t)
+  rw [smoothTensorInducedChangeTransversalIso_def, Functor.mapIso_hom,
+    smoothTensorInducedMulHom_def, smoothTensorInducedMulHom_def]
+  exact ((toSmoothDiscrete R G).map_comp
+      (DiscreteRep.tensorInducedChangeTransversalIso U hU s t
+        ({ V := A } : DiscreteRep.{u, v, max u v w} R U)).hom
+      (DiscreteRep.tensorInducedMulHom U hU s R A)).symm.trans <|
+    congrArg (toSmoothDiscrete R G).map
+      (DiscreteRep.tensorInducedChangeTransversalIso_hom_comp_mulHom U hU s R A t)
 
 /-- `smoothTensorInducedMulHom` intertwines the tensor induction of a multiplicative `TopPairing` on
 `U` with a multiplicative `TopPairing` on `G` (for instance `ofDiscreteModulePairing` of
@@ -414,7 +397,6 @@ theorem smoothTensorInducedMulHom_apply_smoothTensorInduced_bil
         ((PU.smoothTensorInduced.{u, v, max u w} U hU s).bil a b) =
       PG.bil ((smoothTensorInducedMulHom U hU s R A).hom.hom a)
         ((smoothTensorInducedMulHom U hU s R A).hom.hom b) := by
-  let _ : Fintype (G ⧸ U) := U.fintypeQuotientOfFiniteIndex
   have hbil : (PU.bil : A →ₗ[R] A →ₗ[R] A) = LinearMap.mul R A := LinearMap.ext₂ hPU
   have hab : ((PU.smoothTensorInduced.{u, v, max u w} U hU s).bil a b : ⨂[R] _ : G ⧸ U, A) =
       a * b :=

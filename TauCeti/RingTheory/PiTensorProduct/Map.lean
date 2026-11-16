@@ -54,11 +54,9 @@ homomorphism on the indexed tensor product, sending `⨂ₜ aᵢ` to `⨂ₜ f�
 This upgrades `PiTensorProduct.map` to `AlgHom`. -/
 noncomputable def mapAlgHom (f : ∀ i, A i →ₐ[R] B i) :
     (⨂[R] i, A i) →ₐ[R] ⨂[R] i, B i :=
-  AlgHom.ofLinearMap (map fun i ↦ (f i).toLinearMap)
-    (by simp [one_def, map_tprod, Pi.one_def]) <|
-    LinearMap.map_mul_iff _ |>.mpr <| by
-      ext a b
-      simp [tprod_mul_tprod, map_tprod, Pi.mul_def]
+  liftAlgHom ((tprod R).compLinearMap fun i ↦ (f i).toLinearMap)
+    (by simp [one_def, Pi.one_def])
+    (fun x y ↦ by simp [tprod_mul_tprod, Pi.mul_def])
 
 /-- The underlying linear map of `PiTensorProduct.mapAlgHom` is `PiTensorProduct.map`. -/
 @[simp]
