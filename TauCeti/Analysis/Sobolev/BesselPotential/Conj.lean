@@ -69,7 +69,8 @@ private theorem smulLeftCLM_fourier_of_ae_eq_conj {s : ℝ} {u u' : Lp ℂ 2 (vo
   -- transform of the weighted `ψ` is the conjugate of that of the weighted `φ`.
   set ψ : 𝓢(E, ℂ) := SchwartzMap.postcompCLM (conjCLE : ℂ →L[ℝ] ℂ)
     (SchwartzMap.compCLMOfContinuousLinearEquiv ℝ (LinearIsometryEquiv.neg ℝ (E := E)) φ)
-  have hψ (ξ : E) : ψ ξ = conj (φ (-ξ)) := rfl
+  have hψ (ξ : E) : ψ ξ = conj (φ (-ξ)) := by
+    simp [ψ, SchwartzMap.postcompCLM_apply, SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
   have key (x : E) : 𝓕 (SchwartzMap.smulLeftCLM ℂ w ψ) x =
       conj (𝓕 (SchwartzMap.smulLeftCLM ℂ w φ) x) := by
     rw [SchwartzMap.fourier_coe, SchwartzMap.fourier_coe, Real.conj_fourier_apply]
