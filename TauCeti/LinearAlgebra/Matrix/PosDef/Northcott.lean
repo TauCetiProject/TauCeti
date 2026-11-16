@@ -10,6 +10,7 @@ public import Mathlib.Order.Northcott
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import TauCeti.Algebra.Module.Primitive
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Localization.Integer
@@ -18,17 +19,37 @@ import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Positive definiteness from Northcott finiteness
+# Positive definiteness and Northcott finiteness on the integer lattice
 
-A symmetric real matrix whose quadratic form has finite sublevel sets on the integer lattice
-is positive definite. A negative direction contradicts finiteness by scaling integer vectors
-and density of rational vectors; a real null direction gives infinitely many integer vectors
-of bounded quadratic value by rounding its multiples. This criterion applies to Gram matrices of
-height pairings, where finiteness is supplied by Northcott's theorem.
+A symmetric real matrix is positive definite if and only if its quadratic form has finite sublevel
+sets on the integer lattice (`Matrix.IsSymm.posDef_iff_northcott`).
+
+* From Northcott finiteness to positive definiteness (`Matrix.IsSymm.posDef_of_northcott`): a
+  negative direction contradicts finiteness by scaling integer vectors and density of rational
+  vectors; a real null direction gives infinitely many integer vectors of bounded quadratic value
+  by rounding its multiples. This criterion applies to Gram matrices of height pairings, where
+  finiteness is supplied by Northcott's theorem.
+* From positive definiteness to Northcott finiteness (`Matrix.PosDef.northcott`): Cauchy–Schwarz
+  against the columns of `A⁻¹` bounds each squared coordinate `z k ^ 2` by
+  `(A⁻¹ k k) * (z ⬝ᵥ A *ᵥ z)`, confining any sublevel set on `ι → ℤ` to a finite integer box. On a
+  nonempty index type, the quadratic form therefore attains its minimum over nonzero integer
+  vectors at a primitive vector (`Matrix.PosDef.exists_isPrimitive_forall_dotProduct_mulVec_le`).
+
+## Main results
+
+* `Matrix.IsSymm.posSemidef_of_northcott`, `Matrix.IsSymm.posDef_of_northcott`: Northcott
+  finiteness implies positive definiteness.
+* `Matrix.PosDef.northcott` and `Matrix.IsSymm.posDef_iff_northcott`: positive definiteness is
+  equivalent to Northcott finiteness on the integer lattice.
+* `Matrix.PosDef.exists_isPrimitive_forall_dotProduct_mulVec_le`: a positive-definite real matrix
+  on a nonempty finite index type attains its minimum on nonzero integer vectors at a primitive
+  integer vector.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VIII.9.
+* V. Platonov, A. Rapinchuk, and I. Rapinchuk, *Algebraic Groups and Number Theory*, second
+  edition, Vol. I, Cambridge University Press, 2023, §4.2.
 -/
 
 public section
@@ -159,5 +180,102 @@ theorem IsSymm.posDef_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
   intro hdet
   obtain ⟨v, hv, hAv⟩ := exists_mulVec_eq_zero_iff.mpr hdet
   exact hv (eq_zero_of_mulVec_eq_zero_of_northcott hN hAv)
+
+/-- The quadratic form of a positive-definite real matrix has the Northcott property on the integer
+lattice: every sublevel set `{z : ι → ℤ | z ⬝ᵥ A *ᵥ z ≤ B}` is finite. -/
+theorem PosDef.northcott {A : Matrix ι ι ℝ} (hA : A.PosDef) :
+    Northcott (fun z : ι → ℤ ↦ (fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ))) := by
+  classical
+  refine ⟨fun B ↦ ?_⟩
+  have hdet : IsUnit A.det := hA.det_pos.ne'.isUnit
+  have hinv_pos (k : ι) : 0 < A⁻¹ k k := hA.inv.diag_pos
+  have hcoord (x : ι → ℝ) (k : ι) : x k ^ 2 ≤ A⁻¹ k k * (x ⬝ᵥ A *ᵥ x) := by
+    set u : ι → ℝ := A⁻¹ *ᵥ Pi.single k 1
+    have hAu : A *ᵥ u = Pi.single k 1 := by
+      rw [mulVec_mulVec, mul_nonsing_inv A hdet, one_mulVec]
+    have huk : u k = A⁻¹ k k := by simp [u]
+    have huAu : u ⬝ᵥ A *ᵥ u = A⁻¹ k k := by rw [hAu, dotProduct_single_one, huk]
+    have hxAu : x ⬝ᵥ A *ᵥ u = x k := by rw [hAu, dotProduct_single_one]
+    have huAx : u ⬝ᵥ A *ᵥ x = x k := by
+      rw [hA.isHermitian.isSymm.dotProduct_mulVec_comm, hxAu]
+    set t : ℝ := x k / A⁻¹ k k
+    have hnonneg : 0 ≤ (x - t • u) ⬝ᵥ A *ᵥ (x - t • u) := by
+      simpa using hA.posSemidef.dotProduct_mulVec_nonneg (x - t • u)
+    have hexp : (x - t • u) ⬝ᵥ A *ᵥ (x - t • u) = x ⬝ᵥ A *ᵥ x - x k ^ 2 / A⁻¹ k k := by
+      simp only [mulVec_sub, mulVec_smul, sub_dotProduct, dotProduct_sub, smul_dotProduct,
+        dotProduct_smul, smul_eq_mul, hxAu, huAx, huAu, t]
+      field_simp [(hinv_pos k).ne']
+      ring
+    rw [hexp, sub_nonneg, div_le_iff₀ (hinv_pos k), mul_comm] at hnonneg
+    exact hnonneg
+  set N : ℤ := ⌈max B 0 * (∑ j : ι, A⁻¹ j j) + 1⌉
+  refine (Set.Finite.pi fun _ : ι ↦ Set.finite_Icc (-N) N).subset ?_
+  intro z hz k _
+  have hzk_sq : (z k : ℝ) ^ 2 ≤ max B 0 * A⁻¹ k k := by
+    calc (z k : ℝ) ^ 2 ≤ A⁻¹ k k * ((fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ))) :=
+          hcoord (fun i ↦ (z i : ℝ)) k
+      _ ≤ A⁻¹ k k * max B 0 :=
+          mul_le_mul_of_nonneg_left (le_trans hz (le_max_left B 0)) (hinv_pos k).le
+      _ = max B 0 * A⁻¹ k k := mul_comm _ _
+  have hsum_le : A⁻¹ k k ≤ ∑ j : ι, A⁻¹ j j :=
+    Finset.single_le_sum (fun j _ ↦ (hinv_pos j).le) (Finset.mem_univ k)
+  have habs : |(z k : ℝ)| ≤ N := by
+    calc |(z k : ℝ)| ≤ (z k : ℝ) ^ 2 + 1 := by
+          nlinarith [sq_abs (z k : ℝ), sq_nonneg (|(z k : ℝ)| - 1)]
+      _ ≤ max B 0 * A⁻¹ k k + 1 := by linarith
+      _ ≤ max B 0 * (∑ j : ι, A⁻¹ j j) + 1 := by
+          linarith [mul_le_mul_of_nonneg_left hsum_le (le_max_right B 0)]
+      _ ≤ N := Int.le_ceil _
+  rw [← Int.cast_abs] at habs
+  have habs' : |z k| ≤ N := Int.cast_le.mp habs
+  exact ⟨by linarith [neg_abs_le (z k)], (le_abs_self (z k)).trans habs'⟩
+
+/-- A symmetric real matrix is positive definite if and only if its quadratic form has the
+Northcott property on the integer lattice. -/
+theorem IsSymm.posDef_iff_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm) :
+    A.PosDef ↔ Northcott (fun z : ι → ℤ ↦ (fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ))) :=
+  ⟨PosDef.northcott, hA.posDef_of_northcott⟩
+
+/-- **A positive-definite real quadratic form attains its minimum on the integer lattice at a
+primitive vector.** -/
+theorem PosDef.exists_isPrimitive_forall_dotProduct_mulVec_le [Nonempty ι] {A : Matrix ι ι ℝ}
+    (hA : A.PosDef) :
+    ∃ v : ι → ℤ, TauCeti.IsPrimitive v ∧ ∀ x : ι → ℤ, x ≠ 0 →
+      (fun i ↦ (v i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (v i : ℝ)) ≤
+        (fun i ↦ (x i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (x i : ℝ)) := by
+  classical
+  let q : (ι → ℤ) → ℝ := fun z ↦ (fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ))
+  obtain ⟨i₀⟩ := ‹Nonempty ι›
+  set z₀ : ι → ℤ := Pi.single i₀ 1
+  have hz₀ : z₀ ≠ 0 := fun h ↦ by simpa [z₀] using congrFun h i₀
+  have hfin : {z : ι → ℤ | q z ≤ q z₀ ∧ z ≠ 0}.Finite :=
+    (hA.northcott.finite_le (q z₀)).subset fun _ h ↦ h.1
+  have hne : hfin.toFinset.Nonempty := ⟨z₀, hfin.mem_toFinset.mpr ⟨le_rfl, hz₀⟩⟩
+  obtain ⟨v, hv_mem, hv_min⟩ := hfin.toFinset.exists_min_image q hne
+  obtain ⟨hv_le, hv0⟩ := hfin.mem_toFinset.mp hv_mem
+  have hmin : ∀ x : ι → ℤ, x ≠ 0 → q v ≤ q x := by
+    intro x hx
+    by_cases hxq : q x ≤ q z₀
+    · exact hv_min x (hfin.mem_toFinset.mpr ⟨hxq, hx⟩)
+    · exact hv_le.trans (le_of_not_ge hxq)
+  obtain ⟨d, w, hd, hw, hvw⟩ := TauCeti.exists_eq_zsmul_isPrimitive hv0
+  have hqw_pos : 0 < q w := by
+    refine hA.dotProduct_mulVec_pos ?_
+    intro h0
+    refine hw.ne_zero (funext fun i ↦ ?_)
+    exact Int.cast_eq_zero.mp (congrFun h0 i)
+  have hqvw : q v = (d : ℝ) ^ 2 * q w := by
+    have hcast : (fun i ↦ (v i : ℝ)) = (d : ℝ) • (fun i ↦ (w i : ℝ)) := by
+      ext i
+      simp [hvw]
+    simp [q, hcast, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, sq, mul_assoc]
+  have hle_vw : (d : ℝ) ^ 2 * q w ≤ 1 * q w := by
+    rw [one_mul, ← hqvw]
+    exact hmin w hw.ne_zero
+  have hd_sq : (d : ℝ) ^ 2 ≤ 1 := le_of_mul_le_mul_right hle_vw hqw_pos
+  have hd_sq' : d ^ 2 ≤ 1 := by exact_mod_cast hd_sq
+  have hd1 : d = 1 := by nlinarith
+  refine ⟨v, ?_, hmin⟩
+  rwa [hvw, hd1, one_smul]
 
 end Matrix

@@ -33,7 +33,8 @@ Cramer's rule expresses the determinant of `A` with one row or one column replac
 adjugate. Summing over the replaced row, or over the replaced column, gives in both cases
 `trace (adj A * B)` (`Matrix.sum_det_updateRow_eq_trace_adjugate_mul` and
 `Matrix.sum_det_updateCol_eq_trace_adjugate_mul`): Jacobi's formula for the derivative of `det` at
-`A` in the direction `B`, read row by row or column by column.
+`A` in the direction `B`, read row by row or column by column. Diagonal entries of the adjugate are
+complementary principal minors (`Matrix.adjugate_apply_self`).
 -/
 
 public section
@@ -132,5 +133,20 @@ theorem sum_det_updateCol_eq_trace_adjugate_mul {n : Type*} [Fintype n] [Decidab
     (A B : Matrix n n R) : ∑ j, (A.updateCol j fun i ↦ B i j).det = (adjugate A * B).trace := by
   simp only [← cramer_apply, cramer_eq_adjugate_mulVec, trace, diag_apply, Matrix.mul_apply, mulVec,
     dotProduct]
+
+/-- A diagonal entry of the adjugate of `A` is the complementary principal minor obtained by
+deleting row `i` and column `i`. -/
+theorem adjugate_apply_self {n : Type*} [Fintype n] [DecidableEq n]
+    (A : Matrix n n R) (i : n) :
+    A.adjugate i i = (A.submatrix ((↑) : {a // a ≠ i} → n) (↑)).det := by
+  let e := Equiv.sumCompl (· = i)
+  have hblk : (A.updateRow i (Pi.single i 1)).submatrix e e =
+      fromBlocks 1 0 (A.submatrix (↑) (↑)) (A.submatrix (↑) (↑)) := by
+    ext (⟨x, rfl⟩ | ⟨x, hx⟩) (⟨y, hy⟩ | ⟨y, hy⟩)
+    · simp [e, updateRow_apply, hy.symm]
+    · simp [e, updateRow_apply, hy]
+    · simp [e, updateRow_apply, hx]
+    · simp [e, updateRow_apply, hx]
+  rw [adjugate_apply, ← det_submatrix_equiv_self e, hblk, det_fromBlocks_zero₁₂, det_one, one_mul]
 
 end Matrix
