@@ -10,9 +10,9 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Integral.Lebesgue.ApproximateBound
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
@@ -39,8 +39,8 @@ eventually lie in the domain where the `w i` are `C¹`. Suppose that the transla
   `∂_t w i - Φ(t, w i)`.
 
 On windows of bounded measure, convergence to zero in `L²` implies convergence to zero in `L¹`
-(`TauCeti.tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq`, specialized to the
-translated windows in
+(`TauCeti.MeasureTheory.tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq`,
+specialized to the translated windows in
 `TauCeti.tendsto_setLIntegral_enorm_Icc_prod_of_tendsto_setLIntegral_ofReal_norm_sq`), which is the
 form in which energy bounds supply the hypotheses.
 
@@ -57,38 +57,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-/-- **`L²` control gives `L¹` control on sets of bounded measure.** If the sets `A i` eventually
-have measure at most `C < ∞` and the `L²` norms of `g i` over `A i` tend to zero, then so do their
-`L¹` norms. -/
-theorem tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq {ι α F : Type*}
-    [MeasurableSpace α] [NormedAddCommGroup F] {μ : Measure α} {l : Filter ι} {A : ι → Set α}
-    {g : ι → α → F} {C : ℝ≥0∞} (hC : C ≠ ∞) (hA : ∀ᶠ i in l, μ (A i) ≤ C)
-    (hg : ∀ᶠ i in l, AEStronglyMeasurable (g i) (μ.restrict (A i)))
-    (h : Tendsto (fun i ↦ ∫⁻ x in A i, ENNReal.ofReal (‖g i x‖ ^ 2) ∂μ) l (𝓝 0)) :
-    Tendsto (fun i ↦ ∫⁻ x in A i, ‖g i x‖ₑ ∂μ) l (𝓝 0) := by
-  have h2 : Tendsto (fun i ↦ (∫⁻ x in A i, ‖g i x‖ₑ ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) *
-      C ^ (1 / (2 : ℝ))) l (𝓝 0) := by
-    have h' : Tendsto (fun i ↦ ∫⁻ x in A i, ‖g i x‖ₑ ^ (2 : ℝ) ∂μ) l (𝓝 0) := by
-      refine h.congr fun i ↦ lintegral_congr fun x ↦ ?_
-      rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two,
-        Real.rpow_two]
-    have h'' := ((ENNReal.continuous_rpow_const (y := 1 / (2 : ℝ))).tendsto 0).comp h'
-    rw [ENNReal.zero_rpow_of_pos (by norm_num)] at h''
-    simpa using ENNReal.Tendsto.mul_const h''
-      (Or.inr (ENNReal.rpow_ne_top_of_nonneg (by norm_num) hC))
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h2
-    (Eventually.of_forall fun _ ↦ zero_le) ?_
-  filter_upwards [hA, hg] with i hiA hig
-  -- Hölder's inequality on `A i`, which has measure at most `C`.
-  have hL := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2) one_le_two hig
-  rw [eLpNorm_one_eq_lintegral_eNorm hig,
-    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hig,
-    Measure.restrict_apply_univ] at hL
-  refine hL.trans (mul_le_mul' (le_of_eq ?_) ?_)
-  · norm_num
-  · rw [show (1 / ENNReal.toReal 1 - 1 / ENNReal.toReal 2 : ℝ) = 1 / 2 by norm_num]
-    exact ENNReal.rpow_le_rpow hiA (by norm_num)
-
 /-- **`L²` control gives `L¹` control on translated windows.** On the windows
 `[a + s_i, b + s_i] × [c, d]`, which all have measure `(b - a) (d - c)`, if the `L²` norms of `g i`
 tend to zero then so do their `L¹` norms. -/
@@ -99,7 +67,7 @@ theorem tendsto_setLIntegral_enorm_Icc_prod_of_tendsto_setLIntegral_ofReal_norm_
     (h : Tendsto (fun i ↦ ∫⁻ z in Icc (a + s i) (b + s i) ×ˢ Icc c d,
       ENNReal.ofReal (‖g i z‖ ^ 2)) l (𝓝 0)) :
     Tendsto (fun i ↦ ∫⁻ z in Icc (a + s i) (b + s i) ×ˢ Icc c d, ‖g i z‖ₑ) l (𝓝 0) := by
-  refine tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq
+  refine MeasureTheory.tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq
     (C := ENNReal.ofReal (b - a) * ENNReal.ofReal (d - c))
     (ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top)
     (Eventually.of_forall fun i ↦ ?_) hg h
