@@ -113,6 +113,13 @@ private theorem ker_le_lieAnnihilator :
   rw [LinearMap.mem_ker.1 hξ]
   exact LinearMap.map_zero₂ _ _
 
+/-- The orbit directions of a complement `𝔪` of `ker ρ` in `𝔤_ν` are `ω`-orthogonal to the
+orbit. -/
+private theorem apply_eq_zero_of_mem {𝔪 : Submodule ℝ 𝔤}
+    (h𝔪 : LinearMap.ker ρ ⊔ 𝔪 = (lieAnnihilator ℝ 𝔤 ν).toSubmodule) {m : 𝔤} (hm : m ∈ 𝔪)
+    (ζ : 𝔤) : ω (ρ m) (ρ ζ) = 0 :=
+  (mem_lieAnnihilator_iff hρ m).1 (h𝔪 ▸ Submodule.mem_sup_right hm) ζ
+
 /-- The orbit directions `ω`-orthogonal to the orbit, `W ∩ W^ω` for `W = ρ(𝔤)`, are those of the
 coadjoint stabilizer, and so of any complement `𝔪` of `ker ρ` in it. -/
 private theorem range_inf_orthogonal_range {𝔪 : Submodule ℝ 𝔤}
@@ -124,17 +131,12 @@ private theorem range_inf_orthogonal_range {𝔪 : Submodule ℝ 𝔤}
   constructor
   · rintro ⟨⟨ξ, rfl⟩, hξ⟩
     have hK : ξ ∈ (lieAnnihilator ℝ 𝔤 ν).toSubmodule :=
-      (mem_lieAnnihilator_iff hρ ξ).2 fun ζ ↦ by
-        rw [← ω.neg_eq]
-        simp [hξ ζ]
+      (mem_lieAnnihilator_iff hρ ξ).2 fun ζ ↦ ω.isRefl.eq_zero (hξ ζ)
     rw [← h𝔪] at hK
     obtain ⟨κ, hκ, m, hm, rfl⟩ := Submodule.mem_sup.1 hK
     exact ⟨m, hm, by rw [map_add, LinearMap.mem_ker.1 hκ, zero_add]⟩
   · rintro ⟨m, hm, rfl⟩
-    have hK := (mem_lieAnnihilator_iff hρ m).1 (h𝔪 ▸ Submodule.mem_sup_right hm)
-    refine ⟨⟨m, rfl⟩, fun ζ ↦ ?_⟩
-    rw [← ω.isAlt.neg_eq]
-    simpa using hK ζ
+    exact ⟨⟨m, rfl⟩, fun ζ ↦ ω.isRefl.eq_zero (apply_eq_zero_of_mem hρ h𝔪 hm ζ)⟩
 
 /-- On the orbit directions of a complement `𝔪` of `ker ρ` in `𝔤_ν`, the orbit directions of any
 `b, b'`, and a lift `s` of the reduced space of `W^ω`, the form `ω` is the model form: the
@@ -146,14 +148,13 @@ private theorem apply_add_add_apply_add_add {𝔪 : Submodule ℝ 𝔤}
     (v v' : ω.ReducedSpace (ω.orthogonal (LinearMap.range ρ))) :
     ω (ρ a + ρ b + s v) (ρ a' + ρ b' + s v') =
       ν ⁅b, b'⁆ + ω.reduction (ω.orthogonal (LinearMap.range ρ)) v v' := by
-  have hK (m : 𝔪) (ζ : 𝔤) : ω (ρ m) (ρ ζ) = 0 :=
-    (mem_lieAnnihilator_iff hρ m).1 (h𝔪' ▸ Submodule.mem_sup_right m.2) ζ
+  have hK (m : 𝔪) (ζ : 𝔤) : ω (ρ m) (ρ ζ) = 0 := apply_eq_zero_of_mem hρ h𝔪' m.2 ζ
   have hρU (ξ : 𝔤) (u : ω.orthogonal (LinearMap.range ρ)) : ω (ρ ξ) u = 0 := u.2 _ ⟨ξ, rfl⟩
-  have hUρ (ξ : 𝔤) (u : ω.orthogonal (LinearMap.range ρ)) : ω u (ρ ξ) = 0 := by
-    rw [← ω.neg_eq, hρU, neg_zero]
+  have hUρ (ξ : 𝔤) (u : ω.orthogonal (LinearMap.range ρ)) : ω u (ρ ξ) = 0 :=
+    ω.isRefl.eq_zero (hρU ξ u)
   have h₁ : ω (s v) (s v') = ω.reduction _ v v' := by
     conv_rhs => rw [← hs v, ← hs v', reduction_mk]
-  have h₂ : ω (ρ b) (ρ a') = 0 := by rw [← ω.neg_eq, hK, neg_zero]
+  have h₂ : ω (ρ b) (ρ a') = 0 := ω.isRefl.eq_zero (hK a' b)
   simp only [map_add, LinearMap.add_apply, hρU, hUρ, hK, h₁, h₂, hρ]
   ring
 
@@ -267,7 +268,8 @@ theorem exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction
     ((LinearMap.inl ℝ _ _ ∘ₗ LinearMap.inl ℝ _ _ ∘ₗ LinearMap.fst ℝ _ _) +
       (LinearMap.inr ℝ _ _ ∘ₗ LinearMap.inl ℝ _ _ ∘ₗ LinearMap.snd ℝ _ _)).coprod
       (LinearMap.inr ℝ _ _ ∘ₗ LinearMap.inr ℝ _ _)
-  have hF (a : 𝔪) (b : 𝔮) (v : ω.ReducedSpace U) : F ((a, b), v) = ρ a + ρ b + s v := rfl
+  have hF (a : 𝔪) (b : 𝔮) (v : ω.ReducedSpace U) : F ((a, b), v) = ρ a + ρ b + s v := by
+    simp [F]
   have hG (a : 𝔪) (b : 𝔮) (v : ω.ReducedSpace U) : G ((a, b), v) = ((a, 0), (b, v)) := by
     simp [G]
   have hGinj : Function.Injective G := by
@@ -330,6 +332,9 @@ theorem exists_isSymplectomorphism_cotangent_prod_kirillov_prod_symplecticSlice
         e ((0, 0), (0, Submodule.Quotient.mk u)) - u ∈ a.orbitTangent x := by
   have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
   rw [InfinitesimalAction.isotropy_toSubmodule] at h𝔪 h𝔪'
+  -- `a.orbitTangent x` occurs in the types of `e` and `u` (the slice quotient and the subtype of
+  -- its `σ_x`-orthogonal), so a plain `rw` with `orbitTangent_eq_range` fails on the motive; we
+  -- replace it by `range (a.eval x)` everywhere at once with `generalize` and `subst`.
   unfold IsNondegenerate.SymplecticSlice
   generalize hW : a.orbitTangent x = W
   rw [InfinitesimalAction.orbitTangent_eq_range] at hW
