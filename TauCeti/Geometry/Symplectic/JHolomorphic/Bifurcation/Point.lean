@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Bifurcation.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.PointConfigurationCount
-import TauCeti.Data.Finset.Basic
 
 /-!
 # Invariance of the weighted count through points under local bifurcations
@@ -20,11 +19,13 @@ pass through the same points. This file proves that the count through the points
 such bifurcations, transferring the invariance of the count without points proved in
 `TauCeti.Geometry.Symplectic.JHolomorphic.Bifurcation.Basic`.
 
-The transfer rests on an inclusion–exclusion formula. Write `s_T` for the candidates of `s` whose
-images avoid a set `T` of points. A configuration of `s` lies in `s_T` exactly when its images
-avoid `T`, and the alternating sum `∑ (-1) ^ |T|` over the sets `T` avoided by the images is `1`
-when the images cover all the points and `0` otherwise. Hence, when the configurations of `s` in
-class `A` are finite in number (`TauCeti.pointConfigurationCount_eq_sum_neg_one_pow`),
+The transfer rests on the inclusion–exclusion formula of
+`TauCeti.Geometry.Symplectic.JHolomorphic.PointConfigurationCount`. Write `s_T` for the
+candidates of `s` whose images avoid a set `T` of points. A configuration of `s` lies in `s_T`
+exactly when its images avoid `T`, and the alternating sum `∑ (-1) ^ |T|` over the sets `T`
+avoided by the images is `1` when the images cover all the points and `0` otherwise. Hence,
+when the configurations of `s` in class `A` are finite in number
+(`TauCeti.pointConfigurationCount_eq_sum_neg_one_pow`),
 
 `N^P_s(A) = ∑_{T ⊆ P} (-1) ^ |T| N_{s_T}(A)`,
 
@@ -67,55 +68,6 @@ public section
 namespace TauCeti
 
 variable {ι H P R : Type*}
-
-/-! ### Inclusion–exclusion over the points -/
-
-section InclusionExclusion
-
-variable [AddCommMonoid H] [CommRing R] {r : ι → ι → Prop} {cls : ι → H} {pts : ι → Finset P}
-  {w : ι → ℕ → R} {s : Set ι} {A : H}
-
-/-- **Inclusion–exclusion over the points.** If the configurations of `s` in class `A` are finite
-in number, the count through the points is the alternating sum, over the sets `T` of points, of
-the counts without points of the candidates avoiding `T`. -/
-theorem pointConfigurationCount_eq_sum_neg_one_pow [Fintype P]
-    (hfin : (compatibleConfigurations r cls s A).Finite) :
-    pointConfigurationCount r cls pts w s A =
-      ∑ T : Finset P, (-1) ^ T.card *
-        configurationCount r cls w {c ∈ s | Disjoint (pts c) T} A := by
-  classical
-  set F := hfin.toFinset
-  -- Every count involved is a sum over the configurations of `s`, restricted by a condition.
-  have hF {S : Set (ι →₀ ℕ)} (hS : S ⊆ compatibleConfigurations r cls s A) :
-      ∑ᶠ l ∈ S, l.prod w = ∑ l ∈ F, if l ∈ S then l.prod w else 0 := by
-    rw [finsum_mem_eq_finite_toFinset_sum _ (hfin.subset hS), ← Finset.sum_filter]
-    refine Finset.sum_congr (Finset.ext fun l ↦ ?_) fun _ _ ↦ rfl
-    rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset]
-    exact ⟨fun h ↦ ⟨hS h, h⟩, And.right⟩
-  rw [pointConfigurationCount_def, hF pointConfigurations_subset]
-  simp_rw [configurationCount_def, hF (compatibleConfigurations_mono (Set.sep_subset _ _)),
-    Finset.mul_sum]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun l hl ↦ ?_
-  rw [Set.Finite.mem_toFinset] at hl
-  simp only [mem_pointConfigurations, mem_compatibleConfigurations_sep_iff, hl,
-    true_and, mul_ite, mul_zero]
-  -- The sets of points avoided by the components are the subsets of the uncovered points, and
-  -- their alternating sum detects whether that set is empty.
-  rw [← Finset.sum_filter, ← Finset.sum_mul]
-  have hfilter : (Finset.univ.filter fun T : Finset P ↦ ∀ c ∈ l.support, Disjoint (pts c) T) =
-      (Finset.univ \ l.support.biUnion pts).powerset := by
-    ext T
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_powerset,
-      Finset.subset_sdiff, Finset.subset_univ, Finset.disjoint_biUnion_right]
-    exact forall₂_congr fun _ _ ↦ disjoint_comm
-  rw [hfilter, Finset.sum_powerset_neg_one_pow_card_of_ring]
-  have hcov : Finset.univ \ l.support.biUnion pts = ∅ ↔ ∀ p, ∃ c ∈ l.support, p ∈ pts c := by
-    simp [Finset.sdiff_eq_empty_iff_subset, Finset.eq_univ_iff_forall]
-  simp only [hcov]
-  split_ifs <;> simp
-
-end InclusionExclusion
 
 /-! ### Replacing a cluster -/
 
