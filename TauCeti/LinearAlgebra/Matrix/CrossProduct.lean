@@ -159,7 +159,8 @@ theorem mul_crossProductMatrix_mul_transpose {M : Matrix (Fin 3) (Fin 3) R}
     M * crossProductMatrix R u * Mᵀ = crossProductMatrix R (M *ᵥ u) := by
   refine ext_of_mulVec_single fun i ↦ ?_
   have hMMt : M * Mᵀ = 1 := (mem_orthogonalGroup_iff _ _).1 hM.1
-  rw [← mulVec_mulVec, ← mulVec_mulVec, crossProductMatrix_mulVec, crossProductMatrix_mulVec,
-    ← mulVec_cross_mulVec_of_mem_specialOrthogonalGroup hM, mulVec_mulVec, hMMt, one_mulVec]
+  simp only [← mulVec_mulVec, crossProductMatrix_mulVec]
+  rw [← mulVec_cross_mulVec_of_mem_specialOrthogonalGroup hM]
+  simp only [mulVec_mulVec, hMMt, one_mulVec]
 
 end TauCeti

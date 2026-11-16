@@ -148,7 +148,8 @@ private theorem dotProduct_mvfderiv_eq_zero (x : S²) (v : TangentSpace (𝓡 2)
 /-- A vector of `ℝ³` lies on the unit sphere exactly when `v ⬝ v = 1`. -/
 private theorem toLp_mem_sphere_iff (v : Fin 3 → ℝ) : toLp 2 v ∈ S² ↔ v ⬝ᵥ v = 1 := by
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
-    ← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct, star_trivial, ofLp_toLp]
+    ← real_inner_self_eq_norm_sq]
+  simp only [EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
 
 /-- `x ⬝ x = 1` on the unit sphere. -/
 private theorem dotProduct_self_eq_one (x : S²) : ofLp (x : ℝ³) ⬝ᵥ ofLp (x : ℝ³) = 1 :=

@@ -154,8 +154,11 @@ def specialOrthogonalCoadjointRepresentation :
 theorem specialOrthogonalCoadjointRepresentation_apply_apply (g : specialOrthogonalGroup n R)
     (ν : Dual R (so n R)) (A : so n R) :
     specialOrthogonalCoadjointRepresentation n R g ν A =
-      ν (specialOrthogonalAdjointRepresentation n R g⁻¹ A) :=
-  (rfl)
+      ν (specialOrthogonalAdjointRepresentation n R g⁻¹ A) := by
+  let := starRingOfComm (R := R)
+  rw [specialOrthogonalCoadjointRepresentation, specialOrthogonalAdjointRepresentation,
+    MonoidHom.comp_apply, orthogonalCoadjointRepresentation_apply_apply, ← map_inv,
+    MonoidHom.comp_apply]
 
 /-! ### `SO(3)` in the coordinates of the hat map -/
 
@@ -181,10 +184,7 @@ theorem specialOrthogonalCoadjointRepresentation_soThreeDualEquiv
       soThreeDualEquiv R ((g : Matrix (Fin 3) (Fin 3) R) *ᵥ m) := by
   refine LinearMap.ext fun A ↦ ?_
   obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective A
-  rw [specialOrthogonalCoadjointRepresentation_apply_apply,
-    specialOrthogonalAdjointRepresentation_soThreeEquiv, soThreeDualEquiv_apply_soThreeEquiv,
-    soThreeDualEquiv_apply_soThreeEquiv, coe_specialOrthogonalGroup_inv, dotProduct_mulVec,
-    vecMul_transpose]
+  simp [specialOrthogonalCoadjointRepresentation_apply_apply, dotProduct_mulVec, vecMul_transpose]
 
 /-- **The coadjoint stabilizer of `ν_m` is the group of rotations fixing `m`.** -/
 theorem mem_stabilizer_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv_iff
