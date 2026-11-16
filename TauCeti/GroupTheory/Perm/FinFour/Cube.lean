@@ -9,6 +9,7 @@ public import Mathlib.Data.Sym.Sym2
 public import Mathlib.GroupTheory.Perm.Cycle.Concrete
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Monomial
 import Mathlib.Data.Sym.Card
 import Mathlib.GroupTheory.Perm.Closure
@@ -48,6 +49,8 @@ axis through two opposite face centres a double transposition, a third-turn abou
   of the diagonal through a vertex.
 * `TauCeti.cubeBodyDiagonalHom`: the permutation of the body diagonals induced by a rotation.
 * `TauCeti.cubeRotationEquiv`: the isomorphism of the rotation group with `S₄`.
+* `TauCeti.cubeRotationToSpecialOrthogonalGroup`: the homomorphism from `cubeRotationGroup` into
+  `Matrix.specialOrthogonalGroup (Fin 3) R` for any commutative ring `R`.
 * `TauCeti.cubeEdgeHalfTurn`, `TauCeti.cubeFaceHalfTurn`, `TauCeti.cubeDiagonalThirdTurn`,
   `TauCeti.cubeFaceQuarterTurn`: the four rotations above.
 
@@ -55,6 +58,8 @@ axis through two opposite face centres a double transposition, a third-turn abou
 
 * `TauCeti.cubeBodyDiagonalHom_injective`, `TauCeti.cubeBodyDiagonalHom_surjective`: the induced
   permutation of the diagonals is an isomorphism.
+* `TauCeti.cubeRotationToSpecialOrthogonalGroup_injective`: the homomorphism into `SO(3, R)` is
+  injective whenever `2 ≠ 0` in `R`.
 * `TauCeti.cubeBodyDiagonalHom_cubeEdgeHalfTurn` and its three companions: the permutations of the
   diagonals induced by the four named rotations.
 * `TauCeti.natCard_fixed_cubeVertex_cubeEdgeHalfTurn`,
@@ -404,6 +409,86 @@ theorem cubeRotationEquiv_symm_formPerm_zero_one_two :
 theorem cubeRotationEquiv_symm_formPerm_zero_one_two_three :
     cubeRotationEquiv.symm [0, 1, 2, 3].formPerm = cubeFaceQuarterTurn :=
   cubeRotationEquiv.symm_apply_eq.mpr cubeBodyDiagonalHom_cubeFaceQuarterTurn.symm
+
+instance : Finite cubeRotationGroup :=
+  Finite.of_equiv _ cubeRotationEquiv.symm.toEquiv
+
+/-- **The rotation group of the cube has `24` elements.** -/
+@[simp]
+theorem natCard_cubeRotationGroup : Nat.card cubeRotationGroup = 24 := by
+  rw [Nat.card_congr cubeRotationEquiv.toEquiv, Nat.card_eq_fintype_card, Fintype.card_perm,
+    Fintype.card_fin]
+  decide
+
+/-! ### Embedding into special orthogonal groups -/
+
+/-- Every rotation of the cube is orthogonal as a matrix over any commutative ring `R`, hence
+lies in `Matrix.specialOrthogonalGroup (Fin 3) R`. -/
+theorem map_mem_specialOrthogonalGroup_of_mem_cubeRotationGroup {R : Type*} [CommRing R]
+    {A : SpecialLinearGroup (Fin 3) ℤ} (hA : A ∈ cubeRotationGroup) :
+    (Int.castRingHom R).mapMatrix (A : Matrix (Fin 3) (Fin 3) ℤ) ∈
+      Matrix.specialOrthogonalGroup (Fin 3) R := by
+  obtain ⟨σ, ε, hσ⟩ := mem_cubeRotationGroup_iff.mp hA
+  refine mem_specialOrthogonalGroup_iff.mpr ⟨(mem_orthogonalGroup_iff' _ _).mpr ?_, ?_⟩
+  · ext j k
+    simp only [Matrix.mul_apply, Matrix.transpose_apply, RingHom.mapMatrix_apply, Matrix.map_apply,
+      Int.coe_castRingHom, hσ, Matrix.one_apply]
+    simp only [apply_ite (Int.cast : ℤ → R), Int.cast_zero, mul_ite, ite_mul, mul_zero, zero_mul]
+    rw [Finset.sum_ite_eq Finset.univ (σ k)]
+    simp only [Finset.mem_univ, ↓reduceIte, σ.injective.eq_iff]
+    split_ifs with hjk
+    · subst hjk
+      rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+    · rfl
+  · rw [← RingHom.map_det, A.2, map_one]
+
+/-- **The homomorphism from the rotation group of the cube into `SO(3, R)`**, sending each integer
+signed permutation matrix to its image in `Matrix.specialOrthogonalGroup (Fin 3) R`. It is
+injective whenever `2 ≠ 0` in `R` (`TauCeti.cubeRotationToSpecialOrthogonalGroup_injective`). -/
+def cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R] :
+    cubeRotationGroup →* Matrix.specialOrthogonalGroup (Fin 3) R where
+  toFun A := ⟨(Int.castRingHom R).mapMatrix (A.1 : Matrix (Fin 3) (Fin 3) ℤ),
+    map_mem_specialOrthogonalGroup_of_mem_cubeRotationGroup A.2⟩
+  map_one' := Subtype.ext (map_one _)
+  map_mul' _ _ := Subtype.ext (map_mul _ _ _)
+
+/-- The underlying matrix of `cubeRotationToSpecialOrthogonalGroup R A` is the entrywise cast of
+`A` from `ℤ` to `R`. -/
+@[simp]
+theorem coe_cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R] (A : cubeRotationGroup) :
+    (cubeRotationToSpecialOrthogonalGroup R A : Matrix (Fin 3) (Fin 3) R) =
+      (Int.castRingHom R).mapMatrix (A.1 : Matrix (Fin 3) (Fin 3) ℤ) :=
+  (rfl)
+
+/-- **The homomorphism `cubeRotationGroup →* SO(3, R)` is injective whenever `2 ≠ 0` in `R`**:
+signed permutation matrices have entries in `{-1, 0, 1}`, and those three integers remain distinct
+in `R` as soon as `2 ≠ 0`. -/
+theorem cubeRotationToSpecialOrthogonalGroup_injective (R : Type*) [CommRing R] [NeZero (2 : R)] :
+    Function.Injective (cubeRotationToSpecialOrthogonalGroup R) := by
+  have h2 : (2 : R) ≠ 0 := NeZero.ne 2
+  have h1 : (1 : R) ≠ 0 := fun h => h2 (by rw [← one_add_one_eq_two, h, add_zero])
+  have h1neg : (1 : R) ≠ -1 := fun h =>
+    h2 (by rw [← one_add_one_eq_two]; exact add_eq_zero_iff_eq_neg.mpr h)
+  have hmem (A : cubeRotationGroup) (i j : Fin 3) :
+      A.1 i j = -1 ∨ A.1 i j = 0 ∨ A.1 i j = 1 := by
+    obtain ⟨σ, ε, hσ⟩ := mem_cubeRotationGroup_iff.mp A.2
+    rw [hσ]
+    split_ifs
+    · rcases Int.units_eq_one_or (ε j) with h | h <;> simp [h]
+    · exact Or.inr (Or.inl rfl)
+  intro A B hAB
+  refine Subtype.ext (Subtype.ext (Matrix.ext fun i j => ?_))
+  have hij : ((A.1 i j : ℤ) : R) = ((B.1 i j : ℤ) : R) := by
+    simpa [RingHom.mapMatrix_apply, Matrix.map_apply] using
+      congrFun (congrFun (congrArg Subtype.val hAB) i) j
+  rcases hmem A i j with hA | hA | hA <;> rcases hmem B i j with hB | hB | hB <;>
+    rw [hA, hB] at hij ⊢
+  · exact absurd (neg_eq_zero.mp (by simpa using hij)) h1
+  · exact absurd (by simpa using hij.symm) h1neg
+  · exact absurd (neg_eq_zero.mp (by simpa using hij.symm)) h1
+  · exact absurd (by simpa using hij.symm) h1
+  · exact absurd (by simpa using hij) h1neg
+  · exact absurd (by simpa using hij) h1
 
 /-! ### Fixed vertices and edges -/
 
