@@ -107,9 +107,11 @@ def addBasepoint (r₀ : Region) :
   alpha := Sum.elim (fun p => (H.alpha p).castSucc) fun _ => Fin.last n
   beta := Sum.elim (fun p => (H.beta p).castSucc) fun _ => Fin.last n
   alphaNext := Equiv.Perm.sumCongr H.alphaNext (Equiv.swap 0 1)
-  alphaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_swap_fiber H.alphaNext_isCycleOn
+  alphaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_fiber H.alphaNext_isCycleOn
+    (by simpa using isCycleOn_swap_fin_two_fiber (fun _ => 0) 0)
   betaNext := Equiv.Perm.sumCongr H.betaNext (Equiv.swap 0 1)
-  betaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_swap_fiber H.betaNext_isCycleOn
+  betaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_fiber H.betaNext_isCycleOn
+    (by simpa using isCycleOn_swap_fin_two_fiber (fun _ => 0) 0)
   alphaLeft := Sum.elim (Sum.inl ∘ H.alphaLeft) ![Sum.inr 0, Sum.inr 2]
   alphaRight := Sum.elim (Sum.inl ∘ H.alphaRight) ![Sum.inl r₀, Sum.inr 1]
   betaLeft := Sum.elim (Sum.inl ∘ H.betaLeft) ![Sum.inr 2, Sum.inr 1]

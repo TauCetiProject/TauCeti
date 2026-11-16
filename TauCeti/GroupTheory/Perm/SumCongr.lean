@@ -37,8 +37,8 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
 * `Equiv.Perm.IsCycleOn.sumCongr_inl`, `Equiv.Perm.IsCycleOn.sumCongr_inr`: so a cycle of one
   summand on a set is a cycle of the sum permutation on the copy of that set.
-* `Equiv.Perm.isCycleOn_sumCongr_swap_fiber`: adjoining two points exchanged by a transposition as
-  one new fibre keeps a permutation a cycle on every fibre.
+* `Equiv.Perm.isCycleOn_sumCongr_fiber`: adjoining a whole cycle as one new fibre keeps a
+  permutation a cycle on every fibre.
 * `Equiv.Perm.existsUnique_sameCycle_sumCongr`: representatives of the cycles of the two summands
   together represent the cycles of the sum.
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
@@ -170,20 +170,20 @@ theorem IsCycleOn.sumCongr_inr {τ : Perm β} {s : Set β} (h : τ.IsCycleOn s) 
   · rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩
     exact sameCycle_sumCongr_inr.mpr (h.2 ha hb)
 
-/-- Adjoining two points exchanged by a transposition as one new fibre: if `σ` is a cycle on every
-fibre of `f`, then `Equiv.Perm.sumCongr σ (swap 0 1)` is a cycle on every fibre of the map sending
-`α` to the first `n` labels by `f` and the two new points to the last label. -/
-theorem isCycleOn_sumCongr_swap_fiber {n : ℕ} {σ : Perm α} {f : α → Fin n}
-    (hσ : ∀ i, σ.IsCycleOn {a | f a = i}) (i : Fin (n + 1)) :
-    (Perm.sumCongr σ (swap (0 : Fin 2) 1)).IsCycleOn
+/-- Adjoining a whole cycle as one new fibre: if `σ` is a cycle on every fibre of `f` and `τ` is
+one cycle on all of `β`, then `Equiv.Perm.sumCongr σ τ` is a cycle on every fibre of the map
+sending `α` to the first `n` labels by `f` and `β` to the last label. -/
+theorem isCycleOn_sumCongr_fiber {n : ℕ} {σ : Perm α} {τ : Perm β} {f : α → Fin n}
+    (hσ : ∀ i, σ.IsCycleOn {a | f a = i}) (hτ : τ.IsCycleOn _root_.Set.univ) (i : Fin (n + 1)) :
+    (Perm.sumCongr σ τ).IsCycleOn
       {p | Sum.elim (fun a => (f a).castSucc) (fun _ => Fin.last n) p = i} := by
   induction i using Fin.lastCases with
   | last =>
-    convert (isCycleOn_swap_fin_two_fiber (fun _ => 0) 0).sumCongr_inr σ using 2
-    ext (a | k) <;> simp [Fin.castSucc_ne_last]
+    convert hτ.sumCongr_inr σ using 2
+    ext (a | b) <;> simp [Fin.castSucc_ne_last]
   | cast i =>
     convert (hσ i).sumCongr_inl _ using 2
-    ext (a | k) <;> simp [(Fin.castSucc_ne_last _).symm]
+    ext (a | b) <;> simp [(Fin.castSucc_ne_last _).symm]
 
 /-- Choices of one point on every cycle of `σ` and of `τ` together choose one point on every
 cycle of `Equiv.Perm.sumCongr σ τ`. -/
