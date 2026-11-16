@@ -115,6 +115,18 @@ open scoped InnerProductSpace
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
+/-- The inner product with the orthogonal-complement projection is squared distance, embedded
+in the scalar field. In particular, this inner product is real even for complex scalars. -/
+theorem inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
+    inner 𝕜 x (Uᗮ.starProjection x) = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
+  have hfix : Uᗮ.starProjection (Uᗮ.starProjection x) = Uᗮ.starProjection x :=
+    starProjection_eq_self_iff.mpr (Uᗮ.starProjection_apply_mem x)
+  calc
+    inner 𝕜 x (Uᗮ.starProjection x) = inner 𝕜 (Uᗮ.starProjection x) (Uᗮ.starProjection x) := by
+      rw [Uᗮ.inner_starProjection_left_eq_right, hfix]
+    _ = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
+      rw [inner_self_eq_norm_sq_to_K, Uᗮ.norm_starProjection_eq_infDist, orthogonal_orthogonal]
+
 /-- One half of `norm_starProjection_comp_starProjection_comm`. -/
 private theorem norm_starProjection_comp_starProjection_le :
     ‖U.starProjection ∘L V.starProjection‖ ≤ ‖V.starProjection ∘L U.starProjection‖ := by
