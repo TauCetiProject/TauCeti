@@ -86,6 +86,10 @@ variable {B : Type w} [TopologicalSpace B]
 /-- Points of `B × (F ∖ {0})` joined by a path lie on the same side of the zero section. -/
 private theorem pos_iff_of_joined (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
     {p q : (prodThomPair B F).snd} (h : Joined p q) : 0 < e p.1.2 0 ↔ 0 < e q.1.2 0 := by
+  -- Positivity is carried along any path; `Joined` is symmetric, so this gives both directions.
+  suffices key : ∀ {p q : (prodThomPair B F).snd}, Joined p q → 0 < e p.1.2 0 → 0 < e q.1.2 0 from
+    ⟨key h, key h.symm⟩
+  intro p q h hp
   obtain ⟨γ⟩ := h
   set g : unitInterval → ℝ := fun t ↦ e (γ t).1.2 0
   have hg : Continuous g := by fun_prop
@@ -94,18 +98,11 @@ private theorem pos_iff_of_joined (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
     (γ t).2 (e.map_eq_zero_iff.1 (by ext i; rw [Subsingleton.elim i 0]; exact h0))
   have h0 : g 0 = e p.1.2 0 := by simp [g]
   have h1 : g 1 = e q.1.2 0 := by simp [g]
-  rw [← h0, ← h1]
-  constructor
-  · intro hp
-    by_contra hq
-    obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hg
-      ⟨(not_lt.1 hq), hp.le⟩
-    exact hne t ht
-  · intro hq
-    by_contra hp
-    obtain ⟨t, ht⟩ := intermediate_value_univ 0 1 hg
-      ⟨(not_lt.1 hp), hq.le⟩
-    exact hne t ht
+  rw [← h0] at hp
+  rw [← h1]
+  by_contra hq
+  obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hg ⟨not_lt.1 hq, hp.le⟩
+  exact hne t ht
 
 variable (k B) in
 /-- Some class of `H⁰(B × (F ∖ {0}); k)` has the value `1` on the positive side and `0` on the

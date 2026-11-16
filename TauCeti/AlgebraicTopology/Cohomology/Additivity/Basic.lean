@@ -115,6 +115,8 @@ theorem singularCohomology_prod_ext_of_discreteTopology {X Y : TopCat.{w}} [Disc
   let q : X ⊗ Y ⟶ TopCat.of (Σ x, S x) :=
     TopCat.ofHom ⟨fun p ↦ ⟨p.1, p.2⟩,
       continuous_prod_of_discrete_left.2 fun _ ↦ continuous_sigmaMk (σ := fun x ↦ S x)⟩
+  -- Both composites below hold by `rfl`: `≫`, `TopCat.ofHom`, `sigmaι` and `lift` all unfold
+  -- to the underlying functions, so both sides agree pointwise by definition.
   have hqr : q ≫ r = 𝟙 _ := TopCat.ext fun _ ↦ (rfl)
   have hr : TopCat.singularCohomologyMap r n z = TopCat.singularCohomologyMap r n z' :=
     Concrete.isLimit_ext _ (isLimitFanSingularCohomology S C R k M n) _ _ fun ⟨x⟩ ↦ by
