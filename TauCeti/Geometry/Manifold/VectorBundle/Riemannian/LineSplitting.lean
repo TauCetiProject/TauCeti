@@ -13,8 +13,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 /-!
 # Splitting a complex bundle into a trivial bundle and a line bundle
 
-Over a compact boundaryless manifold of real dimension less than four, a smooth complex bundle `V`
-of complex rank `n + 1` with a smooth Hermitian metric has `n` pointwise orthonormal smooth sections
+Over a compact boundaryless finite-dimensional manifold of real dimension less than four, a smooth
+complex bundle `V` of finite complex rank `n + 1` with a smooth Hermitian metric has `n` pointwise
+orthonormal smooth sections
 (`Bundle.ContMDiffRiemannianMetric.exists_orthonormal_contMDiffSection_of_finrank_lt`): the
 complement of the sections chosen so far is a smooth complex bundle of real rank at least four, so
 it has a nowhere-zero smooth section
@@ -42,7 +43,6 @@ variable {X B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimen
   [TopologicalSpace B] [ChartedSpace X B] [T2Space B] [CompactSpace B]
   [IsManifold 𝓘(ℝ, X) ∞ B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
-  [FiniteDimensional ℂ F]
   {V : B → Type*}
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
   [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
@@ -56,8 +56,9 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, X)]
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-/-- **Orthonormal smooth sections.** Let `V` be a smooth Hermitian bundle of complex rank `k + r`
-over a compact boundaryless manifold of real dimension less than `2 (r + 1)`. Then `V` has `k`
+/-- **Orthonormal smooth sections.** Let `V` be a smooth Hermitian bundle with
+`finrank ℂ F = k + r` (hence of finite complex rank `k + r` whenever `k > 0`) over a compact
+boundaryless finite-dimensional manifold of real dimension less than `2 (r + 1)`. Then `V` has `k`
 smooth sections that are orthonormal at every point. -/
 theorem exists_orthonormal_contMDiffSection_of_finrank_lt
     (g : ContMDiffRiemannianMetric 𝓘(ℝ, X) ∞ F V)
@@ -74,6 +75,7 @@ theorem exists_orthonormal_contMDiffSection_of_finrank_lt
   induction k generalizing r with
   | zero => exact ⟨Fin.elim0, fun i ↦ i.elim0, fun _ ↦ ⟨fun i ↦ i.elim0, fun i ↦ i.elim0⟩⟩
   | succ k ih =>
+    have : FiniteDimensional ℂ F := Module.finite_of_finrank_pos (by omega)
     obtain ⟨s, hs, hon⟩ := ih (r := r + 1) (by rw [hk]; ring) (by omega)
     have hW := g.hasLocalContMDiffSubbundleFrames_orthogonalSpanFamily hI s hs hon (r := r + 1)
       (by rw [hk, Fintype.card_fin]; ring)
@@ -126,10 +128,10 @@ end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti
 
-/-- **Splitting off a trivial bundle.** A smooth complex vector bundle `V` of complex rank `n + 1`
-over a compact boundaryless manifold of real dimension less than four, in particular over a closed
-surface, has a smooth Hermitian metric `g` and `n` pointwise orthonormal smooth sections `s` whose
-orthogonal complement `L = s^⊥` is a smooth complex line subbundle, and
+/-- **Splitting off a trivial bundle.** A smooth complex vector bundle `V` of finite complex rank
+`n + 1` over a compact boundaryless finite-dimensional manifold of real dimension less than four, in
+particular over a closed surface, has a smooth Hermitian metric `g` and `n` pointwise orthonormal
+smooth sections `s` whose orthogonal complement `L = s^⊥` is a smooth complex line subbundle, and
 `V ≅ (B × ℂⁿ) ⊕ L` as smooth bundles, by `(x, c, w) ↦ ∑ i, c i • s i x + w`
 (`Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanFamilyDiffeomorph`). -/
 theorem exists_trivialProdLineSubbundle_diffeomorph [∀ x, ContinuousConstSMul ℂ (V x)] {n : ℕ}
@@ -149,6 +151,7 @@ theorem exists_trivialProdLineSubbundle_diffeomorph [∀ x, ContinuousConstSMul 
           (TotalSpace ((Fin n → ℂ) × (Fin 1 → ℂ))
             (Bundle.Trivial B (Fin n → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x))
           (TotalSpace F V) ∞) := by
+  have : FiniteDimensional ℂ F := Module.finite_of_finrank_pos (by omega)
   obtain ⟨g, hI⟩ := exists_contMDiffRiemannianMetric_inner_smul_I (IB := 𝓘(ℝ, X)) (n := ⊤)
     (F := F) (V := V)
   obtain ⟨s, hs, hon⟩ := g.exists_orthonormal_contMDiffSection_of_finrank_lt hI hn (r := 1)
