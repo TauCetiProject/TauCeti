@@ -23,11 +23,10 @@ bounded interval `[a, b)` is integrable against a locally finite measure, that t
 many disjoint measurable subsets, that an almost everywhere positive function has positive
 integral, bounds for the integral of the reciprocal of a function bounded below by a positive
 constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
-ball `B`, the integral of `g ‖f₀‖²` for an almost everywhere zero extension `f₀` of `f`
-from `s`, and that a continuous
-square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
-on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets.
+ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
+from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
+`h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
+It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets.
 
 ## Main statements
 
