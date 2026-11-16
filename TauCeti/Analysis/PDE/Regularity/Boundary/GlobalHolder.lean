@@ -32,7 +32,8 @@ hypothesis. For a weak solution vanishing on `∂Ω`, the decay at a point `z �
 boundary estimate, which needs the complement of `Ω` to have positive density in the balls
 `B(z, ρ)` (Gilbarg–Trudinger, Theorem 8.27); such an exterior density holds on every bounded
 Lipschitz domain. The bound on `u` is the global maximum principle (Gilbarg–Trudinger,
-Theorem 8.16). Together they give Gilbarg–Trudinger's global Hölder estimate, Theorem 8.29.
+Theorem 8.16). Together they give the case of zero boundary values of Gilbarg–Trudinger's global
+Hölder estimate, Theorem 8.29.
 
 ## The argument
 

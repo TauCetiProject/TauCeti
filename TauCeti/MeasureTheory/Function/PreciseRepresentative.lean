@@ -524,7 +524,7 @@ theorem holderWith_preciseRepresentative_of_forall_notMem [CompleteSpace E]
       (preciseRepresentative μ f) := by
   have hR' : (0 : ℝ) < R := hR
   set B : ℝ≥0 := 5 ^ (α : ℝ) * (N + C₀ * (N + M)) + K with hB
-  have hρ : ((R / 8 : ℝ≥0) : ℝ) = R / 8 := by push_cast; rfl
+  have hρ : ((R / 8 : ℝ≥0) : ℝ) = R / 8 := by rw [NNReal.coe_div, NNReal.coe_ofNat]
   -- The oscillation bound `B (s / R)^α = (B / R^α) s^α` on the balls of radius `s ≤ R / 8`.
   have key := holderOnWith_preciseRepresentative (μ := μ) (f := f) (s := univ)
     (C := B / R ^ (α : ℝ)) (M := M) (ρ := R / 8) hα (by positivity) (fun x _ => hf x)
