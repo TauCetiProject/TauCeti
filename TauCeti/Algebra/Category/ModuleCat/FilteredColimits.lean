@@ -12,7 +12,9 @@ public import TauCeti.Algebra.Category.Grp.FilteredColimits
 # Filtered colimits of modules with independent universe levels
 
 The native filtered-colimit cocone allows the module universe to be larger than the ring
-universe. This file exports preservation by the forgetful functor for that universe combination.
+universe. This file exports preservation by the forgetful functor for that universe combination,
+and preservation of filtered colimits indexed by a category in `Type`, whatever the universe of the
+modules.
 
 It also records a recognition criterion with no universe constraints at all: a cocone of modules
 is colimiting as soon as its legs are jointly surjective and any two elements with the same image
@@ -48,6 +50,12 @@ instance forget_preservesFilteredColimits_max (R : Type v) [Ring R] :
     exact Limits.comp_preservesColimitsOfShape
       (CategoryTheory.forget₂ (ModuleCat.{max u v} R) AddCommGrpCat.{max u v})
       (CategoryTheory.forget AddCommGrpCat.{max u v})
+
+/-- Forgetting modules preserves filtered colimits indexed by a small category in `Type`, below the
+universe of the modules. -/
+instance forget_preservesSmallestFilteredColimits (R : Type v) [Ring R] :
+    PreservesFilteredColimitsOfSize.{0, 0} (CategoryTheory.forget (ModuleCat.{max u v} R)) :=
+  preservesSmallestFilteredColimits_of_preservesFilteredColimits _
 
 end ModuleCat
 
