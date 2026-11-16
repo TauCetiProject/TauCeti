@@ -65,17 +65,9 @@ private theorem map_borelSubgroup_conj_of_weylProjection_eq_one {g : D.weylSubgr
     rw [D.positivePoints_eq_iSup K, D.map_iSup_rootSubgroupPoints_conj K g, hproj, map_one]
     simp [Set.image_id]
   have htor : ((D.torusPoints K).range).map (MulAut.conj (g : D.points K)).toMonoidHom =
-      (D.torusPoints K).range := by
-    apply le_antisymm
-    · rintro _ ⟨x, hx, rfl⟩
-      exact (Subgroup.mem_normalizer_iff.mp
-        (D.weylSubgroup_le_normalizer_range_torusPoints K g.2) x).mp hx
-    · intro x hx
-      refine ⟨(g : D.points K)⁻¹ * x * (g : D.points K), ?_, ?_⟩
-      · exact (Subgroup.mem_normalizer_iff.mp
-          (D.weylSubgroup_le_normalizer_range_torusPoints K g⁻¹.2) x).mp hx
-      · simp only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
-        group
+      (D.torusPoints K).range :=
+    Subgroup.mem_normalizer_iff_map_conj_eq.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints K g.2)
   rw [D.borelSubgroup_def, Subgroup.map_sup, hpos, htor]
 
 /-- An element of `D.weylSubgroup K` projects to `1` in the Weyl group if and only if it belongs to
@@ -88,19 +80,10 @@ theorem weylProjection_eq_one_iff_mem_range_torusPoints (g : D.weylSubgroup K) :
     let gE : D.extendedElementarySubgroup K :=
       ⟨(g : D.points K), D.weylSubgroup_le_extendedElementarySubgroup K g.2⟩
     have hnorm : gE ∈ Subgroup.normalizer ((D.titsSystem K).subgroupB : Set _) := by
-      rw [Subgroup.mem_normalizer_iff]
-      intro b
-      simp only [D.titsSystem_subgroupB, Subgroup.mem_subgroupOf, Subgroup.coe_mul,
-        Subgroup.coe_inv]
-      constructor
-      · intro hb
-        rw [← hconj]
-        exact ⟨b.val, hb, rfl⟩
-      · intro hb
-        rw [← hconj] at hb
-        obtain ⟨x, hx, heq⟩ := hb
-        have hxb : x = b.val := (MulAut.conj (g : D.points K)).injective heq
-        rwa [← hxb]
+      rw [D.titsSystem_subgroupB,
+        ← Subgroup.subgroupOf_normalizer_eq (D.borelSubgroup_le_extendedElementarySubgroup K),
+        Subgroup.mem_subgroupOf, Subgroup.mem_normalizer_iff_map_conj_eq]
+      exact hconj
     rw [(D.titsSystem K).normalizer_subgroupB, D.titsSystem_subgroupB] at hnorm
     have hinf : (g : D.points K) ∈ D.borelSubgroup K ⊓ D.weylSubgroup K :=
       ⟨Subgroup.mem_subgroupOf.mp hnorm, g.2⟩
