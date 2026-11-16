@@ -49,6 +49,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   Mathlib's explicit homology of a short complex of modules are `d.boundariesInKer`.
 * `LinearMap.homologyMap_surjective_iff` and `LinearMap.homologyMap_injective_iff`: elementwise
   descriptions of surjectivity and injectivity of the map induced on homology.
+* `LinearMap.homologyMap_eq_of_sub_eq`: chain maps differing by `e ∘ h + h ∘ d` induce the same
+  map on homology.
 * `LinearMap.ker_le_range_mappingCone_iff`: a chain map induces a bijection on homology exactly when
   its mapping cone is exact.
 * `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
@@ -213,6 +215,18 @@ theorem homologyMap_sub (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘�
       homologyMap f hd he hf - homologyMap g hd he hg := by
   ext z
   simp [← Submodule.Quotient.mk_sub, Submodule.Quotient.eq]
+
+/-- **Homotopic chain maps induce the same map on homology.** If `f - g = e ∘ h + h ∘ d` for some
+linear map `h`, a chain homotopy from `g` to `f`, then `f` and `g` induce the same map on
+homology. -/
+theorem homologyMap_eq_of_sub_eq (f g h : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) (hfg : f - g = e ∘ₗ h + h ∘ₗ d) :
+    homologyMap f hd he hf = homologyMap g hd he hg := by
+  refine LinearMap.ext fun c ↦ ?_
+  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ c
+  rw [homologyMap_mk, homologyMap_mk, Submodule.Quotient.eq, mem_boundariesInKer]
+  refine ⟨h z, ?_⟩
+  simpa [mem_ker.mp z.2] using congr($hfg z).symm
 
 variable {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
 
