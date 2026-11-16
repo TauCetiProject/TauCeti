@@ -6,28 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Prod
-public import Mathlib.Algebra.Lie.Solvable
+public import TauCeti.Algebra.Lie.Equiv
+public import TauCeti.Algebra.Lie.Solvable.Equiv
 import Mathlib.LinearAlgebra.Projection
 import TauCeti.Algebra.Lie.Prod
 
 /-!
-# Restrictions and centre/derived assembly of Lie algebra equivalences
+# Centre/derived assembly of Lie algebra equivalences
 
-Every Lie algebra equivalence `e : L ≃ₗ⁅R⁆ M` carries the centre `Z(L)` onto `Z(M)`
-(`LieEquiv.map_center`) and each term of the derived series onto the corresponding term of `M`
-(`LieEquiv.map_derivedSeries`), inducing equivalences `LieEquiv.restrictCenter` and
-`LieEquiv.restrictDerivedSeries`.
-
-When `L` splits as the direct sum of its centre and its derived ideal,
+When a Lie algebra `L` splits as the direct sum of its centre and its derived ideal,
 `IsCompl (center R L) (derivedSeries R L 1)`, addition yields a Lie algebra isomorphism
 `Z(L) × [L, L] ≃ₗ⁅R⁆ L` (`LieEquiv.prodCenterDerivedEquiv`), and any pair of automorphisms of
 `Z(L)` and `[L, L]` assembles into an automorphism of `L` (`LieEquiv.ofCenterDerived`) whose
-restrictions recover the two factors.
+restrictions recover the two factors. Conversely, every automorphism of `L` is reconstructed from
+its restrictions to `Z(L)` and `[L, L]`
+(`LieEquiv.ofCenterDerived_restrictCenter_restrictDerivedSeries`), and any equivalence out of `L`
+is uniquely determined by those two restrictions
+(`LieEquiv.eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq`).
 
 ## Main definitions
 
-* `LieEquiv.restrictCenter` and `LieEquiv.restrictDerivedSeries`: restriction of a Lie algebra
-  equivalence to the centre and to any term of the derived series.
 * `LieEquiv.prodCenterDerivedEquiv`: the Lie isomorphism `Z(L) × [L, L] ≃ₗ⁅R⁆ L` when the centre
   and derived ideal are complementary.
 * `LieEquiv.ofCenterDerived`: assembly of automorphisms of `Z(L)` and `[L, L]` into an automorphism
@@ -35,10 +33,12 @@ restrictions recover the two factors.
 
 ## Main results
 
-* `LieEquiv.map_center` and `LieEquiv.map_derivedSeries`: invariance of the centre and derived
-  series under Lie algebra equivalences.
 * `LieEquiv.restrictCenter_ofCenterDerived` and `LieEquiv.restrictDerivedSeries_ofCenterDerived`:
   restricting an assembled automorphism recovers the central and derived factors.
+* `LieEquiv.ofCenterDerived_restrictCenter_restrictDerivedSeries`: reconstructing an arbitrary
+  automorphism from its central and derived restrictions.
+* `LieEquiv.eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq`: uniqueness of a Lie algebra
+  equivalence from its restrictions to `Z(L)` and `[L, L]`.
 -/
 
 public section
@@ -48,100 +48,6 @@ open LieAlgebra
 namespace LieEquiv
 
 variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing M] [LieAlgebra R M]
-
-/-- Every Lie algebra equivalence maps the centre onto the centre. -/
-theorem map_center (e : L ≃ₗ⁅R⁆ M) :
-    (center R L).toLieSubalgebra.map e.toLieHom = (center R M).toLieSubalgebra := by
-  ext y
-  rw [LieSubalgebra.mem_map]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
-    intro w
-    obtain ⟨u, rfl⟩ := e.surjective w
-    rw [coe_toLieHom, ← e.map_lie, (LieModule.mem_maxTrivSubmodule R L L x).mp hx u, map_zero]
-  · intro hy
-    refine ⟨e.symm y, ?_, e.apply_symm_apply y⟩
-    rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
-    intro u
-    apply e.injective
-    rw [e.toLieHom.map_lie, map_zero, coe_toLieHom, e.apply_symm_apply]
-    exact (LieModule.mem_maxTrivSubmodule R M M y).mp hy (e u)
-
-/-- Restriction of a Lie algebra equivalence to the centre. -/
-def restrictCenter (e : L ≃ₗ⁅R⁆ M) : center R L ≃ₗ⁅R⁆ center R M :=
-  e.ofSubalgebras (center R L).toLieSubalgebra (center R M).toLieSubalgebra e.map_center
-
-@[simp, grind =]
-theorem coe_restrictCenter (e : L ≃ₗ⁅R⁆ M) (z : center R L) :
-    (e.restrictCenter z : M) = e z := by
-  exact e.ofSubalgebras_apply _ _ e.map_center z
-
-@[simp, grind =]
-theorem coe_restrictCenter_symm (e : L ≃ₗ⁅R⁆ M) (z : center R M) :
-    (e.restrictCenter.symm z : L) = e.symm z := by
-  exact e.ofSubalgebras_symm_apply _ _ e.map_center z
-
-/-- Restricting the inverse equivalence to the centre equals the inverse of the restriction. -/
-@[simp]
-theorem restrictCenter_symm (e : L ≃ₗ⁅R⁆ M) :
-    e.symm.restrictCenter = e.restrictCenter.symm := by
-  ext z
-  simp
-
-/-- Restricting a composite equivalence to the centre composes the restrictions. -/
-theorem restrictCenter_trans {N : Type*} [LieRing N] [LieAlgebra R N]
-    (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N) :
-    (e₁.trans e₂).restrictCenter = e₁.restrictCenter.trans e₂.restrictCenter := by
-  ext z
-  simp
-
-/-- Every Lie algebra equivalence maps each term of the derived series onto the corresponding term
-of the target. -/
-theorem map_derivedSeries (e : L ≃ₗ⁅R⁆ M) (k : ℕ) :
-    (derivedSeries R L k).toLieSubalgebra.map e.toLieHom =
-      (derivedSeries R M k).toLieSubalgebra := by
-  ext y
-  rw [LieSubalgebra.mem_map]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact (LieIdeal.derivedSeries_map_le (f := e.toLieHom) k) (LieIdeal.mem_map hx)
-  · intro hy
-    refine ⟨e.symm y, ?_, e.apply_symm_apply y⟩
-    exact (LieIdeal.derivedSeries_map_le (f := e.symm.toLieHom) k) (LieIdeal.mem_map hy)
-
-/-- Restriction of a Lie algebra equivalence to the `k`-th term of the derived series. -/
-def restrictDerivedSeries (e : L ≃ₗ⁅R⁆ M) (k : ℕ) :
-    derivedSeries R L k ≃ₗ⁅R⁆ derivedSeries R M k :=
-  e.ofSubalgebras (derivedSeries R L k).toLieSubalgebra (derivedSeries R M k).toLieSubalgebra
-    (e.map_derivedSeries k)
-
-@[simp, grind =]
-theorem coe_restrictDerivedSeries (e : L ≃ₗ⁅R⁆ M) (k : ℕ) (x : derivedSeries R L k) :
-    (e.restrictDerivedSeries k x : M) = e x := by
-  exact e.ofSubalgebras_apply _ _ (e.map_derivedSeries k) x
-
-@[simp, grind =]
-theorem coe_restrictDerivedSeries_symm (e : L ≃ₗ⁅R⁆ M) (k : ℕ) (y : derivedSeries R M k) :
-    ((e.restrictDerivedSeries k).symm y : L) = e.symm y := by
-  exact e.ofSubalgebras_symm_apply _ _ (e.map_derivedSeries k) y
-
-/-- Restricting the inverse equivalence to a derived-series term equals the inverse of the
-restriction. -/
-@[simp]
-theorem restrictDerivedSeries_symm (e : L ≃ₗ⁅R⁆ M) (k : ℕ) :
-    e.symm.restrictDerivedSeries k = (e.restrictDerivedSeries k).symm := by
-  ext x
-  simp
-
-/-- Restricting a composite equivalence to a term of the derived series composes the
-restrictions. -/
-theorem restrictDerivedSeries_trans {N : Type*} [LieRing N] [LieAlgebra R N]
-    (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N) (k : ℕ) :
-    (e₁.trans e₂).restrictDerivedSeries k =
-      (e₁.restrictDerivedSeries k).trans (e₂.restrictDerivedSeries k) := by
-  ext x
-  simp
 
 /-- When the centre and derived ideal of `L` are complementary, addition gives a Lie algebra
 equivalence `Z(L) × [L, L] ≃ₗ⁅R⁆ L`. -/
@@ -227,15 +133,39 @@ theorem restrictDerivedSeries_ofCenterDerived
   ext d
   simp
 
+/-- Two Lie algebra equivalences out of a Lie algebra with `L = Z(L) ⊕ [L, L]` are equal if they
+have the same restrictions to the centre and to the derived ideal. -/
+theorem eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq
+    (hcompl : IsCompl (center R L) (derivedSeries R L 1)) {e₁ e₂ : L ≃ₗ⁅R⁆ M}
+    (hZ : e₁.restrictCenter = e₂.restrictCenter)
+    (hD : e₁.restrictDerivedSeries 1 = e₂.restrictDerivedSeries 1) :
+    e₁ = e₂ := by
+  ext x
+  obtain ⟨⟨z, d⟩, rfl⟩ := (prodCenterDerivedEquiv hcompl).surjective x
+  have hz : e₁ z = e₂ z := by
+    simpa only [coe_restrictCenter] using
+      congrArg (fun f : center R L ≃ₗ⁅R⁆ center R M ↦ (f z : M)) hZ
+  have hd : e₁ d = e₂ d := by
+    simpa only [coe_restrictDerivedSeries] using
+      congrArg (fun f : derivedSeries R L 1 ≃ₗ⁅R⁆ derivedSeries R M 1 ↦ (f d : M)) hD
+  simp [map_add, hz, hd]
+
+/-- Every Lie algebra automorphism is reconstructed from its restrictions to `Z(L)` and `[L, L]`
+when the centre and derived ideal are complementary. -/
+@[simp]
+theorem ofCenterDerived_restrictCenter_restrictDerivedSeries
+    (hcompl : IsCompl (center R L) (derivedSeries R L 1)) (θ : L ≃ₗ⁅R⁆ L) :
+    ofCenterDerived hcompl θ.restrictCenter (θ.restrictDerivedSeries 1) = θ :=
+  eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq hcompl
+    (restrictCenter_ofCenterDerived hcompl _ _)
+    (restrictDerivedSeries_ofCenterDerived hcompl _ _)
+
 @[simp]
 theorem ofCenterDerived_symm
     (hcompl : IsCompl (center R L) (derivedSeries R L 1))
     (θZ : center R L ≃ₗ⁅R⁆ center R L)
     (θD : derivedSeries R L 1 ≃ₗ⁅R⁆ derivedSeries R L 1) :
-    (ofCenterDerived hcompl θZ θD).symm = ofCenterDerived hcompl θZ.symm θD.symm := by
-  ext x
-  obtain ⟨⟨z, d⟩, rfl⟩ := (prodCenterDerivedEquiv hcompl).surjective x
-  rw [symm_apply_eq]
-  simp [map_add]
+    (ofCenterDerived hcompl θZ θD).symm = ofCenterDerived hcompl θZ.symm θD.symm :=
+  eq_of_restrictCenter_eq_of_restrictDerivedSeries_eq hcompl (by simp) (by simp)
 
 end LieEquiv

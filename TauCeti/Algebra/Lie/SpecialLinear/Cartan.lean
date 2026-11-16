@@ -26,8 +26,8 @@ is the restriction of `Matrix.killingForm_apply`:
 `κ(X, Y) = 2 n trace (X * Y)`
 
 where `n = Fintype.card n`. Composing with `θ Y = -Yᵀ` gives
-`κ(X, θ Y) = -(2 n trace (X * Yᵀ))`, which is strictly negative for nonzero `X` over any ordered
-principal ideal domain.
+`κ(X, θ Y) = -(2 n trace (X * Yᵀ))`; in particular, `κ(X, θ X) < 0` for every nonzero `X` over any
+ordered principal ideal domain.
 
 ## Main definitions
 
@@ -126,12 +126,20 @@ theorem killingForm_apply (X Y : sl n R) :
   let e : sl n R ≃ₗ⁅R⁆ TauCeti.slIdeal R n :=
     LieEquiv.ofEq (sl n R) (TauCeti.slIdeal R n).toLieSubalgebra
       (congrArg SetLike.coe (TauCeti.slIdeal_toLieSubalgebra_eq_sl (R := R) (n := n)).symm)
+  have he (Z : sl n R) : (e Z : Matrix n n R) = Z :=
+    LieEquiv.ofEq_apply (sl n R) (TauCeti.slIdeal R n).toLieSubalgebra _ Z
   have h1 : killingForm R (sl n R) X Y = killingForm R (TauCeti.slIdeal R n) (e X) (e Y) :=
     (killingForm_of_equiv_apply e X Y).symm
   have h2 : killingForm R (TauCeti.slIdeal R n) (e X) (e Y) =
       killingForm R (Matrix n n R) X Y := by
-    rw [LieIdeal.killingForm_eq]
-    rfl
+    calc
+      killingForm R (TauCeti.slIdeal R n) (e X) (e Y)
+          = (killingForm R (Matrix n n R)).restrict (TauCeti.slIdeal R n) (e X) (e Y) :=
+            congrArg (fun B ↦ B (e X) (e Y))
+              (LieIdeal.killingForm_eq (R := R) (L := Matrix n n R) (I := TauCeti.slIdeal R n))
+      _ = killingForm R (Matrix n n R) (e X) (e Y) :=
+            LinearMap.domRestrict₁₂_apply (killingForm R (Matrix n n R)) _ _ (e X) (e Y)
+      _ = killingForm R (Matrix n n R) X Y := by rw [he, he]
   rw [h1, h2, Matrix.killingForm_apply, mem_sl_iff.mp X.property, mem_sl_iff.mp Y.property]
   ring
 

@@ -69,8 +69,9 @@ diagonalizable over `ℝ`.
   reductivity of the fixed subalgebra `𝔨`.
 * `LieEquiv.IsCartanInvolution.orthogonal_fixedSubalgebra_eq_cartanP`,
   `LieEquiv.IsCartanInvolution.eq_of_fixedSubalgebra_eq`,
-  `LieEquiv.IsCartanInvolution.eq_of_commute`: `𝔭 = 𝔨^{⊥_B}`, uniqueness of `θ` from `𝔨`, and
-  equality of commuting Cartan involutions.
+  `LieEquiv.IsCartanInvolution.eq_of_commute`,
+  `LieEquiv.not_isCartanInvolution_of_isLieAbelian`: `𝔭 = 𝔨^{⊥_B}`, uniqueness of `θ` from `𝔨`,
+  equality of commuting Cartan involutions, and nonexistence on nontrivial abelian Lie algebras.
 * `LieEquiv.IsCartanInvolution.iSup_eigenspace_ad_eq_top`: over `ℝ`, `ad x` is diagonalizable for
   every `x ∈ 𝔭`.
 
@@ -108,18 +109,6 @@ theorem cartanP_eq_eigenspace (θ : L ≃ₗ⁅R⁆ L) :
     θ.cartanP = Module.End.eigenspace (θ : L →ₗ[R] L) (-1) := by
   ext x
   simp
-
-/-- The fixed subalgebra `𝔨` of `θ` has underlying submodule equal to the `1`-eigenspace of `θ`. -/
-theorem fixedSubalgebra_toSubmodule_eq_eigenspace (θ : L ≃ₗ⁅R⁆ L) :
-    θ.toLieHom.fixedSubalgebra.toSubmodule = Module.End.eigenspace (θ : L →ₗ[R] L) 1 := by
-  ext x
-  simp
-
-/-- The fixed subalgebra `𝔨` of `θ` has underlying submodule `ker (θ - 1)`. -/
-theorem fixedSubalgebra_toSubmodule_eq_ker (θ : L ≃ₗ⁅R⁆ L) :
-    θ.toLieHom.fixedSubalgebra.toSubmodule = LinearMap.ker ((θ : L →ₗ[R] L) - LinearMap.id) := by
-  ext x
-  simp [sub_eq_zero]
 
 /-- When `2` is a unit, the identity automorphism has trivial `-1`-eigenspace. -/
 @[simp]
@@ -169,7 +158,8 @@ submodules. -/
 theorem isCompl_fixedSubalgebra_cartanP {θ : L ≃ₗ⁅R⁆ L} (h2 : IsUnit (2 : R))
     (hθ : Function.Involutive θ) :
     IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP := by
-  rw [fixedSubalgebra_toSubmodule_eq_eigenspace, cartanP_eq_eigenspace]
+  have hlin : θ.toLieHom.toLinearMap = (θ : L →ₗ[R] L) := LinearMap.ext fun x ↦ by simp
+  rw [LieHom.fixedSubalgebra_toSubmodule_eq_eigenspace, hlin, cartanP_eq_eigenspace]
   exact TauCeti.isCompl_eigenspace_one_neg_one h2 hθ
 
 /-- The eigenspaces `𝔨` and `𝔭` are orthogonal for the Killing form whenever `2` is a unit. -/
@@ -363,6 +353,17 @@ theorem center_eq_bot (hθ : θ.IsCartanInvolution) : center R L = ⊥ := by
 
 end IsCartanInvolution
 
+/-- A nontrivial abelian Lie algebra admits no Cartan involution, because a Lie algebra admitting
+a Cartan involution has trivial centre. -/
+theorem not_isCartanInvolution_of_isLieAbelian [Nontrivial L] [IsLieAbelian L] (θ : L ≃ₗ⁅R⁆ L) :
+    ¬ θ.IsCartanInvolution := by
+  intro hθ
+  obtain ⟨x, hx⟩ := exists_ne (0 : L)
+  have hx0 : x ∈ center R L :=
+    (LieModule.mem_maxTrivSubmodule R L L x).mpr fun y ↦ trivial_lie_zero L L y x
+  rw [hθ.center_eq_bot] at hx0
+  exact hx ((LieSubmodule.mem_bot x).mp hx0)
+
 end PartialOrder
 
 section OrderedAddMonoid
@@ -384,6 +385,51 @@ theorem isCartanInvolution_refl_iff :
     (LieEquiv.refl : L ≃ₗ⁅R⁆ L).IsCartanInvolution ↔
       ∀ x : L, x ≠ 0 → killingForm R L x x < 0 := by
   simp [isCartanInvolution_iff, Function.Involutive]
+
+/-- **Two commuting Cartan involutions are equal.** -/
+theorem IsCartanInvolution.eq_of_commute {θ θ' : L ≃ₗ⁅R⁆ L} (hθ : θ.IsCartanInvolution)
+    (hθ' : θ'.IsCartanInvolution) (hcomm : ∀ x, θ (θ' x) = θ' (θ x)) : θ = θ' := by
+  ext x
+  have hu : (x + θ x) - θ' (x + θ x) = 0 := by
+    by_contra hne
+    have hK : (x + θ x) - θ' (x + θ x) ∈ θ.toLieHom.fixedSubalgebra := by
+      rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_sub, map_add, hθ.involutive,
+        hcomm, map_add, hθ.involutive, add_comm (θ x) x]
+    have hP' : (x + θ x) - θ' (x + θ x) ∈ θ'.cartanP := by
+      rw [mem_cartanP_iff, map_sub, hθ'.involutive, neg_sub]
+    exact (hθ.killingForm_self_neg_of_mem_fixedSubalgebra hK hne).not_gt
+      (hθ'.killingForm_self_pos_of_mem_cartanP hP' hne)
+  have hw : (x - θ x) + θ' (x - θ x) = 0 := by
+    by_contra hne
+    have hP : (x - θ x) + θ' (x - θ x) ∈ θ.cartanP := by
+      rw [mem_cartanP_iff, map_add, map_sub, hθ.involutive, hcomm, map_sub, hθ.involutive,
+        ← neg_sub x (θ x), map_neg]
+      abel
+    have hK' : (x - θ x) + θ' (x - θ x) ∈ θ'.toLieHom.fixedSubalgebra := by
+      rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_add, hθ'.involutive, add_comm]
+    exact (hθ'.killingForm_self_neg_of_mem_fixedSubalgebra hK' hne).not_gt
+      (hθ.killingForm_self_pos_of_mem_cartanP hP hne)
+  have h2 : (θ x - θ' x) + (θ x - θ' x) = 0 := by
+    calc
+      (θ x - θ' x) + (θ x - θ' x) =
+          ((x + θ x) - θ' (x + θ x)) - ((x - θ x) + θ' (x - θ x)) := by
+            simp only [map_add, map_sub]; abel
+      _ = 0 := by rw [hu, hw, sub_self]
+  refine sub_eq_zero.mp ?_
+  by_contra hne
+  have hpos := hθ.cartanBilinForm_self_pos hne
+  have hsum : 0 < θ.cartanBilinForm (θ x - θ' x) (θ x - θ' x) +
+      θ.cartanBilinForm (θ x - θ' x) (θ x - θ' x) :=
+    lt_of_lt_of_le hpos (le_add_of_nonneg_right hpos.le)
+  rw [← map_add, h2, map_zero] at hsum
+  exact lt_irrefl 0 hsum
+
+/-- On a compact Lie algebra (negative definite Killing form), the identity is the unique Cartan
+involution. -/
+theorem IsCartanInvolution.eq_refl_of_killingForm_self_neg {θ : L ≃ₗ⁅R⁆ L}
+    (hθ : θ.IsCartanInvolution) (hneg : ∀ x : L, x ≠ 0 → killingForm R L x x < 0) :
+    θ = LieEquiv.refl :=
+  hθ.eq_of_commute (isCartanInvolution_refl_iff.mpr hneg) (fun _ ↦ rfl)
 
 end OrderedAddMonoid
 
@@ -499,45 +545,6 @@ theorem eq_of_fixedSubalgebra_eq [NeZero (2 : K)] (hθ : θ.IsCartanInvolution)
   have hk2 : θ' k = k := LieHom.mem_fixedSubalgebra.mp (h ▸ hk)
   have hp' : p ∈ θ'.cartanP := hP ▸ hp
   rw [map_add, map_add, hk1, hk2, mem_cartanP_iff.mp hp, mem_cartanP_iff.mp hp']
-
-/-- **Two commuting Cartan involutions are equal.** -/
-theorem eq_of_commute [IsOrderedAddMonoid K] [NeZero (2 : K)] (hθ : θ.IsCartanInvolution)
-    (hθ' : θ'.IsCartanInvolution) (hcomm : ∀ x, θ (θ' x) = θ' (θ x)) : θ = θ' := by
-  ext x
-  have hu : (x + θ x) - θ' (x + θ x) = 0 := by
-    by_contra hne
-    have hK : (x + θ x) - θ' (x + θ x) ∈ θ.toLieHom.fixedSubalgebra := by
-      rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_sub, map_add, hθ.involutive,
-        hcomm, map_add, hθ.involutive, add_comm (θ x) x]
-    have hP' : (x + θ x) - θ' (x + θ x) ∈ θ'.cartanP := by
-      rw [mem_cartanP_iff, map_sub, hθ'.involutive, neg_sub]
-    exact (hθ.killingForm_self_neg_of_mem_fixedSubalgebra hK hne).not_gt
-      (hθ'.killingForm_self_pos_of_mem_cartanP hP' hne)
-  have hw : (x - θ x) + θ' (x - θ x) = 0 := by
-    by_contra hne
-    have hP : (x - θ x) + θ' (x - θ x) ∈ θ.cartanP := by
-      rw [mem_cartanP_iff, map_add, map_sub, hθ.involutive, hcomm, map_sub, hθ.involutive,
-        ← neg_sub x (θ x), map_neg]
-      abel
-    have hK' : (x - θ x) + θ' (x - θ x) ∈ θ'.toLieHom.fixedSubalgebra := by
-      rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_add, hθ'.involutive, add_comm]
-    exact (hθ'.killingForm_self_neg_of_mem_fixedSubalgebra hK' hne).not_gt
-      (hθ.killingForm_self_pos_of_mem_cartanP hP hne)
-  have h2 : (2 : K) • (θ x - θ' x) = 0 := by
-    rw [two_smul]
-    calc
-      (θ x - θ' x) + (θ x - θ' x) =
-          ((x + θ x) - θ' (x + θ x)) - ((x - θ x) + θ' (x - θ x)) := by
-            simp only [map_add, map_sub]; abel
-      _ = 0 := by rw [hu, hw, sub_self]
-  exact sub_eq_zero.mp ((isUnit_iff_ne_zero.mpr (NeZero.ne (2 : K))).smul_eq_zero.mp h2)
-
-/-- On a compact Lie algebra (negative definite Killing form), the identity is the unique Cartan
-involution. -/
-theorem eq_refl_of_killingForm_self_neg [IsOrderedAddMonoid K] [NeZero (2 : K)]
-    (hθ : θ.IsCartanInvolution) (hneg : ∀ x : L, x ≠ 0 → killingForm K L x x < 0) :
-    θ = LieEquiv.refl :=
-  hθ.eq_of_commute (isCartanInvolution_refl_iff.mpr hneg) (fun _ ↦ rfl)
 
 end IsCartanInvolution
 

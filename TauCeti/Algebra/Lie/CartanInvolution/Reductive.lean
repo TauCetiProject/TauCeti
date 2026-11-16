@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Reductive.Equiv
 import Mathlib.Algebra.Lie.Abelian
-import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Reductive.Basic
 
 /-!
@@ -28,8 +27,7 @@ Cartan involution of `[L, L]` assembles into a reductive Cartan involution of `L
 Over a partially ordered field, every Cartan involution is a reductive Cartan involution, and any
 Lie algebra admitting a reductive Cartan involution has semisimple finite-dimensional derived ideal
 and central radical (`LieAlgebra.HasCentralRadical`). On an abelian Lie algebra, `[L, L] = 0`, so
-every involution is a reductive Cartan involution, whereas no nontrivial abelian Lie algebra admits
-a Cartan involution in the semisimple sense.
+every involution is a reductive Cartan involution.
 
 ## Main definitions
 
@@ -46,8 +44,7 @@ a Cartan involution in the semisimple sense.
 * `LieEquiv.IsCartanInvolution.isReductiveCartanInvolution`: every Cartan involution is reductive.
 * `LieEquiv.IsReductiveCartanInvolution.hasCentralRadical` and
   `LieEquiv.IsReductiveCartanInvolution.isSemisimple_derivedSeries`: structure consequences.
-* `LieEquiv.isReductiveCartanInvolution_iff_involutive_of_isLieAbelian` and
-  `LieEquiv.not_isCartanInvolution_of_isLieAbelian`: the abelian case.
+* `LieEquiv.isReductiveCartanInvolution_iff_involutive_of_isLieAbelian`: the abelian case.
 
 ## References
 
@@ -217,19 +214,6 @@ theorem isReductiveCartanInvolution_iff_involutive_of_isLieAbelian [IsLieAbelian
   have hx' : (x : L) ∈ (⊥ : LieIdeal R L) := hD ▸ x.property
   exact (LieSubmodule.mem_bot _).mp hx'
 
-/-- A nontrivial abelian Lie algebra admits no Cartan involution in the semisimple sense, because
-its Killing form vanishes identically. -/
-theorem not_isCartanInvolution_of_isLieAbelian [Nontrivial L] [IsLieAbelian L] (θ : L ≃ₗ⁅R⁆ L) :
-    ¬ θ.IsCartanInvolution := by
-  intro hθ
-  obtain ⟨x, hx⟩ := exists_ne (0 : L)
-  have hpos := hθ.cartanBilinForm_self_pos hx
-  have had : ad R L x = 0 := LieAlgebra.ad_eq_zero_of_isLieAbelian x
-  have hB : killingForm R L x (θ x) = 0 := by
-    rw [killingForm_apply_apply, had, LinearMap.zero_comp, map_zero]
-  rw [cartanBilinForm_apply, hB, neg_zero] at hpos
-  exact lt_irrefl 0 hpos
-
 end PartialOrder
 
 /-! ### Structure consequences over a partially ordered field -/
@@ -243,14 +227,22 @@ theorem IsCartanInvolution.isReductiveCartanInvolution {θ : L ≃ₗ⁅K⁆ L}
     (hθ : θ.IsCartanInvolution) : θ.IsReductiveCartanInvolution := by
   refine ⟨by rw [hθ.center_eq_bot, hθ.derivedSeries_one_eq_top]; exact isCompl_bot_top,
     hθ.involutive, ?_⟩
-  let e : L ≃ₗ⁅K⁆ derivedSeries K L 1 :=
-    (LieSubalgebra.topEquiv (R := K) (L := L)).symm.trans
-      (LieEquiv.ofEq (⊤ : LieSubalgebra K L) (derivedSeries K L 1).toLieSubalgebra
-        (by rw [hθ.derivedSeries_one_eq_top]; rfl))
+  let e₁ : L ≃ₗ⁅K⁆ (⊤ : LieSubalgebra K L) := (LieSubalgebra.topEquiv (R := K) (L := L)).symm
+  let e₂ : (⊤ : LieSubalgebra K L) ≃ₗ⁅K⁆ (derivedSeries K L 1).toLieSubalgebra :=
+    LieEquiv.ofEq (⊤ : LieSubalgebra K L) (derivedSeries K L 1).toLieSubalgebra
+      (by rw [hθ.derivedSeries_one_eq_top, LieIdeal.top_toLieSubalgebra])
+  let e : L ≃ₗ⁅K⁆ derivedSeries K L 1 := e₁.trans e₂
+  have he (y : L) : (e y : L) = y := by
+    calc
+      (e y : L) = (e₂ (e₁ y) : L) := congrArg Subtype.val (trans_apply e₁ e₂ y)
+      _ = (e₁ y : L) := LieEquiv.ofEq_apply _ _ _ (e₁ y)
+      _ = LieSubalgebra.topEquiv (e₁ y) := (LieSubalgebra.topEquiv_apply (e₁ y)).symm
+      _ = y := (LieSubalgebra.topEquiv (R := K) (L := L)).apply_symm_apply y
+  have hes (x : derivedSeries K L 1) : e.symm x = (x : L) := by
+    rw [← he (e.symm x), apply_symm_apply]
   have hconj : θ.restrictDerivedSeries 1 = e.symm.trans (θ.trans e) := by
     ext x
-    rw [coe_restrictDerivedSeries]
-    rfl
+    rw [coe_restrictDerivedSeries, trans_apply, trans_apply, he, hes]
   rw [hconj]
   exact hθ.conj e
 

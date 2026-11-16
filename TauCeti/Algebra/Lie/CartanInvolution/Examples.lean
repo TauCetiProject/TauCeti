@@ -125,14 +125,18 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv (n : Type*) [Fintype n]
     let e : SpecialLinear.sl n K ≃ₗ⁅K⁆ derivedSeries K (Matrix n n K) 1 :=
       LieEquiv.ofEq (SpecialLinear.sl n K) (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
         (congrArg SetLike.coe (derivedSeries_one_toLieSubalgebra_eq_sl (R := K) (n := n)).symm)
+    have he (X : SpecialLinear.sl n K) : (e X : Matrix n n K) = X :=
+      LieEquiv.ofEq_apply (SpecialLinear.sl n K)
+        (derivedSeries K (Matrix n n K) 1).toLieSubalgebra _ X
+    have hes (X : derivedSeries K (Matrix n n K) 1) : (e.symm X : Matrix n n K) = X := by
+      rw [← he (e.symm X), e.apply_symm_apply]
     have hconj : (negTransposeLieEquiv n K).restrictDerivedSeries 1 =
         e.symm.trans ((SpecialLinear.cartanInvolution n K).trans e) := by
       apply LieEquiv.ext
       intro X
       apply Subtype.ext
       rw [LieEquiv.coe_restrictDerivedSeries, negTransposeLieEquiv_apply, LieEquiv.trans_apply,
-        LieEquiv.trans_apply]
-      exact (SpecialLinear.coe_cartanInvolution (e.symm X)).symm
+        LieEquiv.trans_apply, he, SpecialLinear.coe_cartanInvolution, hes]
     rw [hconj]
     exact (SpecialLinear.isCartanInvolution_cartanInvolution (R := K) n).conj e
   · have : IsEmpty n := not_nonempty_iff.mp hn
