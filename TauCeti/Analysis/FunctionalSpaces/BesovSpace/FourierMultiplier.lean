@@ -162,7 +162,7 @@ theorem exists_toDistr_eq_fourierMultiplierCLM_and_norm_le (φ : ContDiffBump (0
   subst hs
   obtain ⟨C, hC0, hC⟩ := exists_littlewoodPaleyBlock_fourierMultiplierCLM_eq_and_le (F := F) φ m s
   refine ⟨C, hC0, fun {g W} hg hgW {p q} _ _ u ↦ ?_⟩
-  have hW : 0 ≤ W := by simpa using (norm_nonneg _).trans (hgW 0 (Nat.zero_le _) 0)
+  have hW : 0 ≤ W := nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hgW 0 (Nat.zero_le _))
   obtain ⟨f', hf', hle⟩ := hC hg hgW u.block fun k ↦ (coe_block u k).symm
   have hu : (TemperedDistribution.fourierMultiplierCLM F g u.toDistr).MemBesov φ (s - m) p q :=
     memBesov_iff.2 ⟨f', hf', ((memBesov_iff_memℓp fun k ↦ (coe_block u k).symm).1
@@ -228,7 +228,7 @@ theorem exists_norm_fourierMultiplierCLM_le (φ : ContDiffBump (0 : E)) (m : ℝ
       ‖fourierMultiplierCLM F φ p q hg hgm hs‖ ≤ C * W := by
   obtain ⟨C, hC0, hC⟩ := exists_toDistr_eq_fourierMultiplierCLM_and_norm_le (F := F) φ m hs
   refine ⟨C, hC0, fun {p q} _ _ g hg hgm W hgW ↦ ?_⟩
-  have hW : 0 ≤ W := by simpa using (norm_nonneg _).trans (hgW 0 (Nat.zero_le _) 0)
+  have hW : 0 ≤ W := nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hgW 0 (Nat.zero_le _))
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   obtain ⟨v, hv, hvC⟩ := hC (.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hg hgm) hgW u
   rw [show fourierMultiplierCLM F φ p q hg hgm hs u = v from

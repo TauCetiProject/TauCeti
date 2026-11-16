@@ -72,7 +72,7 @@ theorem exists_integral_norm_fourierInv_cutoff_smul_le (m : ℝ) {N : ℕ}
   refine ⟨C₀ * (K * (√b + 1) ^ N), fun g W hg hgm R χ hR hχ hsupp hB ↦ ?_⟩
   have hKχ := hKχ g W (hg.of_le (mod_cast le_top)) hgm R χ hR (hχ.of_le (mod_cast le_top)) hsupp
     hB
-  have hW : 0 ≤ W := by simpa using (norm_nonneg _).trans (hgm 0 (Nat.zero_le _) 0)
+  have hW : 0 ≤ W := nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hgm 0 (Nat.zero_le _))
   -- On the support of `χ`, the frequencies are at most `√b R`.
   set t : ℝ := (√b + 1) * R
   have ht : 0 < t := by positivity

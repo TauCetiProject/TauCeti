@@ -8,10 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.Fourier.FourierTransform
-import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
 # Derivatives of the Fourier phases
@@ -63,31 +62,17 @@ theorem hasLineDerivAt_fourierChar_neg_inner (ζ v y : E) :
     using 1 <;> simp [innerSL_apply_apply ℝ, real_inner_comm ζ]
   ring
 
-/-- The phase `x ↦ 2πi ⟪η, x⟫` of the plane wave of frequency `η`, as a real-linear map. -/
-private noncomputable def planePhase (η : E) : E →L[ℝ] ℂ :=
-  (2 * π * Complex.I) • (Complex.ofRealCLM ∘L innerSL ℝ η)
-
-private theorem fourierChar_inner_eq_exp (η : E) :
-    (fun x : E ↦ (𝐞 ⟪η, x⟫ : ℂ)) = fun x ↦ Complex.exp (planePhase η x) := by
+/-- The plane wave `x ↦ 𝐞 ⟪η, x⟫` is the Fourier atom `TauCeti.fourierAtom (-η)`. -/
+private theorem fourierChar_inner_eq_fourierAtom (η : E) :
+    (fun x : E ↦ (𝐞 ⟪η, x⟫ : ℂ)) = TauCeti.fourierAtom (-η) := by
   funext x
-  rw [fourierChar_apply]
-  simp only [planePhase, smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
-    Complex.ofRealCLM_apply, smul_eq_mul]
-  push_cast
-  ring_nf
-
-private theorem norm_planePhase_le (η : E) : ‖planePhase η‖ ≤ 2 * π * ‖η‖ := by
-  refine (norm_smul_le (2 * π * Complex.I) (Complex.ofRealCLM ∘L innerSL ℝ η)).trans ?_
-  rw [show ‖2 * π * Complex.I‖ = 2 * π by simp [abs_of_pos pi_pos]]
-  gcongr
-  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-  rw [Complex.ofRealCLM_norm, one_mul, innerSL_apply_norm]
+  rw [TauCeti.fourierAtom_eq_fourierChar, inner_neg_right, neg_neg, real_inner_comm]
 
 /-- The plane wave `x ↦ 𝐞 ⟪η, x⟫` is smooth. -/
 theorem contDiff_fourierChar_inner (η : E) {n : WithTop ℕ∞} :
     ContDiff ℝ n fun x : E ↦ (𝐞 ⟪η, x⟫ : ℂ) := by
-  rw [fourierChar_inner_eq_exp]
-  exact ((Complex.contDiff_exp (𝕜 := ℂ)).restrict_scalars ℝ).comp (planePhase η).contDiff
+  rw [fourierChar_inner_eq_fourierAtom]
+  exact TauCeti.contDiff_fourierAtom (-η)
 
 /-- The plane waves `𝐞 ⟪η, x⟫` depend continuously on the frequency and the position jointly. -/
 theorem continuous_fourierChar_inner :
@@ -98,13 +83,8 @@ theorem continuous_fourierChar_inner :
 `x ↦ 𝐞 ⟪η, x⟫ = exp(2πi ⟪η, x⟫)` is bounded by `(2π ‖η‖) ^ k` at every point. -/
 theorem norm_iteratedFDeriv_fourierChar_inner_le (η : E) (k : ℕ) (x : E) :
     ‖iteratedFDeriv ℝ k (fun x : E ↦ (𝐞 ⟪η, x⟫ : ℂ)) x‖ ≤ (2 * π * ‖η‖) ^ k := by
-  rw [fourierChar_inner_eq_exp]
-  refine ((planePhase η).norm_iteratedFDeriv_cexp_comp_le k x).trans ?_
-  have h : ‖Complex.exp (planePhase η x)‖ = 1 := by
-    rw [← congrFun (fourierChar_inner_eq_exp η) x, Circle.norm_coe]
-  rw [h, one_mul]
-  gcongr
-  exact norm_planePhase_le η
+  rw [fourierChar_inner_eq_fourierAtom, ← norm_neg η]
+  exact TauCeti.norm_iteratedFDeriv_fourierAtom_le (-η) x k
 
 /-- The plane wave `x ↦ 𝐞 ⟪η, x⟫` has temperate growth. -/
 theorem hasTemperateGrowth_fourierChar_inner (η : E) :

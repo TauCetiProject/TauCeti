@@ -135,7 +135,8 @@ theorem exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le [Complet
           ‖h‖ ≤ C * W * 2 ^ (m * j) * ‖f‖ := by
   obtain ⟨C, hC⟩ := exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq (F := F) φ m
   refine ⟨max C 0, le_max_right _ _, fun {g W} hg hgW {p} _ j u f hf ↦ ?_⟩
-  have hW : 0 ≤ W := by simpa using (norm_nonneg _).trans (hgW 0 (Nat.zero_le _) 0)
+  have hW : 0 ≤ W :=
+    TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hgW 0 (Nat.zero_le _))
   obtain ⟨σ, hσ, hσC⟩ := hC hg hgW j
   obtain ⟨h, hh, hhf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
   refine ⟨h, ?_, ?_⟩
@@ -148,6 +149,18 @@ theorem exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le [Complet
         gcongr
         exact hσC.trans (by gcongr; exact le_max_left _ _)
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The symbol `(1 + ‖ξ‖ ^ 2) ^ (s / 2)` of the Bessel potential of order `s` has temperate growth
+and the symbol estimates of order `s` up to order `finrank ℝ E + 1`, with a common constant. -/
+private theorem hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (s : ℝ) :
+    (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth ∧
+      ∃ W, ∀ i ≤ finrank ℝ E + 1, ∀ ξ : E,
+        ‖iteratedFDeriv ℝ i (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) ξ‖ ≤
+          W * (1 + ‖ξ‖ ^ 2) ^ ((s - i) / 2) :=
+  ⟨Complex.ofRealCLM.hasTemperateGrowth.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _),
+    TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow fun i _ ↦
+      TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s i⟩
+
 /-- **Bessel potentials on Littlewood–Paley blocks.** There is a constant `C` such that for every
 `j` the Bessel potential `J^s` of order `s`, applied after the Littlewood–Paley block `Δⱼ`, is the
 Fourier multiplier by a Schwartz symbol `σⱼ` applied after `Δⱼ`, where the kernel of `σⱼ` satisfies
@@ -159,11 +172,8 @@ theorem exists_besselPotential_compL_littlewoodPaleyBlock_eq (s : ℝ) :
           fourierMultiplierCLM F σ ∘L littlewoodPaleyBlock F φ j ∧
         ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * (2 ^ j) ^ s := by
   obtain ⟨C, hC⟩ := exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq (F := F) φ s
-  obtain ⟨W, hW⟩ := TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow
-    (N := finrank ℝ E + 1) fun i _ ↦
-      TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (E := E) s i
-  exact ⟨C * W, hC (Complex.ofRealCLM.hasTemperateGrowth.comp
-    (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _)) hW⟩
+  obtain ⟨hg, W, hW⟩ := hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (E := E) s
+  exact ⟨C * W, hC hg hW⟩
 
 /-- **Bessel potentials of Littlewood–Paley blocks in `Lᵖ`.** There is a constant `C ≥ 0`,
 depending only on `s` and `φ`, such that for every `1 ≤ p ≤ ∞` and every `j`: if the block
@@ -179,12 +189,10 @@ theorem exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpac
           ‖g‖ ≤ C * 2 ^ (s * j) * ‖f‖ := by
   obtain ⟨C, hC0, hC⟩ :=
     exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ s
-  obtain ⟨W, hW⟩ := TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow
-    (N := finrank ℝ E + 1) fun i _ ↦
-      TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (E := E) s i
-  have hW0 : 0 ≤ W := by simpa using (norm_nonneg _).trans (hW 0 (Nat.zero_le _) 0)
-  exact ⟨C * W, by positivity, hC (Complex.ofRealCLM.hasTemperateGrowth.comp
-    (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _)) hW⟩
+  obtain ⟨hg, W, hW⟩ := hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (E := E) s
+  have hW0 : 0 ≤ W :=
+    TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hW 0 (Nat.zero_le _))
+  exact ⟨C * W, by positivity, hC hg hW⟩
 
 open Distribution in
 /-- **Bessel potentials on a dyadic annulus.** For `t : ℝ`, `a > 0` and every `b` there is a

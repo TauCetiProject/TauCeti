@@ -52,6 +52,8 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   constant proportional to the constant in the symbol estimates.
 * `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow`: finitely many symbol
   estimates hold with a common constant.
+* `TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow`: the constant of a symbol estimate
+  is nonnegative.
 * `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
   `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
@@ -183,6 +185,13 @@ theorem one_add_norm_sq_rpow_half_le_one_add_norm_rpow (x : E) {p : ℝ} (hp : 0
   gcongr
   exact Real.sqrt_le_iff.2 ⟨by positivity, by nlinarith [norm_nonneg x]⟩
 
+/-- The constant `W` of a bound `‖f ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ r`, such as a symbol estimate, is
+nonnegative. -/
+theorem nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow {F : Type*} [SeminormedAddGroup F]
+    {f : E → F} {W r : ℝ}
+    (h : ∀ ξ, ‖f ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ r) : 0 ≤ W :=
+  nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (h 0)) (by positivity)
+
 section NormedSpace
 
 variable [NormedSpace ℝ E]
@@ -210,7 +219,7 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le (N : ℕ) (m : ℝ) {a b : ℝ
   have hS0 (k : ℕ) : 0 ≤ S k := Finset.sum_nonneg fun i _ ↦ by have := hP0 (k - i); positivity
   refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k _ ↦ hS0 k,
     fun w W hw hW R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
-  have hW0 : 0 ≤ W := by simpa using (norm_nonneg _).trans (hW 0 (Nat.zero_le _) 0)
+  have hW0 : 0 ≤ W := nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hW 0 (Nat.zero_le _))
   -- By the Leibniz rule, each term `D^i χ D^(k-i) w` is `O(R ^ (-i) R ^ (m - (k - i)))`, which is
   -- `O(R ^ m / R ^ k)`; it vanishes off the support of `χ`.
   have hterm (i : ℕ) (hi : i ∈ Finset.range (k + 1)) :
