@@ -150,20 +150,13 @@ theorem integralTopForm_inner_selfDualPart_add_smul_add_sub_eq [SigmaCompactSpac
     rw [Submodule.coe_sub, Pi.sub_apply, LinearMap.map_sub₂, SmoothForm.coe_selfDualPart,
       RoughForm.alternatingFormInner_selfDualPart_of_mem_selfDualForms o even_two _ hω'' x,
       sub_self, zero_smul, Pi.zero_apply]
-  -- Constant factors come out of the pairing with `ω`.
-  have hsmul (c : ℝ) (θ : SmoothForm I M ℝ 2) :
-      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((c • θ).1 x) (ω.1 x) •
-        riemannianVolumeForm o x) =
-      c * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (θ.1 x) (ω.1 x) •
-        riemannianVolumeForm o x) := by
-    rw [← integralTopForm_mul_smul_riemannianVolumeForm]
-    simp only [Submodule.coe_smul, Pi.smul_apply, LinearMap.map_smul₂, smul_eq_mul]
   have hsplit : SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • F) =
       (r / 4) • ω + ρ + (-2 : ℝ) • F + (SmoothForm.selfDualPart o F₀ - F₀) := by
     module
   rw [hsplit, SmoothForm.integralTopForm_inner_add_left o rfl _ _ _ (.inr hc), h₀,
     SmoothForm.integralTopForm_inner_add_left o rfl _ _ _ (.inr hc),
-    SmoothForm.integralTopForm_inner_add_left o rfl _ _ _ (.inr hc), hsmul, hsmul,
+    SmoothForm.integralTopForm_inner_add_left o rfl _ _ _ (.inr hc),
+    SmoothForm.integralTopForm_inner_smul_left, SmoothForm.integralTopForm_inner_smul_left,
     SmoothForm.integralTopForm_inner_smul_riemannianVolumeForm_eq_poincarePairing o hF hω hω']
   ring
 
@@ -199,34 +192,26 @@ theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub [CompactS
     (ω.1 x) • riemannianVolumeForm o x)
   set P := poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
     (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩)
-  -- Young's inequality `-2 ⟨ρ, ω⟩₂ ≤ ‖ρ‖₂² + ‖ω‖₂²`, from `0 ≤ ‖ρ + ω‖₂²`.
+  -- Young's inequality `-2 ⟨ρ, ω⟩₂ ≤ ‖ρ‖₂² + ‖ω‖₂²`, from `0 ≤ ‖ρ + ω‖₂² = R + 2 Q + A`.
   have hQ : -(R + A) ≤ 2 * Q := by
     have hsq := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o (ρ + ω).1
-    have hexp : integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-        ((ρ + ω).1 x) ((ρ + ω).1 x) • riemannianVolumeForm o x) = R + 2 * Q + A := by
-      have hs (α β : SmoothForm I M ℝ 2) :=
-        (SmoothForm.isSmoothForm_inner_smul_riemannianVolumeForm o rfl α β).of_le bot_le
-      rw [show (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((ρ + ω).1 x) ((ρ + ω).1 x) •
-          riemannianVolumeForm o x) =
-          ((fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.1 x) (ρ.1 x) •
-            riemannianVolumeForm o x) +
-            (2 : ℝ) • (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.1 x) (ω.1 x) •
-              riemannianVolumeForm o x)) +
-            (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (ω.1 x) •
-              riemannianVolumeForm o x) by
-          funext x
-          simp only [Submodule.coe_add, Pi.add_apply, Pi.smul_apply,
-            LinearMap.add_apply, map_add, alternatingFormInner_comm (ω.1 x) (ρ.1 x), smul_smul,
-            ← add_smul]
-          congr 1
-          ring,
-        integralTopForm_add_of_compactSpace o ((hs ρ ρ).add ((hs ρ ω).smul 2)) (hs ω ω),
-        integralTopForm_add_of_compactSpace o (hs ρ ρ) ((hs ρ ω).smul 2), integralTopForm_smul]
+    have ht (θ : SmoothForm I M ℝ 2) : θ ∈ compactlySupportedForms I M 2 := by
+      simp [compactlySupportedForms_eq_top]
+    rw [SmoothForm.integralTopForm_inner_add_left o rfl ρ ω (ρ + ω) (.inr (ht _)),
+      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o ρ.1,
+      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o ω.1,
+      SmoothForm.integralTopForm_inner_add_left o rfl ρ ω ρ (.inr (ht _)),
+      SmoothForm.integralTopForm_inner_add_left o rfl ρ ω ω (.inr (ht _)),
+      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o ω.1 ρ.1] at hsq
     linarith
-  have hb₀ : 0 ≤ b := (abs_nonneg _).trans hb
   have hR₀ : 0 ≤ R := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o ρ.1
   have hP : P ≤ b := (le_abs_self P).trans hb
-  have hr₄ : 4 ≤ r := by nlinarith
-  nlinarith [hr₄]
+  -- `r ≥ 4` from `4 a ≤ r a`, so the coefficient `r / 4 - 1 / 2` of `A ≥ a` is positive. Then
+  -- `r A / 4 - 2 P + Q ≥ (r / 4 - 1 / 2) A - 2 b - c / 2 ≥ (r / 4 - 1 / 2) a - 2 b - c / 2`,
+  -- which is at least `r a / 8` exactly when `4 a + 16 b + 4 c ≤ r a`.
+  have hr₄ : 4 ≤ r := le_of_mul_le_mul_right (by linarith [(abs_nonneg P).trans hb]) ha
+  have hA : (r / 4 - 1 / 2) * a ≤ (r / 4 - 1 / 2) * A :=
+    mul_le_mul_of_nonneg_left haω (by linarith)
+  linarith
 
 end TauCeti.SeibergWitten

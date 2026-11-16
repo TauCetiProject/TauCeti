@@ -811,6 +811,21 @@ theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (h
   funext x
   rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
 
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The `L²` pairing of forms is homogeneous in its first argument,
+`∫_M ⟨c α, β⟩ vol = c ∫_M ⟨α, β⟩ vol`. -/
+theorem integralTopForm_inner_smul_left (o : Manifold.Orientation I M (Fin m)) (c : ℝ)
+    (α β : SmoothForm I M ℝ k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((c • α).1 x) (β.1 x) •
+      riemannianVolumeForm o x) =
+      c * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
+        riemannianVolumeForm o x) := by
+  rw [← integralTopForm_smul]
+  congr 1
+  funext x
+  rw [Submodule.coe_smul, Pi.smul_apply, LinearMap.map_smul₂, Pi.smul_apply, smul_eq_mul,
+    mul_smul]
+
 /-! ### Green's formulas and positivity of a Laplacian -/
 
 section Laplacian
