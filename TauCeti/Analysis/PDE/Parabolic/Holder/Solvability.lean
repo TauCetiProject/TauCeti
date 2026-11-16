@@ -290,18 +290,6 @@ def euclideanTerminalDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ)
   ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
     (LinearMap.range_eq_top.2 hbij.2)
 
-/-- Uniform ellipticity of the coefficients `aⁱʲ` passes to the precomposed coefficients
-`aⁱʲ ∘ g`, with the same constant. -/
-private theorem mul_norm_sq_le_toQuadraticForm'_compLipschitzL {X : Type*} [MetricSpace X]
-    {K : ℝ≥0} {g : X → slab (E := EuclideanSpace ℝ ι) 0 T} (hg : LipschitzWith K g)
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ} {lam : ℝ}
-    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    (p : X) (ξ : EuclideanSpace ℝ ι) :
-    lam * ‖ξ‖ ^ 2 ≤
-      (Matrix.of fun i j ↦ HolderSpace.compLipschitzL g hg (a i j) p).toQuadraticForm' ξ := by
-  simpa only [HolderSpace.compLipschitzL_apply] using ha (g p) ξ
-
 section TerminalDataCLE
 
 variable {hα₀ : 0 < α} {hα₁ : α < 1} {hT : (0 : ℝ) < T}
@@ -370,8 +358,8 @@ theorem timeReverseLIE_euclideanTerminalDataCLE_symm_apply
           (sub_zero (T : ℝ)).symm).isometry.lipschitzWith (b i))
         (HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
           (sub_zero (T : ℝ)).symm).isometry.lipschitzWith c)
-        (ha.imp fun _ h ↦ ⟨h.1, fun _ ξ ↦ by
-          simpa only [HolderSpace.compLipschitzL_apply] using h.2 _ ξ⟩)).symm
+        (ha.imp fun _ h ↦
+          ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩)).symm
         (-HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
           (sub_zero (T : ℝ)).symm).isometry.lipschitzWith d.1, d.2) := by
   rw [ContinuousLinearEquiv.eq_symm_apply, euclideanInitialDataCLE_apply,
@@ -394,9 +382,8 @@ theorem timeReverseLIE_comp_euclideanTerminalDataCLE_symm :
           (sub_zero (T : ℝ)).symm).isometry.lipschitzWith (b i))
         (HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
           (sub_zero (T : ℝ)).symm).isometry.lipschitzWith c)
-        (ha.imp fun _ h ↦ ⟨h.1, fun _ ξ ↦ by
-          simpa only [HolderSpace.compLipschitzL_apply] using
-            h.2 _ ξ⟩)).symm.toContinuousLinearMap.comp
+        (ha.imp fun _ h ↦ ⟨h.1,
+          mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩)).symm.toContinuousLinearMap.comp
         ((-HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
           (sub_zero (T : ℝ)).symm).isometry.lipschitzWith).prodMap
           (ContinuousLinearMap.id ℝ (CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ))) :=

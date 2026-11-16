@@ -351,6 +351,18 @@ theorem parabolicOperatorL_compLipschitzL_euclidean {a b a' b' T : ℝ} (hab : a
   ext u p
   simp [parabolicOperatorL_apply, HolderSpace.compLipschitzL_apply]
 
+/-- Uniform ellipticity of the coefficients `aⁱʲ` passes to the precomposed coefficients
+`aⁱʲ ∘ g`, with the same constant. -/
+theorem mul_norm_sq_le_toQuadraticForm'_compLipschitzL {X : Type*} [MetricSpace X]
+    {K : ℝ≥0} {g : X → slab (E := EuclideanSpace ℝ ι) t₀ t₁} (hg : LipschitzWith K g)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} {lam : ℝ}
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (p : X) (ξ : EuclideanSpace ℝ ι) :
+    lam * ‖ξ‖ ^ 2 ≤
+      (Matrix.of fun i j ↦ HolderSpace.compLipschitzL g hg (a i j) p).toQuadraticForm' ξ := by
+  simpa only [HolderSpace.compLipschitzL_apply] using ha (g p) ξ
+
 variable {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
   {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
   {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
