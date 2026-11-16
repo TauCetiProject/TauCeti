@@ -91,7 +91,7 @@ namespace NovikovSeries
 
 section Potential
 
-variable {H : Type*} [AddGroup H] (ι : Type*) (N : H →+ ℝ)
+variable {H : Type*} [AddZeroClass H] (ι : Type*) (N : H →+ ℝ)
 
 /-- The potential `⟨i, A⟩ ↦ -N A` on `ι` copies of `H`. A completed combination for this
 potential has only finitely many nonzero coefficients on `{⟨i, A⟩ | N A < C}` for every `C`. -/
@@ -104,16 +104,11 @@ variable {ι N}
 theorem negPeriod_apply (s : Σ _ : ι, H) : negPeriod ι N s = -N s.2 :=
   (rfl)
 
-/-- Translating a generator by `h` lowers its potential by the period of `h`: the equivariance
-hypothesis of the coordinates `TauCeti.NovikovModule.coordinates`. -/
-theorem negPeriod_vadd (i : ι) (h p : H) :
-    negPeriod ι N ⟨i, h +ᵥ p⟩ = negPeriod ι N ⟨i, p⟩ - N h := by
-  simp only [negPeriod_apply, vadd_eq_add, map_add]
-  ring
-
 end Potential
 
-variable {R V W H ι κ : Type*} [AddCommGroup H] {N : H →+ ℝ}
+section AddZeroClass
+
+variable {R V W H ι κ : Type*} [AddZeroClass H] {N : H →+ ℝ}
 
 section Coordinates
 
@@ -179,21 +174,6 @@ theorem coeff_basisCoordinates_symm (a : NovikovModule R (negPeriod ι N)) (A : 
     ((basisCoordinates b).symm a).coeff A = ∑ i, a.val ⟨i, A⟩ • b i :=
   (rfl)
 
-/-- In the lifts `⟨i, 0⟩`, the `i`-th Novikov coordinate of `κ_b(v)` is the series of the `i`-th
-basis coordinates of the coefficients of `v`. -/
-theorem coeff_coordinates_basisCoordinates (v : NovikovSeries V H N) (i : ι) (A : H) :
-    (NovikovModule.coordinates negPeriod_vadd (fun _ => 0) (basisCoordinates b v) i).coeff A =
-      b.repr (v.coeff A) i := by
-  simp
-
-/-- **The scalar case.** For `V = R` with the basis `{1}`, the coordinate of `κ(v)` at the lift
-`⟨(), 0⟩` is the series `v` itself. -/
-theorem coordinates_basisCoordinates_singleton (v : NovikovSeries R H N) :
-    NovikovModule.coordinates negPeriod_vadd (fun _ => 0)
-      (basisCoordinates (Module.Basis.singleton Unit R) v) () = v := by
-  ext A
-  simp
-
 section Grading
 
 variable {D : Type*} [AddGroup D] (deg : ι → D) (δ : H →+ D)
@@ -216,6 +196,128 @@ theorem basisCoordinates_mem_gradeBy_iff {𝒱 : D → Submodule R V}
 end Grading
 
 end Coordinates
+
+section Filtration
+
+variable [Ring R] [AddCommGroup V] [Module R V] [Fintype ι] (b : Module.Basis ι R V)
+
+/-- **The filtration in basis coordinates.** A vector-valued series vanishes at every exponent of
+period `< C` exactly when its basis coordinates lie in the potential filtration at level `-C`. -/
+theorem basisCoordinates_mem_potentialFiltration_iff {C : ℝ} {v : NovikovSeries V H N} :
+    basisCoordinates b v ∈ NovikovModule.potentialFiltration R (negPeriod ι N) (-C) ↔
+      v ∈ periodFiltration V N C := by
+  simp only [NovikovModule.mem_potentialFiltration, mem_periodFiltration,
+    basisCoordinates_apply_val, negPeriod_apply, Sigma.forall, neg_lt_neg_iff]
+  refine ⟨fun h A hA => b.repr.injective ?_, fun h i A hA => by simp [h A hA]⟩
+  ext i
+  simpa using h i A hA
+
+end Filtration
+
+section Kernel
+
+variable [Semiring R]
+
+open scoped Classical in
+/-- **The Cauchy kernel** on basis coordinates: the pair of generators `⟨i, A⟩` and `⟨j, A'⟩`
+goes to the generator `⟨(i, j), A + A'⟩` with coefficient `1`. -/
+def cauchyKernel (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) : (Σ _ : ι × κ, H) → R :=
+  Pi.single ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ 1
+
+/-- The Cauchy kernel is `1` at the generator `⟨(i, j), A + A'⟩` and `0` elsewhere. -/
+theorem cauchyKernel_apply [DecidableEq (Σ _ : ι × κ, H)] (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H)
+    (p₀ : Σ _ : ι × κ, H) :
+    cauchyKernel (R := R) p₁ p₂ p₀ = if p₀ = ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ then 1 else 0 := by
+  simp only [cauchyKernel, Pi.single_apply]
+  -- Only the decidability instances differ: `cauchyKernel` uses the classical one.
+  convert rfl
+
+/-- The Cauchy kernel is `1` at the generator `⟨(i, j), A + A'⟩`. -/
+@[simp]
+theorem cauchyKernel_self (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) :
+    cauchyKernel (R := R) p₁ p₂ ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ = 1 := by
+  simp [cauchyKernel]
+
+/-- The Cauchy kernel vanishes at every generator other than `⟨(i, j), A + A'⟩`. -/
+theorem cauchyKernel_of_ne {p₁ : Σ _ : ι, H} {p₂ : Σ _ : κ, H} {p₀ : Σ _ : ι × κ, H}
+    (hp : p₀ ≠ ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩) : cauchyKernel (R := R) p₁ p₂ p₀ = 0 := by
+  classical
+  simp [cauchyKernel_apply, hp]
+
+/-- The Cauchy kernel has potential bound `0`: its output generator has exactly the sum of the
+potentials of the input generators. -/
+theorem potential_le_of_cauchyKernel_ne_zero (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H)
+    (p₀ : Σ _ : ι × κ, H) (hp : cauchyKernel (R := R) p₁ p₂ p₀ ≠ 0) :
+    negPeriod (ι × κ) N p₀ ≤ negPeriod ι N p₁ + negPeriod κ N p₂ + 0 := by
+  obtain rfl := not_imp_comm.1 cauchyKernel_of_ne hp
+  simp only [negPeriod_apply, map_add]
+  linarith
+
+/-- Each output of the Cauchy kernel is a single generator, hence a completed combination. -/
+theorem cauchyKernel_mem (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) :
+    cauchyKernel (R := R) p₁ p₂ ∈ NovikovModule R (negPeriod (ι × κ) N) := by
+  classical
+  exact NovikovModule.pi_single_mem _ _
+
+end Kernel
+
+/-- **The Cauchy product in basis coordinates** is the kernel product of the Cauchy kernel: for
+bases `b` of `V` and `c` of `W`, the coordinates of `v ⋆ w` in the basis `b ⊗ c` are the kernel
+product of the coordinates of `v` in `b` and of `w` in `c`. -/
+theorem basisCoordinates_cauchyProduct [CommSemiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid W] [Module R W] [Fintype ι] [Fintype κ] (b : Module.Basis ι R V)
+    (c : Module.Basis κ R W) (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
+    basisCoordinates (b.tensorProduct c) (cauchyProduct R v w) =
+      NovikovModule.kernelProduct potential_le_of_cauchyKernel_ne_zero cauchyKernel_mem
+        (basisCoordinates b v) (basisCoordinates c w) := by
+  classical
+  ext ⟨⟨i, j⟩, h⟩
+  rw [basisCoordinates_apply_val, coeff_cauchyProduct, map_sum, Finset.sum_apply',
+    NovikovModule.kernelProduct_apply_val_eq_sum _ _ _ _ _
+      (s := (finite_setOf_add_eq v w h).toFinset.image
+        fun p => ((⟨i, p.1⟩ : Σ _ : ι, H), (⟨j, p.2⟩ : Σ _ : κ, H))) ?_,
+    Finset.sum_image fun p _ p' _ hpp' => Prod.ext_iff.2 (by simpa using hpp')]
+  · refine Finset.sum_congr rfl fun p hp => ?_
+    simp [cauchyKernel_apply, ((Set.Finite.mem_toFinset _).1 hp).1, mul_comm]
+  · rintro ⟨⟨i₁, u⟩, ⟨j₁, u'⟩⟩ hv hw hn
+    obtain ⟨⟨rfl, rfl⟩, rfl⟩ : ((i, j) = (i₁, j₁)) ∧ h = u + u' := by
+      simpa using not_imp_comm.1 cauchyKernel_of_ne hn
+    exact Finset.mem_image.2 ⟨(u, u'), (Set.Finite.mem_toFinset _).2
+      ⟨rfl, fun h0 => hv (by simp [h0]), fun h0 => hw (by simp [h0])⟩, rfl⟩
+
+end AddZeroClass
+
+section AddGroup
+
+variable {R V H ι κ : Type*} [AddGroup H] {N : H →+ ℝ}
+
+/-- Translating a generator by `h` lowers its potential by the period of `h`: the equivariance
+hypothesis of the coordinates `TauCeti.NovikovModule.coordinates`. -/
+theorem negPeriod_vadd (i : ι) (h p : H) :
+    negPeriod ι N ⟨i, h +ᵥ p⟩ = negPeriod ι N ⟨i, p⟩ - N h := by
+  simp only [negPeriod_apply, vadd_eq_add, map_add]
+  ring
+
+section Lifts
+
+variable [Semiring R] [AddCommMonoid V] [Module R V] [Fintype ι] (b : Module.Basis ι R V)
+
+/-- In the lifts `⟨i, 0⟩`, the `i`-th Novikov coordinate of `κ_b(v)` is the series of the `i`-th
+basis coordinates of the coefficients of `v`. -/
+theorem coeff_coordinates_basisCoordinates (v : NovikovSeries V H N) (i : ι) (A : H) :
+    (NovikovModule.coordinates negPeriod_vadd (fun _ => 0) (basisCoordinates b v) i).coeff A =
+      b.repr (v.coeff A) i := by
+  simp
+
+/-- **The scalar case.** For `V = R` with the basis `{1}`, the coordinate of `κ(v)` at the lift
+`⟨(), 0⟩` is the series `v` itself. -/
+theorem coordinates_basisCoordinates_singleton (v : NovikovSeries R H N) :
+    NovikovModule.coordinates negPeriod_vadd (fun _ => 0)
+      (basisCoordinates (Module.Basis.singleton Unit R) v) () = v := by
+  ext A
+  simp
+
+end Lifts
 
 section ChangeOfBasis
 
@@ -253,66 +355,11 @@ theorem basisCoordinates_basisCoordinates_symm_smul (β : NovikovSeries R H N)
 
 end ChangeOfBasis
 
-section Filtration
+end AddGroup
 
-variable [Ring R] [AddCommGroup V] [Module R V] [Fintype ι] (b : Module.Basis ι R V)
+section Invariance
 
-/-- **The filtration in basis coordinates.** A vector-valued series vanishes at every exponent of
-period `< C` exactly when its basis coordinates lie in the potential filtration at level `-C`. -/
-theorem basisCoordinates_mem_potentialFiltration_iff {C : ℝ} {v : NovikovSeries V H N} :
-    basisCoordinates b v ∈ NovikovModule.potentialFiltration R (negPeriod ι N) (-C) ↔
-      v ∈ periodFiltration V N C := by
-  simp only [NovikovModule.mem_potentialFiltration, mem_periodFiltration,
-    basisCoordinates_apply_val, negPeriod_apply, Sigma.forall, neg_lt_neg_iff]
-  refine ⟨fun h A hA => b.repr.injective ?_, fun h i A hA => by simp [h A hA]⟩
-  ext i
-  simpa using h i A hA
-
-end Filtration
-
-section Kernel
-
-variable [Semiring R]
-
-open scoped Classical in
-/-- **The Cauchy kernel** on basis coordinates: the pair of generators `⟨i, A⟩` and `⟨j, A'⟩`
-goes to the generator `⟨(i, j), A + A'⟩` with coefficient `1`. -/
-def cauchyKernel (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) : (Σ _ : ι × κ, H) → R :=
-  Pi.single ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ 1
-
-/-- The Cauchy kernel is `1` at the generator `⟨(i, j), A + A'⟩` and `0` elsewhere. -/
-theorem cauchyKernel_apply [DecidableEq (Σ _ : ι × κ, H)] (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H)
-    (p₀ : Σ _ : ι × κ, H) :
-    cauchyKernel (R := R) p₁ p₂ p₀ = if p₀ = ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ then 1 else 0 := by
-  simp only [cauchyKernel, Pi.single_apply]
-  congr
-
-/-- The Cauchy kernel is `1` at the generator `⟨(i, j), A + A'⟩`. -/
-@[simp]
-theorem cauchyKernel_self (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) :
-    cauchyKernel (R := R) p₁ p₂ ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ = 1 := by
-  simp [cauchyKernel]
-
-/-- The Cauchy kernel vanishes at every generator other than `⟨(i, j), A + A'⟩`. -/
-theorem cauchyKernel_of_ne {p₁ : Σ _ : ι, H} {p₂ : Σ _ : κ, H} {p₀ : Σ _ : ι × κ, H}
-    (hp : p₀ ≠ ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩) : cauchyKernel (R := R) p₁ p₂ p₀ = 0 := by
-  classical
-  simp [cauchyKernel_apply, hp]
-
-/-- The Cauchy kernel has potential bound `0`: its output generator has exactly the sum of the
-potentials of the input generators. -/
-theorem cauchyKernel_potential_le (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) (p₀ : Σ _ : ι × κ, H)
-    (hp : cauchyKernel (R := R) p₁ p₂ p₀ ≠ 0) :
-    negPeriod (ι × κ) N p₀ ≤ negPeriod ι N p₁ + negPeriod κ N p₂ + 0 := by
-  obtain rfl := not_imp_comm.1 cauchyKernel_of_ne hp
-  simp only [negPeriod_apply, map_add]
-  linarith
-
-/-- Each output of the Cauchy kernel is a single generator, hence a completed combination. -/
-theorem cauchyKernel_mem (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) :
-    cauchyKernel (R := R) p₁ p₂ ∈ NovikovModule R (negPeriod (ι × κ) N) := by
-  classical
-  exact NovikovModule.pi_single_mem _ _
+variable {R H ι κ : Type*} [Semiring R] [AddCancelCommMonoid H]
 
 /-- The Cauchy kernel is unchanged when its first input and its output are translated by the
 same `g`. -/
@@ -328,35 +375,7 @@ theorem cauchyKernel_vadd_snd (g : H) (p₁ : Σ _ : ι, H) (j : κ) (A : H) (k 
   classical
   simp [cauchyKernel_apply, add_left_comm _ g]
 
-end Kernel
-
-/-- **The Cauchy product in basis coordinates** is the kernel product of the Cauchy kernel: for
-bases `b` of `V` and `c` of `W`, the coordinates of `v ⋆ w` in the basis `b ⊗ c` are the kernel
-product of the coordinates of `v` in `b` and of `w` in `c`. -/
-theorem basisCoordinates_cauchyProduct [CommSemiring R] [AddCommMonoid V] [Module R V]
-    [AddCommMonoid W] [Module R W] [Fintype ι] [Fintype κ] (b : Module.Basis ι R V)
-    (c : Module.Basis κ R W) (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
-    basisCoordinates (b.tensorProduct c) (cauchyProduct R v w) =
-      NovikovModule.kernelProduct cauchyKernel_potential_le cauchyKernel_mem
-        (basisCoordinates b v) (basisCoordinates c w) := by
-  classical
-  ext ⟨⟨i, j⟩, h⟩
-  let T := (finite_setOf_coeff_ne_zero_coeff_sub_ne_zero v w h).toFinset
-  have hT : ∀ u, v.coeff u ≠ 0 → w.coeff (h - u) ≠ 0 → u ∈ T := fun u hv hw => by
-    simp [T, hv, hw]
-  rw [basisCoordinates_apply_val, coeff_cauchyProduct_eq_sum hT, map_sum,
-    Finset.sum_apply',
-    NovikovModule.kernelProduct_apply_val_eq_sum _ _ _ _ _
-      (s := T.image fun u => ((⟨i, u⟩ : Σ _ : ι, H), (⟨j, h - u⟩ : Σ _ : κ, H))) ?_,
-    Finset.sum_image fun u _ u' _ huu' => by simpa using congrArg (fun q => q.1.2) huu']
-  · refine Finset.sum_congr rfl fun u _ => ?_
-    simp [cauchyKernel_apply, mul_comm]
-  · rintro ⟨⟨i₁, u⟩, ⟨j₁, u'⟩⟩ hv hw hn
-    obtain ⟨⟨rfl, rfl⟩, rfl⟩ : ((i, j) = (i₁, j₁)) ∧ h = u + u' := by
-      simpa using not_imp_comm.1 cauchyKernel_of_ne hn
-    refine Finset.mem_image.2 ⟨u, hT u (fun h0 => hv (by simp [h0]))
-      (fun h0 => hw (by rw [add_sub_cancel_left] at h0; simp [h0])), ?_⟩
-    simp
+end Invariance
 
 end NovikovSeries
 

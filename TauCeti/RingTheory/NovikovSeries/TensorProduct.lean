@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovSeries.Basic
-public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # The Cauchy product of vector-valued Novikov series
 
-Let `H` be a commutative group with a period homomorphism `N : H →+ ℝ`, and let `V` and `W` be
+Let `H` be an additive monoid with a period homomorphism `N : H →+ ℝ`, and let `V` and `W` be
 modules over a commutative semiring `R`. Novikov series with coefficients in `V` and in `W`
 multiply to a Novikov series with coefficients in `V ⊗[R] W`, by the Cauchy product
 
@@ -31,8 +31,9 @@ series in `TauCeti.RingTheory.NovikovSeries.Multiplication`.
 
 ## Main statements
 
-* `TauCeti.NovikovSeries.coeff_cauchyProduct_eq_sum`: a coefficient of the Cauchy product is a
-  sum over any finite set of exponents containing the relevant support exponents.
+* `TauCeti.NovikovSeries.coeff_cauchyProduct_eq_sum`: a coefficient of the Cauchy product at `h`
+  is a sum over any finite set of pairs adding up to `h` that contains every such pair of
+  support exponents.
 * `TauCeti.NovikovSeries.cauchyProduct_single_single`: the Cauchy product of two monomials.
 
 ## References
@@ -55,39 +56,101 @@ namespace TauCeti
 namespace NovikovSeries
 
 variable {R V W H : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V] [AddCommMonoid W]
-  [Module R W] [AddCommGroup H] {N : H →+ ℝ}
-
-/-- Only finitely many exponents `u` have `v_u ≠ 0` and `w_(h - u) ≠ 0`. -/
-theorem finite_setOf_coeff_ne_zero_coeff_sub_ne_zero {S T : Type*} [Zero S] [Zero T]
-    (v : NovikovSeries S H N) (w : NovikovSeries T H N) (h : H) :
-    {u | v.coeff u ≠ 0 ∧ w.coeff (h - u) ≠ 0}.Finite :=
-  ((finite_setOf_add_eq v w h).image Prod.fst).subset fun u hu =>
-    ⟨(u, h - u), ⟨add_sub_cancel u h, hu.1, hu.2⟩, rfl⟩
-
-/-- Each coefficient of the Cauchy product is a sum with finitely many nonzero terms. -/
-private theorem finite_support_tmul_coeff_sub (v : NovikovSeries V H N) (w : NovikovSeries W H N)
-    (h : H) : (Function.support fun u => v.coeff u ⊗ₜ[R] w.coeff (h - u)).Finite :=
-  (finite_setOf_coeff_ne_zero_coeff_sub_ne_zero v w h).subset fun u hu =>
-    ⟨fun hv => hu (by simp [hv]), fun hw => hu (by simp [hw])⟩
-
-/-- The Cauchy product of two vector-valued Novikov series is a Novikov series. -/
-private theorem tmul_coeff_sub_finite_lt (v : NovikovSeries V H N) (w : NovikovSeries W H N)
-    (C : ℝ) :
-    {h | ∑ᶠ u, v.coeff u ⊗ₜ[R] w.coeff (h - u) ≠ 0 ∧ N h < C}.Finite := by
-  refine ((finite_setOf_period_add_lt v w C).image fun p => p.1 + p.2).subset ?_
-  rintro h ⟨hh, hC⟩
-  obtain ⟨u, hu⟩ : ∃ u, v.coeff u ⊗ₜ[R] w.coeff (h - u) ≠ 0 := by
-    by_contra! hu
-    exact hh (finsum_eq_zero_of_forall_eq_zero hu)
-  refine ⟨(u, h - u), ⟨?_, fun hv => hu (by simp [hv]), fun hw => hu (by simp [hw])⟩,
-    add_sub_cancel u h⟩
-  rwa [add_sub_cancel]
+  [Module R W] [AddZeroClass H] {N : H →+ ℝ}
 
 /-- The Cauchy product of two vector-valued Novikov series, before bundling. -/
 private def cauchyProductAux (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
     NovikovSeries (V ⊗[R] W) H N where
-  coeff h := ∑ᶠ u, v.coeff u ⊗ₜ[R] w.coeff (h - u)
-  finite_lt := tmul_coeff_sub_finite_lt v w
+  coeff h := ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, v.coeff p.1 ⊗ₜ[R] w.coeff p.2
+  finite_lt C := ((finite_setOf_period_add_lt v w C).image fun p => p.1 + p.2).subset <| by
+    rintro h ⟨hh, hC⟩
+    obtain ⟨p, hp, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hh
+    rw [Set.Finite.mem_toFinset] at hp
+    exact ⟨p, ⟨by rw [hp.1]; exact hC, hp.2⟩, hp.1⟩
+
+/-- A coefficient of the Cauchy product, before bundling, is a sum over any finite set of pairs
+adding up to the exponent and containing every such pair of support exponents. -/
+private theorem coeff_cauchyProductAux_eq_sum {v : NovikovSeries V H N}
+    {w : NovikovSeries W H N} {h : H} {s : Finset (H × H)} (hs : ∀ p ∈ s, p.1 + p.2 = h)
+    (hvw : ∀ u u', u + u' = h → v.coeff u ≠ 0 → w.coeff u' ≠ 0 → (u, u') ∈ s) :
+    (cauchyProductAux (R := R) v w).coeff h = ∑ p ∈ s, v.coeff p.1 ⊗ₜ[R] w.coeff p.2 := by
+  refine Finset.sum_subset (fun p hp => ?_) fun p hps hp => ?_
+  · rw [Set.Finite.mem_toFinset] at hp
+    exact hvw p.1 p.2 hp.1 hp.2.1 hp.2.2
+  · rw [Set.Finite.mem_toFinset] at hp
+    by_cases hv : v.coeff p.1 = 0
+    · rw [hv, TensorProduct.zero_tmul]
+    by_cases hw : w.coeff p.2 = 0
+    · rw [hw, TensorProduct.tmul_zero]
+    exact absurd ⟨hs p hps, hv, hw⟩ hp
+
+/-- The pairs of support exponents of `v + v'` and `w` adding up to `h` are among those of `v` and
+`w` or of `v'` and `w`. -/
+private theorem cauchyProductAux_add_left (v v' : NovikovSeries V H N) (w : NovikovSeries W H N) :
+    cauchyProductAux (R := R) (v + v') w = cauchyProductAux v w + cauchyProductAux v' w := by
+  classical
+  ext h
+  have hs : ∀ p ∈ (finite_setOf_add_eq v w h).toFinset ∪ (finite_setOf_add_eq v' w h).toFinset,
+      p.1 + p.2 = h := by
+    simp only [Finset.mem_union, Set.Finite.mem_toFinset]
+    rintro p (hp | hp) <;> exact hp.1
+  rw [coeff_add, coeff_cauchyProductAux_eq_sum hs, coeff_cauchyProductAux_eq_sum hs,
+    coeff_cauchyProductAux_eq_sum hs, ← Finset.sum_add_distrib]
+  · simp only [coeff_add, TensorProduct.add_tmul]
+  all_goals
+    intro u u' huu' hv hw
+    simp only [Finset.mem_union, Set.Finite.mem_toFinset]
+    by_contra! hc
+    simp_all
+
+/-- The pairs of support exponents of `v` and `w + w'` adding up to `h` are among those of `v` and
+`w` or of `v` and `w'`. -/
+private theorem cauchyProductAux_add_right (v : NovikovSeries V H N) (w w' : NovikovSeries W H N) :
+    cauchyProductAux (R := R) v (w + w') = cauchyProductAux v w + cauchyProductAux v w' := by
+  classical
+  ext h
+  have hs : ∀ p ∈ (finite_setOf_add_eq v w h).toFinset ∪ (finite_setOf_add_eq v w' h).toFinset,
+      p.1 + p.2 = h := by
+    simp only [Finset.mem_union, Set.Finite.mem_toFinset]
+    rintro p (hp | hp) <;> exact hp.1
+  rw [coeff_add, coeff_cauchyProductAux_eq_sum hs, coeff_cauchyProductAux_eq_sum hs,
+    coeff_cauchyProductAux_eq_sum hs, ← Finset.sum_add_distrib]
+  · simp only [coeff_add, TensorProduct.tmul_add]
+  all_goals
+    intro u u' huu' hv hw
+    simp only [Finset.mem_union, Set.Finite.mem_toFinset]
+    by_contra! hc
+    simp_all
+
+/-- The pairs of support exponents of `r • v` and `w` are among those of `v` and `w`. -/
+private theorem cauchyProductAux_smul_left (r : R) (v : NovikovSeries V H N)
+    (w : NovikovSeries W H N) : cauchyProductAux (r • v) w = r • cauchyProductAux (R := R) v w := by
+  ext h
+  have hs : ∀ p ∈ (finite_setOf_add_eq v w h).toFinset, p.1 + p.2 = h :=
+    fun p hp => ((Set.Finite.mem_toFinset _).1 hp).1
+  rw [coeff_smul, coeff_cauchyProductAux_eq_sum hs, coeff_cauchyProductAux_eq_sum hs,
+    Finset.smul_sum]
+  · simp only [coeff_smul, TensorProduct.smul_tmul']
+  all_goals
+    intro u u' huu' hv hw
+    rw [Set.Finite.mem_toFinset]
+    by_contra hc
+    simp_all
+
+/-- The pairs of support exponents of `v` and `r • w` are among those of `v` and `w`. -/
+private theorem cauchyProductAux_smul_right (r : R) (v : NovikovSeries V H N)
+    (w : NovikovSeries W H N) : cauchyProductAux v (r • w) = r • cauchyProductAux (R := R) v w := by
+  ext h
+  have hs : ∀ p ∈ (finite_setOf_add_eq v w h).toFinset, p.1 + p.2 = h :=
+    fun p hp => ((Set.Finite.mem_toFinset _).1 hp).1
+  rw [coeff_smul, coeff_cauchyProductAux_eq_sum hs, coeff_cauchyProductAux_eq_sum hs,
+    Finset.smul_sum]
+  · simp only [coeff_smul, TensorProduct.tmul_smul]
+  all_goals
+    intro u u' huu' hv hw
+    rw [Set.Finite.mem_toFinset]
+    by_contra hc
+    simp_all
 
 variable (R) in
 /-- **The Cauchy product** of Novikov series with coefficients in `V` and `W`: the series with
@@ -95,40 +158,23 @@ coefficients in `V ⊗[R] W` whose coefficient at `h` is the finite sum
 `∑_(u + u' = h) v_u ⊗ w_(u')`. It is `R`-bilinear. -/
 def cauchyProduct :
     NovikovSeries V H N →ₗ[R] NovikovSeries W H N →ₗ[R] NovikovSeries (V ⊗[R] W) H N :=
-  LinearMap.mk₂ R cauchyProductAux
-    (fun v v' w => by
-      ext h
-      simp only [cauchyProductAux, coeff_add, TensorProduct.add_tmul]
-      exact finsum_add_distrib (finite_support_tmul_coeff_sub v w h)
-        (finite_support_tmul_coeff_sub v' w h))
-    (fun r v w => by
-      ext h
-      simp only [cauchyProductAux, coeff_smul, ← TensorProduct.smul_tmul' (R := R)]
-      exact (smul_finsum' r (finite_support_tmul_coeff_sub v w h)).symm)
-    (fun v w w' => by
-      ext h
-      simp only [cauchyProductAux, coeff_add, TensorProduct.tmul_add]
-      exact finsum_add_distrib (finite_support_tmul_coeff_sub v w h)
-        (finite_support_tmul_coeff_sub v w' h))
-    (fun r v w => by
-      ext h
-      simp only [cauchyProductAux, coeff_smul, TensorProduct.tmul_smul]
-      exact (smul_finsum' r (finite_support_tmul_coeff_sub v w h)).symm)
+  LinearMap.mk₂ R cauchyProductAux cauchyProductAux_add_left cauchyProductAux_smul_left
+    cauchyProductAux_add_right cauchyProductAux_smul_right
 
-/-- The coefficient of the Cauchy product at `h` is `∑_u v_u ⊗ w_(h - u)`. -/
+/-- The coefficient of the Cauchy product at `h`, as a sum over the finite set of pairs of support
+exponents adding up to `h`. -/
 theorem coeff_cauchyProduct (v : NovikovSeries V H N) (w : NovikovSeries W H N) (h : H) :
-    (cauchyProduct R v w).coeff h = ∑ᶠ u, v.coeff u ⊗ₜ[R] w.coeff (h - u) :=
+    (cauchyProduct R v w).coeff h =
+      ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, v.coeff p.1 ⊗ₜ[R] w.coeff p.2 :=
   (rfl)
 
-/-- A coefficient of the Cauchy product is a sum over any finite set of exponents `u` containing
-every `u` with `v_u ≠ 0` and `w_(h - u) ≠ 0`. -/
+/-- A coefficient of the Cauchy product is the sum of `v_u ⊗ w_(u')` over any finite set of pairs
+`(u, u')` with `u + u' = h` containing every such pair of support exponents. -/
 theorem coeff_cauchyProduct_eq_sum {v : NovikovSeries V H N} {w : NovikovSeries W H N} {h : H}
-    {s : Finset H} (hs : ∀ u, v.coeff u ≠ 0 → w.coeff (h - u) ≠ 0 → u ∈ s) :
-    (cauchyProduct R v w).coeff h = ∑ u ∈ s, v.coeff u ⊗ₜ[R] w.coeff (h - u) := by
-  rw [coeff_cauchyProduct]
-  refine finsum_eq_sum_of_support_subset _ fun u hu => hs u (fun hv => hu ?_) (fun hw => hu ?_)
-  · simp [hv]
-  · simp [hw]
+    {s : Finset (H × H)} (hs : ∀ p ∈ s, p.1 + p.2 = h)
+    (hvw : ∀ u u', u + u' = h → v.coeff u ≠ 0 → w.coeff u' ≠ 0 → (u, u') ∈ s) :
+    (cauchyProduct R v w).coeff h = ∑ p ∈ s, v.coeff p.1 ⊗ₜ[R] w.coeff p.2 :=
+  coeff_cauchyProductAux_eq_sum hs hvw
 
 /-- The Cauchy product of two monomials is the monomial of the sum of their exponents. -/
 @[simp]
@@ -137,14 +183,12 @@ theorem cauchyProduct_single_single (A A' : H) (x : V) (y : W) :
       (single (A + A') (x ⊗ₜ[R] y) : NovikovSeries (V ⊗[R] W) H N) := by
   classical
   ext h
-  rw [coeff_cauchyProduct_eq_sum (s := {A}) fun u hu _ => by
-    by_contra hA
-    exact hu (coeff_single_of_ne (Finset.notMem_singleton.1 hA) x)]
-  by_cases hh : h = A + A'
-  · subst hh
-    simp
-  · rw [Finset.sum_singleton, coeff_single_same, coeff_single_of_ne hh,
-      coeff_single_of_ne (fun h' => hh (by rw [← h']; abel)), TensorProduct.tmul_zero]
+  rw [coeff_cauchyProduct_eq_sum (s := ({(A, A')} : Finset (H × H)).filter fun p => p.1 + p.2 = h)
+    (fun p hp => (Finset.mem_filter.1 hp).2) fun u u' huu' hu hu' => ?_]
+  · simp [Finset.sum_filter, coeff_single, Pi.single_apply, eq_comm]
+  · refine Finset.mem_filter.2 ⟨Finset.mem_singleton.2 ?_, huu'⟩
+    rw [Prod.mk.injEq]
+    exact ⟨not_imp_comm.1 (coeff_single_of_ne · x) hu, not_imp_comm.1 (coeff_single_of_ne · y) hu'⟩
 
 end NovikovSeries
 
