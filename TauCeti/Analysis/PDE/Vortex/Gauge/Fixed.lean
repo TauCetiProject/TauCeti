@@ -188,6 +188,16 @@ theorem gaugeAdjoint_add (x : ℂ → EuclideanSpace ℝ (Fin 4)) {y v : ℂ →
   simp [fderiv_fun_add, hyi, hvi]
   ring
 
+/-- `d₀*` preserves differences of variations whose connection coordinates are differentiable at
+the point; these are the only coordinates it differentiates. -/
+theorem gaugeAdjoint_sub (x : ℂ → EuclideanSpace ℝ (Fin 4)) {y v : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hy₀ : DifferentiableAt ℝ (fun w ↦ y w 0) z)
+    (hy₁ : DifferentiableAt ℝ (fun w ↦ y w 1) z) (hv₀ : DifferentiableAt ℝ (fun w ↦ v w 0) z)
+    (hv₁ : DifferentiableAt ℝ (fun w ↦ v w 1) z) :
+    gaugeAdjoint x (y - v) z = gaugeAdjoint x y z - gaugeAdjoint x v z := by
+  simp [fderiv_fun_sub hy₀ hv₀, fderiv_fun_sub hy₁ hv₁]
+  ring
+
 /-- `d₀*` commutes with real scalar multiplication of variations. -/
 theorem gaugeAdjoint_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : ℝ) (z : ℂ) :
     gaugeAdjoint x (t • y) z = t * gaugeAdjoint x y z := by
