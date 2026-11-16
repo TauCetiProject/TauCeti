@@ -10,6 +10,8 @@ public import Mathlib.Basic.Real.Sign
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.Basic.Real.Sign
+public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.Topology.Circle.Degree
 
 import Mathlib.Analysis.CStarAlgebra.Matrix
@@ -25,7 +27,8 @@ import TauCeti.Topology.Instances.Matrix
 A unitary matrix `U ∈ U(n)` is a frame of the Lagrangian subspace `Λ = U ℝⁿ` of `ℂⁿ`, for the
 standard symplectic form `Im ⟪·, ·⟫`. Two frames of the same Lagrangian differ by a real orthogonal
 matrix, so the **Souriau map** `W = U Uᵀ` (`Matrix.UnitaryGroup.souriau`) depends only on `Λ`
-(`Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one`). It is a symmetric unitary matrix,
+(`Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one`,
+`Matrix.UnitaryGroup.souriau_eq_of_realImage_eq`). It is a symmetric unitary matrix,
 and `Λ ∩ ℝⁿ` is the real part of the eigenspace of `W` at the eigenvalue `1`.
 
 The **Maslov index** of a path `U : [0, 1] → U(n)` of frames (`Matrix.UnitaryGroup.maslovIndex`)
@@ -242,6 +245,19 @@ theorem souriau_mul_of_mul_transpose_eq_one (U O : unitaryGroup n α)
   refine Subtype.ext ?_
   simp only [coe_souriau, Submonoid.coe_mul, transpose_mul]
   rw [Matrix.mul_assoc, ← Matrix.mul_assoc (O : Matrix n n α), hO, Matrix.one_mul]
+
+/-- **The Souriau map depends only on the Lagrangian.** Two unitary frames `U` and `V` of the same
+subspace `U ℝⁿ = V ℝⁿ` differ by a real orthogonal matrix, so they have the same Souriau map. -/
+theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
+    (h : (U : Matrix n n ℂ).realImage = (V : Matrix n n ℂ).realImage) : souriau U = souriau V := by
+  have hgram (W : unitaryGroup n ℂ) : ((W : Matrix n n ℂ)ᴴ * W).map Complex.re = 1 := by
+    rw [← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
+      Matrix.map_one _ Complex.zero_re Complex.one_re]
+  obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
+    (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
+  have hOu := map_ofReal_mem_unitaryGroup hO
+  rw [show V = U * ⟨_, hOu⟩ from Subtype.ext hVO,
+    souriau_mul_of_mul_transpose_eq_one U _ (map_ofReal_mul_transpose_map_ofReal_eq_one hO)]
 
 /-- Moving a frame by `O` conjugates its Souriau map: `(O U) (O U)ᵀ = O (U Uᵀ) Oᵀ`. -/
 theorem coe_souriau_mul_left (O U : unitaryGroup n α) :
@@ -537,24 +553,13 @@ theorem maslovIndex_eq_sum_sign_of_diagonal_arctan {U V : unitaryGroup n ℂ} (�
   -- Since `|arctan a| < π / 2`, the half-integer count of `arctan a` is `sign a / 2`.
   have key (b : ℝ) : ((⌊Real.arctan b / Real.pi⌋ + ⌈Real.arctan b / Real.pi⌉ : ℤ) : ℝ) / 2 =
       Real.sign b / 2 := by
-    have hlo : -1 / 2 < Real.arctan b / Real.pi := by
-      rw [lt_div_iff₀ Real.pi_pos]; linarith [Real.neg_pi_div_two_lt_arctan b]
-    have hhi : Real.arctan b / Real.pi < 1 / 2 := by
-      rw [div_lt_iff₀ Real.pi_pos]; linarith [Real.arctan_lt_pi_div_two b]
+    rw [TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt (abs_lt.2
+      ⟨by linarith [Real.neg_pi_div_two_lt_arctan b, Real.pi_pos],
+        by linarith [Real.arctan_lt_pi_div_two b, Real.pi_pos]⟩)]
     rcases lt_trichotomy b 0 with hb | rfl | hb
-    · have hneg : Real.arctan b / Real.pi < 0 :=
-        div_neg_of_neg_of_pos (Real.arctan_lt_zero.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_neg hb]
-      norm_num
+    · rw [Real.sign_of_neg hb, Real.sign_of_neg (Real.arctan_lt_zero.2 hb)]
     · simp
-    · have hpos : 0 < Real.arctan b / Real.pi :=
-        div_pos (Real.arctan_pos.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_pos hb]
-      norm_num
+    · rw [Real.sign_of_pos hb, Real.sign_of_pos (Real.arctan_pos.2 hb)]
   simp only [Function.comp_apply]
   rw [key, key]
   ring
