@@ -94,19 +94,13 @@ theorem _root_.IsRegular.isSquare_sq_mul_iff {R : Type*} [CommMonoid R] [PreValu
     {a x : R} (ha : IsRegular a) : IsSquare (a ^ 2 * x) ↔ IsSquare x := by
   refine ⟨fun ⟨y, hyy⟩ ↦ ?_, fun ⟨z, hz⟩ ↦ ⟨a * z, by rw [hz, sq]; ac_rfl⟩⟩
   rcases _root_.ValuationRing.dvd_total a y with ⟨z, rfl⟩ | ⟨w, rfl⟩
-  · refine ⟨z, (ha.mul ha).left ?_⟩
-    calc a * a * x = a ^ 2 * x := by rw [sq]
-      _ = a * z * (a * z) := hyy
-      _ = a * a * (z * z) := by ac_rfl
+  · exact ⟨z, (ha.mul ha).left <| by dsimp only; rw [← sq, hyy, sq]; ac_rfl⟩
   · have hy : IsRegular y := ha.of_mul_left
     have h1 : w * w * x = 1 := (hy.mul hy).left <| by
       calc y * y * (w * w * x) = (y * w) ^ 2 * x := by rw [sq]; ac_rfl
-        _ = y * y := hyy
-        _ = y * y * 1 := (mul_one _).symm
-    refine ⟨w * x, ?_⟩
-    calc x = 1 * x := (one_mul x).symm
-      _ = w * w * x * x := by rw [h1]
-      _ = w * x * (w * x) := by ac_rfl
+        _ = y * y * 1 := by rw [hyy, mul_one]
+    exact ⟨w * x, by calc x = w * w * x * x := by rw [h1, one_mul]
+      _ = w * x * (w * x) := by ac_rfl⟩
 
 section Domination
 

@@ -396,55 +396,46 @@ theorem exists_isUnit_apply_self_of_not_forall_two_dvd {B : BilinForm ℤ_[2] M}
   obtain ⟨x, hx⟩ := h
   exact ⟨x, by_contra fun hu ↦ hx (by simpa using PadicInt.not_isUnit_iff_dvd.mp hu)⟩
 
-/-- **An odd unimodular form of rank at least `3` over `ℤ_[2]` represents both unit residue classes
-modulo `4`.** If `B` is symmetric with unit Gram determinant in a basis of size at least `3` and
-represents a unit, then for every unit `r` of `ZMod (2 ^ 2)` (that is, `1` or `3`), there exists `x`
-such that `B x x` is a unit reducing to `r` modulo `4`. -/
+/-- **An odd unimodular form of rank at least `3` over `ℤ_[2]` represents both unit residue
+classes modulo `4`.** If `B` is symmetric with unit Gram determinant in a basis of size at least
+`3` and represents a unit, then for every unit `r` of `ZMod (2 ^ 2)` (that is, `1` or `3`), there
+exists `x` such that `B x x` is a unit reducing to `r` modulo `4`. -/
 theorem IsSymm.exists_isUnit_apply_self_toZModPow_two_eq_of_three_le {ι : Type*} [Fintype ι]
     [DecidableEq ι] {B : BilinForm ℤ_[2] M} (hB : B.IsSymm) (b : Basis ι ℤ_[2] M)
     (hBdet : IsUnit (B.toMatrix b).det) (hBodd : ∃ x, IsUnit (B x x)) (h3 : 3 ≤ Fintype.card ι)
     {r : ZMod (2 ^ 2)} (hr : IsUnit r) :
     ∃ x, IsUnit (B x x) ∧ PadicInt.toZModPow 2 (B x x) = r := by
   let e := b.reindex (Fintype.equivFin ι)
-  have hedet : (B.toMatrix e).det = (B.toMatrix b).det := det_toMatrix_reindex b _ B
-  obtain ⟨c, hc, hcu⟩ :=
-    hB.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self e (hedet ▸ hBdet) hBodd
-  have hsq_of_isUnit {a : ZMod (2 ^ 2)} (ha : IsUnit a) : a * a = 1 := by
+  obtain ⟨c, hc, hcu⟩ := hB.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self e
+    ((det_toMatrix_reindex b (Fintype.equivFin ι) B).symm ▸ hBdet) hBodd
+  have hsq {a : ZMod (2 ^ 2)} (ha : IsUnit a) : a * a = 1 := by
     obtain ⟨u, rfl⟩ := ha
-    exact (by decide : ∀ x y : ZMod (2 ^ 2), x * y = 1 → x * x = 1) u ↑u⁻¹
-      (by rw [← Units.val_mul, mul_inv_cancel, Units.val_one])
-  have hrr : r * r = 1 := hsq_of_isUnit hr
-  let u : Fin (Fintype.card ι) → ZMod (2 ^ 2) := fun i ↦ PadicInt.toZModPow 2 (B (c i) (c i))
-  have hu (i : Fin (Fintype.card ι)) : u i * u i = 1 :=
-    hsq_of_isUnit ((hcu i).map (PadicInt.toZModPow 2))
+    exact (by decide : ∀ x y : ZMod (2 ^ 2), x * y = 1 → x * x = 1) u ↑u⁻¹ (by simp)
+  let u (i : Fin (Fintype.card ι)) := PadicInt.toZModPow 2 (B (c i) (c i))
+  have hu (i) : u i * u i = 1 := hsq ((hcu i).map _)
   let i0 : Fin (Fintype.card ι) := ⟨0, by omega⟩
   let i1 : Fin (Fintype.card ι) := ⟨1, by omega⟩
   let i2 : Fin (Fintype.card ι) := ⟨2, by omega⟩
   have hcover : ∀ a d f s : ZMod (2 ^ 2), a * a = 1 → d * d = 1 → f * f = 1 → s * s = 1 →
       a = s ∨ d = s ∨ f = s ∨ a + d + f = s := by decide
-  rcases hcover (u i0) (u i1) (u i2) r (hu i0) (hu i1) (hu i2) hrr with h0 | h1 | h2 | h3'
-  · exact ⟨c i0, hcu i0, h0⟩
-  · exact ⟨c i1, hcu i1, h1⟩
-  · exact ⟨c i2, hcu i2, h2⟩
-  · have h01 : B (c i0) (c i1) = 0 := iIsOrtho_def.mp hc i0 i1 (by simp [Fin.ext_iff, i0, i1])
-    have h02 : B (c i0) (c i2) = 0 := iIsOrtho_def.mp hc i0 i2 (by simp [Fin.ext_iff, i0, i2])
-    have h12 : B (c i1) (c i2) = 0 := iIsOrtho_def.mp hc i1 i2 (by simp [Fin.ext_iff, i1, i2])
+  rcases hcover (u i0) (u i1) (u i2) r (hu i0) (hu i1) (hu i2) (hsq hr) with h | h | h | h
+  · exact ⟨c i0, hcu i0, h⟩
+  · exact ⟨c i1, hcu i1, h⟩
+  · exact ⟨c i2, hcu i2, h⟩
+  · have ho {j k : Fin (Fintype.card ι)} (hjk : j ≠ k) : B (c j) (c k) = 0 :=
+      iIsOrtho_def.mp hc j k hjk
     have hval : B (c i0 + c i1 + c i2) (c i0 + c i1 + c i2) =
         B (c i0) (c i0) + B (c i1) (c i1) + B (c i2) (c i2) := by
-      simp only [map_add, LinearMap.add_apply, h01, h02, h12, hB.eq (c i1) (c i0),
-        hB.eq (c i2) (c i0), hB.eq (c i2) (c i1)]
-      ring
+      simp only [map_add, LinearMap.add_apply, ho (show i0 ≠ i1 by simp [i0, i1]),
+        ho (show i0 ≠ i2 by simp [i0, i2]), ho (show i1 ≠ i2 by simp [i1, i2]),
+        ho (show i1 ≠ i0 by simp [i0, i1]), ho (show i2 ≠ i0 by simp [i0, i2]),
+        ho (show i2 ≠ i1 by simp [i1, i2]), add_zero, zero_add]
     have hmod : PadicInt.toZModPow 2 (B (c i0 + c i1 + c i2) (c i0 + c i1 + c i2)) = r := by
-      rw [hval, map_add, map_add]; exact h3'
-    have hisu : IsUnit (B (c i0 + c i1 + c i2) (c i0 + c i1 + c i2)) := by
-      by_contra hnu
-      obtain ⟨w, hw⟩ := PadicInt.not_isUnit_iff_dvd.mp hnu
-      have : PadicInt.toZModPow 2 (B (c i0 + c i1 + c i2) (c i0 + c i1 + c i2)) =
-          2 * PadicInt.toZModPow 2 w := by rw [hw, map_mul, map_natCast, Nat.cast_ofNat]
-      rw [hmod] at this
-      exact (by decide : ∀ s x : ZMod (2 ^ 2), s * s = 1 → s ≠ 2 * x) r (PadicInt.toZModPow 2 w)
-        hrr this
-    exact ⟨c i0 + c i1 + c i2, hisu, hmod⟩
+      rw [hval, map_add, map_add]; exact h
+    refine ⟨c i0 + c i1 + c i2, by_contra fun hnu ↦ ?_, hmod⟩
+    obtain ⟨w, hw⟩ := PadicInt.not_isUnit_iff_dvd.mp hnu
+    exact (by decide : ∀ s x : ZMod (2 ^ 2), s * s = 1 → s ≠ 2 * x) r (PadicInt.toZModPow 2 w)
+      (hsq hr) (by rw [← hmod, hw, map_mul, map_natCast, Nat.cast_ofNat])
 
 /-- **Classification of odd unimodular forms over `ℤ_[2]`.** Let `B` and `C` be symmetric forms
 over `ℤ_[2]` with unit Gram determinants in bases of the same size, each representing a unit, and
