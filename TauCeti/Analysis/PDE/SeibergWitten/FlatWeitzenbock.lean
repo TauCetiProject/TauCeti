@@ -27,7 +27,7 @@ Let `V` be a finite-dimensional real inner product space and `W` a Hermitian Cli
 the imaginary connection form `a = i b` of a line, give the covariant derivative and the Dirac
 operator
 
-`∇_v ψ = dψ(v) + i b(v) ψ`  (`spinorCovariantDeriv`),
+`∇_v ψ = dψ(v) + i b(v) ψ`  (`TauCeti.SeibergWitten.covariantDeriv`),
 `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`  (`flatDirac`),
 
 for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`); this is the Dirac operator of the twisted
@@ -35,7 +35,7 @@ spinors on a flat chart in which the background connection is trivial. For `ψ =
 constant it is the operator of the flat limiting equations of
 `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). Since the `c(eₖ)`
 satisfy the Clifford relations and the commutator of covariant derivatives is the curvature,
-`∇_v ∇_w ψ - ∇_w ∇_v ψ = i db(v, w) ψ` (`spinorCovariantDeriv_sub_swap`), the square of `D` is
+`∇_v ∇_w ψ - ∇_w ∇_v ψ = i db(v, w) ψ` (`covariantDeriv_sub_swap`), the square of `D` is
 
 `D (D ψ) = -∑ₖ ∇_{eₖ} ∇_{eₖ} ψ + i c₂(db) ψ`
 
@@ -63,7 +63,7 @@ forced equation
 
 `∇*∇ χ + (r / 4) (|χ|² - 1) χ + (r / 2) P_β χ + C(i η) χ / 2 = 0`
 
-(`sum_spinorCovariantDeriv_eq_of_add_hodgeStar_eq`), the flat form of the equation assumed in
+(`sum_covariantDeriv_eq_of_add_hodgeStar_eq`), the flat form of the equation assumed in
 `CovariantDerivative.IsMetricCompatible.norm_sq_le_max_of_roughLaplacian_add_eq_zero`. Pairing
 with `χ`, `⟪q(χ), ω⟫ = (|P_α χ|² - |P_β χ|²) / 2` and `|q(χ)|² = |χ|⁴ / 8` give **Taubes's
 identity**
@@ -113,47 +113,20 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-! ### The covariant derivative -/
 
-/-- The covariant derivative `∇_a ψ = dψ + i b ψ` of a spinor field `ψ` for the imaginary
-connection form `a = i b`. -/
-def spinorCovariantDeriv (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) : V →L[ℝ] W :=
-  fderiv ℝ ψ x +
-    ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I • ψ x)
-
-/-- The covariant derivative evaluated on a vector: `∇_v ψ = dψ(v) + b(v) i ψ`. -/
-@[simp]
-theorem spinorCovariantDeriv_apply (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x v : V) :
-    spinorCovariantDeriv b ψ x v = fderiv ℝ ψ x v + b x (fun _ ↦ v) • I • ψ x := by
-  simp [spinorCovariantDeriv, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply]
-
-/-- On the trivial line, `W = ℂ`, the covariant derivative is the covariant derivative
-`TauCeti.SeibergWitten.covariantDeriv` of a section. -/
-theorem spinorCovariantDeriv_eq_covariantDeriv (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (α : V → ℂ) :
-    spinorCovariantDeriv b α = covariantDeriv b α := by
-  ext x v
-  simp only [spinorCovariantDeriv_apply, covariantDeriv_apply, smul_eq_mul, Complex.real_smul]
-  ring
-
 /-- The covariant derivative of `α u₀` for a constant spinor `u₀` is `(∇_a α) u₀`. -/
-theorem spinorCovariantDeriv_smul_const {α : V → ℂ} (hα : DifferentiableAt ℝ α x) (u₀ : W)
+theorem covariantDeriv_smul_const {α : V → ℂ} (hα : DifferentiableAt ℝ α x) (u₀ : W)
     (v : V) :
-    spinorCovariantDeriv b (fun y ↦ α y • u₀) x v = covariantDeriv b α x v • u₀ := by
-  rw [spinorCovariantDeriv_apply, fderiv_smul_const hα, covariantDeriv_apply]
-  simp only [ContinuousLinearMap.smulRight_apply, add_smul, mul_smul]
-  congr 1
-  simp only [← Complex.coe_smul, smul_smul]
-  ring_nf
+    covariantDeriv b (fun y ↦ α y • u₀) x v = covariantDeriv b α x v • u₀ := by
+  rw [covariantDeriv_apply, fderiv_smul_const hα, covariantDeriv_apply]
+  simp only [ContinuousLinearMap.smulRight_apply, add_smul, smul_assoc]
 
 /-! ### Second covariant derivatives and the curvature -/
 
-/-- `i (c (i z)) = -c z` for a real scalar `c`. -/
-private theorem I_smul_smul_I_smul (c : ℝ) (z : W) : I • c • I • z = -(c • z) := by
-  rw [smul_comm I c, smul_smul I I, I_mul_I, neg_one_smul, smul_neg]
-
 /-- The second covariant derivative `∇_v ∇_w ψ` of a spinor field, expanded: the second derivative
 of `ψ`, the derivative of `b`, the mixed terms and the quadratic term in `b`. -/
-theorem spinorCovariantDeriv_spinorCovariantDeriv_apply (hψ : DifferentiableAt ℝ ψ x)
+theorem covariantDeriv_covariantDeriv_apply (hψ : DifferentiableAt ℝ ψ x)
     (hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x) (hb : DifferentiableAt ℝ b x) (v w : V) :
-    spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y w) x v =
+    covariantDeriv b (fun y ↦ covariantDeriv b ψ y w) x v =
       fderiv ℝ (fderiv ℝ ψ) x v w + fderiv ℝ (fun y ↦ b y fun _ ↦ w) x v • I • ψ x +
         b x (fun _ ↦ w) • I • fderiv ℝ ψ x v + b x (fun _ ↦ v) • I • fderiv ℝ ψ x w -
         (b x (fun _ ↦ v) * b x (fun _ ↦ w)) • ψ x := by
@@ -162,7 +135,7 @@ theorem spinorCovariantDeriv_spinorCovariantDeriv_apply (hψ : DifferentiableAt 
   have H : HasFDerivAt (fun y ↦ fderiv ℝ ψ y w + b y (fun _ ↦ w) • I • ψ y) _ x :=
     (hψ'.hasFDerivAt.clm_apply (hasFDerivAt_const w x)).add
       (hbw.smul (hψ.hasFDerivAt.const_smul I))
-  simp only [spinorCovariantDeriv_apply]
+  simp only [covariantDeriv_apply]
   rw [H.fderiv]
   simp only [_root_.add_apply, ContinuousLinearMap.comp_apply, _root_.zero_apply,
     ContinuousLinearMap.flip_apply, _root_.smul_apply, ContinuousLinearMap.smulRight_apply,
@@ -171,51 +144,51 @@ theorem spinorCovariantDeriv_spinorCovariantDeriv_apply (hψ : DifferentiableAt 
 
 /-- **The curvature of the covariant derivative**: for a `C²` spinor field and a differentiable
 connection form, `∇_v ∇_w ψ - ∇_w ∇_v ψ = db(v, w) i ψ`. -/
-theorem spinorCovariantDeriv_sub_swap (hψ : ContDiffAt ℝ 2 ψ x) (hb : DifferentiableAt ℝ b x)
+theorem covariantDeriv_sub_swap (hψ : ContDiffAt ℝ 2 ψ x) (hb : DifferentiableAt ℝ b x)
     (v w : V) :
-    spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y w) x v -
-        spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y v) x w =
+    covariantDeriv b (fun y ↦ covariantDeriv b ψ y w) x v -
+        covariantDeriv b (fun y ↦ covariantDeriv b ψ y v) x w =
       extDeriv b x ![v, w] • I • ψ x := by
   have hψ₁ : DifferentiableAt ℝ ψ x := hψ.differentiableAt (by norm_num)
   have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
     (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [spinorCovariantDeriv_spinorCovariantDeriv_apply hψ₁ hψ₂ hb,
-    spinorCovariantDeriv_spinorCovariantDeriv_apply hψ₁ hψ₂ hb,
+  rw [covariantDeriv_covariantDeriv_apply hψ₁ hψ₂ hb,
+    covariantDeriv_covariantDeriv_apply hψ₁ hψ₂ hb,
     extDeriv_apply_pair_of_differentiableAt hb, hψ.isSymmSndFDerivAt (by simp) v w]
   module
 
 /-- The covariant derivative of a field whose derivative is differentiable at `x` is
 differentiable at `x`, for a connection form differentiable at `x`. -/
-theorem differentiableAt_spinorCovariantDeriv_apply (hψ : DifferentiableAt ℝ ψ x)
+theorem differentiableAt_covariantDeriv_apply (hψ : DifferentiableAt ℝ ψ x)
     (hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x) (hb : DifferentiableAt ℝ b x) (w : V) :
-    DifferentiableAt ℝ (fun y ↦ spinorCovariantDeriv b ψ y w) x := by
-  simp only [spinorCovariantDeriv_apply]
+    DifferentiableAt ℝ (fun y ↦ covariantDeriv b ψ y w) x := by
+  simp only [covariantDeriv_apply]
   exact (hψ'.clm_apply (differentiableAt_const w)).add
     ((hb.hasFDerivAt.continuousAlternatingMap_apply_const _).differentiableAt.smul
       (hψ.const_smul I))
 
 /-- The covariant derivative commutes with constant complex-linear maps and with finite sums:
 `∇_v (∑ₖ fₖ gₖ) = ∑ₖ fₖ (∇_v gₖ)`. -/
-theorem spinorCovariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype κ]
+theorem covariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype κ]
     (f : κ → Module.End ℂ W)
     {g : κ → V → W} (hg : ∀ k, DifferentiableAt ℝ (g k) x) (v : V) :
-    spinorCovariantDeriv b (fun y ↦ ∑ k, f k (g k y)) x v =
-      ∑ k, f k (spinorCovariantDeriv b (g k) x v) := by
+    covariantDeriv b (fun y ↦ ∑ k, f k (g k y)) x v =
+      ∑ k, f k (covariantDeriv b (g k) x v) := by
   have H : HasFDerivAt (fun y ↦ ∑ k, f k (g k y))
       (∑ k, ((f k).restrictScalars ℝ).toContinuousLinearMap.comp (fderiv ℝ (g k) x)) x :=
     HasFDerivAt.fun_sum fun k _ ↦
       ((f k).restrictScalars ℝ).toContinuousLinearMap.hasFDerivAt.comp x (hg k).hasFDerivAt
-  rw [spinorCovariantDeriv_apply, H.fderiv]
+  rw [covariantDeriv_apply, H.fderiv]
   simp [Finset.smul_sum, ← Finset.sum_add_distrib, map_smul, LinearMap.map_smul_of_tower]
 
 /-! ### The Laplacian of `|ψ|²` -/
 
 /-- The connection terms cancel from `Re ⟪ψ, ∇_v ∇_v ψ⟫ + |∇_v ψ|²`, which is half the second
 derivative of `|ψ|²` along `v`. -/
-private theorem re_inner_add_norm_sq_spinorCovariantDeriv (hψ : DifferentiableAt ℝ ψ x)
+private theorem re_inner_add_norm_sq_covariantDeriv (hψ : DifferentiableAt ℝ ψ x)
     (hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x) (hb : DifferentiableAt ℝ b x) (v : V) :
-    (⟪ψ x, spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y v) x v⟫_ℂ).re +
-        ‖spinorCovariantDeriv b ψ x v‖ ^ 2 =
+    (⟪ψ x, covariantDeriv b (fun y ↦ covariantDeriv b ψ y v) x v⟫_ℂ).re +
+        ‖covariantDeriv b ψ x v‖ ^ 2 =
       (⟪ψ x, fderiv ℝ (fderiv ℝ ψ) x v v⟫_ℂ).re + ‖fderiv ℝ ψ x v‖ ^ 2 := by
   let := InnerProductSpace.complexToReal (G := W)
   have hre (u w : W) : (⟪u, w⟫_ℂ).re = ⟪u, w⟫_ℝ := by
@@ -227,7 +200,7 @@ private theorem re_inner_add_norm_sq_spinorCovariantDeriv (hψ : DifferentiableA
     ring
   have h₃ (z : W) : ⟪I • z, I • z⟫_ℝ = ⟪z, z⟫_ℝ := by
     rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, norm_smul, norm_I, one_mul]
-  rw [spinorCovariantDeriv_spinorCovariantDeriv_apply hψ hψ' hb, spinorCovariantDeriv_apply,
+  rw [covariantDeriv_covariantDeriv_apply hψ hψ' hb, covariantDeriv_apply,
     hre, hre, ← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq]
   simp only [inner_add_left, inner_add_right, inner_sub_right, real_inner_smul_left,
     real_inner_smul_right, h₁, h₃]
@@ -243,14 +216,14 @@ The connection terms cancel because `|ψ|²` is gauge invariant. -/
 theorem laplacian_norm_sq_eq [FiniteDimensional ℝ V] (hψ : ContDiffAt ℝ 2 ψ x)
     (hb : DifferentiableAt ℝ b x) {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
     Δ (fun y ↦ ‖ψ y‖ ^ 2) x =
-      2 * ∑ k, ((⟪ψ x, spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y (e k)) x
-        (e k)⟫_ℂ).re + ‖spinorCovariantDeriv b ψ x (e k)‖ ^ 2) := by
+      2 * ∑ k, ((⟪ψ x, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x
+        (e k)⟫_ℂ).re + ‖covariantDeriv b ψ x (e k)‖ ^ 2) := by
   have hψ₁ : DifferentiableAt ℝ ψ x := hψ.differentiableAt (by norm_num)
   have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
     (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ e, Finset.mul_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [re_inner_add_norm_sq_spinorCovariantDeriv hψ₁ hψ₂ hb, iteratedFDeriv_two_apply]
+  rw [re_inner_add_norm_sq_covariantDeriv hψ₁ hψ₂ hb, iteratedFDeriv_two_apply]
   let := InnerProductSpace.complexToReal (G := W)
   simpa [real_inner_eq_re_inner ℂ, real_inner_self_eq_norm_sq, add_comm] using
     fderiv_fderiv_norm_sq_sub_comp_apply (a := (0 : W)) hψ (e k) (e k)
@@ -273,13 +246,13 @@ variable [FiniteDimensional ℝ V]
 /-- The **flat Dirac operator** `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ` of the connection `d + i b`, defined
 without a basis as the metric contraction of `(v, w) ↦ c(v) ∇_w ψ`. -/
 def flatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) : W :=
-  TensorProduct.lift (cliffordPairing ρ (spinorCovariantDeriv b ψ x))
+  TensorProduct.lift (cliffordPairing ρ (covariantDeriv b ψ x))
     (canonicalCovariantTensor V)
 
 /-- The flat Dirac operator in an orthonormal basis: `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`. -/
 theorem flatDirac_eq_sum {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V)
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
-    flatDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (spinorCovariantDeriv b ψ x (e k)) := by
+    flatDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ x (e k)) := by
   simp [flatDirac, canonicalCovariantTensor_eq_sum V e, cliffordPairing]
 
 /-- The flat Dirac operator of `α u₀` for a constant spinor `u₀`:
@@ -288,7 +261,7 @@ operator of `TauCeti.SeibergWitten.sum_covariantDeriv_smul_ι_apply_eq_zero_iff`
 theorem flatDirac_smul_const {α : V → ℂ} (hα : DifferentiableAt ℝ α x) (u₀ : W) {κ : Type*}
     [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
     flatDirac ρ b (fun y ↦ α y • u₀) x = ∑ k, covariantDeriv b α x (e k) • ρ (ι Q (e k)) u₀ := by
-  simp [flatDirac_eq_sum ρ e, spinorCovariantDeriv_smul_const hα]
+  simp [flatDirac_eq_sum ρ e, covariantDeriv_smul_const hα]
 
 variable [FiniteDimensional ℂ W]
 
@@ -301,33 +274,33 @@ where the curvature `db` is read as a two-vector through the inner product. -/
 theorem flatDirac_flatDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hψ : ContDiffAt ℝ 2 ψ x)
     (hb : DifferentiableAt ℝ b x) {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
     flatDirac ρ b (flatDirac ρ b ψ) x =
-      -∑ k, spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y (e k)) x (e k) +
+      -∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k) +
         I • ρ (bivectorExterior Q ((alternatingFormEquiv V 2).symm (extDeriv b x))) (ψ x) := by
   have hψ₁ : DifferentiableAt ℝ ψ x := hψ.differentiableAt (by norm_num)
   have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
     (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hD : flatDirac ρ b ψ = fun y ↦ ∑ k, ρ (ι Q (e k)) (spinorCovariantDeriv b ψ y (e k)) :=
+  have hD : flatDirac ρ b ψ = fun y ↦ ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ y (e k)) :=
     funext (flatDirac_eq_sum ρ e b ψ)
   -- `∇_{eⱼ} (D ψ) = ∑ₖ c(eₖ) ∇_{eⱼ} ∇_{eₖ} ψ`, since the `c(eₖ)` are constant.
-  have hDD (j : κ) : spinorCovariantDeriv b (flatDirac ρ b ψ) x (e j) =
-      ∑ k, ρ (ι Q (e k)) (spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y (e k)) x
+  have hDD (j : κ) : covariantDeriv b (flatDirac ρ b ψ) x (e j) =
+      ∑ k, ρ (ι Q (e k)) (covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x
         (e j)) := by
     rw [hD]
-    exact spinorCovariantDeriv_sum_apply (fun k ↦ ρ (ι Q (e k)))
-      (g := fun k y ↦ spinorCovariantDeriv b ψ y (e k))
-      (fun k ↦ differentiableAt_spinorCovariantDeriv_apply hψ₁ hψ₂ hb (e k)) (e j)
+    exact covariantDeriv_sum_apply (fun k ↦ ρ (ι Q (e k)))
+      (g := fun k y ↦ covariantDeriv b ψ y (e k))
+      (fun k ↦ differentiableAt_covariantDeriv_apply hψ₁ hψ₂ hb (e k)) (e j)
   rw [flatDirac_eq_sum ρ e, Finset.sum_congr rfl fun j _ ↦ congrArg (ρ (ι Q (e j))) (hDD j),
     sum_ι_sum_ι_apply ρ hQ e _ (I • ψ x), map_smul]
   intro j k
-  rw [spinorCovariantDeriv_sub_swap hψ hb, inner_alternatingFormEquiv_symm_ιMulti]
+  rw [covariantDeriv_sub_swap hψ hb, inner_alternatingFormEquiv_symm_ιMulti]
 
 end Dirac
 
 /-- The covariant derivative of a field vanishing near `x` vanishes at `x`. -/
-theorem spinorCovariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
-    spinorCovariantDeriv b φ x = 0 := by
+theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
+    covariantDeriv b φ x = 0 := by
   ext v
-  simp [spinorCovariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+  simp [covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
 
 /-! ### Solutions of the Dirac equation in dimension four -/
 
@@ -342,13 +315,13 @@ attribute [local instance] finiteDimensional_of_finrank_four
 include hQ in
 /-- At a solution of the Dirac equation the rough Laplacian is the Clifford action of the
 curvature: `∑ₖ ∇_{eₖ} ∇_{eₖ} ψ = i c₂(db) ψ`. -/
-private theorem sum_spinorCovariantDeriv_eq_of_flatDirac_eq_zero (hψ : ContDiffAt ℝ 2 ψ x)
+private theorem sum_covariantDeriv_eq_of_flatDirac_eq_zero (hψ : ContDiffAt ℝ 2 ψ x)
     (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0) {κ : Type*} [Fintype κ]
     (e : OrthonormalBasis κ ℝ V) :
-    ∑ k, spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y (e k)) x (e k) =
+    ∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k) =
       I • ρ (bivectorExterior Q ((alternatingFormEquiv V 2).symm (extDeriv b x))) (ψ x) := by
   have h := flatDirac_flatDirac ρ hQ hψ hb e
-  rw [flatDirac_eq_sum ρ e, spinorCovariantDeriv_eq_zero_of_eventuallyEq hD] at h
+  rw [flatDirac_eq_sum ρ e, covariantDeriv_eq_zero_of_eventuallyEq hD] at h
   simp only [_root_.zero_apply, _root_.map_zero, Finset.sum_const_zero] at h
   exact neg_add_eq_zero.1 h.symm
 
@@ -364,11 +337,11 @@ theorem laplacian_norm_sq_eq_of_flatDirac_eq_zero (hψ : ContDiffAt ℝ 2 ψ x)
     {φ : positiveHalfSpinors o ρ} (hφ : ψ x = φ) {κ : Type*} [Fintype κ]
     (e : OrthonormalBasis κ ℝ V) :
     Δ (fun y ↦ ‖ψ y‖ ^ 2) x =
-      2 * (∑ k, ‖spinorCovariantDeriv b ψ x (e k)‖ ^ 2 +
+      2 * (∑ k, ‖covariantDeriv b ψ x (e k)‖ ^ 2 +
         4 * ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V),
           (alternatingFormEquiv V 2).symm (extDeriv b x)⟫) := by
   rw [laplacian_norm_sq_eq hψ hb e, Finset.sum_add_distrib, ← Complex.re_sum, ← inner_sum,
-    sum_spinorCovariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e,
+    sum_covariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e,
     inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, hφ, ← coe_cliffordRestriction_apply,
     Submodule.coe_inner]
   ring
@@ -407,14 +380,14 @@ at `x`, in any orthonormal basis,
 `∑ₖ ∇_{eₖ} ∇_{eₖ} ψ = (r / 4) (|χ|² - 1) χ + (r / 2) P_β χ + C(i η) χ / 2`,
 
 that is, `∇*∇ψ + (r / 4) (|ψ|² - 1) ψ + (r / 2) β + C(i η) ψ / 2 = 0` with `β = P_β ψ`. -/
-theorem sum_spinorCovariantDeriv_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
+theorem sum_covariantDeriv_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
     (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0)
     {χ : positiveHalfSpinors o ρ} (hχ : ψ x = χ) {r : ℝ} {ω η : ⋀[ℝ]^2 V}
     (hF : (alternatingFormEquiv V 2).symm (-extDeriv b x) +
         o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) =
       (r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η)
     {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
-    ∑ k, spinorCovariantDeriv b (fun y ↦ spinorCovariantDeriv b ψ y (e k)) x (e k) =
+    ∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k) =
       (((r / 4 * (‖χ‖ ^ 2 - 1)) • χ + (r / 2) • cliffordProjection o ρ (-ω) χ +
         (2⁻¹ : ℝ) • cliffordRestriction o ρ η χ : positiveHalfSpinors o ρ) : W) := by
   set F := (alternatingFormEquiv V 2).symm (-extDeriv b x)
@@ -436,7 +409,7 @@ theorem sum_spinorCovariantDeriv_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 
   have hP : cliffordProjection o ρ ω χ = χ - cliffordProjection o ρ (-ω) χ := by
     rw [cliffordProjection_neg_apply]
     abel
-  rw [sum_spinorCovariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e, hneg, hχ,
+  rw [sum_covariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e, hneg, hχ,
     ← coe_cliffordRestriction_apply, map_neg, _root_.neg_apply]
   congr 1
   refine smul_right_injective _ (two_ne_zero (α := ℝ)) ?_
@@ -464,7 +437,7 @@ theorem laplacian_norm_sq_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
       (r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η)
     {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
     Δ (fun y ↦ ‖ψ y‖ ^ 2) x / 2 =
-      ∑ k, ‖spinorCovariantDeriv b ψ x (e k)‖ ^ 2 +
+      ∑ k, ‖covariantDeriv b ψ x (e k)‖ ^ 2 +
         r / 4 * (‖χ‖ ^ 4 - ‖cliffordProjection o ρ ω χ‖ ^ 2 +
           ‖cliffordProjection o ρ (-ω) χ‖ ^ 2) +
         2 * ⟪(quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V), η⟫ := by
@@ -503,7 +476,7 @@ theorem norm_sq_le_one_add_of_isLocalMax (hψ : ContDiffAt ℝ 2 ψ x)
     rw [map_neg, neg_neg]
   rw [laplacian_norm_sq_eq_of_flatDirac_eq_zero o hQ hkl hψ hb hD hχ (stdOrthonormalBasis ℝ V),
     hneg, four_mul_inner_quadraticTwoForm_neg o hkl χ hF] at hΔ
-  have hsum : 0 ≤ ∑ k, ‖spinorCovariantDeriv b ψ x (stdOrthonormalBasis ℝ V k)‖ ^ 2 :=
+  have hsum : 0 ≤ ∑ k, ‖covariantDeriv b ψ x (stdOrthonormalBasis ℝ V k)‖ ^ 2 :=
     Finset.sum_nonneg fun _ _ ↦ by positivity
   -- `|q(χ)| = |χ|² / (2 √2)` and `|ω| = √2` bound the two pairings of `q(χ)`.
   have hq : ‖q‖ = ‖χ‖ ^ 2 / (2 * √2) :=
