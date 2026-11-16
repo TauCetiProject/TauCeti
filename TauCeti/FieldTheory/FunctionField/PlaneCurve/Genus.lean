@@ -44,9 +44,7 @@ namespace TauCeti
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] [Algebra (RatFunc k) F]
   [IsScalarTower k (RatFunc k) F] [Algebra.IsSeparable (RatFunc k) F]
-  [FiniteDimensional (RatFunc k) F]
 
-omit [FiniteDimensional (RatFunc k) F] in
 /-- **The genus of a smooth plane curve**, doubled: under the hypotheses of
 `TauCeti.Divisor.different_eq_principal_add_zsmul_poles`, if `k` is the exact constant field of
 `F`, then a smooth plane curve of degree `n` has `2g = (n - 1)(n - 2)`. -/
@@ -68,7 +66,6 @@ theorem two_mul_genus_eq_of_aeval_eq_zero (hex : IsIntegrallyClosedIn k F)
     finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero hirr hlead hgen hy] at h
   linear_combination h
 
-omit [FiniteDimensional (RatFunc k) F] in
 /-- **The genus of a smooth plane curve** (Fulton, Section 8.3): let `k` be the exact constant
 field of `F`, let `g ∈ k[X, Y]` be irreducible of total degree `n`, with the coefficient of `Yⁿ`
 equal to `1`, such that the projective closure of `g = 0` is smooth in both affine charts

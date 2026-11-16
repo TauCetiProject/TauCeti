@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Analysis.Convex.Body
-public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 public import TauCeti.MeasureTheory.Group.GeometryOfNumbers.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
+import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
 import TauCeti.Analysis.Convex.Gauge.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule

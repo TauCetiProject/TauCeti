@@ -333,7 +333,7 @@ theorem mfderiv_flowOf_apply_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 
   have hdg (v : TangentSpace I x) : mvfderiv I g (φ x) (D v) = mvfderiv I g x v := by
     rw [← mvfderiv_comp_apply x (hg (φ x)) hφ v, hgφ.mvfderiv_eq]
   exact hσ.isNondegenerate.map_hamiltonianVectorField_of_eval₂ hσ.isNondegenerate
-    (hσ.isNondegenerate.surjective_of_eval₂_map hσφ) hσφ hdg
+    (hσ.isNondegenerate.surjective_of_eval₂_map hσφ _) hσφ hdg
 
 /-- **Poisson-commuting local Hamiltonian flows commute.** Let `σ` be symplectic, let `f` be a
 `C³` function and let `g` be a `C²` first integral of `f`, `{g, f} = 0`, and write `φ` and `ψ`

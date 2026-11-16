@@ -34,6 +34,8 @@ the map that sends `b` to `a` and fixes every other point.
 * `Function.update_id_apply_eq_update_id_apply_iff`, `Function.update_id_swap_apply`: two points
   have the same image under `Function.update id b a` exactly when they agree up to
   `Equiv.swap a b`.
+* `Function.comp_update_id_eq_self_iff`: a map factors through `Function.update id b a` if and
+  only if it assigns the same value to `a` and `b`.
 * `Function.Embedding.update_id_comp_eq_update_id_comp_iff`: two embeddings have the same
   composite with `Function.update id b a` exactly when they agree up to `Equiv.swap a b`.
 -/
@@ -110,6 +112,13 @@ theorem update_id_apply_eq_update_id_apply_iff {x y : α} :
 theorem update_id_swap_apply (x : α) :
     update id b a (Equiv.swap a b x) = update id b a x :=
   update_id_apply_eq_update_id_apply_iff.2 (Or.inr rfl)
+
+/-- A map factors through `update id b a` if and only if it assigns the same value to `a` and
+`b`. -/
+@[simp]
+theorem comp_update_id_eq_self_iff {β : Sort*} {x : α → β} :
+    x ∘ update id b a = x ↔ x a = x b := by
+  rw [comp_update, comp_id, update_eq_self_iff]
 
 end Function
 
