@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
+import TauCeti.Data.ZMod.OrderOf
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
@@ -79,17 +80,6 @@ theorem even_of_le_two [NeZero n] (hn : n ≤ 2) (χ : DirichletCharacter R n) :
   have h : (-1 : ZMod n) = 1 := ZMod.neg_one_eq_one_iff.mpr (by have := NeZero.ne n; omega)
   rw [DirichletCharacter.Even, h, map_one]
 
-/-- Above level two, `-1` has order `2` in `(ℤ/nℤ)ˣ`, so the roots of unity that the Dirichlet
-characters of level `n` need include the square roots of unity. -/
-private lemma hasEnoughRootsOfUnity_two_of_two_lt {M : Type*} [CommMonoid M]
-    [HasEnoughRootsOfUnity M (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) :
-    HasEnoughRootsOfUnity M 2 := by
-  have : NeZero n := ⟨by omega⟩
-  have : Fact (1 < n) := ⟨by omega⟩
-  have h2 : 2 ∣ Monoid.exponent (ZMod n)ˣ := by
-    simpa [ZMod.ringChar_zmod_n, hn.ne'] using Monoid.order_dvd_exponent (-1 : (ZMod n)ˣ)
-  exact HasEnoughRootsOfUnity.of_dvd M h2
-
 /-- If one of two levels exceeds `2`, exactly half of the pairs of Dirichlet characters at these
 levels have a prescribed product parity `ε = ±1`. -/
 theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [NeZero b]
@@ -109,8 +99,10 @@ theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [
       ring
   have hφ (q) (y : rootsOfUnity 2 R) : φ q = y ↔ q.1 (-1) * q.2 (-1) = ((y : Rˣ) : R) := by
     simp [φ, Subtype.ext_iff, Units.ext_iff]
-  have : HasEnoughRootsOfUnity R 2 :=
-    hab.elim hasEnoughRootsOfUnity_two_of_two_lt hasEnoughRootsOfUnity_two_of_two_lt
+  -- Above level two, `2` divides the exponent of `(ℤ/nℤ)ˣ`, so `R` has the square roots of unity.
+  have : HasEnoughRootsOfUnity R 2 := hab.elim
+    (fun h ↦ .of_dvd R (ZMod.two_dvd_exponent_units (n := a) (by omega) (by omega)))
+    (fun h ↦ .of_dvd R (ZMod.two_dvd_exponent_units (n := b) (by omega) (by omega)))
   have hcard := HasEnoughRootsOfUnity.natCard_rootsOfUnity R 2
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R 2
   have : Nontrivial R := ⟨ζ, 1, hζ.ne_one one_lt_two⟩
