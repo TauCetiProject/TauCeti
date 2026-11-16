@@ -53,7 +53,7 @@ the computations on sections use `erw` and explicit term chains rather than `sim
 ## References
 
 * [The Stacks Project, Lemma 27.11.5 (01N1)](https://stacks.math.columbia.edu/tag/01N1)
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 -/
 
 public section
@@ -137,8 +137,8 @@ theorem relativeProjTwistingSheafMapChart_transition
   -- (both by definition), both sides are restrictions of morphisms of twisting sheaves of the
   -- charts along the two equal composites `res ∘ φ_V = φ_U ∘ res`
   exact Proj.res_twistingSheafMap_app_res_of_comp_eq _ (hφ V.toOpens V.2) _
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _
-    (B.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ (hφ U.toOpens U.2)
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _
+    (B.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _ (hφ U.toOpens U.2)
     (CommMon.gradedSectionsGradedHom_comp_restrictGradedSectionsGradedHom φ
       ((Scheme.AffineZariskiSite.toOpensFunctor X).map i)).symm n _ _ _ _ t
 

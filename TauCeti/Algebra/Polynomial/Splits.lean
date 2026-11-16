@@ -1,14 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.Algebra.Polynomial.Splits
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
+import Mathlib.RingTheory.Prime
 
 /-!
 # Splitting from the degrees of irreducible factors, and evaluating split polynomials
@@ -19,8 +18,9 @@ through divisibility; it is the form in which splitting is detected when only th
 factors of a polynomial are under control, as in Kummer's theorem on the places above a place of
 a function field.
 
-Divisors over an extension domain of a nonzero split polynomial over a field descend up to a
-unit constant. This classifies units after polynomial localization and scalar extension.
+Divisors over a domain of a mapped split polynomial descend up to a unit constant when the
+mapped leading coefficient is a unit. This classifies units after polynomial localization
+and scalar extension.
 
 ## Main results
 
@@ -33,10 +33,8 @@ unit constant. This classifies units after polynomial localization and scalar ex
   roots `α`.
 * `Polynomial.Splits.eq_prod_roots_of_coeff_zero_eq_one`: the case of constant coefficient `1`,
   where the polynomial is the product of the factors `1 - α⁻¹ X` alone.
-* `TauCeti.exists_eq_C_mul_prod_X_sub_C_of_dvd`: a divisor of a product of monic linear
-  factors over a domain is a unit constant times an indexed subproduct.
-* `Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map`: descent of divisors of nonzero split
-  polynomials along a ring homomorphism from a field.
+* `Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map`: descent up to a unit constant of divisors
+  of mapped split polynomials whose mapped leading coefficient is a unit.
 -/
 
 public section
@@ -94,47 +92,35 @@ end Polynomial
 
 open Polynomial
 
-variable {k : Type*} [Field k]
-
-/-- Over a domain `A`, a divisor of a product of linear polynomials `X - C (v i)` is a unit
-constant times a sub-product. -/
-theorem TauCeti.exists_eq_C_mul_prod_X_sub_C_of_dvd
-    {A ι : Type*} [CommRing A] [IsDomain A] (v : ι → A)
-    (s : Multiset ι) (p : A[X]) (hp : p ∣ (s.map fun i ↦ X - C (v i)).prod) :
-    ∃ u : Aˣ, ∃ t ≤ s, p = C (u : A) * (t.map fun i ↦ X - C (v i)).prod := by
-  induction s using Multiset.induction_on generalizing p with
-  | empty =>
-    rw [Multiset.map_zero, Multiset.prod_zero] at hp
-    obtain ⟨u, ha, rfl⟩ := Polynomial.isUnit_iff.mp (isUnit_of_dvd_one hp)
-    exact ⟨ha.unit, 0, le_rfl, by simp⟩
-  | cons i s ih =>
-    obtain ⟨q, hq⟩ := hp
-    rw [Multiset.map_cons, Multiset.prod_cons] at hq
-    have hdvd : X - C (v i) ∣ p * q := Dvd.intro _ hq
-    rcases (prime_X_sub_C (v i)).dvd_or_dvd hdvd with ⟨p', rfl⟩ | ⟨q', rfl⟩
-    · obtain ⟨u, t, ht, rfl⟩ := ih p' ⟨q, mul_left_cancel₀ (X_sub_C_ne_zero (v i))
-        (by linear_combination hq)⟩
-      refine ⟨u, i ::ₘ t, Multiset.cons_le_cons i ht, ?_⟩
-      rw [Multiset.map_cons, Multiset.prod_cons]
-      ring
-    · obtain ⟨u, t, ht, rfl⟩ := ih p ⟨q', mul_left_cancel₀ (X_sub_C_ne_zero (v i))
-        (by linear_combination hq)⟩
-      exact ⟨u, t, ht.trans (Multiset.le_cons_self s i), rfl⟩
-
-/-- A divisor of a nonzero split polynomial mapped from a field `k` to a domain `A` is a unit
-constant times the image of a divisor over `k`. No algebra structure on `A` is required. -/
-theorem Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map {A : Type*} [CommRing A] [IsDomain A]
-    {i : k →+* A} {f : k[X]} (hf : f ≠ 0) (hsplit : f.Splits) {p : A[X]}
-    (hp : p ∣ f.map i) :
-    ∃ u : Aˣ, ∃ factor : k[X], factor ∣ f ∧ p = C (u : A) * factor.map i := by
-  rw [hsplit.eq_prod_roots, Polynomial.map_mul, map_C, Polynomial.map_multiset_prod,
-    Multiset.map_map] at hp
-  have hu : IsUnit (C (i f.leadingCoeff)) :=
-    (((leadingCoeff_ne_zero.mpr hf).isUnit).map i).map C
-  rw [hu.dvd_mul_left] at hp
-  obtain ⟨u, t, ht, rfl⟩ := TauCeti.exists_eq_C_mul_prod_X_sub_C_of_dvd i f.roots p
-    (by simpa [Function.comp_def] using hp)
-  refine ⟨u, (t.map fun a ↦ X - C a).prod, ?_, ?_⟩
-  · rw [hsplit.eq_prod_roots]
-    exact (Multiset.prod_dvd_prod_of_le (Multiset.map_le_map ht)).mul_left _
-  · simp [Polynomial.map_multiset_prod, Multiset.map_map]
+/-- A divisor of a split polynomial mapped to a domain descends up to a unit constant when
+its mapped leading coefficient is a unit. -/
+theorem Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map
+    {R A : Type*} [CommRing R] [CommRing A] [IsDomain A]
+    {i : R →+* A} {f : R[X]} (hsplit : f.Splits) (hu : IsUnit (i f.leadingCoeff))
+    {p : A[X]} (hp : p ∣ f.map i) :
+    ∃ u : Aˣ, ∃ factor : R[X], factor ∣ f ∧ p = C (u : A) * factor.map i := by
+  classical
+  obtain ⟨roots, hroots⟩ := splits_iff_exists_multiset.mp hsplit
+  let l := roots.toList
+  have hlist : (List.ofFn fun j : Fin l.length ↦ X - C (l.get j)) =
+      l.map (fun x ↦ X - C x) := by
+    simpa only [List.map_ofFn, Function.comp_def] using
+      congrArg (List.map fun x : R ↦ X - C x) (List.ofFn_get l)
+  have hf : f = C f.leadingCoeff * ∏ j : Fin l.length, (X - C (l.get j)) := by
+    rw [← List.prod_ofFn, hlist]
+    simpa [l, ← Multiset.prod_coe, ← Multiset.map_coe] using hroots
+  have hmap : f.map i = C (i f.leadingCoeff) *
+      ∏ j : Fin l.length, (X - C (i (l.get j))) := by
+    conv_lhs => rw [hf]
+    simp only [Polynomial.map_mul, map_C, Polynomial.map_prod, Polynomial.map_sub, map_X]
+  obtain ⟨q, hq⟩ := hp
+  obtain ⟨t, u, b, c, _, _, hbc, hp, _⟩ :=
+    mul_eq_mul_prime_prod (s := Finset.univ)
+      (p := fun j : Fin l.length ↦ X - C (i (l.get j)))
+      (fun j _ ↦ prime_X_sub_C _) (by simpa [hmap] using hq.symm)
+  have hb : IsUnit b := isUnit_of_dvd_unit ⟨c, hbc⟩ (hu.map C)
+  obtain ⟨a, ha, rfl⟩ := Polynomial.isUnit_iff.mp hb
+  refine ⟨ha.unit, ∏ j ∈ t, (X - C (l.get j)), ?_, ?_⟩
+  · rw [hf]
+    exact (Finset.prod_dvd_prod_of_subset t Finset.univ _ (Finset.subset_univ t)).mul_left _
+  · simpa only [Polynomial.map_prod, Polynomial.map_sub, map_X, map_C, IsUnit.unit_spec] using hp

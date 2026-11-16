@@ -10,10 +10,12 @@ public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.PolynomialAlgebra
 
 /-!
-# Units after localizing a split polynomial and extending a domain
+# Units after localizing split polynomials and extending a domain
 
-If `h : k[X]` splits over the field `k` and `A` is a domain over `k`, every unit of
-`A ⊗[k] k[X]ₕ` is a pure tensor of units. This includes `h = 0`, when the localization
+For a submonoid of split polynomials over a commutative ring, assume their leading
+coefficients become units in the coefficient domain. Every unit after localizing and extending
+scalars is a pure tensor of units. Over a field, the leading-coefficient condition follows
+for every nonzero inverted polynomial. This includes `h = 0`, when the localization
 is the trivial ring. For algebraically closed `k`, every `h` satisfies the splitting hypothesis.
 
 This controls transition units when comparing line bundles along points of an open affine line.
@@ -27,74 +29,70 @@ public noncomputable section
 
 open Polynomial TensorProduct
 
-variable {k : Type*} [Field k]
+/-- Units after base change of a polynomial localization are pure tensors when every
+inverted polynomial splits and has unit leading coefficient in the target domain. -/
+theorem Submonoid.exists_units_eq_tmul
+    {R A B : Type*} [CommRing R] [CommRing A] [IsDomain A] [Algebra R A]
+    [CommRing B] [Algebra R B] [Algebra R[X] B] [IsScalarTower R R[X] B]
+    (M : Submonoid R[X]) [IsLocalization M B]
+    (hsplit : ∀ h ∈ M, h.Splits)
+    (hu : ∀ h ∈ M, IsUnit (algebraMap R A h.leadingCoeff))
+    (u : (A ⊗[R] B)ˣ) :
+    ∃ (a : Aˣ) (v : Bˣ), (u : A ⊗[R] B) = (a : A) ⊗ₜ (v : B) := by
+  let M' := M.map (Algebra.TensorProduct.includeRight (R := R) (A := A))
+  let S := Localization M'
+  let e := IsLocalization.tensorProductEquivOfMapIncludeRight R A M B S
+  obtain ⟨⟨p, q⟩, hP⟩ := IsLocalization.surj M' (e (u : A ⊗[R] B))
+  have hqu : IsUnit (algebraMap (A ⊗[R] R[X]) S (q : A ⊗[R] R[X])) :=
+    IsLocalization.map_units S q
+  have hpu : IsUnit (algebraMap (A ⊗[R] R[X]) S p) :=
+    hP ▸ (u.isUnit.map e).mul hqu
+  obtain ⟨n, hn, hpn⟩ := (IsLocalization.algebraMap_isUnit_iff M' (S := S)).mp hpu
+  obtain ⟨h, hh, rfl⟩ := hn
+  have hdvd : (polyEquivTensor R A).symm p ∣ h.map (algebraMap R A) := by
+    simpa using map_dvd (polyEquivTensor R A).symm.toRingHom hpn
+  obtain ⟨a, g, hg, hpg⟩ := (hsplit h hh).exists_eq_C_mul_map_of_dvd_map (hu h hh) hdvd
+  have hp : p = (a : A) ⊗ₜ[R] g := by
+    apply (polyEquivTensor R A).symm.injective
+    simpa [polyEquivTensor_symm_apply_tmul_eq_smul, smul_eq_C_mul] using hpg
+  obtain ⟨den, hden, hdeneq⟩ := q.property
+  have hgu : IsUnit (algebraMap R[X] B g) :=
+    isUnit_of_dvd_unit (map_dvd (algebraMap R[X] B) hg)
+      (IsLocalization.map_units B ⟨h, hh⟩)
+  have hdu : IsUnit (algebraMap R[X] B den) := IsLocalization.map_units B ⟨den, hden⟩
+  refine ⟨a, hgu.unit * hdu.unit⁻¹, e.injective ?_⟩
+  rw [← hqu.mul_left_inj, hP, hp]
+  rw [← hdeneq, Algebra.TensorProduct.includeRight_apply]
+  rw [← IsLocalization.tensorProductEquivOfMapIncludeRight_tmul (R := R) (S := A)
+      R[X] M B S 1 den,
+    ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
+  have hcancel : (↑hdu.unit⁻¹ : B) * (algebraMap R[X] B den) = 1 := by
+    simpa only [IsUnit.unit_spec] using Units.inv_mul hdu.unit
+  simp only [Units.val_mul, IsUnit.unit_spec, mul_one, mul_assoc, hcancel]
+  exact (IsLocalization.tensorProductEquivOfMapIncludeRight_tmul R[X] M B S (a : A) g).symm
 
-private theorem Polynomial.Splits.exists_unit_factor_of_mul_eq_pow
-    {A B : Type*} [CommRing A] [IsDomain A] [Algebra k A]
-    [CommRing B] [Algebra k[X] B] {h : k[X]} [IsLocalization.Away h B]
-    (hsplit : h.Splits) (hh : h ≠ 0) {p q : A ⊗[k] k[X]} {N : ℕ}
-    (hPQ : p * q = (1 ⊗ₜ h) ^ N) :
-    ∃ (a : Aˣ) (g : k[X]), IsUnit (algebraMap k[X] B g) ∧ p = (a : A) ⊗ₜ g := by
-  have hdvd : (polyEquivTensor k A).symm p ∣ (h ^ N).map (algebraMap k A) := by
-    refine ⟨(polyEquivTensor k A).symm q, ?_⟩
-    rw [← map_mul, hPQ, Algebra.TensorProduct.tmul_pow, one_pow,
-      polyEquivTensor_symm_apply_tmul_eq_smul, one_smul]
-  obtain ⟨a, g, hg, hPg⟩ := (hsplit.pow _).exists_eq_C_mul_map_of_dvd_map (pow_ne_zero _ hh) hdvd
-  refine ⟨a, g, (IsLocalization.Away.algebraMap_isUnit_iff h).mpr ⟨N, hg⟩, ?_⟩
-  rw [← (polyEquivTensor k A).apply_symm_apply p, hPg, ← smul_eq_C_mul,
-    ← polyEquivTensor_symm_apply_tmul_eq_smul, AlgEquiv.apply_symm_apply]
+/-- Over a field, localizing at any submonoid of split polynomials and extending a domain
+creates only pure tensors of units. The statement includes the zero localization. -/
+theorem Submonoid.exists_units_eq_tmul_of_splits
+    {k A B : Type*} [Field k] [CommRing A] [IsDomain A] [Algebra k A]
+    [CommRing B] [Algebra k B] [Algebra k[X] B] [IsScalarTower k k[X] B]
+    (M : Submonoid k[X]) [IsLocalization M B]
+    (hsplit : ∀ h ∈ M, h.Splits) (u : (A ⊗[k] B)ˣ) :
+    ∃ (a : Aˣ) (v : Bˣ), (u : A ⊗[k] B) = (a : A) ⊗ₜ (v : B) := by
+  by_cases hzero : 0 ∈ M
+  · have : Subsingleton B := IsLocalization.subsingleton hzero
+    exact ⟨1, 1, Subsingleton.elim _ _⟩
+  exact M.exists_units_eq_tmul hsplit (fun h hh ↦
+    ((leadingCoeff_ne_zero.mpr (ne_of_mem_of_not_mem hh hzero)).isUnit).map
+      (algebraMap k A)) u
 
-/-- Over a field `k`, a unit after base change of a localization at a split polynomial is
-one unit from the coefficient domain tensored with one from the polynomial localization.
-The statement applies to any model of the localization, including basic-open coordinate rings. -/
-theorem Polynomial.Splits.exists_units_eq_tmul_of_splits
-    {A B : Type*} [CommRing A] [IsDomain A] [Algebra k A]
+/-- A unit after base change of a localization at a split polynomial over a field is a pure
+tensor of units. This applies to any model of the localization, including the zero ring. -/
+theorem Polynomial.Splits.exists_units_eq_tmul
+    {k A B : Type*} [Field k] [CommRing A] [IsDomain A] [Algebra k A]
     [CommRing B] [Algebra k B] [Algebra k[X] B] [IsScalarTower k k[X] B]
     {h : k[X]} [IsLocalization.Away h B] (hsplit : h.Splits) (u : (A ⊗[k] B)ˣ) :
     ∃ (a : Aˣ) (v : Bˣ), (u : A ⊗[k] B) = (a : A) ⊗ₜ (v : B) := by
-  by_cases hh : h = 0
-  · subst h
-    have : Subsingleton B :=
-      IsLocalization.subsingleton (M := Submonoid.powers (0 : k[X])) (Submonoid.mem_powers 0)
-    exact ⟨1, 1, Subsingleton.elim _ _⟩
-  let : IsDomain (A ⊗[k] k[X]) :=
-    (polyEquivTensor k A).toMulEquiv.symm.isDomain _
-  let tensorAlgebra : Algebra (A ⊗[k] k[X]) (A ⊗[k] B) :=
-    (Algebra.TensorProduct.map (AlgHom.id k A)
-      (IsScalarTower.toAlgHom k k[X] B)).toAlgebra
-  -- Base change makes the tensor algebra a localization of the polynomial tensor algebra.
-  have : IsScalarTower A (A ⊗[k] k[X]) (A ⊗[k] B) :=
-    IsScalarTower.of_algebraMap_eq (R := A) (S := A ⊗[k] k[X]) (A := A ⊗[k] B) <| by
-      intro scalar
-      simp [tensorAlgebra, RingHom.algebraMap_toAlgebra]
-  have hloc := IsLocalization.tensorProduct_tensorProduct_right k A (Submonoid.powers h)
-    B (by ext <;> simp [tensorAlgebra, RingHom.algebraMap_toAlgebra])
-  rw [Submonoid.map_powers, Algebra.TensorProduct.includeRight_apply] at hloc
-  have halg (x : A) (y : k[X]) : algebraMap (A ⊗[k] k[X]) (A ⊗[k] B)
-      (x ⊗ₜ y) = x ⊗ₜ algebraMap k[X] _ y := by
-    simp [tensorAlgebra, RingHom.algebraMap_toAlgebra]
-  have hM : Submonoid.powers ((1 : A) ⊗ₜ[k] h) ≤ nonZeroDivisors (A ⊗[k] k[X]) :=
-    powers_le_nonZeroDivisors_of_noZeroDivisors (by
-      intro hz
-      have := congrArg (polyEquivTensor k A).symm hz
-      rw [polyEquivTensor_symm_apply_tmul_eq_smul, one_smul, map_zero,
-        Polynomial.map_eq_zero_iff (algebraMap k A).injective] at this
-      exact hh this)
-  -- Clear denominators for the unit and its inverse, then descend their numerator factors.
-  obtain ⟨⟨p, roots, n, rfl⟩, hP⟩ := IsLocalization.surj (Submonoid.powers ((1 : A) ⊗ₜ[k] h))
-    (u : A ⊗[k] B)
-  obtain ⟨⟨q, s', m, rfl⟩, hQ⟩ := IsLocalization.surj (Submonoid.powers ((1 : A) ⊗ₜ[k] h))
-    (↑u⁻¹ : A ⊗[k] B)
-  have hPQ : p * q = (1 ⊗ₜ h) ^ (n + m) := by
-    apply IsLocalization.injective (A ⊗[k] B) hM
-    rw [map_mul, ← hP, ← hQ]
-    simp only [map_pow, pow_add, map_mul, mul_mul_mul_comm, Units.mul_inv, one_mul]
-  obtain ⟨a, g, hgu, hP'⟩ := hsplit.exists_unit_factor_of_mul_eq_pow (B := B) hh hPQ
-  have hhu : IsUnit (algebraMap k[X] B h ^ n) :=
-    (IsLocalization.Away.algebraMap_isUnit h).pow _
-  refine ⟨a, hgu.unit * hhu.unit⁻¹, ?_⟩
-  have hunit : IsUnit (algebraMap (A ⊗[k] k[X]) (A ⊗[k] B)
-      ((1 ⊗ₜ h) ^ n)) := IsLocalization.map_units _ (⟨_, n, rfl⟩ : Submonoid.powers _)
-  -- Cancel the denominator unit separately from the tensor-product normalization.
-  rw [← hunit.mul_left_inj, hP, hP']
-  simp [halg, mul_assoc]
+  apply (Submonoid.powers h).exists_units_eq_tmul_of_splits _ u
+  rintro _ ⟨n, rfl⟩
+  exact hsplit.pow n
