@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeExtension
 
 /-!
@@ -198,11 +196,9 @@ theorem completionAlgHom_toRingHom_eq_adicCompletionCongr
     [w.asIdeal.LiesOver v.asIdeal] {e : K ≃+* L}
     (halg : ∀ x, algebraMap K L x = e x)
     (he : ∀ x, w.valuation L (e x) = v.valuation K x) :
-    (completionAlgHom v w).toRingHom = (adicCompletionCongr v w e he).toRingHom :=
-  (eq_completionAlgHom_of_continuous v w (adicCompletionCongr v w e he).toRingHom
-    (continuous_adicCompletionCongr he) fun x ↦ by
-      rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-        adicCompletionCongr_algebraMap, halg]).symm
+    (completionAlgHom v w).toRingHom = (adicCompletionCongr v w e he).toRingHom := by
+  rw [← algebraMap_eq_completionAlgHom, algebraMap_adicCompletionExtensionAlgebra]
+  exact v.adicCompletionExtension_eq_adicCompletionCongr K L w halg he
 
 /-- Pointwise form of `completionAlgHom_toRingHom_eq_adicCompletionCongr`. -/
 theorem completionAlgHom_apply_eq_adicCompletionCongr
@@ -211,8 +207,10 @@ theorem completionAlgHom_apply_eq_adicCompletionCongr
     [w.asIdeal.LiesOver v.asIdeal] {e : K ≃+* L}
     (halg : ∀ x, algebraMap K L x = e x)
     (he : ∀ x, w.valuation L (e x) = v.valuation K x) (a : v.adicCompletion K) :
-    completionAlgHom v w a = adicCompletionCongr v w e he a :=
-  DFunLike.congr_fun (completionAlgHom_toRingHom_eq_adicCompletionCongr v w halg he) a
+    completionAlgHom v w a = adicCompletionCongr v w e he a := by
+  rw [← AlgHom.coe_toRingHom, ← AlgHom.toRingHom_eq_coe,
+    completionAlgHom_toRingHom_eq_adicCompletionCongr v w halg he,
+    RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
 
 /-- If `algebraMap K L` is surjective (hence bijective, for example when `K` is `Shrink.{0} L`),
 the canonical completion map `K_v → L_w` at any pair of lying-over finite places is bijective. -/
@@ -221,32 +219,11 @@ theorem completionAlgHom_bijective_of_surjective
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] (h : Function.Surjective (algebraMap K L)) :
     Function.Bijective (completionAlgHom v w) := by
-  let e : K ≃+* L := RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩
-  have halg (x : K) : algebraMap K L x = e x := rfl
-  have hint : algebraMap (𝒪 K) (𝒪 L) = (RingOfIntegers.mapRingEquiv e).toRingHom := by
-    ext x
-    exact halg x
-  have hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal := by
-    rw [Ideal.LiesOver.over (p := v.asIdeal) (P := w.asIdeal), Ideal.under_def, hint]
-    exact (Ideal.map_comap_of_surjective _ (RingOfIntegers.mapRingEquiv e).surjective
-      w.asIdeal).symm
-  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
-    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) hvw x
   have hfn : (completionAlgHom v w : v.adicCompletion K → w.adicCompletion L) =
-      adicCompletionCongr v w e he :=
-    funext (completionAlgHom_apply_eq_adicCompletionCongr v w halg he)
+      v.adicCompletionExtension K L w := by
+    rw [← AlgHom.coe_toRingHom, ← AlgHom.toRingHom_eq_coe, ← algebraMap_eq_completionAlgHom,
+      algebraMap_adicCompletionExtensionAlgebra]
   rw [hfn]
-  exact (adicCompletionCongr v w e he).bijective
-
-/-- In the `AdicCompletionExtension` scope, a surjective `algebraMap K L` induces a bijective
-`algebraMap (v.adicCompletion K) (w.adicCompletion L)` at any pair of lying-over finite places. -/
-theorem algebraMap_adicCompletion_bijective_of_surjective
-    {L : Type*} [Field L] [NumberField L] [Algebra K L]
-    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
-    [w.asIdeal.LiesOver v.asIdeal] (h : Function.Surjective (algebraMap K L)) :
-    Function.Bijective (algebraMap (v.adicCompletion K) (w.adicCompletion L)) := by
-  rw [algebraMap_eq_completionAlgHom]
-  exact completionAlgHom_bijective_of_surjective v w h
+  exact v.adicCompletionExtension_bijective_of_surjective K L w h
 
 end IsDedekindDomain.HeightOneSpectrum

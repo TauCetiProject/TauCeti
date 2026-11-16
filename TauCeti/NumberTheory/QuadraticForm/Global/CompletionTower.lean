@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
+public import TauCeti.NumberTheory.QuadraticForm.Global.FiniteHasse
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 
 /-!
@@ -23,7 +24,9 @@ isometric to the localization of the original form at the restricted place.
 This compatibility is the bridge needed to transfer local properties of a quadratic form over
 `K` to the completions of a field extension.  In particular, it allows an isotropic vector over
 `K_v` to be extended to every `L_w` above it, so a form which is isotropic at every finite and
-real place of `K` stays so at every finite and real place of `L`.
+real place of `K` stays so at every finite and real place of `L`. When the completion map
+`K_v → L_w` is surjective (in particular, when `algebraMap K L` is surjective), scalar extension
+also preserves the finite Hasse sign.
 
 ## Main results
 
@@ -31,6 +34,9 @@ real place of `K` stays so at every finite and real place of `L`.
 * `QuadraticForm.atRealPlaceBaseChange`: the real-place comparison `(Q_L)_w ≃ Q_{w|K}`.
 * `QuadraticForm.IsLocallyIsotropic.baseChange`: local isotropy survives scalar extension to
   a finite extension of number fields.
+* `QuadraticForm.finiteHasse_baseChange_of_completionAlgHom_surjective`,
+  `QuadraticForm.finiteHasse_baseChange_of_surjective`: scalar extension preserves the finite
+  Hasse sign when `completionAlgHom v w` (or `algebraMap K L`) is surjective.
 
 ## References
 
@@ -228,5 +234,48 @@ theorem IsLocallyIsotropic.baseChange {Q : _root_.QuadraticForm K V}
     exact not_anisotropic_baseChange (hfin v)
   · rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceBaseChange Q w⟩]
     exact hreal _
+
+section FiniteHasse
+
+open IsDedekindDomain.HeightOneSpectrum TauCeti
+
+variable [FiniteDimensional K V]
+
+/-- If the canonical completion map `completionAlgHom v w` is surjective at a finite place `w` of
+`L` above `v` of `K`, extending scalars of a regular form `Q` from `K` to `L` preserves its finite
+Hasse sign. -/
+theorem finiteHasse_baseChange_of_completionAlgHom_surjective
+    (v : HeightOneSpectrum (NumberField.RingOfIntegers K))
+    (w : HeightOneSpectrum (NumberField.RingOfIntegers L))
+    [w.asIdeal.LiesOver v.asIdeal]
+    (h : Function.Surjective (completionAlgHom v w))
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    (Q.baseChange L).finiteHasse (Nondegenerate.baseChange hQ) w = Q.finiteHasse hQ v := by
+  let _ : Finite (NumberField.RingOfIntegers K ⧸ v.asIdeal) :=
+    Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (NumberField.RingOfIntegers L ⧸ w.asIdeal) :=
+    Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  have hsurj : Function.Surjective (algebraMap (v.adicCompletion K) (w.adicCompletion L)) := by
+    rw [algebraMap_eq_completionAlgHom]
+    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using h
+  rw [finiteHasse_eq_localHasse_baseChange, finiteHasse_eq_localHasse_baseChange,
+    formClass_baseChange Q hQ, RegularFormClass.baseChange_baseChange L (w.adicCompletion L),
+    ← RegularFormClass.baseChange_baseChange (v.adicCompletion K) (w.adicCompletion L),
+    RegularFormClass.localHasse_baseChange_of_surjective hsurj]
+
+/-- Extending scalars of a regular form along a surjective homomorphism of number fields (for
+example, from `Shrink.{0} K` to `K`) preserves the finite Hasse sign at any pair of lying-over
+finite places. -/
+theorem finiteHasse_baseChange_of_surjective
+    (v : HeightOneSpectrum (NumberField.RingOfIntegers K))
+    (w : HeightOneSpectrum (NumberField.RingOfIntegers L))
+    [w.asIdeal.LiesOver v.asIdeal]
+    (h : Function.Surjective (algebraMap K L))
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    (Q.baseChange L).finiteHasse (Nondegenerate.baseChange hQ) w = Q.finiteHasse hQ v :=
+  finiteHasse_baseChange_of_completionAlgHom_surjective v w
+    (completionAlgHom_bijective_of_surjective v w h).surjective Q hQ
+
+end FiniteHasse
 
 end QuadraticForm

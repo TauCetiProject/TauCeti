@@ -209,8 +209,12 @@ theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) 
 an isomorphism). -/
 theorem hilbertSymbol_units_map_of_surjective {L : Type*} [Field L] {f : K →+* L}
     (hf : Function.Surjective f) (a b : Kˣ) :
-    hilbertSymbol (Units.map f.toMonoidHom a) (Units.map f.toMonoidHom b) = hilbertSymbol a b :=
-  hilbertSymbol_units_map_ringEquiv (RingEquiv.ofBijective f ⟨f.injective, hf⟩) a b
+    hilbertSymbol (Units.map f.toMonoidHom a) (Units.map f.toMonoidHom b) = hilbertSymbol a b := by
+  let e : K ≃+* L := RingEquiv.ofBijective f ⟨f.injective, hf⟩
+  have hmap : f.toMonoidHom = (e : K →* L) :=
+    MonoidHom.ext fun x ↦ (RingEquiv.ofBijective_apply f ⟨f.injective, hf⟩ x).symm
+  rw [hmap]
+  exact hilbertSymbol_units_map_ringEquiv e a b
 
 -- The quotient-representative construction follows
 -- `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.
@@ -234,9 +238,10 @@ theorem hilbertSymbolOnSquareClasses_squareClassMap_ringEquiv {L : Type*} [Field
     (x y : SquareClassGroup K) :
     hilbertSymbolOnSquareClasses ((e : K →+* L).squareClassMap x) ((e : K →+* L).squareClassMap y) =
       hilbertSymbolOnSquareClasses x y := by
+  have hmap : (e : K →+* L).toMonoidHom = (e : K →* L) := MonoidHom.ext fun _ ↦ by simp
   rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, RingHom.squareClassMap_apply,
     RingHom.squareClassMap_apply, hilbertSymbolOnSquareClasses_squareClass,
-    hilbertSymbolOnSquareClasses_squareClass]
+    hilbertSymbolOnSquareClasses_squareClass, hmap]
   exact hilbertSymbol_units_map_ringEquiv e _ _
 
 /-- Pushing square classes forward along a surjective field homomorphism leaves the square-class
@@ -244,9 +249,11 @@ Hilbert symbol unchanged. -/
 theorem hilbertSymbolOnSquareClasses_squareClassMap_of_surjective {L : Type*} [Field L]
     {f : K →+* L} (hf : Function.Surjective f) (x y : SquareClassGroup K) :
     hilbertSymbolOnSquareClasses (f.squareClassMap x) (f.squareClassMap y) =
-      hilbertSymbolOnSquareClasses x y :=
-  hilbertSymbolOnSquareClasses_squareClassMap_ringEquiv
-    (RingEquiv.ofBijective f ⟨f.injective, hf⟩) x y
+      hilbertSymbolOnSquareClasses x y := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, RingHom.squareClassMap_apply,
+    RingHom.squareClassMap_apply, hilbertSymbolOnSquareClasses_squareClass,
+    hilbertSymbolOnSquareClasses_squareClass]
+  exact hilbertSymbol_units_map_of_surjective hf _ _
 
 /-- The square-class Hilbert symbol is trivial on a zero second argument. -/
 @[simp] theorem hilbertSymbolOnSquareClasses_zero_right (x : SquareClassGroup K) :

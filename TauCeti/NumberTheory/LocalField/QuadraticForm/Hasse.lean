@@ -53,7 +53,7 @@ Hasse symbol differs from this `i < j` sign by the Hilbert symbol of the discrim
 * `TauCeti.RegularFormClass.localHasse_mk_rankOne_mul`: the formula for scaling by a unit.
 * `TauCeti.RegularFormClass.localHasse_mapRingEquiv`,
   `TauCeti.RegularFormClass.localHasse_baseChange_of_surjective`,
-  `TauCeti.localHasse_formClass_of_semilinearEquiv`,
+  `TauCeti.localHasse_formClass_eq_of_semilinearEquiv`,
   `QuadraticForm.localHasse_formClass_baseChange_of_surjective`: invariance of the local Hasse
   invariant under ring isomorphisms and surjective field extensions of nonarchimedean local fields.
 
@@ -303,7 +303,7 @@ variable {V W : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- Regular quadratic forms over nonarchimedean local fields intertwined by a semilinear
 equivalence `f : V ≃ₛₗ[σ] W` with `Q' (f v) = σ (Q v)` have the same local Hasse invariant. -/
-theorem localHasse_formClass_of_semilinearEquiv
+theorem localHasse_formClass_eq_of_semilinearEquiv
     {Q : QuadraticForm K V} {Q' : QuadraticForm L W}
     (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
     (f : V ≃ₛₗ[σ] W) (hf : ∀ v, Q' (f v) = σ (Q v)) :

@@ -52,9 +52,10 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
 * `TauCeti.RegularFormClass.mapRingEquiv_baseChange`: naturality of class transport with respect to
   scalar extension in a commutative square of field homomorphisms.
 * `TauCeti.formClass_eq_mapRingEquiv_of_semilinearEquiv`,
-  `TauCeti.discr_formClass_of_semilinearEquiv`,
-  `TauCeti.signedDiscr_formClass_of_semilinearEquiv`: the isometry class and discriminants of a
-  regular form transported along a semilinear equivalence over a field isomorphism.
+  `TauCeti.discr_formClass_eq_squareClassMap_of_semilinearEquiv`,
+  `TauCeti.signedDiscr_formClass_eq_squareClassMap_of_semilinearEquiv`: the isometry class and
+  discriminants of a regular form transported along a semilinear equivalence over a field
+  isomorphism.
 -/
 
 public section
@@ -73,53 +74,27 @@ variable {K : Type u} {L : Type v} {M : Type w} [Field K] [Field L] [Field M]
 /-- The equivalence of diagonal presentations induced by a ring isomorphism `e : K ≃+* L`, mapping
 every weight by `Units.map e` and preserving the rank. -/
 def RegularFormPresentation.equivOfRingEquiv (e : K ≃+* L) :
-    RegularFormPresentation K ≃ RegularFormPresentation L where
-  toFun :=
-    letI : Algebra K L := e.toRingHom.toAlgebra
-    RegularFormPresentation.baseChange L
-  invFun :=
-    letI : Algebra L K := e.symm.toRingHom.toAlgebra
-    RegularFormPresentation.baseChange K
-  left_inv p := by
-    let _ : Algebra K L := e.toRingHom.toAlgebra
-    let _ : Algebra L K := e.symm.toRingHom.toAlgebra
-    have : IsScalarTower K L K := IsScalarTower.of_algebraMap_eq fun x ↦ by
-      simpa only [Algebra.algebraMap_self, RingHom.id_apply, RingHom.algebraMap_toAlgebra,
-        RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using (e.symm_apply_apply x).symm
-    exact (RegularFormPresentation.baseChange_baseChange L K p).trans
-      (RegularFormPresentation.baseChange_self p)
-  right_inv q := by
-    let _ : Algebra K L := e.toRingHom.toAlgebra
-    let _ : Algebra L K := e.symm.toRingHom.toAlgebra
-    have : IsScalarTower L K L := IsScalarTower.of_algebraMap_eq fun y ↦ by
-      simpa only [Algebra.algebraMap_self, RingHom.id_apply, RingHom.algebraMap_toAlgebra,
-        RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using (e.apply_symm_apply y).symm
-    exact (RegularFormPresentation.baseChange_baseChange K L q).trans
-      (RegularFormPresentation.baseChange_self q)
-
-private theorem RegularFormPresentation.equivOfRingEquiv_eq_toAlgebra_baseChange (e : K ≃+* L)
-    (p : RegularFormPresentation K) :
-    letI : Algebra K L := e.toRingHom.toAlgebra
-    RegularFormPresentation.equivOfRingEquiv e p = RegularFormPresentation.baseChange L p :=
-  (rfl)
+    RegularFormPresentation K ≃ RegularFormPresentation L :=
+  Equiv.sigmaCongrRight fun _ ↦ Equiv.piCongrRight fun _ ↦ (Units.mapEquiv e.toMulEquiv).toEquiv
 
 /-- Transporting a presentation along `e` keeps its rank and maps its weights by `Units.map e`. -/
 theorem RegularFormPresentation.equivOfRingEquiv_def (e : K ≃+* L)
     (p : RegularFormPresentation K) :
     RegularFormPresentation.equivOfRingEquiv e p =
       ⟨p.1, fun i ↦ Units.map (e : K →* L) (p.2 i)⟩ := by
-  let _ : Algebra K L := e.toRingHom.toAlgebra
-  rw [RegularFormPresentation.equivOfRingEquiv_eq_toAlgebra_baseChange,
-    RegularFormPresentation.baseChange_def]
-  rfl
+  rcases p with ⟨n, w⟩
+  rw [RegularFormPresentation.equivOfRingEquiv, Equiv.sigmaCongrRight_apply]
+  refine Sigma.ext rfl (heq_of_eq ?_)
+  funext i
+  apply Units.ext
+  simp
 
 /-- Transporting a presentation along `e` leaves its rank unchanged. -/
 @[simp]
 theorem RegularFormPresentation.fst_equivOfRingEquiv (e : K ≃+* L)
     (p : RegularFormPresentation K) :
     (RegularFormPresentation.equivOfRingEquiv e p).1 = p.1 := by
-  let _ : Algebra K L := e.toRingHom.toAlgebra
-  exact RegularFormPresentation.fst_baseChange L p
+  simp [RegularFormPresentation.equivOfRingEquiv]
 
 /-- Each weight of the transported presentation is the image under `e` of the weight of `p` at the
 same index, read through `TauCeti.RegularFormPresentation.fst_equivOfRingEquiv`. -/
@@ -130,8 +105,13 @@ theorem RegularFormPresentation.equivOfRingEquiv_apply (e : K ≃+* L)
     (RegularFormPresentation.equivOfRingEquiv e p).2 i =
       Units.map (e : K →* L)
         (p.2 (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i)) := by
-  let _ : Algebra K L := e.toRingHom.toAlgebra
-  exact RegularFormPresentation.baseChange_apply L p i
+  have h : ∀ (q : RegularFormPresentation L)
+      (hq : q = ⟨p.1, fun j ↦ Units.map (e : K →* L) (p.2 j)⟩) (j : Fin q.1),
+      q.2 j = Units.map (e : K →* L)
+        (p.2 (Fin.cast (congrArg (fun r : RegularFormPresentation L ↦ r.1) hq) j)) := by
+    rintro _ rfl j
+    simp
+  exact h _ (RegularFormPresentation.equivOfRingEquiv_def e p) i
 
 /-- When an `Algebra K L` structure agrees with `e`, presentation transport agrees with
 `RegularFormPresentation.baseChange`. -/
@@ -150,23 +130,27 @@ theorem RegularFormPresentation.prod_equivOfRingEquiv (e : K ≃+* L)
     (p : RegularFormPresentation K) :
     (∏ i, (RegularFormPresentation.equivOfRingEquiv e p).2 i) =
       Units.map (e : K →* L) (∏ i, p.2 i) := by
-  let _ : Algebra K L := e.toRingHom.toAlgebra
-  exact RegularFormPresentation.prod_baseChange L p
+  rw [RegularFormPresentation.equivOfRingEquiv_def, map_prod]
 
 /-- Transporting presentations along the identity ring isomorphism is the identity equivalence. -/
 @[simp]
 theorem RegularFormPresentation.equivOfRingEquiv_refl :
     RegularFormPresentation.equivOfRingEquiv (RingEquiv.refl K) = Equiv.refl _ := by
   ext1 p
-  exact RegularFormPresentation.equivOfRingEquiv_eq_baseChange (RingEquiv.refl K) (fun _ ↦ rfl) p
-    |>.trans (RegularFormPresentation.baseChange_self p)
+  rw [RegularFormPresentation.equivOfRingEquiv_def]
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
+  simp
 
 /-- Inverting presentation transport corresponds to inverting the field isomorphism. -/
 @[simp]
 theorem RegularFormPresentation.equivOfRingEquiv_symm (e : K ≃+* L) :
     (RegularFormPresentation.equivOfRingEquiv e).symm =
-      RegularFormPresentation.equivOfRingEquiv e.symm :=
-  Equiv.ext fun _ ↦ rfl
+      RegularFormPresentation.equivOfRingEquiv e.symm := by
+  ext1 q
+  rw [Equiv.symm_apply_eq, RegularFormPresentation.equivOfRingEquiv_def,
+    RegularFormPresentation.equivOfRingEquiv_def]
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
+  simp
 
 /-- Transporting presentations along two field isomorphisms in succession agrees with transport
 along their composite. -/
@@ -176,11 +160,11 @@ theorem RegularFormPresentation.equivOfRingEquiv_trans (e : K ≃+* L) (f : L �
         (RegularFormPresentation.equivOfRingEquiv f) =
       RegularFormPresentation.equivOfRingEquiv (e.trans f) := by
   ext1 p
-  let _ : Algebra K L := e.toRingHom.toAlgebra
-  let _ : Algebra L M := f.toRingHom.toAlgebra
-  let _ : Algebra K M := (e.trans f).toRingHom.toAlgebra
-  have : IsScalarTower K L M := IsScalarTower.of_algebraMap_eq' rfl
-  exact RegularFormPresentation.baseChange_baseChange L M p
+  rw [Equiv.trans_apply, RegularFormPresentation.equivOfRingEquiv_def,
+    RegularFormPresentation.equivOfRingEquiv_def,
+    RegularFormPresentation.equivOfRingEquiv_def]
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
+  simp
 
 /-- Applying successive presentation transports computes transport along the composite
 isomorphism. -/
@@ -197,6 +181,8 @@ theorem RegularFormPresentation.equivOfRingEquiv_one (e : K ≃+* L) :
     RegularFormPresentation.equivOfRingEquiv e (RegularFormPresentation.one (K := K)) =
       RegularFormPresentation.one := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
+  rw [RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
   exact RegularFormPresentation.baseChange_one L
 
 /-- Presentation transport commutes with concatenation of presentations. -/
@@ -207,6 +193,8 @@ theorem RegularFormPresentation.equivOfRingEquiv_append (e : K ≃+* L)
       (RegularFormPresentation.equivOfRingEquiv e p).append
         (RegularFormPresentation.equivOfRingEquiv e q) := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
+  simp_rw [RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
   exact RegularFormPresentation.baseChange_append L p q
 
 /-- Presentation transport commutes with the tensor product of presentations. -/
@@ -217,6 +205,8 @@ theorem RegularFormPresentation.equivOfRingEquiv_tmul (e : K ≃+* L)
       (RegularFormPresentation.equivOfRingEquiv e p).tmul
         (RegularFormPresentation.equivOfRingEquiv e q) := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
+  simp_rw [RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
   exact RegularFormPresentation.baseChange_tmul L p q
 
 /-- In a commutative square of field homomorphisms with horizontal isomorphisms `e` and `e'`,
@@ -241,6 +231,17 @@ end Presentation
 section Class
 
 variable {K : Type u} {L : Type v} {M : Type w} [Field K] [Field L] [Field M]
+
+private theorem isScalarTower_toAlgebra_of_leftInverse (e : K ≃+* L) (f : L ≃+* K)
+    (h : ∀ x, f (e x) = x) :
+    letI : Algebra K L := e.toRingHom.toAlgebra
+    letI : Algebra L K := f.toRingHom.toAlgebra
+    IsScalarTower K L K :=
+  letI : Algebra K L := e.toRingHom.toAlgebra
+  letI : Algebra L K := f.toRingHom.toAlgebra
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    simp [RingHom.algebraMap_toAlgebra, h]
+
 variable [Invertible (2 : K)] [Invertible (2 : L)]
 
 /-- **Transport of regular-form isometry classes along a ring isomorphism of fields**, as an
@@ -249,30 +250,14 @@ def RegularFormClass.mapRingEquiv (e : K ≃+* L) :
     RegularFormClass K ≃+* RegularFormClass L :=
   letI : Algebra K L := e.toRingHom.toAlgebra
   letI : Algebra L K := e.symm.toRingHom.toAlgebra
-  { RegularFormClass.baseChangeHom (K := K) (L := L) with
-    invFun := RegularFormClass.baseChange K
-    left_inv := fun x ↦ by
-      have : IsScalarTower K L K := IsScalarTower.of_algebraMap_eq fun a ↦ by
-        simpa only [Algebra.algebraMap_self, RingHom.id_apply, RingHom.algebraMap_toAlgebra,
-          RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using (e.symm_apply_apply a).symm
-      rw [RingHom.toFun_eq_coe, RegularFormClass.baseChangeHom_apply]
-      exact (RegularFormClass.baseChange_baseChange L K x).trans
-        (RegularFormClass.baseChange_self x)
-    right_inv := fun y ↦ by
-      have : IsScalarTower L K L := IsScalarTower.of_algebraMap_eq fun b ↦ by
-        simpa only [Algebra.algebraMap_self, RingHom.id_apply, RingHom.algebraMap_toAlgebra,
-          RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using (e.apply_symm_apply b).symm
-      rw [RingHom.toFun_eq_coe, RegularFormClass.baseChangeHom_apply]
-      exact (RegularFormClass.baseChange_baseChange K L y).trans
-        (RegularFormClass.baseChange_self y) }
-
-private theorem RegularFormClass.mapRingEquiv_eq_toAlgebra_baseChange (e : K ≃+* L)
-    (x : RegularFormClass K) :
-    letI : Algebra K L := e.toRingHom.toAlgebra
-    RegularFormClass.mapRingEquiv e x = RegularFormClass.baseChange L x := by
-  let _ : Algebra K L := e.toRingHom.toAlgebra
-  rw [RegularFormClass.mapRingEquiv]
-  exact RegularFormClass.baseChangeHom_apply x
+  haveI : IsScalarTower K L K :=
+    isScalarTower_toAlgebra_of_leftInverse e e.symm e.symm_apply_apply
+  haveI : IsScalarTower L K L :=
+    isScalarTower_toAlgebra_of_leftInverse e.symm e e.apply_symm_apply
+  RingEquiv.ofRingHom (RegularFormClass.baseChangeHom (K := K) (L := L))
+    (RegularFormClass.baseChangeHom (K := L) (L := K))
+    (by rw [RegularFormClass.baseChangeHom_comp, RegularFormClass.baseChangeHom_self])
+    (by rw [RegularFormClass.baseChangeHom_comp, RegularFormClass.baseChangeHom_self])
 
 /-- Class transport is computed on diagonal presentations by
 `TauCeti.RegularFormPresentation.equivOfRingEquiv`. -/
@@ -281,8 +266,10 @@ theorem RegularFormClass.mapRingEquiv_mk (e : K ≃+* L) (p : RegularFormPresent
     RegularFormClass.mapRingEquiv e (Quotient.mk (regularFormSetoid K) p) =
       Quotient.mk (regularFormSetoid L) (RegularFormPresentation.equivOfRingEquiv e p) := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
-  rw [RegularFormClass.mapRingEquiv_eq_toAlgebra_baseChange, RegularFormClass.baseChange_mk,
-    RegularFormPresentation.equivOfRingEquiv_eq_toAlgebra_baseChange]
+  rw [RegularFormClass.mapRingEquiv, RingEquiv.ofRingHom_apply,
+    RegularFormClass.baseChangeHom_apply, RegularFormClass.baseChange_mk,
+    ← RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+      (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
 
 /-- When an `Algebra K L` structure agrees with `e`, `RegularFormClass.mapRingEquiv e` agrees with
 `RegularFormClass.baseChange L`. -/
@@ -301,7 +288,8 @@ theorem RegularFormClass.baseChange_eq_mapRingEquiv_of_surjective [Algebra K L]
       RegularFormClass.mapRingEquiv
         (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩) x :=
   (RegularFormClass.mapRingEquiv_eq_baseChange
-    (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩) (fun _ ↦ rfl) x).symm
+    (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩)
+    (fun a ↦ (RingEquiv.ofBijective_apply _ _ a).symm) x).symm
 
 omit [Invertible (2 : L)] in
 /-- Scalar extension of regular-form classes along a surjective field homomorphism is bijective. -/
@@ -341,7 +329,7 @@ semiring isomorphism. -/
 theorem RegularFormClass.mapRingEquiv_refl :
     RegularFormClass.mapRingEquiv (RingEquiv.refl K) = RingEquiv.refl (RegularFormClass K) := by
   ext x
-  exact (RegularFormClass.mapRingEquiv_eq_baseChange (RingEquiv.refl K) (fun _ ↦ rfl) x).trans
+  exact (RegularFormClass.mapRingEquiv_eq_baseChange (RingEquiv.refl K) (fun _ ↦ by simp) x).trans
     (RegularFormClass.baseChange_self x)
 
 /-- Inverting class transport corresponds to inverting the field isomorphism. -/
@@ -349,10 +337,8 @@ theorem RegularFormClass.mapRingEquiv_refl :
 theorem RegularFormClass.mapRingEquiv_symm (e : K ≃+* L) :
     (RegularFormClass.mapRingEquiv e).symm = RegularFormClass.mapRingEquiv e.symm := by
   ext y
-  refine Quotient.inductionOn y fun q ↦ ?_
-  rw [RingEquiv.symm_apply_eq, RegularFormClass.mapRingEquiv_mk, RegularFormClass.mapRingEquiv_mk,
-    RegularFormPresentation.equivOfRingEquiv_trans_apply]
-  simp
+  rw [RegularFormClass.mapRingEquiv, RegularFormClass.mapRingEquiv, RingEquiv.ofRingHom_symm,
+    RingEquiv.ofRingHom_apply, RingEquiv.ofRingHom_apply]
 
 /-- Transporting regular-form classes along two field isomorphisms in succession agrees with
 transport along their composite. -/
@@ -377,7 +363,8 @@ theorem RegularFormClass.mapRingEquiv_trans_apply [Invertible (2 : M)] (e : K �
 theorem RegularFormClass.rank_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
     (RegularFormClass.mapRingEquiv e x).rank = x.rank := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
-  rw [RegularFormClass.mapRingEquiv_eq_toAlgebra_baseChange]
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
   exact RegularFormClass.rank_baseChange L x
 
 /-- Transport along a field isomorphism preserves the hyperbolic class. -/
@@ -385,7 +372,8 @@ theorem RegularFormClass.rank_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass
 theorem RegularFormClass.mapRingEquiv_hyperbolicClass (e : K ≃+* L) :
     RegularFormClass.mapRingEquiv e (hyperbolicClass K) = hyperbolicClass L := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
-  rw [RegularFormClass.mapRingEquiv_eq_toAlgebra_baseChange]
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
   exact RegularFormClass.baseChange_hyperbolicClass
 
 /-- **The discriminant commutes with transport along a field isomorphism**: transporting a class
@@ -395,8 +383,9 @@ theorem RegularFormClass.discr_mapRingEquiv (e : K ≃+* L) (x : RegularFormClas
     RegularFormClass.discr (RegularFormClass.mapRingEquiv e x) =
       (e : K →+* L).squareClassMap (RegularFormClass.discr x) := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
-  rw [RegularFormClass.mapRingEquiv_eq_toAlgebra_baseChange]
-  exact RegularFormClass.discr_baseChange x
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]),
+    RegularFormClass.discr_baseChange, RingHom.algebraMap_toAlgebra, RingEquiv.toRingHom_eq_coe]
 
 /-- **The signed discriminant commutes with transport along a field isomorphism**: transporting a
 class along `e` pushes its signed discriminant forward along `(e : K →+* L).squareClassMap`. -/
@@ -405,8 +394,10 @@ theorem RegularFormClass.signedDiscr_mapRingEquiv (e : K ≃+* L) (x : RegularFo
     RegularFormClass.signedDiscr (RegularFormClass.mapRingEquiv e x) =
       (e : K →+* L).squareClassMap (RegularFormClass.signedDiscr x) := by
   let _ : Algebra K L := e.toRingHom.toAlgebra
-  rw [RegularFormClass.mapRingEquiv_eq_toAlgebra_baseChange]
-  exact RegularFormClass.signedDiscr_baseChange x
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]),
+    RegularFormClass.signedDiscr_baseChange, RingHom.algebraMap_toAlgebra,
+    RingEquiv.toRingHom_eq_coe]
 
 /-- In a commutative square of field homomorphisms with horizontal isomorphisms `e : K ≃+* L` and
 `e' : K' ≃+* L'`, class transport commutes with scalar extension. -/
@@ -446,71 +437,55 @@ theorem formClass_eq_mapRingEquiv_of_semilinearEquiv
       RegularFormClass.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ') (formClass Q hQ) := by
   let e : K ≃+* L := RingHomInvPair.toRingEquiv σ σ'
   obtain ⟨p, ⟨g⟩⟩ := exists_presentedForm_equivalent Q hQ
-  have hcast := RegularFormPresentation.fst_equivOfRingEquiv e p
-  let hL : W ≃ₗ[L] (Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) :=
-    { toFun := fun w i ↦ σ (g (f.symm w) (Fin.cast hcast i))
-      map_add' := fun w₁ w₂ ↦ by
-        ext i
-        simp
+  let hAdd : W ≃+ (Fin p.1 → L) :=
+    (f.symm.toAddEquiv.trans g.toLinearEquiv.toAddEquiv).trans
+      (AddEquiv.piCongrRight fun _ ↦ e.toAddEquiv)
+  let hL : W ≃ₗ[L] (Fin p.1 → L) :=
+    { hAdd with
       map_smul' := fun c w ↦ by
         ext i
         have hsymm : f.symm (c • w) = σ' c • f.symm w := f.symm.map_smulₛₗ c w
-        simp [hsymm]
-      invFun := fun y ↦ f (g.symm fun j ↦ σ' (y (Fin.cast hcast.symm j)))
-      left_inv := fun w ↦ by
-        dsimp only
-        have hg : (fun j ↦ σ' (σ (g (f.symm w) (Fin.cast hcast (Fin.cast hcast.symm j))))) =
-            g (f.symm w) := by
-          ext j
-          simp
-        rw [hg, g.symm_apply_apply, f.apply_symm_apply]
-      right_inv := fun y ↦ by
-        ext i
-        have hf_symm : f.symm (f (g.symm fun j ↦ σ' (y (Fin.cast hcast.symm j)))) =
-            g.symm fun j ↦ σ' (y (Fin.cast hcast.symm j)) :=
-          f.symm_apply_apply _
-        simp [hf_symm] }
-  have hEquiv : Q'.Equivalent (presentedForm (RegularFormPresentation.equivOfRingEquiv e p)) := by
+        simp [hAdd, e, hsymm] }
+  have hEquiv : Q'.Equivalent
+      (presentedForm ⟨p.1, fun i ↦ Units.map (e : K →* L) (p.2 i)⟩) := by
     refine ⟨{ toLinearEquiv := hL, map_app' := fun w ↦ ?_ }⟩
     obtain ⟨v, rfl⟩ := f.surjective w
     have hfv : f.symm (f v) = v := f.symm_apply_apply v
     have hsum :
-        presentedForm (RegularFormPresentation.equivOfRingEquiv e p) (hL (f v)) =
+        presentedForm ⟨p.1, fun i ↦ Units.map (e : K →* L) (p.2 i)⟩ (hL (f v)) =
           σ (presentedForm p (g v)) := by
       simp only [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares_apply,
         Units.smul_def, smul_eq_mul, map_sum, map_mul]
-      refine Fintype.sum_equiv (finCongr hcast) _ _ fun i ↦ ?_
-      simp [e, hL, hfv]
-    change presentedForm (RegularFormPresentation.equivOfRingEquiv e p) (hL (f v)) = Q' (f v)
-    rw [hsum, g.map_app v, hf v]
-  rw [formClass_mk Q hQ p ⟨g⟩, RegularFormClass.mapRingEquiv_mk, formClass_mk Q' hQ' _ hEquiv]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      simp [hL, hAdd, e, hfv]
+    rw [LinearEquiv.toFun_eq_coe, hsum, g.map_app v, hf v]
+  rw [formClass_mk Q hQ p ⟨g⟩, RegularFormClass.mapRingEquiv_mk,
+    RegularFormPresentation.equivOfRingEquiv_def, formClass_mk Q' hQ' _ hEquiv]
 
 /-- If `f : V ≃ₛₗ[σ] W` intertwines two regular quadratic forms `Q` and `Q'` via
 `Q' (f v) = σ (Q v)`, then the discriminant of `Q'` is the image under `σ` of the discriminant of
 `Q`. -/
-theorem discr_formClass_of_semilinearEquiv
+theorem discr_formClass_eq_squareClassMap_of_semilinearEquiv
     {Q : QuadraticForm K V} {Q' : QuadraticForm L W}
     (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
     (f : V ≃ₛₗ[σ] W) (hf : ∀ v, Q' (f v) = σ (Q v)) :
     RegularFormClass.discr (formClass Q' hQ') =
       σ.squareClassMap (RegularFormClass.discr (formClass Q hQ)) := by
-  rw [formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf, RegularFormClass.discr_mapRingEquiv]
-  -- Coercing `RingHomInvPair.toRingEquiv σ σ'` to `K →+* L` reduces definitionally to `σ`.
-  rfl
+  rw [formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf, RegularFormClass.discr_mapRingEquiv,
+    RingHomInvPair.toRingEquiv, RingEquiv.toRingHom_ofRingHom]
 
 /-- If `f : V ≃ₛₗ[σ] W` intertwines two regular quadratic forms `Q` and `Q'` via
 `Q' (f v) = σ (Q v)`, then the signed discriminant of `Q'` is the image under `σ` of the signed
 discriminant of `Q`. -/
-theorem signedDiscr_formClass_of_semilinearEquiv
+theorem signedDiscr_formClass_eq_squareClassMap_of_semilinearEquiv
     {Q : QuadraticForm K V} {Q' : QuadraticForm L W}
     (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
     (f : V ≃ₛₗ[σ] W) (hf : ∀ v, Q' (f v) = σ (Q v)) :
     RegularFormClass.signedDiscr (formClass Q' hQ') =
       σ.squareClassMap (RegularFormClass.signedDiscr (formClass Q hQ)) := by
   rw [formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf,
-    RegularFormClass.signedDiscr_mapRingEquiv]
-  -- Coercing `RingHomInvPair.toRingEquiv σ σ'` to `K →+* L` reduces definitionally to `σ`.
-  rfl
+    RegularFormClass.signedDiscr_mapRingEquiv, RingHomInvPair.toRingEquiv,
+    RingEquiv.toRingHom_ofRingHom]
 
 end FormClass
 
