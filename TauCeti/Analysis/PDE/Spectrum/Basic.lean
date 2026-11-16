@@ -143,6 +143,14 @@ def dirichletSolutionOperator
     Lp ℝ 2 (mu.restrict Omega) →L[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
   hcoercive.formSolutionOperator W1p0.valueL
 
+/-- The solution operator of the Dirichlet problem is the solution operator of the energy form
+along the value inclusion `H¹₀(Ω) → L²(Ω)`. -/
+theorem dirichletSolutionOperator_def
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    dirichletSolutionOperator hcoeff hcoercive = hcoercive.formSolutionOperator W1p0.valueL :=
+  (rfl)
+
 /-- The abstract solution map of the energy form along the value inclusion is the weak solution
 of the Dirichlet problem. -/
 theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
@@ -150,9 +158,8 @@ theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     hcoercive.formSolutionMap W1p0.valueL f = weakSolutionDirichlet hcoeff hcoercive f := by
   refine (IsCoercive.eq_formSolutionMap hcoercive W1p0.valueL fun v ↦ ?_).symm
-  rw [energyFormH1L0_apply, W1p0.valueL_apply, ← dirichletForcing_apply f v,
-    dirichletForcing_apply_eq_setIntegral]
-  exact (isWeakSolutionDirichlet_iff f _).mp
+  rw [energyFormH1L0_apply, W1p0.valueL_apply]
+  exact (isWeakSolutionDirichlet_iff_inner f _).mp
     (isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive f) v
 
 /-- The solution operator returns the value component of the weak solution. -/
@@ -204,10 +211,8 @@ theorem dirichletSolutionOperator_injective
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     Function.Injective (dirichletSolutionOperator hcoeff hcoercive) := by
-  have h := hcoercive.eigenspace_formSolutionOperator_zero_eq_bot
-    (W1p0.denseRange_valueL_two (mu := mu) (Omega := Omega))
-  rw [eigenspace_zero] at h
-  exact LinearMap.ker_eq_bot.1 h
+  rw [dirichletSolutionOperator_def]
+  exact hcoercive.formSolutionOperator_injective W1p0.denseRange_valueL_two
 
 /-! ### Dirichlet eigenvalues -/
 
