@@ -171,6 +171,22 @@ theorem IsHomogeneous.domDomCongrLinearEquiv' {κ' : Type*} [Fintype κ']
   simpa only [_root_.MultilinearMap.domDomCongrLinearEquiv'_apply,
     _root_.MultilinearMap.coe_mk, Function.comp_apply] using h
 
+/-- Reindexing the inputs of a non-dependent homogeneous multilinear map along an equivalence of
+index types via `MultilinearMap.domDomCongr` preserves its degree. -/
+@[grind .]
+theorem IsHomogeneous.domDomCongr {κ' : Type*} [Fintype κ']
+    {M₀ : Type uM} {σM₀ : Type*} [AddCommMonoid M₀] [Module R M₀] [SetLike σM₀ M₀]
+    (σ : κ ≃ κ') {f : MultilinearMap (RingHom.id R) (fun _ : κ ↦ M₀) N}
+    {𝒜 : (i : κ) → ι → σM₀} {ℬ : ι → σN} {q : ι}
+    (hf : IsHomogeneous f 𝒜 ℬ q) :
+    IsHomogeneous (f.domDomCongr σ) (fun i ↦ 𝒜 (σ.symm i)) ℬ q := by
+  intro d x hx
+  have hdeg : ∑ i, d (σ i) = ∑ i, d i := Fintype.sum_equiv σ _ _ fun _ ↦ rfl
+  have h := hf.map_mem (fun i ↦ d (σ i)) (fun i ↦ x (σ i)) fun i ↦ by
+    simpa only [Equiv.symm_apply_apply] using hx (σ i)
+  rw [hdeg] at h
+  simpa only [_root_.MultilinearMap.domDomCongr_apply] using h
+
 end Semiring
 
 section Neg

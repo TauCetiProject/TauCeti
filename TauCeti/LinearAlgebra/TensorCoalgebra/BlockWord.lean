@@ -281,9 +281,8 @@ theorem blockWord_eq_sum_composition (a : ℕ) {b : ℕ} (hb : 0 < b) :
       rw [ofLetter_eq_of_tprod]
       refine of_tprod_congr R M (Nat.one_pos) (Composition.single_length (Nat.succ_pos b)).symm
         fun i ↦ ?_
-      rw [Fin.fin_one_eq_zero i, Fin.val_cast, Fin.val_zero, Composition.sizeUpTo_zero, add_zero,
-        Composition.blocksFun_eq_getElem]
-      simp
+      rw [Composition.blocksFun_eq_getElem]
+      simp [Fin.fin_one_eq_zero i]
     have hrest :
         (∑ k ∈ Finset.range b, prepend R M (e a (k + 1)) (blockWord R e (a + k + 1) (b - k))) =
           ∑ c : {c : Composition (b + 1) // c ≠ s}, term c.1 := by
@@ -297,25 +296,21 @@ theorem blockWord_eq_sum_composition (a : ℕ) {b : ℕ} (hb : 0 < b) :
       rw [prepend_of_tprod]
       dsimp only [term]
       rw [Composition.coe_neSingleSuccEquiv_apply]
-      refine of_tprod_congr R M _ (Composition.cons_length k.2 c').symm fun i ↦ ?_
+      refine of_tprod_congr R M _ (by simp) fun i ↦ ?_
       induction i using Fin.cases with
-      | zero =>
-        rw [Fin.cons_zero, Fin.val_cast, Fin.val_zero, Composition.sizeUpTo_zero, add_zero,
-          Composition.blocksFun_eq_getElem]
-        simp
-      | succ j =>
-        rw [Fin.cons_succ, Fin.val_cast, Fin.val_succ, Composition.cons_sizeUpTo_succ k.2 c' j.2.le,
-          Composition.blocksFun_eq_getElem, Composition.blocksFun_eq_getElem]
-        simp [add_assoc]
+      | zero => simp [Composition.blocksFun_eq_getElem]
+      | succ j => simp [Composition.blocksFun_eq_getElem, add_assoc]
     rw [blockWord_succ, hsingle, hrest, ← Fintype.sum_eq_add_sum_subtype_ne term s]
 
-/-- On a nonempty block of a pure tensor word, `coalgHom R f` evaluates to the block word of the
+/-- On any block of a pure tensor word, `coalgHom R f` evaluates to the block word of the
 letters assigned by `f` to every sub-block. -/
 theorem coalgHom_subword_eq_blockWord (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (x : Fin n → M)
-    (a : ℕ) {b : ℕ} (hb : 0 < b) :
-    coalgHom R f (subword R x a b) = blockWord R (fun c k ↦ f (subword R x c k)) a b :=
-  ((isBlockFamily_subword x).map (isCoalgHom_coalgHom f)).eq_blockWord _ hb
-    fun c k _ _ _ ↦ LinearMap.congr_fun (letter_comp_coalgHom f) (subword R x c k)
+    (a b : ℕ) :
+    coalgHom R f (subword R x a b) = blockWord R (fun c k ↦ f (subword R x c k)) a b := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · simp
+  · exact ((isBlockFamily_subword x).map (isCoalgHom_coalgHom f)).eq_blockWord _ hb
+      fun c k _ _ _ ↦ LinearMap.congr_fun (letter_comp_coalgHom f) (subword R x c k)
 
 /-- **Closed-form expansion of `coalgHom R f` on a pure tensor word**: it sums over all integer
 compositions `c` of `n` the pure tensor word formed by applying `f` to each block
@@ -328,7 +323,7 @@ theorem coalgHom_of_tprod_eq_sum_composition (f : ReducedTensorWords R M →ₗ[
           (PiTensorProduct.tprod R fun i ↦
             f (of R M ⟨c.blocksFun i, c.one_le_blocksFun i⟩
               (PiTensorProduct.tprod R (x ∘ c.embedding i)))) := by
-  rw [of_tprod_eq_subword R hn x, coalgHom_subword_eq_blockWord f x 0 hn,
+  rw [of_tprod_eq_subword R hn x, coalgHom_subword_eq_blockWord f x 0 n,
     blockWord_eq_sum_composition _ 0 hn]
   refine Finset.sum_congr rfl fun c _ ↦ congrArg (of R N _) (congrArg (PiTensorProduct.tprod R)
     (funext fun i ↦ congrArg f ?_))

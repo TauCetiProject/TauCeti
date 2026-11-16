@@ -67,6 +67,13 @@ theorem ofLetter_eq_of_tprod (a : M) :
   rw [ofLetter, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorPower.oneEquiv_symm_apply]
   rfl
 
+/-- A pure tensor word of length one is the single letter at index `0`. -/
+theorem of_one_tprod {hn : 0 < 1} (x : Fin 1 → M) :
+    of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x ⟨0, hn⟩) := by
+  rw [ofLetter_eq_of_tprod]
+  exact congrArg (of R M 1) (congrArg (PiTensorProduct.tprod R)
+    (funext fun i ↦ congrArg x (Subsingleton.elim i ⟨0, hn⟩)))
+
 /-- The length-one component of a single letter is that letter under the tensor-power
 identification. -/
 theorem component_ofLetter (a : M) :

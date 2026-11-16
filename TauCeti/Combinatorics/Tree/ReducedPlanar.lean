@@ -25,7 +25,7 @@ leaves when passing to a child, and the bound on the valence of the root. Thus f
 sums over these trees need neither a convergence hypothesis nor a bound on vertex valences
 chosen separately. The number of internal vertices is at most the number of leaves minus one,
 with equality precisely for binary trees (`ReducedPlanarTree.numInternal_add_one_eq_numLeaves_iff`).
-In arity at least two, decomposing a tree at its root identifies `ReducedPlanarTree.Arity n` with
+In arity `n ≠ 1`, decomposing a tree at its root identifies `ReducedPlanarTree.Arity n` with
 compositions of `n` into at least two blocks together with a child tree on each block
 (`ReducedPlanarTree.arityCompositionEquiv`).
 
@@ -53,6 +53,13 @@ theorem node_congr {m n : ℕ} (hmn : m = n) {f : Fin (m + 2) → ReducedPlanarT
   subst hmn
   exact congrArg (node m) (funext hfg)
 
+/-- Equal nodes have equal children after casting along the child-count equality. -/
+theorem node_child_eq_of_eq {m n : ℕ} {f : Fin (m + 2) → ReducedPlanarTree}
+    {g : Fin (n + 2) → ReducedPlanarTree} (h : node m f = node n g) (i : Fin (n + 2)) :
+    f (i.cast (by have := (node.inj h).1; omega)) = g i := by
+  obtain ⟨rfl, hg⟩ := node.inj h
+  exact congrFun (eq_of_heq hg) i
+
 instance instDecidableEq : DecidableEq ReducedPlanarTree
   | leaf, leaf => isTrue rfl
   | leaf, node _ _ => isFalse nofun
@@ -62,7 +69,7 @@ instance instDecidableEq : DecidableEq ReducedPlanarTree
       letI : ∀ i : Fin (n + 2), Decidable (f (i.cast (by omega)) = g i) :=
         fun i ↦ instDecidableEq (f (i.cast (by omega))) (g i)
       decidable_of_iff (∀ i : Fin (n + 2), f (i.cast (by omega)) = g i)
-        ⟨node_congr hmn, fun h i ↦ by subst hmn; exact congrFun (eq_of_heq (node.inj h).2) i⟩
+        ⟨node_congr hmn, node_child_eq_of_eq⟩
     else isFalse fun h ↦ hmn (node.inj h).1
 
 /-- The number of input leaves. The single leaf has arity one. -/
@@ -71,7 +78,7 @@ instance instDecidableEq : DecidableEq ReducedPlanarTree
   | node _ children => ∑ i, numLeaves (children i)
 
 /-- The number of internal vertices, excluding the input leaves. -/
-@[expose] def numInternal : ReducedPlanarTree → ℕ
+def numInternal : ReducedPlanarTree → ℕ
   | leaf => 0
   | node _ children => 1 + ∑ i, numInternal (children i)
 
@@ -84,18 +91,6 @@ instance instDecidableEq : DecidableEq ReducedPlanarTree
 
 @[simp] theorem numInternal_node (n : ℕ) (children : Fin (n + 2) → ReducedPlanarTree) :
     numInternal (node n children) = 1 + ∑ i, numInternal (children i) := (rfl)
-
-/-- Equivalence between child-leaf pairs `(i, j)` of `node k children` and
-`Fin (node k children).numLeaves`. -/
-@[expose] def nodeLeavesEquiv (k : ℕ) (children : Fin (k + 2) → ReducedPlanarTree) :
-    (Σ i : Fin (k + 2), Fin (children i).numLeaves) ≃ Fin (node k children).numLeaves :=
-  finSigmaFinEquiv
-
-@[simp] theorem coe_nodeLeavesEquiv_apply (k : ℕ) (children : Fin (k + 2) → ReducedPlanarTree)
-    (ij : Σ i : Fin (k + 2), Fin (children i).numLeaves) :
-    (nodeLeavesEquiv k children ij : ℕ) =
-      (∑ a : Fin ij.1.1, (children (Fin.castLE ij.1.2.le a)).numLeaves) + ij.2.1 :=
-  finSigmaFinEquiv_apply ij
 
 /-- A tree has at least one input leaf. -/
 theorem numLeaves_pos (t : ReducedPlanarTree) : 0 < t.numLeaves := by
@@ -146,7 +141,7 @@ theorem numLeaves_eq_one_iff (t : ReducedPlanarTree) : t.numLeaves = 1 ↔ t = l
     omega
 
 /-- The corolla with `n + 2` inputs, consisting of a single internal vertex. -/
-@[expose] def corolla (n : ℕ) : ReducedPlanarTree := node n (fun _ ↦ leaf)
+def corolla (n : ℕ) : ReducedPlanarTree := node n (fun _ ↦ leaf)
 
 /-- A corolla has a single root whose children are all leaves. -/
 theorem corolla_def (n : ℕ) : corolla n = node n (fun _ ↦ leaf) := (rfl)
@@ -158,7 +153,7 @@ theorem corolla_def (n : ℕ) : corolla n = node n (fun _ ↦ leaf) := (rfl)
   simp [corolla]
 
 /-- The binary node with left subtree `l` and right subtree `r`. -/
-@[expose] def binary (l r : ReducedPlanarTree) : ReducedPlanarTree := node 0 ![l, r]
+def binary (l r : ReducedPlanarTree) : ReducedPlanarTree := node 0 ![l, r]
 
 /-- A binary node is a two-input internal vertex with children `![l, r]`. -/
 theorem binary_def (l r : ReducedPlanarTree) : binary l r = node 0 ![l, r] := (rfl)
@@ -219,15 +214,13 @@ theorem numInternal_add_one_eq_numLeaves_iff (t : ReducedPlanarTree) :
       simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
         Nat.nsmul_eq_mul, mul_one] at hle
       have hn : n = 0 := by omega
-      refine ⟨hn, fun i ↦ (ih i).mp ?_⟩
-      by_contra hne
-      have hlt : (children i).numInternal + 1 < (children i).numLeaves :=
-        lt_of_le_of_ne (children i).numInternal_add_one_le_numLeaves hne
-      have hstrict := Finset.sum_lt_sum (s := Finset.univ)
-        (fun j _ ↦ (children j).numInternal_add_one_le_numLeaves) ⟨i, Finset.mem_univ i, hlt⟩
-      simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-        Nat.nsmul_eq_mul, mul_one] at hstrict
-      omega
+      refine ⟨hn, fun i ↦ (ih i).mp <|
+        (Finset.sum_eq_sum_iff_of_le fun j _ ↦ (children j).numInternal_add_one_le_numLeaves).mp
+          (by
+            rw [Finset.sum_add_distrib]
+            simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul, mul_one]
+            omega)
+          i (Finset.mem_univ i)⟩
     · subst hn
       have hsum : (∑ i : Fin (0 + 2), (children i).numLeaves) =
           ∑ i : Fin (0 + 2), ((children i).numInternal + 1) :=
@@ -287,18 +280,11 @@ theorem numLeaves_eq_three_iff (t : ReducedPlanarTree) :
           rw [Fin.forall_fin_two]
           exact ⟨hl, hr⟩
       · left
-        have hsum : ∑ i : Fin 3, (children i).numLeaves = 3 := ht
         have hc (i : Fin 3) : children i = leaf := by
           rw [← numLeaves_eq_one_iff]
-          by_contra hne
-          have hgt : 1 < (children i).numLeaves :=
-            lt_of_le_of_ne (children i).numLeaves_pos (Ne.symm hne)
-          have hlt := Finset.sum_lt_sum (s := Finset.univ)
-            (f := fun _ : Fin 3 ↦ 1) (g := fun j : Fin 3 ↦ (children j).numLeaves)
-            (fun j _ ↦ (children j).numLeaves_pos) ⟨i, Finset.mem_univ i, hgt⟩
-          simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
-            mul_one] at hlt
-          omega
+          exact ((Finset.sum_eq_sum_iff_of_le (s := Finset.univ) (f := fun _ : Fin 3 ↦ 1)
+            fun j _ ↦ (children j).numLeaves_pos).mp (by simpa using ht.symm)
+            i (Finset.mem_univ i)).symm
         exact congrArg (node 1) (funext hc)
   · rintro (rfl | rfl | rfl) <;> simp
 
@@ -396,7 +382,7 @@ theorem sum_arity_three {M : Type*} [AddCommMonoid M] (f : Arity 3 → M) :
 
 /-- Assemble a reduced planar tree of arity `n` from a composition of `n` into at least two blocks
 and a child tree on each block. -/
-@[expose] def ofComposition {n : ℕ} (c : Composition n) (hc : 2 ≤ c.length)
+def ofComposition {n : ℕ} (c : Composition n) (hc : 2 ≤ c.length)
     (children : ∀ i : Fin c.length, Arity (c.blocksFun i)) : Arity n :=
   ⟨node (c.length - 2) (fun i ↦ (children (i.cast (Nat.sub_add_cancel hc))).val), by
     rw [numLeaves_node]
@@ -433,25 +419,6 @@ def nodeComposition (k : ℕ) (children : Fin (k + 2) → ReducedPlanarTree) :
   simp only [nodeComposition_blocks, List.getElem_ofFn]
   rfl
 
-private theorem cast_nodeComposition_length {n : ℕ} (k : ℕ)
-    (children : Fin (k + 2) → ReducedPlanarTree) (ht : (node k children).numLeaves = n) :
-    ((nodeComposition k children).cast ht).length = k + 2 := by
-  rw [Composition.cast_length, nodeComposition_length]
-
-private theorem cast_nodeComposition_blocksFun {n : ℕ} (k : ℕ)
-    (children : Fin (k + 2) → ReducedPlanarTree) (ht : (node k children).numLeaves = n)
-    (i : Fin ((nodeComposition k children).cast ht).length) :
-    ((nodeComposition k children).cast ht).blocksFun i =
-      (children (i.cast (cast_nodeComposition_length k children ht))).numLeaves := by
-  rw [Composition.cast_blocksFun, nodeComposition_blocksFun]
-  rfl
-
-private theorem node_child_eq_of_eq {m n : ℕ} {f : Fin (m + 2) → ReducedPlanarTree}
-    {g : Fin (n + 2) → ReducedPlanarTree} (h : node m f = node n g) (i : Fin (n + 2)) :
-    f (i.cast (by have := (node.inj h).1; omega)) = g i := by
-  obtain ⟨rfl, hg⟩ := node.inj h
-  exact congrFun (eq_of_heq hg) i
-
 private theorem ofComposition_injective {n : ℕ} :
     Function.Injective fun p : Σ c : {c : Composition n // 2 ≤ c.length},
       ∀ i : Fin c.1.length, Arity (c.1.blocksFun i) ↦ ofComposition p.1.1 p.1.2 p.2 := by
@@ -469,26 +436,25 @@ private theorem ofComposition_injective {n : ℕ} :
     ∀ i : Fin e.1.length, Arity (e.1.blocksFun i)) ⟨c₁, hc₁⟩)
     (funext fun i ↦ Subtype.ext (hch i))
 
-private def arityCompositionInv {n : ℕ} (hn : 2 ≤ n) :
+private def arityCompositionInv {n : ℕ} (hn : n ≠ 1) :
     Arity n → Σ c : {c : Composition n // 2 ≤ c.length},
       ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)
-  | ⟨leaf, ht⟩ => False.elim (by simp at ht; omega)
+  | ⟨leaf, ht⟩ => False.elim (hn (by simpa using ht.symm))
   | ⟨node k children, ht⟩ =>
     let c : Composition n := (nodeComposition k children).cast ht
-    have hcl : c.length = k + 2 := cast_nodeComposition_length k children ht
-    ⟨⟨c, by omega⟩, fun i ↦ ⟨children (i.cast hcl),
-      (cast_nodeComposition_blocksFun k children ht i).symm⟩⟩
+    have hcl : c.length = k + 2 := by simp [c]
+    ⟨⟨c, by omega⟩, fun i ↦ ⟨children (i.cast hcl), by simp [c]⟩⟩
 
-private theorem ofComposition_arityCompositionInv {n : ℕ} (hn : 2 ≤ n) (t : Arity n) :
+private theorem ofComposition_arityCompositionInv {n : ℕ} (hn : n ≠ 1) (t : Arity n) :
     ofComposition (arityCompositionInv hn t).1.1 (arityCompositionInv hn t).1.2
       (arityCompositionInv hn t).2 = t := by
   rcases t with ⟨leaf | ⟨k, children⟩, ht⟩
-  · simp at ht; omega
+  · exact (hn (by simpa using ht.symm)).elim
   · exact Subtype.ext (node_congr (by simp [arityCompositionInv]) fun _ ↦ rfl)
 
-/-- Decomposing a reduced planar tree of arity `n ≥ 2` at its root identifies `Arity n` with
+/-- Decomposing a reduced planar tree of arity `n ≠ 1` at its root identifies `Arity n` with
 compositions of `n` into at least two blocks paired with a child tree on each block. -/
-def arityCompositionEquiv {n : ℕ} (hn : 2 ≤ n) :
+def arityCompositionEquiv {n : ℕ} (hn : n ≠ 1) :
     (Σ c : {c : Composition n // 2 ≤ c.length},
       ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)) ≃ Arity n where
   toFun p := ofComposition p.1.1 p.1.2 p.2
@@ -496,10 +462,21 @@ def arityCompositionEquiv {n : ℕ} (hn : 2 ≤ n) :
   left_inv _ := ofComposition_injective (ofComposition_arityCompositionInv hn _)
   right_inv := ofComposition_arityCompositionInv hn
 
-@[simp] theorem arityCompositionEquiv_apply {n : ℕ} (hn : 2 ≤ n)
+@[simp] theorem arityCompositionEquiv_apply {n : ℕ} (hn : n ≠ 1)
     (c : {c : Composition n // 2 ≤ c.length})
     (children : ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)) :
     arityCompositionEquiv hn ⟨c, children⟩ = ofComposition c.1 c.2 children := (rfl)
+
+@[simp] theorem val_fst_arityCompositionEquiv_symm {n : ℕ} (hn : n ≠ 1) (k : ℕ)
+    (children : Fin (k + 2) → ReducedPlanarTree) (ht : (node k children).numLeaves = n) :
+    ((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).1.1 =
+      (nodeComposition k children).cast ht := (rfl)
+
+@[simp] theorem val_snd_arityCompositionEquiv_symm {n : ℕ} (hn : n ≠ 1) (k : ℕ)
+    (children : Fin (k + 2) → ReducedPlanarTree) (ht : (node k children).numLeaves = n)
+    (i : Fin ((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).1.1.length) :
+    (((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).2 i).val =
+      children (i.cast (by simp)) := (rfl)
 
 end ReducedPlanarTree
 

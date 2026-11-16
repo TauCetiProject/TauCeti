@@ -296,7 +296,7 @@ theorem letter_comp_reducedTensorWordsHomotopy (G : InternalGrading R M ℤ) :
     letter R M ∘ₗ c.reducedTensorWordsHomotopy G = c.homotopy ∘ₗ letter R M := by
   refine linearMap_ext R M fun ⟨n, hn⟩ x ↦ ?_
   rcases eq_or_ne n 1 with rfl | hn1
-  · rw [of_tprod_eq_subword R hn x, subword_one R M x hn]
+  · rw [of_one_tprod]
     simp
   · have hne : (⟨n, hn⟩ : {n : ℕ // 0 < n}) ≠ 1 := fun h ↦ hn1 (congrArg Subtype.val h)
     rw [LinearMap.comp_apply, LinearMap.comp_apply, c.reducedTensorWordsHomotopy_of G ⟨n, hn⟩,
