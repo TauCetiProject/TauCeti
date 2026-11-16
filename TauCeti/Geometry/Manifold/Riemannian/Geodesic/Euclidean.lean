@@ -39,6 +39,8 @@ exponential map, normal domains, and the logarithm can be checked.
   Riemannian metric vanishes.
 * `TauCeti.Manifold.acceleration_model_space`: the covariant acceleration of a curve is its
   second derivative.
+* `TauCeti.Manifold.alongCurveWithin_leviCivitaConnection_model_space`: the covariant derivative
+  of a field along a curve is its derivative within the parameter set.
 * `TauCeti.Manifold.isGeodesicCurve_add_smul`: an affine line is an all-time geodesic.
 * `TauCeti.Manifold.isGeodesicCurveOn_iff_model_space`: the geodesic equation is the vanishing of
   the acceleration.
@@ -159,6 +161,23 @@ theorem acceleration_model_space {γ : ℝ → F} {t : ℝ} (hγ : ContDiffAt �
   simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp,
     christoffelMap_leviCivita_model_space, zero_apply, add_zero, TangentBundle.symmL_model_space,
     derivWithin_of_isOpen hs ht, hderiv.deriv_eq]
+  rfl
+
+/-- In an inner-product space the Levi-Civita covariant derivative along a curve is the
+derivative within the parameter set. -/
+theorem alongCurveWithin_leviCivitaConnection_model_space (γ V : ℝ → F) (s : Set ℝ) (t : ℝ) :
+    alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) s t = derivWithin V s t := by
+  let W : ∀ r, TangentSpace 𝓘(ℝ, F) (γ r) := fun r ↦ V r
+  -- Naming the field lets `rw` see it as a section of the tangent bundle along `γ`.
+  change alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ W s t = _
+  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply]
+  simp only [christoffelMap_leviCivita_model_space, zero_apply, add_zero]
+  have hcoord : sectionCoord γ W (γ t) = V := by
+    funext r
+    rw [sectionCoord_apply, TangentBundle.continuousLinearMapAt_model_space]
+    rfl
+  rw [hcoord, TangentBundle.symmL_model_space]
   rfl
 
 /-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the
