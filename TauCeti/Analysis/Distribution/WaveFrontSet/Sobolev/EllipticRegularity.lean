@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Pseudodifferential.EllipticRegularity
@@ -291,8 +292,8 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {T : 𝓓
   let χ : 𝓓(Ω, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM χ'
   let ψ : 𝓓(Ω, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM ψ'
   have hts (θ : 𝓓(Ω, ℝ)) :
-      tsupport (TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM θ) ⊆ tsupport θ := by
-    rw [TestFunction.postcompCLM_apply]; exact tsupport_comp_subset (by simp) θ
+      tsupport (TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM θ) ⊆ tsupport θ :=
+    TestFunction.tsupport_postcompCLM_subset _ θ
   have hφχ : tsupport φ' ⊆ tsupport χ' := fun x hx ↦
     subset_tsupport _ (by simp [hχ1.self_of_nhdsSet x hx])
   have hψ : EqOn (ψ : CoordinateSpace n → ℂ) 1 (tsupport χ') := fun x hx ↦ by

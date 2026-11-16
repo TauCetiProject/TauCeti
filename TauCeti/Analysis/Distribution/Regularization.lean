@@ -21,6 +21,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Distribution.Order
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -662,8 +663,7 @@ theorem complexPairing_eq_integral_of_continuous_iteratedFDeriv (T : 𝓓'(Ω, �
       ∫ y, T (postcompCLM (𝕜 := ℝ) L (f y)) ∂μ := by
     refine T.apply_eq_integral_of_continuous_iteratedFDeriv hKΩ
       (f := fun y ↦ postcompCLM (𝕜 := ℝ) L (f y)) (fun y ↦ ?_) (fun k ↦ ?_) (fun x ↦ ?_)
-    · rw [postcompCLM_apply]
-      exact (tsupport_comp_subset (map_zero L) _).trans (hfK y)
+    · exact (tsupport_postcompCLM_subset L _).trans (hfK y)
     · have h (p : Y × E) : iteratedFDeriv ℝ k (postcompCLM (𝕜 := ℝ) L (f p.1)) p.2 =
           L.compContinuousMultilinearMap (iteratedFDeriv ℝ k (f p.1) p.2) := by
         rw [postcompCLM_apply]
