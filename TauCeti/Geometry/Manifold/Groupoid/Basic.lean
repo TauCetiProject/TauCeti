@@ -9,12 +9,14 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.FiberProduct.Submersion
 public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
-import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.Topology.Bases
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # Lie groupoids
@@ -23,15 +25,16 @@ import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 manifold structures on objects `C` and total arrows `Quiver.Total C` such that source and target are
 smooth submersions, units and inversion are smooth, categorical composition `a.comp b h` (first `a`,
 then `b`, so geometric `gh` is `h.comp g`) is smooth on the transverse fibre product
-`ComposablePairs C`, `Quiver.Total C` is second-countable, and every source fibre is Hausdorff.
-Global Hausdorffness of `Quiver.Total C` is not assumed (foliation and monodromy groupoids need not
-be Hausdorff), and forgetting charts recovers `TauCeti.IsTopologicalGroupoid`
-(`TauCeti.IsLieGroupoid.toIsTopologicalGroupoid`).
+`ComposablePairs C`, `Quiver.Total C` is second-countable, and the object manifold `C` and every
+source fibre are Hausdorff. Global Hausdorffness of `Quiver.Total C` is not assumed (foliation and
+monodromy groupoids need not be Hausdorff), and forgetting charts recovers
+`TauCeti.IsTopologicalGroupoid` (`TauCeti.IsLieGroupoid.toIsTopologicalGroupoid`).
 
 ## Main definitions and results
 
 * `TauCeti.IsLieGroupoid`, `TauCeti.IsLieGroupoid.of_isSubmersion_source`: smooth Lie groupoid
-  class and constructor deriving target submersiveness from source submersiveness and inversion.
+  class and minimal constructor deriving both target submersiveness and unit smoothness from source
+  submersiveness, smooth inversion, and smooth composition.
 * `TauCeti.IsLieGroupoid.ComposablePairs`, `TauCeti.IsLieGroupoid.composablePairsChartedSpace`,
   `TauCeti.IsLieGroupoid.inverseDiffeomorph`: composable-pair manifold (`2 dim Γ - dim M`) and
   smooth arrow-inversion diffeomorphism.
@@ -64,8 +67,8 @@ namespace TauCeti
 /-- A Lie groupoid on a groupoid `C` whose objects and total arrows carry finite-dimensional
 boundaryless smooth real manifold structures: source and target are smooth submersions, units and
 inversion are smooth, categorical composition is smooth on the transverse fibre product of target
-and source, the total arrow space is second-countable, and every source fibre is Hausdorff. The
-total arrow space itself need not be Hausdorff. -/
+and source, the total arrow space is second-countable, and both the object space `C` and every
+source fibre are Hausdorff. The total arrow space itself need not be Hausdorff. -/
 class IsLieGroupoid
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
@@ -93,7 +96,9 @@ class IsLieGroupoid
       fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
         p.1.1.comp p.1.2 p.2
   /-- The total arrow manifold has a second-countable topology. -/
-  secondCountable_arrows : SecondCountableTopology (Quiver.Total C)
+  secondCountableTopology_arrows : SecondCountableTopology (Quiver.Total C)
+  /-- The object manifold is Hausdorff. -/
+  t2Space_objects : T2Space C
   /-- Every source fibre is Hausdorff in its subspace topology. -/
   t2Space_sourceFiber (x : C) : T2Space {a : Quiver.Total C // a.left = x}
 
@@ -115,12 +120,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
   [IsManifold J ∞ (Quiver.Total C)]
 
-/-- Construct `IsLieGroupoid` from the source submersion without proving the target submersion
-separately: smooth involutive inversion is a diffeomorphism exchanging source and target, so
-target is automatically a submersion. -/
+/-- Construct `IsLieGroupoid` from the source submersion, smooth inversion, and smooth composition
+without proving target submersiveness or unit smoothness separately: involutive inversion is a
+diffeomorphism exchanging source and target, and `u ∘ s = comp ∘ (id, inv)` descends along the
+surjective source submersion. -/
 theorem of_isSubmersion_source
     (hs : Manifold.IsSubmersion J I ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (hu : ContMDiff I J ∞ fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
     (hinv : ContMDiff J J ∞ fun a : Quiver.Total C ↦
       (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C))
     (hcomp :
@@ -131,20 +136,30 @@ theorem of_isSubmersion_source
         fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
           p.1.1.comp p.1.2 p.2)
     (hsc : SecondCountableTopology (Quiver.Total C))
+    (ht2_obj : T2Space C)
     (ht2 : ∀ x : C, T2Space {a : Quiver.Total C // a.left = x}) :
     IsLieGroupoid I J C := by
   let e : Quiver.Total C ≃ₘ^∞⟮J, J⟯ Quiver.Total C :=
     { toFun a := ⟨a.right, a.left, inv a.hom⟩, invFun a := ⟨a.right, a.left, inv a.hom⟩
       left_inv a := by cases a; simp, right_inv a := by cases a; simp
       contMDiff_toFun := hinv, contMDiff_invFun := hinv }
-  have ht : Manifold.IsSubmersion J I ∞ (Quiver.Total.right : Quiver.Total C → C) := by
-    refine ((hs.contMDiff.comp e.contMDiff : ContMDiff J I ∞ Quiver.Total.right)
-      |>.isSubmersionOfComplement_of_surjective_mfderiv (by simp) fun a ↦ ?_).isSubmersion
-    rw [mfderiv_comp a ((hs.contMDiff (e a)).mdifferentiableAt (by simp))
-      ((e.contMDiff a).mdifferentiableAt (by simp))]
-    exact (hs.surjective_mfderiv (by simp) (e a)).comp
-      ((e.isLocalDiffeomorph a).mfderivToContinuousLinearEquiv (by simp)).surjective
-  exact ⟨hs, ht, hu, hinv, hcomp, hsc, ht2⟩
+  have ht : Manifold.IsSubmersion J I ∞ (Quiver.Total.right : Quiver.Total C → C) :=
+    e.isLocalDiffeomorph.isSubmersion_comp hs
+  have hu : ContMDiff I J ∞ fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C) := by
+    let := transverseFiberProductChartedSpace (f := Quiver.Total.right) (g := Quiver.Total.left)
+      (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
+      (fun p _ ↦ hs.transverse_right (by simp) _ p)
+    have hι := isSmoothEmbedding_coe_transverseFiberProduct
+      (f := Quiver.Total.right) (g := Quiver.Total.left)
+      (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
+      (fun p _ ↦ hs.transverse_right (by simp) _ p)
+    have hτ : ContMDiff J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
+        (fun a : Quiver.Total C ↦
+          (⟨(a, ⟨a.right, a.left, inv a.hom⟩), rfl⟩ : ComposablePairs C)) :=
+      hι.contMDiff_iff_comp.mpr (contMDiff_id.prodMk hinv)
+    exact (hs.contMDiff_comp_iff Quiver.Total.left_surjective le_rfl).mp
+      ((hcomp.comp hτ).congr fun a ↦ (Quiver.Total.comp_inv a).symm)
+  exact ⟨hs, ht, hu, hinv, hcomp, hsc, ht2_obj, ht2⟩
 
 end Constructor
 
@@ -173,6 +188,16 @@ def composablePairsChartedSpace :
   transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_target I J C) (contMDiff_source I J C)
     (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- `composablePairsChartedSpace` is the transverse fibre-product smooth atlas of target and
+source. -/
+theorem composablePairsChartedSpace_eq_transverseFiberProductChartedSpace :
+    composablePairsChartedSpace I J C =
+      transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
+        (contMDiff_target I J C) (contMDiff_source I J C)
+        (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left
+          (by simp) _ p) :=
+  (rfl)
 
 /-- Composable pairs form a smooth manifold with their transverse fibre-product atlas. -/
 theorem isManifold_composablePairs :
@@ -223,6 +248,22 @@ theorem isSubmersion_snd_composablePairs :
     (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
     (isSubmersion_target (I := I) (J := J) (C := C))
 
+/-- The first factor projection on composable pairs is smooth. -/
+theorem contMDiff_fst_composablePairs :
+    letI := composablePairsChartedSpace I J C
+    ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
+      (fun p : ComposablePairs C ↦ p.1.1) :=
+  letI := composablePairsChartedSpace I J C
+  (isSubmersion_fst_composablePairs I J C).contMDiff
+
+/-- The second factor projection on composable pairs is smooth. -/
+theorem contMDiff_snd_composablePairs :
+    letI := composablePairsChartedSpace I J C
+    ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
+      (fun p : ComposablePairs C ↦ p.1.2) :=
+  letI := composablePairsChartedSpace I J C
+  (isSubmersion_snd_composablePairs I J C).contMDiff
+
 /-- A pair of tangent vectors to total arrows lies in the tangent image of composable pairs
 precisely when the target differential of the first agrees with the source differential of the
 second. -/
@@ -237,6 +278,114 @@ theorem mem_range_mfderiv_coe_composablePairs_iff :
   mem_range_mfderiv_coe_transverseFiberProduct_iff (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_target I J C) (contMDiff_source I J C)
     (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- Any pair `(u, w)` of arrow tangent vectors at `p : ComposablePairs C` whose target and source
+differentials match arises from a tangent vector of `ComposablePairs C`. -/
+theorem exists_mfderiv_eq_of_composablePairs :
+    letI := composablePairsChartedSpace I J C
+    ∀ (p : ComposablePairs C) (u : TangentSpace J p.1.1) (w : TangentSpace J p.1.2),
+      mfderiv J I Quiver.Total.right p.1.1 u =
+        tangentSpaceCast I p.1.2.left p.1.1.right (mfderiv J I Quiver.Total.left p.1.2 w) →
+      ∃ ξ, mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : ComposablePairs C ↦ q.1.1) p ξ = u ∧
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : ComposablePairs C ↦ q.1.2) p ξ = w :=
+  exists_mfderiv_eq_of_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_target I J C) (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- A tangent vector of `ComposablePairs C` is zero when both arrow-projection differentials vanish
+on it. -/
+theorem eq_zero_of_mfderiv_composablePairs :
+    letI := composablePairsChartedSpace I J C
+    ∀ (p : ComposablePairs C)
+      (ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) p),
+      mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : ComposablePairs C ↦ q.1.1) p ξ = 0 →
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : ComposablePairs C ↦ q.1.2) p ξ = 0 → ξ = 0 :=
+  eq_zero_of_mfderiv_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_target I J C) (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- Left unit degeneracy `b ↦ (1_{s(b)}, b)` into composable pairs. -/
+abbrev leftUnitPair {C : Type*} [Category C] (b : Quiver.Total C) : ComposablePairs C :=
+  ⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩
+
+/-- Right unit degeneracy `a ↦ (a, 1_{t(a)})` into composable pairs. -/
+abbrev rightUnitPair {C : Type*} [Category C] (a : Quiver.Total C) : ComposablePairs C :=
+  ⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩
+
+/-- Diagonal unit degeneracy `x ↦ (1_x, 1_x)` from objects into composable pairs. -/
+abbrev unitPair {C : Type*} [Category C] (x : C) : ComposablePairs C :=
+  ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩
+
+@[simp]
+theorem leftUnitPair_fst {C : Type*} [Category C] (b : Quiver.Total C) :
+    (leftUnitPair b).1.1 = ⟨b.left, b.left, 𝟙 b.left⟩ := (rfl)
+
+@[simp]
+theorem leftUnitPair_snd {C : Type*} [Category C] (b : Quiver.Total C) :
+    (leftUnitPair b).1.2 = b := (rfl)
+
+@[simp]
+theorem rightUnitPair_fst {C : Type*} [Category C] (a : Quiver.Total C) :
+    (rightUnitPair a).1.1 = a := (rfl)
+
+@[simp]
+theorem rightUnitPair_snd {C : Type*} [Category C] (a : Quiver.Total C) :
+    (rightUnitPair a).1.2 = ⟨a.right, a.right, 𝟙 a.right⟩ := (rfl)
+
+@[simp]
+theorem unitPair_fst {C : Type*} [Category C] (x : C) :
+    (unitPair x).1.1 = ⟨x, x, 𝟙 x⟩ := (rfl)
+
+@[simp]
+theorem unitPair_snd {C : Type*} [Category C] (x : C) :
+    (unitPair x).1.2 = ⟨x, x, 𝟙 x⟩ := (rfl)
+
+/-- Composing the arrows of `leftUnitPair b` recovers `b`. -/
+theorem comp_leftUnitPair {C : Type*} [Category C] (b : Quiver.Total C) :
+    (leftUnitPair b).1.1.comp (leftUnitPair b).1.2 (leftUnitPair b).2 = b :=
+  Quiver.Total.unit_comp b rfl
+
+/-- Composing the arrows of `rightUnitPair a` recovers `a`. -/
+theorem comp_rightUnitPair {C : Type*} [Category C] (a : Quiver.Total C) :
+    (rightUnitPair a).1.1.comp (rightUnitPair a).1.2 (rightUnitPair a).2 = a :=
+  Quiver.Total.comp_unit a rfl
+
+/-- Composing the arrows of `unitPair x` recovers the unit arrow `1_x`. -/
+theorem comp_unitPair {C : Type*} [Category C] (x : C) :
+    (unitPair x).1.1.comp (unitPair x).1.2 (unitPair x).2 = ⟨x, x, 𝟙 x⟩ :=
+  Quiver.Total.unit_comp ⟨x, x, 𝟙 x⟩ rfl
+
+/-- The left unit degeneracy `b ↦ (1_{s(b)}, b)` into composable pairs is smooth. -/
+theorem contMDiff_leftUnitPair :
+    letI := composablePairsChartedSpace I J C
+    ContMDiff J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
+      (leftUnitPair : Quiver.Total C → ComposablePairs C) :=
+  letI := composablePairsChartedSpace I J C
+  (isSmoothEmbedding_coe_composablePairs I J C).contMDiff_iff_comp.mpr
+    (((contMDiff_unit (I := I) (J := J) (C := C)).comp (contMDiff_source I J C)).prodMk
+      contMDiff_id)
+
+/-- The right unit degeneracy `a ↦ (a, 1_{t(a)})` into composable pairs is smooth. -/
+theorem contMDiff_rightUnitPair :
+    letI := composablePairsChartedSpace I J C
+    ContMDiff J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
+      (rightUnitPair : Quiver.Total C → ComposablePairs C) :=
+  letI := composablePairsChartedSpace I J C
+  (isSmoothEmbedding_coe_composablePairs I J C).contMDiff_iff_comp.mpr
+    (contMDiff_id.prodMk
+      ((contMDiff_unit (I := I) (J := J) (C := C)).comp (contMDiff_target I J C)))
+
+/-- The diagonal unit degeneracy `x ↦ (1_x, 1_x)` into composable pairs is smooth. -/
+theorem contMDiff_unitPair :
+    letI := composablePairsChartedSpace I J C
+    ContMDiff I 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
+      (unitPair : C → ComposablePairs C) :=
+  letI := composablePairsChartedSpace I J C
+  (contMDiff_leftUnitPair I J C).comp (contMDiff_unit (I := I) (J := J) (C := C))
 
 include I J in
 /-- Forgetting the smooth atlases of a Lie groupoid recovers a topological groupoid on the same
@@ -265,13 +414,13 @@ include I J in
 second-countable total arrow manifold. -/
 theorem secondCountableTopology_objects : SecondCountableTopology C := by
   have := toIsTopologicalGroupoid I J C
-  have := secondCountable_arrows (I := I) (J := J) (C := C)
+  have := secondCountableTopology_arrows (I := I) (J := J) (C := C)
   exact (IsTopologicalGroupoid.isEmbedding_unit C).isInducing.secondCountableTopology
 
 include I J in
 /-- Composable pairs form a second-countable space in their subspace topology. -/
 theorem secondCountableTopology_composablePairs : SecondCountableTopology (ComposablePairs C) := by
-  have := secondCountable_arrows (I := I) (J := J) (C := C)
+  have := secondCountableTopology_arrows (I := I) (J := J) (C := C)
   exact Topology.IsEmbedding.subtypeVal.secondCountableTopology
 
 /-- The unit map is a smooth embedding of objects into total arrows, since source is a smooth left
@@ -317,17 +466,8 @@ include I J in
 source fibre over the same object. -/
 theorem t2Space_targetFiber (x : C) : T2Space {a : Quiver.Total C // a.right = x} := by
   have := t2Space_sourceFiber (I := I) (J := J) (C := C) x
-  let f : {a : Quiver.Total C // a.right = x} → {a : Quiver.Total C // a.left = x} :=
-    fun a ↦ ⟨inverseDiffeomorph I J C a.1, a.2⟩
-  have hf : Topology.IsEmbedding f :=
-    ⟨Topology.IsInducing.of_comp
-        ((inverseDiffeomorph I J C).continuous.comp continuous_subtype_val |>.subtype_mk _)
-        continuous_subtype_val
-        ((inverseDiffeomorph I J C).toHomeomorph.isEmbedding.isInducing.comp
-          Topology.IsEmbedding.subtypeVal.isInducing),
-      Function.LeftInverse.injective (g := fun b ↦ ⟨inverseDiffeomorph I J C b.1, b.2⟩)
-        fun a ↦ Subtype.ext (by obtain ⟨⟨_, _, _⟩, _⟩ := a; simp [f])⟩
-  exact hf.t2Space
+  exact ((inverseDiffeomorph I J C).toHomeomorph.subtype
+    (p := fun a ↦ a.left = x) (q := fun a ↦ a.right = x) fun _ ↦ Iff.rfl).t2Space
 
 /-! ### Differential properties, dimension, and the étale case -/
 
@@ -369,10 +509,8 @@ the object manifold. -/
 theorem finrank_objects_le_finrank_arrows [Nonempty C] :
     finrank ℝ E ≤ finrank ℝ E' := by
   obtain ⟨x⟩ := ‹Nonempty C›
-  let a : Quiver.Total C := ⟨x, x, 𝟙 x⟩
-  have hsurj := surjective_mfderiv_source I J C a
-  have hle := LinearMap.finrank_range_le (mfderiv J I Quiver.Total.left a).toLinearMap
-  rwa [LinearMap.range_eq_top.mpr hsurj, finrank_top] at hle
+  exact ((isSubmersion_source (I := I) (J := J) (C := C)).isSubmersionAt
+    ⟨x, x, 𝟙 x⟩).finrank_le (by simp)
 
 /-- Source is a smooth local diffeomorphism if and only if target is, since inversion is a
 diffeomorphism exchanging them. -/
@@ -387,14 +525,8 @@ theorem isLocalDiffeomorph_source_iff_target :
 /-- When the arrow and object models have equal dimension, source is a smooth local diffeomorphism
 (the Lie groupoid is étale). -/
 theorem isLocalDiffeomorph_source_of_finrank_eq (hdim : finrank ℝ E' = finrank ℝ E) :
-    IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C) := fun a ↦ by
-  have : FiniteDimensional ℝ (TangentSpace J a) := inferInstanceAs (FiniteDimensional ℝ E')
-  have : FiniteDimensional ℝ (TangentSpace I a.left) := inferInstanceAs (FiniteDimensional ℝ E)
-  have hinj : Injective (mfderiv J I Quiver.Total.left a) :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mpr
-      (surjective_mfderiv_source I J C a)
-  exact isLocalDiffeomorphAt_of_injective_mfderiv (contMDiff_source I J C).contMDiffOn
-    isOpen_univ (mem_univ a) BoundarylessManifold.isInteriorPoint (by simp) hinj hdim
+    IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C) :=
+  (isSubmersion_source (I := I) (J := J) (C := C)).isLocalDiffeomorph hdim (by simp)
 
 /-- On a nonempty Lie groupoid, the arrow and object manifolds have equal dimension if and only if
 source is a smooth local diffeomorphism (the étale case). -/
@@ -403,6 +535,8 @@ theorem finrank_arrows_eq_iff_isLocalDiffeomorph_source [Nonempty C] :
       IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C) := by
   refine ⟨isLocalDiffeomorph_source_of_finrank_eq I J C, fun h ↦ ?_⟩
   obtain ⟨x⟩ := ‹Nonempty C›
+  rw [← finrank_tangentSpace (I := J) (⟨x, x, 𝟙 x⟩ : Quiver.Total C),
+    ← finrank_tangentSpace (I := I) x]
   exact ((h ⟨x, x, 𝟙 x⟩).mfderivToContinuousLinearEquiv (by simp)).toLinearEquiv.finrank_eq
 
 /-! ### Tangent identities at units -/
@@ -410,36 +544,6 @@ theorem finrank_arrows_eq_iff_isLocalDiffeomorph_source [Nonempty C] :
 section TangentIdentities
 
 variable {I J C}
-
-private theorem tangentSpaceCast_mfderiv_comp
-    {EX HX MX EY HY MY EZ HZ MZ : Type*}
-    [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace MX] [ChartedSpace HX MX]
-    [NormedAddCommGroup EY] [NormedSpace ℝ EY] [TopologicalSpace HY]
-    {IY : ModelWithCorners ℝ EY HY} [TopologicalSpace MY] [ChartedSpace HY MY]
-    [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
-    {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace MZ] [ChartedSpace HZ MZ]
-    {g : MY → MZ} {f : MX → MY} {h : MX → MZ} {x : MX}
-    (hg : ContMDiff IY IZ ∞ g) (hf : ContMDiff IX IY ∞ f) (heq : g ∘ f = h)
-    (z₀ : MZ) (v : TangentSpace IX x) :
-    tangentSpaceCast IZ (g (f x)) z₀ (mfderiv IY IZ g (f x) (mfderiv IX IY f x v)) =
-      tangentSpaceCast IZ (h x) z₀ (mfderiv IX IZ h x v) := by
-  have hc := congrArg (fun L ↦ tangentSpaceCast IZ _ z₀ (L v)) (mfderiv_comp x
-    ((hg (f x)).mdifferentiableAt (by simp)) ((hf x).mdifferentiableAt (by simp))).symm
-  exact hc.trans (congrArg (fun k : MX → MZ ↦
-    tangentSpaceCast IZ (k x) z₀ (mfderiv IX IZ k x v)) heq)
-
-private theorem tangentSpaceCast_mfderiv_comp_id
-    {EX HX MX EY HY MY : Type*}
-    [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace MX] [ChartedSpace HX MX]
-    [NormedAddCommGroup EY] [NormedSpace ℝ EY] [TopologicalSpace HY]
-    {IY : ModelWithCorners ℝ EY HY} [TopologicalSpace MY] [ChartedSpace HY MY]
-    {g : MY → MX} {f : MX → MY} {x : MX}
-    (hg : ContMDiff IY IX ∞ g) (hf : ContMDiff IX IY ∞ f) (heq : g ∘ f = id)
-    (v : TangentSpace IX x) :
-    tangentSpaceCast IX (g (f x)) x (mfderiv IY IX g (f x) (mfderiv IX IY f x v)) = v :=
-  (tangentSpaceCast_mfderiv_comp hg hf heq x v).trans (by rw [mfderiv_id]; rfl)
 
 /-- Differentiating `s ∘ u = id` at an object `x` shows that `du_x` is a continuous linear right
 inverse of `ds_{1_x}`. -/
@@ -483,9 +587,11 @@ theorem mfderiv_inverse_comp_mfderiv_unit (x : C) :
       (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x) =
       mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x := by
   ext v
-  exact tangentSpaceCast_mfderiv_comp (inverseDiffeomorph I J C).contMDiff
-    (contMDiff_unit (I := I) (J := J) (C := C)) (funext (inverseDiffeomorph_unit I J C))
-    ⟨x, x, 𝟙 x⟩ v
+  refine eq_of_tangentSpaceCast_eq (inverseDiffeomorph_unit I J C x) ?_
+  exact (tangentSpaceCast_mfderiv_comp
+    (((inverseDiffeomorph I J C).contMDiff _).mdifferentiableAt (by simp))
+    ((contMDiff_unit (I := I) (J := J) (C := C) x).mdifferentiableAt (by simp))
+    (funext (inverseDiffeomorph_unit I J C)) ⟨x, x, 𝟙 x⟩ v).trans (tangentSpaceCast_self _ _)
 
 /-- Differentiating `s ∘ inv = t` relates the source and target differentials through inversion. -/
 theorem mfderiv_source_comp_mfderiv_inverse (a : Quiver.Total C) :
@@ -502,15 +608,6 @@ theorem mfderiv_target_comp_mfderiv_inverse (a : Quiver.Total C) :
       mfderiv J I (Quiver.Total.left : Quiver.Total C → C) a :=
   (mfderiv_comp a ((contMDiff_target I J C _).mdifferentiableAt (by simp))
     (((inverseDiffeomorph I J C).contMDiff a).mdifferentiableAt (by simp))).symm
-
-private theorem isCompl_range_ker_of_leftInverse {V W : Type*} [AddCommGroup V] [Module ℝ V]
-    [AddCommGroup W] [Module ℝ W] {u : V →ₗ[ℝ] W} {p : W →ₗ[ℝ] V} (h : ∀ v, p (u v) = v) :
-    IsCompl (LinearMap.range u) (LinearMap.ker p) := by
-  have hker : LinearMap.ker (u.rangeRestrict.comp p) = LinearMap.ker p := by
-    ext v; simp [LinearMap.map_eq_zero_iff u (Function.LeftInverse.injective h)]
-  rw [← hker]
-  refine LinearMap.isCompl_of_proj fun ⟨_, y, hy⟩ ↦ Subtype.ext ?_
-  dsimp; rw [← hy, h y]
 
 /-- At any unit `1_x`, the tangent space of arrows decomposes as the direct sum of the image of
 `du_x` and the kernel of `ds_{1_x}` (the Lie algebroid fibre over `x`). -/
@@ -529,6 +626,155 @@ theorem isCompl_range_mfderiv_unit_ker_mfderiv_target (x : C) :
       (LinearMap.ker (mfderiv J I (Quiver.Total.right : Quiver.Total C → C)
         ⟨x, x, 𝟙 x⟩).toLinearMap) :=
   isCompl_range_ker_of_leftInverse (mfderiv_target_mfderiv_unit_apply x)
+
+/-- For any tangent vector `w` of `ComposablePairs C` at `p`, the target differential of its first
+arrow projection agrees (up to `tangentSpaceCast` along `p.2`) with the source differential of its
+second arrow projection. -/
+theorem mfderiv_target_mfderiv_fst_composablePairs (p : ComposablePairs C) :
+    letI := composablePairsChartedSpace I J C
+    ∀ w : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) p,
+      mfderiv J I Quiver.Total.right p.1.1
+        (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : ComposablePairs C ↦ q.1.1) p w) =
+        tangentSpaceCast I p.1.2.left p.1.1.right
+          (mfderiv J I Quiver.Total.left p.1.2
+            (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+              (fun q : ComposablePairs C ↦ q.1.2) p w)) := by
+  let := composablePairsChartedSpace I J C
+  intro w
+  have hval := ((isSmoothEmbedding_coe_composablePairs I J C).contMDiff p).mdifferentiableAt
+    (by simp)
+  have hmem := (mem_range_mfderiv_coe_composablePairs_iff I J C p
+    (mfderiv _ (J.prod J) Subtype.val p w)).mp ⟨w, rfl⟩
+  rwa [← hval.mfderiv_fst_apply, ← hval.mfderiv_snd_apply] at hmem
+
+/-- Every tangent vector `w` to `ComposablePairs C` at `(1_x, 1_x)` decomposes along the right-unit,
+left-unit, and diagonal-unit sections as
+`d(rightUnitPair)(v₁) + d(leftUnitPair)(v₂) - d(unitPair)(dt v₁)`, where `v₁` and `v₂` are the two
+arrow projections of `w`. -/
+theorem mfderiv_composablePairs_at_unit_decomp (x : C) :
+    letI := composablePairsChartedSpace I J C
+    ∀ w : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) (unitPair x),
+      w = mfderiv J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+            rightUnitPair ⟨x, x, 𝟙 x⟩
+            (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+              (fun p : ComposablePairs C ↦ p.1.1) (unitPair x) w) +
+          mfderiv J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+            leftUnitPair ⟨x, x, 𝟙 x⟩
+            (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+              (fun p : ComposablePairs C ↦ p.1.2) (unitPair x) w) -
+          mfderiv I 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) unitPair x
+            (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩
+              (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+                (fun p : ComposablePairs C ↦ p.1.1) (unitPair x) w)) := by
+  let := composablePairsChartedSpace I J C
+  let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+  let u : C → Quiver.Total C := fun y ↦ ⟨y, y, 𝟙 y⟩
+  let u₀ : Quiver.Total C := ⟨x, x, 𝟙 x⟩
+  let π₁ : ComposablePairs C → Quiver.Total C := fun p ↦ p.1.1
+  let π₂ : ComposablePairs C → Quiver.Total C := fun p ↦ p.1.2
+  intro w
+  let v₁ : TangentSpace J u₀ := mfderiv K J π₁ (unitPair x) w
+  let v₂ : TangentSpace J u₀ := mfderiv K J π₂ (unitPair x) w
+  let ξ : TangentSpace I x := mfderiv J I Quiver.Total.right u₀ v₁
+  have hv_eq : ξ = mfderiv J I Quiver.Total.left u₀ v₂ :=
+    (mfderiv_target_mfderiv_fst_composablePairs (unitPair x) w).trans (tangentSpaceCast_self _ _)
+  have hπ₁_diff : MDifferentiableAt K J π₁ (unitPair x) :=
+    ((contMDiff_fst_composablePairs I J C) (unitPair x)).mdifferentiableAt (by simp)
+  have hπ₂_diff : MDifferentiableAt K J π₂ (unitPair x) :=
+    ((contMDiff_snd_composablePairs I J C) (unitPair x)).mdifferentiableAt (by simp)
+  have hσR_diff : MDifferentiableAt J K rightUnitPair u₀ :=
+    ((contMDiff_rightUnitPair I J C) u₀).mdifferentiableAt (by simp)
+  have hσL_diff : MDifferentiableAt J K leftUnitPair u₀ :=
+    ((contMDiff_leftUnitPair I J C) u₀).mdifferentiableAt (by simp)
+  have hσD_diff : MDifferentiableAt I K unitPair x :=
+    ((contMDiff_unitPair I J C) x).mdifferentiableAt (by simp)
+  have hu_diff : MDifferentiableAt I J u x :=
+    ((contMDiff_unit (I := I) (J := J) (C := C)) x).mdifferentiableAt (by simp)
+  -- Check that `w` and the linear combination have equal first and second arrow differentials.
+  refine sub_eq_zero.mp (eq_zero_of_mfderiv_composablePairs I J C (unitPair x) _ ?_ ?_)
+  · -- First projection: `dπ₁` sends the terms to `v₁`, `du_x(ds v₂) = du_x(ξ)`, and `du_x(ξ)`.
+    have h1 : mfderiv K J π₁ (unitPair x) (mfderiv J K rightUnitPair u₀ v₁) = v₁ := by
+      have hid : π₁ ∘ rightUnitPair = id := rfl
+      rw [← mfderiv_comp_apply u₀ hπ₁_diff hσR_diff v₁, hid, mfderiv_id,
+        ContinuousLinearMap.id_apply]
+    have h2 : mfderiv K J π₁ (unitPair x) (mfderiv J K leftUnitPair u₀ v₂) =
+        mfderiv I J u x ξ := by
+      have heq : π₁ ∘ leftUnitPair = u ∘ Quiver.Total.left := rfl
+      rw [← mfderiv_comp_apply u₀ hπ₁_diff hσL_diff v₂, heq,
+        mfderiv_comp_apply u₀ hu_diff
+          (((contMDiff_source I J C) u₀).mdifferentiableAt (by simp)) v₂,
+        ← hv_eq]
+    have h3 : mfderiv K J π₁ (unitPair x) (mfderiv I K unitPair x ξ) = mfderiv I J u x ξ := by
+      have heq : π₁ ∘ unitPair = u := rfl
+      rw [← mfderiv_comp_apply x hπ₁_diff hσD_diff ξ, heq]
+    dsimp only [π₁, v₁] at h1 h2 h3 ⊢
+    rw [map_sub, map_sub, map_add, h1, h2, h3]
+    abel
+  · -- Second projection: `dπ₂` sends the three terms to `du_x(ξ)`, `v₂`, and `du_x(ξ)`.
+    have h1 : mfderiv K J π₂ (unitPair x) (mfderiv J K rightUnitPair u₀ v₁) =
+        mfderiv I J u x ξ := by
+      have heq : π₂ ∘ rightUnitPair = u ∘ Quiver.Total.right := rfl
+      rw [← mfderiv_comp_apply u₀ hπ₂_diff hσR_diff v₁, heq,
+        mfderiv_comp_apply u₀ hu_diff
+          (((contMDiff_target I J C) u₀).mdifferentiableAt (by simp)) v₁]
+    have h2 : mfderiv K J π₂ (unitPair x) (mfderiv J K leftUnitPair u₀ v₂) = v₂ := by
+      have hid : π₂ ∘ leftUnitPair = id := rfl
+      rw [← mfderiv_comp_apply u₀ hπ₂_diff hσL_diff v₂, hid, mfderiv_id,
+        ContinuousLinearMap.id_apply]
+    have h3 : mfderiv K J π₂ (unitPair x) (mfderiv I K unitPair x ξ) = mfderiv I J u x ξ := by
+      have heq : π₂ ∘ unitPair = u := rfl
+      rw [← mfderiv_comp_apply x hπ₂_diff hσD_diff ξ, heq]
+    dsimp only [π₂, v₂] at h1 h2 h3 ⊢
+    rw [map_sub, map_sub, map_add, h1, h2, h3]
+    abel
+
+private theorem tangentSpaceCast_mfderiv_comp_at_unit (x : C) :
+    letI := composablePairsChartedSpace I J C
+    ∀ w : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) (unitPair x),
+      tangentSpaceCast J ((unitPair x).1.1.comp (unitPair x).1.2 (unitPair x).2) ⟨x, x, 𝟙 x⟩
+        (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun p : ComposablePairs C ↦ p.1.1.comp p.1.2 p.2) (unitPair x) w) =
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun p : ComposablePairs C ↦ p.1.1) (unitPair x) w +
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun p : ComposablePairs C ↦ p.1.2) (unitPair x) w -
+        mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x
+          (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩
+            (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+              (fun p : ComposablePairs C ↦ p.1.1) (unitPair x) w)) := by
+  let := composablePairsChartedSpace I J C
+  let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+  let m : ComposablePairs C → Quiver.Total C := fun p ↦ p.1.1.comp p.1.2 p.2
+  let u : C → Quiver.Total C := fun y ↦ ⟨y, y, 𝟙 y⟩
+  let u₀ : Quiver.Total C := ⟨x, x, 𝟙 x⟩
+  intro w
+  let v₁ := mfderiv K J (fun p : ComposablePairs C ↦ p.1.1) (unitPair x) w
+  let v₂ := mfderiv K J (fun p : ComposablePairs C ↦ p.1.2) (unitPair x) w
+  let ξ := mfderiv J I (Quiver.Total.right : Quiver.Total C → C) u₀ v₁
+  have hm_diff : MDifferentiableAt K J m (unitPair x) :=
+    ((contMDiff_composablePairs_comp I J C) (unitPair x)).mdifferentiableAt (by simp)
+  have hw := congrArg
+    (fun z ↦ tangentSpaceCast J (m (unitPair x)) u₀ (mfderiv K J m (unitPair x) z))
+    (mfderiv_composablePairs_at_unit_decomp x w)
+  dsimp only at hw
+  rw [map_sub, map_sub, map_add, map_add] at hw
+  have hR : tangentSpaceCast J (m (unitPair x)) u₀
+      (mfderiv K J m (unitPair x) (mfderiv J K rightUnitPair u₀ v₁)) = v₁ :=
+    tangentSpaceCast_mfderiv_comp_id hm_diff
+      (((contMDiff_rightUnitPair I J C) u₀).mdifferentiableAt (by simp))
+      (funext comp_rightUnitPair) v₁
+  have hL : tangentSpaceCast J (m (unitPair x)) u₀
+      (mfderiv K J m (unitPair x) (mfderiv J K leftUnitPair u₀ v₂)) = v₂ :=
+    tangentSpaceCast_mfderiv_comp_id hm_diff
+      (((contMDiff_leftUnitPair I J C) u₀).mdifferentiableAt (by simp))
+      (funext comp_leftUnitPair) v₂
+  have hD : tangentSpaceCast J (m (unitPair x)) u₀
+      (mfderiv K J m (unitPair x) (mfderiv I K unitPair x ξ)) = mfderiv I J u x ξ :=
+    (tangentSpaceCast_mfderiv_comp hm_diff
+      (((contMDiff_unitPair I J C) x).mdifferentiableAt (by simp))
+      (funext comp_unitPair) u₀ ξ).trans (tangentSpaceCast_self _ _)
+  exact hw.trans (congrArg₂ HSub.hSub (congrArg₂ HAdd.hAdd hR hL) hD)
 
 /-- **Differential of composition at a unit.** At the composable pair `(1_x, 1_x)`, every tangent
 vector `w` of `ComposablePairs C` projects via the two factor maps to a pair `(v₁, v₂)` with
@@ -549,57 +795,9 @@ theorem mfderiv_comp_at_unit (x : C) :
           (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩
             (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
               (fun p : ComposablePairs C ↦ p.1.1) ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ w)) := by
-  let := composablePairsChartedSpace I J C; have := isManifold_composablePairs I J C
-  let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
-  let u : C → Quiver.Total C := fun y ↦ ⟨y, y, 𝟙 y⟩; let u₀ : Quiver.Total C := u x
-  let p₀ : ComposablePairs C := ⟨(u₀, u₀), rfl⟩; let π₁ (p : ComposablePairs C) := p.1.1
-  let π₂ (p : ComposablePairs C) := p.1.2; let m (p : ComposablePairs C) := p.1.1.comp p.1.2 p.2
-  have hι := isSmoothEmbedding_coe_composablePairs I J C; intro w
-  have hπ₁ : ContMDiff K J ∞ π₁ := contMDiff_fst.comp hι.contMDiff
-  have hπ₂ : ContMDiff K J ∞ π₂ := contMDiff_snd.comp hι.contMDiff
-  have hu : ContMDiff I J ∞ u := contMDiff_unit; have hm : ContMDiff K J ∞ m := contMDiff_comp
-  let σR : Quiver.Total C → ComposablePairs C := fun a ↦ ⟨(a, u a.right), rfl⟩
-  let σL : Quiver.Total C → ComposablePairs C := fun b ↦ ⟨(u b.left, b), rfl⟩
-  let σD : C → ComposablePairs C := fun y ↦ ⟨(u y, u y), rfl⟩
-  have hσR : ContMDiff J K ∞ σR :=
-    hι.contMDiff_iff_comp.mpr (contMDiff_id.prodMk (hu.comp (contMDiff_target I J C)))
-  have hσL : ContMDiff J K ∞ σL :=
-    hι.contMDiff_iff_comp.mpr ((hu.comp (contMDiff_source I J C)).prodMk contMDiff_id)
-  have hσD : ContMDiff I K ∞ σD := hι.contMDiff_iff_comp.mpr (hu.prodMk hu)
-  let v₁ : TangentSpace J u₀ := mfderiv K J π₁ p₀ w
-  let v₂ : TangentSpace J u₀ := mfderiv K J π₂ p₀ w
-  let ξ : TangentSpace I x := mfderiv J I Quiver.Total.right u₀ v₁
-  have hv_eq : ξ = mfderiv J I Quiver.Total.left u₀ v₂ :=
-    (tangentSpaceCast_mfderiv_comp (contMDiff_target I J C) hπ₁ (funext fun p ↦ p.2) x w).trans
-      (tangentSpaceCast_mfderiv_comp (contMDiff_source I J C) hπ₂ rfl x w).symm
-  let w' : TangentSpace K p₀ := mfderiv J K σR u₀ v₁ + mfderiv J K σL u₀ v₂ - mfderiv I K σD x ξ
-  have hw_eq : w = w' := by
-    refine sub_eq_zero.mp <| eq_zero_of_mfderiv_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
-      (contMDiff_target I J C) (contMDiff_source I J C) (fun p _ ↦
-        (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p) p₀ _ ?_ ?_
-    · have h1 : mfderiv K J π₁ p₀ _ = v₁ := tangentSpaceCast_mfderiv_comp_id hπ₁ hσR rfl v₁
-      have h2 : mfderiv K J π₁ p₀ _ = mfderiv I J u x ξ :=
-        (tangentSpaceCast_mfderiv_comp hπ₁ hσL rfl u₀ v₂).trans
-          ((tangentSpaceCast_mfderiv_comp hu (contMDiff_source I J C) rfl u₀ v₂).symm.trans
-            (congrArg (mfderiv I J u x) hv_eq.symm))
-      have h3 : mfderiv K J π₁ p₀ _ = mfderiv I J u x ξ :=
-        tangentSpaceCast_mfderiv_comp (h := u) hπ₁ hσD rfl u₀ ξ
-      dsimp only [w', π₁, v₁] at h1 h2 h3 ⊢; rw [map_sub, map_sub, map_add, h1, h2, h3]; abel
-    · have h1 : mfderiv K J π₂ p₀ _ = mfderiv I J u x ξ :=
-        (tangentSpaceCast_mfderiv_comp hπ₂ hσR rfl u₀ v₁).trans
-          (tangentSpaceCast_mfderiv_comp hu (contMDiff_target I J C) rfl u₀ v₁).symm
-      have h2 : mfderiv K J π₂ p₀ _ = v₂ := tangentSpaceCast_mfderiv_comp_id hπ₂ hσL rfl v₂
-      have h3 : mfderiv K J π₂ p₀ _ = mfderiv I J u x ξ :=
-        tangentSpaceCast_mfderiv_comp (h := u) hπ₂ hσD rfl u₀ ξ
-      dsimp only [w', π₂, v₂] at h1 h2 h3 ⊢; rw [map_sub, map_sub, map_add, h1, h2, h3]; abel
-  have hm_σR : mfderiv K J m p₀ _ = v₁ :=
-    tangentSpaceCast_mfderiv_comp_id hm hσR (funext Quiver.Total.comp_unit) v₁
-  have hm_σL : mfderiv K J m p₀ _ = v₂ :=
-    tangentSpaceCast_mfderiv_comp_id hm hσL (funext Quiver.Total.unit_comp) v₂
-  have hm_σD : mfderiv K J m p₀ _ = mfderiv I J u x ξ :=
-    tangentSpaceCast_mfderiv_comp hm hσD (funext fun z ↦ Quiver.Total.unit_comp (u z)) u₀ ξ
-  change mfderiv K J m p₀ w = v₁ + v₂ - mfderiv I J u x ξ; rw [hw_eq]
-  simp only [w', map_sub, map_add, hm_σR, hm_σL, hm_σD]; rfl
+  let := composablePairsChartedSpace I J C
+  intro w
+  exact eq_of_tangentSpaceCast_eq (comp_unitPair x) (tangentSpaceCast_mfderiv_comp_at_unit x w)
 
 /-- **Differential of inversion at a unit.** For every arrow tangent vector `v` at `1_x`,
 `d(inv)_{1_x}(v) = du_x(ds(v) + dt(v)) - v`. -/
@@ -608,41 +806,55 @@ theorem mfderiv_inverse_at_unit (x : C) (v : TangentSpace J (⟨x, x, 𝟙 x⟩ 
       mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x
         (mfderiv J I (Quiver.Total.left : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩ v +
           mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩ v) - v := by
-  let := composablePairsChartedSpace I J C; have := isManifold_composablePairs I J C
+  let := composablePairsChartedSpace I J C
   let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
   let u : C → Quiver.Total C := fun y ↦ ⟨y, y, 𝟙 y⟩
-  let u₀ : Quiver.Total C := ⟨x, x, 𝟙 x⟩; let p₀ : ComposablePairs C := ⟨(u₀, u₀), rfl⟩
+  let u₀ : Quiver.Total C := ⟨x, x, 𝟙 x⟩
   let π₁ : ComposablePairs C → Quiver.Total C := fun p ↦ p.1.1
   let π₂ : ComposablePairs C → Quiver.Total C := fun p ↦ p.1.2
   let m : ComposablePairs C → Quiver.Total C := fun p ↦ p.1.1.comp p.1.2 p.2
-  have hι := isSmoothEmbedding_coe_composablePairs I J C
-  have hπ₁ : ContMDiff K J ∞ π₁ := contMDiff_fst.comp hι.contMDiff
-  have hπ₂ : ContMDiff K J ∞ π₂ := contMDiff_snd.comp hι.contMDiff
-  have hu : ContMDiff I J ∞ u := contMDiff_unit (I := I) (J := J) (C := C)
-  have hm : ContMDiff K J ∞ m := contMDiff_comp (I := I) (J := J) (C := C)
   let τ : Quiver.Total C → ComposablePairs C := fun a ↦ ⟨(a, inverseDiffeomorph I J C a), rfl⟩
+  refine eq_of_tangentSpaceCast_eq (inverseDiffeomorph_unit I J C x) ?_
   have hτ : ContMDiff J K ∞ τ :=
-    hι.contMDiff_iff_comp.mpr (contMDiff_id.prodMk (inverseDiffeomorph I J C).contMDiff)
-  have hτ0 : τ u₀ = p₀ := Subtype.ext (Prod.ext rfl (inverseDiffeomorph_unit I J C x))
-  have h_at_q : ∀ (q : ComposablePairs C), q = p₀ → ∀ w : TangentSpace K q,
+    (isSmoothEmbedding_coe_composablePairs I J C).contMDiff_iff_comp.mpr
+      (contMDiff_id.prodMk (inverseDiffeomorph I J C).contMDiff)
+  have hτ_diff : MDifferentiableAt J K τ u₀ := (hτ u₀).mdifferentiableAt (by simp)
+  have hτ0 : τ u₀ = unitPair x := Subtype.ext (Prod.ext rfl (inverseDiffeomorph_unit I J C x))
+  -- Transport `tangentSpaceCast_mfderiv_comp_at_unit` across `τ u₀ = unitPair x`.
+  have h_at_q : ∀ (q : ComposablePairs C), q = unitPair x → ∀ w : TangentSpace K q,
       tangentSpaceCast J (m q) u₀ (mfderiv K J m q w) =
         tangentSpaceCast J (π₁ q) u₀ (mfderiv K J π₁ q w) +
           tangentSpaceCast J (π₂ q) u₀ (mfderiv K J π₂ q w) -
           mfderiv I J u x (mfderiv J I Quiver.Total.right u₀
             (tangentSpaceCast J (π₁ q) u₀ (mfderiv K J π₁ q w))) := by
-    rintro _ rfl w; exact mfderiv_comp_at_unit x w
-  let v₀ : TangentSpace J u₀ := v
-  have hrhs := h_at_q (τ u₀) hτ0 (mfderiv J K τ u₀ v₀)
-  have h1 := tangentSpaceCast_mfderiv_comp_id hπ₁ hτ rfl v₀
-  have h2 := tangentSpaceCast_mfderiv_comp hπ₂ hτ rfl u₀ v₀
-  have hlhs := (tangentSpaceCast_mfderiv_comp hm hτ (funext Quiver.Total.comp_inv) u₀ v₀).trans
-    (tangentSpaceCast_mfderiv_comp hu (contMDiff_source I J C) rfl u₀ v₀).symm
+    rintro _ rfl w
+    simpa only [π₁, π₂, m, u, u₀, tangentSpaceCast_self] using
+      tangentSpaceCast_mfderiv_comp_at_unit x w
+  have hrhs := h_at_q (τ u₀) hτ0 (mfderiv J K τ u₀ v)
+  have h1 : tangentSpaceCast J (π₁ (τ u₀)) u₀
+      (mfderiv K J π₁ (τ u₀) (mfderiv J K τ u₀ v)) = v := by
+    have hid : π₁ ∘ τ = id := rfl
+    rw [← mfderiv_comp_apply u₀
+      (((contMDiff_fst_composablePairs I J C) (τ u₀)).mdifferentiableAt (by simp)) hτ_diff v,
+      hid, mfderiv_id, ContinuousLinearMap.id_apply]
+    exact tangentSpaceCast_self u₀ v
+  have h2 : mfderiv K J π₂ (τ u₀) (mfderiv J K τ u₀ v) =
+      mfderiv J J (inverseDiffeomorph I J C) u₀ v :=
+    (mfderiv_comp_apply u₀
+      (((contMDiff_snd_composablePairs I J C) (τ u₀)).mdifferentiableAt (by simp)) hτ_diff v).symm
+  have hlhs : tangentSpaceCast J (m (τ u₀)) u₀ (mfderiv K J m (τ u₀) (mfderiv J K τ u₀ v)) =
+      mfderiv I J u x (mfderiv J I Quiver.Total.left u₀ v) := by
+    have hm_τ := tangentSpaceCast_mfderiv_comp
+      (((contMDiff_composablePairs_comp I J C) (τ u₀)).mdifferentiableAt (by simp)) hτ_diff
+      (funext Quiver.Total.comp_inv) u₀ v
+    have hu_s : mfderiv J J (u ∘ Quiver.Total.left) u₀ v =
+        mfderiv I J u x (mfderiv J I Quiver.Total.left u₀ v) :=
+      mfderiv_comp_apply u₀ (((contMDiff_unit (I := I) (J := J) (C := C)) x).mdifferentiableAt
+        (by simp)) (((contMDiff_source I J C) u₀).mdifferentiableAt (by simp)) v
+    exact hm_τ.trans ((tangentSpaceCast_self u₀ _).trans hu_s)
   rw [hlhs, h1, h2] at hrhs
-  change tangentSpaceCast J (inverseDiffeomorph I J C u₀) u₀
-      (mfderiv J J (inverseDiffeomorph I J C) u₀ v₀) =
-      mfderiv I J u x
-        (mfderiv J I Quiver.Total.left u₀ v₀ + mfderiv J I Quiver.Total.right u₀ v₀) - v₀
-  rw [map_add]; exact eq_sub_of_add_eq' (eq_add_of_sub_eq hrhs.symm)
+  rw [map_add]
+  exact eq_sub_of_add_eq' (eq_add_of_sub_eq hrhs.symm)
 
 /-- On the source-vertical tangent space `ker(ds_{1_x})` (the Lie algebroid fibre at `x`),
 inversion differentiates to `v ↦ du_x(dt(v)) - v`. -/

@@ -160,6 +160,15 @@ theorem target_eq_source :
     (Quiver.Total.right : Quiver.Total (Discrete X) → Discrete X) = Quiver.Total.left :=
   funext (right_eq_left X)
 
+omit [TopologicalSpace X] in
+/-- Every source fibre of the unit groupoid is a subsingleton. -/
+instance instSubsingletonSourceFiber (x : Discrete X) :
+    Subsingleton {a : Quiver.Total (Discrete X) // a.left = x} :=
+  ⟨fun ⟨⟨⟨_⟩, ⟨_⟩, f⟩, ha⟩ ⟨⟨⟨_⟩, ⟨_⟩, g⟩, hb⟩ ↦ by
+    obtain ⟨_⟩ := x; obtain rfl := Discrete.eq_of_hom f; obtain rfl := Discrete.eq_of_hom g
+    cases ha; cases hb
+    exact Subtype.ext (Quiver.Total.ext rfl rfl (heq_of_eq (Subsingleton.elim _ _)))⟩
+
 /-- The source map of the unit groupoid is a local homeomorphism. -/
 theorem isLocalHomeomorph_source :
     IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) := by

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Topology.Maps.LocalSections
 
 -- Access the body of `Manifold.IsSubmersionOfComplement`, which Mathlib does not expose, to supply
@@ -53,6 +54,8 @@ constant on the fibres factors through a unique `C^m` map
 * `Manifold.IsSubmersionAtOfComplement.surjective_mfderiv`,
   `Manifold.IsSubmersionAt.surjective_mfderiv` and `Manifold.IsSubmersion.surjective_mfderiv`: the
   derivative of a submersion is surjective. Mathlib lists this as a TODO.
+* `Manifold.IsSubmersionAt.finrank_le`: if a `C^n` submersion (`n ≠ 0`) at a point has a
+  finite-dimensional source model, the target model has dimension at most that of the source.
 * `Manifold.IsSubmersionAtOfComplement.hasRightInverse_mfderiv`,
   `Manifold.IsSubmersionAt.hasRightInverse_mfderiv` and
   `Manifold.IsSubmersion.hasRightInverse_mfderiv`: the derivative of a submersion has a continuous
@@ -254,6 +257,15 @@ theorem IsSubmersionAt.hasRightInverse_mfderiv (h : IsSubmersionAt I J n f x) (h
 theorem IsSubmersion.hasRightInverse_mfderiv (h : IsSubmersion I J n f) (hn : n ≠ 0) (x : M) :
     (mfderiv I J f x).HasRightInverse :=
   (h.isSubmersionAt x).hasRightInverse_mfderiv hn
+
+/-- **Dimension bound for a submersion.** If `f : M → N` is a `C^n` submersion (`n ≠ 0`) at `x`
+and the source model `E` is finite-dimensional, the target model `E''` has dimension at most that
+of `E`. -/
+theorem IsSubmersionAt.finrank_le [FiniteDimensional 𝕜 E] (h : IsSubmersionAt I J n f x)
+    (hn : n ≠ 0) : Module.finrank 𝕜 E'' ≤ Module.finrank 𝕜 E := by
+  rw [← TauCeti.finrank_tangentSpace (I := I) x, ← TauCeti.finrank_tangentSpace (I := J) (f x)]
+  exact LinearMap.finrank_le_finrank_of_surjective
+    (f := (mfderiv I J f x).toLinearMap) (h.surjective_mfderiv hn)
 
 end Derivative
 

@@ -23,6 +23,9 @@ at propositionally equal points are identified by `tangentSpaceCast`. A smoothne
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
+* `TauCeti.tangentSpaceCast_self`, `TauCeti.eq_of_tangentSpaceCast_eq`: over a single base point
+  `tangentSpaceCast` is the identity, and over propositionally equal base points it identifies
+  tangent vectors via the shared model space.
 -/
 
 public section
@@ -53,5 +56,20 @@ theorem heq_tangentSpaceCast {x y : M} (hxy : x = y) (w : TangentSpace I x) :
     HEq (tangentSpaceCast I x y w) w := by
   subst hxy
   rfl
+
+/-- Over a single base point, `tangentSpaceCast` is the identity on the tangent space. -/
+@[simp]
+theorem tangentSpaceCast_self (x : M) (w : TangentSpace I x) :
+    tangentSpaceCast I x x w = w :=
+  eq_of_heq (heq_tangentSpaceCast rfl w)
+
+/-- Eliminate `tangentSpaceCast` between propositionally equal base points `x = y`, isolating the
+definitional identification `TangentSpace I x = TangentSpace I y` (as in Mathlib's
+`mfderiv_congr_point`) in a single lemma. -/
+theorem eq_of_tangentSpaceCast_eq {x y : M} (hxy : x = y) {v : TangentSpace I x}
+    {w : TangentSpace I y} (h : tangentSpaceCast I x y v = w) :
+    @Eq (TangentSpace I y) v w := by
+  subst hxy
+  exact (tangentSpaceCast_self x v).symm.trans h
 
 end TauCeti

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Groupoid.Translation
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.CategoryTheory.Groupoid.Examples
 import Mathlib.Topology.Bases
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Smooth unit groupoids and unit and pair Lie groupoids
@@ -19,19 +20,21 @@ objects and total arrows by pulling charts back along `TauCeti.UnitGroupoid.obje
 `TauCeti.UnitGroupoid.arrowHomeomorph` (`Homeomorph.pullbackChartedSpace`), making source and target
 global (hence local) `C^n` diffeomorphisms (`TauCeti.UnitGroupoid.sourceDiffeomorph`,
 `TauCeti.UnitGroupoid.isLocalDiffeomorph_source`, `TauCeti.UnitGroupoid.isLocalDiffeomorph_target`).
+Similarly, the pair groupoid `Codiscrete N` inherits `C^n` manifold structures on objects and total
+arrows pulled back from `N` and `N × N`, with source a `C^n` submersion
+(`TauCeti.PairGroupoid.isSubmersion_source`).
 
-For any finite-dimensional boundaryless smooth real manifold `X`:
+For any Hausdorff second-countable finite-dimensional boundaryless smooth real manifold `X`:
 
 * **The unit Lie groupoid** `Discrete X` (`TauCeti.UnitGroupoid.isLieGroupoid`): objects and total
-  arrows are both canonically diffeomorphic to `X`, source is a global diffeomorphism (the canonical
-  étale witness), and `[SecondCountableTopology X]` suffices without global Hausdorffness of `X`
-  because every source fibre is a subsingleton (`TauCeti.UnitGroupoid.instSubsingletonSourceFiber`).
-* **The pair Lie groupoid** `Codiscrete X` (`TauCeti.PairGroupoid.isLieGroupoid`): for Hausdorff
-  second-countable `X`, objects are diffeomorphic to `X` and total arrows are diffeomorphic to
-  `X × X` in `(target, source)` coordinates. Every source fibre `s⁻¹(x)` is diffeomorphic to `X`
-  via target (`TauCeti.PairGroupoid.sourceFiberDiffeomorph`), every target fibre `t⁻¹(x)` is
-  diffeomorphic to `X` via source (`TauCeti.PairGroupoid.targetFiberDiffeomorph`), and right/left
-  translations act as `id_X` under these identifications.
+  arrows are both canonically diffeomorphic to `X`, and source is a global diffeomorphism (the
+  canonical étale witness).
+* **The pair Lie groupoid** `Codiscrete X` (`TauCeti.PairGroupoid.isLieGroupoid`): objects are
+  diffeomorphic to `X` and total arrows are diffeomorphic to `X × X` in `(target, source)`
+  coordinates. Every source fibre `s⁻¹(x)` is diffeomorphic to `X` via target
+  (`TauCeti.PairGroupoid.sourceFiberDiffeomorph`), every target fibre `t⁻¹(x)` is diffeomorphic to
+  `X` via source (`TauCeti.PairGroupoid.targetFiberDiffeomorph`), and right/left translations act as
+  `id_X` under these identifications.
 
 ## References
 
@@ -142,55 +145,38 @@ theorem isLocalDiffeomorph_target {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
 
 end Charts
 
-/-- Every source fibre of the unit groupoid is a subsingleton, hence Hausdorff without assuming
-`[T2Space X]`. -/
-instance instSubsingletonSourceFiber {X : Type*} (x : Discrete X) :
-    Subsingleton {a : Quiver.Total (Discrete X) // a.left = x} :=
-  ⟨fun ⟨⟨⟨_⟩, ⟨_⟩, f⟩, ha⟩ ⟨⟨⟨_⟩, ⟨_⟩, g⟩, hb⟩ ↦ by
-    obtain ⟨_⟩ := x; obtain rfl := Discrete.eq_of_hom f; obtain rfl := Discrete.eq_of_hom g
-    cases ha; cases hb
-    exact Subtype.ext (Quiver.Total.ext rfl rfl (heq_of_eq (Subsingleton.elim _ _)))⟩
-
-/-- The unit groupoid on any second-countable boundaryless smooth manifold is a Lie groupoid. -/
+/-- The unit groupoid on any Hausdorff second-countable boundaryless smooth manifold is a Lie
+groupoid. -/
 instance isLieGroupoid {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
     (X : Type*) [TopologicalSpace X] [ChartedSpace H X] [IsManifold I ∞ X]
-    [SecondCountableTopology X] : IsLieGroupoid I I (Discrete X) := by
+    [T2Space X] [SecondCountableTopology X] : IsLieGroupoid I I (Discrete X) := by
   have hs : Manifold.IsSubmersion I I ∞
-      (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) := by
-    rw [← coe_sourceDiffeomorph I ∞ (N := X)]
-    exact ((sourceDiffeomorph I ∞ X).contMDiff.isSubmersionOfComplement_of_surjective_mfderiv
-      (by simp) fun a ↦
-        ((sourceDiffeomorph I ∞ X).isLocalDiffeomorph a).mfderivToContinuousLinearEquiv
-          (by simp) |>.surjective).isSubmersion
-  have hu : ContMDiff I I ∞ fun x : Discrete X ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (Discrete X)) :=
-    coe_sourceDiffeomorph_symm I ∞ (N := X) ▸ (sourceDiffeomorph I ∞ X).symm.contMDiff
+      (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) :=
+    isLocalDiffeomorph_source.isSubmersion
   have hinv : ContMDiff I I ∞ fun a : Quiver.Total (Discrete X) ↦
-      (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total (Discrete X)) := by
-    convert (contMDiff_id (I := I) (M := Quiver.Total (Discrete X))) using 1
-    funext ⟨⟨_⟩, ⟨_⟩, f⟩; obtain rfl := Discrete.eq_of_hom f
-    exact Quiver.Total.ext rfl rfl (heq_of_eq (Subsingleton.elim _ _))
-  refine IsLieGroupoid.of_isSubmersion_source hs hu hinv ?_
-    (arrowHomeomorph X).isEmbedding.secondCountableTopology fun _ ↦ inferInstance
+      (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total (Discrete X)) :=
+    contMDiff_id.congr fun ⟨⟨_⟩, ⟨_⟩, f⟩ ↦ by
+      obtain rfl := Discrete.eq_of_hom f
+      exact Quiver.Total.ext rfl rfl (heq_of_eq (Subsingleton.elim _ _))
+  refine IsLieGroupoid.of_isSubmersion_source hs hinv ?_
+    (arrowHomeomorph X).isEmbedding.secondCountableTopology
+    (objectHomeomorph X).isEmbedding.t2Space fun _ ↦ inferInstance
   let := transverseFiberProductChartedSpace (f := Quiver.Total.right) (g := Quiver.Total.left)
-    (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
-    (fun p _ ↦ hs.transverse_right (by simp) _ p)
-  have := isManifold_transverseFiberProduct (f := Quiver.Total.right) (g := Quiver.Total.left)
     (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
     (fun p _ ↦ hs.transverse_right (by simp) _ p)
   have hι := isSmoothEmbedding_coe_transverseFiberProduct
     (f := Quiver.Total.right) (g := Quiver.Total.left)
     (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
     (fun p _ ↦ hs.transverse_right (by simp) _ p)
-  convert hι.contMDiff.fst using 1
-  funext ⟨⟨⟨⟨_⟩, ⟨_⟩, f⟩, ⟨⟨_⟩, ⟨_⟩, g⟩⟩, hp⟩
-  obtain rfl := Discrete.eq_of_hom f; obtain rfl := Discrete.eq_of_hom g
-  dsimp only at hp; cases hp; rw [Quiver.Total.comp_def]
-  exact Quiver.Total.ext rfl rfl (heq_of_eq (Subsingleton.elim _ _))
+  exact hι.contMDiff.fst.congr fun ⟨⟨⟨⟨_⟩, ⟨_⟩, f⟩, ⟨⟨_⟩, ⟨_⟩, g⟩⟩, hp⟩ ↦ by
+    obtain rfl := Discrete.eq_of_hom f; obtain rfl := Discrete.eq_of_hom g
+    dsimp only at hp; cases hp; rw [Quiver.Total.comp_def]
+    exact Quiver.Total.ext rfl rfl (heq_of_eq (Subsingleton.elim _ _))
 
 end UnitGroupoid
 
-/-! ### Pair Lie groupoid -/
+/-! ### Smooth pair groupoid and pair Lie groupoid -/
 
 namespace PairGroupoid
 
@@ -198,47 +184,75 @@ noncomputable section
 
 section Charts
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  (X : Type*) [TopologicalSpace X] [ChartedSpace H X]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H]
+  {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
 
-/-- Smooth atlas on the objects of the pair groupoid pulled back from `X`. -/
+/-- Objects of `Codiscrete X` carry the charted-space structure pulled back from `X`. -/
 instance instChartedSpaceObjects : ChartedSpace H (Codiscrete X) :=
   (objectHomeomorph X).pullbackChartedSpace
 
-instance instIsManifoldObjects [IsManifold I ∞ X] : IsManifold I ∞ (Codiscrete X) :=
-  (objectHomeomorph X).pullback_isManifold I ∞
+/-- Objects of `Codiscrete X` form a `C^n` manifold whenever `X` does. -/
+instance instIsManifoldObjects (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) [IsManifold I n X] :
+    IsManifold I n (Codiscrete X) :=
+  (objectHomeomorph X).pullback_isManifold I n
 
-/-- Smooth diffeomorphism identifying objects of the pair groupoid with `X`. -/
-def objectDiffeomorph : Codiscrete X ≃ₘ^∞⟮I, I⟯ X := (objectHomeomorph X).pullbackDiffeomorph I ∞
+/-- `C^n` diffeomorphism identifying objects of the pair groupoid with `X`. -/
+def objectDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
+    (X : Type*) [TopologicalSpace X] [ChartedSpace H X] : Codiscrete X ≃ₘ^n⟮I, I⟯ X :=
+  (objectHomeomorph X).pullbackDiffeomorph I n
 
-@[simp] theorem coe_objectDiffeomorph : ⇑(objectDiffeomorph I X) = objectHomeomorph X :=
-  (objectHomeomorph X).coe_pullbackDiffeomorph I ∞
+@[simp]
+theorem coe_objectDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
+    ⇑(objectDiffeomorph I n X) = objectHomeomorph X :=
+  (objectHomeomorph X).coe_pullbackDiffeomorph I n
 
-@[simp] theorem coe_objectDiffeomorph_symm :
-    ⇑(objectDiffeomorph I X).symm = (objectHomeomorph X).symm :=
-  (objectHomeomorph X).coe_pullbackDiffeomorph_symm I ∞
+@[simp]
+theorem coe_objectDiffeomorph_symm (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
+    ⇑(objectDiffeomorph I n X).symm = (objectHomeomorph X).symm :=
+  (objectHomeomorph X).coe_pullbackDiffeomorph_symm I n
 
-/-- Smooth atlas on the total arrows of the pair groupoid pulled back from `X × X` in
+/-- Total arrows of `Codiscrete X` carry the charted-space structure pulled back from `X × X` in
 `(target, source)` coordinates. -/
 instance instChartedSpaceArrows : ChartedSpace (ModelProd H H) (Quiver.Total (Codiscrete X)) :=
   (arrowHomeomorph X).pullbackChartedSpace
 
-instance instIsManifoldArrows [IsManifold I ∞ X] :
-    IsManifold (I.prod I) ∞ (Quiver.Total (Codiscrete X)) :=
-  (arrowHomeomorph X).pullback_isManifold (I.prod I) ∞
+/-- Total arrows of `Codiscrete X` form a `C^n` manifold whenever `X` does. -/
+instance instIsManifoldArrows (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) [IsManifold I n X] :
+    IsManifold (I.prod I) n (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).pullback_isManifold (I.prod I) n
 
-/-- Smooth diffeomorphism identifying total arrows of the pair groupoid with `X × X` via
+/-- `C^n` diffeomorphism identifying total arrows of the pair groupoid with `X × X` via
 `a ↦ (a.right.as, a.left.as)`. -/
-def arrowDiffeomorph : Quiver.Total (Codiscrete X) ≃ₘ^∞⟮I.prod I, I.prod I⟯ X × X :=
-  (arrowHomeomorph X).pullbackDiffeomorph (I.prod I) ∞
+def arrowDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
+    (X : Type*) [TopologicalSpace X] [ChartedSpace H X] :
+    Quiver.Total (Codiscrete X) ≃ₘ^n⟮I.prod I, I.prod I⟯ X × X :=
+  (arrowHomeomorph X).pullbackDiffeomorph (I.prod I) n
 
-@[simp] theorem coe_arrowDiffeomorph : ⇑(arrowDiffeomorph I X) = arrowHomeomorph X :=
-  (arrowHomeomorph X).coe_pullbackDiffeomorph (I.prod I) ∞
+@[simp]
+theorem coe_arrowDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
+    ⇑(arrowDiffeomorph I n X) = arrowHomeomorph X :=
+  (arrowHomeomorph X).coe_pullbackDiffeomorph (I.prod I) n
 
-@[simp] theorem coe_arrowDiffeomorph_symm :
-    ⇑(arrowDiffeomorph I X).symm = (arrowHomeomorph X).symm :=
-  (arrowHomeomorph X).coe_pullbackDiffeomorph_symm (I.prod I) ∞
+@[simp]
+theorem coe_arrowDiffeomorph_symm (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
+    ⇑(arrowDiffeomorph I n X).symm = (arrowHomeomorph X).symm :=
+  (arrowHomeomorph X).coe_pullbackDiffeomorph_symm (I.prod I) n
+
+/-- Source on the pair groupoid is a `C^n` submersion: in `(target, source)` coordinates it is the
+second projection `X × X → X`. -/
+theorem isSubmersion_source (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
+    (X : Type*) [TopologicalSpace X] [ChartedSpace H X] [IsManifold I n X] :
+    Manifold.IsSubmersion (I.prod I) I n
+      (Quiver.Total.left : Quiver.Total (Codiscrete X) → Codiscrete X) := by
+  let e := (arrowDiffeomorph I n X).trans (Diffeomorph.prodComm I I X X n)
+  have heq : (Quiver.Total.left : Quiver.Total (Codiscrete X) → Codiscrete X) =
+      ⇑(objectDiffeomorph I n X).symm ∘ Prod.fst ∘ ⇑e := by
+    ext ⟨⟨_⟩, ⟨_⟩, _⟩; simp [e]
+  rw [heq]
+  exact (objectDiffeomorph I n X).symm.isLocalDiffeomorph.comp_isSubmersion
+    (e.isLocalDiffeomorph.isSubmersion_comp Manifold.isSubmersion_fst)
 
 end Charts
 
@@ -246,63 +260,33 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
   (X : Type*) [TopologicalSpace X] [ChartedSpace H X] [IsManifold I ∞ X]
 
-/-- Source on the pair groupoid is a smooth submersion: in `(target, source)` coordinates it is the
-second projection `X × X → X`. -/
-theorem isSubmersion_source :
-    Manifold.IsSubmersion (I.prod I) I ∞
-      (Quiver.Total.left : Quiver.Total (Codiscrete X) → Codiscrete X) := by
-  have hs_smooth : ContMDiff (I.prod I) I ∞
-      (Quiver.Total.left : Quiver.Total (Codiscrete X) → Codiscrete X) := by
-    convert (objectDiffeomorph I X).symm.contMDiff.comp
-      (arrowDiffeomorph I X).contMDiff.snd using 1
-    funext ⟨⟨_⟩, ⟨_⟩, _⟩; simp
-  refine (hs_smooth.isSubmersionOfComplement_of_surjective_mfderiv
-    (by simp) fun a ↦ ?_).isSubmersion
-  let σ : Codiscrete X → Quiver.Total (Codiscrete X) :=
-    fun x ↦ (arrowDiffeomorph I X).symm (a.right.as, objectDiffeomorph I X x)
-  have hσ : ContMDiff I (I.prod I) ∞ σ :=
-    (arrowDiffeomorph I X).symm.contMDiff.comp
-      (contMDiff_const.prodMk (objectDiffeomorph I X).contMDiff)
-  have hσa : σ a.left = a := (arrowHomeomorph X).injective (by simp [σ])
-  have hleft_σ : (Quiver.Total.left ∘ σ) = id := by funext ⟨_⟩; simp [σ]
-  have hcomp := mfderiv_comp a.left ((hs_smooth (σ a.left)).mdifferentiableAt (by simp))
-    ((hσ a.left).mdifferentiableAt (by simp))
-  rw [hleft_σ, mfderiv_id, hσa] at hcomp
-  exact Function.LeftInverse.surjective (DFunLike.congr_fun hcomp.symm)
-
 /-- The pair groupoid on any Hausdorff second-countable boundaryless smooth manifold is a Lie
 groupoid. -/
 instance isLieGroupoid [T2Space X] [SecondCountableTopology X] :
     IsLieGroupoid I (I.prod I) (Codiscrete X) := by
-  have hs := isSubmersion_source I X
-  have hu : ContMDiff I (I.prod I) ∞
-      fun x : Codiscrete X ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (Codiscrete X)) := by
-    convert (arrowDiffeomorph I X).symm.contMDiff.comp
-      ((objectDiffeomorph I X).contMDiff.prodMk (objectDiffeomorph I X).contMDiff) using 1
-    funext ⟨_⟩; exact (arrowHomeomorph X).injective (by simp)
+  have hs := isSubmersion_source I ∞ X
   have hinv : ContMDiff (I.prod I) (I.prod I) ∞ fun a : Quiver.Total (Codiscrete X) ↦
-      (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total (Codiscrete X)) := by
-    convert (arrowDiffeomorph I X).symm.contMDiff.comp
-      ((arrowDiffeomorph I X).contMDiff.snd.prodMk (arrowDiffeomorph I X).contMDiff.fst) using 1
-    funext a; exact (arrowHomeomorph X).injective (by simp)
-  refine IsLieGroupoid.of_isSubmersion_source hs hu hinv ?_
-    (arrowHomeomorph X).isEmbedding.secondCountableTopology fun _ ↦ by
+      (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total (Codiscrete X)) :=
+    ((arrowDiffeomorph I ∞ X).symm.contMDiff.comp
+      ((arrowDiffeomorph I ∞ X).contMDiff.snd.prodMk
+        (arrowDiffeomorph I ∞ X).contMDiff.fst)).congr
+      fun a ↦ (arrowHomeomorph X).injective (by simp)
+  refine IsLieGroupoid.of_isSubmersion_source hs hinv ?_
+    (arrowHomeomorph X).isEmbedding.secondCountableTopology
+    (objectHomeomorph X).isEmbedding.t2Space fun _ ↦ by
       have : T2Space (Quiver.Total (Codiscrete X)) := (arrowHomeomorph X).isEmbedding.t2Space
       exact Topology.IsEmbedding.subtypeVal.t2Space
   let := transverseFiberProductChartedSpace (f := Quiver.Total.right) (g := Quiver.Total.left)
-    (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
-    (fun p _ ↦ hs.transverse_right (by simp) _ p)
-  have := isManifold_transverseFiberProduct (f := Quiver.Total.right) (g := Quiver.Total.left)
     (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
     (fun p _ ↦ hs.transverse_right (by simp) _ p)
   have hι := isSmoothEmbedding_coe_transverseFiberProduct
     (f := Quiver.Total.right) (g := Quiver.Total.left)
     (by simp : (1 : ℕ∞ω) ≤ ∞) (hs.contMDiff.comp hinv) hs.contMDiff
     (fun p _ ↦ hs.transverse_right (by simp) _ p)
-  convert (arrowDiffeomorph I X).symm.contMDiff.comp
-    (((arrowDiffeomorph I X).contMDiff.comp hι.contMDiff.snd).fst.prodMk
-      ((arrowDiffeomorph I X).contMDiff.comp hι.contMDiff.fst).snd) using 1
-  funext p; exact (arrowHomeomorph X).injective (by simp)
+  exact ((arrowDiffeomorph I ∞ X).symm.contMDiff.comp
+    (((arrowDiffeomorph I ∞ X).contMDiff.comp hι.contMDiff.snd).fst.prodMk
+      ((arrowDiffeomorph I ∞ X).contMDiff.comp hι.contMDiff.fst).snd)).congr
+    fun p ↦ (arrowHomeomorph X).injective (by simp)
 
 section FiberTranslations
 
@@ -317,19 +301,16 @@ def sourceFiberDiffeomorph (x : Codiscrete X) :
   letI := IsLieGroupoid.sourceFiberChartedSpace I (I.prod I) (Codiscrete X) x
   { toFun := fun h ↦ h.1.right.as, invFun := fun z ↦ ⟨⟨x, ⟨z⟩, default⟩, rfl⟩
     left_inv := fun ⟨⟨⟨_⟩, ⟨_⟩, ⟨⟩⟩, rfl⟩ ↦ rfl, right_inv := fun _ ↦ rfl
-    contMDiff_toFun := by
-      have := IsLieGroupoid.isManifold_sourceFiber I (I.prod I) (Codiscrete X) x
-      convert ((arrowDiffeomorph I X).contMDiff.comp
+    contMDiff_toFun :=
+      (((arrowDiffeomorph I ∞ X).contMDiff.comp
         (IsLieGroupoid.isSmoothEmbedding_coe_sourceFiber
-          I (I.prod I) (Codiscrete X) x).contMDiff).fst using 1
-      funext h; simp
-    contMDiff_invFun := by
-      have := IsLieGroupoid.isManifold_sourceFiber I (I.prod I) (Codiscrete X) x
-      refine (IsLieGroupoid.isSmoothEmbedding_coe_sourceFiber
-        I (I.prod I) (Codiscrete X) x).contMDiff_iff_comp.mpr ?_
-      convert (arrowDiffeomorph I X).symm.contMDiff.comp
-        (contMDiff_id.prodMk (contMDiff_const (c := x.as))) using 1
-      funext z; exact (arrowHomeomorph X).injective (by simp) }
+          I (I.prod I) (Codiscrete X) x).contMDiff).fst).congr fun h ↦ by simp
+    contMDiff_invFun :=
+      (IsLieGroupoid.isSmoothEmbedding_coe_sourceFiber
+        I (I.prod I) (Codiscrete X) x).contMDiff_iff_comp.mpr
+        (((arrowDiffeomorph I ∞ X).symm.contMDiff.comp
+          (contMDiff_id.prodMk (contMDiff_const (c := x.as)))).congr
+          fun z ↦ (arrowHomeomorph X).injective (by simp)) }
 
 @[simp] theorem sourceFiberDiffeomorph_apply (x : Codiscrete X)
     (h : IsLieGroupoid.SourceFiber (Codiscrete X) x) :
@@ -349,19 +330,16 @@ def targetFiberDiffeomorph (x : Codiscrete X) :
   letI := IsLieGroupoid.targetFiberChartedSpace I (I.prod I) (Codiscrete X) x
   { toFun := fun h ↦ h.1.left.as, invFun := fun w ↦ ⟨⟨⟨w⟩, x, default⟩, rfl⟩
     left_inv := fun ⟨⟨⟨_⟩, ⟨_⟩, ⟨⟩⟩, rfl⟩ ↦ rfl, right_inv := fun _ ↦ rfl
-    contMDiff_toFun := by
-      have := IsLieGroupoid.isManifold_targetFiber I (I.prod I) (Codiscrete X) x
-      convert ((arrowDiffeomorph I X).contMDiff.comp
+    contMDiff_toFun :=
+      (((arrowDiffeomorph I ∞ X).contMDiff.comp
         (IsLieGroupoid.isSmoothEmbedding_coe_targetFiber
-          I (I.prod I) (Codiscrete X) x).contMDiff).snd using 1
-      funext h; simp
-    contMDiff_invFun := by
-      have := IsLieGroupoid.isManifold_targetFiber I (I.prod I) (Codiscrete X) x
-      refine (IsLieGroupoid.isSmoothEmbedding_coe_targetFiber
-        I (I.prod I) (Codiscrete X) x).contMDiff_iff_comp.mpr ?_
-      convert (arrowDiffeomorph I X).symm.contMDiff.comp
-        ((contMDiff_const (c := x.as)).prodMk contMDiff_id) using 1
-      funext w; exact (arrowHomeomorph X).injective (by simp) }
+          I (I.prod I) (Codiscrete X) x).contMDiff).snd).congr fun h ↦ by simp
+    contMDiff_invFun :=
+      (IsLieGroupoid.isSmoothEmbedding_coe_targetFiber
+        I (I.prod I) (Codiscrete X) x).contMDiff_iff_comp.mpr
+        (((arrowDiffeomorph I ∞ X).symm.contMDiff.comp
+          ((contMDiff_const (c := x.as)).prodMk contMDiff_id)).congr
+          fun w ↦ (arrowHomeomorph X).injective (by simp)) }
 
 @[simp] theorem targetFiberDiffeomorph_apply (x : Codiscrete X)
     (h : IsLieGroupoid.TargetFiber (Codiscrete X) x) :

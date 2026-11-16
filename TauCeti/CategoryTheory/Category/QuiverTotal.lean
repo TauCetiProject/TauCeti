@@ -142,15 +142,19 @@ theorem mk_homOfEq_comp_homOfEq (a b : Quiver.Total C) {y z w : C} (hy : a.left 
   subst hy hz hz' hw
   simp
 
+/-- Composing on the left with the identity arrow at the source gives back the arrow. -/
 @[simp]
-theorem unit_comp (a : Quiver.Total C) :
-    (⟨a.left, a.left, 𝟙 a.left⟩ : Quiver.Total C).comp a rfl = a := by
+theorem unit_comp {x : C} (a : Quiver.Total C) (h : x = a.left) :
+    (⟨x, x, 𝟙 x⟩ : Quiver.Total C).comp a h = a := by
+  subst h
   obtain ⟨x, y, f⟩ := a
   simp [comp_def]
 
+/-- Composing on the right with the identity arrow at the target gives back the arrow. -/
 @[simp]
-theorem comp_unit (a : Quiver.Total C) :
-    a.comp ⟨a.right, a.right, 𝟙 a.right⟩ rfl = a := by
+theorem comp_unit (a : Quiver.Total C) {x : C} (h : a.right = x) :
+    a.comp ⟨x, x, 𝟙 x⟩ h = a := by
+  subst h
   obtain ⟨x, y, f⟩ := a
   simp [comp_def]
 
@@ -225,6 +229,7 @@ theorem inv_comp_comp (a b : Quiver.Total C) (h : a.right = b.left)
   simp [comp_def]
 
 /-- Following the composite of `a` and `b` by the inverse of `b` gives back `a`. -/
+@[simp]
 theorem comp_inv_cancel_right (a b : Quiver.Total C) (h : a.right = b.left)
     (h' : (a.comp b h).right = (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).left) :
     (a.comp b h).comp ⟨b.right, b.left, inv b.hom⟩ h' = a := by
@@ -235,7 +240,8 @@ theorem comp_inv_cancel_right (a b : Quiver.Total C) (h : a.right = b.left)
   simp [comp_def]
 
 /-- Following the composite of `c` and the inverse of `b` by `b` gives back `c`. -/
-theorem comp_inv_cancel_left (c b : Quiver.Total C) (h : c.right = b.right)
+@[simp]
+theorem inv_comp_cancel_right (c b : Quiver.Total C) (h : c.right = b.right)
     (h' : (c.comp ⟨b.right, b.left, inv b.hom⟩ h).right = b.left) :
     (c.comp ⟨b.right, b.left, inv b.hom⟩ h).comp b h' = c := by
   obtain ⟨x, z, f⟩ := c

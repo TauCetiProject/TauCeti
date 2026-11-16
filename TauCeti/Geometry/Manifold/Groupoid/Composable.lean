@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.FiberProduct.Associativity
 public import TauCeti.Geometry.Manifold.Groupoid.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Composable pairs, shear diffeomorphism, and composable triples of a Lie groupoid
@@ -19,9 +20,10 @@ simplicial nerve:
   smooth embeddings, and pair-inversion `(a, b) ↦ (inv b, inv a)` is an involutive smooth
   diffeomorphism (`inverseComposablePairsDiffeomorph`).
 * The shear map `(a, b) ↦ (a, a.comp b h)` is a smooth diffeomorphism from `ComposablePairs C` onto
-  `SameSourcePairs C = {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left}`. Composing its
-  inverse with the second projection shows without coordinate calculations that groupoid composition
-  `ComposablePairs C → Quiver.Total C` is itself a smooth submersion (`isSubmersion_comp`).
+  `SameSourcePairs C = {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left}`. Composing the
+  second projection of `SameSourcePairs C` with `shearDiffeomorph` shows without coordinate
+  calculations that groupoid composition `ComposablePairs C → Quiver.Total C` is itself a smooth
+  submersion (`isSubmersion_comp`).
 * The two parenthesizations `ComposableTriplesLeft C` and `ComposableTriplesRight C` of composable
   triples carry transverse fibre-product smooth atlases and are canonically diffeomorphic via
   `composableTriplesAssocDiffeomorph`, and all four simplicial face maps from composable triples to
@@ -53,31 +55,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
   [IsManifold J ∞ (Quiver.Total C)] [IsLieGroupoid I J C]
 
-/-! ### Projections, degeneracies, and inversion on composable pairs -/
-
-/-- Left unit degeneracy `b ↦ (1_{s(b)}, b)` into composable pairs. -/
-def leftUnitPair {C : Type*} [Category C] (b : Quiver.Total C) : ComposablePairs C :=
-  ⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩
-
-/-- Right unit degeneracy `a ↦ (a, 1_{t(a)})` into composable pairs. -/
-def rightUnitPair {C : Type*} [Category C] (a : Quiver.Total C) : ComposablePairs C :=
-  ⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩
-
-@[simp]
-theorem leftUnitPair_fst {C : Type*} [Category C] (b : Quiver.Total C) :
-    (leftUnitPair b).1.1 = ⟨b.left, b.left, 𝟙 b.left⟩ := (rfl)
-
-@[simp]
-theorem leftUnitPair_snd {C : Type*} [Category C] (b : Quiver.Total C) :
-    (leftUnitPair b).1.2 = b := (rfl)
-
-@[simp]
-theorem rightUnitPair_fst {C : Type*} [Category C] (a : Quiver.Total C) :
-    (rightUnitPair a).1.1 = a := (rfl)
-
-@[simp]
-theorem rightUnitPair_snd {C : Type*} [Category C] (a : Quiver.Total C) :
-    (rightUnitPair a).1.2 = ⟨a.right, a.right, 𝟙 a.right⟩ := (rfl)
+/-! ### Unit degeneracies and inversion on composable pairs -/
 
 /-- The left unit degeneracy `b ↦ (1_{s(b)}, b)` is a smooth embedding into composable pairs. -/
 theorem isSmoothEmbedding_leftUnitPair :
@@ -87,14 +65,8 @@ theorem isSmoothEmbedding_leftUnitPair :
       (leftUnitPair : Quiver.Total C → ComposablePairs C) := by
   let := composablePairsChartedSpace I J C
   have := isManifold_composablePairs I J C
-  have hι := isSmoothEmbedding_coe_composablePairs I J C
-  have hsmooth : ContMDiff J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
-      (leftUnitPair : Quiver.Total C → ComposablePairs C) :=
-    hι.contMDiff_iff_comp.mpr
-      (((contMDiff_unit (I := I) (J := J) (C := C)).comp (contMDiff_source I J C)).prodMk
-        contMDiff_id)
-  exact hsmooth.isSmoothEmbedding_of_leftInverse (by simp)
-    (hι.contMDiff.snd.of_le (by simp)) fun _ ↦ rfl
+  exact (contMDiff_leftUnitPair I J C).isSmoothEmbedding_of_leftInverse (by simp)
+    ((contMDiff_snd_composablePairs I J C).of_le (by simp)) fun _ ↦ rfl
 
 /-- The right unit degeneracy `a ↦ (a, 1_{t(a)})` is a smooth embedding into composable pairs. -/
 theorem isSmoothEmbedding_rightUnitPair :
@@ -104,14 +76,8 @@ theorem isSmoothEmbedding_rightUnitPair :
       (rightUnitPair : Quiver.Total C → ComposablePairs C) := by
   let := composablePairsChartedSpace I J C
   have := isManifold_composablePairs I J C
-  have hι := isSmoothEmbedding_coe_composablePairs I J C
-  have hsmooth : ContMDiff J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
-      (rightUnitPair : Quiver.Total C → ComposablePairs C) :=
-    hι.contMDiff_iff_comp.mpr
-      (contMDiff_id.prodMk
-        ((contMDiff_unit (I := I) (J := J) (C := C)).comp (contMDiff_target I J C)))
-  exact hsmooth.isSmoothEmbedding_of_leftInverse (by simp)
-    (hι.contMDiff.fst.of_le (by simp)) fun _ ↦ rfl
+  exact (contMDiff_rightUnitPair I J C).isSmoothEmbedding_of_leftInverse (by simp)
+    ((contMDiff_fst_composablePairs I J C).of_le (by simp)) fun _ ↦ rfl
 
 /-- Reversing and inverting a composable pair `(a, b) ↦ (inv b, inv a)` is an involutive smooth
 diffeomorphism of `ComposablePairs C`. -/
@@ -128,7 +94,6 @@ def inverseComposablePairsDiffeomorph :
     Subtype.ext (by obtain ⟨⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩, _⟩ := p; simp [f])
   have hf : ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞ f := by
-    have := isManifold_composablePairs I J C
     have hι := isSmoothEmbedding_coe_composablePairs I J C
     exact hι.contMDiff_iff_comp.mpr
       (((inverseDiffeomorph I J C).contMDiff.comp hι.contMDiff.snd).prodMk
@@ -152,6 +117,20 @@ theorem inverseComposablePairsDiffeomorph_symm :
     (inverseComposablePairsDiffeomorph I J C).symm = inverseComposablePairsDiffeomorph I J C :=
   (rfl)
 
+/-- Composing the arrows of `inverseComposablePairsDiffeomorph I J C p` gives the inverse of the
+composite of `p`. -/
+theorem comp_inverseComposablePairsDiffeomorph (p : ComposablePairs C) :
+    letI := composablePairsChartedSpace I J C
+    (inverseComposablePairsDiffeomorph I J C p).1.1.comp
+      (inverseComposablePairsDiffeomorph I J C p).1.2
+      (inverseComposablePairsDiffeomorph I J C p).2 =
+      inverseDiffeomorph I J C (p.1.1.comp p.1.2 p.2) := by
+  let := composablePairsChartedSpace I J C
+  exact ((Quiver.Total.comp_congr (inverseDiffeomorph_apply I J C p.1.2)
+    (inverseDiffeomorph_apply I J C p.1.1) _ p.2.symm).trans
+    (Quiver.Total.inv_comp_rev p.1.1 p.1.2 p.2).symm).trans
+    (inverseDiffeomorph_apply I J C (p.1.1.comp p.1.2 p.2)).symm
+
 /-! ### Same-source pairs, the shear diffeomorphism, and submersiveness of composition -/
 
 /-- Pairs of total arrows sharing the same source. -/
@@ -165,6 +144,16 @@ def sameSourcePairsChartedSpace :
   transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_source I J C) (contMDiff_source I J C)
     (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- Defining equality of `sameSourcePairsChartedSpace` as a transverse fibre-product charted
+space. -/
+theorem sameSourcePairsChartedSpace_eq_transverseFiberProductChartedSpace :
+    sameSourcePairsChartedSpace I J C =
+      transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
+        (contMDiff_source I J C) (contMDiff_source I J C)
+        (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_left
+          (by simp) _ p) :=
+  (rfl)
 
 /-- Same-source arrow pairs form a smooth manifold with their transverse fibre-product atlas. -/
 theorem isManifold_sameSourcePairs :
@@ -182,6 +171,49 @@ theorem isSmoothEmbedding_coe_sameSourcePairs :
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) (J.prod J) ∞
       (Subtype.val : SameSourcePairs C → Quiver.Total C × Quiver.Total C) :=
   isSmoothEmbedding_coe_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_source I J C) (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- A pair of arrow tangent vectors lies in the tangent image of `SameSourcePairs C` precisely when
+both components have equal source differentials. -/
+theorem mem_range_mfderiv_coe_sameSourcePairs_iff :
+    letI := sameSourcePairsChartedSpace I J C
+    ∀ (p : SameSourcePairs C) (v : TangentSpace (J.prod J) p.1),
+      v ∈ (mfderiv
+        𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) (J.prod J)
+        (Subtype.val : SameSourcePairs C → Quiver.Total C × Quiver.Total C) p).range ↔
+      mfderiv J I Quiver.Total.left p.1.1 v.1 =
+        tangentSpaceCast I p.1.2.left p.1.1.left (mfderiv J I Quiver.Total.left p.1.2 v.2) :=
+  mem_range_mfderiv_coe_transverseFiberProduct_iff (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_source I J C) (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- Any pair `(u, w)` of arrow tangent vectors at `p : SameSourcePairs C` with matching source
+differentials arises from a tangent vector of `SameSourcePairs C`. -/
+theorem exists_mfderiv_eq_of_sameSourcePairs :
+    letI := sameSourcePairsChartedSpace I J C
+    ∀ (p : SameSourcePairs C) (u : TangentSpace J p.1.1) (w : TangentSpace J p.1.2),
+      mfderiv J I Quiver.Total.left p.1.1 u =
+        tangentSpaceCast I p.1.2.left p.1.1.left (mfderiv J I Quiver.Total.left p.1.2 w) →
+      ∃ ξ, mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : SameSourcePairs C ↦ q.1.1) p ξ = u ∧
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : SameSourcePairs C ↦ q.1.2) p ξ = w :=
+  exists_mfderiv_eq_of_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_source I J C) (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- A tangent vector of `SameSourcePairs C` is zero when both arrow-projection differentials vanish
+on it. -/
+theorem eq_zero_of_mfderiv_sameSourcePairs :
+    letI := sameSourcePairsChartedSpace I J C
+    ∀ (p : SameSourcePairs C)
+      (ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) p),
+      mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : SameSourcePairs C ↦ q.1.1) p ξ = 0 →
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
+          (fun q : SameSourcePairs C ↦ q.1.2) p ξ = 0 → ξ = 0 :=
+  eq_zero_of_mfderiv_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_source I J C) (contMDiff_source I J C)
     (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
 
@@ -229,13 +261,11 @@ def shearDiffeomorph :
         (Quiver.Total.comp_congr (inverseDiffeomorph_apply I J C q.1.1) rfl _ q.2) _
         (Quiver.Total.comp_left ⟨q.1.1.right, q.1.1.left, inv q.1.1.hom⟩ q.1.2 q.2).symm).trans
         (Quiver.Total.comp_inv_comp q.1.1 q.1.2 q.2 _)))
-    contMDiff_toFun := by
-      have := isManifold_composablePairs I J C; have := isManifold_sameSourcePairs I J C
-      exact (isSmoothEmbedding_coe_sameSourcePairs I J C).contMDiff_iff_comp.mpr
+    contMDiff_toFun :=
+      (isSmoothEmbedding_coe_sameSourcePairs I J C).contMDiff_iff_comp.mpr
         ((isSmoothEmbedding_coe_composablePairs I J C).contMDiff.fst.prodMk
           (contMDiff_composablePairs_comp I J C))
     contMDiff_invFun := by
-      have := isManifold_composablePairs I J C; have := isManifold_sameSourcePairs I J C
       have hι := isSmoothEmbedding_coe_composablePairs I J C
       have hιS := isSmoothEmbedding_coe_sameSourcePairs I J C
       have hinvPair : ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
@@ -278,15 +308,9 @@ theorem isSubmersion_comp :
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
       (fun p : ComposablePairs C ↦ p.1.1.comp p.1.2 p.2) := by
   let := composablePairsChartedSpace I J C; let := sameSourcePairsChartedSpace I J C
-  have := isManifold_composablePairs I J C; have := isManifold_sameSourcePairs I J C
-  let e := shearDiffeomorph I J C
-  have hπ₂ := isSubmersion_snd_sameSourcePairs I J C
-  refine ((hπ₂.contMDiff.comp e.contMDiff).isSubmersionOfComplement_of_surjective_mfderiv
-    (by simp) fun p ↦ ?_).isSubmersion
-  rw [mfderiv_comp p ((hπ₂.contMDiff (e p)).mdifferentiableAt (by simp))
-    ((e.contMDiff p).mdifferentiableAt (by simp))]
-  exact (hπ₂.surjective_mfderiv (by simp) (e p)).comp
-    ((e.isLocalDiffeomorph p).mfderivToContinuousLinearEquiv (by simp)).surjective
+  have := isManifold_composablePairs I J C
+  exact (shearDiffeomorph I J C).isLocalDiffeomorph.isSubmersion_comp
+    (isSubmersion_snd_sameSourcePairs I J C)
 
 /-! ### Composable triples and smooth associativity -/
 
@@ -323,6 +347,19 @@ def composableTriplesLeftChartedSpace :
     (contMDiff_source I J C)
     (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_right (by simp) _ p)
 
+/-- Defining equality of `composableTriplesLeftChartedSpace` as a transverse fibre-product charted
+space. -/
+theorem composableTriplesLeftChartedSpace_eq_transverseFiberProductChartedSpace :
+    letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+    composableTriplesLeftChartedSpace I J C =
+      transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
+        ((contMDiff_target I J C).comp
+          (contMDiff_snd.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+        (contMDiff_source I J C)
+        (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_right
+          (by simp) _ p) :=
+  (rfl)
+
 /-- Left-parenthesized composable triples form a smooth manifold. -/
 theorem isManifold_composableTriplesLeft :
     letI := composableTriplesLeftChartedSpace I J C
@@ -348,6 +385,68 @@ theorem isSmoothEmbedding_coe_composableTriplesLeft :
     (contMDiff_source I J C)
     (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_right (by simp) _ p)
 
+/-- A tangent vector to `ComposablePairs C × Quiver.Total C` lies in the tangent image of
+`ComposableTriplesLeft C` precisely when the target differential of the middle arrow agrees with the
+source differential of the last arrow. -/
+theorem mem_range_mfderiv_coe_composableTriplesLeft_iff :
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    ∀ (p : ComposableTriplesLeft C)
+      (v : TangentSpace (𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ).prod J) p.1),
+      v ∈ (mfderiv 𝓘(ℝ, ComposableTriplesLeftModel E E')
+        (𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ).prod J)
+        (Subtype.val : ComposableTriplesLeft C → ComposablePairs C × Quiver.Total C) p).range ↔
+      mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) I
+          (fun q : ComposablePairs C ↦ q.1.2.right) p.1.1 v.1 =
+        tangentSpaceCast I p.1.2.left p.1.1.1.2.right
+          (mfderiv J I Quiver.Total.left p.1.2 v.2) :=
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+  mem_range_mfderiv_coe_transverseFiberProduct_iff (by simp : (1 : ℕ∞ω) ≤ ∞)
+    ((contMDiff_target I J C).comp
+      (contMDiff_snd.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+    (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_right (by simp) _ p)
+
+/-- Any pair `(u, w)` of tangent vectors to `ComposablePairs C` and `Quiver.Total C` with matching
+middle-target and last-source differentials arises from a tangent vector of
+`ComposableTriplesLeft C`. -/
+theorem exists_mfderiv_eq_of_composableTriplesLeft :
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    ∀ (p : ComposableTriplesLeft C)
+      (u : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) p.1.1)
+      (w : TangentSpace J p.1.2),
+      mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) I
+          (fun q : ComposablePairs C ↦ q.1.2.right) p.1.1 u =
+        tangentSpaceCast I p.1.2.left p.1.1.1.2.right
+          (mfderiv J I Quiver.Total.left p.1.2 w) →
+      ∃ ξ, mfderiv 𝓘(ℝ, ComposableTriplesLeftModel E E')
+          𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+          (fun q : ComposableTriplesLeft C ↦ q.1.1) p ξ = u ∧
+        mfderiv 𝓘(ℝ, ComposableTriplesLeftModel E E') J
+          (fun q : ComposableTriplesLeft C ↦ q.1.2) p ξ = w :=
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+  exists_mfderiv_eq_of_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    ((contMDiff_target I J C).comp
+      (contMDiff_snd.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+    (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_right (by simp) _ p)
+
+/-- A tangent vector of `ComposableTriplesLeft C` is zero when both factor-projection differentials
+vanish on it. -/
+theorem eq_zero_of_mfderiv_composableTriplesLeft :
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    ∀ (p : ComposableTriplesLeft C) (ξ : TangentSpace 𝓘(ℝ, ComposableTriplesLeftModel E E') p),
+      mfderiv 𝓘(ℝ, ComposableTriplesLeftModel E E')
+          𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+          (fun q : ComposableTriplesLeft C ↦ q.1.1) p ξ = 0 →
+        mfderiv 𝓘(ℝ, ComposableTriplesLeftModel E E') J
+          (fun q : ComposableTriplesLeft C ↦ q.1.2) p ξ = 0 → ξ = 0 :=
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+  eq_zero_of_mfderiv_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    ((contMDiff_target I J C).comp
+      (contMDiff_snd.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+    (contMDiff_source I J C)
+    (fun p _ ↦ (isSubmersion_source (I := I) (J := J) (C := C)).transverse_right (by simp) _ p)
+
 /-- Transverse fibre-product smooth atlas on right-parenthesized composable triples. -/
 @[instance_reducible]
 def composableTriplesRightChartedSpace :
@@ -358,6 +457,19 @@ def composableTriplesRightChartedSpace :
     ((contMDiff_source I J C).comp
       (contMDiff_fst.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
     (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- Defining equality of `composableTriplesRightChartedSpace` as a transverse fibre-product charted
+space. -/
+theorem composableTriplesRightChartedSpace_eq_transverseFiberProductChartedSpace :
+    letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+    composableTriplesRightChartedSpace I J C =
+      transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
+        (contMDiff_target I J C)
+        ((contMDiff_source I J C).comp
+          (contMDiff_fst.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+        (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left
+          (by simp) _ p) :=
+  (rfl)
 
 /-- Right-parenthesized composable triples form a smooth manifold. -/
 theorem isManifold_composableTriplesRight :
@@ -379,6 +491,67 @@ theorem isSmoothEmbedding_coe_composableTriplesRight :
       (Subtype.val : ComposableTriplesRight C → Quiver.Total C × ComposablePairs C) :=
   letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
   isSmoothEmbedding_coe_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_target I J C)
+    ((contMDiff_source I J C).comp
+      (contMDiff_fst.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+    (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- A tangent vector to `Quiver.Total C × ComposablePairs C` lies in the tangent image of
+`ComposableTriplesRight C` precisely when the target differential of the first arrow agrees with the
+source differential of the middle arrow. -/
+theorem mem_range_mfderiv_coe_composableTriplesRight_iff :
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesRightChartedSpace I J C
+    ∀ (p : ComposableTriplesRight C)
+      (v : TangentSpace (J.prod 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)) p.1),
+      v ∈ (mfderiv 𝓘(ℝ, ComposableTriplesRightModel E E')
+        (J.prod 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ))
+        (Subtype.val : ComposableTriplesRight C → Quiver.Total C × ComposablePairs C) p).range ↔
+      mfderiv J I Quiver.Total.right p.1.1 v.1 =
+        tangentSpaceCast I p.1.2.1.1.left p.1.1.right
+          (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) I
+            (fun q : ComposablePairs C ↦ q.1.1.left) p.1.2 v.2) :=
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+  mem_range_mfderiv_coe_transverseFiberProduct_iff (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_target I J C)
+    ((contMDiff_source I J C).comp
+      (contMDiff_fst.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+    (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- Any pair `(u, w)` of tangent vectors to `Quiver.Total C` and `ComposablePairs C` with matching
+first-target and middle-source differentials arises from a tangent vector of
+`ComposableTriplesRight C`. -/
+theorem exists_mfderiv_eq_of_composableTriplesRight :
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesRightChartedSpace I J C
+    ∀ (p : ComposableTriplesRight C) (u : TangentSpace J p.1.1)
+      (w : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) p.1.2),
+      mfderiv J I Quiver.Total.right p.1.1 u =
+        tangentSpaceCast I p.1.2.1.1.left p.1.1.right
+          (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) I
+            (fun q : ComposablePairs C ↦ q.1.1.left) p.1.2 w) →
+      ∃ ξ, mfderiv 𝓘(ℝ, ComposableTriplesRightModel E E') J
+          (fun q : ComposableTriplesRight C ↦ q.1.1) p ξ = u ∧
+        mfderiv 𝓘(ℝ, ComposableTriplesRightModel E E')
+          𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+          (fun q : ComposableTriplesRight C ↦ q.1.2) p ξ = w :=
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+  exists_mfderiv_eq_of_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
+    (contMDiff_target I J C)
+    ((contMDiff_source I J C).comp
+      (contMDiff_fst.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
+    (fun p _ ↦ (isSubmersion_target (I := I) (J := J) (C := C)).transverse_left (by simp) _ p)
+
+/-- A tangent vector of `ComposableTriplesRight C` is zero when both factor-projection differentials
+vanish on it. -/
+theorem eq_zero_of_mfderiv_composableTriplesRight :
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesRightChartedSpace I J C
+    ∀ (p : ComposableTriplesRight C) (ξ : TangentSpace 𝓘(ℝ, ComposableTriplesRightModel E E') p),
+      mfderiv 𝓘(ℝ, ComposableTriplesRightModel E E') J
+          (fun q : ComposableTriplesRight C ↦ q.1.1) p ξ = 0 →
+        mfderiv 𝓘(ℝ, ComposableTriplesRightModel E E')
+          𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+          (fun q : ComposableTriplesRight C ↦ q.1.2) p ξ = 0 → ξ = 0 :=
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
+  eq_zero_of_mfderiv_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_target I J C)
     ((contMDiff_source I J C).comp
       (contMDiff_fst.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
@@ -487,7 +660,6 @@ theorem contMDiff_triplesFace₀ :
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₀ : ComposableTriplesLeft C → ComposablePairs C) := by
   let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   have hι := isSmoothEmbedding_coe_composablePairs I J C
   have hL := isSmoothEmbedding_coe_composableTriplesLeft I J C
   exact hι.contMDiff_iff_comp.mpr
@@ -501,7 +673,6 @@ theorem contMDiff_triplesFace₁ :
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₁ : ComposableTriplesLeft C → ComposablePairs C) := by
   let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   have hι := isSmoothEmbedding_coe_composablePairs I J C
   have hL := isSmoothEmbedding_coe_composableTriplesLeft I J C
   exact hι.contMDiff_iff_comp.mpr
@@ -515,7 +686,6 @@ theorem contMDiff_triplesFace₂ :
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₂ : ComposableTriplesLeft C → ComposablePairs C) := by
   let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   have hι := isSmoothEmbedding_coe_composablePairs I J C
   have hL := isSmoothEmbedding_coe_composableTriplesLeft I J C
   exact hι.contMDiff_iff_comp.mpr
@@ -529,7 +699,6 @@ theorem contMDiff_triplesFace₃ :
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₃ : ComposableTriplesLeft C → ComposablePairs C) := by
   let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   exact contMDiff_fst.comp (isSmoothEmbedding_coe_composableTriplesLeft I J C).contMDiff
 
 end TauCeti.IsLieGroupoid
