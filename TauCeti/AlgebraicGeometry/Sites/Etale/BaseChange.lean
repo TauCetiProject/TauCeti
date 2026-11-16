@@ -7,36 +7,38 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
-public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
-# Base change between small étale sites and the small étale pseudofunctor
+# Base change between small étale sites
 
 Every morphism of schemes `f : X ⟶ Y` induces a base-change functor
 `f.smallEtaleBaseChange : Y.Etale ⥤ X.Etale` sending an étale `Y`-scheme `V ⟶ Y` to
-`V ×_Y X ⟶ X`. On underlying `X`-schemes it agrees with `CategoryTheory.Over.pullback f`, so it
-preserves finite limits, is representably flat, preserves jointly surjective étale families and
-covering sieves, and is therefore continuous for the small étale topologies on `Y.Etale` and
-`X.Etale`.
+`V ×_Y X ⟶ X`, defined by specializing Mathlib's `CategoryTheory.MorphismProperty.Over.pullback`.
+On underlying `X`-schemes it agrees with `CategoryTheory.Over.pullback f` via
+`MorphismProperty.Over.pullbackCompForgetIso`, so it preserves finite limits, is representably
+flat, preserves jointly surjective étale families and covering sieves, and is therefore continuous
+for the small étale topologies on `Y.Etale` and `X.Etale`. When `f` is surjective,
+`f.smallEtaleBaseChange` is faithful.
 
-When `f : X ⟶ Y` is itself étale, post-composition with `f` defines a faithful left adjoint
+When `f : X ⟶ Y` is itself étale, post-composition with `f` (specializing
+`CategoryTheory.MorphismProperty.Over.map` and
+`CategoryTheory.MorphismProperty.Over.mapPullbackAdj`) defines a faithful left adjoint
 `f.etaleMap : X.Etale ⥤ Y.Etale` to `f.smallEtaleBaseChange`, which is both continuous and
 cocontinuous for the small étale topologies; if `f` is also a monomorphism (for instance an open
 immersion), `f.etaleMap` is full as well and the adjunction unit identifies
-`f.etaleMap ⋙ f.smallEtaleBaseChange` with `𝟭 X.Etale`. When `X` is empty, `X.Etale` is
-equivalent to the terminal category `Discrete PUnit` and `f.smallEtaleBaseChange` is isomorphic to
-the constant functor at `𝟙 X`.
+`f.etaleMap ⋙ f.smallEtaleBaseChange` with `𝟭 X.Etale`. When `X` is empty, `f.smallEtaleBaseChange`
+is isomorphic to the constant functor at `Etale.mk (𝟙 X)`.
 
-For morphisms `f : X ⟶ Y` and `g : Y ⟶ Z`, the unit isomorphism
-`X.smallEtaleBaseChangeId : (𝟙 X).smallEtaleBaseChange ≅ 𝟭 X.Etale` and composition isomorphism
-`f.smallEtaleBaseChangeComp g : (f ≫ g).smallEtaleBaseChange ≅
-  g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange` satisfy the coherence laws of a contravariant
-pseudofunctor, packaged as
-`AlgebraicGeometry.Scheme.smallEtalePseudofunctor : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ Cat.{u, u + 1}`.
-Any commutative square `gX ≫ f = f' ≫ g` induces a natural isomorphism
-`AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChangeCommSq` between iterated base-change functors
-(specializing to `f.smallEtaleBaseChangePullback g` on a fibre product), compatible with
-identities, symmetry, and pasting of squares.
+For morphisms `f : X ⟶ Y` and `g : Y ⟶ Z`, we also provide the unit isomorphism
+`X.smallEtaleBaseChangeId : (𝟙 X).smallEtaleBaseChange ≅ 𝟭 X.Etale`, congruence isomorphism
+`smallEtaleBaseChangeCongr`, and composition isomorphism `f.smallEtaleBaseChangeComp g`
+(specializing `CategoryTheory.MorphismProperty.Over.pullbackCongr` and
+`CategoryTheory.MorphismProperty.Over.pullbackComp`), together with the induced equivalence
+`f.smallEtaleEquivOfIsIso` along an isomorphism. The pseudofunctorial coherence laws,
+commutative-square comparisons, and `smallEtalePseudofunctor` are proved in
+`TauCeti/AlgebraicGeometry/Sites/Etale/Pseudofunctor.lean`.
 
 ## Main definitions
 
@@ -45,19 +47,11 @@ identities, symmetry, and pasting of squares.
 * `AlgebraicGeometry.Scheme.Hom.etaleMap` and
   `AlgebraicGeometry.Scheme.Hom.etaleMapBaseChangeAdj`: for an étale morphism `f : X ⟶ Y`,
   post-composition `X.Etale ⥤ Y.Etale` and its adjunction `f.etaleMap ⊣ f.smallEtaleBaseChange`.
-* `AlgebraicGeometry.Scheme.etaleEquivOfIsEmpty`: equivalence `X.Etale ≌ Discrete PUnit` when `X`
-  is empty.
 * `AlgebraicGeometry.Scheme.smallEtaleBaseChangeId`,
   `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChangeCongr`,
   `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChangeComp`, and
   `AlgebraicGeometry.Scheme.Hom.smallEtaleEquivOfIsIso`: identity, congruence, and composition
   isomorphisms for `smallEtaleBaseChange`, and the induced equivalence along an isomorphism.
-* `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChangeCommSq` and
-  `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChangePullback`: base-change comparison isomorphisms
-  for a commutative square and for a canonical pullback square.
-* `AlgebraicGeometry.Scheme.smallEtalePseudofunctor`: the contravariant pseudofunctor
-  `LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ Cat.{u, u + 1}` sending `X` to `X.Etale` and `f.op` to
-  `f.smallEtaleBaseChange`.
 
 ## Main results
 
@@ -71,10 +65,8 @@ identities, symmetry, and pasting of squares.
 * `AlgebraicGeometry.Scheme.Hom.coverPreserving_smallEtaleBaseChange` and
   `AlgebraicGeometry.Scheme.Hom.isContinuous_smallEtaleBaseChange`: `f.smallEtaleBaseChange` is
   cover-preserving and continuous for `smallEtaleTopology`.
-* `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChange_associativity`,
-  `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChange_id_comp`, and
-  `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChange_comp_id`: pseudofunctorial coherence of
-  `smallEtaleBaseChangeComp` and `smallEtaleBaseChangeId`.
+* `AlgebraicGeometry.Scheme.Hom.faithful_smallEtaleBaseChange`: `f.smallEtaleBaseChange` is
+  faithful when `f` is surjective.
 
 ## References
 
@@ -82,32 +74,11 @@ identities, symmetry, and pasting of squares.
   [Tag 021J](https://stacks.math.columbia.edu/tag/021J), the small étale site and functoriality.
 -/
 
-@[expose] public section
+public section
 
-open CategoryTheory Bicategory Limits MorphismProperty Opposite
+open CategoryTheory Limits MorphismProperty
 
 universe u
-
-namespace AlgebraicGeometry.Scheme.Etale
-
-/-- The underlying morphism of the identity in `X.Etale` is the identity on `V.left`. -/
-@[simp]
-theorem id_left {X : Scheme.{u}} (V : X.Etale) : (𝟙 V : V ⟶ V).left = 𝟙 V.left :=
-  rfl
-
-/-- Composition in `X.Etale` composes the underlying morphisms of schemes. -/
-@[simp]
-theorem comp_left {X : Scheme.{u}} {U V W : X.Etale} (f : U ⟶ V) (g : V ⟶ W) :
-    (f ≫ g).left = f.left ≫ g.left :=
-  rfl
-
-/-- Two morphisms in `X.Etale` are equal if their underlying scheme morphisms are equal. -/
-@[ext]
-theorem hom_ext {X : Scheme.{u}} {U V : X.Etale} {f g : U ⟶ V} (h : f.left = g.left) :
-    f = g :=
-  MorphismProperty.Over.Hom.ext h
-
-end AlgebraicGeometry.Scheme.Etale
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -115,8 +86,11 @@ section Basic
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
+-- Exposed so that `(f.smallEtaleBaseChange.obj V).left` and `.hom` unfold to `pullback V.hom f`
+-- and `pullback.snd V.hom f` in dependent projection lemmas and downstream consumers.
 /-- Base change along `f : X ⟶ Y`, from schemes étale over `Y` to schemes étale over `X`: an étale
 `V ⟶ Y` is sent to `V ×_Y X ⟶ X`. -/
+@[expose]
 noncomputable def smallEtaleBaseChange : Y.Etale ⥤ X.Etale :=
   MorphismProperty.Over.pullback @Etale ⊤ f
 
@@ -125,6 +99,20 @@ noncomputable def smallEtaleBaseChange : Y.Etale ⥤ X.Etale :=
 noncomputable def smallEtaleBaseChangeCompForgetIso :
     f.smallEtaleBaseChange ⋙ Etale.forget X ≅ Etale.forget Y ⋙ CategoryTheory.Over.pullback f :=
   MorphismProperty.Over.pullbackCompForgetIso f
+
+/-- The forward component of `f.smallEtaleBaseChangeCompForgetIso` at `V` is the identity
+morphism on `pullback V.hom f`. -/
+@[simp]
+theorem smallEtaleBaseChangeCompForgetIso_hom_app_left (V : Y.Etale) :
+    (f.smallEtaleBaseChangeCompForgetIso.hom.app V).left = 𝟙 (pullback V.hom f) :=
+  (rfl)
+
+/-- The inverse component of `f.smallEtaleBaseChangeCompForgetIso` at `V` is the identity
+morphism on `pullback V.hom f`. -/
+@[simp]
+theorem smallEtaleBaseChangeCompForgetIso_inv_app_left (V : Y.Etale) :
+    (f.smallEtaleBaseChangeCompForgetIso.inv.app V).left = 𝟙 (pullback V.hom f) :=
+  (rfl)
 
 /-- The underlying scheme of `f.smallEtaleBaseChange.obj V` is `pullback V.hom f`. -/
 @[simp]
@@ -170,10 +158,8 @@ theorem isPullback_smallEtaleBaseChange_obj (V : Y.Etale) :
 pullback square with `φ.left` along the first projections to `W.left` and `V.left`. -/
 theorem isPullback_smallEtaleBaseChange_map {W V : Y.Etale} (φ : W ⟶ V) :
     IsPullback (f.smallEtaleBaseChange.map φ).left (pullback.fst W.hom f)
-      (pullback.fst V.hom f) φ.left := by
-  refine IsPullback.of_right ?_ (f.smallEtaleBaseChange_map_left_fst φ)
-    (IsPullback.of_hasPullback V.hom f).flip
-  simpa [MorphismProperty.Over.w φ] using (IsPullback.of_hasPullback W.hom f).flip
+      (pullback.fst V.hom f) φ.left :=
+  CategoryTheory.Over.isPullback_pullback_map_left f ((Etale.forget Y).map φ)
 
 /-- The set-theoretic range of `(f.smallEtaleBaseChange.map φ).left` is the preimage of the range
 of `φ.left` under `pullback.fst V.hom f`. -/
@@ -181,24 +167,10 @@ of `φ.left` under `pullback.fst V.hom f`. -/
 theorem range_smallEtaleBaseChange_map_left {W V : Y.Etale} (φ : W ⟶ V) :
     dsimp% Set.range (f.smallEtaleBaseChange.map φ).left =
       pullback.fst V.hom f ⁻¹' Set.range φ.left := by
-  ext p
-  simp only [Set.mem_range]
-  constructor
-  · rintro ⟨q, rfl⟩
-    exact ⟨pullback.fst W.hom f q, ((Scheme.Hom.comp_apply _ _ q).symm.trans
-      (congr($(f.smallEtaleBaseChange_map_left_fst φ) q)).symm).trans
-      (Scheme.Hom.comp_apply _ _ q)⟩
-  · rintro ⟨w, hw⟩
-    -- Lift `(p, w)` into the fibre product of `(f.smallEtaleBaseChange.obj V).left` and `W.left`
-    -- over `V.left`, which is isomorphic to `(f.smallEtaleBaseChange.obj W).left`.
-    have hpb := f.isPullback_smallEtaleBaseChange_map φ
-    obtain ⟨z, hz₁, -⟩ := Scheme.Pullback.exists_preimage_pullback
-      (f := pullback.fst V.hom f) (g := φ.left) p w hw.symm
-    have hinv : hpb.isoPullback.inv ≫ (f.smallEtaleBaseChange.map φ).left =
-        pullback.fst (pullback.fst V.hom f) φ.left :=
-      hpb.isoPullback.inv_comp_eq.mpr hpb.isoPullback_hom_fst.symm
-    exact ⟨hpb.isoPullback.inv z, (Scheme.Hom.comp_apply _ _ z).symm.trans
-      ((congr($hinv z)).trans hz₁)⟩
+  have h := Scheme.image_preimage_eq_of_isPullback
+    (f.isPullback_smallEtaleBaseChange_map φ).flip Set.univ
+  simp only [Set.preimage_univ, Set.image_univ] at h
+  exact h
 
 /-- Base change along `f` commutes with set-theoretic unions of ranges of étale `Y`-morphisms. -/
 theorem iUnion_range_smallEtaleBaseChange_map_left {V : Y.Etale} {ι : Type*} {Z : ι → Y.Etale}
@@ -209,25 +181,22 @@ theorem iUnion_range_smallEtaleBaseChange_map_left {V : Y.Etale} {ι : Type*} {Z
     Set.preimage_iUnion.symm
 
 /-- Base change along `f` preserves jointly surjective families in `Y.Etale`. -/
-theorem iUnion_range_smallEtaleBaseChange_map_left_of_eq_univ {V : Y.Etale} {ι : Type*}
+theorem iUnion_range_smallEtaleBaseChange_map_left_eq_univ {V : Y.Etale} {ι : Type*}
     {Z : ι → Y.Etale} (g : ∀ i, Z i ⟶ V) (hg : ⋃ i, Set.range (g i).left = Set.univ) :
     ⋃ i, Set.range (f.smallEtaleBaseChange.map (g i)).left = Set.univ :=
   (f.iUnion_range_smallEtaleBaseChange_map_left g).trans
     ((congrArg (pullback.fst V.hom f ⁻¹' ·) hg).trans Set.preimage_univ)
 
-/-- `f.smallEtaleBaseChange` preserves finite limits, since `Etale.forget X` is fully faithful and
-preserves (hence reflects) finite limits while `CategoryTheory.Over.pullback f` is a right
-adjoint. -/
+/-- `f.smallEtaleBaseChange` preserves finite limits. -/
 noncomputable instance preservesFiniteLimits_smallEtaleBaseChange :
     PreservesFiniteLimits f.smallEtaleBaseChange := by
-  constructor
-  intro J _ _
-  have : PreservesLimitsOfShape J (f.smallEtaleBaseChange ⋙ Etale.forget X) :=
-    preservesLimitsOfShape_of_natIso f.smallEtaleBaseChangeCompForgetIso.symm
-  exact preservesLimitsOfShape_of_reflects_of_preserves f.smallEtaleBaseChange (Etale.forget X)
+  have aux : ∀ (P : MorphismProperty Scheme.{u}) [P.IsMultiplicative]
+      [P.IsStableUnderBaseChange] [P.HasOfPostcompProperty P],
+      PreservesFiniteLimits (MorphismProperty.Over.pullback P ⊤ f) :=
+    fun _ _ _ _ ↦ inferInstance
+  exact aux (@Etale : MorphismProperty Scheme.{u})
 
-/-- `f.smallEtaleBaseChange` is representably flat, as `Y.Etale` has finite limits and
-`f.smallEtaleBaseChange` preserves them. -/
+/-- `f.smallEtaleBaseChange` is representably flat. -/
 instance representablyFlat_smallEtaleBaseChange : RepresentablyFlat f.smallEtaleBaseChange :=
   flat_of_preservesFiniteLimits f.smallEtaleBaseChange
 
@@ -238,7 +207,7 @@ theorem coverPreserving_smallEtaleBaseChange :
   cover_preserve {U S} hS := by
     obtain ⟨ι, Z, g, rfl⟩ := S.exists_eq_ofArrows
     rw [Sieve.functorPushforward_ofArrows, ofArrows_mem_smallEtaleTopology_iff]
-    exact f.iUnion_range_smallEtaleBaseChange_map_left_of_eq_univ g
+    exact f.iUnion_range_smallEtaleBaseChange_map_left_eq_univ g
       ((ofArrows_mem_smallEtaleTopology_iff g).mp hS)
 
 /-- `f.smallEtaleBaseChange` is continuous for the small étale topologies on `Y.Etale` and
@@ -249,6 +218,24 @@ instance isContinuous_smallEtaleBaseChange :
   rw [Functor.isContinuous_iff_coverPreserving]
   exact f.coverPreserving_smallEtaleBaseChange
 
+/-- Base change along a surjective morphism `f : X ⟶ Y` is faithful on schemes étale over `Y`. -/
+instance faithful_smallEtaleBaseChange [Surjective f] : f.smallEtaleBaseChange.Faithful where
+  map_injective {A B} g₁ g₂ h := by
+    ext1
+    have : Surjective (pullback.fst (A.hom : A.left ⟶ Y) f) :=
+      MorphismProperty.of_isPullback (P := @Surjective)
+        (IsPullback.of_hasPullback (A.hom : A.left ⟶ Y) f).flip ‹Surjective f›
+    refine ext_of_surjective_of_formallyUnramified B.hom
+      ((MorphismProperty.Over.w g₁).trans (MorphismProperty.Over.w g₂).symm)
+      (pullback.fst (A.hom : A.left ⟶ Y) f) ?_
+    have hleft : (f.smallEtaleBaseChange.map g₁).left = (f.smallEtaleBaseChange.map g₂).left :=
+      congrArg (·.left) h
+    have h₁ : (f.smallEtaleBaseChange.map g₁).left ≫ pullback.fst B.hom f =
+        pullback.fst A.hom f ≫ g₁.left := f.smallEtaleBaseChange_map_left_fst g₁
+    have h₂ : (f.smallEtaleBaseChange.map g₂).left ≫ pullback.fst B.hom f =
+        pullback.fst A.hom f ≫ g₂.left := f.smallEtaleBaseChange_map_left_fst g₂
+    exact h₁.symm.trans ((congrArg (· ≫ pullback.fst B.hom f) hleft).trans h₂)
+
 end Basic
 
 /-! ### Left adjoint along an étale morphism and open-immersion specialization -/
@@ -257,8 +244,11 @@ section EtaleMorphism
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Etale f]
 
+-- Exposed so that `(f.etaleMap.obj W).left` and `.hom` unfold to `W.left` and `W.hom ≫ f` in
+-- dependent adjunction lemmas.
 /-- When `f : X ⟶ Y` is étale, post-composition with `f` sends schemes étale over `X` to schemes
 étale over `Y`. -/
+@[expose]
 def etaleMap : X.Etale ⥤ Y.Etale :=
   MorphismProperty.Over.map ⊤ ‹Etale f›
 
@@ -266,6 +256,18 @@ def etaleMap : X.Etale ⥤ Y.Etale :=
 def etaleMapCompForgetIso :
     f.etaleMap ⋙ Etale.forget Y ≅ Etale.forget X ⋙ CategoryTheory.Over.map f :=
   Iso.refl _
+
+/-- The forward component of `f.etaleMapCompForgetIso` at `W` is the identity on `W.left`. -/
+@[simp]
+theorem etaleMapCompForgetIso_hom_app_left (W : X.Etale) :
+    (f.etaleMapCompForgetIso.hom.app W).left = 𝟙 W.left :=
+  (rfl)
+
+/-- The inverse component of `f.etaleMapCompForgetIso` at `W` is the identity on `W.left`. -/
+@[simp]
+theorem etaleMapCompForgetIso_inv_app_left (W : X.Etale) :
+    (f.etaleMapCompForgetIso.inv.app W).left = 𝟙 W.left :=
+  (rfl)
 
 /-- `f.etaleMap` leaves the underlying scheme unchanged. -/
 @[simp]
@@ -293,21 +295,27 @@ noncomputable def etaleMapBaseChangeAdj : f.etaleMap ⊣ f.smallEtaleBaseChange 
 @[simp]
 theorem etaleMapBaseChangeAdj_counit_app_left (V : Y.Etale) :
     dsimp% (f.etaleMapBaseChangeAdj.counit.app V).left = pullback.fst V.hom f :=
-  rfl
+  (rfl)
 
 /-- Composing the unit of `f.etaleMapBaseChangeAdj` at `W : X.Etale` with `pullback.fst` is the
 identity on `W.left`. -/
 @[simp]
 theorem etaleMapBaseChangeAdj_unit_app_left_fst (W : X.Etale) :
-    dsimp% (f.etaleMapBaseChangeAdj.unit.app W).left ≫ pullback.fst (W.hom ≫ f) f = 𝟙 W.left :=
-  pullback.lift_fst _ _ _
+    dsimp% (f.etaleMapBaseChangeAdj.unit.app W).left ≫ pullback.fst (W.hom ≫ f) f = 𝟙 W.left := by
+  have h : (f.etaleMapBaseChangeAdj.unit.app W).left =
+      pullback.lift (𝟙 W.left) (W.hom : W.left ⟶ X) (by
+        change 𝟙 W.left ≫ (W.hom : W.left ⟶ X) ≫ f = (W.hom : W.left ⟶ X) ≫ f
+        exact Category.id_comp _) :=
+    congrArg (·.left) (MorphismProperty.Over.mapPullbackAdj_unit_app
+      (@Etale : MorphismProperty Scheme.{u}) ⊤ f ‹Etale f› trivial W)
+  exact (congrArg (· ≫ pullback.fst (W.hom ≫ f) f) h).trans (pullback.lift_fst _ _ _)
 
 /-- Composing the unit of `f.etaleMapBaseChangeAdj` at `W : X.Etale` with `pullback.snd` is
 `W.hom`. -/
 @[simp]
 theorem etaleMapBaseChangeAdj_unit_app_left_snd (W : X.Etale) :
     dsimp% (f.etaleMapBaseChangeAdj.unit.app W).left ≫ pullback.snd (W.hom ≫ f) f = W.hom :=
-  pullback.lift_snd _ _ _
+  MorphismProperty.Over.w (f.etaleMapBaseChangeAdj.unit.app W)
 
 /-- `f.etaleMap` is a left adjoint when `f` is étale. -/
 instance isLeftAdjoint_etaleMap : f.etaleMap.IsLeftAdjoint :=
@@ -326,37 +334,43 @@ theorem coverPreserving_etaleMap :
     rw [Sieve.functorPushforward_ofArrows, ofArrows_mem_smallEtaleTopology_iff]
     exact (ofArrows_mem_smallEtaleTopology_iff g).mp hS
 
-/-- For an étale morphism `f : X ⟶ Y`, `f.etaleMap` is cocontinuous for the small étale topologies,
-since its right adjoint `f.smallEtaleBaseChange` is cover-preserving. -/
+/-- For an étale morphism `f : X ⟶ Y`, `f.etaleMap` is cocontinuous for the small étale
+topologies. -/
 instance isCocontinuous_etaleMap :
     f.etaleMap.IsCocontinuous X.smallEtaleTopology Y.smallEtaleTopology :=
   (Adjunction.isCocontinuous_iff_coverPreserving X.smallEtaleTopology Y.smallEtaleTopology
     f.etaleMapBaseChangeAdj).mpr f.coverPreserving_smallEtaleBaseChange
 
-/-- For an étale morphism `f : X ⟶ Y`, `f.etaleMap` preserves compatible families for
-`Y.smallEtaleTopology`. -/
-theorem compatiblePreserving_etaleMap :
-    CompatiblePreserving Y.smallEtaleTopology f.etaleMap where
+/-- For an étale morphism `f : X ⟶ Y`, `f.etaleMap` preserves compatible families for any
+Grothendieck topology `K` on `Y.Etale`. Adapted from Mathlib's
+`CategoryTheory.GrothendieckTopology.over_map_compatiblePreserving`. -/
+theorem compatiblePreserving_etaleMap (K : GrothendieckTopology Y.Etale) :
+    CompatiblePreserving K f.etaleMap where
   compatible {F Z _ _ hx Y₁ Y₂ W f₁ f₂ g₁ g₂ hg₁ hg₂ h} := by
     -- Any `Y`-scheme `W` étale over `Y` mapping to `f.etaleMap.obj Y₁` lifts to `X.Etale` via
     -- `f₁.left ≫ Y₁.hom`, because `f₁.left` and `Y₁.hom` are both étale.
     let φ₁ : W.left ⟶ Y₁.left := f₁.left
     let φ₂ : W.left ⟶ Y₂.left := f₂.left
+    let y₁ : Y₁.left ⟶ X := Y₁.hom
+    let y₂ : Y₂.left ⟶ X := Y₂.hom
+    let z : Z.left ⟶ X := Z.hom
+    let γ₁ : Y₁.left ⟶ Z.left := g₁.left
+    let γ₂ : Y₂.left ⟶ Z.left := g₂.left
     have : Etale φ₁ := inferInstanceAs (Etale f₁.left)
-    have : Etale (Y₁.hom : Y₁.left ⟶ X) := Y₁.prop
-    have hleft : φ₂ ≫ (g₂.left : Y₂.left ⟶ Z.left) = φ₁ ≫ (g₁.left : Y₁.left ⟶ Z.left) :=
+    have : Etale y₁ := Y₁.prop
+    have hleft : φ₂ ≫ γ₂ = φ₁ ≫ γ₁ :=
       (Etale.forget Y ⋙ CategoryTheory.Over.forget Y).congr_map h.symm
-    have hw₂ : φ₂ ≫ (Y₂.hom : Y₂.left ⟶ X) = φ₁ ≫ (Y₁.hom : Y₁.left ⟶ X) :=
-      (congrArg (φ₂ ≫ ·) (MorphismProperty.Over.w g₂).symm).trans
-        ((Category.assoc _ _ _).symm.trans
-          ((congrArg (· ≫ (Z.hom : Z.left ⟶ X)) hleft).trans
-            ((Category.assoc _ _ _).trans (congrArg (φ₁ ≫ ·) (MorphismProperty.Over.w g₁)))))
-    let W' : X.Etale := Etale.mk (φ₁ ≫ (Y₁.hom : Y₁.left ⟶ X))
+    have hg₁w : γ₁ ≫ z = y₁ := MorphismProperty.Over.w g₁
+    have hg₂w : γ₂ ≫ z = y₂ := MorphismProperty.Over.w g₂
+    have hw₂ : φ₂ ≫ y₂ = φ₁ ≫ y₁ := by
+      rw [← hg₂w, ← Category.assoc, hleft, Category.assoc, hg₁w]
+    let W' : X.Etale := Etale.mk (φ₁ ≫ y₁)
     let g₁' : W' ⟶ Y₁ := MorphismProperty.Over.homMk φ₁
     let g₂' : W' ⟶ Y₂ := MorphismProperty.Over.homMk φ₂ hw₂
-    let e : f.etaleMap.obj W' ≅ W := MorphismProperty.Over.isoMk (Iso.refl W.left)
-      ((Category.id_comp (W.hom : W.left ⟶ Y)).trans
-        ((MorphismProperty.Over.w f₁).symm.trans (Category.assoc _ _ _).symm))
+    let e : f.etaleMap.obj W' ≅ W := MorphismProperty.Over.isoMk (Iso.refl W.left) <| by
+      change 𝟙 W.left ≫ (W.hom : W.left ⟶ Y) = (φ₁ ≫ y₁) ≫ f
+      rw [Category.id_comp, Category.assoc]
+      exact (MorphismProperty.Over.w f₁).symm
     have he₁ : f₁ = e.inv ≫ f.etaleMap.map g₁' := by
       ext1; exact (Category.id_comp φ₁).symm
     have he₂ : f₂ = e.inv ≫ f.etaleMap.map g₂' := by
@@ -371,7 +385,8 @@ theorem compatiblePreserving_etaleMap :
 so precomposition with `f.etaleMap` restricts étale sheaves on `Y` to `X`. -/
 instance isContinuous_etaleMap :
     f.etaleMap.IsContinuous X.smallEtaleTopology Y.smallEtaleTopology :=
-  Functor.isContinuous_of_coverPreserving f.compatiblePreserving_etaleMap f.coverPreserving_etaleMap
+  Functor.isContinuous_of_coverPreserving (f.compatiblePreserving_etaleMap Y.smallEtaleTopology)
+    f.coverPreserving_etaleMap
 
 /-- For any étale morphism `f : X ⟶ Y`, `f.etaleMap` is faithful. -/
 instance faithful_etaleMap : f.etaleMap.Faithful where
@@ -400,144 +415,62 @@ noncomputable def etaleMapCompSmallEtaleBaseChangeIso [Mono f] :
     f.etaleMap ⋙ f.smallEtaleBaseChange ≅ 𝟭 X.Etale :=
   (asIso f.etaleMapBaseChangeAdj.unit).symm
 
-end EtaleMorphism
+/-- The inverse of `f.etaleMapCompSmallEtaleBaseChangeIso` is the adjunction unit
+`f.etaleMapBaseChangeAdj.unit`. -/
+@[simp]
+theorem etaleMapCompSmallEtaleBaseChangeIso_inv [Mono f] :
+    f.etaleMapCompSmallEtaleBaseChangeIso.inv = f.etaleMapBaseChangeAdj.unit :=
+  (rfl)
 
-end AlgebraicGeometry.Scheme.Hom
+/-- On underlying schemes, the forward component of `f.etaleMapCompSmallEtaleBaseChangeIso` at
+`W : X.Etale` is the first projection `pullback.fst (W.hom ≫ f) f`. -/
+@[simp]
+theorem etaleMapCompSmallEtaleBaseChangeIso_hom_app_left [Mono f] (W : X.Etale) :
+    dsimp% (f.etaleMapCompSmallEtaleBaseChangeIso.hom.app W).left =
+      pullback.fst (W.hom ≫ f) f := by
+  let w : W.left ⟶ X := W.hom
+  let u : W.left ⟶ pullback (w ≫ f) f := (f.etaleMapBaseChangeAdj.unit.app W).left
+  let v : pullback (w ≫ f) f ⟶ W.left := (f.etaleMapCompSmallEtaleBaseChangeIso.hom.app W).left
+  have : IsIso u :=
+    (Etale.forget X ⋙ CategoryTheory.Over.forget X).map_isIso (f.etaleMapBaseChangeAdj.unit.app W)
+  have huv : u ≫ v = 𝟙 W.left :=
+    congrArg (·.left) (f.etaleMapCompSmallEtaleBaseChangeIso.inv_hom_id_app W)
+  have hufst : u ≫ pullback.fst (w ≫ f) f = 𝟙 W.left :=
+    f.etaleMapBaseChangeAdj_unit_app_left_fst W
+  change v = pullback.fst (w ≫ f) f
+  rw [← cancel_epi u, huv, hufst]
+
+end EtaleMorphism
 
 /-! ### Empty-scheme specialization -/
 
-namespace AlgebraicGeometry.Scheme
-
 section IsEmpty
 
-/-- Every scheme étale over an empty scheme is itself empty. -/
-instance isEmpty_etale_left {X : Scheme.{u}} [IsEmpty X] (W : X.Etale) : IsEmpty W.left :=
-  Function.isEmpty (β := X) W.hom
-
-/-- Between any two schemes étale over an empty scheme `X`, there is a unique `X`-morphism. -/
-noncomputable instance uniqueEtaleHomOfIsEmpty {X : Scheme.{u}} [IsEmpty X] (W₁ W₂ : X.Etale) :
-    Unique (W₁ ⟶ W₂) where
-  default := MorphismProperty.Over.homMk (isInitialOfIsEmpty.to W₂.left)
-    (isInitialOfIsEmpty.hom_ext _ _)
-  uniq φ := by
-    ext1
-    exact isInitialOfIsEmpty.hom_ext _ _
-
-/-- When `X` is an empty scheme, `X.Etale` is equivalent to the terminal category
-`Discrete PUnit`. -/
-noncomputable def etaleEquivOfIsEmpty (X : Scheme.{u}) [IsEmpty X] :
-    X.Etale ≌ Discrete PUnit.{1} where
-  functor := (Functor.const _).obj ⟨⟨⟩⟩
-  inverse := (Functor.const _).obj (Etale.mk (𝟙 X))
-  unitIso := NatIso.ofComponents (fun _ ↦ { hom := default, inv := default })
-  counitIso := Iso.refl _
-
-/-- Base change along `f : X ⟶ Y` into an empty scheme `X` is naturally isomorphic to the constant
+/-- Base change along `f : X ⟶ Y` from an empty scheme `X` is naturally isomorphic to the constant
 functor at `Etale.mk (𝟙 X)`. -/
-noncomputable def Hom.smallEtaleBaseChangeIsoConstOfIsEmpty {X Y : Scheme.{u}} (f : X ⟶ Y)
+noncomputable def smallEtaleBaseChangeIsoConstOfIsEmpty {X Y : Scheme.{u}} (f : X ⟶ Y)
     [IsEmpty X] :
     f.smallEtaleBaseChange ≅ (Functor.const Y.Etale).obj (Etale.mk (𝟙 X)) :=
   NatIso.ofComponents (fun _ ↦ { hom := default, inv := default })
 
 end IsEmpty
 
+end AlgebraicGeometry.Scheme.Hom
+
 /-! ### Identity, congruence, composition, and square comparisons -/
 
-section PullbackHelpers
-
-/-- Underlying scheme morphism of `f.smallEtaleBaseChange.map` on morphisms over `Y`. -/
-private noncomputable def pullbackBaseChangeMap {A₁ A₂ X Y : Scheme.{u}} (v₁ : A₁ ⟶ Y)
-    (v₂ : A₂ ⟶ Y) (f : X ⟶ Y) (φ : A₁ ⟶ A₂) (hφ : φ ≫ v₂ = v₁) :
-    pullback v₁ f ⟶ pullback v₂ f :=
-  pullback.lift (pullback.fst v₁ f ≫ φ) (pullback.snd v₁ f)
-    (by rw [Category.assoc, hφ, pullback.condition])
-
-/-- Underlying scheme isomorphism of `X.smallEtaleBaseChangeId.app`. -/
-private noncomputable def pullbackIdIso {A X : Scheme.{u}} (v : A ⟶ X) :
-    pullback v (𝟙 X) ≅ A where
-  hom := pullback.fst v (𝟙 X)
-  inv := pullback.lift (𝟙 A) v (by simp)
-  hom_inv_id := by
-    apply pullback.hom_ext
-    · simp
-    · simpa using (pullback.condition (f := v) (g := 𝟙 X)).trans (Category.comp_id _)
-  inv_hom_id := by simp
-
-/-- Underlying scheme isomorphism of `(f.smallEtaleBaseChangeComp g).app`. -/
-private noncomputable def pullbackCompIso {A X Y Z : Scheme.{u}} (v : A ⟶ Z)
-    (f : X ⟶ Y) (g : Y ⟶ Z) :
-    pullback v (f ≫ g) ≅ pullback (pullback.snd v g) f :=
-  pullback.congrHom rfl rfl ≪≫ (pullbackLeftPullbackSndIso v g f).symm
-
-/-- Underlying scheme isomorphism of `(f.smallEtaleBaseChangeComp' g fg hfg).app`. -/
-private noncomputable def pullbackComp'Iso {A X Y Z : Scheme.{u}} (v : A ⟶ Z)
-    (f : X ⟶ Y) (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : f ≫ g = fg) :
-    pullback v fg ≅ pullback (pullback.snd v g) f :=
-  pullback.congrHom rfl hfg.symm ≪≫ pullbackCompIso v f g
-
-/-- Underlying scheme isomorphism of `(smallEtaleBaseChangeCommSq w).app`. -/
-private noncomputable def pullbackCommSqIso {A X' X Y' Y : Scheme.{u}} (v : A ⟶ Y)
-    {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) :
-    pullback (pullback.snd v f) gX ≅ pullback (pullback.snd v g) f' :=
-  (pullbackCompIso v gX f).symm ≪≫ pullback.congrHom rfl w ≪≫ pullbackCompIso v f' g
-
-/-- Two morphisms into an iterated fibre product `pullback (pullback.snd v g) f` are equal as soon
-as they agree after composing with `pullback.fst _ f ≫ pullback.fst v g` and with
-`pullback.snd _ f`. -/
-private theorem pullback_snd_hom_ext {W A X Y Z : Scheme.{u}} {v : A ⟶ Z} {f : X ⟶ Y} {g : Y ⟶ Z}
-    {u₁ u₂ : W ⟶ pullback (pullback.snd v g) f}
-    (hfst : u₁ ≫ pullback.fst (pullback.snd v g) f ≫ pullback.fst v g =
-      u₂ ≫ pullback.fst (pullback.snd v g) f ≫ pullback.fst v g)
-    (hsnd : u₁ ≫ pullback.snd (pullback.snd v g) f =
-      u₂ ≫ pullback.snd (pullback.snd v g) f) :
-    u₁ = u₂ := by
-  have aux (u : W ⟶ pullback (pullback.snd v g) f) :
-      (u ≫ pullback.fst (pullback.snd v g) f) ≫ pullback.snd v g =
-        (u ≫ pullback.snd (pullback.snd v g) f) ≫ f := by
-    rw [Category.assoc, pullback.condition, ← Category.assoc]
-  refine pullback.hom_ext (pullback.hom_ext ?_ ?_) hsnd
-  · simpa only [Category.assoc] using hfst
-  · rw [aux u₁, aux u₂, hsnd]
-
-/-- Two morphisms into a twice-iterated fibre product
-`pullback (pullback.snd (pullback.snd v h) g) f` are equal as soon as they agree after composing
-with the three first projections to `A` and with the outer second projection to `W`. -/
-private theorem pullback_snd_snd_hom_ext {U A W X Y Z : Scheme.{u}} {v : A ⟶ Z}
-    {f : W ⟶ X} {g : X ⟶ Y} {h : Y ⟶ Z}
-    {u₁ u₂ : U ⟶ pullback (pullback.snd (pullback.snd v h) g) f}
-    (hfst : u₁ ≫ pullback.fst (pullback.snd (pullback.snd v h) g) f ≫
-        pullback.fst (pullback.snd v h) g ≫ pullback.fst v h =
-      u₂ ≫ pullback.fst (pullback.snd (pullback.snd v h) g) f ≫
-        pullback.fst (pullback.snd v h) g ≫ pullback.fst v h)
-    (hsnd : u₁ ≫ pullback.snd (pullback.snd (pullback.snd v h) g) f =
-      u₂ ≫ pullback.snd (pullback.snd (pullback.snd v h) g) f) :
-    u₁ = u₂ := by
-  have aux (u : U ⟶ pullback (pullback.snd (pullback.snd v h) g) f) :
-      (u ≫ pullback.fst (pullback.snd (pullback.snd v h) g) f ≫
-          pullback.fst (pullback.snd v h) g) ≫ pullback.snd v h =
-        (u ≫ pullback.snd (pullback.snd (pullback.snd v h) g) f) ≫ f ≫ g := by
-    rw [Category.assoc, Category.assoc, pullback.condition, ← Category.assoc, Category.assoc,
-      pullback.condition_assoc, ← Category.assoc]
-  refine pullback_snd_hom_ext (pullback.hom_ext ?_ ?_) hsnd
-  · simpa only [Category.assoc] using hfst
-  · rw [aux u₁, aux u₂, hsnd]
-
-end PullbackHelpers
+namespace AlgebraicGeometry.Scheme
 
 /-- Base change along `𝟙 X` is naturally isomorphic to the identity functor on `X.Etale`, with
 forward component at `V : X.Etale` given by the first projection `V ×_X X ⟶ V`. -/
 noncomputable def smallEtaleBaseChangeId (X : Scheme.{u}) :
     Hom.smallEtaleBaseChange (𝟙 X) ≅ 𝟭 X.Etale :=
   NatIso.ofComponents
-    (fun V ↦ MorphismProperty.Over.isoMk
-      { hom := pullback.fst V.hom (𝟙 X)
-        inv := pullback.lift (𝟙 V.left) V.hom (by simp)
-        hom_inv_id := by
-          apply pullback.hom_ext
-          · simp
-          · simpa using (pullback.condition (f := V.hom) (g := 𝟙 X)).trans (Category.comp_id _)
-        inv_hom_id := by simp }
-      (by simp [pullback.condition]))
+    (fun V ↦
+      let v : V.left ⟶ X := V.hom
+      MorphismProperty.Over.isoMk
+        (@asIso _ _ _ _ (pullback.fst v (𝟙 X)) (pullback_fst_iso_of_right_iso v (𝟙 X)))
+        (by simpa using pullback.condition (f := v) (g := 𝟙 X)))
     (fun φ ↦ Etale.hom_ext (Hom.smallEtaleBaseChange_map_left_fst (𝟙 X) φ))
 
 /-- On underlying schemes, the forward component of `X.smallEtaleBaseChangeId` at `V` is the first
@@ -545,21 +478,21 @@ projection `pullback.fst V.hom (𝟙 X)`. -/
 @[simp]
 theorem smallEtaleBaseChangeId_hom_app_left (X : Scheme.{u}) (V : X.Etale) :
     dsimp% ((X.smallEtaleBaseChangeId).hom.app V).left = pullback.fst V.hom (𝟙 X) :=
-  rfl
+  (rfl)
 
 /-- Composing the inverse component of `X.smallEtaleBaseChangeId` at `V` with `pullback.fst` gives
 `𝟙 V.left`. -/
 @[simp]
 theorem smallEtaleBaseChangeId_inv_app_left_fst (X : Scheme.{u}) (V : X.Etale) :
     dsimp% ((X.smallEtaleBaseChangeId).inv.app V).left ≫ pullback.fst V.hom (𝟙 X) = 𝟙 V.left :=
-  pullback.lift_fst _ _ _
+  congrArg (·.left) (X.smallEtaleBaseChangeId.inv_hom_id_app V)
 
 /-- Composing the inverse component of `X.smallEtaleBaseChangeId` at `V` with `pullback.snd` gives
 `V.hom`. -/
 @[simp]
 theorem smallEtaleBaseChangeId_inv_app_left_snd (X : Scheme.{u}) (V : X.Etale) :
     dsimp% ((X.smallEtaleBaseChangeId).inv.app V).left ≫ pullback.snd V.hom (𝟙 X) = V.hom :=
-  pullback.lift_snd _ _ _
+  MorphismProperty.Over.w ((X.smallEtaleBaseChangeId).inv.app V)
 
 namespace Hom
 
@@ -568,18 +501,6 @@ sites. -/
 noncomputable def smallEtaleBaseChangeCongr {X Y : Scheme.{u}} {f f' : X ⟶ Y} (h : f = f') :
     f.smallEtaleBaseChange ≅ f'.smallEtaleBaseChange :=
   MorphismProperty.Over.pullbackCongr h
-
-/-- `smallEtaleBaseChangeCongr` at `rfl` is the identity natural isomorphism. -/
-@[simp]
-theorem smallEtaleBaseChangeCongr_refl {X Y : Scheme.{u}} (f : X ⟶ Y) :
-    smallEtaleBaseChangeCongr (rfl : f = f) = Iso.refl f.smallEtaleBaseChange := by
-  ext V : 3
-  ext1
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullback.congrHom (f₁ := v) (g₁ := f) rfl rfl).hom = 𝟙 (pullback v f) := by
-    intro A v
-    simp
-  exact key V.hom
 
 /-- Composing the forward component of `smallEtaleBaseChangeCongr h` with `pullback.fst` recovers
 `pullback.fst`. -/
@@ -596,9 +517,16 @@ theorem smallEtaleBaseChangeCongr_hom_app_left_fst {X Y : Scheme.{u}} {f f' : X 
 theorem smallEtaleBaseChangeCongr_hom_app_left_snd {X Y : Scheme.{u}} {f f' : X ⟶ Y}
     (h : f = f') (V : Y.Etale) :
     dsimp% ((smallEtaleBaseChangeCongr h).hom.app V).left ≫ pullback.snd V.hom f' =
-      pullback.snd V.hom f := by
-  subst h
-  simp
+      pullback.snd V.hom f :=
+  MorphismProperty.Over.w ((smallEtaleBaseChangeCongr h).hom.app V)
+
+/-- `smallEtaleBaseChangeCongr` at `rfl` is the identity natural isomorphism. -/
+@[simp]
+theorem smallEtaleBaseChangeCongr_refl {X Y : Scheme.{u}} (f : X ⟶ Y) :
+    smallEtaleBaseChangeCongr (rfl : f = f) = Iso.refl f.smallEtaleBaseChange := by
+  ext V : 3
+  apply Etale.hom_ext
+  apply pullback.hom_ext <;> simp
 
 /-- Composing the inverse component of `smallEtaleBaseChangeCongr h` with `pullback.fst` recovers
 `pullback.fst`. -/
@@ -616,9 +544,8 @@ theorem smallEtaleBaseChangeCongr_inv_app_left_fst {X Y : Scheme.{u}} {f f' : X 
 theorem smallEtaleBaseChangeCongr_inv_app_left_snd {X Y : Scheme.{u}} {f f' : X ⟶ Y}
     (h : f = f') (V : Y.Etale) :
     dsimp% ((smallEtaleBaseChangeCongr h).inv.app V).left ≫ pullback.snd V.hom f =
-      pullback.snd V.hom f' := by
-  subst h
-  simp
+      pullback.snd V.hom f' :=
+  MorphismProperty.Over.w ((smallEtaleBaseChangeCongr h).inv.app V)
 
 /-- `smallEtaleBaseChangeCongr` commutes with symmetry of equalities. -/
 theorem smallEtaleBaseChangeCongr_symm {X Y : Scheme.{u}} {f f' : X ⟶ Y} (h : f = f') :
@@ -635,435 +562,160 @@ theorem smallEtaleBaseChangeCongr_trans {X Y : Scheme.{u}} {f₁ f₂ f₃ : X �
   subst h₁ h₂
   simp
 
-/-- Base change along a composite `f ≫ g` (`X ⟶ Y ⟶ Z`) is naturally isomorphic to base change
+/-- Base change along a composite `fg = f ≫ g` (`X ⟶ Y ⟶ Z`) is naturally isomorphic to base change
 along `g` followed by base change along `f`, via fibre-product pasting
 `V ×_Z X ≅ (V ×_Z Y) ×_Y X`. -/
-noncomputable def smallEtaleBaseChangeComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    smallEtaleBaseChange (f ≫ g) ≅ g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange :=
-  MorphismProperty.Over.pullbackComp f g
-
-/-- Composing the forward component of `f.smallEtaleBaseChangeComp g` at `V : Z.Etale` with the two
-first projections recovers `pullback.fst V.hom (f ≫ g)`. -/
-@[simp]
-theorem smallEtaleBaseChangeComp_hom_app_left_fst_fst {X Y Z : Scheme.{u}} (f : X ⟶ Y)
-    (g : Y ⟶ Z) (V : Z.Etale) :
-    dsimp% ((f.smallEtaleBaseChangeComp g).hom.app V).left ≫
-        pullback.fst (pullback.snd V.hom g) f ≫ pullback.fst V.hom g =
-      pullback.fst V.hom (f ≫ g) :=
-  MorphismProperty.Over.pullbackComp_left_fst_fst f g V
-
-/-- Composing the forward component of `f.smallEtaleBaseChangeComp g` at `V : Z.Etale` with the
-outer second projection recovers `pullback.snd V.hom (f ≫ g)`. -/
-@[simp]
-theorem smallEtaleBaseChangeComp_hom_app_left_snd {X Y Z : Scheme.{u}} (f : X ⟶ Y)
-    (g : Y ⟶ Z) (V : Z.Etale) :
-    dsimp% ((f.smallEtaleBaseChangeComp g).hom.app V).left ≫ pullback.snd (pullback.snd V.hom g) f =
-      pullback.snd V.hom (f ≫ g) := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Z),
-      (pullbackCompIso v f g).hom ≫ pullback.snd (pullback.snd v g) f = pullback.snd v (f ≫ g) := by
-    intro A v
-    simp [pullbackCompIso]
-  exact key V.hom
-
-/-- Composing the inverse component of `f.smallEtaleBaseChangeComp g` at `V : Z.Etale` with
-`pullback.fst V.hom (f ≫ g)` gives the composite of the two first projections. -/
-@[simp]
-theorem smallEtaleBaseChangeComp_inv_app_left_fst {X Y Z : Scheme.{u}} (f : X ⟶ Y)
-    (g : Y ⟶ Z) (V : Z.Etale) :
-    dsimp% ((f.smallEtaleBaseChangeComp g).inv.app V).left ≫ pullback.fst V.hom (f ≫ g) =
-      pullback.fst (pullback.snd V.hom g) f ≫ pullback.fst V.hom g := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Z),
-      (pullbackCompIso v f g).inv ≫ pullback.fst v (f ≫ g) =
-        pullback.fst (pullback.snd v g) f ≫ pullback.fst v g := by
-    intro A v
-    simp [pullbackCompIso]
-  exact key V.hom
-
-/-- Composing the inverse component of `f.smallEtaleBaseChangeComp g` at `V : Z.Etale` with
-`pullback.snd V.hom (f ≫ g)` gives `pullback.snd (pullback.snd V.hom g) f`. -/
-@[simp]
-theorem smallEtaleBaseChangeComp_inv_app_left_snd {X Y Z : Scheme.{u}} (f : X ⟶ Y)
-    (g : Y ⟶ Z) (V : Z.Etale) :
-    dsimp% ((f.smallEtaleBaseChangeComp g).inv.app V).left ≫ pullback.snd V.hom (f ≫ g) =
-      pullback.snd (pullback.snd V.hom g) f := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Z),
-      (pullbackCompIso v f g).inv ≫ pullback.snd v (f ≫ g) =
-        pullback.snd (pullback.snd v g) f := by
-    intro A v
-    simp [pullbackCompIso]
-  exact key V.hom
-
-/-- Flexible composition comparison `fg.smallEtaleBaseChange ≅
-  g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange` along an arbitrary factorization
-`f ≫ g = fg`. -/
-noncomputable def smallEtaleBaseChangeComp' {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (fg : X ⟶ Z) (hfg : f ≫ g = fg) :
+noncomputable def smallEtaleBaseChangeComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (fg : X ⟶ Z := f ≫ g) (hfg : fg = f ≫ g := by cat_disch) :
     fg.smallEtaleBaseChange ≅ g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange :=
-  smallEtaleBaseChangeCongr hfg.symm ≪≫ f.smallEtaleBaseChangeComp g
+  MorphismProperty.Over.pullbackComp f g fg hfg
 
-/-- At the syntactic composite `f ≫ g`, `smallEtaleBaseChangeComp'` agrees with
-`smallEtaleBaseChangeComp`. -/
-@[simp]
-theorem smallEtaleBaseChangeComp'_rfl {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    f.smallEtaleBaseChangeComp' g (f ≫ g) rfl = f.smallEtaleBaseChangeComp g := by
-  simp [smallEtaleBaseChangeComp']
+/-- For an arbitrary factorization `fg = f ≫ g`, `f.smallEtaleBaseChangeComp g fg hfg` factors as
+`smallEtaleBaseChangeCongr hfg` followed by `f.smallEtaleBaseChangeComp g`. -/
+theorem smallEtaleBaseChangeComp_eq_congr_trans {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (fg : X ⟶ Z) (hfg : fg = f ≫ g) :
+    f.smallEtaleBaseChangeComp g fg hfg =
+      smallEtaleBaseChangeCongr hfg ≪≫ f.smallEtaleBaseChangeComp g := by
+  subst hfg
+  simp
 
-/-- Composing the forward component of `f.smallEtaleBaseChangeComp' g fg hfg` at `V : Z.Etale` with
+/-- Composing the forward component of `f.smallEtaleBaseChangeComp g fg hfg` at `V : Z.Etale` with
 the two first projections recovers `pullback.fst V.hom fg`. -/
 @[simp]
-theorem smallEtaleBaseChangeComp'_hom_app_left_fst_fst {X Y Z : Scheme.{u}} (f : X ⟶ Y)
-    (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : f ≫ g = fg) (V : Z.Etale) :
-    dsimp% ((f.smallEtaleBaseChangeComp' g fg hfg).hom.app V).left ≫
+theorem smallEtaleBaseChangeComp_hom_app_left_fst_fst {X Y Z : Scheme.{u}} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : fg = f ≫ g) (V : Z.Etale) :
+    dsimp% ((f.smallEtaleBaseChangeComp g fg hfg).hom.app V).left ≫
         pullback.fst (pullback.snd V.hom g) f ≫ pullback.fst V.hom g =
       pullback.fst V.hom fg := by
   subst hfg
-  simp
+  exact MorphismProperty.Over.pullbackComp_left_fst_fst f g V
 
-/-- Composing the forward component of `f.smallEtaleBaseChangeComp' g fg hfg` at `V : Z.Etale` with
+/-- Composing the forward component of `f.smallEtaleBaseChangeComp g fg hfg` at `V : Z.Etale` with
 the outer second projection recovers `pullback.snd V.hom fg`. -/
 @[simp]
-theorem smallEtaleBaseChangeComp'_hom_app_left_snd {X Y Z : Scheme.{u}} (f : X ⟶ Y)
-    (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : f ≫ g = fg) (V : Z.Etale) :
-    dsimp% ((f.smallEtaleBaseChangeComp' g fg hfg).hom.app V).left ≫
+theorem smallEtaleBaseChangeComp_hom_app_left_snd {X Y Z : Scheme.{u}} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : fg = f ≫ g) (V : Z.Etale) :
+    dsimp% ((f.smallEtaleBaseChangeComp g fg hfg).hom.app V).left ≫
         pullback.snd (pullback.snd V.hom g) f =
-      pullback.snd V.hom fg := by
-  subst hfg
-  simp
+      pullback.snd V.hom fg :=
+  MorphismProperty.Over.w ((f.smallEtaleBaseChangeComp g fg hfg).hom.app V)
+
+/-- Composing the forward component of `f.smallEtaleBaseChangeComp g fg hfg` at `V : Z.Etale` with
+the middle projection `pullback.fst _ f ≫ pullback.snd V.hom g` recovers
+`pullback.snd V.hom fg ≫ f`. -/
+@[simp]
+theorem smallEtaleBaseChangeComp_hom_app_left_fst_snd {X Y Z : Scheme.{u}} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : fg = f ≫ g) (V : Z.Etale) :
+    dsimp% ((f.smallEtaleBaseChangeComp g fg hfg).hom.app V).left ≫
+        pullback.fst (pullback.snd V.hom g) f ≫ pullback.snd V.hom g =
+      pullback.snd V.hom fg ≫ f := by
+  let v : V.left ⟶ Z := V.hom
+  let b : pullback v fg ⟶ pullback (pullback.snd v g) f :=
+    ((f.smallEtaleBaseChangeComp g fg hfg).hom.app V).left
+  have hsnd : b ≫ pullback.snd (pullback.snd v g) f = pullback.snd v fg :=
+    f.smallEtaleBaseChangeComp_hom_app_left_snd g fg hfg V
+  change b ≫ pullback.fst (pullback.snd v g) f ≫ pullback.snd v g = pullback.snd v fg ≫ f
+  rw [pullback.condition, ← Category.assoc, hsnd]
+
+/-- Composing the inverse component of `f.smallEtaleBaseChangeComp g fg hfg` at `V : Z.Etale` with
+`pullback.fst V.hom fg` gives the composite of the two first projections. -/
+@[simp]
+theorem smallEtaleBaseChangeComp_inv_app_left_fst {X Y Z : Scheme.{u}} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : fg = f ≫ g) (V : Z.Etale) :
+    dsimp% ((f.smallEtaleBaseChangeComp g fg hfg).inv.app V).left ≫ pullback.fst V.hom fg =
+      pullback.fst (pullback.snd V.hom g) f ≫ pullback.fst V.hom g := by
+  let v : V.left ⟶ Z := V.hom
+  let a : pullback (pullback.snd v g) f ⟶ pullback v fg :=
+    ((f.smallEtaleBaseChangeComp g fg hfg).inv.app V).left
+  let b : pullback v fg ⟶ pullback (pullback.snd v g) f :=
+    ((f.smallEtaleBaseChangeComp g fg hfg).hom.app V).left
+  have hab : a ≫ b = 𝟙 _ :=
+    congrArg (·.left) ((f.smallEtaleBaseChangeComp g fg hfg).inv_hom_id_app V)
+  have hb : b ≫ pullback.fst (pullback.snd v g) f ≫ pullback.fst v g = pullback.fst v fg :=
+    f.smallEtaleBaseChangeComp_hom_app_left_fst_fst g fg hfg V
+  change a ≫ pullback.fst v fg = pullback.fst (pullback.snd v g) f ≫ pullback.fst v g
+  rw [← hb, ← Category.assoc, hab, Category.id_comp]
+
+/-- Composing the inverse component of `f.smallEtaleBaseChangeComp g fg hfg` at `V : Z.Etale` with
+`pullback.snd V.hom fg` gives `pullback.snd (pullback.snd V.hom g) f`. -/
+@[simp]
+theorem smallEtaleBaseChangeComp_inv_app_left_snd {X Y Z : Scheme.{u}} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (fg : X ⟶ Z) (hfg : fg = f ≫ g) (V : Z.Etale) :
+    dsimp% ((f.smallEtaleBaseChangeComp g fg hfg).inv.app V).left ≫ pullback.snd V.hom fg =
+      pullback.snd (pullback.snd V.hom g) f :=
+  MorphismProperty.Over.w ((f.smallEtaleBaseChangeComp g fg hfg).inv.app V)
 
 /-- Base change along an isomorphism `f : X ⟶ Y` is an equivalence `Y.Etale ≌ X.Etale`, with
 quasi-inverse `(inv f).smallEtaleBaseChange`. -/
 noncomputable def smallEtaleEquivOfIsIso {X Y : Scheme.{u}} (f : X ⟶ Y) [IsIso f] :
-    Y.Etale ≌ X.Etale :=
-  CategoryTheory.Equivalence.mk f.smallEtaleBaseChange (inv f).smallEtaleBaseChange
-    ((Y.smallEtaleBaseChangeId).symm ≪≫
-      (inv f).smallEtaleBaseChangeComp' f (𝟙 Y) (IsIso.inv_hom_id f))
-    ((f.smallEtaleBaseChangeComp' (inv f) (𝟙 X) (IsIso.hom_inv_id f)).symm ≪≫
-      X.smallEtaleBaseChangeId)
+    Y.Etale ≌ X.Etale where
+  functor := f.smallEtaleBaseChange
+  inverse := (inv f).smallEtaleBaseChange
+  unitIso := (Y.smallEtaleBaseChangeId).symm ≪≫
+    (inv f).smallEtaleBaseChangeComp f (𝟙 Y) (IsIso.inv_hom_id f).symm
+  counitIso := (f.smallEtaleBaseChangeComp (inv f) (𝟙 X) (IsIso.hom_inv_id f).symm).symm ≪≫
+    X.smallEtaleBaseChangeId
+  functor_unitIso_comp V := by
+    apply Etale.hom_ext
+    let v : V.left ⟶ Y := V.hom
+    let u₁ : V.left ⟶ pullback v (𝟙 Y) := ((Y.smallEtaleBaseChangeId).inv.app V).left
+    let u₂ : pullback v (𝟙 Y) ⟶ pullback (pullback.snd v f) (inv f) :=
+      (((inv f).smallEtaleBaseChangeComp f (𝟙 Y) (IsIso.inv_hom_id f).symm).hom.app V).left
+    let m : pullback v f ⟶ pullback (pullback.snd (pullback.snd v f) (inv f)) f :=
+      (f.smallEtaleBaseChange.map (((Y.smallEtaleBaseChangeId).symm ≪≫
+        (inv f).smallEtaleBaseChangeComp f (𝟙 Y) (IsIso.inv_hom_id f).symm).hom.app V)).left
+    let c₁ : pullback (pullback.snd (pullback.snd v f) (inv f)) f ⟶
+        pullback (pullback.snd v f) (𝟙 X) :=
+      ((f.smallEtaleBaseChangeComp (inv f) (𝟙 X) (IsIso.hom_inv_id f).symm).inv.app
+        (f.smallEtaleBaseChange.obj V)).left
+    let c₂ : pullback (pullback.snd v f) (𝟙 X) ⟶ pullback v f :=
+      ((X.smallEtaleBaseChangeId).hom.app (f.smallEtaleBaseChange.obj V)).left
+    have hu₁_fst : u₁ ≫ pullback.fst v (𝟙 Y) = 𝟙 V.left :=
+      Y.smallEtaleBaseChangeId_inv_app_left_fst V
+    have hu₂_fst_fst : u₂ ≫ pullback.fst (pullback.snd v f) (inv f) ≫ pullback.fst v f =
+        pullback.fst v (𝟙 Y) :=
+      (inv f).smallEtaleBaseChangeComp_hom_app_left_fst_fst f (𝟙 Y) (IsIso.inv_hom_id f).symm V
+    have hm_fst : m ≫ pullback.fst (pullback.snd (pullback.snd v f) (inv f)) f =
+        pullback.fst v f ≫ u₁ ≫ u₂ :=
+      f.smallEtaleBaseChange_map_left_fst _
+    have hm_snd : m ≫ pullback.snd (pullback.snd (pullback.snd v f) (inv f)) f =
+        pullback.snd v f :=
+      f.smallEtaleBaseChange_map_left_snd _
+    have hc₁_fst : c₁ ≫ pullback.fst (pullback.snd v f) (𝟙 X) =
+        pullback.fst (pullback.snd (pullback.snd v f) (inv f)) f ≫
+          pullback.fst (pullback.snd v f) (inv f) :=
+      f.smallEtaleBaseChangeComp_inv_app_left_fst (inv f) (𝟙 X) (IsIso.hom_inv_id f).symm
+        (f.smallEtaleBaseChange.obj V)
+    have hc₁_snd : c₁ ≫ pullback.snd (pullback.snd v f) (𝟙 X) =
+        pullback.snd (pullback.snd (pullback.snd v f) (inv f)) f :=
+      f.smallEtaleBaseChangeComp_inv_app_left_snd (inv f) (𝟙 X) (IsIso.hom_inv_id f).symm
+        (f.smallEtaleBaseChange.obj V)
+    have hc₂ : c₂ = pullback.fst (pullback.snd v f) (𝟙 X) :=
+      X.smallEtaleBaseChangeId_hom_app_left (f.smallEtaleBaseChange.obj V)
+    change m ≫ c₁ ≫ c₂ = 𝟙 (pullback v f)
+    apply pullback.hom_ext
+    · rw [hc₂, Category.assoc, Category.assoc, reassoc_of% hc₁_fst, reassoc_of% hm_fst,
+        hu₂_fst_fst, hu₁_fst, Category.comp_id, Category.id_comp]
+    · rw [hc₂, Category.assoc, Category.assoc, pullback.condition, Category.comp_id,
+        hc₁_snd, hm_snd, Category.id_comp]
+
+/-- The forward functor of `f.smallEtaleEquivOfIsIso` is `f.smallEtaleBaseChange`. -/
+@[simp]
+theorem smallEtaleEquivOfIsIso_functor {X Y : Scheme.{u}} (f : X ⟶ Y) [IsIso f] :
+    f.smallEtaleEquivOfIsIso.functor = f.smallEtaleBaseChange :=
+  (rfl)
+
+/-- The inverse functor of `f.smallEtaleEquivOfIsIso` is `(inv f).smallEtaleBaseChange`. -/
+@[simp]
+theorem smallEtaleEquivOfIsIso_inverse {X Y : Scheme.{u}} (f : X ⟶ Y) [IsIso f] :
+    f.smallEtaleEquivOfIsIso.inverse = (inv f).smallEtaleBaseChange :=
+  (rfl)
 
 /-- Base change along an isomorphism `f : X ⟶ Y` is an equivalence of categories. -/
 noncomputable instance isEquivalence_smallEtaleBaseChange {X Y : Scheme.{u}} (f : X ⟶ Y)
     [IsIso f] : f.smallEtaleBaseChange.IsEquivalence :=
-  f.smallEtaleEquivOfIsIso.isEquivalence_functor
-
-/-! ### Pseudofunctorial coherence laws -/
-
-/-- Componentwise associativity of `smallEtaleBaseChangeComp'` across any composable triple
-`W --f--> X --g--> Y --h--> Z` and arbitrary factorizations. -/
-@[reassoc]
-theorem smallEtaleBaseChangeComp'_associativity {W X Y Z : Scheme.{u}}
-    (f : W ⟶ X) (g : X ⟶ Y) (h : Y ⟶ Z) (fg : W ⟶ Y) (gh : X ⟶ Z) (fgh : W ⟶ Z)
-    (hfg : f ≫ g = fg) (hgh : g ≫ h = gh) (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh)
-    (V : Z.Etale) :
-    (f.smallEtaleBaseChangeComp' gh fgh hfgh').hom.app V ≫
-        f.smallEtaleBaseChange.map ((g.smallEtaleBaseChangeComp' h gh hgh).hom.app V) =
-      (fg.smallEtaleBaseChangeComp' h fgh hfgh).hom.app V ≫
-        (f.smallEtaleBaseChangeComp' g fg hfg).hom.app (h.smallEtaleBaseChange.obj V) := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Z),
-      (pullbackComp'Iso v f gh fgh hfgh').hom ≫
-        pullbackBaseChangeMap (pullback.snd v gh) (pullback.snd (pullback.snd v h) g) f
-          (pullbackComp'Iso v g h gh hgh).hom
-          (by subst hgh; simp [pullbackComp'Iso, pullbackCompIso]) =
-      (pullbackComp'Iso v fg h fgh hfgh).hom ≫
-        (pullbackComp'Iso (pullback.snd v h) f g fg hfg).hom := by
-    intro A v
-    subst hfg hgh hfgh
-    refine pullback_snd_snd_hom_ext ?_ ?_ <;>
-      simp [pullbackComp'Iso, pullbackCompIso, pullbackBaseChangeMap]
-  exact Etale.hom_ext (key V.hom)
-
-/-- Associativity pentagon for `smallEtaleBaseChangeComp` across `W --f--> X --g--> Y --h--> Z`. -/
-@[reassoc]
-theorem smallEtaleBaseChange_associativity {W X Y Z : Scheme.{u}}
-    (f : W ⟶ X) (g : X ⟶ Y) (h : Y ⟶ Z) (V : Z.Etale) :
-    (smallEtaleBaseChangeCongr (Category.assoc f g h)).hom.app V ≫
-        (f.smallEtaleBaseChangeComp (g ≫ h)).hom.app V ≫
-        f.smallEtaleBaseChange.map ((g.smallEtaleBaseChangeComp h).hom.app V) =
-      (smallEtaleBaseChangeComp (f ≫ g) h).hom.app V ≫
-        (f.smallEtaleBaseChangeComp g).hom.app (h.smallEtaleBaseChange.obj V) := by
-  simpa [smallEtaleBaseChangeComp'] using
-    smallEtaleBaseChangeComp'_associativity f g h (f ≫ g) (g ≫ h) ((f ≫ g) ≫ h)
-      rfl rfl rfl (Category.assoc f g h).symm V
-
-/-- Right-unit coherence for `smallEtaleBaseChangeComp'` along `f ≫ 𝟙 Y = f`. -/
-@[reassoc]
-theorem smallEtaleBaseChangeComp'_comp_id {X Y : Scheme.{u}} (f : X ⟶ Y) (hf : f ≫ 𝟙 Y = f)
-    (V : Y.Etale) :
-    (f.smallEtaleBaseChangeComp' (𝟙 Y) f hf).hom.app V ≫
-        f.smallEtaleBaseChange.map ((Y.smallEtaleBaseChangeId).hom.app V) =
-      𝟙 (f.smallEtaleBaseChange.obj V) := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackComp'Iso v f (𝟙 Y) f hf).hom ≫
-        pullbackBaseChangeMap (pullback.snd v (𝟙 Y)) v f (pullbackIdIso v).hom
-          (by simpa [pullbackIdIso] using pullback.condition (f := v) (g := 𝟙 Y)) =
-      𝟙 (pullback v f) := by
-    intro A v
-    apply pullback.hom_ext <;>
-      simp [pullbackComp'Iso, pullbackCompIso, pullbackIdIso, pullbackBaseChangeMap]
-  exact Etale.hom_ext (key V.hom)
-
-/-- Right-unit coherence for `smallEtaleBaseChangeComp` and `smallEtaleBaseChangeId`. -/
-@[reassoc]
-theorem smallEtaleBaseChange_comp_id {X Y : Scheme.{u}} (f : X ⟶ Y) (V : Y.Etale) :
-    (f.smallEtaleBaseChangeComp (𝟙 Y)).hom.app V ≫
-        f.smallEtaleBaseChange.map ((Y.smallEtaleBaseChangeId).hom.app V) =
-      (smallEtaleBaseChangeCongr (Category.comp_id f)).hom.app V := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCompIso v f (𝟙 Y)).hom ≫
-        pullbackBaseChangeMap (pullback.snd v (𝟙 Y)) v f (pullbackIdIso v).hom
-          (by simpa [pullbackIdIso] using pullback.condition (f := v) (g := 𝟙 Y)) =
-      (pullback.congrHom (f₁ := v) (g₁ := f ≫ 𝟙 Y) rfl (Category.comp_id f)).hom := by
-    intro A v
-    apply pullback.hom_ext <;>
-      simp [pullbackCompIso, pullbackIdIso, pullbackBaseChangeMap]
-  exact Etale.hom_ext (key V.hom)
-
-/-- Left-unit coherence for `smallEtaleBaseChangeComp'` along `𝟙 X ≫ f = f`. -/
-@[reassoc]
-theorem smallEtaleBaseChangeComp'_id_comp {X Y : Scheme.{u}} (f : X ⟶ Y) (hf : 𝟙 X ≫ f = f)
-    (V : Y.Etale) :
-    (smallEtaleBaseChangeComp' (𝟙 X) f f hf).hom.app V ≫
-        (X.smallEtaleBaseChangeId).hom.app (f.smallEtaleBaseChange.obj V) =
-      𝟙 (f.smallEtaleBaseChange.obj V) := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackComp'Iso v (𝟙 X) f f hf).hom ≫ (pullbackIdIso (pullback.snd v f)).hom =
-      𝟙 (pullback v f) := by
-    intro A v
-    apply pullback.hom_ext
-    · simp [pullbackComp'Iso, pullbackCompIso, pullbackIdIso]
-    · simp only [pullbackIdIso, Category.assoc, pullback.condition]
-      simp [pullbackComp'Iso, pullbackCompIso]
-  exact Etale.hom_ext (key V.hom)
-
-/-- Left-unit coherence for `smallEtaleBaseChangeComp` and `smallEtaleBaseChangeId`. -/
-@[reassoc]
-theorem smallEtaleBaseChange_id_comp {X Y : Scheme.{u}} (f : X ⟶ Y) (V : Y.Etale) :
-    (smallEtaleBaseChangeComp (𝟙 X) f).hom.app V ≫
-        (X.smallEtaleBaseChangeId).hom.app (f.smallEtaleBaseChange.obj V) =
-      (smallEtaleBaseChangeCongr (Category.id_comp f)).hom.app V := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCompIso v (𝟙 X) f).hom ≫ (pullbackIdIso (pullback.snd v f)).hom =
-      (pullback.congrHom (f₁ := v) (g₁ := 𝟙 X ≫ f) rfl (Category.id_comp f)).hom := by
-    intro A v
-    apply pullback.hom_ext
-    · simp [pullbackCompIso, pullbackIdIso]
-    · simp only [pullbackIdIso, Category.assoc, pullback.condition]
-      simp [pullbackCompIso]
-  exact Etale.hom_ext (key V.hom)
-
-/-! ### Base-change comparison across commutative and Cartesian squares -/
-
-/-- Any commutative square `gX ≫ f = f' ≫ g` of schemes induces a canonical natural isomorphism
-between the iterated base-change functors `f.smallEtaleBaseChange ⋙ gX.smallEtaleBaseChange` and
-`g.smallEtaleBaseChange ⋙ f'.smallEtaleBaseChange`. -/
-noncomputable def smallEtaleBaseChangeCommSq {X' X Y' Y : Scheme.{u}}
-    {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) :
-    f.smallEtaleBaseChange ⋙ gX.smallEtaleBaseChange ≅
-      g.smallEtaleBaseChange ⋙ f'.smallEtaleBaseChange :=
-  (gX.smallEtaleBaseChangeComp f).symm ≪≫ smallEtaleBaseChangeCongr w ≪≫
-    f'.smallEtaleBaseChangeComp g
-
-/-- Composing the forward component of `smallEtaleBaseChangeCommSq w` at `V : Y.Etale` with the two
-first projections recovers the two first projections on the opposite path of the square. -/
-@[simp]
-theorem smallEtaleBaseChangeCommSq_hom_app_left_fst_fst {X' X Y' Y : Scheme.{u}}
-    {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
-    dsimp% ((smallEtaleBaseChangeCommSq w).hom.app V).left ≫
-        pullback.fst (pullback.snd V.hom g) f' ≫ pullback.fst V.hom g =
-      pullback.fst (pullback.snd V.hom f) gX ≫ pullback.fst V.hom f := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCommSqIso v w).hom ≫ pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g =
-        pullback.fst (pullback.snd v f) gX ≫ pullback.fst v f := by
-    intro A v
-    simp [pullbackCommSqIso, pullbackCompIso]
-  exact key V.hom
-
-/-- Composing the forward component of `smallEtaleBaseChangeCommSq w` at `V : Y.Etale` with the
-outer second projection to `X'` recovers the outer second projection on the opposite path. -/
-@[simp]
-theorem smallEtaleBaseChangeCommSq_hom_app_left_snd {X' X Y' Y : Scheme.{u}}
-    {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
-    dsimp% ((smallEtaleBaseChangeCommSq w).hom.app V).left ≫
-        pullback.snd (pullback.snd V.hom g) f' =
-      pullback.snd (pullback.snd V.hom f) gX := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCommSqIso v w).hom ≫ pullback.snd (pullback.snd v g) f' =
-        pullback.snd (pullback.snd v f) gX := by
-    intro A v
-    simp [pullbackCommSqIso, pullbackCompIso]
-  exact key V.hom
-
-/-- Composing the inverse component of `smallEtaleBaseChangeCommSq w` at `V : Y.Etale` with the two
-first projections recovers the two first projections on the opposite path of the square. -/
-@[simp]
-theorem smallEtaleBaseChangeCommSq_inv_app_left_fst_fst {X' X Y' Y : Scheme.{u}}
-    {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
-    dsimp% ((smallEtaleBaseChangeCommSq w).inv.app V).left ≫
-        pullback.fst (pullback.snd V.hom f) gX ≫ pullback.fst V.hom f =
-      pullback.fst (pullback.snd V.hom g) f' ≫ pullback.fst V.hom g := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCommSqIso v w).inv ≫ pullback.fst (pullback.snd v f) gX ≫ pullback.fst v f =
-        pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g := by
-    intro A v
-    simp [pullbackCommSqIso, pullbackCompIso]
-  exact key V.hom
-
-/-- Composing the inverse component of `smallEtaleBaseChangeCommSq w` at `V : Y.Etale` with the
-outer second projection to `X'` recovers the outer second projection on the opposite path. -/
-@[simp]
-theorem smallEtaleBaseChangeCommSq_inv_app_left_snd {X' X Y' Y : Scheme.{u}}
-    {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
-    dsimp% ((smallEtaleBaseChangeCommSq w).inv.app V).left ≫
-        pullback.snd (pullback.snd V.hom f) gX =
-      pullback.snd (pullback.snd V.hom g) f' := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCommSqIso v w).inv ≫ pullback.snd (pullback.snd v f) gX =
-        pullback.snd (pullback.snd v g) f' := by
-    intro A v
-    simp [pullbackCommSqIso, pullbackCompIso]
-  exact key V.hom
-
-/-- Transposing a commutative square inverts `smallEtaleBaseChangeCommSq`. -/
-theorem smallEtaleBaseChangeCommSq_symm {X' X Y' Y : Scheme.{u}}
-    {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) :
-    (smallEtaleBaseChangeCommSq w).symm = smallEtaleBaseChangeCommSq w.symm := by
-  ext V : 3
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCommSqIso v w).inv = (pullbackCommSqIso v w.symm).hom := by
-    intro A v
-    refine pullback_snd_hom_ext ?_ ?_ <;>
-      simp [pullbackCommSqIso, pullbackCompIso]
-  exact Etale.hom_ext (key V.hom)
-
-/-- Along the trivial identity-base-change square `𝟙 X ≫ f = f ≫ 𝟙 Y`,
-`smallEtaleBaseChangeCommSq` reduces to the left and right unit comparisons
-`X.smallEtaleBaseChangeId` and `Y.smallEtaleBaseChangeId`. -/
-theorem smallEtaleBaseChangeCommSq_id_app {X Y : Scheme.{u}} (f : X ⟶ Y) (V : Y.Etale) :
-    (smallEtaleBaseChangeCommSq
-        ((Category.id_comp f).trans (Category.comp_id f).symm)).hom.app V =
-      (X.smallEtaleBaseChangeId).hom.app (f.smallEtaleBaseChange.obj V) ≫
-        f.smallEtaleBaseChange.map ((Y.smallEtaleBaseChangeId).inv.app V) := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCommSqIso v ((Category.id_comp f).trans (Category.comp_id f).symm)).hom =
-        (pullbackIdIso (pullback.snd v f)).hom ≫
-          pullbackBaseChangeMap v (pullback.snd v (𝟙 Y)) f (pullbackIdIso v).inv
-            (by simp [pullbackIdIso]) := by
-    intro A v
-    refine pullback_snd_hom_ext ?_ ?_
-    · simp [pullbackCommSqIso, pullbackCompIso, pullbackIdIso, pullbackBaseChangeMap]
-    · simp only [pullbackIdIso, pullbackBaseChangeMap, Category.assoc, pullback.lift_snd]
-      rw [pullback.condition]
-      simp [pullbackCommSqIso, pullbackCompIso]
-  exact Etale.hom_ext (key V.hom)
-
-/-- Pasting two composable commutative squares `gX' ≫ gX ≫ f = ...` (`X'' ⟶ X' ⟶ X` over
-`Y'' ⟶ Y' ⟶ Y`) commutes with `smallEtaleBaseChangeCommSq` via `smallEtaleBaseChangeComp`. -/
-@[reassoc]
-theorem smallEtaleBaseChangeCommSq_paste {X'' X' X Y'' Y' Y : Scheme.{u}}
-    {gX' : X'' ⟶ X'} {gX : X' ⟶ X} {f'' : X'' ⟶ Y''} {f' : X' ⟶ Y'} {f : X ⟶ Y}
-    {g' : Y'' ⟶ Y'} {g : Y' ⟶ Y} (w₁ : gX ≫ f = f' ≫ g) (w₂ : gX' ≫ f' = f'' ≫ g')
-    (V : Y.Etale) :
-    (gX'.smallEtaleBaseChangeComp gX).hom.app (f.smallEtaleBaseChange.obj V) ≫
-        gX'.smallEtaleBaseChange.map ((smallEtaleBaseChangeCommSq w₁).hom.app V) ≫
-        (smallEtaleBaseChangeCommSq w₂).hom.app (g.smallEtaleBaseChange.obj V) ≫
-        f''.smallEtaleBaseChange.map ((g'.smallEtaleBaseChangeComp g).inv.app V) =
-      (smallEtaleBaseChangeCommSq
-        (by rw [Category.assoc, w₁, ← Category.assoc, w₂, Category.assoc])).hom.app V := by
-  have key : ∀ {A : Scheme.{u}} (v : A ⟶ Y),
-      (pullbackCompIso (pullback.snd v f) gX' gX).hom ≫
-        pullbackBaseChangeMap (pullback.snd (pullback.snd v f) gX)
-          (pullback.snd (pullback.snd v g) f') gX' (pullbackCommSqIso v w₁).hom
-          (by simp [pullbackCommSqIso, pullbackCompIso]) ≫
-        (pullbackCommSqIso (pullback.snd v g) w₂).hom ≫
-        pullbackBaseChangeMap (pullback.snd (pullback.snd v g) g')
-          (pullback.snd v (g' ≫ g)) f'' (pullbackCompIso v g' g).inv
-          (by simp [pullbackCompIso]) =
-      (pullbackCommSqIso v
-        (by rw [Category.assoc, w₁, ← Category.assoc, w₂, Category.assoc])).hom := by
-    intro A v
-    refine pullback_snd_hom_ext ?_ ?_ <;>
-      simp [pullbackCommSqIso, pullbackCompIso, pullbackBaseChangeMap]
-  exact Etale.hom_ext (key V.hom)
-
-/-- Base-change comparison across the canonical pullback square of `f : X ⟶ Y` and `g : Y' ⟶ Y`:
-pulling an étale `Y`-scheme back along `f` and then `pullback.fst f g` is canonically isomorphic to
-pulling it back along `g` and then `pullback.snd f g`. -/
-noncomputable abbrev smallEtaleBaseChangePullback {X Y' Y : Scheme.{u}}
-    (f : X ⟶ Y) (g : Y' ⟶ Y) :
-    f.smallEtaleBaseChange ⋙ smallEtaleBaseChange (pullback.fst f g) ≅
-      g.smallEtaleBaseChange ⋙ smallEtaleBaseChange (pullback.snd f g) :=
-  smallEtaleBaseChangeCommSq pullback.condition
+  f.smallEtaleEquivOfIsIso_functor ▸ f.smallEtaleEquivOfIsIso.isEquivalence_functor
 
 end Hom
-
-/-! ### The contravariant small étale pseudofunctor -/
-
-/-- The contravariant pseudofunctor `LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ Cat.{u, u + 1}` sending each
-scheme `X` to its category `X.Etale` of étale `X`-schemes and each morphism `f : X ⟶ Y` to
-`f.smallEtaleBaseChange : Y.Etale ⥤ X.Etale`. -/
-noncomputable def smallEtalePseudofunctor :
-    LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ Cat.{u, u + 1} :=
-  LocallyDiscrete.mkCatPseudofunctor
-    (obj := fun X ↦ Cat.of X.unop.Etale)
-    (fun f ↦ f.unop.smallEtaleBaseChange)
-    (fun X ↦ X.unop.smallEtaleBaseChangeId)
-    (fun f g fg hfg ↦ g.unop.smallEtaleBaseChangeComp' f.unop fg.unop (Quiver.Hom.op_inj hfg))
-    (fun _ _ _ _ _ _ hfg hgh hfgh hfgh' V ↦
-      Hom.smallEtaleBaseChangeComp'_associativity _ _ _ _ _ _
-        (Quiver.Hom.op_inj hgh) (Quiver.Hom.op_inj hfg)
-        (Quiver.Hom.op_inj hfgh') (Quiver.Hom.op_inj hfgh) V)
-    (fun _ hf V ↦ Hom.smallEtaleBaseChangeComp'_comp_id _ (Quiver.Hom.op_inj hf) V)
-    (fun _ hf V ↦ Hom.smallEtaleBaseChangeComp'_id_comp _ (Quiver.Hom.op_inj hf) V)
-
-/-- `smallEtalePseudofunctor` evaluates on `X` to `Cat.of X.as.unop.Etale`. -/
-@[simp]
-theorem smallEtalePseudofunctor_obj (X : LocallyDiscrete Scheme.{u}ᵒᵖ) :
-    smallEtalePseudofunctor.obj X = Cat.of X.as.unop.Etale :=
-  rfl
-
-/-- `smallEtalePseudofunctor` sends a `1`-morphism `f` to `f.as.unop.smallEtaleBaseChange`. -/
-@[simp]
-theorem smallEtalePseudofunctor_map_toFunctor {X Y : LocallyDiscrete Scheme.{u}ᵒᵖ} (f : X ⟶ Y) :
-    (smallEtalePseudofunctor.map f).toFunctor = f.as.unop.smallEtaleBaseChange :=
-  rfl
-
-/-- The forward unit comparison of `smallEtalePseudofunctor` at `X` is
-`X.as.unop.smallEtaleBaseChangeId`. -/
-@[simp]
-theorem smallEtalePseudofunctor_mapId_hom_toNatTrans_app (X : LocallyDiscrete Scheme.{u}ᵒᵖ)
-    (V : X.as.unop.Etale) :
-    (smallEtalePseudofunctor.mapId X).hom.toNatTrans.app V =
-      (X.as.unop.smallEtaleBaseChangeId).hom.app V :=
-  rfl
-
-/-- The inverse unit comparison of `smallEtalePseudofunctor` at `X` is
-`(X.as.unop.smallEtaleBaseChangeId).inv`. -/
-@[simp]
-theorem smallEtalePseudofunctor_mapId_inv_toNatTrans_app (X : LocallyDiscrete Scheme.{u}ᵒᵖ)
-    (V : X.as.unop.Etale) :
-    (smallEtalePseudofunctor.mapId X).inv.toNatTrans.app V =
-      (X.as.unop.smallEtaleBaseChangeId).inv.app V :=
-  rfl
-
-/-- The forward composition comparison of `smallEtalePseudofunctor` at `f, g` agrees with
-`smallEtaleBaseChangeComp`. -/
-@[simp]
-theorem smallEtalePseudofunctor_mapComp_hom_toNatTrans_app {X Y Z : LocallyDiscrete Scheme.{u}ᵒᵖ}
-    (f : X ⟶ Y) (g : Y ⟶ Z) (V : X.as.unop.Etale) :
-    (smallEtalePseudofunctor.mapComp f g).hom.toNatTrans.app V =
-      ((g.as.unop.smallEtaleBaseChangeComp f.as.unop).hom.app V) := by
-  dsimp only [smallEtalePseudofunctor,
-    LocallyDiscrete.mkCatPseudofunctor_mapComp_hom_toNatTrans_app]
-  exact congrArg (fun e ↦ e.hom.app V) (Hom.smallEtaleBaseChangeComp'_rfl g.as.unop f.as.unop)
-
-/-- The inverse composition comparison of `smallEtalePseudofunctor` at `f, g` agrees with
-`(smallEtaleBaseChangeComp _ _).inv`. -/
-@[simp]
-theorem smallEtalePseudofunctor_mapComp_inv_toNatTrans_app {X Y Z : LocallyDiscrete Scheme.{u}ᵒᵖ}
-    (f : X ⟶ Y) (g : Y ⟶ Z) (V : X.as.unop.Etale) :
-    (smallEtalePseudofunctor.mapComp f g).inv.toNatTrans.app V =
-      ((g.as.unop.smallEtaleBaseChangeComp f.as.unop).inv.app V) := by
-  dsimp only [smallEtalePseudofunctor,
-    LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app]
-  exact congrArg (fun e ↦ e.inv.app V) (Hom.smallEtaleBaseChangeComp'_rfl g.as.unop f.as.unop)
 
 end AlgebraicGeometry.Scheme
