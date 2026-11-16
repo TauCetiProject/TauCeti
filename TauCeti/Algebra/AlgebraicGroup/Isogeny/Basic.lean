@@ -36,6 +36,8 @@ surjectivity by a weaker statement about points over the base field.
   surjective on points over algebraically closed fields.
 * `TauCeti.CommHopfAlgCat.IsIsogeny.isIso_iff_surjective`: an isogeny is an isomorphism
   exactly when its coordinate map is surjective.
+* `TauCeti.CommHopfAlgCat.IsIsogeny.finiteType_source`: over a Noetherian base, an isogeny from
+  a group of finite type has target of finite type.
 * `TauCeti.CommHopfAlgCat.IsIsogeny.ringKrullDim_eq`: an isogeny preserves the Krull dimension
   of the coordinate ring.
 * `TauCeti.CommHopfAlgCat.isCentralIsogeny_of_isIso`: every isomorphism is a central
@@ -192,6 +194,15 @@ theorem finiteType_target (hf : IsIsogeny f) [Algebra.FiniteType R H] :
   rw [← f.hom.toAlgHom.comp_algebraMap]
   exact RingHom.FiniteType.comp hf.finiteType
     (RingHom.finiteType_algebraMap.mpr inferInstance)
+
+/-- Finite type over a Noetherian base passes from the codomain to the domain of an isogeny's
+coordinate map, by the Artin–Tate lemma. -/
+theorem finiteType_source (hf : IsIsogeny f) [IsNoetherianRing R] [Algebra.FiniteType R K] :
+    Algebra.FiniteType R H := by
+  let _ := f.hom.toAlgHom.toAlgebra
+  have : IsScalarTower R H K := .of_algebraMap_eq fun x ↦ (f.hom.toAlgHom.commutes x).symm
+  have : Module.Finite H K := hf.finite
+  exact ⟨fg_of_fg_of_fg R H K Algebra.FiniteType.out Module.Finite.fg_top hf.injective⟩
 
 /-- An isogeny preserves dimension: the coordinate rings of its source and target have the same
 Krull dimension. -/
