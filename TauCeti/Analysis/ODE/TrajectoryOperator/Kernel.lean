@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -40,9 +39,8 @@ difference of dimensions of spaces of square-integrable solutions is
   `v' + A(s) v = 0`.
 * `TauCeti.squareIntegrableSolutions_neg_smul_id_eq_bot`: a scalar equation `v' = b v` has no
   nonzero square-integrable solution when its scalar solution `g` is not square integrable.
-* `TauCeti.mem_squareIntegrableSolutions_iff_of_apply_eq_toLp` and
-  `TauCeti.squareIntegrableSolutions_eq_bot_of_apply_eq_toLp`: for a block-diagonal coefficient on
-  an `Lᵖ` product the equation decouples, and the square-integrable solutions are the pairs of
+* `TauCeti.mem_squareIntegrableSolutions_iff_of_apply_eq_toLp`: for a block-diagonal coefficient
+  on an `L²` product the equation decouples, and the square-integrable solutions are the pairs of
   square-integrable solutions of the two blocks.
 * `TauCeti.hasDerivAt_exp_smul_sub_smul_id`: multiplication by `exp w` turns solutions of
   `v' + A v = 0` into solutions of `u' + (A - w') u = 0`.
@@ -129,31 +127,32 @@ theorem squareIntegrableSolutions_neg_smul_id_eq_bot {b g : ℝ → ℝ} (hb : C
 section Prod
 
 variable {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
-  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
 
 /-- **Square-integrable solutions of a block-diagonal equation.** If the coefficient `A(s)` acts on
-the `Lᵖ` product `F₁ × F₂` as `A₁(s)` on the first factor and `A₂(s)` on the second, then a vector
+the `L²` product `F₁ × F₂` as `A₁(s)` on the first factor and `A₂(s)` on the second, then a vector
 is the initial value of a square-integrable solution of `v' + A v = 0` exactly when its two
 components are initial values of square-integrable solutions of `v₁' + A₁ v₁ = 0` and
 `v₂' + A₂ v₂ = 0`. -/
 theorem mem_squareIntegrableSolutions_iff_of_apply_eq_toLp
-    {A : ℝ → WithLp p (F₁ × F₂) →L[ℝ] WithLp p (F₁ × F₂)} {A₁ : ℝ → F₁ →L[ℝ] F₁}
-    {A₂ : ℝ → F₂ →L[ℝ] F₂} (hA : ∀ s x, A s x = WithLp.toLp p (A₁ s x.fst, A₂ s x.snd))
-    {x : WithLp p (F₁ × F₂)} :
+    {A : ℝ → WithLp 2 (F₁ × F₂) →L[ℝ] WithLp 2 (F₁ × F₂)} {A₁ : ℝ → F₁ →L[ℝ] F₁}
+    {A₂ : ℝ → F₂ →L[ℝ] F₂} (hA : ∀ s x, A s x = WithLp.toLp 2 (A₁ s x.fst, A₂ s x.snd))
+    {x : WithLp 2 (F₁ × F₂)} :
     x ∈ squareIntegrableSolutions A ↔
       x.fst ∈ squareIntegrableSolutions A₁ ∧ x.snd ∈ squareIntegrableSolutions A₂ := by
   constructor
   · rintro ⟨v, rfl, hv, hv2⟩
     refine ⟨⟨fun s ↦ (v s).fst, rfl, fun s ↦ ?_,
-        hv2.continuousLinearMap_comp (WithLp.fstL p ℝ _ _)⟩,
-      ⟨fun s ↦ (v s).snd, rfl, fun s ↦ ?_, hv2.continuousLinearMap_comp (WithLp.sndL p ℝ _ _)⟩⟩
+        hv2.continuousLinearMap_comp (WithLp.fstL 2 ℝ _ _)⟩,
+      ⟨fun s ↦ (v s).snd, rfl, fun s ↦ ?_, hv2.continuousLinearMap_comp (WithLp.sndL 2 ℝ _ _)⟩⟩
     · simpa [hA, Function.comp_def] using
-        (WithLp.fstL p ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
+        (WithLp.fstL 2 ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
     · simpa [hA, Function.comp_def] using
-        (WithLp.sndL p ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
+        (WithLp.sndL 2 ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
   · rintro ⟨⟨v₁, hv₁0, hv₁, hv₁2⟩, ⟨v₂, hv₂0, hv₂, hv₂2⟩⟩
-    let e : F₁ × F₂ →L[ℝ] WithLp p (F₁ × F₂) := (WithLp.prodContinuousLinearEquiv p ℝ F₁ F₂).symm
-    refine ⟨fun s ↦ WithLp.toLp p (v₁ s, v₂ s), WithLp.prod_ext hv₁0 hv₂0, fun s ↦ ?_, ?_⟩
+    let e : F₁ × F₂ →L[ℝ] WithLp 2 (F₁ × F₂) := (WithLp.prodContinuousLinearEquiv 2 ℝ F₁ F₂).symm
+    refine ⟨fun s ↦ WithLp.toLp 2 (v₁ s, v₂ s),
+      (WithLp.ext_iff 2).2 (Prod.ext (by simp [hv₁0]) (by simp [hv₂0])), fun s ↦ ?_, ?_⟩
     · simpa [e, hA, Function.comp_def, ← WithLp.toLp_neg] using
         e.hasFDerivAt.comp_hasDerivAt s ((hv₁ s).prodMk (hv₂ s))
     · -- The pair is the sum of its two components embedded in the product.
@@ -162,20 +161,7 @@ theorem mem_squareIntegrableSolutions_iff_of_apply_eq_toLp
       ext s
       simp [e, ← WithLp.toLp_add]
 
-/-- If both diagonal blocks of `A` on `WithLp p (F₁ × F₂)` have no nonzero square-integrable
-solutions, neither does `A`. -/
-theorem squareIntegrableSolutions_eq_bot_of_apply_eq_toLp
-    {A : ℝ → WithLp p (F₁ × F₂) →L[ℝ] WithLp p (F₁ × F₂)} {A₁ : ℝ → F₁ →L[ℝ] F₁}
-    {A₂ : ℝ → F₂ →L[ℝ] F₂} (hA : ∀ s x, A s x = WithLp.toLp p (A₁ s x.fst, A₂ s x.snd))
-    (h₁ : squareIntegrableSolutions A₁ = ⊥) (h₂ : squareIntegrableSolutions A₂ = ⊥) :
-    squareIntegrableSolutions A = ⊥ := by
-  refine eq_bot_iff.2 fun z hz ↦ (Submodule.mem_bot ℝ).2 ?_
-  rw [mem_squareIntegrableSolutions_iff_of_apply_eq_toLp hA, h₁, h₂, Submodule.mem_bot,
-    Submodule.mem_bot] at hz
-  exact WithLp.prod_ext hz.1 hz.2
-
 end Prod
-
 /-- **Conjugation by an exponential weight.** If `u' = -T u` at `s` and `w` has derivative `w'`
 at `s`, then `exp w • u` solves the shifted equation `(exp w • u)' = -(T - w' • id) (exp w • u)` at
 `s`. -/

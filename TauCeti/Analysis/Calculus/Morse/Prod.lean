@@ -47,10 +47,9 @@ pair of gradients. The results above transfer to it through
 * `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: the negative
   gradient trajectories of the separated sum are the pairs of negative gradient trajectories of
   the summands.
-* `TauCeti.hessianQuadraticForm_separatedSum_apply`,
-  `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff`, and `TauCeti.morseIndex_separatedSum`:
-  its Hessian quadratic form is the sum of the Hessians of the summands, and its nondegenerate
-  critical points are the pairs of nondegenerate critical points, with additive Morse index.
+* `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
+  its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
+  Morse index.
 
 ## References
 
@@ -262,17 +261,6 @@ end Gradient
 
 section Critical
 
-/-- **The Hessian quadratic form of a separated sum is the sum of the Hessians of the summands.** -/
-theorem hessianQuadraticForm_separatedSum_apply {z v : WithLp 2 (E × F)}
-    (hf : ContDiffAt ℝ 2 f z.fst) (hg : ContDiffAt ℝ 2 g z.snd) :
-    hessianQuadraticForm (separatedSum f g) z v =
-      hessianQuadraticForm f z.fst v.fst + hessianQuadraticForm g z.snd v.snd := by
-  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
-  have hez : e z = (z.fst, z.snd) := by ext <;> simp [e]
-  rw [separatedSum_eq_comp, e.hessianQuadraticForm_comp, QuadraticMap.comp_apply, hez,
-    hessianQuadraticForm_comp_fst_add_comp_snd hf hg]
-  simp [e, QuadraticMap.prod_apply]
-
 /-- **Nondegenerate critical points of a separated sum** are the pairs of nondegenerate critical
 points of the summands. -/
 @[simp]
@@ -326,11 +314,14 @@ theorem morseIndex_separatedSum [FiniteDimensional ℝ E] [FiniteDimensional ℝ
     {z : WithLp 2 (E × F)} (hf : ContDiffAt ℝ 2 f z.fst) (hg : ContDiffAt ℝ 2 g z.snd) :
     morseIndex (separatedSum f g) z = morseIndex f z.fst + morseIndex g z.snd := by
   let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
-  have hez : e z = (z.fst, z.snd) := by ext <;> simp [e]
+  have hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z) :=
+    (ContDiffAt.comp (e z) hf contDiffAt_fst).add (ContDiffAt.comp (e z) hg contDiffAt_snd)
   -- The change of coordinates is linear, so the Hessian pulls back without a criticality
   -- hypothesis.
-  rw [separatedSum_eq_comp, morseIndex_def, e.hessianQuadraticForm_comp, hez,
-    ← morseIndex_comp_fst_add_comp_snd hf hg, morseIndex_def]
+  have hH := (e : WithLp 2 (E × F) →L[ℝ] E × F).hessianQuadraticForm_comp hsum
+  simp only [ContinuousLinearEquiv.coe_coe] at hH
+  rw [separatedSum_eq_comp, morseIndex_def, hH, ← morseIndex_comp_fst_add_comp_snd hf hg,
+    morseIndex_def]
   exact (QuadraticMap.Equivalent.sigNeg_eq
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv _ e.toLinearEquiv⟩).symm
 
