@@ -416,6 +416,38 @@ theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
   | zero => simp
   | succ n ih => simp [NormalCrystal.fIter_succ, lowerIter_succ, ih]
 
+/-- Equality of `eIter` in `normalCrystalOn` reduces to equality of `raiseIter` on underlying
+paths. -/
+theorem normalCrystalOn_eIter_eq_iff {i : b.support} {n : ℕ} {π : S} {o : Option S} :
+    (normalCrystalOn hf hF hS).eIter i n π = o ↔
+      raiseIter (F i) (f (P.root i)) n π.1 = o.unattach := by
+  rw [← unattach_normalCrystalOn_eIter (hf := hf) (hF := hF) (hS := hS)]
+  cases (normalCrystalOn hf hF hS).eIter i n π <;> cases o <;> simp [Subtype.ext_iff]
+
+/-- Equality of `fIter` in `normalCrystalOn` reduces to equality of `lowerIter` on underlying
+paths. -/
+theorem normalCrystalOn_fIter_eq_iff {i : b.support} {n : ℕ} {π : S} {o : Option S} :
+    (normalCrystalOn hf hF hS).fIter i n π = o ↔
+      lowerIter (F i) (f (P.root i)) n π.1 = o.unattach := by
+  rw [← unattach_normalCrystalOn_fIter (hf := hf) (hF := hF) (hS := hS)]
+  cases (normalCrystalOn hf hF hS).fIter i n π <;> cases o <;> simp [Subtype.ext_iff]
+
+/-- Equality of `eIter` with `o.map g` in `normalCrystalOn` reduces to `raiseIter` on underlying
+paths. -/
+theorem normalCrystalOn_eIter_eq_map_iff {B : Type*} {i : b.support} {n : ℕ} {π : S}
+    {o : Option B} {g : B → S} :
+    (normalCrystalOn hf hF hS).eIter i n π = o.map g ↔
+      raiseIter (F i) (f (P.root i)) n π.1 = o.map (fun x ↦ (g x).1) := by
+  rw [normalCrystalOn_eIter_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
+
+/-- Equality of `fIter` with `o.map g` in `normalCrystalOn` reduces to `lowerIter` on underlying
+paths. -/
+theorem normalCrystalOn_fIter_eq_map_iff {B : Type*} {i : b.support} {n : ℕ} {π : S}
+    {o : Option B} {g : B → S} :
+    (normalCrystalOn hf hF hS).fIter i n π = o.map g ↔
+      lowerIter (F i) (f (P.root i)) n π.1 = o.map (fun x ↦ (g x).1) := by
+  rw [normalCrystalOn_fIter_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
+
 /-- Adjacency in the crystal graph of `normalCrystalOn` is single-step root-operator adjacency. -/
 @[simp]
 theorem normalCrystalOn_graph_adj_iff {π π' : S} :
@@ -599,6 +631,19 @@ end AmbientCrystal
 
 /-! ### Lattice-endpoint paths need not be integral -/
 
+/-- Any two-segment excursion `straight 𝕜 (-v) * straight 𝕜 v` whose height `F i v` lies strictly
+between `0` and `1` has non-integral minimum `i`-coroot height `-F i v`, hence is not an integral
+path. -/
+theorem not_isIntegralPath_straight_neg_mul_straight (i : b.support) {v : V}
+    (hv0 : 0 < F i v) (hv1 : F i v < 1) :
+    ¬ IsIntegralPath b f F (straight 𝕜 (-v) * straight 𝕜 v) := by
+  intro hπ
+  obtain ⟨z, hz⟩ := hπ.exists_minHeight_eq_intCast i
+  rw [minHeight_straight_neg_mul_straight, min_eq_right (by linarith)] at hz
+  have hlt0 : z < 0 := by exact_mod_cast (show (z : 𝕜) < (0 : ℤ) by push_cast; linarith)
+  have hgt : (-1 : ℤ) < z := by exact_mod_cast (show ((-1 : ℤ) : 𝕜) < z by push_cast; linarith)
+  omega
+
 /-- **Not every path with lattice endpoint is integral**: as soon as `b.support` is nonempty, the
 two-segment excursion `-(1/4) α_i` followed by `(1/4) α_i` has endpoint `0 ∈ f(X)` and minimum
 coroot height `-1/2 ∉ ℤ`. -/
@@ -607,19 +652,12 @@ theorem exists_endpoint_eq_zero_and_not_isIntegralPath [Nonempty b.support]
     ∃ π : PLPath 𝕜 V, π.endpoint = 0 ∧ ¬ IsIntegralPath b f F π := by
   obtain ⟨i⟩ := ‹Nonempty b.support›
   let u := (4 : 𝕜)⁻¹ • f (P.root i)
-  let π : PLPath 𝕜 V := straight 𝕜 (-u) * straight 𝕜 u
-  refine ⟨π, by simp [π], fun hπ ↦ ?_⟩
-  obtain ⟨z, hz⟩ := hπ.exists_minHeight_eq_intCast i
-  have hmin : π.minHeight (F i) = -(2 : 𝕜)⁻¹ := by
-    rw [minHeight_straight_neg_mul_straight]
+  have hFu : F i u = (2 : 𝕜)⁻¹ := by
     simp only [u, map_smul, smul_eq_mul, apply_root_eq_two hF i]
     norm_num
-  rw [hmin] at hz
-  have h2z : ((2 * z : ℤ) : 𝕜) = -1 := by
-    push_cast
-    linarith
-  have : (2 * z : ℤ) = -1 := by exact_mod_cast h2z
-  omega
+  exact ⟨straight 𝕜 (-u) * straight 𝕜 u, by simp,
+    not_isIntegralPath_straight_neg_mul_straight i
+      (hFu ▸ by norm_num) (hFu ▸ by norm_num)⟩
 
 end Realization
 

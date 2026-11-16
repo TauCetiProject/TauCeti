@@ -127,21 +127,15 @@ theorem eWord_eq_some_iff_of_highest {x y : B} (hx : ∀ i, c.e i x = none)
 @[simp]
 theorem eWord_replicate (n : ℕ) (i : b.support) (x : B) :
     c.eWord (List.replicate n i) x = c.eIter i n x := by
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih =>
-    rw [List.replicate_succ, eWord_cons, eIter_succ]
-    cases c.e i x <;> simp [ih]
+  rw [eIter_eq_iterate]
+  exact Option.foldlM_replicate (fun x i ↦ c.e i x) n i x
 
 /-- Lowering along `n` copies of `i` is the `n`-fold iterated lowering operator `fIter i n`. -/
 @[simp]
 theorem fWord_replicate (n : ℕ) (i : b.support) (x : B) :
     c.fWord (List.replicate n i) x = c.fIter i n x := by
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih =>
-    rw [List.replicate_succ, fWord_cons, fIter_succ]
-    cases c.f i x <;> simp [ih]
+  rw [fIter_eq_iterate]
+  exact Option.foldlM_replicate (fun x i ↦ c.f i x) n i x
 
 namespace StrictHom
 
@@ -161,11 +155,8 @@ theorem eWord_apply (w : List b.support) (x : B) :
 @[simp]
 theorem fWord_apply (w : List b.support) (x : B) :
     d.fWord w (ψ x) = (c.fWord w x).map ψ := by
-  induction w generalizing x with
-  | nil => simp
-  | cons i w ih =>
-    rw [fWord_cons, fWord_cons, ψ.f_apply]
-    cases c.f i x <;> simp [ih]
+  have hdual : ⇑ψ.dual = ⇑ψ := funext ψ.dual_apply
+  simpa [hdual] using ψ.dual.eWord_apply w x
 
 end StrictHom
 

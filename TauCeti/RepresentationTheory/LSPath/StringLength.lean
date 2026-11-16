@@ -73,6 +73,14 @@ variable (f x) in
 noncomputable def raiseIter : ℕ → PLPath 𝕜 V → Option (PLPath 𝕜 V) :=
   Option.iterate (raise f x)
 
+/-- `lowerIter f x` is `Option.iterate (lower f x)`. -/
+theorem lowerIter_eq_iterate (n : ℕ) (p : PLPath 𝕜 V) :
+    lowerIter f x n p = Option.iterate (lower f x) n p := (rfl)
+
+/-- `raiseIter f x` is `Option.iterate (raise f x)`. -/
+theorem raiseIter_eq_iterate (n : ℕ) (p : PLPath 𝕜 V) :
+    raiseIter f x n p = Option.iterate (raise f x) n p := (rfl)
+
 @[simp]
 theorem lowerIter_zero (p : PLPath 𝕜 V) : lowerIter f x 0 p = some p :=
   Option.iterate_zero (lower f x) p

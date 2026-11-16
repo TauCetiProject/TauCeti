@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.OrbitStable
 public import TauCeti.RepresentationTheory.LSPath.PartialInverse
+public import TauCeti.RepresentationTheory.LSPath.StringLength
 import TauCeti.LinearAlgebra.RootSystem.Height
 import Mathlib.Algebra.Order.Archimedean.Basic
 
@@ -88,6 +89,29 @@ theorem raiseWord_append (v w : List ι) (π : PLPath 𝕜 V) :
     raiseWord F x (v ++ w) π = (raiseWord F x v π).bind (raiseWord F x w) := by
   unfold raiseWord
   exact List.foldlM_append
+
+/-- Lowering along `n` copies of `i` is `lowerIter (F i) (x i) n`. -/
+@[simp]
+theorem lowerWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    lowerWord F x (List.replicate n i) π = lowerIter (F i) (x i) n π := by
+  rw [lowerIter_eq_iterate]
+  exact Option.foldlM_replicate (fun π i ↦ lower (F i) (x i) π) n i π
+
+/-- Raising along `n` copies of `i` is `raiseIter (F i) (x i) n`. -/
+@[simp]
+theorem raiseWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    raiseWord F x (List.replicate n i) π = raiseIter (F i) (x i) n π := by
+  rw [raiseIter_eq_iterate]
+  exact Option.foldlM_replicate (fun π i ↦ raise (F i) (x i) π) n i π
+
+/-- Raising along a word is lowering along the same word conjugated by path reversal. -/
+theorem raiseWord_eq_map_lowerWord_reverse (w : List ι) (π : PLPath 𝕜 V) :
+    raiseWord F x w π = (lowerWord F x w π.reverse).map reverse := by
+  induction w generalizing π with
+  | nil => simp
+  | cons i w ih =>
+    simp only [raiseWord_cons, lowerWord_cons, raise_def, Option.bind_map,
+      Option.map_bind, ih, Function.comp_def, reverse_reverse]
 
 /-- Lowering along a word and raising along its reversal are partial inverses. -/
 theorem lowerWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :

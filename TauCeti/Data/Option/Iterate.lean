@@ -12,9 +12,10 @@ public import Mathlib.Data.Option.Basic
 # Iteration of a partial self-map
 
 Iterating a map `α → Option α` returns `none` as soon as one application is undefined.
-The bind composition law and the two successor equations support both recursive proofs
-and concatenation of partial trajectories. This supplies the common iteration used by
-crystal strings and path root operators.
+The bind composition law, the two successor equations, and the reduction of `List.foldlM` on
+constant lists (`Option.foldlM_replicate`) support both recursive proofs and concatenation of
+partial trajectories. This supplies the common iteration used by crystal strings and path root
+operators.
 -/
 
 public section
@@ -53,5 +54,14 @@ theorem iterate_succ' (f : α → Option α) (n : ℕ) (x : α) :
     iterate f (n + 1) x = (iterate f n x).bind f := by
   have hfun : iterate f 1 = f := funext (iterate_one f)
   simpa only [hfun] using iterate_add f n 1 x
+
+/-- Folding a partial step along `n` copies of the same label equals `n`-fold iteration. -/
+theorem foldlM_replicate {β : Type*} (step : α → β → Option α) (n : ℕ) (b : β) (x : α) :
+    (List.replicate n b).foldlM step x = iterate (fun y ↦ step y b) n x := by
+  induction n generalizing x with
+  | zero => rfl
+  | succ n ih =>
+    rw [List.replicate_succ, List.foldlM_cons, iterate_succ]
+    cases step x b <;> simp [ih]
 
 end Option

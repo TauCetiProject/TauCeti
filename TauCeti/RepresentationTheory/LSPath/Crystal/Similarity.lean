@@ -7,10 +7,11 @@ module
 
 public import TauCeti.RepresentationTheory.Crystal.Similarity
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Operations
-public import TauCeti.RepresentationTheory.LSPath.Similarity
 
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import TauCeti.RepresentationTheory.LSPath.CappedReflection
 
 /-!
 # Dilation similarity on normal crystals of piecewise-linear paths
@@ -24,17 +25,25 @@ crystal-admissible set `S` into a crystal-admissible set `T`, the path-level sim
 `PLPath.raiseIter_map_natCast_smul` assembles dilation into a magnification-`n` crystal similarity
 morphism `TauCeti.PLPath.dilationOnSimilarityHom` from `normalCrystalOn hf hF hS` to
 `normalCrystalOn hf hF hT` (and into `normalCrystal hf hF` when dilated paths in `S` are integral,
-via `TauCeti.PLPath.dilationToNormalCrystalSimilarityHom`). Dilation similarity is functorial with
-respect to inclusions, multiplicatively composes across magnification factors, and commutes with
-path reversal (`reverseIso`).
+via `TauCeti.PLPath.dilationToNormalCrystalSimilarityHom`). At magnification `n = 1`, these
+morphisms recover `inclusionHom` (`TauCeti.PLPath.toStrictHom_dilationOnSimilarityHom_one`) and
+`embedHom` (`TauCeti.PLPath.toStrictHom_dilationToNormalCrystalSimilarityHom_one`); postcomposing
+`dilationOnSimilarityHom` with `embedHom` yields `dilationToNormalCrystalSimilarityHom`
+(`TauCeti.PLPath.embedHom_compSimilarityHom_dilationOnSimilarityHom`); dilation morphisms compose
+multiplicatively across magnification factors (`TauCeti.PLPath.dilationOnSimilarityHom_comp`); and
+`reverseIso` applied to the dual of `dilationToNormalCrystalSimilarityHom` agrees on underlying
+paths with dilation of the reversed path
+(`TauCeti.PLPath.reverseIso_dilationToNormalCrystalSimilarityHom_dual_apply`).
 
-Conversely, integrality of a dilated path does **not** descend to the original path, even when the
-original path already has zero endpoint (`π.endpoint = 0 ∈ f(X)`): for any isolated simple node `i`
-(in particular on every rank-one root datum), the excursion `-(1/4) α_i` followed by `(1/4) α_i`
-dilates at `n = 2` to the integral path `simpleRootBent 𝕜 f i` while itself having non-integral
-minimum height `-1/2` (`TauCeti.PLPath.exists_isIntegralPath_two_smul_and_not_isIntegralPath`).
-Thus crystal-admissibility of the unstretched source set is genuinely needed in the crystal
-similarity construction.
+Conversely, integrality of a dilated path does **not** descend to the original path for any
+magnification `1 < n`, even when the original path already has zero endpoint
+(`π.endpoint = 0 ∈ f(X)`): for any isolated simple node `i` (in particular on every rank-one root
+datum), the excursion `-(1 / (2n)) α_i` followed by `(1 / (2n)) α_i` dilates at `n` to the
+integral path `simpleRootBent 𝕜 f i` while itself having non-integral minimum height `-1 / n`
+(`TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath_of_isolated`,
+`TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath`). Thus
+crystal-admissibility of the unstretched source set is genuinely needed in the crystal similarity
+construction.
 
 ## Main definitions
 
@@ -47,13 +56,18 @@ similarity construction.
 
 * `TauCeti.PLPath.dilationOnSimilarityHom_injective`: dilation similarity morphisms on path
   crystals are always injective (since scalar multiplication by `(n : 𝕜) ≠ 0` is a linear
-  automorphism on `PLPath 𝕜 V`).
-* `TauCeti.PLPath.dilationOnSimilarityHom_one`, `TauCeti.PLPath.dilationOnSimilarityHom_comp`,
-  `TauCeti.PLPath.reverseIso_comp_dilationToNormalCrystalSimilarityHom`: compatibility with
-  inclusions, iterated dilation, and crystal duality.
-* `TauCeti.PLPath.exists_isIntegralPath_two_smul_and_not_isIntegralPath_of_isolated`,
-  `TauCeti.PLPath.exists_isIntegralPath_two_smul_and_not_isIntegralPath`: integrality of `2 • π`
-  and `π.endpoint = 0` do not imply integrality of `π`.
+  automorphism of `V`, hence induces a bijection on `PLPath 𝕜 V`).
+* `TauCeti.PLPath.embedHom_compSimilarityHom_dilationOnSimilarityHom`,
+  `TauCeti.PLPath.toStrictHom_dilationOnSimilarityHom_one`,
+  `TauCeti.PLPath.toStrictHom_dilationToNormalCrystalSimilarityHom_one`,
+  `TauCeti.PLPath.dilationOnSimilarityHom_comp`,
+  `TauCeti.PLPath.reverseIso_dilationToNormalCrystalSimilarityHom_dual_apply`: factorization
+  through `embedHom`, reduction at `n = 1` to `inclusionHom` and `embedHom`, multiplicative
+  composition, and agreement on underlying paths with `reverseIso` on dualized dilation.
+* `TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath_of_isolated`,
+  `TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath`: for every
+  `1 < n`, integrality of the `n`-dilation of `π` and `π.endpoint = 0` do not imply integrality of
+  `π`.
 
 ## References
 
@@ -73,46 +87,6 @@ variable {ι X Y 𝕜 V : Type*} [AddCommGroup X] [AddCommGroup Y]
   {P : RootDatum ι X Y} {b : P.Base}
   [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
   {f : X →+ V} {F : b.support → Dual 𝕜 V}
-
-section IterCriteria
-
-variable {hf : Function.Injective f}
-  {hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)}
-  {S : Set (PLPath 𝕜 V)} {hS : IsCrystalSet b f F S}
-
-/-- Equality of `eIter` in `normalCrystalOn` reduces to equality of `raiseIter` on underlying
-paths. -/
-theorem normalCrystalOn_eIter_eq_iff {i : b.support} {n : ℕ} {π : S} {o : Option S} :
-    (normalCrystalOn hf hF hS).eIter i n π = o ↔
-      raiseIter (F i) (f (P.root i)) n π.1 = o.unattach := by
-  rw [← unattach_normalCrystalOn_eIter (hf := hf) (hF := hF) (hS := hS)]
-  cases (normalCrystalOn hf hF hS).eIter i n π <;> cases o <;> simp [Subtype.ext_iff]
-
-/-- Equality of `fIter` in `normalCrystalOn` reduces to equality of `lowerIter` on underlying
-paths. -/
-theorem normalCrystalOn_fIter_eq_iff {i : b.support} {n : ℕ} {π : S} {o : Option S} :
-    (normalCrystalOn hf hF hS).fIter i n π = o ↔
-      lowerIter (F i) (f (P.root i)) n π.1 = o.unattach := by
-  rw [← unattach_normalCrystalOn_fIter (hf := hf) (hF := hF) (hS := hS)]
-  cases (normalCrystalOn hf hF hS).fIter i n π <;> cases o <;> simp [Subtype.ext_iff]
-
-/-- Equality of `eIter` with `o.map g` in `normalCrystalOn` reduces to `raiseIter` on underlying
-paths. -/
-theorem normalCrystalOn_eIter_eq_map_iff {B : Type*} {i : b.support} {n : ℕ} {π : S}
-    {o : Option B} {g : B → S} :
-    (normalCrystalOn hf hF hS).eIter i n π = o.map g ↔
-      raiseIter (F i) (f (P.root i)) n π.1 = o.map (fun x ↦ (g x).1) := by
-  rw [normalCrystalOn_eIter_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
-
-/-- Equality of `fIter` with `o.map g` in `normalCrystalOn` reduces to `lowerIter` on underlying
-paths. -/
-theorem normalCrystalOn_fIter_eq_map_iff {B : Type*} {i : b.support} {n : ℕ} {π : S}
-    {o : Option B} {g : B → S} :
-    (normalCrystalOn hf hF hS).fIter i n π = o.map g ↔
-      lowerIter (F i) (f (P.root i)) n π.1 = o.map (fun x ↦ (g x).1) := by
-  rw [normalCrystalOn_fIter_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
-
-end IterCriteria
 
 /-! ### Dilation similarity morphisms between path crystals -/
 
@@ -207,13 +181,22 @@ theorem embedHom_compSimilarityHom_dilationOnSimilarityHom (hf : Function.Inject
 
 /-- At magnification `n = 1`, `dilationOnSimilarityHom` recovers `inclusionHom`. -/
 @[simp]
-theorem dilationOnSimilarityHom_one (hf : Function.Injective f)
+theorem toStrictHom_dilationOnSimilarityHom_one (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S T : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
-    (hST : S ⊆ T) :
-    (dilationOnSimilarityHom hf hF hS hT Nat.one_pos
-      (fun _ hπ ↦ by simpa using hST hπ)).toStrictHom =
-      inclusionHom hS hT hST :=
+    (hn : 0 < 1) (hmap : ∀ ⦃π⦄, π ∈ S → π.map (((1 : ℕ) : 𝕜) • LinearMap.id) ∈ T) :
+    (dilationOnSimilarityHom hf hF hS hT hn hmap).toStrictHom =
+      inclusionHom hS hT (subset_def.mpr fun _ hπ ↦ by simpa using hmap hπ) :=
+  NormalCrystal.StrictHom.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- At magnification `n = 1`, `dilationToNormalCrystalSimilarityHom` recovers `embedHom`. -/
+@[simp]
+theorem toStrictHom_dilationToNormalCrystalSimilarityHom_one (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hn : 0 < 1)
+    (hmap : ∀ ⦃π⦄, π ∈ S → IsIntegralPath b f F (π.map (((1 : ℕ) : 𝕜) • LinearMap.id))) :
+    (dilationToNormalCrystalSimilarityHom hf hF hS hn hmap).toStrictHom =
+      embedHom hS :=
   NormalCrystal.StrictHom.ext fun _ ↦ Subtype.ext (by simp)
 
 /-- Composing a magnification-`m` dilation with a magnification-`n` dilation equals the
@@ -233,8 +216,9 @@ theorem dilationOnSimilarityHom_comp (hf : Function.Injective f)
   NormalCrystal.SimilarityHom.ext fun _ ↦ Subtype.ext
     (by simp [map_map, LinearMap.comp_smul, smul_smul, Nat.cast_mul, mul_comm])
 
-/-- Path reversal intertwines dualized dilation similarity with dilation on reversed paths. -/
-theorem reverseIso_comp_dilationToNormalCrystalSimilarityHom (hf : Function.Injective f)
+/-- Applying `reverseIso` to the dual of `dilationToNormalCrystalSimilarityHom` agrees on
+underlying paths with dilating the reversed path. -/
+theorem reverseIso_dilationToNormalCrystalSimilarityHom_dual_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) {n : ℕ} (hn : 0 < n)
     (hmap : ∀ ⦃π⦄, π ∈ S → IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id))) (x : S) :
@@ -248,49 +232,47 @@ end DilationHom
 
 section Counterexample
 
-/-- **Integrality of `2 • π` and `π.endpoint = 0` do not imply integrality of `π`**: for an
-isolated simple node `i`, the excursion `-(1/4) α_i` followed by `(1/4) α_i` has zero endpoint and
-dilates by `2` to the integral path `simpleRootBent 𝕜 f i`, yet has minimum `i`-coroot height
-`-1/2 ∉ ℤ`. -/
-theorem exists_isIntegralPath_two_smul_and_not_isIntegralPath_of_isolated
+/-- **Integrality of `n • π` and `π.endpoint = 0` do not imply integrality of `π` for any `1 < n`**:
+for an isolated simple node `i`, the excursion `-(1 / (2n)) α_i` followed by `(1 / (2n)) α_i` has
+zero endpoint and dilates by `n` to the integral path `simpleRootBent 𝕜 f i`, yet has minimum
+`i`-coroot height `-1 / n ∉ ℤ`. -/
+theorem exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath_of_isolated
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support)
-    (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0) :
+    (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0) {n : ℕ} (hn : 1 < n) :
     ∃ π : PLPath 𝕜 V, π.endpoint = 0 ∧
-      IsIntegralPath b f F (π.map ((2 : 𝕜) • LinearMap.id)) ∧
+      IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id)) ∧
       ¬ IsIntegralPath b f F π := by
-  let u := (4 : 𝕜)⁻¹ • f (P.root i)
+  let u := (2 * (n : 𝕜))⁻¹ • f (P.root i)
   let π : PLPath 𝕜 V := straight 𝕜 (-u) * straight 𝕜 u
-  have h2u : (2 : 𝕜) • u = (2 : 𝕜)⁻¹ • f (P.root i) := by
+  have hn1 : (1 : 𝕜) < n := Nat.one_lt_cast.mpr hn
+  have hn0 : (n : 𝕜) ≠ 0 := by linarith
+  have hnu : (n : 𝕜) • u = (2 : 𝕜)⁻¹ • f (P.root i) := by
     simp only [u, smul_smul]
-    norm_num
-  have hdil : π.map ((2 : 𝕜) • LinearMap.id) = simpleRootBent 𝕜 f i := by
-    simp [π, simpleRootBent_def, h2u]
+    congr 1
+    field_simp
+  have hdil : π.map ((n : 𝕜) • LinearMap.id) = simpleRootBent 𝕜 f i := by
+    simp [π, simpleRootBent_def, hnu]
   have hint_bent : IsIntegralPath b f F (simpleRootBent 𝕜 f i) :=
     (isCrystalSet_simpleRootString hF i hi).subset_isIntegralPath (Or.inr (Or.inl rfl))
-  refine ⟨π, by simp [π], hdil ▸ hint_bent, fun hπ ↦ ?_⟩
-  obtain ⟨z, hz⟩ := hπ.exists_minHeight_eq_intCast i
-  have hmin : π.minHeight (F i) = -(2 : 𝕜)⁻¹ := by
-    rw [minHeight_straight_neg_mul_straight]
+  have hFu : F i u = (n : 𝕜)⁻¹ := by
     simp only [u, map_smul, smul_eq_mul, apply_root_eq_two hF i]
-    norm_num
-  rw [hmin] at hz
-  have h2z : ((2 * z : ℤ) : 𝕜) = -1 := by
-    push_cast
-    linarith
-  have : (2 * z : ℤ) = -1 := by exact_mod_cast h2z
-  omega
+    field_simp
+  exact ⟨π, by simp [π], hdil ▸ hint_bent,
+    not_isIntegralPath_straight_neg_mul_straight i
+      (hFu ▸ inv_pos.mpr (by linarith)) (hFu ▸ inv_lt_one_of_one_lt₀ hn1)⟩
 
-/-- Over any rank-one root datum (`Nonempty b.support` and `Subsingleton b.support`), there exists
-a zero-endpoint path `π` whose `2`-dilation is an integral path while `π` itself is not. -/
-theorem exists_isIntegralPath_two_smul_and_not_isIntegralPath
+/-- Over any rank-one root datum (`Nonempty b.support` and `Subsingleton b.support`) and for any
+`1 < n`, there exists a zero-endpoint path `π` whose `n`-dilation is an integral path while `π`
+itself is not. -/
+theorem exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath
     [Nonempty b.support] [Subsingleton b.support]
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) {n : ℕ} (hn : 1 < n) :
     ∃ π : PLPath 𝕜 V, π.endpoint = 0 ∧
-      IsIntegralPath b f F (π.map ((2 : 𝕜) • LinearMap.id)) ∧
+      IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id)) ∧
       ¬ IsIntegralPath b f F π := by
   obtain ⟨i⟩ := ‹Nonempty b.support›
-  exact exists_isIntegralPath_two_smul_and_not_isIntegralPath_of_isolated hF i
-    fun j hj ↦ absurd (Subsingleton.elim j i) hj
+  exact exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath_of_isolated hF i
+    (fun j hj ↦ absurd (Subsingleton.elim j i) hj) hn
 
 end Counterexample
 

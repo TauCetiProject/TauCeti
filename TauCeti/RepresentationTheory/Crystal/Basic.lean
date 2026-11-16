@@ -262,6 +262,14 @@ def eIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.e i)
 /-- The `n`-fold lowering operator `f i ^ n`, as a partial map. -/
 def fIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.f i)
 
+/-- `eIter i` is `Option.iterate (c.e i)`. -/
+theorem eIter_eq_iterate (i : b.support) (n : ℕ) (x : B) :
+    c.eIter i n x = Option.iterate (c.e i) n x := (rfl)
+
+/-- `fIter i` is `Option.iterate (c.f i)`. -/
+theorem fIter_eq_iterate (i : b.support) (n : ℕ) (x : B) :
+    c.fIter i n x = Option.iterate (c.f i) n x := (rfl)
+
 variable {i : b.support} {n : ℕ} {x y : B}
 
 @[simp]
@@ -285,6 +293,16 @@ theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x :=
 @[simp]
 theorem fIter_one (x : B) : c.fIter i 1 x = c.f i x :=
   Option.iterate_one (c.f i) x
+
+/-- Concatenating two runs of `e i` composes them via `Option.bind`. -/
+theorem eIter_add (m n : ℕ) (x : B) :
+    c.eIter i (m + n) x = (c.eIter i m x).bind (c.eIter i n) :=
+  Option.iterate_add (c.e i) m n x
+
+/-- Concatenating two runs of `f i` composes them via `Option.bind`. -/
+theorem fIter_add (m n : ℕ) (x : B) :
+    c.fIter i (m + n) x = (c.fIter i m x).bind (c.fIter i n) :=
+  Option.iterate_add (c.f i) m n x
 
 theorem eIter_succ' (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.eIter i n x).bind (c.e i) :=
   Option.iterate_succ' (c.e i) n x
