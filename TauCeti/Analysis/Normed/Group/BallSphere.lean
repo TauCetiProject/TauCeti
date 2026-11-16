@@ -33,11 +33,13 @@ Translating by `-h` maps `{x | s < ‖x‖}` into `{x | r < ‖x‖}` whenever `
 A bijection of the closed unit ball preserving the unit sphere restricts to a bijection of the
 unit sphere (`Equiv.restrictUnitSphere`).
 
-An action by isometries fixing zero preserves every sphere centred at zero, so it restricts to an
-action on the sphere (`TauCeti.Sphere.instMulActionOfIsIsometricSMul`), continuous when the ambient
-action is and again by isometries, and the inclusion of the sphere is equivariant
-(`TauCeti.Sphere.subtypeMulActionHom`). For instance, the unit circle acts in this way on the
-spheres of a complex normed space.
+An action by isometries fixing zero (`SMulZeroClass`) preserves every sphere centred at zero, so
+it restricts to a scalar action on the sphere (`TauCeti.Sphere.instSMulOfIsIsometricSMul`),
+continuous when the ambient action is and again by isometries, and the inclusion of the sphere is
+equivariant (`TauCeti.Sphere.subtypeMulActionHom`). A monoid acting distributively
+(`DistribMulAction`) by isometries acts on the sphere
+(`TauCeti.Sphere.instMulActionOfIsIsometricSMul`). For instance, the unit circle acts in this way
+on the spheres of a complex normed space.
 -/
 
 public section
@@ -192,7 +194,7 @@ theorem isEmbedding_subtypeMulActionHom [SMulZeroClass M E] [IsIsometricSMul M E
     IsEmbedding (subtypeMulActionHom M E r) :=
   IsEmbedding.subtypeVal
 
-/-- A monoid acting by isometries fixing zero acts on every sphere centred at zero. -/
+/-- A monoid acting distributively by isometries acts on every sphere centred at zero. -/
 instance instMulActionOfIsIsometricSMul [Monoid M] [DistribMulAction M E] [IsIsometricSMul M E] :
     MulAction M (sphere (0 : E) r) :=
   Subtype.coe_injective.mulAction _ coe_smul_of_isIsometricSMul

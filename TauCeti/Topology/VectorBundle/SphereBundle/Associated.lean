@@ -13,8 +13,8 @@ public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 /-!
 # Sphere bundles with an isometric structure group
 
-Let `P` be a principal `G`-bundle over `B`, and let `G` act continuously on a normed space `F` by
-isometries fixing zero, for instance linearly and isometrically. Then `G` acts on the unit sphere
+Let `P` be a principal `G`-bundle over `B`, and let `G` act continuously and additively
+(`DistribMulAction`) on a normed space `F` by isometries. Then `G` acts on the unit sphere
 `S(F)` (`TauCeti.Sphere.instMulActionOfIsIsometricSMul`), and the associated bundle
 `P ×_G S(F)` is a bundle of spheres with structure group `G`. On the other hand, the associated
 bundle `P ×_G F` carries the fibre norm of the model (`TauCeti.AssociatedBundle.norm_mk`), and has
@@ -78,8 +78,8 @@ variable {G : Type*} {B : Type u} [TopologicalSpace B] [Group G] [TopologicalSpa
   [IsIsometricSMul G F]
 
 variable (G P F) in
-/-- The bundle `P ×_G S(F)` associated with the unit sphere of the fibre embeds in `P ×_G F` with
-image its unit sphere bundle. -/
+/-- The image of `P ×_G S(F)` in `P ×_G F` under the map induced by the inclusion of the sphere is
+the unit sphere bundle. -/
 theorem range_totalSpaceMap_subtypeMulActionHom :
     range (totalSpaceMap (P := P) (Sphere.subtypeMulActionHom G F 1)) =
       sphereBundle F (AssociatedBundle G P F) := by
