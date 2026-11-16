@@ -161,6 +161,14 @@ theorem SporadicName.presentation_M22 : SporadicName.M22.presentation = Sporadic
 theorem SporadicName.presentation_M23 : SporadicName.M23.presentation = Sporadic.m23Presentation :=
   (rfl)
 
+/-- The presentation selected for `Fi₂₂` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.fi22Presentation`. The body of `TauCeti.SporadicName.presentation` is not
+exposed to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Fi22 :
+    SporadicName.Fi22.presentation = Sporadic.fi22Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
 
