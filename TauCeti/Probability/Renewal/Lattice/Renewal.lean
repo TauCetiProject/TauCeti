@@ -45,7 +45,7 @@ namespace MeasureTheory.Measure
 variable {μ ν : Measure ℝ≥0} {a : ℝ≥0}
 
 /-- Convolving two measures with the same lattice span preserves that span. -/
-theorem IsLatticeSpan.conv [SFinite ν] (hμ : μ.IsLatticeSpan a) (hν : ν.IsLatticeSpan a) :
+theorem IsLatticeSpan.conv (hμ : μ.IsLatticeSpan a) (hν : ν.IsLatticeSpan a) :
     (μ ∗ ν).IsLatticeSpan a := by
   refine ⟨hμ.pos, ae_mem_conv_of_ae_mem (countable_range _).measurableSet ?_
     hμ.ae_mem_range hν.ae_mem_range⟩
@@ -54,7 +54,7 @@ theorem IsLatticeSpan.conv [SFinite ν] (hμ : μ.IsLatticeSpan a) (hν : ν.IsL
 
 /-- Every convolution power of a lattice measure has the same span, including the zeroth
 power, the point mass at zero. -/
-theorem IsLatticeSpan.convolutionPower [SFinite μ] (hμ : μ.IsLatticeSpan a) (n : ℕ) :
+theorem IsLatticeSpan.convolutionPower (hμ : μ.IsLatticeSpan a) (n : ℕ) :
     (μ.convolutionPower n).IsLatticeSpan a := by
   refine ⟨hμ.pos, ae_mem_convolutionPower_of_ae_mem (countable_range _).measurableSet
     ⟨0, by simp⟩ ?_ hμ.ae_mem_range n⟩
@@ -63,14 +63,14 @@ theorem IsLatticeSpan.convolutionPower [SFinite μ] (hμ : μ.IsLatticeSpan a) (
 
 /-- The renewal measure of a lattice measure is concentrated on the same lattice. This does
 not require probability normalization or local finiteness. -/
-theorem IsLatticeSpan.renewalMeasure [SFinite μ] (hμ : μ.IsLatticeSpan a) :
+theorem IsLatticeSpan.renewalMeasure (hμ : μ.IsLatticeSpan a) :
     μ.renewalMeasure.IsLatticeSpan a := by
   refine ⟨hμ.pos, ?_⟩
   rw [renewalMeasure_def, ae_sum_iff]
   exact fun n ↦ (hμ.convolutionPower n).ae_mem_range
 
 /-- Between successive lattice times, the renewal function is constant. -/
-theorem IsLatticeSpan.renewalFunction_eq_of_mem_Ico [SFinite μ] (hμ : μ.IsLatticeSpan a)
+theorem IsLatticeSpan.renewalFunction_eq_of_mem_Ico (hμ : μ.IsLatticeSpan a)
     {t : ℝ≥0} {n : ℕ} (ht : t ∈ Ico ((n : ℝ≥0) * a) ((n + 1 : ℕ) * a)) :
     μ.renewalFunction t = μ.renewalFunction ((n : ℝ≥0) * a) := by
   simp only [renewalFunction_def]

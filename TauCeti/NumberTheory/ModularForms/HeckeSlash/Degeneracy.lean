@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.QExpansion
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.LevelSupported
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Operators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Recurrence

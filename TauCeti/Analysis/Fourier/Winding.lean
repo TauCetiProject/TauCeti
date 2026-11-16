@@ -14,7 +14,7 @@ public import TauCeti.Topology.Homotopy.AddCircle
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Topology.CompactOpen
 import TauCeti.Analysis.Complex.ContinuousLog.AddCircle
-import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 import TauCeti.Analysis.Fourier.Monomial
 
 /-!

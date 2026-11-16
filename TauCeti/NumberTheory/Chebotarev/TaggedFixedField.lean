@@ -60,7 +60,7 @@ theorem fixedField_zpowers_isCyclotomicExtension
       (fixedField (Subgroup.zpowers ((galEquivProd K L M m hcop hζ).symm (σ, τ)))) M := by
   have : FiniteDimensional L M := finiteDimensional {m} L M
   have : FiniteDimensional K M := FiniteDimensional.trans K L M
-  have : IsGalois K M := isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+  have : IsGalois K M := isGalois_of_isGalois_of_isCyclotomicExtension K L M {m}
   refine hζ.fixedField_isCyclotomicExtension_of_inf_fixingSubgroup_eq_bot _ ?_
   rw [hζ.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow,
     ker_autToPow_eq_comap_galEquivProd K L M m hcop hζ]

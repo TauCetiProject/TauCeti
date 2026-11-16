@@ -167,38 +167,6 @@ theorem integral_hamiltonianCurvature_image_plumbingMap (ω : SymplecticForm V) 
 
 /-! ### The energy identity on the plumbed four-punctured sphere -/
 
-/-- The two parts of the truncated plumbed sphere meet in the circle `Re z = L/2` of the end `q`,
-which is a null set. -/
-private theorem volume_inter_image_realChart_plumbingMap (hq : q ≠ inf) {L : ℝ} (hL : 0 < L)
-    (R : ℝ) :
-    volume ((Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}) ∩
-      realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-        {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2})) =
-      0 := by
-  refine measure_mono_null (t := endChart q '' ({L / 2} ×ˢ Ico 0 1)) ?_ ?_
-  · rintro z ⟨hzA, w, hwB, rfl⟩
-    have hw0 : Complex.equivRealProdCLM.symm w ≠ 0 := (mem_truncation.1 hwB.1).1
-    have h₁ : q.endSign *
-        (q.endCoord (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w))).re ≤ L / 2 :=
-      hzA.2
-    have h₂ : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2 :=
-      hwB.2
-    rw [equivRealProdCLM_symm_realChart, re_endCoord_plumbingMap q L hw0, endSign_eq_one hq,
-      one_mul] at h₁
-    rw [endSign_inf] at h₂
-    rw [image_endChart_prod_Ico fun s hs ↦ by
-      rw [mem_singleton_iff.1 hs, endSign_eq_one hq]; linarith]
-    refine ⟨truncation_subset _ hzA.1, ?_⟩
-    rw [mem_singleton_iff, equivRealProdCLM_symm_realChart, re_endCoord_plumbingMap q L hw0]
-    linarith
-  · rw [Measure.volume_eq_prod]
-    have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-    refine addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero _
-      (fun w _ ↦ (hasFDerivAt_endChart q w).differentiableAt.differentiableWithinAt) ?_
-    rw [Measure.prod_prod]
-    simp
-
 /-- **The energy on the receiving part of the truncated plumbed sphere.** Inside the circle
 `Re z = L/2` of the end `q` the plumbed datum is the datum of the receiving pair of pants, so the
 energy there is given by the energy identity of that pair of pants with the end `q` cut short. -/
@@ -403,7 +371,7 @@ theorem integral_floerEnergyDensity_plumbedTruncation_eq_sum_hamiltonianAction
       (realChart_injective (q.plumbingMap_injective L)).injOn
   have hsplit (f : ℝ × ℝ → ℝ)
       (hf : IntegrableOn f (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)) :=
-    setIntegral_union₀ (volume_inter_image_realChart_plumbingMap hq (by linarith) R)
+    setIntegral_union₀ (aedisjoint_truncation_inter_image hq R)
       hψBm.nullMeasurableSet
       ((preimage_plumbedTruncation hq L R ▸ hf).mono_set subset_union_left)
       ((preimage_plumbedTruncation hq L R ▸ hf).mono_set subset_union_right)

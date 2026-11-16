@@ -159,29 +159,8 @@ private theorem contMDiffAt_inner_curvatureTensor_chartDualFrame (x : M) {y : M}
       simpa using (contMDiffAt_const (I := I) (c := v) (n := ∞) (x := y)))
   have hD (k : Fin (finrank ℝ E)) : CMDiffAt ∞ (T% (D k)) y :=
     Riemannian.Tensor.contMDiffAt_chartDualFrame (n := ∞) x hy k
-  -- Cache the iterated operator fibres to keep typeclass search within its default budget.
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : ∀ y : M, NormedAddCommGroup (TangentSpace I y →L[ℝ] TangentSpace I y) :=
-    fun y ↦ inferInstance
-  let _ : ∀ y : M, NormedSpace ℝ (TangentSpace I y →L[ℝ] TangentSpace I y) :=
-    fun y ↦ inferInstance
-  let _ : ∀ y : M, NormedAddCommGroup
-      (TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) :=
-    fun y ↦ inferInstance
-  let _ : ∀ y : M, NormedSpace ℝ
-      (TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) :=
-    fun y ↦ inferInstance
-  let _ : ∀ y : M, AddCommMonoid
-      (TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) :=
-    fun y ↦ (inferInstance : NormedAddCommGroup
-      (TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y)).toAddCommMonoid
-  have hR : CMDiffAt ∞ (T% (fun z ↦
-      cov.curvatureTensor z (D i z) (D j z) (e.symmL ℝ z w))) y := by
-    simpa only [curvatureTensorCLM_apply] using
-      (((contMDiff_curvatureTensorCLM (F := E) (V := fun z : M ↦ TangentSpace I z)
-        (fiberNorm := fun z ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I z)))
-        cov y).clm_bundle_apply (hD i)).clm_bundle_apply (hD j)).clm_bundle_apply (hframe w)
+  have hR := cov.contMDiffAt_curvatureTensor (F := E) (V := TangentSpace I)
+    (f := fun z ↦ z) le_rfl (hD i) (hD j) (hframe w)
   exact hR.inner_bundle (IB := I) (F := E) (E := fun z : M ↦ TangentSpace I z)
     (b := fun z : M ↦ z)
     (h := (inferInstance : IsContMDiffRiemannianBundle I ∞ E

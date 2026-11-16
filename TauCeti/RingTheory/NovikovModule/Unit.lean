@@ -41,6 +41,15 @@ the product on degree-wise cohomology (`LinearMap.cohomologyProduct`) induced by
 `NovikovModule.cohomologyProduct_kernelProduct_mk_unit`). The kernel identities and potential
 bounds remain hypotheses: they are the geometric input from the compactified moduli spaces.
 
+On finite unions of torsors with invariant kernels, the product is given by a matrix `Q` of
+Novikov series relative to reference generators (`NovikovModule.novikovProductOfMatrix`) and the
+maps by matrices `Φ`, `K`, `D₂`, `D₀` (`NovikovModule.novikovMapOfMatrix`). The kernel identity
+becomes the identity `∑ᵢ eᵢ Qᵢⱼₗ - Φⱼₗ = ∑ₘ Kⱼₘ D₀ₘₗ + ∑ₘ D₂ⱼₘ Kₘₗ` between finite sums of
+Novikov series, where `eᵢ` are the coordinates of `e`, and it gives the same homotopy
+`e ⋆ b - Φ b = D₀ (K b) + K (D₂ b)`
+(`NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_right`, and
+`NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_left` for the second input).
+
 ## Main results
 
 * `NovikovModule.kernelProduct_sub_kernelMap_right`,
@@ -52,6 +61,9 @@ bounds remain hypotheses: they are the geometric input from the compactified mod
 * `NovikovModule.cohomologyProduct_kernelProduct_unit_mk`,
   `NovikovModule.cohomologyProduct_kernelProduct_mk_unit`: on a common complex the class of the
   unit is a left and a right identity for the product on cohomology.
+* `NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_right`,
+  `NovikovModule.novikovProductOfMatrix_sub_novikovMapOfMatrix_left`: the unit homotopy for
+  matrices of Novikov series.
 
 ## References
 
@@ -276,6 +288,96 @@ theorem cohomologyProduct_kernelProduct_mk_unit {i j : ℤ} (hij : i + j + ε = 
 end MkUnit
 
 end Cohomology
+
+section Matrix
+
+variable {H ι₁ ι₂ ι₀ : Type*} [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+  [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+  (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
+
+/-- **A unit in the first input, for matrices of Novikov series.** Let `Q` be the matrix of a
+product `⋆` relative to reference generators, `e` a completed combination of generators of its
+first input, `Φ` and `K` the matrices of maps from its second input to its output, and `D₂`, `D₀`
+those of maps on its second input and on its output. If the matrices obey the unit identity
+
+`∑ᵢ eᵢ Qᵢⱼₗ - Φⱼₗ = ∑ₘ Kⱼₘ D₀ₘₗ + ∑ₘ D₂ⱼₘ Kₘₗ`,
+
+where `eᵢ` are the coordinates of `e`, then the map of `K` is a homotopy between multiplication by
+`e` and the map of `Φ`: `e ⋆ b - Φ b = D₀ (K b) + K (D₂ b)` for every completed combination `b`.
+This is the matrix form of `NovikovModule.kernelProduct_sub_kernelMap_right`. -/
+theorem novikovProductOfMatrix_sub_novikovMapOfMatrix_right
+    (Φ K : Matrix ι₂ ι₀ (NovikovSeries R H N)) (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N))
+    (e : NovikovModule R F₁)
+    (hunit : ∀ j l, ∑ i, coordinates hF₁ r₁ e i * Q i j l - Φ j l =
+      ∑ m, K j m * D₀ m l + ∑ m, D₂ j m * K m l)
+    (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q e b - novikovMapOfMatrix hF₂ hF₀ r₂ r₀ Φ b =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀ (novikovMapOfMatrix hF₂ hF₀ r₂ r₀ K b) +
+        novikovMapOfMatrix hF₂ hF₀ r₂ r₀ K (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  simp only [map_sub, map_add, Pi.sub_apply, Pi.add_apply, coordinates_novikovProductOfMatrix,
+    coordinates_novikovMapOfMatrix]
+  set x := coordinates hF₁ r₁ e
+  set y := coordinates hF₂ r₂ b
+  -- Both sides are `∑ⱼ yⱼ` times the two sides of the unit identity.
+  calc ∑ i, ∑ j, x i * y j * Q i j l - ∑ j, y j * Φ j l
+      = ∑ j, y j * (∑ i, x i * Q i j l - Φ j l) := by
+        rw [Finset.sum_comm]
+        simp only [mul_sub, Finset.mul_sum, Finset.sum_sub_distrib]
+        congr 1
+        exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
+    _ = ∑ j, y j * (∑ m, K j m * D₀ m l + ∑ m, D₂ j m * K m l) :=
+        Finset.sum_congr rfl fun j _ => by rw [hunit]
+    _ = ∑ m, (∑ j, y j * K j m) * D₀ m l + ∑ m, (∑ j, y j * D₂ j m) * K m l := by
+        simp only [mul_add, Finset.mul_sum, Finset.sum_mul, Finset.sum_add_distrib]
+        congr 1 <;> rw [Finset.sum_comm] <;>
+          exact Finset.sum_congr rfl fun m _ => Finset.sum_congr rfl fun j _ => by ring
+
+/-- **A unit in the second input, for matrices of Novikov series.** Let `Q` be the matrix of a
+product `⋆` relative to reference generators, `e` a completed combination of generators of its
+second input, `Φ` and `K` the matrices of maps from its first input to its output, and `D₁`, `D₀`
+those of maps on its first input and on its output. If the matrices obey the unit identity
+
+`∑ⱼ eⱼ Qᵢⱼₗ - Φᵢₗ = ∑ₘ Kᵢₘ D₀ₘₗ + ∑ₘ D₁ᵢₘ Kₘₗ`,
+
+where `eⱼ` are the coordinates of `e`, then the map of `K` is a homotopy between multiplication by
+`e` on the right and the map of `Φ`: `a ⋆ e - Φ a = D₀ (K a) + K (D₁ a)` for every completed
+combination `a`. This is the matrix form of `NovikovModule.kernelProduct_sub_kernelMap_left`. -/
+theorem novikovProductOfMatrix_sub_novikovMapOfMatrix_left
+    (Φ K : Matrix ι₁ ι₀ (NovikovSeries R H N)) (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N))
+    (e : NovikovModule R F₂)
+    (hunit : ∀ i l, ∑ j, coordinates hF₂ r₂ e j * Q i j l - Φ i l =
+      ∑ m, K i m * D₀ m l + ∑ m, D₁ i m * K m l)
+    (a : NovikovModule R F₁) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a e - novikovMapOfMatrix hF₁ hF₀ r₁ r₀ Φ a =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀ (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ K a) +
+        novikovMapOfMatrix hF₁ hF₀ r₁ r₀ K (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ D₁ a) := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  simp only [map_sub, map_add, Pi.sub_apply, Pi.add_apply, coordinates_novikovProductOfMatrix,
+    coordinates_novikovMapOfMatrix]
+  set x := coordinates hF₁ r₁ a
+  set y := coordinates hF₂ r₂ e
+  -- Both sides are `∑ᵢ xᵢ` times the two sides of the unit identity.
+  calc ∑ i, ∑ j, x i * y j * Q i j l - ∑ i, x i * Φ i l
+      = ∑ i, x i * (∑ j, y j * Q i j l - Φ i l) := by
+        simp only [mul_sub, Finset.mul_sum, Finset.sum_sub_distrib]
+        congr 1
+        exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+    _ = ∑ i, x i * (∑ m, K i m * D₀ m l + ∑ m, D₁ i m * K m l) :=
+        Finset.sum_congr rfl fun i _ => by rw [hunit]
+    _ = ∑ m, (∑ i, x i * K i m) * D₀ m l + ∑ m, (∑ i, x i * D₁ i m) * K m l := by
+        simp only [mul_add, Finset.mul_sum, Finset.sum_mul, Finset.sum_add_distrib]
+        congr 1 <;> rw [Finset.sum_comm] <;>
+          exact Finset.sum_congr rfl fun m _ => Finset.sum_congr rfl fun i _ => by ring
+
+end Matrix
 
 end NovikovModule
 

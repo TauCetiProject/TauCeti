@@ -113,7 +113,8 @@ theorem finite_setOf_isIntegral_natDegree_eq_house_le (k : ℕ) (C : ℝ) :
       rw [Fin.lastCases_castSucc, Fin.val_castSucc, Finset.mem_Icc, ← abs_le,
         Int.natCast_floor_eq_floor ((abs_nonneg _).trans h)]
       exact Int.le_floor.2 (by rwa [Int.cast_abs])
-  have hfin := Polynomial.finite_biUnion_roots_natDegree_le_coeff_mem_pi (Int.castRingHom F) k s
+  have hfin := Polynomial.finite_biUnion_roots_natDegree_le_coeff_mem_pi (Int.castRingHom F) k
+    fun i ↦ (s i).finite_toSet
   refine ⟨hfin.subset hsub, (Set.ncard_le_ncard hsub hfin).trans <|
     (Polynomial.ncard_biUnion_roots_natDegree_le_coeff_mem_pi_le _ k s).trans_eq ?_⟩
   have hN : (Finset.Icc (-(N : ℤ)) N).card = 2 * N + 1 := by

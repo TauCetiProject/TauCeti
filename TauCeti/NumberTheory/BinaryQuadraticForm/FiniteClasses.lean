@@ -17,7 +17,9 @@ every `SL(2, ℤ)`-class of forms of discriminant `D`
 discriminant `D` fall into finitely many classes
 (`TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_of_forall_discrim_eq`). The forms need not be
 primitive and no definiteness is assumed, so this covers positive definite, negative definite and
-indefinite forms, of square and of nonsquare discriminant.
+indefinite forms, of square and of nonsquare discriminant. The same holds for the proper classes of
+primitive forms of discriminant `D`, including `D = 0`
+(`TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_primitiveForms`).
 
 * For nonsquare `D` the Lagrange reduced forms of discriminant `D` meet every class
   (`TauCeti.BinaryQuadraticForm.exists_smul_mem_lagrangeReducedForms`).

@@ -47,14 +47,12 @@ from the sheaf comparison along `f.toRingCatSheafHom`. -/
 def pullbackSymmetricPowerComparison (n : ℕ) :
     SheafOfModules.symmetricPower Y.sheaf n ⋙ pullback f ⟶
       pullback f ⋙ SheafOfModules.symmetricPower X.sheaf n :=
-  TauCeti.SheafOfModules.pullbackSymmetricPowerComparison
-    (pullbackPushforwardAdjunction f) n
+  SheafOfModules.pullbackSymmetricPowerComparison (pullbackPushforwardAdjunction f) n
 
 /-- The scheme comparison is the sheaf comparison for the scheme pullback adjunction. -/
 theorem pullbackSymmetricPowerComparison_eq (n : ℕ) :
     pullbackSymmetricPowerComparison f n =
-      TauCeti.SheafOfModules.pullbackSymmetricPowerComparison
-        (pullbackPushforwardAdjunction f) n :=
+      SheafOfModules.pullbackSymmetricPowerComparison (pullbackPushforwardAdjunction f) n :=
   (rfl)
 
 /-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
@@ -63,9 +61,8 @@ pushforward comparison along `f.toRingCatSheafHom`. -/
 theorem mateEquiv_pullbackSymmetricPowerComparison (n : ℕ) :
     mateEquiv (pullbackPushforwardAdjunction f) (pullbackPushforwardAdjunction f)
         (pullbackSymmetricPowerComparison f n) =
-      TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n :=
-  TauCeti.SheafOfModules.mateEquiv_pullbackSymmetricPowerComparison
-    (pullbackPushforwardAdjunction f) n
+      SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n :=
+  SheafOfModules.mateEquiv_pullbackSymmetricPowerComparison (pullbackPushforwardAdjunction f) n
 
 /-- The adjunction equation characterizing the pullback comparison for modules on schemes. -/
 theorem unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app
@@ -75,9 +72,9 @@ theorem unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app
       (pushforward f).map ((pullbackSymmetricPowerComparison f n).app M) =
     (SheafOfModules.symmetricPower Y.sheaf n).map
         ((pullbackPushforwardAdjunction f).unit.app M) ≫
-      (TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison
-        f.toRingCatSheafHom n).app ((pullback f).obj M) :=
-  TauCeti.SheafOfModules.unit_comp_pushforward_pullbackSymmetricPowerComparison
+      (SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n).app
+        ((pullback f).obj M) :=
+  SheafOfModules.unit_comp_pushforward_pullbackSymmetricPowerComparison
     (pullbackPushforwardAdjunction f) n M
 
 /-- In degree one, the pullback comparison is the identity of `f^* M`, read through the
@@ -86,14 +83,13 @@ theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerOneIso (M : Y.Mo
     (pullbackSymmetricPowerComparison f 1).app M ≫
         (SheafOfModules.symmetricPowerOneIso X.sheaf).hom.app ((pullback f).obj M) =
       (pullback f).map ((SheafOfModules.symmetricPowerOneIso Y.sheaf).hom.app M) :=
-  TauCeti.SheafOfModules.pullbackSymmetricPowerComparison_app_comp_symmetricPowerOneIso
+  SheafOfModules.pullbackSymmetricPowerComparison_app_comp_symmetricPowerOneIso
     (pullbackPushforwardAdjunction f) M
 
 /-- The pullback comparison for modules on schemes is an isomorphism in degree one. -/
 instance isIso_pullbackSymmetricPowerComparison_one :
     IsIso (pullbackSymmetricPowerComparison f 1) :=
-  TauCeti.SheafOfModules.isIso_pullbackSymmetricPowerComparison_one
-    (pullbackPushforwardAdjunction f)
+  SheafOfModules.isIso_pullbackSymmetricPowerComparison_one (pullbackPushforwardAdjunction f)
 
 end
 

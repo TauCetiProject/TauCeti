@@ -15,6 +15,12 @@ Reversal pairs of darts are the edges of the underlying undirected multigraph. T
 construction retains loops and parallel edges, while its walks forget which direction of a
 loop was chosen. Path reachability and connectedness agree with those of the multigraph.
 
+When all darts are loops, for instance in the graph `noEdge V` without edges, distinct vertices
+lie in distinct connected components and the component count `Graph.componentCount` is
+`Nat.card` of the vertex type; for `noEdge V` the multigraph is `Graph.noEdge Set.univ _`. The
+multigraph of the empty graph is not connected and has no component, and that of two isolated
+vertices has two.
+
 The directed paths remain necessary for the fundamental group of a graph: the two darts of a
 loop represent inverse generators, even though they give the same one-edge undirected walk.
 
@@ -416,6 +422,63 @@ theorem IsOrientation.connected_endpointGraph_iff (hO : Γ.IsOrientation O) :
   SerreGraph.connected_endpointGraph_iff hO.mem_or_rev_mem
 
 end EndpointGraph
+
+/-- Every connected component of the underlying multigraph is the component of a vertex. -/
+theorem toGraph_connectedComponentOf_surjective :
+    Function.Surjective fun v : Γ.V => Γ.toGraph.connectedComponentOf v (by simp) := by
+  intro C
+  obtain ⟨v, hv⟩ := C.property.nonempty
+  exact ⟨v, (Graph.ConnectedComponent.eq_connectedComponentOf hv).symm⟩
+
+/-- If all darts of `Γ` are loops, the underlying multigraph has `Nat.card Γ.V` connected
+components; both sides are `0` when `Γ.V` is infinite. -/
+theorem componentCount_toGraph_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) :
+    Γ.toGraph.componentCount = Nat.card Γ.V := by
+  rw [Graph.componentCount_def]
+  refine (Nat.card_congr (Equiv.ofBijective _
+    ⟨fun a b hab => ?_, Γ.toGraph_connectedComponentOf_surjective⟩)).symm
+  exact (Γ.nonempty_path_iff_of_forall_src_eq_tgt h).mp
+    ((Γ.toGraph_connectedComponentOf_eq_iff a b).mp hab)
+
+/-- The multigraph underlying a Serre graph without darts has all vertices and no edges. -/
+theorem toGraph_eq_noEdge_of_isEmpty_dart [IsEmpty Γ.E] :
+    Γ.toGraph = Graph.noEdge Set.univ Γ.Edge :=
+  Graph.ext (by simp) fun q _ _ => isEmptyElim (Γ.edge_surjective q).choose
+
+/-- The multigraph underlying a Serre graph without vertices has no component. -/
+theorem componentCount_toGraph_eq_zero_of_isEmpty [IsEmpty Γ.V] :
+    Γ.toGraph.componentCount = 0 :=
+  Graph.componentCount_def.trans Nat.card_of_isEmpty
+
+/-- The multigraph underlying a Serre graph without vertices is not connected. -/
+theorem not_connected_toGraph_of_isEmpty [IsEmpty Γ.V] : ¬Γ.toGraph.Connected :=
+  fun h => Γ.not_connected_of_isEmpty ((connected_toGraph_iff Γ).mp h)
+
+section NoEdge
+
+universe u v
+
+variable {V : Type u}
+
+/-- The multigraph underlying a graph without edges has all vertices and no edges. -/
+theorem toGraph_noEdge : (noEdge.{u, v} V).toGraph = Graph.noEdge Set.univ _ :=
+  toGraph_eq_noEdge_of_isEmpty_dart _
+
+/-- The multigraph underlying `noEdge V` has `Nat.card V` connected components; both sides are
+`0` when `V` is infinite. -/
+@[simp] theorem componentCount_toGraph_noEdge :
+    (noEdge.{u, v} V).toGraph.componentCount = Nat.card V :=
+  componentCount_toGraph_of_forall_src_eq_tgt _ isEmptyElim
+
+/-- The multigraph underlying a graph of two or more isolated vertices is not connected. -/
+theorem not_connected_toGraph_noEdge [Nontrivial V] : ¬(noEdge.{u, v} V).toGraph.Connected :=
+  fun h => noEdge_not_connected ((connected_toGraph_iff _).mp h)
+
+/-- The multigraph underlying the graph of two isolated vertices has two components. -/
+example : (noEdge.{0, v} Bool).toGraph.componentCount = 2 := by
+  simp
+
+end NoEdge
 
 end SerreGraph
 end TauCeti

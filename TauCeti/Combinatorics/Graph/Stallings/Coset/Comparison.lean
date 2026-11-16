@@ -16,6 +16,7 @@ the based core of that coset graph. Consequently it is isomorphic to the canonic
 graph, and two folded based cores accept the same subgroup precisely when they are
 isomorphic. Such a based labelled isomorphism is unique. No finiteness or finite-alphabet
 assumption is needed, and the isolated base vertex of the trivial subgroup is retained.
+For example, the subgroup graph of the whole free group is the rose.
 
 ## References
 
@@ -164,5 +165,11 @@ theorem nonempty_unique_iso_of_subgroup_eq (hS : S.IsFolded) (hT : T.IsFolded)
   obtain ⟨f⟩ := (nonempty_iso_iff_subgroup_eq hS hT hSc hTc).mpr h
   exact ⟨⟨⟨f⟩, fun g => Iso.eq_of_isFolded_of_reachable hT
     ((S.graph.isCore_iff S.base).mp hSc).1 g f⟩⟩
+
+/-- The subgroup graph of the whole free group is the rose with one petal for each letter. -/
+theorem nonempty_iso_rose_subgroupGraph_top (α : Type*) :
+    Nonempty (Iso (rose α) (⊤ : Subgroup (FreeGroup α)).subgroupGraph) := by
+  simpa [rose_subgroup_top] using
+    nonempty_iso_subgroupGraph (rose_isFolded α) (SerreGraph.rose_isCore α)
 
 end TauCeti.StallingsGraph

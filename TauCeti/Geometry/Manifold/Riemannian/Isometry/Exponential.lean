@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Geodesic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 
 /-!
 # Maximal geodesics and the exponential map under Riemannian isometries
@@ -48,6 +49,18 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `IsLocalRiemannianIsometry.maximalGeodesic_mfderiv`,
   `IsLocalRiemannianIsometry.riemannianExp_mfderiv`: with completeness at `p`, a local isometry
   intertwines the maximal geodesics and the exponential maps.
+* `RiemannianIsometry.image_riemannianExp_image_ball`: an isometry carries `exp_p '' ball 0 r` onto
+  `exp_{Φ p} '' ball 0 r`.
+* `RiemannianIsometry.riemannianLog_apply`: if `dΦ_p` maps a normal domain `U` at `p` into a normal
+  domain `V` at `Φ p`, then `log_{Φ p} (Φ q) = dΦ_p (log_p q)` on the normal neighbourhood
+  `exp_p '' U`.
+* `TauCeti.riemannianExp_mfderiv_smul`, `TauCeti.smul_riemannianExp_image_ball`: for an element `a`
+  of a group acting by smooth maps, whose differential preserves the metric,
+  `exp_{a • x} (d(a •)_x v) = a • exp_x v`, and `a` carries `exp_x '' ball 0 r` onto
+  `exp_{a • x} '' ball 0 r`.
+* `TauCeti.riemannianExp_mfderiv_smul_of_smul_eq` and
+  `TauCeti.smul_riemannianExp_image_ball_of_smul_eq`: the specializations at a point `x` with
+  `a • x = x`.
 
 ## References
 
@@ -220,7 +233,93 @@ theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space M]
     riemannianExp J N (Φ p) (mfderiv I J Φ p v) = Φ (riemannianExp I M p v) := by
   simp only [riemannianExp_def, Φ.maximalGeodesic_mfderiv]
 
+/-- A smooth Riemannian isometry carries the image under `exp_p` of the ball of radius `r` about
+the origin onto the image under `exp_{Φ p}` of the ball of the same radius. -/
+theorem image_riemannianExp_image_ball [I.Boundaryless] [J.Boundaryless]
+    [T2Space M]
+    (Φ : RiemannianIsometry I J M N) (p : M) (r : ℝ) :
+    Φ '' (riemannianExp I M p '' Metric.ball 0 r) = riemannianExp J N (Φ p) '' Metric.ball 0 r := by
+  have h := Φ.mfderiv_image_ball p 0 r
+  rw [map_zero] at h
+  rw [← h, image_image, image_image]
+  exact image_congr fun v _ ↦ (Φ.riemannianExp_mfderiv p v).symm
+
+/-- A smooth Riemannian isometry intertwines Riemannian logarithms: if `dΦ_p` maps a normal domain
+`U` at `p` into a normal domain `V` at `Φ p`, then `log_{Φ p} (Φ q) = dΦ_p (log_p q)` for every
+`q` in the normal neighbourhood `exp_p '' U`. -/
+theorem riemannianLog_apply [I.Boundaryless] [J.Boundaryless] [T2Space M]
+    (Φ : RiemannianIsometry I J M N) {p : M} {U : Set (TangentSpace I p)}
+    {V : Set (TangentSpace J (Φ p))} (hU : IsNormalDomain I M p U)
+    (hV : IsNormalDomain J N (Φ p) V) (hUV : MapsTo (mfderiv I J Φ p) U V) {q : M}
+    (hq : q ∈ riemannianExp I M p '' U) :
+    riemannianLog J N (Φ p) V (Φ q) = mfderiv I J Φ p (riemannianLog I M p U q) := by
+  obtain ⟨v, hv, rfl⟩ := hq
+  rw [← Φ.riemannianExp_mfderiv, hU.riemannianLog_riemannianExp hv,
+    hV.riemannianLog_riemannianExp (hUV hv)]
+
 end RiemannianIsometry
+
+end TauCeti
+
+namespace TauCeti
+
+open TauCeti.Manifold Metric
+open scoped Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] {a : G}
+  [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless] [T2Space M]
+
+/-- **Isometric actions intertwine exponential maps.** If the differential of the action of `a`
+preserves the metric, then `exp_{a • x} (d(a •)_x v) = a • exp_x v`. -/
+theorem riemannianExp_mfderiv_smul
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    (x : M) (v : TangentSpace I x) :
+    riemannianExp I M (a • x) (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v := by
+  have h := (RiemannianIsometry.constSMul a ha).riemannianExp_mfderiv x v
+  rw [RiemannianIsometry.coe_constSMul] at h
+  exact h
+
+/-- If the differential of the action of `a` preserves the metric, then `a` carries the image
+under `exp_x` of the ball of radius `r` about the origin onto the image under `exp_{a • x}` of the
+ball of the same radius. -/
+theorem smul_riemannianExp_image_ball
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    (x : M) (r : ℝ) :
+    a • (riemannianExp I M x '' ball 0 r) = riemannianExp I M (a • x) '' ball 0 r := by
+  have h := (RiemannianIsometry.constSMul a ha).image_riemannianExp_image_ball x r
+  rw [RiemannianIsometry.coe_constSMul] at h
+  rw [← image_smul]
+  exact h
+
+/-- At a point `x` fixed by `a`, if the differential of the action of `a` preserves the metric,
+then the exponential map intertwines `a` with its differential: `exp_x (d(a •)_x v) = a • exp_x v`.
+-/
+theorem riemannianExp_mfderiv_smul_of_smul_eq
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    {x : M} (hx : a • x = x) (v : TangentSpace I x) :
+    riemannianExp I M x (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v := by
+  have h := riemannianExp_mfderiv_smul ha x v
+  rw [hx] at h
+  exact h
+
+/-- At a point `x` fixed by `a`, if the differential of the action of `a` preserves the metric,
+then the image under `exp_x` of every ball about the origin of `T_x M` is invariant under `a`. -/
+theorem smul_riemannianExp_image_ball_of_smul_eq
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    {x : M} (hx : a • x = x) (r : ℝ) :
+    a • (riemannianExp I M x '' ball 0 r) = riemannianExp I M x '' ball 0 r := by
+  have h := smul_riemannianExp_image_ball ha x r
+  rw [hx] at h
+  exact h
 
 end TauCeti
 
