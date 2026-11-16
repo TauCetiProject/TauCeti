@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.DiffAdd
 public import Mathlib.Data.Nat.BinaryRec
+import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Ladder
 
 /-!
 # The binary Montgomery-ladder invariant
@@ -251,14 +252,9 @@ theorem cross_coordinates_eq_zero (h : LadderRel N D S n U V)
     simp [Montgomery.coordinates_zero, hSP]
   | @bit m U V b _ ih =>
     obtain ⟨hUP, hVP⟩ := ih
-    have hsub : (m + 1) • P - m • P = P := by simp [succ_nsmul]
-    have hsum : (m + 1) • P + m • P = (2 * m + 1) • P := by
-      simp [add_nsmul, two_mul, add_assoc, add_comm, add_left_comm]
-    have hdiff := diffAdd_cross_eq_zero_of_cross_eq_zero hVP hUP
-      (by simpa only [hsub] using hSP)
+    have hdiff := diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero P m hVP hUP hSP
     have hdoubleU := double_cross_eq_zero_of_cross_eq_zero hND hUP
     have hdoubleV := double_cross_eq_zero_of_cross_eq_zero hND hVP
-    rw [hsum] at hdiff
     cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
       ↓reduceIte, Nat.add_zero]
     · refine ⟨?_, hdiff⟩

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Ladder.Relation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Detection
 public import TauCeti.NumberTheory.LcmUpto
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.StageTwo.Product
+import TauCeti.Data.Int.Round
 
 /-!
 # Stage-1 and stage-2 factor detection from Montgomery ladder derivations
@@ -328,32 +329,10 @@ theorem exists_two_mul_le_and_prime_dvd_gcd_cross
         LadderRel N D U₁ (i * w) R₁ T₁ →
         LadderRel N D U₁ j R₂ T₂ →
         p ∣ Nat.gcd (R₁.cross R₂).val n := by
-  have hw' : (0 : ℤ) < w := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hw)
-  obtain ⟨i, hi, _⟩ :=
-    Montgomery.exists_two_mul_abs_sub_mul_le_and_prime_dvd_gcd_cross hpn P horder hw'
-  have hi0 : 0 ≤ i := by
-    by_contra! hneg
-    have hiw : (i + 1) * (w : ℤ) ≤ 0 :=
-      mul_nonpos_of_nonpos_of_nonneg (by omega) hw'.le
-    rw [add_one_mul] at hiw
-    have hge : (w : ℤ) ≤ (q : ℤ) - i * w := by omega
-    have habs : |(q : ℤ) - i * w| = (q : ℤ) - i * w := abs_of_nonneg (by omega)
-    omega
-  refine ⟨i.toNat, ((q : ℤ) - i * w).natAbs, ?_, ?_, fun R₁ T₁ R₂ T₂ hG hB ↦ ?_⟩
-  · have hle : (2 * ((q : ℤ) - i * w).natAbs : ℤ) ≤ w := by
-      simpa [Int.natCast_natAbs] using hi
-    exact_mod_cast hle
-  · have hdecomp : (q : ℤ) = i * w + |(q : ℤ) - i * w| ∨
-        (q : ℤ) = i * w - |(q : ℤ) - i * w| := by
-      rcases abs_choice ((q : ℤ) - i * w) with h | h <;> rw [h]
-      exacts [.inl (by ring), .inr (by ring)]
-    simpa [Int.toNat_of_nonneg hi0, Int.natCast_natAbs] using hdecomp
-  · have hdecomp : (q : ℤ) = (i.toNat : ℤ) * w + ((q : ℤ) - i * w).natAbs ∨
-        (q : ℤ) = (i.toNat : ℤ) * w - ((q : ℤ) - i * w).natAbs := by
-      rcases abs_choice ((q : ℤ) - i * w) with h | h <;>
-        simp only [Int.toNat_of_nonneg hi0, Int.natCast_natAbs, h]
-      exacts [.inl (by ring), .inr (by ring)]
-    exact hM.prime_dvd_gcd_cross_of_addOrderOf_dvd_mul hG hB hpn hND horder hdecomp hSP
+  obtain ⟨i, j, hj, hdecomp⟩ :=
+    Nat.exists_two_mul_le_and_natCast_eq_mul_add_or_mul_sub q hw
+  exact ⟨i, j, hj, hdecomp, fun R₁ T₁ R₂ T₂ hG hB ↦
+    hM.prime_dvd_gcd_cross_of_addOrderOf_dvd_mul hG hB hpn hND horder hdecomp hSP⟩
 
 /-- **Batched two-stage ladder detection.** If a stage-2 batch `L` contains a giant-step/baby-step
 output pair `(R₁, R₂)` from stage-1 output `U₁` for an annihilating `M * q`, `p` divides the gcd
