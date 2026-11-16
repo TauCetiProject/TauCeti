@@ -301,18 +301,15 @@ lemma ordinaryPairQuotientFunctor_map {P Q : TopPair.{u}} (f : P ⟶ Q) :
     ordinaryPairQuotientFunctor.map f = ordinaryPairQuotientMap f := (rfl)
 
 instance instInhabitedOrdinaryPairQuotient (P : TopPair.{u}) :
-    Inhabited P.ordinaryPairQuotient :=
-  ⟨P.ordinaryPairQuotientBasepoint⟩
+    Inhabited P.ordinaryPairQuotient := ⟨P.ordinaryPairQuotientBasepoint⟩
 
 /-- Induction principle for the pointed quotient of a pair: it suffices to treat ambient
 representatives and the basepoint. -/
 @[elab_as_elim]
 lemma ordinaryPairQuotient_ind {P : TopPair.{u}} {motive : P.ordinaryPairQuotient → Prop}
     (hπ : ∀ x, motive (P.ordinaryPairQuotientπ x))
-    (hbase : motive P.ordinaryPairQuotientBasepoint) (z : P.ordinaryPairQuotient) : motive z := by
-  obtain ⟨x, rfl⟩ | rfl := P.exists_ordinaryPairQuotientπ_or_eq_basepoint z
-  · exact hπ x
-  · exact hbase
+    (hbase : motive P.ordinaryPairQuotientBasepoint) (z : P.ordinaryPairQuotient) : motive z :=
+  (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z).elim (fun ⟨x, hx⟩ ↦ hx ▸ hπ x) (· ▸ hbase)
 
 /-- A subset of the pointed quotient is open exactly when its preimage in the ambient space is
 open; the added one-point summand is discrete. -/
@@ -330,14 +327,11 @@ lemma isClosed_ordinaryPairQuotient_iff (P : TopPair.{u}) {s : Set P.ordinaryPai
 /-- The collapse map from the ambient space onto the pointed quotient is surjective exactly when
 the subspace is nonempty. -/
 lemma surjective_ordinaryPairQuotientπ_iff (P : TopPair.{u}) :
-    Function.Surjective P.ordinaryPairQuotientπ ↔ Nonempty P.snd := by
-  refine ⟨fun h ↦ ?_, fun ⟨b⟩ z ↦ ?_⟩
-  · obtain ⟨x, hx⟩ := h P.ordinaryPairQuotientBasepoint
-    obtain ⟨b, _⟩ := (P.ordinaryPairQuotientπ_eq_basepoint_iff x).1 hx
-    exact ⟨b⟩
-  · obtain ⟨x, rfl⟩ | rfl := P.exists_ordinaryPairQuotientπ_or_eq_basepoint z
-    · exact ⟨x, rfl⟩
-    · exact ⟨P.map b, P.ordinaryPairQuotientπ_map b⟩
+    Function.Surjective P.ordinaryPairQuotientπ ↔ Nonempty P.snd :=
+  ⟨fun h ↦ let ⟨x, hx⟩ := h P.ordinaryPairQuotientBasepoint
+    let ⟨b, _⟩ := (P.ordinaryPairQuotientπ_eq_basepoint_iff x).1 hx; ⟨b⟩,
+   fun ⟨b⟩ z ↦ (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z).elim id
+    fun hz ↦ ⟨P.map b, hz ▸ P.ordinaryPairQuotientπ_map b⟩⟩
 
 /-- When the subspace is nonempty, the ambient collapse map is surjective. -/
 lemma surjective_ordinaryPairQuotientπ (P : TopPair.{u}) [Nonempty P.snd] :
@@ -353,114 +347,79 @@ lemma isQuotientMap_ordinaryPairQuotientπ (P : TopPair.{u}) [Nonempty P.snd] :
 /-- The pointed quotient of `(X, B)` is a subsingleton exactly when `B = X`: collapsing the entire
 ambient space identifies it with the added basepoint. -/
 lemma subsingleton_ordinaryPairQuotient_iff (P : TopPair.{u}) :
-    Subsingleton P.ordinaryPairQuotient ↔ Function.Surjective P.map := by
-  refine ⟨fun _ y ↦ (P.ordinaryPairQuotientπ_eq_basepoint_iff y).1 (Subsingleton.elim _ _),
-    fun h ↦ ⟨fun z₁ z₂ ↦ ?_⟩⟩
-  have hbase (z : P.ordinaryPairQuotient) : z = P.ordinaryPairQuotientBasepoint := by
-    induction z using ordinaryPairQuotient_ind with
-    | hπ x =>
-      obtain ⟨b, rfl⟩ := h x
-      exact P.ordinaryPairQuotientπ_map b
-    | hbase => rfl
-  exact (hbase z₁).trans (hbase z₂).symm
+    Subsingleton P.ordinaryPairQuotient ↔ Function.Surjective P.map :=
+  ⟨fun _ y ↦ (P.ordinaryPairQuotientπ_eq_basepoint_iff y).1 (Subsingleton.elim _ _),
+   fun h ↦ subsingleton_of_forall_eq P.ordinaryPairQuotientBasepoint fun z ↦
+    ordinaryPairQuotient_ind (fun x ↦ let ⟨b, hb⟩ := h x; hb ▸ P.ordinaryPairQuotientπ_map b)
+      rfl z⟩
 
 /-- The pointed quotient of a pair with compact ambient space is compact. -/
 instance compactSpace_ordinaryPairQuotient (P : TopPair.{u}) [CompactSpace P.fst] :
     CompactSpace P.ordinaryPairQuotient :=
-  isCompact_univ_iff.1 <| by
-    rw [← P.isQuotientMap_ordinaryPairQuotient.surjective.range_eq]
-    exact isCompact_range P.isQuotientMap_ordinaryPairQuotient.continuous
+  isCompact_univ_iff.1 <| P.isQuotientMap_ordinaryPairQuotient.surjective.range_eq ▸
+    isCompact_range P.isQuotientMap_ordinaryPairQuotient.continuous
 
-private lemma preimage_image_ordinaryPairQuotientπ_of_disjoint (P : TopPair.{u}) {V : Set P.fst}
+private lemma preimage_image_π_of_disjoint (P : TopPair.{u}) {V : Set P.fst}
     (hV : Disjoint V (Set.range P.map)) :
-    P.ordinaryPairQuotientπ ⁻¹' (P.ordinaryPairQuotientπ '' V) = V := by
-  ext x
-  simp only [Set.mem_preimage, Set.mem_image]
-  refine ⟨?_, fun hx ↦ ⟨x, hx, rfl⟩⟩
-  rintro ⟨y, hy, hyx⟩
-  rcases (P.ordinaryPairQuotientπ_eq_iff y x).1 hyx with rfl | ⟨hyB, _⟩
-  · exact hy
-  · exact (Set.disjoint_left.1 hV hy hyB).elim
+    P.ordinaryPairQuotientπ ⁻¹' (P.ordinaryPairQuotientπ '' V) = V :=
+  Set.ext fun x ↦ ⟨fun ⟨y, hy, hyx⟩ ↦ ((P.ordinaryPairQuotientπ_eq_iff y x).1 hyx).elim
+    (· ▸ hy) fun ⟨hyB, _⟩ ↦ (Set.disjoint_left.1 hV hy hyB).elim, fun hx ↦ ⟨x, hx, rfl⟩⟩
 
-private lemma preimage_insert_basepoint_image_ordinaryPairQuotientπ (P : TopPair.{u})
-    {U : Set P.fst} (hU : Set.range P.map ⊆ U) :
+private lemma preimage_insert_basepoint_image_π (P : TopPair.{u}) {U : Set P.fst}
+    (hU : Set.range P.map ⊆ U) :
     P.ordinaryPairQuotientπ ⁻¹'
-      (insert P.ordinaryPairQuotientBasepoint (P.ordinaryPairQuotientπ '' U)) = U := by
-  ext x
-  simp only [Set.mem_preimage, Set.mem_insert_iff, P.ordinaryPairQuotientπ_eq_basepoint_iff,
-    Set.mem_image]
-  refine ⟨?_, fun hx ↦ Or.inr ⟨x, hx, rfl⟩⟩
-  rintro (hxB | ⟨y, hy, hyx⟩)
-  · exact hU hxB
-  · rcases (P.ordinaryPairQuotientπ_eq_iff y x).1 hyx with rfl | ⟨_, hxB⟩
-    · exact hy
-    · exact hU hxB
+      (insert P.ordinaryPairQuotientBasepoint (P.ordinaryPairQuotientπ '' U)) = U :=
+  Set.ext fun x ↦ ⟨fun h ↦ h.elim
+    (fun hx ↦ hU ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).1 hx))
+    fun ⟨y, hy, hyx⟩ ↦ ((P.ordinaryPairQuotientπ_eq_iff y x).1 hyx).elim (· ▸ hy)
+      fun ⟨_, hxB⟩ ↦ hU hxB, fun hx ↦ Or.inr ⟨x, hx, rfl⟩⟩
 
-private lemma exists_disjoint_isOpen_basepoint_ordinaryPairQuotient (P : TopPair.{u})
-    [T3Space P.fst] (hP : IsClosed (Set.range P.map)) {x : P.fst}
-    (hx : x ∉ Set.range P.map) :
+private lemma separated_basepoint_π (P : TopPair.{u}) [T3Space P.fst]
+    (hP : IsClosed (Set.range P.map)) {x : P.fst} (hx : x ∉ Set.range P.map) :
     ∃ W₁ W₂ : Set P.ordinaryPairQuotient, IsOpen W₁ ∧ IsOpen W₂ ∧
-      P.ordinaryPairQuotientBasepoint ∈ W₁ ∧ P.ordinaryPairQuotientπ x ∈ W₂ ∧
-      Disjoint W₁ W₂ := by
+      P.ordinaryPairQuotientBasepoint ∈ W₁ ∧ P.ordinaryPairQuotientπ x ∈ W₂ ∧ Disjoint W₁ W₂ := by
   obtain ⟨U, ⟨hUo, hBU⟩, V, ⟨hxV, hVo⟩, hUV⟩ :=
     ((hasBasis_nhdsSet _).disjoint_iff (nhds_basis_opens x)).1 (RegularSpace.regular hP hx)
-  have hVB : Disjoint V (Set.range P.map) := hUV.symm.mono_right hBU
   refine ⟨insert P.ordinaryPairQuotientBasepoint (P.ordinaryPairQuotientπ '' U),
     P.ordinaryPairQuotientπ '' V, ?_, ?_, Or.inl rfl, ⟨x, hxV, rfl⟩, ?_⟩
-  · rw [P.isOpen_ordinaryPairQuotient_iff,
-      P.preimage_insert_basepoint_image_ordinaryPairQuotientπ hBU]
-    exact hUo
-  · rw [P.isOpen_ordinaryPairQuotient_iff, P.preimage_image_ordinaryPairQuotientπ_of_disjoint hVB]
-    exact hVo
-  · refine Set.disjoint_left.2 fun _ hz₁ hz₂ ↦ ?_
-    obtain ⟨v, hv, rfl⟩ := hz₂
-    have hvU : v ∈ U :=
-      (Set.ext_iff.1 (P.preimage_insert_basepoint_image_ordinaryPairQuotientπ hBU) v).1 hz₁
-    exact Set.disjoint_left.1 hUV hvU hv
+  · rwa [P.isOpen_ordinaryPairQuotient_iff, P.preimage_insert_basepoint_image_π hBU]
+  · rwa [P.isOpen_ordinaryPairQuotient_iff,
+      P.preimage_image_π_of_disjoint (hUV.symm.mono_right hBU)]
+  · refine Set.disjoint_left.2 ?_
+    rintro _ hz₁ ⟨v, hv, rfl⟩
+    exact Set.disjoint_left.1 hUV
+      ((Set.ext_iff.1 (P.preimage_insert_basepoint_image_π hBU) v).1 hz₁) hv
 
 /-- The pointed quotient of a pair with `T₃` ambient space and closed subspace is Hausdorff. -/
 lemma t2Space_ordinaryPairQuotient_of_isClosed (P : TopPair.{u}) [T3Space P.fst]
-    (hP : IsClosed (Set.range P.map)) : T2Space P.ordinaryPairQuotient := by
-  refine ⟨fun {z₁ z₂} hne ↦ ?_⟩
+    (hP : IsClosed (Set.range P.map)) : T2Space P.ordinaryPairQuotient := ⟨fun {z₁ z₂} hne ↦ by
   by_cases hz₁ : z₁ = P.ordinaryPairQuotientBasepoint
-  · subst hz₁
-    obtain ⟨x, rfl⟩ | rfl := P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₂
-    · have hx : x ∉ Set.range P.map :=
-        fun hx ↦ hne ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx).symm
-      obtain ⟨W₁, W₂, hW₁, hW₂, hz₁, hz₂, hdisj⟩ :=
-        P.exists_disjoint_isOpen_basepoint_ordinaryPairQuotient hP hx
-      exact ⟨W₁, W₂, hW₁, hW₂, hz₁, hz₂, hdisj⟩
-    · exact (hne rfl).elim
+  · obtain ⟨x, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₂).resolve_right
+      (hz₁ ▸ hne.symm)
+    exact hz₁ ▸ P.separated_basepoint_π hP fun hx ↦
+      hne (hz₁.trans ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx).symm)
   by_cases hz₂ : z₂ = P.ordinaryPairQuotientBasepoint
-  · subst hz₂
-    obtain ⟨x, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₁).resolve_right hz₁
-    have hx : x ∉ Set.range P.map :=
+  · obtain ⟨x, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₁).resolve_right hz₁
+    obtain ⟨W₁, W₂, h₁, h₂, hb, hx, hd⟩ := P.separated_basepoint_π hP
       fun hx ↦ hz₁ ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx)
-    obtain ⟨W₁, W₂, hW₁, hW₂, hb, hxW, hdisj⟩ :=
-      P.exists_disjoint_isOpen_basepoint_ordinaryPairQuotient hP hx
-    exact ⟨W₂, W₁, hW₂, hW₁, hxW, hb, hdisj.symm⟩
+    exact ⟨W₂, W₁, h₂, h₁, hx, hz₂ ▸ hb, hd.symm⟩
   obtain ⟨x₁, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₁).resolve_right hz₁
   obtain ⟨x₂, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₂).resolve_right hz₂
-  have hx₁ : x₁ ∉ Set.range P.map :=
-    fun hx ↦ hz₁ ((P.ordinaryPairQuotientπ_eq_basepoint_iff x₁).2 hx)
-  have hx₂ : x₂ ∉ Set.range P.map :=
-    fun hx ↦ hz₂ ((P.ordinaryPairQuotientπ_eq_basepoint_iff x₂).2 hx)
-  obtain ⟨U₁, U₂, hU₁, hU₂, hx₁U, hx₂U, hdisj⟩ := t2_separation fun h : x₁ = x₂ ↦ hne (h ▸ rfl)
-  let V₁ := U₁ ∩ (Set.range P.map)ᶜ
-  let V₂ := U₂ ∩ (Set.range P.map)ᶜ
-  have hV₁B : Disjoint V₁ (Set.range P.map) := disjoint_compl_left.mono_left Set.inter_subset_right
-  have hV₂B : Disjoint V₂ (Set.range P.map) := disjoint_compl_left.mono_left Set.inter_subset_right
-  refine ⟨P.ordinaryPairQuotientπ '' V₁, P.ordinaryPairQuotientπ '' V₂, ?_, ?_,
-    ⟨x₁, ⟨hx₁U, hx₁⟩, rfl⟩, ⟨x₂, ⟨hx₂U, hx₂⟩, rfl⟩, ?_⟩
-  · rw [P.isOpen_ordinaryPairQuotient_iff, P.preimage_image_ordinaryPairQuotientπ_of_disjoint hV₁B]
+  obtain ⟨U₁, U₂, hU₁, hU₂, hx₁U, hx₂U, hd⟩ := t2_separation fun h : x₁ = x₂ ↦ hne (h ▸ rfl)
+  have hdisj (U : Set P.fst) : Disjoint (U ∩ (Set.range P.map)ᶜ) (Set.range P.map) :=
+    disjoint_compl_left.mono_left Set.inter_subset_right
+  refine ⟨P.ordinaryPairQuotientπ '' (U₁ ∩ (Set.range P.map)ᶜ),
+    P.ordinaryPairQuotientπ '' (U₂ ∩ (Set.range P.map)ᶜ), ?_, ?_,
+    ⟨x₁, ⟨hx₁U, fun hx ↦ hz₁ ((P.ordinaryPairQuotientπ_eq_basepoint_iff x₁).2 hx)⟩, rfl⟩,
+    ⟨x₂, ⟨hx₂U, fun hx ↦ hz₂ ((P.ordinaryPairQuotientπ_eq_basepoint_iff x₂).2 hx)⟩, rfl⟩, ?_⟩
+  · rw [P.isOpen_ordinaryPairQuotient_iff, P.preimage_image_π_of_disjoint (hdisj U₁)]
     exact hU₁.inter hP.isOpen_compl
-  · rw [P.isOpen_ordinaryPairQuotient_iff, P.preimage_image_ordinaryPairQuotientπ_of_disjoint hV₂B]
+  · rw [P.isOpen_ordinaryPairQuotient_iff, P.preimage_image_π_of_disjoint (hdisj U₂)]
     exact hU₂.inter hP.isOpen_compl
-  · refine Set.disjoint_left.2 fun _ hz₁ hz₂ ↦ ?_
-    obtain ⟨u, hu, rfl⟩ := hz₁
-    have huV₂ : u ∈ V₂ :=
-      (Set.ext_iff.1 (P.preimage_image_ordinaryPairQuotientπ_of_disjoint hV₂B) u).1 hz₂
-    exact Set.disjoint_left.1 hdisj hu.1 huV₂.1
+  · refine Set.disjoint_left.2 ?_
+    rintro _ ⟨u, hu, rfl⟩ hz₂
+    exact Set.disjoint_left.1 hd hu.1
+      ((Set.ext_iff.1 (P.preimage_image_π_of_disjoint (hdisj U₂)) u).1 hz₂).1⟩
 
 /-- The pointed quotient of a pair with `T₃` ambient space and compact subspace is Hausdorff,
 including when the subspace is empty. -/
@@ -472,18 +431,13 @@ instance t2Space_ordinaryPairQuotient (P : TopPair.{u}) [T3Space P.fst] [Compact
 with no separation assumption on `X`. -/
 def ordinaryPairQuotientSingletonIso {X : TopCat.{u}} (x₀ : X) :
     (ofSubset ({x₀} : Set X)).ordinaryPairQuotient ≅ X where
-  hom := (ofSubset ({x₀} : Set X)).ordinaryPairQuotientDesc
-    (TopCat.ofHom (ContinuousMap.id X)) x₀ fun b ↦ b.2
+  hom := (ofSubset ({x₀} : Set X)).ordinaryPairQuotientDesc (𝟙 X) x₀ Subtype.prop
   inv := (ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ
-  hom_inv_id := by
-    apply ordinaryPairQuotient_hom_ext
-    · ext x
-      exact congrArg (ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ
-        (ordinaryPairQuotientπ_desc_apply (ofSubset ({x₀} : Set X))
-          (TopCat.ofHom (ContinuousMap.id X)) x₀ (fun b ↦ b.2) x)
-    · exact (congrArg (fun z ↦ (ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ z)
-        (ordinaryPairQuotientDesc_basepoint _ _ _ _)).trans
-        ((ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ_map ⟨x₀, rfl⟩)
+  hom_inv_id := ordinaryPairQuotient_hom_ext
+    (by ext x; exact congrArg _ (ordinaryPairQuotientπ_desc_apply _ (𝟙 X) x₀ Subtype.prop x))
+    ((congrArg (fun z ↦ (ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ z)
+      (ordinaryPairQuotientDesc_basepoint _ _ _ _)).trans
+      ((ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ_map ⟨x₀, rfl⟩))
   inv_hom_id := ordinaryPairQuotientπ_desc _ _ _ _
 
 /-- Collapsing a singleton `{x₀}` in `X` together with the added basepoint is homeomorphic to `X`,
@@ -494,17 +448,15 @@ def ordinaryPairQuotientSingletonHomeomorph {X : TopCat.{u}} (x₀ : X) :
 
 @[simp]
 lemma ordinaryPairQuotientSingletonHomeomorph_π {X : TopCat.{u}} (x₀ x : X) :
-    ordinaryPairQuotientSingletonHomeomorph x₀
-      ((ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ x) = x :=
-  ordinaryPairQuotientπ_desc_apply (ofSubset ({x₀} : Set X))
-    (TopCat.ofHom (ContinuousMap.id X)) x₀ (fun b ↦ b.2) x
+    ordinaryPairQuotientSingletonHomeomorph x₀ ((ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ x) =
+      x :=
+  ordinaryPairQuotientπ_desc_apply (ofSubset ({x₀} : Set X)) (𝟙 X) x₀ Subtype.prop x
 
 @[simp]
 lemma ordinaryPairQuotientSingletonHomeomorph_basepoint {X : TopCat.{u}} (x₀ : X) :
     ordinaryPairQuotientSingletonHomeomorph x₀
       (ofSubset ({x₀} : Set X)).ordinaryPairQuotientBasepoint = x₀ :=
-  ordinaryPairQuotientDesc_basepoint (ofSubset ({x₀} : Set X))
-    (TopCat.ofHom (ContinuousMap.id X)) x₀ (fun b ↦ b.2)
+  ordinaryPairQuotientDesc_basepoint (ofSubset ({x₀} : Set X)) (𝟙 X) x₀ Subtype.prop
 
 @[simp]
 lemma ordinaryPairQuotientSingletonHomeomorph_symm_apply {X : TopCat.{u}} (x₀ x : X) :

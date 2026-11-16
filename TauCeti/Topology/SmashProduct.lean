@@ -15,42 +15,20 @@ import TauCeti.Topology.Category.TopPair
 
 For pointed topological spaces `(X, x₀)` and `(Y, y₀)`, the smash product `X ∧ Y` collapses the
 axes `X × {y₀} ∪ {x₀} × Y` inside `X × Y` to a single basepoint. Here `TauCeti.SmashProduct x₀ y₀`
-is constructed as the pointed pair quotient `TopPair.ordinaryPairQuotient` of `TauCeti.smashPair`,
-so relative homology and cohomology comparisons for pair quotients apply directly to it.
+is constructed as `TopPair.ordinaryPairQuotient` of `TauCeti.smashPair`, so relative homology and
+cohomology comparisons for pair quotients apply directly.
 
-Because `(x₀, y₀)` belongs to the collapsed subspace, the quotient map
-`TauCeti.SmashProduct.mk x₀ y₀ : C(X × Y, SmashProduct x₀ y₀)` is unconditionally a surjective
-quotient map (`TauCeti.SmashProduct.isQuotientMap_mk`), with no nonemptiness or separation
-hypotheses on `X` or `Y`. Continuous maps out of `SmashProduct x₀ y₀` into any space `Z` are
-therefore continuous maps out of `X × Y` taking a common value on `X × {y₀}` and `{x₀} × Y`
-(`TauCeti.SmashProduct.lift`).
-
-For pairs `(X, A)` and `(Y, B)`, when `X` and `Y / B` are locally compact (in particular when `X`
-and `Y` are compact Hausdorff and `B` is closed), the pointed quotient of the product pair
-`(X × Y, A × Y ∪ X × B)` is homeomorphic to `(X / A) ∧ (Y / B)`
-(`TopPair.ordinaryPairQuotientProdHomeomorph`), including when `A` or `B` is empty. Likewise, when
-`X` and `Z` are locally compact, the smash product `(X ∧ Y) ∧ Z ≃ₜ X ∧ (Y ∧ Z)` is associative
-(`TauCeti.SmashProduct.assoc`).
-
-## Main declarations
-
-* `TauCeti.smashPair` and `TauCeti.SmashProduct`: the pair `(X × Y, X × {y₀} ∪ {x₀} × Y)` and its
-  pointed quotient `X ∧ Y`.
-* `TauCeti.SmashProduct.basepoint` and `TauCeti.SmashProduct.mk`: the basepoint and quotient map
-  `C(X × Y, SmashProduct x₀ y₀)`, with `TauCeti.SmashProduct.isQuotientMap_mk`,
-  `TauCeti.SmashProduct.mk_eq_basepoint_iff`, and `TauCeti.SmashProduct.mk_eq_mk_iff`.
-* `TauCeti.SmashProduct.lift` and `TauCeti.SmashProduct.hom_ext`: the universal mapping property.
-* `TauCeti.SmashProduct.map`, `TauCeti.SmashProduct.congrHomeomorph`, `TauCeti.SmashProduct.comm`,
-  and `TauCeti.SmashProduct.assoc`: functoriality, symmetry, and associativity.
-* `TopPair.ordinaryPairQuotientProdHomeomorph`: `(X × Y) / (A × Y ∪ X × B) ≃ₜ (X / A) ∧ (Y / B)`
-  for locally compact `X` and `Y / B`.
+Because `(x₀, y₀)` belongs to the collapsed subspace, `TauCeti.SmashProduct.mk x₀ y₀` is
+unconditionally a surjective quotient map (`TauCeti.SmashProduct.isQuotientMap_mk`), with universal
+mapping property `TauCeti.SmashProduct.lift`. When `X` and `Y / B` are locally compact,
+`TopPair.ordinaryPairQuotientProdHomeomorph` gives `(X × Y) / (A × Y ∪ X × B) ≃ₜ (X / A) ∧ (Y / B)`
+including empty subspaces; when `X` and `Z` are locally compact, `TauCeti.SmashProduct.assoc` gives
+`(X ∧ Y) ∧ Z ≃ₜ X ∧ (Y ∧ Z)`.
 
 ## References
 
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Chapter 0,
-  the smash product in "Operations on spaces".
-* J. P. May, *A Concise Course in Algebraic Topology*, Section 8.1, quotient maps and associativity
-  of the smash product on locally compact spaces.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Chapter 0.
+* J. P. May, *A Concise Course in Algebraic Topology*, Section 8.1.
 -/
 
 public section
@@ -77,8 +55,8 @@ abbrev smashPair (x₀ : X) (y₀ : Y) : TopPair.{u} :=
 lemma mem_range_smashPair_map_iff {x₀ : X} {y₀ : Y} {p : X × Y} :
     (p : (smashPair x₀ y₀).fst) ∈ range (smashPair x₀ y₀).map ↔ p.1 = x₀ ∨ p.2 = y₀ := by
   rw [TopPair.range_ofSubset_map]
-  exact ⟨fun h ↦ h.elim (fun h ↦ Or.inr h.2) fun h ↦ Or.inl h.1,
-    fun h ↦ h.elim (fun h ↦ Or.inr ⟨h, trivial⟩) fun h ↦ Or.inl ⟨trivial, h⟩⟩
+  exact ⟨fun h ↦ h.elim (Or.inr ∘ And.right) (Or.inl ∘ And.left),
+    fun h ↦ h.elim (fun hx ↦ Or.inr ⟨hx, trivial⟩) fun hy ↦ Or.inl ⟨trivial, hy⟩⟩
 
 instance instNonemptySmashPairSnd (x₀ : X) (y₀ : Y) : Nonempty (smashPair x₀ y₀).snd :=
   ⟨⟨(x₀, y₀), Or.inl ⟨trivial, rfl⟩⟩⟩
@@ -103,8 +81,7 @@ variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] (x₀ : X) (y�
 def basepoint : SmashProduct x₀ y₀ :=
   (smashPair x₀ y₀).ordinaryPairQuotientBasepoint
 
-instance : Inhabited (SmashProduct x₀ y₀) :=
-  ⟨basepoint x₀ y₀⟩
+instance : Inhabited (SmashProduct x₀ y₀) := ⟨basepoint x₀ y₀⟩
 
 /-- The quotient map `X × Y → X ∧ Y` sending `(x, y)` to `x ∧ y`. -/
 def mk : C(X × Y, SmashProduct x₀ y₀) :=
@@ -131,11 +108,11 @@ lemma mk_basepoint_right (x : X) : mk x₀ y₀ (x, y₀) = basepoint x₀ y₀ 
 one basepoint coordinate. -/
 lemma mk_eq_mk_iff {x x' : X} {y y' : Y} :
     mk x₀ y₀ (x, y) = mk x₀ y₀ (x', y') ↔
-      (x = x' ∧ y = y') ∨ (x = x₀ ∨ y = y₀) ∧ (x' = x₀ ∨ y' = y₀) := by
-  refine ((smashPair x₀ y₀).ordinaryPairQuotientπ_eq_iff (x, y) (x', y')).trans ?_
-  refine or_congr ⟨fun h ↦ Prod.mk.inj h, fun ⟨h₁, h₂⟩ ↦ Prod.ext h₁ h₂⟩ ?_
-  exact and_congr (mem_range_smashPair_map_iff (p := (x, y)))
-    (mem_range_smashPair_map_iff (p := (x', y')))
+      (x = x' ∧ y = y') ∨ (x = x₀ ∨ y = y₀) ∧ (x' = x₀ ∨ y' = y₀) :=
+  ((smashPair x₀ y₀).ordinaryPairQuotientπ_eq_iff (x, y) (x', y')).trans <|
+    or_congr ⟨Prod.mk.inj, fun ⟨h₁, h₂⟩ ↦ Prod.ext h₁ h₂⟩
+      (and_congr (mem_range_smashPair_map_iff (p := (x, y)))
+        (mem_range_smashPair_map_iff (p := (x', y'))))
 
 variable (x₀ y₀) in
 /-- The projection `X × Y → X ∧ Y` is unconditionally surjective, as `(x₀, y₀)` maps to the
@@ -151,41 +128,31 @@ lemma isQuotientMap_mk : IsQuotientMap (mk x₀ y₀) :=
 /-- Induction principle for `X ∧ Y`: every point is of the form `mk x₀ y₀ (x, y)`. -/
 @[elab_as_elim]
 lemma ind {motive : SmashProduct x₀ y₀ → Prop}
-    (hmk : ∀ x y, motive (mk x₀ y₀ (x, y))) (z : SmashProduct x₀ y₀) : motive z := by
-  obtain ⟨⟨x, y⟩, rfl⟩ := surjective_mk x₀ y₀ z
-  exact hmk x y
+    (hmk : ∀ x y, motive (mk x₀ y₀ (x, y))) (z : SmashProduct x₀ y₀) : motive z :=
+  let ⟨⟨x, y⟩, h⟩ := surjective_mk x₀ y₀ z; h ▸ hmk x y
 
-lemma isOpen_iff {s : Set (SmashProduct x₀ y₀)} :
-    IsOpen s ↔ IsOpen (mk x₀ y₀ ⁻¹' s) :=
+lemma isOpen_iff {s : Set (SmashProduct x₀ y₀)} : IsOpen s ↔ IsOpen (mk x₀ y₀ ⁻¹' s) :=
   (smashPair x₀ y₀).isOpen_ordinaryPairQuotient_iff
 
-lemma isClosed_iff {s : Set (SmashProduct x₀ y₀)} :
-    IsClosed s ↔ IsClosed (mk x₀ y₀ ⁻¹' s) :=
+lemma isClosed_iff {s : Set (SmashProduct x₀ y₀)} : IsClosed s ↔ IsClosed (mk x₀ y₀ ⁻¹' s) :=
   (smashPair x₀ y₀).isClosed_ordinaryPairQuotient_iff
 
 /-- **Extensionality for continuous maps out of `X ∧ Y`.** -/
 @[ext]
 lemma hom_ext {Z : Type v} [TopologicalSpace Z] {f g : C(SmashProduct x₀ y₀, Z)}
-    (h : ∀ x y, f (mk x₀ y₀ (x, y)) = g (mk x₀ y₀ (x, y))) : f = g := by
-  ext z
-  induction z using ind with
-  | hmk x y => exact h x y
+    (h : ∀ x y, f (mk x₀ y₀ (x, y)) = g (mk x₀ y₀ (x, y))) : f = g :=
+  DFunLike.ext _ _ (ind h)
 
 private lemma factorsThrough_mk {Z : Type v} {f : X × Y → Z} (z₀ : Z)
     (hx₀ : ∀ y, f (x₀, y) = z₀) (hy₀ : ∀ x, f (x, y₀) = z₀) :
-    Function.FactorsThrough f (mk x₀ y₀) := by
-  rintro ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ h
-  rcases mk_eq_mk_iff.1 h with ⟨rfl, rfl⟩ | ⟨h₁, h₂⟩
-  · rfl
-  · have eq₁ : f (x₁, y₁) = z₀ := h₁.elim (fun hx ↦ hx ▸ hx₀ y₁) fun hy ↦ hy ▸ hy₀ x₁
-    have eq₂ : f (x₂, y₂) = z₀ := h₂.elim (fun hx ↦ hx ▸ hx₀ y₂) fun hy ↦ hy ▸ hy₀ x₂
-    exact eq₁.trans eq₂.symm
+    Function.FactorsThrough f (mk x₀ y₀) := fun ⟨x₁, y₁⟩ ⟨x₂, y₂⟩ h ↦
+  (mk_eq_mk_iff.1 h).elim (fun ⟨hx, hy⟩ ↦ hx ▸ hy ▸ rfl) fun ⟨h₁, h₂⟩ ↦
+    (h₁.elim (· ▸ hx₀ y₁) (· ▸ hy₀ x₁)).trans (h₂.elim (· ▸ hx₀ y₂) (· ▸ hy₀ x₂)).symm
 
 /-- **The universal property of the smash product.** A continuous map `f : C(X × Y, Z)` taking a
 constant value `z₀` along `{x₀} × Y` and `X × {y₀}` descends to `C(SmashProduct x₀ y₀, Z)`. -/
 def lift {Z : Type v} [TopologicalSpace Z] (f : C(X × Y, Z)) (z₀ : Z)
-    (hx₀ : ∀ y, f (x₀, y) = z₀) (hy₀ : ∀ x, f (x, y₀) = z₀) :
-    C(SmashProduct x₀ y₀, Z) :=
+    (hx₀ : ∀ y, f (x₀, y) = z₀) (hy₀ : ∀ x, f (x, y₀) = z₀) : C(SmashProduct x₀ y₀, Z) :=
   (isQuotientMap_mk x₀ y₀).lift f (factorsThrough_mk z₀ hx₀ hy₀)
 
 @[simp]
@@ -197,17 +164,14 @@ lemma lift_mk {Z : Type v} [TopologicalSpace Z] (f : C(X × Y, Z)) (z₀ : Z)
 @[simp]
 lemma lift_comp_mk {Z : Type v} [TopologicalSpace Z] (f : C(X × Y, Z)) (z₀ : Z)
     (hx₀ : ∀ y, f (x₀, y) = z₀) (hy₀ : ∀ x, f (x, y₀) = z₀) :
-    (lift f z₀ hx₀ hy₀).comp (mk x₀ y₀) = f := by
-  ext ⟨x, y⟩
-  exact lift_mk f z₀ hx₀ hy₀ x y
+    (lift f z₀ hx₀ hy₀).comp (mk x₀ y₀) = f :=
+  DFunLike.ext _ _ fun ⟨x, y⟩ ↦ lift_mk f z₀ hx₀ hy₀ x y
 
 @[simp]
 lemma lift_basepoint {Z : Type v} [TopologicalSpace Z] (f : C(X × Y, Z)) (z₀ : Z)
     (hx₀ : ∀ y, f (x₀, y) = z₀) (hy₀ : ∀ x, f (x, y₀) = z₀) :
     lift f z₀ hx₀ hy₀ (basepoint x₀ y₀) = z₀ := by
   rw [← mk_basepoint_left (x₀ := x₀) y₀, lift_mk, hx₀]
-
-/-! ### Topological properties -/
 
 instance [CompactSpace X] [CompactSpace Y] : CompactSpace (SmashProduct x₀ y₀) :=
   haveI : CompactSpace (smashPair x₀ y₀).fst := inferInstanceAs (CompactSpace (X × Y))
@@ -219,27 +183,19 @@ instance [T3Space X] [T3Space Y] : T2Space (SmashProduct x₀ y₀) := by
   rw [TopPair.range_ofSubset_map]
   exact (isClosed_univ.prod isClosed_singleton).union (isClosed_singleton.prod isClosed_univ)
 
-instance subsingleton_left [Subsingleton X] : Subsingleton (SmashProduct x₀ y₀) := by
-  refine ⟨fun z₁ z₂ ↦ ?_⟩
-  have hbase (z : SmashProduct x₀ y₀) : z = basepoint x₀ y₀ := by
-    induction z using ind with
-    | hmk x y => rw [Subsingleton.elim x x₀, mk_basepoint_left]
-  exact (hbase z₁).trans (hbase z₂).symm
+instance subsingleton_left [Subsingleton X] : Subsingleton (SmashProduct x₀ y₀) :=
+  subsingleton_of_forall_eq (basepoint x₀ y₀)
+    (ind fun x y ↦ Subsingleton.elim x x₀ ▸ mk_basepoint_left y)
 
-instance subsingleton_right [Subsingleton Y] : Subsingleton (SmashProduct x₀ y₀) := by
-  refine ⟨fun z₁ z₂ ↦ ?_⟩
-  have hbase (z : SmashProduct x₀ y₀) : z = basepoint x₀ y₀ := by
-    induction z using ind with
-    | hmk x y => rw [Subsingleton.elim y y₀, mk_basepoint_right]
-  exact (hbase z₁).trans (hbase z₂).symm
+instance subsingleton_right [Subsingleton Y] : Subsingleton (SmashProduct x₀ y₀) :=
+  subsingleton_of_forall_eq (basepoint x₀ y₀)
+    (ind fun x y ↦ Subsingleton.elim y y₀ ▸ mk_basepoint_right x)
 
 instance [PathConnectedSpace X] [PathConnectedSpace Y] :
     PathConnectedSpace (SmashProduct x₀ y₀) :=
   (isQuotientMap_mk x₀ y₀).surjective.pathConnectedSpace (mk x₀ y₀).continuous
 
 end Basic
-
-/-! ### Functoriality, symmetry, and associativity -/
 
 section Functoriality
 
@@ -269,18 +225,14 @@ lemma map_basepoint (f : C(X, X')) (g : C(Y, Y')) (hf : f x₀ = x₀') (hg : g 
 lemma map_id (x₀ : X) (y₀ : Y) :
     map (x₀ := x₀) (y₀ := y₀) (x₀' := x₀) (y₀' := y₀)
       (ContinuousMap.id X) (ContinuousMap.id Y) rfl rfl =
-      ContinuousMap.id (SmashProduct x₀ y₀) := by
-  apply hom_ext
-  intro x y
-  exact map_mk _ _ _ _ x y
+      ContinuousMap.id (SmashProduct x₀ y₀) :=
+  hom_ext fun x y ↦ map_mk _ _ _ _ x y
 
 lemma map_comp (f : C(X, X')) (g : C(Y, Y')) (hf : f x₀ = x₀') (hg : g y₀ = y₀')
     (f' : C(X', X'')) (g' : C(Y', Y'')) (hf' : f' x₀' = x₀'') (hg' : g' y₀' = y₀'') :
     (map f' g' hf' hg').comp (map f g hf hg) =
-      map (f'.comp f) (g'.comp g) (by simp [hf, hf']) (by simp [hg, hg']) := by
-  apply hom_ext
-  intro x y
-  simp
+      map (f'.comp f) (g'.comp g) (by simp [hf, hf']) (by simp [hg, hg']) :=
+  hom_ext fun x y ↦ by simp
 
 /-- Pointed homeomorphisms `X ≃ₜ X'` and `Y ≃ₜ Y'` induce a homeomorphism `X ∧ Y ≃ₜ X' ∧ Y'`. -/
 def congrHomeomorph (e₁ : X ≃ₜ X') (e₂ : Y ≃ₜ Y') (he₁ : e₁ x₀ = x₀') (he₂ : e₂ y₀ = y₀') :
@@ -288,12 +240,8 @@ def congrHomeomorph (e₁ : X ≃ₜ X') (e₂ : Y ≃ₜ Y') (he₁ : e₁ x₀
   toFun := map (e₁ : C(X, X')) (e₂ : C(Y, Y')) he₁ he₂
   invFun := map (e₁.symm : C(X', X)) (e₂.symm : C(Y', Y)) (e₁.symm_apply_eq.2 he₁.symm)
     (e₂.symm_apply_eq.2 he₂.symm)
-  left_inv z := by
-    induction z using ind with
-    | hmk x y => simp
-  right_inv z' := by
-    induction z' using ind with
-    | hmk x' y' => simp
+  left_inv := ind fun x y ↦ by simp
+  right_inv := ind fun x' y' ↦ by simp
   continuous_toFun := (map (e₁ : C(X, X')) (e₂ : C(Y, Y')) he₁ he₂).continuous
   continuous_invFun := (map (e₁.symm : C(X', X)) (e₂.symm : C(Y', Y))
     (e₁.symm_apply_eq.2 he₁.symm) (e₂.symm_apply_eq.2 he₂.symm)).continuous
@@ -318,19 +266,14 @@ lemma congrHomeomorph_symm (e₁ : X ≃ₜ X') (e₂ : Y ≃ₜ Y') (he₁ : e�
         (e₂.symm_apply_eq.2 he₂.symm) := (rfl)
 
 private def commMap (x₀ : X) (y₀ : Y) : C(SmashProduct x₀ y₀, SmashProduct y₀ x₀) :=
-  lift ((mk y₀ x₀).comp ContinuousMap.prodSwap) (basepoint y₀ x₀)
-    (fun y ↦ by simp) (fun x ↦ by simp)
+  lift ((mk y₀ x₀).comp ContinuousMap.prodSwap) (basepoint y₀ x₀) (by simp) (by simp)
 
 /-- **Symmetry of the smash product**: `X ∧ Y ≃ₜ Y ∧ X` by swapping the two factors. -/
 def comm (x₀ : X) (y₀ : Y) : SmashProduct x₀ y₀ ≃ₜ SmashProduct y₀ x₀ where
   toFun := commMap x₀ y₀
   invFun := commMap y₀ x₀
-  left_inv z := by
-    induction z using ind with
-    | hmk x y => simp [commMap]
-  right_inv z' := by
-    induction z' using ind with
-    | hmk y x => simp [commMap]
+  left_inv := ind fun x y ↦ by simp [commMap]
+  right_inv := ind fun y x ↦ by simp [commMap]
   continuous_toFun := (commMap x₀ y₀).continuous
   continuous_invFun := (commMap y₀ x₀).continuous
 
@@ -358,107 +301,66 @@ variable {X Y Z : Type u} [TopologicalSpace X] [TopologicalSpace Y] [Topological
 private def assocFwdSlice (x₀ : X) (y₀ : Y) (z₀ : Z) (z : Z) :
     C(SmashProduct x₀ y₀, SmashProduct x₀ (basepoint y₀ z₀)) :=
   lift ⟨fun xy : X × Y ↦ mk x₀ (basepoint y₀ z₀) (xy.1, mk y₀ z₀ (xy.2, z)), by fun_prop⟩
-    (basepoint x₀ (basepoint y₀ z₀)) (fun y ↦ by simp) (fun x ↦ by simp)
+    (basepoint x₀ (basepoint y₀ z₀)) (by simp) (by simp)
 
 private def assocFwdProd [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z) :
     C(SmashProduct x₀ y₀ × Z, SmashProduct x₀ (basepoint y₀ z₀)) where
   toFun p := assocFwdSlice x₀ y₀ z₀ p.2 p.1
-  continuous_toFun := by
-    refine (isQuotientMap_mk x₀ y₀).continuous_lift_prod_left ?_
+  continuous_toFun := (isQuotientMap_mk x₀ y₀).continuous_lift_prod_left <| by
     have hEq : (fun q : (X × Y) × Z ↦ assocFwdSlice x₀ y₀ z₀ q.2 (mk x₀ y₀ q.1)) =
-        fun q : (X × Y) × Z ↦ mk x₀ (basepoint y₀ z₀) (q.1.1, mk y₀ z₀ (q.1.2, q.2)) := by
-      funext ⟨⟨x, y⟩, z⟩
-      exact lift_mk _ _ _ _ x y
-    rw [hEq]
-    fun_prop
-
-@[simp]
-private lemma assocFwdProd_mk [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z)
-    (x : X) (y : Y) (z : Z) :
-    assocFwdProd x₀ y₀ z₀ (mk x₀ y₀ (x, y), z) = mk x₀ (basepoint y₀ z₀) (x, mk y₀ z₀ (y, z)) := by
-  simp [assocFwdProd, assocFwdSlice]
-
-@[simp]
-private lemma assocFwdProd_basepoint [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z) (z : Z) :
-    assocFwdProd x₀ y₀ z₀ (basepoint x₀ y₀, z) = basepoint x₀ (basepoint y₀ z₀) := by
-  simp [assocFwdProd, assocFwdSlice]
+        fun q ↦ mk x₀ (basepoint y₀ z₀) (q.1.1, mk y₀ z₀ (q.1.2, q.2)) :=
+      funext fun ⟨⟨x, y⟩, _⟩ ↦ lift_mk _ _ _ _ x y
+    rw [hEq]; fun_prop
 
 private def assocFwdMap [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z) :
     C(SmashProduct (basepoint x₀ y₀) z₀, SmashProduct x₀ (basepoint y₀ z₀)) :=
   lift (assocFwdProd x₀ y₀ z₀) (basepoint x₀ (basepoint y₀ z₀))
-    (fun z ↦ assocFwdProd_basepoint x₀ y₀ z₀ z)
-    (fun w ↦ by
-      induction w using ind with
-      | hmk x y => simp)
-
-private def assocBwdSlice (x₀ : X) (y₀ : Y) (z₀ : Z) (x : X) :
-    C(SmashProduct y₀ z₀, SmashProduct (basepoint x₀ y₀) z₀) :=
-  lift ⟨fun yz : Y × Z ↦ mk (basepoint x₀ y₀) z₀ (mk x₀ y₀ (x, yz.1), yz.2), by fun_prop⟩
-    (basepoint (basepoint x₀ y₀) z₀) (fun z ↦ by simp) (fun y ↦ by simp)
-
-private def assocBwdProd [LocallyCompactSpace X] (x₀ : X) (y₀ : Y) (z₀ : Z) :
-    C(X × SmashProduct y₀ z₀, SmashProduct (basepoint x₀ y₀) z₀) where
-  toFun p := assocBwdSlice x₀ y₀ z₀ p.1 p.2
-  continuous_toFun := by
-    refine (isQuotientMap_mk y₀ z₀).continuous_lift_prod_right ?_
-    have hEq : (fun q : X × (Y × Z) ↦ assocBwdSlice x₀ y₀ z₀ q.1 (mk y₀ z₀ q.2)) =
-        fun q : X × (Y × Z) ↦ mk (basepoint x₀ y₀) z₀ (mk x₀ y₀ (q.1, q.2.1), q.2.2) := by
-      funext ⟨x, ⟨y, z⟩⟩
-      exact lift_mk _ _ _ _ y z
-    rw [hEq]
-    fun_prop
+    (fun _ ↦ by simp [assocFwdProd, assocFwdSlice])
+    (ind fun x y ↦ by simp [assocFwdProd, assocFwdSlice])
 
 @[simp]
-private lemma assocBwdProd_mk [LocallyCompactSpace X] (x₀ : X) (y₀ : Y) (z₀ : Z)
+private lemma assocFwdMap_mk [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z)
     (x : X) (y : Y) (z : Z) :
-    assocBwdProd x₀ y₀ z₀ (x, mk y₀ z₀ (y, z)) = mk (basepoint x₀ y₀) z₀ (mk x₀ y₀ (x, y), z) := by
-  simp [assocBwdProd, assocBwdSlice]
-
-@[simp]
-private lemma assocBwdProd_basepoint [LocallyCompactSpace X] (x₀ : X) (y₀ : Y) (z₀ : Z) (x : X) :
-    assocBwdProd x₀ y₀ z₀ (x, basepoint y₀ z₀) = basepoint (basepoint x₀ y₀) z₀ := by
-  simp [assocBwdProd, assocBwdSlice]
-
-private def assocBwdMap [LocallyCompactSpace X] (x₀ : X) (y₀ : Y) (z₀ : Z) :
-    C(SmashProduct x₀ (basepoint y₀ z₀), SmashProduct (basepoint x₀ y₀) z₀) :=
-  lift (assocBwdProd x₀ y₀ z₀) (basepoint (basepoint x₀ y₀) z₀)
-    (fun w ↦ by
-      induction w using ind with
-      | hmk y z => simp)
-    (fun x ↦ assocBwdProd_basepoint x₀ y₀ z₀ x)
+    assocFwdMap x₀ y₀ z₀ (mk (basepoint x₀ y₀) z₀ (mk x₀ y₀ (x, y), z)) =
+      mk x₀ (basepoint y₀ z₀) (x, mk y₀ z₀ (y, z)) := by
+  simp [assocFwdMap, assocFwdProd, assocFwdSlice]
 
 /-- **Associativity of the smash product**: `(X ∧ Y) ∧ Z ≃ₜ X ∧ (Y ∧ Z)` whenever the outer factors
 `X` and `Z` are locally compact (in particular for all compact Hausdorff spaces). -/
 def assoc [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z) :
     SmashProduct (basepoint x₀ y₀) z₀ ≃ₜ SmashProduct x₀ (basepoint y₀ z₀) where
   toFun := assocFwdMap x₀ y₀ z₀
-  invFun := assocBwdMap x₀ y₀ z₀
-  left_inv q := by
-    induction q using ind with
-    | hmk w z =>
-      induction w using ind with
-      | hmk x y => simp [assocFwdMap, assocBwdMap]
-  right_inv q := by
-    induction q using ind with
-    | hmk x w =>
-      induction w using ind with
-      | hmk y z => simp [assocFwdMap, assocBwdMap]
+  invFun p := comm z₀ (basepoint x₀ y₀) <|
+    congrHomeomorph (.refl Z) (comm y₀ x₀) (congrFun (Homeomorph.refl_apply Z) z₀) comm_basepoint <|
+      assocFwdMap z₀ y₀ x₀ <|
+        congrHomeomorph (comm y₀ z₀) (.refl X) comm_basepoint
+          (congrFun (Homeomorph.refl_apply X) x₀) <|
+          comm x₀ (basepoint y₀ z₀) p
+  left_inv := ind <| ind fun x y z ↦ by simp
+  right_inv := ind fun x ↦ ind fun y z ↦ by simp
   continuous_toFun := (assocFwdMap x₀ y₀ z₀).continuous
-  continuous_invFun := (assocBwdMap x₀ y₀ z₀).continuous
+  continuous_invFun :=
+    (comm z₀ (basepoint x₀ y₀)).continuous.comp <|
+      (congrHomeomorph (.refl Z) (comm y₀ x₀)
+        (congrFun (Homeomorph.refl_apply Z) z₀) comm_basepoint).continuous.comp <|
+        (assocFwdMap z₀ y₀ x₀).continuous.comp <|
+          (congrHomeomorph (comm y₀ z₀) (.refl X)
+            comm_basepoint (congrFun (Homeomorph.refl_apply X) x₀)).continuous.comp
+            (comm x₀ (basepoint y₀ z₀)).continuous
 
 @[simp]
 lemma assoc_mk [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z)
     (x : X) (y : Y) (z : Z) :
     assoc x₀ y₀ z₀ (mk (basepoint x₀ y₀) z₀ (mk x₀ y₀ (x, y), z)) =
-      mk x₀ (basepoint y₀ z₀) (x, mk y₀ z₀ (y, z)) := by
-  simp [assoc, assocFwdMap]
+      mk x₀ (basepoint y₀ z₀) (x, mk y₀ z₀ (y, z)) :=
+  assocFwdMap_mk x₀ y₀ z₀ x y z
 
 @[simp]
 lemma assoc_symm_mk [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z)
     (x : X) (y : Y) (z : Z) :
     (assoc x₀ y₀ z₀).symm (mk x₀ (basepoint y₀ z₀) (x, mk y₀ z₀ (y, z))) =
-      mk (basepoint x₀ y₀) z₀ (mk x₀ y₀ (x, y), z) := by
-  simp [assoc, assocBwdMap]
+      mk (basepoint x₀ y₀) z₀ (mk x₀ y₀ (x, y), z) :=
+  (assoc x₀ y₀ z₀).symm_apply_eq.2 (assoc_mk x₀ y₀ z₀ x y z).symm
 
 @[simp]
 lemma assoc_basepoint [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z) :
@@ -468,8 +370,8 @@ lemma assoc_basepoint [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X)
 @[simp]
 lemma assoc_symm_basepoint [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y)
     (z₀ : Z) :
-    (assoc x₀ y₀ z₀).symm (basepoint x₀ (basepoint y₀ z₀)) = basepoint (basepoint x₀ y₀) z₀ := by
-  simp [assoc, assocBwdMap]
+    (assoc x₀ y₀ z₀).symm (basepoint x₀ (basepoint y₀ z₀)) = basepoint (basepoint x₀ y₀) z₀ :=
+  (assoc x₀ y₀ z₀).symm_apply_eq.2 (assoc_basepoint x₀ y₀ z₀).symm
 
 end Assoc
 
@@ -485,28 +387,26 @@ section ProdQuotient
 
 variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] (A : Set X) (B : Set Y)
 
+private abbrev qLeft : TopPair.{u} := ofSubset (X := TopCat.of X) A
+private abbrev qRight : TopPair.{u} := ofSubset (X := TopCat.of Y) B
+private abbrev qProd : TopPair.{u} := ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)
+
 /-- The canonical continuous map `(X × Y) / (A × Y ∪ X × B) → (X / A) ∧ (Y / B)` sending `(x, y)`
 to `π_A x ∧ π_B y` and the basepoint to the smash basepoint. -/
 def ordinaryPairQuotientProdToSmash :
     (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotient ⟶
       SmashProduct (ofSubset (X := TopCat.of X) A).ordinaryPairQuotientBasepoint
         (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientBasepoint :=
-  (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientDesc
+  (qProd A B).ordinaryPairQuotientDesc
     (TopCat.ofHom ((SmashProduct.mk _ _).comp
-      (((ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ).hom.prodMap
-        ((ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ).hom)))
-    (SmashProduct.basepoint _ _) fun b ↦ by
-      rcases b.2 with ⟨hxA, -⟩ | ⟨-, hyB⟩
-      · have hπ : (ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ b.1.1 =
-            (ofSubset (X := TopCat.of X) A).ordinaryPairQuotientBasepoint :=
-          (ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ_map ⟨b.1.1, hxA⟩
-        exact (congrArg (fun u ↦ SmashProduct.mk _ _ (u, _)) hπ).trans
-          (SmashProduct.mk_basepoint_left _)
-      · have hπ : (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ b.1.2 =
-            (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientBasepoint :=
-          (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ_map ⟨b.1.2, hyB⟩
-        exact (congrArg (fun v ↦ SmashProduct.mk _ _ (_, v)) hπ).trans
-          (SmashProduct.mk_basepoint_right _)
+      (((qLeft A).ordinaryPairQuotientπ).hom.prodMap ((qRight B).ordinaryPairQuotientπ).hom)))
+    (SmashProduct.basepoint _ _) fun b ↦ b.2.elim
+      (fun ⟨hxA, _⟩ ↦ (congrArg (fun u ↦ SmashProduct.mk _ _ (u, _))
+        ((qLeft A).ordinaryPairQuotientπ_map ⟨b.1.1, hxA⟩)).trans
+        (SmashProduct.mk_basepoint_left _))
+      (fun ⟨_, hyB⟩ ↦ (congrArg (fun v ↦ SmashProduct.mk _ _ (_, v))
+        ((qRight B).ordinaryPairQuotientπ_map ⟨b.1.2, hyB⟩)).trans
+        (SmashProduct.mk_basepoint_right _))
 
 @[simp]
 lemma ordinaryPairQuotientProdToSmash_π (x : X) (y : Y) :
@@ -515,8 +415,7 @@ lemma ordinaryPairQuotientProdToSmash_π (x : X) (y : Y) :
       SmashProduct.mk _ _
         ((ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ x,
           (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ y) :=
-  ordinaryPairQuotientπ_desc_apply (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B))
-    _ _ _ (x, y)
+  ordinaryPairQuotientπ_desc_apply (qProd A B) _ _ _ (x, y)
 
 @[simp]
 lemma ordinaryPairQuotientProdToSmash_basepoint :
@@ -524,171 +423,87 @@ lemma ordinaryPairQuotientProdToSmash_basepoint :
       (ofSubset (X := TopCat.of (X × Y))
         (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint =
       SmashProduct.basepoint _ _ :=
-  ordinaryPairQuotientDesc_basepoint (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B))
-    _ _ _
+  ordinaryPairQuotientDesc_basepoint (qProd A B) _ _ _
 
 private def prodQuotientFromRight (x : X)
-    (qb : (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient) :
-    (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotient :=
-  (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientDesc
-    (TopCat.ofHom ⟨fun y ↦ (ofSubset (X := TopCat.of (X × Y))
-      (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ (x, y),
-      ((ofSubset (X := TopCat.of (X × Y))
-        (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ).hom.continuous.comp
+    (qb : (qRight B).ordinaryPairQuotient) : (qProd A B).ordinaryPairQuotient :=
+  (qRight B).ordinaryPairQuotientDesc
+    (TopCat.ofHom ⟨fun y ↦ (qProd A B).ordinaryPairQuotientπ (x, y),
+      ((qProd A B).ordinaryPairQuotientπ).hom.continuous.comp
         (continuous_const.prodMk continuous_id)⟩)
-    (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint
-    (fun b ↦ (ofSubset (X := TopCat.of (X × Y))
-      (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ_map ⟨(x, b.1), Or.inr ⟨trivial, b.2⟩⟩)
-    qb
+    (qProd A B).ordinaryPairQuotientBasepoint
+    (fun b ↦ (qProd A B).ordinaryPairQuotientπ_map ⟨(x, b.1), Or.inr ⟨trivial, b.2⟩⟩) qb
 
 @[simp]
 private lemma prodQuotientFromRight_π (x : X) (y : Y) :
-    prodQuotientFromRight A B x ((ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ y) =
-      (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ (x, y) :=
-  ordinaryPairQuotientπ_desc_apply (ofSubset (X := TopCat.of Y) B) _ _ _ y
+    prodQuotientFromRight A B x ((qRight B).ordinaryPairQuotientπ y) =
+      (qProd A B).ordinaryPairQuotientπ (x, y) :=
+  ordinaryPairQuotientπ_desc_apply (qRight B) _ _ _ y
 
 @[simp]
 private lemma prodQuotientFromRight_basepoint (x : X) :
-    prodQuotientFromRight A B x (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientBasepoint =
-      (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint :=
+    prodQuotientFromRight A B x (qRight B).ordinaryPairQuotientBasepoint =
+      (qProd A B).ordinaryPairQuotientBasepoint :=
   ordinaryPairQuotientDesc_basepoint _ _ _ _
 
 private lemma continuous_prodQuotientFromRight [LocallyCompactSpace X] :
-    Continuous fun p : X × (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient ↦
+    Continuous fun p : X × (qRight B).ordinaryPairQuotient ↦
       prodQuotientFromRight A B p.1 p.2 := by
-  refine (ofSubset (X := TopCat.of Y) B).isQuotientMap_ordinaryPairQuotient
-    |>.continuous_lift_prod_right ?_
-  refine (Homeomorph.prodSumDistrib (Z := PUnit.{u + 1})).symm.comp_continuous_iff'.1 ?_
-  refine continuous_sum_dom.2 ⟨?_, ?_⟩
-  · exact ((ofSubset (X := TopCat.of (X × Y))
-      (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ).hom.continuous.congr fun ⟨x, y⟩ ↦
-      (prodQuotientFromRight_π A B x y).symm
-  · exact (continuous_const (y := (ofSubset (X := TopCat.of (X × Y))
-      (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint)).congr fun ⟨x, _⟩ ↦
-      (prodQuotientFromRight_basepoint A B x).symm
+  refine (qRight B).isQuotientMap_ordinaryPairQuotient.continuous_lift_prod_right ?_
+  refine (Homeomorph.prodSumDistrib (Z := PUnit.{u + 1})).symm.comp_continuous_iff'.1
+    (continuous_sum_dom.2 ⟨?_, ?_⟩)
+  · exact ((qProd A B).ordinaryPairQuotientπ).hom.continuous.congr
+      fun ⟨x, y⟩ ↦ (prodQuotientFromRight_π A B x y).symm
+  · exact (continuous_const (y := (qProd A B).ordinaryPairQuotientBasepoint)).congr
+      fun ⟨x, _⟩ ↦ (prodQuotientFromRight_basepoint A B x).symm
 
-private def prodQuotientFromBoth (qa : (ofSubset (X := TopCat.of X) A).ordinaryPairQuotient)
-    (qb : (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient) :
-    (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotient :=
-  (ofSubset (X := TopCat.of X) A).ordinaryPairQuotientDesc
+private def prodQuotientFromBoth (qa : (qLeft A).ordinaryPairQuotient)
+    (qb : (qRight B).ordinaryPairQuotient) : (qProd A B).ordinaryPairQuotient :=
+  (qLeft A).ordinaryPairQuotientDesc
     (TopCat.ofHom ⟨fun x ↦ prodQuotientFromRight A B x qb,
-      -- Continuity in `x` for fixed `qb` holds by case analysis on `qb`.
-      by
-        induction qb using ordinaryPairQuotient_ind with
-        | hπ y =>
-          exact (((ofSubset (X := TopCat.of (X × Y))
-            (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ).hom.continuous.comp
-            (continuous_id.prodMk (continuous_const (y := y)))).congr fun x ↦
-            (prodQuotientFromRight_π A B x y).symm
-        | hbase =>
-          exact (continuous_const (y := (ofSubset (X := TopCat.of (X × Y))
-            (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint)).congr fun x ↦
-            (prodQuotientFromRight_basepoint A B x).symm⟩)
-    (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint
-    (fun a ↦ by
-      induction qb using ordinaryPairQuotient_ind with
-      | hπ y =>
-        exact (prodQuotientFromRight_π A B a.1 y).trans
-          ((ofSubset (X := TopCat.of (X × Y))
-            (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ_map ⟨(a.1, y), Or.inl ⟨a.2, trivial⟩⟩)
-      | hbase => exact prodQuotientFromRight_basepoint A B a.1)
-    qa
+      ordinaryPairQuotient_ind (P := qRight B)
+        (fun y ↦ (((qProd A B).ordinaryPairQuotientπ).hom.continuous.comp
+          (continuous_id.prodMk continuous_const)).congr
+          fun x ↦ (prodQuotientFromRight_π A B x y).symm)
+        ((continuous_const (y := (qProd A B).ordinaryPairQuotientBasepoint)).congr
+          fun x ↦ (prodQuotientFromRight_basepoint A B x).symm) qb⟩)
+    (qProd A B).ordinaryPairQuotientBasepoint
+    (fun a ↦ ordinaryPairQuotient_ind (P := qRight B)
+      (fun y ↦ (prodQuotientFromRight_π A B a.1 y).trans
+        ((qProd A B).ordinaryPairQuotientπ_map ⟨(a.1, y), Or.inl ⟨a.2, trivial⟩⟩))
+      (prodQuotientFromRight_basepoint A B a.1) qb) qa
 
 @[simp]
-private lemma prodQuotientFromBoth_π (x : X)
-    (qb : (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient) :
-    prodQuotientFromBoth A B ((ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ x) qb =
+private lemma prodQuotientFromBoth_π (x : X) (qb : (qRight B).ordinaryPairQuotient) :
+    prodQuotientFromBoth A B ((qLeft A).ordinaryPairQuotientπ x) qb =
       prodQuotientFromRight A B x qb :=
-  ordinaryPairQuotientπ_desc_apply (ofSubset (X := TopCat.of X) A) _ _ _ x
+  ordinaryPairQuotientπ_desc_apply (qLeft A) _ _ _ x
 
 @[simp]
-private lemma prodQuotientFromBoth_basepoint
-    (qb : (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient) :
-    prodQuotientFromBoth A B (ofSubset (X := TopCat.of X) A).ordinaryPairQuotientBasepoint qb =
-      (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint :=
+private lemma prodQuotientFromBoth_basepoint (qb : (qRight B).ordinaryPairQuotient) :
+    prodQuotientFromBoth A B (qLeft A).ordinaryPairQuotientBasepoint qb =
+      (qProd A B).ordinaryPairQuotientBasepoint :=
   ordinaryPairQuotientDesc_basepoint _ _ _ _
 
-private lemma continuous_prodQuotientFromBoth [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient] :
-    Continuous fun p : (ofSubset (X := TopCat.of X) A).ordinaryPairQuotient ×
-      (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient ↦ prodQuotientFromBoth A B p.1 p.2 := by
-  refine (ofSubset (X := TopCat.of X) A).isQuotientMap_ordinaryPairQuotient
-    |>.continuous_lift_prod_left ?_
-  refine (Homeomorph.sumProdDistrib (Y := PUnit.{u + 1})
-    (Z := (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient)).symm.comp_continuous_iff'.1 ?_
-  refine continuous_sum_dom.2 ⟨?_, ?_⟩
-  · exact (continuous_prodQuotientFromRight A B).congr fun ⟨x, qb⟩ ↦
-      (prodQuotientFromBoth_π A B x qb).symm
-  · exact (continuous_const (y := (ofSubset (X := TopCat.of (X × Y))
-      (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint)).congr fun ⟨_, qb⟩ ↦
-      (prodQuotientFromBoth_basepoint A B qb).symm
-
-private def prodQuotientFromBothMap [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient] :
-    C((ofSubset (X := TopCat.of X) A).ordinaryPairQuotient ×
-        (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient,
-      (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotient) :=
-  ⟨fun p ↦ prodQuotientFromBoth A B p.1 p.2, continuous_prodQuotientFromBoth A B⟩
-
-@[simp]
-private lemma prodQuotientFromBothMap_π_π [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient] (x : X) (y : Y) :
-    prodQuotientFromBothMap A B
-      ((ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ x,
-        (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ y) =
-      (ofSubset (X := TopCat.of (X × Y))
-        (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ (x, y) := by
-  simp [prodQuotientFromBothMap]
-
-@[simp]
-private lemma prodQuotientFromBothMap_basepoint_left [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient]
-    (qb : (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient) :
-    prodQuotientFromBothMap A B
-      ((ofSubset (X := TopCat.of X) A).ordinaryPairQuotientBasepoint, qb) =
-      (ofSubset (X := TopCat.of (X × Y))
-        (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint := by
-  simp [prodQuotientFromBothMap]
-
-@[simp]
-private lemma prodQuotientFromBothMap_basepoint_right [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient]
-    (qa : (ofSubset (X := TopCat.of X) A).ordinaryPairQuotient) :
-    prodQuotientFromBothMap A B
-      (qa, (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientBasepoint) =
-      (ofSubset (X := TopCat.of (X × Y))
-        (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint := by
-  induction qa using ordinaryPairQuotient_ind with
-  | hπ x =>
-    exact (prodQuotientFromBoth_π A B x _).trans (prodQuotientFromRight_basepoint A B x)
-  | hbase => exact prodQuotientFromBothMap_basepoint_left A B _
-
 private def smashToOrdinaryPairQuotientProd [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient] :
-    C(SmashProduct (ofSubset (X := TopCat.of X) A).ordinaryPairQuotientBasepoint
-        (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientBasepoint,
-      (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotient) :=
-  SmashProduct.lift (prodQuotientFromBothMap A B)
-    (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint
-    (prodQuotientFromBothMap_basepoint_left A B)
-    (prodQuotientFromBothMap_basepoint_right A B)
-
-private lemma smashToOrdinaryPairQuotientProd_mk_π [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient] (x : X) (y : Y) :
-    smashToOrdinaryPairQuotientProd A B
-      (SmashProduct.mk _ _
-        ((ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ x,
-          (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ y)) =
-      (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ (x, y) :=
-  (SmashProduct.lift_mk (prodQuotientFromBothMap A B) _ _ _ _ _).trans
-    (prodQuotientFromBothMap_π_π A B x y)
-
-private lemma smashToOrdinaryPairQuotientProd_basepoint [LocallyCompactSpace X]
-    [LocallyCompactSpace (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotient] :
-    smashToOrdinaryPairQuotientProd A B (SmashProduct.basepoint _ _) =
-      (ofSubset (X := TopCat.of (X × Y))
-        (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint := by
-  simp [smashToOrdinaryPairQuotientProd]
+    [LocallyCompactSpace (qRight B).ordinaryPairQuotient] :
+    C(SmashProduct (qLeft A).ordinaryPairQuotientBasepoint (qRight B).ordinaryPairQuotientBasepoint,
+      (qProd A B).ordinaryPairQuotient) :=
+  SmashProduct.lift
+    ⟨fun p ↦ prodQuotientFromBoth A B p.1 p.2, by
+      refine (qLeft A).isQuotientMap_ordinaryPairQuotient.continuous_lift_prod_left ?_
+      refine (Homeomorph.sumProdDistrib (Y := PUnit.{u + 1})
+        (Z := (qRight B).ordinaryPairQuotient)).symm.comp_continuous_iff'.1
+        (continuous_sum_dom.2 ⟨?_, ?_⟩)
+      · exact (continuous_prodQuotientFromRight A B).congr
+          fun ⟨x, qb⟩ ↦ (prodQuotientFromBoth_π A B x qb).symm
+      · exact (continuous_const (y := (qProd A B).ordinaryPairQuotientBasepoint)).congr
+          fun ⟨_, qb⟩ ↦ (prodQuotientFromBoth_basepoint A B qb).symm⟩
+    (qProd A B).ordinaryPairQuotientBasepoint
+    (prodQuotientFromBoth_basepoint A B)
+    (ordinaryPairQuotient_ind (P := qLeft A)
+      (fun x ↦ (prodQuotientFromBoth_π A B x _).trans (prodQuotientFromRight_basepoint A B x))
+      (prodQuotientFromBoth_basepoint A B _))
 
 /-- **The pointed quotient of a product pair is the smash product of the pointed quotients.**
 When `X` and `Y / B` are locally compact (in particular when `X` and `Y` are compact Hausdorff and
@@ -701,37 +516,28 @@ def ordinaryPairQuotientProdHomeomorph [LocallyCompactSpace X]
         (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientBasepoint where
   toFun := ordinaryPairQuotientProdToSmash A B
   invFun := smashToOrdinaryPairQuotientProd A B
-  left_inv z := by
-    induction z using ordinaryPairQuotient_ind with
-    | hπ p =>
-      rcases p with ⟨x, y⟩
-      exact (congrArg (smashToOrdinaryPairQuotientProd A B)
-        (ordinaryPairQuotientProdToSmash_π A B x y)).trans
-        (smashToOrdinaryPairQuotientProd_mk_π A B x y)
-    | hbase =>
-      exact (congrArg (smashToOrdinaryPairQuotientProd A B)
-        (ordinaryPairQuotientProdToSmash_basepoint A B)).trans
-        (smashToOrdinaryPairQuotientProd_basepoint A B)
-  right_inv w := by
-    induction w using SmashProduct.ind with
-    | hmk qa qb =>
-      induction qa using ordinaryPairQuotient_ind with
-      | hπ x =>
-        induction qb using ordinaryPairQuotient_ind with
-        | hπ y =>
-          exact (congrArg (ordinaryPairQuotientProdToSmash A B)
-            (smashToOrdinaryPairQuotientProd_mk_π A B x y)).trans
-            (ordinaryPairQuotientProdToSmash_π A B x y)
-        | hbase =>
-          rw [SmashProduct.mk_basepoint_right]
-          exact (congrArg (ordinaryPairQuotientProdToSmash A B)
-            (smashToOrdinaryPairQuotientProd_basepoint A B)).trans
-            (ordinaryPairQuotientProdToSmash_basepoint A B)
-      | hbase =>
-        rw [SmashProduct.mk_basepoint_left]
-        exact (congrArg (ordinaryPairQuotientProdToSmash A B)
-          (smashToOrdinaryPairQuotientProd_basepoint A B)).trans
-          (ordinaryPairQuotientProdToSmash_basepoint A B)
+  left_inv := ordinaryPairQuotient_ind (P := qProd A B)
+    (fun ⟨x, y⟩ ↦ (congrArg (smashToOrdinaryPairQuotientProd A B)
+      (ordinaryPairQuotientProdToSmash_π A B x y)).trans
+      (by simp [smashToOrdinaryPairQuotientProd]))
+    ((congrArg (smashToOrdinaryPairQuotientProd A B)
+      (ordinaryPairQuotientProdToSmash_basepoint A B)).trans
+      (by simp [smashToOrdinaryPairQuotientProd]))
+  right_inv := SmashProduct.ind <|
+    ordinaryPairQuotient_ind (P := qLeft A)
+      (fun x ↦ ordinaryPairQuotient_ind (P := qRight B)
+        (fun y ↦ (congrArg (ordinaryPairQuotientProdToSmash A B)
+          (((SmashProduct.lift_mk _ _ _ _ _ _).trans (prodQuotientFromBoth_π A B x _)).trans
+            (prodQuotientFromRight_π A B x y))).trans
+          (ordinaryPairQuotientProdToSmash_π A B x y))
+        (by rw [SmashProduct.mk_basepoint_right]
+            exact (congrArg (ordinaryPairQuotientProdToSmash A B)
+              (by simp [smashToOrdinaryPairQuotientProd])).trans
+              (ordinaryPairQuotientProdToSmash_basepoint A B)))
+      (fun _ ↦ by rw [SmashProduct.mk_basepoint_left]
+                  exact (congrArg (ordinaryPairQuotientProdToSmash A B)
+                    (by simp [smashToOrdinaryPairQuotientProd])).trans
+                    (ordinaryPairQuotientProdToSmash_basepoint A B))
   continuous_toFun := (ordinaryPairQuotientProdToSmash A B).hom.continuous
   continuous_invFun := (smashToOrdinaryPairQuotientProd A B).continuous
 
@@ -762,7 +568,8 @@ lemma ordinaryPairQuotientProdHomeomorph_symm_mk_π [LocallyCompactSpace X]
         ((ofSubset (X := TopCat.of X) A).ordinaryPairQuotientπ x,
           (ofSubset (X := TopCat.of Y) B).ordinaryPairQuotientπ y)) =
       (ofSubset (X := TopCat.of (X × Y)) (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientπ (x, y) :=
-  smashToOrdinaryPairQuotientProd_mk_π A B x y
+  (ordinaryPairQuotientProdHomeomorph A B).symm_apply_eq.2
+    (ordinaryPairQuotientProdHomeomorph_π A B x y).symm
 
 @[simp]
 lemma ordinaryPairQuotientProdHomeomorph_symm_basepoint [LocallyCompactSpace X]
@@ -770,7 +577,8 @@ lemma ordinaryPairQuotientProdHomeomorph_symm_basepoint [LocallyCompactSpace X]
     (ordinaryPairQuotientProdHomeomorph A B).symm (SmashProduct.basepoint _ _) =
       (ofSubset (X := TopCat.of (X × Y))
         (A ×ˢ univ ∪ univ ×ˢ B)).ordinaryPairQuotientBasepoint :=
-  smashToOrdinaryPairQuotientProd_basepoint A B
+  (ordinaryPairQuotientProdHomeomorph A B).symm_apply_eq.2
+    (ordinaryPairQuotientProdHomeomorph_basepoint A B).symm
 
 end ProdQuotient
 
