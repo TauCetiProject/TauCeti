@@ -19,12 +19,13 @@ those of `B'` up to the vertex groups of `B'` and up to a conjugation: there are
 * `g_z B_z g_z⁻¹ ≤ B'_{φ(z)}` for every vertex `z` of `B`, and
 * `f_α = g_{o(f)}⁻¹ b' φ(f)_α` with `b' ∈ B'_{φ(o(f))}` for every dart `f` of `B`.
 
-Then a `𝔹`-path `p` from `u₀` to `z` is sent to a `𝔹'`-path from `u₀'` to `φ(z)` reading
+Then every `𝔹`-path `p` from `u₀` to `z` lifts to a `𝔹'`-path from `u₀'` to `φ(z)` reading
 `g_{u₀} μ(p) g_z⁻¹` up to homotopy, so that `g_{u₀} L(B, u₀) g_{u₀}⁻¹ ≤ L(B', u₀')`. When moreover
 `g_{u₀} ∈ B'_{u₀'}`, for instance when `g_{u₀} = 1`, this is an inclusion `L(B, u₀) ≤ L(B', u₀')`.
-This generalises the map `γ` of Kapovich, Weidmann and Myasnikov, Proposition 4.15, given there for
-a folding map with equal labels and `g = 1`; the generalisation applies to the auxiliary moves A0
-and A2 as well, which change only the vertex groups and the labels.
+This inclusion generalises the consequence `im ν ≤ im ν'` of the factorisation `ν = ν' ∘ γ` in
+Kapovich, Weidmann and Myasnikov, Proposition 4.15, given there for a folding map with equal labels
+and `g = 1`; the generalisation applies to the auxiliary moves A0 and A2 as well, which change only
+the vertex groups and the labels.
 
 ## Main statements
 
@@ -244,6 +245,8 @@ private theorem pullback_letterPath {y z : (pullback B' φ base hbase).toGraphOf
     refine (letterPath_dart_arrow _ f).trans (Eq.trans ?_
       (letterPath_dart_arrow B' (φ.toPrefunctor.map f)).symm)
     rw [pullback_labelω]
+    -- The endpoints and the label of the dart of `φ` composed with the type map of `B'` are those
+    -- of its image in `B'`; they agree only after unfolding `Hom.comp` and `Hom.toPrefunctor`.
     rfl
 
 private theorem pullback_pathMap {y z : (pullback B' φ base hbase).toGraphOfGroups.LetterVertex}
@@ -253,9 +256,12 @@ private theorem pullback_pathMap {y z : (pullback B' φ base hbase).toGraphOfGro
   induction p with
   | nil =>
     rw [pathMap_nil, Prefunctor.mapPath_nil, pathMap_nil]
+    -- The type of a vertex of the pullback is that of its image in `B'` only after unfolding
+    -- `Hom.comp`.
     rfl
   | cons p l ih =>
     rw [pathMap_cons, Prefunctor.mapPath_cons, pathMap_cons, ih, pullback_letterPath]
+    -- `pullbackHom` maps a letter by `pullbackLetter`, by definition.
     rfl
 
 /-- The class of a closed `𝔹'`-path at a vertex equal to the base vertex lies in `L(B')`. -/

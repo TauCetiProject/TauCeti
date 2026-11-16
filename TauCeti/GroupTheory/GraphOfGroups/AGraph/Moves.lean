@@ -405,8 +405,9 @@ theorem IsFolded.bassSerre (hB : B.IsFolded) (hc : ∀ f, c (B.graph.rev f) = Mu
 
 /-- A Bass–Serre move by a family taking the same value on a dart and on its reverse preserves
 foldedness (Kapovich, Weidmann and Myasnikov, Lemma 4.16 (1)). -/
-theorem isFolded_bassSerre_iff (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := 𝔸.edgeGroup)
-    ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm (c f)) :
+@[simp] theorem isFolded_bassSerre_iff (hc : ∀ f, c (B.graph.rev f) =
+    MulEquiv.cast (M := 𝔸.edgeGroup)
+      ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm (c f)) :
     (B.bassSerre c).IsFolded ↔ B.IsFolded := by
   refine ⟨fun h => ?_, fun h => h.bassSerre hc⟩
   -- The family `c⁻¹` takes the same value on a dart and on its reverse; the darts of
@@ -537,7 +538,7 @@ theorem IsFolded.adjust (hB : B.IsFolded) (ha : ∀ f, a f ∈ B.grpSrc f) :
       rw [mem_grpSrc] at this
       rw [mem_grpTgt]
       simp only [MulEquiv.cast_apply, cast_cast] at this ⊢
-      exact B.cast_mem_grp rfl this
+      exact B.cast_mem_grp (B.graph.src_rev f) this
     rw [grpSrc_adjust, grpTgt_adjust, adjust_labelα, labelω_adjust, mul_inv_rev,
       ← Subgroup.map_conj_map_conj, ← Subgroup.map_conj_map_conj,
       Subgroup.map_conj_eq_self_of_mem (inv_mem (ha f)),
@@ -546,7 +547,7 @@ theorem IsFolded.adjust (hB : B.IsFolded) (ha : ∀ f, a f ∈ B.grpSrc f) :
 
 /-- A simple adjustment by elements of the vertex groups preserves foldedness (Kapovich, Weidmann
 and Myasnikov, Lemma 4.16 (1)). -/
-theorem isFolded_adjust_iff (ha : ∀ f, a f ∈ B.grpSrc f) :
+@[simp] theorem isFolded_adjust_iff (ha : ∀ f, a f ∈ B.grpSrc f) :
     (B.adjust a).IsFolded ↔ B.IsFolded := by
   refine ⟨fun h => ?_, fun h => h.adjust ha⟩
   simpa using IsFolded.adjust (B := B.adjust a) (a := a⁻¹) h fun f => by
