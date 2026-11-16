@@ -127,6 +127,7 @@ theorem h1Norm_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
   rw [h1Norm_complete (by omega), h1_complete_movedNorm_fin_three hV]
   field_simp
 
+/-- On the complete complex with four vertices the `Sym(3)` coboundary constant is `4/3`. -/
 theorem h1_complete_fin_four : h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 4) (by simp)
 

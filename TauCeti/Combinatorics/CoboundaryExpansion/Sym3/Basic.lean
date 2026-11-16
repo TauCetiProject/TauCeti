@@ -57,6 +57,7 @@ abbrev S3 := Perm (Fin 3)
 /-- The Hamming count: how many of the three points `σ` moves. -/
 def moved (σ : S3) : ℕ := (List.finRange 3).countP fun i => σ i ≠ i
 
+/-- `moved σ` is the number of points of `Fin 3` moved by `σ`, i.e. the size of its support. -/
 theorem moved_eq_card_support : ∀ σ : S3, moved σ = σ.support.card := by decide
 
 /-- The Hamming count is the moved-point norm `Equiv.Perm.movedNorm (Fin 3)`. -/
@@ -81,6 +82,7 @@ def c2 : S3 := swap 1 2 * swap 0 1
 /-- The six elements of `Sym(3)`. -/
 def S3list : List S3 := [1, t01, t12, t02, c1, c2]
 
+/-- `S3list` lists every permutation of `Fin 3`. -/
 theorem mem_S3list : ∀ σ : S3, σ ∈ S3list := by decide
 
 variable {k : ℕ}
@@ -126,11 +128,13 @@ private theorem sum_triangles (g : Fin k → Fin k → Fin k → ℕ) :
   refine congrArg List.sum (List.map_congr_left fun v _ => ?_)
   simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
 
+/-- The cost of a gauge as a double sum over ordered vertex pairs `u < v`. -/
 theorem cost_eq_sum (α : Fin k → Fin k → S3) (β : Fin k → S3) :
     cost α β = ∑ u : Fin k, ∑ v : Fin k,
       if u < v then moved ((β u)⁻¹ * α u v * β v) else 0 :=
   sum_edges fun u v => moved ((β u)⁻¹ * α u v * β v)
 
+/-- The triangle defect as a triple sum over vertex triples `u < v < w`. -/
 theorem defect_eq_sum (α : Fin k → Fin k → S3) :
     defect α = ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k,
       if u < v ∧ v < w then moved (val α u v * val α v w * val α w u) else 0 :=
