@@ -30,6 +30,8 @@ nonnegative ones for this order: those whose top weight is polynomial.
 * `TauCeti.GTPattern.zero_le_iff_topRow`: a pattern is nonnegative exactly when its top row is.
 * `TauCeti.GTPattern.zero_le_iff_isPolynomial`: a pattern is nonnegative exactly when its top
   weight is polynomial.
+* `TauCeti.GTPattern.rowWeight_add` and `TauCeti.GTPattern.rowWeight_nsmul`: row weights respect
+  addition and natural scaling.
 -/
 
 public section
@@ -117,6 +119,25 @@ theorem topRow_nsmul (k : ℕ) (P : GTPattern n) : (k • P).topRow = k • P.to
   funext i
   rw [topRow_apply, nsmul_apply, Pi.smul_apply, topRow_apply]
 
+/-! ### Row weights -/
+
+@[simp]
+theorem rowWeight_zero : (0 : GTPattern n).rowWeight = 0 := by
+  funext r
+  simp [rowWeight_apply, zero_apply]
+
+@[simp]
+theorem rowWeight_add (P Q : GTPattern n) :
+    (P + Q).rowWeight = P.rowWeight + Q.rowWeight := by
+  funext r
+  simp only [rowWeight_apply, add_apply, Finset.sum_add_distrib, Pi.add_apply]
+  exact add_sub_add_comm _ _ _ _
+
+@[simp]
+theorem rowWeight_nsmul (k : ℕ) (P : GTPattern n) : (k • P).rowWeight = k • P.rowWeight := by
+  funext r
+  simp only [rowWeight_apply, nsmul_apply, Finset.sum_nsmul, nsmul_sub, Pi.smul_apply]
+
 /-! ### Constant patterns -/
 
 /-- The constant pattern: every informative entry equals `m`.  Adding it to a pattern is the
@@ -142,6 +163,18 @@ theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
   funext i
   rw [topRow_apply]
   exact const_apply_of_lt_of_le m i.2 le_rfl
+
+@[simp]
+theorem rowWeight_const (m : ℤ) : (const n m).rowWeight = fun _ => m := by
+  funext r
+  rw [rowWeight_apply]
+  have hsum (j : ℕ) (hj : j ≤ n) :
+      (∑ k ∈ Finset.range j, const n m k j) = j • m := by
+    simp only [Finset.sum_congr rfl (fun _ hk =>
+      const_apply_of_lt_of_le m (Finset.mem_range.1 hk) hj), Finset.sum_const,
+      Finset.card_range]
+  rw [hsum (r.val + 1) r.isLt, hsum r.val (Nat.le_of_lt r.isLt), succ_nsmul]
+  exact add_sub_cancel_left _ _
 
 @[simp]
 theorem const_zero : const n 0 = 0 := by
