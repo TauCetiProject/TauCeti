@@ -49,6 +49,8 @@ domain.
 
 * `TauCeti.Floer.perturbationPullback_comp`: pullback is compatible with composition of
   coordinate changes.
+* `TauCeti.Floer.perturbationPullback_comp_add_right`: pulling back along a translate of `φ` is
+  pulling back along `φ` at the translated point.
 * `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`: the domain-derivative
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
@@ -145,6 +147,15 @@ theorem perturbationPullback_comp {φ ψ : ℝ × ℝ → ℝ × ℝ} (Ks Kt : �
   simp only [perturbationPullback_apply, fderiv_comp w hφ hψ, ContinuousLinearMap.comp_apply,
     comp_apply, h, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
   ring
+
+/-- Pulling back along a translate `w ↦ φ (w + a)` is pulling back along `φ` at the translated
+point. -/
+theorem perturbationPullback_comp_add_right (φ : ℝ × ℝ → ℝ × ℝ) (Ks Kt : ℝ × ℝ → X → ℝ)
+    (a v w : ℝ × ℝ) :
+    perturbationPullback (fun w ↦ φ (w + a)) Ks Kt v w =
+      perturbationPullback φ Ks Kt v (w + a) := by
+  funext x
+  simp only [perturbationPullback_apply, fderiv_comp_add_right]
 
 /-- The domain derivative of a component of the pullback `φ^*K`, by the product and chain rules:
 the second derivative of `φ` falls on the coefficient and the first derivative of `φ` on `K`. -/
