@@ -42,6 +42,12 @@ its coefficients.
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `Complex.continuous_Gamma_add_mul_I`, `Complex.continuous_Gamma_sub_mul_I`: continuity of
+  `y ↦ Γ(a ± i y)` whenever `Re a` is not a nonpositive integer.
+* `Complex.exists_norm_Gamma_add_mul_I_le`, `Complex.exists_norm_Gamma_sub_mul_I_le`: uniform
+  boundedness of `y ↦ Γ(a ± i y)` whenever `Re a` is not a nonpositive integer.
+* `Complex.integrable_Gamma_add_mul_I`: integrability of `y ↦ Γ(a + i y)` whenever `Re a` is not
+  a nonpositive integer.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
 * `Complex.integral_cpow_neg_mul_Gamma`: the same formula as the unnormalised vertical integral
   `∫ y^{-(σ + i t)} Γ(σ + i t) dt = 2π e⁻ʸ`.
@@ -170,5 +176,47 @@ theorem integral_cpow_neg_mul_Gamma {σ : ℝ} (hσ : 0 < σ) {y : ℝ} (hy : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
+
+/-- On a vertical line `y ↦ a + i y` avoiding the poles of `Γ`, `y ↦ Γ(a + i y)` is continuous. -/
+theorem continuous_Gamma_add_mul_I {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (a + y * I) := by
+  refine continuous_iff_continuousAt.mpr fun y ↦ ?_
+  refine (differentiableAt_Gamma _ fun m hm ↦ ha m ?_).continuousAt.comp (by fun_prop)
+  simpa using congrArg re hm
+
+/-- On a vertical line `y ↦ a - i y` avoiding the poles of `Γ`, `y ↦ Γ(a - i y)` is continuous. -/
+theorem continuous_Gamma_sub_mul_I {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (a - y * I) := by
+  have h : (fun y : ℝ ↦ Gamma (a - y * I)) = fun y : ℝ ↦ Gamma (a + ((-y : ℝ) : ℂ) * I) := by
+    ext y; congr 1; push_cast; ring
+  rw [h]
+  exact (continuous_Gamma_add_mul_I ha).comp continuous_neg
+
+/-- On a vertical line `y ↦ a + i y` avoiding the poles of `Γ`, `y ↦ Γ(a + i y)` is bounded. -/
+theorem exists_norm_Gamma_add_mul_I_le {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    ∃ C : ℝ, ∀ y : ℝ, ‖Gamma (a + y * I)‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow ha 0
+  refine ⟨C, fun y ↦ ?_⟩
+  have heq : a + (y : ℂ) * I = (a.re : ℂ) + ((a.im + y : ℝ) : ℂ) * I := by
+    apply Complex.ext <;> simp
+  simpa [heq] using hC (a.im + y)
+
+/-- On a vertical line `y ↦ a - i y` avoiding the poles of `Γ`, `y ↦ Γ(a - i y)` is bounded. -/
+theorem exists_norm_Gamma_sub_mul_I_le {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    ∃ C : ℝ, ∀ y : ℝ, ‖Gamma (a - y * I)‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_add_mul_I_le ha
+  refine ⟨C, fun y ↦ ?_⟩
+  have heq : a - (y : ℂ) * I = a + ((-y : ℝ) : ℂ) * I := by push_cast; ring
+  simpa [heq] using hC (-y)
+
+/-- On a vertical line `y ↦ a + i y` avoiding the poles of `Γ`, `y ↦ Γ(a + i y)` is integrable. -/
+theorem integrable_Gamma_add_mul_I {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (a + y * I) := by
+  have hshift := (verticalIntegrable_Gamma ha).comp_add_right a.im
+  refine hshift.congr (.of_forall fun y ↦ ?_)
+  dsimp only
+  congr 1
+  apply Complex.ext <;> simp
+  ring
 
 end Complex
