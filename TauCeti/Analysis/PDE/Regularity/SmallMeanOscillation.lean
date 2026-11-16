@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The `W^{1,p}` estimate for coefficients of small mean oscillation
@@ -77,7 +78,11 @@ Such a `u` solves the same equation with `a` replaced by any field agreeing with
 `B(x₀, r₀ / 4)`, and with `R = r₀ / 4` the field `b = ψ a + (1 - ψ) A₀` has small mean oscillation
 at every scale (`TauCeti.PDE.exists_eqOn_ball_and_forall_setAverage_le`). Here `ψ` is a cutoff
 equal to one on `B(x₀, R)`, vanishing outside `B(x₀, 2R)` and `2 / R`-Lipschitz, and `A₀` is a
-frozen matrix of `B(x₀, 4R)`.
+frozen matrix of `B(x₀, 4R)`. This extension holds for bounded fields with values in any normed
+space, approximated on small balls by constants with any property
+(`TauCeti.PDE.exists_forall_setAverage_norm_cutoff_sub_le`). Its key step bounds the drift of the
+approximating constants along dyadic balls (`TauCeti.PDE.norm_sub_le_of_forall_setAverage_le`,
+`TauCeti.PDE.exists_setAverage_le_and_div_mul_norm_sub_le`).
 
 * On a ball `B` of radius `r ≥ R`, the field `b` stays close to `A₀`: the deviation `ψ ‖a - A₀‖`
   lives on `B(x₀, 2R)`, and its integral is at most `δ |B(x₀, 4R)| ≤ 4^(n + 1) δ |B|`.
@@ -584,7 +589,7 @@ private theorem integrableOn_norm_sub {β : EuclideanSpace ℝ (Fin (n + 1)) →
 /-- **Drift of approximating constants along concentric balls.** If on each ball `B(c, 2ᵏ r)`,
 `k ≤ m`, the constant `P k` approximates `β` with mean deviation at most `δ`, then `P 0` and `P m`
 differ by at most `m (1 + 2^(n + 1)) δ`. -/
-private theorem norm_sub_le_of_forall_setAverage_le {β : EuclideanSpace ℝ (Fin (n + 1)) → F}
+theorem norm_sub_le_of_forall_setAverage_le {β : EuclideanSpace ℝ (Fin (n + 1)) → F}
     (hβ : AEStronglyMeasurable β volume) {Lam : ℝ} (hbd : ∀ x, ‖β x‖ ≤ Lam)
     {c : EuclideanSpace ℝ (Fin (n + 1))} {r δ : ℝ} (hr : 0 < r) {P : ℕ → F} :
     ∀ m : ℕ, (∀ k ≤ m, ⨍ x in ball c (2 ^ k * r), ‖β x - P k‖ ≤ δ) →
@@ -649,8 +654,7 @@ private theorem setAverage_norm_cutoff_sub_le_of_le [NormedSpace ℝ F]
   have hvol := Measure.addHaar_real_ball_div_addHaar_real_ball volume c x₀ hr
     (by positivity : 0 < 4 * R)
   rw [finrank_euclideanSpace_fin] at hvol
-  have hvol0 : 0 < volume.real (ball c r) := ENNReal.toReal_pos (measure_ball_pos _ _ hr).ne'
-    measure_ball_lt_top.ne
+  have hvol0 : 0 < volume.real (ball c r) := Metric.measureReal_ball_pos volume _ hr
   simp_rw [hpt]
   simp only [setAverage_eq, smul_eq_mul] at hδ ⊢
   calc (volume.real (ball c r))⁻¹ * ∫ x in ball c r, ψ x * ‖β x - P₀‖
@@ -658,8 +662,7 @@ private theorem setAverage_norm_cutoff_sub_le_of_le [NormedSpace ℝ F]
     _ = (4 * R / r) ^ (n + 1) * ((volume.real (ball x₀ (4 * R)))⁻¹ *
           ∫ x in ball x₀ (4 * R), ‖β x - P₀‖) := by
         have : volume.real (ball x₀ (4 * R)) ≠ 0 :=
-          (ENNReal.toReal_pos (measure_ball_pos _ _ (by positivity)).ne'
-            measure_ball_lt_top.ne).ne'
+          (Metric.measureReal_ball_pos volume _ (by positivity)).ne'
         rw [← hvol]
         field_simp
     _ ≤ 4 ^ (n + 1) * δ := by
@@ -674,13 +677,12 @@ private theorem setAverage_norm_cutoff_sub_le_of_le [NormedSpace ℝ F]
 private theorem setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
     {β : EuclideanSpace ℝ (Fin (n + 1)) → F}
     (hβ : AEStronglyMeasurable β volume) {Lam : ℝ} (hbd : ∀ x, ‖β x‖ ≤ Lam)
-    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψm : Continuous ψ) (hψ : ∀ x, ψ x ∈ Icc 0 1)
+    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψ : ∀ x, ψ x ∈ Icc 0 1)
     {K : ℝ≥0} (hψlip : LipschitzWith K ψ) {c : EuclideanSpace ℝ (Fin (n + 1))}
     {r δ : ℝ} (hr : 0 < r) {P₀ P : F} (hδ : ⨍ x in ball c r, ‖β x - P‖ ≤ δ) :
     ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖ ≤
       δ + K * r * ‖P - P₀‖ := by
-  have hvol0 : 0 < volume.real (ball c r) := ENNReal.toReal_pos (measure_ball_pos _ _ hr).ne'
-    measure_ball_lt_top.ne
+  have hvol0 : 0 < volume.real (ball c r) := Metric.measureReal_ball_pos volume _ hr
   have hint := integrableOn_norm_sub hβ hbd P c r
   have hpt : ∀ x ∈ ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖ ≤
       ‖β x - P‖ + K * r * ‖P - P₀‖ := fun x hx => by
@@ -695,8 +697,8 @@ private theorem setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
         (mul_le_mul_of_nonneg_left (mem_ball.1 hx).le K.coe_nonneg)
   have hmeas : AEStronglyMeasurable
       (fun x => ‖ψ x • β x + (1 - ψ x) • P₀ - (ψ c • P + (1 - ψ c) • P₀)‖) volume :=
-    (((hψm.aestronglyMeasurable.smul hβ).add
-      ((continuous_const.sub hψm).aestronglyMeasurable.smul_const P₀)).sub
+    (((hψlip.continuous.aestronglyMeasurable.smul hβ).add
+      ((continuous_const.sub hψlip.continuous).aestronglyMeasurable.smul_const P₀)).sub
         aestronglyMeasurable_const).norm
   have hsum : IntegrableOn (fun x => ‖β x - P‖ + K * r * ‖P - P₀‖) (ball c r) :=
     hint.add (integrableOn_const measure_ball_lt_top.ne)
@@ -738,7 +740,7 @@ at most `δ`, and let `P₀` approximate `β` on `B(x₀, 4R)`, `R ≤ r₀`. Th
 `r ≤ R` and `c ∈ B(x₀, 3R)` has such a constant `P` with
 `‖P - P₀‖ ≤ (R / r) (2 + 2^(n + 1) + 8^(n + 1)) δ`: the approximating constants drift at most
 logarithmically in `R / r` along the dyadic balls `B(c, 2ᵏ r)`. -/
-private theorem exists_setAverage_le_and_div_mul_norm_sub_le
+theorem exists_setAverage_le_and_div_mul_norm_sub_le
     {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : AEStronglyMeasurable β volume) {Lam : ℝ}
     (hbd : ∀ x, ‖β x‖ ≤ Lam) {Q : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → F → Prop} {δ r₀ : ℝ}
     (hosc : ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
@@ -804,7 +806,7 @@ private theorem exists_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
     (hbd : ∀ x, ‖β x‖ ≤ Lam) {Q : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → F → Prop} {δ r₀ : ℝ}
     (hosc : ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
       ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ≤ δ)
-    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψm : Continuous ψ) (hψ : ∀ x, ψ x ∈ Icc 0 1)
+    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψ : ∀ x, ψ x ∈ Icc 0 1)
     {x₀ c : EuclideanSpace ℝ (Fin (n + 1))} {R r : ℝ} {K : ℝ≥0} (hψlip : LipschitzWith K ψ)
     (hKR : K * R ≤ 2) {P₀ : F}
     (hδ₀ : ⨍ x in ball x₀ (4 * R), ‖β x - P₀‖ ≤ δ) (hRr₀ : R ≤ r₀) (hr : 0 < r) (hrR : r ≤ R)
@@ -816,7 +818,7 @@ private theorem exists_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
   obtain ⟨P, hQ, hPδ, hdrift⟩ :=
     exists_setAverage_le_and_div_mul_norm_sub_le hβ hbd hosc hδ₀ hRr₀ hr hrR hc
   have hR : 0 < R := hr.trans_le hrR
-  refine ⟨P, hQ, (setAverage_norm_cutoff_sub_le hβ hbd hψm hψ hψlip hr hPδ).trans ?_⟩
+  refine ⟨P, hQ, (setAverage_norm_cutoff_sub_le hβ hbd hψ hψlip hr hPδ).trans ?_⟩
   have hKr : K * r * ‖P - P₀‖ ≤ 2 * (r / R * ‖P - P₀‖) := by
     rw [show (K : ℝ) * r * ‖P - P₀‖ = K * R * (r / R * ‖P - P₀‖) by field_simp]
     exact mul_le_mul_of_nonneg_right hKR (by positivity)
@@ -826,69 +828,73 @@ private theorem exists_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
   have hK : (5 + 2 * 2 ^ (n + 1) + 2 * 8 ^ (n + 1) : ℝ) ≤ 4 * 8 ^ (n + 1) := by nlinarith
   nlinarith [mul_le_mul_of_nonneg_right hK hδ]
 
-/-- **The cutoff field on small balls.** Under the hypotheses of
-`exists_eqOn_ball_and_forall_setAverage_le`, let `A₀` be the frozen matrix of `B(x₀, 4R)` and let
-`ψ ∈ [0, 1]` be a `K`-Lipschitz cutoff, `K R ≤ 2`, vanishing where `dist x x₀ ≥ 2R`. On every ball
-`B(c, r)` with `r < R`, the field `ψ a + (1 - ψ) A₀` has mean deviation at most `4 · 8^(n + 1) δ`
-from an elliptic constant matrix: `A₀` if the ball is far from `x₀`, where the field is `A₀`, and
-otherwise a convex combination of `A₀` and a frozen matrix of the ball. -/
-private theorem exists_uniformlyEllipticOn_and_setAverage_cutoff_le {lam Lam δ r₀ R r : ℝ}
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
+/-- **Small mean oscillation below a radius extends to every scale near a ball.** Let `β` be a
+bounded measurable field on `ℝ^{n+1}` such that on every ball `B(c, r)` of radius at most `r₀` some
+constant satisfying a property `Q c r` has mean deviation at most `δ` from `β`. Then for every ball
+`B(x₀, R)` with `4R ≤ r₀` there are a continuous cutoff `ψ ∈ [0, 1]` equal to one on `B(x₀, R)` and
+a constant `P₀` satisfying `Q x₀ (4R)` such that on every ball `B(c, r)`, of any radius, the field
+`ψ β + (1 - ψ) P₀` has mean deviation at most `4 · 8^(n + 1) δ` from a convex combination
+`t P + (1 - t) P₀`, where `P` is `P₀` or satisfies `Q c r`.
+
+The cutoff `ψ` vanishes outside `B(x₀, 2R)` and is `2 / R`-Lipschitz, and `P₀` is the constant of
+`B(x₀, 4R)`. On small balls near `x₀` the constant is `ψ(c) P + (1 - ψ(c)) P₀` for a constant `P`
+of the ball, whose drift from `P₀` is controlled along dyadic balls
+(`TauCeti.PDE.exists_setAverage_le_and_div_mul_norm_sub_le`); elsewhere it is `P₀`. -/
+theorem exists_forall_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
+    {β : EuclideanSpace ℝ (Fin (n + 1)) → F} (hβ : AEStronglyMeasurable β volume) {Lam : ℝ}
+    (hbd : ∀ x, ‖β x‖ ≤ Lam) {Q : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → F → Prop} {δ r₀ R : ℝ}
     (hosc : ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r → r ≤ r₀ →
-      ∃ A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
-        UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
-          ⨍ x in ball c r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ δ)
-    {x₀ c : EuclideanSpace ℝ (Fin (n + 1))} {A₀ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (hA₀ : UniformlyEllipticOn (ball x₀ (4 * R)) (fun _ => A₀) lam Lam)
-    (hδ₀ : ⨍ x in ball x₀ (4 * R), ‖matrixBilinearForm (a x) - matrixBilinearForm A₀‖ ≤ δ)
-    {ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hψm : Continuous ψ) (hψ : ∀ x, ψ x ∈ Icc 0 1)
-    (hψ0 : ∀ x, 2 * R ≤ dist x x₀ → ψ x = 0) {K : ℝ≥0} (hψlip : LipschitzWith K ψ)
-    (hKR : K * R ≤ 2) (hRr₀ : 4 * R ≤ r₀) (hr : 0 < r) (hrR : r < R) :
-    ∃ A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
-      UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
-        ⨍ x in ball c r, ‖ψ x • matrixBilinearForm (a x) + (1 - ψ x) • matrixBilinearForm A₀ -
-          matrixBilinearForm A‖ ≤ 4 * 8 ^ (n + 1) * δ := by
-  have hR : 0 < R := hr.trans hrR
-  have hδ : 0 ≤ δ := (average_nonneg fun x =>
-    norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A₀)).trans hδ₀
-  have hβ : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) volume :=
-    continuous_matrixBilinearForm.comp_aestronglyMeasurable ha
+      ∃ P, Q c r P ∧ ⨍ x in ball c r, ‖β x - P‖ ≤ δ)
+    (x₀ : EuclideanSpace ℝ (Fin (n + 1))) (hR : 0 < R) (hRr₀ : 4 * R ≤ r₀) :
+    ∃ ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ, Continuous ψ ∧ (∀ x, ψ x ∈ Icc 0 1) ∧
+      EqOn ψ 1 (ball x₀ R) ∧ ∃ P₀, Q x₀ (4 * R) P₀ ∧
+        ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r →
+          ∃ P, (P = P₀ ∨ Q c r P) ∧ ∃ t ∈ Icc (0 : ℝ) 1,
+            ⨍ x in ball c r, ‖ψ x • β x + (1 - ψ x) • P₀ - (t • P + (1 - t) • P₀)‖ ≤
+              4 * 8 ^ (n + 1) * δ := by
+  obtain ⟨P₀, hQ₀, hδ₀⟩ := hosc x₀ (4 * R) (by positivity) hRr₀
+  have hδ : 0 ≤ δ := (average_nonneg fun _ => norm_nonneg _).trans hδ₀
+  obtain ⟨ψ, hψs, hψr, hψ1, hψsupp, hψlip⟩ :=
+    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x₀ (r := R) hR (t := 2) one_lt_two
+  have hψ : ∀ x, ψ x ∈ Icc 0 1 := fun x => hψr (mem_range_self x)
+  have hψ0 : ∀ x, 2 * R ≤ dist x x₀ → ψ x = 0 := fun x hx =>
+    Function.notMem_support.1 fun h => (mem_ball.1 (hψsupp h)).not_ge (by linarith)
+  have hKR : ((2 * R.toNNReal⁻¹ : ℝ≥0) : ℝ) * R ≤ 2 := by
+    simp [Real.coe_toNNReal _ hR.le, hR.ne']
+  refine ⟨ψ, hψs.continuous, hψ, hψ1.mono ball_subset_closedBall, P₀, hQ₀, fun c r hr => ?_⟩
+  rcases le_or_gt R r with hRr | hrR
+  · -- A large ball: compare with `P₀`.
+    refine ⟨P₀, .inl rfl, 0, ⟨le_rfl, zero_le_one⟩, ?_⟩
+    simp only [zero_smul, sub_zero, one_smul, zero_add]
+    refine (setAverage_norm_cutoff_sub_le_of_le hβ hbd hψs.continuous hψ hψ0 hR hRr hδ₀).trans
+      (mul_le_mul_of_nonneg_right ?_ hδ)
+    have h48 : (4 : ℝ) ^ (n + 1) ≤ 8 ^ (n + 1) := by gcongr; norm_num
+    linarith [pow_pos (by norm_num : (0 : ℝ) < 8) (n + 1)]
   rcases le_or_gt (3 * R) (dist c x₀) with hfar | hnear
-  · -- A small ball far from `x₀`, where the field is `A₀`.
-    refine ⟨A₀, hA₀.const_of_mem (mem_ball_self (by positivity)) _, ?_⟩
+  · -- A small ball far from `x₀`, where the field is `P₀`.
+    refine ⟨P₀, .inl rfl, 0, ⟨le_rfl, zero_le_one⟩, ?_⟩
+    simp only [zero_smul, sub_zero, one_smul, zero_add]
     rw [setAverage_norm_cutoff_sub_eq_zero
-      (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
       fun x hx => hψ0 x (by linarith [dist_triangle_right c x₀ x, mem_ball'.1 hx, dist_comm x x₀])]
     positivity
-  · -- A small ball near `x₀`: freeze at a convex combination of `A₀` and a frozen matrix of the
-    -- ball.
-    obtain ⟨P, ⟨A, rfl, hA⟩, hP⟩ := exists_setAverage_norm_cutoff_sub_le
-      (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) hβ hbd
-      (Q := fun c r P => ∃ A, matrixBilinearForm A = P ∧
-        UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam)
-      (fun c r hr hrr₀ => by
-        obtain ⟨A, hA, hAδ⟩ := hosc c r hr hrr₀
-        exact ⟨_, ⟨A, rfl, hA⟩, hAδ⟩)
-      hψm hψ hψlip hKR hδ₀ (by linarith) hr hrR.le hnear
-    refine ⟨ψ c • A + (1 - ψ c) • A₀, ?_, ?_⟩
-    · exact (UniformlyEllipticOn.smul_add_one_sub_smul (hA.const_of_mem (mem_ball_self hr) _)
-        (hA₀.const_of_mem (mem_ball_self (by positivity)) _) (fun _ => hψ c)
-        fun x hx => absurd (mem_univ x) hx).mono_set (subset_univ _)
-    · simpa only [matrixBilinearForm_add, matrixBilinearForm_smul] using hP
+  · -- A small ball near `x₀`: compare with a convex combination of `P₀` and a constant of the ball.
+    obtain ⟨P, hQ, hP⟩ := exists_setAverage_norm_cutoff_sub_le hβ hbd hosc hψ hψlip hKR hδ₀
+      (by linarith) hr hrR.le hnear
+    exact ⟨P, .inr hQ, ψ c, hψ c, hP⟩
 
-/-- **Small mean oscillation below a radius extends to every scale near a ball.** Let `a` be a
-measurable coefficient matrix on `ℝ^{n+1}` bounded by `Λ` such that on every ball of radius at most
-`r₀` some constant matrix, uniformly elliptic with constants `λ, Λ`, has mean deviation at most
-`δ` from `a`. Then for every ball `B(x₀, R)` with `4R ≤ r₀` there is a measurable coefficient
-matrix `b`, bounded by `Λ`, which agrees with `a` on `B(x₀, R)` and has mean deviation at most
-`4 · 8^(n + 1) δ` from an elliptic constant matrix on every ball, of any radius.
+/-- **Small mean oscillation below a radius extends to every scale near a ball**, for coefficient
+matrices. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}` bounded by `Λ` such that on every
+ball of radius at most `r₀` some constant matrix, uniformly elliptic with constants `λ, Λ`, has mean
+deviation at most `δ` from `a`. Then for every ball `B(x₀, R)` with `4R ≤ r₀` there is a measurable
+coefficient matrix `b`, bounded by `Λ`, which agrees with `a` on `B(x₀, R)` and has mean deviation
+at most `4 · 8^(n + 1) δ` from an elliptic constant matrix on every ball, of any radius.
 
 The field is `b = ψ a + (1 - ψ) A₀`, where `ψ` is a `2 / R`-Lipschitz cutoff equal to one on
-`B(x₀, R)` and zero outside `B(x₀, 2R)`, and `A₀` is the frozen matrix of `B(x₀, 4R)`. This is how
-coefficients of vanishing mean oscillation, which are close to constant matrices only on small
-balls, meet estimates that ask for small mean oscillation at every scale: a function whose gradient
-vanishes outside `B(x₀, R)` solves the same divergence-form equation with `b` in place of `a`. -/
+`B(x₀, R)` and zero outside `B(x₀, 2R)`, and `A₀` is the frozen matrix of `B(x₀, 4R)`
+(`TauCeti.PDE.exists_forall_setAverage_norm_cutoff_sub_le`). This is how coefficients of vanishing
+mean oscillation, which are close to constant matrices only on small balls, meet estimates that ask
+for small mean oscillation at every scale: a function whose gradient vanishes outside `B(x₀, R)`
+solves the same divergence-form equation with `b` in place of `a`. -/
 theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a volume) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
@@ -905,19 +911,16 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
               UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
                 ⨍ x in ball c r, ‖matrixBilinearForm (b x) - matrixBilinearForm A‖ ≤
                   4 * 8 ^ (n + 1) * δ := by
-  obtain ⟨A₀, hA₀, hδ₀⟩ := hosc x₀ (4 * R) (by positivity) hRr₀
-  have hδ : 0 ≤ δ := (average_nonneg fun x =>
-    norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A₀)).trans hδ₀
-  have hβ : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) volume :=
-    continuous_matrixBilinearForm.comp_aestronglyMeasurable ha
-  obtain ⟨ψ, hψs, hψr, hψ1, hψsupp, hψlip⟩ :=
-    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x₀ (r := R) hR (t := 2) one_lt_two
-  have hψm : Continuous ψ := hψs.continuous
-  have hψ : ∀ x, ψ x ∈ Icc 0 1 := fun x => hψr (mem_range_self x)
-  have hψ0 : ∀ x, 2 * R ≤ dist x x₀ → ψ x = 0 := fun x hx =>
-    Function.notMem_support.1 fun h => (mem_ball.1 (hψsupp h)).not_ge (by linarith)
-  have hKR : ((2 * R.toNNReal⁻¹ : ℝ≥0) : ℝ) * R ≤ 2 := by
-    simp [Real.coe_toNNReal _ hR.le, hR.ne']
+  obtain ⟨ψ, hψm, hψ, hψ1, P₀, ⟨A₀, rfl, hA₀⟩, hosc'⟩ :=
+    exists_forall_setAverage_norm_cutoff_sub_le
+      (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
+      (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha) hbd
+      (Q := fun c r P => ∃ A, matrixBilinearForm A = P ∧
+        UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam)
+      (fun c r hr hrr₀ => by
+        obtain ⟨A, hA, hAδ⟩ := hosc c r hr hrr₀
+        exact ⟨_, ⟨A, rfl, hA⟩, hAδ⟩) x₀ hR hRr₀
+  have hA₀' := hA₀.const_of_mem (mem_ball_self (by positivity))
   refine ⟨fun x => ψ x • a x + (1 - ψ x) • A₀,
     (hψm.aestronglyMeasurable.smul ha).add
       ((continuous_const.sub hψm).aestronglyMeasurable.smul_const A₀), fun x => ?_,
@@ -925,20 +928,16 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
   · rw [matrixBilinearForm_add, matrixBilinearForm_smul, matrixBilinearForm_smul]
     exact norm_smul_add_one_sub_smul_le
       (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
-      (hψ x) (hbd x)
-      (hA₀.opNorm_matrixBilinearForm_le (mem_ball_self (by positivity)))
-  · simp [hψ1 (ball_subset_closedBall hx)]
-  simp only [matrixBilinearForm_add, matrixBilinearForm_smul]
-  rcases le_or_gt R r with hRr | hrR
-  · -- A large ball: compare with `A₀`.
-    refine ⟨A₀, hA₀.const_of_mem (mem_ball_self (by positivity)) _,
-      (setAverage_norm_cutoff_sub_le_of_le
-        (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
-        hβ hbd hψm hψ hψ0 hR hRr hδ₀).trans (mul_le_mul_of_nonneg_right ?_ hδ)⟩
-    have h48 : (4 : ℝ) ^ (n + 1) ≤ 8 ^ (n + 1) := by gcongr; norm_num
-    linarith [pow_pos (by norm_num : (0 : ℝ) < 8) (n + 1)]
-  exact exists_uniformlyEllipticOn_and_setAverage_cutoff_le ha hbd hosc hA₀ hδ₀ hψm hψ hψ0 hψlip
-    hKR hRr₀ hr hrR
+      (hψ x) (hbd x) (hA₀.opNorm_matrixBilinearForm_le (mem_ball_self (by positivity)))
+  · simp [hψ1 hx]
+  obtain ⟨P, hP, t, ht, havg⟩ := hosc' c r hr
+  obtain ⟨A, rfl, hA⟩ : ∃ A, matrixBilinearForm A = P ∧
+      UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam :=
+    hP.elim (fun h => ⟨A₀, h.symm, hA₀' _⟩) id
+  refine ⟨t • A + (1 - t) • A₀, (UniformlyEllipticOn.smul_add_one_sub_smul
+    (hA.const_of_mem (mem_ball_self hr) _) (hA₀' _) (fun _ => ht)
+      fun x hx => absurd (mem_univ x) hx).mono_set (subset_univ _), ?_⟩
+  simpa only [matrixBilinearForm_add, matrixBilinearForm_smul] using havg
 
 /-- **The `W^{1,p}` estimate for coefficients of small mean oscillation below a radius.** Let
 `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ`
