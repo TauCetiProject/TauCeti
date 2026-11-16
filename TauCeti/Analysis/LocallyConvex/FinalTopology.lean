@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Final locally convex topologies
@@ -25,7 +27,13 @@ with fixed-support inductive limits.
 The construction and universal-property proof generalize Mathlib's
 `TestFunction.topologicalSpace` and `TestFunction.continuous_iff_continuous_comp` from a particular
 family of fixed-support inclusions to an arbitrary family of linear maps. They use the same
-infimum of locally convex vector topologies, not the final topology of topological spaces.
+infimum of locally convex vector topologies, not the final topology of topological spaces. When the
+generating maps are linear over a commutative real algebra `A` (respectively an `RCLike` field `𝕜`)
+whose fixed scalars act continuously on each source space, the `A`-action is continuous in the
+vector variable (`TauCeti.FinalLocallyConvexTopology.continuousConstSMul`) and the `𝕜`-action is
+jointly continuous (`TauCeti.FinalLocallyConvexTopology.continuousSMul`). Companion `*_of_eq`
+lemmas transport these vector-topology instances to any topology equal to
+`finalLocallyConvexTopology`.
 -/
 
 public section
@@ -61,6 +69,18 @@ instance : @ContinuousSMul ℝ F _ _ (finalLocallyConvexTopology f) :=
 
 instance : @LocallyConvexSpace ℝ F _ _ _ _ (finalLocallyConvexTopology f) :=
   .sInf fun _ ⟨_, _, _, ht⟩ ↦ ht
+
+variable {f} in
+/-- A topology equal to `finalLocallyConvexTopology f` makes addition and negation continuous. -/
+theorem isTopologicalAddGroup_of_eq [t : TopologicalSpace F]
+    (ht : t = finalLocallyConvexTopology f) : IsTopologicalAddGroup F :=
+  ht ▸ inferInstance
+
+variable {f} in
+/-- A topology equal to `finalLocallyConvexTopology f` is locally convex over `ℝ`. -/
+theorem locallyConvexSpace_of_eq [t : TopologicalSpace F]
+    (ht : t = finalLocallyConvexTopology f) : LocallyConvexSpace ℝ F :=
+  ht ▸ inferInstance
 
 /-- Every generating map is continuous for the final locally convex topology. -/
 @[fun_prop]
@@ -175,6 +195,27 @@ theorem continuousConstSMul {A : Type*} [CommSemiring A] [Algebra ℝ A]
   exact (continuous_iff_continuous_comp (fun i ↦ (g i).restrictScalars ℝ) sa).2 fun i ↦
     ((continuous (fun j ↦ (g j).restrictScalars ℝ) i).comp
       (continuous_const_smul a)).congr fun x ↦ (g i).map_smul a x
+
+/-- When the generating maps are linear over an `RCLike` field `K` whose fixed scalars act
+continuously on each generating space, the `K`-action is jointly continuous for the final locally
+convex topology. -/
+theorem continuousSMul {K : Type*} [RCLike K]
+    [∀ i, Module K (E i)] [∀ i, IsScalarTower ℝ K (E i)] [∀ i, ContinuousConstSMul K (E i)]
+    [Module K F] [IsScalarTower ℝ K F] (g : ∀ i, E i →ₗ[K] F) :
+    @ContinuousSMul K F _ _ (finalLocallyConvexTopology fun i ↦ (g i).restrictScalars ℝ) := by
+  let := finalLocallyConvexTopology fun i ↦ (g i).restrictScalars ℝ
+  have := continuousConstSMul g
+  exact RCLike.continuousSMul
+
+/-- A topology equal to the final locally convex topology of `K`-linear maps over an `RCLike` field
+`K` with continuous constant scalar actions on the generating spaces has jointly continuous
+`K`-scalar multiplication. -/
+theorem continuousSMul_of_eq {K : Type*} [RCLike K]
+    [∀ i, Module K (E i)] [∀ i, IsScalarTower ℝ K (E i)] [∀ i, ContinuousConstSMul K (E i)]
+    [Module K F] [IsScalarTower ℝ K F] [t : TopologicalSpace F] {g : ∀ i, E i →ₗ[K] F}
+    (ht : t = finalLocallyConvexTopology fun i ↦ (g i).restrictScalars ℝ) :
+    ContinuousSMul K F :=
+  ht ▸ continuousSMul g
 
 end FinalLocallyConvexTopology
 

@@ -25,9 +25,9 @@ dominated by later ones
 particular the modulus of every continuous functional, is bounded by a multiple of a single
 seminorm `f ↦ ‖f j‖` (`TauCeti.dualProjectiveLimit.exists_bound_of_continuous`).
 
-Each vector `x ∈ B j` defines the continuous functional `f ↦ f j x` on the projective limit
-(`TauCeti.dualProjectiveLimit.eval`), continuous in `x` for the strong dual topology
-(`TauCeti.dualProjectiveLimit.evalCLM`), and compatible with the bonding maps.
+Each vector `x ∈ B j` defines the continuous functional `f ↦ f j x` on the projective limit,
+continuous in `x` for the strong dual topology (`TauCeti.dualProjectiveLimit.eval`) and compatible
+with the bonding maps.
 When the bonding maps are weakly compact, in particular when they are compact, every continuous
 functional on the projective limit is such an evaluation
 (`TauCeti.dualProjectiveLimit.exists_eval_eq`). More precisely, a linear functional bounded by
@@ -61,15 +61,15 @@ when `L` has separating dual and surjective when the bonding maps are weakly com
 * `TauCeti.dualProjectiveLimit`: the projective limit `lim_j B j′` as a submodule of the product.
 * `TauCeti.dualProjectiveLimit.coord`: its coordinate projections to the spaces `B j′`.
 * `TauCeti.dualProjectiveLimit.withSeminorms`: its topology is given by the coordinate norms.
-* `TauCeti.dualProjectiveLimit.eval`, `TauCeti.dualProjectiveLimit.evalCLM`: the evaluation map
-  `B j → StrongDual 𝕜 (dualProjectiveLimit T)`.
+* `TauCeti.dualProjectiveLimit.eval`: the continuous linear stage evaluation map
+  `B j →L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)`.
 * `TauCeti.dualProjectiveLimit.exists_norm_le_forall_apply_eq`: a functional bounded by the
   `j`-th coordinate norm is evaluation at a vector of `B (j + 1)`, with a norm bound.
 * `TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`: for weakly compact bonding
   maps, a pointwise bounded family of continuous functionals consists of evaluations at a bounded
   set of vectors of a single space `B j`.
 * `TauCeti.dualProjectiveLimit.isVonNBounded_strongDual_iff`: bounded sets of the strong dual of
-  the projective limit lie in images of balls under `evalCLM`.
+  the projective limit lie in images of balls under `eval`.
 * `TauCeti.dualProjectiveLimit.strongBidualEquiv`: strong-bidual reflexivity of the projective
   limit for weakly compact bonding maps.
 * `TauCeti.dualProjectiveLimit.precomp`: precomposition `L′ → lim_j B j′` with compatible maps
@@ -121,6 +121,10 @@ theorem isClosed_dualProjectiveLimit :
   exact isClosed_iInter fun n ↦ isClosed_eq
     ((precomp 𝕜 (T n)).continuous.comp (continuous_apply (n + 1))) (continuous_apply n)
 
+/-- Direct `AddCommGroup` instance shortcut on `dualProjectiveLimit T`. Without it, `StrongDual`
+synthesizes `AddCommMonoid (dualProjectiveLimit T)` via `Submodule.addCommMonoid` rather than
+`AddCommGroup.toAddCommMonoid`, preventing `ContinuousLinearMap.topologicalSpace` from unifying on
+`StrongDual 𝕜 (dualProjectiveLimit T)` and its strong bidual. -/
 instance : AddCommGroup (dualProjectiveLimit T) :=
   (dualProjectiveLimit T).addCommGroup
 
@@ -214,22 +218,21 @@ is uniformly bounded on it. -/
 theorem isVonNBounded_iff {Q : Set (dualProjectiveLimit T)} :
     Bornology.IsVonNBounded 𝕜 Q ↔
       ∀ j, ∃ C : ℝ, ∀ f ∈ Q, ‖(f : ∀ n, StrongDual 𝕜 (B n)) j‖ ≤ C := by
-  simp_rw [(withSeminorms T).isVonNBounded_iff_seminorm_bddAbove, bddAbove_def,
-    Set.forall_mem_image]
-  rfl
+  simp only [(withSeminorms T).isVonNBounded_iff_seminorm_bddAbove, bddAbove_def,
+    Set.forall_mem_image, Seminorm.comp_apply, coe_normSeminorm, ContinuousLinearMap.coe_coe,
+    coord_apply]
 
 variable (T) in
-/-- Evaluation at a vector of `B j` as a continuous functional on the projective limit,
-`eval T j x f = f j x`. -/
-def eval (j : ℕ) : B j →ₗ[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) where
-  toFun x := (ContinuousLinearMap.apply 𝕜 𝕜 x).comp (coord T j)
-  map_add' x y := by ext; simp
-  map_smul' c x := by ext; simp
+/-- Stage evaluation `x ↦ (f ↦ f j x)` into the strong dual `StrongDual 𝕜 (dualProjectiveLimit T)`
+as a continuous linear map, obtained by pulling back `NormedSpace.inclusionInDoubleDual` along the
+coordinate projection `coord T j`. -/
+def eval (j : ℕ) : B j →L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) :=
+  (ContinuousLinearMap.precomp 𝕜 (coord T j)).comp (NormedSpace.inclusionInDoubleDual 𝕜 (B j))
 
 @[simp]
 theorem eval_apply (j : ℕ) (x : B j) (f : dualProjectiveLimit T) :
-    eval T j x f = (f : ∀ n, StrongDual 𝕜 (B n)) j x :=
-  (rfl)
+    eval T j x f = (f : ∀ n, StrongDual 𝕜 (B n)) j x := by
+  simp [eval, precomp_apply]
 
 /-- The evaluations are compatible with the bonding maps. -/
 @[simp]
@@ -237,27 +240,8 @@ theorem eval_succ_apply (j : ℕ) (x : B j) : eval T (j + 1) (T j x) = eval T j 
   ext f
   simp
 
-variable (T) in
-/-- Stage evaluation `x ↦ (f ↦ f j x)` into the strong dual `StrongDual 𝕜 (dualProjectiveLimit T)`
-as a continuous linear map, obtained by pulling back `NormedSpace.inclusionInDoubleDual` along the
-coordinate projection `coord T j`. -/
-def evalCLM (j : ℕ) : B j →L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) :=
-  (ContinuousLinearMap.precomp 𝕜 (coord T j)).comp (NormedSpace.inclusionInDoubleDual 𝕜 (B j))
-
 @[simp]
-theorem toLinearMap_evalCLM (j : ℕ) : (evalCLM T j).toLinearMap = eval T j :=
-  (rfl)
-
-@[simp]
-theorem coe_evalCLM (j : ℕ) : ⇑(evalCLM T j) = eval T j :=
-  (rfl)
-
-theorem evalCLM_apply (j : ℕ) (x : B j) (f : dualProjectiveLimit T) :
-    evalCLM T j x f = (f : ∀ n, StrongDual 𝕜 (B n)) j x :=
-  (rfl)
-
-@[simp]
-theorem evalCLM_comp (j : ℕ) : (evalCLM T (j + 1)).comp (T j) = evalCLM T j := by
+theorem eval_comp (j : ℕ) : (eval T (j + 1)).comp (T j) = eval T j := by
   ext x f
   simp
 
@@ -338,13 +322,13 @@ theorem exists_eval_eq (hT : ∀ n, (T n).IsWeaklyCompact)
 
 /-- For weakly compact bonding maps, a subset of the strong dual
 `StrongDual 𝕜 (dualProjectiveLimit T)` is von Neumann bounded if and only if it lies in the image
-of a closed ball of a single space `B j` under `evalCLM T j`. -/
+of a closed ball of a single space `B j` under `eval T j`. -/
 theorem isVonNBounded_strongDual_iff (hT : ∀ n, (T n).IsWeaklyCompact)
     {S : Set (StrongDual 𝕜 (dualProjectiveLimit T))} :
     Bornology.IsVonNBounded 𝕜 S ↔
-      ∃ j, ∃ R : ℝ, S ⊆ evalCLM T j '' Metric.closedBall 0 R := by
+      ∃ j, ∃ R : ℝ, S ⊆ eval T j '' Metric.closedBall 0 R := by
   refine ⟨fun hS ↦ ?_, fun ⟨j, R, hS⟩ ↦
-    ((NormedSpace.isVonNBounded_closedBall 𝕜 (B j) R).image (evalCLM T j)).subset hS⟩
+    ((NormedSpace.isVonNBounded_closedBall 𝕜 (B j) R).image (eval T j)).subset hS⟩
   have hbdd (f : dualProjectiveLimit T) :
       BddAbove (Set.range fun φ : S ↦ ‖(φ : StrongDual 𝕜 (dualProjectiveLimit T)) f‖) := by
     obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
@@ -360,21 +344,21 @@ theorem isVonNBounded_strongDual_iff (hT : ∀ n, (T n).IsWeaklyCompact)
 
 variable (T) in
 /-- Restricting a continuous functional on `StrongDual 𝕜 (dualProjectiveLimit T)` along the stage
-evaluations `evalCLM T n` produces a compatible family in `dualProjectiveLimit T`, left-inverse to
+evaluations `eval T n` produces a compatible family in `dualProjectiveLimit T`, left-inverse to
 canonical evaluation `StrongDual.eval`. -/
 def fromStrongBidual :
     StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T)) →L[𝕜] dualProjectiveLimit T where
-  toFun Ψ := ⟨fun n ↦ Ψ.comp (evalCLM T n),
-    mem_dualProjectiveLimit.2 fun n ↦ by rw [comp_assoc, evalCLM_comp]⟩
+  toFun Ψ := ⟨fun n ↦ Ψ.comp (eval T n),
+    mem_dualProjectiveLimit.2 fun n ↦ by rw [comp_assoc, eval_comp]⟩
   map_add' Ψ₁ Ψ₂ := by ext; simp
   map_smul' c Ψ := by ext; simp
   cont := (continuous_pi fun n ↦
-    (ContinuousLinearMap.precomp 𝕜 (evalCLM T n)).continuous).subtype_mk _
+    (ContinuousLinearMap.precomp 𝕜 (eval T n)).continuous).subtype_mk _
 
 @[simp]
 theorem fromStrongBidual_apply
     (Ψ : StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T))) (n : ℕ) :
-    (fromStrongBidual T Ψ : ∀ k, StrongDual 𝕜 (B k)) n = Ψ.comp (evalCLM T n) :=
+    (fromStrongBidual T Ψ : ∀ k, StrongDual 𝕜 (B k)) n = Ψ.comp (eval T n) :=
   (rfl)
 
 @[simp]
@@ -394,6 +378,23 @@ theorem eval_fromStrongBidual (hT : ∀ n, (T n).IsWeaklyCompact)
   obtain ⟨n, x, rfl⟩ := exists_eval_eq hT φ
   simp
 
+variable (T) in
+/-- For every stage `j`, radius `R`, and `ε > 0`, functionals `f` in a zero-neighbourhood of
+`dualProjectiveLimit T` satisfy `‖f j z‖ < ε` uniformly for `z ∈ Metric.closedBall 0 R`. -/
+theorem eventually_nhds_zero_forall_mem_closedBall_norm_lt (j : ℕ) (R : ℝ) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∀ᶠ f : dualProjectiveLimit T in 𝓝 0,
+      ∀ z ∈ Metric.closedBall (0 : B j) R, ‖(f : ∀ n, StrongDual 𝕜 (B n)) j z‖ < ε := by
+  have hR : 0 < |R| + 1 := by positivity
+  filter_upwards [(coord T j).continuous.tendsto' 0 0 (map_zero _)
+    (Metric.ball_mem_nhds 0 (div_pos hε hR))] with f hf z hz
+  rw [Set.mem_preimage, mem_ball_zero_iff, coord_apply, lt_div_iff₀ hR] at hf
+  have hzR : ‖z‖ ≤ |R| + 1 := by linarith [mem_closedBall_zero_iff.1 hz, le_abs_self R]
+  calc ‖(f : ∀ n, StrongDual 𝕜 (B n)) j z‖
+      ≤ ‖(f : ∀ n, StrongDual 𝕜 (B n)) j‖ * ‖z‖ := le_opNorm _ z
+    _ ≤ ‖(f : ∀ n, StrongDual 𝕜 (B n)) j‖ * (|R| + 1) := by gcongr
+    _ < ε := hf
+
 /-- When the bonding maps are weakly compact, canonical evaluation from `dualProjectiveLimit T`
 into its strong bidual is continuous. -/
 theorem continuous_strongDual_eval (hT : ∀ n, (T n).IsWeaklyCompact) :
@@ -407,19 +408,9 @@ theorem continuous_strongDual_eval (hT : ∀ n, (T n).IsWeaklyCompact) :
     (E := StrongDual 𝕜 (dualProjectiveLimit T)) (σ := RingHom.id 𝕜)
     Metric.nhds_basis_ball).tendsto_right_iff).2 fun ⟨S, ε⟩ ⟨hS, hε⟩ ↦ ?_
   obtain ⟨j, R, hSR⟩ := (isVonNBounded_strongDual_iff hT).1 hS
-  have hR : 0 < |R| + 1 := by positivity
-  filter_upwards [(coord T j).continuous.tendsto' 0 0 (map_zero _)
-    (Metric.ball_mem_nhds 0 (div_pos hε hR))] with f hf φ hφ
+  filter_upwards [eventually_nhds_zero_forall_mem_closedBall_norm_lt T j R hε] with f hf φ hφ
   obtain ⟨x, hx, rfl⟩ := hSR hφ
-  rw [Set.mem_preimage, mem_ball_zero_iff, coord_apply, lt_div_iff₀ hR] at hf
-  simp only [LinearMap.toAddMonoidHom_coe, StrongDual.eval_apply, coe_evalCLM, eval_apply,
-    mem_ball_zero_iff]
-  calc ‖(f : ∀ n, StrongDual 𝕜 (B n)) j x‖
-      ≤ ‖(f : ∀ n, StrongDual 𝕜 (B n)) j‖ * (|R| + 1) :=
-        (le_opNorm _ x).trans (mul_le_mul_of_nonneg_left
-          ((mem_closedBall_zero_iff.1 hx).trans
-            ((le_abs_self R).trans (le_add_of_nonneg_right zero_le_one))) (norm_nonneg _))
-    _ < ε := hf
+  simpa [mem_ball_zero_iff] using hf x hx
 
 /-- **Strong-bidual reflexivity of the dual projective limit.** When the bonding maps are weakly
 compact, in particular when they are compact, canonical evaluation `StrongDual.eval` is an
@@ -441,8 +432,8 @@ theorem coe_strongBidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
 
 theorem strongBidualEquiv_apply (hT : ∀ n, (T n).IsWeaklyCompact)
     (f : dualProjectiveLimit T) (φ : StrongDual 𝕜 (dualProjectiveLimit T)) :
-    strongBidualEquiv hT f φ = φ f :=
-  StrongDual.eval_apply f φ
+    strongBidualEquiv hT f φ = φ f := by
+  rw [coe_strongBidualEquiv, StrongDual.eval_apply]
 
 @[simp]
 theorem coe_strongBidualEquiv_symm (hT : ∀ n, (T n).IsWeaklyCompact) :
@@ -513,52 +504,12 @@ private theorem apply_eq_of_eq (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
   · obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f hkj y'
     rw [← hfz, hinj j (h.trans hz.symm)]
 
-/-- Every compatible family of continuous functionals on the spaces `B j` comes from a continuous
-functional on their inductive limit `L`. -/
-theorem precomp_surjective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
-    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
-    (hfinal : ∀ ψ : L →ₗ[𝕜] 𝕜, (∀ n, Continuous (ψ ∘ ι n)) → Continuous ψ) :
-    Function.Surjective (precomp ι hι) := by
-  intro f
-  choose m y hy using hcover
-  -- The functional `x ↦ f (m x) (y x)` is well defined, whatever stage represents `x`.
-  have hval (x : L) {n : ℕ} (z : B n) (hz : ι n z = x) :
-      (f : ∀ n, StrongDual 𝕜 (B n)) (m x) (y x) = (f : ∀ n, StrongDual 𝕜 (B n)) n z :=
-    apply_eq_of_eq hι hinj f ((hy x).trans hz.symm)
-  let ψ : L →ₗ[𝕜] 𝕜 :=
-    { toFun x := (f : ∀ n, StrongDual 𝕜 (B n)) (m x) (y x)
-      map_add' x x' := by
-        obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f (le_max_left (m x) (m x')) (y x)
-        obtain ⟨z', hz', hfz'⟩ := exists_stage_eq hι f (le_max_right (m x) (m x')) (y x')
-        rw [hval (x + x') (z + z') (by rw [map_add, hz, hz', hy, hy]), map_add, hfz, hfz']
-      map_smul' c x := by
-        rw [hval (c • x) (c • y x) (by rw [map_smul, hy]), map_smul, RingHom.id_apply] }
-  have hψ (n : ℕ) (z : B n) : ψ (ι n z) = (f : ∀ n, StrongDual 𝕜 (B n)) n z := hval _ z rfl
-  refine ⟨⟨ψ, hfinal ψ fun n ↦ ?_⟩, ?_⟩
-  · exact ((f : ∀ n, StrongDual 𝕜 (B n)) n).continuous.congr fun z ↦ (hψ n z).symm
-  · ext n z
-    exact hψ n z
-
-/-- The image under `precomp ι hι` of the polar of any zero-neighbourhood in `L` is von Neumann
-bounded in `dualProjectiveLimit T`, since the preimage of that neighbourhood under each continuous
-inclusion `ι n` is a zero-neighbourhood in the normed space `B n`. -/
-theorem isVonNBounded_image_precomp_polar (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
-    {U : Set L} (hU : U ∈ 𝓝 (0 : L)) :
-    Bornology.IsVonNBounded 𝕜 (precomp ι hι '' StrongDual.polar 𝕜 U) := by
-  refine isVonNBounded_iff.2 fun n ↦ ?_
-  have hUn : ι n ⁻¹' U ∈ 𝓝 (0 : B n) := (ι n).continuous.tendsto' 0 0 (map_zero _) hU
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
-    (NormedSpace.isBounded_polar_of_mem_nhds_zero 𝕜 hUn)
-  refine ⟨C, ?_⟩
-  rintro _ ⟨φ, hφ, rfl⟩
-  refine hC (φ.comp (ι n)) ((StrongDual.mem_polar_iff 𝕜 _).2 fun z hz ↦ ?_)
-  exact (StrongDual.mem_polar_iff 𝕜 U).1 hφ (ι n z) hz
-
 private theorem eval_choose_eq (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
     (x : L) {n : ℕ} (z : B n) (hz : ι n z = x) :
     eval T (hcover x).choose (hcover x).choose_spec.choose = eval T n z := by
   ext f
+  rw [eval_apply, eval_apply]
   exact apply_eq_of_eq hι hinj f ((hcover x).choose_spec.choose_spec.trans hz.symm)
 
 /-- When the maps `ι n : B n →L[𝕜] L` are injective and cover `L`, the stage evaluations `eval T n`
@@ -593,7 +544,7 @@ theorem liftEval_ι_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
 @[simp]
 theorem liftEval_comp_ι (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) (n : ℕ) :
-    (liftEval hι hinj hcover).comp (ι n).toLinearMap = eval T n := by
+    (liftEval hι hinj hcover).comp (ι n).toLinearMap = (eval T n).toLinearMap := by
   ext z f
   simp
 
@@ -604,6 +555,37 @@ theorem liftEval_apply_precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     liftEval hι hinj hcover x (precomp ι hι φ) = φ x := by
   obtain ⟨n, z, rfl⟩ := hcover x
   simp
+
+/-- Every compatible family of continuous functionals on the spaces `B j` comes from a continuous
+functional on their inductive limit `L`. -/
+theorem precomp_surjective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hfinal : ∀ ψ : L →ₗ[𝕜] 𝕜, (∀ n, Continuous (ψ ∘ ι n)) → Continuous ψ) :
+    Function.Surjective (precomp ι hι) := by
+  intro f
+  let ψ : L →ₗ[𝕜] 𝕜 :=
+    (StrongDual.eval 𝕜 (dualProjectiveLimit T) f).toLinearMap.comp (liftEval hι hinj hcover)
+  have hψ (n : ℕ) (z : B n) : ψ (ι n z) = (f : ∀ n, StrongDual 𝕜 (B n)) n z := by
+    simp [ψ]
+  refine ⟨⟨ψ, hfinal ψ fun n ↦ ?_⟩, ?_⟩
+  · exact ((f : ∀ n, StrongDual 𝕜 (B n)) n).continuous.congr fun z ↦ (hψ n z).symm
+  · ext n z
+    exact hψ n z
+
+/-- The image under `precomp ι hι` of the polar of any zero-neighbourhood in `L` is von Neumann
+bounded in `dualProjectiveLimit T`, since the preimage of that neighbourhood under each continuous
+inclusion `ι n` is a zero-neighbourhood in the normed space `B n`. -/
+theorem isVonNBounded_image_precomp_polar (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    {U : Set L} (hU : U ∈ 𝓝 (0 : L)) :
+    Bornology.IsVonNBounded 𝕜 (precomp ι hι '' StrongDual.polar 𝕜 U) := by
+  refine isVonNBounded_iff.2 fun n ↦ ?_
+  have hUn : ι n ⁻¹' U ∈ 𝓝 (0 : B n) := (ι n).continuous.tendsto' 0 0 (map_zero _) hU
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
+    (NormedSpace.isBounded_polar_of_mem_nhds_zero 𝕜 hUn)
+  refine ⟨C, ?_⟩
+  rintro _ ⟨φ, hφ, rfl⟩
+  refine hC (φ.comp (ι n)) ((StrongDual.mem_polar_iff 𝕜 _).2 fun z hz ↦ ?_)
+  exact (StrongDual.mem_polar_iff 𝕜 U).1 hφ (ι n z) hz
 
 /-- When continuous linear functionals separate points of `L`, the glued evaluation map `liftEval`
 is injective. -/
