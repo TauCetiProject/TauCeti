@@ -53,10 +53,25 @@ its base change to a completion `R` of `ℤ[H]` are given componentwise torsions
 homomorphisms `ℤ[H] →+* Q` and `R →+* Q'` into reduced Artinian rings. Then any ring homomorphism
 `Q →+* Q'` compatible with the completion map carries the first torsion to the second.
 
+The same construction applies to a based two-periodic complex `C`, graded by `ZMod 2`, with the
+torsion `HomologicalComplex.parityTorsion` of its coordinate base changes to the residue fields
+(`HomologicalComplex.componentwiseParityTorsion`). Floer–Novikov complexes of symplectomorphisms
+are two-periodic complexes over Novikov rings, and when the total quotient ring of the Novikov ring
+is a finite product of fields their torsion is read in the whole of it, with zero components
+exactly where the complex is not acyclic
+(`HomologicalComplex.mk_componentwiseParityTorsion_eq_zero_iff`). No boundedness condition is
+needed. The componentwise torsion of a two-periodic complex has the same
+characterization, zero pattern, field case and naturality as that of a `ℤ`-graded complex
+(`HomologicalComplex.componentwiseParityTorsion_id`,
+`HomologicalComplex.map_componentwiseParityTorsion`,
+`HomologicalComplex.componentwiseParityTorsion_eq_of_toMatrix_eq`).
+
 ## Main definitions
 
 * `HomologicalComplex.componentwiseReidemeisterTorsion c f`: the componentwise torsion in a
   reduced Artinian ring.
+* `HomologicalComplex.componentwiseParityTorsion c f`: the componentwise torsion of a based
+  two-periodic complex in a reduced Artinian ring.
 
 ## Main results
 
@@ -69,6 +84,13 @@ homomorphisms `ℤ[H] →+* Q` and `R →+* Q'` into reduced Artinian rings. The
   is the torsion.
 * `HomologicalComplex.map_componentwiseReidemeisterTorsion`: naturality in the reduced Artinian
   ring.
+* `HomologicalComplex.mk_componentwiseParityTorsion`,
+  `HomologicalComplex.isUnit_componentwiseParityTorsion_iff`,
+  `HomologicalComplex.componentwiseParityTorsion_eq_zero_iff`,
+  `HomologicalComplex.componentwiseParityTorsion_id`,
+  `HomologicalComplex.map_componentwiseParityTorsion`: the same results for two-periodic complexes.
+* `HomologicalComplex.componentwiseParityTorsion_eq_one`: the zero two-periodic complex has
+  componentwise torsion `1`.
 
 ## References
 
@@ -77,6 +99,8 @@ homomorphisms `ℤ[H] →+* Q` and `R →+* Q'` into reduced Artinian rings. The
 * M. Hutchings, *Reidemeister torsion in generalized Morse theory*, Forum Math. 14 (2002),
   Section 2 (torsion in the total ring of fractions of a Novikov ring, with zero components on
   the components where the complex is not acyclic).
+* Y.-J. Lee, *Reidemeister torsion in Floer–Novikov theory and counting pseudo-holomorphic tori,
+  I*, J. Symplectic Geom. 3 (2005), §2 (torsion of two-periodic Floer–Novikov complexes).
 -/
 
 public section
@@ -87,9 +111,24 @@ namespace HomologicalComplex
 
 attribute [local instance] Ideal.Quotient.field
 
-variable {A : Type*} [CommRing A] (C : ChainComplex (ModuleCat A) ℤ) {n : ℤ → ℕ}
-  (c : ∀ i, Basis (Fin (n i)) A (C.X i))
-  {Q : Type*} [CommRing Q] [IsArtinianRing Q] [IsReduced Q] (f : A →+* Q)
+variable {A : Type*} [CommRing A] {Q : Type*} [CommRing Q] [IsArtinianRing Q] [IsReduced Q]
+
+omit [IsReduced Q] in
+/-- For a ring homomorphism `g : Q →+* Q'` between Artinian rings and a maximal ideal `m'` of
+`Q'`, the preimage of `m'` is a maximal ideal `p` of `Q`, and `g` induces a homomorphism of residue
+fields `ψ : Q ⧸ p →+* Q' ⧸ m'`. -/
+private theorem exists_residueField_ringHom {Q' : Type*} [CommRing Q'] (g : Q →+* Q')
+    (m' : MaximalSpectrum Q') :
+    ∃ (p : MaximalSpectrum Q) (ψ : Q ⧸ p.asIdeal →+* Q' ⧸ m'.asIdeal),
+      ∀ x, Ideal.Quotient.mk m'.asIdeal (g x) = ψ (Ideal.Quotient.mk p.asIdeal x) :=
+  -- The preimage of `m'` is prime, hence maximal in the Artinian ring `Q`.
+  ⟨⟨m'.asIdeal.comap g, IsArtinianRing.isMaximal_of_isPrime _⟩,
+    Ideal.quotientMap m'.asIdeal g le_rfl, fun _ ↦ (Ideal.quotientMap_mk ..).symm⟩
+
+section Graded
+
+variable (C : ChainComplex (ModuleCat A) ℤ) {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) A (C.X i))
+  (f : A →+* Q)
 
 /-- The componentwise torsion of a based complex `C` over `A` along a ring homomorphism
 `f : A →+* Q` into a reduced Artinian ring, which is the finite product of its residue fields
@@ -183,18 +222,11 @@ theorem map_componentwiseReidemeisterTorsion {Q' : Type*} [CommRing Q'] [IsArtin
     [IsReduced Q'] (g : Q →+* Q') :
     g (C.componentwiseReidemeisterTorsion c f) = C.componentwiseReidemeisterTorsion c (g.comp f) :=
   eq_componentwiseReidemeisterTorsion_iff.2 fun m' ↦ by
-    -- The preimage `p` of `m'` is prime, hence maximal in the Artinian ring `Q`, and `g` induces
-    -- a homomorphism `ψ : Q ⧸ p →+* Q' ⧸ m'` of residue fields.
-    let p : MaximalSpectrum Q := ⟨m'.asIdeal.comap g, IsArtinianRing.isMaximal_of_isPrime _⟩
-    let ψ := Ideal.quotientMap m'.asIdeal g (le_refl p.asIdeal)
-    have hψ : (Ideal.Quotient.mk m'.asIdeal).comp (g.comp f) =
-        ψ.comp ((Ideal.Quotient.mk p.asIdeal).comp f) := by
-      ext x
-      simp [ψ]
-    have hg : Ideal.Quotient.mk m'.asIdeal (g (C.componentwiseReidemeisterTorsion c f)) =
-        ψ (Ideal.Quotient.mk p.asIdeal (C.componentwiseReidemeisterTorsion c f)) := by
-      rw [Ideal.quotientMap_mk]
-    rw [hg, mk_componentwiseReidemeisterTorsion, map_reidemeisterTorsion_matrixBaseChange, hψ]
+    obtain ⟨p, ψ, hψ⟩ := exists_residueField_ringHom g m'
+    have hψf : (Ideal.Quotient.mk m'.asIdeal).comp (g.comp f) =
+        ψ.comp ((Ideal.Quotient.mk p.asIdeal).comp f) :=
+      RingHom.ext fun x ↦ hψ (f x)
+    rw [hψ, mk_componentwiseReidemeisterTorsion, map_reidemeisterTorsion_matrixBaseChange, hψf]
 
 /-- The componentwise torsion is invariant under a change of coefficient ring of the complex which
 preserves the matrices of the differentials: if the differentials of a based complex `(C', c')`
@@ -213,5 +245,131 @@ theorem componentwiseReidemeisterTorsion_eq_of_toMatrix_eq {A' : Type*} [CommRin
     -- by scalar extension along the identity.
     exact (map_reidemeisterTorsion (RingHom.id _) fun i ↦ by
       simp [hd, Matrix.map_map, Function.comp_assoc]).symm
+
+end Graded
+
+section Periodic
+
+/-! ### Two-periodic complexes -/
+
+variable (C : HomologicalComplex (ModuleCat A) (ComplexShape.up (ZMod 2))) {n : ZMod 2 → ℕ}
+  (c : ∀ i, Basis (Fin (n i)) A (C.X i)) (f : A →+* Q)
+
+/-- The componentwise torsion of a based two-periodic complex `C` over `A` along a ring
+homomorphism `f : A →+* Q` into a reduced Artinian ring, which is the finite product of its
+residue fields `Q ⧸ m`: the element of `Q` whose component in `Q ⧸ m` is the torsion of the
+coordinate base change of `C` along `A → Q → Q ⧸ m`. A component is `0` exactly when that base
+change is not acyclic. -/
+noncomputable def componentwiseParityTorsion : Q :=
+  (IsArtinianRing.equivPi Q).symm fun m ↦
+    (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).parityTorsion
+      (C.matrixBaseChangeBasis c _)
+
+/-- The component of the componentwise torsion of a two-periodic complex in the residue field
+`Q ⧸ m` is the torsion of the coordinate base change of `C` along `A → Q → Q ⧸ m`. -/
+@[simp]
+theorem mk_componentwiseParityTorsion (m : MaximalSpectrum Q) :
+    Ideal.Quotient.mk m.asIdeal (C.componentwiseParityTorsion c f) =
+      (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).parityTorsion
+        (C.matrixBaseChangeBasis c _) := by
+  rw [componentwiseParityTorsion, ← IsArtinianRing.equivPi_apply, AlgEquiv.apply_symm_apply]
+
+variable {C c f}
+
+/-- The componentwise torsion of a two-periodic complex is characterized by its components: an
+element of `Q` is the componentwise torsion exactly when its component in each residue field
+`Q ⧸ m` is the torsion of the coordinate base change of `C` along `A → Q → Q ⧸ m`. -/
+theorem eq_componentwiseParityTorsion_iff {x : Q} :
+    x = C.componentwiseParityTorsion c f ↔ ∀ m : MaximalSpectrum Q,
+      Ideal.Quotient.mk m.asIdeal x =
+        (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).parityTorsion
+          (C.matrixBaseChangeBasis c _) := by
+  simp_rw [← mk_componentwiseParityTorsion, ← IsArtinianRing.equivPi_apply, ← funext_iff,
+    (IsArtinianRing.equivPi Q).injective.eq_iff]
+
+/-- The component of the componentwise torsion of a two-periodic complex in `Q ⧸ m` vanishes
+exactly when the coordinate base change of `C` along `A → Q → Q ⧸ m` is not acyclic. -/
+theorem mk_componentwiseParityTorsion_eq_zero_iff (m : MaximalSpectrum Q) :
+    Ideal.Quotient.mk m.asIdeal (C.componentwiseParityTorsion c f) = 0 ↔
+      ¬(C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).Acyclic := by
+  rw [mk_componentwiseParityTorsion, parityTorsion_eq_zero_iff]
+
+/-- The componentwise torsion of a two-periodic complex is a unit exactly when the coordinate base
+change of `C` to every residue field of `Q` is acyclic. -/
+theorem isUnit_componentwiseParityTorsion_iff :
+    IsUnit (C.componentwiseParityTorsion c f) ↔ ∀ m : MaximalSpectrum Q,
+      (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).Acyclic := by
+  rw [← isUnit_map_iff (IsArtinianRing.equivPi Q), Pi.isUnit_iff]
+  refine forall_congr' fun m ↦ ?_
+  rw [IsArtinianRing.equivPi_apply, isUnit_iff_ne_zero, ne_eq,
+    mk_componentwiseParityTorsion_eq_zero_iff, not_not]
+
+/-- The componentwise torsion of a two-periodic complex is `0` exactly when the coordinate base
+change of `C` to no residue field of `Q` is acyclic. -/
+theorem componentwiseParityTorsion_eq_zero_iff :
+    C.componentwiseParityTorsion c f = 0 ↔ ∀ m : MaximalSpectrum Q,
+      ¬(C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).Acyclic := by
+  rw [eq_comm, eq_componentwiseParityTorsion_iff]
+  refine forall_congr' fun m ↦ ?_
+  rw [map_zero, eq_comm, parityTorsion_eq_zero_iff]
+
+/-- The zero two-periodic complex, with the empty bases, has componentwise torsion `1`. -/
+theorem componentwiseParityTorsion_eq_one (h₀ : n 0 = 0) (h₁ : n 1 = 0) :
+    C.componentwiseParityTorsion c f = 1 :=
+  (eq_componentwiseParityTorsion_iff.2 fun _ ↦ by rw [map_one, parityTorsion_eq_one h₀ h₁]).symm
+
+/-- In a field `F`, the componentwise torsion of a two-periodic complex along `f : A →+* F` is the
+torsion of the coordinate base change of `C` along `f`. -/
+theorem componentwiseParityTorsion_eq_parityTorsion_matrixBaseChange {F : Type*} [Field F]
+    (f : A →+* F) :
+    C.componentwiseParityTorsion c f =
+      (C.matrixBaseChange c f).parityTorsion (C.matrixBaseChangeBasis c f) :=
+  (eq_componentwiseParityTorsion_iff.2 fun m ↦
+    map_parityTorsion_matrixBaseChange f (Ideal.Quotient.mk m.asIdeal)).symm
+
+/-- Over a field `F`, the componentwise torsion of a two-periodic complex along the identity is the
+torsion of the based complex. -/
+@[simp]
+theorem componentwiseParityTorsion_id {F : Type*} [Field F]
+    {C : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))}
+    {c : ∀ i, Basis (Fin (n i)) F (C.X i)} :
+    C.componentwiseParityTorsion c (RingHom.id F) = C.parityTorsion c :=
+  (eq_componentwiseParityTorsion_iff.2 fun m ↦
+    map_parityTorsion (Ideal.Quotient.mk m.asIdeal) fun i j ↦ by
+      rw [toMatrix_matrixBaseChange_d, RingHom.comp_id]).symm
+
+/-- **Naturality of the componentwise torsion of a two-periodic complex.** A ring homomorphism
+`g : Q →+* Q'` between reduced Artinian rings sends the componentwise torsion along `f` to the
+componentwise torsion along `g ∘ f`. -/
+theorem map_componentwiseParityTorsion {Q' : Type*} [CommRing Q'] [IsArtinianRing Q']
+    [IsReduced Q'] (g : Q →+* Q') :
+    g (C.componentwiseParityTorsion c f) = C.componentwiseParityTorsion c (g.comp f) :=
+  eq_componentwiseParityTorsion_iff.2 fun m' ↦ by
+    obtain ⟨p, ψ, hψ⟩ := exists_residueField_ringHom g m'
+    have hψf : (Ideal.Quotient.mk m'.asIdeal).comp (g.comp f) =
+        ψ.comp ((Ideal.Quotient.mk p.asIdeal).comp f) :=
+      RingHom.ext fun x ↦ hψ (f x)
+    rw [hψ, mk_componentwiseParityTorsion, map_parityTorsion_matrixBaseChange, hψf]
+
+/-- The componentwise torsion of a two-periodic complex is invariant under a change of coefficient
+ring of the complex which preserves the matrices of the differentials: if the differentials of a
+based two-periodic complex `(C', c')` over `A'` have the images under `h : A →+* A'` of the
+matrices of the differentials of `C`, then the componentwise torsion of `C'` along `f'` is the
+componentwise torsion of `C` along `f' ∘ h`. -/
+theorem componentwiseParityTorsion_eq_of_toMatrix_eq {A' : Type*} [CommRing A']
+    {C' : HomologicalComplex (ModuleCat A') (ComplexShape.up (ZMod 2))}
+    {c' : ∀ i, Basis (Fin (n i)) A' (C'.X i)} (h : A →+* A')
+    (hd : ∀ i j, LinearMap.toMatrix (c' i) (c' j) (C'.d i j).hom =
+      (LinearMap.toMatrix (c i) (c j) (C.d i j).hom).map h)
+    (f' : A' →+* Q) :
+    C'.componentwiseParityTorsion c' f' = C.componentwiseParityTorsion c (f'.comp h) :=
+  eq_componentwiseParityTorsion_iff.2 fun m ↦ by
+    rw [mk_componentwiseParityTorsion]
+    -- Both coordinate base changes have the same differential matrices, so their torsions agree
+    -- by scalar extension along the identity.
+    exact (map_parityTorsion (RingHom.id _) fun i j ↦ by
+      simp [hd, Matrix.map_map, Function.comp_assoc]).symm
+
+end Periodic
 
 end HomologicalComplex
