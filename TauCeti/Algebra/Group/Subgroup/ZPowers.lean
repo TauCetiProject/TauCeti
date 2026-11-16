@@ -77,6 +77,9 @@ over its subgroup of squares when `-1 ≠ 1`.
   elements of order two, and `Subgroup.mem_zpowers_neg_one_iff` to `-1`, giving `{1, -1}`
 * `Subgroup.map_powMonoidHom_two_zpowers_neg_one`: `{±1}² = 1`;
   `Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one`: `({±1} : {±1}²) = 2` when `-1 ≠ 1`
+* `Int.range_zpowGroupHom_multiplicative`, `Int.index_range_zpowGroupHom_multiplicative`: in
+  `Multiplicative ℤ`, the range of `zpowGroupHom k` corresponds to `AddSubgroup.zmultiples k` and
+  has index `|k|`.
 -/
 
 public section
@@ -231,3 +234,23 @@ theorem relIndex_map_powMonoidHom_two_zpowers_neg_one {G : Type*} [CommGroup G] 
   exact orderOf_eq_prime neg_one_sq h
 
 end Subgroup
+
+namespace Int
+
+/-- In `Multiplicative ℤ`, the range of the `k`-th power homomorphism `zpowGroupHom k` is the
+multiplicative subgroup corresponding to `AddSubgroup.zmultiples k`. -/
+theorem range_zpowGroupHom_multiplicative (k : ℤ) :
+    (zpowGroupHom (α := Multiplicative ℤ) k).range =
+      (AddSubgroup.zmultiples k).toSubgroup := by
+  have hhom : zpowGroupHom (α := Multiplicative ℤ) k =
+      AddMonoidHom.toMultiplicative (zmultiplesHom ℤ k) :=
+    MonoidHom.ext_mint (Multiplicative.toAdd.injective (by simp))
+  rw [hhom, MonoidHom.coe_toMultiplicative_range, AddSubgroup.range_zmultiplesHom]
+
+/-- In `Multiplicative ℤ`, the image of `zpowGroupHom k` has index `|k|`. -/
+@[simp]
+theorem index_range_zpowGroupHom_multiplicative (k : ℤ) :
+    (zpowGroupHom (α := Multiplicative ℤ) k).range.index = k.natAbs := by
+  rw [range_zpowGroupHom_multiplicative, AddSubgroup.index_toSubgroup, Int.index_zmultiples]
+
+end Int

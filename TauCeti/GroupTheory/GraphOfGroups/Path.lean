@@ -302,6 +302,19 @@ theorem of_comp_left (p : 𝔸.Path x y) {r s : 𝔸.Path y z}
     simpa only [Quiver.Path.nil_comp] using (reverse_comp p).comp_right q
   exact (cancel r).symm.trans ((h.comp_left p.reverse).trans (cancel s))
 
+/-- Right cancellation for homotopy of `𝔸`-paths. -/
+theorem of_comp_right {p q : 𝔸.Path x y} (r : 𝔸.Path y z)
+    (h : Homotopic (p.comp r) (q.comp r)) : Homotopic p q :=
+  (comp_comp_reverse p r).symm.trans ((h.comp_right r.reverse).trans (comp_comp_reverse q r))
+
+@[simp] theorem comp_left_iff (p : 𝔸.Path x y) {r s : 𝔸.Path y z} :
+    Homotopic (p.comp r) (p.comp s) ↔ Homotopic r s :=
+  ⟨of_comp_left p, fun h => h.comp_left p⟩
+
+@[simp] theorem comp_right_iff {p q : 𝔸.Path x y} (r : 𝔸.Path y z) :
+    Homotopic (p.comp r) (q.comp r) ↔ Homotopic p q :=
+  ⟨of_comp_right r, fun h => h.comp_right r⟩
+
 end Homotopic
 
 variable (𝔸) in
@@ -440,6 +453,27 @@ theorem vertexHom_cons_vertex (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGr
   simp only [← Quiver.Path.comp_assoc, Path.comp_ofVertex]
   exact (((Path.Homotopic.mul p g h).cons _).trans
     (Path.Homotopic.mul p (g * h) g⁻¹)).comp_right p.reverse
+
+theorem vertexHom_cons_vertex_apply (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g h : 𝔸.vertexGroup b) :
+    vertexHom (p.cons (Letter.vertex g)) h = vertexHom p (g * h * g⁻¹) :=
+    DFunLike.congr_fun (vertexHom_cons_vertex p g) h
+
+/-- Extending the conjugating path by a dart `e : b ⟶ c` identifies the `ω_e`-elements at `c`
+with the `α_e`-elements at `b` inside `π₁(𝔸, a)`. -/
+theorem vertexHom_cons_dart_comp_ωArrow {c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :
+    (vertexHom (p.cons (Letter.dart e))).comp (𝔸.ωArrow e) =
+      (vertexHom p).comp (𝔸.αArrow e) := by
+  ext c₀
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, vertexHom_apply, vertexHom_apply,
+    mk_eq_mk_iff, Quiver.Path.reverse, ← Quiver.Path.comp_assoc,
+    Path.comp_ofVertex, Path.comp_ofVertex, Quiver.Path.comp_toPath_eq_cons, Letter.reverse_dart]
+  exact ((Path.Homotopic.dart_ωArrow p e c₀).cons _ |>.trans
+    (Path.Homotopic.dart_reverse _ e)).comp_right p.reverse
+
+theorem vertexHom_cons_dart_ωArrow_apply {c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    vertexHom (p.cons (Letter.dart e)) (𝔸.ωArrow e c₀) = vertexHom p (𝔸.αArrow e c₀) :=
+  DFunLike.congr_fun (vertexHom_cons_dart_comp_ωArrow p e) c₀
 
 /-- The conjugations of `A_b` into `π₁(𝔸, a)` along two paths `q` and `r` from `a` to `b` differ
 by the inner automorphism by the class of `r q⁻¹`. -/

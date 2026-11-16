@@ -16,7 +16,8 @@ between two vertices, and a tree has exactly one. These unique reduced paths are
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
 An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
-darts with the same endpoints, so a finite set of vertices induces finitely many darts. A
+darts with the same endpoints (`IsAcyclic.outDartEquivNeighbor` identifies the outgoing darts at a
+vertex with its adjacent vertices), so a finite set of vertices induces finitely many darts. A
 restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
 all its darts in `S`.
 
@@ -111,6 +112,28 @@ theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
     simpa using congrArg (Path.darts Γ)
       (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
   exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
+variable {Γ} in
+/-- In an acyclic graph, sending an outgoing dart at `x` to its target gives a bijection onto the
+adjacent vertices of `x`. -/
+noncomputable def IsAcyclic.outDartEquivNeighbor (h : Γ.IsAcyclic) (x : Γ.V) :
+    {d : Γ.E // Γ.src d = x} ≃ {y : Γ.V // ∃ d : Γ.E, Γ.src d = x ∧ Γ.tgt d = y} :=
+  Equiv.ofBijective (fun d => ⟨Γ.tgt d.1, d.1, d.2, rfl⟩)
+    ⟨fun d₁ d₂ hd => Subtype.ext <|
+      h.eq_of_src_eq_of_tgt_eq (d₁.2.trans d₂.2.symm) (congrArg Subtype.val hd),
+    fun ⟨_, d, hsrc, htgt⟩ => ⟨⟨d, hsrc⟩, Subtype.ext htgt⟩⟩
+
+variable {Γ} in
+@[simp] theorem IsAcyclic.outDartEquivNeighbor_apply_val (h : Γ.IsAcyclic) (x : Γ.V)
+    (d : {d : Γ.E // Γ.src d = x}) :
+    (h.outDartEquivNeighbor x d).1 = Γ.tgt d.1 :=
+  (rfl)
+
+variable {Γ} in
+@[simp] theorem IsAcyclic.tgt_outDartEquivNeighbor_symm_val (h : Γ.IsAcyclic) (x : Γ.V)
+    (y : {y : Γ.V // ∃ d : Γ.E, Γ.src d = x ∧ Γ.tgt d = y}) :
+    Γ.tgt ((h.outDartEquivNeighbor x).symm y).1 = y.1 :=
+  congrArg Subtype.val ((h.outDartEquivNeighbor x).apply_symm_apply y)
 
 variable {Γ} in
 /-- In an acyclic graph, a single vertex induces no dart. -/

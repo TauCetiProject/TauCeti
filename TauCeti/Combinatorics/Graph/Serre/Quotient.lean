@@ -195,8 +195,9 @@ theorem quotient_connected (h : Γ.Connected) : (Γ.quotient φ hφ).Connected :
 
 /-! ### Instances on the quotient graph
 
-Finiteness, nonemptiness, emptiness and being a subsingleton pass from the vertices and the darts
-of a graph to those of its quotient graph, along the surjective projection. -/
+Finiteness, nonemptiness, emptiness, being a subsingleton, and having a unique vertex pass from the
+vertices and the darts of a graph to those of its quotient graph, along the surjective projection.
+-/
 
 instance [Finite Γ.V] : Finite (Γ.quotient φ hφ).V :=
   Finite.of_surjective _ (quotientMap_mapV_surjective Γ φ hφ)
@@ -221,6 +222,9 @@ instance [Subsingleton Γ.V] : Subsingleton (Γ.quotient φ hφ).V :=
 
 instance [Subsingleton Γ.E] : Subsingleton (Γ.quotient φ hφ).E :=
   (quotientMap_mapE_surjective Γ φ hφ).subsingleton
+
+instance [Unique Γ.V] : Unique (Γ.quotient φ hφ).V :=
+  (quotientMap_mapV_surjective Γ φ hφ).unique
 
 /-! ### The universal property -/
 

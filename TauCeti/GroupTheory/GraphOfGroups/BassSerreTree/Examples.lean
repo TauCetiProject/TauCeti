@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.QuotientGroup
-public import Mathlib.SetTheory.Cardinal.Basic
 public import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree.Basic
 public import TauCeti.GroupTheory.GraphOfGroups.Cyclic
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Concrete Bass–Serre trees
@@ -16,44 +15,35 @@ public import TauCeti.GroupTheory.GraphOfGroups.Cyclic
 Calculations of vertex stars, degrees, and quotients of `GraphOfGroups.bassSerreTree` on standard
 low-complexity graphs of groups:
 
-* **HNN loops and Baumslag–Solitar groups (`GraphOfGroups.loop`, `GraphOfGroups.baumslagSolitar`)**:
-  at any vertex of the Bass–Serre tree of `loop f g hf hg`, the outgoing star decomposes as
-  `(G ⧸ f.range) ⊕ (G ⧸ g.range)`, so every vertex has degree `f.range.index + g.range.index` when
-  both boundary subgroups have finite index. For `baumslagSolitar m n hm hn`, every vertex has
-  degree `|m| + |n|`; in particular, the Bass–Serre tree of `BS(1, 2)` is `3`-regular.
-* **Amalgamated and free products (`GraphOfGroups.segment`)**: at vertices projecting to `false`
-  (respectively `true`), the outgoing star identifies with `A ⧸ f.range` (respectively
-  `B ⧸ g.range`). When the amalgamated subgroup `C` is trivial (`A ∗ B`), the neighbour vertices of
-  the base vertex `1 · A` correspond bijectively to `A` via `a ↦ a • (e · B)`. Specializing to
-  `ℤ ∗ ℤ`, both the outgoing star and the neighbour set of `1 · ℤ` have countably infinite
-  cardinality `ℵ₀`.
-* **Disconnected graphs (`SerreGraph.noEdge Bool`)**: on two isolated vertices, the Bass–Serre tree
-  at `false` and its `π₁`-quotient each have `1` vertex while the ambient graph has `2`, witnessing
-  that `X(𝔸, v₀) / π₁(𝔸, v₀)` recovers `Γ.component v₀` rather than all of `Γ`.
+* **HNN loops and Baumslag–Solitar groups (`loop`, `baumslagSolitar`)**: outgoing stars decompose
+  as `(G ⧸ f.range) ⊕ (G ⧸ g.range)`, giving degree `f.range.index + g.range.index` (`|m| + |n|` for
+  `baumslagSolitar m n hm hn`, and `3` for `BS(1, 2)`).
+* **Amalgamated and free products (`segment`, `freeProductInt`)**: outgoing stars over `false` and
+  `true` identify with `A ⧸ f.range` and `B ⧸ g.range` (with `A` and `B`, along with neighbor
+  vertices, when `[Subsingleton C]`), giving cardinality `ℵ₀` at every vertex of `ℤ ∗ ℤ`.
+* **Disconnected graphs (`SerreGraph.noEdge Bool`)**: `X(𝔸, false)` and its `π₁`-quotient each have
+  `1` vertex while the ambient graph has `2`, witnessing recovery of `Γ.component v₀`.
 
 ## Main definitions
 
-* `TauCeti.GraphOfGroups.loopStarEquiv`: outgoing star of a vertex in the Bass–Serre tree of an HNN
-  loop as `(G ⧸ f.range) ⊕ (G ⧸ g.range)`.
-* `TauCeti.GraphOfGroups.segmentStarEquivFalse`, `TauCeti.GraphOfGroups.segmentStarEquivTrue`:
-  outgoing stars in the Bass–Serre tree of a segment of groups as `A ⧸ f.range` and `B ⧸ g.range`.
+* `TauCeti.GraphOfGroups.loopStarEquiv`, `TauCeti.GraphOfGroups.segmentStarEquivFalse`,
+  `TauCeti.GraphOfGroups.segmentStarEquivTrue`: outgoing star equivalences for loops and segments.
 * `TauCeti.GraphOfGroups.segmentFreeStarEquivFalse`,
-  `TauCeti.GraphOfGroups.segmentFreeNeighbourEquivFalse`: when `[Subsingleton C]`, the outgoing
-  darts and adjacent vertices of `1 · A` in `A ∗ B` correspond bijectively to `A`.
+  `TauCeti.GraphOfGroups.segmentFreeStarEquivTrue`,
+  `TauCeti.GraphOfGroups.segmentFreeNeighborEquivFalse`,
+  `TauCeti.GraphOfGroups.segmentFreeNeighborEquivTrue`: star and neighbor equivalences for `A ∗ B`.
 * `TauCeti.GraphOfGroups.freeProductInt`: the segment of groups for `ℤ ∗ ℤ`.
 
 ## Main results
 
-* `TauCeti.GraphOfGroups.card_src_eq_bassSerreTree_loop`: finite vertex degree
-  `f.range.index + g.range.index` for an HNN loop.
-* `TauCeti.GraphOfGroups.card_src_eq_bassSerreTree_baumslagSolitar`,
-  `TauCeti.GraphOfGroups.card_src_eq_bassSerreTree_baumslagSolitar_one_two`: every vertex of the
-  Bass–Serre tree of `BS(m, n)` has degree `|m| + |n|`, and `3` for `BS(1, 2)`.
-* `TauCeti.GraphOfGroups.mk_star_freeProduct_int`,
-  `TauCeti.GraphOfGroups.mk_neighbours_freeProduct_int`: in `ℤ ∗ ℤ`, the outgoing star and
-  neighbour set of the base vertex have cardinality `ℵ₀`.
-* `TauCeti.GraphOfGroups.isEmpty_quotient_bassSerreTree_iso_noEdge_bool`: the quotient of the
-  Bass–Serre tree over `SerreGraph.noEdge Bool` is not isomorphic to `SerreGraph.noEdge Bool`.
+* `TauCeti.GraphOfGroups.card_src_eq_bassSerreTree_loop`,
+  `TauCeti.GraphOfGroups.card_src_eq_bassSerreTree_baumslagSolitar`,
+  `TauCeti.GraphOfGroups.card_src_eq_bassSerreTree_baumslagSolitar_one_two`: vertex degrees.
+* `TauCeti.GraphOfGroups.mk_star_freeProductInt`,
+  `TauCeti.GraphOfGroups.mk_neighbors_freeProductInt`: star and neighbor cardinalities in `ℤ ∗ ℤ`.
+* `TauCeti.GraphOfGroups.card_bassSerreTree_noEdge_bool_V`,
+  `TauCeti.GraphOfGroups.card_quotient_bassSerreTree_noEdge_bool_V`,
+  `TauCeti.GraphOfGroups.isEmpty_quotient_bassSerreTree_iso_noEdge_bool`: disconnected example.
 
 ## References
 
@@ -64,9 +54,7 @@ public section
 
 universe w x
 
-namespace TauCeti
-
-namespace GraphOfGroups
+namespace TauCeti.GraphOfGroups
 
 /-! ### HNN loops and Baumslag–Solitar groups -/
 
@@ -118,8 +106,7 @@ noncomputable def loopStarEquiv
     (p : (loop f g hf hg).Path
       ⟨(default : (SerreGraph.rose Unit).V)⟩ ⟨(default : (SerreGraph.rose Unit).V)⟩) (x : G) :
     (loopStarEquiv f g hf hg p (Sum.inl (x : G ⧸ f.range))).1 =
-      bassSerreDart
-        (p.cons (Letter.vertex (x : (loop f g hf hg).vertexGroup default)))
+      bassSerreDart (p.cons (Letter.vertex (x : (loop f g hf hg).vertexGroup default)))
         (⟨((), true), rfl, rfl⟩ :
           (default : (SerreGraph.rose Unit).V) ⟶ (SerreGraph.rose Unit).tgt ((), true)) :=
   (congrArg (fun q => (bassSerreStarEquiv p ⟨roseUnitOutEquiv true, q⟩).1)
@@ -130,8 +117,7 @@ noncomputable def loopStarEquiv
     (p : (loop f g hf hg).Path
       ⟨(default : (SerreGraph.rose Unit).V)⟩ ⟨(default : (SerreGraph.rose Unit).V)⟩) (x : G) :
     (loopStarEquiv f g hf hg p (Sum.inr (x : G ⧸ g.range))).1 =
-      bassSerreDart
-        (p.cons (Letter.vertex (x : (loop f g hf hg).vertexGroup default)))
+      bassSerreDart (p.cons (Letter.vertex (x : (loop f g hf hg).vertexGroup default)))
         (⟨((), false), rfl, rfl⟩ :
           (default : (SerreGraph.rose Unit).V) ⟶ (SerreGraph.rose Unit).tgt ((), false)) :=
   (congrArg (fun q => (bassSerreStarEquiv p ⟨roseUnitOutEquiv false, q⟩).1)
@@ -145,7 +131,7 @@ theorem card_src_eq_bassSerreTree_loop [Finite (G ⧸ f.range)] [Finite (G ⧸ g
     Nat.card {d : ((loop f g hf hg).bassSerreTree default).E //
         ((loop f g hf hg).bassSerreTree default).src d = x} =
       f.range.index + g.range.index := by
-  induction x using bassSerreVertex_induction with | @h v p
+  induction x using bassSerreVertex_induction_on with | @h v p
   obtain rfl : v = default := Subsingleton.elim _ _
   rw [Nat.card_congr (loopStarEquiv f g hf hg p).symm, Nat.card_sum,
     Subgroup.index_eq_card, Subgroup.index_eq_card]
@@ -161,26 +147,13 @@ theorem card_src_eq_bassSerreTree_baumslagSolitar (m n : ℤ) (hm : m ≠ 0) (hn
     Nat.card {d : ((baumslagSolitar m n hm hn).bassSerreTree default).E //
         ((baumslagSolitar m n hm hn).bassSerreTree default).src d = x} =
       m.natAbs + n.natAbs := by
-  have hidx (k : ℤ) : (zpowGroupHom (α := Multiplicative ℤ) k).range.index = k.natAbs := by
-    have hrange : (zpowGroupHom (α := Multiplicative ℤ) k).range =
-        (AddSubgroup.zmultiples k).toSubgroup := by
-      ext a
-      rw [MonoidHom.mem_range, Multiplicative.mem_toSubgroup, AddSubgroup.mem_zmultiples_iff]
-      refine ⟨fun ⟨c, hc⟩ => ⟨c.toAdd, ?_⟩, fun ⟨j, hj⟩ => ⟨Multiplicative.ofAdd j, ?_⟩⟩
-      · rw [← hc, zpowGroupHom_apply, toAdd_zpow]
-        simpa only [zsmul_eq_mul, Int.cast_id] using Int.mul_comm c.toAdd k
-      · apply Multiplicative.toAdd.injective
-        rw [zpowGroupHom_apply, toAdd_zpow, toAdd_ofAdd, ← hj]
-        simpa only [zsmul_eq_mul, Int.cast_id] using Int.mul_comm k j
-    rw [hrange, AddSubgroup.index_toSubgroup, Int.index_zmultiples]
   have : Finite (Multiplicative ℤ ⧸ (zpowGroupHom (α := Multiplicative ℤ) m).range) :=
-    Subgroup.index_ne_zero_iff_finite.1 (by rw [hidx]; exact Int.natAbs_ne_zero.2 hm)
+    Subgroup.index_ne_zero_iff_finite.1 (by simp [hm])
   have : Finite (Multiplicative ℤ ⧸ (zpowGroupHom (α := Multiplicative ℤ) n).range) :=
-    Subgroup.index_ne_zero_iff_finite.1 (by rw [hidx]; exact Int.natAbs_ne_zero.2 hn)
+    Subgroup.index_ne_zero_iff_finite.1 (by simp [hn])
   exact (card_src_eq_bassSerreTree_loop
     (zpowGroupHom (α := Multiplicative ℤ) m) (zpowGroupHom (α := Multiplicative ℤ) n)
-    (zpow_left_injective hm) (zpow_left_injective hn) x).trans
-    (by rw [hidx, hidx])
+    (zpow_left_injective hm) (zpow_left_injective hn) x).trans (by simp)
 
 /-- Every vertex of the Bass–Serre tree of `BS(1, 2)` has degree `3`. -/
 theorem card_src_eq_bassSerreTree_baumslagSolitar_one_two
@@ -210,24 +183,36 @@ private theorem segment_range_αArrow_true :
         SerreGraph.segment.src true ⟶ SerreGraph.segment.tgt true)).range = g.range :=
   congrArg MonoidHom.range (((segment f g hf hg).αArrow_mk true).trans (segment_α_true f g hf hg))
 
+private noncomputable def segmentOutStarEquiv (b : SerreGraph.segment.E)
+    {v₀ : SerreGraph.segment.V} (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src b⟩) :
+    (segment f g hf hg).vertexGroup (SerreGraph.segment.src b) ⧸
+      ((segment f g hf hg).αArrow
+        (⟨b, rfl, rfl⟩ : SerreGraph.segment.src b ⟶ SerreGraph.segment.tgt b)).range ≃
+      {d : ((segment f g hf hg).bassSerreTree v₀).E //
+        ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p} :=
+  (bassSerreOutDartEquiv p
+    (⟨b, rfl, rfl⟩ : SerreGraph.segment.src b ⟶ SerreGraph.segment.tgt b)).trans <|
+    Equiv.subtypeEquivRight fun d => and_iff_left_of_imp fun hd =>
+      SerreGraph.segment_src_injective <| (src_bassSerreDartProj d).trans
+        ((congrArg bassSerreVertexProj hd).trans (bassSerreVertexProj_bassSerreVertex p))
+
+private theorem segmentOutStarEquiv_mk_val (b : SerreGraph.segment.E) {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src b⟩)
+    (x : (segment f g hf hg).vertexGroup (SerreGraph.segment.src b)) :
+    (segmentOutStarEquiv f g hf hg b p
+      (x : (segment f g hf hg).vertexGroup (SerreGraph.segment.src b) ⧸ _)).1 =
+      bassSerreDart (p.cons (Letter.vertex x))
+        (⟨b, rfl, rfl⟩ : SerreGraph.segment.src b ⟶ SerreGraph.segment.tgt b) :=
+  bassSerreOutDartEquiv_mk_val p _ x
+
 /-- At a vertex `p A` over `false` in the Bass–Serre tree of `segment f g hf hg`, the outgoing darts
 correspond bijectively to the left cosets `A ⧸ f.range`. -/
 noncomputable def segmentStarEquivFalse {v₀ : SerreGraph.segment.V}
     (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src false⟩) :
-    A ⧸ f.range ≃
-      {d : ((segment f g hf hg).bassSerreTree v₀).E //
-        ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p} :=
-  ((Subgroup.quotientEquivOfEq (segment_range_αArrow_false f g hf hg).symm).trans
-    (bassSerreOutDartEquiv p
-      (⟨false, rfl, rfl⟩ :
-        SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false))).trans
-    { toFun d := ⟨d.1, d.2.1⟩
-      invFun d := ⟨d.1, d.2, by
-        have h := bassSerreDartProj_src d.1
-        rw [d.2, bassSerreVertexProj_bassSerreVertex] at h
-        exact h⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
+    A ⧸ f.range ≃ {d : ((segment f g hf hg).bassSerreTree v₀).E //
+      ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p} :=
+  (Subgroup.quotientEquivOfEq (segment_range_αArrow_false f g hf hg).symm).trans
+    (segmentOutStarEquiv f g hf hg false p)
 
 @[simp] theorem segmentStarEquivFalse_mk_val {v₀ : SerreGraph.segment.V}
     (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src false⟩) (x : A) :
@@ -236,29 +221,18 @@ noncomputable def segmentStarEquivFalse {v₀ : SerreGraph.segment.V}
         (p.cons (Letter.vertex (x : (segment f g hf hg).vertexGroup
           (SerreGraph.segment.src false))))
         (⟨false, rfl, rfl⟩ : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false) :=
-  (congrArg (fun q => (bassSerreOutDartEquiv p
-        (⟨false, rfl, rfl⟩ : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false) q).1)
+  (congrArg (fun q => (segmentOutStarEquiv f g hf hg false p q).1)
       (Subgroup.quotientEquivOfEq_mk (segment_range_αArrow_false f g hf hg).symm x)).trans
-    (bassSerreOutDartEquiv_mk_val p _ x)
+    (segmentOutStarEquiv_mk_val f g hf hg false p x)
 
 /-- At a vertex `p B` over `true` in the Bass–Serre tree of `segment f g hf hg`, the outgoing darts
 correspond bijectively to the left cosets `B ⧸ g.range`. -/
 noncomputable def segmentStarEquivTrue {v₀ : SerreGraph.segment.V}
     (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src true⟩) :
-    B ⧸ g.range ≃
-      {d : ((segment f g hf hg).bassSerreTree v₀).E //
-        ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p} :=
-  ((Subgroup.quotientEquivOfEq (segment_range_αArrow_true f g hf hg).symm).trans
-    (bassSerreOutDartEquiv p
-      (⟨true, rfl, rfl⟩ :
-        SerreGraph.segment.src true ⟶ SerreGraph.segment.tgt true))).trans
-    { toFun d := ⟨d.1, d.2.1⟩
-      invFun d := ⟨d.1, d.2, by
-        have h := bassSerreDartProj_src d.1
-        rw [d.2, bassSerreVertexProj_bassSerreVertex] at h
-        exact h⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
+    B ⧸ g.range ≃ {d : ((segment f g hf hg).bassSerreTree v₀).E //
+      ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p} :=
+  (Subgroup.quotientEquivOfEq (segment_range_αArrow_true f g hf hg).symm).trans
+    (segmentOutStarEquiv f g hf hg true p)
 
 @[simp] theorem segmentStarEquivTrue_mk_val {v₀ : SerreGraph.segment.V}
     (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src true⟩) (x : B) :
@@ -267,89 +241,119 @@ noncomputable def segmentStarEquivTrue {v₀ : SerreGraph.segment.V}
         (p.cons (Letter.vertex (x : (segment f g hf hg).vertexGroup
           (SerreGraph.segment.src true))))
         (⟨true, rfl, rfl⟩ : SerreGraph.segment.src true ⟶ SerreGraph.segment.tgt true) :=
-  (congrArg (fun q => (bassSerreOutDartEquiv p
-        (⟨true, rfl, rfl⟩ : SerreGraph.segment.src true ⟶ SerreGraph.segment.tgt true) q).1)
+  (congrArg (fun q => (segmentOutStarEquiv f g hf hg true p q).1)
       (Subgroup.quotientEquivOfEq_mk (segment_range_αArrow_true f g hf hg).symm x)).trans
-    (bassSerreOutDartEquiv_mk_val p _ x)
+    (segmentOutStarEquiv_mk_val f g hf hg true p x)
 
 section FreeProduct
 
 variable [Subsingleton C]
 
-/-- When the amalgamated subgroup `C` is trivial (`A ∗ B`), the outgoing darts at the base vertex
-`1 · A` correspond bijectively to `A`. -/
-noncomputable def segmentFreeStarEquivFalse :
-    A ≃ {d : ((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).E //
-      ((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).src d =
-        (segment f g hf hg).bassSerreBase (SerreGraph.segment.src false)} :=
-  ((Equiv.ofBijective (fun x : A => (x : A ⧸ f.range))
-    ⟨fun x₁ x₂ h => by
-      obtain ⟨c, hc⟩ := MonoidHom.mem_range.1 (QuotientGroup.eq.1 h)
-      rw [Subsingleton.elim c 1, map_one] at hc
-      exact inv_mul_eq_one.1 hc.symm,
-    fun q => Quotient.inductionOn q fun x => ⟨x, rfl⟩⟩).trans
-    (segmentStarEquivFalse f g hf hg .nil)).trans
-    { toFun d := ⟨d.1, d.2.trans bassSerreVertex_nil⟩
-      invFun d := ⟨d.1, d.2.trans bassSerreVertex_nil.symm⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
+/-- When the amalgamated subgroup `C` is trivial (`A ∗ B`), the outgoing darts at a vertex `p A`
+over `false` correspond bijectively to `A`. -/
+noncomputable def segmentFreeStarEquivFalse {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src false⟩) :
+    A ≃ {d : ((segment f g hf hg).bassSerreTree v₀).E //
+      ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p} :=
+  ((QuotientGroup.quotientEquivSelf A).symm.trans
+    (Subgroup.quotientEquivOfEq (f.range_eq_bot_iff.mpr (Subsingleton.elim f 1)).symm)).trans
+    (segmentStarEquivFalse f g hf hg p)
 
-/-- Evaluating `segmentFreeStarEquivFalse` at `x : A` gives the dart represented by `x` and the
-positive edge of `segment`. -/
-theorem segmentFreeStarEquivFalse_apply_val (x : A) :
-    (segmentFreeStarEquivFalse f g hf hg x).1 =
+/-- Evaluating `segmentFreeStarEquivFalse` at `x : A` gives the dart `(p x, false)`. -/
+@[simp] theorem segmentFreeStarEquivFalse_apply_val {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src false⟩) (x : A) :
+    (segmentFreeStarEquivFalse f g hf hg p x).1 =
       bassSerreDart
-        (Path.ofVertex (𝔸 := segment f g hf hg) (a := SerreGraph.segment.src false) x)
+        (p.cons (Letter.vertex (x : (segment f g hf hg).vertexGroup
+          (SerreGraph.segment.src false))))
         (⟨false, rfl, rfl⟩ : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false) :=
-  (segmentStarEquivFalse_mk_val f g hf hg .nil x).trans
-    (congrArg (fun q => bassSerreDart q
-        (⟨false, rfl, rfl⟩ : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false))
-      (Path.ofVertex_eq_nil_cons (𝔸 := segment f g hf hg)
-        (a := SerreGraph.segment.src false) x).symm)
+  (congrArg (fun q => (segmentStarEquivFalse f g hf hg p q).1)
+      (Subgroup.quotientEquivOfEq_mk
+        (f.range_eq_bot_iff.mpr (Subsingleton.elim f 1)).symm x)).trans
+    (segmentStarEquivFalse_mk_val f g hf hg p x)
 
-/-- When the amalgamated subgroup `C` is trivial (`A ∗ B`), the adjacent vertices of the base vertex
-`1 · A` in the Bass–Serre tree are the translates `a • (e · B)` for `a : A`. -/
-noncomputable def segmentFreeNeighbourEquivFalse :
-    A ≃ {y : ((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).V //
-      ∃ d : ((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).E,
-        ((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).src d =
-          (segment f g hf hg).bassSerreBase (SerreGraph.segment.src false) ∧
-          ((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).tgt d = y} :=
-  (segmentFreeStarEquivFalse f g hf hg).trans <|
-    Equiv.ofBijective
-      (fun d =>
-        ⟨((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).tgt d.1,
-          d.1, d.2, rfl⟩)
-      ⟨fun ⟨_, h₁⟩ ⟨_, h₂⟩ h => Subtype.ext <|
-        ((segment f g hf hg).bassSerreTree (SerreGraph.segment.src false)).isAcyclic
-          |>.eq_of_src_eq_of_tgt_eq (h₁.trans h₂.symm) (congrArg Subtype.val h),
-      fun ⟨_, d, hsrc, htgt⟩ => ⟨⟨d, hsrc⟩, Subtype.ext htgt⟩⟩
+/-- When the amalgamated subgroup `C` is trivial (`A ∗ B`), the outgoing darts at a vertex `p B`
+over `true` correspond bijectively to `B`. -/
+noncomputable def segmentFreeStarEquivTrue {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src true⟩) :
+    B ≃ {d : ((segment f g hf hg).bassSerreTree v₀).E //
+      ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p} :=
+  ((QuotientGroup.quotientEquivSelf B).symm.trans
+    (Subgroup.quotientEquivOfEq (g.range_eq_bot_iff.mpr (Subsingleton.elim g 1)).symm)).trans
+    (segmentStarEquivTrue f g hf hg p)
 
-/-- Evaluating `segmentFreeNeighbourEquivFalse` at `x : A` gives the translate `x • (e · B)`. -/
-theorem segmentFreeNeighbourEquivFalse_apply_val (x : A) :
-    (segmentFreeNeighbourEquivFalse f g hf hg x).1 =
-      π₁.vertexHom (𝔸 := segment f g hf hg)
-          (Quiver.Path.nil : (segment f g hf hg).Path
-            ⟨SerreGraph.segment.src false⟩ ⟨SerreGraph.segment.src false⟩) x •
-        bassSerreVertex (Path.ofDart (𝔸 := segment f g hf hg)
-          (⟨false, rfl, rfl⟩ : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false)) := by
-  let v₀ : SerreGraph.segment.V := SerreGraph.segment.src false
-  let e₀ : v₀ ⟶ SerreGraph.segment.tgt false := ⟨false, rfl, rfl⟩
-  let px : (segment f g hf hg).Path ⟨v₀⟩ ⟨v₀⟩ :=
-    Path.ofVertex (𝔸 := segment f g hf hg) (a := v₀) x
-  let pe : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.tgt false⟩ :=
-    Path.ofDart (𝔸 := segment f g hf hg) e₀
-  have hrhs :
-      π₁.vertexHom (𝔸 := segment f g hf hg)
-          (Quiver.Path.nil : (segment f g hf hg).Path ⟨v₀⟩ ⟨v₀⟩) x • bassSerreVertex pe =
-        bassSerreVertex (px.cons (Letter.dart e₀)) :=
-    (congrArg (· • bassSerreVertex pe)
-      (π₁.vertexHom_nil_apply (𝔸 := segment f g hf hg) (a := v₀) x)).trans
-      ((mk_smul_bassSerreVertex px pe).trans
-        (congrArg bassSerreVertex (Path.comp_ofDart px e₀)))
-  exact (congrArg ((segment f g hf hg).bassSerreTree v₀).tgt
-      (segmentFreeStarEquivFalse_apply_val f g hf hg x)).trans
-    ((tgt_bassSerreDart px e₀).trans hrhs.symm)
+/-- Evaluating `segmentFreeStarEquivTrue` at `x : B` gives the dart `(p x, true)`. -/
+@[simp] theorem segmentFreeStarEquivTrue_apply_val {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src true⟩) (x : B) :
+    (segmentFreeStarEquivTrue f g hf hg p x).1 =
+      bassSerreDart
+        (p.cons (Letter.vertex (x : (segment f g hf hg).vertexGroup
+          (SerreGraph.segment.src true))))
+        (⟨true, rfl, rfl⟩ : SerreGraph.segment.src true ⟶ SerreGraph.segment.tgt true) :=
+  (congrArg (fun q => (segmentStarEquivTrue f g hf hg p q).1)
+      (Subgroup.quotientEquivOfEq_mk
+        (g.range_eq_bot_iff.mpr (Subsingleton.elim g 1)).symm x)).trans
+    (segmentStarEquivTrue_mk_val f g hf hg p x)
+
+omit [Subsingleton C] in
+private theorem vertexHom_smul_bassSerreVertex_cons_dart {v₀ v v' : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨v⟩)
+    (x : (segment f g hf hg).vertexGroup v) (e : v ⟶ v') :
+    π₁.vertexHom p x • bassSerreVertex (p.cons (Letter.dart e)) =
+      bassSerreVertex ((p.cons (Letter.vertex x)).cons (Letter.dart e)) := by
+  rw [π₁.vertexHom_apply, mk_smul_bassSerreVertex, ← Path.comp_ofDart p e, ← Path.comp_ofDart,
+    ← Path.comp_ofVertex]
+  exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp_comp _ p _)
+
+/-- When the amalgamated subgroup `C` is trivial (`A ∗ B`), the adjacent vertices of `p A` over
+`false` in the Bass–Serre tree correspond bijectively to `A`. -/
+noncomputable def segmentFreeNeighborEquivFalse {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src false⟩) :
+    A ≃ {y : ((segment f g hf hg).bassSerreTree v₀).V //
+      ∃ d : ((segment f g hf hg).bassSerreTree v₀).E,
+        ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p ∧
+          ((segment f g hf hg).bassSerreTree v₀).tgt d = y} :=
+  (segmentFreeStarEquivFalse f g hf hg p).trans
+    (((segment f g hf hg).bassSerreTree v₀).isAcyclic.outDartEquivNeighbor (bassSerreVertex p))
+
+/-- Evaluating `segmentFreeNeighborEquivFalse` at `x : A` gives `(π₁.vertexHom p x) • (p e · B)`. -/
+@[simp] theorem segmentFreeNeighborEquivFalse_apply_val {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src false⟩) (x : A) :
+    (segmentFreeNeighborEquivFalse f g hf hg p x).1 =
+      π₁.vertexHom p (x : (segment f g hf hg).vertexGroup (SerreGraph.segment.src false)) •
+        bassSerreVertex (p.cons (Letter.dart
+          (⟨false, rfl, rfl⟩ : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false))) :=
+  (((segment f g hf hg).bassSerreTree v₀).isAcyclic.outDartEquivNeighbor_apply_val
+      (bassSerreVertex p) (segmentFreeStarEquivFalse f g hf hg p x)).trans
+    ((congrArg ((segment f g hf hg).bassSerreTree v₀).tgt
+        (segmentFreeStarEquivFalse_apply_val f g hf hg p x)).trans
+      ((tgt_bassSerreDart _ _).trans
+        (vertexHom_smul_bassSerreVertex_cons_dart f g hf hg p _ _).symm))
+
+/-- When the amalgamated subgroup `C` is trivial (`A ∗ B`), the adjacent vertices of `p B` over
+`true` in the Bass–Serre tree correspond bijectively to `B`. -/
+noncomputable def segmentFreeNeighborEquivTrue {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src true⟩) :
+    B ≃ {y : ((segment f g hf hg).bassSerreTree v₀).V //
+      ∃ d : ((segment f g hf hg).bassSerreTree v₀).E,
+        ((segment f g hf hg).bassSerreTree v₀).src d = bassSerreVertex p ∧
+          ((segment f g hf hg).bassSerreTree v₀).tgt d = y} :=
+  (segmentFreeStarEquivTrue f g hf hg p).trans
+    (((segment f g hf hg).bassSerreTree v₀).isAcyclic.outDartEquivNeighbor (bassSerreVertex p))
+
+/-- Evaluating `segmentFreeNeighborEquivTrue` at `x : B` gives `(π₁.vertexHom p x) • (p e · A)`. -/
+@[simp] theorem segmentFreeNeighborEquivTrue_apply_val {v₀ : SerreGraph.segment.V}
+    (p : (segment f g hf hg).Path ⟨v₀⟩ ⟨SerreGraph.segment.src true⟩) (x : B) :
+    (segmentFreeNeighborEquivTrue f g hf hg p x).1 =
+      π₁.vertexHom p (x : (segment f g hf hg).vertexGroup (SerreGraph.segment.src true)) •
+        bassSerreVertex (p.cons (Letter.dart
+          (⟨true, rfl, rfl⟩ : SerreGraph.segment.src true ⟶ SerreGraph.segment.tgt true))) :=
+  (((segment f g hf hg).bassSerreTree v₀).isAcyclic.outDartEquivNeighbor_apply_val
+      (bassSerreVertex p) (segmentFreeStarEquivTrue f g hf hg p x)).trans
+    ((congrArg ((segment f g hf hg).bassSerreTree v₀).tgt
+        (segmentFreeStarEquivTrue_apply_val f g hf hg p x)).trans
+      ((tgt_bassSerreDart _ _).trans
+        (vertexHom_smul_bassSerreVertex_cons_dart f g hf hg p _ _).symm))
 
 end FreeProduct
 
@@ -359,34 +363,33 @@ section FreeProductInt
 
 /-- The segment of groups for the free product `ℤ ∗ ℤ`, amalgamating two copies of
 `Multiplicative ℤ` over the trivial group `PUnit`. -/
-def freeProductInt : GraphOfGroups.{0, 0, 0, 0} SerreGraph.segment :=
+abbrev freeProductInt : GraphOfGroups.{0, 0, 0, 0} SerreGraph.segment :=
   segment (1 : PUnit →* Multiplicative ℤ) (1 : PUnit →* Multiplicative ℤ)
     (Function.injective_of_subsingleton _) (Function.injective_of_subsingleton _)
 
-/-- In the Bass–Serre tree of `ℤ ∗ ℤ`, the outgoing star of the base vertex `1 · ℤ` has countably
-infinite cardinality `ℵ₀`. -/
-theorem mk_star_freeProduct_int :
-    Cardinal.mk {d : (freeProductInt.bassSerreTree (SerreGraph.segment.src false)).E //
-        (freeProductInt.bassSerreTree (SerreGraph.segment.src false)).src d =
-          freeProductInt.bassSerreBase (SerreGraph.segment.src false)} = Cardinal.aleph0 := by
+/-- In the Bass–Serre tree of `ℤ ∗ ℤ`, the outgoing star of every vertex has cardinality `ℵ₀`. -/
+theorem mk_star_freeProductInt (v₀ : SerreGraph.segment.V)
+    (x : (freeProductInt.bassSerreTree v₀).V) :
+    Cardinal.mk {d : (freeProductInt.bassSerreTree v₀).E //
+        (freeProductInt.bassSerreTree v₀).src d = x} = Cardinal.aleph0 := by
+  induction x using bassSerreVertex_induction_on with | @h v p
   rw [← Cardinal.mk_int]
-  exact Cardinal.mk_congr
-    ((segmentFreeStarEquivFalse (1 : PUnit →* Multiplicative ℤ)
-      (1 : PUnit →* Multiplicative ℤ) _ _).symm.trans Multiplicative.toAdd)
+  cases v
+  · exact Cardinal.mk_congr ((segmentFreeStarEquivFalse (1 : PUnit →* Multiplicative ℤ)
+      (1 : PUnit →* Multiplicative ℤ) _ _ p).symm.trans Multiplicative.toAdd)
+  · exact Cardinal.mk_congr ((segmentFreeStarEquivTrue (1 : PUnit →* Multiplicative ℤ)
+      (1 : PUnit →* Multiplicative ℤ) _ _ p).symm.trans Multiplicative.toAdd)
 
-/-- In the Bass–Serre tree of `ℤ ∗ ℤ`, the set of neighbour vertices `a ^ k • ⟨b⟩` of the base
-vertex `⟨a⟩` has countably infinite cardinality `ℵ₀`. -/
-theorem mk_neighbours_freeProduct_int :
-    Cardinal.mk {y : (freeProductInt.bassSerreTree (SerreGraph.segment.src false)).V //
-        ∃ d : (freeProductInt.bassSerreTree (SerreGraph.segment.src false)).E,
-          (freeProductInt.bassSerreTree (SerreGraph.segment.src false)).src d =
-            freeProductInt.bassSerreBase (SerreGraph.segment.src false) ∧
-            (freeProductInt.bassSerreTree (SerreGraph.segment.src false)).tgt d = y} =
-      Cardinal.aleph0 := by
-  rw [← Cardinal.mk_int]
-  exact Cardinal.mk_congr
-    ((segmentFreeNeighbourEquivFalse (1 : PUnit →* Multiplicative ℤ)
-      (1 : PUnit →* Multiplicative ℤ) _ _).symm.trans Multiplicative.toAdd)
+/-- In the Bass–Serre tree of `ℤ ∗ ℤ`, the neighbor set of every vertex has cardinality `ℵ₀`. -/
+theorem mk_neighbors_freeProductInt (v₀ : SerreGraph.segment.V)
+    (x : (freeProductInt.bassSerreTree v₀).V) :
+    Cardinal.mk {y : (freeProductInt.bassSerreTree v₀).V //
+        ∃ d : (freeProductInt.bassSerreTree v₀).E,
+          (freeProductInt.bassSerreTree v₀).src d = x ∧
+            (freeProductInt.bassSerreTree v₀).tgt d = y} = Cardinal.aleph0 :=
+  (Cardinal.mk_congr
+    ((freeProductInt.bassSerreTree v₀).isAcyclic.outDartEquivNeighbor x).symm).trans
+    (mk_star_freeProductInt v₀ x)
 
 end FreeProductInt
 
@@ -394,15 +397,14 @@ end FreeProductInt
 
 section Disconnected
 
-/-- On the graph `SerreGraph.noEdge Bool` of two isolated vertices, the Bass–Serre tree at `false`
-has `1` vertex. -/
-theorem card_bassSerreTree_noEdge_bool :
+/-- On `SerreGraph.noEdge Bool`, the Bass–Serre tree at `false` has `1` vertex. -/
+theorem card_bassSerreTree_noEdge_bool_V :
     Nat.card ((trivial (SerreGraph.noEdge.{0, 0} Bool)).bassSerreTree false).V = 1 :=
   Nat.card_unique
 
 /-- On `SerreGraph.noEdge Bool`, the `π₁`-quotient of the Bass–Serre tree at `false` has `1`
-vertex, whereas the ambient graph has `2`. -/
-theorem card_quotient_bassSerreTree_noEdge_bool :
+vertex. -/
+theorem card_quotient_bassSerreTree_noEdge_bool_V :
     Nat.card ((trivial (SerreGraph.noEdge.{0, 0} Bool)).bassSerreTree false).quotient.V = 1 :=
   Nat.card_unique
 
@@ -414,14 +416,11 @@ theorem isEmpty_quotient_bassSerreTree_iso_noEdge_bool :
       (SerreGraph.noEdge.{0, 0} Bool)) :=
   ⟨fun φ => by
     have h := Nat.card_congr φ.equivV
-    rw [card_quotient_bassSerreTree_noEdge_bool] at h
+    rw [card_quotient_bassSerreTree_noEdge_bool_V] at h
     have h2 : Nat.card (SerreGraph.noEdge.{0, 0} Bool).V = 2 := by
-      rw [Nat.card_eq_fintype_card]
-      exact Fintype.card_bool
+      rw [Nat.card_eq_fintype_card]; exact Fintype.card_bool
     omega⟩
 
 end Disconnected
 
-end GraphOfGroups
-
-end TauCeti
+end TauCeti.GraphOfGroups
