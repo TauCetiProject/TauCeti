@@ -111,19 +111,36 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
 
-/-- On a positive-dimensional space, a constant potential on an open set,
-extended by `⊤` outside it, has zero Monge–Ampère measure. -/
-theorem mongeAmpereMeasure_ite_const [Nontrivial E] {U : Set E}
-    [DecidablePred (· ∈ U)] (hU : IsOpen U) (c : ℝ) :
+omit [μ.IsAddHaarMeasure] in
+/-- On a positive-dimensional space, a constant potential on any set, extended by `⊤` outside it,
+has zero Monge–Ampère measure with respect to any measure `μ`: its only subgradient at an interior
+point of the set is `0`, and a point is null for every additive Haar measure. -/
+theorem mongeAmpereMeasure_ite_const [Nontrivial E] {U : Set E} [DecidablePred (· ∈ U)] (c : ℝ) :
     mongeAmpereMeasure μ (fun y => if y ∈ U then (c : EReal) else ⊤) = 0 := by
-  by_cases hUc : Convex ℝ U
+  by_cases hf : Convex ℝ {p : E × ℝ | (if p.1 ∈ U then (c : EReal) else ⊤) ≤ p.2}
   swap
-  · -- A convex epigraph would make the constant convex on `U`, so `U` convex.
-    exact mongeAmpereMeasure_eq_zero_of_not_convex μ fun hconv =>
-      hUc ((convexOn_iff_convex_epigraph_ite (u := fun _ => c)).2 hconv).1
-  have hdim : finrank ℝ E ≠ 0 := (finrank_pos (R := ℝ) (M := E)).ne'
-  simpa only [zero_div, zero_mul, zero_add, zero_pow hdim, ENNReal.ofReal_zero, zero_smul]
-    using mongeAmpereMeasure_ite_mul_norm_sq_add μ hU hUc (a := 0) le_rfl c
+  · exact mongeAmpereMeasure_eq_zero_of_not_convex μ hf
+  by_cases hμ : μ ≪ (addHaar : Measure E)
+  swap
+  · exact mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous μ hμ
+  ext s hs
+  rw [mongeAmpereMeasure_apply μ hf ite_ne_bot hμ hs, setOf_ite_ne_top, _root_.zero_apply]
+  refine measure_mono_null (fun y hy => ?_) (hμ (measure_singleton 0))
+  -- A subgradient `y` at an interior point `x` of `U`, tested at `x + t • y` for a small `t > 0`,
+  -- has `t ‖y‖² ≤ 0`.
+  obtain ⟨x, hx, hxy⟩ := (mem_subgradientImage_iff _).1 hy
+  have hsub := (mem_subdifferential_ite_iff (innerₗ E) (u := fun _ => c)
+    (interior_subset hx.2)).1 hxy
+  have hU : ∀ᶠ t : ℝ in nhds 0, x + t • y ∈ U :=
+    (by fun_prop : Continuous fun t : ℝ => x + t • y).continuousAt.eventually_mem
+      (by simpa using mem_interior_iff_mem_nhds.1 hx.2)
+  obtain ⟨t, htU, ht⟩ := ((hU.filter_mono nhdsWithin_le_nhds).and
+    (self_mem_nhdsWithin : Ioi (0 : ℝ) ∈ nhdsWithin 0 (Ioi 0))).exists
+  have h := hsub _ htU
+  simp only [add_sub_cancel_left, innerₗ_apply_apply, real_inner_smul_left,
+    real_inner_self_eq_norm_sq, add_le_iff_nonpos_right] at h
+  exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1
+    ((nonpos_of_mul_nonpos_right h ht).antisymm (sq_nonneg _)))
 
 /-- **Subtracting a plane on a section.** Let `u` be convex on an open set `Ω`, and let
 `S = {y ∈ Ω | u y < u x + ℓ (y - x) + h}`. The Monge–Ampère measure of `u + L + c`, extended by
@@ -389,29 +406,33 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
     linarith [norm_sub_le (T x₀) z]
   simpa using hC G v 2 hGo hGb hv hvc hfr x₀ hx₀ hd
 
-omit [Nontrivial E] in
-/-- The dimension-zero case of `exists_mul_measure_sq_le_mul_ofReal_pow`: in a subsingleton space
-`MA_v(G) = μ univ` for nonempty `G`, and `μ univ` is finite. -/
-private theorem exists_mul_measure_sq_le_mul_ofReal_pow_of_subsingleton [Subsingleton E] :
-    ∃ C : ℝ≥0, ∀ (G : Set E) [DecidablePred (· ∈ G)] (v : E → ℝ) (lam : ℝ≥0) (h : ℝ),
-      IsOpen G → Bornology.IsBounded G → ConvexOn ℝ G v → ContinuousOn v (closure G) →
-      (∀ x ∈ frontier G, v x ≤ 0) → (∀ x ∈ G, -h ≤ v x) →
-      (lam : ℝ≥0∞) • μ.restrict G ≤
-        mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) →
-      lam * μ G ^ 2 ≤ C * ENNReal.ofReal h ^ finrank ℝ E := by
-  classical
-  refine ⟨(μ univ * μ univ).toNNReal, fun G _ v lam h hGo _ hv _ _ _ hMA => ?_⟩
-  rw [finrank_zero_of_subsingleton, pow_zero, mul_one,
-    ENNReal.coe_toNNReal (ENNReal.mul_ne_top (measure_ne_top μ univ) (measure_ne_top μ univ)),
-    pow_two, ← mul_assoc]
-  rcases G.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · simp
+omit [Nontrivial E] [μ.IsAddHaarMeasure] in
+/-- If `λ μ ≤ MA_v` on `G`, for the Monge–Ampère measure of `v` extended by `⊤` off `G`, then
+`λ μ(G)² ≤ μ(univ)²`: the Monge–Ampère mass of the whole space is the `μ`-measure of a set of
+subgradients, or `0`. This is the volume bound in dimension zero, where `μ` is finite. -/
+private theorem mul_measure_sq_le_measure_univ_sq {G : Set E} [DecidablePred (· ∈ G)]
+    {v : E → ℝ} {lam : ℝ≥0} (hMA : (lam : ℝ≥0∞) • μ.restrict G ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤)) :
+    lam * μ G ^ 2 ≤ μ univ ^ 2 := by
+  have hMAu : mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) univ ≤
+      μ univ := by
+    by_cases hf : Convex ℝ {p : E × ℝ | (if p.1 ∈ G then (v p.1 : EReal) else ⊤) ≤ p.2}
+    swap
+    · rw [mongeAmpereMeasure_eq_zero_of_not_convex μ hf, _root_.zero_apply]
+      exact zero_le
+    by_cases hμ : μ ≪ (addHaar : Measure E)
+    swap
+    · rw [mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous μ hμ, _root_.zero_apply]
+      exact zero_le
+    rw [mongeAmpereMeasure_apply μ hf ite_ne_bot hμ MeasurableSet.univ]
+    exact measure_mono (subset_univ _)
   have h₁ : (lam : ℝ≥0∞) * μ G ≤ μ univ :=
-    calc (lam : ℝ≥0∞) * μ G = ((lam : ℝ≥0∞) • μ.restrict G) G := by
-          rw [_root_.smul_apply, Measure.restrict_apply_self, smul_eq_mul]
-      _ ≤ mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G :=
-          Measure.le_iff'.1 hMA G
-      _ = μ univ := mongeAmpereMeasure_ite_self_of_subsingleton μ hGo hv hx₀
+    calc (lam : ℝ≥0∞) * μ G = ((lam : ℝ≥0∞) • μ.restrict G) univ := by
+          rw [_root_.smul_apply, Measure.restrict_apply_univ, smul_eq_mul]
+      _ ≤ mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) univ :=
+          Measure.le_iff'.1 hMA univ
+      _ ≤ μ univ := hMAu
+  rw [pow_two, pow_two, ← mul_assoc]
   exact mul_le_mul' h₁ (measure_mono (subset_univ _))
 
 omit [Nontrivial E] in
@@ -429,7 +450,10 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
       lam * μ G ^ 2 ≤ C * ENNReal.ofReal h ^ finrank ℝ E := by
   classical
   rcases subsingleton_or_nontrivial E with _ | _
-  · exact exists_mul_measure_sq_le_mul_ofReal_pow_of_subsingleton μ
+  · refine ⟨(μ univ ^ 2).toNNReal, fun G _ v lam h _ _ _ _ _ _ hMA => ?_⟩
+    rw [finrank_zero_of_subsingleton, pow_zero, mul_one,
+      ENNReal.coe_toNNReal (ENNReal.pow_ne_top (measure_ne_top μ univ))]
+    exact mul_measure_sq_le_measure_univ_sq μ hMA
   obtain ⟨r, hr, hnorm⟩ := exists_affineEquiv_ball_subset_image_subset_ball E
   set n := finrank ℝ E
   have hn : n ≠ 0 := finrank_pos.ne'
