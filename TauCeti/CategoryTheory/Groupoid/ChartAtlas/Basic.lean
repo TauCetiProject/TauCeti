@@ -53,7 +53,7 @@ between chart atlases induce functors and natural isomorphisms between their pre
 * A. Adem, J. Leida and Y. Ruan, *Orbifolds and Stringy Topology*, Chapter 1.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory MulAction
 
@@ -134,6 +134,17 @@ theorem comp_congr {i j k : ι} {α α' : R i j} {β β' : R j k}
   subst hα hβ
   rfl
 
+/-- Uniqueness of right inverses: if composing `α` with `β` gives the source unit, then
+`𝓐.inv α = β`. -/
+theorem inv_eq_of_comp_eq_unit {i j : ι} {α : R i j} {β : R j i}
+    (h : 𝓐.tgt α = 𝓐.src β) (hcomp : 𝓐.comp α β h = 𝓐.unit i (𝓐.src α)) :
+    𝓐.inv α = β := by
+  calc 𝓐.inv α
+      = 𝓐.comp (𝓐.inv α) (𝓐.unit i (𝓐.src α)) (by simp) := by simp
+    _ = 𝓐.comp (𝓐.inv α) (𝓐.comp α β h) (by simp) := 𝓐.comp_congr rfl hcomp.symm _ _
+    _ = 𝓐.comp (𝓐.comp (𝓐.inv α) α (𝓐.tgt_inv α)) β _ := (𝓐.comp_assoc _ _ _ _ _).symm
+    _ = β := by simp
+
 /-- Two chart atlases on the same actions and overlap types are equal when their sources, targets,
 and compositions agree; units and inverses are then uniquely determined. -/
 @[ext]
@@ -151,17 +162,9 @@ theorem ext {𝓐 𝓑 : ChartAtlas G U R}
       ((hcomp _ _ h₁ h₂).symm.trans (𝓐.unit_comp x (𝓑.unit i x) h₁))
   have hinv : @𝓐.inv = @𝓑.inv := by
     funext i j α
-    have h₁ : 𝓐.tgt (𝓐.inv α) = 𝓐.src α := 𝓐.tgt_inv α
     have h₂ : 𝓐.tgt α = 𝓐.src (𝓑.inv α) := by rw [htgt, hsrc]; simp
-    have h₂' : 𝓑.tgt α = 𝓑.src (𝓑.inv α) := (𝓑.src_inv α).symm
-    have h₃ : 𝓐.tgt (𝓐.inv α) = 𝓐.src (𝓐.comp α (𝓑.inv α) h₂) := by simp
-    calc 𝓐.inv α
-        = 𝓐.comp (𝓐.inv α) (𝓐.unit i (𝓐.src α)) (by simp) := by simp
-      _ = 𝓐.comp (𝓐.inv α) (𝓐.comp α (𝓑.inv α) h₂) h₃ := by
-          refine 𝓐.comp_congr rfl ?_ _ _
-          rw [hcomp α (𝓑.inv α) h₂ h₂', 𝓑.comp_inv, ← hsrc, hunit]
-      _ = 𝓐.comp (𝓐.comp (𝓐.inv α) α h₁) (𝓑.inv α) _ := (𝓐.comp_assoc _ _ _ _ _).symm
-      _ = 𝓑.inv α := by simp
+    refine 𝓐.inv_eq_of_comp_eq_unit h₂ ?_
+    rw [hcomp α (𝓑.inv α) h₂ (𝓑.src_inv α).symm, 𝓑.comp_inv, ← hsrc, hunit]
   cases 𝓐
   cases 𝓑
   have hs : _ = _ := funext fun i ↦ funext fun j ↦ funext (@hsrc i j)
@@ -171,19 +174,33 @@ theorem ext {𝓐 𝓑 : ChartAtlas G U R}
   funext i j k α β h
   exact hcomp α β h h
 
+/-- The inverse of a unit overlap arrow is itself. -/
+@[simp]
+theorem inv_unit (i : ι) (x : U i) : 𝓐.inv (𝓐.unit i x) = 𝓐.unit i x :=
+  𝓐.inv_eq_of_comp_eq_unit (by simp) (by simp)
+
 /-- Inversion on overlap arrows is an involution. -/
 @[simp]
-theorem inv_inv {i j : ι} (α : R i j) : 𝓐.inv (𝓐.inv α) = α := by
-  calc 𝓐.inv (𝓐.inv α)
-      = 𝓐.comp (𝓐.inv (𝓐.inv α)) (𝓐.comp (𝓐.inv α) α (𝓐.tgt_inv α)) (by simp) := by simp
-    _ = 𝓐.comp (𝓐.comp (𝓐.inv (𝓐.inv α)) (𝓐.inv α) (𝓐.tgt_inv _)) α _ :=
-        (𝓐.comp_assoc _ _ _ _ _).symm
-    _ = α := by simp
+theorem inv_inv {i j : ι} (α : R i j) : 𝓐.inv (𝓐.inv α) = α :=
+  𝓐.inv_eq_of_comp_eq_unit (𝓐.tgt_inv α)
+    ((𝓐.inv_comp α).trans (congrArg (𝓐.unit j) (𝓐.src_inv α).symm))
 
-/-- Postcomposing a unit arrow by `g₂` and then by `g₁` gives the unit arrow translated by
-`g₁ * g₂`. -/
+/-- The inverse of a composite overlap arrow is the reverse composite of the inverses. -/
 @[simp]
-theorem comp_smul_unit {i : ι} (g₁ g₂ : G i) (x : U i) (h) :
+theorem inv_comp_arrow {i j k : ι} (α : R i j) (β : R j k) (h : 𝓐.tgt α = 𝓐.src β) :
+    𝓐.inv (𝓐.comp α β h) =
+      𝓐.comp (𝓐.inv β) (𝓐.inv α) ((𝓐.tgt_inv β).trans (h.symm.trans (𝓐.src_inv α).symm)) := by
+  refine 𝓐.inv_eq_of_comp_eq_unit (by simp) ?_
+  calc 𝓐.comp (𝓐.comp α β h) (𝓐.comp (𝓐.inv β) (𝓐.inv α) _) _
+      = 𝓐.comp α (𝓐.comp (𝓐.comp β (𝓐.inv β) (by simp)) (𝓐.inv α) (by simp [h])) (by simp) := by
+          rw [𝓐.comp_assoc]
+          exact 𝓐.comp_congr rfl (𝓐.comp_assoc _ _ _ _ _).symm _ _
+    _ = 𝓐.unit i (𝓐.src (𝓐.comp α β h)) := by simp [← h]
+
+/-- Composing the `g₂`-translated unit arrow at `x` with the `g₁`-translated unit arrow at
+`g₂ • x` gives the `(g₁ * g₂)`-translated unit arrow at `x`. -/
+@[simp]
+theorem smul_unit_comp_smul_unit {i : ι} (g₁ g₂ : G i) (x : U i) (h) :
     𝓐.comp (g₂ • 𝓐.unit i x) (g₁ • 𝓐.unit i (g₂ • x)) h = (g₁ * g₂) • 𝓐.unit i x := by
   have h₀ : 𝓐.tgt (g₂ • 𝓐.unit i x) = 𝓐.src (𝓐.unit i (g₂ • x)) := by simp
   calc 𝓐.comp (g₂ • 𝓐.unit i x) (g₁ • 𝓐.unit i (g₂ • x)) h
@@ -201,15 +218,8 @@ theorem comp_smul_unit_tgt {i j : ι} (α : R i j) (g : G j) (h) :
 /-- Inverting a `g`-translated unit arrow gives the `g⁻¹`-translated unit at `g • x`. -/
 @[simp]
 theorem inv_smul_unit {i : ι} (g : G i) (x : U i) :
-    𝓐.inv (g • 𝓐.unit i x) = g⁻¹ • 𝓐.unit i (g • x) := by
-  calc 𝓐.inv (g • 𝓐.unit i x)
-      = 𝓐.comp (𝓐.inv (g • 𝓐.unit i x)) (𝓐.unit i x) (by simp) := by simp
-    _ = 𝓐.comp (𝓐.inv (g • 𝓐.unit i x))
-          (𝓐.comp (g • 𝓐.unit i x) (g⁻¹ • 𝓐.unit i (g • x)) (by simp)) (by simp) :=
-        𝓐.comp_congr rfl (by simp) _ _
-    _ = 𝓐.comp (𝓐.comp (𝓐.inv (g • 𝓐.unit i x)) (g • 𝓐.unit i x) (by simp))
-          (g⁻¹ • 𝓐.unit i (g • x)) _ := (𝓐.comp_assoc _ _ _ _ _).symm
-    _ = g⁻¹ • 𝓐.unit i (g • x) := by simp
+    𝓐.inv (g • 𝓐.unit i x) = g⁻¹ • 𝓐.unit i (g • x) :=
+  𝓐.inv_eq_of_comp_eq_unit (by simp) (by simp)
 
 end Basic
 
@@ -274,14 +284,6 @@ noncomputable def diagEquiv (i : ι) : G i × U i ≃ R i i where
 theorem diagEquiv_apply (i : ι) (p : G i × U i) :
     𝓐.diagEquiv i p = p.1 • 𝓐.unit i p.2 := (rfl)
 
-/-- The source of `diagEquiv i (g, x)` is `x`. -/
-theorem src_diagEquiv (i : ι) (p : G i × U i) :
-    𝓐.src (𝓐.diagEquiv i p) = p.2 := by simp
-
-/-- The target of `diagEquiv i (g, x)` is `g • x`. -/
-theorem tgt_diagEquiv (i : ι) (p : G i × U i) :
-    𝓐.tgt (𝓐.diagEquiv i p) = p.1 • p.2 := by simp
-
 /-- The second coordinate of `(diagEquiv i).symm α` is `src α`. -/
 @[simp]
 theorem snd_diagEquiv_symm (i : ι) (α : R i i) :
@@ -333,6 +335,8 @@ structure Obj.Hom {𝓐 : ChartAtlas G U R} (x y : 𝓐.Obj) where
   /-- Target compatibility of the overlap arrow. -/
   tgt_arrow : 𝓐.tgt arrow = y.point
 
+attribute [simp] Obj.Hom.src_arrow Obj.Hom.tgt_arrow
+
 /-- The presenting groupoid structure on `𝓐.Obj`. -/
 instance instGroupoidObj : Groupoid 𝓐.Obj where
   Hom := Obj.Hom
@@ -345,6 +349,20 @@ instance instGroupoidObj : Groupoid 𝓐.Obj where
   assoc _ _ _ := Obj.Hom.ext (𝓐.comp_assoc _ _ _ _ _)
   inv_comp f := Obj.Hom.ext ((𝓐.inv_comp _).trans (congrArg (𝓐.unit _) f.tgt_arrow))
   comp_inv f := Obj.Hom.ext ((𝓐.comp_inv _).trans (congrArg (𝓐.unit _) f.src_arrow))
+
+/-- Extensionality for morphisms in the presenting groupoid `𝓐.Obj`. -/
+@[ext]
+theorem Obj.hom_ext {𝓐 : ChartAtlas G U R} {x y : 𝓐.Obj} {f g : x ⟶ y}
+    (h : f.arrow = g.arrow) : f = g :=
+  Obj.Hom.ext h
+
+/-- Heterogeneous extensionality for morphisms in `𝓐.Obj`. -/
+theorem Obj.Hom.hext {𝓐 : ChartAtlas G U R} {x₁ x₂ y₁ y₂ : 𝓐.Obj}
+    (hx : x₁ = x₂) (hy : y₁ = y₂) {f₁ : x₁ ⟶ y₁} {f₂ : x₂ ⟶ y₂}
+    (h : f₁.arrow ≍ f₂.arrow) : f₁ ≍ f₂ := by
+  cases hx
+  cases hy
+  exact heq_of_eq (Obj.hom_ext (eq_of_heq h))
 
 /-- The underlying overlap arrow of the identity morphism at `x`. -/
 @[simp]
@@ -362,14 +380,15 @@ theorem inv_arrow {x y : 𝓐.Obj} (f : x ⟶ y) :
   rw [← Groupoid.inv_eq_inv]
   rfl
 
-/-- An `eqToHom` morphism in `𝓐.Obj` has the unit overlap arrow at its source. -/
-@[simp]
+/-- An `eqToHom` morphism in `𝓐.Obj` has the unit overlap arrow at its source, transported along
+the object equality. -/
 theorem eqToHom_arrow {x y : 𝓐.Obj} (h : x = y) :
     (eqToHom h).arrow = h ▸ 𝓐.unit x.chart x.point := by
   subst h
   rfl
 
 /-- An `eqToHom` morphism within the same chart `i` has underlying arrow `unit i x`. -/
+@[simp]
 theorem eqToHom_mk_arrow {i : ι} {x y : U i} (h : (⟨i, x⟩ : 𝓐.Obj) = ⟨i, y⟩) :
     (eqToHom h).arrow = 𝓐.unit i x := by
   cases h
@@ -377,6 +396,9 @@ theorem eqToHom_mk_arrow {i : ι} {x y : U i} (h : (⟨i, x⟩ : 𝓐.Obj) = ⟨
 
 /-- Equivalence between the total arrows of `𝓐.Obj` and the disjoint union
 `Σ p : ι × ι, R p.1 p.2` of all overlap-arrow types. -/
+-- The body is exposed: `(𝓐.totalEquiv.symm p).left.chart` and `.right.chart` must reduce
+-- definitionally to `p.1.1` and `p.1.2` in the type of `(𝓐.totalEquiv.symm p).hom.arrow`.
+@[expose]
 def totalEquiv : Quiver.Total 𝓐.Obj ≃ Σ p : ι × ι, R p.1 p.2 where
   toFun a := ⟨(a.left.chart, a.right.chart), a.hom.arrow⟩
   invFun q := ⟨⟨q.1.1, 𝓐.src q.2⟩, ⟨q.1.2, 𝓐.tgt q.2⟩, ⟨q.2, rfl, rfl⟩⟩
@@ -412,16 +434,19 @@ theorem totalEquiv_symm_hom_arrow (p : Σ q : ι × ι, R q.1 q.2) :
 
 /-- The canonical inclusion functor `ActionCategory (G i) (U i) ⥤ 𝓐.Obj` of the `i`-th chart into
 the presenting groupoid, retaining all group labels. -/
+-- `expose, implicit_reducible`: unification of implicit chart indices in `R` must see
+-- `((𝓐.chartFunctor i).obj a).chart` as `i`.
+@[expose, implicit_reducible]
 def chartFunctor (i : ι) : ActionCategory (G i) (U i) ⥤ 𝓐.Obj where
   obj a := ⟨i, a.back⟩
-  map {a _} f := ⟨f.hom • 𝓐.unit i a.back, (𝓐.src_smul _ _).trans (𝓐.src_unit _ _),
-    (𝓐.tgt_smul _ _).trans ((congrArg (f.hom • ·) (𝓐.tgt_unit _ _)).trans f.map_val)⟩
+  map {a _} f := ⟨(f.hom : G i) • 𝓐.unit i a.back, (𝓐.src_smul _ _).trans (𝓐.src_unit _ _),
+    (𝓐.tgt_smul _ _).trans ((congrArg ((f.hom : G i) • ·) (𝓐.tgt_unit _ _)).trans f.map_val)⟩
   map_id a := Obj.Hom.ext (one_smul (G i) (𝓐.unit i a.back))
   map_comp {a b _} f g := Obj.Hom.ext <| by
-    have hf : f.hom • a.back = b.back := ActionCategory.hom_smul f
+    have hf : (f.hom : G i) • a.back = b.back := ActionCategory.hom_smul f
     refine (congrArg (· • 𝓐.unit i a.back) (ActionCategory.comp_hom f g)).trans ?_
-    exact (𝓐.comp_smul_unit g.hom f.hom a.back (by simp)).symm.trans
-      (𝓐.comp_congr rfl (congrArg (g.hom • 𝓐.unit i ·) hf) _ _)
+    exact (𝓐.smul_unit_comp_smul_unit g.hom f.hom a.back (by simp)).symm.trans
+      (𝓐.comp_congr rfl (congrArg ((g.hom : G i) • 𝓐.unit i ·) hf) _ _)
 
 /-- `chartFunctor i` sends an object `a` of the action category to `⟨i, a.back⟩`. -/
 @[simp]
@@ -431,12 +456,12 @@ theorem chartFunctor_obj (i : ι) (a : ActionCategory (G i) (U i)) :
 /-- `chartFunctor i` maps an arrow labelled `g` at `a` to `g • unit i a.back`. -/
 @[simp]
 theorem chartFunctor_map_arrow (i : ι) {a b : ActionCategory (G i) (U i)} (f : a ⟶ b) :
-    ((𝓐.chartFunctor i).map f).arrow = f.hom • 𝓐.unit i a.back := (rfl)
+    ((𝓐.chartFunctor i).map f).arrow = (f.hom : G i) • 𝓐.unit i a.back := (rfl)
 
 /-- Each chart inclusion `chartFunctor i` is faithful, keeping every group label distinct. -/
 instance instFaithfulChartFunctor (i : ι) : (𝓐.chartFunctor i).Faithful where
   map_injective {a _} _ f₂ h := Functor.Elements.hom_ext <|
-    (𝓐.existsUnique_smul_eq (𝓐.unit i a.back) (f₂.hom • 𝓐.unit i a.back)
+    (𝓐.existsUnique_smul_eq (𝓐.unit i a.back) ((f₂.hom : G i) • 𝓐.unit i a.back)
       (𝓐.src_smul _ _).symm).unique (congrArg Obj.Hom.arrow h) rfl
 
 /-- Each chart inclusion `chartFunctor i` is full: every overlap arrow in `R i i` comes from `G i`.
@@ -457,8 +482,8 @@ theorem totalEquiv_mapTotal_chartFunctor (i : ι) (p : G i × U i) :
     𝓐.totalEquiv ((𝓐.chartFunctor i).toPrefunctor.mapTotal
       ((ActionCategory.totalEquiv (G i) (U i)).symm p)) =
       ⟨(i, i), 𝓐.diagEquiv i p⟩ := by
-  simp [Prefunctor.mapTotal, diagEquiv]
-  rfl
+  dsimp [Prefunctor.mapTotal, chartFunctor]
+  simp [ActionCategory.objEquiv]
 
 end PresentingGroupoid
 
@@ -479,22 +504,30 @@ theorem tgt_smul_unit_of_stabilizer {i : ι} {x : U i} (h : stabilizer (G i) x) 
 `⟨i, x⟩` in the presenting groupoid `𝓐.Obj`, retaining all ineffective elements. -/
 noncomputable def stabilizerMulEquivAutObj (i : ι) (x : U i) :
     stabilizer (G i) x ≃* Aut (⟨i, x⟩ : 𝓐.Obj) :=
-  (ActionCategory.stabilizerMulEquivAut (G i) x).trans
+  (ActionCategory.stabilizerMulEquivAut (G i) x).trans <|
     ((Functor.FullyFaithful.ofFullyFaithful (𝓐.chartFunctor i)).autMulEquivOfFullyFaithful
-      (ActionCategory.objEquiv (G i) (U i) x))
+      (ActionCategory.objEquiv (G i) (U i) x)).trans
+      (Aut.autMulEquivOfIso (eqToIso
+        ((𝓐.chartFunctor_obj i (ActionCategory.objEquiv (G i) (U i) x)).trans
+          (congrArg (Obj.mk i) (ActionCategory.coe_back (M := G i) x)))))
 
 /-- Forward arrow of `stabilizerMulEquivAutObj i x h` in `R i i`. -/
 @[simp]
 theorem stabilizerMulEquivAutObj_hom_arrow (i : ι) (x : U i) (h : stabilizer (G i) x) :
     (𝓐.stabilizerMulEquivAutObj i x h).asIso.hom.arrow = (h : G i) • 𝓐.unit i x := by
-  change (((Functor.FullyFaithful.ofFullyFaithful (𝓐.chartFunctor i)).autMulEquivOfFullyFaithful
-    (ActionCategory.objEquiv (G i) (U i) x))
-      (ActionCategory.stabilizerMulEquivAut (G i) x h)).asIso.hom.arrow = _
-  simp
-  rfl
+  let p : (𝓐.chartFunctor i).obj (ActionCategory.objEquiv (G i) (U i) x) = ⟨i, x⟩ :=
+    (𝓐.chartFunctor_obj i (ActionCategory.objEquiv (G i) (U i) x)).trans
+      (congrArg (Obj.mk i) (ActionCategory.coe_back (M := G i) x))
+  have hp₁ : (eqToHom p.symm).arrow = 𝓐.unit i x := 𝓐.eqToHom_mk_arrow p.symm
+  have hp₂ : (eqToHom p).arrow = 𝓐.unit i (ActionCategory.objEquiv (G i) (U i) x).back :=
+    𝓐.eqToHom_mk_arrow p
+  have hback : (ActionCategory.objEquiv (G i) (U i) x).back = x := ActionCategory.coe_back x
+  have hcu (hc) : 𝓐.comp ((h : G i) • 𝓐.unit i x) (𝓐.unit i x) hc = (h : G i) • 𝓐.unit i x :=
+    𝓐.comp_unit _ _ hc
+  simp [stabilizerMulEquivAutObj, eqToIso, hp₁, hp₂, hback, hcu]
 
 /-- **Stabilizer conjugation.** An overlap arrow `α : R i j` conjugates `stabilizer (G i) (src α)`
-isomorphically onto `stabilizer (G j) (tgt α)`, retaining all ineffective elements. -/
+isomorphically onto `stabilizer (G j) (𝓐.tgt α)`, retaining all ineffective elements. -/
 noncomputable def stabilizerConj {i j : ι} (α : R i j) :
     stabilizer (G i) (𝓐.src α) ≃* stabilizer (G j) (𝓐.tgt α) :=
   (𝓐.stabilizerMulEquivAutObj i (𝓐.src α)).trans <|
@@ -575,6 +608,23 @@ theorem coe_stabilizerConj_comp {i j k : ι} (α : R i j) (β : R j k) (hab : �
           (𝓐.comp_assoc _ _ _ _ hab).trans (𝓐.comp_congr (by simp) rfl _ _)
   exact congrArg Subtype.val hv
 
+/-- Stabilizer conjugation along an inverse arrow is the inverse isomorphism on stabilizers. -/
+@[simp]
+theorem coe_stabilizerConj_inv {i j : ι} (α : R i j)
+    (h : stabilizer (G j) (𝓐.src (𝓐.inv α))) :
+    (𝓐.stabilizerConj (𝓐.inv α) h : G i) =
+      (𝓐.stabilizerConj α).symm ⟨h, by simpa using h.2⟩ := by
+  set u := (𝓐.stabilizerConj α).symm ⟨h, by simpa using h.2⟩
+  have hu : (𝓐.stabilizerConj α u : G j) = h :=
+    congrArg Subtype.val ((𝓐.stabilizerConj α).apply_symm_apply _)
+  have hunit : ∀ (γ : R i i), γ = 𝓐.unit i (𝓐.src α) →
+      ∀ z : stabilizer (G i) (𝓐.src γ), (𝓐.stabilizerConj γ z : G i) = z := by
+    rintro _ rfl z
+    exact 𝓐.coe_stabilizerConj_unit i (𝓐.src α) z
+  have hc := 𝓐.coe_stabilizerConj_comp α (𝓐.inv α) (𝓐.src_inv α).symm ⟨u, by simp⟩
+  exact (congrArg (fun z ↦ (𝓐.stabilizerConj (𝓐.inv α) z : G i)) (Subtype.ext hu.symm)).trans
+    (hc.symm.trans (hunit _ (𝓐.comp_inv α) _))
+
 /-- Translating an overlap arrow `α` by `g : G j` conjugates `stabilizerConj α` by `g`. -/
 theorem coe_stabilizerConj_smul_arrow {i j : ι} (g : G j) (α : R i j)
     (h : stabilizer (G i) (𝓐.src (g • α))) :
@@ -642,20 +692,25 @@ variable {𝓐 : ChartAtlas G U R} {𝓑 : ChartAtlas G' U' R'}
 
 attribute [simp] src_map tgt_map map_unit map_smul
 
-/-- Extensionality for morphisms of chart atlases. -/
+/-- Extensionality for morphisms of chart atlases; `obj` is uniquely determined by `index` and
+`map` applied to unit arrows. -/
 @[ext]
 theorem ext {Φ Ψ : 𝓐.Hom 𝓑} (hindex : Φ.index = Ψ.index)
     (hgroup : ∀ i, HEq (Φ.groupHom i) (Ψ.groupHom i))
-    (hobj : ∀ i, HEq (Φ.obj i) (Ψ.obj i))
     (hmap : ∀ {i j} (α : R i j), HEq (Φ.map α) (Ψ.map α)) : Φ = Ψ := by
-  obtain ⟨idx₁, grp₁, obj₁, map₁, _, _, _, _, _⟩ := Φ
-  obtain ⟨idx₂, grp₂, obj₂, map₂, _, _, _, _, _⟩ := Ψ
-  dsimp only at hindex hgroup hobj hmap
+  obtain ⟨idx₁, grp₁, obj₁, map₁, hsrc₁, _, hunit₁, _, _⟩ := Φ
+  obtain ⟨idx₂, grp₂, obj₂, map₂, hsrc₂, _, hunit₂, _, _⟩ := Ψ
+  dsimp only at hindex hgroup hmap
   subst hindex
   have hg : grp₁ = grp₂ := funext fun i ↦ eq_of_heq (hgroup i)
-  have ho : obj₁ = obj₂ := funext fun i ↦ eq_of_heq (hobj i)
   have hm : @map₁ = @map₂ := funext fun i ↦ funext fun j ↦ funext fun α ↦ eq_of_heq (hmap α)
-  subst hg ho hm
+  subst hg hm
+  have ho : obj₁ = obj₂ := funext fun i ↦ funext fun x ↦ by
+    have h₁ := hsrc₁ (𝓐.unit i x)
+    have h₂ := hsrc₂ (𝓐.unit i x)
+    rw [𝓐.src_unit] at h₁ h₂
+    exact h₁.symm.trans h₂
+  subst ho
   rfl
 
 /-- Each chart map `Φ.obj i` is automatically `Φ.groupHom i`-equivariant. -/
@@ -667,21 +722,10 @@ theorem obj_smul (Φ : 𝓐.Hom 𝓑) (i : ι) (g : G i) (x : U i) :
     _ = 𝓑.tgt (Φ.map (g • 𝓐.unit i x)) := (Φ.tgt_map _).symm
     _ = Φ.groupHom i g • Φ.obj i x := by simp
 
-/-- An atlas morphism preserves inverses of overlap arrows. -/
-@[simp]
-theorem map_inv (Φ : 𝓐.Hom 𝓑) {i j : ι} (α : R i j) :
-    Φ.map (𝓐.inv α) = 𝓑.inv (Φ.map α) := by
-  calc Φ.map (𝓐.inv α)
-      = 𝓑.comp (Φ.map (𝓐.inv α)) (𝓑.unit (Φ.index i) (Φ.obj i (𝓐.src α))) (by simp) := by simp
-    _ = 𝓑.comp (Φ.map (𝓐.inv α)) (𝓑.comp (Φ.map α) (𝓑.inv (Φ.map α)) (by simp)) (by simp) :=
-        𝓑.comp_congr rfl (by simp) _ _
-    _ = 𝓑.comp (𝓑.comp (Φ.map (𝓐.inv α)) (Φ.map α) (by simp)) (𝓑.inv (Φ.map α)) _ :=
-        (𝓑.comp_assoc _ _ _ _ _).symm
-    _ = 𝓑.comp (Φ.map (𝓐.comp (𝓐.inv α) α (𝓐.tgt_inv α))) (𝓑.inv (Φ.map α)) (by simp) :=
-        𝓑.comp_congr (Φ.map_comp _ _ _).symm rfl _ _
-    _ = 𝓑.inv (Φ.map α) := by simp
-
 /-- The identity morphism on a chart atlas `𝓐`. -/
+-- The body is exposed: `(Hom.id 𝓐).index` must reduce definitionally in the dependent types of
+-- `groupHom`, `obj`, and `map`.
+@[expose]
 def id (𝓐 : ChartAtlas G U R) : 𝓐.Hom 𝓐 where
   index := _root_.id
   groupHom i := MonoidHom.id (G i)
@@ -693,7 +737,27 @@ def id (𝓐 : ChartAtlas G U R) : 𝓐.Hom 𝓐 where
   map_comp _ _ _ := rfl
   map_smul _ _ := rfl
 
+/-- The index map of `Hom.id 𝓐` is the identity. -/
+@[simp]
+theorem id_index (𝓐 : ChartAtlas G U R) : (Hom.id 𝓐).index = _root_.id := (rfl)
+
+/-- The group homomorphism of `Hom.id 𝓐` on chart `i` is `MonoidHom.id (G i)`. -/
+@[simp]
+theorem id_groupHom (𝓐 : ChartAtlas G U R) (i : ι) :
+    (Hom.id 𝓐).groupHom i = MonoidHom.id (G i) := (rfl)
+
+/-- `Hom.id 𝓐` acts as the identity on chart points. -/
+@[simp]
+theorem id_obj (𝓐 : ChartAtlas G U R) (i : ι) (x : U i) : (Hom.id 𝓐).obj i x = x := (rfl)
+
+/-- `Hom.id 𝓐` acts as the identity on overlap arrows. -/
+@[simp]
+theorem id_map (𝓐 : ChartAtlas G U R) {i j : ι} (α : R i j) : (Hom.id 𝓐).map α = α := (rfl)
+
 /-- Composition of morphisms of chart atlases. -/
+-- The body is exposed: `(Ψ.comp Φ).index` must reduce definitionally in the dependent types of
+-- `groupHom`, `obj`, and `map`.
+@[expose]
 def comp {μ : Type*} {G'' : μ → Type*} [∀ m, Group (G'' m)]
     {U'' : μ → Type*} [∀ m, MulAction (G'' m) (U'' m)]
     {R'' : μ → μ → Type*} [∀ m n, MulAction (G'' n) (R'' m n)]
@@ -708,7 +772,57 @@ def comp {μ : Type*} {G'' : μ → Type*} [∀ m, Group (G'' m)]
   map_comp α β h := (congrArg Ψ.map (Φ.map_comp α β h)).trans (Ψ.map_comp _ _ _)
   map_smul g α := (congrArg Ψ.map (Φ.map_smul g α)).trans (Ψ.map_smul _ _)
 
+section Comp
+
+variable {μ : Type*} {G'' : μ → Type*} [∀ m, Group (G'' m)]
+  {U'' : μ → Type*} [∀ m, MulAction (G'' m) (U'' m)]
+  {R'' : μ → μ → Type*} [∀ m n, MulAction (G'' n) (R'' m n)]
+  {𝓒 : ChartAtlas G'' U'' R''}
+
+/-- The index map of a composite atlas morphism is the composite of the index maps. -/
+@[simp]
+theorem comp_index (Ψ : 𝓑.Hom 𝓒) (Φ : 𝓐.Hom 𝓑) : (Ψ.comp Φ).index = Ψ.index ∘ Φ.index := (rfl)
+
+/-- The group homomorphism of a composite atlas morphism is the composite group homomorphism. -/
+@[simp]
+theorem comp_groupHom (Ψ : 𝓑.Hom 𝓒) (Φ : 𝓐.Hom 𝓑) (i : ι) :
+    (Ψ.comp Φ).groupHom i = (Ψ.groupHom (Φ.index i)).comp (Φ.groupHom i) := (rfl)
+
+/-- Evaluation of a composite atlas morphism on chart points. -/
+@[simp]
+theorem comp_obj (Ψ : 𝓑.Hom 𝓒) (Φ : 𝓐.Hom 𝓑) (i : ι) (x : U i) :
+    (Ψ.comp Φ).obj i x = Ψ.obj (Φ.index i) (Φ.obj i x) := (rfl)
+
+/-- Evaluation of a composite atlas morphism on overlap arrows. -/
+@[simp]
+theorem comp_map (Ψ : 𝓑.Hom 𝓒) (Φ : 𝓐.Hom 𝓑) {i j : ι} (α : R i j) :
+    (Ψ.comp Φ).map α = Ψ.map (Φ.map α) := (rfl)
+
+/-- Left identity law for composition of chart-atlas morphisms. -/
+@[simp]
+theorem id_comp (Φ : 𝓐.Hom 𝓑) : (Hom.id 𝓑).comp Φ = Φ := by
+  ext <;> rfl
+
+/-- Right identity law for composition of chart-atlas morphisms. -/
+@[simp]
+theorem comp_id (Φ : 𝓐.Hom 𝓑) : Φ.comp (Hom.id 𝓐) = Φ := by
+  ext <;> rfl
+
+/-- Associativity of composition of chart-atlas morphisms. -/
+theorem comp_assoc {ν : Type*} {G''' : ν → Type*} [∀ n, Group (G''' n)]
+    {U''' : ν → Type*} [∀ n, MulAction (G''' n) (U''' n)]
+    {R''' : ν → ν → Type*} [∀ m n, MulAction (G''' n) (R''' m n)]
+    {𝓓 : ChartAtlas G''' U''' R'''}
+    (Θ : 𝓒.Hom 𝓓) (Ψ : 𝓑.Hom 𝓒) (Φ : 𝓐.Hom 𝓑) :
+    (Θ.comp Ψ).comp Φ = Θ.comp (Ψ.comp Φ) := by
+  ext <;> rfl
+
+end Comp
+
 /-- The functor `𝓐.Obj ⥤ 𝓑.Obj` between presenting groupoids induced by an atlas morphism `Φ`. -/
+-- `expose, implicit_reducible`: unification of implicit chart indices in `R'` must see
+-- `(Φ.toFunctor.obj x).chart` as `Φ.index x.chart`.
+@[expose, implicit_reducible]
 def toFunctor (Φ : 𝓐.Hom 𝓑) : 𝓐.Obj ⥤ 𝓑.Obj where
   obj x := ⟨Φ.index x.chart, Φ.obj x.chart x.point⟩
   map f := ⟨Φ.map f.arrow, (Φ.src_map _).trans (congrArg _ f.src_arrow),
@@ -721,19 +835,19 @@ def toFunctor (Φ : 𝓐.Hom 𝓑) : 𝓐.Obj ⥤ 𝓑.Obj where
 theorem toFunctor_obj (Φ : 𝓐.Hom 𝓑) (x : 𝓐.Obj) :
     Φ.toFunctor.obj x = ⟨Φ.index x.chart, Φ.obj x.chart x.point⟩ := (rfl)
 
-/-- Chart index of `Φ.toFunctor.obj x`. -/
-theorem chart_toFunctor_obj (Φ : 𝓐.Hom 𝓑) (x : 𝓐.Obj) :
-    (Φ.toFunctor.obj x).chart = Φ.index x.chart := (rfl)
-
-/-- Point of `Φ.toFunctor.obj x`. -/
-@[simp]
-theorem point_toFunctor_obj (Φ : 𝓐.Hom 𝓑) (x : 𝓐.Obj) :
-    (Φ.toFunctor.obj x).point = Φ.obj x.chart x.point := (rfl)
-
 /-- `Φ.toFunctor` applies `Φ.map` to the underlying overlap arrow. -/
 @[simp]
 theorem toFunctor_map_arrow (Φ : 𝓐.Hom 𝓑) {x y : 𝓐.Obj} (f : x ⟶ y) :
     (Φ.toFunctor.map f).arrow = Φ.map f.arrow := (rfl)
+
+/-- An atlas morphism preserves inverses of overlap arrows. -/
+@[simp]
+theorem map_inv (Φ : 𝓐.Hom 𝓑) {i j : ι} (α : R i j) :
+    Φ.map (𝓐.inv α) = 𝓑.inv (Φ.map α) := by
+  have h := congrArg Obj.Hom.arrow
+    (Φ.toFunctor.map_inv (⟨α, rfl, rfl⟩ : (⟨i, 𝓐.src α⟩ : 𝓐.Obj) ⟶ ⟨j, 𝓐.tgt α⟩))
+  rw [toFunctor_map_arrow, inv_arrow, inv_arrow, toFunctor_map_arrow] at h
+  exact h
 
 /-- The identity atlas morphism induces the identity functor on `𝓐.Obj`. -/
 @[simp]
@@ -751,21 +865,18 @@ theorem toFunctor_comp {μ : Type*} {G'' : μ → Type*} [∀ m, Group (G'' m)]
 theorem chartFunctor_comp_toFunctor (Φ : 𝓐.Hom 𝓑) (i : ι) :
     𝓐.chartFunctor i ⋙ Φ.toFunctor =
       ActionCategory.map (Φ.groupHom i) ⟨Φ.obj i, Φ.obj_smul i⟩ ⋙ 𝓑.chartFunctor (Φ.index i) := by
-  have hhext : ∀ {x₁ x₂ y₁ y₂ : 𝓑.Obj}, x₁ = x₂ → y₁ = y₂ →
-      ∀ (f₁ : x₁ ⟶ y₁) (f₂ : x₂ ⟶ y₂), HEq f₁.arrow f₂.arrow → HEq f₁ f₂ := by
-    rintro _ _ _ _ rfl rfl _ _ h
-    exact heq_of_eq (Obj.Hom.ext (eq_of_heq h))
   have hobj (a : ActionCategory (G i) (U i)) :
       (𝓐.chartFunctor i ⋙ Φ.toFunctor).obj a =
         (ActionCategory.map (Φ.groupHom i) ⟨Φ.obj i, Φ.obj_smul i⟩ ⋙
           𝓑.chartFunctor (Φ.index i)).obj a :=
     congrArg (Obj.mk (Φ.index i))
       (ActionCategory.back_map_obj (Φ.groupHom i) ⟨Φ.obj i, Φ.obj_smul i⟩ a).symm
-  refine CategoryTheory.Functor.hext hobj fun a b f ↦ hhext (hobj a) (hobj b) _ _ (heq_of_eq ?_)
-  dsimp only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.comp_map, chartFunctor,
-    toFunctor]
-  rw [Φ.map_smul, Φ.map_unit, ActionCategory.map_map_hom, ActionCategory.back_map_obj]
-  rfl
+  refine CategoryTheory.Functor.hext hobj fun a b f ↦
+    Obj.Hom.hext (hobj a) (hobj b) (heq_of_eq ?_)
+  have hcoe (x : U i) :
+      (⟨Φ.obj i, Φ.obj_smul i⟩ : U i →ₑ[Φ.groupHom i] U' (Φ.index i)) x = Φ.obj i x := rfl
+  dsimp [chartFunctor, toFunctor]
+  simp [hcoe]
 
 /-- `Φ.toFunctor` is faithful precisely when `Φ.map` is injective on arrows sharing the same
 endpoints in `U i` and `U j`. -/
@@ -838,6 +949,17 @@ def toNatTrans {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : Φ.toFunctor ⟶ 
 theorem toNatTrans_app_arrow {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) (x : 𝓐.Obj) :
     (η.toNatTrans.app x).arrow = η.app x.chart x.point := (rfl)
 
+/-- Because `𝓑.Obj` is a groupoid, a natural transformation of atlas morphisms induces a natural
+isomorphism `Φ.toFunctor ≅ Ψ.toFunctor` between the induced functors on presenting groupoids. -/
+def toNatIso {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : Φ.toFunctor ≅ Ψ.toFunctor :=
+  NatIso.ofComponents (fun x ↦ (Groupoid.isoEquivHom _ _).symm (η.toNatTrans.app x))
+    fun f ↦ η.toNatTrans.naturality f
+
+/-- The forward natural transformation of `η.toNatIso` is `η.toNatTrans`. -/
+@[simp]
+theorem toNatIso_hom {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) :
+    η.toNatIso.hom = η.toNatTrans := (rfl)
+
 /-- The identity natural transformation on an atlas morphism `Φ`. -/
 def refl (Φ : 𝓐.Hom 𝓑) : NatTrans Φ Φ where
   app i x := 𝓑.unit (Φ.index i) (Φ.obj i x)
@@ -845,94 +967,107 @@ def refl (Φ : 𝓐.Hom 𝓑) : NatTrans Φ Φ where
   tgt_app i x := 𝓑.tgt_unit _ _
   naturality _ := by simp
 
+/-- Component overlap arrow of `NatTrans.refl Φ`. -/
+@[simp]
+theorem refl_app (Φ : 𝓐.Hom 𝓑) (i : ι) (x : U i) :
+    (refl Φ).app i x = 𝓑.unit (Φ.index i) (Φ.obj i x) := (rfl)
+
+/-- `NatTrans.refl Φ` induces the identity natural transformation on `Φ.toFunctor`. -/
+@[simp]
+theorem toNatTrans_refl (Φ : 𝓐.Hom 𝓑) : (refl Φ).toNatTrans = 𝟙 Φ.toFunctor := (rfl)
+
 /-- The inverse natural transformation of `η : NatTrans Φ Ψ`, formed using `𝓑.inv`. -/
 def symm {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : NatTrans Ψ Φ where
   app i x := 𝓑.inv (η.app i x)
   src_app i x := (𝓑.src_inv _).trans (η.tgt_app i x)
   tgt_app i x := (𝓑.tgt_inv _).trans (η.src_app i x)
-  naturality {i j} α := by
-    have h₁ := 𝓑.comp_congr (η.naturality α).symm (rfl : 𝓑.inv (η.app j (𝓐.tgt α)) = _)
-      (by simp) (by simp)
-    calc 𝓑.comp (Ψ.map α) (𝓑.inv (η.app j (𝓐.tgt α))) _
-        = 𝓑.comp (𝓑.comp (𝓑.inv (η.app i (𝓐.src α))) (η.app i (𝓐.src α)) (by simp))
-            (𝓑.comp (Ψ.map α) (𝓑.inv (η.app j (𝓐.tgt α))) (by simp)) (by simp) := by simp
-      _ = 𝓑.comp (𝓑.inv (η.app i (𝓐.src α)))
-            (𝓑.comp (η.app i (𝓐.src α))
-              (𝓑.comp (Ψ.map α) (𝓑.inv (η.app j (𝓐.tgt α))) (by simp)) (by simp))
-            (by simp) := 𝓑.comp_assoc _ _ _ _ _
-      _ = 𝓑.comp (𝓑.inv (η.app i (𝓐.src α)))
-            (𝓑.comp (𝓑.comp (η.app i (𝓐.src α)) (Ψ.map α) (by simp))
-              (𝓑.inv (η.app j (𝓐.tgt α))) (by simp)) (by simp) :=
-          𝓑.comp_congr rfl (𝓑.comp_assoc _ _ _ (by simp) (by simp)).symm _ _
-      _ = 𝓑.comp (𝓑.inv (η.app i (𝓐.src α)))
-            (𝓑.comp (𝓑.comp (Φ.map α) (η.app j (𝓐.tgt α)) (by simp))
-              (𝓑.inv (η.app j (𝓐.tgt α))) (by simp)) (by simp) :=
-          𝓑.comp_congr rfl h₁ _ _
-      _ = 𝓑.comp (𝓑.inv (η.app i (𝓐.src α))) (Φ.map α) _ :=
-          𝓑.comp_congr rfl ((𝓑.comp_assoc _ _ _ (by simp) (by simp)).trans (by simp)) _ _
+  naturality {i j} α :=
+    congrArg Obj.Hom.arrow
+      (η.toNatIso.inv.naturality (⟨α, rfl, rfl⟩ : (⟨i, 𝓐.src α⟩ : 𝓐.Obj) ⟶ ⟨j, 𝓐.tgt α⟩))
+
+/-- Component overlap arrow of `η.symm`. -/
+@[simp]
+theorem symm_app {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) (i : ι) (x : U i) :
+    η.symm.app i x = 𝓑.inv (η.app i x) := (rfl)
+
+/-- The inverse natural transformation of `η.toNatIso` is `η.symm.toNatTrans`. -/
+@[simp]
+theorem toNatIso_inv {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) :
+    η.toNatIso.inv = η.symm.toNatTrans := (rfl)
 
 /-- Vertical composition of natural transformations between atlas morphisms. -/
 def trans {Φ Ψ Θ : 𝓐.Hom 𝓑} (η₁ : NatTrans Φ Ψ) (η₂ : NatTrans Ψ Θ) : NatTrans Φ Θ where
   app i x := 𝓑.comp (η₁.app i x) (η₂.app i x) ((η₁.tgt_app i x).trans (η₂.src_app i x).symm)
   src_app i x := (𝓑.src_comp _ _ _).trans (η₁.src_app i x)
   tgt_app i x := (𝓑.tgt_comp _ _ _).trans (η₂.tgt_app i x)
-  naturality α :=
-    (𝓑.comp_assoc _ _ _ _ _).symm.trans <|
-      (𝓑.comp_congr (η₁.naturality α) rfl _ _).trans <|
-        (𝓑.comp_assoc _ _ _ _ _).trans <|
-          (𝓑.comp_congr rfl (η₂.naturality α) _ _).trans
-            (𝓑.comp_assoc _ _ _ _ _).symm
+  naturality {i j} α :=
+    congrArg Obj.Hom.arrow ((η₁.toNatTrans ≫ η₂.toNatTrans).naturality
+      (⟨α, rfl, rfl⟩ : (⟨i, 𝓐.src α⟩ : 𝓐.Obj) ⟶ ⟨j, 𝓐.tgt α⟩))
 
-/-- Because `𝓑.Obj` is a groupoid, a natural transformation of atlas morphisms induces a natural
-isomorphism `Φ.toFunctor ≅ Ψ.toFunctor` between the induced functors on presenting groupoids. -/
-def toNatIso {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : Φ.toFunctor ≅ Ψ.toFunctor where
-  hom := η.toNatTrans
-  inv := η.symm.toNatTrans
-  hom_inv_id := by
-    ext x
-    apply Obj.Hom.ext
-    simp only [CategoryTheory.NatTrans.comp_app, comp_arrow, toNatTrans_app_arrow, symm,
-      CategoryTheory.NatTrans.id_app, id_arrow, Hom.point_toFunctor_obj]
-    exact (𝓑.comp_inv _).trans (congrArg _ (η.src_app _ _))
-  inv_hom_id := by
-    ext x
-    apply Obj.Hom.ext
-    simp only [CategoryTheory.NatTrans.comp_app, comp_arrow, toNatTrans_app_arrow, symm,
-      CategoryTheory.NatTrans.id_app, id_arrow, Hom.point_toFunctor_obj]
-    exact (𝓑.inv_comp _).trans (congrArg _ (η.tgt_app _ _))
-
-/-- The component overlap arrow of `η.toNatIso.hom` at `x` is `η.app x.chart x.point`. -/
+/-- Component overlap arrow of `η₁.trans η₂`. -/
 @[simp]
-theorem toNatIso_hom_app_arrow {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) (x : 𝓐.Obj) :
-    (η.toNatIso.hom.app x).arrow = η.app x.chart x.point := (rfl)
+theorem trans_app {Φ Ψ Θ : 𝓐.Hom 𝓑} (η₁ : NatTrans Φ Ψ) (η₂ : NatTrans Ψ Θ) (i : ι) (x : U i) :
+    (η₁.trans η₂).app i x =
+      𝓑.comp (η₁.app i x) (η₂.app i x) ((η₁.tgt_app i x).trans (η₂.src_app i x).symm) := (rfl)
+
+/-- Vertical composition of atlas natural transformations induces categorical composition on
+`toNatTrans`. -/
+@[simp]
+theorem toNatTrans_trans {Φ Ψ Θ : 𝓐.Hom 𝓑} (η₁ : NatTrans Φ Ψ) (η₂ : NatTrans Ψ Θ) :
+    (η₁.trans η₂).toNatTrans = η₁.toNatTrans ≫ η₂.toNatTrans := (rfl)
+
+/-- Left unit law for vertical composition of atlas natural transformations. -/
+@[simp]
+theorem refl_trans {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : (refl Φ).trans η = η := by
+  ext; simp
+
+/-- Right unit law for vertical composition of atlas natural transformations. -/
+@[simp]
+theorem trans_refl {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : η.trans (refl Ψ) = η := by
+  ext; simp
+
+/-- Right inverse law for vertical composition of atlas natural transformations. -/
+@[simp]
+theorem trans_symm {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : η.trans η.symm = refl Φ := by
+  ext; simp
+
+/-- Left inverse law for vertical composition of atlas natural transformations. -/
+@[simp]
+theorem symm_trans {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : η.symm.trans η = refl Ψ := by
+  ext; simp
+
+/-- Symmetry of atlas natural transformations is an involution. -/
+@[simp]
+theorem symm_symm {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) : η.symm.symm = η := by
+  ext; simp
+
+/-- The inverse of `NatTrans.refl Φ` is itself. -/
+@[simp]
+theorem symm_refl (Φ : 𝓐.Hom 𝓑) : (refl Φ).symm = refl Φ := by
+  ext; simp
+
+/-- Associativity of vertical composition of atlas natural transformations. -/
+theorem trans_assoc {Φ Ψ Θ Ξ : 𝓐.Hom 𝓑}
+    (η₁ : NatTrans Φ Ψ) (η₂ : NatTrans Ψ Θ) (η₃ : NatTrans Θ Ξ) :
+    (η₁.trans η₂).trans η₃ = η₁.trans (η₂.trans η₃) := by
+  ext; simp [ChartAtlas.comp_assoc]
 
 /-- `NatTrans.refl` induces `Iso.refl` on `Φ.toFunctor`. -/
 @[simp]
 theorem toNatIso_refl (Φ : 𝓐.Hom 𝓑) : (refl Φ).toNatIso = Iso.refl Φ.toFunctor := by
-  ext x
-  apply Obj.Hom.ext
-  simp only [toNatIso, toNatTrans_app_arrow, refl, Iso.refl_hom, CategoryTheory.NatTrans.id_app,
-    id_arrow, Hom.point_toFunctor_obj]
-  rfl
+  ext1; simp
 
 /-- `NatTrans.symm` induces `Iso.symm` on presenting-groupoid functors. -/
 @[simp]
 theorem toNatIso_symm {Φ Ψ : 𝓐.Hom 𝓑} (η : NatTrans Φ Ψ) :
     η.symm.toNatIso = η.toNatIso.symm := by
-  ext x
-  apply Obj.Hom.ext
-  simp only [toNatIso, toNatTrans_app_arrow, symm, Iso.symm_hom]
-  rfl
+  ext1; simp
 
 /-- `NatTrans.trans` induces `Iso.trans` on presenting-groupoid functors. -/
 @[simp]
 theorem toNatIso_trans {Φ Ψ Θ : 𝓐.Hom 𝓑} (η₁ : NatTrans Φ Ψ) (η₂ : NatTrans Ψ Θ) :
     (η₁.trans η₂).toNatIso = η₁.toNatIso ≪≫ η₂.toNatIso := by
-  ext x
-  apply Obj.Hom.ext
-  simp only [toNatIso, toNatTrans_app_arrow, trans, Iso.trans_hom,
-    CategoryTheory.NatTrans.comp_app, comp_arrow]
-  rfl
+  ext1; simp
 
 end NatTrans
 
