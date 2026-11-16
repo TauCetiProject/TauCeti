@@ -36,10 +36,12 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
-* `UnitAddTorus.mFourier_apply_add`, `TauCeti.UnitAddTorus.mFourier_coe_apply` and
-  `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
-  monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
-  is `exp (2πi ∑ i, n i * x i)`.
+* `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_apply_neg`,
+  `UnitAddTorus.mFourier_apply_sub`, `UnitAddTorus.mFourier_apply_nsmul`,
+  `UnitAddTorus.mFourier_eq_fourier_sum`, `UnitAddTorus.mFourier_zsmul`,
+  `TauCeti.UnitAddTorus.mFourier_coe_apply` and `UnitAddTorus.norm_mFourier_apply`: the same
+  pointwise facts for the multivariate monomials `mFourier n` on the torus `UnitAddTorus d`, whose
+  value at the image of `x : d → ℝ` is `exp (2πi ∑ i, n i * x i)`.
 * `TauCeti.UnitAddTorus.contDiff_mFourier_coe` and
   `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_coe_le`: this lift of `mFourier n` is smooth,
   and its `k`-th derivative is bounded by `(2π ∑ i, |n i|) ^ k`.
@@ -209,6 +211,51 @@ theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
 @[simp]
 theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n z‖ = 1 := by
   simp [mFourier, norm_prod]
+
+/-- A multivariate Fourier monomial on `UnitAddTorus d` evaluates to the fundamental circle
+character on the integer pairing `∑ i, k i • x i`. -/
+theorem mFourier_eq_fourier_sum (k : d → ℤ) (x : UnitAddTorus d) :
+    mFourier k x = fourier 1 (∑ i, k i • x i) := by
+  classical
+  have hprod (s : Finset d) :
+      ∏ i ∈ s, fourier (k i) (x i) = fourier 1 (∑ i ∈ s, k i • x i) := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | insert a s ha ih =>
+      rw [Finset.prod_insert ha, Finset.sum_insert ha, ih, TauCeti.fourier_apply_add,
+        fourier_apply, fourier_one, fourier_one]
+  exact hprod Finset.univ
+
+/-- Negating the argument conjugates a multivariate Fourier monomial. -/
+theorem mFourier_apply_neg (k : d → ℤ) (x : UnitAddTorus d) :
+    mFourier k (-x) = starRingEnd ℂ (mFourier k x) := by
+  rw [← mFourier_neg, mFourier_eq_fourier_sum, mFourier_eq_fourier_sum]
+  simp
+
+/-- A multivariate Fourier monomial sends a difference of points to the product with the
+conjugate. -/
+theorem mFourier_apply_sub (k : d → ℤ) (x y : UnitAddTorus d) :
+    mFourier k (x - y) = mFourier k x * starRingEnd ℂ (mFourier k y) := by
+  rw [sub_eq_add_neg, mFourier_apply_add, mFourier_apply_neg]
+
+/-- Evaluating a multivariate Fourier monomial at a natural-number multiple raises its value to that
+power. -/
+theorem mFourier_apply_nsmul (k : d → ℤ) (n : ℕ) (x : UnitAddTorus d) :
+    mFourier k (n • x) = mFourier k x ^ n := by
+  induction n with
+  | zero => simp [mFourier]
+  | succ n ih =>
+    rw [succ_nsmul, mFourier_apply_add, ih, pow_succ]
+
+/-- Scaling the frequency vector by an integer `m` corresponds to evaluating `fourier m` on the
+integer pairing `∑ i, k i • x i`. -/
+theorem mFourier_zsmul (m : ℤ) (k : d → ℤ) (x : UnitAddTorus d) :
+    mFourier (m • k) x = fourier m (∑ i, k i • x i) := by
+  rw [mFourier_eq_fourier_sum, fourier_one, fourier_apply,
+    Finset.smul_sum (r := m) (s := Finset.univ)]
+  congr 2
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Pi.smul_apply, smul_eq_mul, mul_zsmul]
 
 end UnitAddTorus
 
