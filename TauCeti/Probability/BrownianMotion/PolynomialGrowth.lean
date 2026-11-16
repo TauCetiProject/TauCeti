@@ -18,9 +18,10 @@ positive geometric Brownian stock on a finite horizon. The exponent `p` may be a
 number: negative moments are available too. The same estimate gives square integrability
 at arbitrary random times in the horizon, provided the sampled value is measurable, and
 square integrability for the time-product measure. For arbitrary processes bounded at all
-times by a polynomial in the stock stopped at the horizon, the file proves a finite
-square-maximal moment and square integrability at arbitrary random times whose sampled
-values are a.e. strongly measurable, without assuming deterministic Markov dependence.
+times by a polynomial in the stock stopped at the horizon, the file proves finite maximal
+moments of every nonnegative order, without assuming deterministic Markov dependence or
+positive initial spot. For nonpositive spot, the bound uses signed/zero `Real.rpow`
+conventions, rather than powers of the absolute spot.
 At deterministic times, a
 polynomial stock bound gives every finite `Lᵖ` moment without path regularity or a filtration.
 
@@ -175,50 +176,71 @@ theorem memLp_price_geometricBrownianMotion_prod
 variable {X : ℝ≥0 → Ω → ℝ} {μ σ p : ℝ}
 
 /-- A process bounded by a polynomial in a stock stopped at a finite horizon has finite
-expected squared supremum over the entire time axis. The bound holds on one common full
-event, and the process need not itself be measurable or have regular paths for this
-lower-integral estimate. -/
-theorem lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound
+maximal moments of every nonnegative order over the entire time axis. The bound holds on
+one common full event; no measurability or path regularity of the process is required.
+Any real initial spot is allowed, with signed/zero `Real.rpow` in `hbound`, not `|S_t| ^ p`.
+In particular, order `2` gives a finite expected squared running maximum. -/
+theorem lintegral_iSup_rpow_lt_top_of_geometricBrownianMotion_bound
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    (hs : 0 < s)
+    {r : ℝ} (hr : 0 ≤ r)
     (hbound : ∀ᵐ ω ∂P, ∀ t,
       |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p)) :
-    ∫⁻ ω, ⨆ t, ENNReal.ofReal (X t ω ^ 2) ∂P < ∞ := by
-  have hmax := hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
-    (C := fun x _ ↦ A * (1 + x ^ p)) (A := |A|) hcont hs μ σ p
-    (fun x hx _ _ ↦ by rw [abs_mul, abs_of_nonneg (by positivity : 0 ≤ 1 + x ^ p)])
-  refine lt_of_le_of_lt (lintegral_mono_ae ?_) hmax
+    ∫⁻ ω, ⨆ t, ENNReal.ofReal (|X t ω| ^ r) ∂P < ∞ := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  -- Integrate a constant multiple of one plus the known stock maximal moment.
+  let M : Ω → ℝ≥0∞ := fun ω ↦ ⨆ t ≤ T,
+    ENNReal.ofReal (geometricBrownianMotion |s| μ σ W t ω ^ (p * r))
+  let K : ℝ≥0∞ := ENNReal.ofReal |A| ^ r * 2 ^ r
+  have hK : K < ∞ := ENNReal.mul_lt_top
+    (ENNReal.rpow_lt_top_of_nonneg hr ENNReal.ofReal_ne_top)
+    (ENNReal.rpow_lt_top_of_nonneg hr (by norm_num))
+  have hmax : ∫⁻ ω, M ω ∂P < ∞ :=
+    hW.lintegral_iSup_rpow_geometricBrownianMotion_lt_top hcont |s| μ σ (p * r)
+  have hdom : ∫⁻ ω, K * (1 + M ω) ∂P < ∞ := by
+    rw [lintegral_const_mul' _ _ hK.ne, lintegral_add_left measurable_const]
+    exact ENNReal.mul_lt_top hK (ENNReal.add_lt_top.2 ⟨by simp, hmax⟩)
+  refine lt_of_le_of_lt (lintegral_mono_ae ?_) hdom
   filter_upwards [hbound] with ω hω
   refine iSup_le fun t ↦ ?_
-  have hb := hω t
-  have hnonneg : 0 ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p) :=
-    (abs_nonneg _).trans hb
-  have hsq := (sq_le_sq₀ (abs_nonneg _) hnonneg).2 hb
-  rw [sq_abs] at hsq
-  exact (ENNReal.ofReal_le_ofReal hsq).trans
-    (le_iSup₂ (f := fun t (_ : t ≤ T) ↦ ENNReal.ofReal
-      ((A * (1 + geometricBrownianMotion s μ σ W t ω ^ p)) ^ 2))
-        (min t T) (min_le_right _ _))
-
-/-- A process bounded at all times by a polynomial in a positive geometric Brownian stock
-stopped at the finite horizon `T` belongs to `L²` at every random time whose sampled value
-is a.e. strongly measurable. No stopping-time or path-regularity assumption on the process
-is needed. In particular, this covers measurable values at deterministic times. -/
-theorem memLp_two_randomTime_of_geometricBrownianMotion_bound
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    (hs : 0 < s)
-    (hbound : ∀ᵐ ω ∂P, ∀ t,
-      |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p))
-    {τ : Ω → ℝ≥0} (hm : AEStronglyMeasurable (fun ω ↦ X (τ ω) ω) P) :
-    MemLp (fun ω ↦ X (τ ω) ω) 2 P := by
-  apply (memLp_two_iff_integrable_sq hm).2
-  refine ⟨hm.pow 2, ?_⟩
-  rw [hasFiniteIntegral_iff_norm]
-  simp only [Real.norm_eq_abs, abs_sq]
-  exact lt_of_le_of_lt (lintegral_mono fun ω ↦
-    le_iSup (fun t ↦ ENNReal.ofReal (X t ω ^ 2)) (τ ω))
-    (hW.lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound hcont hs hbound)
+  have hS : 0 ≤ geometricBrownianMotion |s| μ σ W (min t T) ω := by
+    rw [← abs_geometricBrownianMotion]
+    exact abs_nonneg _
+  -- Absolute spot controls signed real powers, even for nonpositive initial spot.
+  have hb : |X t ω| ≤ |A| *
+      (1 + geometricBrownianMotion |s| μ σ W (min t T) ω ^ p) := by
+    calc
+      _ ≤ |A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p)| :=
+        (hω t).trans (le_abs_self _)
+      _ ≤ _ := by
+        rw [abs_mul]
+        gcongr
+        refine (abs_add_le _ _).trans ?_
+        simpa only [abs_one, abs_geometricBrownianMotion] using
+          add_le_add_right (Real.abs_rpow_le_abs_rpow
+            (geometricBrownianMotion s μ σ W (min t T) ω) p) 1
+  -- Raise the bound to order r and absorb the sum using the standard power inequality.
+  rw [← ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) hr]
+  have he : ENNReal.ofReal |X t ω| ≤ ENNReal.ofReal |A| *
+      (1 + ENNReal.ofReal (geometricBrownianMotion |s| μ σ W (min t T) ω ^ p)) := by
+    simpa only [ENNReal.ofReal_mul (abs_nonneg A),
+      ENNReal.ofReal_add zero_le_one (rpow_nonneg hS p), ENNReal.ofReal_one] using
+      ENNReal.ofReal_le_ofReal hb
+  calc
+    _ ≤ (ENNReal.ofReal |A| *
+        (1 + ENNReal.ofReal (geometricBrownianMotion |s| μ σ W (min t T) ω ^ p))) ^ r :=
+      ENNReal.rpow_le_rpow he hr
+    _ ≤ K * (1 + ENNReal.ofReal
+        (geometricBrownianMotion |s| μ σ W (min t T) ω ^ (p * r))) := by
+      rw [ENNReal.mul_rpow_of_nonneg _ _ hr, Real.rpow_mul hS,
+        ← ENNReal.ofReal_rpow_of_nonneg (rpow_nonneg hS p) hr, mul_assoc]
+      exact mul_le_mul_right (by
+        simpa only [ENNReal.one_rpow] using
+          ENNReal.add_rpow_le_two_rpow_mul_rpow_add_rpow 1
+            (ENNReal.ofReal (geometricBrownianMotion |s| μ σ W (min t T) ω ^ p)) hr) _
+    _ ≤ _ := by
+      gcongr
+      exact le_iSup₂ (f := fun t _ ↦ ENNReal.ofReal
+        (geometricBrownianMotion |s| μ σ W t ω ^ (p * r))) (min t T) (min_le_right _ _)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.LocalProperty
+import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
 
 /-!
 # Dominated local martingales
@@ -15,11 +16,13 @@ A strongly adapted native local martingale is a martingale if its paths on each 
 initial interval are dominated by an integrable random variable. In particular, deterministic
 bounds on finite initial intervals give a martingale under a finite measure.
 These criteria justify removing localization in bounded conditional-expectation arguments.
+For almost surely right-continuous paths, finite expected running maxima also suffice;
+on a finite measure space, finite expected squared running maxima suffice.
 
 We retain Mathlib's native convention: the localized stages stop the process multiplied by
 `1_{0 < τ_n}`. Strong adaptation of the original process is a separate hypothesis: native
-locality alone can hide nonmeasurable changes on null sets. No path regularity or usual
-conditions on the filtration are needed.
+locality alone can hide nonmeasurable changes on null sets. The domination and deterministic-
+bound criteria need no path regularity. None of the criteria require usual filtration conditions.
 
 ## References
 
@@ -29,7 +32,7 @@ conditions on the filtration are needed.
 public section
 
 open Filter ProbabilityTheory
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
@@ -96,5 +99,55 @@ theorem StronglyAdapted.martingale_of_locally_martingale_of_bounded [IsFiniteMea
   intro t
   obtain ⟨C, hC⟩ := hbound t
   exact ⟨fun _ ↦ C, integrable_const C, hC⟩
+
+variable [SecondCountableTopology ι]
+
+/-- A strongly adapted Banach-valued local martingale with almost surely right-continuous
+paths and integrable running maxima is a true martingale under a sigma-finite filtration. -/
+theorem StronglyAdapted.martingale_of_locally_martingale_of_lintegral_iSup_norm_lt_top
+    [SigmaFiniteFiltration P F] (hX : StronglyAdapted F X)
+    (hlocal : Locally (fun Y ↦ Martingale Y F P) F X P)
+    (hcont : ∀ T, ∀ᵐ ω ∂P, ∀ t < T,
+      ContinuousWithinAt (fun u ↦ X u ω) (Set.Ioi t) t)
+    (hmax : ∀ T, ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal ‖X t ω‖ ∂P < ∞) :
+    Martingale X F P := by
+  apply hX.martingale_of_locally_martingale_of_dominated hlocal
+  intro T
+  let G : Ω → ℝ≥0∞ := fun ω ↦ ⨆ t ≤ T, ENNReal.ofReal ‖X t ω‖
+  have hG : AEMeasurable G P := aemeasurable_iSup_le_ofReal
+    (fun t ↦ (((hX t).mono (F.le t)).norm.measurable).aemeasurable)
+    ((hcont T).mono fun ω hω t ht ↦ (hω t ht).norm)
+  refine ⟨fun ω ↦ (G ω).toReal,
+    integrable_toReal_of_lintegral_ne_top hG (hmax T).ne, ?_⟩
+  filter_upwards [ae_lt_top' hG (hmax T).ne] with ω hω
+  intro t ht
+  exact (ENNReal.ofReal_le_iff_le_toReal hω.ne).1
+    (le_iSup₂ (f := fun t (_ : t ≤ T) ↦ ENNReal.ofReal ‖X t ω‖) t ht)
+
+/-- On a finite measure space, a strongly adapted Banach-valued local martingale with
+almost surely right-continuous paths and finite expected squared running maxima of its norm
+on finite horizons is a true martingale. -/
+theorem StronglyAdapted.martingale_of_locally_martingale_of_lintegral_iSup_norm_sq_lt_top
+    [IsFiniteMeasure P] (hX : StronglyAdapted F X)
+    (hlocal : Locally (fun Y ↦ Martingale Y F P) F X P)
+    (hcont : ∀ T, ∀ᵐ ω ∂P, ∀ t < T,
+      ContinuousWithinAt (fun u ↦ X u ω) (Set.Ioi t) t)
+    (hmax : ∀ T, ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (‖X t ω‖ ^ 2) ∂P < ∞) :
+    Martingale X F P := by
+  apply hX.martingale_of_locally_martingale_of_lintegral_iSup_norm_lt_top hlocal hcont
+  intro T
+  calc
+    _ ≤ ∫⁻ ω, 1 + ⨆ t ≤ T, ENNReal.ofReal (‖X t ω‖ ^ 2) ∂P := by
+      refine lintegral_mono fun ω ↦ iSup₂_le fun t ht ↦ ?_
+      calc
+        ENNReal.ofReal ‖X t ω‖ ≤ ENNReal.ofReal (1 + ‖X t ω‖ ^ 2) :=
+          ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg (‖X t ω‖ - 1)])
+        _ = 1 + ENNReal.ofReal (‖X t ω‖ ^ 2) := by
+          rw [ENNReal.ofReal_add zero_le_one (sq_nonneg _), ENNReal.ofReal_one]
+        _ ≤ _ := add_le_add le_rfl (le_iSup₂
+          (f := fun t (_ : t ≤ T) ↦ ENNReal.ofReal (‖X t ω‖ ^ 2)) t ht)
+    _ = P Set.univ + ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (‖X t ω‖ ^ 2) ∂P := by
+      rw [lintegral_add_left measurable_const, lintegral_one]
+    _ < ∞ := ENNReal.add_lt_top.2 ⟨measure_lt_top P Set.univ, hmax T⟩
 
 end MeasureTheory
