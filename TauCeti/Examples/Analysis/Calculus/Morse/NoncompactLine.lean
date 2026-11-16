@@ -282,10 +282,11 @@ theorem log_div_four_lt_of_isIntegralCurveOn
   have hlog : log (2 / 3) < 4 * T := (log_lt_iff_lt_exp (by norm_num)).2 (by linarith)
   linarith
 
-/-- The negative gradient trajectory of `x² + x⁴` through `1`, `t ↦ (3 e^{4t} - 2)^{-1/2}`. It is
-defined for `t > log (2 / 3) / 4` (`TauCeti.NoncompactLineExample.isIntegralCurveOn_escapeCurve`),
-and escapes to infinity as `t` decreases to `log (2 / 3) / 4`
-(`TauCeti.NoncompactLineExample.tendsto_escapeCurve`). -/
+/-- The negative gradient trajectory of `x² + x⁴` through `1`, `t ↦ (3 e^{4t} - 2)^{-1/2}`. It
+solves `x' = -(2 x + 4 x³)` on `t > log (2 / 3) / 4`
+(`TauCeti.NoncompactLineExample.isIntegralCurveOn_escapeCurve`) and escapes to infinity as `t`
+decreases to `log (2 / 3) / 4` (`TauCeti.NoncompactLineExample.tendsto_escapeCurve`); for
+`t ≤ log (2 / 3) / 4` the formula takes the junk value `0`. -/
 def escapeCurve (t : ℝ) : ℝ :=
   (√(3 * exp (4 * t) - 2))⁻¹
 
