@@ -324,6 +324,15 @@ theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fin
     IsometryEquiv.piCongrLeft Q e x (e i') = x i' :=
   Equiv.piCongrLeft_apply_apply M e x i'
 
+/-- The inverse map of `QuadraticMap.IsometryEquiv.piCongrLeft` reads a reindexed coordinate. -/
+@[simp]
+theorem IsometryEquiv.piCongrLeft_symm_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (y : ∀ i, M i) (i' : ι') :
+    (IsometryEquiv.piCongrLeft Q e).symm y i' = y (e i') := by
+  conv_rhs => rw [← (IsometryEquiv.piCongrLeft Q e).apply_symm_apply y]
+  exact (IsometryEquiv.piCongrLeft_apply_apply Q e _ i').symm
+
 /-- Restriction to the summands indexed by `{i // S i}` is isometric when every other summand is
 carried by a trivial module: such summands may be deleted from an orthogonal sum. -/
 def IsometryEquiv.piSubtype {ι : Type*} [Fintype ι] {M : ι → Type*} [∀ i, AddCommMonoid (M i)]
@@ -363,6 +372,17 @@ theorem IsometryEquiv.piSubtype_symm_apply {ι : Type*} [Fintype ι] {M : ι →
     (y : ∀ i : Subtype S, M i) (i : ι) :
     (IsometryEquiv.piSubtype Q S hS).symm y i = if hi : S i then y ⟨i, hi⟩ else 0 :=
   (rfl)
+
+/-- Evaluating a family of isometric equivalences applies each equivalence coordinatewise. -/
+@[simp]
+theorem IsometryEquiv.pi_apply {ι : Type*} [Fintype ι] {M N : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, AddCommMonoid (N i)]
+    [∀ i, Module R (M i)] [∀ i, Module R (N i)]
+    {Q : ∀ i, QuadraticMap R (M i) P} {Q' : ∀ i, QuadraticMap R (N i) P}
+    (e : ∀ i, (Q i).IsometryEquiv (Q' i)) (x : ∀ i, M i) (i : ι) :
+    IsometryEquiv.pi e x i = e i (x i) := by
+  rw [← IsometryEquiv.coe_toLinearEquiv, IsometryEquiv.pi_toLinearEquiv,
+    LinearEquiv.piCongrRight_apply, IsometryEquiv.coe_toLinearEquiv]
 
 section OrthogonalDecomposition
 
