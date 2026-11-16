@@ -20,7 +20,8 @@ residue rings.
 and points of order two. Its output is nonzero even when the model is singular, since native
 points are nonsingular. `double_coordinates_of_cross_eq_zero` gives the same result for any nonzero
 representative of a point's coordinate pair, while `double_cross_eq_zero_of_cross_eq_zero`
-records the unconditional cross-difference relation for arbitrary representatives and `D`.
+records the cross-difference relation assuming only `4 * N = (A + 2) * D`, with no
+characteristic, `B ≠ 0`, `D ≠ 0`, or `S ≠ 0` hypotheses.
 
 The proof uses Mathlib's duplication numerator and denominator, in particular
 `WeierstrassCurve.Affine.den_duplication_ne_zero_or_num_duplication_ne_zero` and
@@ -183,8 +184,9 @@ theorem double_coordinates_of_cross_eq_zero (hD : D ≠ 0)
     simpa [hc] using hn
   · simp [hx]
 
-/-- Doubling any representative of a native point has vanishing cross difference with the
-coordinate pair of its double, including when `D = 0`, when `S = 0`, or in characteristic two. -/
+/-- Assuming `4 * N = (A + 2) * D`, doubling any representative of a native point has vanishing
+cross difference with the coordinate pair of its double, including when `B = 0`, `D = 0`,
+`S = 0`, or in characteristic two. -/
 theorem double_cross_eq_zero_of_cross_eq_zero
     (h : 4 * N = (A + 2) * D) {P : (model A B).toAffine.Point} {S : Pair K}
     (hSP : S.cross (coordinates A B P) = 0) :
