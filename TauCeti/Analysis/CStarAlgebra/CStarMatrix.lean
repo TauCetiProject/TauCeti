@@ -143,15 +143,19 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
     rw [hform]
     exact .of_nonneg (hQ x)
   -- Reduce positivity to showing no compression `star N * M * N` equals a nonzero `-(star R * R)`.
-  refine TauCeti.nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg hsa fun R N hRN => ?_
+  refine hsa.nonneg_of_star_mul_mul_eq_neg_imp_eq_zero fun R N hRN => ?_
   classical
   have hv (y : n → A) : ofMatrix.symm R *ᵥ y = 0 := by
     have hneg : ofMatrix.symm (-(star R * R)) = -ofMatrix.symm (star R * R) :=
       ofMatrix.symm_apply_eq.mpr (by rw [← neg_of, Equiv.apply_symm_apply])
-    have h := hQ (ofMatrix.symm N *ᵥ y)
-    rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec, ← ofMatrix_symm_star,
-      ← ofMatrix_symm_mul, ← ofMatrix_symm_mul, hRN, hneg, neg_mulVec, dotProduct_neg, key,
-      Left.nonneg_neg_iff] at h
+    have hpair : star (ofMatrix.symm N *ᵥ y) ⬝ᵥ (ofMatrix.symm M *ᵥ (ofMatrix.symm N *ᵥ y)) =
+        -(star (ofMatrix.symm R *ᵥ y) ⬝ᵥ (ofMatrix.symm R *ᵥ y)) := by
+      calc star (ofMatrix.symm N *ᵥ y) ⬝ᵥ (ofMatrix.symm M *ᵥ (ofMatrix.symm N *ᵥ y))
+          = star y ⬝ᵥ (ofMatrix.symm (star N * M * N) *ᵥ y) := by
+            simp [star_mulVec, ← dotProduct_mulVec, mul_assoc]
+        _ = -(star (ofMatrix.symm R *ᵥ y) ⬝ᵥ (ofMatrix.symm R *ᵥ y)) := by
+            rw [hRN, hneg, neg_mulVec, dotProduct_neg, key]
+    have h := Left.nonneg_neg_iff.mp (hpair ▸ hQ (ofMatrix.symm N *ᵥ y))
     exact dotProduct_star_self_eq_zero.mp (le_antisymm h (dotProduct_star_self_nonneg _))
   refine ext fun i j => ?_
   have h := congrFun (hv (Pi.single j (star (R i j)))) i

@@ -99,8 +99,8 @@ theorem isometry_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}
   AddMonoidHomClass.isometry_of_norm V (norm_map_of_adjoint_comp_self_eq_id hV)
 
 /-- If `V* ∘ V = id_E`, then `V ∘ V*` is an adjointable star projection on `F` (whose range is
-`Set.range V`; see `range_self_comp_adjoint`). -/
-theorem isStarProjection_self_comp_adjoint {V : AdjointableMap A E F}
+`Set.range V`; see `range_self_comp_adjoint_of_adjoint_comp_self_eq_id`). -/
+theorem isStarProjection_self_comp_adjoint_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}
     (hV : V.adjoint.comp V = .id A E) :
     IsStarProjection (V.comp V.adjoint) :=
   ⟨by rw [IsIdempotentElem, mul_def, comp_assoc, ← comp_assoc V.adjoint V, hV, id_comp],
@@ -108,7 +108,8 @@ theorem isStarProjection_self_comp_adjoint {V : AdjointableMap A E F}
 
 /-- For an adjointable isometry `V`, the range of the range projection `V ∘ V*` equals
 `Set.range V`. -/
-theorem range_self_comp_adjoint {V : AdjointableMap A E F} (hV : V.adjoint.comp V = .id A E) :
+theorem range_self_comp_adjoint_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}
+    (hV : V.adjoint.comp V = .id A E) :
     Set.range (V.comp V.adjoint) = Set.range V :=
   Set.Subset.antisymm (by rintro _ ⟨y, rfl⟩; exact ⟨V.adjoint y, by simp⟩)
     (by rintro _ ⟨x, rfl⟩; exact ⟨V x, by rw [comp_apply, ← comp_apply V.adjoint, hV, id_apply]⟩)
@@ -118,9 +119,20 @@ without completeness of `E` or `F`). -/
 theorem isClosed_range_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}
     (hV : V.adjoint.comp V = .id A E) :
     IsClosed (Set.range V) := by
-  rw [← range_self_comp_adjoint hV]
+  rw [← range_self_comp_adjoint_of_adjoint_comp_self_eq_id hV]
   exact isClosed_range_of_isIdempotentElem
-    (isStarProjection_self_comp_adjoint hV).isIdempotentElem
+    (isStarProjection_self_comp_adjoint_of_adjoint_comp_self_eq_id hV).isIdempotentElem
+
+/-- For a rectangular adjointable isometry `V : AdjointableMap A E F` (`V* ∘ V = id_E`),
+`V ∘ V* = id_F` holds if and only if `V` is surjective. -/
+theorem self_comp_adjoint_eq_id_iff_surjective_of_adjoint_comp_self_eq_id
+    {V : AdjointableMap A E F} (hV : V.adjoint.comp V = .id A E) :
+    V.comp V.adjoint = .id A F ↔ Function.Surjective V := by
+  refine ⟨fun h y ↦ ⟨V.adjoint y, by simpa using DFunLike.congr_fun h y⟩,
+    fun hsurj ↦ ext fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hsurj y
+  calc (V.comp V.adjoint) (V x) = V ((V.adjoint.comp V) x) := by simp
+    _ = AdjointableMap.id A F (V x) := by rw [hV, id_apply, id_apply]
 
 /-- An operator `U : AdjointableMap A E E` belongs to `unitary (AdjointableMap A E E)` if and only
 if `U* ∘ U = id_E` and `U ∘ U* = id_E`. -/
@@ -134,15 +146,8 @@ if `U` is surjective and preserves the `A`-valued inner product. -/
 theorem mem_unitary_iff {U : AdjointableMap A E E} :
     U ∈ unitary (AdjointableMap A E E) ↔
       Function.Surjective U ∧ ∀ x y : E, inner A (U x) (U y) = inner A x y := by
-  rw [mem_unitary_iff_adjoint_comp]
-  refine ⟨fun ⟨h₁, h₂⟩ ↦ ⟨fun y ↦ ⟨U.adjoint y, by simpa using DFunLike.congr_fun h₂ y⟩,
-      (adjoint_comp_self_eq_id_iff_inner_map_map U).mp h₁⟩, fun ⟨hsurj, hinner⟩ ↦ ?_⟩
-  have h₁ : U.adjoint.comp U = .id A E :=
-    (adjoint_comp_self_eq_id_iff_inner_map_map U).mpr hinner
-  refine ⟨h₁, ext fun y ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := hsurj y
-  calc (U.comp U.adjoint) (U x) = U ((U.adjoint.comp U) x) := by simp
-    _ = AdjointableMap.id A E (U x) := by rw [h₁, id_apply, id_apply]
+  rw [mem_unitary_iff_adjoint_comp, and_comm, ← adjoint_comp_self_eq_id_iff_inner_map_map]
+  exact and_congr_left self_comp_adjoint_eq_id_iff_surjective_of_adjoint_comp_self_eq_id
 
 end Isometries
 
@@ -256,6 +261,14 @@ theorem toLinearIsometryEquiv_symm (U : CStarModuleUnitary A E F) :
     U.symm.toLinearIsometryEquiv = U.toLinearIsometryEquiv.symm := (rfl)
 
 @[simp]
+theorem coe_symm_toLinearIsometryEquiv (U : CStarModuleUnitary A E F) :
+    ⇑U.toLinearIsometryEquiv.symm = ⇑U.symm := (rfl)
+
+@[simp]
+theorem equivLike_inv_eq_symm (U : CStarModuleUnitary A E F) :
+    EquivLike.inv U = ⇑U.symm := (rfl)
+
+@[simp]
 theorem symm_symm (U : CStarModuleUnitary A E F) : U.symm.symm = U := (rfl)
 
 theorem symm_injective :
@@ -273,6 +286,16 @@ theorem apply_symm_apply (U : CStarModuleUnitary A E F) (y : F) : U (U.symm y) =
 @[simp]
 theorem symm_apply_apply (U : CStarModuleUnitary A E F) (x : E) : U.symm (U x) = x :=
   U.toLinearIsometryEquiv.symm_apply_apply x
+
+theorem symm_apply_eq (U : CStarModuleUnitary A E F) {x : E} {y : F} :
+    U.symm y = x ↔ y = U x := by
+  simpa only [coe_symm_toLinearIsometryEquiv, toLinearIsometryEquiv_apply] using
+    U.toLinearIsometryEquiv.symm_apply_eq (x := y) (y := x)
+
+theorem eq_symm_apply (U : CStarModuleUnitary A E F) {x : E} {y : F} :
+    x = U.symm y ↔ U x = y := by
+  simpa only [coe_symm_toLinearIsometryEquiv, toLinearIsometryEquiv_apply] using
+    U.toLinearIsometryEquiv.eq_symm_apply (x := y) (y := x)
 
 /-- Moving a module unitary across the `A`-valued inner product from left to right:
 `⟪x, U.symm y⟫_A = ⟪U x, y⟫_A`. -/
@@ -472,6 +495,12 @@ theorem ofSurjective_symm_apply_apply (f : E → F) (hf_surj : Function.Surjecti
     (ofSurjective f hf_surj hf_inner).symm (f x) = x :=
   (ofSurjective f hf_surj hf_inner).symm_apply_apply x
 
+theorem ofSurjective_apply_symm_apply (f : E → F) (hf_surj : Function.Surjective f)
+    (hf_inner : ∀ x y : E, inner A (f x) (f y) = inner A x y) (y : F) :
+    f ((ofSurjective f hf_surj hf_inner).symm y) = y := by
+  rw [← ofSurjective_apply f hf_surj hf_inner]
+  exact (ofSurjective f hf_surj hf_inner).apply_symm_apply y
+
 /-- Construct a Hilbert C⋆-module unitary from an invertible adjointable map `T` whose inverse is
 its adjoint (`T* ∘ T = id_E` and `T ∘ T* = id_F`). -/
 def ofAdjointableMap (T : AdjointableMap A E F)
@@ -491,6 +520,11 @@ def ofAdjointableMap (T : AdjointableMap A E F)
 theorem ofAdjointableMap_apply (T : AdjointableMap A E F)
     (h₁ : T.adjoint.comp T = .id A E) (h₂ : T.comp T.adjoint = .id A F) (x : E) :
     ofAdjointableMap T h₁ h₂ x = T x := (rfl)
+
+@[simp]
+theorem coe_ofAdjointableMap (T : AdjointableMap A E F)
+    (h₁ : T.adjoint.comp T = .id A E) (h₂ : T.comp T.adjoint = .id A F) :
+    ⇑(ofAdjointableMap T h₁ h₂) = ⇑T := (rfl)
 
 @[simp]
 theorem symm_ofAdjointableMap (T : AdjointableMap A E F)
@@ -583,6 +617,23 @@ theorem toAdjointableMap_inv (U : CStarModuleUnitary A E E) :
     U⁻¹.toAdjointableMap = U.symm.toAdjointableMap :=
   AdjointableMap.ext fun _ ↦ by simp
 
+@[simp]
+theorem symm_toAdjointableMap_mul_toAdjointableMap (U : CStarModuleUnitary A E E) :
+    U.symm.toAdjointableMap * U.toAdjointableMap = 1 := by
+  rw [AdjointableMap.mul_def, AdjointableMap.one_def]
+  exact U.symm_toAdjointableMap_comp_toAdjointableMap
+
+@[simp]
+theorem toAdjointableMap_mul_symm_toAdjointableMap (U : CStarModuleUnitary A E E) :
+    U.toAdjointableMap * U.symm.toAdjointableMap = 1 := by
+  rw [AdjointableMap.mul_def, AdjointableMap.one_def]
+  exact U.toAdjointableMap_comp_symm_toAdjointableMap
+
+@[simp]
+theorem toAdjointableMap_mem_unitary (U : CStarModuleUnitary A E E) :
+    U.toAdjointableMap ∈ unitary (AdjointableMap A E E) :=
+  Unitary.mem_iff.mpr ⟨by simp, by simp⟩
+
 /-- Endomorphism module unitaries `CStarModuleUnitary A E E` are canonically isomorphic as a group
 to `unitary (AdjointableMap A E E)`. -/
 def mulEquivUnitary : CStarModuleUnitary A E E ≃* unitary (AdjointableMap A E E) :=
@@ -598,6 +649,11 @@ theorem coe_mulEquivUnitary (U : CStarModuleUnitary A E E) :
 @[simp]
 theorem mulEquivUnitary_symm_apply (U : unitary (AdjointableMap A E E)) (x : E) :
     mulEquivUnitary.symm U x = (U : AdjointableMap A E E) x := (rfl)
+
+@[simp]
+theorem toAdjointableMap_mulEquivUnitary_symm (U : unitary (AdjointableMap A E E)) :
+    (mulEquivUnitary.symm U).toAdjointableMap = (U : AdjointableMap A E E) :=
+  AdjointableMap.ext fun _ ↦ rfl
 
 end End
 

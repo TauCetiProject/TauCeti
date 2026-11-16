@@ -52,7 +52,7 @@ generation, nor nontriviality of the modules is assumed; in particular the zero 
   positive in the C⋆-algebra `AdjointableMap A E E` if and only if `0 ≤ ⟪x, T x⟫_A` for every
   `x : E`, with no prior self-adjointness hypothesis.
 * `TauCeti.AdjointableMap.inner_map_map_le_norm_sq_smul`: Paschke's inequality
-  `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` for any `T : AdjointableMap A E F` when `E` is complete.
+  `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` for any `T : AdjointableMap A E F`.
 * `TauCeti.AdjointableMap.isClosed_range_of_isIdempotentElem` and
   `TauCeti.AdjointableMap.inner_eq_add_inner_one_sub_of_isStarProjection`: closed range for
   adjointable idempotents and orthogonal inner-product decomposition for adjointable star
@@ -69,7 +69,7 @@ generation, nor nontriviality of the modules is assumed; in particular the zero 
 
 public section
 
-open CStarModule MulOpposite
+open CStarModule MulOpposite Topology
 
 namespace TauCeti
 
@@ -116,26 +116,19 @@ instance instContinuousLinearMapClass : ContinuousLinearMapClass (AdjointableMap
   map_smulₛₗ T := map_smulₛₗ T.toContinuousLinearMap
   map_continuous T := T.toContinuousLinearMap.continuous
 
-@[simp]
-theorem toContinuousLinearMap_apply (T : AdjointableMap A E F) (x : E) :
+@[simp] theorem toContinuousLinearMap_apply (T : AdjointableMap A E F) (x : E) :
     T.toContinuousLinearMap x = T x := (rfl)
-
-@[simp]
-theorem coe_toContinuousLinearMap (T : AdjointableMap A E F) :
+@[simp] theorem coe_toContinuousLinearMap (T : AdjointableMap A E F) :
     ⇑T.toContinuousLinearMap = ⇑T := (rfl)
-
-@[simp]
-theorem coe_mk (T : E →L[ℂ] F) (S : F →L[ℂ] E)
+@[simp] theorem coe_mk (T : E →L[ℂ] F) (S : F →L[ℂ] E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) :
     ⇑(⟨T, S, h⟩ : AdjointableMap A E F) = ⇑T := (rfl)
-
 theorem mk_apply (T : E →L[ℂ] F) (S : F →L[ℂ] E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) (x : E) :
     (⟨T, S, h⟩ : AdjointableMap A E F) x = T x := (rfl)
 
 /-- Adjointable maps are determined by their action on vectors. -/
-@[ext]
-theorem ext {T S : AdjointableMap A E F} (h : ∀ x, T x = S x) : T = S :=
+@[ext] theorem ext {T S : AdjointableMap A E F} (h : ∀ x, T x = S x) : T = S :=
   DFunLike.ext T S h
 
 /-- The forgetful map to `E →L[ℂ] F` is injective. -/
@@ -143,8 +136,7 @@ theorem toContinuousLinearMap_injective :
     Function.Injective (toContinuousLinearMap : AdjointableMap A E F → E →L[ℂ] F) :=
   fun _ _ h ↦ ext fun x ↦ DFunLike.congr_fun h x
 
-@[simp]
-theorem toContinuousLinearMap_inj {T S : AdjointableMap A E F} :
+@[simp] theorem toContinuousLinearMap_inj {T S : AdjointableMap A E F} :
     T.toContinuousLinearMap = S.toContinuousLinearMap ↔ T = S :=
   toContinuousLinearMap_injective.eq_iff
 
@@ -155,10 +147,8 @@ protected def copy (T : AdjointableMap A E F) (f : E → F) (hf : f = ⇑T) :
   adjoint' := T.adjoint'
   inner_map_eq' x y := by simpa [hf] using T.inner_map_eq' x y
 
-@[simp]
-theorem coe_copy (T : AdjointableMap A E F) (f : E → F) (hf : f = ⇑T) :
+@[simp] theorem coe_copy (T : AdjointableMap A E F) (f : E → F) (hf : f = ⇑T) :
     ⇑(T.copy f hf) = f := (rfl)
-
 theorem copy_eq (T : AdjointableMap A E F) (f : E → F) (hf : f = ⇑T) :
     T.copy f hf = T :=
   DFunLike.ext' hf
@@ -171,30 +161,23 @@ def adjoint (T : AdjointableMap A E F) : AdjointableMap A F E where
     (CStarModule.isAdjointPair_inner_iff.mpr T.inner_map_eq').symm_cstarModule.inner_eq_cstarModule
       y x
 
-@[simp]
-theorem adjoint'_eq (T : AdjointableMap A E F) :
+@[simp] theorem adjoint'_eq (T : AdjointableMap A E F) :
     T.adjoint' = T.adjoint.toContinuousLinearMap := (rfl)
-
-@[simp]
-theorem toContinuousLinearMap_adjoint_mk (T : E →L[ℂ] F) (S : F →L[ℂ] E)
+@[simp] theorem toContinuousLinearMap_adjoint_mk (T : E →L[ℂ] F) (S : F →L[ℂ] E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) :
     (⟨T, S, h⟩ : AdjointableMap A E F).adjoint.toContinuousLinearMap = S := (rfl)
-
-@[simp]
-theorem adjoint_mk_apply (T : E →L[ℂ] F) (S : F →L[ℂ] E)
+@[simp] theorem adjoint_mk_apply (T : E →L[ℂ] F) (S : F →L[ℂ] E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) (y : F) :
     (⟨T, S, h⟩ : AdjointableMap A E F).adjoint y = S y := (rfl)
 
 /-- The adjoint operation is involutive. -/
-@[simp]
-theorem adjoint_adjoint (T : AdjointableMap A E F) : T.adjoint.adjoint = T := (rfl)
+@[simp] theorem adjoint_adjoint (T : AdjointableMap A E F) : T.adjoint.adjoint = T := (rfl)
 
 theorem adjoint_injective :
     Function.Injective (adjoint : AdjointableMap A E F → AdjointableMap A F E) :=
   Function.LeftInverse.injective adjoint_adjoint
 
-@[simp]
-theorem adjoint_inj {T S : AdjointableMap A E F} : T.adjoint = S.adjoint ↔ T = S :=
+@[simp] theorem adjoint_inj {T S : AdjointableMap A E F} : T.adjoint = S.adjoint ↔ T = S :=
   adjoint_injective.eq_iff
 
 /-- Defining identity `⟪x, T.adjoint y⟫_A = ⟪T x, y⟫_A` of the adjoint. -/
@@ -230,99 +213,66 @@ theorem map_smul_coeff (T : AdjointableMap A E F) (a : A) (x : E) :
 
 /-! #### Linear structure and composition -/
 
-instance instZero : Zero (AdjointableMap A E F) where
-  zero :=
-    { toContinuousLinearMap := 0
-      adjoint' := 0
-      inner_map_eq' := fun _ _ ↦ by simp }
-
+instance instZero : Zero (AdjointableMap A E F) := ⟨⟨0, 0, fun _ _ ↦ by simp⟩⟩
 instance instIsZeroApply : IsZeroApply (AdjointableMap A E F) where
-
 instance instInhabited : Inhabited (AdjointableMap A E F) := ⟨0⟩
-
-instance instSubsingleton [Subsingleton F] : Subsingleton (AdjointableMap A E F) :=
-  toContinuousLinearMap_injective.subsingleton
-
 instance instUnique [Subsingleton F] : Unique (AdjointableMap A E F) :=
-  uniqueOfSubsingleton 0
-
-instance instSubsingletonLeft [Subsingleton E] : Subsingleton (AdjointableMap A E F) where
-  allEq T S := ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]
-
+  toContinuousLinearMap_injective.unique
 instance instUniqueLeft [Subsingleton E] : Unique (AdjointableMap A E F) :=
-  uniqueOfSubsingleton 0
+  toContinuousLinearMap_injective.unique
 
-instance instAdd : Add (AdjointableMap A E F) where
-  add T S :=
-    { toContinuousLinearMap := T.toContinuousLinearMap + S.toContinuousLinearMap
-      adjoint' := T.adjoint' + S.adjoint'
-      inner_map_eq' := fun x y ↦ by simp [T.adjoint_inner_right, S.adjoint_inner_right] }
-
+instance instAdd : Add (AdjointableMap A E F) :=
+  ⟨fun T S ↦ ⟨T.toContinuousLinearMap + S.toContinuousLinearMap, T.adjoint' + S.adjoint',
+    fun x y ↦ by simp [T.adjoint_inner_right, S.adjoint_inner_right]⟩⟩
 instance instIsAddApply : IsAddApply (AdjointableMap A E F) where
 
-instance instNeg : Neg (AdjointableMap A E F) where
-  neg T :=
-    { toContinuousLinearMap := -T.toContinuousLinearMap
-      adjoint' := -T.adjoint'
-      inner_map_eq' := fun x y ↦ by simp [T.adjoint_inner_right] }
-
+instance instNeg : Neg (AdjointableMap A E F) :=
+  ⟨fun T ↦ ⟨-T.toContinuousLinearMap, -T.adjoint', fun x y ↦ by simp [T.adjoint_inner_right]⟩⟩
 instance instIsNegApply : IsNegApply (AdjointableMap A E F) where
 
-instance instSub : Sub (AdjointableMap A E F) where
-  sub T S :=
-    { toContinuousLinearMap := T.toContinuousLinearMap - S.toContinuousLinearMap
-      adjoint' := T.adjoint' - S.adjoint'
-      inner_map_eq' := fun x y ↦ by simp [T.adjoint_inner_right, S.adjoint_inner_right] }
-
+instance instSub : Sub (AdjointableMap A E F) :=
+  ⟨fun T S ↦ ⟨T.toContinuousLinearMap - S.toContinuousLinearMap, T.adjoint' - S.adjoint',
+    fun x y ↦ by simp [T.adjoint_inner_right, S.adjoint_inner_right]⟩⟩
 instance instIsSubApply : IsSubApply (AdjointableMap A E F) where
 
-instance instSMulComplex : SMul ℂ (AdjointableMap A E F) where
-  smul c T :=
-    { toContinuousLinearMap := c • T.toContinuousLinearMap
-      adjoint' := star c • T.adjoint'
-      inner_map_eq' := fun x y ↦ by simp [T.adjoint_inner_right] }
-
+instance instSMulComplex : SMul ℂ (AdjointableMap A E F) :=
+  ⟨fun c T ↦ ⟨c • T.toContinuousLinearMap, star c • T.adjoint',
+    fun x y ↦ by simp [T.adjoint_inner_right]⟩⟩
 instance instIsSMulApplyComplex : IsSMulApply ℂ (AdjointableMap A E F) where
 
 @[simp] theorem toContinuousLinearMap_zero :
     (0 : AdjointableMap A E F).toContinuousLinearMap = 0 := (rfl)
+@[simp] theorem toContinuousLinearMap_eq_zero_iff {T : AdjointableMap A E F} :
+    T.toContinuousLinearMap = 0 ↔ T = 0 :=
+  toContinuousLinearMap_injective.eq_iff' toContinuousLinearMap_zero
 @[simp] theorem toContinuousLinearMap_add (T S : AdjointableMap A E F) :
     (T + S).toContinuousLinearMap = T.toContinuousLinearMap + S.toContinuousLinearMap := (rfl)
 @[simp] theorem toContinuousLinearMap_neg (T : AdjointableMap A E F) :
     (-T).toContinuousLinearMap = -T.toContinuousLinearMap := (rfl)
 @[simp] theorem toContinuousLinearMap_sub (T S : AdjointableMap A E F) :
     (T - S).toContinuousLinearMap = T.toContinuousLinearMap - S.toContinuousLinearMap := (rfl)
-@[simp] theorem toContinuousLinearMap_smul (c : ℂ) (T : AdjointableMap A E F) :
-    (c • T).toContinuousLinearMap = c • T.toContinuousLinearMap := (rfl)
 
 @[simp] theorem adjoint_zero : (0 : AdjointableMap A E F).adjoint = 0 := (rfl)
+@[simp] theorem adjoint_eq_zero_iff {T : AdjointableMap A E F} :
+    T.adjoint = 0 ↔ T = 0 :=
+  adjoint_injective.eq_iff' adjoint_zero
 @[simp] theorem adjoint_add (T S : AdjointableMap A E F) :
     (T + S).adjoint = T.adjoint + S.adjoint := (rfl)
 @[simp] theorem adjoint_neg (T : AdjointableMap A E F) : (-T).adjoint = -T.adjoint := (rfl)
 @[simp] theorem adjoint_sub (T S : AdjointableMap A E F) :
     (T - S).adjoint = T.adjoint - S.adjoint := (rfl)
-
-@[simp]
-theorem adjoint_smul (c : ℂ) (T : AdjointableMap A E F) :
+@[simp] theorem adjoint_smul (c : ℂ) (T : AdjointableMap A E F) :
     (c • T).adjoint = star c • T.adjoint :=
   toContinuousLinearMap_injective rfl
 
-instance instSMulNat : SMul ℕ (AdjointableMap A E F) where
-  smul n T :=
-    { toContinuousLinearMap := n • T.toContinuousLinearMap
-      adjoint' := n • T.adjoint'
-      inner_map_eq' := fun x y ↦ by
-        simpa [Nat.cast_smul_eq_nsmul ℂ] using ((n : ℂ) • T).inner_map_eq' x y }
-
+instance instSMulNat : SMul ℕ (AdjointableMap A E F) :=
+  ⟨fun n T ↦ ⟨n • T.toContinuousLinearMap, n • T.adjoint', fun x y ↦ by
+    simpa [Nat.cast_smul_eq_nsmul ℂ] using ((n : ℂ) • T).inner_map_eq' x y⟩⟩
 instance instIsSMulApplyNat : IsSMulApply ℕ (AdjointableMap A E F) where
 
-instance instSMulInt : SMul ℤ (AdjointableMap A E F) where
-  smul n T :=
-    { toContinuousLinearMap := n • T.toContinuousLinearMap
-      adjoint' := n • T.adjoint'
-      inner_map_eq' := fun x y ↦ by
-        simpa [Int.cast_smul_eq_zsmul ℂ] using ((n : ℂ) • T).inner_map_eq' x y }
-
+instance instSMulInt : SMul ℤ (AdjointableMap A E F) :=
+  ⟨fun n T ↦ ⟨n • T.toContinuousLinearMap, n • T.adjoint', fun x y ↦ by
+    simpa [Int.cast_smul_eq_zsmul ℂ] using ((n : ℂ) • T).inner_map_eq' x y⟩⟩
 instance instIsSMulApplyInt : IsSMulApply ℤ (AdjointableMap A E F) where
 
 instance instAddCommGroup : AddCommGroup (AdjointableMap A E F) :=
@@ -333,18 +283,19 @@ instance instAddCommGroup : AddCommGroup (AdjointableMap A E F) :=
 instance instModuleComplex : Module ℂ (AdjointableMap A E F) :=
   Function.Injective.module ℂ
     { toFun := toContinuousLinearMap, map_zero' := rfl, map_add' := toContinuousLinearMap_add }
-    toContinuousLinearMap_injective toContinuousLinearMap_smul
-
+    toContinuousLinearMap_injective (fun _ _ ↦ rfl)
 instance instIsSMulApplyReal : IsSMulApply ℝ (AdjointableMap A E F) where
 
-/-- The forgetful `ℂ`-linear map from `AdjointableMap A E F` to `E →L[ℂ] F`. -/
-def toContinuousLinearMapLinear : AdjointableMap A E F →ₗ[ℂ] E →L[ℂ] F where
-  toFun := toContinuousLinearMap
-  map_add' := toContinuousLinearMap_add
-  map_smul' := toContinuousLinearMap_smul
-
-@[simp] theorem toContinuousLinearMapLinear_apply (T : AdjointableMap A E F) :
-    toContinuousLinearMapLinear T = T.toContinuousLinearMap := (rfl)
+@[simp] theorem toContinuousLinearMap_smul {R : Type*} [SMul R ℂ] [SMul R (AdjointableMap A E F)]
+    [SMul R (E →L[ℂ] F)] [IsScalarTower R ℂ (AdjointableMap A E F)]
+    [IsScalarTower R ℂ (E →L[ℂ] F)] (r : R) (T : AdjointableMap A E F) :
+    (r • T).toContinuousLinearMap = r • T.toContinuousLinearMap := by
+  rw [← smul_one_smul ℂ r T, ← smul_one_smul ℂ r T.toContinuousLinearMap]
+  rfl
+@[simp] theorem toContinuousLinearMap_sum {ι : Type*} (s : Finset ι)
+    (f : ι → AdjointableMap A E F) :
+    (∑ i ∈ s, f i).toContinuousLinearMap = ∑ i ∈ s, (f i).toContinuousLinearMap :=
+  Finset.cons_induction (by simp) (fun _ _ _ ih ↦ by simp [ih]) s
 
 /-- The adjoint bundled as a conjugate-linear equivalence
 `AdjointableMap A E F ≃ₗ⋆[ℂ] AdjointableMap A F E`. -/
@@ -359,6 +310,21 @@ def adjointEquiv : AdjointableMap A E F ≃ₗ⋆[ℂ] AdjointableMap A F E wher
 @[simp] theorem adjointEquiv_apply (T : AdjointableMap A E F) : adjointEquiv T = T.adjoint := (rfl)
 @[simp] theorem adjointEquiv_symm :
     (adjointEquiv : AdjointableMap A E F ≃ₗ⋆[ℂ] AdjointableMap A F E).symm = adjointEquiv := (rfl)
+@[simp] theorem adjoint_sum {ι : Type*} (s : Finset ι) (f : ι → AdjointableMap A E F) :
+    (∑ i ∈ s, f i).adjoint = ∑ i ∈ s, (f i).adjoint := by
+  simpa only [adjointEquiv_apply] using
+    map_sum (adjointEquiv : AdjointableMap A E F ≃ₗ⋆[ℂ] AdjointableMap A F E) f s
+@[simp] theorem adjoint_nsmul (n : ℕ) (T : AdjointableMap A E F) :
+    (n • T).adjoint = n • T.adjoint := by
+  simpa only [adjointEquiv_apply] using
+    map_nsmul (adjointEquiv : AdjointableMap A E F ≃ₗ⋆[ℂ] AdjointableMap A F E) n T
+@[simp] theorem adjoint_zsmul (n : ℤ) (T : AdjointableMap A E F) :
+    (n • T).adjoint = n • T.adjoint := by
+  simpa only [adjointEquiv_apply] using
+    map_zsmul (adjointEquiv : AdjointableMap A E F ≃ₗ⋆[ℂ] AdjointableMap A F E) n T
+@[simp] theorem adjoint_smul_real (r : ℝ) (T : AdjointableMap A E F) :
+    (r • T).adjoint = r • T.adjoint := by
+  rw [← Complex.coe_smul, adjoint_smul, Complex.star_def, Complex.conj_ofReal, Complex.coe_smul]
 
 /-- The identity operator on a Hilbert C⋆-module as an adjointable map. -/
 protected def id (A E : Type*) [NonUnitalCStarAlgebra A] [PartialOrder A]
@@ -417,21 +383,26 @@ theorem comp_add (S : AdjointableMap A F G) (T₁ T₂ : AdjointableMap A E F) :
   ext fun _ ↦ map_add S _ _
 
 theorem smul_comp (c : ℂ) (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
-    (c • S).comp T = c • (S.comp T) :=
-  ext fun _ ↦ rfl
-
+    (c • S).comp T = c • (S.comp T) := ext fun _ ↦ rfl
 theorem comp_smul (c : ℂ) (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
-    S.comp (c • T) = c • (S.comp T) :=
-  ext fun _ ↦ map_smul S c _
+    S.comp (c • T) = c • (S.comp T) := ext fun _ ↦ map_smul S c _
+
+@[simp] theorem adjoint_comp_self_eq_zero_iff {T : AdjointableMap A E F} :
+    T.adjoint.comp T = 0 ↔ T = 0 := by
+  refine ⟨fun h ↦ ext fun x ↦ (CStarModule.inner_self (A := A)).mp ?_, fun h ↦ by simp [h]⟩
+  rw [← T.adjoint_inner_right, ← comp_apply, h, zero_apply, inner_zero_right]
+
+@[simp] theorem self_comp_adjoint_eq_zero_iff {T : AdjointableMap A E F} :
+    T.comp T.adjoint = 0 ↔ T = 0 := by
+  simpa only [adjoint_adjoint, adjoint_eq_zero_iff] using
+    adjoint_comp_self_eq_zero_iff (T := T.adjoint)
 
 /-! #### Endomorphism algebra, star structure, and natural action on the module -/
 
 instance instOne : One (AdjointableMap A E E) := ⟨AdjointableMap.id A E⟩
 instance instMul : Mul (AdjointableMap A E E) := ⟨comp⟩
-
 theorem one_def : (1 : AdjointableMap A E E) = AdjointableMap.id A E := (rfl)
 theorem mul_def (S T : AdjointableMap A E E) : S * T = S.comp T := (rfl)
-
 instance instIsOneApplyEqSelf : IsOneApplyEqSelf (AdjointableMap A E E) where
 instance instIsMulApplyEqComp : IsMulApplyEqComp (AdjointableMap A E E) where
 
@@ -439,6 +410,9 @@ instance instIsMulApplyEqComp : IsMulApplyEqComp (AdjointableMap A E E) where
     (1 : AdjointableMap A E E).toContinuousLinearMap = 1 := (rfl)
 @[simp] theorem toContinuousLinearMap_mul (S T : AdjointableMap A E E) :
     (S * T).toContinuousLinearMap = S.toContinuousLinearMap * T.toContinuousLinearMap := (rfl)
+@[simp] theorem adjoint_one : (1 : AdjointableMap A E E).adjoint = 1 := (rfl)
+@[simp] theorem adjoint_mul (S T : AdjointableMap A E E) :
+    (S * T).adjoint = T.adjoint * S.adjoint := (rfl)
 
 instance instPowNat : Pow (AdjointableMap A E E) ℕ where
   pow T n :=
@@ -446,18 +420,18 @@ instance instPowNat : Pow (AdjointableMap A E E) ℕ where
       adjoint' := T.adjoint' ^ n
       inner_map_eq' := fun x y ↦ by
         induction n generalizing x y with
-        | zero =>
-          simp only [pow_zero, one_apply_eq_self]
+        | zero => simp only [pow_zero, one_apply_eq_self]
         | succ k hk =>
           rw [pow_succ', pow_succ, mul_apply_eq_comp, mul_apply_eq_comp]
           exact (T.inner_map_eq' _ y).trans (hk x (T.adjoint' y)) }
 
 @[simp] theorem toContinuousLinearMap_pow (T : AdjointableMap A E E) (n : ℕ) :
     (T ^ n).toContinuousLinearMap = T.toContinuousLinearMap ^ n := (rfl)
+@[simp] theorem adjoint_pow (T : AdjointableMap A E E) (n : ℕ) :
+    (T ^ n).adjoint = T.adjoint ^ n := (rfl)
 
 instance instNatCast : NatCast (AdjointableMap A E E) := ⟨fun n ↦ n • 1⟩
 instance instIntCast : IntCast (AdjointableMap A E E) := ⟨fun n ↦ n • 1⟩
-
 instance instIsNatCastApplyEqSMul : IsNatCastApplyEqSMul (AdjointableMap A E E) where
 instance instIsIntCastApplyEqSMul : IsIntCastApplyEqSMul (AdjointableMap A E E) where
 
@@ -484,7 +458,6 @@ def toContinuousLinearMapAlgHom : AdjointableMap A E E →ₐ[ℂ] E →L[ℂ] E
     toContinuousLinearMapAlgHom T = T.toContinuousLinearMap := (rfl)
 
 instance instStar : Star (AdjointableMap A E E) := ⟨adjoint⟩
-
 theorem star_eq_adjoint (T : AdjointableMap A E E) : star T = T.adjoint := (rfl)
 
 instance instStarRing : StarRing (AdjointableMap A E E) where
@@ -497,7 +470,6 @@ instance instStarModuleComplex : StarModule ℂ (AdjointableMap A E E) where
 
 /-- The natural left action of `AdjointableMap A E E` on the module `E` by evaluation. -/
 instance instSMulApply : SMul (AdjointableMap A E E) E := ⟨fun T x ↦ T x⟩
-
 @[simp] protected theorem smul_def (T : AdjointableMap A E E) (x : E) : T • x = T x := (rfl)
 
 instance applyModule : Module (AdjointableMap A E E) E where
@@ -508,28 +480,22 @@ instance applyModule : Module (AdjointableMap A E E) E where
   add_smul S T x := by exact add_apply S T x
   zero_smul x := by exact zero_apply x
 
-instance applyFaithfulSMul : FaithfulSMul (AdjointableMap A E E) E :=
-  ⟨fun {_ _} h ↦ ext h⟩
-
-instance applySMulCommClassComplexLeft : SMulCommClass ℂ (AdjointableMap A E E) E where
-  smul_comm c T x := (map_smul T c x).symm
-
-instance applySMulCommClassComplexRight : SMulCommClass (AdjointableMap A E E) ℂ E where
-  smul_comm T c x := map_smul T c x
+instance applyFaithfulSMul : FaithfulSMul (AdjointableMap A E E) E := ⟨fun {_ _} h ↦ ext h⟩
+instance applySMulCommClassComplexLeft : SMulCommClass ℂ (AdjointableMap A E E) E :=
+  ⟨fun c T x ↦ (map_smul T c x).symm⟩
+instance applySMulCommClassComplexRight : SMulCommClass (AdjointableMap A E E) ℂ E :=
+  ⟨fun T c x ↦ map_smul T c x⟩
 
 /-- The natural left action of `AdjointableMap A E E` on `E` commutes with the coefficient action
 of `A` (in particular, with the right `B`-action when `A = Bᵐᵒᵖ`). -/
-instance applySMulCommClassCoeffLeft : SMulCommClass A (AdjointableMap A E E) E where
-  smul_comm a T x := (T.map_smul_coeff a x).symm
+instance applySMulCommClassCoeffLeft : SMulCommClass A (AdjointableMap A E E) E :=
+  ⟨fun a T x ↦ (T.map_smul_coeff a x).symm⟩
+instance applySMulCommClassCoeffRight : SMulCommClass (AdjointableMap A E E) A E :=
+  ⟨fun T a x ↦ T.map_smul_coeff a x⟩
+instance applyIsScalarTowerComplex : IsScalarTower ℂ (AdjointableMap A E E) E :=
+  ⟨fun _ _ _ ↦ rfl⟩
 
-instance applySMulCommClassCoeffRight : SMulCommClass (AdjointableMap A E E) A E where
-  smul_comm T a x := T.map_smul_coeff a x
-
-instance applyIsScalarTowerComplex : IsScalarTower ℂ (AdjointableMap A E E) E where
-  smul_assoc _ _ _ := rfl
-
-@[simp]
-theorem algebraMap_apply {R : Type*} [CommSemiring R] [SMul R E]
+@[simp] theorem algebraMap_apply {R : Type*} [CommSemiring R] [SMul R E]
     [Algebra R (AdjointableMap A E E)] [IsScalarTower R (AdjointableMap A E E) E]
     (r : R) (x : E) :
     algebraMap R (AdjointableMap A E E) r x = r • x := by
@@ -570,15 +536,12 @@ variable {A E F G : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
 noncomputable instance instNormedAddCommGroup :
     NormedAddCommGroup (AdjointableMap A E F) :=
   NormedAddCommGroup.induced (AdjointableMap A E F) (E →L[ℂ] F)
-    ({ toFun := toContinuousLinearMap
-       map_zero' := rfl
-       map_add' := toContinuousLinearMap_add } : AdjointableMap A E F →+ E →L[ℂ] F)
+    ({ toFun := toContinuousLinearMap, map_zero' := rfl, map_add' := toContinuousLinearMap_add } :
+      AdjointableMap A E F →+ E →L[ℂ] F)
     toContinuousLinearMap_injective
 
 theorem norm_def (T : AdjointableMap A E F) : ‖T‖ = ‖T.toContinuousLinearMap‖ := (rfl)
-
-@[simp]
-theorem norm_toContinuousLinearMap (T : AdjointableMap A E F) :
+@[simp] theorem norm_toContinuousLinearMap (T : AdjointableMap A E F) :
     ‖T.toContinuousLinearMap‖ = ‖T‖ := (rfl)
 
 noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (AdjointableMap A E F) where
@@ -586,24 +549,22 @@ noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (AdjointableMap 
 
 /-- The forgetful map from `AdjointableMap A E F` to `E →L[ℂ] F` as a `ℂ`-linear isometry. -/
 noncomputable def toContinuousLinearMapₗᵢ : AdjointableMap A E F →ₗᵢ[ℂ] E →L[ℂ] F where
-  toLinearMap := toContinuousLinearMapLinear
+  toFun := toContinuousLinearMap
+  map_add' := toContinuousLinearMap_add
+  map_smul' := toContinuousLinearMap_smul
   norm_map' _ := rfl
 
-@[simp]
-theorem toContinuousLinearMapₗᵢ_apply (T : AdjointableMap A E F) :
+@[simp] theorem toContinuousLinearMapₗᵢ_apply (T : AdjointableMap A E F) :
     toContinuousLinearMapₗᵢ T = T.toContinuousLinearMap := (rfl)
-
 theorem isometry_toContinuousLinearMap :
     Isometry (toContinuousLinearMap : AdjointableMap A E F → E →L[ℂ] F) :=
   (toContinuousLinearMapₗᵢ (A := A) (E := E) (F := F)).isometry
 
 theorem le_opNorm (T : AdjointableMap A E F) (x : E) : ‖T x‖ ≤ ‖T‖ * ‖x‖ :=
   T.toContinuousLinearMap.le_opNorm x
-
 theorem opNorm_le_bound (T : AdjointableMap A E F) {M : ℝ} (hMp : 0 ≤ M)
     (hM : ∀ x, ‖T x‖ ≤ M * ‖x‖) : ‖T‖ ≤ M :=
   T.toContinuousLinearMap.opNorm_le_bound hMp hM
-
 theorem opNorm_comp_le (S : AdjointableMap A F G) (T : AdjointableMap A E F) :
     ‖S.comp T‖ ≤ ‖S‖ * ‖T‖ :=
   S.toContinuousLinearMap.opNorm_comp_le T.toContinuousLinearMap
@@ -619,30 +580,30 @@ noncomputable instance instNormedRing : NormedRing (AdjointableMap A E E) where
   dist_eq := instNormedAddCommGroup.dist_eq
   norm_mul_le S T := by rw [mul_def]; exact opNorm_comp_le S T
 
-@[simp]
-theorem norm_id [Nontrivial E] : ‖AdjointableMap.id A E‖ = 1 := by
+@[simp] theorem norm_id [Nontrivial E] : ‖AdjointableMap.id A E‖ = 1 := by
   rw [← norm_toContinuousLinearMap, toContinuousLinearMap_id]
   exact ContinuousLinearMap.norm_id
-
 instance instNormOneClass [Nontrivial E] : NormOneClass (AdjointableMap A E E) :=
   ⟨by rw [one_def]; exact norm_id⟩
-
-noncomputable instance instNormedAlgebraComplex :
-    NormedAlgebra ℂ (AdjointableMap A E E) where
+noncomputable instance instNormedAlgebraComplex : NormedAlgebra ℂ (AdjointableMap A E E) where
   norm_smul_le := instNormedSpaceComplex.norm_smul_le
+instance instIsBoundedSMulApply : IsBoundedSMul (AdjointableMap A E E) E :=
+  IsBoundedSMul.of_norm_smul_le le_opNorm
 
-instance instIsBoundedSMulApply : IsBoundedSMul (AdjointableMap A E E) E where
-  dist_smul_pair' T x y := by simpa [dist_eq_norm, sub_zero, map_sub] using T.le_opNorm (x - y)
-  dist_pair_smul' T S x := by simpa [dist_eq_norm] using (T - S).le_opNorm x
+private theorem isAdjointPair_toContinuousLinearMap (T : AdjointableMap A E F) :
+    LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+      (innerₛₗ (A := A) (E := F)).flip
+      T.toContinuousLinearMap T.adjoint.toContinuousLinearMap := by
+  simpa only [coe_toContinuousLinearMap] using T.isAdjointPair
 
 section StarOrdered
 
 variable [StarOrderedRing A]
 
 /-- An adjointable operator and its adjoint have the same operator norm. -/
-@[simp]
-theorem norm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖ = ‖T‖ :=
-  T.isAdjointPair.norm_eq_cstarModule
+@[simp] theorem norm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖ = ‖T‖ := by
+  rw [← norm_toContinuousLinearMap, ← norm_toContinuousLinearMap]
+  exact T.isAdjointPair_toContinuousLinearMap.norm_eq_cstarModule
 
 /-- The adjoint bundled as a conjugate-linear isometric equivalence
 `AdjointableMap A E F ≃ₗᵢ⋆[ℂ] AdjointableMap A F E`. -/
@@ -650,46 +611,29 @@ noncomputable def adjointₗᵢ : AdjointableMap A E F ≃ₗᵢ⋆[ℂ] Adjoint
   toLinearEquiv := adjointEquiv
   norm_map' T := norm_adjoint T
 
-@[simp]
-theorem adjointₗᵢ_apply (T : AdjointableMap A E F) : adjointₗᵢ T = T.adjoint := (rfl)
-
-@[simp]
-theorem adjointₗᵢ_symm :
+@[simp] theorem adjointₗᵢ_apply (T : AdjointableMap A E F) : adjointₗᵢ T = T.adjoint := (rfl)
+@[simp] theorem adjointₗᵢ_symm :
     (adjointₗᵢ : AdjointableMap A E F ≃ₗᵢ⋆[ℂ] AdjointableMap A F E).symm = adjointₗᵢ :=
   LinearIsometryEquiv.ext fun _ ↦ rfl
-
 theorem continuous_adjoint :
     Continuous (adjoint : AdjointableMap A E F → AdjointableMap A F E) :=
   adjointₗᵢ.continuous
 
 /-- The C⋆-identity `‖T* ∘ T‖ = ‖T‖ ^ 2` for rectangular adjointable operators. -/
-@[simp]
-theorem norm_adjoint_comp_self (T : AdjointableMap A E F) :
-    ‖T.adjoint.comp T‖ = ‖T‖ ^ 2 :=
-  T.isAdjointPair.norm_adjoint_comp_self_cstarModule
+@[simp] theorem norm_adjoint_comp_self (T : AdjointableMap A E F) :
+    ‖T.adjoint.comp T‖ = ‖T‖ ^ 2 := by
+  rw [← norm_toContinuousLinearMap, toContinuousLinearMap_comp, ← norm_toContinuousLinearMap]
+  exact T.isAdjointPair_toContinuousLinearMap.norm_adjoint_comp_self_cstarModule
 
 /-- Dual C⋆-identity `‖T ∘ T*‖ = ‖T‖ ^ 2` for rectangular adjointable operators. -/
-@[simp]
-theorem norm_self_comp_adjoint (T : AdjointableMap A E F) :
+@[simp] theorem norm_self_comp_adjoint (T : AdjointableMap A E F) :
     ‖T.comp T.adjoint‖ = ‖T‖ ^ 2 := by
   simpa only [adjoint_adjoint, norm_adjoint] using norm_adjoint_comp_self T.adjoint
 
-@[simp]
-theorem adjoint_comp_self_eq_zero_iff {T : AdjointableMap A E F} :
-    T.adjoint.comp T = 0 ↔ T = 0 := by
-  rw [← norm_eq_zero, norm_adjoint_comp_self, sq_eq_zero_iff, norm_eq_zero]
-
-@[simp]
-theorem self_comp_adjoint_eq_zero_iff {T : AdjointableMap A E F} :
-    T.comp T.adjoint = 0 ↔ T = 0 := by
-  rw [← norm_eq_zero, norm_self_comp_adjoint, sq_eq_zero_iff, norm_eq_zero]
-
 instance instNormedStarGroup : NormedStarGroup (AdjointableMap A E E) where
   norm_star_le T := (norm_adjoint T).le
-
 instance instCStarRing : CStarRing (AdjointableMap A E E) where
-  norm_mul_self_le T := by
-    rw [star_eq_adjoint, mul_def, norm_adjoint_comp_self, sq]
+  norm_mul_self_le T := by rw [star_eq_adjoint, mul_def, norm_adjoint_comp_self, sq]
 
 /-- Product map `T ↦ (T, T.adjoint)` into `(E →L[ℂ] F) × (F →L[ℂ] E)`. -/
 private def toProd (T : AdjointableMap A E F) : (E →L[ℂ] F) × (F →L[ℂ] E) :=
@@ -716,22 +660,60 @@ private theorem isClosed_range_toProd :
 
 private theorem isometry_toProd : Isometry (toProd (A := A) (E := E) (F := F)) :=
   Isometry.of_dist_eq fun T S ↦ by
-    have h₁ : dist T.toContinuousLinearMap S.toContinuousLinearMap = dist T S := by
-      rw [dist_eq_norm, dist_eq_norm, ← toContinuousLinearMap_sub, norm_toContinuousLinearMap]
-    have h₂ : dist T.adjoint.toContinuousLinearMap S.adjoint.toContinuousLinearMap = dist T S := by
-      rw [dist_eq_norm, dist_eq_norm, ← toContinuousLinearMap_sub, ← adjoint_sub,
-        norm_toContinuousLinearMap, norm_adjoint]
-    simp only [Prod.dist_eq, toProd, h₁, h₂, max_self]
+    simp only [Prod.dist_eq, toProd, isometry_toContinuousLinearMap.dist_eq, ← adjointₗᵢ_apply,
+      adjointₗᵢ.isometry.dist_eq, max_self]
 
 instance instCompleteSpace [CompleteSpace E] [CompleteSpace F] :
     CompleteSpace (AdjointableMap A E F) :=
   isometry_toProd.isUniformInducing.completeSpace isClosed_range_toProd.isComplete
 
-/-- Between complete Hilbert C⋆-modules, the adjointable operators form a norm-closed subset of
-`E →L[ℂ] F`. -/
-theorem isClosed_range_toContinuousLinearMap [CompleteSpace E] [CompleteSpace F] :
-    IsClosed (Set.range (toContinuousLinearMap : AdjointableMap A E F → E →L[ℂ] F)) :=
-  isometry_toContinuousLinearMap.isClosedEmbedding.isClosed_range
+/-- When the domain `E` is complete, the adjointable operators form a norm-closed subset of
+`E →L[ℂ] F` (completeness of `F` is not needed). -/
+theorem isClosed_range_toContinuousLinearMap [CompleteSpace E] :
+    IsClosed (Set.range (toContinuousLinearMap : AdjointableMap A E F → E →L[ℂ] F)) := by
+  refine IsSeqClosed.isClosed fun u S hu hS ↦ ?_
+  choose T hT using hu
+  have hT_tendsto : Filter.Tendsto (fun n ↦ (T n).toContinuousLinearMap) Filter.atTop (𝓝 S) := by
+    simpa only [hT] using hS
+  have hT_cauchy : CauchySeq T :=
+    isometry_toContinuousLinearMap.isUniformInducing.cauchy_map_iff.mp
+      (by simpa only [CauchySeq, Filter.map_map, Function.comp_def] using hT_tendsto.cauchySeq)
+  have h_cauchy : CauchySeq (fun n ↦ (T n).adjoint.toContinuousLinearMap) := by
+    simpa only [Function.comp_def, adjointₗᵢ_apply] using
+      isometry_toContinuousLinearMap.uniformContinuous.comp_cauchySeq
+        (adjointₗᵢ.isometry.uniformContinuous.comp_cauchySeq hT_cauchy)
+  obtain ⟨S', hS'⟩ := cauchySeq_tendsto_of_complete h_cauchy
+  have hprod : Filter.Tendsto (fun n ↦ toProd (T n)) Filter.atTop (𝓝 (S, S')) :=
+    hT_tendsto.prodMk_nhds hS'
+  obtain ⟨T', hT'⟩ := isClosed_range_toProd.mem_of_tendsto hprod
+    (Filter.Eventually.of_forall fun n ↦ Set.mem_range_self (T n))
+  exact ⟨T', congrArg Prod.fst hT'⟩
+
+/-- A bounded complex-linear map `T : E →L[ℂ] F` is adjointable if and only if it admits a plain
+function `S : F → E` satisfying `⟪T x, y⟫_A = ⟪x, S y⟫_A` (no completeness of `E` or `F` is
+needed). -/
+theorem mem_range_toContinuousLinearMap_iff {T : E →L[ℂ] F} :
+    T ∈ Set.range (toContinuousLinearMap : AdjointableMap A E F → E →L[ℂ] F) ↔
+      ∃ S : F → E, ∀ x y, inner A (T x) y = inner A x (S y) := by
+  refine ⟨by rintro ⟨T', rfl⟩; exact ⟨T'.adjoint, fun x y ↦ (T'.adjoint_inner_right x y).symm⟩,
+    fun ⟨S, hS⟩ ↦ ?_⟩
+  let Sₗ : F →ₗ[ℂ] E :=
+    (CStarModule.isAdjointPair_inner_iff.mpr hS).symm_cstarModule.toLinearMapCStarModule
+  have hbound (y : F) : ‖Sₗ y‖ ≤ ‖T‖ * ‖y‖ := by
+    have hsq : ‖S y‖ ^ 2 ≤ (‖T‖ * ‖y‖) * ‖S y‖ := by
+      calc ‖S y‖ ^ 2 = ‖inner A (S y) (S y)‖ := CStarModule.norm_sq_eq A
+        _ = ‖inner A (T (S y)) y‖ := by rw [hS (S y) y]
+        _ ≤ ‖T (S y)‖ * ‖y‖ := CStarModule.norm_inner_le F
+        _ ≤ (‖T‖ * ‖S y‖) * ‖y‖ := by gcongr; exact T.le_opNorm (S y)
+        _ = (‖T‖ * ‖y‖) * ‖S y‖ := by ring
+    have hSy : ‖S y‖ ≤ ‖T‖ * ‖y‖ := by
+      rcases eq_or_lt_of_le (norm_nonneg (S y)) with h0 | hpos
+      · rw [← h0]; positivity
+      · exact le_of_mul_le_mul_right (by simpa only [sq] using hsq) hpos
+    simpa only [Sₗ, LinearMap.IsAdjointPair.toLinearMapCStarModule_apply] using hSy
+  refine ⟨⟨T, Sₗ.mkContinuous ‖T‖ hbound, fun x y ↦ ?_⟩, rfl⟩
+  simpa only [LinearMap.mkContinuous_apply, Sₗ,
+    LinearMap.IsAdjointPair.toLinearMapCStarModule_apply] using hS x y
 
 section Complete
 
@@ -748,45 +730,27 @@ noncomputable def ofAdjointPair (T : E → F) (S : F → E)
     (CStarModule.isAdjointPair_inner_iff.mpr h).symm_cstarModule.toContinuousLinearMapCStarModule
   inner_map_eq' x y := by simpa using h x y
 
-@[simp]
-theorem ofAdjointPair_apply (T : E → F) (S : F → E)
+@[simp] theorem ofAdjointPair_apply (T : E → F) (S : F → E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) (x : E) :
     ofAdjointPair T S h x = T x :=
   (CStarModule.isAdjointPair_inner_iff.mpr h).toContinuousLinearMapCStarModule_apply x
-
-@[simp]
-theorem coe_ofAdjointPair (T : E → F) (S : F → E)
+@[simp] theorem coe_ofAdjointPair (T : E → F) (S : F → E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) :
-    ⇑(ofAdjointPair T S h) = T :=
-  funext (ofAdjointPair_apply T S h)
-
-@[simp]
-theorem adjoint_ofAdjointPair_apply (T : E → F) (S : F → E)
+    ⇑(ofAdjointPair T S h) = T := funext (ofAdjointPair_apply T S h)
+@[simp] theorem adjoint_ofAdjointPair_apply (T : E → F) (S : F → E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) (y : F) :
     (ofAdjointPair T S h).adjoint y = S y :=
   (CStarModule.isAdjointPair_inner_iff.mpr h).symm_cstarModule
     |>.toContinuousLinearMapCStarModule_apply y
-
-@[simp]
-theorem coe_adjoint_ofAdjointPair (T : E → F) (S : F → E)
+@[simp] theorem coe_adjoint_ofAdjointPair (T : E → F) (S : F → E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) :
-    ⇑(ofAdjointPair T S h).adjoint = S :=
-  funext (adjoint_ofAdjointPair_apply T S h)
+    ⇑(ofAdjointPair T S h).adjoint = S := funext (adjoint_ofAdjointPair_apply T S h)
 
 theorem adjoint_ofAdjointPair (T : E → F) (S : F → E)
     (h : ∀ x y, inner A (T x) y = inner A x (S y)) :
     (ofAdjointPair T S h).adjoint = ofAdjointPair S T
       ((CStarModule.isAdjointPair_inner_iff.mpr h).symm_cstarModule.inner_eq_cstarModule) :=
   ext fun y ↦ by simp
-
-/-- Between complete Hilbert C⋆-modules, a bounded complex-linear map `T : E →L[ℂ] F` is
-adjointable if and only if it admits a plain function `S : F → E` satisfying
-`⟪T x, y⟫_A = ⟪x, S y⟫_A`. -/
-theorem mem_range_toContinuousLinearMap_iff {T : E →L[ℂ] F} :
-    T ∈ Set.range (toContinuousLinearMap : AdjointableMap A E F → E →L[ℂ] F) ↔
-      ∃ S : F → E, ∀ x y, inner A (T x) y = inner A x (S y) :=
-  ⟨by rintro ⟨T', rfl⟩; exact ⟨T'.adjoint, fun x y ↦ (T'.adjoint_inner_right x y).symm⟩,
-    by rintro ⟨S, hS⟩; exact ⟨ofAdjointPair T S hS, by ext x; simp⟩⟩
 
 end Complete
 
@@ -796,13 +760,11 @@ noncomputable instance instCStarAlgebra [CompleteSpace E] :
     CStarAlgebra (AdjointableMap A E E) where
 
 /-- The spectral partial order on `AdjointableMap A E E` for a complete Hilbert C⋆-module `E`. -/
-noncomputable instance instPartialOrder [CompleteSpace E] :
-    PartialOrder (AdjointableMap A E E) :=
+noncomputable instance instPartialOrder [CompleteSpace E] : PartialOrder (AdjointableMap A E E) :=
   CStarAlgebra.spectralOrder _
 
 /-- `AdjointableMap A E E` is a `StarOrderedRing` for its spectral order. -/
-instance instStarOrderedRing [CompleteSpace E] :
-    StarOrderedRing (AdjointableMap A E E) :=
+instance instStarOrderedRing [CompleteSpace E] : StarOrderedRing (AdjointableMap A E E) :=
   CStarAlgebra.spectralOrderedRing _
 
 end StarOrdered
@@ -850,7 +812,7 @@ theorem nonneg_iff_forall_inner_nonneg {T : AdjointableMap A E E} :
   · -- Positivity of all `⟪x, T x⟫_A` first forces `T` to be self-adjoint by polarization.
     have hsa : IsSelfAdjoint T :=
       (isSelfAdjoint_iff_forall_isSelfAdjoint_inner T).mpr fun x ↦ .of_nonneg (h x)
-    refine TauCeti.nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg hsa fun R N hRN ↦ ?_
+    refine hsa.nonneg_of_star_mul_mul_eq_neg_imp_eq_zero fun R N hRN ↦ ?_
     refine ext fun x ↦ (inner_self (A := A)).mp (le_antisymm ?_ inner_self_nonneg)
     have hpair : inner A (N x) (T (N x)) = -inner A (R x) (R x) := by
       calc inner A (N x) (T (N x))
@@ -892,39 +854,37 @@ theorem adjoint_conj_nonneg [CompleteSpace F] (S : AdjointableMap A E F)
     rw [comp_apply, comp_apply, S.adjoint_inner_right]
     exact nonneg_iff_forall_inner_nonneg.mp hT (S x)
 
-/-- Paschke's inequality for adjointable operators: `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` in `A`
-for every `T : AdjointableMap A E F` when `E` is complete (completeness of `F` is not needed). -/
-theorem inner_map_map_le_norm_sq_smul (T : AdjointableMap A E F) (x : E) :
-    inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x := by
-  have hle : T.adjoint.comp T ≤
-      algebraMap ℝ (AdjointableMap A E E) ‖T.adjoint.comp T‖ :=
-    (adjoint_comp_self_nonneg T).isSelfAdjoint.le_algebraMap_norm_self
-  have hx := le_iff_forall_inner_le.mp hle x
-  rwa [comp_apply, T.adjoint_inner_right, algebraMap_apply, inner_smul_right_real,
-    norm_adjoint_comp_self] at hx
-
 end SpectralOrder
+
+/-- Paschke's inequality for adjointable operators: `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` in `A`
+for every `T : AdjointableMap A E F` (no completeness of `E` or `F` is needed). -/
+theorem inner_map_map_le_norm_sq_smul [StarOrderedRing A] (T : AdjointableMap A E F) (x : E) :
+    inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x := by
+  simpa only [toContinuousLinearMap_apply, norm_toContinuousLinearMap] using
+    CStarModule.inner_map_map_le_norm_sq_smul T.toContinuousLinearMap
+      (fun a y ↦ by simpa only [toContinuousLinearMap_apply] using T.map_smul_coeff a y) x
 
 section RightOrder
 
 variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   {E₁ F₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℂ E₁] [SMul Bᵐᵒᵖ E₁]
-  [CStarModule Bᵐᵒᵖ E₁] [CompleteSpace E₁]
+  [CStarModule Bᵐᵒᵖ E₁]
   [NormedAddCommGroup F₁] [NormedSpace ℂ F₁] [SMul Bᵐᵒᵖ F₁] [CStarModule Bᵐᵒᵖ F₁]
 
 /-- Right-module form of `nonneg_iff_forall_inner_nonneg`: `0 ≤ T` in `AdjointableMap Bᵐᵒᵖ E₁ E₁`
 if and only if `0 ≤ ⟨x, T x⟩_B` in `B` for every `x : E₁`. -/
-theorem nonneg_iff_forall_unop_inner_nonneg {T : AdjointableMap Bᵐᵒᵖ E₁ E₁} :
+theorem nonneg_iff_forall_unop_inner_nonneg [CompleteSpace E₁] {T : AdjointableMap Bᵐᵒᵖ E₁ E₁} :
     0 ≤ T ↔ ∀ x : E₁, 0 ≤ unop (inner Bᵐᵒᵖ x (T x)) := by
   simp_rw [nonneg_iff_forall_inner_nonneg, ← unop_nonneg]
 
 /-- Right-module form of `le_iff_forall_inner_le`: `S ≤ T` in `AdjointableMap Bᵐᵒᵖ E₁ E₁`
 if and only if `⟨x, S x⟩_B ≤ ⟨x, T x⟩_B` in `B` for every `x : E₁`. -/
-theorem le_iff_forall_unop_inner_le {S T : AdjointableMap Bᵐᵒᵖ E₁ E₁} :
+theorem le_iff_forall_unop_inner_le [CompleteSpace E₁] {S T : AdjointableMap Bᵐᵒᵖ E₁ E₁} :
     S ≤ T ↔ ∀ x : E₁, unop (inner Bᵐᵒᵖ x (S x)) ≤ unop (inner Bᵐᵒᵖ x (T x)) := by
   simp_rw [le_iff_forall_inner_le, ← unop_le_unop]
 
-/-- Right-module form of Paschke's inequality: `⟨T x, T x⟩_B ≤ ‖T‖ ^ 2 • ⟨x, x⟩_B`. -/
+/-- Right-module form of Paschke's inequality: `⟨T x, T x⟩_B ≤ ‖T‖ ^ 2 • ⟨x, x⟩_B` (no completeness
+of `E₁` or `F₁` is needed). -/
 theorem unop_inner_map_map_le_norm_sq_smul (T : AdjointableMap Bᵐᵒᵖ E₁ F₁) (x : E₁) :
     unop (inner Bᵐᵒᵖ (T x) (T x)) ≤ ‖T‖ ^ 2 • unop (inner Bᵐᵒᵖ x x) := by
   simpa only [unop_smul] using unop_le_unop.mpr (inner_map_map_le_norm_sq_smul T x)
@@ -941,7 +901,7 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
 
 /-- For an adjointable star projection `P`, `⟪P x, P y⟫_A = ⟪x, P y⟫_A`. -/
-theorem inner_map_map_of_isStarProjection {P : AdjointableMap A E E}
+theorem inner_map_map_eq_inner_map_right_of_isStarProjection {P : AdjointableMap A E E}
     (hP : IsStarProjection P) (x y : E) :
     inner A (P x) (P y) = inner A x (P y) := by
   rw [← P.adjoint_inner_right, ← star_eq_adjoint, hP.isSelfAdjoint.star_eq, ← mul_apply_eq_comp,
@@ -952,26 +912,28 @@ theorem inner_map_map_of_isStarProjection {P : AdjointableMap A E E}
 theorem inner_eq_add_inner_one_sub_of_isStarProjection {P : AdjointableMap A E E}
     (hP : IsStarProjection P) (x y : E) :
     inner A x y = inner A (P x) (P y) + inner A ((1 - P) x) ((1 - P) y) := by
-  rw [inner_map_map_of_isStarProjection hP, inner_map_map_of_isStarProjection hP.one_sub,
+  rw [inner_map_map_eq_inner_map_right_of_isStarProjection hP,
+    inner_map_map_eq_inner_map_right_of_isStarProjection hP.one_sub,
     ← inner_add_right, ← add_apply, add_sub_cancel, one_apply_eq_self]
 
 /-- The range of an adjointable idempotent `P` is its fixed-point locus `{x | P x = x}`. -/
 theorem range_eq_of_isIdempotentElem {P : AdjointableMap A E E} (hP : IsIdempotentElem P) :
     Set.range P = {x : E | P x = x} :=
-  Set.ext fun _ ↦
-    LinearMap.IsIdempotentElem.mem_range_iff
+  Set.ext fun x ↦ by
+    simpa [Set.mem_range] using LinearMap.IsIdempotentElem.mem_range_iff
       (ContinuousLinearMap.IsIdempotentElem.toLinearMap (hP.map toContinuousLinearMapAlgHom))
+      (x := x)
 
 /-- The range of an adjointable idempotent is norm-closed (without completeness of `E`). -/
 theorem isClosed_range_of_isIdempotentElem {P : AdjointableMap A E E} (hP : IsIdempotentElem P) :
     IsClosed (Set.range P) := by
-  rw [← coe_toContinuousLinearMap]
-  exact ContinuousLinearMap.IsIdempotentElem.isClosed_range (hP.map toContinuousLinearMapAlgHom)
+  simpa [LinearMap.coe_range] using
+    ContinuousLinearMap.IsIdempotentElem.isClosed_range (hP.map toContinuousLinearMapAlgHom)
 
 /-- Vectors in the range and kernel of an adjointable star projection are orthogonal for the
 `A`-valued inner product. -/
-theorem inner_eq_zero_of_isStarProjection {P : AdjointableMap A E E} (hP : IsStarProjection P)
-    {x y : E} (hx : x ∈ Set.range P) (hy : P y = 0) :
+theorem inner_eq_zero_of_isStarProjection_of_mem_range_of_apply_eq_zero {P : AdjointableMap A E E}
+    (hP : IsStarProjection P) {x y : E} (hx : x ∈ Set.range P) (hy : P y = 0) :
     inner A x y = 0 := by
   rw [← (range_eq_of_isIdempotentElem hP.isIdempotentElem).subset hx, ← P.adjoint_inner_right,
     ← star_eq_adjoint, hP.isSelfAdjoint.star_eq, hy, inner_zero_right]

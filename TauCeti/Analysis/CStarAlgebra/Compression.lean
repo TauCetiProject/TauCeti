@@ -17,7 +17,7 @@ It decreases a positive element exactly when the projection commutes with that e
 The key zero-corner criterion says that `star b * a * b = 0` for positive `a` exactly when
 `a * b = 0`; thus a vanishing positive corner forces the off-diagonal terms to vanish too.
 Similarly, a self-adjoint element `a` is positive once no compression `star c * a * c` equals a
-nonzero negative square `-(star b * b)` (`TauCeti.nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg`),
+nonzero negative square `-(star b * b)` (`IsSelfAdjoint.nonneg_of_star_mul_mul_eq_neg_imp_eq_zero`),
 encapsulating the negative-part vanishing argument for quadratic-form positivity criteria.
 -/
 
@@ -45,9 +45,15 @@ theorem star_mul_mul_eq_zero_iff_of_nonneg {a : A} (ha : 0 ≤ a) (b : A) :
   · intro h
     simp [mul_assoc, h]
 
+end TauCeti
+
+namespace IsSelfAdjoint
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
 /-- A self-adjoint element `a` of a C⋆-algebra is positive if whenever a compression
 `star c * a * c` equals `-(star b * b)`, the factor `b` vanishes. -/
-theorem nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg {a : A} (ha : IsSelfAdjoint a)
+theorem nonneg_of_star_mul_mul_eq_neg_imp_eq_zero {a : A} (ha : IsSelfAdjoint a)
     (h : ∀ b c : A, star c * a * c = -(star b * b) → b = 0) : 0 ≤ a := by
   refine CStarAlgebra.nonneg_iff_isSelfAdjoint_and_negPart_eq_zero.mpr ⟨ha, ?_⟩
   set N := a⁻
@@ -65,7 +71,7 @@ theorem nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg {a : A} (ha : IsSelfAdjoi
   conv_lhs => lhs; rw [← sqrt_mul_sqrt_self N hN]
   rw [mul_assoc, hsq, mul_zero]
 
-end TauCeti
+end IsSelfAdjoint
 
 namespace IsStarProjection
 
