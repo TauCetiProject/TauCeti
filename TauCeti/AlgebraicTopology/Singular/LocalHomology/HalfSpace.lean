@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Contractible
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Neighborhood
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Compact
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Union
 public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 public import TauCeti.Topology.Homotopy.StarConvexComplement
-public import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
 public import Mathlib.Geometry.Manifold.Instances.Real
 
 /-!
@@ -73,101 +71,12 @@ universe w v u
 
 namespace TauCeti
 
-section Abelian
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-  {M : Type w} [TopologicalSpace M] {n : ℕ}
-
-/-- **Vanishing of local homology along finite unions.** Let `𝒢` be a family of closed sets which
-is closed under binary intersections and along each of which local homology vanishes above
-degree `n`. Then local homology along every finite union of members of `𝒢` vanishes above
-degree `n`. This is the induction of Hatcher's Lemma 3.27 along the relative Mayer–Vietoris
-sequence (`TauCeti.isZero_localHomology_union`). -/
-theorem isZero_localHomology_biUnion {𝒢 : Set (Set M)} (hc : ∀ G ∈ 𝒢, IsClosed G)
-    (hi : ∀ G ∈ 𝒢, ∀ G' ∈ 𝒢, G ∩ G' ∈ 𝒢)
-    (hz : ∀ G ∈ 𝒢, ∀ k, n < k → IsZero (localHomology R G k)) {ι : Type*} (s : Finset ι)
-    {G : ι → Set M} (hG : ∀ i ∈ s, G i ∈ 𝒢) {k : ℕ} (hk : n < k) :
-    IsZero (localHomology R (⋃ i ∈ s, G i) k) := by
-  classical
-  induction s using Finset.induction_on generalizing G k with
-  | empty => simpa using isZero_localHomology_empty R k
-  | insert b s _ ih =>
-    have hb := hG b (Finset.mem_insert_self b s)
-    have hs (i) (hi : i ∈ s) : G i ∈ 𝒢 := hG i (Finset.mem_insert_of_mem hi)
-    rw [Finset.set_biUnion_insert]
-    refine isZero_localHomology_union (hc _ hb) (isClosed_biUnion_finset fun i hi ↦ hc _ (hs i hi))
-      (hz _ hb k hk) (ih hs hk) ?_
-    -- The intersection of `G b` with the union is the union of the intersections `G b ∩ G i`.
-    rw [inter_iUnion₂]
-    exact ih (G := fun i ↦ G b ∩ G i) (fun i hi' ↦ hi _ hb _ (hs i hi')) (by lia)
-
-end Abelian
-
-section Module
-
-variable {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ) {M : Type w} [TopologicalSpace M]
-  [T2Space M] {n : ℕ}
-
-/-- **Vanishing of local homology from larger sets.** In a Hausdorff space, local homology along
-`S` with module coefficients vanishes in degree `k` if every neighbourhood of `S` contains a set
-`K ⊇ S` along which it vanishes in degree `k`: every class along `S` is restricted from a class
-along a neighbourhood of `S` (`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq`), hence
-from a class along such a `K`. -/
-theorem isZero_localHomology_of_forall_mem_nhdsSet {S : Set M} {k : ℕ}
-    (h : ∀ U ∈ 𝓝ˢ S, ∃ K, S ⊆ K ∧ K ⊆ U ∧ IsZero (localHomology N K k)) :
-    IsZero (localHomology N S k) := by
-  have h0 (α : (localHomology N S k : ModuleCat.{w} Λ)) : α = 0 := by
-    obtain ⟨U, hU, β, rfl⟩ := exists_mem_nhdsSet_localHomologyRestriction_eq N k α
-    obtain ⟨K, hSK, hKU, hK⟩ := h U hU
-    rw [← localHomologyRestriction_comp_apply N hSK hKU,
-      (ModuleCat.subsingleton_of_isZero hK).elim (localHomologyRestriction N hKU k β) 0, map_zero]
-  rw [ModuleCat.isZero_iff_subsingleton]
-  exact ⟨fun α β ↦ (h0 α).trans (h0 β).symm⟩
-
-/-- **Vanishing of local homology along compact sets is local.** In a locally compact Hausdorff
-space, suppose every point has a neighbourhood `U` such that local homology along every compact
-subset of `U` vanishes above degree `n`. Then local homology along every compact set vanishes
-above degree `n`: a compact set is a finite union of compact pieces, each in such a
-neighbourhood, and the intersection of two pieces again lies in one
-(`TauCeti.isZero_localHomology_biUnion`). -/
-theorem isZero_localHomology_of_isCompact_of_forall_mem_nhds [LocallyCompactSpace M]
-    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∀ B ⊆ U, IsCompact B → ∀ k, n < k → IsZero (localHomology N B k))
-    {A : Set M} (hA : IsCompact A) {k : ℕ} (hk : n < k) : IsZero (localHomology N A k) := by
-  choose U hU hUz using h
-  choose K hK hKU hKc using fun x ↦ local_compact_nhds (hU x)
-  obtain ⟨t, -, hAt⟩ := hA.elim_nhds_subcover K fun x _ ↦ hK x
-  have hAeq : A = ⋃ x ∈ t, A ∩ K x := by
-    refine subset_antisymm (fun y hy ↦ ?_) (iUnion₂_subset fun _ _ ↦ inter_subset_left)
-    obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 (hAt hy)
-    exact mem_iUnion₂.2 ⟨x, hx, hy, hyx⟩
-  rw [hAeq]
-  refine isZero_localHomology_biUnion N (𝒢 := {B | IsCompact B ∧ ∃ x, B ⊆ U x})
-    (fun B hB ↦ hB.1.isClosed) (fun B hB B' hB' ↦ ?_) (fun B hB ↦ ?_) t
-    (fun x _ ↦ ⟨hA.inter_right (hKc x).isClosed, x, inter_subset_right.trans (hKU x)⟩) hk
-  · obtain ⟨x, hx⟩ := hB.2
-    exact ⟨hB.1.inter_right hB'.1.isClosed, x, inter_subset_left.trans hx⟩
-  · obtain ⟨x, hx⟩ := hB.2
-    exact hUz x B hx hB.1
-
-end Module
-
 /-! ### The half-space model -/
 
 section HalfSpace
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : StrongDual ℝ E}
-
-/-- The complement in the half-space `H = {x | 0 ≤ f x}` of a set `K ⊆ H`, as a subspace of `H`,
-is homeomorphic to the complement `H ∖ K` taken in `E`. -/
-private def halfSpaceComplHomeomorph (K : Set ↥{x : E | 0 ≤ f x}) :
-    ↥(Kᶜ) ≃ₜ ↥({x : E | 0 ≤ f x} \ Subtype.val '' K) where
-  toFun z := ⟨z.1, z.1.2, fun ⟨w, hw, hwz⟩ ↦ z.2 (Subtype.ext hwz ▸ hw)⟩
-  invFun y := ⟨⟨y, y.2.1⟩, fun h ↦ y.2.2 ⟨_, h, rfl⟩⟩
-  continuous_toFun :=
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun :=
-    (continuous_subtype_val.subtype_mk _).subtype_mk _
 
 /-- **Local homology of the half-space along a boundary piece vanishes.** Let `f ≠ 0` and let
 `K` be a subset of the half-space `H = {x | 0 ≤ f x}` which is bounded and star-convex about a
@@ -180,9 +89,11 @@ theorem isZero_localHomology_halfSpace_of_starConvex (hf : f ≠ 0)
   let P := TopPair.ofSubset (Kᶜ : Set (TopCat.of ↥{x : E | 0 ≤ f x}))
   have : ContractibleSpace P.fst :=
     (convex_halfSpace_ge f.toLinearMap.isLinear 0).contractibleSpace ⟨0, by simp⟩
+  -- The complement of `K` in the subspace `H` is the complement `H ∖ K` taken in `E`.
   have : ContractibleSpace P.snd :=
-    have := hK.contractibleSpace_halfSpace_diff hp hKb hf hfp
-    (halfSpaceComplHomeomorph K).contractibleSpace_iff.2 this
+    ((IsEmbedding.subtypeVal.homeomorphImage Kᶜ).trans
+      (.setCongr image_val_compl)).contractibleSpace_iff.2
+      (hK.contractibleSpace_halfSpace_diff hp hKb hf hfp)
   rcases k with _ | k
   · exact TopPair.isZero_singularHomology_zero P R
   · exact (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd k).of_iso
@@ -225,13 +136,11 @@ private theorem isZero_localHomology_halfSpace_of_pos (hn : finrank ℝ E = n)
       (K := fun _ : Unit ↦ Subtype.val '' K) (fun _ ↦ hKv)
       (fun _ ↦ hKc.image continuous_subtype_val) (fun _ ↦ subset_univ _) hk
     simpa [iUnion_const] using this
-  have h₁ := isIso_localHomologyMap R j hj rfl hKc.isClosed
-    (fun x hx ↦ ⟨⟨x, hKf x hx⟩, rfl⟩) k
-  have h₂ := isIso_localHomologyMap R j' hj' hKj.symm
-    (hKc.image continuous_subtype_val).isClosed
-    (fun y ⟨x, hx, hxy⟩ ↦ ⟨⟨x, hKf x hx⟩, hxy⟩) k
-  exact (hKE.of_iso (asIso (localHomologyMap R j' hKj.symm.subset k))).of_iso
-    (asIso (localHomologyMap R j (subset_refl _) k)).symm
+  refine (isZero_localHomology_iff_of_isOpenEmbedding R j hj rfl hKc.isClosed
+    (fun x hx ↦ ⟨⟨x, hKf x hx⟩, rfl⟩) k).1 ?_
+  exact (isZero_localHomology_iff_of_isOpenEmbedding R j' hj' hKj.symm
+    (hKc.image continuous_subtype_val).isClosed (fun y ⟨x, hx, hxy⟩ ↦ ⟨⟨x, hKf x hx⟩, hxy⟩)
+    k).2 hKE
 
 /-- **Local homology of the half-space along a compact convex set vanishes above the
 dimension.** Let `f ≠ 0` be a functional on a real normed space of finite dimension `n`, and let
@@ -272,13 +181,11 @@ theorem isZero_localHomology_symm_image_halfSpace (hf : f ≠ 0) (hn : finrank �
     ext z
     rw [hL]
     exact ⟨fun h ↦ h.2, fun h ↦ ⟨z.2, h⟩⟩
-  have h₁ := isIso_localHomologyMap R j hj rfl hLc.isClosed
-    (fun x hx ↦ ⟨⟨x, (hL ▸ hx).1⟩, rfl⟩) k
-  have h₂ := isIso_localHomologyMap R j' hj' hKj.symm hKc.isClosed
-    (fun y hy ↦ ⟨⟨φ.symm y, φ.map_target (hKφ hy)⟩, φ.right_inv (hKφ hy)⟩) k
-  exact ((isZero_localHomology_halfSpace_of_convex R hf hn hKv hKc hk).of_iso
-    (asIso (localHomologyMap R j' hKj.symm.subset k))).of_iso
-    (asIso (localHomologyMap R j (subset_refl _) k)).symm
+  refine (isZero_localHomology_iff_of_isOpenEmbedding R j hj rfl hLc.isClosed
+    (fun x hx ↦ ⟨⟨x, (hL ▸ hx).1⟩, rfl⟩) k).1 ?_
+  exact (isZero_localHomology_iff_of_isOpenEmbedding R j' hj' hKj.symm hKc.isClosed
+    (fun y hy ↦ ⟨⟨φ.symm y, φ.map_target (hKφ hy)⟩, φ.right_inv (hKφ hy)⟩) k).2
+    (isZero_localHomology_halfSpace_of_convex R hf hn hKv hKc hk)
 
 end HalfSpace
 
@@ -326,7 +233,7 @@ theorem isZero_localHomology_of_subset_source_halfSpace (hf : f ≠ 0) (hn : fin
     rintro _ ⟨K, hKφ, hKc, hKv, rfl⟩ k hk
     exact isZero_localHomology_symm_image_halfSpace N φ hf hn hKv hKc hKφ hk
   refine ⟨⋃ a ∈ t, φ.symm '' closedBall (φ a) (r a), ?_, iUnion₂_subset fun a ha ↦ (ht a ha).2.2.2,
-    isZero_localHomology_biUnion N hc hi hz t (fun a ha ↦ ?_) hk⟩
+    isZero_localHomology_biUnion hc hi hz t (fun a ha ↦ ?_) hk⟩
   · rwa [← image_iUnion₂]
   · obtain ⟨hcpt, hconv⟩ := isCompact_and_convex_closedBall_halfSpace (φ a) (r a)
     exact ⟨_, (ht a ha).2.2.1, hcpt, hconv, rfl⟩

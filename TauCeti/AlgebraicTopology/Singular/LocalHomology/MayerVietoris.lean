@@ -20,6 +20,9 @@ groups (`TauCeti.localHomology`).
 
 * `TauCeti.isZero_localHomology_union`: for closed `S` and `T`, if `Hₖ(M, M ∖ S)`, `Hₖ(M, M ∖ T)`
   and `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish, then so does `Hₖ(M, M ∖ (S ∪ T))`.
+* `TauCeti.isZero_localHomology_biUnion`: local homology vanishes above a degree along finite
+  unions of members of a family of closed sets that is closed under intersections and along which
+  it vanishes above that degree.
 * `TauCeti.localHomology_hom_ext_of_union`: for closed `S` and `T` with
   `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, maps into `Hₖ(M, M ∖ (S ∪ T))` are determined by their
   restrictions to `S` and to `T`.
@@ -54,6 +57,29 @@ theorem isZero_localHomology_union {S T : Set M} (hS : IsClosed S) (hT : IsClose
   have := TopCat.mono_relativeMayerVietorisToBiprod R hS.isOpen_compl hT.isOpen_compl h
   exact IsZero.of_mono (TopCat.relativeMayerVietorisToBiprod R _ _ k)
     ((biprod_isZero_iff _ _).2 ⟨hSk, hTk⟩)
+
+/-- **Vanishing of local homology along finite unions.** Let `𝒢` be a family of closed sets which
+is closed under binary intersections and along each of which local homology vanishes above
+degree `n`. Then local homology along every finite union of members of `𝒢` vanishes above
+degree `n`. This is the induction of Hatcher's Lemma 3.27 along the relative Mayer–Vietoris
+sequence (`TauCeti.isZero_localHomology_union`). -/
+theorem isZero_localHomology_biUnion {n : ℕ} {𝒢 : Set (Set M)} (hc : ∀ G ∈ 𝒢, IsClosed G)
+    (hi : ∀ G ∈ 𝒢, ∀ G' ∈ 𝒢, G ∩ G' ∈ 𝒢)
+    (hz : ∀ G ∈ 𝒢, ∀ k, n < k → IsZero (localHomology R G k)) {ι : Type*} (s : Finset ι)
+    {G : ι → Set M} (hG : ∀ i ∈ s, G i ∈ 𝒢) {k : ℕ} (hk : n < k) :
+    IsZero (localHomology R (⋃ i ∈ s, G i) k) := by
+  classical
+  induction s using Finset.induction_on generalizing G k with
+  | empty => simpa using isZero_localHomology_empty R k
+  | insert b s _ ih =>
+    have hb := hG b (Finset.mem_insert_self b s)
+    have hs (i) (hi : i ∈ s) : G i ∈ 𝒢 := hG i (Finset.mem_insert_of_mem hi)
+    rw [Finset.set_biUnion_insert]
+    refine isZero_localHomology_union (hc _ hb) (isClosed_biUnion_finset fun i hi ↦ hc _ (hs i hi))
+      (hz _ hb k hk) (ih hs hk) ?_
+    -- The intersection of `G b` with the union is the union of the intersections `G b ∩ G i`.
+    rw [inter_iUnion₂]
+    exact ih (G := fun i ↦ G b ∩ G i) (fun i hi' ↦ hi _ hb _ (hs i hi')) (by lia)
 
 /-- **Maps into local homology of a union are detected on the pieces.** Let `S` and `T` be closed
 and let `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Two maps into `Hₖ(M, M ∖ (S ∪ T))` that agree after

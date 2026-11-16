@@ -28,6 +28,8 @@ vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
 
 ## Main results
 
+* `TauCeti.isZero_localHomology_of_isCompact_of_forall_mem_nhds`: in a locally compact Hausdorff
+  space, vanishing of local homology along compact sets above a degree is a local property.
 * `TauCeti.isZero_localHomology_of_isCompact`: `Hₖ(M, M ∖ A) = 0` for compact `A` and `k > n`.
 * `TauCeti.eq_zero_of_forall_localHomologyRestriction_eq_zero`: a class of `Hₙ(M, M ∖ A)` whose
   restriction to every point of `A` vanishes is zero.
@@ -182,13 +184,11 @@ private lemma detects_of_subset_source (hn : finrank ℝ E = n) (φ : OpenPartia
     {A : Set M} (hA : IsCompact A) (hAφ : A ⊆ φ.source) : Detects N n A := by
   have hK := detects_symm_image_biUnion_closedBall N hn φ
   have key := exists_finset_closedBall_restriction_eq N φ hA hAφ
-  refine ⟨fun k hk ↦ ?_, fun α hα ↦ ?_⟩
-  · have h (α : (localHomology N A k : ModuleCat.{w} Λ)) : α = 0 := by
-      obtain ⟨t, r, ht, hAK, β, rfl⟩ := key k α
-      rw [(ModuleCat.subsingleton_of_isZero ((hK t r fun a ha ↦ (ht a ha).2.2).isZero k
-        hk)).elim β 0, map_zero]
-    rw [ModuleCat.isZero_iff_subsingleton]
-    exact ⟨fun α β ↦ (h α).trans (h β).symm⟩
+  refine ⟨fun k hk ↦ isZero_localHomology_of_forall_mem_nhdsSet N fun U hU ↦ ?_, fun α hα ↦ ?_⟩
+  · obtain ⟨t, r, ht, hAt⟩ := φ.exists_finset_closedBall_cover hA hAφ hU
+    refine ⟨_, hAt, ?_, (hK t r fun a ha ↦ (ht a ha).2.2.1).isZero k hk⟩
+    rw [image_iUnion₂]
+    exact iUnion₂_subset fun a ha ↦ (ht a ha).2.2.2
   · obtain ⟨t, r, ht, hAK, β, rfl⟩ := key n α
     refine (congrArg _ ((hK t r fun a ha ↦ (ht a ha).2.2).eq_zero β fun y hy ↦ ?_)).trans
       (map_zero _)
@@ -247,6 +247,31 @@ private lemma detects_of_isCompact [ChartedSpace E M] (hn : finrank ℝ E = n) {
   exact detects_biUnion N hn t _ (fun a _ ↦ hA.inter_right (hK a).isClosed)
     fun a _ ↦ inter_subset_right.trans (hKφ a)
 
+/-- **Vanishing of local homology along compact sets is local.** In a locally compact Hausdorff
+space, suppose every point has a neighbourhood `U` such that local homology along every compact
+subset of `U` vanishes above degree `n`. Then local homology along every compact set vanishes
+above degree `n`: a compact set is a finite union of compact pieces, each in such a
+neighbourhood, and the intersection of two pieces again lies in one
+(`TauCeti.isZero_localHomology_biUnion`). -/
+theorem isZero_localHomology_of_isCompact_of_forall_mem_nhds [LocallyCompactSpace M]
+    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∀ B ⊆ U, IsCompact B → ∀ k, n < k → IsZero (localHomology N B k))
+    {A : Set M} (hA : IsCompact A) {k : ℕ} (hk : n < k) : IsZero (localHomology N A k) := by
+  choose U hU hUz using h
+  choose K hK hKU hKc using fun x ↦ local_compact_nhds (hU x)
+  obtain ⟨t, -, hAt⟩ := hA.elim_nhds_subcover K fun x _ ↦ hK x
+  have hAeq : A = ⋃ x ∈ t, A ∩ K x := by
+    refine subset_antisymm (fun y hy ↦ ?_) (iUnion₂_subset fun _ _ ↦ inter_subset_left)
+    obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 (hAt hy)
+    exact mem_iUnion₂.2 ⟨x, hx, hy, hyx⟩
+  rw [hAeq]
+  refine isZero_localHomology_biUnion (𝒢 := {B | IsCompact B ∧ ∃ x, B ⊆ U x})
+    (fun B hB ↦ hB.1.isClosed) (fun B hB B' hB' ↦ ?_) (fun B hB ↦ ?_) t
+    (fun x _ ↦ ⟨hA.inter_right (hKc x).isClosed, x, inter_subset_right.trans (hKU x)⟩) hk
+  · obtain ⟨x, hx⟩ := hB.2
+    exact ⟨hB.1.inter_right hB'.1.isClosed, x, inter_subset_left.trans hx⟩
+  · obtain ⟨x, hx⟩ := hB.2
+    exact hUz x B hx hB.1
+
 variable [ChartedSpace E M] {A : Set M}
 
 /-- **Local homology of a compact set vanishes above the dimension.** For a compact subset `A` of
@@ -254,7 +279,9 @@ a Hausdorff space modelled on a real normed space of dimension `n`, `Hₖ(M, M �
 `k > n`. This is Hatcher's Lemma 3.27(b). -/
 theorem isZero_localHomology_of_isCompact (hn : finrank ℝ E = n) (hA : IsCompact A) {k : ℕ}
     (hk : n < k) : IsZero (localHomology N A k) :=
-  (detects_of_isCompact N hn hA).isZero k hk
+  have := ChartedSpace.locallyCompactSpace E M
+  isZero_localHomology_of_isCompact_of_forall_mem_nhds N (fun x ↦ ⟨_, chart_source_mem_nhds E x,
+    fun _ hB hBc k hk ↦ (detects_of_subset_source N hn _ hBc hB).isZero k hk⟩) hA hk
 
 /-- **A local homology class of a compact set is detected at its points.** For a compact subset
 `A` of a Hausdorff space modelled on a real normed space of dimension `n`, a class of
