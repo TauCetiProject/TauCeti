@@ -238,19 +238,12 @@ theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
   rw [integral_neg_eq_self (fun ξ => ‖(v : E → F) ξ‖)]
   exact hL1
 
-/-- The difference of two `L²` functions in `H^s` is in `H^s`. -/
-private theorem memSobolev_coe_sub {s : ℝ} {u v : Lp F 2 (volume : Measure E)}
-    (hu : MemSobolev s 2 (u : 𝓢'(E, F))) (hv : MemSobolev s 2 (v : 𝓢'(E, F))) :
-    MemSobolev s 2 ((u - v : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
-  rw [Lp.toTemperedDistribution_sub]
-  exact hu.sub hv
-
 /-- If `u i → v` in `H^s`, then the `H^s` norms of the differences `u i - v` tend to zero. -/
 private theorem tendsto_norm_toBesselPotentialSpace_sub {s : ℝ} {ι : Type*} {l : Filter ι}
     {u : ι → Lp F 2 (volume : Measure E)} {v : Lp F 2 (volume : Measure E)}
     (hu : ∀ i, MemSobolev s 2 (u i : 𝓢'(E, F))) (hv : MemSobolev s 2 (v : 𝓢'(E, F)))
     (h : Tendsto (fun i => (hu i).toBesselPotentialSpace) l (𝓝 hv.toBesselPotentialSpace)) :
-    Tendsto (fun i => ‖(memSobolev_coe_sub (hu i) hv).toBesselPotentialSpace‖) l (𝓝 0) := by
+    Tendsto (fun i => ‖((hu i).toTemperedDistribution_sub hv).toBesselPotentialSpace‖) l (𝓝 0) := by
   refine (tendsto_iff_norm_sub_tendsto_zero.1 h).congr fun i => ?_
   simp only [Lp.toTemperedDistribution_sub, (hu i).toBesselPotentialSpace_sub hv]
 
@@ -263,7 +256,7 @@ theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ
     (h : Tendsto (fun n => (hu n).toBesselPotentialSpace) atTop (𝓝 hv.toBesselPotentialSpace)) :
     ∀ᵐ x ∂volume, Tendsto (fun n => u n x) atTop (𝓝 (v x)) := by
   obtain ⟨C, -, hC⟩ := exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (F := F) hs
-  have hD (n : ℕ) := memSobolev_coe_sub (hu n) hv
+  have hD (n : ℕ) := (hu n).toTemperedDistribution_sub hv
   have hlim : Tendsto (fun n => C * ‖(hD n).toBesselPotentialSpace‖) atTop (𝓝 0) := by
     simpa only [mul_zero] using (tendsto_norm_toBesselPotentialSpace_sub hu hv h).const_mul C
   filter_upwards [ae_all_iff.2 fun n => hC (hD n), ae_all_iff.2 fun n => Lp.coeFn_sub (u n) v]
@@ -569,7 +562,7 @@ theorem tendstoUniformly_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finra
     TendstoUniformly g g₀ l := by
   obtain ⟨C, -, hC⟩ :=
     exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := F) (k := 0) (by simpa)
-  have hD (i : ι) := memSobolev_coe_sub (hu i) hv
+  have hD (i : ι) := (hu i).toTemperedDistribution_sub hv
   have hlim : Tendsto (fun i => C * ‖(hD i).toBesselPotentialSpace‖) l (𝓝 0) := by
     simpa only [mul_zero] using (tendsto_norm_toBesselPotentialSpace_sub hu hv h).const_mul C
   rw [Metric.tendstoUniformly_iff]
