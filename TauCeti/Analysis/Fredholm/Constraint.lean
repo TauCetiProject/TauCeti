@@ -200,9 +200,15 @@ theorem surjective_prod_iff :
   · intro h
     refine ⟨fun y ↦ ?_, fun g ↦ ?_⟩
     · obtain ⟨x, hx⟩ := h (y, 0)
-      exact ⟨x, congrArg Prod.fst hx⟩
+      simp only [prod_apply, Prod.mk.injEq] at hx
+      exact ⟨x, hx.1⟩
     · obtain ⟨x, hx⟩ := h (0, g)
-      exact ⟨⟨x, congrArg Prod.fst hx⟩, congrArg Prod.snd hx⟩
+      simp only [prod_apply, Prod.mk.injEq] at hx
+      refine ⟨⟨x, LinearMap.mem_ker.mpr ?_⟩, ?_⟩
+      · rw [coe_coe]
+        exact hx.1
+      · rw [domRestrict_apply]
+        exact hx.2
   · rintro ⟨hD, hL⟩ ⟨y, g⟩
     obtain ⟨x, rfl⟩ := hD y
     obtain ⟨⟨k, hk⟩, hkg⟩ := hL (g - L x)
@@ -219,9 +225,9 @@ theorem constraintToCoker_surjective (hD : Function.Surjective D) :
     have : Subsingleton (F ⧸ D.range) := by
       rw [LinearMap.range_eq_top.mpr hD]
       infer_instance
-    exact Subsingleton.elim _ _
+    exact LinearMap.mem_ker.mpr (Subsingleton.elim _ _)
   rw [ker_cokerProdHom] at hz
-  exact hz
+  exact LinearMap.mem_range.mp hz
 
 /-- **For an onto `D`, the cokernel of the extended operator is the cokernel of the constraint
 map on `ker D`**, identified by `g ↦ [(0, g)]`. It is the obstruction space of the constrained
