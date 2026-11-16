@@ -8,14 +8,15 @@ module
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.NormalizedTransport.Hom
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Hom.TransportEquivariance
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Transport
-public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Bicategory
+public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Hom.Equivalence
 
 /-!
 # Normalization of morphisms of equivariant lifts
 
 A morphism of equivariant groupoid lifts induces a morphism between their normalized
 transports, including its equivariance for the prescribed actions. Normalization preserves
-identities and composition, and compatible modifications identify the induced morphisms.
+identities, composition, and chosen quasi-inverses, and compatible modifications identify the
+induced morphisms.
 
 These are the morphism formulas for normalization on fixed prescribed fibers. They do not
 assert a biequivalence of the bicategories of lifts and normalized transports. The conventions
@@ -82,5 +83,14 @@ lemma normalizedTransportHom_eq : φ.normalizedTransportHom = ψ.normalizedTrans
   simpa only [normalizedTransport] using Θ.transportIso_eq g
 
 end Hom₂
+
+/-- Normalizing the chosen quasi-inverse of a lift morphism gives the inverse comparison in the
+groupoid of normalized transports. -/
+@[simp]
+lemma equivalence_inv_normalizedTransportHom (φ : L ⟶ L') :
+    φ.equivalence.inv.normalizedTransportHom = CategoryTheory.inv φ.normalizedTransportHom := by
+  have h := Hom₂.normalizedTransportHom_eq φ.equivalence.unit.inv
+  rw [comp_normalizedTransportHom, id_normalizedTransportHom] at h
+  exact (IsIso.inv_eq_of_hom_inv_id h).symm
 
 end TauCeti.EquivariantGroupoidLift.Hom

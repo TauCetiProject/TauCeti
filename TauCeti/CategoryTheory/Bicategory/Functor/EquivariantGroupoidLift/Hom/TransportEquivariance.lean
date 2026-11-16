@@ -48,6 +48,38 @@ lemma jointActIso_inv_app (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
     (φ.jointActIso p a).inv.app Y =
       (φ.joint.naturality (𝟙 p ×ₘ a).toLoc).inv.toNatTrans.app Y := (rfl)
 
+/-- Along a product arrow `(g, a)`, the naturality cell of `φ.joint` after the inverse source
+compositor at `(𝟙 p, a) ≫ (g, 1) = (g, a)` factors through `jointMapIso` and `jointActIso`. -/
+@[reassoc]
+lemma joint_mapComp'_inv_comp_naturality_hom_app {p q : Γ} (g : p ⟶ q)
+    (a : SingleObj.star H ⟶ SingleObj.star H)
+    (hf : (𝟙 p ×ₘ a).toLoc ≫ (g ×ₘ 𝟙 (SingleObj.star H)).toLoc = (g ×ₘ a).toLoc)
+    (Y : L.jointFiber p) :
+    (φ.jointFunctor q).map
+        ((L.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
+          (g ×ₘ a).toLoc hf).inv.toNatTrans.app Y) ≫
+      (φ.joint.naturality (g ×ₘ a).toLoc).hom.toNatTrans.app Y =
+    (φ.jointMapIso g).hom.app ((L.jointAct p a).obj Y) ≫
+      (L'.jointMap g).map ((φ.jointActIso p a).hom.app Y) ≫
+      (L'.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
+        (g ×ₘ a).toLoc hf).inv.toNatTrans.app ((φ.jointFunctor p).obj Y) := by
+  have h : (L.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
+        (g ×ₘ a).toLoc hf).inv ▷ φ.joint.app ⟨(q, SingleObj.star H)⟩ ≫
+      (φ.joint.naturality (g ×ₘ a).toLoc).hom =
+    (α_ _ _ _).hom ≫
+      L.joint.map (𝟙 p ×ₘ a).toLoc ◁ (φ.joint.naturality (g ×ₘ 𝟙 (SingleObj.star H)).toLoc).hom ≫
+      (α_ _ _ _).inv ≫
+      (φ.joint.naturality (𝟙 p ×ₘ a).toLoc).hom ▷ L'.joint.map (g ×ₘ 𝟙 (SingleObj.star H)).toLoc ≫
+      (α_ _ _ _).hom ≫
+      φ.joint.app ⟨(p, SingleObj.star H)⟩ ◁
+        (L'.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
+          (g ×ₘ a).toLoc hf).inv := by
+    simp [φ.joint.naturality_comp'_hom _ _ _ hf]
+  have h' := congrArg (fun m ↦ m.toNatTrans.app Y) h
+  simpa only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
+    Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl, Category.id_comp,
+    jointMapIso_hom_app, jointActIso_hom_app] using h'
+
 /-- The joint transformation preserves the commuting square of a parameter arrow and a
 symmetry arrow. -/
 @[reassoc]

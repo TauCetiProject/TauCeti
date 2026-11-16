@@ -319,6 +319,25 @@ lemma normalizationJointInv_naturality_inv_app {X Y : LocallyDiscrete (Γ × Sin
       (L.normalizationJointIso f.as).inv.app x :=
   (rfl)
 
+/-- Along a parameter arrow `(g, 1)` with trivial symmetry component, the naturality cell of
+`normalizationJointInv` reduces to the target fiber unit inverse followed by the action unit
+comparison. -/
+lemma normalizationJointInv_naturality_actId_hom_app {p q : Γ} (g : p ⟶ q)
+    (x : fiber actions p) :
+    (L.normalizationJointInv.naturality
+        (g ×ₘ 𝟙 (SingleObj.star H)).toLoc).hom.toNatTrans.app x =
+      (L.fiberEquivalence q).unitInv.app
+          ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj
+            ((act actions p (𝟙 (SingleObj.star H))).obj x))) ≫
+        (L.jointMap g).map
+          ((L.fiberEquivalence p).inverse.map ((actId actions p).hom.app x)) := by
+  refine (L.normalizationJointInv_naturality_hom_app
+    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc x).trans ?_
+  change (L.normalizationJointIso (g ×ₘ 𝟙 (SingleObj.star H))).hom.app x = _
+  rw [L.normalizationJointIso_hom_app,
+    ← L.jointMapComp_inv_app (𝟙 p) g g (Category.id_comp g),
+    L.jointMapComp_id_comp_inv_app, ← Functor.map_comp, L.actInverseIso_actId]
+
 private lemma normalizationJointIso_fiber (p : Γ)
     (a : SingleObj.star H ⟶ SingleObj.star H) (x : fiber actions p) :
     (L.fiberEquivalence p).functor.map
@@ -402,6 +421,30 @@ lemma normalizationInv_fiberIso_inv_as_app (p : Γ)
     (L.normalizationInv.fiberIso p).inv.as.app a =
       (Cat.Hom.isoMk (L.fiberEquivalence p).counitIso).inv :=
   (rfl)
+
+lemma normalizationInv_fiberFunctorIso_hom_app (p : Γ)
+    (x : L.normalizedTransport.toLift.jointFiber p) :
+    (L.normalizationInv.fiberFunctorIso p).hom.app x = (L.fiberEquivalence p).counit.app x := by
+  rw [Hom.fiberFunctorIso_hom_app, L.normalizationInv_fiberIso_hom_as_app, Cat.Hom.isoMk_hom,
+    NatTrans.toCatHom₂_toNatTrans]
+
+lemma normalizationInv_fiberFunctorIso_inv_app (p : Γ)
+    (x : L.normalizedTransport.toLift.jointFiber p) :
+    (L.normalizationInv.fiberFunctorIso p).inv.app x =
+      (L.fiberEquivalence p).counitInv.app x := by
+  rw [Hom.fiberFunctorIso_inv_app, L.normalizationInv_fiberIso_inv_as_app, Cat.Hom.isoMk_inv,
+    NatTrans.toCatHom₂_toNatTrans]
+
+lemma normalizationInv_jointMapIso_hom_app {p q : Γ} (g : p ⟶ q)
+    (x : L.normalizedTransport.toLift.jointFiber p) :
+    (L.normalizationInv.jointMapIso g).hom.app x =
+      (L.fiberEquivalence q).unitInv.app
+          ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj
+            ((act actions p (𝟙 (SingleObj.star H))).obj x))) ≫
+        (L.jointMap g).map
+          ((L.fiberEquivalence p).inverse.map ((actId actions p).hom.app x)) :=
+  (L.normalizationInv.jointMapIso_hom_app g x).trans
+    (L.normalizationJointInv_naturality_actId_hom_app g x)
 
 /-- A lift is equivalent to the reconstruction of its normalized transport. The inverse
 morphism uses the original inverse fiber equivalences and their counits; the forward morphism

@@ -18,7 +18,9 @@ The mixed equivariance square is precisely what makes these cells respect joint 
 The unit equation then supplies an invertible modification on each prescribed fiber, giving
 a morphism of the reconstructed equivariant lifts. Canonical identity and composition
 modifications assemble these constructions into `reconstructionPseudofunctor`, from the
-locally discrete bicategory of normalized transports to the bicategory of lifts.
+locally discrete bicategory of normalized transports to the bicategory of lifts; in particular,
+coherent equivariant lifts exist if and only if normalized transport data exist
+(`EquivariantGroupoidLift.nonempty_iff_normalizedTransport`).
 
 This construction uses `NormalizedTransport.joint`, the identity-component comparison lemmas
 in `TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat`, and the native
@@ -280,5 +282,11 @@ lemma reconstructionPseudofunctor_mapComp
     {N N' N'' : LocallyDiscrete (NormalizedTransport Γ actions)} (φ : N ⟶ N') (ψ : N' ⟶ N'') :
     (reconstructionPseudofunctor actions).mapComp φ ψ =
       NormalizedTransport.Hom.toLiftHomCompIso φ.as ψ.as := (rfl)
+
+/-- Coherent equivariant lifts exist if and only if normalized transport data exist on the
+prescribed fibers. -/
+lemma nonempty_iff_normalizedTransport :
+    Nonempty (EquivariantGroupoidLift Γ actions) ↔ Nonempty (NormalizedTransport Γ actions) :=
+  ⟨fun ⟨L⟩ ↦ ⟨L.normalizedTransport⟩, fun ⟨N⟩ ↦ ⟨N.toLift⟩⟩
 
 end TauCeti.EquivariantGroupoidLift
