@@ -281,11 +281,12 @@ variable {S} {T : StallingsGraph α}
 
 private theorem UnbasedIso.dartEquiv_mem_cyclicDarts (f : UnbasedIso S T) {e : S.graph.E}
     (he : e ∈ S.graph.cyclicDarts) : f.dartEquiv e ∈ T.graph.cyclicDarts := by
-  simpa using f.toGraphHom.map_mem_cyclicDarts _ f.toGraphHom_mapE_injective he
+  simpa using f.toGraphHom.map_mem_cyclicDarts _ (fun _ _ _ h => f.toGraphHom_mapE_injective h) he
 
 private theorem UnbasedIso.vertexEquiv_mem_cyclicVertices (f : UnbasedIso S T) {a : S.graph.V}
     (ha : a ∈ S.graph.cyclicVertices) : f.vertexEquiv a ∈ T.graph.cyclicVertices := by
-  simpa using f.toGraphHom.map_mem_cyclicVertices _ f.toGraphHom_mapE_injective ha
+  simpa using
+    f.toGraphHom.map_mem_cyclicVertices _ (fun _ _ _ h => f.toGraphHom_mapE_injective h) ha
 
 /-- An isomorphism of labelled graphs preserves the darts on cyclically reduced closed paths. -/
 @[simp] theorem UnbasedIso.dartEquiv_mem_cyclicDarts_iff (f : UnbasedIso S T) (e : S.graph.E) :
