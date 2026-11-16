@@ -33,8 +33,9 @@ Quillen's canonical strict coordinate transporting `F` via the strict isomorphis
 `FormalGroup.pTypicalIso` to the `p`-typical formal group law `FormalGroup.pTypicalFormalGroup`.
 Canonical `p`-typicalization fixes `p`-typical formal group laws, is idempotent, and commutes with
 base change; over a `ℚ`-algebra, the logarithm of `F.pTypicalFormalGroup` is obtained from `F.log`
-by deleting all degrees divisible by a prime `q ≠ p` and keeping the `p^n`-th coefficients unchanged
-(`FormalGroup.coeff_log_pTypicalFormalGroup` and `FormalGroup.coeff_pow_log_pTypicalFormalGroup`).
+by deleting all degrees divisible by a prime `q ≠ p` and, when `p` is prime, keeping the `p^n`-th
+coefficients unchanged (`FormalGroup.coeff_log_pTypicalFormalGroup` and
+`FormalGroup.coeff_pow_log_pTypicalFormalGroup`).
 
 ## Main definitions
 
@@ -120,13 +121,11 @@ theorem isPTypical_smul_iff (F : FormalGroup R) [F.IsComm] (c : TauCeti.FormalCo
     (p : ℕ) :
     (c • F).IsPTypical p ↔
       (⟨c⁻¹.toPowerSeries, c⁻¹.constantCoeff_toPowerSeries⟩ : F.Curve).IsPTypical p := by
-  have htaut : (smulIso c F).curveEquiv ⟨c⁻¹.toPowerSeries, c⁻¹.constantCoeff_toPowerSeries⟩ =
-      (c • F).tautologicalCurve := by
+  have htaut : (smulIso c F).invHom.mapCurve (c • F).tautologicalCurve =
+      ⟨c⁻¹.toPowerSeries, c⁻¹.constantCoeff_toPowerSeries⟩ := by
     ext1
-    rw [TauCeti.FormalGroupIso.curveEquiv_apply, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
-      smulIso_toHom_toPowerSeries, ← TauCeti.FormalCoordinate.toPowerSeries_mul, mul_inv_cancel,
-      TauCeti.FormalCoordinate.toPowerSeries_one, toPowerSeries_tautologicalCurve]
-  rw [isPTypical_def, ← htaut, Curve.isPTypical_curveEquiv_iff]
+    simp
+  rw [isPTypical_def, ← Curve.isPTypical_invHom_mapCurve_iff (smulIso c F) p, htaut]
 
 /-- The additive formal group law `𝔾ₐ` is `p`-typical over every commutative ring and for every
 `p : ℕ`. -/
@@ -308,18 +307,6 @@ theorem pTypicalIso_invHom_toPowerSeries (p : ℕ)
       (F.pTypicalProjectorCurve p hunit F.tautologicalCurve).toPowerSeries := by
   rw [pTypicalIso, smulIso_invHom_toPowerSeries, inv_pTypicalCoordinate_toPowerSeries]
 
-/-- `F.pTypicalIso` carries the `p`-typical projection of `F.tautologicalCurve` to the tautological
-curve of `F.pTypicalFormalGroup`. -/
-theorem pTypicalIso_curveEquiv_pTypicalProjectorCurve_tautologicalCurve (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
-    (F.pTypicalIso p hunit).curveEquiv (F.pTypicalProjectorCurve p hunit F.tautologicalCurve) =
-      (F.pTypicalFormalGroup p hunit).tautologicalCurve := by
-  ext1
-  rw [TauCeti.FormalGroupIso.curveEquiv_apply, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
-    pTypicalIso_toHom_toPowerSeries, ← inv_pTypicalCoordinate_toPowerSeries,
-    ← TauCeti.FormalCoordinate.toPowerSeries_mul, mul_inv_cancel,
-    TauCeti.FormalCoordinate.toPowerSeries_one, toPowerSeries_tautologicalCurve]
-
 /-- Pushing the `p`-typical projection of `F.tautologicalCurve` forward along `F.pTypicalIso.toHom`
 yields the tautological curve of `F.pTypicalFormalGroup`. -/
 @[simp]
@@ -327,8 +314,9 @@ theorem pTypicalIso_toHom_mapCurve_pTypicalProjectorCurve_tautologicalCurve (p :
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     (F.pTypicalIso p hunit).toHom.mapCurve (F.pTypicalProjectorCurve p hunit F.tautologicalCurve) =
       (F.pTypicalFormalGroup p hunit).tautologicalCurve := by
-  rw [← TauCeti.FormalGroupIso.curveEquiv_apply,
-    pTypicalIso_curveEquiv_pTypicalProjectorCurve_tautologicalCurve]
+  rw [← TauCeti.FormalGroupIso.curveEquiv_apply, ← AddEquiv.eq_symm_apply]
+  ext1
+  simp
 
 /-- The canonical `p`-typicalization `F.pTypicalFormalGroup` is a `p`-typical formal group law. -/
 @[simp]
@@ -373,6 +361,15 @@ theorem pTypicalFormalGroup_eq_self_iff (p : ℕ)
     F.pTypicalFormalGroup p hunit = F ↔ F.IsPTypical p :=
   ⟨fun h ↦ (isPTypical_congr h p).mp (F.isPTypical_pTypicalFormalGroup p hunit),
     F.pTypicalFormalGroup_eq_self_of_isPTypical p hunit⟩
+
+/-- The canonical `p`-typicalization coordinate of `F.pTypicalFormalGroup` is the identity
+coordinate `1`. -/
+@[simp]
+theorem pTypicalCoordinate_pTypicalFormalGroup (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (F.pTypicalFormalGroup p hunit).pTypicalCoordinate p hunit = 1 :=
+  (F.pTypicalFormalGroup p hunit).pTypicalCoordinate_eq_one_of_isPTypical p hunit
+    (F.isPTypical_pTypicalFormalGroup p hunit)
 
 /-- Canonical `p`-typicalization of formal group laws is idempotent. -/
 @[simp]

@@ -88,16 +88,14 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
 theorem Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq {p k : ℕ} (hp : p.Prime) :
     (∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) ↔ ∃ n : ℕ, p ^ n = k := by
   refine ⟨fun hno ↦ ?_, fun ⟨n, hn⟩ q hq hqp hqd ↦
-    hqp ((Nat.prime_dvd_prime_iff_eq hq hp).mp (hq.dvd_of_dvd_pow (hn ▸ hqd)))⟩
+    hqp (Nat.prime_eq_prime_of_dvd_pow hq hp (hn ▸ hqd))⟩
   rcases eq_or_ne k 0 with rfl | hk
   · by_cases hp2 : p = 2
     · exact (hno 3 Nat.prime_three (by omega) (dvd_zero 3)).elim
     · exact (hno 2 Nat.prime_two (Ne.symm hp2) (dvd_zero 2)).elim
-  · obtain ⟨n, m, hpm, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hk p hp.ne_one
-    rcases eq_or_ne m 1 with rfl | hm1
-    · exact ⟨n, (mul_one (p ^ n)).symm⟩
-    · exact (hno m.minFac (Nat.minFac_prime hm1) (fun heq ↦ hpm (heq ▸ Nat.minFac_dvd m))
-        (dvd_mul_of_dvd_right (Nat.minFac_dvd m) _)).elim
+  · exact ⟨_, (Nat.eq_prime_pow_of_unique_prime_dvd hk fun {q} hq hqk ↦ by
+      by_contra hqp
+      exact hno q hq hqp hqk).symm⟩
 
 end Nat
 
