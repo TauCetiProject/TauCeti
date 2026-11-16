@@ -340,6 +340,7 @@ theorem jet_apply (f : NormedContDiffMapSupportedIn E F ℓ K) (j : Fin (ℓ + 1
   (rfl)
 
 /-- The jet map is additive. -/
+@[simp]
 theorem jet_add (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f + g) = jet f + jet g := by
   funext j
   ext x : 1
@@ -356,6 +357,7 @@ theorem jet_zero : jet (0 : NormedContDiffMapSupportedIn E F ℓ K) = 0 := by
   simp
 
 /-- The jet map commutes with scalar multiplication. -/
+@[simp]
 theorem jet_smul (c : 𝕜) (f : NormedContDiffMapSupportedIn E F ℓ K) :
     jet (c • f) = c • jet f := by
   funext j
@@ -365,10 +367,12 @@ theorem jet_smul (c : 𝕜) (f : NormedContDiffMapSupportedIn E F ℓ K) :
   exact iteratedFDeriv_const_smul_apply (f.contDiff.contDiffAt.of_le hj)
 
 /-- The jet map commutes with negation. -/
+@[simp]
 theorem jet_neg (f : NormedContDiffMapSupportedIn E F ℓ K) : jet (-f) = -jet f := by
   rw [eq_neg_iff_add_eq_zero, ← jet_add, neg_add_cancel, jet_zero]
 
 /-- The jet map is subtractive. -/
+@[simp]
 theorem jet_sub (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f - g) = jet f - jet g := by
   rw [sub_eq_add_neg, jet_add, jet_neg, ← sub_eq_add_neg]
 
