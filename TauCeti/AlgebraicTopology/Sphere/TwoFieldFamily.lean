@@ -42,9 +42,15 @@ depends continuously on `(x, q)` and gives the family
 which lies over `Sⁿ`: evaluation at the north pole sends `σ (x, q)` to `x`
 (`TauCeti.mappingSpaceEval_comp_twoFieldSphereFamily`). This is the commutative square over
 `Sⁿ` required of a fibred family of two-spheres in the source's Definition 6.14, for the family
-of their Example 6.20. The other requirements of that definition, that `Σ → Sⁿ` be an oriented
-locally trivial bundle of closed manifolds and that the class of a fibre be nonvanishing, are not
-addressed here. The first cube coordinate `s` runs along the inner circle, as in
+of their Example 6.20. The fibre `Σₓ` of `Σ` over `x` is the equator orthogonal to `v x` of the
+unit sphere of the orthogonal complement of `u x` (`TauCeti.twoFieldEquatorsFiberHomeomorph`),
+and over it `σ` restricts to a family of based maps `(S², north) → (Sⁿ, x)`
+(`TauCeti.twoFieldSphereFamilyFiber`). That the class of a fibre is nonvanishing for `n ≥ 4`,
+indeed a generator of `H_{n-2}(Ω²Sⁿ; ℤ)`, is proved in
+`TauCeti.AlgebraicTopology.Sphere.DoubleTangentCircle`
+(`TauCeti.isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber`). The remaining requirement
+of that definition, that `Σ → Sⁿ` be an oriented locally trivial bundle of closed manifolds, is
+not addressed here. The first cube coordinate `s` runs along the inner circle, as in
 `TauCeti.tangentCircleDoubleLoop`, so that under `Map_*(S², Sⁿ) ≃ₜ Ω²Sⁿ` it is the loop parameter
 of the loop of loops. On the square, `σ (x, q)` is therefore the generalized loop
 `tangentCircleGenLoop` of the inner circle with its two cube coordinates exchanged
@@ -61,6 +67,9 @@ itself lies on its equator, and its sphere is constant (`TauCeti.twoFieldSphereF
 * `TauCeti.twoFieldSphereFamily_sphereCollapse`: on the square, `σ (x, q)` is
   `tangentCircleGenLoop` of the inner loop, with the cube coordinates exchanged.
 * `TauCeti.mappingSpaceEval_comp_twoFieldSphereFamily`: `σ` lies over the sphere.
+* `TauCeti.twoFieldEquatorsFiberHomeomorph`: the fibre `Σₓ` is an equator of the unit sphere of
+  `(u x)⊥`.
+* `TauCeti.twoFieldSphereFamilyFiber`: the restriction `Σₓ → Map_*(S², Sⁿ)` of `σ` to a fibre.
 
 ## References
 
@@ -130,6 +139,53 @@ theorem mk_self_mem_twoFieldEquators : (x, x) ∈ twoFieldEquators u v :=
   ⟨inner_u_eq_zero hx, inner_v_eq_zero hx⟩
 
 end Pointwise
+
+section Fiber
+
+variable {x : sphere (0 : E) 1} (huv : ⟪v x, u x⟫ = 0)
+
+/-- **The fibre of the space of equators over a point.** When `v x` is orthogonal to `u x`, the
+fibre `Σₓ = {(x', q) ∈ Σ | x' = x}` is homeomorphic, through `q ↦ (x, q)`, to the equator
+orthogonal to `v x` of the unit sphere of the orthogonal complement of `u x`. -/
+def twoFieldEquatorsFiberHomeomorph :
+    sphereEquator (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ : (ℝ ∙ u x)ᗮ) ≃ₜ
+      {xq : twoFieldEquators u v // xq.1.1 = x} where
+  toFun q := ⟨⟨(x, ⟨((q : sphere (0 : (ℝ ∙ u x)ᗮ) 1) : (ℝ ∙ u x)ᗮ), by
+      rw [mem_sphere_zero_iff_norm, Submodule.norm_coe]
+      exact norm_eq_of_mem_sphere _⟩),
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (q : sphere (0 : (ℝ ∙ u x)ᗮ) 1).1.2,
+    by simpa only [Submodule.coe_inner] using mem_sphereEquator.1 q.2⟩, rfl⟩
+  invFun xq := ⟨⟨⟨xq.1.1.2, Submodule.mem_orthogonal_singleton_iff_inner_left.2 (by
+      obtain ⟨⟨⟨x', q⟩, hq⟩, rfl⟩ := xq
+      exact hq.1)⟩, by simp [norm_eq_of_mem_sphere]⟩, by
+    obtain ⟨⟨⟨x', q⟩, hq⟩, rfl⟩ := xq
+    exact mem_sphereEquator.2 hq.2⟩
+  left_inv q := rfl
+  right_inv xq := by
+    obtain ⟨⟨⟨x', q⟩, hxq⟩, rfl⟩ := xq
+    rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+/-- The homeomorphism `twoFieldEquatorsFiberHomeomorph` sends `q` to `(x, q)`. -/
+@[simp]
+theorem coe_twoFieldEquatorsFiberHomeomorph_apply
+    (q : sphereEquator
+      (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ : (ℝ ∙ u x)ᗮ)) :
+    ((twoFieldEquatorsFiberHomeomorph huv q : twoFieldEquators u v) :
+        sphere (0 : E) 1 × sphere (0 : E) 1) =
+      (x, (orthogonalSphereToEquator (u x) q : sphere (0 : E) 1)) :=
+  Prod.ext rfl (Subtype.ext (coe_orthogonalSphereToEquator _ _).symm)
+
+/-- The inverse of `twoFieldEquatorsFiberHomeomorph` sends `(x, q)` to `q`. -/
+@[simp]
+theorem coe_twoFieldEquatorsFiberHomeomorph_symm_apply
+    (xq : {xq : twoFieldEquators u v // xq.1.1 = x}) :
+    ((((twoFieldEquatorsFiberHomeomorph huv).symm xq : sphere (0 : (ℝ ∙ u x)ᗮ) 1) :
+        (ℝ ∙ u x)ᗮ) : E) = xq.1.1.2 :=
+  (rfl)
+
+end Fiber
 
 section InnerLoop
 
@@ -262,5 +318,21 @@ theorem twoFieldSphereFamily_self (x : sphere (0 : E) 1) :
   ext z : 1
   obtain ⟨y, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north z
   exact Subtype.ext (by simp)
+
+/-- **The two-spheres over a point.** Over `x`, the family `σ` restricts to the fibre
+`Σₓ = {(x', q) ∈ Σ | x' = x}` as a family of based maps `(S², north) → (Sⁿ, x)`: the map that
+Definition 6.14 of Barraud–Damian–Humilière–Oancea reads in the double loop space `Ω²Sⁿ`. -/
+def twoFieldSphereFamilyFiber (x : sphere (0 : E) 1) :
+    C({xq : twoFieldEquators u v // xq.1.1 = x},
+      BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x) :=
+  BasedMap.lift ((twoFieldSphereFamily h hu hv).comp ⟨Subtype.val, continuous_subtype_val⟩)
+    fun xq ↦ by simpa using xq.2
+
+/-- The based two-sphere of a point `(x, q)` of the fibre over `x` is the two-sphere of `(x, q)`. -/
+@[simp]
+theorem coe_twoFieldSphereFamilyFiber_apply (x : sphere (0 : E) 1)
+    (xq : {xq : twoFieldEquators u v // xq.1.1 = x}) :
+    (twoFieldSphereFamilyFiber h hu hv x xq).1 = twoFieldSphereFamily h hu hv xq.1 :=
+  BasedMap.lift_apply_val _ _ _
 
 end TauCeti
