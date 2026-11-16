@@ -24,8 +24,11 @@ transports it along the diffeomorphism `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` o
 with slope at most `1/4` (`TauCeti.Floer.exchangeMap`).
 
 * `Φ_c` is the identity near the inputs `0`, `1` and the translation by `c` near the output end
-  (`TauCeti.Floer.exchangeMap_of_norm_le`, `TauCeti.Floer.exchangeMap_of_le_norm`).
-  It is `C²` (`TauCeti.Floer.contDiff_exchangeMap`), and for `|c| ≤ 1` the slope bound makes it
+  (`TauCeti.Floer.exchangeMap_of_norm_le`, `TauCeti.Floer.exchangeMap_of_le_norm`). It keeps
+  the `t` coordinate and, for `c ≥ 0`, moves `s` by an amount between `0` and `c`
+  (`TauCeti.Floer.snd_exchangeMap`, `TauCeti.Floer.le_fst_exchangeMap`,
+  `TauCeti.Floer.fst_exchangeMap_le`). It is `C²` (`TauCeti.Floer.contDiff_exchangeMap`), and
+  for `|c| ≤ 1` the slope bound makes it
   bijective with nonnegative Jacobian (`TauCeti.Floer.injective_exchangeMap`,
   `TauCeti.Floer.surjective_exchangeMap`, `TauCeti.Floer.det_fderiv_exchangeMap_nonneg`). For
   `0 ≤ c ≤ 1` it maps `S` onto itself
@@ -261,6 +264,19 @@ theorem exchangeMap_of_norm_le (hy : ‖Complex.equivRealProdCLM.symm y‖ ≤ 3
 theorem exchangeMap_of_le_norm (hy : 8 ≤ ‖Complex.equivRealProdCLM.symm y‖) :
     exchangeMap c y = y + (c, 0) := by
   ext <;> simp [exchangeMap, exchangeShift_of_le_norm hy]
+
+/-- The map `Φ_c` keeps the `t` coordinate. -/
+@[simp]
+theorem snd_exchangeMap (c : ℝ) (y : ℝ × ℝ) : (exchangeMap c y).2 = y.2 := by
+  simp [exchangeMap]
+
+/-- For `c ≥ 0` the map `Φ_c` moves the `s` coordinate to the right. -/
+theorem le_fst_exchangeMap (hc : 0 ≤ c) (y : ℝ × ℝ) : y.1 ≤ (exchangeMap c y).1 := by
+  simpa [exchangeMap] using exchangeShift_nonneg hc y
+
+/-- For `c ≥ 0` the map `Φ_c` moves the `s` coordinate by at most `c`. -/
+theorem fst_exchangeMap_le (hc : 0 ≤ c) (y : ℝ × ℝ) : (exchangeMap c y).1 ≤ y.1 + c := by
+  simpa [exchangeMap] using exchangeShift_le hc y
 
 /-! ### Pulling back along `Φ_c` -/
 
@@ -518,30 +534,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 variable {K₁ K₀ : ℂ → M → ℂ →L[ℝ] ℝ}
 
-/-- The components in real coordinates of a datum which is `C¹` over `S` are differentiable in the
-domain point, at points of `S`. -/
-private theorem differentiableAt_domain_of_contMDiffAt
-    (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ K₁ p.1 p.2) (Complex.equivRealProdCLM.symm z, x))
-    {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
-    DifferentiableAt ℝ (fun z ↦ K₁ (Complex.equivRealProdCLM.symm z) x v) z := by
-  have hK' : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ K₁ w x)
-      (Complex.equivRealProdCLM.symm z) :=
-    (hK z hz x).comp (f := fun w : ℂ ↦ (w, x)) _ (contMDiffAt_id.prodMk contMDiffAt_const)
-  exact ((hK'.contDiffAt.differentiableAt one_ne_zero).comp z
-    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
-
-/-- The components of a datum which is `C¹` over `S` are differentiable in the target point, at
-points of `S`. -/
-private theorem mdifferentiableAt_target_of_contMDiffAt
-    (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ K₁ p.1 p.2) (Complex.equivRealProdCLM.symm z, x))
-    {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ K₁ (Complex.equivRealProdCLM.symm z) y v) x :=
-  (((hK z hz x).comp (f := fun y : M ↦ (Complex.equivRealProdCLM.symm z, y)) x
-    (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
-    one_ne_zero
-
 variable [IsManifold I ⊤ M] {ω : SmoothTwoForm I M}
 
 /-- **Pulling back along `Φ_c` multiplies the energy density by the Jacobian.** Let `K₁` be a
@@ -572,8 +564,8 @@ theorem floerEnergyDensity_comp_exchangeMap (ω : SmoothTwoForm I M)
   exact ω.floerEnergyDensity_perturbationPullback
     ((contDiff_exchangeMap c).differentiable two_ne_zero w)
     (mdifferentiableAt_exchangeMap hc₀ hc₁ hu hw)
-    (mdifferentiableAt_target_of_contMDiffAt hK hS _ _)
-    (mdifferentiableAt_target_of_contMDiffAt hK hS _ _)
+    (mdifferentiableAt_target_of_contMDiffAt (hK _ hS _) one_ne_zero _)
+    (mdifferentiableAt_target_of_contMDiffAt (hK _ hS _) one_ne_zero _)
 
 /-- **Energy is invariant under `Φ_c`.** For a datum `K₁` which is `C¹` over `S` and whose
 pullback along `Φ_c` is `K₀`, the energy of `u` for `K₁` over the image under `Φ_c` of a
@@ -603,8 +595,8 @@ theorem integral_floerEnergyDensity_image_exchangeMap (ω : SmoothTwoForm I M)
     (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
     (fun w hw ↦ mdifferentiableAt_exchangeMap hc₀ hc₁ hu (hsS hw))
-    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt hK (hS hw) _ _)
-    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt hK (hS hw) _ _),
+    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt (hK _ (hS hw) _) one_ne_zero _)
+    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt (hK _ (hS hw) _) one_ne_zero _),
     (perturbationPullback_exchangeMap_stdComplexLine hpull).1,
     (perturbationPullback_exchangeMap_stdComplexLine hpull).2]
 
@@ -653,10 +645,10 @@ theorem integral_hamiltonianCurvature_image_exchangeMap (ω : SmoothTwoForm I M)
   rw [ω.integral_hamiltonianCurvature_image hs (injective_exchangeMap hc).injOn
     (fun w _ ↦ (contDiff_exchangeMap c).contDiffAt)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
-    (fun w hw ↦ differentiableAt_domain_of_contMDiffAt hK (hS hw) _ _)
-    (fun w hw ↦ differentiableAt_domain_of_contMDiffAt hK (hS hw) _ _)
-    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt hK (hS hw) _ _)
-    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt hK (hS hw) _ _),
+    (fun w hw ↦ differentiableAt_domain_of_contMDiffAt (hK _ (hS hw) _) one_ne_zero _)
+    (fun w hw ↦ differentiableAt_domain_of_contMDiffAt (hK _ (hS hw) _) one_ne_zero _)
+    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt (hK _ (hS hw) _) one_ne_zero _)
+    (fun w hw ↦ mdifferentiableAt_target_of_contMDiffAt (hK _ (hS hw) _) one_ne_zero _),
     (perturbationPullback_exchangeMap_stdComplexLine hpull).1,
     (perturbationPullback_exchangeMap_stdComplexLine hpull).2]
   simp only [comp_apply]
