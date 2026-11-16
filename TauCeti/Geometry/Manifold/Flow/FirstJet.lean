@@ -233,6 +233,8 @@ private theorem exists_ball_norm_timeDependentField_coordinates_le
     (hDcont.norm.isOpen_inter_preimage hopen (isOpen_Iio (a := η))) (fun p hp ↦ by
       have hp₂ : p.2 = c x := hp.2
       refine ⟨⟨mem_univ _, by simpa only [hp₂] using htarget⟩, ?_⟩
+      -- Unfold `Set.preimage` and `Set.Iio` membership and write the product argument
+      -- by its projections so `hD` and `hY'` can rewrite the resulting norm bound.
       change ‖D (p.1, p.2)‖ < η
       rw [hp₂, ← hD p.1 (c x) htarget, hY' p.1 hp.1, norm_zero]
       exact hη)
@@ -317,6 +319,8 @@ private theorem hasFDerivAt_timeDependentFlowOf_chart_of_jet_eq_zero
       _ ≤ δ * ‖z - c x‖ := by
         simpa only [mul_assoc] using
           mul_le_mul_of_nonneg_right hηδ (norm_nonneg (z - c x)))
+  -- Reduce the chart-function applications and `ContinuousLinearMap.id` in the
+  -- little-o residual so `hfix` can rewrite its fixed-point term.
   change ‖c (timeDependentFlowOf X s t (c.symm z)) -
       c (timeDependentFlowOf X s t (c.symm (c x))) - (z - c x)‖ ≤ δ * ‖z - c x‖
   rw [hfix, sub_sub_sub_cancel_right]
