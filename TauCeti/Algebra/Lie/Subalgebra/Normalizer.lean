@@ -73,7 +73,9 @@ theorem eq_of_le_of_isLieAbelian_of_normalizer_eq (hle : T ≤ T') [IsLieAbelian
   refine le_antisymm hle fun x hx ↦ ?_
   rw [← hT, mem_normalizer_iff]
   intro y hy
-  have hxy : ⁅x, y⁆ = 0 := congr_arg Subtype.val (trivial_lie_zero T' T' ⟨x, hx⟩ ⟨y, hle hy⟩)
+  have hxy : ⁅x, y⁆ = 0 := by
+    have h := trivial_lie_zero T' T' ⟨x, hx⟩ ⟨y, hle hy⟩
+    rwa [← coe_zero_iff_zero, coe_bracket] at h
   rw [hxy]
   exact zero_mem T
 
