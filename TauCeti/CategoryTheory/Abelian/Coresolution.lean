@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.Limits
 public import Mathlib.CategoryTheory.ObjectProperty.Basic
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import TauCeti.Algebra.Homology.ExactSequence
 public import TauCeti.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+public import TauCeti.CategoryTheory.Exact.Injective
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
@@ -24,6 +24,11 @@ exactness at `X` says that `X ⟶ I⁰` is a monomorphism. Unlike Mathlib's
 `CategoryTheory.InjectiveResolution`, which is infinite, these truncated coresolutions need no
 enough injectives.
 
+The definition and its basic API need only zero morphisms, together with cokernels or a zero
+object where cosyzygies, splicing and tails appear. That splicing gives a coresolution, the
+recursive description of `HasCoresolution` and the closure properties are proved for abelian
+categories.
+
 The *`i`-th cosyzygy* of `S` is `cokernel (S.map' i (i + 1))`
 (`CategoryTheory.ComposableArrows.cosyzygy`): the zeroth one is `X`, and the `(i + 1)`-st is the
 cokernel of the monomorphism `cosyzygy i ⟶ Iⁱ` induced by `S`
@@ -36,8 +41,9 @@ every coresolution with `n + 1` terms arises this way, by its tail
 terms satisfy a property `P` (`CategoryTheory.HasCoresolution`) this is
 `CategoryTheory.hasCoresolution_succ_iff`. When `P` consists of injective objects and is closed
 under binary biproducts, the objects with such a coresolution are closed under extensions
-(`CategoryTheory.HasCoresolution.of_shortExact`, the horseshoe argument) and under retracts
-(`CategoryTheory.HasCoresolution.of_retract`).
+(`CategoryTheory.HasCoresolution.of_shortExact`, by the injective horseshoe lemma
+`TauCeti.ExactStructure.exists_conflation_of_conflation_of_injective` for the exact structure of
+short exact sequences) and under retracts (`CategoryTheory.HasCoresolution.of_retract`).
 
 ## Main definitions
 
@@ -70,11 +76,15 @@ namespace CategoryTheory
 
 open Limits ZeroObject
 
-variable {C : Type u} [Category.{v} C] [Abelian C]
+variable {C : Type u} [Category.{v} C]
 
 namespace ComposableArrows
 
 variable {n : ℕ}
+
+section HasZeroMorphisms
+
+variable [HasZeroMorphisms C]
 
 /-- `S : ComposableArrows C (n + 1)` is a **coresolution with `n` terms** of `S.obj' 1`: the
 sequence `0 → S.obj' 1 → S.obj' 2 → ⋯ → S.obj' (n + 1)` is exact, starting at a zero object. The
@@ -84,6 +94,10 @@ structure IsCoresolution (S : ComposableArrows C (n + 1)) : Prop where
   exact : S.Exact
   /-- The sequence starts at a zero object. -/
   isZero_left : IsZero S.left
+
+section HasCokernels
+
+variable [HasCokernels C]
 
 /-- The `i`-th **cosyzygy** of `S : ComposableArrows C (n + 1)`, the cokernel of
 `S.map' i (i + 1)`. For a coresolution of `X`, the zeroth cosyzygy is `X`
@@ -97,10 +111,6 @@ namespace IsCoresolution
 variable {S : ComposableArrows C (n + 1)} (hS : S.IsCoresolution)
 include hS
 
-/-- The first map of a coresolution is a monomorphism. -/
-theorem mono_map'_one_two (hn : 1 ≤ n) : Mono (S.map' 1 2) :=
-  (ShortComplex.exact_iff_mono _ (hS.isZero_left.eq_of_src _ _)).1 (hS.exact.exact 0)
-
 /-- The embedding of the `i`-th cosyzygy into the `i`-th term `S.obj' (i + 2)`. -/
 noncomputable def cosyzygyι (i : ℕ) (hi : i < n := by valid) : S.cosyzygy i ⟶ S.obj' (i + 2) :=
   cokernel.desc _ (S.map' (i + 1) (i + 2)) (hS.exact.toIsComplex.zero i)
@@ -113,9 +123,6 @@ theorem cosyzygyι_eq_cokernelDesc (i : ℕ) (hi : i < n) :
 theorem π_cosyzygyι (i : ℕ) (hi : i < n := by valid) :
     cokernel.π (S.map' i (i + 1)) ≫ hS.cosyzygyι i = S.map' (i + 1) (i + 2) :=
   cokernel.π_desc _ _ _
-
-instance mono_cosyzygyι (i : ℕ) (hi : i < n) : Mono (hS.cosyzygyι i) :=
-  (hS.exact.exact i).mono_cokernelDesc
 
 /-- The zeroth cosyzygy of a coresolution of `X` is `X`. -/
 noncomputable def cosyzygyZeroIso : S.cosyzygy 0 ≅ S.obj' 1 :=
@@ -150,13 +157,17 @@ theorem π_cosyzygySuccIso_inv (i : ℕ) (hi : i < n) :
       cokernel.π (S.map' (i + 1) (i + 2)) := by
   rw [Iso.comp_inv_eq, π_cosyzygySuccIso_hom _ i hi]
 
-omit hS in
+end IsCoresolution
+
+end HasCokernels
+
+namespace IsCoresolution
+
 /-- Dropping the last term of a coresolution with `n + 1` terms leaves one with `n` terms. -/
 theorem δlast {S : ComposableArrows C (n + 2)} (hS : S.IsCoresolution) :
     S.δlast.IsCoresolution :=
   ⟨hS.exact.δlast, hS.isZero_left⟩
 
-omit hS in
 /-- Coresolutions are invariant under isomorphisms of composable arrows. -/
 theorem of_iso {S T : ComposableArrows C (n + 1)} (hS : S.IsCoresolution) (e : S ≅ T) :
     T.IsCoresolution :=
@@ -166,8 +177,8 @@ end IsCoresolution
 
 section Map
 
-variable {D : Type u'} [Category.{v'} D] [Abelian D] (F : C ⥤ D) [F.PreservesZeroMorphisms]
-  [F.PreservesHomology]
+variable {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] (F : C ⥤ D)
+  [F.PreservesZeroMorphisms] [F.PreservesHomology]
 
 /-- **Exact functors carry coresolutions to coresolutions.** -/
 theorem IsCoresolution.map {S : ComposableArrows C (n + 1)} (hS : S.IsCoresolution) :
@@ -176,7 +187,35 @@ theorem IsCoresolution.map {S : ComposableArrows C (n + 1)} (hS : S.IsCoresoluti
 
 end Map
 
+end HasZeroMorphisms
+
+section Preadditive
+
+variable [Preadditive C]
+
+namespace IsCoresolution
+
+variable {S : ComposableArrows C (n + 1)} (hS : S.IsCoresolution)
+include hS
+
+/-- The first map of a coresolution is a monomorphism. -/
+theorem mono_map'_one_two (hn : 1 ≤ n) : Mono (S.map' 1 2) :=
+  (hS.exact.exact 0).mono_g (hS.isZero_left.eq_of_src _ _)
+
+instance mono_cosyzygyι [HasCokernels C] (i : ℕ) (hi : i < n) : Mono (hS.cosyzygyι i) := by
+  have h := hS.exact.exact i (by omega)
+  have := h.hasHomology
+  exact h.mono_cokernelDesc
+
+end IsCoresolution
+
+end Preadditive
+
 section Cons
+
+section Construction
+
+variable [HasZeroMorphisms C] [HasZeroObject C] [HasCokernels C]
 
 namespace CoresolutionCons
 
@@ -252,6 +291,11 @@ private theorem coresolutionCons_zero (hT : T.IsCoresolution) (i : ℕ) (hi : i 
     rw [Category.assoc, Category.assoc, hT.exact.toIsComplex.zero' 1 2 3, comp_zero, comp_zero]
   | k + 3, _ => hT.exact.toIsComplex.zero (k + 2)
 
+end Construction
+
+variable [Abelian C] {X I : C} {ι : X ⟶ I} {T : ComposableArrows C (n + 1)}
+  {e : cokernel ι ≅ T.obj' 1}
+
 /-- An embedding followed by a coresolution of its cokernel is a coresolution. -/
 theorem IsCoresolution.coresolutionCons [Mono ι] (hT : T.IsCoresolution) :
     (coresolutionCons ι T e).IsCoresolution where
@@ -280,6 +324,10 @@ theorem IsCoresolution.coresolutionCons [Mono ι] (hT : T.IsCoresolution) :
 end Cons
 
 section Tail
+
+section Construction
+
+variable [HasZeroMorphisms C] [HasZeroObject C] [HasCokernels C]
 
 namespace CoresolutionTail
 
@@ -339,6 +387,11 @@ private theorem tail_zero (i : ℕ) (hi : i + 2 ≤ n + 1) :
     exact hS.exact.toIsComplex.zero' 2 3 4
   | k + 2, _ => hS.exact.toIsComplex.zero (k + 3)
 
+end Construction
+
+variable [Preadditive C] [HasZeroObject C] [HasCokernels C] {S : ComposableArrows C (n + 2)}
+  (hS : S.IsCoresolution)
+
 /-- The tail of a coresolution is a coresolution. -/
 theorem IsCoresolution.isCoresolution_tail : hS.tail.IsCoresolution where
   isZero_left := isZero_zero C
@@ -368,6 +421,10 @@ end ComposableArrows
 
 open ComposableArrows
 
+section HasZeroMorphisms
+
+variable [HasZeroMorphisms C]
+
 /-- `X` **has a coresolution with `n` terms satisfying `P`**: there is a coresolution
 `0 → X → I⁰ → ⋯ → Iⁿ⁻¹` (`CategoryTheory.ComposableArrows.IsCoresolution`) whose terms `Iⁱ` all
 satisfy `P`. -/
@@ -384,7 +441,7 @@ theorem hasCoresolution_iff {X : C} {n : ℕ} :
 
 /-- Every object has a coresolution with no terms, `0 → X`. -/
 @[simp]
-theorem hasCoresolution_zero (X : C) : HasCoresolution P X 0 :=
+theorem hasCoresolution_zero [HasZeroObject C] (X : C) : HasCoresolution P X 0 :=
   ⟨mk₁ (0 : 0 ⟶ X), ⟨(mk₁ (0 : 0 ⟶ X)).exact₁, isZero_zero C⟩, ⟨Iso.refl _⟩,
     fun _ hi ↦ absurd hi (Nat.not_lt_zero _)⟩
 
@@ -396,6 +453,39 @@ theorem HasCoresolution.of_iso {X Y : C} {n : ℕ} (h : HasCoresolution P X n) (
 theorem hasCoresolution_iff_of_iso {X Y : C} {n : ℕ} (e : X ≅ Y) :
     HasCoresolution P X n ↔ HasCoresolution P Y n :=
   ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
+
+/-- Dropping the last term of a coresolution with `n + 1` terms leaves one with `n` terms. -/
+theorem HasCoresolution.of_succ {X : C} {n : ℕ} (h : HasCoresolution P X (n + 1)) :
+    HasCoresolution P X n := by
+  obtain ⟨S, hS, e, hP⟩ := h
+  exact ⟨S.δlast, hS.δlast, e, fun i hi ↦ hP i (by omega)⟩
+
+theorem HasCoresolution.of_le {X : C} {m n : ℕ} (h : HasCoresolution P X n) (hmn : m ≤ n) :
+    HasCoresolution P X m := by
+  induction hmn with
+  | refl => exact h
+  | step _ ih => exact ih h.of_succ
+
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] (F : C ⥤ D)
+  [F.PreservesZeroMorphisms] [F.PreservesHomology] {Q : ObjectProperty D}
+
+/-- **Exact functors carry coresolutions to coresolutions.** If an exact functor `F` sends objects
+satisfying `P` to objects satisfying `Q`, it carries coresolutions with terms in `P` to
+coresolutions with terms in `Q`. -/
+theorem HasCoresolution.map (hPQ : ∀ Y, P Y → Q (F.obj Y)) {X : C} {n : ℕ}
+    (h : HasCoresolution P X n) : HasCoresolution Q (F.obj X) n := by
+  obtain ⟨S, hS, ⟨e⟩, hP⟩ := h
+  exact ⟨(F.mapComposableArrows (n + 1)).obj S, hS.map F, ⟨F.mapIso e⟩, fun i hi ↦ hPQ _ (hP i hi)⟩
+
+end Map
+
+end HasZeroMorphisms
+
+section Abelian
+
+variable [Abelian C] {P : ObjectProperty C}
 
 /-- **Coresolutions are built one term at a time.** `X` has a coresolution with `n + 1` terms
 satisfying `P` exactly when it embeds into an object `I` satisfying `P` such that `cokernel ι` has
@@ -440,18 +530,6 @@ theorem hasCoresolution_two_iff {X : C} :
     have := hfg.mono_cokernelDesc
     exact ⟨I₀, f, hf, hI₀, hasCoresolution_one_iff.2 ⟨I₁, cokernel.desc f g w, this, hI₁⟩⟩
 
-/-- Dropping the last term of a coresolution with `n + 1` terms leaves one with `n` terms. -/
-theorem HasCoresolution.of_succ {X : C} {n : ℕ} (h : HasCoresolution P X (n + 1)) :
-    HasCoresolution P X n := by
-  obtain ⟨S, hS, e, hP⟩ := h
-  exact ⟨S.δlast, hS.δlast, e, fun i hi ↦ hP i (by omega)⟩
-
-theorem HasCoresolution.of_le {X : C} {m n : ℕ} (h : HasCoresolution P X n) (hmn : m ≤ n) :
-    HasCoresolution P X m := by
-  induction hmn with
-  | refl => exact h
-  | step _ ih => exact ih h.of_succ
-
 /-- **Coresolutions add up.** If `P` is closed under binary biproducts, then coresolutions with
 `n` terms satisfying `P` of `X` and of `Y` give one of `X ⊞ Y`. -/
 theorem HasCoresolution.biprod (hP : ∀ A B : C, P A → P B → P (A ⊞ B)) {n : ℕ} :
@@ -467,9 +545,13 @@ theorem HasCoresolution.biprod (hP : ∀ A B : C, P A → P B → P (A ⊞ B)) {
       (CokernelCofork.isColimitBiprod (cokernelIsCokernel ι) (cokernelIsCokernel κ))
       (colimit.isColimit _))
 
+open TauCeti in
 /-- **Coresolutions of extensions** (the horseshoe lemma). Let `P` be a property of injective
 objects closed under binary biproducts. If the ends of a short exact sequence
-`0 → B → A → Ω → 0` have coresolutions with `n` terms satisfying `P`, so does the middle. -/
+`0 → B → A → Ω → 0` have coresolutions with `n` terms satisfying `P`, so does the middle. Each
+step is the injective horseshoe lemma
+`TauCeti.ExactStructure.exists_conflation_of_conflation_of_injective` for the exact structure of
+short exact sequences. -/
 theorem HasCoresolution.of_shortExact (hP : ∀ Y, P Y → Injective Y)
     (hPb : ∀ A B : C, P A → P B → P (A ⊞ B)) {n : ℕ} :
     ∀ {L : ShortComplex C}, L.ShortExact → HasCoresolution P L.X₁ n → HasCoresolution P L.X₃ n →
@@ -480,39 +562,20 @@ theorem HasCoresolution.of_shortExact (hP : ∀ Y, P Y → Injective Y)
     intro L hL h₁ h₃
     obtain ⟨Q, β, hβ, hQ, hβ'⟩ := hasCoresolution_succ_iff.1 h₁
     obtain ⟨I, ω, hω, hI, hω'⟩ := hasCoresolution_succ_iff.1 h₃
-    have := hP Q hQ
-    have := hL.mono_f
-    have := hL.epi_g
-    let β₂ : L.X₂ ⟶ Q := Injective.factorThru β L.f
-    have hβ₂ : L.f ≫ β₂ = β := Injective.comp_factorThru _ _
-    let ι : L.X₂ ⟶ Q ⊞ I := biprod.lift β₂ (L.g ≫ ω)
-    let L₂ : ShortComplex C := ShortComplex.mk (biprod.inl : Q ⟶ Q ⊞ I) biprod.snd (by simp)
-    let v : L ⟶ L₂ :=
-      { τ₁ := β
-        τ₂ := ι
-        τ₃ := ω
-        comm₁₂ := by ext <;> simp [ι, L₂, hβ₂]
-        comm₂₃ := by simp [ι, L₂] }
-    have hι : Mono ι :=
-      ShortComplex.mono_τ₂_of_exact_of_mono (φ := v) hL.exact (S₂ := L₂)
-    let L₃ : ShortComplex C :=
-      { f := cokernel.map β ι L.f biprod.inl (by ext <;> simp [ι, hβ₂])
-        g := cokernel.map ι ω L.g biprod.snd (by simp [ι])
-        zero := by ext; simp }
-    let π : L₂ ⟶ L₃ :=
-      { τ₁ := cokernel.π β
-        τ₂ := cokernel.π ι
-        τ₃ := cokernel.π ω }
-    have w : v ≫ π = 0 := by ext <;> simp [v, π]
-    have hπ : IsColimit (CokernelCofork.ofπ π w) := by
-      apply ShortComplex.isColimitOfIsColimitπ <;>
-        apply (CokernelCofork.isColimitMapCoconeEquiv _ _).2
-      · exact cokernelIsCokernel _
-      · exact cokernelIsCokernel _
-      · exact cokernelIsCokernel _
-    have hL₃ : L₃.ShortExact := ShortComplex.ShortExact.of_isColimit_cokernelCofork
-      (ShortComplex.Splitting.ofHasBinaryBiproduct Q I).shortExact hL.exact v π w hπ
-    exact hasCoresolution_succ_iff.2 ⟨Q ⊞ I, ι, hι, hPb _ _ hQ hI, ih hL₃ hβ' hω'⟩
+    -- The injective horseshoe lemma for the abelian exact structure embeds `L.X₂` into an
+    -- extension `M` of `I` by `Q`, with cokernel an extension of `cokernel ω` by `cokernel β`.
+    obtain ⟨M, j, q, hjq, ⟨s⟩, K, b, c, hbc, v, w, hvw, hb, hv, -⟩ :=
+      (ExactStructure.abelian C).exists_conflation_of_conflation_of_injective
+        ((ExactStructure.abelian_conflation L).2 hL)
+        (ExactStructure.abelian_conflation_of_mono β) (ExactStructure.abelian_conflation_of_mono ω)
+        ((ExactStructure.abelian_isInjective_iff Q).2 (hP Q hQ))
+    rw [ExactStructure.abelian_conflation] at hb hv
+    have := hb.mono_f
+    -- The extension `M` splits, so `b` followed by the splitting is an embedding into `Q ⊞ I`.
+    refine hasCoresolution_succ_iff.2
+      ⟨Q ⊞ I, b ≫ s.isoBinaryBiproduct.hom, inferInstance, hPb _ _ hQ hI, ?_⟩
+    exact (ih hv hβ' hω').of_iso (hb.gIsCokernel.coconePointUniqueUpToIso
+      (cokernelIsCokernel b) ≪≫ (cokernelCompIsIso b _).symm)
 
 /-- **Coresolutions of retracts.** Let `P` be a property of injective objects closed under binary
 biproducts. If `Y` has a coresolution with `n` terms satisfying `P`, so does every retract `X` of
@@ -531,19 +594,6 @@ theorem HasCoresolution.of_retract (hP : ∀ Y, P Y → Injective Y)
       (ih (binaryBiconeOfIsSplitMonoOfCokernel (cokernelIsCokernel r.i)).retract_right hY.of_succ)
       hY'
 
-section Map
-
-variable {D : Type u'} [Category.{v'} D] [Abelian D] (F : C ⥤ D) [F.PreservesZeroMorphisms]
-  [F.PreservesHomology] {Q : ObjectProperty D}
-
-/-- **Exact functors carry coresolutions to coresolutions.** If an exact functor `F` sends objects
-satisfying `P` to objects satisfying `Q`, it carries coresolutions with terms in `P` to
-coresolutions with terms in `Q`. -/
-theorem HasCoresolution.map (hPQ : ∀ Y, P Y → Q (F.obj Y)) {X : C} {n : ℕ}
-    (h : HasCoresolution P X n) : HasCoresolution Q (F.obj X) n := by
-  obtain ⟨S, hS, ⟨e⟩, hP⟩ := h
-  exact ⟨(F.mapComposableArrows (n + 1)).obj S, hS.map F, ⟨F.mapIso e⟩, fun i hi ↦ hPQ _ (hP i hi)⟩
-
-end Map
+end Abelian
 
 end CategoryTheory
