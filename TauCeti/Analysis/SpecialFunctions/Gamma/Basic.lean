@@ -57,6 +57,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Real.neg_one_pow_mul_Gamma_pos` — `(-1) ^ (m + 1) * Γ x > 0` on each unit interval
+  `(-m - 1, -m)` between consecutive poles of `Real.Gamma`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -275,6 +277,34 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+/-- On each unit interval `(-m - 1, -m)` between consecutive poles, `Real.Gamma` has strict sign
+`(-1) ^ (m + 1)`. -/
+theorem neg_one_pow_mul_Gamma_pos {m : ℕ} {x : ℝ}
+    (hx : x ∈ Set.Ioo (-(m : ℝ) - 1) (-(m : ℝ))) :
+    0 < (-1 : ℝ) ^ (m + 1) * Gamma x := by
+  induction m generalizing x with
+  | zero =>
+    simp only [Nat.cast_zero, neg_zero, zero_sub, Set.mem_Ioo] at hx
+    have h1 : 0 < Gamma (x + 1) := Gamma_pos_of_pos (by linarith)
+    rw [Gamma_add_one hx.2.ne] at h1
+    have : Gamma x < 0 := by nlinarith
+    simpa using this
+  | succ m ih =>
+    have hx1 : x + 1 ∈ Set.Ioo (-(m : ℝ) - 1) (-(m : ℝ)) := by
+      simp only [Nat.cast_add, Nat.cast_one, Set.mem_Ioo] at hx ⊢
+      exact ⟨by linarith, by linarith⟩
+    have hih := ih hx1
+    have hx_neg : x < 0 := by
+      have : (0 : ℝ) ≤ (m : ℝ) := Nat.cast_nonneg m
+      simp only [Nat.cast_add, Nat.cast_one, Set.mem_Ioo] at hx
+      linarith
+    rw [Gamma_add_one hx_neg.ne] at hih
+    have hrew : (-1 : ℝ) ^ (m + 1) * (x * Gamma x) =
+        (-x) * ((-1 : ℝ) ^ (m + 1 + 1) * Gamma x) := by
+      rw [pow_succ]; ring
+    rw [hrew] at hih
+    nlinarith
 
 end Real
 

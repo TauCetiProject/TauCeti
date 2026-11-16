@@ -29,6 +29,9 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
 * `Real.monotoneOn_digamma`: digamma is monotone on the positive real axis, being the derivative
   of the convex function `log ∘ Gamma`.
+* `Real.differentiableAt_digamma`, `Real.deriv_digamma_apply_add_nat`, `Real.deriv_digamma_pos`:
+  real digamma is differentiable off `−ℕ` with strictly positive derivative satisfying the shift
+  identity `ψ'(x + n) = ψ'(x) - ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹`.
 * `Real.digamma_one_half`, `Real.digamma_three_halves`, `Real.digamma_one_half_neg`,
   `Real.digamma_three_halves_pos`: the values `ψ(1/2) = -γ - 2 log 2 < 0` and
   `ψ(3/2) = 2 - γ - 2 log 2 > 0`.
@@ -170,6 +173,86 @@ theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
     digamma_eq_deriv_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)
   exact (convexOn_log_Gamma.monotoneOn_deriv fun x hx ↦
     differentiableAt_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)).congr hd.symm
+
+/-- Real digamma is differentiable at every regular real point. -/
+theorem differentiableAt_digamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    DifferentiableAt ℝ digamma x := by
+  have hxℂ : ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := Complex.ofReal_ne_neg_nat hx
+  have hΓ : AnalyticAt ℂ Complex.Gamma (x : ℂ) := by
+    have h := (Complex.differentiable_one_div_Gamma.analyticAt (x : ℂ)).inv
+      (inv_ne_zero (Complex.Gamma_ne_zero hxℂ))
+    simpa only [Pi.inv_def, inv_inv] using h
+  have hψ : AnalyticAt ℂ Complex.digamma (x : ℂ) := by
+    have heq : Complex.digamma = fun z => deriv Complex.Gamma z / Complex.Gamma z :=
+      funext fun z => by rw [Complex.digamma_def, logDeriv_apply]
+    rw [heq]
+    exact hΓ.deriv.div hΓ (Complex.Gamma_ne_zero hxℂ)
+  have hd : HasDerivAt (fun b : ℝ => Complex.digamma (b : ℂ))
+      (deriv Complex.digamma (x : ℂ)) x :=
+    hψ.differentiableAt.hasDerivAt.comp_ofReal
+  have hre : (fun b : ℝ => (Complex.digamma (b : ℂ)).re) = digamma := by
+    ext b; simp [Complex.digamma_ofReal]
+  rw [← hre]
+  exact (Complex.reCLM.hasFDerivAt.comp x hd.hasFDerivAt).differentiableAt
+
+/-- The derivative of real digamma satisfies the iterated shift identity
+`ψ'(x + n) = ψ'(x) - ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹` at every regular real point. -/
+theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (n : ℕ) :
+    deriv digamma (x + n) = deriv digamma x - ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ := by
+  have hreg : ∀ᶠ y in 𝓝 x, ∀ m : ℕ, y ≠ -(m : ℝ) := by
+    rcases lt_or_gt_of_ne (by simpa using hx 0) with hx_neg | hx_pos
+    · let m : ℕ := Nat.floor (-x)
+      have hlo : (m : ℝ) < -x :=
+        lt_of_le_of_ne (Nat.floor_le (by linarith)) fun h => hx m (by linarith)
+      have hhi : -x < (m : ℝ) + 1 := Nat.lt_floor_add_one (-x)
+      filter_upwards [isOpen_Ioo.mem_nhds (⟨by linarith, by linarith⟩ :
+          x ∈ Ioo (-(m : ℝ) - 1) (-(m : ℝ)))] with y hy k hk
+      rw [hk] at hy
+      have h1 : m < k := by exact_mod_cast (show (m : ℝ) < (k : ℝ) by linarith [hy.2])
+      have h2 : k < m + 1 := by exact_mod_cast (show (k : ℝ) < (m : ℝ) + 1 by linarith [hy.1])
+      omega
+    · filter_upwards [isOpen_Ioi.mem_nhds hx_pos] with y hy m
+      have : (0 : ℝ) ≤ (m : ℝ) := Nat.cast_nonneg m
+      linarith [Set.mem_Ioi.mp hy]
+  have hev : (fun y => digamma (y + n)) =ᶠ[𝓝 x]
+      fun y => digamma y + ∑ k ∈ Finset.range n, (y + k)⁻¹ := by
+    filter_upwards [hreg] with y hy
+    exact digamma_apply_add_nat hy n
+  have hshift : ∀ m : ℕ, x + (n : ℝ) ≠ -(m : ℝ) := fun m hm =>
+    hx (m + n) (by push_cast; linarith)
+  have hd_lhs : HasDerivAt (fun y => digamma (y + n)) (deriv digamma (x + n)) x :=
+    (differentiableAt_digamma hshift).hasDerivAt.comp_add_const x (n : ℝ)
+  have hd_sum : HasDerivAt (fun y => ∑ k ∈ Finset.range n, (y + (k : ℝ))⁻¹)
+      (∑ k ∈ Finset.range n, -((x + (k : ℝ)) ^ 2)⁻¹) x := by
+    refine HasDerivAt.fun_sum fun k _ => ?_
+    have hxk : x + (k : ℝ) ≠ 0 := fun h => hx k (by linarith)
+    simpa [neg_div, one_div] using ((hasDerivAt_id x).add_const (k : ℝ)).fun_inv hxk
+  have hd_rhs := (differentiableAt_digamma hx).hasDerivAt.fun_add hd_sum
+  have huniq := hd_lhs.unique (hd_rhs.congr_of_eventuallyEq hev)
+  rw [Finset.sum_neg_distrib, ← sub_eq_add_neg] at huniq
+  exact huniq
+
+/-- The derivative of real digamma is strictly positive at every regular real point. -/
+theorem deriv_digamma_pos {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) : 0 < deriv digamma x := by
+  have hnonneg_pos : ∀ {y : ℝ}, 0 < y → 0 ≤ deriv digamma y := fun {y} hy => by
+    have h1 := (hasDerivAt_iff_tendsto_slope.mp
+      (differentiableAt_digamma (Complex.real_ne_neg_nat_of_pos hy)).hasDerivAt).mono_left
+      (nhdsWithin_mono _ fun _ hb => (Set.mem_Ioi.mp hb).ne')
+    refine ge_of_tendsto h1 ?_
+    filter_upwards [self_mem_nhdsWithin] with b (hb : y < b)
+    rw [slope_def_field]
+    exact div_nonneg (sub_nonneg.mpr (monotoneOn_digamma hy (hy.trans hb) hb.le))
+      (sub_pos.mpr hb).le
+  obtain ⟨n, hn⟩ := exists_nat_gt (-x)
+  have hpos : 0 < x + ((n + 1 : ℕ) : ℝ) := by push_cast; linarith
+  have hshift := deriv_digamma_apply_add_nat hx (n + 1)
+  have hterm : 0 < ((x + (0 : ℕ)) ^ 2)⁻¹ :=
+    inv_pos.mpr (sq_pos_of_ne_zero fun h => hx 0 (by simpa using h))
+  have hsum : ((x + (0 : ℕ)) ^ 2)⁻¹ ≤ ∑ k ∈ Finset.range (n + 1), ((x + k) ^ 2)⁻¹ :=
+    Finset.single_le_sum (f := fun k : ℕ => ((x + (k : ℝ)) ^ 2)⁻¹)
+      (fun _ _ => by positivity) (Finset.mem_range.mpr (Nat.succ_pos n))
+  have hge := hnonneg_pos hpos
+  linarith
 
 /-- The value `ψ(1/2) = -γ - 2 log 2`. -/
 theorem digamma_one_half : digamma (1 / 2) = -eulerMascheroniConstant - 2 * log 2 := by

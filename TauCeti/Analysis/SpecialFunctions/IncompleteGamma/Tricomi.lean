@@ -42,7 +42,11 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
   `γ*(a, ·)` is entire (`differentiable_tricomiIncompleteGamma`);
 * `Complex.differentiable_tricomiIncompleteGamma_left` — `γ*(·, z)` is entire;
 * `Complex.tricomiIncompleteGamma_ode` — the differential equation
-  `z w'' + (a + 1 + z) w' + a w = 0` (DLMF 8.2.14).
+  `z w'' + (a + 1 + z) w' + a w = 0` (DLMF 8.2.14);
+* `Complex.tricomiIncompleteGamma_conj`, `tricomiIncompleteGamma_ofReal_im`,
+  `tricomiIncompleteGamma_ofReal_eq_zero_iff`, `tricomiIncompleteGamma_ofReal_re_eq_integral` —
+  conjugation symmetry, reality, and real integral representation for real parameters and
+  arguments.
 
 ## Implementation
 
@@ -137,6 +141,27 @@ theorem tricomiIncompleteGamma_one_left {z : ℂ} (hz : z ≠ 0) :
   rw [tricomiIncompleteGamma_zero_left, zero_add, Gamma_one, div_one] at h
   rw [eq_div_iff hz]
   linear_combination -h
+
+/-- Tricomi's function commutes with complex conjugation. -/
+theorem tricomiIncompleteGamma_conj (a z : ℂ) :
+    tricomiIncompleteGamma (starRingEnd ℂ a) (starRingEnd ℂ z) =
+      starRingEnd ℂ (tricomiIncompleteGamma a z) := by
+  refine (hasSum_tricomiIncompleteGamma _ _).unique ?_
+  refine ((hasSum_tricomiIncompleteGamma a z).map (starRingEnd ℂ) continuous_conj).congr_fun
+    fun k => ?_
+  simp only [Function.comp_apply, map_div₀, map_mul, map_pow, ← exp_conj, ← Gamma_conj,
+    map_neg, map_add, map_natCast, map_one]
+
+/-- Tricomi's function is real-valued for real parameter and real argument. -/
+@[simp]
+theorem tricomiIncompleteGamma_ofReal_im (a x : ℝ) :
+    (tricomiIncompleteGamma a x).im = 0 := by
+  rw [← conj_eq_iff_im, ← tricomiIncompleteGamma_conj, conj_ofReal, conj_ofReal]
+
+/-- For real parameter and argument, `γ*(a, x)` vanishes iff its real part vanishes. -/
+theorem tricomiIncompleteGamma_ofReal_eq_zero_iff (a x : ℝ) :
+    tricomiIncompleteGamma a x = 0 ↔ (tricomiIncompleteGamma a x).re = 0 := by
+  simp [Complex.ext_iff]
 
 /-! ### Differentiability in the argument -/
 
@@ -331,5 +356,22 @@ theorem tricomiIncompleteGamma_eq_integral {a : ℂ} (ha : 0 < a.re) (z : ℂ) :
     · exact (Complex.exp_eq_exp_ℂ ▸ NormedSpace.expSeries_div_hasSum_exp (-(z * t)) :
         HasSum (fun k : ℕ => (-(z * t)) ^ k / k !) (cexp (-(z * t)))).mul_left _
   exact (hasSum_tricomiIncompleteGamma_of_ne_neg_natCast ha' z).unique (hint.mul_left _)
+
+/-- Real form of Tricomi's integral (DLMF 8.2.7): for real `a > 0` and real `x`,
+`Re γ*(a, x) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−xt} dt`. -/
+theorem tricomiIncompleteGamma_ofReal_re_eq_integral {a : ℝ} (ha : 0 < a) (x : ℝ) :
+    (tricomiIncompleteGamma a x).re =
+      (Real.Gamma a)⁻¹ * ∫ t in (0 : ℝ)..1, t ^ (a - 1) * Real.exp (-(x * t)) := by
+  have h := tricomiIncompleteGamma_eq_integral (a := (a : ℂ)) (by simpa using ha) (x : ℂ)
+  have hcongr : ∀ᵐ t ∂volume, t ∈ Ι (0 : ℝ) 1 →
+      (t : ℂ) ^ ((a : ℂ) - 1) * cexp (-((x : ℂ) * t)) =
+        ((t ^ (a - 1) * Real.exp (-(x * t)) : ℝ) : ℂ) :=
+    Eventually.of_forall fun t ht => by
+      rw [uIoc_of_le zero_le_one] at ht
+      rw [ofReal_mul, ofReal_cpow ht.1.le, ofReal_sub, ofReal_one, ofReal_exp, ofReal_neg,
+        ofReal_mul]
+  rw [intervalIntegral.integral_congr_ae hcongr, intervalIntegral.integral_ofReal,
+    Gamma_ofReal, ← ofReal_inv, ← ofReal_mul] at h
+  rw [h, ofReal_re]
 
 end Complex
