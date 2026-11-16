@@ -152,7 +152,7 @@ theorem isComplexAntilinear_normalCauchyRiemannLinearization
     (fun v ↦ by simp only [hjv, j₀.apply_apply]) hJ hzero
   rw [hj, hJ₀] at h
   exact ((isComplexLinearMap_iff_isComplexLinear _ _ _).1
-    hu.isComplexLinearMap_quotientRange_mkQ).comp_antilinear h
+    hu.isComplexLinearMap_quotientRange_mkQ).comp_isComplexAntilinear h
 
 /-- The Leibniz remainder of the actual normal linearization is the intrinsic real
 Cauchy–Riemann symbol on the normal quotient. Together with
