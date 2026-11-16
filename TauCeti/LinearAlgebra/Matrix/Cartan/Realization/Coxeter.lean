@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Reflection
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.WeylGroup
 import TauCeti.GroupTheory.Coxeter.Geometric.Basic
+import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # The Coxeter presentation of the Weyl group of a Cartan realization
@@ -71,23 +72,17 @@ private theorem linearCombination_int_coroot_injective :
     Injective (Finsupp.linearCombination ℤ R.coroot) :=
   linearIndependent_iff_injective_finsuppLinearCombination.mp R.linearIndependent_int_coroot
 
-omit [CharZero K] in
-private theorem linearCombination_int_mapRange_natCast (c : I →₀ ℕ) :
-    Finsupp.linearCombination ℤ R.root (c.mapRange (Nat.cast : ℕ → ℤ) rfl) =
-      Finsupp.linearCombination ℕ R.root c := by
-  simp [Finsupp.linearCombination_apply, Finsupp.sum_mapRange_index]
-
 private theorem linearCombination_int_root_mem_posRootCone_iff (z : I →₀ ℤ) :
     Finsupp.linearCombination ℤ R.root z ∈ R.posRootCone ↔ 0 ≤ z := by
   rw [R.posRootCone_def, ← Finsupp.range_linearCombination (R := ℕ), LinearMap.mem_range]
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun hz ↦ ?_⟩
   · have hzz' : z = c.mapRange (Nat.cast : ℕ → ℤ) rfl :=
       R.linearCombination_int_root_injective
-        (hc.symm.trans (R.linearCombination_int_mapRange_natCast c).symm)
+        (hc.symm.trans (Finsupp.linearCombination_mapRange_natCast R.root c).symm)
     subst hzz'
     exact fun i ↦ Nat.cast_nonneg (c i)
   · refine ⟨z.mapRange Int.toNat rfl, ?_⟩
-    rw [← R.linearCombination_int_mapRange_natCast]
+    rw [← Finsupp.linearCombination_mapRange_natCast (R := ℤ) R.root _ (hf := rfl)]
     congr 1
     ext i
     exact Int.toNat_of_nonneg (hz i)
@@ -100,16 +95,16 @@ omit [CharZero K] in
 relations of `B.cartanCoxeterMatrix`. -/
 theorem isLiftable_simpleReflection :
     B.cartanCoxeterMatrix.IsLiftable (R.simpleReflection (hB.diag_map K)) := by
+  have hpair : ∀ i j, Dual.eval K H (R.coroot i) (R.root j) = B i j := fun i j ↦ by simp
   have heq : R.simpleReflection (hB.diag_map K) =
-      fun i ↦ Module.reflection (x := R.root i) (f := Dual.eval K H (R.coroot i))
-        (by simp [hB.diag i]) :=
-    funext fun i ↦ LinearEquiv.ext fun φ ↦ by
-      rw [R.simpleReflection_apply, Module.reflection_apply]
-      rfl
+      fun i ↦ Module.reflection ((hpair i i).trans (by simp [hB.diag i])) :=
+    funext (R.simpleReflection_eq_reflection (hB.diag_map K))
   rw [heq]
-  exact hB.isLiftable_reflection (fun i j ↦ by simp)
+  exact hB.isLiftable_reflection hpair
 
 omit [CharZero K] in
+/-- Subgroup-valued braid relations: the simple reflection generators `R.simpleReflectionMem` in
+`R.weylGroup` satisfy all braid relations of `B.cartanCoxeterMatrix`. -/
 theorem isLiftable_simpleReflectionMem :
     B.cartanCoxeterMatrix.IsLiftable (R.simpleReflectionMem (hB.diag_map K)) := fun i j ↦
   Subtype.ext <| by
@@ -123,58 +118,69 @@ private noncomputable def weylGroupHom :
     ⟨R.simpleReflectionMem (hB.diag_map K), R.isLiftable_simpleReflectionMem hB⟩
 
 omit [CharZero K] in
-private theorem weylGroupHom_intertwines (g : B.cartanCoxeterMatrix.Group) (z : I →₀ ℤ) :
-    (R.weylGroupHom hB g).1 (Finsupp.linearCombination ℤ R.root z) =
-      Finsupp.linearCombination ℤ R.root
-        (B.cartanCoxeterMatrix.toCoxeterSystem.cartanRepresentation hB g z) := by
-  induction g using B.cartanCoxeterMatrix.toCoxeterSystem.simple_induction generalizing z with
+private theorem apply_linearCombination_root_of_coxeterSystem {W : Type*} [Group W]
+    (cs : CoxeterSystem B.cartanCoxeterMatrix W) (ρ : W →* R.weylGroup (hB.diag_map K))
+    (hρ : ∀ i, ρ (cs.simple i) = R.simpleReflectionMem (hB.diag_map K) i)
+    (w : W) (z : I →₀ ℤ) :
+    (ρ w).1 (Finsupp.linearCombination ℤ R.root z) =
+      Finsupp.linearCombination ℤ R.root (cs.cartanRepresentation hB w z) := by
+  induction w using cs.simple_induction generalizing z with
   | simple i =>
     induction z using Finsupp.induction_linear with
     | zero => simp
     | add u v ihu ihv => simp only [map_add, ihu, ihv]
     | single j c =>
       have hlhs :
-          (R.weylGroupHom hB (B.cartanCoxeterMatrix.toCoxeterSystem.simple i)).1
-              (Finsupp.linearCombination ℤ R.root (Finsupp.single j c)) =
+          (ρ (cs.simple i)).1 (Finsupp.linearCombination ℤ R.root (Finsupp.single j c)) =
             c • (R.root j - B i j • R.root i) := by
-        rw [weylGroupHom, CoxeterSystem.lift_apply_simple, coe_simpleReflectionMem,
-          Finsupp.linearCombination_single, map_zsmul, R.simpleReflection_root_intCast]
+        rw [hρ, coe_simpleReflectionMem, Finsupp.linearCombination_single, map_zsmul,
+          R.simpleReflection_root_intCast]
       have hrhs :
           Finsupp.linearCombination ℤ R.root
-              (B.cartanCoxeterMatrix.toCoxeterSystem.cartanRepresentation hB
-                (B.cartanCoxeterMatrix.toCoxeterSystem.simple i) (Finsupp.single j c)) =
+              (cs.cartanRepresentation hB (cs.simple i) (Finsupp.single j c)) =
             c • (R.root j - B i j • R.root i) := by
         rw [← Finsupp.smul_single_one j c, map_smul,
           CoxeterSystem.cartanRepresentation_simple_single, map_smul, map_sub, map_smul,
           Finsupp.linearCombination_single, Finsupp.linearCombination_single, one_smul, one_smul]
       exact hlhs.trans hrhs.symm
   | one => simp
-  | mul g₁ g₂ ih₁ ih₂ =>
+  | mul w₁ w₂ ih₁ ih₂ =>
     rw [map_mul, Subgroup.coe_mul, mul_apply_eq_comp, ih₂, ih₁, map_mul, mul_apply_eq_comp]
+
+omit [CharZero K] in
+private theorem weylGroupHom_intertwines (g : B.cartanCoxeterMatrix.Group) (z : I →₀ ℤ) :
+    (R.weylGroupHom hB g).1 (Finsupp.linearCombination ℤ R.root z) =
+      Finsupp.linearCombination ℤ R.root
+        (B.cartanCoxeterMatrix.toCoxeterSystem.cartanRepresentation hB g z) :=
+  R.apply_linearCombination_root_of_coxeterSystem hB B.cartanCoxeterMatrix.toCoxeterSystem
+    (R.weylGroupHom hB) (B.cartanCoxeterMatrix.toCoxeterSystem.lift_apply_simple _) g z
+
+private theorem weylGroupHom_bijective : Bijective (R.weylGroupHom hB) :=
+  ⟨(injective_iff_map_eq_one _).mpr fun g hg ↦
+      B.cartanCoxeterMatrix.toCoxeterSystem.cartanRepresentation_injective hB <|
+        LinearEquiv.ext fun z ↦ R.linearCombination_int_root_injective <| by
+          have h := R.weylGroupHom_intertwines hB g z
+          rw [hg, Subgroup.coe_one, one_apply_eq_self] at h
+          simpa using h.symm,
+    MonoidHom.range_eq_top.mp <| eq_top_iff.mpr <| by
+      rw [← R.closure_range_simpleReflectionMem (hB.diag_map K), Subgroup.closure_le]
+      rintro _ ⟨i, rfl⟩
+      exact ⟨B.cartanCoxeterMatrix.simple i,
+        B.cartanCoxeterMatrix.toCoxeterSystem.lift_apply_simple _ i⟩⟩
 
 /-- **Kac's Proposition 3.13 (Coxeter isomorphism).** Over a field of characteristic zero, the Weyl
 group of any realization of a generalized Cartan matrix `B` is canonically isomorphic to
 `B.cartanCoxeterMatrix.Group`. -/
 noncomputable def weylGroupMulEquiv :
     B.cartanCoxeterMatrix.Group ≃* R.weylGroup (hB.diag_map K) :=
-  MulEquiv.ofBijective (R.weylGroupHom hB)
-    ⟨(injective_iff_map_eq_one _).mpr fun g hg ↦
-        B.cartanCoxeterMatrix.toCoxeterSystem.cartanRepresentation_injective hB <|
-          LinearEquiv.ext fun z ↦ R.linearCombination_int_root_injective <| by
-            have h := R.weylGroupHom_intertwines hB g z
-            rw [hg, Subgroup.coe_one, one_apply_eq_self] at h
-            simpa using h.symm,
-      MonoidHom.range_eq_top.mp <| eq_top_iff.mpr <| by
-        rw [← R.closure_range_simpleReflectionMem (hB.diag_map K), Subgroup.closure_le]
-        rintro _ ⟨i, rfl⟩
-        exact ⟨B.cartanCoxeterMatrix.simple i,
-          B.cartanCoxeterMatrix.toCoxeterSystem.lift_apply_simple _ i⟩⟩
+  MulEquiv.ofBijective (R.weylGroupHom hB) (R.weylGroupHom_bijective hB)
 
 @[simp]
 theorem weylGroupMulEquiv_simple (i : I) :
     R.weylGroupMulEquiv hB (B.cartanCoxeterMatrix.simple i) =
-      R.simpleReflectionMem (hB.diag_map K) i :=
-  B.cartanCoxeterMatrix.toCoxeterSystem.lift_apply_simple _ i
+      R.simpleReflectionMem (hB.diag_map K) i := by
+  rw [weylGroupMulEquiv, MulEquiv.ofBijective_apply]
+  exact B.cartanCoxeterMatrix.toCoxeterSystem.lift_apply_simple _ i
 
 /-- **The canonical Coxeter system on the Weyl group** of a realization of a generalized Cartan
 matrix `B`. -/
@@ -191,31 +197,9 @@ theorem weylCoxeterSystem_simple (i : I) :
 theorem apply_linearCombination_root (w : R.weylGroup (hB.diag_map K)) (z : I →₀ ℤ) :
     w.1 (Finsupp.linearCombination ℤ R.root z) =
       Finsupp.linearCombination ℤ R.root
-        ((R.weylCoxeterSystem hB).cartanRepresentation hB w z) := by
-  induction w using (R.weylCoxeterSystem hB).simple_induction generalizing z with
-  | simple i =>
-    induction z using Finsupp.induction_linear with
-    | zero => simp
-    | add u v ihu ihv => simp only [map_add, ihu, ihv]
-    | single j c =>
-      have hlhs :
-          ((R.weylCoxeterSystem hB).simple i).1
-              (Finsupp.linearCombination ℤ R.root (Finsupp.single j c)) =
-            c • (R.root j - B i j • R.root i) := by
-        rw [weylCoxeterSystem_simple, coe_simpleReflectionMem, Finsupp.linearCombination_single,
-          map_zsmul, R.simpleReflection_root_intCast]
-      have hrhs :
-          Finsupp.linearCombination ℤ R.root
-              ((R.weylCoxeterSystem hB).cartanRepresentation hB
-                ((R.weylCoxeterSystem hB).simple i) (Finsupp.single j c)) =
-            c • (R.root j - B i j • R.root i) := by
-        rw [← Finsupp.smul_single_one j c, map_smul,
-          CoxeterSystem.cartanRepresentation_simple_single, map_smul, map_sub, map_smul,
-          Finsupp.linearCombination_single, Finsupp.linearCombination_single, one_smul, one_smul]
-      exact hlhs.trans hrhs.symm
-  | one => simp
-  | mul w₁ w₂ ih₁ ih₂ =>
-    rw [Subgroup.coe_mul, mul_apply_eq_comp, ih₂, ih₁, map_mul, mul_apply_eq_comp]
+        ((R.weylCoxeterSystem hB).cartanRepresentation hB w z) :=
+  R.apply_linearCombination_root_of_coxeterSystem hB (R.weylCoxeterSystem hB)
+    (MonoidHom.id _) (R.weylCoxeterSystem_simple hB) w z
 
 /-- Intertwining of `R.dualAct` on coroots with `CoxeterSystem.dualCartanRepresentation`. -/
 theorem dualAct_linearCombination_coroot (w : R.weylGroup (hB.diag_map K)) (z : I →₀ ℤ) :
@@ -276,6 +260,8 @@ theorem orderOf_dualReflection_mul (i j : I) :
       (R.simpleReflectionMem (hB.diag_map K) i * R.simpleReflectionMem (hB.diag_map K) j)
 
 omit [CharZero K] in
+/-- Ambient linear-equivalence braid relation: `(sᵢ * sⱼ) ^ (B.cartanCoxeterMatrix i j) = 1` in
+`Dual K H ≃ₗ[K] Dual K H`. -/
 theorem simpleReflection_mul_pow (i j : I) :
     (R.simpleReflection (hB.diag_map K) i *
       R.simpleReflection (hB.diag_map K) j) ^ B.cartanCoxeterMatrix i j = 1 :=
@@ -523,41 +509,26 @@ theorem simpleReflection_mul_zpow_root_one_affineA₁
       R.simpleReflection (CartanMatrix.isGeneralizedCartan_affineA₁.diag_map K) 1) ^ n)
         (R.root 1) =
       R.root 1 - (2 * n) • (R.root 0 + R.root 1) := by
-  set s₀ := R.simpleReflection (CartanMatrix.isGeneralizedCartan_affineA₁.diag_map K) 0
-  set s₁ := R.simpleReflection (CartanMatrix.isGeneralizedCartan_affineA₁.diag_map K) 1
-  set δ := R.root 0 + R.root 1
-  have hδ : (s₀ * s₁) δ = δ := by
-    rw [mul_apply_eq_comp, R.simpleReflection_nullRoot_affineA₁ 1,
-      R.simpleReflection_nullRoot_affineA₁ 0]
-  have hδ_inv : (s₀ * s₁)⁻¹ δ = δ := (s₀ * s₁).symm_apply_eq.mpr hδ.symm
-  have hstep : (s₀ * s₁) (R.root 1) = R.root 1 - (2 : ℤ) • δ := by
-    have h01 : CartanMatrix.affineA₁ 0 1 = -2 := rfl
-    rw [mul_apply_eq_comp, R.simpleReflection_root_self, map_neg, R.simpleReflection_root_intCast,
-      h01]
-    dsimp only [δ]
-    abel
-  have hstep_inv : (s₀ * s₁)⁻¹ (R.root 1) = R.root 1 + (2 : ℤ) • δ := by
-    apply (s₀ * s₁).injective
-    have hc : (s₀ * s₁) ((s₀ * s₁)⁻¹ (R.root 1)) = R.root 1 := by
-      rw [← mul_apply_eq_comp, mul_inv_cancel, one_apply_eq_self]
-    rw [hc, map_add, hstep, map_zsmul, hδ]
-    abel
-  have hδ_zpow (m : ℤ) : ((s₀ * s₁) ^ m) δ = δ := by
-    induction m using Int.induction_on with
-    | zero => simp
-    | succ k ih => rw [zpow_add_one, mul_apply_eq_comp, hδ, ih]
-    | pred k ih => rw [zpow_sub_one, mul_apply_eq_comp, hδ_inv, ih]
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ k ih =>
-    rw [zpow_add_one, mul_apply_eq_comp, hstep, map_sub, ih, map_zsmul, hδ_zpow, mul_add, mul_one,
-      add_zsmul]
-    abel
-  | pred k ih =>
-    rw [zpow_sub_one, mul_apply_eq_comp, hstep_inv, map_add, ih, map_zsmul, hδ_zpow]
-    have hcoef : (2 : ℤ) * (-(k : ℤ) - 1) = 2 * -(k : ℤ) - 2 := by ring
-    rw [hcoef, sub_zsmul]
-    abel
+  have h01 : CartanMatrix.affineA₁ 0 1 = -2 := rfl
+  have h10 : CartanMatrix.affineA₁ 1 0 = -2 := rfl
+  have h11 : CartanMatrix.affineA₁ 1 1 = 2 := rfl
+  have ht : (2 : K) = Dual.eval K H (R.coroot 0) (R.root 1) *
+      Dual.eval K H (R.coroot 1) (R.root 0) - 2 := by
+    simp only [Dual.eval_apply, R.root_coroot, Matrix.map_apply, h01, h10, Int.cast_neg,
+      Int.cast_ofNat]
+    norm_num
+  have hu : (n - 2) / 2 = n / 2 - 1 := by omega
+  have hv : (n - 3) / 2 = (n - 1) / 2 - 1 := by omega
+  have huv : n / 2 + (n - 1) / 2 + 1 = n := by omega
+  rw [R.simpleReflection_eq_reflection, R.simpleReflection_eq_reflection,
+    Module.reflection_mul_reflection_zpow_apply _ _ n (R.root 1) (2 : K) ht]
+  simp only [Dual.eval_apply, R.root_coroot, Matrix.map_apply, h01, h10, h11, Int.cast_neg,
+    Int.cast_ofNat, Polynomial.Chebyshev.S_eval_two, hu, hv]
+  rw [← Int.cast_smul_eq_zsmul K (2 * n), Int.cast_mul, Int.cast_ofNat]
+  have hcast : ((n / 2 : ℤ) : K) + (((n - 1) / 2 : ℤ) : K) + 1 = (n : K) := by
+    simpa [Int.cast_add, Int.cast_one] using congrArg (Int.cast : ℤ → K) huv
+  rw [← hcast]
+  module
 
 end RankTwo
 

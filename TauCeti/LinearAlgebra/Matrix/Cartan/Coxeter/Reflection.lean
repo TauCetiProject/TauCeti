@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Order
-public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.GroupTheory.Coxeter.Parabolic
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 import TauCeti.GroupTheory.Coxeter.Dihedral
 
 /-!
 # Coxeter matrix and reflection representation of a generalized Cartan matrix
 
-Let `A` be a generalized Cartan matrix (`Matrix.IsGeneralizedCartan`): an integer matrix with `2`
-on the diagonal, nonpositive off-diagonal entries, and symmetric zero pattern (`A i j = 0` iff
-`A j i = 0`). Neither finiteness of the index set, invertibility, nor symmetrizability is assumed.
+Let `A` be a generalized Cartan matrix (`Matrix.IsGeneralizedCartan` from
+`TauCeti.LinearAlgebra.Matrix.Cartan.Basic`): an integer matrix with `2` on the diagonal,
+nonpositive off-diagonal entries, and symmetric zero pattern (`A i j = 0` iff `A j i = 0`). Neither
+finiteness of the index set, invertibility, nor symmetrizability is assumed.
 
 From any integer matrix `A` we read off its **Cartan Coxeter matrix**
 `Matrix.cartanCoxeterMatrix`: on the diagonal its entries are `1`; off the diagonal, when the
@@ -56,94 +57,6 @@ public section
 
 open Function Polynomial.Chebyshev Set
 open scoped Matrix
-
-/-! ### Generalized Cartan matrices -/
-
-/-- The proposition that an integer matrix is a **generalized Cartan matrix**: its diagonal entries
-are `2`, its off-diagonal entries are nonpositive, and its zero pattern is symmetric. Neither
-finiteness of the index type nor symmetrizability is required. -/
-structure Matrix.IsGeneralizedCartan {I : Type*} (A : Matrix I I ℤ) : Prop where
-  /-- Every diagonal entry equals `2`. -/
-  diag : ∀ i, A i i = 2
-  /-- Off-diagonal entries are nonpositive. -/
-  offDiag_nonpos : ∀ i j, i ≠ j → A i j ≤ 0
-  /-- Off-diagonal zeros are symmetric. -/
-  zero_comm : ∀ i j, A i j = 0 ↔ A j i = 0
-
-namespace Matrix.IsGeneralizedCartan
-
-variable {I : Type*} {A : Matrix I I ℤ} (hA : A.IsGeneralizedCartan)
-include hA
-
-/-- Every Cartan product `A i j * A j i` of a generalized Cartan matrix is nonnegative. -/
-theorem mul_nonneg (i j : I) : 0 ≤ A i j * A j i := by
-  rcases eq_or_ne i j with rfl | hij
-  · simp [hA.diag]
-  · exact mul_nonneg_of_nonpos_of_nonpos (hA.offDiag_nonpos i j hij)
-      (hA.offDiag_nonpos j i hij.symm)
-
-/-- The Cartan product `A i j * A j i` vanishes iff both `A i j` and `A j i` vanish. -/
-theorem mul_eq_zero_iff (i j : I) : A i j * A j i = 0 ↔ A i j = 0 ∧ A j i = 0 := by
-  rw [mul_eq_zero]
-  exact ⟨fun h ↦ h.elim (fun h₁ ↦ ⟨h₁, (hA.zero_comm i j).mp h₁⟩)
-    (fun h₂ ↦ ⟨(hA.zero_comm i j).mpr h₂, h₂⟩), fun h ↦ Or.inl h.1⟩
-
-/-- The diagonal entries of the cast of `A` to any ring with `1` equal `2`. -/
-theorem diag_map (R : Type*) [AddGroupWithOne R] (i : I) :
-    A.map (Int.cast : ℤ → R) i i = 2 := by
-  simp [hA.diag]
-
-/-- The transpose of a generalized Cartan matrix is a generalized Cartan matrix. -/
-protected theorem transpose : Aᵀ.IsGeneralizedCartan where
-  diag i := hA.diag i
-  offDiag_nonpos i j hij := hA.offDiag_nonpos j i hij.symm
-  zero_comm i j := hA.zero_comm j i
-
-omit hA in
-@[simp]
-protected theorem transpose_iff : Aᵀ.IsGeneralizedCartan ↔ A.IsGeneralizedCartan :=
-  ⟨fun h ↦ h.transpose, IsGeneralizedCartan.transpose⟩
-
-/-- Any principal submatrix of a generalized Cartan matrix along an embedding is a generalized
-Cartan matrix. -/
-protected theorem submatrix {J : Type*} (f : J ↪ I) : (A.submatrix f f).IsGeneralizedCartan where
-  diag i := hA.diag (f i)
-  offDiag_nonpos i j hij := hA.offDiag_nonpos (f i) (f j) (f.injective.ne hij)
-  zero_comm i j := hA.zero_comm (f i) (f j)
-
-/-- Reindexing a generalized Cartan matrix gives a generalized Cartan matrix. -/
-protected theorem reindex {J : Type*} (e : I ≃ J) : (A.reindex e e).IsGeneralizedCartan :=
-  hA.submatrix e.symm.toEmbedding
-
-end Matrix.IsGeneralizedCartan
-
-/-- Every finite-type Cartan matrix is a generalized Cartan matrix. -/
-theorem Matrix.IsFiniteCartan.isGeneralizedCartan {I : Type*} [Fintype I] [DecidableEq I]
-    {A : Matrix I I ℤ} (hA : A.IsFiniteCartan) : A.IsGeneralizedCartan :=
-  ⟨hA.diag, hA.offDiag_nonpos, hA.zero_comm⟩
-
-namespace CartanMatrix
-
-theorem isGeneralizedCartan_A (n : ℕ) : (CartanMatrix.A n).IsGeneralizedCartan where
-  diag i := by simpa using congrFun (A_diag n) i
-  offDiag_nonpos := A_apply_le_zero_of_ne n
-  zero_comm i j := by
-    have h : CartanMatrix.A n j i = CartanMatrix.A n i j := by
-      simpa [Matrix.transpose_apply] using congrArg (fun M ↦ M i j) (A_transpose n)
-    rw [h]
-
-theorem isGeneralizedCartan_B (n : ℕ) : (CartanMatrix.B n).IsGeneralizedCartan where
-  diag := B_diag n
-  offDiag_nonpos := B_off_diag_nonpos n
-  zero_comm i j := by
-    simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
-    split_ifs <;> simp_all
-
-theorem isGeneralizedCartan_C (n : ℕ) : (CartanMatrix.C n).IsGeneralizedCartan := by
-  rw [← B_transpose]
-  exact (isGeneralizedCartan_B n).transpose
-
-end CartanMatrix
 
 /-! ### The Coxeter matrix of an integer Cartan matrix -/
 
@@ -260,15 +173,6 @@ end Matrix
 
 namespace CartanMatrix
 
-/-- The `2 × 2` generalized Cartan matrix `!![2, -2; -2, 2]` of untwisted affine type `A₁⁽¹⁾`. -/
-abbrev affineA₁ : Matrix (Fin 2) (Fin 2) ℤ := !![2, -2; -2, 2]
-
-/-- `CartanMatrix.affineA₁` is a generalized Cartan matrix. -/
-theorem isGeneralizedCartan_affineA₁ : affineA₁.IsGeneralizedCartan where
-  diag i := by fin_cases i <;> decide
-  offDiag_nonpos i j hij := by fin_cases i <;> fin_cases j <;> simp_all [affineA₁]
-  zero_comm i j := by fin_cases i <;> fin_cases j <;> decide
-
 /-- The off-diagonal Coxeter entry of `CartanMatrix.B 2` is `4`. -/
 theorem cartanCoxeterMatrix_B_two : (CartanMatrix.B 2).cartanCoxeterMatrix 0 1 = 4 := by
   apply Matrix.cartanCoxeterMatrix_eq_four_of_mul_eq_two _ (by decide)
@@ -293,10 +197,11 @@ satisfying `f i (x j) = A i j`. Then the reflections `Module.reflection` satisfy
 `(s_i * s_j) ^ (A.cartanCoxeterMatrix i j) = 1`. -/
 theorem isLiftable_reflection {I R X : Type*} [CommRing R] [AddCommGroup X]
     [Module R X] {A : Matrix I I ℤ} (hA : A.IsGeneralizedCartan) {x : I → X}
-    {f : I → Module.Dual R X} (hpair : ∀ i j, f i (x j) = A i j)
-    {hf : ∀ i, f i (x i) = 2} :
-    A.cartanCoxeterMatrix.IsLiftable (fun i ↦ Module.reflection (hf i)) := by
+    {f : I → Module.Dual R X} (hpair : ∀ i j, f i (x j) = A i j) :
+    A.cartanCoxeterMatrix.IsLiftable
+      (fun i ↦ Module.reflection ((hpair i i).trans (by simp [hA.diag i]))) := by
   classical
+  have hf (i : I) : f i (x i) = 2 := (hpair i i).trans (by simp [hA.diag i])
   intro i j
   rcases eq_or_ne i j with rfl | hij
   · rw [cartanCoxeterMatrix_diag, pow_one]
@@ -460,6 +365,9 @@ theorem cartanRepresentation_simple (i : I) :
     cs.cartanRepresentation hA (cs.simple i) = A.cartanRootReflection hA.diag i :=
   cs.lift_apply_simple _ i
 
+/-- Action of the `i`-th simple generator on the `j`-th basis vector in the root-lattice
+representation (`simp` already normalizes via `cartanRepresentation_simple` and
+`Matrix.cartanRootReflection_single`). -/
 theorem cartanRepresentation_simple_single (i j : I) :
     cs.cartanRepresentation hA (cs.simple i) (Finsupp.single j 1) =
       Finsupp.single j 1 - A i j • Finsupp.single i 1 := by
@@ -627,10 +535,13 @@ theorem dualCartanRepresentation_simple (i : I) :
     cs.dualCartanRepresentation hA (cs.simple i) = Aᵀ.cartanRootReflection hA.transpose.diag i :=
   cs.lift_apply_simple _ i
 
+/-- Action of the `i`-th simple generator on the `j`-th basis vector in the coroot-lattice
+representation (`simp` already normalizes via `dualCartanRepresentation_simple`,
+`Matrix.cartanRootReflection_single`, and `Matrix.transpose_apply`). -/
 theorem dualCartanRepresentation_simple_single (i j : I) :
     cs.dualCartanRepresentation hA (cs.simple i) (Finsupp.single j 1) =
       Finsupp.single j 1 - A j i • Finsupp.single i 1 := by
-  simp [Matrix.transpose_apply]
+  simp
 
 private theorem dualCartanRepresentation_eq_cartanRepresentation :
     cs.dualCartanRepresentation hA =

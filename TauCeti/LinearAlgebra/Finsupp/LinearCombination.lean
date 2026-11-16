@@ -36,6 +36,8 @@ coefficients.
   a linear combination of its predecessors.
 * `TauCeti.leftInverse_fintypeLinearCombination`: a linear map `M → (ι → R)` sending each `x i` to
   the `i`-th standard basis vector is a left inverse of `Fintype.linearCombination R x`.
+* `Finsupp.linearCombination_mapRange_natCast`: evaluating an `R`-linear combination along
+  coefficients cast from `ℕ` agrees with the `ℕ`-linear combination of the same family.
 * `Fintype.linearCombination_intCast`: an additive map sends an integer linear combination to the
   linear combination of the images with the integer coefficients cast to the scalar ring.
 -/
@@ -54,6 +56,15 @@ theorem _root_.Submodule.coe_linearCombination {p : Submodule R M} (v : ι → p
       Finsupp.linearCombination R (fun i ↦ (v i : M)) a := by
   simpa only [Submodule.subtype_apply, Function.comp_def] using
     Finsupp.apply_linearCombination R p.subtype v a
+
+/-- Evaluating an `R`-linear combination along coefficients cast from `ℕ` agrees with the
+`ℕ`-linear combination of the same family. -/
+@[simp]
+theorem _root_.Finsupp.linearCombination_mapRange_natCast (v : ι → M) (c : ι →₀ ℕ)
+    {hf : ((0 : ℕ) : R) = 0} :
+    Finsupp.linearCombination R v (c.mapRange (Nat.cast : ℕ → R) hf) =
+      Finsupp.linearCombination ℕ v c := by
+  simp [Finsupp.linearCombination_apply, Finsupp.sum_mapRange_index, Nat.cast_smul_eq_nsmul]
 
 /-- An element lies in the span of a linearly independent family exactly when it has a unique
 finitely supported expression in that family. -/

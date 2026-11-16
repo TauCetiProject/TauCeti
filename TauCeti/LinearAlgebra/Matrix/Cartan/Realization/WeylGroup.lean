@@ -72,6 +72,18 @@ def simpleReflection (i : I) : Dual K H ≃ₗ[K] Dual K H :=
 def dualReflection (i : I) : H ≃ₗ[K] H :=
   Module.reflection (x := R.coroot i) (f := R.root i) (by simp [hdiag i])
 
+/-- `R.simpleReflection` expressed as `Module.reflection`. -/
+theorem simpleReflection_eq_reflection (i : I) :
+    R.simpleReflection hdiag i =
+      Module.reflection (x := R.root i) (f := Dual.eval K H (R.coroot i)) (by simp [hdiag i]) :=
+  (rfl)
+
+/-- `R.dualReflection` expressed as `Module.reflection`. -/
+theorem dualReflection_eq_reflection (i : I) :
+    R.dualReflection hdiag i =
+      Module.reflection (x := R.coroot i) (f := R.root i) (by simp [hdiag i]) :=
+  (rfl)
+
 theorem simpleReflection_apply (i : I) (φ : Dual K H) :
     R.simpleReflection hdiag i φ = φ - φ (R.coroot i) • R.root i :=
   Module.reflection_apply φ _
@@ -203,13 +215,31 @@ theorem dualWeylGroup_def :
     R.dualWeylGroup hdiag = Subgroup.closure (range (R.dualReflection hdiag)) :=
   (rfl)
 
+/-- Every simple reflection belongs to `R.weylGroup hdiag`. -/
+@[simp]
 theorem simpleReflection_mem_weylGroup (i : I) :
     R.simpleReflection hdiag i ∈ R.weylGroup hdiag :=
   Subgroup.subset_closure (mem_range_self i)
 
+/-- Every dual reflection belongs to `R.dualWeylGroup hdiag`. -/
+@[simp]
 theorem dualReflection_mem_dualWeylGroup (i : I) :
     R.dualReflection hdiag i ∈ R.dualWeylGroup hdiag :=
   Subgroup.subset_closure (mem_range_self i)
+
+/-- A subgroup contains `R.weylGroup hdiag` iff it contains every simple reflection. -/
+@[simp]
+theorem weylGroup_le_iff {S : Subgroup (Dual K H ≃ₗ[K] Dual K H)} :
+    R.weylGroup hdiag ≤ S ↔ ∀ i, R.simpleReflection hdiag i ∈ S := by
+  rw [weylGroup_def, Subgroup.closure_le, range_subset_iff]
+  rfl
+
+/-- A subgroup contains `R.dualWeylGroup hdiag` iff it contains every dual reflection. -/
+@[simp]
+theorem dualWeylGroup_le_iff {S : Subgroup (H ≃ₗ[K] H)} :
+    R.dualWeylGroup hdiag ≤ S ↔ ∀ i, R.dualReflection hdiag i ∈ S := by
+  rw [dualWeylGroup_def, Subgroup.closure_le, range_subset_iff]
+  rfl
 
 /-- The `i`-th simple reflection as an element of `R.weylGroup hdiag`. -/
 def simpleReflectionMem (i : I) : R.weylGroup hdiag :=
@@ -283,6 +313,7 @@ theorem weylGroup_eq_bot [IsEmpty I] : R.weylGroup hdiag = ⊥ := by
 theorem dualWeylGroup_eq_bot [IsEmpty I] : R.dualWeylGroup hdiag = ⊥ := by
   simp [dualWeylGroup]
 
+/-- When the index type `I` is empty, the Weyl group is trivial. -/
 instance [IsEmpty I] : Subsingleton (R.weylGroup hdiag) :=
   ⟨fun ⟨_, hw₁⟩ ⟨_, hw₂⟩ ↦ Subtype.ext <| by
     rw [R.weylGroup_eq_bot hdiag, Subgroup.mem_bot] at hw₁ hw₂
@@ -293,7 +324,7 @@ private theorem symm_dualMap_mem_weylGroup {g : H ≃ₗ[K] H} (hg : g ∈ R.dua
   induction hg using Subgroup.closure_induction with
   | mem x hx =>
     obtain ⟨i, rfl⟩ := hx
-    simpa using R.simpleReflection_mem_weylGroup hdiag i
+    simp
   | one =>
     have h1 : (1 : H ≃ₗ[K] H).symm.dualMap = 1 := by ext; rfl
     exact h1 ▸ one_mem _
@@ -359,7 +390,7 @@ theorem dualAct_symm_dualMap (w : R.weylGroup hdiag) :
   obtain ⟨g, rfl⟩ := (R.dualWeylEquiv hdiag).symm.surjective w
   have hg : R.dualAct hdiag ((R.dualWeylEquiv hdiag).symm g) = g.1 := by simp [dualAct]
   rw [hg]
-  rfl
+  simp [dualWeylEquiv, contragredientWeylHom]
 
 /-- Adjointness of the Weyl actions on `Dual K H` and `H`: `(w⁻¹ φ)(h) = φ(w h)`. -/
 theorem inv_apply_eq_apply_dualAct (w : R.weylGroup hdiag) (φ : Dual K H) (h : H) :
@@ -416,11 +447,16 @@ private noncomputable def dualActRestrictHom : R.weylGroup hdiag →* (M ≃ₗ[
   map_one' := by ext; simp
   map_mul' _ _ := by ext; simp [mul_apply_eq_comp]
 
+@[simp]
+private theorem coe_dualActRestrictHom_apply (w : R.weylGroup hdiag) (m : M) :
+    (R.dualActRestrictHom M hc hdiag w m : H) = R.dualAct hdiag w m :=
+  rfl
+
 private theorem dualActRestrictHom_simpleReflectionMem (i : I) :
     R.dualActRestrictHom M hc hdiag (R.simpleReflectionMem hdiag i) =
       (R.restrict M hc hs).dualReflection hdiag i := by
   ext ⟨m, hm⟩
-  simp [dualActRestrictHom, dualReflection_apply]
+  simp [dualReflection_apply]
 
 private theorem dualActRestrictHom_mem_dualWeylGroup (w : R.weylGroup hdiag) :
     R.dualActRestrictHom M hc hdiag w ∈ (R.restrict M hc hs).dualWeylGroup hdiag := by
@@ -446,7 +482,7 @@ private theorem dualActRestrictHom_injective : Injective (R.dualActRestrictHom M
   obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp hx
   have hm_eq : R.dualAct hdiag w m = m := by
     have h := congrArg (fun e : M ≃ₗ[K] M ↦ (e ⟨m, hm⟩ : H)) hw
-    simpa [dualActRestrictHom] using h
+    simpa using h
   rw [map_add, hm_eq, R.dualAct_apply_of_mem_cartanCenter hdiag w hz]
 
 private noncomputable def dualActRestrictSubgroupHom :
@@ -456,17 +492,37 @@ private noncomputable def dualActRestrictSubgroupHom :
   map_one' := Subtype.ext (map_one (R.dualActRestrictHom M hc hdiag))
   map_mul' w₁ w₂ := Subtype.ext (map_mul (R.dualActRestrictHom M hc hdiag) w₁ w₂)
 
+@[simp]
+private theorem coe_dualActRestrictSubgroupHom (w : R.weylGroup hdiag) :
+    (R.dualActRestrictSubgroupHom M hc hs hdiag w : M ≃ₗ[K] M) =
+      R.dualActRestrictHom M hc hdiag w :=
+  rfl
+
+private theorem dualActRestrictSubgroupHom_bijective :
+    Bijective (R.dualActRestrictSubgroupHom M hc hs hdiag) :=
+  ⟨(injective_iff_map_eq_one _).mpr fun w hw ↦
+      (injective_iff_map_eq_one _).mp (R.dualActRestrictHom_injective M hc hs hdiag) w
+        (Subtype.ext_iff.mp hw),
+    MonoidHom.range_eq_top.mp <| eq_top_iff.mpr <| by
+      rw [← (R.restrict M hc hs).closure_range_dualReflectionMem hdiag, Subgroup.closure_le]
+      rintro _ ⟨i, rfl⟩
+      exact ⟨R.simpleReflectionMem hdiag i, Subtype.ext <|
+        R.dualActRestrictHom_simpleReflectionMem M hc hs hdiag i⟩⟩
+
 private noncomputable def dualActRestrictEquiv :
     R.weylGroup hdiag ≃* (R.restrict M hc hs).dualWeylGroup hdiag :=
   MulEquiv.ofBijective (R.dualActRestrictSubgroupHom M hc hs hdiag)
-    ⟨(injective_iff_map_eq_one _).mpr fun w hw ↦
-        (injective_iff_map_eq_one _).mp (R.dualActRestrictHom_injective M hc hs hdiag) w
-          (Subtype.ext_iff.mp hw),
-      MonoidHom.range_eq_top.mp <| eq_top_iff.mpr <| by
-        rw [← (R.restrict M hc hs).closure_range_dualReflectionMem hdiag, Subgroup.closure_le]
-        rintro _ ⟨i, rfl⟩
-        exact ⟨R.simpleReflectionMem hdiag i, Subtype.ext <|
-          R.dualActRestrictHom_simpleReflectionMem M hc hs hdiag i⟩⟩
+    (R.dualActRestrictSubgroupHom_bijective M hc hs hdiag)
+
+@[simp]
+private theorem coe_dualActRestrictEquiv (w : R.weylGroup hdiag) :
+    (R.dualActRestrictEquiv M hc hs hdiag w : M ≃ₗ[K] M) =
+      R.dualActRestrictHom M hc hdiag w := by
+  simp [dualActRestrictEquiv]
+
+private theorem coe_dualActRestrictEquiv_apply (w : R.weylGroup hdiag) (m : M) :
+    ((R.dualActRestrictEquiv M hc hs hdiag w : M ≃ₗ[K] M) m : H) = R.dualAct hdiag w m := by
+  rw [coe_dualActRestrictEquiv, coe_dualActRestrictHom_apply]
 
 /-- **Enlargement / restriction invariance of the Weyl group.** Restricting a realization to a
 subspace `M` containing `R.corootSpan` with `M ⊔ R.cartanCenter = ⊤` induces an isomorphism of Weyl
@@ -480,8 +536,9 @@ theorem weylGroupRestrictEquiv_simpleReflectionMem (i : I) :
     R.weylGroupRestrictEquiv M hc hs hdiag (R.simpleReflectionMem hdiag i) =
       (R.restrict M hc hs).simpleReflectionMem hdiag i := by
   have h : R.dualActRestrictEquiv M hc hs hdiag (R.simpleReflectionMem hdiag i) =
-      (R.restrict M hc hs).dualReflectionMem hdiag i :=
-    Subtype.ext (R.dualActRestrictHom_simpleReflectionMem M hc hs hdiag i)
+      (R.restrict M hc hs).dualReflectionMem hdiag i := by
+    apply Subtype.ext
+    rw [coe_dualActRestrictEquiv, dualActRestrictHom_simpleReflectionMem, coe_dualReflectionMem]
   simp [weylGroupRestrictEquiv, h]
 
 @[simp]
@@ -491,9 +548,8 @@ theorem coe_dualAct_weylGroupRestrictEquiv (w : R.weylGroup hdiag) (m : M) :
   have h : ((R.restrict M hc hs).dualWeylEquiv hdiag (R.weylGroupRestrictEquiv M hc hs hdiag w)) =
       R.dualActRestrictEquiv M hc hs hdiag w := by
     simp [weylGroupRestrictEquiv]
-  have h' : R.dualActRestrictHom M hc hdiag w =
-      (R.dualActRestrictEquiv M hc hs hdiag w : M ≃ₗ[K] M) := (rfl)
-  simp [dualAct, h, ← h', dualActRestrictHom]
+  rw [dualAct, MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom, h,
+    coe_dualActRestrictEquiv_apply]
 
 /-- Every functional in `R.rootLattice` vanishes on `R.cartanCenter`. -/
 theorem apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter {φ : Dual K H}
