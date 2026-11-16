@@ -22,7 +22,8 @@ agree, `isScalarTower_completionExtensionAlgebra` also identifies the original c
 through the completed extension. The completed extension restricts to an injective local
 homomorphism `completionIntegersExtension` of completed valuation rings, whose algebra
 `completionIntegersExtensionAlgebra` is likewise installed locally, is torsion-free, and forms a
-scalar tower with `P'.Completion`.
+scalar tower with `P'.Completion`, and `integralClosureToCompletionIntegers` embeds the integral
+closure `𝒪'_P` of `𝒪_P` in `F'` into `𝒪̂_{P'}` compatibly with completion at `P`.
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -241,13 +242,16 @@ theorem completionIntegersExtension_injective :
 /-- The completed valuation ring above is torsion-free over the completed valuation ring below. -/
 instance isTorsionFree_completionIntegersExtensionAlgebra :
     letI := P.completionIntegersExtensionAlgebra P' hP
-    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
-  let _ := P.completionIntegersExtensionAlgebra P' hP
-  refine .of_smul_eq_zero fun a b hab ↦ ?_
-  rw [Algebra.smul_def, mul_eq_zero, algebraMap_completionIntegersExtensionAlgebra] at hab
-  exact hab.imp (fun h ↦ P.completionIntegersExtension_injective P' hP (by rwa [map_zero])) id
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers :=
+  letI := P.completionIntegersExtensionAlgebra P' hP
+  Module.isTorsionFree_iff_algebraMap_injective.mpr <| by
+    rw [algebraMap_completionIntegersExtensionAlgebra]
+    exact P.completionIntegersExtension_injective P' hP
 
-attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension in
+section LocalModel
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
 /-- The action of `𝒪̂_P` on `F̂'_{P'}` through `F̂_P` agrees with its action through `𝒪̂_{P'}`. -/
 theorem isScalarTower_completionIntegers_completion :
     letI := P.completionExtensionAlgebra P' hP
@@ -259,6 +263,46 @@ theorem isScalarTower_completionIntegers_completion :
   rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
     algebraMap_completionExtensionAlgebra, ValuationSubring.algebraMap_apply,
     ValuationSubring.algebraMap_apply, coe_algebraMap_completionIntegersExtensionAlgebra]
+
+/-- **The canonical embedding `𝒪'_P →+* 𝒪̂_{P'}`** from the integral closure of `𝒪_P` in `F'` into
+the completed valuation ring at a place `P'` lying over `P`. -/
+noncomputable def integralClosureToCompletionIntegers :
+    integralClosure P.integers F' →+* P'.completionPlace.integers :=
+  P'.completionIntegersEmbedding.toRingHom.comp
+    ((algebraMap (integralClosure P.integers F') F').codRestrict P'.integers fun y ↦ by
+      subst hP
+      exact algebraMap_mem_integers_of_mem_integralClosure k F P' y)
+
+@[simp]
+theorem coe_integralClosureToCompletionIntegers (y : integralClosure P.integers F') :
+    (P.integralClosureToCompletionIntegers P' hP y : P'.Completion) =
+      P'.completionEmbedding (algebraMap (integralClosure P.integers F') F' y) := by
+  simp [integralClosureToCompletionIntegers]
+
+/-- The canonical embedding `𝒪'_P →+* 𝒪̂_{P'}` is injective. -/
+theorem integralClosureToCompletionIntegers_injective :
+    Function.Injective (P.integralClosureToCompletionIntegers P' hP) := by
+  intro x y h
+  apply IsIntegralClosure.algebraMap_injective (integralClosure P.integers F') P.integers F'
+  apply P'.completionEmbedding.injective
+  simpa [← coe_integralClosureToCompletionIntegers P P' hP] using congrArg Subtype.val h
+
+/-- On `𝒪_P`, the canonical embedding `𝒪'_P →+* 𝒪̂_{P'}` agrees with completing at `P` and
+applying the completed valuation-ring extension. -/
+@[simp]
+theorem integralClosureToCompletionIntegers_algebraMap (x : P.integers) :
+    P.integralClosureToCompletionIntegers P' hP
+        (algebraMap P.integers (integralClosure P.integers F') x) =
+      P.completionIntegersExtension P' hP (P.completionIntegersEmbedding x) := by
+  apply Subtype.ext
+  rw [coe_integralClosureToCompletionIntegers, coe_completionIntegersExtension,
+    completionIntegersEmbedding_apply,
+    ← IsScalarTower.algebraMap_apply P.integers (integralClosure P.integers F') F',
+    IsScalarTower.algebraMap_apply P.integers F F',
+    ValuationSubring.algebraMap_apply,
+    ← P.completionExtension_completionEmbedding P' hP]
+
+end LocalModel
 
 end Integers
 

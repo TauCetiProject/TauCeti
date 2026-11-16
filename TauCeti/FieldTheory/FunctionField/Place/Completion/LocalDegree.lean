@@ -487,21 +487,20 @@ theorem finrank_completion :
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension in
 /-- **The completed valuation ring above is the integral closure of the completed valuation ring
-below**: `𝒪̂_{P'}` is module-finite, hence integral, over `𝒪̂_P`, and as a valuation subring it is
-integrally closed in `F̂'_{P'}`. -/
+below**: if `F' / F` is integral and the residue extension at `P'` is finite, then `𝒪̂_{P'}` is
+the integral closure of `𝒪̂_P` in `F̂'_{P'}`. -/
 theorem isIntegralClosure_completionIntegers :
     letI := P.completionExtensionAlgebra P' hP
-    letI := P.completionIntegersExtensionAlgebra P' hP
-    haveI := P.isScalarTower_completionIntegers_completion P' hP
     IsIntegralClosure P'.completionPlace.integers P.completionPlace.integers P'.Completion := by
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionIntegersExtensionAlgebra P' hP
   have _ := P.isScalarTower_completionIntegers_completion P' hP
   have _ := P.moduleFinite_completionIntegers P' hP
   refine ⟨ValuationSubring.subtype_injective _, fun {x} ↦ ⟨fun hx ↦ ?_, ?_⟩⟩
-  · refine ⟨⟨x, P'.completionPlace.mem_integers_of_isIntegral (fun a ↦ ?_) hx⟩, rfl⟩
+  · refine ⟨⟨x, P'.completionPlace.mem_integers_of_isIntegral (fun a ↦ ?_) hx⟩,
+      ValuationSubring.algebraMap_apply _ _⟩
     rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
-      algebraMap_completionExtensionAlgebra]
+      algebraMap_completionExtensionAlgebra, ValuationSubring.algebraMap_apply]
     exact P.completionExtension_mem_integers P' hP a.2
   · rintro ⟨y, rfl⟩
     exact (Algebra.IsIntegral.isIntegral (R := P.completionPlace.integers) y).algebraMap

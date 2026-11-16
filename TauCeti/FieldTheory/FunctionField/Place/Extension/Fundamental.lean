@@ -55,9 +55,6 @@ integral closure in `F'` is a finite module over it — the hypothesis of Mathli
 * `TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField`: the
   fundamental identity at an arbitrary place of an algebraic function field, for any finite
   extension (Stichtenoth, Theorem 3.1.11, which assumes no separability).
-* `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional`: for any
-  finite extension `F' / F` with `k' / k` integral, the integral closure of `𝒪_P` in `F'` is the
-  intersection of the valuation rings of the places above `P`.
 
 ## References
 
@@ -168,47 +165,6 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
   refine sum_ramificationIdx_mul_relativeDegree_eq_finrank (R := R) (S := S) k F
     (P.center hR) fun P' ↦ ?_
   rw [hs P', ofPrime_center]
-
-variable {k F} (k') in
-/-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`** for any
-finite extension `F' / F` with `k' / k` integral, with no function-field or separability
-hypothesis: `𝒪'_P` is a Dedekind domain (`TauCeti.integralClosure.isDedekindDomain`) whose height
-one primes all lie over the maximal ideal of `𝒪_P`, hence define places of `F' / k'` over `P`.
-Compare `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`, which drops finiteness of
-`F' / F` in favour of `IsFunctionField k' F'`. -/
-theorem isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional (P : Place k F)
-    {x : F'} :
-    IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
-  have := Algebra.IsIntegral.of_finite F F'
-  refine ⟨fun hx P' hP' ↦ P'.mem_integers_of_isIntegral (fun a ↦ ?_) hx, fun h ↦ ?_⟩
-  · subst hP'
-    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2
-  let S := integralClosure P.integers F'
-  have : IsDedekindDomain S := TauCeti.integralClosure.isDedekindDomain P.integers F F'
-  have : IsFractionRing S F' := integralClosure.isFractionRing_of_finite_extension F F'
-  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.2
-  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-  have hk' : ∀ c : k', algebraMap k' F' c ∈ S := fun c ↦
-    (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
-  let _ : Algebra k' S := ((algebraMap k' F').codRestrict S hk').toAlgebra
-  have : IsScalarTower k' S F' := .of_algebraMap_eq fun _ ↦ rfl
-  have hxS : x ∈ Set.range (algebraMap S F') := by
-    refine HeightOneSpectrum.mem_integers_of_valuation_le_one (R := S) F' x fun 𝔓 ↦ ?_
-    have hmax : (𝔓.asIdeal.under P.integers).IsMaximal :=
-      Ideal.isMaximal_under_of_isIntegral_of_isMaximal 𝔓.asIdeal
-    have hp : (P.center hR).asIdeal = IsLocalRing.maximalIdeal P.integers := by
-      ext r
-      rw [mem_center_asIdeal, mem_maximalIdeal_iff_valuation_lt_one]
-      exact Iff.rfl
-    have hlies : 𝔓.asIdeal.LiesOver (P.center hR).asIdeal :=
-      ⟨hp.trans (IsLocalRing.eq_maximalIdeal hmax).symm⟩
-    have hP' : (ofPrime k' F' 𝔓).restrict k F = P := by
-      rw [restrict_ofPrime k F (P.center hR) 𝔓, ofPrime_center]
-    simpa [valuation_ofPrime] using (ofPrime k' F' 𝔓).mem_integers_iff.mp (h _ hP')
-  obtain ⟨y, rfl⟩ := hxS
-  exact y.2
 
 end Place
 
