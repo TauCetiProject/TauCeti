@@ -78,7 +78,9 @@ variable {α : Type*} [PseudoMetricSpace α] [MeasurableSpace α] {μ : Measure 
 
 /-- The set `s` has **density** `d` at `x` with respect to `μ`: the proportion
 `μ (s ∩ closedBall x r) / μ (closedBall x r)` of `s` in the closed ball of radius `r` around `x`
-tends to `d` as `r → 0⁺`. -/
+tends to `d` as `r → 0⁺`. The quotient is taken in `ℝ≥0∞`, so where the small closed balls around
+`x` are null or of infinite measure (for instance at every point outside the support of `μ`) it is
+the junk value `0`, and every set, `univ` included, has density `0` at `x`. -/
 def HasDensityAt (μ : Measure α) (s : Set α) (x : α) (d : ℝ≥0∞) : Prop :=
   Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 d)
 
@@ -171,13 +173,16 @@ def essentialInterior (μ : Measure α) (s : Set α) : Set α :=
   {x | HasDensityAt μ s x 1}
 
 /-- The **essential exterior** of `s` with respect to `μ`: the points at which `s` has density
-zero. For Lebesgue measure this is the set `E⁽⁰⁾` of points of density zero of `E`. -/
+zero. For Lebesgue measure this is the set `E⁽⁰⁾` of points of density zero of `E`. Where small
+closed balls are null or of infinite measure every set has density zero (see `HasDensityAt`), so
+`essentialExterior μ s` contains the complement of the support of `μ`. -/
 def essentialExterior (μ : Measure α) (s : Set α) : Set α :=
   {x | HasDensityAt μ s x 0}
 
 /-- The **essential boundary** of `s` with respect to `μ`: the points at which `s` has neither
 density one nor density zero. This is the measure-theoretic boundary `∂ᵉE`, which ignores
-modifications of `E` by null sets. -/
+modifications of `E` by null sets. Since the complement of the support of `μ` lies in
+`essentialExterior μ s` (see `HasDensityAt`), the essential boundary lies inside the support. -/
 def essentialBoundary (μ : Measure α) (s : Set α) : Set α :=
   (essentialInterior μ s ∪ essentialExterior μ s)ᶜ
 

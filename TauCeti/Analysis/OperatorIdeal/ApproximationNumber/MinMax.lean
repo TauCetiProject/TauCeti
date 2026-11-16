@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Analysis.Normed.Operator.Restrict
 
 /-!
 # Min–max bounds for approximation numbers
@@ -28,7 +29,9 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   `Vᗮ`. Composing `T` with the orthogonal projection onto `V` gives an approximant of rank at
   most `n` whose error is `T` on `Vᗮ`. Conversely, for an approximant `R` of rank at most `n` the
   subspace `V = (ker R)ᗮ` has rank at most `n`, and `R` vanishes up to norm zero on
-  `Vᗮ = closure (ker R)`, so `T` restricted to `Vᗮ` is no larger than `T - R`.
+  `Vᗮ = closure (ker R)`, so `T` restricted to `Vᗮ` is no larger than `T - R`. The norm of that
+  restriction is the supremum of `‖T x‖` over `x ∈ Vᗮ` with `‖x‖ ≤ 1`, which gives the formula
+  in the classical form `aₙ(T) = inf_V sup {‖T x‖ : x ∈ Vᗮ, ‖x‖ ≤ 1}`.
 * **The converse min–max localization.** The coercive-subspace bound has a converse on a pair of
   spaces `E`, `F` exactly when every strict lower bound `r < aₙ(T)` is beaten by a uniform
   coercivity bound on the span of `n + 1` linearly independent vectors. This is the property
@@ -59,6 +62,8 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   subspace `V` of rank at most `n`.
 * `ContinuousLinearMap.singularValue_eq_iInf_nnnorm_comp_orthogonal`: on a complete inner product
   space, `aₙ(T)` is the infimum of `‖T|_{Vᗮ}‖` over subspaces `V` of rank at most `n`.
+* `ContinuousLinearMap.singularValue_eq_iInf_sSup_image_orthogonal_inter_unitClosedBall`: the same,
+  with `‖T|_{Vᗮ}‖` written as the supremum of `‖T x‖` over the closed unit ball of `Vᗮ`.
 * `ContinuousLinearMap.exists_linearIndependent_or_exists_rank_le`: on a complete inner product
   space, `T` is `c`-coercive on the span of `n + 1` linearly independent vectors or
   `c`-contractive on the orthogonal complement of a subspace of rank at most `n`.
@@ -247,6 +252,17 @@ theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E �
   calc ‖(T ∘L Vᗮ.subtypeL) x‖₊ = ‖(T - R) x + R x‖₊ := by simp
     _ ≤ ‖(T - R) x‖₊ := by simpa [hRx] using nnNorm_add_le ((T - R) x) (R x)
     _ ≤ ‖T - R‖₊ * ‖x‖₊ := (T - R).le_opNNNorm x
+
+open Metric in
+/-- **Orthogonal-tail min–max formula, closed-unit-ball form.** On a complete inner product
+space, `aₙ(T)` is the infimum, over subspaces `V` of rank at most `n`, of the supremum of `‖T x‖`
+over the vectors `x ∈ Vᗮ` with `‖x‖ ≤ 1`. -/
+theorem singularValue_eq_iInf_sSup_image_orthogonal_inter_unitClosedBall [CompleteSpace E]
+    (T : E →L[𝕜] F) (n : ℕ) :
+    T.singularValue n = ⨅ V : {V : Submodule 𝕜 E // Module.rank 𝕜 V ≤ n},
+      sSup ((fun x ↦ ‖T x‖₊) '' ((V.1ᗮ : Set E) ∩ closedBall 0 1)) := by
+  simp_rw [sSup_image_inter_unitClosedBall_eq_nnNorm_comp_subtypeL]
+  exact T.singularValue_eq_iInf_nnnorm_comp_orthogonal n
 
 end OrthogonalTail
 

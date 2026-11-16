@@ -84,13 +84,11 @@ All declarations are in the `TauCeti.PDE` namespace.
 
 public section
 
-noncomputable section
-
 namespace TauCeti
 
 namespace PDE
 
-open Matrix RealInnerProductSpace Set
+open RealInnerProductSpace Set
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -467,5 +465,3 @@ theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_in
 end PDE
 
 end TauCeti
-
-end
