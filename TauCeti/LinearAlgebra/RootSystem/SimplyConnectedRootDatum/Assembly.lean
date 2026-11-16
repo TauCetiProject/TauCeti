@@ -52,8 +52,9 @@ make this explicit data available without requiring downstream users to unfold t
 * `TauCeti.DynkinType.coroot'_simpleIndex_apply`: evaluation at a simple coroot extracts the
   corresponding fundamental-weight coordinate.
 * `TauCeti.DynkinType.simpleIndex_B`, `simpleIndex_F4` and `simpleIndex_G2`: the simple-root
-  index of the dispatcher is the family module's own simple-root index, for the three families
-  carrying a special isogeny.
+  index of the dispatcher is the type-`B` simple-root index `typeBSimpleIndex`, resp. the first
+  four (`Fin.castAdd 44`) and two (`Fin.castAdd 10`) root indices of the `F₄` and `G₂` modules,
+  for the three families carrying a special isogeny.
 
 ## References
 
@@ -144,67 +145,40 @@ theorem g2_root_add_iff {ht : G2.Valid} (i j k : Fin G2.numRoots) :
 -- corresponding datum equation instead of exposing either dispatcher's implementation.
 @[simp] theorem simplyConnectedBase_A (n : ℕ) (ht : (A n).Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_A n ht))
-      ((A n).simplyConnectedBase ht) = typeASimplyConnectedBase n := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      ((A n).simplyConnectedBase ht) = typeASimplyConnectedBase n := (rfl)
 
 @[simp] theorem simplyConnectedBase_B (n : ℕ) (ht : (B n).Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_B n ht))
-      ((B n).simplyConnectedBase ht) = typeBSimplyConnectedBase n := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      ((B n).simplyConnectedBase ht) = typeBSimplyConnectedBase n := (rfl)
 
 @[simp] theorem simplyConnectedBase_C (n : ℕ) (ht : (C n).Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_C n ht))
-      ((C n).simplyConnectedBase ht) = typeCSimplyConnectedBase n := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      ((C n).simplyConnectedBase ht) = typeCSimplyConnectedBase n := (rfl)
 
 @[simp] theorem simplyConnectedBase_D (n : ℕ) (ht : (D n).Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_D n ht))
       ((D n).simplyConnectedBase ht) =
-        typeDSimplyConnectedBase n (valid_D.mp ht) := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+        typeDSimplyConnectedBase n (valid_D.mp ht) := (rfl)
 
 @[simp] theorem simplyConnectedBase_E6 (ht : E6.Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_E6 ht))
-      (E6.simplyConnectedBase ht) = e6SimplyConnectedBase := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      (E6.simplyConnectedBase ht) = e6SimplyConnectedBase := (rfl)
 
 @[simp] theorem simplyConnectedBase_E7 (ht : E7.Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_E7 ht))
-      (E7.simplyConnectedBase ht) = e7SimplyConnectedBase := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      (E7.simplyConnectedBase ht) = e7SimplyConnectedBase := (rfl)
 
 @[simp] theorem simplyConnectedBase_E8 (ht : E8.Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_E8 ht))
-      (E8.simplyConnectedBase ht) = e8SimplyConnectedBase := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      (E8.simplyConnectedBase ht) = e8SimplyConnectedBase := (rfl)
 
 @[simp] theorem simplyConnectedBase_F4 (ht : F4.Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_F4 ht))
-      (F4.simplyConnectedBase ht) = f4SimplyConnectedBase := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      (F4.simplyConnectedBase ht) = f4SimplyConnectedBase := (rfl)
 
 @[simp] theorem simplyConnectedBase_G2 (ht : G2.Valid) :
     Eq.mp (congrArg (fun P => P.Base) (simplyConnectedRootDatum_G2 ht))
-      (G2.simplyConnectedBase ht) = g2SimplyConnectedBase := by
-  apply eq_of_heq
-  simp only [simplyConnectedBase, simplyConnectedRootDatum]
-  exact HEq.rfl
+      (G2.simplyConnectedBase ht) = g2SimplyConnectedBase := (rfl)
 
 /-! ## The uniform Bourbaki pinning -/
 
@@ -216,10 +190,10 @@ def simpleIndex (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) : Fin t.numRoot
 @[simp] theorem simpleIndex_val (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
     (t.simpleIndex ht i : ℕ) = i := (rfl)
 
-/-! Each family module enumerates its own roots and names its own simple-root index. The
-equations below identify the dispatcher with those names, so a statement proved for one family
-about its own index transfers to the uniform one. They are stated by `Fin.ext` against
-`simpleIndex_val` rather than by unfolding either side. -/
+/-! The families `A` to `E₈` each enumerate their own roots and name their own simple-root index.
+The equations below identify the dispatcher with those names, so a statement proved for one family
+about its own index transfers to the uniform one. The `F₄` and `G₂` modules name no such index;
+for them the equations give the dispatcher index as `Fin.castAdd`. -/
 
 private theorem simpleIndex_A (n : ℕ) (ht : (A n).Valid) (i : Fin n) :
     (A n).simpleIndex ht i = typeASimpleIndex n i := by
@@ -264,116 +238,52 @@ private theorem simpleIndex_E8 (ht : E8.Valid) (i : Fin 8) :
   rw [e8SimpleIndex_val]
   exact simpleIndex_val E8 ht i
 
-/-- The simple-root index of the dispatcher at type `F₄` is type `F₄`'s own simple-root index. -/
+/-- The simple-root index of the dispatcher at type `F₄` is the first four root indices of the `F₄`
+module, `Fin.castAdd 44`. -/
 @[simp] theorem simpleIndex_F4 (ht : F4.Valid) (i : Fin 4) :
     F4.simpleIndex ht i = Fin.castAdd 44 i := Fin.ext rfl
 
-/-- The simple-root index of the dispatcher at type `G₂` is type `G₂`'s own simple-root index. -/
+/-- The simple-root index of the dispatcher at type `G₂` is the first two root indices of the `G₂`
+module, `Fin.castAdd 10`. -/
 @[simp] theorem simpleIndex_G2 (ht : G2.Valid) (i : Fin 2) :
     G2.simpleIndex ht i = Fin.castAdd 10 i := Fin.ext rfl
 
 /-- The simple coroots of the pinned datum are the standard basis of the cocharacter lattice. -/
 @[simp] theorem coroot_simpleIndex (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht i) = Pi.single i 1 := by
-  -- Case splitting refines `rank`, but Lean retains `i` in the dependent motive. Each first
-  -- `change` records the resulting concrete index type; the dispatcher itself is rewritten by its
-  -- public branch equation.
-  cases t with
-  | A n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_A, simpleIndex_A]
-    change (typeASimplyConnectedRootDatum n).coroot (typeASimpleIndex n i) = Pi.single i 1
-    rw [coroot_typeASimpleIndex]
-  | B n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_B, simpleIndex_B]
-    change (typeBSimplyConnectedRootDatum n).coroot (typeBSimpleIndex n i) = Pi.single i 1
-    rw [coroot_typeBSimpleIndex]
-  | C n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_C, simpleIndex_C]
-    change (typeCSimplyConnectedRootDatum n).coroot (typeCSimpleIndex n i) = Pi.single i 1
-    rw [coroot_typeCSimpleIndex]
-  | D n =>
-    change Fin n at i
-    rw [simplyConnectedRootDatum_D, simpleIndex_D]
-    change (typeDSimplyConnectedRootDatum n (valid_D.mp ht)).coroot
-      (typeDSimpleIndex n (valid_D.mp ht) i) = Pi.single i 1
-    rw [coroot_typeDSimpleIndex]
-  | E6 =>
-    change Fin 6 at i
-    rw [simplyConnectedRootDatum_E6, simpleIndex_E6]
-    change e6SimplyConnectedRootDatum.coroot (e6SimpleIndex i) = Pi.single i 1
-    rw [e6SimplyConnectedRootDatum_coroot, coroot_e6SimpleIndex]
-  | E7 =>
-    change Fin 7 at i
-    rw [simplyConnectedRootDatum_E7, simpleIndex_E7]
-    change e7SimplyConnectedRootDatum.coroot (e7SimpleIndex i) = Pi.single i 1
-    rw [e7SimplyConnectedRootDatum_coroot, coroot_e7SimpleIndex]
-  | E8 =>
-    change Fin 8 at i
-    rw [simplyConnectedRootDatum_E8, simpleIndex_E8]
-    change e8SimplyConnectedRootDatum.coroot (e8SimpleIndex i) = Pi.single i 1
-    rw [e8SimplyConnectedRootDatum_coroot, coroot_e8SimpleIndex]
-  | F4 =>
-    change Fin 4 at i
-    rw [simplyConnectedRootDatum_F4, simpleIndex_F4]
-    change f4SimplyConnectedRootDatum.coroot (Fin.castAdd 44 i) = Pi.single i 1
-    rw [f4SimplyConnectedRootDatum_coroot, f4Coroot_castAdd]
-  | G2 =>
-    change Fin 2 at i
-    rw [simplyConnectedRootDatum_G2, simpleIndex_G2]
-    change g2SimplyConnectedRootDatum.coroot (Fin.castAdd 10 i) = Pi.single i 1
-    rw [g2SimplyConnectedRootDatum_coroot, g2Coroot_castAdd]
+  cases t <;> dsimp only [rank] at i <;>
+    simp only [simplyConnectedRootDatum_A, simplyConnectedRootDatum_B, simplyConnectedRootDatum_C,
+      simplyConnectedRootDatum_D, simplyConnectedRootDatum_E6, simplyConnectedRootDatum_E7,
+      simplyConnectedRootDatum_E8, simplyConnectedRootDatum_F4, simplyConnectedRootDatum_G2,
+      simpleIndex_A, simpleIndex_B, simpleIndex_C, simpleIndex_D, simpleIndex_E6, simpleIndex_E7,
+      simpleIndex_E8, simpleIndex_F4, simpleIndex_G2, e6SimplyConnectedRootDatum_coroot,
+      e7SimplyConnectedRootDatum_coroot, e8SimplyConnectedRootDatum_coroot,
+      f4SimplyConnectedRootDatum_coroot, g2SimplyConnectedRootDatum_coroot] <;>
+    first
+    | exact coroot_typeASimpleIndex _ | exact coroot_typeBSimpleIndex _
+    | exact coroot_typeCSimpleIndex _ | exact coroot_typeDSimpleIndex _ _
+    | exact coroot_e6SimpleIndex _ | exact coroot_e7SimpleIndex _ | exact coroot_e8SimpleIndex _
+    | exact f4Coroot_castAdd _ | exact g2Coroot_castAdd _
 
 /-- The simple roots of the pinned datum are the rows of its Bourbaki-numbered Cartan matrix. -/
 @[simp] theorem root_simpleIndex (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) =
       fun k => t.cartanMatrix i k := by
-  -- As above, the case split leaves `i` in the dependent motive; `dsimp` exposes its concrete
-  -- rank, the branch equations rewrite the dispatcher, and each family's row lemma closes it.
-  cases t with
-  | A n =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_A, simpleIndex_A, cartanMatrix_A]
-    exact root_typeASimpleIndex _
-  | B n =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_B, simpleIndex_B, cartanMatrix_B]
-    exact root_typeBSimpleIndex _
-  | C n =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_C, simpleIndex_C, cartanMatrix_C]
-    exact root_typeCSimpleIndex _
-  | D n =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_D, simpleIndex_D, cartanMatrix_D]
-    exact root_typeDSimpleIndex _ _
-  | E6 =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_E6, simpleIndex_E6, cartanMatrix_E6,
-      e6SimplyConnectedRootDatum_root]
-    exact root_e6SimpleIndex _
-  | E7 =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_E7, simpleIndex_E7, cartanMatrix_E7,
-      e7SimplyConnectedRootDatum_root]
-    exact root_e7SimpleIndex _
-  | E8 =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_E8, simpleIndex_E8, cartanMatrix_E8,
-      e8SimplyConnectedRootDatum_root]
-    exact root_e8SimpleIndex _
-  | F4 =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_F4, simpleIndex_F4, cartanMatrix_F4,
-      f4SimplyConnectedRootDatum_root]
-    exact f4Root_castAdd _
-  | G2 =>
-    dsimp only [rank] at i
-    simp only [simplyConnectedRootDatum_G2, simpleIndex_G2, cartanMatrix_G2,
-      g2SimplyConnectedRootDatum_root]
-    exact g2Root_castAdd _
+  cases t <;> dsimp only [rank] at i <;>
+    simp only [simplyConnectedRootDatum_A, simplyConnectedRootDatum_B, simplyConnectedRootDatum_C,
+      simplyConnectedRootDatum_D, simplyConnectedRootDatum_E6, simplyConnectedRootDatum_E7,
+      simplyConnectedRootDatum_E8, simplyConnectedRootDatum_F4, simplyConnectedRootDatum_G2,
+      simpleIndex_A, simpleIndex_B, simpleIndex_C, simpleIndex_D, simpleIndex_E6, simpleIndex_E7,
+      simpleIndex_E8, simpleIndex_F4, simpleIndex_G2, cartanMatrix_A, cartanMatrix_B,
+      cartanMatrix_C, cartanMatrix_D, cartanMatrix_E6, cartanMatrix_E7, cartanMatrix_E8,
+      cartanMatrix_F4, cartanMatrix_G2, e6SimplyConnectedRootDatum_root,
+      e7SimplyConnectedRootDatum_root, e8SimplyConnectedRootDatum_root,
+      f4SimplyConnectedRootDatum_root,
+      g2SimplyConnectedRootDatum_root] <;>
+    first
+    | exact root_typeASimpleIndex _ | exact root_typeBSimpleIndex _ | exact root_typeCSimpleIndex _
+    | exact root_typeDSimpleIndex _ _ | exact root_e6SimpleIndex _ | exact root_e7SimpleIndex _
+    | exact root_e8SimpleIndex _ | exact f4Root_castAdd _ | exact g2Root_castAdd _
 
 /-- The pinned base is supported exactly on the first `t.rank` root indices. -/
 @[simp] theorem mem_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid)
@@ -404,18 +314,36 @@ private theorem simpleIndex_E8 (ht : E8.Valid) (i : Fin 8) :
 
 /-- The Bourbaki numbering identifies the nodes with the support of the pinned integral base. -/
 def simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid) :
-    Fin t.rank ≃ (t.simplyConnectedBase ht).support where
-  toFun i := ⟨t.simpleIndex ht i, by simp⟩
-  invFun k := ⟨(k : Fin t.numRoots), (mem_support_simplyConnectedBase t ht).mp k.2⟩
-  left_inv i := Fin.ext (by simp [simpleIndex_val])
-  right_inv k := Subtype.ext (Fin.ext (by simp [simpleIndex_val]))
+    Fin t.rank ≃ (t.simplyConnectedBase ht).support :=
+  (Fin.castLEquiv (rank_le_numRoots ht)).trans
+    (Equiv.subtypeEquivRight fun _ ↦ (mem_support_simplyConnectedBase t ht).symm)
 
 @[simp] theorem coe_simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid)
     (i : Fin t.rank) :
-    ((t.simpleSupportEquivSimplyConnectedBase ht i : Fin t.numRoots)) = t.simpleIndex ht i := by
-  simp [simpleSupportEquivSimplyConnectedBase]
+    ((t.simpleSupportEquivSimplyConnectedBase ht i : Fin t.numRoots)) = t.simpleIndex ht i :=
+  (rfl)
+
+/-- The inverse of the Bourbaki numbering sends a simple root to its node, with the same
+zero-based value. -/
+@[simp] theorem val_simpleSupportEquivSimplyConnectedBase_symm (t : DynkinType) (ht : t.Valid)
+    (k : (t.simplyConnectedBase ht).support) :
+    (((t.simpleSupportEquivSimplyConnectedBase ht).symm k : Fin t.rank) : ℕ) =
+      (k : Fin t.numRoots) := (rfl)
+
+/-- The simple root attached to the node of a simple root is that root. -/
+@[simp] theorem simpleIndex_simpleSupportEquivSimplyConnectedBase_symm (t : DynkinType)
+    (ht : t.Valid) (k : (t.simplyConnectedBase ht).support) :
+    t.simpleIndex ht ((t.simpleSupportEquivSimplyConnectedBase ht).symm k) = k :=
+  congrArg Subtype.val ((t.simpleSupportEquivSimplyConnectedBase ht).apply_symm_apply k)
+
+/-- The node of the simple root attached to a node is that node. -/
+@[simp] theorem simpleSupportEquivSimplyConnectedBase_symm_mk_simpleIndex (t : DynkinType)
+    (ht : t.Valid) (i : Fin t.rank) (hk : t.simpleIndex ht i ∈ (t.simplyConnectedBase ht).support) :
+    (t.simpleSupportEquivSimplyConnectedBase ht).symm ⟨t.simpleIndex ht i, hk⟩ = i :=
+  (t.simpleSupportEquivSimplyConnectedBase ht).symm_apply_eq.2 (Subtype.ext (by simp))
 
 /-- The pinned base has one simple root per Bourbaki node. -/
+@[simp]
 theorem card_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
     (t.simplyConnectedBase ht).support.card = t.rank := by
   classical

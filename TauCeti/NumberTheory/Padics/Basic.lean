@@ -25,7 +25,10 @@ of measures on `ℤ_p`.
 Finally, it records that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is the structure
 map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of norm at most `1` whose
 range contains the closed unit ball. These are the hypotheses under which `ℚ_[p]`-valued measures
-of norm at most `1` come from `ℤ_[p]`-valued measures.
+of norm at most `1` come from `ℤ_[p]`-valued measures. It also maps exactly the maximal ideal of
+`ℤ_[p]` into the open unit ball (`PadicInt.norm_coe_ringHom_lt_one_iff`); together with the norm
+bound, this is the hypothesis under which formal and normed Weierstrass degrees over `ℤ_[p]` are
+compared.
 
 For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
@@ -68,6 +71,13 @@ theorem algebraMap_eq_coe_ringHom : algebraMap ℤ_[p] ℚ_[p] = Coe.ringHom :=
 /-- The inclusion `ℤ_[p] → ℚ_[p]` takes values in the closed unit ball. -/
 theorem norm_coe_ringHom_le_one (a : ℤ_[p]) : ‖Coe.ringHom a‖ ≤ 1 := by
   simpa using a.norm_le_one
+
+/-- The inclusion `ℤ_[p] → ℚ_[p]` maps exactly the maximal ideal of `ℤ_[p]` into the open unit
+ball. -/
+theorem norm_coe_ringHom_lt_one_iff {a : ℤ_[p]} :
+    ‖Coe.ringHom a‖ < 1 ↔ a ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
+  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits]
+  simp
 
 /-- The inclusion `ℤ_[p] → ℚ_[p]` is a topological embedding. -/
 theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=

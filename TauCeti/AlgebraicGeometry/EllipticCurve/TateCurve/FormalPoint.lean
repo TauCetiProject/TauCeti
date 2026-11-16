@@ -81,7 +81,7 @@ variable (R : Type*) [CommRing R]
 of `uᵃ vᵇ` being `coeff a (coeff b _)`. That coefficient is `-2 σ₁(a)` when `a = b`, and otherwise
 `d = |a - b|` when `d` divides `min a b` (equivalently `a`, or `b`) and `0` when it does not. With
 `q = u v` this is the expansion of `∑_{n ∈ ℤ} qⁿu / (1 - qⁿu)² - 2 s₁(q)` on `|q| < |u| < 1`. -/
-noncomputable def tateFormalX : R⟦X⟧⟦X⟧ :=
+def tateFormalX : R⟦X⟧⟦X⟧ :=
   mk fun b ↦ mk fun a ↦
     if a = b then -2 * (σ 1 a : R) else if a.dist b ∣ min a b then (a.dist b : R) else 0
 
@@ -90,7 +90,7 @@ of `uᵃ vᵇ` being `coeff a (coeff b _)`. That coefficient is `σ₁(a)` when 
 `d = |a - b|`, it is `0` unless `d` divides `min a b`, in which case it is `d (d - 1) / 2` when
 `b < a` and `-d (d + 1) / 2` when `a < b`. With `q = u v` this is the expansion of
 `∑_{n ∈ ℤ} (qⁿu)² / (1 - qⁿu)³ + s₁(q)` on `|q| < |u| < 1`. -/
-noncomputable def tateFormalY : R⟦X⟧⟦X⟧ :=
+def tateFormalY : R⟦X⟧⟦X⟧ :=
   mk fun b ↦ mk fun a ↦
     if a = b then (σ 1 a : R) else if a.dist b ∣ min a b then
       (if b < a then ((a.dist b).choose 2 : R) else -((a.dist b + 1).choose 2 : R)) else 0
@@ -557,16 +557,27 @@ private theorem exists_polar_eq : ∃ h : (Polynomial ℚ)⟦X⟧,
   set W := C wP
   set p := sig₃
   set r := sig₅
-  exact ⟨-8 * B - 12 * A - 6 * r + 12 * p ^ 2 - 2 * W * B - 2 * W * A + 12 * W * p * r +
-    4 * W ^ 2 * r ^ 2 + 8 * W ^ 2 * p * B - 4 * W ^ 2 * p * A + 2 * W ^ 2 * p * r -
-    4 * W ^ 2 * p ^ 3 + 16 * W ^ 3 * r * B - 24 * W ^ 3 * r * A + 3 * W ^ 3 * r ^ 2 +
-    2 * W ^ 3 * p * B - 2 * W ^ 3 * p * A - 12 * W ^ 3 * p ^ 2 * r + 4 * W ^ 4 * B ^ 2 -
-    12 * W ^ 4 * A ^ 2 + 4 * W ^ 4 * r * B - 2 * W ^ 4 * r * A - 12 * W ^ 4 * p * r ^ 2 -
-    12 * W ^ 4 * p ^ 2 * A + W ^ 5 * B ^ 2 - W ^ 5 * A ^ 2 - 4 * W ^ 5 * r ^ 3 -
-    24 * W ^ 5 * p * r * A - 12 * W ^ 6 * r ^ 2 * A - 12 * W ^ 6 * p * A ^ 2 -
-    12 * W ^ 7 * r * A ^ 2 - 4 * W ^ 8 * A ^ 3, by ring⟩
+  let U := p + W * r + W ^ 2 * A
+  let V := p + 2 * W * r + W ^ 2 * B
+  refine ⟨-8 * B - 12 * A - 6 * r - 2 * W * (A + B) +
+    (W + 4) * V ^ 2 - (W + 12) * U ^ 2 - 4 * W ^ 2 * U ^ 3 + 20 * p * U, ?_⟩
+  dsimp [U, V]
+  ring
 
 /-! ### A formal Liouville theorem -/
+
+/-- A symmetric Laurent polynomial `symmHom (w g)` that is constant is zero, since evaluation at
+`u = 1` kills the multiple of `w = u - 2 + u⁻¹`. -/
+private theorem symmHom_wP_mul_eq_zero {g : Polynomial ℚ} {a : ℚ}
+    (h : symmHom (wP * g) = LaurentPolynomial.C a) : symmHom (wP * g) = 0 := by
+  set ev := LaurentPolynomial.eval₂ (RingHom.id ℚ) (1 : ℚˣ)
+  have hw : ev (symmHom wP) = 0 := by
+    simp [ev, symmHom, wP]
+    norm_num
+  have h0 : ev (symmHom (wP * g)) = 0 := by
+    rw [map_mul, map_mul, hw, zero_mul]
+  rw [h, LaurentPolynomial.eval₂_C, RingHom.id_apply] at h0
+  rw [h, h0, _root_.map_zero]
 
 /-- **A formal Liouville theorem.** Let `G ∈ ℚ⟦u⟧⟦v⟧` be symmetric in `u` and `v`. Suppose that
 after substituting `v = q / u` each coefficient of `qᴺ` is `F(u + u⁻¹)` for a polynomial `F`
@@ -578,8 +589,9 @@ absolute value larger than `N`, and the symmetry in `u` and `v` moves the coeffi
 vanish because `F(2) = 0`.
 
 This is a formal counterpart of the non-archimedean Liouville theorem in Tate, *A review of
-non-Archimedean elliptic functions*: an analytic function on `Kˣ` invariant under `u ↦ q u` is
-constant. -/
+non-Archimedean elliptic functions*: over a complete non-archimedean field `K` and for `q ∈ Kˣ`
+with `|q| < 1`, a holomorphic function on `Kˣ`, that is, a Laurent series converging on all of
+`Kˣ`, which is invariant under `u ↦ q u` is constant. -/
 private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSeries.swap G = G)
     {f : (Polynomial ℚ)⟦X⟧} (hj : toLaurent G = map psi (C wP * f)) : G = 0 := by
   set L : ℕ → LaurentPolynomial ℚ := fun N ↦ symmHom (coeff N (C wP * f)) with hLdef
@@ -599,14 +611,9 @@ private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSerie
   have hconst (N : ℕ) : L N = LaurentPolynomial.C ((L N).coeff 0) :=
     LaurentPolynomial.eq_C_coeff_zero_of_coeff_swap hcoe hsymm hswap N
   have hzero (N : ℕ) : L N = 0 := by
-    set ev := LaurentPolynomial.eval₂ (RingHom.id ℚ) (1 : ℚˣ)
-    have hw : ev (symmHom wP) = 0 := by
-      simp [ev, symmHom, wP]
-      norm_num
-    have h : ev (L N) = 0 := by
-      simp only [hLdef, coeff_C_mul, map_mul, hw, zero_mul]
-    rw [hconst N, LaurentPolynomial.eval₂_C, RingHom.id_apply] at h
-    rw [hconst N, h, _root_.map_zero]
+    have h := hconst N
+    simp only [hLdef, coeff_C_mul] at h ⊢
+    exact symmHom_wP_mul_eq_zero h
   refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
   have h := hcoe b ((a : ℤ) - b)
   have e : ((a : ℤ) - b + b).natAbs = a := by omega

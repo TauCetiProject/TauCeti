@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -23,11 +23,16 @@ set is exposed in that subset (`IsExposed.inter_of_subset`).
 Adapted from `Mei/Analysis/Convex/Exposed.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
 commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
+The intersection lemma (copyright 2026 Mei contributors, author Codex) is adapted
+from the same file at Mei commit
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
 -/
 
 public section
 
 namespace IsExposed
+
+
 
 section Restrict
 
@@ -43,6 +48,27 @@ theorem inter_of_subset (hF : IsExposed 𝕜 A F) (hQA : Q ⊆ A) : IsExposed �
     fun z hz => ⟨⟨hQA hz.1, fun y hy => (hxF.2 y hy).trans (hz.2 x hxQ)⟩, hz.1⟩⟩
 
 end Restrict
+
+section Intersections
+
+variable {R V : Type*} [TopologicalSpace R] [Ring R] [PartialOrder R] [IsOrderedRing R]
+  [ContinuousAdd R] [AddCommMonoid V] [TopologicalSpace V] [Module R V] {P Q F G : Set V}
+
+/-- Intersections of exposed subsets are exposed in the intersection of their
+ambient sets. This includes empty intersections and requires no convexity. -/
+theorem inter_inter (hF : IsExposed R P F) (hG : IsExposed R Q G) :
+    IsExposed R (P ∩ Q) (F ∩ G) := by
+  have hf := hF.inter_of_subset (Set.inter_subset_left : P ∩ Q ⊆ P)
+  have hg := hG.inter_of_subset (Set.inter_subset_right : P ∩ Q ⊆ Q)
+  have heq : (F ∩ (P ∩ Q)) ∩ (G ∩ (P ∩ Q)) = F ∩ G := by
+    ext x
+    exact ⟨fun hx => ⟨hx.1.1, hx.2.1⟩, fun hx =>
+      ⟨⟨hx.1, hF.subset hx.1, hG.subset hx.2⟩,
+        ⟨hx.2, hF.subset hx.1, hG.subset hx.2⟩⟩⟩
+  exact heq ▸ hf.inter hg
+
+end Intersections
+
 
 section IntrinsicInterior
 

@@ -275,6 +275,12 @@ end ContinuousMap
 
 namespace TauCeti
 
+/-- The zero-frequency Fourier coefficient is the integral against normalized Haar measure. -/
+theorem fourierCoeff_zero_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : AddCircle T → E) :
+    fourierCoeff f 0 = ∫ x, f x ∂haarAddCircle := by
+  simp only [fourierCoeff, neg_zero, fourier_zero, one_smul]
+
 /-- Reflection of a circle function reverses its Fourier indices. -/
 theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : AddCircle T → E) (n : ℤ) :

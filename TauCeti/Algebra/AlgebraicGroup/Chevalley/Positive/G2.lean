@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 import TauCeti.Algebra.Group.Subgroup.Pointwise
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Parabolic.G2
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Parabolic
 
 /-!
 # Simple-root factorization of positive G₂ points
@@ -18,8 +18,8 @@ factors as an element of U⁽ⁱ⁾ followed by an element of Xᵢ. This is the 
 factorization used in simple-reflection Bruhat reduction, not a claim that the
 positive simple root subgroups generate the positive subgroup.
 
-The normalization transports
-`DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_G2`
+The normalization transports the G₂ case of
+`DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton`
 from automorphisms of the admissible lattice to the datum's points. The factorization
 then uses `Subgroup.mem_sup_of_right_le_normalizer_left`. Both results hold over every
 commutative ring, including characteristics two and three; neither point generation
@@ -72,7 +72,7 @@ theorem closure_simpleRootPair_le_normalizer_positivePoints_diff_singleton_G2
   let U : Subgroup (D.points A) := ⨆ γ ∈
     posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \ {G2.simpleIndex ht i},
     (D.rootSubgroupPoints γ A).range
-  have h := DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_G2
+  have h := DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator i (CommAlgCat.of ℤ A)
   -- First express both generated subgroups in lattice coordinates. The injective

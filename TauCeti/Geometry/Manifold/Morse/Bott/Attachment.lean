@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Deformation
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
 import TauCeti.Topology.Homotopy.DeformationRetract
 
@@ -52,6 +55,11 @@ since `[0, 1]` is compact the deformation is still continuous.
 * `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation`: across a compact band around a
   critical level, the sublevel `M_{c+ε}` strong deformation retracts onto `M_{c-ε}` with the
   negative disc bundle of a quadratic normal form attached.
+* `TauCeti.exists_sublevel_union_image_deformation`: the same, for a normal form
+  `f ∘ Θ = c - s + t` given by a partial diffeomorphism `Θ` near a compact core and all small
+  `ε > 0`. The tube is the image under `Θ` of a sublevel `{s + 2t < m}`, which for small `m` has
+  compact closed sublevels inside the source of `Θ`
+  (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
 
 ## References
 
@@ -501,5 +509,233 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation (hfs : ContMDiff I 
       hs.continuousOn ht.continuousOn ht₀ hf hK.isClosed (fun _ hx ↦ hx.1) hXK hXφ)
 
 end Attachment
+
+/-! ### The attachment theorem through a partial diffeomorphism -/
+
+section Transport
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- If a curve `γ` through `y` keeps `u` constant and `v` equal to `τ² b` near `τ = 1`, with
+`b ≠ 0`, then its velocity at `τ = 1` is killed by `du` but not by `dv`. -/
+private theorem exists_mfderiv_apply_eq_zero_and_ne_zero {u v : M → ℝ} {γ : ℝ → M} {y : M}
+    {a b : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ 1) (hγy : γ 1 = y)
+    (hu : MDifferentiableAt I 𝓘(ℝ) u y) (hv : MDifferentiableAt I 𝓘(ℝ) v y)
+    (huγ : u ∘ γ =ᶠ[𝓝 1] fun _ ↦ a) (hvγ : v ∘ γ =ᶠ[𝓝 1] fun τ ↦ τ ^ 2 * b) (hb : b ≠ 0) :
+    ∃ w : TangentSpace I y, mfderiv I 𝓘(ℝ) u y w = 0 ∧ mfderiv I 𝓘(ℝ) v y w ≠ 0 := by
+  subst hγy
+  have hdu := mfderiv_comp_apply (I' := I) 1 hu hγ (1 : ℝ)
+  have hdv := mfderiv_comp_apply (I' := I) 1 hv hγ (1 : ℝ)
+  rw [huγ.mfderiv_eq, mfderiv_const] at hdu
+  rw [(((hasDerivAt_pow 2 (1 : ℝ)).mul_const b).hasFDerivAt.hasMFDerivAt.congr_of_eventuallyEq_abuse
+    hvγ).mfderiv] at hdv
+  refine ⟨mfderiv 𝓘(ℝ) I γ 1 (1 : ℝ), hdu.symm, fun h0 ↦ hb ?_⟩
+  rw [h0] at hdv
+  -- The tangent spaces of `ℝ` are `ℝ`, so the derivative of `τ ↦ τ² b` at `1` is a multiple of `b`.
+  exact (mul_eq_zero.1 ((ContinuousLinearMap.toSpanSingleton_apply_one (M₁ := ℝ) ℝ _).symm.trans
+    hdv)).resolve_left (by norm_num)
+
+variable {F G X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+  {K : ModelWithCorners ℝ F G} [TopologicalSpace X] [ChartedSpace G X]
+
+/-- The image under a partial diffeomorphism `Θ` of a subset `W` of its source lies in its target,
+and `Θ⁻¹` maps it back into `W`. -/
+private theorem image_subset_target_and_symm_mem (Θ : PartialDiffeomorph K I X M ∞) {W : Set X}
+    (hWΘ : W ⊆ Θ.source) : Θ '' W ⊆ Θ.target ∧ ∀ y ∈ Θ '' W, Θ.toPartialEquiv.symm y ∈ W := by
+  refine ⟨image_subset_iff.2 fun x hx ↦ Θ.map_source (hWΘ hx), ?_⟩
+  rintro _ ⟨x, hx, rfl⟩
+  rwa [Θ.left_inv (hWΘ hx)]
+
+/-- A scaling `ρ` of the positive directions of a subset `W` of the source of a partial
+diffeomorphism `Θ`, carried to `Θ '' W`: it preserves `s ∘ Θ⁻¹`, multiplies `t ∘ Θ⁻¹` by `τ²`, is
+the identity at `τ = 1` and fixes the points with `t ∘ Θ⁻¹ = 0`. -/
+private theorem exists_continuousMap_image (Θ : PartialDiffeomorph K I X M ∞) {s t : X → ℝ}
+    (ρ : ℝ → X → X) (hρ : Continuous fun p : ℝ × X ↦ ρ p.1 p.2) (hρs : ∀ b x, s (ρ b x) = s x)
+    (hρt : ∀ b x, t (ρ b x) = b ^ 2 * t x) (hρ₁ : ∀ x, ρ 1 x = x)
+    (hρ₀ : ∀ b x, t x = 0 → ρ b x = x) {W : Set X} (hWΘ : W ⊆ Θ.source)
+    (hρW : ∀ τ : unitInterval, ∀ x ∈ W, ρ τ x ∈ W) :
+    ∃ φ : C(unitInterval × Θ '' W, Θ '' W),
+      (∀ τ (y : Θ '' W), s (Θ.toPartialEquiv.symm (φ (τ, y))) = s (Θ.toPartialEquiv.symm y)) ∧
+      (∀ τ (y : Θ '' W),
+        t (Θ.toPartialEquiv.symm (φ (τ, y))) = (τ : ℝ) ^ 2 * t (Θ.toPartialEquiv.symm y)) ∧
+      (∀ y, φ (1, y) = y) ∧
+      (∀ τ (y : Θ '' W), t (Θ.toPartialEquiv.symm y) = 0 → φ (τ, y) = y) := by
+  obtain ⟨hWt, hWsymm⟩ := image_subset_target_and_symm_mem Θ hWΘ
+  have hcont : Continuous fun p : unitInterval × Θ '' W ↦ Θ.toPartialEquiv.symm p.2 :=
+    Θ.symm.contMDiffOn.continuousOn.comp_continuous (continuous_subtype_val.comp continuous_snd)
+      fun p ↦ hWt p.2.2
+  refine ⟨⟨fun p ↦ ⟨Θ (ρ p.1 (Θ.toPartialEquiv.symm p.2)),
+      mem_image_of_mem _ (hρW p.1 _ (hWsymm _ p.2.2))⟩,
+    (Θ.contMDiffOn.continuousOn.comp_continuous
+      (hρ.comp ((continuous_subtype_val.comp continuous_fst).prodMk hcont))
+      fun p ↦ hWΘ (hρW p.1 _ (hWsymm _ p.2.2))).subtype_mk _⟩, ?_, ?_, ?_, ?_⟩
+  · rintro τ ⟨_, x, hx, rfl⟩
+    simp only [ContinuousMap.coe_mk, Θ.left_inv (hWΘ hx), Θ.left_inv (hWΘ (hρW τ x hx)), hρs]
+  · rintro τ ⟨_, x, hx, rfl⟩
+    simp only [ContinuousMap.coe_mk, Θ.left_inv (hWΘ hx), Θ.left_inv (hWΘ (hρW τ x hx)), hρt]
+  · rintro ⟨_, x, hx, rfl⟩
+    simp only [ContinuousMap.coe_mk, Θ.left_inv (hWΘ hx), Set.Icc.coe_one, hρ₁]
+  · rintro τ ⟨_, x, hx, rfl⟩ htx
+    rw [Θ.left_inv (hWΘ hx)] at htx
+    simp only [ContinuousMap.coe_mk, Θ.left_inv (hWΘ hx), hρ₀ _ x htx]
+
+/-- Let `s` and `t` be smooth on `X`, and let `ρ b` preserve `s` and multiply `t` by `b²`, with
+`ρ 1 = id`. At a point `x` of the source of `Θ` with `t x ≠ 0`, the velocity at `b = 1` of the
+curve `b ↦ Θ (ρ b x)` is killed by the derivative of `s ∘ Θ⁻¹` but not by that of `t ∘ Θ⁻¹`. -/
+private theorem exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero
+    (Θ : PartialDiffeomorph K I X M ∞) {s t : X → ℝ} (hs : ContMDiff K 𝓘(ℝ) ∞ s)
+    (ht : ContMDiff K 𝓘(ℝ) ∞ t) (ρ : ℝ → X → X) (hρ : Continuous fun p : ℝ × X ↦ ρ p.1 p.2)
+    (hρd : ∀ x, MDifferentiableAt 𝓘(ℝ) K (fun b ↦ ρ b x) 1) (hρs : ∀ b x, s (ρ b x) = s x)
+    (hρt : ∀ b x, t (ρ b x) = b ^ 2 * t x) (hρ₁ : ∀ x, ρ 1 x = x) {x : X} (hx : x ∈ Θ.source)
+    (htx : t x ≠ 0) : ∃ v : TangentSpace I (Θ x),
+      mfderiv I 𝓘(ℝ) (s ∘ Θ.toPartialEquiv.symm) (Θ x) v = 0 ∧
+        mfderiv I 𝓘(ℝ) (t ∘ Θ.toPartialEquiv.symm) (Θ x) v ≠ 0 := by
+  have hΘs : ContMDiffAt I K ∞ Θ.toPartialEquiv.symm (Θ x) :=
+    Θ.symm.contMDiffOn.contMDiffAt (Θ.open_target.mem_nhds (Θ.map_source hx))
+  have hev : ∀ᶠ b in 𝓝 (1 : ℝ), ρ b x ∈ Θ.source :=
+    (hρ.comp (continuous_id.prodMk continuous_const)).continuousAt.preimage_mem_nhds
+      (Θ.open_source.mem_nhds (by simpa [hρ₁] using hx))
+  refine exists_mfderiv_apply_eq_zero_and_ne_zero (γ := fun b ↦ Θ (ρ b x)) (a := s x)
+    ((Θ.mdifferentiableAt (by simp) (by rwa [hρ₁])).comp (I' := K) 1 (hρd x))
+    (by simp only [hρ₁]) (((hs _).comp _ hΘs).mdifferentiableAt (by simp))
+    (((ht _).comp _ hΘs).mdifferentiableAt (by simp)) (hev.mono fun b hb ↦ ?_)
+    (hev.mono fun b hb ↦ ?_) htx
+  · simp only [comp_apply, Θ.left_inv hb, hρs]
+  · simp only [comp_apply, Θ.left_inv hb, hρt]
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
+  {c : ℝ}
+
+/-- The attachment theorem `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation`, read
+through a partial diffeomorphism `Θ : X → M`. On `X`, the functions `s, t ≥ 0` are smooth with
+`f ∘ Θ = c - s + t`, and `ρ b` scales the positive directions: it preserves `s`, multiplies `t` by
+`b²`, is the identity for `b = 1` and fixes the points with `t = 0`. If `W ⊆ X` is an open subset
+of the source of `Θ` preserved by `ρ τ` for `τ ∈ [0, 1]`, containing the disc bundle
+`{t = 0, s ≤ ε}`, whose part `{s + 2t ≤ 2ε}` is compact and whose image contains the critical
+points of the compact band `f⁻¹[c - ε, c + ε]`, then `{f ≤ c + ε}` strong deformation retracts
+onto `{f ≤ c - ε}` with the image of the disc bundle attached. -/
+private theorem exists_sublevel_union_image_deformation_of_tube (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (Θ : PartialDiffeomorph K I X M ∞) {s t : X → ℝ} (hs : ContMDiff K 𝓘(ℝ) ∞ s)
+    (ht : ContMDiff K 𝓘(ℝ) ∞ t) (hs₀ : ∀ x, 0 ≤ s x) (ht₀ : ∀ x, 0 ≤ t x)
+    (hf : ∀ x ∈ Θ.source, f (Θ x) = c - s x + t x) (ρ : ℝ → X → X)
+    (hρ : Continuous fun p : ℝ × X ↦ ρ p.1 p.2)
+    (hρd : ∀ x, MDifferentiableAt 𝓘(ℝ) K (fun b ↦ ρ b x) 1) (hρs : ∀ b x, s (ρ b x) = s x)
+    (hρt : ∀ b x, t (ρ b x) = b ^ 2 * t x) (hρ₁ : ∀ x, ρ 1 x = x)
+    (hρ₀ : ∀ b x, t x = 0 → ρ b x = x) {W : Set X} (hWo : IsOpen W) (hWΘ : W ⊆ Θ.source)
+    (hρW : ∀ τ : unitInterval, ∀ x ∈ W, ρ τ x ∈ W) {ε : ℝ} (hε : 0 < ε)
+    (hD : ∀ x, t x = 0 → s x ≤ ε → x ∈ W) (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ Θ '' W) :
+    ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩
+        ({y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}))),
+      (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
+      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
+        (ContinuousMap.id _) {y | (y : M) ∈ {y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}}) := by
+  have hΘs : ContMDiffOn I K ∞ Θ.toPartialEquiv.symm Θ.target := Θ.symm.contMDiffOn
+  obtain ⟨hWt, hWsymm⟩ := image_subset_target_and_symm_mem Θ hWΘ
+  -- A condition on the points of `W` reads on `Θ '' W` through `Θ⁻¹`.
+  have himage (p : X → Prop) :
+      {y | y ∈ Θ '' W ∧ p (Θ.toPartialEquiv.symm y)} = Θ '' {x | x ∈ W ∧ p x} := by
+    ext y
+    refine ⟨fun ⟨hy, hpy⟩ ↦ ⟨_, ⟨hWsymm y hy, hpy⟩, Θ.right_inv (hWt hy)⟩, ?_⟩
+    rintro ⟨x, ⟨hx, hpx⟩, rfl⟩
+    rw [mem_ofPred_eq, Θ.left_inv (hWΘ hx)]
+    exact ⟨mem_image_of_mem _ hx, hpx⟩
+  have hWo' : IsOpen (Θ '' W) := by
+    simpa [inter_eq_self_of_subset_right hWΘ] using
+      Θ.toOpenPartialHomeomorph.isOpen_image_source_inter hWo
+  -- The functions `s` and `t` read on `M`, and the scaling of the positive directions.
+  set sM : M → ℝ := s ∘ Θ.toPartialEquiv.symm
+  set tM : M → ℝ := t ∘ Θ.toPartialEquiv.symm
+  have hsM : ContMDiffOn I 𝓘(ℝ) ∞ sM (Θ '' W) := hs.comp_contMDiffOn (hΘs.mono hWt)
+  have htM : ContMDiffOn I 𝓘(ℝ) ∞ tM (Θ '' W) := ht.comp_contMDiffOn (hΘs.mono hWt)
+  have hsΘ (x : X) (hx : x ∈ Θ.source) : sM (Θ x) = s x := by
+    simp only [sM, comp_apply, Θ.left_inv hx]
+  have htΘ (x : X) (hx : x ∈ Θ.source) : tM (Θ x) = t x := by
+    simp only [tM, comp_apply, Θ.left_inv hx]
+  obtain ⟨φ, hφs, hφt, hφ₁, hφ₀⟩ := exists_continuousMap_image Θ ρ hρ hρs hρt hρ₁ hρ₀ hWΘ hρW
+  have hdir (y : M) (hy : y ∈ Θ '' W) (hty : tM y ≠ 0) : ∃ v : TangentSpace I y,
+      mfderiv I 𝓘(ℝ) sM y v = 0 ∧ mfderiv I 𝓘(ℝ) tM y v ≠ 0 := by
+    obtain ⟨x, hx, rfl⟩ := hy
+    exact exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero Θ hs ht ρ hρ hρd hρs hρt hρ₁
+      (hWΘ hx) (by rwa [htΘ x (hWΘ hx)] at hty)
+  have hKM : IsCompact {y | y ∈ Θ '' W ∧ sM y + 2 * tM y ≤ 2 * ε} := by
+    rw [show {y | y ∈ Θ '' W ∧ sM y + 2 * tM y ≤ 2 * ε} =
+        Θ '' {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε} from himage fun x ↦ s x + 2 * t x ≤ 2 * ε]
+    exact hK.image_of_continuousOn (Θ.contMDiffOn.continuousOn.mono fun x hx ↦ hWΘ hx.1)
+  have key := exists_sublevel_union_negativeDiscBundle_deformation hfs hWo' hsM htM
+    (fun y _ ↦ hs₀ _) (fun y _ ↦ ht₀ _) ?_ hdir φ hφs hφt hφ₁ hφ₀ hε hKM hcompact hcrit
+  · have hDW : {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε} = {x | t x = 0 ∧ s x ≤ ε} :=
+      Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨hD x hx.1 hx.2, hx⟩⟩
+    rwa [show {y | y ∈ Θ '' W ∧ tM y = 0 ∧ sM y ≤ ε} = Θ '' {x | t x = 0 ∧ s x ≤ ε} from
+      hDW ▸ himage fun x ↦ t x = 0 ∧ s x ≤ ε] at key
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [hf x (hWΘ hx), hsΘ x (hWΘ hx), htΘ x (hWΘ hx)]
+
+/-- **Attaching the negative disc bundle of a normal form given by a partial diffeomorphism.**
+Let `Θ : X → M` be a smooth partial diffeomorphism from a locally compact Hausdorff manifold `X`,
+and let `Z` be a compact subset of its source, the core of the normal form. On `X`, let the
+functions `s, t ≥ 0` be smooth and vanish together exactly on `Z`, with `f ∘ Θ = c - s + t` on the
+source of `Θ`. Let the maps `σ a b : X → X`, continuous jointly in `a`, `b` and the point, rescale
+`s` by `a²` and `t` by `b²`; let `σ 1 1` be the identity, `σ 1 b` fix the points with `t = 0` and be
+differentiable in `b` at `b = 1`, and let `σ 0 0` map into `Z`.
+
+Then there is an `ε₀ > 0` such that for `0 < ε < ε₀`, if the band `f⁻¹[c - ε, c + ε]` is compact
+and its critical points lie in `Θ '' Z`, the disc bundle `D_ε = {t = 0, s ≤ ε}` lies in the source
+of `Θ` and `{f ≤ c - ε} ∪ Θ(D_ε)` is a strong deformation retract of `{f ≤ c + ε}`: there is a
+retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}` from this retraction to the
+identity which fixes it pointwise. This is
+`TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` for the tube `Θ '' {s + 2t < m}`
+with `m > 0` small. -/
+theorem exists_sublevel_union_image_deformation [LocallyCompactSpace X] [T2Space X]
+    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (Θ : PartialDiffeomorph K I X M ∞) {s t : X → ℝ}
+    (hs : ContMDiff K 𝓘(ℝ) ∞ s) (ht : ContMDiff K 𝓘(ℝ) ∞ t) (hs₀ : ∀ x, 0 ≤ s x)
+    (ht₀ : ∀ x, 0 ≤ t x) (hf : ∀ x ∈ Θ.source, f (Θ x) = c - s x + t x) {Z : Set X}
+    (hZ : IsCompact Z) (hZΘ : Z ⊆ Θ.source) (hZst : ∀ x ∈ Z, s x = 0 ∧ t x = 0)
+    (hstZ : ∀ x, s x = 0 → t x = 0 → x ∈ Z) (σ : ℝ → ℝ → X → X)
+    (hσ : Continuous fun p : (ℝ × ℝ) × X ↦ σ p.1.1 p.1.2 p.2)
+    (hσd : ∀ x, MDifferentiableAt 𝓘(ℝ) K (fun b ↦ σ 1 b x) 1)
+    (hσs : ∀ a b x, s (σ a b x) = a ^ 2 * s x) (hσt : ∀ a b x, t (σ a b x) = b ^ 2 * t x)
+    (hσ₁ : ∀ x, σ 1 1 x = x) (hσ₀ : ∀ b x, t x = 0 → σ 1 b x = x) (hσZ : ∀ x, σ 0 0 x ∈ Z) :
+    ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
+      criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ Θ '' Z →
+      {x | t x = 0 ∧ s x ≤ ε} ⊆ Θ.source ∧
+      ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩
+          ({y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}))),
+        (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
+        Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
+          (ContinuousMap.id _)
+          {y | (y : M) ∈ {y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}}) := by
+  set q : X → ℝ := fun x ↦ s x + 2 * t x with hq_def
+  have hq : Continuous q := hs.continuous.add (continuous_const.mul ht.continuous)
+  have hq_le (a b : ℝ) (ha : a ^ 2 ≤ 1) (hb : b ^ 2 ≤ 1) (x : X) : q (σ a b x) ≤ q x := by
+    simp only [hq_def, hσs, hσt]
+    nlinarith [hs₀ x, ht₀ x]
+  -- The rays `a ↦ σ a a x`, `a ∈ [0, 1]`, join each point to the core, with `q` at most `q x`.
+  obtain ⟨m, hm, hmΘ, hmK⟩ := exists_gt_setOf_lt_subset_and_isCompact hZ Θ.open_source hZΘ hq
+    (fun x (hx : s x + 2 * t x ≤ 0) ↦
+      hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
+    fun x ↦ ⟨(fun a ↦ σ a a x) '' Icc 0 1, isPreconnected_Icc.image _
+      (hσ.comp ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
+      ⟨1, ⟨zero_le_one, le_rfl⟩, hσ₁ x⟩, ⟨σ 0 0 x, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, hσZ x⟩,
+      by rintro _ ⟨a, ha, rfl⟩; exact hq_le a a (pow_le_one₀ ha.1 ha.2) (pow_le_one₀ ha.1 ha.2) x⟩
+  refine ⟨m / 2, half_pos hm, fun ε hε hcompact hcrit ↦ ?_⟩
+  have hεm : 2 * ε < m := by linarith [hε.2]
+  have hD (x : X) (ht : t x = 0) (hs : s x ≤ ε) : q x < m := by
+    simp only [hq_def, ht, mul_zero, add_zero]
+    linarith [hε.1]
+  refine ⟨fun x hx ↦ hmΘ (hD x hx.1 hx.2), exists_sublevel_union_image_deformation_of_tube hfs Θ
+    hs ht hs₀ ht₀ hf (σ 1) (hσ.comp ((continuous_const.prodMk continuous_fst).prodMk
+      continuous_snd)) hσd (fun b x ↦ by rw [hσs, one_pow, one_mul]) (hσt 1) hσ₁ hσ₀
+    (W := {x | q x < m}) (isOpen_lt hq continuous_const) hmΘ
+    (fun τ x hx ↦ (hq_le 1 τ (by norm_num) (pow_le_one₀ τ.2.1 τ.2.2) x).trans_lt hx) hε.1 hD ?_
+    hcompact (hcrit.trans (image_mono fun x hx ↦ ?_))⟩
+  · have hset : {x | x ∈ {x | q x < m} ∧ s x + 2 * t x ≤ 2 * ε} = {x | q x ≤ 2 * ε} :=
+      Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨lt_of_le_of_lt hx hεm, hx⟩⟩
+    exact hset ▸ hmK (2 * ε) hεm
+  · simp only [mem_ofPred_eq, hq_def, (hZst x hx).1, (hZst x hx).2, mul_zero, add_zero, hm]
+
+end Transport
 
 end TauCeti

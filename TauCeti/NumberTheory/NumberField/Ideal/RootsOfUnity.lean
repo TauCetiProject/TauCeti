@@ -35,6 +35,7 @@ the residue field; this is the character whose powers Stickelberger's congruence
   of unity of `𝓞 K` and those of `𝓞 K ⧸ P`.
 * `Ideal.pow_absNorm_sub_one_div_mem_rootsOfUnity`: `u ^ ((N P - 1) / n)` is an `n`-th root of
   unity for every unit `u` of `𝓞 K ⧸ P`.
+* `Ideal.absNorm_sub_one_div_ne_zero`: the exponent `(N P - 1) / n` is positive.
 * `Ideal.exists_mulChar_mk_eq`: a ring homomorphism from a finite field with `q` elements to
   `𝓞 K ⧸ P` lifts to a multiplicative character with values in `𝓞 K`, the Teichmüller character,
   when `𝓞 K` contains a primitive `(q - 1)`-th root of unity.
@@ -116,6 +117,13 @@ theorem pow_absNorm_sub_one_eq_one (u : (𝓞 K ⧸ P)ˣ) : u ^ (absNorm P - 1) 
   rw [absNorm_eq_natCard, ← Nat.card_units]
   exact pow_card_eq_one'
 
+/-- The absolute norm of a maximal ideal `P` satisfies `N P - 1 ≠ 0`: this is the number of units
+of the residue field `𝓞 K ⧸ P`. -/
+theorem absNorm_sub_one_ne_zero : absNorm P - 1 ≠ 0 := by
+  let _ := Ideal.Quotient.field P
+  rw [absNorm_eq_natCard, ← Nat.card_units]
+  exact Nat.card_pos.ne'
+
 /-- **Reduction of roots of unity modulo a prime not dividing `n`.** If `𝓞 K` contains a
 primitive `n`-th root of unity and `N P` is prime to `n`, then reduction modulo `P` is an
 isomorphism from the `n`-th roots of unity of `𝓞 K` onto those of the residue field. -/
@@ -157,6 +165,17 @@ theorem pow_absNorm_sub_one_div_mem_rootsOfUnity (hP : (absNorm P).Coprime n)
     (u : (𝓞 K ⧸ P)ˣ) : u ^ ((absNorm P - 1) / n) ∈ rootsOfUnity n (𝓞 K ⧸ P) := by
   rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel (dvd_absNorm_sub_one hP),
     pow_absNorm_sub_one_eq_one]
+
+omit [NeZero n] in
+/-- If `N P` is prime to `n` and `𝓞 K` contains a primitive `n`-th root of unity, then the
+exponent `(N P - 1) / n` is positive. Here `n ≠ 0`, since `N P` is prime to `0` only if `N P = 1`,
+which a maximal ideal excludes. -/
+theorem absNorm_sub_one_div_ne_zero (hP : (absNorm P).Coprime n) : (absNorm P - 1) / n ≠ 0 := by
+  have hn : n ≠ 0 := by
+    rintro rfl
+    exact absNorm_sub_one_ne_zero P (by rw [(Nat.coprime_zero_right _).mp hP])
+  exact (Nat.div_ne_zero_iff_of_dvd (dvd_absNorm_sub_one hP)).mpr
+    ⟨absNorm_sub_one_ne_zero P, hn⟩
 
 variable (P) in
 /-- **The Teichmüller character.** Let `F` be a finite field with `q` elements and
