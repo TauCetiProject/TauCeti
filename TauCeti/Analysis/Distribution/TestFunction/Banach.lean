@@ -51,6 +51,7 @@ Banach space in which the smooth perturbations are dense.
 * `TauCeti.NormedContDiffMapSupportedIn.continuousLinearEquiv`: the identity, as a continuous
   linear equivalence with `𝓓^{ℓ}_{K}(E, F)`.
 * `TauCeti.NormedContDiffMapSupportedIn.jet`: the jets `(D^j f|_K)_{j ≤ ℓ}`.
+* `TauCeti.NormedContDiffMapSupportedIn.jetₗᵢ`: the jet map, as a linear isometry.
 
 ## Main results
 
@@ -109,15 +110,22 @@ theorem withSeminorms_supSeminorm_self :
   · rw [Finset.sup_singleton, one_smul]
     exact supSeminorm_le_supSeminorm_self 𝕜 i
 
+/-- The seminorms `N_j` do not depend on the field of scalars. -/
+theorem seminorm_apply_eq_of_scalars {n : ℕ∞} (j : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.seminorm 𝕜 E F n K j f =
+      ContDiffMapSupportedIn.seminorm ℝ E F n K j f := by
+  rw [ContDiffMapSupportedIn.seminorm_apply, ContDiffMapSupportedIn.seminorm_apply,
+    structureMapCLM_eq_of_scalars 𝕜 ℝ]
+
 /-- The seminorms `max_{j ≤ i} N_j` do not depend on the field of scalars. -/
 theorem supSeminorm_apply_eq_of_scalars {n : ℕ∞} (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
     ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K i f =
       ContDiffMapSupportedIn.supSeminorm ℝ E F n K i f :=
   le_antisymm
     (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
-      (Seminorm.le_finset_sup_apply (p := ContDiffMapSupportedIn.seminorm ℝ E F n K) hj :))
+      (seminorm_apply_eq_of_scalars _ f).trans_le (Seminorm.le_finset_sup_apply hj))
     (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
-      (Seminorm.le_finset_sup_apply (p := ContDiffMapSupportedIn.seminorm 𝕜 E F n K) hj :))
+      (seminorm_apply_eq_of_scalars _ f).symm.trans_le (Seminorm.le_finset_sup_apply hj))
 
 /-- For a finite order `ℓ`, the seminorm `max_{j ≤ ℓ} N_j` vanishes only at zero. -/
 theorem supSeminorm_self_eq_zero_iff (f : 𝓓^{ℓ}_{K}(E, F)) :
@@ -164,35 +172,35 @@ instance : FunLike (NormedContDiffMapSupportedIn E F ℓ K) E F :=
 variable {E F ℓ K}
 
 /-- The underlying map of `f` in `𝓓^{ℓ}_{K}(E, F)`. -/
-@[expose] def toContDiffMapSupportedIn (f : NormedContDiffMapSupportedIn E F ℓ K) :
+def toContDiffMapSupportedIn (f : NormedContDiffMapSupportedIn E F ℓ K) :
     𝓓^{ℓ}_{K}(E, F) :=
   f
 
 /-- A map of `𝓓^{ℓ}_{K}(E, F)`, regarded in the normed space. -/
-@[expose] def ofContDiffMapSupportedIn (f : 𝓓^{ℓ}_{K}(E, F)) :
+def ofContDiffMapSupportedIn (f : 𝓓^{ℓ}_{K}(E, F)) :
     NormedContDiffMapSupportedIn E F ℓ K :=
   f
 
 @[simp]
 theorem coe_toContDiffMapSupportedIn (f : NormedContDiffMapSupportedIn E F ℓ K) :
     ⇑(toContDiffMapSupportedIn f) = f :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_ofContDiffMapSupportedIn (f : 𝓓^{ℓ}_{K}(E, F)) :
     ⇑(ofContDiffMapSupportedIn f) = f :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem toContDiffMapSupportedIn_ofContDiffMapSupportedIn (f : 𝓓^{ℓ}_{K}(E, F)) :
     toContDiffMapSupportedIn (ofContDiffMapSupportedIn f) = f :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem ofContDiffMapSupportedIn_toContDiffMapSupportedIn
     (f : NormedContDiffMapSupportedIn E F ℓ K) :
     ofContDiffMapSupportedIn (toContDiffMapSupportedIn f) = f :=
-  rfl
+  (rfl)
 
 @[ext]
 theorem ext {f g : NormedContDiffMapSupportedIn E F ℓ K} (h : ∀ x, f x = g x) : f = g :=
@@ -250,8 +258,7 @@ instance normedAddCommGroup : NormedAddCommGroup (NormedContDiffMapSupportedIn E
     { norm_nonneg f := apply_nonneg p f
       norm_smul c f := map_smul_eq_mul p c f
       norm_triangle f g := map_add_le_add p f g
-      norm_eq_zero_iff f := ContDiffMapSupportedIn.supSeminorm_self_eq_zero_iff
-        (toContDiffMapSupportedIn f) }
+      norm_eq_zero_iff := ContDiffMapSupportedIn.supSeminorm_self_eq_zero_iff (𝕜 := ℝ) }
     (by
       -- The uniform structure `U` of the synonym is, by definition, the one of `𝓓^{ℓ}_{K}(E, F)`.
       change 𝓤[(ContDiffMapSupportedIn.uniformSpace : UniformSpace 𝓓^{ℓ}_{K}(E, F))] = _
@@ -262,7 +269,7 @@ instance normedAddCommGroup : NormedAddCommGroup (NormedContDiffMapSupportedIn E
 most `ℓ`. -/
 theorem norm_def (f : NormedContDiffMapSupportedIn E F ℓ K) :
     ‖f‖ = ContDiffMapSupportedIn.supSeminorm ℝ E F ℓ K ℓ (toContDiffMapSupportedIn f) :=
-  rfl
+  (rfl)
 
 variable [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 
@@ -341,6 +348,30 @@ theorem jet_add (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f + g) = j
   exact iteratedFDeriv_add_apply (f.contDiff.contDiffAt.of_le hj)
     (g.contDiff.contDiffAt.of_le hj)
 
+/-- The jets of the zero map vanish. -/
+@[simp]
+theorem jet_zero : jet (0 : NormedContDiffMapSupportedIn E F ℓ K) = 0 := by
+  funext j
+  ext x : 1
+  simp
+
+/-- The jet map commutes with scalar multiplication. -/
+theorem jet_smul (c : 𝕜) (f : NormedContDiffMapSupportedIn E F ℓ K) :
+    jet (c • f) = c • jet f := by
+  funext j
+  ext x : 1
+  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.2
+  simp only [jet_apply, coe_smul, Pi.smul_apply, ContinuousMap.smul_apply]
+  exact iteratedFDeriv_const_smul_apply (f.contDiff.contDiffAt.of_le hj)
+
+/-- The jet map commutes with negation. -/
+theorem jet_neg (f : NormedContDiffMapSupportedIn E F ℓ K) : jet (-f) = -jet f := by
+  rw [eq_neg_iff_add_eq_zero, ← jet_add, neg_add_cancel, jet_zero]
+
+/-- The jet map is subtractive. -/
+theorem jet_sub (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f - g) = jet f - jet g := by
+  rw [sub_eq_add_neg, jet_add, jet_neg, ← sub_eq_add_neg]
+
 /-- The norm of `f` is the sup norm of its jets on `K`. -/
 theorem norm_jet (f : NormedContDiffMapSupportedIn E F ℓ K) : ‖jet f‖ = ‖f‖ := by
   refine le_antisymm ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun j ↦ ?_) ?_
@@ -352,9 +383,22 @@ theorem norm_jet (f : NormedContDiffMapSupportedIn E F ℓ K) : ‖jet f‖ = �
       _ ≤ ‖jet f ⟨j, Nat.lt_succ_of_le hj⟩‖ := ContinuousMap.norm_coe_le_norm _ _
       _ ≤ ‖jet f‖ := norm_le_pi_norm (jet f) _
 
+variable (𝕜 E F ℓ K) in
+/-- The jet map `f ↦ (D^j f|_K)_{j ≤ ℓ}`, as a linear isometry. -/
+def jetₗᵢ :
+    NormedContDiffMapSupportedIn E F ℓ K →ₗᵢ[𝕜] (j : Fin (ℓ + 1)) → C(K, E [×j]→L[ℝ] F) where
+  toFun := jet
+  map_add' := jet_add
+  map_smul' := jet_smul
+  norm_map' := norm_jet
+
+@[simp]
+theorem coe_jetₗᵢ : ⇑(jetₗᵢ 𝕜 E F ℓ K) = jet :=
+  (rfl)
+
 /-- The jet map is an isometry. -/
 theorem isometry_jet : Isometry (jet : NormedContDiffMapSupportedIn E F ℓ K → _) :=
-  AddMonoidHomClass.isometry_of_norm (AddMonoidHom.mk' jet jet_add) norm_jet
+  (jetₗᵢ ℝ E F ℓ K).isometry
 
 /-- **Separability.** When `F` is second countable, the `C^ℓ` maps supported in `K` form a second
 countable, hence separable, space. If `E` is finite-dimensional, their jets embed them
