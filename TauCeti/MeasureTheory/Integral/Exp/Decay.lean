@@ -154,7 +154,8 @@ theorem memLp_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
   refine (integrable_norm_rpow_iff hm hp0 hptop).1 ((integrable_exp_neg_mul_abs
     (mul_pos (ENNReal.toReal_pos hp0 hptop) ha)).congr (.of_forall fun x ↦ ?_))
   simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
-  ring_nf
+  congr 1
+  ring
 
 /-- The two-sided exponential `exp (-(a * |x|))` has integral `2 / a` when `0 < a`. -/
 theorem integral_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :

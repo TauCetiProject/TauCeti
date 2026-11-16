@@ -49,14 +49,15 @@ with `AL` the class of `A - w' • id`. The results are:
   (`TauCeti.exp_mul_abs_mul_norm_sub_le`);
 * **the kernel of the extended operator** (`TauCeti.WeakDerivStep.coprod_endTailL_eq_zero_iff`):
   `(ξ, v)` lies in it exactly when `u = exp (-w) • ξ + ∑ i, χ i • v i` solves `u' + A u = 0`. So
-  the kernel consists of the solutions that converge to the free variables at the weighted rate;
+  the kernel corresponds to the solutions of this form;
 * **the index** (`TauCeti.WeakDerivStep.index_coprod_endTailL`): when the weighted operator is
   Fredholm, the extended operator has index `index D_{A - w'} + ∑ i, dim K i`.
 
 For the constant trajectory at a critical manifold filling `E`, the coefficient is `A = 0`. With
 the weight `log cosh` the weighted operator is `d/ds - tanh s`, of index `-dim E`, and the two end
 variables raise the index to `dim E`, the dimension of the critical manifold
-(`TauCeti.WeakDerivStep.index_coprod_endTailL_neg_tanh_smul_id`).
+(`TauCeti.WeakDerivStep.index_coprod_endTailL_neg_tanh_smul_id`, stated for any finite family of
+free variables in `E`).
 
 ## References
 
@@ -127,16 +128,18 @@ theorem memLp_endTail {p : ℝ≥0∞} (hw : Continuous w) (hχ : ContDiff ℝ 1
       ((hw.rexp.mul hχ.continuous).smul (hA.clm_apply continuous_const)).aestronglyMeasurable
       (.of_forall fun s ↦ ?_)
     have hAv : A s v = (A s - A₀) v := by simp [hv]
-    rw [hAv, norm_smul, Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _), Real.norm_eq_abs]
+    rw [hAv]
+    simp only [norm_smul, Real.norm_eq_abs, abs_mul, Real.abs_exp, abs_norm]
     calc Real.exp (w s) * |χ s| * ‖(A s - A₀) v‖
         ≤ Real.exp (w s) * |χ s| * (‖A s - A₀‖ * ‖v‖) := by
           gcongr
           exact (A s - A₀).le_opNorm v
       _ = Real.exp (w s) * |χ s| * ‖A s - A₀‖ * ‖v‖ := by ring
       _ ≤ C * Real.exp (-(ε * |s|)) * ‖v‖ := mul_le_mul_of_nonneg_right (htail s) (norm_nonneg v)
-      _ ≤ |C * ‖v‖ * Real.exp (-(ε * |s|))| := by
+      _ ≤ |C| * ‖v‖ * Real.exp (-(ε * |s|)) := by
           rw [mul_right_comm]
-          exact le_abs_self _
+          gcongr
+          exact le_abs_self C
   refine (h₁.add h₂).congr_norm (continuous_endTail hw hχ hA v).aestronglyMeasurable
     (.of_forall fun s ↦ ?_)
   simp [endTail_apply, smul_add, mul_smul]
@@ -159,17 +162,19 @@ theorem exp_mul_abs_mul_norm_sub_le (hχ : ∀ s, |χ s| ≤ 1) {A₀ : F →L[�
         · exact hχ s
         · exact hA s hs
     _ = C * Real.exp c * Real.exp (-((κ - δ) * |s|)) := by
-        rw [mul_one, ← mul_assoc, mul_comm (Real.exp _) C, mul_assoc, mul_assoc, ← Real.exp_add,
-          ← Real.exp_add]
-        ring_nf
+        have : Real.exp (δ * |s| + c) * Real.exp (-(κ * |s|)) =
+            Real.exp c * Real.exp (-((κ - δ) * |s|)) := by
+          rw [← Real.exp_add, ← Real.exp_add]
+          congr 1
+          ring
+        linear_combination C * this
 
-/-- For the zero coefficient, the end tail `cosh • χ' • v` of every free variable lies in `Lᵖ`,
-whatever the cutoff, as long as its derivative has compact support. -/
-theorem memLp_endTail_log_cosh_zero {p : ℝ≥0∞} (hχ : ContDiff ℝ 1 χ)
+/-- For the zero coefficient and any continuous weight `w`, the end tail `exp w • χ' • v` of every
+free variable lies in `Lᵖ`, whatever the cutoff, as long as its derivative has compact support. -/
+theorem memLp_endTail_zero {p : ℝ≥0∞} (hw : Continuous w) (hχ : ContDiff ℝ 1 χ)
     (hχ' : HasCompactSupport (deriv χ)) (v : F) :
-    MemLp (endTail (fun s ↦ Real.log (Real.cosh s)) χ (fun _ ↦ 0) v) p :=
-  memLp_endTail (A₀ := 0) (C := 0) (Real.continuous_cosh.log fun s ↦ (Real.cosh_pos s).ne') hχ
-    hχ' continuous_const rfl one_pos fun s ↦ by simp
+    MemLp (endTail w χ (fun _ ↦ 0) v) p :=
+  memLp_endTail (A₀ := 0) (C := 0) hw hχ hχ' continuous_const rfl one_pos fun s ↦ by simp
 
 end EndTail
 
@@ -209,36 +214,6 @@ theorem endTailL_apply_ae (hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) 
     endTailL w χ A hmem v =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ ∑ i, endTail w (χ i) A (v i) s :=
   MemLp.coeFn_toLp (memLp_sum_endTail hmem v)
-
-omit [Fact (1 ≤ p)] [Fintype ι] [∀ i, FiniteDimensional ℝ (K i)] in
-/-- **Change of unknown in the weighted equation.** Write a path as `ξ = exp w • (u - S)`, where
-`S` has derivative `S'`. Then `ξ` solves the weighted equation
-`ξ' = w' ξ - A ξ - exp w • (S' + A S)` exactly when `u = exp (-w) • ξ + S` solves
-`u' + A u = 0`. -/
-private theorem forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add {w' : ℝ → ℝ}
-    (hw : ∀ s, HasDerivAt w (w' s) s) {S S' ξ : ℝ → F} (hS : ∀ s, HasDerivAt S (S' s) s) :
-    (∀ s, HasDerivAt ξ
-      (w' s • ξ s - A s (ξ s) - Real.exp (w s) • (S' s + A s (S s))) s) ↔
-      ∀ s, HasDerivAt (fun s ↦ Real.exp (-w s) • ξ s + S s)
-        (-A s (Real.exp (-w s) • ξ s + S s)) s := by
-  have hexp (s : ℝ) : Real.exp (-w s) * Real.exp (w s) = 1 := by
-    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
-  have hexp' (s : ℝ) : Real.exp (w s) * Real.exp (-w s) = 1 := by
-    rw [mul_comm, hexp]
-  constructor
-  · intro h s
-    refine (((hw s).neg.exp.smul (h s)).add (hS s)).congr_deriv ?_
-    simp only [Pi.neg_apply, map_add, map_smul, smul_add, smul_sub, smul_smul, hexp, one_smul]
-    module
-  · intro h s
-    convert (hw s).exp.smul ((h s).sub (hS s)) using 1
-    · ext s
-      simp only [Pi.smul_apply', Pi.sub_apply, add_sub_cancel_right, smul_smul, hexp', one_smul]
-    simp only [Pi.sub_apply, map_add, map_smul]
-    -- The scalar identities only use `exp w * exp (-w) = 1`.
-    match_scalars <;> first
-      | ring1 | linear_combination hexp' s | linear_combination -hexp' s
-      | linear_combination w' s * hexp' s | linear_combination -w' s * hexp' s
 
 /-- The extended operator vanishes at `(ξ, v)` exactly when the weak derivative of `ξ` is,
 almost everywhere, the right-hand side `w' ξ - A ξ - exp w • (S' + A S)` of the weighted
@@ -312,7 +287,7 @@ theorem coprod_endTailL_eq_zero_iff [CompleteSpace F] (hp : p ≠ ∞) {w' : ℝ
           ((hχ i).continuous_deriv le_rfl).smul continuous_const).add
         (hA.clm_apply (continuous_iff_continuousAt.2 fun s ↦ (hS s).continuousAt))))
   rw [coprod_endTailL_eq_zero_iff_ae hp hAL hmem ξ v, ← forall_hasDerivAt_toZeroAtInfty_iff hp ξ hg]
-  exact forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add hw hS
+  exact TauCeti.forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add hw hS
 
 /-- **The index of the extended operator.** If the weighted trajectory operator is Fredholm,
 adjoining the free endpoint variables raises its index by their number of dimensions. -/
@@ -335,10 +310,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- **The constant trajectory at a critical manifold.** Along a constant trajectory at a critical
 manifold filling `E`, the linearized coefficient is `A = 0`, whose limits have kernel `E`. With the
 weight `log cosh`, of slope `tanh`, the weighted operator is `d/ds - tanh s`, of index `-dim E`.
-Adjoining a free variable in `E` at each end `i`, with any cutoffs `χ i`, gives index
-`(card ι - 1) dim E`. For the two ends of the line this is `dim E`, the dimension of the critical
-manifold, as the Morse–Bott count `ind C - ind C + dim C` predicts for a trajectory from `C` to
-itself. -/
+Adjoining an arbitrary finite family `ι` of free variables in `E`, with arbitrary cutoffs `χ i`,
+gives index `(card ι - 1) dim E`; this is index arithmetic and does not use the cutoffs. In the
+Morse–Bott situation, which the theorem does not assume, `card ι = 2` with the cutoffs attached
+to `-∞` and `+∞`, and the index is `dim E`, the dimension of the critical manifold, as the
+Morse–Bott count `ind C - ind C + dim C` predicts for a trajectory from `C` to itself. -/
 theorem index_coprod_endTailL_neg_tanh_smul_id {χ : ι → ℝ → ℝ} (hχ : ∀ i, ContDiff ℝ 1 (χ i))
     (hχ' : ∀ i, HasCompactSupport (deriv (χ i)))
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -346,7 +322,8 @@ theorem index_coprod_endTailL_neg_tanh_smul_id {χ : ι → ℝ → ℝ} (hχ : 
       fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) :
     ((trajectoryOperator (p := 2) AL).coprod (endTailL (K := fun _ ↦ ⊤)
       (fun s ↦ Real.log (Real.cosh s)) χ (fun _ ↦ 0)
-      fun i v _ ↦ TauCeti.memLp_endTail_log_cosh_zero (hχ i) (hχ' i) v)).index =
+      fun i v _ ↦ TauCeti.memLp_endTail_zero
+        (Real.continuous_cosh.log fun s ↦ (Real.cosh_pos s).ne') (hχ i) (hχ' i) v)).index =
       (Fintype.card ι - 1 : ℤ) * Module.finrank ℝ E := by
   rw [index_coprod_endTailL (isFredholm_trajectoryOperator_neg_tanh_smul_id hAL),
     index_trajectoryOperator_neg_tanh_smul_id hAL]
