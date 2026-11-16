@@ -15,8 +15,8 @@ import TauCeti.Geometry.Manifold.RegularValue.Fibre
 
 Let `f : M → N` be a proper `C¹` map from a Hausdorff boundaryless manifold to a manifold modelled
 on the same space, with orientations `o` of `M` and `o'` of `N`, and let `y` be a regular
-value of `f`; every continuous map from a compact space is proper. The fibre over `y` is finite and
-`f` is a local diffeomorphism at each of its points.
+value of `f`; every continuous map from a compact space to a Hausdorff space is proper. The fibre
+over `y` is finite and `f` is a local diffeomorphism at each of its points.
 Near `y`, the preimage of a small neighbourhood `V` of `y` is therefore a finite disjoint union of
 open sheets, each carried diffeomorphically onto its image by `f`, and on each sheet `f` either
 preserves or reverses orientation, according to its orientation sign at the point of the fibre. This

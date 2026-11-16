@@ -27,8 +27,8 @@ dimension is `0` at every value.
 
 The *mapping degree* `TauCeti.degree o o' f` is the signed count at a regular value chosen
 arbitrarily, and `0` when there is none, for instance when `N` is empty. That this choice does not
-matter, for a proper smooth map from a boundaryless manifold to a connected σ-compact one, is
-proved in `TauCeti.Geometry.Manifold.Degree.Global`.
+matter, for a proper smooth map from a Hausdorff boundaryless manifold to a connected σ-compact
+Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Global`.
 
 ## Main definitions
 
@@ -168,9 +168,9 @@ theorem degreeAtRegularValue_modEq_ncard (hy : IsRegularValue I J f y) :
 open Classical in
 /-- The *mapping degree* of `f : M → N` with respect to orientations `o` of `M` and `o'` of `N`:
 the signed count `degreeAtRegularValue o o' f y` of the fibre over a regular value `y`, chosen
-arbitrarily, and `0` if `f` has no regular value. For a proper smooth map from a boundaryless
-manifold to a connected σ-compact boundaryless manifold of the same dimension the choice does not
-matter (`TauCeti.degree_eq_degreeAtRegularValue`). -/
+arbitrarily, and `0` if `f` has no regular value. For a proper smooth map from a Hausdorff
+boundaryless manifold to a connected σ-compact Hausdorff boundaryless manifold of the same
+dimension the choice does not matter (`TauCeti.degree_eq_degreeAtRegularValue`). -/
 def degree (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι) (f : M → N) : ℤ :=
   if h : ∃ y, IsRegularValue I J f y then degreeAtRegularValue o o' f h.choose else 0
 
