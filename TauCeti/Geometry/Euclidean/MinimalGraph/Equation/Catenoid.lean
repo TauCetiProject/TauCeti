@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
 public import Mathlib.Analysis.SpecialFunctions.Arcosh
-public import TauCeti.Analysis.Calculus.Gradient
-public import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Dual
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
+import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
 # The upper half-catenoid as a minimal graph
@@ -28,18 +30,18 @@ open scoped Gradient Topology
 namespace TauCeti.MinimalGraph
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E]
+  [CompleteSpace E]
 
 /-- The radial minimal-graph flux of the upper half-catenoid. -/
 def catenoidRadialFlux (ρ : ℝ) : ℝ :=
   ρ * (Real.sqrt (ρ ^ 2 - 1))⁻¹ /
     Real.sqrt (1 + ((Real.sqrt (ρ ^ 2 - 1))⁻¹) ^ 2)
 
-@[simp] theorem catenoidRadialFlux_apply (ρ : ℝ) :
+theorem catenoidRadialFlux_apply (ρ : ℝ) :
     catenoidRadialFlux ρ = ρ * (Real.sqrt (ρ ^ 2 - 1))⁻¹ /
       Real.sqrt (1 + ((Real.sqrt (ρ ^ 2 - 1))⁻¹) ^ 2) := (rfl)
 
-/-- The radial flux is defined using the actual derivative of `arcosh` on `ρ > 1`. -/
+/-- On `ρ > 1`, the radial flux agrees with the expression using the derivative of `arcosh`. -/
 theorem catenoidRadialFlux_eq_deriv {ρ : ℝ} (hρ : 1 < ρ) :
     catenoidRadialFlux ρ = ρ * deriv Real.arcosh ρ /
       Real.sqrt (1 + (deriv Real.arcosh ρ) ^ 2) := by
@@ -73,23 +75,27 @@ theorem deriv_catenoidRadialFlux_eq_zero {ρ : ℝ} (hρ : 1 < ρ) :
 /-- The upper half-catenoid height on the exterior of the unit ball. -/
 def upperCatenoidHeight (x : E) : ℝ := Real.arcosh ‖x‖
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
+omit [InnerProductSpace ℝ E] [CompleteSpace E] in
 @[simp] theorem upperCatenoidHeight_apply (x : E) :
     upperCatenoidHeight x = Real.arcosh ‖x‖ := (rfl)
+
+omit [CompleteSpace E] in
+/-- The upper half-catenoid height is smooth outside the unit ball. -/
+theorem contDiffAt_upperCatenoidHeight {n : WithTop ℕ∞} {x : E} (hx : 1 < ‖x‖) :
+    ContDiffAt ℝ n upperCatenoidHeight x :=
+  (Real.contDiffAt_arcosh hx).comp x
+    (contDiffAt_norm ℝ (norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hx))))
 
 /-- The gradient of the upper half-catenoid height outside the unit ball. -/
 theorem hasGradientAt_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
     HasGradientAt upperCatenoidHeight
       ((Real.sqrt (‖x‖ ^ 2 - 1))⁻¹ • (‖x‖⁻¹ • x)) x := by
+  have hx0 : x ≠ 0 := norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hx))
   have hn : HasGradientAt (fun y : E ↦ ‖y‖) (‖x‖⁻¹ • x) x := by
-    rw [hasGradientAt_iff_hasFDerivAt]
-    convert TauCeti.hasFDerivAt_norm_of_ne
-      (norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hx))) using 1
-    ext v
-    simp [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+    simpa using (TauCeti.hasFDerivAt_norm_of_ne hx0).hasGradientAt
   exact (Real.hasDerivAt_arcosh hx).comp_hasGradientAt hn
 
-/-- The normalized gradient of the upper half-catenoid is the inverse-square radial field. -/
+/-- The normalized gradient of the upper half-catenoid is the radial field `x / ‖x‖²`. -/
 theorem areaFlux_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
     areaFlux upperCatenoidHeight x = (‖x‖ ^ 2)⁻¹ • x := by
   rw [areaFlux_apply]
@@ -115,26 +121,40 @@ theorem areaFlux_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
   simp only [smul_smul]
   rw [hscalar]
 
-/-- The upper half-catenoid solves the two-dimensional minimal graph equation. -/
-theorem fluxDivergence_upperCatenoidHeight (hE : Module.finrank ℝ E = 2)
-    {x : E} (hx : 1 < ‖x‖) : fluxDivergence upperCatenoidHeight x = 0 := by
+omit [CompleteSpace E] in
+/-- The divergence of the upper half-catenoid flux in arbitrary finite dimension. -/
+theorem fluxDivergence_upperCatenoidHeight [FiniteDimensional ℝ E]
+    {x : E} (hx : 1 < ‖x‖) :
+    fluxDivergence upperCatenoidHeight x = ((Module.finrank ℝ E : ℝ) - 2) / ‖x‖ ^ 2 := by
+  have hx0 : x ≠ 0 := norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hx))
   have hlocal : areaFlux upperCatenoidHeight =ᶠ[𝓝 x] ∇ (fun y : E ↦ Real.log ‖y‖) := by
     have hopen : IsOpen {y : E | 1 < ‖y‖} := isOpen_lt continuous_const continuous_norm
     filter_upwards [hopen.mem_nhds hx] with y hy
     rw [areaFlux_upperCatenoidHeight hy]
     symm
-    apply HasGradientAt.gradient
-    rw [hasGradientAt_iff_hasFDerivAt]
-    convert TauCeti.hasFDerivAt_log_norm_of_ne
-      (norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hy))) using 1
-    ext v
-    simp [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+    have hy0 : y ≠ 0 := norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hy))
+    simpa using (TauCeti.hasFDerivAt_log_norm_of_ne hy0).hasGradientAt.gradient
   rw [fluxDivergence_def, hlocal.fderiv_eq]
   have hlap := TauCeti.laplacian_eq_trace_iteratedGradientChain_one
     (fun y : E ↦ Real.log ‖y‖) x
   rw [TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero] at hlap
-  rw [← hlap, TauCeti.laplacian_log_norm_of_ne
-    (norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hx))), hE]
+  rw [← hlap, TauCeti.laplacian_log_norm_of_ne hx0]
+
+omit [CompleteSpace E] in
+/-- The upper half-catenoid solves the two-dimensional divergence equation. -/
+theorem fluxDivergence_upperCatenoidHeight_eq_zero [FiniteDimensional ℝ E]
+    (hE : Module.finrank ℝ E = 2) {x : E} (hx : 1 < ‖x‖) :
+    fluxDivergence upperCatenoidHeight x = 0 := by
+  rw [fluxDivergence_upperCatenoidHeight hx, hE]
   norm_num
+
+omit [CompleteSpace E] in
+/-- The upper half-catenoid solves the two-dimensional nondivergence equation. -/
+theorem nondivergenceOperator_upperCatenoidHeight [FiniteDimensional ℝ E]
+    (hE : Module.finrank ℝ E = 2) {x : E} (hx : 1 < ‖x‖) :
+    nondivergenceOperator upperCatenoidHeight x = 0 := by
+  have hu : ContDiffAt ℝ 2 upperCatenoidHeight x := contDiffAt_upperCatenoidHeight hx
+  have hgrad := (hu.gradient_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  exact (fluxDivergence_eq_zero_iff hgrad).1 (fluxDivergence_upperCatenoidHeight_eq_zero hE hx)
 
 end TauCeti.MinimalGraph

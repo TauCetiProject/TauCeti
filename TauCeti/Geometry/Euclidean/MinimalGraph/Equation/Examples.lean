@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
-public import Mathlib.Analysis.Calculus.ContDiff.WithLp
-public import Mathlib.Analysis.Calculus.FDeriv.WithLp
-public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
-public import TauCeti.Analysis.Calculus.Gradient
-public import TauCeti.Analysis.Calculus.SecondDerivative
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
+import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 
 /-!
 # Model checks for the Euclidean minimal graph equation
@@ -44,29 +48,25 @@ omit [FiniteDimensional ℝ E] in
 theorem affineHeight_apply (a : E) (c : ℝ) (x : E) :
     affineHeight a c x = c + inner ℝ a x := (rfl)
 
+omit [FiniteDimensional ℝ E] in
 /-- The gradient of an affine height function is constant. -/
-theorem gradient_affineHeight (a : E) (c : ℝ) (x : E) : ∇ (affineHeight a c) x = a := by
-  rw [funext (affineHeight_apply a c)]
+@[simp]
+theorem gradient_affineHeight [CompleteSpace E] (a : E) (c : ℝ) (x : E) :
+    ∇ (affineHeight a c) x = a := by
+  apply (InnerProductSpace.toDual ℝ E).injective
+  rw [toDual_gradient, funext (affineHeight_apply a c)]
   simp_rw [← InnerProductSpace.toDual_apply_apply]
-  unfold gradient
   rw [fderiv_const_add, ContinuousLinearMap.fderiv]
-  exact (InnerProductSpace.toDual ℝ E).symm_apply_apply a
 
 /-- Every affine graph solves the nondivergence minimal graph equation. -/
+@[simp]
 theorem nondivergenceOperator_affineHeight (a : E) (c : ℝ) (x : E) :
     nondivergenceOperator (affineHeight a c) x = 0 := by
-  have hgrad : (∇ (affineHeight a c)) = fun _ ↦ a := funext (gradient_affineHeight a c)
-  have hF : fderiv ℝ (affineHeight a c) = fun _ ↦ InnerProductSpace.toDual ℝ E a := by
-    funext y
-    rw [funext (affineHeight_apply a c)]
-    simp_rw [← InnerProductSpace.toDual_apply_apply]
-    rw [fderiv_const_add, ContinuousLinearMap.fderiv]
-  rw [nondivergenceOperator_eq, TauCeti.laplacian_eq_trace_iteratedGradientChain_one,
-    TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero]
-  rw [hgrad, hF]
+  rw [nondivergenceOperator_def, funext (gradient_affineHeight a c)]
   simp
 
 /-- Every affine graph solves the divergence minimal graph equation. -/
+@[simp]
 theorem fluxDivergence_affineHeight (a : E) (c : ℝ) (x : E) :
     fluxDivergence (affineHeight a c) x = 0 := by
   rw [fluxDivergence_eq_rpow_mul_nondivergenceOperator (by
@@ -76,46 +76,24 @@ theorem fluxDivergence_affineHeight (a : E) (c : ℝ) (x : E) :
 
 local notation "Plane" => EuclideanSpace ℝ (Fin 2)
 
-/-- On the Euclidean plane, the squared norm gives `4 + 8‖x‖²` in the graph operator. -/
-theorem nondivergenceOperator_norm_sq (x : Plane) :
-    nondivergenceOperator (fun y : Plane ↦ ‖y‖ ^ 2) x = 4 + 8 * ‖x‖ ^ 2 := by
-  have hgrad : ∇ (fun y : Plane ↦ ‖y‖ ^ 2) x = (2 : ℝ) • x := by
-    have h := TauCeti.gradient_mul_norm_sq_add (E := Plane) 2 0 x
-    have hfun : (fun y : Plane ↦ (2 : ℝ) / 2 * ‖y‖ ^ 2 + 0) =
-        (fun y : Plane ↦ ‖y‖ ^ 2) := by
-      funext y
-      norm_num
-    rw [hfun] at h
-    exact h
+/-- The squared norm graph operator in any finite-dimensional Euclidean space. -/
+theorem nondivergenceOperator_norm_sq (x : E) :
+    nondivergenceOperator (fun y : E ↦ ‖y‖ ^ 2) x =
+      2 * (Module.finrank ℝ E : ℝ) + 8 * ((Module.finrank ℝ E : ℝ) - 1) * ‖x‖ ^ 2 := by
+  have hgrad : ∇ (fun y : E ↦ ‖y‖ ^ 2) x = (2 : ℝ) • x := by
+    simpa only [sub_zero] using TauCeti.gradient_norm_sq_sub (0 : E) x
   rw [nondivergenceOperator_eq, hgrad, TauCeti.laplacian_norm_sq,
     TauCeti.fderiv_fderiv_norm_sq_apply]
-  simp only [finrank_euclideanSpace_fin, Nat.cast_ofNat]
-  rw [real_inner_self_eq_norm_sq, norm_smul]
-  norm_num only [norm_smul, Real.norm_ofNat, inner_smul_left, inner_smul_right,
-    real_inner_self_eq_norm_sq]
+  simp [norm_smul]
   ring
 
-/-- The squared norm is a strict negative control for the minimal graph equation. -/
-theorem nondivergenceOperator_norm_sq_pos (x : Plane) :
-    0 < nondivergenceOperator (fun y : Plane ↦ ‖y‖ ^ 2) x := by
+/-- In positive dimension the squared norm does not solve the minimal graph equation. -/
+theorem nondivergenceOperator_norm_sq_pos [Nontrivial E] (x : E) :
+    0 < nondivergenceOperator (fun y : E ↦ ‖y‖ ^ 2) x := by
   rw [nondivergenceOperator_norm_sq]
+  have hn : (1 : ℝ) ≤ Module.finrank ℝ E := by
+    exact_mod_cast Module.finrank_pos (R := ℝ) (M := E)
   positivity
-
-/-- Exchange the two Cartesian coordinates of the Euclidean plane. -/
-private def coordinateSwap : Plane →L[ℝ] Plane where
-  toFun x := WithLp.toLp 2 ![x 1, x 0]
-  map_add' x y := by
-    ext i
-    fin_cases i <;> simp
-  map_smul' r x := by
-    ext i
-    fin_cases i <;> simp
-
-private theorem coordinateSwap_apply (x : Plane) :
-    coordinateSwap x = WithLp.toLp 2 ![x 1, x 0] := (rfl)
-
-@[simp] private theorem coordinateSwap_apply_zero (x : Plane) : (coordinateSwap x) 0 = x 1 := (rfl)
-@[simp] private theorem coordinateSwap_apply_one (x : Plane) : (coordinateSwap x) 1 = x 0 := (rfl)
 
 /-- The saddle height `xy` in Cartesian coordinates. -/
 def saddleHeight (x : Plane) : ℝ := x 0 * x 1
@@ -135,40 +113,38 @@ theorem gradient_saddleHeight (x : Plane) :
     (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 1).fderiv, InnerProductSpace.toDual_apply_apply,
     EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two, mul_comm, add_comm]
 
+private theorem gradient_saddleHeight_eq :
+    ∇ saddleHeight =
+      (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
+        (Equiv.swap (0 : Fin 2) 1)).toContinuousLinearMap := by
+  funext x
+  rw [gradient_saddleHeight]
+  ext i
+  fin_cases i <;> simp [LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft']
+
 /-- The saddle height `xy` is harmonic. -/
+@[simp]
 theorem laplacian_saddleHeight (x : Plane) : Δ saddleHeight x = 0 := by
   rw [TauCeti.laplacian_eq_trace_iteratedGradientChain_one,
-    TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero]
-  have hgrad : (∇ saddleHeight) = coordinateSwap :=
-    funext fun y ↦ (gradient_saddleHeight y).trans (coordinateSwap_apply y).symm
-  rw [hgrad, ContinuousLinearMap.fderiv]
+    TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero,
+    gradient_saddleHeight_eq, ContinuousLinearMap.fderiv]
   rw [LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin 2) ℝ)]
-  simp [Fin.sum_univ_two, EuclideanSpace.inner_single_left]
-
-/-- The first derivative of `xy` is the Riesz dual of the coordinate exchange. -/
-private theorem fderiv_saddleHeight_eq :
-    fderiv ℝ saddleHeight =
-      (InnerProductSpace.toDual ℝ Plane).toContinuousLinearMap.comp coordinateSwap := by
-  funext x
-  rw [← toDual_gradient, gradient_saddleHeight, ← coordinateSwap_apply]
-  ext v
-  simp [ContinuousLinearMap.comp_apply, InnerProductSpace.toDual_apply_apply]
+  simp [EuclideanSpace.inner_single_left]
 
 /-- The nondivergence graph operator of `xy` is `-2xy`, despite its harmonicity. -/
 theorem nondivergenceOperator_saddleHeight (x : Plane) :
     nondivergenceOperator saddleHeight x = -2 * x 0 * x 1 := by
-  rw [nondivergenceOperator_eq, laplacian_saddleHeight, gradient_saddleHeight,
-    fderiv_saddleHeight_eq, ContinuousLinearMap.fderiv]
-  simp only [mul_zero, zero_sub, ContinuousLinearMap.comp_apply]
-  simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue,
-    LinearMap.coe_toContinuousLinearMap', LinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toLinearEquiv, InnerProductSpace.toDual_apply_apply,
-    EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Pi.star_apply, star_trivial,
-    Fin.sum_univ_two, Matrix.cons_val_zero, coordinateSwap_apply_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, coordinateSwap_apply_one, neg_add_rev, neg_mul]
+  have htrace := laplacian_saddleHeight x
+  rw [TauCeti.laplacian_eq_trace_iteratedGradientChain_one,
+    TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero] at htrace
+  rw [nondivergenceOperator_def, htrace, gradient_saddleHeight_eq,
+    ContinuousLinearMap.fderiv]
+  simp [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two,
+    LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft']
   ring
 
-/-- Away from the coordinate axes, the harmonic saddle graph is not minimal. -/
+/-- Away from the axes, the harmonic saddle height does not solve the nondivergence
+minimal graph equation. -/
 theorem nondivergenceOperator_saddleHeight_ne_zero (x : Plane) (h : x 0 * x 1 ≠ 0) :
     nondivergenceOperator saddleHeight x ≠ 0 := by
   rw [nondivergenceOperator_saddleHeight]
@@ -206,28 +182,14 @@ theorem fderiv_fderiv_separableHeight_apply (f g : ℝ → ℝ) (x v w : Plane)
     fderiv ℝ (fderiv ℝ (separableHeight f g)) x v w =
       iteratedDeriv 2 f (x 0) * v 0 * w 0 +
         iteratedDeriv 2 g (x 1) * v 1 * w 1 := by
-  have hp0 : ContDiffAt ℝ 2 (fun y : Plane ↦ y 0) x := contDiffAt_piLp_apply 2
-  have hp1 : ContDiffAt ℝ 2 (fun y : Plane ↦ y 1) x := contDiffAt_piLp_apply 2
-  have hfcomp := TauCeti.fderiv_fderiv_comp_apply
-    (f := f) (φ := fun y : Plane ↦ y 0) hf hp0 v w
-  have hgcomp := TauCeti.fderiv_fderiv_comp_apply
-    (f := g) (φ := fun y : Plane ↦ y 1) hg hp1 v w
-  have hsum := iteratedFDeriv_add_apply (hf.comp x hp0) (hg.comp x hp1)
-    (i := 2)
-  have hsum' := congrArg (fun L ↦ L ![v, w]) hsum
-  simp only [add_apply, iteratedFDeriv_two_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Pi.add_def, Function.comp_def] at hsum'
-  simp only [Function.comp_def] at hfcomp hgcomp
-  unfold separableHeight
-  rw [hsum', hfcomp, hgcomp]
-  have hproj (i : Fin 2) : fderiv ℝ (fun y : Plane ↦ y i) =
-      fun _ ↦ EuclideanSpace.proj i :=
-    funext fun y ↦ (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y i).fderiv
-  simp only [hproj, fderiv_const_apply, zero_apply, map_zero, add_zero]
-  rw [TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv,
-    TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv]
-  simp only [smul_eq_mul, EuclideanSpace.coe_proj]
-  ring
+  have heq : separableHeight f g =
+      (fun z : Fin 2 → ℝ ↦ ∑ i : Fin 2, ![f, g] i (z i)) ∘
+        EuclideanSpace.equiv (Fin 2) ℝ := by
+    funext y
+    simp [separableHeight, Fin.sum_univ_two]
+  rw [heq, ContinuousLinearEquiv.fderiv_fderiv_comp_right_apply_apply]
+  rw [TauCeti.fderiv_fderiv_sum_comp_eval_apply (Fin.forall_fin_two.2 ⟨hf, hg⟩)]
+  simp [Fin.sum_univ_two, iteratedDeriv_succ]
 
 /-- The flat Laplacian of a separated height is the sum of its one-variable second derivatives. -/
 theorem laplacian_separableHeight (f g : ℝ → ℝ) (x : Plane)
@@ -259,24 +221,24 @@ theorem nondivergenceOperator_separableHeight (f g : ℝ → ℝ) (x : Plane)
   ring
 
 /-- The one-dimensional profile of Scherk's graph. -/
-def logCos (t : ℝ) : ℝ := Real.log (Real.cos t)
+private def logCos (t : ℝ) : ℝ := Real.log (Real.cos t)
 
-@[simp] theorem logCos_apply (t : ℝ) : logCos t = Real.log (Real.cos t) := (rfl)
+@[simp] private theorem logCos_apply (t : ℝ) : logCos t = Real.log (Real.cos t) := (rfl)
 
-/-- The Scherk profile is twice continuously differentiable wherever the cosine is nonzero. -/
-theorem contDiffAt_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
-    ContDiffAt ℝ 2 logCos t := by
+/-- The Scherk profile is smooth wherever the cosine is nonzero. -/
+private theorem contDiffAt_logCos {n : WithTop ℕ∞} {t : ℝ} (hc : Real.cos t ≠ 0) :
+    ContDiffAt ℝ n logCos t := by
   exact (Real.contDiff_cos.contDiffAt.log hc)
 
 /-- The derivative of the Scherk profile is the negative tangent. -/
-theorem deriv_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
+private theorem deriv_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
     deriv logCos t = -Real.tan t := by
   have h := ((Real.hasDerivAt_cos t).log hc).deriv
   unfold logCos
   simpa [Real.tan_eq_sin_div_cos, neg_div] using h
 
 /-- The second derivative of the Scherk profile is the negative squared secant. -/
-theorem iteratedDeriv_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
+private theorem iteratedDeriv_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
     iteratedDeriv 2 logCos t = -(1 / Real.cos t ^ 2) := by
   rw [iteratedDeriv_succ, iteratedDeriv_succ, iteratedDeriv_zero]
   have hne : ∀ᶠ s in 𝓝 t, Real.cos s ≠ 0 :=
@@ -293,14 +255,11 @@ def scherkHeight (x : Plane) : ℝ :=
 @[simp] theorem scherkHeight_apply (x : Plane) :
     scherkHeight x = Real.log (Real.cos (x 0)) - Real.log (Real.cos (x 1)) := (rfl)
 
-/-- Scherk's graph solves the Euclidean minimal graph equation on its natural square domain. -/
+/-- Scherk's graph solves the Euclidean minimal graph equation where both cosines are nonzero. -/
 theorem nondivergenceOperator_scherkHeight (x : Plane)
-    (hx : x 0 ∈ Set.Ioo (-(Real.pi / 2)) (Real.pi / 2))
-    (hy : x 1 ∈ Set.Ioo (-(Real.pi / 2)) (Real.pi / 2)) :
+    (hcx : Real.cos (x 0) ≠ 0) (hcy : Real.cos (x 1) ≠ 0) :
     nondivergenceOperator scherkHeight x = 0 := by
-  have hcx : Real.cos (x 0) ≠ 0 := (Real.cos_pos_of_mem_Ioo hx).ne'
-  have hcy : Real.cos (x 1) ≠ 0 := (Real.cos_pos_of_mem_Ioo hy).ne'
-  have hfx := contDiffAt_logCos hcx
+  have hfx : ContDiffAt ℝ 2 logCos (x 0) := contDiffAt_logCos hcx
   have hgy : ContDiffAt ℝ 2 (fun t ↦ -logCos t) (x 1) :=
     (contDiffAt_logCos hcy).neg
   have heq : scherkHeight = separableHeight logCos (fun t ↦ -logCos t) := by
@@ -314,19 +273,16 @@ theorem nondivergenceOperator_scherkHeight (x : Plane)
   simp only [one_div, inv_inv]
   ring
 
-/-- Scherk's height also solves the divergence form on the open square. -/
+/-- Scherk's height also solves the divergence form where both cosines are nonzero. -/
 theorem fluxDivergence_scherkHeight (x : Plane)
-    (hx : x 0 ∈ Set.Ioo (-(Real.pi / 2)) (Real.pi / 2))
-    (hy : x 1 ∈ Set.Ioo (-(Real.pi / 2)) (Real.pi / 2)) :
+    (hcx : Real.cos (x 0) ≠ 0) (hcy : Real.cos (x 1) ≠ 0) :
     fluxDivergence scherkHeight x = 0 := by
-  have hcx : Real.cos (x 0) ≠ 0 := (Real.cos_pos_of_mem_Ioo hx).ne'
-  have hcy : Real.cos (x 1) ≠ 0 := (Real.cos_pos_of_mem_Ioo hy).ne'
   have hu : ContDiffAt ℝ 2 scherkHeight x := by
     unfold scherkHeight
     exact ((contDiffAt_logCos hcx).comp x (contDiffAt_piLp_apply 2)).sub
       ((contDiffAt_logCos hcy).comp x (contDiffAt_piLp_apply 2))
   have hgrad : DifferentiableAt ℝ (∇ scherkHeight) x :=
     (hu.gradient_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  exact (fluxDivergence_eq_zero_iff hgrad).2 (nondivergenceOperator_scherkHeight x hx hy)
+  exact (fluxDivergence_eq_zero_iff hgrad).2 (nondivergenceOperator_scherkHeight x hcx hcy)
 
 end TauCeti.MinimalGraph
