@@ -54,8 +54,10 @@ bounded function with `f'' ≥ κ f`, `κ > 0`, is convex and bounded, hence zer
 The constant structure `J` covers flat targets. On a torus `V / Λ` with a flat compatible
 structure, a Floer cylinder whose loops are contractible lifts to a solution on `V` of period one
 in `t`, for the lifted `Λ`-periodic Hamiltonian. Domain- or target-dependent structures, for which
-the linearized operator acquires derivatives of `J`, and the bound on `du` in terms of `H` are not
-treated here.
+the linearized operator acquires derivatives of `J`, are not treated here. For a small multiple `εH`
+of `H` and cylinders of finite energy in a compact set, the bound on `du` holds uniformly, so that
+these cylinders are time-independent
+(`TauCeti.Geometry.Symplectic.Floer.TimeIndependent.SmallMultiple`).
 
 ## References
 

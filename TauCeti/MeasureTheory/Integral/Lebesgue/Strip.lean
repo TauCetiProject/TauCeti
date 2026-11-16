@@ -7,9 +7,12 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
@@ -52,6 +55,10 @@ far out along the strip: its integrals over sets that eventually lie in `E` and 
 windows `[a + s_k, b + s_k] × T` with `|s_k| → ∞`, this says that a half-cylinder of finite energy
 carries less and less energy over its translated windows, since such windows eventually lie
 outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`).
+
+For a function on `ℝ × ℝ` periodic in the second variable, as the energy density of a Floer
+cylinder is, the integrals over all horizontal strips `ℝ × [τ, τ + 1]` of width one agree
+(`TauCeti.setLIntegral_univ_prod_Icc_add_one_eq_of_periodic`).
 -/
 
 public section
@@ -215,6 +222,24 @@ theorem setLIntegral_univ_prod_eq_zero_of_periodic {β : Type*} [MeasurableSpace
   rw [hunion]
   refine (lintegral_iUnion_le _ _).trans (le_of_eq ?_)
   simp [setLIntegral_Ioc_prod_eq_zero_of_periodic hT hμ hf hfin]
+
+/-- **Functions periodic in the second variable.** If `g` is measurable on `ℝ × ℝ` and of period
+one in its second variable, its integrals over all the horizontal strips `ℝ × [τ, τ + 1]` of
+width one agree with its integral over `ℝ × [0, 1]`. -/
+theorem setLIntegral_univ_prod_Icc_add_one_eq_of_periodic {g : ℝ × ℝ → ℝ≥0∞} (hg : Measurable g)
+    (hper : ∀ s t, g (s, t + 1) = g (s, t)) (τ : ℝ) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ Icc τ (τ + 1), g z = ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, g z := by
+  -- By Tonelli, both sides integrate over `s` the integrals of the slices over a period, and
+  -- these are the integrals of the slices over the circle `ℝ / ℤ`.
+  have key (a : ℝ) : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc a (a + 1), g z =
+      ∫⁻ s, ∫⁻ b : UnitAddCircle,
+        (show Periodic (fun t ↦ g (s, t)) 1 from fun t ↦ hper s t).lift b := by
+    rw [Measure.volume_eq_prod, ← Measure.prod_restrict, lintegral_prod _ hg.aemeasurable,
+      Measure.restrict_univ]
+    refine lintegral_congr fun s ↦ ?_
+    rw [← UnitAddCircle.lintegral_preimage a, setLIntegral_congr Ioc_ae_eq_Icc.symm]
+    simp only [Periodic.lift_coe]
+  simpa only [zero_add] using (key τ).trans (key 0).symm
 
 /-- If `|s_i| → ∞` and the translated window `[a + s_i, b + s_i] × T` eventually lies in `E`, then
 it eventually lies in `E` and outside the band `|z.1| < R`, for every `R`. These windows are thus
