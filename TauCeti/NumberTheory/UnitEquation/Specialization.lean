@@ -32,8 +32,6 @@ between characteristic-zero fields. They assert no finiteness theorem for unit e
 
 public section
 
-open Finset
-
 namespace TauCeti
 
 variable {k A K ι σ : Type*} [Field k] [CommRing A] [IsDomain A]
@@ -44,21 +42,19 @@ variable {k A K ι σ : Type*} [Field k] [CommRing A] [IsDomain A]
 specialization to any algebraically closed extension of the ground field that preserves
 distinctness and nondegeneracy. The same specialization is injective on any prescribed
 additional finite subset of the domain. No characteristic assumption is needed. -/
-theorem exists_specialization_nondegenerate_solutions (a : ι → A) (x : σ → ι → A)
-    (hx : Function.Injective x) (h : ∀ j, IsNondegenerateSolution a (x j)) (t : Finset A) :
+theorem exists_algHom_injOn_and_comp_injective_and_isNondegenerateSolution (a : ι → A)
+    (x : σ → ι → A) (hx : Function.Injective x) (h : ∀ j, IsNondegenerateSolution a (x j))
+    {t : Set A} (ht : t.Finite) :
     ∃ f : A →ₐ[k] K, Set.InjOn f t ∧
       Function.Injective (fun j ↦ f ∘ x j) ∧
       ∀ j, IsNondegenerateSolution (f ∘ a) (f ∘ x j) := by
-  classical
-  let := Fintype.ofFinite σ
-  let c : Finset A := univ.image fun p : σ × ι ↦ x p.1 p.2
-  let b : Finset A := univ.image fun p : σ × Finset ι ↦ ∑ i ∈ p.2, a i * x p.1 i
-  obtain ⟨f, hf⟩ := (t ∪ c ∪ b).exists_algHom_injOn (k := k) (K := K)
-  have hc (j : σ) (i : ι) : x j i ∈ t ∪ c ∪ b := by
-    exact mem_union_left _ (mem_union_right _ (mem_image_of_mem _ (mem_univ (j, i))))
-  have hb (j : σ) (I : Finset ι) : ∑ i ∈ I, a i * x j i ∈ t ∪ c ∪ b :=
-    mem_union_right _ (mem_image_of_mem _ (mem_univ (j, I)))
-  refine ⟨f, hf.mono (by intro z hz; simp [hz]), ?_, fun j ↦ ?_⟩
+  let c : Set A := Set.range fun p : σ × ι ↦ x p.1 p.2
+  let b : Set A := Set.range fun p : σ × Finset ι ↦ ∑ i ∈ p.2, a i * x p.1 i
+  have hs : (t ∪ c ∪ b).Finite := (ht.union (Set.finite_range _)).union (Set.finite_range _)
+  obtain ⟨f, hf⟩ := hs.exists_algHom_injOn (k := k) (K := K)
+  have hc (j : σ) (i : ι) : x j i ∈ t ∪ c ∪ b := Or.inl (Or.inr ⟨(j, i), rfl⟩)
+  have hb (j : σ) (I : Finset ι) : ∑ i ∈ I, a i * x j i ∈ t ∪ c ∪ b := Or.inr ⟨(j, I), rfl⟩
+  refine ⟨f, hf.mono (Set.subset_union_left.trans Set.subset_union_left), ?_, fun j ↦ ?_⟩
   · intro j l hjl
     apply hx
     exact funext fun i ↦ hf (hc j i) (hc l i) (congrFun hjl i)
