@@ -7,11 +7,12 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
-public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
-public import TauCeti.Topology.Algebra.MulAction.Orbit
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import TauCeti.Topology.Algebra.MulAction.Orbit
 
 /-!
 # Orbits of algebraic group actions are locally closed

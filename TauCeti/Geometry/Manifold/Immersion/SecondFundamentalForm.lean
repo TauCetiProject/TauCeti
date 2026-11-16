@@ -200,10 +200,7 @@ theorem _root_.ContMDiffAt.manifoldSecondFundamentalForm_apply_eq_of_mem_maximal
   have hDφ (u : TangentSpace I x) : fderiv 𝕜 φ z (tangentSpaceCastModel I x u) =
       mvfderiv I (e.extend I) x u :=
     (mvfderiv_apply_eq_fderiv_comp_extChartAt_symm (e.extend I) x u).symm
-  have hinv : (mvfderiv I (e.extend I) x).IsInvertible := by
-    unfold mvfderiv
-    exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩
-      (isInvertible_mfderiv_extend he1 hx)
+  have hinv := isInvertible_mvfderiv_extend he1 hx
   have hsurj : Surjective (fderiv 𝕜 φ z) := by
     intro u
     obtain ⟨L, hL⟩ := hinv

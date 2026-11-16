@@ -5,7 +5,7 @@ Authors: Claude, Codex
 -/
 module
 
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Probability.Distributions.Cauchy

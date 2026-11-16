@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Elementary
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 

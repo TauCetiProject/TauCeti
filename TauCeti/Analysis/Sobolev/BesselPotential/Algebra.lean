@@ -81,7 +81,8 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
 * `BesselPotentialSpace.mulCLM`: the product on `H^s(E)` as a continuous bilinear map, whose
-  `L²` functions are the pointwise products (`BesselPotentialSpace.coeFn_toLp_inclusion_mulCLM`).
+  `L²` functions are the pointwise products (`BesselPotentialSpace.coeFn_toLp_inclusion_mulCLM`);
+  it is commutative and associative.
 
 ## References
 
@@ -420,5 +421,15 @@ theorem coeFn_toLp_inclusion_mulCLM (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (
 theorem mulCLM_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
     mulCLM hs u v = mulCLM hs v u :=
   mulAux_comm hs u v
+
+/-- Multiplication on `H^s(E)`, `s > dim E / 2`, is associative. -/
+theorem mulCLM_assoc (hs : finrank ℝ E < 2 * s) (u v w : H^{s}(E)) :
+    mulCLM hs (mulCLM hs u v) w = mulCLM hs u (mulCLM hs v w) := by
+  have h := nonneg_of_finrank_lt hs
+  refine toLp_inclusion_injective h (Lp.ext ?_)
+  filter_upwards [coeFn_toLp_inclusion_mulCLM hs h (mulCLM hs u v) w,
+    coeFn_toLp_inclusion_mulCLM hs h u (mulCLM hs v w), coeFn_toLp_inclusion_mulCLM hs h u v,
+    coeFn_toLp_inclusion_mulCLM hs h v w] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, mul_assoc]
 
 end BesselPotentialSpace

@@ -72,7 +72,11 @@ universe u v w
 
 section Values
 
-variable {k : Type u} {G : Type v} [Field k] [Monoid G] [Finite G]
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+section
+
+variable [Finite G]
 
 /-- The distinct values of the character, without a choice of conjugacy representatives. -/
 noncomputable def characterValues (V : FDRep k G) : Finset k :=
@@ -83,11 +87,15 @@ theorem mem_characterValues (V : FDRep k G) (z : k) :
     z ∈ V.characterValues ↔ ∃ g, V.character g = z := by
   simp [characterValues]
 
+end
+
 /-- Character values are the image of the character on all group elements. -/
 theorem characterValues_eq_image [Fintype G] [DecidableEq k] (V : FDRep k G) :
     V.characterValues = Finset.univ.image V.character := by
   ext z
   simp only [mem_characterValues, Finset.mem_image, Finset.mem_univ, true_and]
+
+variable [Finite G]
 
 /-- The number of distinct values of a character. -/
 noncomputable def characterValueCount (V : FDRep k G) : ℕ :=
@@ -451,7 +459,11 @@ end FiniteFractions
 
 section Complex
 
-variable {G : Type v} [Group G] [Finite G]
+variable {G : Type v} [Group G]
+
+section
+
+variable [Finite G]
 
 /-- For a faithful complex representation the interpolator is the indicator of the identity. -/
 theorem eval_characterInterpolator_of_injective [DecidableEq G] (V : FDRep ℂ G)
@@ -542,6 +554,8 @@ theorem arbitrarily_large_tensorPowers (V X : FDRep ℂ G)
   obtain ⟨n, ⟨h, -⟩, hm⟩ := exists_mem_Ico_pos_finrank_hom_tensorPower V X hV hd hX B
   exact ⟨n, h, hm⟩
 
+end
+
 /-- For a faithful complex representation `V`, only the identity has character value `dim V`, so
 the weight of that value is `b_{dim V} = dim X`. -/
 theorem characterFiberSum_finrank_of_injective [Fintype G] (V X : FDRep ℂ G)
@@ -554,30 +568,34 @@ theorem characterFiberSum_finrank_of_injective [Fintype G] (V X : FDRep ℂ G)
   simp [characterFiberSum_def, h, Finset.sum_filter]
 
 /-- **The numerator at the reciprocal of the dimension.** For a faithful complex representation
-`V` of positive dimension `d`, only the value `a = d` contributes to the grouped numerator at
-`z = 1/d`, so `N_X(1/d) = (dim X / |G|) ∏_{a ≠ d} (1 - a/d)`, the product running over the other
-character values of `V`. -/
+`V` of dimension `d`, only the value `a = d` contributes to the grouped numerator at `z = 1/d`, so
+`N_X(1/d) = (dim X / |G|) ∏_{a ≠ d} (1 - a/d)`, the product running over the other character
+values of `V`. -/
 theorem eval_inv_finrank_tensorMultiplicityNumerator [Fintype G] [DecidableEq ℂ]
-    (V X : FDRep ℂ G)
-    (hV : Function.Injective V.ρ) (hd : 0 < Module.finrank ℂ V) :
+    (V X : FDRep ℂ G) (hV : Function.Injective V.ρ) :
     (V.tensorMultiplicityNumerator X).eval (Module.finrank ℂ V : ℂ)⁻¹ =
       (Nat.card G : ℂ)⁻¹ * Module.finrank ℂ X *
         ∏ a ∈ V.characterValues.erase (Module.finrank ℂ V : ℂ), (1 - a / Module.finrank ℂ V) := by
-  have hd' : (Module.finrank ℂ V : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
   have hmem : (Module.finrank ℂ V : ℂ) ∈ V.characterValues :=
     (mem_characterValues _ _).mpr ⟨1, char_one V⟩
   rw [tensorMultiplicityNumerator_eq_sum_characterValues, Polynomial.eval_mul,
-    Polynomial.eval_finsetSum, Finset.sum_eq_single_of_mem _ hmem fun a _ ha ↦ ?_]
+    Polynomial.eval_finsetSum, Finset.sum_eq_single_of_mem _ hmem fun a ha hne ↦ ?_]
   · simp [Polynomial.eval_prod, characterFiberSum_finrank_of_injective V X hV, mul_assoc,
       div_eq_mul_inv]
-  · rw [Polynomial.eval_mul, Polynomial.eval_prod,
-      Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨Ne.symm ha, hmem⟩) (by simp [hd']), mul_zero]
+  · obtain ⟨g, rfl⟩ := (mem_characterValues _ _).mp ha
+    have hd' : (Module.finrank ℂ V : ℂ) ≠ 0 := by
+      rintro hd0
+      have : Subsingleton V := Module.finrank_zero_iff.mp (Nat.cast_eq_zero.mp hd0)
+      exact hne ((congrArg V.character (hV (Subsingleton.elim (V.ρ g) (V.ρ 1)))).trans
+        (char_one V))
+    rw [Polynomial.eval_mul, Polynomial.eval_prod,
+      Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨Ne.symm hne, hmem⟩) (by simp [hd']), mul_zero]
 
 /-- **The tensor-multiplicity series is not a polynomial.** For a faithful complex representation
 `V` of positive dimension and a nonzero `X`, no polynomial equals the series
 `∑ₙ dim Hom_G(X, V^⊗n) zⁿ`. Positivity of the dimension is necessary: for the zero representation
 of the trivial group and the trivial `X` the series is the constant `1`. -/
-theorem tensorMultiplicitySeries_ne_coe (V X : FDRep ℂ G) (hV : Function.Injective V.ρ)
+theorem tensorMultiplicitySeries_ne_coe [Finite G] (V X : FDRep ℂ G) (hV : Function.Injective V.ρ)
     (hd : 0 < Module.finrank ℂ V) (hX : 0 < Module.finrank ℂ X) (p : Polynomial ℂ) :
     V.tensorMultiplicitySeries X ≠ p := by
   classical
@@ -588,7 +606,7 @@ theorem tensorMultiplicitySeries_ne_coe (V X : FDRep ℂ G) (hV : Function.Injec
   rw [h, ← Polynomial.coe_mul, Polynomial.coe_inj] at hQ
   have hN := congrArg (Polynomial.eval (Module.finrank ℂ V : ℂ)⁻¹) hQ
   rw [Polynomial.eval_mul, eval_inv_finrank_tensorMultiplicityDenominator V hd', zero_mul,
-    eval_inv_finrank_tensorMultiplicityNumerator V X hV hd] at hN
+    eval_inv_finrank_tensorMultiplicityNumerator V X hV] at hN
   refine (mul_ne_zero (mul_ne_zero (inv_ne_zero (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
     (Nat.cast_ne_zero.mpr hX.ne')) (Finset.prod_ne_zero_iff.mpr fun a ha ↦ ?_)) hN.symm
   rw [sub_ne_zero, ne_comm, Ne, div_eq_one_iff_eq hd']

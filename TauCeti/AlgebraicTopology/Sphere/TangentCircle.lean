@@ -80,9 +80,7 @@ def tangentCircleLoop (hu : ‖u‖ = 1) (p₀ : sphereEquator u) :
       continuous_toFun := ((continuous_tangentCircle _ u).comp
         (continuous_const.prodMk (continuous_const.mul continuous_subtype_val))).subtype_mk _
       source' := Subtype.ext (by simp)
-      target' := Subtype.ext (by
-        simpa using tangentCircle_add_two_pi ((p₀ : sphere (0 : V) 1) : V) u
-          ((q : sphere (0 : V) 1) : V) 0) }
+      target' := Subtype.ext (by simp) }
   continuous_toFun := by
     refine Path.continuous_uncurry_iff.1 (Continuous.subtype_mk ?_ _)
     exact (continuous_tangentCircle _ u).comp

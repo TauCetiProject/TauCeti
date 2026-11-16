@@ -39,6 +39,7 @@ induces a homomorphism of algebraic `K₁`, functorially.
 * `TauCeti.AlgebraicK1.mk`: the class in `K₁(A)` of an invertible matrix.
 * `TauCeti.AlgebraicK1.lift`: the universal property of `K₁(A)`, for families of homomorphisms
   to a commutative group compatible with stabilization.
+* `TauCeti.AlgebraicK1.ofUnits`: the homomorphism `Aˣ →* K₁(A)`, `u ↦ [(u)]`.
 * `TauCeti.AlgebraicK1.quotientElementarySubgroupEquiv`: `GL_∞(A) / E_∞(A) ≃* K₁(A)`.
 * `TauCeti.AlgebraicK1.map`: the homomorphism `K₁(A) →* K₁(B)` induced by a ring homomorphism.
 
@@ -140,6 +141,16 @@ theorem stabilizeGL_transvectionUnit {m n : ℕ} (h : m ≤ n) {i j : Fin m} (hi
   simp only [coe_stabilizeGL_apply, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
     Matrix.one_apply, single_apply, Fin.ext_iff, Fin.val_castLE]
   split_ifs <;> first | rfl | omega | simp_all
+
+/-- Stabilization `u ↦ u ⊕ 1` does not change the determinant of an invertible matrix over a
+commutative ring. -/
+@[simp]
+theorem det_stabilizeGL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) R) :
+    GeneralLinearGroup.det (stabilizeGL R h u) = GeneralLinearGroup.det u := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL]
+  ext
+  simp [GeneralLinearGroup.val_det_apply, det_fromBlocks_zero₂₁]
 
 /-- Stabilization maps the elementary subgroup into the elementary subgroup. -/
 theorem map_stabilizeGL_elementarySubgroup_le {m n : ℕ} (h : m ≤ n) :
@@ -392,6 +403,16 @@ theorem lift_mk {G : Type*} [CommGroup G] (f : ∀ n, GL (Fin n) A →* G)
     lift f hf (mk A n u) = f n u :=
   (Group.Abelianization.lift_apply_of _ _).trans (StableGeneralLinearGroup.lift_of f hf n u)
 
+variable (A) in
+/-- The class in algebraic `K₁` of an invertible `1 × 1` matrix: the homomorphism
+`Aˣ →* K₁(A)`, `u ↦ [(u)]`. -/
+def ofUnits : Aˣ →* AlgebraicK1 A :=
+  (mk A 1).comp (GeneralLinearGroup.scalar (Fin 1))
+
+/-- `ofUnits` sends a unit `u` to the class of the `1 × 1` matrix `(u)`. -/
+theorem ofUnits_apply (u : Aˣ) : ofUnits A u = mk A 1 (GeneralLinearGroup.scalar (Fin 1) u) :=
+  (rfl)
+
 end AlgebraicK1
 
 /-! ## Functoriality -/
@@ -443,6 +464,16 @@ induced by `g.comp f`. -/
 theorem map_map (f : A →+* B) (g : B →+* C) (x : AlgebraicK1 A) :
     AlgebraicK1.map g (AlgebraicK1.map f x) = AlgebraicK1.map (g.comp f) x := by
   rw [map_comp, MonoidHom.comp_apply]
+
+/-- The homomorphism of algebraic `K₁` induced by a ring homomorphism sends the class of a unit
+`u` to the class of `f u`. -/
+@[simp]
+theorem map_ofUnits (f : A →+* B) (u : Aˣ) :
+    map f (ofUnits A u) = ofUnits B (Units.map (f : A →* B) u) := by
+  rw [ofUnits_apply, ofUnits_apply, map_mk]
+  congr 1
+  ext
+  simp [diagonal_apply, apply_ite f]
 
 end AlgebraicK1
 

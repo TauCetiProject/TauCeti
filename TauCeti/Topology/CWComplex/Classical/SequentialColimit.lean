@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
+public import TauCeti.Topology.Category.TopCat.DisjointOpens
 public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.CWComplex.Classical.Image
 public import TauCeti.Topology.CWComplex.Classical.Tower.Union
 public import TauCeti.Topology.Homotopy.Extension.CWComplex
+public import TauCeti.Topology.Homotopy.Extension.Tower
 import TauCeti.Topology.Coherent
 
 /-!
@@ -37,6 +39,18 @@ linked by closed cofibrations: the range of the `k`-th stage has the homotopy ex
 in the range of the next one (`TauCeti.hasHomotopyExtensionProperty_preimage_range_ι`), since it
 is a subcomplex.
 
+If the stages are Hausdorff, so is the colimit (`TauCeti.t2Space_of_isColimit_cwComplex`): the
+range of each bonding map has the homotopy extension property, so the bonding maps extend disjoint
+open sets (`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`). The colimit is
+then a model for any space exhausted compatibly by spaces of the homotopy types of the stages. Let
+`Y` be the union of an increasing sequence of subsets `A 0 ⊆ A 1 ⊆ ⋯`, each with the homotopy
+extension property in the next, carrying the topology coherent with them, and let
+`h k : F k ≃ₕ A k` be homotopy equivalences commuting strictly with the inclusions. Then the
+colimit is homotopy equivalent to `Y` by a homotopy equivalence restricting to `h k` on `F k`
+(`TauCeti.exists_homotopyEquiv_of_isColimit_cwComplex`). This is the comparison
+`TauCeti.exists_homotopyEquiv_of_isColimit` of a colimit of a tower of cofibrations with such a
+union.
+
 ## Main definitions
 
 * `TauCeti.cwComplexOfIsColimit`: the CW structure on a colimit of a sequence of cellular closed
@@ -50,9 +64,16 @@ is a subcomplex.
   `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inr`: the characteristic maps of the cells.
 * `TauCeti.hasHomotopyExtensionProperty_preimage_range_ι`: each stage has the homotopy extension
   property in the next one, inside the colimit.
+* `TauCeti.t2Space_of_isColimit_cwComplex`: a sequential colimit of Hausdorff CW complexes is
+  Hausdorff.
+* `TauCeti.exists_homotopyEquiv_of_isColimit_cwComplex`: a space exhausted by a tower of
+  cofibrations with compatible CW models is homotopy equivalent to the colimit of the models.
 
 ## References
 
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
+  Theorem 3.5, whose proof builds a CW model of a manifold one critical level at a time and
+  passes to the union of the stages.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Chapter 0 and the Appendix, for CW complexes built by attaching cells inductively, with the
   weak topology of the union of their stages.
@@ -63,6 +84,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Set Topology Topology.RelCWComplex
+open scoped ContinuousMap
 
 namespace TauCeti
 
@@ -254,23 +276,36 @@ Inside the colimit, the range of `F k` has the homotopy extension property in th
 `F k`. -/
 theorem hasHomotopyExtensionProperty_preimage_range_ι [∀ k, T2Space (F.obj k)] (k : ℕ) :
     HasHomotopyExtensionProperty
-      ((↑) ⁻¹' (range (c.ι.app k) : Set c.pt) : Set ↥(range (c.ι.app (k + 1)) : Set c.pt)) := by
-  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc (k + 1)
-  have h := (hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k)).image
-    hemb.isEmbedding.toHomeomorph
-  convert h using 1
-  -- A point of the range of `F (k + 1)` comes from `F k` exactly when its preimage in
-  -- `F (k + 1)` lies in the range of the bonding map.
-  ext ⟨_, w, rfl⟩
-  have hw (x : F.obj k) :
-      (c.ι.app (k + 1) (F.map (homOfLE k.le_succ) x) : c.pt) = (c.ι.app k x : c.pt) := by
-    rw [← ConcreteCategory.comp_apply, c.w]
-  simp only [mem_preimage, mem_range, mem_image, Subtype.ext_iff,
-    IsEmbedding.toHomeomorph_apply_coe]
-  constructor
-  · rintro ⟨x, hx⟩
-    exact ⟨_, ⟨x, rfl⟩, (hw x).trans hx⟩
-  · rintro ⟨_, ⟨x, rfl⟩, hx⟩
-    exact ⟨x, (hw x).symm.trans hx⟩
+      ((↑) ⁻¹' (range (c.ι.app k) : Set c.pt) : Set ↥(range (c.ι.app (k + 1)) : Set c.pt)) :=
+  hasHomotopyExtensionProperty_preimage_range_ι_of_isColimit hc hF k
+    (hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k))
+
+include hF hι hc in
+/-- **A sequential colimit of Hausdorff CW complexes is Hausdorff.** The range of each bonding map
+is a subcomplex, so it has the homotopy extension property and the bonding map extends disjoint
+open sets. -/
+theorem t2Space_of_isColimit_cwComplex [∀ k, T2Space (F.obj k)] : T2Space c.pt :=
+  TopCat.t2Space_of_isColimit_nat (fun k ↦
+    TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty _ (hF k).isInducing
+      (hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k))) hc
+
+include hF hι hc in
+/-- **The CW model of a tower.** Let `Y` be the union of an increasing sequence of subsets `A k`,
+each with the homotopy extension property in the next, carrying the topology coherent with them.
+Let `F` be a sequence of Hausdorff CW complexes whose bonding maps are closed embeddings carrying
+every cell onto a cell, and let `h k : F k ≃ₕ A k` be homotopy equivalences commuting with the
+inclusions. Then the colimit of `F`, a Hausdorff CW complex (`TauCeti.cwComplexOfIsColimit` and
+`TauCeti.t2Space_of_isColimit_cwComplex`), is homotopy equivalent to `Y` by a homotopy equivalence
+restricting to `h k` on every stage. This is `TauCeti.exists_homotopyEquiv_of_isColimit`, as the
+ranges of the bonding maps are subcomplexes. -/
+theorem exists_homotopyEquiv_of_isColimit_cwComplex [∀ k, T2Space (F.obj k)] {Y : Type u}
+    [TopologicalSpace Y] {A : ℕ → Set Y} (hA : Monotone A) (hAY : ⋃ k, A k = univ)
+    (hAc : IsCoherentWith (range A))
+    (hAH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' A k : Set (A (k + 1))))
+    (h : ∀ k, F.obj k ≃ₕ A k)
+    (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
+    ∃ H : c.pt ≃ₕ Y, ∀ k w, H (c.ι.app k w) = (h k w : Y) :=
+  exists_homotopyEquiv_of_isColimit hc (fun k ↦ (hF k).isEmbedding)
+    (fun k ↦ hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k)) hA hAY hAc hAH h hh
 
 end TauCeti
