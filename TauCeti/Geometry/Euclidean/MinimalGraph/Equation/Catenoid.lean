@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
-import all TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
 public import Mathlib.Analysis.SpecialFunctions.Arcosh
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.InnerProductSpace.NormPow
@@ -15,7 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.NormPow
 # The upper half-catenoid as a minimal graph
 
 For the height `arcosh ρ` on `ρ > 1`, the radial minimal-graph flux is constant.
-The two-dimensional graph flux is the inverse-square radial field and has zero divergence.
+The graph flux is `x/‖x‖²` in every dimension and has zero divergence in dimension two.
 
 ## References
 
@@ -28,58 +27,24 @@ open scoped Gradient Topology
 
 namespace TauCeti.MinimalGraph
 
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E]
-
-/-- The vector field `x / ‖x‖²` on a Euclidean plane. -/
-def inverseSquareRadialField (x : E) : E := (‖x‖ ^ 2)⁻¹ • x
-
-omit [FiniteDimensional ℝ E] in
-private theorem fderiv_inv_norm_sq_self {x : E} (hx : x ≠ 0) :
-    fderiv ℝ (fun y : E ↦ (‖y‖ ^ 2)⁻¹) x x =
-      -(2 : ℝ) * (‖x‖ ^ 2)⁻¹ := by
-  have hn : ‖x‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.mpr hx)
-  have h := ((hasFDerivAt_inv (𝕜 := ℝ) hn).comp x
-    (hasStrictFDerivAt_norm_sq x).hasFDerivAt).fderiv
-  change (fderiv ℝ ((fun t : ℝ ↦ t⁻¹) ∘ fun y : E ↦ ‖y‖ ^ 2) x) x = _
-  rw [h]
-  simp only [ContinuousLinearMap.comp_apply, smul_apply,
-    ContinuousLinearMap.toSpanSingleton_apply, innerSL_apply_apply]
-  rw [real_inner_self_eq_norm_sq]
-  simp only [smul_eq_mul, two_smul]
-  have hnorm : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
-  field_simp [hnorm]
-  have hprod : ‖x‖ ^ 4 * (‖x‖⁻¹) ^ 4 = 1 := by
-    rw [inv_pow]
-    exact mul_inv_cancel₀ (pow_ne_zero 4 hnorm)
-  nlinarith [hprod]
-
-/-- In dimension two, the inverse-square radial field is divergence-free away from zero. -/
-theorem trace_fderiv_inverseSquareRadialField_eq_zero (hE : Module.finrank ℝ E = 2)
-    {x : E} (hx : x ≠ 0) :
-    LinearMap.trace ℝ E (fderiv ℝ inverseSquareRadialField x).toLinearMap = 0 := by
-  have hn : ‖x‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.mpr hx)
-  have hc : DifferentiableAt ℝ (fun y : E ↦ (‖y‖ ^ 2)⁻¹) x :=
-    (hasStrictFDerivAt_norm_sq x).differentiableAt.inv hn
-  change LinearMap.trace ℝ E
-    (fderiv ℝ (fun y : E ↦ (‖y‖ ^ 2)⁻¹ • id y) x).toLinearMap = 0
-  rw [TauCeti.trace_fderiv_smul hc differentiableAt_id]
-  simp only [fderiv_id, ContinuousLinearMap.coe_id, LinearMap.trace_id, hE,
-    Nat.cast_ofNat, id_eq, fderiv_inv_norm_sq_self hx]
-  ring
 
 /-- The radial minimal-graph flux of the upper half-catenoid. -/
 def catenoidRadialFlux (ρ : ℝ) : ℝ :=
   ρ * (Real.sqrt (ρ ^ 2 - 1))⁻¹ /
     Real.sqrt (1 + ((Real.sqrt (ρ ^ 2 - 1))⁻¹) ^ 2)
 
+@[simp] theorem catenoidRadialFlux_apply (ρ : ℝ) :
+    catenoidRadialFlux ρ = ρ * (Real.sqrt (ρ ^ 2 - 1))⁻¹ /
+      Real.sqrt (1 + ((Real.sqrt (ρ ^ 2 - 1))⁻¹) ^ 2) := (rfl)
+
 /-- The radial flux is defined using the actual derivative of `arcosh` on `ρ > 1`. -/
 theorem catenoidRadialFlux_eq_deriv {ρ : ℝ} (hρ : 1 < ρ) :
     catenoidRadialFlux ρ = ρ * deriv Real.arcosh ρ /
       Real.sqrt (1 + (deriv Real.arcosh ρ) ^ 2) := by
   rw [(Real.hasDerivAt_arcosh hρ).deriv]
-  rfl
+  rw [catenoidRadialFlux_apply]
 
 /-- The radial flux is identically one above the neck of the catenoid. -/
 theorem catenoidRadialFlux_eq_one {ρ : ℝ} (hρ : 1 < ρ) :
@@ -92,45 +57,47 @@ theorem catenoidRadialFlux_eq_one {ρ : ℝ} (hρ : 1 < ρ) :
     have hnonneg : 0 ≤ ρ / s := div_nonneg (by linarith) hs.le
     apply (Real.sqrt_eq_iff_eq_sq (by positivity) hnonneg).2
     field_simp
-    nlinarith
-  rw [catenoidRadialFlux, show Real.sqrt (ρ ^ 2 - 1) = s from rfl, hsqrt]
+    linear_combination hs2
+  rw [catenoidRadialFlux_apply, hsqrt]
   field_simp
+  simp only [s]
 
 /-- The radial flux has zero derivative on the half-catenoid graph domain. -/
 theorem deriv_catenoidRadialFlux_eq_zero {ρ : ℝ} (hρ : 1 < ρ) :
     deriv catenoidRadialFlux ρ = 0 := by
   have heq : catenoidRadialFlux =ᶠ[𝓝 ρ] fun _ ↦ (1 : ℝ) :=
-    Filter.mem_of_superset (isOpen_Ioi.mem_nhds (show ρ ∈ Set.Ioi (1 : ℝ) from hρ))
+    Filter.mem_of_superset (isOpen_Ioi.mem_nhds hρ)
       (fun _ ht ↦ catenoidRadialFlux_eq_one ht)
   exact ((hasDerivAt_const ρ (1 : ℝ)).congr_of_eventuallyEq heq).deriv
 
 /-- The upper half-catenoid height on the exterior of the unit ball. -/
 def upperCatenoidHeight (x : E) : ℝ := Real.arcosh ‖x‖
 
-private theorem hasGradientAt_norm_of_one_lt {x : E} (hx : 1 < ‖x‖) :
-    HasGradientAt (fun y : E ↦ ‖y‖) (‖x‖⁻¹ • x) x := by
-  rw [hasGradientAt_iff_hasFDerivAt]
-  convert TauCeti.hasFDerivAt_norm_of_ne (norm_ne_zero_iff.mp (by linarith : ‖x‖ ≠ 0)) using 1
-  ext v
-  simp [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
+@[simp] theorem upperCatenoidHeight_apply (x : E) :
+    upperCatenoidHeight x = Real.arcosh ‖x‖ := (rfl)
 
 private theorem hasGradientAt_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
     HasGradientAt upperCatenoidHeight
       ((Real.sqrt (‖x‖ ^ 2 - 1))⁻¹ • (‖x‖⁻¹ • x)) x := by
-  exact (Real.hasDerivAt_arcosh hx).comp_hasGradientAt
-    (hasGradientAt_norm_of_one_lt hx)
+  have hn : HasGradientAt (fun y : E ↦ ‖y‖) (‖x‖⁻¹ • x) x := by
+    rw [hasGradientAt_iff_hasFDerivAt]
+    convert TauCeti.hasFDerivAt_norm_of_ne
+      (norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hx))) using 1
+    ext v
+    simp [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+  exact (Real.hasDerivAt_arcosh hx).comp_hasGradientAt hn
 
 /-- The normalized gradient of the upper half-catenoid is the inverse-square radial field. -/
-theorem areaWeight_smul_gradient_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
-    areaWeight upperCatenoidHeight x • ∇ upperCatenoidHeight x =
-      inverseSquareRadialField x := by
+theorem areaFlux_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
+    areaFlux upperCatenoidHeight x = (‖x‖ ^ 2)⁻¹ • x := by
+  rw [areaFlux_apply]
   let ρ : ℝ := ‖x‖
   let a : ℝ := (Real.sqrt (ρ ^ 2 - 1))⁻¹
   have hρ : ρ ≠ 0 := by dsimp [ρ]; positivity
   have hgrad : ∇ upperCatenoidHeight x = (a * ρ⁻¹) • x := by
     rw [(hasGradientAt_upperCatenoidHeight hx).gradient]
-    simp only [smul_smul]
-    rfl
+    simp only [smul_smul, a, ρ]
   have hnorm : ‖∇ upperCatenoidHeight x‖ = a := by
     rw [(hasGradientAt_upperCatenoidHeight hx).gradient, norm_smul, norm_smul]
     simp only [Real.norm_eq_abs, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _),
@@ -139,32 +106,34 @@ theorem areaWeight_smul_gradient_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) 
   have hscalar : (Real.sqrt (1 + a ^ 2))⁻¹ * (a * ρ⁻¹) = (ρ ^ 2)⁻¹ := by
     have hsqrt : Real.sqrt (1 + a ^ 2) ≠ 0 := by positivity
     have hflux := catenoidRadialFlux_eq_one hx
-    change ρ * a / Real.sqrt (1 + a ^ 2) = 1 at hflux
+    rw [catenoidRadialFlux_apply] at hflux
+    dsimp only [a, ρ] at hsqrt ⊢
     field_simp at hflux ⊢
-    nlinarith [hflux]
-  dsimp only [inverseSquareRadialField]
+    linear_combination hflux
   rw [areaWeight_eq_inv_sqrt, hnorm, hgrad]
   simp only [smul_smul]
   rw [hscalar]
 
-/-- The upper half-catenoid graph has the inverse-square radial area flux. -/
-theorem areaFlux_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
-    areaFlux upperCatenoidHeight x = inverseSquareRadialField x := by
-  change areaWeight upperCatenoidHeight x • ∇ upperCatenoidHeight x =
-    inverseSquareRadialField x
-  exact areaWeight_smul_gradient_upperCatenoidHeight hx
-
 /-- The upper half-catenoid solves the two-dimensional minimal graph equation. -/
 theorem fluxDivergence_upperCatenoidHeight (hE : Module.finrank ℝ E = 2)
     {x : E} (hx : 1 < ‖x‖) : fluxDivergence upperCatenoidHeight x = 0 := by
-  have hlocal : areaFlux upperCatenoidHeight =ᶠ[𝓝 x] inverseSquareRadialField := by
+  have hlocal : areaFlux upperCatenoidHeight =ᶠ[𝓝 x] ∇ (fun y : E ↦ Real.log ‖y‖) := by
     have hopen : IsOpen {y : E | 1 < ‖y‖} := isOpen_lt continuous_const continuous_norm
     filter_upwards [hopen.mem_nhds hx] with y hy
-    exact areaFlux_upperCatenoidHeight hy
-  change LinearMap.trace ℝ E
-    (fderiv ℝ (areaFlux upperCatenoidHeight) x).toLinearMap = 0
-  rw [hlocal.fderiv_eq]
-  exact trace_fderiv_inverseSquareRadialField_eq_zero hE
-    (norm_ne_zero_iff.mp (by linarith : ‖x‖ ≠ 0))
+    rw [areaFlux_upperCatenoidHeight hy]
+    symm
+    apply HasGradientAt.gradient
+    rw [hasGradientAt_iff_hasFDerivAt]
+    convert TauCeti.hasFDerivAt_log_norm_of_ne
+      (norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hy))) using 1
+    ext v
+    simp [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+  rw [fluxDivergence_def, hlocal.fderiv_eq]
+  have hlap := TauCeti.laplacian_eq_trace_iteratedGradientChain_one
+    (fun y : E ↦ Real.log ‖y‖) x
+  rw [TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero] at hlap
+  rw [← hlap, TauCeti.laplacian_log_norm_of_ne
+    (norm_ne_zero_iff.mp (ne_of_gt (lt_trans zero_lt_one hx))), hE]
+  norm_num
 
 end TauCeti.MinimalGraph
