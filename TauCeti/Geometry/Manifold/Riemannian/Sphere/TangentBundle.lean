@@ -31,8 +31,7 @@ to `C^k` manifold and vector-bundle equivalences at every regularity `k : ℕ∞
   expanded along an orthonormal basis of height gradients).
 * `TauCeti.contMDiff_sphereTangentEquiv_symm_along_iff`: lifting an ambient map `w : M → E`
   satisfying `w y ∈ (ℝ ∙ (base y : E))ᗮ` along `(sphereTangentEquiv (base y)).symm` produces a
-  `C^k` map into `TangentBundle (𝓡 n) (sphere (0 : E) 1)` if and only if `base` and `w` are `C^k`
-  (with `TauCeti.contMDiff_sphereTangentEquiv_symm_iff` as the section case `base = id`).
+  `C^k` map into `TangentBundle (𝓡 n) (sphere (0 : E) 1)` if and only if `base` and `w` are `C^k`.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere` and
   `TauCeti.sphereTangentSubbundleDiffeomorph`: the orthogonal complements `(ℝ ∙ (x : E))ᗮ` form a
   `C^k` subbundle of the trivial bundle `sphere (0 : E) 1 × E`, and `sphereTangentEquiv` gives a
@@ -201,16 +200,6 @@ theorem contMDiff_sphereTangentEquiv_symm_along_iff
     simp only [Function.comp_apply, LinearIsometryEquiv.apply_symm_apply]
   · refine (contMDiff_sphereTangentProj.comp (hb.prodMk hwm)).congr fun y ↦ ?_
     simp only [Function.comp_apply, sphereTangentProj_of_mem_orthogonal (hw y)]
-
-/-- A section `x ↦ (sphereTangentEquiv x).symm ⟨w x, hw x⟩` of the sphere tangent bundle is `C^k`
-if and only if its ambient coordinate map `w : sphere (0 : E) 1 → E` is `C^k`. -/
-theorem contMDiff_sphereTangentEquiv_symm_iff {k : ℕ∞ω}
-    {w : sphere (0 : E) 1 → E} (hw : ∀ x : sphere (0 : E) 1, w x ∈ (ℝ ∙ (x : E))ᗮ) :
-    ContMDiff (𝓡 n) (𝓡 n).tangent k
-        (fun x ↦ (⟨x, (sphereTangentEquiv x).symm ⟨w x, hw x⟩⟩ :
-          TangentBundle (𝓡 n) (sphere (0 : E) 1))) ↔
-      ContMDiff (𝓡 n) 𝓘(ℝ, E) k w :=
-  (contMDiff_sphereTangentEquiv_symm_along_iff hw).trans (and_iff_right contMDiff_id)
 
 /-! ### The smooth subbundle `(ℝ ∙ x)ᗮ` and bundle equivalence with `TSⁿ` -/
 
