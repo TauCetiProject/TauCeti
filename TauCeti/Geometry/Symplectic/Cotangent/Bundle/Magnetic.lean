@@ -95,8 +95,8 @@ when the magnetic field `dσ` vanishes. -/
 theorem magneticSymplecticForm_eq_symplecticForm_iff (σ : SmoothForm I M ℝ 1) :
     magneticSymplecticForm σ = symplecticForm I M ↔ σ.IsClosed := by
   rw [magneticSymplecticForm_def, add_eq_left,
-    map_eq_zero_iff _ SmoothForm.mpullback_proj_injective, SmoothForm.isClosed_def,
-    ← mextDerivₗ_apply I 1 σ, ZeroMemClass.coe_eq_zero]
+    map_eq_zero_iff _ SmoothForm.mpullback_proj_injective,
+    SmoothForm.isClosed_iff_mextDerivₗ_eq_zero]
 
 /-- **The fibre translation by `-σ` removes the magnetic term.** Translating the fibres of the
 cotangent bundle by `-σ`, `p ↦ p - σ_x`, pulls the canonical symplectic form back to the exact
@@ -120,11 +120,12 @@ theorem isSymplectic_magneticSymplecticForm (σ : SmoothForm I M ℝ 1) :
 
 variable [FiniteDimensional ℝ E]
 
-/-- **Almost existence in an exact magnetic cotangent bundle** (Barraud–Damian–Humilière–Oancea,
-Corollary D). Let `τ` be the fibre translation `p ↦ p - σ_x`, which covers the identity of `M`. A
-level `F⁻¹(c)` has the contractible almost existence property in `W` for the magnetic form `ω_σ`
-exactly when the level `c` of `F ∘ τ⁻¹`, the hypersurface `τ(F⁻¹(c))`, has it in `τ(W)` for the
-canonical form `ω`. -/
+/-- **Almost existence transfers from `ω_σ` to `ω`.** This is the reduction step behind
+Barraud–Damian–Humilière–Oancea, Corollary D (almost existence in an exact magnetic cotangent
+bundle); it does not itself prove almost existence. Let `τ` be the fibre translation
+`p ↦ p - σ_x`, which covers the identity of `M`. A level `F⁻¹(c)` has the contractible almost
+existence property in `W` for the magnetic form `ω_σ` exactly when the level `c` of `F ∘ τ⁻¹`,
+the hypersurface `τ(F⁻¹(c))`, has it in `τ(W)` for the canonical form `ω`. -/
 theorem hasContractibleAlmostExistence_magneticSymplecticForm_iff (σ : SmoothForm I M ℝ 1)
     {W : Set (CotangentBundle I M)} {F : CotangentBundle I M → ℝ} {c : ℝ} :
     (magneticSymplecticForm σ).HasContractibleAlmostExistence W F c ↔
