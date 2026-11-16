@@ -51,10 +51,17 @@ noncomputable def piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι]
     VonNeumannAlgebra (PiLp 2 (fun _ : ι => H)) where
   toStarSubalgebra := M.toStarSubalgebra.piLpMatrix ι
   centralizer_centralizer' := by
-    refine (M.toStarSubalgebra.coe_piLpMatrix_centralizer_centralizer ι).trans
+    refine (M.toStarSubalgebra.centralizer_centralizer_coe_piLpMatrix ι).trans
       (Eq.trans ?_ (M.toStarSubalgebra.coe_piLpMatrix ι).symm)
     ext T
     simp [M.centralizer_centralizer]
+
+/-- The underlying star subalgebra of `M.piLpMatrix ι` is `M.toStarSubalgebra.piLpMatrix ι`. -/
+@[simp]
+theorem toStarSubalgebra_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι]
+    [DecidableEq ι] :
+    (M.piLpMatrix ι).toStarSubalgebra = M.toStarSubalgebra.piLpMatrix ι :=
+  (rfl)
 
 @[simp]
 theorem mem_piLpMatrix_iff {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -67,5 +74,31 @@ theorem coe_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι] [Deci
     (M.piLpMatrix ι : Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))) =
       {T | ∀ i j, T.piLpEntry i j ∈ M} :=
   M.toStarSubalgebra.coe_piLpMatrix ι
+
+/-- Placing an element of `M` in a single `(i, j)` block gives an element of `M.piLpMatrix ι`. -/
+theorem singleEntryCLM_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (i j : ι) {s : H →L[ℂ] H} (hs : s ∈ M) :
+    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι :=
+  M.toStarSubalgebra.singleEntryCLM_mem_piLpMatrix i j hs
+
+/-- Diagonal amplification maps `M` into `M.piLpMatrix ι`. -/
+theorem diagStarAlgHom_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {s : H →L[ℂ] H} (hs : s ∈ M) :
+    PiLp.diagStarAlgHom ℂ H ι s ∈ M.piLpMatrix ι :=
+  M.toStarSubalgebra.diagStarAlgHom_mem_piLpMatrix hs
+
+/-- The commutant of the matrix von Neumann algebra `M.piLpMatrix ι` consists of block-diagonal
+operators with constant diagonal entry in `M.commutant`. -/
+theorem coe_commutant_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι]
+    [DecidableEq ι] :
+    ((M.piLpMatrix ι).commutant :
+        Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))) =
+      {R | (∀ i j, i ≠ j → R.piLpEntry i j = 0) ∧
+        (∀ i j, R.piLpEntry i i = R.piLpEntry j j) ∧
+        ∀ i, R.piLpEntry i i ∈ M.commutant} := by
+  rw [coe_commutant, ← coe_toStarSubalgebra, toStarSubalgebra_piLpMatrix,
+    M.toStarSubalgebra.centralizer_coe_piLpMatrix ι]
+  ext R
+  simp only [Set.mem_ofPred_eq, ← SetLike.mem_coe, coe_commutant, coe_toStarSubalgebra]
 
 end VonNeumannAlgebra

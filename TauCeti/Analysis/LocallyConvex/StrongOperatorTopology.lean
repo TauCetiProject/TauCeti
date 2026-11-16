@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Bounded composition in the strong operator topology
@@ -20,7 +21,10 @@ For sequences on a Banach space the bound follows automatically from Banach–St
 Operator norm bounds also pass to pointwise limits
 (`ContinuousLinearMap.opNorm_le_of_tendsto_pointwise`), so closed operator-norm balls are closed
 in the strong operator topology
-(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
+(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`). Membership in a
+strong-operator closure is characterized by finite-vector approximation
+(`PointwiseConvergenceCLM.toPointwiseConvergenceCLM_mem_closure_image_iff`,
+`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
 
 On a complete real or complex Hilbert space, orthogonal projections form a strongly closed
 set. Their uniform norm bound lets idempotence pass to the strong limit; self-adjointness
@@ -38,16 +42,17 @@ open Filter Topology
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+section Semilinear
 
-/-- **Norm lower semicontinuity of strong limits.** If a net of continuous linear maps is
+variable {𝕜₁ 𝕜₂ E F ι : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- **Norm lower semicontinuity of strong limits.** If a net of continuous semilinear maps is
 eventually bounded in operator norm by `C` along a nontrivial filter and converges pointwise to
 `T₀`, then `‖T₀‖ ≤ C`. Neither space needs completeness. -/
 theorem opNorm_le_of_tendsto_pointwise {l : Filter ι} [l.NeBot]
-    {T : ι → E →L[𝕜] F} {T₀ : E →L[𝕜] F} {C : ℝ}
+    {T : ι → E →SL[σ] F} {T₀ : E →SL[σ] F} {C : ℝ}
     (hC : ∀ᶠ i in l, ‖T i‖ ≤ C)
     (hT : ∀ x, Tendsto (fun i => T i x) l (𝓝 (T₀ x))) :
     ‖T₀‖ ≤ C := by
@@ -56,6 +61,13 @@ theorem opNorm_le_of_tendsto_pointwise {l : Filter ι} [l.NeBot]
     exact (norm_nonneg _).trans hi
   exact T₀.opNorm_le_bound hC0 fun x =>
     le_of_tendsto (hT x).norm (hC.mono fun i hi => (T i).le_of_opNorm_le hi x)
+
+end Semilinear
+
+variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
 
 /-- A strongly convergent sequence of operators on a Banach space is uniformly norm bounded. -/
 theorem exists_norm_le_of_tendsto_pointwise [CompleteSpace E]
@@ -156,18 +168,78 @@ theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] 
   · have heq : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' Metric.closedBall f₀ r =
         ⋂ x : E, {g : E →SLₚₜ[σ] F | ‖g x - f₀ x‖ ≤ r * ‖x‖} := by
       ext g
-      let g' : E →SL[σ] F := g
-      have hg' : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F g' = g := rfl
-      simp only [Set.mem_image, Metric.mem_closedBall, dist_eq_norm, Set.mem_iInter,
-        Set.mem_ofPred_eq]
-      refine ⟨fun ⟨f, hf, hfg⟩ x => hfg ▸ (f - f₀).le_of_opNorm_le hf x, fun h => ?_⟩
-      exact ⟨g', (g' - f₀).opNorm_le_bound hr h, hg'⟩
+      obtain ⟨g', rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective g
+      rw [ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image,
+        Metric.mem_closedBall, dist_eq_norm, Set.mem_iInter]
+      simp only [Set.mem_ofPred_eq, ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply]
+      exact ⟨fun h x => (g' - f₀).le_of_opNorm_le h x, (g' - f₀).opNorm_le_bound hr⟩
     rw [heq]
     refine isClosed_iInter fun x => isClosed_le ?_ continuous_const
-    exact (((continuous_apply x).comp
-      (PointwiseConvergenceCLM.isEmbedding_coeFn σ E F).continuous).sub continuous_const).norm
+    exact ((continuous_eval_const x).sub continuous_const).norm
 
 end ClosedBall
+
+section Closure
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- For a finite family of vectors `v`, the set of operators whose values on `v` stay within `ε` of
+a fixed operator `x` is open in the topology of pointwise convergence. -/
+theorem isOpen_setOf_forall_norm_sub_apply_lt {ι : Type*} [Finite ι]
+    (x : E →SL[σ] F) (v : ι → E) (ε : ℝ) :
+    IsOpen {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} := by
+  have heq : {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} =
+      ⋂ i, {T : E →SLₚₜ[σ] F | ‖x (v i) - T (v i)‖ < ε} := by ext T; simp
+  rw [heq]
+  exact isOpen_iInter_of_finite fun i ↦
+    isOpen_lt (continuous_const.sub (continuous_eval_const (v i))).norm continuous_const
+
+/-- An operator `x` lies in the strong operator closure of `A` if and only if for every finite set
+`s : Finset E` and `ε > 0` there is `a ∈ A` with `‖x v - a v‖ < ε` for all `v ∈ s`. -/
+theorem toPointwiseConvergenceCLM_mem_closure_image_iff [ContinuousSMul 𝕜₁ E]
+    {A : Set (E →SL[σ] F)} {x : E →SL[σ] F} :
+    ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F x ∈
+        closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A) ↔
+      ∀ (s : Finset E) {ε : ℝ}, 0 < ε → ∃ a ∈ A, ∀ v ∈ s, ‖x v - a v‖ < ε := by
+  set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F
+  rw [mem_closure_iff_nhds_basis
+    ((PointwiseConvergenceCLM.hasBasis_nhds_zero_of_basis
+      (σ := σ) (E := E) Metric.nhds_basis_ball).nhds_of_zero (q x))]
+  refine ⟨fun h s ε hε ↦ ?_, fun h ⟨t, ε⟩ ⟨ht, hε⟩ ↦ ?_⟩
+  · obtain ⟨_, ⟨a, ha, rfl⟩, hball⟩ := h ⟨(s : Set E), ε⟩ ⟨s.finite_toSet, hε⟩
+    refine ⟨a, ha, fun v hv ↦ ?_⟩
+    have hlt := hball v hv
+    rw [Metric.mem_ball, dist_zero_right, sub_apply,
+      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply,
+      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, norm_sub_rev] at hlt
+    exact hlt
+  · classical
+    have ht' : t.Finite := ht
+    obtain ⟨a, ha, hlt⟩ := h ht'.toFinset hε
+    refine ⟨q a, ⟨a, ha, rfl⟩, fun v hv ↦ ?_⟩
+    rw [Metric.mem_ball, dist_zero_right, sub_apply,
+      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply,
+      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, norm_sub_rev]
+    exact hlt v (ht'.mem_toFinset.2 hv)
+
+/-- If `x` lies in the strong operator closure of `A`, then for every finite family of vectors `v`
+and `ε > 0` there is `a ∈ A` approximating `x` within `ε` on `v`. -/
+theorem exists_mem_forall_norm_sub_apply_lt_of_mem_closure [ContinuousSMul 𝕜₁ E]
+    {A : Set (E →SL[σ] F)} {x : E →SL[σ] F}
+    (hx : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F x ∈
+      closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A))
+    {ι : Type*} [Finite ι] (v : ι → E) {ε : ℝ} (hε : 0 < ε) :
+    ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε := by
+  obtain ⟨_, ⟨hU, a, ha, rfl⟩⟩ := mem_closure_iff.1 hx _
+    (isOpen_setOf_forall_norm_sub_apply_lt x v ε)
+    (fun i ↦ by rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, sub_self, norm_zero]
+                exact hε)
+  exact ⟨a, ha, fun i ↦ by
+    simpa only [ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply] using hU i⟩
+
+end Closure
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
   [InnerProductSpace 𝕜 H] [CompleteSpace H]

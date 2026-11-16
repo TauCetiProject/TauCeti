@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Lp.Diagonal.Positive
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 public import TauCeti.Analysis.VonNeumannAlgebra.Kaplansky
 public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
+import Mathlib.Analysis.InnerProductSpace.LinearMap
 
 /-!
 # Examples and negative controls for Kaplansky's density theorem
@@ -120,9 +121,10 @@ theorem centralizer_coe_finiteRankPlusScalars :
       have hn : ‖e‖ = 1 := by
         rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_norm, inv_mul_cancel₀ hu_norm]
       refine ⟨⟪e, R e⟫_ℂ, ContinuousLinearMap.ext fun x ↦ ?_⟩
-      let Eex : H →L[ℂ] H := ((ContinuousLinearMap.id ℂ ℂ).smulRight x).comp (innerSL ℂ e)
-      have hEex_fin : (Eex : H →ₗ[ℂ] H).HasFiniteRange :=
-        LinearMap.HasFiniteRange.of_finite_dom.comp_right _
+      let Eex : H →L[ℂ] H := InnerProductSpace.rankOne ℂ x e
+      have hEex_fin : (Eex : H →ₗ[ℂ] H).HasFiniteRange := by
+        simp only [Eex, InnerProductSpace.rankOne_def']
+        exact LinearMap.HasFiniteRange.of_finite_dom.comp_right _
       have hcomm := DFunLike.congr_fun
         (hR Eex (mem_finiteRankPlusScalars_of_hasFiniteRange hEex_fin)) e
       simpa [Eex, mul_apply_eq_comp, hn, Algebra.algebraMap_eq_smul_one] using hcomm
@@ -173,9 +175,43 @@ theorem evenSeq_apply (n : ℕ) : evenSeq n = if Even n then 1 else 0 := (rfl)
 def evenProjection : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ) :=
   lp.diagonalCLM evenSeq
 
+/-- `evenProjection` is the diagonal operator with symbol `evenSeq`. -/
+theorem evenProjection_def : evenProjection = lp.diagonalCLM evenSeq :=
+  (rfl)
+
+/-- On coordinates, `evenProjection` retains even entries and zeroes odd entries. -/
+@[simp]
+theorem evenProjection_apply (x : ℓ^2(ℕ, ℂ)) (n : ℕ) :
+    evenProjection x n = if Even n then x n else 0 := by
+  simp [evenProjection_def]
+
+/-- `evenProjection` is an orthogonal projection (`IsStarProjection`). -/
+theorem isStarProjection_evenProjection : IsStarProjection evenProjection where
+  isIdempotentElem := by
+    ext x n
+    simp only [mul_apply_eq_comp, evenProjection_apply]
+    split_ifs <;> simp
+  isSelfAdjoint := by
+    rw [evenProjection_def, lp.isSelfAdjoint_diagonalCLM_iff]
+    intro n
+    simp only [evenSeq_apply]
+    split_ifs <;> simp
+
 /-- Finite-rank coordinate truncations of `evenProjection` along `Finset.range n`. -/
 def evenProjectionTrunc (n : ℕ) : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ) :=
   lp.diagonalTruncation evenSeq (Finset.range n)
+
+/-- `evenProjectionTrunc n` is the `Finset.range n` diagonal truncation of `evenSeq`. -/
+theorem evenProjectionTrunc_def (n : ℕ) :
+    evenProjectionTrunc n = lp.diagonalTruncation evenSeq (Finset.range n) :=
+  (rfl)
+
+/-- On coordinates, `evenProjectionTrunc n` retains even entries strictly below `n`. -/
+@[simp]
+theorem evenProjectionTrunc_apply (n : ℕ) (x : ℓ^2(ℕ, ℂ)) (k : ℕ) :
+    evenProjectionTrunc n x k = if k < n ∧ Even k then x k else 0 := by
+  simp only [evenProjectionTrunc_def, lp.diagonalTruncation_apply, Finset.mem_range, evenSeq_apply]
+  split_ifs <;> simp_all
 
 /-- `evenProjection` is a positive contraction (`0 ≤ evenProjection` and `evenProjection ≤ 1`). -/
 theorem evenProjection_mem_Icc :
@@ -185,7 +221,7 @@ theorem evenProjection_mem_Icc :
   · simp only [evenSeq_apply]; split_ifs <;> simp
   · have hone : (1 : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) = lp.diagonalCLM 1 :=
       (lp.diagonalCLM_one (p := 2)).symm
-    rw [evenProjection, hone, lp.diagonalCLM_le_diagonalCLM_iff]
+    rw [evenProjection_def, hone, lp.diagonalCLM_le_diagonalCLM_iff]
     intro n; simp only [evenSeq_apply]; split_ifs <;> simp
 
 /-- Each finite-rank truncation `evenProjectionTrunc n` is a positive contraction in
@@ -231,10 +267,9 @@ theorem max_norm_le_norm_evenProjection_sub_algebraMap_add_compact (c : ℂ)
     {K : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)} (hK : IsCompactOperator K) :
     max ‖1 - c‖ ‖c‖ ≤
       ‖evenProjection - (algebraMap ℂ (ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) c + K)‖ := by
-  let b : HilbertBasis ℕ ℂ ℓ^2(ℕ, ℂ) := default
   let e : ℕ → ℓ^2(ℕ, ℂ) := fun n ↦ lp.single 2 n 1
-  have he_eq : (b : ℕ → ℓ^2(ℕ, ℂ)) = e := funext fun n ↦ b.repr_self n
-  have he : Orthonormal ℂ e := he_eq ▸ b.orthonormal
+  have he : Orthonormal ℂ e := orthonormal_iff_ite.mpr fun i j ↦ by
+    simp [e, lp.inner_single_left, Pi.single_apply]
   have hKe : Tendsto (fun n : ℕ ↦ ‖K (e n)‖) atTop (𝓝 0) := by
     simpa [Nat.cofinite_eq_atTop] using he.tendsto_norm_apply_cofinite hK
   set D := evenProjection - (algebraMap ℂ (ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) c + K)
@@ -252,10 +287,10 @@ theorem max_norm_le_norm_evenProjection_sub_algebraMap_add_compact (c : ℂ)
       _ ≤ ‖D‖ := by simpa [he.1 (f k)] using D.le_opNorm (e (f k))
   refine max_le
     (hsub (2 * ·) (fun _ _ h ↦ Nat.mul_lt_mul_of_pos_left h two_pos) 1 fun k ↦ by
-      simp [evenProjection, e, lp.diagonalCLM_single]) ?_
+      simp [evenProjection_def, e, lp.diagonalCLM_single]) ?_
   simpa using hsub (fun k ↦ 2 * k + 1)
     (fun _ _ h ↦ Nat.add_lt_add_right (Nat.mul_lt_mul_of_pos_left h two_pos) 1) 0 fun k ↦ by
-      simp [evenProjection, e, lp.diagonalCLM_single]
+      simp [evenProjection_def, e, lp.diagonalCLM_single]
 
 /-- Every element of `finiteRankPlusScalars ℓ^2(ℕ, ℂ)` lies at operator-norm distance at least
 `1 / 2` from `evenProjection`. -/

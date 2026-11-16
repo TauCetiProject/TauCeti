@@ -12,10 +12,11 @@ public import Mathlib.Tactic.Module
 /-!
 # Closures of star-convex sets intersected with closed balls
 
-If a subset `s` of a real seminormed space contains a point `x₀` and is star-convex about `x₀`,
-intersecting with any closed ball centred at `x₀` commutes with taking topological closures:
+If a subset `s` of a real seminormed space is star-convex about `x₀`, intersecting with any closed
+ball centred at `x₀` commutes with taking topological closures:
 `closure (s ∩ closedBall x₀ r) = closure s ∩ closedBall x₀ r`
-(`StarConvex.closure_inter_closedBall`), unconditionally on the radius `r : ℝ`.
+(`StarConvex.closure_inter_closedBall`), unconditionally on the radius `r : ℝ` (including when
+`s = ∅`).
 
 Specializing to convex sets and real subspaces gives `Convex.closure_inter_closedBall` and
 `Submodule.closure_inter_closedBall_zero`, which pull norm-bounded approximations from the norm
@@ -31,16 +32,17 @@ section StarConvex
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} {x₀ : E}
 
-/-- Intersecting a set containing `x₀` and star-convex about `x₀` with any closed ball centred at
-`x₀` commutes with taking closures. -/
-theorem StarConvex.closure_inter_closedBall (hs : StarConvex ℝ x₀ s) (hx₀ : x₀ ∈ s) (r : ℝ) :
+/-- Intersecting a set star-convex about `x₀` with any closed ball centred at `x₀` commutes with
+taking closures. -/
+theorem StarConvex.closure_inter_closedBall (hs : StarConvex ℝ x₀ s) (r : ℝ) :
     closure (s ∩ closedBall x₀ r) = closure s ∩ closedBall x₀ r := by
   refine subset_antisymm
     (closure_inter_subset.trans (inter_subset_inter_right _ isClosed_closedBall.closure_eq.subset))
     fun x ⟨hx, hxr⟩ ↦ ?_
   rcases lt_trichotomy r 0 with hr | rfl | hr
   · exact ((closedBall_eq_empty.2 hr).subset hxr).elim
-  · exact mem_closure_iff.2 fun ε hε ↦ ⟨x₀, ⟨hx₀, mem_closedBall_self le_rfl⟩, hxr.trans_lt hε⟩
+  · exact mem_closure_iff.2 fun ε hε ↦
+      ⟨x₀, ⟨hs.mem (closure_nonempty_iff.1 ⟨x, hx⟩), mem_closedBall_self le_rfl⟩, hxr.trans_lt hε⟩
   · -- Points `(1 - t) • x₀ + t • x` for `t ∈ (0, 1)` lie in `closure s ∩ ball x₀ r` and tend to `x`
     -- as `t → 1`.
     have hne : (𝓝[Ioo (0 : ℝ) 1] 1).NeBot := mem_closure_iff_nhdsWithin_neBot.1 <| by
@@ -67,7 +69,7 @@ theorem StarConvex.closure_inter_closedBall (hs : StarConvex ℝ x₀ s) (hx₀ 
 taking closures. -/
 theorem Convex.closure_inter_closedBall (hs : Convex ℝ s) (hx₀ : x₀ ∈ s) (r : ℝ) :
     closure (s ∩ closedBall x₀ r) = closure s ∩ closedBall x₀ r :=
-  (hs.starConvex hx₀).closure_inter_closedBall hx₀ r
+  (hs.starConvex hx₀).closure_inter_closedBall r
 
 /-- Intersecting a real subspace with any closed ball centred at `0` commutes with taking
 closures. -/

@@ -14,9 +14,14 @@ public import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 # Comparing the strong and weak operator topologies
 
 The identity from the pointwise-convergence copy of continuous linear maps to the weak
-operator copy is continuous. Centralizers of sets of operators are weak-operator closed.
-These facts allow strong approximation results to identify weak operator closures without
-changing the norm topology on the original operator space.
+operator copy is continuous (`ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM`), so
+weak-operator closed sets are strong-operator closed
+(`ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM`) and
+strong-operator closure identities pass to weak-operator closed targets
+(`ContinuousLinearMapWOT.closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM`).
+Centralizers of sets of operators are weak-operator closed. These facts allow strong approximation
+results to identify weak operator closures without changing the norm topology on the original
+operator space.
 
 The two topologies have the same continuous linear functionals: every functional continuous for
 pointwise convergence is a finite sum `T ↦ ∑ x ∈ s, g x (T x)` of continuous functionals of
@@ -51,6 +56,36 @@ theorem continuous_ofPointwiseConvergenceCLM :
   apply continuous_of_dual_apply_continuous
   intro x y
   exact y.continuous.comp (continuous_eval_const x)
+
+/-- Every weak-operator closed set of operators is closed in the strong operator topology. -/
+theorem isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM [ContinuousSMul 𝕜₁ E]
+    {s : Set (E →SL[σ] F)} (hs : IsClosed (ofCLM '' s)) :
+    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) := by
+  let g : (E →SLₚₜ[σ] F) → (E →SWOT[σ] F) := fun T ↦ ofCLM (T : E →SL[σ] F)
+  have hg_inj : Function.Injective g := fun T₁ T₂ h ↦
+    DFunLike.ext T₁ T₂ fun x ↦ congrArg (fun S : E →SL[σ] F ↦ S x) (ofCLM_injective h)
+  rw [← Set.preimage_image_eq (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) hg_inj,
+    Set.image_image]
+  exact hs.preimage continuous_ofPointwiseConvergenceCLM
+
+/-- If `B` is weak-operator closed and equals the strong-operator closure of `A`, then `B` is also
+the weak-operator closure of `A`. -/
+theorem closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM [ContinuousSMul 𝕜₁ E]
+    {A B : Set (E →SL[σ] F)} (hclosed : IsClosed (ofCLM '' B))
+    (hsot : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' B) :
+    closure (ofCLM '' A) = ofCLM '' B := by
+  have hAB : A ⊆ B :=
+    (Set.image_subset_image_iff ContinuousLinearMap.toPointwiseConvergenceCLM_injective).1
+      (subset_closure.trans hsot.subset)
+  refine subset_antisymm (closure_minimal (Set.image_mono hAB) hclosed) ?_
+  rintro _ ⟨x, hx, rfl⟩
+  have hx' : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F x ∈
+      closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A) :=
+    hsot ▸ ⟨x, hx, rfl⟩
+  simpa only [Set.image_image, Function.comp_def,
+    ContinuousLinearMap.toPointwiseConvergenceCLM_apply] using
+    mem_closure_image continuous_ofPointwiseConvergenceCLM.continuousAt hx'
 
 end ContinuousLinearMapWOT
 

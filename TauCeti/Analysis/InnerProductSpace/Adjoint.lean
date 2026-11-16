@@ -434,7 +434,8 @@ theorem _root_.LinearMap.HasFiniteRange.adjoint {A : E →L[𝕜] F}
       _ = ContinuousLinearMap.adjoint A ∘L
             ContinuousLinearMap.adjoint W.starProjection := adjoint_comp _ _
       _ = ContinuousLinearMap.adjoint A ∘L W.starProjection := by rw [hWadj]
-      _ = (ContinuousLinearMap.adjoint A ∘L W.subtypeL) ∘L W.orthogonalProjectionOnto := rfl
+      _ = (ContinuousLinearMap.adjoint A ∘L W.subtypeL) ∘L W.orthogonalProjectionOnto := by
+            ext x; simp
   rw [hadj]
   exact LinearMap.HasFiniteRange.of_finite_dom.comp_right _
 

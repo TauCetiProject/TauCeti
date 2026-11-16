@@ -29,7 +29,8 @@ The ultraweak topology sits between the others: it is coarser than the ultrastro
 `TauCeti.ContinuousLinearMapUltrastrong` and finer than the weak operator topology
 (`continuous_ofUltrastrong`, `continuous_toWOT`). On norm-bounded sets it agrees with the weak
 operator topology (`isInducing_restrict_toWOT`): for a uniformly bounded net, weak operator and
-ultraweak convergence are equivalent.
+ultraweak convergence are equivalent, so bounded sets have the same weak operator and ultraweak
+closures (`ofCLM_mem_closure_image_iff_of_norm_le`, `closure_image_ofCLM_of_closure_image_WOT`).
 
 ## Implementation notes
 
@@ -87,6 +88,10 @@ theorem toCLM_injective :
 theorem ofCLM_injective :
     Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltraweak 𝕜 E F) :=
   equiv.symm.injective
+
+theorem ofCLM_surjective :
+    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltraweak 𝕜 E F) :=
+  equiv.symm.surjective
 
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltraweak 𝕜 E F) :=
   equiv.addCommGroup
@@ -393,6 +398,18 @@ theorem ofCLM_mem_closure_image_iff_of_norm_le {t : Set (E →L[𝕜] F)} {C : �
           (ContinuousLinearMapWOT.equiv.left_inv T).symm)
     exact mem_closure_of_tendsto hlim
       (hmem.mono fun T hT ↦ ⟨ContinuousLinearMapWOT.toCLM T, hT, rfl⟩)
+
+/-- **Bounded-set closure transfer from the weak operator topology.** If a norm-bounded set `t`
+of operators into a complete inner product space has weak operator closure `u`, then its ultraweak
+closure is also `u`. -/
+theorem closure_image_ofCLM_of_closure_image_WOT {t u : Set (E →L[𝕜] F)} {C : ℝ}
+    (ht : ∀ T ∈ t, ‖T‖ ≤ C)
+    (hwot : closure (ContinuousLinearMapWOT.ofCLM '' t) = ContinuousLinearMapWOT.ofCLM '' u) :
+    closure (ofCLM '' t) = ofCLM '' u := by
+  ext A
+  obtain ⟨x, rfl⟩ := ofCLM_surjective A
+  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hwot,
+    ContinuousLinearMapWOT.ofCLM_injective.mem_set_image, ofCLM_injective.mem_set_image]
 
 end Comparison
 

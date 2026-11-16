@@ -21,17 +21,21 @@ its unitary group is compact. In particular the orthogonal and unitary groups of
 finite-dimensional real or complex inner product space are compact.
 
 Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the restricted
-`NormedStarGroup` structure. For a star subalgebra `S` over `ℝ` or `ℂ`, taking self-adjoint parts
-and intersecting with closed norm balls centred at `0` both commute with topological closure.
+`NormedStarGroup` structure. For any star-closed subobject `s` closed under addition and scalar
+multiplication by a division semiring with `2 ≠ 0`, taking self-adjoint parts commutes with
+topological closure (`StarMemClass.closure_inter_selfAdjoint`); in a normed space over `ℝ` or `ℂ`,
+intersecting the self-adjoint part with a closed norm ball centred at `0` commutes with norm
+closure (`StarMemClass.closure_inter_selfAdjoint_inter_closedBall_zero`).
 
 ## Main results
 
 * `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
 * `CStarRing.isCompact_unitary`: the unitary elements of a proper C⋆-ring form a compact set.
 * `CStarRing.instCompactSpaceUnitary`: the unitary group of a proper C⋆-ring is compact.
-* `StarSubalgebra.closure_inter_selfAdjoint` and
-  `StarSubalgebra.closure_inter_selfAdjoint_inter_closedBall_zero`: self-adjoint parts and closed
-  balls of star subalgebras commute with topological closure.
+* `StarMemClass.closure_inter_selfAdjoint`: taking self-adjoint parts commutes with topological
+  closure.
+* `StarMemClass.closure_inter_selfAdjoint_inter_closedBall_zero`: intersecting the self-adjoint
+  part with a closed norm ball centred at `0` commutes with norm closure.
 -/
 
 public section
@@ -62,39 +66,48 @@ instance instCompactSpaceUnitary : CompactSpace (unitary E) :=
 
 end CStarRing
 
-namespace StarSubalgebra
+namespace StarMemClass
 
-/-- Taking self-adjoint parts commutes with taking the closure of a star subalgebra over `ℝ` or
-`ℂ`. -/
-theorem closure_inter_selfAdjoint {𝕜 A : Type*} [RCLike 𝕜] [TopologicalSpace A] [T2Space A]
-    [Ring A] [StarRing A] [Algebra 𝕜 A] [StarModule 𝕜 A] [ContinuousAdd A]
-    [ContinuousConstSMul 𝕜 A] [ContinuousStar A] (S : StarSubalgebra 𝕜 A) :
-    closure ((S : Set A) ∩ selfAdjoint A) = closure (S : Set A) ∩ selfAdjoint A := by
+/-- Taking self-adjoint parts commutes with taking the closure of a star-closed subobject closed
+under addition and scalar multiplication by a division semiring with `2 ≠ 0`. -/
+theorem closure_inter_selfAdjoint (𝕜 : Type*) {A S : Type*} [DivisionSemiring 𝕜]
+    [NeZero (2 : 𝕜)] [TopologicalSpace A] [T2Space A] [AddCommGroup A] [StarAddMonoid A]
+    [Module 𝕜 A] [ContinuousAdd A] [ContinuousConstSMul 𝕜 A] [ContinuousStar A]
+    [SetLike S A] [AddMemClass S A] [SMulMemClass S 𝕜 A] [StarMemClass S A] (s : S) :
+    closure ((s : Set A) ∩ selfAdjoint A) = closure (s : Set A) ∩ selfAdjoint A := by
   refine subset_antisymm
     (closure_inter_subset.trans
       (inter_subset_inter_right _ (isClosed_eq continuous_star continuous_id).closure_eq.subset))
     fun x ⟨hx, hxsa⟩ ↦ ?_
-  have h2 : IsSelfAdjoint (2⁻¹ : 𝕜) := by simp [IsSelfAdjoint]
   have hre := map_mem_closure (f := fun a : A ↦ (2⁻¹ : 𝕜) • (a + star a)) (by fun_prop) hx
-    (t := (S : Set A) ∩ selfAdjoint A) fun a ha ↦
-      ⟨SMulMemClass.smul_mem _ (add_mem ha (star_mem ha)), h2.smul (.add_star_self a)⟩
+    (t := (s : Set A) ∩ selfAdjoint A) fun a ha ↦ by
+      refine ⟨SMulMemClass.smul_mem _ (add_mem ha (star_mem ha)), ?_⟩
+      simp only [SetLike.mem_coe, selfAdjoint.mem_iff]
+      rw [← Nat.cast_two (R := 𝕜), star_inv_natCast_smul, (IsSelfAdjoint.add_star_self a).star_eq]
   have hx2 : (2⁻¹ : 𝕜) • (x + star x) = x := by
-    rw [hxsa.star_eq, ← two_smul 𝕜 x, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+    rw [hxsa.star_eq, ← two_smul 𝕜 x, smul_smul, inv_mul_cancel₀ (NeZero.ne (2 : 𝕜)), one_smul]
   rwa [hx2] at hre
 
-/-- Intersecting the self-adjoint part of a star subalgebra with a closed norm ball centred at `0`
-commutes with taking the norm closure. -/
-theorem closure_inter_selfAdjoint_inter_closedBall_zero {𝕜 A : Type*} [RCLike 𝕜] [NormedRing A]
-    [StarRing A] [NormedAlgebra 𝕜 A] [NormedSpace ℝ A] [IsScalarTower ℝ 𝕜 A] [StarModule 𝕜 A]
-    [ContinuousStar A] (S : StarSubalgebra 𝕜 A) (r : ℝ) :
-    closure ((S : Set A) ∩ selfAdjoint A ∩ closedBall 0 r) =
-      closure (S : Set A) ∩ selfAdjoint A ∩ closedBall 0 r := by
-  have : StarModule ℝ A := ⟨fun c a ↦ by
-    simp only [RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def,
-      RCLike.conj_ofReal, star_trivial]⟩
-  let p : Submodule ℝ A :=
-    (S.toSubalgebra.toSubmodule.restrictScalars ℝ) ⊓ selfAdjoint.submodule ℝ A
-  have hp : (p : Set A) = (S : Set A) ∩ selfAdjoint A := rfl
-  rw [← hp, p.closure_inter_closedBall_zero r, hp, S.closure_inter_selfAdjoint]
+/-- Intersecting the self-adjoint part of a star-closed normed-space subobject over `ℝ` or `ℂ` with
+a closed norm ball centred at `0` commutes with taking the norm closure. -/
+theorem closure_inter_selfAdjoint_inter_closedBall_zero (𝕜 : Type*) {A S : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup A] [StarAddMonoid A] [NormedSpace 𝕜 A] [StarModule 𝕜 A]
+    [ContinuousStar A] [SetLike S A] [AddSubmonoidClass S A] [SMulMemClass S 𝕜 A]
+    [StarMemClass S A] (s : S) (r : ℝ) :
+    closure ((s : Set A) ∩ selfAdjoint A ∩ closedBall 0 r) =
+      closure (s : Set A) ∩ selfAdjoint A ∩ closedBall 0 r := by
+  have hcl : closure ((s : Set A) ∩ selfAdjoint A) = closure (s : Set A) ∩ selfAdjoint A :=
+    closure_inter_selfAdjoint 𝕜 s
+  let _ : NormedSpace ℝ A := NormedSpace.restrictScalars ℝ 𝕜 A
+  have _ : IsScalarTower ℝ 𝕜 A := RestrictScalars.isScalarTower ℝ 𝕜 A
+  have _ : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜 A
+  have _ : StarModule ℝ A := ⟨fun c a ↦ by
+    rw [← algebraMap_smul 𝕜 c a, star_smul, RCLike.algebraMap_eq_ofReal, RCLike.star_def,
+      RCLike.conj_ofReal, ← RCLike.algebraMap_eq_ofReal, algebraMap_smul, star_trivial c]⟩
+  let p : Submodule ℝ A := Submodule.ofClass s ⊓ selfAdjoint.submodule ℝ A
+  have hp : (p : Set A) = (s : Set A) ∩ selfAdjoint A := by
+    simp only [p, Submodule.coe_inf, Submodule.coe_ofClass,
+      ← selfAdjoint.toAddSubgroup_submodule ℝ A, Submodule.coe_toAddSubgroup]
+  rw [← hp, p.closure_inter_closedBall_zero r, hp, hcl]
 
-end StarSubalgebra
+end StarMemClass

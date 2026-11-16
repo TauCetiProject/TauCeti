@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.TransferInstance
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.MapCLM
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # The ultrastrong operator topology
@@ -29,8 +30,10 @@ topology. The copy is a Hausdorff locally convex topological vector space, with 
 The ultrastrong topology is coarser than the norm topology and finer than the strong operator
 topology on Mathlib's pointwise-convergence copy `E →Lₚₜ[𝕜] F`. On norm-bounded sets the latter
 comparison is an equality (`isInducing_restrict_toPointwiseConvergenceCLM`): for a uniformly
-bounded net, strong and ultrastrong convergence agree. This is the bounded-set agreement used to
-pass between the two topologies in von Neumann algebra theory.
+bounded net, strong and ultrastrong convergence agree, so bounded sets have the same strong and
+ultrastrong closures (`ofCLM_mem_closure_image_iff_of_norm_le`,
+`closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM`). This is the bounded-set
+agreement used to pass between the two topologies in von Neumann algebra theory.
 
 The definition needs no inner product: `E` and `F` are arbitrary normed spaces.
 
@@ -89,6 +92,10 @@ theorem toCLM_injective :
 theorem ofCLM_injective :
     Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.symm.injective
+
+theorem ofCLM_surjective :
+    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.surjective
 
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.addCommGroup
@@ -350,19 +357,33 @@ theorem ofCLM_mem_closure_image_iff_of_norm_le {t : Set (E →L[𝕜] F)} {C : �
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · simpa only [Set.image_image, Function.comp_def] using
       mem_closure_image continuous_toPointwiseConvergenceCLM.continuousAt hx
-  · let toCLM : (E →Lₚₜ[𝕜] F) → (E →L[𝕜] F) :=
-      (UniformConvergenceCLM.ofFun (RingHom.id 𝕜) F {s : Set E | s.Finite}).symm
-    let l : Filter (E →Lₚₜ[𝕜] F) := 𝓝[q '' t] (q x)
+  · let l : Filter (E →Lₚₜ[𝕜] F) := 𝓝[q '' t] (q x)
     have : l.NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
-    have hmem : ∀ᶠ T in l, toCLM T ∈ t := by
+    have hmem : ∀ᶠ T in l, PointwiseConvergenceCLM.toCLM T ∈ t := by
       refine (eventually_mem_nhdsWithin (a := q x) (s := q '' t)).mono ?_
       rintro T ⟨S, hS, rfl⟩
-      exact hS
-    have hlim : Tendsto (fun T : E →Lₚₜ[𝕜] F ↦ ofCLM (toCLM T)) l (𝓝 (ofCLM x)) :=
+      rwa [PointwiseConvergenceCLM.toCLM_toPointwiseConvergenceCLM]
+    have hlim : Tendsto (fun T : E →Lₚₜ[𝕜] F ↦ ofCLM (PointwiseConvergenceCLM.toCLM T)) l
+        (𝓝 (ofCLM x)) :=
       (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_eventually_norm_le
         (hmem.mono fun T hT ↦ ht _ hT)).2
-        (tendsto_nhdsWithin_of_tendsto_nhds (tendsto_id (x := 𝓝 (q x))))
-    exact mem_closure_of_tendsto hlim (hmem.mono fun T hT ↦ ⟨toCLM T, hT, rfl⟩)
+        ((tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).congr fun T ↦
+          (PointwiseConvergenceCLM.toPointwiseConvergenceCLM_toCLM T).symm)
+    exact mem_closure_of_tendsto hlim
+      (hmem.mono fun T hT ↦ ⟨PointwiseConvergenceCLM.toCLM T, hT, rfl⟩)
+
+/-- **Bounded-set closure transfer from the strong operator topology.** If a norm-bounded set `t`
+of operators has strong operator closure `u`, then its ultrastrong closure is also `u`. -/
+theorem closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM {t u : Set (E →L[𝕜] F)}
+    {C : ℝ} (ht : ∀ T ∈ t, ‖T‖ ≤ C)
+    (hsot : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' u) :
+    closure (ofCLM '' t) = ofCLM '' u := by
+  ext A
+  obtain ⟨x, rfl⟩ := ofCLM_surjective A
+  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hsot,
+    ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image,
+    ofCLM_injective.mem_set_image]
 
 end Comparison
 
