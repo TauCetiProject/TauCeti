@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.Algebra.Group.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Torsion
 
 /-!
 # Centralizers in free groups
@@ -33,6 +34,7 @@ free basis.
   is trivial.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
+* `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
   nontrivial element commute with each other.
 * `IsFreeGroup.isCyclic_centralizer`: the centralizer of a nontrivial element of a free group is
@@ -150,3 +152,19 @@ theorem isCyclic_centralizer {x : G} (hx : x ≠ 1) : IsCyclic (Subgroup.central
   Subgroup.isCyclic_of_isMulCommutative _
 
 end IsFreeGroup
+
+namespace FreeGroup
+
+variable {α : Type*}
+
+/-- Nonzero powers of distinct generators of a free group do not commute: `of a ^ m` and
+`of b ^ n` commute only when `m = 0` or `n = 0`. -/
+@[simp]
+theorem commute_of_zpow_of_zpow_iff {a b : α} (hab : a ≠ b) {m n : ℤ} :
+    Commute (of a ^ m) (of b ^ n) ↔ m = 0 ∨ n = 0 := by
+  refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
+  by_contra! hmn
+  rw [Commute.zpow_left_iff hmn.1, Commute.zpow_right_iff hmn.2] at h
+  exact hab (eq_of_commute_of_of h)
+
+end FreeGroup

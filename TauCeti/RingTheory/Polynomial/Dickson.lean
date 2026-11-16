@@ -136,11 +136,15 @@ theorem dickson_sq_mul_eval_mul (k : ℕ) (s t a : R) (n : ℕ) :
     simp only [dickson_add_two, eval_sub, eval_mul, eval_X, eval_C, ih₀, ih₁]
     ring
 
-/-- A Dickson polynomial with even index has the same value at opposite arguments. -/
-@[simp]
-theorem dickson_eval_neg_of_even (k : ℕ) (a t : R) {n : ℕ} (hn : Even n) :
-    (dickson k a n).eval (-t) = (dickson k a n).eval t := by
-  simpa [hn.neg_one_pow] using dickson_sq_mul_eval_mul k (-1 : R) t a n
+/-- **The Dickson polynomials have the parity of their index**, for every kind `k`: negating the
+argument multiplies the value by `(-1) ^ n`. For even `n` the values at `t` and `-t` agree
+(rewrite with `Even.neg_one_pow`), and for odd `n` they are opposite (`Odd.neg_one_pow`).
+
+This is not a simp lemma, since it would rewrite the left side of the simp lemma
+`dickson_eval_neg_one_three_mul_add`. -/
+theorem dickson_eval_neg (k : ℕ) (a t : R) (n : ℕ) :
+    (dickson k a n).eval (-t) = (-1) ^ n * (dickson k a n).eval t := by
+  simpa using dickson_sq_mul_eval_mul k (-1 : R) t a n
 
 /-- **The Dickson polynomial of the second kind with square parameter is a rescaled Chebyshev
 polynomial**.

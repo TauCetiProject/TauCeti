@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Presheaf
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Opens
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.Algebra.Homology.HomologicalComplex.PresheafOfModules
 
@@ -18,8 +19,11 @@ restriction. The result is
 `Scheme.Hom.higherDirectImagePresheaf_map_globalSectionsSmul_app`.
 
 This computes the scalar action on the module presheaf whose sheafification is
-`Rⁿ f_* M`. It is an input for relating that action to coefficient multiplication
-on cohomology, and hence for applying localization criteria to higher direct images.
+`Rⁿ f_* M`. Under the identification of its sections over `U` with `Hⁿ(f⁻¹ U, M)`, the
+action of a global function `r` on `Y` is the action of its pullback `f^* r` on cohomology
+through coefficient multiplication
+(`Scheme.Hom.higherDirectImagePresheafToPresheafIso_hom_app_smul`). This is how localization
+criteria for cohomology apply to higher direct images.
 
 ## References
 
@@ -77,5 +81,24 @@ lemma higherDirectImagePresheaf_map_globalSectionsSmul_app (M : X.Modules) (n : 
   rw [pushforward_map_globalSectionsSmul, globalSectionsSmul_app]
   exact ((pushforward f).obj (P.cocomplex.X n)).smul_apply _ _
 
+/-- Under the identification of the sections over `U` of the derived module presheaf with
+`Hⁿ(f⁻¹ U, M)`, multiplication by the restriction of a global function `r` on `Y` is
+multiplication by its pullback `f^* r`, acting on cohomology through `M`. -/
+-- The cohomology presheaf evaluated at `U` is the cohomology of `f⁻¹ U`; typeclass search does not
+-- unfold this identification to find the module structure over global functions.
+-- Apply before simp normalizes the source and target presheaf section types.
+@[simp↓]
+lemma higherDirectImagePresheafToPresheafIso_hom_app_smul (M : X.Modules) (n : ℕ)
+    (r : Γ(Y, ⊤)) (U : Y.Opens) (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op U)) :
+    (f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op U)
+        ((show Y.ringCatSheaf.obj.obj (.op U) from Y.presheaf.map U.leTop.op r) • x) =
+      f.appTop r • (show TauCeti.AlgebraicGeometry.Scheme.Modules.cohomologyOn M n (f ⁻¹ᵁ U) from
+        (f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op U) x) := by
+  have h := ConcreteCategory.congr_hom (NatTrans.congr_app
+    (f.higherDirectImagePresheafToPresheafIso_naturality (M.globalSectionsSmul (f.appTop r)) n)
+    (.op U)) x
+  simp only [NatTrans.comp_app] at h
+  rw [← higherDirectImagePresheaf_map_globalSectionsSmul_app, cohomologyOn_smul_def]
+  exact h
 
 end AlgebraicGeometry.Scheme.Hom

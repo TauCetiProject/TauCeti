@@ -1,12 +1,14 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import Mathlib.Tactic.Module
 
 /-!
 # Unitarily invariant seminorms on rectangular linear maps
@@ -64,6 +66,11 @@ values:
 * `TauCeti.UnitarilyInvariantSeminorm.compAdjoint`: the seminorm `B ↦ N B†` on the adjoint maps.
 * `TauCeti.UnitarilyInvariantSeminorm.map_operatorAbs`: on endomorphisms, `N |A| = N A` for the
   operator modulus `|A| = √(A† A)`.
+* `TauCeti.UnitarilyInvariantSeminorm.map_comp_starProjection_sub_starProjection_comp_le`: the
+  checkerboard contraction `N (H P_U - P_V H) ≤ N H`; composing with an orthogonal projection on
+  either side does not increase `N`
+  (`TauCeti.UnitarilyInvariantSeminorm.map_starProjection_comp_le`,
+  `TauCeti.UnitarilyInvariantSeminorm.map_comp_starProjection_le`).
 
 ## Source
 
@@ -72,6 +79,10 @@ certificates are adapted from the
 [AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
 (`ForTauCeti/Analysis/InnerProductSpace/UnitarilyInvariantSeminorm/Basic.lean`).
 Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
+
+The checkerboard contraction was factored from the symmetric two-orientation proof adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the same formalization
+(Apache-2.0; copyright 2026 Kitware, Inc.; Jon Crall, GPT-6).
 
 ## References
 
@@ -414,6 +425,63 @@ modulus `|A| = √(A† A)`. -/
 theorem map_operatorAbs [FiniteDimensional 𝕜 E] (N : UnitarilyInvariantSeminorm 𝕜 E E)
     (A : E →ₗ[𝕜] E) : N A.operatorAbs = N A :=
   N.map_eq_of_singularValues_eq A.singularValues_operatorAbs
+
+/-! ### Orthogonal projections -/
+
+/-- **Checkerboard contraction.** For any `H`, the off-diagonal difference
+`H P_U - P_V H` has no larger unitarily invariant seminorm than `H`.
+No symmetry, invariance or spectral-gap hypotheses on `H` are needed. -/
+theorem map_comp_starProjection_sub_starProjection_comp_le
+    (N : UnitarilyInvariantSeminorm 𝕜 E F)
+    (U : Submodule 𝕜 E) (V : Submodule 𝕜 F)
+    [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (H : E →ₗ[𝕜] F) :
+    N (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
+      (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H) ≤ N H := by
+  let JU : E ≃ₗᵢ[𝕜] E := U.reflection
+  let JV : F ≃ₗᵢ[𝕜] F := V.reflection
+  -- Two reflections turn the checkerboard into a difference of isometric multiples.
+  have hdouble :
+      (2 : 𝕜) • (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
+          (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H) =
+        H ∘ₗ (JU : E →ₗ[𝕜] E) - (JV : F →ₗ[𝕜] F) ∘ₗ H := by
+    ext x
+    simp [JU, JV, Submodule.reflection_apply, LinearMap.comp_apply]
+    module
+  have hscaled :
+      2 * N (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
+          (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H) ≤ 2 * N H := by
+    calc
+      _ = N ((2 : 𝕜) • (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
+          (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H)) := by
+        simp only [map_smul_eq_mul, RCLike.norm_ofNat]
+      _ = N (H ∘ₗ (JU : E →ₗ[𝕜] E) - (JV : F →ₗ[𝕜] F) ∘ₗ H) := by
+        rw [hdouble]
+      _ ≤ N (H ∘ₗ (JU : E →ₗ[𝕜] E)) + N (-((JV : F →ₗ[𝕜] F) ∘ₗ H)) := by
+        simpa [sub_eq_add_neg] using
+          map_add_le_add N (H ∘ₗ (JU : E →ₗ[𝕜] E))
+            (-((JV : F →ₗ[𝕜] F) ∘ₗ H))
+      _ = N H + N H := by
+        rw [map_neg_eq_map N, N.map_comp_linearIsometryEquiv JU H,
+          N.map_linearIsometryEquiv_comp JV H]
+      _ = 2 * N H := by ring
+  exact le_of_mul_le_mul_left hscaled (by norm_num : (0 : ℝ) < 2)
+
+/-- Composing with an orthogonal projection on the left does not increase a unitarily invariant
+seminorm. -/
+theorem map_starProjection_comp_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 F)
+    [U.HasOrthogonalProjection] (A : E →ₗ[𝕜] F) :
+    N ((U.starProjection : F →ₗ[𝕜] F) ∘ₗ A) ≤ N A := by
+  have h := N.map_comp_starProjection_sub_starProjection_comp_le (⊥ : Submodule 𝕜 E) U A
+  simpa [Submodule.starProjection_bot, map_neg_eq_map] using h
+
+/-- Composing with an orthogonal projection on the right does not increase a unitarily invariant
+seminorm. -/
+theorem map_comp_starProjection_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 E)
+    [U.HasOrthogonalProjection] (A : E →ₗ[𝕜] F) :
+    N (A ∘ₗ (U.starProjection : E →ₗ[𝕜] E)) ≤ N A := by
+  have h := N.map_comp_starProjection_sub_starProjection_comp_le U (⊥ : Submodule 𝕜 F) A
+  simpa [Submodule.starProjection_bot] using h
 
 end UnitarilyInvariantSeminorm
 

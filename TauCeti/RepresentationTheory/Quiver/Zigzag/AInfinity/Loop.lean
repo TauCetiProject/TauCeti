@@ -305,7 +305,7 @@ private theorem loopOps_eq_zero_of_coord {m : ℕ} (h₂ : m ≠ 2)
 /-! ### Degrees -/
 
 /-- The path-length grading of the zigzag quotient, as an internal integer grading. -/
-private noncomputable def loopGrading : InternalGrading k (nonisolatedZigzagQuotient k G) :=
+private noncomputable def loopGrading : InternalGrading k (nonisolatedZigzagQuotient k G) ℤ :=
   ⟨zigzagIntegerGrade k G, isInternal_zigzagIntegerGrade k G⟩
 
 private theorem isHomogeneous_loopOps (m : ℕ) :

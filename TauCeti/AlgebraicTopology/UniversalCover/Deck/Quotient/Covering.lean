@@ -61,8 +61,7 @@ theorem _root_.IsQuotientCoveringMap.isRegular {G : Type*} [Group G] [MulAction 
     (h : IsQuotientCoveringMap p G) : IsRegular p := by
   refine isRegular_iff_exists_apply_eq.mpr ⟨h.surjective, fun {e e'} hee => ?_⟩
   obtain ⟨g, hg⟩ := h.apply_eq_iff_mem_orbit.mp hee.symm
-  exact ⟨IsQuotientCoveringMap.toDeckHom h g, by
-    rw [IsQuotientCoveringMap.toDeckHom_apply]; exact hg⟩
+  exact ⟨h.toDeckHom g, by rw [h.toDeckHom_apply]; exact hg⟩
 
 /-- For a covering map with preconnected total space, being a quotient covering map for the
 deck transformation group is equivalent to regularity of the deck action. -/

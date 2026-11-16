@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpOrder
+public import Mathlib.Order.PartialSups
 
 /-!
 # `Lᵖ` is an ordered module
@@ -15,6 +16,8 @@ the values is monotone, then so is scalar multiplication on `Lᵖ` classes, sinc
 almost everywhere pointwise. In particular real `Lᵖ` is an ordered real module, which is the
 hypothesis under which Mathlib's Bochner integral of almost everywhere nonnegative functions is
 nonnegative (`MeasureTheory.integral_nonneg_of_ae`), now applicable to `Lᵖ`-valued functions.
+Finite running suprema and positive parts also preserve `MemLp`
+(`MeasureTheory.MemLp.partialSups`, `MeasureTheory.MemLp.posPart`).
 
 The positive part of a real `Lᵖ` class is nonnegative (`MeasureTheory.Lp.posPart_nonneg`), and it
 vanishes exactly when the class is nonpositive (`MeasureTheory.Lp.posPart_eq_zero_iff`).
@@ -23,6 +26,33 @@ vanishes exactly when the class is nonpositive (`MeasureTheory.Lp.posPart_eq_zer
 public section
 
 open scoped ENNReal
+
+namespace MeasureTheory
+
+/-- The positive part of an `Lᵖ` function is in `Lᵖ`. -/
+theorem MemLp.posPart {α E : Type*} {m : MeasurableSpace α} {μ : Measure[m] α}
+    {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
+    [IsOrderedAddMonoid E] {f : α → E} (hf : MemLp f p μ) : MemLp (f⁺) p μ :=
+  hf.sup .zero
+
+/-- The supremum of a nonempty finite family of `Lᵖ` functions is in `Lᵖ`. -/
+theorem memLp_finset_sup' {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure[m] α}
+    {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
+    [IsOrderedAddMonoid E] {s : Finset ι} (hs : s.Nonempty) {f : ι → α → E}
+    (hf : ∀ j ∈ s, MemLp (f j) p μ) : MemLp (s.sup' hs f) p μ :=
+  Finset.sup'_induction _ _ (p := fun g ↦ MemLp g p μ)
+    (fun _ hf _ hg ↦ hf.sup hg) hf
+
+/-- A finite running supremum of `Lᵖ` functions is in `Lᵖ`. -/
+theorem MemLp.partialSups {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure α}
+    {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
+    [IsOrderedAddMonoid E] [Preorder ι] [LocallyFiniteOrderBot ι]
+    {f : ι → α → E} {i : ι} (hf : ∀ j ≤ i, MemLp (f j) p μ) :
+    MemLp (partialSups f i) p μ := by
+  rw [partialSups_apply]
+  exact memLp_finset_sup' _ (fun j hj ↦ hf j (Finset.mem_Iic.mp hj))
+
+end MeasureTheory
 
 namespace MeasureTheory.Lp
 

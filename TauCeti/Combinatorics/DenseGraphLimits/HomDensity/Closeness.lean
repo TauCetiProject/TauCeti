@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 import TauCeti.Probability.UniformSampling
-import TauCeti.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Linarith
 

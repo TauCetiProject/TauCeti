@@ -65,7 +65,8 @@ from it.
 * `MeasureTheory.Measure.decreasingRearrangement_indicator`,
   `MeasureTheory.Measure.decreasingRearrangement_const_mul`,
   `MeasureTheory.Measure.decreasingRearrangement_sub_const`: indicators, and multiplication by and
-  subtraction of constants.
+  subtraction of constants; `MeasureTheory.Measure.lintegral_decreasingRearrangement_indicator`:
+  the formula `∫₀ᵗ (c 1_A)* = c min (t, μ A)`.
 * `MeasureTheory.Measure.volume_restrict_setOf_lt_decreasingRearrangement`: equimeasurability,
   with the consequences `lintegral_rpow_decreasingRearrangement`,
   `eLpNorm_decreasingRearrangement`, `memLp_decreasingRearrangement_iff` and
@@ -355,6 +356,32 @@ exponent `p ∈ [0, ∞]`. -/
 theorem memLp_decreasingRearrangement_iff (hf : AEMeasurable f μ) {p : ℝ≥0∞} :
     MemLp (μ.decreasingRearrangement f) p (volume.restrict (Ioi 0)) ↔ MemLp f p μ := by
   rw [memLp_iff, memLp_iff, eLpNorm_decreasingRearrangement μ hf]
+
+/-- The integral of the decreasing rearrangement of `c 1_A` over `(0, t]` is `c min (t, μ A)`. -/
+theorem lintegral_decreasingRearrangement_indicator (A : Set α) (c : ℝ≥0∞) (t : ℝ) :
+    ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (A.indicator fun _ ↦ c) s =
+      c * min (ENNReal.ofReal t) (μ A) := by
+  simp_rw [μ.decreasingRearrangement_indicator]
+  have hS : MeasurableSet {s : ℝ | ENNReal.ofReal s < μ A} :=
+    measurableSet_lt ENNReal.measurable_ofReal measurable_const
+  have hind : (fun s : ℝ ↦ if ENNReal.ofReal s < μ A then c else 0) =
+      {s : ℝ | ENNReal.ofReal s < μ A}.indicator fun _ ↦ c := by
+    ext s
+    simp [Set.indicator_apply]
+  rw [hind, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc, lintegral_indicator_const hS,
+    Measure.restrict_apply hS]
+  congr 1
+  rcases eq_or_ne (μ A) ∞ with hA | hA
+  · simp [hA]
+  have hset : {s : ℝ | ENNReal.ofReal s < μ A} ∩ Ioo 0 t = Ioo 0 t ∩ Iio (μ A).toReal := by
+    ext s
+    constructor
+    · rintro ⟨hs, hs₀, hst⟩
+      exact ⟨⟨hs₀, hst⟩, (ENNReal.ofReal_lt_iff_lt_toReal hs₀.le hA).1 hs⟩
+    · rintro ⟨⟨hs₀, hst⟩, hs⟩
+      exact ⟨(ENNReal.ofReal_lt_iff_lt_toReal hs₀.le hA).2 hs, hs₀, hst⟩
+  rw [hset, Ioo_inter_Iio, Real.volume_Ioo, sub_zero, ENNReal.ofReal_min,
+    ENNReal.ofReal_toReal hA]
 
 /-! ### The `K`-functional of `(L¹, L∞)` -/
 

@@ -183,21 +183,19 @@ private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridS
     (D.first.disjoint_coveredSquares D.second), Finset.mem_insert, Finset.mem_singleton]
   constructor
   · rintro ⟨-, -, hX⟩
-    rcases D.first.left_right_eq_cases D.second with ⟨hleft, hright⟩ | ⟨hleft, hright⟩
+    rcases D.first.left_right_eq_cases D.second with ⟨hleft, -⟩ | ⟨hleft, -⟩
     · -- a column band: it is the column annulus of column `k`
       rw [coveredSquares_union_coveredSquares_of_left_eq_left _ _ hleft,
         product_univ_inter_XSet_eq_singleton_iff, GridRectangle.coveredColumns_def,
         toGridRectangle_left, toGridRectangle_right, Grid.cIco_eq_singleton_iff] at hX
       obtain ⟨hl, hr, -⟩ := hX
       left
-      refine GridRectangleDecomposition.ext ?_ ?_ ?_ ?_ <;>
+      refine GridRectangleDecomposition.ext ?_ ?_ ?_ <;>
         simp only [columnAnnulus, ofSwapColumns_left, ofSwapColumns_right]
       · exact hl
       · exact hr
       · rw [hleft]
         exact hl
-      · rw [hright]
-        exact hr
     · -- a row band: it is the row annulus of the row of `X_k`
       rw [coveredSquares_union_coveredSquares_of_left_eq_right _ _ hleft,
         univ_product_inter_XSet_eq_singleton_iff, GridRectangle.coveredRows_def,
@@ -210,14 +208,12 @@ private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridS
       have hr : D.first.right = x.transpose (finRotate n (G.X k)) := by
         rw [← ht, GridState.transpose_apply_apply]
       right
-      refine GridRectangleDecomposition.ext ?_ ?_ ?_ ?_ <;>
+      refine GridRectangleDecomposition.ext ?_ ?_ ?_ <;>
         simp only [rowAnnulus, ofSwapColumns_left, ofSwapColumns_right]
       · exact hl
       · exact hr
       · rw [hleft]
         exact hr
-      · rw [hright]
-        exact hl
   · rintro (rfl | rfl)
     · refine ⟨(columnAnnulus_isEmpty x k _).1, (columnAnnulus_isEmpty x k _).2, ?_⟩
       rw [columnAnnulus_coveredSquares, product_univ_inter_XSet_eq_singleton_iff]

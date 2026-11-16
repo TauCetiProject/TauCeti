@@ -51,7 +51,7 @@ variable {R : Type uR} [CommRing R] {n : ℕ} {β : Fin n → Type uβ}
   [∀ i j, AddCommMonoid (M i j)] [∀ i j, Module R (M i j)]
   [∀ i, AddCommMonoid (P i)] [∀ i, Module R (P i)]
   [AddCommMonoid N] [Module R N]
-  (G : ∀ i j, InternalGrading R (M i j))
+  (G : ∀ i j, InternalGrading R (M i j) ℤ)
   (H : ∀ i, ℤ → Submodule R (P i)) (ℬ : ℤ → Submodule R N)
   {p : ℤ} {q : Fin n → ℤ}
   (f : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R) H ℬ p)

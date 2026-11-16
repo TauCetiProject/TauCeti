@@ -19,7 +19,7 @@ are bundled as graded algebra maps, so the equivalence can be used on projective
 This supplies the homogeneous-coordinate comparison needed to construct families of projective
 linear transformations. No freeness, flatness, or finite generation of the module is required.
 
-The underlying equivalence is `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`; the grading
+The underlying equivalence is `SymmetricAlgebra.scalarTensorBialgEquiv`; the grading
 on its source is Mathlib's `GradedAlgebra.baseChange`.
 
 The image computation follows the image-of-powers argument in
@@ -47,6 +47,7 @@ Naturality is provided by `LinearMap.scalarTensorBialgEquiv_comp_map` in
 
 public section
 
+open SymmetricAlgebra
 open scoped TensorProduct
 
 namespace TauCeti.SymmetricAlgebra

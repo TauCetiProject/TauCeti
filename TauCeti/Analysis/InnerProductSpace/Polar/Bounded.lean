@@ -161,8 +161,7 @@ variable {T} in
 `ker T` is the polar factor of `T`. It is not assumed to be a partial isometry. -/
 theorem eq_polarFactor {V : E →L[𝕜] F} (hV : V ∘L T.modulus = T) (hV₀ : ∀ x ∈ T.ker, V x = 0) :
     V = T.polarFactor :=
-  eq_factorThru_of_isStarNormal (fun x ↦ (T.norm_modulus_apply x).symm)
-    T.isSelfAdjoint_modulus.isStarNormal hV hV₀
+  eq_factorThru_of_isStarNormal T.isSelfAdjoint_modulus.isStarNormal hV hV₀
 
 /-- A bounded operator is the polar factor of `T` exactly when it factors `T` through its modulus
 and vanishes on `ker T`. -/

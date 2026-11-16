@@ -182,7 +182,7 @@ omit [SetLike.GradedMul 𝒜] in
 /-- The enveloping differential raises total tensor degree by one whenever the original
 endomorphism does, independently of the degree of its free generator. The bundled grading
 may carry any decomposition of the original homogeneous pieces. -/
-theorem isHomogeneous_envelopeDifferential (G : InternalGrading R A) (hG : G.piece = 𝒜)
+theorem isHomogeneous_envelopeDifferential (G : InternalGrading R A ℤ) (hG : G.piece = 𝒜)
     (hdeg : LinearMap.IsHomogeneous d G.piece G.piece 1) (n : ℤ) :
     LinearMap.IsHomogeneous (envelopeDifferential 𝒜 d n)
       (G.tensorProduct G.opposite).piece (G.tensorProduct G.opposite).piece 1 := by

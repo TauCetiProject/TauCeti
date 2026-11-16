@@ -56,8 +56,7 @@ private theorem IsGeodesicCurveOn.contMDiffOn_jacobiOperator
       (fun r ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (γ r)
         ((((leviCivitaConnection I M).curvatureTensorCLM
-          (V := fun x : M ↦ TangentSpace I x)
-          (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) (γ r)).flip
+          (V := fun x : M ↦ TangentSpace I x) (γ r)).flip
           (curveVelocityWithin I γ s r)).flip (curveVelocityWithin I γ s r))) s := by
   -- Cache the iterated hom-fibre instances, as in the curvature smoothness theorem.
   let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
@@ -78,7 +77,6 @@ private theorem IsGeodesicCurveOn.contMDiffOn_jacobiOperator
       hγ.contMDiffOn_curveVelocityLiftWithin_infty
   have hR := (contMDiff_curvatureTensorCLM (F := E)
     (V := fun x : M ↦ TangentSpace I x)
-    (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
     (leviCivitaConnection I M)).comp_contMDiffOn hγ.contMDiffOn_infty
   intro r hr
   have hswap := ContMDiffWithinAt.clm_bundle_flip (F₁ := E) (F₂ := E) (F₃ := E →L[ℝ] E)
@@ -105,8 +103,7 @@ theorem IsJacobiFieldOn.alongCurveWithin_three_of_eq_zero
         (alongCurveWithin (leviCivitaConnection I M) γ J s a)
         (curveVelocityWithin I γ s a) (curveVelocityWithin I γ s a) := by
   let A := fun r ↦ (((leviCivitaConnection I M).curvatureTensorCLM
-          (V := fun x : M ↦ TangentSpace I x)
-          (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) (γ r)).flip
+          (V := fun x : M ↦ TangentSpace I x) (γ r)).flip
     (curveVelocityWithin I γ s r)).flip (curveVelocityWithin I γ s r)
   have hA := (hJ.isGeodesicCurveOn.contMDiffOn_jacobiOperator a ha).mdifferentiableWithinAt
     (by simp)

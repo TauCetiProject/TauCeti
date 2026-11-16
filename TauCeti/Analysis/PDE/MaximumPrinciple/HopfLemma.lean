@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Geometry.Euclidean.Triangle
 import TauCeti.Analysis.Normed.Module.Ball.Touching

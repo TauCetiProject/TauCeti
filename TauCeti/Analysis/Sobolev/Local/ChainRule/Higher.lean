@@ -26,6 +26,8 @@ next step of the bootstrap needs.
 
 * `TauCeti.MemWkpLoc.contDiffOn_comp_succ`: composition with maps that are `C^{k+1}` on an open
   neighbourhood of the image.
+* `TauCeti.MemWkpLoc.contDiffOn_comp_of_one_le`: the same for an order `k ≥ 1`, an extended
+  exponent `p < ∞` and a plain open set.
 * `TauCeti.MemWkpLoc.contDiff_comp_succ`: composition with globally `C^{k+1}` maps.
 * `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ`: the domain-dependent composition
   `z ↦ g(z, u z)`.
@@ -91,6 +93,21 @@ theorem MemWkpLoc.contDiffOn_comp_succ (hp : 2 < p) {k : ℕ} {u : ℂ → F} {g
   have hg' : ContDiffOn ℝ (k + 1) (fun x => e (g x)) W := e.contDiff.comp_contDiffOn hg
   exact e.comp_memWkpLoc_iff.1
     (contDiffOn_comp_succ_aux (g := fun x => e (g x)) hp hu huc hW hg' huW)
+
+/-- **Composition of continuous local Sobolev maps with `C^k` maps, `k ≥ 1`.** For `2 < p < ∞`, an
+order `k ≥ 1` and an open set `U`, if `u` is continuous on `U` and belongs to `W^{k,p}_loc(U)`,
+and `g` is `C^k` on an open set `W` containing `u '' U`, then `g ∘ u` belongs to
+`W^{k,p}_loc(U)`. This is `TauCeti.MemWkpLoc.contDiffOn_comp_succ` for an extended exponent and a
+plain open set. -/
+theorem MemWkpLoc.contDiffOn_comp_of_one_le {p : ℝ≥0∞} (hp : 2 < p) (hp' : p ≠ ⊤) {k : ℕ}
+    (hk : 1 ≤ k) {u : ℂ → F} {g : F → G} {U : Set ℂ} {W : Set F} (hU : IsOpen U)
+    (hu : MemWkpLoc p U k u) (huc : ContinuousOn u U) (hW : IsOpen W)
+    (hg : ContDiffOn ℝ k g W) (huW : MapsTo u U W) :
+    MemWkpLoc p U k (g ∘ u) := by
+  lift p to ℝ≥0 using hp'
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  exact MemWkpLoc.contDiffOn_comp_succ (Ω := ⟨U, hU⟩) (u := u) (g := g) (by exact_mod_cast hp) hu
+    huc hW (by exact_mod_cast hg) huW
 
 /-- **Composition of continuous local Sobolev maps with globally `C^{k+1}` maps.** For `p > 2`,
 if `u` is continuous on `Ω` and belongs to `W^{k+1,p}_loc(Ω)`, and `g` is `C^{k+1}`, then

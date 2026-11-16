@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.MeasureEstimate
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.KrylovSafonov
 import Mathlib.Analysis.SpecialFunctions.Log.Base
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 

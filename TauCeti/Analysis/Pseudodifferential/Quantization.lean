@@ -900,6 +900,16 @@ theorem quantizeSchwartzValue_sum_right {ι : Type*} (a : Symbol n V W m) (s : F
     rw [Finset.sum_insert hi, Finset.sum_insert hi, quantizeSchwartzValue_add_right
       (a.continuous_coefficient_slice x).aestronglyMeasurable hC, ih]
 
+/-- The quantization is additive in the symbol, also for symbols of different orders. -/
+theorem quantizeSchwartzValue_coefficient_add {m' : ℝ} (b : Symbol n V W m) (c : Symbol n V W m')
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (b.coefficient + c.coefficient) u x =
+      quantizeSchwartzValue b.coefficient u x + quantizeSchwartzValue c.coefficient u x := by
+  obtain ⟨C, -, hC⟩ := b.exists_bound_coefficient_slice x
+  obtain ⟨C', -, hC'⟩ := c.exists_bound_coefficient_slice x
+  exact quantizeSchwartzValue_add_left (b.continuous_coefficient_slice x).aestronglyMeasurable hC
+    (c.continuous_coefficient_slice x).aestronglyMeasurable hC' u
+
 /-- The quantization is additive over finite sums of symbols. -/
 theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
@@ -909,11 +919,8 @@ theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → 
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih =>
-    obtain ⟨C, -, hC⟩ := (a i).exists_bound_coefficient_slice x
-    obtain ⟨C', -, hC'⟩ := (∑ i ∈ s, a i).exists_bound_coefficient_slice x
     rw [Finset.sum_insert hi, Finset.sum_insert hi, coefficient_add,
-      quantizeSchwartzValue_add_left ((a i).continuous_coefficient_slice x).aestronglyMeasurable
-        hC ((∑ i ∈ s, a i).continuous_coefficient_slice x).aestronglyMeasurable hC', ih]
+      quantizeSchwartzValue_coefficient_add, ih]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/

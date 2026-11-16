@@ -22,7 +22,7 @@ It also records three facts about Mathlib's extension of scalars `ModuleCat.exte
 
 * Extension of scalars is additive.
 * Extension of scalars carries multiplication by a scalar to multiplication by its image
-  (`TauCeti.ModuleCat.extendScalars_map_smul_id`). This transports the curvature equations of a
+  (`ModuleCat.extendScalars_map_smul_id`). This transports the curvature equations of a
   matrix factorization when its components are extended along a ring map, so the resulting
   factorization has the image potential.
 * Extension of scalars to a localization `T⁻¹R` is localization: for an `R`-module `M`,
@@ -48,6 +48,11 @@ universe u v w
 
 namespace ModuleCat
 
+open CategoryTheory
+open scoped ChangeOfRings
+
+section RestrictScalars
+
 -- Mathlib's `ModuleCat` and its scalar-restriction equivalence require rings.
 variable {R S : Type*} [Ring R] [Ring S]
 
@@ -57,20 +62,17 @@ variable {R S : Type*} [Ring R] [Ring S]
 @[simp↓]
 theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_hom_app_apply (e : R ≃+* S)
     (M : ModuleCat.{v} R) (x : M) :
-    (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).counitIso.hom.app M x = x := (rfl)
+    (restrictScalarsEquivalenceOfRingEquiv e).counitIso.hom.app M x = x := (rfl)
 
 /-- The inverse counit of restriction of scalars along a ring equivalence keeps each element. -/
 @[simp↓]
 theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply (e : R ≃+* S)
     (M : ModuleCat.{v} R) (x : M) :
-    (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
+    (restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
 
-end ModuleCat
+end RestrictScalars
 
-namespace ModuleCat
-
-open CategoryTheory
-open scoped ChangeOfRings
+section Additive
 
 variable {S : Type u} {T : Type v} [CommRing S] [CommRing T]
 
@@ -82,22 +84,17 @@ instance (f : S →+* T) : (extendScalars f).Additive where
     apply hom_ext
     exact LinearMap.baseChange_add _ _
 
-end ModuleCat
-
-namespace TauCeti.ModuleCat
-
-open CategoryTheory
-open scoped ChangeOfRings
+end Additive
 
 section SMul
 
 variable {S : Type u} {T : Type v} [CommRing S] [CommRing T] {w : S}
 
 /-- Scalar extension sends multiplication by a scalar to multiplication by its image. -/
-@[simp] theorem extendScalars_map_smul_id (f : S →+* T) (M : _root_.ModuleCat.{u} S) :
-    (_root_.ModuleCat.extendScalars f).map (w • 𝟙 M) = f w • 𝟙 _ := by
+@[simp] theorem extendScalars_map_smul_id (f : S →+* T) (M : ModuleCat.{u} S) :
+    (extendScalars f).map (w • 𝟙 M) = f w • 𝟙 _ := by
   let _ : Algebra S T := f.toAlgebra
-  apply _root_.ModuleCat.hom_ext
+  apply hom_ext
   -- Expose the underlying base-changed linear map after forgetting the category wrapper.
   change (w • (LinearMap.id : M →ₗ[S] M)).baseChange T =
     (f w) • (LinearMap.id : TensorProduct S T M →ₗ[T] TensorProduct S T M)
@@ -106,49 +103,42 @@ variable {S : Type u} {T : Type v} [CommRing S] [CommRing T] {w : S}
 
 end SMul
 
-end TauCeti.ModuleCat
-
-namespace TauCeti
-
-open CategoryTheory
-open scoped ChangeOfRings
-
 section Localization
 
-variable {R : Type u} [CommRing R] (M : _root_.ModuleCat.{v} R) (T : Submonoid R)
+variable {R : Type u} [CommRing R] (M : ModuleCat.{v} R) (T : Submonoid R)
 
 /-- Extension of scalars to the localization `T⁻¹R` is localization: `T⁻¹R ⊗_R M` is isomorphic
 to the localized module `T⁻¹M`, by `s ⊗ m ↦ s • m / 1`.
 
 This transports `LocalizedModule.equivTensorProduct` across the `Module.compHom` structure
 used by `ModuleCat.extendScalars`. -/
-noncomputable def _root_.ModuleCat.extendScalarsLocalizationIso :
-    (_root_.ModuleCat.extendScalars (algebraMap R (Localization T))).obj M ≅
-      _root_.ModuleCat.of (Localization T) (LocalizedModule T M) := by
+noncomputable def extendScalarsLocalizationIso :
+    (extendScalars (algebraMap R (Localization T))).obj M ≅
+      of (Localization T) (LocalizedModule T M) := by
   let φ := algebraMap R (Localization T)
   let A := Localization T
-  let E := (_root_.ModuleCat.restrictScalars φ).obj (_root_.ModuleCat.of A A)
+  let E := (restrictScalars φ).obj (of A A)
   have : IsScalarTower R A E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   let c : E ≃ₗ[A] A := LinearEquiv.refl A A
   let b := TensorProduct.AlgebraTensorModule.congr c (LinearEquiv.refl R M)
   let e := b.trans (LocalizedModule.equivTensorProduct T M).symm
   exact
-    { hom := _root_.ModuleCat.ofHom e.toLinearMap
-      inv := _root_.ModuleCat.ofHom e.symm.toLinearMap
+    { hom := ofHom e.toLinearMap
+      inv := ofHom e.symm.toLinearMap
       hom_inv_id := by
-        apply _root_.ModuleCat.hom_ext
+        apply hom_ext
         apply LinearMap.ext
         intro x
         exact e.symm_apply_apply x
       inv_hom_id := by
-        apply _root_.ModuleCat.hom_ext
+        apply hom_ext
         apply LinearMap.ext
         intro x
         exact e.apply_symm_apply x }
 
 /-- `extendScalarsLocalizationIso` sends `1 ⊗ m` to `m / 1`. -/
 @[simp]
-theorem _root_.ModuleCat.extendScalarsLocalizationIso_hom_one_tmul (m : M) :
+theorem extendScalarsLocalizationIso_hom_one_tmul (m : M) :
     (M.extendScalarsLocalizationIso T).hom
       ((1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m) = LocalizedModule.mk m 1 :=
   by
@@ -162,42 +152,42 @@ theorem _root_.ModuleCat.extendScalarsLocalizationIso_hom_one_tmul (m : M) :
 
 /-- The inverse of `extendScalarsLocalizationIso` sends `m / 1` to `1 ⊗ m`. -/
 @[simp]
-theorem _root_.ModuleCat.extendScalarsLocalizationIso_inv_mk_one (m : M) :
+theorem extendScalarsLocalizationIso_inv_mk_one (m : M) :
     (M.extendScalarsLocalizationIso T).inv (LocalizedModule.mk m 1) =
       (1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m :=
   by
     let i := M.extendScalarsLocalizationIso T
     -- Name the isomorphism to apply its categorical inverse identity.
     change i.inv (LocalizedModule.mk m 1) = _
-    rw [← _root_.ModuleCat.extendScalarsLocalizationIso_hom_one_tmul]
+    rw [← extendScalarsLocalizationIso_hom_one_tmul]
     -- Evaluation of a `ModuleCat` composite is evaluation of its underlying maps.
     change (i.hom ≫ i.inv)
       ((1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m) = _
-    erw [i.hom_inv_id, _root_.ModuleCat.id_apply]
+    erw [i.hom_inv_id, id_apply]
     rfl
 
 /-- `extendScalarsLocalizationIso` sends a pure tensor to the scalar multiple of `m / 1`. -/
 @[simp]
-theorem _root_.ModuleCat.extendScalarsLocalizationIso_hom_tmul (s : Localization T) (m : M) :
+theorem extendScalarsLocalizationIso_hom_tmul (s : Localization T) (m : M) :
     (M.extendScalarsLocalizationIso T).hom
       (s ⊗ₜ[R,algebraMap R (Localization T)] m) =
       s • LocalizedModule.mk m 1 := by
-  have ht := (_root_.ModuleCat.ExtendScalars.smul_tmul
+  have ht := (ExtendScalars.smul_tmul
     (algebraMap R (Localization T)) (M := M) s 1 m)
   rw [mul_one] at ht
   -- `erw` identifies the scalar actions through `extendScalars`'s `Module.compHom` presentation.
   exact (congrArg (fun x ↦ (M.extendScalarsLocalizationIso T).hom x) ht.symm).trans
-    (by erw [map_smul, _root_.ModuleCat.extendScalarsLocalizationIso_hom_one_tmul])
+    (by erw [map_smul, extendScalarsLocalizationIso_hom_one_tmul])
 
 /-- The inverse of `extendScalarsLocalizationIso` sends `m / t` to `t⁻¹ ⊗ m`. -/
 @[simp]
-theorem _root_.ModuleCat.extendScalarsLocalizationIso_inv_mk (m : M) (t : T) :
+theorem extendScalarsLocalizationIso_inv_mk (m : M) (t : T) :
     (M.extendScalarsLocalizationIso T).inv (LocalizedModule.mk m t) =
       Localization.mk 1 t ⊗ₜ[R,algebraMap R (Localization T)] m := by
   have h : Localization.mk 1 t • LocalizedModule.mk m 1 = LocalizedModule.mk m t := by
     simpa using LocalizedModule.mk_smul_mk 1 m t 1
-  rw [← h, map_smul, _root_.ModuleCat.extendScalarsLocalizationIso_inv_mk_one]
-  exact (_root_.ModuleCat.ExtendScalars.smul_tmul
+  rw [← h, map_smul, extendScalarsLocalizationIso_inv_mk_one]
+  exact (ExtendScalars.smul_tmul
     (algebraMap R (Localization T)) (M := M) (Localization.mk 1 t) 1 m).trans
       (by rw [mul_one])
 
@@ -212,33 +202,31 @@ variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S]
 /-- Extension of scalars along `algebraMap R S` is the tensor product `S ⊗[R] M` with the algebra
 module structure of `S`. `ModuleCat.extendScalars` uses the `Module.compHom` structure of `S`;
 the two tensor products are identified by the identity of `S`. -/
-noncomputable def _root_.ModuleCat.extendScalarsAlgebraMapIso (M : _root_.ModuleCat.{w} R) :
-    (_root_.ModuleCat.extendScalars (algebraMap R S)).obj M ≅ _root_.ModuleCat.of S (S ⊗[R] M) :=
-  let E := (_root_.ModuleCat.restrictScalars (algebraMap R S)).obj (_root_.ModuleCat.of S S)
+noncomputable def extendScalarsAlgebraMapIso (M : ModuleCat.{w} R) :
+    (extendScalars (algebraMap R S)).obj M ≅ of S (S ⊗[R] M) :=
+  let E := (restrictScalars (algebraMap R S)).obj (of S S)
   have : IsScalarTower R S E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   let c : E ≃ₗ[S] S := LinearEquiv.refl S S
   let e := TensorProduct.AlgebraTensorModule.congr c (LinearEquiv.refl R M)
-  { hom := _root_.ModuleCat.ofHom e.toLinearMap
-    inv := _root_.ModuleCat.ofHom e.symm.toLinearMap
-    hom_inv_id := _root_.ModuleCat.hom_ext (LinearMap.ext e.symm_apply_apply)
-    inv_hom_id := _root_.ModuleCat.hom_ext (LinearMap.ext e.apply_symm_apply) }
+  { hom := ofHom e.toLinearMap
+    inv := ofHom e.symm.toLinearMap
+    hom_inv_id := hom_ext (LinearMap.ext e.symm_apply_apply)
+    inv_hom_id := hom_ext (LinearMap.ext e.apply_symm_apply) }
 
 /-- `extendScalarsAlgebraMapIso` sends `s ⊗ m` to `s ⊗ m`. -/
 @[simp]
-theorem _root_.ModuleCat.extendScalarsAlgebraMapIso_hom_tmul (M : _root_.ModuleCat.{w} R) (s : S)
-    (m : M) :
-    (_root_.ModuleCat.extendScalarsAlgebraMapIso M).hom (s ⊗ₜ[R, algebraMap R S] m) =
+theorem extendScalarsAlgebraMapIso_hom_tmul (M : ModuleCat.{w} R) (s : S) (m : M) :
+    (extendScalarsAlgebraMapIso M).hom (s ⊗ₜ[R, algebraMap R S] m) =
       s ⊗ₜ[R] m := by
-  unfold _root_.ModuleCat.extendScalarsAlgebraMapIso
+  unfold extendScalarsAlgebraMapIso
   rfl
 
 /-- The inverse of `extendScalarsAlgebraMapIso` sends `s ⊗ m` to `s ⊗ m`. -/
 @[simp]
-theorem _root_.ModuleCat.extendScalarsAlgebraMapIso_inv_tmul (M : _root_.ModuleCat.{w} R) (s : S)
-    (m : M) :
-    (_root_.ModuleCat.extendScalarsAlgebraMapIso M).inv (s ⊗ₜ[R] m) =
+theorem extendScalarsAlgebraMapIso_inv_tmul (M : ModuleCat.{w} R) (s : S) (m : M) :
+    (extendScalarsAlgebraMapIso M).inv (s ⊗ₜ[R] m) =
       s ⊗ₜ[R, algebraMap R S] m := by
-  unfold _root_.ModuleCat.extendScalarsAlgebraMapIso
+  unfold extendScalarsAlgebraMapIso
   rfl
 
 end AlgebraMap
@@ -253,40 +241,36 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
 /-- **Base change and extension of scalars.** If an `R`-linear map `f : M → N` to an `S`-module
 exhibits `N` as the base change of `M` along `R → S`, then its adjoint `S ⊗[R] M → N`,
 `s ⊗ m ↦ s • f m`, is an isomorphism of `S`-modules. -/
-theorem _root_.ModuleCat.isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange
+theorem isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange
     {M N : Type u} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module S N]
     [IsScalarTower R S N] {f : M →ₗ[R] N} (hf : IsBaseChange S f) :
-    IsIso (((_root_.ModuleCat.extendRestrictScalarsAdj (algebraMap R S)).homEquiv
-      (_root_.ModuleCat.of R M) (_root_.ModuleCat.of S N)).symm
-        (_root_.ModuleCat.ofHom f ≫ (_root_.ModuleCat.restrictScalarsAlgebraMapIso N).inv)) := by
-  have key : (_root_.ModuleCat.extendScalarsAlgebraMapIso (_root_.ModuleCat.of R M)).inv ≫
-      ((_root_.ModuleCat.extendRestrictScalarsAdj (algebraMap R S)).homEquiv
-        (_root_.ModuleCat.of R M) (_root_.ModuleCat.of S N)).symm
-          (_root_.ModuleCat.ofHom f ≫ (_root_.ModuleCat.restrictScalarsAlgebraMapIso N).inv) =
-      _root_.ModuleCat.ofHom hf.equiv.toLinearMap := by
-    refine _root_.ModuleCat.hom_ext (LinearMap.ext fun z ↦ ?_)
+    IsIso (((extendRestrictScalarsAdj (algebraMap R S)).homEquiv (of R M) (of S N)).symm
+      (ofHom f ≫ (restrictScalarsAlgebraMapIso N).inv)) := by
+  have key : (extendScalarsAlgebraMapIso (of R M)).inv ≫
+      ((extendRestrictScalarsAdj (algebraMap R S)).homEquiv (of R M) (of S N)).symm
+        (ofHom f ≫ (restrictScalarsAlgebraMapIso N).inv) =
+      ofHom hf.equiv.toLinearMap := by
+    refine hom_ext (LinearMap.ext fun z ↦ ?_)
     induction z using TensorProduct.inductionOn with
     | tmul s m =>
-      rw [_root_.ModuleCat.hom_ofHom, LinearEquiv.coe_coe, IsBaseChange.equiv_tmul,
-        _root_.ModuleCat.hom_comp, LinearMap.comp_apply,
-        _root_.ModuleCat.extendScalarsAlgebraMapIso_inv_tmul]
+      rw [hom_ofHom, LinearEquiv.coe_coe, IsBaseChange.equiv_tmul, hom_comp,
+        LinearMap.comp_apply, extendScalarsAlgebraMapIso_inv_tmul]
       -- The adjoint of a morphism into a restriction of scalars is Mathlib's
       -- `fromExtendScalars`, which sends `s ⊗ m` to `s • f m`.
-      change (_root_.ModuleCat.ExtendRestrictScalarsAdj.HomEquiv.fromExtendScalars
-        (algebraMap R S) (Y := _root_.ModuleCat.of S N) (_root_.ModuleCat.ofHom f ≫
-          (_root_.ModuleCat.restrictScalarsAlgebraMapIso N).inv)).hom
+      change (ExtendRestrictScalarsAdj.HomEquiv.fromExtendScalars
+        (algebraMap R S) (Y := of S N) (ofHom f ≫
+          (restrictScalarsAlgebraMapIso N).inv)).hom
             (s ⊗ₜ[R, algebraMap R S] m) = s • f m
-      erw [_root_.ModuleCat.ExtendRestrictScalarsAdj.HomEquiv.fromExtendScalars_hom_apply]
+      erw [ExtendRestrictScalarsAdj.HomEquiv.fromExtendScalars_hom_apply]
       exact congrArg (fun x : N ↦ s • x)
-        (_root_.ModuleCat.restrictScalarsAlgebraMapIso_inv_apply (R := R) (S := S) N (f m))
+        (restrictScalarsAlgebraMapIso_inv_apply (R := R) (S := S) N (f m))
     | add x y hx hy => rw [map_add, map_add, hx, hy]
-  have : IsIso ((_root_.ModuleCat.extendScalarsAlgebraMapIso (_root_.ModuleCat.of R M)).inv ≫
-      ((_root_.ModuleCat.extendRestrictScalarsAdj (algebraMap R S)).homEquiv
-        (_root_.ModuleCat.of R M) (_root_.ModuleCat.of S N)).symm
-          (_root_.ModuleCat.ofHom f ≫ (_root_.ModuleCat.restrictScalarsAlgebraMapIso N).inv)) := by
+  have : IsIso ((extendScalarsAlgebraMapIso (of R M)).inv ≫
+      ((extendRestrictScalarsAdj (algebraMap R S)).homEquiv (of R M) (of S N)).symm
+        (ofHom f ≫ (restrictScalarsAlgebraMapIso N).inv)) := by
     rw [key]
     exact hf.equiv.toModuleIso.isIso_hom
-  exact IsIso.of_isIso_comp_left (_root_.ModuleCat.extendScalarsAlgebraMapIso _).inv _
+  exact IsIso.of_isIso_comp_left (extendScalarsAlgebraMapIso _).inv _
 
 end BaseChange
 
@@ -295,12 +279,11 @@ section Cyclic
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] (f : R →+* S)
 
 /-- The extension of scalars of a module generated by `m₀` is generated by `1 ⊗ m₀`. -/
-theorem _root_.ModuleCat.ExtendScalars.span_singleton_one_tmul_eq_top
-    {M : _root_.ModuleCat.{v} R} {m₀ : M} (h : Submodule.span R {m₀} = ⊤) :
-    Submodule.span S ({(1 : S) ⊗ₜ[R,f] m₀} : Set ((_root_.ModuleCat.extendScalars f).obj M)) =
-      ⊤ := by
+theorem ExtendScalars.span_singleton_one_tmul_eq_top
+    {M : ModuleCat.{v} R} {m₀ : M} (h : Submodule.span R {m₀} = ⊤) :
+    Submodule.span S ({(1 : S) ⊗ₜ[R,f] m₀} : Set ((extendScalars f).obj M)) = ⊤ := by
   -- `s • (1 ⊗ m₀) = s ⊗ m₀`, stated for `s : S` rather than for the restriction of scalars of `S`.
-  have key (s : S) := (_root_.ModuleCat.ExtendScalars.smul_tmul f (M := M) s 1 m₀).trans
+  have key (s : S) := (ExtendScalars.smul_tmul f (M := M) s 1 m₀).trans
     (congrArg (· ⊗ₜ[R,f] m₀) (mul_one s))
   refine eq_top_iff.mpr fun x _ ↦ Submodule.mem_span_singleton.mpr ?_
   obtain ⟨s, rfl⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top h x
@@ -308,23 +291,22 @@ theorem _root_.ModuleCat.ExtendScalars.span_singleton_one_tmul_eq_top
 
 end Cyclic
 
-end TauCeti
+end ModuleCat
 
+namespace RingHom
+
+open CategoryTheory ModuleCat
 open scoped TensorProduct ChangeOfRings
-
-namespace TauCeti
-
-open CategoryTheory _root_.ModuleCat
 
 /-- Scalar extension of a finite relation cokernel agrees with the cokernel of its
 coefficientwise image under a ring homomorphism. -/
-theorem _root_.RingHom.nonempty_extendScalars_cokernel_pi_iso
+theorem nonempty_extendScalars_cokernel_pi_iso
     {R S : Type u} [CommRing R] [CommRing S] (φ : R →+* S) (n m : ℕ)
     (r : (Fin m → S) →ₗ[S] (Fin n → S))
     (rᵢ : (Fin m → R) →ₗ[R] (Fin n → R))
     (hcoeff : ∀ (row : Fin n) (col : Fin m),
       φ (rᵢ (Pi.single col 1) row) = r (Pi.single col 1) row) :
-    Nonempty ((extendScalars (φ)).obj
+    Nonempty ((extendScalars φ).obj
         (ModuleCat.of R (ULift.{v} ((Fin n → R) ⧸ LinearMap.range rᵢ))) ≅
         ModuleCat.of S
           (ULift.{v} ((Fin n → S) ⧸ LinearMap.range r))) := by
@@ -348,4 +330,4 @@ theorem _root_.RingHom.nonempty_extendScalars_cokernel_pi_iso
   let e := eU.trans (eQ.trans ULift.moduleEquiv.symm)
   exact ⟨e.toModuleIso⟩
 
-end TauCeti
+end RingHom

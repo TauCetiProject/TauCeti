@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Basic
+public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Determinant
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -19,8 +19,9 @@ chirality eigenspaces rather than on separately chosen matrix spaces.
 
 The descended actions preserve the Hermitian inner product when Clifford generators are
 skew-adjoint. In complex rank two their determinant is the weight-two character `[s,z] ↦ z²`.
-No choice of orientation of the frame is needed to descend the action on a fixed eigenspace;
-the identification of the two coordinate SU(2) factors with positive and negative chirality
+The central determinant half-parameter path has operator-norm derivative `(ia/2) Id` at the
+identity. No choice of orientation of the frame is needed to descend the action on a fixed
+eigenspace; identifying the two coordinate SU(2) factors with positive and negative chirality
 requires a positively oriented frame separately.
 
 ## References
@@ -101,6 +102,48 @@ theorem realSpinCHalfSpinSmoothHom_ofCircle (z : Circle) :
   rw [realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀,
     OrthonormalBasis.realSpinCGroupHom_ofCircle, spinCGroupHalfSpinRep_ofCircle]
   exact map_smul (Module.End.toContinuousLinearMap S) (z : ℂ) 1
+
+section DeterminantDerivative
+
+-- Match the normed-algebra parent structures used by the framed smooth representation.
+/-- Operator-norm ring structure on half-spin endomorphisms. -/
+local instance : NormedRing (S →L[ℂ] S) := ContinuousLinearMap.toNormedRing
+/-- Complex normed-space structure on half-spin endomorphisms. -/
+local instance : NormedSpace ℂ (S →L[ℂ] S) := ContinuousLinearMap.toNormedSpace
+/-- The underlying real normed algebra of half-spin endomorphisms. -/
+local instance : NormedAlgebra ℝ (S →L[ℂ] S) := NormedAlgebra.complexToReal
+/-- The real scalar action selected by the normed-algebra structure. -/
+local instance : NormedSpace ℝ (S →L[ℂ] S) :=
+  NormedAlgebra.toNormedSpace (𝕜 := ℝ) (S →L[ℂ] S)
+
+/-- Along a determinant parameter with velocity `a`, the half-spin action has operator-norm
+derivative `(ia/2) Id` times the phase at time `t`. Differentiation is over `ℝ`. -/
+theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift (a t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
+      (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
+      ((Complex.I * (a / 2) * (Circle.exp (t * a / 2) : ℂ)) • (1 : S →L[ℂ] S)) t := by
+  simp only [spinCGroup.lieExp_smul_realDetLieLift, realSpinCHalfSpinSmoothHom_ofCircle,
+    Circle.coe_exp]
+  have harg : HasDerivAt (fun s : ℝ ↦ ((s * a / 2 : ℝ) : ℂ) * Complex.I)
+      (((a / 2 : ℝ) : ℂ) * Complex.I) t := by
+    simpa only [one_mul, id_eq] using
+      ((((hasDerivAt_id t).mul_const a).div_const 2).ofReal_comp).mul_const Complex.I
+  convert ((Complex.hasDerivAt_exp _).comp t harg).smul_const (1 : S →L[ℂ] S) using 1
+  · funext s
+    simp only [Function.comp_apply]
+  · congr 1
+    push_cast
+    ring
+
+/-- At the identity the determinant ray acts infinitesimally by `(ia/2) Id`. -/
+theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero (a : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
+      (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
+      ((Complex.I * (a / 2)) • (1 : S →L[ℂ] S)) 0 := by
+  simpa using
+    hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift o hQ b ρ ε a 0
+
+end DeterminantDerivative
 
 /-- Restriction to Spin is the half-spin action in the selected frame. -/
 @[simp]

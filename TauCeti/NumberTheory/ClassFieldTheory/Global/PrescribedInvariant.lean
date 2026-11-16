@@ -659,10 +659,10 @@ private theorem ideleInfiniteBrLocalization_explicitCor2_characterCarryCocycle_e
       (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) = 0 := by
   obtain ⟨τ⟩ : Nonempty (SeparableClosure K →ₐ[K] SeparableClosure w.Completion) :=
     ⟨IsSepClosed.lift⟩
-  rw [ideleInfiniteBrLocalization_explicitCor2 U hU τ (fun D ↦ Quotient.out D)
-    (fun D ↦ DoubleCoset.out_eq' D)]
-  refine Finset.sum_eq_zero fun D _ ↦ ?_
-  rw [explicitMap2_characterCarryCocycle_eq_zero _ _ _ _ χ hχ a (ha _), map_zero, map_zero]
+  simp only [ideleInfiniteBrLocalization_explicitCor2 U hU τ (fun D ↦ Quotient.out D)
+    (fun D ↦ DoubleCoset.out_eq' D),
+    explicitMap2_characterCarryCocycle_eq_zero _ _ _ _ χ hχ a (ha _), map_zero,
+    Finset.sum_const_zero]
 
 /-- The invariant of the localization of a carry class along `τ₁` only depends on `τ₁`. -/
 private theorem subgroupInvMap_explicitMap2_characterCarryCocycle_congr

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Sheaves.LocalCohomology.Module
 public import TauCeti.Topology.Sheaves.SupportedCohomology.LongExactSequence
+import Mathlib.Topology.Sheaves.LocallySurjective
 
 /-!
 # The coefficient sequence for module-valued local cohomology
@@ -20,6 +21,11 @@ Flasque sheaves have zero positive local cohomology sheaves. Consequently a
 short exact sequence with flasque middle term gives dimension-shift
 isomorphisms in positive degrees. These are the connecting maps used to compare
 flasque resolutions, not arbitrary isomorphisms between the cohomology objects.
+
+If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and `𝓗_S¹(F₁) = 0`, the supported-section functor
+`Γ_S` keeps it short exact (`CategoryTheory.Sheaf.shortExact_map_supportedSubmoduleFunctor`): a
+section of `F₃` supported in `S` lifts locally, since its degree-zero connecting image in
+`H_S¹(-, F₁)` vanishes locally.
 
 ## References
 
@@ -131,6 +137,43 @@ instance isIso_supportedModuleHSheafδ_succ (hT : T.ShortExact)
     IsIso (supportedModuleHSheafδ S hT (n + 1)) := by
   have := isIso_supportedModuleHPresheafδ_succ S hT n
   exact Functor.map_isIso (presheafToSheaf _ _) (supportedModuleHPresheafδ S hT (n + 1))
+
+/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `F₂` flasque and `𝓗_Sⁿ⁺²(F₁) = 0`, then
+`𝓗_Sⁿ⁺¹(F₃) = 0`. -/
+theorem isZero_supportedModuleHSheaf_X₃_of_shortExact (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₂.obj] {n : ℕ}
+    (h : IsZero (T.X₁.supportedModuleHSheaf S (n + 2))) :
+    IsZero (T.X₃.supportedModuleHSheaf S (n + 1)) :=
+  h.of_iso (asIso (supportedModuleHSheafδ S hT (n + 1)))
+
+/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
+then `Γ_S(F₂) ⟶ Γ_S(F₃)` is an epimorphism: a section of `F₃` supported in `S` lifts locally to a
+section of `F₂` supported in `S`. -/
+theorem epi_supportedSubmoduleFunctor_map_g (hT : T.ShortExact)
+    (h : IsZero (T.X₁.supportedModuleHSheaf S 1)) :
+    Epi ((supportedSubmoduleFunctor S).map T.g) := by
+  refine (TopCat.Sheaf.isLocallySurjective_iff_epi _).1 ?_
+  rw [TopCat.Presheaf.isLocallySurjective_iff]
+  intro W s x hx
+  -- the connecting image of `s` in `H_S¹(W, F₁)` vanishes near `x`
+  obtain ⟨V, hVW, hxV, hV⟩ :=
+    T.X₁.exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf S h
+      ((supportedModuleHPresheafδZero S hT).app (op W) s) hx
+  rw [← ConcreteCategory.comp_apply, ← NatTrans.naturality, ConcreteCategory.comp_apply] at hV
+  -- so near `x` the section `s` comes from a section of `F₂` supported in `S`
+  obtain ⟨t, ht⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    (exact_supportedModuleHPresheafδZero_app S hT (op V)) _ hV
+  exact ⟨V, hVW, ⟨t, ht⟩, hxV⟩
+
+/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
+then `0 ⟶ Γ_S(F₁) ⟶ Γ_S(F₂) ⟶ Γ_S(F₃) ⟶ 0` is short exact. -/
+theorem shortExact_map_supportedSubmoduleFunctor (hT : T.ShortExact)
+    (h : IsZero (T.X₁.supportedModuleHSheaf S 1)) :
+    (T.map (supportedSubmoduleFunctor S)).ShortExact :=
+  have := hT.mono_f
+  { exact := exact_map_supportedSubmoduleFunctor S hT.exact
+    mono_f := mono_supportedSubmoduleFunctor_map S T.f
+    epi_g := epi_supportedSubmoduleFunctor_map_g S hT h }
 
 end
 

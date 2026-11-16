@@ -145,7 +145,7 @@ theorem lattice_bot_eq_toFractionalIdeal (α : FiniteIdeles K (⊥ : Subalgebra 
       ((toFractionalIdeal (finiteIdelesBotEquiv A K α) : FractionalIdeal A⁰ K) :
         Submodule A K) := by
   ext x
-  rw [mem_lattice_bot_iff, FractionalIdeal.mem_coe, mem_toFractionalIdeal_iff]
+  rw [mem_lattice_bot_iff, FractionalIdeal.mem_coeToSubmodule, mem_toFractionalIdeal_iff]
   refine forall_congr' fun v ↦ ?_
   rw [← map_inv (finiteIdelesBotEquiv A K) α, coe_finiteIdelesBotEquiv_apply,
     RestrictedProduct.inv_apply, map_units_inv]

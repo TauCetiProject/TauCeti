@@ -24,7 +24,10 @@ into its complex-linear and conjugate-linear parts; alternatizing them gives the
 On `ι → ℂ` for a linearly ordered finite `ι`, the coefficients `SmoothForm.conjCoeff` of a form
 are its values on increasing families of coordinate vectors. Those of `∂bar η` are obtained from
 those of `η` by the coordinate operator `TauCeti.delBarCoeff` of the coordinate
-Dolbeault–Grothendieck lemma (`SmoothForm.IsOfType.conjCoeff_delBar`).
+Dolbeault–Grothendieck lemma (`SmoothForm.IsOfType.conjCoeff_delBar`). Forms of type `(0,k)`
+correspond exactly to their families of smooth coefficients: they are determined by their
+coefficients (`SmoothForm.IsOfType.ext_conjCoeff`), and every family of smooth coefficients is
+that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_eq`).
 
 ## Main declarations
 
@@ -34,6 +37,11 @@ Dolbeault–Grothendieck lemma (`SmoothForm.IsOfType.conjCoeff_delBar`).
 * `TauCeti.SmoothForm.conjCoeff`: the coefficients of a form on `ι → ℂ`.
 * `TauCeti.SmoothForm.IsOfType.conjCoeff_delBar`: the coefficients of `∂bar` of a `(0,q)`-form
   are those of the coordinate operator `TauCeti.delBarCoeff`.
+* `TauCeti.SmoothForm.IsOfType.apply_eq_of_conjCoeff_eq`,
+  `TauCeti.SmoothForm.IsOfType.ext_conjCoeff`: `(0,k)`-forms are determined by their
+  coefficients.
+* `TauCeti.SmoothForm.exists_isOfType_conjCoeff_eq`: `(0,k)`-forms with prescribed smooth
+  coefficients.
 
 ## References
 
@@ -213,6 +221,82 @@ theorem IsOfType.conjCoeff_delBar {q : ℕ} {η : SmoothForm 𝓘(ℝ, ι → �
       omega
     rw [η.conjCoeff_of_card_ne hcard, conjWirtingerDeriv_apply]
     simp
+
+/-- Two smooth forms of type `(0,k)` on `ι → ℂ` agree at a point where all their coefficients
+agree. -/
+theorem IsOfType.apply_eq_of_conjCoeff_eq {φ ψ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k}
+    (hφ : φ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k)
+    (hψ : ψ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k) {z : ι → ℂ}
+    (h : ∀ J, #J = k → φ.conjCoeff J z = ψ.conjCoeff J z) : φ.1 z = ψ.1 z := by
+  -- The tangent and coefficient fibres at `z` are the model spaces `ι → ℂ` and `F`.
+  let A : (ι → ℂ) [⋀^Fin k]→L[ℝ] F := φ.1 z
+  let B : (ι → ℂ) [⋀^Fin k]→L[ℝ] F := ψ.1 z
+  suffices A - B = 0 from sub_eq_zero.1 this
+  refine ((hφ.apply_modelSpace z).sub (hψ.apply_modelSpace z)).eq_zero_of_forall_apply_orderEmbOfFin
+    fun J hJ ↦ ?_
+  refine (ContinuousAlternatingMap.sub_apply A B _).trans (sub_eq_zero.2 ?_)
+  exact (φ.conjCoeff_of_card_eq hJ z).symm.trans ((h J hJ).trans (ψ.conjCoeff_of_card_eq hJ z))
+
+/-- Smooth forms of type `(0,k)` on `ι → ℂ` are determined by their coefficients. -/
+theorem IsOfType.ext_conjCoeff {φ ψ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k}
+    (hφ : φ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k)
+    (hψ : ψ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k)
+    (h : ∀ J, #J = k → φ.conjCoeff J = ψ.conjCoeff J) : φ = ψ :=
+  Subtype.ext <| funext fun z ↦ hφ.apply_eq_of_conjCoeff_eq hψ fun J hJ ↦ congrFun (h J hJ) z
+
+/-- **Forms with prescribed coefficients.** Smooth functions `u_J`, indexed by the sets `J` with
+`k` elements, are the coefficients of a smooth form of type `(0,k)` on `ι → ℂ`, namely of
+`∑_J u_J d(conj z)_J`. -/
+theorem exists_isOfType_conjCoeff_eq {u : Finset ι → (ι → ℂ) → F}
+    (hu : ∀ J, #J = k → ContDiff ℝ ∞ (u J)) :
+    ∃ φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k,
+      φ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k ∧ ∀ J, #J = k → φ.conjCoeff J = u J := by
+  classical
+  -- `β J f` is the form `f d(conj z)_J` when `J` has `k` elements, and `0` otherwise.
+  let L : F →L[ℝ] ℂ →L[ℝ] F := (ContinuousLinearMap.lsmul ℝ ℂ).flip
+  let β (J : Finset ι) (f : F) : (ι → ℂ) [⋀^Fin k]→L[ℝ] F :=
+    if h : #J = k then (L f).compContinuousAlternatingMap
+      (ContinuousAlternatingMap.conjCoordForm (J.orderEmbOfFin h)) else 0
+  let Φ : (ι → ℂ) → (ι → ℂ) [⋀^Fin k]→L[ℝ] F := fun z ↦ ∑ J, β J (u J z)
+  have hΦ : ContDiff ℝ ∞ Φ := by
+    refine ContDiff.sum fun J _ ↦ ?_
+    by_cases h : #J = k
+    · simp only [β, h, ↓reduceDIte]
+      exact ((ContinuousLinearMap.compContinuousAlternatingMapCLM ℝ (ι → ℂ) ℂ F (Fin k) ∘L
+        L).contDiff.comp (hu J h)).clm_apply contDiff_const
+    · simp only [β, h, ↓reduceDIte]
+      exact contDiff_const
+  let φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k :=
+    ⟨Φ, (isSmoothForm_modelSpace_iff.mpr hΦ).mem_smoothBundleForms⟩
+  refine ⟨φ, isOfType_iff_forall.2 ⟨zero_add k, fun z ↦ ?_⟩, fun J hJ ↦ funext fun z ↦ ?_⟩
+  · rw [toEndomorphism_ofComplexManifold]
+    refine ContinuousAlternatingMap.IsOfType.sum (zero_add k) fun J _ ↦ ?_
+    by_cases h : #J = k
+    · simp only [β, h, ↓reduceDIte]
+      exact (ContinuousAlternatingMap.isOfType_conjCoordForm _).compContinuousAlternatingMap
+        fun c x ↦ by simp [L, smul_smul]
+    · simp only [β, h, ↓reduceDIte]
+      exact ContinuousAlternatingMap.isOfType_zero_iff.2 (zero_add k)
+  · rw [conjCoeff_of_card_eq _ hJ]
+    -- The value of `φ` at `z` is `Φ z`, a form with coefficients in `F` on the model space.
+    change (∑ K, β K (u K z)) (fun a ↦ Pi.single (J.orderEmbOfFin hJ a) 1) = u J z
+    rw [ContinuousAlternatingMap.sum_apply, Finset.sum_eq_single J]
+    · simp [β, hJ, L, ContinuousAlternatingMap.conjCoordForm_apply_single_self
+        (J.orderEmbOfFin hJ).injective]
+    · intro K _ hKJ
+      by_cases hK : #K = k
+      · -- Some element of `J` lies outside `K`, so `d(conj z)_K` vanishes on the coordinate
+        -- vectors indexed by `J`.
+        obtain ⟨x, hxJ, hxK⟩ := Finset.not_subset.1 fun hJK ↦
+          hKJ (Finset.eq_of_subset_of_card_le hJK (hK.trans hJ.symm).le).symm
+        obtain ⟨a, rfl⟩ : x ∈ Set.range (J.orderEmbOfFin hJ) := by
+          rwa [Finset.range_orderEmbOfFin]
+        have h₀ := ContinuousAlternatingMap.conjCoordForm_apply_single_eq_zero
+          (K.orderEmbOfFin hK) (f := J.orderEmbOfFin hJ) (a := a)
+          (by rwa [Finset.range_orderEmbOfFin])
+        simp [β, hK, L, h₀]
+      · simp [β, hK]
+    · simp
 
 end Coefficients
 

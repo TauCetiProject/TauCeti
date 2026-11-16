@@ -132,7 +132,8 @@ the fractional ideal of `x : K` such that `Tr_{K/ℚ}(xy)` is an integer for eve
 def traceDual (O : NumberFieldOrder K) :
     FractionalIdeal (nonZeroDivisors O.toSubalgebra) K :=
   ⟨Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K), by
-    simpa only [FractionalIdeal.coe_one] using O.isFractional_traceDual (I := 1) one_ne_zero⟩
+    simpa only [FractionalIdeal.coeToSubmodule_one] using
+      O.isFractional_traceDual (I := 1) one_ne_zero⟩
 
 @[simp]
 theorem coe_traceDual (O : NumberFieldOrder K) :
@@ -147,7 +148,7 @@ theorem mem_traceDual_iff (O : NumberFieldOrder K) (x : K) :
     x ∈ O.traceDual ↔
       ∀ y : O.toSubalgebra,
         Algebra.trace ℚ K (x * y) ∈ (algebraMap ℤ ℚ).range := by
-  rw [← FractionalIdeal.mem_coe, O.coe_traceDual, Submodule.mem_traceDual]
+  rw [← FractionalIdeal.mem_coeToSubmodule, O.coe_traceDual, Submodule.mem_traceDual]
   constructor
   · intro h y
     simpa [Algebra.traceForm_apply] using h (y : K) (Submodule.mem_one.mpr ⟨y, rfl⟩)
@@ -181,7 +182,7 @@ theorem traceDual_ne_zero (O : NumberFieldOrder K) : O.traceDual ≠ 0 := by
 theorem traceDual_traceDual (O : NumberFieldOrder K) :
     Submodule.traceDual ℤ ℚ (O.traceDual : Submodule O.toSubalgebra K) =
       (1 : Submodule O.toSubalgebra K) := by
-  simpa only [O.coe_traceDual, FractionalIdeal.coe_one] using
+  simpa only [O.coe_traceDual, FractionalIdeal.coeToSubmodule_one] using
     O.traceDual_traceDual_of_ne_zero (I := 1) one_ne_zero
 
 /-- The multiplier ring of the trace dual is the order itself. Thus the trace dual is always a
@@ -230,7 +231,7 @@ theorem coe_dual {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
 with the elements of `I` have integral trace. -/
 theorem mem_dual {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) {x : K} :
     x ∈ O.dual I ↔ ∀ y ∈ I, Algebra.trace ℚ K (x * y) ∈ (algebraMap ℤ ℚ).range := by
-  simp only [← FractionalIdeal.mem_coe, coe_dual hI, Submodule.mem_traceDual,
+  simp only [← FractionalIdeal.mem_coeToSubmodule, coe_dual hI, Submodule.mem_traceDual,
     Algebra.traceForm_apply]
 
 variable (O) in
@@ -241,7 +242,7 @@ theorem dual_zero : O.dual 0 = 0 := by
 
 /-- The trace dual of a nonzero fractional ideal is nonzero. -/
 theorem dual_ne_zero {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) : O.dual I ≠ 0 := by
-  rw [ne_eq, ← FractionalIdeal.coeToSubmodule_inj, coe_dual hI, FractionalIdeal.coe_zero]
+  rw [ne_eq, ← FractionalIdeal.coeToSubmodule_inj, coe_dual hI, FractionalIdeal.coeToSubmodule_zero]
   exact O.traceDual_ne_bot hI
 
 /-- The trace dual of a fractional ideal vanishes exactly when the ideal does. -/
@@ -273,7 +274,7 @@ theorem dual_injective : Function.Injective O.dual :=
 theorem dual_one_eq_traceDual (O : NumberFieldOrder K) : O.dual 1 = O.traceDual := by
   apply FractionalIdeal.coeToSubmodule_injective
   exact (coe_dual one_ne_zero).trans (by
-    rw [FractionalIdeal.coe_one]
+    rw [FractionalIdeal.coeToSubmodule_one]
     exact O.coe_traceDual.symm)
 
 /-! ### Proper ideals and the trace dual -/
@@ -302,8 +303,8 @@ theorem mem_multiplierRing_iff_mem_dual {I : FractionalIdeal O.toSubalgebra⁰ K
     rw [← Submodule.le_div_iff_mul_le, Submodule.span_singleton_le_iff_mem,
       Submodule.mem_div_iff_forall_mul_mem, O.mem_multiplierRing_iff]
     simp [J]
-  rw [← hmul, ← hdual, ← FractionalIdeal.mem_coe, coe_dual (mul_dual_ne_zero hI),
-    FractionalIdeal.coe_mul, coe_dual hI]
+  rw [← hmul, ← hdual, ← FractionalIdeal.mem_coeToSubmodule, coe_dual (mul_dual_ne_zero hI),
+    FractionalIdeal.coeToSubmodule_mul, coe_dual hI]
 
 /-- **A fractional ideal `I` is proper exactly when `I Iᵛ = Oᵛ`.** -/
 theorem isProperFractionalIdeal_iff_mul_dual_eq_dual_one
@@ -397,7 +398,7 @@ theorem traceDual_eq_spanSingleton_of_toSubalgebra_eq_adjoin {x : K}
     traceForm_dualSubmodule_adjoin ℤ ℚ htop hxint]
   ext y
   rw [Submodule.mem_smul_pointwise_iff_exists, Submodule.restrictScalars_mem,
-    FractionalIdeal.mem_coe, FractionalIdeal.mem_spanSingleton, ← hx]
+    FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.mem_spanSingleton, ← hx]
   exact ⟨fun ⟨b, hb, hby⟩ ↦ ⟨⟨b, hb⟩, by simp [← hby, Subalgebra.smul_def, mul_comm]⟩,
     fun ⟨b, hby⟩ ↦ ⟨b, b.2, by simp [← hby, Subalgebra.smul_def, mul_comm]⟩⟩
 

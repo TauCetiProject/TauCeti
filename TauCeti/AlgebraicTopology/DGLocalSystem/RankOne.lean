@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Homology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
-public import TauCeti.RepresentationTheory.CharacterTwist
+public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Twist
 public import TauCeti.Algebra.Homology.DG.Twisted.Map
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex

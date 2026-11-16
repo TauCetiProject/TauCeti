@@ -16,9 +16,8 @@ regularized incomplete beta function,
 
 `Bin(n, p).real {k | m ≤ k} = I_p(m, n - m + 1)`.
 
-This is the binomial entry of the "Closed-form cdfs and tails" target of
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 2, and it is what supplies the cumulative
-mass function that Layer 1 defers to Layer 2 for the binomial and Bernoulli laws.
+Its complement gives the cumulative mass function of the binomial law in closed form,
+`Bin(n, p).real {k | k ≤ m} = I_{1-p}(n - m, m + 1)`.
 
 The identity is proved by induction on `m` with `n` fixed. Removing the least point of the tail
 subtracts the binomial weight `(n.choose m) * p ^ m * (1 - p) ^ (n - m)`, so the right-hand side
@@ -31,8 +30,8 @@ generalized binomial coefficient is `n.choose m`, by
 
 The induction starts at `m = 0`, where the tail is everything and the left-hand side is `1`. This
 is the one place the boundary convention `I_x(0, b) = 1` of `TauCeti.regularizedIncompleteBeta`
-is used, and it is the completion check the roadmap states for this target: at `m = 0` the
-identity reads `1 = 1` for every admissible `p`, including `p = 0` and `p = 1`.
+is used: at `m = 0` the identity reads `1 = 1` for every admissible `p`, including `p = 0` and
+`p = 1`.
 
 ## Main results
 
@@ -46,8 +45,6 @@ identity reads `1 = 1` for every admissible `p`, including `p = 0` and `p = 1`.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 2, the "Closed-form cdfs and
-  tails" target.
 * *NIST Digital Library of Mathematical Functions*, [§8.17(v)](https://dlmf.nist.gov/8.17.v).
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley, 2005,
   §3.4.
@@ -160,10 +157,7 @@ theorem sum_Icc_choose_mul_pow_eq_regularizedIncompleteBeta (p : unitInterval) :
     simp
 
 /-- The cumulative mass of a binomial law, the complement of the tail identity: for `m ≤ n`,
-`Bin(n, p).real {k | k ≤ m} = I_{1-p}(n - m, m + 1)`.
-
-This is the cumulative mass function that `TauCetiRoadmap/StandardDistributions/README.md`,
-Layer 1 defers to this layer. -/
+`Bin(n, p).real {k | k ≤ m} = I_{1-p}(n - m, m + 1)`. -/
 @[simp]
 theorem binomial_cumulative_eq_regularizedIncompleteBeta (hmn : m ≤ n) (p : unitInterval) :
     Bin(n, p).real {k | k ≤ m} =

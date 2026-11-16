@@ -9,7 +9,10 @@ public import TauCeti.Probability.Distributions.NegativeBinomial.Zero.Inflated
 public import TauCeti.Probability.Distributions.NegativeBinomial.Zero.Hurdle
 
 /-!
-# Quantile endpoints of zero-inflated and hurdle negative-binomial laws
+# Quantile endpoints of zero-modified negative-binomial laws
+
+For positive shape and success probability strictly between zero and one, the zero-truncated
+negative-binomial quantile has lower endpoint one and upper endpoint positive infinity.
 
 The real-cast zero-inflated negative-binomial law has lower quantile endpoint zero. Its upper
 endpoint is positive infinity unless the shape is zero, the success probability is one, or the
@@ -36,6 +39,29 @@ open scoped unitInterval
 namespace TauCeti.Probability
 
 variable {r p : ℝ} (w : unitInterval)
+
+/-- Zero-truncated negative-binomial quantiles tend to one as the level tends to zero
+from above. -/
+theorem tendsto_quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_nhdsGT_zero
+    (hr : 0 < r) (hp : 0 < p) (hp1 : p < 1) :
+    Tendsto (fun u ↦
+      ((((negativeBinomialMeasure r p)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 1) := by
+  have := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
+  exact (negativeBinomialMeasure r p).tendsto_quantile_map_natCast_cond_compl_zero_nhdsGT_zero
+    ((negativeBinomialMeasure_singleton_ne_zero_iff hr.le hp hp1.le 1).2 (Or.inr ⟨hr, hp1⟩))
+
+/-- Zero-truncated negative-binomial quantiles tend to positive infinity as the level tends
+to one from below. -/
+theorem tendsto_quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_nhdsLT_one
+    (hr : 0 < r) (hp : 0 < p) (hp1 : p < 1) :
+    Tendsto (fun u ↦
+      ((((negativeBinomialMeasure r p)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 ⊤) := by
+  have := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
+  apply (negativeBinomialMeasure r p).tendsto_quantile_map_natCast_cond_compl_zero_nhdsLT_one
+  simpa [hr.ne', hp1.ne] using
+    tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one hr.le hp hp1.le
 
 /-- Every valid zero-inflated negative-binomial law has lower quantile endpoint zero,
 including the shape-zero, success-probability-one, and weight-one Dirac boundaries. -/
@@ -108,26 +134,8 @@ theorem
   · let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
     let _ := isProbabilityMeasure_negativeBinomialMeasure_cond_compl_zero hr hp hp1
     by_cases hw : w = 0
-    · subst w
-      simp only [Measure.atomMixture_zero]
-      have hmass : 0 < ((negativeBinomialMeasure r p)[|{0}ᶜ]).real {1} := by
-        rw [negativeBinomialMeasure_cond_compl_zero_real_singleton hr.le hp hp1.le one_ne_zero]
-        exact div_pos
-          ((negativeBinomialWeightReal_pos_iff hr.le hp hp1.le 1).2 (Or.inr ⟨hr, hp1⟩))
-          (sub_pos.mpr (rpow_lt_one hp.le hp1 hr))
-      apply tendsto_const_nhds.congr'
-      filter_upwards [Ioo_mem_nhdsGT (lt_min hmass zero_lt_one)] with u hu
-      have hu' : u ∈ Ioo (0 : ℝ) 1 := ⟨hu.1, hu.2.trans_le (min_le_right _ _)⟩
-      have hq : (((negativeBinomialMeasure r p)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u =
-          (0 + 1 : ℕ) := by
-        rw [Measure.quantile_map_natCast_eq_succ_iff _ hu']
-        constructor
-        · have hIic : (Iic 0 : Set ℕ) = {0} := Iic_bot
-          simpa [hIic, measureReal_def] using hu.1
-        · exact (hu.2.le.trans (min_le_left _ _)).trans
-            (measureReal_mono (singleton_subset_iff.mpr (by simp)))
-      rw [hq]
-      norm_num
+    · simpa [hw] using
+        tendsto_quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_nhdsGT_zero hr hp hp1
     · rw [ite_eq_right hw]
       have hwpos : 0 < (w : ℝ) :=
         lt_of_le_of_ne w.2.1 (unitInterval.coe_ne_zero.2 hw).symm

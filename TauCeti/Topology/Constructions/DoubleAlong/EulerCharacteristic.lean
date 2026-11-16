@@ -88,14 +88,16 @@ theorem finiteCWType_annulusDouble (h₀ : 0 < r₁) (h : r₁ < r₂) :
 `r₁ ≤ ‖z‖ ≤ r₂` doubled along its two boundary circles is the torus, with Euler characteristic `0`.
 The finite CW type of the double is `TauCeti.DoubleAlong.finiteCWType_annulusDouble`. -/
 @[simp]
-theorem eulerChar_annulusDouble [FiniteCWType (DoubleAlong (annulusBoundary r₁ r₂))]
-    (h₀ : 0 < r₁) (h : r₁ < r₂) : eulerChar (DoubleAlong (annulusBoundary r₁ r₂)) = 0 := by
+theorem eulerChar_annulusDouble (h₀ : 0 < r₁) (h : r₁ < r₂) :
+    haveI := finiteCWType_annulusDouble h₀ h
+    eulerChar (DoubleAlong (annulusBoundary r₁ r₂)) = 0 := by
+  have := finiteCWType_annulusDouble h₀ h
   rw [(annulusDoubleHomeomorph h₀ h).eulerChar_eq, eulerChar_prod, eulerChar_circle, zero_mul]
 
 /-- For `0 < r₁ < r₂`, the Euler characteristic of the doubled closed annulus is twice that of the
 annulus: `0 = 2 · 0`. -/
-theorem eulerChar_annulusDouble_eq_two_mul [FiniteCWType (DoubleAlong (annulusBoundary r₁ r₂))]
-    (h₀ : 0 < r₁) (h : r₁ < r₂) :
+theorem eulerChar_annulusDouble_eq_two_mul (h₀ : 0 < r₁) (h : r₁ < r₂) :
+    haveI := finiteCWType_annulusDouble h₀ h
     eulerChar (DoubleAlong (annulusBoundary r₁ r₂)) = 2 * eulerChar (closedAnnulus r₁ r₂) := by
   rw [eulerChar_annulusDouble h₀ h, eulerChar_closedAnnulus h₀, mul_zero]
 

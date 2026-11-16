@@ -46,7 +46,7 @@ variable {R : Type uR} [Semiring R] {ι : Type uι}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
 
-variable (G : ∀ i, InternalGrading R (M i))
+variable (G : ∀ i, InternalGrading R (M i) ℤ)
 
 section Finite
 
@@ -83,7 +83,7 @@ theorem multilinearMap_ext {f g : MultilinearMap (RingHom.id R) M N}
 on homogeneous tuples whose degrees are recorded by a family indexed by the naturals, as for
 operations whose inputs are indexed by `ℕ`. -/
 theorem multilinearMap_ext_nat {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
-    (G : InternalGrading R P) {f g : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ P) N}
+    (G : InternalGrading R P ℤ) {f g : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ P) N}
     (h : ∀ (d : ℕ → ℤ) (x : Fin n → P), (∀ i : Fin n, x i ∈ G.piece (d i)) → f x = g x) :
     f = g := by
   refine multilinearMap_ext (fun _ : Fin n ↦ G) fun d x hx ↦ ?_
@@ -146,7 +146,7 @@ variable {R : Type uR} [CommSemiring R] {ι : Type uι}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
 
-variable (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+variable (G : ∀ i, InternalGrading R (M i) ℤ) (ℬ : ℤ → Submodule R N)
 
 variable [Fintype ι]
 

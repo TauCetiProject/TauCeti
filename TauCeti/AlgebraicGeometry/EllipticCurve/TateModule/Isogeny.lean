@@ -190,8 +190,8 @@ theorem hasGoodReduction_iff [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
   classical
   obtain ⟨ℓ, hℓ, hℓ₀⟩ := exists_prime_natCast_ne_zero 𝓀[K]
   have := Fact.mk hℓ
-  rw [W₁.hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one hℓ₀,
-    W₂.hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one hℓ₀]
+  rw [W₁.hasGoodReduction_iff_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one hℓ₀,
+    W₂.hasGoodReduction_iff_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one hℓ₀]
   exact forall₂_congr fun σ _ ↦
     φ.tateModuleGaloisRepresentation_eq_one_iff <|
       natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀

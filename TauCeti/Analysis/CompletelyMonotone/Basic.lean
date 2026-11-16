@@ -89,6 +89,7 @@ public section
 
 open Set Filter
 open scoped ContDiff Topology
+open scoped Pointwise
 
 namespace TauCeti
 

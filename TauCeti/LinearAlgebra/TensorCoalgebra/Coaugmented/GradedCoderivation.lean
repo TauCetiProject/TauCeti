@@ -69,7 +69,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The words of total degree `D`: the span of the pure tensor words whose letters lie in
 homogeneous pieces the degrees of which add up to `D`. -/
-noncomputable def gradedPiece (G : InternalGrading R M) (D : ℤ) :
+noncomputable def gradedPiece (G : InternalGrading R M ℤ) (D : ℤ) :
     Submodule R (TensorWords R M) :=
   Submodule.span R {z | ∃ (n : ℕ) (𝒟 : Fin n → ℤ) (x : Fin n → M),
     (∀ i, x i ∈ G.piece (𝒟 i)) ∧ (∑ i, 𝒟 i) = D ∧
@@ -77,7 +77,7 @@ noncomputable def gradedPiece (G : InternalGrading R M) (D : ℤ) :
 
 /-- Induction on membership in `gradedPiece`: a consumer may apply this in place of
 `Submodule.span_induction`, whose span is sealed behind the definition. -/
-theorem gradedPiece_induction {G : InternalGrading R M} {D : ℤ}
+theorem gradedPiece_induction {G : InternalGrading R M ℤ} {D : ℤ}
     {motive : TensorWords R M → Prop} {z : TensorWords R M}
     (hz : z ∈ gradedPiece G D)
     (mem : ∀ (n : ℕ) (𝒟 : Fin n → ℤ) (x : Fin n → M),
@@ -98,14 +98,14 @@ theorem gradedPiece_induction {G : InternalGrading R M} {D : ℤ}
 
 /-- A pure tensor word of homogeneous letters of degrees `𝒟 i` lies in the graded piece of total
 degree `∑ i, 𝒟 i`. -/
-theorem mem_gradedPiece_of_tprod (G : InternalGrading R M) {n : ℕ}
+theorem mem_gradedPiece_of_tprod (G : InternalGrading R M ℤ) {n : ℕ}
     (x : Fin n → M) (𝒟 : Fin n → ℤ) (h𝒟 : ∀ i, x i ∈ G.piece (𝒟 i)) :
     of R M n (PiTensorProduct.tprod R x) ∈ gradedPiece G (∑ i, 𝒟 i) :=
   Submodule.subset_span ⟨n, 𝒟, x, h𝒟, rfl, rfl⟩
 
 /-- The total-degree pieces span the coaugmented tensor words.  In particular, an equality of
 linear maps out of tensor words may be checked separately on these pieces. -/
-theorem iSup_gradedPiece_eq_top (G : InternalGrading R M) :
+theorem iSup_gradedPiece_eq_top (G : InternalGrading R M ℤ) :
     ⨆ D : ℤ, gradedPiece G D = ⊤ := by
   classical
   apply le_antisymm le_top
@@ -141,7 +141,7 @@ theorem iSup_gradedPiece_eq_top (G : InternalGrading R M) :
 
 /-- On the total-degree-`D` piece of tensor words, applying the Koszul twist to every letter is
 scalar multiplication by `(-1) ^ (q * D)`. -/
-theorem map_koszulTwist_apply_of_mem (G : InternalGrading R M) {D : ℤ}
+theorem map_koszulTwist_apply_of_mem (G : InternalGrading R M ℤ) {D : ℤ}
     {z : TensorWords R M} (hz : z ∈ gradedPiece G D) (q : ℤ) :
     map (G.koszulTwist q) z = (((q * D).negOnePow : ℤ) : R) • z := by
   refine gradedPiece_induction
@@ -167,7 +167,7 @@ theorem map_koszulTwist_apply_of_mem (G : InternalGrading R M) {D : ℤ}
 
 /-- A word of the reduced tensor coalgebra is a coaugmented word of the same total degree, so the
 reduced degree pieces embed into the coaugmented ones. -/
-theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M} {D : ℤ}
+theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M ℤ} {D : ℤ}
     {w : ReducedTensorWords R M} (hw : w ∈ ReducedTensorWords.gradedPiece G D) :
     reducedInclusion R M w ∈ gradedPiece G D := by
   refine ReducedTensorWords.gradedPiece_induction
@@ -184,7 +184,7 @@ theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M} {D : ℤ}
     exact Submodule.smul_mem _ _ hu
 
 /-- Deleting the empty word preserves total letter degree. -/
-theorem isHomogeneous_reducedProjection (G : InternalGrading R M) :
+theorem isHomogeneous_reducedProjection (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous (reducedProjection R M) (gradedPiece G)
       (ReducedTensorWords.gradedPiece G) 0 := by
   rw [LinearMap.isHomogeneous_def]
@@ -219,7 +219,7 @@ and is recorded by `TauCeti.TensorWords.gradedPiece`.  Nor does the condition it
 annihilate the empty word: the extensions by zero on the empty word of *reduced* coderivations,
 such as `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential`, satisfy it, by
 `TauCeti.TensorWords.isGradedCoderivation_extendReduced`. -/
-def IsGradedCoderivation (G : InternalGrading R M) (q : ℤ)
+def IsGradedCoderivation (G : InternalGrading R M ℤ) (q : ℤ)
     (b : TensorWords R M →ₗ[R] TensorWords R M) : Prop :=
   deconcatenation R M ∘ₗ b =
     LinearMap.rTensor (TensorWords R M) b ∘ₗ deconcatenation R M +
@@ -228,7 +228,7 @@ def IsGradedCoderivation (G : InternalGrading R M) (q : ℤ)
             (map (InternalGrading.koszulTwist G q))) ∘ₗ
         deconcatenation R M
 
-variable {G : InternalGrading R M} {q : ℤ} {b : TensorWords R M →ₗ[R] TensorWords R M}
+variable {G : InternalGrading R M ℤ} {q : ℤ} {b : TensorWords R M →ₗ[R] TensorWords R M}
 
 /-- The co-Leibniz identity of a graded coderivation, as a reusable `Iff`: this exposes the body of
 the predicate to consumers in other modules, for which the definition's body is not exposed. -/

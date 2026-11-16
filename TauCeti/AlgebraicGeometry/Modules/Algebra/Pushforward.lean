@@ -22,7 +22,7 @@ and `NatIso.ofComponents`, together with the canonical lax monoidal pushforward 
 
 public section
 
-open CategoryTheory MonoidalCategory Opposite AlgebraicGeometry TauCeti
+open CategoryTheory MonoidalCategory Opposite AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme
 

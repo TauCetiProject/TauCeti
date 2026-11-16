@@ -82,29 +82,27 @@ private theorem factor_fifteen_mem :
   rw [monicFactorsMod_twenty_three hmin]
   simp
 
+omit hmin in
 private theorem factor_root_multiplicity_eq_count (r : ZMod 23) :
     multiplicity (X - C r)
       ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23))) =
       (normalizedFactors ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23)))).count
         (X - C r) := by
   classical
-  have h0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod 23)) ≠ 0 := by
-    rw [minpoly_mod_twenty_three hmin]
-    exact mul_ne_zero (pow_ne_zero _ (X_sub_C_ne_zero 16)) (X_sub_C_ne_zero 15)
-  rw [multiplicity_eq_count_normalizedFactors (irreducible_X_sub_C r) h0,
+  rw [multiplicity_eq_count_normalizedFactors (irreducible_X_sub_C r),
     (monic_X_sub_C r).normalize_eq_self]
 
 private theorem factor_sixteen_multiplicity :
     multiplicity (X - C (16 : ZMod 23))
       ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23))) = 2 := by
-  rw [factor_root_multiplicity_eq_count hmin, normalizedFactors_mod_twenty_three hmin]
+  rw [factor_root_multiplicity_eq_count, normalizedFactors_mod_twenty_three hmin]
   have hne : (16 : ZMod 23) ≠ 15 := by decide
   simp [hne]
 
 private theorem factor_fifteen_multiplicity :
     multiplicity (X - C (15 : ZMod 23))
       ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23))) = 1 := by
-  rw [factor_root_multiplicity_eq_count hmin, normalizedFactors_mod_twenty_three hmin]
+  rw [factor_root_multiplicity_eq_count, normalizedFactors_mod_twenty_three hmin]
   have hne : (15 : ZMod 23) ≠ 16 := by decide
   simp [hne]
 

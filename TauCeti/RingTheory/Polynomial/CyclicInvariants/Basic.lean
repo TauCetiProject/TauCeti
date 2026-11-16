@@ -60,14 +60,19 @@ theorem comp_C_mul_X_eq_self_iff (p : R[X]) (hζ : IsPrimitiveRoot ζ e) :
     · rw [hp n hn, zero_mul]
 
 /-- Contracting a scalar-invariant polynomial and then substituting `X ^ e` recovers it. -/
-theorem expand_contract_of_comp_C_mul_X_eq_self (p : R[X]) (he : 0 < e)
+theorem expand_contract_of_comp_C_mul_X_eq_self (p : R[X])
     (hζ : IsPrimitiveRoot ζ e) (hp : p.comp (C ζ * X) = p) :
     expand R e (contract e p) = p := by
-  ext n
-  rw [coeff_expand he]
-  split_ifs with hn
-  · rw [coeff_contract he.ne', Nat.div_mul_cancel hn]
-  · exact ((p.comp_C_mul_X_eq_self_iff hζ).1 hp n hn).symm
+  have h := (p.comp_C_mul_X_eq_self_iff hζ).1 hp
+  rcases e.eq_zero_or_pos with rfl | he
+  · rw [p.eq_C_of_natDegree_le_zero
+      (natDegree_le_iff_coeff_eq_zero.2 fun n hn ↦ h n (mt eq_zero_of_zero_dvd hn.ne')),
+      contract_C, expand_C]
+  · ext n
+    rw [coeff_expand he]
+    split_ifs with hn
+    · rw [coeff_contract he.ne', Nat.div_mul_cancel hn]
+    · exact (h n hn).symm
 
 /-- The normal-coordinate invariants are exactly the image of the power substitution.
 The polynomial downstairs is unique, including for the trivial group `e = 1`. -/
@@ -76,9 +81,9 @@ theorem comp_C_mul_X_eq_self_iff_existsUnique (p : R[X]) (he : 0 < e)
     p.comp (C ζ * X) = p ↔ ∃! q : R[X], expand R e q = p := by
   constructor
   · intro hp
-    exact ⟨contract e p, p.expand_contract_of_comp_C_mul_X_eq_self he hζ hp,
+    exact ⟨contract e p, p.expand_contract_of_comp_C_mul_X_eq_self hζ hp,
       fun q hq ↦ expand_injective he
-        (hq.trans (p.expand_contract_of_comp_C_mul_X_eq_self he hζ hp).symm)⟩
+        (hq.trans (p.expand_contract_of_comp_C_mul_X_eq_self hζ hp).symm)⟩
   · rintro ⟨q, rfl, -⟩
     apply (comp_C_mul_X_eq_self_iff _ hζ).2
     intro n hn
@@ -132,7 +137,7 @@ theorem cyclicInvariantsEquiv_symm_apply (he : 0 < e) (hζ : IsPrimitiveRoot ζ 
     (cyclicInvariantsEquiv he hζ).symm p = contract e (p : R[X]) := by
   apply expand_injective he
   rw [← coe_cyclicInvariantsEquiv he hζ, AlgEquiv.apply_symm_apply]
-  exact (expand_contract_of_comp_C_mul_X_eq_self _ he hζ p.property).symm
+  exact (expand_contract_of_comp_C_mul_X_eq_self _ hζ p.property).symm
 
 /-- The coefficients downstairs are the coefficients at multiples of `e` upstairs. -/
 @[simp]
@@ -144,10 +149,10 @@ theorem coeff_cyclicInvariantsEquiv_symm (he : 0 < e) (hζ : IsPrimitiveRoot ζ 
 /-- In the cyclic normal-coordinate model, every invariant derivative is divisible by
 `X ^ (e - 1)`. The factorization retains the polynomial downstairs and its derivative,
 so the scalar ramification factor is explicit, even in positive characteristic. -/
-theorem derivative_of_comp_C_mul_X_eq_self (p : R[X]) (he : 0 < e)
+theorem derivative_of_comp_C_mul_X_eq_self (p : R[X])
     (hζ : IsPrimitiveRoot ζ e) (hp : p.comp (C ζ * X) = p) :
     derivative p = expand R e (derivative (contract e p)) * ((e : R[X]) * X ^ (e - 1)) := by
-  conv_lhs => rw [← p.expand_contract_of_comp_C_mul_X_eq_self he hζ hp]
+  conv_lhs => rw [← p.expand_contract_of_comp_C_mul_X_eq_self hζ hp]
   exact derivative_expand e _
 
 end Polynomial

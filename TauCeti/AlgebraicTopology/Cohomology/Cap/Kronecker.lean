@@ -46,10 +46,12 @@ The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
 singular chains is the left unitor.
 
-Capping into degree zero is the Kronecker pairing up to the augmentation: for a topological pair
-`(X, A)`, a relative class `α ∈ Hⁿ(X, A; R, M)` and a relative class `x ∈ Hₙ(X, A; R)`, the cap
-product `x ⌢ α ∈ H₀(X; M)` taken along the right unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M` has
-augmentation `ε (x ⌢ α) = ⟨α, x⟩` (`TopPair.singularCap_comp_singularHomology₀ε`).  On chains,
+Capping into degree zero is the Kronecker pairing up to the augmentation: for a class
+`α ∈ Hⁿ(X; R, M)` and a class `x ∈ Hₙ(X; R)`, the cap product `x ⌢ α ∈ H₀(X; M)` taken along the
+right unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M` has augmentation `ε (x ⌢ α) = ⟨α, x⟩`
+(`TopCat.singularCap_comp_singularHomology₀ε`), and likewise for a relative class
+`α ∈ Hⁿ(X, A; R, M)` and a relative class `x ∈ Hₙ(X, A; R)` of a topological pair `(X, A)`
+(`TopPair.singularCap_comp_singularHomology₀ε`).  On chains,
 the back `0`-face of each singular `n`-simplex is a vertex, whose augmentation is the identity.
 
 For a class `α ∈ Hᵖ(X; R, M)` with values in an arbitrary object `M`, the cap product along a
@@ -65,7 +67,8 @@ this pairs `α ∈ Hᵖ(X; M)` with `β ∈ H^q(X; k)`, the general coefficient 
 a pair `(X, A)` the same identities hold for the relative cap product of a relative class
 `α ∈ Hᵖ(X, A; R, M)` with a relative class `x ∈ Hₙ(X, A; T)`, with the relative cup product
 `α ⌣ β ∈ Hⁿ(X, A; T, N')` along the relative Alexander–Whitney diagonal
-(`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
+(`TopPair.singularCap_comp_singularKronecker`, for `α` with values in the tensor unit,
+`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
 `TopPair.singularCap_comp_singularKronecker_of_isIso`).
 
 ## References
@@ -276,6 +279,27 @@ lemma capChain_comp_homology₀ε (X : TopCat.{w}) (k : Type*) [Ring k] [Linear 
     SSet.ιHomology₀_homology₀ε]
   simp [TauCeti.SimplexCategory.subinterval_zero_eq_id]
 
+/-- **The augmentation of a cap product into degree zero**, `ε (x ⌢ α) = ⟨α, x⟩`: capping a class
+`x ∈ Hₙ(X; R)` with a class `α ∈ Hⁿ(X; R, M)`, along the right unitors `R ⟶ R ⊗ 𝟙` and
+`M ⊗ 𝟙 ⟶ M`, and then applying the augmentation `H₀(X; M) ⟶ M` is the Kronecker pairing of `α`
+with `x`. -/
+@[reassoc (attr := simp)]
+theorem singularCap_comp_singularHomology₀ε (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n) (α : X.singularCohomology R k M n) :
+    X.singularCap k (ρ_ R).inv (ρ_ M).hom n 0 n h α ≫ X.singularHomology₀ε M =
+      X.singularKronecker k n α := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ n α
+  refine (cancel_epi (((toSSet.obj X).chainComplex R).homologyπ n)).1 ?_
+  -- Zeroth singular homology is the homology of the singular chain complex only after unfolding
+  -- `singularHomologyFunctor`, so `Category.assoc` is applied as a term rather than rewritten.
+  refine (Category.assoc _ _ _).symm.trans ?_
+  rw [singularCap_homologyπ, singularKronecker_homologyπ,
+    ← capChain_comp_homology₀ε X k n h ((X.singularCochainComplex R k M).iCycles n φ),
+    ← TauCeti.ChainComplex.capCycles_i_assoc]
+  -- In degree zero every chain is a cycle.
+  simp only [HomologicalComplex.iCyclesIso_hom_inv_id_assoc]
+  exact Category.assoc _ _ _
+
 end TopCat
 
 namespace TopPair
@@ -369,5 +393,24 @@ theorem singularCap_comp_singularKronecker_of_isIso (P : TopPair.{w}) (k : Type*
         (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) ν p q n h α β) := by
   rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
   exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
+
+/-- **The Kronecker pairing of a relative singular cap product**, `⟨β, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: the
+relative form of `TopCat.singularCap_comp_singularKronecker`. For a pair `(X, A)`, a relative class
+`α ∈ Hᵖ(X, A; R, 𝟙)` with values in the tensor unit, capped along `u` and the left unitor, and an
+absolute class `β ∈ H^q(X; S, N)`, evaluating `β` on `x ⌢ α` is evaluating on `x` the relative cup
+product `α ⌣ β ∈ Hⁿ(X, A; T, N)` along the relative Alexander–Whitney diagonal
+`P.alexanderWhitneyDiagonal u` and the left unitor of `N`. -/
+theorem singularCap_comp_singularKronecker (P : TopPair.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (p q n : ℕ) (h : p + q = n)
+    (α : P.singularCohomology R k (𝟙_ C) p) (β : P.fst.singularCohomology S k N q) :
+    P.singularCap k u (λ_ S).hom p q n h α ≫ P.fst.singularKronecker k q β =
+      P.singularKronecker k n
+        (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) (λ_ N).hom p q n h α β) := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
+  rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
+  refine TauCeti.ChainComplex.cap_comp_kronecker _ _ _ p q n h φ ψ ψ ?_
+  rw [SSet.chainComplexPairing_leftUnitor_hom_f]
+  exact (leftUnitor_naturality _).symm
 
 end TopPair

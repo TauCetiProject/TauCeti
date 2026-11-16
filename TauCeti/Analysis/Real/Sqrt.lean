@@ -27,7 +27,8 @@ is strictly less than `1`. In particular, for nonnegative ordered inputs `0 ≤ 
 squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluations.
 
 A real number `x` of the same sign as `c` is rescaled to `c` by the positive square of
-`√(c / x)`.
+`√(c / x)`. For `0 ≤ t < √2 - 1`, completing `(t + 1)² < 2` bounds the quadratic majorant
+`2 t + t² < 1`.
 
 ## Main results
 
@@ -43,6 +44,7 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 * `Real.sq_sqrt_one_sub_sq_div`: the same identity for `t = b / a` when `0 ≤ b ≤ a`.
 * `Real.sq_sqrt_one_sub_sq_lt_one`: `√(1 - t²)² < 1` for nonzero `t`.
 * `Real.exists_pos_sq_mul_eq_of_mul_pos`: `μ ^ 2 * x = c` for some `μ > 0` when `0 < c * x`.
+* `Real.two_mul_add_sq_lt_one`: `2 * t + t ^ 2 < 1` for `0 ≤ t < √2 - 1`.
 -/
 
 public section
@@ -142,5 +144,13 @@ theorem exists_pos_sq_mul_eq_of_mul_pos {c x : ℝ} (h : 0 < c * x) :
   refine ⟨√(c / x), sqrt_pos.2 hcx, ?_⟩
   rw [sq_sqrt hcx.le]
   field_simp
+
+/-- Whenever `0 ≤ t < √2 - 1`, the quadratic majorant `2 * t + t ^ 2` is strictly less than `1`. -/
+theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
+    2 * t + t ^ 2 < 1 := by
+  have hlt : t + 1 < √2 := by linarith
+  have hsq : (t + 1) ^ 2 < √2 ^ 2 := pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
+  rw [sq_sqrt zero_le_two] at hsq
+  linarith
 
 end Real

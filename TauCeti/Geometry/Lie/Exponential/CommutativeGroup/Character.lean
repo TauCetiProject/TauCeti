@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import TauCeti.Geometry.Lie.Exponential.Circle
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
+public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
@@ -33,8 +34,9 @@ exponential of the circle is `Circle.exp`. It is characterized by
 
 (`ContinuousMonoidHom.apply_lieExp_eq_circleExp_lieWeight`, `ContinuousMonoidHom.eq_lieWeight`).
 The weight of a product of characters is the sum of the weights, and the weight of `χ ∘ f` is
-`α_χ ∘ df`. On the period lattice weights take integer values: for `λ ∈ ker(exp)` the number
-`α_χ(λ) / (2π)` is an integer.
+`α_χ ∘ df`. Even for noncommutative `G`, weights vanish on Lie brackets and are invariant under
+the group adjoint action. On the period lattice weights take integer values: for `λ ∈ ker(exp)`
+the number `α_χ(λ) / (2π)` is an integer.
 
 For connected `G` these weights are exactly the integral functionals: a character is determined
 by its weight, and every real-linear functional taking integer values on `Λ_ℤ` is the weight of a
@@ -61,6 +63,8 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
   satisfying it.
 * `ContinuousMonoidHom.lieWeight_mul`, `ContinuousMonoidHom.lieWeight_comp`: weights are additive
   in the character and natural in the group.
+* `ContinuousMonoidHom.lieWeight_lie`, `ContinuousMonoidHom.lieWeight_Ad`: weights vanish on
+  brackets and are adjoint-invariant, including for noncommutative groups.
 * `ContinuousMonoidHom.exists_lieWeight_apply_eq_intCast_mul_of_mem_ker`,
   `ContinuousMonoidHom.exists_lieWeight_apply_eq_intCast_of_mem_periodLattice`: integrality of
   weights on the kernel of the exponential and on the period lattice.
@@ -214,6 +218,12 @@ theorem lieWeight_apply (χ : G →ₜ* Circle) (X : LeftInvariantDerivation I G
     lieWeight χ X = circleLieAlgebraEquiv (lieMap (I := I) (I' := 𝓡 1) χ X) :=
   (rfl)
 
+/-- The weight of a circle character vanishes on Lie brackets. -/
+@[simp]
+theorem lieWeight_lie (χ : G →ₜ* Circle) (X Y : LeftInvariantDerivation I G) :
+    lieWeight χ ⁅X, Y⁆ = 0 := by
+  rw [lieWeight_apply, LieHom.map_lie, LieModule.IsTrivial.trivial, map_zero]
+
 /-- **Naturality of weights.** The weight of `χ ∘ f` is the weight of `χ` composed with the Lie
 map of `f`. -/
 theorem lieWeight_comp
@@ -260,6 +270,21 @@ theorem eq_lieWeight {χ : G →ₜ* Circle} {α : Module.Dual ℝ (LeftInvarian
     rw [show π = π / (α X - lieWeight χ X) * α X - π / (α X - lieWeight χ X) * lieWeight χ X by
       field_simp, Circle.exp_sub, ← hX, div_self']
   exact Circle.exp_pi_ne_one hπ
+
+omit [T2Space G] [BoundarylessManifold I G] in
+/-- The weight of a circle character is invariant under the group adjoint action. -/
+@[simp]
+theorem lieWeight_Ad (χ : G →ₜ* Circle) (g : G) (X : LeftInvariantDerivation I G) :
+    lieWeight χ (Lie.Ad (I := I) g X) = lieWeight χ X := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+  have h := eq_lieWeight (I := I) (χ := χ)
+    (α := (lieWeight χ).comp (Lie.Ad (I := I) g).toLinearEquiv.toLinearMap) (fun Y ↦ by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
+      rw [← apply_lieExp_eq_circleExp_lieWeight, ← Lie.conj_lieExp (I := I) g Y]
+      simp only [map_mul, map_inv]
+      rw [mul_comm (χ g), mul_inv_cancel_right])
+  exact LinearMap.congr_fun h X
 
 /-- The trivial character has weight zero. -/
 @[simp]

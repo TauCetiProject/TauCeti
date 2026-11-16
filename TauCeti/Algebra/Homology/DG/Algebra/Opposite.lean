@@ -43,7 +43,7 @@ universe uR uA
 namespace IsDGAlgebra
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-  {G : InternalGrading R A} [GradedAlgebra G.piece] {d : A →ₗ[R] A}
+  {G : InternalGrading R A ℤ} [GradedAlgebra G.piece] {d : A →ₗ[R] A}
 
 /-- The Koszul-signed graded opposite of a differential graded algebra, with the same differential
 on underlying elements. -/

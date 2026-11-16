@@ -91,7 +91,7 @@ abbrev TotalHom : Type (max u v) :=
 
 /-- The grading of the total module of morphisms: an element has degree `n` when each of its
 components has degree `n`. -/
-noncomputable def totalGrading : InternalGrading R (TotalHom R C) :=
+noncomputable def totalGrading : InternalGrading R (TotalHom R C) ℤ :=
   InternalGrading.directSum fun p : C × C ↦ grading (R := R) p.1 p.2
 
 variable {R C}

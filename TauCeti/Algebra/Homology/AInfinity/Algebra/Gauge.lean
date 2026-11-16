@@ -187,7 +187,7 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R] [AddCommGroup A]
 
 section ComapBarEquiv
 
-variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A)
+variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A ℤ)
   (e : ReducedTensorWords R A ≃ₗ[R] ReducedTensorWords R B)
   (he : IsCoalgHom R e.toLinearMap)
   (he₀ : LinearMap.IsHomogeneous e.toLinearMap (gradedPiece (G.shift 1))

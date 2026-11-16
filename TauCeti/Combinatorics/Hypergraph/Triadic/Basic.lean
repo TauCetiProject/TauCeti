@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Complex.Basic
 public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
-public import TauCeti.Data.Fintype.CardEmbedding
+public import TauCeti.Data.Fintype.Card.Embedding
 public import Mathlib.Order.Partition.Equipartition
 
 /-!
