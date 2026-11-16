@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Tilted
-public import Mathlib.Probability.HasLaw
 public import TauCeti.Analysis.Fourier.ExpCos
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
+public import TauCeti.Probability.Density
 
 import TauCeti.MeasureTheory.Measure.Tilted
 
@@ -53,6 +53,9 @@ representatives.
 * `TauCeti.Probability.vonMisesMeasure_zero_concentration`: at zero concentration it is Haar
   measure.
 * `TauCeti.Probability.map_add_right_vonMisesMeasure`: rotating the circle rotates the location.
+* `ProbabilityTheory.HasLaw.hasPDF_vonMisesMeasure`: a random angle with a von Mises law has a Haar
+  density; `ProbabilityTheory.HasLaw.pdf_vonMisesMeasure` identifies the named density at
+  nonnegative concentration.
 * `TauCeti.Probability.integral_fourier_vonMisesMeasure`: the integer Fourier moments.
 * `TauCeti.Probability.norm_integral_fourier_one_vonMisesMeasure`: the mean resultant length.
 
@@ -291,8 +294,27 @@ namespace ProbabilityTheory
 
 open TauCeti.Probability
 
+attribute [local instance] factTwoPiPos
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → AddCircle (2 * π)}
   {m : AddCircle (2 * π)} {κ : ℝ}
+
+/-- A random angle with a von Mises law has a density relative to normalized Haar measure; at
+negative concentration the zero law trivially has one. -/
+theorem HasLaw.hasPDF_vonMisesMeasure (hX : HasLaw X (vonMisesMeasure m κ) P) :
+    HasPDF X P AddCircle.haarAddCircle := by
+  by_cases hκ : 0 ≤ κ
+  · rw [vonMisesMeasure_of_nonneg hκ] at hX
+    exact hasPDF_of_hasLaw_withDensity (measurable_vonMisesPDF m κ).aemeasurable hX
+  · refine hasPDF_of_hasLaw_withDensity (f := 0) aemeasurable_const ?_
+    rwa [withDensity_zero, ← vonMisesMeasure_of_neg (not_le.mp hκ)]
+
+/-- For a nonnegative concentration, the canonical Haar density of a random angle with a von Mises
+law agrees almost everywhere with the named von Mises density. -/
+theorem HasLaw.pdf_vonMisesMeasure (hX : HasLaw X (vonMisesMeasure m κ) P) (hκ : 0 ≤ κ) :
+    pdf X P AddCircle.haarAddCircle =ᵐ[AddCircle.haarAddCircle] vonMisesPDF m κ := by
+  rw [vonMisesMeasure_of_nonneg hκ] at hX
+  exact pdf_eq_of_hasLaw_withDensity (measurable_vonMisesPDF m κ).aemeasurable hX
 
 /-- Rotating a von Mises random angle by `a` gives a von Mises angle with location `m + a`. -/
 theorem HasLaw.add_const_vonMisesMeasure (hX : HasLaw X (vonMisesMeasure m κ) P)
