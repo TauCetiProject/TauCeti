@@ -45,7 +45,11 @@ Adding `s ω` to the `(1,1)`-part raises the Hermitian form by `s g`. Hence, if
 
 `dist(η, positiveCone) ≤ ‖D_J² η‖ / 4 + s ‖ω‖`
 
-(`infDist_positiveCone_le`), in every dimension.
+(`infDist_positiveCone_le`), in every dimension. Conversely the distance bounds the negative part
+of the Hermitian form on complex lines:
+`η(v, J v) ≥ -dist(η, positiveCone) ‖v ∧ J v‖` (`neg_infDist_positiveCone_mul_le_inner_ιMulti`),
+which is what makes an approximately positive form approximately nonnegative on the tangent planes
+of a pseudoholomorphic curve.
 
 **Norm control by a taming form.** For a positive `(1,1)`-form `κ`, the symmetric operator `T`
 with `⟪T u, w⟫ = κ(u, J w)` is positive semidefinite, and an orthonormal eigenbasis `b` of `T`
@@ -209,6 +213,21 @@ theorem infDist_positiveCone_le {J : AlmostComplexStructure V}
         refine (norm_add_le _ _).trans_eq ?_
         rw [norm_smul, norm_smul, Real.norm_of_nonneg (by norm_num), Real.norm_of_nonneg hs]
         ring
+
+/-- **Pairing with a complex line, up to the distance to the cone.** Every two-form `η` pairs with
+a complex line `v ∧ J v` to at least `-dist(η, positiveCone) ‖v ∧ J v‖`: positive `(1,1)`-forms
+pair nonnegatively with `v ∧ J v`. -/
+theorem neg_infDist_positiveCone_mul_le_inner_ιMulti {J : AlmostComplexStructure V}
+    (η : ⋀[ℝ]^2 V) (v : V) :
+    -(infDist η (J.positiveCone : Set (⋀[ℝ]^2 V)) * ‖ιMulti ℝ 2 ![v, J v]‖) ≤
+      ⟪η, ιMulti ℝ 2 ![v, J v]⟫ := by
+  obtain ⟨κ, hκ, hd⟩ := (isClosed_positiveCone J).exists_infDist_eq_dist
+    ⟨0, zero_mem J.positiveCone⟩ η
+  have hκv := (mem_positiveCone.1 hκ).2 v
+  have hle := real_inner_le_norm (κ - η) (ιMulti ℝ 2 ![v, J v])
+  rw [inner_sub_left, norm_sub_rev] at hle
+  rw [hd, dist_eq_norm]
+  linarith
 
 /-! ### Norm and pairing bounds -/
 

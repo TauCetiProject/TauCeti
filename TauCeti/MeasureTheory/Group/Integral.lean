@@ -40,8 +40,9 @@ invariance.
 
 * `TauCeti.integral_comp_add_sub_mul_eq`: moving a translation of an integrable function
   onto a bounded measurable test function inside an integral.
-* `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
-  origin.
+* `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`,
+  `TauCeti.setIntegral_closedBall_eq_setIntegral_closedBall_zero_add`: translating a ball integral
+  to the origin.
 * `TauCeti.setIntegral_ball_sub_eq_zero`, `TauCeti.setAverage_ball_id`: for a measure invariant
   under translation and negation, the centre of a ball is its barycentre.
 * `TauCeti.lintegral_lintegral_mul_right`, `TauCeti.lintegral_lintegral_add_right`,
@@ -79,6 +80,17 @@ theorem setIntegral_ball_eq_setIntegral_ball_zero_add
     ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
   simpa using ((measurePreserving_add_right μ x₀).setIntegral_preimage_emb
     (MeasurableEquiv.addRight x₀).measurableEmbedding f (ball x₀ R)).symm
+
+/-- For a measure invariant under right addition, the integral over `closedBall x₀ R` is the
+integral over `closedBall 0 R` of the translate `y ↦ f (y + x₀)`. No integrability hypothesis is
+needed. -/
+theorem setIntegral_closedBall_eq_setIntegral_closedBall_zero_add
+    {E F : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] [MeasurableAdd E]
+    {μ : Measure E} [μ.IsAddRightInvariant] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : E → F) (x₀ : E) (R : ℝ) :
+    ∫ x in closedBall x₀ R, f x ∂μ = ∫ y in closedBall (0 : E) R, f (y + x₀) ∂μ := by
+  simpa using ((measurePreserving_add_right μ x₀).setIntegral_preimage_emb
+    (MeasurableEquiv.addRight x₀).measurableEmbedding f (closedBall x₀ R)).symm
 
 /-- For a measure invariant under right addition and under negation, such as an additive Haar
 measure on a finite-dimensional real normed space, the integral of `x - x₀` over `ball x₀ R`
