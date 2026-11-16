@@ -26,15 +26,18 @@ all pairs `x, y ∈ S` with `dist x y ≤ h`, taking the value `0` when no such 
 * `TauCeti.modulusOfContinuityOn`: the uniform modulus of continuity of `f` on `S` at mesh `h`.
 * `TauCeti.modulusOfContinuityOn_le`, `TauCeti.dist_le_modulusOfContinuityOn`,
   `TauCeti.modulusOfContinuityOn_le_iff`: upper and lower bounds for increments at mesh `h`.
-* `TauCeti.monotone_modulusOfContinuityOn`, `TauCeti.modulusOfContinuityOn_mono_set`:
-  monotonicity in the mesh and in the domain subset when `f '' S` is bounded.
+* `TauCeti.modulusOfContinuityOn_mono`, `TauCeti.monotone_modulusOfContinuityOn`,
+  `TauCeti.modulusOfContinuityOn_mono_set`: monotonicity in the mesh and in the domain subset when
+  the increment set is bounded above.
 * `UniformContinuousOn.tendsto_modulusOfContinuityOn_nhdsGT_zero`,
   `ContinuousOn.tendsto_modulusOfContinuityOn_nhdsGT_zero`,
   `TauCeti.uniformContinuousOn_iff_tendsto_modulusOfContinuityOn`: vanishing of the modulus as
-  `h → 0⁺` for uniformly continuous maps, and characterization when `f '' S` is bounded.
+  `h → 0⁺` for uniformly continuous maps, and characterization when small-mesh increment sets are
+  bounded above.
 * `Isometry.modulusOfContinuityOn_comp`, `TauCeti.modulusOfContinuityOn_neg`,
   `TauCeti.modulusOfContinuityOn_smul`, `TauCeti.modulusOfContinuityOn_add_le`,
-  `LipschitzOnWith.modulusOfContinuityOn_le`, `HolderOnWith.modulusOfContinuityOn_le`:
+  `LipschitzOnWith.modulusOfContinuityOn_le`, `LipschitzOnWith.bddAbove_modulusOfContinuityOn_set`,
+  `HolderOnWith.modulusOfContinuityOn_le`, `HolderOnWith.bddAbove_modulusOfContinuityOn_set`:
   invariance, scaling, subadditivity, and Lipschitz/Hölder bounds.
 * `TauCeti.modulusOfContinuityOn_Iic_nnreal_mul`: rescaling `[0, 1]` to `[0, T]` on `ℝ≥0`.
 * `TauCeti.modulusOfContinuityOn_Iic_one_le_of_dyadic`: deterministic binary-expansion chaining
@@ -43,9 +46,13 @@ all pairs `x, y ∈ S` with `dist x y ≤ h`, taking the value `0` when no such 
 ## Implementation notes
 
 Because `Real.sSup` maps unbounded-above sets to `0`, lower-bound and monotonicity statements that
-read individual increments back out of `modulusOfContinuityOn f S h` assume
-`Bornology.IsBounded (f '' S)`. Upper bounds (`TauCeti.modulusOfContinuityOn_le`), nonnegativity,
-and scalar rescaling (`TauCeti.modulusOfContinuityOn_smul`) hold unconditionally.
+read individual increments back out of `modulusOfContinuityOn f S h` assume `BddAbove` of the
+increment set `{a | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)}`, supplied for bounded
+images by `TauCeti.bddAbove_modulusOfContinuityOn_set` and for Lipschitz or Hölder maps by
+`LipschitzOnWith.bddAbove_modulusOfContinuityOn_set` and
+`HolderOnWith.bddAbove_modulusOfContinuityOn_set`. Upper bounds
+(`TauCeti.modulusOfContinuityOn_le`), nonnegativity, and scalar rescaling
+(`TauCeti.modulusOfContinuityOn_smul`) hold unconditionally.
 -/
 
 public section
@@ -125,44 +132,58 @@ theorem bddAbove_modulusOfContinuityOn_set {f : X → Y} {S : Set X}
   exact hD (mem_image_of_mem f hx) (mem_image_of_mem f hy)
 
 /-- Each increment of `f` on `S` at distance at most `h` is bounded by
-`modulusOfContinuityOn f S h` whenever `f '' S` is bounded. -/
-theorem dist_le_modulusOfContinuityOn {f : X → Y} {S : Set X}
-    (hf : Bornology.IsBounded (f '' S)) {x y : X} {h : ℝ}
+`modulusOfContinuityOn f S h` whenever the mesh-`h` increment set is bounded above. -/
+theorem dist_le_modulusOfContinuityOn {f : X → Y} {S : Set X} {x y : X} {h : ℝ}
+    (hbdd : BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)})
     (hx : x ∈ S) (hy : y ∈ S) (hxy : dist x y ≤ h) :
     dist (f x) (f y) ≤ modulusOfContinuityOn f S h :=
-  le_csSup (bddAbove_modulusOfContinuityOn_set hf h) ⟨x, hx, y, hy, hxy, rfl⟩
+  le_csSup hbdd ⟨x, hx, y, hy, hxy, rfl⟩
 
 /-- Characterization of upper bounds on `modulusOfContinuityOn f S h` when `S` is nonempty,
-`0 ≤ h`, and `f '' S` is bounded. -/
+`0 ≤ h`, and the mesh-`h` increment set is bounded above. -/
 theorem modulusOfContinuityOn_le_iff {f : X → Y} {S : Set X} (hS : S.Nonempty) {h M : ℝ}
-    (hh : 0 ≤ h) (hf : Bornology.IsBounded (f '' S)) :
+    (hh : 0 ≤ h)
+    (hbdd : BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)}) :
     modulusOfContinuityOn f S h ≤ M ↔ ∀ x ∈ S, ∀ y ∈ S, dist x y ≤ h → dist (f x) (f y) ≤ M := by
-  refine ⟨fun hle x hx y hy hxy ↦ (dist_le_modulusOfContinuityOn hf hx hy hxy).trans hle,
+  refine ⟨fun hle x hx y hy hxy ↦ (dist_le_modulusOfContinuityOn hbdd hx hy hxy).trans hle,
     fun hle ↦ ?_⟩
   obtain ⟨x₀, hx₀⟩ := hS
   have hM : 0 ≤ M := by
     simpa only [dist_self] using hle x₀ hx₀ x₀ hx₀ (by simpa only [dist_self] using hh)
   exact modulusOfContinuityOn_le hM hle
 
-/-- Monotonicity of `modulusOfContinuityOn f S` in the mesh when `f '' S` is bounded. -/
-theorem monotone_modulusOfContinuityOn {f : X → Y} {S : Set X}
-    (hf : Bornology.IsBounded (f '' S)) : Monotone (modulusOfContinuityOn f S) := by
-  intro h₁ h₂ hh
-  let A₁ := {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h₁ ∧ a = dist (f x) (f y)}
+private lemma modulusOfContinuityOn_le_of_subset {f : X → Y} {S₁ S₂ : Set X} {h₁ h₂ : ℝ}
+    (hsub : {a : ℝ | ∃ x ∈ S₁, ∃ y ∈ S₁, dist x y ≤ h₁ ∧ a = dist (f x) (f y)} ⊆
+      {a : ℝ | ∃ x ∈ S₂, ∃ y ∈ S₂, dist x y ≤ h₂ ∧ a = dist (f x) (f y)})
+    (hbdd : BddAbove {a : ℝ | ∃ x ∈ S₂, ∃ y ∈ S₂, dist x y ≤ h₂ ∧ a = dist (f x) (f y)}) :
+    modulusOfContinuityOn f S₁ h₁ ≤ modulusOfContinuityOn f S₂ h₂ := by
+  let A₁ := {a : ℝ | ∃ x ∈ S₁, ∃ y ∈ S₁, dist x y ≤ h₁ ∧ a = dist (f x) (f y)}
   rcases A₁.eq_empty_or_nonempty with hempty | hne
-  · simpa [modulusOfContinuityOn, A₁, hempty] using modulusOfContinuityOn_nonneg f S h₂
-  · exact csSup_le_csSup (bddAbove_modulusOfContinuityOn_set hf h₂) hne
-      fun a ⟨x, hx, y, hy, hxy, ha⟩ ↦ ⟨x, hx, y, hy, hxy.trans hh, ha⟩
+  · simpa [modulusOfContinuityOn, A₁, hempty] using modulusOfContinuityOn_nonneg f S₂ h₂
+  · exact csSup_le_csSup hbdd hne hsub
 
-/-- Monotonicity of `modulusOfContinuityOn` in the domain set when the larger image is bounded. -/
-theorem modulusOfContinuityOn_mono_set {f : X → Y} {S₁ S₂ : Set X} (hS : S₁ ⊆ S₂)
-    (hf : Bornology.IsBounded (f '' S₂)) (h : ℝ) :
-    modulusOfContinuityOn f S₁ h ≤ modulusOfContinuityOn f S₂ h := by
-  let A₁ := {a : ℝ | ∃ x ∈ S₁, ∃ y ∈ S₁, dist x y ≤ h ∧ a = dist (f x) (f y)}
-  rcases A₁.eq_empty_or_nonempty with hempty | hne
-  · simpa [modulusOfContinuityOn, A₁, hempty] using modulusOfContinuityOn_nonneg f S₂ h
-  · exact csSup_le_csSup (bddAbove_modulusOfContinuityOn_set hf h) hne
-      fun a ⟨x, hx, y, hy, hxy, ha⟩ ↦ ⟨x, hS hx, y, hS hy, hxy, ha⟩
+/-- Pairwise monotonicity of `modulusOfContinuityOn f S` in the mesh when the larger mesh's
+increment set is bounded above. -/
+theorem modulusOfContinuityOn_mono {f : X → Y} {S : Set X} {h₁ h₂ : ℝ} (hh : h₁ ≤ h₂)
+    (hbdd : BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h₂ ∧ a = dist (f x) (f y)}) :
+    modulusOfContinuityOn f S h₁ ≤ modulusOfContinuityOn f S h₂ :=
+  modulusOfContinuityOn_le_of_subset
+    (fun _ ⟨x, hx, y, hy, hxy, ha⟩ ↦ ⟨x, hx, y, hy, hxy.trans hh, ha⟩) hbdd
+
+/-- Monotonicity of `modulusOfContinuityOn f S` in the mesh when the increment set is bounded above
+at every mesh. -/
+theorem monotone_modulusOfContinuityOn {f : X → Y} {S : Set X}
+    (hbdd : ∀ h, BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)}) :
+    Monotone (modulusOfContinuityOn f S) :=
+  fun _ h₂ hh ↦ modulusOfContinuityOn_mono hh (hbdd h₂)
+
+/-- Monotonicity of `modulusOfContinuityOn` in the domain set when the larger domain's increment
+set at mesh `h` is bounded above. -/
+theorem modulusOfContinuityOn_mono_set {f : X → Y} {S₁ S₂ : Set X} (hS : S₁ ⊆ S₂) {h : ℝ}
+    (hbdd : BddAbove {a : ℝ | ∃ x ∈ S₂, ∃ y ∈ S₂, dist x y ≤ h ∧ a = dist (f x) (f y)}) :
+    modulusOfContinuityOn f S₁ h ≤ modulusOfContinuityOn f S₂ h :=
+  modulusOfContinuityOn_le_of_subset
+    (fun _ ⟨x, hx, y, hy, hxy, ha⟩ ↦ ⟨x, hS hx, y, hS hy, hxy, ha⟩) hbdd
 
 end PseudoMetricSpace
 
@@ -230,30 +251,45 @@ theorem HolderOnWith.modulusOfContinuityOn_le {X Y : Type*} [PseudoMetricSpace X
     (hf.dist_le hx hy).trans
       (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg hxy r.coe_nonneg) C.coe_nonneg)
 
+/-- For a `(C, r)`-Hölder map on `S`, the increment set defining `modulusOfContinuityOn f S h` is
+bounded above at every mesh `h` (even when `f '' S` is unbounded). -/
+theorem HolderOnWith.bddAbove_modulusOfContinuityOn_set {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {C r : ℝ≥0} {f : X → Y} {S : Set X} (hf : HolderOnWith C r f S)
+    (h : ℝ) :
+    BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)} :=
+  ⟨(C : ℝ) * (max h 0) ^ (r : ℝ), by
+    rintro _ ⟨x, hx, y, hy, hxy, rfl⟩
+    exact (hf.dist_le hx hy).trans (mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow dist_nonneg (hxy.trans (le_max_left h 0)) r.coe_nonneg) C.coe_nonneg)⟩
+
+/-- For a `K`-Lipschitz map on `S`, the increment set defining `modulusOfContinuityOn f S h` is
+bounded above at every mesh `h` (even when `f '' S` is unbounded). -/
+theorem LipschitzOnWith.bddAbove_modulusOfContinuityOn_set {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {K : ℝ≥0} {f : X → Y} {S : Set X} (hf : LipschitzOnWith K f S)
+    (h : ℝ) :
+    BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)} :=
+  hf.holderOnWith.bddAbove_modulusOfContinuityOn_set h
+
 namespace TauCeti
 
 section ContinuityAndNormed
 
 variable {X Y : Type*} [PseudoMetricSpace X]
 
-/-- When `f '' S` is bounded, uniform continuity on `S` is equivalent to vanishing of
-`modulusOfContinuityOn f S` along `𝓝[>] 0`. -/
+/-- When small-mesh increment sets are bounded above, uniform continuity on `S` is equivalent to
+vanishing of `modulusOfContinuityOn f S` along `𝓝[>] 0`. -/
 theorem uniformContinuousOn_iff_tendsto_modulusOfContinuityOn [PseudoMetricSpace Y]
-    {f : X → Y} {S : Set X} (hf : Bornology.IsBounded (f '' S)) :
+    {f : X → Y} {S : Set X}
+    (hbdd : ∀ᶠ h in 𝓝[>] 0,
+      BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)}) :
     UniformContinuousOn f S ↔ Tendsto (modulusOfContinuityOn f S) (𝓝[>] 0) (𝓝 0) := by
   refine ⟨UniformContinuousOn.tendsto_modulusOfContinuityOn_nhdsGT_zero, fun hlim ↦ ?_⟩
   rw [Metric.uniformContinuousOn_iff]
   intro ε hε
-  obtain ⟨δ, hδ, hmod⟩ := Metric.tendsto_nhdsWithin_nhds.1 hlim ε hε
-  refine ⟨δ / 2, half_pos hδ, fun x hx y hy hxy ↦ ?_⟩
-  have hδ₂ : δ / 2 ∈ Ioi (0 : ℝ) := half_pos hδ
-  have hdist : dist (δ / 2) 0 < δ := by
-    rw [Real.dist_eq, sub_zero, abs_of_pos (half_pos hδ)]
-    exact half_lt_self hδ
-  have hlt : modulusOfContinuityOn f S (δ / 2) < ε := by
-    simpa only [Real.dist_eq, sub_zero,
-      abs_of_nonneg (modulusOfContinuityOn_nonneg f S (δ / 2))] using hmod hδ₂ hdist
-  exact (dist_le_modulusOfContinuityOn hf hx hy hxy.le).trans_lt hlt
+  obtain ⟨δ, ⟨hδ_pos, hδ_bdd⟩, hδ_lt⟩ :=
+    ((eventually_mem_nhdsWithin.and hbdd).and ((tendsto_order.1 hlim).2 ε hε)).exists
+  exact ⟨δ, hδ_pos, fun x hx y hy hxy ↦
+    (dist_le_modulusOfContinuityOn hδ_bdd hx hy hxy.le).trans_lt hδ_lt⟩
 
 /-- Negating a map into a seminormed group preserves its uniform modulus of continuity. -/
 @[simp]
@@ -289,9 +325,12 @@ theorem modulusOfContinuityOn_fun_smul {𝕜 : Type*} [SeminormedRing 𝕜] [Sem
     modulusOfContinuityOn (fun x ↦ c • f x) S h = ‖c‖ * modulusOfContinuityOn f S h :=
   modulusOfContinuityOn_smul c f S h
 
-/-- Subadditivity of the uniform modulus of continuity for bounded maps into a seminormed group. -/
+/-- Subadditivity of the uniform modulus of continuity for maps into a seminormed group whose
+mesh-`h` increment sets are bounded above. -/
 theorem modulusOfContinuityOn_add_le [SeminormedAddCommGroup Y] {f g : X → Y} {S : Set X}
-    (hf : Bornology.IsBounded (f '' S)) (hg : Bornology.IsBounded (g '' S)) (h : ℝ) :
+    {h : ℝ}
+    (hf : BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)})
+    (hg : BddAbove {a : ℝ | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (g x) (g y)}) :
     modulusOfContinuityOn (f + g) S h ≤
       modulusOfContinuityOn f S h + modulusOfContinuityOn g S h := by
   refine modulusOfContinuityOn_le
@@ -360,6 +399,13 @@ theorem modulusOfContinuityOn_Iic_nnreal_mul (f : ℝ≥0 → Y) {T : ℝ≥0} (
 private def dyadicApprox (r : ℕ) (x : ℝ≥0) : ℝ≥0 :=
   (⌊(x : ℝ) * (2 : ℝ) ^ r⌋₊ : ℝ≥0) / 2 ^ r
 
+private lemma dyadicApprox_def (r : ℕ) (x : ℝ≥0) :
+    dyadicApprox r x = (⌊(x : ℝ) * (2 : ℝ) ^ r⌋₊ : ℝ≥0) / 2 ^ r := rfl
+
+private lemma coe_dyadicApprox (r : ℕ) (x : ℝ≥0) :
+    (dyadicApprox r x : ℝ) = (⌊(x : ℝ) * (2 : ℝ) ^ r⌋₊ : ℝ) / (2 : ℝ) ^ r := by
+  simp [dyadicApprox]
+
 private lemma dyadicApprox_le_and_lt {x : ℝ≥0} (r : ℕ) :
     dyadicApprox r x ≤ x ∧ (x : ℝ) < (dyadicApprox r x : ℝ) + 1 / (2 : ℝ) ^ r := by
   have h2 : (0 : ℝ) < (2 : ℝ) ^ r := by positivity
@@ -368,11 +414,9 @@ private lemma dyadicApprox_le_and_lt {x : ℝ≥0} (r : ℕ) :
   have hlt : (x : ℝ) * (2 : ℝ) ^ r < (⌊(x : ℝ) * (2 : ℝ) ^ r⌋₊ : ℝ) + 1 :=
     Nat.lt_floor_add_one _
   refine ⟨?_, ?_⟩
-  · rw [← NNReal.coe_le_coe, dyadicApprox, NNReal.coe_div, NNReal.coe_pow, NNReal.coe_ofNat,
-      NNReal.coe_natCast, div_le_iff₀ h2]
+  · rw [← NNReal.coe_le_coe, coe_dyadicApprox, div_le_iff₀ h2]
     exact hle
-  · rw [dyadicApprox, NNReal.coe_div, NNReal.coe_pow, NNReal.coe_ofNat, NNReal.coe_natCast,
-      ← add_div, lt_div_iff₀ h2]
+  · rw [coe_dyadicApprox, ← add_div, lt_div_iff₀ h2]
     exact hlt
 
 private lemma tendsto_dyadicApprox (x : ℝ≥0) :
@@ -392,8 +436,8 @@ private lemma dist_dyadicApprox_succ_le {f : ℝ≥0 → Y} {x : ℝ≥0} (hx : 
     (hstep : ∀ i < 2 ^ (r + 1),
       dist (f (((i + 1 : ℕ) : ℝ≥0) / 2 ^ (r + 1))) (f ((i : ℝ≥0) / 2 ^ (r + 1))) ≤ B) :
     dist (f (dyadicApprox r x)) (f (dyadicApprox (r + 1) x)) ≤ B := by
-  set k := ⌊(x : ℝ) * (2 : ℝ) ^ r⌋₊
-  set m := ⌊(x : ℝ) * (2 : ℝ) ^ (r + 1)⌋₊
+  set k := ⌊(x : ℝ) * (2 : ℝ) ^ r⌋₊ with hk_def
+  set m := ⌊(x : ℝ) * (2 : ℝ) ^ (r + 1)⌋₊ with hm_def
   have hm_le_pow : m ≤ 2 ^ (r + 1) := by
     refine Nat.floor_le_of_le ?_
     calc (x : ℝ) * (2 : ℝ) ^ (r + 1) ≤ 1 * (2 : ℝ) ^ (r + 1) := by
@@ -412,22 +456,18 @@ private lemma dist_dyadicApprox_succ_le {f : ℝ≥0 → Y} {x : ℝ≥0} (hx : 
       _ = ((2 * k + 2 : ℕ) : ℝ) := by push_cast; ring
   have h2k_eq : dyadicApprox r x = ((2 * k : ℕ) : ℝ≥0) / 2 ^ (r + 1) := by
     apply NNReal.coe_injective
-    simp only [dyadicApprox, NNReal.coe_div, NNReal.coe_pow, NNReal.coe_ofNat, NNReal.coe_natCast]
-    change (k : ℝ) / (2 : ℝ) ^ r = ((2 * k : ℕ) : ℝ) / (2 : ℝ) ^ (r + 1)
+    rw [coe_dyadicApprox, ← hk_def]
     push_cast [pow_succ]
     field_simp
   rcases eq_or_lt_of_le h2k_le with h_eq | h_lt
   · have hsame : dyadicApprox (r + 1) x = dyadicApprox r x := by
-      rw [h2k_eq, dyadicApprox]
-      change (m : ℝ≥0) / 2 ^ (r + 1) = ((2 * k : ℕ) : ℝ≥0) / 2 ^ (r + 1)
-      rw [← h_eq]
+      rw [h2k_eq, dyadicApprox_def, ← hm_def, ← h_eq]
     rw [hsame, dist_self]
     exact hB0
   · have hm_eq : m = 2 * k + 1 := by omega
     have hi_lt : 2 * k < 2 ^ (r + 1) := by omega
     have hm_approx : dyadicApprox (r + 1) x = ((2 * k + 1 : ℕ) : ℝ≥0) / 2 ^ (r + 1) := by
-      change (m : ℝ≥0) / 2 ^ (r + 1) = ((2 * k + 1 : ℕ) : ℝ≥0) / 2 ^ (r + 1)
-      rw [hm_eq]
+      rw [dyadicApprox_def, ← hm_def, hm_eq]
     rw [h2k_eq, hm_approx, dist_comm]
     exact hstep (2 * k) hi_lt
 
@@ -463,12 +503,57 @@ private lemma dist_dyadicApprox_le_tsum {f : ℝ≥0 → Y} (hf : ContinuousOn f
   exact le_of_tendsto_of_tendsto hlim_lhs hshift_sum.hasSum.tendsto_sum_nat
     (Eventually.of_forall hpartial)
 
+private lemma dist_le_of_dyadic {f : ℝ≥0 → Y} (hf : ContinuousOn f (Iic 1)) (n : ℕ)
+    {h C : ℝ} (hC0 : 0 ≤ C)
+    (hcoarse : ∀ i j : ℕ, i < j → j ≤ 2 ^ n →
+      ((j - i : ℕ) : ℝ) / (2 : ℝ) ^ n < h + 1 / (2 : ℝ) ^ n →
+      dist (f ((j : ℝ≥0) / 2 ^ n)) (f ((i : ℝ≥0) / 2 ^ n)) ≤ C)
+    {M : ℕ → ℝ} (hM_sum : Summable M)
+    (hM : ∀ r ≥ n + 1, ∀ i < 2 ^ r,
+      dist (f (((i + 1 : ℕ) : ℝ≥0) / 2 ^ r)) (f ((i : ℝ≥0) / 2 ^ r)) ≤ M r)
+    {s t : ℝ≥0} (hst : s ≤ t) (ht1 : t ≤ 1) (hdiff : (t : ℝ) - s ≤ h) :
+    dist (f s) (f t) ≤ C + 2 * ∑' k : ℕ, M (n + 1 + k) := by
+  have hs1 : s ≤ 1 := hst.trans ht1
+  -- Approximate `s` and `t` from below on the level-`n` dyadic grid.
+  set i := ⌊(s : ℝ) * (2 : ℝ) ^ n⌋₊ with hi_def
+  set j := ⌊(t : ℝ) * (2 : ℝ) ^ n⌋₊ with hj_def
+  have hij : i ≤ j := Nat.floor_mono (by gcongr)
+  have hj_le : j ≤ 2 ^ n := Nat.floor_le_of_le <| by
+    calc (t : ℝ) * (2 : ℝ) ^ n ≤ 1 * (2 : ℝ) ^ n := by gcongr; exact_mod_cast ht1
+      _ = ((2 ^ n : ℕ) : ℝ) := by push_cast; ring
+  -- Bound the coarse level-`n` jump between `dyadicApprox n s` and `dyadicApprox n t`.
+  have hmid : dist (f (dyadicApprox n s)) (f (dyadicApprox n t)) ≤ C := by
+    rcases eq_or_lt_of_le hij with h_eq | h_lt
+    · rw [dyadicApprox_def, dyadicApprox_def, ← hi_def, ← hj_def, h_eq, dist_self]
+      exact hC0
+    · have hlen : ((j - i : ℕ) : ℝ) / (2 : ℝ) ^ n < h + 1 / (2 : ℝ) ^ n := by
+        have h2 : (0 : ℝ) < (2 : ℝ) ^ n := by positivity
+        have hrhs : h + 1 / (2 : ℝ) ^ n = (h * (2 : ℝ) ^ n + 1) / (2 : ℝ) ^ n := by
+          field_simp
+        rw [Nat.cast_sub hij, hrhs, div_lt_div_iff_of_pos_right h2]
+        have hj_r : (j : ℝ) ≤ (t : ℝ) * (2 : ℝ) ^ n := Nat.floor_le (by positivity)
+        have hi_r : (s : ℝ) * (2 : ℝ) ^ n < (i : ℝ) + 1 := Nat.lt_floor_add_one _
+        have hts_mul : ((t : ℝ) - s) * (2 : ℝ) ^ n ≤ h * (2 : ℝ) ^ n :=
+          mul_le_mul_of_nonneg_right hdiff h2.le
+        linarith
+      rw [dist_comm]
+      exact hcoarse i j h_lt hj_le hlen
+  -- Combine the coarse jump with the two dyadic refinement tails at `s` and `t`.
+  have htail_s := dist_dyadicApprox_le_tsum hf hs1 n hM_sum hM
+  have htail_t := dist_dyadicApprox_le_tsum hf ht1 n hM_sum hM
+  calc dist (f s) (f t)
+      ≤ dist (f s) (f (dyadicApprox n s)) + dist (f (dyadicApprox n s)) (f (dyadicApprox n t)) +
+          dist (f (dyadicApprox n t)) (f t) := dist_triangle4 _ _ _ _
+    _ = dist (f (dyadicApprox n s)) (f s) + dist (f (dyadicApprox n s)) (f (dyadicApprox n t)) +
+          dist (f (dyadicApprox n t)) (f t) := by rw [dist_comm (f s)]
+    _ ≤ C + 2 * ∑' k : ℕ, M (n + 1 + k) := by linarith
+
 /-- **Deterministic dyadic chaining bound on `[0, 1]`**: if `f : ℝ≥0 → Y` is continuous on `[0, 1]`,
 `C ≥ 0` bounds every level-`n` dyadic increment of length `< h + 2 ^ (-n)`, and a summable sequence
 `M` bounds single-step dyadic increments at all finer levels `r ≥ n + 1`, then
 `modulusOfContinuityOn f (Set.Iic 1) h ≤ C + 2 * ∑' k, M (n + 1 + k)`. -/
 theorem modulusOfContinuityOn_Iic_one_le_of_dyadic {f : ℝ≥0 → Y}
-    (hf : ContinuousOn f (Iic 1)) (n : ℕ) {h C : ℝ} (hh : 0 ≤ h) (hC0 : 0 ≤ C)
+    (hf : ContinuousOn f (Iic 1)) (n : ℕ) {h C : ℝ} (hC0 : 0 ≤ C)
     (hcoarse : ∀ i j : ℕ, i < j → j ≤ 2 ^ n →
       ((j - i : ℕ) : ℝ) / (2 : ℝ) ^ n < h + 1 / (2 : ℝ) ^ n →
       dist (f ((j : ℝ≥0) / 2 ^ n)) (f ((i : ℝ≥0) / 2 ^ n)) ≤ C)
@@ -479,47 +564,13 @@ theorem modulusOfContinuityOn_Iic_one_le_of_dyadic {f : ℝ≥0 → Y}
   have htsum_nonneg : 0 ≤ ∑' k : ℕ, M (n + 1 + k) :=
     (dist_nonneg (x := f (dyadicApprox n 0)) (y := f 0)).trans
       (dist_dyadicApprox_le_tsum hf zero_le_one n hM_sum hM)
-  have hpair : ∀ s t : ℝ≥0, s ≤ t → t ≤ 1 → (t : ℝ) - s ≤ h →
-      dist (f s) (f t) ≤ C + 2 * ∑' k : ℕ, M (n + 1 + k) := by
-    intro s t hst ht1 hdiff
-    have hs1 : s ≤ 1 := hst.trans ht1
-    set i := ⌊(s : ℝ) * (2 : ℝ) ^ n⌋₊
-    set j := ⌊(t : ℝ) * (2 : ℝ) ^ n⌋₊
-    have hij : i ≤ j := Nat.floor_mono (by gcongr)
-    have hj_le : j ≤ 2 ^ n := Nat.floor_le_of_le <| by
-      calc (t : ℝ) * (2 : ℝ) ^ n ≤ 1 * (2 : ℝ) ^ n := by gcongr; exact_mod_cast ht1
-        _ = ((2 ^ n : ℕ) : ℝ) := by push_cast; ring
-    have hmid : dist (f (dyadicApprox n s)) (f (dyadicApprox n t)) ≤ C := by
-      rcases eq_or_lt_of_le hij with h_eq | h_lt
-      · simp only [dyadicApprox, i, j] at h_eq ⊢
-        rw [h_eq, dist_self]
-        exact hC0
-      · have hlen : ((j - i : ℕ) : ℝ) / (2 : ℝ) ^ n < h + 1 / (2 : ℝ) ^ n := by
-          have h2 : (0 : ℝ) < (2 : ℝ) ^ n := by positivity
-          have hrhs : h + 1 / (2 : ℝ) ^ n = (h * (2 : ℝ) ^ n + 1) / (2 : ℝ) ^ n := by
-            field_simp
-          rw [Nat.cast_sub hij, hrhs, div_lt_div_iff_of_pos_right h2]
-          have hj_r : (j : ℝ) ≤ (t : ℝ) * (2 : ℝ) ^ n := Nat.floor_le (by positivity)
-          have hi_r : (s : ℝ) * (2 : ℝ) ^ n < (i : ℝ) + 1 := Nat.lt_floor_add_one _
-          have hts_mul : ((t : ℝ) - s) * (2 : ℝ) ^ n ≤ h * (2 : ℝ) ^ n :=
-            mul_le_mul_of_nonneg_right hdiff h2.le
-          linarith
-        rw [dist_comm]
-        exact hcoarse i j h_lt hj_le hlen
-    have htail_s := dist_dyadicApprox_le_tsum hf hs1 n hM_sum hM
-    have htail_t := dist_dyadicApprox_le_tsum hf ht1 n hM_sum hM
-    calc dist (f s) (f t)
-        ≤ dist (f s) (f (dyadicApprox n s)) + dist (f (dyadicApprox n s)) (f (dyadicApprox n t)) +
-            dist (f (dyadicApprox n t)) (f t) := dist_triangle4 _ _ _ _
-      _ = dist (f (dyadicApprox n s)) (f s) + dist (f (dyadicApprox n s)) (f (dyadicApprox n t)) +
-            dist (f (dyadicApprox n t)) (f t) := by rw [dist_comm (f s)]
-      _ ≤ C + 2 * ∑' k : ℕ, M (n + 1 + k) := by linarith
+  -- Reduce to ordered pairs `x ≤ y` in `[0, 1]` and apply `dist_le_of_dyadic`.
   refine modulusOfContinuityOn_le (by positivity) fun x hx y hy hxy ↦ ?_
   rcases le_total x y with hle | hle
-  · refine hpair x y hle hy ?_
+  · refine dist_le_of_dyadic hf n hC0 hcoarse hM_sum hM hle hy ?_
     rwa [NNReal.dist_eq, abs_of_nonpos (sub_nonpos.2 (NNReal.coe_le_coe.2 hle)), neg_sub] at hxy
   · rw [dist_comm]
-    refine hpair y x hle hx ?_
+    refine dist_le_of_dyadic hf n hC0 hcoarse hM_sum hM hle hx ?_
     rwa [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 hle))] at hxy
 
 end NNRealInterval
