@@ -44,9 +44,8 @@ variable {l m n : Type*}
 /-- An orthogonal real matrix `O` satisfies `O Oᵀ = 1` as a complex matrix. -/
 theorem map_ofReal_mul_transpose_eq_one [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
     (hO : O ∈ orthogonalGroup n ℝ) : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
-  rw [← transpose_map]
-  exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans
-    ((congrArg _ ((mem_orthogonalGroup_iff _ _).1 hO)).trans (map_one _))
+  rw [← transpose_map, ← funext Complex.ofRealHom_eq_coe, ← Matrix.map_mul,
+    (mem_orthogonalGroup_iff _ _).1 hO, Matrix.map_one _ (map_zero _) (map_one _)]
 
 /-- An orthogonal real matrix is unitary as a complex matrix. -/
 theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
