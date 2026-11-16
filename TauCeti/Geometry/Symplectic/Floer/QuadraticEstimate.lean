@@ -595,13 +595,10 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinea
       AEStronglyMeasurable (fun z ↦ fderiv ℝ f z stdComplexLineImag) (μ.restrict s) :=
     (measurable_fderiv_apply_const ℝ f _).aestronglyMeasurable
   have hb' := hC (μ.restrict s) hp hφ (hcont hw) (hder w) (hcont hξ₁) (hcont hξ₂) (hder ξ₁)
-    (hder ξ₂) ((ae_restrict_iff' hs).2 (Filter.Eventually.of_forall hK')) haδ
-    ((ae_restrict_iff' hs).2 (Filter.Eventually.of_forall ha₁))
-    ((ae_restrict_iff' hs).2 (Filter.Eventually.of_forall ha₂))
-    ((ae_restrict_iff' hs).2 (Filter.Eventually.of_forall hb))
-    ((ae_restrict_iff' hs).2 (Filter.Eventually.of_forall hA))
-  refine le_of_eq_of_le (eLpNorm_congr_ae ((ae_restrict_iff' hs).2
-    (Filter.Eventually.of_forall fun z hz ↦ ?_))) hb'
+    (hder ξ₂) (ae_restrict_of_forall_mem hs hK') haδ (ae_restrict_of_forall_mem hs ha₁)
+    (ae_restrict_of_forall_mem hs ha₂) (ae_restrict_of_forall_mem hs hb)
+    (ae_restrict_of_forall_mem hs hA)
+  refine le_of_eq_of_le (eLpNorm_congr_ae (ae_restrict_of_forall_mem hs fun z hz ↦ ?_)) hb'
   -- On `s` the operator difference is the difference of the remainders.
   have h₁ := ω.floerOperator_add_sub_floerOperator_sub_floerLinearization
     (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w ξ₁ (hw z hz) (hξ₁ z hz)

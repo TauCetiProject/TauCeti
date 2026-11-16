@@ -578,7 +578,7 @@ theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_z
   have hS : eLpNorm F p (volume.restrict S) = eLpNorm F p (volume.restrict N) := by
     have hSm : MeasurableSet S := MeasurableSet.univ.prod measurableSet_Icc
     calc eLpNorm F p (volume.restrict S) = eLpNorm (N.indicator F) p (volume.restrict S) := by
-          refine eLpNorm_congr_ae ((ae_restrict_iff' hSm).2 (Eventually.of_forall fun z hz ↦ ?_))
+          refine eLpNorm_congr_ae (ae_restrict_of_forall_mem hSm fun z hz ↦ ?_)
           by_cases hzN : z ∈ N
           · rw [indicator_of_mem hzN]
           · rw [indicator_of_notMem hzN]
@@ -599,7 +599,7 @@ theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_z
   rw [hS]
   calc eLpNorm F p (volume.restrict N) ≤
         volume.restrict N univ ^ p.toReal⁻¹ * ENNReal.ofReal (C' * Real.exp (-(κ * R))) :=
-        eLpNorm_le_of_ae_bound hFm ((ae_restrict_iff' hN).2 (Eventually.of_forall hR))
+        eLpNorm_le_of_ae_bound hFm (ae_restrict_of_forall_mem hN hR)
     _ ≤ 2 * ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
         rw [hvol]
         gcongr
