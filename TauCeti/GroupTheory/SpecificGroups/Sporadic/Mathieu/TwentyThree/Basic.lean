@@ -52,6 +52,8 @@ whenever it is finite.
 ## Main declarations
 
 * `TauCeti.Sporadic.M23`: the permutation model of `M₂₃` on `23` points.
+* `TauCeti.Sporadic.M23.closure_pair_eq_top`: the two generators generate the model, as a
+  statement in its carrier.
 * `TauCeti.Sporadic.M23.presentationImage`: the images `a` and `b⁻¹` of the presentation
   generators.
 * `TauCeti.Sporadic.M23.lift_presentationImage_toFreeGroup_eq_one`: all nine transcribed relators
@@ -118,6 +120,16 @@ theorem b_def :
 theorem a_mem : a ∈ M23 := M23_def ▸ Subgroup.subset_closure (by simp)
 
 theorem b_mem : b ∈ M23 := M23_def ▸ Subgroup.subset_closure (by simp)
+
+/-- The copies of the two ATLAS generators in the carrier of the model generate it. -/
+theorem closure_pair_eq_top :
+    Subgroup.closure ({⟨a, a_mem⟩, ⟨b, b_mem⟩} : Set M23) = ⊤ := by
+  have h : Subgroup.closure (M23.subtype ⁻¹' {a, b}) = ⊤ := by
+    rw [M23_def]
+    exact Subgroup.closure_preimage_eq_top _
+  rw [eq_top_iff, ← h]
+  refine Subgroup.closure_mono ?_
+  rintro ⟨x, hx⟩ (rfl | rfl) <;> simp
 
 /-- The generator `M23.a`, given by its table of images; it is an involution. -/
 private def aTable : Equiv.Perm (Fin 23) where
