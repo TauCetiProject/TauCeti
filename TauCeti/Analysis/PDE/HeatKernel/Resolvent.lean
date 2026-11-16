@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -92,12 +93,6 @@ theorem heatResolventKernel_apply (lam : ℝ) (x : E) :
     heatResolventKernel lam x = ∫ t in Ioi 0, exp (-(lam * t)) * heatKernel t x :=
   (rfl)
 
-/-- `∫₀^∞ e^{-ct} dt = c⁻¹` for `c > 0`. -/
-private theorem integral_exp_neg_mul_Ioi_zero {c : ℝ} (hc : 0 < c) :
-    ∫ t in Ioi 0, exp (-c * t) = c⁻¹ := by
-  rw [integral_exp_mul_Ioi (neg_lt_zero.2 hc)]
-  simp
-
 /-- The heat resolvent kernel is nonnegative. -/
 theorem heatResolventKernel_nonneg (lam : ℝ) (x : E) : 0 ≤ heatResolventKernel lam x :=
   setIntegral_nonneg measurableSet_Ioi fun _ ht ↦
@@ -139,7 +134,7 @@ theorem integral_heatResolventKernel (hlam : 0 < lam) :
   simp_rw [heatResolventKernel_apply]
   rw [← integral_integral_swap (integrable_exp_mul_heatKernel hlam)]
   rw [setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ integral_exp_mul_heatKernel ht,
-    integral_exp_neg_mul_Ioi_zero hlam]
+    integral_Ioi_exp_neg_mul hlam]
 
 /-- **The Fourier transform of the heat resolvent kernel.** In Mathlib's normalization
 `𝓕 f(ξ) = ∫ e^{-2πi⟪x, ξ⟫} f(x) dx`, `𝓕 G_λ(ξ) = (λ + 4π² ‖ξ‖²)⁻¹` for `λ > 0`: the reciprocal of
@@ -169,7 +164,7 @@ theorem fourier_heatResolventKernel (hlam : 0 < lam) (ξ : E) :
   simp_rw [fourier_eq, Circle.smul_def, smul_eq_mul, heatResolventKernel_apply,
     ← integral_complex_ofReal, ← integral_const_mul]
   rw [← integral_integral_swap hint, setIntegral_congr_fun measurableSet_Ioi h,
-    integral_complex_ofReal, integral_exp_neg_mul_Ioi_zero hsum]
+    integral_complex_ofReal, integral_Ioi_exp_neg_mul hsum]
 
 variable [CompleteSpace F]
 
