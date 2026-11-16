@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Module
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Resolution.Mirror
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import TauCeti.Algebra.Homology.PrincipalIdealRing
 
 /-!
 # Mirror duality for the Khovanov complex and Khovanov homology
