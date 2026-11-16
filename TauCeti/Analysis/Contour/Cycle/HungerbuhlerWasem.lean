@@ -153,7 +153,7 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
   have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
     hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := hasCauchyPV_analyticRemainder_add_residue_sum
-    (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU
+    (PolarPartDecomposition.ofMeromorphic hf' hmero') hU
     (fun s ↦ PolarPartDecomposition.ofMeromorphic_order s)
     (fun s hs ↦ (Finset.mem_filter.mp hs).2) hCU h_imm (fun γ hγ h ↦ hbase γ hγ (hsub h))
     (fun γ hγ ↦ (hA γ hγ).mono hsub) hB
@@ -161,7 +161,7 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
       ∑ s ∈ S, windingNumber s C * residue f s :=
     Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [homologyCauchyTheorem hU hCU
-    (PolarPartDecomposition.ofMeromorphic hU hf' hmero').analyticRemainder_differentiableOn hnull,
+    (PolarPartDecomposition.ofMeromorphic hf' hmero').analyticRemainder_differentiableOn hnull,
     zero_add, hsum] at h
 
 /-- **The generalized residue theorem for a contour cycle with simple poles** — HW Thm 3.3's

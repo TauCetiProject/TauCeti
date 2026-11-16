@@ -172,18 +172,12 @@ theorem mem_periodicSolutions_positiveEndHamiltonian_iff {q : Puncture} {x : ℝ
       (fun t ↦ x (q.endSign * t)) ∈
         periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 := by
   refine ⟨mem_periodicSolutions_comp_endSign_mul, fun hx ↦ ?_⟩
-  let H' : Puncture → ℝ → M → ℝ := fun r t y ↦ r.endSign * H r (r.endSign * t) y
-  have hH'1 : positiveEndHamiltonian H' q = H q := by
-    funext t y
-    simp only [H', positiveEndHamiltonian_apply, ← mul_assoc, endSign_mul_self, one_mul]
-  have hH'2 : H' q = positiveEndHamiltonian H q := by
-    funext t y
-    simp only [H', positiveEndHamiltonian_apply]
   have hx' : (fun t ↦ (fun r ↦ x (q.endSign * r)) (q.endSign * t)) = x := by
     funext t
-    simp only [← mul_assoc, endSign_mul_self, one_mul]
-  have h := mem_periodicSolutions_comp_endSign_mul (ω := ω) (H := H') (by rwa [hH'1])
-  rwa [hx', hH'2] at h
+    simp only [endSign_mul_endSign_mul]
+  have h := mem_periodicSolutions_comp_endSign_mul (ω := ω) (H := positiveEndHamiltonian H)
+    (by rwa [positiveEndHamiltonian_positiveEndHamiltonian])
+  rwa [hx'] at h
 
 /-! ### The ends of a Floer pair of pants in a manifold as Floer half-cylinders -/
 
@@ -357,11 +351,7 @@ private theorem mem_periodicSolutions_and_tendstoUniformly_endChart_of_positiveE
       ∀ t, Tendsto (fun i ↦ u (endChart q (q.endSign * σ i, t))) l
         (𝓝 (x (q.endSign * t))) := by
   refine ⟨mem_periodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _, ?_, fun t ↦ ?_⟩
-  · have hloop (i : ι) : (fun t ↦ f (u (endChart q (q.endSign * σ i, t)))) =
-        (fun t ↦ f (u (positiveEndChart q (σ i, t)))) ∘ fun t ↦ q.endSign * t := by
-      funext t
-      simp only [comp_apply, endChart_eq_positiveEndChart]
-    rw [funext hloop]
+  · rw [funext fun i ↦ comp_endChart_eq_comp_positiveEndChart (fun z ↦ f (u z)) q (σ i)]
     exact hconv.comp _
   · simpa only [endChart_eq_positiveEndChart] using hpt (q.endSign * t)
 
