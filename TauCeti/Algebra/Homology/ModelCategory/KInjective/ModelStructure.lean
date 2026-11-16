@@ -52,9 +52,14 @@ All in the namespace `CochainComplex.modelCategoryInjective`:
 
 * J. Lurie, *Higher Algebra*, Proposition 1.3.5.3.
 * [Stacks: Theorem 079P](https://stacks.math.columbia.edu/tag/079P).
-* The model structure on bounded below complexes in Mathlib's
-  `Mathlib.Algebra.Homology.ModelCategory.Injective`, by Joël Riou, whose factorization
-  `CochainComplex.cm5b` is reused here.
+* Mathlib's model structure on bounded below complexes
+  `CochainComplex.Plus.modelCategoryQuillen` in
+  `Mathlib.Algebra.Homology.ModelCategory.Injective`, by Joël Riou, whose structure is followed
+  here.
+* The constructions `CochainComplex.cm5b.i` and `CochainComplex.cm5b.p` in
+  `Mathlib.Algebra.Homology.Factorizations.CM5b`, by Joël Riou, which are reused here for the
+  factorization into a cofibration followed by a trivial fibration; they need no boundedness
+  assumption.
 -/
 
 public section
