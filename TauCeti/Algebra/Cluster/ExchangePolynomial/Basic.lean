@@ -46,7 +46,7 @@ structure ExchangePolynomial (K : Type*) [CommMonoidWithZero K] where
   isUnit_coeff_zero : IsUnit (coeff 0)
   isUnit_coeff_degree : IsUnit (coeff degree)
 
-attribute [simp] ExchangePolynomial.degree_pos ExchangePolynomial.isUnit_coeff_zero
+attribute [simp↓] ExchangePolynomial.degree_pos ExchangePolynomial.isUnit_coeff_zero
   ExchangePolynomial.isUnit_coeff_degree
 
 namespace ExchangePolynomial
@@ -54,15 +54,15 @@ namespace ExchangePolynomial
 variable {K L M : Type*} [CommMonoidWithZero K] [CommMonoidWithZero L]
   [CommMonoidWithZero M]
 
-@[simp] theorem degree_ne_zero (H : ExchangePolynomial K) : H.degree ≠ 0 :=
+@[simp↓] theorem degree_ne_zero (H : ExchangePolynomial K) : H.degree ≠ 0 :=
   H.degree_pos.ne'
 
 /-- Over a nontrivial coefficient monoid the unit constant coefficient is nonzero. -/
-@[simp] theorem coeff_zero_ne_zero [Nontrivial K] (H : ExchangePolynomial K) : H.coeff 0 ≠ 0 :=
+@[simp↓] theorem coeff_zero_ne_zero [Nontrivial K] (H : ExchangePolynomial K) : H.coeff 0 ≠ 0 :=
   H.isUnit_coeff_zero.ne_zero
 
 /-- Over a nontrivial coefficient monoid the unit highest coefficient is nonzero. -/
-@[simp] theorem coeff_degree_ne_zero [Nontrivial K] (H : ExchangePolynomial K) :
+@[simp↓] theorem coeff_degree_ne_zero [Nontrivial K] (H : ExchangePolynomial K) :
     H.coeff H.degree ≠ 0 :=
   H.isUnit_coeff_degree.ne_zero
 
@@ -327,6 +327,11 @@ noncomputable def leadingUnit (H : ExchangePolynomial K) : Kˣ := H.isUnit_coeff
     exact H.scale_right_inj.mp hs
   · rintro rfl
     exact H.scale_one
+
+/-- The symmetric form of `scale_eq_self`, reached after `scale_one` rewrites `H.scale 1`. -/
+@[simp] theorem self_eq_scale (H : ExchangePolynomial K) {e : Kˣ} :
+    H = H.scale e ↔ e = 1 :=
+  eq_comm.trans H.scale_eq_self
 
 @[simp] theorem constantUnit_map (H : ExchangePolynomial K) (f : K →*₀ L) :
     (H.map f).constantUnit = Units.map f.toMonoidHom H.constantUnit := by

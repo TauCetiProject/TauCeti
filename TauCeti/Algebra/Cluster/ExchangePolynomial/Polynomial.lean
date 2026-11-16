@@ -41,7 +41,7 @@ noncomputable def toPolynomial (H : ExchangePolynomial R) : R[X] := by
   exact ofFn (H.degree + 1) (fun i => H.coeff i)
 
 /-- Polynomial realization preserves every coefficient, including the zero extension. -/
-@[simp] theorem coeff_toPolynomial (H : ExchangePolynomial R) (i : ℕ) :
+@[simp↓] theorem coeff_toPolynomial (H : ExchangePolynomial R) (i : ℕ) :
     H.toPolynomial.coeff i = H.coeff i := by
   classical
   by_cases hi : i < H.degree + 1
@@ -55,7 +55,7 @@ theorem natDegree_toPolynomial_le (H : ExchangePolynomial R) :
     simpa using H.coeff_eq_zero i hi
 
 /-- Over a nontrivial semiring the unit highest coefficient prevents a degree drop. -/
-@[simp] theorem natDegree_toPolynomial [Nontrivial R] (H : ExchangePolynomial R) :
+@[simp↓] theorem natDegree_toPolynomial [Nontrivial R] (H : ExchangePolynomial R) :
     H.toPolynomial.natDegree = H.degree := by
   apply natDegree_eq_of_le_of_coeff_ne_zero (natDegree_toPolynomial_le H)
   simp
@@ -66,20 +66,20 @@ theorem degree_toPolynomial_le (H : ExchangePolynomial R) :
   exact (degree_le_natDegree).trans (Nat.cast_le.mpr (natDegree_toPolynomial_le H))
 
 /-- The unit leading coefficient supplies the polynomial's leading coefficient. -/
-@[simp] theorem leadingCoeff_toPolynomial (H : ExchangePolynomial R) :
+@[simp↓] theorem leadingCoeff_toPolynomial (H : ExchangePolynomial R) :
     H.toPolynomial.leadingCoeff = H.coeff H.degree := by
   rcases subsingleton_or_nontrivial R with _ | _
   · exact Subsingleton.elim _ _
   rw [← coeff_natDegree, natDegree_toPolynomial, coeff_toPolynomial]
 
 /-- Over a nontrivial semiring the specified degree is the polynomial degree. -/
-@[simp] theorem degree_toPolynomial [Nontrivial R] (H : ExchangePolynomial R) :
+@[simp↓] theorem degree_toPolynomial [Nontrivial R] (H : ExchangePolynomial R) :
     H.toPolynomial.degree = H.degree := by
   exact degree_eq_iff_natDegree_eq_of_pos H.degree_pos |>.mpr
     (natDegree_toPolynomial H)
 
 /-- Realization is nonzero over a nontrivial coefficient semiring. -/
-@[simp] theorem toPolynomial_ne_zero [Nontrivial R] (H : ExchangePolynomial R) :
+@[simp↓] theorem toPolynomial_ne_zero [Nontrivial R] (H : ExchangePolynomial R) :
     H.toPolynomial ≠ 0 := by
   apply leadingCoeff_ne_zero.mp
   simp
@@ -94,7 +94,7 @@ theorem toPolynomial_injective [Nontrivial R] :
     simpa using congrArg (fun p : R[X] => p.coeff i) h
 
 /-- Polynomial realizations agree exactly when the exchange polynomials do. -/
-@[simp] theorem toPolynomial_inj [Nontrivial R] {H G : ExchangePolynomial R} :
+@[simp↓] theorem toPolynomial_inj [Nontrivial R] {H G : ExchangePolynomial R} :
     H.toPolynomial = G.toPolynomial ↔ H = G :=
   toPolynomial_injective.eq_iff
 
@@ -135,9 +135,20 @@ def _root_.Polynomial.toExchangePolynomial (p : R[X]) (hpos : 0 < p.natDegree)
   ext i
   simp
 
+/-- Two polynomials give the same exchange polynomial exactly when they are equal. -/
+@[simp] theorem _root_.Polynomial.toExchangePolynomial_inj {p q : R[X]} {hp : 0 < p.natDegree}
+    {hq : 0 < q.natDegree} {hp0 : IsUnit (p.coeff 0)} {hq0 : IsUnit (q.coeff 0)}
+    {hpr : IsUnit p.leadingCoeff} {hqr : IsUnit q.leadingCoeff} :
+    p.toExchangePolynomial hp hp0 hpr = q.toExchangePolynomial hq hq0 hqr ↔ p = q := by
+  constructor
+  · intro h
+    simpa using congrArg toPolynomial h
+  · rintro rfl
+    rfl
+
 /-- Recover an exchange polynomial from its realization, given any proofs of positive degree
 `0 < H.toPolynomial.natDegree` and of the unit endpoint conditions. -/
-@[simp] theorem toExchangePolynomial_toPolynomial (H : ExchangePolynomial R)
+@[simp↓] theorem toExchangePolynomial_toPolynomial (H : ExchangePolynomial R)
     (hpos : 0 < H.toPolynomial.natDegree) (h0 : IsUnit (H.toPolynomial.coeff 0))
     (hr : IsUnit H.toPolynomial.leadingCoeff) :
     H.toPolynomial.toExchangePolynomial hpos h0 hr = H := by
