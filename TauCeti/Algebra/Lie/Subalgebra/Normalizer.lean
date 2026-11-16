@@ -65,9 +65,9 @@ theorem le_normalizer_of_le_sup (hsup : T'.toSubmodule ≤ T.toSubmodule ⊔ H.t
     (hH : H ≤ T.normalizer) : T' ≤ T.normalizer :=
   hsup.trans (sup_le T.le_normalizer hH)
 
-/-- **A self-normalizing Lie subalgebra is maximal abelian.** If a Lie subalgebra `T` with
-`T.normalizer = T`, such as a Cartan subalgebra, lies in an abelian Lie subalgebra `T'`, then
-`T = T'`: the subalgebra `T'` commutes with `T`, hence normalizes it. -/
+/-- **A self-normalizing Lie subalgebra is not properly contained in an abelian one.** If a Lie
+subalgebra `T` with `T.normalizer = T`, such as a Cartan subalgebra, lies in an abelian Lie
+subalgebra `T'`, then `T = T'`: the subalgebra `T'` commutes with `T`, hence normalizes it. -/
 theorem eq_of_le_of_isLieAbelian_of_normalizer_eq (hle : T ≤ T') [IsLieAbelian T']
     (hT : T.normalizer = T) : T = T' := by
   refine le_antisymm hle fun x hx ↦ ?_
