@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Bordered.TypeA
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # Type `DA` bimodules and associativity of the box tensor product
@@ -44,15 +45,18 @@ idempotents of `A` at the generators, and strict unitality, are not needed below
 * **Associativity.** The box tensor differential of the type `A` module `M ⊠ P` with `N`
   (`TauCeti.TypeDStructure.typeABoxDifferential`) is the box tensor differential
   `∂ φ = dM φ + φ ⬝ δ` of `M` with `P ⊠ N` (`TauCeti.TypeDStructure.boxDifferential`)
-  (`TauCeti.TypeDAStructure.typeABoxDifferential_boxModule`). This is also how the structure
+  (`TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_apply`, and
+  `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule` when `dB` is a differential, so that
+  `P ⊠ N` is a type `D` structure). This is also how the structure
   equation of `P ⊠ N` is proved: for `M = B`, the row of `dB δ + δ * δ` at a generator `p` is the
   square of the box tensor differential at `1 ⊗ p`, which vanishes because the box tensor
   differential of the type `A` module `B ⊠ P` with `N` squares to zero.
 * **The identity bimodule.** When the idempotents `ι s` of `A` are cycles summing to `1`, the
   identity bimodule `[I]` (`TauCeti.TypeDAStructure.identity`) has one generator at each
   idempotent and the single operation `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t`. If the idempotents are
-  moreover orthogonal, `[I] ⊠ N` is a copy of `N` on the generators `(idem x, x)`, the other
-  generators carrying no coefficients (`TauCeti.TypeDAStructure.boxCoeff_identity`).
+  moreover orthogonal, the coefficients of `[I] ⊠ N` restricted to the generators `(idem x, x)` are
+  those of `N`, and the other generators carry zero coefficients
+  (`TauCeti.TypeDAStructure.boxCoeff_identity`).
 
 The tensor products here are taken over `R` on the generators, as for the box tensor differential
 of `TauCeti.LowDimTopology.Bordered.TypeA`; the elementary tensors `y ⊗ x` whose idempotents do not
@@ -74,9 +78,11 @@ are not treated.
 
 * `TauCeti.TypeDAStructure.map_boxCoeff_add_boxCoeff_mul_boxCoeff`: the structure equation of
   `P ⊠ N`.
-* `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule`: associativity,
-  `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`.
-* `TauCeti.TypeDAStructure.boxCoeff_identity`: `[I] ⊠ N` is a copy of `N`.
+* `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_apply` and
+  `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule`: associativity,
+  `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`, on row vectors and through the type `D` structure `P ⊠ N`.
+* `TauCeti.TypeDAStructure.boxCoeff_identity`: the coefficients of `[I] ⊠ N` are those of `N` on
+  the generators `(idem x, x)` and zero on the others.
 
 ## References
 
@@ -116,29 +122,6 @@ theorem typeDAComp_def [Fintype Y] (n : ℕ) (a : Fin n → A) :
         coeff (n - k) (fun l => a ⟨k + l, lt_tsub_iff_left.mp l.isLt⟩) :=
   (rfl)
 
-/-- The **differential terms** of the type `DA` structure relation of length `n`:
-`∑_l δ_n(a₁, …, d aₗ, …, aₙ)`. -/
-noncomputable def typeDADiff (dA : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) : Matrix Y Y B :=
-  ∑ l : Fin n, coeff n (Function.update a l (dA (a l)))
-
-theorem typeDADiff_def (dA : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) :
-    typeDADiff coeff dA n a = ∑ l : Fin n, coeff n (Function.update a l (dA (a l))) :=
-  (rfl)
-
-/-- The **product terms** of the type `DA` structure relation of length `n`:
-`∑_l δ_{n-1}(a₁, …, aₗ aₗ₊₁, …, aₙ)`, over the `n - 1` adjacent pairs. -/
-noncomputable def typeDAMul : (n : ℕ) → (Fin n → A) → Matrix Y Y B
-  | 0, _ => 0
-  | n + 1, a => ∑ l : Fin n, coeff n (Fin.contractNth l.castSucc (· * ·) a)
-
-@[simp]
-theorem typeDAMul_zero (a : Fin 0 → A) : typeDAMul coeff 0 a = 0 :=
-  (rfl)
-
-theorem typeDAMul_succ (n : ℕ) (a : Fin (n + 1) → A) :
-    typeDAMul coeff (n + 1) a = ∑ l : Fin n, coeff n (Fin.contractNth l.castSucc (· * ·) a) :=
-  (rfl)
-
 end Relations
 
 variable (dA : A →ₗ[R] A) (dB : B →ₗ[R] B) {S : Type*} (ιB : S → B) (Y : Type*) [Fintype Y]
@@ -148,9 +131,9 @@ idempotents `ιB` and of type `A` over the differential algebra `(A, dA)`, in a 
 `Y`. Each generator `y` lies in the summand of the idempotent `ιB (idem y)`, and the operation
 `δ¹_{n+1}(y, a₁, …, aₙ) = ∑ y', coeff n a y y' ⊗ y'` has coefficient matrix `coeff n a`,
 multilinear in `a`. The structure relations say that the composite terms `TauCeti.typeDAComp`,
-the entrywise differential `dB` of `coeff n a`, the differential terms `TauCeti.typeDADiff` and the
-product terms `TauCeti.typeDAMul` sum to zero; over a ring of characteristic two they need no
-signs. -/
+the entrywise differential `dB` of `coeff n a`, the differential terms
+`TauCeti.ungradedStasheffDiff` and the product terms `TauCeti.ungradedStasheffMul` sum to zero;
+over a ring of characteristic two they need no signs. -/
 @[ext]
 structure TypeDAStructure where
   /-- The idempotent of `B` of each generator. -/
@@ -164,7 +147,8 @@ structure TypeDAStructure where
     coeff n a y y' * ιB (idem y') = coeff n a y y'
   /-- The type `DA` structure relation of length `n`. -/
   stasheff (n : ℕ) (a : Fin n → A) :
-    typeDAComp coeff n a + (coeff n a).map dB + typeDADiff coeff dA n a + typeDAMul coeff n a = 0
+    typeDAComp coeff n a + (coeff n a).map dB + ungradedStasheffDiff coeff dA n a +
+      ungradedStasheffMul coeff n a = 0
 
 namespace TypeDAStructure
 
@@ -177,18 +161,6 @@ section BoxModule
 variable {M : Type*} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
   [IsScalarTower R Bᵐᵒᵖ M]
 
-variable (R M Y) in
-/-- The action `ψ ↦ ψ ⬝ F` of matrices over `B` on row vectors `Y → M`, linear in the matrix. -/
-private noncomputable def continuationMapLinear : Matrix Y Y B →ₗ[R] (Y → M) →ₗ[R] Y → M where
-  toFun F := continuationMap R M F
-  map_add' := continuationMap_add
-  map_smul' r F := LinearMap.ext fun ψ => funext fun z => by
-    rw [RingHom.id_apply, LinearMap.smul_apply, Pi.smul_apply,
-      continuationMap_apply (R := R) (M := M) (r • F), continuationMap_apply (R := R) (M := M) F,
-      Finset.smul_sum]
-    refine Finset.sum_congr rfl fun y _ => ?_
-    rw [Matrix.smul_apply, op_smul, smul_assoc]
-
 /-- The differential part of the operations of `M ⊠ P`: `m₁` contributes `dM` on each entry. -/
 private noncomputable def diffAct (dM : M →ₗ[R] M) :
     (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) ((Y → M) →ₗ[R] Y → M)
@@ -200,28 +172,23 @@ private theorem diffAct_apply (dM : M →ₗ[R] M) (n : ℕ) (a : Fin n → A) (
     diffAct (Y := Y) dM n a ψ = if n = 0 then fun y => dM (ψ y) else 0 := by
   cases n <;> rfl
 
+omit [Fintype Y] in
+private theorem diffAct_succ (dM : M →ₗ[R] M) (n : ℕ) : diffAct (A := A) (Y := Y) dM (n + 1) = 0 :=
+  MultilinearMap.ext fun a => LinearMap.ext fun ψ => by
+    rw [diffAct_apply, ite_eq_right n.succ_ne_zero, zero_apply, LinearMap.zero_apply]
+
 variable (P : TypeDAStructure dA dB ιB Y)
 
 /-- The operations of `M ⊠ P`. -/
 private noncomputable def boxAct (dM : M →ₗ[R] M) (n : ℕ) :
     MultilinearMap (RingHom.id R) (fun _ : Fin n => A) ((Y → M) →ₗ[R] Y → M) :=
-  diffAct dM n + (continuationMapLinear R Y M).compMultilinearMap (P.coeff n)
+  diffAct dM n + (continuationMapₗ R M Y Y).compMultilinearMap (P.coeff n)
 
 private theorem boxAct_apply (dM : M →ₗ[R] M) (n : ℕ) (a : Fin n → A) (ψ : Y → M) :
     P.boxAct dM n a ψ =
       (if n = 0 then fun y => dM (ψ y) else 0) + continuationMap R M (P.coeff n a) ψ := by
-  rw [boxAct, add_apply, LinearMap.add_apply, diffAct_apply]
-  rfl
-
-@[simp]
-private theorem continuationMapLinear_apply (F : Matrix Y Y B) :
-    continuationMapLinear R Y M F = continuationMap R M F :=
-  (rfl)
-
-/-- The action of a sum of matrices is the sum of their actions. -/
-private theorem continuationMap_sum {ι : Type*} (s : Finset ι) (F : ι → Matrix Y Y B) :
-    continuationMap R M (∑ i ∈ s, F i : Matrix Y Y B) = ∑ i ∈ s, continuationMap R M (F i) :=
-  map_sum (continuationMapLinear R Y M) F s
+  rw [boxAct, add_apply, LinearMap.add_apply, diffAct_apply, LinearMap.compMultilinearMap_apply,
+    continuationMapₗ_apply]
 
 /-- A coefficient matrix only depends on the length and the entries of its tuple of inputs. -/
 private theorem coeff_eq_of_eq {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
@@ -286,26 +253,29 @@ variable [CharP R 2]
 /-- **The box tensor product `M ⊠ P` of a differential module with a type `DA` bimodule.** For a
 differential right `B`-module `(M, dM)` and a type `DA` bimodule `P = ^B P_A`, the row
 vectors `Y → M`, standing for `∑ y, ψ y ⊗ y`, form an `A∞` right module over `A` with operations
-`m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a₁, …, aₙ) = ψ ⬝ δₙ(a₁, …, aₙ)` for `n ≥ 1`. Its `A∞`
-relations are the type `DA` structure relations, multiplied on the left by `ψ`: the two terms
-`dM ψ ⬝ δₙ` from `m₁` acting before and after `m_{n+1}` cancel, over a ring of characteristic two,
-and the Leibniz rule turns `dM (ψ ⬝ δₙ)` into the differential term `ψ ⬝ dB δₙ`. -/
+`m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a₁, …, aₙ) = ψ ⬝ δₙ(a₁, …, aₙ)` for `n ≥ 1`, over a ring
+of characteristic two. -/
 noncomputable def boxModule {dM : M →ₗ[R] M} (hM : IsUngradedDGRightModule dB dM) :
     UngradedAInfinityRightModule dA (Y → M) where
   act := P.boxAct dM
   stasheff n a φ := by
+    -- The `A∞` relations are the type `DA` structure relations, multiplied on the left by `φ`:
+    -- the two terms `dM φ ⬝ δₙ` from `m₁` acting before and after `m_{n+1}` cancel, and the
+    -- Leibniz rule turns `dM (φ ⬝ δₙ)` into the differential term `φ ⬝ dB δₙ`.
     have hcomp := P.ungradedStasheffComp_boxAct hM n a φ
     have hdiff : ungradedStasheffDiff (P.boxAct dM) dA n a φ =
-        continuationMap R M (typeDADiff P.coeff dA n a) φ := by
-      rw [ungradedStasheffDiff_def, typeDADiff_def, continuationMap_sum, LinearMap.sum_apply]
+        continuationMap R M (ungradedStasheffDiff P.coeff dA n a : Matrix Y Y B) φ := by
+      rw [ungradedStasheffDiff_apply, ungradedStasheffDiff_def, continuationMap_sum,
+        LinearMap.sum_apply]
       refine Finset.sum_congr rfl fun l _ => ?_
       rw [boxAct_apply, ite_eq_right (Nat.pos_iff_ne_zero.mp l.pos), zero_add]
     have hmul : ungradedStasheffMul (P.boxAct dM) n a φ =
-        continuationMap R M (typeDAMul P.coeff n a) φ := by
+        continuationMap R M (ungradedStasheffMul P.coeff n a : Matrix Y Y B) φ := by
       cases n with
       | zero => simp
       | succ n =>
-        rw [ungradedStasheffMul_succ, typeDAMul_succ, continuationMap_sum, LinearMap.sum_apply]
+        rw [ungradedStasheffMul_succ_apply, ungradedStasheffMul_succ, continuationMap_sum,
+          LinearMap.sum_apply]
         refine Finset.sum_congr rfl fun l _ => ?_
         rw [boxAct_apply, ite_eq_right (Nat.pos_iff_ne_zero.mp l.pos), zero_add]
     rw [hcomp, hdiff, hmul, add_self_eq_zero_of_charTwo R, add_zero, ← LinearMap.add_apply,
@@ -362,22 +332,6 @@ private theorem idem_mul_lift_coeff_mul_idem (k : ℕ) (t : PiTensorProduct R fu
   | add t t' ht ht' =>
     simp only [map_add, Matrix.add_apply, mul_add, add_mul, ht.1, ht.2, ht'.1, ht'.2, and_self]
 
-/-- A `finsum` which is fixed termwise by left multiplication by `c` is fixed by it. -/
-private theorem mul_finsum_of_forall {f : ℕ → B} {c : B} (h : ∀ k, c * f k = f k) :
-    c * ∑ᶠ k, f k = ∑ᶠ k, f k := by
-  by_cases hf : (Function.support f).Finite
-  · rw [mul_finsum' f c hf]
-    exact finsum_congr h
-  · rw [finsum_of_infinite_support hf, mul_zero]
-
-/-- A `finsum` which is fixed termwise by right multiplication by `c` is fixed by it. -/
-private theorem finsum_mul_of_forall {f : ℕ → B} {c : B} (h : ∀ k, f k * c = f k) :
-    (∑ᶠ k, f k) * c = ∑ᶠ k, f k := by
-  by_cases hf : (Function.support f).Finite
-  · rw [finsum_mul' f c hf]
-    exact finsum_congr h
-  · rw [finsum_of_infinite_support hf, zero_mul]
-
 theorem idem_mul_boxCoeff (p q : Y × X) : ιB (P.idem p.1) * P.boxCoeff N p q = P.boxCoeff N p q :=
   mul_finsum_of_forall fun k => (P.idem_mul_lift_coeff_mul_idem k _ p.1 q.1).1
 
@@ -394,6 +348,10 @@ variable {T : Type*} {ιA : T → A} {X : Type*} [Fintype X] [DecidableEq X]
   {M : Type*} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
   [IsScalarTower R Bᵐᵒᵖ M] [CharP R 2] {dM : M →ₗ[R] M}
   (P : TypeDAStructure dA dB ιB Y) (N : TypeDStructure dA ιA X)
+
+private theorem boxModule_act (hM : IsUngradedDGRightModule dB dM) (n : ℕ) :
+    (P.boxModule hM).act n = P.boxAct dM n :=
+  (rfl)
 
 /-- The operations of `M ⊠ P`: `m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a) = ψ ⬝ δₙ(a)`, `n ≥ 1`. -/
 theorem boxModule_act_apply (hM : IsUngradedDGRightModule dB dM) (n : ℕ) (a : Fin n → A)
@@ -416,27 +374,22 @@ private theorem lift_boxModule_act (hM : IsUngradedDGRightModule dB dM) (n : ℕ
     PiTensorProduct.lift ((P.boxModule hM).act n) (N.iteratedCoeff n x z) ψ =
       (if n = 0 ∧ x = z then fun y => dM (ψ y) else 0) +
         continuationMap R M (PiTensorProduct.lift (P.coeff n) (N.iteratedCoeff n x z)) ψ := by
-  have hL : PiTensorProduct.lift ((continuationMapLinear R Y M).compMultilinearMap (P.coeff n)) =
-      continuationMapLinear R Y M ∘ₗ PiTensorProduct.lift (P.coeff n) :=
+  have hL : PiTensorProduct.lift ((continuationMapₗ R M Y Y).compMultilinearMap (P.coeff n)) =
+      continuationMapₗ R M Y Y ∘ₗ PiTensorProduct.lift (P.coeff n) :=
     PiTensorProduct.ext (MultilinearMap.ext fun a => by simp)
-  rw [show (P.boxModule hM).act n =
-      diffAct dM n + (continuationMapLinear R Y M).compMultilinearMap (P.coeff n) from rfl,
-    map_add, hL, LinearMap.add_apply, LinearMap.add_apply, LinearMap.comp_apply,
-    continuationMapLinear_apply]
+  rw [boxModule_act, boxAct, map_add, hL, LinearMap.add_apply, LinearMap.add_apply,
+    LinearMap.comp_apply, continuationMapₗ_apply]
   congr 1
   cases n with
   | zero =>
     rw [N.iteratedCoeff_zero]
     by_cases hxz : x = z
-    · rw [ite_eq_left hxz, PiTensorProduct.lift.tprod, ite_eq_left ⟨rfl, hxz⟩]
-      rfl
-    · rw [ite_eq_right hxz, map_zero, ite_eq_right fun h => hxz h.2]
-      rfl
+    · rw [ite_eq_left hxz, PiTensorProduct.lift.tprod, ite_eq_left ⟨rfl, hxz⟩, diffAct_apply,
+        ite_eq_left rfl]
+    · rw [ite_eq_right hxz, map_zero, ite_eq_right fun h => hxz h.2, LinearMap.zero_apply]
   | succ n =>
-    rw [ite_eq_right fun h => Nat.succ_ne_zero n h.1]
-    have h0 : diffAct (A := A) (Y := Y) dM (n + 1) = 0 := rfl
-    rw [h0, map_zero]
-    rfl
+    rw [ite_eq_right fun h => Nat.succ_ne_zero n h.1, diffAct_succ, map_zero,
+      LinearMap.zero_apply, LinearMap.zero_apply]
 
 /-- Under either boundedness hypothesis, a single length `K ≥ 1` bounds both the nonzero operations
 of the matrix module of `M ⊠ P` along the coefficients of `N` and the nonzero terms of the
@@ -462,7 +415,7 @@ private theorem exists_bound (hM : IsUngradedDGRightModule dB dM)
 `N` is the box tensor differential `∂ = dM + · ⬝ δ` of `M` with `P ⊠ N`: on a row vector `φ`,
 standing for `∑ m ⊗ y ⊗ x` with coefficients `φ x y`,
 `∂ φ = dM φ + φ ⬝ (P ⊠ N)` at the generator `y' ⊗ z`. -/
-private theorem typeABoxDifferential_boxModule_apply (hM : IsUngradedDGRightModule dB dM)
+theorem typeABoxDifferential_boxModule_apply (hM : IsUngradedDGRightModule dB dM)
     (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (φ : X → Y → M) (z : X) (y' : Y) :
     N.typeABoxDifferential (P.boxModule hM) φ z y' =
       dM (φ z y') + continuationMap R M (P.boxCoeff N) (fun p => φ p.2 p.1) (y', z) := by
@@ -486,14 +439,15 @@ private theorem typeABoxDifferential_boxModule_apply (hM : IsUngradedDGRightModu
 
 /-- **The structure equation of `P ⊠ N`.** If `dB` is a differential, over a ring of characteristic
 two, and `N` is bounded or the operations of `P` vanish from some arity on, the coefficient matrix
-`δ` of `P ⊠ N` satisfies `dB δ + δ * δ = 0`. Its row at `p` is the box tensor differential of the
-generator `1 ⊗ p` of `B ⊠ (P ⊠ N)`, which by associativity is the box tensor differential of the
-type `A` module `B ⊠ P` with `N`; that differential squares to zero, and its square at `1 ⊗ p` is
-the row at `p` of `dB δ + δ * δ`. -/
+`δ` of `P ⊠ N` satisfies `dB δ + δ * δ = 0`. -/
 theorem map_boxCoeff_add_boxCoeff_mul_boxCoeff (hdB : IsUngradedDGAlgebra dB)
     (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) :
     (P.boxCoeff N).map dB + P.boxCoeff N * P.boxCoeff N = 0 := by
   classical
+  -- The row of `δ` at `p` is the box tensor differential of the generator `1 ⊗ p` of
+  -- `B ⊠ (P ⊠ N)`, which by associativity is the box tensor differential of the type `A` module
+  -- `B ⊠ P` with `N`. That differential squares to zero, and its square at `1 ⊗ p` is the row at
+  -- `p` of `dB δ + δ * δ`.
   have hB := hdB.isUngradedDGRightModule
   have hsq (φ : X → Y → B) : N.typeABoxDifferential (P.boxModule hB)
       (N.typeABoxDifferential (P.boxModule hB) φ) = 0 := by
@@ -516,7 +470,13 @@ theorem map_boxCoeff_add_boxCoeff_mul_boxCoeff (hdB : IsUngradedDGAlgebra dB)
   have h₀ := congrFun (congrFun (hsq e) q₀.2) q₀.1
   rw [hrow, P.typeABoxDifferential_boxModule_apply N hB h,
     continuationMap_apply (R := R) (M := B) (P.boxCoeff N)] at h₀
-  simpa [Matrix.mul_apply, op_smul_eq_mul] using h₀
+  -- Its square at `1 ⊗ p₀` is the entry of `dB δ + δ * δ`.
+  have hentry : ((P.boxCoeff N).map dB + P.boxCoeff N * P.boxCoeff N) p₀ q₀ =
+      dB (P.boxCoeff N p₀ (q₀.1, q₀.2)) +
+        ∑ p, op (P.boxCoeff N p (q₀.1, q₀.2)) • P.boxCoeff N p₀ (p.1, p.2) := by
+    simp only [Matrix.add_apply, Matrix.map_apply, Matrix.mul_apply, op_smul_eq_mul, Prod.mk.eta]
+  rw [hentry, Matrix.zero_apply]
+  exact h₀
 
 /-- **The box tensor product `P ⊠ N`** of a type `DA` bimodule `^B P_A` with a type `D`
 structure over `A`, a type `D` structure over `B` on the generators `y ⊗ x`, written `(y, x)`, with
@@ -604,8 +564,8 @@ private theorem identityCoeff_apply_eq_zero {n : ℕ} (hn : n ≠ 1) (a : Fin n 
 private theorem identityCoeff_stasheff_two [Fintype S] [CharP R 2] (hιι : ∀ s, ι s * ι s = ι s)
     (hsum : ∑ s, ι s = 1) (a : Fin 2 → A) :
     typeDAComp (identityCoeff (R := R) ι) 2 a + (identityCoeff (R := R) ι 2 a).map d +
-      typeDADiff (identityCoeff (R := R) ι) d 2 a + typeDAMul (identityCoeff (R := R) ι) 2 a =
-        0 := by
+      ungradedStasheffDiff (identityCoeff (R := R) ι) d 2 a +
+        ungradedStasheffMul (identityCoeff (R := R) ι) 2 a = 0 := by
   have hc (k : ℕ) (hk : k ≠ 1) (b : Fin k → A) : identityCoeff (R := R) ι k b = 0 :=
     identityCoeff_apply_eq_zero hk b
   -- `∑ u, ι s * a₀ * ι u * ι u * a₁ * ι t = ι s * a₀ * a₁ * ι t`, the product term.
@@ -624,20 +584,20 @@ private theorem identityCoeff_stasheff_two [Fintype S] [CharP R 2] (hιι : ∀ 
     funext fun l => by
       rw [Fin.fin_one_eq_zero l, Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.castSucc_zero,
         Fin.succ_zero_eq_one]
-  rw [typeDAComp_def, Fin.sum_univ_three, hc ((0 : Fin 3) : ℕ) (by decide),
-    hc (2 - ((2 : Fin 3) : ℕ)) (by decide), Matrix.zero_mul, Matrix.mul_zero, zero_add,
-    add_zero, hmid, hc 2 (by decide), Matrix.map_zero _ (map_zero d), add_zero,
-    typeDADiff_def, Finset.sum_eq_zero fun l _ => hc 2 (by decide) _, add_zero,
-    typeDAMul_succ, Fin.sum_univ_one, hmul, add_self_eq_zero_of_charTwo R]
+  -- Only the composite `δ₁ * δ₁` and the product term survive, and they cancel.
+  rw [typeDAComp_def, Fin.sum_univ_three, hmid, ungradedStasheffDiff_def,
+    ungradedStasheffMul_succ, Fin.sum_univ_one, hmul]
+  simp only [ne_eq, hc, Fin.val_zero, Fin.val_two, Nat.sub_zero, Nat.sub_self, zero_ne_one,
+    OfNat.ofNat_ne_one, not_false_eq_true, Matrix.mul_zero,
+    Matrix.map_zero _ (map_zero d), Finset.sum_const_zero, zero_add, add_zero]
+  exact add_self_eq_zero_of_charTwo R _
 
 variable [Fintype S] [CharP R 2]
 
 variable (ι) in
 /-- **The identity type `DA` bimodule** `[I]` of a differential algebra `(A, d)` whose idempotents
 `ι s` are cycles and sum to `1`, over a ring of characteristic two: one generator `s` at each
-idempotent, with `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t` and all other operations zero. Its relation of
-length one is the Leibniz rule for `ι s * a * ι t`, and that of length two is
-`∑ u, ι s * a * ι u * ι u * b * ι t = ι s * a * b * ι t`. -/
+idempotent, with `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t` and all other operations zero. -/
 noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
     (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) : TypeDAStructure d d ι S where
   idem s := s
@@ -651,6 +611,8 @@ noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) =
     · rw [identityCoeff_one_apply, mul_assoc, hιι]
     · rw [identityCoeff_apply_eq_zero hn, Matrix.zero_apply, zero_mul]
   stasheff n a := by
+    -- The relation of length one is the Leibniz rule for `ι s * a * ι t`, and that of length two
+    -- is `∑ u, ι s * a * ι u * ι u * b * ι t = ι s * a * b * ι t`.
     -- The only nonzero operation has one algebra input.
     have hc (k : ℕ) (hk : k ≠ 1) (b : Fin k → A) : identityCoeff (R := R) ι k b = 0 :=
       identityCoeff_apply_eq_zero hk b
@@ -663,7 +625,7 @@ noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) =
         · rw [hc k hk, Matrix.zero_mul]
     match n with
     | 0 =>
-      simp [hcomp 0 (by decide), typeDADiff_def, hc 0 (by decide)]
+      simp [hcomp 0 (by decide), ungradedStasheffDiff_def, hc 0 (by decide)]
     | 1 =>
       have hmap : (identityCoeff (R := R) ι 1 a).map d =
           identityCoeff (R := R) ι 1 fun _ => d (a 0) := by
@@ -672,13 +634,13 @@ noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) =
           add_zero, zero_add]
       have hupd : Function.update a 0 (d (a 0)) = fun _ => d (a 0) :=
         funext fun l => by rw [Fin.fin_one_eq_zero l, Function.update_self]
-      rw [hcomp 1 (by decide), hmap, typeDADiff_def, Fin.sum_univ_one, hupd, typeDAMul_succ,
-        Finset.sum_eq_zero fun l _ => hc 0 (by decide) _, zero_add, add_zero,
-        add_self_eq_zero_of_charTwo R]
+      rw [hcomp 1 (by decide), hmap, ungradedStasheffDiff_def, Fin.sum_univ_one, hupd,
+        ungradedStasheffMul_succ, Finset.sum_eq_zero fun l _ => hc 0 (by decide) _, zero_add,
+        add_zero, add_self_eq_zero_of_charTwo R]
     | 2 => exact identityCoeff_stasheff_two hιι hsum a
     | n + 3 =>
-      rw [hcomp (n + 3) (by omega), hc _ (by omega), typeDADiff_def, typeDAMul_succ,
-        Finset.sum_eq_zero fun l _ => hc _ (by omega) _,
+      rw [hcomp (n + 3) (by omega), hc _ (by omega), ungradedStasheffDiff_def,
+        ungradedStasheffMul_succ, Finset.sum_eq_zero fun l _ => hc _ (by omega) _,
         Finset.sum_eq_zero fun l _ => hc _ (by omega) _]
       simp
 
@@ -701,12 +663,11 @@ theorem identity_coeff_eq_zero (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι 
     (identity ι hd hι hιι hsum).coeff n = 0 :=
   identityCoeff_eq_zero hn
 
-/-- **The identity bimodule is a unit for the box tensor product.** If moreover the idempotents
-are orthogonal, the coefficient of `[I] ⊠ N` from `(s, x)` to `(t, x')` is the coefficient of `N`
-from `x` to `x'` when `s` and `t` are the idempotents of `x` and `x'`, and zero otherwise. So the
-generators `(idem x, x)` of `[I] ⊠ N` span a copy of `N`, and the other generators, the elementary
-tensors `s ⊗ x` with `ι s * ι (idem x) = 0` that vanish over the idempotents, carry no
-coefficients. -/
+/-- **The coefficients of `[I] ⊠ N`.** If moreover the idempotents are orthogonal, the coefficient
+of `[I] ⊠ N` from `(s, x)` to `(t, x')` is the coefficient of `N` from `x` to `x'` when `s` and `t`
+are the idempotents of `x` and `x'`, and zero otherwise. So the coefficients restricted to the
+generators `(idem x, x)` are those of `N`, and the other generators, the elementary tensors
+`s ⊗ x` with `ι s * ι (idem x) = 0` that vanish over the idempotents, carry zero coefficients. -/
 theorem boxCoeff_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
     (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0)
     [DecidableEq S] {X : Type*} [Fintype X] [DecidableEq X] (N : TypeDStructure d ι X)
