@@ -171,6 +171,24 @@ theorem norm_plumbingFactor_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) 
 theorem plumbingMap_zero (q : Puncture) (L : ℝ) : q.plumbingMap L 0 = q.endCenter := by
   rw [plumbingMap_apply, mul_zero, add_zero]
 
+/-- Plumbing into the input at `0` places the second input of the inserted pair of pants at
+`ε = e^{-2πL} / 4`. -/
+@[simp]
+theorem plumbingMap_zero_one (L : ℝ) :
+    zero.plumbingMap L 1 = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
+  rw [plumbingMap_apply, plumbingFactor_eq_mul_ofReal, endCenter_zero, endScale_zero]
+  push_cast
+  ring
+
+/-- Plumbing into the input at `1` places the second input of the inserted pair of pants at
+`1 - ε`, with `ε = e^{-2πL} / 4`. -/
+@[simp]
+theorem plumbingMap_one_one (L : ℝ) :
+    one.plumbingMap L 1 = 1 - ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
+  rw [plumbingMap_apply, plumbingFactor_eq_mul_ofReal, endCenter_one, endScale_one]
+  push_cast
+  ring
+
 theorem plumbingMap_injective (q : Puncture) (L : ℝ) : Function.Injective (q.plumbingMap L) :=
   fun _ _ h => mul_left_cancel₀ (q.plumbingFactor_ne_zero L) (add_left_cancel h)
 
