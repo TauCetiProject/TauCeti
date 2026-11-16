@@ -62,6 +62,8 @@ bijective.
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
+* `TauCeti.deriv_intervalBaseTimeCoordinate_mul_eq`: the linearized flow along a solution in
+  `(0, 1)` preserves `U'(x) w`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
@@ -519,6 +521,36 @@ theorem _root_.HasDerivAt.intervalBaseTimeCoordinate_comp {x : ℝ → ℝ} {s :
   have h1 : 0 < 1 - x s ^ 2 := by nlinarith [hxs.1, hxs.2]
   refine ((hasDerivAt_intervalBaseTimeCoordinate hxs).comp s hx).congr_deriv ?_
   field_simp [hxs.1.ne', h1.ne']
+
+/-- On `(0, 1)` the derivative of the time coordinate is `1 / (t (1 - t²))`. -/
+theorem deriv_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    deriv intervalBaseTimeCoordinate t = (t * (1 - t ^ 2))⁻¹ :=
+  (hasDerivAt_intervalBaseTimeCoordinate ht).deriv
+
+/-- **The linearized flow carries the derivative of the time coordinate along.** Let `x` be a
+solution of `x' = C x (1 - x²)` with values in `(0, 1)`, and `w` a solution of the linearized
+equation `w' + C (3 x² - 1) w = 0` along it. Then `U'(x) w` does not depend on the time. Since the
+time coordinate `U` advances at the same rate `C` along every solution, this is the linearization
+of `U ∘ Φ_s = U + C s`. -/
+theorem deriv_intervalBaseTimeCoordinate_mul_eq {x w : ℝ → ℝ}
+    (hx : ∀ s, HasDerivAt x (C * x s * (1 - x s ^ 2)) s) (hxI : ∀ s, x s ∈ Ioo 0 1)
+    (hw : ∀ s, HasDerivAt w (-(C * (3 * x s ^ 2 - 1) * w s)) s) (s r : ℝ) :
+    deriv intervalBaseTimeCoordinate (x s) * w s =
+      deriv intervalBaseTimeCoordinate (x r) * w r := by
+  -- The product `w / (x (1 - x²))` has derivative zero: `x (1 - x²)` solves the same linearized
+  -- equation as `w`, since it is `x' / C`.
+  have hg (s : ℝ) : HasDerivAt (fun s ↦ (x s * (1 - x s ^ 2))⁻¹ * w s) 0 s := by
+    have h1 : 0 < 1 - x s ^ 2 := by nlinarith [(hxI s).1, (hxI s).2]
+    have hp : x s * (1 - x s ^ 2) ≠ 0 := (mul_pos (hxI s).1 h1).ne'
+    have hdp : HasDerivAt (fun s ↦ x s * (1 - x s ^ 2))
+        (C * x s * (1 - x s ^ 2) * (1 - 3 * x s ^ 2)) s :=
+      ((hx s).mul (((hx s).pow 2).const_sub 1)).congr_deriv (by norm_num; ring)
+    refine ((hdp.inv hp).mul (hw s)).congr_deriv ?_
+    simp only [Pi.inv_apply]
+    field_simp
+    ring
+  rw [deriv_intervalBaseTimeCoordinate (hxI s), deriv_intervalBaseTimeCoordinate (hxI r)]
+  exact is_const_of_deriv_eq_zero (fun s ↦ (hg s).differentiableAt) (fun s ↦ (hg s).deriv) s r
 
 /-- **The time coordinate advances at rate `C` along the flow.** -/
 @[simp]
