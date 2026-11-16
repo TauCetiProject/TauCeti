@@ -37,7 +37,9 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
 * `TauCeti.twoVectorAlternatingSum θ a b c`: the alternating sum
   `θ(a)(b, c) - θ(b)(a, c) + θ(c)(a, b)` of a map with values in two-vectors, which is
-  `dω(a, b, c)` for `θ v = ∇_v ω` and a torsion-free connection.
+  `dω(a, b, c)` for `θ v = ∇_v ω` and a torsion-free connection. It is linear in `θ` and
+  alternating in `a`, `b`, `c` (`TauCeti.twoVectorAlternatingSum_swap₁₂`,
+  `TauCeti.twoVectorAlternatingSum_swap₂₃`).
 
 ## Main results
 
@@ -468,6 +470,46 @@ theorem twoVectorAlternatingSum_def (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
     twoVectorAlternatingSum θ a b c =
       ⟪θ a, ιMulti ℝ 2 ![b, c]⟫ - ⟪θ b, ιMulti ℝ 2 ![a, c]⟫ + ⟪θ c, ιMulti ℝ 2 ![a, b]⟫ :=
   (rfl)
+
+@[simp]
+theorem twoVectorAlternatingSum_zero (a b c : V) :
+    twoVectorAlternatingSum (0 : V → ⋀[ℝ]^2 V) a b c = 0 := by
+  simp [twoVectorAlternatingSum_def]
+
+@[simp]
+theorem twoVectorAlternatingSum_add (θ η : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (θ + η) a b c =
+      twoVectorAlternatingSum θ a b c + twoVectorAlternatingSum η a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.add_apply, inner_add_left]
+  ring
+
+@[simp]
+theorem twoVectorAlternatingSum_smul (r : ℝ) (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (r • θ) a b c = r * twoVectorAlternatingSum θ a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.smul_apply, real_inner_smul_left]
+  ring
+
+@[simp]
+theorem twoVectorAlternatingSum_neg (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (-θ) a b c = -twoVectorAlternatingSum θ a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.neg_apply, inner_neg_left]
+  ring
+
+/-- The alternating sum changes sign when its first two arguments are swapped. -/
+theorem twoVectorAlternatingSum_swap₁₂ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ b a c = -twoVectorAlternatingSum θ a b c := by
+  have h : ιMulti ℝ 2 ![b, a] = -ιMulti ℝ 2 ![a, b] := by
+    simpa using (ιMulti ℝ 2).map_swap ![a, b] (i := 0) (j := 1) Fin.zero_ne_one
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, h, inner_neg_right]
+  ring
+
+/-- The alternating sum changes sign when its last two arguments are swapped. -/
+theorem twoVectorAlternatingSum_swap₂₃ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ a c b = -twoVectorAlternatingSum θ a b c := by
+  have h : ιMulti ℝ 2 ![c, b] = -ιMulti ℝ 2 ![b, c] := by
+    simpa using (ιMulti ℝ 2).map_swap ![b, c] (i := 0) (j := 1) Fin.zero_ne_one
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, h, inner_neg_right]
+  ring
 
 end TwoVectorAlternatingSum
 

@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 /-!
@@ -73,6 +74,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `repr_apply`: the coordinates of `J v` in a unitary frame.
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
+* `inner_ιMulti_of_antiinvariant`: the frame coordinates of an anti-`J`-invariant two-vector.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
 * `inner_kahlerForm_hodgeStar`: `⟪ω, ⋆F⟫ = ⟪ω, F⟫`.
 * `exists_orthonormalBasis_apply_zero_eq`: every unit vector starts a positively oriented unitary
@@ -343,6 +345,32 @@ theorem kahlerForm_eq_ιMulti_add_ιMulti :
     repr_apply h₀ h₂, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
   ring
+
+include h₀ h₂ in
+/-- **The frame coordinates of an anti-`J`-invariant two-vector.** If
+`⟪x, J a ∧ J b⟫ = -⟪x, a ∧ b⟫` for all `a`, `b`, then in a unitary frame, with
+`xᵢⱼ = ⟪x, eᵢ ∧ eⱼ⟫`, `x₀₁ = x₂₃ = 0`, `x₁₃ = -x₀₂` and `x₁₂ = x₀₃`. -/
+theorem inner_ιMulti_of_antiinvariant {x : ⋀[ℝ]^2 V}
+    (hx : ∀ a b, ⟪x, ιMulti ℝ 2 ![J a, J b]⟫ = -⟪x, ιMulti ℝ 2 ![a, b]⟫) :
+    ⟪x, ιMulti ℝ 2 ![e 0, e 1]⟫ = 0 ∧ ⟪x, ιMulti ℝ 2 ![e 2, e 3]⟫ = 0 ∧
+      ⟪x, ιMulti ℝ 2 ![e 1, e 3]⟫ = -⟪x, ιMulti ℝ 2 ![e 0, e 2]⟫ ∧
+      ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ = ⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
+  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
+  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
+  -- `a ∧ (-b) = -(a ∧ b)` and `b ∧ a = -(a ∧ b)`.
+  have hneg (a b : V) : ιMulti ℝ 2 ![a, -b] = -ιMulti ℝ 2 ![a, b] := by
+    rw [← neg_one_smul ℝ b, ιMulti_two_smul_right, neg_one_smul]
+  have hswap (a b : V) : ιMulti ℝ 2 ![b, a] = -ιMulti ℝ 2 ![a, b] := by
+    simpa using (ιMulti ℝ 2).map_swap ![a, b] (i := 0) (j := 1) Fin.zero_ne_one
+  have h01 := hx (e 0) (e 1)
+  have h23 := hx (e 2) (e 3)
+  have h02 := hx (e 0) (e 2)
+  have h03 := hx (e 0) (e 3)
+  rw [h₀, h₁, hneg, hswap, neg_neg] at h01
+  rw [h₂, h₃, hneg, hswap, neg_neg] at h23
+  rw [h₀, h₂] at h02
+  rw [h₀, h₃, hneg, inner_neg_right] at h03
+  refine ⟨by linarith, by linarith, h02, by linarith⟩
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
   (he : e.toBasis.orientation = o)

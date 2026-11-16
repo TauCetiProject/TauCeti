@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
-import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -100,25 +99,17 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
 
-/-! ### Clifford multiplication by a unitary frame -/
-
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-include hQ in
-/-- Clifford multiplication by a vector of an orthonormal basis squares to `-1`. -/
-private theorem map_ι_apply_map_ι_apply_of_orthonormalBasis (k : Fin 4) (ψ : W) :
-    ρ (ι Q (e k)) (ρ (ι Q (e k)) ψ) = -ψ := by
-  rw [map_ι_apply_map_ι_apply ρ, hQ, e.orthonormal.1 k]
-  simp
-
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-include hQ in
-/-- Clifford multiplications by distinct vectors of an orthonormal basis anticommute. -/
-private theorem map_ι_apply_map_ι_apply_comm_of_orthonormalBasis {i j : Fin 4} (hij : i ≠ j)
-    (ψ : W) : ρ (ι Q (e i)) (ρ (ι Q (e j)) ψ) = -ρ (ι Q (e j)) (ρ (ι Q (e i)) ψ) := by
-  simpa [mul_apply_eq_comp] using
-    congrArg (fun x ↦ ρ x ψ) (ι_mul_ι_comm_of_isOrtho (e.isOrtho_apply hQ hij))
-
 /-! ### The Clifford action of two-forms on the canonical line -/
+
+include hQ hkl he h₀ h₂ in
+/-- On the canonical eigenspace, `c(e₁) u₀ = i c(e₀) u₀` and `c(e₃) u₀ = i c(e₂) u₀`. -/
+private theorem ι_apply_one_three_of_cliffordProjection_apply_eq_self
+    {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
+    ρ (ι Q (e 1)) u₀ = Complex.I • ρ (ι Q (e 0)) u₀ ∧
+      ρ (ι Q (e 3)) u₀ = Complex.I • ρ (ι Q (e 2)) u₀ := by
+  rw [← h₀, ← h₂]
+  exact ⟨ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀ (e 0),
+    ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀ (e 2)⟩
 
 include hQ hkl he h₀ h₂ in
 /-- **The Clifford action of a two-form on the canonical eigenspace, in a unitary frame.** If
@@ -135,14 +126,9 @@ theorem bivectorExterior_apply_eq_of_cliffordProjection_apply_eq_self
         (((⟪x, ιMulti ℝ 2 ![e 0, e 2]⟫ - ⟪x, ιMulti ℝ 2 ![e 1, e 3]⟫ : ℝ) : ℂ) +
           ((⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ + ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ : ℝ) : ℂ) *
             Complex.I) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u₀) := by
-  -- `c(e₁) u₀ = i c(e₀) u₀` and `c(e₃) u₀ = i c(e₂) u₀`.
-  have h₁ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀ (e 0)
-  have h₃ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀ (e 2)
-  rw [h₀] at h₁
-  rw [h₂] at h₃
-  have hsq := map_ι_apply_map_ι_apply_of_orthonormalBasis (ρ := ρ) (e := e) hQ
-  have hanti {i j : Fin 4} (hij : i ≠ j) :=
-    map_ι_apply_map_ι_apply_comm_of_orthonormalBasis (ρ := ρ) (e := e) hQ hij
+  obtain ⟨h₁, h₃⟩ := ι_apply_one_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀
+  have hsq := e.map_ι_apply_map_ι_apply hQ ρ
+  have hanti {i j : Fin 4} (hij : i ≠ j) := e.map_ι_apply_map_ι_apply_comm hQ ρ hij
   -- The six products `c(eᵢ) c(eⱼ) u₀`.
   have p01 : ρ (ι Q (e 0)) (ρ (ι Q (e 1)) u₀) = (-Complex.I) • (u₀ : W) := by
     rw [h₁, map_smul, hsq]
@@ -186,53 +172,13 @@ theorem eq_I_div_four_smul_of_cliffordProjection_apply_eq_zero {u₀ : W}
     (hL : ρ (bivectorExterior Q θ) u₀ + ρ (bivectorExterior Q ω) u =
       (-2 * Complex.I) • (u : W)) :
     (u : W) = (Complex.I / 4) • ρ (bivectorExterior Q θ) u₀ := by
-  -- `C(iω) u = -2 u` says `c₂(ω) u = 2 i u`.
-  have hc := congrArg Subtype.val ((cliffordProjection_apply_eq_zero_iff o ρ).1 hu)
-  rw [coe_cliffordRestriction_apply, Submodule.coe_smul] at hc
-  have hω : ρ (bivectorExterior Q ω) u = (2 * Complex.I) • (u : W) := by
-    calc ρ (bivectorExterior Q ω) u =
-          (-Complex.I) • (Complex.I • ρ (bivectorExterior Q ω) u) := by
-          rw [smul_smul, neg_mul, Complex.I_mul_I, neg_neg, one_smul]
-      _ = (2 * Complex.I) • (u : W) := by
-          rw [hc, smul_smul]
-          congr 1
-          ring
   have hθ : ρ (bivectorExterior Q θ) u₀ = (-4 * Complex.I) • (u : W) := by
-    linear_combination (norm := module) hL - hω
-  rw [hθ, smul_smul]
-  ring_nf
-  simp
+    linear_combination (norm := module)
+      hL - bivectorExterior_apply_of_cliffordProjection_apply_eq_zero o ρ hu
+  rw [hθ, smul_smul, show Complex.I / 4 * (-4 * Complex.I) = 1 by
+    linear_combination -Complex.I_mul_I, one_smul]
 
 /-! ### The Dirac operator of the canonical spinor -/
-
-include h₀ h₂ in
-/-- The frame coordinates of an anti-`J`-invariant two-form: `x₀₁ = x₂₃ = 0`, `x₁₃ = -x₀₂` and
-`x₁₂ = x₀₃`. -/
-private theorem inner_ιMulti_of_antiinvariant {x : ⋀[ℝ]^2 V}
-    (hx : ∀ a b, ⟪x, ιMulti ℝ 2 ![J a, J b]⟫ = -⟪x, ιMulti ℝ 2 ![a, b]⟫) :
-    ⟪x, ιMulti ℝ 2 ![e 0, e 1]⟫ = 0 ∧ ⟪x, ιMulti ℝ 2 ![e 2, e 3]⟫ = 0 ∧
-      ⟪x, ιMulti ℝ 2 ![e 1, e 3]⟫ = -⟪x, ιMulti ℝ 2 ![e 0, e 2]⟫ ∧
-      ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ = ⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
-  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
-  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
-  -- `a ∧ (-b) = -(a ∧ b)` and `b ∧ a = -(a ∧ b)`.
-  have hneg (a b : V) : ιMulti ℝ 2 ![a, -b] = -ιMulti ℝ 2 ![a, b] := by
-    refine ext_inner_ιMulti_two fun u w ↦ ?_
-    simp only [inner_ιMulti_two, inner_neg_left]
-    ring
-  have hswap (a b : V) : ιMulti ℝ 2 ![b, a] = -ιMulti ℝ 2 ![a, b] := by
-    refine ext_inner_ιMulti_two fun u w ↦ ?_
-    simp only [inner_ιMulti_two, inner_neg_left]
-    ring
-  have h01 := hx (e 0) (e 1)
-  have h23 := hx (e 2) (e 3)
-  have h02 := hx (e 0) (e 2)
-  have h03 := hx (e 0) (e 3)
-  rw [h₀, h₁, hneg, hswap, neg_neg] at h01
-  rw [h₂, h₃, hneg, hswap, neg_neg] at h23
-  rw [h₀, h₂] at h02
-  rw [h₀, h₃, hneg, inner_neg_right] at h03
-  refine ⟨by linarith, by linarith, h02, by linarith⟩
 
 include hQ hkl he h₀ h₂ in
 /-- Clifford multiplication by the frame on `β₀ = c(e₀) c(e₂) u₀`, for `u₀` in the canonical
@@ -244,13 +190,9 @@ private theorem map_ι_apply_map_ι_apply_map_ι_apply_of_cliffordProjection
       ρ (ι Q (e 1)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u₀)) = Complex.I • ρ (ι Q (e 2)) u₀ ∧
       ρ (ι Q (e 2)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u₀)) = ρ (ι Q (e 0)) u₀ ∧
       ρ (ι Q (e 3)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u₀)) = (-Complex.I) • ρ (ι Q (e 0)) u₀ := by
-  have h₁ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀ (e 0)
-  have h₃ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀ (e 2)
-  rw [h₀] at h₁
-  rw [h₂] at h₃
-  have hsq := map_ι_apply_map_ι_apply_of_orthonormalBasis (ρ := ρ) (e := e) hQ
-  have hanti {i j : Fin 4} (hij : i ≠ j) :=
-    map_ι_apply_map_ι_apply_comm_of_orthonormalBasis (ρ := ρ) (e := e) hQ hij
+  obtain ⟨h₁, h₃⟩ := ι_apply_one_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀
+  have hsq := e.map_ι_apply_map_ι_apply hQ ρ
+  have hanti {i j : Fin 4} (hij : i ≠ j) := e.map_ι_apply_map_ι_apply_comm hQ ρ hij
   refine ⟨hsq _ _, ?_, ?_, ?_⟩
   · rw [hanti (i := 1) (j := 0) (by decide), hanti (i := 1) (j := 2) (by decide), h₁]
     simp only [map_neg, map_smul]
@@ -292,21 +234,31 @@ theorem sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero
       ((((⟪θ (e k), ιMulti ℝ 2 ![e 0, e 2]⟫ - ⟪θ (e k), ιMulti ℝ 2 ![e 1, e 3]⟫ : ℝ) : ℂ) +
         ((⟪θ (e k), ιMulti ℝ 2 ![e 0, e 3]⟫ + ⟪θ (e k), ιMulti ℝ 2 ![e 1, e 2]⟫ : ℝ) : ℂ) *
           Complex.I) • β₀) := by
-    obtain ⟨h01, h23, -, -⟩ := inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e k))
+    obtain ⟨h01, h23, -, -⟩ :=
+      AlmostComplexStructure.inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e k))
     rw [eq_I_div_four_smul_of_cliffordProjection_apply_eq_zero (hu (e k)) (hL (e k)),
       bivectorExterior_apply_eq_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀, h01,
       h23]
     simp [hβ₀]
   -- Rewrite the alternating sums with the coordinates `θ(e_k)(eᵢ, eⱼ)`, `i < j`.
-  obtain ⟨-, h23₀, h13₀, h12₀⟩ := inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 0))
-  obtain ⟨-, h23₁, h13₁, h12₁⟩ := inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 1))
-  obtain ⟨h01₂, -, h13₂, h12₂⟩ := inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 2))
-  obtain ⟨h01₃, -, h13₃, h12₃⟩ := inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 3))
+  obtain ⟨-, h23₀, h13₀, h12₀⟩ :=
+    AlmostComplexStructure.inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 0))
+  obtain ⟨-, h23₁, h13₁, h12₁⟩ :=
+    AlmostComplexStructure.inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 1))
+  obtain ⟨h01₂, -, h13₂, h12₂⟩ :=
+    AlmostComplexStructure.inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 2))
+  obtain ⟨h01₃, -, h13₃, h12₃⟩ :=
+    AlmostComplexStructure.inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e 3))
   simp only [twoVectorAlternatingSum_def, h13₀, h12₀, h23₁, h01₂, h13₂, h01₃, h12₃, h23₀]
-  rw [Fin.sum_univ_four, hu', hu', hu', hu', map_smul, map_smul, map_smul, map_smul, map_smul,
-    map_smul, map_smul, map_smul, q0, q1, q2, q3, h13₀, h12₀, h13₁, h12₁, h13₂, h12₂, h13₃, h12₃]
+  simp only [Fin.sum_univ_four, hu', map_smul, q0, q1, q2, q3, h13₀, h12₀, h13₁, h12₁,
+    h13₂, h12₂, h13₃, h12₃]
   push_cast
-  match_scalars <;> apply Complex.ext <;> simp <;> ring
+  match_scalars <;> apply Complex.ext <;>
+    simp only [Complex.add_re, Complex.add_im, Complex.sub_re, Complex.sub_im, Complex.mul_re,
+      Complex.mul_im, Complex.neg_re, Complex.neg_im, Complex.div_ofNat_re, Complex.div_ofNat_im,
+      Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, Complex.zero_re,
+      Complex.zero_im, Complex.one_re, Complex.one_im] <;>
+    ring
 
 include hQ hkl he h₀ h₂ in
 /-- **`D_{A₀} u₀ = 0` when `dω = 0`.** Under the hypotheses of
