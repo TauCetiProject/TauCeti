@@ -257,12 +257,6 @@ section Star
 
 variable {R : Type*} [CommRing R] [StarRing R]
 
-/-- Helper packaging `IsSelfAdjoint (-δ)` as a `Fact` from `Fact (IsSelfAdjoint δ)`. Kept as a
-theorem rather than a global instance so `Fact (IsSelfAdjoint ?x)` cannot loop on `-?y`. -/
-theorem isSelfAdjoint_neg_fact (δ : R) [h : Fact (IsSelfAdjoint δ)] :
-    Fact (IsSelfAdjoint (-δ)) :=
-  ⟨h.out.neg⟩
-
 /-- At self-adjoint opposite loop parameters `δ + δ' = 0`, `signEquivOfAddEqZero` commutes with
 the analytic adjoint. -/
 @[simp]
