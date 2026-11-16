@@ -357,19 +357,14 @@ theorem inner_ιMulti_of_antiinvariant {x : ⋀[ℝ]^2 V}
       ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ = ⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
   have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
   have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
-  -- `a ∧ (-b) = -(a ∧ b)` and `b ∧ a = -(a ∧ b)`.
-  have hneg (a b : V) : ιMulti ℝ 2 ![a, -b] = -ιMulti ℝ 2 ![a, b] := by
-    rw [← neg_one_smul ℝ b, ιMulti_two_smul_right, neg_one_smul]
-  have hswap (a b : V) : ιMulti ℝ 2 ![b, a] = -ιMulti ℝ 2 ![a, b] := by
-    simpa using (ιMulti ℝ 2).map_swap ![a, b] (i := 0) (j := 1) Fin.zero_ne_one
   have h01 := hx (e 0) (e 1)
   have h23 := hx (e 2) (e 3)
   have h02 := hx (e 0) (e 2)
   have h03 := hx (e 0) (e 3)
-  rw [h₀, h₁, hneg, hswap, neg_neg] at h01
-  rw [h₂, h₃, hneg, hswap, neg_neg] at h23
+  rw [h₀, h₁, ιMulti_two_neg_right, ιMulti_two_swap, neg_neg] at h01
+  rw [h₂, h₃, ιMulti_two_neg_right, ιMulti_two_swap, neg_neg] at h23
   rw [h₀, h₂] at h02
-  rw [h₀, h₃, hneg, inner_neg_right] at h03
+  rw [h₀, h₃, ιMulti_two_neg_right, inner_neg_right] at h03
   refine ⟨by linarith, by linarith, h02, by linarith⟩
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)

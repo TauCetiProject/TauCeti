@@ -253,12 +253,11 @@ theorem sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero
   simp only [Fin.sum_univ_four, hu', map_smul, q0, q1, q2, q3, h13₀, h12₀, h13₁, h12₁,
     h13₂, h12₂, h13₃, h12₃]
   push_cast
-  match_scalars <;> apply Complex.ext <;>
-    simp only [Complex.add_re, Complex.add_im, Complex.sub_re, Complex.sub_im, Complex.mul_re,
-      Complex.mul_im, Complex.neg_re, Complex.neg_im, Complex.div_ofNat_re, Complex.div_ofNat_im,
-      Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, Complex.zero_re,
-      Complex.zero_im, Complex.one_re, Complex.one_im] <;>
-    ring
+  match_scalars
+  · linear_combination
+      (Complex.I / 2 * (⟪θ (e 1), ιMulti ℝ 2 ![e 0, e 3]⟫ : ℂ)) * Complex.I_sq
+  · linear_combination
+      (-Complex.I / 2 * (⟪θ (e 3), ιMulti ℝ 2 ![e 0, e 3]⟫ : ℂ)) * Complex.I_sq
 
 include hQ hkl he h₀ h₂ in
 /-- **`D_{A₀} u₀ = 0` when `dω = 0`.** Under the hypotheses of

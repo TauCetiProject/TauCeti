@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -498,17 +499,15 @@ theorem twoVectorAlternatingSum_neg (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
 /-- The alternating sum changes sign when its first two arguments are swapped. -/
 theorem twoVectorAlternatingSum_swap₁₂ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
     twoVectorAlternatingSum θ b a c = -twoVectorAlternatingSum θ a b c := by
-  have h : ιMulti ℝ 2 ![b, a] = -ιMulti ℝ 2 ![a, b] := by
-    simpa using (ιMulti ℝ 2).map_swap ![a, b] (i := 0) (j := 1) Fin.zero_ne_one
-  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, h, inner_neg_right]
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, ιMulti_two_swap a b,
+    inner_neg_right]
   ring
 
 /-- The alternating sum changes sign when its last two arguments are swapped. -/
 theorem twoVectorAlternatingSum_swap₂₃ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
     twoVectorAlternatingSum θ a c b = -twoVectorAlternatingSum θ a b c := by
-  have h : ιMulti ℝ 2 ![c, b] = -ιMulti ℝ 2 ![b, c] := by
-    simpa using (ιMulti ℝ 2).map_swap ![b, c] (i := 0) (j := 1) Fin.zero_ne_one
-  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, h, inner_neg_right]
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, ιMulti_two_swap b c,
+    inner_neg_right]
   ring
 
 end TwoVectorAlternatingSum
