@@ -29,6 +29,9 @@ complete: the formula is applied after embedding `V` into its completion.
 
 ## Main results
 
+* `ContinuousLinearMap.isClosed_range_of_isUnit_adjoint_comp`,
+  `ContinuousLinearMap.hasOrthogonalProjection_range_of_isUnit_adjoint_comp`: when `B† B` is
+  invertible, the range of `B` is closed and admits an orthogonal projection.
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
@@ -91,6 +94,22 @@ private theorem contDiffAt_gramLeftInverse
   exact (((compL 𝕜 V F F).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp A
     (hi.comp (f := fun B : F →L[𝕜] V ↦ adjoint B ∘L B) A hgram.contDiffAt)).clm_apply
       ha.contDiffAt
+
+/-- If the Gram operator `B† B` is invertible, then the range of `B` is closed. -/
+theorem isClosed_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
+    (hB : IsUnit (adjoint B ∘L B)) : IsClosed (Set.range B) := by
+  have hleft : LeftInverse (gramLeftInverse B) B := fun x ↦ by
+    rw [gramLeftInverse, comp_apply, ← comp_apply (adjoint B), ← mul_apply_eq_comp,
+      Ring.inverse_mul_cancel _ hB, one_apply_eq_self]
+  exact hleft.isClosed_range (gramLeftInverse B).continuous B.continuous
+
+/-- If the Gram operator `B† B` is invertible, then the range of `B` admits an orthogonal
+projection. -/
+theorem hasOrthogonalProjection_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
+    (hB : IsUnit (adjoint B ∘L B)) : B.range.HasOrthogonalProjection := by
+  have : CompleteSpace B.range :=
+    (isClosed_range_of_isUnit_adjoint_comp hB).isComplete.completeSpace_coe
+  exact .ofCompleteSpace B.range
 
 /-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, when the Gram operator
 `B† B` is invertible. -/
