@@ -68,6 +68,17 @@ otherwise. For `k = 2t + 1` this is the staircase of the partition `(t, …, 1)`
 vertex `0`. -/
 def stair (k : ℕ) : Fin k → Fin k → S3 := fun p q => if stEdge p.val q.val then t01 else 1
 
+/-- `stEdge p q` holds exactly when `p` is odd and `q` is even. -/
+@[simp]
+theorem stEdge_eq_true_iff (p q : ℕ) : stEdge p q = true ↔ p % 2 = 1 ∧ q % 2 = 0 := by
+  simp [stEdge]
+
+/-- The value of `stair k` on a pair: `t01` when `p` is odd and `q` is even, `1` otherwise. -/
+@[simp]
+theorem stair_apply (k : ℕ) (p q : Fin k) :
+    stair k p q = if p.val % 2 = 1 ∧ q.val % 2 = 0 then t01 else 1 := by
+  simp only [stair, ← stEdge_eq_true_iff]
+
 /-- The sign of a permutation of three points, as a Boolean (`true` for an odd permutation). -/
 private def oddPerm (σ : S3) : Bool := decide (Equiv.Perm.sign σ = -1)
 
