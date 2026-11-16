@@ -160,8 +160,7 @@ theorem colimitToLocalCompletion_ι (f : BasicNeighbourhood p)
       toLocalCompletion p f x :=
   colimit.ι_desc_apply (localCompletionCocone p) f x
 
-/-- For noetherian `A`, the completion `Â_𝔭` is flat over `colim_{f ∉ 𝔭} A_{f}`, being flat over
-every `A_{f}`. -/
+/-- For noetherian `A`, the completion `Â_𝔭` is flat over `colim_{f ∉ 𝔭} A_{f}`. -/
 theorem flat_colimitToLocalCompletion [IsNoetherianRing A] :
     (colimitToLocalCompletion p).Flat :=
   RingHom.Flat.of_isColimit (colimit.isColimit _) (colimitToLocalCompletion p) fun f ↦
@@ -221,8 +220,7 @@ private theorem residueLocalCompletion_colimitToLocalCompletion
     (by rw [pow_one, map_ideal_residue p]) ((residueLocalCompletion p).comp
       (toLocalCompletion p f)) g) y)
 
-/-- For noetherian `A`, the completion `Â_𝔭` is faithfully flat over `colim_{f ∉ 𝔭} A_{f}`: it is
-flat, and the maximal ideal of the colimit maps into the kernel of the value at `𝔭`. -/
+/-- For noetherian `A`, the completion `Â_𝔭` is faithfully flat over `colim_{f ∉ 𝔭} A_{f}`. -/
 theorem faithfullyFlat_colimitToLocalCompletion [IsNoetherianRing A] :
     (colimitToLocalCompletion p).FaithfullyFlat := by
   algebraize [colimitToLocalCompletion p]

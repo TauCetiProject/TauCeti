@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.CohenMacaulay.Ring
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
-import Mathlib.RingTheory.KrullDimension.Field
 import Mathlib.RingTheory.PolynomialAlgebra
 import Mathlib.RingTheory.RegularLocalRing.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
@@ -111,8 +110,7 @@ theorem isCohenMacaulay_self_iff_of_flat :
 end Local
 
 /-- Along a flat homomorphism `R → S` of local rings with `S` Noetherian under which the maximal
-ideal of `R` generates the maximal ideal of `S`, `S` is Cohen–Macaulay if and only if `R` is: the
-closed fibre is the residue field of `S`, which is Cohen–Macaulay of dimension zero. -/
+ideal of `R` generates the maximal ideal of `S`, `S` is Cohen–Macaulay if and only if `R` is. -/
 theorem isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq {R S : Type u} [CommRing R]
     [CommRing S] [Algebra R S] [IsLocalRing R] [IsLocalRing S] [IsNoetherianRing S]
     [Module.Flat R S] (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :

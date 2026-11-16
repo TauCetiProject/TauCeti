@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Basic
+public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.Spectrum.Maximal.Topology
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
@@ -24,9 +24,9 @@ If an ideal `I` defines the topology of `A`, a prime ideal is open exactly when 
 so the underlying space is the Zariski closed set `V(I)`, and the quotient map `A → A ⧸ J`
 identifies it with `Spec (A ⧸ J)` for every ideal of definition `J`, in particular for every power
 `I ^ (n + 1)`. Since the set of open primes is defined from the topology alone, it does not depend
-on the choice of an ideal of definition. When `A` is `I`-adically complete, `I` lies in the
-Jacobson radical of `A`, so every maximal ideal is open; hence the closed points of `Spf A` are
-identified homeomorphically with `MaximalSpectrum A`.
+on the choice of an ideal of definition. When `I` lies in the Jacobson radical of `A` (in
+particular, when `A` is `I`-adically complete, by Stacks Tag 05GI), every maximal ideal is open;
+hence the closed points of `Spf A` are identified homeomorphically with `MaximalSpectrum A`.
 
 For `f ∈ A`, the basic open set `D(f)` of `Spf A` consists of the open primes not containing `f`.
 These form a basis of the topology; `D(g) ⊆ D(f)` holds exactly when `g` lies in the radical of
@@ -37,9 +37,9 @@ exactly when `f` is nilpotent modulo `I`.
 ## Main definitions
 
 * `TauCeti.FormalScheme.Spf.carrier A`: the open prime ideals of `A`, as a subset of `Spec A`.
-* `TauCeti.FormalScheme.Spf.maximalSpectrumHomeomorphClosedPoints`: when `A` is `I`-adically
-  complete for an ideal of definition `I`, the homeomorphism identifying `MaximalSpectrum A` with
-  the closed points of `Spf A`.
+* `TauCeti.FormalScheme.Spf.maximalSpectrumHomeomorphClosedPoints`: when an ideal of definition `I`
+  lies in the Jacobson radical of `A`, the homeomorphism identifying `MaximalSpectrum A` with the
+  closed points of `Spf A`.
 * `TauCeti.FormalScheme.Spf.homeomorphSpecQuotient`: for an ideal of definition `J`, the
   homeomorphism of the underlying space of `Spf A` with `Spec (A ⧸ J)`.
 * `TauCeti.FormalScheme.Spf.basicOpen f`: the basic open set `D(f)` of the underlying space.
@@ -55,7 +55,7 @@ exactly when `f` is nilpotent modulo `I`.
   `V(I)`, hence quasi-compact.
 * `TauCeti.FormalScheme.Spf.isClosed_singleton_iff_isMaximal`,
   `TauCeti.FormalScheme.Spf.mem_carrier_of_isMaximal`: closed points of `Spf A` are the open
-  maximal ideals, and when `A` is `I`-adically complete every maximal ideal is open.
+  maximal ideals, and when `I ≤ Ring.jacobson A` every maximal ideal is open.
 * `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
   separated ring with an ideal of definition is empty exactly when the ring is zero.
 * `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.exists_basicOpen_le`,
@@ -71,7 +71,8 @@ exactly when `f` is nilpotent modulo `I`.
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. I, §10.1
   (10.1.1, 10.1.2) and §10.2 (10.2.1).
 * [Stacks Project, Tag 0AHY](https://stacks.math.columbia.edu/tag/0AHY).
-* [Stacks Project, Tag 05GI](https://stacks.math.columbia.edu/tag/05GI).
+* [Stacks Project, Tag 05GI](https://stacks.math.columbia.edu/tag/05GI) (supplies
+  `I ≤ Ring.jacobson A` when `A` is `I`-adically complete).
 -/
 
 public section
@@ -153,20 +154,17 @@ theorem isClosed_singleton_iff_isMaximal (hI : IsAdic I) (p : carrier A) :
   rw [(isClosed_carrier hI).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed,
     Set.image_singleton, PrimeSpectrum.isClosed_singleton_iff_isMaximal]
 
-/-- If `A` is `I`-adically complete for an ideal of definition `I`, then `I` lies in the Jacobson
-radical of `A`, so every maximal ideal of `A` is open and defines a point of `Spf A`. -/
-@[stacks 05GI]
-theorem mem_carrier_of_isMaximal (hI : IsAdic I) [IsAdicComplete I A] (m : Ideal A)
+/-- If `I` is an ideal of definition of `A` contained in the Jacobson radical of `A`, then every
+maximal ideal of `A` is open and defines a point of `Spf A`. -/
+theorem mem_carrier_of_isMaximal (hI : IsAdic I) (hIjac : I ≤ Ring.jacobson A) (m : Ideal A)
     [m.IsMaximal] : (⟨m, inferInstance⟩ : PrimeSpectrum A) ∈ carrier A :=
-  (mem_carrier_iff_le hI).mpr
-    ((IsAdicComplete.le_jacobson I).trans (Ring.jacobson_le_of_isMaximal m))
+  (mem_carrier_iff_le hI).mpr (hIjac.trans (Ring.jacobson_le_of_isMaximal m))
 
-/-- For an `I`-adically complete ring `A` with ideal of definition `I`, the closed points of
-`Spf A` are homeomorphic to `MaximalSpectrum A` (Stacks, Tag 05GI). -/
-@[stacks 05GI]
-def maximalSpectrumHomeomorphClosedPoints (hI : IsAdic I) [IsAdicComplete I A] :
+/-- For an ideal of definition `I` of `A` contained in the Jacobson radical of `A`, the closed
+points of `Spf A` are homeomorphic to `MaximalSpectrum A`. -/
+def maximalSpectrumHomeomorphClosedPoints (hI : IsAdic I) (hIjac : I ≤ Ring.jacobson A) :
     MaximalSpectrum A ≃ₜ {p : carrier A // IsClosed ({p} : Set (carrier A))} where
-  toFun m := ⟨⟨m.toPrimeSpectrum, mem_carrier_of_isMaximal hI m.asIdeal⟩,
+  toFun m := ⟨⟨m.toPrimeSpectrum, mem_carrier_of_isMaximal hI hIjac m.asIdeal⟩,
     (isClosed_singleton_iff_isMaximal hI _).mpr m.isMaximal⟩
   invFun p := ⟨(p.1 : PrimeSpectrum A).asIdeal, (isClosed_singleton_iff_isMaximal hI p.1).mp p.2⟩
   left_inv _ := rfl
@@ -178,17 +176,18 @@ def maximalSpectrumHomeomorphClosedPoints (hI : IsAdic I) [IsAdicComplete I A] :
 
 /-- `maximalSpectrumHomeomorphClosedPoints` preserves the underlying prime ideal. -/
 @[simp]
-theorem maximalSpectrumHomeomorphClosedPoints_apply_val (hI : IsAdic I) [IsAdicComplete I A]
-    (m : MaximalSpectrum A) :
-    ((maximalSpectrumHomeomorphClosedPoints hI m).1 : PrimeSpectrum A) = m.toPrimeSpectrum := by
+theorem maximalSpectrumHomeomorphClosedPoints_apply_val (hI : IsAdic I)
+    (hIjac : I ≤ Ring.jacobson A) (m : MaximalSpectrum A) :
+    ((maximalSpectrumHomeomorphClosedPoints hI hIjac m).1 : PrimeSpectrum A) =
+      m.toPrimeSpectrum := by
   rfl
 
 /-- The inverse of `maximalSpectrumHomeomorphClosedPoints` preserves the underlying maximal
 ideal. -/
 @[simp]
 theorem maximalSpectrumHomeomorphClosedPoints_symm_apply_asIdeal (hI : IsAdic I)
-    [IsAdicComplete I A] (p : {p : carrier A // IsClosed ({p} : Set (carrier A))}) :
-    ((maximalSpectrumHomeomorphClosedPoints hI).symm p).asIdeal =
+    (hIjac : I ≤ Ring.jacobson A) (p : {p : carrier A // IsClosed ({p} : Set (carrier A))}) :
+    ((maximalSpectrumHomeomorphClosedPoints hI hIjac).symm p).asIdeal =
       (p.1 : PrimeSpectrum A).asIdeal := by
   rfl
 

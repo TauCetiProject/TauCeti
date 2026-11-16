@@ -61,7 +61,8 @@ local instance padicPowerSeriesIsAdicRing : IsAdicRing ℤ_[p]⟦X⟧ :=
 /-- The unique closed point of `Spf ℤ_[p]⟦X⟧`. -/
 def padicPowerSeriesClosedPoint : carrier ℤ_[p]⟦X⟧ :=
   ⟨⟨maximalIdeal ℤ_[p]⟦X⟧, inferInstance⟩,
-    mem_carrier_of_isMaximal (I := maximalIdeal ℤ_[p]⟦X⟧) rfl (maximalIdeal ℤ_[p]⟦X⟧)⟩
+    mem_carrier_of_isMaximal (I := maximalIdeal ℤ_[p]⟦X⟧) rfl (IsAdicComplete.le_jacobson _)
+      (maximalIdeal ℤ_[p]⟦X⟧)⟩
 
 /-- `Spf ℤ_[p]⟦X⟧` has a single underlying point. -/
 example : Subsingleton (carrier ℤ_[p]⟦X⟧) := by
@@ -87,9 +88,11 @@ example :
    localizationToStalk_bijective_of_isLocalRing _ rfl,
    stalkToLocalCompletion_bijective_of_isLocalRing _ rfl⟩
 
-/-- The stalk and completed localisation of `Spf ℤ_[p]⟦X⟧` at its unique point have Krull dimension
-`2` (not the topological dimension `0` of its one-point carrier). -/
+/-- The localisation, stalk, and completed localisation of `Spf ℤ_[p]⟦X⟧` at its unique point all
+have Krull dimension `2` (not the topological dimension `0` of its one-point carrier). -/
 example :
+    ringKrullDim (Localization.AtPrime
+        (padicPowerSeriesClosedPoint p : PrimeSpectrum ℤ_[p]⟦X⟧).asIdeal) = 2 ∧
     ringKrullDim ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p)) = 2 ∧
     ringKrullDim (LocalCompletion (padicPowerSeriesClosedPoint p)) = 2 := by
   have hA : ringKrullDim ℤ_[p]⟦X⟧ = 2 :=
@@ -99,20 +102,39 @@ example :
     rw [← hA]
     exact (ringKrullDim_eq_of_ringEquiv
       (RingEquiv.ofBijective _ (toStalk_bijective_of_isLocalRing _ rfl))).symm
-  refine ⟨hstalk, ?_⟩
-  rw [ringKrullDim_localCompletion_eq_stalk (padicPowerSeriesClosedPoint p)]
-  exact hstalk
+  refine ⟨?_, hstalk, ?_⟩
+  · rw [← ringKrullDim_stalk_eq (padicPowerSeriesClosedPoint p)]
+    exact hstalk
+  · rw [ringKrullDim_localCompletion_eq_stalk (padicPowerSeriesClosedPoint p)]
+    exact hstalk
 
-/-- The stalk and completed localisation of `Spf ℤ_[p]⟦X⟧` are regular and Cohen–Macaulay. -/
+/-- The localisation, stalk, and completed localisation of `Spf ℤ_[p]⟦X⟧` are all regular and
+Cohen–Macaulay. -/
 example :
+    IsRegularLocalRing (Localization.AtPrime
+        (padicPowerSeriesClosedPoint p : PrimeSpectrum ℤ_[p]⟦X⟧).asIdeal) ∧
+    Module.IsCohenMacaulay
+        (Localization.AtPrime (padicPowerSeriesClosedPoint p : PrimeSpectrum ℤ_[p]⟦X⟧).asIdeal)
+        (Localization.AtPrime (padicPowerSeriesClosedPoint p : PrimeSpectrum ℤ_[p]⟦X⟧).asIdeal) ∧
     IsRegularLocalRing ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p)) ∧
     Module.IsCohenMacaulay ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p))
-      ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p)) := by
+      ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p)) ∧
+    IsRegularLocalRing (LocalCompletion (padicPowerSeriesClosedPoint p)) ∧
+    Module.IsCohenMacaulay (LocalCompletion (padicPowerSeriesClosedPoint p))
+      (LocalCompletion (padicPowerSeriesClosedPoint p)) := by
   have hregStalk :
       IsRegularLocalRing ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p)) :=
     IsRegularLocalRing.of_ringEquiv
       (RingEquiv.ofBijective _ (toStalk_bijective_of_isLocalRing _ rfl))
-  exact ⟨hregStalk, TauCeti.IsRegularLocalRing.isCohenMacaulay⟩
+  have hcmStalk :
+      Module.IsCohenMacaulay ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p))
+        ((Spf ℤ_[p]⟦X⟧).presheaf.stalk (padicPowerSeriesClosedPoint p)) :=
+    TauCeti.IsRegularLocalRing.isCohenMacaulay
+  exact ⟨(isRegularLocalRing_stalk_iff (padicPowerSeriesClosedPoint p)).mp hregStalk,
+    (isCohenMacaulay_stalk_iff (padicPowerSeriesClosedPoint p)).mp hcmStalk,
+    hregStalk, hcmStalk,
+    (isRegularLocalRing_localCompletion_iff_stalk (padicPowerSeriesClosedPoint p)).mpr hregStalk,
+    (isCohenMacaulay_localCompletion_iff_stalk (padicPowerSeriesClosedPoint p)).mpr hcmStalk⟩
 
 end PadicPowerSeries
 
@@ -165,6 +187,7 @@ example :
 /-- On discrete `k[X]`, the ideal of definition `I` maps to `⊥` in `LocalCompletion (X)`, strictly
 smaller than the maximal ideal: `I`-adic completion stays `k[X]_{(X)}` rather than `k⟦X⟧`. -/
 example :
+    (IsAdicRing.ideal k[X]).map (algebraMap k[X] (LocalCompletion (polyOrigin k))) = ⊥ ∧
     (IsAdicRing.ideal k[X]).map (algebraMap k[X] (LocalCompletion (polyOrigin k))) <
       maximalIdeal (LocalCompletion (polyOrigin k)) := by
   have hI : IsAdicRing.ideal k[X] = ⊥ := by
@@ -178,6 +201,7 @@ example :
       (IsAdicRing.ideal k[X]).map (algebraMap k[X] (LocalCompletion (polyOrigin k))) = ⊥ := by
     rw [← Ideal.map_bot (f := algebraMap k[X] (LocalCompletion (polyOrigin k)))]
     exact congrArg (Ideal.map (algebraMap k[X] (LocalCompletion (polyOrigin k)))) hI
+  refine ⟨hmap, ?_⟩
   rw [hmap]
   refine bot_lt_iff_ne_bot.mpr fun hbot ↦ ?_
   have hX : algebraMap k[X] (LocalCompletion (polyOrigin k)) Polynomial.X ∈
@@ -219,8 +243,7 @@ example :
       IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain k[X] hne _
     exact IsDiscreteValuationRing.ringKrullDim_eq_one _
   · rw [ringKrullDim_stalk_eq_height (polyGeneric k)]
-    change ((⊥ : Ideal k[X]).height : WithBot ℕ∞) = 0
-    simp
+    simp [polyGeneric]
 
 end DiscretePolynomial
 
@@ -233,25 +256,42 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Is
 example : MaximalSpectrum A ≃ₜ {p : carrier A // IsClosed ({p} : Set (carrier A))} :=
   have := (IsAdicRing.ideal_spec A).2.2
   maximalSpectrumHomeomorphClosedPoints (IsAdicRing.ideal_spec A).2.1
+    (IsAdicComplete.le_jacobson _)
 
 /-- For any open prime `p` of a noetherian adic ring `A`, `A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭` are
 faithfully flat local homomorphisms sharing their maximal-ideal completion, Krull dimension,
 regularity, and Cohen–Macaulay property. -/
 example (p : carrier A) :
+    IsLocalHom (localizationToStalk p) ∧
+    IsLocalHom (stalkToLocalCompletion p) ∧
     (localizationToStalk p).FaithfullyFlat ∧
     (stalkToLocalCompletion p).FaithfullyFlat ∧
+    (maximalIdealCompletionLocalizationEquivStalk p).trans
+        (maximalIdealCompletionStalkEquivLocalCompletion p) =
+      maximalIdealCompletionLocalizationEquivLocalCompletion p ∧
     ringKrullDim ((Spf A).presheaf.stalk p) =
       ringKrullDim (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) ∧
+    ringKrullDim (LocalCompletion p) = ringKrullDim ((Spf A).presheaf.stalk p) ∧
     (IsRegularLocalRing ((Spf A).presheaf.stalk p) ↔
       IsRegularLocalRing (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) ∧
+    (IsRegularLocalRing (LocalCompletion p) ↔
+      IsRegularLocalRing ((Spf A).presheaf.stalk p)) ∧
     (Module.IsCohenMacaulay ((Spf A).presheaf.stalk p) ((Spf A).presheaf.stalk p) ↔
       Module.IsCohenMacaulay (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
-        (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) :=
-  ⟨faithfullyFlat_localizationToStalk p,
+        (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) ∧
+    (Module.IsCohenMacaulay (LocalCompletion p) (LocalCompletion p) ↔
+      Module.IsCohenMacaulay ((Spf A).presheaf.stalk p) ((Spf A).presheaf.stalk p)) :=
+  ⟨inferInstance,
+   inferInstance,
+   faithfullyFlat_localizationToStalk p,
    faithfullyFlat_stalkToLocalCompletion p,
+   maximalIdealCompletionLocalizationEquivStalk_trans p,
    ringKrullDim_stalk_eq p,
+   ringKrullDim_localCompletion_eq_stalk p,
    isRegularLocalRing_stalk_iff p,
-   isCohenMacaulay_stalk_iff p⟩
+   isRegularLocalRing_localCompletion_iff_stalk p,
+   isCohenMacaulay_stalk_iff p,
+   isCohenMacaulay_localCompletion_iff_stalk p⟩
 
 end GeneralNoetherian
 
