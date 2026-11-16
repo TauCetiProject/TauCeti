@@ -27,7 +27,7 @@ the orientation reverses it on the source `U` and on the target `E` at once, and
 changes cancel (`ContinuousMap.fixedPointIndex_eq_localDegree`,
 `ContinuousMap.localFixedPointIndex_eq_localIndex`). So the index needs no orientation of `E`.
 
-The index has the properties that characterize the classical fixed-point index:
+The index has the following properties of the classical fixed-point index:
 
 * **Normalization at nondegenerate fixed points.** If `f` is differentiable at the fixed point `x`
   with derivative `f'` and `1 - f'` is invertible, then the local index at `x` is the sign of
@@ -116,19 +116,27 @@ variable {X S : Type*} [TopologicalSpace X] [AddGroup X] [IsTopologicalAddGroup 
 /-- The **displacement** of a continuous map `f : s → X` on a subset `s` of a topological additive
 group: the map `z ↦ z - f z`, whose zeros are the fixed points of `f`
 (`ContinuousMap.preimage_displacement_zero`). -/
-@[expose] def displacement (f : C(s, X)) : C(s, X) :=
+def displacement (f : C(s, X)) : C(s, X) :=
   subtypeVal (s : Set X) - f
 
 /-- The displacement of `f` sends `z` to `z - f z`. -/
 @[simp]
 theorem displacement_apply (f : C(s, X)) (z : s) : f.displacement z = z - f z :=
-  rfl
+  (rfl)
 
 /-- The zeros of the displacement `z ↦ z - f z` are the fixed points of `f`. -/
 theorem preimage_displacement_zero (f : C(s, X)) : f.displacement ⁻¹' {0} = {z | f z = z} := by
   ext z
   rw [mem_preimage, mem_singleton_iff, displacement_apply, sub_eq_zero, mem_ofPred_eq]
   exact eq_comm
+
+/-- The displacement of the restriction of `f : U → X` to an open subset `V ⊆ U` is the
+restriction of the displacement of `f`. -/
+@[simp]
+theorem displacement_comp_inclusion {U V : Opens X} (hVU : V ≤ U) (f : C(U, X)) :
+    (f.comp (inclusion hVU)).displacement = f.displacement.comp (inclusion hVU) := by
+  ext z
+  simp [inclusion]
 
 end Displacement
 
@@ -224,10 +232,9 @@ theorem localFixedPointIndex_comp_inclusion {V : Opens E} (hVU : V ≤ U) (f : C
     have h := HomologicalOrientation.localIndex_comap rfl
       (fixedPointOrientation.comap U.isOpenEmbedding') fixedPointOrientation hι IsOpenEmbedding.id
       (f := (f.comp ι).displacement) (g := f.displacement) (x := x)
-      (.of_forall fun z ↦ by simp [ι, inclusion])
-    rwa [HomologicalOrientation.comap_id, HomologicalOrientation.comap_comap,
-      HomologicalOrientation.comap_congr _ (U.isOpenEmbedding'.comp hι) V.isOpenEmbedding'
-        (funext fun z ↦ by simp [ι, inclusion])] at h
+      (.of_forall fun z ↦ by rw [displacement_comp_inclusion, comp_apply, id_eq])
+    rwa [HomologicalOrientation.comap_id,
+      HomologicalOrientation.comap_comap_of_comp_eq _ _ hι V.isOpenEmbedding' rfl] at h
   · rw [(f.comp ι).localFixedPointIndex_of_ne hx, f.localFixedPointIndex_of_ne hx]
 
 /-- **The local fixed-point index at a nondegenerate fixed point** is the sign of
@@ -284,18 +291,13 @@ theorem fixedPointIndex_comp_inclusion {V : Opens E} (hVU : V ≤ U) (f : C(U, E
     (f.comp (inclusion hVU)).fixedPointIndex = f.fixedPointIndex := by
   set ι : C(V, U) := inclusion hVU
   have hι : IsOpenEmbedding ι := Opens.isOpenEmbedding_of_le hVU
-  -- The displacement of `f` restricted to `V` is that of `f` read through the inclusion `V → U`,
-  -- and all its zeros lie in `V`.
-  have hD : (f.comp ι).displacement = f.displacement.comp ι := by
-    ext z
-    simp [ι, inclusion]
+  -- All zeros of the displacement of `f` lie in `V`.
   have hzero : f.displacement ⁻¹' {0} ⊆ range ι := by
     rw [preimage_displacement_zero]
     exact fun z hz ↦ ⟨⟨z, hV z hz⟩, rfl⟩
-  rw [fixedPointIndex, fixedPointIndex, hD, ← HomologicalOrientation.localDegree_comap_comp _ _ rfl
-    rfl hι _ hzero, HomologicalOrientation.comap_comap,
-    HomologicalOrientation.comap_congr _ (U.isOpenEmbedding'.comp hι) V.isOpenEmbedding'
-      (funext fun z ↦ by simp [ι, inclusion])]
+  rw [fixedPointIndex, fixedPointIndex, displacement_comp_inclusion,
+    ← HomologicalOrientation.localDegree_comap_comp _ _ rfl rfl hι _ hzero,
+    HomologicalOrientation.comap_comap_of_comp_eq _ _ hι V.isOpenEmbedding' rfl]
 
 /-- **A compact set of nondegenerate fixed points is finite**: if `f : U → E` agrees on `U` with a
 map `φ : E → E`, its fixed set is compact, and at each fixed point `x` the map `φ` has a derivative
