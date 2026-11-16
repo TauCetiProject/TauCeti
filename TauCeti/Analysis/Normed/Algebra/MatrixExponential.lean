@@ -12,6 +12,9 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Order.Interval.Set.OrdConnected
+import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Analysis.Normed.Algebra.Exponential
+import TauCeti.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Triangular
@@ -55,6 +58,8 @@ exponentials whenever all their powers agree at those entries.
 * `Matrix.IsUpperTriangular.exp_submatrix`: restriction to order-connected index sets.
 * `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
 * `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
+* `Matrix.IsUpperTriangular.exp_apply_diag_pos`: real diagonal entries exponentiate to positive
+  real diagonal entries.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
@@ -141,6 +146,27 @@ theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
 
 end EntrySeries
 
+section PositiveDiagonal
+
+open scoped ComplexOrder
+
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+/-- A real diagonal entry of an upper-triangular matrix exponentiates to a positive real entry. -/
+theorem IsUpperTriangular.exp_apply_diag_pos {ι 𝕜 : Type*} [Fintype ι] [LinearOrder ι]
+    [RCLike 𝕜] {A : Matrix ι ι 𝕜} (hA : A.IsUpperTriangular) (i : ι)
+    (hreal : RCLike.im (A i i) = 0) : 0 < exp A i i := by
+  have hdiag := RCLike.re_eq_self_of_im_eq_zero hreal
+  -- The generic diagonal lemma uses the rational normed-algebra instance; the RCLike
+  -- operator-norm instance reaches the same exponential through a different instance path.
+  have hexp : exp A i i = exp (A i i) := by
+    simpa using! hA.exp_apply_diag i
+  rw [hexp, ← hdiag, RCLike.exp_ofReal]
+  exact RCLike.pos_iff.mpr ⟨by simpa using Real.exp_pos (RCLike.re (A i i)), by simp⟩
+
+end PositiveDiagonal
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕂 : Type*} [RCLike 𝕂]
 

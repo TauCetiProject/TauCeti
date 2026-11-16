@@ -229,7 +229,7 @@ theorem IsHomogeneous.linearSubst_smul {p : MvPolynomial σ R} {n : ℕ} (hp : p
     MvPolynomial.linearSubst (c • M) p = c ^ n • MvPolynomial.linearSubst M p := by
   simpa only [linearSubst_eq_aeval, Pi.smul_def, Finset.smul_sum, Matrix.smul_apply,
     smul_eq_mul, smul_eq_C_mul, map_mul, mul_assoc] using
-    hp.aeval_smul (S := R) (A := MvPolynomial σ R) (fun i ↦ ∑ j, C (M i j) * X j) c
+    hp.aeval_smul_of_algebra (S := R) (A := MvPolynomial σ R) (fun i ↦ ∑ j, C (M i j) * X j) c
 
 /-- On forms of degree `n`, negating the matrix multiplies by `(-1)ⁿ`. -/
 theorem IsHomogeneous.linearSubst_neg {R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}

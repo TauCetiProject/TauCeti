@@ -105,7 +105,7 @@ private theorem exists_isCompleteVectorField_eq_hamiltonianVectorField (hσ : σ
       ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∧
         IsCompleteVectorField v ∧ (∀ x, F x ≤ m → v x = σ.hamiltonianVectorField F x) ∧
           ∀ x, ∃ a : ℝ, v x = a • σ.hamiltonianVectorField F x := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   set ψ : M → ℝ := fun x ↦ Real.smoothTransition ((b - F x) / (b - m))
   have hψ : ContMDiff I 𝓘(ℝ) 1 ψ :=
     (Real.smoothTransition.contDiff.comp ((contDiff_const.sub contDiff_id).div_const _)

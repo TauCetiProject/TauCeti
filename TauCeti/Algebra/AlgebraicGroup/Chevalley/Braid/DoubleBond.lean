@@ -71,9 +71,10 @@ private theorem weylRestrict_braid_doubleBond (i j : Fin t.rank)
     LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using hv
 
 /-- Pinned simple Weyl representatives at a double bond satisfy the length-four braid
-relation over every commutative value ring. -/
+relation over every commutative value ring. The Cartan matrix is indexed by root, then coroot,
+so `j` is the long node and `i` the short node. -/
 theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2)
+    (hji : t.cartanMatrix j i = -2)
     (A : Type*) [CommRing A] :
     D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
         D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 =
@@ -86,7 +87,8 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
   have hn : n i * n j * n i * n j = n j * n i * n j * n i := by
     apply Units.ext
     have h := congrArg (fun e : D.lattice ≃ₗ[ℤ] D.lattice =>
-      (e : Module.End ℤ D.lattice).baseChange A) (D.weylRestrict_braid_doubleBond i j hij hji)
+      (e : Module.End ℤ D.lattice).baseChange A) (D.weylRestrict_braid_doubleBond i j
+        (t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j (by omega)) hji)
     simpa only [LinearEquiv.coe_toLinearMap_mul, LinearMap.baseChange_mul,
       Units.val_mul, n, kostantWeylGL_val, kostantWeylPoints_toLinearMap] using h
   let f := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom

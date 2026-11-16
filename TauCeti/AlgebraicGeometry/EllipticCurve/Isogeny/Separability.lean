@@ -76,8 +76,8 @@ inseparable law's is on the lower one, so they call `finiteDimensional_of_fieldR
 
 ## Provenance
 
-The degrees follow D. Angdinata's shared isogeny development in its function-field form;
-here they are written in the coordinate-ring form this repository's `Isogeny` uses.
+The degrees follow D. Angdinata's isogeny development in its function-field form; here they are
+written in the coordinate-ring form this repository's `Isogeny` uses.
 
 The arithmetic content is Mathlib's — `Field.finSepDegree_mul_finInsepDegree` and the tower laws;
 this file transports it to isogenies along `degree_def`. No AINTLIB material is used: that

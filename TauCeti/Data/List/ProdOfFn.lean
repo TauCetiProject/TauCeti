@@ -25,6 +25,11 @@ homomorphisms.
 
 The product of a word whose letters all equal `c` except for a single letter `a` in position `p`
 is `c ^ p * a * c ^ (n - p)` (`List.prod_ofFn_ite`).
+
+A monoid endomorphism fixing every letter of a word, or fixing the product of two adjacent
+letters and every other letter, fixes the product of the word (`List.map_prod_ofFn_of_forall`,
+`List.map_prod_ofFn_of_adjacent`). In a division monoid the inverse of a product is the product
+of the inverses in the reverse order (`List.inv_prod_ofFn`).
 -/
 
 public section
@@ -85,5 +90,46 @@ theorem prod_ofFn_ite {M : Type*} [Monoid M] (a c : M) :
       simp only [Fin.succ_inj, h0, ite_false, Fin.val_succ] at h ⊢
       rw [h, pow_succ']
       simp [mul_assoc, Nat.add_sub_add_right]
+
+/-- A monoid endomorphism fixing every letter of a word fixes the product of the word. -/
+theorem map_prod_ofFn_of_forall {F M : Type*} [Monoid M] [FunLike F M M] [MonoidHomClass F M M]
+    (f : F) {k : ℕ} (g : Fin k → M) (h : ∀ i, f (g i) = g i) :
+    f (List.ofFn g).prod = (List.ofFn g).prod := by
+  simp [map_list_prod, List.map_ofFn, Function.comp_def, h]
+
+/-- A monoid endomorphism fixing the product of two adjacent letters of a word, and every other
+letter, fixes the product of the word. -/
+theorem map_prod_ofFn_of_adjacent {F M : Type*} [Monoid M] [FunLike F M M] [MonoidHomClass F M M]
+    (f : F) {k : ℕ} (g : Fin k → M) {i i' : Fin k} (hi : (i : ℕ) + 1 = i')
+    (hfix : ∀ j, j ≠ i → j ≠ i' → f (g j) = g j) (h : f (g i * g i') = g i * g i') :
+    f (List.ofFn g).prod = (List.ofFn g).prod := by
+  have hmap (L : List M) (hL : ∀ a ∈ L, f a = a) : f L.prod = L.prod := by
+    rw [map_list_prod, List.map_congr_left hL, List.map_id']
+  have hi₁ : (i : ℕ) < (List.ofFn g).length := by simp
+  have hi₂ : (i : ℕ) + 1 < (List.ofFn g).length := by simp [hi]
+  have hprod : (List.ofFn g).prod = ((List.ofFn g).take i).prod * (g i * g i') *
+      ((List.ofFn g).drop (i' + 1)).prod := by
+    conv_lhs => rw [← List.take_append_drop i (List.ofFn g), List.drop_eq_getElem_cons hi₁,
+      List.drop_eq_getElem_cons hi₂]
+    simp [hi, mul_assoc]
+  rw [hprod, map_mul, map_mul, h, hmap, hmap]
+  · intro a ha
+    obtain ⟨j, hj, rfl⟩ := List.mem_drop_iff_getElem.1 ha
+    rw [List.getElem_ofFn]
+    exact hfix _ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
+  · intro a ha
+    obtain ⟨j, hj, rfl⟩ := List.mem_take_iff_getElem.1 ha
+    rw [List.getElem_ofFn]
+    exact hfix _ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
+
+/-- The inverse of a product `f₀ f₁ ⋯ fₙ₋₁` in a division monoid is the product of the inverses
+in the reverse order. -/
+theorem inv_prod_ofFn {M : Type*} [DivisionMonoid M] :
+    ∀ {k : ℕ} (f : Fin k → M), (List.ofFn f).prod⁻¹ = (List.ofFn fun i ↦ (f i.rev)⁻¹).prod
+  | 0, _ => by simp
+  | k + 1, f => by
+    rw [List.ofFn_succ, List.ofFn_succ', List.concat_eq_append, List.prod_cons, List.prod_append,
+      mul_inv_rev, inv_prod_ofFn]
+    simp [Fin.rev_castSucc]
 
 end List

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
+import Mathlib.Analysis.InnerProductSpace.Completion
 import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Parseval's identity in norm-square form
@@ -35,8 +37,11 @@ public section
 
 namespace TauCeti
 
-variable {ι : Type*} {𝕜 : Type*} {E : Type*}
-variable [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {ι : Type*} {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
+
+section Normed
+
+variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- **Parseval's identity, norm-square form.** The squared coordinates of `x` in a Hilbert basis
 sum to `‖x‖²`, as a convergent series of real numbers. -/
@@ -71,28 +76,31 @@ theorem _root_.OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq [Fintype ι]
     (b : OrthonormalBasis ι 𝕜 E) (A : E →L[𝕜] 𝕜) :
     ∑ i, ‖A (b i)‖ ^ 2 = ‖A‖ ^ 2 := by
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis b.toBasis
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   rw [← (InnerProductSpace.toDual 𝕜 E).symm.norm_map A, ← b.sum_sq_norm_inner_left]
   simp_rw [InnerProductSpace.toDual_symm_apply]
 
+end Normed
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
 /-- **Bessel's inequality for a functional.** The values of a continuous linear functional `φ` on
-an orthonormal family are square summable. The space need not be complete. -/
+an orthonormal family are square summable. The space need not be complete, and its seminorm need
+not be a norm. -/
 theorem _root_.Orthonormal.summable_norm_apply_sq {v : ι → E} (hv : Orthonormal 𝕜 v)
     (φ : StrongDual 𝕜 E) : Summable fun i ↦ ‖φ (v i)‖ ^ 2 := by
-  refine summable_of_sum_le (c := ‖φ‖ ^ 2) (fun _ ↦ by positivity) fun s ↦ ?_
-  -- Test `φ` against `w = ∑ᵢ conj (φ vᵢ) vᵢ`, which has `φ w = ‖w‖² = ∑ᵢ ‖φ vᵢ‖²`.
-  set A := ∑ i ∈ s, ‖φ (v i)‖ ^ 2
-  set w := ∑ i ∈ s, (starRingEnd 𝕜) (φ (v i)) • v i
-  have hA0 : 0 ≤ A := Finset.sum_nonneg fun _ _ ↦ by positivity
-  have hφw : φ w = (A : 𝕜) := by
-    simp only [w, A, map_sum, map_smul, smul_eq_mul, RCLike.conj_mul, RCLike.ofReal_pow]
-  have hw : ‖w‖ ^ 2 = A := by
-    rw [@norm_sq_eq_re_inner 𝕜, sum_inner]
-    simp only [inner_smul_left, RCLike.conj_conj]
-    rw [Finset.sum_congr rfl fun i hi ↦ by rw [hv.inner_right_sum _ hi]]
-    simp only [A, RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_sum, RCLike.ofReal_re]
-  have hA : A ≤ ‖φ‖ * ‖w‖ := by
-    simpa [hφw, abs_of_nonneg hA0] using φ.le_opNorm w
-  nlinarith [norm_nonneg φ, norm_nonneg w, sq_nonneg (‖φ‖ - ‖w‖)]
+  -- Extend `φ` to the completion and represent the extension by a vector `u` (Riesz), so that
+  -- `‖φ x‖ = ‖⟪x, u⟫‖`; the claim is then Bessel's inequality for `u` and the image of `v`.
+  let u := (InnerProductSpace.toDual 𝕜 (UniformSpace.Completion E)).symm φ.fromCompletion
+  have hu (x : E) : ‖φ x‖ = ‖inner 𝕜 (x : UniformSpace.Completion E) u‖ := by
+    rw [norm_inner_symm, InnerProductSpace.toDual_symm_apply,
+      ContinuousLinearMap.fromCompletion_apply_coe]
+  have hv' := hv.comp_linearIsometry (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜))
+  simpa only [hu, Function.comp_apply, UniformSpace.Completion.coe_toComplₗᵢ] using
+    hv'.inner_products_summable u
+
+end Seminormed
 
 end TauCeti

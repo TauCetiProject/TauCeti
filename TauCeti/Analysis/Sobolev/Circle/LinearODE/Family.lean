@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Circle.LinearODE
+public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 import TauCeti.Analysis.Normed.Operator.CompactFamily
 
 /-!
@@ -47,7 +47,7 @@ theorem exists_pos_isInvertible_loopOperator_sub_smul_norm_inverse_le
     ∃ ε > 0, ∃ C ≥ 0, ∀ p ∈ K, ∀ δ : ℝ, |δ| ≤ ε →
       (loopOperator T (S p - δ • J p)).IsInvertible ∧
         ‖(loopOperator T (S p - δ • J p)).inverse‖ ≤ C := by
-  let : CompleteSpace E := FiniteDimensional.complete ℂ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let L : K × ℝ → CircleSobolev 1 E →L[ℝ] CircleSobolev 0 E :=
     fun z ↦ loopOperator T (S z.1 - z.2 • J z.1)

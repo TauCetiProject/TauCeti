@@ -107,7 +107,7 @@ theorem explicitInfl1_explicitCup01
   | _ b =>
       rw [explicitCup01_mk, explicitInfl1_mk, explicitInfl1_mk, explicitCup01_mk]
       exact congrArg (fun z : Z1 G P => (z : H1 G P)) <| Subtype.ext <| funext fun g => by
-        simp [cocyclesMap1_coe]
+        simp [coe_cocyclesMap1]
 
 omit [IsTopologicalAddGroup A] [ContinuousSMul G A]
     [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N A)] [IsTopologicalGroup G] in
@@ -127,7 +127,7 @@ theorem explicitInfl1_explicitCup10
   | _ a =>
       rw [explicitCup10_mk, explicitInfl1_mk, explicitInfl1_mk, explicitCup10_mk]
       exact congrArg (fun z : Z1 G P => (z : H1 G P)) <| Subtype.ext <| funext fun g => by
-        simp [cocyclesMap1_coe]
+        simp [coe_cocyclesMap1]
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M]
     [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
@@ -148,7 +148,7 @@ theorem explicitInfl2_explicitCup02
       rw [explicitCup02_mk, explicitInfl2_mk, explicitInfl2_mk, explicitCup02_mk]
       exact congrArg (fun z : Z2 G P => (z : H2 G P)) <| Subtype.ext <| funext fun q => by
         obtain ⟨g, h⟩ := q
-        simp [cocyclesMap2_coe]
+        simp [coe_cocyclesMap2]
 
 /-- **Inflation preserves the `(1,1)` cup product.** -/
 @[simp]
@@ -170,7 +170,7 @@ theorem explicitInfl2_explicitCup11
             explicitCup11_mk]
           exact congrArg (fun z : Z2 G P => (z : H2 G P)) <| Subtype.ext <| funext fun q => by
             obtain ⟨g, h⟩ := q
-            simp [cocyclesMap1_coe, cocyclesMap2_coe]
+            simp [coe_cocyclesMap1, coe_cocyclesMap2]
 
 omit [IsTopologicalAddGroup A] [ContinuousSMul G A]
     [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N A)] in
@@ -197,7 +197,7 @@ theorem explicitInfl2_explicitCup20
               (g * h) • (b : A) := by
           simpa only [map_mul, QuotientGroup.mk'_apply, AddSubgroup.coe_subtype] using
             N.fixedPoints_subtype_mk'_smul (g * h) (b : FixedPoints.addSubgroup N A)
-        simpa [cocyclesMap2_coe] using congrArg (μ (↑((a : (G ⧸ N) × (G ⧸ N) →
+        simpa [coe_cocyclesMap2] using congrArg (μ (↑((a : (G ⧸ N) × (G ⧸ N) →
           FixedPoints.addSubgroup N M) ((g : G ⧸ N), (h : G ⧸ N))) : M))
             hsmul
 

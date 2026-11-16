@@ -84,8 +84,7 @@ theorem measurePreserving_surfaceInv :
     have hx : surfacePart y = (x : realSpace K) := rfl
     simp only [mem_inter_iff, mem_preimage, surfacePart_inv (archNorm_pos hy).le, archNorm_inv, hx,
       ← surfaceInv_apply x, Subtype.coe_injective.mem_set_image]
-    congr 1
-    apply propext
+    refine and_congr_right fun _ ↦ ?_
     exact ⟨fun h ↦ ⟨(inv_le_inv₀ (Real.exp_pos 1) (archNorm_pos hy)).mpr h.2,
         (inv_le_one₀ (archNorm_pos hy)).mpr h.1⟩,
       fun h ↦ ⟨(inv_le_one₀ (archNorm_pos hy)).mp h.2,

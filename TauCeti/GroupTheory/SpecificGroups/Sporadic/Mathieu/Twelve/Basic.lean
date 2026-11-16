@@ -450,7 +450,7 @@ private theorem siftCheck_eq_true :
 /-- **The points `0, 1, 2, 3, 4` form a base of `M12`**: no element of `M12` other than `1` fixes
 all of them. -/
 theorem stabilizerChain_five_eq_bot : M12.stabilizerChain (Fin.ofNat 12) 5 = ⊥ :=
-  Subgroup.stabilizerChain_eq_bot_of_siftCheck mem_transversal le_closure_tables
+  Subgroup.stabilizerChain_eq_bot_of_siftCheck le_closure_tables
     transversalCheck_eq_true sift_tables siftCheck_eq_true
 
 end M12

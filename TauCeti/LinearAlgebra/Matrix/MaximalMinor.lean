@@ -252,7 +252,7 @@ example : minorGcd !![(2 : ℤ), 2] = 2 := by
   exact dvd_minorGcd_iff.2 fun e ↦ (h e).symm ▸ dvd_rfl
 
 example : (!![(2 : ℤ), 2] * !![(2 : ℤ), 2]ᵀ).det = 8 := by
-  simp [det_unique, vecMul, dotProduct, Fin.sum_univ_two]
+  simp [det_unique, Function.swap, Matrix.vecHead, Matrix.vecTail]
 
 -- The shear `!![1, 1; 0, 1]` moves `!![1, 0, -1; 0, 1, -1]` to `!![1, 1, -2; 0, 1, -1]`. Both
 -- have minor gcd `1` and Gram determinant `3`, while the largest entry grows from `1` to `2`. The
@@ -263,6 +263,6 @@ example : minorGcd !![(1 : ℤ), 1, -2; 0, 1, -1] = 1 := by
     (by simpa [det_fin_two] using minorGcd_dvd !![(1 : ℤ), 1, -2; 0, 1, -1] ⟨![0, 1], by decide⟩)
 
 example : (!![(1 : ℤ), 1, -2; 0, 1, -1] * !![(1 : ℤ), 1, -2; 0, 1, -1]ᵀ).det = 3 := by
-  simp [det_fin_two, vecMul, dotProduct, Fin.sum_univ_three]
+  simp [det_fin_two, Function.swap, Matrix.vecHead, Matrix.vecTail]
 
 end Matrix

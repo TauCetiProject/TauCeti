@@ -17,9 +17,12 @@ element in such a group is its unique maximal abelian subgroup containing that e
 particular, commutation is transitive through a nonidentity element. In a torsion-free
 commutative-transitive group roots are unique and no nonidentity element is conjugate to its
 inverse. In a torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of
-different cosets of the centralizer of `u` do not commute. A group is CSA exactly when it is
-commutative transitive and every nonidentity element commuting with one of its conjugates
-`g * x * g⁻¹` commutes with `g`. Consequently, given two noncommuting elements `a` and `b`, the
+different cosets of the centralizer of `u` do not commute, and on any finite index set powers
+`c x` of an element outside that centralizer can be chosen so that `(c x)⁻¹ * h * c x'` avoids
+the centralizer for distinct indices when `h = 1` and for all indices when `h` is a prescribed
+nonidentity element of a finite set. A group is CSA exactly when it is commutative transitive
+and every nonidentity element commuting with one of its conjugates `g * x * g⁻¹` commutes with
+`g`. Consequently, given two noncommuting elements `a` and `b`, the
 disjunction `x = 1 ∨ y = 1` is equivalent to `x` commuting with `y`, `a * y * a⁻¹` and
 `b * y * b⁻¹`. A failure of either condition is witnessed by a nonidentity element together with a
 nontrivial commutator, so both conditions pass to any group in which every pair of nonidentity
@@ -175,6 +178,17 @@ theorem IsCSA.mem_centralizer_of_commute_conj (hG : IsCSA G) {u x y g : G}
       (Subgroup.mem_centralizer_singleton_iff.2 h.eq.symm)
   exact (hT g x u hx1 (Subgroup.mem_centralizer_singleton_iff.1 hg) hx).eq
 
+/-- In a CSA group, an element conjugating `u` into its own centralizer centralizes `u`: if
+`g⁻¹ * u * g` commutes with `u`, then so does `g`. -/
+theorem IsCSA.mem_centralizer_of_conj_mem_centralizer (hG : IsCSA G) {u g : G}
+    (h : g⁻¹ * u * g ∈ Subgroup.centralizer {u}) : g ∈ Subgroup.centralizer {u} := by
+  rcases eq_or_ne u 1 with rfl | hu
+  · exact Subgroup.mem_centralizer_singleton_iff.2 (by simp)
+  have huu : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
+  refine inv_mem_iff.1 (hG.mem_centralizer_of_commute_conj huu hu huu hu ?_)
+  rw [inv_inv, commute_iff_eq]
+  exact (Subgroup.mem_centralizer_singleton_iff.1 h).symm
+
 /-- In a torsion-free CSA group, conjugates of nonzero powers of `u` by `y` and `y'` do not
 commute unless `y⁻¹ * y'` centralizes `u`. -/
 theorem IsCSA.not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u y y' : G}
@@ -208,6 +222,19 @@ theorem IsCSA.exists_inv_mul_notMem_centralizer (hG : IsCSA G) {u g : G} (hu : u
     · simpa [mul_assoc] using mul_mem (inv_mem hu') h
     · exact (hG.centralizer_isTISubgroup u).conj_notMem (g := (a⁻¹ * b)⁻¹)
         (fun h' => hd (by simpa using inv_mem h')) hu' hu (by simpa [mul_assoc] using h)
+
+/-- In a torsion-free CSA group, given `v` outside `C_G(u)`, one can choose powers of `v` whose
+mixed products `(v ^ n x)⁻¹ * h * v ^ n x'` avoid `C_G(u)` for distinct indices in the finite set
+`s` when `h = 1`, and for all indices in `s` when `h` is a prescribed nonidentity element of the
+finite set `T`. -/
+theorem IsCSA.exists_inv_pow_mul_mul_pow_notMem_centralizer (hG : IsCSA G) [IsMulTorsionFree G]
+    {ι : Type*} {u v : G} (hv : v ∉ Subgroup.centralizer {u}) (s : Finset ι)
+    (T : Set G) (hT : T.Finite) :
+    ∃ n : ι → ℕ, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
+      (v ^ n x)⁻¹ * h * v ^ n x' ∉ Subgroup.centralizer {u} := by
+  have hv1 : v ≠ 1 := by rintro rfl; exact hv (Subgroup.one_mem _)
+  exact (hG.centralizer_isTISubgroup u).exists_inv_pow_mul_mul_pow_notMem hv
+    (not_isOfFinOrder_of_isMulTorsionFree hv1) s T hT
 
 /-- In a CSA group with two noncommuting elements `a` and `b`, an element `x` is trivial or `y`
 is trivial exactly when `x` commutes with `y`, `a * y * a⁻¹` and `b * y * b⁻¹`. This expresses

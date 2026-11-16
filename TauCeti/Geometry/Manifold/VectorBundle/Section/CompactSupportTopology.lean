@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
+import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 
 /-!
 # The fixed-compact inductive topology on bundle tests
@@ -16,8 +18,17 @@ Compactly supported native bundle sections carry the final locally convex topolo
 fixed-compact support stages. Each stage has the subspace topology of the compact derivative
 section topology. Linear maps from this space into locally convex real topological vector
 spaces are continuous exactly when they are continuous on every stage. This is the fixed-support
-presentation of the topology used for bundle-valued tests; its comparison with native
-test-function chart extensions is not asserted here.
+presentation of the topology used for bundle-valued tests.
+
+A native test function on the target of a smooth chart, read in a smooth bundle frame, extends by
+zero to a compactly supported section (`Bundle.Trivialization.chartTestSection`). These chart
+extensions are continuous from the native LF topology of `TestFunction`
+(`Bundle.Trivialization.continuous_chartTestSection`), so precomposing a continuous linear
+functional on bundle tests with a chart extension gives a continuous linear functional on the
+native test functions of the chart target. In any smooth frame the coefficients of an extended
+test are the test function composed with the chart and multiplied by the smooth transition
+matrix, and both operations are continuous in the weak Whitney topology on coefficient functions
+(`Bundle.Trivialization.continuous_frameCoordinates_chartTestSection_ofSupportedIn`).
 
 The topology is Hausdorff for a covering frame system, is independent of that frame cover,
 and on a compact base agrees with the compact derivative topology on all sections. In
@@ -164,3 +175,116 @@ theorem compactlySupportedTopology_eq_of_covers
 end Cover
 
 end ContMDiffSection
+
+namespace Bundle.Trivialization
+
+open ContMDiffSection
+open scoped Distributions TauCeti.ManifoldWeakWhitney
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {n : ℕ∞} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+  (c : OpenPartialHomeomorph M E)
+  (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hct : c.source ⊆ t.baseSet)
+
+/-- For test functions supported in a fixed compact subset of the chart target, the coefficients
+of the extended sections in any smooth frame depend continuously on the test function, in the
+weak Whitney topology. Near the chart source the coefficients are the test function composed with
+the chart, multiplied by the transition matrix; away from the image of the support they vanish. -/
+theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts E}
+    (hK : (K : Set E) ⊆ c.target) (t' : Trivialization F (π F V)) [MemTrivializationAtlas t']
+    {U : Opens M} (hU : (U : Set M) ⊆ t'.baseSet) :
+    Continuous (fun φ : 𝓓^{n}_{K}(E, F) ↦ t'.frameCoordinates hU
+      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1) := by
+  have hL : IsClosed (c.symm '' K) :=
+    (K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)).isClosed
+  let val : C(U, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  -- Cover `U` by the chart source, where the coefficients are computed in the chart, and by the
+  -- complement of the image of `K`, where they vanish.
+  let W : Bool → Opens U := fun b ↦
+    bif b then Opens.comap val ⟨c.source, c.open_source⟩ else
+      Opens.comap val ⟨(c.symm '' K)ᶜ, hL.isOpen_compl⟩
+  have hW : ∀ x : U, ∃ b, x ∈ W b := by
+    intro x
+    by_cases hx : (x : M) ∈ c.source
+    · exact ⟨true, hx⟩
+    · exact ⟨false, fun ⟨y, hy, hyx⟩ ↦ hx (hyx ▸ c.map_target (hK hy) : val x ∈ c.source)⟩
+  refine ContMDiffMap.continuous_of_forall_continuous_restrict W hW fun b ↦ ?_
+  cases b with
+  | false =>
+    -- Away from the image of `K` every extended test vanishes.
+    convert continuous_const (y := (0 : C^n⟮I, W false; 𝓘(ℝ, F), F⟯)) using 1
+    funext φ
+    ext x
+    have hx : ((x : U) : M) ∉
+        (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1.tsupport := by
+      rw [tsupport_chartTestSection, TestFunction.coe_ofSupportedIn]
+      exact fun hmem ↦ x.2 (image_mono φ.tsupport_subset hmem)
+    rw [ContMDiffMap.restrict_apply, frameCoordinates_apply, eq_zero_of_notMem_tsupport _ hx,
+      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).2), map_zero]
+    simp
+  | true =>
+    -- On the chart source, compose with the chart and apply the transition matrix.
+    let j : C^n⟮I, W true; 𝓘(ℝ, E), E⟯ :=
+      ⟨fun x ↦ c ((x : U) : M), fun x ↦
+        (hc.contMDiffAt (c.open_source.mem_nhds x.2)).comp x
+          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+    let A : C^n⟮I, W true; 𝓘(ℝ, F →L[ℝ] F), F →L[ℝ] F⟯ :=
+      ⟨fun x ↦ (t.coordChangeL ℝ t' ((x : U) : M) : F →L[ℝ] F), fun x ↦
+        (contMDiffAt_coordChangeL (e := t) (e' := t') (hct x.2) (hU (x : U).2)).comp x
+          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+    have hincl : Continuous (ContDiffMapSupportedIn.toContMDiffMap :
+        𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
+      rw [ContMDiffMap.manifoldWeakWhitneyTopology_self]
+      exact ContDiffMapSupportedIn.continuous_toContMDiffMap
+    have hcomp : Continuous fun φ : 𝓓^{n}_{K}(E, F) ↦
+        (ContDiffMapSupportedIn.toContMDiffMap φ).comp j :=
+      ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (hincl.prodMk continuous_const)
+    convert (ContMDiffMap.continuous_clmApplyLinearMap A).comp hcomp using 1
+    funext φ
+    ext x
+    have hx : ((x : U) : M) ∈ c.source := x.2
+    rw [ContMDiffMap.restrict_apply, frameCoordinates_apply,
+      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).2),
+      t.continuousLinearMapAt_chartTestSection_eq_coordChangeL c hc hct t' _ hx (hU (x : U).2)]
+    simp only [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply,
+      ContMDiffMap.comp_apply, TestFunction.coe_ofSupportedIn,
+      ContDiffMapSupportedIn.coe_toContMDiffMap]
+    -- Both sides are the transition matrix applied to `φ ∘ c`; the right side only unfolds the
+    -- local multiplier `A` and chart map `j`.
+    rfl
+
+variable {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
+  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+
+/-- **Chart extensions of test functions are continuous.** Extending native test functions on a
+chart target by zero, through a smooth bundle frame, is continuous from the LF topology of
+`TestFunction` to the fixed-compact inductive topology on compactly supported sections. -/
+theorem continuous_chartTestSection :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    Continuous (t.chartTestSection c hc hct) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  refine (TestFunction.continuous_iff_continuous_comp (𝕜 := ℝ) _).2 fun K hK ↦ ?_
+  -- A test supported in `K` extends to a section supported in the compact set `c.symm '' K`.
+  let K' : Compacts M := ⟨c.symm '' K, K.isCompact.image_of_continuousOn
+    (c.continuousOn_symm.mono hK)⟩
+  have hval : Continuous fun φ : 𝓓^{n}_{K}(E, F) ↦
+      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1 :=
+    (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦
+      continuous_frameCoordinates_chartTestSection_ofSupportedIn t c hc hct hK (e i) (hU i)
+  let g : 𝓓^{n}_{K}(E, F) → supportedIn I F n V K' := fun φ ↦
+    ⟨_, t.chartTestSection_mem_supportedIn c hc hct (TestFunction.ofSupportedIn hK φ) (by
+      rw [TestFunction.coe_ofSupportedIn]
+      exact φ.tsupport_subset)⟩
+  refine ((continuous_ofSupportedIn e U hU K').comp (hval.subtype_mk _ : Continuous g)).congr
+    fun φ ↦ ?_
+  exact Subtype.ext (ofSupportedIn_apply K' (g φ))
+
+end Bundle.Trivialization

@@ -56,7 +56,8 @@ private theorem reflect_cyclotomic_eq_C_mul (n : ℕ) :
       Nat.sum_totient]
   -- By induction, reflecting `Q` only picks up the sign of its factor `Φ_1`.
   have hreflQ : Q.reflect (∑ d ∈ n.properDivisors, d.totient) = -Q := by
-    rw [hQ, reflect_prod _ _ _ fun d _ => natDegree_cyclotomic_le,
+    rw [hQ, reflect_prod n.properDivisors (fun d ↦ cyclotomic d R) Nat.totient
+        (fun d _ ↦ natDegree_cyclotomic_le),
       Finset.prod_congr rfl fun d hd => ih d (Nat.mem_properDivisors.1 hd).2,
       Finset.prod_mul_distrib, ← map_prod, Finset.prod_ite_eq']
     simp [Nat.one_mem_properDivisors_iff_one_lt.2 hn]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.SeparableMeasure
 public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
@@ -34,6 +35,9 @@ instance, for `sin` in `W^{1,∞}(ℝ)`.  The derivative fields above first orde
 so the norm of `W^{k,2}(Ω)` with `k ≥ 2` need not be induced by an inner product: on
 `Ω = (0,1)² ⊆ ℝ²`, for instance, `x²/2` and `y²/2` violate the parallelogram law.  It is a
 Banach-space norm, not in general the Hilbert-space norm of `H^k(Ω)`.
+
+For finite `p`, the full iterated weak-derivative graph topology is second countable, hence
+separable. No separability assertion is made for `p = ∞`.
 
 ## Implementation notes
 
@@ -65,6 +69,8 @@ The projections below are sealed instead, and are used through their characteris
   derivative identity.
 * `TauCeti.Wkp.ae_value_add_sum_eq`: almost everywhere, the value of a sum of Sobolev functions is
   the sum of the almost-everywhere values of the summands.
+* `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto`: convergence in `W^{k,p}(Ω)` gives convergence in
+  `Lᵖ(Ω)` of any almost-everywhere representatives of the values.
 
 ## References
 
@@ -141,6 +147,21 @@ theorem SobolevStage.instCompleteSpace (j : ℕ) :
 
 attribute [instance] SobolevStage.instCompleteSpace
 
+/-- At finite exponent, every iterated weak-derivative graph stage is second countable. -/
+instance SobolevStage.instSecondCountableTopology [Fact (p ≠ ⊤)] (j : ℕ) :
+    SecondCountableTopology
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).Space := by
+  induction j with
+  | zero =>
+    -- The first stage is definitionally the value-gradient `Lᵖ` subspace `W1p`.
+    exact (inferInstance : SecondCountableTopology (W1p mu Omega p))
+  | succ j ih =>
+    have := ih
+    -- The next stage is a graph in the product of the preceding stage and an `Lᵖ` space.
+    exact (inferInstance : SecondCountableTopology
+      (WeakDerivStep mu Omega p
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).iteratedGradientL))
+
 /-- The arbitrary-order, real-valued weak Sobolev space `W^{k,p}(Ω)`.  At order zero this is
 `Lᵖ(Ω)`; order one is `W1p`; every further order adjoins the weak derivative of the highest
 derivative field from the preceding order. -/
@@ -170,6 +191,12 @@ theorem Wkp.instCompleteSpace :
   | k + 1 => (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).completeSpace
 
 attribute [instance] Wkp.instCompleteSpace
+
+/-- At every order and finite exponent, the full weak Sobolev topology is second countable. -/
+instance Wkp.instSecondCountableTopology [Fact (p ≠ ⊤)] :
+    (k : ℕ) → SecondCountableTopology (Wkp mu Omega p k)
+  | 0 => inferInstance
+  | k + 1 => SobolevStage.instSecondCountableTopology k
 
 namespace Wkp
 
@@ -249,6 +276,12 @@ theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
     value k (u + v) = value k u + value k v :=
   map_add (valueL k) u v
 
+/-- The value component preserves subtraction. -/
+@[simp]
+theorem value_sub (k : ℕ) (u v : Wkp mu Omega p k) :
+    value k (u - v) = value k u - value k v :=
+  map_sub (valueL k) u v
+
 /-- The value component preserves scalar multiplication. -/
 @[simp]
 theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
@@ -296,6 +329,17 @@ theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
 theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     value (k + 1) u = value k (lowerOrder k u) :=
   (rfl)
+
+/-- If `u i → v` in `W^{k,p}(Ω)` along a filter `l` and the values of `u i` and `v` represent
+`f i` and `g` almost everywhere on `Ω`, then `f i → g` in `Lᵖ(Ω)` along `l`. -/
+theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
+    {u : α → Wkp mu Omega p k} {v : Wkp mu Omega p k} {f : α → E → ℝ} {g : E → ℝ}
+    (huv : Filter.Tendsto u l (nhds v)) (hu : ∀ i, value k (u i) =ᵐ[mu.restrict Omega] f i)
+    (hv : value k v =ᵐ[mu.restrict Omega] g) :
+    Filter.Tendsto (fun i => eLpNorm (f i - g) p (mu.restrict Omega)) l (nhds 0) := by
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (((valueL k).continuous.tendsto v).comp huv)).congr fun i => eLpNorm_congr_ae ?_
+  simpa only [Function.comp_apply, valueL_apply] using (hu i).sub hv
 
 /-- At first order, the generic lower-order projection is the `W1p` value projection. -/
 @[simp]
@@ -478,6 +522,12 @@ Successive uniqueness of weak derivatives determines every higher component. -/
 theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → u = v
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
+
+/-- On an empty domain every Sobolev space is trivial. -/
+theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :
+    Subsingleton (Wkp mu Omega p k) :=
+  ⟨fun _ _ ↦ ext k (Lp.ext (Filter.Eventually.filter_mono
+    (ae_eq_bot.2 (Measure.restrict_eq_zero.2 (by simp [h]))).le Filter.eventually_bot))⟩
 
 /-- The graph norm controls the one-order-lower Sobolev component. -/
 theorem norm_lowerOrder_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :

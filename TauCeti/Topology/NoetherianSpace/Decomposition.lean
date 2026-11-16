@@ -36,10 +36,11 @@ nonmaximal members of Mathlib's finite decomposition
   irreducible closed subsets.
 * `TauCeti.setOf_maximal_mem_eq_of_sUnion_eq`: two finite covers of the same set by irreducible
   closed sets have the same maximal members.
+* `TauCeti.exists_eq_of_iUnion_eq`: an irreducible member of a finite closed cover that is
+  inclusion-maximal among its members is a member of every finite cover of the same set by
+  irreducible closed sets.
 * `TauCeti.eq_setOf_maximal_isIrreducible_of_isAntichain`: the members of an irredundant finite
   decomposition into irreducible closed sets are the maximal irreducible subsets of the union.
-* `TauCeti.exists_eq_of_iUnion_eq`: a member of an irredundant finite decomposition is a member of
-  every finite decomposition of the same set into irreducible closed sets.
 * `TauCeti.exists_equiv_eq_of_iUnion_eq`: two irredundant finite decompositions of the same set
   agree up to a bijection of their indices.
 * `TauCeti.exists_finite_isAntichain_irreducible_of_noetherianSpace`: in a Noetherian space every
@@ -49,7 +50,7 @@ nonmaximal members of Mathlib's finite decomposition
 
 * The Stacks Project, Tag 0052, *Noetherian topological spaces*.
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §3.6, Theorem D1.
+  and ideal theory*, J. Algebra 219 (1999), §3.6, Proposition 11.
 -/
 
 public section
@@ -144,6 +145,18 @@ theorem irreducibleComponents_eq_setOf_maximal_mem {S : Set (Set X)} (hSf : S.Fi
   refine Set.ext fun Z ↦ Iff.trans ?_ (maximal_isIrreducible_subset_sUnion_iff hSf hSc hSi)
   simp [irreducibleComponents, hS]
 
+/-- If finitely many closed sets `C i` have the same union as finitely many irreducible closed
+sets `D k`, then every irreducible `C i` that is inclusion-maximal among the `C j` is one of the
+`D k`. The other `C j` need not be irreducible, and the `C j` may be repeated or contained in one
+another. -/
+theorem exists_eq_of_iUnion_eq {ι κ : Type*} [Finite ι] [Finite κ] {C : ι → Set X} {D : κ → Set X}
+    (hCc : ∀ i, IsClosed (C i)) (hDc : ∀ k, IsClosed (D k)) (hDi : ∀ k, IsIrreducible (D k))
+    (h : ⋃ i, C i = ⋃ k, D k) {i : ι} (hCi : IsIrreducible (C i))
+    (hC : ∀ j, C i ⊆ C j → C j ⊆ C i) : ∃ k, C i = D k := by
+  obtain ⟨k, hk⟩ := hCi.exists_subset_of_subset_iUnion hDc ((Set.subset_iUnion C i).trans h.le)
+  obtain ⟨j, hj⟩ := (hDi k).exists_subset_of_subset_iUnion hCc ((Set.subset_iUnion D k).trans h.ge)
+  exact ⟨k, hk.antisymm (hj.trans (hC j (hk.trans hj)))⟩
+
 /-! ### Irredundant decompositions -/
 
 /-- The members of an irredundant finite decomposition into irreducible closed sets are exactly
@@ -154,19 +167,6 @@ theorem eq_setOf_maximal_isIrreducible_of_isAntichain {S : Set (Set X)} (hSf : S
   Set.ext fun _ ↦ hS.maximal_mem_iff.symm.trans
     (maximal_isIrreducible_subset_sUnion_iff hSf hSc hSi).symm
 
-/-- Every member of an irredundant finite decomposition into irreducible closed sets is a member
-of every finite decomposition of the same set into irreducible closed sets. -/
-theorem exists_eq_of_iUnion_eq {ι κ : Type*} [Finite ι] [Finite κ] {C : ι → Set X}
-    {D : κ → Set X} (hCc : ∀ i, IsClosed (C i)) (hCi : ∀ i, IsIrreducible (C i))
-    (hC : ∀ i j, C i ⊆ C j → i = j) (hDc : ∀ k, IsClosed (D k))
-    (hDi : ∀ k, IsIrreducible (D k)) (h : ⋃ i, C i = ⋃ k, D k) (i : ι) : ∃ k, C i = D k := by
-  obtain ⟨k, hk⟩ := (hCi i).exists_subset_of_subset_iUnion hDc
-    ((Set.subset_iUnion C i).trans h.le)
-  obtain ⟨j, hj⟩ := (hDi k).exists_subset_of_subset_iUnion hCc
-    ((Set.subset_iUnion D k).trans h.ge)
-  obtain rfl := hC i j (hk.trans hj)
-  exact ⟨k, hk.antisymm hj⟩
-
 /-- Two irredundant finite decompositions of the same set into irreducible closed sets agree up
 to a bijection of their indices. -/
 theorem exists_equiv_eq_of_iUnion_eq {ι κ : Type*} [Finite ι] [Finite κ] {C : ι → Set X}
@@ -174,10 +174,12 @@ theorem exists_equiv_eq_of_iUnion_eq {ι κ : Type*} [Finite ι] [Finite κ] {C 
     (hC : ∀ i j, C i ⊆ C j → i = j) (hDc : ∀ k, IsClosed (D k))
     (hDi : ∀ k, IsIrreducible (D k)) (hD : ∀ k l, D k ⊆ D l → k = l)
     (h : ⋃ i, C i = ⋃ k, D k) : ∃ e : ι ≃ κ, ∀ i, C i = D (e i) := by
-  choose f hf using exists_eq_of_iUnion_eq hCc hCi hC hDc hDi h
+  choose f hf using fun i ↦ exists_eq_of_iUnion_eq hCc hDc hDi h (hCi i)
+    fun j hj ↦ (congrArg C (hC i j hj)).superset
   refine ⟨Equiv.ofBijective f ⟨fun i j hij ↦ hC i j ?_, fun k ↦ ?_⟩, hf⟩
   · rw [hf i, hf j, hij]
-  · obtain ⟨i, hi⟩ := exists_eq_of_iUnion_eq hDc hDi hD hCc hCi h.symm k
+  · obtain ⟨i, hi⟩ := exists_eq_of_iUnion_eq hDc hCc hCi h.symm (hDi k)
+      fun l hl ↦ (congrArg D (hD k l hl)).superset
     exact ⟨i, hD _ _ ((hf i).symm.trans hi.symm).le⟩
 
 /-- In a Noetherian space every closed set is an irredundant finite union of irreducible closed

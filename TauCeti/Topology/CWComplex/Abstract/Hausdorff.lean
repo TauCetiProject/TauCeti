@@ -178,6 +178,14 @@ end HomotopicalAlgebra
 
 namespace TopCat
 
+/-- A relative CW complex `f : X ⟶ Y` extends disjoint open sets: every pair of disjoint open
+subsets of `X` is the preimage of a pair of disjoint open subsets of `Y`. -/
+theorem RelativeCWComplex.extendsDisjointOpens {X Y : TopCat.{u}} {f : X ⟶ Y}
+    (c : RelativeCWComplex f) : extendsDisjointOpens f :=
+  TauCeti.TopCat.extendsDisjointOpens.transfiniteCompositionsOfShape_le _ _
+    ((c.transfiniteCompositionOfShape' fun s ↦ extendsDisjointOpens_diskBoundaryInclusion s.j).ofLE
+      (pushouts_le_iff.2 (coproducts_le _))).mem
+
 /-- **A relative CW complex on a Hausdorff space is Hausdorff.** If `f : X ⟶ Y` is a relative CW
 complex in Mathlib's categorical sense and `X` is Hausdorff, then so is `Y`. -/
 theorem RelativeCWComplex.t2Space {X Y : TopCat.{u}} {f : X ⟶ Y} (c : RelativeCWComplex f)

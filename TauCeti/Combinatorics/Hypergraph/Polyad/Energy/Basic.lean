@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
-import TauCeti.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 import Mathlib.Data.Rat.BigOperators
 
 /-!

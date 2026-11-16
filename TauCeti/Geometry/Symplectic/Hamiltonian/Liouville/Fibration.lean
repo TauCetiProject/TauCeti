@@ -24,9 +24,7 @@ The proof reduces to the topological Liouville–Arnold theorem for `n` Poisson-
 (`TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`). A smooth map
 `κ : B → ℝⁿ` which near `b` is a chart of `B` (localized by a bump function) pulls back to the
 family `F = κ ∘ π`. Its components Poisson-commute because the fibres are Lagrangian
-(`IsLagrangianFibration.poissonBracket_comp_eq_zero`); their Hamiltonian vector fields are
-vertical, so complete because `π` is proper
-(`IsLagrangianFibration.isCompleteVectorField_hamiltonianVectorField_comp`); `F` is regular along
+(`IsLagrangianFibration.poissonBracket_comp_eq_zero`); `F` is regular along
 `π⁻¹(b)` because `dκ_b` is invertible and `π` is a submersion; and since `κ` is injective near `b`,
 the connected compact fibre `π⁻¹(b)` is exactly the connected component of the level
 `F⁻¹(F x)` through any of its points `x`.
@@ -120,8 +118,6 @@ theorem nonempty_homeomorph_unitAddTorus (h : hσ.IsLagrangianTorusFibration J �
   obtain ⟨φ⟩ := hσS.nonempty_homeomorph_unitAddTorus hGs
     (fun i j y ↦ h.poissonBracket_comp_eq_zero ((hGi i).mdifferentiableAt (by simp))
       ((hGi j).mdifferentiableAt (by simp)))
-    (fun i ↦ h.isCompleteVectorField_hamiltonianVectorField_comp h.isProperMap
-      ((hGi i).of_le (by simp)))
     hreg (by rw [Fintype.card_fin, h.two_mul_finrank])
     (hcomp ▸ h.isCompact_preimage_singleton b)
   exact ⟨(Homeomorph.setCongr hcomp.symm).trans φ⟩

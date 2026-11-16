@@ -36,18 +36,25 @@ statements.
   `TauCeti.IsRealCauchyRiemannOperator.difference_prod`,
   `TauCeti.IsRealCauchyRiemannOperator.antilinearPart_prod`).
 * `TauCeti.IsRealCauchyRiemannOperator.transport`: the transport of a real Cauchy–Riemann operator
-  along a fibrewise complex linear isomorphism preserving differentiability of sections is a real
-  Cauchy–Riemann operator; it is complex linear exactly when the operator is
-  (`TauCeti.isComplexLinearOperator_sectionTransport_iff`). Transport commutes with taking the
+  along a fibrewise complex linear isomorphism `Φ` whose inverse preserves differentiability of
+  sections is a real Cauchy–Riemann operator. When both `Φ` and `Φ⁻¹` preserve differentiability
+  of sections, the transport is a real Cauchy–Riemann operator, respectively complex linear,
+  exactly when the operator is (`TauCeti.isRealCauchyRiemannOperator_sectionTransport_iff`,
+  `TauCeti.isComplexLinearOperator_sectionTransport_iff`). Transport commutes with taking the
   complex linear part, the difference and the antilinear part
   (`TauCeti.sectionComplexLinearPart_sectionTransport`,
   `TauCeti.IsRealCauchyRiemannOperator.difference_transport`,
   `TauCeti.IsRealCauchyRiemannOperator.antilinearPart_transport`), is the identity along the
-  identity (`TauCeti.sectionTransport_refl`) and composes (`TauCeti.sectionTransport_trans`).
-* `TauCeti.IsRealCauchyRiemannOperator.lineMap`: every point `(1 - t) • D₀ + t • D₁` of the
-  straight line between two real Cauchy–Riemann operators is a real Cauchy–Riemann operator,
-  differing from `D₀` by `t` times the difference of `D₁` and `D₀`
-  (`TauCeti.IsRealCauchyRiemannOperator.difference_lineMap`).
+  identity (`TauCeti.sectionTransport_refl`) and composes
+  (`TauCeti.sectionTransport_sectionTransport`).
+* `TauCeti.IsRealCauchyRiemannOperator.smul_add_smul`: for weight functions `a b : M → ℝ` with
+  `a + b = 1`, the pointwise combination `a • D₀ + b • D₁` of two real Cauchy–Riemann operators is
+  a real Cauchy–Riemann operator, differing from `D₀` by `b` times the difference of `D₁` and `D₀`
+  (`TauCeti.IsRealCauchyRiemannOperator.difference_smul_add_smul`). Special cases are the affine
+  combination `t • D₀ + (1 - t) • D₁`, in the convention of
+  `IsCovariantDerivativeOn.affine_combination`
+  (`TauCeti.IsRealCauchyRiemannOperator.affineCombination`), and the straight line
+  `(1 - t) • D₀ + t • D₁` between them (`TauCeti.IsRealCauchyRiemannOperator.lineMap`).
 
 ## References
 
@@ -96,7 +103,7 @@ components. -/
 theorem dbarSMulRight_prod (g : M → ℝ) (σ : Π x : M, V x × W x) (x : M) :
     j.dbarSMulRight (V := V ×ᵇ W) g σ x =
       (j.dbarSMulRight g (fun y ↦ (σ y).1) x).prod (j.dbarSMulRight g (fun y ↦ (σ y).2) x) := by
-  ext v <;> simp [dbarSMulRight_apply]
+  ext v <;> simp [dbarSMulRight_apply, -mvfderiv_apply_eq_mfderiv_apply]
 
 variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
 
@@ -114,7 +121,7 @@ theorem restrictScalars_comp_dbarSMulRight (L : Π x : M, V x →L[ℂ] W x) (g 
     ((L x).restrictScalars ℝ).comp (j.dbarSMulRight g σ x) =
       j.dbarSMulRight g (fun y ↦ L y (σ y)) x := by
   ext v
-  simp [dbarSMulRight_apply]
+  simp [dbarSMulRight_apply, -mvfderiv_apply_eq_mfderiv_apply]
 
 end SmoothAlmostComplexStructure
 
@@ -142,8 +149,8 @@ theorem sectionProdMap_apply (σ : Π x : M, V x × W x) (x : M) :
 
 omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, IsTopologicalAddGroup (V x)]
   [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
-/-- The components of a constant multiple of a section of `V ×ᵇ W` are the constant multiples of
-its components. -/
+/-- The direct sum `D₁ ⊕ D₂` applied to a constant multiple `c • σ` applies `D₁` and `D₂` to the
+constant multiples of the components of `σ`. -/
 theorem sectionProdMap_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W x)] (c : S)
     (σ : Π x : M, V x × W x) (x : M) :
     sectionProdMap D₁ D₂ (c • σ) x =
@@ -152,9 +159,10 @@ theorem sectionProdMap_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W 
 
 omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, IsTopologicalAddGroup (V x)]
   [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
-/-- The components of a function multiple `g • σ` of a section of `V ×ᵇ W` are the function
-multiples of its components. -/
-theorem sectionProdMap_smul' (g : M → ℝ) (σ : Π x : M, V x × W x) (x : M) :
+/-- The direct sum `D₁ ⊕ D₂` applied to a function multiple `g • σ` applies `D₁` and `D₂` to the
+function multiples of the components of `σ`. -/
+theorem sectionProdMap_smul' {S : M → Type*} [∀ x, SMul (S x) (V x)] [∀ x, SMul (S x) (W x)]
+    (g : Π x : M, S x) (σ : Π x : M, V x × W x) (x : M) :
     sectionProdMap D₁ D₂ (g • σ) x =
       (D₁ (g • fun y ↦ (σ y).1) x).prod (D₂ (g • fun y ↦ (σ y).2) x) :=
   (rfl)
@@ -309,7 +317,7 @@ theorem sectionTransport_refl :
 omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- Transport along `Φ` and then along `Ψ` is transport along the composite. -/
-theorem sectionTransport_trans {X : M → Type*} [∀ x, TopologicalSpace (X x)]
+theorem sectionTransport_sectionTransport {X : M → Type*} [∀ x, TopologicalSpace (X x)]
     [∀ x, AddCommGroup (X x)] [∀ x, Module ℂ (X x)] [∀ x, Module ℝ (X x)]
     [∀ x, IsScalarTower ℝ ℂ (X x)] (Ψ : Π x : M, W x ≃L[ℂ] X x) :
     sectionTransport Ψ (sectionTransport Φ D) =
@@ -330,34 +338,42 @@ theorem sectionTransport_symm_sectionTransport :
 
 omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
-/-- Transport pulls a constant multiple of a section back to the constant multiple of the pulled
-back section. -/
-theorem sectionTransport_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W x)]
-    [∀ x, LinearMap.CompatibleSMul (W x) (V x) S ℂ] (c : S) (σ : Π x : M, W x) (x : M) :
-    sectionTransport Φ D (c • σ) x =
-      ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (c • fun y ↦ (Φ y).symm (σ y)) x) := by
-  rw [sectionTransport_apply, Pi.smul_def, Pi.smul_def]
-  congr 2 with y
-  exact LinearMapClass.map_smul_of_tower _ _ _
+/-- Transporting along `Φ⁻¹` and then back along `Φ` recovers the operator. -/
+@[simp]
+theorem sectionTransport_sectionTransport_symm
+    {D' : (Π x : M, W x) → Π x : M, TangentSpace I x →L[ℝ] W x} :
+    sectionTransport Φ (sectionTransport (fun x ↦ (Φ x).symm) D') = D' :=
+  sectionTransport_symm_sectionTransport (Φ := fun x ↦ (Φ x).symm)
 
 omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
-/-- Transport pulls a function multiple `g • σ` of a section back to the function multiple of the
-pulled back section. -/
-theorem sectionTransport_smul' (g : M → ℝ) (σ : Π x : M, W x) (x : M) :
+/-- The transport `sectionTransport Φ D` applied to a function multiple `g • σ` is `Φ` composed
+with `D` applied to the function multiple `g • Φ⁻¹ σ`. -/
+theorem sectionTransport_smul' {S : M → Type*} [∀ x, SMul (S x) (V x)] [∀ x, SMul (S x) (W x)]
+    [∀ x, LinearMap.CompatibleSMul (W x) (V x) (S x) ℂ] (g : Π x : M, S x) (σ : Π x : M, W x)
+    (x : M) :
     sectionTransport Φ D (g • σ) x =
       ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (g • fun y ↦ (Φ y).symm (σ y)) x) := by
   rw [sectionTransport_apply, Pi.smul_def', Pi.smul_def']
   congr 2 with y
   exact LinearMapClass.map_smul_of_tower _ _ _
 
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
+/-- The transport `sectionTransport Φ D` applied to a constant multiple `c • σ` is `Φ` composed
+with `D` applied to the constant multiple `c • Φ⁻¹ σ`. -/
+theorem sectionTransport_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W x)]
+    [∀ x, LinearMap.CompatibleSMul (W x) (V x) S ℂ] (c : S) (σ : Π x : M, W x) (x : M) :
+    sectionTransport Φ D (c • σ) x =
+      ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (c • fun y ↦ (Φ y).symm (σ y)) x) :=
+  sectionTransport_smul' (fun _ ↦ c) σ x
+
 omit [∀ x, ContinuousSMul ℝ (V x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- The transport of an operator additive on sections differentiable at `x` along a fibrewise
-complex linear isomorphism preserving differentiability of sections is additive on sections
-differentiable at `x`. -/
-theorem sectionTransport_add
-    (hΦ : ∀ ⦃σ : Π x : M, W x⦄ ⦃x : M⦄, MDiffAt (T% σ) x →
-      MDiffAt (T% fun y ↦ (Φ y).symm (σ y)) x) {x : M}
+complex linear isomorphism whose inverse preserves differentiability of sections at `x` is
+additive on sections differentiable at `x`. -/
+theorem sectionTransport_add {x : M}
+    (hΦ : ∀ ⦃σ : Π x : M, W x⦄, MDiffAt (T% σ) x → MDiffAt (T% fun y ↦ (Φ y).symm (σ y)) x)
     (hD : ∀ {τ τ' : Π x : M, V x}, MDiffAt (T% τ) x → MDiffAt (T% τ') x →
       D (τ + τ') x = D τ x + D τ' x)
     {σ σ' : Π x : M, W x} (hσ : MDiffAt (T% σ) x) (hσ' : MDiffAt (T% σ') x) :
@@ -379,13 +395,13 @@ theorem sectionComplexLinearPart_sectionTransport :
   ext v
   simp [sectionTransport_apply, sectionComplexLinearPart_apply]
 
-/-- The transport of a complex linear operator along a fibrewise complex linear isomorphism
-preserving differentiability of sections is complex linear. -/
+/-- The transport of a complex linear operator along a fibrewise complex linear isomorphism whose
+inverse preserves differentiability of sections is complex linear. -/
 theorem IsComplexLinearOperator.transport (hD : IsComplexLinearOperator F D)
     (hΦ : ∀ ⦃σ : Π x : M, W x⦄ ⦃x : M⦄, MDiffAt (T% σ) x →
       MDiffAt (T% fun y ↦ (Φ y).symm (σ y)) x) :
     IsComplexLinearOperator G (sectionTransport Φ D) where
-  add hσ hσ' := sectionTransport_add hΦ hD.add hσ hσ'
+  add hσ hσ' := sectionTransport_add (fun _ h ↦ hΦ h) hD.add hσ hσ'
   smul_const a {σ x} hσ := by
     rw [sectionTransport_smul, hD.smul_const a (hΦ hσ), ContinuousLinearMap.comp_smul,
       sectionTransport_apply]
@@ -413,13 +429,13 @@ variable [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
 namespace IsRealCauchyRiemannOperator
 
 /-- The transport of a real Cauchy–Riemann operator along a fibrewise complex linear isomorphism
-preserving differentiability of sections is a real Cauchy–Riemann operator. -/
+whose inverse preserves differentiability of sections is a real Cauchy–Riemann operator. -/
 theorem transport (hD : IsRealCauchyRiemannOperator F j D)
     (hΦ : ∀ ⦃σ : Π x : M, W x⦄ ⦃x : M⦄, MDiffAt (T% σ) x →
       MDiffAt (T% fun y ↦ (Φ y).symm (σ y)) x) :
     IsRealCauchyRiemannOperator G j (sectionTransport Φ D) where
   isZeroOneForm σ x := (hD.isZeroOneForm _ x).restrictScalars_comp _
-  add hσ hσ' := sectionTransport_add hΦ hD.add hσ hσ'
+  add hσ hσ' := sectionTransport_add (fun _ h ↦ hΦ h) hD.add hσ hσ'
   leibniz {σ g x} hσ hg := by
     rw [sectionTransport_smul', hD.leibniz (hΦ hσ) hg, sectionTransport_apply,
       ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_smul,
@@ -485,62 +501,100 @@ theorem isRealCauchyRiemannOperator_sectionTransport_iff
 
 end Transport
 
-/-! ### The straight line between two operators -/
+/-! ### Affine combinations and the straight line between two operators -/
 
 section LineMap
 
 variable {D₀ D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
 
-/-- A real linear combination `a • D₀ + b • D₁` of two complex linear operators is complex linear;
-in particular so is every point `(1 - t) • D₀ + t • D₁` of the straight line between them. -/
+/-- A pointwise linear combination `a • D₀ + b • D₁` of two complex linear operators, with weights
+`a b : Π x, S x` acting on the fibres, is complex linear; in particular so is every point
+`(1 - t) • D₀ + t • D₁` of the straight line between them. -/
 theorem IsComplexLinearOperator.smul_add_smul [∀ x, IsScalarTower ℝ ℂ (V x)]
-    [∀ x, ContinuousSMul ℂ (V x)] (hD₀ : IsComplexLinearOperator F D₀)
-    (hD₁ : IsComplexLinearOperator F D₁) (a b : ℝ) :
-    IsComplexLinearOperator F fun σ x ↦ a • D₀ σ x + b • D₁ σ x where
+    [∀ x, ContinuousSMul ℂ (V x)] {S : M → Type*} [∀ x, DistribSMul (S x) (V x)]
+    [∀ x, SMulCommClass ℝ (S x) (V x)] [∀ x, SMulCommClass ℂ (S x) (V x)]
+    [∀ x, ContinuousConstSMul (S x) (V x)] (hD₀ : IsComplexLinearOperator F D₀)
+    (hD₁ : IsComplexLinearOperator F D₁) (a b : Π x, S x) :
+    IsComplexLinearOperator F fun σ x ↦ a x • D₀ σ x + b x • D₁ σ x where
   add hσ hσ' := by
     simp only [hD₀.add hσ hσ', hD₁.add hσ hσ', smul_add]
     abel
   smul_const c _ _ hσ := by
     simp only [hD₀.smul_const c hσ, hD₁.smul_const c hσ, smul_add, smul_comm c]
   complex_I_smul hσ := by
-    simp only [hD₀.complex_I_smul hσ, hD₁.complex_I_smul hσ, smul_add,
-      smul_comm Complex.I (_ : ℝ)]
+    simp only [hD₀.complex_I_smul hσ, hD₁.complex_I_smul hσ, smul_add, smul_comm Complex.I]
 
 variable [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
 
 namespace IsRealCauchyRiemannOperator
 
-/-- Every point `(1 - t) • D₀ + t • D₁` of the straight line between two real Cauchy–Riemann
-operators is a real Cauchy–Riemann operator. -/
-theorem lineMap [∀ x, IsScalarTower ℝ ℂ (V x)] (hD₀ : IsRealCauchyRiemannOperator F j D₀)
-    (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : ℝ) :
-    IsRealCauchyRiemannOperator F j fun σ x ↦ (1 - t) • D₀ σ x + t • D₁ σ x where
+/-- For weight functions `a b : M → ℝ` with `a + b = 1`, the pointwise combination
+`a • D₀ + b • D₁` of two real Cauchy–Riemann operators is a real Cauchy–Riemann operator. -/
+theorem smul_add_smul [∀ x, IsScalarTower ℝ ℂ (V x)]
+    (hD₀ : IsRealCauchyRiemannOperator F j D₀) (hD₁ : IsRealCauchyRiemannOperator F j D₁)
+    (a b : M → ℝ) (hab : ∀ x, a x + b x = 1) :
+    IsRealCauchyRiemannOperator F j fun σ x ↦ a x • D₀ σ x + b x • D₁ σ x where
   isZeroOneForm σ x := isZeroOneForm_iff.2 fun v ↦ by
     simp only [add_apply, smul_apply,
       isZeroOneForm_iff.1 (hD₀.isZeroOneForm σ x) v, isZeroOneForm_iff.1 (hD₁.isZeroOneForm σ x) v,
       smul_neg, smul_add, neg_add]
-    rw [smul_comm Complex.I (1 - t), smul_comm Complex.I t]
+    rw [smul_comm Complex.I (a x), smul_comm Complex.I (b x)]
   add hσ hσ' := by
     simp only [hD₀.add hσ hσ', hD₁.add hσ hσ', smul_add]
     abel
   leibniz {σ g x} hσ hg := by
     simp only [hD₀.leibniz hσ hg, hD₁.leibniz hσ hg, smul_add, smul_comm (g x)]
-    module
+    rw [add_add_add_comm, ← add_smul, hab, one_smul]
+
+/-- For every function `t : M → ℝ`, the affine combination `t • D₀ + (1 - t) • D₁` of two real
+Cauchy–Riemann operators is a real Cauchy–Riemann operator. This is the convention of
+`IsCovariantDerivativeOn.affine_combination`. -/
+theorem affineCombination [∀ x, IsScalarTower ℝ ℂ (V x)]
+    (hD₀ : IsRealCauchyRiemannOperator F j D₀) (hD₁ : IsRealCauchyRiemannOperator F j D₁)
+    (t : M → ℝ) :
+    IsRealCauchyRiemannOperator F j fun σ ↦ t • D₀ σ + (1 - t) • D₁ σ :=
+  hD₀.smul_add_smul hD₁ t (1 - t) fun x ↦ add_sub_cancel (t x) 1
+
+/-- Every point `(1 - t) • D₀ + t • D₁` of the straight line between two real Cauchy–Riemann
+operators is a real Cauchy–Riemann operator. -/
+theorem lineMap [∀ x, IsScalarTower ℝ ℂ (V x)] (hD₀ : IsRealCauchyRiemannOperator F j D₀)
+    (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : ℝ) :
+    IsRealCauchyRiemannOperator F j fun σ x ↦ (1 - t) • D₀ σ x + t • D₁ σ x :=
+  hD₀.smul_add_smul hD₁ (fun _ ↦ 1 - t) (fun _ ↦ t) fun _ ↦ sub_add_cancel 1 t
+
+section Difference
+
+variable [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℝ F V] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle 1 F V I]
+
+/-- The combination `a • D₀ + b • D₁` with `a + b = 1` differs from `D₀` by `b` times the
+difference of `D₁` and `D₀`. -/
+theorem difference_smul_add_smul (hD₀ : IsRealCauchyRiemannOperator F j D₀)
+    (hD₁ : IsRealCauchyRiemannOperator F j D₁) (a b : M → ℝ) (hab : ∀ x, a x + b x = 1) (x : M) :
+    (hD₀.smul_add_smul hD₁ a b hab).difference hD₀ x = b x • hD₁.difference hD₀ x := by
+  ext e : 1
+  have hσ := mdifferentiableAt_extend I F e
+  have k := (hD₀.smul_add_smul hD₁ a b hab).difference_apply hD₀ hσ
+  have k' := hD₁.difference_apply hD₀ hσ
+  simp only [extend_apply_self] at k k'
+  rw [smul_apply, k, k', eq_sub_of_add_eq (hab x)]
+  module
+
+/-- The affine combination `t • D₀ + (1 - t) • D₁` differs from `D₀` by `1 - t` times the
+difference of `D₁` and `D₀`. -/
+theorem difference_affineCombination (hD₀ : IsRealCauchyRiemannOperator F j D₀)
+    (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : M → ℝ) (x : M) :
+    (hD₀.affineCombination hD₁ t).difference hD₀ x = (1 - t x) • hD₁.difference hD₀ x :=
+  hD₀.difference_smul_add_smul hD₁ t (1 - t) (fun y ↦ add_sub_cancel (t y) 1) x
 
 /-- The point `(1 - t) • D₀ + t • D₁` of the straight line differs from `D₀` by `t` times the
 difference of `D₁` and `D₀`. -/
-theorem difference_lineMap [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℝ F V]
-    [FiniteDimensional ℝ F] [ContMDiffVectorBundle 1 F V I]
-    (hD₀ : IsRealCauchyRiemannOperator F j D₀)
+theorem difference_lineMap (hD₀ : IsRealCauchyRiemannOperator F j D₀)
     (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : ℝ) (x : M) :
-    (hD₀.lineMap hD₁ t).difference hD₀ x = t • hD₁.difference hD₀ x := by
-  ext e : 1
-  have hσ := mdifferentiableAt_extend I F e
-  have k := (hD₀.lineMap hD₁ t).difference_apply hD₀ hσ
-  have k' := hD₁.difference_apply hD₀ hσ
-  simp only [extend_apply_self] at k k'
-  rw [smul_apply, k, k']
-  module
+    (hD₀.lineMap hD₁ t).difference hD₀ x = t • hD₁.difference hD₀ x :=
+  hD₀.difference_smul_add_smul hD₁ (fun _ ↦ 1 - t) (fun _ ↦ t) (fun _ ↦ sub_add_cancel 1 t) x
+
+end Difference
 
 end IsRealCauchyRiemannOperator
 

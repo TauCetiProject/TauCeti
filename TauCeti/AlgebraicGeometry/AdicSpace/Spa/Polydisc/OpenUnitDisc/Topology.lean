@@ -179,8 +179,8 @@ theorem gaussPoint_mem_discExhaustion_iff {r : ℝ} (hr₀ : 0 < r) (hr₁ : r �
     (c : K) (n : ℕ) :
     gaussPoint hr₀ hr₁ ∈ discExhaustion c n ↔ r ^ (n + 1) ≤ ‖c‖ ∧ c ≠ 0 := by
   simp only [mem_discExhaustion, gaussPoint_vle_iff, map_pow, map_zero,
-    closedDiscGaussValuation_weightedC, nonpos_iff_eq_zero, nnnorm_eq_zero,
-    ← NNReal.coe_le_coe, NNReal.coe_pow, coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
+    closedDiscGaussValuation_weightedC, nonpos_iff_eq_zero, nnNorm_eq_zero,
+    ← NNReal.coe_le_coe, NNReal.coe_pow, coe_closedDiscGaussValuation_weightedX, coe_nnNorm]
 
 end NontriviallyNormedField
 

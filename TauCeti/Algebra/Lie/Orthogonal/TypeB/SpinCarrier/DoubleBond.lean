@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix
-import TauCeti.Algebra.Lie.Orthogonal.TypeB.SerreRelations
+import TauCeti.Algebra.Lie.Orthogonal.TypeB.Serre.Relations
 import TauCeti.LinearAlgebra.Matrix.UnipotentCommutator
 
 /-!

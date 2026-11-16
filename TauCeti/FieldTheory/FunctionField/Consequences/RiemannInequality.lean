@@ -140,7 +140,7 @@ theorem genus_le_finrank_sub_one_mul_finrank_sub_one (hF : IsFunctionField k F)
   have hdegC : Divisor.degree C = ((m : ℤ) - 1) * n := by
     rw [map_zsmul, Divisor.degree_poles hF (Units.mk0 y hy0) hy, smul_eq_mul, Units.val_mk0]
   have h := genus_le_one_add_finrank_mul_genus_sub_one_add_degree hF hex b hb
-  rw [genus_adjoin_simple_eq_zero hx, hdegC, Nat.cast_zero] at h
+  rw [genus_adjoin_simple_eq_zero, hdegC, Nat.cast_zero] at h
   have h' : (genus k F : ℤ) ≤ ((m - 1 : ℕ) : ℤ) * ((n - 1 : ℕ) : ℤ) := by
     push_cast [hm1, hn1]
     linarith

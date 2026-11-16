@@ -61,14 +61,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- Almost every point of a convex set in a finite-dimensional real normed space is an interior
 point, since the frontier of the set is null for every additive Haar measure. -/
 theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s → x ∈ interior s :=
-  (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.le
+  (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.subset
 
 /-- A subset of a convex set `s` in a finite-dimensional real normed space differs from its
 intersection with `interior s` by a null set, since the frontier of `s` is null for every additive
 Haar measure. -/
 theorem Convex.inter_interior_ae_eq (hs : Convex ℝ s) {t : Set E} (ht : t ⊆ s) :
     t ∩ interior s =ᵐ[μ] t := by
-  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (Filter.EventuallyEq.rfl : t =ᵐ[μ] t)
+  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (Filter.EventuallyEqSet.rfl : t =ᵐ[μ] t)
     (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ))
 
 /-- If a convex set in a finite-dimensional real normed space meets a set `t` in positive additive

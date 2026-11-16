@@ -87,7 +87,7 @@ open ReducedTensorWords
 variable {R : Type uR} {A : Type uA} {H : Type uH} [CommRing R] [AddCommGroup A] [Module R A]
   [AddCommGroup H] [Module R H]
 
-variable (𝒜 : AInfinityAlgebra R A) {GH : InternalGrading R H} {dH : Module.End R H}
+variable (𝒜 : AInfinityAlgebra R A) {GH : InternalGrading R H ℤ} {dH : Module.End R H}
   (c : LinearSpecialContraction 𝒜.differential dH)
   (hh : LinearMap.IsHomogeneous c.homotopy 𝒜.grading.piece 𝒜.grading.piece (-1))
   (hincl : LinearMap.IsHomogeneous c.incl GH.piece 𝒜.grading.piece 0)

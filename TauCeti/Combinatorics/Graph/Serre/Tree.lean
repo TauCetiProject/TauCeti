@@ -15,11 +15,14 @@ moreover nonempty and connected. Equivalently, an acyclic graph has at most one 
 between two vertices, and a tree has exactly one. These unique reduced paths are the tree paths
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
-An acyclic graph has no loop, and a restriction `Γ.restrict S hS` is acyclic exactly when no
-nonempty reduced closed path of `Γ` has all its darts in `S`.
+An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
+darts with the same endpoints, so a finite set of vertices induces finitely many darts. A
+restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
+all its darts in `S`.
 
-The one-vertex graph without edges and the segment are trees. A rose with a petal is not a tree,
-since its petal is a reduced loop.
+A graph without darts, such as the graph `noEdge V` without edges, is acyclic, and it is a tree
+exactly when it has one vertex. A graph without vertices is not a tree. The segment is a tree.
+A rose with a petal is not a tree, since its petal is a reduced loop.
 
 ## References
 
@@ -86,6 +89,47 @@ theorem IsAcyclic.src_ne_tgt (h : Γ.IsAcyclic) (e : Γ.E) : Γ.src e ≠ Γ.tgt
     cases h a f.toPath (Path.isReduced_toPath Γ f)
   exact key (Γ.dart e)
 
+variable {Γ} in
+/-- An acyclic graph with at most one vertex has no darts. -/
+theorem IsAcyclic.isEmpty_dart_of_subsingleton (h : Γ.IsAcyclic) [Subsingleton Γ.V] :
+    IsEmpty Γ.E :=
+  ⟨fun e => h.src_ne_tgt e (Subsingleton.elim _ _)⟩
+
+variable {Γ} in
+/-- In an acyclic graph, a reduced path only crosses darts of any other path with the same
+endpoints, in the same order. -/
+theorem IsAcyclic.darts_sublist (h : Γ.IsAcyclic) {a b : Γ.V} {p : Γ.Path a b}
+    (hp : Path.IsReduced Γ p) (q : Γ.Path a b) : (Path.darts Γ p).Sublist (Path.darts Γ q) := by
+  rw [h.eq_of_isReduced hp (Path.isReduced_reduce Γ q)]
+  exact Path.darts_reduce_sublist Γ q
+
+variable {Γ} in
+/-- An acyclic graph has no parallel darts: a dart is determined by its endpoints. -/
+theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
+    (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
+  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.1 = y.1 := fun x y => by
+    simpa using congrArg (Path.darts Γ)
+      (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
+  exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
+variable {Γ} in
+/-- In an acyclic graph, a single vertex induces no dart. -/
+@[simp] theorem IsAcyclic.inducedDarts_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
+    Γ.inducedDarts {v} = ∅ :=
+  Set.eq_empty_of_forall_notMem fun e he => by
+    obtain ⟨hs, ht⟩ := mem_inducedDarts_iff.mp he
+    exact h.src_ne_tgt e (hs.trans ht.symm)
+
+variable {Γ} in
+/-- In an acyclic graph, a finite set of vertices induces finitely many darts. -/
+theorem IsAcyclic.finite_inducedDarts (h : Γ.IsAcyclic) {C : Set Γ.V} (hC : C.Finite) :
+    (Γ.inducedDarts C).Finite := by
+  refine Set.Finite.of_finite_image (f := fun e => (Γ.src e, Γ.tgt e))
+    ((hC.prod hC).subset ?_) fun e _ f _ hef =>
+      h.eq_of_src_eq_of_tgt_eq (congrArg Prod.fst hef) (congrArg Prod.snd hef)
+  rintro _ ⟨e, he, rfl⟩
+  exact mem_inducedDarts_iff.mp he
+
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔
     ∀ ⦃a b : Γ.V⦄ (p q : Γ.Path a b), Path.IsReduced Γ p → Path.IsReduced Γ q → p = q :=
@@ -115,6 +159,23 @@ theorem isTree_iff_existsUnique_isReduced : Γ.IsTree ↔
     ?_⟩
   exact (Γ.isAcyclic_iff_eq_of_isReduced).mpr fun a b p q hp hq => (h a b).unique hp hq
 
+/-- A Serre graph without darts is acyclic: its only closed paths are empty. -/
+theorem isAcyclic_of_isEmpty_dart [IsEmpty Γ.E] : Γ.IsAcyclic := by
+  refine (isAcyclic_iff Γ).mpr fun u p _ => ?_
+  cases p with
+  | nil => rfl
+  | cons p e => exact isEmptyElim e.1
+
+/-- A Serre graph without darts is a tree exactly when it has exactly one vertex. -/
+theorem isTree_iff_of_isEmpty_dart [IsEmpty Γ.E] :
+    Γ.IsTree ↔ Nonempty Γ.V ∧ Subsingleton Γ.V := by
+  rw [isTree_iff, Γ.connected_iff_of_forall_src_eq_tgt isEmptyElim,
+    and_iff_left Γ.isAcyclic_of_isEmpty_dart]
+
+/-- A Serre graph without vertices is not a tree: a tree is connected. -/
+theorem not_isTree_of_isEmpty [IsEmpty Γ.V] : ¬Γ.IsTree :=
+  fun h => Γ.not_connected_of_isEmpty h.connected
+
 section Restrict
 
 variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
@@ -137,27 +198,22 @@ theorem isAcyclic_restrict_iff : (Γ.restrict S hS).IsAcyclic ↔
 
 /-- The restriction to the empty set of darts is acyclic. -/
 theorem isAcyclic_restrict_empty : (Γ.restrict ∅ fun _ h => h.elim).IsAcyclic :=
-  (Γ.isAcyclic_restrict_iff _ _).mpr fun _ p _ hp => Quiver.Path.eq_nil_of_length_zero _ (by
-    rw [← Path.length_darts, List.eq_nil_iff_forall_not_mem.mpr fun e he => hp e he,
-      List.length_nil])
+  isAcyclic_of_isEmpty_dart _
 
 end Restrict
 
+/-- A graph without edges is acyclic. -/
+@[simp] theorem noEdge_isAcyclic {V : Type u} : (noEdge.{u, v} V).IsAcyclic :=
+  isAcyclic_of_isEmpty_dart _
+
+/-- A graph without edges is a tree exactly when it has exactly one vertex. -/
+@[simp] theorem noEdge_isTree_iff {V : Type u} :
+    (noEdge.{u, v} V).IsTree ↔ Nonempty V ∧ Subsingleton V :=
+  isTree_iff_of_isEmpty_dart _
+
 /-- The graph with one vertex and no edges is a tree. -/
-theorem single_vertex_isTree : point.{u, v}.IsTree := by
-  rw [isTree_iff]
-  refine ⟨?_, ?_⟩
-  · rw [point.{u, v}.connected_iff]
-    refine ⟨⟨PUnit.unit⟩, ?_⟩
-    rw [point.{u, v}.preconnected_iff]
-    intro u v
-    cases u
-    cases v
-    exact ⟨(@Quiver.Path.nil point.{u, v}.V point.{u, v}.toQuiver PUnit.unit)⟩
-  · intro u p _
-    cases p with
-    | nil => rfl
-    | cons p e => exact e.1.elim
+theorem single_vertex_isTree : (noEdge.{u, v} PUnit).IsTree :=
+  noEdge_isTree_iff.mpr ⟨inferInstance, inferInstance⟩
 
 /-- The segment, two vertices joined by a single pair of darts, is a tree. -/
 theorem segment_isTree : segment.IsTree := by

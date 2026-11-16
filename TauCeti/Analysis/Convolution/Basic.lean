@@ -20,9 +20,10 @@ An essentially bounded function convolves with an integrable function at every p
 measurable additive group with a measure invariant under left translations and negation
 (`MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable` and
 `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
-sigma-finiteness of the measure is required. For two integrable scalar kernels and an
-essentially bounded function, convolution is associative at every point; this associativity
-statement additionally assumes s-finiteness.
+sigma-finiteness of the measure is required. For two integrable fields and an
+essentially bounded function, convolution along compatible bilinear maps is associative at every
+point; this associativity statement requires only right-translation invariance and
+s-finiteness.
 
 A continuous linear map `L : F →L[𝕜] F'` between real or complex Banach spaces commutes with
 convolution against a scalar kernel `ρ : G → 𝕜`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)` at every point where
@@ -65,13 +66,15 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
 * `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
   `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`: existence of `f ⋆ g` when one
   factor is integrable and the other essentially bounded.
-* `MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm` and
-  `MeasureTheory.norm_convolution_lsmul_add_sub_le`: the sup bound and the increment bound of the
+* `MeasureTheory.norm_convolution_le_integral_norm_mul_norm`,
+  `MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm` and
+  `MeasureTheory.norm_convolution_lsmul_add_sub_le`: the sup bound (along a bilinear map and
+  along scalar multiplication) and the increment bound of the
   convolution of an `L^∞` function with an integrable kernel.
 * `MeasureTheory.convolution_eq_zero_of_not_completeSpace`: without completeness of the target
   every convolution is the zero function.
-* `MeasureTheory.convolution_lsmul_assoc_of_integrable_of_ae_norm_le`: pointwise associativity
-  for two integrable kernels and an essentially bounded function.
+* `MeasureTheory.convolution_assoc_of_integrable_of_ae_norm_le`: pointwise associativity along
+  compatible bilinear maps for two integrable fields and an essentially bounded function.
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
 * `MeasureTheory.le_convolution_lsmul_of_forall_le` and
   `MeasureTheory.convolution_lsmul_le_of_forall_le`: one-sided bounds on a ball pass to the
@@ -87,6 +90,10 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   semicontinuity.
 * `MeasureTheory.convolution_indicator_eq_of_forall_sub_mem`: replacing `g` by its indicator on a
   set containing `x - support f` does not change `(f ⋆ g) x`.
+* `MeasureTheory.indicator_convolution_eq_of_forall_sub_mem` and
+  `MeasureTheory.convolutionExistsAt_indicator_iff_of_forall_sub_mem`: replacing `f` by its
+  indicator on a set containing every `t` with `x - t ∈ support g` changes neither `(f ⋆ g) x` nor
+  its existence.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
   `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_left_comp_sub`: the same
@@ -146,36 +153,47 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
 
 section Assoc
 
-variable {𝕜 G F : Type*} [RCLike 𝕜] [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G]
-  [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+variable {𝕜 G E E' E'' F F' F'' : Type*} [RCLike 𝕜]
+  [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+  {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [CompleteSpace F]
-  {f g : G → 𝕜} {h : G → F} {M : ℝ}
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [CompleteSpace F']
+  [NormedAddCommGroup F''] [NormedSpace ℝ F''] [NormedSpace 𝕜 F''] [CompleteSpace F'']
+  {f : G → E} {g : G → E'} {h : G → E''} {M : ℝ}
 
-/-- Convolution of two integrable scalar kernels with an essentially bounded function is
-associative at every point, not just almost everywhere. -/
-theorem convolution_lsmul_assoc_of_integrable_of_ae_norm_le
+/-- Convolution along compatible bilinear maps of two integrable fields with an essentially
+bounded function is associative at every point, not just almost everywhere. -/
+theorem convolution_assoc_of_integrable_of_ae_norm_le
+    (L : E →L[𝕜] E' →L[𝕜] F) (L₂ : F →L[𝕜] E'' →L[𝕜] F')
+    (L₃ : E →L[𝕜] F'' →L[𝕜] F') (L₄ : E' →L[𝕜] E'' →L[𝕜] F'')
+    (hL : ∀ x y z, L₂ (L x y) z = L₃ x (L₄ y z))
     (hf : Integrable f μ) (hg : Integrable g μ) (hh : AEStronglyMeasurable h μ)
     (hM : ∀ᵐ x ∂μ, ‖h x‖ ≤ M) :
-    (f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] g) ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h =
-      f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h) := by
+    (f ⋆[L, μ] g) ⋆[L₂, μ] h = f ⋆[L₃, μ] (g ⋆[L₄, μ] h) := by
+  have hex {a b : G → ℝ} {C : ℝ} (ha : Integrable a μ)
+      (hb : AEStronglyMeasurable b μ) (hC : ∀ᵐ y ∂μ, ‖b y‖ ≤ C) :
+      ConvolutionExists a b (ContinuousLinearMap.mul ℝ ℝ) μ := fun x ↦ by
+    have hsub := quasiMeasurePreserving_sub_left_of_right_invariant μ x
+    exact (ContinuousLinearMap.mul ℝ ℝ).integrable_of_bilin_of_bdd_right C ha
+      (hb.comp_quasiMeasurePreserving hsub) (hsub.ae hC)
   have hbdd : ∀ x, ‖((fun y ↦ ‖g y‖) ⋆[ContinuousLinearMap.mul ℝ ℝ, μ]
       (fun y ↦ ‖h y‖)) x‖ ≤ (∫ y, ‖g y‖ ∂μ) * M := by
     intro x
     rw [convolution_def, ← integral_mul_const]
     refine norm_integral_le_of_norm_le (hg.norm.mul_const M) ?_
-    filter_upwards [(μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM] with y hy
+    filter_upwards [(quasiMeasurePreserving_sub_left_of_right_invariant μ x).ae hM] with y hy
     simpa only [ContinuousLinearMap.mul_apply', norm_mul, norm_norm] using
       mul_le_mul_of_nonneg_left hy (norm_nonneg (g y))
   ext x
-  exact convolution_assoc (ContinuousLinearMap.lsmul 𝕜 𝕜)
-    (ContinuousLinearMap.lsmul 𝕜 𝕜) (ContinuousLinearMap.lsmul 𝕜 𝕜)
-    (ContinuousLinearMap.lsmul 𝕜 𝕜) (fun a b c ↦ mul_smul a b c)
+  exact convolution_assoc L L₂ L₃ L₄ hL
     hf.aestronglyMeasurable hg.aestronglyMeasurable hh
     (hf.ae_convolution_exists _ hg)
-    (ae_of_all _ (convolutionExists_of_integrable_of_ae_norm_le _ hg.norm hh.norm
+    (ae_of_all _ (hex hg.norm hh.norm
       (hM.mono fun _ hx ↦ by simpa only [norm_norm] using hx)))
-    (convolutionExists_of_integrable_of_ae_norm_le _ hf.norm
-      (hg.aestronglyMeasurable.norm.convolution _ hh.norm) (ae_of_all _ hbdd) x)
+    (hex hf.norm (hg.aestronglyMeasurable.norm.convolution _ hh.norm) (ae_of_all _ hbdd) x)
 
 end Assoc
 
@@ -185,18 +203,27 @@ variable {𝕜 G F : Type*} [RCLike 𝕜] [AddGroup G] [MeasurableSpace G] [Meas
   [MeasurableNeg G] {μ : Measure G} [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] {K : G → 𝕜}
 
+omit [NormedSpace ℝ F] in
+/-- **Convolving an `L^∞` function with an integrable kernel** along a bilinear map `L` gives a
+function bounded everywhere by `‖L‖ ‖f‖₁ ‖g‖_∞`. -/
+theorem norm_convolution_le_integral_norm_mul_norm {E' F' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace 𝕜 F']
+    {f : G → E'} (L : E' →L[𝕜] F →L[𝕜] F') (hf : Integrable f μ) (g : Lp F ∞ μ) (x : G) :
+    ‖(f ⋆[L, μ] (g : G → F)) x‖ ≤ ‖L‖ * (∫ y, ‖f y‖ ∂μ) * ‖g‖ := by
+  have hae : ∀ᵐ t ∂μ, ‖g (x - t)‖ ≤ ‖g‖ :=
+    (μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae (p := fun y ↦ ‖g y‖ ≤ ‖g‖)
+      (Lp.ae_norm_le_norm_top g)
+  rw [convolution_def, ← integral_const_mul, ← integral_mul_const]
+  refine norm_integral_le_of_norm_le ((hf.norm.const_mul _).mul_const _) (hae.mono fun t ht ↦ ?_)
+  exact (L.le_opNorm₂ _ _).trans (by gcongr)
+
 /-- **Convolving an `L^∞` function with an integrable kernel** gives a function bounded
 everywhere by `‖K‖₁ ‖g‖_∞`. Compare Mathlib's `MeasureTheory.enorm_convolution_le`, the extended
 form for Hölder conjugate exponents. -/
 theorem norm_convolution_lsmul_le_integral_norm_mul_norm (hK : Integrable K μ) (g : Lp F ∞ μ)
-    (x : G) : ‖(K ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g : G → F)) x‖ ≤ (∫ y, ‖K y‖ ∂μ) * ‖g‖ := by
-  have hae : ∀ᵐ t ∂μ, ‖g (x - t)‖ ≤ ‖g‖ :=
-    (μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae (p := fun y ↦ ‖g y‖ ≤ ‖g‖)
-      (Lp.ae_norm_le_norm_top g)
-  rw [convolution_def, ← integral_mul_const]
-  refine norm_integral_le_of_norm_le (hK.norm.mul_const _) (hae.mono fun t ht ↦ ?_)
-  rw [ContinuousLinearMap.lsmul_apply, norm_smul]
-  gcongr
+    (x : G) : ‖(K ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g : G → F)) x‖ ≤ (∫ y, ‖K y‖ ∂μ) * ‖g‖ :=
+  (norm_convolution_le_integral_norm_mul_norm _ hK g x).trans
+    (by grw [ContinuousLinearMap.opNorm_lsmul_le, one_mul])
 
 /-- **Increments of the convolution of an `L^∞` function** are controlled by the `L¹` modulus of
 continuity of the kernel: `‖(K ⋆ g) (x + h) - (K ⋆ g) x‖ ≤ ‖K (· + h) - K‖₁ ‖g‖_∞`. -/
@@ -373,6 +400,40 @@ theorem convolution_indicator_eq_of_forall_sub_mem [Sub G] [MeasurableSpace G] {
   · simp [ht]
   · simp only [Set.indicator_of_mem (h t ht)]
 
+section Indicator
+
+variable [Sub G] (L : E →L[𝕜] E' →L[𝕜] F) {K : G → E} {f : G → E'} {s : Set G} {x : G}
+
+omit [NormedSpace ℝ F] in
+/-- The integrand of a convolution at `x` sees the kernel `K` only at the points `t` with
+`x - t` in the support of `f`, so `K` may be replaced by its indicator on any set containing all
+of them. -/
+private theorem indicator_convolution_integrand_eq (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
+    (fun t ↦ L (s.indicator K t) (f (x - t))) = fun t ↦ L (K t) (f (x - t)) := by
+  funext t
+  by_cases ht : f (x - t) = 0
+  · simp [ht]
+  · rw [Set.indicator_of_mem (h t ht)]
+
+variable [MeasurableSpace G] {μ : Measure G}
+
+/-- A convolution at `x` sees the kernel `K` only at the points `t` with `x - t` in the support of
+`f`, so `K` may be replaced by its indicator on any set containing all of them. -/
+theorem indicator_convolution_eq_of_forall_sub_mem
+    (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
+    (s.indicator K ⋆[L, μ] f) x = (K ⋆[L, μ] f) x := by
+  simp only [convolution_def, indicator_convolution_integrand_eq L h]
+
+omit [NormedSpace ℝ F] in
+/-- The convolution of `K` and `f` exists at `x` exactly when that of the indicator of `K` on a set
+containing every `t` with `x - t` in the support of `f` does. -/
+theorem convolutionExistsAt_indicator_iff_of_forall_sub_mem
+    (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
+    ConvolutionExistsAt (s.indicator K) f x L μ ↔ ConvolutionExistsAt K f x L μ := by
+  simp only [ConvolutionExistsAt, indicator_convolution_integrand_eq L h]
+
+end Indicator
+
 end Support
 
 section Fubini
@@ -435,11 +496,7 @@ theorem integral_mul_convolution_eq_integral_mul_integral_left_comp_sub [SFinite
     (hψ : Continuous ψ) (hψc : HasCompactSupport ψ) (hK : LocallyIntegrable K μ)
     (hg : Integrable g μ) (hgc : HasCompactSupport g) :
     ∫ x, ψ x * (K ⋆[lsmul ℝ ℝ, μ] g) x ∂μ = ∫ t, g t * ∫ x, ψ x * K (x - t) ∂μ ∂μ := by
-  have hcomm : K ⋆[lsmul ℝ ℝ, μ] g = g ⋆[lsmul ℝ ℝ, μ] K := by
-    funext x
-    rw [convolution_lsmul_swap, convolution_lsmul]
-    simp only [smul_eq_mul, mul_comm]
-  rw [hcomm]
+  rw [convolution_symm (lsmul ℝ ℝ) (by ext; simp)]
   exact integral_mul_convolution_eq_integral_mul_integral_comp_sub hψ hψc hg hgc
     (hK.locallyIntegrableOn Set.univ) fun _ _ _ _ ↦ Set.mem_univ _
 
@@ -493,8 +550,8 @@ theorem enorm_sub_convolution_lsmul_le [CompleteSpace F] (hψ : Continuous ψ)
     simp only [convolution_eq_swap, lsmul_apply, smul_sub]
     rw [integral_sub (hψint.smul_const (f x)) hint, integral_smul_const, h1, one_smul]
   rw [heq]
-  refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq (lintegral_congr fun w ↦ ?_))
-  rw [enorm_smul]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq (lintegral_congr fun w ↦ ?_))
+  rw [eNorm_smul]
 
 /-- **Increments of a mollification.** For a continuous compactly supported kernel `ψ` and a
 locally integrable `f`, the increments of `ψ ⋆ f` are bounded by the `‖ψ‖ₑ`-weighted integral of
@@ -506,8 +563,8 @@ theorem enorm_convolution_lsmul_sub_convolution_lsmul_le (hψ : Continuous ψ)
   rw [convolution_def, convolution_def,
     ← integral_sub (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf x)
       (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf y)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq (lintegral_congr fun z ↦ ?_))
-  simp only [lsmul_apply, ← smul_sub, enorm_smul]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq (lintegral_congr fun z ↦ ?_))
+  simp only [lsmul_apply, ← smul_sub, eNorm_smul]
 
 /-- **Mollification by a bounded kernel of small support.** If `ψ` is a continuous kernel of
 integral `1` with `‖ψ‖ ≤ M`, vanishing off `closedBall 0 t`, and `f` is locally integrable, then

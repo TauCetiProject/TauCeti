@@ -123,9 +123,6 @@ non-integral discriminant.
 
 ## Provenance
 
-⚠ *mathlib-track*: this is a statement about Mathlib's own `IsMinimal`, with no Tau Ceti
-definitions involved, and belongs upstream once its consumers are in place.
-
 Ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 @ `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0` (Apache-2.0), file
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Reduction.lean`, by Kevin Buzzard — the source commit

@@ -97,7 +97,8 @@ theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
     x ∈ Submodule.traceDual R K (1 : Submodule S L) ↔
       ∀ y ∈ differentIdeal R S, x * algebraMap S L y ∈ (1 : Submodule S L) := by
   have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
-  rw [← FractionalIdeal.coe_dual_one (A := R) (K := K), FractionalIdeal.mem_coe,
+  rw [← FractionalIdeal.coeToSubmodule_dual_one (A := R) (K := K),
+    FractionalIdeal.mem_coeToSubmodule,
     ← inv_inv (FractionalIdeal.dual R K _),
     FractionalIdeal.mem_inv_iff (inv_ne_zero (FractionalIdeal.dual_ne_zero R K one_ne_zero)),
     ← coeIdeal_differentIdeal (A := R) (K := K) (L := L)]
@@ -156,7 +157,7 @@ noncomputable def equivTraceDualOfDifferentIdealEqSpan
       map_smul' := fun b c ↦ Subtype.ext (by simp [Algebra.smul_def, mul_div_assoc]) }
   refine LinearEquiv.ofBijective f ⟨?_, ?_⟩
   · intro b c h
-    exact IsFractionRing.injective S L ((div_left_inj' hδL).mp
+    exact IsFractionRing.injective S L ((div_left_inj₀ hδL).mp
       (congrArg Subtype.val h))
   · intro x
     obtain ⟨b, hb⟩ := Submodule.mem_one.mp
@@ -284,11 +285,11 @@ theorem dvd_differentIdeal_iff_forall_intTrace_mem
   rw [Ideal.dvd_iff_le, differentialIdeal_le_iff (K := K) (L := L) hI, hIinv,
     Submodule.map_le_iff_le_comap]
   intro x hx
-  rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coe,
+  rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coeToSubmodule,
     FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp')] at hx
-  rw [Submodule.mem_comap, LinearMap.coe_restrictScalars, ← FractionalIdeal.coe_one,
+  rw [Submodule.mem_comap, LinearMap.coe_restrictScalars, ← FractionalIdeal.coeToSubmodule_one,
     ← div_self (G₀ := FractionalIdeal A⁰ K) (a := p) (by simpa using hp),
-    FractionalIdeal.mem_coe, FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp)]
+    FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp)]
   simp only [FractionalIdeal.mem_coeIdeal, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂] at hx
   intro y hy'

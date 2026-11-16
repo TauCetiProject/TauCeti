@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.CurvatureEquation
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Volume
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.TotalCurvature
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric

@@ -388,7 +388,7 @@ theorem _root_.Manifold.IsImmersion.isLocalDiffeomorph {g : X → Y} (hg : IsImm
       inferInstanceAs (FiniteDimensional 𝕂 F')
     exact FiniteDimensional.of_injective (mfderiv K K' g x₀).toLinearMap
       (hg.isDiffImmersionAt hn0 x₀).mfderiv_injective
-  have := FiniteDimensional.complete 𝕂 F
+  have := FiniteDimensional.completeSpace 𝕂 F
   refine isLocalDiffeomorph_of_mfderiv_eq hg.contMDiff hn fun y ↦ ?_
   let L := (mfderiv K K' g y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (g y))
   have hinj : Function.Injective L :=

@@ -166,10 +166,10 @@ theorem natCard_cell_eq_bettiNumber_add_coeff_of_cwComplex {n : ℕ}
     Nat.card (cell C j) = bettiNumber k C j +
       ((1 + Polynomial.X) * ∑ i ∈ Finset.range n, monomial i (finrank k (LinearMap.range
         ((cellularChainComplex C (ModuleCat.of k k)).d (i + 1) i).hom))).coeff j := by
-  have h := congrArg (Polynomial.coeff · j)
+  have h := congrArg (fun p : Polynomial ℕ => p.coeff j)
     (sum_range_monomial_natCard_cell_mul_finrank_eq_of_cwComplex C (ModuleCat.of k k) hfinite
       (hn (n + 1) n.lt_succ_self))
-  simp only [Polynomial.coeff_add, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial,
+  simp only [Polynomial.coeff_add, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial_apply,
     Finset.sum_ite_eq', Finset.mem_range, finrank_self, mul_one] at h
   rw [bettiNumber_def]
   split_ifs at h with hj

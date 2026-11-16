@@ -182,7 +182,7 @@ instance : NormedAddCommGroup (regularSubmodule X 𝕜) :=
 instance : NormedSpace 𝕜 (regularSubmodule X 𝕜) :=
   .ofCore normedSpaceCore
 
-theorem enorm_eq (μ : regularSubmodule X 𝕜) :
+theorem eNorm_eq (μ : regularSubmodule X 𝕜) :
     ‖μ‖ₑ = (μ : VectorMeasure X 𝕜).variation univ := by
   rw [← ofReal_norm, norm_def, ofReal_measureReal]
 
@@ -194,7 +194,7 @@ theorem norm_apply_le (μ : regularSubmodule X 𝕜) (s : Set X) :
 /-- The Dirac measure `δₓ` with unit weight, as a scalar measure of regular variation. -/
 def dirac (x : X) : regularSubmodule X 𝕜 :=
   ⟨VectorMeasure.dirac x 1, by
-    rw [mem_regularSubmodule, variation_dirac, enorm_one, one_smul]
+    rw [mem_regularSubmodule, variation_dirac, eNorm_one, one_smul]
     infer_instance⟩
 
 @[simp]

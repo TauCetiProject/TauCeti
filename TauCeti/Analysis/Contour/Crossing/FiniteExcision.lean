@@ -274,11 +274,12 @@ theorem exciseCrossings_perm {γ : ℝ → ℂ} {s : ℂ}
         ht ⟨W, hperm.mem_iff.mpr hW, htW⟩)]
 
 /-- Finite excision preserves piecewise-`C¹` regularity when the windows are pairwise disjoint,
-strictly inside the parameter interval, and their cap endpoints agree with the original curve. -/
+nondegenerate (`lower < upper`), and their cap endpoints agree with the original curve. The
+windows need not lie inside the parameter interval. -/
 theorem _root_.TauCeti.IsPiecewiseC1On.exciseCrossings {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
     {windows : List CircularCapWindow} (hγ : IsPiecewiseC1On γ a b)
     (hpw : windows.Pairwise fun W V => Disjoint W.interval V.interval)
-    (hinside : ∀ W ∈ windows, a < W.lower ∧ W.lower < W.upper ∧ W.upper < b)
+    (hinside : ∀ W ∈ windows, W.lower < W.upper)
     (hstart : ∀ W ∈ windows, γ W.lower = circleMap s W.radius W.startAngle)
     (hend : ∀ W ∈ windows, γ W.upper = circleMap s W.radius W.endAngle) :
     IsPiecewiseC1On (exciseCrossings γ s windows) a b := by
@@ -290,19 +291,19 @@ theorem _root_.TauCeti.IsPiecewiseC1On.exciseCrossings {γ : ℝ → ℂ} {s : �
       have hW := hinside W List.mem_cons_self
       have hfirst : IsPiecewiseC1On (W.excise γ s) a b := by
         simpa only [CircularCapWindow.excise] using
-          hγ.exciseCrossing hW.1 hW.2.1 hW.2.2
+          hγ.exciseCrossing hW
             (hstart W List.mem_cons_self) (hend W List.mem_cons_self)
       refine ih hfirst hpw.2 (fun V hV => hinside V (List.mem_cons_of_mem W hV)) ?_ ?_
       · intro V hV
         rw [W.excise_of_notMem]
         · exact hstart V (List.mem_cons_of_mem W hV)
         · exact fun hmem => Set.disjoint_left.mp (hpw.1 V hV) hmem
-            (left_mem_Icc.mpr (hinside V (List.mem_cons_of_mem W hV)).2.1.le)
+            (left_mem_Icc.mpr (hinside V (List.mem_cons_of_mem W hV)).le)
       · intro V hV
         rw [W.excise_of_notMem]
         · exact hend V (List.mem_cons_of_mem W hV)
         · exact fun hmem => Set.disjoint_left.mp (hpw.1 V hV) hmem
-            (right_mem_Icc.mpr (hinside V (List.mem_cons_of_mem W hV)).2.1.le)
+            (right_mem_Icc.mpr (hinside V (List.mem_cons_of_mem W hV)).le)
 
 /-- Finite excision preserves closedness when both parameter endpoints lie outside every
 replacement window. -/

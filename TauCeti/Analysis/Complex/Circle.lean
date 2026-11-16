@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
@@ -13,7 +14,9 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -24,9 +27,9 @@ stated for unit spheres of real normed spaces (such as their CW structures) appl
 without unfolding the synonym.
 
 It also packages the exponential `t ↦ exp (i t)` as a continuous homomorphism from the real line,
-and records that the coordinate function `z ↦ z` is a unitary element of `C(S¹, ℂ)`. Finally,
-it parametrizes the upper semicircle by the real part, so that the circle is two closed intervals
-glued at their endpoints `±1`.
+computes its velocity `i exp (i t)`, and records that the coordinate function `z ↦ z` is a
+unitary element of `C(S¹, ℂ)`. Finally, it parametrizes the upper semicircle by the real part, so
+that the circle is two closed intervals glued at their endpoints `±1`.
 
 ## Main declarations
 
@@ -40,7 +43,8 @@ glued at their endpoints `±1`.
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
-  of `sphere (0 : ℂ) 1`.
+  of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
+  `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -48,11 +52,13 @@ glued at their endpoints `±1`.
   integer multiple of `2π / n`.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
+* `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
+* `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 -/
 
 public section
@@ -95,6 +101,15 @@ theorem _root_.Complex.zpow_mul_conj_zpow_of_mem_sphere {z : ℂ} (hz : z ∈ sp
   have hz1 : ‖z‖ = 1 := by simpa using hz
   have hz0 : z ≠ 0 := by rintro rfl; simp at hz1
   rw [map_zpow₀, ← Complex.inv_eq_conj hz1, inv_zpow', ← zpow_add₀ hz0, sub_eq_add_neg]
+
+/-- On the unit sphere of `ℂ`, `z ^ k * conj a - a` is fixed by `b ↦ -(z ^ k * conj b)`: at
+`z = e^{iθ}` it lies on the line `i e^{ikθ/2} ℝ`. -/
+theorem _root_.Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere {z : ℂ}
+    (hz : z ∈ sphere (0 : ℂ) 1) (k : ℤ) (a : ℂ) :
+    z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a)) := by
+  rw [map_sub, map_mul, Complex.conj_conj, mul_sub, ← mul_assoc,
+    Complex.zpow_mul_conj_zpow_of_mem_sphere hz, sub_self, zpow_zero]
+  ring
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
@@ -213,6 +228,11 @@ theorem coordinate_mem_unitary : coordinate ∈ unitary C(Circle, ℂ) :=
 theorem inv_eq_self_iff (v : Circle) : v⁻¹ = v ↔ v = 1 ∨ v = -1 := by
   simp [inv_eq_iff_mul_eq_one, ← Circle.coe_inj, mul_self_eq_one_iff]
 
+/-- A point of the circle is real exactly when it is `1` or `-1`. -/
+theorem im_coe_eq_zero_iff (v : Circle) : (v : ℂ).im = 0 ↔ v = 1 ∨ v = -1 := by
+  -- Being real means being fixed by conjugation, which on the circle is inversion.
+  rw [← inv_eq_self_iff, ← coe_inj, coe_inv_eq_conj, Complex.conj_eq_iff_im]
+
 /-! ### The upper semicircle -/
 
 /-- The point `x + √(1 - x²) I` of the upper unit semicircle, for `-1 ≤ x ≤ 1`. Together with
@@ -286,3 +306,15 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
     · simp [hsqrt, abs_of_neg him]
 
 end Circle
+
+namespace TauCeti
+
+open Complex
+
+/-- Read in `ℂ`, the circle exponential `t ↦ exp (t i)` has velocity `i exp (t i)`. -/
+theorem hasDerivAt_coe_circleExp (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ ((Circle.exp s : Circle) : ℂ)) (I * Circle.exp t) t := by
+  simp only [Circle.coe_exp]
+  simpa [mul_comm] using ((ofRealCLM.hasDerivAt (x := t)).mul_const I).cexp
+
+end TauCeti

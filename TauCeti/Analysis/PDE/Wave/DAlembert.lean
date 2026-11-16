@@ -420,9 +420,9 @@ theorem lintegral_enorm_sub_sq_add_enorm_add_sq {A' B' : ℝ → H} (hA : AEStro
       2 * (∫⁻ z, ‖A' z‖ₑ ^ 2) + 2 * ∫⁻ z, ‖B' z‖ₑ ^ 2 := by
   simp_rw [add_comm (‖_ - _‖ₑ ^ 2), parallelogram_law_with_enorm ℝ, mul_add]
   have hA' : AEMeasurable fun x ↦ ‖A' (x + t)‖ₑ ^ 2 :=
-    (hA.comp_measurePreserving (measurePreserving_add_right volume t)).enorm.pow_const 2
+    (hA.comp_measurePreserving (measurePreserving_add_right volume t)).eNorm.pow_const 2
   have hB' : AEMeasurable fun x ↦ ‖B' (x - t)‖ₑ ^ 2 :=
-    (hB.comp_measurePreserving (measurePreserving_sub_right volume t)).enorm.pow_const 2
+    (hB.comp_measurePreserving (measurePreserving_sub_right volume t)).eNorm.pow_const 2
   rw [lintegral_add_left' (hA'.const_mul 2), lintegral_const_mul'' _ hA',
     lintegral_const_mul'' _ hB', lintegral_add_right_eq_self (fun z ↦ ‖A' z‖ₑ ^ 2),
     lintegral_sub_right_eq_self (fun z ↦ ‖B' z‖ₑ ^ 2)]

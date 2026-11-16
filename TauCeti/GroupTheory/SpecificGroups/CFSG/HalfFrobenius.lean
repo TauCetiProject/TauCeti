@@ -15,8 +15,7 @@ The Steinberg endomorphism of a Suzuki, Ree or Tits group is not a Frobenius but
 a half-Frobenius*: the exceptional isogeny `τ` of the pinned ambient group, which squares to the
 prime-field Frobenius, raised to the odd exponent `2 * m + 1`. This file takes that odd power on
 root data, where `τ` already lives as
-`TauCeti.SuzukiReeIndex.datumSpecialIsogeny`, and proves the relation the CFSG roadmap requires of
-it,
+`TauCeti.SuzukiReeIndex.datumSpecialIsogeny`, and proves the relation
 
 ```text
 steinberg (m) ^ 2 = Frob_(p ^ (2 * m + 1)).
@@ -29,7 +28,7 @@ map is `τ` itself. So `TauCeti.SuzukiReeIndex.halfExponent` reads off the `m` t
 share, `fieldExponent_eq_two_mul_halfExponent_add_one` is the odd decomposition, and the Steinberg
 map is the `fieldExponent`-th power throughout. Squaring it then lands on the scaling by
 `TauCeti.LieTypeIndex.fieldOrder` rather than on some separately tabulated field order, which is
-the check that the exponent convention of milestone L2 and the numeric data of milestone I0 agree.
+the check that the exponent convention and the field-order data of the index agree.
 
 The odd power is genuinely a new map and not a rescaled identity: it is a scaling times `τ`, so it
 permutes the roots exactly as `τ` does, by the length-exchanging permutation
@@ -72,11 +71,6 @@ work.
   the numbered simple roots and coroots.
 
 ## References
-
-The odd half-Frobenius power and the relation `steinberg (m) ^ 2 = Frob_(p ^ (2 * m + 1))` are
-milestone L2 of `TauCetiRoadmap/CFSGStatement/README.md`, which fixes the convention followed here,
-including the Tits index as the `m = 0` member. The upstream exceptional isogeny is the Layer 9
-target of `TauCetiRoadmap/ReductiveGroups/README.md`.
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
 * R. W. Carter, *Simple Groups of Lie Type*, §13.

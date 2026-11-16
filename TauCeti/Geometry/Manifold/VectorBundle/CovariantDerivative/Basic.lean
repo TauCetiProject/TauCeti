@@ -32,6 +32,7 @@ section values and fibre vectors.
   of a section differentiable at the base point.
 * `CovariantDerivative.difference_apply_eq_extend`: evaluate the difference of two connections on
   a fibre vector using a local extension.
+* `CovariantDerivative.difference_self`: the difference of a connection with itself vanishes.
 -/
 
 public section
@@ -170,5 +171,11 @@ theorem difference_apply_eq_extend (cov cov' : CovariantDerivative I F V)
     cov.difference cov' x w = cov (FiberBundle.extend F w) x - cov' (FiberBundle.extend F w) x := by
   simpa only [FiberBundle.extend_apply_self] using
     cov.difference_apply cov' (FiberBundle.mdifferentiableAt_extend I F w)
+
+/-- The difference of a connection with itself vanishes. -/
+@[simp]
+theorem difference_self (cov : CovariantDerivative I F V) : cov.difference cov = 0 := by
+  ext x w
+  simp [difference_apply_eq_extend]
 
 end CovariantDerivative

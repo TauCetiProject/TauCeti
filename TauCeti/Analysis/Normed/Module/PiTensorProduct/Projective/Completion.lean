@@ -98,7 +98,7 @@ variable {F : Type*} [AddCommGroup F] [UniformSpace F] [Module 𝕜 F]
 /-- Extend a multilinear map satisfying projective seminorm bounds to the completed projective
 tensor product.  The selected factor seminorms and the bound may depend on the target seminorm. -/
 noncomputable def lift {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminorms q)
-    (f : MultilinearMap 𝕜 E F)
+    (f : MultilinearMap (RingHom.id 𝕜) E F)
     (hf : ∀ j, ∃ (s : ∀ i, Finset (σ i)) (C : NNReal),
       ∀ x, q j (f x) ≤ (C : ℝ) * ∏ i, (s i).sup (p i) (x i)) :
     CompletedProjectiveTensorProduct p →L[𝕜] F :=
@@ -109,7 +109,7 @@ noncomputable def lift {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSem
 /-- The extended map agrees with the original multilinear map on pure tensors. -/
 @[simp]
 theorem lift_tprod {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminorms q)
-    (f : MultilinearMap 𝕜 E F)
+    (f : MultilinearMap (RingHom.id 𝕜) E F)
     (hf : ∀ j, ∃ (s : ∀ i, Finset (σ i)) (C : NNReal),
       ∀ x, q j (f x) ≤ (C : ℝ) * ∏ i, (s i).sup (p i) (x i))
     (x : ∀ i, E i) :
@@ -119,7 +119,7 @@ theorem lift_tprod {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminor
 /-- The completed lift is the unique continuous linear map with the prescribed values on pure
 tensors. -/
 theorem lift_unique {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminorms q)
-    (f : MultilinearMap 𝕜 E F)
+    (f : MultilinearMap (RingHom.id 𝕜) E F)
     (hf : ∀ j, ∃ (s : ∀ i, Finset (σ i)) (C : NNReal),
       ∀ x, q j (f x) ≤ (C : ℝ) * ∏ i, (s i).sup (p i) (x i))
     (g : CompletedProjectiveTensorProduct p →L[𝕜] F)

@@ -37,11 +37,17 @@ the occupation projection onto the coordinates `s` containing `i`
 `⁅εᵢ, ιᵢ⁆` multiplies the coefficient of `s` by `1` if `i ∈ s` and by `-1` otherwise
 (`Module.Basis.lie_exteriorCreation_exteriorContraction_self_apply`), and `ιᵢ` is the transpose
 of `εᵢ` for the standard pairing of coordinate vectors
-(`Module.Basis.sum_exteriorCreation_apply_mul`). Combining the anticommutation relation with
-these commutators, a double sum of products `εᵢ ιⱼ` and `ιⱼ εᵢ` reduces to a diagonal term plus
-commutators (`TauCeti.sum_creation_contraction_of_anticommutator`). For an orthonormal basis of a
-Euclidean space the standard pairing is the induced inner product on `⋀ M`, so `ιᵢ` is the adjoint
-of `εᵢ`.
+(`Module.Basis.sum_exteriorCreation_apply_mul`). Hence `|ιᵢ φ|² + |εᵢ φ|² = |φ|²`
+(`Module.Basis.sum_exteriorContraction_apply_sq_add_sum_exteriorCreation_apply_sq`), and over an
+ordered ring the commutator `⁅εᵢ, ιⱼ⁆` has quadratic form bounded by `|φ|²`
+(`Module.Basis.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le`), so a combination
+`∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆` has quadratic form bounded by `(∑ᵢⱼ |Hᵢⱼ|) |φ|²`
+(`Module.Basis.abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le`).
+Combining the anticommutation relation with these commutators, a double sum of products `εᵢ ιⱼ`
+and `ιⱼ εᵢ` reduces to a diagonal term plus commutators
+(`TauCeti.sum_creation_contraction_of_anticommutator`).
+For an orthonormal basis of a Euclidean space the standard pairing is the induced inner product on
+`⋀ M`, so `ιᵢ` is the adjoint of `εᵢ`.
 
 Coordinate vectors are what one differentiates: a differential form on `ℝⁿ` is a function with
 values in the coordinate space `Finset (Fin n) → ℝ`, a finite-dimensional normed space, and the
@@ -239,6 +245,76 @@ theorem sum_exteriorCreation_apply_mul (i : I) (φ ψ : Finset I → R) :
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hs
     rw [Finset.insert_erase hs, Units.smul_def, Units.smul_def, zsmul_eq_mul, zsmul_eq_mul]
     ring
+
+/-- **Creation and contraction split the squared norm.** For the standard pairing of coordinate
+vectors, `|ιᵢ φ|² + |εᵢ φ|² = |φ|²`: this is the canonical anticommutation relation
+`εᵢ ιᵢ + ιᵢ εᵢ = 1` paired with `φ`, since `ιᵢ` is the transpose of `εᵢ`. -/
+theorem sum_exteriorContraction_apply_sq_add_sum_exteriorCreation_apply_sq (i : I)
+    (φ : Finset I → R) :
+    ∑ s, b.exteriorContraction i φ s ^ 2 + ∑ s, b.exteriorCreation i φ s ^ 2 = ∑ s, φ s ^ 2 := by
+  have h := congr($(b.exteriorCreation_mul_exteriorContraction_add_swap i i) φ)
+  simp only [LinearMap.add_apply, mul_apply_eq_comp, ↓reduceIte, one_apply_eq_self] at h
+  have h₁ : ∑ s, b.exteriorContraction i φ s ^ 2 =
+      ∑ s, b.exteriorCreation i (b.exteriorContraction i φ) s * φ s := by
+    simp only [sq, b.sum_exteriorCreation_apply_mul]
+  have h₂ : ∑ s, b.exteriorCreation i φ s ^ 2 =
+      ∑ s, b.exteriorContraction i (b.exteriorCreation i φ) s * φ s := by
+    simp only [sq, b.sum_exteriorCreation_apply_mul, mul_comm]
+  rw [h₁, h₂, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  rw [← add_mul, ← Pi.add_apply, h, sq]
+
+/-- **The quadratic form of the commutator `⁅εᵢ, ιⱼ⁆` is bounded by the squared norm.** For
+coordinates in an ordered ring, `|⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ |φ|²` for the standard pairing. Indeed
+`⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩ = ⟨ιⱼ φ, ιᵢ φ⟩ - ⟨εⱼ φ, εᵢ φ⟩`, and `|ιₖ φ|² + |εₖ φ|² = |φ|²` for `k = i, j`.
+This bounds the quadratic form only: for `i ≠ j` the operator `⁅εᵢ, ιⱼ⁆ = 2 εᵢ ιⱼ` is not a
+contraction. -/
+theorem abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le [LinearOrder R]
+    [IsStrictOrderedRing R] (i j : I) (φ : Finset I → R) :
+    |∑ s, ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ s * φ s| ≤ ∑ s, φ s ^ 2 := by
+  have hj := b.sum_exteriorContraction_apply_sq_add_sum_exteriorCreation_apply_sq j φ
+  have hi := b.sum_exteriorContraction_apply_sq_add_sum_exteriorCreation_apply_sq i φ
+  set a := b.exteriorContraction j φ
+  set c := b.exteriorContraction i φ
+  set d := b.exteriorCreation j φ
+  set e := b.exteriorCreation i φ
+  have key : ∑ s, ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ s * φ s =
+      ∑ s, (a s * c s - d s * e s) := by
+    simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, Pi.sub_apply, sub_mul,
+      Finset.sum_sub_distrib, b.sum_exteriorCreation_apply_mul]
+    congr 1
+    rw [Finset.sum_congr rfl fun s _ ↦ mul_comm _ _, ← b.sum_exteriorCreation_apply_mul]
+  have hup : ∑ s, 2 * (a s * c s - d s * e s) ≤ ∑ s, (a s ^ 2 + d s ^ 2 + (c s ^ 2 + e s ^ 2)) :=
+    Finset.sum_le_sum fun s _ ↦ by nlinarith [sq_nonneg (a s - c s), sq_nonneg (d s + e s)]
+  have hlow : -∑ s, (a s ^ 2 + d s ^ 2 + (c s ^ 2 + e s ^ 2)) ≤
+      ∑ s, 2 * (a s * c s - d s * e s) := by
+    rw [← Finset.sum_neg_distrib]
+    exact Finset.sum_le_sum fun s _ ↦ by nlinarith [sq_nonneg (a s + c s), sq_nonneg (d s - e s)]
+  simp only [← Finset.mul_sum, Finset.sum_add_distrib, hi, hj] at hup hlow
+  rw [key, abs_le]
+  constructor <;> linarith
+
+/-- **The quadratic form of a weighted sum of commutators `⁅εᵢ, ιⱼ⁆` is bounded by the
+weights.** For coordinates in an ordered ring and any coefficients `Hᵢⱼ`,
+`|⟨∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ (∑ᵢⱼ |Hᵢⱼ|) |φ|²`, by the triangle inequality and the bound for the
+quadratic form of a single commutator. -/
+theorem abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
+    [LinearOrder R] [IsStrictOrderedRing R] (H : I → I → R) (φ : Finset I → R) :
+    |∑ s, (∑ i, ∑ j, H i j • ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ) s * φ s| ≤
+      (∑ i, ∑ j, |H i j|) * ∑ s, φ s ^ 2 := by
+  have h : ∑ s, (∑ i, ∑ j, H i j • ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ) s * φ s =
+      ∑ i, ∑ j, H i j * ∑ s, ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ s * φ s := by
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_mul, Finset.mul_sum,
+      mul_assoc]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm
+  rw [h, Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [abs_mul]
+  exact mul_le_mul_of_nonneg_left
+    (b.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le i j φ) (abs_nonneg _)
 
 end Module.Basis
 

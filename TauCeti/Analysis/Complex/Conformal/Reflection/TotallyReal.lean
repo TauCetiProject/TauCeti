@@ -92,7 +92,7 @@ theorem IsMaximalTotallyReal.contDiffOn_of_boundary_mem
     (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
     (hboundary : ∀ z ∈ Ω, z.im = 0 → f z - q ∈ L) :
     ContDiffOn ℝ ∞ f (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-  let : CompleteSpace E := FiniteDimensional.complete ℂ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
   intro z hz
   by_cases him : z.im = 0
   · -- Near an axis point, intersecting with the reflected domain gives a symmetric neighborhood.

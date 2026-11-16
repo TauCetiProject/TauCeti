@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.OfRepresentation
+public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
+public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.Unitary
 public import TauCeti.Analysis.Fourier.Pontryagin.Density
+public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
+public import Mathlib.GroupTheory.SemidirectProduct
 
 /-!
 # Spectral measure of a unitary representation of a discrete abelian group
@@ -37,6 +40,16 @@ The trivial character carries the invariant vectors: the spectral projection of 
 projection onto the `π`-invariant vectors. Hence `π` has no nonzero invariant vector exactly
 when `P({1}) = 0`.
 
+The spectral measure is natural in the group and in the Hilbert space. Restricting `π` along a
+homomorphism `f` pushes `P` forward along the dual homomorphism `χ ↦ χ ∘ f`, and a unitary
+intertwining two representations intertwines their spectral projections. Combining the two, a
+unitary `U` with `U π(g) = π'(f g) U` satisfies `U P(B) = P'({χ | χ ∘ f ∈ B}) U`. For a unitary
+representation `ρ` of a semidirect product `G ⋊[φ] K` this says that `ρ k` moves the spectral
+measure of `ρ` restricted to `G` by the map `χ ↦ χ ∘ φ k` on the characters of `G`, and likewise
+for the diagonal measures `B ↦ ‖P(B) ξ‖²`. For `ℤ² ⋊ SL₂(ℤ)` this is the equivariance of the
+spectral measure on the torus `𝕋²` under the dual action of `SL₂(ℤ)`, the starting point of the
+spectral proof of relative property (T) of `(ℤ² ⋊ SL₂(ℤ), ℤ²)`.
+
 ## Main declarations
 
 * `ContRepresentation.spectralStarAlgHom`: the spectral calculus of `π`, and its
@@ -51,12 +64,21 @@ when `P({1}) = 0`.
   spectral measure are those commuting with `π`.
 * `ContRepresentation.range_spectralPVM_proj_singleton_one`: `P({1})` projects onto the
   `π`-invariant vectors.
+* `ContRepresentation.spectralPVM_restrict`: restriction along a homomorphism pushes the spectral
+  measure forward along the dual homomorphism.
+* `ContRepresentation.apply_spectralPVM_proj_of_intertwines_restrict`,
+  `ContRepresentation.map_diag_spectralPVM_of_intertwines_restrict`: equivariance of the spectral
+  projections and diagonal measures under a unitary intertwiner.
+* `ContRepresentation.apply_inr_spectralPVM_restrict_inl_proj`,
+  `ContRepresentation.map_diag_spectralPVM_restrict_inl_apply_inr`: equivariance of the spectral
+  measure of the normal abelian factor of a semidirect product.
 
 ## References
 
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC Press (2016), §4.4.
 * B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Cambridge University Press
   (2008), Appendix D.
+* C. Anantharaman and S. Popa, *An Introduction to II₁ Factors*, Example 14.2.8.
 -/
 
 public section
@@ -373,5 +395,125 @@ theorem spectralPVM_proj_singleton_one_eq_zero_iff (hπ : π.IsUnitary) :
     ← ContinuousLinearMap.toLinearMap_zero, ContinuousLinearMap.coe_inj]
 
 end Measure
+
+section Equivariance
+
+/-! ### Naturality and equivariance -/
+
+variable [MeasurableSpace (PontryaginDual (Multiplicative G))]
+  [BorelSpace (PontryaginDual (Multiplicative G))]
+  {G' : Type*} [AddCommGroup G'] [TopologicalSpace G'] [DiscreteTopology G']
+  [MeasurableSpace (PontryaginDual (Multiplicative G'))]
+  [BorelSpace (PontryaginDual (Multiplicative G'))]
+  {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
+
+/-- **Naturality of the spectral measure.** Restricting `π` along a homomorphism `f` pushes its
+spectral measure forward along the dual homomorphism `χ ↦ χ ∘ f`. -/
+@[simp]
+theorem spectralPVM_restrict (hπ : π.IsUnitary) (f : Multiplicative G' →ₜ* Multiplicative G) :
+    (π.restrict (f : Multiplicative G' →* Multiplicative G)).spectralPVM (hπ.restrict _) =
+      (π.spectralPVM hπ).map (PontryaginDual.map f)
+        (map_continuous (PontryaginDual.map f)).measurable := by
+  symm
+  refine ((π.restrict _).eq_spectralPVM_iff (hπ.restrict _) _ fun ξ => ?_).2 fun g => ?_
+  · -- The pushforward of a finite regular measure along a continuous map is regular.
+    rw [ProjValMeasure.map_diag]
+    have := Measure.InnerRegularCompactLTTop.map_of_continuous (μ := (π.spectralPVM hπ).diag ξ)
+      (map_continuous (PontryaginDual.map f))
+    infer_instance
+  · have h : BoundedBorelFunction.compStarAlgHom' (PontryaginDual.map f)
+        (map_continuous (PontryaginDual.map f)).measurable
+          (BoundedBorelFunction.ofContinuousMap (evalBoundedContinuous g).toContinuousMap) =
+        BoundedBorelFunction.ofContinuousMap
+          (evalBoundedContinuous (f (.ofAdd g)).toAdd).toContinuousMap := by
+      ext χ
+      simp
+    rw [ProjValMeasure.integral_map, h, integral_spectralPVM_evalBoundedContinuous,
+      restrict_apply, ofAdd_toAdd, MonoidHom.coe_ofClass]
+
+/-- **Unitary transport of the spectral measure.** A unitary `U` intertwining `π` with `π'`
+intertwines their spectral projections: `U ∘ P_π(B) = P_π'(B) ∘ U`. -/
+theorem apply_spectralPVM_proj_of_intertwines {π' : ContRepresentation ℂ (Multiplicative G) H'}
+    (hπ : π.IsUnitary) (hπ' : π'.IsUnitary) (U : H ≃ₗᵢ[ℂ] H')
+    (hU : ∀ g ξ, U (π g ξ) = π' g (U ξ)) {B : Set (PontryaginDual (Multiplicative G))}
+    (hB : MeasurableSet B) (ξ : H) :
+    U ((π.spectralPVM hπ).proj B hB ξ) = (π'.spectralPVM hπ').proj B hB (U ξ) := by
+  have h : π'.spectralStarAlgHom hπ' =
+      U.conjStarAlgEquiv.toStarAlgHom.comp (π.spectralStarAlgHom hπ) := by
+    refine ((π'.eq_spectralStarAlgHom_iff hπ' _).2 fun g => ?_).symm
+    ext η
+    simp [hU]
+  unfold spectralPVM
+  rw [h, StarAlgHom.ofRepresentation_proj_conj, LinearIsometryEquiv.conjStarAlgEquiv_apply_apply,
+    U.symm_apply_apply]
+
+/-- **Equivariance of the spectral measure.** If a unitary `U` intertwines `π` with the
+restriction of `π'` along a homomorphism `f`, then `U ∘ P_π(B) = P_π'(f̂⁻¹(B)) ∘ U`, where
+`f̂ : χ ↦ χ ∘ f` is the dual homomorphism. -/
+theorem apply_spectralPVM_proj_of_intertwines_restrict
+    {π' : ContRepresentation ℂ (Multiplicative G') H'} (hπ : π.IsUnitary) (hπ' : π'.IsUnitary)
+    (U : H ≃ₗᵢ[ℂ] H') (f : Multiplicative G →ₜ* Multiplicative G')
+    (hU : ∀ g ξ, U (π g ξ) = π' (f g) (U ξ)) {B : Set (PontryaginDual (Multiplicative G))}
+    (hB : MeasurableSet B) (ξ : H) :
+    U ((π.spectralPVM hπ).proj B hB ξ) =
+      (π'.spectralPVM hπ').proj (PontryaginDual.map f ⁻¹' B)
+        ((map_continuous (PontryaginDual.map f)).measurable hB) (U ξ) := by
+  rw [apply_spectralPVM_proj_of_intertwines hπ (hπ'.restrict _) U hU hB,
+    spectralPVM_restrict, ProjValMeasure.map_proj]
+
+/-- **Equivariance of the diagonal spectral measures.** If a unitary `U` intertwines `π` with the
+restriction of `π'` along a homomorphism `f`, then pushing the diagonal measure of `U ξ` forward
+along the dual homomorphism `f̂ : χ ↦ χ ∘ f` gives the diagonal measure of `ξ`. -/
+theorem map_diag_spectralPVM_of_intertwines_restrict
+    {π' : ContRepresentation ℂ (Multiplicative G') H'} (hπ : π.IsUnitary) (hπ' : π'.IsUnitary)
+    (U : H ≃ₗᵢ[ℂ] H') (f : Multiplicative G →ₜ* Multiplicative G')
+    (hU : ∀ g ξ, U (π g ξ) = π' (f g) (U ξ)) (ξ : H) :
+    Measure.map (PontryaginDual.map f) ((π'.spectralPVM hπ').diag (U ξ)) =
+      (π.spectralPVM hπ).diag ξ := by
+  have hf := (map_continuous (PontryaginDual.map f)).measurable
+  ext B hB
+  rw [Measure.map_apply hf hB,
+    ← ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _),
+    ← ProjValMeasure.norm_sq_proj_apply _ _ (hf hB), ← ProjValMeasure.norm_sq_proj_apply _ _ hB,
+    ← apply_spectralPVM_proj_of_intertwines_restrict hπ hπ' U f hU hB, U.norm_map]
+
+section SemidirectProduct
+
+open SemidirectProduct (inl inr)
+
+variable {K : Type*} [Group K] {φ : K →* MulAut (Multiplicative G)}
+  {ρ : ContRepresentation ℂ (Multiplicative G ⋊[φ] K) H}
+
+/-- **Equivariance of the spectral measure in a semidirect product.** For a unitary
+representation `ρ` of `G ⋊[φ] K` with `G` discrete abelian, the operator `ρ k` carries the spectral
+projection of a set `B` of characters of `G`, for the restriction of `ρ` to `G`, to the spectral
+projection of `{χ | χ ∘ φ k ∈ B}`. -/
+theorem apply_inr_spectralPVM_restrict_inl_proj (hρ : ρ.IsUnitary) (k : K)
+    {B : Set (PontryaginDual (Multiplicative G))} (hB : MeasurableSet B) (ξ : H) :
+    ρ (inr k) (((ρ.restrict inl).spectralPVM (hρ.restrict _)).proj B hB ξ) =
+      ((ρ.restrict inl).spectralPVM (hρ.restrict _)).proj
+        (PontryaginDual.map ⟨(φ k).toMonoidHom, continuous_of_discreteTopology⟩ ⁻¹' B)
+        ((map_continuous (PontryaginDual.map _)).measurable hB) (ρ (inr k) ξ) := by
+  rw [← hρ.coe_toLinearIsometryEquiv (inr k)]
+  exact apply_spectralPVM_proj_of_intertwines_restrict (hρ.restrict _) (hρ.restrict _)
+    (hρ.toLinearIsometryEquiv (inr k)) _
+    (fun g η => by rw [IsUnitary.coe_toLinearIsometryEquiv]; exact ρ.apply_inr_apply_inl k g η) hB ξ
+
+/-- **Equivariance of the diagonal spectral measures in a semidirect product.** For a unitary
+representation `ρ` of `G ⋊[φ] K` with `G` discrete abelian, pushing the diagonal spectral measure
+of `ρ k ξ`, for the restriction of `ρ` to `G`, forward along `χ ↦ χ ∘ φ k` gives the diagonal
+spectral measure of `ξ`. -/
+theorem map_diag_spectralPVM_restrict_inl_apply_inr (hρ : ρ.IsUnitary) (k : K) (ξ : H) :
+    Measure.map (PontryaginDual.map ⟨(φ k).toMonoidHom, continuous_of_discreteTopology⟩)
+        (((ρ.restrict inl).spectralPVM (hρ.restrict _)).diag (ρ (inr k) ξ)) =
+      ((ρ.restrict inl).spectralPVM (hρ.restrict _)).diag ξ := by
+  rw [← hρ.coe_toLinearIsometryEquiv (inr k)]
+  exact map_diag_spectralPVM_of_intertwines_restrict (hρ.restrict _) (hρ.restrict _)
+    (hρ.toLinearIsometryEquiv (inr k)) _
+    (fun g η => by rw [IsUnitary.coe_toLinearIsometryEquiv]; exact ρ.apply_inr_apply_inl k g η) ξ
+
+end SemidirectProduct
+
+end Equivariance
 
 end ContRepresentation

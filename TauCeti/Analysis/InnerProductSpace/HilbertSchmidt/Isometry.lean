@@ -60,8 +60,9 @@ theorem hilbertSchmidtEnergy_isometry_comp (U : F →L[𝕜] G) (hU : ∀ x, ‖
     (U ∘L T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
   simp [hilbertSchmidtEnergy_def, ← ofReal_norm, hU]
 
-variable [CompleteSpace E] [CompleteSpace F] [CompleteSpace G]
+variable [CompleteSpace E] [CompleteSpace F]
 
+omit [CompleteSpace F] in
 /-- **Left isometric invariance of the Hilbert–Schmidt norm.** If `U` preserves norms, then
 `‖U T‖_HS = ‖T‖_HS`. -/
 theorem hilbertSchmidtNorm_isometry_comp (U : F →L[𝕜] G) (hU : ∀ x, ‖U x‖ = ‖x‖)
@@ -76,8 +77,11 @@ theorem hilbertSchmidtNorm_isometry_comp (U : F →L[𝕜] G) (hU : ∀ x, ‖U 
 theorem hilbertSchmidtEnergy_comp_coisometry (T : F →L[𝕜] G) (V : E →L[𝕜] F)
     (hV : ∀ x, ‖adjoint V x‖ = ‖x‖) (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis ι' 𝕜 F) :
     (T ∘L V).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy c := by
-  obtain ⟨w, d, -⟩ := exists_hilbertBasis 𝕜 G
-  rw [← hilbertSchmidtEnergy_adjoint _ b d, ← hilbertSchmidtEnergy_adjoint T c d, adjoint_comp,
+  -- Adjoints need a complete target, so first embed `G` into its completion.
+  rw [← hilbertSchmidtEnergy_toComplL_comp (T ∘L V) b, ← hilbertSchmidtEnergy_toComplL_comp T c,
+    ← comp_assoc]
+  obtain ⟨w, d, -⟩ := exists_hilbertBasis 𝕜 (UniformSpace.Completion G)
+  rw [← hilbertSchmidtEnergy_adjoint _ b d, ← hilbertSchmidtEnergy_adjoint _ c d, adjoint_comp,
     hilbertSchmidtEnergy_isometry_comp _ hV]
 
 /-- **Right coisometric invariance of the Hilbert–Schmidt norm.** If the adjoint of `V` preserves
@@ -101,7 +105,7 @@ theorem hilbertSchmidtEnergy_isometry_comp_coisometry (U : G →L[𝕜] H) (hU :
 /-- **Two-sided isometric invariance of the Hilbert–Schmidt norm.** If `U` and the adjoint of `V`
 preserve norms, then `‖U T V‖_HS = ‖T‖_HS`. In particular the Hilbert–Schmidt norm is invariant
 under conjugation by unitaries. -/
-theorem hilbertSchmidtNorm_isometry_comp_coisometry [CompleteSpace H] (U : G →L[𝕜] H)
+theorem hilbertSchmidtNorm_isometry_comp_coisometry (U : G →L[𝕜] H)
     (hU : ∀ x, ‖U x‖ = ‖x‖) (T : F →L[𝕜] G) (V : E →L[𝕜] F) (hV : ∀ x, ‖adjoint V x‖ = ‖x‖) :
     (U ∘L T ∘L V).hilbertSchmidtNorm = T.hilbertSchmidtNorm := by
   rw [hilbertSchmidtNorm_isometry_comp U hU, hilbertSchmidtNorm_comp_coisometry T V hV]

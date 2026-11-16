@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Map
 /-!
 # The loop formula for the boundary Maslov index on the annulus
 
-Let `E` be a finite-dimensional complex normed space and `A = {z | r ≤ ‖z‖ ≤ R}` the closed
+Let `E` be a complex normed space and `A = {z | r ≤ ‖z‖ ≤ R}` the closed
 annulus, `0 ≤ r ≤ R`. A bundle pair `(E, F)` over `A` read in a trivialization `A × E` is a pair of
 loops of maximal totally real subspaces of `E` (`TauCeti.TotallyRealLoop`): `Λ` on the outer circle,
 parametrized counterclockwise by `t ↦ R e^{2πit}`, and `Γ` on the inner circle, parametrized
@@ -60,7 +60,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- **Independence of the trivialization on the annulus.** Let `B` be a continuous map from the
 closed annulus `r ≤ ‖z‖ ≤ R` to the complex-linear automorphisms of `E`, with loops of boundary

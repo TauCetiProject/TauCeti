@@ -25,11 +25,19 @@ inverting an unbounded set adds `0`, the image of infinity, to the closure. Comp
 inversion of a set by `0` commutes with closures, and turns an open set with bounded complement
 into an open set.
 
+On a closed ball `closedBall c r` not containing `w`, the inversion `z ↦ (w - z)⁻¹` about `w` is
+bounded by `(‖w - c‖ - r)⁻¹`, so its `n`-th power is bounded by `((‖w - c‖ - r) ^ n)⁻¹`, and
+it stays within `r / ((‖w - c‖ - r) ‖w - c‖)` of its value at the centre. These are the kernel
+estimates that describe a Cauchy-type integral far from its data.
+
 ## Main results
 
 * `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.image_inv_sub_eq_preimage_add_inv`: the inversion about `q` maps a set onto its
   preimage under `w ↦ q + w⁻¹`.
+* `TauCeti.bijOn_inv_compl_ball_one`, `TauCeti.bijOn_inv_compl_closedBall_one` and
+  `TauCeti.bijOn_inv_sphere_one`: inversion exchanges the exterior of the unit ball, of the closed
+  unit ball, and the unit sphere with the punctured closed ball, the punctured ball and the sphere.
 * `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`: the inversion of a closed bounded set about
   any centre, with the centre removed, is closed.
 * `TauCeti.isBounded_image_inv_sub`: the inversion of a set about a point outside its closure is
@@ -49,6 +57,11 @@ into an open set.
   inverted frontier as frontier.
 * `TauCeti.mapsTo_inv_ball_diff_singleton_compl_closedBall`: the inversion maps the punctured ball
   of radius `R⁻¹` about `0` outside the closed ball of radius `R`.
+* `TauCeti.norm_inv_sub_le_of_mem_closedBall`, `TauCeti.norm_inv_sub_pow_le_of_mem_closedBall`
+  and `TauCeti.norm_inv_sub_sub_inv_sub_le_of_mem_closedBall`: on a closed ball `closedBall c r`
+  not containing `w`, `‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹`,
+  `‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹` and
+  `‖(w - z)⁻¹ - (w - c)⁻¹‖ ≤ r / ((‖w - c‖ - r) ‖w - c‖)`.
 -/
 
 public section
@@ -78,6 +91,32 @@ theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
 end DivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
+
+section UnitBall
+
+/-- Inversion is a bijection from the closed exterior `(ball 0 1)ᶜ` of the unit ball onto the
+punctured closed unit ball. -/
+theorem bijOn_inv_compl_ball_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (ball 0 1)ᶜ (closedBall 0 1 \ {0}) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_le_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection from the exterior `(closedBall 0 1)ᶜ` of the closed unit ball onto
+the punctured open unit ball. -/
+theorem bijOn_inv_compl_closedBall_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (closedBall 0 1)ᶜ (ball 0 1 \ {0}) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_lt_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection of the unit sphere. -/
+theorem bijOn_inv_sphere_one : BijOn (fun w : 𝕜 => w⁻¹) (sphere 0 1) (sphere 0 1) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by simp
+
+end UnitBall
 
 /-- **The inversion of a closed bounded set is closed.** For closed bounded `K` and any `q`, the
 image `{w | w ≠ 0 ∧ q + w⁻¹ ∈ K}` of `K \ {q}` under `z ↦ (z - q)⁻¹` is closed: it stays away
@@ -136,6 +175,36 @@ theorem mapsTo_inv_ball_diff_singleton_compl_closedBall (R : ℝ) :
   simp only [mem_ball_zero_iff, mem_singleton_iff] at hw hw0
   have hR : 0 < R := inv_pos.1 ((norm_nonneg w).trans_lt hw)
   simpa [norm_inv] using (lt_inv_comm₀ (norm_pos_iff.2 hw0) hR).1 hw
+
+/-- On a closed ball `closedBall c r` not containing `w`, the inversion about `w` is bounded:
+`‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹`. -/
+theorem norm_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ} (hz : z ∈ closedBall c r)
+    (hw : r < ‖w - c‖) : ‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹ := by
+  rw [norm_inv]
+  exact inv_anti₀ (sub_pos.mpr hw)
+    (by linarith [norm_sub_le_norm_sub_add_norm_sub w z c, mem_closedBall_iff_norm.mp hz])
+
+/-- On a closed ball `closedBall c r` not containing `w`, the powers of the inversion about `w`
+are bounded: `‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹`. -/
+theorem norm_inv_sub_pow_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ} (hz : z ∈ closedBall c r)
+    (hw : r < ‖w - c‖) (n : ℕ) : ‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹ := by
+  rw [← inv_pow, norm_pow, ← inv_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (norm_inv_sub_le_of_mem_closedBall hz hw) n
+
+/-- On a closed ball `closedBall c r` not containing `w`, the inversion about `w` differs from its
+value at the centre by at most `r / ((‖w - c‖ - r) ‖w - c‖)`. -/
+theorem norm_inv_sub_sub_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ}
+    (hz : z ∈ closedBall c r) (hw : r < ‖w - c‖) :
+    ‖(w - z)⁻¹ - (w - c)⁻¹‖ ≤ r / ((‖w - c‖ - r) * ‖w - c‖) := by
+  have hzc := mem_closedBall_iff_norm.mp hz
+  have hρ : 0 < ‖w - c‖ := ((norm_nonneg _).trans hzc).trans_lt hw
+  have hwz : 0 < ‖w - z‖ := by linarith [norm_sub_le_norm_sub_add_norm_sub w z c]
+  rw [inv_sub_inv' (norm_pos_iff.mp hwz) (norm_pos_iff.mp hρ), sub_sub_sub_cancel_left,
+    norm_mul, norm_mul, norm_inv (w - c)]
+  calc ‖(w - z)⁻¹‖ * ‖z - c‖ * ‖w - c‖⁻¹ ≤ (‖w - c‖ - r)⁻¹ * r * ‖w - c‖⁻¹ := by
+        gcongr
+        exact norm_inv_sub_le_of_mem_closedBall hz hw
+    _ = r / ((‖w - c‖ - r) * ‖w - c‖) := by field_simp
 
 section Completion
 

@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.Morse.SquaredDistance
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
+import TauCeti.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
 # Squared distance on complex manifolds
@@ -29,7 +31,9 @@ shows that for a smooth holomorphic immersion of a second-countable complex mani
 finite-dimensional complex inner product space and almost every center `a`, `y ↦ ‖i y - a‖²` is a
 real Morse function whose critical points all have index at most `finrank ℂ E`
 (`TauCeti.ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le`,
-`TauCeti.exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le`).
+`TauCeti.exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le`). When the immersion is
+moreover proper into a proper space, such a squared distance is a proper Morse exhaustion, bounded
+below (`TauCeti.exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le`).
 
 Along the inclusion of an open subset, squared distance is strictly plurisubharmonic at every
 point (`TauCeti.isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal`).
@@ -207,5 +211,30 @@ theorem exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
   exact (ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le Measure.addHaar hi hinj).exists
 
 end Immersion
+
+section ProperImmersion
+
+variable [FiniteDimensional ℂ E] [ProperSpace F] [IsManifold 𝓘(ℂ, E) ∞ M]
+
+/-- **A proper low-index squared-distance Morse exhaustion along a proper holomorphic
+immersion.** If `i` is a smooth proper holomorphic immersion of a complex manifold of complex
+dimension `n` into a proper complex inner product space, then for some centre `a` the squared
+distance `x ↦ ‖i x - a‖²` is a proper Morse function, bounded below, all of whose critical points
+have Morse index at most `n`. -/
+theorem exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le
+    (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
+    (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) (hip : IsProperMap i) :
+    ∃ a : F, IsMorse 𝓘(ℝ, E) (fun x ↦ ‖i x - a‖ ^ 2) ∧
+      IsProperMap (fun x ↦ ‖i x - a‖ ^ 2) ∧ BddBelow (Set.range fun x ↦ ‖i x - a‖ ^ 2) ∧
+      ∀ x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2),
+        manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
+  have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
+  have : SigmaCompactSpace M := hip.sigmaCompactSpace
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact E M
+  obtain ⟨a, ha, hidx⟩ := exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj
+  exact ⟨a, ha, (isProperMap_norm_sq_sub_comp_iff hi.continuous a).2 hip,
+    ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩, hidx⟩
+
+end ProperImmersion
 
 end TauCeti

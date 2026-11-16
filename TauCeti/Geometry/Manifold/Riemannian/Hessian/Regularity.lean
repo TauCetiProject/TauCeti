@@ -42,7 +42,7 @@ theorem contMDiffAt_hessian_pair (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {f : M �
     (hP : ContMDiffAt J I.tangent n (fun y ↦ TotalSpace.mk' E (γ y) (P y)) x)
     (hQ : ContMDiffAt J I.tangent n (fun y ↦ TotalSpace.mk' E (γ y) (Q y)) x) :
     ContMDiffAt J 𝓘(ℝ) n (fun y ↦ hessian I f (γ y) (P y) (Q y)) x := by
-  have hγ : ContMDiffAt J I n γ x := (contMDiffAt_totalSpace.mp hP).1
+  have hγ : ContMDiffAt J I n γ x := (contMDiffAt_totalSpace_iff.mp hP).1
   have h2 : n + 1 + 1 = n + 2 := by rw [add_assoc, one_add_one_eq_two]
   have : IsManifold I (n + 1 + 1) M := IsManifold.of_le (n := m) (h2 ▸ hm)
   have : IsContMDiffRiemannianBundle I (n + 1) E (fun x : M ↦ TangentSpace I x) :=

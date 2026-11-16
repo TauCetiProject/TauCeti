@@ -98,7 +98,7 @@ private theorem cauchySeq_ofTestFunctionₗ_monoCLM_mul {U : Opens E} (hUO : U �
         2 ^ (k + 1) * M * ‖r n - r m‖ := by
     intro n m
     rw [← map_sub, ← map_sub, norm_ofTestFunctionₗ_monoCLM hUO k]
-    refine norm_ofTestFunctionₗ_le_of_eqOn_mul k hzeta hM0 hM (r n - r m)
+    refine norm_ofTestFunctionₗ_le_of_eqOn_mul k hzeta hM (r n - r m)
       (f := fun x => psi n x - psi m x)
       ((((psi n).contDiff.sub (psi m).contDiff).of_le (by simp)).contDiffOn) ?_ _
       (fun x _ => by simp [hPhiU, mul_sub])

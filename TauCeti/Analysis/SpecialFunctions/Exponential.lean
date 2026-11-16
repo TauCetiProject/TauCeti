@@ -248,7 +248,7 @@ theorem summable_expFDerivTerm (x : R) : Summable (expFDerivTerm 𝕂 x) :=
       exact (expSeries 𝕂 R).radius_le_radius_derivSeries
     rw [hr]
     rw [Metric.mem_eball, edist_zero_right]
-    exact enorm_lt_top)).congr
+    exact eNorm_lt_top)).congr
       fun n ↦ (expFDerivTerm_eq_derivSeries (𝕂 := 𝕂) x n).symm
 
 /-- Applying the derivative terms to a fixed tangent vector gives a summable series. -/
@@ -268,7 +268,7 @@ theorem hasFDerivAt_exp (x : R) :
     HasFDerivAt exp (expFDeriv 𝕂 x) x := by
   have hx : ‖x‖ₑ < (expSeries 𝕂 R).radius := by
     rw [expSeries_radius_eq_top]
-    exact enorm_lt_top
+    exact eNorm_lt_top
   have h := (expSeries 𝕂 R).hasFDerivAt_sum hx
   have hderiv : (expSeries 𝕂 R).derivSeries.sum x = expFDeriv 𝕂 x := by
     rw [FormalMultilinearSeries.sum, expFDeriv]

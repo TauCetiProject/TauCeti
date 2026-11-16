@@ -65,7 +65,7 @@ theorem contMDiffAt_flip_section
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y)) x) :
     ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y).flip) x := by
-  rw [contMDiffAt_section] at hb ⊢
+  rw [contMDiffAt_section_iff] at hb ⊢
   -- The unbundled bound avoids identifying the normed and seminormed structures on hom spaces.
   have hflip : IsBoundedLinearMap 𝕜 (fun c : F →L[𝕜] F →L[𝕜] G ↦ c.flip) :=
     { map_add := fun c d ↦ by ext v w; simp

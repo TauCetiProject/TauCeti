@@ -175,7 +175,7 @@ theorem closure_splitGluingPairs :
     have h := ContinuousOn.image_closure (s := Ioc 0 r₀) (f := F)
       (by rwa [closure_Ioc hr₀.ne])
     simpa only [closure_Ioc hr₀.ne] using h
-  rw [← himage, hclosure, ← Ioc_insert_left hr₀.le, image_insert_eq, hF₀]
+  rw [← himage, hclosure, ← insert_left_Ioc hr₀.le, image_insert_eq, hF₀]
 
 /-- The local compactified gluing space is a closed interval. Its inverse gluing coordinate
 is the expanding entrance norm divided by the box radius, and parameter zero is the broken
@@ -189,7 +189,7 @@ theorem exists_homeomorph_closure_splitGluingPairs :
     exists_splitGluingPairs_parametrization hg hgε hk hkε hε hr₀₁ hK
   have hclosure : closure (splitGluingPairs ε r₀ g k) = F '' Icc 0 r₀ := by
     rw [closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK, ← himage,
-      ← hF₀, ← image_insert_eq, Ioc_insert_left hr₀.le]
+      ← hF₀, ← image_insert_eq, insert_left_Ioc hr₀.le]
   let f : Icc (0 : ℝ) r₀ → closure (splitGluingPairs ε r₀ g k) :=
     fun r ↦ ⟨F r, by rw [hclosure]; exact mem_image_of_mem F r.property⟩
   have hf : Continuous f := hF.domRestrict.codRestrict _

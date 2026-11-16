@@ -20,9 +20,10 @@ sum of the norms of its two components.  For `p = 1` the bound is an identity fo
 It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
-Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, and that a graph map
-`x ↦ (f x, u x)` into `WithLp p (E × V)` is the sum of `f` and `u` followed by the inclusions of
-the two factors.
+Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, that an indexed family of pairs in
+`WithLp p (α × β)` has bounded range if and only if each coordinate family does, and that a graph
+map `x ↦ (f x, u x)` into `WithLp p (E × V)` is the sum of `f` and `u` followed by the inclusions
+of the two factors.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
@@ -35,6 +36,8 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 ## Main statements
 
 * `WithLp.prod_norm_le_norm_fst_add_norm_snd` — the bound `‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖`.
+* `WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero`, `WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero` —
+  a pair with one vanishing component has the norm of the other.
 * `WithLp.prod_norm_nonneg` — the norm of a pair is nonnegative, in possibly noncommutative
   seminormed groups.
 * `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
@@ -43,6 +46,8 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
   strictly less than `1`.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
   of the component.
+* `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
+  and only if `Set.range f` and `Set.range g` are bounded.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
@@ -65,6 +70,22 @@ universe u v
 namespace TauCeti
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {α β : Type*}
+
+/-- A pair whose second component vanishes has the norm of its first component. -/
+theorem _root_.WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {x : WithLp p (α × β)} (hx : x.snd = 0) : ‖x‖ = ‖x.fst‖ := by
+  obtain ⟨a, b⟩ := x
+  simp only [WithLp.toLp_snd] at hx
+  subst hx
+  simp only [WithLp.toLp_fst, WithLp.norm_toLp_fst]
+
+/-- A pair whose first component vanishes has the norm of its second component. -/
+theorem _root_.WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {x : WithLp p (α × β)} (hx : x.fst = 0) : ‖x‖ = ‖x.snd‖ := by
+  obtain ⟨a, b⟩ := x
+  simp only [WithLp.toLp_fst] at hx
+  subst hx
+  simp only [WithLp.toLp_snd, WithLp.norm_toLp_snd]
 
 /-- The `ℓ^p` norm of a pair is at most the sum of the norms of its two components. -/
 theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd [SeminormedAddCommGroup α]
@@ -169,6 +190,26 @@ theorem _root_.WithLp.snd_indicator (f : ι → WithLp p (α × β)) (x : ι) :
   (congr_fun (Set.indicator_comp_of_zero (g := WithLp.snd) WithLp.zero_snd) x).symm
 
 end Indicator
+
+section Bornology
+
+variable {p : ℝ≥0∞} {ι : Sort*} {α β : Type*} [Bornology α] [Bornology β]
+
+/-- A family of pairs in `WithLp p (α × β)` has bounded range if and only if each coordinate
+family has bounded range. -/
+@[simp]
+theorem isBounded_range_toLp {f : ι → α} {g : ι → β} :
+    Bornology.IsBounded (Set.range fun i ↦ WithLp.toLp p (f i, g i)) ↔
+      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) := by
+  have hfst : Prod.fst '' (WithLp.ofLp '' Set.range fun i ↦ WithLp.toLp p (f i, g i)) =
+      Set.range f := by
+    rw [Set.image_image, ← Set.range_comp]; rfl
+  have hsnd : Prod.snd '' (WithLp.ofLp '' Set.range fun i ↦ WithLp.toLp p (f i, g i)) =
+      Set.range g := by
+    rw [Set.image_image, ← Set.range_comp]; rfl
+  rw [Bornology.isBounded_induced, ← Bornology.isBounded_image_fst_and_snd, hfst, hsnd]
+
+end Bornology
 
 section Graph
 

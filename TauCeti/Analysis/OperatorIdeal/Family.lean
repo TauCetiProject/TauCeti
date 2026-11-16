@@ -123,7 +123,7 @@ theorem gauge_zero : Φ.gauge (0 : E →L[𝕜] F) = 0 := by
 theorem gauge_eq_zero_iff (A : E →L[𝕜] F) : Φ.gauge A = 0 ↔ A = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ Φ.gauge_zero⟩
   have hzero : ‖A‖ₑ = 0 := le_antisymm (h ▸ Φ.enorm_le_gauge A) bot_le
-  exact (ENormedAddMonoid.enorm_eq_zero A).mp hzero
+  exact (ENormedAddMonoid.eNorm_eq_zero A).mp hzero
 
 /-- Negating an operator does not change its operator-ideal gauge. -/
 @[simp]
@@ -145,7 +145,7 @@ theorem gauge_comp_left_le {G : Type w}
     Φ.gauge (L ∘L A) ≤ ‖L‖ₑ * Φ.gauge A * ‖ContinuousLinearMap.id 𝕜 E‖ₑ := by
       simpa using Φ.gauge_comp_le L A (ContinuousLinearMap.id 𝕜 E)
     _ ≤ ‖L‖ₑ * Φ.gauge A := mul_le_of_le_one_right' <| by
-      rw [enorm_eq_nnnorm]
+      rw [eNorm_eq_nnNorm]
       exact_mod_cast ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := E)
 
 /-- Composition on the right satisfies the one-sided ideal inequality. -/
@@ -158,7 +158,7 @@ theorem gauge_comp_right_le {H : Type v}
       simpa using Φ.gauge_comp_le (ContinuousLinearMap.id 𝕜 F) A R
     _ ≤ Φ.gauge A * ‖R‖ₑ := by
       have hid : ‖ContinuousLinearMap.id 𝕜 F‖ₑ ≤ 1 := by
-        rw [enorm_eq_nnnorm]
+        rw [eNorm_eq_nnNorm]
         exact_mod_cast ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := F)
       have hmul : ‖ContinuousLinearMap.id 𝕜 F‖ₑ * Φ.gauge A ≤ Φ.gauge A :=
         mul_le_of_le_one_left' hid
@@ -170,7 +170,7 @@ theorem gauge_comp_left_le_self {G : Type w}
     {L : F →L[𝕜] G} (hL : ‖L‖ ≤ 1) (A : E →L[𝕜] F) :
     Φ.gauge (L ∘L A) ≤ Φ.gauge A := by
   refine (Φ.gauge_comp_left_le L A).trans ?_
-  rw [enorm_eq_nnnorm]
+  rw [eNorm_eq_nnNorm]
   exact mul_le_of_le_one_left' (by exact_mod_cast hL)
 
 /-- Right composition by a contraction does not increase an operator-ideal gauge. -/
@@ -179,7 +179,7 @@ theorem gauge_comp_right_le_self {H : Type v}
     (A : E →L[𝕜] F) {R : H →L[𝕜] E} (hR : ‖R‖ ≤ 1) :
     Φ.gauge (A ∘L R) ≤ Φ.gauge A := by
   refine (Φ.gauge_comp_right_le A R).trans ?_
-  rw [enorm_eq_nnnorm]
+  rw [eNorm_eq_nnNorm]
   exact mul_le_of_le_one_right' (by exact_mod_cast hR)
 
 end OperatorIdealFamily

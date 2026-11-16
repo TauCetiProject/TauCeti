@@ -25,6 +25,8 @@ entering the statements.
 
 ## Main results
 
+* `WeierstrassCurve.valuation_xCoord_formalPoint_mul_sq`: the parameter `t` of a point determines
+  the valuation of its `x`-coordinate, `v(x) · v(t) ^ 2 = 1`.
 * `WeierstrassCurve.one_lt_valuation_xCoord_formalPoint` and
   `WeierstrassCurve.exists_formalPoint_eq_of_one_lt_valuation_xCoord`: the two inclusions over an
   adic completion.
@@ -60,47 +62,38 @@ local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
 local notation "m_u" => IsLocalRing.maximalIdeal O_u
 
-local instance : IsLinearTopology O_u O_u :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
-
-local instance : Fact (IsAdic m_u) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
-
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
 
 open scoped Classical in
-/-- **A nonzero parameter has a pole in the `x`-coordinate of its point.** The closed form
-`x * (t ^ 2 u(t)) = 1` of `xCoord_formalPoint_mul_eq_one` makes `x` inverse to an element of the
-maximal ideal, `t` lying there and `u(t)` being integral. -/
+/-- **The valuation of the `x`-coordinate of a parametrised point**: for a nonzero parameter `t`
+in the maximal ideal, `v(x) · v(t) ^ 2 = 1`. -/
+theorem valuation_xCoord_formalPoint_mul_sq {t : O_u} (ht : t ∈ m_u) (ht0 : t ≠ 0) :
+    Valued.v ((C.formalPoint (K := F_u)
+      (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht).xCoord) *
+        Valued.v (t : F_u) ^ 2 = 1 := by
+  have hkey := congrArg (Valued.v (R := F_u)) (C.xCoord_formalPoint_mul_eq_one (K := F_u)
+    (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht ht0)
+  have hU : Valued.v ((C.formalUEval t : O_u) : F_u) = 1 :=
+    HeightOneSpectrum.adicCompletionIntegers.isUnit_iff_valued_eq_one.mp
+      (C.isUnit_formalUEval
+        (u.isAdic_maximalIdeal_adicCompletionIntegers.isTopologicallyNilpotent_of_mem ht))
+  rw [Algebra.algebraMap_ofSubsemiring_apply] at hkey
+  push_cast [map_mul, map_pow, map_one] at hkey
+  rwa [hU, mul_one] at hkey
+
+open scoped Classical in
+/-- **A nonzero parameter in the maximal ideal has a pole in the `x`-coordinate of its point**:
+`1 < v(x)`. -/
 theorem one_lt_valuation_xCoord_formalPoint {t : O_u} (ht : t ∈ m_u) (ht0 : t ≠ 0) :
     1 < Valued.v ((C.formalPoint (K := F_u)
       (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht).xCoord) := by
-  have hkey := congrArg (Valued.v (R := F_u)) (C.xCoord_formalPoint_mul_eq_one (K := F_u)
-    (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht ht0)
-  rw [map_mul, map_one] at hkey
-  have hcoe : ∀ z : O_u, algebraMap O_u F_u z = (z : F_u) :=
-    fun z ↦ Algebra.algebraMap_ofSubsemiring_apply _ z
-  have hsmall : Valued.v (algebraMap O_u F_u (t ^ 2 * C.formalUEval t)) < 1 := by
-    rw [hcoe]
-    push_cast
-    rw [map_mul, map_pow]
-    calc Valued.v (t : F_u) ^ 2 * Valued.v ((C.formalUEval t : O_u) : F_u)
-        ≤ Valued.v (t : F_u) ^ 2 * 1 := mul_le_mul' le_rfl (C.formalUEval t).property
-      _ = Valued.v (t : F_u) * Valued.v (t : F_u) := by rw [mul_one, sq]
-      _ ≤ 1 * Valued.v (t : F_u) := mul_le_mul' t.property le_rfl
-      _ = Valued.v (t : F_u) := one_mul _
-      _ < 1 := (Valuation.mem_maximalIdeal_iff _ Valued.v).mp ht
+  have hkey := C.valuation_xCoord_formalPoint_mul_sq u ht ht0
+  have hsmall : Valued.v (t : F_u) ^ 2 < 1 :=
+    pow_lt_one₀ zero_le ((Valuation.mem_maximalIdeal_iff _ Valued.v).mp ht) two_ne_zero
   by_contra hle
   push Not at hle
-  refine absurd hkey (ne_of_lt ?_)
-  calc Valued.v ((C.formalPoint (K := F_u)
-          (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht).xCoord) *
-        Valued.v (algebraMap O_u F_u (t ^ 2 * C.formalUEval t))
-      ≤ 1 * Valued.v (algebraMap O_u F_u (t ^ 2 * C.formalUEval t)) :=
-        mul_le_mul' hle le_rfl
-    _ = Valued.v (algebraMap O_u F_u (t ^ 2 * C.formalUEval t)) := one_mul _
-    _ < 1 := hsmall
+  exact (hkey ▸ mul_le_of_le_one_left' hle).not_gt hsmall
 
 open scoped Classical in
 /-- **A point with a pole in its `x`-coordinate is parametrised**, by the parameter `-x / y`.

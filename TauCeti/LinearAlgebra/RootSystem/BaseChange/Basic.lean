@@ -48,7 +48,11 @@ can be written on `κ → S` without tensor products, see
 
 ## Main results
 
-* `RootPairing.baseChange_pairing`: the pairings of the extension are the images of those of `P`.
+* `RootPairing.tensorProduct_mk_injective`: for a faithful algebra `S`, the map `m ↦ 1 ⊗ m` on the
+  weight module is injective.
+* `RootPairing.baseChange_pairing`, `RootPairing.baseChange_coroot'_tmul`, and
+  `RootPairing.baseChange_root'_tmul`: the pairings and root/coroot forms of the extension on pure
+  tensors.
 * `RootPairing.baseChange_reflection_tmul` and `RootPairing.baseChange_coreflection_tmul`: the
   reflections of the extension are the extensions of the reflections of `P`.
 * `RootPairing.isValuedIn_baseChange` and `RootPairing.baseChange_pairingIn`: the extension of a
@@ -77,9 +81,16 @@ open Submodule (span)
 namespace RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : RootPairing ι R M N) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
 
-variable [Free R N] [Module.Finite R N]
+/-- For a faithful `R`-algebra `S`, the canonical map `m ↦ 1 ⊗ m` on the weight module of a root
+pairing is injective. -/
+theorem tensorProduct_mk_injective (P : RootPairing ι R M N) (S : Type*) [CommSemiring S]
+    [Algebra R S] [FaithfulSMul R S] : Function.Injective (TensorProduct.mk R S M 1) :=
+  P.toLinearMap.tensorProduct_mk_injective_of_injective S
+    (LinearMap.IsPerfPair.bijective_left _).injective
+
+variable (P : RootPairing ι R M N) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
+  [Free R N] [Module.Finite R N]
 
 /-- **Extension of scalars of a root pairing.** For an `R`-algebra `S` with `algebraMap R S`
 injective, and a finite free coweight space, the root pairing `P` extends to a root pairing over `S`
@@ -88,11 +99,9 @@ permutations, and the `S`-bilinear extension of the pairing of `P`. -/
 noncomputable def baseChange : RootPairing ι S (S ⊗[R] M) (S ⊗[R] N) where
   toLinearMap := P.toLinearMap.baseChangePairing S
   root := ⟨TensorProduct.mk R S M 1 ∘ P.root,
-    (P.toLinearMap.tensorProduct_mk_injective_of_injective S
-      (LinearMap.IsPerfPair.bijective_left _).injective).comp P.root.injective⟩
+    (P.tensorProduct_mk_injective S).comp P.root.injective⟩
   coroot := ⟨TensorProduct.mk R S N 1 ∘ P.coroot,
-    (P.toLinearMap.flip.tensorProduct_mk_injective_of_injective S
-      (LinearMap.IsPerfPair.bijective_right _).injective).comp P.coroot.injective⟩
+    (P.flip.tensorProduct_mk_injective S).comp P.coroot.injective⟩
   root_coroot_two i := by simp [P.root_coroot_two, map_ofNat]
   reflectionPerm := P.reflectionPerm
   reflectionPerm_root i j := by
@@ -124,6 +133,17 @@ theorem baseChange_pairing (i j : ι) :
   simp only [baseChange_toLinearMap, baseChange_root, baseChange_coroot,
     LinearMap.baseChangePairing_tmul_tmul, one_mul]
 
+-- Not `@[simp]`: `coroot'` is `abbrev` for `toLinearMap.flip ∘ coroot`, so `LinearMap.flip_apply`
+-- and `LinearMap.baseChangePairing_tmul_tmul` already simplify the left-hand side (`simpNF`).
+theorem baseChange_coroot'_tmul (i : ι) (a : S) (x : M) :
+    (P.baseChange S).coroot' i (a ⊗ₜ x) = a * algebraMap R S (P.coroot' i x) := by
+  simp
+
+@[simp]
+theorem baseChange_root'_tmul (i : ι) (a : S) (y : N) :
+    (P.baseChange S).root' i (a ⊗ₜ y) = a * algebraMap R S (P.root' i y) := by
+  simp [root']
+
 /-- The Coxeter weights of the extension are those of `P`, mapped to `S`. -/
 @[simp]
 theorem baseChange_coxeterWeight (i j : ι) :
@@ -140,7 +160,7 @@ theorem baseChange_reflection_tmul (i : ι) (a : S) (x : M) :
 @[simp]
 theorem baseChange_coreflection_tmul (i : ι) (a : S) (y : N) :
     (P.baseChange S).coreflection i (a ⊗ₜ y) = a ⊗ₜ P.coreflection i y := by
-  simp [coreflection_apply, root', tmul_sub, smul_tmul', Algebra.smul_def, mul_comm]
+  simp [coreflection_apply, tmul_sub, smul_tmul', Algebra.smul_def, mul_comm]
 
 section IsValuedIn
 

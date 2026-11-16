@@ -175,22 +175,15 @@ theorem mem_biSup_posRoots_b2_iff_exists_list_prod_map (A : CommAlgCat ℤ)
     ⨆ γ ∈ S, (chevalleyRootSubgroup ρ M hM hnil γ A).range) hpos).trans hjoin
   rw [hjoin']
   let X := fun i : Fin 4 =>
-    (chevalleyRootSubgroup ρ M hM hnil (b2Index (Fin.castAdd 4 i)) A).range
-  have hc := mem_biSup_iff_exists_list_prod_map (X := X) (ht := id)
+    chevalleyRootSubgroup ρ M hM hnil (b2Index (Fin.castAdd 4 i)) A
+  have hc := mem_biSup_range_iff_exists_list_prod_map (X := X) (ht := id)
     (S := Finset.univ)
     (fun i _ j _ hij => by
       simpa only [Finset.mem_univ, iSup_true, Finset.mem_filter,
         true_and, id_eq, Set.mem_ofPred_eq] using
           commutator_range_chevalleyRootSubgroup_b2_le ρ M hM hnil A i j hij)
     hl (fun i => by simp [hlall i]) (g := g)
-  simp only [Finset.mem_univ, iSup_true] at hc
-  rw [hc]
-  constructor
-  · rintro ⟨f, hf, hprod⟩
-    choose u hu using hf
-    exact ⟨fun i => (u i).toAdd, by simpa only [ofAdd_toAdd, hu] using hprod⟩
-  · rintro ⟨u, hu⟩
-    exact ⟨_, fun i => ⟨Multiplicative.ofAdd (u i), rfl⟩, hu⟩
+  simpa only [Finset.mem_univ, iSup_true] using hc
 
 end
 

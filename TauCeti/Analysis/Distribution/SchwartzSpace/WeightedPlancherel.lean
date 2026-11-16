@@ -98,7 +98,7 @@ theorem integral_norm_fourierInv_add_sub_le (σ : 𝓢(V, H)) (h : V) :
   rw [← ofReal_integral_eq_lintegral_ofReal
     (((𝓕⁻ (smulLeftCLM H (inner ℝ · h) σ)).integrable.norm).const_mul _)
     (.of_forall fun _ ↦ by positivity), integral_const_mul] at hle
-  rw [integral_norm_eq_lintegral_enorm (by fun_prop)]
+  rw [integral_norm_eq_lintegral_eNorm (by fun_prop)]
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **Cauchy–Schwarz on `{‖x‖ > R}`**, splitting `‖𝓕⁻ σ x‖ = ‖x‖ ^ (-N) · ‖x‖ ^ N ‖𝓕⁻ σ x‖`. -/
@@ -205,7 +205,7 @@ theorem setIntegral_closedBall_norm_fourierInv_le (σ : 𝓢(V, H)) {R : ℝ} (h
       Real.sqrt_mul (by positivity), Real.sqrt_sq (norm_nonneg _), Real.sqrt_eq_rpow,
       ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
     ring_nf
-  rw [integral_norm_eq_lintegral_enorm (by fun_prop)]
+  rw [integral_norm_eq_lintegral_eNorm (by fun_prop)]
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **The tail of an inverse Fourier transform in `L¹`.** Let `b` be an orthonormal basis of the
@@ -264,7 +264,7 @@ theorem exists_setIntegral_norm_fourierInv_le {ι : Type*} [Fintype ι]
       ← ENNReal.ofReal_mul (by positivity), ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow,
       ← mul_assoc A c, Real.sqrt_mul (by positivity), Real.sqrt_mul hD, Real.sqrt_sq hT, hRpow]
     ring_nf
-  rw [integral_norm_eq_lintegral_enorm (by fun_prop)]
+  rw [integral_norm_eq_lintegral_eNorm (by fun_prop)]
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **An inverse Fourier transform in `L¹`.** Let `b` be an orthonormal basis of the

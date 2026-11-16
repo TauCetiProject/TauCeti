@@ -29,12 +29,13 @@ morphisms), and the periodicity isomorphism `[n] ⋙ π ≅ π`. Its component a
 identity of `X⟦n⟧`, read as a morphism `X⟦n⟧ ⟶ X` of degree `1`, with inverse in degree `-1`.
 More generally `X⟦n * i⟧ ≅ X` in `D/[n]` for every `i`.
 
-It also proves Keller's universal property. An additive functor `G : D ⥤ E` to a preadditive
-category with a periodicity isomorphism `φ : [n] ⋙ G ≅ G` descends to `lift G φ : D/[n] ⥤ E`,
-which sends a homogeneous piece `f : X ⟶ Y⟦n * i⟧` to `G.map f` followed by the `i`-th power of
-`φ` at `Y` (`CategoryTheory.Iso.periodicityZPow`). The descent restricts to `G` along the
-projection and carries the periodicity isomorphism of the projection to `φ`, and every additive
-functor with these two properties is isomorphic to it.
+It also proves the existence and uniqueness-up-to-isomorphism parts of Keller's 2-universal
+property. An additive functor `G : D ⥤ E` to a preadditive category with a periodicity isomorphism
+`φ : [n] ⋙ G ≅ G` descends to `lift G φ : D/[n] ⥤ E`, which sends a homogeneous piece
+`f : X ⟶ Y⟦n * i⟧` to `G.map f` followed by the `i`-th power of `φ` at `Y`
+(`CategoryTheory.Iso.periodicityZPow`). The descent restricts to `G` along the projection and
+carries the periodicity isomorphism of the projection to `φ`, and every additive functor with
+these two properties is isomorphic to it.
 
 Descent is compatible with composition. Postcomposing `lift G φ` with an additive functor `H`
 gives the descent of `G ⋙ H`. An additive functor `F : D ⥤ D'` commuting with the shifts induces
@@ -335,6 +336,14 @@ theorem shiftIso_hom_eq_comp (X : D) {m₁ m₂ m i j k : ℤ} (h₁ : n * i = m
   congr 1
   simp [ShiftedHom.comp]
 
+/-- The shift isomorphism of degree `0` is the projection of the shift isomorphism `X⟦m⟧ ≅ X`
+of `D`, for any `m` with `n * 0 = m`. -/
+theorem shiftIso_zero_hom (X : D) {m : ℤ} (h : n * 0 = m) :
+    (shiftIso (n := n) X m 0 h).hom =
+      projection.map ((shiftFunctorZero' D m (by rw [← h, mul_zero])).hom.app X) := by
+  subst h
+  simp [ShiftedHom.mk₀]
+
 /-- Induction principle for morphisms of the orbit category: a property of morphisms that holds
 for `0` and for every homogeneous piece, and is closed under addition, holds for every
 morphism. -/
@@ -480,10 +489,8 @@ private theorem conjShiftNatIso_eq
     conjShiftNatIso F e = φ.periodicityZPow := by
   apply Iso.periodicityZPow_unique
   · ext X
-    have h₀ : (shiftIso X (n * 0) 0 rfl).hom =
-        projection.map ((shiftFunctorZero' D (n * 0) (mul_zero n)).hom.app X) := by
-      simp [ShiftedHom.mk₀]
-    rw [conjShiftNatIso_hom_app, h₀, ← Functor.comp_map, ← e.inv.naturality_assoc]
+    rw [conjShiftNatIso_hom_app, shiftIso_zero_hom, ← Functor.comp_map,
+      ← e.inv.naturality_assoc]
     simp
   · rintro i _ rfl
     ext X
@@ -629,12 +636,10 @@ private theorem mapPeriodicity_periodicityZPow_hom_app (i : ℤ) (X : D) :
         Functor.isoWhiskerLeft F (shiftNatIso (n * i) i rfl))
     (by
       ext X
-      have h₀ : (shiftIso (n := n) (F.obj X) (n * 0) 0 rfl).hom =
-          projection.map ((shiftFunctorZero' D' (n * 0) (mul_zero n)).hom.app (F.obj X)) := by
-        simp [ShiftedHom.mk₀]
       simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.associator_inv_app,
         Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Functor.associator_hom_app,
-        Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, shiftNatIso_hom_app, h₀,
+        Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, shiftNatIso_hom_app,
+        shiftIso_zero_hom,
         Functor.leftUnitor_hom_app, Category.id_comp, Functor.comp_map,
         F.commShiftIso_zero' ℤ (n * 0) (mul_zero n), Functor.CommShift.isoZero'_hom_app]
       rw [homOf_comp_homOf_eq (add_zero 0), ShiftedHom.mk₀_comp_mk₀, Category.assoc,

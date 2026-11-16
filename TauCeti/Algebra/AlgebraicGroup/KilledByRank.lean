@@ -25,7 +25,7 @@ group schemes. It is the input which turns a Drinfeld point of exact order `n` i
 
 ## Main results
 
-* `TauCeti.AlgHom.convPow_finrank_eq_one`: when `H` is free of finite rank over `R`, every point
+* `TauCeti.AlgHom.convPow_finrank_eq_one`: when `H` is free over `R`, every point
   is killed by `Module.finrank R H`.
 * `TauCeti.AlgHom.convPow_eq_one_of_rankAtStalk`: when `H` is finite flat over `R` and its
   rank at every prime is `n`, every point is killed by `n`.
@@ -150,10 +150,16 @@ private theorem convPow_id_eq_one [Module.Free R H] [Module.Finite R H] :
   rwa [Module.finrank_eq_card_chooseBasisIndex]
 
 /-- **Deligne's theorem, free case.** Every point of a commutative and cocommutative Hopf algebra
-which is free of finite rank `n` over `R` is killed by `n`. -/
-theorem convPow_finrank_eq_one [Module.Free R H] [Module.Finite R H] {A : Type*}
+which is free of rank `n` over `R` is killed by `n`. -/
+theorem convPow_finrank_eq_one [Module.Free R H] {A : Type*}
     [CommSemiring A] [Algebra R A] (x : WithConv (H →ₐ[R] A)) :
     x ^ Module.finrank R H = 1 := by
+  obtain _ | _ := subsingleton_or_nontrivial R
+  · have : Subsingleton A := Module.subsingleton R A
+    exact Subsingleton.elim (α := WithConv (H →ₐ[R] A)) _ _
+  by_cases hfin : Module.Finite R H
+  swap
+  · rw [Module.finrank_of_not_finite hfin, pow_zero]
   have hid : toConv (_root_.AlgHom.id R H) ^ Module.finrank R H = 1 := by
     apply ofConv_injective
     apply _root_.AlgHom.toLinearMap_injective
@@ -168,7 +174,7 @@ end Free
 /-- If `H` becomes free after base change to `S`, then every point of `H` with values in an
 `S`-algebra is killed by the rank of `S ⊗[R] H` over `S`. -/
 private theorem convPow_eq_one_of_baseChange {S : Type*} [CommRing S] [Algebra R S]
-    [Module.Free S (S ⊗[R] H)] [Module.Finite S (S ⊗[R] H)] {A : Type*} [CommSemiring A]
+    [Module.Free S (S ⊗[R] H)] {A : Type*} [CommSemiring A]
     [Algebra S A] [Algebra R A] [IsScalarTower R S A] (x : WithConv (H →ₐ[R] A)) :
     x ^ Module.finrank S (S ⊗[R] H) = 1 := by
   let e := baseChangePointsMulEquiv (k := R) (K := S) (A := H) (R := A)

@@ -360,11 +360,11 @@ theorem spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le (hv0 : v ≠ 0)
   rw [spectralRadius_eq_of_unital]
   refine le_antisymm (iSup₂_le fun μ hμ' => ?_) ?_
   · obtain ⟨z, hz, hAz⟩ := mem_spectrum_iff_exists_mulVec_eq_smul.1 hμ'
-    rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm]
+    rw [← ENNReal.ofReal_coe_nnreal, coe_nnNorm]
     exact ENNReal.ofReal_le_ofReal (hμ μ z hz hAz)
   · refine le_iSup₂_of_le (r : ℂ)
       (mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨_, hz, hAz⟩) ?_
-    rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm, Complex.norm_real, Real.norm_of_nonneg hr]
+    rw [← ENNReal.ofReal_coe_nnreal, coe_nnNorm, Complex.norm_real, Real.norm_of_nonneg hr]
 
 /-- **Perron–Frobenius**: the eigenvalue `r` of an eigenvector with strictly positive entries of an
 entrywise nonnegative real square matrix is the spectral radius of the matrix, viewed as a complex

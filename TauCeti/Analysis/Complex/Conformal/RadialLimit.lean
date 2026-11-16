@@ -89,7 +89,7 @@ theorem lintegral_Ioc_lintegral_Ioo_enorm_deriv_circleMap_le (c : ℂ) {a : ℝ}
     ∫⁻ θ in Ioc t (t + 2 * π), ∫⁻ r in Ioo a R, ‖deriv f (circleMap c r θ)‖ₑ ≤
       ENNReal.ofReal a⁻¹ * ∫⁻ z in ball c R, ‖deriv f z‖ₑ := by
   have hg : Measurable ((ball c R).indicator fun z => ‖deriv f z‖ₑ) :=
-    (measurable_deriv f).enorm.indicator measurableSet_ball
+    (measurable_deriv f).eNorm.indicator measurableSet_ball
   rw [← lintegral_indicator measurableSet_ball, ← lintegral_Ioc_lintegral_Ioi_circleMap_eq_lintegral
     hg c t, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine lintegral_mono fun θ => ?_
@@ -122,7 +122,7 @@ theorem ae_exists_tendsto_circleMap_of_lintegral_enorm_deriv_ne_top
   have hlen : ∀ t : ℝ, ∀ᵐ θ ∂volume.restrict (Ioc t (t + 2 * π)),
       ∫⁻ r in Ioo a R, ‖deriv f (circleMap c r θ)‖ₑ ≠ ⊤ := fun t => by
     have hmeas : Measurable fun θ => ∫⁻ r in Ioo a R, ‖deriv f (circleMap c r θ)‖ₑ :=
-      ((measurable_deriv f).enorm.comp (by simp only [circleMap]; fun_prop :
+      ((measurable_deriv f).eNorm.comp (by simp only [circleMap]; fun_prop :
         Continuous fun p : ℝ × ℝ => circleMap c p.2 p.1).measurable).lintegral_prod_right'
     refine ae_lt_top hmeas (ne_top_of_le_ne_top ?_
       (lintegral_Ioc_lintegral_Ioo_enorm_deriv_circleMap_le c ha R t)) |>.mono fun _ h => h.ne

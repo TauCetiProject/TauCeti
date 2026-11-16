@@ -131,7 +131,7 @@ theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero
     (f := (f : X.functionField)) fun y hy ↦ (hf y hy).ge
   obtain ⟨b, hb⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
     (f := ((f⁻¹ : X.functionFieldˣ) : X.functionField)) fun y hy ↦ by
-      rw [Units.val_inv_eq_inv_val, ord_inv, hf y hy, neg_zero]
+      rw [Units.val_inv_eq_inv_val, AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
   have hab : a * b = 1 := by
     refine X.germToFunctionField_injective U ?_
     rw [map_mul, ha, hb, map_one, Units.mul_inv]

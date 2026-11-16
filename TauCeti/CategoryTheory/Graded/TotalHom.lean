@@ -91,7 +91,7 @@ abbrev TotalHom : Type (max u v) :=
 
 /-- The grading of the total module of morphisms: an element has degree `n` when each of its
 components has degree `n`. -/
-noncomputable def totalGrading : InternalGrading R (TotalHom R C) :=
+noncomputable def totalGrading : InternalGrading R (TotalHom R C) ℤ :=
   InternalGrading.directSum fun p : C × C ↦ grading (R := R) p.1 p.2
 
 variable {R C}
@@ -262,7 +262,7 @@ multilinear map out of the total module of morphisms sends every tuple of elemen
 into a submodule `S` as soon as it does so on every tuple of morphisms of degrees `d`, each lying
 in a single hom module. -/
 theorem multilinearMap_apply_mem_of_mem_totalGrading_piece {M : Type*} [AddCommMonoid M]
-    [Module R M] {n : ℕ} {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) M}
+    [Module R M] {n : ℕ} {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) M}
     {S : Submodule R M} {d : Fin n → ℤ}
     (h : ∀ (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)),
       (∀ i, x i ∈ (grading (R := R) (s i) (t i)).piece (d i)) →
@@ -292,7 +292,8 @@ arity is determined by its values on composable strings (`IsPathCompatible.ext`)
 there may be no composable string to constrain the operation: when `C` is empty, every nullary
 operation is path-compatible. -/
 structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] (φ : C → C')
-    {n : ℕ} (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')) : Prop where
+    {n : ℕ} (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R
+        C')) : Prop where
   /-- A composable string is sent to a morphism between the images of the endpoints of the
   string. -/
   mem_range_homInclusion (X : Fin (n + 1) → C)
@@ -309,9 +310,9 @@ structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] 
 between the images of the endpoints. No path-compatibility hypothesis is needed for projection. -/
 noncomputable def _root_.MultilinearMap.restrictToPath {C' : Type u'}
     [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
-    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
     (φ : C → C') (X : Fin (n + 1) → C) :
-    MultilinearMap R
+    MultilinearMap (RingHom.id R)
       (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
       (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
   (homProjection _ _).compMultilinearMap
@@ -319,7 +320,7 @@ noncomputable def _root_.MultilinearMap.restrictToPath {C' : Type u'}
 
 theorem _root_.MultilinearMap.restrictToPath_apply {C' : Type u'}
     [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
-    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
     (φ : C → C') (X : Fin (n + 1) → C)
     (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
     f.restrictToPath φ X x = homProjection (φ (X 0)) (φ (X (Fin.last n)))
@@ -329,7 +330,7 @@ theorem _root_.MultilinearMap.restrictToPath_apply {C' : Type u'}
 @[simp]
 theorem IsPathCompatible.homInclusion_restrictToPath {C' : Type u'}
     [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
     (hf : IsPathCompatible φ f) (X : Fin (n + 1) → C)
     (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
     homInclusion (φ (X 0)) (φ (X (Fin.last n))) (f.restrictToPath φ X x) =
@@ -352,7 +353,7 @@ multilinear map of positive arity out of the total module of morphisms takes val
 submodule `S` as soon as it sends every composable string into `S` and every string which is not
 composable to zero. -/
 theorem multilinearMap_apply_mem {M : Type*} [AddCommGroup M] [Module R M] {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) M} {S : Submodule R M}
+    {f : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ TotalHom R C) M} {S : Submodule R M}
     (h : ∀ (X : Fin (n + 2) → C)
       (x : ∀ i : Fin (n + 1), homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
         f (fun i ↦ homInclusion _ _ (x i)) ∈ S)
@@ -380,7 +381,8 @@ theorem multilinearMap_apply_mem {M : Type*} [AddCommGroup M] [Module R M] {n : 
 arity is positive: an operation of arity zero is a single element, which no composable string
 constrains when `C` has no objects. -/
 theorem IsPathCompatible.ext {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'}
-    {n : ℕ} {f g : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C')}
+    {n : ℕ} {f g : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R
+        C')}
     (hf : IsPathCompatible φ f) (hg : IsPathCompatible φ g)
     (h : ∀ (X : Fin (n + 2) → C)
       (x : ∀ i : Fin (n + 1), homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
@@ -397,7 +399,7 @@ of its last morphism to the image `φ b` of the target `b` of its first.  This i
 morphisms rather than by its objects. -/
 theorem IsPathCompatible.mem_range_homInclusion_of_chain {C' : Type u'}
     [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C')}
+    {f : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C')}
     (hf : IsPathCompatible φ f) (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i))
     (hst : ∀ j : Fin n, t j.succ = s j.castSucc) {a b : C} (ha : s (Fin.last n) = a)
     (hb : t 0 = b) :
@@ -411,7 +413,8 @@ theorem IsPathCompatible.mem_range_homInclusion_of_chain {C' : Type u'}
 
 /-- **Path compatibility can be tested on homogeneous morphisms.** -/
 theorem isPathCompatible_of_homogeneous {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C']
-    {φ : C → C'} {n : ℕ} {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    {φ : C → C'} {n : ℕ} {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C)
+        (TotalHom R C')}
     (mem_range : ∀ (X : Fin (n + 1) → C)
       (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) (d : Fin n → ℤ),
       (∀ i, x i ∈ (grading (R := R) (X i.rev.castSucc) (X i.rev.succ)).piece (d i)) →
@@ -436,7 +439,7 @@ theorem isPathCompatible_of_homogeneous {C' : Type u'} [GradedLinearQuiver.{u', 
 leaves it path-compatible, since the twists act on each hom module separately. -/
 theorem IsPathCompatible.compLinearMap_koszulTwist {C' : Type u'}
     [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
     (hf : IsPathCompatible φ f) (q : Fin n → ℤ) :
     IsPathCompatible φ (f.compLinearMap fun i ↦ (totalGrading R C).koszulTwist (q i)) where
   mem_range_homInclusion X x := by

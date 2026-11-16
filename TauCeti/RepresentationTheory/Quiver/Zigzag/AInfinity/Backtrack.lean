@@ -94,7 +94,7 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 /-- The **backtrack operation** of two darts `d` and `e`: the product of the `d`-, `e`- and
 `e.symm`-arrow coordinates of its three inputs, times the arrow of `d`. -/
 noncomputable def zigzagBacktrackOperation (d e : G.Dart) :
-    MultilinearMap k (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   ((MultilinearMap.mkPiAlgebra k (Fin 3) k).compLinearMap
     fun i ↦ (zigzagBasis k G hns).coord (.inr (.inl (![d, e, e.symm] i)))).smulRight
@@ -161,7 +161,7 @@ variable {k} (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
 /-- The **backtrack cochain** of a finite set `P` of pairs of darts with weights `a`: the sum of the
 backtrack operations of the pairs in `P`, weighted by `a`. -/
 noncomputable def zigzagBacktrackCochain :
-    MultilinearMap k (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   ∑ p ∈ P, a p • zigzagBacktrackOperation k G hns p.1 p.2
 
@@ -277,7 +277,7 @@ theorem zigzagBacktrackCochain_mul_zigzagBacktrackCochain_eq_zero
 
 section Twist
 
-variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
+variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G) ℤ}
   (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
 include h𝒢
 
@@ -359,7 +359,7 @@ variable {k} {P : Finset (G.Dart × G.Dart)} (a : G.Dart × G.Dart → k)
 variable (P) in
 /-- The family of operations of the backtrack Taylor map: the backtrack cochain in arity three. -/
 private noncomputable def backtrackOps :
-    ∀ n : ℕ, MultilinearMap k (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
+    ∀ n : ℕ, MultilinearMap (RingHom.id k) (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G)
   | 0 => 0
   | 1 => 0

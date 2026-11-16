@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Proper projections of bundles with compact fibre
@@ -34,9 +34,8 @@ namespace TauCeti
 /-- A map that is locally trivial with compact fibre is proper. -/
 theorem isProperMap_of_forall_exists_trivialization [CompactSpace F] {p : Z → B}
     (ht : ∀ x, ∃ e : Trivialization F p, x ∈ e.baseSet) : IsProperMap p := by
-  refine isProperMap_iff_ultrafilter.2 ⟨continuous_iff_continuousAt.2 fun z ↦ ?_, fun U x hx ↦ ?_⟩
-  · obtain ⟨e, he⟩ := ht (p z)
-    exact e.continuousAt_proj (e.mem_source.2 he)
+  refine isProperMap_iff_ultrafilter.2 ⟨continuous_of_forall_exists_trivialization ht,
+    fun U x hx ↦ ?_⟩
   obtain ⟨e, hxe⟩ := ht x
   have hsource : e.source ∈ U := e.source_eq ▸ hx (e.open_baseSet.mem_nhds hxe)
   obtain ⟨v, -, hv⟩ := isCompact_univ.ultrafilter_le_nhds' (U.map fun z ↦ (e z).2) univ_mem
@@ -54,5 +53,4 @@ variable (F) in
 theorem FiberBundle.isProperMap_proj [CompactSpace F] (E : B → Type*)
     [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] :
     IsProperMap (π F E) :=
-  TauCeti.isProperMap_of_forall_exists_trivialization fun b ↦
-    ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
+  TauCeti.isProperMap_of_forall_exists_trivialization (exists_trivialization_mem_baseSet F E)

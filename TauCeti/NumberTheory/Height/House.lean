@@ -150,7 +150,7 @@ theorem house_eq_numberField_house {K : Type*} [Field K] [NumberField K] (x : K)
   · obtain ⟨φ, rfl⟩ := hroots.symm.subset hz
     exact NumberField.norm_embedding_le_house x φ
   · obtain ⟨φ, -, hφ⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : K →+* ℂ ↦ ‖φ x‖₊
-    rw [NumberField.house_eq_sup', hφ, coe_nnnorm]
+    rw [NumberField.house_eq_sup', hφ, coe_nnNorm]
     exact norm_le_house_of_mem_rootSet (hroots ▸ ⟨φ, rfl⟩)
 
 open Height NumberField in

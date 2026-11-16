@@ -58,8 +58,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
   [∀ x, ContinuousSMul 𝕜 (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
   [ContMDiffVectorBundle 2 F V I]
-  {ι : Type*} [Fintype ι] {s : ι → Π x, V x} {u : Set M}
-  (hs : IsLocalFrameOn I F 2 s u) (hu : IsOpen u)
+  {ι : Type*} [Fintype ι] {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
+  (hs : IsLocalFrameOn I F n s u) (hn : 2 ≤ n) (hu : IsOpen u)
   (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivativeOn F 1 cov.toFun u]
   {X Y : Π x : M, TangentSpace I x} {x : M}
 
@@ -68,7 +68,7 @@ local notation "A" => fun j l Z y ↦
   hs.coeff l y (cov (s j) y (Z y))
 
 omit [FiniteDimensional 𝕜 F] in
-include hu in
+include hn hu in
 /-- The curvature matrix in a C² moving frame is `dA + A∧A`, evaluated on arbitrary C¹
 vector fields. The exterior derivative includes the noncoordinate term `-A([X,Y])`. -/
 theorem coeff_curvatureOperator (hx : x ∈ u)
@@ -84,14 +84,14 @@ theorem coeff_curvatureOperator (hx : x ∈ u)
   have hcov (Z : Π y : M, TangentSpace I y) (hZ : CMDiff[u] 1 (T% Z)) :
       CMDiff[u] 1 (T% (fun y ↦ cov (s j) y (Z y))) :=
     ContMDiffOn.clm_bundle_apply
-      (ContMDiffCovariantDerivativeOn.contMDiff (hs.contMDiffOn j)) hZ
+      (ContMDiffCovariantDerivativeOn.contMDiff ((hs.contMDiffOn j).of_le hn)) hZ
   have hcoeff (Z : Π y : M, TangentSpace I y) (hZ : CMDiff[u] 1 (T% Z)) (k : ι) :
       MDiffAt (A j k Z) x :=
-    ((hs.contMDiffOn_coeff hu one_le_two (hcov Z hZ) k).contMDiffAt
+    ((hs.contMDiffOn_coeff hu (one_le_two.trans hn) (hcov Z hZ) k).contMDiffAt
       (hu.mem_nhds hx)).mdifferentiableAt one_ne_zero
-  have hfirst := hs.covariantDerivative_eq_sum one_le_two (hu.mem_nhds hx)
+  have hfirst := hs.covariantDerivative_eq_sum (one_le_two.trans hn) (hu.mem_nhds hx)
     (cov.isCovariantDerivativeOn (s := u)) (hcoeff Y hY)
-  have hsecond := hs.covariantDerivative_eq_sum one_le_two (hu.mem_nhds hx)
+  have hsecond := hs.covariantDerivative_eq_sum (one_le_two.trans hn) (hu.mem_nhds hx)
     (cov.isCovariantDerivativeOn (s := u)) (hcoeff X hX)
   rw [curvatureOperator_apply, hfirst, hsecond]
   simp only [sum_apply, add_apply,
@@ -133,7 +133,7 @@ theorem coeff_curvatureOperator_frame (hx : x ∈ u) (i j k l : ι) :
   have : IsManifold I (2 + 1) M := IsManifold.of_le (n := 3) (by norm_num)
   let : ContMDiffVectorBundle 2 E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  rw [hs.coeff_curvatureOperator hu cov hx ((hs.contMDiffOn i).of_le one_le_two)
+  rw [hs.coeff_curvatureOperator le_rfl hu cov hx ((hs.contMDiffOn i).of_le one_le_two)
     ((hs.contMDiffOn j).of_le one_le_two)]
   congr 1
   conv_lhs => rw [hs.coeff_sum_eq (mlieBracket I (s i) (s j)) hx]

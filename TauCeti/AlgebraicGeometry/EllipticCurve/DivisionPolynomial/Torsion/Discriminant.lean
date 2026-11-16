@@ -93,7 +93,7 @@ it.** `kappa_sq_eq_Psi2Sq` (`:183`), `bezout_identity` (`:192`) and `kappa_sq_dv
 (`:202`) are `Discriminant.lean`'s `evalEval_ψ₂_sq`, `bezout_four_mul_Δ` and
 `dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃` — the last of which is *more general*, taking an
 arbitrary `d` where the source fixes `κ²`. The four `eval`-level wrappers (`:300`–`:352`) collapse
-into `Basic.lean`'s `eval_Ψ₃_eq_sub_mul_eval_Ψ₂Sq`, and `isInteger_mul_of_den_dvd` (`:338`) is
+into `Basic.lean`'s `eval_Ψ₃_eq_sub_mul_eval_Ψ₂Sq_iff`, and `isInteger_mul_of_den_dvd` (`:338`) is
 `NumDen.lean`'s `den_dvd_iff_isInteger_mul`. The source's `lutz_nagell_pid_discriminant` (`:242`)
 is likewise declined: it is the on-curve specialisation of the general divisibility, and stating
 it separately would add a name for what the headline below already does with the point in hand.
@@ -147,7 +147,7 @@ private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
     rw [show (2 : ℤ) = ((2 : ℕ) : ℤ) from Nat.cast_ofNat.symm, natCast_zsmul]
     exact h2P_eq
   have hcoord := mul_eval_ΨSq_eq_eval_Φ_of_zsmul (W.baseChange K) hns hns' (n := 2) h2P_zsmul
-  have hΨ₃K := eval_Ψ₃_eq_sub_mul_eval_Ψ₂Sq (W.baseChange K) hcoord
+  have hΨ₃K := (eval_Ψ₃_eq_sub_mul_eval_Ψ₂Sq_iff (W.baseChange K)).mpr hcoord
   -- Both evaluations descend: `Ψ₃` and `Ψ₂Sq` commute with base change, and on the curve
   -- `Ψ₂Sq(x₀) = κ²`.
   have hΨ₃ : ((W.baseChange K).Ψ₃).eval x = algebraMap R K ((W.Ψ₃).eval x₀) := by
@@ -180,6 +180,7 @@ private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
   · exact key (4 * x'₀) (by rw [map_mul, map_ofNat, hx'₀])
   · exact key n₀ hn₀
 
+omit [IsDomain R] in
 /-- **The discriminant companion of Nagell–Lutz.** For a torsion point with integral coordinates,
 either `ψ₂` vanishes there — equivalently the point is two-torsion — or its square divides `4Δ`.
 
@@ -196,6 +197,8 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ {x y : K}
           Squarefree ((p : ℤ) : R))
     {x₀ y₀ : R} (hx : algebraMap R K x₀ = x) (hy : algebraMap R K y₀ = y) :
     W.ψ₂.evalEval x₀ y₀ = 0 ∨ W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * W.Δ := by
+  -- `R` embeds into the field `K`, so it is a domain.
+  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   by_cases hκ : W.ψ₂.evalEval x₀ y₀ = 0
   · exact Or.inl hκ
   -- The point satisfies the equation over `R` itself, by injectivity of `algebraMap R K`.
@@ -211,6 +214,7 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ {x y : K}
   refine Or.inr (dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃ W (evalEval_ψ₂_sq W hEq).dvd ?_)
   exact sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ W hns htor hsf hx hEq hκK
 
+omit [IsDomain R] in
 /-- **The discriminant companion from a uniform hypothesis.** The same conclusion, asking
 squarefreeness at *every* prime dividing `addOrderOf (2 • P)` rather than at the one branch the
 proof lands in.

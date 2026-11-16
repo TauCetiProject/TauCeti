@@ -372,7 +372,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipsch
             exact abs_real_inner_le_norm _ y)
       _ = ‖y‖ₑ * eLpNorm (W1p.gradient g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) 2
             (mu.restrict Omega) := by
-          rw [eLpNorm_const_smul, enorm_norm]
+          rw [eLpNorm_const_smul, eNorm_norm]
       _ = ‖y‖ₑ * ENNReal.ofReal ‖W1p.gradient g‖ := by
           rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _)]
       _ ≤ ‖y‖ₑ * ENNReal.ofReal

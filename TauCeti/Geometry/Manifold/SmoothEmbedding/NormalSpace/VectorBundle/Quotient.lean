@@ -64,7 +64,7 @@ theorem contMDiff_normalQuotientMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 
   let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le ((le_add_right le_rfl).trans hm)⟩
   let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
     ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
-  let : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  let : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   intro p
   let d := normalChartData f hn hdim p.proj
   let e := d.trivialization f hn

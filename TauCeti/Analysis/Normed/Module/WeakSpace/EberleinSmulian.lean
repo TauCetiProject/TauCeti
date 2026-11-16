@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 public import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Operator.Norming
 import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.Analysis.Normed.Module.Mazur
+import TauCeti.Analysis.LocallyConvex.Mazur
 
 /-!
 # The Eberlein–Šmulian theorem

@@ -176,7 +176,7 @@ private theorem apply_smul_le {A : E → ℝ≥0∞} (hsmul : ∀ (r : ℝ) x, A
     (c : lp (fun _ : ℕ ↦ ℝ) 1) (ν : ℕ) :
     A ((c ν / synthesisWeight a ν) • e ν) ≤ ‖c ν‖ₑ / synthesisWeight a ν * A (e ν) := by
   refine (hsmul _ _).trans_eq ?_
-  simp [enorm_eq_nnnorm, nnnorm_div, ENNReal.coe_div, (synthesisWeight_pos a ν).ne']
+  simp [eNorm_eq_nnNorm, nnNorm_div, ENNReal.coe_div, (synthesisWeight_pos a ν).ne']
 
 end Term
 
@@ -191,6 +191,7 @@ private theorem summable_synthesis (c : lp (fun _ : ℕ ↦ ℝ) 1) :
     (summable_norm_mul_div_synthesisWeight a c m).of_nonneg_of_le (fun _ ↦ apply_nonneg _ _)
       (seminorm_smul_le hpa c m)
 
+omit [IsUniformAddGroup E] [CompleteSpace E] in
 include hp hpa in
 private theorem seminorm_tsum_smul_le (c : lp (fun _ : ℕ ↦ ℝ) 1) (m : ℕ) :
     p m (∑' ν, (c ν / synthesisWeight a ν) • e ν) ≤ synthesisBound a m * ‖c‖ := by
@@ -198,7 +199,7 @@ private theorem seminorm_tsum_smul_le (c : lp (fun _ : ℕ ↦ ℝ) 1) (m : ℕ)
   have hc := lp.hasSum_norm_one c
   calc p m (∑' ν, (c ν / synthesisWeight a ν) • e ν)
       ≤ ∑' ν, p m ((c ν / synthesisWeight a ν) • e ν) :=
-        Seminorm.map_tsum_le (hp.continuous_seminorm m) (summable_synthesis hp hpa c)
+        Seminorm.map_tsum_le (hp.continuous_seminorm m)
           (hb.of_nonneg_of_le (fun _ ↦ apply_nonneg _ _) (seminorm_smul_le hpa c m))
     _ ≤ ∑' ν, ‖c ν‖ * synthesisBound a m := by
         refine Summable.tsum_le_tsum (fun ν ↦ (seminorm_smul_le hpa c m ν).trans ?_)

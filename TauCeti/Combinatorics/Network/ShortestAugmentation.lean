@@ -52,8 +52,11 @@ generality.
   terminates.
 * `TauCeti.BoundedFlow.exists_reflTransGen_shortestAugmentationStep_isMaximum`: finitely many steps
   lead from any bounded `s`–`t` assignment to a maximum one.
+* `TauCeti.BoundedFlow.exists_isMaximum`: a maximum assignment exists whenever a feasible one
+  does, and `TauCeti.BoundedFlow.exists_isMaximum_mem`: integrality of some maximum assignment.
 * `TauCeti.BoundedFlow.exists_val_eq_cutBound`: the max-flow/min-cut theorem for bounded
   assignments.
+* `TauCeti.Flow.exists_isMaximum`: a maximum ordinary flow exists for nonnegative capacities.
 * `TauCeti.Flow.exists_isMaximum_mem` and `TauCeti.Flow.exists_val_eq_arrowSum`: integrality and
   the max-flow/min-cut theorem for ordinary flows with nonnegative capacities.
 

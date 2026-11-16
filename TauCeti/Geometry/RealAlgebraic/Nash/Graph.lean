@@ -130,7 +130,7 @@ theorem isSemialgebraicOn_of_polynomial_relation {σ : Type*} [Finite σ]
     IsSemialgebraicOn (fun x (_ : Unit) ↦ f x) s := by
   obtain ⟨j, hj⟩ : ∃ j, P.coeff j ≠ 0 := by
     by_contra h
-    exact hP (Polynomial.ext fun j ↦ by simpa using not_exists.mp h j)
+    exact hP (AddMonoidAlgebra.ext <| Finsupp.ext fun j ↦ by simpa using not_exists.mp h j)
   let t := s ∩ {x | eval x (P.coeff j) ≠ 0}
   have ht : IsSemialgebraic t := hs.inter (isSemialgebraic_eval_ne_zero (P.coeff j))
   have hts : t ⊆ s := inter_subset_left

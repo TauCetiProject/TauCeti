@@ -165,9 +165,9 @@ theorem wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm (hab : a ≤ b)
         eLpNorm_map_measure measurable_edist.aestronglyMeasurable (hs'.prodMk hu').aemeasurable
     _ ≤ eLpNorm (fun γ : C(Icc a b, X) ↦ ∫⁻ r in Ι s u, metricDerivative (IccExtend hab γ) r)
           p η := by
-        refine eLpNorm_mono_enorm_ae (hs'.edist hu').aestronglyMeasurable ?_
+        refine eLpNorm_mono_eNorm_ae (hs'.edist hu').aestronglyMeasurable ?_
         filter_upwards [hAC] with γ hγ
-        simpa only [enorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
+        simpa only [eNorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
     _ ≤ ∫⁻ r in Ι s u,
           eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η := by
         -- Minkowski's integral inequality moves the `Lᵖ(η)` seminorm inside the time integral.

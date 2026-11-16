@@ -146,7 +146,7 @@ theorem exists_continuous_clm_bundle_extension_isInvertible {s : Set B} (hs : Is
     ∃ ψ : ∀ x, E₁ x →L[𝕜] E₂ x,
       Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (ψ x)) ∧
       (∀ x ∈ s, ψ x = ϕ x) ∧ ∃ U, IsOpen U ∧ s ⊆ U ∧ ∀ x ∈ U, (ψ x).IsInvertible := by
-  have := FiniteDimensional.complete 𝕜 F₁
+  have := FiniteDimensional.completeSpace 𝕜 F₁
   obtain ⟨ψ, hψ, hψϕ⟩ := exists_continuous_section_extension 𝕜 hs hϕ
   exact ⟨ψ, hψ, hψϕ, _, hψ.isOpen_setOf_clm_bundle_isInvertible,
     fun x hx ↦ by simpa [hψϕ x hx] using hinv x hx, fun _ hx ↦ hx⟩

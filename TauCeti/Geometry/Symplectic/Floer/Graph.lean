@@ -56,7 +56,8 @@ native algebraic skew product in these coordinates
 (`TauCeti.Floer.graphStructure_toLp_eq_skewProd`),
 without a finite-dimensionality requirement on the target. It squares to `-1` wherever `J` does
 (`TauCeti.Floer.graphStructure_graphStructure`), is as regular as `J` and `X`
-(`TauCeti.Floer.contDiffOn_graphStructure`), and `u` solves
+(`TauCeti.Floer.contDiffOn_graphStructure`), is invariant under the translations along `(1, 0)`
+when `J` and `X` do not depend on `re z` (`TauCeti.Floer.graphStructure_periodic`), and `u` solves
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` at `y` exactly when its graph `U` solves
 `∂ₜU = J'(U) ∂ₛU` there (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`).
 
@@ -439,6 +440,16 @@ theorem contDiffOn_graphStructure {n : WithTop ℕ∞} {W : Set (ℂ × V)}
   exact contDiffOn_const.clm_comp ((contDiffOn_const.add (contDiffOn_const.clm_comp
     ((hJ'.clm_comp (contDiffOn_const.sub (hX'.clm_comp contDiffOn_const))).add
       (hX'.clm_comp contDiffOn_const)))).clm_comp contDiffOn_const)
+
+/-- Gromov's structure for data independent of `re z` is invariant under the translations along
+`(1, 0)`. -/
+theorem graphStructure_periodic (hJ : ∀ x (τ : ℝ), Periodic (fun z ↦ J (z, x)) τ)
+    (hX : ∀ x (τ : ℝ), Periodic (fun z ↦ X (z, x)) τ) (τ : ℝ) :
+    Periodic (graphStructure J X) (τ • WithLp.toLp 2 ((1 : ℂ), (0 : V))) := fun p ↦ by
+  have hp : (p + τ • WithLp.toLp 2 ((1 : ℂ), (0 : V))).ofLp = (p.ofLp.1 + τ, p.ofLp.2) := by
+    ext <;> simp
+  ext1 ζ
+  simp only [graphStructure_apply, hp, hJ p.ofLp.2 τ p.ofLp.1, hX p.ofLp.2 τ p.ofLp.1]
 
 end GraphStructure
 

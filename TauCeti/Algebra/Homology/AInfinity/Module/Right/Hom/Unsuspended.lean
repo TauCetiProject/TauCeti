@@ -63,7 +63,7 @@ variable {MM : AInfinityRightModule AA M} {NN : AInfinityRightModule AA N}
 /-- The unsuspended component with `n` algebra inputs.  It has total arity `n + 1`, with the
 module input first, and cohomological degree `-n`. -/
 noncomputable def component (f : AInfinityRightModuleHom MM NN) (n : ℕ) :
-    M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N :=
+    M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N :=
   AInfinityRightModule.unsuspend MM.grading AA.grading n (f.suspendedComponent n)
 
 /-- The unsuspended component evaluates the suspended component on Koszul-twisted inputs. -/

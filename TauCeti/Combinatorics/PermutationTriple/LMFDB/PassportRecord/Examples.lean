@@ -404,7 +404,7 @@ example :
     parseMapLabel 4 "4T1-4_4_2.2-ab" =
       some (⟨⟨0, by simp⟩, {4}, {4}, {2, 2}⟩, "ab") := by
   rw [parseMapLabel_eq_some_iff]
-  refine ⟨"4T1", "4_4_2.2", by decide +kernel, by decide, by decide, ?_⟩
+  refine ⟨"4T1", "4_4_2.2", by decide +kernel, by decide, by simp, ?_⟩
   exact parsePassportLabel_torusPassportRecord
 
 end PassportRecord
@@ -501,7 +501,7 @@ theorem parseMapLabel_doubleCoverBelyiRecord :
     parseMapLabel 2 doubleCoverBelyiRecord.label =
       some (⟨⟨0, by simp⟩, {2}, {2}, {1, 1}⟩, "a") := by
   rw [parseMapLabel_eq_some_iff_append]
-  refine ⟨"2T1-2_2_1.1", by decide +kernel, by decide, by decide, ?_⟩
+  refine ⟨"2T1-2_2_1.1", by decide +kernel, by decide, by simp, ?_⟩
   rw [parsePassportLabel_eq_some_iff]
   refine ⟨"2T1", "2_2_1.1", "2", "2", "1.1", by decide +kernel,
     by decide +kernel, ?_, ?_, ?_, ?_⟩

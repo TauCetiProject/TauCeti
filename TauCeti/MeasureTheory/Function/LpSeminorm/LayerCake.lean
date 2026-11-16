@@ -49,7 +49,7 @@ theorem eLpNorm_le_lintegral_measure_norm_gt (hf : AEStronglyMeasurable f μ)
     simp [H, lintegral_indicator, Measure.restrict_apply, Iio_inter_Ioi]
   have hnorm : eLpNorm f p μ =
       (∫⁻ x, (∫⁻ t in Ioi (0 : ℝ), H x t) ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hf]
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hf]
     simp_rw [hlayer]
     congr 1
     apply lintegral_congr_ae

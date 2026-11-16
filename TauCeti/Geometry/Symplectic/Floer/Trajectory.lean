@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
+public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 
 /-!

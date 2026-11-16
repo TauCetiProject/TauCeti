@@ -13,7 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
-import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
+import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 
 /-!
 # The kernel of the Hessian Fourier multiplier
@@ -180,10 +180,8 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_m
   rw [(hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
     Pi.neg_apply, hφx x (by linarith), neg_zero, smul_zero, zero_add, add_zero]
   have hR₀x : R₀ < ‖x‖ := by linarith
-  have hφi := hφ.continuous.integrable_of_hasCompactSupport (μ := volume) hc
-  have h₁ := norm_fderiv_newtonianKernel_convolution_le (by omega) hφi
-    ((subset_tsupport φ).trans hR₀) hR₀x
-  have h₂ := norm_newtonianKernel_convolution_le hn hφi ((subset_tsupport φ).trans hR₀) hR₀x
+  have h₁ := norm_fderiv_newtonianKernel_convolution_le ((subset_tsupport φ).trans hR₀) hR₀x
+  have h₂ := norm_newtonianKernel_convolution_le hn ((subset_tsupport φ).trans hR₀) hR₀x
   have hΔχ : ‖Δ χ x‖ ≤ C / R := (hχ'' x).trans (div_le_div_of_nonneg_left hC hR0
     (by nlinarith))
   calc ‖(2 : ℝ) • fderiv ℝ u x (∇ χ x) + Δ χ x • u x‖
@@ -301,8 +299,8 @@ private theorem exists_continuousOn_norm_le_cthickening {s : Set (EuclideanSpace
       (continuous_const.sub continuous_id).continuousAt).eval_const _ |>.continuousWithinAt
   refine ((iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y)).le_opNorm _).trans ?_
   simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-  refine mul_le_mul_of_nonneg_right ((norm_iteratedFDeriv_two_newtonianKernel_le
-    (hne y hy)).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))) (by positivity)
+  refine mul_le_mul_of_nonneg_right ((norm_iteratedFDeriv_two_newtonianKernel_le (x - y)).trans
+    (mul_le_mul_of_nonneg_left ?_ (by positivity))) (by positivity)
   exact Real.rpow_le_rpow_of_nonpos hη (hdist y hy) (neg_nonpos.2 (Nat.cast_nonneg n))
 
 section Multiplier

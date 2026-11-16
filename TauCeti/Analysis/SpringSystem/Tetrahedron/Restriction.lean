@@ -176,6 +176,15 @@ theorem tetrahedronVibrationSeed_def (i : Fin 4) :
     tetrahedronVibrationSeed i = tetrahedronAffineFieldEquiv (0, tetrahedronVertexSeedMatrix i) :=
   (rfl)
 
+/-- The breathing mode has squared norm `∑ⱼ qⱼ ⬝ qⱼ = 3`. -/
+@[simp]
+theorem dotProduct_tetrahedronBreathingMode_self :
+    tetrahedronBreathingMode ⬝ᵥ tetrahedronBreathingMode = 3 := by
+  rw [tetrahedronBreathingMode_def]
+  simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three,
+    tetrahedronCenteredVertex_eq]
+  norm_num
+
 /-- The breathing mode is fixed by every symmetry. -/
 @[simp]
 theorem tetrahedronDisplacementRep_breathingMode (σ : Equiv.Perm (Fin 4)) :
