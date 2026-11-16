@@ -95,8 +95,8 @@ the smoothing arcs suppresses them; neither step raises the genus.
 * `TauCeti.PDCode.IsPlanar.resolveCrossing`: the resolutions of a planar code are planar.
 * `TauCeti.PDCode.two_mul_componentCount_resolveCrossing`: the component count of a resolution in
   terms of the orbits of `resolveCrossingTurn D c t * D.edgePair.val`.
-* `TauCeti.PDCode.orientation_resolveCrossing_edgePair`: a half-edge direction reversing along
-  every arc of `D` and along the local smoothing at `c` also reverses along every arc of the
+* `TauCeti.PDCode.apply_crossing_resolveCrossing_edgePair_eq_not`: a half-edge direction reversing
+  along every arc of `D` and along the local smoothing at `c` also reverses along every arc of the
   resolution.
 
 ## References
@@ -1194,25 +1194,14 @@ theorem resolveCrossingTurn_crossing_of_ne {i : Fin (n + 1)} (hi : i ≠ c) (k :
     D.resolveCrossingTurn c t (D.resolveCrossingTurn c t h) = h := by
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
   obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv (n + 1)).surjective x
-  by_cases hi : i = c
-  · subst hi; simp
-  · simp [hi]
+  rcases eq_or_ne i c with rfl | hi <;> simp [*]
 
 /-- `resolveCrossingTurn` is a perfect matching of the half-edges of `D`. -/
 theorem isPerfectMatching_resolveCrossingTurn : IsPerfectMatching (D.resolveCrossingTurn c t) := by
   refine isPerfectMatching_iff.mpr ⟨D.resolveCrossingTurn_apply_apply c t, fun h hh ↦ ?_⟩
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
   obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv (n + 1)).surjective x
-  by_cases hi : i = c
-  · subst hi
-    simp only [resolveCrossingTurn_halfEdge_crossingSlotEquiv_self, crossing_apply,
-      D.halfEdge.apply_eq_iff_eq, (crossingSlotEquiv (n + 1)).apply_eq_iff_eq,
-      Prod.mk.injEq, true_and] at hh
-    exact slotSmoothing_ne _ k hh
-  · simp only [resolveCrossingTurn_halfEdge_crossingSlotEquiv_of_ne D c t hi, crossing_apply,
-      D.halfEdge.apply_eq_iff_eq, (crossingSlotEquiv (n + 1)).apply_eq_iff_eq,
-      Prod.mk.injEq, true_and] at hh
-    exact Fin.oppositeCrossingSlot_ne k hh
+  rcases eq_or_ne i c with rfl | hi <;> simp [*, crossing_apply] at hh
 
 /-- In the Klein four-group on `Fin 4`, each local smoothing differs from `oppositeCrossingSlot`
 by the two disjoint transpositions `(0, S 2)` and `(2, S 0)`. -/

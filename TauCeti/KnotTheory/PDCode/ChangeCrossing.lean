@@ -9,56 +9,29 @@ public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.KnotTheory.PDCode.Planar
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Seifert
 
-/-!
-# Switching a single crossing of a PD-code
+/-! # Switching a single crossing of a PD-code
 
-`TauCeti.PDCode.changeCrossing D c` switches the over- and under-strands at a single crossing `c`
-of a PD-code `D`, leaving all other crossings, all arcs, and all crossing-free circles unchanged.
-It preserves the underlying `4`-valent ribbon graph, planarity, and component count, while
-exchanging the `A`- and `B`-smoothings at `c` via the involutive state permutation
-`TauCeti.PDCode.changeCrossingStateEquiv c`.
+`TauCeti.PDCode.changeCrossing D c` switches the over- and under-strands at crossing `c` of `D`,
+preserving the `4`-valent ribbon graph (`toPermutationTriple_changeCrossing`), planarity
+(`isPlanar_changeCrossing`), and component count (`componentCount_changeCrossing`), while
+exchanging `A`- and `B`-smoothings at `c` via `TauCeti.PDCode.changeCrossingStateEquiv c`. This
+bijection preserves `stateLoopCount` and flips `(-1) ^ |S|`
+(`negOnePow_card_false_changeCrossingStateEquiv`).
 
-On an oriented PD-code (`TauCeti.OrientedPDCode.changeCrossing`), switching `c` keeps all
-half-edge directions and crossing-free circle orientations unchanged, negates `crossingSign` at `c`
-while preserving all other crossing signs, transforms `seifertState` by
-`changeCrossingStateEquiv c`, and flips the parity sign `(-1) ^ n₋` of `negativeCrossingCount`.
+On an oriented PD-code (`TauCeti.OrientedPDCode.changeCrossing`), half-edge directions and
+crossing-free circle orientations are unchanged, `crossingSign` negates at `c` only, `seifertState`
+transforms by `changeCrossingStateEquiv c` (`seifertState_changeCrossing`), and `(-1) ^ n₋` flips
+(`negOnePow_negativeCrossingCount_changeCrossing`).
 
-## Main definitions
-
-* `TauCeti.PDCode.changeCrossing`: switch the over- and under-strands at crossing `c`.
-* `TauCeti.PDCode.changeCrossingStateEquiv`: the involutive permutation of `Fin n → Bool`
-  complementing the state at `c`.
-* `TauCeti.OrientedPDCode.changeCrossing`: switch over- and under-strands at `c` on an oriented
-  PD-code.
-
-## Main results
-
-* `TauCeti.PDCode.toPermutationTriple_changeCrossing`, `TauCeti.PDCode.isPlanar_changeCrossing`,
-  `TauCeti.PDCode.componentCount_changeCrossing`: changing a crossing preserves the ribbon graph,
-  planarity, and component count.
-* `TauCeti.PDCode.stateLoopCount_changeCrossing_changeCrossingStateEquiv`: the `A`/`B` state
-  bijection preserves the number of state loops in every state.
-* `TauCeti.PDCode.negOnePow_card_false_changeCrossingStateEquiv`: complementing a state at `c`
-  flips `(-1) ^ |S|`.
-* `TauCeti.OrientedPDCode.seifertState_changeCrossing`,
-  `TauCeti.OrientedPDCode.negOnePow_negativeCrossingCount_changeCrossing`: switching `c` flips the
-  Seifert state at `c` and negates `(-1) ^ n₋`.
-
-## References
-
-* W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 1 and
-  Chapter 3.
+Reference: W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Ch. 1, 3.
 -/
 
 public section
-
 namespace TauCeti
-
 open Equiv Equiv.Perm
 open scoped Finset
 
 namespace PDCode
-
 variable {n : ℕ}
 
 /-- **Crossing change.** Switch the over- and under-strands at crossing `c`, leaving all other
@@ -83,13 +56,11 @@ def changeCrossing (D : PDCode n) (c : Fin n) : PDCode n where
 
 /-- Changing crossing `c` complements `overPair` at `c`. -/
 @[simp] theorem changeCrossing_overPair_self (D : PDCode n) (c : Fin n) :
-    (D.changeCrossing c).overPair c = !D.overPair c := by
-  simp [changeCrossing]
+    (D.changeCrossing c).overPair c = !D.overPair c := by simp [changeCrossing]
 
 /-- Changing crossing `c` leaves `overPair` unchanged at every other crossing. -/
 @[simp] theorem changeCrossing_overPair_of_ne (D : PDCode n) {c i : Fin n} (hi : i ≠ c) :
-    (D.changeCrossing c).overPair i = D.overPair i := by
-  simp [changeCrossing, hi]
+    (D.changeCrossing c).overPair i = D.overPair i := by simp [changeCrossing, hi]
 
 /-- Changing a crossing preserves the half-edges at every crossing slot. -/
 theorem crossing_changeCrossing (D : PDCode n) (c i : Fin n) (k : Fin 4) :
@@ -98,17 +69,13 @@ theorem crossing_changeCrossing (D : PDCode n) (c i : Fin n) (k : Fin 4) :
 
 /-- Changing the same crossing twice recovers the original PD-code. -/
 @[simp] theorem changeCrossing_changeCrossing (D : PDCode n) (c : Fin n) :
-    (D.changeCrossing c).changeCrossing c = D := by
-  ext : 1 <;> simp [changeCrossing]
+    (D.changeCrossing c).changeCrossing c = D := by ext : 1 <;> simp [changeCrossing]
 
 /-- Reflection commutes with switching a crossing. -/
 @[simp] theorem mirror_changeCrossing (D : PDCode n) (c : Fin n) :
     (D.changeCrossing c).mirror = D.mirror.changeCrossing c := by
   apply PDCode.ext <;> try simp
-  funext i
-  by_cases hi : i = c
-  · subst hi; simp
-  · simp [hi]
+  funext i; rcases eq_or_ne i c with rfl | hi <;> simp [*]
 
 /-- Changing a crossing preserves the opposite-slot involution `crossingTurn`. -/
 @[simp] theorem crossingTurn_changeCrossing (D : PDCode n) (c : Fin n) :
@@ -163,13 +130,11 @@ theorem changeCrossingStateEquiv_apply (c : Fin n) (s : Fin n → Bool) :
 
 /-- At the changed crossing `c`, `changeCrossingStateEquiv` complements the state value. -/
 @[simp] theorem changeCrossingStateEquiv_apply_self (c : Fin n) (s : Fin n → Bool) :
-    changeCrossingStateEquiv c s c = !s c := by
-  simp [changeCrossingStateEquiv_apply]
+    changeCrossingStateEquiv c s c = !s c := by simp [changeCrossingStateEquiv_apply]
 
 /-- Away from `c`, `changeCrossingStateEquiv` leaves the state value unchanged. -/
 @[simp] theorem changeCrossingStateEquiv_apply_of_ne {c i : Fin n} (hi : i ≠ c)
-    (s : Fin n → Bool) :
-    changeCrossingStateEquiv c s i = s i := by
+    (s : Fin n → Bool) : changeCrossingStateEquiv c s i = s i := by
   simp [changeCrossingStateEquiv_apply, hi]
 
 /-- `changeCrossingStateEquiv` is its own inverse. -/
@@ -180,27 +145,19 @@ theorem changeCrossingStateEquiv_apply (c : Fin n) (s : Fin n → Bool) :
 /-- Applying `changeCrossingStateEquiv c` twice recovers the original state. -/
 @[simp] theorem changeCrossingStateEquiv_apply_apply (c : Fin n) (s : Fin n → Bool) :
     changeCrossingStateEquiv c (changeCrossingStateEquiv c s) = s := by
-  ext i
-  by_cases hi : i = c
-  · subst hi; simp
-  · simp [hi]
+  simpa using (changeCrossingStateEquiv c).apply_symm_apply s
 
 /-- Composing `changeCrossingStateEquiv c` with itself gives the identity equivalence. -/
 @[simp] theorem changeCrossingStateEquiv_trans_self (c : Fin n) :
     (changeCrossingStateEquiv c).trans (changeCrossingStateEquiv c) = Equiv.refl _ := by
-  ext s i
-  simp
+  ext s i; simp
 
 /-- Complementing the state at `c` selects the same local smoothings in `D.changeCrossing c` as the
 original state selects in `D`. -/
 @[simp] theorem smoothingChoice_changeCrossing_changeCrossingStateEquiv (D : PDCode n) (c : Fin n)
     (s : Fin n → Bool) :
     (D.changeCrossing c).smoothingChoice (changeCrossingStateEquiv c s) = D.smoothingChoice s := by
-  funext i
-  by_cases hi : i = c
-  · subst hi
-    cases hs : s i <;> simp [hs]
-  · cases hs : s i <;> simp [hs, hi]
+  funext i; rcases eq_or_ne i c with rfl | hi <;> (cases hs : s i <;> simp [*])
 
 /-- The `A`/`B` state bijection preserves the smoothed traversal permutation. -/
 @[simp] theorem statePerm_changeCrossing_changeCrossingStateEquiv (D : PDCode n) (c : Fin n)
@@ -219,21 +176,16 @@ theorem negOnePow_card_false_changeCrossingStateEquiv (c : Fin n) (s : Fin n →
     (#{i | changeCrossingStateEquiv c s i = false} : ℤ).negOnePow =
       -(#{i | s i = false} : ℤ).negOnePow := by
   apply Int.negOnePow_eq_neg_of_odd_sub
-  have hcompl : ∀ j ∈ ({c}ᶜ : Finset (Fin n)),
-      (if changeCrossingStateEquiv c s j = false then (1 : ℤ) else 0) =
-        if s j = false then 1 else 0 :=
-    fun j hj ↦ by rw [changeCrossingStateEquiv_apply_of_ne (by simpa using hj)]
   rw [Finset.natCast_card_filter, Finset.natCast_card_filter, Fintype.sum_eq_add_sum_compl c,
     Fintype.sum_eq_add_sum_compl c (fun i ↦ if s i = false then (1 : ℤ) else 0),
-    Finset.sum_congr rfl hcompl, add_sub_add_right_eq_sub, changeCrossingStateEquiv_apply_self]
-  cases s c
-  · exact ⟨-1, by decide⟩
-  · exact ⟨0, by decide⟩
+    Finset.sum_congr rfl (fun j hj ↦ by
+      rw [changeCrossingStateEquiv_apply_of_ne (by simpa using hj)]),
+    add_sub_add_right_eq_sub, changeCrossingStateEquiv_apply_self, Int.odd_iff]
+  cases s c <;> decide
 
 end PDCode
 
 namespace OrientedPDCode
-
 variable {n : ℕ}
 
 /-- **Oriented crossing change.** Switch the over- and under-strands at crossing `c` while keeping
@@ -260,56 +212,44 @@ def changeCrossing (D : OrientedPDCode n) (c : Fin n) : OrientedPDCode n where
 
 /-- Changing the same oriented crossing twice recovers the original oriented PD-code. -/
 @[simp] theorem changeCrossing_changeCrossing (D : OrientedPDCode n) (c : Fin n) :
-    (D.changeCrossing c).changeCrossing c = D := by
-  ext <;> simp
+    (D.changeCrossing c).changeCrossing c = D := by ext <;> simp
 
 /-- Reflection commutes with switching an oriented crossing. -/
 @[simp] theorem mirror_changeCrossing (D : OrientedPDCode n) (c : Fin n) :
-    (D.changeCrossing c).mirror = D.mirror.changeCrossing c := by
-  ext <;> simp
+    (D.changeCrossing c).mirror = D.mirror.changeCrossing c := by ext <;> simp
 
 /-- Reversing all component orientations commutes with switching an oriented crossing. -/
 @[simp] theorem reverse_changeCrossing (D : OrientedPDCode n) (c : Fin n) :
-    (D.changeCrossing c).reverse = D.reverse.changeCrossing c := by
-  ext <;> simp
+    (D.changeCrossing c).reverse = D.reverse.changeCrossing c := by ext <;> simp
 
 /-- Changing crossing `c` negates its crossing sign. -/
 @[simp] theorem crossingSign_changeCrossing_self (D : OrientedPDCode n) (c : Fin n) :
     (D.changeCrossing c).crossingSign c = -D.crossingSign c := by
-  rw [crossingSign_def, crossingSign_def]
-  simp only [toPDCode_changeCrossing, PDCode.crossing_changeCrossing, orientation_changeCrossing,
-    PDCode.changeCrossing_overPair_self]
+  simp only [crossingSign_def, toPDCode_changeCrossing, PDCode.crossing_changeCrossing,
+    orientation_changeCrossing, PDCode.changeCrossing_overPair_self]
   cases Bool.xor (D.orientation (D.crossing c 0)) (D.orientation (D.crossing c 1)) <;>
     cases D.overPair c <;> decide
 
 /-- Changing crossing `c` preserves the sign of every other crossing. -/
 @[simp] theorem crossingSign_changeCrossing_of_ne (D : OrientedPDCode n) {c i : Fin n}
-    (hi : i ≠ c) :
-    (D.changeCrossing c).crossingSign i = D.crossingSign i := by
-  rw [crossingSign_def, crossingSign_def]
-  simp [hi]
+    (hi : i ≠ c) : (D.changeCrossing c).crossingSign i = D.crossingSign i := by
+  simp [crossingSign_def, hi]
 
 /-- Switching crossing `c` complements the Seifert state at `c` and leaves it unchanged
 elsewhere. -/
 @[simp] theorem seifertState_changeCrossing (D : OrientedPDCode n) (c : Fin n) :
     (D.changeCrossing c).seifertState = PDCode.changeCrossingStateEquiv c D.seifertState := by
-  funext i
-  rw [Bool.eq_iff_iff]
-  by_cases hi : i = c
-  · subst hi
-    rcases D.crossingSign_eq_one_or_neg_one i with h | h <;> simp [h]
+  funext i; rw [Bool.eq_iff_iff]
+  rcases eq_or_ne i c with rfl | hi
+  · rcases D.crossingSign_eq_one_or_neg_one i with h | h <;> simp [h]
   · simp [hi]
 
 /-- Changing a single crossing flips the parity sign `(-1) ^ n₋` of the negative crossing count. -/
 theorem negOnePow_negativeCrossingCount_changeCrossing (D : OrientedPDCode n) (c : Fin n) :
     ((D.changeCrossing c).negativeCrossingCount : ℤ).negOnePow =
       -(D.negativeCrossingCount : ℤ).negOnePow := by
-  have hneg (E : OrientedPDCode n) :
-      E.negativeCrossingCount = #{i | E.seifertState i = false} := by
-    simp only [negativeCrossingCount_def, seifertState_eq_false_iff]
-  rw [hneg, hneg, seifertState_changeCrossing]
-  exact PDCode.negOnePow_card_false_changeCrossingStateEquiv c D.seifertState
+  simpa only [negativeCrossingCount_def, ← seifertState_eq_false_iff, seifertState_changeCrossing]
+    using PDCode.negOnePow_card_false_changeCrossingStateEquiv c D.seifertState
 
 end OrientedPDCode
-
 end TauCeti
