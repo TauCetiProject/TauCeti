@@ -123,6 +123,7 @@ lemma sections_mono {I J : X.IdealSheafData} (h : I ≤ J) (U : X.Opens) :
   mem_sections_of_forall_affineOpens fun V i ↦ h V (map_mem_ideal hs V i)
 
 /-- The sections of `I ⊓ J` are the regular functions that are sections of both `I` and `J`. -/
+@[simp]
 lemma sections_inf {I J : X.IdealSheafData} (U : X.Opens) :
     (I ⊓ J).sections U = I.sections U ⊓ J.sections U :=
   le_antisymm (le_inf (sections_mono inf_le_left U) (sections_mono inf_le_right U))
