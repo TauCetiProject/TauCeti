@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Tubular
-import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!
@@ -486,44 +485,6 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation [T2Space M]
   rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR ε]
   exact hmain ε hε hcomp (hZ ▸ hcrit)
 
-/-- Over a compact base, the sublevels `{s + t ≤ δ}` of the squared norms of the two parts of a
-normal vector are compact for small `δ`: the rays `a ↦ (a u, a w)`, `a ∈ [0, 1]`, join each normal
-vector to the compact zero section without increasing `s + t`. -/
-private theorem exists_pos_forall_isCompact_setOf_negSq_add_posSq_le [T2Space S] [CompactSpace S]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
-    (g : letI := i.normalSpaceFiberBundle hn hdim
-      letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
-    letI := i.normalSpaceFiberBundle hn hdim
-    letI := i.normalSpaceVectorBundle hn hdim
-    ∃ m > 0, ∀ δ < m, IsCompact {x : TotalSpace P fun s ↦ i.NormalSpace s hn |
-      h.negSq hn g.toRiemannianMetric x + h.posSq hn g.toRiemannianMetric x ≤ δ} := by
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  have : LocallyCompactSpace (ModelProd H' P) := (J.prod 𝓘(ℝ, P)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace P fun s ↦ i.NormalSpace s hn) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H' P) _
-  obtain ⟨hs, ht, hσ⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
-  set gR := g.toRiemannianMetric
-  obtain ⟨m, hm, -, hmK⟩ := exists_gt_setOf_lt_subset_and_isCompact (U := univ)
-    (isCompact_range (Bundle.contMDiff_zeroSection (n := ∞) (IB := J) _ _).continuous) isOpen_univ
-    (subset_univ _) (q := fun x ↦ h.negSq hn gR x + h.posSq hn gR x)
-    (hs.continuous.add ht.continuous) (a := 0)
-    (fun x hx ↦ ⟨x.proj, h.eq_zeroSection_of_negSq_eq_zero hn gR x
-      (by linarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])
-      (by linarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])⟩)
-    fun x ↦ ⟨(fun a ↦ h.rescale hn gR a a x) '' Icc 0 1, isPreconnected_Icc.image _
-      (hσ.continuous.comp
-        ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
-      ⟨1, ⟨zero_le_one, le_rfl⟩, h.rescale_one_one hn gR x⟩,
-      ⟨_, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, x.proj, (h.rescale_zero_zero hn gR x).symm⟩, by
-        rintro _ ⟨a, ha, rfl⟩
-        have ha2 : a ^ 2 ≤ 1 := pow_le_one₀ ha.1 ha.2
-        simp only [h.negSq_rescale hn gR x a a, h.posSq_rescale hn gR x a a]
-        nlinarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x]⟩
-  exact ⟨m, hm, hmK⟩
-
 /-- **The negative disc bundle of a compact Morse–Bott submanifold is compact.** Let `i : S → M`
 be a nondegenerate critical submanifold of a smooth function, with `S` compact and Hausdorff, and
 let `g` be a smooth fibre metric on its normal bundle. Then for every `ε` the negative disc bundle
@@ -540,21 +501,31 @@ theorem isCompact_negativeDiscBundle [T2Space S] [CompactSpace S]
     IsCompact (h.negativeDiscBundle hn P g.toRiemannianMetric ε) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
+  have : LocallyCompactSpace (ModelProd H' P) := (J.prod 𝓘(ℝ, P)).locallyCompactSpace
+  have : LocallyCompactSpace (TotalSpace P fun s ↦ i.NormalSpace s hn) :=
+    ChartedSpace.locallyCompactSpace (ModelProd H' P) _
   obtain ⟨hs, ht, hσ⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
-  obtain ⟨m, hm, hmK⟩ := h.exists_pos_forall_isCompact_setOf_negSq_add_posSq_le hn hfs hdim g
   set gR := g.toRiemannianMetric
+  -- The rays `a ↦ (a u, a w)`, `a ∈ [0, 1]`, join each normal vector to the compact zero section.
+  obtain ⟨m, hm, -, hmK⟩ := exists_pos_setOf_add_two_mul_lt_subset_and_isCompact hs.continuous
+    ht.continuous (h.negSq_nonneg hn gR) (h.posSq_nonneg hn gR)
+    (isCompact_range (Bundle.contMDiff_zeroSection (n := ∞) (IB := J) _ _).continuous) isOpen_univ
+    (subset_univ _) (fun x hs ht ↦ ⟨x.proj, h.eq_zeroSection_of_negSq_eq_zero hn gR x hs ht⟩)
+    (h.rescale hn gR) hσ.continuous (fun a b x ↦ h.negSq_rescale hn gR x a b)
+    (fun a b x ↦ h.posSq_rescale hn gR x a b) (h.rescale_one_one hn gR)
+    (fun x ↦ ⟨x.proj, (h.rescale_zero_zero hn gR x).symm⟩)
   have hD : IsClosed (h.negativeDiscBundle hn P gR ε) := by
     rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR ε]
     exact (isClosed_eq ht.continuous continuous_const).inter
       (isClosed_le hs.continuous continuous_const)
   set δ := m / 2
   have hK := hmK δ (half_lt_self hm)
-  -- A disc bundle of size at most `δ` lies in the compact set `{s + t ≤ δ}`.
+  -- A disc bundle of size at most `δ` lies in the compact set `{s + 2t ≤ δ}`.
   have hDK (ε : ℝ) (hεδ : ε ≤ δ) :
-      h.negativeDiscBundle hn P gR ε ⊆ {x | h.negSq hn gR x + h.posSq hn gR x ≤ δ} := by
+      h.negativeDiscBundle hn P gR ε ⊆ {x | h.negSq hn gR x + 2 * h.posSq hn gR x ≤ δ} := by
     rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR ε]
     rintro x ⟨htx, hsx⟩
-    rw [mem_ofPred_eq, htx, add_zero]
+    rw [mem_ofPred_eq, htx, mul_zero, add_zero]
     exact hsx.trans hεδ
   rcases le_or_gt ε δ with hεδ | hεδ
   · exact hK.of_isClosed_subset hD (hDK ε hεδ)

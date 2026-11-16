@@ -16,8 +16,9 @@ import TauCeti.Topology.Category.TopCat.Pushout
 Let `i : S → M` be a critical submanifold of a function `f` on the level `f = c`, let `g` be a
 fibre metric on its normal bundle `ν`, and let `Θ` be a Morse–Bott normal form on the negative
 disc bundle `D_ε = {v ∈ ν⁻ | -½ Hessₛ (v, v) ≤ ε}`: `f (Θ v) = c + ½ Hessₛ (v, v)`. For a compact
-Morse–Bott submanifold, crossing the critical level, the sublevel `{f ≤ c + ε}` strong
-deformation retracts onto `{f ≤ c - ε} ∪ Θ(D_ε)`, for such a `Θ`
+Morse–Bott submanifold, crossing the critical level, there are such a `Θ` and an `ε₀ > 0` such
+that for `0 < ε < ε₀` with the band `f⁻¹[c - ε, c + ε]` compact and its critical points on `i`,
+the sublevel `{f ≤ c + ε}` strong deformation retracts onto `{f ≤ c - ε} ∪ Θ(D_ε)`
 (`IsNondegenerateCriticalSubmanifold.exists_sublevel_union_negativeDiscBundle_deformation`, in
 the namespace `TauCeti.SmoothEmbedding`). This file shows that this union is the space obtained
 from the lower sublevel by attaching `D_ε` along the negative sphere bundle
@@ -28,9 +29,11 @@ The normal Hessian is negative semidefinite on `ν⁻`, so on `D_ε` the value `
 sublevel `{f ≤ c}` (`IsCriticalSubmanifold.apply_le_of_mem_negativeDiscBundle`) and meets the lower
 sublevel exactly in `Θ(S_ε)` (`IsCriticalSubmanifold.mem_negativeSphereBundle_iff_apply_le`,
 `IsCriticalSubmanifold.image_negativeDiscBundle_inter_sublevel`). With a closed embedding of
-`D_ε`, these are the conditions under which a disc bundle is attached along its sphere bundle in
-the sense of `TauCeti.isIso_singularHomologyMap_of_attach_discBundle`, which computes the relative
-homology of such an attachment.
+`D_ε`, these conditions are analogous to the hypotheses of
+`TauCeti.isIso_singularHomologyMap_of_attach_discBundle`, which computes the relative homology of
+a closed embedding of the fibre-norm disc bundle `TauCeti.discBundle` of a vector bundle attached
+along its sphere bundle. `D_ε` is cut out of the whole normal bundle by the normal Hessian rather
+than being such a fibre-norm disc bundle, so applying that theorem to `D_ε` needs further work.
 
 When `D_ε` is compact, as it is for a compact Morse–Bott submanifold and a smooth fibre metric
 (`IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`), a normal form which is
@@ -38,7 +41,8 @@ continuous and injective on `D_ε` embeds it as a closed subset of the Hausdorff
 Covered by the closed sets `{f ≤ c - ε}` and `Θ(D_ε)`, which meet in `Θ(S_ε)`, the union is
 therefore a pushout in `TopCat` of the attaching map `Θ : S_ε → {f ≤ c - ε}` along the inclusion
 `S_ε → D_ε` (`IsCriticalSubmanifold.isPushout_negativeDiscBundle`). Together with the deformation
-theorem, `{f ≤ c + ε}` is homotopy equivalent, relative to `{f ≤ c - ε}`, to
+theorem, for `0 < ε < ε₀` with `f⁻¹[c - ε, c + ε]` compact and its critical points on `i`,
+`{f ≤ c + ε}` is homotopy equivalent, relative to `{f ≤ c - ε}`, to
 `{f ≤ c - ε} ∪_{Θ|S_ε} D_ε`: crossing the level of a compact Morse–Bott submanifold attaches its
 negative disc bundle along its sphere bundle. For an isolated nondegenerate critical point the
 base is a point, `D_ε` is a closed ellipsoid of dimension the index and `S_ε` its boundary sphere.

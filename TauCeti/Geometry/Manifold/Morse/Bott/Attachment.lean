@@ -59,7 +59,7 @@ since `[0, 1]` is compact the deformation is still continuous.
   `f ∘ Θ = c - s + t` given by a partial diffeomorphism `Θ` near a compact core and all small
   `ε > 0`. The tube is the image under `Θ` of a sublevel `{s + 2t < m}`, which for small `m` has
   compact closed sublevels inside the source of `Θ`
-  (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
+  (`TauCeti.exists_pos_setOf_add_two_mul_lt_subset_and_isCompact`).
 
 ## References
 
@@ -673,6 +673,32 @@ private theorem exists_sublevel_union_image_deformation_of_tube (hfs : ContMDiff
   · rintro _ ⟨x, hx, rfl⟩
     rw [hf x (hWΘ hx), hsΘ x (hWΘ hx), htΘ x (hWΘ hx)]
 
+/-- Let the continuous functions `s, t ≥ 0` on a locally compact Hausdorff space vanish together
+only on a compact set `Z`, and let the maps `σ a b`, continuous jointly in `a`, `b` and the point,
+rescale `s` by `a²` and `t` by `b²`, with `σ 1 1` the identity and `σ 0 0` mapping into `Z`. Then
+for every open neighbourhood `U` of `Z` there is `m > 0` such that `{s + 2t < m}` lies in `U` and
+the sublevels `{s + 2t ≤ δ}`, `δ < m`, are compact: the rays `a ↦ σ a a x`, `a ∈ [0, 1]`, join
+each point `x` to `Z` without increasing `s + 2t`. -/
+theorem exists_pos_setOf_add_two_mul_lt_subset_and_isCompact [LocallyCompactSpace X] [T2Space X]
+    {s t : X → ℝ} (hs : Continuous s) (ht : Continuous t) (hs₀ : ∀ x, 0 ≤ s x)
+    (ht₀ : ∀ x, 0 ≤ t x) {Z U : Set X} (hZ : IsCompact Z) (hU : IsOpen U) (hZU : Z ⊆ U)
+    (hstZ : ∀ x, s x = 0 → t x = 0 → x ∈ Z) (σ : ℝ → ℝ → X → X)
+    (hσ : Continuous fun p : (ℝ × ℝ) × X ↦ σ p.1.1 p.1.2 p.2)
+    (hσs : ∀ a b x, s (σ a b x) = a ^ 2 * s x) (hσt : ∀ a b x, t (σ a b x) = b ^ 2 * t x)
+    (hσ₁ : ∀ x, σ 1 1 x = x) (hσZ : ∀ x, σ 0 0 x ∈ Z) :
+    ∃ m > 0, {x | s x + 2 * t x < m} ⊆ U ∧ ∀ δ < m, IsCompact {x | s x + 2 * t x ≤ δ} :=
+  exists_gt_setOf_lt_subset_and_isCompact hZ hU hZU
+    (hs.add (continuous_const.mul ht)) (q := fun x ↦ s x + 2 * t x)
+    (fun x (hx : s x + 2 * t x ≤ 0) ↦
+      hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
+    fun x ↦ ⟨(fun a ↦ σ a a x) '' Icc 0 1, isPreconnected_Icc.image _
+      (hσ.comp ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
+      ⟨1, ⟨zero_le_one, le_rfl⟩, hσ₁ x⟩, ⟨σ 0 0 x, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, hσZ x⟩, by
+        rintro _ ⟨a, ha, rfl⟩
+        have ha2 : a ^ 2 ≤ 1 := pow_le_one₀ ha.1 ha.2
+        simp only [hσs, hσt]
+        nlinarith [hs₀ x, ht₀ x]⟩
+
 /-- **Attaching the negative disc bundle of a normal form given by a partial diffeomorphism.**
 Let `Θ : X → M` be a smooth partial diffeomorphism from a locally compact Hausdorff manifold `X`,
 and let `Z` be a compact subset of its source, the core of the normal form. On `X`, let the
@@ -712,14 +738,8 @@ theorem exists_sublevel_union_image_deformation [LocallyCompactSpace X] [T2Space
   have hq_le (a b : ℝ) (ha : a ^ 2 ≤ 1) (hb : b ^ 2 ≤ 1) (x : X) : q (σ a b x) ≤ q x := by
     simp only [hq_def, hσs, hσt]
     nlinarith [hs₀ x, ht₀ x]
-  -- The rays `a ↦ σ a a x`, `a ∈ [0, 1]`, join each point to the core, with `q` at most `q x`.
-  obtain ⟨m, hm, hmΘ, hmK⟩ := exists_gt_setOf_lt_subset_and_isCompact hZ Θ.open_source hZΘ hq
-    (fun x (hx : s x + 2 * t x ≤ 0) ↦
-      hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
-    fun x ↦ ⟨(fun a ↦ σ a a x) '' Icc 0 1, isPreconnected_Icc.image _
-      (hσ.comp ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
-      ⟨1, ⟨zero_le_one, le_rfl⟩, hσ₁ x⟩, ⟨σ 0 0 x, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, hσZ x⟩,
-      by rintro _ ⟨a, ha, rfl⟩; exact hq_le a a (pow_le_one₀ ha.1 ha.2) (pow_le_one₀ ha.1 ha.2) x⟩
+  obtain ⟨m, hm, hmΘ, hmK⟩ := exists_pos_setOf_add_two_mul_lt_subset_and_isCompact
+    hs.continuous ht.continuous hs₀ ht₀ hZ Θ.open_source hZΘ hstZ σ hσ hσs hσt hσ₁ hσZ
   refine ⟨m / 2, half_pos hm, fun ε hε hcompact hcrit ↦ ?_⟩
   have hεm : 2 * ε < m := by linarith [hε.2]
   have hD (x : X) (ht : t x = 0) (hs : s x ≤ ε) : q x < m := by
