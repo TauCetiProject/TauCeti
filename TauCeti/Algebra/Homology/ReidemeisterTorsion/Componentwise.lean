@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Group.Pi.Units
 public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.MatrixBaseChange
+import TauCeti.RingTheory.Artinian.EquivPi
 
 /-!
 # Componentwise torsion over a finite product of fields
@@ -113,49 +113,6 @@ attribute [local instance] Ideal.Quotient.field
 
 variable {A : Type*} [CommRing A] {Q : Type*} [CommRing Q] [IsArtinianRing Q] [IsReduced Q]
 
-omit [IsReduced Q] in
-/-- For a ring homomorphism `g : Q →+* Q'` between Artinian rings and a maximal ideal `m'` of
-`Q'`, the preimage of `m'` is a maximal ideal `p` of `Q`, and `g` induces a homomorphism of residue
-fields `ψ : Q ⧸ p →+* Q' ⧸ m'`, also compatible with the compositions with `f : A →+* Q`. -/
-private theorem exists_residueField_ringHom {Q' : Type*} [CommRing Q'] (g : Q →+* Q')
-    (m' : MaximalSpectrum Q') (f : A →+* Q) :
-    ∃ (p : MaximalSpectrum Q) (ψ : Q ⧸ p.asIdeal →+* Q' ⧸ m'.asIdeal),
-      (∀ x, Ideal.Quotient.mk m'.asIdeal (g x) = ψ (Ideal.Quotient.mk p.asIdeal x)) ∧
-        (Ideal.Quotient.mk m'.asIdeal).comp (g.comp f) =
-          ψ.comp ((Ideal.Quotient.mk p.asIdeal).comp f) := by
-  -- The preimage of `m'` is prime, hence maximal in the Artinian ring `Q`.
-  let p : MaximalSpectrum Q := ⟨m'.asIdeal.comap g, IsArtinianRing.isMaximal_of_isPrime _⟩
-  have hψ (x : Q) : Ideal.Quotient.mk m'.asIdeal (g x) =
-      Ideal.quotientMap m'.asIdeal g le_rfl (Ideal.Quotient.mk p.asIdeal x) :=
-    Ideal.quotientMap_mk.symm
-  exact ⟨p, _, hψ, RingHom.ext fun x ↦ hψ (f x)⟩
-
-/-! The element of `Q` with prescribed components `t m` in the residue fields `Q ⧸ m`. -/
-
-/-- The component in `Q ⧸ m` of the element with components `t` is `t m`. -/
-private theorem mk_equivPi_symm (t : ∀ m : MaximalSpectrum Q, Q ⧸ m.asIdeal)
-    (m : MaximalSpectrum Q) :
-    Ideal.Quotient.mk m.asIdeal ((IsArtinianRing.equivPi Q).symm t) = t m := by
-  rw [← IsArtinianRing.equivPi_apply, AlgEquiv.apply_symm_apply]
-
-/-- An element of `Q` is the element with components `t` exactly when its component in each
-residue field `Q ⧸ m` is `t m`. -/
-private theorem eq_equivPi_symm_iff {t : ∀ m : MaximalSpectrum Q, Q ⧸ m.asIdeal} {x : Q} :
-    x = (IsArtinianRing.equivPi Q).symm t ↔ ∀ m : MaximalSpectrum Q,
-      Ideal.Quotient.mk m.asIdeal x = t m := by
-  simp_rw [AlgEquiv.eq_symm_apply, funext_iff, IsArtinianRing.equivPi_apply]
-
-/-- The element with components `t` is a unit exactly when every component is nonzero. -/
-private theorem isUnit_equivPi_symm_iff {t : ∀ m : MaximalSpectrum Q, Q ⧸ m.asIdeal} :
-    IsUnit ((IsArtinianRing.equivPi Q).symm t) ↔ ∀ m, t m ≠ 0 := by
-  simp_rw [isUnit_map_iff, Pi.isUnit_iff, isUnit_iff_ne_zero]
-
-/-- The element with components `t` is `0` exactly when every component is `0`. -/
-private theorem equivPi_symm_eq_zero_iff {t : ∀ m : MaximalSpectrum Q, Q ⧸ m.asIdeal} :
-    (IsArtinianRing.equivPi Q).symm t = 0 ↔ ∀ m, t m = 0 := by
-  rw [map_eq_zero_iff _ (IsArtinianRing.equivPi Q).symm.injective, funext_iff]
-  simp_rw [Pi.zero_apply]
-
 section Graded
 
 variable (C : ChainComplex (ModuleCat A) ℤ) {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) A (C.X i))
@@ -178,7 +135,7 @@ theorem mk_componentwiseReidemeisterTorsion (m : MaximalSpectrum Q) :
     Ideal.Quotient.mk m.asIdeal (C.componentwiseReidemeisterTorsion c f) =
       (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).reidemeisterTorsion
         (C.matrixBaseChangeBasis c _) :=
-  mk_equivPi_symm _ m
+  IsArtinianRing.mk_equivPi_symm _ m
 
 variable {C c f}
 
@@ -190,7 +147,7 @@ theorem eq_componentwiseReidemeisterTorsion_iff {x : Q} :
       Ideal.Quotient.mk m.asIdeal x =
         (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).reidemeisterTorsion
           (C.matrixBaseChangeBasis c _) :=
-  eq_equivPi_symm_iff
+  IsArtinianRing.eq_equivPi_symm_iff
 
 /-- The componentwise torsion of an unbounded complex is `0`. -/
 @[simp]
@@ -212,7 +169,7 @@ change of `C` to every residue field of `Q` is acyclic. -/
 theorem isUnit_componentwiseReidemeisterTorsion_iff (hn : {i | n i ≠ 0}.Finite) :
     IsUnit (C.componentwiseReidemeisterTorsion c f) ↔ ∀ m : MaximalSpectrum Q,
       (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).Acyclic := by
-  rw [componentwiseReidemeisterTorsion, isUnit_equivPi_symm_iff]
+  rw [componentwiseReidemeisterTorsion, IsArtinianRing.isUnit_equivPi_symm_iff]
   exact forall_congr' fun m ↦ (reidemeisterTorsion_eq_zero_iff _ _ hn).not_left
 
 /-- The componentwise torsion of a bounded complex is `0` exactly when the coordinate base change
@@ -220,7 +177,7 @@ of `C` to no residue field of `Q` is acyclic. -/
 theorem componentwiseReidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
     C.componentwiseReidemeisterTorsion c f = 0 ↔ ∀ m : MaximalSpectrum Q,
       ¬(C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).Acyclic := by
-  rw [componentwiseReidemeisterTorsion, equivPi_symm_eq_zero_iff]
+  rw [componentwiseReidemeisterTorsion, IsArtinianRing.equivPi_symm_eq_zero_iff]
   exact forall_congr' fun m ↦ reidemeisterTorsion_eq_zero_iff _ _ hn
 
 /-- In a field `F`, the componentwise torsion along `f : A →+* F` is the torsion of the coordinate
@@ -249,7 +206,7 @@ theorem map_componentwiseReidemeisterTorsion {Q' : Type*} [CommRing Q'] [IsArtin
     [IsReduced Q'] (g : Q →+* Q') :
     g (C.componentwiseReidemeisterTorsion c f) = C.componentwiseReidemeisterTorsion c (g.comp f) :=
   eq_componentwiseReidemeisterTorsion_iff.2 fun m' ↦ by
-    obtain ⟨p, ψ, hψ, hψf⟩ := exists_residueField_ringHom g m' f
+    obtain ⟨p, ψ, hψ, hψf⟩ := IsArtinianRing.exists_residueField_ringHom g m' f
     rw [hψ, mk_componentwiseReidemeisterTorsion, map_reidemeisterTorsion_matrixBaseChange, hψf]
 
 /-- The componentwise torsion is invariant under a change of coefficient ring of the complex which
@@ -296,7 +253,7 @@ theorem mk_componentwiseParityTorsion (m : MaximalSpectrum Q) :
     Ideal.Quotient.mk m.asIdeal (C.componentwiseParityTorsion c f) =
       (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).parityTorsion
         (C.matrixBaseChangeBasis c _) :=
-  mk_equivPi_symm _ m
+  IsArtinianRing.mk_equivPi_symm _ m
 
 variable {C c f}
 
@@ -308,7 +265,7 @@ theorem eq_componentwiseParityTorsion_iff {x : Q} :
       Ideal.Quotient.mk m.asIdeal x =
         (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).parityTorsion
           (C.matrixBaseChangeBasis c _) :=
-  eq_equivPi_symm_iff
+  IsArtinianRing.eq_equivPi_symm_iff
 
 /-- The component of the componentwise torsion of a two-periodic complex in `Q ⧸ m` vanishes
 exactly when the coordinate base change of `C` along `A → Q → Q ⧸ m` is not acyclic. -/
@@ -322,7 +279,7 @@ change of `C` to every residue field of `Q` is acyclic. -/
 theorem isUnit_componentwiseParityTorsion_iff :
     IsUnit (C.componentwiseParityTorsion c f) ↔ ∀ m : MaximalSpectrum Q,
       (C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).Acyclic := by
-  rw [componentwiseParityTorsion, isUnit_equivPi_symm_iff]
+  rw [componentwiseParityTorsion, IsArtinianRing.isUnit_equivPi_symm_iff]
   exact forall_congr' fun m ↦ parityTorsion_eq_zero_iff.not_left
 
 /-- The componentwise torsion of a two-periodic complex is `0` exactly when the coordinate base
@@ -330,7 +287,7 @@ change of `C` to no residue field of `Q` is acyclic. -/
 theorem componentwiseParityTorsion_eq_zero_iff :
     C.componentwiseParityTorsion c f = 0 ↔ ∀ m : MaximalSpectrum Q,
       ¬(C.matrixBaseChange c ((Ideal.Quotient.mk m.asIdeal).comp f)).Acyclic := by
-  rw [componentwiseParityTorsion, equivPi_symm_eq_zero_iff]
+  rw [componentwiseParityTorsion, IsArtinianRing.equivPi_symm_eq_zero_iff]
   exact forall_congr' fun m ↦ parityTorsion_eq_zero_iff
 
 /-- The zero two-periodic complex, with the empty bases, has componentwise torsion `1`. -/
@@ -365,7 +322,7 @@ theorem map_componentwiseParityTorsion {Q' : Type*} [CommRing Q'] [IsArtinianRin
     [IsReduced Q'] (g : Q →+* Q') :
     g (C.componentwiseParityTorsion c f) = C.componentwiseParityTorsion c (g.comp f) :=
   eq_componentwiseParityTorsion_iff.2 fun m' ↦ by
-    obtain ⟨p, ψ, hψ, hψf⟩ := exists_residueField_ringHom g m' f
+    obtain ⟨p, ψ, hψ, hψf⟩ := IsArtinianRing.exists_residueField_ringHom g m' f
     rw [hψ, mk_componentwiseParityTorsion, map_parityTorsion_matrixBaseChange, hψf]
 
 /-- The componentwise torsion of a two-periodic complex is invariant under a change of coefficient
