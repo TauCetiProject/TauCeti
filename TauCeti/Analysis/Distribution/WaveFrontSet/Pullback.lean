@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
-import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Fourier.Continuous
@@ -14,6 +13,7 @@ import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Integrable
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
 # Pullback of distributions along linear maps
@@ -269,13 +269,6 @@ private theorem exists_norm_mul_fourier_le {A : E →L[ℝ] E'} {T : 𝓓'(Ω', 
 
 variable [MeasurableSpace E'] [BorelSpace E']
 
-/-- The weight `(1 + ‖η‖) ^ (-(d + 1))`, with `d` the dimension of `E'`, is integrable. -/
-private theorem integrable_inv_one_add_norm_pow :
-    Integrable fun η : E' ↦ ((1 + ‖η‖) ^ (Module.finrank ℝ E' + 1))⁻¹ := by
-  refine (integrable_one_add_norm (r := (Module.finrank ℝ E' + 1 : ℕ)) (by simp)).congr
-    (Eventually.of_forall fun η ↦ ?_)
-  simp only [Real.rpow_neg (by positivity : 0 ≤ 1 + ‖η‖), Real.rpow_natCast]
-
 /-- **The integrand of the pullback is integrable.** Under the wave front condition, the integrand
 `T (φ e_η) 𝓕 ψ (-Aᵀ η)` defining the pullback `Distribution.cutoffPullback` is integrable for
 every real test function `ψ`. -/
@@ -285,7 +278,7 @@ theorem integrable_localFourier_mul_fourier {A : E →L[ℝ] E'} {T : 𝓓'(Ω',
     Integrable fun η ↦ T.localFourier φ η * 𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η) := by
   obtain ⟨M, B, hB⟩ := exists_norm_mul_fourier_le h ψ.hasCompactSupport.isCompact
   obtain ⟨C, hC0, hC⟩ := ψ.hasCompactSupport.exists_bound_iteratedFDeriv ψ.contDiff M
-  refine Integrable.mono' (integrable_inv_one_add_norm_pow.const_mul (B * C))
+  refine Integrable.mono' (TauCeti.integrable_inv_one_add_norm_pow.const_mul (B * C))
     ((T.continuous_localFourier φ).mul (ψ.integrable_ofReal.continuous_fourier.comp
       (A†).continuous.neg)).aestronglyMeasurable (Eventually.of_forall fun η ↦ ?_)
   exact (le_mul_inv_iff₀ (by positivity)).2 (hB ψ ψ.contDiff subset_rfl C hC0 hC η)
@@ -339,7 +332,7 @@ def cutoffPullback : 𝓓'(Ω, ℂ) :=
     simp only [Seminorm.comp_apply, coe_normSeminorm]
     calc ‖(pullbackLM A T φ h) (ofSupportedInCLM ℝ hK f)‖
         ≤ ∫ η : E', B * S * ((1 + ‖η‖) ^ (Module.finrank ℝ E' + 1))⁻¹ :=
-          norm_integral_le_of_norm_le (integrable_inv_one_add_norm_pow.const_mul (B * S))
+          norm_integral_le_of_norm_le (TauCeti.integrable_inv_one_add_norm_pow.const_mul (B * S))
             (Eventually.of_forall fun η ↦ (le_mul_inv_iff₀ (by positivity)).2 (hbound η))
       _ = B * I * S := by rw [integral_const_mul]; ring
       _ ≤ max B 0 * I * S := by gcongr; exact le_max_left _ _
