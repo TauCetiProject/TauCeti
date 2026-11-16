@@ -24,8 +24,9 @@ change-of-transversal behavior along the canonical splitting transversals
 * With the conjugation twist along `TauCeti.alternatingGroupFinThreeSplittingEquiv a`, the crossed
   transfer of the local projection on `A₃` equals `(c_a ·) ^ 2`
   (`TauCeti.crossedTransfer_leftProjection_alternatingGroup_fin_three`), whose modular-inverse
-  power `e = 2` (`TauCeti.val_inv_index_alternatingGroup_fin_three`) recovers
-  `TauCeti.symmetricThreeCrossedProjection a` and yields `gaschutzComplement = stabilizer a`
+  power recovers `TauCeti.symmetricThreeCrossedProjection a`
+  (`TauCeti.crossedTransfer_leftProjection_pow_inv_index_alternatingGroup_fin_three`) and yields
+  `gaschutzComplement = stabilizer a`
   (`TauCeti.gaschutzComplement_alternatingGroup_fin_three`).
 * Comparing `a` and `b` produces the unnormalized change-of-transversal element
   `TauCeti.symmetricThreeChangeTransversal a b` with permutation coercion
@@ -52,15 +53,6 @@ namespace TauCeti
 
 attribute [local instance] Subgroup.conjugationAction Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- The natural-number value of the modular inverse `([S₃ : A₃] : ZMod |A₃|)⁻¹` appearing in
-Gaschütz's normalization equals `2`. -/
-theorem val_inv_index_alternatingGroup_fin_three :
-    (((alternatingGroup (Fin 3)).index : ZMod (Nat.card (alternatingGroup (Fin 3))))⁻¹).val =
-      2 := by
-  rw [alternatingGroup.index_eq_two, card_alternatingGroup_fin_three, Nat.cast_ofNat,
-    ZMod.inv_eq_of_mul_eq_one 3 2 2 (by decide)]
-  decide
-
 /-- Omitting the conjugation action `t u • ·` from `crossedTransfer` collapses the product of
 transversal words in `A₃` to `1` for *every* transversal `t` and *every* `g ∈ S₃`, because the
 untwisted product computes the classical transfer homomorphism `S₃ →* A₃`. -/
@@ -79,14 +71,13 @@ theorem prod_lWord_alternatingGroup_fin_three
 
 /-- Along `alternatingGroupFinThreeSplittingEquiv a`, the unnormalized crossed transfer of the
 local projection on `A₃` equals the square `(c_a ·) ^ 2` of `symmetricThreeCrossedProjection a`. -/
-theorem crossedTransfer_leftProjection_alternatingGroup_fin_three (a : Fin 3)
+theorem crossedTransfer_leftProjection_alternatingGroup_fin_three
+    (h : (alternatingGroup (Fin 3)).IsLocalComplement ⊥ (alternatingGroup (Fin 3))) (a : Fin 3)
     (g : Equiv.Perm (Fin 3)) :
     crossedTransfer (alternatingGroup (Fin 3)) (alternatingGroupFinThreeSplittingEquiv a)
-      (mk_alternatingGroupFinThreeSplittingEquiv a)
-      (alternatingGroup (Fin 3)).isLocalComplement_bot_self.leftProjection g =
+      (mk_alternatingGroupFinThreeSplittingEquiv a) h.leftProjection g =
         symmetricThreeCrossedProjection a g ^ 2 := by
-  rw [(alternatingGroup
-      (Fin 3)).isLocalComplement_bot_self.crossedTransfer_leftProjection_eq_crossedProjection_pow
+  rw [h.crossedTransfer_leftProjection_apply
     (alternatingGroupFinThreeSplittingEquiv a) (mk_alternatingGroupFinThreeSplittingEquiv a)
     (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) bot_le
     (alternatingGroupFinThreeSplittingEquiv_mem_stabilizer a) g,
@@ -94,26 +85,30 @@ theorem crossedTransfer_leftProjection_alternatingGroup_fin_three (a : Fin 3)
 
 /-- Normalizing the crossed transfer by the inverse exponent `e = 2` recovers
 `symmetricThreeCrossedProjection a`. -/
-theorem crossedTransfer_leftProjection_pow_inv_index_alternatingGroup_fin_three (a : Fin 3)
+theorem crossedTransfer_leftProjection_pow_inv_index_alternatingGroup_fin_three
+    (h : (alternatingGroup (Fin 3)).IsLocalComplement ⊥ (alternatingGroup (Fin 3))) (a : Fin 3)
     (g : Equiv.Perm (Fin 3)) :
     crossedTransfer (alternatingGroup (Fin 3)) (alternatingGroupFinThreeSplittingEquiv a)
-      (mk_alternatingGroupFinThreeSplittingEquiv a)
-      (alternatingGroup (Fin 3)).isLocalComplement_bot_self.leftProjection g ^
+      (mk_alternatingGroupFinThreeSplittingEquiv a) h.leftProjection g ^
         (((alternatingGroup (Fin 3)).index :
           ZMod (Nat.card (alternatingGroup (Fin 3))))⁻¹).val =
       symmetricThreeCrossedProjection a g := by
-  rw [crossedTransfer_leftProjection_alternatingGroup_fin_three,
-    ← alternatingGroup.index_eq_two (α := Fin 3),
-    pow_pow_zmod_val_inv coprime_index_card_alternatingGroup_fin_three.symm]
+  rw [h.crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection
+    (alternatingGroupFinThreeSplittingEquiv a) (mk_alternatingGroupFinThreeSplittingEquiv a)
+    coprime_index_card_alternatingGroup_fin_three
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) bot_le
+    (alternatingGroupFinThreeSplittingEquiv_mem_stabilizer a),
+    ← symmetricThreeCrossedProjection_def]
 
 /-- The Gaschütz complement of `⊥` in `A₃` along `alternatingGroupFinThreeSplittingEquiv a` is
 `stabilizer a`. -/
-theorem gaschutzComplement_alternatingGroup_fin_three (a : Fin 3) :
-    (alternatingGroup (Fin 3)).isLocalComplement_bot_self.gaschutzComplement
+theorem gaschutzComplement_alternatingGroup_fin_three
+    (h : (alternatingGroup (Fin 3)).IsLocalComplement ⊥ (alternatingGroup (Fin 3))) (a : Fin 3) :
+    h.gaschutzComplement
       (alternatingGroupFinThreeSplittingEquiv a)
       (mk_alternatingGroupFinThreeSplittingEquiv a) =
         MulAction.stabilizer (Equiv.Perm (Fin 3)) a :=
-  (alternatingGroup (Fin 3)).isLocalComplement_bot_self.gaschutzComplement_eq_of_isComplement'
+  h.gaschutzComplement_eq_of_forall_mem
     (alternatingGroupFinThreeSplittingEquiv a) (mk_alternatingGroupFinThreeSplittingEquiv a)
     coprime_index_card_alternatingGroup_fin_three
     (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) bot_le
@@ -226,13 +221,14 @@ theorem conj_symmetricThreeChangeTransversal_smul_stabilizer (a b : Fin 3) :
 `alternatingGroupFinThreeSplittingEquiv a` and `alternatingGroupFinThreeSplittingEquiv b` are *not*
 conjugate by the unnormalized change-of-transversal element
 `symmetricThreeChangeTransversal a b`. -/
-theorem gaschutzComplement_ne_conj_symmetricThreeChangeTransversal_smul {a b : Fin 3}
+theorem gaschutzComplement_ne_conj_symmetricThreeChangeTransversal_smul
+    (h : (alternatingGroup (Fin 3)).IsLocalComplement ⊥ (alternatingGroup (Fin 3))) {a b : Fin 3}
     (hab : a ≠ b) :
-    (alternatingGroup (Fin 3)).isLocalComplement_bot_self.gaschutzComplement
+    h.gaschutzComplement
       (alternatingGroupFinThreeSplittingEquiv b)
       (mk_alternatingGroupFinThreeSplittingEquiv b) ≠
     MulAut.conj (symmetricThreeChangeTransversal a b : Equiv.Perm (Fin 3)) •
-      (alternatingGroup (Fin 3)).isLocalComplement_bot_self.gaschutzComplement
+      h.gaschutzComplement
         (alternatingGroupFinThreeSplittingEquiv a)
         (mk_alternatingGroupFinThreeSplittingEquiv a) := by
   rw [gaschutzComplement_alternatingGroup_fin_three,

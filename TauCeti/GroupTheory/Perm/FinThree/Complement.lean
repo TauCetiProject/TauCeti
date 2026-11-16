@@ -7,12 +7,12 @@ module
 
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.GroupTheory.Complement.Stabilizer
+public import TauCeti.GroupTheory.Perm.FinThree.Alternating
 public import TauCeti.GroupTheory.Perm.FinThree.Subgroup
-import Mathlib.Data.Finite.Perm
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
-# Complements, quotient splittings, crossed projections, and the Sylow `3`-subgroup of `S₃`
+# Quotient splittings, crossed projections, and the Sylow `3`-subgroup of `S₃`
 
 Inside `S₃ = Equiv.Perm (Fin 3)`, the alternating subgroup `A₃ = alternatingGroup (Fin 3)` has
 prime order `3` and acts regularly on `Fin 3`, with orbit equivalence
@@ -20,9 +20,10 @@ prime order `3` and acts regularly on `Fin 3`, with orbit equivalence
 `a` to `b`.
 
 The three point stabilizers `MulAction.stabilizer (Equiv.Perm (Fin 3)) a` (`a : Fin 3`) are
-pairwise distinct, self-normalizing `2`-subgroups of order `2`. Using `Subgroup.fin_three_cases`,
-they exhaust:
-* the subgroup complements of `A₃` in `S₃` (`TauCeti.alternatingGroupFinThreeComplementEquiv`),
+pairwise distinct, self-normalizing `2`-subgroups of order `2`
+(`TauCeti.isPGroup_two_stabilizer_perm_fin_three`) that exhaust the subgroup complements of `A₃` in
+`S₃` (`TauCeti.alternatingGroupFinThreeComplementEquiv`). Building on that classification, this file
+shows that `Fin 3` also parameterizes:
 * the homomorphic splittings of the quotient extension `1 → A₃ → S₃ → S₃ ⧸ A₃ → 1`
   (`TauCeti.alternatingGroupFinThreeSplittingEquiv`), and
 * via their induced crossed projections `TauCeti.symmetricThreeCrossedProjection a` with closed
@@ -32,11 +33,9 @@ they exhaust:
   (`TauCeti.symmetricThreeCrossedProjection_smul`) and differing pairwise by a unique `A₃`
   coboundary (`TauCeti.forall_symmetricThreeCrossedProjection_eq_mul_smul_div_iff`).
 
-Moreover, although `gcd(|stabilizer a|, |S₃|) = 2`, `stabilizer a` is the unique
-`stabilizer a`-normalized complement of `A₃` in `S₃`
-(`TauCeti.isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff`), whereas `A₃` itself is
-the unique Sylow `3`-subgroup of `S₃` (`TauCeti.alternatingGroupSylowThree`), in which `A₃` has
-unique local complement `⊥`.
+Finally, `A₃` is a `3`-group (`TauCeti.isPGroup_three_alternatingGroup_fin_three`) and packages as
+the unique Sylow `3`-subgroup of `S₃` (`TauCeti.alternatingGroupSylowThree`,
+`TauCeti.instSubsingletonSylowThreePermFinThree`).
 
 ## References
 
@@ -78,7 +77,7 @@ theorem coe_alternatingGroupFinThreeOrbitEquiv_symm (a b : Fin 3) :
     ((alternatingGroupFinThreeOrbitEquiv a).symm b : Equiv.Perm (Fin 3)) =
       finRotate 3 ^ (b - a).val := by
   let r : alternatingGroup (Fin 3) :=
-    ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ ^ (b - a).val
+    ⟨finRotate 3, Equiv.Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩ ^ (b - a).val
   have hr : alternatingGroupFinThreeOrbitEquiv a r = b := by
     rw [alternatingGroupFinThreeOrbitEquiv_apply, Subgroup.coe_pow, Subgroup.coe_mk,
       Equiv.Perm.coe_pow, ← finCycle_eq_finRotate_iterate, finCycle_apply, add_sub_cancel]
@@ -100,47 +99,7 @@ theorem alternatingGroupFinThreeOrbitEquiv_symm_self (a : Fin 3) :
   rw [alternatingGroupFinThreeOrbitEquiv_def]
   exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).stabilizerOrbitEquiv_symm_self
 
-/-! ### Classification of subgroup complements and quotient splittings -/
-
-/-- A subgroup of `S₃` complements `A₃` if and only if it is one of the three point
-stabilizers. -/
-theorem isComplement'_alternatingGroup_fin_three_iff (D : Subgroup (Equiv.Perm (Fin 3))) :
-    (alternatingGroup (Fin 3)).IsComplement' D ↔
-      ∃ a : Fin 3, D = MulAction.stabilizer (Equiv.Perm (Fin 3)) a := by
-  refine ⟨fun hD => ?_, ?_⟩
-  · have hmul := hD.card_mul_card
-    simp only [card_alternatingGroup_fin_three, Nat.card_perm, Nat.card_fin,
-      Nat.factorial] at hmul
-    rcases Subgroup.fin_three_cases D with rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [Subgroup.card_bot] at hmul
-      omega
-    · exact ⟨0, rfl⟩
-    · exact ⟨1, rfl⟩
-    · exact ⟨2, rfl⟩
-    · rw [card_alternatingGroup_fin_three] at hmul
-      omega
-    · simp only [Subgroup.card_top, Nat.card_perm, Nat.card_fin, Nat.factorial] at hmul
-      omega
-  · rintro ⟨a, rfl⟩
-    exact isComplement'_alternatingGroup_stabilizer_perm_fin_three a
-
-/-- The three points of `Fin 3` parameterize the subgroup complements of `A₃` in `S₃`. -/
-noncomputable def alternatingGroupFinThreeComplementEquiv :
-    Fin 3 ≃ {D : Subgroup (Equiv.Perm (Fin 3)) // (alternatingGroup (Fin 3)).IsComplement' D} :=
-  Equiv.ofBijective
-    (fun a => ⟨MulAction.stabilizer (Equiv.Perm (Fin 3)) a,
-      isComplement'_alternatingGroup_stabilizer_perm_fin_three a⟩)
-    ⟨fun _ _ h => stabilizer_perm_fin_three_injective (congrArg Subtype.val h),
-      fun ⟨D, hD⟩ =>
-        let ⟨a, ha⟩ := (isComplement'_alternatingGroup_fin_three_iff D).mp hD
-        ⟨a, Subtype.ext ha.symm⟩⟩
-
-/-- `alternatingGroupFinThreeComplementEquiv` sends `a` to `stabilizer a`. -/
-@[simp]
-theorem coe_alternatingGroupFinThreeComplementEquiv (a : Fin 3) :
-    (alternatingGroupFinThreeComplementEquiv a : Subgroup (Equiv.Perm (Fin 3))) =
-      MulAction.stabilizer (Equiv.Perm (Fin 3)) a :=
-  (rfl)
+/-! ### Classification of quotient splittings -/
 
 /-- `alternatingGroupFinThreeComplementEquiv a` packages `stabilizer a` with its complement
 proof. -/
@@ -148,7 +107,7 @@ theorem alternatingGroupFinThreeComplementEquiv_apply (a : Fin 3) :
     alternatingGroupFinThreeComplementEquiv a =
       ⟨MulAction.stabilizer (Equiv.Perm (Fin 3)) a,
         isComplement'_alternatingGroup_stabilizer_perm_fin_three a⟩ :=
-  Subtype.ext (coe_alternatingGroupFinThreeComplementEquiv a)
+  Subtype.ext (coe_alternatingGroupFinThreeComplementEquiv_apply a)
 
 /-- The inverse of `alternatingGroupFinThreeComplementEquiv` recovers the stabilized point. -/
 @[simp]
@@ -158,13 +117,6 @@ theorem alternatingGroupFinThreeComplementEquiv_symm_stabilizer (a : Fin 3) :
         isComplement'_alternatingGroup_stabilizer_perm_fin_three a⟩ = a := by
   apply alternatingGroupFinThreeComplementEquiv.injective
   rw [Equiv.apply_symm_apply, alternatingGroupFinThreeComplementEquiv_apply]
-
-/-- There are exactly three subgroup complements of `A₃` in `S₃`. -/
-@[simp]
-theorem card_isComplement'_alternatingGroup_fin_three :
-    Nat.card {D : Subgroup (Equiv.Perm (Fin 3)) // (alternatingGroup (Fin 3)).IsComplement' D} =
-      3 := by
-  rw [Nat.card_congr alternatingGroupFinThreeComplementEquiv.symm, Nat.card_fin]
 
 /-- The three points of `Fin 3` parameterize the splittings of
 `1 → A₃ → S₃ → S₃ ⧸ A₃ → 1`. -/
@@ -232,7 +184,7 @@ theorem alternatingGroupFinThreeSplittingEquiv_mk_swap (a : Fin 3) :
         Equiv.swap (a + 1) (a + 2) := by
   rw [alternatingGroupFinThreeSplittingEquiv_apply]
   exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).quotientSplitting_mk
-    ⟨Equiv.swap (a + 1) (a + 2), (mem_stabilizer_perm_fin_three_iff a _).mpr (Or.inr rfl)⟩
+    ⟨Equiv.swap (a + 1) (a + 2), swap_mem_stabilizer_perm_fin_three a⟩
 
 /-- Every coset representative chosen by `alternatingGroupFinThreeSplittingEquiv a` fixes `a`. -/
 theorem alternatingGroupFinThreeSplittingEquiv_mem_stabilizer (a : Fin 3)
@@ -310,8 +262,7 @@ theorem symmetricThreeCrossedProjection_eq_one_iff (a : Fin 3) (σ : Equiv.Perm 
 @[simp]
 theorem symmetricThreeCrossedProjection_swap_add_one_add_two (a : Fin 3) :
     symmetricThreeCrossedProjection a (Equiv.swap (a + 1) (a + 2)) = 1 :=
-  (symmetricThreeCrossedProjection_eq_one_iff a _).mpr
-    ((mem_stabilizer_perm_fin_three_iff a _).mpr (Or.inr rfl))
+  (symmetricThreeCrossedProjection_eq_one_iff a _).mpr (swap_mem_stabilizer_perm_fin_three a)
 
 /-- Each `symmetricThreeCrossedProjection a` is a multiplicative `1`-cocycle for ambient
 conjugation on `A₃`. -/
@@ -463,35 +414,6 @@ theorem isMulCocycle₁_and_forall_coe_eq_iff_exists_symmetricThreeCrossedProjec
     exact ⟨isMulCocycle₁_symmetricThreeCrossedProjection a,
       symmetricThreeCrossedProjection_coe a⟩
 
-/-! ### Subgroup-invariant complements in `S₃` -/
-
-/-- Among all subgroups of `S₃`, `stabilizer a` is the unique `stabilizer a`-normalized complement
-of `A₃`. -/
-@[simp]
-theorem isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff (a : Fin 3)
-    (D : Subgroup (Equiv.Perm (Fin 3))) :
-    ((alternatingGroup (Fin 3)).IsComplement' D ∧
-      MulAction.stabilizer (Equiv.Perm (Fin 3)) a ≤
-        Subgroup.normalizer (D : Set (Equiv.Perm (Fin 3)))) ↔
-      D = MulAction.stabilizer (Equiv.Perm (Fin 3)) a := by
-  refine ⟨fun ⟨hD, hnorm⟩ => ?_, ?_⟩
-  · obtain ⟨b, rfl⟩ := (isComplement'_alternatingGroup_fin_three_iff D).mp hD
-    rw [normalizer_stabilizer_perm_fin_three] at hnorm
-    exact (Subgroup.eq_of_le_of_card_ge hnorm
-      (by rw [card_stabilizer_perm_fin_three, card_stabilizer_perm_fin_three])).symm
-  · rintro rfl
-    exact ⟨isComplement'_alternatingGroup_stabilizer_perm_fin_three a, Subgroup.le_normalizer⟩
-
-/-- Existence and uniqueness of a `stabilizer a`-normalized complement of `A₃` in `S₃`. -/
-theorem existsUnique_invariant_complement_alternatingGroup_fin_three (a : Fin 3) :
-    ∃! D : Subgroup (Equiv.Perm (Fin 3)),
-      (alternatingGroup (Fin 3)).IsComplement' D ∧
-        MulAction.stabilizer (Equiv.Perm (Fin 3)) a ≤
-          Subgroup.normalizer (D : Set (Equiv.Perm (Fin 3))) :=
-  ⟨MulAction.stabilizer (Equiv.Perm (Fin 3)) a,
-    (isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff a _).mpr rfl,
-    fun D hD => (isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff a D).mp hD⟩
-
 /-! ### `p`-group properties and the Sylow `3`-subgroup of `S₃` -/
 
 /-- The alternating group `A₃` is a `3`-group. -/
@@ -511,9 +433,16 @@ noncomputable def alternatingGroupSylowThree : Sylow 3 (Equiv.Perm (Fin 3)) :=
     decide
 
 /-- The underlying subgroup of `alternatingGroupSylowThree` is `A₃`. -/
+@[simp]
 theorem coe_alternatingGroupSylowThree :
     (alternatingGroupSylowThree : Subgroup (Equiv.Perm (Fin 3))) = alternatingGroup (Fin 3) :=
   (rfl)
+
+/-- Membership in `alternatingGroupSylowThree` coincides with membership in `A₃`. -/
+@[simp]
+theorem mem_alternatingGroupSylowThree {g : Equiv.Perm (Fin 3)} :
+    g ∈ alternatingGroupSylowThree ↔ g ∈ alternatingGroup (Fin 3) :=
+  Iff.rfl
 
 /-- Because `A₃` is normal in `S₃`, `S₃` has a unique Sylow `3`-subgroup. -/
 instance instSubsingletonSylowThreePermFinThree :
@@ -528,25 +457,5 @@ instance instSubsingletonSylowThreePermFinThree :
 theorem sylow_three_perm_fin_three_eq (P : Sylow 3 (Equiv.Perm (Fin 3))) :
     P = alternatingGroupSylowThree :=
   Subsingleton.elim P alternatingGroupSylowThree
-
-/-- Every Sylow `3`-subgroup of `S₃` has underlying subgroup `A₃`. -/
-@[simp]
-theorem coe_sylow_three_perm_fin_three (P : Sylow 3 (Equiv.Perm (Fin 3))) :
-    (P : Subgroup (Equiv.Perm (Fin 3))) = alternatingGroup (Fin 3) := by
-  rw [sylow_three_perm_fin_three_eq P, coe_alternatingGroupSylowThree]
-
-/-- Membership in any Sylow `3`-subgroup of `S₃` coincides with membership in `A₃`. -/
-@[simp]
-theorem mem_sylow_three_perm_fin_three (P : Sylow 3 (Equiv.Perm (Fin 3)))
-    {g : Equiv.Perm (Fin 3)} :
-    g ∈ P ↔ g ∈ alternatingGroup (Fin 3) :=
-  Iff.of_eq (congrArg (g ∈ ·) (coe_sylow_three_perm_fin_three P))
-
-/-- Because `A₃` is itself the unique Sylow `3`-subgroup of `S₃`, its only local complement in a
-Sylow `3`-subgroup is `⊥`. -/
-theorem isLocalComplement_alternatingGroup_sylow_three_iff
-    (P : Sylow 3 (Equiv.Perm (Fin 3))) (K : Subgroup (Equiv.Perm (Fin 3))) :
-    (alternatingGroup (Fin 3)).IsLocalComplement K P ↔ K = ⊥ := by
-  rw [coe_sylow_three_perm_fin_three, Subgroup.isLocalComplement_self_left]
 
 end TauCeti
