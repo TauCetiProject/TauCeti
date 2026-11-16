@@ -317,6 +317,11 @@ point because a point moved by `f p₀` is still moved by `f p`. -/
 
 variable [T2Space M]
 
+/-- A point moved by `f p₀` is still moved by `f q.1` at every point `q` near `(p₀, x)`. -/
+private theorem eventually_not_isFixedPt {x : M} (hf : ContinuousAt (uncurry f) (p₀, x))
+    (h : ¬IsFixedPt (f p₀) x) : ∀ᶠ q in 𝓝 (p₀, x), ¬IsFixedPt (f q.1) q.2 :=
+  (hf.ne_iff_eventually_ne continuousAt_snd).1 h
+
 /-- **Nondegeneracy on a compact set persists.** Let `f : N → M → M` be a family of self-maps of a
 boundaryless Hausdorff manifold modelled on a finite-dimensional space, parametrized by a
 boundaryless manifold and jointly `C^n`, `n ≥ 1`, at every point of `{p₀} × K` for a compact set
@@ -330,10 +335,8 @@ theorem _root_.IsCompact.eventually_forall_isNondegenerateFixedPt_of_isFixedPt [
   refine hK.eventually_forall_of_forall_eventually fun x hx ↦ ?_
   by_cases hfix : IsFixedPt (f p₀) x
   · exact (h x hx hfix).eventually_isNondegenerateFixedPt_of_isFixedPt hn (hf x hx)
-  · -- A point moved by `f p₀` is moved by `f p` near `(p₀, x)`.
-    filter_upwards [((hf x hx).continuousAt.ne_iff_eventually_ne continuousAt_snd).1 hfix]
-      with q hq hq'
-    exact absurd hq' hq
+  · exact (eventually_not_isFixedPt (hf x hx).continuousAt hfix).mono fun _ hq hq' ↦
+      absurd hq' hq
 
 /-- **The fixed points of a family on a compact manifold continue.** Let `f : N → M → M` be a
 family of self-maps of a compact boundaryless Hausdorff manifold modelled on a finite-dimensional
@@ -372,9 +375,8 @@ theorem exists_contMDiffAt_bijOn_fixedPoints [CompleteSpace F] [CompactSpace M] 
     by_cases hy : IsFixedPt (f p₀) y
     · filter_upwards [hgiff y hy] with q hq hfix
       exact ⟨y, hy, hq.1 hfix⟩
-    · filter_upwards [((hf y).continuousAt.ne_iff_eventually_ne continuousAt_snd).1 hy]
-        with q hq hfix
-      exact absurd hfix hq
+    · exact (eventually_not_isFixedPt (hf y).continuousAt hy).mono fun _ hq hfix ↦
+        absurd hfix hq
   -- The branches are pairwise distinct near `p₀`, since they start at distinct points.
   have hinj : ∀ᶠ p in 𝓝 p₀, ∀ x ∈ fixedPoints (f p₀), ∀ x' ∈ fixedPoints (f p₀),
       x ≠ x' → g x p ≠ g x' p := by
@@ -409,9 +411,17 @@ theorem eventually_ncard_fixedPoints_eq [CompleteSpace F] [CompactSpace M] [IsMa
 
 A point of period `k` of `f p` is a fixed point of the iterate `(f p)^[k]`, and the iterates form
 again a family which is jointly `C^n` along `{p₀} × M` (`TauCeti.contMDiffAt_uncurry_iterate`). Up
-to a period cutoff `N` there are finitely many periods to consider, so nondegeneracy up to period
-`N` (`TauCeti.IsNondegenerateUpToPeriod`) is an open condition on the parameter, and the number of
-periodic points of each period `k ≤ N` is locally constant. -/
+to a period cutoff `K` there are finitely many periods to consider, so nondegeneracy up to period
+`K` (`TauCeti.IsNondegenerateUpToPeriod`) is an open condition on the parameter, and the number of
+periodic points of each period `k ≤ K` is locally constant. -/
+
+omit [FiniteDimensional 𝕜 E] [BoundarylessManifold I M] [T2Space M] in
+/-- For a map nondegenerate up to period `K`, at each period `k ∈ [1, K]` every fixed point of
+the iterate `g^[k]` is nondegenerate. -/
+private theorem IsNondegenerateUpToPeriod.isNondegenerateFixedPt_of_mem_Icc {g : M → M} {K k : ℕ}
+    (h : IsNondegenerateUpToPeriod I g K) (hk : k ∈ Finset.Icc 1 K) {x : M}
+    (hx : IsFixedPt g^[k] x) : IsNondegenerateFixedPt I g^[k] x :=
+  h.isNondegenerateFixedPt (Finset.mem_Icc.1 hk).1 (Finset.mem_Icc.1 hk).2 hx
 
 /-- **Nondegeneracy up to a period persists.** Let `f : N → M → M` be a family of self-maps of a
 compact boundaryless Hausdorff manifold modelled on a finite-dimensional space, parametrized by a
@@ -426,8 +436,7 @@ theorem IsNondegenerateUpToPeriod.eventually_isNondegenerateUpToPeriod [CompactS
     (eventually_all_finset _).2 fun k hk ↦
       isCompact_univ.eventually_forall_isNondegenerateFixedPt_of_isFixedPt
         (f := fun p ↦ (f p)^[k]) hn (fun x _ ↦ contMDiffAt_uncurry_iterate hf k x)
-        fun _ _ hx ↦ isNondegenerateUpToPeriod_iff.1 h (Finset.mem_Icc.1 hk).1
-          (Finset.mem_Icc.1 hk).2 hx
+        fun _ _ hx ↦ h.isNondegenerateFixedPt_of_mem_Icc hk hx
   filter_upwards [hk] with p hp
   exact isNondegenerateUpToPeriod_iff.2 fun k hk hkK x hx ↦
     hp k (Finset.mem_Icc.2 ⟨hk, hkK⟩) x (mem_univ x) hx
@@ -446,8 +455,7 @@ theorem IsNondegenerateUpToPeriod.eventually_ncard_ptsOfPeriod_eq [CompleteSpace
       (fixedPoints (f p)^[k]).ncard = (fixedPoints (f p₀)^[k]).ncard :=
     (eventually_all_finset _).2 fun k hk ↦ eventually_ncard_fixedPoints_eq
       (f := fun p ↦ (f p)^[k]) hn (contMDiffAt_uncurry_iterate hf k)
-      fun _ hx ↦ isNondegenerateUpToPeriod_iff.1 h (Finset.mem_Icc.1 hk).1
-        (Finset.mem_Icc.1 hk).2 hx
+      fun _ hx ↦ h.isNondegenerateFixedPt_of_mem_Icc hk hx
   filter_upwards [hk] with p hp k hk hkK
   exact hp k (Finset.mem_Icc.2 ⟨hk, hkK⟩)
 
