@@ -250,11 +250,13 @@ theorem ker_residualOrbitMap (hc : σ.momentCocycle a μ x = 0)
     (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) :
     LinearMap.ker (h.residualOrbitMap hσ 𝔫 hc hμ) =
       𝔫.toSubmodule ⊔ (a.isotropy x).toSubmodule := by
+  -- `[Z_M x] = 0` exactly when `Z_M x` lies in the null directions `𝔫 · x`, that is when `Z`
+  -- lies in the preimage of `𝔫 · x` under `Z ↦ Z_M x`, which is `𝔫 + ker (Z ↦ Z_M x)`.
+  rw [InfinitesimalAction.isotropy_toSubmodule, ← Submodule.comap_map_eq]
   ext Z
-  simp [-LinearMap.mem_ker, LinearMap.mem_ker (f := h.residualOrbitMap hσ 𝔫 hc hμ),
-    Submodule.Quotient.mk_eq_zero, SymplecticForm.mem_ker_restrict_iff,
-    h.symplecticFormAt_orthogonal_ker_differential_comp hσ,
-    InfinitesimalAction.isotropy_toSubmodule, ← Submodule.comap_map_eq]
+  rw [LinearMap.mem_ker, residualOrbitMap_apply, Submodule.Quotient.mk_eq_zero,
+    SymplecticForm.mem_ker_restrict_iff, h.symplecticFormAt_orthogonal_ker_differential_comp hσ,
+    Submodule.mem_comap, InfinitesimalAction.eval_apply]
 
 /-- **The residual action is locally free where the action is.** If the action of `𝔤` is locally
 free at `x`, the residual orbit map has kernel exactly `𝔫`. -/
