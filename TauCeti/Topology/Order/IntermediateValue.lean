@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
@@ -20,6 +21,8 @@ uniform order statements:
 * `IsPreconnected.forall_le_or_forall_ge`: a continuous function on `s` which never takes a value
   in the open interval `Ioo a b`, with `a < b`, lies below `a` on all of `s` or above `b` on all
   of `s`.
+* `IsPreconnected.exists_abs_eq_mul`: a continuous function without zeros on `s` has constant sign,
+  `|f| = ε f` on `s`.
 * `IsPreconnected.subsingleton_of_interior_eq_empty`: a preconnected subset of a linearly ordered
   space with empty interior has at most one point.
 * `IsPreconnected.subsingleton_image_of_interior_eq_empty`: a continuous function on `s` with values
@@ -79,6 +82,15 @@ theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
   exact (isPreconnected_iff_subset_of_disjoint_closed.1 (hs.image f hf) _ _ isClosed_Iic
     isClosed_Ici hcover hdisj).imp (fun h x hx ↦ h (mem_image_of_mem f hx))
     fun h x hx ↦ h (mem_image_of_mem f hx)
+
+/-- A continuous function on a preconnected set without zeros there has constant sign: `|f| = ε f`
+on the whole set for a constant `ε`. -/
+theorem IsPreconnected.exists_abs_eq_mul [Ring α] [IsOrderedRing α] (hs : IsPreconnected s)
+    {f : X → α} (hf : ContinuousOn f s) (h0 : ∀ x ∈ s, f x ≠ 0) :
+    ∃ ε : α, ∀ x ∈ s, |f x| = ε * f x := by
+  rcases hs.forall_lt_or_forall_lt hf continuousOn_const h0 with h | h
+  · exact ⟨-1, fun x hx ↦ by rw [abs_of_neg (h x hx), neg_one_mul]⟩
+  · exact ⟨1, fun x hx ↦ by rw [abs_of_pos (h x hx), one_mul]⟩
 
 /-- A preconnected subset with empty interior of a linearly ordered space has at most one
 point. -/

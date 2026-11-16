@@ -14,10 +14,10 @@ import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
-import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Topology.Order.IntermediateValue
 
 /-!
 # Derivatives of functions of temperate growth
@@ -151,19 +151,9 @@ theorem exists_norm_le_of_leftInverse {g : F → E} (hg : g.HasTemperateGrowth)
 by the intermediate value theorem the function has constant sign. -/
 theorem abs {f : E → ℝ} (hf : f.HasTemperateGrowth) (h0 : ∀ x, f x ≠ 0) :
     (fun x ↦ |f x|).HasTemperateGrowth := by
-  rcases (h0 0).lt_or_gt with hneg | hpos
-  · have : ∀ x, f x < 0 := fun x ↦ by
-      by_contra! hx
-      obtain ⟨y, hy⟩ := intermediate_value_univ 0 x hf.1.continuous ⟨hneg.le, hx⟩
-      exact h0 y hy
-    convert hf.neg using 1
-    funext x
-    simp [abs_of_neg (this x)]
-  · have : ∀ x, 0 < f x := fun x ↦ by
-      by_contra! hx
-      obtain ⟨y, hy⟩ := intermediate_value_univ x 0 hf.1.continuous ⟨hx, hpos.le⟩
-      exact h0 y hy
-    simpa [abs_of_pos (this _)] using hf
+  obtain ⟨ε, hε⟩ := isPreconnected_univ.exists_abs_eq_mul hf.1.continuous.continuousOn
+    fun x _ ↦ h0 x
+  simpa only [hε _ (Set.mem_univ _)] using (HasTemperateGrowth.const ε).fun_mul hf
 
 end Function.HasTemperateGrowth
 
@@ -253,18 +243,13 @@ theorem exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le [FiniteDimensional ℝ
       fun m _ ↦ (hb m).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x
   -- `det Dφ⁻¹` has no zeros on the connected space `E`, hence a constant sign `ε`.
   have hcont : Continuous fun y ↦ (_root_.fderiv ℝ φ.symm y).det := hψ.det_fderiv.1.continuous
-  obtain ⟨ε, hε⟩ : ∃ ε : ℝ, ∀ y,
-      |(_root_.fderiv ℝ φ.symm y).det| = ε * (_root_.fderiv ℝ φ.symm y).det := by
-    rcases isPreconnected_univ.eq_or_eq_neg_of_sq_eq hcont.abs.continuousOn hcont.continuousOn
-      (fun y _ ↦ sq_abs _) fun {y} _ ↦ φ.det_fderiv_symm_ne_zero
-        (hφ.1.differentiable (by simp) _) (hψ.1.differentiable (by simp) y) with h | h
-    · exact ⟨1, fun y ↦ by simpa using h (Set.mem_univ y)⟩
-    · exact ⟨-1, fun y ↦ by simpa using h (Set.mem_univ y)⟩
+  obtain ⟨ε, hε⟩ := isPreconnected_univ.exists_abs_eq_mul hcont.continuousOn fun y _ ↦
+    φ.det_fderiv_symm_ne_zero (hφ.1.differentiable (by simp) _) (hψ.1.differentiable (by simp) y)
   have hJ : (fun y ↦ ((|(_root_.fderiv ℝ φ.symm y).det| : ℝ) : ℂ)) =
       (ε • Complex.ofRealCLM) ∘ ((fun A : E →L[ℝ] E ↦ A.det) ∘ _root_.fderiv ℝ φ.symm) := by
     funext y
     simp only [Function.comp_apply, _root_.smul_apply, Complex.ofRealCLM_apply,
-      Complex.real_smul, hε y, Complex.ofReal_mul]
+      Complex.real_smul, hε y (Set.mem_univ y), Complex.ofReal_mul]
   refine ⟨‖ε • Complex.ofRealCLM‖ * C, fun y ↦ ?_⟩
   rw [hJ]
   exact ((ε • Complex.ofRealCLM).norm_iteratedFDeriv_comp_left
