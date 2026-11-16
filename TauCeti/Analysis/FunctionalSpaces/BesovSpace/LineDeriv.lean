@@ -110,20 +110,14 @@ theorem exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq (φ : ContDiffBump (0 : 
   choose g hg hgn using fun j ↦ hΔ j f
   have hder (j : ℕ) (i : ι) : ∂_{b i} (g j : 𝓢'(E, F)) = (v i).block j := by
     rw [← hg, ← littlewoodPaleyBlock_lineDerivOp, hv i, coe_block]
-  -- The weighted block norms of each `vᵢ`, as elements of `ℓ^q`, and the majorant `B` of the
-  -- weighted blocks of `f` of order `s + 1`.
-  set n : ι → lp (fun _ : ℕ ↦ ℝ) q := fun i ↦ ⟨fun k ↦ ‖(v i).weightedBlocks k‖,
-    (lp.memℓp _).norm⟩
-  have hnn (i : ι) : ‖n i‖ ≤ ‖v i‖ := by
-    rw [← norm_weightedBlocks]
-    exact lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun k ↦ (norm_norm _).le
+  -- The majorant `B` of the weighted blocks of `f` of order `s + 1`, built from the weighted
+  -- block norms of the `vᵢ`.
   set e : lp (fun _ : ℕ ↦ ℝ) q := lp.single q 0 (1 : ℝ)
-  set B : lp (fun _ : ℕ ↦ ℝ) q := (max CΔ 0 * ‖f‖) • e + c • ∑ i, n i
-  -- The entries of the anonymous `lp` elements `n i` are their defining sequences by definition.
+  set B : lp (fun _ : ℕ ↦ ℝ) q := (max CΔ 0 * ‖f‖) • e + c • ∑ i, (v i).weightedBlockNorms
   have hB (j : ℕ) : B j = (max CΔ 0 * ‖f‖) * (if j = 0 then 1 else 0) +
       c * ∑ i, 2 ^ (s * j) * ‖(v i).block j‖ := by
-    simp only [B, e, n, lp.coeFn_add, lp.coeFn_smul, lp.coeFn_sum, Pi.add_apply, Pi.smul_apply,
-      Finset.sum_apply, smul_eq_mul, lp.single_apply, Pi.single_apply, norm_weightedBlocks_apply]
+    simp only [B, e, lp.coeFn_add, lp.coeFn_smul, lp.coeFn_sum, Pi.add_apply, Pi.smul_apply,
+      Finset.sum_apply, smul_eq_mul, lp.single_apply, Pi.single_apply, weightedBlockNorms_apply]
   obtain ⟨w, hw, hwn⟩ :=
     exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq (s := s + 1) g B hg fun j ↦ by
       rw [hB]
@@ -136,12 +130,12 @@ theorem exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq (φ : ContDiffBump (0 : 
         exact hblock s f j _ _ (hg (j + 1)) (hder (j + 1))
   refine ⟨w, hw, hwn.trans ?_⟩
   have he : ‖e‖ = 1 := by rw [lp.norm_single (zero_lt_one.trans_le Fact.out), norm_one]
-  calc ‖B‖ ≤ ‖(max CΔ 0 * ‖f‖) • e‖ + ‖c • ∑ i, n i‖ := norm_add_le _ _
+  calc ‖B‖ ≤ ‖(max CΔ 0 * ‖f‖) • e‖ + ‖c • ∑ i, (v i).weightedBlockNorms‖ := norm_add_le _ _
     _ ≤ max CΔ 0 * ‖f‖ + c * ∑ i, ‖v i‖ := by
       rw [norm_smul, norm_smul, he, mul_one, Real.norm_of_nonneg (by positivity),
         Real.norm_of_nonneg hc]
       gcongr
-      exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ hnn i)
+      exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_weightedBlockNorms _).le)
     _ ≤ (max CΔ 0 + c) * (‖f‖ + ∑ i, ‖v i‖) := by
       have : 0 ≤ ∑ i, ‖v i‖ := by positivity
       nlinarith [le_max_right CΔ 0, norm_nonneg f]

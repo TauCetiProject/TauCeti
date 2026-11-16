@@ -731,16 +731,8 @@ theorem exists_toDistr_eq_and_norm_le_of_holderWith (α : ℝ≥0) :
   -- The blocks `Δⱼ f` are `L^∞` functions `gⱼ`, and the weighted blocks are bounded by
   -- `c = max CΔ 0 ‖f‖ + Cm H`: the low-frequency block by `‖f‖`, the others by `H`.
   choose g hg hgn using fun j ↦ hΔ j (toLpTop volume ℂ f)
-  set c : ℝ := max CΔ 0 * ‖f‖ + Cm * H
-  have hc : 0 ≤ c := by positivity
-  set B : lp (fun _ : ℕ ↦ ℝ) ∞ := ⟨fun _ ↦ c, memℓp_infty ⟨c, by
-    rintro _ ⟨_, rfl⟩
-    exact (Real.norm_of_nonneg hc).le⟩⟩
-  -- The entries of the anonymous `lp` element `B` are `c` by definition.
-  have hBj (j : ℕ) : B j = c := rfl
-  obtain ⟨w, hw, hwn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq
-    (s := α) (q := ∞) g B hg fun j ↦ by
-      rw [hBj]
+  obtain ⟨w, hw, hwn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_of_forall_le
+    (s := α) g (c := max CΔ 0 * ‖f‖ + Cm * H) hg fun j ↦ by
       rcases j with _ | j
       · rw [Nat.cast_zero, mul_zero, Real.rpow_zero, one_mul]
         refine ((hgn 0).trans ?_).trans (le_add_of_nonneg_right (by positivity))
@@ -750,10 +742,8 @@ theorem exists_toDistr_eq_and_norm_le_of_holderWith (α : ℝ≥0) :
       · exact (hblock f hf j (g (j + 1)) (hg (j + 1))).trans
           (le_add_of_nonneg_left (by positivity))
   refine ⟨w, hw, hwn.trans ?_⟩
-  calc ‖B‖ ≤ c := lp.norm_le_of_forall_le hc fun j ↦ by rw [hBj, Real.norm_of_nonneg hc]
-    _ ≤ (max CΔ 0 + Cm) * (‖f‖ + H) := by
-      have := le_max_right CΔ 0
-      nlinarith [norm_nonneg f, H.coe_nonneg]
+  have := le_max_right CΔ 0
+  nlinarith [norm_nonneg f, H.coe_nonneg]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- A bound `M` on the order-zero derivative field of a bounded continuous function bounds its
