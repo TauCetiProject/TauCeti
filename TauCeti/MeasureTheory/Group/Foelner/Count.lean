@@ -28,8 +28,9 @@ and `maxFoelner` for `Measure.count` with `Set.ncard` ratios and finite-test cri
 * `MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard`: for a finite nonempty
   `F : Set X`, the counting-measure Følner ratio is below `ENNReal.ofReal ε` iff
   `(((m • F) ∆ F).ncard : ℝ) < ε * F.ncard`.
-* `IsFoelner.tendsto_ncard_smul_symmDiff_div_ncard`: real `Set.ncard` ratios of a counting-measure
-  Følner family tend to zero.
+* `MeasureTheory.Measure.ncard_smul_symmDiff_div_ncard_le_count_div_count`,
+  `IsFoelner.tendsto_ncard_smul_symmDiff_div_ncard`: real `Set.ncard` ratios of a counting-measure
+  Følner family are bounded by counting-measure ratios and tend to zero.
 * `TauCeti.maxFoelner_count_neBot_iff_of_closure_eq_top`, `TauCeti.maxFoelner_count_neBot_iff`:
   finite-`Set` characterizations of `(maxFoelner G Measure.count).NeBot`.
 
@@ -77,6 +78,25 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard
   rw [Measure.count_apply_eq_ncard hsd, Measure.count_apply_eq_ncard hfin]
   exact ENNReal.natCast_div_natCast_lt_ofReal_iff ((Set.ncard_pos hfin).2 hne)
 
+/-- The counting-measure Følner ratio of a finite measurable set bounds its `Set.ncard` ratio from
+above, without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/
+@[to_additive
+/-- The counting-measure additive Følner ratio of a finite measurable set bounds its `Set.ncard`
+ratio from above, without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/]
+theorem MeasureTheory.Measure.ncard_smul_symmDiff_div_ncard_le_count_div_count {M : Type*}
+    [SMul M X] {F : Set X} (hfin : F.Finite) (hFm : MeasurableSet F) (m : M) :
+    (((m • F) ∆ F).ncard : ℝ≥0∞) / F.ncard ≤
+      Measure.count ((m • F) ∆ F) / Measure.count F := by
+  have hsd : ((m • F) ∆ F).Finite := (hfin.smul_set).symmDiff hfin
+  rw [Measure.count_apply_finite' hfin hFm, Set.ncard_eq_toFinset_card _ hfin]
+  refine ENNReal.div_le_div_right ?_ _
+  calc
+    (((m • F) ∆ F).ncard : ℝ≥0∞) = hsd.toFinset.card := by
+      rw [Set.ncard_eq_toFinset_card _ hsd]
+    _ = ∑' _ : (hsd.toFinset : Set X), (1 : ℝ≥0∞) := by simp
+    _ ≤ Measure.count (hsd.toFinset : Set X) := Measure.le_count_apply
+    _ = Measure.count ((m • F) ∆ F) := by rw [Finite.coe_toFinset]
+
 /-- Along any counting-measure Følner family, the real `Set.ncard` translation-boundary ratios tend
 to zero without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/
 @[to_additive
@@ -91,20 +111,8 @@ theorem IsFoelner.tendsto_ncard_smul_symmDiff_div_ncard {ι : Type*} {l : Filter
   filter_upwards [hF.eventually_measurableSet, hF.eventually_meas_ne_top,
     (hF.tendsto_meas_smul_symmDiff g).eventually (gt_mem_nhds zero_lt_one)] with i hFm hitop hlt
   have hfin : (F i).Finite := (Measure.count_apply_lt_top' hFm).1 (lt_top_iff_ne_top.2 hitop)
-  have hsd : ((g • F i) ∆ F i).Finite := (hfin.smul_set).symmDiff hfin
-  have hcountF : Measure.count (F i) = (F i).ncard := by
-    rw [Measure.count_apply_finite' hfin hFm, Set.ncard_eq_toFinset_card _ hfin]
-  have hle : (((g • F i) ∆ F i).ncard : ℝ≥0∞) / (F i).ncard ≤
-      Measure.count ((g • F i) ∆ F i) / Measure.count (F i) := by
-    rw [hcountF]
-    refine ENNReal.div_le_div_right ?_ _
-    calc
-      (((g • F i) ∆ F i).ncard : ℝ≥0∞) = hsd.toFinset.card := by
-        rw [Set.ncard_eq_toFinset_card _ hsd]
-      _ = ∑' _ : (hsd.toFinset : Set X), (1 : ℝ≥0∞) := by simp
-      _ ≤ Measure.count (hsd.toFinset : Set X) := Measure.le_count_apply
-      _ = Measure.count ((g • F i) ∆ F i) := by rw [Finite.coe_toFinset]
-  simpa [ENNReal.toReal_div, Function.comp_def] using ENNReal.toReal_mono hlt.ne_top hle
+  simpa [ENNReal.toReal_div, Function.comp_def] using ENNReal.toReal_mono hlt.ne_top
+    (Measure.ncard_smul_symmDiff_div_ncard_le_count_div_count hfin hFm g)
 
 namespace TauCeti
 

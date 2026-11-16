@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Action.Pointwise.Finset
+public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Data.Finset.SymmDiff
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import TauCeti.Data.Finset.SymmDiff
 
 /-!
@@ -33,6 +35,9 @@ conditions to generating sets.
   `#(insert 1 S • F) ≤ (∑ g ∈ S, #(g • F \ F)) + #F`.
 * `Finset.card_inv_smul_finset_symmDiff_self`: `#((g⁻¹ • F) ∆ F) = #((g • F) ∆ F)`.
 * `Finset.card_zpow_smul_finset_symmDiff_le`: `#((g ^ n • F) ∆ F) ≤ n.natAbs * #((g • F) ∆ F)`.
+* `Subgroup.exists_finset_card_smul_symmDiff_le_of_mem_closure`,
+  `Finset.exists_finset_card_smul_symmDiff_le_of_subset_closure`: quantitative generator-to-test-set
+  boundary bounds for elements and finite subsets of `Subgroup.closure S`.
 
 ## References
 
@@ -107,7 +112,8 @@ theorem card_list_prod_smul_finset_symmDiff_le (L : List M) (F : Finset X) :
 monoid. -/]
 theorem card_pow_smul_finset_symmDiff_le (g : M) (n : ℕ) (F : Finset X) :
     #((g ^ n • F) ∆ F) ≤ n * #((g • F) ∆ F) := by
-  simpa using card_list_prod_smul_finset_symmDiff_le (List.replicate n g) F
+  simpa only [List.prod_replicate, List.map_replicate, List.sum_replicate, smul_eq_mul] using
+    card_list_prod_smul_finset_symmDiff_le (List.replicate n g) F
 
 end Monoid
 
@@ -182,3 +188,74 @@ theorem card_zpow_smul_finset_symmDiff_le (g : G) (n : ℤ) (F : Finset X) :
 end Group
 
 end Finset
+
+section WordBound
+
+open Finset
+
+variable {G X : Type*} [Group G] [MulAction G X] [DecidableEq X]
+
+/-- Every element `g ∈ Subgroup.closure S` has a finite subset `K₀ ⊆ S` and a multiplicity `M`
+bounding `#((g • F) ∆ F) ≤ M * ∑ s ∈ K₀, #((s • F) ∆ F)` uniformly for all `F : Finset X`. -/
+@[to_additive
+/-- Every element `g ∈ AddSubgroup.closure S` has a finite subset `K₀ ⊆ S` and a multiplicity `M`
+bounding `#((g +ᵥ F) ∆ F) ≤ M * ∑ s ∈ K₀, #((s +ᵥ F) ∆ F)` uniformly for all `F : Finset X`. -/]
+theorem Subgroup.exists_finset_card_smul_symmDiff_le_of_mem_closure {S : Set G} {g : G}
+    (hg : g ∈ Subgroup.closure S) :
+    ∃ K₀ : Finset G, (K₀ : Set G) ⊆ S ∧ ∃ M : ℕ,
+      ∀ F : Finset X, #((g • F) ∆ F) ≤ M * ∑ s ∈ K₀, #((s • F) ∆ F) := by
+  classical
+  induction hg using Subgroup.closure_induction with
+  | mem s hs =>
+    exact ⟨{s}, singleton_subset_set_iff.2 hs, 1, fun F ↦ by simp⟩
+  | one =>
+    exact ⟨∅, by simp, 0, fun F ↦ by simp⟩
+  | mul x y _ _ ihx ihy =>
+    obtain ⟨Kx, hKx, Mx, hMx⟩ := ihx
+    obtain ⟨Ky, hKy, My, hMy⟩ := ihy
+    refine ⟨Kx ∪ Ky, coe_union Kx Ky ▸ Set.union_subset hKx hKy, Mx + My, fun F ↦ ?_⟩
+    have hx : ∑ s ∈ Kx, #((s • F) ∆ F) ≤ ∑ s ∈ Kx ∪ Ky, #((s • F) ∆ F) :=
+      sum_le_sum_of_subset subset_union_left
+    have hy : ∑ s ∈ Ky, #((s • F) ∆ F) ≤ ∑ s ∈ Kx ∪ Ky, #((s • F) ∆ F) :=
+      sum_le_sum_of_subset subset_union_right
+    calc
+      #(((x * y) • F) ∆ F) ≤ #((y • F) ∆ F) + #((x • F) ∆ F) :=
+        card_mul_smul_finset_symmDiff_le x y F
+      _ ≤ My * ∑ s ∈ Ky, #((s • F) ∆ F) + Mx * ∑ s ∈ Kx, #((s • F) ∆ F) :=
+        Nat.add_le_add (hMy F) (hMx F)
+      _ ≤ My * ∑ s ∈ Kx ∪ Ky, #((s • F) ∆ F) + Mx * ∑ s ∈ Kx ∪ Ky, #((s • F) ∆ F) :=
+        Nat.add_le_add (Nat.mul_le_mul_left _ hy) (Nat.mul_le_mul_left _ hx)
+      _ = (Mx + My) * ∑ s ∈ Kx ∪ Ky, #((s • F) ∆ F) := by rw [Nat.add_comm, Nat.add_mul]
+  | inv x _ ihx =>
+    obtain ⟨Kx, hKx, Mx, hMx⟩ := ihx
+    refine ⟨Kx, hKx, Mx, fun F ↦ ?_⟩
+    rw [card_inv_smul_finset_symmDiff_self]
+    exact hMx F
+
+/-- Quantitative generator-to-test-set bound: for any finite set `K` contained in
+`Subgroup.closure S`, there exist a finite `K₀ ⊆ S` and `M : ℕ` bounding `#((g • F) ∆ F)` for all
+`g ∈ K` and `F : Finset X` simultaneously. -/
+@[to_additive
+/-- Quantitative generator-to-test-set bound: for any finite set `K` contained in
+`AddSubgroup.closure S`, there exist a finite `K₀ ⊆ S` and `M : ℕ` bounding `#((g +ᵥ F) ∆ F)` for
+all `g ∈ K` and `F : Finset X` simultaneously. -/]
+theorem Finset.exists_finset_card_smul_symmDiff_le_of_subset_closure {S : Set G} {K : Finset G}
+    (hK : (K : Set G) ⊆ Subgroup.closure S) :
+    ∃ K₀ : Finset G, (K₀ : Set G) ⊆ S ∧ ∃ M : ℕ,
+      ∀ F : Finset X, ∀ g ∈ K, #((g • F) ∆ F) ≤ M * ∑ s ∈ K₀, #((s • F) ∆ F) := by
+  classical
+  induction K using Finset.induction with
+  | empty => exact ⟨∅, by simp, 0, fun _ _ hg ↦ (notMem_empty _ hg).elim⟩
+  | insert g K hgK ih =>
+    rw [coe_insert, Set.insert_subset_iff] at hK
+    obtain ⟨K₁, hK₁, M₁, hM₁⟩ :=
+      Subgroup.exists_finset_card_smul_symmDiff_le_of_mem_closure (X := X) hK.1
+    obtain ⟨K₂, hK₂, M₂, hM₂⟩ := ih hK.2
+    refine ⟨K₁ ∪ K₂, coe_union K₁ K₂ ▸ Set.union_subset hK₁ hK₂, max M₁ M₂, fun F x hx ↦ ?_⟩
+    rcases mem_insert.1 hx with rfl | hxK
+    · exact (hM₁ F).trans (Nat.mul_le_mul (le_max_left _ _)
+        (sum_le_sum_of_subset subset_union_left))
+    · exact (hM₂ F x hxK).trans (Nat.mul_le_mul (le_max_right _ _)
+        (sum_le_sum_of_subset subset_union_right))
+
+end WordBound

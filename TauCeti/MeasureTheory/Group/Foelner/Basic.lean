@@ -18,20 +18,19 @@ additive counterparts `IsAddFoelner` and `maxAddFoelner`):
 1. **Measure-theoretic translation cocycle bounds** under `[SMulInvariantMeasure G X μ]`:
    invariance of `μ ((g • s) ∆ (g • t))`, inversion symmetry `μ ((g⁻¹ • s) ∆ s) = μ ((g • s) ∆ s)`,
    and subadditivity along products and list words.
-2. **Filter and perturbation compatibility**: eventual equality (`IsFoelner.congr`), restriction to
-   a principal filter or subtype, cofinal monotone reindexing along `atTop`, invariance of
-   `IsFoelner` and ultrafilter density means `IsFoelner.mean` under asymptotically negligible
-   relative symmetric-difference perturbations `μ (F i ∆ F' i) / μ (F i) → 0`, and eventual
-   `μ`-almost-everywhere equality.
+2. **Filter and perturbation compatibility**: eventual equality (`IsFoelner.congr`), cofinal
+   monotone reindexing along `atTop`, invariance of `IsFoelner` and ultrafilter density means
+   `IsFoelner.mean` under asymptotically negligible relative symmetric-difference perturbations
+   `μ (F i ∆ F' i) / μ (F i) → 0`, and eventual `μ`-almost-everywhere equality.
 3. **Generating-set reduction (Garrido Lemma 3.4, BDHV Remark G.5.3)**: for an invariant measure
    `μ`, the elements `g : G` with `μ ((g • F i) ∆ F i) / μ (F i) → 0` form a subgroup
-   `IsFoelner.vanishingSubgroup μ l F`. Consequently `IsFoelner`, `maxFoelner G μ`, and
+   `TauCeti.vanishingSubgroup μ l F`. Consequently `IsFoelner`, `maxFoelner G μ`, and
    `(maxFoelner G μ).NeBot` can be tested purely on a generating set `S` with
    `Subgroup.closure S = ⊤`.
 
 ## Main definitions
 
-* `IsFoelner.vanishingSubgroup`: the subgroup of group elements whose relative translation
+* `TauCeti.vanishingSubgroup`: the subgroup of group elements whose relative translation
   boundaries along `F` tend to zero.
 
 ## Main results
@@ -123,22 +122,6 @@ namespace IsFoelner
 /-- A family eventually equal to an additive Følner family along `l` is itself Følner. -/]
 theorem congr (hF : IsFoelner G μ l F) (h : F =ᶠ[l] F') : IsFoelner G μ l F' :=
   (isFoelner_iff_tendsto _ _).2 <| ((isFoelner_iff_tendsto _ _).1 hF).congr' h
-
-/-- Restricting a Følner family to `l ⊓ 𝓟 s` preserves the Følner property. -/
-@[to_additive
-/-- Restricting an additive Følner family to `l ⊓ 𝓟 s` preserves the Følner property. -/]
-theorem inf_principal (hF : IsFoelner G μ l F) (s : Set ι) :
-    IsFoelner G μ (l ⊓ 𝓟 s) F :=
-  hF.mono inf_le_left
-
-/-- Restricting the index type of a Følner family to a subset via `Filter.comap (↑)` preserves the
-Følner property. -/
-@[to_additive
-/-- Restricting the index type of an additive Følner family to a subset via `Filter.comap (↑)`
-preserves the Følner property. -/]
-theorem comap_subtype (hF : IsFoelner G μ l F) (s : Set ι) :
-    IsFoelner G μ (comap ((↑) : s → ι) l) (fun i : s ↦ F i) :=
-  hF.comp_tendsto tendsto_comap
 
 /-- Reindexing a Følner family along `atTop` by a monotone cofinal map preserves `IsFoelner`. -/
 @[to_additive
@@ -291,7 +274,11 @@ theorem mean_eq_of_eventually_ae_eq (hF : IsFoelner G μ u F) (hF' : IsFoelner G
   filter_upwards [hae] with i hi
   simp [measure_symmDiff_eq_zero_iff.2 hi]
 
+end IsFoelner
+
 /-! ### Generating-set reduction (Garrido Lemma 3.4) -/
+
+namespace TauCeti
 
 variable (μ l F) in
 /-- For a `G`-invariant measure `μ`, the elements `g : G` whose relative translation boundaries
@@ -314,11 +301,19 @@ def vanishingSubgroup [SMulInvariantMeasure G X μ] : Subgroup G where
     simp_rw [Set.mem_ofPred_eq, measure_inv_smul_symmDiff_self] at hg ⊢
     exact hg
 
-@[to_additive (attr := simp)]
+/-- An element `g : G` belongs to `TauCeti.vanishingSubgroup μ l F` if and only if its relative
+translation boundary `μ ((g • F i) ∆ F i) / μ (F i)` tends to `0` along `l`. -/
+@[to_additive (attr := simp)
+/-- An element `g : G` belongs to `TauCeti.vanishingAddSubgroup μ l F` if and only if its relative
+translation boundary `μ ((g +ᵥ F i) ∆ F i) / μ (F i)` tends to `0` along `l`. -/]
 theorem mem_vanishingSubgroup [SMulInvariantMeasure G X μ] {g : G} :
     g ∈ vanishingSubgroup μ l F ↔
       Tendsto (fun i ↦ μ ((g • F i) ∆ F i) / μ (F i)) l (𝓝 0) :=
   Iff.rfl
+
+end TauCeti
+
+namespace IsFoelner
 
 /-- **Garrido Lemma 3.4 (measure-space form).** When `μ` is `G`-invariant and `S` generates `G`, a
 family of eventually measurable sets of finite nonzero measure is Følner as soon as its relative
@@ -336,8 +331,8 @@ theorem of_closure_eq_top [SMulInvariantMeasure G X μ] {S : Set G} (hS : Subgro
   eventually_meas_ne_zero := hne0
   eventually_meas_ne_top := hnetop
   tendsto_meas_smul_symmDiff g := by
-    have hle : Subgroup.closure S ≤ vanishingSubgroup μ l F :=
-      (Subgroup.closure_le (vanishingSubgroup μ l F)).2 htendsto
+    have hle : Subgroup.closure S ≤ TauCeti.vanishingSubgroup μ l F :=
+      (Subgroup.closure_le (TauCeti.vanishingSubgroup μ l F)).2 htendsto
     exact hle (hS.symm ▸ Subgroup.mem_top g)
 
 end IsFoelner
