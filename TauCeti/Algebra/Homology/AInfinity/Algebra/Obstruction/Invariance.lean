@@ -400,9 +400,13 @@ private theorem exists_taylor_apply_eq_letter_succ (hℋ : ℋ.IsMinimal)
     hχe _ (filtration_monotone R A he (ofLetter_mem_filtration R A a))
   have hδχ : ℋ.hochschildDifferential 0 χ = 0 := by
     rw [hχdef, hochschildDifferential_smul, hδφ₀, smul_zero]
+  have hf₁ : f.linearPart = LinearMap.id := LinearMap.ext fun a ↦ by
+    rw [AInfinityHom.linearPart_apply,
+      hf _ (filtration_monotone R A he (ofLetter_mem_filtration R A a)), letter_ofLetter,
+      LinearMap.id_apply]
   refine ⟨(ℋ.expHom hχ hχ₁ hδχ).comp f, fun z hz ↦ ?_⟩
   -- On the words of length at most `e + 1`, `χ = -φ₀ = -ψ`, so `f.taylor + χ = letter`.
-  rw [taylor_expHom_comp_apply_of_mem_filtration hχ hχ₁ hδχ f hf hχe hz, hχdef,
+  rw [taylor_expHom_comp_apply_of_mem_filtration hχ hχ₁ hδχ f hf₁ hχe hz, hχdef,
     LinearMap.smul_apply, hφ₀def, LinearMap.comp_apply,
     apply_lengthProj_of_mem_filtration R A hψe hz, hψdef, LinearMap.sub_apply]
   module
