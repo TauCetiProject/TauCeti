@@ -37,7 +37,7 @@ This file collects general algebraic properties of multivariate polynomial rings
 * `TauCeti.MvPolynomial.finite_map`: `MvPolynomial.map f` is finite when `f` is.
 * `TauCeti.MvPolynomial.exists_surjective_algHom_of_subsingleton`: `R[X]` surjects onto
   `MvPolynomial ι R` whenever `ι` is a subsingleton.
-* `TauCeti.MvPolynomial.exists_map_eq_smul_of_isLocalization`: clearing denominators in a
+* `MvPolynomial.exists_map_eq_smul_of_isLocalization`: clearing denominators in a
   multivariate polynomial over a localization `M⁻¹ R`.
 * `TauCeti.MvPolynomial.exists_ne_zero_and_aeval_eq_zero_of_isLocalization`: a nonzero polynomial
   relation over a localization `M⁻¹ R` evaluated along an injective map `D → E` yields a nonzero
@@ -53,6 +53,31 @@ hence `R′[x^{1/q}]` is finite over `R[x]`"; the multivariate form is not claim
 public section
 
 open Polynomial
+
+namespace MvPolynomial
+
+/-- Clearing denominators in a multivariate polynomial `f` over a localization `K` of `R` at `M`
+produces `d ∈ M` and a polynomial `f₁` over `R` whose image in `K` equals `d • f`. -/
+theorem exists_map_eq_smul_of_isLocalization {R K ι : Type*}
+    [CommRing R] [CommRing K] [Algebra R K] (M : Submonoid R) [IsLocalization M K]
+    (f : MvPolynomial ι K) :
+    ∃ (d : M) (f₁ : MvPolynomial ι R),
+      MvPolynomial.map (algebraMap R K) f₁ = algebraMap R K d • f := by
+  classical
+  obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples_of_finset M (f.support.image f.coeff)
+  have hmem (m : ι →₀ ℕ) : (d : R) • f.coeff m ∈ Set.range (algebraMap R K) := by
+    by_cases hm : m ∈ f.support
+    · exact hd _ (Finset.mem_image_of_mem f.coeff hm)
+    · rw [MvPolynomial.notMem_support_iff.mp hm, smul_zero]
+      exact ⟨0, map_zero _⟩
+  choose c hc using hmem
+  refine ⟨d, ∑ m ∈ f.support, MvPolynomial.monomial m (c m), ?_⟩
+  ext m
+  by_cases hm : m ∈ f.support
+  · simp [MvPolynomial.coeff_monomial, hm, hc m, Algebra.smul_def]
+  · simp [MvPolynomial.coeff_monomial, hm, MvPolynomial.notMem_support_iff.mp hm]
+
+end MvPolynomial
 
 namespace TauCeti
 
@@ -90,27 +115,6 @@ theorem MvPolynomial.exists_surjective_algHom_of_subsingleton (R ι : Type*)
     exact ⟨(MvPolynomial.uniqueAlgEquiv R ι).symm.toAlgHom,
       (MvPolynomial.uniqueAlgEquiv R ι).symm.surjective⟩
 
-/-- Clearing denominators in a multivariate polynomial `f` over a localization `K` of `R` at `M`
-produces `d ∈ M` and a polynomial `f₁` over `R` whose image in `K` equals `d • f`. -/
-theorem MvPolynomial.exists_map_eq_smul_of_isLocalization {R K ι : Type*}
-    [CommRing R] [CommRing K] [Algebra R K] (M : Submonoid R) [IsLocalization M K]
-    (f : MvPolynomial ι K) :
-    ∃ (d : M) (f₁ : MvPolynomial ι R),
-      MvPolynomial.map (algebraMap R K) f₁ = algebraMap R K d • f := by
-  classical
-  obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples_of_finset M (f.support.image f.coeff)
-  have hmem (m : ι →₀ ℕ) : (d : R) • f.coeff m ∈ Set.range (algebraMap R K) := by
-    by_cases hm : m ∈ f.support
-    · exact hd _ (Finset.mem_image_of_mem f.coeff hm)
-    · rw [MvPolynomial.notMem_support_iff.mp hm, smul_zero]
-      exact ⟨0, map_zero _⟩
-  choose c hc using hmem
-  refine ⟨d, ∑ m ∈ f.support, MvPolynomial.monomial m (c m), ?_⟩
-  ext m
-  by_cases hm : m ∈ f.support
-  · simp [MvPolynomial.coeff_monomial, hm, hc m, Algebra.smul_def]
-  · simp [MvPolynomial.coeff_monomial, hm, MvPolynomial.notMem_support_iff.mp hm]
-
 /-- Clearing denominators in a nonzero multivariate polynomial over a localization `K` of `R` at
 `M` produces a nonzero polynomial over `R` with the same vanishing under an injective algebra map
 `D → E`. -/
@@ -121,7 +125,7 @@ theorem MvPolynomial.exists_ne_zero_and_aeval_eq_zero_of_isLocalization {R K D E
     (hinj : Function.Injective (algebraMap D E)) (y : ι → D) {f : MvPolynomial ι K} (hf : f ≠ 0)
     (heval : MvPolynomial.aeval (fun i ↦ algebraMap D E (y i)) f = 0) :
     ∃ f₁ : MvPolynomial ι R, f₁ ≠ 0 ∧ MvPolynomial.aeval y f₁ = 0 := by
-  obtain ⟨d, f₁, hf₁_map⟩ := MvPolynomial.exists_map_eq_smul_of_isLocalization M f
+  obtain ⟨d, f₁, hf₁_map⟩ := _root_.MvPolynomial.exists_map_eq_smul_of_isLocalization M f
   refine ⟨f₁, fun h0 ↦ hf ?_, hinj ?_⟩
   · obtain ⟨u, hu⟩ := IsLocalization.map_units K d
     have hsmul : u • f = 0 := by rw [Units.smul_def, hu, ← hf₁_map, h0, map_zero]
