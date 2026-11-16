@@ -145,6 +145,44 @@ instance [CategoryWithHomology C] :
         (congrArg (fun f ↦ f.f 0) (T.singularChainComplexπ_comp_totalToOuter R)))
   exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
 
+/-- In each degree, the map `Cₙ(A, B) ⟶ Cₙ(X, B)` of relative singular chains of a triple
+`(X, A, B)` is a split monomorphism: a retraction of `Cₙ(A) ⟶ Cₙ(X)` is the identity on the chains
+of `B`, so it descends to the quotients by them. -/
+instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
+    IsSplitMono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) := by
+  have : IsSplitMono ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n) :=
+    inferInstanceAs (IsSplitMono
+      ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
+  let r := retraction ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n)
+  have hr {Z : C} (h : ((TopCat.toSSet.obj T.snd).chainComplex R).X n ⟶ Z) :
+      (SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n ≫ r ≫ h = h :=
+    IsSplitMono.id_assoc _ h
+  -- The chains of `B` map to the chains of `X` through those of `A`, on which `r` is the
+  -- identity; so `r` followed by the quotient map vanishes on them.
+  have e : (SSet.chainComplexMap (TopCat.toSSet.map T.innerMap) R ≫
+      SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n =
+      (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n :=
+    congrArg (fun φ ↦ φ.f n) <| (((SSet.chainComplexFunctor C).obj R).map_comp _ _).symm.trans <|
+      congrArg _ ((TopCat.toSSet.map_comp _ _).symm.trans (congrArg _ T.innerMap_comp_outerMap))
+  have hB : (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n ≫ r ≫
+      ((innerPair.obj T).singularChainComplexπ R).f n = 0 :=
+    (congrArg (· ≫ r ≫ _) e).symm.trans <| (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (hr _)).trans
+        ((TopPair.toSSetPair.obj (innerPair.obj T)).chainComplex_condition_f R n)
+  let ρ : ((totalPair.obj T).singularChainComplex R).X n ⟶
+      ((innerPair.obj T).singularChainComplex R).X n :=
+    ((TopPair.toSSetPair.obj (totalPair.obj T)).isColimitCokernelCoforkChainComplexX R n).desc
+      (CokernelCofork.ofπ _ hB)
+  have hρ : ((totalPair.obj T).singularChainComplexπ R).f n ≫ ρ =
+      r ≫ ((innerPair.obj T).singularChainComplexπ R).f n :=
+    ((TopPair.toSSetPair.obj (totalPair.obj T)).isColimitCokernelCoforkChainComplexX R n).fac _
+      WalkingParallelPair.one
+  have hπ := congrArg (fun φ ↦ φ.f n) (T.singularChainComplexπ_comp_innerToTotal R)
+  exact ⟨⟨ρ, (cancel_epi (((innerPair.obj T).singularChainComplexπ R).f n)).1 <|
+    (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ ρ) hπ).trans <|
+      (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) hρ).trans <|
+        (hr _).trans (Category.comp_id _).symm⟩⟩
+
 end
 
 section
