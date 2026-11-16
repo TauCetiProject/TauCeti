@@ -68,7 +68,7 @@ theorem norm_herschNumerator_neg {u : E} (hu : ‖u‖ = 1) {ρ : ℝ} (hρ0 : 0
       1 - ρ := by
   have hρu : ‖ρ • u‖ = ρ := by rw [norm_smul, hu, mul_one, Real.norm_of_nonneg hρ0]
   rw [hρu, inner_neg_right, real_inner_smul_left, real_inner_self_eq_norm_sq, hu]
-  set s := √(1 - ρ ^ 2) with hs_def
+  set s := √(1 - ρ ^ 2)
   have hs : s ^ 2 = 1 - ρ ^ 2 := Real.sq_sqrt (by nlinarith)
   have hs1 : 1 + s ≠ 0 := by positivity
   have : s • (-u) + (-(ρ * 1 ^ 2) / (1 + s) + 1) • (ρ • u) = (ρ - 1) • u := by

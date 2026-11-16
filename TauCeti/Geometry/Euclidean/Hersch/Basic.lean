@@ -79,7 +79,6 @@ theorem norm_herschMap {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1) (h : �
     ‖herschMap a x‖ = 1 := by
   set s := √(1 - ‖a‖ ^ 2) with hs_def
   have hs : s ^ 2 = 1 - ‖a‖ ^ 2 := sqrt_one_sub_sq ha
-  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
   have hD : 1 + ⟪a, x⟫ ≠ 0 := fun h' ↦ h (by linarith)
   have hs1 : 1 + s ≠ 0 := by positivity
   rw [herschMap, ← hs_def, norm_smul, norm_inv, Real.norm_eq_abs,
@@ -112,7 +111,7 @@ theorem herschMap_neg_herschMap {a x : E} (ha : ‖a‖ < 1) (h : ⟪a, x⟫ ≠
   rw [herschMap_def (-a), hD', norm_neg, ← hs_def, hinner, herschMap_def a, ← hs_def]
   have hs2 : s ^ 2 ≠ 0 := by positivity
   rw [inv_div]
-  match_scalars <;> field_simp
+  match_scalars <;> field_simp [hs2]
   ring
 
 /-- At a point `v` of the unit sphere, `T_v(x) = v` whenever `⟪v, x⟫ ≠ -1`. -/
