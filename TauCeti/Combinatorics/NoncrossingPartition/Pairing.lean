@@ -53,7 +53,7 @@ open Finset
 
 namespace TauCeti.NoncrossingPartition
 
-variable {α M : Type*} [LinearOrder α] [CommSemiring M] {s : Finset α}
+variable {α M : Type*} [LinearOrder α] {s : Finset α}
 
 /-- The empty partition is the unique noncrossing pairing of `∅`. -/
 instance instUniqueIsPairingEmpty :
@@ -67,7 +67,7 @@ theorem isEmpty_isPairing (hs : Odd #s) :
   ⟨fun P => Nat.not_even_iff_odd.2 hs P.2.even_card⟩
 
 /-- Any sum over the noncrossing pairings of a set of odd size vanishes. -/
-theorem sum_isPairing_eq_zero (hs : Odd #s)
+theorem sum_isPairing_eq_zero [AddCommMonoid M] (hs : Odd #s)
     (f : {P : NoncrossingPartition s // P.1.IsPairing} → M) :
     ∑ P, f P = 0 := by
   have := isEmpty_isPairing hs
@@ -75,7 +75,7 @@ theorem sum_isPairing_eq_zero (hs : Odd #s)
 
 /-- On the empty set, the sum over noncrossing pairings of any empty product of block weights is
 `1`. -/
-theorem sum_isPairing_prod_empty (F : Finset α → M) :
+theorem sum_isPairing_prod_empty [AddCommMonoid M] [CommMonoid M] (F : Finset α → M) :
     (∑ P : {P : NoncrossingPartition (∅ : Finset α) // P.1.IsPairing},
         ∏ B ∈ P.1.1.parts, F B) = 1 := by
   rw [univ_unique, sum_singleton]
@@ -84,12 +84,14 @@ theorem sum_isPairing_prod_empty (F : Finset α → M) :
 
 /-- On the empty set, the sum over noncrossing pairings of any empty product of directed-arc
 weights is `1`. -/
-theorem sum_isPairing_prod_orderedPairs_empty (w : α → α → M) :
+theorem sum_isPairing_prod_orderedPairs_empty [AddCommMonoid M] [CommMonoid M] (w : α → α → M) :
     (∑ P : {P : NoncrossingPartition (∅ : Finset α) // P.1.IsPairing},
         ∏ p ∈ P.1.1.orderedPairs, w p.1 p.2) = 1 := by
   rw [univ_unique, sum_singleton]
   have hbot : (default : {P : NoncrossingPartition (∅ : Finset α) // P.1.IsPairing}).1 = ⊥ := rfl
   simp [hbot]
+
+variable [CommSemiring M]
 
 /-- Weighting blocks of size two by `F` and all other blocks by `0`, only the noncrossing pairings
 contribute to the sum over `NC(s)`. -/

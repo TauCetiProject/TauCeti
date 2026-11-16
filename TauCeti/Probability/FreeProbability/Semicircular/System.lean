@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Mul
 public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
+public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 public import TauCeti.Probability.FreeProbability.Distribution.Basic
 public import TauCeti.Probability.FreeProbability.Semicircular.Basic
 
@@ -36,7 +36,10 @@ when its covariance is diagonal, and a family is a semicircular system with diag
 `v` exactly when it is a free family of semicircular elements of variances `v i`. In particular,
 a single element is a semicircular system exactly when it is semicircular.
 
-No positivity, symmetry of `C`, or traciality of `φ` is assumed.
+No positivity, symmetry of `C`, or traciality of `φ` is assumed in the algebraic theory; when
+`φ : A →ₚ[ℂ] ℂ` is a positive linear functional on a `StarOrderedRing` and the `s i` are
+self-adjoint, positivity forces any real covariance `C` to be symmetric and positive semidefinite
+(`TauCeti.IsSemicircularSystem.posSemidef_of_isSelfAdjoint`).
 
 ## Main definitions
 
@@ -61,6 +64,9 @@ No positivity, symmetry of `C`, or traciality of `φ` is assumed.
   `v` are the free families of semicircular elements of variances `v i`.
 * `TauCeti.isSemicircularSystem_iff_isSemicircular` — a family indexed by a one-element type is a
   semicircular system exactly when its member is semicircular.
+* `TauCeti.IsSemicircularSystem.posSemidef_of_isSelfAdjoint` — under a positive linear functional on
+  a `StarOrderedRing`, a real covariance of a self-adjoint semicircular system is symmetric and
+  positive semidefinite.
 
 ## References
 
@@ -72,6 +78,7 @@ No positivity, symmetry of `C`, or traciality of `φ` is assumed.
 public section
 
 open Finset Matrix
+open scoped ComplexOrder
 
 namespace TauCeti
 
@@ -232,77 +239,62 @@ theorem apply_prod_eq_zero_of_odd {α : Type*} [LinearOrder α] (h : IsSemicircu
 end IsSemicircularSystem
 
 /-- Target block weight for the converse of the algebraic Wick formula. -/
-private def wickBlockWeight (C : Matrix ι ι R) {m : ℕ} (w : Fin m → ι) (B : Finset (Fin m)) : R :=
+private def wickBlockWeight (C : Matrix ι ι R) {α : Type*} [LinearOrder α] (w : α → ι)
+    (B : Finset α) : R :=
   if hB : B.Nonempty then if #B = 2 then C (w (B.min' hB)) (w (B.max' hB)) else 0 else 0
 
-private theorem sum_prod_wickBlockWeight_eq {n : ℕ} (w : Fin n → ι) :
-    (∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ π.1.parts, wickBlockWeight C w B) =
-      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
+private theorem sum_prod_wickBlockWeight_eq {α : Type*} [LinearOrder α] (s : Finset α)
+    (w : α → ι) :
+    (∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, wickBlockWeight C w B) =
+      ∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
         ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
   refine NoncrossingPartition.sum_prod_eq_sum_isPairing_prod_orderedPairs
     (fun i j => C (w i) (w j)) (fun {i j} _ _ hij => ?_) fun B _ hB hcard => ?_
-  · have hne : ({i, j} : Finset (Fin n)).Nonempty := ⟨i, mem_insert_self i _⟩
+  · have hne : ({i, j} : Finset α).Nonempty := ⟨i, mem_insert_self i _⟩
     simp [wickBlockWeight, hne, card_pair hij.ne, min_eq_left hij.le, max_eq_right hij.le]
   · simp [wickBlockWeight, hB, hcard]
 
-private theorem wickBlockWeight_comp_orderEmbOfFin {n : ℕ} (w : Fin n → ι)
-    {B : Finset (Fin n)} (hB : B.Nonempty) :
-    wickBlockWeight C (w ∘ B.orderEmbOfFin rfl) univ = wickBlockWeight C w B := by
-  have : Nonempty (Fin #B) := ⟨⟨0, hB.card_pos⟩⟩
-  have hmin : (univ : Finset (Fin #B)).min' univ_nonempty = ⟨0, hB.card_pos⟩ :=
-    le_antisymm (min'_le _ _ (mem_univ _)) (Fin.mk_le_mk.2 (Nat.zero_le _))
-  have hmax :
-      (univ : Finset (Fin #B)).max' univ_nonempty = ⟨#B - 1, Nat.sub_lt hB.card_pos one_pos⟩ :=
-    le_antisymm
-      (Fin.mk_le_mk.2 (Nat.le_sub_one_of_lt
-        (Fin.isLt ((univ : Finset (Fin #B)).max' univ_nonempty))))
-      (le_max' _ _ (mem_univ _))
-  simp only [wickBlockWeight, univ_nonempty, hB, ↓reduceDIte, card_univ, Fintype.card_fin,
-    Function.comp_apply, hmin, hmax]
-  rw [orderEmbOfFin_zero rfl hB.card_pos, orderEmbOfFin_last rfl hB.card_pos]
+private theorem wickBlockWeight_image_orderEmbedding {α β : Type*} [LinearOrder α] [LinearOrder β]
+    (w : α → ι) (e : β ↪o α) (D : Finset β) :
+    wickBlockWeight C w (D.image e) = wickBlockWeight C (w ∘ e) D := by
+  by_cases hD : D.Nonempty
+  · simp [wickBlockWeight, hD, hD.image, card_image_of_injective D e.injective,
+      min'_image e.monotone, max'_image e.monotone]
+  · simp [wickBlockWeight, not_nonempty_iff_eq_empty.1 hD]
 
 private theorem freeCumulant_eq_wickBlockWeight_of_apply_prod_ofFn
     (hprod : ∀ {n : ℕ} (w : Fin n → ι),
       φ (List.ofFn (s ∘ w)).prod =
         ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
-          ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2)) :
-    ∀ {n : ℕ}, n ≠ 0 → ∀ w : Fin n → ι,
-      freeCumulant φ (s ∘ w) univ = wickBlockWeight C w univ := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  intro hn w
+          ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2))
+    {n : ℕ} (hn : n ≠ 0) (w : Fin n → ι) :
+    freeCumulant φ (s ∘ w) univ = wickBlockWeight C w univ := by
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
-  have hsum : (∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ π.1.parts, freeCumulant φ (s ∘ w) B) =
-      ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ π.1.parts, wickBlockWeight C w B := by
-    rw [← apply_prod_ofFn_eq_sum_prod_freeCumulant φ hn (s ∘ w), hprod w,
-      sum_prod_wickBlockWeight_eq]
-  rw [← add_sum_erase _ _ (mem_univ (⊤ : NoncrossingPartition (univ : Finset (Fin n)))),
-    ← add_sum_erase _ _ (mem_univ (⊤ : NoncrossingPartition (univ : Finset (Fin n))))] at hsum
-  have herase : (∑ π ∈ univ.erase (⊤ : NoncrossingPartition (univ : Finset (Fin n))),
-        ∏ B ∈ π.1.parts, freeCumulant φ (s ∘ w) B) =
-      ∑ π ∈ univ.erase (⊤ : NoncrossingPartition (univ : Finset (Fin n))),
-        ∏ B ∈ π.1.parts, wickBlockWeight C w B := by
-    refine sum_congr rfl fun π hπ => prod_congr rfl fun B hB => ?_
-    have hne : B.Nonempty := π.1.nonempty_of_mem_parts hB
-    have hlt : #B < n := by
-      refine lt_of_le_of_ne (by simpa using card_le_card (subset_univ B)) fun hcard =>
-        (mem_erase.1 hπ).1 ?_
-      have hBu : B = univ := eq_of_subset_of_card_le (subset_univ B) (by simp [hcard])
-      exact Subtype.ext <| (π.1.eq_top_of_mem_parts (hBu ▸ hB)).trans
-        NoncrossingPartition.coe_top.symm
-    rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ (s ∘ w) B, Function.comp_assoc,
-      ih #B hlt hne.card_pos.ne' (w ∘ B.orderEmbOfFin rfl),
-      wickBlockWeight_comp_orderEmbOfFin w hne]
-  rw [herase] at hsum
-  have htop := add_right_cancel hsum
-  have hparts : (⊤ : NoncrossingPartition (univ : Finset (Fin n))).1.parts = {univ} := by
-    rw [NoncrossingPartition.coe_top,
-      Finpartition.parts_top (univ_nonempty (α := Fin n)).ne_empty]
-  rwa [hparts, prod_singleton, prod_singleton] at htop
+  refine freeCumulant_eq_of_forall_apply_prod_eq_sum_prod φ (s ∘ w) (wickBlockWeight C w)
+    (fun X _ _ => ?_) univ_nonempty
+  set e := X.orderEmbOfFin rfl
+  have hlist : X.sort.map (s ∘ w) = List.ofFn (s ∘ (w ∘ e)) := by
+    rw [← listMap_orderEmbOfFin_finRange X rfl, List.map_map, List.ofFn_eq_map]
+    rfl
+  rw [hlist, hprod (w ∘ e), ← sum_prod_wickBlockWeight_eq]
+  have hmono : MonotoneOn e ((univ : Finset (Fin #X)) : Set (Fin #X)) :=
+    e.strictMono.monotone.monotoneOn _
+  have hbij : Function.Bijective (NoncrossingPartition.comap hmono) :=
+    ⟨(NoncrossingPartition.comap hmono).injective, fun σ =>
+      NoncrossingPartition.exists_comap_eq_iff.2 <| by
+        refine Finpartition.le_iff_forall_part_subset.2 fun x y hy => ?_
+        rw [NoncrossingPartition.coe_comap, NoncrossingPartition.coe_bot,
+          Finpartition.part_comap_bot (mem_univ x), mem_filter] at hy
+        cases e.injective hy.2
+        exact σ.1.mem_part_self.2 (mem_univ _)⟩
+  rw [← (Equiv.ofBijective _ hbij).sum_comp]
+  have himg : univ.image (e : Fin #X → Fin n) = X := image_orderEmbOfFin_univ X rfl
+  refine (sum_congr rfl fun ρ _ => ?_).trans
+    (congrArg (fun Y : Finset (Fin n) =>
+      ∑ ρ : NoncrossingPartition Y, ∏ B ∈ ρ.1.parts, wickBlockWeight C w B) himg)
+  rw [Equiv.ofBijective_apply, NoncrossingPartition.coe_comap, Finpartition.prod_parts_comap]
+  refine prod_congr rfl fun B hB => ?_
+  rw [← wickBlockWeight_image_orderEmbedding w e, Finpartition.image_filter_mem_of_mem_parts hB]
 
 /-- **Wick characterization of semicircular systems**: a family `s : ι → A` is a semicircular
 system with covariance `C` for `φ` if and only if every word `w : Fin n → ι` (including the empty
@@ -370,5 +362,55 @@ theorem isSemicircularSystem_iff_isSemicircular [Unique ι] :
   rw [hC, isSemicircularSystem_diagonal_iff]
   exact ⟨fun h => h.2.2 default, fun h => ⟨h.apply_one,
     isFreelyIndependentElements_of_subsingleton φ s, fun i => Unique.eq_default i ▸ h⟩⟩
+
+/-- If `s : ι → A` is a self-adjoint semicircular system with real covariance `C` for a positive
+linear functional `φ : A →ₚ[ℂ] ℂ` on a `StarOrderedRing`, then `C` is symmetric and positive
+semidefinite. -/
+theorem IsSemicircularSystem.posSemidef_of_isSelfAdjoint {A ι : Type*} [Ring A] [PartialOrder A]
+    [StarRing A] [StarOrderedRing A] [Algebra ℂ A] [StarModule ℂ A] {φ : A →ₚ[ℂ] ℂ}
+    {s : ι → A} {C : Matrix ι ι ℝ}
+    (h : IsSemicircularSystem φ.toLinearMap s (C.map Complex.ofReal))
+    (hs : ∀ i, IsSelfAdjoint (s i)) :
+    C.PosSemidef := by
+  refine posSemidef_iff_finite_sum.{0, _, 0}.2 ⟨fun i j => ?_, fun {κ} _ v x => ?_⟩
+  · let b : A := s i + Complex.I • s j
+    have hb_star : star b = s i - Complex.I • s j := by
+      simp [b, star_add, star_smul, (hs i).star_eq, (hs j).star_eq, sub_eq_add_neg]
+    have hmul : star b * b =
+        s i * s i + s j * s j + Complex.I • (s i * s j - s j * s i) := by
+      have hII : (Complex.I • s j) * (Complex.I • s j) = -(s j * s j) := by
+        rw [smul_mul_smul_comm, Complex.I_mul_I, neg_one_smul]
+      rw [hb_star, sub_mul, mul_add, mul_add, mul_smul_comm, smul_mul_assoc, hII, smul_sub]
+      abel
+    have him : (φ (star b * b)).im = 0 :=
+      (φ.map_nonneg (star_mul_self_nonneg b)).2.symm
+    have hmul_im : (φ (star b * b)).im = C i j - C j i := by
+      have h_ii : φ (s i * s i) = C i i := by simpa using h.apply_mul i i
+      have h_jj : φ (s j * s j) = C j j := by simpa using h.apply_mul j j
+      have h_ij : φ (s i * s j) = C i j := by simpa using h.apply_mul i j
+      have h_ji : φ (s j * s i) = C j i := by simpa using h.apply_mul j i
+      rw [hmul, map_add, map_add, LinearMapClass.map_smul, map_sub, h_ii, h_jj, h_ij, h_ji]
+      simp
+    simp only [star_trivial]
+    linarith [him, hmul_im]
+  · let b : A := ∑ p : κ, (x p : ℂ) • s (v p)
+    have hb_star : star b = b := by
+      simp [b, star_sum, star_smul, (hs _).star_eq]
+    have hbb : star b * b =
+        ∑ p : κ, ∑ q : κ, ((x p : ℂ) * (x q : ℂ)) • (s (v p) * s (v q)) := by
+      rw [hb_star]
+      simp only [b, sum_mul_sum, smul_mul_smul_comm]
+    have hφ : φ (star b * b) =
+        ((∑ p : κ, ∑ q : κ, star (x p) * C (v p) (v q) * x q : ℝ) : ℂ) := by
+      have hmul (p q : κ) : φ (s (v p) * s (v q)) = C (v p) (v q) := by
+        simpa using h.apply_mul (v p) (v q)
+      rw [hbb, map_sum]
+      simp only [map_sum, LinearMapClass.map_smul, hmul, smul_eq_mul, star_trivial,
+        Complex.ofReal_sum, Complex.ofReal_mul]
+      refine sum_congr rfl fun p _ => sum_congr rfl fun q _ => ?_
+      ring
+    have hnonneg : 0 ≤ φ (star b * b) := φ.map_nonneg (star_mul_self_nonneg b)
+    rw [hφ] at hnonneg
+    exact Complex.zero_le_real.1 hnonneg
 
 end TauCeti

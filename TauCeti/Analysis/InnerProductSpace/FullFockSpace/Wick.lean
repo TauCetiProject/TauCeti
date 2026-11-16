@@ -6,39 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.FullFockSpace.Basic
-public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
 import TauCeti.Data.Finset.Basic
 
 /-!
-# Vacuum state, field operators, and the Wick formula on full Fock space
+# The vacuum Wick formula on full Fock space
 
 On the full Fock space `FullFockSpace 𝕜 H` (`𝓕(H)`) over a real or complex inner product space `H`
-(`[RCLike 𝕜]`, without requiring `H` to be complete), pairing bounded operators against the unit
-vacuum vector `vacuum` defines the positive linear functional `FullFockSpace.vacuumState 𝕜 H`
-(`ω_Ω(T) = ⟪Ω, T Ω⟫_𝕜`), and for each vector `h : H` the sum of left creation and left annihilation
-defines the bounded self-adjoint *field* (or *position*) operator
-`FullFockSpace.field 𝕜 h = creation 𝕜 h + annihilation 𝕜 h` (`s(h) = ℓ(h) + ℓ(h)*`).
-
-Because left annihilation kills the vacuum (`ℓ(g)* Ω = 0`) and satisfies the Cuntz–Toeplitz
-identity `ℓ(g)* ℓ(f) = ⟪g, f⟫_𝕜 • 1`, the vacuum expectation of an ordered product of sums
-`ℓ(f i) + ℓ(g i)*` satisfies the same quadratic recurrence by the partner of the first position as
-weighted noncrossing pairings
-(`TauCeti.NoncrossingPartition.sum_isPairing_prod_orderedPairs_eq_sum`).
+(`[RCLike 𝕜]`, without requiring `H` to be complete), left annihilation kills the vacuum
+(`ℓ(g)* Ω = 0`) and satisfies the Cuntz–Toeplitz identity `ℓ(g)* ℓ(f) = ⟪g, f⟫_𝕜 • 1`. Consequently,
+under the vacuum functional `FullFockSpace.vacuumState 𝕜 H` (`ω_Ω(T) = ⟪Ω, T Ω⟫_𝕜`), the expectation
+of an ordered product of sums `creation 𝕜 (f i) + annihilation 𝕜 (g i)` (`ℓ(f i) + ℓ(g i)*`)
+satisfies the same quadratic recurrence by the partner of the first position as weighted noncrossing
+pairings (`TauCeti.NoncrossingPartition.sum_isPairing_prod_orderedPairs_eq_sum`).
 This yields the **Fock-space vacuum Wick formula**:
 
 `ω_Ω(∏_{i ∈ s} (ℓ(f i) + ℓ(g i)*)) = ∑_{P ∈ NC₂(s)} ∏_{(i, j) ∈ P} ⟪g i, f j⟫_𝕜`.
 
 Specializing to `g = f` gives the noncrossing-pairing expansion for products of self-adjoint field
-operators `field 𝕜 (f i)` and, for a single vector `h : H`, the semicircular moment sequence
-`ω_Ω(s(h)^n) = ‖h‖^n * catalan (n / 2)` for even `n` and `0` for odd `n`.
-
-## Main definitions
-
-* `TauCeti.FullFockSpace.vacuumState`: the normalized positive linear functional
-  `T ↦ ⟪vacuum, T vacuum⟫_𝕜` on `FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H`.
-* `TauCeti.FullFockSpace.field`: the self-adjoint field operator
-  `field 𝕜 h = creation 𝕜 h + annihilation 𝕜 h` on `FullFockSpace 𝕜 H`.
+operators `FullFockSpace.field 𝕜 (f i)` and, for a single vector `h : H`, the semicircular moment
+sequence `ω_Ω(s(h)^n) = ‖h‖^n * catalan (n / 2)` for even `n` and `0` for odd `n`.
 
 ## Main results
 
@@ -65,178 +52,13 @@ public section
 noncomputable section
 
 open Finset
-open scoped ComplexOrder InnerProductSpace
+open scoped InnerProductSpace
 
 namespace TauCeti
 
 universe u v
 
 namespace FullFockSpace
-
-section VacuumState
-
-/-- The normalized *vacuum functional* `T ↦ ⟪vacuum, T vacuum⟫_𝕜` on bounded operators on
-`FullFockSpace 𝕜 H`, bundled as a positive linear map for the Loewner partial order. When `𝕜 = ℂ`
-and `H` is complete, this is the vacuum vector state on the C⋆-algebra `𝓑(𝓕(H))`. -/
-def vacuumState (𝕜 : Type u) (H : Type v) [RCLike 𝕜]
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] :
-    (FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) →ₚ[𝕜] 𝕜 :=
-  ContinuousLinearMap.innerPositiveLinearMap 𝕜 (vacuum : FullFockSpace 𝕜 H)
-
-section
-
-variable {𝕜 : Type u} {H : Type v} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-theorem vacuumState_def :
-    vacuumState 𝕜 H =
-      ContinuousLinearMap.innerPositiveLinearMap 𝕜 (vacuum : FullFockSpace 𝕜 H) :=
-  (rfl)
-
-@[simp]
-theorem vacuumState_apply (T : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) :
-    vacuumState 𝕜 H T = ⟪vacuum, T vacuum⟫_𝕜 :=
-  ContinuousLinearMap.innerPositiveLinearMap_apply (vacuum : FullFockSpace 𝕜 H) T
-
-theorem vacuumState_one : vacuumState 𝕜 H 1 = 1 := by
-  simp
-
-theorem norm_vacuumState_apply_le (T : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) :
-    ‖vacuumState 𝕜 H T‖ ≤ ‖T‖ := by
-  simpa using ContinuousLinearMap.norm_innerPositiveLinearMap_apply_le
-    (𝕜 := 𝕜) (vacuum : FullFockSpace 𝕜 H) T
-
-theorem continuous_vacuumState :
-    Continuous (vacuumState 𝕜 H : (FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) → 𝕜) := by
-  have h : (vacuumState 𝕜 H : (FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) → 𝕜) =
-      (innerSL 𝕜 (vacuum : FullFockSpace 𝕜 H)) ∘
-        (ContinuousLinearMap.apply 𝕜 (FullFockSpace 𝕜 H) vacuum) := by
-    ext T
-    simp
-  rw [h]
-  exact (innerSL 𝕜 (vacuum : FullFockSpace 𝕜 H)).continuous.comp
-    (ContinuousLinearMap.apply 𝕜 (FullFockSpace 𝕜 H) vacuum).continuous
-
-theorem vacuumState_vacuumProj : vacuumState 𝕜 H vacuumProj = 1 := by
-  simp
-
-theorem vacuumState_creation (h : H) : vacuumState 𝕜 H (creation 𝕜 h) = 0 := by
-  simp
-
-theorem vacuumState_annihilation (h : H) : vacuumState 𝕜 H (annihilation 𝕜 h) = 0 := by
-  simp
-
-theorem vacuumState_annihilation_mul_creation (h k : H) :
-    vacuumState 𝕜 H (annihilation 𝕜 h * creation 𝕜 k) = ⟪h, k⟫_𝕜 := by
-  simp
-
-theorem vacuumState_creation_mul_annihilation (h k : H) :
-    vacuumState 𝕜 H (creation 𝕜 h * annihilation 𝕜 k) = 0 := by
-  simp
-
-theorem vacuumState_creation_mul_creation (h k : H) :
-    vacuumState 𝕜 H (creation 𝕜 h * creation 𝕜 k) = 0 := by
-  simp
-
-theorem vacuumState_annihilation_mul_annihilation (h k : H) :
-    vacuumState 𝕜 H (annihilation 𝕜 h * annihilation 𝕜 k) = 0 := by
-  simp
-
-end
-
-end VacuumState
-
-section Field
-
-/-- The self-adjoint *field* (or *position*) operator `s(h) = ℓ(h) + ℓ(h)*` on
-`FullFockSpace 𝕜 H`. -/
-def field (𝕜 : Type u) {H : Type v} [RCLike 𝕜]
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] (h : H) :
-    FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H :=
-  creation 𝕜 h + annihilation 𝕜 h
-
-section
-
-variable {𝕜 : Type u} {H : Type v} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-theorem field_def (h : H) : field 𝕜 h = creation 𝕜 h + annihilation 𝕜 h :=
-  (rfl)
-
-theorem field_apply (h : H) (x : FullFockSpace 𝕜 H) :
-    field 𝕜 h x = creation 𝕜 h x + annihilation 𝕜 h x :=
-  (rfl)
-
-@[simp]
-theorem adjoint_field (h : H) : (field 𝕜 h).adjoint = field 𝕜 h := by
-  rw [field_def, map_add, adjoint_creation, adjoint_annihilation, add_comm]
-
-@[simp]
-theorem star_field (h : H) : star (field 𝕜 h) = field 𝕜 h :=
-  adjoint_field h
-
-theorem isSelfAdjoint_field (h : H) : IsSelfAdjoint (field 𝕜 h) :=
-  star_field h
-
-@[simp]
-theorem field_zero : field 𝕜 (0 : H) = 0 := by
-  simp [field_def]
-
-@[simp]
-theorem field_add (h k : H) : field 𝕜 (h + k) = field 𝕜 h + field 𝕜 k := by
-  rw [field_def, creation_add, annihilation_add, field_def, field_def, add_add_add_comm]
-
-@[simp]
-theorem field_neg (h : H) : field 𝕜 (-h) = -field 𝕜 h := by
-  rw [field_def, creation_neg, annihilation_neg, ← neg_add, ← field_def]
-
-@[simp]
-theorem field_sub (h k : H) : field 𝕜 (h - k) = field 𝕜 h - field 𝕜 k := by
-  rw [sub_eq_add_neg, field_add, field_neg, ← sub_eq_add_neg]
-
-theorem field_smul_of_isSelfAdjoint {c : 𝕜} (hc : IsSelfAdjoint c) (h : H) :
-    field 𝕜 (c • h) = c • field 𝕜 h := by
-  rw [field_def, field_def, smul_add, creation_smul, annihilation_smul, hc.star_eq]
-
-@[simp]
-theorem field_ofReal_smul (r : ℝ) (h : H) :
-    field 𝕜 ((r : 𝕜) • h) = (r : 𝕜) • field 𝕜 h :=
-  field_smul_of_isSelfAdjoint (by simp [IsSelfAdjoint, RCLike.conj_ofReal]) h
-
-@[simp]
-theorem norm_field (h : H) : ‖field 𝕜 h‖ = 2 * ‖h‖ :=
-  norm_creation_add_annihilation h
-
-theorem field_injective : Function.Injective (field 𝕜 (H := H)) := by
-  intro h k hhk
-  have hnorm : 2 * ‖h - k‖ = 0 := by
-    rw [← norm_field (𝕜 := 𝕜), field_sub, hhk, sub_self, norm_zero]
-  simp only [mul_eq_zero, OfNat.ofNat_ne_zero, false_or, norm_eq_zero] at hnorm
-  exact sub_eq_zero.mp hnorm
-
-@[simp]
-theorem field_eq_zero_iff {h : H} : field 𝕜 h = 0 ↔ h = 0 :=
-  ⟨fun hh => field_injective (hh.trans field_zero.symm), fun hh => hh ▸ field_zero⟩
-
-@[simp]
-theorem field_vacuum (h : H) : field 𝕜 h vacuum = creation 𝕜 h vacuum := by
-  simp [field_apply]
-
-theorem inner_vacuum_field_vacuum (h : H) : ⟪vacuum, field 𝕜 h vacuum⟫_𝕜 = 0 := by
-  simp
-
-theorem vacuumState_field (h : H) : vacuumState 𝕜 H (field 𝕜 h) = 0 := by
-  simp
-
-theorem vacuumState_field_mul_field (h k : H) :
-    vacuumState 𝕜 H (field 𝕜 h * field 𝕜 k) = ⟪h, k⟫_𝕜 := by
-  simp [field_def, inner_add_right, inner_smul_right]
-
-theorem vacuumState_field_sq (h : H) :
-    vacuumState 𝕜 H (field 𝕜 h ^ 2) = (‖h‖ ^ 2 : 𝕜) := by
-  rw [sq, vacuumState_field_mul_field, inner_self_eq_norm_sq_to_K]
-
-end
-
-end Field
 
 section Wick
 
@@ -486,15 +308,17 @@ theorem vacuumState_prod_ofFn_creation_add_annihilation {n : ℕ} (f g : Fin n �
 theorem vacuumState_prod_field (s : Finset α) (f : α → H) :
     vacuumState 𝕜 H ((s.sort.map fun i => field 𝕜 (f i)).prod) =
       ∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 :=
-  vacuumState_prod_creation_add_annihilation s f f
+        ∏ p ∈ P.1.1.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 := by
+  simp_rw [field_def]
+  exact vacuumState_prod_creation_add_annihilation s f f
 
 /-- Vacuum Wick formula for words of self-adjoint field operators indexed by `Fin n`. -/
 theorem vacuumState_prod_ofFn_field {n : ℕ} (f : Fin n → H) :
     vacuumState 𝕜 H ((List.ofFn fun i => field 𝕜 (f i)).prod) =
       ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 :=
-  vacuumState_prod_ofFn_creation_add_annihilation f f
+        ∏ p ∈ P.1.1.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 := by
+  simp_rw [field_def]
+  exact vacuumState_prod_ofFn_creation_add_annihilation f f
 
 /-- On an odd number of positions, the vacuum expectation of any ordered product of
 `creation 𝕜 (f i) + annihilation 𝕜 (g i)` vanishes. -/
