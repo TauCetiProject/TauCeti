@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
@@ -41,6 +42,8 @@ pair of gradients. The results above transfer to it through
 * `TauCeti.separatedSum`: the separated sum on the `L²` product.
 * `TauCeti.gradient_separatedSum` and `TauCeti.lipschitzWith_gradient_separatedSum`: its gradient is
   the pair of gradients, and is Lipschitz when both gradients are.
+* `TauCeti.hessianOperator_separatedSum_apply`: its Hessian operator acts on each factor by the
+  Hessian operator of the corresponding summand.
 * `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: the negative
   gradient trajectories of the separated sum are the pairs of negative gradient trajectories of
   the summands.
@@ -125,7 +128,7 @@ end CompFstAddCompSnd
 section SeparatedSum
 
 open Set
-open scoped Gradient NNReal
+open scoped Gradient NNReal Topology
 
 section Defs
 
@@ -232,6 +235,27 @@ theorem isIntegralCurve_separatedSum_iff {z : ℝ → WithLp 2 (E × F)}
       (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
   · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
       (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+
+/-- **The Hessian operator of a separated sum** acts on each factor by the Hessian operator of the
+corresponding summand. -/
+theorem hessianOperator_separatedSum_apply {z : WithLp 2 (E × F)} (hf : ContDiffAt ℝ 2 f z.fst)
+    (hg : ContDiffAt ℝ 2 g z.snd) (w : WithLp 2 (E × F)) :
+    hessianOperator (separatedSum f g) z w =
+      WithLp.toLp 2 (hessianOperator f z.fst w.fst, hessianOperator g z.snd w.snd) := by
+  -- Near `z` the gradient of the sum is the pair of gradients.
+  have hgrad : ∇ (separatedSum f g) =ᶠ[𝓝 z] fun y ↦ WithLp.toLp 2 (∇ f y.fst, ∇ g y.snd) := by
+    filter_upwards [(WithLp.fstL 2 ℝ E F).continuous.continuousAt.eventually
+        (hf.eventually (by simp)),
+      (WithLp.sndL 2 ℝ E F).continuous.continuousAt.eventually (hg.eventually (by simp))]
+      with y hy₁ hy₂
+    exact gradient_separatedSum (hy₁.differentiableAt two_ne_zero)
+      (hy₂.differentiableAt two_ne_zero)
+  have hd := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.hasFDerivAt.comp z
+    ((hf.hasFDerivAt_gradient.comp z (WithLp.fstL 2 ℝ E F).hasFDerivAt).prodMk
+      (hg.hasFDerivAt_gradient.comp z (WithLp.sndL 2 ℝ E F).hasFDerivAt))
+  simp only [Function.comp_def, WithLp.prodContinuousLinearEquiv_symm_apply] at hd
+  rw [← fderiv_gradient, hgrad.fderiv_eq, hd.fderiv]
+  simp
 
 end Gradient
 

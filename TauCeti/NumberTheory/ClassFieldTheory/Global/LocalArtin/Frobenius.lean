@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
-public import TauCeti.NumberTheory.LocalField.Uniformizer
-public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
@@ -76,7 +74,8 @@ homomorphism whose prime values are the global Artin symbols of the prime idele 
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §5 and §7 (the idelic and the
   ideal-theoretic Artin symbols).
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter V, §3 and Chapter VII.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter V, §3 and §5 (Proposition 5.2,
+  Theorem 5.3) and Chapter VII.
 -/
 
 public section
@@ -122,8 +121,6 @@ theorem globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt {σ : Gal(L/K)}
   -- The prime `Q` is a finite place of `L` above `v`.
   let w : HeightOneSpectrum (𝓞 L) :=
     ⟨Q, inferInstance, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q⟩
-  have : w.asIdeal.LiesOver v.asIdeal := ‹Q.LiesOver v.asIdeal›
-  have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := ‹Algebra.IsUnramifiedAt (𝓞 K) Q›
   rw [IdeleClassGroup.ofAdicCompletion_apply, globalArtinMap_local,
     localArtinAt_eq_of_isArithFrobAt v w hσ]
 
