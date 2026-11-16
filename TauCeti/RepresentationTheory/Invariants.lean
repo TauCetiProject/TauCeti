@@ -316,7 +316,7 @@ theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
   · rintro _ ⟨x, rfl⟩
     exact fun g => self_norm_apply _ g x
   · rintro x hx
-    obtain ⟨F, S, hFS⟩ := exists_intertwiningMap_section_of_projective ρ
+    obtain ⟨F, S, hFS⟩ := exists_retract_free_of_projective ρ
     have hSx : S x ∈ (free k G V).invariants := fun g => by
       rw [← IntertwiningMap.isIntertwining ρ _ S g x, hx g]
     obtain ⟨y, hy⟩ : S x ∈ LinearMap.range (free k G V).norm := by
