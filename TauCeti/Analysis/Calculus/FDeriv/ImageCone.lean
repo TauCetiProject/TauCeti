@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Topology.MetricSpace.Antilipschitz
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
+import Mathlib.Analysis.Asymptotics.Arith
 
 /-!
 # Tangent cones containing differentiable images
@@ -18,9 +19,12 @@ it prevents distant parameters from returning arbitrarily close to the image poi
 
 This pointwise estimate is the geometric input for approximate tangent planes of rectifiable
 sets. It does not require measurability, finite dimension, or injectivity of the derivative.
-Along vectors in the tangent cone of the parameter set, the Lipschitz lower bound also passes
-to the derivative (`HasFDerivWithinAt.le_mul_norm_of_mem_tangentConeAt`), making the derivative
-antilipschitz when the tangent cone is the whole parameter space.
+Along an inverse-Lipschitz parametrization `f`, differentiability of a composite `g ∘ f` within
+`s` also pushes forward to differentiability of `g` within the image `f '' s`
+(`HasFDerivWithinAt.of_comp_antilipschitzWith`). Along vectors in the tangent cone of the
+parameter set, the Lipschitz lower bound passes to the derivative
+(`HasFDerivWithinAt.le_mul_norm_of_mem_tangentConeAt`), making the derivative antilipschitz when
+the tangent cone is the whole parameter space.
 -/
 
 public section
@@ -60,6 +64,49 @@ theorem HasFDerivWithinAt.exists_pos_forall_infDist_range_le
       gcongr
       simpa only [dist_eq_norm] using hinv
     _ = ε * dist (f z) (f x) := by field_simp
+
+/-- Along an inverse-Lipschitz parametrization `f`, if `g ∘ f` has derivative `B` within `s` at
+`x ∈ s` and `D : V →L[𝕜] W` satisfies `D (A u) = B u`, then `g` has derivative `D` within `f '' s`
+at `f x`. -/
+theorem HasFDerivWithinAt.of_comp_antilipschitzWith
+    {𝕜 U V W : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup U] [NormedSpace 𝕜 U]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    {f : U → V} {g : V → W} {s : Set U} {x : U}
+    {A : U →L[𝕜] V} {B : U →L[𝕜] W} {D : V →L[𝕜] W}
+    (hf : HasFDerivWithinAt f A s x) (hx : x ∈ s)
+    {K : ℝ≥0} (hi : AntilipschitzWith K (s.domRestrict f))
+    (hgf : HasFDerivWithinAt (g ∘ f) B s x) (hD : ∀ u, D (A u) = B u) :
+    HasFDerivWithinAt g D (f '' s) (f x) := by
+  have hrem : (fun y => g (f y) - g (f x) - D (f y - f x)) =o[𝓝[s] x] (fun y => y - x) := by
+    have heq : (fun y => g (f y) - g (f x) - D (f y - f x)) =
+        fun y => (g (f y) - g (f x) - B (y - x)) - D (f y - f x - A (y - x)) :=
+      funext fun y => by
+        have hsp : D (f y - f x) = B (y - x) + D (f y - f x - A (y - x)) := by
+          rw [← hD (y - x), ← map_add, add_sub_cancel]
+        rw [hsp]
+        abel
+    rw [heq]
+    exact hgf.isLittleO.sub ((D.isBigO_comp _ _).trans_isLittleO hf.isLittleO)
+  rw [hasFDerivWithinAt_iff_isLittleO, Asymptotics.isLittleO_iff]
+  intro c hc
+  let C : ℝ := K + 1
+  have hC : 0 < C := by positivity
+  obtain ⟨δ, hδ, hb⟩ := Metric.eventually_nhds_iff.1
+    (eventually_nhdsWithin_iff.1 (hrem.bound (div_pos hc hC)))
+  rw [eventually_nhdsWithin_iff, Metric.eventually_nhds_iff]
+  refine ⟨δ / C, div_pos hδ hC, ?_⟩
+  rintro _ hz ⟨y, hys, rfl⟩
+  have hdy : dist y x ≤ C * dist (f y) (f x) :=
+    (hi.le_mul_dist ⟨y, hys⟩ ⟨x, hx⟩).trans
+      (mul_le_mul_of_nonneg_right (by dsimp [C]; linarith) dist_nonneg)
+  have hyδ : dist y x < δ :=
+    hdy.trans_lt ((mul_lt_mul_of_pos_left hz hC).trans_eq (by field_simp))
+  calc ‖g (f y) - g (f x) - D (f y - f x)‖
+      ≤ (c / C) * dist y x := by simpa only [dist_eq_norm] using hb hyδ hys
+    _ ≤ (c / C) * (C * dist (f y) (f x)) := mul_le_mul_of_nonneg_left hdy (by positivity)
+    _ = c * ‖f y - f x‖ := by rw [dist_eq_norm]; field_simp
 
 /-- Along every vector in the tangent cone of the parameter set, an inverse-Lipschitz
 parametrization transfers its lower bound to its derivative. -/

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.MeasurableTangent
 import Mathlib.Analysis.Calculus.Rademacher
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.Analysis.Calculus.TangentCone.Haar
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
 
@@ -128,17 +129,10 @@ theorem of_tendsto_diff {k : ℕ} {E₁ E₂ : Set V} {P : Submodule ℝ V} {x :
   limsup_pos := h.limsup_pos.trans_le <| (limsup_measure_inter_div_le_of_tendsto_diff h12).trans
     (limsup_le_limsup (Eventually.of_forall fun _ => by gcongr; exact inter_subset_right))
   tendsto_outside_cone_div ε hε := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      (by simpa only [add_zero] using (h.tendsto_outside_cone_div ε hε).add h21)
-      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun r => ?_)
-    have hsub : {z ∈ E₂ ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} ⊆
-        {z ∈ E₁ ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} ∪
-          ((E₂ \ E₁) ∩ closedBall x r) := fun z ⟨⟨hzE₂, hzr⟩, hzc⟩ => by
-      by_cases hzE₁ : z ∈ E₁
-      · exact Or.inl ⟨⟨hzE₁, hzr⟩, hzc⟩
-      · exact Or.inr ⟨⟨hzE₂, hzE₁⟩, hzr⟩
-    rw [← ENNReal.add_div]
-    exact ENNReal.div_le_div_right ((measure_mono hsub).trans (measure_union_le _ _)) _
+    classical
+    exact tendsto_measure_div_of_subset_union (h.tendsto_outside_cone_div ε hε) h21
+      fun _ z ⟨⟨hzE₂, hzr⟩, hzc⟩ =>
+        if hzE₁ : z ∈ E₁ then Or.inl ⟨⟨hzE₁, hzr⟩, hzc⟩ else Or.inr ⟨⟨hzE₂, hzE₁⟩, hzr⟩
 
 end IsApproxTangentPlane
 
@@ -195,6 +189,19 @@ theorem approxTangentPlane_zero (E : Set V) (x : V) : approxTangentPlane 0 E x =
   · exact (isApproxTangentPlane_approxTangentPlane h).eq_bot_of_zero
   · exact approxTangentPlane_of_not_existsUnique h
 
+/-- If `E₁` and `E₂` admit the same approximate tangent `k`-planes at `x`, their canonical
+`approxTangentPlane` agrees at `x`. -/
+theorem approxTangentPlane_congr_of_iff {k : ℕ} {E₁ E₂ : Set V} {x : V}
+    (h : ∀ P, IsApproxTangentPlane k E₁ P x ↔ IsApproxTangentPlane k E₂ P x) :
+    approxTangentPlane k E₁ x = approxTangentPlane k E₂ x := by
+  have hex : (∃! P, IsApproxTangentPlane k E₁ P x) ↔ ∃! P, IsApproxTangentPlane k E₂ P x :=
+    existsUnique_congr h
+  by_cases h₁ : ∃! P, IsApproxTangentPlane k E₁ P x
+  · exact (approxTangentPlane_eq_of_existsUnique (hex.1 h₁)
+      ((h _).1 (isApproxTangentPlane_approxTangentPlane h₁))).symm
+  · rw [approxTangentPlane_of_not_existsUnique h₁,
+      approxTangentPlane_of_not_existsUnique (mt hex.2 h₁)]
+
 /-- Approximate tangency depends on `E` only up to `k`-density-zero symmetric differences at `x`. -/
 theorem isApproxTangentPlane_congr_of_tendsto_symmDiff_div {k : ℕ} {E₁ E₂ : Set V}
     {P : Submodule ℝ V} {x : V}
@@ -204,8 +211,7 @@ theorem isApproxTangentPlane_congr_of_tendsto_symmDiff_div {k : ℕ} {E₁ E₂ 
   have hle {A : Set V} (hA : A ⊆ E₁ ∆ E₂) :
       Tendsto (fun r => μHE[k] (A ∩ closedBall x r) /
         volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsym
-      (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun _ => by gcongr)
+    tendsto_measure_div_of_subset hsym fun _ => inter_subset_inter_left _ hA
   exact ⟨fun h => h.of_tendsto_diff (hle subset_union_left) (hle subset_union_right),
     fun h => h.of_tendsto_diff (hle subset_union_right) (hle subset_union_left)⟩
 
@@ -213,25 +219,21 @@ theorem isApproxTangentPlane_congr_of_tendsto_symmDiff_div {k : ℕ} {E₁ E₂ 
 theorem approxTangentPlane_congr_of_tendsto_symmDiff_div {k : ℕ} {E₁ E₂ : Set V} {x : V}
     (hsym : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ closedBall x r) /
       volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)) :
-    approxTangentPlane k E₁ x = approxTangentPlane k E₂ x := by
-  classical
-  exact congrArg (fun q : Submodule ℝ V → Prop => if h : ExistsUnique q then h.choose else ⊥)
-    (funext fun _ => propext (isApproxTangentPlane_congr_of_tendsto_symmDiff_div hsym))
+    approxTangentPlane k E₁ x = approxTangentPlane k E₂ x :=
+  approxTangentPlane_congr_of_iff fun _ => isApproxTangentPlane_congr_of_tendsto_symmDiff_div hsym
 
 /-- Modifying `E` by a `μHE[k]`-null set preserves `IsApproxTangentPlane` at **every** point `x`. -/
 theorem isApproxTangentPlane_congr_ae {k : ℕ} {E₁ E₂ : Set V} (h : E₁ =ᵐ[μHE[k]] E₂)
     (P : Submodule ℝ V) (x : V) :
     IsApproxTangentPlane k E₁ P x ↔ IsApproxTangentPlane k E₂ P x := by
   have hnull : μHE[k] (E₁ ∆ E₂) = 0 := measure_union_null (ae_eq_set.1 h).1 (ae_eq_set.1 h).2
-  exact isApproxTangentPlane_congr_of_tendsto_symmDiff_div <| tendsto_const_nhds.congr fun r => by
-    rw [measure_mono_null inter_subset_left hnull, ENNReal.zero_div]
+  exact isApproxTangentPlane_congr_of_tendsto_symmDiff_div
+    (tendsto_measure_inter_div_of_measure_eq_zero Subset.rfl hnull _ _ _)
 
 /-- Modifying `E` by a `μHE[k]`-null set preserves `approxTangentPlane` at **every** point `x`. -/
 theorem approxTangentPlane_congr_ae {k : ℕ} {E₁ E₂ : Set V} (h : E₁ =ᵐ[μHE[k]] E₂) (x : V) :
-    approxTangentPlane k E₁ x = approxTangentPlane k E₂ x := by
-  classical
-  exact congrArg (fun q : Submodule ℝ V → Prop => if h : ExistsUnique q then h.choose else ⊥)
-    (funext fun P => propext (isApproxTangentPlane_congr_ae h P x))
+    approxTangentPlane k E₁ x = approxTangentPlane k E₂ x :=
+  approxTangentPlane_congr_of_iff fun P => isApproxTangentPlane_congr_ae h P x
 
 omit [NormedSpace ℝ V] in
 private lemma tendsto_symmDiff_div_of_eventuallyEq_nhds {k : ℕ} {E₁ E₂ : Set V} {x : V}
@@ -255,7 +257,7 @@ theorem isApproxTangentPlane_congr_nhds {k : ℕ} {E₁ E₂ : Set V} {P : Submo
 /-- `approxTangentPlane k E x` depends only on the germ of `E` at `x`. -/
 theorem approxTangentPlane_congr_nhds {k : ℕ} {E₁ E₂ : Set V} {x : V} (h : E₁ =ᶠ[𝓝 x] E₂) :
     approxTangentPlane k E₁ x = approxTangentPlane k E₂ x :=
-  approxTangentPlane_congr_of_tendsto_symmDiff_div (tendsto_symmDiff_div_of_eventuallyEq_nhds h)
+  approxTangentPlane_congr_of_iff fun _ => isApproxTangentPlane_congr_nhds h
 
 end Normed
 
@@ -391,7 +393,7 @@ theorem existsUnique_isApproxTangentPlane_image
       (𝓝[>] 0) (𝓝 1)) :
     ∃! P : Submodule ℝ V, TauCeti.IsApproxTangentPlane (finrank ℝ U) (f '' s) P (f x₀) :=
   hf.existsUnique_isApproxTangentPlane_of_tendsto_diff hx₀ hi hs Subset.rfl
-    (by simp only [sdiff_self, empty_inter, measure_empty, ENNReal.zero_div, tendsto_const_nhds])
+    (TauCeti.tendsto_measure_sdiff_inter_div_of_subset Subset.rfl _ _ _)
 
 /-- On `f '' s` itself, `approxTangentPlane (finrank ℝ U) (f '' s) (f x₀) = range A`. -/
 theorem approxTangentPlane_image
@@ -400,7 +402,7 @@ theorem approxTangentPlane_image
       (𝓝[>] 0) (𝓝 1)) :
     TauCeti.approxTangentPlane (finrank ℝ U) (f '' s) (f x₀) = LinearMap.range A.toLinearMap :=
   hf.approxTangentPlane_eq_range_of_tendsto_diff hx₀ hi hs Subset.rfl
-    (by simp only [sdiff_self, empty_inter, measure_empty, ENNReal.zero_div, tendsto_const_nhds])
+    (TauCeti.tendsto_measure_sdiff_inter_div_of_subset Subset.rfl _ _ _)
 
 end HasFDerivWithinAt
 
@@ -485,29 +487,6 @@ theorem CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_di
   obtain ⟨P, hdim, _, hP⟩ := hx hxE
   exact ⟨P, hdim, hP⟩
 
-/-- Countable bi-Lipschitz Borel patch cover `f n '' A n ⊆ E` up to a `μHE[k]`-null set. -/
-theorem CountablyRectifiable.exists_bilipschitz_subset_cover
-    (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k]) :
-    ∃ (A : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V),
-      (∀ n, MeasurableSet (A n)) ∧ (∀ n, f n '' A n ⊆ E) ∧
-      (∀ n, ∃ K L : ℝ≥0,
-        LipschitzWith K (f n) ∧ AntilipschitzWith L ((A n).domRestrict (f n))) ∧
-      μHE[k] (E \ ⋃ n, f n '' A n) = 0 := by
-  obtain ⟨E₀, hE₀E, hE₀m, hE₀ae⟩ := hEm.exists_measurable_subset_ae_eq
-  obtain ⟨A, f, hAm, hbi, hcover⟩ := (hE.congr hE₀ae.symm).exists_bilipschitz_cover
-  choose K L hLip hAnti using hbi
-  refine ⟨fun n => A n ∩ f n ⁻¹' E₀, f,
-    fun n => (hAm n).inter (hE₀m.preimage (hLip n).continuous.measurable),
-    fun n => image_subset_iff.2 fun x hx => hE₀E hx.2,
-    fun n => ⟨K n, L n, hLip n, fun x y => hAnti n ⟨x, x.2.1⟩ ⟨y, y.2.1⟩⟩, ?_⟩
-  refine measure_mono_null (fun y ⟨hyE, hyU⟩ => ?_)
-    (measure_union_null (ae_eq_set.1 hE₀ae.symm).1 hcover)
-  by_cases hyE₀ : y ∈ E₀
-  · refine Or.inr ⟨hyE₀, fun hyA => ?_⟩
-    obtain ⟨n, x, hx, rfl⟩ := mem_iUnion.1 hyA
-    exact hyU (mem_iUnion.2 ⟨n, x, ⟨hx, hyE₀⟩, rfl⟩)
-  · exact Or.inl ⟨hyE, hyE₀⟩
-
 /-- **Existence and uniqueness of approximate tangent `k`-planes** at `μHE[k]`-a.e. `x ∈ E`. -/
 theorem CountablyRectifiable.ae_existsUnique_isApproxTangentPlane
     (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
@@ -519,10 +498,12 @@ theorem CountablyRectifiable.ae_existsUnique_isApproxTangentPlane
     simpa only [finrank_euclideanSpace_fin] using ‹IsLocallyFiniteMeasure (μHE[k].restrict E)›
   have hpatch (n : ℕ) : ∀ᵐ y ∂μHE[k], y ∈ f n '' A n →
       ∃! P : Submodule ℝ V, IsApproxTangentPlane k E P y := by
-    simpa only [finrank_euclideanSpace_fin] using
-      ((hLip n).ae_existsUnique_isApproxTangentPlane_image (hAm n) (hAnti n) (hAsub n)
-        (by simpa only [finrank_euclideanSpace_fin] using hEm)).mono
-        fun _ hy hyfs => (hy hyfs).choose_spec.2.2.2.2.1
+    have hae := (hLip n).ae_existsUnique_isApproxTangentPlane_image (hAm n) (hAnti n) (hAsub n)
+      (by simpa only [finrank_euclideanSpace_fin] using hEm)
+    rw [finrank_euclideanSpace_fin] at hae
+    refine hae.mono fun _ hy hyfs => ?_
+    obtain ⟨_, _, _, _, _, hex, -⟩ := hy hyfs
+    exact hex
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 hcov, ae_all_iff.2 hpatch] with x hcovx hpx hxE
   obtain ⟨n, hxn⟩ := mem_iUnion.1 (not_not.1 fun h => hcovx ⟨hxE, h⟩)
   exact hpx n hxn
