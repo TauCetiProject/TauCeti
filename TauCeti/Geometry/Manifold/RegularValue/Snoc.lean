@@ -15,7 +15,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Pi
 A point `x` is a regular point of a family `F = (F₁, …, F_k) : M → 𝕜ᵏ` of functions on a manifold
 when the differentials `dF_i(x)` are independent. This file shows that appending a function `g`
 keeps `x` regular as soon as the differential of `g` at `x` does not vanish on some vector of
-`ker dF_x` (`TauCeti.IsRegularPoint.snoc`): the family `(F₁, …, F_k, g)` then has independent
+`ker dF_x` (`TauCeti.IsRegularPoint.finSnoc`): the family `(F₁, …, F_k, g)` then has independent
 differentials. This is how families of independent functions, such as involutive families on a
 symplectic manifold, are enlarged one function at a time.
 -/
@@ -32,7 +32,7 @@ namespace TauCeti
 /-- **Appending a function to a regular family.** If `x` is a regular point of
 `F = (F₁, …, F_k)` and the differential of `g` at `x` does not vanish on some vector of
 `ker dF_x`, then `x` is a regular point of `(F₁, …, F_k, g)`. -/
-theorem IsRegularPoint.snoc {F : M → Fin k → 𝕜} {g : M → 𝕜} {x : M}
+theorem IsRegularPoint.finSnoc {F : M → Fin k → 𝕜} {g : M → 𝕜} {x : M}
     (hF : IsRegularPoint I 𝓘(𝕜, Fin k → 𝕜) F x) (hg : MDifferentiableAt I 𝓘(𝕜) g x)
     {w : TangentSpace I x} (hw : w ∈ (mfderiv I 𝓘(𝕜, Fin k → 𝕜) F x).ker)
     (hgw : mvfderiv I g x w ≠ 0) :

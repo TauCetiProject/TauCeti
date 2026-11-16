@@ -28,8 +28,8 @@ Carathéodory–Jacobi–Lie theorem, which then chooses the `n` functions as th
 chart.
 
 The extension adds one function at a time
-(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isRegularPoint_snoc`). Since the `F_i` Poisson-commute
-near `x`, their Hamiltonian vector fields `X_i` commute there
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isRegularPoint_finSnoc`). Since the `F_i`
+Poisson-commute near `x`, their Hamiltonian vector fields `X_i` commute there
 (`TauCeti.SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`), and they are
 independent at `x`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.linearIndependent_hamiltonianVectorField`). So some
@@ -41,7 +41,7 @@ dimension `k` of `ker dF_x`, which has dimension `2n - k > k` when `k < n`. So t
 `w ∈ ker dF_x` outside that span
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_mem_ker_mfderiv_notMem_span`), and `ℓ` can be
 chosen with `ℓ(dφ_x w) = 1`, which makes `dg_x` independent of the `dF_i(x)`
-(`TauCeti.IsRegularPoint.snoc`). A bump function extends `g` from a neighbourhood of `x` to a
+(`TauCeti.IsRegularPoint.finSnoc`). A bump function extends `g` from a neighbourhood of `x` to a
 smooth function on `M`.
 
 ## Main results
@@ -49,7 +49,7 @@ smooth function on `M`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_poissonBracket_eventuallyEq_zero_mvfderiv_eq_one`: a
   function Poisson-commuting with the `F_i` near `x` whose differential at `x` is `1` on a given
   vector outside the span of the `X_{F_i}(x)`.
-* `TauCeti.SmoothTwoForm.IsSymplectic.exists_isRegularPoint_snoc`: fewer than `n` independent
+* `TauCeti.SmoothTwoForm.IsSymplectic.exists_isRegularPoint_finSnoc`: fewer than `n` independent
   functions which Poisson-commute near `x` can be extended by one more.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_isRegularPoint_castLE`: at most `n` independent
   functions which Poisson-commute near `x` extend to `n` such functions.
@@ -139,7 +139,7 @@ theorem exists_poissonBracket_eventuallyEq_zero_mvfderiv_eq_one {ι : Type*} [Fi
 `2n`, let `F₁, …, F_k` be smooth functions which pairwise Poisson-commute near `x` and have
 independent differentials at `x`. If `k < n`, there is a smooth function `g` which Poisson-commutes
 with every `F_i` near `x` and whose differential at `x` is independent of those of the `F_i`. -/
-theorem exists_isRegularPoint_snoc {k : ℕ} {F : M → Fin k → ℝ}
+theorem exists_isRegularPoint_finSnoc {k : ℕ} {F : M → Fin k → ℝ}
     (hF : ContMDiff I 𝓘(ℝ, Fin k → ℝ) ∞ F)
     (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) =ᶠ[𝓝 x] fun _ ↦ 0)
     (hreg : IsRegularPoint I 𝓘(ℝ, Fin k → ℝ) F x) (hk : 2 * k < finrank ℝ E) :
@@ -151,7 +151,7 @@ theorem exists_isRegularPoint_snoc {k : ℕ} {F : M → Fin k → ℝ}
     (fun i j ↦ (hcomm i j).self_of_nhds) (by simpa using hk)
   obtain ⟨g, hg, hgF, hgw⟩ :=
     hσ.exists_poissonBracket_eventuallyEq_zero_mvfderiv_eq_one hF hcomm hreg hwS
-  exact ⟨g, hg, hgF, hreg.snoc (hg.mdifferentiableAt (by simp)) hwK (hgw ▸ one_ne_zero)⟩
+  exact ⟨g, hg, hgF, hreg.finSnoc (hg.mdifferentiableAt (by simp)) hwK (hgw ▸ one_ne_zero)⟩
 
 /-- **Extending an involutive family to `n` functions.** On a symplectic manifold `M`, let
 `F₁, …, F_k` be smooth functions which pairwise Poisson-commute near `x` and have independent
@@ -173,7 +173,7 @@ theorem exists_isRegularPoint_castLE {n k : ℕ} (hn : 2 * n ≤ finrank ℝ E) 
     exact ⟨F, hF, hcomm, hreg, fun i ↦ rfl⟩
   | succ d ih =>
     -- Append one function `g`, then extend the `k + 1` functions by induction.
-    obtain ⟨g, hg, hgF, hreg'⟩ := hσ.exists_isRegularPoint_snoc hF hcomm hreg (by omega)
+    obtain ⟨g, hg, hgF, hreg'⟩ := hσ.exists_isRegularPoint_finSnoc hF hcomm hreg (by omega)
     have hF' := hF.finSnoc hg
     have hcomm' (i j : Fin (k + 1)) :
         σ.poissonBracket (fun y ↦ Fin.snoc (α := fun _ ↦ ℝ) (F y) (g y) i)
