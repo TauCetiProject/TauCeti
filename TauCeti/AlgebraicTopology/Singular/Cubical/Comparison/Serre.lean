@@ -98,6 +98,27 @@ lemma serreSpectralObjectIsoCubical_hom (C : Set B) {D : Set B} [RelCWComplex C 
 
 end SpectralObject
 
+section Sigma
+
+variable (R : Type u) [Ring R] {J : Type u} (Z : J → _root_.TopCat.{u}) (q : ℕ)
+
+/-- On a coproduct, the sum of the comparisons `TauCeti.singularCubicalHomologyIso` is the sum of
+the maps induced on homology by `TauCeti.singularToCubical`. -/
+lemma sigmaMapIso_singularCubicalHomologyIso_hom :
+    (Sigma.mapIso fun j ↦ singularCubicalHomologyIso R (Z j) q).hom =
+      Limits.Sigma.map fun j ↦ HomologicalComplex.homologyMap ((singularToCubical R).app (Z j)) q :=
+  Sigma.hom_ext _ _ fun j ↦ by simp
+
+/-- On a coproduct, the sum of the inverses of the comparisons
+`TauCeti.singularCubicalHomologyIso` is the sum of the maps induced on homology by
+`TauCeti.cubicalToSingular`. -/
+lemma sigmaMapIso_singularCubicalHomologyIso_inv :
+    (Sigma.mapIso fun j ↦ singularCubicalHomologyIso R (Z j) q).inv =
+      Limits.Sigma.map fun j ↦ HomologicalComplex.homologyMap ((cubicalToSingular R).app (Z j)) q :=
+  Sigma.hom_ext _ _ fun j ↦ by simp
+
+end Sigma
+
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p) (R : Type u) [Ring R]
 
 include hp
@@ -167,15 +188,8 @@ lemma serreSpectralSequencePullbackFirstPageXIsoSigmaCubical_hom (g : B' ⟶ B) 
     (serreSpectralSequencePullbackFirstPageXIsoSigmaCubical hp R C g k q pq hb ha).hom =
       (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).hom ≫
         Limits.Sigma.map fun _ ↦ HomologicalComplex.homologyMap ((singularToCubical R).app _) q :=
-  congrArg ((serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).hom ≫ ·) <|
-    Sigma.hom_ext _ _ fun j ↦ by
-      -- The summands are `singularHomologyFunctor` objects on one side and `homology` of the
-      -- singular chain complex on the other, equal only up to defeq, so `simp` does not apply
-      -- `Sigma.ι_mapIso_hom`/`Sigma.ι_map`; the two steps are spelled out.
-      refine (Sigma.ι_mapIso_hom (fun _ ↦ singularCubicalHomologyIso R _ q) j).trans ?_
-      rw [singularCubicalHomologyIso_hom]
-      exact (Sigma.ι_map (fun x ↦ HomologicalComplex.homologyMap
-        ((singularToCubical R).app (p.fiber (g (map k x 0)))) q) j).symm
+  congrArg ((serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).hom ≫ ·)
+    (sigmaMapIso_singularCubicalHomologyIso_hom R _ q)
 
 /-- On the summand of the `k`-cell `j`, the inverse of
 `TauCeti.TopCat.serreSpectralSequencePullbackFirstPageXIsoSigmaCubical` is the map induced on
@@ -190,11 +204,9 @@ lemma ι_serreSpectralSequencePullbackFirstPageXIsoSigmaCubical_inv (g : B' ⟶ 
         Sigma.ι (fun j : cell C k ↦
           ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
             (ModuleCat.of R R)).obj (p.fiber (g (map k j 0)))) j ≫
-        (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).inv := by
-  refine (Sigma.ι_mapIso_inv_assoc (fun _ ↦ singularCubicalHomologyIso R _ q) j _).trans ?_
-  rw [singularCubicalHomologyIso_inv]
-  -- The two sides differ only in the spelling of the summands, as in the lemma above.
-  rfl
+        (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).inv :=
+  (congrArg (Sigma.ι _ j ≫ · ≫ _) (sigmaMapIso_singularCubicalHomologyIso_inv R _ q)).trans
+    (Sigma.ι_map_assoc _ j _)
 
 end Pullback
 
@@ -257,13 +269,8 @@ lemma arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical_hom (k q : ℕ
     (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical hp R k q pq hb ha).hom =
       (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫
         Limits.Sigma.map fun _ ↦ HomologicalComplex.homologyMap ((singularToCubical R).app _) q :=
-  congrArg ((arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫ ·) <|
-    Sigma.hom_ext _ _ fun j ↦ by
-      -- As for `TauCeti.TopCat.serreSpectralSequencePullbackFirstPageXIsoSigmaCubical_hom`.
-      refine (Sigma.ι_mapIso_hom (fun _ ↦ singularCubicalHomologyIso R _ q) j).trans ?_
-      rw [singularCubicalHomologyIso_hom]
-      exact (Sigma.ι_map (fun x ↦ HomologicalComplex.homologyMap
-        ((singularToCubical R).app (p.fiber (sigmaCWApproximationMap B (map k x 0)))) q) j).symm
+  congrArg ((arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫ ·)
+    (sigmaMapIso_singularCubicalHomologyIso_hom R _ q)
 
 /-- On the summand of the `k`-cell `j`, the inverse of
 `TauCeti.TopCat.arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical` is the map induced on
@@ -280,11 +287,9 @@ lemma ι_arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical_inv (k q : 
         Sigma.ι (fun j : cell (univ : Set (sigmaCWApproximation B)) k ↦
           ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
             (ModuleCat.of R R)).obj (p.fiber (sigmaCWApproximationMap B (map k j 0)))) j ≫
-        (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).inv := by
-  refine (Sigma.ι_mapIso_inv_assoc (fun _ ↦ singularCubicalHomologyIso R _ q) j _).trans ?_
-  rw [singularCubicalHomologyIso_inv]
-  -- The two sides differ only in the spelling of the summands.
-  rfl
+        (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).inv :=
+  (congrArg (Sigma.ι _ j ≫ · ≫ _) (sigmaMapIso_singularCubicalHomologyIso_inv R _ q)).trans
+    (Sigma.ι_map_assoc _ j _)
 
 end TopCat
 

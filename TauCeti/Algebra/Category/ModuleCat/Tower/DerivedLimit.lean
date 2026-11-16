@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
+public import TauCeti.Algebra.Homology.DerivedCategory.MappingCone
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic
 
 /-!
