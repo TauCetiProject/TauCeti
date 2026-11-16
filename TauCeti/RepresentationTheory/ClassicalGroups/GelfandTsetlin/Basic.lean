@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 public import Mathlib.Data.Int.Interval
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -260,6 +261,40 @@ theorem abs_le_sum_abs (P : GTPattern n) (i j : ℕ) :
   · rw [P.entry_eq_zero (by omega), abs_zero]
     exact Finset.sum_nonneg fun i' _ => hnn i'
 
+/-! ### Row sums and the weight -/
+
+/-- The sum `λ₀,ⱼ + ⋯ + λⱼ₋₁,ⱼ` of the `j` entries of row `j`; the empty row `j = 0` has sum `0`. -/
+def rowSum (P : GTPattern n) (j : ℕ) : ℤ := ∑ i ∈ Finset.range j, P i j
+
+theorem rowSum_def (P : GTPattern n) (j : ℕ) : P.rowSum j = ∑ i ∈ Finset.range j, P i j := (rfl)
+
+@[simp]
+theorem rowSum_zero (P : GTPattern n) : P.rowSum 0 = 0 := by simp [rowSum]
+
+/-- The row of length `n` is the top row. -/
+theorem rowSum_eq_sum_topRow (P : GTPattern n) : P.rowSum n = ∑ i, P.topRow i := by
+  simp [rowSum, Fin.sum_univ_eq_sum_range (fun i => P i n)]
+
+/-- The **weight** of a Gelfand-Tsetlin pattern: its `r`-th coordinate is the sum of row `r + 1`
+minus the sum of row `r`, so that the first `j` coordinates add up to the sum of row `j`. -/
+def weight (P : GTPattern n) : Fin n → ℤ := fun r => P.rowSum (r + 1) - P.rowSum r
+
+theorem weight_apply (P : GTPattern n) (r : Fin n) :
+    P.weight r = P.rowSum (r + 1) - P.rowSum r := (rfl)
+
+/-- The first `j` coordinates of the weight add up to the sum of row `j`. -/
+theorem prefixSum_weight (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
+    prefixSum j P.weight = P.rowSum j := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [prefixSum_succ hj, ih (by omega), weight_apply]
+    exact add_sub_cancel _ _
+
+/-- The weight of a pattern has the same total as its top row. -/
+theorem sum_weight (P : GTPattern n) : ∑ r, P.weight r = ∑ i, P.topRow i := by
+  rw [← rowSum_eq_sum_topRow, ← P.prefixSum_weight le_rfl, prefixSum_of_le le_rfl]
+
 /-- There is exactly one empty pattern. -/
 instance : Unique (GTPattern 0) where
   default := ⟨fun _ _ => 0, fun _ => rfl, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
@@ -431,6 +466,48 @@ theorem extend_truncate (P : GTPattern (n + 1)) :
     · rw [ite_eq_left hjn]
     · rw [ite_eq_right hjn]
       exact (P.entry_eq_zero_of_lt (by omega)).symm
+
+/-! ### Row sums and the weight under deleting and prepending a top row -/
+
+/-- Deleting the top row keeps the sums of the remaining rows. -/
+@[simp]
+theorem rowSum_truncate (P : GTPattern (n + 1)) {j : ℕ} (hj : j ≤ n) :
+    (truncate P).rowSum j = P.rowSum j := by
+  simp [rowSum, hj]
+
+/-- Deleting the top row drops the last weight coordinate. -/
+@[simp]
+theorem weight_truncate (P : GTPattern (n + 1)) (r : Fin n) :
+    (truncate P).weight r = P.weight r.castSucc := by
+  rw [weight_apply, weight_apply, rowSum_truncate P (j := r + 1) (by omega),
+    rowSum_truncate P (j := r) (by omega), Fin.val_castSucc]
+
+/-- Prepending a row keeps the sums of the other rows. -/
+@[simp]
+theorem rowSum_extend_of_ne (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow)
+    {j : ℕ} (hj : j ≠ n + 1) : (extend Q l h).rowSum j = Q.rowSum j := by
+  simp [rowSum, hj]
+
+/-- The sum of a prepended row is the sum of its entries. -/
+@[simp]
+theorem rowSum_extend_top (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow) :
+    (extend Q l h).rowSum (n + 1) = ∑ i, l i := by
+  rw [rowSum_eq_sum_topRow, topRow_extend]
+
+/-- Prepending a row keeps the weight coordinates of the original pattern. -/
+@[simp]
+theorem weight_extend_castSucc (Q : GTPattern n) (l : Fin (n + 1) → ℤ)
+    (h : Interlaces l Q.topRow) (r : Fin n) : (extend Q l h).weight r.castSucc = Q.weight r := by
+  rw [weight_apply, weight_apply, Fin.val_castSucc, rowSum_extend_of_ne Q l h (by omega),
+    rowSum_extend_of_ne Q l h (by omega)]
+
+/-- The last weight coordinate of a pattern with a prepended row `l` is the sum of `l` minus the
+sum of the old top row. -/
+@[simp]
+theorem weight_extend_last (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow) :
+    (extend Q l h).weight (Fin.last n) = ∑ i, l i - ∑ i, Q.topRow i := by
+  rw [weight_apply, Fin.val_last, rowSum_extend_top, rowSum_extend_of_ne Q l h (by omega),
+    rowSum_eq_sum_topRow]
 
 /-- **Deleting the top row is a bijection.**  The Gelfand-Tsetlin patterns with `n + 1` rows and
 top row `l` are exactly the patterns with `n` rows whose own top row interlaces `l`.
