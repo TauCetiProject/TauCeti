@@ -21,11 +21,24 @@ Schauder basis.
 Over real or complex scalars, a uniform bound on the projections of a basis onto all finite sets
 controls all bounded coordinate multipliers. If every such projection has norm at most `C`, the
 multiplier `x ↦ ∑ i ∈ A, a i • b.coord i x • b i` has norm at most `2 * t * C` for real
-coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. In particular a uniform
-bound on finite coordinate projections is equivalent to one on signed coordinate multipliers
+coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. Conversely, a bound `K`
+on signed coordinate multipliers over a finite set `B` bounds every sub-projection `A ⊆ B` by
+`(1 + K) / 2` times the projection onto `B`
+(`GeneralSchauderBasis.norm_proj_apply_le_of_sign_bound`). In particular a uniform bound on finite
+coordinate projections is equivalent to one on signed coordinate multipliers
 (`GeneralSchauderBasis.exists_forall_norm_proj_le_iff`). These finite estimates hold for any
 summation filter; for an unconditional basis of a Banach space the bound `C` is supplied by
 `UnconditionalSchauderBasis.nnNormProjBound`.
+
+For a classical Schauder basis, a uniform bound on all finite coordinate projections suffices for
+unconditional convergence of every expansion
+(`SchauderBasis.hasSum_expansion_of_forall_norm_proj_le`), and in a Banach space the two conditions
+are equivalent (`SchauderBasis.hasSum_expansion_iff_exists_forall_norm_proj_le`). Any classical
+Schauder basis with unconditionally convergent expansions upgrades via
+`SchauderBasis.toUnconditionalSchauderBasis`, preserving its basis vectors and coordinate
+functionals. Together with `SchauderBasis.norm_proj_le_of_sign_bound`, this turns a uniform
+signed-multiplier bound on initial segments into unconditionality and an explicit upper bound on
+`nnNormProjBound`.
 
 In a Banach space every bounded scalar family `a ∈ ℓ^∞(β, 𝕜)` then defines the multiplier
 `x ↦ ∑' i, a i • b.coord i x • b i`, whose series converges unconditionally
@@ -44,7 +57,7 @@ public section
 noncomputable section
 
 open Filter Set Topology
-open scoped ENNReal lp
+open scoped ENNReal NNReal lp
 
 namespace UnconditionalSchauderBasis
 
@@ -87,6 +100,22 @@ theorem nnnormProjBound_reindex (e : β ≃ γ) :
   simp only [nnNormProjBound, proj_reindex, ← Equiv.finsetCongr_apply]
   exact e.symm.finsetCongr.iSup_comp (g := fun A ↦ ‖b.proj A‖₊)
 
+/-- If every finite coordinate projection of an unconditional basis has `nnNorm` at most `C`, then
+its basis constant `nnNormProjBound` is at most `C`. -/
+theorem nnNormProjBound_le {C : ℝ≥0} (hC : ∀ A : Finset β, ‖b.proj A‖₊ ≤ C) :
+    b.nnNormProjBound ≤ C :=
+  ciSup_le hC
+
+/-- If every finite coordinate projection of an unconditional basis has norm at most `C`, then its
+basis constant `nnNormProjBound` is at most `C`. -/
+theorem coe_nnNormProjBound_le {C : ℝ} (hC : ∀ A : Finset β, ‖b.proj A‖ ≤ C) :
+    (b.nnNormProjBound : ℝ) ≤ C := by
+  have hC0 : 0 ≤ C := (norm_nonneg (b.proj ∅)).trans (hC ∅)
+  simpa [Real.coe_toNNReal C hC0] using NNReal.coe_le_coe.2
+    (b.nnNormProjBound_le (C := C.toNNReal) fun A ↦ by
+      rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal C hC0]
+      exact hC A)
+
 end Reindex
 
 end UnconditionalSchauderBasis
@@ -114,6 +143,32 @@ theorem norm_sum_smul_coord_smul_le {C : ℝ} (hC : ∀ A : Finset β, ‖b.proj
   refine TauCeti.norm_sum_smul_le_four_mul (fun u _ ↦ ?_) ht ha
   simpa using (b.proj u).le_of_opNorm_le (hC u) x
 
+/-- If signed coordinate multipliers over a finite set `B` have norm at most `K * ‖b.proj B x‖`,
+then the projection onto any subset `A ⊆ B` satisfies
+`‖b.proj A x‖ ≤ (1 + K) / 2 * ‖b.proj B x‖`. -/
+theorem norm_proj_apply_le_of_sign_bound {A B : Finset β} (hAB : A ⊆ B) {K : ℝ} {x : X}
+    (hK : ∀ ε : β → ℝ, (∀ i, ε i = 1 ∨ ε i = -1) →
+      ‖∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj B x‖) :
+    ‖b.proj A x‖ ≤ (1 + K) / 2 * ‖b.proj B x‖ := by
+  classical
+  let ε : β → ℝ := fun i ↦ if i ∈ A then 1 else -1
+  have hε : ∀ i, ε i = 1 ∨ ε i = -1 := fun i ↦ by dsimp [ε]; split_ifs <;> simp
+  -- Averaging the identity and the sign multiplier `ε` on `B` isolates the projection onto `A`.
+  have h2 : b.proj B x + ∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i = (2 : 𝕜) • b.proj A x := by
+    rw [proj_apply, proj_apply, Finset.smul_sum, ← Finset.sum_add_distrib,
+      ← Finset.sum_subset hAB fun i _ hi ↦ by simp [ε, hi]]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    simp [ε, hi, ← one_add_one_eq_two, add_smul]
+  have hnorm2 : ‖(2 : 𝕜) • b.proj A x‖ = 2 * ‖b.proj A x‖ := by
+    rw [norm_smul, ← RCLike.ofReal_ofNat, RCLike.norm_ofReal, abs_of_nonneg two_pos.le]
+  have hle : 2 * ‖b.proj A x‖ ≤ (1 + K) * ‖b.proj B x‖ := by
+    calc 2 * ‖b.proj A x‖ = ‖b.proj B x + ∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ := by
+          rw [h2, hnorm2]
+      _ ≤ ‖b.proj B x‖ + ‖∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ := norm_add_le _ _
+      _ ≤ ‖b.proj B x‖ + K * ‖b.proj B x‖ := by gcongr; exact hK ε hε
+      _ = (1 + K) * ‖b.proj B x‖ := by ring
+  linarith
+
 /-- The finite coordinate projections of a generalized Schauder basis are uniformly bounded if
 and only if its signed coordinate multipliers `x ↦ ∑ i ∈ A, ε i • b.coord i x • b i`, with
 `ε i = ±1`, are uniformly bounded. -/
@@ -136,7 +191,135 @@ theorem exists_forall_norm_proj_le_iff :
 
 end GeneralSchauderBasis
 
+namespace SchauderBasis
+
+section Unconditional
+
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  (b : SchauderBasis 𝕜 X)
+
+/-- A classical Schauder basis whose expansions converge unconditionally is an unconditional
+Schauder basis, with the same basis vectors and coordinate functionals. -/
+protected def toUnconditionalSchauderBasis (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) :
+    UnconditionalSchauderBasis ℕ 𝕜 X where
+  basis := b
+  coord := b.coord
+  ortho := b.ortho
+  expansion := h
+
+/-- The basis vectors of the upgraded unconditional basis are the original basis vectors. -/
+@[simp]
+theorem coe_toUnconditionalSchauderBasis (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) :
+    ⇑(b.toUnconditionalSchauderBasis h) = ⇑b :=
+  (rfl)
+
+/-- The coordinate functionals of the upgraded unconditional basis are the original ones. -/
+@[simp]
+theorem toUnconditionalSchauderBasis_coord (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) :
+    (b.toUnconditionalSchauderBasis h).coord = b.coord :=
+  (rfl)
+
+/-- The finite projections of the upgraded unconditional basis are those of the original basis. -/
+@[simp]
+theorem toUnconditionalSchauderBasis_proj (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x)
+    (A : Finset ℕ) :
+    (b.toUnconditionalSchauderBasis h).proj A = GeneralSchauderBasis.proj b A :=
+  (rfl)
+
+/-- Forgetting unconditionality recovers the original classical Schauder basis. -/
+@[simp]
+theorem toUnconditionalSchauderBasis_toSchauderBasis
+    (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) :
+    (b.toUnconditionalSchauderBasis h).toSchauderBasis = b := by
+  ext <;> simp
+
+/-- If the finite coordinate projections of a classical Schauder basis are uniformly bounded, then
+every basis expansion converges unconditionally. -/
+theorem hasSum_expansion_of_forall_norm_proj_le {C : ℝ}
+    (hC : ∀ A : Finset ℕ, ‖GeneralSchauderBasis.proj b A‖ ≤ C) (x : X) :
+    HasSum (fun i ↦ b.coord i x • b i) x := by
+  rw [HasSum, SummationFilter.unconditional_filter, Metric.tendsto_atTop]
+  intro ε hε
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ∅)
+  have hδ : 0 < ε / (C + 1) := by positivity
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 (b.tendsto_proj x) (ε / (C + 1)) hδ
+  refine ⟨Finset.range N, fun A hA ↦ ?_⟩
+  have hcomp : GeneralSchauderBasis.proj b A (b.proj N x) = b.proj N x := by
+    rw [SchauderBasis.proj, GeneralSchauderBasis.proj_comp]
+    congr 2
+    ext i
+    simp only [Finset.mem_inter, and_iff_right_iff_imp]
+    exact fun hi ↦ hA hi
+  have hsub : ∑ i ∈ A, b.coord i x • b i - x =
+      GeneralSchauderBasis.proj b A (x - b.proj N x) + (b.proj N x - x) := by
+    rw [map_sub, hcomp, GeneralSchauderBasis.proj_apply]
+    abel
+  rw [dist_eq_norm, hsub]
+  have hNx : ‖b.proj N x - x‖ < ε / (C + 1) := by
+    simpa [dist_eq_norm] using hN N le_rfl
+  calc ‖GeneralSchauderBasis.proj b A (x - b.proj N x) + (b.proj N x - x)‖
+      ≤ ‖GeneralSchauderBasis.proj b A (x - b.proj N x)‖ + ‖b.proj N x - x‖ := norm_add_le _ _
+    _ ≤ C * ‖x - b.proj N x‖ + ‖b.proj N x - x‖ := by
+        gcongr
+        exact (GeneralSchauderBasis.proj b A).le_of_opNorm_le (hC A) _
+    _ = (C + 1) * ‖b.proj N x - x‖ := by
+        rw [norm_sub_rev]
+        ring
+    _ < (C + 1) * (ε / (C + 1)) := by gcongr
+    _ = ε := mul_div_cancel₀ ε (by positivity)
+
+/-- In a Banach space, a classical Schauder basis has unconditionally convergent expansions if and
+only if its finite coordinate projections are uniformly bounded. -/
+theorem hasSum_expansion_iff_exists_forall_norm_proj_le [CompleteSpace X] :
+    (∀ x, HasSum (fun i ↦ b.coord i x • b i) x) ↔
+      ∃ C, ∀ A : Finset ℕ, ‖GeneralSchauderBasis.proj b A‖ ≤ C :=
+  ⟨fun h ↦ (b.toUnconditionalSchauderBasis h).exists_norm_proj_le,
+    fun ⟨_, hC⟩ ↦ b.hasSum_expansion_of_forall_norm_proj_le hC⟩
+
+end Unconditional
+
+/-- If signed coordinate multipliers on initial segments satisfy a uniform bound
+`‖∑ i ∈ range N, ε i • b.coord i x • b i‖ ≤ K * ‖b.proj N x‖` and the initial projections have
+norm at most `M`, then every finite coordinate projection has norm at most `(1 + K) / 2 * M`. -/
+theorem norm_proj_le_of_sign_bound {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] (b : SchauderBasis 𝕜 X) {K M : ℝ}
+    (hK : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ i, ε i = 1 ∨ ε i = -1) → ∀ x,
+      ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj N x‖)
+    (hM : ∀ N, ‖b.proj N‖ ≤ M) (A : Finset ℕ) :
+    ‖GeneralSchauderBasis.proj b A‖ ≤ (1 + K) / 2 * M := by
+  have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 fun h0 ↦ by
+    have h := b.ortho 0 0
+    simp [h0] at h
+  have hK1 : 1 ≤ K := by
+    have h1 := hK 1 (fun _ ↦ 1) (fun _ ↦ Or.inl rfl) (b 0)
+    simp only [Finset.range_one, Finset.sum_singleton, RCLike.ofReal_one, one_smul,
+      b.ortho, Pi.single_eq_same, SchauderBasis.proj_apply] at h1
+    nlinarith
+  have hM0 : 0 ≤ M := (norm_nonneg (b.proj 0)).trans (hM 0)
+  let N := A.sup id + 1
+  have hAN : A ⊆ Finset.range N := fun i hi ↦
+    Finset.mem_range.2 (Nat.lt_succ_of_le (Finset.le_sup (f := id) hi))
+  refine (GeneralSchauderBasis.proj b A).opNorm_le_bound (by positivity) fun x ↦ ?_
+  calc ‖GeneralSchauderBasis.proj b A x‖
+      ≤ (1 + K) / 2 * ‖b.proj N x‖ :=
+        GeneralSchauderBasis.norm_proj_apply_le_of_sign_bound b hAN (fun ε hε ↦ hK N ε hε x)
+    _ ≤ (1 + K) / 2 * (M * ‖x‖) := by
+        gcongr
+        exact (b.proj N).le_of_opNorm_le (hM N) x
+    _ = (1 + K) / 2 * M * ‖x‖ := (mul_assoc _ _ _).symm
+
+end SchauderBasis
+
 namespace UnconditionalSchauderBasis
+
+/-- Upgrading the underlying classical Schauder basis of an unconditional basis recovers the
+original unconditional basis. -/
+@[simp]
+theorem toSchauderBasis_toUnconditionalSchauderBasis {𝕜 X : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] (b : UnconditionalSchauderBasis ℕ 𝕜 X)
+    (h : ∀ x, HasSum (fun i ↦ b.toSchauderBasis.coord i x • b.toSchauderBasis i) x) :
+    b.toSchauderBasis.toUnconditionalSchauderBasis h = b := by
+  ext <;> simp
 
 section Multiplier
 
