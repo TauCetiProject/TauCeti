@@ -27,9 +27,12 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
 not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
-Pullback along a smooth map with a
-smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
-preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
+A product map `Prod.map f g` pulls a form pulled back from either factor back through the
+corresponding component (`TauCeti.SmoothForm.mpullback_prodMap_mpullback_fst`,
+`TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`), and so the wedge of two such forms
+(`TauCeti.SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd`). Pullback along a smooth map
+with a smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms
+of `M` preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
 (`TauCeti.SmoothForm.diffeomorphStabilizer`).
 
 Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
@@ -456,6 +459,24 @@ theorem mpullback_mpullback_of_comp_eq {f : M → M'} {g : M' → M''} {f' : M �
     mpullback f hf (mpullback g hg β) = mpullback f' hf' (mpullback g' hg' β) := by
   simp only [mpullback_mpullback, hcomp]
 
+/-- Pulling back along a product map `Prod.map f g` a form pulled back along the first projection
+is pulling it back along `f` and then along the first projection. -/
+@[simp]
+theorem mpullback_prodMap_mpullback_fst {f : M → M''} {g : M' → M'''}
+    (hf : ContMDiff I I'' ∞ f) (hg : ContMDiff I' I''' ∞ g) (α : SmoothForm I'' M'' F k) :
+    mpullback (Prod.map f g) (hf.prodMap hg) (mpullback Prod.fst contMDiff_fst α) =
+      mpullback Prod.fst contMDiff_fst (mpullback f hf α) :=
+  mpullback_mpullback_of_comp_eq _ _ _ _ (Prod.map_fst' f g) α
+
+/-- Pulling back along a product map `Prod.map f g` a form pulled back along the second projection
+is pulling it back along `g` and then along the second projection. -/
+@[simp]
+theorem mpullback_prodMap_mpullback_snd {f : M → M''} {g : M' → M'''}
+    (hf : ContMDiff I I'' ∞ f) (hg : ContMDiff I' I''' ∞ g) (β : SmoothForm I''' M''' F k) :
+    mpullback (Prod.map f g) (hf.prodMap hg) (mpullback Prod.snd contMDiff_snd β) =
+      mpullback Prod.snd contMDiff_snd (mpullback g hg β) :=
+  mpullback_mpullback_of_comp_eq _ _ _ _ (Prod.map_snd' f g) β
+
 /-- Restricting a smooth form on `M` to an open subset does not change its value at any point. -/
 theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : SmoothForm I M F k)
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 x = σ.1 x :=
@@ -595,6 +616,19 @@ theorem mpullback_wedge (f : M → M') (hf : ContMDiff I I' ∞ f)
       SmoothForm.wedge (mpullback (k := k) f hf φ) (mpullback (k := l) f hf ψ) := by
   simpa only [SmoothForm.wedge_def] using
     mpullback_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) f hf φ ψ
+
+/-- A product map `Prod.map f g` pulls the wedge of a form pulled back from the first factor and a
+form pulled back from the second factor back to the wedge of their pullbacks along `f` and `g`. -/
+@[simp]
+theorem mpullback_prodMap_wedge_mpullback_fst_snd {f : M → M''} {g : M' → M'''}
+    (hf : ContMDiff I I'' ∞ f) (hg : ContMDiff I' I''' ∞ g) (α : SmoothForm I'' M'' ℝ k)
+    (β : SmoothForm I''' M''' ℝ l) :
+    mpullback (k := k + l) (Prod.map f g) (hf.prodMap hg)
+        (SmoothForm.wedge (mpullback Prod.fst contMDiff_fst α)
+          (mpullback Prod.snd contMDiff_snd β)) =
+      SmoothForm.wedge (mpullback Prod.fst contMDiff_fst (mpullback f hf α))
+        (mpullback Prod.snd contMDiff_snd (mpullback g hg β)) := by
+  rw [mpullback_wedge, mpullback_prodMap_mpullback_fst hf hg, mpullback_prodMap_mpullback_snd hf hg]
 
 end SmoothForm
 

@@ -282,14 +282,11 @@ theorem mpullback_map_fiberForm {τ : SmoothForm J N F k}
     (hgτ : SmoothForm.mpullback g hg τ = σ) :
     SmoothForm.mpullback (map φ ψ g h) (contMDiff_map φ ψ g h hg) (fiberForm ψ τ hτ) =
       fiberForm φ σ hσ := by
-  have hsnd : Prod.snd ∘ Prod.map id g = g ∘ (Prod.snd : ℝ × M → M) := rfl
   rw [eq_fiberForm_iff, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
   simp only [map_comp_uncurry_mk]
   rw [SmoothForm.mpullback_comp _ _ (contMDiff_id.prodMap hg) (contMDiff_uncurry_mk ψ),
-    LinearMap.comp_apply, mpullback_uncurry_mk_fiberForm, ← LinearMap.comp_apply,
-    ← SmoothForm.mpullback_comp]
-  simp only [hsnd]
-  rw [SmoothForm.mpullback_comp _ _ contMDiff_snd hg, LinearMap.comp_apply, hgτ]
+    LinearMap.comp_apply, mpullback_uncurry_mk_fiberForm,
+    SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hg, hgτ]
 
 end Map
 

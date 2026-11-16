@@ -435,10 +435,14 @@ theorem orbitTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) :
     orbitTorus φ h p = (p.1, closedOrbit φ h p.2) :=
   (rfl)
 
+/-- The orbit torus is the product map of the identity of `ℝ / ℤ` with the closed orbit. -/
+theorem orbitTorus_eq_prodMap : orbitTorus φ h = Prod.map id (closedOrbit φ h) :=
+  (rfl)
+
 /-- The image of the orbit torus is the product of the circle `ℝ / ℤ` with the image of the closed
 orbit. -/
 theorem range_orbitTorus : range (orbitTorus φ h) = univ ×ˢ range (closedOrbit φ h) := by
-  rw [orbitTorus, range_prodMap, range_id]
+  rw [orbitTorus_eq_prodMap, range_prodMap, range_id]
 
 /-- The orbit torus is injective exactly when `d` is the least period of `x`. -/
 theorem injective_orbitTorus_iff : Injective (orbitTorus φ h) ↔ minimalPeriod φ x = d := by
