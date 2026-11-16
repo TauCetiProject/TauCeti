@@ -5,196 +5,159 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
-import Mathlib.Analysis.Real.Cardinality
-import Mathlib.Order.Interval.Set.Infinite
 
 /-!
-# Cumulative break coordinates and scalar pushforward on standard simplices
+# Cumulative prefix-sum coordinates on standard simplices
 
-A point `w` of the finite standard simplex `Convexity.StdSimplex R (Fin (n + 1))` has `n + 1`
-nonnegative weights summing to `1`. Its cumulative prefix sums `w.breakTime : Fin (n + 2) → R`
-form a monotone sequence from `0` to `1` whose successive differences recover the weights.
-Conversely, every monotone sequence `0 = t₀ ≤ t₁ ≤ ⋯ ≤ t_{n+1} = 1` arises in this way
-(`Convexity.StdSimplex.equivBreakTime`), with strictly increasing sequences corresponding to
-the open interior where every weight is positive. Merging two adjacent vertices `p.castSucc` and
-`p.succ` along `p.predAbove` deletes the internal break `t_{p+1}`.
+A point `w` of the finite standard simplex `Convexity.StdSimplex R (Fin n)` has `n` nonnegative
+weights summing to `1`. Its cumulative prefix sums `w.prefixSum : Fin (n + 1) → R` form a monotone
+sequence from `0` to `1` whose successive differences recover the weights. Conversely, every
+monotone sequence `0 = t₀ ≤ t₁ ≤ ⋯ ≤ t_n = 1` arises in this way
+(`Convexity.StdSimplex.equivPrefixSum`), with strictly increasing sequences corresponding to the
+open interior where every weight is positive.
 
-This file also defines scalar pushforward `Convexity.StdSimplex.mapRange` along a monotone
-semiring homomorphism, such as casting rational barycentric weights to a real or ordered-field
-simplex, and records that positive-dimensional simplices are infinite over densely ordered rings
-and uncountable over `ℝ`.
+Embedding a facet along `p.succAbove` repeats the `p`-th cumulative sum via `p.predAbove`, while
+merging two adjacent vertices `p.castSucc` and `p.succ` along `p.predAbove` deletes the internal
+sum `t_{p+1}`.
 
 ## Main definitions
 
-* `Convexity.StdSimplex.mapRange`: push weights of a standard simplex forward along a monotone
-  semiring homomorphism.
-* `Convexity.StdSimplex.breakTime`: cumulative prefix sums `0 = t₀ ≤ ⋯ ≤ t_{n+1} = 1` of a point
-  of `StdSimplex R (Fin (n + 1))`.
-* `Convexity.StdSimplex.equivBreakTime`: the equivalence between `StdSimplex R (Fin (n + 1))` and
+* `Convexity.StdSimplex.prefixSum`: cumulative prefix sums `0 = t₀ ≤ ⋯ ≤ t_n = 1` of a point of
+  `StdSimplex R (Fin n)`.
+* `Convexity.StdSimplex.equivPrefixSum`: the equivalence between `StdSimplex R (Fin n)` and
   monotone sequences in `[0, 1]` from `0` to `1`.
 
 ## Main results
 
-* `Convexity.StdSimplex.strictMono_breakTime_iff`: the break times strictly increase exactly when
+* `Convexity.StdSimplex.strictMono_prefixSum_iff`: the prefix sums strictly increase exactly when
   every barycentric weight is strictly positive.
-* `Convexity.StdSimplex.breakTime_map_predAbove`: merging adjacent vertices `p.castSucc` and
-  `p.succ` removes the `(p + 1)`-st break time.
-* `Convexity.StdSimplex.infinite`, `Convexity.StdSimplex.not_countable_real`: standard simplices
-  on nontrivial vertex types are infinite over densely ordered rings and uncountable over `ℝ`.
+* `Convexity.StdSimplex.prefixSum_map_succAbove`, `Convexity.StdSimplex.prefixSum_map_predAbove`:
+  how facet inclusions and adjacent-vertex merges act on cumulative prefix sums.
 -/
 
 public section
 
 namespace Convexity.StdSimplex
 
-section MapRange
-
-variable {R S X Y : Type*} [PartialOrder R] [Semiring R] [PartialOrder S] [Semiring S]
-
-/-- Push a point of a standard simplex forward along a monotone semiring homomorphism on its
-weights, such as casting rational barycentric coordinates into an ordered field. -/
-noncomputable def mapRange (f : R →+* S) (hf : Monotone f) (w : StdSimplex R X) :
-    StdSimplex S X where
-  weights := w.weights.mapRange f (map_zero f)
-  nonneg x := by
-    simpa only [Finsupp.coe_zero, Pi.zero_apply, Finsupp.mapRange_apply, ← map_zero f] using
-      hf (w.nonneg x)
-  total := by
-    rw [Finsupp.sum_mapRange_index (by simp), ← map_finsuppSum f w.weights fun _ r ↦ r,
-      w.total, map_one]
-
-/-- Scalar pushforward applies `Finsupp.mapRange` to the weight vector. -/
-theorem weights_mapRange (f : R →+* S) (hf : Monotone f) (w : StdSimplex R X) :
-    (w.mapRange f hf).weights = w.weights.mapRange f (map_zero f) :=
-  (rfl)
-
-/-- Scalar pushforward applies the homomorphism to each weight. -/
-@[simp]
-theorem weights_mapRange_apply (f : R →+* S) (hf : Monotone f) (w : StdSimplex R X) (x : X) :
-    (w.mapRange f hf).weights x = f (w.weights x) := by
-  rw [weights_mapRange, Finsupp.mapRange_apply]
-
-/-- Scalar pushforward along an injective homomorphism is injective. -/
-theorem mapRange_injective {f : R →+* S} (hf : Monotone f) (hfinj : Function.Injective f) :
-    Function.Injective (mapRange (X := X) f hf) := by
-  intro w₁ w₂ h
-  ext x
-  exact hfinj (by simpa only [weights_mapRange_apply] using congrArg (fun u ↦ u.weights x) h)
-
-/-- Scalar pushforward along an injective homomorphism preserves the support of weights. -/
-@[simp]
-theorem support_weights_mapRange {f : R →+* S} (hf : Monotone f) (hfinj : Function.Injective f)
-    (w : StdSimplex R X) : (w.mapRange f hf).weights.support = w.weights.support := by
-  ext x
-  simp [Finsupp.mem_support_iff, map_eq_zero_iff f hfinj]
-
-/-- Scalar pushforward sends each vertex point mass to the corresponding vertex point mass. -/
-@[simp]
-theorem mapRange_single [IsStrictOrderedRing R] [IsStrictOrderedRing S]
-    (f : R →+* S) (hf : Monotone f) (x : X) :
-    (single x).mapRange f hf = single x := by
-  ext y
-  by_cases h : x = y <;> simp [h]
-
-/-- Scalar pushforward commutes with pushing vertices forward along a map. -/
-theorem mapRange_map [IsStrictOrderedRing R] [IsStrictOrderedRing S]
-    (f : R →+* S) (hf : Monotone f) (g : X → Y) (w : StdSimplex R X) :
-    (w.map g).mapRange f hf = (w.mapRange f hf).map g := by
-  ext y
-  rw [weights_mapRange_apply, weights_map, weights_map, weights_mapRange,
-    Finsupp.mapDomain, Finsupp.mapDomain, Finsupp.sum_apply, Finsupp.sum_apply,
-    map_finsuppSum, Finsupp.sum_mapRange_index (by simp)]
-  refine Finsupp.sum_congr fun x _ ↦ ?_
-  by_cases h : g x = y <;> simp [h]
-
-/-- Scalar pushforward along the identity homomorphism is the identity. -/
-@[simp]
-theorem mapRange_id (w : StdSimplex R X) : w.mapRange (RingHom.id R) monotone_id = w := by
-  ext x
-  simp
-
-end MapRange
-
-section BreakTime
-
-/-- The `k`-th cumulative break time `∑_{j < k} w_j` of a point `w` of the standard `n`-simplex,
-for `k : Fin (n + 2)`. It runs from `0` at `k = 0` to `1` at `k = n + 1`. -/
-def breakTime {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) (k : Fin (n + 2)) : R :=
+/-- The `k`-th cumulative prefix sum `∑_{j < k} w_j` of a point `w` of `StdSimplex R (Fin n)`,
+for `k : Fin (n + 1)`. It runs from `0` at `k = 0` to `1` at `k = n` (when `R` is nontrivial or
+`n` is nonzero). -/
+def prefixSum {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
+    (w : StdSimplex R (Fin n)) (k : Fin (n + 1)) : R :=
   TauCeti.prefixSum k.val w.weights
 
-/-- The defining formula of `breakTime` as a prefix sum of weights. -/
-theorem breakTime_def {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) (k : Fin (n + 2)) :
-    w.breakTime k = TauCeti.prefixSum k.val w.weights :=
+/-- The defining formula of `prefixSum` in terms of `TauCeti.prefixSum` on weights. -/
+theorem prefixSum_def {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
+    (w : StdSimplex R (Fin n)) (k : Fin (n + 1)) :
+    w.prefixSum k = TauCeti.prefixSum k.val w.weights :=
   (rfl)
 
-/-- The initial break time is `0`. -/
+/-- The initial prefix sum at `0` is `0`. -/
 @[simp]
-theorem breakTime_zero {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) : w.breakTime 0 = 0 := by
-  simp [breakTime_def]
+theorem prefixSum_zero {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
+    (w : StdSimplex R (Fin n)) : w.prefixSum 0 = 0 := by
+  simp [prefixSum_def]
 
-/-- Advancing past the `j`-th vertex adds its weight to the cumulative break time. -/
-theorem breakTime_castSucc_add_weights {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) (j : Fin (n + 1)) :
-    w.breakTime j.castSucc + w.weights j = w.breakTime j.succ :=
+/-- Advancing past the `j`-th vertex adds its weight to the cumulative prefix sum. -/
+theorem prefixSum_castSucc_add_weights {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
+    (w : StdSimplex R (Fin n)) (j : Fin n) :
+    w.prefixSum j.castSucc + w.weights j = w.prefixSum j.succ :=
   (TauCeti.prefixSum_succ j.isLt w.weights).symm
 
-/-- The final break time is `1`, the total weight of the simplex point. -/
+/-- The final prefix sum at `Fin.last n` is `1`, the total weight of the simplex point. -/
 @[simp]
-theorem breakTime_last {R : Type*} [PartialOrder R] [Semiring R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) : w.breakTime (Fin.last (n + 1)) = 1 := by
-  rw [breakTime_def, Fin.val_last, TauCeti.prefixSum_of_le le_rfl, w.total_of_fintype]
+theorem prefixSum_last {R : Type*} [LE R] [AddCommMonoid R] [One R] {n : ℕ}
+    (w : StdSimplex R (Fin n)) : w.prefixSum (Fin.last n) = 1 := by
+  rw [prefixSum_def, Fin.val_last, TauCeti.prefixSum_of_le le_rfl]
+  simpa [Finsupp.sum_fintype] using w.total
 
-/-- Each weight is the difference of the two adjacent cumulative break times. -/
+/-- Each weight is the difference of the two adjacent cumulative prefix sums. -/
 @[simp]
-theorem breakTime_succ_sub_castSucc {R : Type*} [Ring R] [PartialOrder R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) (j : Fin (n + 1)) :
-    w.breakTime j.succ - w.breakTime j.castSucc = w.weights j := by
-  rw [← w.breakTime_castSucc_add_weights j, add_sub_cancel_left]
+theorem prefixSum_succ_sub_castSucc {R : Type*} [LE R] [AddCommGroup R] [One R] {n : ℕ}
+    (w : StdSimplex R (Fin n)) (j : Fin n) :
+    w.prefixSum j.succ - w.prefixSum j.castSucc = w.weights j := by
+  rw [← w.prefixSum_castSucc_add_weights j, add_sub_cancel_left]
 
-/-- The cumulative break times of a simplex point are monotone. -/
-theorem monotone_breakTime {R : Type*} [PartialOrder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
-    [One R] {n : ℕ} (w : StdSimplex R (Fin (n + 1))) : Monotone w.breakTime :=
+/-- A point of `StdSimplex R (Fin n)` is determined by its cumulative prefix sums. -/
+theorem prefixSum_injective {R : Type*} [LE R] [AddCommGroup R] [One R] {n : ℕ} :
+    Function.Injective (prefixSum (R := R) (n := n)) := by
+  intro w₁ w₂ h
+  have hw : w₁.weights = w₂.weights := by
+    ext j
+    rw [← w₁.prefixSum_succ_sub_castSucc j, ← w₂.prefixSum_succ_sub_castSucc j,
+      congrFun h j.succ, congrFun h j.castSucc]
+  cases w₁
+  cases w₂
+  congr 1
+
+/-- Two points of `StdSimplex R (Fin n)` have the same cumulative prefix sums if and only if they
+are equal. -/
+@[simp]
+theorem prefixSum_inj {R : Type*} [LE R] [AddCommGroup R] [One R] {n : ℕ}
+    {w₁ w₂ : StdSimplex R (Fin n)} :
+    w₁.prefixSum = w₂.prefixSum ↔ w₁ = w₂ :=
+  prefixSum_injective.eq_iff
+
+/-- The cumulative prefix sums of a simplex point are monotone. -/
+theorem monotone_prefixSum {R : Type*} [PartialOrder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
+    [One R] {n : ℕ} (w : StdSimplex R (Fin n)) : Monotone w.prefixSum :=
   fun _ _ h ↦ TauCeti.monotone_prefixSum w.nonneg h
 
-/-- Every cumulative break time is nonnegative. -/
-theorem breakTime_nonneg {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) (k : Fin (n + 2)) : 0 ≤ w.breakTime k :=
-  w.prefixSum_weights_nonneg k.val
+/-- Every cumulative prefix sum of a simplex point is nonnegative. -/
+theorem prefixSum_nonneg {R : Type*} [PartialOrder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
+    [One R] {n : ℕ} (w : StdSimplex R (Fin n)) (k : Fin (n + 1)) : 0 ≤ w.prefixSum k := by
+  rw [prefixSum_def, TauCeti.prefixSum_def]
+  exact Finset.sum_nonneg fun j _ ↦ w.nonneg j
 
-/-- Every cumulative break time is at most `1`. -/
-theorem breakTime_le_one {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) (k : Fin (n + 2)) : w.breakTime k ≤ 1 :=
-  w.prefixSum_weights_le_one k.val
+/-- Every cumulative prefix sum of a simplex point is at most `1`. -/
+theorem prefixSum_le_one {R : Type*} [PartialOrder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
+    [One R] {n : ℕ} (w : StdSimplex R (Fin n)) (k : Fin (n + 1)) : w.prefixSum k ≤ 1 :=
+  (w.monotone_prefixSum (Fin.le_last k)).trans_eq w.prefixSum_last
 
-/-- The cumulative break times strictly increase exactly when every barycentric weight is strictly
+/-- The cumulative prefix sums strictly increase exactly when every barycentric weight is strictly
 positive, that is, when the point lies in the open interior of the simplex. -/
-theorem strictMono_breakTime_iff {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
-    {n : ℕ} (w : StdSimplex R (Fin (n + 1))) :
-    StrictMono w.breakTime ↔ ∀ j, 0 < w.weights j := by
+theorem strictMono_prefixSum_iff {R : Type*} [PartialOrder R] [AddCommMonoid R]
+    [IsOrderedCancelAddMonoid R] [One R] {n : ℕ} (w : StdSimplex R (Fin n)) :
+    StrictMono w.prefixSum ↔ ∀ j, 0 < w.weights j := by
   rw [Fin.strictMono_iff_lt_succ]
   refine forall_congr' fun j ↦ ?_
-  rw [← sub_pos, w.breakTime_succ_sub_castSucc]
+  rw [← w.prefixSum_castSucc_add_weights j, lt_add_iff_pos_right]
 
-/-- Scalar pushforward transforms cumulative break times by the same homomorphism. -/
+/-- The cumulative prefix sums of the `j`-th vertex `single j` jump from `0` to `1` after `j`. -/
 @[simp]
-theorem breakTime_mapRange {R S : Type*} [PartialOrder R] [Semiring R] [PartialOrder S]
-    [Semiring S] {n : ℕ} (f : R →+* S) (hf : Monotone f) (w : StdSimplex R (Fin (n + 1)))
-    (k : Fin (n + 2)) : (w.mapRange f hf).breakTime k = f (w.breakTime k) := by
-  rw [breakTime_def, breakTime_def, TauCeti.map_prefixSum f]
-  rfl
+theorem prefixSum_single {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {n : ℕ}
+    (j : Fin n) (k : Fin (n + 1)) :
+    (single j : StdSimplex R (Fin n)).prefixSum k = if j.castSucc < k then 1 else 0 := by
+  rw [prefixSum_def, TauCeti.prefixSum_def]
+  split_ifs with hj
+  · rw [Finset.sum_eq_single j]
+    · simp
+    · intro i _ hij
+      simp [hij]
+    · intro hnot
+      exact absurd (Fin.lt_def.mp hj) (by simpa using hnot)
+  · refine Finset.sum_eq_zero fun i hi ↦ ?_
+    have hij : i ≠ j := fun h ↦ hj (h ▸ Fin.lt_def.mpr (Finset.mem_filter.mp hi).2)
+    simp [hij]
 
-/-- Merging two adjacent vertices `p.castSucc` and `p.succ` along `p.predAbove` deletes the
-internal break time `p.castSucc.succ`. -/
+/-- Scalar pushforward transforms cumulative prefix sums by the same homomorphism. -/
 @[simp]
-theorem breakTime_map_predAbove {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
-    {n : ℕ} (p : Fin (n + 1)) (w : StdSimplex R (Fin (n + 2))) (k : Fin (n + 2)) :
-    (w.map p.predAbove).breakTime k = w.breakTime (p.castSucc.succ.succAbove k) := by
-  rw [breakTime_def, breakTime_def, TauCeti.prefixSum_def, TauCeti.prefixSum_def,
+theorem prefixSum_mapRange {R S : Type*} [PartialOrder R] [Semiring R] [PartialOrder S]
+    [Semiring S] {n : ℕ} (f : R →+* S) (hf : Monotone f) (w : StdSimplex R (Fin n))
+    (k : Fin (n + 1)) : (w.mapRange f hf).prefixSum k = f (w.prefixSum k) := by
+  rw [prefixSum_def, prefixSum_def, TauCeti.map_prefixSum f]
+  congr 1
+  funext i
+  simp
+
+/-- Including the facet opposite `p` along `p.succAbove` repeats the `p`-th cumulative prefix sum
+via `p.predAbove`. -/
+@[simp]
+theorem prefixSum_map_succAbove {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
+    {n : ℕ} (p : Fin (n + 1)) (w : StdSimplex R (Fin n)) (k : Fin (n + 2)) :
+    (w.map p.succAbove).prefixSum k = w.prefixSum (p.predAbove k) := by
+  rw [prefixSum_def, prefixSum_def, TauCeti.prefixSum_def, TauCeti.prefixSum_def,
     sum_filter_weights_map]
   refine Finset.sum_congr ?_ fun _ _ ↦ rfl
   ext j
@@ -203,12 +166,38 @@ theorem breakTime_map_predAbove {R : Type*} [PartialOrder R] [Semiring R] [IsStr
     dite_eq_ite, apply_ite Fin.val, Fin.val_succ]
   split_ifs <;> omega
 
-/-- The equivalence between the standard `n`-simplex over `R` and monotone break-time sequences
-`0 = t₀ ≤ t₁ ≤ ⋯ ≤ t_{n+1} = 1`. -/
-noncomputable def equivBreakTime (R : Type*) [Ring R] [PartialOrder R] [IsOrderedRing R] (n : ℕ) :
-    StdSimplex R (Fin (n + 1)) ≃
-      {t : Fin (n + 2) → R // t 0 = 0 ∧ t (Fin.last (n + 1)) = 1 ∧ Monotone t} where
-  toFun w := ⟨w.breakTime, w.breakTime_zero, w.breakTime_last, w.monotone_breakTime⟩
+/-- Merging two adjacent vertices `p.castSucc` and `p.succ` along `p.predAbove` deletes the
+internal prefix sum `p.castSucc.succ`. -/
+@[simp]
+theorem prefixSum_map_predAbove {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
+    {n : ℕ} (p : Fin n) (w : StdSimplex R (Fin (n + 1))) (k : Fin (n + 1)) :
+    (w.map p.predAbove).prefixSum k = w.prefixSum (p.castSucc.succ.succAbove k) := by
+  rw [prefixSum_def, prefixSum_def, TauCeti.prefixSum_def, TauCeti.prefixSum_def,
+    sum_filter_weights_map]
+  refine Finset.sum_congr ?_ fun _ _ ↦ rfl
+  ext j
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.succAbove, Fin.predAbove,
+    Fin.lt_def, Fin.val_castSucc, apply_dite Fin.val, Fin.val_pred, Fin.coe_castPred,
+    dite_eq_ite, apply_ite Fin.val, Fin.val_succ]
+  split_ifs <;> omega
+
+private theorem prefixSum_sub_eq {R : Type*} [AddCommGroup R] {n : ℕ} (t : Fin (n + 1) → R)
+    (h0 : t 0 = 0) (i : ℕ) (hi : i ≤ n) :
+    TauCeti.prefixSum i (fun j : Fin n ↦ t j.succ - t j.castSucc) =
+      t ⟨i, Nat.lt_succ_of_le hi⟩ := by
+  induction i with
+  | zero => simp [h0]
+  | succ i ih =>
+    rw [TauCeti.prefixSum_succ (by omega), ih (by omega)]
+    exact add_sub_cancel _ _
+
+/-- The equivalence between `StdSimplex R (Fin n)` and monotone prefix-sum sequences
+`0 = t₀ ≤ t₁ ≤ ⋯ ≤ t_n = 1`. -/
+noncomputable def equivPrefixSum (R : Type*) [AddCommGroup R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [One R] (n : ℕ) :
+    StdSimplex R (Fin n) ≃
+      {t : Fin (n + 1) → R // t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t} where
+  toFun w := ⟨w.prefixSum, w.prefixSum_zero, w.prefixSum_last, w.monotone_prefixSum⟩
   invFun t :=
     { weights := Finsupp.equivFunOnFinite.symm fun j ↦ t.1 j.succ - t.1 j.castSucc
       nonneg j := by
@@ -216,72 +205,50 @@ noncomputable def equivBreakTime (R : Type*) [Ring R] [PartialOrder R] [IsOrdere
       total := by
         rw [Finsupp.sum_fintype _ _ (by simp)]
         simp only [Finsupp.equivFunOnFinite_symm_apply_apply]
-        rw [← Finset.Iic_top, Fin.top_eq_last, Fin.sum_Iic_sub, Fin.succ_last,
-          t.2.2.1, t.2.1, sub_zero] }
+        have h := prefixSum_sub_eq t.1 t.2.1 n le_rfl
+        rw [TauCeti.prefixSum_of_le le_rfl] at h
+        exact h.trans t.2.2.1 }
   left_inv w := by
-    ext j
-    simp
+    have hw : (Finsupp.equivFunOnFinite.symm fun j : Fin n ↦
+        w.prefixSum j.succ - w.prefixSum j.castSucc) = w.weights := by
+      ext j
+      simp
+    cases w
+    dsimp only
+    congr 1
   right_inv t := by
     apply Subtype.ext
     funext k
     have hcoe :
-        (⇑(Finsupp.equivFunOnFinite.symm fun j : Fin (n + 1) ↦ t.1 j.succ - t.1 j.castSucc) :
-          Fin (n + 1) → R) = fun j ↦ t.1 j.succ - t.1 j.castSucc := by
+        (⇑(Finsupp.equivFunOnFinite.symm fun j : Fin n ↦ t.1 j.succ - t.1 j.castSucc) :
+          Fin n → R) = fun j ↦ t.1 j.succ - t.1 j.castSucc := by
       ext j
       simp
-    have hval (i : ℕ) (hi : i ≤ n + 1) :
-        TauCeti.prefixSum i (fun j : Fin (n + 1) ↦ t.1 j.succ - t.1 j.castSucc) =
-          t.1 ⟨i, Nat.lt_succ_of_le hi⟩ := by
-      induction i with
-      | zero => simp [t.2.1]
-      | succ i ih =>
-        rw [TauCeti.prefixSum_succ (by omega), ih (by omega)]
-        exact add_sub_cancel _ _
-    simpa only [breakTime_def, hcoe] using hval k.val (Nat.le_of_lt_succ k.isLt)
+    simpa only [prefixSum_def, hcoe] using
+      prefixSum_sub_eq t.1 t.2.1 k.val (Nat.le_of_lt_succ k.isLt)
 
-/-- Applying `equivBreakTime` recovers `breakTime`. -/
+/-- Applying `equivPrefixSum` recovers `prefixSum`. -/
 @[simp]
-theorem equivBreakTime_apply_coe {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R] {n : ℕ}
-    (w : StdSimplex R (Fin (n + 1))) : (equivBreakTime R n w).1 = w.breakTime :=
+theorem equivPrefixSum_apply_coe {R : Type*} [AddCommGroup R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [One R] {n : ℕ}
+    (w : StdSimplex R (Fin n)) : (equivPrefixSum R n w).1 = w.prefixSum :=
   (rfl)
 
-/-- The inverse of `equivBreakTime` assigns successive differences of break times as weights. -/
+/-- The cumulative prefix sums of `(equivPrefixSum R n).symm t` recover `t`. -/
 @[simp]
-theorem weights_equivBreakTime_symm_apply {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
-    {n : ℕ} (t : {t : Fin (n + 2) → R // t 0 = 0 ∧ t (Fin.last (n + 1)) = 1 ∧ Monotone t})
-    (j : Fin (n + 1)) : ((equivBreakTime R n).symm t).weights j = t.1 j.succ - t.1 j.castSucc := by
-  simp [equivBreakTime]
+theorem prefixSum_equivPrefixSum_symm {R : Type*} [AddCommGroup R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [One R] {n : ℕ}
+    (t : {t : Fin (n + 1) → R // t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t}) :
+    ((equivPrefixSum R n).symm t).prefixSum = t.1 :=
+  congrArg Subtype.val ((equivPrefixSum R n).apply_symm_apply t)
 
-end BreakTime
-
-section Cardinality
-
-private theorem exists_injective_icc_to_stdSimplex {R X : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [Nontrivial X] :
-    ∃ g : Set.Icc (0 : R) 1 → StdSimplex R X, Function.Injective g := by
-  obtain ⟨x, y, hxy⟩ := exists_pair_ne X
-  have hinj : Function.Injective ![x, y] := by
-    intro i j hij
-    fin_cases i <;> fin_cases j <;> simp_all
-  exact ⟨fun t ↦ (equivIcc.symm t).map ![x, y], (map_injective hinj).comp equivIcc.symm.injective⟩
-
-/-- Over a densely ordered strict ordered ring (such as `ℚ` or `ℝ`), any standard simplex on a
-type with at least two vertices is infinite: the unit interval embeds as the edge between two
-distinct vertices. -/
-theorem infinite {R X : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
-    [DenselyOrdered R] [Nontrivial X] : Infinite (StdSimplex R X) := by
-  obtain ⟨g, hg⟩ := exists_injective_icc_to_stdSimplex (R := R) (X := X)
-  have : Infinite (Set.Icc (0 : R) 1) := Set.Icc.infinite zero_lt_one
-  exact Infinite.of_injective g hg
-
-/-- Over `ℝ`, any standard simplex on a type with at least two vertices is uncountable. -/
-theorem not_countable_real {X : Type*} [Nontrivial X] : ¬ Countable (StdSimplex ℝ X) := by
-  obtain ⟨g, hg⟩ := exists_injective_icc_to_stdSimplex (R := ℝ) (X := X)
-  intro hcount
-  have hIcc : (Set.Icc (0 : ℝ) 1).Countable :=
-    Set.countable_coe_iff.mp (hg.countable)
-  exact (Cardinal.Real.Icc_countable_iff.mp hIcc).not_gt zero_lt_one
-
-end Cardinality
+/-- The inverse of `equivPrefixSum` assigns successive differences of prefix sums as weights. -/
+@[simp]
+theorem weights_equivPrefixSum_symm_apply {R : Type*} [AddCommGroup R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [One R] {n : ℕ}
+    (t : {t : Fin (n + 1) → R // t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t})
+    (j : Fin n) :
+    ((equivPrefixSum R n).symm t).weights j = t.1 j.succ - t.1 j.castSucc := by
+  simp [equivPrefixSum]
 
 end Convexity.StdSimplex

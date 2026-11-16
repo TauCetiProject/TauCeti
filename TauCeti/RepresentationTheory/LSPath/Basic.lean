@@ -54,13 +54,15 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
 * `TauCeti.LSPath.timed`: the distinguished timed presentation, running with constant velocity
   `τ_j λ` for time `a_{j+1} - a_j`.
 * `TauCeti.LSPath.toPLPath`: the piecewise-linear path presented by it.
-* `TauCeti.LSPath.straight` and `TauCeti.LSPath.simple`: the straight path and the
-  two-direction paths along a simple root.
+* `TauCeti.LSPath.straight`, `TauCeti.LSPath.single`, and `TauCeti.LSPath.simple`: the straight
+  path, the zero-break path along any minimal coset representative, and the two-direction paths
+  along a simple root.
 
 ## Main results
 
 * `TauCeti.LSPath.finite`: **for dominant `λ` there are finitely many Lakshmibai–Seshadri paths
   of shape `λ`.**
+* `TauCeti.LSPath.instCountable`: for any weight `λ`, `LSPath P b lam` is countable.
 * `TauCeti.LSPath.bruhatLE_dir_succ` and `TauCeti.LSPath.strictAnti_length_dir`: the directions
   strictly decrease in the Bruhat order, and so do their lengths.
 * `TauCeti.LSPath.sum_duration`, `TauCeti.LSPath.isTimed_timed` and
@@ -295,6 +297,69 @@ theorem toPLPath_straight :
     (straight lam : LSPath P b lam).toPLPath 𝕜 f = PLPath.straight 𝕜 (f lam) := by
   simp [toPLPath, timed, duration, straight, PLPath.straight_def]
 
+/-- The zero-break Lakshmibai–Seshadri path running along a single minimal coset representative `τ`
+for `P.wallIndices b lam` from time `0` to time `1`. When `τ = 1` this is
+`TauCeti.LSPath.straight`. -/
+noncomputable def single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    LSPath P b lam where
+  length := 0
+  dir _ := τ
+  time := ![0, 1]
+  time_zero := rfl
+  time_last := rfl
+  strictMono_time := Fin.strictMono_iff_lt_succ.mpr fun j ↦ by
+    fin_cases j
+    simp
+  dir_succ_ne j := j.elim0
+  exists_isAChain j := j.elim0
+
+/-- `LSPath.single τ` has zero internal breaks. -/
+@[simp]
+theorem length_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    (single τ : LSPath P b lam).length = 0 :=
+  (rfl)
+
+/-- The sole segment direction of `LSPath.single τ` is `τ`. -/
+@[simp]
+theorem dir_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+    (j : Fin ((single τ : LSPath P b lam).length + 1)) :
+    (single τ : LSPath P b lam).dir j = τ :=
+  (rfl)
+
+/-- `LSPath.single τ` has the single segment from time `0` to time `1`. -/
+@[simp]
+theorem time_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+    (k : Fin ((single τ : LSPath P b lam).length + 2)) :
+    (single τ : LSPath P b lam).time k = k.val := by
+  fin_cases k <;> rfl
+
+/-- The sole segment of `LSPath.single τ` has duration `1`. -/
+@[simp]
+theorem duration_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+    (j : Fin ((single τ : LSPath P b lam).length + 1)) :
+    (single τ : LSPath P b lam).duration j = 1 := by
+  fin_cases j
+  simp [duration_def]
+
+/-- At the identity minimal coset representative, `LSPath.single` is `LSPath.straight`. -/
+@[simp]
+theorem single_one :
+    (single ⟨1, (weylCoxeterSystem P b).isMinimalCosetRep_one _⟩ : LSPath P b lam) =
+      straight lam :=
+  (rfl)
+
+/-- The piecewise-linear path of `LSPath.single τ` is the straight path along `f (τ • lam)`. -/
+@[simp]
+theorem toPLPath_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    (single τ : LSPath P b lam).toPLPath 𝕜 f = PLPath.straight 𝕜 (f (τ.1 • lam)) := by
+  simp [toPLPath, timed, duration, single, PLPath.straight_def]
+
 /-- The **two-direction** Lakshmibai–Seshadri path `(sᵢ, 1; 0, a, 1)` along a simple root `αᵢ`
 with `⟨λ, αᵢ^∨⟩ ≠ 0`, for `0 < a < 1` with `a ⟨λ, αᵢ^∨⟩ ∈ ℤ`. It runs along `sᵢ λ` until time
 `a`, then along `λ`. The chain `sᵢ ⋗ 1` has the single bond `⟨λ, αᵢ^∨⟩`. -/
@@ -424,6 +489,13 @@ theorem finite (hlam : lam ∈ dominantChamber P b) : Finite (LSPath P b lam) :=
   · exact congrArg Subtype.val (Prod.ext_iff.mp h).1
   · have := congrArg (List.map Subtype.val ∘ Subtype.val) (Prod.ext_iff.mp h).2
     simpa [e, List.map_ofFn, Function.comp_def] using this
+
+/-- For any weight `λ` (not necessarily dominant), `LSPath P b lam` is countable. -/
+instance instCountable : Countable (LSPath P b lam) := by
+  have := P.finite_weylGroup_of_base b
+  exact Function.Injective.countable
+    (f := fun π : LSPath P b lam ↦ (List.ofFn π.dir, List.ofFn π.time))
+    (fun π₁ π₂ h ↦ ext (Prod.ext_iff.mp h).1 (Prod.ext_iff.mp h).2)
 
 end Finite
 

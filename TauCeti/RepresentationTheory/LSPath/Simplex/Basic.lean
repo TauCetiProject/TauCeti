@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Sort
 public import Mathlib.Order.Fin.Basic
 public import TauCeti.Geometry.Convex.ConvexSpace.PrefixSum
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 public import TauCeti.RepresentationTheory.LSPath.Realization
+
+import Mathlib.Data.Finset.Sort
+import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Geometry.Convex.ConvexSpace.Cardinality
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
@@ -18,8 +21,8 @@ import TauCeti.LinearAlgebra.RootSystem.Reduced
 Fixing a finite sequence of velocities `v₀, …, v_l` in a vector space `V` over an ordered field `𝕜`
 parametrizes a family of duration-one piecewise-linear paths indexed by the standard `l`-simplex
 `Convexity.StdSimplex 𝕜 (Fin (l + 1))`: a weight vector `w` traverses `v_j` for duration `w_j`,
-producing the displacement `w_j • v_j` on the interval `[t_j, t_{j+1}]` between cumulative break
-times `t_k = ∑_{j < k} w_j`.
+producing the displacement `w_j • v_j` on the interval `[t_j, t_{j+1}]` between cumulative prefix
+sums `t_k = ∑_{j < k} w_j`.
 
 Up to piecewise-linear reparametrization (`TauCeti.PLPath`), this evaluation `chainSimplexPath`
 satisfies a universal simplicial law (`TauCeti.PLPath.chainSimplexPath_map_orderHom`): pushing
@@ -29,32 +32,35 @@ pulling velocities back along `φ`. Two elementary identifications are special c
 * **Face inclusion** (`φ = p.succAboveOrderEmb`): setting the `p`-th weight to `0` identifies the
   facet opposite vertex `p` with the `(l - 1)`-simplex obtained by omitting direction `v_p`.
 * **Adjacent-direction merge** (`φ = p.predAboveOrderHom`): when `v_p = v_{p+1}`, adding the two
-  adjacent weights `w_p + w_{p+1}` and deleting the internal break time `t_{p+1}` identifies the
-  `(l + 1)`-simplex with the `l`-simplex in which the duplicate direction has been merged.
+  adjacent weights `w_p + w_{p+1}` and deleting the internal prefix sum `t_{p+1}` identifies the
+  `l`-simplex with the `(l - 1)`-simplex in which the duplicate direction has been merged.
 
-Conversely, when the velocities `v_j` are pairwise distinct elements of a set `S` with no two
-distinct vectors in the same ray (such as a Weyl orbit `W λ`), `chainSimplexPath` is injective on
-the **entire closed simplex** (`TauCeti.PLPath.chainSimplexPath_injective`), recovering both the
-support face of nonvanishing weights and the weights themselves from the unparametrized path.
+Conversely, when no two velocities at distinct indices lie in the same ray (as on distinct orbit
+weights in `W λ`), `chainSimplexPath` is injective on the **entire closed simplex**
+(`TauCeti.PLPath.chainSimplexPath_injective`), recovering both the support face of nonvanishing
+weights and the weights themselves from the unparametrized path.
 
-Specializing to a direction sequence `τ₀ > τ₁ > ⋯ > τ_l` in the parabolic quotient `W / W_λ` of a
-root datum, the Lakshmibai–Seshadri paths of dominant shape `λ` supported on subchains of `τ` cut
-out a **finite** subset `TauCeti.LSPath.lsChainSimplexSet` of the closed simplex, characterized on
-the open simplex by positivity of weights and divisibility of internal break denominators by the
-interval bond gcds `d_λ(τ_j, τ_{j+1})`
-(`TauCeti.LSPath.isLSChainBreak_iff_den_dvd_intervalBondGcd`). Whenever `1 ≤ l`, this finite LS
-subset is a strict subset of the simplex continuum (both over `ℚ` and over `ℝ`); only at a
-single-direction vertex `l = 0` does it exhaust the `0`-simplex.
+Specializing to a direction sequence `τ₀ > τ₁ > ⋯ > τ_l` of minimal coset representatives for
+`P.wallIndices b lam`, the rational break-chain integrality predicate
+`TauCeti.LSPath.IsLSChainBreak` on `StdSimplex ℚ (Fin (l + 1))` is characterized for dominant `λ`
+by positivity of weights and divisibility of internal break denominators by the interval bond gcds
+`d_λ(τ_j, τ_{j+1})` (`TauCeti.LSPath.isLSChainBreak_iff_den_dvd_intervalBondGcd`). Over any ordered
+field `𝕜`, the Lakshmibai–Seshadri paths of shape `λ` supported on order-embedded subchains of `τ`
+cut out the subset `TauCeti.LSPath.lsChainSimplexSet 𝕜 τ` of the closed simplex, whose open-simplex
+points are precisely the scalar pushforwards along `Rat.castHom 𝕜` of rational points satisfying
+`IsLSChainBreak` (`TauCeti.LSPath.mem_lsChainSimplexSet_and_weights_pos_iff`). For dominant `λ`,
+this subset is finite (`TauCeti.LSPath.finite_lsChainSimplexSet`) and strictly smaller than the
+simplex whenever `1 ≤ l` (`TauCeti.LSPath.lsChainSimplexSet_ssubset_univ_iff`).
 
 ## Main definitions
 
-* `TauCeti.PLPath.chainSimplexTimed`, `TauCeti.PLPath.chainSimplexPath`: the timed presentation and
-  reparametrization class of a standard-simplex weight vector along a velocity sequence.
+* `TauCeti.PLPath.chainSimplexTimed`, `TauCeti.PLPath.chainSimplexPath`: the duration-one list of
+  `(duration, displacement)` pairs (a timed presentation on the open simplex) and reparametrization
+  class of a standard-simplex weight vector along a velocity sequence.
 * `TauCeti.LSPath.durationSimplex`: the rational standard-simplex point of segment durations of an
   LS path.
 * `TauCeti.LSPath.IsLSChainBreak`, `TauCeti.LSPath.ofChainSimplex`: the break-chain integrality
   predicate on `StdSimplex ℚ (Fin (l + 1))` and the LS encoding it constructs.
-* `TauCeti.LSPath.single`: the zero-break LS path running along any minimal coset representative.
 * `TauCeti.LSPath.lsChainSimplexSet`: the subset of `StdSimplex 𝕜 (Fin (l + 1))` cut out by LS paths
   on order-embedded subchains of a fixed direction chain.
 
@@ -62,13 +68,14 @@ single-direction vertex `l = 0` does it exhaust the `0`-simplex.
 
 * `TauCeti.PLPath.chainSimplexPath_map_orderHom`: functoriality of `chainSimplexPath` under all
   monotone maps `Fin m →o Fin n`, with specializations `chainSimplexPath_map_succAbove` (faces) and
-  `chainSimplexPath_map_predAbove` (merging equal adjacent directions).
-* `TauCeti.PLPath.chainSimplexPath_injective`: injectivity on the closed simplex when velocities
-  are distinct and pairwise non-collinear along rays.
+  `TauCeti.PLPath.chainSimplexPath_map_predAbove` (merging equal adjacent directions).
+* `TauCeti.PLPath.chainSimplexPath_injective`: injectivity on the closed simplex when distinct
+  indices have velocities in distinct rays.
 * `TauCeti.LSPath.isLSChainBreak_iff_den_dvd_intervalBondGcd`: break-chain integrality via interval
   bond gcds for dominant shapes.
-* `TauCeti.LSPath.chainSimplexPath_mem_range_toPLPath_iff`: a closed-simplex point realizes an LS
-  path of dominant shape `λ` if and only if it belongs to `lsChainSimplexSet`.
+* `TauCeti.LSPath.mem_lsChainSimplexSet_and_weights_pos_iff` and
+  `TauCeti.LSPath.chainSimplexPath_mem_range_toPLPath_iff`: open-simplex and closed-simplex
+  characterizations of `lsChainSimplexSet`.
 * `TauCeti.LSPath.finite_lsChainSimplexSet`, `TauCeti.LSPath.lsChainSimplexSet_ssubset_univ_iff`:
   finiteness of the LS subset and strict containment in the simplex whenever `1 ≤ l`.
 
@@ -90,9 +97,10 @@ variable {𝕜 V : Type*} [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 
   [AddCommGroup V] [Module 𝕜 V]
 
 omit [IsStrictOrderedRing 𝕜] in
-/-- The duration-one timed presentation associated to a velocity sequence `v : Fin n → V` and a
-barycentric weight vector `w : StdSimplex 𝕜 (Fin n)`: the `j`-th piece has duration `w_j` and
-displacement `w_j • v_j`. -/
+/-- The duration-one list of `(duration, displacement)` pairs associated to a velocity sequence
+`v : Fin n → V` and a barycentric weight vector `w : StdSimplex 𝕜 (Fin n)`: the `j`-th entry is
+`(w_j, w_j • v_j)`. On the open simplex where every weight is positive, this is a timed
+presentation (`PLPath.IsTimed`). -/
 def chainSimplexTimed {n : ℕ} (v : Fin n → V) (w : Convexity.StdSimplex 𝕜 (Fin n)) :
     List (𝕜 × V) :=
   List.ofFn fun j ↦ (w.weights j, w.weights j • v j)
@@ -121,7 +129,7 @@ theorem ofSegments_map_snd_chainSimplexTimed {n : ℕ} (v : Fin n → V)
   simp [chainSimplexTimed_def, chainSimplexPath_def, Function.comp_def]
 
 omit [IsStrictOrderedRing 𝕜] in
-/-- The timed presentation of a standard-simplex point has total duration `1`. -/
+/-- `chainSimplexTimed v w` has total duration `1`. -/
 @[simp]
 theorem duration_chainSimplexTimed {n : ℕ} (v : Fin n → V) (w : Convexity.StdSimplex 𝕜 (Fin n)) :
     duration (chainSimplexTimed v w) = 1 := by
@@ -173,6 +181,7 @@ private theorem ofSegments_sum_ite_orderHom {m n : ℕ} {a : Fin m → 𝕜} (ha
           ⟨fun i ↦ (φ i).pred (hpos i), fun i j hij ↦ by
             rw [← Fin.succ_le_succ_iff, Fin.succ_pred, Fin.succ_pred]
             exact φ.monotone hij⟩
+        have hψ : ⇑ψ = fun i ↦ (φ i).pred (hpos i) := OrderHom.coe_mk _ _
         have hstep := ih_n (v ∘ Fin.succ) ψ
         rw [List.ofFn_succ]
         simp only [hpos, ↓reduceIte, Finset.sum_const_zero, zero_smul, ofSegments_zero_cons]
@@ -180,13 +189,11 @@ private theorem ofSegments_sum_ite_orderHom {m n : ℕ} {a : Fin m → 𝕜} (ha
         · congr 1
           funext k
           have hiff (i : Fin (m + 1)) : φ i = k.succ ↔ ψ i = k := by
-            change φ i = k.succ ↔ (φ i).pred (hpos i) = k
-            rw [Fin.pred_eq_iff_eq_succ]
+            simp [hψ, Fin.pred_eq_iff_eq_succ]
           simp [hiff]
         · congr 1
           funext i
-          change a i • v (φ i) = a i • v (ψ i).succ
-          rw [show (ψ i).succ = φ i from Fin.succ_pred (φ i) (hpos i)]
+          simp [hψ]
 
 /-- **Simplicial functoriality of fixed-chain simplex paths.** Pushing barycentric weights forward
 along any monotone map `φ : Fin m →o Fin n` produces the same path modulo reparametrization as
@@ -219,22 +226,14 @@ theorem chainSimplexPath_map_succAbove {n : ℕ} (v : Fin (n + 1) → V) (p : Fi
 
 /-- **Merging equal adjacent directions.** When `v p.castSucc = v p.succ`, collapsing the two
 adjacent vertices along `p.predAbove` (summing weights `w p.castSucc + w p.succ` and deleting the
-internal break `p.castSucc.succ`) leaves the presented piecewise-linear path unchanged. -/
-theorem chainSimplexPath_map_predAbove {n : ℕ} {v : Fin (n + 2) → V} {p : Fin (n + 1)}
-    (hv : v p.castSucc = v p.succ) (w : Convexity.StdSimplex 𝕜 (Fin (n + 2))) :
+internal prefix sum `p.castSucc.succ`) leaves the presented piecewise-linear path unchanged. -/
+theorem chainSimplexPath_map_predAbove {n : ℕ} {v : Fin (n + 1) → V} {p : Fin n}
+    (hv : v p.castSucc = v p.succ) (w : Convexity.StdSimplex 𝕜 (Fin (n + 1))) :
     chainSimplexPath (v ∘ p.succ.succAbove) (w.map p.predAbove) = chainSimplexPath v w := by
   have hord : chainSimplexPath (v ∘ p.succ.succAbove) (w.map p.predAbove) =
       chainSimplexPath ((v ∘ p.succ.succAbove) ∘ p.predAbove) w :=
     chainSimplexPath_map_orderHom (v ∘ p.succ.succAbove) p.predAboveOrderHom w
-  rw [hord]
-  congr 1
-  funext i
-  by_cases hi : i = p.succ
-  · subst hi
-    have hpred : p.predAbove p.succ = p := by
-      rw [Fin.predAbove_of_castSucc_lt _ _ p.castSucc_lt_succ, Fin.pred_succ]
-    simp [Function.comp_apply, hpred, Fin.succAbove_of_castSucc_lt _ _ p.castSucc_lt_succ, hv]
-  · simp [Function.comp_apply, Fin.succ_succAbove_predAbove hi]
+  rw [hord, Fin.comp_succ_succAbove_comp_predAbove hv]
 
 /-- Linear images commute with `chainSimplexPath`. -/
 @[simp]
@@ -251,8 +250,9 @@ variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
   [AddCommGroup V] [Module 𝕜 V]
 
 omit [IsStrictOrderedRing 𝕜] in
-/-- On the open interior of a standard simplex (where every weight is strictly positive), the timed
-presentation of a velocity sequence in `S` with distinct adjacent velocities is distinguished. -/
+/-- On the open interior of a standard simplex (where every weight is strictly positive),
+`chainSimplexTimed v w` for a velocity sequence in `S` with distinct adjacent velocities is a
+distinguished timed presentation. -/
 theorem isDistinguished_chainSimplexTimed {n : ℕ} {S : Set V} {v : Fin n → V}
     (hvS : ∀ j, v j ∈ S) (hvne : ∀ i : Fin n, ∀ h : i.val + 1 < n, v i ≠ v ⟨i.val + 1, h⟩)
     {w : Convexity.StdSimplex 𝕜 (Fin n)} (hw : ∀ j, 0 < w.weights j) :
@@ -277,9 +277,7 @@ theorem isDistinguished_chainSimplexTimed {n : ℕ} {S : Set V} {v : Fin n → V
 a distinguished timed presentation of `chainSimplexPath v w`. -/
 private theorem isDistinguished_support_chainSimplexTimed {n : ℕ} {S : Set V} {v : Fin n → V}
     (hv : Function.Injective v) (hvS : ∀ j, v j ∈ S) (w : Convexity.StdSimplex 𝕜 (Fin n)) :
-    let φ : Fin w.weights.support.card ↪o Fin n :=
-      (w.weights.support.orderIsoOfFin rfl).toOrderEmbedding.trans
-        (OrderEmbedding.subtype (· ∈ w.weights.support))
+    let φ : Fin w.weights.support.card ↪o Fin n := w.weights.support.orderEmbOfFin rfl
     ∃ w' : Convexity.StdSimplex 𝕜 (Fin w.weights.support.card),
       w'.map φ = w ∧
         (∀ i, w'.weights i = w.weights (φ i)) ∧
@@ -287,14 +285,11 @@ private theorem isDistinguished_support_chainSimplexTimed {n : ℕ} {S : Set V} 
         (chainSimplexTimed (v ∘ φ) w').map (fun x ↦ x.1⁻¹ • x.2) = List.ofFn (v ∘ φ) := by
   intro φ
   have hrange : ↑w.weights.support ⊆ Set.range φ := by
-    intro j hj
-    exact ⟨(w.weights.support.orderIsoOfFin rfl).symm ⟨j, hj⟩,
-      congrArg Subtype.val ((w.weights.support.orderIsoOfFin rfl).apply_symm_apply ⟨j, hj⟩)⟩
+    simp [φ]
   let w' := w.comap φ.injective hrange
   have hw'pos (i : Fin w.weights.support.card) : 0 < w'.weights i := by
     rw [Convexity.StdSimplex.weights_comap_apply]
-    have hmem : φ i ∈ w.weights.support := ((w.weights.support.orderIsoOfFin rfl) i).2
-    exact (w.nonneg (φ i)).lt_of_ne' (Finsupp.mem_support_iff.mp hmem)
+    exact (w.nonneg (φ i)).lt_of_ne' (Finsupp.mem_support_iff.mp (Finset.orderEmbOfFin_mem _ _ i))
   have hslope (i : Fin w.weights.support.card) :
       (w'.weights i)⁻¹ • (w'.weights i • v (φ i)) = v (φ i) :=
     inv_smul_smul₀ (hw'pos i).ne' _
@@ -305,23 +300,24 @@ private theorem isDistinguished_support_chainSimplexTimed {n : ℕ} {S : Set V} 
         (φ.injective (hv h))) hw'pos, ?_⟩
   simp [chainSimplexTimed_def, Function.comp_def, hslope]
 
-/-- **Closed-simplex injectivity of `chainSimplexPath`.** When `v : Fin n → V` takes pairwise
-distinct values in a set `S` with no two distinct vectors in the same ray (such as a Weyl orbit of
-any weight, including `0`), `chainSimplexPath v` is injective on the entire closed standard simplex
-`StdSimplex 𝕜 (Fin n)`. -/
-theorem chainSimplexPath_injective {n : ℕ} {S : Set V} {v : Fin n → V}
-    (hv : Function.Injective v) (hvS : ∀ j, v j ∈ S)
-    (hS : S.Pairwise fun x y ↦ ¬ SameRay 𝕜 x y) :
+/-- **Closed-simplex injectivity of `chainSimplexPath`.** When velocities at distinct indices never
+lie in the same ray (for example along distinct vectors of any Weyl orbit, including `0`),
+`chainSimplexPath v` is injective on the entire closed standard simplex `StdSimplex 𝕜 (Fin n)`. -/
+theorem chainSimplexPath_injective {n : ℕ} {v : Fin n → V}
+    (hv : Pairwise fun i j ↦ ¬ SameRay 𝕜 (v i) (v j)) :
     Function.Injective (chainSimplexPath (𝕜 := 𝕜) v) := by
+  have hvinj : Function.Injective v := fun i j hij ↦
+    by_contra fun hne ↦ hv hne (hij ▸ SameRay.refl _)
+  have hS : (Set.range v).Pairwise fun x y ↦ ¬ SameRay 𝕜 x y := by
+    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩ hne
+    exact hv (ne_of_apply_ne v hne)
   intro w₁ w₂ hpath
-  set φ₁ : Fin w₁.weights.support.card ↪o Fin n :=
-    (w₁.weights.support.orderIsoOfFin rfl).toOrderEmbedding.trans
-      (OrderEmbedding.subtype (· ∈ w₁.weights.support))
-  set φ₂ : Fin w₂.weights.support.card ↪o Fin n :=
-    (w₂.weights.support.orderIsoOfFin rfl).toOrderEmbedding.trans
-      (OrderEmbedding.subtype (· ∈ w₂.weights.support))
-  obtain ⟨w₁', hw₁map, hw₁wt, hd₁, hsl₁⟩ := isDistinguished_support_chainSimplexTimed hv hvS w₁
-  obtain ⟨w₂', hw₂map, hw₂wt, hd₂, hsl₂⟩ := isDistinguished_support_chainSimplexTimed hv hvS w₂
+  set φ₁ : Fin w₁.weights.support.card ↪o Fin n := w₁.weights.support.orderEmbOfFin rfl
+  set φ₂ : Fin w₂.weights.support.card ↪o Fin n := w₂.weights.support.orderEmbOfFin rfl
+  obtain ⟨w₁', hw₁map, -, hd₁, hsl₁⟩ :=
+    isDistinguished_support_chainSimplexTimed (S := Set.range v) hvinj (fun j ↦ ⟨j, rfl⟩) w₁
+  obtain ⟨w₂', hw₂map, -, hd₂, hsl₂⟩ :=
+    isDistinguished_support_chainSimplexTimed (S := Set.range v) hvinj (fun j ↦ ⟨j, rfl⟩) w₂
   have hp : chainSimplexTimed (v ∘ φ₁) w₁' = chainSimplexTimed (v ∘ φ₂) w₂' := by
     refine hd₁.unique hd₂ hS ?_
     have hm₁ : chainSimplexPath v (w₁'.map φ₁) = chainSimplexPath (v ∘ φ₁) w₁' :=
@@ -337,28 +333,16 @@ theorem chainSimplexPath_injective {n : ℕ} {S : Set V} {v : Fin n → V}
   have hcard : w₁.weights.support.card = w₂.weights.support.card := by
     simpa using congrArg List.length hsl
   rw [List.ofFn_congr hcard.symm] at hsl hwt
-  have hφeq (i : Fin w₁.weights.support.card) : φ₁ i = φ₂ (i.cast hcard) :=
-    hv (congrFun (List.ofFn_injective hsl) i)
-  have hwteq (i : Fin w₁.weights.support.card) :
-      w₁.weights (φ₁ i) = w₂.weights (φ₂ (i.cast hcard)) := by
-    rw [← hw₁wt i, ← hw₂wt (i.cast hcard)]
+  let e : Fin w₁.weights.support.card ≃ Fin w₂.weights.support.card := finCongr hcard
+  have hw₁₂ : w₁'.map e = w₂' := by
+    ext k
+    obtain ⟨i, rfl⟩ := e.surjective k
+    rw [Convexity.StdSimplex.weights_map_apply_of_injective e.injective]
     exact congrFun (List.ofFn_injective hwt) i
-  ext j
-  by_cases hj₁ : j ∈ w₁.weights.support
-  · obtain ⟨i, hi⟩ : ∃ i, φ₁ i = j :=
-      ⟨(w₁.weights.support.orderIsoOfFin rfl).symm ⟨j, hj₁⟩,
-        congrArg Subtype.val ((w₁.weights.support.orderIsoOfFin rfl).apply_symm_apply ⟨j, hj₁⟩)⟩
-    rw [← hi, hwteq i, ← hφeq i]
-  · have hj₂ : j ∉ w₂.weights.support := by
-      intro hj₂
-      obtain ⟨i₂, hi₂⟩ : ∃ i₂, φ₂ i₂ = j :=
-        ⟨(w₂.weights.support.orderIsoOfFin rfl).symm ⟨j, hj₂⟩,
-          congrArg Subtype.val ((w₂.weights.support.orderIsoOfFin rfl).apply_symm_apply ⟨j, hj₂⟩)⟩
-      have hmem : φ₁ (i₂.cast hcard.symm) ∈ w₁.weights.support :=
-        ((w₁.weights.support.orderIsoOfFin rfl) (i₂.cast hcard.symm)).2
-      rw [hφeq, Fin.cast_cast, Fin.cast_eq_self, hi₂] at hmem
-      exact hj₁ hmem
-    rw [Finsupp.notMem_support_iff.mp hj₁, Finsupp.notMem_support_iff.mp hj₂]
+  have hcomp : (φ₂ : Fin w₂.weights.support.card → Fin n) ∘ e = φ₁ := by
+    funext i
+    exact (hvinj (congrFun (List.ofFn_injective hsl) i)).symm
+  rw [← hw₁map, ← hw₂map, ← hw₁₂, ← Convexity.StdSimplex.map_comp, hcomp]
 
 end Injectivity
 
@@ -372,37 +356,6 @@ variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
 section DurationSimplex
-
-/-- The zero-break Lakshmibai–Seshadri path running along a single minimal coset representative `τ`
-of `W / W_λ` from time `0` to time `1`. When `τ = 1` this is `TauCeti.LSPath.straight`. -/
-noncomputable def single
-    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
-    LSPath P b lam where
-  length := 0
-  dir _ := τ
-  time := ![0, 1]
-  time_zero := rfl
-  time_last := rfl
-  strictMono_time := Fin.strictMono_iff_lt_succ.mpr fun j ↦ by
-    fin_cases j
-    simp
-  dir_succ_ne j := j.elim0
-  exists_isAChain j := j.elim0
-
-/-- `LSPath.single τ` has zero internal breaks. -/
-@[simp]
-theorem length_single
-    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
-    (single τ : LSPath P b lam).length = 0 :=
-  (rfl)
-
-/-- The sole segment direction of `LSPath.single τ` is `τ`. -/
-@[simp]
-theorem dir_single
-    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
-    (j : Fin ((single τ : LSPath P b lam).length + 1)) :
-    (single τ : LSPath P b lam).dir j = τ :=
-  (rfl)
 
 /-- The point of the rational standard `π.length`-simplex whose weights are the segment durations
 `a_{j+1} - a_j` of an LS path `π`. -/
@@ -433,20 +386,38 @@ theorem support_weights_durationSimplex (π : LSPath P b lam) :
   ext j
   simp [Finsupp.mem_support_iff, (π.duration_pos j).ne']
 
-/-- The cumulative break times of `π.durationSimplex` recover `π.time`. -/
+/-- The duration simplex of `LSPath.single τ` is the unique point `single 0` of the `0`-simplex. -/
 @[simp]
-theorem breakTime_durationSimplex (π : LSPath P b lam) (k : Fin (π.length + 2)) :
-    π.durationSimplex.breakTime k = π.time k := by
+theorem durationSimplex_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    (single τ : LSPath P b lam).durationSimplex = Convexity.StdSimplex.single 0 := by
+  ext j
+  have hj : j = 0 := Fin.ext (by have := j.isLt; have := length_single τ; simp; omega)
+  simp [hj]
+
+/-- The duration simplex of `LSPath.straight lam` is the unique point `single 0` of the
+`0`-simplex. -/
+@[simp]
+theorem durationSimplex_straight :
+    (straight lam : LSPath P b lam).durationSimplex = Convexity.StdSimplex.single 0 := by
+  ext j
+  have hj : j = 0 := Fin.ext
+    (by have := j.isLt; have := length_straight (P := P) (b := b) (lam := lam); simp; omega)
+  have hsucc : (0 : Fin ((straight (P := P) (b := b) lam).length + 1)).succ =
+      Fin.last ((straight (P := P) (b := b) lam).length + 1) :=
+    Fin.ext (by simp)
+  simp [hj, duration_def, hsucc]
+
+/-- The cumulative prefix sums of `π.durationSimplex` recover `π.time`. -/
+@[simp]
+theorem prefixSum_durationSimplex (π : LSPath P b lam) (k : Fin (π.length + 2)) :
+    π.durationSimplex.prefixSum k = π.time k := by
   have heq : π.durationSimplex =
-      (Convexity.StdSimplex.equivBreakTime ℚ π.length).symm
+      (Convexity.StdSimplex.equivPrefixSum ℚ (π.length + 1)).symm
         ⟨π.time, π.time_zero, π.time_last, π.strictMono_time.monotone⟩ := by
     ext j
     simp [duration_def]
-  have happ := congrFun (congrArg Subtype.val
-    ((Convexity.StdSimplex.equivBreakTime ℚ π.length).apply_symm_apply
-      ⟨π.time, π.time_zero, π.time_last, π.strictMono_time.monotone⟩)) k
-  rw [Convexity.StdSimplex.equivBreakTime_apply_coe] at happ
-  rwa [heq]
+  rw [heq, Convexity.StdSimplex.prefixSum_equivPrefixSum_symm]
 
 /-- Evaluating `chainSimplexTimed` at the scalar pushforward of `π.durationSimplex` recovers
 `π.timed`. -/
@@ -473,8 +444,8 @@ section BreakChainIntegrality
 
 /-- A rational standard-simplex point `w` satisfies the **Lakshmibai–Seshadri break-chain
 condition** along a direction sequence `dir` of shape `λ` if every weight is strictly positive (so
-`w` lies in the open simplex) and each internal cumulative break time `w.breakTime (j + 1)` admits
-an `a`-chain from `dir j` down to `dir (j + 1)` in `W / W_λ`. -/
+`w` lies in the open simplex) and each internal cumulative prefix sum `w.prefixSum (j + 1)` admits
+an `a`-chain from `dir j` down to `dir (j + 1)` for `P.wallIndices b lam`. -/
 def IsLSChainBreak {l : ℕ}
     (dir : Fin (l + 1) →
       {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
@@ -482,7 +453,19 @@ def IsLSChainBreak {l : ℕ}
   (∀ j, 0 < w.weights j) ∧
     ∀ j : Fin l, ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
       C.head = dir j.castSucc ∧ C.last = dir j.succ ∧
-        IsAChain (w.breakTime j.castSucc.succ) lam C
+        IsAChain (w.prefixSum j.castSucc.succ) lam C
+
+/-- Defining characterization of `TauCeti.LSPath.IsLSChainBreak`. -/
+theorem isLSChainBreak_iff {l : ℕ}
+    {dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    {w : Convexity.StdSimplex ℚ (Fin (l + 1))} :
+    IsLSChainBreak dir w ↔
+      (∀ j, 0 < w.weights j) ∧
+        ∀ j : Fin l, ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
+          C.head = dir j.castSucc ∧ C.last = dir j.succ ∧
+            IsAChain (w.prefixSum j.castSucc.succ) lam C :=
+  Iff.rfl
 
 /-- On a `0`-simplex (`l = 0`), the LS break-chain condition holds automatically at the unique
 point. -/
@@ -493,15 +476,16 @@ theorem isLSChainBreak_fin_one
   ⟨fun j ↦ by rw [w.weights_apply_eq_one j]; exact zero_lt_one, fun j ↦ j.elim0⟩
 
 /-- The duration simplex of any LS path satisfies `IsLSChainBreak` along its direction sequence. -/
+@[simp]
 theorem isLSChainBreak_durationSimplex (π : LSPath P b lam) :
     IsLSChainBreak π.dir π.durationSimplex := by
   refine ⟨π.weights_durationSimplex_pos, fun j ↦ ?_⟩
-  simpa only [breakTime_durationSimplex] using π.exists_isAChain j
+  simpa only [prefixSum_durationSimplex] using π.exists_isAChain j
 
 /-- **Interval bond gcd criterion for `IsLSChainBreak`.** For a dominant shape `λ` and a decreasing
 direction sequence in `W / W_λ`, a rational simplex point `w` satisfies `IsLSChainBreak` if and
-only if all its weights are positive and the denominator of each internal cumulative break time
-`w.breakTime (j + 1)` divides the interval bond gcd `d_λ(dir j, dir (j + 1))`. -/
+only if all its weights are positive and the denominator of each internal cumulative prefix sum
+`w.prefixSum (j + 1)` divides the interval bond gcd `d_λ(dir j, dir (j + 1))`. -/
 theorem isLSChainBreak_iff_den_dvd_intervalBondGcd (hlam : lam ∈ dominantChamber P b) {l : ℕ}
     {dir : Fin (l + 1) →
       {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
@@ -509,7 +493,7 @@ theorem isLSChainBreak_iff_den_dvd_intervalBondGcd (hlam : lam ∈ dominantChamb
     (w : Convexity.StdSimplex ℚ (Fin (l + 1))) :
     IsLSChainBreak dir w ↔
       (∀ j, 0 < w.weights j) ∧
-        ∀ j : Fin l, (w.breakTime j.castSucc.succ).den ∣
+        ∀ j : Fin l, (w.prefixSum j.castSucc.succ).den ∣
           intervalBondGcd b lam (dir j.castSucc).1 (dir j.succ).1 := by
   refine and_congr_right' (forall_congr' fun j ↦ ?_)
   simpa only [Subtype.ext_iff] using
@@ -525,10 +509,10 @@ noncomputable def ofChainSimplex {l : ℕ}
     LSPath P b lam where
   length := l
   dir := dir
-  time := w.breakTime
-  time_zero := w.breakTime_zero
-  time_last := w.breakTime_last
-  strictMono_time := w.strictMono_breakTime_iff.mpr hw.1
+  time := w.prefixSum
+  time_zero := w.prefixSum_zero
+  time_last := w.prefixSum_last
+  strictMono_time := w.strictMono_prefixSum_iff.mpr hw.1
   dir_succ_ne := hne
   exists_isAChain := hw.2
 
@@ -554,7 +538,7 @@ theorem dir_ofChainSimplex {l : ℕ}
       dir (j.cast (congrArg (· + 1) (length_ofChainSimplex dir hne w hw))) :=
   (rfl)
 
-/-- The break-time sequence of `ofChainSimplex` is `w.breakTime`. -/
+/-- The break-time sequence of `ofChainSimplex` is `w.prefixSum`. -/
 @[simp]
 theorem time_ofChainSimplex {l : ℕ}
     (dir : Fin (l + 1) →
@@ -563,7 +547,7 @@ theorem time_ofChainSimplex {l : ℕ}
     (w : Convexity.StdSimplex ℚ (Fin (l + 1))) (hw : IsLSChainBreak dir w)
     (k : Fin ((ofChainSimplex dir hne w hw).length + 2)) :
     (ofChainSimplex dir hne w hw).time k =
-      w.breakTime (k.cast (congrArg (· + 2) (length_ofChainSimplex dir hne w hw))) :=
+      w.prefixSum (k.cast (congrArg (· + 2) (length_ofChainSimplex dir hne w hw))) :=
   (rfl)
 
 /-- The segment durations of `ofChainSimplex` recover the weights of `w`. -/
@@ -577,10 +561,49 @@ theorem duration_ofChainSimplex {l : ℕ}
     (ofChainSimplex dir hne w hw).duration j =
       w.weights (j.cast (congrArg (· + 1) (length_ofChainSimplex dir hne w hw))) := by
   simp only [duration_def, time_ofChainSimplex]
-  exact w.breakTime_succ_sub_castSucc
+  exact w.prefixSum_succ_sub_castSucc
     (j.cast (congrArg (· + 1) (length_ofChainSimplex dir hne w hw)))
 
+/-- Taking `durationSimplex` of `ofChainSimplex` recovers `w` up to index casting. -/
+@[simp]
+theorem durationSimplex_ofChainSimplex {l : ℕ}
+    (dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+    (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc)
+    (w : Convexity.StdSimplex ℚ (Fin (l + 1))) (hw : IsLSChainBreak dir w) :
+    (ofChainSimplex dir hne w hw).durationSimplex =
+      w.map (finCongr (congrArg (· + 1) (length_ofChainSimplex dir hne w hw)).symm) := by
+  let e := finCongr (congrArg (· + 1) (length_ofChainSimplex dir hne w hw)).symm
+  ext k
+  obtain ⟨j, rfl⟩ := e.surjective k
+  rw [Convexity.StdSimplex.weights_map_apply_of_injective e.injective,
+    weights_durationSimplex_apply, duration_ofChainSimplex]
+  simp [e]
+
+/-- Reconstructing an LS path from `π.dir` and `π.durationSimplex` recovers `π`. -/
+@[simp]
+theorem ofChainSimplex_durationSimplex (π : LSPath P b lam)
+    (hne : ∀ j : Fin π.length, π.dir j.succ ≠ π.dir j.castSucc)
+    (hw : IsLSChainBreak π.dir π.durationSimplex) :
+    ofChainSimplex π.dir hne π.durationSimplex hw = π := by
+  apply LSPath.ext
+  · rfl
+  · exact congrArg List.ofFn (funext π.prefixSum_durationSimplex)
+
+/-- `ofChainSimplex` determines the underlying rational simplex point `w`. -/
+theorem ofChainSimplex_injective {l : ℕ}
+    {dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc)
+    {w₁ w₂ : Convexity.StdSimplex ℚ (Fin (l + 1))}
+    (hw₁ : IsLSChainBreak dir w₁) (hw₂ : IsLSChainBreak dir w₂)
+    (h : ofChainSimplex dir hne w₁ hw₁ = ofChainSimplex dir hne w₂ hw₂) :
+    w₁ = w₂ :=
+  Convexity.StdSimplex.prefixSum_injective
+    (List.ofFn_injective (congrArg (fun π ↦ List.ofFn π.time) h))
+
 /-- Realizing `ofChainSimplex` gives `chainSimplexPath` at the scalar pushforward of `w`. -/
+@[simp]
 theorem toPLPath_ofChainSimplex {l : ℕ}
     (dir : Fin (l + 1) →
       {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
@@ -604,33 +627,24 @@ theorem finite_setOf_isLSChainBreak (hlam : lam ∈ dominantChamber P b) {l : �
     {w : Convexity.StdSimplex ℚ (Fin (l + 1)) | IsLSChainBreak dir w}.Finite := by
   have := LSPath.finite hlam
   rw [← Set.finite_coe_iff]
-  refine Finite.of_injective (fun w : {w // IsLSChainBreak dir w} ↦ ofChainSimplex dir hne w.1 w.2)
-    fun w₁ w₂ h ↦ Subtype.ext ?_
-  have hd : List.ofFn (ofChainSimplex dir hne w₁.1 w₁.2).duration =
-      List.ofFn (ofChainSimplex dir hne w₂.1 w₂.2).duration :=
-    congrArg (fun π ↦ List.ofFn π.duration) h
-  have hw (u : {w // IsLSChainBreak dir w}) :
-       List.ofFn (ofChainSimplex dir hne u.1 u.2).duration = List.ofFn u.1.weights := by
-    rw [List.ofFn_congr (congrArg (· + 1) (length_ofChainSimplex dir hne u.1 u.2))]
-    simp
-  rw [hw w₁, hw w₂] at hd
-  ext j
-  exact congrFun (List.ofFn_injective hd) j
+  exact Finite.of_injective (fun w : {w // IsLSChainBreak dir w} ↦ ofChainSimplex dir hne w.1 w.2)
+    fun w₁ w₂ h ↦ Subtype.ext (ofChainSimplex_injective hne w₁.2 w₂.2 h)
 
-/-- Even inside the rational `l`-simplex, the break-integral points form a strict subset whenever
-`1 ≤ l` (and exhaust the `0`-simplex when `l = 0`). -/
-theorem setOf_isLSChainBreak_ssubset_univ_iff (hlam : lam ∈ dominantChamber P b) {l : ℕ}
-    {dir : Fin (l + 1) →
-      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
-    (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc) :
+/-- Inside the rational `l`-simplex, the points satisfying `IsLSChainBreak` form a strict subset
+whenever `1 ≤ l` (and exhaust the `0`-simplex when `l = 0`). -/
+theorem setOf_isLSChainBreak_ssubset_univ_iff {l : ℕ}
+    (dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
     {w : Convexity.StdSimplex ℚ (Fin (l + 1)) | IsLSChainBreak dir w} ⊂ Set.univ ↔ 1 ≤ l := by
   rw [Set.ssubset_univ_iff]
   rcases Nat.eq_zero_or_pos l with rfl | hl
   · simp
   · refine iff_of_true (fun huniv ↦ ?_) hl
-    have : Nontrivial (Fin (l + 1)) := ⟨⟨0, by omega⟩, ⟨1, by omega⟩, by simp⟩
-    have : Infinite (Convexity.StdSimplex ℚ (Fin (l + 1))) := Convexity.StdSimplex.infinite
-    exact Set.infinite_univ (huniv ▸ finite_setOf_isLSChainBreak hlam hne)
+    have hmem : Convexity.StdSimplex.single (0 : Fin (l + 1)) ∈
+        {w : Convexity.StdSimplex ℚ (Fin (l + 1)) | IsLSChainBreak dir w} :=
+      huniv ▸ Set.mem_univ _
+    have hpos := hmem.1 ⟨1, by omega⟩
+    simp at hpos
 
 end BreakChainIntegrality
 
@@ -650,6 +664,70 @@ def lsChainSimplexSet {l : ℕ}
       (π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_mono).map φ = x}
 
 variable {𝕜}
+
+/-- Membership characterization of `TauCeti.LSPath.lsChainSimplexSet`. -/
+theorem mem_lsChainSimplexSet_iff {l : ℕ}
+    {dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    {x : Convexity.StdSimplex 𝕜 (Fin (l + 1))} :
+    x ∈ lsChainSimplexSet 𝕜 dir ↔
+      ∃ (π : LSPath P b lam) (φ : Fin (π.length + 1) ↪o Fin (l + 1)),
+        dir ∘ φ = π.dir ∧
+          (π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_mono).map φ = x :=
+  Iff.rfl
+
+/-- **Open-simplex characterization of `lsChainSimplexSet`.** For a direction sequence `dir` with
+distinct adjacent directions, a point `x` in the open interior of `StdSimplex 𝕜 (Fin (l + 1))`
+(where every weight is strictly positive) belongs to `lsChainSimplexSet 𝕜 dir` if and only if it is
+the scalar pushforward along `Rat.castHom 𝕜` of a rational simplex point satisfying
+`IsLSChainBreak dir`. -/
+theorem mem_lsChainSimplexSet_and_weights_pos_iff {l : ℕ}
+    {dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc)
+    (x : Convexity.StdSimplex 𝕜 (Fin (l + 1))) :
+    x ∈ lsChainSimplexSet 𝕜 dir ∧ (∀ j, 0 < x.weights j) ↔
+      ∃ w : Convexity.StdSimplex ℚ (Fin (l + 1)),
+        IsLSChainBreak dir w ∧ w.mapRange (Rat.castHom 𝕜) Rat.cast_mono = x := by
+  constructor
+  · rintro ⟨⟨π, φ, hdir, rfl⟩, hpos⟩
+    have hsurj : Function.Surjective φ := fun j ↦ by
+      by_contra hj
+      have h0 :
+          ((π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_mono).map φ).weights j = 0 := by
+        rw [Convexity.StdSimplex.weights_map_apply]
+        exact Finset.sum_eq_zero fun i hi ↦
+          absurd (Finset.mem_filter.mp hi).2 fun h ↦ hj ⟨i, h⟩
+      exact (hpos j).ne' h0
+    have hcard := Fintype.card_of_bijective ⟨φ.injective, hsurj⟩
+    simp only [Fintype.card_fin] at hcard
+    have hlen : π.length = l := Nat.add_right_cancel hcard
+    cases π with | mk plen pdir ptime hz hlast hmono hpne hchain =>
+    dsimp only at hlen φ hdir hpos hsurj
+    subst hlen
+    have hφ : (φ : Fin (plen + 1) → Fin (plen + 1)) = id :=
+      (φ.strictMono.range_inj_of_wellFoundedLT strictMono_id).mp
+        (hsurj.range_eq.trans Set.range_id.symm)
+    have hdir' : dir = pdir := by simpa [hφ] using hdir
+    refine ⟨(LSPath.mk plen pdir ptime hz hlast hmono hpne hchain).durationSimplex,
+      hdir' ▸ (LSPath.mk plen pdir ptime hz hlast hmono hpne hchain).isLSChainBreak_durationSimplex,
+      ?_⟩
+    rw [hφ, Convexity.StdSimplex.map_id]
+  · rintro ⟨w, hw, rfl⟩
+    refine ⟨?_, fun j ↦ ?_⟩
+    · let π := ofChainSimplex dir hne w hw
+      let e := Fin.castOrderIso (congrArg (· + 1) (length_ofChainSimplex dir hne w hw))
+      let φ : Fin (π.length + 1) ↪o Fin (l + 1) := e.toOrderEmbedding
+      refine ⟨π, φ, by funext j; simp [π, φ, e], ?_⟩
+      have hcomp :
+          (φ : Fin (π.length + 1) → Fin (l + 1)) ∘
+            finCongr (congrArg (· + 1) (length_ofChainSimplex dir hne w hw)).symm = id := by
+        funext k
+        simp [φ, e]
+      rw [durationSimplex_ofChainSimplex, Convexity.StdSimplex.mapRange_map,
+        ← Convexity.StdSimplex.map_comp, hcomp, Convexity.StdSimplex.map_id]
+    · rw [Convexity.StdSimplex.weights_mapRange_apply]
+      exact Rat.cast_pos.mpr (hw.1 j)
 
 /-- Pushing `lsChainSimplexSet` along an order embedding of subchains carries LS points of the face
 into LS points of the ambient simplex. -/
@@ -674,10 +752,8 @@ theorem single_mem_lsChainSimplexSet {l : ℕ}
   let c : Fin 1 ↪o Fin (l + 1) :=
     ⟨⟨fun _ ↦ j, Function.injective_of_subsingleton _⟩,
       fun {a b} ↦ by simp [Subsingleton.elim a b]⟩
-  have hsub : Subsingleton (Fin ((single (dir j)).length + 1)) := e.toEquiv.subsingleton
   refine ⟨single (dir j), e.toOrderEmbedding.trans c, by funext k; simp [c], ?_⟩
-  rw [Subsingleton.elim ((single (dir j)).durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_mono)
-    (Convexity.StdSimplex.single 0), Convexity.StdSimplex.map_single]
+  rw [durationSimplex_single, Convexity.StdSimplex.mapRange_single, Convexity.StdSimplex.map_single]
   rfl
 
 /-- Every point of `lsChainSimplexSet` realizes a Lakshmibai–Seshadri path of shape `λ`. -/
@@ -723,9 +799,7 @@ theorem chainSimplexPath_mem_range_toPLPath_iff {V : Type*} [AddCommGroup V] [Mo
   have hv : Function.Injective v := fun j₁ j₂ h ↦
     hdir (Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam (dir j₁).2 (dir j₂).2
       (hf ⟨_, rfl⟩ ⟨_, rfl⟩ h)))
-  set ψ : Fin x.weights.support.card ↪o Fin (l + 1) :=
-    (x.weights.support.orderIsoOfFin rfl).toOrderEmbedding.trans
-      (OrderEmbedding.subtype (· ∈ x.weights.support))
+  set ψ : Fin x.weights.support.card ↪o Fin (l + 1) := x.weights.support.orderEmbOfFin rfl
   obtain ⟨x', hx'map, hx'wt, hdist, -⟩ :=
     PLPath.isDistinguished_support_chainSimplexTimed
       (S := Set.range fun w : P.weylGroup ↦ f (w • lam)) hv (fun j ↦ ⟨(dir j).1, rfl⟩) x
@@ -738,6 +812,9 @@ theorem chainSimplexPath_mem_range_toPLPath_iff {V : Type*} [AddCommGroup V] [Mo
   have hcard : π.length + 1 = x.weights.support.card := by
     simpa [PLPath.chainSimplexTimed_def, timed_def] using (congrArg List.length htimed).symm
   let φ : Fin (π.length + 1) ↪o Fin (l + 1) := (Fin.castOrderIso hcard).toOrderEmbedding.trans ψ
+  have hφcoe : (φ : Fin (π.length + 1) → Fin (l + 1)) = ψ ∘ Fin.castOrderIso hcard := by
+    dsimp only [φ]
+    rw [RelEmbedding.coe_trans, OrderIso.coe_toOrderEmbedding]
   rw [PLPath.chainSimplexTimed_def, timed_def, List.ofFn_congr hcard.symm] at htimed
   have hentry (i : Fin (π.length + 1)) :
       (x.weights (φ i), x.weights (φ i) • f ((dir (φ i)).1 • lam)) =
@@ -751,8 +828,7 @@ theorem chainSimplexPath_mem_range_toPLPath_iff {V : Type*} [AddCommGroup V] [Mo
     have hne : (π.duration i : 𝕜) ≠ 0 := Rat.cast_ne_zero.mpr (π.duration_pos i).ne'
     exact Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam (dir (φ i)).2 (π.dir i).2
       (hf ⟨_, rfl⟩ ⟨_, rfl⟩ (smul_right_injective V hne hsnd)))
-  · rw [← hx'map, show ⇑φ = ⇑ψ ∘ ⇑(Fin.castOrderIso hcard) from rfl,
-      Convexity.StdSimplex.map_comp]
+  · rw [← hx'map, hφcoe, Convexity.StdSimplex.map_comp]
     congr 1
     ext k
     obtain ⟨i, rfl⟩ := (Fin.castOrderIso hcard).surjective k
@@ -792,7 +868,6 @@ theorem lsChainSimplexSet_ssubset_univ_iff (hlam : lam ∈ dominantChamber P b) 
     exact single_mem_lsChainSimplexSet dir 0
   · refine iff_of_true (fun huniv ↦ ?_) hl
     have : Nontrivial (Fin (l + 1)) := ⟨⟨0, by omega⟩, ⟨1, by omega⟩, by simp⟩
-    have : Infinite (Convexity.StdSimplex 𝕜 (Fin (l + 1))) := Convexity.StdSimplex.infinite
     exact Set.infinite_univ (huniv ▸ finite_lsChainSimplexSet hlam dir)
 
 end ClosedChainSimplex

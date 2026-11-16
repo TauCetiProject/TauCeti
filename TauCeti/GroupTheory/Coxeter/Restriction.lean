@@ -215,12 +215,11 @@ include hf in
 theorem isReduced_map_iff {ω : List B} : cs'.IsReduced (ω.map f) ↔ cs.IsReduced ω := by
   rw [IsReduced, IsReduced, ← parabolicHom_wordProd cs hf, length_parabolicHom, List.length_map]
 
-/-- **The homomorphism `CoxeterSystem.parabolicHom` preserves and reflects the Bruhat order.** By
-the subword property, Bruhat comparisons are read off subwords of a reduced word, which `f`
-carries bijectively onto subwords of the mapped reduced word. -/
+/-- **The homomorphism `CoxeterSystem.parabolicHom` preserves and reflects the Bruhat order.** -/
 @[simp]
 theorem bruhatLE_parabolicHom_iff {u w : W} :
     cs'.BruhatLE (cs.parabolicHom cs' hf u) (cs.parabolicHom cs' hf w) ↔ cs.BruhatLE u w := by
+  -- `f` carries subwords of a reduced word bijectively onto subwords of the mapped reduced word.
   obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
   rw [parabolicHom_wordProd, cs'.bruhatLE_iff_exists_sublist_wordProd_eq
     ((isReduced_map_iff cs hf).mpr hω), cs.bruhatLE_iff_exists_sublist_wordProd_eq hω]
