@@ -207,8 +207,9 @@ end FinrankEq
 /-- **Exact constants descend to subextensions.** If `F` and `k'` are linearly disjoint over `k`
 inside `F'` and `k'` is the exact constant field of `F'`, then every subextension `M` of `k' / k`
 is the exact constant field of the compositum `F · M`. Neither separability of `k' / k` nor
-finiteness of `M / k` is needed: a constant `c ∈ k'` of `F · M` satisfies `F · M(c) ≤ F · M`, so
-linear disjointness gives `M(c) = M` (`TauCeti.eq_of_constantCompositum_le_of_linearDisjoint`). -/
+finiteness of `M / k` is needed: by linear disjointness, a constant `c ∈ k'` lies in `F · M`
+only if it lies in `M`
+(`TauCeti.algebraMap_mem_constantCompositum_iff_of_linearDisjoint`). -/
 theorem isIntegrallyClosedIn_constantCompositum_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     (hex' : IsIntegrallyClosedIn k' F') (M : IntermediateField k k') :
@@ -222,20 +223,8 @@ theorem isIntegrallyClosedIn_constantCompositum_of_linearDisjoint
   have hzM : IsIntegral M (z : F') := hz.isIntegral.map (IsScalarTower.toAlgHom M FM F')
   obtain ⟨c, hc⟩ :=
     isIntegrallyClosedIn_iff_forall_isAlgebraic.1 hex' _ hzM.tower_top.isAlgebraic
-  -- Adjoining `c` to `M` does not enlarge the compositum, so by linear disjointness it does not
-  -- enlarge `M` either.
-  let M' : IntermediateField k k' := M ⊔ k⟮c⟯
-  have hle : constantCompositum F M' F' ≤ FM := by
-    -- The constants of `F'` lying in `F · M` form an intermediate field containing `M` and `c`.
-    let N : IntermediateField k k' :=
-      (FM.restrictScalars k).comap (IsScalarTower.toAlgHom k k' F')
-    have hM'N : M' ≤ N := sup_le (fun m hm ↦ IntermediateField.mem_comap.2
-        (algebraMap_mem_constantCompositum F M F' ⟨m, hm⟩))
-      (IntermediateField.adjoin_simple_le_iff.2 (IntermediateField.mem_comap.2 (hc ▸ z.2)))
-    exact (constantCompositum_le_iff F M' F').2 fun m ↦ IntermediateField.mem_comap.1 (hM'N m.2)
-  have hMM' : M = M' := eq_of_constantCompositum_le_of_linearDisjoint H le_sup_left hle
   have hcM : c ∈ M :=
-    hMM' ▸ (le_sup_right : k⟮c⟯ ≤ M') (IntermediateField.mem_adjoin_simple_self k c)
+    (algebraMap_mem_constantCompositum_iff_of_linearDisjoint H).1 (hc ▸ z.2)
   exact ⟨⟨c, hcM⟩, Subtype.ext hc⟩
 
 variable [Algebra.IsSeparable k k']
