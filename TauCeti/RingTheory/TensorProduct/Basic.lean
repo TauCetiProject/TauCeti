@@ -15,6 +15,10 @@ is the pure tensor of the products: `∏ i ∈ s, a i ⊗ₜ b i = (∏ i ∈ s,
 This is the multiplicative counterpart of `TensorProduct.sum_tmul` and `TensorProduct.tmul_sum`,
 and extends `Algebra.TensorProduct.tmul_pow` from powers to products. For ordered list products
 neither factor needs to be commutative.
+
+For any `A ⊗[R] B`-algebra `Q` forming scalar towers with both `A` and `B`,
+`TauCeti.algebraMap_tensorProduct_tmul` expands `algebraMap (A ⊗[R] B) Q (a ⊗ₜ b)` as the product
+`algebraMap A Q a * algebraMap B Q b`.
 -/
 
 public section
@@ -55,3 +59,24 @@ theorem list_prod_ofFn_tmul [Semiring B] [Algebra R B] {n : ℕ} (a : Fin n → 
     List.prod_map_tmul (R := R) (List.ofFn (fun i : Fin n ↦ i)) a b
 
 end Algebra.TensorProduct
+
+namespace TauCeti
+
+section RightAlgebra
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+
+/-- In any `A ⊗[R] B`-algebra `Q` compatible with both factors, `algebraMap` sends a pure tensor
+`a ⊗ₜ b` to `algebraMap A Q a * algebraMap B Q b`. -/
+theorem algebraMap_tensorProduct_tmul {R A B Q : Type*} [CommSemiring R] [CommSemiring A]
+    [CommSemiring B] [Semiring Q] [Algebra R A] [Algebra R B] [Algebra (A ⊗[R] B) Q]
+    [Algebra A Q] [Algebra B Q] [IsScalarTower A (A ⊗[R] B) Q] [IsScalarTower B (A ⊗[R] B) Q]
+    (a : A) (b : B) :
+    algebraMap (A ⊗[R] B) Q (a ⊗ₜ[R] b) = algebraMap A Q a * algebraMap B Q b := by
+  have hab : a ⊗ₜ[R] b = algebraMap A (A ⊗[R] B) a * algebraMap B (A ⊗[R] B) b := by
+    simp [Algebra.TensorProduct.right_algebraMap_apply]
+  rw [hab, map_mul, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+
+end RightAlgebra
+
+end TauCeti

@@ -15,7 +15,7 @@ import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
-# Regular field extensions: characterizations, towers, and scalar stability
+# Regular field extensions: characterizations and scalar stability
 
 Let `F / k` be a field extension with a **separating element**: some `x ∈ F` is transcendental
 over `k` and `F` is separable algebraic over `k(x)`. Then `F ⊗[k] K` is reduced for every
@@ -43,12 +43,10 @@ Over a perfect field `k`, geometric reducedness holds automatically, so regulari
 `IsIntegrallyClosedIn k F`; over an algebraically closed field `k`, every field extension is
 regular.
 
-Regularity is stable under towers of field extensions (`IsIntegralClosure` transitivity together
-with `Algebra.IsGeometricallyReduced.trans`) and under scalar extension through any specified
-fraction field `Q` of `F ⊗[k] K`: if `F / k` is regular, then `Q / K` is regular; symmetrically, if
-`K / k` is regular, then `Q / F` is regular. In particular, when `k` is algebraically closed, both
-`F` and `K` are algebraically closed in `Q` (`IsIntegrallyClosedIn F Q` and
-`IsIntegrallyClosedIn K Q`).
+Regularity is stable under scalar extension through any specified fraction field `Q` of `F ⊗[k] K`:
+if `F / k` is regular, then `Q / K` is regular; symmetrically, if `K / k` is regular, then `Q / F`
+is regular. In particular, when `k` is algebraically closed, both `F` and `K` are algebraically
+closed in `Q` (`IsIntegrallyClosedIn F Q` and `IsIntegrallyClosedIn K Q`).
 
 Both hypotheses are needed in general. Over `k = ℝ`, the field `ℂ(x)` has the separating element
 `x`, but `ℂ(x) ⊗[ℝ] ℂ` is not a domain since the constants `ℂ` are not exact. Over an imperfect
@@ -67,10 +65,7 @@ field, exact constants alone do not suffice: for `k = 𝔽_p(a, b)` and `F = k(x
   `k`-algebra `A`.
 * `TauCeti.isDomain_tensorProduct_iff_of_isAlgClosed`,
   `TauCeti.forall_isDomain_tensorProduct_field_iff`,
-  `TauCeti.forall_isDomain_tensorProduct_iff`: equivalent characterizations of regular extensions,
-  with separable-generation and perfect-field specializations.
-* `TauCeti.isDomain_tensorProduct_of_isGeometricallyReduced_tower`: tower stability of regular
-  field extensions.
+  `TauCeti.forall_isDomain_tensorProduct_iff`: equivalent characterizations of regular extensions.
 * `TauCeti.isDomain_tensorProduct_right_of_isFractionRing_tensorProduct`,
   `TauCeti.isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct`,
   `TauCeti.isGeometricallyReduced_right_of_isFractionRing_tensorProduct`,
@@ -221,22 +216,6 @@ theorem isDomain_tensorProduct_iff_of_isAlgClosed (L : Type*) [Field L] [Algebra
     isGeometricallyReduced_of_isDomain_tensorProduct L⟩,
     fun ⟨hex, _⟩ ↦ isDomain_tensorProduct_of_isGeometricallyReduced hex L⟩
 
-/-- Regularity over `k` tested against an algebraically closed field `L`, expressed via
-`Algebra.IsTranscendentalSeparable`. -/
-theorem isDomain_tensorProduct_iff_isTranscendentalSeparable_of_isAlgClosed (L : Type*) [Field L]
-    [Algebra k L] [IsAlgClosed L] :
-    IsDomain (F ⊗[k] L) ↔ IsIntegrallyClosedIn k F ∧ Algebra.IsTranscendentalSeparable k F := by
-  rw [isDomain_tensorProduct_iff_of_isAlgClosed,
-    isGeometricallyReduced_iff_isTranscendentalSeparable]
-
-/-- For a finitely generated field extension `F / k`, `F ⊗[k] L` is a domain (for an algebraically
-closed `L / k`) if and only if `k` is integrally closed in `F` and `F / k` is separably
-generated. -/
-theorem isDomain_tensorProduct_iff_isSeparablyGenerated_of_isAlgClosed [Algebra.EssFiniteType k F]
-    (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] :
-    IsDomain (F ⊗[k] L) ↔ IsIntegrallyClosedIn k F ∧ Algebra.IsSeparablyGenerated k F := by
-  rw [isDomain_tensorProduct_iff_of_isAlgClosed, isGeometricallyReduced_iff_isSeparablyGenerated]
-
 /-- **Universal field-extension criterion for regularity**: `F ⊗[k] K` is a domain for every field
 extension `K / k` (in `Type u`, the universe of `k`) if and only if `k` is integrally closed in `F`
 and `F / k` is geometrically reduced. -/
@@ -259,39 +238,7 @@ theorem forall_isDomain_tensorProduct_iff :
     (isDomain_tensorProduct_iff_of_isAlgClosed (AlgebraicClosure k)).mp inferInstance,
     fun ⟨hex, _⟩ A _ _ _ ↦ isDomain_tensorProduct_of_isGeometricallyReduced hex A⟩
 
-/-- Over a perfect field `k`, `F ⊗[k] L` is a domain (for an algebraically closed `L / k`) if and
-only if `k` is integrally closed in `F`. -/
-theorem isDomain_tensorProduct_iff_of_isAlgClosed_of_perfectField [PerfectField k] (L : Type*)
-    [Field L] [Algebra k L] [IsAlgClosed L] :
-    IsDomain (F ⊗[k] L) ↔ IsIntegrallyClosedIn k F := by
-  rw [isDomain_tensorProduct_iff_of_isAlgClosed]
-  exact and_iff_left inferInstance
-
-/-- Over a perfect field `k`, `F ⊗[k] K` is a domain for all field extensions `K / k` (in `Type u`)
-if and only if `k` is integrally closed in `F`. -/
-theorem forall_isDomain_tensorProduct_field_iff_of_perfectField [PerfectField k] :
-    (∀ (K : Type u) [Field K] [Algebra k K], IsDomain (F ⊗[k] K)) ↔ IsIntegrallyClosedIn k F := by
-  rw [forall_isDomain_tensorProduct_field_iff]
-  exact and_iff_left inferInstance
-
 end Equivalences
-
-section Tower
-
-/-- **Regularity is transitive in towers of field extensions**: if `E / k` and `F / E` are
-geometrically reduced with exact constants, then `F ⊗[k] A` is a domain for every domain
-`k`-algebra `A`. -/
-theorem isDomain_tensorProduct_of_isGeometricallyReduced_tower {k E F : Type*} [Field k] [Field E]
-    [Field F] [Algebra k E] [Algebra E F] [Algebra k F] [IsScalarTower k E F]
-    [IsIntegrallyClosedIn k E] [IsIntegrallyClosedIn E F]
-    [Algebra.IsGeometricallyReduced k E] [Algebra.IsGeometricallyReduced E F]
-    (A : Type*) [CommRing A] [IsDomain A] [Algebra k A] : IsDomain (F ⊗[k] A) :=
-  have hex : IsIntegrallyClosedIn k F :=
-    IsIntegralClosure.of_isIntegralClosure_of_isIntegrallyClosedIn k k E F
-  have : Algebra.IsGeometricallyReduced k F := Algebra.IsGeometricallyReduced.trans k E F
-  isDomain_tensorProduct_of_isGeometricallyReduced hex A
-
-end Tower
 
 section FractionRing
 
