@@ -114,8 +114,9 @@ variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [Decidable
 
 /-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
 `ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
-@[to_additive /-- For a finite nonempty `F`, the counting-measure additive Følner ratio of `F` at
-`m` is below `ENNReal.ofReal ε` exactly when `|(m +ᵥ F) △ F| < ε · |F|`. -/]
+@[to_additive MeasureTheory.Measure.count_vadd_symmDiff_div_count_lt_ofReal_iff
+  /-- For a finite nonempty `F`, the counting-measure additive Følner ratio of `F` at `m` is below
+  `ENNReal.ofReal ε` exactly when `|(m +ᵥ F) △ F| < ε · |F|`. -/]
 theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
     [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
     Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
@@ -127,8 +128,9 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
 omit [MeasurableSingletonClass X] in
 /-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
 from above. -/
-@[to_additive /-- The counting-measure additive Følner ratio of a measurable finite set bounds the
-cardinality ratio from above. -/]
+@[to_additive MeasureTheory.Measure.card_vadd_symmDiff_div_card_le_count_div_count
+  /-- The counting-measure additive Følner ratio of a measurable finite set bounds the cardinality
+  ratio from above. -/]
 theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M : Type*}
     [SMul M X] {F : Finset X} (hFm : MeasurableSet (F : Set X)) (m : M) :
     (#((m • F) ∆ F) : ℝ≥0∞) / #F ≤
@@ -142,8 +144,9 @@ theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M 
 omit [MeasurableSingletonClass X] in
 /-- The real cardinality ratios of a counting-measure Følner family of finite sets tend to
 zero for every group element. -/
-@[to_additive /-- The real cardinality ratios of a counting-measure additive Følner family of
-finite sets tend to zero for every group element. -/]
+@[to_additive IsAddFoelner.tendsto_card_vadd_symmDiff_div_card
+  /-- The real cardinality ratios of a counting-measure additive Følner family of finite sets tend
+  to zero for every group element. -/]
 theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type*}
     {l : Filter ι} {F : ι → Finset X}
     (hF : IsFoelner G Measure.count l (fun i => (F i : Set X))) (g : G) :
