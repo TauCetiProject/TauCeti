@@ -16,7 +16,6 @@ import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 import TauCeti.MeasureTheory.OptimalTransport.CTransform.CyclicalMonotonicity
 import TauCeti.MeasureTheory.OptimalTransport.CTransform.Regularity
 import TauCeti.MeasureTheory.OptimalTransport.Existence.CyclicalMonotonicity
-import TauCeti.MeasureTheory.OptimalTransport.Existence.Finite
 import TauCeti.MeasureTheory.OptimalTransport.Twist.StrictConvex
 
 /-!
@@ -36,8 +35,8 @@ every point of `{x | φ x ≠ ⊥}` (its finiteness domain whenever `φ ≢ ⊤`
 When `0 ≤ h`, wrapping the displacement cost as `(x, y) ↦ ENNReal.ofReal (h (x - y))` and combining
 this potential regularity with `TauCeti.exists_isOptimalCoupling_isCyclicallyMonotone_support` and
 Rockafellar–Rüschendorf (`TauCeti.IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential`)
-yields Gangbo and McCann's Theorem 1.2: for probability measures `μ` and `ν` with `μ` absolutely
-continuous with respect to Haar measure, there is a `c`-concave potential `φ` such that
+yields Gangbo and McCann's Theorem 1.2: for finite measures `μ` and `ν` of equal mass with `μ`
+absolutely continuous with respect to Haar measure, there is a `c`-concave potential `φ` such that
 `T x = x - ∇h⋆(∇φ x)` is a Kantorovich-optimal transport map for `ENNReal.ofReal (h (x - y))` whose
 graph plan has `c`-cyclically monotone support
 (`TauCeti.exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn`), even when the
@@ -59,7 +58,7 @@ differentiable, `∇h⋆` is the two-sided inverse of `∇h` by
   uniqueness of finite-cost optimal plans for `(x, y) ↦ ENNReal.ofReal (h (x - y))`;
 * `TauCeti.exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn` — for `0 ≤ h`,
   unconditional existence of a `c`-concave potential and cyclically/Kantorovich-optimal map
-  `x ↦ x - ∇h⋆(∇φ x)` for `(x, y) ↦ ENNReal.ofReal (h (x - y))`;
+  `x ↦ x - ∇h⋆(∇φ x)` between finite equal-mass measures for `(x, y) ↦ ENNReal.ofReal (h (x - y))`;
 * `TauCeti.exists_isKantorovichOptimalTransportMap_of_strictConvexOn` — for `0 ≤ h`, finite-cost
   existence and uniqueness of the Kantorovich-optimal transport map and optimal plan for
   `(x, y) ↦ ENNReal.ofReal (h (x - y))`.
@@ -95,7 +94,7 @@ graph plan over `μ` of `x ↦ x - ∇h⋆(∇φ x)`. -/
 theorem eq_graphPlan_of_ae_mem_cSuperdifferential_of_strictConvexOn (hπ : π.fst = μ) (hμ : μ ≪ ρ)
     (h_strict : StrictConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     {φ : E → EReal} (hφ : IsCConcave (fun z : E × E ↦ h (z.1 - z.2)) φ)
@@ -145,36 +144,73 @@ theorem eq_graphPlan_of_ae_mem_cSuperdifferential_of_strictConvexOn (hπ : π.fs
   refine ⟨hdiff, ?_⟩
   rw [eq_graphPlan_of_ae_snd_eq hT_meas.aemeasurable hgraph, hπ]
 
+private theorem exists_eq_graphPlan_of_isCyclicallyMonotone_support (hπ : π.fst = μ) (hμ : μ ≪ ρ)
+    (h_strict : StrictConvexOn ℝ univ h)
+    (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
+      ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
+        ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
+    (hcm : IsCyclicallyMonotone (fun z : E × E ↦ h (z.1 - z.2)) π.support) :
+    ∃ φ : E → EReal, IsCConcave (fun z : E × E ↦ h (z.1 - z.2)) φ ∧
+      (∀ x, φ x ≠ ⊤) ∧
+      (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, φ x' ≠ ⊥) ∧ DifferentiableAt ℝ (fun x' ↦ (φ x').toReal) x) ∧
+      (∀ᵐ x ∂μ, (x, x -
+        ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
+          (∇ (fun x' ↦ (φ x').toReal) x)) ∈
+        cSuperdifferential (fun z : E × E ↦ h (z.1 - z.2)) φ) ∧
+      π = graphPlan (fun x ↦ x -
+        ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
+          (∇ (fun x' ↦ (φ x').toReal) x)) μ := by
+  set c : E × E → ℝ := fun z ↦ h (z.1 - z.2)
+  obtain ⟨φ, hφ, hφ_top, hsub⟩ :
+      ∃ φ : E → EReal, IsCConcave c φ ∧ (∀ x, φ x ≠ ⊤) ∧
+        π.support ⊆ cSuperdifferential c φ := by
+    rcases π.support.eq_empty_or_nonempty with hemp | ⟨z₀, hz₀⟩
+    · exact ⟨cTransformSymm c 0, isCConcave_cTransformSymm c 0,
+        fun x ↦ (cTransformSymm_lt_top_of_ne_bot c (y := (0 : E)) EReal.zero_ne_bot x).ne,
+        hemp ▸ empty_subset _⟩
+    · obtain ⟨φ, hφ, hsub⟩ := hcm.exists_isCConcave_subset_cSuperdifferential
+      have hhz₀ : (z₀.1, z₀.2) ∈ contactSet c φ (cTransform c φ) := by
+        simpa only [cSuperdifferential_def] using hsub hz₀
+      exact ⟨φ, hφ, ne_top_of_cTransform_ne_bot (ne_bot_right_of_mem_contactSet hhz₀), hsub⟩
+  have hcon : ∀ᵐ z ∂π, z ∈ cSuperdifferential c φ := by
+    filter_upwards [π.support_mem_ae] with z hz using hsub hz
+  obtain ⟨hdiff, hgraph⟩ := eq_graphPlan_of_ae_mem_cSuperdifferential_of_strictConvexOn
+    hπ hμ h_strict h_superlinear h_cone hφ hcon
+  have hT_meas : Measurable fun x ↦ x -
+      ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
+        (∇ (fun x' ↦ (φ x').toReal) x) :=
+    measurable_id.sub ((measurable_gradient _).comp (measurable_gradient _))
+  exact ⟨φ, hφ, hφ_top, hdiff, ae_of_ae_graphPlan hT_meas.aemeasurable (hgraph ▸ hcon), hgraph⟩
+
 /-- **An optimal finite-cost plan is the graph plan of a Gangbo–McCann map.** Between finite
 measures on a finite-dimensional real inner product space with `μ ≪ ρ`, any optimal coupling of
 finite cost for a nonnegative strictly convex superlinear displacement cost `h (x - y)` satisfying
-the cone condition (H2) is the graph plan of `x ↦ x - ∇h⋆(∇φ x)` for a `c`-concave potential
-`φ`. -/
+the cone condition (H2) is the graph plan of `x ↦ x - ∇h⋆(∇φ x)` for a `c`-concave potential `φ`
+that never takes `⊤`, avoids `⊥` near `μ`-almost every point, and has differentiable real
+representative there. -/
 theorem IsOptimalCoupling.exists_eq_graphPlan_of_strictConvexOn [IsFiniteMeasure μ] (hμ : μ ≪ ρ)
     (h_nonneg : ∀ x, 0 ≤ h x) (h_strict : StrictConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     (hopt : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2))) π μ ν)
     (hfin : transportCost (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2))) μ ν ≠ ∞) :
     ∃ φ : E → EReal, IsCConcave (fun z : E × E ↦ h (z.1 - z.2)) φ ∧
+      (∀ x, φ x ≠ ⊤) ∧
       (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, φ x' ≠ ⊥) ∧ DifferentiableAt ℝ (fun x' ↦ (φ x').toReal) x) ∧
       π = graphPlan (fun x ↦ x -
         ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
           (∇ (fun x' ↦ (φ x').toReal) x)) μ := by
-  have hc : Continuous h := h_strict.convexOn.locallyLipschitz.continuous
   have hc_prod : Continuous fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)) :=
-    ENNReal.continuous_ofReal.comp (hc.comp (continuous_fst.sub continuous_snd))
-  have hcm : IsCyclicallyMonotone (fun z : E × E ↦ h (z.1 - z.2)) π.support :=
-    (isCyclicallyMonotone_ofReal_iff fun z ↦ h_nonneg _).1
-      (hopt.isCyclicallyMonotone_support hc_prod hfin)
-  obtain ⟨φ, hφ, hsub⟩ := hcm.exists_isCConcave_subset_cSuperdifferential
-  have hcon : ∀ᵐ z ∂π, z ∈ cSuperdifferential (fun z : E × E ↦ h (z.1 - z.2)) φ := by
-    filter_upwards [π.support_mem_ae] with z hz using hsub hz
-  obtain ⟨hdiff, hgraph⟩ := eq_graphPlan_of_ae_mem_cSuperdifferential_of_strictConvexOn
-    hopt.fst_eq hμ h_strict h_superlinear h_cone hφ hcon
-  exact ⟨φ, hφ, hdiff, hgraph⟩
+    ENNReal.continuous_ofReal.comp
+      (h_strict.convexOn.locallyLipschitz.continuous.comp (continuous_fst.sub continuous_snd))
+  obtain ⟨φ, hφ, hφ_top, hdiff, -, hgraph⟩ :=
+    exists_eq_graphPlan_of_isCyclicallyMonotone_support hopt.fst_eq hμ h_strict h_superlinear
+      h_cone ((isCyclicallyMonotone_ofReal_iff fun _ ↦ h_nonneg _).1
+        (hopt.isCyclicallyMonotone_support hc_prod hfin))
+  exact ⟨φ, hφ, hφ_top, hdiff, hgraph⟩
 
 /-- **Uniqueness of the optimal plan for a strictly convex displacement cost**
 (Gangbo–McCann, Theorem 1.2). Between finite measures on a finite-dimensional real inner product
@@ -184,45 +220,35 @@ equal. -/
 theorem IsOptimalCoupling.unique_of_strictConvexOn [IsFiniteMeasure μ] (hμ : μ ≪ ρ)
     {π' : Measure (E × E)} (h_nonneg : ∀ x, 0 ≤ h x) (h_strict : StrictConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     (hopt : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2))) π μ ν)
     (hopt' : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2))) π' μ ν)
     (hfin : transportCost (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2))) μ ν ≠ ∞) :
-    π = π' := by
-  have hsum := hopt.add hopt'
-  have hfin' : transportCost (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)))
-      (μ + μ) (ν + ν) ≠ ∞ := by
-    rw [← hsum.lintegral_eq, lintegral_add_measure, hopt.lintegral_eq, hopt'.lintegral_eq]
-    exact ENNReal.add_ne_top.2 ⟨hfin, hfin⟩
-  obtain ⟨φ, -, -, hgraph⟩ :=
-    hsum.exists_eq_graphPlan_of_strictConvexOn (hμ.add_left hμ) h_nonneg h_strict h_superlinear
-      h_cone hfin'
-  have hT : Measurable fun x ↦ x -
-      ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
-        (∇ (fun x' ↦ (φ x').toReal) x) :=
-    measurable_id.sub ((measurable_gradient _).comp (measurable_gradient _))
-  have hae := hgraph ▸ ae_snd_eq_graphPlan (μ := μ + μ) hT.aemeasurable
-  rw [eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_right le_rfl) hae),
-    eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_left le_rfl) hae),
-    hopt.fst_eq, hopt'.fst_eq]
+    π = π' :=
+  hopt.eq_of_add_eq_graphPlan hopt' fun hsum ↦ by
+    obtain ⟨φ, -, -, -, hgraph⟩ := hsum.exists_eq_graphPlan_of_strictConvexOn
+      (hμ.add_left hμ) h_nonneg h_strict h_superlinear h_cone
+      (ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hfin, hfin⟩) (transportCost_add_le _ _ _ _ _))
+    exact ⟨_, (measurable_id.sub
+      ((measurable_gradient _).comp (measurable_gradient _))).aemeasurable, hgraph⟩
 
 /-- **Gangbo–McCann's theorem, unconditional potential and map form**
-(Gangbo–McCann, Theorem 1.2). For probability measures `μ` and `ν` on a finite-dimensional real
-inner product space with `μ ≪ ρ`, and a nonnegative strictly convex superlinear function `h`
-satisfying the cone condition (H2), there exists a `c`-concave potential `φ` for
-`c (x, y) = h (x - y)` that never takes `⊤`, avoids `⊥` near `μ`-almost every point and has
+(Gangbo–McCann, Theorem 1.2). For finite measures `μ` and `ν` of equal mass on a
+finite-dimensional real inner product space with `μ ≪ ρ`, and a nonnegative strictly convex
+superlinear function `h` satisfying the cone condition (H2), there exists a `c`-concave potential
+`φ` for `c (x, y) = h (x - y)` that never takes `⊤`, avoids `⊥` near `μ`-almost every point and has
 differentiable real representative there, such that `T x = x - ∇h⋆(∇φ x)` satisfies
 `(x, T x) ∈ cSuperdifferential c φ` `μ`-almost everywhere, `(graphPlan T μ).support` is
 `c`-cyclically monotone, and `T` is a Kantorovich-optimal transport map from `μ` to `ν`. No
 finiteness assumption on `transportCost` is required, and no uniqueness claim is made when the
 optimal cost is `∞`. -/
 theorem exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn
-    [IsProbabilityMeasure μ] (ν : Measure E) [IsProbabilityMeasure ν] (hμ : μ ≪ ρ)
+    [IsFiniteMeasure μ] (hmass : μ univ = ν univ) (hμ : μ ≪ ρ)
     (h_nonneg : ∀ x, 0 ≤ h x) (h_strict : StrictConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p) :
     ∃ φ : E → EReal, IsCConcave (fun z : E × E ↦ h (z.1 - z.2)) φ ∧
@@ -240,36 +266,20 @@ theorem exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn
         (fun x ↦ x -
           ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
             (∇ (fun x' ↦ (φ x').toReal) x)) := by
-  set c : E × E → ℝ := fun z ↦ h (z.1 - z.2)
-  have hc : Continuous c :=
-    h_strict.convexOn.locallyLipschitz.continuous.comp
-      (continuous_fst.sub continuous_snd)
-  obtain ⟨π, hopt, hcm⟩ := exists_isOptimalCoupling_isCyclicallyMonotone_support μ ν hc
-    fun z ↦ h_nonneg _
-  have : IsProbabilityMeasure π := hopt.toIsCoupling.isProbabilityMeasure
-  obtain ⟨φ, hφ, hsub⟩ := hcm.exists_isCConcave_subset_cSuperdifferential
-  obtain ⟨z₀, hz₀⟩ := Measure.nonempty_support (IsProbabilityMeasure.ne_zero π)
-  have hhz₀ : (z₀.1, z₀.2) ∈ contactSet c φ (cTransform c φ) := by
-    simpa only [cSuperdifferential_def] using hsub hz₀
-  have hφ_top : ∀ x, φ x ≠ ⊤ := fun x ↦ by
-    rw [← hφ.cTransformSymm_cTransform]
-    exact (cTransformSymm_lt_top_of_ne_bot c (ne_bot_right_of_mem_contactSet hhz₀) x).ne
-  have hcon : ∀ᵐ z ∂π, z ∈ cSuperdifferential c φ := by
-    filter_upwards [π.support_mem_ae] with z hz using hsub hz
-  obtain ⟨hdiff, hgraph⟩ := eq_graphPlan_of_ae_mem_cSuperdifferential_of_strictConvexOn
-    hopt.fst_eq hμ h_strict h_superlinear h_cone hφ hcon
-  set T : E → E := fun x ↦ x -
-    ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
-      (∇ (fun x' ↦ (φ x').toReal) x)
-  have hT_meas : Measurable T :=
+  have hc : Continuous fun z : E × E ↦ h (z.1 - z.2) :=
+    h_strict.convexOn.locallyLipschitz.continuous.comp (continuous_fst.sub continuous_snd)
+  obtain ⟨π, hopt, hcm⟩ :=
+    exists_isOptimalCoupling_isCyclicallyMonotone_support hmass hc fun _ ↦ h_nonneg _
+  obtain ⟨φ, hφ, hφ_top, hdiff, hcon_T, hgraph⟩ :=
+    exists_eq_graphPlan_of_isCyclicallyMonotone_support hopt.fst_eq hμ h_strict h_superlinear
+      h_cone hcm
+  have hT_meas : Measurable fun x ↦ x -
+      ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
+        (∇ (fun x' ↦ (φ x').toReal) x) :=
     measurable_id.sub ((measurable_gradient _).comp (measurable_gradient _))
-  have hlaw : HasLaw T ν μ :=
-    (isCoupling_graphPlan_iff hT_meas.aemeasurable).1 (hgraph ▸ hopt.toIsCoupling)
-  have hcon_T : ∀ᵐ x ∂μ, (x, T x) ∈ cSuperdifferential c φ :=
-    ae_of_ae_graphPlan hT_meas.aemeasurable (hgraph ▸ hcon)
-  refine ⟨φ, hφ, hφ_top, hdiff, hcon_T, hgraph ▸ hcm, ?_⟩
-  exact (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw
-    (ENNReal.continuous_ofReal.comp hc).measurable.aemeasurable).2 (hgraph ▸ hopt)
+  exact ⟨φ, hφ, hφ_top, hdiff, hcon_T, hgraph ▸ hcm,
+    isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan hT_meas.aemeasurable
+      (ENNReal.continuous_ofReal.comp hc).measurable.aemeasurable (hgraph ▸ hopt)⟩
 
 /-- **Gangbo–McCann's theorem for strictly convex costs** (Gangbo–McCann, Theorem 1.2). Let `μ` be
 a finite measure and `ν` a measure on a finite-dimensional real inner product space `E`, with `μ`
@@ -284,7 +294,7 @@ there exists a transport map `T : E → E` that:
 theorem exists_isKantorovichOptimalTransportMap_of_strictConvexOn [IsFiniteMeasure μ]
     (hμ : μ ≪ ρ) (h_nonneg : ∀ x, 0 ≤ h x) (h_strict : StrictConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     (hfin : transportCost (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2))) μ ν ≠ ∞) :
@@ -297,31 +307,22 @@ theorem exists_isKantorovichOptimalTransportMap_of_strictConvexOn [IsFiniteMeasu
           S =ᵐ[μ] T := by
   have hc : Continuous fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)) :=
     ENNReal.continuous_ofReal.comp
-      (h_strict.convexOn.locallyLipschitz.continuous.comp
-        (continuous_fst.sub continuous_snd))
-  obtain ⟨π, hπ⟩ := (exists_isOptimalCoupling_iff hc.lowerSemicontinuous).2
+      (h_strict.convexOn.locallyLipschitz.continuous.comp (continuous_fst.sub continuous_snd))
+  have hmass : μ univ = ν univ :=
     (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.measure_univ_eq
-  obtain ⟨φ, -, -, hgraph⟩ :=
-    hπ.exists_eq_graphPlan_of_strictConvexOn hμ h_nonneg h_strict h_superlinear h_cone hfin
-  set T : E → E := fun x ↦ x -
-    ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
-      (∇ (fun x' ↦ (φ x').toReal) x)
-  have hT_meas : Measurable T :=
-    measurable_id.sub ((measurable_gradient _).comp (measurable_gradient _))
-  have hlaw : HasLaw T ν μ :=
-    (isCoupling_graphPlan_iff hT_meas.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
-  have hiff : ∀ S : E → E, HasLaw S ν μ →
-      (IsKantorovichOptimalTransportMap (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2))) μ ν S ↔
-        IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)))
-          (graphPlan S μ) μ ν) := fun S hS ↦
-    isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hS hc.measurable.aemeasurable
-  have hopt_T : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)))
-      (graphPlan T μ) μ ν := hgraph ▸ hπ
-  refine ⟨T, (hiff T hlaw).2 hopt_T, fun γ ↦ ⟨fun hγ ↦ hγ.unique_of_strictConvexOn hμ h_nonneg
-    h_strict h_superlinear h_cone hopt_T hfin, fun hγ ↦ hγ ▸ hopt_T⟩, fun S hS ↦ ?_⟩
-  exact (graphPlan_eq_graphPlan_iff hS.toHasLaw.aemeasurable hT_meas.aemeasurable).1
-    (((hiff S hS.toHasLaw).1 hS).unique_of_strictConvexOn hμ h_nonneg h_strict h_superlinear
-      h_cone hopt_T hfin)
+  obtain ⟨φ, -, -, -, -, -, hT_opt⟩ :=
+    exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn hmass hμ h_nonneg
+      h_strict h_superlinear h_cone
+  have hπ : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)))
+      (graphPlan _ μ) μ ν :=
+    (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hT_opt.toHasLaw
+      hc.measurable.aemeasurable).1 hT_opt
+  refine ⟨_, hT_opt,
+    fun γ ↦ ⟨fun hγ ↦ hγ.unique_of_strictConvexOn hμ h_nonneg h_strict h_superlinear
+      h_cone hπ hfin, fun hγ ↦ hγ ▸ hπ⟩,
+    fun S hS ↦ hS.ae_eq_of_isOptimalCoupling_eq_graphPlan hT_opt.toHasLaw.aemeasurable
+      hc.measurable.aemeasurable fun hS_opt ↦
+        hS_opt.unique_of_strictConvexOn hμ h_nonneg h_strict h_superlinear h_cone hπ hfin⟩
 
 end TransportMap
 

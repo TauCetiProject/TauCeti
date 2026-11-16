@@ -28,11 +28,11 @@ geometric regularity steps:
 1. **Full-measure interior of `{x | φ x ≠ ⊥}`** (Gangbo–McCann, Proposition 3.3). Even for
    smooth strictly convex superlinear `h` on `ℝ²`, a `c`-concave potential `φ` can take `-∞` on a
    dense set while remaining finite on a set of positive Lebesgue measure unless the level sets of
-   `h` satisfy the cone condition (H2) at infinity: for every height `r` and aperture `θ ∈ (0, π)`,
-   every sufficiently distant vertex `p` admits `z ≠ 0` such that `h ≤ h p` on the truncated cone
-   `{x | ‖x - p‖ ‖z‖ cos (θ / 2) ≤ ⟪z, x - p⟫ ≤ r ‖z‖}`. Under continuity of `h` and (H2), a
-   finite ball cover of the unit sphere (`IsCompact.finite_cover_balls`) forces any point where
-   `φ = ⊥` to propagate `φ = ⊥` to a ball of comparable radius nearby, so
+   `h` satisfy the cone condition (H2) at infinity: for some height `r > 0`, aperture `θ ∈ (0, π)`,
+   and radius `R`, every distant vertex `p` (`R < ‖p‖`) admits `z ≠ 0` such that `h ≤ h p` on the
+   truncated cone `{x | ‖x - p‖ ‖z‖ cos (θ / 2) ≤ ⟪z, x - p⟫ ≤ r ‖z‖}`. Under continuity of `h` and
+   (H2), a finite ball cover of the unit sphere (`IsCompact.finite_cover_balls`) forces any point
+   where `φ = ⊥` to propagate `φ = ⊥` to a ball of comparable radius nearby, so
    `{x | φ x ≠ ⊥} \ interior {x | φ x ≠ ⊥}` (where `{x | φ x ≠ ⊥}` is the finiteness domain whenever
    `ψ ≢ ⊥`) has zero Haar measure by Besicovitch/Lebesgue density
    (`NullMeasurableSet.ae_eq_setOf_tendsto_measure_inter_div`,
@@ -85,65 +85,70 @@ namespace TauCeti
 
 section ConeRegularity
 
-private theorem cos_pi_div_four_bounds :
-    0 ≤ Real.cos ((Real.pi / 2) / 2) ∧ Real.cos ((Real.pi / 2) / 2) ≤ 3 / 4 := by
-  have hdiv : (Real.pi / 2) / 2 = Real.pi / 4 := by ring
-  rw [hdiv, Real.cos_pi_div_four]
-  have hsqrt : Real.sqrt 2 ≤ 3 / 2 := Real.sqrt_le_iff.2 ⟨by positivity, by norm_num⟩
-  exact ⟨by positivity, by linarith⟩
+private theorem cos_half_bounds {θ : ℝ} (hθ₀ : 0 < θ) (hθπ : θ < Real.pi) :
+    0 < Real.cos (θ / 2) ∧ Real.cos (θ / 2) < 1 := by
+  refine ⟨Real.cos_pos_of_mem_Ioo ⟨by linarith, by linarith⟩, ?_⟩
+  simpa only [Real.cos_zero] using Real.cos_lt_cos_of_nonneg_of_le_pi le_rfl
+    (by linarith : θ / 2 ≤ Real.pi) (by positivity : 0 < θ / 2)
 
-/-- Any point of `closedBall (x₀ + (δ / 2) • u) (δ / 80)` with `u` on the unit sphere within
-`1 / 20` of `‖z‖⁻¹ • z` and `0 < δ ≤ 1` lies in the truncated cone of height `1` and aperture
-`π / 2` in direction `z`. -/
+/-- For `θ ∈ (0, π)` and `κ = (1 - cos (θ / 2)) / 8`, any point of
+`closedBall (x₀ + (δ / 2) • u) (κ * δ)` with `u` on the unit sphere within `κ` of `‖z‖⁻¹ • z` and
+`0 < δ ≤ r` lies in the truncated cone of height `r` and aperture `θ` in direction `z`. -/
 private theorem mem_truncatedCone_of_mem_closedBall {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {z u x₀ x p : E} {δ : ℝ} (hz : z ≠ 0)
-    (hu : u ∈ sphere (0 : E) 1) (hzu : ‖(‖z‖⁻¹ : ℝ) • z - u‖ < 1 / 20)
-    (hδ₀ : 0 < δ) (hδ₁ : δ ≤ 1) (hx : x ∈ closedBall (x₀ + (δ / 2) • u) (δ / 80)) :
-    ‖(x - x₀ + p) - p‖ * ‖z‖ * Real.cos ((Real.pi / 2) / 2) ≤ ⟪z, (x - x₀ + p) - p⟫ ∧
-      ⟪z, (x - x₀ + p) - p⟫ ≤ 1 * ‖z‖ := by
+    [InnerProductSpace ℝ E] {z u x₀ x p : E} {r θ δ : ℝ} (hz : z ≠ 0)
+    (hθ₀ : 0 < θ) (hθπ : θ < Real.pi) (hu : u ∈ sphere (0 : E) 1)
+    (hzu : ‖(‖z‖⁻¹ : ℝ) • z - u‖ < (1 - Real.cos (θ / 2)) / 8)
+    (hδ₀ : 0 < δ) (hδr : δ ≤ r)
+    (hx : x ∈ closedBall (x₀ + (δ / 2) • u) ((1 - Real.cos (θ / 2)) / 8 * δ)) :
+    ‖(x - x₀ + p) - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, (x - x₀ + p) - p⟫ ∧
+      ⟪z, (x - x₀ + p) - p⟫ ≤ r * ‖z‖ := by
+  obtain ⟨hc₀, hc₁⟩ := cos_half_bounds hθ₀ hθπ
+  set κ := (1 - Real.cos (θ / 2)) / 8 with hκ_def
+  have hκ₀ : 0 < κ := by linarith
+  have _ : κ < 1 / 8 := by linarith
   have hnorm_u : ‖u‖ = 1 := mem_sphere_zero_iff_norm.1 hu
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.2 hz
   set e := x - (x₀ + (δ / 2) • u)
-  have he : ‖e‖ ≤ δ / 80 := mem_closedBall_iff_norm.1 hx
+  have he : ‖e‖ ≤ κ * δ := mem_closedBall_iff_norm.1 hx
   have hdiff : (x - x₀ + p) - p = (δ / 2) • u + e := by simp only [e]; abel
-  have hnorm_diff : ‖(x - x₀ + p) - p‖ ≤ 41 / 80 * δ := by
+  have hnorm_diff : ‖(x - x₀ + p) - p‖ ≤ (1 / 2 + κ) * δ := by
     rw [hdiff]
     calc ‖(δ / 2) • u + e‖ ≤ ‖(δ / 2) • u‖ + ‖e‖ := norm_add_le _ _
       _ = δ / 2 + ‖e‖ := by
         rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity), hnorm_u, mul_one]
-      _ ≤ 41 / 80 * δ := by linarith
+      _ ≤ (1 / 2 + κ) * δ := by linarith
+  have hnorm_le_δ : ‖(x - x₀ + p) - p‖ ≤ δ := hnorm_diff.trans (by nlinarith)
   refine ⟨?_, ?_⟩
   · set w := (‖z‖⁻¹ : ℝ) • z
-    have h1 : ⟪u, e⟫ ≥ -(δ / 80) := by
+    have h1 : ⟪u, e⟫ ≥ -(κ * δ) := by
       have := abs_real_inner_le_norm u e
       rw [hnorm_u, one_mul] at this
       linarith [(abs_le.1 this).1]
-    have h2 : ⟪w - u, (x - x₀ + p) - p⟫ ≥ -(41 / 1600 * δ) := by
+    have h2 : ⟪w - u, (x - x₀ + p) - p⟫ ≥ -(κ * δ) := by
       have := abs_real_inner_le_norm (w - u) ((x - x₀ + p) - p)
-      have hprod : ‖w - u‖ * ‖(x - x₀ + p) - p‖ ≤ 1 / 20 * (41 / 80 * δ) :=
-        mul_le_mul hzu.le hnorm_diff (norm_nonneg _) (by positivity)
-      linarith [(abs_le.1 this).1, hprod]
-    have h3 : ⟪w, (x - x₀ + p) - p⟫ ≥ 739 / 1600 * δ := by
+      linarith [(abs_le.1 this).1, mul_le_mul hzu.le hnorm_le_δ (norm_nonneg _) hκ₀.le]
+    have h3 : (1 / 2 + κ) * δ * Real.cos (θ / 2) ≤ ⟪w, (x - x₀ + p) - p⟫ := by
+      have hκc : ((1 / 2 + κ) * Real.cos (θ / 2)) * δ ≤ (1 / 2 - 2 * κ) * δ :=
+        mul_le_mul_of_nonneg_right (by nlinarith) hδ₀.le
       have hwu : w = u + (w - u) := by abel
-      rw [hwu, inner_add_left]
       have hu_diff : ⟪u, (x - x₀ + p) - p⟫ = δ / 2 + ⟪u, e⟫ := by
         rw [hdiff, inner_add_right, inner_smul_right, real_inner_self_eq_norm_sq, hnorm_u]
         ring
+      rw [hwu, inner_add_left]
       linarith
     have hz_eq : ⟪z, (x - x₀ + p) - p⟫ = ‖z‖ * ⟪w, (x - x₀ + p) - p⟫ := by
       have : z = ‖z‖ • w := by simp [w, smul_smul, hz_pos.ne']
       conv_lhs => rw [this]
       rw [inner_smul_left, RCLike.conj_to_real]
-    calc ‖(x - x₀ + p) - p‖ * ‖z‖ * Real.cos ((Real.pi / 2) / 2)
-        ≤ (41 / 80 * δ) * ‖z‖ * (3 / 4) :=
-          mul_le_mul (mul_le_mul_of_nonneg_right hnorm_diff hz_pos.le)
-            cos_pi_div_four_bounds.2 cos_pi_div_four_bounds.1 (by positivity)
-      _ ≤ ‖z‖ * (739 / 1600 * δ) := by nlinarith
+    calc ‖(x - x₀ + p) - p‖ * ‖z‖ * Real.cos (θ / 2)
+        = ‖z‖ * (‖(x - x₀ + p) - p‖ * Real.cos (θ / 2)) := by ring
+      _ ≤ ‖z‖ * ((1 / 2 + κ) * δ * Real.cos (θ / 2)) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hnorm_diff hc₀.le) hz_pos.le
       _ ≤ ‖z‖ * ⟪w, (x - x₀ + p) - p⟫ := mul_le_mul_of_nonneg_left h3 hz_pos.le
       _ = ⟪z, (x - x₀ + p) - p⟫ := hz_eq.symm
   · calc ⟪z, (x - x₀ + p) - p⟫ ≤ ‖z‖ * ‖(x - x₀ + p) - p‖ := real_inner_le_norm _ _
-      _ ≤ ‖z‖ * 1 := mul_le_mul_of_nonneg_left (by linarith) hz_pos.le
-      _ = 1 * ‖z‖ := by ring
+      _ ≤ ‖z‖ * r := mul_le_mul_of_nonneg_left (hnorm_le_δ.trans hδr) hz_pos.le
+      _ = r * ‖z‖ := by ring
 
 /-- On compact balls around `x₀`, continuity of `h` bounds `(h (x - y) : EReal) - ψ y` from below
 whenever `cTransformSymm` avoids `⊥` at a reference point `x_ref` within distance `1` of `x₀`. -/
@@ -188,54 +193,57 @@ private theorem le_sub_of_norm_sub_le {E : Type*} [NormedAddCommGroup E] [Normed
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {h : E → ℝ}
 
-/-- Cone-net propagation lemma: under the cone condition (H2), there exist `R ≥ 0` and a finite
-subset `F` of the unit sphere such that for every distant `p` (`R < ‖p‖`), every center `x₀`, and
-every `δ ∈ (0, 1]`, some `u ∈ F` satisfies `h (x - x₀ + p) ≤ h p` throughout
-`closedBall (x₀ + (δ / 2) • u) (δ / 80)`. -/
-private theorem exists_net_forall_closedBall_le [Nontrivial E]
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
-      ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
-        ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p) :
+/-- Cone-net propagation lemma: under the cone condition with height `r` and aperture `θ ∈ (0, π)`,
+there exist `R ≥ 0` and a finite subset `F` of the unit sphere such that for every distant `p`
+(`R < ‖p‖`), every center `x₀`, and every `δ ∈ (0, r]`, some `u ∈ F` satisfies
+`h (x - x₀ + p) ≤ h p` throughout `closedBall (x₀ + (δ / 2) • u) ((1 - cos (θ / 2)) / 8 * δ)`. -/
+private theorem exists_net_forall_closedBall_le [Nontrivial E] {r θ R₀ : ℝ}
+    (hθ₀ : 0 < θ) (hθπ : θ < Real.pi)
+    (hR₀ : ∀ p, R₀ < ‖p‖ → ∃ z, z ≠ 0 ∧ ∀ x,
+      ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ → ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p) :
     ∃ (R : ℝ) (F : Finset E), 0 ≤ R ∧ F.Nonempty ∧ (↑F : Set E) ⊆ sphere (0 : E) 1 ∧
-      ∀ p, R < ‖p‖ → ∀ x₀ : E, ∀ δ : ℝ, 0 < δ → δ ≤ 1 →
-        ∃ u ∈ F, ∀ x ∈ closedBall (x₀ + (δ / 2) • u) (δ / 80), h (x - x₀ + p) ≤ h p := by
-  obtain ⟨R₀, hR₀⟩ := h_cone 1 (Real.pi / 2) (by positivity) (by linarith [Real.pi_pos])
-  obtain ⟨t, htsub, htfin, htcov⟩ :=
-    (isCompact_sphere (0 : E) 1).finite_cover_balls (by positivity : (0 : ℝ) < 1 / 20)
+      ∀ p, R < ‖p‖ → ∀ x₀ : E, ∀ δ : ℝ, 0 < δ → δ ≤ r →
+        ∃ u ∈ F, ∀ x ∈ closedBall (x₀ + (δ / 2) • u) ((1 - Real.cos (θ / 2)) / 8 * δ),
+          h (x - x₀ + p) ≤ h p := by
+  have hκ : 0 < (1 - Real.cos (θ / 2)) / 8 := by linarith [(cos_half_bounds hθ₀ hθπ).2]
+  obtain ⟨t, htsub, htfin, htcov⟩ := (isCompact_sphere (0 : E) 1).finite_cover_balls hκ
   have htne : htfin.toFinset.Nonempty := by
     obtain ⟨w, hw⟩ := (NormedSpace.sphere_nonempty (E := E) (x := 0)).2 zero_le_one
     obtain ⟨u, hut, -⟩ := mem_iUnion₂.1 (htcov hw)
     exact ⟨u, htfin.mem_toFinset.2 hut⟩
   refine ⟨max R₀ 0, htfin.toFinset, le_max_right _ _, htne, by simpa using htsub,
-    fun p hp x₀ δ hδ₀ hδ₁ ↦ ?_⟩
+    fun p hp x₀ δ hδ₀ hδr ↦ ?_⟩
   obtain ⟨z, hz, hcone_z⟩ := hR₀ p ((le_max_left R₀ 0).trans_lt hp)
   obtain ⟨u, hut, hzu⟩ := mem_iUnion₂.1
     (htcov (mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm (𝕜 := ℝ) hz)))
   refine ⟨u, htfin.mem_toFinset.2 hut, fun x hx ↦ ?_⟩
-  obtain ⟨hc₁, hc₂⟩ := mem_truncatedCone_of_mem_closedBall hz (htsub hut)
-    (mem_ball_iff_norm.1 hzu) hδ₀ hδ₁ hx
+  obtain ⟨hc₁, hc₂⟩ := mem_truncatedCone_of_mem_closedBall hz hθ₀ hθπ (htsub hut)
+    (mem_ball_iff_norm.1 hzu) hδ₀ hδr hx
   exact hcone_z (x - x₀ + p) hc₁ hc₂
 
-/-- Given witnesses `g u` in `closedBall (x₀ + (δ / 2) • u) (δ / 80)` where `cTransformSymm`
-avoids `⊥`, continuity of `h` and the cone condition (H2) yield a uniform real lower bound on
-`cTransformSymm` at every `x ∈ closedBall x₀ (δ / 80)` whose shifted balls still contain `g u`. -/
+/-- Given witnesses `g u` in `closedBall (x₀ + (δ / 2) • u) ((1 - cos (θ / 2)) / 8 * δ)` where
+`cTransformSymm` avoids `⊥`, continuity of `h` and the cone condition yield a uniform real lower
+bound on `cTransformSymm` at every `x ∈ closedBall x₀ ((1 - cos (θ / 2)) / 8 * δ)` whose shifted
+balls still contain `g u`. -/
 private theorem exists_le_cTransformSymm_of_forall_sphere [Nontrivial E]
-    (hc : Continuous h)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
-      ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
-        ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
-    {ψ : E → EReal} {x₀ : E} {δ : ℝ} (hδ₀ : 0 < δ) (hδ₁ : δ ≤ 1) {g : E → E}
-    (hg_mem : ∀ u ∈ sphere (0 : E) 1, g u ∈ closedBall (x₀ + (δ / 2) • u) (δ / 80))
+    (hc : Continuous h) {r θ R₀ : ℝ} (hθ₀ : 0 < θ) (hθπ : θ < Real.pi)
+    (hR₀ : ∀ p, R₀ < ‖p‖ → ∃ z, z ≠ 0 ∧ ∀ x,
+      ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ → ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
+    {ψ : E → EReal} {x₀ : E} {δ : ℝ} (hδ₀ : 0 < δ) (hδ₁ : δ ≤ 1) (hδr : δ ≤ r) {g : E → E}
+    (hg_mem : ∀ u ∈ sphere (0 : E) 1,
+      g u ∈ closedBall (x₀ + (δ / 2) • u) ((1 - Real.cos (θ / 2)) / 8 * δ))
     (hg_bot : ∀ u ∈ sphere (0 : E) 1,
       cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ (g u) ≠ ⊥) :
-    ∃ m : ℝ, ∀ x ∈ closedBall x₀ (δ / 80),
-      (∀ u ∈ sphere (0 : E) 1, g u ∈ closedBall (x + (δ / 2) • u) (δ / 80)) →
+    ∃ m : ℝ, ∀ x ∈ closedBall x₀ ((1 - Real.cos (θ / 2)) / 8 * δ),
+      (∀ u ∈ sphere (0 : E) 1,
+        g u ∈ closedBall (x + (δ / 2) • u) ((1 - Real.cos (θ / 2)) / 8 * δ)) →
       (m : EReal) ≤ cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x := by
   set φ := cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ
+  have hκ₁ : (1 - Real.cos (θ / 2)) / 8 < 1 / 8 := by linarith [(cos_half_bounds hθ₀ hθπ).1]
   by_cases hall : ∀ y, ψ y = ⊥
   · exact ⟨0, fun _ _ _ ↦ le_cTransformSymm fun y ↦ by simp [hall y]⟩
   obtain ⟨y₁, hy₁⟩ : ∃ y, ψ y ≠ ⊥ := by simpa using hall
-  obtain ⟨R, F, hR₀, ⟨u₀, hu₀⟩, hFsub, hnet⟩ := exists_net_forall_closedBall_le h_cone
+  obtain ⟨R, F, hR_nonneg, ⟨u₀, hu₀⟩, hFsub, hnet⟩ := exists_net_forall_closedBall_le hθ₀ hθπ hR₀
   have hgu₀_dist : ‖g u₀ - x₀‖ ≤ 1 := by
     have hmem := mem_closedBall_iff_norm.1 (hg_mem u₀ (hFsub hu₀))
     have hu₀_norm : ‖(δ / 2) • u₀‖ = δ / 2 := by
@@ -243,22 +251,22 @@ private theorem exists_le_cTransformSymm_of_forall_sphere [Nontrivial E]
         mem_sphere_zero_iff_norm.1 (hFsub hu₀), mul_one]
     calc ‖g u₀ - x₀‖ = ‖(g u₀ - (x₀ + (δ / 2) • u₀)) + (δ / 2) • u₀‖ := by congr 1; abel
       _ ≤ ‖g u₀ - (x₀ + (δ / 2) • u₀)‖ + ‖(δ / 2) • u₀‖ := norm_add_le _ _
-      _ ≤ 1 := by linarith
+      _ ≤ 1 := by nlinarith
   obtain ⟨m₀, hm₀⟩ :=
     le_sub_of_norm_sub_le hc (by positivity : 0 ≤ R + 1) hgu₀_dist (hg_bot u₀ (hFsub hu₀))
   set m₁ := F.inf' ⟨u₀, hu₀⟩ fun u ↦ (φ (g u)).toReal
   refine ⟨min m₀ m₁, fun x hx hg_x ↦ le_cTransformSymm fun y ↦ ?_⟩
-  have hx_dist : ‖x - x₀‖ ≤ δ / 80 := mem_closedBall_iff_norm.1 hx
+  have hx_dist : ‖x - x₀‖ ≤ (1 - Real.cos (θ / 2)) / 8 * δ := mem_closedBall_iff_norm.1 hx
   by_cases hyR : ‖x₀ - y‖ ≤ R + 1
   · exact (EReal.coe_le_coe_iff.2 (min_le_left _ _)).trans
-      (hm₀ x y (hx_dist.trans (by linarith)) hyR)
+      (hm₀ x y (hx_dist.trans (by nlinarith)) hyR)
   push Not at hyR
   have hp : R < ‖x - y‖ := by
     have htri : ‖x₀ - y‖ - ‖x₀ - x‖ ≤ ‖x - y‖ := by
       simpa only [sub_sub_sub_cancel_left] using norm_sub_norm_le (x₀ - y) (x₀ - x)
     rw [norm_sub_rev x₀ x] at htri
-    linarith
-  obtain ⟨u, huF, hu_le⟩ := hnet (x - y) hp x δ hδ₀ hδ₁
+    nlinarith
+  obtain ⟨u, huF, hu_le⟩ := hnet (x - y) hp x δ hδ₀ hδr
   have hguy : h (g u - y) ≤ h (x - y) :=
     by simpa only [sub_add_sub_cancel] using hu_le (g u) (hg_x u (hFsub huF))
   calc ((min m₀ m₁ : ℝ) : EReal) ≤ (m₁ : EReal) := EReal.coe_le_coe_iff.2 (min_le_right _ _)
@@ -274,7 +282,7 @@ private theorem exists_le_cTransformSymm_of_forall_sphere [Nontrivial E]
 point of `interior {x | cTransformSymm c ψ x ≠ ⊥}` (the interior of the finiteness domain when
 `ψ ≢ ⊥`). -/
 theorem exists_eventually_le_cTransformSymm_of_mem_interior (hc : Continuous h)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     {ψ : E → EReal} {x₀ : E}
@@ -288,44 +296,49 @@ theorem exists_eventually_le_cTransformSymm_of_mem_interior (hc : Continuous h)
     refine ⟨(φ x₀).toReal, Eventually.of_forall fun x ↦ ?_⟩
     rw [Subsingleton.elim x x₀,
       EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ x₀).ne (interior_subset hx₀)]
+  obtain ⟨r, θ, R₀, hr, hθ₀, hθπ, hR₀⟩ := h_cone
+  have hκ : 0 < (1 - Real.cos (θ / 2)) / 8 := by linarith [(cos_half_bounds hθ₀ hθπ).2]
   obtain ⟨δ₀, hδ₀_pos, hδ₀_sub⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hx₀)
-  set δ := min (δ₀ / 2) 1
+  set δ := min (δ₀ / 2) (min r 1)
   have hδ_pos : 0 < δ := by positivity
   have hcb_sub : closedBall x₀ δ ⊆ {x | φ x ≠ ⊥} :=
     (closedBall_subset_ball (lt_of_le_of_lt (min_le_left _ _) (by linarith))).trans hδ₀_sub
-  obtain ⟨m, hm⟩ := exists_le_cTransformSymm_of_forall_sphere hc h_cone hδ_pos (min_le_right _ _)
+  obtain ⟨m, hm⟩ := exists_le_cTransformSymm_of_forall_sphere hc hθ₀ hθπ hR₀ hδ_pos
+    ((min_le_right _ _).trans (min_le_right _ _)) ((min_le_right _ _).trans (min_le_left _ _))
     (g := fun u ↦ x₀ + (δ / 2) • u) (fun _ _ ↦ mem_closedBall_self (by positivity))
     fun u hu ↦ hcb_sub <| mem_closedBall_iff_norm.2 <| by
       simp only [add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
         abs_of_pos (by positivity : 0 < δ / 2), mem_sphere_zero_iff_norm.1 hu, mul_one]
       linarith
-  refine ⟨m, eventually_of_mem (closedBall_mem_nhds x₀ (by positivity : 0 < δ / 80))
+  refine ⟨m, eventually_of_mem
+    (closedBall_mem_nhds x₀ (by positivity : 0 < (1 - Real.cos (θ / 2)) / 8 * δ))
     fun x hx ↦ hm x hx fun u _ ↦ mem_closedBall_iff_norm.2 ?_⟩
   simpa only [add_sub_add_right_eq_sub, norm_sub_rev] using mem_closedBall_iff_norm.1 hx
 
-/-- If `cTransformSymm` takes `⊥` at `x₁`, then under continuity of `h` and the cone condition (H2),
-it takes `⊥` on an entire ball `closedBall (x₁ + (δ / 2) • u) (δ / 80)` for some unit vector `u`. -/
+/-- If `cTransformSymm` takes `⊥` at `x₁`, then under continuity of `h` and the cone condition, it
+takes `⊥` on an entire ball `closedBall (x₁ + (δ / 2) • u) ((1 - cos (θ / 2)) / 8 * δ)` for some
+unit vector `u`. -/
 private theorem exists_closedBall_subset_setOf_cTransformSymm_eq_bot [Nontrivial E]
-    (hc : Continuous h)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
-      ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
-        ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
+    (hc : Continuous h) {r θ R₀ : ℝ} (hθ₀ : 0 < θ) (hθπ : θ < Real.pi)
+    (hR₀ : ∀ p, R₀ < ‖p‖ → ∃ z, z ≠ 0 ∧ ∀ x,
+      ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ → ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     {ψ : E → EReal} {x₁ : E}
     (hx₁ : cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x₁ = ⊥) {δ : ℝ}
-    (hδ₀ : 0 < δ) (hδ₁ : δ ≤ 1) :
+    (hδ₀ : 0 < δ) (hδ₁ : δ ≤ 1) (hδr : δ ≤ r) :
     ∃ u ∈ sphere (0 : E) 1,
-      closedBall (x₁ + (δ / 2) • u) (δ / 80) ⊆
+      closedBall (x₁ + (δ / 2) • u) ((1 - Real.cos (θ / 2)) / 8 * δ) ⊆
         {x | cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x = ⊥} := by
+  have hκ : 0 < (1 - Real.cos (θ / 2)) / 8 := by linarith [(cos_half_bounds hθ₀ hθπ).2]
   by_contra! hcon
   have hcon' : ∀ u, ∃ x, u ∈ sphere (0 : E) 1 →
-      x ∈ closedBall (x₁ + (δ / 2) • u) (δ / 80) ∧
+      x ∈ closedBall (x₁ + (δ / 2) • u) ((1 - Real.cos (θ / 2)) / 8 * δ) ∧
         cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x ≠ ⊥ := fun u ↦ by
     by_cases hu : u ∈ sphere (0 : E) 1
     · obtain ⟨x, hx_cb, hx_bot⟩ := not_subset.1 (hcon u hu)
       exact ⟨x, fun _ ↦ ⟨hx_cb, hx_bot⟩⟩
     · exact ⟨x₁, fun h ↦ (hu h).elim⟩
   choose g hg using hcon'
-  obtain ⟨m, hm⟩ := exists_le_cTransformSymm_of_forall_sphere hc h_cone hδ₀ hδ₁
+  obtain ⟨m, hm⟩ := exists_le_cTransformSymm_of_forall_sphere hc hθ₀ hθπ hR₀ hδ₀ hδ₁ hδr
     (fun u hu ↦ (hg u hu).1) (fun u hu ↦ (hg u hu).2)
   have hle := hm x₁ (mem_closedBall_self (by positivity)) fun u hu ↦ (hg u hu).1
   exact EReal.coe_ne_bot m (eq_bot_iff.2 (hle.trans_eq hx₁))
@@ -337,7 +350,7 @@ non-interior points `{x | cTransformSymm c ψ x ≠ ⊥} \ interior {x | cTransf
 measure. -/
 theorem addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero
     [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure] (hc : Continuous h)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     (ψ : E → EReal) :
@@ -347,6 +360,11 @@ theorem addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero
   rcases subsingleton_or_nontrivial E with hsub | hnon
   · have : DiscreteTopology E := Finite.instDiscreteTopology
     rw [(isOpen_discrete S).interior_eq, Set.sdiff_self, measure_empty]
+  obtain ⟨r, θ, R₀, hr, hθ₀, hθπ, hR₀⟩ := h_cone
+  obtain ⟨hc₀, hc₁⟩ := cos_half_bounds hθ₀ hθπ
+  set κ : ℝ := (1 - Real.cos (θ / 2)) / 8 with hκ_def
+  have hκ₀ : 0 < κ := by linarith
+  have _ : κ < 1 / 8 := by linarith
   have hS_meas : NullMeasurableSet S ρ :=
     (measurable_cTransformSymm_of_upperSemicontinuous
       (fun y ↦ (hc.comp (continuous_id.sub continuous_const)).upperSemicontinuous) ψ
@@ -359,26 +377,27 @@ theorem addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero
   by_contra hx₀_int
   have hball_pos := eventually_measure_closedBall_ne_zero_ne_top ρ x₀
   have hcompl := (hS_meas.tendsto_measure_compl_inter_div_iff hball_pos).2 hx₀
-  set α : ℝ≥0∞ := ENNReal.ofReal ((1 / 80 : ℝ) ^ Module.finrank ℝ E)
+  set α : ℝ≥0∞ := ENNReal.ofReal (κ ^ Module.finrank ℝ E)
   have hα : 0 < α := ENNReal.ofReal_pos.2 (by positivity)
   have hev := (hcompl.eventually (gt_mem_nhds hα)).and
-    (Ioo_mem_nhdsGT (zero_lt_one : (0 : ℝ) < 1))
-  obtain ⟨δ, ⟨hδ_lt, hδ₀, hδ₁⟩, hρ0, hρtop⟩ := (hev.and hball_pos).exists
+    (Ioo_mem_nhdsGT (by positivity : (0 : ℝ) < min r 1))
+  obtain ⟨δ, ⟨hδ_lt, hδ₀, hδ_lt_min⟩, hρ0, hρtop⟩ := (hev.and hball_pos).exists
   have hnot_sub : ¬ ball x₀ (δ / 4) ⊆ S := fun hsub ↦
     hx₀_int (mem_interior.2 ⟨ball x₀ (δ / 4), hsub, isOpen_ball, mem_ball_self (by positivity)⟩)
   obtain ⟨x₁, hx₁_ball, hx₁_notS⟩ := not_subset.1 hnot_sub
-  obtain ⟨u, hu_sph, hu_sub⟩ := exists_closedBall_subset_setOf_cTransformSymm_eq_bot hc h_cone
-    (not_not.1 hx₁_notS) hδ₀ hδ₁.le
-  have hcb_sub : closedBall (x₁ + (δ / 2) • u) (1 / 80 * δ) ⊆ Sᶜ ∩ closedBall x₀ δ :=
+  obtain ⟨u, hu_sph, hu_sub⟩ := exists_closedBall_subset_setOf_cTransformSymm_eq_bot hc hθ₀ hθπ hR₀
+    (not_not.1 hx₁_notS) hδ₀ (hδ_lt_min.le.trans (min_le_right _ _))
+    (hδ_lt_min.le.trans (min_le_left _ _))
+  have hcb_sub : closedBall (x₁ + (δ / 2) • u) (κ * δ) ⊆ Sᶜ ∩ closedBall x₀ δ :=
     subset_inter
-      (fun x hx hxS ↦ hxS (hu_sub (by convert hx using 2; ring)))
+      (fun x hx hxS ↦ hxS (hu_sub hx))
       (closedBall_subset_closedBall' <| by
         have hd : dist (x₁ + (δ / 2) • u) x₁ = δ / 2 := by
           rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
             abs_of_pos (by positivity), mem_sphere_zero_iff_norm.1 hu_sph, mul_one]
-        linarith [dist_triangle (x₁ + (δ / 2) • u) x₁ x₀, mem_ball.1 hx₁_ball])
-  have hmeas_eq : ρ (closedBall (x₁ + (δ / 2) • u) (1 / 80 * δ)) = α * ρ (closedBall x₀ δ) := by
-    rw [Measure.addHaar_closedBall_mul_of_pos ρ _ (by norm_num : (0 : ℝ) < 1 / 80) δ,
+        nlinarith [dist_triangle (x₁ + (δ / 2) • u) x₁ x₀, mem_ball.1 hx₁_ball])
+  have hmeas_eq : ρ (closedBall (x₁ + (δ / 2) • u) (κ * δ)) = α * ρ (closedBall x₀ δ) := by
+    rw [Measure.addHaar_closedBall_mul_of_pos ρ _ hκ₀ δ,
       Measure.addHaar_closedBall_center ρ x₀ δ]
   have hle : α ≤ ρ (Sᶜ ∩ closedBall x₀ δ) / ρ (closedBall x₀ δ) := by
     calc α = (α * ρ (closedBall x₀ δ)) / ρ (closedBall x₀ δ) :=
@@ -567,7 +586,7 @@ the real representative of `cTransformSymm` for `h (x - y)` is locally Lipschitz
 `interior {x | cTransformSymm c ψ x ≠ ⊥}` (the interior of the finiteness domain when `ψ ≢ ⊥`). -/
 theorem locallyLipschitzOn_interior_toReal_cTransformSymm (hh : ConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     (ψ : E → EReal) :
@@ -584,7 +603,7 @@ theorem ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm
     [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure]
     (hh : ConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
-    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+    (h_cone : ∃ r θ R : ℝ, 0 < r ∧ 0 < θ ∧ θ < Real.pi ∧ ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
     (ψ : E → EReal) :

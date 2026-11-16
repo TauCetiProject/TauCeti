@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
-public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
+import TauCeti.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.OptimalTransport.Existence.Finite
 import TauCeti.MeasureTheory.OptimalTransport.Stability
 import TauCeti.Topology.Order.OrderClosed
 
@@ -20,10 +21,11 @@ trivially Kantorovich-optimal, so Kantorovich optimality alone no longer selects
 cyclically monotone support.
 
 Following Gangbo and McCann (Theorem 2.3), this file constructs couplings with `c`-cyclically
-monotone support for an arbitrary continuous real cost `c : X × Y → ℝ` on Polish spaces, with no
-lower bound or finite-moment assumption on `c`: the cost is clamped to `[-k, k]`, shifted by `+ k`
-to become nonnegative and bounded (hence of finite optimal cost), and a weak cluster point of the
-resulting optimal plans inherits `c`-cyclical monotonicity of its support by
+monotone support between finite measures of equal mass for an arbitrary continuous real cost
+`c : X × Y → ℝ` on Polish spaces, with no lower bound or finite-moment assumption on `c`: after
+normalizing nonzero marginals to probability measures, the cost is clamped to `[-k, k]`, shifted by
+`+ k` to become nonnegative and bounded (hence of finite optimal cost), and a weak cluster point of
+the resulting optimal plans inherits `c`-cyclical monotonicity of its support by
 `TauCeti.isCyclicallyMonotone_support_of_tendsto`. When `c` is nonnegative, combining the finite
 and infinite total-cost regimes yields an optimal coupling whose support is `c`-cyclically
 monotone regardless of whether `transportCost` is finite.
@@ -31,10 +33,11 @@ monotone regardless of whether `transportCost` is finite.
 ## Main statements
 
 * `TauCeti.exists_isCoupling_isCyclicallyMonotone_support` — for any continuous real cost on Polish
-  spaces, any two probability measures admit a coupling with `c`-cyclically monotone support;
-* `TauCeti.exists_isOptimalCoupling_isCyclicallyMonotone_support` — when `0 ≤ c`, there is an
-  optimal coupling for `ENNReal.ofReal ∘ c` whose support is `c`-cyclically monotone, even when the
-  optimal transport cost is `∞`.
+  spaces, any two finite measures of equal mass admit a coupling with `c`-cyclically monotone
+  support;
+* `TauCeti.exists_isOptimalCoupling_isCyclicallyMonotone_support` — when `0 ≤ c`, finite measures
+  of equal mass admit an optimal coupling for `ENNReal.ofReal ∘ c` whose support is `c`-cyclically
+  monotone, even when the optimal transport cost is `∞`.
 
 ## References
 
@@ -53,12 +56,9 @@ namespace TauCeti
 variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
 
-/-- **Existence of a coupling with cyclically monotone support** (Gangbo–McCann, Theorem 2.3).
-On Polish Borel spaces, for any continuous cost `c : X × Y → ℝ` and any two probability measures
-`μ` and `ν`, there exists a coupling `π` of `μ` and `ν` whose topological support is `c`-cyclically
-monotone. Neither nonnegativity of `c` nor finiteness of any cost integral is required. -/
-theorem exists_isCoupling_isCyclicallyMonotone_support (μ : Measure X) [IsProbabilityMeasure μ]
-    (ν : Measure Y) [IsProbabilityMeasure ν] {c : X × Y → ℝ} (hc : Continuous c) :
+private theorem exists_isCoupling_isCyclicallyMonotone_support_prob (μ : Measure X)
+    [IsProbabilityMeasure μ] (ν : Measure Y) [IsProbabilityMeasure ν]
+    {c : X × Y → ℝ} (hc : Continuous c) :
     ∃ π, IsCoupling π μ ν ∧ IsCyclicallyMonotone c π.support := by
   let b : ℕ → X × Y → ℝ := fun k z ↦ max (-(k : ℝ)) (min (c z) k)
   let cPos : ℕ → X × Y → ℝ≥0∞ := fun k z ↦ ENNReal.ofReal (b k z + k)
@@ -97,21 +97,45 @@ theorem exists_isCoupling_isCyclicallyMonotone_support (μ : Measure X) [IsProba
   exact (tendsto_neg_atTop_atBot.comp hcast).atBot_max
     (((hc.tendsto z).comp tendsto_snd).min_atTop hcast)
 
+variable {μ : Measure X} {ν : Measure Y} [IsFiniteMeasure μ]
+
+/-- **Existence of a coupling with cyclically monotone support** (Gangbo–McCann, Theorem 2.3).
+On Polish Borel spaces, for any continuous cost `c : X × Y → ℝ` and any two finite measures `μ`
+and `ν` of equal mass, there exists a coupling `π` of `μ` and `ν` whose topological support is
+`c`-cyclically monotone. Neither nonnegativity of `c` nor finiteness of any cost integral is
+required. -/
+theorem exists_isCoupling_isCyclicallyMonotone_support (hmass : μ univ = ν univ)
+    {c : X × Y → ℝ} (hc : Continuous c) :
+    ∃ π, IsCoupling π μ ν ∧ IsCyclicallyMonotone c π.support := by
+  have : IsFiniteMeasure ν := ⟨hmass ▸ measure_lt_top μ univ⟩
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · have hν : ν = 0 := Measure.measure_univ_eq_zero.mp (by simpa using hmass.symm)
+    subst ν
+    exact ⟨0, isCoupling_zero, by simp [Measure.support_zero]⟩
+  have hμ0 : μ univ ≠ 0 := fun h ↦ hμ (Measure.measure_univ_eq_zero.mp h)
+  have hν : ν ≠ 0 := fun h ↦ hμ0 (by simpa [h] using hmass)
+  let : NeZero μ := ⟨hμ⟩
+  let : NeZero ν := ⟨hν⟩
+  obtain ⟨π, hπ, hcm⟩ :=
+    exists_isCoupling_isCyclicallyMonotone_support_prob ((μ univ)⁻¹ • μ) ((ν univ)⁻¹ • ν) hc
+  refine ⟨μ univ • π, ?_, by rwa [Measure.support_smul_measure _ _ hμ0]⟩
+  simpa only [← hmass, smul_smul, ENNReal.mul_inv_cancel hμ0 (measure_ne_top μ univ),
+    one_smul] using hπ.smul (μ univ)
+
 /-- **Existence of an optimal coupling with cyclically monotone support.** On Polish Borel spaces,
-for any continuous nonnegative cost `c : X × Y → ℝ` and any two probability measures `μ` and `ν`,
-there exists an optimal coupling `π` for `ENNReal.ofReal ∘ c` whose topological support is
-`c`-cyclically monotone. Unlike `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support`, this
+for any continuous nonnegative cost `c : X × Y → ℝ` and any two finite measures `μ` and `ν` of
+equal mass, there exists an optimal coupling `π` for `ENNReal.ofReal ∘ c` whose topological support
+is `c`-cyclically monotone. Unlike `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support`, this
 requires no finiteness assumption on `transportCost`. -/
-theorem exists_isOptimalCoupling_isCyclicallyMonotone_support (μ : Measure X)
-    [IsProbabilityMeasure μ] (ν : Measure Y) [IsProbabilityMeasure ν]
+theorem exists_isOptimalCoupling_isCyclicallyMonotone_support (hmass : μ univ = ν univ)
     {c : X × Y → ℝ} (hc : Continuous c) (hc0 : ∀ z, 0 ≤ c z) :
     ∃ π, IsOptimalCoupling (fun z ↦ ENNReal.ofReal (c z)) π μ ν ∧
       IsCyclicallyMonotone c π.support := by
   by_cases hfin : transportCost (fun z ↦ ENNReal.ofReal (c z)) μ ν = ∞
-  · obtain ⟨π, hπ, hcm⟩ := exists_isCoupling_isCyclicallyMonotone_support μ ν hc
+  · obtain ⟨π, hπ, hcm⟩ := exists_isCoupling_isCyclicallyMonotone_support hmass hc
     exact ⟨π, ⟨hπ, le_antisymm (hfin ▸ le_top) (transportCost_le_lintegral hπ _)⟩, hcm⟩
   · have hc' : Continuous fun z ↦ ENNReal.ofReal (c z) := ENNReal.continuous_ofReal.comp hc
-    obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc'.lowerSemicontinuous
+    obtain ⟨π, hπ⟩ := (exists_isOptimalCoupling_iff hc'.lowerSemicontinuous).2 hmass
     exact ⟨π, hπ,
       (isCyclicallyMonotone_ofReal_iff hc0).1 (hπ.isCyclicallyMonotone_support hc' hfin)⟩
 
