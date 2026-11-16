@@ -49,6 +49,8 @@ equality. Every statement here holds in any characteristic, including two and th
 * `WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero`: at such a model, `c₄ = b₂²`.
 * `WeierstrassCurve.Affine.c₄_eq_of_isSingular`: at any singular point with tangent slope `α`,
   `c₄ = (2 α + a₁) ^ 4`.
+* `WeierstrassCurve.Affine.variableChange_eq_of_isSingular`: the change of variables `⟨1, x, α, y⟩`
+  brings the model to `y² + (a₁ + 2 α) x y = x³`.
 * `WeierstrassCurve.Affine.isSingular_iff_variableChange`: singularity at a point is singularity at
   the origin of the model translated there.
 * `WeierstrassCurve.Affine.isSingular_iff_equation_and_not_nonsingular`: the comparison with
@@ -216,6 +218,22 @@ theorem c₄_eq_of_isSingular {x y α : R} (h : W.IsSingular x y)
   simp only [b₂, variableChange_a₁, variableChange_a₂, inv_one, Units.val_one]
   linear_combination (-8 * (W.a₁ ^ 2 + 4 * (3 * x + W.a₂)) -
     16 * (α ^ 2 + W.a₁ * α - (3 * x + W.a₂))) * hα
+
+/-- **Bringing a singular Weierstrass model with a tangent slope to `y² + (a₁ + 2 α) x y = x³`.**
+At a singular point `(x, y)` with tangent slope `α` satisfying `α² + a₁ α - (3 x + a₂) = 0`, the
+change of variables `⟨1, x, α, y⟩` kills `a₂`, `a₃`, `a₄`, and `a₆`, leaving `a₁' = a₁ + 2 α`
+(whose fourth power is `c₄` by `c₄_eq_of_isSingular`). -/
+theorem variableChange_eq_of_isSingular {x y α : R} (h : W.IsSingular x y)
+    (hα : α ^ 2 + W.a₁ * α - (3 * x + W.a₂) = 0) :
+    VariableChange.mk 1 x α y • W = ⟨W.a₁ + 2 * α, 0, 0, 0, 0⟩ := by
+  obtain ⟨hE, hX, hY⟩ := (isSingular_iff' _ _ _).mp h
+  rw [equation_iff'] at hE
+  ext <;> simp only [variableChange_def, inv_one, Units.val_one]
+  · ring
+  · linear_combination -hα
+  · linear_combination hY
+  · linear_combination -hX - α * hY
+  · linear_combination -hE
 
 /-- **Singularity is carried along a coefficient map.** -/
 theorem IsSingular.map {S : Type*} [CommRing S] (f : R →+* S) {x y : R} (h : W.IsSingular x y) :
