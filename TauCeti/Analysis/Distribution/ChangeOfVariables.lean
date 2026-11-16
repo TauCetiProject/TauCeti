@@ -43,8 +43,8 @@ coordinate charts: chart transitions of a manifold are such maps.
 * `Distribution.compCLMOfOpenPartialHomeomorph_delta`: `e^* δ_{e x} = |det D e (x)|⁻¹ δ_x`.
 * `Distribution.compCLMOfOpenPartialHomeomorph_refl`: pulling back along the identity is
   restriction.
-* `Distribution.dsupport_compCLMOfOpenPartialHomeomorph_subset`: on the source of `e`, the support
-  of `e^* T` lies in the preimage of the support of `T`.
+* `Distribution.dsupport_compCLMOfOpenPartialHomeomorph_inter_source_subset`: on the source of
+  `e`, the support of `e^* T` lies in the preimage of the support of `T`.
 * `Distribution.compCLMOfOpenPartialHomeomorph_trans`: pulling back along a composite is the
   composite of the pullbacks.
 * `Distribution.compCLMOfOpenPartialHomeomorph_symm_apply_apply`,
@@ -116,7 +116,7 @@ theorem compCLMOfOpenPartialHomeomorph_refl
 /-- On the source of `e`, the support of the pullback `e^* T` lies in the preimage of the support
 of `T`. Off the source, the values of `e` carry no information, so the intersection is needed at
 boundary points of `U` outside the source. -/
-theorem dsupport_compCLMOfOpenPartialHomeomorph_subset (T : 𝓓'(Ω, F)) :
+theorem dsupport_compCLMOfOpenPartialHomeomorph_inter_source_subset (T : 𝓓'(Ω, F)) :
     dsupport (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T) ∩ e.source ⊆
       e ⁻¹' dsupport T := by
   rintro x ⟨hx, hxs⟩
