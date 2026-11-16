@@ -35,6 +35,16 @@ completing the square. The operator norm of `J_N(z, W)` grows at most linearly i
 (`TauCeti.norm_normalLinearization_le`), so on the disk bundle of radius `R` the required `K` is
 of order `R²`.
 
+The qualitative form of this statement, for a linear complex structure with a complex-linear
+projection on a finite-dimensional space, is
+`TauCeti.SymplecticForm.eventually_exists_pos_forall_mul_norm_sq_le_mul_apply_add_apply` in
+`TauCeti.Geometry.Symplectic.AlmostComplex.Projection`, proved by compactness. The estimate here is
+the explicit refinement for the splitting `E × N`: it gives the constants `m / 2` and
+`K ≥ 1 / 2 + t + 2 t²`, and it needs neither finite dimension, nor `J_N² = -1`, nor `ω`
+symplectic. Applying the compactness result to `J_N` would require `J` to be differentiable along
+the curve, to square to `-1` near it and to preserve `E × {0}` there, which make `J_N(z, W)` a
+complex structure (`TauCeti.normalLinearization_apply_normalLinearization_apply`).
+
 ## Main results
 
 * `TauCeti.div_two_mul_norm_sq_le_mul_apply_add_apply`: for an endomorphism `L` of `E × N` that
