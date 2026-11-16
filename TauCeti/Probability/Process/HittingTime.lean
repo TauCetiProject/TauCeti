@@ -24,7 +24,8 @@ times, giving a stopping time on the original filtration, without right continui
 completion assumptions. For ordered-valued continuous paths, first entrance into a
 singleton coincides with first entrance into the corresponding closed half-line when the
 initial state lies on the opposite side, and a path starting in `[a, b]` remains in
-`[a, b]` up to its first exit from `(a, b)` and hits `{a, b}` when that exit is finite.
+`[a, b]` up to its first exit from `(a, b)` (so the stopped path stays in `[a, b]` thereafter)
+and hits `{a, b}` when that exit is finite.
 
 For arbitrary processes and state spaces—without order, topology, or path-continuity
 hypotheses—post-composition and negation pull target sets back through preimages, entrance
@@ -168,6 +169,21 @@ theorem Continuous.mem_Icc_of_le_hittingAfter_compl_Ioo {u t : ι} {a b : β}
       (ht.trans (MeasureTheory.hittingAfter_apply_anti X u ω fun _ hy h ↦ hy.not_gt h.1)),
     hX.le_of_le_hittingAfter_Ici hut hstart.2
       (ht.trans (MeasureTheory.hittingAfter_apply_anti X u ω fun _ hy h ↦ hy.not_gt h.2))⟩
+
+/-- Stopping a continuous ordered-valued path at its first exit from `(a, b)` after `u` keeps it in
+`[a, b]` at every time `t ≥ u`, provided it starts in `[a, b]` at `u`. -/
+theorem Continuous.stoppedProcess_hittingAfter_compl_Ioo_mem_Icc [Nonempty ι] {u t : ι} {a b : β}
+    (hX : Continuous (X · ω)) (hut : u ≤ t) (hstart : X u ω ∈ Icc a b) :
+    MeasureTheory.stoppedProcess X (MeasureTheory.hittingAfter X (Ioo a b)ᶜ u) t ω ∈ Icc a b := by
+  by_cases ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Ioo a b)ᶜ u ω
+  · rw [MeasureTheory.stoppedProcess_eq_of_le ht]
+    exact hX.mem_Icc_of_le_hittingAfter_compl_Ioo hut hstart ht
+  · rw [MeasureTheory.stoppedProcess_eq_of_ge (le_of_not_ge ht)]
+    cases hs : MeasureTheory.hittingAfter X (Ioo a b)ᶜ u ω with
+    | top => exact absurd (hs ▸ le_of_not_ge ht) (not_le.mpr (WithTop.coe_lt_top t))
+    | coe s =>
+      simpa only [WithTop.untopA, WithTop.untopD_coe] using hX.mem_Icc_of_le_hittingAfter_compl_Ioo
+        (WithTop.coe_le_coe.mp (hs ▸ MeasureTheory.le_hittingAfter ω)) hstart hs.symm.le
 
 /-- A continuous ordered-valued path starting in `[a, b]` evaluates to `a` or `b` at any finite
 first exit time from `(a, b)`. -/
