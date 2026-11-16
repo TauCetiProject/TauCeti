@@ -31,7 +31,7 @@ direction at every `x ∈ C` (as
 `TauCeti.exists_admissible_forall_mem_range_fderiv_perturbedFlow_sup_span_eq_top` provides), then
 for almost every small parameter `s` the unstable set of `p` and the stable set of `q` for `f_s` are
 transverse at every point `φ^{f_s}_T x`, `x ∈ C`, that lies on a trajectory to `q` below `c₁`
-(`TauCeti.exists_pos_ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top`).
+(`exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_perturb_eq_top`).
 
 The proof applies the parametric transversality theorem
 `TauCeti.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top` to the universal map
@@ -47,9 +47,9 @@ the flow of the tangent space of the unstable set.
 
 ## Main results
 
-* `TauCeti.exists_pos_ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top`: for almost
-  every small parameter, the perturbed unstable set of `p` and stable set of `q` are transverse
-  along the images of `C`.
+* `exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_perturb_eq_top`:
+  for almost every small parameter, the perturbed unstable set of `p` and stable set of `q` are
+  transverse along the images of `C`.
 
 ## References
 
@@ -71,11 +71,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   (ν : Measure (EuclideanSpace ℝ ι)) [ν.IsAddHaarMeasure]
 
 /-- **Transversality in one chart of the unstable set.** The statement of
-`TauCeti.exists_pos_ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top` for the points
-of `C` in the source of one chart `e` flattening the unstable set of `p`, given the spanning
-condition for all parameters of norm less than `δ ≤ 1`. -/
-private theorem ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top_of_chart {m : ℕ}
-    (hfs : ContDiff ℝ (m + 2) f) (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+`exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_perturb_eq_top`
+for the points of `C` in the source of one chart `e` flattening the unstable set of `p`, given the
+spanning condition for all parameters of norm less than `δ ≤ 1`. -/
+private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_unstableSet_chart
+    {m : ℕ}
+    (hfs : ContDiff ℝ (m + 2) f) (hfs' : ContDiff ℝ ((m + 1 : ℕ) + 1) f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (hc : ∀ i, HasCompactSupport (h i)) (hhs : ∀ i, ContDiff ℝ (m + 2) (h i)) {p q : E}
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hm : morseIndex f p ≤ morseIndex f q + m) {c₁ c₂ : ℝ}
@@ -134,10 +136,6 @@ private theorem ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top_o
     contDiffAt_fst.comp z (hΦT.contDiffAt.comp z (((hes _ hz.1).comp z
       (Lu.subtypeL.contDiff.contDiffAt.comp z contDiffAt_fst)).prodMk contDiffAt_snd))
   -- The stable set of `q` is flattened by `C^(m+1)` charts.
-  have hfs' : ContDiff ℝ ((m + 1 : ℕ) + 1) f := by
-    convert hfs using 1
-    push_cast
-    rw [add_assoc, one_add_one_eq_two]
   have hchart : ∀ z ∈ U, G z ∈ S → ∃ e' : OpenPartialHomeomorph E E, G z ∈ e'.source ∧
       (∀ y ∈ e'.source, y ∈ S → ContDiffAt ℝ (m + 1 : ℕ) e' y) ∧
       (∀ y ∈ e'.source, y ∈ S → DifferentiableAt ℝ e'.symm (e' y)) ∧
@@ -212,8 +210,7 @@ private theorem ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top_o
       fderiv_negativeGradientFlow_perturb hfs2 hf hh hc (hsδ.le.trans hδ) hf']
     rintro _ ⟨w, rfl⟩
     refine ⟨A.symm (w : E), by simp, ?_⟩
-    simp [(hGd _ hU).fderiv, hAs, hxv]
-    rfl
+    simp [(hGd _ hU).fderiv, hAs, hxv, Φ]
   · rw [tangentConeAt_stableSet_perturb hf hf' hc₁ q hlt hfs2.continuous.continuousAt]
 
 /-- **Transversality for one pair of critical points, for almost every small perturbation.** Let
@@ -224,7 +221,8 @@ every `x ∈ C`, the derivative at the parameter `0` of `s ↦ φ^{f_s}_T x` spa
 flow direction, then for almost every small parameter `s`, at every point `y = φ^{f_s}_T x` with
 `x ∈ C` lying below `c₁` on a trajectory of `f_s` to `q`, the unstable set of `p` and the stable set
 of `q` for `f_s` are transverse. -/
-theorem exists_pos_ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top {m : ℕ}
+theorem exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_perturb_eq_top
+    {m : ℕ}
     (hfs : ContDiff ℝ (m + 2) f) (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (hc : ∀ i, HasCompactSupport (h i)) (hhs : ∀ i, ContDiff ℝ (m + 2) (h i)) {p q : E}
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
@@ -268,8 +266,8 @@ theorem exists_pos_ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_to
     (fun x ↦ (e x).open_source) fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hxe _⟩
   refine ⟨min δ₀ 1, lt_min hδ₀ one_pos, ?_⟩
   have hall := (Filter.eventually_all_finset t).2 fun i _ ↦
-    ae_span_tangentConeAt_unstableSet_sup_stableSet_perturb_eq_top_of_chart ν hfs hf hh hc hhs hp hq
-      hm hc₁ hc₂ hCu hCc (min_le_right _ _)
+    ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_unstableSet_chart ν hfs hfs'
+      hf hh hc hhs hp hq hm hc₁ hc₂ hCu hCc (min_le_right _ _)
       (fun s hs ↦ hδspan s (hs.trans_le (min_le_left _ _))) (he i) (hes i) (heS i)
   filter_upwards [hall] with s hs hsδ K' hf' x hx hlt hys
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
