@@ -23,6 +23,8 @@ unit ball for all parameters.
 * `TauCeti.one_le_radius_ordinaryHypergeometricSeries`: the radius of convergence of
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
+* `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
+  its first `n + 1` terms.
 -/
 
 public section
@@ -61,5 +63,24 @@ theorem analyticOnNhd_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂)
     (zero_lt_one.trans_le h1)).analyticAt_of_mem
       (Metric.eball_subset_eball h1 (by
         simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx))
+
+section Terminating
+
+open scoped Nat
+
+variable {𝕂 𝔸 : Type*} [Field 𝕂] [Ring 𝔸] [Algebra 𝕂 𝔸] [TopologicalSpace 𝔸]
+  [IsTopologicalRing 𝔸]
+
+/-- A terminating `₂F₁(−n, b; c; z)` is the sum of its first `n + 1` terms, for all `b`, `c`. -/
+theorem ordinaryHypergeometric_neg_nat_eq_sum (n : ℕ) (b c : 𝕂) (z : 𝔸) :
+    ordinaryHypergeometric (-n : 𝕂) b c z =
+      ∑ k ∈ Finset.range (n + 1), ((k ! : 𝕂)⁻¹ * (ascPochhammer 𝕂 k).eval (-n : 𝕂) *
+        (ascPochhammer 𝕂 k).eval b * ((ascPochhammer 𝕂 k).eval c)⁻¹) • z ^ k := by
+  rw [ordinaryHypergeometric_eq_tsum]
+  refine tsum_eq_sum fun k hk => ?_
+  rw [ascPochhammer_eval_neg_natCast_of_lt (by simpa using hk)]
+  simp
+
+end Terminating
 
 end TauCeti
