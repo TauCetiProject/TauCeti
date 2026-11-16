@@ -81,8 +81,7 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
 * `BesselPotentialSpace.mulCLM`: the product on `H^s(E)` as a continuous bilinear map, whose
-  `L²` functions are the pointwise products (`BesselPotentialSpace.coeFn_toLp_inclusion_mulCLM`,
-  `BesselPotentialSpace.coeFn_inclusionLp_mulCLM_ae_eq`);
+  `L²` functions are the pointwise products (`BesselPotentialSpace.coeFn_toLp_inclusion_mulCLM`);
   it is commutative and associative.
 
 ## References
@@ -417,12 +416,6 @@ theorem coeFn_toLp_inclusion_mulCLM (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (
     ⇑(inclusion h (mulCLM hs u v)).toLp =ᵐ[volume]
       fun x ↦ (inclusion h u).toLp x * (inclusion h v).toLp x :=
   coeFn_toLp_inclusion_mulAux hs h u v
-
-/-- The `L²` function `inclusionLp h (mulCLM hs u v)` of the product of `u, v ∈ H^s(E)` is the
-pointwise product of the `L²` functions of `u` and `v`. -/
-theorem coeFn_inclusionLp_mulCLM_ae_eq (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (u v : H^{s}(E)) :
-    ⇑(inclusionLp h (mulCLM hs u v)) =ᵐ[volume] fun x ↦ inclusionLp h u x * inclusionLp h v x := by
-  simpa only [toLp_inclusion] using coeFn_toLp_inclusion_mulCLM hs h u v
 
 /-- Multiplication on `H^s(E)`, `s > dim E / 2`, is commutative. -/
 theorem mulCLM_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :

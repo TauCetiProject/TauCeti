@@ -543,8 +543,9 @@ theorem coeFn_inclusionLp_fieldMulCLM_ae_eq (hk : 1 ≤ k) {u : Fin 4 → H^{(k 
   rw [inclusionLp_inclusion] at hr
   filter_upwards [Lp.coeFn_add (inclusionLp _ (referenceMulCLM f m k a
     (inclusion (lt_add_one _).le v))) (inclusionLp h₀ (mulCLM hs (u a) v)), hr,
-    coeFn_inclusionLp_mulCLM_ae_eq hs h₀ (u a) v, hu a, hv]
+    coeFn_toLp_inclusion_mulCLM hs h₀ (u a) v, hu a, hv]
     with z h₁ h₂ h₃ h₄ h₅
+  simp only [toLp_inclusion] at h₃
   rw [h₁, Pi.add_apply, h₂, h₃, h₄, h₅]
   simp only [PiLp.add_apply, Pi.add_apply, Complex.ofReal_mul, Complex.ofReal_add]
   ring
@@ -603,8 +604,9 @@ theorem coeFn_inclusionLp_sobolevQuadraticTerm_ae_eq (hk : 1 ≤ k)
   have h₀ : (0 : ℝ) ≤ k + 1 := by positivity
   have hP (a b : Fin 4) : ⇑(inclusionLp h₀ (mulCLM hs (u a) (u b))) =ᵐ[volume]
       fun z ↦ (y z a : ℂ) * y z b := by
-    filter_upwards [coeFn_inclusionLp_mulCLM_ae_eq hs h₀ (u a) (u b), hu a, hu b]
+    filter_upwards [coeFn_toLp_inclusion_mulCLM hs h₀ (u a) (u b), hu a, hu b]
       with z h₁ h₂ h₃
+    simp only [toLp_inclusion] at h₁
     rw [h₁, h₂, h₃]
   fin_cases i
   · simp only [Fin.zero_eta, Fin.isValue, sobolevQuadraticTerm_apply_zero hk hs,
