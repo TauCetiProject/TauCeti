@@ -25,13 +25,23 @@ absolute moment tends to zero as the norm cutoff tends to infinity.
 For functions in `Lᵖ`, with finite positive `p` and values in a seminormed group, cutting off
 values above increasing real norm levels makes the integral of the `p`-th power of the error
 norm tend to zero. This supplies bounded approximations without requiring the underlying measure
-to be finite.
+to be finite. The cut-off function is bounded by the level itself
+(`TauCeti.norm_indicator_setOf_norm_le_le`).
 -/
 
 public section
 
 open Set Filter
 open scoped ENNReal Topology NNReal
+
+namespace TauCeti
+
+/-- Keeping a function only where its norm is at most `R ≥ 0` gives values of norm at most `R`. -/
+theorem norm_indicator_setOf_norm_le_le {α E : Type*} [SeminormedAddGroup E] (f : α → E)
+    {R : ℝ} (hR : 0 ≤ R) (a : α) : ‖{x | ‖f x‖ ≤ R}.indicator f a‖ ≤ R := by
+  by_cases h : ‖f a‖ ≤ R <;> simp [indicator, h, hR]
+
+end TauCeti
 
 namespace MeasureTheory
 

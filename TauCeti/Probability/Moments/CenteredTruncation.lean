@@ -80,20 +80,16 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.centeredTruncation
   (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const)).sub
     aestronglyMeasurable_const
 
-omit [MeasurableSpace Ω] [NormedSpace ℝ E] in
-private theorem norm_indicator_le (R : ℝ≥0) (ω : Ω) :
-    ‖{ω | ‖X ω‖ ≤ R}.indicator X ω‖ ≤ R := by
-  by_cases h : ‖X ω‖ ≤ R <;> simp [indicator, h, R.coe_nonneg]
-
 variable [IsProbabilityMeasure P]
 
 /-- Centered truncation has norm at most twice the cutoff, including cutoff zero. -/
 theorem norm_centeredTruncation_le (R : ℝ≥0) (ω : Ω) :
     ‖centeredTruncation X P R ω‖ ≤ 2 * R := by
   exact (norm_sub_le _ _).trans (by
-    simpa only [two_mul, probReal_univ, mul_one] using add_le_add (norm_indicator_le (X := X) R ω)
+    simpa only [two_mul, probReal_univ, mul_one] using
+      add_le_add (norm_indicator_setOf_norm_le_le X R.coe_nonneg ω)
       (norm_integral_le_of_norm_le_const (μ := P) (f := {ω | ‖X ω‖ ≤ R}.indicator X)
-        (.of_forall (norm_indicator_le (X := X) R))))
+        (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))))
 
 /-- Every finite absolute moment of a centered truncation exists. -/
 theorem _root_.MeasureTheory.AEStronglyMeasurable.memLp_centeredTruncation
@@ -111,7 +107,7 @@ variable [CompleteSpace E]
   have hi : Integrable ({ω | ‖X ω‖ ≤ R}.indicator X) P :=
     Integrable.of_bound
       (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const))
-      R (.of_forall (norm_indicator_le (X := X) R))
+      R (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))
   rw [centeredTruncation_def, integral_sub hi (integrable_const _)]
   simp
 

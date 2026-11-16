@@ -43,7 +43,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- Truncating and centering upper coordinates preserves their joint independence with the
 unchanged diagonal coordinates. -/
-theorem iIndepFun_wignerMatrix_centeredTruncation
+theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation
     (h : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
       Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P) (R : ℝ≥0) :
     iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
