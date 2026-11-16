@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
-import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 
 /-!
 # Smoothness of diagonalizable groups
@@ -19,12 +18,11 @@ In characteristic zero, where `p = 1`, the condition is empty and every diagonal
 smooth; in characteristic `p` the group `μ_p = D(ℤ/p)` is the basic non-smooth example.
 
 A finite-type affine group over a field is smooth exactly when it is geometrically reduced, so the
-criterion is the one for geometric reducedness of the group algebra `k[G]`.
+criterion is the one for geometric reducedness of the group algebra `k[G]`, in the form
+`TauCeti.DiagonalizableGroup.smooth_coordinateRing_iff` for the coordinate Hopf algebra.
 
 ## Main declarations
 
-* `TauCeti.DiagonalizableGroup.smooth_coordinateRing_iff`: the coordinate Hopf algebra of a
-  diagonalizable group is smooth exactly when the character group has no `p`-torsion.
 * `TauCeti.DiagonalizableGroup.smooth_groupScheme_iff`: the structural morphism of the
   diagonalizable group scheme is smooth exactly when the character group has no `p`-torsion.
 
@@ -39,16 +37,7 @@ open AlgebraicGeometry CategoryTheory
 
 namespace TauCeti.DiagonalizableGroup
 
-universe u w
-
-/-- **The coordinate Hopf algebra of a diagonalizable group over a field of exponential
-characteristic `p` is smooth exactly when its character group has no `p`-torsion.** In
-characteristic zero, where `p = 1`, the condition is empty. -/
-theorem smooth_coordinateRing_iff
-    (k : Type u) [Field k] (p : ℕ) [ExpChar k p] (G : FGCommGrpCat.{w}) :
-    smoothCommHopfAlgProperty k (coordinateRing k G).obj ↔ ∀ g : G, g ^ p = 1 → g = 1 :=
-  (smoothCommHopfAlgProperty_iff_geometricallyReduced k (coordinateRing k G).obj).trans
-    (geometricallyReduced_coordinateRing_iff k p G)
+universe u
 
 /-- **The diagonalizable group scheme `D(G)` over a field of exponential characteristic `p` is
 smooth exactly when `G` has no `p`-torsion.** In characteristic zero, where `p = 1`, the condition
