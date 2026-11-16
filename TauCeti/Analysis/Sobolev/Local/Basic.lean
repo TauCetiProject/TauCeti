@@ -96,6 +96,14 @@ theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (
     (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
   (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
 
+/-- A locally `Lᵖ` function on `U` that vanishes off a compact set `T ⊆ U` is `Lᵖ` on the plane. -/
+theorem MemLpLoc.memLp_of_forall_notMem_eq_zero (hf : MemLpLoc p U f) {T : Set ℂ}
+    (hT : IsCompact T) (hTU : T ⊆ U) (h0 : ∀ z ∉ T, f z = 0) : MemLp f p volume := by
+  have : T.indicator f = f :=
+    Set.indicator_eq_self.2 fun z hz => by_contra fun h' => hz (h0 z h')
+  rw [← this, memLp_indicator_iff_restrict hT.measurableSet.nullMeasurableSet]
+  exact hf T hTU hT
+
 /-- A function that is `Lᵖ` on `U` is locally `Lᵖ` there. -/
 theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U)) :
     MemLpLoc p U f :=
@@ -254,6 +262,13 @@ theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [Norme
   memLpLoc_iff.2 fun K hKU hK => (ContinuousLinearMap.compL ℝ F G H).memLp_of_bilin p
     (memLpLoc_iff.1 hB K hKU hK)
     ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
+/-- **Hölder's inequality on compact subsets**, for a Hölder triple `1/r = 1/p + 1/q`: a locally
+`Lᵖ` field of continuous linear maps applied to a locally `L^q` field is locally `Lʳ`. -/
+theorem MemLpLoc.clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F} {r : ENNReal}
+    [ENNReal.HolderTriple p q r] (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) :
+    MemLpLoc r U (fun z => A z (w z)) :=
+  fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin r (hA K hK hc) (hw K hK hc)
+
 /-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
 applied to a locally `L^q` field is locally integrable on a locally closed set when
 `1/p + 1/q ≤ 1`. -/
