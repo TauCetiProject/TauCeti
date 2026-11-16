@@ -44,8 +44,7 @@ nondegenerate, the orbits are isolated
 (`TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt` and
 `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`), so the loops of a finite-energy
 half-cylinder whose derivative through `e` is bounded converge, `u(s, ·) → x`
-(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer`). This is the form
-the asymptotic condition takes at each end once that bound is available.
+(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer`).
 
 Measuring the convergence needs a metric near `K`. It is measured through a `C¹` map `e : M → F`
 into a finite-dimensional normed space, injective on `K` and with injective differential at the
@@ -326,7 +325,6 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) ∧
       TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  have hemb := hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj
   have hKe : IsCompact (e '' K) := hK.image he.continuous
   obtain ⟨Y, hYc, hYper, hYe, hfin⟩ :=
     hω.exists_lintegral_norm_sq_sliceDefect_comp_ne_top hH hHper he hK he_inj hu huK J hc hJc
@@ -341,15 +339,13 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     obtain ⟨x, hx, hxK, rfl⟩ :=
       exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hyper hy hyK
     -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
-    have hnhds := continuous_subtype_val.continuousAt (x := (⟨x 0, hxK 0⟩ : K)).preimage_mem_nhds
-      (hiso x hx hxK)
-    rw [hemb.isInducing.nhds_eq_comap, mem_comap] at hnhds
-    obtain ⟨V, hV, hVx⟩ := hnhds
+    obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he.continuous.continuousOn
+      he_inj (hxK 0) (hiso x hx hxK)
     obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
     refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
     obtain ⟨x', hx', hx'K, rfl⟩ :=
       exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hy'per hy' hy'K
-    have h0 : (⟨x' 0, hx'K 0⟩ : K) ∈ K.domRestrict e ⁻¹' V := hεV (Metric.mem_ball.2 (hdist 0))
+    have h0 : x' 0 ∈ K ∩ e ⁻¹' V := ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩
     rw [hVx h0 x' hx' hx'K rfl]
   -- The loops of `e ∘ u` converge to a single periodic solution of `y' = Y(t, y)`.
   obtain ⟨y, hyper, hy, hconv⟩ := exists_periodic_hasDerivAt_tendstoUniformly_atTop
