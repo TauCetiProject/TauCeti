@@ -44,7 +44,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
 /-- **The singular-value Hoffman–Wielandt inequality** when the domain dimension does not exceed
 the codomain dimension. The squared distance between the ordered singular values is at most the
 squared Frobenius seminorm of the difference. -/
-theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
+private theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
     (A B : E →ₗ[𝕜] F) (hEF : finrank 𝕜 E ≤ finrank 𝕜 F) :
     ∑ i : Fin (finrank 𝕜 E), (A.singularValues i - B.singularValues i) ^ 2 ≤
       TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F (A - B) ^ 2 := by
