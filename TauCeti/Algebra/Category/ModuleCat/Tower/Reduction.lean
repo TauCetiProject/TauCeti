@@ -514,7 +514,7 @@ theorem finiteReductionEquiv_inverse [IsNoetherianRing A] [IsAdicComplete I A] :
 @[simp]
 theorem finiteReductionEquiv_unitIso_hom_app_apply [IsNoetherianRing A] [IsAdicComplete I A]
     (M : FGModuleCat.{v} A) (x : M) :
-    ((finiteReductionEquiv.{v} I).unitIso.hom.app M).hom.hom x = toLimReduction I M x := by
+    dsimp% ((finiteReductionEquiv.{v} I).unitIso.hom.app M).hom.hom x = toLimReduction I M x := by
   simp only [finiteReductionEquiv, NatIso.ofComponents_hom_app]
   rfl
 
