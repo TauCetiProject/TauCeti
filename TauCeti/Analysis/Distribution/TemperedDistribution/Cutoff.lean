@@ -228,11 +228,13 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {φ 
   congr 1
   refine cutoffTempered_apply T ψ fun x ↦ ?_
   rw [← congrFun hD x]
+  have hχφ : tsupport (χ : E → ℂ) ⊆ tsupport φ := by
+    rw [funext hχ]
+    exact tsupport_mul_subset_left
   by_cases hx : x ∈ tsupport φ
   · rw [h hx, Pi.one_apply, one_mul]
   · have hD0 : x ∉ tsupport D := fun hxD ↦ hx <|
-      (TestFunction.tsupport_iteratedLineDerivOp_subset χ _).trans
-        ((funext hχ ▸ tsupport_mul_subset_left : tsupport (χ : E → ℂ) ⊆ tsupport φ)) hxD
+      (TestFunction.tsupport_iteratedLineDerivOp_subset χ _).trans hχφ hxD
     rw [image_eq_zero_of_notMem_tsupport hD0, mul_zero]
 
 /-- **Localizing a cut-off distribution.** If `ψ = 1` on the support of `φ`, then multiplying the

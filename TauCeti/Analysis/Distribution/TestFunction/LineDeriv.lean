@@ -84,7 +84,7 @@ function. -/
 theorem tsupport_iteratedLineDerivOp_subset (φ : 𝓓(Ω, F)) {n : ℕ} (m : Fin n → E) :
     tsupport (∂^{m} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   induction n with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
     rw [iteratedLineDerivOp_succ_left]
     exact (tsupport_lineDerivOp_subset _ _).trans (ih _)
@@ -95,7 +95,7 @@ theorem coe_iteratedLineDerivOp_eq_of_coe_eq {φ : 𝓓(Ω, F)} {f : 𝓢(E, F)}
     (h : (φ : E → F) = f) {n : ℕ} (m : Fin n → E) :
     ((∂^{m} φ : 𝓓(Ω, F)) : E → F) = (∂^{m} f : 𝓢(E, F)) := by
   induction n with
-  | zero => exact h
+  | zero => simpa using h
   | succ n ih =>
     ext x
     rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, lineDerivOp_apply_eq_fderiv,

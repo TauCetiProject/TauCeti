@@ -82,7 +82,7 @@ theorem lineDerivOp_toTemperedDistributionCLM_postcompCLM (L : G →L[ℝ] F) (f
 theorem iteratedLineDerivOp_toTemperedDistributionCLM_eq (f : 𝓢(E, F)) {n : ℕ} (m : Fin n → E) :
     ∂^{m} (toTemperedDistributionCLM E F μ f) = toTemperedDistributionCLM E F μ (∂^{m} f) := by
   induction n with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left, ih,
       lineDerivOp_toTemperedDistributionCLM_eq]
