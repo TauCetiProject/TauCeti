@@ -23,12 +23,12 @@ Suppose that on every ball `B(c, r)` of radius at most `r₀` some constant `P`,
 property `Q c r`, approximates `β` with mean deviation `⨍_{B(c, r)} ‖β - P‖ dμ ≤ δ`. For a ball
 `B(x₀, R)` with `4R ≤ r₀`, this file produces a continuous cutoff `ψ ∈ [0, 1]` equal to one on
 `B(x₀, R)` and a constant `P₀` satisfying `Q x₀ (4R)` such that the field `ψ β + (1 - ψ) P₀`,
-which agrees with `β` on `B(x₀, R)`, has mean deviation at most `4 · 8^d δ` on every ball,
-of any radius, from a convex combination of `P₀` and a constant satisfying `Q`
-(`TauCeti.exists_forall_setAverage_norm_cutoff_sub_le`, which asks `E` to be a nontrivial inner
-product space for the cutoff). This is how fields of vanishing mean oscillation, which are close
-to constants only on small balls, meet estimates that ask for small mean oscillation at every
-scale.
+which agrees with `β` on `B(x₀, R)`, has mean deviation at most `4 · 8^d δ` on every ball
+`B(c, r)`, of any radius, from a convex combination `t P + (1 - t) P₀`, where `P` is `P₀` or
+satisfies `Q c r` (`TauCeti.exists_forall_setAverage_norm_cutoff_sub_le`, which asks `E` to be a
+nontrivial inner product space for the cutoff). This is how fields of vanishing mean oscillation,
+which are close to constants only on small balls, meet estimates that ask for small mean
+oscillation at every scale.
 
 The key step bounds the drift of the approximating constants along the dyadic balls
 `B(c, 2ᵏ r)`: consecutive constants differ by `O(δ)`
