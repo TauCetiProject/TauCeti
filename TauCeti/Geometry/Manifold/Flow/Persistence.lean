@@ -145,7 +145,8 @@ theorem eventually_not_hasEigenvalue_returnDerivative_of_flowOf_eq {g : M → �
     eventually_contMDiffAt_and_mvfderiv_apply_ne_zero hv.continuous.continuousAt hg hgv
   filter_upwards [hpair.eventually hlev, hproj.eventually huniq,
     (continuous_fst.tendsto _).eventually horbit,
-    eventually_mem_flowDomain hv hP, hpair.eventually hgnear, (hpair.comp hproj).eventually hgnear]
+    eventually_mem_flowDomain_param hv hP, hpair.eventually hgnear,
+    (hpair.comp hproj).eventually hgnear]
     with ⟨a, t, x⟩ ⟨hσdom, hσg⟩ hu ⟨_, _, _, _, hndc⟩ htx ⟨hgx, hgvx⟩ ⟨hgx', hgvx'⟩ hper
   dsimp only [comp_apply] at hσdom hσg hu hndc hgx hgvx hgx' hgvx' hper ⊢
   -- The point `x' = flowOf (v a) (σ (a, x)) x` lies on the section through `p` and returns to
@@ -183,7 +184,7 @@ theorem eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivati
           ¬(returnDerivative (v a) g y.1 y.2).HasEigenvalue 1)) h] with a ha
     exact ⟨fun y hy ↦ (ha y hy).1, fun y hy ↦ (ha y hy).2⟩
   rintro ⟨t, x⟩ hy
-  have hdom := eventually_mem_flowDomain hv (hSD hy)
+  have hdom := eventually_mem_flowDomain_param hv (hSD hy)
   by_cases hper : flowOf (v a₀) t x = x
   · -- A closed orbit of `v a₀`: the nearby closed orbits are nondegenerate.
     obtain ⟨g, hg, hgv, hndg⟩ := hnd (t, x) hy hper
@@ -194,7 +195,8 @@ theorem eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivati
   · -- Not a closed orbit of `v a₀`: by continuity of the flow, nor of the nearby fields.
     have hcont : ContinuousAt (fun z : N × (ℝ × M) ↦ (flowOf (v z.1) z.2.1 z.2.2, z.2.2))
         (a₀, (t, x)) :=
-      (contMDiffAt_flowOf le_rfl hv (hSD hy)).continuousAt.prodMk continuous_snd.snd.continuousAt
+      (contMDiffAt_flowOf_param le_rfl hv (hSD hy)).continuousAt.prodMk
+        continuous_snd.snd.continuousAt
     filter_upwards [hdom, hcont.eventually ((isClosed_diagonal (X := M)).isOpen_compl.mem_nhds
       (mt mem_diagonal_iff.1 hper))] with z hz hzper
     exact ⟨hz, fun h ↦ absurd h hzper⟩

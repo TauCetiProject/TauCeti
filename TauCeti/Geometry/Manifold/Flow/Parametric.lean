@@ -64,8 +64,8 @@ orbits of bounded period in a compact window is an open condition on the vector 
   `TauCeti.flowOf_verticalField`: the flow of the vertical field is the flow of the fields of the
   family, with the parameter fixed.
 * `ContMDiff.apply_param`: the fields of a `C^n` family are `C^n`.
-* `TauCeti.eventually_mem_flowDomain`, `TauCeti.contMDiffAt_flowOf`: the flow of a `C^n` family
-  is defined on an open set of parameters, times and points, and is `C^n` there.
+* `TauCeti.eventually_mem_flowDomain_param`, `TauCeti.contMDiffAt_flowOf_param`: the flow of a
+  `C^n` family is defined on an open set of parameters, times and points, and is `C^n` there.
 * `TauCeti.eventually_contMDiffAt_and_mvfderiv_apply_ne_zero`: transversality of a function to
   the fields of a continuous family is an open condition in the parameter and the point.
 * `TauCeti.eventually_eventuallyEq_snd_flowTransition_verticalField`: near `(T₀, (a₀, p))`, the
@@ -277,7 +277,7 @@ variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E] [CompleteSpace
 /-- **The flow domain of a family is open.** If the flow of `v a₀` is defined at `(t, x)`,
 then for `(a, t', x')` near `(a₀, t, x)` the flow of `v a` is defined at `(t', x')`, provided the
 family `v` is jointly `C¹`. -/
-theorem eventually_mem_flowDomain
+theorem eventually_mem_flowDomain_param
     (hv : ContMDiff (J.prod I) I.tangent 1
       (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M)))
     (hP : (t, x) ∈ flowDomain (v a₀)) :
@@ -293,7 +293,7 @@ theorem eventually_mem_flowDomain
 /-- **The flow of a family is `C^n` in the parameter, the time and the point.** If the family `v`
 is jointly `C^n` with `1 ≤ n` and the flow of `v a₀` is defined at `(t, x)`, then
 `(a, t', x') ↦ flowOf (v a) t' x'` is `C^n` at `(a₀, t, x)`. -/
-theorem contMDiffAt_flowOf {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M] [IsManifold J n N]
+theorem contMDiffAt_flowOf_param {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M] [IsManifold J n N]
     (hv : ContMDiff (J.prod I) I.tangent n
       (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M)))
     (hP : (t, x) ∈ flowDomain (v a₀)) :
