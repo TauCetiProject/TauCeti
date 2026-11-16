@@ -134,15 +134,11 @@ def ofUnitalLinearIsometryEquiv : A ≃ₗᵢ[𝕜] 𝓜(𝕜, A) where
   map_smul' := coe_smul
   norm_map' := norm_coe
 
-@[simp]
-theorem ofUnitalLinearIsometryEquiv_apply (a : A) :
-    ofUnitalLinearIsometryEquiv 𝕜 A a = a :=
-  (rfl)
+@[simp] theorem ofUnitalLinearIsometryEquiv_apply (a : A) :
+    ofUnitalLinearIsometryEquiv 𝕜 A a = a := (rfl)
 
-@[simp]
-theorem ofUnitalLinearIsometryEquiv_symm_apply (m : 𝓜(𝕜, A)) :
-    (ofUnitalLinearIsometryEquiv 𝕜 A).symm m = m.fst 1 :=
-  (rfl)
+@[simp] theorem ofUnitalLinearIsometryEquiv_symm_apply (m : 𝓜(𝕜, A)) :
+    (ofUnitalLinearIsometryEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
 
 end UnitalRegularNormedAlgebra
 

@@ -28,12 +28,8 @@ variable {R A : Type*} [CommSemiring R] [StarRing R] [Semiring A] [StarRing A] [
 closed. -/
 instance isClosed_idealizer (S : NonUnitalStarSubalgebra R A) [hS : IsClosed (S : Set A)] :
     IsClosed (S.idealizer : Set A) := by
-  have heq : (S.idealizer : Set A) =
-      ⋂ x : S, (· * (x : A)) ⁻¹' (S : Set A) ∩ ((x : A) * ·) ⁻¹' (S : Set A) := by
-    ext a
-    simp [Set.mem_iInter, Subtype.forall]
-  rw [heq]
-  exact isClosed_iInter fun x =>
+  convert isClosed_iInter fun x : S =>
     (hS.preimage (continuous_mul_const (x : A))).inter (hS.preimage (continuous_const_mul (x : A)))
+  ext a; simp [Set.mem_iInter, Subtype.forall]
 
 end NonUnitalStarSubalgebra
