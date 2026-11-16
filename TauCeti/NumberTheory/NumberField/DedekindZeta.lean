@@ -8,7 +8,10 @@ module
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
+import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
@@ -64,6 +67,9 @@ Tauberian theorem needs to count prime ideals.
   `s ≠ 1` of the line `Re s = 1` does not vanish there.
 * `TauCeti.exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub`: `-ζ_K'(s) / ζ_K(s) - 1 / (s - 1)`
   extends continuously from `Re s > 1` to `Re s ≥ 1`.
+* `TauCeti.tendsto_re_dedekindZeta_nhdsGT_one`: `(ζ_K σ).re → +∞` as real `σ → 1⁺`.
+* `TauCeti.tendsto_sub_one_mul_of_eqOn_dedekindZeta`: `(s - 1) * Z s → dedekindZeta_residue K` as
+  `s → 1` along `𝓝[≠] 1` for any continuation `Z` of `ζ_K` differentiable near `1`.
 
 ## References
 
@@ -266,5 +272,97 @@ theorem exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub : ∃ G : ℂ → 
     (hH.differentiableAt (hUs hs.le)) (differentiableAt_id.sub_const 1), logDeriv_apply (· - 1),
     deriv_sub_const, deriv_id'']
   ring
+
+/-- **Real blowup of the Dedekind zeta function at `1⁺`.** As real `σ → 1⁺`, the real part of
+`ζ_K(σ)` tends to `+∞`, since `(σ - 1) ζ_K(σ)` tends to the positive residue
+`NumberField.dedekindZeta_residue K`. -/
+theorem tendsto_re_dedekindZeta_nhdsGT_one :
+    Tendsto (fun σ : ℝ ↦ (dedekindZeta K σ).re) (𝓝[>] 1) atTop := by
+  have hre : Tendsto (fun σ : ℝ ↦ (σ - 1) * (dedekindZeta K σ).re) (𝓝[>] 1)
+      (𝓝 (dedekindZeta_residue K)) := by
+    have h := (Complex.continuous_re.tendsto _).comp (tendsto_sub_one_mul_dedekindZeta_nhdsGT K)
+    refine (Complex.ofReal_re (dedekindZeta_residue K) ▸ h).congr fun σ ↦ ?_
+    simp only [Function.comp_apply]
+    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.re_ofReal_mul]
+  have hsub0 : Tendsto (fun σ : ℝ ↦ σ - 1) (𝓝 1) (𝓝 0) := by
+    simpa using (continuous_sub_right (1 : ℝ)).tendsto 1
+  have hsub : Tendsto (fun σ : ℝ ↦ σ - 1) (𝓝[>] 1) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (hsub0.mono_left nhdsWithin_le_nhds)
+      (eventually_nhdsWithin_of_forall fun σ (hσ : 1 < σ) ↦ sub_pos.mpr hσ)
+  refine (Filter.Tendsto.atTop_mul_pos (dedekindZeta_residue_pos K)
+    (tendsto_inv_nhdsGT_zero.comp hsub) hre).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
+  simp [inv_mul_cancel_left₀ (sub_ne_zero.mpr (ne_of_gt hσ))]
+
+/-- On a small punctured disc around `1`, any punctured-neighbourhood continuation of `ζ_K` agrees
+with `G(s) + ρ / (s - 1)` for a holomorphic `G` continuing `ζ_K(s) - ρ / (s - 1)`. -/
+private theorem eventuallyEq_dedekindZeta_add_pole {K : Type*} [Field K] [NumberField K]
+    {f G : ℂ → ℂ} (hG : DifferentiableOn ℂ G {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re})
+    (hGζ : ∀ s : ℂ, 1 < s.re → G s = dedekindZeta K s - dedekindZeta_residue K / (s - 1))
+    (hf : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ f s)
+    (hfζ : Set.EqOn f (dedekindZeta K) {s | 1 < s.re}) :
+    f =ᶠ[𝓝[≠] 1] fun s ↦ G s + (dedekindZeta_residue K : ℂ) / (s - 1) := by
+  obtain ⟨r₁, hr₁, hfr₁⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp hf)
+  set r : ℝ := min r₁ (1 / (Module.finrank ℚ K : ℝ))
+  have hr : 0 < r := lt_min hr₁ (one_div_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos))
+  set V : Set ℂ := Metric.ball (1 : ℂ) r \ {1}
+  have hVopen : IsOpen V := Metric.isOpen_ball.sdiff isClosed_singleton
+  have hVsub : V ⊆ {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := fun s hs ↦ by
+    have hdist : dist s 1 < 1 / (Module.finrank ℚ K : ℝ) :=
+      (Metric.mem_ball.mp hs.1).trans_le (min_le_right _ _)
+    have hre : 1 - s.re ≤ dist s 1 := by
+      rw [Complex.dist_eq]
+      calc 1 - s.re = -(s - 1).re := by simp
+        _ ≤ |(s - 1).re| := neg_le_abs _
+        _ ≤ ‖s - 1‖ := Complex.abs_re_le_norm _
+    change 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re
+    linarith
+  set T : ℂ → ℂ := fun s ↦ G s + (dedekindZeta_residue K : ℂ) / (s - 1)
+  have hfdiff : DifferentiableOn ℂ f V := fun s hs ↦
+    (hfr₁ ((Metric.mem_ball.mp hs.1).trans_le (min_le_left _ _)) hs.2).differentiableWithinAt
+  have hfV : AnalyticOnNhd ℂ f V := hfdiff.analyticOnNhd hVopen
+  have hTV : AnalyticOnNhd ℂ T V :=
+    ((hG.mono hVsub).add (differentiableOn_const _ |>.div (differentiableOn_id.sub_const 1)
+      fun s hs ↦ sub_ne_zero.mpr hs.2)).analyticOnNhd hVopen
+  have hVconn : IsPreconnected V :=
+    (isConnected_ball_sdiff_singleton (by rw [Complex.rank_real_complex]; norm_num)
+      (1 : ℂ) hr).isPreconnected
+  set z₀ : ℂ := 1 + ((r / 2 : ℝ) : ℂ)
+  have hz₀V : z₀ ∈ V := by
+    refine ⟨?_, fun h ↦ by have := congrArg Complex.re h; simp [z₀] at this; linarith⟩
+    rw [Metric.mem_ball, Complex.dist_eq]
+    simpa [z₀, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hr] using half_lt_self hr
+  have hfeq : f =ᶠ[𝓝 z₀] T := Filter.eventuallyEq_of_mem
+    ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds
+      (by simp [z₀, half_pos hr] : 1 < z₀.re))
+    fun s hs ↦ by simp only [T, hfζ hs, hGζ s hs, sub_add_cancel]
+  have hEqV : Set.EqOn f T V := hfV.eqOn_of_preconnected_of_eventuallyEq hTV hVconn hz₀V hfeq
+  filter_upwards [inter_mem_nhdsWithin _ (Metric.ball_mem_nhds (1 : ℂ) hr)] with s hs
+  exact hEqV ⟨hs.2, hs.1⟩
+
+variable {K} in
+/-- **Any punctured-neighbourhood continuation of `ζ_K` has residue `dedekindZeta_residue K` at
+`1`.** If `f` is complex differentiable on a punctured neighbourhood of `1` and agrees with `ζ_K`
+on `Re s > 1`, then `(s - 1) * f s → dedekindZeta_residue K` along `𝓝[≠] 1`. -/
+theorem tendsto_sub_one_mul_of_eqOn_dedekindZeta {f : ℂ → ℂ}
+    (hf : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ f s)
+    (hfζ : Set.EqOn f (dedekindZeta K) {s | 1 < s.re}) :
+    Tendsto (fun s : ℂ ↦ (s - 1) * f s) (𝓝[≠] 1) (𝓝 (dedekindZeta_residue K : ℂ)) := by
+  obtain ⟨G, hG, hGζ⟩ := exists_differentiableOn_eq_dedekindZeta_sub K
+  have hG1 : ContinuousAt G 1 :=
+    (hG.differentiableAt ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds
+      (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K (by simp)))).continuousAt
+  have hlim : Tendsto (fun s : ℂ ↦ (s - 1) * G s + (dedekindZeta_residue K : ℂ)) (𝓝[≠] 1)
+      (𝓝 (dedekindZeta_residue K : ℂ)) := by
+    have hcont : ContinuousAt (fun s : ℂ ↦ (s - 1) * G s + (dedekindZeta_residue K : ℂ)) 1 :=
+      ((continuousAt_id.sub continuousAt_const).mul hG1).add continuousAt_const
+    simpa using hcont.tendsto.mono_left (nhdsWithin_le_nhds (s := ({1}ᶜ : Set ℂ)))
+  refine hlim.congr' ?_
+  filter_upwards [eventuallyEq_dedekindZeta_add_pole hG hGζ hf hfζ,
+    self_mem_nhdsWithin] with s hs hne
+  have hs1 : s - 1 ≠ 0 := sub_ne_zero.mpr hne
+  rw [hs]
+  field_simp [hs1]
 
 end TauCeti
