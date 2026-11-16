@@ -9,14 +9,16 @@ public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
-# Basic facts about tangent spaces
+# Basic facts about tangent spaces and smoothness exponents
 
 The tangent space `TangentSpace I x` of a manifold modelled on `I : ModelWithCorners 𝕜 E H` is
 linearly equivalent to the model vector space `E`, so its dimension is that of `E`. Tangent spaces
-at propositionally equal points are identified by `tangentSpaceCast`.
+at propositionally equal points are identified by `tangentSpaceCast`. A smoothness exponent
+`n : ℕ∞ω` with `[ENat.LEInfty n]` is not `ω`, so it is the image of an exponent in `ℕ∞`.
 
 ## Main results
 
+* `ENat.LEInfty.ne_top`: an exponent at most `∞` is not `ω`.
 * `TauCeti.finrank_tangentSpace`: the tangent space at any point has the dimension of the model
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
@@ -24,6 +26,13 @@ at propositionally equal points are identified by `tangentSpaceCast`.
 -/
 
 public section
+
+open scoped ContDiff
+
+/-- A smoothness exponent which is at most `∞` is not `ω`, the top element of `ℕ∞ω`. This is the
+hypothesis needed to `lift` such an exponent to `ℕ∞`. -/
+theorem ENat.LEInfty.ne_top (n : ℕ∞ω) [ENat.LEInfty n] : n ≠ ⊤ :=
+  ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
 
 namespace TauCeti
 

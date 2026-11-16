@@ -122,8 +122,7 @@ structures are the pullback-induced ones, installed inside the proof, so the sta
 hypothesis-free. The rank identity, projectivity, fundamental identity, and prime-count bound are
 not in that source.
 
-⚠ *mathlib-track*, with the sibling `Isogeny` files: D. Angdinata's shared isogeny development
-carries the intermediate ring and its structural theory.
+D. Angdinata's isogeny development also carries the intermediate ring and its structural theory.
 
 ## References
 

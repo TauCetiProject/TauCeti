@@ -60,7 +60,7 @@ variable (g) in
 /-- The map `k[G]^ι → I_G`, `e_i ↦ g_i - 1`, whose kernel is the relation module. -/
 private def relationModuleToKer :
     (ι → MonoidAlgebra k G) →ₗ[MonoidAlgebra k G]
-      RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) :=
+      RingHom.ker (MonoidAlgebra.augmentation k G) :=
   (Fintype.linearCombination (MonoidAlgebra k G)
     fun i ↦ MonoidAlgebra.single (g i) (1 : k) - 1).codRestrict _ fun c ↦
       TauCeti.MonoidAlgebra.range_linearCombination_le_ker_augmentation g ⟨c, rfl⟩
@@ -93,7 +93,7 @@ to a finite subgroup `S`. -/
 def relationModuleδ (hg : Subgroup.closure (Set.range g) = ⊤) (S : Subgroup G)
     [Fintype S] (n : ℤ) :
     tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))))) n ⟶
+      (RingHom.ker (MonoidAlgebra.augmentation k G))))) n ⟶
       tateCohomology (res S.subtype (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
         (TauCeti.MonoidAlgebra.relationModule k G g)))) (n + 1) :=
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact ((shortExact_res S.subtype).2

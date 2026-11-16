@@ -205,15 +205,10 @@ theorem normalizedLattice_index : normalizedLattice.toAddSubgroup.index = 4 := b
   let h2 : IsRegular (2 : ℤ) := IsRegular.of_ne_zero (by norm_num)
   let b := fixedBasis ℤ h2
   let f := b.constr ℤ (fun i ↦ (![1, 2, 2] i : ℤ) • b i)
-  have hf : Function.Injective f := by
-    apply b.injective_constr_of_linearIndependent
-    exact b.linearIndependent.smul_of_isRightRegular (fun i ↦ by
-      apply (IsRegular.of_ne_zero ?_).right
-      fin_cases i <;> norm_num)
   have hrange : LinearMap.range f = normalizedLattice := by
     rw [Module.Basis.constr_range]
     rfl
-  rw [← hrange, LinearMap.index_range_eq_natAbs_det_toMatrix b b hf]
+  rw [← hrange, LinearMap.index_range_eq_natAbs_det_toMatrix b b f]
   have hm : LinearMap.toMatrix b b f = Matrix.diagonal (![1, 2, 2] : Fin 3 → ℤ) := by
     ext i j
     simp [f, LinearMap.toMatrix_apply, Matrix.diagonal_apply, Finsupp.single_apply,

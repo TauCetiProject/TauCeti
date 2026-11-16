@@ -34,13 +34,16 @@ For the differential symbol of order `m`:
   `m - j` is the part of the symbol made of the summands of order `m - j`; in particular the
   principal symbol (`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialSymbol`) is the
   sum of the top-order summands, in the angular-frequency convention `σ(∂_v) = i ⟪ξ, v⟫`;
+* `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_iff`: the operator is elliptic exactly
+  when the symbol of its top-order summands is invertible at every nonzero frequency;
 * `TauCeti.ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol`: compactly
   supported coefficients give a symbol with compact spatial support;
 * `TauCeti.ClassicalSymbol.negLaplacian`: the classical symbol of the negative Laplacian
   `-∑ⱼ ∂ⱼ²`, with full symbol `‖ξ‖²` (`TauCeti.ClassicalSymbol.coefficient_toSymbol_negLaplacian`)
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
   (`TauCeti.ClassicalSymbol.principal_negLaplacian`); it is elliptic
-  (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`).
+  (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`), and its quantization is Mathlib's `-Δ` on
+  Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`).
 
 ## References
 
@@ -142,6 +145,16 @@ theorem coefficient_principal_ofDifferentialSymbol {x ξ : CoordinateSpace n} (h
   rw [coefficient_principal, coefficient_term_ofDifferentialSymbol m s v b hb hk 0 hξ]
   simp
 
+/-- **Ellipticity of a differential operator.** The classical symbol of a differential operator
+of order `m` is elliptic exactly when the differential symbol of its summands of order exactly
+`m` is invertible at every position and every nonzero frequency. -/
+theorem isElliptic_ofDifferentialSymbol_iff :
+    (ofDifferentialSymbol m s v b hb hk).IsElliptic ↔
+      ∀ x ξ, ξ ≠ 0 → (differentialSymbol {i ∈ s | k i = m} v b (x, ξ)).IsInvertible := by
+  rw [isElliptic_iff]
+  refine forall_congr' fun x ↦ forall_congr' fun ξ ↦ forall_congr' fun hξ ↦ ?_
+  rw [coefficient_principal_ofDifferentialSymbol m s v b hb hk hξ]
+
 /-- Compactly supported coefficients give a classical symbol with compact spatial support. -/
 theorem hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol
     (hbc : ∀ i ∈ s, HasCompactSupport (b i)) :
@@ -181,13 +194,14 @@ theorem coefficient_toSymbol_negLaplacian (p : CoordinateSpace n × CoordinateSp
     (negLaplacian n V).toSymbol.coefficient p = ‖p.2‖ ^ 2 • ContinuousLinearMap.id ℂ V := by
   rw [negLaplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_negLaplacian]
 
-/-- The negative Laplacian is the sum of the negative second derivatives on Schwartz input. -/
+open Laplacian in
+/-- The quantization of `negLaplacian` is the negative Laplacian `-Δ` on Schwartz input. -/
 theorem quantizeSchwartzValue_negLaplacian [CompleteSpace V] (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
-    quantizeSchwartzValue (negLaplacian n V).toSymbol.coefficient u x =
-      -∑ j : Fin n, ∂^{fun _ : Fin 2 ↦ EuclideanSpace.single j (1 : ℝ)} u x := by
-  rw [negLaplacian, quantizeSchwartzValue_ofDifferentialSymbol]
-  simp
+    quantizeSchwartzValue (negLaplacian n V).toSymbol.coefficient u x = -Δ u x := by
+  rw [negLaplacian, quantizeSchwartzValue_ofDifferentialSymbol,
+    SchwartzMap.laplacian_eq_sum (EuclideanSpace.basisFun (Fin n) ℝ)]
+  simp [LineDeriv.iteratedLineDerivOp_succ_left, EuclideanSpace.basisFun_apply, Fin.tail]
 
 /-- The principal symbol of the negative Laplacian is `‖ξ‖²`. -/
 @[simp]

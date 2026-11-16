@@ -193,9 +193,7 @@ theorem powerResidueSymbolIdeal_pow_eq_one {x : 𝓞 K ⧸ 𝔞} (hx : IsUnit x)
     simpa [Quotient.factor_mk] using
       hx.map (Quotient.factor (le_of_dvd (dvd_of_mem_normalizedFactors hP)))
   rw [symbolAt, dite_eq_left hPm]
-  by_cases hn : (absNorm P).Coprime n
-  · exact powerResidueSymbol_pow_eq_one hn hαP.ne_zero
-  · rw [powerResidueSymbol_of_not_coprime hn, MulChar.one_apply hαP, one_pow]
+  exact powerResidueSymbol_pow_eq_one hαP.ne_zero
 
 /-- For odd `n`, `(-x / 𝔞)_n = (x / 𝔞)_n` at every ideal `𝔞`: the symbol is a character of odd
 order dividing `n`, so its value at `-1` is `1`. -/

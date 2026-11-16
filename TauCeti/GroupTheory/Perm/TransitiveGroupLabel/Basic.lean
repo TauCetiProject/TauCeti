@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.GroupAction.Primitive
+import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Reference transitive permutation groups in degree at most five
@@ -334,6 +335,14 @@ theorem isPretransitive_referenceSubgroup :
       · rw [referenceSubgroup_five_four]
         exact isPretransitive_of_finRotate_mem (n := 5) (G := ⊤) (by simp)
   | _ + 6, j => j.elim0
+
+/-- **The degree divides the order of a reference subgroup.** The order of the reference subgroup
+`referenceSubgroup n j` of the label `nT(j + 1)` is divisible by `n`. -/
+theorem dvd_natCard_referenceSubgroup (n : ℕ) (j : TransitiveGroupIndex n) :
+    n ∣ Nat.card (referenceSubgroup n j) := by
+  have : NeZero n := ⟨(pos_of_transitiveGroupIndex j).ne'⟩
+  have := isPretransitive_referenceSubgroup n j
+  simpa using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup n j) (X := Fin n)
 
 /-- A reference subgroup carries its defining transitive-group label. -/
 @[simp]

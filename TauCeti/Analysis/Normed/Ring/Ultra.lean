@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
-public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
 import TauCeti.Algebra.Group.ForwardDiff
 import TauCeti.Analysis.Normed.Ring.Basic
 

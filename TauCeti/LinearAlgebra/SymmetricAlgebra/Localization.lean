@@ -22,7 +22,7 @@ semilinear map on each homogeneous piece is a localization map.
 public section
 
 open scoped TensorProduct
-open TauCeti.SymmetricAlgebra
+open SymmetricAlgebra TauCeti.SymmetricAlgebra
 
 noncomputable section
 
