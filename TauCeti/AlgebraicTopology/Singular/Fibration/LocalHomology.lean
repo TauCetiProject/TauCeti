@@ -34,6 +34,16 @@ the fundamental class at `b` when its localization in `Hₖ(E, E ∖ F)` is nonz
 `j_! α ≠ 0` (`TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero`), and
 only in degrees at least `r` (`TauCeti.LivesOverFundamentalClass.finrank_le`).
 
+The identification is natural in maps of fibrations: for a second Serre fibration
+`p' : E' ⟶ B` and a map `f : E ⟶ E'` over `B`, the map induced by `f` on `Hₙ₊ᵣ(E, E ∖ F)` becomes,
+for the same chart and ball, the map induced on `Hₙ(F)` by the restriction `F ⟶ F'` of `f` to the
+fibres (`TauCeti.TopCat.singularHomologyComplFiberIso_hom_naturality`). So the shriek maps commute
+with `f`, `j_! ∘ f_* = f_* ∘ j_!` (the source's Proposition 2.12), and `f_* α` lives over the
+fundamental class exactly when `f_* (j_! α) ≠ 0`
+(`TauCeti.livesOverFundamentalClass_homologyMap_iff`). This is the step of the source's
+Corollary 2.13 that passes from a nonvanishing class of the fibre to a class of the total space
+living over the fundamental class.
+
 The relative group, rather than the shriek map itself, is used in the definition because it does
 not depend on the chart: the identification `Hₙ₊ᵣ(E, E ∖ F) ≅ Hₙ(F)` depends on the chart. Its
 construction `TauCeti.TopCat.singularHomologyComplFiberIso` takes a ball in the target of the
@@ -67,12 +77,18 @@ dimension
 * `TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero`: a class lives
   over the fundamental class exactly when its image in `Hₖ₋ᵣ(p⁻¹(b))` is nonzero.
 * `TauCeti.LivesOverFundamentalClass.finrank_le`: such a class has degree at least `r`.
+* `TauCeti.TopCat.singularHomologyComplFiberIso_hom_naturality`: the identification is natural in
+  maps of fibrations over `B`.
+* `TauCeti.homologyMap_comp_fiberLocalization_comp_singularHomologyComplFiberIso_hom`: the shriek
+  map of the inclusion of `b` commutes with maps of fibrations over `B`.
+* `TauCeti.livesOverFundamentalClass_homologyMap_iff`: the image of a class under a map of
+  fibrations lives over the fundamental class exactly when the image of its shriek is nonzero.
 
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §2.4, Definition 2.3, Example 2.4 and
-  Proposition 2.6.
+  Applications to cotangent bundles*, arXiv:2404.07953, §2.4, Definition 2.3, Example 2.4,
+  Proposition 2.6, Proposition 2.12 and Corollary 2.13.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   Chapter II.
 -/
@@ -114,6 +130,16 @@ lemma chartBallProj_def (p : E ⟶ B) :
 lemma coe_chartBallProj_apply {p : E ⟶ B} (z : _root_.TopCat.of (p ⁻¹' chartBall e b ε)) :
     (chartBallProj e hε p z : V) = e (p z) - e b := by
   simp [chartBallProj]
+
+/-- Over `chartBall e b ε`, the restriction of a map `f` over `B` is a map over the ball: it
+commutes with `chartBallProj`. -/
+@[reassoc]
+lemma preimageMap_comp_chartBallProj {E' : _root_.TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B}
+    {f : E ⟶ E'} (hf : f ≫ p' = p) :
+    f.preimageMap hf (chartBall e b ε) ≫ chartBallProj e hε p' = chartBallProj e hε p := by
+  ext z
+  rw [ConcreteCategory.comp_apply, coe_chartBallProj_apply, coe_chartBallProj_apply,
+    TopCat.Hom.coe_preimageMap_apply, ← ConcreteCategory.comp_apply, hf]
 
 include hb in
 /-- A point over `chartBall e b ε` lies over `0` in the ball exactly when it lies over `b`. -/
@@ -188,19 +214,37 @@ variable {V : Type u} [NormedAddCommGroup V] {E B : _root_.TopCat.{u}}
 
 variable [T1Space B]
 
+include hb in
+/-- Excision onto the part of `E` over `e.chartBall b ε` is an isomorphism on homology. -/
+private lemma isIso_singularHomologyMap_excisionMap_chartBall (hε₀ : 0 < ε) (m : ℕ) :
+    IsIso (TopPair.singularHomologyMap
+      (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) (ModuleCat.of R R) m) :=
+  TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
+    (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
+    (isClosed_singleton.preimage p.hom.continuous)
+    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
+
 /-- Excision onto the part of `E` over `e.chartBall b ε`, followed by
 `OpenPartialHomeomorph.chartBallComplFiberPairIso`. -/
 private def excisionIso (hε₀ : 0 < ε) (m : ℕ) :
     (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) m ≅
       (TopPair.ofSubset (e.chartBallProj hε p ⁻¹' {x | (x : V) ≠ 0})).singularHomology
         (ModuleCat.of R R) m :=
-  haveI := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
-    (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
-    (isClosed_singleton.preimage p.hom.continuous)
-    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
+  haveI := isIso_singularHomologyMap_excisionMap_chartBall (p := p) R e hb hε₀ m
   (asIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) _ m)).symm ≪≫
     TopPair.singularHomologyMapIso _ (e.chartBallComplFiberPairIso hb hε p) m
+
+/-- The defining square of `excisionIso`: after the excision inclusion it is the map induced by
+`OpenPartialHomeomorph.chartBallComplFiberPairIso`. -/
+@[reassoc]
+private lemma singularHomologyMap_excisionMap_comp_excisionIso_hom (hε₀ : 0 < ε) (m : ℕ) :
+    TopPair.singularHomologyMap
+        (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
+        (ModuleCat.of R R) m ≫ (excisionIso R e hb hε hε₀ m).hom =
+      TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
+        (ModuleCat.of R R) m := by
+  simp [excisionIso]
 
 variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -280,6 +324,97 @@ lemma singularHomologyComplFiberIso_inv
           (ModuleCat.of R R) m := by
   simp [singularHomologyComplFiberIso, excisionIso]
 
+/-! ### Naturality in maps of fibrations -/
+
+section Naturality
+
+variable {E' : _root_.TopCat.{u}} {p' : E' ⟶ B} {f : E ⟶ E'}
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The isomorphism `excisionIso` is natural in maps of fibrations over `B`: after excision, the
+map induced by `f` is the map induced by its restriction over
+`OpenPartialHomeomorph.chartBall e b ε`. -/
+@[reassoc]
+private lemma excisionIso_hom_naturality (hε₀ : 0 < ε) (hf : f ≫ p' = p) (m : ℕ) :
+    TopPair.singularHomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ))
+        (ModuleCat.of R R) m ≫ (excisionIso (p := p') R e hb hε hε₀ m).hom =
+      (excisionIso (p := p) R e hb hε hε₀ m).hom ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap (f.preimageMap hf (e.chartBall b ε))
+          ((f.preimageMap hf (e.chartBall b ε)).mapsTo_preimage_of_comp_eq
+            (e.preimageMap_comp_chartBallProj hε hf) _)) (ModuleCat.of R R) m := by
+  -- The map of excision data induced by `f`.
+  let Q := TopPair.interPairMap f (f.mapsTo_preimage_of_comp_eq hf (e.chartBall b ε))
+    (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ)
+  have hQ : TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ ≫
+        TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ) =
+      Q ≫ TopPair.excisionMap (X := E') (p' ⁻¹' e.chartBall b ε) (p' ⁻¹' {b})ᶜ :=
+    (TopPair.interPairMap_comp_excisionMap f _ _).symm
+  have hQ' : (e.chartBallComplFiberPairIso hb hε p).hom ≫
+        TopPair.ofSubsetMap (f.preimageMap hf (e.chartBall b ε))
+          ((f.preimageMap hf (e.chartBall b ε)).mapsTo_preimage_of_comp_eq
+            (e.preimageMap_comp_chartBallProj hε hf) _) =
+      Q ≫ (e.chartBallComplFiberPairIso hb hε p').hom :=
+    TopPair.hom_ext_of_fst _ (by
+      ext x
+      apply Subtype.ext
+      rw [OpenPartialHomeomorph.chartBallComplFiberPairIso_hom,
+        OpenPartialHomeomorph.chartBallComplFiberPairIso_hom, TopPair.Hom.fst_comp,
+        TopPair.Hom.fst_comp]
+      -- The ambient spaces of the pairs are `TopCat.of` of subtypes, which `rw` does not unfold.
+      erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply,
+        TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+      exact (TopCat.Hom.coe_preimageMap_apply f hf _ x).trans
+        (TopPair.interPairMap_fst_apply _ _ _ x).symm)
+  have := isIso_singularHomologyMap_excisionMap_chartBall (p := p) R e hb hε₀ m
+  rw [← cancel_epi (TopPair.singularHomologyMap
+      (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) (ModuleCat.of R R) m),
+    singularHomologyMap_excisionMap_comp_excisionIso_hom_assoc,
+    ← TopPair.singularHomologyMap_comp_assoc, hQ, TopPair.singularHomologyMap_comp_assoc,
+    singularHomologyMap_excisionMap_comp_excisionIso_hom, ← TopPair.singularHomologyMap_comp,
+    ← TopPair.singularHomologyMap_comp, hQ']
+
+omit [T1Space B] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The identifications `OpenPartialHomeomorph.chartBallProjFiberHomeomorph` of the fibres over `0`
+with the fibres over `b` carry the restriction of `f` over `OpenPartialHomeomorph.chartBall e b ε`
+to the restriction of `f` to the fibres over `b`. -/
+private lemma chartBallProjFiberHomeomorph_naturality (hε₀ : 0 < ε) (hf : f ≫ p' = p) :
+    (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p hε₀)).hom ≫
+        f.preimageMap hf {b} =
+      (f.preimageMap hf (e.chartBall b ε)).preimageMap (e.preimageMap_comp_chartBallProj hε hf)
+          {x | (x : V) = 0} ≫
+        (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p' hε₀)).hom := by
+  ext x
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.Hom.coe_preimageMap_apply]
+  -- The homeomorphism is applied through `TopCat.isoOfHomeo`, which `rw` does not see through.
+  erw [OpenPartialHomeomorph.coe_chartBallProjFiberHomeomorph_apply]
+  exact ((congrArg Subtype.val (TopCat.Hom.coe_preimageMap_apply _ _ _ x)).trans
+    (TopCat.Hom.coe_preimageMap_apply _ _ _ x.1)).symm
+
+/-- **The homology of a Serre fibration modulo the complement of a fibre is natural in maps of
+fibrations.** Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations over a `T₁` space, `e` a chart
+of dimension `r` at `b`, and `f : E ⟶ E'` a map over `B`. Under the isomorphisms
+`Hₙ₊ᵣ(E, E ∖ p⁻¹(b); R) ≅ Hₙ(p⁻¹(b); R)` of `TauCeti.TopCat.singularHomologyComplFiberIso`, built
+from the same ball about `e b`, the map induced by `f` on relative homology is the map induced by
+the restriction `p⁻¹(b) ⟶ p'⁻¹(b)` of `f` on the homology of the fibres. -/
+@[reassoc]
+theorem singularHomologyComplFiberIso_hom_naturality (hε₀ : 0 < ε) (hp : serreFibrations p)
+    (hp' : serreFibrations p') (hf : f ≫ p' = p) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    TopPair.singularHomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ))
+        (ModuleCat.of R R) m ≫ (singularHomologyComplFiberIso R e hb hε hε₀ hp' n m h).hom =
+      (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map (f.preimageMap hf {b}) := by
+  simp only [singularHomologyComplFiberIso, Iso.trans_hom, Functor.mapIso_hom, Category.assoc]
+  rw [excisionIso_hom_naturality_assoc R e hb hε hε₀ hf m,
+    singularHomologyPreimageNeZeroIso_hom_naturality_assoc R
+      (e.mem_serreFibrations_chartBallProj hε hp) (e.mem_serreFibrations_chartBallProj hε hp')
+      (convex_ball 0 _) (ball_mem_nhds 0 hε₀) (e.preimageMap_comp_chartBallProj hε hf)
+      ((f.preimageMap hf (e.chartBall b ε)).preimageMap (e.preimageMap_comp_chartBallProj hε hf)
+        {x | (x : V) = 0}) (fun x ↦ TopCat.Hom.coe_preimageMap_apply _ _ _ x) n m h,
+    ← Functor.map_comp, ← Functor.map_comp, chartBallProjFiberHomeomorph_naturality]
+
+end Naturality
+
 end Chart
 
 end TopCat
@@ -318,5 +453,64 @@ theorem LivesOverFundamentalClass.finrank_le (hp : TopCat.serreFibrations p) {d 
   have := ModuleCat.isZero_iff_subsingleton.1 (TopCat.isZero_singularHomology_complFiber R e hb hp
     (not_le.1 hd))
   exact (livesOverFundamentalClass_iff _ _ _ _).1 h (Subsingleton.elim _ _)
+
+/-! ### Naturality of the shriek map -/
+
+section ShriekNaturality
+
+variable {ε : ℝ} (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε) {E' : _root_.TopCat.{u}}
+  {p' : E' ⟶ B} (hp : TopCat.serreFibrations p) (hp' : TopCat.serreFibrations p')
+  {f : E ⟶ E'} (hf : f ≫ p' = p) {n m : ℕ} (h : n + finrank ℝ V = m)
+
+/-- **Naturality of the shriek map of a point** (Barraud–Damian–Humilière–Oancea,
+Proposition 2.12). Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations over a `T₁` space, with a
+chart `e` of dimension `r` at `b`, and let `f : E ⟶ E'` be a map over `B`. The shriek map
+`j_! : Hₙ₊ᵣ(E) → Hₙ(p⁻¹(b))` of the inclusion of `b` is the localization at the fibre followed by
+`TauCeti.TopCat.singularHomologyComplFiberIso`. It commutes with `f`: `j_! ∘ f_* = f_* ∘ j_!`, where
+on the right `f` acts through its restriction `p⁻¹(b) ⟶ p'⁻¹(b)` to the fibres. -/
+@[reassoc]
+theorem homologyMap_comp_fiberLocalization_comp_singularHomologyComplFiberIso_hom :
+    SSet.homologyMap (_root_.TopCat.toSSet.map f) (ModuleCat.of R R) m ≫
+        fiberLocalization (ModuleCat.of R R) p' b m ≫
+          (TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp' n m h).hom =
+      fiberLocalization (ModuleCat.of R R) p b m ≫
+        (TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom ≫
+          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+            (ModuleCat.of R R)).map (f.preimageMap hf {b}) := by
+  have hloc : SSet.homologyMap (_root_.TopCat.toSSet.map f) (ModuleCat.of R R) m ≫
+        fiberLocalization (ModuleCat.of R R) p' b m =
+      fiberLocalization (ModuleCat.of R R) p b m ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {b}ᶜ))
+          (ModuleCat.of R R) m := by
+    have hσ := homologyMap_comp_fiberLocalization (ModuleCat.of R R) f.hom
+      (congrArg (fun g : E ⟶ B ↦ ⇑g.hom) hf) b m
+    -- `hσ` is stated for `TopCat.ofHom f.hom` on `TopCat.of E`, which `exact` identifies with `f`.
+    rw [localHomologyMap_def] at hσ
+    exact hσ
+  rw [reassoc_of% hloc, TopCat.singularHomologyComplFiberIso_hom_naturality R e hb hε hε₀ hp hp' hf]
+
+include hp' in
+/-- **Living over the fundamental class under maps of fibrations.** Let `p : E ⟶ B` and
+`p' : E' ⟶ B` be Serre fibrations over a `T₁` space, with a chart `e` of dimension `r` at `b`, and
+let `f : E ⟶ E'` be a map over `B`. A class `f_* α`, for `α ∈ Hₙ₊ᵣ(E; R)`, lives over the
+fundamental class at `b` exactly when the restriction `p⁻¹(b) ⟶ p'⁻¹(b)` of `f` sends the shriek
+image `j_! α ∈ Hₙ(p⁻¹(b); R)` to a nonzero class. This is the argument of
+Barraud–Damian–Humilière–Oancea, Corollary 2.13, in which `j_! α` is the fundamental class of the
+fibre of a fibre bundle of closed oriented manifolds. -/
+theorem livesOverFundamentalClass_homologyMap_iff
+    (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) m : ModuleCat.{u} R)) :
+    LivesOverFundamentalClass (ModuleCat.of R R) p' b
+        ((SSet.homologyMap (_root_.TopCat.toSSet.map f) (ModuleCat.of R R) m).hom α) ↔
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map (f.preimageMap hf {b})).hom
+        ((TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom.hom
+          ((fiberLocalization (ModuleCat.of R R) p b m).hom α)) ≠ 0 := by
+  have h' := congrArg (fun φ ↦ φ.hom α)
+    (homologyMap_comp_fiberLocalization_comp_singularHomologyComplFiberIso_hom e hb hε hε₀ hp hp'
+      hf h)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h'
+  rw [livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero e hb hε hε₀ hp' h, h']
+
+end ShriekNaturality
 
 end TauCeti
