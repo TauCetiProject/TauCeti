@@ -528,6 +528,17 @@ theorem algebraMap_apply (s : S) :
 
 end Algebra
 
+section AlgebraSelf
+
+variable [AddMonoid H] {N : H →+ ℝ} [CommSemiring R]
+
+/-- Over its own coefficient ring, the algebra map sends `r` to the constant series `r e^0`. -/
+theorem algebraMap_self_apply (r : R) :
+    algebraMap R (NovikovSeries R H N) r = single 0 r :=
+  rfl
+
+end AlgebraSelf
+
 section AddMonoidAlgebra
 
 variable [AddMonoid H] {N : H →+ ℝ} [Semiring R]
