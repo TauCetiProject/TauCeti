@@ -19,7 +19,6 @@ public import TauCeti.LinearAlgebra.Trace.Idempotent
 -- exterior-algebra contraction lemmas in `TauCeti.ExteriorAlgebra` are used only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
