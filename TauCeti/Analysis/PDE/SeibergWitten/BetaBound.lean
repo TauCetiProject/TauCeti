@@ -43,9 +43,9 @@ The potential `(r / 4)(|α|² + 1)` of the second inequality controls `|β|²` u
 `|∇_a α|²` by `(1 / 2) d*d (1 - |α|²)` plus `(r / 4)(1 - |α|²)|α|²` up to a constant. So, with
 `κ = 4 c²`, the function `y = |β|² - (κ / r)(1 - |α|²)` satisfies, wherever it is positive,
 
-`(1 / 2) d*d y + (r / 8) y ≤ C / r`,
+`(1 / 2) d*d y + (r / 8) y ≤ C₀ / r`,  `C₀ = 4 c² (K₁ + K₃ / 8 + 2 (1 + K₃ / r))`,
 
-where `d*d = -Δ`. At a maximum of `y`, where `Δ y ≤ 0`, this gives `y ≤ 8 C / r²`
+where `d*d = -Δ`. At a maximum of `y`, where `Δ y ≤ 0`, this gives `y ≤ 8 C₀ / r²`
 (`TauCeti.SeibergWitten.norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax`), and hence
 everywhere, for `r ≥ 1`,
 
@@ -154,12 +154,8 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax (hr : 0 < r) (hK₁ 
     (hmax : IsLocalMax (fun y ↦ ‖β y‖ ^ 2 + 4 * c ^ 2 / r * ‖α y‖ ^ 2) x₀) :
     ‖β x₀‖ ^ 2 ≤ 4 * c ^ 2 / r * (1 - ‖α x₀‖ ^ 2) +
       32 * c ^ 2 * (K₁ + K₃ / 8 + 2 * (1 + K₃ / r)) / r ^ 2 := by
-  have hcα : ContMDiffAt I 𝓘(ℝ) 2 ((4 * c ^ 2 / r) • fun y ↦ ‖α y‖ ^ 2) x₀ := by
-    simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiffAt_const.mul hα
-  have hΔ := Manifold.laplaceBeltrami_nonpos_of_isLocalMax (hβ.add hcα) hmax
-  rw [Manifold.laplaceBeltrami_add_of_contMDiffAt I hβ hcα,
-    Manifold.laplaceBeltrami_smul_of_contMDiffAt I _ hα] at hΔ
-  exact sq_le_of_add_mul_nonpos hr hK₁ hK₃ hWα hWβ hΔ hC
+  exact sq_le_of_add_mul_nonpos hr hK₁ hK₃ hWα hWβ
+    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hβ hα hmax) hC
 
 /-- **Taubes's pointwise bound** `|β|² ≤ (C / r) w₊ + C / r²`, with `w₊ = max (1 - |α|²) 0` and
 `C = 32 c² (K₁ + 3 K₃ + 2)`. On a compact boundaryless Riemannian manifold, suppose `|α|²` and
