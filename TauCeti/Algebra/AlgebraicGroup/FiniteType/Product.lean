@@ -63,21 +63,6 @@ noncomputable abbrev tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
   letI : Algebra.FiniteType R (H ⊗[R] K) := tensorProduct_finiteType (R := R) H K
   of R (H ⊗[R] K)
 
-/-- Tensor products of bialgebra maps compose to the identity when both factors do. -/
-private theorem map_comp_map_eq_id {A B C D : Type v} [CommRing A] [CommRing B] [CommRing C]
-    [CommRing D] [Bialgebra R A] [Bialgebra R B] [Bialgebra R C] [Bialgebra R D]
-    {φ : A →ₐc[R] B} {φ' : B →ₐc[R] A} {ψ : C →ₐc[R] D} {ψ' : D →ₐc[R] C}
-    (hφ : φ'.comp φ = BialgHom.id R A) (hψ : ψ'.comp ψ = BialgHom.id R C) :
-    (Bialgebra.TensorProduct.map φ' ψ').comp (Bialgebra.TensorProduct.map φ ψ) =
-      BialgHom.id R (A ⊗[R] C) := by
-  apply BialgHom.coe_toAlgHom_injective
-  apply Algebra.TensorProduct.ext'
-  intro a c
-  simp only [BialgHom.coe_toAlgHom, BialgHom.comp_apply, Bialgebra.TensorProduct.map_tmul,
-    BialgHom.id_apply]
-  rw [← BialgHom.comp_apply, ← BialgHom.comp_apply, hφ, hψ, BialgHom.id_apply,
-    BialgHom.id_apply]
-
 /-- Tensor products preserve isomorphisms of finite-type commutative Hopf algebras: the
 isomorphism and its inverse are the tensor products of the maps of the two factors. -/
 noncomputable def tensorProductCongr
@@ -87,10 +72,10 @@ noncomputable def tensorProductCongr
     Bialgebra.TensorProduct.map (toBialgHom e.hom) (toBialgHom f.hom)
   inv := ObjectProperty.homMk <| _root_.CommHopfAlgCat.ofHom <|
     Bialgebra.TensorProduct.map (toBialgHom e.inv) (toBialgHom f.inv)
-  hom_inv_id := hom_ext <| map_comp_map_eq_id
+  hom_inv_id := hom_ext <| Bialgebra.TensorProduct.map_comp_map_eq_id
     (by rw [← toBialgHom_comp, e.hom_inv_id, toBialgHom_id])
     (by rw [← toBialgHom_comp, f.hom_inv_id, toBialgHom_id])
-  inv_hom_id := hom_ext <| map_comp_map_eq_id
+  inv_hom_id := hom_ext <| Bialgebra.TensorProduct.map_comp_map_eq_id
     (by rw [← toBialgHom_comp, e.inv_hom_id, toBialgHom_id])
     (by rw [← toBialgHom_comp, f.inv_hom_id, toBialgHom_id])
 
