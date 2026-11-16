@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
@@ -150,21 +151,13 @@ private theorem exists_norm_fourierInv_phaseSymbol_mul_littlewoodPaley_sq_le :
 
 variable {φ}
 
-/-- A symbol almost everywhere equal to a Littlewood–Paley cutoff is real, so its multiplier is
-self-adjoint. -/
-private theorem star_eq_of_ae_eq_littlewoodPaley {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
-    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) : star m = m := by
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_star m, hm] with ξ h₁ h₂
-  rw [h₁, Pi.star_apply, h₂, Complex.star_def, conj_ofReal]
-
 /-- The adjoint of `W₊(t) Pⱼ` is `Pⱼ W₊(-t)`. -/
 private theorem adjoint_halfWavePropagator_comp {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
     (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (t : ℝ) :
     ((halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m)†) =
       Lp.fourierMultiplierCLM ℂ m ∘L halfWavePropagator ℂ (-t) := by
   rw [ContinuousLinearMap.adjoint_comp, Lp.adjoint_fourierMultiplierCLM,
-    star_eq_of_ae_eq_littlewoodPaley hm, halfWavePropagator_def, adjoint_phasePropagator]
+    Lp.star_eq_self_of_ae_eq_ofReal hm, halfWavePropagator_def, adjoint_phasePropagator]
 
 variable (φ) in
 /-- The Schwartz symbol `exp(2πiτ‖ξ‖) ψⱼ(ξ)²` of `W₊(τ) Pⱼ²`. -/
