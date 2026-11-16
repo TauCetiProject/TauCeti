@@ -29,8 +29,9 @@ The comparison controls the complex expectation itself, and hence both its real 
 parts, retaining the rank-to-dimension improvement for low-rank coordinate perturbations. Empty
 coordinate and matrix index types are allowed.
 
-The proof combines `Matrix.IsHermitian.iteratedDeriv_inv_add_smul_sub_smul_one` with the scalar
-Lindeberg replacement theorem `TauCeti.Probability.abs_integral_pi_sub_integral_pi_le_of_bounded`.
+The proof combines
+`Matrix.IsHermitian.norm_iteratedDeriv_succ_normalized_trace_inv_add_smul_sub_smul_one_le` with
+the scalar Lindeberg theorem `TauCeti.Probability.abs_integral_pi_sub_integral_pi_le_of_bounded`.
 
 ## References
 

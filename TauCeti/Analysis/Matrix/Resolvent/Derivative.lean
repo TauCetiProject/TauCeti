@@ -58,7 +58,7 @@ theorem contDiffAt_inv_sub_smul_one {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [
   have hd : ContDiffAt 𝕜 k (fun M : Matrix n n 𝕜 ↦ M - z • 1) A := by fun_prop
   simpa only [Matrix.nonsing_inv_eq_ringInverse] using hd.inverse h
 
-/-- Every positive-order derivative of an invertible affine matrix pencil has rank at most
+/-- Every positive-order derivative of the inverse of an affine matrix pencil has rank at most
 that of the perturbation. Invertibility is needed only at the evaluation point. -/
 theorem rank_iteratedDeriv_succ_inv_add_smul_le {𝕜₀ 𝕜 n : Type*}
     [NontriviallyNormedField 𝕜₀] [RCLike 𝕜] [Fintype n] [DecidableEq n]
