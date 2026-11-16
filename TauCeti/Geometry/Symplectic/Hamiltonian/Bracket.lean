@@ -34,14 +34,14 @@ For a nondegenerate closed form on a finite-dimensional manifold, where the Pois
 `X_{{f, g}} = -[X_f, X_g]`
 
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_poissonBracket`): the map
-`f ↦ -X_f` takes Poisson brackets to Lie brackets of vector fields. In particular the
-Hamiltonian vector fields of two functions commute at every point near which the functions
-Poisson-commute
-(`SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`). It gives the identity
+`f ↦ -X_f` takes Poisson brackets to Lie brackets of vector fields. It gives the identity
 `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}` and the **Jacobi identity**
 `{f, {g, k}} + {g, {k, f}} + {k, {f, g}} = 0` for `C²` functions
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket` and
-`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`).
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`). The same identity shows that
+the Hamiltonian vector fields of two functions commute at every point near which the functions
+Poisson-commute
+(`TauCeti.SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`).
 
 ## References
 
