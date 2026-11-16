@@ -393,14 +393,13 @@ theorem W1p.exists_norm_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
 on the Haar measure `μ`, such that every `u ∈ W^{1,2}(E)`, every measurable set `s` of finite
 measure and every `c ≥ 1` with `C c ‖∇u‖₂ ≤ 1` satisfy
 
-`‖u‖₂² ≤ 3 ∫_{sᶜ} u² + 9 μ(s) / c²`.
-
-This is `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two` applied to `c u`, with
-`√(1 + t²) - 1 ≤ t² / 2`. -/
+`‖u‖₂² ≤ 3 ∫_{sᶜ} u² + 9 μ(s) / c²`. -/
 theorem W1p.exists_norm_value_sq_le_of_mul_norm_gradient_le (hE : finrank ℝ E = 2) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (u : W1p μ ⊤ 2) (s : Set E), MeasurableSet s → μ s ≠ ∞ →
       ∀ c : ℝ, 1 ≤ c → C * c * ‖W1p.gradient u‖ ≤ 1 →
       ‖W1p.value u‖ ^ 2 ≤ 3 * (∫ x in sᶜ, W1p.value u x ^ 2 ∂μ) + 9 * μ.real s / c ^ 2 := by
+  -- Apply `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two` to `c u`, with
+  -- `√(1 + t²) - 1 ≤ t² / 2`.
   obtain ⟨C, hC, hpl⟩ := W1p.exists_norm_value_sq_le_of_finrank_eq_two μ hE
   refine ⟨C, hC, fun u s hs hμs c hc hG ↦ ?_⟩
   have hc0 : 0 < c := by linarith

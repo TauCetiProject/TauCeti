@@ -36,6 +36,7 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   integrable.
 * `Polynomial.tendsto_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_cocompact`: it tends to
   zero at infinity.
+* `Polynomial.exists_forall_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_le`: it is bounded.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
 * `Polynomial.exists_forall_le_norm_eval`: a nonconstant polynomial has modulus at least `c`
@@ -44,9 +45,12 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   `Q` is bounded by a multiple of `1 + ‖Q‖` everywhere.
 * `Polynomial.exists_tendsto_eventually_forall_norm_eval_le`: polynomials of bounded degree whose
   coefficients tend to zero are bounded by `δ (1 + ‖Q‖)` everywhere, with `δ → 0`.
+* `Polynomial.exists_tendsto_eventually_abs_norm_eval_sub_le`: if the coefficients of `P i`
+  converge to those of a nonconstant `Q`, with eventually `deg P i ≤ deg Q`, then
+  `|‖P i‖ - ‖Q‖| ≤ δ (1 + ‖Q‖)` and `|‖P i'‖ - ‖Q'‖| ≤ δ (1 + ‖Q'‖)` everywhere, with `δ → 0`.
 
-These three hold over normed rings `R` with multiplicative norm; the last two assume `R` proper,
-and the last also nontrivial.
+These four hold over normed rings `R` with multiplicative norm; the last three assume `R` proper,
+and the last two also nontrivial; the last assumes characteristic zero as well.
 -/
 
 public section
@@ -169,6 +173,20 @@ theorem tendsto_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_cocompact (P
   filter_upwards [hb] with z hz
   rwa [le_div_iff₀ (by positivity)]
 
+/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` is bounded on the
+plane. -/
+theorem exists_forall_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_le (P : Polynomial ℂ) :
+    ∃ C : ℝ, ∀ z, ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ C := by
+  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1
+    ((tendsto_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_cocompact P).eventually
+      (eventually_le_nhds one_pos))
+  obtain ⟨C, hC⟩ :=
+    hK.exists_bound_of_continuousOn (continuous_norm_derivative_eval_sq_div P).continuousOn
+  refine ⟨max C 1, fun z ↦ ?_⟩
+  by_cases hz : z ∈ K
+  · exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hC z hz).trans (le_max_left _ _))
+  · exact (hKc hz).trans (le_max_right _ _)
+
 /-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` is square integrable on
 the plane. -/
 theorem memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Polynomial ℂ) :
@@ -266,6 +284,43 @@ theorem exists_tendsto_eventually_forall_norm_eval_le [Nontrivial R] {ι : Type*
     rw [norm_mul, mul_assoc, mul_comm (C k), mul_assoc]
     refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
     simpa [mul_comm, eval_X_pow] using hC k z
+
+/-- If the coefficients of the polynomials `P i` converge to those of a polynomial `Q` of
+positive degree, and eventually `deg P i ≤ deg Q`, then for some nonnegative `δ i → 0`,
+eventually `|‖P i‖ - ‖Q‖| ≤ δ i (1 + ‖Q‖)` and `|‖P i'‖ - ‖Q'‖| ≤ δ i (1 + ‖Q'‖)` everywhere. -/
+theorem exists_tendsto_eventually_abs_norm_eval_sub_le [Nontrivial R] [CharZero R] {ι : Type*}
+    {l : Filter ι} {P : ι → Polynomial R} {Q : Polynomial R} (hQ : 0 < Q.natDegree)
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) :
+    ∃ δ : ι → ℝ, (∀ i, 0 ≤ δ i) ∧ Tendsto δ l (𝓝 0) ∧ ∀ᶠ i in l, ∀ z,
+      |‖(P i).eval z‖ - ‖Q.eval z‖| ≤ δ i * (1 + ‖Q.eval z‖) ∧
+      |‖(P i).derivative.eval z‖ - ‖Q.derivative.eval z‖| ≤
+        δ i * (1 + ‖Q.derivative.eval z‖) := by
+  have hQ0 : Q ≠ 0 := by rintro rfl; simp at hQ
+  -- Closeness of the values.
+  obtain ⟨δ₁, hδ₁0, hδ₁, hP₁⟩ :=
+    exists_tendsto_eventually_forall_norm_eval_le (A := fun i ↦ P i - Q)
+    (Q := Q) (n := Q.natDegree) (degree_eq_natDegree hQ0).ge
+    (hdeg.mono fun i hi ↦ (natDegree_sub_le _ _).trans (max_le hi le_rfl))
+    fun k ↦ by simpa using (hcoeff k).sub_const (Q.coeff k)
+  -- Closeness of the derivatives.
+  obtain ⟨δ₂, hδ₂0, hδ₂, hP₂⟩ := exists_tendsto_eventually_forall_norm_eval_le
+    (A := fun i ↦ derivative (P i - Q)) (Q := derivative Q)
+    (n := Q.natDegree - 1) (degree_derivative hQ.ne').ge
+    (hdeg.mono fun i hi ↦ (natDegree_derivative_le _).trans
+      (Nat.sub_le_sub_right ((natDegree_sub_le _ _).trans (max_le hi le_rfl)) 1))
+    fun k ↦ by
+      simpa [coeff_derivative, sub_mul] using
+        ((hcoeff (k + 1)).sub_const (Q.coeff (k + 1))).mul_const ((k : R) + 1)
+  refine ⟨fun i ↦ δ₁ i + δ₂ i, fun i ↦ add_nonneg (hδ₁0 i) (hδ₂0 i),
+    by simpa using hδ₁.add hδ₂, ?_⟩
+  filter_upwards [hP₁, hP₂] with i h₁ h₂ z
+  refine ⟨(abs_norm_sub_norm_le _ _).trans (le_trans (by simpa using h₁ z :
+      ‖(P i).eval z - Q.eval z‖ ≤ δ₁ i * (1 + ‖Q.eval z‖)) ?_),
+    (abs_norm_sub_norm_le _ _).trans (le_trans (by simpa using h₂ z :
+      ‖(P i).derivative.eval z - Q.derivative.eval z‖ ≤ δ₂ i * (1 + ‖Q.derivative.eval z‖)) ?_)⟩
+  · exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (hδ₂0 i)) (by positivity)
+  · exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_left (hδ₁0 i)) (by positivity)
 
 end NormedRing
 

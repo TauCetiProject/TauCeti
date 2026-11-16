@@ -190,7 +190,8 @@ variable {P : Polynomial ℂ}
 
 /-- The potential `h (exp (2u) - 1 - 2u)` of an element of `H¹(ℂ)`, where
 `h = ‖P‖² / (1 + ‖P‖²)`, is measurable. -/
-theorem aestronglyMeasurable_potential (u : W1p (volume : Measure ℂ) ⊤ 2) :
+theorem aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul
+    (u : W1p (volume : Measure ℂ) ⊤ 2) :
     AEStronglyMeasurable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
   have hh : Continuous fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
@@ -200,14 +201,14 @@ theorem aestronglyMeasurable_potential (u : W1p (volume : Measure ℂ) ⊤ 2) :
     (W1p.memLp_value u).aestronglyMeasurable)
 
 /-- The potential `h (exp (2w) - 1 - 2w)`, where `h = ‖P‖² / (1 + ‖P‖²)`, is nonnegative. -/
-theorem potential_nonneg (w : ℂ → ℝ) (z : ℂ) :
+theorem norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg (w : ℂ → ℝ) (z : ℂ) :
     0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
   mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
 
 /-- The integral of the potential `h (exp (2w) - 1 - 2w)` is nonnegative. -/
 private theorem integral_potential_nonneg (w : ℂ → ℝ) :
     0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-  integral_nonneg fun z ↦ potential_nonneg w z
+  integral_nonneg fun z ↦ norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg w z
 
 /-- When the potential is integrable, Taubes's functional on `H¹(ℂ)` is the real number
 `‖∇u‖₂² / 2 + (1 / 16) ∫ h (exp (2u) - 1 - 2u) + ∫ (g - (1 + ‖P‖²)⁻¹ / 8) u`. -/
@@ -227,8 +228,8 @@ theorem sobolevReducedFunctional_eq_coe {u : W1p (volume : Measure ℂ) ⊤ 2}
         (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) / 16) := by
     rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_ofNat]
   rw [sobolevReducedFunctional_def, ← ofReal_integral_eq_lintegral_ofReal hu
-    (ae_of_all _ (potential_nonneg _)), h16, EReal.coe_ennreal_ofReal,
-    max_eq_left (by positivity), ← EReal.coe_add]
+    (ae_of_all _ (norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg _)), h16,
+    EReal.coe_ennreal_ofReal, max_eq_left (by positivity), ← EReal.coe_add]
   congr 1
   ring
 
@@ -240,8 +241,10 @@ theorem sobolevReducedFunctional_eq_top {u : W1p (volume : Measure ℂ) ⊤ 2}
   have hinf : ∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) = ⊤ := by
     by_contra hne
-    exact hu ⟨aestronglyMeasurable_potential u, (hasFiniteIntegral_iff_ofReal
-      (ae_of_all _ (potential_nonneg _))).2 (lt_top_iff_ne_top.2 hne)⟩
+    exact hu ⟨aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul u,
+      (hasFiniteIntegral_iff_ofReal (ae_of_all _
+        (norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg _))).2
+        (lt_top_iff_ne_top.2 hne)⟩
   rw [sobolevReducedFunctional_def, hinf, ENNReal.top_div_of_ne_top (by norm_num),
     EReal.coe_ennreal_top, EReal.coe_add_top]
 
@@ -328,8 +331,7 @@ private theorem exists_sobolevReducedFunctional_eq {w : ℂ → ℝ} (hw : ContD
   simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at hv hg
   refine ⟨u, sobolevReducedFunctional_eq_reducedFunctional hw.continuous hws hv hg, ?_, ?_,
     integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])⟩
-  · rw [← W1p.integral_value_sq_eq_norm_value_sq]
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+  · rw [← W1p.integral_value_sq_eq_norm_value_sq_top]
     exact integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
   · exact norm_gradient_sq_eq hg
 
@@ -385,7 +387,8 @@ private theorem setIntegral_compl_closedBall_le {R : ℝ}
     _ ≤ ∫ z, 2 * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
           (Real.exp (2 * w z) - 1 - 2 * w z)) :=
         setIntegral_le_integral (hpint.const_mul 2)
-          (Eventually.of_forall fun z ↦ mul_nonneg zero_le_two (potential_nonneg w z))
+          (Eventually.of_forall fun z ↦ mul_nonneg zero_le_two
+            (norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg w z))
 
 /-- The energy `‖∇u‖₂² / 2 + (1 / 16) ∫ h (exp (2u) - 1 - 2u)` controls `‖u‖₂²`: its square is at
 most a constant times the cube of one plus the energy. The constant depends only on a radius `R`
@@ -465,8 +468,7 @@ theorem exists_le_two_mul_sobolevReducedFunctional_add_of_forall_one_le_norm_eva
   set x := |∫ z, c z * W1p.value u z|
   have hx2 : x ^ 2 ≤ K * ‖W1p.value u‖ ^ 2 := by
     refine le_trans ?_ (mul_le_mul_of_nonneg_right hK (sq_nonneg _))
-    rw [sq_abs, ← W1p.integral_value_sq_eq_norm_value_sq]
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+    rw [sq_abs, ← W1p.integral_value_sq_eq_norm_value_sq_top]
     exact sq_integral_mul_le_integral_sq_mul_integral_sq hc (W1p.memLp_value u)
   have hx4 : x ^ 4 ≤ D * (1 + M) ^ 3 := by
     calc x ^ 4 = (x ^ 2) ^ 2 := by ring
@@ -647,9 +649,10 @@ private theorem integrable_potential_midpoint {u v : W1p (volume : Measure ℂ) 
       (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)) :
     Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value (midpoint ℝ u v) z) - 1 - 2 * W1p.value (midpoint ℝ u v) z) := by
-  refine Integrable.mono' ((hu.add hv).div_const 2) (aestronglyMeasurable_potential _) ?_
+  refine Integrable.mono' ((hu.add hv).div_const 2)
+    (aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul _) ?_
   filter_upwards [potential_midpoint_le_ae (P := P) u v] with z hz
-  rw [Real.norm_of_nonneg (potential_nonneg _ z)]
+  rw [Real.norm_of_nonneg (norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg _ z)]
   exact hz
 
 /-- **The convexity defect of the potential.** If the potentials of `u` and `v` are integrable,
