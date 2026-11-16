@@ -68,7 +68,7 @@ theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] 
 
 /-- The trivial absolute value is nonarchimedean. -/
 theorem isNonarchimedean_trivial {R S : Type*} [Semiring R] [DecidablePred fun x : R ↦ x = 0]
-    [NoZeroDivisors R] [Semiring S] [LinearOrder S] [IsStrictOrderedRing S] :
+    [NoZeroDivisors R] [Semiring S] [LinearOrder S] [IsOrderedRing S] [Nontrivial S] :
     IsNonarchimedean (AbsoluteValue.trivial : AbsoluteValue R S) := by
   intro x y
   rcases eq_or_ne x 0 with rfl | hx

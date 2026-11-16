@@ -103,6 +103,21 @@ theorem lipschitzWith_quotientKerEquivOfSurjective_symm {f : R →+* S} (hf : Fu
   AddMonoidHomClass.lipschitz_of_bound (f.quotientKerEquivOfSurjective hf).symm L
     (f.norm_quotientKerEquivOfSurjective_symm_le hf hlift)
 
+/-- For a contractive ring homomorphism `f : R →+* S`, if `f a` admits non-strict approximate
+preimages of norm at most `‖f a‖ + ε` for every `ε > 0`, then the quotient seminorm modulo `ker f`
+at `a` equals `‖f a‖`. -/
+theorem norm_mk_ker_eq_of_forall_pos_exists_norm_le_add {f : R →+* S} (h1 : ∀ x, ‖f x‖ ≤ ‖x‖)
+    {a : R} (h2 : ∀ ε > 0, ∃ a', f a' = f a ∧ ‖a'‖ ≤ ‖f a‖ + ε) :
+    ‖Ideal.Quotient.mk (ker f) a‖ = ‖f a‖ := by
+  apply le_antisymm
+  · refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
+    obtain ⟨a', ha', hle⟩ := h2 (ε / 2) (half_pos hε)
+    have hmk : Ideal.Quotient.mk (ker f) a' = Ideal.Quotient.mk (ker f) a :=
+      f.kerLift_injective (by simp [ha'])
+    exact (hmk ▸ Ideal.Quotient.norm_mk_le_norm (ker f) a').trans_lt
+      (hle.trans_lt (by linarith [half_lt_self hε]))
+  · simpa using f.norm_kerLift_le (C := 1) (by simpa using h1) (Ideal.Quotient.mk (ker f) a)
+
 /-- The quotient seminorm modulo `ker f` equals `‖f ·‖` everywhere if and only if `f` is
 contractive and every value `f a` admits preimages of norm arbitrarily close to `‖f a‖`. -/
 theorem norm_mk_ker_eq_iff (f : R →+* S) :
@@ -116,16 +131,8 @@ theorem norm_mk_ker_eq_iff (f : R →+* S) :
     refine ⟨a', ?_, by rwa [h a] at hlt⟩
     simpa only [kerLift_mk] using congrArg f.kerLift ha'
   · rintro ⟨h1, h2⟩ a
-    apply le_antisymm
-    · refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
-      obtain ⟨a', ha', hlt⟩ := h2 a ε hε
-      have hmk : Ideal.Quotient.mk (ker f) a' = Ideal.Quotient.mk (ker f) a :=
-        f.kerLift_injective (by simp [ha'])
-      exact (hmk ▸ Ideal.Quotient.norm_mk_le_norm (ker f) a').trans_lt hlt
-    · refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
-      obtain ⟨a', ha', hlt⟩ := Ideal.Quotient.exists_norm_mk_lt (Ideal.Quotient.mk (ker f) a) hε
-      have hfa : f a = f a' := by simpa only [kerLift_mk] using (congrArg f.kerLift ha').symm
-      exact (hfa ▸ h1 a').trans_lt hlt
+    exact norm_mk_ker_eq_of_forall_pos_exists_norm_le_add h1 fun ε hε ↦
+      let ⟨a', ha', hlt⟩ := h2 a ε hε; ⟨a', ha', hlt.le⟩
 
 /-- **Quotient-isometry criterion for ring homomorphisms.** The induced injection
 `f.kerLift : R ⧸ ker f →+* S` is an isometry if and only if `f` is contractive and every value
@@ -147,16 +154,8 @@ theorem isometry_quotientKerEquivOfSurjective_iff {f : R →+* S} (hf : Function
   simp only [quotientKerEquivOfSurjective_apply_mk, eq_comm (b := ‖Ideal.Quotient.mk (ker f) _‖),
     f.norm_mk_ker_eq_iff, hf.forall]
 
-/-- Non-strict approximate preimages `‖a‖ ≤ ‖b‖ + ε` suffice for the quotient seminorm modulo
-`ker f` to equal `‖f ·‖`. -/
-theorem norm_mk_ker_eq_of_forall_pos_exists_norm_le_add {f : R →+* S} (h1 : ∀ a, ‖f a‖ ≤ ‖a‖)
-    (h2 : ∀ b, ∀ ε > 0, ∃ a, f a = b ∧ ‖a‖ ≤ ‖b‖ + ε) (a : R) :
-    ‖Ideal.Quotient.mk (ker f) a‖ = ‖f a‖ := by
-  refine (f.norm_mk_ker_eq_iff.mpr ⟨h1, fun x ε hε ↦ ?_⟩) a
-  obtain ⟨a', ha', hle⟩ := h2 (f x) (ε / 2) (half_pos hε)
-  exact ⟨a', ha', by linarith [half_lt_self hε]⟩
-
-/-- Non-strict approximate preimages `‖a‖ ≤ ‖b‖ + ε` suffice for
+/-- For a contractive surjective ring homomorphism `f : R →+* S`, non-strict approximate preimages
+of norm at most `‖b‖ + ε` for every `b : S` and `ε > 0` suffice for
 `RingHom.quotientKerEquivOfSurjective` to be an isometry. -/
 theorem isometry_quotientKerEquivOfSurjective_of_forall_pos_exists_norm_le_add {f : R →+* S}
     (hf : Function.Surjective f) (h1 : ∀ a, ‖f a‖ ≤ ‖a‖)
@@ -164,7 +163,8 @@ theorem isometry_quotientKerEquivOfSurjective_of_forall_pos_exists_norm_le_add {
     Isometry (f.quotientKerEquivOfSurjective hf) := by
   rw [AddMonoidHomClass.isometry_iff_norm, Ideal.Quotient.mk_surjective.forall]
   intro a
-  rw [quotientKerEquivOfSurjective_apply_mk, norm_mk_ker_eq_of_forall_pos_exists_norm_le_add h1 h2]
+  rw [quotientKerEquivOfSurjective_apply_mk,
+    norm_mk_ker_eq_of_forall_pos_exists_norm_le_add h1 (h2 (f a))]
 
 end Ker
 

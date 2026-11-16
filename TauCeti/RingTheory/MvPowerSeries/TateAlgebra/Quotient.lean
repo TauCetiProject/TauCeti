@@ -74,13 +74,24 @@ variable {σ R S : Type*} [NormedRing R] [IsUltrametricDist R]
   [NormedRing S] [IsUltrametricDist S] {c : σ → ℝ}
   (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖) [∀ i, Fact (0 < c i)]
 
+/-- A uniform bound on coefficient lifts along `φ : R →+* S` produces a restricted preimage for
+`MvPowerSeries.map φ` with the same Gauss-norm bound, without assuming a forward norm bound on
+`φ`. -/
+theorem exists_map_eq_and_norm_le {L : ℝ}
+    (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖)
+    (g : IsRestricted.subring (R := S) c) :
+    ∃ f : IsRestricted.subring (R := R) c,
+      MvPowerSeries.map φ (f : MvPowerSeries σ R) = g ∧ ‖f‖ ≤ L * ‖g‖ := by
+  obtain ⟨f, hf, hcoeff⟩ := exists_map_eq_and_norm_coeff_le φ hlift g
+  exact ⟨f, hf, norm_le_mul_of_norm_coeff_le hcoeff⟩
+
 /-- A bound on coefficient lifts is also a bound on lifts for the Gauss norm. -/
 theorem exists_restrictedMap_eq_and_norm_le {L : ℝ}
     (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖)
     (g : IsRestricted.subring (R := S) c) :
     ∃ f, restrictedMap φ hφ f = g ∧ ‖f‖ ≤ L * ‖g‖ := by
-  obtain ⟨f, hf, hcoeff⟩ := exists_restrictedMap_eq_and_norm_coeff_le φ hφ hlift g
-  exact ⟨f, hf, norm_le_mul_of_norm_coeff_le hcoeff⟩
+  obtain ⟨f, hf, hle⟩ := exists_map_eq_and_norm_le φ hlift g
+  exact ⟨f, Subtype.ext ((coe_restrictedMap φ hφ f).trans hf), hle⟩
 
 /-- Uniformly bounded coefficient lifts make the induced map of restricted series open. -/
 theorem isOpenMap_restrictedMap {L : ℝ}
@@ -121,15 +132,16 @@ variable {σ R S : Type*} [NormedRing R] [IsUltrametricDist R]
   [NormedRing S] [IsUltrametricDist S] {c : σ → ℝ}
   (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖) [∀ i, Fact (0 < c i)]
 
-/-- If every image `φ a` lifts to elements of `R` of norm arbitrarily close to `‖φ a‖`, then every
-image `restrictedMap φ hφ f` lifts to a restricted series of Gauss norm strictly below
-`‖restrictedMap φ hφ f‖ + ε`. -/
-theorem exists_restrictedMap_eq_restrictedMap_and_norm_lt_add
-    (hlift : ∀ a, ∀ ε > 0, ∃ a', φ a' = φ a ∧ ‖a'‖ ≤ ‖φ a‖ + ε)
-    (f : IsRestricted.subring (R := R) c) {ε : ℝ} (hε : 0 < ε) :
-    ∃ f', restrictedMap φ hφ f' = restrictedMap φ hφ f ∧
-      ‖f'‖ < ‖restrictedMap φ hφ f‖ + ε := by
-  set g := restrictedMap φ hφ f
+/-- If every coefficient of a restricted series `g` over `S` lifts along `φ : R →+* S` to elements
+of `R` of norm arbitrarily close to its norm, then `g` lifts along `MvPowerSeries.map φ` to a
+restricted series over `R` of Gauss norm strictly below `‖g‖ + ε`, without assuming a forward norm
+bound on `φ`. -/
+theorem exists_map_eq_and_norm_lt_add {g : IsRestricted.subring (R := S) c}
+    (hlift : ∀ t, ∀ ε > 0, ∃ a, φ a = coeff t (g : MvPowerSeries σ S) ∧
+      ‖a‖ ≤ ‖coeff t (g : MvPowerSeries σ S)‖ + ε)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ f : IsRestricted.subring (R := R) c,
+      MvPowerSeries.map φ (f : MvPowerSeries σ R) = g ∧ ‖f‖ < ‖g‖ + ε := by
   -- At each nonzero coefficient `gₜ`, choosing the monomial-dependent tolerance
   -- `δ = min ‖gₜ‖ (ε / (2 * cᵗ))` keeps `f'` restricted via `‖a'ₜ‖ ≤ 2 * ‖gₜ‖` while bounding
   -- every weighted coefficient by `‖g‖ + ε / 2`.
@@ -142,10 +154,7 @@ theorem exists_restrictedMap_eq_restrictedMap_and_norm_lt_add
       have hgt : 0 < ‖coeff t (g : MvPowerSeries σ S)‖ := norm_pos_iff.mpr ht
       set δ := min ‖coeff t (g : MvPowerSeries σ S)‖ (ε / 2 / t.prod (c · ^ ·))
       have hδ : 0 < δ := lt_min hgt (div_pos (half_pos hε) hw)
-      have heq : coeff t (g : MvPowerSeries σ S) = φ (coeff t (f : MvPowerSeries σ R)) :=
-        coeff_restrictedMap φ hφ f t
-      obtain ⟨a', ha'φ, ha'n⟩ := hlift (coeff t (f : MvPowerSeries σ R)) δ hδ
-      rw [← heq] at ha'φ ha'n
+      obtain ⟨a', ha'φ, ha'n⟩ := hlift t δ hδ
       refine ⟨a', ha'φ, ?_, ?_⟩
       · linarith [min_le_left ‖coeff t (g : MvPowerSeries σ S)‖ (ε / 2 / t.prod (c · ^ ·))]
       · have hδw : δ * t.prod (c · ^ ·) ≤ ε / 2 := by
@@ -159,9 +168,9 @@ theorem exists_restrictedMap_eq_restrictedMap_and_norm_lt_add
           _ ≤ ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) + ε / 2 := by linarith
   choose a' ha'φ ha'2 ha'ε using hchoice
   let f' : MvPowerSeries σ R := fun t ↦ a' t
-  have hf' : IsRestricted c f' := isRestricted_of_norm_coeff_le g.2 ha'2
-  refine ⟨⟨f', hf'⟩, Subtype.ext <| MvPowerSeries.ext fun t ↦ ?_, ?_⟩
-  · rw [coeff_restrictedMap]
+  have hf' : IsRestricted c f' := g.2.of_norm_coeff_le ha'2
+  refine ⟨⟨f', hf'⟩, MvPowerSeries.ext fun t ↦ ?_, ?_⟩
+  · rw [coeff_map]
     exact ha'φ t
   · have hle : ‖(⟨f', hf'⟩ : IsRestricted.subring (R := R) c)‖ ≤ ‖g‖ + ε / 2 := by
       rw [norm_le_iff]
@@ -170,20 +179,33 @@ theorem exists_restrictedMap_eq_restrictedMap_and_norm_lt_add
       linarith [ht ▸ ha'ε t, norm_coeff_mul_prod_le g t]
     linarith [half_lt_self hε]
 
+/-- If every image `φ a` lifts to elements of `R` of norm arbitrarily close to `‖φ a‖`, then every
+image `restrictedMap φ hφ f` lifts to a restricted series of Gauss norm strictly below
+`‖restrictedMap φ hφ f‖ + ε`. -/
+theorem exists_restrictedMap_eq_restrictedMap_and_norm_lt_add
+    (hlift : ∀ a, ∀ ε > 0, ∃ a', φ a' = φ a ∧ ‖a'‖ ≤ ‖φ a‖ + ε)
+    (f : IsRestricted.subring (R := R) c) {ε : ℝ} (hε : 0 < ε) :
+    ∃ f', restrictedMap φ hφ f' = restrictedMap φ hφ f ∧
+      ‖f'‖ < ‖restrictedMap φ hφ f‖ + ε := by
+  obtain ⟨f', hf', hlt⟩ := exists_map_eq_and_norm_lt_add φ (g := restrictedMap φ hφ f)
+    (fun t δ hδ ↦ by rw [coeff_restrictedMap]; exact hlift _ δ hδ) hε
+  exact ⟨f', Subtype.ext ((coe_restrictedMap φ hφ f').trans hf'), hlt⟩
+
 omit [∀ i, Fact (0 < c i)] in
 /-- Sharp approximate coefficient lifts make `restrictedMap` surjective at every polyradius. -/
 theorem restrictedMap_surjective_of_forall_pos_exists_norm_le_add
     (hlift : ∀ b, ∀ ε > 0, ∃ a, φ a = b ∧ ‖a‖ ≤ ‖b‖ + ε) :
     Function.Surjective (restrictedMap (c := c) φ hφ) :=
-  restrictedMap_surjective φ hφ (exists_norm_le_two_mul_of_forall_pos_exists_norm_le_add hlift)
+  restrictedMap_surjective φ hφ fun b ↦
+    exists_norm_le_two_mul_of_forall_pos_exists_norm_le_add (hlift b)
 
 /-- Sharp approximate coefficient lifts make `restrictedMap` an open quotient map for the Gauss
 norm topologies at arbitrary positive polyradii. -/
 theorem isOpenQuotientMap_restrictedMap_of_forall_pos_exists_norm_le_add
     (hlift : ∀ b, ∀ ε > 0, ∃ a, φ a = b ∧ ‖a‖ ≤ ‖b‖ + ε) :
     IsOpenQuotientMap (restrictedMap (c := c) φ hφ) :=
-  isOpenQuotientMap_restrictedMap φ hφ
-    (exists_norm_le_two_mul_of_forall_pos_exists_norm_le_add hlift)
+  isOpenQuotientMap_restrictedMap φ hφ fun b ↦
+    exists_norm_le_two_mul_of_forall_pos_exists_norm_le_add (hlift b)
 
 /-- **Sharp approximate Gauss-norm lifts.** If every `b : S` lifts along `φ` to elements of norm
 at most `‖b‖ + ε` for every `ε > 0`, then every restricted series `g` over `S` lifts to a
@@ -192,9 +214,9 @@ theorem exists_restrictedMap_eq_and_norm_lt_add
     (hlift : ∀ b, ∀ ε > 0, ∃ a, φ a = b ∧ ‖a‖ ≤ ‖b‖ + ε)
     (g : IsRestricted.subring (R := S) c) {ε : ℝ} (hε : 0 < ε) :
     ∃ f, restrictedMap φ hφ f = g ∧ ‖f‖ < ‖g‖ + ε := by
-  obtain ⟨f₀, rfl⟩ := restrictedMap_surjective_of_forall_pos_exists_norm_le_add φ hφ hlift g
-  exact exists_restrictedMap_eq_restrictedMap_and_norm_lt_add φ hφ
-    (fun a δ hδ ↦ hlift (φ a) δ hδ) f₀ hε
+  obtain ⟨f, hf, hlt⟩ := exists_map_eq_and_norm_lt_add φ (g := g)
+    (fun t δ hδ ↦ hlift _ δ hδ) hε
+  exact ⟨f, Subtype.ext ((coe_restrictedMap φ hφ f).trans hf), hlt⟩
 
 /-- **Exact Gauss-norm-attaining lifts.** If `φ` is contractive and every `b : S` admits a lift of
 norm at most `‖b‖`, then every restricted series over `S` admits a restricted lift of the exact

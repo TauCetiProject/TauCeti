@@ -14,7 +14,7 @@ An additive map between seminormed groups is open if every element has a preimag
 whose norm is bounded by a fixed multiple of its norm (`TauCeti.isOpenMap_of_exists_norm_le`), and
 is an open quotient map when it is also continuous (`TauCeti.isOpenQuotientMap_of_exists_norm_le`).
 Neither completeness nor a Banach hypothesis is required. When the target is a normed group,
-`(1 + ε)`-sharp approximate preimages give uniform `2`-bounded preimages
+additive `‖y‖ + ε` approximate preimages along a zero-preserving map give a `2`-bounded preimage
 (`TauCeti.exists_norm_le_two_mul_of_forall_pos_exists_norm_le_add`).
 -/
 
@@ -52,16 +52,15 @@ theorem isOpenQuotientMap_of_exists_norm_le {E F 𝓕 : Type*}
     (h : ∀ y, ∃ x, f x = y ∧ ‖x‖ ≤ K * ‖y‖) : IsOpenQuotientMap f :=
   ⟨fun y ↦ let ⟨x, hx, _⟩ := h y; ⟨x, hx⟩, hf, isOpenMap_of_exists_norm_le f h⟩
 
-/-- If every element of a normed group `F` admits preimages along a zero-preserving map `f` of norm
-at most `‖y‖ + ε` for every `ε > 0`, then every element admits a preimage of norm at most
-`2 * ‖y‖`. -/
+/-- If an element `y` of a normed group `F` admits preimages along a zero-preserving map `f` of norm
+at most `‖y‖ + ε` for every `ε > 0`, then `y` admits a preimage of norm at most `2 * ‖y‖`. -/
 theorem exists_norm_le_two_mul_of_forall_pos_exists_norm_le_add {E F 𝓕 : Type*}
     [SeminormedAddGroup E] [NormedAddGroup F] [FunLike 𝓕 E F] [ZeroHomClass 𝓕 E F] {f : 𝓕}
-    (h : ∀ y, ∀ ε > 0, ∃ x, f x = y ∧ ‖x‖ ≤ ‖y‖ + ε) (y : F) :
+    {y : F} (h : ∀ ε > 0, ∃ x, f x = y ∧ ‖x‖ ≤ ‖y‖ + ε) :
     ∃ x, f x = y ∧ ‖x‖ ≤ 2 * ‖y‖ := by
   by_cases hy : y = 0
   · exact ⟨0, by simp [hy], by simp⟩
-  · obtain ⟨x, hx, hn⟩ := h y ‖y‖ (norm_pos_iff.mpr hy)
+  · obtain ⟨x, hx, hn⟩ := h ‖y‖ (norm_pos_iff.mpr hy)
     exact ⟨x, hx, hn.trans_eq (two_mul ‖y‖).symm⟩
 
 end TauCeti
