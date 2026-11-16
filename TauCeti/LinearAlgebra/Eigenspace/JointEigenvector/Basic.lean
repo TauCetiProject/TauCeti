@@ -347,8 +347,8 @@ end DomainScalars
 /-! ### Invariant submodules of a sum of joint eigenspaces
 
 Over any field, with no commutation, semisimplicity, finite-dimensionality or algebraic-closedness
-hypothesis: subtracting `χ₀ i • v` from `f i v` clears one joint-eigenvalue component while scaling
-every differing one by a nonzero field element.
+hypothesis: descending the family to the quotient `V ⧸ p` turns the congruence into a vanishing sum
+of joint eigenvectors, to which joint-eigenspace independence applies directly.
 -/
 
 section InvariantSubmodule
@@ -362,42 +362,19 @@ theorem mem_of_sum_mem_of_forall_mem_iInf_eigenspace {ι : Type*} (f : ι → Mo
     {p : Submodule K V} (hp : ∀ i, Set.MapsTo (f i) p p) {s : Finset (ι → K)} {u : (ι → K) → V}
     (hu : ∀ χ ∈ s, u χ ∈ ⨅ i, (f i).eigenspace (χ i)) (hsum : ∑ χ ∈ s, u χ ∈ p)
     {χ : ι → K} (hχ : χ ∈ s) : u χ ∈ p := by
-  classical
-  induction hn : s.card using Nat.strong_induction_on generalizing s u χ with
-  | _ n ih =>
-    subst hn
-    rcases le_or_gt s.card 1 with hcard | hcard
-    · obtain ⟨a, rfl⟩ := Finset.card_eq_one.mp
-        (le_antisymm hcard (Finset.card_pos.mpr ⟨χ, hχ⟩))
-      obtain rfl := Finset.mem_singleton.mp hχ
-      simpa using hsum
-    · obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp hcard
-      obtain ⟨i, hi⟩ := Function.ne_iff.mp hab
-      have hcard_a : (s.erase a).card < s.card := Finset.card_erase_lt_of_mem ha
-      have hshift : ∑ ψ ∈ s.erase a, (ψ i - a i) • u ψ ∈ p := by
-        have hmem : f i (∑ ψ ∈ s, u ψ) - a i • ∑ ψ ∈ s, u ψ ∈ p :=
-          p.sub_mem (hp i hsum) (p.smul_mem (a i) hsum)
-        have hterm (ψ : ι → K) (hψ : ψ ∈ s) :
-            f i (u ψ) - a i • u ψ = (ψ i - a i) • u ψ := by
-          rw [Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp (hu ψ hψ) i), sub_smul]
-        rw [map_sum, Finset.smul_sum, ← Finset.sum_sub_distrib,
-          ← Finset.add_sum_erase _ _ ha, hterm a ha, sub_self, zero_smul, zero_add] at hmem
-        exact (Finset.sum_congr rfl fun ψ hψ ↦
-          (hterm ψ (Finset.mem_of_mem_erase hψ)).symm) ▸ hmem
-      have hb_mem : b ∈ s.erase a := Finset.mem_erase.mpr ⟨hab.symm, hb⟩
-      have hub_smul : (b i - a i) • u b ∈ p :=
-        ih _ hcard_a (fun ψ hψ ↦ Submodule.smul_mem _ _ (hu ψ (Finset.mem_of_mem_erase hψ)))
-          hshift hb_mem rfl
-      have hub : u b ∈ p := by
-        simpa [inv_smul_smul₀ (sub_ne_zero.mpr hi.symm)] using p.smul_mem (b i - a i)⁻¹ hub_smul
-      rcases eq_or_ne χ b with rfl | hχb
-      · exact hub
-      · have hcard_b : (s.erase b).card < s.card := Finset.card_erase_lt_of_mem hb
-        have hsum_b : ∑ ψ ∈ s.erase b, u ψ ∈ p := by
-          have := p.sub_mem hsum hub
-          rwa [← Finset.add_sum_erase _ _ hb, add_sub_cancel_left] at this
-        exact ih _ hcard_b (fun ψ hψ ↦ hu ψ (Finset.mem_of_mem_erase hψ)) hsum_b
-          (Finset.mem_erase.mpr ⟨hχb, hχ⟩) rfl
+  let f' : ι → Module.End K (V ⧸ p) := fun i ↦ p.mapQ p (f i) fun _ hx ↦ hp i hx
+  have hu' : ∀ ψ ∈ s, p.mkQ (u ψ) ∈ ⨅ i, (f' i).eigenspace (ψ i) := fun ψ hψ ↦
+    (Submodule.mem_iInf _).mpr fun i ↦ Module.End.mem_eigenspace_iff.mpr <| by
+      dsimp only [f']
+      rw [Submodule.mkQ_apply, Submodule.mapQ_apply,
+        Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp (hu ψ hψ) i),
+        Submodule.Quotient.mk_smul]
+  have hsum' : ∑ ψ ∈ s, p.mkQ (u ψ) = 0 := by
+    rw [← map_sum, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact hsum
+  have hzero := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).mp
+    (iSupIndep_iInf_eigenspace f') s (fun ψ ↦ p.mkQ (u ψ)) hu' hsum' χ hχ
+  exact (Submodule.Quotient.mk_eq_zero p).mp hzero
 
 /-- **Intersecting an invariant submodule with a sum of joint eigenspaces.** Over any field, the
 part of an `f`-invariant submodule `p` lying in the sum of the joint eigenspaces of `f` is spanned
