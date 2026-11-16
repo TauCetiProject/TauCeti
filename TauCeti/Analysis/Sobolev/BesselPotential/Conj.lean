@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 
 /-!
 # Complex conjugation on `H^s(ℝⁿ)`
@@ -94,19 +95,6 @@ private theorem smulLeftCLM_fourier_of_ae_eq_conj {s : ℝ} {u u' : Lp ℂ 2 (vo
           (Measure.measurePreserving_neg volume)).star.coeFn_toLp] with ξ hξ
         simp [hξ]
 
-/-- The `H^s` norm of `f` is the `L²` norm of its weighted Fourier transform. -/
-private theorem MemSobolev.norm_toBesselPotentialSpace_eq {s : ℝ} {f : 𝓢'(E, ℂ)}
-    (hf : MemSobolev s 2 f) {g : Lp ℂ 2 (volume : Measure E)}
-    (hg : smulLeftCLM ℂ (fun ξ : E ↦ ((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ)) (𝓕 f) = g) :
-    ‖hf.toBesselPotentialSpace‖ = ‖g‖ := by
-  have hU : besselPotential E ℂ s f = hf.toBesselPotentialSpace.toLp := by
-    simpa using hf.toBesselPotentialSpace.bessel_toDistr_eq_toLp
-  have hF : 𝓕 hf.toBesselPotentialSpace.toLp = g := Lp.toTemperedDistribution_injective <| by
-    simp only
-    rw [← Lp.fourier_toTemperedDistribution_eq, ← hU,
-      fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hg]
-  rw [← BesselPotentialSpace.norm_fourier_toLp_eq, hF]
-
 /-- **`H^s` is closed under complex conjugation.** If an `L²` function `u` lies in `H^s`, so does
 every `L²` function agreeing almost everywhere with `conj u`. -/
 theorem MemSobolev.of_ae_eq_conj {s : ℝ} {u u' : Lp ℂ 2 (volume : Measure E)}
@@ -123,8 +111,11 @@ theorem MemSobolev.norm_toBesselPotentialSpace_of_ae_eq_conj {s : ℝ}
     (hu' : u' =ᵐ[volume] fun x ↦ conj (u x)) (hu'' : MemSobolev s 2 (u' : 𝓢'(E, ℂ))) :
     ‖hu''.toBesselPotentialSpace‖ = ‖hu.toBesselPotentialSpace‖ := by
   obtain ⟨g, hg⟩ := memSobolev_iff_exists_smulLeftCLM_fourier.1 hu
-  rw [hu''.norm_toBesselPotentialSpace_eq (smulLeftCLM_fourier_of_ae_eq_conj hu' hg),
-    hu.norm_toBesselPotentialSpace_eq hg, Lp.norm_toLp, Lp.norm_def, eLpNorm_star,
+  rw [BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq (u := hu''.toBesselPotentialSpace)
+      (by rw [hu''.toBesselPotentialSpace_toDistr, smulLeftCLM_fourier_of_ae_eq_conj hu' hg]),
+    BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq (u := hu.toBesselPotentialSpace)
+      (by rw [hu.toBesselPotentialSpace_toDistr, hg]),
+    Lp.norm_toLp, Lp.norm_def, eLpNorm_star,
     eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable g)
       (Measure.measurePreserving_neg volume)]
 
