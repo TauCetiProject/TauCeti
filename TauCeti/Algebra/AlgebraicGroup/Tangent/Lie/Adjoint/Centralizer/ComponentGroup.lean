@@ -16,7 +16,8 @@ Let `G = Spec H` be an affine group of finite type over an algebraically closed 
 Lie algebra `𝔤`, and let `x ∈ 𝔤`. The component group of the centralizer is the finite group
 `A(x) = π₀(C_G(x))`, written `(centralizerHopfIdeal H x).ComponentGroup`. By the general theory
 of component groups of closed subgroups (`TauCeti.HopfIdeal.quotientMulEquivComponentGroup`)
-it is `C_G(x)(k) ⧸ C_G(x)°(k)`, and `TauCeti.HopfIdeal.toComponentGroup` maps it to `π₀(G)`.
+it is `C_G(x)(k) ⧸ C_G(x)°(k)`, and `TauCeti.HopfIdeal.componentGroupInclusion` maps it to
+`π₀(G)`.
 
 This file supplies the two comparison maps between these groups for different elements and
 groups.
@@ -31,7 +32,8 @@ groups.
   to the component of `φ(c)`. This map is not asserted to be injective. If the coordinate map of
   `φ` is injective, so that `φ` is surjective on rational points, and `C_G'(x)` is the full
   inverse image of `C_G(dφ x)`, it is surjective
-  (`TauCeti.centralizerComponentGroupMap_surjective`). In characteristic zero this applies to
+  (`TauCeti.centralizerComponentGroupMap_surjective`, from
+  `TauCeti.HopfIdeal.componentGroupMap_surjective`). In characteristic zero this applies to
   every isogeny (`TauCeti.centralizerComponentGroupMap_surjective_of_isIsogeny`), in particular
   to central isogenies of semisimple groups, where the map need not be injective: for the
   regular nilpotent of `𝔰𝔩₂` it is the map from `π₀` of the centralizer `{±1} × Gₐ` in `SL₂` onto
@@ -74,6 +76,7 @@ noncomputable def centralizerComponentGroupConjugationEquiv
 
 /-- On rational points, conjugation of centralizer component groups sends the component of `c`
 to the component of `gcg⁻¹`. -/
+@[simp]
 theorem centralizerComponentGroupConjugationEquiv_rationalComponentMap
     (x : Module.Dual k (Bialgebra.CotangentSpace k H))
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
@@ -93,47 +96,17 @@ section Map
 
 variable {H K : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-omit [IsAlgClosed k] in
-/-- A homomorphism of affine groups carries the rational points of `C_G'(x)` into those of
-`C_G(dφ x)`. The coordinate arrow `f : H ⟶ K` represents `φ : Spec K → Spec H`. -/
-theorem mapDomain_mem_quotientPointsSubgroup_centralizerHopfIdeal (f : H ⟶ K)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K))
-    {c : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k)}
-    (hc : c ∈ CommHopfAlgCat.quotientPointsSubgroup K.obj (centralizerHopfIdeal K x)
-      (CommAlgCat.of k k)) :
-    BialgHom.mapDomain (A := k) (toBialgHom f) c ∈
-      CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)) (CommAlgCat.of k k) := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hc ⊢
-  intro a ha
-  rw [BialgHom.mapDomain_apply_apply]
-  exact hc _ ((toBialgHom f).map_centralizerHopfIdeal_le x (HopfIdeal.mem_map_of_mem _ ha))
-
-/-- The coordinate morphism of the restriction `C_G'(x) → C_G(dφ x)` of a homomorphism of affine
-groups, in the category of finite-type commutative Hopf algebras. -/
-private noncomputable def centralizerMapHom (f : H ⟶ K)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    quotient H (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)) ⟶
-      quotient K (centralizerHopfIdeal K x) :=
-  ObjectProperty.homMk (_root_.CommHopfAlgCat.ofHom ((toBialgHom f).centralizerMap x))
-
-omit [IsAlgClosed k] in
-private theorem centralizerMapHom_apply (f : H ⟶ K)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K))
-    (y : quotient H (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x))) :
-    toBialgHom (centralizerMapHom f x) y = (toBialgHom f).centralizerMap x y :=
-  (rfl)
-
 /-- **Centralizer component groups under homomorphisms.** A homomorphism `φ : G' → G` of affine
 groups induces `π₀(C_G'(x)) →* π₀(C_G(dφ x))`. -/
 noncomputable def centralizerComponentGroupMap (f : H ⟶ K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     (centralizerHopfIdeal K x).ComponentGroup →*
       (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)).ComponentGroup :=
-  mapComponentGroup (centralizerMapHom f x)
+  HopfIdeal.componentGroupMap _ _ f ((toBialgHom f).map_centralizerHopfIdeal_le x)
 
 /-- On rational points, the induced map of centralizer component groups sends the component of
 `c` to the component of `φ(c)`. -/
+@[simp]
 theorem centralizerComponentGroupMap_rationalComponentMap (f : H ⟶ K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K))
     (c : CommHopfAlgCat.quotientPointsSubgroup K.obj (centralizerHopfIdeal K x)
@@ -141,16 +114,9 @@ theorem centralizerComponentGroupMap_rationalComponentMap (f : H ⟶ K)
     centralizerComponentGroupMap f x ((centralizerHopfIdeal K x).rationalComponentMap c) =
       (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)).rationalComponentMap
         ⟨BialgHom.mapDomain (A := k) (toBialgHom f) c,
-          mapDomain_mem_quotientPointsSubgroup_centralizerHopfIdeal f x c.2⟩ := by
-  rw [centralizerComponentGroupMap, HopfIdeal.rationalComponentMap_apply,
-    mapComponentGroup_rationalComponentMap, HopfIdeal.rationalComponentMap_apply]
-  congr 1
-  refine ((CommHopfAlgCat.liftQuotientPoint_eq_iff H.obj _ (CommAlgCat.of k k) _ _ _).mpr ?_).symm
-  apply WithConv.ofConv_injective
-  ext a
-  rw [CommHopfAlgCat.quotientPointsHom_apply_apply, BialgHom.mapDomain_apply_apply,
-    BialgHom.mapDomain_apply_apply, Ideal.Quotient.mkₐ_eq_mk, centralizerMapHom_apply,
-    BialgHom.centralizerMap_mk, CommHopfAlgCat.liftQuotientPoint_mk]
+          CommHopfAlgCat.mapDomain_mem_quotientPointsSubgroup_of_map_le f.hom
+            ((toBialgHom f).map_centralizerHopfIdeal_le x) _ c.2⟩ :=
+  HopfIdeal.componentGroupMap_rationalComponentMap _ _ f _ c
 
 /-- **Surjectivity of centralizer component group maps.** Let `φ : G' → G` be a homomorphism of
 affine groups whose coordinate map is injective, so that `φ` is surjective on rational points,
@@ -161,22 +127,8 @@ theorem centralizerComponentGroupMap_surjective (f : H ⟶ K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K))
     (hx : (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)).map (toBialgHom f) =
       centralizerHopfIdeal K x) :
-    Function.Surjective (centralizerComponentGroupMap f x) := by
-  intro a
-  obtain ⟨n, rfl⟩ := HopfIdeal.rationalComponentMap_surjective _ a
-  obtain ⟨c, hc⟩ := CommHopfAlgCat.mapPointsFunctor_app_surjective_of_injective k f.hom hf
-    (n : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
-  -- The point functor's object is the rational point group; its map is `mapDomain`.
-  let c' : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k) := c
-  have hc' : BialgHom.mapDomain (A := k) (toBialgHom f) c' = n := hc
-  -- The lift `c'` centralizes `x`, since `C_G'(x)` is the inverse image of `C_G(dφ x)`.
-  have hcx : c' ∈ CommHopfAlgCat.quotientPointsSubgroup K.obj (centralizerHopfIdeal K x)
-      (CommAlgCat.of k k) := by
-    rw [← hx, CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff f.hom]
-    exact hc ▸ n.2
-  refine ⟨(centralizerHopfIdeal K x).rationalComponentMap ⟨c', hcx⟩, ?_⟩
-  rw [centralizerComponentGroupMap_rationalComponentMap]
-  exact congrArg _ (Subtype.ext hc')
+    Function.Surjective (centralizerComponentGroupMap f x) :=
+  HopfIdeal.componentGroupMap_surjective _ _ f hf hx
 
 /-- In characteristic zero, an isogeny `φ : G' → G` induces a surjection
 `π₀(C_G'(x)) →* π₀(C_G(dφ x))` of centralizer component groups. This includes central isogenies

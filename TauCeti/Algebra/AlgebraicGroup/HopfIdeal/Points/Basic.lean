@@ -263,6 +263,18 @@ theorem mem_quotientPointsSubgroup_map_iff
       exact Ideal.mem_comap.mpr (RingHom.mem_ker.mpr hx')
     exact fun y hy ↦ RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hy))
 
+/-- If a morphism `phi` maps the Hopf ideal `I` into `J`, then pulling back along `phi` carries
+the points of `J` into the points of `I`. -/
+theorem mapDomain_mem_quotientPointsSubgroup_of_map_le
+    {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
+    {I : HopfIdeal R H} {J : HopfIdeal R K} (hIJ : I.map phi.hom ≤ J) (A : CommAlgCat.{w} R)
+    {f : HopfAlgebra.points (R := R) (H := K) A} (hf : f ∈ quotientPointsSubgroup K J A) :
+    BialgHom.mapDomain (A := A) phi.hom f ∈ quotientPointsSubgroup H I A := by
+  rw [mem_quotientPointsSubgroup_iff] at hf ⊢
+  intro x hx
+  rw [BialgHom.mapDomain_apply_apply]
+  exact hf _ (hIJ (HopfIdeal.mem_map_of_mem phi.hom hx))
+
 /-- For the quotient morphism `q : H ⟶ H ⧸ I`, given with `hq : q = mkQuotient H I`, a point of
 `H ⧸ I` vanishes on the image of a Hopf ideal `J` of `H` exactly when the corresponding point of
 `H` vanishes on `J`. -/

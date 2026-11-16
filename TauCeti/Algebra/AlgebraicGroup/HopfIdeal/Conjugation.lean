@@ -378,8 +378,10 @@ theorem mul_mul_inv_mem_conjugate_iff (I : HopfIdeal R H) (g x : WithConv (H →
     g * x * g⁻¹ ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) (CommAlgCat.of R R) ↔
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I (CommAlgCat.of R R) := by
-  simpa only [Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply] using
-    pointConjugation_mem_conjugate_iff I g (CommAlgCat.of R R) x
+  have h := mapDomain_pointConjugation_mem_conjugate_iff I g (CommAlgCat.of R R) x
+  rwa [BialgHom.mapDomain_apply, BialgEquiv.toBialgHom_eq_coe,
+    HopfAlgebra.pointConjugationBialgEquiv_toAlgHom,
+    HopfAlgebra.comp_pointConjugationAlgHom_self] at h
 
 /-- A Hopf ideal whose points are the `g`-conjugates of the points of `I` is the conjugate of
 `I` by `g`. -/
