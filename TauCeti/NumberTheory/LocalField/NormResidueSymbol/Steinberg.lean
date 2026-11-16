@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Cyclic
 import TauCeti.FieldTheory.Kummer.Degree
 import TauCeti.FieldTheory.Kummer.Steinberg
@@ -26,12 +27,12 @@ argument (`normResidueSymbol_eq_one_iff_mem_normGroup`):
 
 Combining this Artin norm criterion with the field-theoretic Steinberg norm identity of
 `TauCeti.FieldTheory.Kummer.Steinberg` (`xⁿ - b ∈ N_{L/K}(Lˣ)`) gives `(xⁿ - b, b) = 1` whenever
-`xⁿ - b ∈ Kˣ`, and in particular the **Steinberg relation** `(a, b) = 1` for `a + b = 1`
-(`normResidueSymbol_eq_one_of_add_eq_one`). From `(1 - a, a) = 1` and `(1 - a⁻¹, a⁻¹) = 1` via
-`-a = (1 - a) / (1 - a⁻¹)` follows `(-a, a) = 1` (`normResidueSymbol_neg_self_left`), hence
-`(a, a) = (-1, a)` of order dividing `2`, and expanding `(-(a * b), a * b) = 1` yields **skew
-symmetry** `(b, a) = (a, b)⁻¹` (`normResidueSymbol_swap`). Skew symmetry then transposes the norm
-criterion to the radical argument (`normResidueSymbol_eq_one_iff_mem_normGroup_of_pow_eq_left`).
+`xⁿ - b ∈ Kˣ`. Specializing to `x = 1` and `x = 0` yields the **Steinberg relation** `(a, b) = 1`
+for `a + b = 1` (`normResidueSymbol_eq_one_of_add_eq_one`) and `(-a, a) = 1`
+(`normResidueSymbol_neg_self_left`), hence `(a, a) = (-1, a)` of order dividing `2`. Expanding
+`(-(a * b), a * b) = 1` then yields **skew symmetry** `(b, a) = (a, b)⁻¹`
+(`normResidueSymbol_swap`), which transposes the norm criterion to the radical argument
+(`normResidueSymbol_eq_one_iff_mem_normGroup_of_pow_eq_left`).
 
 ## Main results
 
@@ -88,20 +89,12 @@ theorem normResidueSymbol_eq_one_iff_mem_normGroup {L : Type*} [Field L] [Algebr
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (α := Gal(AlgebraicClosure K/K)) (artinMap K a)
   rw [mem_normGroup_iff_restrictNormalHom_eq_one_of_mk_eq_artinMap K L ι σ hσ]
-  have hact := restrictNormalHom_apply_eq_algebraMap_normResidueSymbol_mul_of_pow_eq ι a b σ hσ hs
+  have hact := ι.restrictNormalHom_apply_eq_algebraMap_normResidueSymbol_mul_of_pow_eq a b σ hσ hs
   have hs0 : s ≠ 0 := ne_zero_of_pow_eq_algebraMap hs
-  have htop : Algebra.adjoin K {s} = ⊤ := by
-    rw [← adjoin_simple_toSubalgebra_of_isAlgebraic
-      (IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)).isAlgebraic, hgen,
-      top_toSubalgebra]
-  refine ⟨fun h ↦ AlgEquiv.coe_toAlgHom_injective <|
-    AlgHom.ext_of_adjoin_eq_top htop <| Set.eqOn_singleton.2 ?_, fun h ↦ ?_⟩
-  · rw [AlgEquiv.coe_toAlgHom, hact, h, Subgroup.coe_one, Units.val_one, map_one, one_mul,
-      AlgEquiv.coe_toAlgHom, AlgEquiv.one_apply]
-  · rw [h, AlgEquiv.one_apply, eq_comm, mul_eq_right₀ hs0,
-      ← map_one (algebraMap K L), (algebraMap K L).injective.eq_iff,
-      ← Units.val_one, Units.val_inj, ← Subgroup.coe_one, Subtype.coe_inj] at hact
-    exact hact
+  refine ⟨fun h ↦ TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen ?_, fun h ↦ ?_⟩
+  · rintro _ rfl
+    simp [hact, h]
+  · simpa [h, hs0] using hact.symm
 
 /-- In any field extension `E/K` containing an `n`-th root `β` of `b`, `(a, b) = 1` holds if and
 only if `a` is a unit norm from `K⟮β⟯`. -/
@@ -112,7 +105,7 @@ theorem normResidueSymbol_eq_one_iff_mem_range_normUnits_adjoin {E : Type*} [Fie
     adjoin.finiteDimensional (.of_pow (NeZero.pos n) (hβ ▸ isIntegral_algebraMap))
   have ht : AdjoinSimple.gen K β ^ n = algebraMap K K⟮β⟯ b := Subtype.ext (by simpa using hβ)
   exact (normResidueSymbol_eq_one_iff_mem_normGroup a b ht (adjoin_adjoinSimple_gen_eq_top β)).trans
-    mem_normGroup_iff_exists_normUnits
+    (mem_normGroup_iff_exists_normUnits.trans MonoidHom.mem_range.symm)
 
 /-! ### The Steinberg relation and skew symmetry -/
 
@@ -143,30 +136,12 @@ theorem normResidueSymbol_unitsMk0_one_sub_left {a : Kˣ} (ha : 1 - (a : K) ≠ 
 /-- **Triviality on `(-a, a)`.** For every `a ∈ Kˣ`, `(-a, a) = 1`. -/
 @[simp]
 theorem normResidueSymbol_neg_self_left (a : Kˣ) :
-    normResidueSymbol K n (-a) a = 1 := by
-  -- For `a ≠ 1`, write `-a = (1 - a) / (1 - a⁻¹)` and apply the Steinberg relation to `a` and
-  -- `a⁻¹`.
-  by_cases ha : (a : K) = 1
-  · obtain rfl : a = 1 := Units.ext ha
-    exact normResidueSymbol_one_right (-1)
-  have h1 : 1 - (a : K) ≠ 0 := sub_ne_zero.2 (Ne.symm ha)
-  have h2 : 1 - ((a⁻¹ : Kˣ) : K) ≠ 0 := by
-    rw [sub_ne_zero, ne_comm, Units.val_inv_eq_inv_val]
-    exact inv_ne_one.2 ha
-  set u₁ : Kˣ := Units.mk0 (1 - (a : K)) h1
-  set u₂ : Kˣ := Units.mk0 (1 - ((a⁻¹ : Kˣ) : K)) h2
-  have hdiv : -a = u₁ / u₂ := by
-    apply Units.ext
-    rw [Units.val_div_eq_div_val, Units.val_neg, Units.val_mk0, Units.val_mk0, eq_div_iff h2]
-    simp only [mul_sub, mul_one, Units.val_inv_eq_inv_val, neg_mul, mul_inv_cancel₀ a.ne_zero]
-    ring
-  have hinv : normResidueSymbol K n u₂ a = 1 := by
-    rw [← inv_inv a, normResidueSymbol_inv_right u₂ a⁻¹,
-      normResidueSymbol_unitsMk0_one_sub_left h2, inv_one]
-  rw [hdiv, normResidueSymbol_div_left, normResidueSymbol_unitsMk0_one_sub_left h1, hinv, div_self']
+    normResidueSymbol K n (-a) a = 1 :=
+  normResidueSymbol_eq_one_of_eq_pow_sub_left (x := 0) (by simp [zero_pow (NeZero.ne n)])
 
 /-- **Skew symmetry of the norm-residue symbol, product form.** For all `a, b ∈ Kˣ`,
 `(a, b) * (b, a) = 1`. -/
+@[simp]
 theorem normResidueSymbol_mul_swap (a b : Kˣ) :
     normResidueSymbol K n a b * normResidueSymbol K n b a = 1 := by
   have hneg (x : Kˣ) : normResidueSymbol K n (-1) x * normResidueSymbol K n x x = 1 := by
@@ -208,8 +183,8 @@ theorem normResidueSymbol_eq_one_iff_mem_normGroup_of_pow_eq_left {L : Type*} [F
 
 /-- In any field extension `E/K` containing an `n`-th root `α` of `a`, `(a, b) = 1` holds if and
 only if `b` is a unit norm from `K⟮α⟯`. -/
-theorem normResidueSymbol_eq_one_iff_mem_range_normUnits_adjoin_left {E : Type*} [Field E]
-    [Algebra K E] (a b : Kˣ) {α : E} (hα : α ^ n = algebraMap K E a) :
+theorem normResidueSymbol_eq_one_iff_mem_range_normUnits_adjoin_of_pow_eq_left {E : Type*}
+    [Field E] [Algebra K E] (a b : Kˣ) {α : E} (hα : α ^ n = algebraMap K E a) :
     normResidueSymbol K n a b = 1 ↔ b ∈ (Algebra.normUnits K : K⟮α⟯ˣ →* Kˣ).range :=
   (normResidueSymbol_eq_one_comm a b).trans
     (normResidueSymbol_eq_one_iff_mem_range_normUnits_adjoin b a hα)
@@ -259,17 +234,14 @@ theorem normResidueSymbol_self_sq (a : Kˣ) :
 theorem normResidueSymbol_self_of_odd (hn : Odd n) (a : Kˣ) :
     normResidueSymbol K n a a = 1 := by
   obtain ⟨k, hk⟩ := hn
-  apply Subtype.ext
-  have hpow : (normResidueSymbol K n a a : Kˣ) ^ n = 1 := (normResidueSymbol K n a a).property
-  have hsq : (normResidueSymbol K n a a : Kˣ) ^ 2 = 1 := by
-    exact_mod_cast normResidueSymbol_self_sq (n := n) a
-  generalize (normResidueSymbol K n a a : Kˣ) = u at hpow hsq ⊢
-  rw [hk, pow_add, pow_mul, hsq, one_pow, one_mul, pow_one] at hpow
-  exact hpow
+  have hpow : normResidueSymbol K n a a ^ n = 1 := by
+    rw [← normResidueSymbol_pow_left, normResidueSymbol_pow_left_eq_one]
+  simpa [hk, pow_add, pow_mul, normResidueSymbol_self_sq] using hpow
 
 /-! ### Skew symmetry on power classes -/
 
 /-- Skew symmetry of `normResidueSymbolPairing` on `Kˣ ⧸ (Kˣ)ⁿ`, in product form. -/
+@[simp]
 theorem normResidueSymbolPairing_mul_swap (x y : powerClassQuotient Kˣ n) :
     normResidueSymbolPairing x y * normResidueSymbolPairing y x = 1 := by
   obtain ⟨a, rfl⟩ := powerClassHom_surjective Kˣ n x

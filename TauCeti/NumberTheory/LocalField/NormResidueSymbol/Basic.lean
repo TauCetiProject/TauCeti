@@ -141,8 +141,8 @@ theorem normResidueSymbol_spec (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
 /-- **The Artin characterization of the norm-residue symbol in a normal extension.** Every
 representative of `Art_K(a)` restricts along any `K`-embedding `ι : L →ₐ[K] SeparableClosure K` of
 a normal extension `L/K` to move every `n`-th root `y ∈ L` of `b` by `(a, b)`. -/
-theorem restrictNormalHom_apply_eq_algebraMap_normResidueSymbol_mul_of_pow_eq {L : Type*}
-    [Field L] [Algebra K L] [Normal K L] (ι : L →ₐ[K] SeparableClosure K) (a b : Kˣ)
+theorem _root_.AlgHom.restrictNormalHom_apply_eq_algebraMap_normResidueSymbol_mul_of_pow_eq
+    {L : Type*} [Field L] [Algebra K L] [Normal K L] (ι : L →ₐ[K] SeparableClosure K) (a b : Kˣ)
     (σ : Gal(AlgebraicClosure K/K))
     (hσ : (σ : TopologicalAbelianization Gal(AlgebraicClosure K/K)) = artinMap K a) {y : L}
     (hy : y ^ n = algebraMap K L b) :

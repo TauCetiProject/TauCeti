@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.CyclicClass
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
-import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 
 /-!
 # Nondegeneracy of the local Hilbert pairing
@@ -25,13 +24,11 @@ The argument is Serre's. Let `L = K(ⁿ√b)`. By the symbol–norm criterion
 (`localSymbol_eq_zero_iff_mem_normGroup`) every `a` pairs to zero with `b` exactly when every
 `a ∈ Kˣ` is a norm from `L`. The extension `L/K` is cyclic, so by the cyclic norm index
 `[Kˣ : N_{L/K}(Lˣ)] = [L : K]` (`TauCeti.index_normGroup_of_isCyclic`) this forces `L = K`, that
-is, `b` is an `n`-th power in `K`. No reciprocity is used, and the identification
-`H²(G_K, μₙ) ≃+ ZMod n` is arbitrary.
+is, `b` is an `n`-th power in `K` (`IsPrimitiveRoot.mem_powerSubgroup_of_normGroup_eq_top`). No
+reciprocity is used, and the identification `H²(G_K, μₙ) ≃+ ZMod n` is arbitrary.
 
 ## Main results
 
-* `TauCeti.mem_powerSubgroup_of_normGroup_eq_top`: if a finite radical extension `L = K(s)` with
-  `sⁿ = b` has `normGroup K L = ⊤`, then `b ∈ (Kˣ)ⁿ`.
 * `TauCeti.ClassFieldTheory.forall_localSymbol_kummerClass_eq_zero_iff`: `(a, b) = 0` for every
   `a ∈ Kˣ` exactly when `b ∈ (Kˣ)ⁿ`.
 * `TauCeti.ClassFieldTheory.separatingRight_localSymbol`: the local symbol along
@@ -49,48 +46,11 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open _root_.IntermediateField Module
+open _root_.IntermediateField
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
-
-include hζ in
-/-- **Serre's radical norm-top criterion.** Let `K` be a nonarchimedean local field containing a
-primitive `n`-th root of unity `ζ`. If a finite radical extension `L = K(s)` with `sⁿ = b`
-(`b ∈ Kˣ`) has full norm subgroup `N_{L/K}(Lˣ) = Kˣ`, then `[L : K] = 1` and `b ∈ (Kˣ)ⁿ`. -/
-theorem _root_.TauCeti.mem_powerSubgroup_of_normGroup_eq_top {L : Type*} [Field L] [Algebra K L]
-    [FiniteDimensional K L] {b : Kˣ} {s : L} (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤)
-    (hnorm : normGroup K L = ⊤) :
-    b ∈ powerSubgroup Kˣ n := by
-  let ι : L →ₐ[K] AlgebraicClosure K := IsAlgClosed.lift
-  set E := ι.fieldRange
-  let e : L ≃ₐ[K] E := AlgEquiv.ofInjectiveField ι
-  have : FiniteDimensional K E := e.toLinearEquiv.finiteDimensional
-  have hs' : (e s) ^ n = algebraMap K E b := by
-    rw [← map_pow, hs, AlgEquiv.commutes]
-  have hgen' : K⟮e s⟯ = ⊤ := by
-    rw [← AlgEquiv.coe_toAlgHom, ← Set.image_singleton, ← adjoin_map, hgen, eq_top_iff]
-    rintro y -
-    obtain ⟨x, rfl⟩ := e.surjective y
-    exact ⟨x, trivial, rfl⟩
-  have hnorm' : normGroup K E = ⊤ :=
-    eq_top_iff.2 (hnorm.ge.trans e.symm.toAlgHom.normGroup_le_normGroup)
-  let _ := algebraicExtensionValuativeRel K E
-  let _ := algebraicExtensionNormedFieldTopology K E
-  have := finiteExtension_isNonarchimedeanLocalField K E
-  have := algebraicExtension_valuativeExtension K E
-  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hs' hgen'
-  have := isCyclic_of_pow_eq_of_adjoin_eq_top hζ hs' hgen'
-  have h1 : finrank K E = 1 := by
-    rw [← index_normGroup_of_isCyclic K E, hnorm', Subgroup.index_top]
-  obtain ⟨c, -, hcb⟩ := exists_pow_finrank_eq_algebraMap hζ hs' hgen'
-  rw [h1, Nat.div_one] at hcb
-  have hc0 : c ≠ 0 := by
-    rintro rfl
-    exact b.ne_zero (by rw [← hcb, zero_pow (NeZero.ne n)])
-  exact (mem_powerSubgroup_iff n).2 ⟨Units.mk0 c hc0, Units.ext (by simpa using hcb)⟩
-
-variable (tr : continuousCohomology 2 (muNRep n K) ≃+ ZMod n)
+  (tr : continuousCohomology 2 (muNRep n K) ≃+ ZMod n)
 
 /-- **Nondegeneracy of the Hilbert pairing in the second variable.** Let `K` be a nonarchimedean
 local field containing a primitive `n`-th root of unity `ζ`. Then `b ∈ Kˣ` pairs to zero under
@@ -109,7 +69,7 @@ theorem forall_localSymbol_kummerClass_eq_zero_iff (b : Kˣ) :
     adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral s)
   have ht : AdjoinSimple.gen K s ^ n = algebraMap K K⟮s⟯ b := Subtype.ext (by simpa using hs)
   have htop := adjoin_adjoinSimple_gen_eq_top (F := K) s
-  exact mem_powerSubgroup_of_normGroup_eq_top hζ ht htop
+  exact hζ.mem_powerSubgroup_of_normGroup_eq_top ht
     (eq_top_iff.2 fun a _ ↦ (localSymbol_eq_zero_iff_mem_normGroup hζ tr hn a b ht htop).1 (h a))
 
 /-- **The Hilbert pairing is separating in the second variable.** For a nonarchimedean local field

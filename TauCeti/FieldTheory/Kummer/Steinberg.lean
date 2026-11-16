@@ -82,8 +82,8 @@ theorem _root_.IsPrimitiveRoot.norm_prod_algebraMap_sub_mul_eq_pow_sub {K L : Ty
     induction q with
     | zero => simp
     | succ q ih =>
-      rw [pow_succ', AlgEquiv.mul_apply, ih, map_mul, AlgEquiv.commutes, hgs, ← mul_assoc,
-        ← map_mul, ← pow_add, Nat.mul_succ]
+      simp [pow_succ', ih, hgs, Nat.mul_succ, pow_add]
+      ring
   -- On each coset representative `ζ ^ r · s`, the norm is the product over `Gal(L/K) = ⟨g⟩`.
   have hnorm (r : ℕ) :
       algebraMap K L (Algebra.norm K (algebraMap K L x - algebraMap K L (ζ ^ r) * s)) =
@@ -91,8 +91,8 @@ theorem _root_.IsPrimitiveRoot.norm_prod_algebraMap_sub_mul_eq_pow_sub {K L : Ty
     rw [Algebra.norm_eq_prod_automorphisms, ← IsCyclic.image_range_card hg, hcard,
       Finset.prod_image (by simpa [hord] using pow_injOn_Iio_orderOf (x := g))]
     refine Finset.prod_congr rfl fun q _ ↦ ?_
-    rw [map_sub, map_mul, AlgEquiv.commutes, AlgEquiv.commutes, hgp, ← mul_assoc, ← map_mul,
-      ← pow_add, add_comm]
+    simp [-AlgEquiv.coe_pow, hgp, pow_add]
+    ring
   apply (algebraMap K L).injective
   rw [map_prod, map_prod, Finset.prod_congr rfl fun r _ ↦ hnorm r, Finset.prod_comm,
     ← Finset.prod_range_mul_eq_prod_prod
