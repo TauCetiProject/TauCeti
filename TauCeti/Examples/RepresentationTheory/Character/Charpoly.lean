@@ -62,7 +62,7 @@ example (hV : finrank k V = 4) {g : G} (hg : g ^ 2 = 1) :
     LinearMap.trace k V (ρ g) = ρ.character g ∧ LinearMap.trace k V (ρ g ^ 2) = 4 ∧
       LinearMap.trace k V (ρ g ^ 3) = ρ.character g ∧ LinearMap.trace k V (ρ g ^ 4) = 4 := by
   have h3 : g ^ 3 = g := by rw [pow_succ, hg, one_mul]
-  have h4 : g ^ 4 = 1 := by rw [show 4 = 2 * 2 by rfl, pow_mul, hg, one_pow]
+  have h4 : g ^ 4 = 1 := by rw [pow_succ, h3, ← pow_two, hg]
   simp only [trace_pow_eq_character_pow, hg, h3, h4, char_one, hV]
   exact ⟨rfl, by norm_num, trivial, by norm_num⟩
 

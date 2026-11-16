@@ -50,7 +50,6 @@ representation. -/
 @[simp]
 theorem charpoly_trivial_apply (g : G) : (trivial R G V g).charpoly = (X - 1) ^ finrank R V := by
   nontriviality R
-  rw [show trivial R G V g = 1 from LinearMap.ext fun _ ↦ trivial_apply R g _,
-    LinearMap.charpoly_one]
+  rw [isTrivial_def, ← Module.End.one_eq_id, LinearMap.charpoly_one]
 
 end Representation
