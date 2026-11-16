@@ -13,6 +13,7 @@ import TauCeti.Geometry.Contact.Contactization
 import TauCeti.Geometry.Contact.Darboux.Manifold
 import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Contact.Slice
+import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -64,6 +65,7 @@ public section
 noncomputable section
 
 open Set Filter Metric Module Bundle
+open Diffeomorph (prodAssocSymmSelf)
 open scoped Manifold ContDiff Topology InnerProductSpace
 
 namespace TauCeti
@@ -109,34 +111,18 @@ private theorem eval₂_mextDerivₗ_stdPrimitive (w : V × V) (u v : TangentSpa
     mextDeriv_innerProductContactForm_apply, ContinuousLinearMap.mfderiv_eq]
   exact congrArg Neg.neg key
 
-/-- The diffeomorphism `(q, p, z) ↦ ((q, p), z)` from `V × V × ℝ` to the contactization
-`(V × V) × ℝ`. -/
-private def reassoc :
-    (V × V × ℝ) ≃ₘ⟮𝓘(ℝ, V × V × ℝ), 𝓘(ℝ, V × V).prod 𝓘(ℝ)⟯ ((V × V) × ℝ) where
-  toFun y := ((y.1, y.2.1), y.2.2)
-  invFun p := (p.1.1, p.1.2, p.2)
-  left_inv _ := rfl
-  right_inv _ := rfl
-  contMDiff_toFun := (contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
-    (contDiff_snd.comp contDiff_snd).contMDiff
-  contMDiff_invFun := (contDiff_fst.contMDiff.comp contMDiff_fst).prodMk_space
-    ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk_space contMDiff_snd)
-
-private theorem reassoc_apply (y : V × V × ℝ) : reassoc V y = ((y.1, y.2.1), y.2.2) :=
-  rfl
-
 /-- The reassociation `(q, p, z) ↦ ((q, p), z)` pulls the contactization form of `⟪p, dq⟫` back to
 the standard contact form `dz - ⟪p, dq⟫`. -/
 private theorem mpullback_reassoc_contactization_stdPrimitive :
-    mpullback 𝓘(ℝ, V × V × ℝ) (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (reassoc V)
+    mpullback 𝓘(ℝ, V × V × ℝ) (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (prodAssocSymmSelf ℝ V V ℝ ∞)
       (stdPrimitive V).contactization.1 = (innerProductContactForm V).1 := by
   let ιL : (V × V × ℝ) →L[ℝ] V × V :=
     (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod
       ((ContinuousLinearMap.fst ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ)))
   let hL : (V × V × ℝ) →L[ℝ] ℝ :=
     (ContinuousLinearMap.snd ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ))
-  have hreassoc : ⇑(reassoc V) = fun y ↦ (ιL y, hL y) :=
-    funext fun y ↦ by simp [reassoc_apply, ιL, hL]
+  have hreassoc : ⇑(prodAssocSymmSelf ℝ V V ℝ ∞) = fun y ↦ (ιL y, hL y) :=
+    funext fun y ↦ by simp [ιL, hL]
   rw [hreassoc, ← SmoothForm.coe_mpullback _ (ιL.contMDiff.prodMk hL.contMDiff),
     SmoothForm.mpullback_prodMk_contactization _ ιL.contMDiff hL.contMDiff]
   funext y
@@ -274,18 +260,20 @@ the change of variables `t = z - g(q, p)`, pulls `α` back to the standard conta
 private theorem mpullback_flowOf_comp_contactizationShift_comp_reassoc (hα : α.IsContactForm)
     {ι : V × V → M} (hι : ContMDiff 𝓘(ℝ, V × V) I ∞ ι) {g : V × V → ℝ}
     (hg : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ) ∞ g) {y : V × V × ℝ}
-    (hy : ((contactizationShift 𝓘(ℝ, V × V) hg (reassoc V y)).2,
-      ι (contactizationShift 𝓘(ℝ, V × V) hg (reassoc V y)).1) ∈ flowDomain α.reebVectorField)
+    (hy : ((contactizationShift 𝓘(ℝ, V × V) hg (prodAssocSymmSelf ℝ V V ℝ ∞ y)).2,
+      ι (contactizationShift 𝓘(ℝ, V × V) hg (prodAssocSymmSelf ℝ V V ℝ ∞ y)).1) ∈
+        flowDomain α.reebVectorField)
     (hθ : (-SmoothForm.mpullback ι hι α +
-      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1 (reassoc V y).1 =
-        (stdPrimitive V).1 (reassoc V y).1) :
+      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1
+        (prodAssocSymmSelf ℝ V V ℝ ∞ y).1 =
+        (stdPrimitive V).1 (prodAssocSymmSelf ℝ V V ℝ ∞ y).1) :
     TauCeti.mpullback _ I ((fun p : (V × V) × ℝ ↦ flowOf α.reebVectorField p.2 (ι p.1)) ∘
-        contactizationShift 𝓘(ℝ, V × V) hg ∘ reassoc V) α.1 y =
+        contactizationShift 𝓘(ℝ, V × V) hg ∘ prodAssocSymmSelf ℝ V V ℝ ∞) α.1 y =
       (innerProductContactForm V).1 y := by
   have hR := hα.contMDiff_reebVectorField
   set Sh := contactizationShift 𝓘(ℝ, V × V) hg
   set Φ : (V × V) × ℝ → M := fun p ↦ flowOf α.reebVectorField p.2 (ι p.1)
-  have hΦd : MDifferentiableAt (𝓘(ℝ, V × V).prod 𝓘(ℝ)) I Φ (Sh (reassoc V y)) :=
+  have hΦd : MDifferentiableAt (𝓘(ℝ, V × V).prod 𝓘(ℝ)) I Φ (Sh (prodAssocSymmSelf ℝ V V ℝ ∞ y)) :=
     (contMDiffAt_flowOf_comp le_top hR contMDiffAt_snd
       (hι.contMDiffAt.comp _ contMDiffAt_fst) hy).mdifferentiableAt (by simp)
   -- The flow pulls `α` back to `dt + ι^* α`, and the shift turns this into `dz - (-ι^* α + dg)`.
@@ -299,22 +287,25 @@ private theorem mpullback_flowOf_comp_contactizationShift_comp_reassoc (hα : α
   rw [SmoothForm.coe_mpullback] at hSh
   -- At `(q, p)`, the contactization forms of `-ι^* α + dg` and of `⟪p, dq⟫` agree.
   have hcon : (-SmoothForm.mpullback ι hι α +
-      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).contactization.1 (reassoc V y) =
-        (stdPrimitive V).contactization.1 (reassoc V y) := by
+      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).contactization.1
+        (prodAssocSymmSelf ℝ V V ℝ ∞ y) =
+        (stdPrimitive V).contactization.1 (prodAssocSymmSelf ℝ V V ℝ ∞ y) := by
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
     obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
     rw [SmoothForm.contactization_apply, SmoothForm.contactization_apply, hθ]
-  have hpt : TauCeti.mpullback _ _ (Φ ∘ Sh) α.1 (reassoc V y) =
-      (stdPrimitive V).contactization.1 (reassoc V y) := by
+  have hpt : TauCeti.mpullback _ _ (Φ ∘ Sh) α.1 (prodAssocSymmSelf ℝ V V ℝ ∞ y) =
+      (stdPrimitive V).contactization.1 (prodAssocSymmSelf ℝ V V ℝ ∞ y) := by
     rw [mpullback_comp_at (Sh.contMDiff.mdifferentiableAt (by simp)) hΦd, ← hcon, ← hSh]
     exact ContinuousAlternatingMap.ext fun u ↦ by
       rw [TauCeti.mpullback_apply (⇑Sh), TauCeti.mpullback_apply (⇑Sh), hflow]
   -- Finally reassociate `(q, p, z) ↦ ((q, p), z)`.
-  rw [← Function.comp_assoc, mpullback_comp_at ((reassoc V).contMDiff.mdifferentiableAt (by simp))
+  rw [← Function.comp_assoc,
+    mpullback_comp_at ((prodAssocSymmSelf ℝ V V ℝ ∞).contMDiff.mdifferentiableAt (by simp))
     (hΦd.comp _ (Sh.contMDiff.mdifferentiableAt (by simp))),
     ← congrFun (mpullback_reassoc_contactization_stdPrimitive V) y]
   exact ContinuousAlternatingMap.ext fun v ↦ by
-    rw [TauCeti.mpullback_apply (⇑(reassoc V)), TauCeti.mpullback_apply (⇑(reassoc V)), hpt]
+    rw [TauCeti.mpullback_apply (⇑(prodAssocSymmSelf ℝ V V ℝ ∞)),
+      TauCeti.mpullback_apply (⇑(prodAssocSymmSelf ℝ V V ℝ ∞)), hpt]
 
 /-- **Straightening a slice in Darboux coordinates.** Let `ι : V × V → M` be a smooth map such
 that `d(ι^* α)` is the standard symplectic form near `0`. Then a smooth partial diffeomorphism from
@@ -351,28 +342,30 @@ private theorem SmoothForm.IsContactForm.exists_strictDarbouxChart_of_slice
       (by rw [finrank_prod, hn]; ring) hα.apply_reebVectorField
       hα.interior_mextDeriv_reebVectorField hnd h0D
   -- The inverse chart `Ξ (q, p, z) = φ_{z - g(q, p)}(ι(q, p))`.
-  have hSh0 : (Sh ∘ reassoc V) 0 = ((0 : V × V), (0 : ℝ)) := by
-    have hre : reassoc V 0 = ((0 : V × V), (0 : ℝ)) := rfl
+  have hSh0 : (Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) 0 = ((0 : V × V), (0 : ℝ)) := by
+    have hre : prodAssocSymmSelf ℝ V V ℝ ∞ 0 = ((0 : V × V), (0 : ℝ)) := by simp
     rw [Function.comp_apply, hre, contactizationShift_apply, hg0, sub_zero]
-  have hΞ : IsLocalDiffeomorphAt 𝓘(ℝ, V × V × ℝ) I ∞ (Φ ∘ Sh ∘ reassoc V) 0 :=
+  have hΞ : IsLocalDiffeomorphAt 𝓘(ℝ, V × V × ℝ) I ∞ (Φ ∘ Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) 0 :=
     IsLocalDiffeomorphAt.comp
-      (hf := IsLocalDiffeomorphAt.comp (hf := (reassoc V).isLocalDiffeomorph 0)
+      (hf := IsLocalDiffeomorphAt.comp (hf := (prodAssocSymmSelf ℝ V V ℝ ∞).isLocalDiffeomorph 0)
         (hg := Sh.isLocalDiffeomorph _)) (hg := by rw [hSh0]; exact hΦ)
-  have hΞ0 : (Φ ∘ Sh ∘ reassoc V) 0 = ι 0 := by
+  have hΞ0 : (Φ ∘ Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) 0 = ι 0 := by
     rw [Function.comp_apply, hSh0]
     exact flowOf_zero _ _
   -- Near `0`, `Ξ` pulls `α` back to the standard contact form.
-  have hev : ∀ᶠ y in 𝓝 (0 : V × V × ℝ), (Sh ∘ reassoc V) y ∈ D ∧
+  have hev : ∀ᶠ y in 𝓝 (0 : V × V × ℝ), (Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) y ∈ D ∧
       (-SmoothForm.mpullback ι hι α +
-        mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1 (reassoc V y).1 =
-          (stdPrimitive V).1 (reassoc V y).1 :=
-    Filter.Eventually.and (p := fun y ↦ (Sh ∘ reassoc V) y ∈ D)
-      ((Sh.continuous.comp (reassoc V).continuous).continuousAt.preimage_mem_nhds
+        mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1
+          (prodAssocSymmSelf ℝ V V ℝ ∞ y).1 =
+          (stdPrimitive V).1 (prodAssocSymmSelf ℝ V V ℝ ∞ y).1 :=
+    Filter.Eventually.and (p := fun y ↦ (Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) y ∈ D)
+      ((Sh.continuous.comp (prodAssocSymmSelf ℝ V V ℝ ∞).continuous).continuousAt.preimage_mem_nhds
         (by rw [hSh0]; exact hD.mem_nhds h0D))
-      (((continuous_fst.comp (reassoc V).continuous).tendsto' (0 : V × V × ℝ) (0 : V × V)
-        rfl).eventually hgθ)
-  have hpull : ∀ᶠ y in 𝓝 (0 : V × V × ℝ), TauCeti.mpullback _ I (Φ ∘ Sh ∘ reassoc V) α.1 y =
-      (innerProductContactForm V).1 y := by
+      (((continuous_fst.comp (prodAssocSymmSelf ℝ V V ℝ ∞).continuous).tendsto'
+        (0 : V × V × ℝ) (0 : V × V) (by simp)).eventually hgθ)
+  have hpull : ∀ᶠ y in 𝓝 (0 : V × V × ℝ),
+      TauCeti.mpullback _ I (Φ ∘ Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) α.1 y =
+        (innerProductContactForm V).1 y := by
     filter_upwards [hev] with y ⟨hyD, hyθ⟩
     exact mpullback_flowOf_comp_contactizationShift_comp_reassoc hα hι hg hyD hyθ
   obtain ⟨chart, hsrc, hchart, hpb⟩ := hΞ.exists_partialDiffeomorph_mpullback_eq (by simp) hpull
