@@ -119,6 +119,9 @@ theorem algebraMap_injective :
   intro r s h
   simpa using congrArg (fun x ↦ (basis u Λ).repr x 0) h
 
+instance : FaithfulSMul R (QuantumTorus R L u Λ) :=
+  (faithfulSMul_iff_algebraMap_injective R _).mpr algebraMap_injective
+
 /-- A map out of a based quantum torus is determined by its normalized monomials. -/
 @[ext]
 theorem algHom_ext {B : Type*} [Semiring B] [Algebra R B]
@@ -169,11 +172,11 @@ theorem val_inv_monomialUnit (a : L) :
 /-- The inverse of a normalized monomial, including the diagonal correction. -/
 theorem monomialUnit_inv_eq_map_mul (a : L) :
     (monomialUnit u Λ a)⁻¹ =
-      Units.map (algebraMap R (QuantumTorus R L u Λ) : R →* _) (u ^ (Λ a a)) *
+      Units.map (algebraMap R (QuantumTorus R L u Λ)) (u ^ (Λ a a)) *
         monomialUnit u Λ (-a) :=
   Units.ext <| by
-    simp only [Units.val_mul, val_monomialUnit, val_inv_monomialUnit, Algebra.smul_def]
-    congr 1
+    simp only [Units.val_mul, val_monomialUnit, val_inv_monomialUnit, Units.coe_map,
+      MonoidHom.coe_ofClass, Algebra.smul_def]
 
 /-- For alternating forms, negation of an exponent inverts its monomial. -/
 theorem monomialUnit_neg (hΛ : Λ.IsAlt) (a : L) :
@@ -201,6 +204,43 @@ theorem monomialUnit_mul (a b : L) :
 @[simp]
 theorem isUnit_monomial (a : L) : IsUnit (monomial u Λ a) :=
   (monomialUnit u Λ a).isUnit
+
+/-- A map out of a based quantum torus is determined by its values on the monomials
+of a spanning set of exponents. -/
+theorem algHom_ext_of_span_eq_top {B : Type*} [Semiring B] [Algebra R B]
+    {f g : QuantumTorus R L u Λ →ₐ[R] B} (s : Set L) (hs : Submodule.span ℤ s = ⊤)
+    (h : ∀ a ∈ s, f (monomial u Λ a) = g (monomial u Λ a)) : f = g := by
+  let S : AddSubgroup L :=
+    { carrier := {a | (Units.map f (monomialUnit u Λ a) : Bˣ) = Units.map g (monomialUnit u Λ a)}
+      zero_mem' := by simp
+      add_mem' {x y} hx hy := by
+        rw [Set.mem_ofPred_eq] at hx hy ⊢
+        rw [eq_inv_mul_of_mul_eq (monomialUnit_mul x y).symm]
+        simp only [map_mul, map_inv, hx, hy]
+        congr 2
+        ext
+        simp only [Units.coe_map, MonoidHom.coe_ofClass, AlgHom.commutes]
+      neg_mem' {x} hx := by
+        rw [Set.mem_ofPred_eq] at hx ⊢
+        rw [eq_inv_mul_of_mul_eq (monomialUnit_inv_eq_map_mul x).symm]
+        simp only [map_mul, map_inv, hx]
+        congr 2
+        ext
+        simp only [Units.coe_map, MonoidHom.coe_ofClass, AlgHom.commutes] }
+  have hS : ∀ a ∈ s, a ∈ S := fun a ha ↦ Units.ext <| by simpa using h a ha
+  ext a
+  have ha : a ∈ S.toIntSubmodule :=
+    Submodule.span_le (p := S.toIntSubmodule).mpr hS (hs ▸ Submodule.mem_top)
+  simpa using congrArg Units.val (show a ∈ S from ha)
+
+/-- A map out of a based quantum torus is determined by its values on the monomials
+of a lattice basis. -/
+theorem algHom_ext_of_basis {B : Type*} [Semiring B] [Algebra R B]
+    {f g : QuantumTorus R L u Λ →ₐ[R] B} {I : Type*} (b : Module.Basis I ℤ L)
+    (h : ∀ i, f (monomial u Λ (b i)) = g (monomial u Λ (b i))) : f = g :=
+  algHom_ext_of_span_eq_top (Set.range b) b.span_eq <| by
+    rintro _ ⟨i, rfl⟩
+    exact h i
 
 /-- For alternating forms, integer powers of a monomial unit simplify to monomial units. -/
 @[simp]
@@ -230,10 +270,11 @@ theorem monomial_pow (hΛ : Λ.IsAlt) (a : L) (n : ℕ) :
 theorem monomial_mul_monomial_eq_smul_mul (hΛ : Λ.IsAlt) (a b : L) :
     monomial u Λ a * monomial u Λ b =
       ((u ^ (2 * Λ a b) : Rˣ) : R) • (monomial u Λ b * monomial u Λ a) := by
+  have hexp : 2 * Λ a b + Λ b a = Λ a b := by
+    have := hΛ.neg_eq a b
+    omega
   rw [monomial_mul_monomial, monomial_mul_monomial, smul_smul, ← Units.val_mul,
-    ← zpow_add, ← hΛ.neg_eq, add_comm b a]
-  congr 1
-  rw [show 2 * -(Λ b) a + (Λ b) a = -(Λ b) a by omega]
+    ← zpow_add, hexp, add_comm b a]
 
 /-- When all twist factors are one, the based torus is the ordinary group algebra,
 with its normalized monomial basis preserved. In particular this applies at `u = 1`

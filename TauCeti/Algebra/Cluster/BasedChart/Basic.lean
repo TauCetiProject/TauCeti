@@ -97,6 +97,21 @@ theorem eval_injective (M : BasedChart u Λ B) : Function.Injective M.eval := by
   rw [← AlgHom.coe_toLinearMap, M.eval_toLinearMap]
   exact (QuantumTorus.basis u Λ).injective_constr_of_linearIndependent M.linearIndependent
 
+@[simp]
+theorem eval_inj (M : BasedChart u Λ B) {x y : QuantumTorus R L u Λ} :
+    M.eval x = M.eval y ↔ x = y :=
+  M.eval_injective.eq_iff
+
+@[simp]
+theorem eval_eq_zero_iff (M : BasedChart u Λ B) {x : QuantumTorus R L u Λ} :
+    M.eval x = 0 ↔ x = 0 :=
+  map_eq_zero_iff M.eval M.eval_injective
+
+@[simp]
+theorem eval_eq_one_iff (M : BasedChart u Λ B) {x : QuantumTorus R L u Λ} :
+    M.eval x = 1 ↔ x = 1 :=
+  map_eq_one_iff M.eval M.eval_injective
+
 /-- A chart embeds its scalar semiring in the ambient algebra. -/
 theorem algebraMap_injective (M : BasedChart u Λ B) : Function.Injective (algebraMap R B) := by
   rw [← M.eval.comp_algebraMap]
@@ -207,6 +222,23 @@ theorem ofInjective_monomial (f : QuantumTorus R L u Λ →ₐ[R] B)
     (hf : Function.Injective f) (a : L) :
     (ofInjective f hf).monomial a = Units.map f (QuantumTorus.monomialUnit u Λ a) :=
   (rfl)
+
+@[simp]
+theorem canonical_map (f : QuantumTorus R L u Λ →ₐ[R] B) (hf : Function.Injective f) :
+    (canonical u Λ).map f hf = ofInjective f hf :=
+  (rfl)
+
+/-- Ambient transport of the chart of an injective map is the chart of the composite. -/
+@[simp]
+theorem map_ofInjective (f : QuantumTorus R L u Λ →ₐ[R] B) (hf : Function.Injective f)
+    (g : B →ₐ[R] C) (hg : Function.Injective g) :
+    (ofInjective f hf).map g hg = ofInjective (g.comp f) (hg.comp hf) :=
+  map_map _ f hf g hg
+
+@[simp]
+theorem ofInjective_id :
+    ofInjective (AlgHom.id R (QuantumTorus R L u Λ)) Function.injective_id = canonical u Λ :=
+  map_id _
 
 @[simp]
 theorem map_eval_monomialUnit (M : BasedChart u Λ B) (a : L) :
@@ -326,22 +358,9 @@ theorem coordinate_def {I : Type*} (M : BasedChart u Λ B) (b : Module.Basis I �
 
 /-- Agreement on a spanning set determines every normalized monomial of a chart. -/
 theorem ext_of_span_eq_top {M N : BasedChart u Λ B} (s : Set L)
-    (hs : Submodule.span ℤ s = ⊤) (h : ∀ a ∈ s, M.monomial a = N.monomial a) : M = N := by
-  let S : AddSubgroup L :=
-    { carrier := {a | M.monomial a = N.monomial a}
-      zero_mem' := by simp
-      add_mem' {x y} hx hy := by
-        apply mul_left_cancel (a := Units.map (algebraMap R B) (u ^ (Λ x y)))
-        rw [← M.monomial_mul, ← N.monomial_mul, hx, hy]
-      neg_mem' {x} hx :=
-        (M.monomial_neg_eq_inv_map_mul x).trans (by rw [N.monomial_neg_eq_inv_map_mul, hx]) }
-  apply BasedChart.ext
-  intro a
-  have ha : a ∈ S.toIntSubmodule :=
-    Submodule.span_le (p := S.toIntSubmodule).mpr h (hs ▸ Submodule.mem_top)
-  have ha' : a ∈ S := by
-    simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using ha
-  simpa [S] using ha'
+    (hs : Submodule.span ℤ s = ⊤) (h : ∀ a ∈ s, M.monomial a = N.monomial a) : M = N :=
+  evalEquiv.injective <| Subtype.ext <|
+    QuantumTorus.algHom_ext_of_span_eq_top s hs fun a ha ↦ by simp [h a ha]
 
 /-- Coordinate agreement determines every normalized monomial of a chart. -/
 theorem ext_coordinate {I : Type*} {M N : BasedChart u Λ B}
