@@ -74,6 +74,8 @@ the linear algebra itself is standard.
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
   its determinant.
+* `LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `M` and `e'` of
+  `N` act on `det M ⊗ (det N)^*` by `det e * (det e')⁻¹`.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
   dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
   convention).
@@ -187,6 +189,23 @@ theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x 
   refine Subtype.ext ?_
   rw [coe_detLineCongr, ← exteriorPower.coe_map, LinearMap.map_exteriorPower_finrank_eq_det_smul]
   simp
+
+/-- Automorphisms `e` of `M` and `e'` of `N` act on `det M ⊗ (det N)^*` by multiplication by
+`det e * (det e')⁻¹`. -/
+theorem tensorCongr_detLineCongr_apply_eq_det_smul {K M N : Type*} [Field K] [AddCommGroup M]
+    [Module K M] [AddCommGroup N] [Module K N] (e : M ≃ₗ[K] M) (e' : N ≃ₗ[K] N)
+    (z : detLine K M ⊗[K] Dual K (detLine K N)) :
+    TensorProduct.congr e.detLineCongr e'.detLineCongr.symm.dualMap z =
+      (LinearMap.det (e : M →ₗ[K] M) * (LinearMap.det (e' : N →ₗ[K] N))⁻¹) • z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    have hφ : e'.detLineCongr.symm.dualMap φ = (LinearMap.det (e' : N →ₗ[K] N))⁻¹ • φ := by
+      refine LinearMap.ext fun y ↦ ?_
+      rw [dualMap_apply, detLineCongr_symm, detLineCongr_apply_eq_det_smul, _root_.map_smul,
+        det_coe_symm, LinearMap.smul_apply]
+    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul, hφ,
+      TensorProduct.smul_tmul_smul]
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
 
 end LinearEquiv
 

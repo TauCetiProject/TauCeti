@@ -77,7 +77,9 @@ operator of interest.
 
 ## Main results
 
-* `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart.
+* `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart,
+  and conversely `TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`: at a Fredholm
+  operator, coherence can be checked in any one kernel chart.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
@@ -231,6 +233,32 @@ theorem IsDetLineCoherentWithinAt.eventually_sameRay (hT : ContinuousWithinAt T 
   -- transition is `c` times that one.
   have := (hsr.map ((detLineChartEquiv (T x₀) S.subtypeL q₁ h₁).symm.trans
     (detLineChartEquiv (T x₀) D₂ q h₀)).toLinearMap).pos_smul_left hc
+  simpa only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hcu]
+    using this
+
+variable [CompleteSpace F] in
+/-- **Coherence can be tested in any kernel chart.** A family `v` which is nonzero at `x₀` and
+which some kernel chart valid at the Fredholm operator `T x₀` reads, near `x₀`, as nonnegative
+multiples of its reading of `v x₀`, is coherent within `s` at `x₀`. -/
+theorem isDetLineCoherentWithinAt_of_eventually_sameRay (hT : ContinuousWithinAt T s x₀)
+    (hF : IsFredholm (T x₀)) (hv : v x₀ ≠ 0) {Λ G : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G}
+    (h₀ : (((T x₀).coprod D₂).prod q).IsInvertible)
+    (hev : ∀ᶠ x in 𝓝[s] x₀, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
+      SameRay ℝ (detLineChartEquiv (T x) D₂ q h (v x)) (detLineChartEquiv (T x₀) D₂ q h₀ (v x₀))) :
+    IsDetLineCoherentWithinAt T v s x₀ := by
+  obtain ⟨S, hS, G₁, hG₁, q₁, U, -, hxU, hinv⟩ := hF.exists_isOpen_kernelChart
+  refine isDetLineCoherentWithinAt_iff.2 ⟨hv, S, hS, G₁, hG₁, q₁, hinv _ hxU, ?_⟩
+  filter_upwards [hev, hT.tendsto.eventually
+    (eventually_detLineChartEquiv_symm_eq_smul (hinv _ hxU) h₀)] with x hx hcx
+  obtain ⟨h, hsr⟩ := hx
+  obtain ⟨h₁, h', c, hc, hcu⟩ := hcx
+  refine ⟨h₁, ?_⟩
+  -- Map the readings in the given chart to the subspace chart by the transition at `x₀`; at `x`
+  -- the transition is `c` times that one.
+  have := (hsr.map ((detLineChartEquiv (T x₀) D₂ q h₀).symm.trans
+    (detLineChartEquiv (T x₀) S.subtypeL q₁ (hinv _ hxU))).toLinearMap).pos_smul_left hc
   simpa only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hcu]
     using this
 
