@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Basis
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+import Mathlib.LinearAlgebra.TensorProduct.Lift
 
 /-!
 # Spans of families in the span of a basis
@@ -14,11 +16,67 @@ Over a coefficient algebra `A` of the scalars, the `A`-span of a family lies in 
 basis `b` exactly when every coordinate of the family in `b` lies in the image of `A`; in
 particular, a linear endomorphism maps the `A`-span of `b` into itself exactly when its matrix in
 `b` has entries in the image of `A`.
+
+Extending scalars from the `A`-span of `b` recovers the original module, even when `A → S`
+is not injective. More generally, a linear map carrying an `A`-basis to an `S`-basis is a
+base-change map.
 -/
 
 public section
 
 namespace Module.Basis
+
+open scoped TensorProduct
+
+/-- A linear map carrying a basis to a basis over the extended scalars is a base-change map. -/
+theorem isBaseChange_of_map_basis
+    {A S M N ι : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    [AddCommMonoid M] [Module A M] [AddCommMonoid N] [Module A N] [Module S N]
+    [IsScalarTower A S N] (c : Basis ι A M) (b : Basis ι S N) (f : M →ₗ[A] N)
+    (h : ∀ i, f (c i) = b i) : IsBaseChange S f := by
+  have he : (Finsupp.linearCombination A b).comp c.repr.toLinearMap = f := by
+    apply c.ext
+    intro i
+    simp [h]
+  have hbase := (IsBaseChange.of_basis A b).comp_equiv c.repr (Finsupp.linearCombination A b)
+  rwa [he] at hbase
+
+/-- Extending scalars from the span of a basis over an under-semiring recovers the original
+module. The scalar map need not be injective. -/
+theorem isBaseChange_span
+    {A S M ι : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    [AddCommMonoid M] [Module A M] [Module S M] [IsScalarTower A S M]
+    (b : Basis ι S M) : IsBaseChange S (Submodule.span A (Set.range b)).subtype := by
+  let P := Submodule.span A (Set.range b)
+  let f := P.subtype.liftBaseChange S
+  let g := b.constr S (fun i ↦ (1 : S) ⊗ₜ[A] (⟨b i, Submodule.subset_span ⟨i, rfl⟩⟩ : P))
+  have hfg : f.comp g = LinearMap.id := by
+    apply b.ext
+    intro i
+    simp [f, g]
+  have hg (x : P) : g (x : M) = 1 ⊗ₜ[A] x := by
+    obtain ⟨x, hx⟩ := x
+    -- Normalize each constructor's membership witness to operations on the original span subtype.
+    induction hx using Submodule.span_induction with
+    | mem x hx =>
+        obtain ⟨i, rfl⟩ := hx
+        simp [g]
+    | zero =>
+        change g 0 = 1 ⊗ₜ[A] (0 : P)
+        simp
+    | add x y hx hy ihx ihy =>
+        change g (x + y) = 1 ⊗ₜ[A] ((⟨x, hx⟩ : P) + ⟨y, hy⟩)
+        simp only [map_add, TensorProduct.tmul_add, ihx, ihy]
+    | smul a x hx ih =>
+        change g (a • x) = 1 ⊗ₜ[A] (a • (⟨x, hx⟩ : P))
+        rw [← algebraMap_smul S a x, map_smul, ih, TensorProduct.smul_tmul',
+          Algebra.algebraMap_eq_smul_one, ← TensorProduct.smul_tmul]
+        simp
+  have hgf : g.comp f = LinearMap.id := by
+    apply TensorProduct.AlgebraTensorModule.ext
+    intro s x
+    simp [f, hg, TensorProduct.smul_tmul']
+  exact IsBaseChange.of_equiv (LinearEquiv.ofLinearMap f g hfg hgf) fun x ↦ by simp [f]
 
 /-- The `A`-span of a family `v` lies in the `A`-span of a basis `b` exactly when every
 coordinate of `v` in `b`, that is every entry of the change-of-basis matrix from `b` to `v`, lies
@@ -54,6 +112,16 @@ theorem span_range_le_span_range_iff_forall_toMatrix_mem
   dsimp only
   rw [← ha, algebraMap_smul]
   exact Submodule.smul_mem _ a (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- A vector lies in the span of a basis over an under-semiring exactly when all its
+coordinates lie in the image of that under-semiring. -/
+theorem mem_span_iff_repr_range
+    {A S M ι : Type*} [CommSemiring A] [CommSemiring S] [AddCommMonoid M]
+    [Algebra A S] [Module S M] [Module A M] [IsScalarTower A S M]
+    (b : Basis ι S M) (x : M) :
+    x ∈ Submodule.span A (Set.range b) ↔ ∀ i, b.repr x i ∈ Set.range (algebraMap A S) := by
+  simpa [Submodule.span_le, Set.range_subset_iff, Basis.toMatrix_apply] using
+    (b.span_range_le_span_range_iff_forall_toMatrix_mem (fun _ : Unit ↦ x))
 
 /-- A linear endomorphism maps the `A`-span of a basis `b` into itself exactly when every entry of
 its matrix in `b` lies in the image of `A`. -/
