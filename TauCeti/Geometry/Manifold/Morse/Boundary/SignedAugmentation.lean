@@ -243,7 +243,8 @@ private theorem trajectorySign_eq_signBasis {p q : M} {φp : MorseChart E f p}
   set B₀ := (((Module.Basis.singleton (Fin 1) ℝ).prod b).reindex finSumFinEquiv).reindex
     (finCongr hcard) with hB₀def
   have hT : φq.trajectoryTargetOrientation b.orientation hpq = B₀.orientation := by
-    rw [MorseChart.trajectoryTargetOrientation_def, Orientation.prod_basis_orientation, hB₀def]
+    rw [MorseChart.trajectoryTargetOrientation_def, MorseChart.flowNormalOrientation_def,
+      Orientation.prod_basis_orientation, hB₀def]
     simp only [Module.Basis.orientation_reindex]
   have hB₀ (j : Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) : (B₀ j).1 = 1 := by
     rw [hB₀def, Module.Basis.reindex_apply, Module.Basis.reindex_apply]
