@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 public import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Data.SignType.Basic
-import TauCeti.LinearAlgebra.LinearMap.KerCoker
+import TauCeti.LinearAlgebra.LinearMap.RegularRestriction
 
 /-!
 # The determinant line of a periodic loop operator and the return map
