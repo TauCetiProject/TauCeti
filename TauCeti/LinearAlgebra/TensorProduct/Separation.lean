@@ -17,7 +17,9 @@ of linear functionals likewise detect zero tensors by contraction in both factor
 These lemmas supply the shared separation step for rational-point separation and reducedness
 of tensor products of algebras. Over a field, every module is projective. In particular, over a
 commutative semiring without zero divisors, the tensor product of nonzero vectors of projective
-modules is nonzero (`TauCeti.tmul_ne_zero`).
+modules is nonzero (`TauCeti.tmul_ne_zero`). Over any commutative semiring, the tensor product of
+a free generator of a module of rank one with a nonzero vector is nonzero
+(`TauCeti.tmul_ne_zero_of_bijective_toSpanSingleton`).
 -/
 
 public section
@@ -78,5 +80,21 @@ theorem tmul_ne_zero {R M N : Type*} [CommSemiring R] [NoZeroDivisors R] [AddCom
   intro h
   apply mul_ne_zero hf hg
   simpa using congrArg (TensorProduct.lid R R ∘ TensorProduct.map f g) h
+
+/-- If `m` freely generates `M`, that is, `r ↦ r • m` is a bijection `R → M`, then `m ⊗ n` is
+nonzero for every nonzero `n`, with no hypothesis on `N`: the isomorphism `M ⊗ N ≃ R ⊗ N ≃ N`
+sends `m ⊗ n` to `n`. -/
+theorem tmul_ne_zero_of_bijective_toSpanSingleton {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {m : M}
+    (hm : Function.Bijective (LinearMap.toSpanSingleton R M m)) {n : N} (hn : n ≠ 0) :
+    m ⊗ₜ[R] n ≠ 0 := by
+  let e := LinearEquiv.ofBijective _ hm
+  have he : e.symm m = 1 := by
+    simpa using LinearEquiv.ofBijective_symm_apply_apply (f := LinearMap.toSpanSingleton R M m)
+      (h := hm) 1
+  intro h
+  apply hn
+  simpa [he] using congrArg ((TensorProduct.lid R N).toLinearMap ∘ₗ
+    TensorProduct.map e.symm.toLinearMap LinearMap.id) h
 
 end TauCeti

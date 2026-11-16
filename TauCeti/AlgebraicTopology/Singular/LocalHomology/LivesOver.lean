@@ -46,7 +46,11 @@ needed for the statements below.
   cross product is injective, for instance over a field by the relative Künneth theorem, and the
   homology is projective over a ring without zero divisors, the converse holds
   (`TauCeti.livesOverFundamentalClass_singularHomologyCross_iff`,
-  `TauCeti.livesOverFundamentalClass_singularHomologyCross_iff_of_field`).
+  `TauCeti.livesOverFundamentalClass_singularHomologyCross_iff_of_field`). For the fundamental
+  class of a compact oriented manifold `M` and integer coefficients no hypothesis is needed:
+  `[M] × β` lives over the fundamental class exactly when `β ≠ 0`
+  (`HomologicalOrientation.livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff`),
+  because the local orientation freely generates the local homology.
 * **The trivial fibration.** For the identity of a compact oriented `n`-manifold `M` and integer
   coefficients, the localization of `Hₙ(M)` at a point is the map to the local homology
   `Hₙ(M, M ∖ {b})`, and the multiple `d • [M]` of the fundamental class lives over the
@@ -349,6 +353,36 @@ include hn in
 theorem livesOverFundamentalClass_id_fundamentalClass (b : M) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) id b (o.fundamentalClass hn) := by
   simpa using (o.livesOverFundamentalClass_id_zsmul_fundamentalClass_iff hn b 1).2 one_ne_zero
+
+include hn in
+/-- **The fundamental class times a class of a second factor.** For a compact oriented
+`n`-manifold `M` and a space `Y`, the cross product `[M] × β ∈ Hₙ₊ⱼ(M × Y; ℤ ⊗ ℤ)` lives over the
+fundamental class at every point `b` for the projection `M × Y → M` exactly when `β ≠ 0`. Its
+localization is the relative cross product of the local orientation at `b`, which freely
+generates the local homology, with `β`, and the relative cross product is injective over `ℤ`.
+No hypothesis on `Y` or on its homology is needed. -/
+theorem livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff (b : M)
+    {Y : Type} [TopologicalSpace Y] {j k : ℕ} (h : n + j = k)
+    (β : ((TopCat.toSSet.obj (TopCat.of Y)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) j :
+      ModuleCat.{0} ℤ)) :
+    LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ))
+        (id ∘ Prod.fst) b
+        ((TopCat.singularHomologyCross (TopCat.of M) (TopCat.of Y) (ModuleCat.of ℤ (ULift.{0} ℤ))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n j k h).hom (o.fundamentalClass hn ⊗ₜ β)) ↔
+      β ≠ 0 := by
+  refine ⟨LivesOverFundamentalClass.right_ne_zero_of_singularHomologyCross _ _ h,
+    fun hβ h₀ ↦ ?_⟩
+  have h₁ := (fiberLocalization_singularHomologyCross_tmul _ _ id b h
+    (o.fundamentalClass hn) β).symm.trans h₀
+  -- The localization of `[M]` at `b` is the local orientation `o b`.
+  rw [fiberLocalization_id] at h₁
+  erw [ModuleCat.comp_apply, ← singularHomologyToLocalHomology_apply,
+    singularHomologyToLocalHomology_fundamentalClass] at h₁
+  have hinj := (ModuleCat.mono_iff_injective (TopCat.singularHomologyCrossRel (TopCat.of M)
+    (TopCat.of Y) ((id : M → M) ⁻¹' {b})ᶜ (ModuleCat.of ℤ (ULift.{0} ℤ))
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) n j k h)).1 inferInstance
+  exact (map_ne_zero_iff _ hinj).2
+    (tmul_ne_zero_of_bijective_toSpanSingleton (o.bijective_toSpanSingleton hn b) hβ) h₁
 
 include o hn in
 /-- **The trivial fibration** (the remark after Barraud–Damian–Humilière–Oancea, Definition 2.3).
