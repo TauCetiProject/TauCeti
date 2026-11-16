@@ -26,26 +26,19 @@ finitely generated projective graded `𝒜`-module — is isomorphic in `TauCeti
 a finite graded free module `free 𝒜 d`, and therefore admits a finite `A`-basis of homogeneous
 elements.
 
-The proof reduces modulo the positive-degree action `A₊ M` degree by degree:
+For any graded module `M` over a commutative base ring `k`, `headPiece M p` is the degree-`p` head
+quotient `Mₚ / (A₊ M ∩ Mₚ)`, functorial in graded morphisms `M ⟶ N`. By bounded-below graded
+Nakayama, a graded morphism between bounded-below graded modules with projective target is an
+isomorphism whenever it induces a bijection on `headPiece` in every degree
+(`isIso_of_forall_bijective_headPieceMap`). Over a connected nonnegatively graded algebra,
+`freeHeadEquiv` identifies `headPiece (free 𝒜 s) p` with `{j // s j = p} → k`; when `k` is
+nontrivial, graded free isomorphisms and finite homogeneous bases of submodules therefore determine
+the degree multiplicities and shift multisets uniquely (`natCard_fiber_eq_of_free_iso`,
+`multiset_map_eq_of_free_iso`, `multiset_map_eq_of_homogeneous_basis_submodule`).
 
-1. For any graded module `M`, the degree-`p` head piece `headPiece M p` is the `k`-module quotient
-   of `Mₚ` by `(A₊ M) ∩ Mₚ`, functorial in graded morphisms `M ⟶ N`.
-2. By bounded-below graded Nakayama, any graded morphism `φ : M ⟶ P` between bounded-below graded
-   modules with projective target `P` that induces a bijection on `headPiece` in every degree is an
-   isomorphism (`isIso_of_forall_bijective_headPieceMap`).
-3. For a finite graded free module `free 𝒜 s`, nonnegativity implies that
-   `(A₊ (free 𝒜 s)) ∩ (free 𝒜 s)ₚ` consists precisely of the degree-`p` tuples vanishing on every
-   coordinate `j` with `s j = p`. Connectedness over `k` therefore identifies
-   `headPiece (free 𝒜 s) p` with `{j // s j = p} → k` (`freeHeadEquiv`).
-4. For a graded retract `P` of `free 𝒜 s`, `headPiece P p` embeds as a `k`-submodule into the
-   finite free `k`-module `{j // s j = p} → k` and vanishes outside the finite range of `s`. Since
-   `k` is a principal ideal domain, each `headPiece P p` has a finite `k`-basis. Lifting those
-   basis elements homogeneously produces a graded morphism `φ : free 𝒜 d ⟶ P` inducing an
-   isomorphism on `headPiece` in every degree, hence a graded isomorphism.
-
-As consequences, every degree-zero idempotent endomorphism of `free 𝒜 s` — or, in coordinates, of
-a finite product `J → A` with summand shifts `s : J → ℤ` — splits homogeneously through a finite
-shifted free module `Fin n → A` via explicit maps `ι` and `π` satisfying `π ∘ₗ ι = id` and
+Over a principal ideal domain `k`, every degree-zero idempotent endomorphism of `free 𝒜 s` — or, in
+coordinates, of a finite product `J → A` with summand shifts `s : J → ℤ` — splits homogeneously
+through a finite shifted free module via explicit maps `ι` and `π` satisfying `π ∘ₗ ι = id` and
 `ι ∘ₗ π = p`, and its image `LinearMap.range p` admits a finite homogeneous `A`-basis.
 
 ## Main definitions
@@ -530,7 +523,7 @@ finite homogeneous `A`-bases of a submodule `S : Submodule A (J → A)` (with am
 theorem multiset_map_eq_of_homogeneous_basis_submodule [Nontrivial k] [FaithfulSMul k A]
     (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : 𝒜 0 ≤ LinearMap.range (Algebra.linearMap k A))
-    {J : Type} [Finite J] (s : J → ℤ) (S : Submodule A (J → A))
+    {J : Type v} [Finite J] (s : J → ℤ) (S : Submodule A (J → A))
     {m n : ℕ}
     (b₁ : Module.Basis (Fin m) A S) (d₁ : Fin m → ℤ)
     (hb₁ : ∀ i j, (b₁ i).val j ∈ 𝒜 (d₁ i - s j))
@@ -540,30 +533,31 @@ theorem multiset_map_eq_of_homogeneous_basis_submodule [Nontrivial k] [FaithfulS
   classical
   let _ : Fintype J := Fintype.ofFinite J
   let eJ : free 𝒜 s ≃ₗ[A] (J → A) := DirectSum.linearEquivFunOnFintype A J (fun _ : J => A)
+  let d₁' : ULift.{v} (Fin m) → ℤ := fun i => d₁ i.down
+  let d₂' : ULift.{v} (Fin n) → ℤ := fun i => d₂ i.down
   have hlift : ∀ {r : ℕ} (b : Module.Basis (Fin r) A S) (d : Fin r → ℤ),
       (∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) →
-      ∀ i : Fin r, eJ.symm (b i).val ∈ (free 𝒜 s).grading.piece (d i) := by
-    intro r b d hb i
-    refine (mem_free_piece_iff 𝒜 s (d i) _).mpr fun j => ?_
-    have hcoord : (eJ.symm (b i).val) j = (b i).val j :=
-      congrFun (eJ.apply_symm_apply (b i).val) j
-    rw [hcoord]
-    exact hb i j
-  let φ₁ : free 𝒜 d₁ ⟶ free 𝒜 s := freeLift fun i => ⟨eJ.symm (b₁ i).val, hlift b₁ d₁ hb₁ i⟩
-  let φ₂ : free 𝒜 d₂ ⟶ free 𝒜 s := freeLift fun i => ⟨eJ.symm (b₂ i).val, hlift b₂ d₂ hb₂ i⟩
-  let e₁ : free 𝒜 d₁ ≃ₗ[A] S := (freeBasis 𝒜 d₁).equiv b₁ (Equiv.refl _)
-  let e₂ : free 𝒜 d₂ ≃ₗ[A] S := (freeBasis 𝒜 d₂).equiv b₂ (Equiv.refl _)
+      ∀ i : ULift.{v} (Fin r),
+        eJ.symm (b i.down).val ∈ (free 𝒜 s).grading.piece (d i.down) :=
+    fun _ d hb i =>
+      (linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s (d i.down) _).mpr (hb i.down)
+  let φ₁ : free 𝒜 d₁' ⟶ free 𝒜 s :=
+    freeLift fun i => ⟨eJ.symm (b₁ i.down).val, hlift b₁ d₁ hb₁ i⟩
+  let φ₂ : free 𝒜 d₂' ⟶ free 𝒜 s :=
+    freeLift fun i => ⟨eJ.symm (b₂ i.down).val, hlift b₂ d₂ hb₂ i⟩
+  let e₁ : free 𝒜 d₁' ≃ₗ[A] S := (freeBasis 𝒜 d₁').equiv b₁ Equiv.ulift
+  let e₂ : free 𝒜 d₂' ≃ₗ[A] S := (freeBasis 𝒜 d₂').equiv b₂ Equiv.ulift
   have hφ₁_eq : φ₁.hom = eJ.symm.toLinearMap.comp (S.subtype.comp e₁.toLinearMap) := by
-    apply (freeBasis 𝒜 d₁).ext
+    apply (freeBasis 𝒜 d₁').ext
     intro i
     simp only [e₁, φ₁, LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equiv_apply,
-      Equiv.refl_apply, Submodule.subtype_apply]
+      Equiv.ulift_apply, Submodule.subtype_apply]
     rw [freeBasis_apply, freeLift_generator]
   have hφ₂_eq : φ₂.hom = eJ.symm.toLinearMap.comp (S.subtype.comp e₂.toLinearMap) := by
-    apply (freeBasis 𝒜 d₂).ext
+    apply (freeBasis 𝒜 d₂').ext
     intro i
     simp only [e₂, φ₂, LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equiv_apply,
-      Equiv.refl_apply, Submodule.subtype_apply]
+      Equiv.ulift_apply, Submodule.subtype_apply]
     rw [freeBasis_apply, freeLift_generator]
   have hφ₁_inj : Function.Injective φ₁.hom := by
     rw [hφ₁_eq]
@@ -571,14 +565,25 @@ theorem multiset_map_eq_of_homogeneous_basis_submodule [Nontrivial k] [FaithfulS
   have hφ₂_inj : Function.Injective φ₂.hom := by
     rw [hφ₂_eq]
     exact eJ.symm.injective.comp ((Submodule.subtype_injective S).comp e₂.injective)
-  let e₁₂ : free 𝒜 d₁ ≃ₗ[A] free 𝒜 d₂ := e₁.trans e₂.symm
-  have hcomm (x : free 𝒜 d₁) : φ₂.hom (e₁₂ x) = φ₁.hom x := by
+  let e₁₂ : free 𝒜 d₁' ≃ₗ[A] free 𝒜 d₂' := e₁.trans e₂.symm
+  have hcomm (x : free 𝒜 d₁') : φ₂.hom (e₁₂ x) = φ₁.hom x := by
     rw [hφ₁_eq, hφ₂_eq]
     simp [e₁₂]
-  let iso : free 𝒜 d₁ ≅ free 𝒜 d₂ := isoMk e₁₂ fun q x => by
+  let iso : free 𝒜 d₁' ≅ free 𝒜 d₂' := isoMk e₁₂ fun q x => by
     rw [← mem_piece_iff_of_injective φ₁ hφ₁_inj, ← hcomm x,
       mem_piece_iff_of_injective φ₂ hφ₂_inj]
-  exact multiset_map_eq_of_free_iso 𝒜 hneg hzero d₁ d₂ iso
+  refine Multiset.ext.mpr fun p => ?_
+  have hcount : ∀ {r : ℕ} (e : Fin r → ℤ),
+      Multiset.count p (Multiset.map e Finset.univ.val) =
+        Nat.card {i : ULift.{v} (Fin r) // e i.down = p} := by
+    intro r e
+    have hequiv : {i : ULift.{v} (Fin r) // e i.down = p} ≃ {i : Fin r // e i = p} :=
+      Equiv.subtypeEquiv Equiv.ulift (fun _ => Iff.rfl)
+    rw [Nat.card_congr hequiv, Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_def,
+      Finset.filter_val, Multiset.count_map]
+    simp_rw [eq_comm]
+  rw [hcount d₁, hcount d₂]
+  exact natCard_fiber_eq_of_free_iso 𝒜 hneg hzero d₁' d₂' iso p
 
 end FreeHead
 
@@ -800,12 +805,12 @@ module `free 𝒜 d` via `ι : free 𝒜 d ⟶ free 𝒜 s` and `π : free 𝒜 
 theorem exists_split_free_of_idempotent
     (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : 𝒜 0 ≤ LinearMap.range (Algebra.linearMap k A))
-    {J : Type} [Finite J] (s : J → ℤ)
+    {J : Type v} [Finite J] (s : J → ℤ)
     (e : free 𝒜 s ⟶ free 𝒜 s) (he : e ≫ e = e) :
-    ∃ (n : ℕ) (d : Fin n → ℤ) (ι : free 𝒜 d ⟶ free 𝒜 s) (π : free 𝒜 s ⟶ free 𝒜 d),
+    ∃ (n : ℕ) (d : ULift.{v} (Fin n) → ℤ) (ι : free 𝒜 d ⟶ free 𝒜 s) (π : free 𝒜 s ⟶ free 𝒜 d),
       ι ≫ π = 𝟙 (free 𝒜 d) ∧ π ≫ ι = e := by
   obtain ⟨Y, iIm, rIm, hir, hri⟩ := IsIdempotentComplete.idempotents_split (free 𝒜 s) e he
-  obtain ⟨n, d, ⟨iso⟩⟩ := exists_fin_free_iso_of_retract 𝒜 hneg hzero s iIm rIm hir
+  obtain ⟨n, d, ⟨iso⟩⟩ := exists_free_iso_of_retract 𝒜 hneg hzero s iIm rIm hir
   refine ⟨n, d, iso.hom ≫ iIm, rIm ≫ iso.inv, ?_, ?_⟩
   · rw [Category.assoc, ← Category.assoc iIm, hir, Category.id_comp, iso.hom_inv_id]
   · rw [Category.assoc, ← Category.assoc iso.inv, iso.inv_hom_id, Category.id_comp, hri]
@@ -817,7 +822,7 @@ pieces splits through `Fin n → A` via homogeneous `A`-linear maps `ι` and `π
 theorem exists_split_pi_of_idempotent
     (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : 𝒜 0 ≤ LinearMap.range (Algebra.linearMap k A))
-    {J : Type} [Finite J] (s : J → ℤ)
+    {J : Type v} [Finite J] (s : J → ℤ)
     (p : (J → A) →ₗ[A] (J → A))
     (hp : p.comp p = p)
     (hhom : ∀ (q : ℤ) (v : J → A),
@@ -837,13 +842,12 @@ theorem exists_split_pi_of_idempotent
   let eHom : free 𝒜 s ⟶ free 𝒜 s :=
     ofHom (eJ.symm.toLinearMap.comp (p.comp eJ.toLinearMap)) <|
       LinearMap.isHomogeneous_def.mpr fun q x hx => by
-        rw [add_zero]
-        refine (mem_free_piece_iff 𝒜 s q _).mpr fun j => ?_
-        have happly : (eJ.symm (p (eJ x))) j = p (eJ x) j :=
-          congrFun (eJ.apply_symm_apply (p (eJ x))) j
-        rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-          happly]
-        exact hhom q (eJ x) ((mem_free_piece_iff 𝒜 s q x).mp hx) j
+        rw [add_zero, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+          LinearEquiv.coe_coe]
+        refine (linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q _).mpr ?_
+        refine hhom q (eJ x) fun j => ?_
+        simp only [eJ, DirectSum.linearEquivFunOnFintype_apply]
+        exact (mem_free_piece_iff 𝒜 s q x).mp hx j
   have heHom : eHom ≫ eHom = eHom := by
     apply hom_ext
     apply LinearMap.ext
@@ -851,9 +855,13 @@ theorem exists_split_pi_of_idempotent
     simp only [hom_comp, LinearMap.comp_apply, eHom, LinearEquiv.coe_coe,
       LinearEquiv.apply_symm_apply]
     rw [← LinearMap.comp_apply p p, hp]
-  obtain ⟨n, d, ιF, πF, hιπ, hπι⟩ := exists_split_free_of_idempotent 𝒜 hneg hzero s eHom heHom
-  let eN : free 𝒜 d ≃ₗ[A] (Fin n → A) :=
-    DirectSum.linearEquivFunOnFintype A (Fin n) (fun _ : Fin n => A)
+  obtain ⟨n, d', ιF, πF, hιπ, hπι⟩ := exists_split_free_of_idempotent 𝒜 hneg hzero s eHom heHom
+  let d : Fin n → ℤ := fun i => d' (ULift.up i)
+  let eN₀ : free 𝒜 d' ≃ₗ[A] (ULift.{v} (Fin n) → A) :=
+    DirectSum.linearEquivFunOnFintype A (ULift.{v} (Fin n)) (fun _ => A)
+  let eULift : (ULift.{v} (Fin n) → A) ≃ₗ[A] (Fin n → A) :=
+    LinearEquiv.piCongrLeft' A (fun _ => A) Equiv.ulift
+  let eN : free 𝒜 d' ≃ₗ[A] (Fin n → A) := eN₀.trans eULift
   let ι : (Fin n → A) →ₗ[A] (J → A) := eJ.toLinearMap.comp (ιF.hom.comp eN.symm.toLinearMap)
   let π : (J → A) →ₗ[A] (Fin n → A) := eN.toLinearMap.comp (πF.hom.comp eJ.symm.toLinearMap)
   refine ⟨n, d, ι, π, ?_, ?_, ?_, ?_⟩
@@ -868,19 +876,21 @@ theorem exists_split_pi_of_idempotent
     rw [← LinearMap.comp_apply ιF.hom πF.hom, ← hom_comp, hπι]
     simp [eHom]
   · intro q w hw j
-    have hmem : eN.symm w ∈ (free 𝒜 d).grading.piece q := by
-      refine (mem_free_piece_iff 𝒜 d q _).mpr fun i => ?_
-      have hcoord : (eN.symm w) i = w i := congrFun (eN.apply_symm_apply w) i
-      rw [hcoord]
-      exact hw i
+    have hmem : eN.symm w ∈ (free 𝒜 d').grading.piece q := by
+      simp only [eN, eN₀, LinearEquiv.trans_symm, LinearEquiv.trans_apply]
+      refine (linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 d' q _).mpr fun ⟨i⟩ => ?_
+      simpa only [eULift, LinearEquiv.piCongrLeft'_symm_apply, Equiv.piCongrLeft'_symm_apply,
+        Equiv.ulift_apply] using hw i
+    simp only [ι, eJ, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      DirectSum.linearEquivFunOnFintype_apply]
     exact (mem_free_piece_iff 𝒜 s q _).mp (map_mem ιF hmem) j
   · intro q v hv i
-    have hmem : eJ.symm v ∈ (free 𝒜 s).grading.piece q := by
-      refine (mem_free_piece_iff 𝒜 s q _).mpr fun j => ?_
-      have hcoord : (eJ.symm v) j = v j := congrFun (eJ.apply_symm_apply v) j
-      rw [hcoord]
-      exact hv j
-    exact (mem_free_piece_iff 𝒜 d q _).mp (map_mem πF hmem) i
+    have hmem : eJ.symm v ∈ (free 𝒜 s).grading.piece q :=
+      (linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q v).mpr hv
+    simp only [π, eN, eN₀, eULift, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.trans_apply, LinearEquiv.piCongrLeft'_apply, Equiv.ulift_symm_apply,
+      DirectSum.linearEquivFunOnFintype_apply]
+    exact (mem_free_piece_iff 𝒜 d' q _).mp (map_mem πF hmem) (ULift.up i)
 
 /-- **Homogeneous basis of the image of a degree-zero idempotent.** Over a connected nonnegatively
 graded algebra over a principal ideal domain, the image `LinearMap.range p` of a degree-zero
@@ -889,7 +899,7 @@ homogeneous vectors. -/
 theorem exists_homogeneous_basis_range_idempotent
     (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : 𝒜 0 ≤ LinearMap.range (Algebra.linearMap k A))
-    {J : Type} [Finite J] (s : J → ℤ)
+    {J : Type v} [Finite J] (s : J → ℤ)
     (p : (J → A) →ₗ[A] (J → A))
     (hp : p.comp p = p)
     (hhom : ∀ (q : ℤ) (v : J → A),
@@ -911,8 +921,7 @@ theorem exists_homogeneous_basis_range_idempotent
         apply Subtype.ext
         simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, Submodule.subtype_apply,
           LinearMap.id_apply]
-        have h1 : ι (π (p v)) = (ι.comp π) (p v) := rfl
-        rw [h1, hιπ, ← LinearMap.comp_apply p p, hp])
+        rw [← LinearMap.comp_apply ι π, hιπ, ← LinearMap.comp_apply p p, hp])
       (by
         apply LinearMap.ext
         intro w
