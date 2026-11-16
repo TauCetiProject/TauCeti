@@ -48,14 +48,15 @@ of the maximal ideal, so extending `I` to `Â` preserves every value of `I.hilbe
   quotients, and ring equivalences.
 * `Ideal.hilbertSamuel_ne_top`, `Ideal.natCast_toNat_hilbertSamuel`: finiteness over a Noetherian
   local ring.
-* `Ideal.hilbertSamuel_map_adicCompletion_of_fg`, `Ideal.hilbertSamuel_map_adicCompletion`:
+* `Ideal.hilbertSamuel_map_adicCompletion_of_fg`, `Ideal.hilbertSamuel_map_adicCompletion`,
+  `Ideal.hilbertSamuel_adicCompletion_bot_of_fg`, `Ideal.hilbertSamuel_adicCompletion_bot`:
   invariance under maximal-adic completion.
 
 ## References
 
 * Edward Bierstone and Pierre D. Milman, *Canonical desingularization in characteristic zero by
   blowing up the maximum strata of a local invariant*, Invent. Math. 128 (1997), 207–302,
-  Remarks 1.3 (pp. 213–214), Corollary 3.20 (p. 239), Theorem 9.2 and Lemma 9.3 (p. 276).
+  Remarks 1.3 (pp. 213–214).
 -/
 
 public section
@@ -106,15 +107,14 @@ theorem hilbertSamuel_zero_of_ne_top {I : Ideal A} (hI : I ≠ ⊤) : I.hilbertS
 
 /-- The zero ideal of a local ring has Hilbert–Samuel value `1` at degree `0`. -/
 @[simp]
-theorem hilbertSamuel_zero_bot : (⊥ : Ideal A).hilbertSamuel 0 = 1 :=
+theorem hilbertSamuel_bot_zero : (⊥ : Ideal A).hilbertSamuel 0 = 1 :=
   hilbertSamuel_zero_of_ne_top bot_ne_top
 
 /-- The zero ideal of a field has identically `1` Hilbert–Samuel function. -/
 @[simp]
 theorem hilbertSamuel_bot_of_field {K : Type*} [Field K] (n : ℕ) :
     (⊥ : Ideal K).hilbertSamuel n = 1 := by
-  rw [hilbertSamuel_bot, maximalIdeal_eq_bot, ← Ideal.zero_eq_bot,
-    zero_pow (Nat.succ_ne_zero n), Ideal.zero_eq_bot]
+  rw [hilbertSamuel_bot, maximalIdeal_eq_bot, Ideal.bot_pow (Nat.succ_ne_zero n)]
   exact Ideal.length_quotient_eq_one (⊥ : Ideal K)
 
 /-- Larger ideals have smaller Hilbert–Samuel functions. -/
@@ -138,6 +138,7 @@ theorem hilbertSamuel_map_of_surjective {B F : Type*} [CommRing B] [IsLocalRing 
     ← Ideal.map_pow, ← Ideal.map_sup, Ideal.length_quotient_map_of_surjective _ hψ, sup_right_comm]
 
 /-- Pushing an ideal `J` along `A →+* A ⧸ I` computes the Hilbert–Samuel function of `J ⊔ I`. -/
+@[simp]
 theorem hilbertSamuel_map_quotientMk (J I : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
     (J.map (Ideal.Quotient.mk I)).hilbertSamuel n = (J ⊔ I).hilbertSamuel n := by
   rw [J.hilbertSamuel_map_of_surjective Ideal.Quotient.mk_surjective, Ideal.mk_ker]
@@ -148,13 +149,12 @@ theorem hilbertSamuel_quotient_bot (I : Ideal A) [IsLocalRing (A ⧸ I)] (n : �
     (⊥ : Ideal (A ⧸ I)).hilbertSamuel n = I.hilbertSamuel n := by
   simpa using (⊥ : Ideal A).hilbertSamuel_map_quotientMk I n
 
-/-- A ring equivalence between local rings preserves the Hilbert–Samuel function. -/
+/-- An isomorphism of local rings preserves the Hilbert–Samuel function. -/
 @[simp]
-theorem hilbertSamuel_map_equiv {B : Type*} [CommRing B] [IsLocalRing B]
-    (I : Ideal A) (e : A ≃+* B) (n : ℕ) :
+theorem hilbertSamuel_map_equiv {B F : Type*} [CommRing B] [IsLocalRing B]
+    [EquivLike F A B] [RingEquivClass F A B] (I : Ideal A) (e : F) (n : ℕ) :
     (I.map e).hilbertSamuel n = I.hilbertSamuel n := by
-  rw [I.hilbertSamuel_map_of_surjective e.surjective,
-    (RingHom.injective_iff_ker_eq_bot e).mp e.injective, sup_bot_eq]
+  rw [I.hilbertSamuel_map_of_surjective (EquivLike.surjective e), RingHom.ker_equiv, sup_bot_eq]
 
 end Basic
 
@@ -164,6 +164,7 @@ variable {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 
 /-- In a Noetherian local ring, every value of the Hilbert–Samuel function of any ideal is
 finite. -/
+@[simp]
 theorem hilbertSamuel_ne_top (I : Ideal A) (n : ℕ) :
     I.hilbertSamuel n ≠ ⊤ := by
   have hbot : (⊥ : Ideal A).hilbertSamuel n ≠ ⊤ := by
@@ -208,6 +209,15 @@ theorem hilbertSamuel_map_adicCompletion_of_fg (hfg : (maximalIdeal A).FG) (I : 
     Ideal.length_quotient_map_of_surjective I Ideal.Quotient.mk_surjective,
     Ideal.mk_ker, ← hilbertSamuel_def]
 
+/-- The maximal-adic completion of a local ring with finitely generated maximal ideal has the same
+Hilbert–Samuel function at `⊥` as the original ring. -/
+theorem hilbertSamuel_adicCompletion_bot_of_fg (hfg : (maximalIdeal A).FG) (n : ℕ) :
+    haveI := AdicCompletion.isLocalRing_of_fg hfg
+    (⊥ : Ideal (AdicCompletion (maximalIdeal A) A)).hilbertSamuel n =
+      (⊥ : Ideal A).hilbertSamuel n := by
+  have := AdicCompletion.isLocalRing_of_fg hfg
+  simpa using hilbertSamuel_map_adicCompletion_of_fg hfg ⊥ n
+
 /-- Extending an ideal of a Noetherian local ring to its maximal-adic completion preserves every
 value of the Hilbert–Samuel function. -/
 @[simp]
@@ -216,12 +226,20 @@ theorem hilbertSamuel_map_adicCompletion [IsNoetherianRing A] (I : Ideal A) (n :
       I.hilbertSamuel n :=
   hilbertSamuel_map_adicCompletion_of_fg (IsNoetherian.noetherian _) I n
 
+/-- The maximal-adic completion of a Noetherian local ring has the same Hilbert–Samuel function at
+`⊥` as the original ring. -/
+@[simp]
+theorem hilbertSamuel_adicCompletion_bot [IsNoetherianRing A] (n : ℕ) :
+    (⊥ : Ideal (AdicCompletion (maximalIdeal A) A)).hilbertSamuel n =
+      (⊥ : Ideal A).hilbertSamuel n := by
+  simpa using hilbertSamuel_map_adicCompletion (⊥ : Ideal A) n
+
 end Completion
 
 -- A closed point whose residue field has degree 2 over a base field still has `H(0) = 1` by
 -- local-ring length.
 example {K L : Type*} [Field K] [Field L] [Algebra K L] (_ : Module.finrank K L = 2) :
     (⊥ : Ideal L).hilbertSamuel 0 = 1 :=
-  Ideal.hilbertSamuel_zero_bot
+  Ideal.hilbertSamuel_bot_zero
 
 end Ideal

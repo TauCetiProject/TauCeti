@@ -14,39 +14,35 @@ public import Mathlib.Order.WellFoundedSet
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.Data.Fintype.Pigeonhole
 import Mathlib.Order.Minimal
-import Mathlib.Order.OrderIsoNat
-import TauCeti.Algebra.Order.Antidiag.FinsuppEquiv
 
 /-!
 # Complement counts and lexicographic well-foundedness for upper sets in `σ →₀ ℕ`
 
-For a finite variable type `σ`, the set `{α : σ →₀ ℕ | α.degree ≤ ℓ}` of multi-indices of total
-degree at most `ℓ` is finite of cardinality `(Fintype.card σ + ℓ).choose (Fintype.card σ)`
-(`Finsupp.ncard_degree_le`). Given an upper set `D : UpperSet (σ →₀ ℕ)` in the componentwise
-order, its complement-counting function `ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ D).ncard` records
+For a finite variable type `σ` and an upper set `D : UpperSet (σ →₀ ℕ)` in the componentwise
+order, the complement-counting function `ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ D).ncard` records
 how many exponents of degree at most `ℓ` lie outside `D`.
 
 By diagonalization over finite bounded-degree balls, every sequence `E : ℕ → UpperSet (σ →₀ ℕ)`
-admits a limit upper set `D` that agrees on `{α | α.degree ≤ ℓ}` with infinitely many terms `E j`
-for every `ℓ` (`Finsupp.exists_limit_upperSet`). By Dickson's lemma (`Finsupp.wellQuasiOrderedLE`),
-every upper set `D` has a finite degree bound `d` such that any upper set containing all elements
-of `D` of degree at most `d` contains all of `D` (`Finsupp.exists_subset_of_degree_le`). Combining
-these two properties yields the combinatorial core of Bierstone–Milman's stabilization theorem: the
-set of complement-counting functions realized by upper sets in `σ →₀ ℕ` is well-founded in the
-lexicographic order on `ℕ → ℕ` (`Finsupp.isWF_range_toLex_ncard_degree_le_diff`), so every
-lexicographically antitone sequence of such functions stabilizes
-(`Finsupp.exists_ncard_degree_le_diff_eq_of_antitone_lex`).
+admits an upper set `D` that agrees on `{α | α.degree ≤ ℓ}` with infinitely many terms `E j`
+for every `ℓ` (`Finsupp.exists_upperSet_infinite_mem_iff`). By Dickson's lemma
+(`Finsupp.wellQuasiOrderedLE`), every upper set `D` has a finite degree bound `d` such that any
+upper set containing all elements of `D` of degree at most `d` contains all of `D`
+(`Finsupp.exists_forall_subset_of_forall_degree_le`). Combining these two properties yields the
+combinatorial core of Bierstone–Milman's stabilization theorem: the set of complement-counting
+functions realized by upper sets in `σ →₀ ℕ` is well-founded in the lexicographic order on
+`ℕ → ℕ` (`Finsupp.isWF_range_toLex_ncard_degree_le_sdiff`), so every lexicographically antitone
+sequence of such functions stabilizes
+(`Finsupp.exists_ncard_degree_le_sdiff_eq_of_antitone_lex`).
 
 ## Main results
 
-* `Finsupp.ncard_degree_le`: `{α : σ →₀ ℕ | α.degree ≤ ℓ}.ncard = (card σ + ℓ).choose (card σ)`.
-* `Finsupp.exists_limit_upperSet`: every sequence of upper sets in `σ →₀ ℕ` admits a limit upper
-  set agreeing with infinitely many terms on every bounded-degree ball.
-* `Finsupp.exists_subset_of_degree_le`: every upper set `D` in `σ →₀ ℕ` has a degree bound `d` such
-  that containment on `{α | α.degree ≤ d}` implies `(D : Set (σ →₀ ℕ)) ⊆ E`.
-* `Finsupp.isWF_range_toLex_ncard_degree_le_diff`: the range of complement-counting functions of
+* `Finsupp.exists_upperSet_infinite_mem_iff`: every sequence of upper sets in `σ →₀ ℕ` admits an
+  upper set agreeing with infinitely many terms on every bounded-degree ball.
+* `Finsupp.exists_forall_subset_of_forall_degree_le`: every upper set `D` in `σ →₀ ℕ` has a degree
+  bound `d` such that containment on `{α | α.degree ≤ d}` implies `(D : Set (σ →₀ ℕ)) ⊆ E`.
+* `Finsupp.isWF_range_toLex_ncard_degree_le_sdiff`: the range of complement-counting functions of
   upper sets in `σ →₀ ℕ` is well-founded in `Lex (ℕ → ℕ)`.
-* `Finsupp.exists_ncard_degree_le_diff_eq_of_antitone_lex`: every lexicographically antitone
+* `Finsupp.exists_ncard_degree_le_sdiff_eq_of_antitone_lex`: every lexicographically antitone
   sequence of complement-counting functions of upper sets in `σ →₀ ℕ` is eventually constant.
 
 ## References
@@ -59,27 +55,12 @@ public section
 
 namespace Finsupp
 
-/-- In finitely many variables, there are `(card σ + ℓ).choose (card σ)` multi-indices of total
-degree at most `ℓ`. -/
-theorem ncard_degree_le (σ : Type*) [Fintype σ] (ℓ : ℕ) :
-    {α : σ →₀ ℕ | α.degree ≤ ℓ}.ncard = (Fintype.card σ + ℓ).choose (Fintype.card σ) := by
-  have himg : (equivFunOnFinite : (σ →₀ ℕ) ≃ (σ → ℕ)) '' {α : σ →₀ ℕ | α.degree ≤ ℓ} =
-      {c : σ → ℕ | ∑ a, c a ≤ ℓ} := by
-    ext c
-    simp only [Set.mem_image, Set.mem_ofPred_eq]
-    refine ⟨?_, fun hc ↦ ⟨equivFunOnFinite.symm c, ?_, equivFunOnFinite.apply_symm_apply c⟩⟩
-    · rintro ⟨α, hα, rfl⟩
-      simpa [degree_eq_sum] using hα
-    · simpa [degree_eq_sum] using hc
-  rw [← Set.ncard_image_of_injective _ equivFunOnFinite.injective, himg,
-    TauCeti.ncard_setOf_sum_le, add_comm]
-
 /-- Pigeonhole extraction on a finite ball `B`: an infinite set of indices `S` contains an infinite
-subset on which the slice `B ∩ E j` is constant. -/
-private theorem exists_infinite_subset_filter_eq {σ : Type*} (E : ℕ → UpperSet (σ →₀ ℕ))
+subset on which membership in `E j` is constant on `B`. -/
+private theorem exists_infinite_subset_mem_iff {σ : Type*} (E : ℕ → UpperSet (σ →₀ ℕ))
     (B : Finset (σ →₀ ℕ)) {S : Set ℕ} (hS : S.Infinite) :
     ∃ S' ⊆ S, S'.Infinite ∧ ∃ A : Finset (σ →₀ ℕ),
-      ∀ j ∈ S', (letI := Classical.decPred (· ∈ E j); B.filter (· ∈ E j)) = A := by
+      ∀ j ∈ S', ∀ α ∈ B, (α ∈ E j ↔ α ∈ A) := by
   classical
   have : Infinite S := Set.infinite_coe_iff.mpr hS
   let g : S → B.powerset := fun j ↦
@@ -87,48 +68,49 @@ private theorem exists_infinite_subset_filter_eq {σ : Type*} (E : ℕ → Upper
   obtain ⟨⟨A, hA⟩, hfib⟩ := Finite.exists_infinite_fiber g
   refine ⟨Subtype.val '' (g ⁻¹' {⟨A, hA⟩}), Subtype.coe_image_subset S _,
     (Set.infinite_coe_iff.mp hfib).image Subtype.val_injective.injOn, A, ?_⟩
-  rintro _ ⟨⟨j, hjS⟩, hjg, rfl⟩
-  have hval := congrArg Subtype.val (Set.mem_singleton_iff.mp hjg)
-  simpa [g] using hval
+  rintro _ ⟨⟨j, hjS⟩, hjg, rfl⟩ α hα
+  have hval : B.filter (· ∈ E j) = A := by
+    simpa [g] using congrArg Subtype.val (Set.mem_singleton_iff.mp hjg)
+  rw [← hval, Finset.mem_filter]
+  exact ⟨fun h ↦ ⟨hα, h⟩, fun h ↦ h.2⟩
 
 section UpperSetStabilization
 
 variable {σ : Type*} [Finite σ]
 
 /-- Diagonal compactness for upper sets in `σ →₀ ℕ`: every sequence `E : ℕ → UpperSet (σ →₀ ℕ)`
-admits a limit upper set `D` and infinite index sets `S ℓ` such that for every `j ∈ S ℓ`, `D` and
-`E j` agree on all exponents of degree at most `ℓ`. -/
-theorem exists_limit_upperSet (E : ℕ → UpperSet (σ →₀ ℕ)) :
+admits an upper set `D` and infinite index sets `S ℓ` such that for every `j ∈ S ℓ`, `D` and `E j`
+agree on all exponents of degree at most `ℓ`. -/
+theorem exists_upperSet_infinite_mem_iff (E : ℕ → UpperSet (σ →₀ ℕ)) :
     ∃ (D : UpperSet (σ →₀ ℕ)) (S : ℕ → Set ℕ),
       (∀ ℓ, (S ℓ).Infinite) ∧
       ∀ ℓ, ∀ j ∈ S ℓ, ∀ α : σ →₀ ℕ, α.degree ≤ ℓ → (α ∈ D ↔ α ∈ E j) := by
-  classical
   let B : ℕ → Finset (σ →₀ ℕ) := fun ℓ ↦ (finite_of_degree_le ℓ).toFinset
   let State (ℓ : ℕ) := { p : Set ℕ × Finset (σ →₀ ℕ) //
-    p.1.Infinite ∧ ∀ j ∈ p.1, (B ℓ).filter (· ∈ E j) = p.2 }
-  let step : (ℓ : ℕ) → State ℓ → State (ℓ + 1) := fun ℓ st ↦
-    have hex := exists_infinite_subset_filter_eq E (B (ℓ + 1)) st.2.1
-    ⟨(hex.choose, hex.choose_spec.2.2.choose), hex.choose_spec.2.1,
-      hex.choose_spec.2.2.choose_spec⟩
+    p.1.Infinite ∧ ∀ j ∈ p.1, ∀ α ∈ B ℓ, (α ∈ E j ↔ α ∈ p.2) }
+  let step : (ℓ : ℕ) → (st : State ℓ) → { next : State (ℓ + 1) // next.1.1 ⊆ st.1.1 } :=
+    fun ℓ st ↦
+      have hex := exists_infinite_subset_mem_iff E (B (ℓ + 1)) st.2.1
+      ⟨⟨(hex.choose, hex.choose_spec.2.2.choose), hex.choose_spec.2.1,
+        hex.choose_spec.2.2.choose_spec⟩, hex.choose_spec.1⟩
   let init : State 0 :=
-    have hex := exists_infinite_subset_filter_eq E (B 0) Set.infinite_univ
+    have hex := exists_infinite_subset_mem_iff E (B 0) Set.infinite_univ
     ⟨(hex.choose, hex.choose_spec.2.2.choose), hex.choose_spec.2.1,
       hex.choose_spec.2.2.choose_spec⟩
-  let seq : (ℓ : ℕ) → State ℓ := Nat.rec init step
+  let seq : (ℓ : ℕ) → State ℓ := Nat.rec init fun ℓ st ↦ (step ℓ st).1
   let S : ℕ → Set ℕ := fun ℓ ↦ (seq ℓ).1.1
   let A : ℕ → Finset (σ →₀ ℕ) := fun ℓ ↦ (seq ℓ).1.2
-  have hS_step (ℓ : ℕ) : S (ℓ + 1) ⊆ S ℓ :=
-    (exists_infinite_subset_filter_eq E (B (ℓ + 1)) (seq ℓ).2.1).choose_spec.1
+  have hS_step (ℓ : ℕ) : S (ℓ + 1) ⊆ S ℓ := (step ℓ (seq ℓ)).2
   have hS_anti : Antitone S := antitone_nat_of_succ_le hS_step
   have hS_inf (ℓ : ℕ) : (S ℓ).Infinite := (seq ℓ).2.1
-  have hA (ℓ : ℕ) {j : ℕ} (hj : j ∈ S ℓ) : (B ℓ).filter (· ∈ E j) = A ℓ := (seq ℓ).2.2 j hj
+  have hA (ℓ : ℕ) {j : ℕ} (hj : j ∈ S ℓ) {α : σ →₀ ℕ} (hα : α ∈ B ℓ) :
+      α ∈ E j ↔ α ∈ A ℓ := (seq ℓ).2.2 j hj α hα
   let Dset : Set (σ →₀ ℕ) := {α | α ∈ A α.degree}
   have hcons (ℓ : ℕ) {j : ℕ} (hj : j ∈ S ℓ) {α : σ →₀ ℕ} (hα : α.degree ≤ ℓ) :
       α ∈ Dset ↔ α ∈ E j := by
     have hj' : j ∈ S α.degree := hS_anti hα hj
     simp only [Dset, Set.mem_ofPred_eq]
-    rw [← hA α.degree hj', Finset.mem_filter]
-    exact ⟨fun h ↦ h.2, fun h ↦ ⟨(Set.Finite.mem_toFinset _).mpr (le_refl α.degree), h⟩⟩
+    exact (hA α.degree hj' ((Set.Finite.mem_toFinset _).mpr (le_refl α.degree))).symm
   have hD_upper : IsUpperSet Dset := by
     intro α β hαβ hα
     obtain ⟨j, hj⟩ := (hS_inf β.degree).nonempty
@@ -139,7 +121,7 @@ theorem exists_limit_upperSet (E : ℕ → UpperSet (σ →₀ ℕ)) :
 /-- By Dickson's lemma, every upper set `D` in `σ →₀ ℕ` (`[Finite σ]`) admits a degree bound `d`
 such that any upper set `E` containing all elements of `D` of degree at most `d` satisfies
 `(D : Set (σ →₀ ℕ)) ⊆ E`. -/
-theorem exists_subset_of_degree_le (D : UpperSet (σ →₀ ℕ)) :
+theorem exists_forall_subset_of_forall_degree_le (D : UpperSet (σ →₀ ℕ)) :
     ∃ d : ℕ, ∀ E : UpperSet (σ →₀ ℕ),
       (∀ α : σ →₀ ℕ, α.degree ≤ d → α ∈ D → α ∈ E) → (D : Set (σ →₀ ℕ)) ⊆ E := by
   classical
@@ -155,7 +137,7 @@ theorem exists_subset_of_degree_le (D : UpperSet (σ →₀ ℕ)) :
 /-- **Bierstone–Milman lexicographic well-foundedness**: in finitely many variables, the set of
 complement-counting functions `ℓ ↦ ({α | α.degree ≤ ℓ} \ D).ncard` realized by upper sets
 `D : UpperSet (σ →₀ ℕ)` is well-founded in the lexicographic order on `ℕ → ℕ`. -/
-theorem isWF_range_toLex_ncard_degree_le_diff (σ : Type*) [Finite σ] :
+theorem isWF_range_toLex_ncard_degree_le_sdiff (σ : Type*) [Finite σ] :
     (Set.range fun D : UpperSet (σ →₀ ℕ) ↦
       toLex fun ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (D : Set (σ →₀ ℕ))).ncard).IsWF := by
   classical
@@ -163,8 +145,8 @@ theorem isWF_range_toLex_ncard_degree_le_diff (σ : Type*) [Finite σ] :
   refine Set.isWF_iff_no_descending_seq.mpr fun f hf hmem ↦ ?_
   choose E hE using hmem
   dsimp only at hE
-  obtain ⟨D, S, hS_inf, hcons⟩ := exists_limit_upperSet E
-  obtain ⟨d, hd⟩ := exists_subset_of_degree_le D
+  obtain ⟨D, S, hS_inf, hcons⟩ := exists_upperSet_infinite_mem_iff E
+  obtain ⟨d, hd⟩ := exists_forall_subset_of_forall_degree_le D
   have hle_cD {j : ℕ} (hj : j ∈ S d) (m : ℕ) : c (E j) m ≤ c D m :=
     Set.ncard_le_ncard (Set.sdiff_subset_sdiff_right (hd (E j) fun α hα ↦ (hcons d j hj α hα).mp))
       (finite_of_degree_le m).sdiff
@@ -197,20 +179,19 @@ theorem isWF_range_toLex_ncard_degree_le_diff (σ : Type*) [Finite σ] :
 
 /-- Any lexicographically antitone sequence of complement-counting functions realized by upper sets
 in `σ →₀ ℕ` (`[Finite σ]`) is eventually constant. -/
-theorem exists_ncard_degree_le_diff_eq_of_antitone_lex (E : ℕ → UpperSet (σ →₀ ℕ))
+theorem exists_ncard_degree_le_sdiff_eq_of_antitone_lex (E : ℕ → UpperSet (σ →₀ ℕ))
     (hE : Antitone fun j ↦
       toLex fun ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (E j : Set (σ →₀ ℕ))).ncard) :
     ∃ j₀, ∀ j, j₀ ≤ j →
       ∀ ℓ, ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (E j : Set (σ →₀ ℕ))).ncard =
         ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (E j₀ : Set (σ →₀ ℕ))).ncard := by
-  let S := Set.range fun D : UpperSet (σ →₀ ℕ) ↦
-    toLex fun ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (D : Set (σ →₀ ℕ))).ncard
-  have : WellFoundedLT S := isWF_range_toLex_ncard_degree_le_diff σ
-  let u : ℕ → S := fun j ↦ ⟨_, ⟨E j, rfl⟩⟩
-  obtain ⟨j₀, hj₀⟩ := WellFoundedLT.antitone_chain_condition (f := u) (fun a b hab ↦ hE hab)
+  have hwf := (isWF_range_toLex_ncard_degree_le_sdiff σ).mono
+    (Set.range_subset_iff.mpr fun j ↦ ⟨E j, rfl⟩)
+  obtain ⟨j₀, hj₀⟩ := hwf.min_mem (Set.range_nonempty _)
   refine ⟨j₀, fun j hj ℓ ↦ ?_⟩
-  have heq := congrArg (fun x : S ↦ ofLex x.1 ℓ) (hj₀ j hj)
-  exact heq.symm
+  have heq := eq_of_le_of_not_lt (hE hj)
+    (hj₀ ▸ hwf.not_lt_min (Set.range_nonempty _) ⟨j, rfl⟩)
+  exact congrArg (fun x : Lex (ℕ → ℕ) ↦ ofLex x ℓ) heq
 
 end UpperSetStabilization
 

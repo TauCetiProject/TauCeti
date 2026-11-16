@@ -63,6 +63,9 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
 * `MonomialOrder.isCompl_restrictScalars_complementSubmodule`,
   `MonomialOrder.snd_eq_normalRemainder_of_eq_sum_mul_add`: complement decomposition and agreement
   of formal-division remainders with `ord.normalRemainder I`.
+* `MonomialOrder.order_le_order_normalRemainder`,
+  `MonomialOrder.normalRemainder_mem_maximalIdeal_pow`: normal remainders for a degree-compatible
+  monomial order never drop total-degree order and preserve maximal-ideal powers.
 * `MonomialOrder.eq_standardGenerator_iff`, `MonomialOrder.initialExp_standardGenerator`,
   `MonomialOrder.span_image_standardGenerator_initialDiagramVertices`: uniqueness, initial data,
   and ideal generation for Hironaka's normalized vertex generators.
@@ -864,6 +867,31 @@ theorem coeff_normalRemainder_eq_zero_of_isLowerSet {I : Ideal (MvPowerSeries σ
   rw [← ord.snd_eq_normalRemainder_of_eq_sum_mul_add hFI hD hdiv hR]
   exact (ord.coeff_eq_zero_and_coeff_eq_zero_of_isLowerSet hα hu hQ hR hS
     fun γ hγ ↦ hdiv ▸ hG γ hγ).2
+
+/-- For a degree-compatible monomial order `ord`, taking the normal remainder modulo `I` does not
+decrease total-degree order. -/
+theorem order_le_order_normalRemainder (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) (f : MvPowerSeries σ K) :
+    f.order ≤ (ord.normalRemainder I f).order := by
+  have hS : IsLowerSet {s : ord.syn | ((ord.toSyn.symm s).degree : ℕ∞) < f.order} :=
+    fun _ _ hle (hs : _ < f.order) ↦ lt_of_le_of_lt (Nat.cast_le (α := ℕ∞).mpr (hdeg hle)) hs
+  have hf : ∀ γ, ord.toSyn γ ∈ {s : ord.syn | ((ord.toSyn.symm s).degree : ℕ∞) < f.order} →
+      MvPowerSeries.coeff γ f = 0 := by
+    intro γ hγ
+    simp only [Set.mem_ofPred_eq, AddEquiv.symm_apply_apply] at hγ
+    exact MvPowerSeries.coeff_of_lt_order hγ
+  have hrem := ord.coeff_normalRemainder_eq_zero_of_isLowerSet (I := I) hS hf
+  refine MvPowerSeries.le_order fun γ hγ ↦ hrem γ ?_
+  simpa only [Set.mem_ofPred_eq, AddEquiv.symm_apply_apply] using hγ
+
+/-- For a degree-compatible monomial order `ord`, the normal-remainder projection modulo `I`
+preserves every power `𝔪 ^ n` of the maximal ideal of `MvPowerSeries σ K`. -/
+theorem normalRemainder_mem_maximalIdeal_pow (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) {f : MvPowerSeries σ K} {n : ℕ}
+    (hf : f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n) :
+    ord.normalRemainder I f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n := by
+  rw [MvPowerSeries.mem_maximalIdeal_pow_iff_le_order] at hf ⊢
+  exact hf.trans (ord.order_le_order_normalRemainder hdeg I f)
 
 /-- For `v ∈ ord.initialDiagram I`, `ord.standardGenerator I v` has `ord`-initial exponent `v`. -/
 @[simp]
