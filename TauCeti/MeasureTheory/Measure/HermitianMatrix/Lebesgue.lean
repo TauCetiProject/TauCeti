@@ -163,20 +163,11 @@ private theorem addHaar_hermScaled (n : ℕ) :
 
 private theorem card_offDiag_fin_prod (n : ℕ) :
     (Finset.univ.filter fun p : Fin n × Fin n => p.1 ≠ p.2).card = n * (n - 1) := by
-  have hdiag : (Finset.univ.filter fun p : Fin n × Fin n => p.1 = p.2).card = n := by
-    have hbij : (Finset.univ.filter fun p : Fin n × Fin n => p.1 = p.2) =
-        Finset.univ.image fun i : Fin n => (i, i) := by
-      ext ⟨i, j⟩
-      simp [eq_comm]
-    rw [hbij, Finset.card_image_of_injective _ (fun _ _ h => (Prod.mk.inj h).1), Finset.card_fin]
-  have hsum := Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset (Fin n × Fin n)))
-    (p := fun p => p.1 = p.2)
-  simp only [Finset.card_univ, Fintype.card_prod, Fintype.card_fin, hdiag, ← ne_eq] at hsum
-  rcases n with _ | k
-  · simp
-  · rw [Nat.add_sub_cancel]
-    have : (k + 1) * (k + 1) = (k + 1) + (k + 1) * k := by ring
-    omega
+  have h : (Finset.univ.filter fun p : Fin n × Fin n => p.1 ≠ p.2) =
+      (Finset.univ : Finset (Fin n)).offDiag := by
+    ext ⟨i, j⟩
+    simp
+  rw [h, Finset.offDiag_card, Finset.card_fin, Nat.mul_sub_left_distrib, mul_one]
 
 private theorem prod_hermScale_inv (n : ℕ) :
     (((∏ p, hermScale n p)⁻¹ : ℝˣ) : ℝ) = (2 : ℝ) ^ (n * (n - 1) / 2) := by

@@ -207,10 +207,7 @@ theorem map_smul_stdGaussian_eq_withDensity (E : Type*) [NormedAddCommGroup E]
       volume.withDensity fun x =>
         ENNReal.ofReal ((2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) *
           exp (-‖x‖ ^ 2 / (2 * c ^ 2))) := by
-  let A : E ≃L[ℝ] E :=
-    (LinearEquiv.ofLinearMap (c • LinearMap.id) (c⁻¹ • LinearMap.id)
-      (by ext x; simp [smul_smul, mul_inv_cancel₀ hc])
-      (by ext x; simp [smul_smul, inv_mul_cancel₀ hc])).toContinuousLinearEquiv
+  let A : E ≃L[ℝ] E := (LinearEquiv.smulOfNeZero ℝ E c hc).toContinuousLinearEquiv
   have hdet : LinearMap.det (A : E →ₗ[ℝ] E) = c ^ Module.finrank ℝ E := by
     have hA : (A : E →ₗ[ℝ] E) = c • LinearMap.id := by
       ext x
@@ -229,7 +226,7 @@ theorem map_smul_stdGaussian_eq_withDensity (E : Type*) [NormedAddCommGroup E]
     congr 1
     push_cast
     ring
-  have hAsymm : A.symm y = c⁻¹ • y := rfl
+  have hAsymm : A.symm y = c⁻¹ • y := by simp [A, Units.smul_def]
   have hnorm : -‖A.symm (y - 0)‖ ^ 2 / 2 = -‖y‖ ^ 2 / (2 * c ^ 2) := by
     rw [sub_zero, hAsymm, norm_smul, norm_inv, Real.norm_eq_abs, mul_pow, inv_pow, sq_abs]
     field_simp
