@@ -62,10 +62,10 @@ tori is not done here.
   `SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative`:
   the same statements for an area-preserving map of a surface, with the orbit tori labelled by the
   linearized return maps of the orbits.
-* `orbitZeta_closedOrbitHomologyClass_sub_tprod_fixedPointDerivative_mem_periodFiltration`:
-  for a map nondegenerate only up to period `T` and finitely many periodic points, the product of
+* For a map nondegenerate only up to period `T` and finitely many periodic points, the product of
   their orbit-torus series agrees with the orbit zeta function at every class of period at most
-  `T`.
+  `T`:
+`orbitZeta_closedOrbitHomologyClass_sub_mapRingHom_tprod_fixedPointDerivative_mem_periodFiltration`.
 
 ## References
 
@@ -266,7 +266,8 @@ any `ℚ`-algebra `K` the product of the orbit-torus series labelled by `D i` ag
 `exp (∑ᵢ ∑_{n ≥ 1} sgn det (1 - d(φ^[d i * n])_(x i)) e^(n [γ_(x i)]) / n)` in
 `Nov(K, H₁(Y_φ; ℤ), N)`: their coefficients at every class of period at most `T` coincide.
 Periodic points of period greater than `T` may be degenerate. -/
-theorem orbitZeta_closedOrbitHomologyClass_sub_tprod_fixedPointDerivative_mem_periodFiltration
+theorem
+  orbitZeta_closedOrbitHomologyClass_sub_mapRingHom_tprod_fixedPointDerivative_mem_periodFiltration
     [Finite ι] {T : ℕ} (hφT : IsNondegenerateUpToPeriod I φ T) (hE : Module.finrank ℝ E = 2)
     (hσ : σ.IsNondegenerate) (hφσ : SmoothForm.mpullback φ φ.contMDiff σ = σ) (K : Type*)
     [CommRing K] [Algebra ℚ K] :
