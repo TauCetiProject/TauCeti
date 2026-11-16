@@ -12,9 +12,9 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 
 This file records elementary consequences of the submultiplicativity of the norm, an estimate for
 `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, and norm bounds for powers of units —
-including the shell lemma `Units.exists_lt_norm_zpow_lt` showing that integer powers of a unit `u`
-with `‖u‖ < 1` in a nontrivial normed ring visit every interval `(a, b)` with `0 ≤ a` and
-`a * ‖u⁻¹‖ < b`.
+including the shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers
+of a unit `u` with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with
+`0 ≤ a` and `a * ‖u⁻¹‖ < b`.
 -/
 
 public section
@@ -87,11 +87,10 @@ theorem _root_.Units.norm_le_norm_inv_pow_mul_norm_pow_mul {R : Type*} [Seminorm
     ‖x‖ ≤ ‖((u⁻¹ : Rˣ) : R)‖ ^ n * ‖(u : R) ^ n * x‖ := by
   rcases n with _ | n
   · simp
-  · have hx : x = ((u⁻¹ : Rˣ) : R) ^ (n + 1) * ((u : R) ^ (n + 1) * x) := by
-      rw [← mul_assoc, ← Units.val_pow_eq_pow_val, ← Units.val_pow_eq_pow_val, ← Units.val_mul,
-        inv_pow, inv_mul_cancel, Units.val_one, one_mul]
-    calc ‖x‖ = ‖((u⁻¹ : Rˣ) : R) ^ (n + 1) * ((u : R) ^ (n + 1) * x)‖ := congrArg norm hx
-      _ ≤ ‖((u⁻¹ : Rˣ) : R) ^ (n + 1)‖ * ‖(u : R) ^ (n + 1) * x‖ := norm_mul_le _ _
+  · calc ‖x‖ = ‖(↑((u ^ (n + 1))⁻¹) : R) * (↑(u ^ (n + 1)) * x)‖ := by
+          rw [Units.inv_mul_cancel_left]
+      _ ≤ ‖(↑((u ^ (n + 1))⁻¹) : R)‖ * ‖↑(u ^ (n + 1)) * x‖ := norm_mul_le _ _
+      _ = ‖((u⁻¹ : Rˣ) : R) ^ (n + 1)‖ * ‖(u : R) ^ (n + 1) * x‖ := by simp
       _ ≤ ‖((u⁻¹ : Rˣ) : R)‖ ^ (n + 1) * ‖(u : R) ^ (n + 1) * x‖ :=
           mul_le_mul_of_nonneg_right (norm_pow_le' _ n.succ_pos) (norm_nonneg _)
 
@@ -104,8 +103,9 @@ theorem _root_.Units.one_le_norm_pow_mul_norm_zpow_neg {R : Type*} [NormedRing R
 
 /-- **Shells for submultiplicative unit powers.** In a nontrivial normed ring, the norms of integer
 powers of a unit `u` with `‖u‖ < 1` visit every open interval `(a, b)` with `0 ≤ a` and
-`a * ‖u⁻¹‖ < b`. Unlike `exists_mem_Ico_zpow` or `TauCeti.NormedRing.PseudoUniformizer`, the norm
-need not be multiplicative on `u`. -/
+`a * ‖u⁻¹‖ < b`. Unlike `rescale_to_shell_zpow` (which applies `exists_mem_Ico_zpow` using
+multiplicativity `‖u ^ z‖ = ‖u‖ ^ z`) or `TauCeti.NormedRing.PseudoUniformizer`, the norm need
+not be multiplicative on `u`. -/
 theorem _root_.Units.exists_lt_norm_zpow_lt {R : Type*} [NormedRing R] [Nontrivial R]
     (u : Rˣ) (hu : ‖(u : R)‖ < 1) {a b : ℝ} (ha : 0 ≤ a)
     (hab : a * ‖((u⁻¹ : Rˣ) : R)‖ < b) :

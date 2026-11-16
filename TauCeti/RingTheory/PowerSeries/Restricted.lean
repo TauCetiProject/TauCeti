@@ -44,9 +44,11 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
 * `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
   is restricted at `c`.
-* `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
-  `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
-  with those on the ambient formal series.
+* `TauCeti.PowerSeries.algebraOfCMem`,
+  `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring`, and
+  `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: any subsemiring of power series containing
+  all constant series inherits coefficientwise scalar actions and scalar towers from the
+  coefficient ring, specializing to restricted series.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
 * `TauCeti.PowerSeries.exists_isUnit_isMonicOfDegree_mul_eq_of_isUnit_leadingCoeff`: move a unit
   leading coefficient from a polynomial factor to its restricted-unit cofactor.
@@ -143,34 +145,61 @@ theorem _root_.PowerSeries.IsRestricted.exists_nonneg_norm_coeff_mul_pow_le
 
 section Algebra
 
+/-- An algebra structure on the coefficients induces one on any subsemiring (in particular, any
+subring) of `R⟦X⟧` containing all constant series, with scalars acting as on the ambient formal
+series. -/
+noncomputable abbrev algebraOfCMem {R S σ : Type*} [Semiring R] [CommSemiring S] [Algebra S R]
+    [SetLike σ (PowerSeries R)] [SubsemiringClass σ (PowerSeries R)] (T : σ)
+    (hC : ∀ a : R, PowerSeries.C a ∈ T) : Algebra S T where
+  smul s f := ⟨s • (f : PowerSeries R), by
+    rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
+    exact mul_mem (hC (algebraMap S R s)) f.2⟩
+  algebraMap := (algebraMap S (PowerSeries R)).codRestrict T fun s ↦ by
+    rw [PowerSeries.algebraMap_apply]
+    exact hC _
+  commutes' s f := Subtype.ext <| by
+    simpa only [MulMemClass.coe_mul, RingHom.codRestrict_apply] using
+      Algebra.commutes s (f : PowerSeries R)
+  smul_def' s f := Subtype.ext <| by
+    rw [MulMemClass.coe_mul, RingHom.codRestrict_apply]
+    exact Algebra.smul_def s (f : PowerSeries R)
+
+/-- Under `algebraOfCMem`, a scalar maps to the constant series of its image in the coefficient
+ring. -/
+theorem coe_algebraMap_algebraOfCMem {R S σ : Type*} [Semiring R] [CommSemiring S] [Algebra S R]
+    [SetLike σ (PowerSeries R)] [SubsemiringClass σ (PowerSeries R)] (T : σ)
+    (hC : ∀ a : R, PowerSeries.C a ∈ T) (s : S) :
+    ((@algebraMap S T _ _ (algebraOfCMem T hC) s : T) : PowerSeries R) =
+      PowerSeries.C (algebraMap S R s) :=
+  (RingHom.codRestrict_apply _ _ _ s).trans PowerSeries.algebraMap_apply
+
+/-- Scalar towers on the coefficients induce scalar towers on any subsemiring of `R⟦X⟧` equipped
+with `algebraOfCMem`. -/
+theorem isScalarTower_algebraOfCMem {R S T σ : Type*} [Semiring R] [CommSemiring S]
+    [CommSemiring T] [Algebra S R] [Algebra T R] [SMul S T] [IsScalarTower S T R]
+    [SetLike σ (PowerSeries R)] [SubsemiringClass σ (PowerSeries R)] (U : σ)
+    (hC : ∀ a : R, PowerSeries.C a ∈ U) :
+    @IsScalarTower S T U _ (algebraOfCMem (S := T) U hC).toSMul
+      (algebraOfCMem (S := S) U hC).toSMul :=
+  @IsScalarTower.mk S T U _ (algebraOfCMem (S := T) U hC).toSMul
+    (algebraOfCMem (S := S) U hC).toSMul fun s t f ↦
+      Subtype.ext (smul_assoc s t (f : PowerSeries R))
+
 variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {c : ℝ}
 
 /-- An algebra structure on the coefficients induces one on restricted power series through
 constant series. Scalars act as on the ambient formal series, and the coefficient ring need not
 be commutative. -/
 noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] :
-    Algebra S (PowerSeries.IsRestricted.subring (R := R) c) where
-  smul s f := ⟨s • (f : PowerSeries R), by
-    rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
-    exact (PowerSeries.isRestricted_C c (algebraMap S R s)).mul f.2⟩
-  algebraMap := (algebraMap S (PowerSeries R)).codRestrict _ fun s ↦ by
-    rw [PowerSeries.algebraMap_apply]
-    exact PowerSeries.isRestricted_C c _
-  commutes' s f := Subtype.ext <| by
-    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using
-      Algebra.commutes s (f : PowerSeries R)
-  smul_def' s f := Subtype.ext <| by
-    rw [Subring.coe_mul, RingHom.codRestrict_apply]
-    convert Algebra.smul_def s (f : PowerSeries R) using 1
+    Algebra S (PowerSeries.IsRestricted.subring (R := R) c) :=
+  algebraOfCMem _ (PowerSeries.isRestricted_C c)
 
 /-- A scalar maps to the constant restricted series of its image in the coefficient ring. -/
 @[simp]
 theorem coe_algebraMap_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
     (algebraMap S (PowerSeries.IsRestricted.subring (R := R) c) s : PowerSeries R) =
-      PowerSeries.C (algebraMap S R s) := by
-  calc
-    _ = algebraMap S (PowerSeries R) s := (rfl)
-    _ = _ := PowerSeries.algebraMap_apply
+      PowerSeries.C (algebraMap S R s) :=
+  coe_algebraMap_algebraOfCMem _ (PowerSeries.isRestricted_C c) s
 
 /-- Scalars act on restricted series as on their underlying formal power series. -/
 @[simp]
@@ -182,10 +211,8 @@ theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] 
 /-- Scalar towers on the coefficients induce scalar towers on restricted power series. -/
 instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
     [SMul S T] [IsScalarTower S T R] :
-    IsScalarTower S T (PowerSeries.IsRestricted.subring (R := R) c) where
-  smul_assoc s t f := Subtype.ext <| by
-    simp only [coe_smul_isRestrictedSubring]
-    exact smul_assoc s t (f : PowerSeries R)
+    IsScalarTower S T (PowerSeries.IsRestricted.subring (R := R) c) :=
+  isScalarTower_algebraOfCMem _ (PowerSeries.isRestricted_C c)
 
 end Algebra
 

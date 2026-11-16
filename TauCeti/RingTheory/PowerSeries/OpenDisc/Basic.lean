@@ -334,26 +334,15 @@ theorem OnOpenDisc.coe_polynomialHom (p : Polynomial R) :
 series. Scalars act as on the ambient formal series, and the coefficient ring need not be
 commutative. -/
 noncomputable instance OnOpenDisc.instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
-    Algebra S (OnOpenDisc.subring R R₀) where
-  smul s h := ⟨s • (h : R⟦X⟧), by
-    rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
-    exact (onOpenDisc_C (algebraMap S R s)).mul h.2⟩
-  algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ by
-    rw [PowerSeries.algebraMap_apply]
-    exact onOpenDisc_C _
-  commutes' s h := Subtype.ext <| by
-    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using Algebra.commutes s (h : R⟦X⟧)
-  smul_def' s h := Subtype.ext <| by
-    rw [Subring.coe_mul, RingHom.codRestrict_apply]
-    convert Algebra.smul_def s (h : R⟦X⟧) using 1
+    Algebra S (OnOpenDisc.subring R R₀) :=
+  TauCeti.PowerSeries.algebraOfCMem _ fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)
 
 /-- A scalar maps to the constant open-disc series of its image in the coefficient ring. -/
 @[simp]
 theorem OnOpenDisc.coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
-    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) := by
-  calc
-    _ = algebraMap S R⟦X⟧ s := (rfl)
-    _ = _ := PowerSeries.algebraMap_apply
+    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) :=
+  TauCeti.PowerSeries.coe_algebraMap_algebraOfCMem _
+    (fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)) s
 
 /-- Scalars act on open-disc series as on their underlying formal power series. -/
 @[simp]
@@ -364,10 +353,9 @@ theorem OnOpenDisc.coe_smul_subring {S : Type*} [CommSemiring S] [Algebra S R] (
 /-- Scalar towers on the coefficients induce scalar towers on open-disc power series. -/
 instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
     [SMul S T] [IsScalarTower S T R] :
-    IsScalarTower S T (OnOpenDisc.subring R R₀) where
-  smul_assoc s t h := Subtype.ext <| by
-    simp only [OnOpenDisc.coe_smul_subring]
-    exact smul_assoc s t (h : R⟦X⟧)
+    IsScalarTower S T (OnOpenDisc.subring R R₀) :=
+  TauCeti.PowerSeries.isScalarTower_algebraOfCMem _
+    fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)
 
 variable (R) in
 /-- The subring of series on the open disc of radius `R₀` shrinks as `R₀` grows. -/

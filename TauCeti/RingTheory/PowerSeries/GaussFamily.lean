@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Huber.Bounded
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.Huber.Normed
 
 /-!
 # The Gauss topology of a family of radii
@@ -23,7 +24,8 @@ where they are all positive radii. This file develops the topology on `T` given 
 norms at all the radii `ρ i` once, so that each of these algebras is a specialization.
 
 The subring is described by a membership condition `hT`, and its uniformity by the hypothesis
-that restriction to the closed discs of all radii is uniformly inducing. Under these hypotheses,
+that restriction to the closed discs of all radii is uniformly inducing (with purely topological
+results requiring only that it is topologically inducing). Under these hypotheses,
 convergence is convergence in each Gauss norm, and it may be tested at any family of radii that
 dominates `ρ`. The resulting uniform ring is a topological ring in which polynomial truncations
 converge. When `ι` is nonempty, restriction is a uniform embedding whose image consists of the
@@ -55,13 +57,15 @@ algebra is Hausdorff when `ι` is nonempty and is complete when `R` is complete.
 * `TauCeti.PowerSeries.GaussFamily.range_restrictFamily` and
   `TauCeti.PowerSeries.GaussFamily.range_restrictSubfamily_eq_compatibleSubring`: the images of
   the full and monotone-cofinal restriction embeddings.
-* `TauCeti.PowerSeries.GaussFamily.isTopologicalRing`, `TauCeti.PowerSeries.GaussFamily.t2Space`
-  and `TauCeti.PowerSeries.GaussFamily.completeSpace`: the ring structure, separation (for nonempty
-  `ι`), and completeness of the Gauss topology.
+* `TauCeti.PowerSeries.GaussFamily.isTopologicalRing`,
+  `TauCeti.PowerSeries.GaussFamily.continuousSMul`, `TauCeti.PowerSeries.GaussFamily.t2Space`, and
+  `TauCeti.PowerSeries.GaussFamily.completeSpace`: the ring and scalar-action continuity,
+  separation (for nonempty `ι`), and completeness of the Gauss topology.
 * `TauCeti.PowerSeries.GaussFamily.not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem`,
   `TauCeti.PowerSeries.GaussFamily.not_isBounded_of_mem_nhds_zero`,
   `TauCeti.PowerSeries.GaussFamily.not_exists_ringSeminorm_toTopologicalSpace_eq`,
   `TauCeti.PowerSeries.GaussFamily.not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le`,
+  `TauCeti.PowerSeries.GaussFamily.not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le`,
   and `TauCeti.PowerSeries.GaussFamily.not_isNormableSpace`: when `ι` is nonempty and the radii
   have no maximum, `T` admits no bounded zero-neighborhood and no compatible ring seminorm,
   scalar-bounded additive group seminorm, or normable space structure over a nontrivial ultrametric
@@ -75,6 +79,19 @@ open Filter PowerSeries
 open scoped Topology Uniformity Pointwise
 
 namespace TauCeti.PowerSeries.GaussFamily
+
+private theorem hasBasis_nhds_zero_of_addGroupSeminorm {G : Type*} [AddCommGroup G]
+    [t : TopologicalSpace G] (p : AddGroupSeminorm G)
+    (htop : p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace = t) :
+    (𝓝 (0 : G)).HasBasis (0 < ·) fun r ↦ {x : G | p x < r} := by
+  subst htop
+  let : SeminormedAddCommGroup G := p.toSeminormedAddCommGroup
+  have hball : (fun r ↦ {x : G | p x < r}) = Metric.ball (0 : G) := by
+    ext r x
+    simp only [Set.mem_ofPred_eq, mem_ball_zero_iff]
+    rfl
+  rw [hball]
+  exact Metric.nhds_basis_ball
 
 section Family
 
@@ -121,15 +138,24 @@ theorem restrictSubfamily_apply {κ : Type*} (σ : κ → ι) (f : T) (k : κ) :
     restrictSubfamily hT σ f k = restrict hT (σ k) f :=
   (rfl)
 
+private theorem restrictSubfamily_eq_restrictFamily {κ : Type*} {σ : κ → ι}
+    (hT' : ∀ f : R⟦X⟧, f ∈ T ↔ ∀ k, f.IsRestricted (ρ (σ k))) :
+    restrictSubfamily hT σ = restrictFamily hT' :=
+  RingHom.ext fun f ↦ funext fun k ↦ Subtype.ext <| by
+    simp only [restrictSubfamily_apply, restrictFamily_apply, coe_restrict]
+
 /-- Any nonempty subfamily of closed-disc restrictions determines a series in `T`. -/
 theorem restrictSubfamily_injective {κ : Type*} [Nonempty κ] (σ : κ → ι) :
     Function.Injective (restrictSubfamily hT σ) := by
   intro f g h
-  exact Subtype.ext (congrArg (fun h ↦ (h (Classical.arbitrary κ) : R⟦X⟧)) h)
+  have hval := congrArg (fun x ↦ (x (Classical.arbitrary κ) : R⟦X⟧)) h
+  simp only [restrictSubfamily_apply, coe_restrict] at hval
+  exact Subtype.ext hval
 
 /-- The family of closed-disc restrictions determines a series in `T`. -/
-theorem restrictFamily_injective [Nonempty ι] : Function.Injective (restrictFamily hT) :=
-  restrictSubfamily_injective hT id
+theorem restrictFamily_injective [Nonempty ι] : Function.Injective (restrictFamily hT) := by
+  rw [← restrictSubfamily_eq_restrictFamily hT (σ := id) hT]
+  exact restrictSubfamily_injective hT id
 
 /-- The restriction image consists exactly of families with radius-independent coefficients. -/
 theorem range_restrictFamily :
@@ -164,8 +190,9 @@ index-independent formal coefficients. -/
 theorem range_restrictSubfamily {κ : Type*} {σ : κ → ι} (hρ : ∀ i, 0 ≤ ρ i)
     (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) :
     Set.range (restrictSubfamily hT σ) =
-      {g | ∀ k l : κ, ∀ n : ℕ, coeff n (g k : R⟦X⟧) = coeff n (g l : R⟦X⟧)} :=
-  range_restrictFamily (mem_iff_forall_isRestricted_subfamily hT hρ hσ)
+      {g | ∀ k l : κ, ∀ n : ℕ, coeff n (g k : R⟦X⟧) = coeff n (g l : R⟦X⟧)} := by
+  rw [restrictSubfamily_eq_restrictFamily hT (mem_iff_forall_isRestricted_subfamily hT hρ hσ)]
+  exact range_restrictFamily (mem_iff_forall_isRestricted_subfamily hT hρ hσ)
 
 variable [∀ i, Fact (0 < ρ i)]
 
@@ -195,8 +222,9 @@ omit [∀ i, Fact (0 < ρ i)] in
 `restrictSubfamily` is closed in the corresponding product of closed-disc algebras. -/
 theorem isClosed_range_restrictSubfamily {κ : Type*} {σ : κ → ι} [∀ k, Fact (0 < ρ (σ k))]
     (hρ : ∀ i, 0 ≤ ρ i) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) :
-    IsClosed (Set.range (restrictSubfamily hT σ)) :=
-  isClosed_range_restrictFamily (mem_iff_forall_isRestricted_subfamily hT hρ hσ)
+    IsClosed (Set.range (restrictSubfamily hT σ)) := by
+  rw [restrictSubfamily_eq_restrictFamily hT (mem_iff_forall_isRestricted_subfamily hT hρ hσ)]
+  exact isClosed_range_restrictFamily (mem_iff_forall_isRestricted_subfamily hT hρ hσ)
 
 section Inducing
 
@@ -267,17 +295,6 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → T} :
   rw [hu.isInducing.continuous_iff, continuous_pi_iff]
   rfl
 
-/-- Constant inclusion `constHom` is continuous for the Gauss topology on `T`. -/
-theorem continuous_constHom : Continuous (constHom hT) := by
-  rw [continuous_iff hu]
-  intro i
-  let ψ : R →+ IsRestricted.subring (R := R) (ρ i) :=
-    ((restrict hT i).comp (constHom hT)).toAddMonoidHom
-  refine continuous_of_continuousAt_zero ψ (Metric.continuousAt_iff.mpr fun ε hε ↦ ⟨ε, hε, ?_⟩)
-  intro c hc
-  have hψc : ψ c = ⟨PowerSeries.C c, isRestricted_C (ρ i) c⟩ := Subtype.ext (by simp [ψ])
-  simpa [dist_zero_right, hψc, TauCeti.PowerSeries.norm_C] using hc
-
 /-- A map into `T` is uniformly continuous exactly when each restriction is. -/
 theorem uniformContinuous_iff {X : Type*} [UniformSpace X] {f : X → T} :
     UniformContinuous f ↔ ∀ i, UniformContinuous fun x ↦ restrict hT i (f x) := by
@@ -328,22 +345,59 @@ theorem uniformContinuous_coeff (n : ℕ) : UniformContinuous fun f : T ↦ coef
   have h := TauCeti.PowerSeries.uniformContinuous_coeff (R := R) (c := ρ (Classical.arbitrary ι)) n
   exact h.comp (uniformContinuous_restrict hu (Classical.arbitrary ι))
 
+end Inducing
+
+section TopologicalInducing
+
+variable {hT} [t : TopologicalSpace T] (ht : Topology.IsInducing (restrictFamily hT))
+include ht
+
+/-- Constant inclusion `constHom` is continuous for the Gauss topology on `T`. -/
+theorem continuous_constHom : Continuous (constHom hT) := by
+  rw [ht.continuous_iff, continuous_pi_iff]
+  intro i
+  simp only [Function.comp_def, restrictFamily_apply]
+  let ψ : R →+ IsRestricted.subring (R := R) (ρ i) :=
+    ((restrict hT i).comp (constHom hT)).toAddMonoidHom
+  refine continuous_of_continuousAt_zero ψ (Metric.continuousAt_iff.mpr fun ε hε ↦ ⟨ε, hε, ?_⟩)
+  intro c hc
+  have hψc : ψ c = ⟨PowerSeries.C c, isRestricted_C (ρ i) c⟩ := Subtype.ext (by simp [ψ])
+  simpa [dist_zero_right, hψc, TauCeti.PowerSeries.norm_C] using hc
+
+/-- Coefficientwise scalar multiplication is continuous for the Gauss topology on `T`. -/
+theorem continuousSMul {S : Type*} [Semiring S] [TopologicalSpace S] [Module S R]
+    [IsScalarTower S R R] [ContinuousSMul S R] [SMul S T]
+    (hsmul : ∀ (s : S) (f : T), ((s • f : T) : R⟦X⟧) = s • (f : R⟦X⟧)) :
+    ContinuousSMul S T := by
+  have : ContinuousMul T := ht.continuousMul (restrictFamily hT)
+  refine ⟨?_⟩
+  have heq : (fun p : S × T ↦ p.1 • p.2) = fun p ↦ constHom hT (p.1 • (1 : R)) * p.2 := by
+    ext ⟨s, f⟩ : 1
+    apply Subtype.ext
+    ext n
+    rw [hsmul, PowerSeries.coeff_smul, Subring.coe_mul, coe_constHom, PowerSeries.coeff_C_mul,
+      smul_mul_assoc, one_mul]
+  rw [heq]
+  exact ((continuous_constHom ht).comp (continuous_fst.smul continuous_const)).mul continuous_snd
+
+variable [Nonempty ι]
+
 /-- When `ι` is nonempty, every zero-neighborhood for the Gauss topology contains a single
 closed-disc Gauss ball. -/
 theorem exists_norm_restrict_lt_imp_mem {U : Set T} (hU : U ∈ 𝓝 0) :
     ∃ i₀ : ι, ∃ δ > 0, ∀ f : T, ‖restrict hT i₀ f‖ < δ → f ∈ U := by
-  rw [hu.isInducing.nhds_eq_comap, map_zero, Filter.mem_comap] at hU
+  rw [ht.nhds_eq_comap, map_zero, Filter.mem_comap] at hU
   obtain ⟨V, hV, hVU⟩ := hU
   rw [nhds_pi, Filter.mem_pi'] at hV
-  obtain ⟨s, t, ht, hstV⟩ := hV
-  choose ε hεpos hεt using fun i ↦ Metric.mem_nhds_iff.mp (ht i)
+  obtain ⟨s, u, hu, hsuV⟩ := hV
+  choose ε hεpos hεu using fun i ↦ Metric.mem_nhds_iff.mp (hu i)
   rcases s.eq_empty_or_nonempty with rfl | hs
-  · refine ⟨Classical.arbitrary ι, 1, one_pos, fun f _ ↦ hVU (hstV ?_)⟩
+  · refine ⟨Classical.arbitrary ι, 1, one_pos, fun f _ ↦ hVU (hsuV ?_)⟩
     simp
   · obtain ⟨i₀, _, hi₀max⟩ := s.exists_max_image ρ hs
     let δ : ℝ := s.inf' hs ε
     have hδpos : 0 < δ := (Finset.lt_inf'_iff hs).mpr fun i _ ↦ hεpos i
-    refine ⟨i₀, δ, hδpos, fun f hf ↦ hVU (hstV fun i hi ↦ hεt i ?_)⟩
+    refine ⟨i₀, δ, hδpos, fun f hf ↦ hVU (hsuV fun i hi ↦ hεu i ?_)⟩
     rw [Metric.mem_ball, Pi.zero_apply, dist_zero_right, restrictFamily_apply]
     have hle : ‖restrict hT i f‖ ≤ ‖restrict hT i₀ f‖ := by
       rw [TauCeti.PowerSeries.norm_eq_gaussNorm, TauCeti.PowerSeries.norm_eq_gaussNorm,
@@ -363,11 +417,14 @@ theorem not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem [Nontrivial R]
       ∀ c ∈ W, ∀ f ∈ U, constHom hT c * f ∈ V := by
   rintro ⟨U, hU, habs⟩
   obtain ⟨u, hu1⟩ := hu_unit
-  obtain ⟨i₀, δ, hδ, hball⟩ := exists_norm_restrict_lt_imp_mem hu hU
+  obtain ⟨i₀, δ, hδ, hball⟩ := exists_norm_restrict_lt_imp_mem ht hU
   obtain ⟨i₁, hi₀₁⟩ := hmax i₀
   have ⟨hr0, hr1⟩ : 0 < ρ i₀ ∧ 0 < ρ i₁ := ⟨Fact.out, Fact.out⟩
+  have hcont_i₁ : Continuous (restrict hT i₁) := by
+    simpa only [Function.comp_def, restrictFamily_apply] using
+      (continuous_apply i₁).comp ht.continuous
   obtain ⟨W, hW, hWUV⟩ := habs {f : T | ‖restrict hT i₁ f‖ < 1} <|
-    ((uniformContinuous_restrict hu i₁).continuous.tendsto 0).norm
+    (hcont_i₁.tendsto 0).norm
       (gt_mem_nhds (by simp : ‖restrict hT i₁ (0 : T)‖ < 1))
   obtain ⟨q, hq⟩ := (((tendsto_pow_atTop_nhds_zero_of_norm_lt_one hu1).comp
     (tendsto_add_atTop_nat 1)).eventually hW).exists
@@ -375,8 +432,10 @@ theorem not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem [Nontrivial R]
   have hM : 0 < M := Units.norm_pos u⁻¹
   let B : ℝ := δ / (2 * (M + 1))
   have hB : 0 < B := by positivity
-  have hBM : B * M < δ := (mul_lt_mul_of_pos_left (lt_add_one M) hB).trans
-    (by rw [show B * (M + 1) = δ / 2 by dsimp [B]; field_simp]; exact half_lt_self hδ)
+  have hBM : B * M < δ := calc
+    B * M < B * (M + 1) := mul_lt_mul_of_pos_left (lt_add_one M) hB
+    _ = δ / 2 := by dsimp [B]; field_simp
+    _ < δ := half_lt_self hδ
   obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (M ^ (q + 1) / B) ((one_lt_div hr0).mpr hi₀₁)
   obtain ⟨z, hz_gt, hz_lt⟩ := u.exists_lt_norm_zpow_lt hu1 (by positivity : 0 ≤ B / ρ i₀ ^ m)
     (by rw [div_mul_eq_mul_div]; exact div_lt_div_of_pos_right hBM (pow_pos hr0 m))
@@ -413,11 +472,11 @@ theorem not_isBounded_of_mem_nhds_zero [Nontrivial R] (hmax : ∀ i, ∃ j, ρ i
     ¬ TauCeti.Huber.IsBounded U := by
   rw [TauCeti.Huber.isBounded_iff]
   intro hb
-  refine not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem hu hmax hu_unit
+  refine not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem ht hmax hu_unit
     ⟨U, hU, fun V hV ↦ ?_⟩
   obtain ⟨W, hW, hWU⟩ := hb V hV
   refine ⟨constHom hT ⁻¹' W, ?_, fun c hc f hf ↦ hWU (Set.mul_mem_mul hc hf)⟩
-  exact (continuous_constHom hu).continuousAt.preimage_mem_nhds (by rwa [map_zero])
+  exact (continuous_constHom ht).continuousAt.preimage_mem_nhds (by rwa [map_zero])
 
 /-- **No single ring seminorm represents the Gauss topology when `ι` is nonempty and the radii have
 no maximum.** Over a nontrivial ultrametric normed ring with a unit `u` of norm `< 1` (in
@@ -427,22 +486,11 @@ topology. -/
 theorem not_exists_ringSeminorm_toTopologicalSpace_eq [Nontrivial R]
     (hmax : ∀ i, ∃ j, ρ i < ρ j) (hu_unit : ∃ u : Rˣ, ‖(u : R)‖ < 1) :
     ¬ ∃ p : RingSeminorm T,
-      p.toSeminormedRing.toUniformSpace.toTopologicalSpace = UniformSpace.toTopologicalSpace := by
+      p.toSeminormedRing.toUniformSpace.toTopologicalSpace = t := by
   rintro ⟨p, htop⟩
-  have hnhds : 𝓝 (0 : T) = Filter.comap p (𝓝 0) :=
-    htop ▸ (@comap_norm_nhds_zero T p.toAddGroupSeminorm.toSeminormedAddGroup).symm
-  have hmem {r : ℝ} (hr : 0 < r) : {f : T | p f < r} ∈ 𝓝 (0 : T) :=
-    hnhds ▸ Filter.preimage_mem_comap (Iio_mem_nhds hr)
-  refine not_isBounded_of_mem_nhds_zero hu hmax hu_unit (hmem one_pos)
-    (TauCeti.Huber.isBounded_iff.mpr fun V hV ↦ ?_)
-  obtain ⟨S, hS, hSV⟩ := Filter.mem_comap.mp (hnhds ▸ hV)
-  obtain ⟨ε, hε, hεS⟩ := Metric.mem_nhds_iff.mp hS
-  refine ⟨{f : T | p f < ε}, hmem hε, ?_⟩
-  rintro _ ⟨g, hg, f, hf, rfl⟩
-  refine hSV (hεS ?_)
-  rw [Metric.mem_ball, Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg p _)]
-  exact (map_mul_le_mul p g f).trans_lt
-    ((mul_le_of_le_one_right (apply_nonneg p g) (le_of_lt hf)).trans_lt hg)
+  exact not_isBounded_of_mem_nhds_zero ht hmax hu_unit
+    (htop ▸ @Metric.closedBall_mem_nhds T p.toSeminormedRing.toPseudoMetricSpace 0 1 one_pos)
+    (htop ▸ @TauCeti.Huber.isBounded_closedBall_zero T p.toSeminormedRing 1)
 
 /-- **No scalar-bounded group seminorm represents the Gauss topology when `ι` is nonempty and the
 radii have no maximum.** Over a nontrivial ultrametric normed ring with a unit `u` of norm `< 1`, if
@@ -453,32 +501,44 @@ theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le [Nontrivial
     (hmax : ∀ i, ∃ j, ρ i < ρ j) (hu_unit : ∃ u : Rˣ, ‖(u : R)‖ < 1)
     {φ : R → T} (hφ : ∀ c, (φ c : R⟦X⟧) = PowerSeries.C c) :
     ¬ ∃ (p : AddGroupSeminorm T) (C : ℝ),
-      p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace =
-        UniformSpace.toTopologicalSpace ∧
+      p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace = t ∧
       ∀ (c : R) (f : T), p (φ c * f) ≤ C * ‖c‖ * p f := by
   rintro ⟨p, C, htop, hsmul⟩
-  have hnhds : 𝓝 (0 : T) = Filter.comap p (𝓝 0) :=
-    htop ▸ (@comap_norm_nhds_zero T p.toSeminormedAddGroup).symm
-  have hmem {r : ℝ} (hr : 0 < r) : {f : T | p f < r} ∈ 𝓝 (0 : T) :=
-    hnhds ▸ Filter.preimage_mem_comap (Iio_mem_nhds hr)
-  refine not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem hu hmax hu_unit
-    ⟨{f : T | p f < 1}, hmem one_pos, fun V hV ↦ ?_⟩
-  obtain ⟨S, hS, hSV⟩ := Filter.mem_comap.mp (hnhds ▸ hV)
-  obtain ⟨ε, hε, hεS⟩ := Metric.mem_nhds_iff.mp hS
+  have hbasis := hasBasis_nhds_zero_of_addGroupSeminorm p htop
+  refine not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem ht hmax hu_unit
+    ⟨{f : T | p f < 1}, hbasis.mem_of_mem one_pos, fun V hV ↦ ?_⟩
+  obtain ⟨ε, hε, hεV⟩ := hbasis.mem_iff.mp hV
   have hC1 : 0 < max C 1 := lt_of_lt_of_le one_pos (le_max_right C 1)
   refine ⟨Metric.ball (0 : R) (ε / max C 1), Metric.ball_mem_nhds 0 (div_pos hε hC1),
-    fun c hc f hf ↦ hSV (hεS ?_)⟩
+    fun c hc f hf ↦ hεV ?_⟩
   rw [Metric.mem_ball, dist_zero_right] at hc
-  rw [Metric.mem_ball, Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg p _)]
   have hφc : constHom hT c = φ c := Subtype.ext ((coe_constHom hT c).trans (hφ c).symm)
-  rw [hφc]
+  rw [Set.mem_ofPred_eq, hφc]
   calc p (φ c * f) ≤ C * ‖c‖ * p f := hsmul c f
     _ ≤ max C 1 * ‖c‖ * 1 := mul_le_mul
         (mul_le_mul_of_nonneg_right (le_max_left C 1) (norm_nonneg c))
         (le_of_lt hf) (apply_nonneg p f) (by positivity)
     _ < ε := by simpa using (lt_div_iff₀' hC1).mp hc
 
-end Inducing
+/-- **No scalar-bounded group seminorm represents the Gauss topology when `ι` is nonempty and the
+radii have no maximum.** Over a nontrivial ultrametric normed ring `R` with a unit `u` of norm
+`< 1`, if `ι` is nonempty and every radius `ρ i` is strictly dominated by another radius `ρ j`, then
+no additive group seminorm on `T` in which scalar multiplication is bounded by `C * ‖c‖` induces the
+Gauss topology for any coefficientwise `R`-action. -/
+theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le [Nontrivial R] [SMul R T]
+    (hmax : ∀ i, ∃ j, ρ i < ρ j) (hu_unit : ∃ u : Rˣ, ‖(u : R)‖ < 1)
+    (hsmul : ∀ (c : R) (f : T), ((c • f : T) : R⟦X⟧) = c • (f : R⟦X⟧)) :
+    ¬ ∃ (p : AddGroupSeminorm T) (C : ℝ),
+      p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace = t ∧
+      ∀ (c : R) (f : T), p (c • f) ≤ C * ‖c‖ * p f := by
+  rintro ⟨p, C, htop, hle⟩
+  refine not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le ht hmax hu_unit
+    (coe_constHom hT) ⟨p, C, htop, fun c f ↦ ?_⟩
+  have hmul : constHom hT c * f = c • f := Subtype.ext <| by
+    rw [Subring.coe_mul, coe_constHom, hsmul, PowerSeries.smul_eq_C_mul]
+  simpa only [hmul] using hle c f
+
+end TopologicalInducing
 
 /-- Any cofinal subfamily of radii induces the full Gauss uniformity `uniformSpace hT`. -/
 theorem comap_restrictSubfamily_eq_uniformSpace_of_cofinal_radius {κ : Type*} {σ : κ → ι}
@@ -508,24 +568,24 @@ section NontriviallyNormedField
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
   {ι : Type*} [Nonempty ι] {ρ : ι → ℝ} [∀ i, Fact (0 < ρ i)]
   {T : Subring K⟦X⟧} {hT : ∀ f : K⟦X⟧, f ∈ T ↔ ∀ i, f.IsRestricted (ρ i)}
-  [UniformSpace T] (hu : IsUniformInducing (restrictFamily hT))
-include hu
+  [t : TopologicalSpace T] (ht : Topology.IsInducing (restrictFamily hT))
+include ht
 
 /-- Over a nontrivially normed ultrametric field, when `ι` is nonempty and the radii have no
 maximum, no zero-neighborhood in `T` is bounded in the sense of `TauCeti.Huber.IsBounded`. -/
 theorem not_isBounded_of_mem_nhds_zero_of_nontriviallyNormedField (hmax : ∀ i, ∃ j, ρ i < ρ j)
     {U : Set T} (hU : U ∈ 𝓝 (0 : T)) : ¬ TauCeti.Huber.IsBounded U :=
   let ⟨x, hx0, hx1⟩ := NormedField.exists_norm_lt_one K
-  not_isBounded_of_mem_nhds_zero hu hmax ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩ hU
+  not_isBounded_of_mem_nhds_zero ht hmax ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩ hU
 
 /-- Over a nontrivially normed ultrametric field, when `ι` is nonempty and the radii have no
 maximum, no single ring seminorm induces the Gauss topology on `T`. -/
 theorem not_exists_ringSeminorm_toTopologicalSpace_eq_of_nontriviallyNormedField
     (hmax : ∀ i, ∃ j, ρ i < ρ j) :
     ¬ ∃ p : RingSeminorm T,
-      p.toSeminormedRing.toUniformSpace.toTopologicalSpace = UniformSpace.toTopologicalSpace :=
+      p.toSeminormedRing.toUniformSpace.toTopologicalSpace = t :=
   let ⟨x, hx0, hx1⟩ := NormedField.exists_norm_lt_one K
-  not_exists_ringSeminorm_toTopologicalSpace_eq hu hmax ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩
+  not_exists_ringSeminorm_toTopologicalSpace_eq ht hmax ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩
 
 /-- Over a nontrivially normed ultrametric field, when `ι` is nonempty and the radii have no
 maximum, for any constant inclusion `φ : K → T`, no additive group seminorm on `T` in which left
@@ -533,29 +593,24 @@ multiplication by `φ c` is bounded by `C * ‖c‖` induces the Gauss topology.
 theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le_of_nontriviallyNormedField
     (hmax : ∀ i, ∃ j, ρ i < ρ j) {φ : K → T} (hφ : ∀ c, (φ c : K⟦X⟧) = PowerSeries.C c) :
     ¬ ∃ (p : AddGroupSeminorm T) (C : ℝ),
-      p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace =
-        UniformSpace.toTopologicalSpace ∧
+      p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace = t ∧
       ∀ (c : K) (f : T), p (φ c * f) ≤ C * ‖c‖ * p f :=
   let ⟨x, hx0, hx1⟩ := NormedField.exists_norm_lt_one K
-  not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le hu hmax
+  not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le ht hmax
     ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩ hφ
 
 /-- Over a nontrivially normed ultrametric field `K`, when `ι` is nonempty and the radii have no
 maximum, no additive group seminorm on `T` in which scalar multiplication is bounded by `C * ‖c‖`
-induces the Gauss topology for any coefficientwise `K`-module structure. -/
-theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le [Module K T]
-    (hmax : ∀ i, ∃ j, ρ i < ρ j)
+induces the Gauss topology for any coefficientwise `K`-action. -/
+theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le_of_nontriviallyNormedField
+    [SMul K T] (hmax : ∀ i, ∃ j, ρ i < ρ j)
     (hsmul : ∀ (c : K) (f : T), ((c • f : T) : K⟦X⟧) = c • (f : K⟦X⟧)) :
     ¬ ∃ (p : AddGroupSeminorm T) (C : ℝ),
-      p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace =
-        UniformSpace.toTopologicalSpace ∧
-      ∀ (c : K) (f : T), p (c • f) ≤ C * ‖c‖ * p f := by
-  rintro ⟨p, C, htop, hle⟩
-  refine not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le_of_nontriviallyNormedField
-    hu hmax (coe_constHom hT) ⟨p, C, htop, fun c f ↦ ?_⟩
-  have hmul : constHom hT c * f = c • f := Subtype.ext <| by
-    rw [Subring.coe_mul, coe_constHom, hsmul, PowerSeries.smul_eq_C_mul]
-  simpa only [hmul] using hle c f
+      p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace = t ∧
+      ∀ (c : K) (f : T), p (c • f) ≤ C * ‖c‖ * p f :=
+  let ⟨x, hx0, hx1⟩ := NormedField.exists_norm_lt_one K
+  not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le ht hmax
+    ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩ hsmul
 
 /-- Over a nontrivially normed ultrametric field `K`, when `ι` is nonempty and the radii have no
 maximum, `T` with its Gauss topology is not normable as a `K`-vector space for any coefficientwise
@@ -565,7 +620,8 @@ theorem not_isNormableSpace [Module K T] (hmax : ∀ i, ∃ j, ρ i < ρ j)
     ¬ IsNormableSpace K T := by
   intro hn
   obtain ⟨p, hp⟩ := hn.withSeminorms'
-  exact not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le hu hmax hsmul
+  exact not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le_of_nontriviallyNormedField
+    ht hmax hsmul
     ⟨p.toAddGroupSeminorm, 1, ciInf_unique.symm.trans hp.topologicalSpace_eq_iInf.symm,
       fun c f ↦ by simpa only [AddGroupSeminorm.toFun_eq_coe, one_mul] using (p.smul' c f).le⟩
 
@@ -599,7 +655,6 @@ theorem mem_compatibleSubring {κ : Type*} [Preorder κ] {r : κ → ℝ} [∀ k
 
 /-- The underlying set of `compatibleSubring` consists of families intertwined by radius
 restriction. -/
-@[simp]
 theorem coe_compatibleSubring {κ : Type*} [Preorder κ] {r : κ → ℝ} [∀ k, Fact (0 < r k)]
     (hr : Monotone r) :
     (compatibleSubring (R := R) hr : Set (∀ k, IsRestricted.subring (R := R) (r k))) =
@@ -670,7 +725,7 @@ noncomputable def compatibleRingEquiv {κ : Type*} [Preorder κ] [IsDirectedOrde
   RingEquiv.ofBijective
     ((restrictSubfamily hT σ).codRestrict (compatibleSubring (R := R) hr)
       (restrictSubfamily_mem_compatibleSubring hT hr))
-    ⟨fun f g h ↦ restrictSubfamily_injective hT σ (congrArg Subtype.val h), fun ⟨g, hg⟩ ↦ by
+    ⟨RingHom.injective_codRestrict.mpr (restrictSubfamily_injective hT σ), fun ⟨g, hg⟩ ↦ by
       have hmem : g ∈ Set.range (restrictSubfamily hT σ) := by
         rwa [range_restrictSubfamily_eq_compatibleSubring hT (fun i ↦ (Fact.out : 0 < ρ i).le)
           hr hσ]
@@ -727,9 +782,15 @@ noncomputable def compatibleUniformEquiv {hT : ∀ f : R⟦X⟧, f ∈ T ↔ ∀
     [IsDirectedOrder κ] [Nonempty κ] {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k))
     (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) :
     T ≃ᵤ compatibleSubring (R := R) hr :=
-  (compatibleRingEquiv hT hr hσ).toEquiv.toUniformEquivOfIsUniformInducing <|
-    (IsUniformInducing.mk (f := Subtype.val) rfl).of_comp_iff.mp
-      (isUniformInducing_restrictSubfamily hu hσ)
+  (compatibleRingEquiv hT hr hσ).toEquiv.toUniformEquivOfIsUniformInducing <| by
+    rw [← isUniformEmbedding_subtype_val.isUniformInducing.of_comp_iff]
+    have hcomp : Subtype.val ∘ (compatibleRingEquiv hT hr hσ).toEquiv =
+        restrictSubfamily hT σ := by
+      funext f k
+      simp only [Function.comp_apply, RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
+        coe_compatibleRingEquiv_apply, restrictSubfamily_apply]
+    rw [hcomp]
+    exact isUniformInducing_restrictSubfamily hu hσ
 
 /-- `compatibleUniformEquiv` applies on elements as `compatibleRingEquiv`. -/
 @[simp]
