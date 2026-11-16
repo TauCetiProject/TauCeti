@@ -10,9 +10,9 @@ public import Mathlib.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.NeumannMaximumPrinciple
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import Mathlib.Analysis.Calculus.TangentCone.Real
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!
 # The maximum principle for `J`-holomorphic curves in a cylindrical end
@@ -335,13 +335,8 @@ theorem comp_le_of_mapsTo_of_comp_le_strip_ends {R T : ℝ} {L₀ L₁ : Set V}
       Du w 1 ∈ tangentConeAt ℝ L (u w) := by
     have hline : {y : ℂ | y.im = c} ⊆ univ ×ℂ Icc 0 1 := fun y (hy : y.im = c) ↦
       ⟨mem_univ _, by rw [mem_preimage, hy]; exact hc⟩
-    have hone : (1 : ℂ) ∈ tangentConeAt ℝ {y : ℂ | y.im = c} w := by
-      have hseg : segment ℝ w (w + 1) ⊆ {y : ℂ | y.im = c} := by
-        rw [segment_eq_image']
-        rintro _ ⟨θ, -, rfl⟩
-        simp [hw]
-      simpa using mem_tangentConeAt_of_segment_subset hseg
-    exact tangentConeAt_mono hL.image_subset ((hD.mono hline).mapsTo_tangent_cone hone)
+    exact tangentConeAt_mono hL.image_subset ((hD.mono hline).mapsTo_tangent_cone
+      (mem_tangentConeAt_setOf_im_eq hw one_im))
   refine comp_le_of_neumann_of_comp_le_strip_ends hf hu hCR hρ hα hJsq hρJ htame hDu hCRbdry
     (fun w hw hRw ↦ ?_) hends hz₀ hz₁
   rcases hw with hw | hw

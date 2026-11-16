@@ -257,34 +257,6 @@ theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
       hRw).2)
     (fun w hw ↦ hbdry w hw) hz
 
-/-- **No escape for strips in a manifold.** Let `J_w` be a family of almost complex structures
-depending on the point `w` of the strip. Suppose that on the region `{ρ > R}` the function `ρ` is
-`C²`, and for every `w`, `dρ ∘ J_w = -α` for a one-form `α` differentiable there, and `dα` tames
-`J_w`. Let `ρ ∘ u` be continuous on the closed strip `ℝ × [0, 1]`, and let `u` be `C²` and solve
-`∂ₜu = J_w(u) ∂ₛu` at the points `w` of the open strip `ℝ × (0, 1)` which it maps into
-`{ρ > R}`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into `{ρ ≤ R}`, and also the
-two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole strip into `{ρ ≤ R}`. -/
-theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
-    (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
-    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
-    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
-      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J z (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
-    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
-    (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
-    (hρJ : ∀ w x, R < ρ x → ∀ v, mvfderiv I ρ x (J w x v) = -α x ![v])
-    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J w x v])
-    (h₀ : ∀ z : ℂ, z.im = 0 → ρ (u z) ≤ R) (h₁ : ∀ z : ℂ, z.im = 1 → ρ (u z) ≤ R)
-    (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
-    (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
-  have hU : IsOpen {w : ℂ | 0 < w.im ∧ w.im < 1} :=
-    (isOpen_lt continuous_const continuous_im).inter (isOpen_lt continuous_im continuous_const)
-  have hint (w : ℂ) (h₀ : 0 < w.im) (h₁ : w.im < 1) (hRw : R < ρ (u w)) :=
-    contDiffAt_and_laplacian_nonneg hU (z := w) ⟨h₀, h₁⟩ (fun y hy ↦ hu y hy.1 hy.2)
-      (fun y hy ↦ hCR y hy.1 hy.2) hρ hα hρJ htame hRw
-  exact le_of_laplacian_nonneg_of_lt_le_strip hf (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).1)
-    (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).2) h₀ h₁ hends hz₀ hz₁
-
 /-- **No escape for strips in a manifold with Neumann boundary conditions.** Let `J_w` be a family
 of almost complex structures depending on the point `w` of the strip. Suppose that on the region
 `{ρ > R}` the function `ρ` is `C²`, and for every `w`, `dρ ∘ J_w = -α` for a one-form `α`
@@ -328,6 +300,33 @@ theorem comp_le_of_neumann_of_comp_le_strip_ends {R T : ℝ}
         (hDu w hw hRw))
   · rw [ContinuousLinearMap.comp_apply, hCRbdry w hw hRw, hρJ w _ hRw, hαbdry w hw hRw, neg_zero]
 
+/-- **No escape for strips in a manifold.** Let `J_w` be a family of almost complex structures
+depending on the point `w` of the strip. Suppose that on the region `{ρ > R}` the function `ρ` is
+`C²`, and for every `w`, `dρ ∘ J_w = -α` for a one-form `α` differentiable there, and `dα` tames
+`J_w`. Let `ρ ∘ u` be continuous on the closed strip `ℝ × [0, 1]`, and let `u` be `C²` and solve
+`∂ₜu = J_w(u) ∂ₛu` at the points `w` of the open strip `ℝ × (0, 1)` which it maps into
+`{ρ > R}`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into `{ρ ≤ R}`, and also the
+two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole strip into `{ρ ≤ R}`. -/
+theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
+    (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
+    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
+    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
+      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J z (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
+    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
+    (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (hρJ : ∀ w x, R < ρ x → ∀ v, mvfderiv I ρ x (J w x v) = -α x ![v])
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J w x v])
+    (h₀ : ∀ z : ℂ, z.im = 0 → ρ (u z) ≤ R) (h₁ : ∀ z : ℂ, z.im = 1 → ρ (u z) ≤ R)
+    (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
+    (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
+  -- The boundary lines stay in `{ρ ≤ R}`, so the Neumann hypotheses hold vacuously.
+  have hbdry (w : ℂ) (hw : w.im = 0 ∨ w.im = 1) (hRw : R < ρ (u w)) : False :=
+    hw.elim (fun h ↦ (h₀ w h).not_gt hRw) fun h ↦ (h₁ w h).not_gt hRw
+  exact comp_le_of_neumann_of_comp_le_strip_ends (Du := 0) hf hu hCR hρ hα hρJ htame
+    (fun w hw hRw ↦ (hbdry w hw hRw).elim) (fun w hw hRw ↦ (hbdry w hw hRw).elim)
+    (fun w hw hRw ↦ (hbdry w hw hRw).elim) hends hz₀ hz₁
+
 /-- **No escape for strips in a manifold with boundary on exact cylindrical Lagrangians.** Let
 `J_w` be a family of almost complex structures depending on the point `w` of the strip. Suppose
 that on the region `{ρ > R}` the function `ρ` is `C²`, and for every `w`, `dρ ∘ J_w = -α` for a
@@ -369,11 +368,7 @@ theorem comp_le_of_mapsTo_of_comp_le_strip_ends {R T : ℝ} {L₀ L₁ : Set M}
     have hline : {y : ℂ | y.im = c} ⊆ univ ×ℂ Icc 0 1 := fun y (hy : y.im = c) ↦
       ⟨mem_univ _, by rw [mem_preimage, hy]; exact hc⟩
     have hone : (1 : ℂ) ∈ mtangentConeAt 𝓘(ℝ, ℂ) {y : ℂ | y.im = c} w := by
-      have hseg : segment ℝ w (w + 1) ⊆ {y : ℂ | y.im = c} := by
-        rw [segment_eq_image']
-        rintro _ ⟨θ, -, rfl⟩
-        simp [hw]
-      simpa using mem_tangentConeAt_of_segment_subset hseg
+      simpa using mem_tangentConeAt_setOf_im_eq hw one_im
     exact mtangentConeAt_mono (I := I) hL.image_subset _
       ((hD.mono hline).mapsTo_mtangentConeAt hone)
   refine comp_le_of_neumann_of_comp_le_strip_ends hf hu hCR hρ hα hρJ htame hDu hCRbdry
