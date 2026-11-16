@@ -37,7 +37,9 @@ The API parallels `TauCeti.signedSymPiece` in
 
 ## Main results
 
-* `TauCeti.ParitySignedSym.homogeneous_induction`: induction on parity-homogeneous elements.
+* `TauCeti.ParitySignedSym.homogeneous_induction` and
+  `TauCeti.ParitySignedSym.isHomogeneous_algHom`: induction on parity-homogeneous elements and
+  homogeneity of algebra maps out of `ParitySignedSym G` checked on generators.
 * `TauCeti.isInternal_paritySignedSymPiece` and the `GradedAlgebra (paritySignedSymPiece G)`
   instance.
 * `TauCeti.SignedSym.parityEquiv_mem_paritySignedSymPiece` and
@@ -175,6 +177,29 @@ instance : SetLike.GradedMonoid (paritySignedSymPiece G) where
 
 end Pieces
 
+namespace ParitySignedSym
+
+/-- Any `R`-algebra homomorphism out of `ParitySignedSym G` into a `ZMod 2`-graded monoid of
+submodules is parity-preserving if its restriction to generators is parity-preserving. -/
+theorem isHomogeneous_algHom (G : InternalGrading R V (ZMod 2))
+    {A : Type w} [Semiring A] [Algebra R A] (𝒜 : ZMod 2 → Submodule R A) [SetLike.GradedMonoid 𝒜]
+    (φ : ParitySignedSym G →ₐ[R] A)
+    (hφ : LinearMap.IsHomogeneous (φ.toLinearMap ∘ₗ generator G) G.piece 𝒜 0) :
+    LinearMap.IsHomogeneous φ.toLinearMap (paritySignedSymPiece G) 𝒜 0 := by
+  refine LinearMap.isHomogeneous_def.2 fun i a ha => ?_
+  rw [add_zero]
+  refine homogeneous_induction G (P := fun i a => φ a ∈ 𝒜 i)
+    (by simpa only [map_one] using SetLike.GradedOne.one_mem (A := 𝒜))
+    (fun j x hx => by
+      simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, add_zero] using hφ.map_mem hx)
+    (fun j k b c hb hc => by rw [map_mul]; exact SetLike.mul_mem_graded hb hc)
+    (fun _ => by simp)
+    (fun _ b c hb hc => by rw [map_add]; exact add_mem hb hc)
+    (fun _ r b hb => by rw [map_smul]; exact Submodule.smul_mem _ r hb)
+    ha
+
+end ParitySignedSym
+
 namespace SignedSym
 
 variable (G : InternalGrading R V ℤ)
@@ -218,19 +243,12 @@ private theorem parityEquiv_mem_of_mem_parityGrading {i : ZMod 2} {a : SignedSym
 private theorem parityEquiv_symm_mem_parityGrading {i : ZMod 2}
     {b : ParitySignedSym G.parity} (hb : b ∈ paritySignedSymPiece G.parity i) :
     (parityEquiv G).symm b ∈ parityGrading (signedSymPiece G) i := by
-  have hgen := (isHomogeneous_signedSymGenerator G).coarsenGrading (Int.castAddHom (ZMod 2))
-  refine ParitySignedSym.homogeneous_induction G.parity
-    (P := fun i b => (parityEquiv G).symm b ∈ parityGrading (signedSymPiece G) i)
-    (by simpa using SetLike.GradedOne.one_mem (A := parityGrading (signedSymPiece G)))
-    (fun i x hx => by
-      rw [parityEquiv_symm_generator]
-      rw [InternalGrading.parity_piece] at hx
-      simpa only [map_zero, add_zero] using hgen.map_mem hx)
-    (fun i j a c ha hc => by rw [map_mul]; exact SetLike.mul_mem_graded ha hc)
-    (fun _ => by simp)
-    (fun _ a c ha hc => by rw [map_add]; exact add_mem ha hc)
-    (fun _ r a ha => by rw [map_smul]; exact Submodule.smul_mem _ r ha)
-    hb
+  have hhom := ParitySignedSym.isHomogeneous_algHom G.parity (parityGrading (signedSymPiece G))
+    (parityEquiv G).symm.toAlgHom <| LinearMap.isHomogeneous_def.2 fun j x hx => by
+      rw [add_zero, LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgEquiv.coe_toAlgHom,
+        parityEquiv_symm_generator]
+      exact generator_mem_parityGrading G (by rwa [InternalGrading.parity_piece] at hx)
+  simpa only [add_zero, AlgHom.toLinearMap_apply, AlgEquiv.coe_toAlgHom] using hhom.map_mem hb
 
 /-- `SignedSym.parityEquiv` identifies the coarsened parity pieces of `SignedSym G` with the
 parity pieces of `ParitySignedSym G.parity`. -/
@@ -364,17 +382,11 @@ theorem isHomogeneous_lift [SetLike.GradedMonoid 𝒜] (f : V →ₗ[R] A)
     (hr : ∀ (i j : ZMod 2) (x y : V), x ∈ G.piece i → y ∈ G.piece j →
       f x * f y = ((-1 : ℤˣ) ^ (i * j)) • (f y * f x))
     (hf : LinearMap.IsHomogeneous f G.piece 𝒜 0) :
-    LinearMap.IsHomogeneous (lift G f hr).toLinearMap (paritySignedSymPiece G) 𝒜 0 := by
-  refine LinearMap.isHomogeneous_def.2 fun i a ha => ?_
-  rw [add_zero]
-  refine homogeneous_induction G (P := fun i a => lift G f hr a ∈ 𝒜 i)
-    (by simpa only [map_one] using SetLike.GradedOne.one_mem (A := 𝒜))
-    (fun j x hx => by simpa only [lift_generator, add_zero] using hf.map_mem hx)
-    (fun j k b c hb hc => by rw [map_mul]; exact SetLike.mul_mem_graded hb hc)
-    (fun _ => by simp)
-    (fun _ b c hb hc => by rw [map_add]; exact add_mem hb hc)
-    (fun _ r b hb => by rw [map_smul]; exact Submodule.smul_mem _ r hb)
-    ha
+    LinearMap.IsHomogeneous (lift G f hr).toLinearMap (paritySignedSymPiece G) 𝒜 0 :=
+  isHomogeneous_algHom G 𝒜 (lift G f hr) <| by
+    have hcomp : (lift G f hr).toLinearMap ∘ₗ generator G = f :=
+      LinearMap.ext (lift_generator G f hr)
+    rwa [hcomp]
 
 variable [GradedAlgebra 𝒜]
 
@@ -415,17 +427,12 @@ variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W (ZMo
 /-- Functorial maps induced by parity-preserving linear maps preserve the parity grading. -/
 theorem isHomogeneous_map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
     LinearMap.IsHomogeneous (map G H f hf).toLinearMap
-      (paritySignedSymPiece G) (paritySignedSymPiece H) 0 := by
-  have hr : ∀ (i j : ZMod 2) (x y : V), x ∈ G.piece i → y ∈ G.piece j →
-      (generator H).comp f x * (generator H).comp f y =
-        ((-1 : ℤˣ) ^ (i * j)) • ((generator H).comp f y * (generator H).comp f x) := by
-    intro i j x y hx hy
-    exact generator_mul_generator H
-      (by simpa only [add_zero] using hf.map_mem hx)
-      (by simpa only [add_zero] using hf.map_mem hy)
-  rw [lift_unique G ((generator H).comp f) hr (map G H f hf) (map_generator G H f hf)]
-  apply isHomogeneous_lift
-  simpa only [add_zero] using (isHomogeneous_paritySignedSymGenerator H).comp hf
+      (paritySignedSymPiece G) (paritySignedSymPiece H) 0 :=
+  isHomogeneous_algHom G (paritySignedSymPiece H) (map G H f hf) <| by
+    have hcomp : (map G H f hf).toLinearMap ∘ₗ generator G = generator H ∘ₗ f :=
+      LinearMap.ext (map_generator G H f hf)
+    rw [hcomp]
+    simpa only [add_zero] using (isHomogeneous_paritySignedSymGenerator H).comp hf
 
 /-- A parity-preserving linear map induces a graded algebra map of parity presentations.
 Its underlying algebra map is `ParitySignedSym.map`. -/
@@ -549,7 +556,7 @@ theorem gradedOfParity_comp_gradedToParity :
     (gradedOfParity G).comp (gradedToParity G) =
       GradedAlgHom.id R (parityGrading (signedSymPiece G)) := by
   ext a
-  exact (parityEquiv G).symm_apply_apply a
+  simp
 
 end SignedSym
 

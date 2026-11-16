@@ -103,8 +103,11 @@ private noncomputable def triangularLift :
     fun _ _ _ _ hx hy =>
       lowerTriangularLinearMap_mul_eq_smul (uzpow_add (-1 : ℤˣ))
         (fun ha hb => mul_eq_uzpow_smul_mul G ha hb)
-        (fun ha => InternalGrading.parityTwistAlgEquiv_apply_of_mem (paritySignedSymPiece G) ha)
-        (isHomogeneous_paritySignedSymGenerator G) hδ hx hy
+        (isHomogeneous_paritySignedSymGenerator G) hδ
+        (fun hx' =>
+          InternalGrading.parityTwistAlgEquiv_apply_of_mem (paritySignedSymPiece G)
+            (generator_mem_paritySignedSymPiece G hx'))
+        hx hy
 
 variable (δ) in
 /-- The odd derivation of `ParitySignedSym G` extending a parity-`1` linear map
@@ -112,12 +115,12 @@ variable (δ) in
 parity (`i ↦ i + 1`), and is the unique such extension of `δ`
 (`TauCeti.ParitySignedSym.eq_liftDerivation`). -/
 noncomputable def liftDerivation : ParitySignedSym G →ₗ[R] ParitySignedSym G :=
-  lowerTriangularDerivation (triangularLift hδ)
+  (triangularLift hδ).lowerLeftEntry
 
 /-- The odd derivation extends the assignment on generators. -/
 @[simp]
 theorem liftDerivation_generator (x : V) : liftDerivation δ hδ (generator G x) = δ x := by
-  simp [liftDerivation, lowerTriangularDerivation_apply, triangularLift]
+  simp [liftDerivation, AlgHom.lowerLeftEntry_apply, triangularLift]
 
 /-- **The parity signed Leibniz rule**: for a left factor `a` of parity `i`,
 `d (a * b) = d a * b + (-1) ^ i • (a * d b)`. -/
@@ -125,7 +128,7 @@ theorem liftDerivation_mul {i : ZMod 2} {a : ParitySignedSym G}
     (ha : a ∈ paritySignedSymPiece G i) (b : ParitySignedSym G) :
     liftDerivation δ hδ (a * b) =
       liftDerivation δ hδ a * b + ((-1 : ℤˣ) ^ i) • (a * liftDerivation δ hδ b) := by
-  have h := lowerTriangularDerivation_mul_of_adjoin_range_eq_top (triangularLift hδ)
+  have h := (triangularLift hδ).lowerLeftEntry_mul_of_adjoin_range_eq_top
     (InternalGrading.parityTwistAlgEquiv (paritySignedSymPiece G) :
       ParitySignedSym G →ₐ[R] ParitySignedSym G)
     (adjoin_range_generator G) (lift_generator G _ _) a b
@@ -137,12 +140,12 @@ theorem liftDerivation_mul {i : ZMod 2} {a : ParitySignedSym G}
 @[simp]
 theorem liftDerivation_algebraMap (r : R) :
     liftDerivation δ hδ (algebraMap R _ r) = 0 :=
-  lowerTriangularDerivation_algebraMap (triangularLift hδ) r
+  (triangularLift hδ).lowerLeftEntry_algebraMap r
 
 /-- The odd derivation annihilates the unit. -/
 @[simp]
 theorem liftDerivation_one : liftDerivation δ hδ 1 = 0 :=
-  lowerTriangularDerivation_one (triangularLift hδ)
+  (triangularLift hδ).lowerLeftEntry_one
 
 /-- The odd derivation has parity `1`, mapping `paritySignedSymPiece G i` into
 `paritySignedSymPiece G (i + 1)`. -/
@@ -211,13 +214,9 @@ theorem isHomogeneous_parityEquiv_comp {δ : V →ₗ[R] SignedSym G}
     (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) 1) :
     LinearMap.IsHomogeneous ((parityEquiv G).toLinearMap ∘ₗ δ)
       G.parity.piece (paritySignedSymPiece G.parity) 1 := by
-  refine LinearMap.isHomogeneous_def.2 fun i x hx => ?_
-  rw [InternalGrading.parity_piece] at hx
   have h1 : Int.castAddHom (ZMod 2) 1 = 1 := Int.cast_one
-  have hmem := (hδ.coarsenGrading (Int.castAddHom (ZMod 2))).map_mem hx
-  rw [h1] at hmem
-  simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    mem_paritySignedSymPiece_parityEquiv_iff] using hmem
+  simpa only [InternalGrading.parity_piece, h1, add_zero] using
+    (isHomogeneous_parityEquiv G).comp (hδ.coarsenGrading (Int.castAddHom (ZMod 2)))
 
 /-- `SignedSym.parityEquiv G` intertwines `SignedSym.liftDerivation` with
 `ParitySignedSym.liftDerivation`. -/

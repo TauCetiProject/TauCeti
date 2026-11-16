@@ -230,7 +230,10 @@ theorem congr_refl :
     congr G G (LinearEquiv.refl R V) (LinearMap.isHomogeneous_id G.piece) =
       AlgEquiv.refl := by
   apply AlgEquiv.coe_toAlgHom_injective
-  exact map_id G
+  apply hom_ext
+  intro x
+  simpa using
+    congr_generator G G (LinearEquiv.refl R V) (LinearMap.isHomogeneous_id G.piece) x
 
 /-- The induced algebra equivalence of parity presentations respects inverses. -/
 @[simp]

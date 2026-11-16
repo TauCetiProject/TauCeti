@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.CharP.Invertible
-import TauCeti.Algebra.Group.Action.SemiconjBy
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
 
 /-!
 # Supercommutativity of the signed symmetric algebra
@@ -21,7 +21,8 @@ over any commutative ring, and every element of odd parity has square zero when 
 in the coefficient ring. These identities allow the signed symmetric algebra to serve as a receiving
 supercommutative algebra in universal properties and tensor comparisons.
 
-The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
+The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top` from
+`TauCeti.RingTheory.GradedAlgebra.Supercommutativity`.
 The construction follows the supercommutative algebra of J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1).
 -/
@@ -40,37 +41,16 @@ variable (G : InternalGrading R V ℤ)
 No assumption on the characteristic of the coefficient ring is needed. -/
 theorem mul_eq_negOnePow_smul_mul {p q : ℤ} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
-    a * b = ((p * q).negOnePow : ℤ) • (b * a) := by
-  -- First commute a generator past a homogeneous expression, then induct on the other factor.
-  have hgen : ∀ (p : ℤ) (x : V), x ∈ G.piece p →
-      ∀ (q : ℤ) (b : SignedSym G), b ∈ signedSymPiece G q →
-        generator G x * b = ((p * q).negOnePow : ℤ) • (b * generator G x) := by
-    intro p x hx q b hb
-    refine homogeneous_induction G (P := fun q b =>
-      generator G x * b = ((p * q).negOnePow : ℤ) • (b * generator G x))
-      ?_ ?_ ?_ ?_ ?_ ?_ hb
-    · simp
-    · exact fun q y hy => generator_mul_generator G hx hy
-    · intro q r b c hb hc
-      simpa only [Int.mul_add, Int.negOnePow_add, Units.val_mul] using
-        mul_mul_eq_smul_of_mul_eq_smul_right hb hc
-    · simp
-    · intro q b c hb hc
-      simp only [mul_add, add_mul, zsmul_add, hb, hc]
-    · intro q r b hb
-      rw [mul_smul_comm, hb, smul_mul_assoc, smul_comm r]
-  refine homogeneous_induction G (P := fun p a =>
-    a * b = ((p * q).negOnePow : ℤ) • (b * a)) ?_ ?_ ?_ ?_ ?_ ?_ ha
-  · simp
-  · exact fun p x hx => hgen p x hx q b hb
-  · intro p r a c ha hc
-    rw [Int.add_mul, add_comm (p * q), Int.negOnePow_add, Units.val_mul]
-    exact mul_mul_eq_smul_of_mul_eq_smul_left ha hc
-  · simp
-  · intro p a c ha hc
-    simp only [add_mul, mul_add, zsmul_add, ha, hc]
-  · intro p r a ha
-    rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r]
+    a * b = ((p * q).negOnePow : ℤ) • (b * a) :=
+  mul_eq_smul_mul_of_adjoin_range_eq_top (𝒜 := signedSymPiece G)
+    (s := fun p q => ((p * q).negOnePow : ℤ))
+    (fun _ => by simp)
+    (fun _ _ _ => by simp [mul_add, Int.negOnePow_add])
+    (fun _ => by simp)
+    (fun p₁ _ q => by rw [add_mul, add_comm (p₁ * q), Int.negOnePow_add, Units.val_mul])
+    (adjoin_range_generator G) G.isInternal.submodule_iSup_eq_top
+    (isHomogeneous_signedSymGenerator G)
+    (fun hx hy => generator_mul_generator G hx hy) ha hb
 
 /-- An odd homogeneous element squares to its own negative, over any commutative ring. -/
 theorem sq_eq_neg {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) (hp : Odd p) :

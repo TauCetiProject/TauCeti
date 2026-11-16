@@ -42,9 +42,11 @@ its degree alone.
 
 ## Main results
 
-* `TauCeti.map_mul_of_leibniz_of_map_eq_zero`, `TauCeti.map_one_eq_zero_of_leibniz`, and
-  `TauCeti.map_algebraMap_of_leibniz`: consequences of the graded Leibniz rule alone, shared with
-  the curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs`.
+* `TauCeti.map_mul_of_leibniz_along_of_map_eq_zero`, `TauCeti.map_mul_of_leibniz_of_map_eq_zero`,
+  `TauCeti.map_one_eq_zero_of_leibniz_along`, `TauCeti.map_one_eq_zero_of_leibniz`, and
+  `TauCeti.map_algebraMap_of_leibniz`: consequences of an `s`-signed graded Leibniz rule alone,
+  shared with `TauCeti.Algebra.Homology.Curved.Algebra.Defs` and
+  `TauCeti.Algebra.Homology.DG.Algebra.SignedDerivation`.
 * `TauCeti.IsNonUnitalDGAlgebra.map_decompose` computes the differential on homogeneous
   components.
 * `TauCeti.IsNonUnitalDGAlgebra.leibniz_of_map_eq_zero` and
@@ -81,25 +83,37 @@ section Leibniz
 /-!
 ### A consequence of the Leibniz law alone
 
-The next lemma uses only the graded Leibniz rule, and not that `d` raises degree by one or squares
-to zero.  It is stated with that rule as a hypothesis so that differential graded algebras and the
-curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs` share one
-proof.  The corresponding consequence of the degree law alone, that `d` commutes with homogeneous
-projections up to the degree shift, is `TauCeti.LinearMap.IsHomogeneous.map_decompose`.
+The next lemmas use only an `s`-signed graded Leibniz rule (for an arbitrary grading index type `ι`
+and sign function `s : ι → ℤˣ`), and not that `d` raises degree by one or squares to zero.  They
+are shared across differential graded algebras, the curved differential graded algebras of
+`TauCeti.Algebra.Homology.Curved.Algebra.Defs`, and the general signed-derivation API in
+`TauCeti.Algebra.Homology.DG.Algebra.SignedDerivation`.  The corresponding consequence of the degree
+law alone, that `d` commutes with homogeneous projections up to the degree shift, is
+`TauCeti.LinearMap.IsHomogeneous.map_decompose`.
 -/
 
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
-  {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜] {d : A →ₗ[R] A}
-
-/-- The graded Leibniz rule against a cycle in the right factor.  The vanishing signed term permits
-an arbitrary left factor, without a homogeneity hypothesis. -/
-theorem map_mul_of_leibniz_of_map_eq_zero
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
-    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
+/-- An `s`-signed Leibniz rule along `f` against a right factor in the kernel of `d` holds for an
+arbitrary left factor, without a homogeneity assumption. -/
+theorem map_mul_of_leibniz_along_of_map_eq_zero {A B ι σ F : Type*}
+    [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocRing B] [DecidableEq ι]
+    [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
+    [FunLike F A B] [AddMonoidHomClass F A B] {s : ι → ℤˣ} {d : F} (f : A → B)
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * f b + s i • (f a * d b))
+    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * f b := by
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | homogeneous a => simp [hl a.property b, hb]
   | add a a' ha ha' => simp [add_mul, ha, ha']
+
+/-- An `s`-signed Leibniz rule against a right factor in the kernel of `d` holds for an arbitrary
+left factor, without a homogeneity assumption. -/
+theorem map_mul_of_leibniz_of_map_eq_zero {A ι σ F : Type*}
+    [NonUnitalNonAssocRing A] [DecidableEq ι]
+    [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
+    [FunLike F A A] [AddMonoidHomClass F A A] {s : ι → ℤˣ} {d : F}
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
+    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b :=
+  map_mul_of_leibniz_along_of_map_eq_zero (𝒜 := 𝒜) id hl a hb
 
 end Leibniz
 
@@ -139,7 +153,7 @@ theorem map_decompose (h : IsNonUnitalDGAlgebra 𝒜 d) (p : ℤ) (a : A) :
 arbitrary left factor, without a homogeneity hypothesis. -/
 theorem leibniz_of_map_eq_zero (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) {b : A}
     (hb : d b = 0) : d (a * b) = d a * b :=
-  map_mul_of_leibniz_of_map_eq_zero h.leibniz a hb
+  map_mul_of_leibniz_of_map_eq_zero (𝒜 := 𝒜) h.leibniz a hb
 
 /-- The Leibniz rule for a left factor of degree zero, where the sign is trivial. -/
 theorem leibniz_of_mem_zero (h : IsNonUnitalDGAlgebra 𝒜 d) {a : A} (ha : a ∈ 𝒜 0) (b : A) :
@@ -166,31 +180,36 @@ end NonUnital
 
 section UnitalLeibniz
 
-variable {A σ : Type*} [NonAssocRing A] [SetLike σ A] {𝒜 : ℤ → σ}
-  [SetLike.GradedOne 𝒜] {d : A → A}
-
-/-- A function satisfying the graded Leibniz rule annihilates the unit: the rule for `1 * 1`
-reads `d 1 = d 1 + d 1`. Neither additivity nor a direct-sum decomposition is needed. -/
-theorem map_one_eq_zero_of_leibniz
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b)) :
+/-- A function satisfying an `s`-signed Leibniz rule along a unit-preserving map `f` annihilates
+the unit. -/
+theorem map_one_eq_zero_of_leibniz_along {A B ι σ F : Type*} [MulOneClass A] [NonAssocRing B]
+    [SetLike σ A] [Zero ι] {𝒜 : ι → σ} [SetLike.GradedOne 𝒜] [FunLike F A B] [OneHomClass F A B]
+    {s : ι → ℤˣ} (f : F) {d : A → B}
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * f b + s i • (f a * d b)) :
     d 1 = 0 := by
   have key := hl (SetLike.one_mem_graded 𝒜) 1
-  simp only [mul_one, one_mul, Int.negOnePow_zero, one_smul] at key
-  exact left_eq_add.mp key
+  simp only [map_one, mul_one, one_mul, left_eq_add] at key
+  exact (smul_eq_zero_iff_eq (s 0)).mp key
+
+/-- A function satisfying an `s`-signed Leibniz rule on homogeneous left factors annihilates the
+unit. Neither additivity nor a direct-sum decomposition is needed. -/
+theorem map_one_eq_zero_of_leibniz {A ι σ : Type*} [NonAssocRing A] [SetLike σ A] [Zero ι]
+    {𝒜 : ι → σ} [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A → A}
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b)) :
+    d 1 = 0 :=
+  map_one_eq_zero_of_leibniz_along (𝒜 := 𝒜) (OneHom.id A) hl
 
 end UnitalLeibniz
 
 section AlgebraLeibniz
 
-variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
-  [SetLike.GradedOne 𝒜] {d : A →ₗ[R] A}
-
-/-- A linear map satisfying the graded Leibniz rule annihilates the image of the ground semiring.
-Only the unit's degree-zero membership is needed from the grading. -/
-theorem map_algebraMap_of_leibniz
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+/-- A linear map satisfying an `s`-signed Leibniz rule annihilates the image of the ground
+semiring. Only the unit's degree-zero membership is needed from the grading. -/
+theorem map_algebraMap_of_leibniz {R A ι σ : Type*} [CommSemiring R] [Ring A] [Algebra R A]
+    [SetLike σ A] [Zero ι] {𝒜 : ι → σ} [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A →ₗ[R] A}
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
     (r : R) : d (algebraMap R A r) = 0 := by
-  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz hl, smul_zero]
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz (𝒜 := 𝒜) hl, smul_zero]
 
 end AlgebraLeibniz
 
@@ -225,11 +244,11 @@ theorem toIsNonUnitalDGAlgebra (h : IsDGAlgebra 𝒜 d) : IsNonUnitalDGAlgebra �
 /-- The differential of a differential graded algebra annihilates the unit: the Leibniz rule for
 `1 * 1` reads `d 1 = d 1 + d 1`. -/
 theorem map_one_eq_zero (h : IsDGAlgebra 𝒜 d) : d 1 = 0 :=
-  map_one_eq_zero_of_leibniz h.leibniz
+  map_one_eq_zero_of_leibniz (𝒜 := 𝒜) h.leibniz
 
 /-- The differential of a differential graded algebra annihilates the image of the ground ring. -/
 theorem map_algebraMap (h : IsDGAlgebra 𝒜 d) (r : R) : d (algebraMap R A r) = 0 :=
-  map_algebraMap_of_leibniz h.leibniz r
+  map_algebraMap_of_leibniz (𝒜 := 𝒜) h.leibniz r
 
 end IsDGAlgebra
 

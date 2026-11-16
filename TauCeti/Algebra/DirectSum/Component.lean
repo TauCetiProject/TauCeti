@@ -16,7 +16,9 @@ composes it with the submodule inclusion to give an endomorphism of the ambient 
 projections are idempotent and pairwise orthogonal, acting as the identity on their own piece and as
 zero on every other piece. We also record the subtype-valued evaluations
 `TauCeti.decompose_apply_of_mem_same` and `TauCeti.decompose_apply_of_mem_ne` of
-`DirectSum.decompose` for any `AddSubmonoidClass` decomposition.
+`DirectSum.decompose` for any `AddSubmonoidClass` decomposition, as well as
+`TauCeti.zsmul_mem_of_decomposition` showing that each homogeneous piece of an `AddCommGroup`
+decomposition is closed under integer scalar multiplication.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0),
@@ -45,6 +47,27 @@ theorem decompose_apply_of_mem_ne {i j : ι} {x : M} (hx : x ∈ ℳ i) (hij : i
   Subtype.ext (DirectSum.decompose_of_mem_ne ℳ hx hij)
 
 end AddCommMonoid
+
+section AddCommGroup
+
+variable {ι M σ : Type*} [DecidableEq ι] [AddCommGroup M]
+  [SetLike σ M] [AddSubmonoidClass σ M] (ℳ : ι → σ) [DirectSum.Decomposition ℳ]
+
+/-- In an internal direct-sum decomposition of an additive commutative group, every homogeneous
+piece is closed under integer scalar multiplication. -/
+theorem zsmul_mem_of_decomposition {i : ι} {x : M} (hx : x ∈ ℳ i) (n : ℤ) :
+    n • x ∈ ℳ i := by
+  let proj : M →+ M :=
+    { toFun a := (DirectSum.decompose ℳ a i : M)
+      map_zero' := by simp
+      map_add' a b := by simp }
+  have h : n • x = proj (n • x) := by
+    rw [map_zsmul]
+    simp [proj, DirectSum.decompose_of_mem_same ℳ hx]
+  rw [h]
+  exact Subtype.property _
+
+end AddCommGroup
 
 variable {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [DecidableEq ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]

@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.RingTheory.GradedAlgebra.Basic
-public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.LinearAlgebra.Graded.LinearMap
+import Mathlib.Data.Int.Order.Units
 import Mathlib.GroupTheory.GroupAction.Ring
 import Mathlib.Tactic.Abel
 import TauCeti.Algebra.DirectSum.Component
+import TauCeti.Algebra.Homology.DG.Algebra.Defs
+import TauCeti.RingTheory.GradedAlgebra.Generators
 
 /-!
 # Signed Leibniz endomorphisms and lower-triangular matrix derivations
@@ -23,12 +26,15 @@ when
 
 `d (a * b) = d a * b + s i • (a * d b)` for `a ∈ 𝒜 i`.
 
-This generalizes the integer-graded Leibniz consequences in
-`TauCeti.Algebra.Homology.DG.Algebra.Defs` to arbitrary grading index types `ι` (in particular both
-`ℤ` and `ZMod 2`) and arbitrary sign maps `s : ι → ℤˣ`:
+Building on the basic signed-Leibniz consequences in `TauCeti.Algebra.Homology.DG.Algebra.Defs`
+(`TauCeti.map_mul_of_leibniz_along_of_map_eq_zero`, `TauCeti.map_one_eq_zero_of_leibniz_along`, and
+`TauCeti.map_algebraMap_of_leibniz`), this file develops uniqueness, homogeneity, and square-zero
+results for arbitrary grading index types `ι` (in particular both `ℤ` and `ZMod 2`) and arbitrary
+sign maps `s : ι → ℤˣ`:
 
-* `d` annihilates `1` and `algebraMap R A r`, and its kernel is a subalgebra of `A`, so two
-  `s`-signed Leibniz maps that agree on an algebra-generating set are equal;
+* an `s`-signed Leibniz map vanishes on `A` as soon as it vanishes on an algebra-generating set, so
+  two `s`-signed Leibniz maps (or an intertwining along a grading-preserving algebra map) are
+  determined on any algebra-generating set;
 * if `d` shifts the degrees of homogeneous generators by `q`, then `d` is homogeneous of degree `q`
   on all of `A`;
 * if `d` is homogeneous of degree `q` and `s (i + q) = -s i`, then `d ∘ₗ d` is an unsigned
@@ -36,13 +42,14 @@ This generalizes the integer-graded Leibniz consequences in
 
 To *construct* signed derivations out of algebras presented by generators and Koszul commutation
 relations (such as `TauCeti.SignedSym` and `TauCeti.ParitySignedSym`), we also package the `2 × 2`
-lower-triangular matrix representation `x ↦ !![g x, 0; δ x, σ (g x)]`, whose `(1, 0)` entry after
-lifting to an algebra map `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` is a `(1, σ)`-derivation.
+lower-triangular matrix representation `x ↦ !![g x, 0; δ x, h x]` and the `(1, 0)`-entry extractor
+`AlgHom.lowerLeftEntry`, which produces a `(1, σ)`-derivation whenever an algebra map
+`Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` is lower-triangular with diagonal `(id, σ)` on generators.
 
 ## Main definitions
 
 * `TauCeti.lowerTriangularLinearMap`: the linear map `x ↦ !![g x, 0; δ x, h x]`.
-* `TauCeti.lowerTriangularDerivation`: the `(1, 0)` entry of an algebra map
+* `AlgHom.lowerLeftEntry`: the `(1, 0)` entry of an algebra map
   `A →ₐ[R] Matrix (Fin 2) (Fin 2) A` as an `R`-linear endomorphism of `A`.
 
 ## Main results
@@ -58,7 +65,7 @@ lifting to an algebra map `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` is a `(1, 
 * `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top`: an odd-sign Leibniz map
   squares to zero if and only if its square vanishes on generators.
 * `TauCeti.lowerTriangularLinearMap_mul_eq_smul` and
-  `TauCeti.lowerTriangularDerivation_mul_of_adjoin_range_eq_top`: Koszul supercommutativity of the
+  `AlgHom.lowerLeftEntry_mul_of_adjoin_range_eq_top`: Koszul supercommutativity of the
   generator matrices and the resulting twisted Leibniz rule.
 
 ## References
@@ -72,54 +79,33 @@ public section
 
 namespace TauCeti
 
-section SignedLeibniz
+section UniquenessAlong
 
-variable {R A ι : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
-  [DecidableEq ι] {𝒜 : ι → Submodule R A} [DirectSum.Decomposition 𝒜]
-  {s : ι → ℤˣ} {d : A →ₗ[R] A}
+variable {R A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+  [DecidableEq ι] [Zero ι] {𝒜 : ι → Submodule R A} [SetLike.GradedOne 𝒜]
+  [DirectSum.Decomposition 𝒜] {s : ι → ℤˣ}
 
-/-- An `s`-signed Leibniz rule against a cycle in the right factor holds for an arbitrary left
-factor, without a homogeneity assumption. -/
-theorem map_mul_of_signedLeibniz_of_map_eq_zero
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
-    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | homogeneous a => simp [hl a.property b, hb]
-  | add a a' ha ha' => simp [add_mul, ha, ha']
+/-- A linear map `D : A →ₗ[R] B` satisfying an `s`-signed Leibniz rule along a unit-preserving map
+`f` vanishes if it vanishes on an algebra-generating set. -/
+theorem eq_zero_of_signedLeibniz_along_of_adjoin_eq_top
+    {B F : Type*} [NonAssocRing B] [Module R B] [FunLike F A B] [OneHomClass F A B]
+    (f : F) {D : A →ₗ[R] B}
+    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, D (a * b) = D a * f b + s i • (f a * D b))
+    {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, D x = 0) : D = 0 := by
+  have h1 : (1 : A) ∈ LinearMap.ker D :=
+    LinearMap.mem_ker.2 (map_one_eq_zero_of_leibniz_along (𝒜 := 𝒜) f hl)
+  let K : Subalgebra R A :=
+    (LinearMap.ker D).toSubalgebra h1 fun a b ha hb ↦ by
+      rw [LinearMap.mem_ker] at ha hb ⊢
+      rw [map_mul_of_leibniz_along_of_map_eq_zero (𝒜 := 𝒜) f hl a hb, ha, zero_mul]
+  have htop : (⊤ : Subalgebra R A) ≤ K :=
+    hadj ▸ Algebra.adjoin_le fun x hx ↦
+      Submodule.mem_toSubalgebra.2 (LinearMap.mem_ker.2 (hS x hx))
+  ext a
+  rw [LinearMap.zero_apply, ← LinearMap.mem_ker, ← Submodule.mem_toSubalgebra]
+  exact htop Algebra.mem_top
 
-end SignedLeibniz
-
-section UnitalSignedLeibniz
-
-variable {A ι σ : Type*} [NonAssocRing A] [SetLike σ A] [Zero ι] {𝒜 : ι → σ}
-  [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A → A}
-
-/-- A function satisfying an `s`-signed Leibniz rule on homogeneous left factors annihilates the
-unit: the rule for `1 * 1` gives `s 0 • d 1 = 0`, and `s 0` is a unit of `ℤ`. -/
-theorem map_one_eq_zero_of_signedLeibniz
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b)) :
-    d 1 = 0 := by
-  have key := hl (SetLike.one_mem_graded 𝒜) 1
-  simp only [mul_one, one_mul, left_eq_add] at key
-  exact (smul_eq_zero_iff_eq (s 0)).mp key
-
-end UnitalSignedLeibniz
-
-section AlgebraSignedLeibniz
-
-variable {R A ι : Type*} [CommSemiring R] [Ring A] [Algebra R A] [Zero ι]
-  {𝒜 : ι → Submodule R A} [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A →ₗ[R] A}
-
-/-- A linear map satisfying an `s`-signed Leibniz rule annihilates the image of the ground
-semiring. -/
-theorem map_algebraMap_of_signedLeibniz
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
-    (r : R) : d (algebraMap R A r) = 0 := by
-  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_signedLeibniz (𝒜 := 𝒜) hl,
-    smul_zero]
-
-end AlgebraSignedLeibniz
+end UniquenessAlong
 
 section Uniqueness
 
@@ -127,37 +113,12 @@ variable {R A ι : Type*} [CommSemiring R] [Ring A] [Algebra R A]
   [DecidableEq ι] [Zero ι] {𝒜 : ι → Submodule R A} [SetLike.GradedOne 𝒜]
   [DirectSum.Decomposition 𝒜] {s : ι → ℤˣ}
 
-/-- A linear map `D : A →ₗ[R] B` satisfying an `s`-signed Leibniz rule along a unit-preserving map
-`f` vanishes if it vanishes on an algebra-generating set: its kernel contains `1` and is closed
-under multiplication. -/
-theorem eq_zero_of_signedLeibniz_along_of_adjoin_eq_top
-    {B F : Type*} [Ring B] [Algebra R B] [FunLike F A B] [OneHomClass F A B]
-    (f : F) {D : A →ₗ[R] B}
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, D (a * b) = D a * f b + s i • (f a * D b))
-    {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, D x = 0) : D = 0 := by
-  have h1 : D 1 = 0 := by
-    have key := hl (SetLike.one_mem_graded 𝒜) 1
-    simp only [map_one, mul_one, one_mul, left_eq_add] at key
-    exact (smul_eq_zero_iff_eq (s 0)).mp key
-  have hmul : ∀ (a : A) {b : A}, D b = 0 → D (a * b) = D a * f b := fun a {b} hb ↦ by
-    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | homogeneous a => simp [hl a.property b, hb]
-    | add a a' ha ha' => simp [add_mul, ha, ha']
-  let K : Subalgebra R A :=
-    (LinearMap.ker D).toSubalgebra h1 fun a b ha hb ↦ by
-      rw [LinearMap.mem_ker] at ha hb ⊢
-      rw [hmul a hb, ha, zero_mul]
-  have htop : (⊤ : Subalgebra R A) ≤ K := hadj ▸ Algebra.adjoin_le fun x hx ↦ hS x hx
-  ext a
-  exact htop Algebra.mem_top
-
-/-- The kernel of a linear endomorphism satisfying an `s`-signed Leibniz rule is a subalgebra, so
-such an endomorphism vanishes if it vanishes on an algebra-generating set. -/
+/-- A linear endomorphism satisfying an `s`-signed Leibniz rule vanishes if it vanishes on an
+algebra-generating set. -/
 theorem eq_zero_of_signedLeibniz_of_adjoin_eq_top {D : A →ₗ[R] A}
     (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, D (a * b) = D a * b + s i • (a * D b))
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, D x = 0) : D = 0 :=
-  eq_zero_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (AlgHom.id R A) hl hadj hS
+  eq_zero_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (OneHom.id A) hl hadj hS
 
 /-- A grading-preserving algebra homomorphism out of `A` intertwines `s`-signed Leibniz
 endomorphisms if it does so on an algebra-generating set. Neither degree-shift nor square-zero
@@ -234,42 +195,23 @@ theorem isHomogeneous_of_signedLeibniz_of_adjoin_eq_top
     (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤)
     (hS : S ⊆ (⨆ i : ι, 𝒜 i ⊓ (𝒜 (i + q)).comap d : Submodule R A)) :
-    LinearMap.IsHomogeneous d 𝒜 𝒜 q := by
-  let F : ι → Submodule R A := fun i ↦ 𝒜 i ⊓ (𝒜 (i + q)).comap d
-  let P : Submodule R A := ⨆ i, F i
-  have h1 : (1 : A) ∈ P :=
-    le_iSup F 0 ⟨SetLike.GradedOne.one_mem, Submodule.mem_comap.2 <| by
-      rw [map_one_eq_zero_of_signedLeibniz (𝒜 := 𝒜) hl]
-      exact zero_mem _⟩
-  have hmul : ∀ a b, a ∈ P → b ∈ P → a * b ∈ P := fun a b ha hb ↦ by
-    refine Submodule.iSup_induction F (motive := fun a ↦ a * b ∈ P) ha
-      (fun i a ha ↦ ?_) (by simp) fun a₁ a₂ h₁ h₂ ↦ by rw [add_mul]; exact add_mem h₁ h₂
-    refine Submodule.iSup_induction F (motive := fun b ↦ a * b ∈ P) hb
-      (fun j b hb ↦ ?_) (by simp) fun b₁ b₂ h₁ h₂ ↦ by rw [mul_add]; exact add_mem h₁ h₂
-    refine le_iSup F (i + j) ⟨SetLike.GradedMul.mul_mem ha.1 hb.1, Submodule.mem_comap.2 ?_⟩
-    rw [hl ha.1 b]
-    have hda_b : d a * b ∈ 𝒜 ((i + j) + q) :=
-      add_right_comm i q j ▸ SetLike.GradedMul.mul_mem ha.2 hb.1
-    have ha_db : a * d b ∈ 𝒜 ((i + j) + q) :=
-      add_assoc i j q ▸ SetLike.GradedMul.mul_mem ha.1 hb.2
-    -- Direct summands of an `AddCommGroup` are closed under `±1` even over a `CommSemiring`.
-    have hneg : -(a * d b) ∈ 𝒜 ((i + j) + q) := by
-      have h : -(a * d b) = homogeneousComponent 𝒜 ((i + j) + q) (-(a * d b)) := by
-        rw [map_neg, homogeneousComponent_apply_of_mem 𝒜 ha_db]
-      exact h ▸ homogeneousComponent_mem 𝒜 ((i + j) + q) (-(a * d b))
-    refine add_mem hda_b ?_
-    rcases Int.units_eq_one_or (s i) with hs | hs <;> simp [hs, ha_db, hneg]
-  have htop : (⊤ : Subalgebra R A) ≤ P.toSubalgebra h1 hmul :=
-    hadj ▸ Algebra.adjoin_le hS
-  refine LinearMap.isHomogeneous_def.2 fun k a ha ↦ ?_
-  let π : A →ₗ[R] A := d ∘ₗ homogeneousComponent 𝒜 k
-  have hπ : P ≤ (𝒜 (k + q)).comap π := iSup_le fun i x hx ↦ by
-    by_cases hik : i = k
-    · subst hik
-      simpa [π, homogeneousComponent_apply_of_mem 𝒜 hx.1] using hx.2
-    · simp [π, homogeneousComponent_apply_of_mem_ne 𝒜 hx.1 hik]
-  have haP : a ∈ P := htop Algebra.mem_top
-  simpa [π, homogeneousComponent_apply_of_mem 𝒜 ha] using hπ haP
+    LinearMap.IsHomogeneous d 𝒜 𝒜 q :=
+  LinearMap.isHomogeneous_def.2 fun k a ha ↦
+    GradedAlgebra.grade_le_of_adjoin_eq_top 𝒜
+      (ℬ := fun i ↦ (𝒜 (i + q)).comap d)
+      (Submodule.mem_comap.2 <| by
+        rw [map_one_eq_zero_of_leibniz (𝒜 := 𝒜) hl]
+        exact zero_mem _)
+      (fun {i j a b} ha hda hb hdb ↦ Submodule.mem_comap.2 <| by
+        rw [hl ha b]
+        have hda_b : d a * b ∈ 𝒜 ((i + j) + q) :=
+          add_right_comm i q j ▸ SetLike.GradedMul.mul_mem hda hb
+        have ha_db : a * d b ∈ 𝒜 ((i + j) + q) :=
+          add_assoc i j q ▸ SetLike.GradedMul.mul_mem ha hdb
+        refine add_mem hda_b ?_
+        rw [Units.smul_def]
+        exact zsmul_mem_of_decomposition 𝒜 ha_db _)
+      hadj hS k ha
 
 /-- If `g : V →ₗ[R] A` is homogeneous of degree `0`, its image generates `A`, `𝒱` spans `V`, and
 `d ∘ₗ g` is homogeneous of degree `q`, then any `s`-signed Leibniz endomorphism `d` is homogeneous
@@ -291,14 +233,14 @@ theorem isHomogeneous_of_signedLeibniz_of_adjoin_range_eq_top
 
 end Homogeneity
 
-section SquareZero
+section SquareZeroMul
 
-variable {R A ι : Type*} [CommSemiring R] [Ring A] [Algebra R A]
-  [DecidableEq ι] [AddMonoid ι] {𝒜 : ι → Submodule R A} [GradedAlgebra 𝒜]
+variable {R A ι : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
+  [DecidableEq ι] [AddMonoid ι] {𝒜 : ι → Submodule R A} [DirectSum.Decomposition 𝒜]
   {s : ι → ℤˣ} {q : ι} {d : A →ₗ[R] A}
 
-/-- When `d` has degree `q` and `s (i + q) = -s i`, the square `d ∘ₗ d` is an unsigned derivation:
-the two cross terms of `d (d (a * b))` cancel. -/
+/-- When `d` has degree `q` and `s (i + q) = -s i`, the square `d ∘ₗ d` is an unsigned
+derivation. -/
 theorem comp_self_mul_of_signedLeibniz (hdeg : LinearMap.IsHomogeneous d 𝒜 𝒜 q)
     (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
     (hs : ∀ i, s (i + q) = -s i) (a b : A) :
@@ -315,6 +257,14 @@ theorem comp_self_mul_of_signedLeibniz (hdeg : LinearMap.IsHomogeneous d 𝒜 �
     simp only [Units.smul_def, Units.val_neg, neg_zsmul, zsmul_add, smul_smul,
       ← Units.val_mul, Int.units_mul_self, Units.val_one, one_zsmul]
     abel
+
+end SquareZeroMul
+
+section SquareZero
+
+variable {R A ι : Type*} [CommSemiring R] [Ring A] [Algebra R A]
+  [DecidableEq ι] [AddMonoid ι] {𝒜 : ι → Submodule R A} [SetLike.GradedOne 𝒜]
+  [DirectSum.Decomposition 𝒜] {s : ι → ℤˣ} {q : ι} {d : A →ₗ[R] A}
 
 /-- A degree-`q` endomorphism satisfying an `s`-signed Leibniz rule with `s (i + q) = -s i` squares
 to zero if and only if its square vanishes on an algebra-generating set. -/
@@ -358,8 +308,8 @@ theorem lowerTriangularLinearMap_apply {R V A : Type*} [Semiring R] [AddCommMono
     [AddCommMonoid A] [Module R A] (g δ h : V →ₗ[R] A) (x : V) :
     lowerTriangularLinearMap g δ h x = !![g x, 0; δ x, h x] := (rfl)
 
-private theorem mul_add_smul_mul_eq_smul {R A ι : Type*} [Semiring R] [Ring A] [Module R A]
-    [Semiring ι] {𝒜 : ι → Submodule R A} {c : ι → ℤˣ} (hc : ∀ i j, c (i + j) = c i * c j)
+private theorem mul_add_smul_mul_eq_smul {A ι σ : Type*} [NonUnitalNonAssocRing A]
+    [SetLike σ A] [Semiring ι] {𝒜 : ι → σ} {c : ι → ℤˣ} (hc : ∀ i j, c (i + j) = c i * c j)
     (hcomm : ∀ {i j : ι} {a b : A}, a ∈ 𝒜 i → b ∈ 𝒜 j → a * b = c (i * j) • (b * a))
     {i j : ι} {a b a' b' : A} (ha : a ∈ 𝒜 i) (hb : b ∈ 𝒜 j)
     (ha' : a' ∈ 𝒜 (i + 1)) (hb' : b' ∈ 𝒜 (j + 1)) :
@@ -380,23 +330,20 @@ private theorem mul_add_smul_mul_eq_smul {R A ι : Type*} [Semiring R] [Ring A] 
   rw [hleft, hright, ← smul_add, add_comm]
 
 /-- For homogeneous generators `x ∈ 𝒱 i` and `y ∈ 𝒱 j`, a degree-`0` generator map `g`, a
-degree-`1` derivation assignment `δ`, and an algebra endomorphism `σ` scaling `𝒜 k` by `c k`, the
-lower-triangular matrices `!![g x, 0; δ x, σ (g x)]` obey the Koszul commutation relation with sign
+degree-`1` derivation assignment `δ`, and a linear map `h` scaling `g x` by `c i` on `𝒱 i`, the
+lower-triangular matrices `!![g x, 0; δ x, h x]` obey the Koszul commutation relation with sign
 `c (i * j)`. -/
-theorem lowerTriangularLinearMap_mul_eq_smul {R V A ι : Type*} [CommSemiring R] [Ring A]
-    [Algebra R A] [AddCommMonoid V] [Module R V] [Semiring ι]
+theorem lowerTriangularLinearMap_mul_eq_smul {R V A ι : Type*} [Semiring R]
+    [NonUnitalNonAssocRing A] [Module R A] [AddCommMonoid V] [Module R V] [Semiring ι]
     {𝒱 : ι → Submodule R V} {𝒜 : ι → Submodule R A} {c : ι → ℤˣ}
     (hc : ∀ i j, c (i + j) = c i * c j)
     (hcomm : ∀ {i j : ι} {a b : A}, a ∈ 𝒜 i → b ∈ 𝒜 j → a * b = c (i * j) • (b * a))
-    {σ : A →ₐ[R] A} (hσ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → σ a = c i • a)
-    {g δ : V →ₗ[R] A} (hg : LinearMap.IsHomogeneous g 𝒱 𝒜 0)
-    (hδ : LinearMap.IsHomogeneous δ 𝒱 𝒜 1) {i j : ι} {x y : V}
-    (hx : x ∈ 𝒱 i) (hy : y ∈ 𝒱 j) :
-    lowerTriangularLinearMap g δ (σ.toLinearMap ∘ₗ g) x *
-        lowerTriangularLinearMap g δ (σ.toLinearMap ∘ₗ g) y =
-      c (i * j) •
-        (lowerTriangularLinearMap g δ (σ.toLinearMap ∘ₗ g) y *
-          lowerTriangularLinearMap g δ (σ.toLinearMap ∘ₗ g) x) := by
+    {g δ h : V →ₗ[R] A} (hg : LinearMap.IsHomogeneous g 𝒱 𝒜 0)
+    (hδ : LinearMap.IsHomogeneous δ 𝒱 𝒜 1)
+    (hh : ∀ {i : ι} {x : V}, x ∈ 𝒱 i → h x = c i • g x)
+    {i j : ι} {x y : V} (hx : x ∈ 𝒱 i) (hy : y ∈ 𝒱 j) :
+    lowerTriangularLinearMap g δ h x * lowerTriangularLinearMap g δ h y =
+      c (i * j) • (lowerTriangularLinearMap g δ h y * lowerTriangularLinearMap g δ h x) := by
   have hgx : g x ∈ 𝒜 i := by simpa only [add_zero] using hg.map_mem hx
   have hgy : g y ∈ 𝒜 j := by simpa only [add_zero] using hg.map_mem hy
   have hdx : δ x ∈ 𝒜 (i + 1) := hδ.map_mem hx
@@ -406,40 +353,48 @@ theorem lowerTriangularLinearMap_mul_eq_smul {R V A ι : Type*} [CommSemiring R]
   · simpa [Matrix.mul_apply] using hcomm hgx hgy
   · simp [Matrix.mul_apply]
   · have hcross := mul_add_smul_mul_eq_smul hc hcomm hgx hgy hdx hdy
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, hσ hgx, hσ hgy, Units.smul_def, smul_mul_assoc]
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, hh hx, hh hy, Units.smul_def, smul_mul_assoc]
       using hcross
-  · have key : σ (g x) * σ (g y) = c (i * j) • (σ (g y) * σ (g x)) := by
-      rw [← map_mul σ, ← map_mul σ, hcomm hgx hgy, Units.smul_def, map_zsmul, Units.smul_def]
+  · have key : h x * h y = c (i * j) • (h y * h x) := by
+      simp only [hh hx, hh hy, Units.smul_def, smul_mul_assoc, mul_smul_comm, hcomm hgx hgy]
+      rw [smul_comm (c i : ℤ), smul_comm (c j : ℤ), smul_comm (c i : ℤ) (c j : ℤ)]
     simpa [Matrix.mul_apply, Fin.sum_univ_two] using key
+
+end LowerTriangular
+
+end TauCeti
+
+namespace AlgHom
 
 /-- Extract the lower-left `(1, 0)` entry of an algebra homomorphism into `2 × 2` matrices as an
 `R`-linear endomorphism of `A`. -/
-def lowerTriangularDerivation {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+def lowerLeftEntry {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
     (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) : A →ₗ[R] A :=
   Matrix.entryLinearMap R A 1 0 ∘ₗ Φ.toLinearMap
 
-/-- `lowerTriangularDerivation Φ` evaluates to the `(1, 0)` entry of `Φ`. -/
-theorem lowerTriangularDerivation_apply {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+/-- `AlgHom.lowerLeftEntry Φ` evaluates to the `(1, 0)` entry of `Φ`. -/
+theorem lowerLeftEntry_apply {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
     (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (a : A) :
-    lowerTriangularDerivation Φ a = Φ a 1 0 := (rfl)
+    Φ.lowerLeftEntry a = Φ a 1 0 := (rfl)
 
-/-- The `(1, 0)` entry of an algebra map into `2 × 2` matrices vanishes on scalar matrices. -/
+/-- The `(1, 0)` entry of an algebra map `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` vanishes on
+`algebraMap R A r` for every `r : R`. -/
 @[simp]
-theorem lowerTriangularDerivation_algebraMap {R A : Type*} [CommSemiring R] [Semiring A]
+theorem lowerLeftEntry_algebraMap {R A : Type*} [CommSemiring R] [Semiring A]
     [Algebra R A] (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (r : R) :
-    lowerTriangularDerivation Φ (algebraMap R A r) = 0 := by
-  simp [lowerTriangularDerivation_apply, Matrix.algebraMap_matrix_apply]
+    Φ.lowerLeftEntry (algebraMap R A r) = 0 := by
+  simp [lowerLeftEntry_apply, Matrix.algebraMap_matrix_apply]
 
-/-- The `(1, 0)` entry of an algebra map into `2 × 2` matrices annihilates `1`. -/
+/-- The `(1, 0)` entry of an algebra map `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` annihilates `1`. -/
 @[simp]
-theorem lowerTriangularDerivation_one {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+theorem lowerLeftEntry_one {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
     (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) :
-    lowerTriangularDerivation Φ 1 = 0 := by
-  simpa only [map_one] using lowerTriangularDerivation_algebraMap Φ 1
+    Φ.lowerLeftEntry 1 = 0 := by
+  simpa only [map_one] using Φ.lowerLeftEntry_algebraMap 1
 
 /-- If `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` has diagonal `(id, σ)` and zero `(0, 1)` entry on an
 algebra-generating set, it has that form on all of `A`. -/
-theorem algHom_lowerTriangular_entries_of_adjoin_eq_top {R A : Type*} [CommSemiring R]
+theorem lowerTriangular_entries_of_adjoin_eq_top {R A : Type*} [CommSemiring R]
     [Semiring A] [Algebra R A] (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (σ : A →ₐ[R] A)
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤)
     (hS : ∀ x ∈ S, Φ x 0 0 = x ∧ Φ x 0 1 = 0 ∧ Φ x 1 1 = σ x) (a : A) :
@@ -455,31 +410,27 @@ theorem algHom_lowerTriangular_entries_of_adjoin_eq_top {R A : Type*} [CommSemir
   have htop : (⊤ : Subalgebra R A) ≤ L := hadj ▸ Algebra.adjoin_le hS
   exact htop Algebra.mem_top
 
-/-- Under the hypotheses of `algHom_lowerTriangular_entries_of_adjoin_eq_top`, the `(1, 0)` entry of
-`Φ` satisfies the `(1, σ)`-twisted Leibniz rule `d (a * b) = d a * b + σ a * d b`. -/
-theorem lowerTriangularDerivation_mul_of_adjoin_eq_top {R A : Type*} [CommSemiring R]
+/-- Under the hypotheses of `AlgHom.lowerTriangular_entries_of_adjoin_eq_top`, the `(1, 0)` entry
+of `Φ` satisfies the `(1, σ)`-twisted Leibniz rule `d (a * b) = d a * b + σ a * d b`. -/
+theorem lowerLeftEntry_mul_of_adjoin_eq_top {R A : Type*} [CommSemiring R]
     [Semiring A] [Algebra R A] (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (σ : A →ₐ[R] A)
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤)
     (hS : ∀ x ∈ S, Φ x 0 0 = x ∧ Φ x 0 1 = 0 ∧ Φ x 1 1 = σ x) (a b : A) :
-    lowerTriangularDerivation Φ (a * b) =
-      lowerTriangularDerivation Φ a * b + σ a * lowerTriangularDerivation Φ b := by
-  have ha := algHom_lowerTriangular_entries_of_adjoin_eq_top Φ σ hadj hS a
-  have hb := algHom_lowerTriangular_entries_of_adjoin_eq_top Φ σ hadj hS b
-  simp [lowerTriangularDerivation_apply, Matrix.mul_apply, Fin.sum_univ_two, ha.2.2, hb.1]
+    Φ.lowerLeftEntry (a * b) = Φ.lowerLeftEntry a * b + σ a * Φ.lowerLeftEntry b := by
+  have ha := Φ.lowerTriangular_entries_of_adjoin_eq_top σ hadj hS a
+  have hb := Φ.lowerTriangular_entries_of_adjoin_eq_top σ hadj hS b
+  simp [lowerLeftEntry_apply, Matrix.mul_apply, Fin.sum_univ_two, ha.2.2, hb.1]
 
 /-- When `Φ (g x) = !![g x, 0; δ x, σ (g x)]` for an algebra-generating map `g : V →ₗ[R] A`, the
 `(1, 0)` entry of `Φ` satisfies `d (a * b) = d a * b + σ a * d b` for all `a, b : A`. -/
-theorem lowerTriangularDerivation_mul_of_adjoin_range_eq_top {R V A : Type*} [CommSemiring R]
+theorem lowerLeftEntry_mul_of_adjoin_range_eq_top {R V A : Type*} [CommSemiring R]
     [Semiring A] [Algebra R A] [AddCommMonoid V] [Module R V]
     (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (σ : A →ₐ[R] A) {g δ : V →ₗ[R] A}
     (hadj : Algebra.adjoin R (Set.range g) = ⊤)
-    (hΦ : ∀ x, Φ (g x) = lowerTriangularLinearMap g δ (σ.toLinearMap ∘ₗ g) x) (a b : A) :
-    lowerTriangularDerivation Φ (a * b) =
-      lowerTriangularDerivation Φ a * b + σ a * lowerTriangularDerivation Φ b := by
-  refine lowerTriangularDerivation_mul_of_adjoin_eq_top Φ σ hadj ?_ a b
+    (hΦ : ∀ x, Φ (g x) = TauCeti.lowerTriangularLinearMap g δ (σ.toLinearMap ∘ₗ g) x) (a b : A) :
+    Φ.lowerLeftEntry (a * b) = Φ.lowerLeftEntry a * b + σ a * Φ.lowerLeftEntry b := by
+  refine Φ.lowerLeftEntry_mul_of_adjoin_eq_top σ hadj ?_ a b
   rintro _ ⟨x, rfl⟩
   simp [hΦ x]
 
-end LowerTriangular
-
-end TauCeti
+end AlgHom

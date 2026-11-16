@@ -98,21 +98,23 @@ private noncomputable def triangularLift :
         lowerTriangularLinearMap_mul_eq_smul Int.negOnePow_add
           (fun ha hb => by
             simpa only [Units.smul_def] using mul_eq_negOnePow_smul_mul G ha hb)
-          (fun ha => by
-            simpa using InternalGrading.koszulTwistAlgEquiv_apply_of_mem (signedSymPiece G) 1 ha)
-          (isHomogeneous_signedSymGenerator G) hδ hx hy
+          (isHomogeneous_signedSymGenerator G) hδ
+          (fun hx' => by
+            simpa using InternalGrading.koszulTwistAlgEquiv_apply_of_mem (signedSymPiece G) 1
+              (generator_mem_signedSymPiece G hx'))
+          hx hy
 
 variable (δ) in
 /-- The odd derivation of `A(V)` extending a degree-one linear map `δ : V → A(V)`. It satisfies
 the signed Leibniz rule `TauCeti.SignedSym.liftDerivation_mul`, raises degree by one, and is the
 unique such extension of `δ` (`TauCeti.SignedSym.eq_liftDerivation`). -/
 noncomputable def liftDerivation : SignedSym G →ₗ[R] SignedSym G :=
-  lowerTriangularDerivation (triangularLift hδ)
+  (triangularLift hδ).lowerLeftEntry
 
 /-- The odd derivation extends the assignment on generators. -/
 @[simp]
 theorem liftDerivation_generator (x : V) : liftDerivation δ hδ (generator G x) = δ x := by
-  simp [liftDerivation, lowerTriangularDerivation_apply, triangularLift]
+  simp [liftDerivation, AlgHom.lowerLeftEntry_apply, triangularLift]
 
 /-- **The signed Leibniz rule**: for a left factor of degree `p`,
 `d (a * b) = d a * b + (-1) ^ p • (a * d b)`. -/
@@ -120,7 +122,7 @@ theorem liftDerivation_mul {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiec
     (b : SignedSym G) :
     liftDerivation δ hδ (a * b) =
       liftDerivation δ hδ a * b + p.negOnePow • (a * liftDerivation δ hδ b) := by
-  have h := lowerTriangularDerivation_mul_of_adjoin_range_eq_top (triangularLift hδ)
+  have h := (triangularLift hδ).lowerLeftEntry_mul_of_adjoin_range_eq_top
     (InternalGrading.koszulTwistAlgEquiv (signedSymPiece G) 1 : SignedSym G →ₐ[R] SignedSym G)
     (adjoin_range_generator G) (lift_generator G _ _) a b
   simpa only [liftDerivation, AlgEquiv.coe_toAlgHom,
@@ -130,12 +132,12 @@ theorem liftDerivation_mul {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiec
 /-- The odd derivation annihilates the coefficients. -/
 @[simp]
 theorem liftDerivation_algebraMap (r : R) : liftDerivation δ hδ (algebraMap R _ r) = 0 :=
-  lowerTriangularDerivation_algebraMap (triangularLift hδ) r
+  (triangularLift hδ).lowerLeftEntry_algebraMap r
 
 /-- The odd derivation annihilates the unit. -/
 @[simp]
 theorem liftDerivation_one : liftDerivation δ hδ 1 = 0 :=
-  lowerTriangularDerivation_one (triangularLift hδ)
+  (triangularLift hδ).lowerLeftEntry_one
 
 /-- The odd derivation raises degree by one. -/
 theorem isHomogeneous_liftDerivation :
