@@ -260,7 +260,6 @@ private theorem tendsto_schwarzChristoffelBoundary_sub_of_eq_comp_neg_inv
       (continuousAt_inv₀ hx0').norm.eventually (gt_mem_nhds hxr')
     filter_upwards [nhdsWithin_le_nhds hnorm, self_mem_nhdsWithin] with z hzr hz
     exact heq z hz hzr
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   exact (tendsto_nhds_unique (hB.congr' hnear) hHx).symm
 
 /-- On the right outer edge, the normalized Schwarz--Christoffel boundary with total exponent

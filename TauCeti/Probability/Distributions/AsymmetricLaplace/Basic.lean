@@ -259,16 +259,6 @@ theorem integrable_asymmetricLaplacePDFReal (m l r : ℝ) :
     · simp [funext (asymmetricLaplacePDFReal_of_nonpos_right (not_lt.mp hr) m l)]
   · simp [funext (asymmetricLaplacePDFReal_of_nonpos_left (not_lt.mp hl) m r)]
 
-/-- The asymmetric Laplace density is integrable on every lower half-line. -/
-theorem integrableOn_asymmetricLaplacePDFReal_Iic :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Iic x) :=
-  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
-
-/-- The asymmetric Laplace density is integrable on every upper half-line. -/
-theorem integrableOn_asymmetricLaplacePDFReal_Ioi :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Ioi x) :=
-  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
-
 /-- The asymmetric Laplace density integrates to `1`. -/
 theorem integral_asymmetricLaplacePDFReal (hl : 0 < l) (hr : 0 < r) (m : ℝ) :
     ∫ y, asymmetricLaplacePDFReal m l r y = 1 := by
@@ -522,7 +512,7 @@ private lemma measureReal_asymmetricLaplaceMeasure {s : Set ℝ} (hs : Measurabl
     (asymmetricLaplaceMeasure m l r).real s = ∫ y in s, asymmetricLaplacePDFReal m l r y := by
   rw [asymmetricLaplaceMeasure_eq_withDensity, funext (asymmetricLaplacePDF_eq_ofReal m l r)]
   exact measureReal_withDensity_ofReal (ae_of_all _ (asymmetricLaplacePDFReal_nonneg m l r)) hs
-    (integrable_asymmetricLaplacePDFReal m l r).integrableOn
+    (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
 
 /-- **The cumulative distribution function of the asymmetric Laplace law.** -/
 theorem cdf_asymmetricLaplaceMeasure_eq (hl : 0 < l) (hr : 0 < r) (m x : ℝ) :

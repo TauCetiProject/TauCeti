@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Convex.Between
+import TauCeti.LinearAlgebra.AffineSpace.Independent
 
 /-!
 # Turning at Schwarz--Christoffel vertices
@@ -128,14 +129,10 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
   have hqrne : ‖B r - B q‖ ≠ 0 := norm_ne_zero_iff.mpr <| sub_ne_zero.mpr fun h ↦
     hqr.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hqrFree hq hr
       ⟨le_rfl, hqr.le⟩ ⟨hqr.le, le_rfl⟩ h.symm
-  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
-    ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))]
+  rw [affineIndependent_iff_linearIndependent_vsub_vsub]
   convert (LinearIndependent.pair_smul_smul_iff (isUnit_iff_ne_zero.mpr (neg_ne_zero.mpr hpqne))
     (isUnit_iff_ne_zero.mpr hqrne)).2 hdir using 1
-  ext i
-  fin_cases i
-  · simp [finSuccAboveEquiv_apply, Complex.real_smul, ← hpqEq, B]
-  · simp [finSuccAboveEquiv_apply, Complex.real_smul, ← hqrEq, B]
+  simp [Complex.real_smul, ← hpqEq, ← hqrEq, B]
 
 /-- Three indexed Schwarz--Christoffel vertices at consecutive ordered prevertices are affinely
 independent when the total exponent at the middle prevertex exceeds `-1` and its `π` multiple
@@ -202,16 +199,10 @@ theorem schwarzChristoffelVertex_adjacent_segments_inter_eq
       {schwarzChristoffelVertex a e z₀ k} := by
   have hcorner := affineIndependent_schwarzChristoffelVertex_of_consecutive_of_ne_zero
     a e z₀ ha hjk hkl hj hk hk0 hl
-  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
-    ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at hcorner
-  have hlin : LinearIndependent ℝ
-      ![schwarzChristoffelVertex a e z₀ j - schwarzChristoffelVertex a e z₀ k,
-        schwarzChristoffelVertex a e z₀ l - schwarzChristoffelVertex a e z₀ k] := by
-    convert! hcorner using 1
-    ext i
-    fin_cases i <;> simp [finSuccAboveEquiv_apply]
   rw [segment_symm ℝ (schwarzChristoffelVertex a e z₀ j)
     (schwarzChristoffelVertex a e z₀ k)]
+  have hlin := affineIndependent_iff_linearIndependent_vsub_vsub.1 hcorner
+  simp only [vsub_eq_sub] at hlin
   exact segment_inter_eq_endpoint_of_linearIndependent_sub ℝ hlin
 
 

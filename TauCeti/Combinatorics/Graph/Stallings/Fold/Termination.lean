@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Stallings.Fold.Cardinality
 public import TauCeti.Combinatorics.Graph.Stallings.Fold.Subgroup
-public import TauCeti.Combinatorics.Graph.Stallings.Folded
-public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Data.Fintype.EquivFin
 
 /-!
 # Finite Stallings folding
@@ -107,22 +105,6 @@ theorem FoldSequence.exists_surjective_hom {S T : StallingsGraph.{u, v, w} α}
         (foldHom_mapV_surjective _ e f hsrc hlabel).comp hgv
     · simpa only [Hom.comp_graphHom, SerreGraph.Hom.comp_mapE] using
         (foldHom_mapE_surjective _ e f hsrc hlabel).comp hge
-
-/-- Folding distinct darts strictly decreases the number of darts. -/
-theorem card_foldAt_lt (S : StallingsGraph.{u, v, w} α) [Finite S.graph.E]
-    (e f : S.graph.E) (hne : e ≠ f)
-    (hsrc : S.graph.src e = S.graph.src f)
-    (hlabel : S.label e = S.label f) :
-    Nat.card (S.foldAt e f hsrc hlabel).graph.E < Nat.card S.graph.E := by
-  classical
-  let _ := Fintype.ofFinite S.graph.E
-  let _ := Fintype.ofFinite (S.foldAt e f hsrc hlabel).graph.E
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-  apply Fintype.card_lt_of_surjective_not_injective
-    (S.foldHom e f hsrc hlabel).graphHom.mapE
-    (S.foldHom_mapE_surjective e f hsrc hlabel)
-  intro hinj
-  exact hne (hinj (S.foldHom_mapE_eq e f hsrc hlabel))
 
 /-- A finite labelled graph can be folded by a finite sequence of quotients. -/
 theorem exists_foldSequence_isFolded (S : StallingsGraph.{u, v, w} α)
