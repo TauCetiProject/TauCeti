@@ -234,24 +234,20 @@ theorem eq_bot_or_eq_center_or_eq_slIdeal_or_eq_top (htwo : (2 : K) ≠ 0) :
   · by_cases hle : I ≤ slIdeal K n
     · exact Or.inr (Or.inr (Or.inl (le_antisymm hle hsl)))
     · obtain ⟨x, hxI, hx⟩ := IsConcreteLE.not_le_iff_exists.mp hle
-      have htr : x.trace ≠ 0 := by rwa [mem_slIdeal_iff] at hx
       refine Or.inr (Or.inr (Or.inr (eq_top_iff.mpr fun A _ => ?_)))
       have hsub : A - (A.trace / x.trace) • x ∈ slIdeal K n := by
         rw [mem_slIdeal_iff, Matrix.trace_sub, Matrix.trace_smul, smul_eq_mul,
-          div_mul_cancel₀ _ htr, sub_self]
+          div_mul_cancel₀ _ (mt mem_slIdeal_iff.mpr hx), sub_self]
       simpa only [sub_add_cancel] using
         add_mem (hsl hsub) (SMulMemClass.smul_mem (A.trace / x.trace) hxI)
   · by_cases hbot : I ≤ ⊥
     · exact Or.inl (le_bot_iff.mp hbot)
     · obtain ⟨x, hxI, hx0⟩ := IsConcreteLE.not_le_iff_exists.mp hbot
-      rw [LieSubmodule.mem_bot] at hx0
       obtain ⟨r, rfl⟩ := mem_center_matrix_iff.mp (hc hxI)
-      have hr : r ≠ 0 := fun hr0 => hx0 (by rw [hr0, zero_smul])
+      have hr : r ≠ 0 := fun hr0 => hx0 (by simp [hr0])
       refine Or.inr (Or.inl (le_antisymm hc fun A hA => ?_))
       obtain ⟨s, rfl⟩ := mem_center_matrix_iff.mp hA
-      have h1 : (1 : Matrix n n K) ∈ I := by
-        simpa [inv_smul_smul₀ hr] using SMulMemClass.smul_mem r⁻¹ hxI
-      exact SMulMemClass.smul_mem s h1
+      simpa [smul_smul, mul_assoc, inv_mul_cancel₀ hr] using SMulMemClass.smul_mem (s * r⁻¹) hxI
 
 end Ideals
 
