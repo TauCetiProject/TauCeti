@@ -133,16 +133,19 @@ theorem volume_add_volume_le_of_nullMeasurableSet {A B : Set ℝ} (hAn : A.Nonem
     _ ≤ volume (A + B) := by grw [union_subset (hKL.trans hLB) (singleton_subset_iff.2 hb)]
 
 /-- Weighted one-dimensional **Brunn–Minkowski theorem** for a Lebesgue-measurable set `B` and
-an arbitrary set `A`, with outer volumes. The coefficients may vanish; extended multiplication
-uses `0 * ∞ = 0`. Taking `c = 1 - θ` and `d = θ` gives the convex-combination form for every
-`θ ∈ [0,1]`. -/
+an arbitrary set `A`, with outer volumes. The coefficients may vanish or be negative (a negative
+coefficient contributes `0`); extended multiplication uses `0 * ∞ = 0`. Taking `c = 1 - θ` and
+`d = θ` gives the convex-combination form for every `θ ∈ [0,1]`. -/
 theorem mul_volume_add_mul_volume_le {A B : Set ℝ} (hAn : A.Nonempty) (hBn : B.Nonempty)
-    (hBm : NullMeasurableSet B volume) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) :
+    (hBm : NullMeasurableSet B volume) {c d : ℝ} :
     ENNReal.ofReal c * volume A + ENNReal.ofReal d * volume B ≤
       volume (c • A + d • B) := by
   have h := volume_add_volume_le_of_nullMeasurableSet (hAn.smul_set (a := c)) hBn.smul_set
     (Measure.NullMeasurableSet.const_smul hBm d)
-  simpa [Measure.addHaar_smul, abs_of_nonneg hc, abs_of_nonneg hd] using h
+  simp only [Measure.addHaar_smul, Module.finrank_self, pow_one] at h
+  exact le_trans (add_le_add
+    (mul_le_mul_left (ENNReal.ofReal_le_ofReal (le_abs_self c)) _)
+    (mul_le_mul_left (ENNReal.ofReal_le_ofReal (le_abs_self d)) _)) h
 
 /-- Real-valued one-dimensional Brunn–Minkowski inequality for a Lebesgue-measurable set `B`
 and an arbitrary set `A`. Finiteness of the outer volume of the sum implies finiteness of both
@@ -159,16 +162,20 @@ theorem volume_real_add_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty) (hBn :
 set `B` and an arbitrary set `A`. The outer volume of the weighted sum must be finite; a zero
 coefficient still permits an infinite input volume. -/
 theorem mul_volume_real_add_mul_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty)
-    (hBn : B.Nonempty) (hBm : NullMeasurableSet B volume) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
+    (hBn : B.Nonempty) (hBm : NullMeasurableSet B volume) {c d : ℝ}
     (hfin : volume (c • A + d • B) ≠ ∞) :
     c * volume.real A + d * volume.real B ≤ volume.real (c • A + d • B) := by
-  have h := mul_volume_add_mul_volume_le hAn hBn hBm hc hd
+  have h := mul_volume_add_mul_volume_le hAn hBn hBm (c := c) (d := d)
   have hA : ENNReal.ofReal c * volume A ≠ ∞ :=
     ne_top_of_le_ne_top hfin (le_self_add.trans h)
   have hB : ENNReal.ofReal d * volume B ≠ ∞ :=
     ne_top_of_le_ne_top hfin (le_add_self.trans h)
-  simpa [measureReal_def, ENNReal.toReal_add hA hB, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal hc, ENNReal.toReal_ofReal hd] using ENNReal.toReal_mono hfin h
+  have h' := ENNReal.toReal_mono hfin h
+  rw [ENNReal.toReal_add hA hB, ENNReal.toReal_mul, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal', ENNReal.toReal_ofReal'] at h'
+  refine le_trans ?_ h'
+  simp only [measureReal_def]
+  gcongr <;> exact le_max_left _ _
 
 /-- The open `ρ`-neighbourhood of a nonempty subset of the real line has volume at least that
 of the set plus `2 ρ`. No measurability of the set is required: the volume on the left is its

@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -626,7 +627,10 @@ theorem contMDiff_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F�
     fun hϕ x ↦ (contMDiffAt_hom_bundle_iff ϕ x).2 fun v ↦ hϕ ⟨x, v⟩⟩
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
-  [∀ x, IsTopologicalAddGroup (E₁ x)] [∀ x, ContinuousSMul 𝕜 (E₁ x)]
+
+section
+
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
 /-- A `C^n` fibrewise linear equivalence with finite-dimensional model source has a `C^n`
 inverse on total spaces. -/
@@ -636,6 +640,10 @@ theorem contMDiff_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     ContMDiff (IB.prod 𝓘(𝕜, F₂)) (IB.prod 𝓘(𝕜, F₁)) n
       (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.2)) := by
   let := FiniteDimensional.completeSpace 𝕜 F₁
+  have : ∀ x, IsTopologicalAddGroup (E₁ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁
+  have : ∀ x, ContinuousSMul 𝕜 (E₁ x) := VectorBundle.continuousSMul 𝕜 F₁ E₁
+  have : ∀ x, IsTopologicalAddGroup (E₂ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₂ E₂
+  have : ∀ x, ContinuousSMul 𝕜 (E₂ x) := VectorBundle.continuousSMul 𝕜 F₂ E₂
   have h := (contMDiff_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).2 he
   have hi := h.clm_bundle_inverse fun x ↦ ContinuousLinearMap.isInvertible_equiv
   have ha := (hi.comp (contMDiff_proj E₂)).clm_bundle_apply contMDiff_id
@@ -678,6 +686,8 @@ theorem toHomeomorph_bundleDiffeomorph :
 
 end
 
+end
+
 section
 
 variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
@@ -705,6 +715,7 @@ def bundleDiffeomorphOfHom :
 
 end
 
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
 /-- For a finite-dimensional model source, a family of fibrewise linear maps is realized by a
 `C^n` diffeomorphism of total spaces exactly when the induced map of total spaces is `C^n` and
 every fibre map is bijective. -/
@@ -718,6 +729,10 @@ theorem exists_bundleDiffeomorph_iff (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
     fun ⟨hϕ, hbij⟩ ↦ ?_⟩
   -- A bijective fibre map is an isomorphism, since the fibres are finite-dimensional.
   have h (x : B) : ∃ e : E₁ x ≃L[𝕜] E₂ x, ⇑e = ϕ x := by
+    have := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁ x
+    have := VectorBundle.continuousSMul 𝕜 F₁ E₁ x
+    have := VectorBundle.isTopologicalAddGroup 𝕜 F₂ E₂ x
+    have := VectorBundle.continuousSMul 𝕜 F₂ E₂ x
     let := FiberBundle.t2Space F₁ E₁ x
     let := FiberBundle.t2Space F₂ E₂ x
     let := VectorBundle.finiteDimensional 𝕜 F₁ E₁ x

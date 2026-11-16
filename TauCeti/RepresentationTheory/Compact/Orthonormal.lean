@@ -10,8 +10,9 @@ public import TauCeti.RepresentationTheory.Compact.Character.Basic
 /-!
 # The orthonormal systems cut out by Schur orthogonality
 
-Fix a family `π i` of pairwise inequivalent finite-dimensional irreducible unitary representations
-of a compact group `G`, one for each index `i`. This file assembles the two orthogonality relations
+Fix an algebraically closed field `𝕜` (`RCLike`, so `ℂ`) and a family `π i` of pairwise inequivalent
+finite-dimensional irreducible representations of a compact group `G`, one for each index `i`. This
+file assembles the two orthogonality relations
 of `TauCeti/RepresentationTheory/Compact/SchurOrthogonality.lean` and
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean` into `Orthonormal` families in `L²(G)`:
 
@@ -27,17 +28,18 @@ subspace of `L²(G)`.
 ## Main statements
 
 * `TauCeti.ContRepresentation.orthonormal_matrixCoeffLp`: the normalized matrix coefficients of a
-  family of pairwise inequivalent irreducible unitary representations form an orthonormal system
-  in `L²(G)`.
-* `ContRepresentation.orthonormal_characterLp`: the characters of such a family form an
-  orthonormal system in `L²(G)`.
+  family of pairwise inequivalent irreducible unitary representations on inner product spaces, with
+  chosen orthonormal bases, form an orthonormal system in `L²(G)`.
+* `ContRepresentation.orthonormal_characterLp`: the characters of a family of pairwise inequivalent
+  irreducible representations on normed spaces form an orthonormal system in `L²(G)`; neither
+  unitarity, inner products nor bases are needed.
 
 ## Implementation notes
 
 Inequivalence is the hypothesis `Pairwise fun i j ↦ IsEmpty (ContRepresentation.Equiv (π i) (π j))`.
 Nothing here selects the family: "one representative per equivalence class" is chosen data,
-supplied by the caller as `π` together with the orthonormal bases `e`, exactly as the Peter-Weyl
-basis uses it.
+supplied by the caller as `π` (together with the orthonormal bases `e` for the matrix coefficients,
+exactly as the Peter-Weyl basis uses it).
 
 Both systems live in the *same* `L²(G)`, so the index of the matrix-coefficient system is a sigma
 type over the family rather than a product: different `i` contribute different numbers of
@@ -118,16 +120,26 @@ theorem orthonormal_matrixCoeffLp {n : ι → ℕ} (hunitary : ∀ i, IsUnitary 
   · rw [(π i).schur_orthogonality (hπ i) (π j) (hπ j) (hunitary j) (hirr i) (hirr j) (hne hij)]
     simp [Sigma.ext_iff, hij]
 
-omit [∀ i, NormedSpace ℝ (V i)] [∀ i, SMulCommClass ℝ 𝕜 (V i)] in
-/-- **The irreducible characters are orthonormal.** The characters of a family of pairwise
-inequivalent finite-dimensional irreducible unitary representations of a compact group form an
-orthonormal system in `L²(G)`.
+end OrthonormalSystem
+
+section CharacterSystem
+
+variable {𝕜 G ι : Type*} {V : ι → Type*} [RCLike 𝕜] [IsAlgClosed 𝕜]
+  [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [MeasurableSpace G] [BorelSpace G]
+  [∀ i, NormedAddCommGroup (V i)] [∀ i, NormedSpace 𝕜 (V i)] [∀ i, FiniteDimensional 𝕜 (V i)]
+
+variable (π : ∀ i, ContRepresentation 𝕜 G (V i)) (hπ : ∀ i, Continuous (π i))
+
+/-- **The irreducible characters are orthonormal.** Over an algebraically closed field, the
+characters of a family of pairwise inequivalent finite-dimensional irreducible representations of a
+compact group form an orthonormal system in `L²(G)`.
 
 This is the system form of the two character orthogonality relations: normalization is the first,
 and orthogonality across the family is the second, whose intertwiner hypothesis Schur's lemma
 supplies from inequivalence. For a finite group it is the statement that the irreducible characters
 are an orthonormal set of class functions. -/
-theorem _root_.ContRepresentation.orthonormal_characterLp (hunitary : ∀ i, IsUnitary (π i))
+theorem _root_.ContRepresentation.orthonormal_characterLp
     (hirr : ∀ i, Representation.IsIrreducible (π i).toRepresentation)
     (hne : Pairwise fun i j ↦ IsEmpty (_root_.ContRepresentation.Equiv (π i) (π j))) :
     Orthonormal 𝕜 fun i ↦ characterLp (π i) (hπ i) := by
@@ -135,15 +147,15 @@ theorem _root_.ContRepresentation.orthonormal_characterLp (hunitary : ∀ i, IsU
   rw [orthonormal_iff_ite]
   intro i j
   rcases eq_or_ne i j with rfl | hij
-  · simpa using character_orthonormal_self (π i) (hπ i) (hunitary i) (hirr i)
+  · simpa using character_orthonormal_self (π i) (hπ i) (hirr i)
   · -- The second character orthogonality asks for the intertwiners `π j → π i`, not `π i → π j`,
     -- so it is the pair `(j, i)` that Schur's lemma is applied to.
-    rw [character_orthonormal_distinct (π i) (hπ i) (π j) (hπ j) (hunitary i)
+    rw [character_orthonormal_distinct (π i) (hπ i) (π j) (hπ j)
       fun f ↦ by
         simp [ContRepresentation.eq_zero_of_isEmpty_equiv (hirr j) (hirr i) (hne hij.symm) f]]
     simp [hij]
 
-end OrthonormalSystem
+end CharacterSystem
 
 end ContRepresentation
 

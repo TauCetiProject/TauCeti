@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Algebra.Order.Group.Int
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Fin.VecNotation

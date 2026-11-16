@@ -295,6 +295,17 @@ theorem coe_pointsMulEquivGLSymplectic
         (pointsMulEquiv R m (A := A) f : GL (Fin (m + m)) A) :=
   GLSymplecticFin.coe_mulEquivGLSymplectic m A (pointsMulEquiv R m (A := A) f)
 
+/-- The `Fin m ⊕ Fin m` reading of the points identification is natural in the value algebra. -/
+theorem pointsMulEquivGLSymplectic_mapValue (phi : A →ₐ[R] B)
+    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
+    pointsMulEquivGLSymplectic R m (A := B)
+        (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
+      GLSymplectic.map (Fin m) (phi : A →+* B)
+        (pointsMulEquivGLSymplectic R m (A := A) f) := by
+  simp only [pointsMulEquivGLSymplectic, MulEquiv.trans_apply]
+  exact (congrArg _ (pointsMulEquiv_mapValue (R := R) (m := m) (A := A) (B := B) phi f)).trans
+    (GLSymplecticFin.mulEquivGLSymplectic_map m A (phi : A →+* B) _)
+
 end Points
 
 end TauCeti.Symplectic

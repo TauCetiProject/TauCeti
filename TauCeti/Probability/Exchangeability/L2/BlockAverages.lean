@@ -49,10 +49,9 @@ The covariance/variance bilinearity (`ProbabilityTheory.covariance_sum_sum`,
 `variance_sum`, `covariance_smul_left`, `variance_const_mul`) and the integral manipulations are
 Mathlib's; the contractability input is the API in
 `TauCeti.Probability.Exchangeability.Contractability` and
-`TauCeti.Probability.Exchangeability.L2.Covariance`. No material from
-`cameronfreer/exchangeability` is reused: the source carries the block-average bounds through a
-different, sequence-specific `L²` development, whereas this file records the closed-form
-second-moment identities directly.
+`TauCeti.Probability.Exchangeability.L2.Covariance`.
+
+The main result is `TauCeti.Probability.Contractable.integral_sq_blockAverage_sub_of_disjoint`.
 -/
 
 public section

@@ -170,7 +170,7 @@ theorem level_sqrt_two_smul_realModel_typeE₈RootLattice :
   have := nontrivial_realModelSpace_typeE₈RootLattice
   exact_mod_cast ((isEven_realModel_iff _ _).mpr
     isEven_typeE₈RootLattice).level_sqrt_smul_of_isUnimodular
-    ((isUnimodular_realModel_iff _ _).mpr isUnimodular_typeE₈RootLattice) two_ne_zero
+    ((isUnimodular_realModel_iff _ _).mpr isUnimodular_typeE₈RootLattice) (m := 2)
 
 /-- The real model of `E₈` scaled by `√2` has signed discriminant `256 = 16²`. -/
 theorem signedDiscr_sqrt_two_smul_realModel_typeE₈RootLattice :
@@ -216,10 +216,10 @@ theorem level_sqrt_level_smul_dual_sqrt_two_smul_realModel_typeE₈RootLattice :
     ZLattice.level
       (√(ZLattice.level (√(2 : ℝ) • typeE₈RootLattice.realModel isPosDef_typeE₈RootLattice) : ℝ) •
         ZLattice.dual (√(2 : ℝ) • typeE₈RootLattice.realModel isPosDef_typeE₈RootLattice)) = 1 := by
-  have := nontrivial_realModelSpace_typeE₈RootLattice
-  have h := ((isEven_realModel_iff _ _).mpr
+  have h := ((isEven_realModel_iff typeE₈RootLattice isPosDef_typeE₈RootLattice).mpr
     isEven_typeE₈RootLattice).sqrt_level_smul_dual_sqrt_smul_of_isUnimodular
-    ((isUnimodular_realModel_iff _ _).mpr isUnimodular_typeE₈RootLattice) (m := 2) two_ne_zero
+    ((isUnimodular_realModel_iff typeE₈RootLattice isPosDef_typeE₈RootLattice).mpr
+      isUnimodular_typeE₈RootLattice) (m := 2) two_ne_zero
   push_cast at h
   rw [h, level_realModel, level_typeE₈RootLattice]
 

@@ -22,7 +22,8 @@ atlas or on the transition functions of `E`.
 This file provides general `C^n` criteria for morphisms and bundle maps whose local coordinates are
 intertwined by a fixed continuous linear map:
 
-* `FiniteRankBundleCore.contMDiff_of_localTriv_snd` and
+* `FiniteRankBundleCore.contMDiff_of_localTriv_snd`,
+  `FiniteRankBundleCore.contMDiff_of_trivializationAt_snd`, and
   `FiniteRankBundleCore.contMDiff_totalSpaceMap_of_coordChange` establish `C^n` regularity on total
   spaces without `C^n` assumptions on the cores;
 * `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_coordChange_comp` and
@@ -73,6 +74,24 @@ theorem contMDiff_of_localTriv_snd {F : Type*} [NormedAddCommGroup F] [NormedSpa
   rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀]
   refine ⟨((contMDiff_proj E.core.Fiber).congr hf_proj).contMDiffAt, ?_⟩
   exact (L.contDiff.comp_contMDiffAt (E.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun p ↦ hL p₀.proj p)
+
+/-- A map from the total space of a fibre bundle `V` into `E.core.TotalSpace` covering the
+identity of `B` whose chart coordinate in `E` at every base point is a fixed continuous linear
+map `L` of the fibre coordinate in the preferred trivialization of `V` is `C^n`, without any
+smoothness hypothesis on the base or transition functions. -/
+theorem contMDiff_of_trivializationAt_snd {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+    [FiberBundle F V] (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
+    (hf_proj : ∀ p, (f p).proj = p.proj) (L : F →L[𝕜] (Fin E.rank → 𝕜))
+    (hL : ∀ (b : B) (p : TotalSpace F V),
+      (E.core.localTriv b (f p)).2 = L ((trivializationAt F V b p).2)) :
+    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) n f := by
+  intro p₀
+  rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀, E.trivializationAt_core]
+  refine ⟨((contMDiff_proj V).congr hf_proj).contMDiffAt, ?_⟩
+  exact (L.contDiff.comp_contMDiffAt
+    (p₀.contMDiffAt_trivializationAt_snd (IB := I) (n := n))).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun p ↦ hL p₀.proj p)
 
 /-- A morphism `a : E ⟶ E'` of point-indexed finite-rank cores whose fibre maps intertwine the

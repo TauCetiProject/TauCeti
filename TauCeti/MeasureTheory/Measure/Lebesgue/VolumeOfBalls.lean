@@ -28,9 +28,8 @@ namespace TauCeti
 open MeasureTheory Metric Module Real Set
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [MeasurableSpace V] [BorelSpace V] [Nontrivial V]
+  [MeasurableSpace V] [BorelSpace V]
 
-omit [Nontrivial V] in
 /-- The real volume of the unit ball of a real inner product space of dimension `d` is
 `π ^ (d / 2) / Γ(d / 2 + 1)`. -/
 theorem volume_real_unitBall :
@@ -43,7 +42,6 @@ theorem volume_real_unitBall :
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
     ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
 
-omit [Nontrivial V] in
 /-- There is a closed ball about the origin of volume one. -/
 theorem exists_volume_closedBall_eq_one : ∃ ρ : ℝ, 0 < ρ ∧ volume (closedBall (0 : V) ρ) = 1 := by
   rcases subsingleton_or_nontrivial V with hV | hV
@@ -63,7 +61,6 @@ theorem exists_volume_closedBall_eq_one : ∃ ρ : ℝ, 0 < ρ ∧ volume (close
   rw [Measure.addHaar_closedBall volume 0 (by positivity), hpow, hinv,
     ENNReal.inv_mul_cancel (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne]
 
-omit [Nontrivial V] in
 /-- In a one-dimensional real inner product space, a closed ball of radius `r ≥ 0` has volume
 `2 * r`. -/
 theorem volume_real_closedBall_of_finrank_eq_one (h : finrank ℝ V = 1) (x : V) {r : ℝ}
