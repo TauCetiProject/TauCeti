@@ -9,13 +9,15 @@ public import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
-public import TauCeti.Analysis.Matrix.Contraction
+import TauCeti.Analysis.Matrix.Contraction
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Mean oscillation of the Hessian for non-divergence-form equations
@@ -51,11 +53,11 @@ attached bilinear forms `TauCeti.PDE.matrixBilinearForm`, the extra term is at m
 `ψ(ρ) ≤ (n + 1)² (4 D (ρ / r)^(n + 3) ψ(r)`
 `  + (2 (4 D + 2) / λ²) (∫_{B_r} f² + (n + 1)² ∫_{B_r} θ² ‖D²u‖²))`
 
-(`setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBilinearForm_sub_le`).
+(`setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le`).
 If `θ ≤ K` on `B_r` and `D²u ∈ L^{2q}(B_r)` for Hölder conjugate exponents `q, q'`, Hölder's
 inequality turns the coefficient term into the mean deviation `⨍_{B_r} θ`, which gives the
 scale-invariant averaged form
-(`setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBilinearForm_sub_le`).
+(`setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le`).
 These are the non-divergence counterparts of the gradient estimates in
 `TauCeti.Analysis.PDE.Regularity.MeanOscillation`.
 
@@ -363,52 +365,6 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_m
   rwa [average_congr hHρ, integral_congr_ae (hHρ.mono fun x hx => by rw [hx]),
     average_congr hHB, integral_congr_ae (hHB.mono fun x hx => by rw [hx])] at key
 
-/-- The contraction `∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫` of an endomorphism `H` of `ℝⁿ` with a matrix `M` is at
-most `n ‖M‖ ‖H‖` in absolute value, where `‖M‖` is the operator norm of the bilinear form
-`(η, ξ) ↦ ηᵀ M ξ` and `‖H‖` that of `H`. -/
-theorem _root_.Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm
-    (M : Matrix (Fin n) (Fin n) ℝ)
-    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
-    |Matrix.contraction M H| ≤ n * ‖matrixBilinearForm M‖ * ‖H‖ := by
-  have h : Matrix.contraction M H = ∑ i, matrixBilinearForm M (EuclideanSpace.single i 1)
-      (H (EuclideanSpace.single i 1)) := by
-    simp [Matrix.mulVec, dotProduct, EuclideanSpace.inner_single_right]
-  rw [h]
-  refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
-  calc ∑ i, |matrixBilinearForm M (EuclideanSpace.single i 1) (H (EuclideanSpace.single i 1))|
-      ≤ ∑ _i : Fin n, ‖matrixBilinearForm M‖ * ‖H‖ := by
-        refine Finset.sum_le_sum fun i _ => ?_
-        refine ((matrixBilinearForm M).le_opNorm₂ _ _).trans ?_
-        simp only [PiLp.norm_single, norm_one, mul_one]
-        refine mul_le_mul_of_nonneg_left ((H.le_opNorm _).trans ?_) (by positivity)
-        simp
-    _ = n * ‖matrixBilinearForm M‖ * ‖H‖ := by
-        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        ring
-
-/-- The deviation `x ↦ ‖a(x) - A‖` of a measurable coefficient field from a constant matrix, in the
-operator norm of the attached bilinear forms, is measurable. -/
-private theorem aestronglyMeasurable_norm_matrixBilinearForm_sub
-    {μ : Measure (EuclideanSpace ℝ (Fin (n + 1)))}
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a μ) :
-    AEStronglyMeasurable (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) μ := by
-  have h : Continuous
-      fun M : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ => matrixBilinearForm (M - A) :=
-    continuous_matrixBilinearForm.comp (continuous_sub_right A)
-  simpa only [matrixBilinearForm_sub] using
-    (Continuous.norm (E := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ]
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) h).comp_aestronglyMeasurable ha
-
-/-- Volumes of concentric balls in `ℝ^{n+1}`: `|B_ρ| = (ρ / r)^(n + 1) |B_r|`. -/
-private theorem measureReal_ball_eq (hρ : 0 < ρ) (hr : 0 < r) :
-    volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * volume.real (ball x₀ r) := by
-  simp only [measureReal_def, Measure.addHaar_ball_of_pos volume x₀ hρ,
-    Measure.addHaar_ball_of_pos volume x₀ hr, finrank_euclideanSpace_fin, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (pow_nonneg hρ.le _), ENNReal.toReal_ofReal (pow_nonneg hr.le _),
-    div_pow]
-  field_simp
-
 /-- Freezing the coefficients of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` at `A` changes the right-hand side by at most
 `(n + 1) ‖a - A‖ ‖D²u‖`; when `‖a - A‖` is bounded on `B_r`, this bound and `f` are square
 integrable there. -/
@@ -435,7 +391,7 @@ private theorem abs_contraction_sub_le_and_memLp {K : ℝ}
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
   have hH2 : MemLp H 2 (volume.restrict (ball x₀ r)) :=
     (Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure (Measure.restrict_mono hball le_rfl)
-  have hθm := aestronglyMeasurable_norm_matrixBilinearForm_sub (A := A) ha
+  have hθm := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   -- The frozen right-hand side differs from `f` by at most `(n + 1) θ ‖D²u‖`.
   have hdiff : ∀ᵐ x ∂(volume.restrict (ball x₀ r)),
       |Matrix.contraction A (H x) - f x| ≤ (n + 1) * θ x * ‖H x‖ := by
@@ -530,7 +486,8 @@ attached bilinear forms, is bounded there. Then for `0 < ρ ≤ r` the square me
 
 with `D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. Neither continuity nor symmetry of `a` is
 assumed. -/
-theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBilinearForm_sub_le
+theorem
+    setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le
     {lam Lam K : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a (volume.restrict (ball x₀ r)))
@@ -579,7 +536,7 @@ conjugate exponents `q, q'`. Then for `0 < ρ ≤ r`
 with `E = (K^(2q' - 1) ⨍_{B_r} θ)^(1/q') (⨍_{B_r} ‖D²u‖^(2q))^(1/q)` and
 `D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. Every average is invariant under dilations, and
 the coefficients enter only through the mean deviation `⨍_{B_r} θ`. -/
-theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBilinearForm_sub_le
+theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le
     {lam Lam K : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a (volume.restrict (ball x₀ r)))
@@ -616,7 +573,7 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBili
   have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hK : 0 ≤ K := (norm_nonneg (matrixBilinearForm (a x₀) - matrixBilinearForm A)).trans
     (haK x₀ (mem_ball_self hr))
-  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha
+  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem measurableSet_ball).mono fun x hx =>
       ⟨norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A), haK x hx⟩
@@ -626,12 +583,15 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBili
   set Ig := ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q)
   have hIg : 0 ≤ Ig := integral_nonneg fun x => by positivity
   have key :=
-    setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBilinearForm_sub_le
+    setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le
       hA ha haK u hball heq hρ hρr
   -- Pass to averages, using `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.
   set V : ℝ := volume.real (ball x₀ r)
   have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
-  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * V := measureReal_ball_eq hρ hr
+  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * V := by
+    simp only [V, Measure.addHaar_real_ball_of_pos _ _ hρ, Measure.addHaar_real_ball_of_pos _ _ hr,
+      finrank_euclideanSpace_fin, div_pow]
+    field_simp
   have havg : ∀ (t : ℝ) (g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
       ⨍ x in ball x₀ t, g x = (volume.real (ball x₀ t))⁻¹ * ∫ x in ball x₀ t, g x :=
     fun t g => by rw [setAverage_eq, smul_eq_mul]
@@ -640,10 +600,10 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_matrixBili
     havg r θ, havg r (fun x => ‖H x‖ ^ (2 * q)), hVρ]
   have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
       V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm, Real.mul_rpow (inv_nonneg.2 hV.le)
-        (mul_nonneg (Real.rpow_nonneg hK _) (integral_nonneg_of_ae (hθ.mono fun x hx => hx.1))),
-      Real.mul_rpow (inv_nonneg.2 hV.le) hIg, mul_mul_mul_comm, ← Real.rpow_add (inv_pos.2 hV),
-      hq.symm.inv_add_inv_eq_one, Real.rpow_one]
+    rw [mul_left_comm]
+    exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
+      (mul_nonneg (Real.rpow_nonneg hK _) (integral_nonneg_of_ae (hθ.mono fun x hx => hx.1))) hIg
+      hq.symm.inv_add_inv_eq_one
   rw [hsplit]
   have hs : 0 < ρ / r := div_pos hρ hr
   refine (mul_le_mul_of_nonneg_left (key.trans (mul_le_mul_of_nonneg_left (add_le_add le_rfl
