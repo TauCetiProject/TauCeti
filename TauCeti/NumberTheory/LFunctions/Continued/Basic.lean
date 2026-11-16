@@ -189,20 +189,12 @@ theorem continuedL_eq_uncompletedProduct_of_analyticAt (hm : Meromorphic d.compl
     (meromorphic_uncompletedProduct hm).meromorphicOn ha.meromorphicOrderAt_nonneg,
     toMeromorphicNFAt_eq_self.mpr ha.meromorphicNFAt]
 
-private theorem continuedL_eventuallyEq_of_meromorphicOn
-    (hm : MeromorphicOn d.uncompletedProduct
-      {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z}) (s : ℂ) :
-    d.continuedL =ᶠ[𝓝[≠] s] d.uncompletedProduct := by
-  have hm' := meromorphic_uncompletedProduct_of_meromorphicOn hm
-  filter_upwards [(hm' s).eventually_analyticAt] with z hz
-  rw [continuedL_def, toMeromorphicNFOn_eq_toMeromorphicNFAt hm hz.meromorphicOrderAt_nonneg,
-    toMeromorphicNFAt_eq_self.mpr hz.meromorphicNFAt]
-
 /-- With a globally meromorphic completion, repairing nonnegative-order singularities
 changes no punctured germ of the raw product. -/
 theorem continuedL_eventuallyEq (hm : Meromorphic d.completed) (s : ℂ) :
-    d.continuedL =ᶠ[𝓝[≠] s] d.uncompletedProduct :=
-  continuedL_eventuallyEq_of_meromorphicOn (meromorphic_uncompletedProduct hm).meromorphicOn s
+    d.continuedL =ᶠ[𝓝[≠] s] d.uncompletedProduct := by
+  filter_upwards [(meromorphic_uncompletedProduct hm s).eventually_analyticAt] with z hz
+  exact continuedL_eq_uncompletedProduct_of_analyticAt hm hz
 
 /-- The uncompleted function is meromorphic on the whole plane. -/
 @[fun_prop]
@@ -278,6 +270,7 @@ theorem continuedL_eq_uncompletedProduct_of_meromorphicOrderAt_neg {s : ℂ}
     d.continuedL s = d.uncompletedProduct s := by
   by_cases hm : Meromorphic d.completed
   · rw [meromorphicOrderAt_congr (continuedL_eventuallyEq hm s)] at hs
+    rw [continuedL_def]
     exact toMeromorphicNFOn_eq_self_on_compl
       (meromorphic_uncompletedProduct hm).meromorphicOn (not_le.mpr hs)
   · rw [continuedL_of_not_meromorphic hm] at hs
@@ -287,24 +280,14 @@ theorem continuedL_eq_uncompletedProduct_of_meromorphicOrderAt_neg {s : ℂ}
 at the same point, including the canonical zero value at any remaining pole. -/
 theorem meromorphicNFAt_continuedL {s : ℂ}
     (hNF : MeromorphicNFAt d.completed s) : MeromorphicNFAt d.continuedL s := by
-  by_cases hm : MeromorphicOn d.uncompletedProduct
-      {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z}
-  · have heq := continuedL_eventuallyEq_of_meromorphicOn hm s
-    by_cases hs : 0 ≤ meromorphicOrderAt d.uncompletedProduct s
-    · exact meromorphicNFOn_toMeromorphicNFOn _ _ hs
-    have hmAt := meromorphicAt_uncompletedProduct hNF.meromorphicAt
-    refine meromorphicNFAt_iff_analyticAt_or.mpr
-      (Or.inr ⟨hmAt.congr heq.symm, ?_, ?_⟩)
-    · rw [meromorphicOrderAt_congr heq]
-      exact lt_of_not_ge hs
-    · rw [continuedL_def, toMeromorphicNFOn_eq_self_on_compl hm hs, uncompletedProduct_def]
-      rcases meromorphicNFAt_iff_analyticAt_or.mp hNF with ha | ⟨_, _, hz⟩
-      · exfalso
-        apply hs
-        exact (analyticAt_uncompletedProduct ha).meromorphicOrderAt_nonneg
-      · simp only [hz, mul_zero, zero_mul]
-  · rw [continuedL_def, toMeromorphicNFOn_of_not_meromorphicOn hm]
-    exact analyticAt_const.meromorphicNFAt
+  rcases meromorphicNFAt_iff_analyticAt_or.mp hNF with ha | ⟨_, _, hz⟩
+  · exact (analyticAt_continuedL_of_analyticAt ha).meromorphicNFAt
+  · by_cases hs : 0 ≤ meromorphicOrderAt d.continuedL s
+    · exact (analyticAt_continuedL hs).meromorphicNFAt
+    · refine meromorphicNFAt_iff_analyticAt_or.mpr
+        (Or.inr ⟨d.meromorphic_continuedL s, lt_of_not_ge hs, ?_⟩)
+      rw [continuedL_eq_uncompletedProduct_of_meromorphicOrderAt_neg (lt_of_not_ge hs),
+        uncompletedProduct_def, hz, mul_zero, zero_mul]
 
 /-- Normal form of the completion on a set passes to the continued uncompleted function. -/
 theorem meromorphicNFOn_continuedL {U : Set ℂ}

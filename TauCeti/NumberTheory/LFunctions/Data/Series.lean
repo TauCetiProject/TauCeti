@@ -110,27 +110,26 @@ theorem hasDirichletAgreement_ofSeries (ha : a 1 = 1) (hdeg : 0 < μ.card + 2 * 
 
 variable {d : AnalyticLFunctionData}
 
-/-- Dirichlet agreement and meromorphy of the completion on `Re s > 1` make the Dirichlet
-series analytic there, without an additional coefficient-growth hypothesis. -/
-theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
-    (hm : MeromorphicOn d.completed {z | 1 < z.re}) {s : ℂ} (hs : 1 < s.re) :
-    AnalyticAt ℂ (LSeries d.coeff) s := by
-  by_cases hσ : LSeries.abscissaOfAbsConv d.coeff < s.re
-  · exact LSeries_analyticOnNhd d.coeff s hσ
-  by_cases htop : LSeries.abscissaOfAbsConv d.coeff = ⊤
-  · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top htop]
-    exact analyticAt_const
-  -- A finite abscissa above this point would force the completion to vanish on a strip,
-  -- hence on the whole half-plane as a meromorphic germ, contradicting the first coefficient.
-  obtain ⟨t, ht1, hts⟩ := exists_between hs
-  have ht : (t : ℂ).re ∈ Ioo 1 s.re := by
-    simpa only [Complex.ofReal_re, mem_Ioo] using And.intro ht1 hts
+/-- With Dirichlet agreement and a completion meromorphic on `Re s > 1`, any abscissa of
+absolute convergence other than `⊤` is at most one. -/
+theorem HasDirichletAgreement.abscissaOfAbsConv_le_one (hD : d.HasDirichletAgreement)
+    (hm : MeromorphicOn d.completed {z | 1 < z.re})
+    (htop : LSeries.abscissaOfAbsConv d.coeff ≠ ⊤) :
+    LSeries.abscissaOfAbsConv d.coeff ≤ 1 := by
+  by_contra hσ
+  obtain ⟨u, hu1, huσ⟩ := EReal.exists_between_coe_real (lt_of_not_ge hσ)
+  have hu : 1 < u := by exact_mod_cast hu1
+  -- An abscissa above one would force the completion to vanish on a strip, hence on the
+  -- whole half-plane as a meromorphic germ, contradicting the first coefficient.
+  obtain ⟨t, ht1, htu⟩ := exists_between hu
+  have ht : (t : ℂ).re ∈ Ioo 1 u := by
+    simpa only [Complex.ofReal_re, mem_Ioo] using And.intro ht1 htu
   have hz : d.completed =ᶠ[𝓝[≠] (t : ℂ)] 0 := by
     filter_upwards [nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
       (Ioo_mem_nhds ht.1 ht.2))] with z hz
     rw [Pi.zero_apply, hD.completed_eq z hz.1,
       LSeries.eq_zero_of_not_LSeriesSummable d.coeff z (fun hsum ↦
-        (not_lt.mp hσ).not_gt (hsum.abscissaOfAbsConv_le.trans_lt
+        huσ.le.not_gt (hsum.abscissaOfAbsConv_le.trans_lt
           (by exact_mod_cast hz.2))), mul_zero]
   have hz' (z : ℂ) (hzre : 1 < z.re) : d.completed =ᶠ[𝓝[≠] z] 0 :=
     hm.eventuallyEq_of_isPreconnected (MeromorphicOn.const 0)
@@ -153,7 +152,18 @@ theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
       (mul_ne_zero (d.conductor_cpow_ne_zero _) hzγ)
   have hcoeff := tendsto_nhds_unique (LSeries.tendsto_atTop (lt_top_iff_ne_top.mpr htop))
     (tendsto_const_nhds.congr' hzero.symm)
-  exact False.elim (one_ne_zero (hD.coeff_one.symm.trans hcoeff))
+  exact one_ne_zero (hD.coeff_one.symm.trans hcoeff)
+
+/-- Dirichlet agreement and meromorphy of the completion on `Re s > 1` make the Dirichlet
+series analytic there, without an additional coefficient-growth hypothesis. -/
+theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
+    (hm : MeromorphicOn d.completed {z | 1 < z.re}) {s : ℂ} (hs : 1 < s.re) :
+    AnalyticAt ℂ (LSeries d.coeff) s := by
+  by_cases htop : LSeries.abscissaOfAbsConv d.coeff = ⊤
+  · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top htop]
+    exact analyticAt_const
+  · exact LSeries_analyticOnNhd d.coeff s
+      ((hD.abscissaOfAbsConv_le_one hm htop).trans_lt (by exact_mod_cast hs))
 
 /-- Dirichlet agreement identifies the completion with the series defining its series card
 on `Re s > 1`. -/

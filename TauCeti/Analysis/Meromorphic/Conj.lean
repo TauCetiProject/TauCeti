@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Reflecting a function across the real axis
@@ -94,8 +95,7 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
       meromorphicOrderAt_of_not_meromorphicAt (meromorphicAt_conj_conj_iff.not.2 hf)]
   -- Conjugation carries the punctured neighbourhoods of `x` to those of `conj x`.
   have hconj : Tendsto conj (𝓝[≠] x) (𝓝[≠] (conj x)) :=
-    Complex.continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun z hz ↦
-      (starRingEnd ℂ).injective.ne hz
+    Complex.continuous_conj.continuousAt.tendsto_nhdsNE (starRingEnd ℂ).injective
   cases h : meromorphicOrderAt f (conj x) with
   | top =>
     rw [meromorphicOrderAt_eq_top_iff] at h ⊢
@@ -142,11 +142,9 @@ theorem TauCeti.toMeromorphicNFAt_conj_conj (f : ℂ → ℂ) (x : ℂ) :
   · by_cases hy : y = x
     · subst y
       have hc : Tendsto conj (𝓝[≠] x) (𝓝[≠] (conj x)) :=
-        Complex.continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun z hz ↦
-          (starRingEnd ℂ).injective.ne hz
-      have hn : MeromorphicNFAt (conj ∘ toMeromorphicNFAt f (conj x) ∘ conj) x := by
-        simpa only [Complex.conj_conj] using
-          (meromorphicNFAt_toMeromorphicNFAt (f := f) (x := conj x)).conj_conj
+        Complex.continuous_conj.continuousAt.tendsto_nhdsNE (starRingEnd ℂ).injective
+      have hn : MeromorphicNFAt (conj ∘ toMeromorphicNFAt f (conj x) ∘ conj) x :=
+        meromorphicNFAt_conj_conj_iff.mpr meromorphicNFAt_toMeromorphicNFAt
       apply (meromorphicNFAt_toMeromorphicNFAt.eventuallyEq_nhdsNE_iff_eventuallyEq_nhds hn).mp _
         |>.eq_of_nhds
       filter_upwards [(meromorphicAt_conj_conj_iff.mpr hf).eq_nhdsNE_toMeromorphicNFAt,

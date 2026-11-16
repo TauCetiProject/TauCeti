@@ -31,13 +31,9 @@ private theorem uncompletedProduct_riemannZetaData (s : ℂ) :
 
 private theorem continuedL_eventuallyEq_riemannZeta (s : ℂ) :
     riemannZetaData.continuedL =ᶠ[𝓝[≠] s] riemannZeta := by
-  have h0 : ∀ᶠ z : ℂ in 𝓝[≠] s, z ≠ 0 := by
-    by_cases hs : s = 0
-    · subst s
-      exact self_mem_nhdsWithin
-    · exact nhdsWithin_le_nhds (eventually_ne_nhds hs)
   filter_upwards [AnalyticLFunctionData.continuedL_eventuallyEq
-    riemannZetaData_hasMeromorphicContinuation.meromorphic s, h0]
+    riemannZetaData_hasMeromorphicContinuation.meromorphic s,
+    (eventually_cofinite_ne (0 : ℂ)).filter_mono (nhdsNE_le_cofinite s)]
     with z hz hz0
   rw [hz, uncompletedProduct_riemannZetaData, riemannZeta_def_of_ne_zero hz0]
 
