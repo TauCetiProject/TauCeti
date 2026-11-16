@@ -241,20 +241,17 @@ private theorem contMDiffOn_capModel {E H : Type*} [NormedAddCommGroup E] [Norme
     exact (contMDiffAt_const.congr_of_eventuallyEq h).contMDiffWithinAt
 
 /-- The path in the loop space traced by the model on the unit square. -/
-private def capModelPath (hg : Continuous g) : Path γ (Path.refl x) where
-  toContinuousMap := Path.continuousFamily (fun s t : unitInterval ↦ capModel g P (s, t))
+private def capModelPath (hg : Continuous g) : Path γ (Path.refl x) :=
+  Path.ofContinuousFamily (fun s t : unitInterval ↦ capModel g P (s, t))
     ((continuous_capModel hgγ hg).comp (continuous_subtype_val.prodMap continuous_subtype_val))
     (fun s ↦ by rw [Icc.coe_zero, capModel_seam_zero hgγ])
     (fun s ↦ by rw [Icc.coe_one, capModel_seam_one hgγ])
-  source' := Path.ext (funext fun t ↦ by
-    rw [ContinuousMap.toFun_eq_coe, Path.continuousFamily_apply, Icc.coe_zero, capModel_zero, hgγ])
-  target' := Path.ext (funext fun t ↦ by
-    rw [ContinuousMap.toFun_eq_coe, Path.continuousFamily_apply, Icc.coe_one, capModel_one hgγ,
-      Path.refl_apply])
+    (fun t ↦ by rw [Icc.coe_zero, capModel_zero, hgγ])
+    (fun t ↦ by rw [Icc.coe_one, capModel_one hgγ, Path.refl_apply])
 
 private theorem capModelPath_apply (hg : Continuous g) (s t : unitInterval) :
     capModelPath (P := P) hgγ hg s t = capModel g P (s, t) :=
-  Path.continuousFamily_apply _ _ _ _ s t
+  Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
 
 /-- The model has the class of `P`: it is the image of the diagonal of the square of loops
 `(r, s) ↦ P s ∘ τ_r`, which is constant along its top edge. -/

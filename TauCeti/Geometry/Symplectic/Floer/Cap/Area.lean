@@ -138,20 +138,16 @@ theorem apply_zero_eq_apply_zero (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothB
 
 /-- The path `s ↦ u (s, ·)` in the loop space of a smooth based cap `u`, from `γ` to the constant
 loop. -/
-def toPath (hu : IsSmoothBasedCap I γ u) : Path γ (Path.refl x) where
-  toContinuousMap := Path.continuousFamily (fun s t : unitInterval ↦ u (s, t))
+def toPath (hu : IsSmoothBasedCap I γ u) : Path γ (Path.refl x) :=
+  Path.ofContinuousFamily (fun s t : unitInterval ↦ u (s, t))
     (hu.contMDiff.continuous.comp (by fun_prop)) hu.apply_seam hu.apply_seam_one
-  source' := Path.ext <| funext fun t ↦ by
-    rw [ContinuousMap.toFun_eq_coe, Path.continuousFamily_apply, Icc.coe_zero,
-      hu.apply_zero]
-  target' := Path.ext <| funext fun t ↦ by
-    rw [ContinuousMap.toFun_eq_coe, Path.continuousFamily_apply, Icc.coe_one,
-      hu.apply_one, Path.refl_apply]
+    (fun t ↦ by rw [Icc.coe_zero, hu.apply_zero])
+    (fun t ↦ by rw [Icc.coe_one, hu.apply_one, Path.refl_apply])
 
 @[simp]
 theorem toPath_apply (hu : IsSmoothBasedCap I γ u) (s t : unitInterval) :
     hu.toPath s t = u (s, t) :=
-  Path.continuousFamily_apply _ _ _ _ s t
+  Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
 
 /-- The raw cap of a smooth based cap: the homotopy class of its path in the loop space. -/
 def rawCap (hu : IsSmoothBasedCap I γ u) : RawCap γ :=
