@@ -15,11 +15,13 @@ import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 /-!
 # Time-dependent flows of fields with zero first jet
 
-A time-dependent vector field vanishing to first order at a point has a flow fixing that point
-with identity differential on its full ambient tangent space. Vanishing of the first derivative
-is expressed using an auxiliary connection. Both `HasMFDerivAt` and its differential and
-pointwise consequences are provided. The conclusion concerns every time:
-a stationary solution exists for all time even when the vector field is not complete.
+A time-dependent vector field stationary at a point and vanishing to first order there
+between two times has a flow fixing that point with identity differential on its full ambient
+tangent space. Vanishing of the first derivative is expressed using an auxiliary connection.
+Both `HasMFDerivAt` and its differential and
+pointwise consequences are provided. A stationary solution exists for all time even when the
+vector field is not complete; vanishing of the covariant derivative is needed only between the
+specified times.
 
 This is the flow ingredient in the refinement of relative Moser's theorem which preserves the
 ambient first jet along a submanifold, rather than just its points.
@@ -41,8 +43,9 @@ namespace CovariantDerivative
 open TauCeti TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 2 M]
+  [BoundarylessManifold I M]
   {X : ℝ → Π x : M, TangentSpace I x} {x : M}
 
 private theorem differentiable_sectionCoord_mfderiv_timeDependentFlowOf
@@ -59,6 +62,7 @@ private theorem differentiable_sectionCoord_mfderiv_timeDependentFlowOf
   let Q : ∀ u, TangentSpace I (γ u) :=
     fun u ↦ mfderiv I I (timeDependentFlowOf X s u) x v
   let V : ℝ → E := sectionCoord (F := E) γ Q x
+  let e := trivializationAt E (TangentSpace I) x
   intro u
   have hf : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2
       (fun p : ℝ × M ↦ timeDependentFlowOf X s p.1 p.2) (u, x) :=
@@ -67,26 +71,25 @@ private theorem differentiable_sectionCoord_mfderiv_timeDependentFlowOf
         ((contMDiffAt_const.prodMk contMDiffAt_fst).prodMk contMDiffAt_snd)
   have hd := hf.mfderiv_apply (I := I) (I' := I) (E := E) (E' := E) (m := 1)
     (fun u y ↦ timeDependentFlowOf X s u y)
-    (fun _ ↦ x) id (fun _ ↦ (v : E)) contMDiffAt_const contMDiffAt_id contMDiffAt_const
-    (by norm_num)
+    (fun _ ↦ x) id (fun _ ↦ e.continuousLinearMapAt ℝ x v)
+    contMDiffAt_const contMDiffAt_id contMDiffAt_const (by norm_num)
   have heq : (fun r ↦ inTangentCoordinates I I (fun _ ↦ x) γ
-      (fun r ↦ mfderiv I I (timeDependentFlowOf X s r) x) u r v) = V := by
+      (fun r ↦ mfderiv I I (timeDependentFlowOf X s r) x) u r
+        (e.continuousLinearMapAt ℝ x v)) = V := by
     funext r
-    rw [inTangentCoordinates_eq_self_of_eq (x₀ := u) (x := r)
-      _ _ _ rfl ((hfix r).trans (hfix u).symm)]
-    dsimp only [V, γ, Q]
-    rw [sectionCoord_apply]
-    -- At a stationary point the fixed chart is also the chart at the vector's base point.
-    have hread (y : M) (hy : y = x) (w : TangentSpace I y) :
-        (trivializationAt E (TangentSpace I) x).continuousLinearMapAt ℝ y w = w := by
-      subst y
-      exact continuousLinearMapAt_trivializationAt_self x w
-    exact (hread _ (hfix r) _).symm
+    dsimp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates,
+      ContinuousLinearMap.comp_apply]
+    have hbase : γ u = x := hfix u
+    have hcancel : e.symmL ℝ x (e.continuousLinearMapAt ℝ x v) = v :=
+      e.symmL_continuousLinearMapAt
+        (mem_baseSet_trivializationAt E (TangentSpace I) x) v
+    rw [hbase, hcancel]
+    exact (sectionCoord_apply γ Q x r).symm
   simp only [id_eq] at hd
   rw [heq] at hd
   exact hd.contDiffAt.differentiableAt (by norm_num)
 
-omit [I.Boundaryless] [T2Space M] in
+omit [BoundarylessManifold I M] [T2Space M] in
 private theorem deriv_sectionCoord_eq_zero_of_stationary
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
     (γ : ℝ → M) (Q : ∀ u, TangentSpace I (γ u)) (hγ : ∀ u, γ u = x)
@@ -101,14 +104,16 @@ private theorem deriv_sectionCoord_eq_zero_of_stationary
   rw [hchart, map_zero, add_zero, derivWithin_univ, hγ u] at hread
   exact hread.symm
 
-/-- If a jointly `C²` time-dependent vector field and its covariant derivative vanish at `x`
-at every time, its time map has identity derivative at `x`. The identity is transported to
-the target tangent space using the stationary-point equation. No completeness is required. -/
+/-- If a jointly `C²` time-dependent vector field vanishes at `x` at every time and its
+covariant derivative vanishes there between `s` and `t`, its time map has identity derivative.
+The identity is transported to the target tangent space using the stationary-point equation. No
+completeness is required. -/
 theorem hasMFDerivAt_timeDependentFlowOf_of_forall_eq_zero
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    (hx : ∀ u, X u x = 0) (hcov : ∀ u, cov (X u) x = 0) (s t : ℝ) :
+    (hx : ∀ u, X u x = 0) (s t : ℝ)
+    (hcov : ∀ u ∈ uIcc s t, cov (X u) x = 0) :
     HasMFDerivAt I I (timeDependentFlowOf X s t) x
       ((timeDependentFlowOf_eq_self_of_forall_eq_zero
         (hX.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)) hx s t).symm ▸
@@ -136,17 +141,21 @@ theorem hasMFDerivAt_timeDependentFlowOf_of_forall_eq_zero
   let V : ℝ → E := sectionCoord (F := E) γ Q x
   have hV : Differentiable ℝ V :=
     differentiable_sectionCoord_mfderiv_timeDependentFlowOf hX hx s v
-  have hderiv (u : ℝ) : deriv V u = 0 := by
+  have hderiv (u : ℝ) (hu : u ∈ uIcc s t) : deriv V u = 0 := by
     -- Symmetrization preserves the first jet at a zero, so no torsion hypothesis is needed.
     have hv : alongCurve cov.symmetrize γ Q u = cov.symmetrize (X u) (γ u) (Q u) :=
       cov.symmetrize.alongCurve_mfderiv_timeDependentFlowOf
         cov.isTorsionFree_symmetrize hX
         (mem_timeDependentFlowDomain_of_forall_eq_zero hx s u) v
     have hcovzero : cov.symmetrize (X u) (γ u) = 0 := by
-      rw [hγ, cov.symmetrize_apply_of_eq_zero (hx u), hcov]
+      rw [hγ, cov.symmetrize_apply_of_eq_zero (hx u), hcov u hu]
     rw [hcovzero, zero_apply] at hv
     exact deriv_sectionCoord_eq_zero_of_stationary cov.symmetrize γ Q hγ u hv
-  have hconst : V t = V s := is_const_of_deriv_eq_zero hV hderiv t s
+  have hconst : V t = V s := by
+    have hbound := (convex_uIcc s t).norm_image_sub_le_of_norm_deriv_le
+      (fun u _ ↦ hV u) (fun u hu ↦ by rw [hderiv u hu, norm_zero])
+      (left_mem_uIcc : s ∈ uIcc s t) (right_mem_uIcc : t ∈ uIcc s t)
+    simpa only [zero_mul, norm_le_zero_iff, sub_eq_zero] using hbound
   have hVs : V s = e.continuousLinearMapAt ℝ x v := by
     dsimp only [V, Q, γ, e]
     rw [sectionCoord_apply, mfderiv_timeDependentFlowOf_self,
@@ -166,26 +175,29 @@ theorem hasMFDerivAt_timeDependentFlowOf_of_forall_eq_zero
     _ = e.symmL ℝ (γ t) (e.continuousLinearMapAt ℝ x v) := by rw [hconst, hVs]
     _ = _ := htransport _ (hγ t).symm
 
-/-- A stationary zero first jet gives identity differential on the full tangent space.
-The transport keeps the source and target tangent-space carriers explicit. -/
+/-- A stationary field with zero first jet between `s` and `t` gives identity differential on
+the full tangent space. The transport keeps the source and target tangent-space carriers
+explicit. -/
 theorem mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    (hx : ∀ u, X u x = 0) (hcov : ∀ u, cov (X u) x = 0) (s t : ℝ) :
+    (hx : ∀ u, X u x = 0) (s t : ℝ)
+    (hcov : ∀ u ∈ uIcc s t, cov (X u) x = 0) :
     mfderiv I I (timeDependentFlowOf X s t) x =
       (timeDependentFlowOf_eq_self_of_forall_eq_zero
         (hX.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)) hx s t).symm ▸
           ContinuousLinearMap.id ℝ (TangentSpace I x) :=
-  (cov.hasMFDerivAt_timeDependentFlowOf_of_forall_eq_zero hX hx hcov s t).mfderiv
+  (cov.hasMFDerivAt_timeDependentFlowOf_of_forall_eq_zero hX hx s t hcov).mfderiv
 
-/-- The linearized flow fixes every tangent vector at a stationary zero first jet, transported
-along the stationary-point equality to the tangent space at the image. -/
+/-- The linearized flow fixes every tangent vector of a stationary field with zero first jet
+between `s` and `t`, transported to the tangent space at the image. -/
 theorem mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero_apply
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    (hx : ∀ u, X u x = 0) (hcov : ∀ u, cov (X u) x = 0) (s t : ℝ)
+    (hx : ∀ u, X u x = 0) (s t : ℝ)
+    (hcov : ∀ u ∈ uIcc s t, cov (X u) x = 0)
     (v : TangentSpace I x) :
     mfderiv I I (timeDependentFlowOf X s t) x v =
       (timeDependentFlowOf_eq_self_of_forall_eq_zero
@@ -195,6 +207,6 @@ theorem mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero_apply
         TangentSpace I x →L[ℝ] TangentSpace I y) v = hy ▸ v := by
     subst y
     exact ContinuousLinearMap.id_apply v
-  rw [cov.mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero hX hx hcov, happly]
+  rw [cov.mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero hX hx s t hcov, happly]
 
 end CovariantDerivative
