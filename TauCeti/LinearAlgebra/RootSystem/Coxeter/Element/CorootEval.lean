@@ -30,6 +30,8 @@ matrices for Weyl equivariance, real Coxeter-plane sign changes, and complex reg
   for the colour-class involutions and bipartite Coxeter element.
 
 ## Main results
+* `RootPairing.Base.coroot'_sum_smul_root`, `RootPairing.Base.liftBaseChange_coroot'_sum_tmul_root`:
+  agreement of `corootEval` with `P.coroot'` on simple-root combinations in `M` and `S ⊗[R] M`.
 * `RootPairing.Base.corootEval_weylGroupToPerm_inv`: Weyl equivariance under `ActsBy`.
 * `RootPairing.Base.exists_corootEval_eq_sum_nat_of_mem_posRoots`,
   `RootPairing.Base.corootEval_pos_iff_mem_posRoots`,
@@ -89,6 +91,16 @@ theorem coroot'_sum_smul_root (j : ι) (y : b.support → R) :
   exact Finset.sum_congr rfl fun i _ ↦ by
     rw [map_smul, smul_eq_mul, root_coroot'_eq_pairing, ← P.algebraMap_pairingIn ℤ, eq_intCast,
       mul_comm]
+
+open TensorProduct in
+/-- After scalar extension to a commutative `R`-algebra `S`, lifting `P.coroot' j` to
+`S ⊗[R] M →ₗ[S] S` evaluates on simple-root coordinate combinations to `b.corootEval S j`. -/
+theorem liftBaseChange_coroot'_sum_tmul_root {S : Type*} [CommRing S] [Algebra R S]
+    (j : ι) (y : b.support → S) :
+    LinearMap.liftBaseChange S (Algebra.linearMap R S ∘ₗ P.coroot' j)
+      (∑ i : b.support, y i ⊗ₜ[R] P.root i) = b.corootEval S j y := by
+  rw [map_sum, corootEval_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ by simp [← P.algebraMap_pairingIn ℤ, mul_comm]
 
 /-- Root negation negates `corootEval`. -/
 @[simp]

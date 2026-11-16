@@ -23,9 +23,12 @@ import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 /-!
 # Coleman's Coxeter plane and regular primitive-root eigenvectors
 
-For a base `b` of a finite, reduced, crystallographic root pairing `P` and a Coxeter element
-`c = wordProd P b l` of order `h = orderOf c`, we construct Coleman's real Coxeter plane (rank ≥ 2)
-and Steinberg's regular `exp (2πi / h)`-eigenvector with trivial Weyl stabilizer.
+For a base `b` of a finite, reduced, irreducible, crystallographic root pairing `P` over a
+characteristic-zero domain (or, more generally, a finite, reduced, crystallographic pairing whose
+Cartan matrix `b.cartanMatrix` is of finite type with preconnected Dynkin diagram) and a Coxeter
+element `c = wordProd P b l` of order `h = orderOf c`, we construct Coleman's real Coxeter plane
+(rank ≥ 2) and Steinberg's regular `exp (2πi / h)`-eigenvector with trivial Weyl stabilizer
+(assuming `[Nonempty ι]` in the coordinate and finite-type forms).
 
 On `span {e₁, e₂} ⊆ (b.support → ℝ)`, the bipartite Coxeter matrix `W` rotates `(e₁, e₂)` by
 `-2π / h` (`Winv` by `+2π / h`), with the open sector `(0, π / h)` in the open dominant cone.
@@ -553,28 +556,9 @@ section BaseChangeWeightSpace
 
 open TensorProduct
 
-variable {ι R M N : Type*} [CommRing R] [Algebra R ℂ]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
-
-private theorem baseChange_weylGroupRootRep_sum_tmul_root (b : P.Base) (y : b.support → ℂ)
-    {g : P.weylGroup} {G : Matrix b.support b.support ℤ} (hG : b.ActsBy g G) :
-    P.weylGroupRootRep.baseChange ℂ g (∑ i : b.support, y i ⊗ₜ[R] P.root i) =
-      ∑ i : b.support, ((G.map (Int.castRingHom ℂ)) *ᵥ y) i ⊗ₜ[R] P.root i := by
-  rw [map_sum, Finset.sum_congr rfl fun j _ ↦ show P.weylGroupRootRep.baseChange ℂ g
-      (y j ⊗ₜ[R] P.root j) = y j ⊗ₜ[R] ∑ i : b.support, G i j • P.root i by
-    simp [RootPairing.weylGroupRootRep, actsBy_iff.mp hG j]]
-  simp only [tmul_sum, mulVec, dotProduct, map_apply, Int.coe_castRingHom, sum_tmul]
-  rw [Finset.sum_comm]; simp [tmul_smul, smul_tmul', zsmul_eq_mul]
-
-variable [P.IsCrystallographic]
-
-private theorem liftBaseChange_coroot'_sum_tmul_root (b : P.Base) (j : ι) (y : b.support → ℂ) :
-    LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j)
-      (∑ i : b.support, y i ⊗ₜ[R] P.root i) = b.corootEval ℂ j y := by
-  rw [map_sum, corootEval_apply]
-  exact Finset.sum_congr rfl fun i _ ↦ by simp [← P.algebraMap_pairingIn ℤ, mul_comm]
-
-variable [CharZero R] [IsDomain R] [Finite ι] [P.IsReduced]
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Algebra R ℂ]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
 
 private theorem exists_eigenvector_baseChange_isEmpty [P.IsIrreducible] [IsEmpty ι] (b : P.Base)
     (l : List b.support) :
@@ -630,11 +614,11 @@ theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType
   let v : ℂ ⊗[R] M := ∑ i : b.support, y i ⊗ₜ[R] P.root i; obtain ⟨j₀⟩ := ‹Nonempty ι›
   refine ⟨v, fun hv0 ↦ hy_reg j₀ ((b.liftBaseChange_coroot'_sum_tmul_root j₀ y).symm.trans <|
       (congrArg _ hv0).trans (map_zero _)),
-    by rw [b.baseChange_weylGroupRootRep_sum_tmul_root y hW, hy_eig]
+    by rw [Representation.baseChange_apply, hW.baseChange_weylGroupRootRep_sum_tmul_root y, hy_eig]
        simp [c, v, Finset.smul_sum, smul_tmul'],
     hprim, fun j ↦ b.liftBaseChange_coroot'_sum_tmul_root j y ▸ hy_reg j, fun g hg ↦ ?_⟩
   obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; have hG := b.actsBy_wordProd lg
-  rw [b.baseChange_weylGroupRootRep_sum_tmul_root y hG] at hg
+  rw [Representation.baseChange_apply, hG.baseChange_weylGroupRootRep_sum_tmul_root y] at hg
   have hu_ker : (b.cartanMatrixᵀ.map (Int.castRingHom ℂ)) *ᵥ
       (((lg.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℂ)) *ᵥ y - y) = 0 :=
     funext fun k ↦ by

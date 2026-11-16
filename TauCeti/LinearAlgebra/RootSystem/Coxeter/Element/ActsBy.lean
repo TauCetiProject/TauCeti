@@ -22,6 +22,9 @@ the roots need not span), so the order of `w` is the order of `W`.
 
 ## Main results
 
+* `RootPairing.Base.ActsBy.baseChange_weylGroupRootRep_sum_tmul_root`: after scalar extension along
+  `R → S`, `w` acts on simple-root coordinate combinations in `S ⊗[R] M` by the matrix `W` cast to
+  `S`.
 * `RootPairing.Base.actsBy_wordProd`: a word in the simple reflections acts by the product of the
   corresponding reflection matrices.
 * `RootPairing.Base.ActsBy.orderOf_eq`: if `w` acts by `W`, then `orderOf w = orderOf W`.
@@ -75,6 +78,24 @@ theorem ActsBy.pow {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.suppor
   induction k with
   | zero => simpa using actsBy_one b
   | succ k ih => rw [pow_succ, pow_succ]; exact ih.mul h
+
+omit [DecidableEq ι] in
+open TensorProduct in
+/-- If `w` acts on the simple roots by `W`, then the scalar extension
+`(P.weylGroupRootRep w).baseChange S` acts on simple-root coordinate combinations in `S ⊗[R] M` by
+`W.map (Int.castRingHom S)`. -/
+theorem ActsBy.baseChange_weylGroupRootRep_sum_tmul_root {S : Type*} [Ring S] [Algebra R S]
+    {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (hW : b.ActsBy w W)
+    (y : b.support → S) :
+    (P.weylGroupRootRep w).baseChange S (∑ i : b.support, y i ⊗ₜ[R] P.root i) =
+      ∑ i : b.support, ((W.map (Int.castRingHom S)) *ᵥ y) i ⊗ₜ[R] P.root i := by
+  rw [map_sum]
+  simp only [LinearMap.baseChange_tmul, RootPairing.weylGroupRootRep,
+    Representation.ofDistribMulAction_apply_apply, actsBy_iff.mp hW, tmul_sum, mulVec, dotProduct,
+    map_apply, Int.coe_castRingHom, sum_tmul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [← Int.cast_smul_eq_zsmul R (W i j), tmul_smul, smul_tmul', Algebra.smul_def, map_intCast]
 
 /-- The simple reflection `sᵢ` acts by `reflMatrix b.cartanMatrix i`. -/
 theorem actsBy_ofIdx [P.IsCrystallographic] (b : P.Base) (i : b.support) :
