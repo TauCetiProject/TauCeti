@@ -127,11 +127,11 @@ private theorem stickelbergerPhi_four_eq_of_isMaximal {P : Ideal (𝓞 K)} [P.Is
   have hχ : (powerResidueSymbol P 4)⁻¹.ringHomComp f =
       (powerResidueSymbol P 4).ringHomComp (f.comp (RingHomClass.toRingHom σ)) := by
     refine MulChar.ext fun u ↦ ?_
-    have hu4 := powerResidueSymbol_pow_eq_one hP u.ne_zero
+    have hu4 := powerResidueSymbol_pow_eq_one (n := 4) u.ne_zero
     have h4 : powerResidueSymbol P 4 * powerResidueSymbol P 4 ^ 3 = 1 :=
       MulChar.ext fun v ↦ by
         rw [MulChar.mul_apply, MulChar.pow_apply_coe, ← pow_succ', MulChar.one_apply_coe,
-          powerResidueSymbol_pow_eq_one hP v.ne_zero]
+          powerResidueSymbol_pow_eq_one (n := 4) v.ne_zero]
     have hinv : (powerResidueSymbol P 4)⁻¹ u = powerResidueSymbol P 4 u ^ 3 := by
       rw [inv_eq_of_mul_eq_one_right h4, MulChar.pow_apply_coe]
     simp only [MulChar.ringHomComp_apply, RingHom.comp_apply, RingHom.coe_coe, hinv, hσ _ hu4]

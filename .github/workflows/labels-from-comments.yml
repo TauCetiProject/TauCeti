@@ -1,6 +1,7 @@
 # Adapted from Mathlib's comment-label workflow:
 # https://github.com/leanprover-community/mathlib4/blob/master/.github/workflows/labels_from_comment.yml
 # Any contributor may add/remove an allowlisted label with a standalone LABEL/-LABEL line.
+# self-tested is a persistent PR-author declaration; pushes do not invalidate it.
 # Only newly posted conversation comments count; editing/deleting a comment does not undo it.
 # The last matching line for each label wins. Labels and matching are case-sensitive.
 name: Labels from comments
@@ -23,7 +24,10 @@ jobs:
         contains(github.event.comment.body, 'mathlib-overlap') ||
         contains(github.event.comment.body, 'documentation') ||
         contains(github.event.comment.body, 'enhancement') ||
-        contains(github.event.comment.body, 'help wanted')
+        contains(github.event.comment.body, 'help wanted') ||
+        (contains(github.event.comment.body, 'self-tested') &&
+         github.event.issue.pull_request != null &&
+         github.event.comment.user.id == github.event.issue.user.id)
       )
     # Keep comment commands responsive when GitHub-hosted runners are backlogged.
     runs-on: ubuntu-24.04
@@ -43,6 +47,7 @@ jobs:
               'documentation',
               'enhancement',
               'help wanted',
+              'self-tested',
             ]);
             const commands = new Map();
             for (const raw of context.payload.comment.body.split(/\r?\n/)) {
@@ -76,7 +81,16 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const { owner, repo, number: issue_number } = context.issue;
+            const comment = context.payload.comment;
             for (const [label, add] of JSON.parse(process.env.LABEL_COMMANDS)) {
+              if (label === 'self-tested') {
+                if (!context.payload.issue.pull_request) continue;
+                const { data: pull } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                if (comment.user.id !== pull.user.id) continue;
+                if (add && pull.state !== 'open') continue;
+                const { data: fresh } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                if (fresh.user.id !== comment.user.id || (add && fresh.state !== 'open')) continue;
+              }
               if (add) {
                 await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [label] });
               } else {

@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Coeff
-public import Mathlib.Data.Finsupp.Weight
-public import Mathlib.RingTheory.Adjoin.Tower
-public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
