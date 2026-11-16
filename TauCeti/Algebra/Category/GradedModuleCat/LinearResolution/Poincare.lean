@@ -122,8 +122,8 @@ theorem IsMinimal.coeff_bigradedExtPoincareSeries_eq_zero_of_lt (hr : r.IsMinima
             by_contra hne
             have := hlb n hne
             omega)
-          (p := j) (by omega) _ fun q hq ↦ by
-            simpa [sub_eq_add_neg] using hN (q - j) (sub_ne_zero.mpr hq)
+          (p := j) (by omega) _ <| by
+            simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN j
       rw [← GradedModuleCat.shiftFunctor_obj] at hshift
       have := (extLinearEquivOfIso k (Iso.refl M)
         ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).injective.subsingleton
