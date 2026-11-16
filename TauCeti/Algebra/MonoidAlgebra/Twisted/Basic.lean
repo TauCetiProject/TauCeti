@@ -501,32 +501,26 @@ end Coboundary
 section Map
 
 variable {H : Type*} [Monoid H] {β : H → H → kˣ} [IsFactorSet β]
+  (f : G →* H) (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂))
 
 /-- Functoriality of the twisted monoid algebra: a monoid homomorphism `f : G →* H` pulling back
 the factor set `β` to `α` induces a `k`-algebra map `k_α[G] →ₐ[k] k_β[H]` sending `of g` to
 `of (f g)`. -/
-noncomputable def map (f : G →* H)
-    (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂)) :
-    twistedMonoidAlgebra k G α →ₐ[k] twistedMonoidAlgebra k H β :=
+noncomputable def map : twistedMonoidAlgebra k G α →ₐ[k] twistedMonoidAlgebra k H β :=
   lift (fun g ↦ (of (f g) : twistedMonoidAlgebra k H β))
-    (by rw [map_one, of_one])
-    (fun g₁ g₂ ↦ by rw [of_mul_of, map_mul, hα])
+    (by rw [map_one, of_one]) (fun g₁ g₂ ↦ by rw [of_mul_of, map_mul, hα])
 
 /-- `map f hα` sends the basis element `of g` to `of (f g)`. -/
 @[simp]
-theorem map_of (f : G →* H)
-    (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂)) (g : G) :
-    map f hα (of g) = of (f g) :=
+theorem map_of (g : G) : map f hα (of g) = of (f g) :=
   lift_of ..
 
 /-- In the standard bases, `map f hα` pushes coordinate functions forward by `Finsupp.mapDomain f`.
 -/
-theorem basis_repr_map (f : G →* H) (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂))
-    (x : twistedMonoidAlgebra k G α) :
+theorem basis_repr_map (x : twistedMonoidAlgebra k G α) :
     (basis k H β).repr (map f hα x) = Finsupp.mapDomain f ((basis k G α).repr x) := by
-  have key :
-      ((basis k H β).repr.toLinearMap.comp (map f hα).toLinearMap) =
-        (Finsupp.lmapDomain k k f).comp (basis k G α).repr.toLinearMap :=
+  have key : ((basis k H β).repr.toLinearMap.comp (map f hα).toLinearMap) =
+      (Finsupp.lmapDomain k k f).comp (basis k G α).repr.toLinearMap :=
     (basis k G α).ext fun g ↦ by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
         Finsupp.lmapDomain_apply, Basis.repr_self, Finsupp.mapDomain_single]
@@ -535,27 +529,20 @@ theorem basis_repr_map (f : G →* H) (hα : ∀ g₁ g₂ : G, α g₁ g₂ = �
 
 /-- When `f` is injective, `map f hα` preserves the coordinate at `g` as the coordinate at `f g`.
 -/
-theorem basis_repr_map_apply (f : G →* H)
-    (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂))
-    (hf : Function.Injective f) (x : twistedMonoidAlgebra k G α) (g : G) :
+theorem basis_repr_map_apply (hf : Function.Injective f) (x : twistedMonoidAlgebra k G α) (g : G) :
     (basis k H β).repr (map f hα x) (f g) = (basis k G α).repr x g := by
   rw [basis_repr_map, Finsupp.mapDomain_apply_of_injective hf]
 
 /-- Coordinates of `map f hα x` outside `Set.range f` vanish. -/
-theorem basis_repr_map_of_not_mem_range (f : G →* H)
-    (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂))
-    (x : twistedMonoidAlgebra k G α) {h : H} (hh : h ∉ Set.range f) :
-    (basis k H β).repr (map f hα x) h = 0 := by
+theorem basis_repr_map_of_not_mem_range (x : twistedMonoidAlgebra k G α) {h : H}
+    (hh : h ∉ Set.range f) : (basis k H β).repr (map f hα x) h = 0 := by
   rw [basis_repr_map, Finsupp.mapDomain_of_notMem_range _ _ hh]
 
 /-- An injective monoid homomorphism pulling back the factor set induces an injective algebra
 map between twisted monoid algebras. -/
-theorem map_injective (f : G →* H) (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂))
-    (hf : Function.Injective f) :
-    Function.Injective (map f hα) := by
+theorem map_injective (hf : Function.Injective f) : Function.Injective (map f hα) := by
   intro x y hxy
-  apply (basis k G α).repr.injective
-  exact Finsupp.mapDomain_injective hf <| by
+  exact (basis k G α).repr.injective <| Finsupp.mapDomain_injective hf <| by
     rw [← basis_repr_map f hα x, ← basis_repr_map f hα y, hxy]
 
 end Map

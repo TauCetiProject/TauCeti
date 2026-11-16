@@ -10,30 +10,10 @@ public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
 /-!
 # The canonical trace on a twisted monoid algebra
 
-The **canonical trace** `TauCeti.TwistedMonoidAlgebra.trace` on a twisted monoid algebra
-`k_α[G]` reads off the coefficient of the identity basis element `of 1 = 1` in
-`TauCeti.TwistedMonoidAlgebra.basis k G α`. It is a normalized `k`-linear functional
-(`trace 1 = 1`), and when `G` is a group it is tracial (`trace (x * y) = trace (y * x)`) by the
-inverse-pair symmetry `TauCeti.IsFactorSet.apply_inv_eq_inv_apply`.
-
-Under an injective monoid homomorphism pulling back the factor set, `trace` is preserved
-(`TauCeti.TwistedMonoidAlgebra.trace_map`), and for any group homomorphism `f : G →* H` and any
-`h ∉ Set.range f`, multiplying an element of the image by `of h` has zero trace
-(`TauCeti.TwistedMonoidAlgebra.trace_map_mul_of_eq_zero`).
-
-## Main definitions
-
-* `TauCeti.TwistedMonoidAlgebra.trace`: the identity-coordinate linear functional
-  `k_α[G] →ₗ[k] k`.
-
-## Main results
-
-* `TauCeti.TwistedMonoidAlgebra.trace_one` and `TauCeti.TwistedMonoidAlgebra.trace_of_ne_one`:
-  values on the standard basis elements.
-* `TauCeti.TwistedMonoidAlgebra.trace_mul_comm`: traciality on a twisted group algebra.
-* `TauCeti.TwistedMonoidAlgebra.trace_map` and
-  `TauCeti.TwistedMonoidAlgebra.trace_map_mul_of_eq_zero`: compatibility with functorial maps and
-  orthogonality to basis elements outside the image subgroup.
+The canonical trace `TauCeti.TwistedMonoidAlgebra.trace` on `k_α[G]` extracts the identity
+coordinate in `basis k G α`. It satisfies `trace 1 = 1`, is tracial when `G` is a group
+(`trace_mul_comm`), is preserved by injective functorial maps (`trace_map`), and vanishes on
+`map f hα x * of h` whenever `h ∉ Set.range f` (`trace_map_mul_of_eq_zero`).
 
 ## References
 
@@ -55,8 +35,7 @@ noncomputable def trace : twistedMonoidAlgebra k G α →ₗ[k] k :=
 
 /-- Evaluation of `trace` as the coordinate at `1` in `basis k G α`. -/
 theorem trace_apply (x : twistedMonoidAlgebra k G α) :
-    trace x = (basis k G α).repr x 1 :=
-  (rfl)
+    trace x = (basis k G α).repr x 1 := (rfl)
 
 /-- The canonical trace is normalized at `1`. -/
 @[simp]
@@ -87,19 +66,15 @@ variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFact
 /-- The canonical trace on a twisted group algebra is tracial: `trace (x * y) = trace (y * x)`. -/
 theorem trace_mul_comm (x y : twistedMonoidAlgebra k G α) :
     trace (x * y) = trace (y * x) := by
-  have key :
-      (LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ trace =
-        ((LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ trace).flip := by
+  have key : (LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ trace =
+      ((LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ trace).flip := by
     refine (basis k G α).ext fun g ↦ (basis k G α).ext fun h ↦ ?_
     simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.flip_apply, basis_apply,
       of_mul_of, map_smul, smul_eq_mul]
     by_cases hgh : g * h = 1
-    · have hh : h = g⁻¹ := eq_inv_of_mul_eq_one_right hgh
-      subst hh
+    · obtain rfl : h = g⁻¹ := eq_inv_of_mul_eq_one_right hgh
       simp [IsFactorSet.apply_inv_eq_inv_apply α g]
-    · have hhg : h * g ≠ 1 := fun h1 ↦ hgh (by
-        have hg : g = h⁻¹ := eq_inv_of_mul_eq_one_right h1
-        simp [hg])
+    · have hhg : h * g ≠ 1 := fun h1 ↦ hgh (by rw [eq_inv_of_mul_eq_one_right h1, inv_mul_cancel])
       rw [trace_of_ne_one hgh, trace_of_ne_one hhg, mul_zero, mul_zero]
   exact LinearMap.congr_fun₂ key x y
 
@@ -109,8 +84,7 @@ theorem trace_map_mul_of_eq_zero {H : Type*} [Group H] {β : H → H → kˣ} [I
     (f : G →* H) (hα : ∀ g₁ g₂ : G, α g₁ g₂ = β (f g₁) (f g₂))
     (x : twistedMonoidAlgebra k G α) {h : H} (hh : h ∉ Set.range f) :
     trace (map f hα x * of h) = 0 := by
-  have key :
-      (trace.comp ((LinearMap.mulRight k (of h)).comp (map f hα).toLinearMap)) = 0 := by
+  have key : trace.comp ((LinearMap.mulRight k (of h)).comp (map f hα).toLinearMap) = 0 := by
     refine (basis k G α).ext fun g ↦ ?_
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, LinearMap.mulRight_apply,
       LinearMap.zero_apply, basis_apply, map_of, of_mul_of, map_smul, smul_eq_mul]
