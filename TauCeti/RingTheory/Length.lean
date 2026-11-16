@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
 -- no statement in this file mentions it.
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
+import Mathlib.LinearAlgebra.Quotient.Card
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
@@ -79,6 +80,10 @@ applies to the quotients appearing here without any further appeal to defeq.
   of `M` by it.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
+* `TauCeti.natCard_eq_natCard_residueField_pow_length` and
+  `TauCeti.natCard_eq_natCard_residueField_pow_length_of_finite`: a finite-length (in particular,
+  finite) module `M` over a commutative local ring `A` has cardinality
+  `Nat.card (ResidueField A) ^ (Module.length A M).toNat`.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
 * `Ideal.length_quotient_eq_one`: `length (A ⧸ 𝔪) = 1` for a maximal (left) ideal `𝔪` of a ring
@@ -388,6 +393,34 @@ theorem length_residueField_eq_one : Module.length A (ResidueField A) = 1 := by
   rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
     (S := ResidueField A) residue_surjective]
   exact instIsSimpleModule _
+
+/-- Every finite-length module over a commutative local ring has cardinality equal to the
+`(Module.length A M).toNat`-th power of the residue cardinality: each simple subquotient in a
+composition series is isomorphic to `ResidueField A`. No finiteness assumption on `ResidueField A`
+is needed. -/
+theorem natCard_eq_natCard_residueField_pow_length {M : Type*} [AddCommGroup M] [Module A M]
+    (hM : IsFiniteLength A M) :
+    Nat.card M = Nat.card (ResidueField A) ^ (Module.length A M).toNat := by
+  induction hM with
+  | of_subsingleton =>
+    rw [Module.length_eq_zero_iff.mpr inferInstance, ENat.toNat_zero, pow_zero, Nat.card_unique]
+  | @of_simple_quotient M _ _ N hQ hN ih =>
+    obtain ⟨m, hm, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp hQ
+    rw [eq_maximalIdeal hm] at e
+    have hcardQ : Nat.card (M ⧸ N) = Nat.card (ResidueField A) := Nat.card_congr e.toEquiv
+    have hlen : Module.length A M = Module.length A N + 1 := by
+      rw [Module.length_eq_add_of_exact N.subtype N.mkQ N.injective_subtype N.mkQ_surjective
+        (LinearMap.exact_subtype_mkQ N), Module.length_eq_one_iff.mpr hQ]
+    rw [Submodule.card_eq_card_quotient_mul_card N, hcardQ, ih, hlen,
+      ENat.toNat_add (Module.length_ne_top_iff.mpr hN) (by simp), ENat.toNat_one, pow_succ]
+
+/-- Every finite module over a commutative local ring has cardinality equal to the
+`(Module.length A M).toNat`-th power of the residue cardinality. -/
+theorem natCard_eq_natCard_residueField_pow_length_of_finite (M : Type*) [AddCommGroup M]
+    [Module A M] [Finite M] :
+    Nat.card M = Nat.card (ResidueField A) ^ (Module.length A M).toNat :=
+  natCard_eq_natCard_residueField_pow_length
+    (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, isArtinian_of_finite⟩)
 
 end LocalRing
 

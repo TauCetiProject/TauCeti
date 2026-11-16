@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Jacobson.Ideal
+public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.Degree.Operations
@@ -71,6 +72,9 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
   modulo an ideal in the Jacobson radical are coprime are themselves coprime.
+* `Polynomial.IsDistinguishedAt.isUnit_resultant_of_isUnit_coeff_zero`: a polynomial distinguished
+  at an ideal contained in the Jacobson radical has unit resultant with every polynomial whose
+  constant coefficient is a unit.
 
 ## Provenance
 
@@ -338,6 +342,21 @@ theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g
     rwa [← isUnit_resultant_iff_isCoprime (hg.map _),
       ← (hg.map _).resultant_of_le (natDegree_map_le (f := Ideal.Quotient.mk I) (p := h)),
       hg.natDegree_map, resultant_map_map] at hgh
+
+/-- A polynomial distinguished at an ideal `I` contained in the Jacobson radical has unit resultant
+with every polynomial whose constant coefficient is a unit: modulo `I` the distinguished polynomial
+reduces to `X ^ d`, which is coprime to any polynomial with unit constant term. -/
+theorem IsDistinguishedAt.isUnit_resultant_of_isUnit_coeff_zero {I : Ideal R} {P Q : R[X]}
+    (hP : P.IsDistinguishedAt I) (hI : I ≤ Ring.jacobson R) (hQ : IsUnit (Q.coeff 0)) :
+    IsUnit (P.resultant Q) := by
+  nontriviality R
+  rw [isUnit_resultant_iff_isCoprime hP.monic]
+  refine isCoprime_of_isCoprime_map hI hP.monic ?_
+  rw [hP.map_eq_X_pow]
+  have heval : IsUnit ((Q.map (Ideal.Quotient.mk I)).eval 0) := by
+    rw [← coeff_zero_eq_eval_zero, coeff_map]
+    exact hQ.map _
+  simpa using (isCoprime_X_sub_C_of_isUnit_eval (a := 0) heval).pow_left
 
 /-- The resultant with degree bounds `m` and `n` only involves the coefficients of index at most
 `m` of the first polynomial and at most `n` of the second. -/

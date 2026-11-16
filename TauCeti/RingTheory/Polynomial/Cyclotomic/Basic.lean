@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import Mathlib.Algebra.Algebra.Rat
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 
@@ -31,10 +34,11 @@ needed to check that these polynomials annihilate an explicit matrix.
 Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
 `Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
-`Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. Over a commutative `ℚ`-algebra,
-`Polynomial.isCoprime_cyclotomic_comp_X_add_one` shows that `Φ_m(X + 1)` and `Φ_n(X + 1)` are
-coprime for `m ≠ n`. The first two are used for the shifted
-prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. For a
+`Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. The first two are used for the shifted
+prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. Over a
+commutative `ℚ`-algebra, `Polynomial.isCoprime_cyclotomic_comp_X_add_one` shows that `Φ_m(X + 1)`
+and `Φ_n(X + 1)` are coprime for `m ≠ n`, so over a characteristic-zero domain no nonunit monic
+polynomial can divide both (`Polynomial.Monic.not_dvd_cyclotomic_comp_X_add_one_of_dvd`). For a
 prime `p`, `Polynomial.coeff_cyclotomic_prime_comp_X_add_one` gives the coefficients of
 `Φ_p(X + 1)` as the binomial coefficients `p choose (n + 1)`; this is the explicit form behind the
 Eisenstein property of `Φ_p(X + 1)` at `p`, and it computes the Newton polygon of `Φ_p(X + 1)` over
@@ -134,5 +138,25 @@ theorem isCoprime_cyclotomic_comp_X_add_one {R : Type*} [CommRing R] [Algebra �
   have hR : IsCoprime (cyclotomic m R) (cyclotomic n R) := by
     simpa using (cyclotomic.isCoprime_rat h).map (mapRingHom (algebraMap ℚ R))
   simpa using hR.map (compRingHom (X + 1 : R[X]))
+
+/-- Over a characteristic-zero integral domain, a nonunit monic polynomial dividing `Φ_n(X + 1)`
+divides no `Φ_m(X + 1)` with `m ≠ n`. -/
+protected theorem Monic.not_dvd_cyclotomic_comp_X_add_one_of_dvd {R : Type*} [CommRing R]
+    [IsDomain R] [CharZero R] {F : R[X]} (hF : F.Monic) (hFu : ¬ IsUnit F) {m n : ℕ}
+    (hmn : m ≠ n) (hdn : F ∣ (cyclotomic n R).comp (X + 1)) :
+    ¬ F ∣ (cyclotomic m R).comp (X + 1) := by
+  intro hdm
+  let φ := algebraMap R (FractionRing R)
+  have hcop : IsCoprime
+      (((cyclotomic m R).comp (X + 1)).map φ)
+      (((cyclotomic n R).comp (X + 1)).map φ) := by
+    simpa [Polynomial.map_comp] using
+      isCoprime_cyclotomic_comp_X_add_one (R := FractionRing R) hmn
+  have hu : IsUnit (F.map φ) :=
+    hcop.isUnit_of_dvd' (Polynomial.map_dvd φ hdm) (Polynomial.map_dvd φ hdn)
+  have hdeg : F.natDegree = 0 := by
+    rw [← hF.natDegree_map φ]
+    exact natDegree_eq_zero_of_isUnit hu
+  exact hFu (eq_one_of_monic_natDegree_zero hF hdeg ▸ isUnit_one)
 
 end Polynomial

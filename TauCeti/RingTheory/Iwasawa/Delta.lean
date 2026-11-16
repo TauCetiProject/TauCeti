@@ -7,13 +7,20 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Distinguished
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Charpoly
+public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.PowerSeries.Ideal
+
+import TauCeti.LinearAlgebra.LinearMap.Cardinality
+import TauCeti.RingTheory.PowerSeries.OneAddXPow
 
 /-!
 # The cyclotomic delta submodule
 
 For a module `M` over `O⟦X⟧`, its delta submodule is the increasing union of the kernels of
-`ωₙ = (1 + X) ^ (p ^ n) - 1`. Linear maps preserve this submodule, and injective maps reflect it.
+`ωₙ = (1 + X) ^ (p ^ n) - 1`. Linear maps preserve this submodule, injective maps reflect it, and
+linear maps with finite kernel and cokernel preserve the finiteness of scalar multiples `a • M_δ`.
+On a vertical block `O⟦X⟧ ⧸ (ϖ ^ m)` over a local domain with prime `ϖ` and `p ≠ 0`, the delta
+submodule vanishes.
 
 On a noetherian module the union stabilizes at a single kernel. If `O` is noetherian and
 `I`-adically complete for an ideal `I` containing the prime `p`, this makes the delta submodule of
@@ -32,6 +39,7 @@ J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, second e
 public noncomputable section
 
 open PowerSeries Submodule
+open scoped Pointwise
 
 namespace TauCeti.Iwasawa
 
@@ -175,6 +183,159 @@ theorem map_deltaSubmodule_subtype (S : Submodule O⟦X⟧ M) (p : ℕ) :
 end Submodule
 
 namespace TauCeti.Iwasawa
+
+section Transport
+
+/-- A linear map with finite kernel reflects the finiteness of `a • deltaSubmodule p O _`. -/
+theorem finite_smul_deltaSubmodule_of_finite_ker {p : ℕ} {O M N : Type*} [CommRing O]
+    [AddCommGroup M] [Module O⟦X⟧ M] [AddCommGroup N] [Module O⟦X⟧ N] {f : M →ₗ[O⟦X⟧] N}
+    (hker : Finite (LinearMap.ker f)) (a : O⟦X⟧)
+    (hN : Finite ↥(a • deltaSubmodule p O N)) :
+    Finite ↥(a • deltaSubmodule p O M) := by
+  have hmap (x : M) (hx : x ∈ a • deltaSubmodule p O M) : f x ∈ a • deltaSubmodule p O N := by
+    rw [Submodule.mem_smul_pointwise_iff_exists] at hx ⊢
+    rcases hx with ⟨y, hy, rfl⟩
+    exact ⟨f y, f.map_deltaSubmodule_le p ⟨y, hy, rfl⟩, (map_smul f a y).symm⟩
+  let g := f.restrict hmap
+  have hgker : Finite (LinearMap.ker g) := by
+    refine Finite.of_injective (fun x : LinearMap.ker g ↦
+      (⟨x.1.1, congr_arg Subtype.val x.2⟩ : LinearMap.ker f)) ?_
+    intro x y hxy
+    exact Subtype.ext (Subtype.ext (Subtype.mk.inj hxy))
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [g.card_eq_card_range_mul_card_ker]
+  exact mul_ne_zero Nat.card_pos.ne' Nat.card_pos.ne'
+
+/-- A surjective linear map with finite kernel preserves the finiteness of
+`a • deltaSubmodule p O _`. -/
+private theorem finite_smul_deltaSubmodule_of_surjective_of_finite_ker {p : ℕ} {O M P : Type*}
+    [CommRing O] [AddCommGroup M] [Module O⟦X⟧ M] [AddCommGroup P] [Module O⟦X⟧ P]
+    {g : M →ₗ[O⟦X⟧] P} (hg : Function.Surjective g) (hker : Finite (LinearMap.ker g)) (a : O⟦X⟧)
+    (hM : Finite ↥(a • deltaSubmodule p O M)) :
+    Finite ↥(a • deltaSubmodule p O P) := by
+  classical
+  by_contra hinf
+  have : Infinite ↥(a • deltaSubmodule p O P) := not_finite_iff_infinite.mp hinf
+  cases nonempty_fintype ↥(a • deltaSubmodule p O M)
+  cases nonempty_fintype (LinearMap.ker g)
+  let B := Fintype.card ↥(a • deltaSubmodule p O M) * Fintype.card (LinearMap.ker g) + 1
+  let e : Fin B → ↥(a • deltaSubmodule p O P) :=
+    fun i ↦ Infinite.natEmbedding ↥(a • deltaSubmodule p O P) i
+  have hz : ∀ i : Fin B, ∃ z ∈ deltaSubmodule p O P, a • z = (e i).1 := fun i ↦
+    (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp (e i).2
+  choose z hz_mem hz_smul using hz
+  choose m hm using fun i ↦ (mem_deltaSubmodule p O P (z i)).mp (hz_mem i)
+  let m₀ := Finset.univ.sup m
+  let ω : O⟦X⟧ := (1 + X) ^ p ^ m₀ - 1
+  have hωz (i : Fin B) : ω • z i = 0 :=
+    (mem_torsionBy_iff _ _).mp <|
+      monotone_torsionBy_one_add_X_pow_sub_one p O P (Finset.le_sup (Finset.mem_univ i))
+        ((mem_torsionBy_iff _ _).mpr (hm i))
+  choose x hgx using fun i ↦ hg (z i)
+  let κ : Fin B → LinearMap.ker g := fun i ↦
+    ⟨ω • x i, by rw [LinearMap.mem_ker, map_smul, hgx, hωz]⟩
+  let x₀ : LinearMap.ker g → M := fun k ↦ if h : ∃ j, κ j = k then x h.choose else 0
+  have hdiff_mem (i : Fin B) : x i - x₀ (κ i) ∈ deltaSubmodule p O M := by
+    refine (mem_deltaSubmodule p O M _).mpr ⟨m₀, ?_⟩
+    dsimp only [x₀]
+    split_ifs with h
+    · have hκ : (κ h.choose).1 = (κ i).1 := congr_arg Subtype.val h.choose_spec
+      simpa only [smul_sub, sub_eq_zero, ω] using hκ.symm
+    · exact absurd ⟨i, rfl⟩ h
+  let Φ : Fin B → ↥(a • deltaSubmodule p O M) × LinearMap.ker g := fun i ↦
+    (⟨a • (x i - x₀ (κ i)), Submodule.smul_mem_pointwise_smul _ _ _ (hdiff_mem i)⟩, κ i)
+  have hΦ : Function.Injective Φ := fun i₁ i₂ h ↦ by
+    have h₂ : κ i₁ = κ i₂ := congr_arg Prod.snd h
+    have h₁ : a • (x i₁ - x₀ (κ i₁)) = a • (x i₂ - x₀ (κ i₂)) :=
+      congr_arg Subtype.val (congr_arg Prod.fst h)
+    rw [h₂, smul_sub, smul_sub, sub_left_inj] at h₁
+    have he : (e i₁).1 = (e i₂).1 := by
+      rw [← hz_smul i₁, ← hz_smul i₂, ← hgx i₁, ← hgx i₂, ← map_smul, ← map_smul, h₁]
+    exact Fin.ext ((Infinite.natEmbedding _).injective (Subtype.ext he))
+  have hcard := Fintype.card_le_of_injective Φ hΦ
+  rw [Fintype.card_fin, Fintype.card_prod] at hcard
+  omega
+
+/-- Passage from a submodule `I` of finite index in `N` preserves the finiteness of
+`a • deltaSubmodule p O _`. -/
+private theorem finite_smul_deltaSubmodule_of_finite_quotient {p : ℕ} {O N : Type*} [CommRing O]
+    [AddCommGroup N] [Module O⟦X⟧ N] (I : Submodule O⟦X⟧ N) (hcoker : Finite (N ⧸ I)) (a : O⟦X⟧)
+    (hI : Finite ↥(a • deltaSubmodule p O I)) :
+    Finite ↥(a • deltaSubmodule p O N) := by
+  let S : Submodule O⟦X⟧ N := a • deltaSubmodule p O N
+  let T : Submodule O⟦X⟧ N := (a • deltaSubmodule p O I).map I.subtype
+  have hT_eq : T = a • (I ⊓ deltaSubmodule p O N) := by
+    dsimp only [T]
+    rw [Submodule.map_pointwise_smul, Submodule.map_deltaSubmodule_subtype]
+  have hTS : T ≤ S := hT_eq ▸ smul_mono_right a inf_le_right
+  have hfin_sub : Finite ↥(T.comap S.subtype) := by
+    refine Finite.of_surjective
+      (fun y : ↥(a • deltaSubmodule p O I) ↦
+        (⟨⟨y.1.1, hTS ⟨y.1, y.2, rfl⟩⟩, ⟨y.1, y.2, rfl⟩⟩ : ↥(T.comap S.subtype))) ?_
+    rintro ⟨⟨z, hzS⟩, hzT⟩
+    rcases hzT with ⟨y, hy, hyz⟩
+    exact ⟨⟨y, hy⟩, Subtype.ext (Subtype.ext hyz)⟩
+  let D := deltaSubmodule p O N
+  let K := I.comap D.subtype
+  have hfin_DK : Finite (↥D ⧸ K) := by
+    let ι : ↥D ⧸ K →ₗ[O⟦X⟧] N ⧸ I :=
+      Submodule.liftQ K (I.mkQ ∘ₗ D.subtype) (by rw [LinearMap.ker_comp, Submodule.ker_mkQ])
+    refine Finite.of_injective ι fun q₁ q₂ hq ↦ ?_
+    obtain ⟨x₁, rfl⟩ := Submodule.mkQ_surjective _ q₁
+    obtain ⟨x₂, rfl⟩ := Submodule.mkQ_surjective _ q₂
+    rw [← sub_eq_zero, ← map_sub, ← map_sub] at hq
+    dsimp only [ι] at hq
+    rw [Submodule.mkQ_apply, Submodule.liftQ_apply, LinearMap.coe_comp, Function.comp_apply,
+      Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hq
+    rw [← sub_eq_zero, ← map_sub, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact hq
+  let π₀ : ↥D →ₗ[O⟦X⟧] ↥S ⧸ T.comap S.subtype :=
+    (T.comap S.subtype).mkQ ∘ₗ
+      { toFun y := ⟨a • y.1, Submodule.smul_mem_pointwise_smul y.1 a D y.2⟩
+        map_add' x y := Subtype.ext (smul_add a x.1 y.1)
+        map_smul' r x := Subtype.ext (smul_comm a r x.1) }
+  have hK_le : K ≤ LinearMap.ker π₀ := fun y hy ↦ by
+    rw [LinearMap.mem_ker, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply,
+      Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, hT_eq]
+    exact Submodule.smul_mem_pointwise_smul y.1 a _ ⟨hy, y.2⟩
+  let π : ↥D ⧸ K →ₗ[O⟦X⟧] ↥S ⧸ T.comap S.subtype := Submodule.liftQ K π₀ hK_le
+  have hπ_surj : Function.Surjective π := fun q ↦ by
+    obtain ⟨⟨s, hs⟩, rfl⟩ := Submodule.mkQ_surjective _ q
+    obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hs
+    exact ⟨Submodule.Quotient.mk ⟨y, hy⟩, rfl⟩
+  have hfin_quot : Finite (↥S ⧸ T.comap S.subtype) := Finite.of_surjective π hπ_surj
+  let g := (T.comap S.subtype).mkQ
+  have hgker : Finite (LinearMap.ker g) := by
+    rw [Submodule.ker_mkQ]
+    exact hfin_sub
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [g.card_eq_card_range_mul_card_ker]
+  exact mul_ne_zero Nat.card_pos.ne' Nat.card_pos.ne'
+
+/-- A linear map with finite kernel and finite cokernel preserves and reflects the finiteness of
+`a • deltaSubmodule p O _`. -/
+theorem finite_smul_deltaSubmodule_iff_of_finite_ker_of_finite_coker {p : ℕ} {O M N : Type*}
+    [CommRing O] [AddCommGroup M] [Module O⟦X⟧ M] [AddCommGroup N] [Module O⟦X⟧ N]
+    {f : M →ₗ[O⟦X⟧] N} (hker : Finite (LinearMap.ker f))
+    (hcoker : Finite (N ⧸ LinearMap.range f)) (a : O⟦X⟧) :
+    Finite ↥(a • deltaSubmodule p O M) ↔ Finite ↥(a • deltaSubmodule p O N) := by
+  refine ⟨fun hM ↦ ?_, finite_smul_deltaSubmodule_of_finite_ker hker a⟩
+  have hker' : Finite (LinearMap.ker f.rangeRestrict) := by
+    rw [LinearMap.ker_rangeRestrict]
+    exact hker
+  exact finite_smul_deltaSubmodule_of_finite_quotient (LinearMap.range f) hcoker a
+    (finite_smul_deltaSubmodule_of_surjective_of_finite_ker f.surjective_rangeRestrict hker' a hM)
+
+end Transport
+
+/-- The cyclotomic delta submodule of a vertical block `O⟦X⟧ ⧸ (ϖ ^ m)` vanishes. -/
+@[simp]
+theorem deltaSubmodule_quotient_span_C_pow {p : ℕ} [NeZero p] {O : Type*} [CommRing O]
+    [IsDomain O] [IsLocalRing O] {ϖ : O} (hϖ : Prime ϖ) (m : ℕ) :
+    deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) = ⊥ := by
+  refine eq_bot_iff.mpr ((deltaSubmodule_le_iff p O _).mpr fun k ↦ ?_)
+  exact (torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot hϖ
+    (pow_ne_zero k (NeZero.ne p)) m).le
 
 variable (p : ℕ) (O : Type*) [CommRing O]
 

@@ -13,9 +13,12 @@ public import TauCeti.RingTheory.Iwasawa.Growth.Transition
 import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Iwasawa.Growth.Cutoff
+import TauCeti.RingTheory.Length
+import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.PowerSeries.AdicComplete
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Norm
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
@@ -47,8 +50,9 @@ The proof combines three ingredients at level `k`:
   `M → Elementary O ϖ 0 m F n` identifies `#(M ⧸ ν_{k,n₀} M) / #M[ν_{k,n₀}]` with
   `q ^ ((∑ mᵢ) deg ν_{k,n₀}) · #(O ⧸ Res(∏ Fⱼ ^ nⱼ, ν_{k,n₀}))`, and
   `deg ν_{k,n₀}` differs from `p ^ k` by a constant depending only on `n₀`.
-* **Resultant growth above the ramification threshold:** once `k > e · ∑ nⱼ deg Fⱼ`, each step from
-  `k` to `k + 1` multiplies `Res(∏ Fⱼ ^ nⱼ, ν_{k,n₀})` up to a unit of `O` by `p ^ (∑ nⱼ deg Fⱼ)`
+* **Resultant growth above the ramification threshold:** once `k ≥ n₀` and
+  `k > e · ∑ nⱼ deg Fⱼ`, each step from `k` to `k + 1` multiplies `Res(∏ Fⱼ ^ nⱼ, ν_{k,n₀})` up to
+  a unit of `O` by `p ^ (∑ nⱼ deg Fⱼ)`
   (`TauCeti.Iwasawa.associated_resultant_growthTransitionPoly`), increasing the `ϖ`-adic valuation
   by `e · ∑ nⱼ deg Fⱼ`.
 
@@ -59,21 +63,23 @@ quotient cardinality `4` before the linear growth regime begins.
 
 ## Main results
 
-* `TauCeti.Iwasawa.eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism`: growth
-  formula in base `q = #(ResidueField O)` from a pseudo-isomorphism to a torsion elementary module.
-* `TauCeti.Iwasawa.eventually_natCard_quotSMulTop_growthTransition`: intrinsic growth formula in
-  terms of `muInvariant O M` and `lambdaInvariant O M`.
+* `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism`:
+  growth formula in base `q = #(ResidueField O)` from a pseudo-isomorphism to a torsion elementary
+  module.
+* `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition`: intrinsic growth formula
+  in terms of `muInvariant O M` and `lambdaInvariant O M`.
 * `TauCeti.Iwasawa.card_quotient_growthTransition_general`: mixed-characteristic growth formula in
   base `p` when `#(ResidueField O) = p ^ f`.
 * `TauCeti.Iwasawa.card_quotient_growthTransition`: growth formula over `ℤ_[p]`.
-* `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition`: unconditional existence
-  of a cutoff `n₀` and constant `ν` for any finitely generated torsion `O⟦X⟧`-module.
+* `TauCeti.Iwasawa.exists_finite_and_exists_eventually_natCard_quotSMulTop_growthTransition`:
+  unconditional existence of a cutoff `n₀` and constant `ν` for any finitely generated torsion
+  `O⟦X⟧`-module.
 
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition,
-  Grundlehren 323, Proposition 5.3.17 and Theorem 5.3.18.
-* L. Washington, *Introduction to Cyclotomic Fields*, second edition, GTM 83, Theorem 13.13.
+  Grundlehren 323, Proposition 5.3.17 and Lemma 5.3.18.
+* L. Washington, *Introduction to Cyclotomic Fields*, second edition, GTM 83, §13.3.
 -/
 
 public noncomputable section
@@ -95,41 +101,24 @@ private theorem exists_eventually_natCard_torsionBy_growthTransition_eq_pow {p :
     ∃ K₁ s : ℕ, ∀ k, K₁ ≤ k →
       Nat.card (torsionBy O⟦X⟧ M (growthTransition p O n₀ k)) =
         Nat.card (ResidueField O) ^ s := by
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   let T : ℕ →o Submodule O⟦X⟧ M :=
-    ⟨fun d ↦ torsionBy O⟦X⟧ M (growthTransition p O n₀ (n₀ + d)), fun d₁ d₂ hd x hx ↦ by
-      obtain ⟨q, hq⟩ := growthTransition_dvd_of_le p O (n₀ := n₀) (Nat.add_le_add_left hd n₀)
-      rw [mem_torsionBy_iff] at hx ⊢
-      rw [hq, mul_comm, mul_smul, hx, smul_zero]⟩
+    ⟨fun d ↦ torsionBy O⟦X⟧ M (growthTransition p O n₀ (n₀ + d)),
+      fun _ _ hd ↦ torsionBy_le_torsionBy_of_dvd _ _
+        (growthTransition_dvd_of_le p O (Nat.add_le_add_left hd n₀))⟩
   obtain ⟨d₀, hd₀⟩ := monotone_stabilizes_iff_noetherian.mpr inferInstance T
   have hT (d : ℕ) : T d = torsionBy O⟦X⟧ M (growthTransition p O n₀ (n₀ + d)) := rfl
   have hfinT : Finite (T d₀) := by
     rw [hT, ← coe_growthTransitionPoly]
     exact finite_torsionBy_of_finite_quotSMulTop (monic_growthTransitionPoly p O n₀ (n₀ + d₀))
       (coe_growthTransitionPoly p O n₀ (n₀ + d₀) ▸ hfin (n₀ + d₀) (Nat.le_add_right n₀ d₀))
-  obtain ⟨s, hs⟩ := @TauCeti.IsDiscreteValuationRing.exists_natCard_eq_pow O _ _ _ (T d₀) _
-    (Module.compHom (T d₀) (C : O →+* O⟦X⟧)) hfinT
-  refine ⟨n₀ + d₀, s, fun k hk ↦ ?_⟩
+  let instMod : Module O (T d₀) := Module.compHom (T d₀) (C : O →+* O⟦X⟧)
+  have hs := @TauCeti.natCard_eq_natCard_residueField_pow_length_of_finite O _ _ (T d₀) _
+    instMod hfinT
+  refine ⟨n₀ + d₀, (@Module.length O (T d₀) _ _ instMod).toNat, fun k hk ↦ ?_⟩
   have hkeq : torsionBy O⟦X⟧ M (growthTransition p O n₀ k) = T d₀ := by
     rw [hd₀ (k - n₀) (by omega), hT, Nat.add_sub_of_le (le_trans (Nat.le_add_right n₀ d₀) hk)]
   rw [hkeq, hs]
-
-/-- In a discrete valuation ring `O` with `(p : O) = u * ϖ ^ e`, the quotient `O ⧸ (x * p ^ d)` for
-`x ≠ 0` has cardinality `q ^ (c + e * d)`, where `c` is the `ϖ`-adic valuation of `x`. -/
-private theorem exists_natCard_quotient_span_mul_pow {p : ℕ} {O : Type*} [CommRing O] [IsDomain O]
-    [IsDiscreteValuationRing O] {ϖ : O} (hϖ : Irreducible ϖ) {e : ℕ} {u : Oˣ}
-    (hpe : (p : O) = u * ϖ ^ e) {x : O} (hx : x ≠ 0) :
-    ∃ c : ℕ, ∀ d : ℕ,
-      Nat.card (O ⧸ Ideal.span {x * (p : O) ^ d}) =
-        Nat.card (ResidueField O) ^ (c + e * d) := by
-  have hpspan : Ideal.span {(p : O)} = maximalIdeal O ^ e := by
-    rw [hpe, Ideal.span_singleton_mul_left_unit u.isUnit, ← Ideal.span_singleton_pow,
-      ← hϖ.maximalIdeal_eq]
-  obtain ⟨c, hc⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
-    (mt Ideal.span_singleton_eq_bot.mp hx) hϖ
-  rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq] at hc
-  refine ⟨c, fun d ↦ ?_⟩
-  rw [← Ideal.span_singleton_mul_span_singleton, ← Ideal.span_singleton_pow, hc, hpspan,
-    ← pow_mul, ← pow_add, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
 
 /-- At any single level `k` with `M ⧸ ν_{k,n₀} M` finite and `(p : O) ∈ maximalIdeal O`, a
 pseudo-isomorphism `g : M → Elementary O ϖ 0 m F n` expresses `#(M ⧸ ν_{k,n₀} M)` as the product of
@@ -150,6 +139,7 @@ private theorem natCard_quotSMulTop_growthTransition_eq {p : ℕ} [Fact p.Prime]
               ((∑ i, m i) * (growthTransitionPoly p O n₀ k).natDegree) *
             Nat.card (O ⧸ Ideal.span
               {(∏ j, F j ^ n j).resultant (growthTransitionPoly p O n₀ k)})) := by
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   set G := growthTransitionPoly p O n₀ k
   have hcoe : (G : O⟦X⟧) = growthTransition p O n₀ k := coe_growthTransitionPoly p O n₀ k
   rw [← hcoe] at hfin ⊢
@@ -169,45 +159,6 @@ private theorem natCard_quotSMulTop_growthTransition_eq {p : ℕ} [Fact p.Prime]
   rw [div_eq_iff hne] at hdiv
   linarith
 
-/-- If a polynomial `G` distinguished at `maximalIdeal O` has positive degree and finite cokernel on
-an elementary module `Elementary O ϖ r m F n`, then the free rank `r` is zero. -/
-private theorem eq_zero_of_finite_quotSMulTop_elementary {O : Type*} [CommRing O] [IsDomain O]
-    [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O] {ϖ : O} {r a b : ℕ}
-    {m : Fin a → ℕ} {F : Fin b → O[X]} {n : Fin b → ℕ} {G : O[X]}
-    (hG : G.IsDistinguishedAt (maximalIdeal O)) (hd : 0 < G.natDegree)
-    (hfin : Finite (QuotSMulTop (G : O⟦X⟧) (Elementary O ϖ r m F n))) : r = 0 := by
-  by_contra hr
-  let i₀ : Fin r := ⟨0, Nat.pos_of_ne_zero hr⟩
-  let π : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ :=
-    (LinearMap.proj i₀).comp (LinearMap.fst O⟦X⟧ _ _)
-  have hsurj : Function.Surjective π := fun y ↦ ⟨(Pi.single i₀ y, 0), by simp [π]⟩
-  have hspan : (G : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ O⟦X⟧) = Ideal.span {(G : O⟦X⟧)} := by
-    rw [← ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
-  have hinf := hG.isWeierstrassFactorizationAt.infinite_quotient hd
-  rw [← hspan] at hinf
-  exact not_finite_iff_infinite.mpr hinf
-    (Finite.of_surjective _ (QuotSMulTop.map_surjective _ hsurj))
-
-/-- A local domain in which a rational prime `p` is a nonzero nonunit has characteristic zero. -/
-private theorem charZero_of_mem_maximalIdeal_of_ne_zero {p : ℕ} [Fact p.Prime] {O : Type*}
-    [CommRing O] [IsDomain O] [IsLocalRing O] (hp_mem : (p : O) ∈ maximalIdeal O)
-    (hp_ne : (p : O) ≠ 0) : CharZero O := by
-  rcases CharP.char_is_prime_or_zero O (ringChar O) with hq | h0
-  · exfalso
-    rcases eq_or_ne (ringChar O) p with heq | hne
-    · exact hp_ne (heq ▸ ringChar.Nat.cast_ringChar)
-    · obtain ⟨a, b, hab⟩ := (hq.coprime_iff_not_dvd.mpr fun hdvd ↦
-        hne ((Nat.prime_dvd_prime_iff_eq hq Fact.out).mp hdvd)).isCoprime
-      have h1 : (1 : O) ∈ maximalIdeal O := by
-        have hcast := congr_arg (Int.cast : ℤ → O) hab
-        simp only [Int.cast_add, Int.cast_mul, Int.cast_natCast, Int.cast_one,
-          ringChar.Nat.cast_ringChar, mul_zero, zero_add] at hcast
-        rw [← hcast]
-        exact Ideal.mul_mem_left _ _ hp_mem
-      exact (maximalIdeal.isMaximal O).ne_top (Ideal.eq_top_of_isUnit_mem _ h1 isUnit_one)
-  · have := ringChar.of_eq h0
-    exact CharP.charP_to_charZero O
-
 end Helpers
 
 section GrowthFormula
@@ -218,24 +169,27 @@ complete discrete valuation ring of mixed characteristic `(0, p)` with `(p : O) 
 `Elementary O ϖ 0 m F n` with distinguished `Fⱼ` and `M ⧸ ν_{k,n₀} M` is finite for every `k ≥ n₀`,
 then `#(M ⧸ ν_{k,n₀} M) = q ^ ((∑ mᵢ) p ^ k + e (∑ nⱼ deg Fⱼ) k + ν)` for all sufficiently large
 `k`. -/
-theorem eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism {p : ℕ}
+theorem exists_eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism {p : ℕ}
     [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
     [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)] {ϖ : O} (hϖ : Irreducible ϖ)
     {e : ℕ} (he : 0 < e) {u : Oˣ} (hpe : (p : O) = u * ϖ ^ e) {a b : ℕ} (m : Fin a → ℕ)
     {F : Fin b → O[X]} (hF : ∀ j, (F j).IsDistinguishedAt (maximalIdeal O)) (n : Fin b → ℕ)
-    {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
+    {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M]
     (g : M →ₗ[O⟦X⟧] Elementary O ϖ 0 m F n) (hg : IsPseudoIsomorphism g) (n₀ : ℕ)
     (hfin : ∀ k, n₀ ≤ k → Finite (QuotSMulTop (growthTransition p O n₀ k) M)) :
     ∃ ν : ℤ, ∀ᶠ k in atTop,
       (Nat.card (QuotSMulTop (growthTransition p O n₀ k) M) : ℚ) =
         (Nat.card (ResidueField O) : ℚ) ^
           ((((∑ i, m i) * p ^ k + e * (∑ j, n j * (F j).natDegree) * k : ℕ) : ℤ) + ν) := by
-  have hpO : (p : O) ∈ maximalIdeal O := by
-    rw [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton, hpe, ← Nat.sub_add_cancel he, pow_succ]
-    exact ⟨↑u * ϖ ^ (e - 1), by ring⟩
-  have hmax_le : maximalIdeal O ^ e ≤ Ideal.span {(p : O)} := by
-    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, hpe,
-      Ideal.span_singleton_mul_left_unit u.isUnit]
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have : Module.Finite O⟦X⟧ M := hg.finite_iff.mpr inferInstance
+  have hpO : (p : O) ∈ maximalIdeal O :=
+    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_eq_unit_mul_pow hϖ u.isUnit he hpe
+  have hmax_le : maximalIdeal O ^ e ≤ Ideal.span {(p : O)} :=
+    (TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow hϖ u.isUnit hpe).ge
+  have hp_ne : (p : O) ≠ 0 := by
+    rw [hpe]
+    exact mul_ne_zero u.ne_zero (pow_ne_zero e hϖ.ne_zero)
   set P : O[X] := ∏ j, F j ^ n j
   have hP : P.IsDistinguishedAt (maximalIdeal O) :=
     Polynomial.isDistinguishedAt_prod fun j _ ↦ (hF j).pow (n j)
@@ -246,8 +200,18 @@ theorem eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism {
   let K₂ := max n₀ (P.natDegree * e + 1)
   have hresK₂ := (natCard_quotSMulTop_growthTransition_eq hϖ hpO m hF n hg
     (hfin K₂ (le_max_left _ _))).1
-  obtain ⟨c, hc⟩ := exists_natCard_quotient_span_mul_pow hϖ hpe hresK₂
-  let d₀ := if n₀ = 0 then 0 else p ^ (n₀ - 1)
+  let c := (IsDiscreteValuationRing.addVal O (P.resultant (growthTransitionPoly p O n₀ K₂))).toNat
+  have hc (d : ℕ) :
+      Nat.card (O ⧸ Ideal.span {P.resultant (growthTransitionPoly p O n₀ K₂) * (p : O) ^ d}) =
+        Nat.card (ResidueField O) ^ (c + d * e) := by
+    rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_span_singleton
+        (mul_ne_zero hresK₂ (pow_ne_zero d hp_ne)),
+      IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
+      IsDiscreteValuationRing.addVal_def _ u hϖ e hpe, nsmul_eq_mul, ← Nat.cast_mul,
+      ENat.toNat_add (IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr hresK₂)
+        (ENat.natCast_ne_top _),
+      ENat.toNat_natCast]
+  set d₀ := if n₀ = 0 then 0 else p ^ (n₀ - 1) with hd₀
   refine ⟨(s + c : ℤ) - (∑ i, m i) * d₀ - e * P.natDegree * K₂,
     eventually_atTop.mpr ⟨max K₁ K₂, fun k hk ↦ ?_⟩⟩
   have hk₁ : K₁ ≤ k := (le_max_left _ _).trans hk
@@ -264,11 +228,15 @@ theorem eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism {
   rw [← pow_add, ← pow_add] at heq
   rw [heq, ← zpow_natCast]
   congr 1
-  have hdeg := natDegree_growthTransitionPoly p O (Nat.le_trans hn₀k (Nat.le_succ k))
-  change (growthTransitionPoly p O n₀ k).natDegree + d₀ = p ^ k at hdeg
+  have hdeg := natDegree_growthTransitionPoly p O n₀ k
+  rw [← hd₀] at hdeg
+  have hle_d₀ : d₀ ≤ p ^ k := by
+    rw [hd₀]
+    split_ifs with h0
+    · exact Nat.zero_le _
+    · exact Nat.pow_le_pow_right (Fact.out : p.Prime).pos (by omega)
   have hdegZ : ((growthTransitionPoly p O n₀ k).natDegree : ℤ) = (p : ℤ) ^ k - d₀ := by
-    rw [← Nat.cast_pow]
-    omega
+    rw [hdeg, Int.ofNat_sub hle_d₀, Nat.cast_pow]
   have hsubZ : ((k - K₂ : ℕ) : ℤ) = (k : ℤ) - K₂ := Int.ofNat_sub hk₂
   push_cast [hPdeg]
   rw [hdegZ, hsubZ]
@@ -279,7 +247,7 @@ mixed characteristic `(0, p)` with `(p : O) = u * ϖ ^ e` (`0 < e`) and finite r
 cardinality `q`. For any finitely generated `O⟦X⟧`-module `M` and level `n₀` such that
 `M ⧸ ν_{k,n₀} M` is finite for all `k ≥ n₀`, there exists `ν : ℤ` such that
 `#(M ⧸ ν_{k,n₀} M) = q ^ (μ(M) p ^ k + e λ(M) k + ν)` for all sufficiently large `k`. -/
-theorem eventually_natCard_quotSMulTop_growthTransition {p : ℕ} [Fact p.Prime] {O : Type*}
+theorem exists_eventually_natCard_quotSMulTop_growthTransition {p : ℕ} [Fact p.Prime] {O : Type*}
     [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
     [Finite (ResidueField O)] {ϖ : O} (hϖ : Irreducible ϖ) {e : ℕ} (he : 0 < e) {u : Oˣ}
     (hpe : (p : O) = u * ϖ ^ e) {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
@@ -288,30 +256,26 @@ theorem eventually_natCard_quotSMulTop_growthTransition {p : ℕ} [Fact p.Prime]
       (Nat.card (QuotSMulTop (growthTransition p O n₀ k) M) : ℚ) =
         (Nat.card (ResidueField O) : ℚ) ^
           (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) := by
-  have hpO : (p : O) ∈ maximalIdeal O := by
-    rw [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton, hpe, ← Nat.sub_add_cancel he, pow_succ]
-    exact ⟨↑u * ϖ ^ (e - 1), by ring⟩
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have hpO : (p : O) ∈ maximalIdeal O :=
+    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_eq_unit_mul_pow hϖ u.isUnit he hpe
   obtain ⟨r, a, b, m, F, n, -, hFn, g, hg⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
   have hF (j : Fin b) := (hFn j).1
   have hirr (j : Fin b) := (hFn j).2.1
   have hdeg_pos : 0 < (growthTransitionPoly p O n₀ (n₀ + 1)).natDegree := by
-    have hdeg := natDegree_growthTransitionPoly p O (n₀ := n₀) (n := n₀ + 1) (by omega)
+    rw [natDegree_growthTransitionPoly]
     have hp1 : 1 < p := (Fact.out : p.Prime).one_lt
-    rcases Nat.eq_zero_or_pos n₀ with rfl | hn₀
-    · simp only [↓reduceIte, add_zero, zero_add, pow_one] at hdeg
-      rw [zero_add, hdeg]
-      omega
-    · rw [ite_eq_right hn₀.ne'] at hdeg
-      have hlt : p ^ (n₀ - 1) < p ^ (n₀ + 1) := Nat.pow_lt_pow_right hp1 (by omega)
-      omega
+    split_ifs with h0
+    · exact Nat.sub_pos_of_lt (Nat.pow_pos hp1.pos)
+    · exact Nat.sub_pos_of_lt (Nat.pow_lt_pow_right hp1 (by omega))
   have hdim := TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing (R := O)
   have hE := (hg.finite_quotSMulTop_iff hdim _).mp
     (coe_growthTransitionPoly p O n₀ (n₀ + 1) ▸ hfin (n₀ + 1) (Nat.le_succ n₀))
   obtain rfl : r = 0 := eq_zero_of_finite_quotSMulTop_elementary
     (isDistinguishedAt_growthTransitionPoly hpO n₀ (n₀ + 1)) hdeg_pos hE
   rw [hg.muInvariant_eq_sum hϖ fun j ↦ (hF j).monic, hg.lambdaInvariant_eq_sum hϖ hF hirr]
-  exact eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism hϖ he hpe m hF n g
-    hg n₀ hfin
+  exact exists_eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism hϖ he hpe m hF
+    n g hg n₀ hfin
 
 /-- **Iwasawa's growth formula over a mixed-characteristic coefficient ring**
 (Neukirch–Schmidt–Wingberg, Proposition 5.3.17): with `(p : O) = u * ϖ ^ e` (`0 < e`), residue field
@@ -324,7 +288,7 @@ theorem card_quotient_growthTransition_general (p : ℕ) [Fact p.Prime] (O : Typ
     (u : Oˣ) (hpe : (p : O) = u * ϖ ^ e) (hres : Nat.card (IsLocalRing.ResidueField O) = p ^ f)
     {a b : ℕ} (m : Fin a → ℕ) (F : Fin b → O[X]) (n : Fin b → ℕ)
     (hF : ∀ j, (F j).IsDistinguishedAt (IsLocalRing.maximalIdeal O)) (M : Type*)
-    [AddCommGroup M] [Module (PowerSeries O) M] [Module.Finite (PowerSeries O) M]
+    [AddCommGroup M] [Module (PowerSeries O) M]
     (g : M →ₗ[PowerSeries O] Elementary O ϖ 0 m F n) (hg : IsPseudoIsomorphism g) (n₀ : ℕ)
     (hfin : ∀ k, n₀ ≤ k →
       Finite (M ⧸ (growthTransition p O n₀ k • (⊤ : Submodule (PowerSeries O) M)))) :
@@ -332,10 +296,10 @@ theorem card_quotient_growthTransition_general (p : ℕ) [Fact p.Prime] (O : Typ
       (Nat.card (M ⧸ (growthTransition p O n₀ k • (⊤ : Submodule (PowerSeries O) M))) : ℚ) =
         (p : ℚ) ^ (((f * (∑ i, m i) * p ^ k + e * f * (∑ j, n j * (F j).natDegree) * k : ℕ) : ℤ)
           + ν) := by
-  obtain ⟨ν₀, hν₀⟩ := eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism
+  obtain ⟨ν₀, hν₀⟩ := exists_eventually_natCard_quotSMulTop_growthTransition_of_isPseudoIsomorphism
     hϖ he hpe m hF n g hg n₀ hfin
   refine ⟨f * ν₀, hν₀.mono fun k hk ↦ ?_⟩
-  change (Nat.card (QuotSMulTop (growthTransition p O n₀ k) M) : ℚ) = _
+  rw [QuotSMulTop] at hk
   rw [hk, hres, Nat.cast_pow, ← zpow_natCast (p : ℚ) f, ← zpow_mul]
   congr 1
   push_cast
@@ -348,7 +312,7 @@ theorem card_quotient_growthTransition_general (p : ℕ) [Fact p.Prime] (O : Typ
 theorem card_quotient_growthTransition (p : ℕ) [Fact p.Prime] {a b : ℕ} (m : Fin a → ℕ)
     (F : Fin b → ℤ_[p][X]) (n : Fin b → ℕ)
     (hF : ∀ j, (F j).IsDistinguishedAt (IsLocalRing.maximalIdeal ℤ_[p])) (M : Type*)
-    [AddCommGroup M] [Module (PowerSeries ℤ_[p]) M] [Module.Finite (PowerSeries ℤ_[p]) M]
+    [AddCommGroup M] [Module (PowerSeries ℤ_[p]) M]
     (f : M →ₗ[PowerSeries ℤ_[p]] Elementary ℤ_[p] (p : ℤ_[p]) 0 m F n)
     (hf : IsPseudoIsomorphism f)
     (n₀ : ℕ) (hfin : ∀ k, n₀ ≤ k →
@@ -369,25 +333,24 @@ ring `O` of mixed characteristic `(0, p)` with `(p : O) = u * ϖ ^ e` (`0 < e`) 
 field of cardinality `q`, every finitely generated torsion `O⟦X⟧`-module `M` admits a cutoff `n₀`
 and an integer `ν` such that `M ⧸ ν_{k,n₀} M` is finite for all `k ≥ n₀` and has cardinality
 `q ^ (μ(M) p ^ k + e λ(M) k + ν)` for all sufficiently large `k`. -/
-theorem exists_eventually_natCard_quotSMulTop_growthTransition {p : ℕ} [Fact p.Prime] {O : Type*}
-    [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
-    [Finite (ResidueField O)] {ϖ : O} (hϖ : Irreducible ϖ) {e : ℕ} (he : 0 < e) {u : Oˣ}
-    (hpe : (p : O) = u * ϖ ^ e) {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
-    (hM : Module.IsTorsion O⟦X⟧ M) :
+theorem exists_finite_and_exists_eventually_natCard_quotSMulTop_growthTransition {p : ℕ}
+    [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+    [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)] {ϖ : O} (hϖ : Irreducible ϖ)
+    {e : ℕ} (he : 0 < e) {u : Oˣ} (hpe : (p : O) = u * ϖ ^ e) {M : Type*} [AddCommGroup M]
+    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M) :
     ∃ n₀ : ℕ, (∀ k, n₀ ≤ k → Finite (QuotSMulTop (growthTransition p O n₀ k) M)) ∧
       ∃ ν : ℤ, ∀ᶠ k in atTop,
         (Nat.card (QuotSMulTop (growthTransition p O n₀ k) M) : ℚ) =
           (Nat.card (ResidueField O) : ℚ) ^
             (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) := by
-  have hpO : (p : O) ∈ maximalIdeal O := by
-    rw [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton, hpe, ← Nat.sub_add_cancel he, pow_succ]
-    exact ⟨↑u * ϖ ^ (e - 1), by ring⟩
+  have hpO : (p : O) ∈ maximalIdeal O :=
+    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_eq_unit_mul_pow hϖ u.isUnit he hpe
   have hp_ne : (p : O) ≠ 0 := by
     rw [hpe]
     exact mul_ne_zero u.ne_zero (pow_ne_zero e hϖ.ne_zero)
-  have : CharZero O := charZero_of_mem_maximalIdeal_of_ne_zero hpO hp_ne
+  have : CharZero O := IsLocalRing.charZero_of_mem_maximalIdeal_of_ne_zero Fact.out hpO hp_ne
   obtain ⟨n₀, hfin⟩ := exists_finite_quotSMulTop_growthTransition (p := p) hM
-  exact ⟨n₀, hfin, eventually_natCard_quotSMulTop_growthTransition hϖ he hpe n₀ hfin⟩
+  exact ⟨n₀, hfin, exists_eventually_natCard_quotSMulTop_growthTransition hϖ he hpe n₀ hfin⟩
 
 end GrowthFormula
 
@@ -424,8 +387,9 @@ example (p : ℕ) [Fact p.Prime] :
     simp
   have hnorm := (H.norm_mk_coe_eq_resultant (growthTransitionPoly p O 0 n)).trans hres
   have hne : (X : O) ^ p ^ n ≠ 0 := pow_ne_zero _ (PowerSeries.irreducible_X (R := ZMod p)).ne_zero
-  change Nat.card (QuotSMulTop (growthTransition p O 0 n) M) = p ^ (p ^ n)
-  rw [← coe_growthTransitionPoly, H.natCard_quotSMulTop (hnorm.symm ▸ hne), hnorm,
+  have hcard := H.natCard_quotSMulTop (hnorm.symm ▸ hne)
+  rw [QuotSMulTop] at hcard
+  rw [← coe_growthTransitionPoly, hcard, hnorm,
     ← Ideal.span_singleton_pow, ← PowerSeries.maximalIdeal_eq_span_X,
     TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow,
     Nat.card_congr PowerSeries.residueFieldOfPowerSeries.toEquiv, Nat.card_zmod]
@@ -442,13 +406,7 @@ example (O : Type*) [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
       (1 + π) ^ 2 - 1 = π ^ 2 + 2 * π := by ring
       _ = π ^ 2 + π ^ 2 * π := by rw [hπ2]
       _ = π ^ 2 * (1 + π) := by ring
-  have hπ_mem : π ∈ maximalIdeal O := hπ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self π
-  have hu : IsUnit (1 + π) := by
-    rw [← notMem_maximalIdeal]
-    intro hmem
-    have h1mem : (1 : O) ∈ maximalIdeal O := by
-      simpa using sub_mem hmem hπ_mem
-    exact (maximalIdeal.isMaximal O).ne_top (Ideal.eq_top_of_isUnit_mem _ h1mem isUnit_one)
+  have hu : IsUnit (1 + π) := TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one hπ.not_isUnit
   refine ⟨h1, hu, ?_⟩
   rw [h1, mul_comm, Ideal.span_singleton_mul_left_unit hu, ← Ideal.span_singleton_pow,
     ← hπ.maximalIdeal_eq, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, hk]

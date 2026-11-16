@@ -37,7 +37,7 @@ characteristic polynomial is `∏ Fⱼ ^ nⱼ`.
 
 ## Main results
 
-* `TauCeti.Iwasawa.isTorsion_elementary_iff`: over a domain `O` with `ϖ ≠ 0` and monic `Fⱼ`, an
+* `TauCeti.Iwasawa.isTorsion_elementary_iff`: over a domain `O` with `ϖ ≠ 0` and nonzero `Fⱼ`, an
   elementary module `Elementary O ϖ r m F n` is torsion over `O⟦X⟧` iff `r = 0`.
 * `TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary`: every finitely generated
   `O⟦X⟧`-module admits a pseudo-isomorphism onto an elementary module, with every exponent
@@ -65,9 +65,9 @@ abbrev Elementary (O : Type*) [CommRing O] (ϖ : O) (r : ℕ) {a b : ℕ} (m : F
 
 section Torsion
 
-/-- If an elementary module `Elementary O ϖ r m F n` over a domain `O` is torsion, its free rank
-`r` vanishes. -/
-theorem eq_zero_of_isTorsion_elementary {O : Type*} [CommRing O] [IsDomain O] {ϖ : O}
+/-- If an elementary module `Elementary O ϖ r m F n` over a nontrivial commutative ring `O` is
+torsion, its free rank `r` vanishes. -/
+theorem eq_zero_of_isTorsion_elementary {O : Type*} [CommRing O] [Nontrivial O] {ϖ : O}
     {r a b : ℕ} {m : Fin a → ℕ} {F : Fin b → O[X]} {n : Fin b → ℕ}
     (hE : Module.IsTorsion O⟦X⟧ (Elementary O ϖ r m F n)) : r = 0 := by
   by_contra hr
@@ -77,12 +77,11 @@ theorem eq_zero_of_isTorsion_elementary {O : Type*} [CommRing O] [IsDomain O] {�
     simpa [Submonoid.smul_def] using congr_fun (congr_arg Prod.fst hs) i₀
   exact nonZeroDivisors.ne_zero s.2 h0
 
-/-- A rank-zero elementary module `Elementary O ϖ 0 m F n` over a domain `O` with `ϖ ≠ 0` and monic
-horizontal factors is torsion over `O⟦X⟧`. -/
+/-- A rank-zero elementary module `Elementary O ϖ 0 m F n` over a domain `O` with `ϖ ≠ 0` and
+nonzero horizontal factors is torsion over `O⟦X⟧`. -/
 theorem isTorsion_elementary {O : Type*} [CommRing O] [IsDomain O] {ϖ : O} (hϖ : ϖ ≠ 0)
-    {a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]} (hF : ∀ j, (F j).Monic) (n : Fin b → ℕ) :
+    {a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]} (hF : ∀ j, F j ≠ 0) (n : Fin b → ℕ) :
     Module.IsTorsion O⟦X⟧ (Elementary O ϖ 0 m F n) := by
-  have hfree : Module.IsTorsion O⟦X⟧ (Fin 0 → O⟦X⟧) := fun _ ↦ ⟨1, Subsingleton.elim _ _⟩
   have hvert (i : Fin a) : Module.IsTorsion O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)}) :=
     Ideal.isTorsion_quotient_of_mem (Ideal.mem_span_singleton_self _)
       (mem_nonZeroDivisors_of_ne_zero
@@ -91,26 +90,14 @@ theorem isTorsion_elementary {O : Type*} [CommRing O] [IsDomain O] {ϖ : O} (hϖ
       (O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)}) :=
     Ideal.isTorsion_quotient_of_mem (Ideal.mem_span_singleton_self _)
       (mem_nonZeroDivisors_of_ne_zero
-        ((Polynomial.coe_eq_zero_iff).not.mpr ((hF j).pow _).ne_zero))
-  have hpi₁ : Module.IsTorsion O⟦X⟧ (∀ i, O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)}) := fun x ↦ by
-    choose s hs using fun i ↦ @hvert i (x i)
-    exact ⟨∏ i, s i, funext fun i ↦ by
-      obtain ⟨t, ht⟩ := Finset.dvd_prod_of_mem s (Finset.mem_univ i)
-      rw [ht, mul_comm, mul_smul]
-      exact congr_arg ((t : O⟦X⟧) • ·) (hs i) |>.trans (smul_zero _)⟩
-  have hpi₂ : Module.IsTorsion O⟦X⟧
-      (∀ j, O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)}) := fun x ↦ by
-    choose s hs using fun j ↦ @hhor j (x j)
-    exact ⟨∏ j, s j, funext fun j ↦ by
-      obtain ⟨t, ht⟩ := Finset.dvd_prod_of_mem s (Finset.mem_univ j)
-      rw [ht, mul_comm, mul_smul]
-      exact congr_arg ((t : O⟦X⟧) • ·) (hs j) |>.trans (smul_zero _)⟩
-  exact hfree.prod (hpi₁.prod hpi₂)
+        ((Polynomial.coe_eq_zero_iff).not.mpr (pow_ne_zero _ (hF j))))
+  exact (Module.IsTorsion.pi Fin.elim0).prod
+    ((Module.IsTorsion.pi hvert).prod (Module.IsTorsion.pi hhor))
 
-/-- Over a domain `O` with `ϖ ≠ 0` and monic horizontal factors `Fⱼ`, an elementary module
+/-- Over a domain `O` with `ϖ ≠ 0` and nonzero horizontal factors `Fⱼ`, an elementary module
 `Elementary O ϖ r m F n` is torsion over `O⟦X⟧` if and only if `r = 0`. -/
 theorem isTorsion_elementary_iff {O : Type*} [CommRing O] [IsDomain O] {ϖ : O} (hϖ : ϖ ≠ 0)
-    {r a b : ℕ} {m : Fin a → ℕ} {F : Fin b → O[X]} (hF : ∀ j, (F j).Monic) {n : Fin b → ℕ} :
+    {r a b : ℕ} {m : Fin a → ℕ} {F : Fin b → O[X]} (hF : ∀ j, F j ≠ 0) {n : Fin b → ℕ} :
     Module.IsTorsion O⟦X⟧ (Elementary O ϖ r m F n) ↔ r = 0 :=
   ⟨eq_zero_of_isTorsion_elementary, fun hr ↦ hr ▸ isTorsion_elementary hϖ m hF n⟩
 
