@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.RegularLocalRing.Descent
 
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
+import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 import TauCeti.RingTheory.RegularLocalRing.MiracleFlatness
 import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 import TauCeti.RingTheory.RegularLocalRing.Quotient
