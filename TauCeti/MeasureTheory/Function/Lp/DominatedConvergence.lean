@@ -29,6 +29,8 @@ a function over measurable sets `s n` have limit superior at most its `Lᵖ` sem
 ## Main declarations
 
 * `TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`: the convergence `eLpNorm (f n - g) q m → 0`.
+* `TauCeti.tendsto_eLpNorm_smul_sub`: truncations `χ i • u` by `[0, 1]`-valued cutoffs that are
+  eventually `1` near every point converge to `u` in `Lᵖ`.
 * `TauCeti.tendsto_eLpNorm_restrict_Ioo`: for a finite exponent, the `Lᵖ` norm of a function on
   the unit interval `(t, t + 1)` tends to zero as `t` tends to infinity in either direction.
 * `TauCeti.tendsto_eLpNorm_restrict_closedBall`: for a finite exponent and a measure vanishing on
@@ -89,6 +91,34 @@ theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace �
         simpa [hr] using (hx.sub (tendsto_const_nhds (x := g x))).eNorm.ennrpow_const q.toReal)
   simpa only [ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)] using
     hlint.ennrpow_const (1 / q.toReal)
+
+/-- **Cutoffs converge in `Lᵖ`.** Let the a.e. strongly measurable cutoffs `χ i` take values in
+`[0, 1]` and equal `1` near every point of `ball 0 (R i)`, with `R i → ∞`. For `u ∈ Lᵖ`, `p < ∞`,
+the truncations `χ i • u` converge to `u` in `Lᵖ`. -/
+theorem tendsto_eLpNorm_smul_sub {E F ι : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {l : Filter ι} [l.IsCountablyGenerated]
+    {χ : ι → E → ℝ} {R : ι → ℝ} {μ : Measure E} {p : ℝ≥0∞} (hp : p ≠ ∞)
+    (hR : Tendsto R l atTop) (hχ : ∀ i, AEStronglyMeasurable (χ i) μ)
+    (hχ1 : ∀ i x, ‖x‖ < R i → χ i =ᶠ[𝓝 x] fun _ => 1) (hχI : ∀ i x, χ i x ∈ Set.Icc (0 : ℝ) 1)
+    {u : E → F} (hu : MemLp u p μ) :
+    Tendsto (fun i ↦ eLpNorm ((fun x ↦ χ i x • u x) - u) p μ) l (𝓝 0) := by
+  refine tendsto_eLpNorm_sub_of_ae_tendsto hp
+    (Eventually.of_forall fun i => (hχ i).smul hu.aestronglyMeasurable) hu (C := 1)
+    (Eventually.of_forall fun i => ae_of_all _ fun x => ?_)
+    (ae_of_all _ fun x => tendsto_const_nhds.congr' ?_)
+  · -- `‖χ u - u‖ = |χ - 1| ‖u‖ ≤ ‖u‖`.
+    have h1 : ‖χ i x - 1‖ ≤ 1 := by
+      rw [Real.norm_eq_abs, abs_le]
+      constructor <;> linarith [(hχI i x).1, (hχI i x).2]
+    calc ‖χ i x • u x - u x‖ₑ = ‖χ i x - 1‖ₑ * ‖u x‖ₑ := by
+          rw [← eNorm_smul, sub_smul, one_smul]
+      _ ≤ 1 * ‖u x‖ₑ := by
+          gcongr
+          rw [← ofReal_norm]
+          exact ENNReal.ofReal_le_one.2 h1
+      _ = _ := by rw [ENNReal.coe_one]
+  · filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
+    simp [(hχ1 i x hi).eq_of_nhds]
 
 /-- For a finite exponent `q`, the `Lᵖ` norm of a function on the unit interval `(t, t + 1)`
 tends to zero as `t` tends to infinity in either direction. -/
