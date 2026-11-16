@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DualNumber
+public import Mathlib.Algebra.TrivSqZeroExt.Ideal
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.RingTheory.FormalGroup.Deformation.Basic
@@ -732,14 +733,6 @@ theorem bijective_map_of_height_eq_one [IsLocalRing B] [IsHausdorff (maximalIdea
   have hsub := (squareZeroFiberEquiv hπ_B hq hq_surj hFG hker hF₀ F).symm.injective.subsingleton
   exact congrArg Subtype.val (@Subsingleton.elim _ hsub ⟨x₁, hx⟩ ⟨⟦F⟧, map_mk q hq F⟩)
 
-/-- The kernel of the projection `DualNumber R →+* R` has square zero. -/
-theorem ker_fstHom_mul_self_eq_bot (R : Type*) [CommRing R] :
-    RingHom.ker (TrivSqZeroExt.fstHom R R R).toRingHom *
-      RingHom.ker (TrivSqZeroExt.fstHom R R R).toRingHom = ⊥ :=
-  eq_bot_iff.mpr <| Ideal.mul_le.mpr fun x hx y hy ↦ by
-    have hx0 : x.fst = 0 := hx; have hy0 : y.fst = 0 := hy
-    rw [Ideal.mem_bot]; ext <;> simp [hx0, hy0]
-
 /-- **The Lubin–Tate tangent space.** For a commutative formal group law `F₀` of finite height `h`
 over a field `k` of characteristic `p`, the set of deformations of `F₀` over the dual numbers
 `DualNumber k = k[ε]` (`ε² = 0`) is canonically equivalent to `Fin (h - 1) → k`. -/
@@ -760,7 +753,7 @@ noncomputable def dualNumberEquiv {p h : ℕ} [Fact p.Prime] [CharP k p]
   exact (Equiv.piCongrRight fun _ ↦ eKer).trans <|
     (squareZeroFiberEquiv (B := k) (π_B := RingHom.id k) Function.surjective_id
       (RingHom.id_comp π) (fun c ↦ ⟨algebraMap k (DualNumber k) c, by simp [π]⟩)
-      hFG (ker_fstHom_mul_self_eq_bot k) hF₀
+      hFG ((pow_two (TrivSqZeroExt.kerIdeal k k)).symm.trans (TrivSqZeroExt.kerIdeal_sq k k)) hF₀
       (FormalGroupLift.ofSection F₀ π (algebraMap k (DualNumber k))
         (RingHom.ext fun _ ↦ by simp [π]))).trans
       (Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _)
@@ -773,7 +766,7 @@ theorem dualNumberEquiv_apply {p h : ℕ} [Fact p.Prime] [CharP k p]
         (FormalGroupLift.ofSection F₀ (TrivSqZeroExt.fstHom k k k).toRingHom
           (algebraMap k (DualNumber k)) (RingHom.ext fun x ↦ by simp))
         (RingHom.id_comp _)
-        (ker_fstHom_mul_self_eq_bot k)
+        ((pow_two (TrivSqZeroExt.kerIdeal k k)).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
         p h (fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩) := by
   rw [dualNumberEquiv]; rfl
 
