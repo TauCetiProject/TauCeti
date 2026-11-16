@@ -118,7 +118,7 @@ theorem exists_sup_eq_and_isCompl_of_isCompact {H : Subgroup G} (hH : IsCompact 
   exact ⟨𝔨 ⊓ hB.orthogonalSubrepresentation 𝔥, hB.orthogonalSubrepresentation 𝔨,
     hB.sup_inf_orthogonalSubrepresentation hani h𝔥𝔨,
     hB.isCompl_orthogonalSubrepresentation hani 𝔨,
-    hB.isCompl_inf_orthogonalSubrepresentation_sup hani h𝔥𝔨,
+    hB.isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation_right hani h𝔥𝔨,
     hB.isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation hani h𝔥𝔨⟩
 
 end Splitting

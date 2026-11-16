@@ -29,10 +29,11 @@ When `H` is compact, as it is for a proper action, `𝔤` therefore splits as
 `𝔤 = 𝔥 ⊕ 𝔪 ⊕ 𝔮`,  `𝔥 ⊕ 𝔪 = 𝔨`,
 
 with `Ad(H)`-invariant `𝔪` and `𝔮`
-(`exists_isotropy_sup_eq_lieAnnihilator_and_isCompl_of_isCompact` in the same namespace). No
-`Ad(G)`-invariant inner product is used, and `G` need be neither compact nor connected. This is
-the splitting of the Marle–Guillemin–Sternberg local model `G ×_H (𝔪* × V)` of the action near
-the orbit of `p`: `𝔪*` is included into `𝔤*` by extending forms by zero on `𝔥 ⊕ 𝔮`
+(`exists_isotropySubrepresentation_sup_eq_lieAnnihilatorSubrepresentation_and_isCompl_of_isCompact`
+in the same namespace). No `Ad(G)`-invariant inner product is used, and `G` need be neither
+compact nor connected. This is the splitting of the Marle–Guillemin–Sternberg local model
+`G ×_H (𝔪* × V)` of the action near the orbit of `p`: `𝔪*` is included into `𝔤*` by extending
+forms by zero on `𝔥 ⊕ 𝔮`
 (`TauCeti.Lie.isIntertwiningMap_dualMap_projectionOnto_coadjointRepresentation`), and the
 `𝔮`-summand carries the Kirillov–Kostant–Souriau form of the coadjoint orbit of `ν`.
 
@@ -42,8 +43,9 @@ Both in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`:
 
 * `isotropySubrepresentation_le_lieAnnihilatorSubrepresentation`: `𝔤_p ≤ 𝔤_{μ(p)}` as
   subrepresentations of the adjoint representation of a subgroup of `G_p`.
-* `exists_isotropy_sup_eq_lieAnnihilator_and_isCompl_of_isCompact`: for a compact stabilizer
-  `G_p`, `Ad(G_p)`-invariant complements `𝔤 = 𝔤_p ⊕ 𝔪 ⊕ 𝔮` with `𝔤_p ⊕ 𝔪 = 𝔤_{μ(p)}`.
+* For a compact stabilizer `G_p`, `Ad(G_p)`-invariant complements `𝔤 = 𝔤_p ⊕ 𝔪 ⊕ 𝔮` with
+  `𝔤_p ⊕ 𝔪 = 𝔤_{μ(p)}`:
+  `exists_isotropySubrepresentation_sup_eq_lieAnnihilatorSubrepresentation_and_isCompl_of_isCompact`
 
 ## References
 
@@ -61,7 +63,7 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothTwoForm.IsEquivariantMomentMap
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
@@ -92,7 +94,8 @@ are subrepresentations `𝔪` and `𝔮` of the adjoint representation of `H` su
 complements the isotropy algebra `𝔤_p` in the coadjoint stabilizer `𝔤_{μ(p)}` and `𝔮` complements
 `𝔤_{μ(p)}` in `𝔤`. Thus `𝔤 = 𝔤_p ⊕ 𝔪 ⊕ 𝔮`, with each summand complementary to the sum of the
 other two. -/
-theorem exists_isotropy_sup_eq_lieAnnihilator_and_isCompl_of_isCompact
+theorem
+    exists_isotropySubrepresentation_sup_eq_lieAnnihilatorSubrepresentation_and_isCompl_of_isCompact
     (h : σ.IsEquivariantMomentMap μ) (p : M) (hp : IsCompact (MulAction.stabilizer G p : Set G)) :
     ∃ 𝔪 𝔮 : Subrepresentation
         ((Lie.adjointRepresentation ℝ I G).comp (MulAction.stabilizer G p).subtype),

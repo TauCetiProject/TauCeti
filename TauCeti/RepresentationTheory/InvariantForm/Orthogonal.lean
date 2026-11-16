@@ -21,15 +21,15 @@ complement of a subrepresentation is again a subrepresentation
 subrepresentation `S`, then so is `ρ g w`, because `B v (ρ g w) = B (ρ g⁻¹ v) w` and `ρ g⁻¹` maps
 `S` into itself.
 
-When `B` moreover has anisotropic diagonal, for instance a real inner product, and the
-representation is finite-dimensional, every subrepresentation is complemented by its orthogonal
-complement. Applied to a flag `S ≤ T` of subrepresentations this gives the invariant three-term
-splitting
+When `B` moreover has anisotropic diagonal, for instance a real inner product, every
+finite-dimensional subrepresentation is complemented by its orthogonal complement. Applied to a
+flag `S ≤ T` of subrepresentations this gives the invariant three-term splitting
 
 `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ`,
 
 in which `S ⊔ (T ⊓ Sᗮ) = T`, `(T ⊓ Sᗮ) ⊔ Tᗮ = Sᗮ`, and each summand is complementary to the sum of
-the other two. No reflexivity of `B` is needed for this; for a reflexive form moreover
+the other two. No reflexivity of `B` is needed for this, and only `T` needs to be
+finite-dimensional; for a reflexive form on a finite-dimensional representation moreover
 `(T ⊓ Sᗮ)ᗮ = S ⊔ Tᗮ`. This is how an inner product averaged over a compact
 group produces invariant complements adapted to a flag of invariant subspaces, as for the splitting
 `𝔤 = 𝔥 ⊕ 𝔪 ⊕ 𝔮` of a Lie algebra along subspaces `𝔥 ⊆ 𝔨` invariant under a compact subgroup.
@@ -49,12 +49,15 @@ All in the namespace `TauCeti.Representation.IsInvariantForm`:
   `orthogonalSubrepresentation_sup` and
   `le_orthogonalSubrepresentation_orthogonalSubrepresentation`: the order-reversing behaviour of
   the orthogonal complement.
-* `isCompl_orthogonalSubrepresentation`: for an anisotropic invariant form, a subrepresentation and
-  its orthogonal complement are complementary.
+* `orthogonalSubrepresentation_top_eq_bot`, `orthogonalSubrepresentation_inf` and
+  `orthogonalSubrepresentation_orthogonalSubrepresentation`: their counterparts for a
+  nondegenerate form (on a finite-dimensional representation, and reflexive for the last).
+* `isCompl_orthogonalSubrepresentation`: for an anisotropic invariant form, a finite-dimensional
+  subrepresentation and its orthogonal complement are complementary.
 * `sup_inf_orthogonalSubrepresentation`,
   `inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation`,
   `orthogonalSubrepresentation_inf_orthogonalSubrepresentation` (for a reflexive form),
-  `isCompl_inf_orthogonalSubrepresentation_sup` and
+  `isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation_right` and
   `isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation`: the three-term
   splitting of a flag of subrepresentations.
 
@@ -135,6 +138,14 @@ theorem orthogonalSubrepresentation_bot (hB : IsInvariantForm ρ B) :
   rw [toSubmodule_orthogonalSubrepresentation, Subrepresentation.toSubmodule_bot,
     Subrepresentation.toSubmodule_top, BilinForm.orthogonal_bot]
 
+/-- For a nondegenerate invariant form, the orthogonal complement of the whole representation is
+zero. -/
+theorem orthogonalSubrepresentation_top_eq_bot (hB : IsInvariantForm ρ B)
+    (hnd : B.Nondegenerate) : hB.orthogonalSubrepresentation ⊤ = ⊥ := by
+  apply Subrepresentation.toSubmodule_injective
+  rw [toSubmodule_orthogonalSubrepresentation, Subrepresentation.toSubmodule_top,
+    Subrepresentation.toSubmodule_bot, BilinForm.orthogonal_top_eq_bot hnd]
+
 /-- Taking orthogonal complements of subrepresentations reverses inclusions. -/
 @[gcongr]
 theorem orthogonalSubrepresentation_le (hB : IsInvariantForm ρ B) {S T : Subrepresentation ρ}
@@ -162,27 +173,55 @@ theorem le_orthogonalSubrepresentation_orthogonalSubrepresentation (hB : IsInvar
     toSubmodule_orthogonalSubrepresentation]
   exact BilinForm.le_orthogonal_orthogonal hrefl
 
-section Field
+section Nondegenerate
 
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
   [FiniteDimensional k V] {ρ : Representation k G V} {B : BilinForm k V}
+
+/-- For a nondegenerate invariant form on a finite-dimensional representation, the orthogonal
+complement of an intersection of subrepresentations is the sum of their orthogonal
+complements. -/
+theorem orthogonalSubrepresentation_inf (hB : IsInvariantForm ρ B) (hnd : B.Nondegenerate)
+    (S T : Subrepresentation ρ) :
+    hB.orthogonalSubrepresentation (S ⊓ T) =
+      hB.orthogonalSubrepresentation S ⊔ hB.orthogonalSubrepresentation T := by
+  apply Subrepresentation.toSubmodule_injective
+  simp only [toSubmodule_orthogonalSubrepresentation, Subrepresentation.toSubmodule_sup,
+    Subrepresentation.toSubmodule_inf]
+  exact B.orthogonal_inf hnd S.toSubmodule T.toSubmodule
+
+/-- For a nondegenerate reflexive invariant form on a finite-dimensional representation, the
+double orthogonal complement of a subrepresentation is the subrepresentation itself. -/
+theorem orthogonalSubrepresentation_orthogonalSubrepresentation (hB : IsInvariantForm ρ B)
+    (hnd : B.Nondegenerate) (hrefl : B.IsRefl) (S : Subrepresentation ρ) :
+    hB.orthogonalSubrepresentation (hB.orthogonalSubrepresentation S) = S := by
+  apply Subrepresentation.toSubmodule_injective
+  rw [toSubmodule_orthogonalSubrepresentation, toSubmodule_orthogonalSubrepresentation,
+    BilinForm.orthogonal_orthogonal hnd hrefl]
+
+end Nondegenerate
+
+section Field
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+  {ρ : Representation k G V} {B : BilinForm k V}
   (hB : IsInvariantForm ρ B) (hani : B.toQuadraticMap.Anisotropic)
 include hB hani
 
-/-- **Invariant anisotropic forms complement every subrepresentation.** For an invariant form
-with anisotropic diagonal on a finite-dimensional representation, such as an invariant inner
-product, a subrepresentation and its orthogonal complement are complementary. -/
-theorem isCompl_orthogonalSubrepresentation (S : Subrepresentation ρ) :
-    IsCompl S (hB.orthogonalSubrepresentation S) :=
+/-- **Invariant anisotropic forms complement every finite-dimensional subrepresentation.** For an
+invariant form with anisotropic diagonal, such as an invariant inner product, a
+finite-dimensional subrepresentation and its orthogonal complement are complementary. -/
+theorem isCompl_orthogonalSubrepresentation (S : Subrepresentation ρ)
+    [FiniteDimensional k S.toSubmodule] : IsCompl S (hB.orthogonalSubrepresentation S) :=
   Subrepresentation.isCompl_toSubmodule.mp <| by
     rw [toSubmodule_orthogonalSubrepresentation]
     exact BilinForm.isCompl_orthogonal_of_anisotropic hani S.toSubmodule
 
 variable {S T : Subrepresentation ρ}
 
-/-- For a flag `S ≤ T` of subrepresentations, `S` and the relative orthogonal complement `T ⊓ Sᗮ`
-span `T`: `S ⊔ (T ⊓ Sᗮ) = T`. -/
-theorem sup_inf_orthogonalSubrepresentation (hST : S ≤ T) :
+/-- For a flag `S ≤ T` of subrepresentations with `S` finite-dimensional, `S` and the relative
+orthogonal complement `T ⊓ Sᗮ` span `T`: `S ⊔ (T ⊓ Sᗮ) = T`. -/
+theorem sup_inf_orthogonalSubrepresentation [FiniteDimensional k S.toSubmodule] (hST : S ≤ T) :
     S ⊔ T ⊓ hB.orthogonalSubrepresentation S = T := by
   apply Subrepresentation.toSubmodule_injective
   simp only [Subrepresentation.toSubmodule_sup, Subrepresentation.toSubmodule_inf,
@@ -190,9 +229,11 @@ theorem sup_inf_orthogonalSubrepresentation (hST : S ≤ T) :
   exact BilinForm.sup_inf_orthogonal_of_le hani
     (Subrepresentation.toSubmodule_le_toSubmodule.mpr hST)
 
-/-- For a flag `S ≤ T` of subrepresentations, the orthogonal complement `Sᗮ` is the sum of the
-relative complement `T ⊓ Sᗮ` and of `Tᗮ`: `(T ⊓ Sᗮ) ⊔ Tᗮ = Sᗮ`. -/
-theorem inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation (hST : S ≤ T) :
+/-- For a flag `S ≤ T` of subrepresentations with `T` finite-dimensional, the orthogonal
+complement `Sᗮ` is the sum of the relative complement `T ⊓ Sᗮ` and of `Tᗮ`:
+`(T ⊓ Sᗮ) ⊔ Tᗮ = Sᗮ`. -/
+theorem inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation
+    [FiniteDimensional k T.toSubmodule] (hST : S ≤ T) :
     T ⊓ hB.orthogonalSubrepresentation S ⊔ hB.orthogonalSubrepresentation T =
       hB.orthogonalSubrepresentation S := by
   apply Subrepresentation.toSubmodule_injective
@@ -201,30 +242,33 @@ theorem inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation (hST : S
   exact BilinForm.inf_orthogonal_sup_orthogonal_of_le hani
     (Subrepresentation.toSubmodule_le_toSubmodule.mpr hST)
 
-/-- For a reflexive form, the orthogonal complement of `T ⊓ Sᗮ` is `S ⊔ Tᗮ`. For a flag `S ≤ T`
-this identifies the sum of the two other summands of the splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ` with
-the orthogonal complement of the middle one. -/
-theorem orthogonalSubrepresentation_inf_orthogonalSubrepresentation (hrefl : B.IsRefl)
-    (S T : Subrepresentation ρ) :
+/-- For a reflexive form on a finite-dimensional representation, the orthogonal complement of
+`T ⊓ Sᗮ` is `S ⊔ Tᗮ`. For a flag `S ≤ T` this identifies the sum of the two other summands of the
+splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ` with the orthogonal complement of the middle one. -/
+theorem orthogonalSubrepresentation_inf_orthogonalSubrepresentation [FiniteDimensional k V]
+    (hrefl : B.IsRefl) (S T : Subrepresentation ρ) :
     hB.orthogonalSubrepresentation (T ⊓ hB.orthogonalSubrepresentation S) =
       S ⊔ hB.orthogonalSubrepresentation T := by
   have hnd := B.nondegenerate_of_anisotropic hani
-  apply Subrepresentation.toSubmodule_injective
-  simp only [Subrepresentation.toSubmodule_sup, Subrepresentation.toSubmodule_inf,
-    toSubmodule_orthogonalSubrepresentation]
-  rw [B.orthogonal_inf hnd, BilinForm.orthogonal_orthogonal hnd hrefl, sup_comm]
+  rw [hB.orthogonalSubrepresentation_inf hnd,
+    hB.orthogonalSubrepresentation_orthogonalSubrepresentation hnd hrefl, sup_comm]
 
-/-- For a flag `S ≤ T` of subrepresentations, `S` is complementary to the sum `(T ⊓ Sᗮ) ⊔ Tᗮ` of
-the two other summands of the splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ`. -/
-theorem isCompl_inf_orthogonalSubrepresentation_sup (hST : S ≤ T) :
+/-- For a flag `S ≤ T` of subrepresentations with `T` finite-dimensional, `S` is complementary to
+the sum `(T ⊓ Sᗮ) ⊔ Tᗮ` of the two other summands of the splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ`. The
+suffix `_right` records that this sum is the right argument of `IsCompl`. -/
+theorem isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation_right
+    [FiniteDimensional k T.toSubmodule] (hST : S ≤ T) :
     IsCompl S (T ⊓ hB.orthogonalSubrepresentation S ⊔ hB.orthogonalSubrepresentation T) := by
+  have : FiniteDimensional k S.toSubmodule := Submodule.finiteDimensional_of_le
+    (Subrepresentation.toSubmodule_le_toSubmodule.mpr hST)
   rw [hB.inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation hani hST]
   exact hB.isCompl_orthogonalSubrepresentation hani S
 
-/-- For a flag `S ≤ T` of subrepresentations, the relative complement `T ⊓ Sᗮ` is complementary to
-the sum `S ⊔ Tᗮ` of the two other summands of the splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ`. No
-reflexivity of the form is needed. -/
-theorem isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation (hST : S ≤ T) :
+/-- For a flag `S ≤ T` of subrepresentations with `T` finite-dimensional, the relative complement
+`T ⊓ Sᗮ` is complementary to the sum `S ⊔ Tᗮ` of the two other summands of the splitting
+`V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ`. No reflexivity of the form is needed. -/
+theorem isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation
+    [FiniteDimensional k T.toSubmodule] (hST : S ≤ T) :
     IsCompl (T ⊓ hB.orthogonalSubrepresentation S) (S ⊔ hB.orthogonalSubrepresentation T) :=
   Subrepresentation.isCompl_toSubmodule.mp <| by
     simp only [Subrepresentation.toSubmodule_sup, Subrepresentation.toSubmodule_inf,
