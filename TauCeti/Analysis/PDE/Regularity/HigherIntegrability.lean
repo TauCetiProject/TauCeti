@@ -64,8 +64,10 @@ cutoff `ψ² u` is still a test function, since `u ∈ H¹₀(Ω)`, so Caccioppo
 vanishes on `B(z, ρ/2) \ Ω`, a proportion `θ / 4ⁿ` of `B(y, 2ρ)`, so the mean of `u₀` is
 controlled by its oscillation (`TauCeti.setLAverage_enorm_sq_le_of_ae_eq_zero`) and the
 Sobolev–Poincaré inequality for `u₀` applies again. Gehring's lemma then gives Meyers' estimate
-for `1_Ω ∇u` on all balls of radius at most `r₀`, and for bounded `Ω` the global integrability
-`∇u ∈ L^{2 + ε}(Ω)` whenever `F ∈ L^{2 + ε}(Ω)`, the upper half of Meyers' global theorem.
+for `1_Ω ∇u` on all balls of radius at most `r₀`, and for bounded `Ω` the qualitative global
+higher integrability `∇u ∈ L^{2 + ε}(Ω)` of `H¹₀` solutions whenever `F ∈ L^{2 + ε}(Ω)`. This is
+the integrability part of the upper range of Meyers' Theorem 1, without its norm bound
+`‖∇u‖_{2 + ε} ≤ C ‖F‖_{2 + ε}` or its `W^{1,p}` well-posedness.
 
 ## Main declarations
 
