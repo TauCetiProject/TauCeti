@@ -120,18 +120,14 @@ theorem algebraMap_injective (M : BasedChart u Λ B) : Function.Injective (algeb
 theorem faithfulSMul (M : BasedChart u Λ B) : FaithfulSMul R B :=
   (faithfulSMul_iff_algebraMap_injective R B).mpr M.algebraMap_injective
 
-/-- Ambient algebra maps fix the scalar units. -/
-private theorem units_map_algebraMap (f : B →ₐ[R] C) (v : Rˣ) :
-    Units.map (f : B →* C) (Units.map (algebraMap R B) v) = Units.map (algebraMap R C) v :=
-  Units.ext <| by simp
-
 /-- Transport a chart through an injective map of ambient algebras. -/
 noncomputable def map (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Injective f) :
     BasedChart u Λ C where
   monomial a := Units.map f (M.monomial a)
   monomial_zero := by simp
   monomial_mul a b := by
-    rw [← map_mul, M.monomial_mul, map_mul, units_map_algebraMap]
+    rw [← map_mul, M.monomial_mul, map_mul]
+    exact congrArg (· * _) (Units.ext (f.commutes _))
   linearIndependent := by
     simpa only [Function.comp_def, AlgHom.toLinearMap_apply, Units.coe_map,
       AlgHom.coe_toMonoidHom] using
