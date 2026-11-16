@@ -15,35 +15,13 @@ import TauCeti.Topology.Sheaves.Presheaf
 # Inclusions between restrictions of a locally ringed space to nested opens
 
 For opens `V ≤ W` of a locally ringed space `X`, `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE`
-lifts to an open immersion `X|_V ⟶ X|_W` of locally ringed spaces compatible with `ofRestrict`. We
-also record the isomorphism `Γ(X, U) ≅ Γ(X|_U, ⊤)` and its compatibility with restrictions,
-isomorphisms on global sections, factorizations, and residue-field evaluation.
-
-## Main definitions
-
-* `AlgebraicGeometry.LocallyRingedSpace.restrictHomOfLE`: the open immersion `X|_V ⟶ X|_W` for
-  `V ≤ W`.
-* `AlgebraicGeometry.LocallyRingedSpace.restrictTopSectionsIso`: the isomorphism
-  `Γ(X, U) ≅ Γ(X|_U, ⊤)`.
-
-## Main results
-
-* `AlgebraicGeometry.LocallyRingedSpace.restrictHomOfLE_ofRestrict`,
-  `AlgebraicGeometry.LocallyRingedSpace.restrictHomOfLE_refl`,
-  `AlgebraicGeometry.LocallyRingedSpace.restrictHomOfLE_comp`: functoriality and compatibility with
-  `ofRestrict`.
-* `AlgebraicGeometry.LocallyRingedSpace.iso_inv_c_app_top_comp_hom`,
-  `AlgebraicGeometry.LocallyRingedSpace.iso_hom_c_app_top_comp_inv`: global-section cancellations
-  for an isomorphism of locally ringed spaces.
-* `AlgebraicGeometry.LocallyRingedSpace.ofRestrict_c_app_le`,
-  `AlgebraicGeometry.LocallyRingedSpace.ofRestrict_c_app_self`,
-  `AlgebraicGeometry.LocallyRingedSpace.ofRestrict_c_app_top`,
-  `AlgebraicGeometry.LocallyRingedSpace.restrictTopSectionsIso_hom_restrictHomOfLE_c_app_top`,
-  `AlgebraicGeometry.LocallyRingedSpace.restrictTopSectionsIso_hom_c_app_top_of_fac_le`,
-  `AlgebraicGeometry.LocallyRingedSpace.restrictTopSectionsIso_hom_c_app_top_of_fac`,
-  `AlgebraicGeometry.LocallyRingedSpace.evaluation_eq_zero_iff_restrict_Γevaluation_eq_zero`:
-  compatibility of `restrictTopSectionsIso` with `ofRestrict`, `restrictHomOfLE`, morphisms, and
-  residue-field evaluation.
+lifts to an open immersion `restrictHomOfLE : X|_V ⟶ X|_W` of locally ringed spaces compatible with
+`ofRestrict` and functorial in inclusions. We also record global-section cancellations for
+isomorphisms (`iso_inv_c_app_top_comp_hom`, `iso_hom_c_app_top_comp_inv`) and the canonical
+isomorphism `restrictTopSectionsIso : Γ(X, U) ≅ Γ(X|_U, ⊤)` together with its compatibilities with
+restrictions (`ofRestrict_c_app_le`, `ofRestrict_c_app_self`, `ofRestrict_c_app_top`), nested opens,
+factorizations (`restrictTopSectionsIso_hom_c_app_top_of_fac_le`,
+`restrictTopSectionsIso_hom_c_app_top_of_fac`), and residue evaluation.
 -/
 
 public section
@@ -146,6 +124,7 @@ theorem restrictTopSectionsIso_inv (U : Opens X) :
 
 /-- Restricting a section over `W` along `X|_V ⟶ X` (for `V ≤ W`) and then to `⊤` on `X|_V`
 is the presheaf restriction `Γ(X, W) ⟶ Γ(X, V)` followed by `restrictTopSectionsIso`. -/
+@[reassoc]
 theorem ofRestrict_c_app_le {V W : Opens X} (h : V ≤ W) :
     (X.ofRestrict V.isOpenEmbedding).c.app (op W) ≫
         (X.restrict V.isOpenEmbedding).presheaf.map
@@ -174,10 +153,8 @@ theorem ofRestrict_c_app_top (U : Opens X) :
         X.presheaf.obj (op ⊤) ⟶ (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤)) =
       X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op ≫ (X.restrictTopSectionsIso U).hom :=
   (Category.comp_id _).symm.trans <|
-    (congrArg (_ ≫ ·) (TopCat.Presheaf.map_eq_id (X.restrict U.isOpenEmbedding).presheaf
-      (homOfLE (fun _ _ ↦ trivial : (⊤ : Opens _) ≤
-        (Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj ⊤)).op).symm).trans
-      (X.ofRestrict_c_app_le le_top)
+    (congrArg (_ ≫ ·) ((X.restrict U.isOpenEmbedding).presheaf.map_id (op ⊤)).symm).trans
+      (X.ofRestrict_c_app_le (V := U) (W := ⊤) le_top)
 
 /-- Under `restrictTopSectionsIso`, the global-section map of `X|_V ⟶ X|_W` is the presheaf
 restriction `Γ(X, W) ⟶ Γ(X, V)`. -/
@@ -188,9 +165,25 @@ theorem restrictTopSectionsIso_hom_restrictHomOfLE_c_app_top {V W : Opens X} (h 
   (X.presheaf.map_comp _ _).symm.trans <|
     (congrArg X.presheaf.map (Subsingleton.elim _ _)).trans (X.presheaf.map_comp _ _)
 
-/-- If `l : Z ⟶ Y|_V` and `h : Z ⟶ X|_U` satisfy `l ≫ Y|_V = h ≫ X|_U ≫ f` with `V ≤ W` and
-`U ≤ f⁻¹ W`, then under `restrictTopSectionsIso` the restriction `Γ(Y, W) ⟶ Γ(Y, V) ⟶ Γ(Z, ⊤)`
-equals `f.c.app (op W)` followed by `Γ(X, f⁻¹ W) ⟶ Γ(X, U) ⟶ Γ(Z, ⊤)`. -/
+private theorem comp_ofRestrict_c_app_le {X Z : LocallyRingedSpace.{u}} {U W : Opens X}
+    (hUW : U ≤ W) (k : Z ⟶ X.restrict U.isOpenEmbedding)
+    (hleZ : (⊤ : Opens Z) ≤ (Opens.map (k ≫ X.ofRestrict U.isOpenEmbedding).base).obj W) :
+    (k ≫ X.ofRestrict U.isOpenEmbedding).c.app (op W) ≫ Z.presheaf.map (homOfLE hleZ).op =
+      X.presheaf.map (homOfLE hUW).op ≫ (X.restrictTopSectionsIso U).hom ≫ k.c.app (op ⊤) := by
+  have hleU : (⊤ : Opens _) ≤ (Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W :=
+    fun x _ ↦ hUW x.2
+  have hnat : k.c.app (op ((Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W)) ≫
+        Z.presheaf.map (homOfLE hleZ).op =
+      (X.restrict U.isOpenEmbedding).presheaf.map (homOfLE hleU).op ≫ k.c.app (op ⊤) :=
+    (congrArg (_ ≫ Z.presheaf.map ·) (Subsingleton.elim _ _)).trans
+      (k.c.naturality (homOfLE hleU).op).symm
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg ((X.ofRestrict U.isOpenEmbedding).c.app (op W) ≫ ·) hnat).trans <|
+      (Category.assoc _ _ _).symm.trans <|
+        (congrArg (· ≫ k.c.app (op ⊤)) (X.ofRestrict_c_app_le hUW)).trans (Category.assoc _ _ _)
+
+/-- Compatibility of `restrictTopSectionsIso` with factorizations `l ≫ Y|_V = h ≫ X|_U ≫ f`
+for opens `V ≤ W` and `U ≤ f⁻¹ W`. -/
 @[reassoc]
 theorem restrictTopSectionsIso_hom_c_app_top_of_fac_le {X Y Z : LocallyRingedSpace.{u}}
     (f : X ⟶ Y) {V W : Opens Y} (hVW : V ≤ W) {U : Opens X}
@@ -203,45 +196,22 @@ theorem restrictTopSectionsIso_hom_c_app_top_of_fac_le {X Y Z : LocallyRingedSpa
       f.c.app (op W) ≫ X.presheaf.map (homOfLE hUW).op ≫ (X.restrictTopSectionsIso U).hom ≫
         (h.c.app (op ⊤) : (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤) ⟶
           Z.presheaf.obj (op ⊤)) := by
-  let jU := X.ofRestrict U.isOpenEmbedding
-  let jV := Y.ofRestrict V.isOpenEmbedding
-  have hleV : (⊤ : Opens _) ≤ (Opens.map jV.base).obj W := fun y _ ↦ hVW y.2
-  have hleU : (⊤ : Opens _) ≤ (Opens.map jU.base).obj ((Opens.map f.base).obj W) :=
-    fun x _ ↦ hUW x.2
-  have hleZ₁ : (⊤ : Opens _) ≤ (Opens.map (l ≫ jV).base).obj W := fun z _ ↦ hVW (l.base z).2
-  have hleZ₂ : (⊤ : Opens _) ≤ (Opens.map (h ≫ jU ≫ f).base).obj W := fun z _ ↦ hUW (h.base z).2
   have hmid : ∀ {k₁ k₂ : Z ⟶ Y} (_ : k₁ = k₂)
       (h₁ : (⊤ : Opens _) ≤ (Opens.map k₁.base).obj W)
       (h₂ : (⊤ : Opens _) ≤ (Opens.map k₂.base).obj W),
       k₁.c.app (op W) ≫ Z.presheaf.map (homOfLE h₁).op =
-        k₂.c.app (op W) ≫ Z.presheaf.map (homOfLE h₂).op := by
-    rintro k _ rfl _ _; rfl
-  have hlhs : (l ≫ jV).c.app (op W) ≫ Z.presheaf.map (homOfLE hleZ₁).op =
-      Y.presheaf.map (homOfLE hVW).op ≫ (Y.restrictTopSectionsIso V).hom ≫ l.c.app (op ⊤) := by
-    have hnat : l.c.app (op ((Opens.map jV.base).obj W)) ≫ Z.presheaf.map (homOfLE hleZ₁).op =
-        (Y.restrict V.isOpenEmbedding).presheaf.map (homOfLE hleV).op ≫ l.c.app (op ⊤) :=
-      (congrArg (_ ≫ Z.presheaf.map ·) (Subsingleton.elim _ _)).trans
-        (l.c.naturality (homOfLE hleV).op).symm
-    exact (Category.assoc _ _ _).trans <| (congrArg (jV.c.app (op W) ≫ ·) hnat).trans <|
-      (Category.assoc _ _ _).symm.trans <|
-        (congrArg (· ≫ l.c.app (op ⊤)) (Y.ofRestrict_c_app_le hVW)).trans (Category.assoc _ _ _)
-  have hrhs : (h ≫ jU ≫ f).c.app (op W) ≫ Z.presheaf.map (homOfLE hleZ₂).op =
-      f.c.app (op W) ≫ X.presheaf.map (homOfLE hUW).op ≫ (X.restrictTopSectionsIso U).hom ≫
-        h.c.app (op ⊤) := by
-    have hnat : h.c.app (op ((Opens.map (jU ≫ f).base).obj W)) ≫ Z.presheaf.map (homOfLE hleZ₂).op =
-        (X.restrict U.isOpenEmbedding).presheaf.map (homOfLE hleU).op ≫ h.c.app (op ⊤) :=
-      (congrArg (_ ≫ Z.presheaf.map ·) (Subsingleton.elim _ _)).trans
-        (h.c.naturality (homOfLE hleU).op).symm
-    exact (Category.assoc _ _ _).trans <| (Category.assoc _ _ _).trans <|
-      congrArg (f.c.app (op W) ≫ ·) <| (Category.assoc _ _ _).trans <|
-        (congrArg (jU.c.app (op ((Opens.map f.base).obj W)) ≫ ·) hnat).trans <|
-          (Category.assoc _ _ _).symm.trans <|
-            (congrArg (· ≫ h.c.app (op ⊤)) (X.ofRestrict_c_app_le hUW)).trans (Category.assoc _ _ _)
-  exact hlhs.symm.trans ((hmid hfac hleZ₁ hleZ₂).trans hrhs)
+        k₂.c.app (op W) ≫ Z.presheaf.map (homOfLE h₂).op := by rintro k _ rfl _ _; rfl
+  have hleZ₁ : (⊤ : Opens _) ≤ (Opens.map (l ≫ Y.ofRestrict V.isOpenEmbedding).base).obj W :=
+    fun z _ ↦ hVW (l.base z).2
+  have hleZ₂ : (⊤ : Opens _) ≤
+      (Opens.map ((h ≫ X.ofRestrict U.isOpenEmbedding) ≫ f).base).obj W :=
+    fun z _ ↦ hUW (h.base z).2
+  exact (comp_ofRestrict_c_app_le hVW l hleZ₁).symm.trans <|
+    (hmid (hfac.trans (Category.assoc _ _ _).symm) hleZ₁ hleZ₂).trans <|
+      (Category.assoc _ _ _).trans <|
+        congrArg (f.c.app (op W) ≫ ·) (comp_ofRestrict_c_app_le hUW h hleZ₂)
 
-/-- If `fUV : X|_U ⟶ Y|_V` restricts `f : X ⟶ Y` (so `fUV ≫ Y|_V = X|_U ≫ f`), then under
-`restrictTopSectionsIso` the global-section map of `fUV` is `f.c.app (op V)` followed by
-restriction `Γ(X, f⁻¹ V) ⟶ Γ(X, U)`. -/
+/-- Compatibility of `restrictTopSectionsIso` with a restriction `fUV ≫ Y|_V = X|_U ≫ f`. -/
 @[reassoc]
 theorem restrictTopSectionsIso_hom_c_app_top_of_fac {X Y : LocallyRingedSpace.{u}}
     (f : X ⟶ Y) {V : Opens Y} {U : Opens X} (hUV : U ≤ (Opens.map f.base).obj V)
@@ -257,21 +227,19 @@ theorem restrictTopSectionsIso_hom_c_app_top_of_fac {X Y : LocallyRingedSpace.{u
   exact h.trans <| congrArg (_ ≫ _ ≫ ·) <|
     (congrArg (_ ≫ ·) (LocallyRingedSpace.Γ.map_id _)).trans (Category.comp_id _)
 
-/-- A section `s ∈ Γ(X, U)` vanishes in the residue field of `X` at `x ∈ U` if and only if its
-image under `restrictTopSectionsIso U` vanishes in the residue field of `X|_U` at `x`. -/
+/-- `s ∈ Γ(X, U)` vanishes in the residue field at `x ∈ U` iff its image under
+`restrictTopSectionsIso U` vanishes in the residue field of `X|_U` at `x`. -/
 theorem evaluation_eq_zero_iff_restrict_Γevaluation_eq_zero (U : Opens X) (x : U)
     (s : X.presheaf.obj (op U)) :
     X.evaluation x s = 0 ↔
       (X.restrict U.isOpenEmbedding).Γevaluation x ((X.restrictTopSectionsIso U).hom s) = 0 := by
-  let j := X.ofRestrict U.isOpenEmbedding
-  let x' : (Opens.map j.base).obj U := ⟨x, x.2⟩
+  let j := X.ofRestrict U.isOpenEmbedding; let x' : (Opens.map j.base).obj U := ⟨x, x.2⟩
   have hle : (⊤ : Opens (X.restrict U.isOpenEmbedding)) ≤ (Opens.map j.base).obj U := fun y _ ↦ y.2
   have hres : (X.restrict U.isOpenEmbedding).evaluation x' (j.c.app (op U) s) =
       (X.restrict U.isOpenEmbedding).Γevaluation x ((X.restrictTopSectionsIso U).hom s) := by
     rw [← ofRestrict_c_app_self X U, ConcreteCategory.comp_apply]
     exact (congrArg ((X.restrict U.isOpenEmbedding).residue x)
-      (TopCat.Presheaf.germ_res_apply (X.restrict U.isOpenEmbedding).presheaf
-        (homOfLE hle) x trivial (j.c.app (op U) s))).symm
+      (TopCat.Presheaf.germ_res_apply _ (homOfLE hle) x trivial (j.c.app (op U) s))).symm
   exact ((residueFieldMap j x'.1).hom.map_eq_zero_iff).symm.trans
     (congrArg (· = 0) ((evaluation_naturality_apply j x' s).trans hres)).to_iff
 

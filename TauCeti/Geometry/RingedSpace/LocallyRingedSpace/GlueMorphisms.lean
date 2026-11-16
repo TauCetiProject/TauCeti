@@ -12,23 +12,12 @@ import TauCeti.Geometry.RingedSpace.PresheafedSpace.GlueMorphisms
 /-!
 # Gluing morphisms of locally ringed spaces along open covers
 
-Let `X` and `Y` be locally ringed spaces and `U : ι → Opens X` an open cover (`⨆ i, U i = ⊤`). A
-family of morphisms `f i : X|_{U i} ⟶ Y` agreeing on all intersections `U i ⊓ U j` glues via
-`AlgebraicGeometry.PresheafedSpace.glueMorphisms` to a unique morphism `X ⟶ Y` restricting to `f i`
-on each `U i` (EGA I, Ch. I, 2.2.4 and 10.4.6), with stalk locality checked on the cover.
-
-## Main definitions
-
-* `AlgebraicGeometry.LocallyRingedSpace.glueMorphisms`: the glued morphism `X ⟶ Y`.
-
-## Main results
-
-* `AlgebraicGeometry.LocallyRingedSpace.ofRestrict_glueMorphisms`: the glued morphism restricts to
-  `f i` on each `U i`.
-* `AlgebraicGeometry.LocallyRingedSpace.hom_ext_of_ofRestrict`: morphisms out of `X` are determined
-  by their restrictions to an open cover.
-* `AlgebraicGeometry.LocallyRingedSpace.existsUnique_glueMorphisms`: unique existence of the glued
-  morphism.
+For locally ringed spaces `X`, `Y` and an open cover `U : ι → Opens X` (`⨆ i, U i = ⊤`), a family
+`f i : X|_{U i} ⟶ Y` agreeing on intersections `U i ⊓ U j` glues via
+`AlgebraicGeometry.PresheafedSpace.glueMorphisms` to a unique morphism `glueMorphisms : X ⟶ Y`
+restricting to `f i` on each `U i` (`ofRestrict_glueMorphisms`, `hom_ext_of_ofRestrict`,
+`existsUnique_glueMorphisms`; EGA I, Ch. I, 2.2.4 and 10.4.6), with stalk locality checked on the
+cover.
 -/
 
 public section
@@ -84,18 +73,18 @@ private theorem isLocalHom_stalkMap_gluePsh (x : X) :
     IsLocalHom ((gluePsh U hU f hf).stalkMap x).hom := by
   obtain ⟨i, hx⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
   let j := X.ofRestrict (U i).isOpenEmbedding
-  let y : X.restrict (U i).isOpenEmbedding := ⟨x, hx⟩
+  let x' : X.restrict (U i).isOpenEmbedding := ⟨x, hx⟩
   have hcomp_eq : j.toHom ≫ gluePsh U hU f hf = (f i).toHom :=
     PresheafedSpace.ofRestrict_glueMorphisms X.IsSheaf U hU _ _ i
-  have hloc : IsLocalHom ((j.toHom ≫ gluePsh U hU f hf).stalkMap y).hom := by
-    rw [PresheafedSpace.stalkMap.congr_hom _ _ hcomp_eq y, CommRingCat.hom_comp]
+  have hloc : IsLocalHom ((j.toHom ≫ gluePsh U hU f hf).stalkMap x').hom := by
+    rw [PresheafedSpace.stalkMap.congr_hom _ _ hcomp_eq x', CommRingCat.hom_comp]
     have := isLocalHom_of_isIso (eqToHom (hcomp_eq ▸ rfl :
-      Y.presheaf.stalk ((j.toHom ≫ gluePsh U hU f hf).base y) = Y.presheaf.stalk ((f i).base y)))
-    have := (f i).prop y
+      Y.presheaf.stalk ((j.toHom ≫ gluePsh U hU f hf).base x') = Y.presheaf.stalk ((f i).base x')))
+    have := (f i).prop x'
     exact CommRingCat.isLocalHom_comp _ _
   rw [PresheafedSpace.stalkMap.comp] at hloc
-  have : IsLocalHom ((j.toHom.stalkMap y).hom.comp ((gluePsh U hU f hf).stalkMap x).hom) := hloc
-  exact isLocalHom_of_comp _ (j.toHom.stalkMap y).hom
+  have : IsLocalHom ((j.toHom.stalkMap x').hom.comp ((gluePsh U hU f hf).stalkMap x).hom) := hloc
+  exact isLocalHom_of_comp _ (j.toHom.stalkMap x').hom
 
 /-- **Gluing morphisms of locally ringed spaces along an open cover.** Given an open cover
 `U : ι → Opens X` with `⨆ i, U i = ⊤` and morphisms `f i : X|_{U i} ⟶ Y` agreeing on every
