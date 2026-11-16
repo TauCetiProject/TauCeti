@@ -96,9 +96,12 @@ theorem polylog_conj_of_im_ne_zero_or_re_le_one (n : ℤ) {z : ℂ} (hz : z.im �
     rcases m with _ | _ | k
     · exact polylog_conj_of_nonpos le_rfl z
     · rw [Int.ofNat_eq_natCast, zero_add, Nat.cast_one, polylog_one, polylog_one, map_neg]
-      have harg : (1 - z).arg ≠ Real.pi := by
-        simpa using Complex.arg_one_sub_ofReal_mul_ne_pi hz (right_mem_Icc.mpr zero_le_one)
-      rw [← Complex.log_conj _ harg, map_sub, map_one]
+      rcases eq_or_ne z 1 with rfl | hz1
+      · simp
+      · have harg : (1 - z).arg ≠ Real.pi :=
+          Complex.slitPlane_arg_ne_pi
+            (Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz hz1)
+        rw [← Complex.log_conj _ harg, map_sub, map_one]
     · rw [Int.ofNat_eq_natCast, polylog_nat_add_two, polylog_nat_add_two, map_mul, map_inv₀,
         map_natCast, ← intervalIntegral.intervalIntegral_conj]
       congr 1
@@ -174,10 +177,6 @@ theorem ofReal_re_polylog_of_le_one (n : ℤ) {x : ℝ} (hx : x ≤ 1) :
     ((polylog n x).re : ℂ) = polylog n x :=
   Complex.conj_eq_iff_re.mp
     (by simpa using (polylog_conj_of_im_ne_zero_or_re_le_one n (z := x) (Or.inr (by simpa))).symm)
-
-/-- At `-1`, the dilogarithm is real. -/
-theorem im_polylog_two_neg_one : (polylog 2 (-1)).im = 0 := by
-  simpa using im_polylog_of_le_one 2 (x := -1) (by norm_num)
 
 /-- On the cut `(1, ∞)`, conjugation does not commute with `polylog 1`: at `3`, `polylog 1 3` has
 imaginary part `-π` whereas `conj (polylog 1 3)` has imaginary part `+π`. -/

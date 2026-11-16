@@ -202,9 +202,8 @@ theorem setLIntegral_norm_log_one_sub_mul_pow_le (k : ℕ) (a b : ℝ) {r R : �
           ENNReal.ofReal ((2 : ℝ) ^ (k - 1)) *
             ENNReal.ofReal (|Real.log (|t - (z⁻¹).re|)| ^ k) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioc,
-      ae_restrict_of_ae (by rw [ae_iff]; simp : ∀ᵐ t : ℝ, t ≠ (z⁻¹).re)] with t ht hts
-    have htT : |t| ≤ T := abs_le.mpr ⟨by linarith [ht.1, neg_abs_le a, le_max_left |a| |b|],
-      by linarith [ht.2, le_abs_self b, le_max_right |a| |b|]⟩
+      ae_restrict_of_ae (Measure.ae_ne volume (z⁻¹).re)] with t ht hts
+    have htT : |t| ≤ T := abs_le_max_abs_abs ht.1.le ht.2
     have hlogt : Real.log (1 + |t| * ‖z‖) ≤ Real.log (1 + T * R) :=
       Real.log_le_log (by positivity) (by linarith [mul_le_mul htT hzR hz_pos.le hT])
     have hbound : ‖Complex.log (1 - t * z)‖ ≤ M + |Real.log (|t - (z⁻¹).re|)| :=
@@ -250,8 +249,7 @@ theorem exists_setLIntegral_norm_log_one_sub_mul_pow_le (k : ℕ) (a b R : ℝ) 
   rcases le_or_gt ‖z‖ r with hsmall | hlarge
   · refine (setLIntegral_mono' measurableSet_Ioc
         (g := fun _ ↦ ENNReal.ofReal ((2 : ℝ) ^ (k - 1) * M ^ k)) fun t ht ↦ ?_).trans ?_
-    · have htT : |t| ≤ T := abs_le.mpr ⟨by linarith [ht.1, neg_abs_le a, le_max_left |a| |b|],
-        by linarith [ht.2, le_abs_self b, le_max_right |a| |b|]⟩
+    · have htT : |t| ≤ T := abs_le_max_abs_abs ht.1.le ht.2
       have htz : ‖-((t : ℂ) * z)‖ ≤ 1 / 2 := by
         rw [norm_neg, norm_mul, Complex.norm_real, Real.norm_eq_abs]
         refine (mul_le_mul htT hsmall (norm_nonneg z) hT).trans ?_

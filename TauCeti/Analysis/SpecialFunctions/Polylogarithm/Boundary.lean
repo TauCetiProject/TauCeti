@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Complex.UpperLogContinuity
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conjugation
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Boundary continuity and the principal jump of integer-weight polylogarithms
@@ -127,9 +129,7 @@ theorem continuousAt_polylog_of_im_ne_zero_or_re_le_one {n : ℤ} {z : ℂ} (hn 
     · exact (analyticAt_polylog_neg_nat 0 (hn.resolve_right (by decide))).continuousAt
     · have hz1 : z ≠ 1 := hn.resolve_right (by decide)
       have hslit : 1 - z ∈ Complex.slitPlane :=
-        Complex.mem_slitPlane_iff_arg.mpr
-          ⟨by simpa using Complex.arg_one_sub_ofReal_mul_ne_pi hz (right_mem_Icc.mpr zero_le_one),
-            sub_ne_zero.mpr hz1.symm⟩
+        Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz hz1
       rw [Int.ofNat_eq_natCast, zero_add, Nat.cast_one,
         (funext polylog_one : polylog 1 = fun w ↦ -Complex.log (1 - w))]
       exact ((continuousAt_clog hslit).comp (by fun_prop)).neg
@@ -195,7 +195,7 @@ theorem continuousWithinAt_polylog_im_nonpos (n : ℤ) {z : ℂ} (hz : z ≠ 1 �
     · rw [Int.ofNat_eq_natCast]
       refine tendsto_polylog_nat_add_two_of_ae_tendsto k nhdsWithin_le_nhds ?_
       filter_upwards [ae_restrict_mem measurableSet_Ioc,
-        ae_restrict_of_ae (ae_one_sub_ofReal_mul_ne_zero z)] with t ht htz
+        Complex.ae_one_sub_ofReal_mul_ne_zero z] with t ht htz
       exact (continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos ht.1.le htz).tendsto
 
 /-- For integer weight `n ≥ 2`, `polylog n` is continuous on the entire closed lower half-plane
@@ -214,15 +214,8 @@ theorem tendsto_polylog_nhdsWithin_im_neg (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 
 /-- Lower boundary limit along `ℝ`: for integer weight `n` and real `x` with `x ≠ 1 ∨ 2 ≤ n`,
 `polylog n (x - t * I) → polylog n x` as `t → 0+`. -/
 theorem tendsto_polylog_sub_mul_I_nhdsGT_zero (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 2 ≤ n) :
-    Tendsto (fun t : ℝ ↦ polylog n (x - t * Complex.I)) (𝓝[>] 0) (𝓝 (polylog n x)) := by
-  have hcont : Continuous fun t : ℝ ↦ (x : ℂ) - t * Complex.I := by fun_prop
-  have hpath : Tendsto (fun t : ℝ ↦ (x : ℂ) - t * Complex.I) (𝓝[>] 0)
-      (𝓝[{z : ℂ | z.im < 0}] x) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with t ht
-      simpa using ht
-  exact (tendsto_polylog_nhdsWithin_im_neg n hx).comp hpath
+    Tendsto (fun t : ℝ ↦ polylog n (x - t * Complex.I)) (𝓝[>] 0) (𝓝 (polylog n x)) :=
+  (tendsto_polylog_nhdsWithin_im_neg n hx).comp (tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg x)
 
 /-- Imaginary part of the radial integral on `(1, ∞)` obtained by splitting `[0, 1]` at `x⁻¹`. -/
 private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 < x) :
@@ -265,9 +258,8 @@ private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 
       Complex.log_im, harg]
     ring
   rw [← intervalIntegral.integral_add_adjacent_intervals hint₁ hint₂, Complex.add_im,
-    him_int _ _ hint₁, him_int _ _ hint₂, h1, zero_add, h2,
-    integral_neg_log_pow_div_self k h0_notMem, Real.log_one, neg_zero,
-    zero_pow (Nat.succ_ne_zero k), sub_zero, Real.log_inv, neg_neg]
+    him_int _ _ hint₁, him_int _ _ hint₂, h1, h2, integral_neg_log_pow_div_self k h0_notMem]
+  simp
 
 /-- On the cut `(1, ∞)`, the total value `polylog n x` (`1 ≤ n`) has imaginary part
 `-π (log x) ^ (n - 1) / (n - 1)!`. -/
@@ -278,30 +270,18 @@ theorem im_polylog_of_one_lt {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 < x) :
   · simp only [zero_add, Nat.cast_one, polylog_one, Nat.sub_self, pow_zero, Nat.factorial_zero,
       Nat.cast_one, div_one, mul_one, Complex.neg_im, Complex.log_im]
     rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.arg_ofReal_of_neg (sub_neg.mpr hx)]
-  · have hn_eq : k + 1 + 1 = k + 2 := rfl
-    have hk2 : k + 2 - 1 = k + 1 := rfl
-    rw [hn_eq, polylog_nat_add_two, ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
-      Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero,
-      im_integral_radialIntegrand_of_one_lt k hx, hk2, Nat.factorial_succ]
-    push_cast
+  · rw [Nat.add_sub_cancel, Nat.add_assoc, polylog_nat_add_two, Complex.mul_im,
+      im_integral_radialIntegrand_of_one_lt k hx, Nat.factorial_succ]
+    simp
     field_simp
-
-/-- On the cut at `3`, the dilogarithm has imaginary part `-π log 3`. -/
-theorem im_polylog_two_three : (polylog 2 3).im = -Real.pi * Real.log 3 := by
-  simpa using im_polylog_of_one_lt (n := 2) (by norm_num) (x := 3) (by norm_num)
 
 /-- Approaching real `x` (`x ≠ 1 ∨ 2 ≤ n`) from the open upper half-plane `{z | 0 < z.im}`,
 `polylog n z` tends to `conj (polylog n x)`. -/
 theorem tendsto_polylog_nhdsWithin_im_pos (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 2 ≤ n) :
     Tendsto (polylog n) (𝓝[{z : ℂ | 0 < z.im}] x) (𝓝 (conj (polylog n x))) := by
-  have hconj_map : Tendsto (conj : ℂ → ℂ) (𝓝[{z : ℂ | 0 < z.im}] x)
-      (𝓝[{w : ℂ | w.im < 0}] x) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa using (Complex.continuous_conj.tendsto (x : ℂ)).mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with z hz
-      simpa using hz
   have hlim := Complex.continuous_conj.continuousAt.tendsto.comp
-    ((tendsto_polylog_nhdsWithin_im_neg n hx).comp hconj_map)
+    ((tendsto_polylog_nhdsWithin_im_neg n hx).comp
+      (by simpa using tendsto_conj_nhdsWithin_im_pos (x : ℂ)))
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with z hz
   dsimp only [Function.comp_def]
@@ -333,15 +313,9 @@ theorem tendsto_polylog_add_mul_I_nhdsGT_zero_of_one_lt {n : ℕ} (hn : 1 ≤ n)
     (hx : 1 < x) :
     Tendsto (fun t : ℝ ↦ polylog n (x + t * Complex.I)) (𝓝[>] 0)
       (𝓝 (polylog n x +
-        2 * Real.pi * Complex.I * (Real.log x : ℂ) ^ (n - 1) / ((n - 1).factorial : ℂ))) := by
-  have hcont : Continuous fun t : ℝ ↦ (x : ℂ) + t * Complex.I := by fun_prop
-  have hpath : Tendsto (fun t : ℝ ↦ (x : ℂ) + t * Complex.I) (𝓝[>] 0)
-      (𝓝[{z : ℂ | 0 < z.im}] x) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with t ht
-      simpa using ht
-  exact (tendsto_polylog_nhdsWithin_im_pos_of_one_lt hn hx).comp hpath
+        2 * Real.pi * Complex.I * (Real.log x : ℂ) ^ (n - 1) / ((n - 1).factorial : ℂ))) :=
+  (tendsto_polylog_nhdsWithin_im_pos_of_one_lt hn hx).comp
+    (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
 
 /-- Principal jump formula across `(1, ∞)`: for natural `n ≥ 1` and real `x > 1`,
 `polylog n (x + t * I) - polylog n (x - t * I)` tends to
@@ -362,27 +336,24 @@ theorem not_continuousAt_of_eqOn_polylog_of_one_lt {n : ℤ} (hn : 1 ≤ n) {x :
   obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m := ⟨n.toNat, by omega⟩
   have hm : 1 ≤ m := by omega
   intro hgx
-  have hc_pos : Continuous fun t : ℝ ↦ (x : ℂ) + t * Complex.I := by fun_prop
-  have hc_neg : Continuous fun t : ℝ ↦ (x : ℂ) - t * Complex.I := by fun_prop
   have hpath_pos : Tendsto (fun t : ℝ ↦ g (x + t * Complex.I)) (𝓝[>] 0) (𝓝 (g x)) :=
-    (hgx.tendsto.comp (by simpa using hc_pos.tendsto 0)).mono_left nhdsWithin_le_nhds
+    (hgx.tendsto.mono_left nhdsWithin_le_nhds).comp
+      (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
   have hpath_neg : Tendsto (fun t : ℝ ↦ g (x - t * Complex.I)) (𝓝[>] 0) (𝓝 (g x)) :=
-    (hgx.tendsto.comp (by simpa using hc_neg.tendsto 0)).mono_left nhdsWithin_le_nhds
+    (hgx.tendsto.mono_left nhdsWithin_le_nhds).comp
+      (tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg x)
   have hg_diff : Tendsto (fun t : ℝ ↦ g (x + t * Complex.I) - g (x - t * Complex.I))
       (𝓝[>] 0) (𝓝 0) := by
     simpa using hpath_pos.sub hpath_neg
+  have hmem {w : ℂ} (hw : w.im ≠ 0) :
+      w ∈ {z : ℂ | z ∈ Complex.slitPlane ∧ 1 - z ∈ Complex.slitPlane} :=
+    ⟨Complex.mem_slitPlane_iff.mpr (Or.inr hw),
+      Complex.mem_slitPlane_iff.mpr (Or.inr (by simp [hw]))⟩
   have heq : (fun t : ℝ ↦ g (x + t * Complex.I) - g (x - t * Complex.I)) =ᶠ[𝓝[>] 0]
       fun t : ℝ ↦ polylog m (x + t * Complex.I) - polylog m (x - t * Complex.I) := by
     filter_upwards [self_mem_nhdsWithin] with t ht
-    have hpos_mem : (x : ℂ) + t * Complex.I ∈
-        {z : ℂ | z ∈ Complex.slitPlane ∧ 1 - z ∈ Complex.slitPlane} :=
-      ⟨Complex.mem_slitPlane_iff.mpr (Or.inr (by simp [ht.ne'])),
-        Complex.mem_slitPlane_iff.mpr (Or.inr (by simp [ht.ne']))⟩
-    have hneg_mem : (x : ℂ) - t * Complex.I ∈
-        {z : ℂ | z ∈ Complex.slitPlane ∧ 1 - z ∈ Complex.slitPlane} :=
-      ⟨Complex.mem_slitPlane_iff.mpr (Or.inr (by simp [ht.ne'])),
-        Complex.mem_slitPlane_iff.mpr (Or.inr (by simp [ht.ne']))⟩
-    simp [hg hpos_mem, hg hneg_mem]
+    simp [hg (hmem (w := x + t * Complex.I) (by simp [ht.ne'])),
+      hg (hmem (w := x - t * Complex.I) (by simp [ht.ne']))]
   have hzero := tendsto_nhds_unique (hg_diff.congr' heq)
     (tendsto_polylog_add_mul_I_sub_nhdsGT_zero_of_one_lt hm hx)
   have hlogx : (Real.log x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (Real.log_pos hx).ne'
@@ -403,7 +374,7 @@ theorem continuousAt_polylog_iff {n : ℤ} (hn : 2 ≤ n) {z : ℂ} :
     ContinuousAt (polylog n) z ↔ z.im ≠ 0 ∨ z.re ≤ 1 := by
   refine ⟨fun hc ↦ ?_, continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr hn)⟩
   by_contra! h
-  have hz_eq : z = (z.re : ℂ) := Complex.ext rfl (by simp [h.1])
+  have hz_eq : z = (z.re : ℂ) := Complex.ext (Complex.ofReal_re _).symm (by simp [h.1])
   exact not_continuousAt_polylog_of_one_lt (by omega) h.2 (hz_eq ▸ hc)
 
 /-- For integer weight `n ≥ 1`, no continuous function on `ℂ ∖ {0, 1}` agrees with the principal
@@ -503,7 +474,7 @@ theorem continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
         hupper
     simpa [ContinuousAt] using hli.tendsto.add hprod
   · by_cases hcut : z.im = 0 ∧ 1 < z.re
-    · have hz_eq : z = (z.re : ℂ) := Complex.ext rfl (by simp [hcut.1])
+    · have hz_eq : z = (z.re : ℂ) := Complex.ext (Complex.ofReal_re _).symm (by simp [hcut.1])
       rw [hz_eq]
       exact continuousAt_im_polylog_two_add_arg_mul_log_norm_of_one_lt hcut.2
     · have hz_off : z.im ≠ 0 ∨ z.re ≤ 1 := by
@@ -511,9 +482,7 @@ theorem continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
         · exact Or.inl him
         · exact Or.inr (le_of_not_gt fun hgt ↦ hcut ⟨him, hgt⟩)
       have hslit : 1 - z ∈ Complex.slitPlane :=
-        Complex.mem_slitPlane_iff_arg.mpr
-          ⟨by simpa using (Complex.arg_one_sub_ofReal_mul_ne_pi hz_off
-              (right_mem_Icc.mpr zero_le_one)), sub_ne_zero.mpr hz1.symm⟩
+        Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz_off hz1
       have hli : ContinuousAt (fun w : ℂ ↦ (polylog 2 w).im) z :=
         Complex.continuous_im.continuousAt.comp
           (continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr le_rfl) hz_off)

@@ -58,6 +58,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
   eventually, then `arg (f x) → arg Q`.
 * `Complex.arg_one_sub_ofReal_mul_ne_pi`: for `z` off `(1, ∞)` and `t ∈ [0, 1]`,
   `arg (1 - t * z) ≠ π`.
+* `Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one`: for `z ≠ 1` off `(1, ∞)`,
+  `1 - z ∈ slitPlane`.
 * `Filter.Tendsto.arg_of_im_neg_of_re_neg_of_im_zero`: approaching the open negative real axis from
   the open lower half-plane along an arbitrary filter sends `(f y).arg` to `-π`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
@@ -237,6 +239,14 @@ theorem arg_one_sub_ofReal_mul_ne_pi {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) 
     · linarith
     · exact hzim hzim'
   · nlinarith [ht.1, ht.2]
+
+/-- For `z ≠ 1` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`), the point `1 - z` lies in
+the open slit plane `Complex.slitPlane`. -/
+theorem one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1)
+    (hz1 : z ≠ 1) : 1 - z ∈ slitPlane :=
+  mem_slitPlane_iff_arg.mpr
+    ⟨by simpa using arg_one_sub_ofReal_mul_ne_pi hz (Set.right_mem_Icc.mpr zero_le_one),
+      sub_ne_zero.mpr hz1.symm⟩
 
 end Complex
 

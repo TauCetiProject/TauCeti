@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.MeasureTheory.Function.DeLaValleePoussin
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Integrability of the polylogarithm's radial integrand
@@ -37,9 +38,8 @@ instead, translating `log |t - Re(1 / z)| ^ 2` gives a uniform `L²` bound on `(
 
 * `TauCeti.Polylog.intervalIntegrable_radialIntegrand`: interval integrability on `[0, 1]` for
   every `z`.
-* `TauCeti.Polylog.ae_one_sub_ofReal_mul_ne_zero` and
-  `TauCeti.Polylog.integral_eq_integral_radialIntegrand_of_eqOn`: `1 - t z` vanishes at most once on
-  `ℝ`, so modifying the radial integrand at `0`, `1`, and that point leaves the integral unchanged.
+* `TauCeti.Polylog.integral_eq_integral_radialIntegrand_of_eqOn`: modifying the radial integrand
+  at `0`, `1`, and the possible zero of `1 - t z` leaves the integral unchanged.
 * `TauCeti.Polylog.exists_le_norm_one_sub_ofReal_mul`: on a compact subset of the principal
   domain, `‖1 - t z‖` is bounded below by a positive constant for `t ∈ [0, 1]`.
 * `TauCeti.Polylog.exists_norm_radialIntegrand_le`: the uniform majorant `C * |log t| ^ k` on a
@@ -190,23 +190,6 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
           gcongr
           · linarith [le_max_right R 0]
 
-/-- For a fixed `z : ℂ`, the factor `1 - t z` vanishes at most once as `t` varies over `ℝ`. -/
-theorem subsingleton_one_sub_ofReal_mul_eq_zero (z : ℂ) :
-    {t : ℝ | 1 - (t : ℂ) * z = 0}.Subsingleton := by
-  intro t₁ ht₁ t₂ ht₂
-  have hz : z ≠ 0 := by
-    rintro rfl
-    simp at ht₁
-  have h1 : (t₁ : ℂ) * z = 1 := sub_eq_zero.mp ht₁ |>.symm
-  have h2 : (t₂ : ℂ) * z = 1 := sub_eq_zero.mp ht₂ |>.symm
-  exact Complex.ofReal_injective (mul_right_cancel₀ hz (h1.trans h2.symm))
-
-/-- For any `z : ℂ`, `1 - t z ≠ 0` for Lebesgue-almost-every real `t`. -/
-theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) :
-    ∀ᵐ t : ℝ ∂volume, 1 - (t : ℂ) * z ≠ 0 := by
-  rw [ae_iff]
-  simpa [Classical.not_not] using (subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero volume
-
 /-- Any function agreeing with the polylogarithm's radial integrand on `(0, 1)` away from the
 possible zero of `1 - t z` has the same interval integral on `[0, 1]`. -/
 theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : ℝ → ℂ}
@@ -219,7 +202,7 @@ theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : �
   have hIoo : ∀ᵐ t : ℝ ∂volume, t ∈ Ioc (0 : ℝ) 1 → t ∈ Ioo (0 : ℝ) 1 := by
     filter_upwards [Ioo_ae_eq_Ioc (a := (0 : ℝ)) (b := 1) (μ := volume)] with t ht htIoc
     exact ht.mpr htIoc
-  filter_upwards [hIoo, ae_one_sub_ofReal_mul_ne_zero z] with t ht₁ ht₂ htIoc
+  filter_upwards [hIoo, Complex.ae_one_sub_ofReal_mul_ne_zero z] with t ht₁ ht₂ htIoc
   exact hg ⟨ht₁ htIoc, ht₂⟩
 
 /-- Away from `t = 0` (`0 < a ≤ 1`), the Lebesgue integral of the `p`-th power of the norm of the
