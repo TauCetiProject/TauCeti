@@ -96,12 +96,17 @@ theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
   constructor
   · -- Two unitary frames of the same subspace differ by a real orthogonal matrix.
     intro h
-    have hgram (W : unitaryGroup n ℂ) : ((W : Matrix n n ℂ)ᴴ * W).map Complex.re = 1 := by
-      rw [← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
+    have hgram (W : unitaryGroup n ℂ) :
+        (((Unitary.toUnits W : GL n ℂ) : Matrix n n ℂ)ᴴ * (Unitary.toUnits W : GL n ℂ)).map
+          Complex.re = 1 := by
+      rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
         Matrix.map_one _ Complex.zero_re Complex.one_re]
     obtain ⟨N, hN, hVN⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
-      (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
-    rw [show V = U * ⟨_, map_ofReal_mem_unitaryGroup hN⟩ from Subtype.ext hVN,
+      (M := Unitary.toUnits U) (M' := Unitary.toUnits V)
+      (by rwa [Unitary.val_toUnits_apply, Unitary.val_toUnits_apply]) (hgram U) (hgram V)
+    rw [Unitary.val_toUnits_apply, Unitary.val_toUnits_apply] at hVN
+    rw [show V = U * ⟨_, map_ofReal_mem_unitaryGroup hN⟩ from
+        Subtype.ext (by rw [hVN, Submonoid.coe_mul]),
       souriau_mul_of_mul_transpose_eq_one U _ (map_ofReal_mul_transpose_eq_one hN)]
   · -- If `U Uᵀ = V Vᵀ`, then `V⁻¹ U` is a real orthogonal matrix.
     intro h
