@@ -7,6 +7,9 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import TauCeti.Analysis.Meromorphic.Divisor
+import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import TauCeti.Analysis.Meromorphic.Conj
+import TauCeti.NumberTheory.LSeries.RiemannZeta
 
 /-!
 # Meromorphy and poles of the completed Riemann zeta function
@@ -32,11 +35,14 @@ continuation.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
   exactly the zeros of `riemannZeta` excluded neither by `RiemannHypothesis` as trivial zeros nor
   as the pole `1`.
+* `TauCeti.divisor_completedRiemannZeta_conj`: the divisor of `Λ` is invariant under complex
+  conjugation.
+* `TauCeti.divisor_completedRiemannZeta_ofReal_nonpos`: `Λ` has no zero on the real axis.
 -/
 
 public section
 
-open Complex Filter Topology Set
+open Complex ComplexConjugate Filter Topology Set
 
 namespace TauCeti
 
@@ -176,5 +182,39 @@ theorem zero_lt_divisor_completedRiemannZeta_iff {s : ℂ} :
       cases n with
       | zero => simp at hs0
       | succ m => exact absurd ⟨m, by push_cast; ring⟩ htriv
+
+/-- The divisor of the completed Riemann zeta function is invariant under complex conjugation,
+by the reflection symmetry `Λ (conj s) = conj (Λ s)`. -/
+@[simp]
+theorem divisor_completedRiemannZeta_conj (s : ℂ) :
+    MeromorphicOn.divisor completedRiemannZeta univ (conj s) =
+      MeromorphicOn.divisor completedRiemannZeta univ s := by
+  have hΛ : conj ∘ completedRiemannZeta ∘ conj = completedRiemannZeta :=
+    funext fun z ↦ by simp
+  rw [← divisor_conj_conj_univ, hΛ]
+
+open scoped ComplexOrder in
+/-- The completed Riemann zeta function has no zero on the real axis: it has poles at `0` and `1`,
+`riemannZeta` is negative on `(0, 1)` and nonzero on `(1, ∞)`, and the functional equation
+`Λ (1 - s) = Λ s` carries `(1, ∞)` to `(-∞, 0)`. -/
+theorem divisor_completedRiemannZeta_ofReal_nonpos (x : ℝ) :
+    MeromorphicOn.divisor completedRiemannZeta univ x ≤ 0 := by
+  rcases lt_or_ge x 0 with h₀ | h₀
+  · -- The functional equation `Λ x = Λ (1 - x)` with `1 < 1 - x` makes `Λ` regular and nonzero.
+    have hΛ : completedRiemannZeta x ≠ 0 := by
+      rw [← completedRiemannZeta_one_sub]
+      refine completedRiemannZeta_ne_zero_of_one_lt_re ?_
+      simp only [sub_re, one_re, ofReal_re]
+      linarith
+    exact ((analyticAt_completedRiemannZeta (ofReal_ne_zero.2 h₀.ne)
+      (by exact_mod_cast (by linarith : x ≠ 1))).divisor_apply_eq_zero hΛ).le
+  refine not_lt.1 fun hpos ↦ ?_
+  obtain ⟨hζ, -, hx1⟩ := zero_lt_divisor_completedRiemannZeta_iff.1 hpos
+  rcases h₀.eq_or_lt with rfl | h₀
+  · simp [riemannZeta_zero] at hζ
+  rcases lt_trichotomy x 1 with h₁ | rfl | h₁
+  · exact (riemannZeta_lt_zero h₀ h₁).ne hζ
+  · exact hx1 ofReal_one
+  · exact riemannZeta_ne_zero_of_one_lt_re (by simpa using h₁) hζ
 
 end TauCeti

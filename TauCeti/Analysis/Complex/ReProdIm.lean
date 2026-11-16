@@ -12,9 +12,10 @@ public import Mathlib.Analysis.Complex.Basic
 # The sets `s ×ℂ t` and periodicity in the coordinate directions
 
 Facts about the sets `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` that are used for functions on `ℂ`
-periodic under `z ↦ z + 1` or `z ↦ z + i`.
+periodic under `z ↦ z + 1` or `z ↦ z + i`, and for reflecting such sets across the real axis.
 
 * `Complex.reProdIm_union_right`: `s ×ℂ (t ∪ t') = s ×ℂ t ∪ s ×ℂ t'`.
+* `Complex.preimage_conj_reProdIm`: complex conjugation reflects `s ×ℂ t` to `s ×ℂ (-t)`.
 * `Complex.sub_floor_mem_reProdIm`: subtracting the lattice vector `⌊z.re⌋ + ⌊z.im⌋ i` moves `z`
   into the unit square `[0, 1) ×ℂ [0, 1)`.
 * `Function.Periodic.exists_bound_of_continuousOn_reProdIm_univ`: a function periodic under
@@ -23,7 +24,8 @@ periodic under `z ↦ z + 1` or `z ↦ z + i`.
 
 public section
 
-open Function Set
+open Function Set ComplexConjugate
+open scoped Pointwise
 
 namespace Complex
 
@@ -31,6 +33,12 @@ namespace Complex
 theorem reProdIm_union_right (s t t' : Set ℝ) : s ×ℂ (t ∪ t') = s ×ℂ t ∪ s ×ℂ t' := by
   ext z
   simp only [mem_reProdIm, mem_union, and_or_left]
+
+/-- Complex conjugation reflects the rectangle `s ×ℂ t` to `s ×ℂ (-t)`. -/
+@[simp]
+theorem preimage_conj_reProdIm (s t : Set ℝ) : conj ⁻¹' (s ×ℂ t) = s ×ℂ (-t) := by
+  ext z
+  simp [mem_reProdIm, Set.mem_neg]
 
 /-- Subtracting the lattice vector `⌊z.re⌋ + ⌊z.im⌋ i` moves `z` into the unit square. -/
 theorem sub_floor_mem_reProdIm (z : ℂ) :
