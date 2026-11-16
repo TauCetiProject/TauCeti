@@ -28,13 +28,12 @@ maps, so it defines an isomorphism of cores by `FiniteRankBundleCore.constIso`. 
 intertwining relations, applied to the fibre maps of bundle morphisms, give naturality, and the
 coherence laws hold fibrewise as identities between coordinate permutations.
 
-Pullback along a continuous base map commutes strictly with the monoidal tensor product and unit
-(`pullback_tensorObj`, `pullback_tensorUnit`), making `pullbackFunctor f` a braided monoidal
-functor (`pullbackCoreMonoidal`). Together with the Whitney biproducts of
-`TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`, this gives a symmetric monoidal preadditive
-category with binary biproducts whose base-change functors induce ring homomorphisms on
-`TauCeti.SplitK0` via `TauCeti.SplitK0.mapRingHom`. The base is arbitrary, and the scalar field
-need not be complete.
+Together with the Whitney biproducts of `TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`,
+this is the structure of a symmetric monoidal preadditive category with binary biproducts, which
+is what the commutative ring structure on split Grothendieck groups
+(`TauCeti.SplitK0.instCommRing`) consumes: the tensor product of cores descends to the product
+of classes, `[A] * [D] = [A ⊗ D]`, with the class of the trivial line bundle as unit. The base is
+arbitrary, and the scalar field need not be complete.
 
 For the tensor product of vector bundles and its transition functions see Milnor–Stasheff,
 *Characteristic Classes*, §3, and Atiyah, *K-Theory*, §1.2.
@@ -48,8 +47,6 @@ open scoped MonoidalCategory
 namespace TauCeti.FiniteRankBundleCore
 
 open ContinuousLinearEquiv ContinuousLinearMap
-
-section
 
 variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
 
@@ -207,87 +204,5 @@ theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
 @[simp] theorem fiberMap_braiding_inv (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
     (β_ A D).inv.fiberMap x = (kroneckerComm 𝕜 D.rank A.rank).toContinuousLinearMap :=
   fiberMap_tensorComm_inv A D x
-
-end
-
-section Pullback
-
-variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- Pulling back commutes strictly with the monoidal tensor product of cores. -/
-@[simp] theorem pullback_tensorObj (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    (A ⊗ D).pullback f = A.pullback f ⊗ D.pullback f := (rfl)
-
-/-- Pulling back commutes strictly with the monoidal tensor unit. -/
-@[simp] theorem pullback_tensorUnit (f : C(X, Y)) :
-    (𝟙_ (FiniteRankBundleCore 𝕜 Y)).pullback f = 𝟙_ (FiniteRankBundleCore 𝕜 X) := (rfl)
-
-/-- Strict monoidal core structure on `pullbackFunctor f`, whose unit and tensorator are
-identities because `pullback_tensorUnit` and `pullback_tensorObj` hold definitionally. -/
-@[expose]
-def pullbackCoreMonoidal (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).CoreMonoidal where
-  εIso := Iso.refl _
-  μIso _ _ := Iso.refl _
-  μIso_hom_natural_left {A A'} a D :=
-    (Category.comp_id (pullbackMap a f ▷ D.pullback f)).trans <|
-      (hom_ext fun x ↦ (fiberMap_whiskerRight (pullbackMap a f) (D.pullback f) x).trans <| by
-        rw [fiberMap_pullbackMap]
-        exact (fiberMap_whiskerRight a D (f x)).symm.trans
-          (fiberMap_pullbackMap (a ▷ D) f x).symm).trans
-        (Category.id_comp (X := A.pullback f ⊗ D.pullback f) (pullbackMap (a ▷ D) f)).symm
-  μIso_hom_natural_right {D D'} A b :=
-    (Category.comp_id (A.pullback f ◁ pullbackMap b f)).trans <|
-      (hom_ext fun x ↦ (fiberMap_whiskerLeft (A.pullback f) (pullbackMap b f) x).trans <| by
-        rw [fiberMap_pullbackMap]
-        exact (fiberMap_whiskerLeft A b (f x)).symm.trans
-          (fiberMap_pullbackMap (A ◁ b) f x).symm).trans
-        (Category.id_comp (X := A.pullback f ⊗ D.pullback f) (pullbackMap (A ◁ b) f)).symm
-  associativity A D C := by
-    change 𝟙 (A.pullback f ⊗ D.pullback f) ▷ C.pullback f ≫
-        𝟙 ((A.pullback f ⊗ D.pullback f) ⊗ C.pullback f) ≫ pullbackMap (α_ A D C).hom f =
-      (α_ (A.pullback f) (D.pullback f) (C.pullback f)).hom ≫
-        A.pullback f ◁ 𝟙 (D.pullback f ⊗ C.pullback f) ≫
-        𝟙 (A.pullback f ⊗ (D.pullback f ⊗ C.pullback f))
-    rw [MonoidalCategory.id_whiskerRight, MonoidalCategory.whiskerLeft_id,
-      Category.comp_id, Category.comp_id]
-    exact (Category.id_comp (X := (A.pullback f ⊗ D.pullback f) ⊗ C.pullback f) _).trans <|
-      (Category.id_comp (X := (A.pullback f ⊗ D.pullback f) ⊗ C.pullback f) _).trans <|
-        hom_ext fun x ↦ (fiberMap_pullbackMap (α_ A D C).hom f x).trans
-          ((fiberMap_associator_hom A D C (f x)).trans
-            (fiberMap_associator_hom (A.pullback f) (D.pullback f) (C.pullback f) x).symm)
-  left_unitality A := by
-    change (λ_ (A.pullback f)).hom =
-      𝟙 (𝟙_ (FiniteRankBundleCore 𝕜 X)) ▷ A.pullback f ≫
-        𝟙 (𝟙_ (FiniteRankBundleCore 𝕜 X) ⊗ A.pullback f) ≫ pullbackMap (λ_ A).hom f
-    rw [MonoidalCategory.id_whiskerRight]
-    refine (hom_ext fun x ↦ (fiberMap_leftUnitor_hom (A.pullback f) x).trans
-      ((fiberMap_leftUnitor_hom A (f x)).symm.trans
-        (fiberMap_pullbackMap (λ_ A).hom f x).symm)).trans ?_
-    exact ((Category.id_comp (X := 𝟙_ (FiniteRankBundleCore 𝕜 X) ⊗ A.pullback f) _).trans
-      (Category.id_comp (X := 𝟙_ (FiniteRankBundleCore 𝕜 X) ⊗ A.pullback f) _)).symm
-  right_unitality A := by
-    change (ρ_ (A.pullback f)).hom =
-      A.pullback f ◁ 𝟙 (𝟙_ (FiniteRankBundleCore 𝕜 X)) ≫
-        𝟙 (A.pullback f ⊗ 𝟙_ (FiniteRankBundleCore 𝕜 X)) ≫ pullbackMap (ρ_ A).hom f
-    rw [MonoidalCategory.whiskerLeft_id]
-    refine (hom_ext fun x ↦ (fiberMap_rightUnitor_hom (A.pullback f) x).trans
-      ((fiberMap_rightUnitor_hom A (f x)).symm.trans
-        (fiberMap_pullbackMap (ρ_ A).hom f x).symm)).trans ?_
-    exact ((Category.id_comp (X := A.pullback f ⊗ 𝟙_ (FiniteRankBundleCore 𝕜 X)) _).trans
-      (Category.id_comp (X := A.pullback f ⊗ 𝟙_ (FiniteRankBundleCore 𝕜 X)) _)).symm
-
-instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Monoidal :=
-  (pullbackCoreMonoidal f).toMonoidal
-
-instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Braided where
-  braided A D :=
-    (Category.id_comp (X := A.pullback f ⊗ D.pullback f) (pullbackMap (β_ A D).hom f)).trans <|
-      (hom_ext fun x ↦ (fiberMap_pullbackMap (β_ A D).hom f x).trans
-        ((fiberMap_braiding_hom A D (f x)).trans
-          (fiberMap_braiding_hom (A.pullback f) (D.pullback f) x).symm)).trans
-        (Category.comp_id (X := A.pullback f ⊗ D.pullback f)
-          (Y := D.pullback f ⊗ A.pullback f) (β_ (A.pullback f) (D.pullback f)).hom).symm
-
-end Pullback
 
 end TauCeti.FiniteRankBundleCore

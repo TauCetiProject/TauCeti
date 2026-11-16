@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Analysis.Normed.Operator.Kronecker
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -24,12 +24,12 @@ standard pairing is `ContinuousLinearMap.sum_mul_piTranspose`, the matrix of the
 the transposed matrix (`ContinuousLinearMap.toMatrix'_piTranspose`), and transposition is an
 involution reversing composition.
 
-On `Fin`-indexed Kronecker coordinates, `piTranspose` commutes with `kronecker`, identifies
-`S.piTranspose.kronecker R` with `homCoordConj S R`, and makes `kroneckerCoev` and `kroneckerEv`
-dinatural with respect to `piTranspose`.
-
 These are the coordinate transition maps of a dual vector bundle presented by finite-matrix
 charts.
+
+On `Fin`-indexed Kronecker coordinates, `ContinuousLinearMap.piTranspose_kronecker_eq_homCoordConj`
+identifies `S.piTranspose.kronecker R` with operator conjugation
+`ContinuousLinearMap.homCoordConj S R`.
 -/
 
 public section
@@ -147,93 +147,19 @@ section Kronecker
 
 variable {m m' n n' : ℕ}
 
-/-- Transposing a Kronecker product transposes each factor. -/
-@[simp] theorem piTranspose_kronecker (f : (Fin m → 𝕜) →L[𝕜] (Fin m' → 𝕜))
-    (g : (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) :
-    (f.kronecker g).piTranspose = f.piTranspose.kronecker g.piTranspose := by
-  refine (ContinuousLinearEquiv.finProdCLM 𝕜 (m' * n') (m * n)).symm.injective ?_
-  ext k
-  obtain ⟨⟨a, b⟩, rfl⟩ := finProdFinEquiv.surjective k
-  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective a
-  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective b
-  rw [ContinuousLinearEquiv.finProdCLM_symm_apply, ContinuousLinearEquiv.finProdCLM_symm_apply,
-    kronecker_single, piTranspose_apply, piTranspose_apply, piTranspose_apply]
-  simp only [Pi.single_apply, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ,
-    ↓reduceIte]
-  exact kronecker_single f g i j i' j'
-
-/-- On `Fin (_ * _) → 𝕜`, `S.piTranspose.kronecker R` equals operator conjugation `homCoordConj S R`
-via `ContinuousLinearEquiv.finProdCLM`. -/
+/-- On `Fin (_ * _) → 𝕜`, `S.piTranspose.kronecker R` equals operator conjugation
+`homCoordConj S R`. -/
 theorem piTranspose_kronecker_eq_homCoordConj (S : (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜))
     (R : (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) :
     S.piTranspose.kronecker R = homCoordConj S R := by
-  refine ContinuousLinearMap.ext fun v ↦ (ContinuousLinearEquiv.finProdCLM 𝕜 m' n').injective <|
-    ContinuousLinearMap.ext fun u' ↦ funext fun j' ↦ ?_
-  rw [finProdCLM_homCoordConj, comp_apply, comp_apply, ContinuousLinearEquiv.finProdCLM_apply]
-  simp only [kronecker_apply]
-  rw [sum_mul_piTranspose]
-  have hlin : ContinuousLinearEquiv.finProdCLM 𝕜 m n v (S u') =
-      ∑ i : Fin m, S u' i • fun j ↦ v (finProdFinEquiv (i, j)) := by
-    ext j; simp [ContinuousLinearEquiv.finProdCLM_apply, Finset.sum_apply, smul_eq_mul]
-  rw [hlin, map_sum]
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k' ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k'
+  rw [kronecker_apply, homCoordConj_apply, piTranspose_apply]
+  have hv : (fun j : Fin n ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) =
+      ∑ i : Fin m, S (Pi.single i' 1) i • fun j : Fin n ↦ v (finProdFinEquiv (i, j)) := by
+    ext j; simp [Finset.sum_apply, smul_eq_mul]
+  rw [hv, map_sum]
   simp [Finset.sum_apply, smul_eq_mul]
-
-/-- Coevaluation is dinatural with respect to `piTranspose`: acting on the left factor by `f`
-agrees with acting on the right factor by `f.piTranspose`. -/
-theorem kronecker_comp_kroneckerCoev (f : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) :
-    (f.kronecker (ContinuousLinearMap.id 𝕜 (Fin m → 𝕜))).comp (kroneckerCoev 𝕜 m) =
-      ((ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)).kronecker f.piTranspose).comp
-        (kroneckerCoev 𝕜 n) := by
-  refine ContinuousLinearMap.ext fun c ↦ funext fun k ↦ ?_
-  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
-  simp only [comp_apply, kronecker_apply, id_apply, kroneckerCoev_apply]
-  have h₁ : (fun i' : Fin m ↦ if i' = j then c 0 else 0) = c 0 • Pi.single j 1 := by
-    ext i'; simp [Pi.single_apply, eq_comm]
-  have h₂ : (fun j' : Fin n ↦ if i = j' then c 0 else 0) = c 0 • Pi.single i 1 := by
-    ext j'; simp [Pi.single_apply, eq_comm]
-  rw [h₁, h₂, f.map_smul, f.piTranspose.map_smul, Pi.smul_apply, Pi.smul_apply, piTranspose_apply]
-  simp [Pi.single_apply]
-
-/-- When `T.comp S = id`, `T ⊗ S.piTranspose` carries `kroneckerCoev 𝕜 m` to `kroneckerCoev 𝕜 n`. -/
-theorem kronecker_piTranspose_comp_kroneckerCoev {T : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)}
-    {S : (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)} (hTS : T.comp S = ContinuousLinearMap.id 𝕜 _) :
-    (T.kronecker S.piTranspose).comp (kroneckerCoev 𝕜 m) = kroneckerCoev 𝕜 n := by
-  have h : T.kronecker S.piTranspose =
-      (T.kronecker (ContinuousLinearMap.id 𝕜 (Fin n → 𝕜))).comp
-        ((ContinuousLinearMap.id 𝕜 (Fin m → 𝕜)).kronecker S.piTranspose) := by
-    rw [kronecker_comp_kronecker, comp_id, id_comp]
-  rw [h, comp_assoc, ← kronecker_comp_kroneckerCoev S, ← comp_assoc,
-    kronecker_comp_kronecker, hTS, id_comp, id_kronecker_id, id_comp]
-
-/-- Evaluation is dinatural with respect to `piTranspose`: acting on the left factor by
-`f.piTranspose` agrees with acting on the right factor by `f`. -/
-theorem kroneckerEv_comp_kronecker (f : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) :
-    (kroneckerEv 𝕜 m).comp (f.piTranspose.kronecker (ContinuousLinearMap.id 𝕜 (Fin m → 𝕜))) =
-      (kroneckerEv 𝕜 n).comp ((ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)).kronecker f) := by
-  refine ContinuousLinearMap.ext fun v ↦ funext fun z ↦ ?_
-  simp only [comp_apply, kroneckerEv_apply, kronecker_apply, id_apply]
-  have lhs_eq : ∑ i : Fin m, f.piTranspose (fun i' ↦ v (finProdFinEquiv (i', i))) i =
-      ∑ i : Fin m, ∑ j : Fin n, f (Pi.single i 1) j * v (finProdFinEquiv (j, i)) :=
-    Finset.sum_congr rfl fun i _ ↦ piTranspose_apply f _ i
-  rw [lhs_eq, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have hrow : (fun i : Fin m ↦ v (finProdFinEquiv (j, i))) =
-      ∑ i : Fin m, v (finProdFinEquiv (j, i)) • Pi.single i 1 := by
-    ext i; simp [Finset.sum_apply, Pi.single_apply]
-  conv_rhs => rw [hrow, map_sum]
-  simp [Finset.sum_apply, smul_eq_mul, mul_comm]
-
-/-- When `S.comp T = id`, `S.piTranspose ⊗ T` intertwines `kroneckerEv 𝕜 n` with
-`kroneckerEv 𝕜 m`. -/
-theorem kroneckerEv_comp_piTranspose_kronecker {S : (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)}
-    {T : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)} (hST : S.comp T = ContinuousLinearMap.id 𝕜 _) :
-    (kroneckerEv 𝕜 n).comp (S.piTranspose.kronecker T) = kroneckerEv 𝕜 m := by
-  have h : S.piTranspose.kronecker T =
-      (S.piTranspose.kronecker (ContinuousLinearMap.id 𝕜 (Fin n → 𝕜))).comp
-        ((ContinuousLinearMap.id 𝕜 (Fin m → 𝕜)).kronecker T) := by
-    rw [kronecker_comp_kronecker, comp_id, id_comp]
-  rw [h, ← comp_assoc, kroneckerEv_comp_kronecker S, comp_assoc,
-    kronecker_comp_kronecker, id_comp, hST, id_kronecker_id, comp_id]
 
 end Kronecker
 

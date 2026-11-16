@@ -39,9 +39,9 @@ symmetric monoidal structure on bundles presented by finite coordinate charts.
 The matrix comparison uses Mathlib's `Matrix.kronecker` and `LinearMap.toMatrix'`; through it
 the mixed-product law is Mathlib's `Matrix.mul_kronecker_mul`.
 
-`ContinuousLinearMap.kroneckerCoev` and `ContinuousLinearMap.kroneckerEv` place a scalar down the
-diagonal of `Fin (n * n) → R` and sum the diagonal entries back into `Fin 1 → R`. They commute with
-`kroneckerComm` and satisfy the two snake identities of an exact pairing on `Fin n → R`.
+`ContinuousLinearMap.homCoordConj` conjugates operators encoded in `Fin (m * n) → R` by
+precomposition and postcomposition in coordinates, and `ContinuousLinearMap.kroneckerHomEv`
+evaluates a vector in `Fin m → R` against a coordinate-encoded operator in `Fin (m * n) → R`.
 -/
 
 public section
@@ -79,26 +79,10 @@ theorem kronecker_apply_mul (u : Fin m → R) (c : Fin n → R) :
   obtain ⟨⟨i, l⟩, rfl⟩ := finProdFinEquiv.surjective k
   have hrow (i' : Fin m) :
       g (fun l' ↦ u i' * c l') l = u i' * g c l := by
-    change g (u i' • c) l = _
-    rw [g.map_smul, Pi.smul_apply, smul_eq_mul]
+    simp only [← smul_eq_mul, ← Pi.smul_def, g.map_smul, Pi.smul_apply]
   simp only [kronecker_apply, Equiv.symm_apply_apply, hrow]
   have hcol : (fun i' ↦ u i' * g c l) = g c l • u := by ext i'; exact mul_comm _ _
   rw [hcol, f.map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
-
-/-- On standard basis vectors indexed via `finProdFinEquiv`, a Kronecker product multiplies the
-corresponding matrix entries of its factors. -/
-theorem kronecker_single (i : Fin m) (l : Fin n) (i' : Fin m') (l' : Fin n') :
-    (f.kronecker g) (Pi.single (finProdFinEquiv (i, l)) 1) (finProdFinEquiv (i', l')) =
-      f (Pi.single i 1) i' * g (Pi.single l 1) l' := by
-  have hp : (Pi.single (finProdFinEquiv (i, l)) (1 : R) : Fin (m * n) → R) =
-      fun k ↦ (Pi.single (M := fun _ : Fin m ↦ R) i 1) (finProdFinEquiv.symm k).1 *
-        (Pi.single (M := fun _ : Fin n ↦ R) l 1) (finProdFinEquiv.symm k).2 := by
-    ext k
-    obtain ⟨⟨a, b⟩, rfl⟩ := finProdFinEquiv.surjective k
-    simp [Pi.single_apply, Prod.mk.injEq, ite_and]
-    split_ifs <;> rfl
-  simpa [hp] using congrFun (kronecker_apply_mul f g (Pi.single i 1) (Pi.single l 1))
-    (finProdFinEquiv (i', l'))
 
 /-- The matrix of a Kronecker product is the reindexed Kronecker product of the matrices. -/
 theorem toMatrix'_kronecker :
@@ -411,86 +395,147 @@ theorem kroneckerComm_hexagon_reverse (m n p : ℕ) :
 
 end ContinuousLinearMap
 
-/-! ### Diagonal coevaluation and evaluation on Kronecker coordinates -/
+/-! ### Operator conjugation and coordinate evaluation -/
 
 namespace ContinuousLinearMap
 
-section CoevEv
+section HomEv
 
-variable (R : Type*) [Semiring R] [TopologicalSpace R]
+variable (R : Type*) [Semiring R] [TopologicalSpace R] [ContinuousAdd R]
 
-/-- Place the single coordinate of `Fin 1 → R` down the diagonal `(i, i)` of `Fin (n * n) → R`,
-stored at `finProdFinEquiv (i, i)`, with zeros off the diagonal. -/
-def kroneckerCoev (n : ℕ) : (Fin 1 → R) →L[R] (Fin (n * n) → R) :=
-  pi fun k ↦ if (finProdFinEquiv.symm k).1 = (finProdFinEquiv.symm k).2 then proj 0 else 0
+/-- Coordinate evaluation `(Fin m → R) ⊗ ((Fin m → R) →L[R] (Fin n → R)) → (Fin n → R)`,
+summing the entries at `(i, (i, j))` into the `j`-th output coordinate. -/
+def kroneckerHomEv (m n : ℕ) : (Fin (m * (m * n)) → R) →L[R] (Fin n → R) :=
+  pi fun j ↦ ∑ i : Fin m, proj (finProdFinEquiv (i, finProdFinEquiv (i, j)))
 
-@[simp] theorem kroneckerCoev_apply {R : Type*} [Semiring R] [TopologicalSpace R] {n : ℕ}
-    (c : Fin 1 → R) (i j : Fin n) :
-    kroneckerCoev R n c (finProdFinEquiv (i, j)) = if i = j then c 0 else 0 := by
-  simp only [kroneckerCoev, coe_pi', Equiv.symm_apply_apply]
-  split_ifs <;> rfl
+@[simp] theorem kroneckerHomEv_apply {R : Type*} [Semiring R] [TopologicalSpace R]
+    [ContinuousAdd R] {m n : ℕ} (w : Fin (m * (m * n)) → R) (j : Fin n) :
+    kroneckerHomEv R m n w j =
+      ∑ i : Fin m, w (finProdFinEquiv (i, finProdFinEquiv (i, j))) := by
+  simp only [kroneckerHomEv, coe_pi', sum_apply, proj_apply]
 
-/-- Sum the diagonal entries `(i, i)` of `Fin (n * n) → R` into the single coordinate of
-`Fin 1 → R`. -/
-def kroneckerEv [ContinuousAdd R] (n : ℕ) : (Fin (n * n) → R) →L[R] (Fin 1 → R) :=
-  pi fun _ ↦ ∑ i : Fin n, proj (finProdFinEquiv (i, i))
+end HomEv
 
-@[simp] theorem kroneckerEv_apply {R : Type*} [Semiring R] [TopologicalSpace R] [ContinuousAdd R]
-    {n : ℕ} (v : Fin (n * n) → R) (k : Fin 1) :
-    kroneckerEv R n v k = ∑ i : Fin n, v (finProdFinEquiv (i, i)) := by
-  simp only [kroneckerEv, coe_pi', sum_apply, proj_apply]
+section HomCoordConj
 
-end CoevEv
+variable {R : Type*} [CommSemiring R] [TopologicalSpace R] [ContinuousAdd R]
+  {m m' m'' n n' n'' : ℕ}
 
-section Snake
+/-- Conjugate an operator encoded in `Fin (m * n) → R` (with `finProdFinEquiv (i, j)` storing
+column `i`, row `j`) by precomposing with `S` and postcomposing with `T`. -/
+def homCoordConj (S : (Fin m' → R) →L[R] (Fin m → R)) (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    (Fin (m * n) → R) →L[R] (Fin (m' * n') → R) :=
+  pi fun k ↦ (proj (finProdFinEquiv.symm k).2).comp <| T.comp <| pi fun j ↦
+    ∑ i : Fin m, ((proj i).comp (S.comp (single R (fun _ : Fin m' ↦ R)
+      (finProdFinEquiv.symm k).1))).comp (proj (finProdFinEquiv (i, j)))
 
-open ContinuousLinearEquiv
+@[simp] theorem homCoordConj_apply (S : (Fin m' → R) →L[R] (Fin m → R))
+    (T : (Fin n → R) →L[R] (Fin n' → R)) (v : Fin (m * n) → R) (i' : Fin m') (j' : Fin n') :
+    homCoordConj S T v (finProdFinEquiv (i', j')) =
+      T (fun j ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) j' := by
+  simp only [homCoordConj, coe_pi', coe_comp, Function.comp_apply, proj_apply, sum_apply,
+    Equiv.symm_apply_apply, single_apply]
+  refine congrArg (fun u ↦ T u j') (funext fun j ↦ Finset.sum_congr rfl fun i _ ↦ ?_)
+  have hs : Pi.single (M := fun _ : Fin m' ↦ R) i' (v (finProdFinEquiv (i, j))) =
+      v (finProdFinEquiv (i, j)) • Pi.single i' 1 := by
+    rw [← Pi.single_smul, smul_eq_mul, mul_one]
+  rw [hs, S.map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
 
-variable {R : Type*} [CommSemiring R] [TopologicalSpace R]
-
-/-- Swapping the two factors fixes the diagonal coevaluation. -/
-@[simp] theorem kroneckerComm_comp_kroneckerCoev (n : ℕ) :
-    (kroneckerComm R n n : (Fin (n * n) → R) →L[R] _).comp (kroneckerCoev R n) =
-      kroneckerCoev R n := by
-  refine ContinuousLinearMap.ext fun c ↦ funext fun k ↦ ?_
-  obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective k
-  simp [eq_comm]
-
-variable [ContinuousAdd R]
-
-/-- Diagonal evaluation is invariant under swapping the two factors. -/
-@[simp] theorem kroneckerEv_comp_kroneckerComm (n : ℕ) :
-    (kroneckerEv R n).comp (kroneckerComm R n n : (Fin (n * n) → R) →L[R] _) =
-      kroneckerEv R n := by
+@[simp] theorem id_homCoordConj_id :
+    homCoordConj (ContinuousLinearMap.id R (Fin m → R)) (ContinuousLinearMap.id R (Fin n → R)) =
+      ContinuousLinearMap.id R (Fin (m * n) → R) := by
   refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
-  simp
+  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp [Pi.single_apply]
 
-/-- First snake identity for `kroneckerCoev` and `kroneckerEv`: coevaluation on the right followed
-by evaluation on the left reduces to the composite of the right and inverse left unitors. -/
-theorem kroneckerEv_kronecker_comp_kroneckerAssoc_symm_comp_kronecker_kroneckerCoev (n : ℕ) :
-    ((kroneckerEv R n).kronecker (ContinuousLinearMap.id R (Fin n → R))).comp
-      (((kroneckerAssoc R n n n).symm : (Fin (n * (n * n)) → R) →L[R] _).comp
-        ((ContinuousLinearMap.id R (Fin n → R)).kronecker (kroneckerCoev R n))) =
-      ((kroneckerLid R n).symm : (Fin n → R) →L[R] _).comp
-        (kroneckerRid R n : (Fin (n * 1) → R) →L[R] _) := by
+/-- Operator conjugation is contravariant in the source map and covariant in the target map. -/
+theorem homCoordConj_comp_homCoordConj (S' : (Fin m'' → R) →L[R] (Fin m' → R))
+    (T' : (Fin n' → R) →L[R] (Fin n'' → R)) (S : (Fin m' → R) →L[R] (Fin m → R))
+    (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    (homCoordConj S' T').comp (homCoordConj S T) = homCoordConj (S.comp S') (T'.comp T) := by
   refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
-  obtain ⟨⟨z, j⟩, rfl⟩ := finProdFinEquiv.surjective k
-  rw [Subsingleton.elim z 0]
-  simp
+  obtain ⟨⟨i'', j''⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [comp_apply, homCoordConj_apply]
+  refine congrArg (fun u ↦ T' u j'') ?_
+  have hT : (fun j' ↦ ∑ i' : Fin m', S' (Pi.single i'' 1) i' *
+      T (fun j ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) j') =
+      T (∑ i' : Fin m', S' (Pi.single i'' 1) i' •
+        fun j ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) := by
+    rw [map_sum]
+    ext j'
+    simp [Finset.sum_apply, smul_eq_mul]
+  rw [hT]
+  refine congrArg T (funext fun j ↦ ?_)
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hS : S (S' (Pi.single i'' 1)) i =
+      ∑ i' : Fin m', S' (Pi.single i'' 1) i' * S (Pi.single i' 1) i := by
+    conv_lhs => rw [pi_eq_sum_univ' (S' (Pi.single i'' 1)), map_sum]
+    simp [Finset.sum_apply, smul_eq_mul]
+  rw [hS, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i' _ ↦ (mul_assoc _ _ _).symm
 
-/-- Second snake identity for `kroneckerCoev` and `kroneckerEv`: coevaluation on the left followed
-by evaluation on the right reduces to the composite of the left and inverse right unitors. -/
-theorem kronecker_kroneckerEv_comp_kroneckerAssoc_comp_kroneckerCoev_kronecker (n : ℕ) :
-    ((ContinuousLinearMap.id R (Fin n → R)).kronecker (kroneckerEv R n)).comp
-      ((kroneckerAssoc R n n n : (Fin (n * n * n) → R) →L[R] _).comp
-        ((kroneckerCoev R n).kronecker (ContinuousLinearMap.id R (Fin n → R)))) =
-      ((kroneckerRid R n).symm : (Fin n → R) →L[R] _).comp
-        (kroneckerLid R n : (Fin (1 * n) → R) →L[R] _) := by
+@[simp] theorem add_homCoordConj (S S₂ : (Fin m' → R) →L[R] (Fin m → R))
+    (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    homCoordConj (S + S₂) T = homCoordConj S T + homCoordConj S₂ T := by
   refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
-  obtain ⟨⟨i, z⟩, rfl⟩ := finProdFinEquiv.surjective k
-  rw [Subsingleton.elim z 0]
-  simp
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [homCoordConj_apply, add_apply, Pi.add_apply, add_mul, Finset.sum_add_distrib]
+  rw [← Pi.add_def, T.map_add, Pi.add_apply]
 
-end Snake
+@[simp] theorem homCoordConj_add (S : (Fin m' → R) →L[R] (Fin m → R))
+    (T T₂ : (Fin n → R) →L[R] (Fin n' → R)) :
+    homCoordConj S (T + T₂) = homCoordConj S T + homCoordConj S T₂ := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp [homCoordConj_apply]
+
+@[simp] theorem zero_homCoordConj (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    homCoordConj (0 : (Fin m' → R) →L[R] (Fin m → R)) T = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [homCoordConj_apply, zero_apply, Pi.zero_apply, zero_mul, Finset.sum_const_zero]
+  rw [← Pi.zero_def, T.map_zero, Pi.zero_apply]
+
+@[simp] theorem homCoordConj_zero (S : (Fin m' → R) →L[R] (Fin m → R)) :
+    homCoordConj S (0 : (Fin n → R) →L[R] (Fin n' → R)) = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp [homCoordConj_apply]
+
+/-- Dinaturality of coordinate evaluation: acting on the Hom factor by `homCoordConj S U` agrees
+with acting on the argument by `S` before evaluating and postcomposing with `U`. -/
+theorem kroneckerHomEv_comp_id_kronecker_homCoordConj (S : (Fin m' → R) →L[R] (Fin m → R))
+    (U : (Fin n → R) →L[R] (Fin n' → R)) :
+    (kroneckerHomEv R m' n').comp
+        ((ContinuousLinearMap.id R (Fin m' → R)).kronecker (homCoordConj S U)) =
+      U.comp ((kroneckerHomEv R m n).comp
+        (S.kronecker (ContinuousLinearMap.id R (Fin (m * n) → R)))) := by
+  refine ContinuousLinearMap.ext fun w ↦ funext fun j' ↦ ?_
+  simp only [comp_apply, kroneckerHomEv_apply, kronecker_apply, id_apply, homCoordConj_apply]
+  rw [← Finset.sum_apply, ← map_sum]
+  refine congrArg (fun u ↦ U u j') (funext fun j ↦ ?_)
+  simp only [Finset.sum_apply, kroneckerHomEv_apply, kronecker_apply, id_apply]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [pi_eq_sum_univ' (R := R) (fun i' : Fin m' ↦ w (finProdFinEquiv (i', finProdFinEquiv (i, j)))),
+    map_sum]
+  simp [Finset.sum_apply, smul_eq_mul, mul_comm]
+
+/-- When `S.comp T = id`, coordinate evaluation intertwines `T ⊗ homCoordConj S U` with `U`. -/
+theorem kroneckerHomEv_comp_kronecker_homCoordConj {S : (Fin m' → R) →L[R] (Fin m → R)}
+    {T : (Fin m → R) →L[R] (Fin m' → R)} (hST : S.comp T = ContinuousLinearMap.id R _)
+    (U : (Fin n → R) →L[R] (Fin n' → R)) :
+    (kroneckerHomEv R m' n').comp (T.kronecker (homCoordConj S U)) =
+      U.comp (kroneckerHomEv R m n) := by
+  have h : T.kronecker (homCoordConj S U) =
+      ((ContinuousLinearMap.id R (Fin m' → R)).kronecker (homCoordConj S U)).comp
+        (T.kronecker (ContinuousLinearMap.id R (Fin (m * n) → R))) := by
+    rw [kronecker_comp_kronecker, id_comp, comp_id]
+  rw [h, ← comp_assoc, kroneckerHomEv_comp_id_kronecker_homCoordConj, comp_assoc, comp_assoc,
+    kronecker_comp_kronecker, hST, id_comp, id_kronecker_id, comp_id]
+
+end HomCoordConj
 
 end ContinuousLinearMap
