@@ -78,18 +78,6 @@ section ZeroMode
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ}
 
-/-- **The linearized Floer operator for a constant structure and `K = H dt`.** For a constant
-almost complex structure `J` and an autonomous Hamiltonian `H`, the linearized Floer operator
-along `u` is `D ξ = ∂s ξ + J (∂t ξ - dX_H(u) ξ)`. -/
-theorem floerLinearization_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u ξ z =
-      fderiv ℝ ξ z (1, 0) +
-        J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
-  simp [floerLinearization_def, hamiltonianVectorField_const, stdComplexLineReal_eq,
-    stdComplexLineImag_eq]
-
 /-- **The zero Fourier mode of the linearized operator is the Morse operator.** Along a
 time-independent cylinder `u(s, t) = γ(s)`, the slice average of the linearized Floer operator
 `D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)` applied to a `C¹` map `ξ` of period one in `t` is the
@@ -266,8 +254,10 @@ theorem forall_neg_fderiv_add_eq_zero_iff (hg : ∀ v w, ω v (J w) = ⟪v, w⟫
           (-J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (η (s, 0)))) s := by
   -- Reflect `s ↦ -s`: `ρ (s, t) = (-s, t)`, `η̂ = η ∘ ρ` and `γ̂ (s) = γ (-s)`.
   set ρ : ℝ × ℝ →L[ℝ] ℝ × ℝ := (-fst ℝ ℝ ℝ).prod (snd ℝ ℝ ℝ)
-  have hρ (z : ℝ × ℝ) : ρ z = (-z.1, z.2) := rfl
-  have hρρ (z : ℝ × ℝ) : ρ (ρ z) = z := by simp [hρ]
+  have hρ (z : ℝ × ℝ) : ρ z = (-z.1, z.2) := by
+    simp only [ρ, ContinuousLinearMap.prod_apply, _root_.neg_apply, coe_fst', coe_snd']
+  have hρ₁ : ρ (1, 0) = -(1, 0) := by simp only [hρ, Prod.neg_mk, neg_zero]
+  have hρ₂ : ρ (0, 1) = (0, 1) := by simp only [hρ, neg_zero]
   set γ' : ℝ → V := fun s ↦ γ (-s)
   have hγ' : ContDiff ℝ 1 γ' := hγ.comp contDiff_neg
   have hM' (s : ℝ) : ‖deriv γ' s‖ ≤ M := by
@@ -284,23 +274,27 @@ theorem forall_neg_fderiv_add_eq_zero_iff (hg : ∀ v w, ω v (J w) = ⟪v, w⟫
           fderiv ℝ (ω.hamiltonianVectorField H) (γ (ρ z).1) (η (ρ z))) := by
     have hd : HasFDerivAt (η ∘ ρ) ((fderiv ℝ η (ρ z)).comp ρ) z :=
       ((hη.differentiable (by norm_num)) (ρ z)).hasFDerivAt.comp z ρ.hasFDerivAt
-    rw [floerLinearization_const_eq, hd.fderiv]
-    simp [hρ, γ', ← map_neg]
+    have hγρ : γ' z.1 = γ (ρ z).1 := by simp only [γ', hρ]
+    simp only [floerLinearization_const_eq, hd.fderiv, coe_comp, Function.comp_apply, hρ₁, hρ₂,
+      map_neg, hγρ]
+  -- Reflecting `s ↦ -s` negates the derivative of a curve.
+  have hrefl (ζ f : ℝ → V) (h : ∀ s, HasDerivAt ζ (f s) s) (s : ℝ) :
+      HasDerivAt (fun s ↦ ζ (-s)) (-f (-s)) s := by
+    rw [← neg_one_smul ℝ (f (-s))]
+    exact (h (-s)).scomp s (hasDerivAt_neg' (x := s))
   have hiff := forall_floerLinearization_comp_fst_eq_zero_iff hg hH ha hc ha2π hcM hγ' hM' hη'
     hper' hB'
   simp only [hD] at hiff
+  simp only [Function.comp_apply, hρ, γ'] at hiff
   constructor
   · intro h
-    obtain ⟨ht, hd⟩ := hiff.1 fun z ↦ h (ρ z)
-    refine ⟨fun s t ↦ by simpa [hρ] using ht (-s) t, fun s ↦ ?_⟩
-    have h' := (hd (-s)).scomp s (hasDerivAt_neg s)
-    simpa [γ', hρ, Function.comp_def] using h'
+    obtain ⟨ht, hd⟩ := hiff.1 fun z ↦ h (-z.1, z.2)
+    refine ⟨fun s t ↦ by simpa only [neg_neg] using ht (-s) t, fun s ↦ ?_⟩
+    simpa only [neg_neg] using hrefl _ _ hd s
   · rintro ⟨ht, hd⟩
-    have key := hiff.2 ⟨fun s t ↦ by simpa [hρ] using ht (-s) t, fun s ↦ ?_⟩
-    · intro z
-      simpa [hρρ] using key (ρ z)
-    have h' := (hd (-s)).scomp s (hasDerivAt_neg s)
-    simpa [γ', hρ, Function.comp_def] using h'
+    have key := hiff.2 ⟨fun s t ↦ ht (-s) t, fun s ↦ by simpa only [neg_neg] using hrefl _ _ hd s⟩
+    intro z
+    simpa only [neg_neg, Prod.mk.eta] using key (-z.1, z.2)
 
 end Kernel
 
