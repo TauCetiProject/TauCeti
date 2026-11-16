@@ -102,8 +102,8 @@ theorem exists_lazardExponent_eq_content_add_sum (hB : F.IsSquarefreeBasis B)
     lazardExponent_map Polynomial.C Polynomial.C_injective,
     lazardExponent_mul hc u.ne_zero, hu, add_zero,
     lazardExponent_prod B _ (fun b hb' ↦ pow_ne_zero _ (hb b hb'))]
-  exact congrArg (_ + ·) (Finset.sum_congr rfl fun b hb' ↦
-    lazardExponent_pow (hb b hb') _ _)
+  exact congrArg (_ + ·) (Finset.sum_congr rfl fun b _ ↦
+    lazardExponent_pow _ _)
 
 /-- Invariant content and basis exponents give invariant input exponents, including
 zero inputs. No connectedness or nonnullification hypothesis is required. -/
