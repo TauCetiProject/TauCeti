@@ -36,6 +36,8 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
+* `Complex.hasSum_regularizedHGFun_zero_singleton_mul` — the Cauchy product series of
+  `₀F₁(; b; z) * ₀F₁(; c; z)` (DLMF 16.12.2, regularized form).
 -/
 
 public section
@@ -203,5 +205,34 @@ theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     calc (n : ℝ) * |z| ^ (n - 1) * ((n ! : ℝ)⁻¹ * |(Real.Gamma (b + n))⁻¹|)
         ≤ n * R ^ (n - 1) * ((n ! : ℝ)⁻¹ * C) := by gcongr
       _ = C * (n * R ^ (n - 1) / n !) := by ring
+
+/-- **Product of two `₀F₁` functions** (DLMF 16.12.2, regularized form): for all complex `b`, `c`,
+and `z`,
+`₀F₁(; b; z) * ₀F₁(; c; z) = ∑ m, (b + c + m − 1)_m / (m! Γ(b + m) Γ(c + m)) * z ^ m`.
+Because `1 / Γ` vanishes at the poles of `Γ`, no restriction on `b` or `c` is needed. -/
+theorem hasSum_regularizedHGFun_zero_singleton_mul (b c z : ℂ) :
+    HasSum (fun m : ℕ =>
+      (ascPochhammer ℂ m).eval (b + c + m - 1) /
+        (m ! * Gamma (b + m) * Gamma (c + m)) * z ^ m)
+      (regularizedHGFun 0 {b} z * regularizedHGFun 0 {c} z) := by
+  have hb := hasSum_regularizedHGFun (a := 0) (b := {b}) (by simp) z
+  have hc := hasSum_regularizedHGFun (a := 0) (b := {c}) (by simp) z
+  have hbn := summable_norm_regularizedHGFun (a := 0) (b := {b}) (by simp) z
+  have hcn := summable_norm_regularizedHGFun (a := 0) (b := {c}) (by simp) z
+  have hprod := hasSum_sum_range_mul_of_summable_norm hbn hcn
+  rw [hb.tsum_eq, hc.tsum_eq] at hprod
+  refine hprod.congr_fun fun m => ?_
+  rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+    (fun i j => (regularizedHGFunCoeff 0 {b} i * z ^ i) *
+      (regularizedHGFunCoeff 0 {c} j * z ^ j))]
+  have hterm : ∀ p ∈ Finset.antidiagonal m,
+      (regularizedHGFunCoeff 0 {b} p.1 * z ^ p.1) * (regularizedHGFunCoeff 0 {c} p.2 * z ^ p.2) =
+        (p.1 ! * Gamma (b + p.1))⁻¹ * (p.2 ! * Gamma (c + p.2))⁻¹ * z ^ m := fun p hp => by
+    rw [regularizedHGFunCoeff_zero_singleton, regularizedHGFunCoeff_zero_singleton]
+    have hpow : z ^ p.1 * z ^ p.2 = z ^ m := by
+      rw [← pow_add, Finset.mem_antidiagonal.mp hp]
+    linear_combination
+      (p.1 ! * Gamma (b + p.1))⁻¹ * (p.2 ! * Gamma (c + p.2))⁻¹ * hpow
+  rw [Finset.sum_congr rfl hterm, ← Finset.sum_mul, sum_antidiagonal_inv_factorial_mul_Gamma]
 
 end Complex
