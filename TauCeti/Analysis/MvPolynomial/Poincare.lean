@@ -14,7 +14,7 @@ import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Analysis.MvPolynomial.Jacobian
-import TauCeti.RingTheory.MvPolynomial.Poincare
+import TauCeti.RingTheory.MvPolynomial.PoincareLemma
 
 /-!
 # Analytic calculus and the Poincaré lemma on Euclidean polynomial spaces
@@ -22,7 +22,7 @@ import TauCeti.RingTheory.MvPolynomial.Poincare
 `TauCeti.polynomialsDegLE ι m` is the space of real functions on `EuclideanSpace ℝ ι` represented
 by formal polynomials of total degree at most `m`. This file records the analytic calculus of
 these functions on `EuclideanSpace ℝ ι` and transports the formal polynomial Poincaré lemma
-(`MvPolynomial.exists_mem_restrictTotalDegree_pderiv_eq`) to functions in `polynomialsDegLE`:
+(`MvPolynomial.exists_pderiv_eq`) to functions in `polynomialsDegLE`:
 
 * Every function in `polynomialsDegLE ι m` is real-analytic on `EuclideanSpace ℝ ι`, hence smooth;
   two such functions agreeing on a nonempty open set, or almost everywhere there with respect to an
@@ -246,7 +246,7 @@ theorem exists_mem_polynomialsDegLE_fderiv_single_eq {ι : Type*} [Finite ι] [D
     apply polynomialEvalₗ_injective ι
     ext x
     simpa only [← fderiv_polynomialEvalₗ_single, hPeval] using hclosed i j x
-  obtain ⟨Q, hQdeg, hQp⟩ := exists_mem_restrictTotalDegree_pderiv_eq hPmem hPclosed
+  obtain ⟨Q, hQdeg, hQp⟩ := exists_pderiv_eq P hPmem hPclosed
   refine ⟨polynomialEvalₗ ι Q, ?_, fun i x ↦ ?_⟩
   · rw [polynomialEvalₗ_mem_polynomialsDegLE_iff]
     exact (mem_restrictTotalDegree ι (m + 1) Q).mp hQdeg
