@@ -47,6 +47,7 @@ API replace them.
   the basis of the model space.
 * `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
   the frame is taking coordinate partial derivatives in the chart.
+* `Riemannian.Tensor.contMDiffAt_chartLocalFrame`: smoothness of the frame at its base point.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
@@ -171,6 +172,14 @@ theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
     TangentBundle.contMDiffVectorBundle
   exact (trivializationAt E (TangentSpace I) α).contMDiffOn_localFrame_baseSet
     (n := n) (Module.finBasis ℝ E) i
+
+/-- Each member of `chartLocalFrame α` is `C^n` at the base point `α`. -/
+theorem contMDiffAt_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    (α : M) (i : Fin (Module.finrank ℝ E)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
+      (fun x ↦ TotalSpace.mk' E x (chartLocalFrame (I := I) α i x)) α :=
+  (contMDiffOn_chartLocalFrame α i).contMDiffAt
+    ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds (by simp))
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 

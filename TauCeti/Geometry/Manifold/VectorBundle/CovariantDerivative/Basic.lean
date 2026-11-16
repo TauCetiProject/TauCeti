@@ -26,6 +26,8 @@ section values and fibre vectors.
   `CovariantDerivative.covariantDerivative_smul_section_vectorField`: the Leibniz rule for the
   covariant derivative of a function multiple of a section at a tangent vector and along a
   vector field.
+* `CovariantDerivative.apply_eq_zero_of_notMem_closure`: a covariant derivative of a section
+  vanishes off the closure of its nonzero locus.
 * `CovariantDerivative.addOneForm_apply`: evaluate a connection perturbed by an
   endomorphism-valued one-form on a section.
 * `CovariantDerivative.difference_apply`: evaluate the difference of two connections on the value
@@ -155,6 +157,19 @@ theorem covariantDerivative_smul_section_vectorField (cov : CovariantDerivative 
   change cov (f • σ) y (Z y) = f y • cov σ y (Z y) + d% f y (Z y) • σ y
   rw [h]
   simp [add_apply, ContinuousLinearMap.smulRight_apply]
+
+/-- **Locality.** A covariant derivative of a section vanishes off the closure of the nonzero
+locus of the section. -/
+theorem apply_eq_zero_of_notMem_closure (cov : CovariantDerivative I F V) {σ : Π x : M, V x}
+    {x : M} (hx : x ∉ closure {y | σ y ≠ 0}) : cov σ x = 0 := by
+  have hev : ∀ᶠ y in 𝓝 x, σ y = (0 : Π y : M, V y) y := by
+    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hx] with y hy
+    by_contra h
+    exact hy (subset_closure h)
+  have h0 : MDiffAt (T% (0 : Π y : M, V y)) x := mdifferentiableAt_zeroSection ..
+  have hσ : MDiffAt (T% σ) x := h0.congr_of_eventuallyEq (hev.mono fun y hy ↦ by simp [hy])
+  rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hσ h0 Filter.univ_mem hev]
+  exact congrFun cov.zero x
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [ContMDiffVectorBundle 1 F V I]
 
