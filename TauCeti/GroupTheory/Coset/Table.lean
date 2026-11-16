@@ -54,6 +54,8 @@ known; it is a finite computation, run by `decide`.
 * `TauCeti.CosetTable.index_le_of_edges` and `TauCeti.CosetTable.finiteIndex_of_edges`: a
   nonempty table on `k` points with sound generator edges on the cosets of a subgroup `H` shows
   `H.index ≤ k`, however the edges were established.
+* `TauCeti.CosetTable.index_eq_iff_injective_of_edges`: such a table gives the exact subgroup
+  index `k` exactly when its named cosets are distinct.
 * `TauCeti.CosetTable.index_le` and `TauCeti.CosetTable.finiteIndex`: a certified table on `k`
   points for a subgroup `H` shows `H.index ≤ k`, and in particular that `H` has finite index.
 * `TauCeti.CosetTable.index_eq_iff_injective`: a certified table on `k` points gives the exact
@@ -292,6 +294,30 @@ theorem finiteIndex_of_edges [NeZero k] {H : Subgroup G} (hg : Subgroup.closure 
   have : Finite (G ⧸ H) := Finite.of_surjective _ (surjective_point_of_edges hg hedges)
   H.finiteIndex_of_finite_quotient
 
+/-- Every element lies in the left coset of some representative word of a nonempty table with
+sound generator edges on the cosets of `H`, if the generators `g` generate `G`. -/
+theorem exists_inv_word_mul_mem_of_edges [NeZero k] {H : Subgroup G}
+    (hg : Subgroup.closure (Set.range g) = ⊤)
+    (hedges : ∀ t i,
+      g t • T.point g ((1 : G) : G ⧸ H) i = T.point g ((1 : G) : G ⧸ H) (T.act t i)) (x : G) :
+    ∃ i, ((T.word i).map g).prod⁻¹ * x ∈ H := by
+  obtain ⟨i, hi⟩ := surjective_point_of_edges hg hedges (x : G ⧸ H)
+  refine ⟨i, QuotientGroup.eq.mp ?_⟩
+  simpa [point_def, MulAction.Quotient.smul_mk] using hi
+
+/-- A nonempty table on `k` points with sound generator edges on the cosets of `H` shows that
+`H` has index exactly `k` if and only if the cosets it names are distinct, if the generators `g`
+generate `G`. -/
+theorem index_eq_iff_injective_of_edges [NeZero k] {H : Subgroup G}
+    (hg : Subgroup.closure (Set.range g) = ⊤)
+    (hedges : ∀ t i,
+      g t • T.point g ((1 : G) : G ⧸ H) i = T.point g ((1 : G) : G ⧸ H) (T.act t i)) :
+    H.index = k ↔ Function.Injective (T.point g ((1 : G) : G ⧸ H)) := by
+  have hsurj := surjective_point_of_edges hg hedges
+  rw [Subgroup.index_eq_card]
+  refine ⟨fun h ↦ (hsurj.bijective_of_nat_card_le (by rw [Nat.card_fin, h])).1, fun hinj ↦ ?_⟩
+  rw [← Nat.card_eq_of_bijective _ ⟨hinj, hsurj⟩, Nat.card_fin]
+
 /-- The edges of a table whose certificate checks for a subgroup `H` are sound on the cosets of
 `H`, and the table is nonempty. -/
 private theorem neZero_and_smul_point_mk {H : Subgroup G} {rels stab : List (List (Fin m))}
@@ -318,10 +344,9 @@ theorem exists_inv_word_mul_mem {H : Subgroup G} {rels stab : List (List (Fin m)
     {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) (x : G) :
-    ∃ i, ((T.word i).map g).prod⁻¹ * x ∈ H := by
-  obtain ⟨i, hi⟩ := T.surjective_point hg hT hrels hstab (x : G ⧸ H)
-  refine ⟨i, QuotientGroup.eq.mp ?_⟩
-  simpa [point_def, MulAction.Quotient.smul_mk] using hi
+    ∃ i, ((T.word i).map g).prod⁻¹ * x ∈ H :=
+  have ⟨_, hedges⟩ := neZero_and_smul_point_mk hT hrels hstab
+  exists_inv_word_mul_mem_of_edges hg hedges x
 
 /-- **Coset enumeration bounds the index.** If the generators `g` generate `G`, the relators
 `rels` hold for them and the words `stab` lie in the subgroup `H`, a coset table on `k` points
@@ -339,11 +364,9 @@ theorem index_eq_iff_injective {H : Subgroup G} {rels stab : List (List (Fin m))
     {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) :
-    H.index = k ↔ Function.Injective (T.point g ((1 : G) : G ⧸ H)) := by
-  have hsurj := surjective_point hg hT hrels hstab
-  rw [Subgroup.index_eq_card]
-  refine ⟨fun h ↦ (hsurj.bijective_of_nat_card_le (by rw [Nat.card_fin, h])).1, fun hinj ↦ ?_⟩
-  rw [← Nat.card_eq_of_bijective _ ⟨hinj, hsurj⟩, Nat.card_fin]
+    H.index = k ↔ Function.Injective (T.point g ((1 : G) : G ⧸ H)) :=
+  have ⟨_, hedges⟩ := neZero_and_smul_point_mk hT hrels hstab
+  index_eq_iff_injective_of_edges hg hedges
 
 /-- A subgroup admitting a certified coset table has finite index. -/
 theorem finiteIndex {H : Subgroup G} {rels stab : List (List (Fin m))}

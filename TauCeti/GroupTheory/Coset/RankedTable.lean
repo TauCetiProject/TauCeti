@@ -102,17 +102,26 @@ def word (i : Fin k) : List (Fin m) :=
 termination_by i.val
 decreasing_by assumption
 
+/-- The word of a point is the word of its parent with the letter of the point in front if the
+point lies below its parent, and is empty otherwise. -/
+theorem word_def (i : Fin k) :
+    T.word i = if T.parent i < i then T.letter i :: T.word (T.parent i) else [] := by
+  rw [word, dite_eq_ite]
+
 /-- The word of a point below its parent is the word of the parent with the letter of the point
 in front. -/
 theorem word_of_parent_lt {i : Fin k} (h : T.parent i < i) :
     T.word i = T.letter i :: T.word (T.parent i) := by
-  rw [word]
-  simp only [h, ↓reduceDIte]
+  rw [word_def, ite_eq_left h]
 
 /-- The word of a root is empty. -/
 theorem word_of_not_parent_lt {i : Fin k} (h : ¬ T.parent i < i) : T.word i = [] := by
-  rw [word]
-  simp only [h, ↓reduceDIte]
+  rw [word_def, ite_eq_right h]
+
+/-- The point `0` is a root: its word is empty. -/
+@[simp]
+theorem word_zero [NeZero k] : T.word 0 = [] :=
+  T.word_of_not_parent_lt (Fin.not_lt_zero _)
 
 /-- The coset table described by a ranked coset table: the same action, with the points named by
 the words of the forest. -/
@@ -192,8 +201,52 @@ theorem scan_eq_some_iff {r : ℕ} {i j : Fin k} {u : List (Fin m)} :
       CosetTable.edges, List.forall_mem_cons]
     grind
 
+/-- An edge passes `isForestEdge` exactly when the point it leads to lies above the point it
+starts at and has that point as its parent and the generator of the edge as its letter. -/
+@[simp]
+theorem isForestEdge_eq_true_iff {t : Fin m} {j : Fin k} :
+    T.isForestEdge t j = true ↔
+      j < T.act t j ∧ T.parent (T.act t j) = j ∧ T.letter (T.act t j) = t := by
+  simp only [isForestEdge, Bool.and_eq_true, decide_eq_true_eq, and_assoc]
+
+@[simp]
+theorem closes_nil (t : Fin m) (j : Fin k) : T.closes t j [] = false := (rfl)
+
+@[simp]
+theorem closes_cons (t : Fin m) (j : Fin k) (t' : Fin m) (u : List (Fin m)) :
+    T.closes t j (t' :: u) =
+      (decide (t' = t) && decide (T.scan (T.rank t j) (T.act t j) u = some j)) := (rfl)
+
+/-- A word deduces the edge `(t, j)` exactly when it has the form `t :: u`, where the table
+carries `T.act t j` to `j` along `u` and every edge traversed on the way has rank less than
+`T.rank t j`. -/
+theorem closes_eq_true_iff {t : Fin m} {j : Fin k} {w : List (Fin m)} :
+    T.closes t j w = true ↔
+      ∃ u, w = t :: u ∧ T.toCosetTable.trace u (T.act t j) = j ∧
+        ∀ e ∈ T.toCosetTable.edges u (T.act t j), T.rank e.1 e.2 < T.rank t j := by
+  cases w with
+  | nil => simp
+  | cons t' u => simp [scan_eq_some_iff]
+
+/-- An edge `(t, j)` passes `checkEdge` exactly when it is an edge of the forest, or the rotation
+by `T.rot t j` of the relator at the position `T.rel t j` deduces it, or the position `T.rel t j`
+lies beyond the relators, `T.act t j` is a root and the subgroup generator at the position
+`T.rel t j - rels.length` deduces it. -/
+theorem checkEdge_eq_true_iff {rels stab : List (List (Fin m))} {t : Fin m} {j : Fin k} :
+    T.checkEdge rels stab t j = true ↔
+      T.isForestEdge t j = true ∨
+        (∃ w, rels[T.rel t j]? = some w ∧ T.closes t j (w.rotate (T.rot t j)) = true) ∨
+        (rels.length ≤ T.rel t j ∧ ¬ T.parent (T.act t j) < T.act t j ∧
+          ∃ w, stab[T.rel t j - rels.length]? = some w ∧ T.closes t j w = true) := by
+  rw [checkEdge, Bool.or_eq_true]
+  refine or_congr_right ?_
+  cases h : rels[T.rel t j]? with
+  | none => simp [List.getElem?_eq_none_iff.1 h, Option.any_eq_true]
+  | some w => simp [(List.getElem?_eq_some_iff.1 h).1]
+
 /-- An interval of points passes `checkRange` exactly when every edge at each of its points
 passes `checkEdge`. -/
+@[simp]
 theorem checkRange_eq_true_iff {rels stab : List (List (Fin m))} {lo len : ℕ} :
     T.checkRange rels stab lo len = true ↔
       ∀ (t : Fin m) (j : Fin k), lo ≤ j → j < lo + len → T.checkEdge rels stab t j = true := by
@@ -217,8 +270,7 @@ variable {T} {G α : Type*} [Group G] [MulAction G α] {g : Fin m → G} {a : α
 private theorem smul_point_of_isForestEdge {t : Fin m} {j : Fin k}
     (h : T.isForestEdge t j = true) :
     g t • T.toCosetTable.point g a j = T.toCosetTable.point g a (T.act t j) := by
-  simp only [isForestEdge, Bool.and_eq_true, decide_eq_true_eq] at h
-  obtain ⟨⟨hlt, hparent⟩, hletter⟩ := h
+  obtain ⟨hlt, hparent, hletter⟩ := T.isForestEdge_eq_true_iff.1 h
   have hword : T.word (T.act t j) = t :: T.word j := by
     rw [T.word_of_parent_lt (hparent.symm ▸ hlt), hparent, hletter]
   rw [CosetTable.point_def, CosetTable.point_def, toCosetTable_word, hword, List.map_cons,
@@ -232,51 +284,47 @@ private theorem smul_point_of_closes {t : Fin m} {j : Fin k} {w : List (Fin m)}
     (ih : ∀ t' j', T.rank t' j' < T.rank t j →
       g t' • T.toCosetTable.point g a j' = T.toCosetTable.point g a (T.act t' j')) :
     g t • T.toCosetTable.point g a j = T.toCosetTable.point g a (T.act t j) := by
-  match w with
-  | [] => simp [closes] at h
-  | t' :: u =>
-    simp only [closes, Bool.and_eq_true, decide_eq_true_eq, scan_eq_some_iff] at h
-    obtain ⟨rfl, htrace, hrank⟩ := h
-    have hu := CosetTable.prod_smul_point_of_edges (g := g) (a := a) (T.act t' j) u
-      fun e he ↦ ih e.1 e.2 (hrank e he)
-    rwa [List.map_cons, List.prod_cons, mul_smul, hu, htrace] at hw
+  obtain ⟨u, rfl, htrace, hrank⟩ := T.closes_eq_true_iff.1 h
+  have hu := CosetTable.prod_smul_point_of_edges (g := g) (a := a) (T.act t j) u
+    fun e he ↦ ih e.1 e.2 (hrank e he)
+  rwa [List.map_cons, List.prod_cons, mul_smul, hu, htrace] at hw
 
 /-- **Soundness of a ranked coset table.** If the relators `rels` hold for the generators `g`,
 the words `stab` fix the base point `a` and every edge passes the check, the table describes the
-action of each generator on the points it names. -/
+action of each generator on the points it names. The conclusion is the soundness of the edges of
+`T.toCosetTable`, in the form the lemmas `TauCeti.CosetTable.prod_smul_point_of_edges` and
+`TauCeti.CosetTable.smul_mem_range_point_of_edges` take as hypothesis. -/
 theorem smul_point {rels stab : List (List (Fin m))}
     (hrels : ∀ r ∈ rels, (r.map g).prod = 1) (hstab : ∀ r ∈ stab, (r.map g).prod • a = a)
     (hT : ∀ t j, T.checkEdge rels stab t j = true) (t : Fin m) (j : Fin k) :
-    g t • T.toCosetTable.point g a j = T.toCosetTable.point g a (T.act t j) := by
+    g t • T.toCosetTable.point g a j = T.toCosetTable.point g a (T.toCosetTable.act t j) := by
+  rw [toCosetTable_act]
   induction hr : T.rank t j using Nat.strong_induction_on generalizing t j with
   | _ r ih =>
     subst hr
-    have h := hT t j
-    simp only [checkEdge, Bool.or_eq_true] at h
-    rcases h with h | h
-    · exact smul_point_of_isForestEdge h
     have ih' : ∀ t' j', T.rank t' j' < T.rank t j →
         g t' • T.toCosetTable.point g a j' = T.toCosetTable.point g a (T.act t' j') :=
       fun t' j' hlt ↦ ih _ hlt t' j' rfl
-    split at h
-    · next w hw =>
-      refine smul_point_of_closes h ?_ ih'
+    rcases T.checkEdge_eq_true_iff.1 (hT t j) with h | ⟨w, hw, h⟩ | ⟨-, hroot, w, hw, h⟩
+    · exact smul_point_of_isForestEdge h
+    · refine smul_point_of_closes h ?_ ih'
       rw [List.map_rotate, List.prod_rotate_eq_one_of_prod_eq_one
         (hrels w (List.mem_of_getElem? hw)), one_smul]
-    · simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not,
-        Option.any_eq_true] at h
-      obtain ⟨hroot, w, hw, hcloses⟩ := h
-      refine smul_point_of_closes hcloses ?_ ih'
+    · refine smul_point_of_closes h ?_ ih'
       rw [CosetTable.point_def, toCosetTable_word, T.word_of_not_parent_lt hroot, List.map_nil,
         List.prod_nil, one_smul, hstab w (List.mem_of_getElem? hw)]
 
 /-- The edges of a ranked coset table for a subgroup `H`, all of which pass the check, hold on
-the cosets of `H`. -/
-private theorem smul_point_mk {H : Subgroup G} {rels stab : List (List (Fin m))}
+the cosets of `H`: if the relators `rels` hold for the generators `g` and the words `stab` lie in
+`H`, the table describes the action of each generator on the cosets it names. The conclusion is
+the hypothesis of the lemmas `TauCeti.CosetTable.surjective_point_of_edges`,
+`TauCeti.CosetTable.index_le_of_edges` and `TauCeti.CosetTable.index_eq_iff_injective_of_edges`
+for `T.toCosetTable`. -/
+theorem smul_point_mk {H : Subgroup G} {rels stab : List (List (Fin m))}
     (hrels : ∀ r ∈ rels, (r.map g).prod = 1) (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H)
     (hT : ∀ t j, T.checkEdge rels stab t j = true) (t : Fin m) (j : Fin k) :
     g t • T.toCosetTable.point g ((1 : G) : G ⧸ H) j =
-      T.toCosetTable.point g ((1 : G) : G ⧸ H) (T.act t j) :=
+      T.toCosetTable.point g ((1 : G) : G ⧸ H) (T.toCosetTable.act t j) :=
   smul_point hrels
     (fun r hr ↦ by simpa [MulAction.Quotient.smul_mk, QuotientGroup.eq] using hstab r hr) hT t j
 
