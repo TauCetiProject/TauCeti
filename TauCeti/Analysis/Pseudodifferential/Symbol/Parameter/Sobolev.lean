@@ -64,7 +64,8 @@ theorem exists_norm_quantizeSobolev_inclusion_toSymbol_le (a : ParameterSymbol n
     (ha : ∀ x ∉ K, ∀ ξ z, a.coefficient ((x, ξ), z) = 0) (s : ℝ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ z ∈ Λ,
       ‖(Symbol.inclusion h (a.toSymbol z)).quantizeSobolev
-          ((a.hasCompactSpatialSupport_toSymbol K.isCompact ha z).inclusion h) s‖ ≤
+          ((a.hasCompactSpatialSupport_toSymbol z K.isCompact fun x hx ξ => ha x hx ξ z).inclusion
+            h) s‖ ≤
         C * (1 + Real.sqrt ‖z‖) ^ (m - m') := by
   obtain ⟨t, C, hC, hop⟩ :=
     Symbol.exists_norm_quantizeSobolev_le_sum_seminorm (V := V) (W := W) (m := m') K s

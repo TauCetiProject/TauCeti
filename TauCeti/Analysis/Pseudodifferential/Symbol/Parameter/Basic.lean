@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -130,17 +131,12 @@ theorem one_add_norm_sq_le_parameterWeight_sq (ξ : CoordinateSpace n) (z : ℂ)
   rw [parameterWeight_def]
   nlinarith
 
-/-- A real power of the parameter weight as a power of its square: `w ^ r = (w ^ 2) ^ (r / 2)`. -/
-theorem parameterWeight_rpow_eq_sq_rpow (ξ : CoordinateSpace n) (z : ℂ) (r : ℝ) :
-    parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) := by
-  rw [Real.rpow_div_two_eq_sqrt r (by positivity), Real.sqrt_sq (parameterWeight_pos ξ z).le]
-
 /-- For a nonpositive exponent the parameter weight is dominated by the frequency weight:
 `w ^ r ≤ ⟨ξ⟩ ^ r`. -/
 theorem parameterWeight_rpow_le_one_add_norm_sq_rpow (ξ : CoordinateSpace n) (z : ℂ) {r : ℝ}
     (hr : r ≤ 0) : parameterWeight ξ z ^ r ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) :=
-        parameterWeight_rpow_eq_sq_rpow ξ z r
+        (Real.sq_rpow_div_two (parameterWeight_pos ξ z).le r).symm
     _ ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
         Real.rpow_le_rpow_of_nonpos (by positivity) (one_add_norm_sq_le_parameterWeight_sq ξ z)
           (by linarith)
@@ -170,7 +166,7 @@ theorem parameterWeight_rpow_le_mul_one_add_norm_sq_rpow (ξ : CoordinateSpace n
         sq_nonneg (‖ξ‖ - Real.sqrt ‖z‖), norm_nonneg ξ, mul_nonneg (norm_nonneg z)
           (sq_nonneg ‖ξ‖)]
     calc parameterWeight ξ z ^ r = (parameterWeight ξ z ^ 2) ^ (r / 2) :=
-          parameterWeight_rpow_eq_sq_rpow ξ z r
+          (Real.sq_rpow_div_two (parameterWeight_pos ξ z).le r).symm
       _ ≤ (3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2)) ^ (r / 2) :=
           Real.rpow_le_rpow (by positivity) hsq (by linarith)
       _ = _ := by rw [abs_of_nonneg hr, Real.mul_rpow (by positivity) (by positivity)]

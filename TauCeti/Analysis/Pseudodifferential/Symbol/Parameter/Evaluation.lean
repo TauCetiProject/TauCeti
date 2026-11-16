@@ -203,14 +203,13 @@ theorem toSymbol_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n �
     (b.comp a).toSymbol z = (b.toSymbol z).comp (a.toSymbol z) :=
   Symbol.ext <| funext fun q => by simp
 
-/-- If a parameter-dependent symbol vanishes at the positions outside a compact set `K`, for every
-frequency and spectral parameter, then its symbol at each spectral parameter has compact spatial
-support. -/
-theorem hasCompactSpatialSupport_toSymbol (a : ParameterSymbol n Λ V W m)
+/-- If a parameter-dependent symbol vanishes, at a spectral parameter `z`, at the positions outside
+a compact set `K` for every frequency, then its symbol at `z` has compact spatial support. -/
+theorem hasCompactSpatialSupport_toSymbol (a : ParameterSymbol n Λ V W m) (z : ℂ)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (ha : ∀ x ∉ K, ∀ ξ z, a.coefficient ((x, ξ), z) = 0) (z : ℂ) :
+    (ha : ∀ x ∉ K, ∀ ξ, a.coefficient ((x, ξ), z) = 0) :
     (a.toSymbol z).HasCompactSpatialSupport :=
-  Symbol.hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ => ha x hx ξ z⟩
+  Symbol.hasCompactSpatialSupport_iff.2 ⟨K, hK, ha⟩
 
 /-- **Decay in the spectral parameter.** For orders `m ≤ m' ≤ 0`, a parameter-dependent symbol of
 order `m`, viewed at each spectral parameter as an ordinary symbol of order `m'`, has seminorms
