@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.LinearAlgebra.Dual.DoubleDual
 
-import Mathlib.LinearAlgebra.Dual.Basis
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.RingTheory.Finiteness.Finsupp
+import Mathlib.Algebra.Module.LocalizedModule.Basic
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.Localization.Integer
-import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Linear-functional criterion for finite generation over a Noetherian domain
@@ -26,10 +25,12 @@ Let `R` be a Noetherian integral domain with fraction field `K` and let `V` be a
 `Module.Dual.eval R N` into the double dual is injective ([bosch-guntzer-remmert], §4.1,
 Proposition 4).
 
-The forward direction needs neither Noetherianity of `R` nor finite dimensionality of `V`: clearing
-a common denominator of the values of a `K`-linear functional on a finite generating set produces a
-separating `R`-linear functional on `N`. Conversely, if `Module.Dual R N` separates points and `V`
-is finite-dimensional over `K`, any functional `φ : N →ₗ[R] R` that is nonzero at `x₀ ∈ N` has
+The forward direction needs neither Noetherianity of `R` nor an ambient finite-dimensional vector
+space: for any finitely generated torsion-free `R`-module `M` over an integral domain `R`, clearing
+a common denominator of the values of a `FractionRing R`-linear functional on the localized module
+`LocalizedModule (nonZeroDivisors R) M` across a finite generating set produces a separating
+`R`-linear functional on `M`. Conversely, if `Module.Dual R N` separates points and `V` is
+finite-dimensional over `K`, any functional `φ : N →ₗ[R] R` that is nonzero at `x₀ ∈ N` has
 finitely generated image (as `R` is Noetherian) while the `K`-span of `ker φ` avoids `x₀` (clearing
 denominators in `K = Frac(R)`), lowering the `K`-dimension and concluding by induction.
 
@@ -38,8 +39,8 @@ In particular, the integral closure `C` of a Noetherian domain `R` in a module-f
 
 ## Main results
 
-* `Submodule.injective_dual_eval_of_fg`: over any domain `R` with fraction field `K`, a finitely
-  generated `R`-submodule of a `K`-vector space has injective double-dual evaluation.
+* `TauCeti.Module.Dual.injective_eval_of_finite`: over any integral domain `R`, a finitely
+  generated torsion-free `R`-module has injective double-dual evaluation.
 * `Submodule.fg_of_forall_exists_dual_ne_zero`: over a Noetherian domain `R` with fraction field
   `K`, an `R`-submodule of a finite-dimensional `K`-vector space whose `R`-dual separates points is
   finitely generated.
@@ -58,44 +59,49 @@ In particular, the integral closure `C` of a Noetherian domain `R` in a module-f
 
 public section
 
-section Domain
+namespace TauCeti.Module.Dual
 
-variable {R : Type*} [CommRing R] [IsDomain R] (K : Type*) [Field K] [Algebra R K]
-  [IsFractionRing R K] {V : Type*} [AddCommGroup V] [Module K V] [Module R V]
-  [IsScalarTower R K V]
-include K
-
-/-- Over an integral domain `R` with fraction field `K`, `Module.Dual.eval R N` is injective for
-any finitely generated `R`-submodule `N` of a `K`-vector space `V` (without `IsNoetherianRing R` or
-`FiniteDimensional K V`). -/
-theorem Submodule.injective_dual_eval_of_fg {N : Submodule R V} (hN : N.FG) :
-    Function.Injective (Module.Dual.eval R N) := by
+/-- Over an integral domain `R`, `Module.Dual.eval R M` is injective for any finitely generated
+torsion-free `R`-module `M` (without requiring `IsNoetherianRing R`). -/
+theorem injective_eval_of_finite {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M]
+    [Module R M] [Module.Finite R M] [Module.IsTorsionFree R M] :
+    Function.Injective (Module.Dual.eval R M) := by
   classical
-  obtain ⟨s, hs⟩ := hN
-  refine Module.Dual.injective_eval_iff.mpr fun x hx ↦ ?_
-  obtain ⟨ψ, hψx⟩ := Module.Dual.injective_eval_iff.mp
-    (Module.Basis.ofVectorSpace K V).eval_injective (x : V) (Subtype.coe_ne_coe.mpr hx)
+  let K := FractionRing R
+  let V := LocalizedModule (nonZeroDivisors R) M
+  let f : M →ₗ[R] V := LocalizedModule.mkLinearMap (nonZeroDivisors R) M
+  have hf : Function.Injective f :=
+    (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) f).mpr fun c ↦
+      (IsRegular.of_ne_zero (nonZeroDivisors.ne_zero c.2)).isSMulRegular
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
+  refine injective_eval_iff.mpr fun x hx ↦ ?_
+  obtain ⟨ψ, hψx⟩ := Module.Projective.exists_dual_ne_zero K ((map_ne_zero_iff f hf).mpr hx)
   obtain ⟨d, hd⟩ :=
-    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) (fun y : s ↦ ψ y.1)
-  have hmem : ∀ v ∈ N, (d : R) • ψ v ∈ LinearMap.range (Algebra.linearMap R K) := by
-    suffices N ≤ (LinearMap.range (Algebra.linearMap R K)).comap ((d : R) • ψ.restrictScalars R)
-      from fun _ hv ↦ this hv
+    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) (fun y : s ↦ ψ (f y.1))
+  have hmem : ∀ m : M, (d : R) • ψ (f m) ∈ LinearMap.range (Algebra.linearMap R K) := by
+    suffices ⊤ ≤ (LinearMap.range (Algebra.linearMap R K)).comap
+        ((d : R) • (ψ.restrictScalars R).comp f) from fun m ↦ this trivial
     rw [← hs, Submodule.span_le]
-    exact fun v hv ↦ hd ⟨v, hv⟩
-  let φ : Module.Dual R N :=
-    (((d : R) • ψ.restrictScalars R).domRestrict N).codRestrictOfInjective
-      (Algebra.linearMap R K) (IsFractionRing.injective R K) fun z ↦ hmem z.1 z.2
+    exact fun m hm ↦ hd ⟨m, hm⟩
+  let φ : Module.Dual R M :=
+    ((d : R) • (ψ.restrictScalars R).comp f).codRestrictOfInjective
+      (Algebra.linearMap R K) (IsFractionRing.injective R K) hmem
   refine ⟨φ, fun hφ0 ↦ ?_⟩
-  have hmap : algebraMap R K (φ x) = algebraMap R K (d : R) * ψ x := by
+  have hmap : algebraMap R K (φ x) = algebraMap R K (d : R) * ψ (f x) := by
     simpa [φ, Algebra.smul_def] using
-      LinearMap.codRestrictOfInjective_comp_apply (((d : R) • ψ.restrictScalars R).domRestrict N)
-        (Algebra.linearMap R K) (IsFractionRing.injective R K) (fun z : N ↦ hmem z.1 z.2) x
+      LinearMap.codRestrictOfInjective_comp_apply ((d : R) • (ψ.restrictScalars R).comp f)
+        (Algebra.linearMap R K) (IsFractionRing.injective R K) hmem x
   exact mul_ne_zero (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.2) hψx
     (by rwa [hφ0, map_zero, eq_comm] at hmap)
 
+end TauCeti.Module.Dual
+
 section Noetherian
 
-variable [IsNoetherianRing R] [FiniteDimensional K V]
+variable {R : Type*} [CommRing R] [IsDomain R] [IsNoetherianRing R] (K : Type*) [Field K]
+  [Algebra R K] [IsFractionRing R K] {V : Type*} [AddCommGroup V] [Module K V] [Module R V]
+  [IsScalarTower R K V] [FiniteDimensional K V]
+include K
 
 private theorem fg_of_finrank_le_aux :
     ∀ (n : ℕ) (P : Submodule R V) (U : Submodule K V),
@@ -158,8 +164,16 @@ finite-dimensional `K`-vector space is finitely generated if and only if `Module
 injective. -/
 theorem Submodule.fg_iff_injective_dual_eval {N : Submodule R V} :
     N.FG ↔ Function.Injective (Module.Dual.eval R N) :=
-  ⟨Submodule.injective_dual_eval_of_fg K, fun h ↦
-    Submodule.fg_of_forall_exists_dual_ne_zero K (Module.Dual.injective_eval_iff.mp h)⟩
+  ⟨fun hN ↦ by
+    have : Module.Finite R N := Module.Finite.iff_fg.mpr hN
+    have : Module.IsTorsionFree R N := .of_smul_eq_zero fun r x hrx ↦ by
+      have h : algebraMap R K r • (x : V) = 0 := by
+        rw [algebraMap_smul, ← SetLike.val_smul, hrx, ZeroMemClass.coe_zero]
+      exact (smul_eq_zero.mp h).imp (map_eq_zero_iff _ (IsFractionRing.injective R K)).mp
+        ZeroMemClass.coe_eq_zero.mp
+    exact TauCeti.Module.Dual.injective_eval_of_finite,
+  fun h ↦ Submodule.fg_of_forall_exists_dual_ne_zero K
+    (TauCeti.Module.Dual.injective_eval_iff.mp h)⟩
 
 /-- Over a Noetherian domain `R` with fraction field `K`, an `R`-submodule `N` of a
 finite-dimensional `K`-vector space is a finite `R`-module if and only if `Module.Dual.eval R N` is
@@ -176,7 +190,7 @@ theorem LinearMap.finite_iff_injective_dual_eval_of_injective {M : Type*} [AddCo
     Module.Finite R M ↔ Function.Injective (Module.Dual.eval R M) := by
   let e : M ≃ₗ[R] LinearMap.range f := LinearEquiv.ofInjective f hf
   rw [Module.Finite.equiv_iff e, Submodule.finite_iff_injective_dual_eval K,
-    Module.Dual.injective_eval_iff, Module.Dual.injective_eval_iff]
+    TauCeti.Module.Dual.injective_eval_iff, TauCeti.Module.Dual.injective_eval_iff]
   exact ⟨fun h x hx ↦ let ⟨φ, hφ⟩ := h (e x) ((map_ne_zero_iff e e.injective).mpr hx)
       ⟨φ.comp e.toLinearMap, hφ⟩,
     fun h y hy ↦ let ⟨φ, hφ⟩ := h (e.symm y) ((map_ne_zero_iff e.symm e.symm.injective).mpr hy)
@@ -189,11 +203,10 @@ theorem Module.Finite.of_injective_of_forall_exists_dual_ne_zero {M : Type*} [Ad
     [Module R M] {f : M →ₗ[R] V} (hf : Function.Injective f)
     (hsep : ∀ x : M, x ≠ 0 → ∃ φ : Module.Dual R M, φ x ≠ 0) :
     Module.Finite R M :=
-  (f.finite_iff_injective_dual_eval_of_injective K hf).mpr (Module.Dual.injective_eval_iff.mpr hsep)
+  (f.finite_iff_injective_dual_eval_of_injective K hf).mpr
+    (TauCeti.Module.Dual.injective_eval_iff.mpr hsep)
 
 end Noetherian
-
-end Domain
 
 namespace TauCeti.IsIntegralClosure
 

@@ -6,20 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Japanese
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FractionField
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
-import Mathlib.Algebra.Module.Torsion.Field
-import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.Data.Finsupp.Encodable
 import Mathlib.FieldTheory.KummerPolynomial
-import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Analysis.Normed.Module.Bases.CountableType
-import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.RingTheory.Finiteness.Dual
 import TauCeti.RingTheory.IntegralClosure.PurelyInseparable
 import TauCeti.RingTheory.MvPowerSeries.Convolution
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FractionField
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FrobeniusRoot
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.IntegrallyClosed
@@ -35,7 +32,8 @@ file proves that the ring `T = K{X / c}` of restricted power series is a Japanes
 extension of its fraction field, inseparable extensions included, is a finite `T`-module.
 Downstream, via affinoid Noether normalization (`TauCeti.RingTheory.Affinoid.Japanese`),
 `isJapanese_isRestricted_subring` implies that all affinoid domains are Japanese, all affinoid
-algebras are Nagata, and normalizations of reduced affinoid algebras are finite affinoid algebras.
+algebras are Nagata, and normalizations of reduced affinoid algebras are finite modules (and
+affinoid `K`-algebras when `K` is nontrivially normed).
 
 ## Proof outline
 
@@ -49,13 +47,12 @@ inseparable extension `M / F` (`F = GaussFractionField σ K c`) of exponent `e`,
    `F' = GaussFractionField σ K' (c^{1/q})` sending a denominator-cleared `F`-basis `b` of `M` into
    `T'` (`exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable`).
 2. Because `T` is integrally closed (`isIntegrallyClosed_isRestricted_subring`, proved in
-   `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.IntegrallyClosed` by pulling the integral quotient
-   `qL` back from `L{X / c}` to `K{X / c}` along `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem`),
-   every `y ∈ integralClosure T M` satisfies `y ^ q ∈ T`, so extracting its `q`-th root produces a
-   series `ζ(y) ∈ T'` mapping to `y` in `F'`.
-3. Clearing denominators of the `b`-coordinates of `y` in `M` (`algebraMap_sum_mul_eq_mul`) and
-   applying `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem` confines all coefficients of `ζ(y)` to a
-   single countably generated `K`-submodule `E ⊆ K'` independent of `y`.
+   `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.IntegrallyClosed`), every `y ∈ integralClosure T M`
+   satisfies `y ^ q ∈ T`, so extracting its `q`-th root produces a series `ζ(y) ∈ T'` mapping to
+   `y` in `F'`.
+3. Clearing denominators of the `b`-coordinates of `y` in `M` and applying
+   `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem` confines all coefficients of `ζ(y)` to a single
+   countably generated `K`-submodule `E ⊆ K'` independent of `y`.
 4. Bounded `K`-linear functionals separate points of `E` (by
    `Submodule.separatingDual_span_of_countable` when `K` is nontrivially normed, and by boundedness
    of all algebraic linear functionals when the norm on `K` is trivial), so the `q`-adic
@@ -69,14 +66,8 @@ inseparable extension `M / F` (`F = GaussFractionField σ K c`) of exponent `e`,
 
 * `TauCeti.MvPowerSeries.isJapanese_isRestricted_subring_of_isEmpty`: in zero variables `K{X / c}`
   is Japanese without completeness or positivity hypotheses.
-* `TauCeti.MvPowerSeries.finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable`:
-  finiteness of any integral closure of `K{X / c}` in a finite purely inseparable extension of
-  `GaussFractionField σ K c`.
 * `TauCeti.MvPowerSeries.isJapanese_isRestricted_subring`: `K{X / c}` is Japanese over any complete
   ultrametric normed field `K` for finite `σ` and positive `c`.
-* `TauCeti.MvPowerSeries.finite_of_isIntegralClosure_isRestricted_subring`: finiteness of any
-  integral closure of `K{X / c}` in a finitely generated field extension of any fraction field of
-  `K{X / c}`.
 
 ## References
 
@@ -113,24 +104,19 @@ private theorem exists_bounded_dual_ne_zero_frobeniusRoot [CompleteSpace K] (p :
     (e : ℕ) {S : Set (FrobeniusRoot K p e)} (hS : S.Countable) (x : Submodule.span K S)
     (hx : x ≠ 0) :
     ∃ (φ : Submodule.span K S →ₗ[K] K) (C : ℝ), (∀ y, ‖φ y‖ ≤ C * ‖y‖) ∧ φ x ≠ 0 := by
-  by_cases hnt : ∃ a : K, 1 < ‖a‖
-  · let : NontriviallyNormedField K := { ‹NormedField K› with non_trivial := hnt }
-    have : SeparatingDual K (Submodule.span K S) := Submodule.separatingDual_span_of_countable hS
-    obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) hx
-    exact ⟨f_dual.toLinearMap, ‖f_dual‖, f_dual.le_opNorm, hf_ne⟩
-  · push Not at hnt
-    have hK_one {a : K} (ha : a ≠ 0) : ‖a‖ = 1 := le_antisymm (hnt a) <| by
-      have hmul := norm_mul a a⁻¹
-      rw [mul_inv_cancel₀ ha, norm_one] at hmul
-      nlinarith [hnt a⁻¹, norm_nonneg a]
-    obtain ⟨φ, hφx⟩ := Module.Projective.exists_dual_ne_zero K hx
+  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨⟨_, rfl⟩⟩
+  · obtain ⟨φ, hφx⟩ := Module.Projective.exists_dual_ne_zero K hx
     refine ⟨φ, 1, fun y ↦ ?_, hφx⟩
     rcases eq_or_ne y 0 with rfl | hy
     · simp
     · have hval : FrobeniusRoot.val K p e (y : FrobeniusRoot K p e) ≠ 0 :=
         (map_ne_zero_iff _ (RingHom.injective _)).mpr (Subtype.coe_ne_coe.mpr hy)
-      rw [← Submodule.norm_coe, FrobeniusRoot.norm_def, hK_one hval, Real.one_rpow, mul_one]
-      exact hnt (φ y)
+      rw [← Submodule.norm_coe, FrobeniusRoot.norm_def,
+        NormedDivisionRing.norm_eq_one_iff_ne_zero_of_discrete.mpr hval, Real.one_rpow, mul_one]
+      exact NormedDivisionRing.norm_le_one_of_discrete (φ y)
+  · have : SeparatingDual K (Submodule.span K S) := Submodule.separatingDual_span_of_countable hS
+    obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) hx
+    exact ⟨f_dual.toLinearMap, ‖f_dual‖, f_dual.le_opNorm, hf_ne⟩
 
 /-- Since `T = K{X / c}` is integrally closed, extracting formal `p ^ e`-th roots of `y ^ p ^ e ∈ T`
 gives an injective `T`-semilinear map `ζ : integralClosure T M → (FrobeniusRoot K p e){X / r}`
@@ -142,9 +128,9 @@ private theorem exists_frobeniusRoot_integralClosure_map [Finite σ]
     [IsScalarTower (IsRestricted.subring (R := K) c) (GaussFractionField σ K c) M]
     [FiniteDimensional (GaussFractionField σ K c) M]
     [IsPurelyInseparable (GaussFractionField σ K c) M]
-    (p : ℕ) [ExpChar K p] [ExpChar (GaussFractionField σ K c) p]
+    (p : ℕ) [ExpChar K p]
     (e : ℕ) (he : IsPurelyInseparable.exponent (GaussFractionField σ K c) M ≤ e)
-    (hr_def : ∀ i, r i = c i ^ (((p ^ e : ℕ) : ℝ)⁻¹)) (hr : ∀ i, r i ^ p ^ e = c i) :
+    (hr : ∀ i, r i ^ p ^ e = c i) :
     let K' := FrobeniusRoot K p e
     let T := IsRestricted.subring (R := K) c
     let F := GaussFractionField σ K c
@@ -160,10 +146,17 @@ private theorem exists_frobeniusRoot_integralClosure_map [Finite σ]
         (∀ (t : T) y, ζ (t • y) = Ψ t * ζ y) ∧
         (∀ {y}, y ≠ 0 → ζ y ≠ 0) := by
   intro K' T F T' F' Ψ ι₀
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap K F).injective p
   have : ExpChar F' p := expChar_of_injective_algebraMap (algebraMap K' F').injective p
+  have hr_def (i : σ) : r i = c i ^ (((p ^ e : ℕ) : ℝ)⁻¹) := by
+    rw [← hr i, Real.pow_rpow_inv_natCast (Fact.out : 0 < r i).le (pow_pos (expChar_pos K p) e).ne']
   have hΨ_inj := frobeniusRootRestrictedHom_injective (K := K) p e hr
   let _ : Algebra F F' := (Ψ.gaussFractionFieldMap hΨ_inj).toAlgebra
-  have hF_alg (x : F) : algebraMap F F' x = Ψ.gaussFractionFieldMap hΨ_inj x := rfl
+  have hF_alg (x : F) : algebraMap F F' x = Ψ.gaussFractionFieldMap hΨ_inj x :=
+    RingHom.congr_fun (RingHom.algebraMap_toAlgebra _) x
+  have hΨ_alg (t : T) : Ψ.gaussFractionFieldMap hΨ_inj (algebraMap T F t) =
+      algebraMap T' F' (Ψ t) :=
+    Ψ.gaussFractionFieldMap_algebraMap hΨ_inj t
   choose aOf haOf using fun y : integralClosure T M ↦
     IsIntegral.exists_algebraMap_eq_iterateFrobenius (A := T) (K := F) p he y.2
   let ζ (y : integralClosure T M) : T' := frobeniusRootRestrictedEquiv p e hr_def (aOf y)
@@ -171,14 +164,11 @@ private theorem exists_frobeniusRoot_integralClosure_map [Finite σ]
     iterateFrobenius_inj F' p e <| by
       simp only [iterateFrobenius_def]
       rw [← map_pow, frobeniusRootRestrictedEquiv_pow hr_def hr (aOf y),
-        ← Ψ.gaussFractionFieldMap_algebraMap hΨ_inj, ← hF_alg, haOf, ← AlgHom.commutes ι₀,
+        ← hΨ_alg, ← hF_alg, haOf, ← AlgHom.commutes ι₀,
         IsPurelyInseparable.algebraMap_iterateFrobenius F p he (y : M), map_pow]
-  refine ⟨ζ, hζ_alg, fun y₁ y₂ ↦ IsFractionRing.injective T' F' <| by
-      rw [map_add, hζ_alg, hζ_alg, hζ_alg, AddMemClass.coe_add, map_add],
+  refine ⟨ζ, hζ_alg, fun y₁ y₂ ↦ IsFractionRing.injective T' F' <| by simp [hζ_alg],
     fun t y ↦ IsFractionRing.injective T' F' <| by
-      rw [map_mul, hζ_alg, hζ_alg, Subalgebra.coe_smul, Algebra.smul_def, map_mul,
-        IsScalarTower.algebraMap_apply T F M, AlgHom.commutes, hF_alg,
-        Ψ.gaussFractionFieldMap_algebraMap hΨ_inj],
+      simp [hζ_alg, Algebra.smul_def, IsScalarTower.algebraMap_apply T F M, hF_alg, hΨ_alg],
     fun {y} hy h0 ↦ hy <| ZeroMemClass.coe_eq_zero.mp <| (map_eq_zero_iff ι₀ ι₀.injective).mp <| by
       rw [← hζ_alg, h0, map_zero]⟩
 
@@ -212,20 +202,25 @@ private theorem coeff_mem_of_algebraMap_eq_apply
   obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finset (nonZeroDivisors T)
     (Finset.univ.image (b.repr y))
   choose a ha using fun j : Fin m ↦ hs (b.repr y j) (Finset.mem_image_of_mem _ (by simp))
-  have hclear : Ψ s * z = ∑ j, Ψ (a j) * rootG j :=
+  have hclear : ∑ j, Ψ (a j) * rootG j = Ψ s * z :=
     IsFractionRing.injective (IsRestricted.subring (R := K') r) (GaussFractionField σ K' r) <| by
-      rw [map_mul, hz, ← algebraMap_sum_mul_eq_mul b Ψ rootG ι hι_alg hι_b y s a ha]
+      rw [map_mul, hz, map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      have haj := by simpa only [Algebra.smul_def] using ha j
+      rw [map_mul, ← hι_alg (a j), haj, map_mul, map_mul, hι_alg s, ← hι_b j, mul_assoc,
+        ← map_mul ι, ← Algebra.smul_def (b.repr y j) (b j)]
   have hexp_ne : _root_.MvPowerSeries.expand (p ^ e) hq ((s : T) : _root_.MvPowerSeries σ K) ≠ 0 :=
     fun h0 ↦ hΨ_inj.ne (nonZeroDivisors.ne_zero s.2) <| by
       rw [Ψ.map_zero]
-      exact Subtype.ext (by rw [coe_frobeniusRootRestrictedHom p e hr (s : T), h0, map_zero]; rfl)
+      exact Subtype.ext (by rw [coe_frobeniusRootRestrictedHom p e hr (s : T), h0, map_zero,
+        ZeroMemClass.coe_zero])
   refine _root_.MvPowerSeries.coeff_mem_of_coeff_map_mul_mem E hexp_ne
     (g := (z : _root_.MvPowerSeries σ K')) (fun β ↦ ?_) α
   have hβ : _root_.MvPowerSeries.map (algebraMap K K')
       (_root_.MvPowerSeries.expand (p ^ e) hq ((s : T) : _root_.MvPowerSeries σ K)) *
         (z : _root_.MvPowerSeries σ K') =
       ((∑ j, Ψ (a j) * rootG j : IsRestricted.subring (R := K') r) : _root_.MvPowerSeries σ K') :=
-    by rw [← coe_frobeniusRootRestrictedHom p e hr (s : T), ← Subring.coe_mul, hclear]
+    by rw [← coe_frobeniusRootRestrictedHom p e hr (s : T), ← Subring.coe_mul, ← hclear]
   rw [hβ, AddSubmonoidClass.coe_finsetSum, map_sum]
   refine E.sum_mem fun j _ ↦ ?_
   rw [frobeniusRootRestrictedHom_apply]
@@ -239,25 +234,20 @@ section Japanese
 variable {σ : Type*} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 /-- **Finiteness of normalization in purely inseparable extensions.** Over a complete ultrametric
-normed field `K`, for finite `σ` and positive polyradius `c : σ → ℝ`, any integral closure `C` of
+normed field `K`, for finite `σ` and positive polyradius `c : σ → ℝ`, the integral closure of
 `T = K{X / c}` in a finite purely inseparable extension `M` of `GaussFractionField σ K c` is a
 finite `T`-module. -/
-theorem finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable [Finite σ]
+private theorem finite_integralClosure_isRestricted_subring_of_isPurelyInseparable [Finite σ]
     {c : σ → ℝ} [∀ i, Fact (0 < c i)] (M : Type*) [Field M]
     [Algebra (GaussFractionField σ K c) M] [Algebra (IsRestricted.subring (R := K) c) M]
     [IsScalarTower (IsRestricted.subring (R := K) c) (GaussFractionField σ K c) M]
     [FiniteDimensional (GaussFractionField σ K c) M]
-    [IsPurelyInseparable (GaussFractionField σ K c) M]
-    (C : Type*) [CommRing C] [Algebra (IsRestricted.subring (R := K) c) C] [Algebra C M]
-    [IsScalarTower (IsRestricted.subring (R := K) c) C M]
-    [IsIntegralClosure C (IsRestricted.subring (R := K) c) M] :
-    Module.Finite (IsRestricted.subring (R := K) c) C := by
+    [IsPurelyInseparable (GaussFractionField σ K c) M] :
+    Module.Finite (IsRestricted.subring (R := K) c)
+      (integralClosure (IsRestricted.subring (R := K) c) M) := by
   classical
   let T := IsRestricted.subring (R := K) c
   let F := GaussFractionField σ K c
-  -- Reduce from an abstract integral closure `C` to `integralClosure T M`.
-  suffices Module.Finite T (integralClosure T M) from
-    .equiv (IsIntegralClosure.equiv T (integralClosure T M) M C).toLinearEquiv
   obtain ⟨p, _⟩ := ExpChar.exists K
   have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap K F).injective p
   let e := IsPurelyInseparable.exponent F M
@@ -267,17 +257,14 @@ theorem finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable 
   let K' := FrobeniusRoot K p e
   let r : σ → ℝ := fun i ↦ c i ^ ((q : ℝ)⁻¹)
   have hr_fact : ∀ i, Fact (0 < r i) := fun i ↦ ⟨Real.rpow_pos_of_pos (Fact.out : 0 < c i) _⟩
-  have hr (i : σ) : r i ^ q = c i := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (Fact.out : 0 < c i).le,
-      inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hq), Real.rpow_one]
+  have hr (i : σ) : r i ^ q = c i := Real.rpow_inv_natCast_pow (Fact.out : 0 < c i).le hq
   let Ψ := frobeniusRootRestrictedHom (K := K) p e hr
   let _ : Algebra F (GaussFractionField σ K' r) :=
     (Ψ.gaussFractionFieldMap (frobeniusRootRestrictedHom_injective p e hr)).toAlgebra
   obtain ⟨m, b, rootG, ι₀, hι_alg, hι_b⟩ :=
-    exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable M p e le_rfl
-      (fun _ ↦ rfl) hr
+    exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable M p e le_rfl hr
   obtain ⟨ζ, hζ_alg, hζ_add, hζ_smul, hζ_ne⟩ :=
-    exists_frobeniusRoot_integralClosure_map M p e le_rfl (fun _ ↦ rfl) hr ι₀
+    exists_frobeniusRoot_integralClosure_map M p e le_rfl hr ι₀
   -- All coefficients of `ζ y` lie in the countably generated `K`-submodule `E ⊆ K'`.
   let E : Submodule K K' := Submodule.span K (Set.range fun idx : Fin m × (σ →₀ ℕ) ↦
     coeff idx.2 (rootG idx.1 : _root_.MvPowerSeries σ K'))
@@ -288,7 +275,7 @@ theorem finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable 
   -- Separate nonzero elements of `integralClosure T M` via `T`-linear functionals (BGR §4.1).
   have : IsNoetherianRing T := isNoetherianRing_isRestricted_subring
   refine (TauCeti.IsIntegralClosure.finite_iff_injective_dual_eval T F M (integralClosure T M)).mpr
-    (Module.Dual.injective_eval_iff.mpr fun y₀ hy₀ ↦ ?_)
+    (TauCeti.Module.Dual.injective_eval_iff.mpr fun y₀ hy₀ ↦ ?_)
   obtain ⟨ν, hν, φ, _, hφ, hπ_ne⟩ :=
     exists_toSubringDualOfBound_restrictedExpandComponentFamily_ne_zero hq hr E
       (exists_bounded_dual_ne_zero_frobeniusRoot p e (Set.countable_range _))
@@ -320,23 +307,7 @@ instance isJapanese_isRestricted_subring [Finite σ] {c : σ → ℝ} [∀ i, Fa
   have : IsNoetherianRing (IsRestricted.subring (R := K) c) :=
     isNoetherianRing_isRestricted_subring
   Ring.IsJapanese.of_isPurelyInseparable (GaussFractionField σ K c) fun M _ _ _ _ _ _ ↦
-    finite_of_isIntegralClosure_isRestricted_subring_of_isPurelyInseparable M (integralClosure _ M)
-
-/-- **Finiteness of normalization over restricted power series.** For any model `F` of the fraction
-field of `K{X / c}` (`σ` finite, `c` positive, `K` complete ultrametric) and any finitely generated
-field extension `L / F` (separable, inseparable, or transcendental), every integral closure `C` of
-`K{X / c}` in `L` is a finite `K{X / c}`-module. -/
-theorem finite_of_isIntegralClosure_isRestricted_subring [Finite σ] {c : σ → ℝ}
-    [∀ i, Fact (0 < c i)] (F : Type*) (L : Type*) [Field F] [Field L]
-    [Algebra (IsRestricted.subring (R := K) c) F]
-    [IsFractionRing (IsRestricted.subring (R := K) c) F]
-    [Algebra F L] [Algebra (IsRestricted.subring (R := K) c) L]
-    [IsScalarTower (IsRestricted.subring (R := K) c) F L] [Algebra.EssFiniteType F L]
-    (C : Type*) [CommRing C] [Algebra (IsRestricted.subring (R := K) c) C] [Algebra C L]
-    [IsScalarTower (IsRestricted.subring (R := K) c) C L]
-    [IsIntegralClosure C (IsRestricted.subring (R := K) c) L] :
-    Module.Finite (IsRestricted.subring (R := K) c) C :=
-  Ring.IsJapanese.finite_of_isIntegralClosure F L C
+    finite_integralClosure_isRestricted_subring_of_isPurelyInseparable M
 
 end Japanese
 
@@ -383,9 +354,10 @@ example (p : ℕ) [Fact p.Prime] [CharP K p] (i : σ) :
     eq_top_iff.mpr <| (AdjoinRoot.adjoinRoot_eq_top (R := F) (f := P)).symm.trans_le <|
       Algebra.adjoin_le <| Set.singleton_subset_iff.mpr <| Subalgebra.mem_perfectClosure_iff.mpr <|
         by
-          have h0 := AdjoinRoot.eval₂_root P
-          rw [eval₂_sub, eval₂_X_pow, Polynomial.eval₂_C, sub_eq_zero] at h0
-          exact ⟨1, xi, by rw [pow_one, h0]; rfl⟩
+          have h0 : aeval (AdjoinRoot.root P) P = 0 :=
+            (AdjoinRoot.aeval_eq (f := P) P).trans AdjoinRoot.mk_self
+          rw [map_sub, map_pow, aeval_X, aeval_C, sub_eq_zero] at h0
+          exact ⟨1, xi, by rw [pow_one, h0]⟩
   exact ⟨AdjoinRoot P, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     (isPurelyInseparable_iff_pow_mem F p).mpr fun _ ↦
       Subalgebra.mem_perfectClosure_iff.mp (htop ▸ Algebra.mem_top),
@@ -393,30 +365,41 @@ example (p : ℕ) [Fact p.Prime] [CharP K p] (i : σ) :
       (AdjoinRoot.powerBasis_dim hP_irr.ne_zero)).trans hP_deg,
     Ring.IsJapanese.finite_integralClosure F (AdjoinRoot P)⟩
 
-/-- In arbitrary characteristic (including characteristic `2`), `Y^2 + X_i^2 Y + X_i = 0` defines a
-degree-`2` separable field extension of `GaussFractionField σ K c` in which the integral closure of
-`K{X / c}` is finite. -/
+/-- In arbitrary characteristic (including characteristic `2`), adjoining a square root (when
+`2 ≠ 0`) or cube root (when `2 = 0`) of a coordinate variable `X i` defines a nontrivial finite
+separable field extension of `GaussFractionField σ K c` in which the integral closure of `K{X / c}`
+is finite. -/
 example (i : σ) :
     ∃ (M : Type (max u v)) (_ : Field M) (_ : Algebra (GaussFractionField σ K c) M)
       (_ : Algebra (IsRestricted.subring (R := K) c) M),
       IsScalarTower (IsRestricted.subring (R := K) c) (GaussFractionField σ K c) M ∧
       FiniteDimensional (GaussFractionField σ K c) M ∧
       Algebra.IsSeparable (GaussFractionField σ K c) M ∧
-      Module.finrank (GaussFractionField σ K c) M = 2 ∧
+      1 < Module.finrank (GaussFractionField σ K c) M ∧
       Module.Finite (IsRestricted.subring (R := K) c)
         (integralClosure (IsRestricted.subring (R := K) c) M) := by
+  classical
   let T := IsRestricted.subring (R := K) c
   let F := GaussFractionField σ K c
   let xi : F := algebraMap T F ⟨_root_.MvPowerSeries.X i, isRestricted_X c i⟩
-  have hxi_ne : xi ≠ 0 := by
-    rw [← norm_pos_iff, norm_algebraMap_gaussFractionField_X]; exact Fact.out
-  let P : F[X] := Polynomial.X ^ 2 + Polynomial.C (xi ^ 2) * Polynomial.X + Polynomial.C xi
-  have hP_deg : P.natDegree = 2 := by dsimp only [P]; compute_degree!
-  have hP_monic : P.Monic := by dsimp only [P]; monicity!
-  have hP_irr : Irreducible P := Polynomial.irreducible_of_degree_le_three_of_not_isRoot
-    (by rw [hP_deg]; decide) (not_isRoot_X_sq_add_C_sq_mul_X_add_C σ K c i)
+  let q : ℕ := if (2 : F) = 0 then 3 else 2
+  have hq_prime : q.Prime := by
+    dsimp only [q]; split_ifs <;> decide
+  have hq_ne : (q : F) ≠ 0 := by
+    dsimp only [q]
+    split_ifs with h2
+    · push_cast
+      rw [show (3 : F) = (2 : F) + 1 by norm_num, h2, zero_add]
+      exact one_ne_zero
+    · simpa using h2
+  let P : F[X] := Polynomial.X ^ q - Polynomial.C xi
+  have hP_deg : P.natDegree = q := by
+    rw [natDegree_sub_eq_left_of_natDegree_lt (by simpa using hq_prime.pos), natDegree_X_pow]
+  have hP_monic : P.Monic := Polynomial.monic_X_pow_sub_C xi hq_prime.ne_zero
+  have hP_irr : Irreducible P := irreducible_X_pow_sub_C_of_prime hq_prime fun z ↦
+    pow_ne_algebraMap_gaussFractionField_X σ K c i hq_prime.ne_one z
   have hP_sep : P.Separable := (separable_iff_derivative_ne_zero hP_irr).mpr fun hderiv ↦
-    pow_ne_zero 2 hxi_ne (by simpa [P, eq_comm] using congrArg (Polynomial.eval 0) hderiv)
+    hq_ne (by simpa [P, Polynomial.derivative_X_pow] using congrArg (Polynomial.eval 1) hderiv)
   have : Fact (Irreducible P) := ⟨hP_irr⟩
   let pb := AdjoinRoot.powerBasis hP_irr.ne_zero
   have : FiniteDimensional F (AdjoinRoot P) := pb.finite
@@ -430,7 +413,10 @@ example (i : σ) :
   exact ⟨AdjoinRoot P, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     AlgEquiv.Algebra.isSeparable ((IntermediateField.equivOfEq hadj_top).trans
       IntermediateField.topEquiv),
-    (pb.finrank.trans (AdjoinRoot.powerBasis_dim hP_irr.ne_zero)).trans hP_deg,
+    by
+      have hfin : Module.finrank F (AdjoinRoot P) = q :=
+        (pb.finrank.trans (AdjoinRoot.powerBasis_dim hP_irr.ne_zero)).trans hP_deg
+      simpa only [F, hfin] using hq_prime.one_lt,
     Ring.IsJapanese.finite_integralClosure F (AdjoinRoot P)⟩
 
 end Examples

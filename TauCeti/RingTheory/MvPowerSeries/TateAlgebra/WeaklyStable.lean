@@ -16,10 +16,10 @@ import TauCeti.Analysis.Normed.Module.Bases.CountableType
 import TauCeti.Analysis.Normed.Module.Dual.Bounded
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basis
-import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.RingTheory.MvPowerSeries.Basic
+import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FrobeniusRoot
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Dual
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Expand
 
 /-!
 # Characteristic-free weak stability of Gauss-normed Tate fraction fields
@@ -46,15 +46,16 @@ Let `p := ringExpChar K` and `q := p ^ e`, where `e` is the exponent of `M / F`.
    (`r i ^ q = c i`). Combining coefficientwise scalar extension with `restrictedExpand q` gives an
    isometric ring homomorphism `Ψ : K{X / c} →+* K'{X / r}`, extending to an isometric field
    embedding `Ψ_F : F →+* F'` into `F' := GaussFractionField σ K' r`.
-2. Every `f ∈ K{X / c}` has an explicit `q`-th root
-   `frobeniusRootRestrictedEquiv p e hr f ∈ K'{X / r}` obtained by applying
-   `FrobeniusRoot.root K p e` coefficientwise. Choosing an `F`-basis `b` of `M` whose `q`-th powers
-   lie in `K{X / c}`, `exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable` embeds
-   `M` `F`-linearly into `F'` with `‖ι y‖ = spectralNorm F M y` and `ι (b j)` equal to the `q`-th
-   root of `b j ^ q` in `K'{X / r}`.
-3. The `K`-span `E ⊆ K'` of all power-series coefficients of the generators
-   `frobeniusRootRestrictedEquiv p e hr (g j)` is countably generated over the complete ultrametric
-   field `K`, so `StrongDual K E` separates points (`Submodule.separatingDual_span_of_countable`).
+2. Every `f ∈ K{X / c}` has an explicit `q`-th root in `K'{X / r}`
+   (`frobeniusRootRestrictedEquiv`) obtained by applying `FrobeniusRoot.root K p e`
+   coefficientwise. Choosing an `F`-basis `b` of `M` whose `q`-th powers lie in `K{X / c}`,
+   `exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable` embeds `M` `F`-linearly
+   into `F'` sending each `b j` to the `q`-th root of `b j ^ q` in `K'{X / r}`; since every
+   `y ∈ M` satisfies `y ^ (p ^ k) ∈ F` for some `k`, this embedding satisfies
+   `‖ι y‖ = spectralNorm F M y`.
+3. The `K`-span `E ⊆ K'` of all power-series coefficients of the basis images `ι (b j)` in
+   `K'{X / r}` is countably generated over the complete ultrametric field `K`, so
+   `StrongDual K E` separates points (`Submodule.separatingDual_span_of_countable`).
 4. Extracting a `q`-adic expansion component (`restrictedExpandComponentFamily`) and applying a
    continuous functional `f_dual : StrongDual K E` coefficientwise produces `K`-linear maps from
    series with coefficients in `E` back to `K{X / c}` that are `K{X / c}`-linear along `Ψ`, bounded
@@ -120,7 +121,7 @@ section Helpers
 
 /-- Embeds a finite purely inseparable extension `M` of `GaussFractionField σ K c` of exponent at
 most `e` in exponential characteristic `p` isometrically (for `spectralNorm`) into
-`GaussFractionField σ (FrobeniusRoot K p e) r` with `r i = c i ^ (p ^ e)⁻¹`, sending an `F`-basis
+`GaussFractionField σ (FrobeniusRoot K p e) r` with `r i ^ p ^ e = c i`, sending an `F`-basis
 of `M` into restricted series over `FrobeniusRoot K p e`. -/
 private theorem exists_isometric_ringHom_of_isPurelyInseparable
     {σ K : Type*} [NormedField K] [IsUltrametricDist K]
@@ -128,10 +129,9 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
     (M : Type*) [Field M] [Algebra (GaussFractionField σ K c) M]
     [FiniteDimensional (GaussFractionField σ K c) M]
     [IsPurelyInseparable (GaussFractionField σ K c) M]
-    (p : ℕ) [ExpChar K p] [ExpChar (GaussFractionField σ K c) p]
+    (p : ℕ) [ExpChar K p]
     (e : ℕ) (he : IsPurelyInseparable.exponent (GaussFractionField σ K c) M ≤ e)
-    (hr_def : ∀ i, r i = c i ^ (((p ^ e : ℕ) : ℝ)⁻¹)) (hr : ∀ i, r i ^ p ^ e = c i)
-    (h_iso : ∀ a : K, ‖algebraMap K (FrobeniusRoot K p e) a‖ ≤ 1 * ‖a‖) :
+    (hr : ∀ i, r i ^ p ^ e = c i) :
     let K' := FrobeniusRoot K p e
     let T := IsRestricted.subring (R := K) c
     let F := GaussFractionField σ K c
@@ -139,19 +139,21 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
     let F' := GaussFractionField σ K' r
     ∃ (Ψ : T →+* T') (m : ℕ) (b : Module.Basis (Fin m) F M) (rootG : Fin m → T') (ι : M →+* F'),
       (∀ f, Ψ f = restrictedExpand (p ^ e) (pow_pos (expChar_pos K p) e).ne' hr
-        (restrictedMap (algebraMap K K') h_iso f)) ∧
+        (restrictedMap (algebraMap K K') (C := 1)
+          (fun a ↦ by rw [one_mul, FrobeniusRoot.norm_algebraMap]) f)) ∧
       (∀ f, ‖Ψ f‖ = ‖f‖) ∧
       (∀ f, ι (algebraMap F M (algebraMap T F f)) = algebraMap T' F' (Ψ f)) ∧
       (∀ y : M, ‖ι y‖ = spectralNorm F M y) ∧
       (∀ j : Fin m, ι (b j) = algebraMap T' F' (rootG j)) := by
   intro K' T F T' F'
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap K F).injective p
   let Ψ : T →+* T' := frobeniusRootRestrictedHom p e hr
   have hΨ_norm : ∀ f : T, ‖Ψ f‖ = ‖f‖ := norm_frobeniusRootRestrictedHom p e hr
   have hΨ_inj : Function.Injective Ψ := frobeniusRootRestrictedHom_injective p e hr
   let _ : Algebra F F' := (Ψ.gaussFractionFieldMap hΨ_inj).toAlgebra
   have hF_alg : algebraMap F F' = Ψ.gaussFractionFieldMap hΨ_inj := RingHom.algebraMap_toAlgebra _
   obtain ⟨m, b, rootG, ι₀, hι_alg, hι_b⟩ :=
-    exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable M p e he hr_def hr
+    exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable M p e he hr
   refine ⟨Ψ, m, b, rootG, ι₀.toRingHom, frobeniusRootRestrictedHom_apply p e hr, hΨ_norm,
     hι_alg, fun y ↦ ?_, hι_b⟩
   obtain ⟨k, a, ha⟩ := IsPurelyInseparable.pow_mem F p y
@@ -167,9 +169,9 @@ private theorem exists_sum_mul_ne_zero_of_sum_ne_zero
     {σ K K' : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
     [NormedField K'] [IsUltrametricDist K'] [NormedAlgebra K K']
     {c r : σ → ℝ} [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)] {q : ℕ} (hq : q ≠ 0)
-    (hr : ∀ i, r i ^ q = c i) (h_iso : ∀ a : K, ‖algebraMap K K' a‖ ≤ 1 * ‖a‖)
+    (hr : ∀ i, r i ^ q = c i) {C : ℝ} (hφ : ∀ a : K, ‖algebraMap K K' a‖ ≤ C * ‖a‖)
     {Ψ : IsRestricted.subring (R := K) c →+* IsRestricted.subring (R := K') r}
-    (hΨ_def : ∀ f, Ψ f = restrictedExpand q hq hr (restrictedMap (algebraMap K K') h_iso f))
+    (hΨ_def : ∀ f, Ψ f = restrictedExpand q hq hr (restrictedMap (algebraMap K K') hφ f))
     {m : ℕ} {rootG : Fin m → IsRestricted.subring (R := K') r} {E : Submodule K K'}
     [SeparatingDual K E]
     (hrootG_mem : ∀ (j : Fin m) (α : σ →₀ ℕ),
@@ -184,37 +186,39 @@ private theorem exists_sum_mul_ne_zero_of_sum_ne_zero
       coeff α ((Ψ (a j) * rootG j : IsRestricted.subring (R := K') r) :
         _root_.MvPowerSeries σ K') ∈ E := by
     rw [hΨ_def]
-    exact coeff_restrictedExpand_restrictedMap_mul_mem hq hr h_iso E (a j) (hrootG_mem j) α
+    exact coeff_restrictedExpand_restrictedMap_mul_mem hq hr hφ E (a j) (hrootG_mem j) α
   have hsum_mem (s : Finset (Fin m)) (a : Fin m → T) (α : σ →₀ ℕ) :
       coeff α ((∑ j ∈ s, Ψ (a j) * rootG j : IsRestricted.subring (R := K') r) :
         _root_.MvPowerSeries σ K') ∈ E := by
     rw [AddSubmonoidClass.coe_finsetSum, map_sum]
     exact E.sum_mem fun j _ ↦ hterm_mem a j α
-  obtain ⟨ν, hν, f_dual, hf_ne⟩ :=
-    exists_toSubringDual_restrictedExpandComponentFamily_ne_zero hq hr E ha₀
-      (hsum_mem Finset.univ a₀)
+  obtain ⟨ν, hν, φ_E, C_φ, hφ_E, hπ_ne⟩ :=
+    exists_toSubringDualOfBound_restrictedExpandComponentFamily_ne_zero hq hr E
+      (fun x hx ↦ let ⟨f, hf⟩ := SeparatingDual.exists_ne_zero (R := K) hx
+        ⟨f.toLinearMap, ‖f‖, f.le_opNorm, hf⟩)
+      ha₀ (hsum_mem Finset.univ a₀)
   let wE (j : Fin m) := restrictedExpandComponentFamily hq hr ν E (rootG j) (hrootG_mem j)
   have hcomp_sum (s : Finset (Fin m)) (a : Fin m → T) :
       restrictedExpandComponentFamily hq hr ν E (∑ j ∈ s, Ψ (a j) * rootG j) (hsum_mem s a) =
         ∑ j ∈ s, a j • wE j := by
     rw [restrictedExpandComponentFamily_sum hq hr ν E s _ (hterm_mem a)]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← restrictedExpandComponentFamily_restrictedExpand_mul hq hr hν h_iso E (a j) (rootG j)
-        (hrootG_mem j) (hz_mul := coeff_restrictedExpand_restrictedMap_mul_mem hq hr h_iso E
+    rw [← restrictedExpandComponentFamily_restrictedExpand_mul hq hr hν hφ E (a j) (rootG j)
+        (hrootG_mem j) (hz_mul := coeff_restrictedExpand_restrictedMap_mul_mem hq hr hφ E
           (a j) (hrootG_mem j))]
     exact restrictedExpandComponentFamily_congr hq hr ν E
       (congrArg (· * rootG j) (hΨ_def (a j)))
-  let π := IsRestrictedFamily.toSubringDual (c := c) f_dual
+  let π := IsRestrictedFamily.toSubringDualOfBound (c := c) φ_E hφ_E
   have hπ_sum (a : Fin m → T) :
       ∑ j, a j * π (wE j) =
         π (restrictedExpandComponentFamily hq hr ν E (∑ j, Ψ (a j) * rootG j)
           (hsum_mem Finset.univ a)) := by
     rw [hcomp_sum Finset.univ a, map_sum]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [map_smul, smul_eq_mul]
-  refine ⟨fun j ↦ π (wE j), ‖f_dual‖ / ν.prod (r · ^ ·), fun a ↦ ?_, fun h0 ↦ ?_⟩
+  refine ⟨fun j ↦ π (wE j), C_φ / ν.prod (r · ^ ·), fun a ↦ ?_, fun h0 ↦ ?_⟩
   · rw [hπ_sum a]
-    exact norm_toSubringDual_restrictedExpandComponentFamily_le hq hr ν E f_dual _ _
-  · exact hf_ne (by rwa [← hπ_sum a₀])
+    exact norm_toSubringDualOfBound_restrictedExpandComponentFamily_le hq hr ν E φ_E hφ_E _ _
+  · exact hπ_ne (by rwa [← hπ_sum a₀])
 
 end Helpers
 
@@ -235,21 +239,17 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
   let e := IsPurelyInseparable.exponent F M
   set q := p ^ e
   have hq : q ≠ 0 := (pow_pos (expChar_pos K p) e).ne'
-  have hqR_ne : (q : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hq
   -- Step 1 & 2: Construct `K' = FrobeniusRoot K p e`, `r = c ^ q⁻¹`, and embed `M` into `F'`.
   let K' := FrobeniusRoot K p e
   let r : σ → ℝ := fun i ↦ c i ^ ((q : ℝ)⁻¹)
   have hr_fact : ∀ i, Fact (0 < r i) := fun i ↦ ⟨Real.rpow_pos_of_pos (Fact.out : 0 < c i) _⟩
-  have hr (i : σ) : r i ^ q = c i := by
-    dsimp only [r]
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (Fact.out : 0 < c i).le, inv_mul_cancel₀ hqR_ne,
-      Real.rpow_one]
+  have hr (i : σ) : r i ^ q = c i := Real.rpow_inv_natCast_pow (Fact.out : 0 < c i).le hq
   let T' := IsRestricted.subring (R := K') r
   let F' := GaussFractionField σ K' r
   have h_iso (a : K) : ‖algebraMap K K' a‖ ≤ 1 * ‖a‖ := by
     rw [one_mul, FrobeniusRoot.norm_algebraMap]
   obtain ⟨Ψ, m, b, rootG, ι, hΨ_def, hΨ_norm, hι_alg, hι_norm, hι_b⟩ :=
-    exists_isometric_ringHom_of_isPurelyInseparable M p e le_rfl (fun _ ↦ rfl) hr h_iso
+    exists_isometric_ringHom_of_isPurelyInseparable M p e le_rfl hr
   -- Step 3: Span a countable-type `K`-subspace `E ⊆ K'` from all coefficients of `rootG`.
   obtain ⟨E, _, hrootG_mem⟩ : ∃ E : Submodule K K', SeparatingDual K E ∧
       ∀ (j : Fin m) (α : σ →₀ ℕ), coeff α (rootG j : _root_.MvPowerSeries σ K') ∈ E :=
@@ -258,6 +258,14 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
       Submodule.separatingDual_span_of_countable (Set.countable_range _),
       fun j α ↦ Submodule.subset_span ⟨(j, α), rfl⟩⟩
   -- Step 4: Construct separating spectrally bounded `F`-linear functionals on `M`.
+  have hι_clear (y : M) (s : nonZeroDivisors T) (a : Fin m → T)
+      (ha : ∀ j, algebraMap T F (a j) = (s : T) • b.repr y j) :
+      algebraMap T' F' (∑ j, Ψ (a j) * rootG j) = algebraMap T' F' (Ψ s) * ι y := by
+    rw [map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    have haj := by simpa only [Algebra.smul_def] using ha j
+    rw [map_mul, ← hι_alg (a j), haj, map_mul, map_mul, hι_alg s, ← hι_b j, mul_assoc,
+      ← map_mul ι, ← Algebra.smul_def (b.repr y j) (b j)]
   refine Module.Dual.exists_bound_of_forall_exists_ne_zero ψ (spectralNorm F M) fun x₀ hx₀ ↦ ?_
   obtain ⟨s₀, hs₀⟩ :=
     IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T) (b.repr x₀)
@@ -267,7 +275,7 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
     exact nonZeroDivisors.ne_zero s₀.2
   have hu₀_ne : ∑ j, Ψ (a₀ j) * rootG j ≠ 0 := fun h0 ↦ by
     have hmul : algebraMap T' F' (Ψ s₀) * ι x₀ = 0 := by
-      rw [← algebraMap_sum_mul_eq_mul b Ψ rootG ι hι_alg hι_b x₀ s₀ a₀ ha₀, h0, map_zero]
+      rw [← hι_clear x₀ s₀ a₀ ha₀, h0, map_zero]
     exact mul_ne_zero hs₀_F_ne ((map_ne_zero_iff ι ι.injective).mpr hx₀) hmul
   obtain ⟨g, C_π, hg_norm, hg_ne⟩ :=
     exists_sum_mul_ne_zero_of_sum_ne_zero hq hr h_iso hΨ_def hrootG_mem hu₀_ne
@@ -287,7 +295,7 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
     choose a ha using hs
     have hu_norm : ‖∑ j, Ψ (a j) * rootG j‖ = ‖(s : T)‖ * spectralNorm F M y := by
       rw [← norm_algebraMap_gaussFractionField σ K' r _,
-        algebraMap_sum_mul_eq_mul b Ψ rootG ι hι_alg hι_b y s a ha, norm_mul,
+        hι_clear y s a ha, norm_mul,
         norm_algebraMap_gaussFractionField σ K' r _, hΨ_norm, hι_norm]
     have hs_pos : 0 < ‖(s : T)‖ := by
       rw [← norm_algebraMap_gaussFractionField σ K c (s : T), norm_pos_iff]
@@ -321,6 +329,62 @@ power-basis coordinate norm.
 
 universe u₁ u₂
 
+private theorem sq_add_X_sq_mul_add_X_mul_sq_ne_zero {σ R : Type*}
+    [CommSemiring R] [NoZeroDivisors R] [Nontrivial R] (i : σ)
+    {A B : _root_.MvPowerSeries σ R} (hB : B ≠ 0) :
+    A ^ 2 + X i ^ 2 * A * B + X i * B ^ 2 ≠ 0 := by
+  rcases eq_or_ne A 0 with rfl | hA
+  · rw [sq, zero_mul, mul_zero, zero_mul, zero_add, zero_add]
+    exact mul_ne_zero (X_ne_zero i) (pow_ne_zero 2 hB)
+  obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hA)
+  obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hB)
+  have ho1 : (A ^ 2).order = ((2 * a : ℕ) : ℕ∞) := by
+    rw [order_pow, ← ha, nsmul_eq_mul]; norm_cast
+  have ho2 : (X i * B ^ 2).order = ((1 + 2 * b : ℕ) : ℕ∞) := by
+    rw [order_mul, order_X, order_pow, ← hb, nsmul_eq_mul]; norm_cast
+  have ho3 : (X i ^ 2 * A * B).order = ((2 + a + b : ℕ) : ℕ∞) := by
+    rw [order_mul, order_mul, order_pow, order_X, ← ha, ← hb, nsmul_eq_mul]; norm_cast
+  have hne12 : (A ^ 2).order ≠ (X i * B ^ 2).order := by rw [ho1, ho2, ne_eq, Nat.cast_inj]; omega
+  have hmin_cast (x y : ℕ) : (min (x : ℕ∞) (y : ℕ∞)) = ((min x y : ℕ) : ℕ∞) :=
+    (Monotone.map_min (fun _ _ ↦ Nat.cast_le.mpr)).symm
+  have ho12 : (A ^ 2 + X i * B ^ 2).order = ((min (2 * a) (1 + 2 * b) : ℕ) : ℕ∞) := by
+    rw [order_add_of_order_ne hne12, ho1, ho2, hmin_cast]
+  have hne_sum : (A ^ 2 + X i * B ^ 2).order ≠ (X i ^ 2 * A * B).order := by
+    rw [ho12, ho3, ne_eq, Nat.cast_inj]; omega
+  rw [add_right_comm, ne_eq, ← order_eq_top_iff, order_add_of_order_ne hne_sum, ho12, ho3,
+    hmin_cast]
+  exact ENat.natCast_ne_top _
+
+/-- For any coordinate variable `x₀ = X i` in `GaussFractionField σ K c`, the quadratic polynomial
+`Y ^ 2 + x₀ ^ 2 * Y + x₀` has no root in `GaussFractionField σ K c`. -/
+private theorem not_isRoot_X_sq_add_C_sq_mul_X_add_C {σ K : Type*}
+    [NormedField K] [IsUltrametricDist K] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    (i : σ) (z : GaussFractionField σ K c) :
+    let x₀ := algebraMap (IsRestricted.subring (R := K) c) (GaussFractionField σ K c)
+      ⟨X i, isRestricted_X c i⟩
+    ¬ (Polynomial.X ^ 2 + Polynomial.C (x₀ ^ 2) * Polynomial.X + Polynomial.C x₀).IsRoot z := by
+  let T := IsRestricted.subring (R := K) c
+  let F := GaussFractionField σ K c
+  let X₀ : T := ⟨X i, isRestricted_X c i⟩
+  intro x₀ hz
+  rw [Polynomial.IsRoot.def, Polynomial.eval_add, Polynomial.eval_add, Polynomial.eval_pow,
+    Polynomial.eval_mul, Polynomial.eval_X, Polynomial.eval_C, Polynomial.eval_C] at hz
+  obtain ⟨A, B, hB_mem, rfl⟩ := IsFractionRing.div_surjective T z
+  have hB_F_ne : algebraMap T F B ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hB_mem
+  have hclear : algebraMap T F (A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2) = 0 := by
+    have hmul := congrArg (· * (algebraMap T F B) ^ 2) hz
+    simp only [zero_mul, map_add, map_mul, map_pow] at hmul ⊢
+    dsimp only [x₀, X₀, T, F] at hmul hB_F_ne ⊢
+    field_simp [hB_F_ne] at hmul
+    linear_combination hmul
+  have hT0 : A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2 = 0 :=
+    (map_eq_zero_iff _ (IsFractionRing.injective T F)).mp hclear
+  exact sq_add_X_sq_mul_add_X_mul_sq_ne_zero i
+    (Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem))
+    (by simpa only [Subring.coe_add, Subring.coe_mul, SubmonoidClass.coe_pow,
+      ZeroMemClass.coe_zero] using congrArg Subtype.val hT0)
+
 /-- In any characteristic (including `2`), `Y ^ 2 + Xᵢ ^ 2 * Y + Xᵢ` defines a degree-`2` separable
 extension of `GaussFractionField σ K c` on which `spectralNorm` is equivalent to the power-basis
 coordinate norm. -/
@@ -346,7 +410,7 @@ example (σ : Type u₁) (K : Type u₂) [Countable σ] [Nonempty σ]
   have hP_monic : P.Monic := by dsimp only [P]; monicity!
   have hP_irr : Irreducible P :=
     Polynomial.irreducible_of_degree_le_three_of_not_isRoot (by rw [hP_deg]; decide)
-      (not_isRoot_X_sq_add_C_sq_mul_X_add_C σ K c i₀)
+      (not_isRoot_X_sq_add_C_sq_mul_X_add_C i₀)
   have hP_sep : P.Separable := by
     rw [Polynomial.separable_iff_derivative_ne_zero hP_irr]
     exact fun hderiv ↦ hx₀_ne (by simpa [P] using congrArg (Polynomial.eval 0) hderiv)

@@ -510,14 +510,27 @@ noncomputable def toSubringDualOfBound (φ : E →ₗ[R] R) {C : ℝ} (hφ : ∀
         rw [RingHom.id_apply]
         exact mapLinearMap_isRestrictedSubring_smul φ hφ t v }
 
+/-- Evaluating `toSubringDualOfBound φ hφ` applies `φ` coefficientwise and identifies the resulting
+restricted family with a restricted power series. -/
+theorem toSubringDualOfBound_apply (φ : E →ₗ[R] R) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (v : IsRestrictedFamily.addSubgroup E c) :
+    toSubringDualOfBound φ hφ v = subringLinearEquiv.symm (mapLinearMap φ hφ v) :=
+  (rfl)
+
 @[simp]
 theorem coeff_coe_toSubringDualOfBound (φ : E →ₗ[R] R) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
     (v : IsRestrictedFamily.addSubgroup E c) (α : σ →₀ ℕ) :
     MvPowerSeries.coeff α (toSubringDualOfBound φ hφ v : MvPowerSeries σ R) =
       φ ((v : (σ →₀ ℕ) → E) α) := by
-  rw [toSubringDualOfBound, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    coeff_coe_subringLinearEquiv_symm_apply, LinearMap.coe_mk, AddHom.coe_mk, coe_mapLinearMap,
-    Function.comp_apply]
+  simp [toSubringDualOfBound_apply]
+
+/-- A restricted family is killed by `toSubringDualOfBound φ hφ` if and only if `φ` kills every
+coefficient. -/
+@[simp]
+theorem toSubringDualOfBound_eq_zero_iff (φ : E →ₗ[R] R) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (v : IsRestrictedFamily.addSubgroup E c) :
+    toSubringDualOfBound φ hφ v = 0 ↔ ∀ α, φ ((v : (σ →₀ ℕ) → E) α) = 0 := by
+  rw [toSubringDualOfBound_apply, LinearEquiv.map_eq_zero_iff, mapLinearMap_eq_zero_iff]
 
 end IsRestrictedFamily
 

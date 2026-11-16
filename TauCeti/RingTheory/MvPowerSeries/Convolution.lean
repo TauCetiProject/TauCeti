@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 
-import Mathlib.LinearAlgebra.Quotient.Basic
 import Mathlib.RingTheory.MvPowerSeries.LexOrder
 
 /-!
@@ -25,11 +24,11 @@ on a coefficient family `a : (σ →₀ ℕ) → E` by convolution,
 This file defines the convolution `MvPowerSeries.convSMul` and proves its module laws: it is
 additive in both arguments, constant series act through their constants, and it is compatible
 with multiplication of series. For `E = R` it is the coefficient family of the product
-(`MvPowerSeries.convSMul_coeff`), and linear maps of coefficient modules commute with it
-(`MvPowerSeries.convSMul_comp`). When `E` is `R`-torsion-free over a cancellative `R`, nonzero
-power series act faithfully on nonzero coefficient families (`MvPowerSeries.convSMul_eq_zero`),
-which implies coefficientwise descent along submodules
-(`MvPowerSeries.coeff_mem_of_coeff_map_mul_mem`). No norm or topology is needed.
+(`MvPowerSeries.convSMul_coeff`, and for an `R`-algebra `S`, `MvPowerSeries.convSMul_coeff_map`),
+and linear maps of coefficient modules commute with it (`MvPowerSeries.convSMul_comp`). When `E` is
+`R`-torsion-free over a cancellative `R`, nonzero power series act faithfully on nonzero
+coefficient families (`MvPowerSeries.convSMul_eq_zero`), which implies coefficientwise descent along
+submodules (`MvPowerSeries.coeff_mem_of_coeff_map_mul_mem`). No norm or topology is needed.
 
 ## Implementation notes
 
@@ -122,6 +121,15 @@ theorem convSMul_coeff (f g : MvPowerSeries σ R) :
   ext t
   simp [convSMul_apply, coeff_mul]
 
+/-- For an `R`-algebra `S`, convolution of `f : MvPowerSeries σ R` with the coefficients of
+`g : MvPowerSeries σ S` gives the coefficients of `map (algebraMap R S) f * g`. -/
+theorem convSMul_coeff_map {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    (f : MvPowerSeries σ R) (g : MvPowerSeries σ S) :
+    convSMul f (fun t ↦ coeff t g) = fun t ↦ coeff t (map (algebraMap R S) f * g) := by
+  classical
+  ext t
+  simp [convSMul_apply, coeff_mul, Algebra.smul_def]
+
 /-- When `E` is `R`-torsion-free over a cancellative `R`, the convolution of a nonzero series with
 a nonzero coefficient family is nonzero. -/
 theorem eq_zero_or_eq_zero_of_convSMul_eq_zero [IsCancelMulZero R] [Module.IsTorsionFree R E]
@@ -165,15 +173,10 @@ theorem coeff_mem_of_coeff_map_mul_mem {R : Type*} {S : Type*} [CommRing R] [IsC
     {f : MvPowerSeries σ R} (hf : f ≠ 0) {g : MvPowerSeries σ S}
     (hfg : ∀ t, coeff t (MvPowerSeries.map (algebraMap R S) f * g) ∈ E) (t : σ →₀ ℕ) :
     coeff t g ∈ E := by
-  classical
   have hconv : convSMul f (E.mkQ ∘ fun d ↦ coeff d g) = 0 := by
-    rw [convSMul_comp]
+    rw [convSMul_comp, convSMul_coeff_map]
     ext d
-    simp only [Function.comp_apply, Pi.zero_apply, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero]
-    convert hfg d using 2
-    rw [convSMul_apply, coeff_mul]
-    exact Finset.sum_congr rfl fun _ _ ↦ by rw [Algebra.smul_def, coeff_map]
+    simpa [Submodule.Quotient.mk_eq_zero] using hfg d
   exact (Submodule.Quotient.mk_eq_zero E).mp <|
     congrFun ((eq_zero_or_eq_zero_of_convSMul_eq_zero hconv).resolve_left hf) t
 

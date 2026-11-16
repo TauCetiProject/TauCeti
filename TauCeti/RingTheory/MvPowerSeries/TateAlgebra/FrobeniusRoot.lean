@@ -31,17 +31,20 @@ Let `K` be an ultrametric normed field of exponential characteristic `p` and `e 
    extension along `algebraMap K (FrobeniusRoot K p e)` with `restrictedExpand (p ^ e)` gives an
    injective ring homomorphism
    `TauCeti.MvPowerSeries.frobeniusRootRestrictedHom : K{X / c} →+* (FrobeniusRoot K p e){X / r}`
-   that is isometric when `c` and `r` are positive (`norm_frobeniusRootRestrictedHom`), and whose
-   image of `f` is the `p ^ e`-th power of `frobeniusRootRestrictedEquiv p e hr f`.
+   that is isometric when `c` and `r` are positive (`norm_frobeniusRootRestrictedHom`). In the
+   positive-`c`, `r i = c i ^ (p ^ e)⁻¹` setting of item 1, it is the `p ^ e`-th power of
+   `frobeniusRootRestrictedEquiv` (`frobeniusRootRestrictedEquiv_pow`).
 3. Extending `frobeniusRootRestrictedHom` across fractions embeds any finite purely inseparable
    extension `M` of `GaussFractionField σ K c` of exponent at most `e` into
    `GaussFractionField σ (FrobeniusRoot K p e) r`, sending a denominator-cleared basis of `M` into
    `(FrobeniusRoot K p e){X / r}`
    (`TauCeti.MvPowerSeries.exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable`).
 
-The characteristic-free `q`-adic component families and linear-functional projections used alongside
-these maps live in `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Expand` and
-`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Dual`.
+These maps feed the purely inseparable reductions in
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.WeaklyStable` and
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Japanese`; the characteristic-free `q`-adic component
+families and linear-functional projections used alongside them live in
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Expand`.
 
 ## Main definitions and results
 
@@ -51,10 +54,10 @@ these maps live in `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Expand` 
 * `TauCeti.MvPowerSeries.frobeniusRootRestrictedHom`: injective ring homomorphism
   `K{X / c} →+* (FrobeniusRoot K p e){X / r}` (isometric for positive `c` and `r`) satisfying
   `frobeniusRootRestrictedEquiv_pow`.
-* `TauCeti.MvPowerSeries.exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable` and
-  `TauCeti.MvPowerSeries.algebraMap_sum_mul_eq_mul`: embedding a finite purely inseparable extension
-  of `GaussFractionField σ K c` into `GaussFractionField σ (FrobeniusRoot K p e) r` with
-  denominator-cleared basis images in `(FrobeniusRoot K p e){X / r}`.
+* `TauCeti.MvPowerSeries.exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable`:
+  embedding a finite purely inseparable extension of `GaussFractionField σ K c` into
+  `GaussFractionField σ (FrobeniusRoot K p e) r` with denominator-cleared basis images in
+  `(FrobeniusRoot K p e){X / r}`.
 
 ## References
 
@@ -96,22 +99,14 @@ noncomputable def frobeniusRootRestrictedEquiv (p : ℕ) [ExpChar K p] (e : ℕ)
       refine hlim.congr fun μ ↦ ?_
       have hprod : 0 ≤ μ.prod (r · ^ ·) := Finset.prod_nonneg fun i _ ↦ pow_nonneg (hr_nn i) _
       rw [Function.comp_apply, Real.mul_rpow (norm_nonneg _) hprod, coeff_map,
-        FrobeniusRoot.norm_def, ← Real.rpow_mul (norm_nonneg _), inv_mul_cancel₀ hq.ne',
-        Real.rpow_one, μ.prod_pow_rpow fun i _ ↦ hr_nn i]
+        FrobeniusRoot.norm_def, Real.rpow_inv_rpow (norm_nonneg _) hq.ne',
+        μ.prod_pow_rpow fun i _ ↦ hr_nn i]
       congr 1
       refine Finset.prod_congr rfl fun i _ ↦ ?_
       dsimp only
-      rw [hr, ← Real.rpow_mul (Fact.out : 0 < c i).le, inv_mul_cancel₀ hq.ne', Real.rpow_one]⟩
-  left_inv f := Subtype.ext <| by
-    dsimp only
-    rw [MvPowerSeries.map_map,
-      show (FrobeniusRoot.val K p e).comp (FrobeniusRoot.root K p e) = RingHom.id K from
-        RingHom.ext FrobeniusRoot.val_root, MvPowerSeries.map_id, RingHom.id_apply]
-  right_inv g := Subtype.ext <| by
-    dsimp only
-    rw [MvPowerSeries.map_map,
-      show (FrobeniusRoot.root K p e).comp (FrobeniusRoot.val K p e) = RingHom.id _ from
-        RingHom.ext FrobeniusRoot.root_val, MvPowerSeries.map_id, RingHom.id_apply]
+      rw [hr, Real.rpow_inv_rpow (Fact.out : 0 < c i).le hq.ne']⟩
+  left_inv _ := Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
+  right_inv _ := Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
   map_mul' f g := Subtype.ext (map_mul (MvPowerSeries.map (FrobeniusRoot.root K p e)) f.1 g.1)
   map_add' f g := Subtype.ext (map_add (MvPowerSeries.map (FrobeniusRoot.root K p e)) f.1 g.1)
 
@@ -196,23 +191,21 @@ theorem norm_frobeniusRootRestrictedEquiv (p : ℕ) [ExpChar K p] (e : ℕ) {c r
     (f : IsRestricted.subring (R := K) c) :
     ‖frobeniusRootRestrictedEquiv p e hr f‖ = ‖f‖ ^ (((p ^ e : ℕ) : ℝ)⁻¹) := by
   have hq : p ^ e ≠ 0 := (pow_pos (expChar_pos K p) e).ne'
-  have hqR : ((p ^ e : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hq
   have hr_pow (i : σ) : r i ^ p ^ e = c i := by
-    rw [hr, ← Real.rpow_natCast, ← Real.rpow_mul (Fact.out : 0 < c i).le, inv_mul_cancel₀ hqR,
-      Real.rpow_one]
+    rw [hr, Real.rpow_inv_natCast_pow (Fact.out : 0 < c i).le hq]
   refine (pow_left_inj₀ (norm_nonneg _) (Real.rpow_nonneg (norm_nonneg _) _) hq).mp ?_
   rw [← norm_pow, frobeniusRootRestrictedEquiv_pow hr hr_pow, norm_frobeniusRootRestrictedHom,
-    ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), inv_mul_cancel₀ hqR, Real.rpow_one]
+    Real.rpow_inv_natCast_pow (norm_nonneg _) hq]
 
 @[simp]
 theorem norm_frobeniusRootRestrictedEquiv_symm (p : ℕ) [ExpChar K p] (e : ℕ) {c r : σ → ℝ}
     [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)] (hr : ∀ i, r i = c i ^ (((p ^ e : ℕ) : ℝ)⁻¹))
     (g : IsRestricted.subring (R := FrobeniusRoot K p e) r) :
     ‖(frobeniusRootRestrictedEquiv p e hr).symm g‖ = ‖g‖ ^ p ^ e := by
-  have hqR : ((p ^ e : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (pow_pos (expChar_pos K p) e).ne'
+  have hq : p ^ e ≠ 0 := (pow_pos (expChar_pos K p) e).ne'
   have hg := norm_frobeniusRootRestrictedEquiv p e hr ((frobeniusRootRestrictedEquiv p e hr).symm g)
   rw [RingEquiv.apply_symm_apply] at hg
-  rw [hg, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), inv_mul_cancel₀ hqR, Real.rpow_one]
+  rw [hg, Real.rpow_inv_natCast_pow (norm_nonneg _) hq]
 
 end FrobeniusRoot
 
@@ -222,7 +215,7 @@ variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-- For a finite purely inseparable extension `M` of `F = GaussFractionField σ K c` of exponent at
 most `e` in exponential characteristic `p`, there exist an `F`-basis `b` of `M`, restricted series
-`rootG` in `(FrobeniusRoot K p e){X / r}` (`r i = c i ^ (p ^ e)⁻¹`), and an `F`-algebra embedding
+`rootG` in `(FrobeniusRoot K p e){X / r}` (`r i ^ p ^ e = c i`), and an `F`-algebra embedding
 `ι₀ : M →ₐ[F] GaussFractionField σ (FrobeniusRoot K p e) r` (for the `F`-algebra structure induced
 by `frobeniusRootRestrictedHom p e hr`) sending `b j` to `rootG j`. -/
 theorem exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable
@@ -230,9 +223,9 @@ theorem exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable
     (M : Type*) [Field M] [Algebra (GaussFractionField σ K c) M]
     [FiniteDimensional (GaussFractionField σ K c) M]
     [IsPurelyInseparable (GaussFractionField σ K c) M]
-    (p : ℕ) [ExpChar K p] [ExpChar (GaussFractionField σ K c) p]
+    (p : ℕ) [ExpChar K p]
     (e : ℕ) (he : IsPurelyInseparable.exponent (GaussFractionField σ K c) M ≤ e)
-    (hr_def : ∀ i, r i = c i ^ (((p ^ e : ℕ) : ℝ)⁻¹)) (hr : ∀ i, r i ^ p ^ e = c i) :
+    (hr : ∀ i, r i ^ p ^ e = c i) :
     let K' := FrobeniusRoot K p e
     let F := GaussFractionField σ K c
     let T' := IsRestricted.subring (R := K') r
@@ -246,7 +239,10 @@ theorem exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable
       (∀ j : Fin m, ι₀ (b j) = algebraMap T' F' (rootG j)) := by
   classical
   intro K' F T' F' Ψ
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap K F).injective p
   have : ExpChar F' p := expChar_of_injective_algebraMap (algebraMap K' F').injective p
+  have hr_def (i : σ) : r i = c i ^ (((p ^ e : ℕ) : ℝ)⁻¹) := by
+    rw [← hr i, Real.pow_rpow_inv_natCast (Fact.out : 0 < r i).le (pow_pos (expChar_pos K p) e).ne']
   have hΨ_inj := frobeniusRootRestrictedHom_injective (K := K) p e hr
   let _ : Algebra F F' := (Ψ.gaussFractionFieldMap hΨ_inj).toAlgebra
   have hF_alg : algebraMap F F' = Ψ.gaussFractionFieldMap hΨ_inj := RingHom.algebraMap_toAlgebra _
@@ -265,31 +261,6 @@ theorem exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable
   simp only [iterateFrobenius_def]
   rw [← map_pow, ← IsPurelyInseparable.algebraMap_iterateFrobenius F p he (b j), AlgHom.commutes,
     hF_alg, ← map_pow, hrootG_pow, hg, Ψ.gaussFractionFieldMap_algebraMap hΨ_inj]
-
-/-- Clearing the denominator `s` of the coordinates of `y` in an `F`-basis `b` whose images under
-`ι : M →+* GaussFractionField σ K' r` come from `rootG : Fin m → K'{X / r}` expresses
-`algebraMap _ _ (Ψ s) * ι y` as the image of `∑ j, Ψ (a j) * rootG j`. -/
-theorem algebraMap_sum_mul_eq_mul
-    {K' : Type*} [NormedField K'] [IsUltrametricDist K']
-    {c r : σ → ℝ} [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
-    {M : Type*} [Field M] [Algebra (GaussFractionField σ K c) M]
-    {m : ℕ} (b : Module.Basis (Fin m) (GaussFractionField σ K c) M)
-    (Ψ : IsRestricted.subring (R := K) c →+* IsRestricted.subring (R := K') r)
-    (rootG : Fin m → IsRestricted.subring (R := K') r) (ι : M →+* GaussFractionField σ K' r)
-    (hι_alg : ∀ f, ι (algebraMap _ M (algebraMap _ (GaussFractionField σ K c) f)) =
-      algebraMap _ (GaussFractionField σ K' r) (Ψ f))
-    (hι_b : ∀ j, ι (b j) = algebraMap _ (GaussFractionField σ K' r) (rootG j))
-    (y : M) (s : nonZeroDivisors (IsRestricted.subring (R := K) c))
-    (a : Fin m → IsRestricted.subring (R := K) c)
-    (ha : ∀ j, algebraMap _ (GaussFractionField σ K c) (a j) =
-      (s : IsRestricted.subring (R := K) c) • b.repr y j) :
-    algebraMap _ (GaussFractionField σ K' r) (∑ j, Ψ (a j) * rootG j) =
-      algebraMap _ (GaussFractionField σ K' r) (Ψ s) * ι y := by
-  rw [map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have haj := by simpa only [Algebra.smul_def] using ha j
-  rw [map_mul, ← hι_alg (a j), haj, map_mul, map_mul, hι_alg s, ← hι_b j, mul_assoc,
-    ← map_mul ι, ← Algebra.smul_def (b.repr y j) (b j)]
 
 end PurelyInseparableEmbedding
 
