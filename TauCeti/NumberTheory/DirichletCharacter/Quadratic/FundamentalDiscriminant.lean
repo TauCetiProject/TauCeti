@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import TauCeti.NumberTheory.DirichletCharacter.LocalFactor
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
@@ -24,6 +25,11 @@ and the right side modulo `|D|`. When `2 ≠ 0` in the coefficient ring, `D` is 
 and `-N` otherwise. The principal character is included: it is primitive only at level `1`, where
 `D = 1`.
 
+Taking the squarefree part `d` of `D` (namely `D` when `D ≡ 1 mod 4`, and `D / 4` when `4 ∣ D`)
+removes the square factor `4` without changing the Jacobi symbol at odd arguments: for every
+nonprincipal primitive quadratic character `χ` of level `N ≠ 0`, there is a squarefree integer
+`d ≠ 1` with `|d| ≤ N` such that `χ n = jacobiSym d n` at every odd natural number `n`.
+
 The proof is local. At a prime power `p ^ k`, `k ≠ 0`, a primitive quadratic character is the
 Legendre character modulo `p` (so `k = 1`) when `p` is odd, and `χ₄`, `χ₈` or `χ₈'` (so `k = 2`
 or `k = 3`) when `p = 2`; in each case it is the character of a prime discriminant `p*`, `-4`, `8`
@@ -41,6 +47,9 @@ The results hold for characters with values in any commutative ring.
 * `DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`: a primitive quadratic
   character of level `N ≠ 0` is the character of a fundamental discriminant of absolute
   value `N`.
+* `DirichletCharacter.IsPrimitive.exists_squarefree_apply_eq_jacobiSym`: a nonprincipal primitive
+  quadratic character of level `N ≠ 0` agrees at every odd natural number with `jacobiSym d ·` for
+  a squarefree integer `d ≠ 1` with `|d| ≤ N`.
 * `DirichletCharacter.IsPrimitive.isFundamentalDiscr_ite`,
   `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: when `2 ≠ 0`,
   that fundamental discriminant is `χ (-1) N`.
@@ -163,6 +172,42 @@ theorem IsPrimitive.exists_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
   rw [← hval, ← hu, changeLevel_eq_cast_of_dvd' _ _ hn, (hP p hp).2.2,
     fundamentalDiscriminantCharCast_apply,
     fundamentalDiscriminantChar_apply_primeDiscriminant (hP p hp).1]
+
+/-- **Squarefree radicand form of primitive quadratic characters.** A nonprincipal primitive
+quadratic Dirichlet character `χ` of level `N ≠ 0` agrees at every odd natural number with the
+Jacobi symbol of a squarefree integer `d ≠ 1` satisfying `|d| ≤ N`. The radicand `d` is the
+squarefree part of the fundamental discriminant `D` of `χ`: `d = D` when `D ≡ 1 (mod 4)` and
+`d = D / 4` when `4 ∣ D`. -/
+theorem IsPrimitive.exists_squarefree_apply_eq_jacobiSym {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) (h1 : χ ≠ 1) :
+    ∃ d : ℤ, Squarefree d ∧ d ≠ 1 ∧ |d| ≤ N ∧
+      ∀ n : ℕ, _root_.Odd n → χ (n : ZMod N) = (jacobiSym d n : R) := by
+  obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
+  have hD1 : D ≠ 1 := by
+    rintro rfl
+    have hN1 : N = 1 := hDN.symm
+    subst hN1
+    exact h1 (Subsingleton.elim _ _)
+  have hDabs : |D| = (N : ℤ) := by rw [← hDN, Int.natCast_natAbs]
+  have hodd {n : ℕ} (hn : _root_.Odd n) : χ (n : ZMod N) = (jacobiSym D n : R) := by
+    have h := hval (n : ℤ)
+    rw [Int.cast_natCast, fundamentalDiscriminantCharCast_apply,
+      fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn] at h
+    exact h
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨-, hsf⟩ | ⟨h4, hsf, hmod⟩
+  · exact ⟨D, hsf, hD1, hDabs.le, fun _ hn ↦ hodd hn⟩
+  · refine ⟨D / 4, hsf, by omega, ?_, fun n hn ↦ ?_⟩
+    · rw [← hDabs, abs_le]
+      have h1 := neg_abs_le D
+      have h2 := le_abs_self D
+      constructor <;> omega
+    · rw [hodd hn]
+      have hgcd : (2 : ℤ).gcd n = 1 := by
+        simpa [Int.gcd] using Nat.coprime_two_left.mpr hn
+      have hj : jacobiSym D n = jacobiSym (D / 4) n := by
+        conv_lhs => rw [show D = (2 : ℤ) ^ 2 * (D / 4) by omega]
+        rw [jacobiSym.mul_left, jacobiSym.sq_one' hgcd, one_mul]
+      rw [hj]
 
 section Sign
 
