@@ -141,6 +141,30 @@ theorem exists_norm_logDeriv_dirichletData_entireCompletion_sub_le (K : Set ℂ)
   convert hC χ s hs using 2
   ring
 
+/-- On `[1, 2]`, the logarithmic derivative of the entire completion of a nonprincipal primitive
+character differs from `½ log N + L'/L(σ, χ)` in norm by at most `gammaLogDerivBound`. -/
+theorem norm_logDeriv_dirichletData_entireCompletion_ofReal_sub_le (hne : χ ≠ 1) {σ : ℝ}
+    (hσ : σ ∈ Set.Icc 1 2) :
+    ‖logDeriv (dirichletData χ hχ).entireCompletion σ - (Real.log N : ℂ) / 2 -
+      logDeriv χ.LFunction σ‖ ≤ gammaLogDerivBound := by
+  have hs : 0 < (σ : ℂ).re := by simp only [ofReal_re]; linarith [hσ.1]
+  have hL : χ.LFunction σ ≠ 0 :=
+    χ.LFunction_ne_zero_of_one_le_re (.inl hne) (by simpa using hσ.1)
+  rw [logDeriv_dirichletData_entireCompletion χ hχ hne hs hL]
+  convert χ.norm_logDeriv_gammaFactor_ofReal_le hσ using 2
+  ring
+
+/-- **Explicit gamma bound in real-zero estimates.** For a nonprincipal primitive character of
+either parity and `σ ∈ [1, 2]`, `Re Λ₀'/Λ₀(σ)` differs from `½ log N + Re L'/L(σ, χ)` by at most
+`gammaLogDerivBound`. -/
+theorem abs_re_logDeriv_dirichletData_entireCompletion_ofReal_sub_le (hne : χ ≠ 1) {σ : ℝ}
+    (hσ : σ ∈ Set.Icc 1 2) :
+    |(logDeriv (dirichletData χ hχ).entireCompletion σ).re - Real.log N / 2 -
+      (logDeriv χ.LFunction σ).re| ≤ gammaLogDerivBound := by
+  refine le_trans (le_of_eq ?_) ((abs_re_le_norm _).trans
+    (norm_logDeriv_dirichletData_entireCompletion_ofReal_sub_le χ hχ hne hσ))
+  rw [sub_re, sub_re, div_ofNat_re, ofReal_re]
+
 /-- **The gamma term in real-zero estimates.** One absolute constant, chosen before the
 modulus, the character and the point, bounds the difference between `Re Λ₀'/Λ₀(σ)` and
 `½ log N + Re L'/L(σ, χ)` for `σ ∈ [1, 2]`, for every nonprincipal primitive character
@@ -149,17 +173,8 @@ theorem exists_abs_re_logDeriv_dirichletData_entireCompletion_sub_le :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive),
       χ ≠ 1 → ∀ σ ∈ Set.Icc (1 : ℝ) 2,
         |(logDeriv (dirichletData χ hχ).entireCompletion σ).re - Real.log N / 2 -
-          (logDeriv χ.LFunction σ).re| ≤ C := by
-  have hK : IsCompact ((↑) '' Set.Icc (1 : ℝ) 2 : Set ℂ) :=
-    isCompact_Icc.image continuous_ofReal
-  obtain ⟨C, hC0, hC⟩ := exists_norm_logDeriv_dirichletData_entireCompletion_sub_le _ hK <| by
-    rintro _ ⟨σ, hσ, rfl⟩
-    simp only [Set.mem_ofPred_eq, ofReal_re]
-    linarith [hσ.1]
-  refine ⟨C, hC0, fun χ hχ hne σ hσ ↦ ?_⟩
-  have hL : χ.LFunction σ ≠ 0 :=
-    χ.LFunction_ne_zero_of_one_le_re (.inl hne) (by simpa using hσ.1)
-  refine le_trans (le_of_eq ?_) ((abs_re_le_norm _).trans (hC χ hχ hne σ ⟨σ, hσ, rfl⟩ hL))
-  rw [sub_re, sub_re, div_ofNat_re, ofReal_re]
+          (logDeriv χ.LFunction σ).re| ≤ C :=
+  ⟨gammaLogDerivBound, gammaLogDerivBound_nonneg,
+    fun χ hχ hne _ hσ ↦ abs_re_logDeriv_dirichletData_entireCompletion_ofReal_sub_le χ hχ hne hσ⟩
 
 end TauCeti.LFunctions
