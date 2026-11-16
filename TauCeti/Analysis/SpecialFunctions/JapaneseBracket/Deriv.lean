@@ -43,6 +43,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
+* `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le`: the derivatives
+  `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ (-1 / 2)` of the Japanese bracket have bounded derivatives of every
+  order.
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le`: the derivative bounds for the
   translated bracket power `(1 + ‖x + y‖ ^ 2) ^ (s / 2)`, uniformly in the translation `y` up to
   the factor `⟨y⟩ ^ (|s| + k)` from Peetre's inequality.
@@ -386,6 +389,21 @@ theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le (v : E) (r 
   exact (innerSL ℝ v).exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
     (contDiff_one_add_norm_sq_rpow r)
     fun i _ ↦ exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le r i
+
+/-- **The derivatives of the Japanese bracket are symbols of order zero.** The directional
+derivative `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ (-1 / 2)` of `(1 + ‖x‖ ^ 2) ^ (1 / 2)` has bounded derivatives of
+every order. -/
+theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le (v : E) (k : ℕ) :
+    ∃ C, ∀ x : E,
+      ‖iteratedFDeriv ℝ k (fun x : E ↦ inner ℝ x v * (1 + ‖x‖ ^ 2) ^ (-(1 / 2) : ℝ)) x‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le v (-(1 / 2)) k
+  refine ⟨max C 0, fun x ↦ (hC x).trans ?_⟩
+  have h0 : 0 ≤ (1 + ‖x‖ ^ 2) ^ (-(1 / 2) + 1 / 2 - k / 2 : ℝ) := by positivity
+  have h1 : (1 + ‖x‖ ^ 2) ^ (-(1 / 2) + 1 / 2 - k / 2 : ℝ) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith [norm_nonneg x])
+      (by have : (0 : ℝ) ≤ k := k.cast_nonneg; linarith)
+  exact (mul_le_mul_of_nonneg_right (le_max_left C 0) h0).trans
+    (mul_le_of_le_one_right (le_max_right C 0) h1)
 
 /-- **Derivative bounds for a rescaled bracket power.** For `c ≠ 0`, every real `r` and every
 `k`, `‖D^k (1 + ‖c x‖ ^ 2) ^ r‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r - k / 2)`. -/
