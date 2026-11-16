@@ -272,4 +272,17 @@ theorem singularHomologyMap_comp {Y Z W : Type u} [TopologicalSpace Y] [Topologi
   -- The composite of linear maps applied to `x` is the iterated application by definition.
   rfl
 
+variable {k n} in
+/-- The identity map induces the identity linear map on singular homology. -/
+theorem singularHomologyMap_id' {Y : Type u} [TopologicalSpace Y] :
+    singularHomologyMap k n (ContinuousMap.id Y) = LinearMap.id :=
+  LinearMap.ext singularHomologyMap_id
+
+variable {k n} in
+/-- Singular homology respects composition of continuous maps, as a composite of linear maps. -/
+theorem singularHomologyMap_comp' {Y Z W : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+    [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) :
+    singularHomologyMap k n (g.comp g') = singularHomologyMap k n g ∘ₗ singularHomologyMap k n g' :=
+  LinearMap.ext (singularHomologyMap_comp g g')
+
 end ContinuousMap
