@@ -13,9 +13,9 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible
 # Cellular resolutions from simply connected covers of aspherical spaces
 
 Let `p : E → B` be a quotient covering map for an action of a group `G` on a simply connected space
-`E`, with `B` aspherical at a basepoint `b = p e`, so that `E` is a universal cover of `B` and `G`
-acts on `E` by deck transformations (`IsQuotientCoveringMap.fundamentalGroupEquiv` identifies
-`π₁(B, b)` with `Gᵐᵒᵖ`). Whenever `E` has CW type, it is contractible by Whitehead's theorem
+`E`, with `B` aspherical at a basepoint `b`, so that `E` is a universal cover of `B` and `G` acts on
+`E` by deck transformations (`IsQuotientCoveringMap.fundamentalGroupEquiv` identifies `π₁(B, b)`
+with `Gᵐᵒᵖ`). Whenever `E` has CW type, it is contractible by Whitehead's theorem
 (`IsCoveringMap.contractibleSpace_of_cwType_of_isAspherical`).
 
 Two sources of `G`-equivariant CW structure on `E` yield projective resolutions of the trivial
@@ -71,7 +71,7 @@ section BaseCW
 
 variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {G : Type w}
   [Group G] [MulAction G E] (hG : IsQuotientCoveringMap p G) [T2Space B]
-  [CWComplex (univ : Set B)] [SimplyConnectedSpace E] {e : E} {b : B} (he : p e = b)
+  [CWComplex (univ : Set B)] [SimplyConnectedSpace E] {b : B}
   (hb : IsAspherical B b) (k : Type w) [CommRing k]
 
 /-- **The cellular resolution of an aspherical CW complex**: if `p : E → B` is a quotient covering
@@ -80,15 +80,15 @@ complex, then the cellular chains of the lift `p ⁻¹' univ` of the CW structur
 projective resolution of the trivial representation of `G` over `k`. In degree `n` they are free
 over `k[G]` with one generator for each `n`-cell of `B` (`TauCeti.cellularChainRepIsoFree`). -/
 def cellularResolutionOfIsAspherical : ProjectiveResolution (Rep.trivial k G k) :=
-  haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical he hb
+  haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical hb
   cellularResolution univ hG k
 
 /-- The complex of `TauCeti.cellularResolutionOfIsAspherical` is the lifted cellular chain
 complex. -/
 @[simp]
 lemma cellularResolutionOfIsAspherical_complex :
-    (cellularResolutionOfIsAspherical hG he hb k).complex = cellularChainComplexRep univ hG k :=
-  haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical he hb
+    (cellularResolutionOfIsAspherical hG hb k).complex = cellularChainComplexRep univ hG k :=
+  haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical hb
   cellularResolution_complex ..
 
 -- As for `TauCeti.cellularResolution_π`, the public statement cannot unfold the unexposed body of
@@ -98,10 +98,10 @@ lemma cellularResolutionOfIsAspherical_complex :
 chain complex. -/
 @[simp]
 lemma cellularResolutionOfIsAspherical_π :
-    (cellularResolutionOfIsAspherical hG he hb k).π =
-      eqToHom (cellularResolutionOfIsAspherical_complex hG he hb k) ≫
+    (cellularResolutionOfIsAspherical hG hb k).π =
+      eqToHom (cellularResolutionOfIsAspherical_complex hG hb k) ≫
         cellularChainComplexRepAugmentation univ hG k :=
-  haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical he hb
+  haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical hb
   cellularResolution_π ..
 
 end BaseCW
@@ -115,20 +115,20 @@ variable {E : Type w} {B : Type*} [TopologicalSpace E] [T2Space E] [CWComplex (u
     ∃ j : cell (univ : Set E) n, g • openCell n i = openCell n j)
   (hfree : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
     g • openCell n i = openCell n i → g = 1)
-  [SimplyConnectedSpace E] {e : E} {b : B} (he : p e = b) (hb : IsAspherical B b)
+  [SimplyConnectedSpace E] {b : B} (hb : IsAspherical B b)
   (k : Type w) [CommRing k]
 
 /-- **The cellular resolution from a free cellular covering of an aspherical space**: if `p : E → B`
 is a quotient covering map for a free open-cell-permuting action of `G` on a simply connected
-Hausdorff CW complex `E`, and `B` is aspherical at `b = p e`, then the cellular chains of
-`univ : Set E` form a projective resolution of `Rep.trivial k G k`. In degree `n` they are free over
-`k[G]` on the `G`-orbits of `n`-cells of `E` (`TauCeti.cellActionChainRepIsoFreeOfOrbits`), and when
-`B : Type w` on chosen lifts of the `n`-cells of the orbit CW complex `B`
+Hausdorff CW complex `E`, and `B` is aspherical at `b`, then the cellular chains of `univ : Set E`
+form a projective resolution of `Rep.trivial k G k`. In degree `n` they are free over `k[G]` on the
+`G`-orbits of `n`-cells of `E` (`TauCeti.cellActionChainRepIsoFreeOfOrbits`), and when `B : Type w`
+on chosen lifts of the `n`-cells of the orbit CW complex `B`
 (`IsQuotientCoveringMap.cellActionChainRepIsoFree`). -/
 def _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical :
     ProjectiveResolution (Rep.trivial k G k) :=
   haveI := hG.toContinuousConstSMul
-  haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical he hb
+  haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical hb
   cellActionResolution (univ : Set E) hcell hfree k
 
 /-- The underlying chain complex of `IsQuotientCoveringMap.cellActionResolutionOfIsAspherical` is
@@ -136,10 +136,10 @@ def _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical :
 @[simp]
 theorem _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical_complex :
     haveI := hG.toContinuousConstSMul
-    (hG.cellActionResolutionOfIsAspherical hcell hfree he hb k).complex =
+    (hG.cellActionResolutionOfIsAspherical hcell hfree hb k).complex =
       cellActionChainComplexRep (univ : Set E) hcell k :=
   haveI := hG.toContinuousConstSMul
-  haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical he hb
+  haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical hb
   cellActionResolution_complex ..
 
 -- Under `module`, the public statement cannot unfold the unexposed body of
@@ -150,11 +150,11 @@ theorem _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical_complex 
 @[simp]
 theorem _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical_π :
     haveI := hG.toContinuousConstSMul
-    (hG.cellActionResolutionOfIsAspherical hcell hfree he hb k).π =
-      eqToHom (hG.cellActionResolutionOfIsAspherical_complex hcell hfree he hb k) ≫
+    (hG.cellActionResolutionOfIsAspherical hcell hfree hb k).π =
+      eqToHom (hG.cellActionResolutionOfIsAspherical_complex hcell hfree hb k) ≫
         cellActionChainComplexRepAugmentation (univ : Set E) hcell k :=
   haveI := hG.toContinuousConstSMul
-  haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical he hb
+  haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical hb
   cellActionResolution_π ..
 
 end TotalSpaceCW

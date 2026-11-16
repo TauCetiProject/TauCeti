@@ -9,24 +9,21 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.AlgebraicTopology.Cellular.Equivariant
-public import TauCeti.AlgebraicTopology.Cellular.Incidence
 public import TauCeti.RepresentationTheory.FreeOfBasis
 public import TauCeti.Topology.CWComplex.Classical.OrbitSpace
 import Mathlib.LinearAlgebra.Basis.SMul
-import TauCeti.AlgebraicTopology.Cellular.Permutation
 import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Cellular chains of free cellular actions
 
 Let a group `G` act continuously on a Hausdorff CW complex `C ⊆ E` so that every element carries
-each open `n`-cell onto an open `n`-cell (`TauCeti.cellMulAction`). Unlike the lifted CW structure
-of a covering map (`TauCeti.cwComplexPreimage`), translations need not preserve chosen
-characteristic maps strictly: by `TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`, a
-translation carrying the open cell of `i` onto that of `g • i` sends the cellular basis vector of
-`i` to a scalar multiple of the cellular basis vector of `g • i` (`TauCeti.cellActionBasisCoeff`).
-For a group action, these scalars are units (`TauCeti.cellActionBasisUnit`), over `ℤ` the
-orientation signs `±1` of the induced self-homeomorphisms of cells.
+each open `n`-cell onto an open `n`-cell (`TauCeti.cellMulAction`). In
+`TauCeti.AlgebraicTopology.Cellular.Equivariant`, this produces the equivariant cellular chain
+complex `TauCeti.cellActionChainComplexRep` in `Rep R G` together with the orientation units
+`TauCeti.cellActionBasisUnit` by which `g` scales the cellular basis vector of `i` into that of
+`g • i` (without requiring translations to preserve chosen characteristic maps strictly, unlike the
+lifted CW structure `TauCeti.cwComplexPreimage`).
 
 Given any equivariant parametrization `(Σ _ : ι, G) ≃ cell C n`, rescaling the cellular basis along
 each fibre by the units from its identity representative produces a `G`-permuted basis, identifying
@@ -44,17 +41,13 @@ chain complex of `C` as a projective resolution of the trivial representation `R
 
 ## Main definitions and results
 
-* `TauCeti.cellActionChainRepresentation` and `TauCeti.cellActionChainComplexRep`: the cellular
-  chain groups and chain complex of a CW complex carrying a continuous monoid action that sends open
-  cells onto open cells of the same dimension, as representations and complexes in `Rep R G`.
-* `TauCeti.cellActionBasisCoeff` and `TauCeti.cellActionBasisUnit`: the scalar (and unit, for a
-  group action) by which `g` scales the cellular basis vector of `i` into that of `g • i`.
 * `TauCeti.cellActionChainRepIsoFreeOfEquiv`, `TauCeti.cellActionChainRepIsoFreeOfOrbits`, and
   `IsQuotientCoveringMap.cellActionChainRepIsoFree`: for an equivariant cell parametrization or a
   free cellular action, each cellular chain group is free over `R[G]` on the parameter set, on the
   cell orbits, or on chosen lifts of the cells of the orbit space `B`.
-* `TauCeti.cellActionResolution`: for a contractible CW complex with a free cellular group action,
-  its cellular chains form a `ProjectiveResolution (Rep.trivial R G R)`.
+* `TauCeti.projective_cellActionChainComplexRep_X` and `TauCeti.cellActionResolution`: for a
+  contractible CW complex with a free cellular group action, its cellular chains form a
+  `ProjectiveResolution (Rep.trivial R G R)`.
 
 ## References
 
@@ -67,322 +60,18 @@ public section
 
 noncomputable section
 
-open CategoryTheory Function Metric Set Topology Topology.RelCWComplex
+open CategoryTheory Function Set Topology Topology.RelCWComplex
 open scoped Pointwise
 
 universe w
 
 namespace TauCeti
 
-section Action
-
-variable {E : Type w} [TopologicalSpace E] [T2Space E] (C : Set E) [CWComplex C]
-  {G : Type w} [Monoid G] [MulAction G E] [ContinuousConstSMul G E]
-  (hcell : ∀ (g : G) (n : ℕ) (i : cell C n), ∃ j : cell C n, g • openCell n i = openCell n j)
-  (R : Type w) [Ring R]
-
-/-- The representation of `G` on the `n`-th cellular chain group of a Hausdorff CW complex `C`
-induced by a continuous action carrying open cells onto open cells of the same dimension. -/
-def cellActionChainRepresentation (n : ℕ) :
-    Representation R G (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R) :=
-  cellularActionRepresentation C (fun g ↦ cellActionSMul C g (hcell g))
-    (fun g ↦ isCellular_cellActionSMul C g (hcell g))
-    (cellActionSMul_one C (hcell 1))
-    (fun g h ↦ cellActionSMul_mul C g h (hcell g) (hcell h) (hcell (g * h))) R n
-
-/-- An element `g` acts on the cellular chains of `C` by the cellular chain map of translation by
-`g`. -/
-@[simp]
-theorem cellActionChainRepresentation_apply (n : ℕ) (g : G) :
-    cellActionChainRepresentation C hcell R n g =
-      (cellularChainGroupMap C C (isCellular_cellActionSMul C g (hcell g))
-        (ModuleCat.of R R) n).hom := by
-  unfold cellActionChainRepresentation
-  exact cellularActionRepresentation_apply _ _ _ _ _ _ _ _
-
-/-- The cellular differential of `C` as a morphism of representations of `G`. -/
-def cellActionDifferentialRep (n : ℕ) :
-    Rep.of (cellActionChainRepresentation C hcell R (n + 1)) ⟶
-      Rep.of (cellActionChainRepresentation C hcell R n) :=
-  cellularActionDifferential C (fun g ↦ cellActionSMul C g (hcell g))
-    (fun g ↦ isCellular_cellActionSMul C g (hcell g))
-    (cellActionSMul_one C (hcell 1))
-    (fun g h ↦ cellActionSMul_mul C g h (hcell g) (hcell h) (hcell (g * h))) R n
-
-/-- The underlying linear map of `TauCeti.cellActionDifferentialRep` is the cellular differential
-of `C`. -/
-@[simp]
-theorem cellActionDifferentialRep_hom_toLinearMap (n : ℕ) :
-    (cellActionDifferentialRep C hcell R n).hom.toLinearMap =
-      (cellularDifferential C (ModuleCat.of R R) n).hom := by
-  unfold cellActionDifferentialRep
-  exact cellularActionDifferential_hom_toLinearMap _ _ _ _ _ _ _
-
-/-- **The cellular chain complex of `C` as a chain complex in `Rep R G`** for a continuous action
-carrying open cells onto open cells of the same dimension. -/
-def cellActionChainComplexRep : ChainComplex (Rep.{w} R G) ℕ :=
-  cellularActionComplex C (fun g ↦ cellActionSMul C g (hcell g))
-    (fun g ↦ isCellular_cellActionSMul C g (hcell g))
-    (cellActionSMul_one C (hcell 1))
-    (fun g h ↦ cellActionSMul_mul C g h (hcell g) (hcell h) (hcell (g * h))) R
-
-/-- The terms of `TauCeti.cellActionChainComplexRep` are `TauCeti.cellActionChainRepresentation`. -/
-@[simp]
-theorem cellActionChainComplexRep_X (n : ℕ) :
-    (cellActionChainComplexRep C hcell R).X n =
-      Rep.of (cellActionChainRepresentation C hcell R n) := by
-  unfold cellActionChainComplexRep cellActionChainRepresentation
-  exact cellularActionComplex_X _ _ _ _ _ _ _
-
-/-- The differentials of `TauCeti.cellActionChainComplexRep` are the equivariant cellular
-differentials. -/
-@[simp]
-theorem cellActionChainComplexRep_d (n : ℕ) :
-    (cellActionChainComplexRep C hcell R).d (n + 1) n =
-      eqToHom (cellActionChainComplexRep_X C hcell R (n + 1)) ≫
-        cellActionDifferentialRep C hcell R n ≫
-          eqToHom (cellActionChainComplexRep_X C hcell R n).symm := by
-  unfold cellActionChainComplexRep cellActionDifferentialRep
-  exact cellularActionComplex_d _ _ _ _ _ _ n
-
-/-- Forgetting the `G`-action on `TauCeti.cellActionChainComplexRep` recovers the cellular chain
-complex of `C`. -/
-def cellActionChainComplexRepForget₂Iso :
-    ((forget₂ (Rep.{w} R G) (ModuleCat.{w} R)).mapHomologicalComplex _).obj
-        (cellActionChainComplexRep C hcell R) ≅
-      cellularChainComplex C (ModuleCat.of R R) :=
-  (cellularActionComplexForget₂Iso C (fun g ↦ cellActionSMul C g (hcell g))
-    (fun g ↦ isCellular_cellActionSMul C g (hcell g))
-    (cellActionSMul_one C (hcell 1))
-    (fun g h ↦ cellActionSMul_mul C g h (hcell g) (hcell h) (hcell (g * h))) R).symm
-
-/-- Components of `TauCeti.cellActionChainComplexRepForget₂Iso` are the canonical term
-transports. -/
-@[simp]
-theorem cellActionChainComplexRepForget₂Iso_hom_f (n : ℕ) :
-    (cellActionChainComplexRepForget₂Iso C hcell R).hom.f n =
-      eqToHom (by
-        rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplex_X,
-          cellActionChainComplexRep_X]
-        rfl) := by
-  unfold cellActionChainComplexRepForget₂Iso
-  exact cellularActionComplexForget₂Iso_inv_f _ _ _ _ _ _ _
-
-/-- Inverse components of `TauCeti.cellActionChainComplexRepForget₂Iso` are the reverse term
-transports. -/
-@[simp]
-theorem cellActionChainComplexRepForget₂Iso_inv_f (n : ℕ) :
-    (cellActionChainComplexRepForget₂Iso C hcell R).inv.f n =
-      eqToHom (by
-        rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplex_X,
-          cellActionChainComplexRep_X]
-        rfl) := by
-  unfold cellActionChainComplexRepForget₂Iso
-  exact cellularActionComplexForget₂Iso_hom_f _ _ _ _ _ _ _
-
-/-- The scalar in `R` by which `g` multiplies the cellular basis vector of `i` into the cellular
-basis vector of `g • i`. -/
-def cellActionBasisCoeff {n : ℕ} (g : G) (i : cell C n) : R :=
-  letI := cellMulAction hcell n
-  (cellularChainBasis C R n).repr
-    (cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n i)) (g • i)
-
-/-- `TauCeti.cellActionBasisCoeff` is the `(g • i)`-coordinate in `TauCeti.cellularChainBasis` of
-the `g`-translate of the cellular basis vector of `i`. -/
-theorem cellActionBasisCoeff_def {n : ℕ} (g : G) (i : cell C n) :
-    letI := cellMulAction hcell n
-    cellActionBasisCoeff C hcell R g i =
-      (cellularChainBasis C R n).repr
-        (cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n i)) (g • i) :=
-  (rfl)
-
-/-- **Translation by `g` sends the cellular basis vector of `i` to `cellActionBasisCoeff` times
-that of `g • i`.** This is not a `simp` lemma because `simp` unfolds `TauCeti.cellularChainBasis`
-first. -/
-theorem cellActionChainRepresentation_cellularChainBasis {n : ℕ} (g : G) (i : cell C n) :
-    letI := cellMulAction hcell n
-    cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n i) =
-      cellActionBasisCoeff C hcell R g i • cellularChainBasis C R n (g • i) := by
-  let := cellMulAction hcell n
-  have hi : ∀ x ∈ closedCell n i, ∀ hx : x ∈ C,
-      (cellActionSMul C g (hcell g) ⟨x, hx⟩).1 ∈ closedCell n (g • i) := by
-    intro x hx _
-    rw [coe_cellActionSMul_apply, ← smul_closedCell hcell g i]
-    exact smul_mem_smul_set hx
-  simpa only [cellActionChainRepresentation_apply, cellActionBasisCoeff] using
-    cellularChainGroupMap_cellularChainBasis_eq_smul C C
-      (isCellular_cellActionSMul C g (hcell g)) R hi
-
-/-- The identity element scales every cellular basis vector by `1`. -/
-@[simp]
-theorem cellActionBasisCoeff_one {n : ℕ} (i : cell C n) :
-    cellActionBasisCoeff C hcell R (1 : G) i = 1 := by
-  let := cellMulAction hcell n
-  have h := cellActionChainRepresentation_cellularChainBasis C hcell R (1 : G) i
-  rw [map_one, one_apply_eq_self, one_smul] at h
-  have hrepr := congrArg (fun x ↦ (cellularChainBasis C R n).repr x i) h
-  simpa only [map_smul, Finsupp.smul_apply, Module.Basis.repr_self, Finsupp.single_eq_same,
-    smul_eq_mul, mul_one] using hrepr.symm
-
-/-- Cocycle law for `TauCeti.cellActionBasisCoeff` under composition of translations. -/
-theorem cellActionBasisCoeff_mul {n : ℕ} (g h : G) (i : cell C n) :
-    letI := cellMulAction hcell n
-    cellActionBasisCoeff C hcell R (g * h) i =
-      cellActionBasisCoeff C hcell R h i * cellActionBasisCoeff C hcell R g (h • i) := by
-  let := cellMulAction hcell n
-  have lhs := cellActionChainRepresentation_cellularChainBasis C hcell R (g * h) i
-  rw [map_mul, mul_apply_eq_comp,
-    cellActionChainRepresentation_cellularChainBasis C hcell R h i, map_smul,
-    cellActionChainRepresentation_cellularChainBasis C hcell R g (h • i), smul_smul,
-    ← mul_smul] at lhs
-  have hrepr := congrArg (fun x ↦ (cellularChainBasis C R n).repr x ((g * h) • i)) lhs
-  simpa only [map_smul, Finsupp.smul_apply, Module.Basis.repr_self, Finsupp.single_eq_same,
-    smul_eq_mul, mul_one] using hrepr.symm
-
-/-- When translation by `g` carries the characteristic map of `i` strictly onto that of `g • i`
-(as for lifted CW structures along coverings, or simplicial actions preserving the vertex order on
-each face via `PreAbstractSimplicialComplex.SimplicialMap.realizationMap_characteristicMap`), the
-scaling coefficient `TauCeti.cellActionBasisCoeff` is `1`. -/
-theorem cellActionBasisCoeff_eq_one_of_smul_map {n : ℕ} {g : G} {i : cell C n}
-    (hmap : letI := cellMulAction hcell n
-      ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, g • map n i x = map n (g • i) x) :
-    cellActionBasisCoeff C hcell R g i = 1 := by
-  let := cellMulAction hcell n
-  have hstrict : cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n i) =
-      cellularChainBasis C R n (g • i) := by
-    rw [cellActionChainRepresentation_apply]
-    exact cellularChainGroupMap_cellularChainBasis C C
-      (isCellular_cellActionSMul C g (hcell g)) R fun x hx hxC ↦
-        (coe_cellActionSMul_apply C g (hcell g) ⟨map n i x, hxC⟩).trans (hmap x hx)
-  rw [cellActionBasisCoeff, hstrict, Module.Basis.repr_self, Finsupp.single_eq_same]
-
-/-- The **augmentation** of `TauCeti.cellActionChainRepresentation` in degree `0` onto the trivial
-representation. -/
-def cellActionAugmentationRep :
-    Rep.of (cellActionChainRepresentation C hcell R 0) ⟶ Rep.trivial R G R :=
-  cellularActionAugmentation C (fun g ↦ cellActionSMul C g (hcell g))
-    (fun g ↦ isCellular_cellActionSMul C g (hcell g))
-    (cellActionSMul_one C (hcell 1))
-    (fun g h ↦ cellActionSMul_mul C g h (hcell g) (hcell h) (hcell (g * h))) R
-
-/-- The underlying linear map of `TauCeti.cellActionAugmentationRep` is the cellular augmentation
-of `C`. -/
-@[simp]
-theorem cellActionAugmentationRep_hom_toLinearMap :
-    (cellActionAugmentationRep C hcell R).hom.toLinearMap =
-      (cellularAugmentation C (ModuleCat.of R R)).hom := by
-  unfold cellActionAugmentationRep
-  exact cellularActionAugmentation_hom_toLinearMap _ _ _ _ _ _
-
-/-- The equivariant cellular augmentation vanishes on boundaries of `1`-cells. -/
-@[reassoc (attr := simp)]
-theorem cellActionDifferentialRep_comp_cellActionAugmentationRep :
-    cellActionDifferentialRep C hcell R 0 ≫ cellActionAugmentationRep C hcell R = 0 := by
-  unfold cellActionDifferentialRep cellActionAugmentationRep
-  exact cellularActionDifferential_comp_cellularActionAugmentation _ _ _ _ _ _
-
-/-- The **augmentation of `TauCeti.cellActionChainComplexRep`** as a chain map in `Rep R G` to the
-trivial representation concentrated in degree `0`. -/
-def cellActionChainComplexRepAugmentation :
-    cellActionChainComplexRep C hcell R ⟶
-      (ChainComplex.single₀ (Rep.{w} R G)).obj (Rep.trivial R G R) :=
-  cellularActionComplexAugmentation C (fun g ↦ cellActionSMul C g (hcell g))
-    (fun g ↦ isCellular_cellActionSMul C g (hcell g))
-    (cellActionSMul_one C (hcell 1))
-    (fun g h ↦ cellActionSMul_mul C g h (hcell g) (hcell h) (hcell (g * h))) R
-
-/-- In degree `0`, `TauCeti.cellActionChainComplexRepAugmentation` is
-`TauCeti.cellActionAugmentationRep`. -/
-@[simp]
-theorem cellActionChainComplexRepAugmentation_f_zero :
-    (cellActionChainComplexRepAugmentation C hcell R).f 0 =
-      eqToHom (cellActionChainComplexRep_X C hcell R 0) ≫ cellActionAugmentationRep C hcell R := by
-  have hX : cellActionChainComplexRep_X C hcell R 0 =
-      cellularActionComplex_X C (fun g ↦ cellActionSMul C g (hcell g))
-        (fun g ↦ isCellular_cellActionSMul C g (hcell g))
-        (cellActionSMul_one C (hcell 1))
-        (fun g h ↦ cellActionSMul_mul C g h (hcell g) (hcell h) (hcell (g * h))) R 0 :=
-    Subsingleton.elim _ _
-  rw [hX]
-  unfold cellActionChainComplexRepAugmentation cellActionAugmentationRep
-  exact cellularActionComplexAugmentation_f_zero _ _ _ _ _ _
-
-/-- **The augmented cellular chain complex of a contractible CW complex with a cellular action is
-exact.** -/
-theorem quasiIso_cellActionChainComplexRepAugmentation [ContractibleSpace C] :
-    QuasiIso (cellActionChainComplexRepAugmentation C hcell R) := by
-  unfold cellActionChainComplexRepAugmentation
-  exact quasiIso_cellularActionComplexAugmentation _ _ _ _ _ _
-
-end Action
-
 section GroupAction
 
 variable {E : Type w} [TopologicalSpace E] [T2Space E] (C : Set E) [CWComplex C]
   {G : Type w} [Group G] [MulAction G E] [ContinuousConstSMul G E]
   (hcell : ∀ (g : G) (n : ℕ) (i : cell C n), ∃ j : cell C n, g • openCell n i = openCell n j)
-
-section Units
-
-variable (R : Type w) [Ring R]
-
-/-- For a group action carrying open cells onto open cells, the scalar
-`TauCeti.cellActionBasisCoeff` by which `g` multiplies the cellular basis vector of `i` is a unit in
-`Rˣ`, with inverse the scalar of `g⁻¹` at `g • i`. -/
-def cellActionBasisUnit {n : ℕ} (g : G) (i : cell C n) : Rˣ :=
-  letI := cellMulAction hcell n
-  { val := cellActionBasisCoeff C hcell R g i
-    inv := cellActionBasisCoeff C hcell R g⁻¹ (g • i)
-    val_inv := by
-      rw [← cellActionBasisCoeff_mul, inv_mul_cancel, cellActionBasisCoeff_one]
-    inv_val := by
-      have h := cellActionBasisCoeff_mul C hcell R g g⁻¹ (g • i)
-      rw [mul_inv_cancel, cellActionBasisCoeff_one, inv_smul_smul] at h
-      exact h.symm }
-
-/-- The underlying ring element of `TauCeti.cellActionBasisUnit` is
-`TauCeti.cellActionBasisCoeff`. -/
-@[simp]
-theorem val_cellActionBasisUnit {n : ℕ} (g : G) (i : cell C n) :
-    (cellActionBasisUnit C hcell R g i : R) = cellActionBasisCoeff C hcell R g i :=
-  (rfl)
-
-/-- The unit attached to the identity group element is `1`. -/
-@[simp]
-theorem cellActionBasisUnit_one {n : ℕ} (i : cell C n) :
-    cellActionBasisUnit C hcell R (1 : G) i = 1 :=
-  Units.ext (cellActionBasisCoeff_one C hcell R i)
-
-/-- Cocycle law for `TauCeti.cellActionBasisUnit` under group multiplication. -/
-theorem cellActionBasisUnit_mul {n : ℕ} (g h : G) (i : cell C n) :
-    letI := cellMulAction hcell n
-    cellActionBasisUnit C hcell R (g * h) i =
-      cellActionBasisUnit C hcell R h i * cellActionBasisUnit C hcell R g (h • i) :=
-  Units.ext (cellActionBasisCoeff_mul C hcell R g h i)
-
-/-- The inverse of `TauCeti.cellActionBasisUnit` at `(g, i)` is the unit of `g⁻¹` at `g • i`. -/
-theorem cellActionBasisUnit_inv {n : ℕ} (g : G) (i : cell C n) :
-    letI := cellMulAction hcell n
-    (cellActionBasisUnit C hcell R g i)⁻¹ = cellActionBasisUnit C hcell R g⁻¹ (g • i) :=
-  Units.ext rfl
-
-/-- Translation by `g` acts on `cellularChainBasis` through the unit
-`TauCeti.cellActionBasisUnit`. -/
-theorem cellActionChainRepresentation_cellularChainBasis_unit {n : ℕ} (g : G) (i : cell C n) :
-    letI := cellMulAction hcell n
-    cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n i) =
-      cellActionBasisUnit C hcell R g i • cellularChainBasis C R n (g • i) :=
-  cellActionChainRepresentation_cellularChainBasis C hcell R g i
-
-/-- When translation by `g` carries the characteristic map of `i` strictly onto that of `g • i`,
-the orientation unit `TauCeti.cellActionBasisUnit` is `1`. -/
-theorem cellActionBasisUnit_eq_one_of_smul_map {n : ℕ} {g : G} {i : cell C n}
-    (hmap : letI := cellMulAction hcell n
-      ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, g • map n i x = map n (g • i) x) :
-    cellActionBasisUnit C hcell R g i = 1 :=
-  Units.ext (cellActionBasisCoeff_eq_one_of_smul_map C hcell R hmap)
-
-end Units
 
 section EquivariantBasis
 

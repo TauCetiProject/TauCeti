@@ -54,47 +54,48 @@ open TauCeti
 
 section CWType
 
-variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {e : E} {b : B}
+variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {b : B}
 
 /-- **A simply connected cover of CW type over an aspherical space is contractible.** -/
 theorem contractibleSpace_of_cwType_of_isAspherical (hp : IsCoveringMap p) [CWType E]
-    [SimplyConnectedSpace E] (he : p e = b) (hb : IsAspherical B b) :
+    [SimplyConnectedSpace E] (hb : IsAspherical B b) :
     ContractibleSpace E :=
+  let ⟨e⟩ := PathConnectedSpace.nonempty (X := E)
   contractibleSpace_of_subsingleton_homotopyGroup e
-    (hp.subsingleton_homotopyGroup_of_isAspherical he hb)
+    (hp.subsingleton_homotopyGroup_of_isAspherical rfl (hb.of_basepoint (p e)))
 
 /-- **The subspace `univ : Set E` of a simply connected cover `E` of CW type over an aspherical
 space is contractible.** -/
 theorem contractibleSpace_univ_of_isAspherical (hp : IsCoveringMap p) [CWType E]
-    [SimplyConnectedSpace E] (he : p e = b) (hb : IsAspherical B b) :
+    [SimplyConnectedSpace E] (hb : IsAspherical B b) :
     ContractibleSpace (univ : Set E) :=
-  have := hp.contractibleSpace_of_cwType_of_isAspherical he hb
+  have := hp.contractibleSpace_of_cwType_of_isAspherical hb
   (Homeomorph.Set.univ E).contractibleSpace
 
 end CWType
 
 section BaseCW
 
-variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {e : E} {b : B}
+variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {b : B}
 
 /-- **The simply connected cover of an aspherical CW complex is contractible.** -/
 theorem contractibleSpace_of_isAspherical (hp : IsCoveringMap p) [T2Space B]
-    [CWComplex (univ : Set B)] [SimplyConnectedSpace E] (he : p e = b) (hb : IsAspherical B b) :
+    [CWComplex (univ : Set B)] [SimplyConnectedSpace E] (hb : IsAspherical B b) :
     ContractibleSpace E := by
   let := cwComplexPreimage (univ : Set B) hp
   have := hp.t2Space
   let φ : (p ⁻¹' (univ : Set B)) ≃ₜ E :=
     (Homeomorph.setCongr preimage_univ).trans (Homeomorph.Set.univ E)
   have : CWType E := φ.symm.cwType
-  exact hp.contractibleSpace_of_cwType_of_isAspherical he hb
+  exact hp.contractibleSpace_of_cwType_of_isAspherical hb
 
 /-- **The lift of an aspherical CW complex to a simply connected cover is contractible**: the form
 of `IsCoveringMap.contractibleSpace_of_isAspherical` for `p ⁻¹' univ`, the space carrying the
 lifted CW structure. -/
 theorem contractibleSpace_preimage_univ_of_isAspherical (hp : IsCoveringMap p) [T2Space B]
-    [CWComplex (univ : Set B)] [SimplyConnectedSpace E] (he : p e = b) (hb : IsAspherical B b) :
+    [CWComplex (univ : Set B)] [SimplyConnectedSpace E] (hb : IsAspherical B b) :
     ContractibleSpace (p ⁻¹' (univ : Set B)) :=
-  have := hp.contractibleSpace_of_isAspherical he hb
+  have := hp.contractibleSpace_of_isAspherical hb
   ((Homeomorph.setCongr preimage_univ).trans (Homeomorph.Set.univ E)).contractibleSpace
 
 end BaseCW

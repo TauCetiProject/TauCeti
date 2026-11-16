@@ -21,18 +21,19 @@ cells freely, with one orbit over each cell of `C`, translating characteristic m
 (`TauCeti.map_smul_cellPreimage`).
 
 Translation by `g` is therefore cellular (`TauCeti.isCellular_preimageSMul`) and sends the
-cellular basis vector of a lifted cell to that of its translate. With coefficients in a commutative
-ring `R`, this makes each cellular chain group of `p ⁻¹' C`, the relative homology of consecutive
-skeleta of `p ⁻¹' C` with coefficients in `R`, a representation of `G`
+cellular basis vector of a lifted cell to that of its translate. With coefficients in a ring `R`,
+this makes each cellular chain group of `p ⁻¹' C`, the relative homology of consecutive skeleta of
+`p ⁻¹' C` with coefficients in `R`, a representation of `G`
 (`TauCeti.cellularChainRepresentation`), on which `g` acts by the chain map of the translation.
 The cellular differentials are `G`-equivariant, so the cellular chain complex of `p ⁻¹' C` is a
 chain complex of representations (`TauCeti.cellularChainComplexRep`), whose underlying chain
 complex of `R`-modules is the cellular chain complex of `p ⁻¹' C`
 (`TauCeti.cellularChainComplexRepForget₂Iso`).
 
-Each of its terms is free over `R[G]`, with basis one chosen lift of each cell of `C`
-(`TauCeti.cellularChainRepIsoFree`): for a choice `s` of lifts, the basis vector of the lifted cell
-`g • s i` corresponds to the generator `single i (single g 1)` of `Rep.free R G (cell C n)`.
+Over a commutative ring `R`, each of its terms is free over `R[G]`, with basis one chosen lift of
+each cell of `C` (`TauCeti.cellularChainRepIsoFree`): for a choice `s` of lifts, the basis vector of
+the lifted cell `g • s i` corresponds to the generator `single i (single g 1)` of
+`Rep.free R G (cell C n)`.
 
 ## Main definitions
 
@@ -63,8 +64,11 @@ namespace TauCeti
 
 variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
   (C : Set B) {G : Type w} [Group G] [MulAction G E] (hG : IsQuotientCoveringMap p G)
+  [T2Space B] [CWComplex C]
 
-variable [T2Space B] [CWComplex C] (R : Type w) [CommRing R]
+section ChainComplex
+
+variable (R : Type w) [Ring R]
 
 /-- Translation by `g` sends the cellular basis vector of a lifted cell to that of its translate;
 this is `TauCeti.cellularChainRepresentation_cellularChainBasis` before the representation is
@@ -241,9 +245,11 @@ lemma cellularChainComplexRepForget₂Iso_hom_f (n : ℕ) :
   unfold cellularChainComplexRepForget₂Iso
   exact cellularActionComplexForget₂Iso_inv_f _ _ _ _ _ _ _
 
+end ChainComplex
+
 section Free
 
-variable {n : ℕ}
+variable (R : Type w) [CommRing R] {n : ℕ}
   (s : cell C n → letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n)
   (hs : ∀ i, (cellPreimageEquiv C hG.isCoveringMap n (s i)).1 = i)
 
