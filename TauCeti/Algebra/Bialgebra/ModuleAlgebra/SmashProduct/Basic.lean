@@ -207,7 +207,8 @@ theorem smashMulPure_eq_sum (μ : LeftModuleAlgebra R H A) {h : H} {ι : Type*}
     μ.smashMulPure a b h k =
       ∑ i ∈ r.index, (a * μ.action (r.left i) b) ⊗ₜ[R] (r.right i * k) := by
   rw [smashMulPure, ← r.eq, map_sum]
-  rfl
+  simp only [TensorProduct.map_tmul, LinearMap.comp_apply, LinearMap.flip_apply,
+    AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
 
 /-- Compatibility of algebra maps `fA : A →ₐ[R] C` and `fH : H →ₐ[R] C` for descending to
 the smash product `A # H`: for every `h : H` and `a : A`,
@@ -237,6 +238,64 @@ theorem smashCompatible_iff_sum (μ : LeftModuleAlgebra R H A) {C : Type*}
   rw [hf h a, ← (r h).eq, map_sum, map_sum]
   simp
 
+/-- Post-composing a `SmashCompatible` pair with an `R`-algebra homomorphism yields a
+`SmashCompatible` pair. -/
+theorem SmashCompatible.comp {μ : LeftModuleAlgebra R H A} {C D : Type*}
+    [Semiring C] [Algebra R C] [Semiring D] [Algebra R D] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
+    (hf : μ.SmashCompatible fA fH) (φ : C →ₐ[R] D) :
+    μ.SmashCompatible (φ.comp fA) (φ.comp fH) := by
+  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
+  intro h a
+  simpa only [AlgHom.comp_apply, map_mul, map_sum] using congrArg φ (hf.mul_eq_sum (ℛ R h) a)
+
+/-- Tensoring a `SmashCompatible` pair `(fA, fH)` on the right with an `R`-algebra homomorphism
+`gH : H →ₐ[R] D` via the comultiplication of `H` yields a `SmashCompatible` pair in `C ⊗[R] D`. -/
+theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C D : Type*}
+    [Semiring C] [Algebra R C] [Semiring D] [Algebra R D] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
+    (hf : μ.SmashCompatible fA fH) (gH : H →ₐ[R] D) :
+    μ.SmashCompatible (Algebra.TensorProduct.includeLeft.comp fA)
+      ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) := by
+  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
+  intro h a
+  set r := ℛ R h
+  let r₁ := fun i => ℛ R (r.left i)
+  let r₂ := fun i => ℛ R (r.right i)
+  let Φ : H ⊗[R] (H ⊗[R] H) →ₗ[R] C ⊗[R] D :=
+    TensorProduct.map
+      (LinearMap.mul' R C ∘ₗ
+        TensorProduct.map (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap)
+      gH.toLinearMap ∘ₗ (TensorProduct.assoc R H H H).symm.toLinearMap
+  have hco := congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
+  simp only [Φ, map_sum, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul, LinearMap.flip_apply,
+    AlgHom.toLinearMap_apply, LinearMap.mul'_apply] at hco
+  calc ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) h *
+          (Algebra.TensorProduct.includeLeft.comp fA) a
+      = (∑ i ∈ r.index, fH (r.left i) ⊗ₜ[R] gH (r.right i)) * (fA a ⊗ₜ[R] 1) := by
+          simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, ← r.eq, map_sum,
+            Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.includeLeft_apply]
+    _ = ∑ i ∈ r.index, ∑ j ∈ (r₁ i).index,
+          (fA (μ.action ((r₁ i).left j) a) * fH ((r₁ i).right j)) ⊗ₜ[R] gH (r.right i) := by
+          rw [Finset.sum_mul]
+          refine Finset.sum_congr rfl fun i _ => ?_
+          rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, hf.mul_eq_sum (r₁ i) a,
+            TensorProduct.sum_tmul]
+    _ = ∑ i ∈ r.index, ∑ j ∈ (r₂ i).index,
+          (fA (μ.action (r.left i) a) * fH ((r₂ i).left j)) ⊗ₜ[R] gH ((r₂ i).right j) := hco
+    _ = _ := by
+          refine Finset.sum_congr rfl fun i _ => ?_
+          simp only [AlgHom.comp_apply, Algebra.TensorProduct.includeLeft_apply,
+            Bialgebra.comulAlgHom_apply, ← (r₂ i).eq, map_sum, Algebra.TensorProduct.map_tmul,
+            Finset.mul_sum, Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+
+/-- Left multiplication by `A` and `μ.action` form a `SmashCompatible` pair in `Module.End R A`. -/
+theorem smashCompatible_lsmul_action (μ : LeftModuleAlgebra R H A) :
+    μ.SmashCompatible (Algebra.lsmul R R A) μ.action := by
+  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
+  intro h a
+  ext b
+  simpa [LinearMap.sum_apply] using μ.action_mul_eq_sum (ℛ R h) a b
+
 namespace SmashProduct
 
 section AlgebraConstruction
@@ -252,9 +311,8 @@ variable (μ : LeftModuleAlgebra R H A)
 
 /-- Diagonal left action of `H` on `A ⊗[R] H` via `μ.action` and left multiplication in `H`. -/
 private noncomputable def leftMulH : H →ₐ[R] Module.End R (A ⊗[R] H) :=
-  ((Module.endTensorEndAlgHom (R := R) (S := R) (A := R) (M := A) (N := H)).comp
-    (Algebra.TensorProduct.map μ.action (Algebra.lsmul R R H))).comp
-    (Bialgebra.comulAlgHom R H)
+  (Module.endTensorEndAlgHom (R := R) (S := R) (A := R) (M := A) (N := H)).comp
+    ((Algebra.TensorProduct.map μ.action (Algebra.lsmul R R H)).comp (Bialgebra.comulAlgHom R H))
 
 private theorem leftMulA_tmul (a b : A) (k : H) :
     leftMulA R H A a (b ⊗ₜ[R] k) = (a * b) ⊗ₜ[R] k := by
@@ -266,37 +324,10 @@ private theorem leftMulH_tmul {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (
     LinearMap.sum_apply, Module.endTensorEndAlgHom_apply]
 
 /-- Covariance of `leftMulA` and `leftMulH` in `Module.End R (A ⊗[R] H)`, deduced from
-`μ.action_mul` and coassociativity of `H`. -/
-private theorem smashCompatible_leftMul : μ.SmashCompatible (leftMulA R H A) (leftMulH μ) := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
-  intro h a
-  refine TensorProduct.ext' fun b k => ?_
-  let r := ℛ R h
-  let r₁ := fun i => ℛ R (r.left i)
-  let r₂ := fun i => ℛ R (r.right i)
-  let Φ : H ⊗[R] (H ⊗[R] H) →ₗ[R] A ⊗[R] H :=
-    (LinearMap.mul' R A).rTensor H ∘ₗ (TensorProduct.assoc R A A H).symm.toLinearMap ∘ₗ
-      TensorProduct.map (μ.action.toLinearMap.flip a)
-        (TensorProduct.map (μ.action.toLinearMap.flip b) (LinearMap.mulRight R k))
-  have hco := congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
-  simp only [Φ, map_sum, LinearMap.comp_apply, TensorProduct.map_tmul, LinearMap.flip_apply,
-    AlgHom.toLinearMap_apply, LinearEquiv.coe_coe, TensorProduct.assoc_symm_tmul,
-    LinearMap.rTensor_tmul, LinearMap.mul'_apply, LinearMap.mulRight_apply] at hco
-  calc (leftMulH μ h * leftMulA R H A a) (b ⊗ₜ[R] k)
-      = ∑ i ∈ r.index, μ.action (r.left i) (a * b) ⊗ₜ[R] (r.right i * k) := by
-          rw [mul_apply_eq_comp, leftMulA_tmul, leftMulH_tmul μ r]
-    _ = ∑ i ∈ r.index, ∑ j ∈ (r₁ i).index,
-          (μ.action ((r₁ i).left j) a * μ.action ((r₁ i).right j) b) ⊗ₜ[R] (r.right i * k) := by
-          refine Finset.sum_congr rfl fun i _ => ?_
-          rw [μ.action_mul_eq_sum (r₁ i), TensorProduct.sum_tmul]
-    _ = ∑ i ∈ r.index, ∑ j ∈ (r₂ i).index,
-          (μ.action (r.left i) a * μ.action ((r₂ i).left j) b) ⊗ₜ[R] ((r₂ i).right j * k) := hco
-    _ = (∑ i ∈ r.index, leftMulA R H A (μ.action (r.left i) a) * leftMulH μ (r.right i))
-          (b ⊗ₜ[R] k) := by
-          rw [LinearMap.sum_apply]
-          refine Finset.sum_congr rfl fun i _ => ?_
-          rw [mul_apply_eq_comp, leftMulH_tmul μ (r₂ i), map_sum]
-          exact Finset.sum_congr rfl fun j _ => (leftMulA_tmul _ _ _).symm
+`smashCompatible_lsmul_action` and coassociativity of `H`. -/
+private theorem smashCompatible_leftMul : μ.SmashCompatible (leftMulA R H A) (leftMulH μ) :=
+  (μ.smashCompatible_lsmul_action.includeLeft_map_comul (Algebra.lsmul R R H)).comp
+    (Module.endTensorEndAlgHom (R := R) (S := R) (A := R) (M := A) (N := H))
 
 /-- The `R`-linear map `A ⊗[R] H →ₗ[R] C` sending `a ⊗ h` to `fA a * fH h`. -/
 private noncomputable def bilinLift {C : Type*} [Semiring C] [Algebra R C]
@@ -354,9 +385,19 @@ noncomputable def mulLinear :
     (LinearMap.compr₂ (toEnd μ ∘ₗ μ.tensorEquiv.toLinearMap) μ.tensorEquiv.symm.toLinearMap)
     μ.tensorEquiv.toLinearMap
 
-private theorem mulLinear_apply (x y : μ.SmashProduct) :
-    mulLinear μ x y = μ.tensorEquiv.symm (toEnd μ (μ.tensorEquiv x) (μ.tensorEquiv y)) :=
-  rfl
+private theorem mulLinear_eq_toEnd (x y : μ.SmashProduct) :
+    mulLinear μ x y = μ.tensorEquiv.symm (toEnd μ (μ.tensorEquiv x) (μ.tensorEquiv y)) := rfl
+
+private theorem mulLinear_assoc (x y z : μ.SmashProduct) :
+    mulLinear μ (mulLinear μ x y) z = mulLinear μ x (mulLinear μ y z) := by
+  simp only [mulLinear_eq_toEnd, LinearEquiv.apply_symm_apply, toEnd_mul, mul_apply_eq_comp]
+
+private theorem mulLinear_one_left (x : μ.SmashProduct) : mulLinear μ (μ.smash 1 1) x = x := by
+  simp only [mulLinear_eq_toEnd, tensorEquiv_smash, toEnd, bilinLift_tmul, map_one, mul_one,
+    one_apply_eq_self, LinearEquiv.symm_apply_apply]
+
+private theorem mulLinear_one_right (x : μ.SmashProduct) : mulLinear μ x (μ.smash 1 1) = x := by
+  rw [mulLinear_eq_toEnd, tensorEquiv_smash, toEnd_apply_one, LinearEquiv.symm_apply_apply]
 
 noncomputable instance instSemiring : Semiring μ.SmashProduct where
   toAddCommMonoid := instAddCommMonoid μ
@@ -365,33 +406,28 @@ noncomputable instance instSemiring : Semiring μ.SmashProduct where
   left_distrib x y z := map_add (mulLinear μ x) y z
   right_distrib x y z := LinearMap.add_apply (mulLinear μ x) (mulLinear μ y) z ▸
     congrArg (· z) (map_add (mulLinear μ) x y)
-  zero_mul x := by
-    change mulLinear μ 0 x = 0
-    rw [map_zero, LinearMap.zero_apply]
+  zero_mul x := (congrArg (· x) (map_zero (mulLinear μ))).trans (LinearMap.zero_apply x)
   mul_zero x := map_zero (mulLinear μ x)
-  mul_assoc x y z := by
-    change mulLinear μ (mulLinear μ x y) z = mulLinear μ x (mulLinear μ y z)
-    simp only [mulLinear_apply, LinearEquiv.apply_symm_apply, toEnd_mul, mul_apply_eq_comp]
-  one_mul x := by
-    change mulLinear μ (μ.smash 1 1) x = x
-    simp only [mulLinear_apply, tensorEquiv_smash, toEnd, bilinLift_tmul, map_one, mul_one,
-      one_apply_eq_self, LinearEquiv.symm_apply_apply]
-  mul_one x := by
-    change mulLinear μ x (μ.smash 1 1) = x
-    rw [mulLinear_apply, tensorEquiv_smash, toEnd_apply_one, LinearEquiv.symm_apply_apply]
+  mul_assoc x y z := by exact mulLinear_assoc μ x y z
+  one_mul x := by exact mulLinear_one_left μ x
+  mul_one x := by exact mulLinear_one_right μ x
   natCast n := μ.smash n 1
   natCast_zero := by rw [Nat.cast_zero, zero_smash]
-  natCast_succ n := by rw [Nat.cast_succ, add_smash]; rfl
+  natCast_succ n := (congrArg (μ.smash · 1) (Nat.cast_succ n)).trans (add_smash (n : A) 1 1)
 
 -- Verify there is no `AddCommMonoid` diamond with `instSemiring`.
 example : (instSemiring μ).toAddCommMonoid = instAddCommMonoid μ := rfl
+
+/-- Evaluating `mulLinear` gives the smash product multiplication. -/
+@[simp] theorem mulLinear_apply (x y : μ.SmashProduct) : mulLinear μ x y = x * y := (rfl)
+
+private theorem natCast_def (n : ℕ) : (n : μ.SmashProduct) = μ.smash n 1 := rfl
 
 theorem one_def : (1 : μ.SmashProduct) = μ.smash 1 1 := (rfl)
 
 theorem smash_mul_smash (a b : A) (h k : H) :
     μ.smash a h * μ.smash b k = μ.tensorEquiv.symm (μ.smashMulPure a b h k) := by
-  change mulLinear μ (μ.smash a h) (μ.smash b k) = _
-  rw [mulLinear_apply, tensorEquiv_smash, tensorEquiv_smash, toEnd_tmul_tmul]
+  rw [← mulLinear_apply, mulLinear_eq_toEnd, tensorEquiv_smash, tensorEquiv_smash, toEnd_tmul_tmul]
 
 @[simp] theorem tensorEquiv_one : μ.tensorEquiv 1 = 1 ⊗ₜ[R] 1 := (rfl)
 
@@ -405,14 +441,13 @@ theorem smash_mul_smash_eq_sum {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι)
     μ.smash a h * μ.smash b k =
       ∑ i ∈ r.index, μ.smash (a * μ.action (r.left i) b) (r.right i * k) := by
   rw [smash_mul_smash μ, μ.smashMulPure_eq_sum r, map_sum]
-  rfl
+  simp only [tensorEquiv_symm_tmul]
 
 @[simp]
 theorem smash_one_mul_smash (a b : A) (k : H) :
     μ.smash a 1 * μ.smash b k = μ.smash (a * b) k := by
-  change mulLinear μ (μ.smash a 1) (μ.smash b k) = μ.smash (a * b) k
-  rw [mulLinear_apply, tensorEquiv_smash, tensorEquiv_smash, toEnd, bilinLift_tmul, map_one,
-    mul_one, leftMulA_tmul, tensorEquiv_symm_tmul]
+  rw [← mulLinear_apply, mulLinear_eq_toEnd, tensorEquiv_smash, tensorEquiv_smash, toEnd,
+    bilinLift_tmul, map_one, mul_one, leftMulA_tmul, tensorEquiv_symm_tmul]
 
 @[simp]
 theorem smash_mul_one_smash (a : A) (h k : H) :
@@ -426,32 +461,30 @@ theorem one_smash_mul_smash_one {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι)
   simpa using smash_mul_smash_eq_sum μ r 1 b 1
 
 instance instSMulCommClass : SMulCommClass R μ.SmashProduct μ.SmashProduct where
-  smul_comm r x y := (map_smul (mulLinear μ x) r y).symm
+  smul_comm r x y := by simp only [smul_eq_mul, ← mulLinear_apply, map_smul]
 
 instance instIsScalarTower : IsScalarTower R μ.SmashProduct μ.SmashProduct where
-  smul_assoc r x y := by
-    change mulLinear μ (r • x) y = r • mulLinear μ x y
-    rw [map_smul, LinearMap.smul_apply]
+  smul_assoc r x y := by simp only [smul_eq_mul, ← mulLinear_apply, map_smul, LinearMap.smul_apply]
 
-/-- Ring homomorphism `A →+* A # H` sending `a` to `a # 1`. -/
-@[expose]
-noncomputable def includeARingHom : A →+* μ.SmashProduct where
-  toFun a := μ.smash a 1
-  map_one' := rfl
-  map_mul' a b := (smash_one_mul_smash μ a b 1).symm
-  map_zero' := zero_smash 1
-  map_add' a b := add_smash a b 1
+private theorem smash_algebraMap_commutes (r : R) (x : μ.SmashProduct) :
+    μ.smash (algebraMap R A r) 1 * x = x * μ.smash (algebraMap R A r) 1 := by
+  rw [Algebra.algebraMap_eq_smul_one, smul_smash, ← one_def, smul_mul_assoc, one_mul,
+    mul_smul_comm, mul_one]
+
+private theorem smul_eq_smash_algebraMap_mul (r : R) (x : μ.SmashProduct) :
+    r • x = μ.smash (algebraMap R A r) 1 * x := by
+  rw [Algebra.algebraMap_eq_smul_one, smul_smash, ← one_def, smul_mul_assoc, one_mul]
 
 noncomputable instance instAlgebra : Algebra R μ.SmashProduct where
   smul := (· • ·)
-  algebraMap := (includeARingHom μ).comp (algebraMap R A)
-  commutes' r x := by
-    change μ.smash (algebraMap R A r) 1 * x = x * μ.smash (algebraMap R A r) 1
-    rw [Algebra.algebraMap_eq_smul_one, smul_smash, ← one_def, smul_mul_assoc, one_mul,
-      mul_smul_comm, mul_one]
-  smul_def' r x := by
-    change r • x = μ.smash (algebraMap R A r) 1 * x
-    rw [Algebra.algebraMap_eq_smul_one, smul_smash, ← one_def, smul_mul_assoc, one_mul]
+  algebraMap :=
+    { toFun r := μ.smash (algebraMap R A r) 1
+      map_one' := by rw [map_one, one_def]
+      map_mul' r s := by rw [map_mul, smash_one_mul_smash]
+      map_zero' := by rw [map_zero, zero_smash]
+      map_add' r s := by rw [map_add, add_smash] }
+  commutes' r x := by exact smash_algebraMap_commutes μ r x
+  smul_def' r x := by exact smul_eq_smash_algebraMap_mul μ r x
 
 -- Verify there is no `Module R` or `Algebra ℕ` diamond.
 example : (instAlgebra μ).toModule = instModule μ := rfl
@@ -479,7 +512,11 @@ variable (μ : LeftModuleAlgebra R H A)
 
 /-- The canonical `R`-algebra homomorphism `A →ₐ[R] A # H` sending `a` to `a # 1`. -/
 noncomputable def includeA : A →ₐ[R] μ.SmashProduct where
-  __ := SmashProduct.includeARingHom μ
+  toFun a := μ.smash a 1
+  map_one' := rfl
+  map_mul' a b := (SmashProduct.smash_one_mul_smash μ a b 1).symm
+  map_zero' := zero_smash 1
+  map_add' a b := add_smash a b 1
   commutes' _ := rfl
 
 /-- The canonical `R`-algebra homomorphism `H →ₐ[R] A # H` sending `h` to `1 # h`. -/
@@ -523,8 +560,7 @@ theorem SmashProduct.algHom_ext {C : Type*} [Semiring C] [Algebra R C]
   have hA' := AlgHom.congr_fun hA a
   have hH' := AlgHom.congr_fun hH h
   simp only [AlgHom.comp_apply] at hA' hH'
-  change f (μ.smash a h) = g (μ.smash a h)
-  rw [← μ.includeA_mul_includeH, map_mul, map_mul, hA', hH']
+  simp only [AlgHom.toLinearMap_apply, ← μ.includeA_mul_includeH, map_mul, hA', hH']
 
 end Inclusions
 
@@ -613,16 +649,15 @@ noncomputable def lift (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) (hf : μ.SmashC
     (bilinLift fA fH ∘ₗ μ.tensorEquiv.toLinearMap)
     (by simp [bilinLift_tmul])
     (fun x y => by
-      simp only [LinearMap.comp_apply]
-      change bilinLift fA fH (μ.tensorEquiv (mulLinear μ x y)) = _
-      rw [mulLinear_apply, LinearEquiv.apply_symm_apply]
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+      rw [← mulLinear_apply, mulLinear_eq_toEnd, LinearEquiv.apply_symm_apply]
       exact bilinLift_toEnd_apply hf (μ.tensorEquiv x) (μ.tensorEquiv y))
 
 @[simp]
 theorem lift_smash (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) (hf : μ.SmashCompatible fA fH)
     (a : A) (h : H) : lift fA fH hf (μ.smash a h) = fA a * fH h := by
-  change bilinLift fA fH (μ.tensorEquiv (μ.smash a h)) = fA a * fH h
-  rw [tensorEquiv_smash, bilinLift_tmul]
+  simp only [lift, AlgHom.ofLinearMap_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    tensorEquiv_smash, bilinLift_tmul]
 
 theorem lift_includeA (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) (hf : μ.SmashCompatible fA fH) (a : A) :
     lift fA fH hf (μ.includeA a) = fA a := by
@@ -651,18 +686,8 @@ theorem lift_includeA_includeH :
 /-- Every `R`-algebra homomorphism out of `A # H` restricts along `includeA` and `includeH` to a
 `SmashCompatible` pair. -/
 theorem smashCompatible_comp (F : μ.SmashProduct →ₐ[R] C) :
-    μ.SmashCompatible (F.comp μ.includeA) (F.comp μ.includeH) := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
-  intro h a
-  calc (F.comp μ.includeH) h * (F.comp μ.includeA) a
-      = F (μ.includeH h * μ.includeA a) := (map_mul F _ _).symm
-    _ = F (∑ i ∈ (ℛ R h).index,
-          μ.includeA (μ.action ((ℛ R h).left i) a) * μ.includeH ((ℛ R h).right i)) := by
-          rw [μ.includeH_mul_includeA_eq_sum (ℛ R h) a]
-    _ = ∑ i ∈ (ℛ R h).index,
-          (F.comp μ.includeA) (μ.action ((ℛ R h).left i) a) *
-            (F.comp μ.includeH) ((ℛ R h).right i) := by
-          simp only [map_sum, map_mul, AlgHom.comp_apply]
+    μ.SmashCompatible (F.comp μ.includeA) (F.comp μ.includeH) :=
+  μ.smashCompatible_includeA_includeH.comp F
 
 /-- Existence and uniqueness form of the universal property of `A # H`. -/
 theorem lift_unique (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) (hf : μ.SmashCompatible fA fH) :
@@ -721,8 +746,8 @@ noncomputable def trivialAlgEquiv :
         induction y using SmashProduct.inductionOn with
         | add y₁ y₂ hy₁ hy₂ => simp [mul_add, hy₁, hy₂]
         | smash b k =>
-          change μ₀.tensorEquiv (μ₀.smash a h * μ₀.smash b k) = (a ⊗ₜ[R] h) * (b ⊗ₜ[R] k)
-          rw [tensorEquiv_smash_mul_smash, μ₀.smashMulPure_eq_sum (ℛ R h)]
+          rw [tensorEquiv_smash, tensorEquiv_smash, tensorEquiv_smash_mul_smash,
+            μ₀.smashMulPure_eq_sum (ℛ R h)]
           simp only [μ₀, trivial_action, Algebra.mul_smul_comm, TensorProduct.smul_tmul]
           simp only [← Algebra.smul_mul_assoc, ← TensorProduct.tmul_sum, ← Finset.sum_mul,
             sum_counit_smul, Algebra.TensorProduct.tmul_mul_tmul])
@@ -776,16 +801,11 @@ noncomputable def map {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H
         ∑ i ∈ (ℛ R k).index, g ((ℛ R k).left i) ⊗ₜ[R] g ((ℛ R k).right i) := by
       simpa [← (ℛ R k).eq, map_sum] using (CoalgHomClass.map_comp_comul_apply g k).symm
     let rg : Coalgebra.Repr R (g k) _ :=
-      { index := (ℛ R k).index
-        left := fun i => g ((ℛ R k).left i)
-        right := fun i => g ((ℛ R k).right i)
-        eq := hcomul.symm }
-    simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, ν.includeH_mul_includeA_eq_sum rg]
+      ⟨(ℛ R k).index, fun i => g ((ℛ R k).left i), fun i => g ((ℛ R k).right i), hcomul.symm⟩
+    simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, Hom.coe_toAlgHom,
+      ν.includeH_mul_includeA_eq_sum rg]
     refine Finset.sum_congr rfl fun i _ => ?_
-    change ν.includeA (ν.action (g ((ℛ R k).left i)) (f a)) *
-        ν.includeH (g ((ℛ R k).right i)) =
-      ν.includeA (f (μ.action ((ℛ R k).left i) a)) * ν.includeH (g ((ℛ R k).right i))
-    rw [← ν.restrict_action g, ← f.map_action]
+    simp only [rg, ← ν.restrict_action g, ← f.map_action]
 
 @[simp]
 theorem map_smash {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
@@ -930,10 +950,9 @@ noncomputable instance SmashProduct.instRing (μ : LeftModuleAlgebra R H A) :
   zsmul_neg' n x := SmashProduct.toTensor_injective μ (SubNegMonoid.zsmul_neg' n x.toTensor)
   neg_add_cancel x := SmashProduct.toTensor_injective μ (neg_add_cancel x.toTensor)
   intCast z := μ.smash z 1
-  intCast_ofNat n := by rw [Int.cast_natCast]; rfl
+  intCast_ofNat n := by rw [Int.cast_natCast, SmashProduct.natCast_def]
   intCast_negSucc n := by
-    change μ.smash (Int.negSucc n : A) 1 = -μ.smash ((n + 1 : ℕ) : A) 1
-    rw [Int.cast_negSucc]
+    rw [Int.cast_negSucc, SmashProduct.natCast_def]
     exact SmashProduct.toTensor_injective μ (TensorProduct.neg_tmul _ _)
 
 -- Verify there are no `AddCommGroup`, `Semiring`, or `Algebra ℤ` diamonds.

@@ -57,14 +57,6 @@ variable {R : Type u} {H : Type v} {A : Type w}
 
 /-! ### Canonical left `A # H`-action on `A` -/
 
-/-- Left multiplication by `A` and `μ.action` form a `SmashCompatible` pair in `Module.End R A`. -/
-theorem smashCompatible_lsmul_action (μ : LeftModuleAlgebra R H A) :
-    μ.SmashCompatible (Algebra.lsmul R R A) μ.action := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
-  intro h a
-  ext b
-  simpa [LinearMap.sum_apply] using μ.action_mul_eq_sum (ℛ R h) a b
-
 /-- The canonical `R`-algebra homomorphism `A # H →ₐ[R] Module.End R A` sending `a # h` to
 `b ↦ a * (h · b)`. -/
 noncomputable def toEndAlgHom (μ : LeftModuleAlgebra R H A) :
@@ -191,6 +183,13 @@ noncomputable def moduleOfCompatible [AddCommMonoid M] [Module R M]
     [μ.IsCompatibleAction M] : Module μ.SmashProduct M :=
   Module.compHom M (lsmulAlgHom μ M).toRingHom
 
+private theorem moduleOfCompatible_smul [AddCommMonoid M] [Module R M]
+    [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
+    [μ.IsCompatibleAction M] (z : μ.SmashProduct) (m : M) :
+    let _ := moduleOfCompatible μ M
+    z • m = lsmulAlgHom μ M z m :=
+  rfl
+
 theorem isScalarTower_moduleOfCompatible [AddCommMonoid M] [Module R M]
     [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
     [μ.IsCompatibleAction M] :
@@ -198,9 +197,7 @@ theorem isScalarTower_moduleOfCompatible [AddCommMonoid M] [Module R M]
     IsScalarTower R μ.SmashProduct M := by
   let _ := moduleOfCompatible μ M
   refine IsScalarTower.of_algebraMap_smul fun r m => ?_
-  change lsmulAlgHom μ M (algebraMap R μ.SmashProduct r) m = r • m
-  rw [AlgHom.commutes]
-  rfl
+  rw [moduleOfCompatible_smul, AlgHom.commutes, Module.algebraMap_end_apply]
 
 theorem isSmashModule_moduleOfCompatible [AddCommMonoid M] [Module R M]
     [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
@@ -220,6 +217,16 @@ noncomputable def moduleA [AddCommMonoid M] [Module μ.SmashProduct M] : Module 
 noncomputable def moduleH [AddCommMonoid M] [Module μ.SmashProduct M] : Module H M :=
   Module.compHom M μ.includeH.toRingHom
 
+private theorem moduleA_smul [AddCommMonoid M] [Module μ.SmashProduct M] (a : A) (m : M) :
+    let _ := moduleA μ M
+    a • m = μ.includeA a • m :=
+  rfl
+
+private theorem moduleH_smul [AddCommMonoid M] [Module μ.SmashProduct M] (h : H) (m : M) :
+    let _ := moduleH μ M
+    h • m = μ.includeH h • m :=
+  rfl
+
 theorem isSmashModule_moduleA_moduleH [AddCommMonoid M] [Module μ.SmashProduct M] :
     let _ := moduleA μ M
     let _ := moduleH μ M
@@ -227,8 +234,7 @@ theorem isSmashModule_moduleA_moduleH [AddCommMonoid M] [Module μ.SmashProduct 
   let _ := moduleA μ M
   let _ := moduleH μ M
   refine ⟨fun a h m => ?_⟩
-  change μ.smash a h • m = μ.includeA a • (μ.includeH h • m)
-  rw [← mul_smul, μ.includeA_mul_includeH]
+  rw [moduleA_smul, moduleH_smul, ← mul_smul, μ.includeA_mul_includeH]
 
 theorem isScalarTower_moduleA [AddCommMonoid M] [Module R M]
     [Module μ.SmashProduct M] [IsScalarTower R μ.SmashProduct M] :
@@ -236,8 +242,7 @@ theorem isScalarTower_moduleA [AddCommMonoid M] [Module R M]
     IsScalarTower R A M := by
   let _ := moduleA μ M
   refine IsScalarTower.of_algebraMap_smul fun r m => ?_
-  change μ.includeA (algebraMap R A r) • m = r • m
-  rw [AlgHom.commutes, algebraMap_smul]
+  rw [moduleA_smul, AlgHom.commutes, algebraMap_smul]
 
 theorem isScalarTower_moduleH [AddCommMonoid M] [Module R M]
     [Module μ.SmashProduct M] [IsScalarTower R μ.SmashProduct M] :
@@ -245,8 +250,7 @@ theorem isScalarTower_moduleH [AddCommMonoid M] [Module R M]
     IsScalarTower R H M := by
   let _ := moduleH μ M
   refine IsScalarTower.of_algebraMap_smul fun r m => ?_
-  change μ.includeH (algebraMap R H r) • m = r • m
-  rw [AlgHom.commutes, algebraMap_smul]
+  rw [moduleH_smul, AlgHom.commutes, algebraMap_smul]
 
 /-- Bundled data of `R`-compatible `Module A M` and `Module H M` structures satisfying
 `μ.IsCompatibleAction M`. -/
@@ -328,10 +332,12 @@ private theorem ofSmashModule_toSmashModule [AddCommMonoid M] [Module R M]
   let _ := d.towerH
   let _ := d.compatible
   refine CompatibleActionData.ext (fun a x => ?_) (fun h x => ?_)
-  · change lsmulAlgHom μ M (μ.includeA a) x = a • x
-    simp [lsmulAlgHom]
-  · change lsmulAlgHom μ M (μ.includeH h) x = h • x
-    simp [lsmulAlgHom]
+  · dsimp only [ofSmashModule, toSmashModule]
+    rw [moduleA_smul]
+    exact (moduleOfCompatible_smul μ M (μ.includeA a) x).trans (by simp [lsmulAlgHom])
+  · dsimp only [ofSmashModule, toSmashModule]
+    rw [moduleH_smul]
+    exact (moduleOfCompatible_smul μ M (μ.includeH h) x).trans (by simp [lsmulAlgHom])
 
 /-- Bijection between `R`-compatible left `A # H`-module structures on `M` and compatible pairs of
 `R`-compatible `A`- and `H`-module structures on `M`. -/
@@ -386,8 +392,7 @@ def restrictScalarsLinearMapA (f : M →ₗ[μ.SmashProduct] N) : M →ₗ[A] N 
   toFun := f
   map_add' := f.map_add
   map_smul' a m := by
-    rw [← IsSmashModule.includeA_smul (μ := μ), f.map_smul, IsSmashModule.includeA_smul]
-    rfl
+    simp only [RingHom.id_apply, ← IsSmashModule.includeA_smul (μ := μ), f.map_smul]
 
 @[simp]
 theorem restrictScalarsLinearMapA_apply (f : M →ₗ[μ.SmashProduct] N) (m : M) :
