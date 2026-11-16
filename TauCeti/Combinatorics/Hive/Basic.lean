@@ -834,16 +834,6 @@ theorem coe_boundaryLinear :
   funext f s i
   exact boundaryLinear_apply S f s i
 
-/-- The boundary operator is independent of the scalar ring used to bundle it. -/
-theorem boundaryLinear_eq (T : Type*) [Semiring T] [Module T R] (f : Vertex n → R) :
-    boundaryLinear S n R f = boundaryLinear T n R f := by
-  ext s i; rw [boundaryLinear_apply, boundaryLinear_apply]
-
-/-- The underlying boundary function is independent of its scalar ring. -/
-theorem coe_boundaryLinear_eq (T : Type*) [Semiring T] [Module T R] :
-    ⇑(boundaryLinear S n R) = ⇑(boundaryLinear T n R) := by
-  funext f; exact boundaryLinear_eq S T f
-
 /-- Reflecting a labelling reverses the side order and negates the reversed differences. -/
 @[simp] theorem boundaryLinear_reflect (f : Vertex n → R) :
     boundaryLinear S n R (fun p => f p.reflect) =
@@ -890,7 +880,7 @@ end Ambient
 
 /-- Along the first `k` steps of side `s`, the edge differences telescope to
 `f(edgePoint n s k) - f(edgePoint n s 0)`. -/
-theorem sum_boundaryLinear_lt (S : Type*) [Semiring S] [AddCommGroup R] [Module S R]
+theorem sum_boundaryLinear_lt {S : Type*} [Semiring S] [AddCommGroup R] [Module S R]
     (f : Vertex n → R) (s : Fin 3) (k : ℕ) (hk : k ≤ n) :
     (∑ i : Fin n with i.val < k, boundaryLinear S n R f s i) =
       f (Vertex.edgePoint n s ⟨k, by omega⟩) - f (Vertex.edgePoint n s 0) := by
@@ -906,7 +896,7 @@ theorem sum_boundaryLinear_lt (S : Type*) [Semiring S] [AddCommGroup R] [Module 
       Fin.castSucc_mk]; abel
 
 /-- Along side `s`, the `n` edge differences telescope to the difference of its two corners. -/
-theorem sum_boundaryLinear_side (S : Type*) [Semiring S] [AddCommGroup R] [Module S R]
+theorem sum_boundaryLinear_side {S : Type*} [Semiring S] [AddCommGroup R] [Module S R]
     (f : Vertex n → R) (s : Fin 3) :
     (∑ i : Fin n, boundaryLinear S n R f s i) =
       f (Vertex.edgePoint n s (Fin.last n)) - f (Vertex.edgePoint n s 0) := by
@@ -914,7 +904,7 @@ theorem sum_boundaryLinear_side (S : Type*) [Semiring S] [AddCommGroup R] [Modul
     Fin.sum_univ_succ_sub_castSucc (fun i => f (Vertex.edgePoint n s i))
 
 /-- The cyclic trace `∑ s, ∑ i, boundaryLinear f s i` vanishes for every lattice function `f`. -/
-theorem sum_boundaryLinear (S : Type*) [Semiring S] [AddCommGroup R] [Module S R]
+theorem sum_boundaryLinear {S : Type*} [Semiring S] [AddCommGroup R] [Module S R]
     (f : Vertex n → R) :
     (∑ s : Fin 3, ∑ i : Fin n, boundaryLinear S n R f s i) = 0 := by
   simp only [Fin.sum_univ_three, sum_boundaryLinear_side]
@@ -976,12 +966,12 @@ theorem boundary_apply (h : Hive n R) (s : Fin 3) (i : Fin n) :
 
 /-- The cyclic trace `∑ s, ∑ i, h.boundary s i` of any hive vanishes. -/
 @[simp] theorem sum_boundary (h : Hive n R) : (∑ s : Fin 3, ∑ i : Fin n, h.boundary s i) = 0 :=
-  sum_boundaryLinear ℤ h
+  sum_boundaryLinear h
 
 /-- Value of a hive at the `k`-th vertex of side `A → B` (`s = 0`) in terms of its boundary. -/
 theorem apply_edgePoint_zero (h : Hive n R) (k : Fin (n + 1)) :
     h (Vertex.edgePoint n 0 k) = ∑ i : Fin n with i.val < k.val, h.boundary 0 i := by
-  have ht := sum_boundaryLinear_lt ℤ (⇑h) 0 k.val (Nat.le_of_lt_succ k.isLt)
+  have ht := sum_boundaryLinear_lt (S := ℤ) (⇑h) 0 k.val (Nat.le_of_lt_succ k.isLt)
   rw [boundaryLinear_coe, Fin.eta, Vertex.edgePoint_zero_zero, h.apply_cornerA, sub_zero] at ht
   exact ht.symm
 
@@ -989,8 +979,8 @@ theorem apply_edgePoint_zero (h : Hive n R) (k : Fin (n + 1)) :
 theorem apply_edgePoint_one (h : Hive n R) (k : Fin (n + 1)) :
     h (Vertex.edgePoint n 1 k) =
       (∑ i : Fin n, h.boundary 0 i) + ∑ i : Fin n with i.val < k.val, h.boundary 1 i := by
-  have ht1 := sum_boundaryLinear_lt ℤ (⇑h) 1 k.val (Nat.le_of_lt_succ k.isLt)
-  have ht0 := sum_boundaryLinear_side ℤ (⇑h) 0
+  have ht1 := sum_boundaryLinear_lt (S := ℤ) (⇑h) 1 k.val (Nat.le_of_lt_succ k.isLt)
+  have ht0 := sum_boundaryLinear_side (S := ℤ) (⇑h) 0
   rw [boundaryLinear_coe, Fin.eta] at ht1
   rw [boundaryLinear_coe, Vertex.edgePoint_zero_zero, h.apply_cornerA, sub_zero,
     ← Vertex.edgePoint_add_one_zero n 0, zero_add] at ht0
@@ -1003,8 +993,8 @@ theorem apply_edgePoint_two (h : Hive n R) (k : Fin (n + 1)) :
       (∑ i : Fin n with k.val ≤ i.val, h.boundary 2 i) = ∑ i : Fin n, h.boundary 2 i := by
     simpa [not_lt] using Finset.sum_filter_add_sum_filter_not Finset.univ
       (fun i : Fin n => i.val < k.val) (h.boundary 2)
-  have ht := sum_boundaryLinear_lt ℤ (⇑h) 2 k.val (Nat.le_of_lt_succ k.isLt)
-  have hfull := sum_boundaryLinear_side ℤ (⇑h) 2
+  have ht := sum_boundaryLinear_lt (S := ℤ) (⇑h) 2 k.val (Nat.le_of_lt_succ k.isLt)
+  have hfull := sum_boundaryLinear_side (S := ℤ) (⇑h) 2
   rw [boundaryLinear_coe, Fin.eta] at ht
   rw [boundaryLinear_coe, Vertex.edgePoint_two_last, h.apply_cornerA, zero_sub] at hfull
   rw [ht, hfull] at hcompl
@@ -1052,7 +1042,7 @@ private theorem antitone_boundaryLinear_zero_of_isRhombusConcave
       _ = f p₁ - f p₀ := by abel
 
 /-- Each side of an unnormalized rhombus-concave labelling has antitone differences. -/
-theorem IsRhombusConcave.boundaryLinear_antitone (S : Type*) [Semiring S] [Module S R]
+theorem IsRhombusConcave.boundaryLinear_antitone {S : Type*} [Semiring S] [Module S R]
     [IsOrderedAddMonoid R] {f : Vertex n → R} (hf : IsRhombusConcave f) (s : Fin 3) :
     Antitone (boundaryLinear S n R f s) := by
   -- The cyclic-shift lemmas use side numerals; fin_cases instead produces Fin constructors.
@@ -1075,7 +1065,7 @@ theorem IsRhombusConcave.boundaryLinear_antitone (S : Type*) [Semiring S] [Modul
 /-- **Each boundary side of a hive is antitone**: for every hive over an ordered abelian group and
 every side `s : Fin 3`, the successive clockwise edge differences `h.boundary s` decrease weakly. -/
 theorem boundary_antitone [IsOrderedAddMonoid R] (h : Hive n R) (s : Fin 3) :
-    Antitone (h.boundary s) := h.isRhombusConcave.boundaryLinear_antitone ℤ s
+    Antitone (h.boundary s) := h.isRhombusConcave.boundaryLinear_antitone s
 
 end HiveBoundary
 
