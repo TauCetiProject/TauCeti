@@ -259,14 +259,11 @@ theorem even_sigPos_hessianQuadraticForm_linearActionMomentMap_apply [IsTopologi
     [CompactSpace G] (hω : ∀ (g : G) (u w : V), ω (g • u) (g • w) = ω u w)
     (ξ : GroupLieAlgebra I G) (x : V) :
     Even (sigPos (hessianQuadraticForm (fun y ↦ linearActionMomentMap I G ω y ξ) x)) := by
-  -- In infinite dimensions the index of inertia is `0`.
-  by_cases hV : FiniteDimensional ℝ V
-  swap
-  · rw [QuadraticForm.sigPos_eq_zero_of_not_finite _ hV]
-    exact .zero
-  obtain ⟨J, hJ, hξ⟩ := exists_compatible_forall_isComplexLinearMap_fundamentalLinearMap (I := I) hω
-  simp only [linearActionMomentMap_apply_eq_linearMomentMap ω hω]
-  rw [hessianQuadraticForm_linearMomentMap, QuadraticForm.sigPos_smul_of_pos _ two_pos]
-  exact even_sigPos_hamiltonianEndEquiv_symm hJ _ (hξ ξ)
+  -- The coindex of `μ^ξ` is the Morse index of `-μ^ξ = μ^(-ξ)`.
+  have h : (fun y ↦ linearActionMomentMap I G ω y (-ξ)) =
+      -fun y ↦ linearActionMomentMap I G ω y ξ :=
+    funext fun y ↦ map_neg (linearActionMomentMap I G ω y) ξ
+  rw [← sigNeg_neg, ← hessianQuadraticForm_neg, ← h, ← morseIndex_def]
+  exact even_morseIndex_linearActionMomentMap_apply I G ω hω (-ξ) x
 
 end TauCeti.SymplecticForm
