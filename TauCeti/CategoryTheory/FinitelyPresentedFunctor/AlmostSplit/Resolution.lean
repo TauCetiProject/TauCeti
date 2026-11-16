@@ -23,9 +23,10 @@ quotient. Representables are projective in `mod C`, which is the ambient categor
 We assume `C` is a nonempty preadditive category with weak kernels and binary biproducts, so
 that `mod C` is abelian. In particular the construction applies to any abelian category,
 including finitely generated modules over an Artin algebra. The resolution is bounded above by
-degree two. When `C` is moreover balanced and the sequence is almost split, every chain
-endomorphism of this resolution lifting the identity of `S_Z` is invertible; this is the
-minimality property of the resolution.
+degree two. When the last map is moreover right minimal, every chain endomorphism of this
+resolution lifting the identity of `S_Z` is invertible; this is the minimality property of the
+resolution. It holds in particular when the first map is left almost split, as for an
+almost-split sequence, without any balancedness assumption on `C`.
 
 ## References
 
@@ -128,73 +129,112 @@ variable (S : ShortComplex C) (hg : IsRightAlmostSplit S.g)
   (hf : IsLimit (KernelFork.ofι S.f S.zero))
 
 /-- Degree zero of the simple-functor resolution is `(-, Z)`. -/
-noncomputable def simpleFunctorProjectiveResolutionZeroIso :
+noncomputable def simpleFunctorProjectiveResolutionXZeroIso :
     (S.simpleFunctorProjectiveResolution hg hf).complex.X 0 ≅ modYoneda.obj S.X₃ :=
   Iso.refl _
 
 /-- Degree one of the simple-functor resolution is `(-, Y)`. -/
-noncomputable def simpleFunctorProjectiveResolutionOneIso :
+noncomputable def simpleFunctorProjectiveResolutionXOneIso :
     (S.simpleFunctorProjectiveResolution hg hf).complex.X 1 ≅ modYoneda.obj S.X₂ :=
   Iso.refl _
 
 /-- Degree two of the simple-functor resolution is `(-, X)`. -/
-noncomputable def simpleFunctorProjectiveResolutionTwoIso :
+noncomputable def simpleFunctorProjectiveResolutionXTwoIso :
     (S.simpleFunctorProjectiveResolution hg hf).complex.X 2 ≅ modYoneda.obj S.X₁ :=
   Iso.refl _
 
 /-- The simple-functor resolution vanishes in degrees above two. -/
-theorem isZero_simpleFunctorProjectiveResolution_X (n : ℕ) :
+theorem isZero_simpleFunctorProjectiveResolution_X_add_three (n : ℕ) :
     IsZero ((S.simpleFunctorProjectiveResolution hg hf).complex.X (n + 3)) :=
   isZero_zero _
 
 /-- The first differential is induced by `Y ⟶ Z`. -/
-@[reassoc (attr := simp)]
+@[simp]
 theorem simpleFunctorProjectiveResolution_d_one_zero :
-    (S.simpleFunctorProjectiveResolution hg hf).complex.d 1 0 ≫
-        (S.simpleFunctorProjectiveResolutionZeroIso hg hf).hom =
-      (S.simpleFunctorProjectiveResolutionOneIso hg hf).hom ≫ modYoneda.map S.g := by
+    (S.simpleFunctorProjectiveResolution hg hf).complex.d 1 0 =
+      (S.simpleFunctorProjectiveResolutionXOneIso hg hf).hom ≫ modYoneda.map S.g ≫
+        (S.simpleFunctorProjectiveResolutionXZeroIso hg hf).inv := by
   dsimp only [simpleFunctorProjectiveResolution, ChainComplex.toProjectiveResolution,
-    simpleFunctorProjectiveResolutionZeroIso, simpleFunctorProjectiveResolutionOneIso]
-  simpa only [Nat.reduceAdd, resolutionTerm, resolutionDifferential, Iso.refl_hom,
+    simpleFunctorProjectiveResolutionXZeroIso, simpleFunctorProjectiveResolutionXOneIso]
+  simpa only [Nat.reduceAdd, resolutionTerm, resolutionDifferential, Iso.refl_hom, Iso.refl_inv,
     Category.comp_id, Category.id_comp] using
     ChainComplex.of_d (resolutionTerm S) (resolutionDifferential S) 0
 
 /-- The second differential is induced by `X ⟶ Y`. -/
-@[reassoc (attr := simp)]
+@[simp]
 theorem simpleFunctorProjectiveResolution_d_two_one :
-    (S.simpleFunctorProjectiveResolution hg hf).complex.d 2 1 ≫
-        (S.simpleFunctorProjectiveResolutionOneIso hg hf).hom =
-      (S.simpleFunctorProjectiveResolutionTwoIso hg hf).hom ≫ modYoneda.map S.f := by
+    (S.simpleFunctorProjectiveResolution hg hf).complex.d 2 1 =
+      (S.simpleFunctorProjectiveResolutionXTwoIso hg hf).hom ≫ modYoneda.map S.f ≫
+        (S.simpleFunctorProjectiveResolutionXOneIso hg hf).inv := by
   dsimp only [simpleFunctorProjectiveResolution, ChainComplex.toProjectiveResolution,
-    simpleFunctorProjectiveResolutionOneIso, simpleFunctorProjectiveResolutionTwoIso]
-  simpa only [Nat.reduceAdd, resolutionTerm, resolutionDifferential, Iso.refl_hom,
+    simpleFunctorProjectiveResolutionXOneIso, simpleFunctorProjectiveResolutionXTwoIso]
+  simpa only [Nat.reduceAdd, resolutionTerm, resolutionDifferential, Iso.refl_hom, Iso.refl_inv,
     Category.comp_id, Category.id_comp] using
     ChainComplex.of_d (resolutionTerm S) (resolutionDifferential S) 1
+
+/-- The differentials out of the degrees above two vanish. -/
+@[simp]
+theorem simpleFunctorProjectiveResolution_d_add_three (n j : ℕ) :
+    (S.simpleFunctorProjectiveResolution hg hf).complex.d (n + 3) j = 0 :=
+  (S.isZero_simpleFunctorProjectiveResolution_X_add_three hg hf n).eq_of_src _ _
 
 /-- The augmentation is the quotient by the radical functor. -/
 @[simp]
 theorem simpleFunctorProjectiveResolution_π_f_zero :
     (S.simpleFunctorProjectiveResolution hg hf).π.f 0 =
-      (S.simpleFunctorProjectiveResolutionZeroIso hg hf).hom ≫
+      (S.simpleFunctorProjectiveResolutionXZeroIso hg hf).hom ≫
         (ObjectProperty.homMk (simpleFunctorπ S.X₃) : modYoneda.obj S.X₃ ⟶
           ⟨simpleFunctor S.X₃, have := hg.isLocalRing_end
             (isFinitelyPresentedFunctor_simpleFunctor_iff S.X₃).2 ⟨S.X₂, S.g, hg⟩⟩) := by
   dsimp only [simpleFunctorProjectiveResolution, ChainComplex.toProjectiveResolution,
-    simpleFunctorProjectiveResolutionZeroIso, Iso.refl_hom, Category.id_comp]
+    simpleFunctorProjectiveResolutionXZeroIso, Iso.refl_hom, Category.id_comp]
   exact ChainComplex.toSingle₀Equiv_symm_apply_f_zero ..
 
-/-- **Minimality of the resolution associated to an almost-split sequence.** In a balanced
-category, every chain endomorphism lifting the identity of the simple functor is an
-isomorphism. Thus no nonzero contractible direct summand can be removed from this resolution. -/
-theorem IsAlmostSplit.isIso_simpleFunctorProjectiveResolution_of_comp_π_eq [Balanced C]
-    {S : ShortComplex C} (hS : S.IsAlmostSplit)
-    (α : (S.simpleFunctorProjectiveResolution hS.isRightAlmostSplit_g
-        hS.shortExact.fIsKernel).complex ⟶
-      (S.simpleFunctorProjectiveResolution hS.isRightAlmostSplit_g
-        hS.shortExact.fIsKernel).complex)
-    (hα : α ≫ (S.simpleFunctorProjectiveResolution hS.isRightAlmostSplit_g
-        hS.shortExact.fIsKernel).π =
-      (S.simpleFunctorProjectiveResolution hS.isRightAlmostSplit_g hS.shortExact.fIsKernel).π) :
+omit [HasBinaryBiproducts C] [HasWeakKernels C] [Nonempty C] in
+/-- An endomorphism of a kernel sequence whose last map is right almost split and right minimal
+is invertible as soon as it is invertible at the right-hand end. -/
+private theorem isIso_of_isIso_τ₃_of_rightMinimal {S : ShortComplex C}
+    (hg : IsRightAlmostSplit S.g) (hf : IsLimit (KernelFork.ofι S.f S.zero))
+    (hmin : ∀ b : S.X₂ ⟶ S.X₂, b ≫ S.g = S.g → IsIso b) (φ : S ⟶ S) [IsIso φ.τ₃] :
+    IsIso φ := by
+  -- Factoring `S.g ≫ φ.τ₃⁻¹` through `S.g` gives a two-sided inverse of `φ.τ₂` up to right
+  -- minimality of `S.g`.
+  obtain ⟨c, hc⟩ := hg.factors S.X₂ (S.g ≫ inv φ.τ₃) (hg.comp_iso (inv φ.τ₃)).not_isSplitEpi
+  have : IsIso (φ.τ₂ ≫ c) := hmin _ (by
+    rw [Category.assoc, hc, reassoc_of% φ.comm₂₃, IsIso.hom_inv_id, Category.comp_id])
+  have : IsIso (c ≫ φ.τ₂) := hmin _ (by
+    rw [Category.assoc, φ.comm₂₃, reassoc_of% hc, IsIso.inv_hom_id, Category.comp_id])
+  have : IsSplitMono φ.τ₂ :=
+    IsSplitMono.mk' ⟨c ≫ inv (φ.τ₂ ≫ c), by rw [← Category.assoc, IsIso.hom_inv_id]⟩
+  have : IsSplitEpi φ.τ₂ :=
+    IsSplitEpi.mk' ⟨inv (c ≫ φ.τ₂) ≫ c, by rw [Category.assoc, IsIso.inv_hom_id]⟩
+  have : IsIso φ.τ₂ := isIso_of_mono_of_isSplitEpi φ.τ₂
+  -- The kernel property of `S.f` then inverts the left-hand comparison.
+  have : Mono S.f := Fork.IsLimit.mono hf
+  have hinv : inv φ.τ₂ ≫ S.g = S.g ≫ inv φ.τ₃ := by
+    rw [IsIso.inv_comp_eq, reassoc_of% φ.comm₂₃, IsIso.hom_inv_id, Category.comp_id]
+  obtain ⟨(e : S.X₁ ⟶ S.X₁), (he : e ≫ S.f = S.f ≫ inv φ.τ₂)⟩ :=
+    KernelFork.IsLimit.lift' hf (S.f ≫ inv φ.τ₂) (by
+    rw [Category.assoc, hinv, S.zero_assoc, zero_comp])
+  have : IsIso φ.τ₁ := ⟨e, (cancel_mono S.f).1 (by
+      rw [Category.assoc, he, reassoc_of% φ.comm₁₂, IsIso.hom_inv_id, Category.comp_id,
+        Category.id_comp]),
+    (cancel_mono S.f).1 (by
+      rw [Category.assoc, φ.comm₁₂, reassoc_of% he, IsIso.inv_hom_id, Category.comp_id,
+        Category.id_comp])⟩
+  exact isIso_of_isIso φ
+
+variable {hg hf} in
+/-- **Minimality of the resolution of a right minimal kernel sequence.** When the last map
+`Y ⟶ Z` is right minimal, every chain endomorphism of the resolution lifting the identity of the
+simple functor is an isomorphism. Thus no nonzero contractible direct summand can be removed from
+this resolution. -/
+theorem isIso_of_comp_simpleFunctorProjectiveResolution_π_eq
+    (hmin : ∀ b : S.X₂ ⟶ S.X₂, b ≫ S.g = S.g → IsIso b)
+    (α : (S.simpleFunctorProjectiveResolution hg hf).complex ⟶
+      (S.simpleFunctorProjectiveResolution hg hf).complex)
+    (hα : α ≫ (S.simpleFunctorProjectiveResolution hg hf).π =
+      (S.simpleFunctorProjectiveResolution hg hf).π) :
     IsIso α := by
   -- In this construction the three term isomorphisms are identities. Reduce those endpoints
   -- when reading the chain map through the fully faithful Yoneda embedding.
@@ -204,33 +244,17 @@ theorem IsAlmostSplit.isIso_simpleFunctorProjectiveResolution_of_comp_π_eq [Bal
   have ha₀ : modYoneda.map a₀ = α.f 0 := Functor.map_preimage _ _
   have ha₁ : modYoneda.map a₁ = α.f 1 := Functor.map_preimage _ _
   have ha₂ : modYoneda.map a₂ = α.f 2 := Functor.map_preimage _ _
-  have hd₀ : (S.simpleFunctorProjectiveResolution hS.isRightAlmostSplit_g
-      hS.shortExact.fIsKernel).complex.d 1 0 = modYoneda.map S.g :=
-    ChainComplex.of_d (resolutionTerm S) (resolutionDifferential S) 0
-  have hd₁ : (S.simpleFunctorProjectiveResolution hS.isRightAlmostSplit_g
-      hS.shortExact.fIsKernel).complex.d 2 1 = modYoneda.map S.f :=
-    ChainComplex.of_d (resolutionTerm S) (resolutionDifferential S) 1
-  have hg : a₁ ≫ S.g = S.g ≫ a₀ := by
-    apply (modYoneda : C ⥤ _).map_injective
+  have hcomm₀ : a₁ ≫ S.g = S.g ≫ a₀ := (modYoneda : C ⥤ _).map_injective <| by
     rw [Functor.map_comp, Functor.map_comp, ha₀, ha₁]
-    have h := α.comm 1 0
-    rw [hd₀] at h
-    dsimp only [simpleFunctorProjectiveResolution, ChainComplex.toProjectiveResolution,
-      resolutionComplex, resolutionTerm] at h
-    exact h
-  have hf : a₂ ≫ S.f = S.f ≫ a₁ := by
-    apply (modYoneda : C ⥤ _).map_injective
+    exact α.comm 1 0
+  have hcomm₁ : a₂ ≫ S.f = S.f ≫ a₁ := (modYoneda : C ⥤ _).map_injective <| by
     rw [Functor.map_comp, Functor.map_comp, ha₁, ha₂]
-    have h := α.comm 2 1
-    rw [hd₁] at h
-    dsimp only [simpleFunctorProjectiveResolution, ChainComplex.toProjectiveResolution,
-      resolutionComplex, resolutionTerm] at h
-    exact h
+    exact α.comm 2 1
   -- The augmentation is the projective cover of `S_Z`, so its degree-zero comparison is invertible.
   have hπ : preadditiveYoneda.map a₀ ≫ simpleFunctorπ S.X₃ = simpleFunctorπ S.X₃ := by
     have h := congrArg (fun β ↦ β.f 0) hα
     simp only [HomologicalComplex.comp_f, simpleFunctorProjectiveResolution_π_f_zero] at h
-    dsimp only [simpleFunctorProjectiveResolutionZeroIso, Iso.refl_hom,
+    dsimp only [simpleFunctorProjectiveResolutionXZeroIso, Iso.refl_hom,
       simpleFunctorProjectiveResolution, ChainComplex.toProjectiveResolution,
       resolutionComplex, resolutionTerm] at h
     simp only [Category.id_comp, ← ha₀] at h
@@ -238,19 +262,78 @@ theorem IsAlmostSplit.isIso_simpleFunctorProjectiveResolution_of_comp_π_eq [Bal
   have : IsIso a₀ :=
     (isRepresentableProjectiveCover_preadditiveYonedaMap_jacobsonRadicalIdeal
       S.X₃).isIso_of_preadditiveYoneda_map_comp_eq _ hπ
-  -- The remaining comparisons come from the corresponding morphism of almost-split sequences.
-  let φ : S ⟶ S := ⟨a₂, a₁, a₀, hf, hg⟩
+  -- The remaining comparisons come from the corresponding endomorphism of the kernel sequence.
+  let φ : S ⟶ S := ⟨a₂, a₁, a₀, hcomm₁, hcomm₀⟩
   have : IsIso φ.τ₃ := inferInstanceAs (IsIso a₀)
-  have : IsIso φ := hS.isIso_of_isIso_τ₃ hS φ
-  have h₁ : IsIso a₁ := inferInstanceAs (IsIso (π₂.map φ))
-  have h₂ : IsIso a₂ := inferInstanceAs (IsIso (π₁.map φ))
+  have : IsIso φ := isIso_of_isIso_τ₃_of_rightMinimal hg hf hmin φ
   have (n : ℕ) : IsIso (α.f n) := by
     rcases n with _ | _ | _ | n
     · exact ha₀ ▸ (inferInstanceAs (IsIso ((modYoneda : C ⥤ _).map a₀)))
-    · exact ha₁ ▸ (inferInstanceAs (IsIso ((modYoneda : C ⥤ _).map a₁)))
-    · exact ha₂ ▸ (inferInstanceAs (IsIso ((modYoneda : C ⥤ _).map a₂)))
-    · exact (S.isZero_simpleFunctorProjectiveResolution_X _ _ n).isIso
-        (S.isZero_simpleFunctorProjectiveResolution_X _ _ n) (α.f (n + 3))
+    · exact ha₁ ▸ (inferInstanceAs (IsIso ((modYoneda : C ⥤ _).map (π₂.map φ))))
+    · exact ha₂ ▸ (inferInstanceAs (IsIso ((modYoneda : C ⥤ _).map (π₁.map φ))))
+    · exact (S.isZero_simpleFunctorProjectiveResolution_X_add_three _ _ n).isIso
+        (S.isZero_simpleFunctorProjectiveResolution_X_add_three _ _ n) (α.f (n + 3))
   exact HomologicalComplex.Hom.isIso_of_components α
 
+omit [HasBinaryBiproducts C] [HasWeakKernels C] [Nonempty C] in
+/-- In a kernel sequence whose first map is left almost split, the last map is right minimal.
+Unlike `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_of_comp_g_eq`, this needs no
+balancedness: the inverse is written down from the kernel lift of `𝟙 - b`. -/
+private theorem isIso_of_comp_g_eq_of_isLeftAlmostSplit {S : ShortComplex C}
+    (hf : IsLimit (KernelFork.ofι S.f S.zero)) (hl : IsLeftAlmostSplit S.f) (b : S.X₂ ⟶ S.X₂)
+    (hb : b ≫ S.g = S.g) : IsIso b := by
+  have := hl.isLocalRing_end
+  obtain ⟨(h : S.X₂ ⟶ S.X₁), (hh : h ≫ S.f = 𝟙 S.X₂ - b)⟩ :=
+    KernelFork.IsLimit.lift' hf (𝟙 S.X₂ - b) (by
+    rw [Preadditive.sub_comp, hb, Category.id_comp, sub_self])
+  -- `b` fixes the right-hand end, so its restriction `𝟙 - S.f ≫ h` to `X` is invertible.
+  let φ : S ⟶ S := ⟨𝟙 _ - S.f ≫ h, b, 𝟙 _, by
+    rw [Preadditive.sub_comp, Category.id_comp, Category.assoc, hh, Preadditive.comp_sub,
+      Category.comp_id, sub_sub_cancel], by rw [hb, Category.comp_id]⟩
+  have : IsIso (𝟙 S.X₁ - S.f ≫ h) := isIso_τ₁_of_τ₃_eq_id hf hl.not_isSplitMono φ rfl
+  have hb' : b = 𝟙 S.X₂ - h ≫ S.f := by rw [hh, sub_sub_cancel]
+  have hu : ∀ {W : C} (k : S.X₁ ⟶ W),
+      S.f ≫ h ≫ inv (𝟙 S.X₁ - S.f ≫ h) ≫ k = inv (𝟙 S.X₁ - S.f ≫ h) ≫ k - k := by
+    have := IsIso.hom_inv_id (𝟙 S.X₁ - S.f ≫ h)
+    rw [Preadditive.sub_comp, Category.id_comp, Category.assoc] at this
+    have h₀ := (sub_sub_cancel _ _).symm.trans (congrArg (inv (𝟙 S.X₁ - S.f ≫ h) - ·) this)
+    intro W k
+    simpa only [Category.assoc, Preadditive.sub_comp, Category.id_comp] using h₀ =≫ k
+  have hu' : ∀ {W : C} (k : S.X₁ ⟶ W),
+      inv (𝟙 S.X₁ - S.f ≫ h) ≫ S.f ≫ h ≫ k = inv (𝟙 S.X₁ - S.f ≫ h) ≫ k - k := by
+    have := IsIso.inv_hom_id (𝟙 S.X₁ - S.f ≫ h)
+    rw [Preadditive.comp_sub, Category.comp_id] at this
+    have h₀ := (sub_sub_cancel _ _).symm.trans (congrArg (inv (𝟙 S.X₁ - S.f ≫ h) - ·) this)
+    intro W k
+    simpa only [Category.assoc, Preadditive.sub_comp, Category.id_comp] using h₀ =≫ k
+  refine ⟨𝟙 _ + h ≫ inv (𝟙 S.X₁ - S.f ≫ h) ≫ S.f, ?_, ?_⟩ <;> rw [hb']
+  · simp only [Preadditive.sub_comp, Preadditive.comp_add, Category.id_comp, Category.comp_id,
+      Category.assoc, hu, Preadditive.comp_sub]
+    abel
+  · simp only [Preadditive.comp_sub, Preadditive.add_comp, Category.id_comp, Category.comp_id,
+      Category.assoc, hu']
+    abel
+
 end CategoryTheory.ShortComplex
+
+namespace TauCeti
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+  [HasBinaryBiproducts C] [HasWeakKernels C] [Nonempty C]
+
+/-- **Minimality of the resolution associated to an almost-split sequence.** When the first map
+`X ⟶ Y` of the kernel sequence is left almost split, as for an almost-split sequence, every chain
+endomorphism of the resolution lifting the identity of the simple functor is an isomorphism. No
+balancedness of `C` is needed. -/
+theorem IsLeftAlmostSplit.isIso_of_comp_simpleFunctorProjectiveResolution_π_eq
+    {S : ShortComplex C} {hg : IsRightAlmostSplit S.g} {hf : IsLimit (KernelFork.ofι S.f S.zero)}
+    (hl : IsLeftAlmostSplit S.f)
+    (α : (S.simpleFunctorProjectiveResolution hg hf).complex ⟶
+      (S.simpleFunctorProjectiveResolution hg hf).complex)
+    (hα : α ≫ (S.simpleFunctorProjectiveResolution hg hf).π =
+      (S.simpleFunctorProjectiveResolution hg hf).π) :
+    IsIso α :=
+  S.isIso_of_comp_simpleFunctorProjectiveResolution_π_eq
+    (ShortComplex.isIso_of_comp_g_eq_of_isLeftAlmostSplit hf hl) α hα
+
+end TauCeti
