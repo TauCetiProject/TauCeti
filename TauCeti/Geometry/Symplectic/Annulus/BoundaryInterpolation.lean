@@ -11,7 +11,7 @@ import Mathlib.Algebra.Field.Periodic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -41,9 +41,9 @@ The `x`-derivative of the first component of `B_t` at `(x, y)` is the slope
 a convex combination of `1`, `b₀'(x)` and `b₁'(x)` when `t, y ∈ [0, 1]`; it is positive there as
 soon as `b₀' > 0` and `b₁' > 0`. Let `D` be the set of parameters `(t, (x, y))` at which this slope
 is positive for every `x` (`TauCeti.stripBoundaryInterpolationDomain`). Since the slope is
-`1`-periodic in `x` (`AddCircle.periodic_deriv_of_lift`), this is an open set when the derivatives
-of `b₀` and `b₁` are continuous, and it contains
-`[0, 1] × ℝ × [0, 1]` when the derivatives of `b₀` and `b₁` are positive. On each horizontal line
+`1`-periodic in `x` (`TauCeti.periodic_deriv_of_apply_add_eq_add`), this is an open set when the
+derivatives of `b₀` and `b₁` are continuous, and it contains `[0, 1] × ℝ × [0, 1]` when the
+derivatives of `b₀` and `b₁` are positive. On each horizontal line
 over a parameter in `D`, the first component of `B_t` is a strictly increasing continuous lift, so a
 homeomorphism of the line. The Jacobian of the track `(t, p) ↦ (t, B_t(p))` is invertible on `D`,
 so by the inverse function theorem the track is a `C^n` partial diffeomorphism of `ℝ × ℝ × ℝ` with
@@ -201,8 +201,8 @@ theorem hasDerivAt_stripBoundaryInterpolation_fst {x : ℝ} (hb₀ : Differentia
 /-- The slope is `1`-periodic along every horizontal line. -/
 theorem stripBoundaryInterpolationSlope_periodic (t y : ℝ) :
     Periodic (stripBoundaryInterpolationSlope b₀ b₁ t y) 1 := fun x ↦ by
-  simp [stripBoundaryInterpolationSlope_def, AddCircle.periodic_deriv_of_lift b₀.map_add_one x,
-    AddCircle.periodic_deriv_of_lift b₁.map_add_one x]
+  simp [stripBoundaryInterpolationSlope_def, periodic_deriv_of_apply_add_eq_add b₀.map_add_one x,
+    periodic_deriv_of_apply_add_eq_add b₁.map_add_one x]
 
 /-- For `t, y ∈ [0, 1]` the slope is a convex combination of `1`, `b₀'(x)` and `b₁'(x)`, so it is
 positive when the derivatives of `b₀` and `b₁` are. -/

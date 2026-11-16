@@ -33,6 +33,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   periodic.
 * `Function.Periodic.iteratedFDeriv`: the iterated Fréchet derivatives of a periodic function are
   periodic.
+* `TauCeti.periodic_deriv_of_apply_add_eq_add`: the derivative of a function with
+  `f (x + c) = f x + d`, such as a lift of a degree one circle map, is `c`-periodic.
 * `Function.Periodic.deriv`: the derivative of a periodic function is periodic.
 * `Function.Periodic.iteratedDeriv`: the iterated derivatives of a periodic function are
   periodic.
@@ -47,6 +49,17 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
 -/
 
 public section
+
+namespace TauCeti
+
+/-- The derivative of a function with `f (x + c) = f x + d`, such as a lift of a degree one circle
+map (`c = d = 1`), is `c`-periodic. For `d = 0` this is `Function.Periodic.deriv`. -/
+theorem periodic_deriv_of_apply_add_eq_add {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → F} {c : 𝕜} {d : F}
+    (h : ∀ x, f (x + c) = f x + d) : Function.Periodic (deriv f) c := fun x ↦ by
+  rw [← deriv_comp_add_const, funext h, deriv_add_const]
+
+end TauCeti
 
 namespace Function
 
@@ -66,8 +79,8 @@ protected theorem Periodic.iteratedFDeriv {E F : Type*} [NormedAddCommGroup E] [
 
 /-- The derivative of a periodic function is periodic. -/
 protected theorem Periodic.deriv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {f : 𝕜 → F} {c : 𝕜} (hf : Periodic f c) : Periodic (deriv f) c := fun x ↦ by
-  rw [← deriv_comp_add_const, hf.funext]
+    {f : 𝕜 → F} {c : 𝕜} (hf : Periodic f c) : Periodic (deriv f) c :=
+  TauCeti.periodic_deriv_of_apply_add_eq_add (d := 0) fun x ↦ by rw [hf x, add_zero]
 
 /-- The iterated derivatives of a periodic function are periodic. -/
 protected theorem Periodic.iteratedDeriv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]

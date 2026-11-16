@@ -15,11 +15,11 @@ public import Mathlib.Topology.ContinuousMap.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Order.Hom.Set
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
@@ -34,8 +34,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 
 ## Main declarations
 
-* `AddCircle.periodic_deriv_of_lift`, `AddCircle.periodic_of_hasDerivAt_of_lift`: the derivative
-  of a lift, or more generally of any `F` with `F (x + T) = F x + c`, is `T`-periodic.
+* `AddCircle.periodic_of_hasDerivAt_of_lift`: the derivative of a lift, or more generally of any
+  `F` with `F (x + T) = F x + c`, is `T`-periodic.
 * `AddCircle.derivOfLift`: the derivative `F'` of a lift, as a continuous complex function on the
   circle; it is smooth when `F'` is (`AddCircle.contDiff_derivOfLift`).
 * `AddCircle.hasDerivAt_add_mul_sub`, `AddCircle.one_sub_add_mul_pos`: for a weight
@@ -60,18 +60,12 @@ namespace AddCircle
 
 variable {T : ℝ} {F F' : ℝ → ℝ}
 
-/-- The derivative of a function `F` with `F (x + T) = F x + c`, such as a lift (`c = T`), is
-`T`-periodic. This holds without any differentiability hypothesis, since `deriv` takes its junk
-value `0` at the same points of each period. -/
-theorem periodic_deriv_of_lift {c : ℝ} (hper : ∀ x, F (x + T) = F x + c) :
-    Function.Periodic (deriv F) T :=
-  fun x ↦ by rw [← deriv_comp_add_const, funext hper, deriv_add_const]
-
 /-- The derivative `F'` of a function `F` with `F (x + T) = F x + c`, such as a lift (`c = T`), is
-`T`-periodic. -/
+`T`-periodic. For the derivative `deriv F`, without a differentiability hypothesis, see
+`TauCeti.periodic_deriv_of_apply_add_eq_add`. -/
 theorem periodic_of_hasDerivAt_of_lift {c : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
     (hper : ∀ x, F (x + T) = F x + c) : Function.Periodic F' T :=
-  funext (fun x ↦ (hF x).deriv) ▸ periodic_deriv_of_lift hper
+  funext (fun x ↦ (hF x).deriv) ▸ TauCeti.periodic_deriv_of_apply_add_eq_add hper
 
 /-- The derivative `F'` of a lift `F`, `F (x + T) = F x + T`, regarded as a continuous complex
 function on the circle; it is well defined since `F'` is `T`-periodic
