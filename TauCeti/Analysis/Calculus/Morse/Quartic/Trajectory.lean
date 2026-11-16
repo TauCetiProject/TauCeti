@@ -60,6 +60,8 @@ time shifts tend to infinity.
 * `TauCeti.quarticConnectingSet p q`: the points of the cube on trajectories from `p` to `q`.
 * `TauCeti.quarticTrajectoryPoint p q τ` and `TauCeti.quarticTimeShift p q y`: the time-shift chart
   of the connecting set and its inverse.
+* `TauCeti.quarticTimeShiftEquiv`: the time-shift chart as an equivalence between the connecting
+  set and `{i // p i ≠ q i} → ℝ`.
 * `TauCeti.quarticConnectingOrbitSetoid p q`: lying on the same trajectory.
 
 ## Main results
@@ -147,9 +149,7 @@ theorem quarticTimeShift_quarticTrajectoryPoint (hq : ∀ i, q i = -1 ∨ q i = 
     (hpq : ∀ i, p i ≠ q i → p i = 0) (τ : {i // p i ≠ q i} → ℝ) :
     quarticTimeShift p q (quarticTrajectoryPoint p q τ) = τ := by
   funext j
-  rw [quarticTimeShift_apply, quarticTrajectoryPoint_apply_coe, ← mul_assoc,
-    mul_self_eq_one_of_ne hq hpq j.2, one_mul, intervalBaseTimeCoordinate_intervalBaseOrbit,
-    one_mul]
+  simp [← mul_assoc, mul_self_eq_one_of_ne hq hpq j.2]
 
 /-- The time-shift chart is injective. -/
 theorem quarticTrajectoryPoint_injective (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1)
@@ -314,6 +314,15 @@ section Parametrized
 
 variable [Fintype ι]
 
+/-- A negative gradient trajectory of the Euclidean quartic staying in the cube `[-1, 1]^ι` and
+running from `p` to `q` passes at time `0` through the connecting set. -/
+theorem mem_quarticConnectingSet_of_isIntegralCurve {γ : ℝ → ι → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ z i ↦ -∇ (intervalBasePotential 1) (z i)))
+    (hmem : ∀ t, γ t ∈ Icc (-1) 1) (hbot : Tendsto γ atBot (𝓝 p))
+    (htop : Tendsto γ atTop (𝓝 q)) : γ 0 ∈ quarticConnectingSet p q := by
+  have hγ' := eq_quarticWellSumFlow_of_isIntegralCurve hγ hmem
+  exact ⟨hmem 0, hγ' ▸ hbot, hγ' ▸ htop⟩
+
 /-- The curve `t ↦ quarticTrajectoryPoint p q (t + τ)` is a negative gradient trajectory of the
 Euclidean quartic: the flow line through the point with time shifts `τ`. -/
 theorem isIntegralCurve_quarticTrajectoryPoint (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
@@ -333,10 +342,10 @@ theorem eq_quarticTrajectoryPoint_of_isIntegralCurve {γ : ℝ → ι → ℝ}
     (hmem : ∀ t, γ t ∈ Icc (-1) 1) (hbot : Tendsto γ atBot (𝓝 p))
     (htop : Tendsto γ atTop (𝓝 q)) :
     γ = fun t ↦ quarticTrajectoryPoint p q fun j ↦ t + quarticTimeShift p q (γ 0) j := by
-  have hγ' := eq_quarticWellSumFlow_of_isIntegralCurve hγ hmem
-  have h0 : γ 0 ∈ quarticConnectingSet p q := ⟨hmem 0, hγ' ▸ hbot, hγ' ▸ htop⟩
+  have h0 := mem_quarticConnectingSet_of_isIntegralCurve hγ hmem hbot htop
   obtain ⟨hp, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet h0
-  conv_lhs => rw [hγ', ← quarticTrajectoryPoint_quarticTimeShift h0]
+  conv_lhs => rw [eq_quarticWellSumFlow_of_isIntegralCurve hγ hmem,
+    ← quarticTrajectoryPoint_quarticTimeShift h0]
   simp only [quarticWellSumFlow_quarticTrajectoryPoint hp hq hpq]
 
 /-- Every negative gradient trajectory of the Euclidean quartic from `p` to `q` staying in the cube
@@ -347,10 +356,8 @@ theorem existsUnique_eq_quarticTrajectoryPoint_of_isIntegralCurve {γ : ℝ → 
     (htop : Tendsto γ atTop (𝓝 q)) :
     ∃! τ : {i // p i ≠ q i} → ℝ, γ = fun t ↦ quarticTrajectoryPoint p q fun j ↦ t + τ j := by
   refine ⟨_, eq_quarticTrajectoryPoint_of_isIntegralCurve hγ hmem hbot htop, fun τ hτ ↦ ?_⟩
-  have h0 : γ 0 ∈ quarticConnectingSet p q :=
-    ⟨hmem 0, (eq_quarticWellSumFlow_of_isIntegralCurve hγ hmem) ▸ hbot,
-      (eq_quarticWellSumFlow_of_isIntegralCurve hγ hmem) ▸ htop⟩
-  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet h0
+  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet
+    (mem_quarticConnectingSet_of_isIntegralCurve hγ hmem hbot htop)
   rw [hτ]
   simp [quarticTimeShift_quarticTrajectoryPoint hq hpq]
 
@@ -398,14 +405,29 @@ theorem exists_quarticWellSumFlow_eq_iff (hy : y ∈ quarticConnectingSet p q) {
     simp only [Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one, Pi.sub_apply] at this
     linarith
 
-/-- The time shifts identify the connecting set with `{i // p i ≠ q i} → ℝ`. -/
-private def quarticConnectingSetEquiv (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
+/-- **The time-shift chart as an equivalence.** The time shifts identify the connecting set with
+`{i // p i ≠ q i} → ℝ`, with inverse the time-shift chart `TauCeti.quarticTrajectoryPoint`. -/
+def quarticTimeShiftEquiv (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0) :
     quarticConnectingSet p q ≃ ({i // p i ≠ q i} → ℝ) where
   toFun y := quarticTimeShift p q y
   invFun τ := ⟨_, quarticTrajectoryPoint_mem_quarticConnectingSet hp hq hpq τ⟩
   left_inv y := Subtype.ext (quarticTrajectoryPoint_quarticTimeShift y.2)
   right_inv := quarticTimeShift_quarticTrajectoryPoint hq hpq
+
+@[simp]
+theorem quarticTimeShiftEquiv_apply (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
+    (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0)
+    (y : quarticConnectingSet p q) :
+    quarticTimeShiftEquiv hp hq hpq y = quarticTimeShift p q y :=
+  (rfl)
+
+@[simp]
+theorem quarticTimeShiftEquiv_symm_apply (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
+    (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0)
+    (τ : {i // p i ≠ q i} → ℝ) :
+    ((quarticTimeShiftEquiv hp hq hpq).symm τ : ι → ℝ) = quarticTrajectoryPoint p q τ :=
+  (rfl)
 
 /-- **The space of unparametrized trajectories from `p` to `q`.** The time shifts identify the
 trajectories of the Euclidean quartic from `p` to `q` in the cube, that is, the points of the
@@ -414,10 +436,10 @@ def quarticConnectingOrbitEquiv (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0) :
     Quotient (quarticConnectingOrbitSetoid p q) ≃
       ({i // p i ≠ q i} → ℝ) ⧸ ℝ ∙ (1 : {i // p i ≠ q i} → ℝ) :=
-  Quotient.congr (quarticConnectingSetEquiv hp hq hpq) fun y y' ↦ by
+  Quotient.congr (quarticTimeShiftEquiv hp hq hpq) fun y y' ↦ by
     rw [quarticConnectingOrbitSetoid_apply, exists_quarticWellSumFlow_eq_iff y.2 y'.2,
-      Submodule.quotientRel_def, ← Submodule.neg_mem_iff, neg_sub]
-    rfl
+      Submodule.quotientRel_def, quarticTimeShiftEquiv_apply, quarticTimeShiftEquiv_apply,
+      ← neg_sub (quarticTimeShift p q y), Submodule.neg_mem_iff]
 
 @[simp]
 theorem quarticConnectingOrbitEquiv_mk (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
