@@ -8,8 +8,10 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Ball
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
 
 /-!
 # Taubes's monotonicity inequality for the defect energy
@@ -47,7 +49,7 @@ his formula for the `ω`-component gives `δ ≤ ⟨F, ω⟩ + K`. With the dive
 `∫_{B_σ} δ ≤ (σ / 2) (1 + κ) σ³ ∫_S δ (c + σ θ) dθ + K (|S| / 2 + |B₁|) σ⁴`
 
 (`TauCeti.SeibergWitten.setIntegral_ball_le_mul_integral_toSphere_add`), whose sphere integral is
-the derivative of the ball integrals (`TauCeti.hasDerivAt_setIntegral_ball`). For the defect
+the derivative of the ball integrals (`ContinuousOn.hasDerivAt_setIntegral_ball`). For the defect
 measure `δ dμ` this is the differential inequality hypothesis of the covering and density
 arguments above with `C = 0` and `C r^(-1/2)` replaced by `κ`
 (`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`).
@@ -75,47 +77,6 @@ open MeasureTheory Metric Set Filter Topology Module
 open scoped RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-! ### Two-forms in a frame -/
-
-/-- A two-form is antisymmetric. -/
-private lemma apply_vecCons_swap (Φ : E [⋀^Fin 2]→L[ℝ] ℝ) (x y : E) :
-    Φ ![y, x] = -Φ ![x, y] := by
-  have h := Φ.toAlternatingMap.map_swap ![x, y] (zero_ne_one : (0 : Fin 2) ≠ 1)
-  have hv : (![x, y] ∘ Equiv.swap 0 1 : Fin 2 → E) = ![y, x] := by
-    ext i; fin_cases i <;> rfl
-  rwa [hv] at h
-
-/-- A two-form on a four-dimensional space in the coordinates of an orthonormal frame `e`:
-`Φ(u, v) = ∑_{a < b} Φ(e_a, e_b) (u_a v_b - u_b v_a)`. -/
-private lemma apply_eq_frame (e : OrthonormalBasis (Fin 4) ℝ E) (Φ : E [⋀^Fin 2]→L[ℝ] ℝ)
-    (u v : E) :
-    Φ ![u, v] =
-      Φ ![e 0, e 1] * (e.repr u 0 * e.repr v 1 - e.repr u 1 * e.repr v 0) +
-      Φ ![e 0, e 2] * (e.repr u 0 * e.repr v 2 - e.repr u 2 * e.repr v 0) +
-      Φ ![e 0, e 3] * (e.repr u 0 * e.repr v 3 - e.repr u 3 * e.repr v 0) +
-      Φ ![e 1, e 2] * (e.repr u 1 * e.repr v 2 - e.repr u 2 * e.repr v 1) +
-      Φ ![e 1, e 3] * (e.repr u 1 * e.repr v 3 - e.repr u 3 * e.repr v 1) +
-      Φ ![e 2, e 3] * (e.repr u 2 * e.repr v 3 - e.repr u 3 * e.repr v 2) := by
-  have h : ∀ x y : E, Φ ![x, y] = (Φ.toAlternatingMap.curryLeft x).curryLeft y ![] := by
-    intro x y
-    simp [AlternatingMap.curryLeft_apply_apply]
-  have hsum : Φ ![u, v] = ∑ a, ∑ b, e.repr u a * e.repr v b * Φ ![e a, e b] := by
-    conv_lhs => rw [h, ← e.sum_repr u, ← e.sum_repr v]
-    simp only [map_sum, map_smul, h]
-    simp only [sum_apply, smul_apply, AlternatingMap.curryLeft_apply_apply, Nat.succ_eq_add_one,
-      Nat.reduceAdd, AlternatingMap.coe_mk, ContinuousMultilinearMap.coe_coe,
-      ContinuousAlternatingMap.coe_toContinuousMultilinearMap, smul_eq_mul, Finset.mul_sum,
-      mul_left_comm, mul_assoc]
-    exact Finset.sum_comm
-  have hzero : ∀ a, Φ ![e a, e a] = 0 := fun a ↦
-    Φ.map_eq_zero_of_eq ![e a, e a] (i := 0) (j := 1) rfl zero_ne_one
-  rw [hsum]
-  simp only [Fin.sum_univ_four, hzero, apply_vecCons_swap Φ (e 0) (e 1),
-    apply_vecCons_swap Φ (e 0) (e 2), apply_vecCons_swap Φ (e 0) (e 3),
-    apply_vecCons_swap Φ (e 1) (e 2), apply_vecCons_swap Φ (e 1) (e 3),
-    apply_vecCons_swap Φ (e 2) (e 3)]
-  ring
 
 /-! ### The flux field -/
 
@@ -161,20 +122,6 @@ private lemma contDiffAt_fluxField (hF : ContDiffAt ℝ 1 F x) :
     ((((h 0 1 2).sub (h 1 3 1)).sub (h 0 3 0)).smul contDiffAt_const) |>.add
     ((((h 1 2 1).add (h 0 2 0)).add (h 0 1 3)).smul contDiffAt_const)).const_smul _
 
-/-- The exterior derivative of a two-form field on three vectors:
-`dF(a, b, c) = ∂_a F(b, c) - ∂_b F(a, c) + ∂_c F(a, b)`. -/
-private lemma extDeriv_apply_three (hF : DifferentiableAt ℝ F x) (a b c : E) :
-    extDeriv F x ![a, b, c] = fderiv ℝ F x a ![b, c] - fderiv ℝ F x b ![a, c] +
-      fderiv ℝ F x c ![a, b] := by
-  rw [extDeriv_apply hF]
-  have r₀ : (0 : Fin 3).removeNth ![a, b, c] = ![b, c] := by ext i; fin_cases i <;> rfl
-  have r₁ : (1 : Fin 3).removeNth ![a, b, c] = ![a, c] := by ext i; fin_cases i <;> rfl
-  have r₂ : (2 : Fin 3).removeNth ![a, b, c] = ![a, b] := by ext i; fin_cases i <;> rfl
-  simp only [fderiv_continuousAlternatingMap_apply_const_apply hF]
-  rw [Fin.sum_univ_three, r₀, r₁, r₂]
-  simp
-  ring
-
 variable [FiniteDimensional ℝ E] in
 /-- **The divergence of the flux field is the Kähler component of `F`.** If the two-form field `F`
 is differentiable and closed at `x`, then `tr (DV(x)) = F_x(e₀, e₁) + F_x(e₂, e₃)`. -/
@@ -189,8 +136,7 @@ private lemma trace_fderiv_fluxField (hF : DifferentiableAt ℝ F x) (hdF : extD
       ((((h 1 2 1).add (h 0 2 0)).add (h 0 1 3)).smul_const (e 3))).const_smul (2 : ℝ)⁻¹
   have hd : ∀ i j k, fderiv ℝ F x (e i) ![e j, e k] - fderiv ℝ F x (e j) ![e i, e k] +
       fderiv ℝ F x (e k) ![e i, e j] = 0 := fun i j k ↦ by
-    rw [← extDeriv_apply_three hF, hdF]
-    rfl
+    rw [← extDeriv_apply_triple, hdF, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   rw [hV.fderiv]
   simp only [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.toLinearMap_add,
     ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.coe_smulRight, map_smul, map_add,
@@ -226,8 +172,9 @@ private lemma inner_fluxField_add {J : AlmostComplexStructure E} (h₀ : J (e 0)
     (h₂ : J (e 2) = e 3) (y : E) :
     ⟪fluxField e c F (c + y), y⟫ =
       F (c + y) ![tangentVector e y, J (tangentVector e y)] / 2 := by
-  rw [apply_eq_frame e]
-  simp only [AlmostComplexStructure.repr_apply h₀ h₂, repr_tangentVector]
+  rw [ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four e.toBasis]
+  simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.coe_toBasis_repr_apply,
+    AlmostComplexStructure.repr_apply h₀ h₂, repr_tangentVector]
   simp only [fluxField, fluxTerm, add_sub_cancel_left, inner_smul_left, inner_add_left,
     ← e.repr_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
@@ -235,6 +182,11 @@ private lemma inner_fluxField_add {J : AlmostComplexStructure E} (h₀ : J (e 0)
   ring
 
 /-! ### The monotonicity inequality -/
+
+/-- A space with an orthonormal frame indexed by `Fin 4` is four-dimensional. -/
+private lemma finrank_eq_four (e : OrthonormalBasis (Fin 4) ℝ E) :
+    finrank ℝ E = 4 := by
+  simpa using finrank_eq_card_basis e.toBasis
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
   [μ.IsAddHaarMeasure]
@@ -246,7 +198,7 @@ private lemma setIntegral_ball_eq_integral_inner_fluxField {σ : ℝ} (hσ : 0 �
     (hF : ∀ x ∈ closedBall c σ, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c σ, extDeriv F x = 0) :
     ∫ x in ball c σ, (F x ![e 0, e 1] + F x ![e 2, e 3]) ∂μ =
       σ ^ 3 * ∫ θ : sphere (0 : E) 1, ⟪fluxField e c F (c + σ • (θ : E)), θ⟫ ∂μ.toSphere := by
-  have hn : finrank ℝ E = 4 := by simpa using finrank_eq_card_basis e.toBasis
+  have hn := finrank_eq_four e
   have h := setIntegral_ball_trace_fderiv (μ := μ) (V := fluxField e c F) c hσ
     fun x hx ↦ contDiffAt_fluxField (hF x hx)
   rw [hn] at h
@@ -320,8 +272,8 @@ theorem setIntegral_ball_le_mul_integral_toSphere_add {J : AlmostComplexStructur
     ∫ x in ball c σ, δ x ∂μ ≤
       σ / 2 * (1 + κ) * (σ ^ 3 * ∫ θ : sphere (0 : E) 1, δ (c + σ • (θ : E)) ∂μ.toSphere) +
         K * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
-  have hn : finrank ℝ E = 4 := by simpa using finrank_eq_card_basis e.toBasis
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [hn]; norm_num)
+  have hn := finrank_eq_four e
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hn
   rcases hσ.eq_or_lt with rfl | hσ
   · simp [Metric.ball_eq_empty.mpr le_rfl]
   -- The Kähler component bounds `δ` on the ball.
@@ -372,8 +324,8 @@ theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
       σ / 2 * (1 + κ) * deriv (fun s ↦
         ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c s)).toReal) σ +
         K * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
-  have hn : finrank ℝ E = 4 := by simpa using finrank_eq_card_basis e.toBasis
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [hn]; norm_num)
+  have hn := finrank_eq_four e
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hn
   set ν := μ.withDensity fun x ↦ ENNReal.ofReal (δ x)
   -- On radii in `[0, R]`, the measure of the closed ball is the integral of `δ` over the ball.
   have hνball : ∀ s ∈ Icc 0 R, (ν (closedBall c s)).toReal = ∫ x in ball c s, δ x ∂μ := by
@@ -383,8 +335,8 @@ theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
       ((ae_restrict_iff' measurableSet_closedBall).mpr (ae_of_all _ fun x hx ↦ hδ₀ x (hsub hx)))
       ((hδ.mono hsub).aestronglyMeasurable measurableSet_closedBall),
       setIntegral_congr_set (Measure.addHaar_closedBall_ae_eq_ball μ c s)]
-  have hderiv := hasDerivAt_setIntegral_ball (μ := μ) hδ hσ
-  rw [hn] at hderiv
+  have hderiv := hδ.hasDerivAt_setIntegral_ball (μ := μ) hσ
+  rw [hn, smul_eq_mul] at hderiv
   have hderiv' : deriv (fun s ↦ (ν (closedBall c s)).toReal) σ =
       σ ^ 3 * ∫ θ : sphere (0 : E) 1, δ (c + σ • (θ : E)) ∂μ.toSphere := by
     refine (hderiv.congr_of_eventuallyEq ?_).deriv

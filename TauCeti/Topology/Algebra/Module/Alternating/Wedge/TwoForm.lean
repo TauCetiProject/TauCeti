@@ -32,6 +32,11 @@ nondegenerate, through the volume criterion `ContinuousAlternatingMap.wedgePow_n
 
 ## Main results
 
+* `ContinuousAlternatingMap.apply_vecCons_swap`: a two-form changes sign when its arguments are
+  exchanged.
+* `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
+  `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
+  a basis, and its six-term form on a four-dimensional space.
 * `ContinuousAlternatingMap.pairedWedge_mul_apply_two_two`: the six-term formula for `ω ∧ β`.
 * `ContinuousAlternatingMap.wedgePow_two_eq`: the square of a two-form is its wedge with itself.
 * `ContinuousAlternatingMap.wedgePow_two_apply`: the Pfaffian formula for `ω²`.
@@ -47,7 +52,53 @@ public section
 
 namespace ContinuousAlternatingMap
 
+section Swap
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+  [AddCommGroup N] [Module R N] [TopologicalSpace N]
+
+/-- A continuous alternating map of two vectors changes sign when they are exchanged. -/
+theorem apply_vecCons_swap (f : M [⋀^Fin 2]→L[R] N) (v w : M) : f ![w, v] = -f ![v, w] := by
+  simpa using f.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
+
+end Swap
+
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+
+/-- **A two-form in coordinates.** In the coordinates of a basis `b`, a two-form `ω` is
+`ω(u, v) = ∑ᵢ ∑ⱼ uᵢ vⱼ ω(bᵢ, bⱼ)`. -/
+theorem apply_vecCons_eq_sum_repr {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ E)
+    (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (u v : E) :
+    ω ![u, v] = ∑ i, ∑ j, b.repr u i * b.repr v j * ω ![b i, b j] := by
+  have h : ∀ x y : E, ω ![x, y] = (ω.toAlternatingMap.curryLeft x).curryLeft y ![] := by
+    intro x y
+    simp [AlternatingMap.curryLeft_apply_apply]
+  conv_lhs => rw [h, ← b.sum_repr u, ← b.sum_repr v]
+  simp only [_root_.map_sum, _root_.map_smul, h]
+  simp only [_root_.sum_apply, _root_.smul_apply, AlternatingMap.curryLeft_apply_apply,
+    Nat.succ_eq_add_one, Nat.reduceAdd, AlternatingMap.coe_mk, ContinuousMultilinearMap.coe_coe,
+    coe_toContinuousMultilinearMap, smul_eq_mul, Finset.mul_sum, mul_left_comm, mul_assoc]
+  exact Finset.sum_comm
+
+/-- **A two-form on a four-dimensional space in coordinates.** In the coordinates of a basis `b`
+indexed by `Fin 4`, a two-form `ω` is `ω(u, v) = ∑_{i < j} ω(bᵢ, bⱼ) (uᵢ vⱼ - uⱼ vᵢ)`. -/
+theorem apply_vecCons_eq_sum_repr_fin_four (b : Module.Basis (Fin 4) ℝ E)
+    (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (u v : E) :
+    ω ![u, v] =
+      ω ![b 0, b 1] * (b.repr u 0 * b.repr v 1 - b.repr u 1 * b.repr v 0) +
+      ω ![b 0, b 2] * (b.repr u 0 * b.repr v 2 - b.repr u 2 * b.repr v 0) +
+      ω ![b 0, b 3] * (b.repr u 0 * b.repr v 3 - b.repr u 3 * b.repr v 0) +
+      ω ![b 1, b 2] * (b.repr u 1 * b.repr v 2 - b.repr u 2 * b.repr v 1) +
+      ω ![b 1, b 3] * (b.repr u 1 * b.repr v 3 - b.repr u 3 * b.repr v 1) +
+      ω ![b 2, b 3] * (b.repr u 2 * b.repr v 3 - b.repr u 3 * b.repr v 2) := by
+  have hzero : ∀ i, ω ![b i, b i] = 0 := fun i ↦
+    ω.map_eq_zero_of_eq ![b i, b i] (i := 0) (j := 1) rfl zero_ne_one
+  rw [apply_vecCons_eq_sum_repr b]
+  simp only [Fin.sum_univ_four, hzero, apply_vecCons_swap ω (b 0) (b 1),
+    apply_vecCons_swap ω (b 0) (b 2), apply_vecCons_swap ω (b 0) (b 3),
+    apply_vecCons_swap ω (b 1) (b 2), apply_vecCons_swap ω (b 1) (b 3),
+    apply_vecCons_swap ω (b 2) (b 3)]
+  ring
 
 /-- Evaluating a two-form on the first two entries of a permuted four-tuple. -/
 private theorem apply_comp_castAdd (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (g : Fin 4 → E)
@@ -80,8 +131,6 @@ theorem pairedWedge_mul_apply_two_two (ω β : E [⋀^Fin 2]→L[ℝ] ℝ) (a b 
   have h₃ {n : ℕ} (e : Equiv.Perm (Fin (n + 3))) (p : Fin (n + 4)) :
       Equiv.Perm.decomposeFin.symm (p, e) 3 = Equiv.swap 0 p (e 2).succ :=
     Equiv.Perm.decomposeFin_symm_apply_succ e p 2
-  have hswap (γ : E [⋀^Fin 2]→L[ℝ] ℝ) (v w : E) : γ ![w, v] = -γ ![v, w] := by
-    simpa using γ.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
   -- Expand the sum over the `24` permutations of `Fin 4` and evaluate each of them.
   rw [pairedWedge_apply]
   simp only [apply_comp_castAdd, apply_comp_natAdd]
@@ -96,8 +145,10 @@ theorem pairedWedge_mul_apply_two_two (ω β : E [⋀^Fin 2]→L[ℝ] ℝ) (a b 
     Matrix.cons_val_one, Fin.succ_one_eq_two, Fin.reduceEq, Matrix.cons_val, Fin.reduceSucc,
     ContinuousLinearMap.mul_apply', one_smul, mul_neg, Units.neg_smul, neg_neg, smul_eq_mul]
   -- Each of the six terms appears four times, with the two arguments of `ω` or `β` reversed.
-  simp only [hswap ω b a, hswap ω c a, hswap ω d a, hswap ω c b, hswap ω d b, hswap ω d c,
-    hswap β b a, hswap β c a, hswap β d a, hswap β c b, hswap β d b, hswap β d c]
+  simp only [apply_vecCons_swap ω b a, apply_vecCons_swap ω c a, apply_vecCons_swap ω d a,
+    apply_vecCons_swap ω c b, apply_vecCons_swap ω d b, apply_vecCons_swap ω d c,
+    apply_vecCons_swap β b a, apply_vecCons_swap β c a, apply_vecCons_swap β d a,
+    apply_vecCons_swap β c b, apply_vecCons_swap β d b, apply_vecCons_swap β d c]
   ring
 
 /-- The square of a two-form is its wedge with itself. -/
