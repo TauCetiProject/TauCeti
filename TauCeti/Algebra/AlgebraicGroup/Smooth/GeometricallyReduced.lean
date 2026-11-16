@@ -35,8 +35,8 @@ reducedness nor smoothness is built into the category of commutative Hopf algebr
 * `TauCeti.geometricallyReducedCommHopfAlgProperty_of_smooth`: a smooth commutative Hopf algebra
   over a field is geometrically reduced.
 * `TauCeti.smoothCommHopfAlgProperty_iff_geometricallyReduced`: the finite-type equivalence.
-* `TauCeti.smoothCommHopfAlgProperty.of_injective`: smoothness descends along an injective
-  homomorphism of coordinate rings onto a finite-type commutative Hopf algebra.
+* `TauCeti.smoothCommHopfAlgProperty.of_injective`: smoothness descends to a finite-type
+  commutative Hopf algebra along an injective homomorphism of coordinate rings.
 
 ## References
 
@@ -118,8 +118,8 @@ theorem smoothCommHopfAlgProperty_of_geometricallyReduced
   let _ : Algebra.Smooth k (K ⊗[k] H) := Algebra.Smooth.comp k K _
   exact Algebra.Smooth.of_equiv e.symm
 
-/-- Smoothness descends along an injective algebra homomorphism of coordinate rings onto a
-finite-type commutative Hopf algebra. Contravariantly, a finite-type target of a schematically
+/-- Smoothness descends to a finite-type commutative Hopf algebra along an injective algebra
+homomorphism of coordinate rings. Contravariantly, a finite-type target of a schematically
 dominant homomorphism from a smooth affine group is smooth. -/
 theorem smoothCommHopfAlgProperty.of_injective
     {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k} {H' : CommHopfAlgCat.{max v w} k}

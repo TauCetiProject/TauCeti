@@ -196,7 +196,7 @@ theorem finiteType_target (hf : IsIsogeny f) [Algebra.FiniteType R H] :
     (RingHom.finiteType_algebraMap.mpr inferInstance)
 
 /-- Finite type over a Noetherian base passes from the codomain to the domain of an isogeny's
-coordinate map, by the Artin–Tate lemma. -/
+coordinate map. -/
 theorem finiteType_source (hf : IsIsogeny f) [IsNoetherianRing R] [Algebra.FiniteType R K] :
     Algebra.FiniteType R H := by
   let _ := f.hom.toAlgHom.toAlgebra

@@ -197,8 +197,8 @@ section CharZero
 
 variable {k : Type u} [Field k] [CharZero k] {H K : _root_.CommHopfAlgCat.{v} k} {f : H ⟶ K}
 
-/-- In characteristic zero the scheme-theoretic kernel of an isogeny is étale: it is finite, and
-reduced by Cartier's theorem. Neither group needs to be of finite type. -/
+/-- In characteristic zero the scheme-theoretic kernel of an isogeny is étale. Neither group needs
+to be of finite type. -/
 theorem algebraEtale_quotient_kernelHopfIdeal_of_charZero (hf : IsIsogeny f) :
     Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal) :=
   let _ := moduleFinite_quotient_kernelHopfIdeal hf.finite
