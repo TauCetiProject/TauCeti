@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.Character.ApproximateUnit
-public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Analysis.Normed.Algebra.GroupAlgebraL1.Basic
 public import TauCeti.MeasureTheory.Group.Convolution.Kernel
 
@@ -21,10 +20,10 @@ identity neighborhoods ordered by reverse inclusion (`Filter.atBot`), with no co
 metrizability, or `σ`-finiteness assumption on `G` or `μ`:
 
 * **Kernel properties (`ofConv_approximateIdentity_ae_eq`, `memLp_approximateIdentity`,
-  `norm_approximateIdentity`, `integralHom_approximateIdentity`):** Each `u_U` is represented
-  almost everywhere by the nonnegative continuous compactly supported function
-  `x ↦ (μ.approximateIdentity U x : 𝕜)` supported inside `U`, belongs to `Lᵖ(G, μ; 𝕜)` for every
-  `p : ℝ≥0∞` (in particular `L¹ ∩ L²`), and satisfies `‖u_U‖ = 1` and `integralHom 𝕜 μ u_U = 1`.
+  `norm_approximateIdentity`):** Each `u_U` is represented almost everywhere by the nonnegative
+  continuous compactly supported function `x ↦ (μ.approximateIdentity U x : 𝕜)` supported inside
+  `U`, belongs to `Lᵖ(G, μ; 𝕜)` for every `p : ℝ≥0∞` (in particular `L¹ ∩ L²`), and satisfies
+  `‖u_U‖ = 1`.
 * **Two-sided convergence (`tendsto_approximateIdentity_mul`, `tendsto_mul_approximateIdentity`,
   `isApproximateUnit_map_approximateIdentity`):** When `μ` is inner regular for compact sets of
   finite measure, `u_U * f → f` in `GroupAlgebraL1 𝕜 μ`; when `μ` is regular, `f * u_U → f` as
@@ -35,12 +34,8 @@ metrizability, or `σ`-finiteness assumption on `G` or `μ`:
   `norm_nonUnitalAlgHom_toContinuousLinearMap`):** Every nonzero algebraic `𝕜`-linear character
   `φ : GroupAlgebraL1 𝕜 μ →ₙₐ[𝕜] 𝕜` is automatically continuous, satisfies `φ u_U → 1` along
   `atBot`, and has operator norm `‖φ.toContinuousLinearMap‖ = 1`.
-* **Nondegeneracy and multipliers (`instFaithfulSMul`, `instFaithfulSMulMulOpposite`,
-  `isometry_doubleCentralizer_coe`, `isClosed_range_doubleCentralizer_coe`,
-  `norm_doubleCentralizer_fst`, `norm_doubleCentralizer_snd`):** When `μ` is regular,
-  `GroupAlgebraL1 𝕜 μ` has zero left and right annihilators, embeds isometrically as a closed
-  essential ideal in its multiplier algebra `𝓜(𝕜, GroupAlgebraL1 𝕜 μ)`, and every multiplier
-  satisfies `‖m.fst‖ = ‖m‖ = ‖m.snd‖`.
+* **Nondegeneracy (`instFaithfulSMul`, `instFaithfulSMulMulOpposite`):** When `μ` is regular,
+  `GroupAlgebraL1 𝕜 μ` has zero left and right annihilators.
 
 ## References
 
@@ -54,7 +49,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory MeasureTheory.Measure TopologicalSpace Topology
-open scoped ENNReal MultiplierAlgebra
+open scoped ENNReal
 
 namespace TauCeti.GroupAlgebraL1
 
@@ -132,19 +127,6 @@ variable {G 𝕜 : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   {μ : Measure G} [μ.IsHaarMeasure] [μ.InnerRegularCompactLTTop] [RCLike 𝕜]
 
-/-- Every kernel in `approximateIdentity 𝕜 μ` evaluates to `1` under the augmentation character. -/
-@[simp]
-theorem integralHom_approximateIdentity (U : OpenNhdsOf (1 : G)) :
-    integralHom 𝕜 μ (approximateIdentity 𝕜 μ U) = 1 := by
-  rw [integralHom_apply, ofConv_approximateIdentity, μ.integral_approximateIdentityL1]
-
-/-- The augmentation character `integralHom 𝕜 μ` is nonzero. -/
-theorem integralHom_ne_zero : integralHom 𝕜 μ ≠ 0 := by
-  intro h
-  have h1 : integralHom 𝕜 μ (approximateIdentity 𝕜 μ ⊤) = 0 := by rw [h, NonUnitalAlgHom.zero_apply]
-  rw [integralHom_approximateIdentity] at h1
-  exact one_ne_zero h1
-
 /-- **Left approximate identity.** Along `Filter.atBot` on open identity neighborhoods,
 `approximateIdentity 𝕜 μ U * f → f` in `GroupAlgebraL1 𝕜 μ` for every `f`. -/
 theorem tendsto_approximateIdentity_mul (f : GroupAlgebraL1 𝕜 μ) :
@@ -173,15 +155,9 @@ theorem norm_nonUnitalAlgHom_toContinuousLinearMap {φ : GroupAlgebraL1 𝕜 μ 
   NonUnitalAlgHom.norm_toContinuousLinearMap_of_tendsto_mul_right
     (.of_forall fun U => (norm_approximateIdentity U).le) tendsto_approximateIdentity_mul hφ
 
-/-- The augmentation character has operator norm `1`. -/
-@[simp]
-theorem norm_integralHom_toContinuousLinearMap :
-    ‖(integralHom 𝕜 μ).toContinuousLinearMap‖ = 1 :=
-  norm_nonUnitalAlgHom_toContinuousLinearMap integralHom_ne_zero
-
 end LeftApproximateIdentity
 
-/-! ### Two-sided approximate unit, involution, nondegeneracy, and multipliers -/
+/-! ### Two-sided approximate unit, involution, and nondegeneracy -/
 
 section RegularHaar
 
@@ -242,10 +218,6 @@ theorem norm_star_approximateIdentity (U : OpenNhdsOf (1 : G)) :
     ‖star (approximateIdentity 𝕜 μ U)‖ = 1 := by
   rw [norm_star, norm_approximateIdentity]
 
-theorem integralHom_star_approximateIdentity (U : OpenNhdsOf (1 : G)) :
-    integralHom 𝕜 μ (star (approximateIdentity 𝕜 μ U)) = 1 := by
-  rw [integralHom_star, integralHom_approximateIdentity, star_one]
-
 /-- The involuted kernels `star (approximateIdentity 𝕜 μ U)` also form a left approximate identity
 in `GroupAlgebraL1 𝕜 μ`. -/
 theorem tendsto_star_approximateIdentity_mul (f : GroupAlgebraL1 𝕜 μ) :
@@ -272,55 +244,6 @@ instance instFaithfulSMulMulOpposite :
   have := (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).neBot
   exact TauCeti.faithfulSMul_mulOpposite_of_tendsto_mul_right
     (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).tendsto_mul_right
-
-/-- The canonical inclusion of `GroupAlgebraL1 𝕜 μ` into its multiplier algebra preserves norms. -/
-@[simp]
-theorem norm_doubleCentralizer_coe (f : GroupAlgebraL1 𝕜 μ) :
-    ‖(f : 𝓜(𝕜, GroupAlgebraL1 𝕜 μ))‖ = ‖f‖ := by
-  have := (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).neBot
-  exact DoubleCentralizer.norm_coe_of_tendsto_mul_right
-    (eventually_norm_eq_one_map_approximateIdentity.mono fun _ h => h.le)
-    isApproximateUnit_map_approximateIdentity.tendsto_mul_right f
-
-/-- The canonical inclusion `GroupAlgebraL1 𝕜 μ → 𝓜(𝕜, GroupAlgebraL1 𝕜 μ)` is an isometry. -/
-theorem isometry_doubleCentralizer_coe :
-    Isometry (DoubleCentralizer.coe 𝕜 : GroupAlgebraL1 𝕜 μ → 𝓜(𝕜, GroupAlgebraL1 𝕜 μ)) := by
-  have := (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).neBot
-  exact DoubleCentralizer.isometry_coe_of_tendsto_mul_right
-    (eventually_norm_eq_one_map_approximateIdentity.mono fun _ h => h.le)
-    isApproximateUnit_map_approximateIdentity.tendsto_mul_right
-
-/-- The canonical image of `GroupAlgebraL1 𝕜 μ` in `𝓜(𝕜, GroupAlgebraL1 𝕜 μ)` is closed. -/
-theorem isClosed_range_doubleCentralizer_coe :
-    IsClosed (Set.range
-      (DoubleCentralizer.coe 𝕜 : GroupAlgebraL1 𝕜 μ → 𝓜(𝕜, GroupAlgebraL1 𝕜 μ))) := by
-  have := (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).neBot
-  exact DoubleCentralizer.isClosed_range_coe
-    (eventually_norm_eq_one_map_approximateIdentity.mono fun _ h => h.le)
-    isApproximateUnit_map_approximateIdentity.tendsto_mul_right
-
-/-- For every multiplier `m` of `GroupAlgebraL1 𝕜 μ`, the left and right centralizers have equal
-operator norms. -/
-theorem norm_doubleCentralizer_fst_eq_snd (m : 𝓜(𝕜, GroupAlgebraL1 𝕜 μ)) :
-    ‖m.fst‖ = ‖m.snd‖ :=
-  DoubleCentralizer.norm_fst_eq_snd_of_isApproximateUnit
-    isApproximateUnit_map_approximateIdentity
-    (eventually_norm_eq_one_map_approximateIdentity.mono fun _ h => h.le) m
-
-/-- The norm of a multiplier of `GroupAlgebraL1 𝕜 μ` equals the operator norm of its left
-centralizer. -/
-@[simp]
-theorem norm_doubleCentralizer_fst (m : 𝓜(𝕜, GroupAlgebraL1 𝕜 μ)) :
-    ‖m.fst‖ = ‖m‖ := by
-  simp only [DoubleCentralizer.norm_def, DoubleCentralizer.toProdHom_apply, Prod.norm_def,
-    norm_doubleCentralizer_fst_eq_snd, max_self]
-
-/-- The norm of a multiplier of `GroupAlgebraL1 𝕜 μ` equals the operator norm of its right
-centralizer. -/
-@[simp]
-theorem norm_doubleCentralizer_snd (m : 𝓜(𝕜, GroupAlgebraL1 𝕜 μ)) :
-    ‖m.snd‖ = ‖m‖ := by
-  rw [← norm_doubleCentralizer_fst, norm_doubleCentralizer_fst_eq_snd]
 
 end RegularHaar
 

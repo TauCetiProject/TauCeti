@@ -35,12 +35,10 @@ Each layer assumes only the hypotheses it genuinely uses:
 1. **Banach space structure (`GroupAlgebraL1.linearIsometryEquiv`):** Over any measure space
    `(G, μ)` and normed group/module `𝕜`, `GroupAlgebraL1 𝕜 μ` inherits the `L¹` norm, scalar
    actions, and completeness from `Lp 𝕜 1 μ`.
-2. **Nonunital Banach algebra (`instNonUnitalNormedRing`, `integralHom`):** When `G` is a
-   topological group with Borel `σ`-algebra and `μ` is left-invariant, locally finite, and inner
-   regular for compact sets of finite measure, operator convolution `MeasureTheory.Lp.convolutionL`
-   equips `GroupAlgebraL1 𝕜 μ` with a `NonUnitalNormedRing` structure satisfying
-   `‖f * g‖ ≤ ‖f‖ * ‖g‖`, and integration defines a `𝕜`-algebra character
-   `GroupAlgebraL1.integralHom 𝕜 μ : GroupAlgebraL1 𝕜 μ →ₙₐ[𝕜] 𝕜`.
+2. **Nonunital Banach algebra (`instNonUnitalNormedRing`):** When `G` is a topological group with
+   Borel `σ`-algebra and `μ` is left-invariant, locally finite, and inner regular for compact sets
+   of finite measure, operator convolution `MeasureTheory.Lp.convolutionL` equips
+   `GroupAlgebraL1 𝕜 μ` with a `NonUnitalNormedRing` structure satisfying `‖f * g‖ ≤ ‖f‖ * ‖g‖`.
 3. **Pointwise convolution formulas (`ofConv_mul_ae_eq`, `ofConv_mul_ae_eq_right`):** On a locally
    compact Hausdorff group with a regular left Haar measure `μ`, `(f * g).ofConv` agrees `μ`-almost
    everywhere both with `x ↦ ∫ y, f y * g (y⁻¹ * x) ∂μ` and with the right-variable form
@@ -48,11 +46,10 @@ Each layer assumes only the hypotheses it genuinely uses:
 4. **Banach `⋆`-algebra (`instStarRing`, `instNormedStarGroup`, `instStarModule`):** On any locally
    compact group with a regular left Haar measure `μ` (without `T2Space G`), composing
    `MeasureTheory.Lp.modularInversion` with pointwise conjugation gives an isometric
-   conjugate-linear anti-multiplicative involution satisfying
-   `integralHom 𝕜 μ (star f) = star (integralHom 𝕜 μ f)`.
+   conjugate-linear anti-multiplicative involution.
 5. **Isometric left and right translations (`leftTranslation`, `rightTranslation`):** Strongly
-   continuous isometric actions of `G` compatible with convolution, the involution
-   (`star (L_g f) = R_g (star f)`), and `integralHom`.
+   continuous isometric actions of `G` compatible with convolution and the involution
+   (`star (L_g f) = R_g (star f)`).
 6. **Haar-normalization comparison (`smulMeasureStarAlgEquiv`, `haarStarAlgEquiv`):** Rescaling by
    `MeasureTheory.Measure.haarScalarFactor μ' μ` yields a canonical isometric `⋆`-algebra
    isomorphism `GroupAlgebraL1 𝕜 μ' ≃⋆ₐ[𝕜] GroupAlgebraL1 𝕜 μ` between any two regular left Haar
@@ -66,7 +63,6 @@ Each layer assumes only the hypotheses it genuinely uses:
 * `TauCeti.GroupAlgebraL1 𝕜 μ`: the `L¹` group algebra carrier wrapping `Lp 𝕜 1 μ`.
 * `TauCeti.GroupAlgebraL1.linearIsometryEquiv`: isometric linear equivalence with `Lp 𝕜 1 μ`.
 * `TauCeti.GroupAlgebraL1.toL1`: constructor from an integrable function `f : G → 𝕜`.
-* `TauCeti.GroupAlgebraL1.integralHom`: the augmentation character `f ↦ ∫ x, f x ∂μ`.
 * `TauCeti.GroupAlgebraL1.leftTranslation`, `TauCeti.GroupAlgebraL1.rightTranslation`: strongly
   continuous isometric translation actions of `G`.
 * `TauCeti.GroupAlgebraL1.rescaleLinearIsometryEquiv`,
@@ -353,7 +349,7 @@ theorem dense_setOf_continuous_hasCompactSupport [TopologicalSpace G] [R1Space G
 
 end NormedSpace
 
-/-! ### Nonunital Banach algebra structure and the augmentation character -/
+/-! ### Nonunital Banach algebra structure -/
 
 section ConvolutionAlgebra
 
@@ -418,37 +414,6 @@ instance : NonUnitalNormedRing (GroupAlgebraL1 𝕜 μ) :=
 /-- Submultiplicativity of the `L¹` convolution norm: `‖f * g‖ ≤ ‖f‖ * ‖g‖`. -/
 theorem norm_mul_le (f g : GroupAlgebraL1 𝕜 μ) : ‖f * g‖ ≤ ‖f‖ * ‖g‖ :=
   _root_.norm_mul_le f g
-
-variable (𝕜 μ) in
-/-- **The augmentation (integral) character** `f ↦ ∫ x, f x ∂μ` on `GroupAlgebraL1 𝕜 μ` as a
-nonunital `𝕜`-algebra homomorphism into `𝕜`. By `NonUnitalAlgHom.instContinuousLinearMapClass` it
-is automatically continuous and contractive. -/
-def integralHom : GroupAlgebraL1 𝕜 μ →ₙₐ[𝕜] 𝕜 where
-  toFun f := ∫ x, f.ofConv x ∂μ
-  map_smul' c f := by
-    rw [MonoidHom.id_apply, ofConv_smul, ← L1.integral_eq_integral, L1.integral_smul,
-      L1.integral_eq_integral, smul_eq_mul]
-  map_zero' := by
-    rw [ofConv_zero, ← L1.integral_eq_integral, L1.integral_zero]
-  map_add' f g := by
-    rw [ofConv_add, ← L1.integral_eq_integral, L1.integral_add, L1.integral_eq_integral,
-      L1.integral_eq_integral]
-  map_mul' f g := by
-    simpa only [ofConv_mul, smul_eq_mul] using Lp.integral_convolutionL f.ofConv g.ofConv
-
-theorem integralHom_apply (f : GroupAlgebraL1 𝕜 μ) :
-    integralHom 𝕜 μ f = ∫ x, f.ofConv x ∂μ :=
-  (rfl)
-
-@[simp]
-theorem integralHom_toL1 {f : G → 𝕜} (hf : Integrable f μ) :
-    integralHom 𝕜 μ (toL1 hf) = ∫ x, f x ∂μ :=
-  integral_congr_ae hf.coeFn_toL1
-
-/-- The augmentation character is contractive: `‖integralHom 𝕜 μ f‖ ≤ ‖f‖`. -/
-theorem norm_integralHom_apply_le (f : GroupAlgebraL1 𝕜 μ) :
-    ‖integralHom 𝕜 μ f‖ ≤ ‖f‖ :=
-  (norm_integral_le_integral_norm _).trans_eq (norm_eq_integral_norm f).symm
 
 end RCLike
 
@@ -534,15 +499,6 @@ instance : StarModule 𝕜 (GroupAlgebraL1 𝕜 μ) where
   star_smul c f := ext <| by
     rw [ofConv_star, ofConv_smul, star_smul, map_smul, ofConv_smul, ofConv_star]
 
-/-- The augmentation character is a `⋆`-homomorphism:
-`integralHom 𝕜 μ (star f) = star (integralHom 𝕜 μ f)`. -/
-@[simp]
-theorem integralHom_star (f : GroupAlgebraL1 𝕜 μ) :
-    integralHom 𝕜 μ (star f) = star (integralHom 𝕜 μ f) := by
-  rw [integralHom_apply, integralHom_apply, ofConv_star, Lp.integral_modularInversion,
-    integral_congr_ae (Lp.coeFn_star f.ofConv)]
-  simpa only [Pi.star_apply, RCLike.star_def] using integral_conj (μ := μ) (f := f.ofConv)
-
 end StarAlgebra
 
 /-! ### Isometric left and right translation actions -/
@@ -592,13 +548,6 @@ theorem leftTranslation_mul [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactL
   ext <| by
     rw [ofConv_leftTranslation, ofConv_mul, ofConv_mul, ofConv_leftTranslation,
       Lp.leftTranslation_convolutionL]
-
-/-- Left translation preserves the augmentation character. -/
-@[simp]
-theorem integralHom_leftTranslation [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
-    (g : G) (f : GroupAlgebraL1 𝕜 μ) :
-    integralHom 𝕜 μ (leftTranslation 𝕜 μ g f) = integralHom 𝕜 μ f := by
-  rw [integralHom_apply, integralHom_apply, ofConv_leftTranslation, Lp.integral_leftTranslation]
 
 end Left
 
@@ -658,12 +607,6 @@ theorem star_leftTranslation (g : G) (f : GroupAlgebraL1 𝕜 μ) :
 theorem star_rightTranslation (g : G) (f : GroupAlgebraL1 𝕜 μ) :
     star (rightTranslation 𝕜 μ g f) = leftTranslation 𝕜 μ g (star f) := by
   rw [← star_inj, star_star, star_leftTranslation, star_star]
-
-/-- Right translation preserves the augmentation character. -/
-@[simp]
-theorem integralHom_rightTranslation (g : G) (f : GroupAlgebraL1 𝕜 μ) :
-    integralHom 𝕜 μ (rightTranslation 𝕜 μ g f) = integralHom 𝕜 μ f := by
-  rw [integralHom_apply, integralHom_apply, ofConv_rightTranslation, Lp.integral_rightTranslation]
 
 end Right
 
@@ -876,16 +819,6 @@ theorem ofConv_haarStarAlgEquiv_ae_eq (f : GroupAlgebraL1 𝕜 μ') :
       fun x => (haarScalarFactor μ' μ : ℝ) • f.ofConv x :=
   ofConv_rescaleLinearIsometryEquiv_ae_eq
     (haarScalarFactor_pos_of_isHaarMeasure μ' μ).ne' (isMulLeftInvariant_eq_smul_of_regular μ' μ) f
-
-/-- `haarStarAlgEquiv` commutes with the augmentation characters of `μ'` and `μ`. -/
-@[simp]
-theorem integralHom_haarStarAlgEquiv (f : GroupAlgebraL1 𝕜 μ') :
-    integralHom 𝕜 μ (haarStarAlgEquiv 𝕜 μ' μ f) = integralHom 𝕜 μ' f := by
-  have hrhs : ∫ x, f.ofConv x ∂μ' = ∫ x, f.ofConv x ∂((haarScalarFactor μ' μ : ℝ≥0∞) • μ) :=
-    congr_arg (integral · f.ofConv) (isMulLeftInvariant_eq_smul_of_regular μ' μ)
-  rw [integralHom_apply, integralHom_apply,
-    integral_congr_ae (ofConv_haarStarAlgEquiv_ae_eq 𝕜 μ' μ f), hrhs, integral_smul_measure,
-    ENNReal.coe_toReal, integral_smul]
 
 @[simp]
 theorem haarStarAlgEquiv_self (f : GroupAlgebraL1 𝕜 μ) :
