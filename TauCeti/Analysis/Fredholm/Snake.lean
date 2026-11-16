@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.SnakeLemma
 public import TauCeti.Analysis.Fredholm.ClosedRange
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Fredholm operators along maps of short exact sequences
@@ -59,14 +60,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
   {f₁ : E₁ →L[𝕜] E₂} {f₂ : E₂ →L[𝕜] E₃} {g₁ : F₁ →L[𝕜] F₂} {g₂ : F₂ →L[𝕜] F₃}
   {i₁ : E₁ →L[𝕜] F₁} {i₂ : E₂ →L[𝕜] F₂} {i₃ : E₃ →L[𝕜] F₃}
-
-/-- A commutative square of continuous linear maps commutes as a square of linear maps. -/
-private theorem toLinearMap_comp_eq {E E' F F' : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] {f : E →L[𝕜] E'} {g : F →L[𝕜] F'}
-    {i : E →L[𝕜] F} {i' : E' →L[𝕜] F'} (h : g ∘L i = i' ∘L f) :
-    (g : F →ₗ[𝕜] F') ∘ₗ (i : E →ₗ[𝕜] F) = (i' : E' →ₗ[𝕜] F') ∘ₗ (f : E →ₗ[𝕜] E') := by
-  rw [← toLinearMap_comp, h, toLinearMap_comp]
 
 section IsRCLikeNormedField
 
