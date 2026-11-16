@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Calculus.FDeriv.Integral
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
@@ -26,11 +27,13 @@ weak derivative its classical derivative `s ‖x‖ ^ (s - 2) ⟪x, ·⟫` away 
 The condition `s > 1 - d` makes that derivative, whose norm is `|s| ‖x‖ ^ (s - 1)` away from the
 origin, locally integrable.
 
-For `s > 0` the power is continuous and the origin is a removable point
-(`TauCeti.hasWeakFDerivOn_of_hasFDerivAt_off_countable`). For `s ≤ 0`, where the power is
-unbounded near the origin unless `s = 0`, the power is replaced by the smooth regularizations
-`(‖x‖ ^ 2 + t) ^ (s / 2)`, whose values and derivatives are dominated by those at `t = 0`, and
-dominated convergence passes the integration by parts identity to the limit `t → 0⁺`.
+For `s > 0` the power is continuous and the origin is a removable point: the integral of the
+derivative of `‖x‖ ^ s g(x)`, which exists off the origin, vanishes for every `C¹` function `g`
+with compact support (`TauCeti.integral_apply_eq_zero_of_hasFDerivAt_off_countable`). For
+`s ≤ 0`, where the power is unbounded near the origin unless `s = 0`, the power is replaced by the
+smooth regularizations `(‖x‖ ^ 2 + t) ^ (s / 2)`, whose values and derivatives are dominated by
+those at `t = 0`, and dominated convergence passes the integration by parts identity to the limit
+`t → 0⁺`.
 
 This adapts the regularization proof first given for the Newtonian kernel in Tau Ceti's
 `TauCeti.integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul`
@@ -47,7 +50,7 @@ those converge in `L¹` on the unit ball, dominated by `‖v‖` and by `2 ‖v�
 * `TauCeti.locallyIntegrable_norm_rpow_smul_innerSL`: the classical derivative is locally
   integrable for `s > 1 - d`.
 * `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`: integration by parts against `‖x‖ ^ s` for
-  `1 - d < s ≤ 0`.
+  `s > 1 - d`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow`: the classical derivative is a weak derivative on every
   open set for `s > 1 - d`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_mul_inner`: for `d ≥ 2`, the coordinates of the unit
@@ -148,10 +151,9 @@ private lemma abs_regPowDeriv_le (hs : s ≤ 2) (v : E) {t : ℝ} (ht : 0 ≤ t)
   exact mul_le_mul_of_nonneg_left (sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith))
     (abs_nonneg s)
 
-/-- **Integration by parts against a singular norm power.** For `1 - dim E < s ≤ 0` and a `C¹`
-function `g` with compact support, `∫ ‖x‖ ^ s ∂ᵥg = -∫ s ‖x‖ ^ (s - 2) ⟪x, v⟫ g`, although for
-`s < 0` the power is unbounded near the origin. -/
-theorem integral_norm_rpow_mul_fderiv_eq_neg (hs0 : s ≤ 0)
+/-- Integration by parts against a norm power `‖x‖ ^ s` with `1 - dim E < s ≤ 0`, through the
+smooth regularizations `(‖x‖ ^ 2 + t) ^ (s / 2)`. -/
+private theorem integral_norm_rpow_mul_fderiv_eq_neg_of_nonpos (hs0 : s ≤ 0)
     (hs : 1 - (Module.finrank ℝ E : ℝ) < s) {g : E → ℝ} (hg : ContDiff ℝ 1 g)
     (hc : HasCompactSupport g) (v : E) :
     ∫ x, ‖x‖ ^ s * fderiv ℝ g x v ∂μ =
@@ -209,24 +211,58 @@ theorem integral_norm_rpow_mul_fderiv_eq_neg (hs0 : s ≤ 0)
   rw [integral_congr_ae hderiv]
   exact tendsto_nhds_unique (hL.congr' hibp) hR.neg
 
+/-- Integration by parts against a norm power `‖x‖ ^ s` with `s > 0`, which is continuous and
+differentiable off the origin. -/
+private theorem integral_norm_rpow_mul_fderiv_eq_neg_of_pos (hs0 : 0 < s)
+    (hs : 1 - (Module.finrank ℝ E : ℝ) < s) {g : E → ℝ} (hg : ContDiff ℝ 1 g)
+    (hc : HasCompactSupport g) (v : E) :
+    ∫ x, ‖x‖ ^ s * fderiv ℝ g x v ∂μ =
+      -∫ x, ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) v * g x ∂μ := by
+  have hpow : Continuous fun x : E ↦ ‖x‖ ^ s := continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le
+  have hg' : Continuous fun x ↦ fderiv ℝ g x v :=
+    (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hcg' : HasCompactSupport fun x ↦ fderiv ℝ g x v :=
+    (hc.fderiv ℝ).comp_left (g := fun L : E →L[ℝ] ℝ ↦ L v) rfl
+  have hi₁ : Integrable (fun x ↦ ‖x‖ ^ s * fderiv ℝ g x v) μ :=
+    (hpow.mul hg').integrable_of_hasCompactSupport hcg'.mul_left
+  have hi₂ : Integrable (fun x ↦ ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) v * g x) μ := by
+    simpa [mul_comm] using
+      ((locallyIntegrable_norm_rpow_smul_innerSL (μ := μ)
+        hs).integrable_smul_left_of_hasCompactSupport hg.continuous hc).apply_continuousLinearMap v
+  -- The product `‖x‖ ^ s g(x)` is differentiable off the origin, so its derivative integrates
+  -- to zero.
+  have hzero := integral_apply_eq_zero_of_hasFDerivAt_off_countable (μ := μ)
+    (countable_singleton (0 : E)) (hpow.mul hg.continuous) hc.mul_left
+    (fun x hx ↦ (hasFDerivAt_norm_rpow_of_ne s hx).mul
+      ((hg.differentiable one_ne_zero) x).hasFDerivAt) v
+  rw [eq_neg_iff_add_eq_zero, ← integral_add hi₁ hi₂, ← hzero]
+  congr 1 with x
+  simp only [add_apply, smul_apply, smul_eq_mul]
+  ring
+
+/-- **Integration by parts against a norm power.** For `s > 1 - dim E` and a `C¹` function `g`
+with compact support, `∫ ‖x‖ ^ s ∂ᵥg = -∫ s ‖x‖ ^ (s - 2) ⟪x, v⟫ g`, although for `s < 0` the
+power is unbounded near the origin. -/
+theorem integral_norm_rpow_mul_fderiv_eq_neg (hs : 1 - (Module.finrank ℝ E : ℝ) < s)
+    {g : E → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g) (v : E) :
+    ∫ x, ‖x‖ ^ s * fderiv ℝ g x v ∂μ =
+      -∫ x, ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) v * g x ∂μ := by
+  rcases le_or_gt s 0 with hs0 | hs0
+  · exact integral_norm_rpow_mul_fderiv_eq_neg_of_nonpos hs0 hs hg hc v
+  · exact integral_norm_rpow_mul_fderiv_eq_neg_of_pos hs0 hs hg hc v
+
 /-- **Norm powers are weakly differentiable.** For `s > 1 - dim E`, on every open set the
 classical derivative `s ‖x‖ ^ (s - 2) ⟪x, ·⟫` of `x ↦ ‖x‖ ^ s`, which exists away from the
 origin, is a weak derivative of the power, although for `s < 0` the power is unbounded near the
 origin. -/
 theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (fun x : E => ‖x‖ ^ s)
-      (fun x => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) := by
-  rcases le_or_gt s 0 with hs0 | hs0
-  · exact hasWeakFDerivOn_of_forall_integral_fderiv_smul
-      (by simpa only [zero_sub, norm_neg] using
-        locallyIntegrable_norm_sub_rpow (mu := μ) (s := s) (by linarith) (0 : E))
-      (locallyIntegrable_norm_rpow_smul_innerSL hs) (fun _ hg hc v ↦ by
-        simpa only [smul_eq_mul, mul_comm] using
-          integral_norm_rpow_mul_fderiv_eq_neg hs0 hs hg hc v) Ω
-  · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
-      (continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).continuousOn
-      ((locallyIntegrable_norm_rpow_smul_innerSL hs).locallyIntegrableOn _)
-      fun x hx ↦ hasFDerivAt_norm_rpow_of_ne s hx.2
+      (fun x => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) :=
+  hasWeakFDerivOn_of_forall_integral_fderiv_smul
+    (by simpa only [zero_sub, norm_neg] using
+      locallyIntegrable_norm_sub_rpow (mu := μ) (s := s) (by linarith) (0 : E))
+    (locallyIntegrable_norm_rpow_smul_innerSL hs) (fun _ hg hc v ↦ by
+      simpa only [smul_eq_mul, mul_comm] using integral_norm_rpow_mul_fderiv_eq_neg hs hg hc v) Ω
 
 /-! ### The unit radial field -/
 
