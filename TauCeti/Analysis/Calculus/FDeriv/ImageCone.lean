@@ -65,35 +65,25 @@ theorem HasFDerivWithinAt.exists_pos_forall_infDist_range_le
 parametrization transfers its lower bound to its derivative. -/
 theorem HasFDerivWithinAt.le_mul_norm_of_mem_tangentConeAt
     {𝕜 U V : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup U] [NormedSpace 𝕜 U]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] {f : U → V} {s : Set U} {x : U}
-    {A : U →L[𝕜] V} (hd : HasFDerivWithinAt f A s x) (hx : x ∈ s)
-    {K : ℝ≥0} (hi : AntilipschitzWith K (s.domRestrict f))
-    {v : U} (hv : v ∈ tangentConeAt 𝕜 s x) :
+    [NormedAddCommGroup U] [NormedSpace 𝕜 U] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    {f : U → V} {s : Set U} {x : U} {A : U →L[𝕜] V} (hd : HasFDerivWithinAt f A s x) (hx : x ∈ s)
+    {K : ℝ≥0} (hi : AntilipschitzWith K (s.domRestrict f)) {v : U} (hv : v ∈ tangentConeAt 𝕜 s x) :
     ‖v‖ ≤ K * ‖A v‖ := by
   obtain ⟨ι, l, hl, c, d, hd₀, hds, hcd⟩ := exists_fun_of_mem_tangentConeAt hv
-  have hlim : Tendsto (fun n => ‖c n • d n‖) l (𝓝 ‖v‖) := hcd.norm
-  have hAlim : Tendsto (fun n => (K : ℝ) * ‖c n • (f (x + d n) - f x)‖) l (𝓝 ((K : ℝ) * ‖A v‖)) :=
-    (hd.lim hd₀ hds hcd).norm.const_mul (K : ℝ)
-  refine le_of_tendsto_of_tendsto hlim hAlim (hds.mono fun n hn => ?_)
+  refine le_of_tendsto_of_tendsto hcd.norm ((hd.lim hd₀ hds hcd).norm.const_mul (K : ℝ))
+    (hds.mono fun n hn => ?_)
   have hdist : dist (x + d n) x ≤ K * dist (f (x + d n)) (f x) :=
     hi.le_mul_dist ⟨x + d n, hn⟩ ⟨x, hx⟩
   simp only [norm_smul, dist_eq_norm, add_sub_cancel_left] at hdist ⊢
-  calc
-    ‖c n‖ * ‖d n‖ ≤ ‖c n‖ * (K * ‖f (x + d n) - f x‖) :=
-      mul_le_mul_of_nonneg_left hdist (norm_nonneg _)
-    _ = K * (‖c n‖ * ‖f (x + d n) - f x‖) := by ring
+  nlinarith [norm_nonneg (c n)]
 
 /-- When the tangent cone of the parameter set is the whole space, an inverse-Lipschitz
 parametrization has an antilipschitz derivative with the same constant. -/
 theorem HasFDerivWithinAt.antilipschitzWith_of_tangentConeAt_eq_univ
     {𝕜 U V : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup U] [NormedSpace 𝕜 U]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] {f : U → V} {s : Set U} {x : U}
-    {A : U →L[𝕜] V} (hd : HasFDerivWithinAt f A s x) (hx : x ∈ s)
-    {K : ℝ≥0} (hi : AntilipschitzWith K (s.domRestrict f))
-    (htc : tangentConeAt 𝕜 s x = univ) :
+    [NormedAddCommGroup U] [NormedSpace 𝕜 U] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    {f : U → V} {s : Set U} {x : U} {A : U →L[𝕜] V} (hd : HasFDerivWithinAt f A s x) (hx : x ∈ s)
+    {K : ℝ≥0} (hi : AntilipschitzWith K (s.domRestrict f)) (htc : tangentConeAt 𝕜 s x = univ) :
     AntilipschitzWith K A :=
   AddMonoidHomClass.antilipschitz_of_bound A fun v =>
     hd.le_mul_norm_of_mem_tangentConeAt hx hi (htc.symm ▸ mem_univ v)
-

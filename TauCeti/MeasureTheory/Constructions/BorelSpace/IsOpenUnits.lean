@@ -11,57 +11,36 @@ public import TauCeti.Topology.Algebra.IsOpenUnits
 /-!
 # Borel measurability of `Ring.inverse` for monoids with open units
 
-In a topological monoid `M` with open units (`IsOpenUnits M`), `{x : M | IsUnit x}` is open and
-therefore Borel measurable (`measurableSet_isUnit`). In a topological monoid with zero satisfying
-`IsOpenUnits R` (in particular, in any complete normed ring or endomorphism algebra `E →L[𝕜] E`
-of a Banach space via `NormedRing.instIsOpenUnits`), `Ring.inverse : R → R` is continuous at every
-unit (`IsOpenUnits.continuousAt_ringInverse`) and vanishes outside `{x : R | IsUnit x}`, so it is
-Borel measurable (`measurable_ringInverse`).
-
-## Main results
-
-* `measurableSet_isUnit`: `{x : M | IsUnit x}` is Borel measurable when `IsOpenUnits M`.
-* `measurable_ringInverse`, `Measurable.ringInverse`, `AEMeasurable.ringInverse`: Borel
-  measurability of `Ring.inverse` under `IsOpenUnits R`.
+In a topological monoid with open units (`IsOpenUnits`), `{x | IsUnit x}` is open and Borel
+measurable (`measurableSet_isUnit`), and `Ring.inverse` on a `MonoidWithZero` with open units is
+Borel measurable (`measurable_ringInverse`, `Measurable.ringInverse`, `AEMeasurable.ringInverse`).
 -/
 
 public section
 
 open MeasureTheory Set Topology
 
-/-- In a topological monoid with open units, the set of units `{x : M | IsUnit x}` is Borel
-measurable. -/
+/-- In a topological monoid with open units, `{x : M | IsUnit x}` is Borel measurable. -/
 theorem measurableSet_isUnit {M : Type*} [Monoid M] [TopologicalSpace M] [IsOpenUnits M]
-    [MeasurableSpace M] [OpensMeasurableSpace M] :
-    MeasurableSet {x : M | IsUnit x} := by
-  have heq : {x : M | IsUnit x} = range (Units.val : Mˣ → M) := by
-    ext x
-    exact Iff.rfl
-  rw [heq]
-  exact IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.measurableSet
+    [MeasurableSpace M] [OpensMeasurableSpace M] : MeasurableSet {x : M | IsUnit x} :=
+  IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.measurableSet
 
 section MonoidWithZero
 
 variable {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [IsOpenUnits R]
   [MeasurableSpace R] [BorelSpace R]
 
-/-- Ring inversion `Ring.inverse` on a monoid with zero and open units is Borel measurable: it is
-continuous on the open set of units and zero on its complement. -/
+/-- Ring inversion `Ring.inverse` on a monoid with zero and open units is Borel measurable. -/
 @[fun_prop]
 theorem measurable_ringInverse : Measurable (Ring.inverse : R → R) := by
   classical
   have hcont : ContinuousOn (Ring.inverse : R → R) {x : R | IsUnit x} := by
-    intro x (hx : IsUnit x)
-    obtain ⟨u, rfl⟩ := hx
-    exact (IsOpenUnits.continuousAt_ringInverse u).continuousWithinAt
-  have heq : (Ring.inverse : R → R) =
-      {x : R | IsUnit x}.piecewise Ring.inverse (fun _ => 0) := by
-    ext x
-    by_cases hx : x ∈ {x : R | IsUnit x}
-    · rw [Set.piecewise_eq_of_mem _ _ _ hx]
-    · rw [Set.piecewise_eq_of_notMem _ _ _ hx, Ring.inverse_non_unit x hx]
-  rw [heq]
-  exact hcont.measurable_piecewise continuousOn_const measurableSet_isUnit
+    rintro _ ⟨u, rfl⟩; exact (IsOpenUnits.continuousAt_ringInverse u).continuousWithinAt
+  have heq : (Ring.inverse : R → R) = {x : R | IsUnit x}.piecewise Ring.inverse 0 := funext fun x =>
+    if hx : x ∈ {x : R | IsUnit x} then (Set.piecewise_eq_of_mem _ _ _ hx).symm
+    else (Ring.inverse_non_unit x hx).trans
+      (Set.piecewise_eq_of_notMem _ Ring.inverse (0 : R → R) hx).symm
+  exact heq ▸ hcont.measurable_piecewise continuousOn_const measurableSet_isUnit
 
 /-- Composition form of `measurable_ringInverse` for `fun_prop` and dot notation. -/
 @[fun_prop]
