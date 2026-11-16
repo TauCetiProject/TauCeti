@@ -379,8 +379,15 @@ abbrev mergeFaces : SurfaceModel.{u, v, w} where
 
 /-- A remaining dart is a boundary dart of the merged model exactly when it is one of the original
 model. -/
-theorem mem_boundaryDarts_mergeFaces_iff {e : (S.mergeFaces h).graph.E} :
-    e ∈ (S.mergeFaces h).boundaryDarts ↔ e.1 ∈ S.boundaryDarts := by
+@[simp] theorem mem_boundaryDarts_mergeFaces_iff {e : (S.mergeFaces h).graph.E} :
+    -- Membership is stated in the set of darts of `S` off the edge of `d`, the form to which
+    -- `simp` reduces `Set (S.mergeFaces h).graph.E`: stated in the latter form (or in
+    -- `Set (S.graph.deleteEdge d).E`), the lemma is not found by `simp`.
+    @Membership.mem ↥{e : S.graph.E | S.graph.toGeomEdge e ≠
+        S.graph.toGeomEdge (S.incoming ⟨g₁, ⟨0, S.sides_pos g₁⟩⟩)}
+      (Set ↥{e : S.graph.E | S.graph.toGeomEdge e ≠
+        S.graph.toGeomEdge (S.incoming ⟨g₁, ⟨0, S.sides_pos g₁⟩⟩)}) _
+      (S.mergeFaces h).boundaryDarts e ↔ e.1 ∈ S.boundaryDarts := by
   rw [mem_boundaryDarts_iff, mem_boundaryDarts_iff]
   exact Eq.congr_left (congrArg₂ (· + ·) (PolygonalComplex.sideCount_mergeFaces h _)
     (PolygonalComplex.sideCount_mergeFaces h e))
