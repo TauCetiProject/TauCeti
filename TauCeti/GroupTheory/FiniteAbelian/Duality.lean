@@ -133,23 +133,11 @@ private theorem surjective_evalRootsOfUnityHom (a : G) :
   have : NeZero (orderOf a) := ⟨(orderOf_pos a).ne'⟩
   have : HasEnoughRootsOfUnity M (orderOf a) :=
     HasEnoughRootsOfUnity.of_dvd M (Monoid.order_dvd_exponent a)
-  have hord : Nat.card (rootsOfUnity (orderOf a) M) = orderOf a :=
-    HasEnoughRootsOfUnity.natCard_rootsOfUnity M (orderOf a)
-  have hfin_roots : Finite (rootsOfUnity (orderOf a) M) :=
-    Nat.finite_of_card_ne_zero (hord.trans_ne (orderOf_pos a).ne')
-  have hker : Nat.card (evalRootsOfUnityHom M a).ker = Nat.card (G ⧸ Subgroup.zpowers a) := by
-    rw [ker_evalRootsOfUnityHom, card_domRestrictHom_ker]
-  have hcard : Nat.card (evalRootsOfUnityHom M a).ker * Nat.card (evalRootsOfUnityHom M a).range =
-      Nat.card (G →* Mˣ) := by
-    rw [← Nat.card_congr (QuotientGroup.quotientKerEquivRange (evalRootsOfUnityHom M a)).toEquiv,
-      ← Subgroup.index_eq_card, Subgroup.card_mul_index]
-  rw [card_monoidHom_of_hasEnoughRootsOfUnity G M, hker] at hcard
-  have hlag : Nat.card (G ⧸ Subgroup.zpowers a) * orderOf a = Nat.card G := by
-    rw [← Subgroup.index_eq_card, ← Nat.card_zpowers, Subgroup.index_mul_card]
-  have hrange : Nat.card (evalRootsOfUnityHom M a).range = Nat.card (rootsOfUnity (orderOf a) M) :=
-    (Nat.mul_left_cancel Nat.card_pos (hcard.trans hlag.symm)).trans hord.symm
-  rw [← MonoidHom.range_eq_top]
-  exact Subgroup.eq_top_of_card_eq _ hrange
+  refine MonoidHom.surjective_of_card_ker_le_div _ (le_of_eq ?_)
+  rw [card_monoidHom_of_hasEnoughRootsOfUnity G M, HasEnoughRootsOfUnity.natCard_rootsOfUnity,
+    ker_evalRootsOfUnityHom, card_domRestrictHom_ker,
+    (Subgroup.zpowers a).card_eq_card_quotient_mul_card_subgroup, Nat.card_zpowers,
+    Nat.mul_div_cancel _ (orderOf_pos a)]
 
 /-- **Every `(orderOf a)`-th root of unity is attained by a character at `a`.** If `M` has enough
 roots of unity for the finite commutative group `G`, then for any `a : G` and any
@@ -169,9 +157,6 @@ theorem finprod_monoidHom_apply {N : Type*} [CommMonoid N] (a : G) (g : Mˣ → 
   have : NeZero (orderOf a) := ⟨(orderOf_pos a).ne'⟩
   have : HasEnoughRootsOfUnity M (orderOf a) :=
     HasEnoughRootsOfUnity.of_dvd M (Monoid.order_dvd_exponent a)
-  have hfin_roots : Finite (rootsOfUnity (orderOf a) M) :=
-    Nat.finite_of_card_ne_zero <|
-      (HasEnoughRootsOfUnity.natCard_rootsOfUnity M (orderOf a)).trans_ne (orderOf_pos a).ne'
   have := Fintype.ofFinite (G →* Mˣ)
   have := Fintype.ofFinite (rootsOfUnity (orderOf a) M)
   rw [finprod_eq_prod_of_fintype, finprod_eq_prod_of_fintype, ← card_domRestrictHom_ker M

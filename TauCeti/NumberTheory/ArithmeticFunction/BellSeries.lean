@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 import Mathlib.RingTheory.PowerSeries.WellKnown
+import TauCeti.NumberTheory.Divisors
 
 /-!
 # Bell series of arithmetic functions
@@ -52,19 +53,6 @@ section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
 
-private theorem map_antidiagonal_eq_divisorsAntidiagonal_prime_pow {p : ℕ} (hp : p.Prime)
-    (k : ℕ) :
-    letI ι : ℕ ↪ ℕ := ⟨fun i ↦ p ^ i, Nat.pow_right_injective hp.one_lt⟩
-    (Finset.antidiagonal k).map (.prodMap ι ι) = (p ^ k).divisorsAntidiagonal := by
-  refine Finset.Subset.antisymm (Nat.antidiagonal_map_subset_divisorsAntidiagonal_pow hp.one_lt k)
-    fun ⟨a, b⟩ hab ↦ ?_
-  obtain ⟨hmul, -⟩ := Nat.mem_divisorsAntidiagonal.mp hab
-  obtain ⟨i, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro b hmul)
-  obtain ⟨j, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro_left (p ^ i) hmul)
-  rw [← pow_add] at hmul
-  exact Finset.mem_map.mpr ⟨(i, j),
-    Finset.mem_antidiagonal.mpr (Nat.pow_right_injective hp.one_lt hmul), rfl⟩
-
 /-- The **Bell series** of an arithmetic function at a prime `p`, sending `f` to the formal power
 series `∑ k, f (p ^ k) X ^ k`. This is an `R`-algebra homomorphism from Dirichlet convolution to
 multiplication of formal power series. -/
@@ -76,7 +64,7 @@ noncomputable def bellSeries (p : ℕ) (hp : p.Prime) : ArithmeticFunction R →
     | succ k => simp [ArithmeticFunction.one_apply, hp.ne_one]
   map_mul' f g := PowerSeries.ext fun k ↦ by
     rw [PowerSeries.coeff_mk, ArithmeticFunction.mul_apply, PowerSeries.coeff_mul,
-      ← map_antidiagonal_eq_divisorsAntidiagonal_prime_pow hp k, Finset.sum_map]
+      Nat.divisorsAntidiagonal_prime_pow hp k, Finset.sum_map]
     simp
   map_zero' := PowerSeries.ext fun _ ↦ by simp
   map_add' _ _ := PowerSeries.ext fun _ ↦ by simp

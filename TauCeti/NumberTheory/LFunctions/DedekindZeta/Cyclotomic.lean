@@ -36,15 +36,15 @@ punctured germs at every point of `ℂ` and as pointwise equalities away from `s
   `dedekindZetaC K s = ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction s` for `s ≠ 1`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter`:
   the same with the principal factor `riemannZeta s` separated.
-* `TauCeti.LFunctions.dedekindZetaC_mul_prod_eulerFactor_eventuallyEq_prod_LFunction`: the
-  imprimitive level-`n` factorization as an equality of punctured germs at every `s : ℂ`.
-* `TauCeti.LFunctions.dedekindZetaC_mul_prod_eulerFactor_eq_prod_LFunction`: the imprimitive
+* `TauCeti.LFunctions.dedekindZetaC_mul_prod_one_sub_eq_prod_LFunction`: the imprimitive
   level-`n` factorization pointwise for `s ≠ 1`.
+* `TauCeti.LFunctions.dedekindZetaC_mul_prod_one_sub_eventuallyEq_prod_LFunction`: the imprimitive
+  level-`n` factorization as an equality of punctured germs at every `s : ℂ`.
 
 ## References
 
 * L. C. Washington, *Introduction to Cyclotomic Fields*, Theorem 4.3.
-* J. Neukirch, *Algebraic Number Theory*, Chapter VII, Corollary 5.11.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VII, §10.
 -/
 
 public section
@@ -69,7 +69,7 @@ private theorem analyticAt_prod_LFunction_primitiveCharacter {s : ℂ} (hs : s �
 private theorem meromorphic_prod_LFunction_primitiveCharacter :
     Meromorphic fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction z := fun z ↦
   MeromorphicAt.fun_prod fun χ _ ↦
-    DirichletCharacter.meromorphic_LFunction_primitiveCharacter χ z
+    DirichletCharacter.meromorphic_LFunction χ.primitiveCharacter z
 
 /-- The product `∏ χ, χ.primitiveCharacter.LFunction z` is analytic on `Re s > 1`. -/
 private theorem analyticOnNhd_prod_LFunction_primitiveCharacter :
@@ -128,10 +128,22 @@ theorem dedekindZetaC_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter
     ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ (1 : DirichletCharacter ℂ n)),
     DirichletCharacter.LFunction_primitiveCharacter_one]
 
+/-- **The imprimitive cyclotomic factorization of `dedekindZetaC`.** For every `s ≠ 1`,
+`dedekindZetaC K s * ∏ χ, ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * p ^ (-s))` equals
+`∏ χ : DirichletCharacter ℂ n, χ.LFunction s`. -/
+theorem dedekindZetaC_mul_prod_one_sub_eq_prod_LFunction {s : ℂ} (hs : s ≠ 1) :
+    dedekindZetaC K s *
+        ∏ χ : DirichletCharacter ℂ n, ∏ p ∈ n.primeFactors,
+          (1 - χ.primitiveCharacter (p : ZMod χ.conductor) * (p : ℂ) ^ (-s)) =
+      ∏ χ : DirichletCharacter ℂ n, χ.LFunction s := by
+  rw [dedekindZetaC_eq_prod_LFunction_primitiveCharacter K n hs, ← Finset.prod_mul_distrib]
+  exact Finset.prod_congr rfl fun χ _ ↦
+    (DirichletCharacter.LFunction_eq_LFunction_primitiveCharacter_mul χ (.inr hs)).symm
+
 /-- **The imprimitive cyclotomic factorization of `dedekindZetaC`, as germs.** In terms of the
-level-`n` characters `χ : DirichletCharacter ℂ n`, the missing Euler factors at primes dividing `n`
-multiply `dedekindZetaC K` on the left as an equality of punctured germs at every `s : ℂ`. -/
-theorem dedekindZetaC_mul_prod_eulerFactor_eventuallyEq_prod_LFunction (s : ℂ) :
+level-`n` characters `χ : DirichletCharacter ℂ n`, multiplying `dedekindZetaC K` by the factors
+`1 - χ*(p) p^(-z)` at primes dividing `n` gives an equality of punctured germs at every `s : ℂ`. -/
+theorem dedekindZetaC_mul_prod_one_sub_eventuallyEq_prod_LFunction (s : ℂ) :
     (fun z ↦ dedekindZetaC K z *
         ∏ χ : DirichletCharacter ℂ n, ∏ p ∈ n.primeFactors,
           (1 - χ.primitiveCharacter (p : ZMod χ.conductor) * (p : ℂ) ^ (-z))) =ᶠ[𝓝[≠] s]
@@ -140,24 +152,6 @@ theorem dedekindZetaC_mul_prod_eulerFactor_eventuallyEq_prod_LFunction (s : ℂ)
     rcases eq_or_ne s 1 with rfl | hs1
     · exact self_mem_nhdsWithin
     · exact nhdsWithin_le_nhds (isOpen_ne.mem_nhds hs1)
-  filter_upwards [dedekindZetaC_eventuallyEq_prod_LFunction_primitiveCharacter K n s, hne]
-    with z hz hz1
-  rw [hz, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun χ _ ↦ ?_
-  rw [← DirichletCharacter.LFunction_changeLevel χ.conductor_dvd_level χ.primitiveCharacter
-    (.inr hz1), χ.changeLevel_primitiveCharacter]
-
-/-- **The imprimitive cyclotomic factorization of `dedekindZetaC`.** For every `s ≠ 1`,
-`dedekindZetaC K s * ∏ χ, ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * p ^ (-s))` equals
-`∏ χ : DirichletCharacter ℂ n, χ.LFunction s`. -/
-theorem dedekindZetaC_mul_prod_eulerFactor_eq_prod_LFunction {s : ℂ} (hs : s ≠ 1) :
-    dedekindZetaC K s *
-        ∏ χ : DirichletCharacter ℂ n, ∏ p ∈ n.primeFactors,
-          (1 - χ.primitiveCharacter (p : ZMod χ.conductor) * (p : ℂ) ^ (-s)) =
-      ∏ χ : DirichletCharacter ℂ n, χ.LFunction s := by
-  rw [dedekindZetaC_eq_prod_LFunction_primitiveCharacter K n hs, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun χ _ ↦ ?_
-  rw [← DirichletCharacter.LFunction_changeLevel χ.conductor_dvd_level χ.primitiveCharacter
-    (.inr hs), χ.changeLevel_primitiveCharacter]
+  exact hne.mono fun _ hz ↦ dedekindZetaC_mul_prod_one_sub_eq_prod_LFunction K n hz
 
 end TauCeti.LFunctions

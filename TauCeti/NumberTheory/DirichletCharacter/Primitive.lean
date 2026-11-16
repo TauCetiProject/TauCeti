@@ -11,18 +11,15 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.GroupTheory.FiniteAbelian.Duality
 import TauCeti.NumberTheory.DirichletCharacter.Basic
-import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Reflect
 
 /-!
-# Primitive Dirichlet characters: comparison, prime values, and local Euler polynomials
-
-Primitive Dirichlet characters are identified by their lifts to a common nonzero level. Equality
-of the lifts forces equality of the original levels, because changing level preserves the
-conductor. This gives an equality criterion without choosing representatives at prime arguments,
-and identifies the primitive character associated to any lift of a primitive character.
+# Primitive Dirichlet characters: local Euler polynomials and quadratic products
 
 For a prime `p` and a nonzero level `N`, a character `χ` mod `N` has `p ∤ χ.conductor` if and only
-if `χ` factors through the prime-to-`p` part `ordCompl[p] N` of `N`. Characters whose conductor is
+if `χ` factors through the prime-to-`p` part `ordCompl[p] N` of `N`
+(`DirichletCharacter.not_dvd_conductor_iff_factorsThrough_ordCompl`). Characters whose conductor is
 divisible by `p` satisfy `χ.primitiveCharacter p = 0`, while the remaining characters biject with
 all characters modulo `ordCompl[p] N` and evaluate at `p` as characters of
 `(ZMod (ordCompl[p] N))ˣ`. When the coefficient domain has enough roots of unity, taking the
@@ -36,70 +33,22 @@ Only one of the two characters needs to be quadratic.
 
 ## Main results
 
-* `DirichletCharacter.IsPrimitive.changeLevel_eq_changeLevel_iff`: equality of lifts of primitive
-  characters.
-* `DirichletCharacter.IsPrimitive.apply_eq_primitiveCharacter`: a primitive character lifted to a
-  multiple level agrees pointwise with the primitive character of its lift.
-* `DirichletCharacter.not_dvd_conductor_iff_factorsThrough_ordCompl`: `¬ p ∣ χ.conductor` iff `χ`
-  factors through `ordCompl[p] N`.
 * `DirichletCharacter.prod_one_sub_C_mul_X_primitiveCharacter`:
   `∏ χ : DirichletCharacter R N, (1 - C (χ.primitiveCharacter p) * X) = (1 - X ^ f) ^ (φ(m) / f)`
   for `m = ordCompl[p] N` and `f = orderOf (p : ZMod m)`.
+* `DirichletCharacter.IsPrimitive.mul_eq_one_iff`: the common-level product of two primitive
+  characters, one of them quadratic, is principal iff they coincide.
+
+## References
+
+* L. C. Washington, *Introduction to Cyclotomic Fields*, Theorem 4.3.
 -/
 
 public section
 
 namespace DirichletCharacter
 
-variable {R : Type*} {N M L : ℕ}
-
-/-- Two primitive characters have equal lifts to a common nonzero level exactly when their levels
-and characters agree. The existential equality transports the first character to the second
-level. -/
-theorem IsPrimitive.changeLevel_eq_changeLevel_iff [CommMonoidWithZero R] [NeZero L]
-    {χ : DirichletCharacter R N} {ψ : DirichletCharacter R M}
-    (hχ : χ.IsPrimitive) (hψ : ψ.IsPrimitive) (hN : N ∣ L) (hM : M ∣ L) :
-    changeLevel hN χ = changeLevel hM ψ ↔ ∃ h : N = M, h ▸ χ = ψ := by
-  constructor
-  · intro h
-    have hlevel : N = M := by
-      simpa only [conductor_changeLevel, (isPrimitive_def χ).mp hχ,
-        (isPrimitive_def ψ).mp hψ] using congrArg conductor h
-    subst M
-    exact ⟨rfl, changeLevel_injective hN h⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
-
-/-- If a primitive character `ψ` lifts to `χ` at a nonzero multiple level, then `ψ` agrees with
-`χ.primitiveCharacter` at every integer. -/
-theorem IsPrimitive.apply_eq_primitiveCharacter [CommMonoidWithZero R] [NeZero N]
-    {ψ : DirichletCharacter R M} {χ : DirichletCharacter R N}
-    (hψ : ψ.IsPrimitive) (hMN : M ∣ N) (hχ : changeLevel hMN ψ = χ) (a : ℤ) :
-    ψ a = χ.primitiveCharacter a := by
-  obtain ⟨rfl, rfl⟩ := (hψ.changeLevel_eq_changeLevel_iff χ.primitiveCharacter_isPrimitive
-    hMN χ.conductor_dvd_level).mp (hχ.trans χ.changeLevel_primitiveCharacter.symm)
-  rfl
-
-/-- For a prime `p` and a nonzero level `N`, `p` fails to divide the conductor of `χ` if and only
-if `χ` factors through the prime-to-`p` part `ordCompl[p] N` of `N`. -/
-theorem not_dvd_conductor_iff_factorsThrough_ordCompl [CommMonoidWithZero R] [NeZero N]
-    (χ : DirichletCharacter R N) {p : ℕ} (hp : p.Prime) :
-    ¬ p ∣ χ.conductor ↔ χ.FactorsThrough (ordCompl[p] N) := by
-  rw [← mem_conductorSet_iff, mem_conductorSet_iff_conductor_dvd χ (Nat.ordCompl_dvd N p)]
-  exact ⟨Nat.dvd_ordCompl_of_dvd_not_dvd χ.conductor_dvd_level,
-    fun h hd ↦ Nat.not_dvd_ordCompl hp (NeZero.ne N) (hd.trans h)⟩
-
-/-- Lifting a character `ψ` from `ordCompl[p] N` to `N` and taking its primitive character
-preserves the value at `p`. -/
-theorem primitiveCharacter_changeLevel_ordCompl_apply_prime [CommMonoidWithZero R] [NeZero N]
-    {p : ℕ} (hp : p.Prime) (ψ : DirichletCharacter R (ordCompl[p] N)) :
-    (changeLevel (Nat.ordCompl_dvd N p) ψ).primitiveCharacter p = ψ p := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact Subsingleton.elim _ _
-  have hcop : IsCoprime (p : ℤ) (ordCompl[p] N : ℕ) :=
-    Nat.isCoprime_iff_coprime.mpr (Nat.coprime_ordCompl hp (NeZero.ne N))
-  rw [← Int.cast_natCast (n := p), primitiveCharacter_changeLevel_apply,
-    primitiveCharacter_apply_of_isCoprime ψ hcop, Int.cast_natCast]
+variable {R : Type*} {N M : ℕ}
 
 /-- **Local Euler polynomial across all primitive characters of level dividing `N`.** For a prime
 `p` and a nonzero level `N`, let `m = ordCompl[p] N` and `f = orderOf (p : ZMod m)`. Over any
@@ -144,12 +93,12 @@ theorem prod_one_sub_C_mul_X_primitiveCharacter [CommRing R] [IsDomain R] {N p :
     refine Fintype.prod_equiv e _ _ fun ⟨χ, hχ⟩ ↦ ?_
     have hval : χ.primitiveCharacter (p : ZMod χ.conductor) =
         ((e ⟨χ, hχ⟩ u : Rˣ) : R) := by
-      have h1 := primitiveCharacter_changeLevel_ordCompl_apply_prime hp
-        (factorsThroughEquiv hm ⟨χ, hχ⟩)
+      have h1 := primitiveCharacter_changeLevel_apply_of_isCoprime hm
+        (factorsThroughEquiv hm ⟨χ, hχ⟩) (a := (p : ℤ)) (Nat.isCoprime_iff_coprime.mpr hcop)
       have h2 : changeLevel hm (factorsThroughEquiv hm ⟨χ, hχ⟩) = χ := by
         rw [factorsThroughEquiv_apply]
         exact hχ.eq_changeLevel.symm
-      rw [h2] at h1
+      rw [h2, Int.cast_natCast, Int.cast_natCast] at h1
       rw [h1, ← ZMod.coe_unitOfCoprime p hcop]
       exact (MulChar.coe_toUnitHom _ u).symm
     rw [hval]
