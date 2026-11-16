@@ -43,7 +43,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
-  at naturals prime to the new level, and
+  at naturals prime to the new level, `DirichletCharacter.changeLevel_dvd_of_eq_apply`:
+  transporting along an equality of levels preserves all integer values, and
   `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
   character at an integer prime to the new level.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
@@ -300,6 +301,15 @@ theorem changeLevel_ringHomComp_intCast_apply {R : Type*} [CommRing R] {d N : �
     (ψ : DirichletCharacter ℤ d) {n : ℤ} (hn : IsCoprime n N) :
     changeLevel h (ψ.ringHomComp (Int.castRingHom R)) n = ψ n := by
   rw [changeLevel_eq_cast_of_dvd' _ h hn, MulChar.ringHomComp_apply, eq_intCast]
+
+/-- Transporting along a propositional level equality via `changeLevel (dvd_of_eq h)` preserves
+all integer evaluations, including nonunits. -/
+@[simp]
+theorem changeLevel_dvd_of_eq_apply {R : Type*} [CommMonoidWithZero R] {M₁ M₂ : ℕ} (h : M₁ = M₂)
+    (ψ : DirichletCharacter R M₁) (n : ℤ) :
+    changeLevel (dvd_of_eq h) ψ n = ψ n := by
+  subst h
+  rw [changeLevel_self]
 
 /-- Two Dirichlet characters of equal levels that agree at the integers prime to the level agree
 at every integer, since both vanish at the others. The levels are equal natural numbers, not

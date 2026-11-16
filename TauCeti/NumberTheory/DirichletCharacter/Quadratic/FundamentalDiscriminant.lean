@@ -22,10 +22,10 @@ Every quadratic Dirichlet character `χ` of level `N ≠ 0` is induced by the Kr
 unique fundamental discriminant `D` with `|D| = χ.conductor`: at every integer `n` coprime to `N`,
 `χ n = fundamentalDiscriminantCharCast R D hD n`, and equivalently `χ` is the lift along
 `|D| ∣ N` of `fundamentalDiscriminantCharCast R D hD`. The principal character corresponds to
-`D = 1`. When `[DecidableEq R]`, that unique discriminant is `χ.conductor` if `χ (-1) = 1` and
-`-χ.conductor` otherwise. Over any `RCLike` field (such as `ℝ` or `ℂ`), real-valued Dirichlet
-characters coincide with quadratic ones (`MulChar.isQuadratic_iff_forall_im_eq_zero`), so every
-real Dirichlet character of nonzero level has a unique primitive fundamental discriminant.
+`D = 1`. That unique discriminant is `χ.conductor` if `χ (-1) = 1` and `-χ.conductor` otherwise.
+Over any `RCLike` field (such as `ℝ` or `ℂ`), real-valued Dirichlet characters coincide with
+quadratic ones (`MulChar.isQuadratic_iff_forall_im_eq_zero`), so every real Dirichlet character of
+nonzero level has a unique primitive fundamental discriminant.
 
 The construction first classifies primitive quadratic characters locally. At a prime power `p ^ k`,
 `k ≠ 0`, a primitive quadratic character is the Legendre character modulo `p` (so `k = 1`) when `p`
@@ -188,16 +188,6 @@ theorem IsPrimitive.exists_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
     fundamentalDiscriminantCharCast_apply,
     fundamentalDiscriminantChar_apply_primeDiscriminant (hP p hp).1]
 
-/-- When `2 = 0` in `R`, every quadratic multiplicative character is principal: its values on
-units lie in `{1, -1} = {1}`. -/
-private theorem eq_one_of_two_eq_zero {M : Type*} [CommMonoid M] {χ : MulChar M R}
-    (hχ : χ.IsQuadratic) (h2 : (2 : R) = 0) : χ = 1 := by
-  refine MulChar.eq_one_iff.mpr fun u ↦ ?_
-  rcases hχ.apply_eq_one_or_eq_neg_one u.isUnit with hu | hu
-  · exact hu
-  · rw [hu]
-    linear_combination -h2
-
 /-- Two fundamental discriminants of absolute value `χ.conductor` whose Kronecker characters agree
 with a quadratic character `χ` at `-1` are equal: when `2 ≠ 0` in `R`, `χ (-1)` fixes their sign,
 and when `2 = 0`, `χ = 1` has conductor `1`, forcing both discriminants to equal `1`. -/
@@ -209,7 +199,7 @@ private theorem eq_of_isFundamentalDiscr_apply_neg_one_eq {N : ℕ} [NeZero N]
     (h₂ : χ ((-1 : ℤ) : ZMod N) = fundamentalDiscriminantCharCast R D₂ hD₂ (-1 : ℤ)) :
     D₁ = D₂ := by
   by_cases h2 : (2 : R) = 0
-  · have hc : χ.conductor = 1 := by rw [eq_one_of_two_eq_zero hχ h2, conductor_one]
+  · have hc : χ.conductor = 1 := by rw [hχ.eq_one_of_two_eq_zero h2, conductor_one]
     rw [hD₁.natAbs_eq_one_iff.mp (habs₁.trans hc), hD₂.natAbs_eq_one_iff.mp (habs₂.trans hc)]
   · have hsigncast : (D₁.sign : R) = (D₂.sign : R) := by
       simpa [fundamentalDiscriminantChar_neg_one] using h₁.symm.trans h₂
@@ -242,14 +232,6 @@ theorem IsPrimitive.existsUnique_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N
       (hDN.trans hcond.symm) (hval' (-1)) (hval (-1))⟩
 
 /-! ### Quadratic and real characters of arbitrary nonzero level -/
-
-/-- Transporting along a propositional level equality via `changeLevel (dvd_of_eq h)` preserves
-all integer evaluations, including nonunits. -/
-private theorem changeLevel_dvd_of_eq_apply {M₁ M₂ : ℕ} (h : M₁ = M₂)
-    (ψ : DirichletCharacter R M₁) (n : ℤ) :
-    changeLevel (dvd_of_eq h) ψ n = ψ n := by
-  subst h
-  rw [changeLevel_self]
 
 /-- A Dirichlet character of level `N` is the lift along `|D| ∣ N` of
 `fundamentalDiscriminantCharCast R D hD` if and only if the two agree at every integer coprime to
@@ -349,7 +331,7 @@ theorem changeLevel_isFundamentalDiscr_apply_eq_iff {N M : ℕ} [NeZero M] (hNM 
 
 section Sign
 
-variable [DecidableEq R] [NeZero (2 : R)] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N}
+variable [NeZero (2 : R)] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N} [Decidable (χ (-1) = 1)]
 
 /-- When `2 ≠ 0`, the fundamental discriminant of a primitive quadratic character `χ` of level `N`
 is `N` if `χ (-1) = 1` and `-N` otherwise, its sign being `χ (-1)`. -/
@@ -390,7 +372,7 @@ end Sign
 
 section ConductorSign
 
-variable [DecidableEq R] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N}
+variable {N : ℕ} [NeZero N] {χ : DirichletCharacter R N} [Decidable (χ (-1) = 1)]
 
 /-- For every quadratic Dirichlet character `χ` of level `N ≠ 0`, the signed conductor
 `if χ (-1) = 1 then χ.conductor else -χ.conductor` is its unique fundamental discriminant, and
@@ -400,26 +382,22 @@ private theorem _root_.MulChar.IsQuadratic.exists_eq_ite_conductor_apply_eq (hq 
       D = (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) ∧
         ∀ n : ℤ, χ.primitiveCharacter n = fundamentalDiscriminantCharCast R D hD n := by
   by_cases h2 : (2 : R) = 0
-  · have h1 : χ = 1 := eq_one_of_two_eq_zero hq h2
-    subst h1
+  · rcases hq.eq_one_of_two_eq_zero h2 with rfl
     refine ⟨1, Int.isFundamentalDiscr_one, ?_, fun n ↦ ?_⟩
-    · rw [MulChar.one_apply isUnit_one.neg, ite_eq_left rfl, conductor_one, Nat.cast_one]
-    · rw [primitiveCharacter_one]
-      have : Subsingleton (ZMod (1 : DirichletCharacter R N).conductor) := by
-        rw [conductor_one]
-        infer_instance
-      have h1' : Subsingleton (ZMod (1 : ℤ).natAbs) := by
-        change Subsingleton (ZMod 1)
-        infer_instance
-      rw [Subsingleton.elim (n : ZMod (1 : DirichletCharacter R N).conductor) 1,
-        Subsingleton.elim (n : ZMod (1 : ℤ).natAbs) 1, map_one, map_one]
+    · rw [ite_eq_left (MulChar.one_apply isUnit_one.neg), conductor_one, Nat.cast_one]
+    · rw [primitiveCharacter_one, fundamentalDiscriminantCharCast_apply,
+        fundamentalDiscriminantChar_intCast, TauCeti.kroneckerSym_one_left, Int.cast_one,
+        MulChar.one_apply ((ZMod.isUnit_intCast_iff_isCoprime n _).mpr
+          (by rw [conductor_one]; exact isCoprime_one_left))]
   · have : NeZero (2 : R) := ⟨h2⟩
     have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
-    obtain ⟨D, hD, hDite, hval⟩ :=
-      χ.primitiveCharacter_isPrimitive.exists_eq_ite_apply_eq hq.primitiveCharacter
     have hneg1 : χ.primitiveCharacter (-1) = χ (-1) := by
       simpa using χ.primitiveCharacter_apply_of_isCoprime (IsCoprime.neg_left isCoprime_one_left)
-    rw [hneg1] at hDite
+    have : Decidable (χ.primitiveCharacter (-1) = 1) :=
+      decidable_of_iff (χ (-1) = 1) (by rw [hneg1])
+    obtain ⟨D, hD, hDite, hval⟩ :=
+      χ.primitiveCharacter_isPrimitive.exists_eq_ite_apply_eq hq.primitiveCharacter
+    simp only [hneg1] at hDite
     exact ⟨D, hD, hDite, hval⟩
 
 /-- The signed conductor `if χ (-1) = 1 then χ.conductor else -χ.conductor` of a quadratic
@@ -467,12 +445,13 @@ end ConductorSign
 
 /-- Lifting a Dirichlet character to a nonzero multiple of its level preserves the signed
 conductor formula `if χ (-1) = 1 then χ.conductor else -χ.conductor`. -/
-theorem ite_changeLevel_conductor [DecidableEq R] {N M : ℕ} [NeZero M] (hNM : N ∣ M)
-    (χ : DirichletCharacter R N) :
+theorem ite_changeLevel_conductor {N M : ℕ} [NeZero M] (hNM : N ∣ M)
+    (χ : DirichletCharacter R N) [Decidable (changeLevel hNM χ (-1) = 1)]
+    [Decidable (χ (-1) = 1)] :
     (if changeLevel hNM χ (-1) = 1 then ((changeLevel hNM χ).conductor : ℤ)
       else -(changeLevel hNM χ).conductor) =
       if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor := by
-  rw [changeLevel_apply_neg_one, conductor_changeLevel]
+  simp only [changeLevel_apply_neg_one, conductor_changeLevel]
 
 /-! ### Odd-prime Legendre and nonsquare dictionary -/
 
@@ -541,16 +520,18 @@ theorem apply_prime_eq_neg_one_iff_not_isSquare_radicand [NeZero (2 : R)]
 
 /-- At an odd prime `p ∤ N`, a quadratic Dirichlet character `χ` of level `N ≠ 0` takes the value
 `legendreSym p D` for `D = if χ (-1) = 1 then χ.conductor else -χ.conductor`. -/
-theorem _root_.MulChar.IsQuadratic.apply_prime_eq_legendreSym_ite [DecidableEq R] [NeZero N]
-    (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hpN : ¬ p ∣ N) :
+theorem _root_.MulChar.IsQuadratic.apply_prime_eq_legendreSym_ite [NeZero N]
+    [Decidable (χ (-1) = 1)] (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2)
+    (hpN : ¬ p ∣ N) :
     χ p = legendreSym p (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) :=
   apply_prime_eq_legendreSym hq.isFundamentalDiscr_ite
     (fun _ hn ↦ hq.apply_eq_fundamentalDiscriminantCharCast_ite hn) hp2 hpN
 
 /-- At an odd prime `p ∤ N`, a quadratic Dirichlet character `χ` of level `N ≠ 0` takes the value
 `legendreSym p (fundamentalDiscriminantRadicand D)` for its signed conductor `D`. -/
-theorem _root_.MulChar.IsQuadratic.apply_prime_eq_legendreSym_radicand_ite [DecidableEq R]
-    [NeZero N] (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hpN : ¬ p ∣ N) :
+theorem _root_.MulChar.IsQuadratic.apply_prime_eq_legendreSym_radicand_ite [NeZero N]
+    [Decidable (χ (-1) = 1)] (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2)
+    (hpN : ¬ p ∣ N) :
     χ p = legendreSym p (fundamentalDiscriminantRadicand
       (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor)) :=
   apply_prime_eq_legendreSym_radicand hq.isFundamentalDiscr_ite
@@ -559,8 +540,9 @@ theorem _root_.MulChar.IsQuadratic.apply_prime_eq_legendreSym_radicand_ite [Deci
 /-- When `2 ≠ 0` in `R`, a quadratic Dirichlet character `χ` of level `N ≠ 0` satisfies
 `χ p = -1` at an odd prime `p` if and only if `p ∤ N` and its signed conductor is not a square in
 `ZMod p`. -/
-theorem _root_.MulChar.IsQuadratic.apply_prime_eq_neg_one_iff_not_isSquare_ite [DecidableEq R]
-    [NeZero (2 : R)] [NeZero N] (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) :
+theorem _root_.MulChar.IsQuadratic.apply_prime_eq_neg_one_iff_not_isSquare_ite
+    [NeZero (2 : R)] [NeZero N] [Decidable (χ (-1) = 1)] (hq : χ.IsQuadratic) {p : ℕ}
+    [Fact p.Prime] (hp2 : p ≠ 2) :
     χ p = -1 ↔ ¬ p ∣ N ∧
       ¬ IsSquare ((if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor : ℤ) : ZMod p) :=
   apply_prime_eq_neg_one_iff_not_isSquare hq.isFundamentalDiscr_ite
@@ -570,8 +552,8 @@ theorem _root_.MulChar.IsQuadratic.apply_prime_eq_neg_one_iff_not_isSquare_ite [
 `χ p = -1` at an odd prime `p` if and only if `p ∤ N` and the squarefree radicand of its signed
 conductor is not a square in `ZMod p`. -/
 theorem _root_.MulChar.IsQuadratic.apply_prime_eq_neg_one_iff_not_isSquare_radicand_ite
-    [DecidableEq R] [NeZero (2 : R)] [NeZero N] (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime]
-    (hp2 : p ≠ 2) :
+    [NeZero (2 : R)] [NeZero N] [Decidable (χ (-1) = 1)] (hq : χ.IsQuadratic) {p : ℕ}
+    [Fact p.Prime] (hp2 : p ≠ 2) :
     χ p = -1 ↔ ¬ p ∣ N ∧ ¬ IsSquare ((fundamentalDiscriminantRadicand
       (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) : ℤ) : ZMod p) :=
   apply_prime_eq_neg_one_iff_not_isSquare_radicand hq.isFundamentalDiscr_ite
@@ -599,9 +581,10 @@ example : Int.IsFundamentalDiscr 1 ∧ Int.IsFundamentalDiscr (-4) ∧
   have h12 : Int.IsFundamentalDiscr 12 := by
     simpa using isPrimeDiscriminant_neg_four.isFundamentalDiscr.mul h3 (by decide)
   have hn12 : ¬ Int.IsFundamentalDiscr (-12) := by
-    rw [show (-12 : ℤ) = 4 * (-3) by norm_num, Int.isFundamentalDiscr_four_mul]
-    rintro ⟨-, h⟩
-    omega
+    have h4 : ¬ Int.IsFundamentalDiscr (4 * (-3)) := by
+      rw [Int.isFundamentalDiscr_four_mul]
+      omega
+    simpa using h4
   exact ⟨Int.isFundamentalDiscr_one, isPrimeDiscriminant_neg_four.isFundamentalDiscr,
     isPrimeDiscriminant_eight.isFundamentalDiscr, isPrimeDiscriminant_neg_eight.isFundamentalDiscr,
     h5, h3, h12, hn12⟩
@@ -639,10 +622,8 @@ example :
   intro χ
   have hcond : χ.conductor = 4 := by
     simp [χ, DirichletCharacter.conductor_changeLevel, DirichletCharacter.conductor_χ₄_ringHomComp]
-  have hneg1 : χ (-1) = -1 := by
-    rw [DirichletCharacter.changeLevel_apply_neg_one]
-    change (ZMod.χ₄ (-1) : ℂ) = -1
-    rw [show ZMod.χ₄ (-1) = -1 by decide, Int.cast_neg, Int.cast_one]
+  have hχ₄ : ZMod.χ₄ (-1) = -1 := by decide
+  have hneg1 : χ (-1) = -1 := by simp [χ, hχ₄]
   refine ⟨hcond, ?_, by norm_num [fundamentalDiscriminantRadicand_def], ?_, ?_⟩
   · rw [hcond, hneg1, ite_eq_right (by norm_num)]
     norm_num
@@ -659,12 +640,10 @@ example :
     (if χpos (-1) = 1 then (χpos.conductor : ℤ) else -χpos.conductor) = 8 ∧
       (if χneg (-1) = 1 then (χneg.conductor : ℤ) else -χneg.conductor) = -8 := by
   intro χpos χneg
-  have hpos1 : χpos (-1) = 1 := by
-    change (ZMod.χ₈ (-1) : ℂ) = 1
-    rw [show ZMod.χ₈ (-1) = 1 by decide, Int.cast_one]
-  have hneg1 : χneg (-1) = -1 := by
-    change (ZMod.χ₈' (-1) : ℂ) = -1
-    rw [show ZMod.χ₈' (-1) = -1 by decide, Int.cast_neg, Int.cast_one]
+  have hχ₈ : ZMod.χ₈ (-1) = 1 := by decide
+  have hχ₈' : ZMod.χ₈' (-1) = -1 := by decide
+  have hpos1 : χpos (-1) = 1 := by simp [χpos, hχ₈]
+  have hneg1 : χneg (-1) = -1 := by simp [χneg, hχ₈']
   refine ⟨?_, ?_⟩
   · rw [hpos1, ite_eq_left rfl, DirichletCharacter.conductor_χ₈_ringHomComp]
     norm_num
@@ -702,11 +681,9 @@ example :
         DirichletCharacter.conductor_χ₄_ringHomComp,
         DirichletCharacter.conductor_changeLevel_quadraticChar hR (by norm_num : 3 ≠ 2)]
     norm_num
-  have hneg1 : χ (-1) = 1 := by
-    simp only [χ, MulChar.mul_apply, DirichletCharacter.changeLevel_apply_neg_one]
-    change (ZMod.χ₄ (-1) : ℂ) * (quadraticChar (ZMod 3) (-1) : ℂ) = 1
-    rw [show ZMod.χ₄ (-1) = -1 by decide, show quadraticChar (ZMod 3) (-1) = -1 by decide]
-    norm_num
+  have hχ₄ : ZMod.χ₄ (-1) = -1 := by decide
+  have hq3 : quadraticChar (ZMod 3) (-1) = -1 := by decide
+  have hneg1 : χ (-1) = 1 := by simp [χ, hχ₄, hq3]
   have hD : (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) = 12 := by
     rw [hneg1, ite_eq_left rfl, hcond]
     norm_num

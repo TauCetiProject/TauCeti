@@ -200,7 +200,7 @@ theorem fundamentalDiscriminant_injective : Function.Injective fundamentalDiscri
   rw [fundamentalDiscriminant_def]
   split_ifs with h
   · rfl
-  · rw [Int.sign_mul, show (4 : ℤ).sign = 1 from rfl, one_mul]
+  · rw [Int.sign_mul, Int.sign_eq_one_of_pos (by norm_num), one_mul]
 
 /-- The radicand of a fundamental discriminant is squarefree. -/
 theorem squarefree_fundamentalDiscriminantRadicand {D : ℤ} (hD : Int.IsFundamentalDiscr D) :

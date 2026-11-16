@@ -15,10 +15,11 @@ import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker character
 `TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
-zero when `n` is not coprime to `D`. Because `fundamentalDiscriminant d` differs from `d` by `1` or
-`4 = 2²`, which is a square coprime to every odd integer, `jacobiSym` at odd `n` and `legendreSym`
-at odd primes `p` agree on `D` and on its squarefree radicand `fundamentalDiscriminantRadicand D`.
-At even arguments the Jacobi and Legendre symbols need not agree with the character.
+zero when `n` is not coprime to `D`. Because `fundamentalDiscriminant d` is either `d` or
+`4 * d = 2² * d`, and `1` and `2²` are squares coprime to every odd integer, `jacobiSym` at odd `n`
+and `legendreSym` at odd primes `p` agree on `D` and on its squarefree radicand
+`fundamentalDiscriminantRadicand D`. At even arguments the Jacobi and Legendre symbols need not
+agree with the character.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -39,7 +40,7 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
 
 /-- At an odd natural number `n`, `fundamentalDiscriminant d` has the same Jacobi symbol as `d`
-(no squarefreeness needed), since they differ by `1` or `2²`. -/
+(no squarefreeness needed). -/
 theorem jacobiSym_fundamentalDiscriminant (d : ℤ) {n : ℕ} (hn : Odd n) :
     jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n := by
   obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
