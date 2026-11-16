@@ -75,11 +75,13 @@ section Domain
 
 variable (hB : B.PosDef) (k : Type*) [CommRing k] [CharZero k]
 
+omit [CharZero k] in
 /-- Casting to `k` entrywise carries the dot product of `I → ℤ` to the dot product of `I → k`. -/
 private theorem intCast_dotProduct (x y : I → ℤ) :
     ((x ⬝ᵥ y : ℤ) : k) = (fun i ↦ (x i : k)) ⬝ᵥ fun i ↦ (y i : k) := by
   simpa [Function.comp_def] using RingHom.map_dotProduct (Int.castRingHom k) x y
 
+omit [Fintype I] in
 /-- Casting to `k` entrywise is injective on `I → ℤ`. -/
 private theorem intCast_vec_injective : Injective fun (x : I → ℤ) (i : I) ↦ (x i : k) :=
   fun _ _ h ↦ funext fun i ↦ Int.cast_injective (congrFun h i)
@@ -117,13 +119,17 @@ def normTwoShellRootPairing : RootPairing B.normTwoShell k (I → k) (I → k) :
       rintro a - ⟨b, rfl⟩
       refine ⟨⟨_, hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩, ?_⟩
       simp only [preReflection_apply, LinearMap.flip_apply, dotProductBilin_apply_apply,
-        shellRoot_apply, shellCoroot_apply, ← intCast_dotProduct])
+        shellRoot_apply, shellCoroot_apply, ← intCast_dotProduct]
+      ext i
+      simp)
     (by
       rintro a - ⟨b, rfl⟩
       refine ⟨⟨_, hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩, ?_⟩
       simp only [preReflection_apply, dotProductBilin_apply_apply,
         shellRoot_apply, shellCoroot_apply, ← intCast_dotProduct, mulVec_sub, mulVec_smul,
-        hB.isHermitian.isSymm.dotProduct_mulVec_comm (x := b.1) (y := a.1)])
+        hB.isHermitian.isSymm.dotProduct_mulVec_comm (x := b.1) (y := a.1)]
+      ext i
+      simp)
 
 @[simp]
 theorem root_normTwoShellRootPairing (a : B.normTwoShell) :
@@ -149,7 +155,7 @@ theorem coroot_normTwoShellRootPairing (a : B.normTwoShell) :
 @[simp]
 theorem toLinearMap_normTwoShellRootPairing (x y : I → k) :
     (hB.normTwoShellRootPairing k).toLinearMap x y = x ⬝ᵥ y :=
-  dotProductBilin_apply_apply x y
+  dotProductBilin_apply_apply k k x y
 
 /-- The pairing of two roots of the norm-two shell is their lattice pairing. -/
 @[simp]
@@ -191,7 +197,7 @@ theorem rootSpan_normTwoShellRootPairing_eq_top :
     (v := (Subtype.val : B.normTwoShell → I → ℤ))
     (by rw [Subtype.range_val]; exact B.span_normTwoShell_eq_top_of_diagonal_eq_two hdiag)
   rw [RootPairing.rootSpan]
-  convert h using 4 with a
+  convert h using 4
   ext i
   simp [TauCeti.piAlgebraMap_apply]
 
