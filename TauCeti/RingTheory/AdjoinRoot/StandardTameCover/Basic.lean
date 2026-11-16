@@ -450,26 +450,19 @@ noncomputable def standardTameCoverAlgEquivOfMulPowEq {R : Type*} [CommRing R] {
     standardTameCover R g e ≃ₐ[R] standardTameCover R f e :=
   let uinv : R := ↑hu.unit⁻¹
   have huinv_pow : uinv ^ e * f = g := by
-    rw [← huf, ← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul]
+    simp [uinv, ← huf, ← mul_assoc, ← mul_pow, hu.val_inv_mul]
+  have hroot {a b c : R} (hc : c ^ e * b = a) :
+      aeval (algebraMap R (standardTameCover R b e) c * AdjoinRoot.root _) (X ^ e - C a) = 0 := by
+    simp [← hc, mul_pow]
   let F : standardTameCover R g e →ₐ[R] standardTameCover R f e :=
-    (AdjoinRoot.algHomEquiv _ _).symm
-      ⟨algebraMap R _ uinv * AdjoinRoot.root _, by
-        rw [map_sub, map_pow, aeval_X, aeval_C, mul_pow, AdjoinRoot.algebraMap_eq,
-          AdjoinRoot.root_X_pow_sub_C_pow, ← map_pow, ← map_mul, huinv_pow, sub_self]⟩
+    (AdjoinRoot.algHomEquiv _ _).symm ⟨algebraMap R _ uinv * AdjoinRoot.root _, hroot huinv_pow⟩
   let G : standardTameCover R f e →ₐ[R] standardTameCover R g e :=
-    (AdjoinRoot.algHomEquiv _ _).symm
-      ⟨algebraMap R _ u * AdjoinRoot.root _, by
-        rw [map_sub, map_pow, aeval_X, aeval_C, mul_pow, AdjoinRoot.algebraMap_eq,
-          AdjoinRoot.root_X_pow_sub_C_pow, ← map_pow, ← map_mul, huf, sub_self]⟩
+    (AdjoinRoot.algHomEquiv _ _).symm ⟨algebraMap R _ u * AdjoinRoot.root _, hroot huf⟩
   AlgEquiv.ofAlgHom F G
     (AdjoinRoot.algHom_ext <| by
-      simp only [F, G, uinv, AlgHom.comp_apply, AlgHom.id_apply,
-        AdjoinRoot.algHomEquiv_symm_apply_root, map_mul, AlgHom.commutes]
-      rw [← mul_assoc, ← map_mul, hu.mul_val_inv, (algebraMap R _).map_one, one_mul])
+      simp [F, G, uinv, ← Algebra.smul_def, smul_smul, hu.mul_val_inv, -AdjoinRoot.algebraMap_eq])
     (AdjoinRoot.algHom_ext <| by
-      simp only [F, G, uinv, AlgHom.comp_apply, AlgHom.id_apply,
-        AdjoinRoot.algHomEquiv_symm_apply_root, map_mul, AlgHom.commutes]
-      rw [← mul_assoc, ← map_mul, hu.val_inv_mul, (algebraMap R _).map_one, one_mul])
+      simp [F, G, uinv, ← Algebra.smul_def, smul_smul, hu.val_inv_mul, -AdjoinRoot.algebraMap_eq])
 
 /-- `standardTameCoverAlgEquivOfMulPowEq` sends the root of `X^e − g` to `u⁻¹ · root`. -/
 @[simp]
@@ -521,13 +514,7 @@ theorem standardTameCoverBaseChangeAlgEquiv_one_tmul_mk (B : Type*) [CommRing B]
     (f : A) (e : ℕ) (p : A[X]) :
     standardTameCoverBaseChangeAlgEquiv B f e (1 ⊗ₜ AdjoinRoot.mk _ p) =
       AdjoinRoot.mk _ (p.map (algebraMap A B)) := by
-  let φ₁ : A[X] →ₐ[A] standardTameCover B (algebraMap A B f) e :=
-    ((standardTameCoverBaseChangeAlgEquiv B f e).toAlgHom.restrictScalars A).comp
-      (Algebra.TensorProduct.includeRight.comp (AdjoinRoot.mkₐ _))
-  let φ₂ : A[X] →ₐ[A] standardTameCover B (algebraMap A B f) e :=
-    ((AdjoinRoot.mkₐ _).restrictScalars A).comp (Polynomial.mapAlgHom (Algebra.ofId A B))
-  have hφ : φ₁ = φ₂ := Polynomial.algHom_ext (by simp [φ₁, φ₂])
-  exact DFunLike.congr_fun hφ p
+  simp [standardTameCoverBaseChangeAlgEquiv]
 
 /-- Being a finite product of standard tame covers is stable under base change to any `A`-algebra
 `B`. -/

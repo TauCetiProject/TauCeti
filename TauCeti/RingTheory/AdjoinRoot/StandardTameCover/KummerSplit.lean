@@ -25,6 +25,8 @@ import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 import TauCeti.RingTheory.Etale.IntegralClosure
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Henselian.Etale
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Basic
 import TauCeti.RingTheory.Localization.AtPrime
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -150,23 +152,6 @@ private theorem isIntegral_of_pow_eq {A L : Type*} [CommRing A] [CommRing L] [Al
     {n : ℕ} (hn : n ≠ 0) {γ : L} (hγ : γ ^ n = algebraMap A L f) : IsIntegral A γ :=
   ⟨X ^ n - Polynomial.C f, monic_X_pow_sub_C f hn, by simp [hγ]⟩
 
-private theorem mem_maximalIdeal_of_not_dvd {A : Type*} [CommRing A] [IsLocalRing A] {f a : A}
-    (hfa : ¬ f ∣ a) : f ∈ maximalIdeal A :=
-  of_not_not fun h ↦ hfa (notMem_maximalIdeal.mp h).dvd
-
-/-- If `A ⧸ (f)` is reduced and `f` does not divide `a`, then some minimal prime of `(f)` does not
-contain `a`. -/
-private theorem exists_mem_minimalPrimes_notMem_of_not_dvd {A : Type*} [CommRing A] {f a : A}
-    [IsReduced (A ⧸ Ideal.span {f})] (hfa : ¬ f ∣ a) :
-    ∃ p ∈ (Ideal.span {f}).minimalPrimes, a ∉ p := by
-  by_contra! hall
-  have hrad : (Ideal.span {f}).radical = Ideal.span {f} :=
-    ((Ideal.isRadical_iff_quotient_reduced _).mpr inferInstance).radical
-  have ha : a ∈ Ideal.span {f} := by
-    rw [← hrad, ← Ideal.sInf_minimalPrimes, Ideal.mem_sInf]
-    exact hall
-  exact hfa (Ideal.mem_span_singleton.mp ha)
-
 /-- Localizing a Noetherian domain `A` at a prime `p` minimal over a reduced nonzerodivisor `(f)`
 gives a discrete valuation ring in which the image of `f` is irreducible. -/
 private theorem isDiscreteValuationRing_and_irreducible_atPrime {A : Type*} [CommRing A]
@@ -195,8 +180,7 @@ theorem irreducible_X_pow_sub_C_of_isReduced_quotient (hf : ¬ IsUnit f)
     (K : Type*) [Field K] [Algebra A K] [IsFractionRing A K] :
     Irreducible (X ^ n - Polynomial.C (algebraMap A K f)) := by
   have : IsDomain A := (IsFractionRing.injective A K).isDomain _
-  obtain ⟨p, hp, -⟩ := exists_mem_minimalPrimes_notMem_of_not_dvd (f := f) (a := 1)
-    (mt isUnit_of_dvd_one hf)
+  obtain ⟨p, hp⟩ := Ideal.nonempty_minimalPrimes (Ideal.span_singleton_eq_top.not.mpr hf)
   have : p.IsPrime := hp.1.1
   have ⟨_, hπ⟩ := isDiscreteValuationRing_and_irreducible_atPrime hf₀ hp
   rw [IsScalarTower.algebraMap_apply A (Localization.AtPrime p) K]
@@ -223,8 +207,7 @@ theorem finrank_eq_of_pow_eq_of_isReduced_quotient
     (hγ : γ ^ n = algebraMap A L f) (hgen : K⟮γ⟯ = ⊤) :
     Module.finrank K L = n := by
   have : IsDomain A := (IsFractionRing.injective A K).isDomain _
-  obtain ⟨p, hp, -⟩ := exists_mem_minimalPrimes_notMem_of_not_dvd (f := f) (a := 1)
-    (mt isUnit_of_dvd_one hf)
+  obtain ⟨p, hp⟩ := Ideal.nonempty_minimalPrimes (Ideal.span_singleton_eq_top.not.mpr hf)
   have : p.IsPrime := hp.1.1
   let Aₚ := Localization.AtPrime p
   have ⟨_, hπ⟩ := isDiscreteValuationRing_and_irreducible_atPrime hf₀ hp
@@ -253,7 +236,10 @@ theorem exists_pow_eq_and_adjoin_eq_top_of_algHom_standardTameCover {e : ℕ}
         (AdjoinRoot.root _ ^ (e / Module.finrank K L)) := by
   have he : e ≠ 0 := ne_zero_of_not_dvd_natCast hfe
   have : IsDomain A := (IsFractionRing.injective A K).isDomain _
-  obtain ⟨p, hp, he_notMem⟩ := exists_mem_minimalPrimes_notMem_of_not_dvd hfe
+  obtain ⟨p, hp, he_notMem⟩ :=
+    (Ideal.span {f}).notMem_radical_iff_exists_mem_minimalPrimes_notMem.mp <| by
+      rwa [((Ideal.isRadical_iff_quotient_reduced _).mpr inferInstance).radical,
+        Ideal.mem_span_singleton]
   have : p.IsPrime := hp.1.1
   let Aₚ := Localization.AtPrime p
   have ⟨_, hπ⟩ := isDiscreteValuationRing_and_irreducible_atPrime hf₀ hp
@@ -411,7 +397,8 @@ noncomputable def integralClosureAlgEquivStandardTameCover
     (hf₀ : f ∈ nonZeroDivisors A) (hfe : ¬ f ∣ (e : A)) (φ : L →ₐ[K] K') :
     integralClosure A L ≃ₐ[A] standardTameCover A f (Module.finrank K L) :=
   let h := exists_pow_eq_and_adjoin_eq_top_of_algHom_standardTameCover hf₀ hfe φ
-  (standardTameCoverIntegralClosureAlgEquiv (mem_maximalIdeal_of_not_dvd hfe) hf₀
+  (standardTameCoverIntegralClosureAlgEquiv
+    (TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd hfe) hf₀
     h.choose_spec.1 h.choose_spec.2.1).symm
 
 /-- The inverse of `integralClosureAlgEquivStandardTameCover` maps the root of
@@ -520,7 +507,7 @@ theorem isFiniteProductOfStandardTameCovers_of_forall_algHom
     (hsplit : ∀ m : MaximalSpectrum (K ⊗[Af] Sf),
       Nonempty (((K ⊗[Af] Sf) ⧸ m.asIdeal) →ₐ[K] K')) :
     IsFiniteProductOfStandardTameCovers A C f := by
-  have hf : f ∈ maximalIdeal A := mem_maximalIdeal_of_not_dvd hfe
+  have hf : f ∈ maximalIdeal A := TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd hfe
   obtain ⟨_, -⟩ := isRegularLocalRing_and_prime hf hf₀
   have hsub : Submonoid.powers f ≤ nonZeroDivisors A := Submonoid.powers_le.mpr hf₀
   have : IsDomain Af := IsLocalization.isDomain_of_le_nonZeroDivisors Af hsub
@@ -564,8 +551,7 @@ theorem isFiniteProductOfStandardTameCovers_of_isFiniteSplit_fractionRing
     .of_algEquiv (Algebra.TensorProduct.cancelBaseChange Af K K' K' Sf).symm
   refine isFiniteProductOfStandardTameCovers_of_forall_algHom hf₀ Af Sf hfe (K := K) (K' := K')
     fun m ↦ ?_
-  exact Algebra.IsFiniteSplit.nonempty_algHom_of_surjective (K := K) (K' := K')
-    (Ideal.Quotient.mkₐ K m.asIdeal) Ideal.Quotient.mk_surjective
+  exact (Ideal.Quotient.mkₐ K m.asIdeal).nonempty_algHom_of_surjective Ideal.Quotient.mk_surjective
 
 /-- **Multi-component Kummer identification from splitting away from the divisor.** Let `A'_f` be a
 localization of `A' = A[x]/(x^e − f)` away from the image of `f` (with `¬ f ∣ (e : A)`). If
@@ -584,7 +570,7 @@ theorem isFiniteProductOfStandardTameCovers_of_isFiniteSplit_away
     [IsLocalization.Away (algebraMap A (standardTameCover A f e) f) A'f]
     [Algebra.IsFiniteSplit A'f (A'f ⊗[Af] Sf)] :
     IsFiniteProductOfStandardTameCovers A C f := by
-  have hf : f ∈ maximalIdeal A := mem_maximalIdeal_of_not_dvd hfe
+  have hf : f ∈ maximalIdeal A := TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd hfe
   have he : e ≠ 0 := ne_zero_of_not_dvd_natCast hfe
   obtain ⟨_, -⟩ := isRegularLocalRing_and_prime hf hf₀
   let A' := standardTameCover A f e
@@ -654,7 +640,7 @@ theorem isFiniteProductOfStandardTameCovers_of_etale_standardTameCover
     [Algebra.Etale (standardTameCover A f e) T] [Module.Finite (standardTameCover A f e) T]
     (φ : A'f ⊗[standardTameCover A f e] T ≃ₐ[A'f] A'f ⊗[Af] Sf) :
     IsFiniteProductOfStandardTameCovers A C f := by
-  have hf : f ∈ maximalIdeal A := mem_maximalIdeal_of_not_dvd hfe
+  have hf : f ∈ maximalIdeal A := TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd hfe
   have he : e ≠ 0 := ne_zero_of_not_dvd_natCast hfe
   have := standardTameCover_isLocalRing hf he
   have := standardTameCover_henselianLocalRing hf he
