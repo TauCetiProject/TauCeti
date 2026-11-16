@@ -237,20 +237,6 @@ end ContinuationCocycle
 
 end Maps
 
-/-! ### Restriction preserves the total degree -/
-
-section TotalGrading
-
-variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
-  {P : Type uP} {ind : P → ℤ} {ℳ : ℤ → Submodule R M} {n : ℤ} (S : Set P)
-
-/-- Restriction from `P` to a set `S` of generators preserves the total degree. -/
-theorem domRestrict_mem_twistedTotalGrading {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
-    S.domRestrict f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n :=
-  mem_twistedTotalGrading_iff.mpr fun x ↦ mem_twistedTotalGrading_iff.mp hf x
-
-end TotalGrading
-
 /-! ### The short exact sequence of a subcomplex and its quotient -/
 
 section ShortExact
