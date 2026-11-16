@@ -101,30 +101,17 @@ theorem contMDiff (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
   have hhom : ContMDiff I 𝓘(ℝ, V →L[𝕜] V) ∞ (π.toUnitsContinuousMonoidHom hπ) :=
     TauCeti.Lie.contMDiff_of_continuous_monoidHom (π.toUnitsContinuousMonoidHom hπ)
       (π.toUnitsContinuousMonoidHom hπ).continuous
-  simpa [Function.comp_def] using
+  simpa [Function.comp_def, toMonoidHom_apply] using
     (Units.contMDiff_val (𝕜 := ℝ) (R := V →L[𝕜] V) (n := ∞)).comp hhom
 
 /-- The joint action `(g, v) ↦ π g v` of a continuous finite-dimensional representation of a
 finite-dimensional real Lie group is smooth. -/
 theorem contMDiff_apply (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     ContMDiff (I.prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ (fun p : G × V ↦ π p.1 p.2) := by
-  let _ : FiniteDimensional ℝ V := Module.Finite.trans 𝕜 V
-  let _ : FiniteDimensional ℝ (V →L[𝕜] V) := Module.Finite.trans 𝕜 (V →L[𝕜] V)
-  -- Push `π g` through `restrictScalars ℝ` and compose with bounded bilinear evaluation.
-  let Rlin : (V →L[𝕜] V) →ₗ[ℝ] (V →L[ℝ] V) :=
-    { toFun f := f.restrictScalars ℝ, map_add' _ _ := rfl, map_smul' _ _ := rfl }
-  let R : (V →L[𝕜] V) →L[ℝ] (V →L[ℝ] V) := Rlin.toContinuousLinearMap
+  let R : (V →L[𝕜] V) →L[ℝ] (V →L[ℝ] V) := ContinuousLinearMap.restrictScalarsL 𝕜 V V ℝ ℝ
   have hR : ContMDiff I 𝓘(ℝ, V →L[ℝ] V) ∞ (fun g : G ↦ R (π g)) :=
     R.contDiff.contMDiff.comp (π.contMDiff hπ)
-  have hcomp : ContMDiff (I.prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞
-      ((fun q : (V →L[ℝ] V) × V ↦ q.1 q.2) ∘ fun p : G × V ↦ (R (π p.1), p.2)) :=
-    (isBoundedBilinearMap_apply (𝕜 := ℝ) (E := V) (F := V)).contDiff.contMDiff.comp
-      ((hR.comp contMDiff_fst).prodMk_space contMDiff_snd)
-  have hfun :
-      ((fun q : (V →L[ℝ] V) × V ↦ q.1 q.2) ∘ fun p : G × V ↦ (R (π p.1), p.2)) =
-        fun p : G × V ↦ π p.1 p.2 :=
-    funext fun p ↦ by simp [R, Rlin]; rfl
-  rwa [hfun] at hcomp
+  exact (hR.comp contMDiff_fst).clm_apply contMDiff_snd
 
 end ContRepresentation
 
@@ -176,14 +163,13 @@ theorem exists_injective_contMDiffMonoidMorphism_matrixUnitarySubgroup :
   have heMat_cont : Continuous eMat :=
     LinearMap.continuous_of_finiteDimensional eMat.toAlgEquiv.toLinearEquiv.toLinearMap
   let φGL : G →* GL (Fin n) 𝕜 :=
-    (Units.map eMat.toRingHom.toMonoidHom).comp π.toUnitsMonoidHom
+    (Units.map eMat.toRingHom.toMonoidHom).comp π.toMonoidHom.toHomUnits
   have hval_φGL (g : G) : ((φGL g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) = eMat (π g) := by
     simp [φGL]
     rfl
   have hinv_φGL (g : G) :
       (((φGL g)⁻¹ : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) = eMat (π g⁻¹) := by
-    simp [φGL, ← map_inv]
-    rfl
+    rw [← map_inv, hval_φGL]
   have hφGL_cont : Continuous φGL := by
     refine Units.continuous_iff.mpr ⟨?_, ?_⟩
     · have h1 : (Units.val ∘ φGL) = fun g ↦ eMat (π g) := funext hval_φGL
@@ -230,8 +216,8 @@ theorem HasNoSmallSubgroups.exists_lieGroup (hG : HasNoSmallSubgroups G) :
       LieGroup 𝓘(ℝ, EuclideanSpace ℝ (Fin d)) ∞ G := by
   obtain ⟨n, π, hπc, hπu, hinj⟩ := hG.exists_faithful_isUnitary (𝕜 := ℝ)
   let φ : G →ₜ* (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))ˣ :=
-    ⟨π.toUnitsMonoidHom, hπu.continuous_toUnitsMonoidHom hπc⟩
-  have hφ_inj : Function.Injective φ := π.injective_toUnitsMonoidHom_iff.mpr hinj
+    ⟨π.toMonoidHom.toHomUnits, hπu.continuous_toHomUnits hπc⟩
+  have hφ_inj : Function.Injective φ := fun _ _ h ↦ hinj (congrArg Units.val h)
   let K : Subgroup (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))ˣ :=
     φ.toMonoidHom.range
   have hK_closed :

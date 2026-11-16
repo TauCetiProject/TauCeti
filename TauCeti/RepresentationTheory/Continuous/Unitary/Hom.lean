@@ -14,8 +14,8 @@ public import TauCeti.Topology.Algebra.Star.Unitary
 # Group homomorphisms induced by continuous and unitary representations
 
 A group representation `π : ContRepresentation 𝕜 G V` maps every group element to an invertible
-bounded operator, giving a homomorphism `π.toUnitsMonoidHom : G →* (V →L[𝕜] V)ˣ`. When `𝕜` is a
-normed `ℝ`-algebra, the integer homogeneity of the operator norm implies that any group admitting
+bounded operator, giving a homomorphism `π.toMonoidHom.toHomUnits : G →* (V →L[𝕜] V)ˣ`. When `𝕜` is
+a normed `ℝ`-algebra, the integer homogeneity of the operator norm implies that any group admitting
 an injective representation continuous at `1` has no small subgroups
 (`ContRepresentation.hasNoSmallSubgroups_of_injective`), without assuming continuity of group
 multiplication or inversion.
@@ -28,8 +28,9 @@ to `Matrix.unitaryGroup ι 𝕜`.
 
 ## Main definitions and results
 
-* `ContRepresentation.toUnitsMonoidHom`, `ContRepresentation.toUnitsContinuousMonoidHom`:
-  homomorphism into `(V →L[𝕜] V)ˣ`.
+* `ContRepresentation.continuous_toHomUnits`,
+  `ContRepresentation.toUnitsContinuousMonoidHom`: continuity of `π.toMonoidHom.toHomUnits` and its
+  bundled continuous homomorphism into `(V →L[𝕜] V)ˣ`.
 * `ContRepresentation.hasNoSmallSubgroups_of_injective`: a group with an injective representation
   continuous at `1` over a normed `ℝ`-algebra has no small subgroups.
 * `ContRepresentation.IsUnitary.toUnitaryMonoidHom`,
@@ -51,60 +52,24 @@ section NormedSpace
 
 variable {𝕜 G V : Type*} [NormedField 𝕜] [Group G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
-/-- A continuous group representation as a group homomorphism into the invertible bounded linear
-operators `(V →L[𝕜] V)ˣ`. -/
-def toUnitsMonoidHom (π : ContRepresentation 𝕜 G V) : G →* (V →L[𝕜] V)ˣ where
-  toFun g :=
-    { val := π g
-      inv := π g⁻¹
-      val_inv := by rw [← map_mul, mul_inv_cancel, map_one]
-      inv_val := by rw [← map_mul, inv_mul_cancel, map_one] }
-  map_one' := Units.ext (map_one π)
-  map_mul' g h := Units.ext (map_mul π g h)
-
-/-- The underlying operator of `π.toUnitsMonoidHom g` is `π g`. -/
-@[simp]
-theorem val_toUnitsMonoidHom_apply (π : ContRepresentation 𝕜 G V) (g : G) :
-    (π.toUnitsMonoidHom g : V →L[𝕜] V) = π g :=
-  (rfl)
-
-/-- The inverse operator of `π.toUnitsMonoidHom g` is `π g⁻¹`. -/
-@[simp]
-theorem val_inv_toUnitsMonoidHom_apply (π : ContRepresentation 𝕜 G V) (g : G) :
-    Units.val (π.toUnitsMonoidHom g)⁻¹ = π g⁻¹ :=
-  (rfl)
-
-/-- `π.toUnitsMonoidHom` has the same kernel as `π`. -/
-@[simp]
-theorem ker_toUnitsMonoidHom (π : ContRepresentation 𝕜 G V) :
-    π.toUnitsMonoidHom.ker = π.toMonoidHom.ker := by
-  ext g
-  simp [MonoidHom.mem_ker, Units.ext_iff, toMonoidHom_apply]
-
-/-- `π.toUnitsMonoidHom` is injective if and only if `π` is injective. -/
-@[simp]
-theorem injective_toUnitsMonoidHom_iff (π : ContRepresentation 𝕜 G V) :
-    Function.Injective π.toUnitsMonoidHom ↔ Function.Injective π :=
-  ⟨fun h _ _ hxy ↦ h (Units.ext hxy), fun h _ _ hxy ↦ h (congrArg Units.val hxy)⟩
-
 /-- When inversion on `G` is continuous, continuity of `π` implies continuity of
-`π.toUnitsMonoidHom`. -/
-theorem continuous_toUnitsMonoidHom [TopologicalSpace G] [ContinuousInv G]
+`π.toMonoidHom.toHomUnits`. -/
+theorem continuous_toHomUnits [TopologicalSpace G] [ContinuousInv G]
     {π : ContRepresentation 𝕜 G V} (hπ : Continuous π) :
-    Continuous π.toUnitsMonoidHom :=
+    Continuous π.toMonoidHom.toHomUnits :=
   Units.continuous_iff.mpr ⟨hπ, hπ.comp continuous_inv⟩
 
 /-- A continuous group representation on a normed space, bundled as a continuous group homomorphism
 into `(V →L[𝕜] V)ˣ`. -/
 def toUnitsContinuousMonoidHom [TopologicalSpace G] [ContinuousInv G]
     (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) : G →ₜ* (V →L[𝕜] V)ˣ :=
-  ⟨π.toUnitsMonoidHom, π.continuous_toUnitsMonoidHom hπ⟩
+  ⟨π.toMonoidHom.toHomUnits, π.continuous_toHomUnits hπ⟩
 
 /-- Evaluation of `ContRepresentation.toUnitsContinuousMonoidHom`. -/
 @[simp]
 theorem coe_toUnitsContinuousMonoidHom [TopologicalSpace G] [ContinuousInv G]
     (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    ⇑(π.toUnitsContinuousMonoidHom hπ) = π.toUnitsMonoidHom :=
+    ⇑(π.toUnitsContinuousMonoidHom hπ) = π.toMonoidHom.toHomUnits :=
   (rfl)
 
 /-- **Any group admitting an injective representation continuous at `1` over a normed `ℝ`-algebra
@@ -181,29 +146,29 @@ theorem coe_toUnitaryContinuousMonoidHom [TopologicalSpace G] (hπ : π.IsUnitar
     ⇑(hπ.toUnitaryContinuousMonoidHom hπc) = hπ.toUnitaryMonoidHom :=
   (rfl)
 
-/-- For a unitary representation, `π.toUnitsMonoidHom` is continuous as soon as `π` is, without
-assuming continuity of inversion on `G`. -/
-theorem continuous_toUnitsMonoidHom [TopologicalSpace G] (hπ : π.IsUnitary)
-    (hπc : Continuous π) : Continuous π.toUnitsMonoidHom := by
-  have heq : ⇑π.toUnitsMonoidHom = Unitary.toUnits ∘ hπ.toUnitaryMonoidHom := by
+/-- For a unitary representation, `π.toMonoidHom.toHomUnits` is continuous as soon as `π` is,
+without assuming continuity of inversion on `G`. -/
+theorem continuous_toHomUnits [TopologicalSpace G] (hπ : π.IsUnitary)
+    (hπc : Continuous π) : Continuous π.toMonoidHom.toHomUnits := by
+  have heq : ⇑π.toMonoidHom.toHomUnits = Unitary.toUnits ∘ hπ.toUnitaryMonoidHom := by
     funext g
     exact Units.ext rfl
   rw [heq]
   exact Unitary.continuous_toUnits.comp (hπ.continuous_toUnitaryMonoidHom hπc)
 
-/-- Every unit `π.toUnitsMonoidHom g` of a unitary representation belongs to
+/-- Every unit `π.toMonoidHom.toHomUnits g` of a unitary representation belongs to
 `unitarySubgroup (V →L[𝕜] V)ˣ`. -/
-theorem toUnitsMonoidHom_mem_unitarySubgroup (hπ : π.IsUnitary) (g : G) :
-    π.toUnitsMonoidHom g ∈ unitarySubgroup (V →L[𝕜] V)ˣ :=
+theorem toHomUnits_mem_unitarySubgroup (hπ : π.IsUnitary) (g : G) :
+    π.toMonoidHom.toHomUnits g ∈ unitarySubgroup (V →L[𝕜] V)ˣ :=
   mem_unitarySubgroup_iff.mpr (TauCeti.mem_unitary_units_iff.mpr (hπ.mem_unitary g))
 
 /-- A continuous unitary group representation as a continuous group homomorphism into
 `unitarySubgroup (V →L[𝕜] V)ˣ`. -/
 def toUnitarySubgroupHom [TopologicalSpace G] (hπ : π.IsUnitary) (hπc : Continuous π) :
     G →ₜ* unitarySubgroup (V →L[𝕜] V)ˣ where
-  toMonoidHom := π.toUnitsMonoidHom.codRestrict (unitarySubgroup (V →L[𝕜] V)ˣ)
-    hπ.toUnitsMonoidHom_mem_unitarySubgroup
-  continuous_toFun := (hπ.continuous_toUnitsMonoidHom hπc).subtype_mk _
+  toMonoidHom := π.toMonoidHom.toHomUnits.codRestrict (unitarySubgroup (V →L[𝕜] V)ˣ)
+    hπ.toHomUnits_mem_unitarySubgroup
+  continuous_toFun := (hπ.continuous_toHomUnits hπc).subtype_mk _
 
 /-- The operator underlying `hπ.toUnitarySubgroupHom hπc g` is `π g`. -/
 @[simp]
