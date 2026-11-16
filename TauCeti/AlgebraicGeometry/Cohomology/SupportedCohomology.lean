@@ -52,8 +52,6 @@ for the closed vanishing locus of `I` in `Spec R`.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.tildeSheafFunctor R`: the exact functor `M ↦ M~` from `ModuleCat R` to
-  sheaves of `R`-modules on `Spec R`.
 * `TauCeti.AlgebraicGeometry.tildeCompSupportedSubmoduleSectionsTopIso`: the degree-zero natural
   isomorphism `M ↦ Γ_{V(I)}(Spec R, M~) ≅ Γ_I(M)` for finitely generated `I`.
 * `TauCeti.AlgebraicGeometry.tildeCompRightDerivedSupportedSectionsIso` (Stacks 0955): the natural
@@ -97,14 +95,7 @@ open PrimeSpectrum CategoryTheory.Sheaf
 
 section Comparison
 
-variable (R : CommRingCat.{u})
-
-/-- The functor `M ↦ M~` from `R`-modules to sheaves of `R`-modules on `Spec R`. -/
-abbrev tildeSheafFunctor :
-    ModuleCat.{u} R ⥤ Sheaf (Opens.grothendieckTopology (Spec R)) (ModuleCat.{u} R) :=
-  tilde.functor R ⋙ modulesSpecToSheaf
-
-variable {R}
+variable {R : CommRingCat.{u}}
 
 /-- For any set `s ⊆ R` and element `m : M`, the global section `tilde.toOpen M ⊤ m` of `M~` is
 supported in `V(s)` if and only if every `f ∈ s` annihilates `m` at some power. -/
@@ -347,7 +338,7 @@ end Comparison
 section DiscreteValuationRing
 
 variable (R : CommRingCat.{u}) [IsDomain R] [IsDiscreteValuationRing R]
-  (K : Type u) [Field K] [Algebra R K] [IsFractionRing R K]
+  (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H⁰_{V(𝔪)}(Spec R, 𝒪_{Spec R}) = 0`. -/
 theorem subsingleton_supportedModuleH_dvr_zero :

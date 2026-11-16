@@ -64,12 +64,6 @@ def primaryComponentFunctor : ModuleCat.{v} R ⥤ ModuleCat.{v} R where
     ext x
     rfl
 
-/-- `J.primaryComponentFunctor` sends `M` to `ModuleCat.of R (J.primaryComponent M)`. -/
-@[simp]
-theorem primaryComponentFunctor_obj (M : ModuleCat.{v} R) :
-    J.primaryComponentFunctor.obj M = ModuleCat.of R (J.primaryComponent M) :=
-  (rfl)
-
 /-- The canonical isomorphism identifying `J.primaryComponentFunctor.obj M` with
 `ModuleCat.of R (J.primaryComponent M)`. -/
 def primaryComponentFunctorObjIso (M : ModuleCat.{v} R) :

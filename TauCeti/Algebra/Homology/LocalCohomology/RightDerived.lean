@@ -44,10 +44,10 @@ commutative ring `R`, ideal `J`, and degree `q : ℕ` (Stacks Project, Tag 0954)
    colimit of `Hom_R(R ⧸ J^n, -)` with `J.primaryComponentFunctor`
    (`localCohomology.colimitLinearCoyonedaIsoPrimaryComponentFunctor`).
 
-As applications, `localCohomology J q` is an additive functor (so `H^q_J(0) = 0`), and for a
-discrete valuation ring `(R, 𝔪)` with fraction field `K`, the two-term injective resolution
-`0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0` yields `H^0_𝔪(R) = 0`, `H^1_𝔪(R) ≅ K ⧸ R`, and
-`H^{n+2}_𝔪(R) = 0`.
+As applications, `localCohomology J q` is an additive functor (so `H^q_J(0) = 0` via
+`Functor.map_isZero`), and for a discrete valuation ring `(R, 𝔪)` with fraction field `K`, the
+two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0` yields `H^0_𝔪(R) = 0`,
+`H^1_𝔪(R) ≅ K ⧸ R`, and `H^{n+2}_𝔪(R) = 0`.
 
 ## Main definitions
 
@@ -62,7 +62,7 @@ discrete valuation ring `(R, 𝔪)` with fraction field `K`, the two-term inject
 
 ## Main results
 
-* `localCohomology.isZero_obj_zero`: `H^q_J(0) = 0` in every degree `q`.
+* `localCohomology.additive`: `localCohomology J q` is additive in every degree `q`.
 * `localCohomology.isZero_dvr_zero` and `localCohomology.isZero_dvr_add_two`: for a discrete
   valuation ring `(R, 𝔪)`, `H^0_𝔪(R) = 0` and `H^{n+2}_𝔪(R) = 0`.
 
@@ -206,17 +206,12 @@ lemma linearEquivRightDerivedPrimaryComponent_naturality {M N : ModuleCat.{u} R}
 instance additive (q : ℕ) : (localCohomology J q).Additive :=
   Functor.additive_of_iso (isoRightDerivedPrimaryComponent J q).symm
 
-/-- Local cohomology vanishes on a zero module in every degree. -/
-theorem isZero_obj_zero {M : ModuleCat.{u} R} (hM : IsZero M) (q : ℕ) :
-    IsZero ((localCohomology J q).obj M) :=
-  (localCohomology J q).map_isZero hM
-
 end Comparison
 
 section DiscreteValuationRing
 
 variable (R : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-  (K : Type u) [Field K] [Algebra R K] [IsFractionRing R K]
+  (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `R` itself has no nonzero `𝔪`-power torsion. -/
 lemma primaryComponent_maximalIdeal_self :
@@ -229,6 +224,7 @@ lemma primaryComponent_maximalIdeal_self :
 torsion because any uniformizer acts invertibly on `K`. -/
 lemma primaryComponent_maximalIdeal_fractionRing :
     (IsLocalRing.maximalIdeal R).primaryComponent K = ⊥ := by
+  let := IsFractionRing.toField R (K := K)
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
   rw [hϖ.maximalIdeal_eq, Ideal.primaryComponent_span_singleton_eq_bot_iff]
   intro x y hxy
@@ -277,14 +273,16 @@ private lemma dvrShortComplex_shortExact : (dvrShortComplex R K).ShortExact :=
     (Submodule.mkQ_surjective _)
 
 private instance injective_fractionRing_obj : Injective (ModuleCat.of R K) := by
+  let := IsFractionRing.toField R (K := K)
   have : Module.Injective R K :=
     Module.Injective.of_ringEquiv (RingEquiv.refl R)
       (Submodule.quotEquivOfEqBot (⊥ : Submodule R K) rfl)
   exact Module.injective_object_of_injective_module R K
 
 private instance injective_quotient_fractionRing_obj :
-    Injective (ModuleCat.of R (K ⧸ LinearMap.range (Algebra.linearMap R K))) :=
-  Module.injective_object_of_injective_module R _
+    Injective (ModuleCat.of R (K ⧸ LinearMap.range (Algebra.linearMap R K))) := by
+  let := IsFractionRing.toField R (K := K)
+  exact Module.injective_object_of_injective_module R _
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H⁰_𝔪(R) = 0`. -/
 theorem isZero_dvr_zero :
