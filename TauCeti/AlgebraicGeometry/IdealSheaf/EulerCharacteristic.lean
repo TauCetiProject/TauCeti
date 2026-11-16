@@ -426,7 +426,8 @@ private def tensorMayerVietorisX₂Iso :
     (tensorMayerVietoris E I J).X₂ ≅
       (E.obj.obj ⊗ I.pushforwardSubscheme) ⊞ (E.obj.obj ⊗ J.pushforwardSubscheme) :=
   have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (tensorLeft E.obj.obj)
-  (tensorLeft E.obj.obj).mapBiprod I.pushforwardSubscheme J.pushforwardSubscheme
+  eqToIso (by rw [ShortComplex.map_X₂, mayerVietoris_X₂]) ≪≫
+    (tensorLeft E.obj.obj).mapBiprod I.pushforwardSubscheme J.pushforwardSubscheme
 
 omit [IsFinite ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k))] in
 include hI hJ in

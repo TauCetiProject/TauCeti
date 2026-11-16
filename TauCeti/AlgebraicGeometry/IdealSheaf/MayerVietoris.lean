@@ -167,7 +167,7 @@ variable (I J) in
 /-- **The Mayer–Vietoris sequence of two closed subschemes**
 `ι_* 𝒪_{V(I ⊓ J)} ⟶ ι_* 𝒪_{V(I)} ⊞ ι_* 𝒪_{V(J)} ⟶ ι_* 𝒪_{V(I ⊔ J)}`, whose maps are the
 restrictions of functions, with a sign on `ι_* 𝒪_{V(J)}` in the first map. -/
-abbrev mayerVietoris : ShortComplex X.Modules where
+@[expose] def mayerVietoris : ShortComplex X.Modules where
   f := biprod.lift (pushforwardSubschemeMap inf_le_left) (-pushforwardSubschemeMap inf_le_right)
   g := biprod.desc (pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J))
     (pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J))
@@ -230,8 +230,8 @@ variable (I J)
 /-- The first map of the Mayer–Vietoris sequence is a monomorphism: a function vanishing on `V(I)`
 and on `V(J)` vanishes on `V(I ⊓ J)`. -/
 private lemma mono_mayerVietoris_f : Mono (mayerVietoris I J).f := by
+  dsimp only [mayerVietoris_X₁, mayerVietoris_X₂, mayerVietoris_f]
   refine Preadditive.mono_of_cancel_zero _ fun {T} h hh ↦ ?_
-  rw [mayerVietoris_f] at hh
   -- Lift `h` to `𝒪_X` after a refinement of its source.
   obtain ⟨T', π, _, x, hx⟩ :=
     surjective_up_to_refinements_of_epi (I ⊓ J).toPushforwardSubscheme h
@@ -246,6 +246,7 @@ private lemma mono_mayerVietoris_f : Mono (mayerVietoris I J).f := by
 
 /-- The second map of the Mayer–Vietoris sequence is an epimorphism. -/
 private lemma epi_mayerVietoris_g : Epi (mayerVietoris I J).g := by
+  dsimp only [mayerVietoris_X₂, mayerVietoris_X₃, mayerVietoris_g]
   have : Epi (biprod.inl ≫ biprod.desc (pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J))
       (pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J))) := by
     rw [biprod.inl_desc]
@@ -255,8 +256,9 @@ private lemma epi_mayerVietoris_g : Epi (mayerVietoris I J).g := by
 /-- The Mayer–Vietoris sequence is exact in the middle. -/
 private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
   rw [ShortComplex.exact_iff_exact_up_to_refinements]
+  dsimp only [mayerVietoris_X₁, mayerVietoris_X₂, mayerVietoris_X₃, mayerVietoris_f,
+    mayerVietoris_g]
   intro A x₂ hx₂
-  rw [mayerVietoris_g] at hx₂
   -- Lift both components of `x₂` to `𝒪_X` after refining `A`.
   obtain ⟨A₁, π₁, _, a, ha⟩ :=
     surjective_up_to_refinements_of_epi I.toPushforwardSubscheme (x₂ ≫ biprod.fst)
@@ -265,7 +267,8 @@ private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
   -- The sum of the lifts vanishes on `V(I ⊔ J)`, so it is a section of `I ⊔ J` ...
   have hx₂' : x₂ ≫ biprod.fst ≫ pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J) +
       x₂ ≫ biprod.snd ≫ pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J) = 0 := by
-    simpa only [biprod.desc_eq, Preadditive.comp_add] using hx₂
+    rw [← Preadditive.comp_add, ← biprod.desc_eq]
+    exact hx₂
   have e₁ : a ≫ (I ⊔ J).toPushforwardSubscheme =
       π₁ ≫ x₂ ≫ biprod.fst ≫ pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J) := by
     rw [reassoc_of% ha, toPushforwardSubscheme_pushforwardSubschemeMap]
@@ -282,7 +285,6 @@ private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
     (π₃ ≫ π₂ ≫ a - c ≫ I.sheafι') ≫ (I ⊓ J).toPushforwardSubscheme, ?_⟩
   have hb' : π₃ ≫ π₂ ≫ a - c ≫ I.sheafι' = e ≫ J.sheafι' - π₃ ≫ b := by
     rw [sub_eq_sub_iff_add_eq_add, hce, add_comm]
-  rw [mayerVietoris_f]
   apply biprod.hom_ext
   · simp only [Category.assoc, biprod.lift_fst, toPushforwardSubscheme_pushforwardSubschemeMap,
       Preadditive.sub_comp]
