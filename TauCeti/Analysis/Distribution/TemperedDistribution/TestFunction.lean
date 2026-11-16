@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.Analysis.Distribution.Support
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -35,6 +36,8 @@ The density input is Mathlib's `SchwartzMap.dense_hasCompactSupport`.
 * `TemperedDistribution.toDistribution`: the restriction of a tempered distribution to the test
   functions on an open set, as a complex-linear map `𝓢'(E, F) →ₗ[ℂ] 𝓓'(Ω, F)`.
 * `TemperedDistribution.toDistribution_injective`: the restriction to all of `E` is injective.
+* `TemperedDistribution.restrictCLM_toDistribution`: restricting further to an open subset with
+  `Distribution.restrictCLM` gives the restriction to that subset.
 * `TemperedDistribution.dsupport_toDistribution_subset`: restriction does not enlarge the support.
 * `TemperedDistribution.toDistribution_lineDerivOp`,
   `TemperedDistribution.toDistribution_toTemperedDistribution`: restriction commutes with
@@ -117,12 +120,19 @@ theorem toDistribution_injective [FiniteDimensional ℝ E] [T2Space F] :
     Function.Injective (toDistribution (⊤ : Opens E) : 𝓢'(E, F) → 𝓓'(⊤, F)) := by
   intro u v h
   refine ext_real fun φ hφ ↦ ?_
-  let φ' : 𝓓((⊤ : Opens E), ℝ) := φ.toTestFunction hφ (Set.subset_univ _)
-  have hφ' : TestFunction.toSchwartzMapCLM ℝ (TestFunction.postcompCLM Complex.ofRealCLM φ') =
-      φ.postcompCLM Complex.ofRealCLM := by
-    ext x
-    simp [φ', TestFunction.postcompCLM_apply]
-  rw [← hφ', ← toDistribution_apply, ← toDistribution_apply, h]
+  simpa using DFunLike.congr_fun h (φ.toTestFunction hφ (Set.subset_univ _))
+
+/-- Restricting a tempered distribution to `Ω` and then to an open subset `Ω'` is the restriction
+to `Ω'`. -/
+@[simp]
+theorem restrictCLM_toDistribution [ContinuousSMul ℝ F] {Ω Ω' : Opens E} (h : Ω' ≤ Ω)
+    (u : 𝓢'(E, F)) :
+    (Distribution.restrictCLM (toDistribution Ω u) : 𝓓'(Ω', F)) = toDistribution Ω' u := by
+  ext φ
+  simp only [Distribution.restrictCLM_apply, toDistribution_apply]
+  congr 1
+  ext x
+  simp [TestFunction.monoCLM_apply, h]
 
 /-- Restriction to `Ω` commutes with directional derivatives. -/
 @[simp]
@@ -144,7 +154,7 @@ theorem toDistribution_toTemperedDistribution {G : Type*} [NormedAddCommGroup G]
   ext φ
   rw [toDistribution_apply, Lp.toTemperedDistribution_apply,
     Distribution.ofFun_apply (((Lp.memLp f).locallyIntegrable Fact.out).locallyIntegrableOn _)]
-  simp [TestFunction.postcompCLM_apply, Complex.coe_smul]
+  simp [Complex.coe_smul]
 
 /-- The support of the restriction of a tempered distribution to `Ω` lies in the support of the
 tempered distribution. -/
@@ -156,8 +166,8 @@ theorem dsupport_toDistribution_subset {Ω : Opens E} (u : 𝓢'(E, F)) :
   refine (Distribution.notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ ?_, hso, hxs⟩
   rw [toDistribution_apply]
   refine hs _ (Set.Subset.trans ?_ hφ)
-  simpa [TestFunction.postcompCLM_apply] using
-    tsupport_comp_subset (map_zero Complex.ofRealCLM) (φ : E → ℝ)
+  rw [TestFunction.coe_toSchwartzMapCLM, TestFunction.postcompCLM_apply]
+  exact tsupport_comp_subset (map_zero Complex.ofRealCLM) (φ : E → ℝ)
 
 end ToDistribution
 

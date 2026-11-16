@@ -27,10 +27,12 @@ compared with distributions on open sets.
 ## Main declarations
 
 * `ContDiffMapSupportedIn.toSchwartzMapCLM`: smooth functions supported in a compact set as
-  Schwartz functions, as a continuous linear map.
+  Schwartz functions, as a continuous linear map, with the seminorm bound
+  `ContDiffMapSupportedIn.seminorm_toSchwartzMapCLM_le`.
 * `TestFunction.toSchwartzMapCLM`: test functions on an open set as Schwartz functions, as a
   continuous linear map, with `TestFunction.coe_toSchwartzMapCLM`; it commutes with directional
-  derivatives (`TestFunction.toSchwartzMapCLM_lineDerivOp`).
+  derivatives (`TestFunction.toSchwartzMapCLM_lineDerivOp`) and with postcomposition by continuous
+  linear maps (`TestFunction.toSchwartzMapCLM_postcompCLM`).
 * `SchwartzMap.toTestFunction`: a compactly supported Schwartz function as a test function, sent
   back to itself by `TestFunction.toSchwartzMapCLM` (`SchwartzMap.toSchwartzMapCLM_toTestFunction`).
 
@@ -98,6 +100,15 @@ theorem coe_toSchwartzMapCLM (f : 𝓓_{K}(E, F)) : ⇑(toSchwartzMapCLM 𝕜 f)
   -- `HasCompactSupport.toSchwartzMap` keeps the underlying function.
   (rfl)
 
+/-- **Quantitative inclusion of test functions in Schwartz space.** On smooth functions supported
+in `K ⊆ closedBall 0 R`, the Schwartz seminorm of orders `k` and `l` is at most `R ^ k` times the
+sup norm of the `l`-th derivative. -/
+theorem seminorm_toSchwartzMapCLM_le {R : ℝ} (hR : 0 ≤ R) (hKR : ∀ x ∈ K, ‖x‖ ≤ R) (k l : ℕ)
+    (f : 𝓓_{K}(E, F)) :
+    SchwartzMap.seminorm 𝕜 k l (toSchwartzMapCLM 𝕜 f) ≤ R ^ k * N[𝕜]_{K, l} f :=
+  -- `toSchwartzMapCLM 𝕜 f` is `HasCompactSupport.toSchwartzMap` applied to `f` by definition.
+  seminorm_toSchwartzMap_le hR hKR k l f
+
 end ContDiffMapSupportedIn
 
 namespace TestFunction
@@ -131,6 +142,16 @@ theorem toSchwartzMapCLM_lineDerivOp (v : E) (φ : 𝓓(Ω, F)) :
   ext x
   simp [lineDerivOp_eq_lineDerivCLM ℝ, SchwartzMap.lineDerivOp_apply]
 
+/-- The inclusion of test functions in Schwartz space commutes with postcomposition by continuous
+linear maps. -/
+@[simp]
+theorem toSchwartzMapCLM_postcompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedSpace 𝕜 G] [SMulCommClass ℝ 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : F →L[ℝ] G)
+    (φ : 𝓓(Ω, F)) :
+    toSchwartzMapCLM 𝕜 (postcompCLM L φ) = (toSchwartzMapCLM 𝕜 φ).postcompCLM L := by
+  ext x
+  simp
+
 end TestFunction
 
 namespace SchwartzMap
@@ -152,6 +173,9 @@ variable [Algebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 F] in
 @[simp]
 theorem toSchwartzMapCLM_toTestFunction (f : 𝓢(E, F)) (hf : HasCompactSupport f)
     (hΩ : tsupport f ⊆ Ω) : TestFunction.toSchwartzMapCLM 𝕜 (f.toTestFunction hf hΩ) = f :=
+  -- `TestFunction.toSchwartzMapCLM` is `TestFunction.limitCLM` of
+  -- `HasCompactSupport.toSchwartzMap`, which unfolds to that map; it keeps the underlying
+  -- function, and `SchwartzMap` has structure eta.
   (rfl)
 
 end SchwartzMap

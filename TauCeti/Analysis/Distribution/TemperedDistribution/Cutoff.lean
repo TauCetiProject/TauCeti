@@ -169,6 +169,12 @@ theorem cutoffTempered_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ φ' : 𝓓(Ω, ℂ)) 
   ext ψ
   simp only [add_apply, cutoffTempered_def, map_add]
 
+/-- The tempered distribution `φ T` is additive in the cutoff `φ`, over finite sums. -/
+@[simp]
+theorem cutoffTempered_sum_cutoff {ι : Type*} (T : 𝓓'(Ω, ℂ)) (s : Finset ι) (φ : ι → 𝓓(Ω, ℂ)) :
+    T.cutoffTempered (∑ i ∈ s, φ i) = ∑ i ∈ s, T.cutoffTempered (φ i) :=
+  map_sum (AddMonoidHom.mk' T.cutoffTempered T.cutoffTempered_add_cutoff) φ s
+
 /-- The tempered distribution `φ T` is complex-linear in the cutoff `φ`. -/
 @[simp]
 theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, ℂ)) :

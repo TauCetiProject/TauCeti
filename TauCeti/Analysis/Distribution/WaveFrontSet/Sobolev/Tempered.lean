@@ -247,10 +247,7 @@ theorem memSobolev_cutoffTempered_of_forall_isLocallySobolevAt
   obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
     (fun _ ↦ isOpen_interior) fun x hx ↦
       mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  have hsum : T.cutoffTempered φ = ∑ i, T.cutoffTempered (ψ i) := by
-    conv_lhs => rw [← hψφ]
-    exact map_sum (AddMonoidHom.mk' T.cutoffTempered T.cutoffTempered_add_cutoff) ψ Finset.univ
-  rw [hsum]
+  rw [← hψφ, cutoffTempered_sum_cutoff]
   exact Finset.sum_induction _ (MemSobolev s 2) (fun _ _ ↦ MemSobolev.add)
     (memSobolev_fun_zero E ℂ s 2) fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
 
@@ -322,9 +319,7 @@ theorem memSobolev_of_isCompact_dsupport_of_forall_isLocallySobolevAt (hu : IsCo
   have hu' : u = T.cutoffTempered χ' := eq_cutoffTempered_of_forall T χ' fun ψ ψ' hψ hψ' ↦ by
     -- `ψ` is a test function, and `ψ' = χ' ψ` agrees with it near the support of `T`.
     let ψt : 𝓓((⊤ : Opens E), ℂ) := postcompCLM ofRealCLM (ψ.toTestFunction hψ (subset_univ _))
-    have hψt : toSchwartzMapCLM ℝ ψt = ψ.postcompCLM ofRealCLM := by
-      ext y
-      simp [ψt, postcompCLM_apply]
+    have hψt : toSchwartzMapCLM ℝ ψt = ψ.postcompCLM ofRealCLM := by simp [ψt]
     rw [← hψt, ← complexPairing_toDistribution]
     exact complexPairing_eq_of_eventuallyEq T (hχ'.mono fun y hy ↦ by simp [ψt, hψ' y, hy])
   rw [hu']
