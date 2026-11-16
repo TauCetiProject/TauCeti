@@ -35,12 +35,12 @@ open scoped BigOperators
 
 namespace TauCeti
 
-variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
+variable {ι : Type*} [LinearOrder ι] [Fintype ι]
 
 /-- A choice, for every occurrence of every entry `(i, j)` in a monomial in the entries of
 `L * Lᵀ`, of a column `k ≤ min i j` of the lower-triangular factor `L`. -/
 abbrev mulTransposeExpansionChoice (n : ι × ι → ℕ) :=
-  (ij : ι × ι) → Fin (n ij) → Finset.Iic (min ij.1 ij.2)
+  (ij : ι × ι) → Fin (n ij) → {k : ι // k ≤ min ij.1 ij.2}
 
 /-- The entry of `L` selected by one side of one occurrence: occurrence `r` of `(i, j)` with
 chosen column `k` contributes the factors `L i k` and `L j k`. -/
@@ -48,22 +48,25 @@ private def mulTransposeExpansionIndex {n : ι × ι → ℕ} (c : mulTransposeE
     (a : (Σ ij, Fin (n ij)) × Fin 2) : ι × ι :=
   (if a.2 = 0 then a.1.1.1 else a.1.1.2, c a.1.1 a.1.2)
 
+omit [Fintype ι] in
 @[simp]
 private theorem mulTransposeExpansionIndex_zero {n : ι × ι → ℕ}
     (c : mulTransposeExpansionChoice n) (a : Σ ij, Fin (n ij)) :
     mulTransposeExpansionIndex c (a, 0) = (a.1.1, (c a.1 a.2 : ι)) := by
   simp [mulTransposeExpansionIndex]
 
+omit [Fintype ι] in
 @[simp]
 private theorem mulTransposeExpansionIndex_one {n : ι × ι → ℕ}
     (c : mulTransposeExpansionChoice n) (a : Σ ij, Fin (n ij)) :
     mulTransposeExpansionIndex c (a, 1) = (a.1.2, (c a.1 a.2 : ι)) := by
   simp [mulTransposeExpansionIndex]
 
+omit [Fintype ι] in
 private theorem mulTransposeExpansionIndex_snd_le {n : ι × ι → ℕ}
     (c : mulTransposeExpansionChoice n) (a : (Σ ij, Fin (n ij)) × Fin 2) :
     (mulTransposeExpansionIndex c a).2 ≤ (mulTransposeExpansionIndex c a).1 := by
-  have h := Finset.mem_Iic.mp (c a.1.1 a.1.2).2
+  have h := (c a.1.1 a.1.2).2
   unfold mulTransposeExpansionIndex
   split_ifs
   · exact h.trans (min_le_left _ _)
@@ -71,19 +74,29 @@ private theorem mulTransposeExpansionIndex_snd_le {n : ι × ι → ℕ}
 
 /-- The multi-index in the entries of `L` of the term of the expansion of a monomial in the
 entries of `L * Lᵀ` given by a column choice. -/
-noncomputable def mulTransposeExpansionPower {n : ι × ι → ℕ}
+def mulTransposeExpansionPower {n : ι × ι → ℕ}
     (c : mulTransposeExpansionChoice n) (q : ι × ι) : ℕ :=
-  Function.occCount (mulTransposeExpansionIndex c) q
+  ∑ ij, ∑ r : Fin (n ij),
+    ((if (ij.1, (c ij r : ι)) = q then 1 else 0) +
+      if (ij.2, (c ij r : ι)) = q then 1 else 0)
 
 /-- The multi-index counts, over all occurrences, how often `q` is the left factor `(i, k)` or
 the right factor `(j, k)` selected by the chosen column `k`. -/
-theorem mulTransposeExpansionPower_eq_sum [Fintype ι] {n : ι × ι → ℕ}
+theorem mulTransposeExpansionPower_eq_sum {n : ι × ι → ℕ}
     (c : mulTransposeExpansionChoice n) (q : ι × ι) :
     mulTransposeExpansionPower c q =
       ∑ ij, ∑ r : Fin (n ij),
         ((if (ij.1, (c ij r : ι)) = q then 1 else 0) +
           if (ij.2, (c ij r : ι)) = q then 1 else 0) := by
-  rw [mulTransposeExpansionPower, Function.occCount_eq_sum, Fintype.sum_prod_type,
+  unfold mulTransposeExpansionPower
+  rfl
+
+private theorem mulTransposeExpansionPower_eq_occCount {n : ι × ι → ℕ}
+    (c : mulTransposeExpansionChoice n) (q : ι × ι) :
+    mulTransposeExpansionPower c q = Function.occCount (mulTransposeExpansionIndex c) q := by
+  rw [mulTransposeExpansionPower_eq_sum]
+  symm
+  rw [Function.occCount_eq_sum, Fintype.sum_prod_type,
     Fintype.sum_sigma]
   refine Fintype.sum_congr _ _ fun ij ↦ Fintype.sum_congr _ _ fun r ↦ ?_
   simp only [Fin.sum_univ_two, mulTransposeExpansionIndex_zero,
@@ -93,23 +106,24 @@ theorem mulTransposeExpansionPower_eq_sum [Fintype ι] {n : ι × ι → ℕ}
 @[simp]
 theorem mulTransposeExpansionPower_of_lt {n : ι × ι → ℕ} (c : mulTransposeExpansionChoice n)
     {q : ι × ι} (hq : q.1 < q.2) : mulTransposeExpansionPower c q = 0 :=
-  Function.occCount_of_notMem_range _ _ fun ⟨a, ha⟩ ↦
-    (mulTransposeExpansionIndex_snd_le c a).not_gt (ha ▸ hq)
+  mulTransposeExpansionPower_eq_occCount c q |>.trans <|
+    Function.occCount_of_notMem_range _ _ fun ⟨a, ha⟩ ↦
+      (mulTransposeExpansionIndex_snd_le c a).not_gt (ha ▸ hq)
 
 /-- The empty monomial expands to the single term with zero multi-index. -/
 @[simp]
 theorem mulTransposeExpansionPower_zero (c : mulTransposeExpansionChoice (0 : ι × ι → ℕ)) :
     mulTransposeExpansionPower c = 0 := by
   funext q
-  exact Function.occCount_of_notMem_range _ _ fun ⟨a, _⟩ ↦ Fin.elim0 a.1.2
+  simp [mulTransposeExpansionPower]
 
 /-- A term of the expansion, written as paired factors `L i k * L j k`, is the monomial in the
 entries of `L` with multi-index `mulTransposeExpansionPower c`. -/
-private theorem prod_apply_mul_apply_eq_prod_pow [Fintype ι] {M : Type*} [CommMonoid M]
+private theorem prod_apply_mul_apply_eq_prod_pow {M : Type*} [CommMonoid M]
     (L : Matrix ι ι M) {n : ι × ι → ℕ} (c : mulTransposeExpansionChoice n) :
     (∏ a : Σ ij, Fin (n ij), L a.1.1 (c a.1 a.2) * L a.1.2 (c a.1 a.2)) =
       ∏ q, L q.1 q.2 ^ mulTransposeExpansionPower c q := by
-  unfold mulTransposeExpansionPower
+  simp_rw [mulTransposeExpansionPower_eq_occCount]
   rw [Function.prod_occCount_pow (T := Finset.univ) _ (fun _ ↦ Finset.mem_univ _)]
   rw [Fintype.prod_prod_type]
   apply Finset.prod_congr rfl
@@ -123,7 +137,7 @@ namespace Matrix.IsLowerTriangular
 
 open TauCeti
 
-variable {ι R : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [Fintype ι]
+variable {ι R : Type*} [LinearOrder ι] [Fintype ι]
 
 /-- A monomial in the entries of `L * Lᵀ` for lower-triangular `L` is the finite sum, over all
 choices of a column `k ≤ min i j` for each occurrence of each entry `(i, j)`, of the
@@ -132,10 +146,14 @@ theorem prod_mul_transpose_apply_pow_eq_sum [CommSemiring R] {L : Matrix ι ι R
     (hL : L.IsLowerTriangular) (n : ι × ι → ℕ) :
     (∏ ij, (L * Lᵀ) ij.1 ij.2 ^ n ij) =
       ∑ c : mulTransposeExpansionChoice n, ∏ q, L q.1 q.2 ^ mulTransposeExpansionPower c q := by
+  let _ : LocallyFiniteOrderBot ι :=
+    LocallyFiniteOrderBot.ofIic' ι (fun i ↦ Finset.univ.filter (· ≤ i)) (by simp)
   have hentry (ij : ι × ι) :
       (L * Lᵀ) ij.1 ij.2 ^ n ij =
-        ∑ c : Fin (n ij) → Finset.Iic (min ij.1 ij.2), ∏ r, L ij.1 (c r) * L ij.2 (c r) := by
-    rw [hL.mul_transpose_apply_eq_sum_Iic, ← Finset.sum_coe_sort, Fintype.sum_pow]
+        ∑ c : Fin (n ij) → {k : ι // k ≤ min ij.1 ij.2},
+          ∏ r, L ij.1 (c r) * L ij.2 (c r) := by
+    rw [hL.mul_transpose_apply_eq_sum_Iic,
+      Finset.sum_subtype (Finset.Iic (min ij.1 ij.2)) (fun _ ↦ Finset.mem_Iic), Fintype.sum_pow]
   simp_rw [hentry]
   rw [Fintype.prod_sum]
   apply Finset.sum_congr rfl
