@@ -13,12 +13,12 @@ import Mathlib.Combinatorics.SimpleGraph.Ends.Defs
 /-!
 # Degrees of cut vertices in the block--cut forest
 
-For a cut vertex `v` of a finite simple graph, the blocks containing `v` are in bijection with
+For a cut vertex `v` of a simple graph, the blocks containing `v` are in bijection with
 the connected components of the original component of `v` after `v` is deleted.  Since those
 blocks are precisely the neighbours of `v` in the block--cut graph, this identifies the degree
 of `v` in the block--cut forest with the number of branches created inside its component.
 
-The resulting count is
+For a finite vertex type, the resulting count is
 
 `components(G - v) + 1 = components(G) + degree(blockCutGraph G, v)`.
 
@@ -189,8 +189,10 @@ theorem mem_incidentBlockEquivDeletedComponent
     simpa only [incidentBlockComponent] using ConnectedComponent.sound hreach
   exact (ConnectedComponent.mem_supp_iff _ _).mpr hcomponent
 
-/-- The neighbours of a cut vertex in the block--cut graph are counted by the components into
-which deleting it splits its original connected component. -/
+/-- The neighbours of a cut vertex in the block--cut graph are in bijection with the components
+into which deleting it splits its original connected component, so the two cardinalities agree.
+Both sides are `0` when these sets are infinite, by the convention of `Set.ncard` and
+`Nat.card`. -/
 theorem ncard_neighborSet_blockCutGraph_eq_natCard_deletedComponent :
     (G.blockCutGraph.neighborSet (.inr c)).ncard = Nat.card c.DeletedComponent := by
   rw [← Nat.card_coe_set_eq]
