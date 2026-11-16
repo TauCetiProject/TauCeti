@@ -103,40 +103,24 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
     (hK' (by norm_num) 1) (hK' (by norm_num) I) hJ hD hK (prod_mono hDS (subset_univ K))
     fun z hz x _ ↦ hJt z (hDS hz) x
   refine ⟨δ, hδ, fun Ω u a A hΩ hΩD hu hfl ha hA huK ↦ ?_⟩
-  set Ks : ℝ × ℝ → V → ℝ := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1
-  set Kt : ℝ × ℝ → V → ℝ := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
-  have hΩm : MeasurableSet Ω := hΩ.measurableSet
-  -- The energy over `Ω` is at most the energy over `S`, hence at most `A + B_0 + B_1 + B_∞`.
-  have hf0 (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) :
-      0 ≤ ω.floerEnergyDensity Ks Kt (u k) z :=
-    ω.floerEnergyDensity_nonneg (hJt z hz _) (hfl k z hz)
   -- The action bound `a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞` makes the energy bound nonnegative.
   have hE0 : 0 ≤ A + ∑ q, B q := by
     have h := le_add_add_sum_of_tendsto_hamiltonianAction ω hH
       (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu 0).of_le (by norm_num))
       (fun z hz ↦ hJt z hz _) (hfl 0) (ha 0)
     linarith [hA 0]
-  have hlin (k : ℕ) : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u k) z) ≤
-      ENNReal.ofReal (A + ∑ q, B q) := by
-    refine (lintegral_mono_set hΩS).trans <|
-      (lintegral_floerEnergyDensity_pairOfPantsPerturbation_le ω hH
-        (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu k).of_le (by norm_num))
-        (fun z hz ↦ hJt z hz _) (hfl k) (ha k)).trans (ENNReal.ofReal_le_ofReal ?_)
-    simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
-      Puncture.endSign_inf]
-    linarith [hA k]
-  have hint (k : ℕ) : IntegrableOn (ω.floerEnergyDensity Ks Kt (u k)) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
-      ((hu k).of_le (by norm_num)) (hK' (by norm_num) 1) (hK' (by norm_num) I)).mono
-        hΩS).aestronglyMeasurable hΩm,
-      (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem hΩm fun z hz ↦ hf0 k (hΩS hz))).2
-        ((hlin k).trans_lt ENNReal.ofReal_lt_top)⟩
-  exact hconv hΩ hΩD (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK hint
-    fun k ↦ by
-      rw [integral_eq_lintegral_of_nonneg_ae
-        (ae_restrict_of_forall_mem hΩm fun z hz ↦ hf0 k (hΩS hz))
-        (hint k).aestronglyMeasurable]
-      exact ENNReal.toReal_le_of_le_ofReal hE0 (hlin k)
+  -- Every solution has energy over `S` at most `A + B_0 + B_1 + B_∞`.
+  have hE (k : ℕ) := ω.integrableOn_and_setIntegral_floerEnergyDensity_le
+    isOpen_thricePuncturedSphereReal ((hu k).of_le (by norm_num)) (hK' (by norm_num) 1)
+    (hK' (by norm_num) I) (fun z hz ↦ hJt z hz _) (hfl k) hE0
+    ((lintegral_floerEnergyDensity_pairOfPantsPerturbation_le ω hH
+      (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu k).of_le (by norm_num))
+      (fun z hz ↦ hJt z hz _) (hfl k) (ha k)).trans (ENNReal.ofReal_le_ofReal (by
+        simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
+          Puncture.endSign_inf]
+        linarith [hA k]))) hΩ.measurableSet hΩS
+  exact hconv hΩ hΩD (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
+    (fun k ↦ (hE k).1) fun k ↦ (hE k).2
 
 end TauCeti.SymplecticForm
