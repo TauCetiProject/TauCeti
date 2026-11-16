@@ -22,8 +22,11 @@ conjugates (`OpenPartialHomeomorph.conj_mul_smul_eventuallyEq`). These are the l
 behind the chain-rule computation of the derivative representation at a fixed point.
 
 `OpenPartialHomeomorph.restrInvariant` restricts a chart to the largest invariant open subset
-of its source for a finite monoid action. An equivariant chart with invariant source also has
-invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`), and
+of its source for a finite monoid action. A chart intertwining a self-map `f` of its source with a
+map `A` has `A`-invariant target, and its inverse intertwines `A` with `f`
+(`OpenPartialHomeomorph.symm_map_of_intertwines`). In particular, an equivariant chart with
+invariant source also has invariant target and equivariant inverse
+(`OpenPartialHomeomorph.symm_map_smul_of_map_smul`), and
 invariant restriction preserves equivariance (`OpenPartialHomeomorph.restrInvariant_map_smul`).
 For a jointly continuous action, the pairs `(w, g)` for which `χ (g • χ.symm w)` is defined form
 an open set (`OpenPartialHomeomorph.isOpen_setOf_mem_target_smul_symm_mem_source`).
@@ -61,6 +64,17 @@ theorem conj_mul_smul_eventuallyEq [ContinuousConstSMul G X] {x : X} (hx : x ∈
   filter_upwards [hmem] with w hw
   simp [χ.left_inv hw, mul_smul]
 
+/-- If an open partial homeomorphism `e` intertwines a map `f` of its source into itself with a
+map `A`, then `A` maps the target of `e` into itself and `e.symm` intertwines `A` with `f`
+there. -/
+theorem symm_map_of_intertwines (e : OpenPartialHomeomorph X E) {f : X → X} {A : E → E}
+    (hA : ∀ x ∈ e.source, f x ∈ e.source ∧ e (f x) = A (e x)) {z : E} (hz : z ∈ e.target) :
+    A z ∈ e.target ∧ e.symm (A z) = f (e.symm z) := by
+  obtain ⟨hfs, hfe⟩ := hA (e.symm z) (e.map_target hz)
+  rw [e.right_inv hz] at hfe
+  rw [← hfe]
+  exact ⟨e.map_source hfs, e.left_inv hfs⟩
+
 /-- An equivariant open partial homeomorphism with invariant source has invariant target and
 an equivariant inverse. No continuity or monoid laws for the scalar actions are needed. -/
 theorem symm_map_smul_of_map_smul {M : Type*} [SMul M X] [SMul M E]
@@ -68,15 +82,8 @@ theorem symm_map_smul_of_map_smul {M : Type*} [SMul M X] [SMul M E]
     (hequiv : ∀ (g : M) (x : X), x ∈ e.source →
       g • x ∈ e.source ∧ e (g • x) = g • e x)
     (g : M) (z : E) (hz : z ∈ e.target) :
-    g • z ∈ e.target ∧ e.symm (g • z) = g • e.symm z := by
-  have hg := hequiv g (e.symm z) (e.map_target hz)
-  have hz' : g • z ∈ e.target := by
-    rw [← e.right_inv hz, ← hg.2]
-    exact e.map_source hg.1
-  refine ⟨hz', ?_⟩
-  calc
-    e.symm (g • z) = e.symm (e (g • e.symm z)) := by rw [hg.2, e.right_inv hz]
-    _ = g • e.symm z := e.left_inv hg.1
+    g • z ∈ e.target ∧ e.symm (g • z) = g • e.symm z :=
+  e.symm_map_of_intertwines (f := (g • ·)) (A := (g • ·)) (hequiv g) hz
 
 /-- Under a jointly continuous action, the pairs `(w, g)` for which the action of `g` is defined
 in the coordinates of a partial homeomorphism `e`, that is `w ∈ e.target` and

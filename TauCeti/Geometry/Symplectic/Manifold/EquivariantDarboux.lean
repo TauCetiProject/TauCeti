@@ -72,37 +72,8 @@ section Chart
 
 /-! ### Forms read in a chart -/
 
-variable {e : OpenPartialHomeomorph M E} {G : Type*}
-
-/-- If `e` intertwines `g • ·` with a linear map `A` on its source, the target of `e` is
-`A`-invariant and `e.symm` intertwines `A` with `g • ·` there. -/
-private theorem symm_map_of_intertwines [SMul G M] {g : G} {A : E →L[ℝ] E}
-    (hA : ∀ z ∈ e.source, g • z ∈ e.source ∧ e (g • z) = A (e z)) {y : E} (hy : y ∈ e.target) :
-    A y ∈ e.target ∧ e.symm (A y) = g • e.symm y := by
-  obtain ⟨hgs, hge⟩ := hA (e.symm y) (e.map_target hy)
-  rw [e.right_inv hy] at hge
-  rw [← hge]
-  exact ⟨e.map_source hgs, e.left_inv hgs⟩
-
-variable (he : ContMDiffOn I 𝓘(ℝ, E) ∞ e e.source)
+variable {e : OpenPartialHomeomorph M E} {G : Type*} (he : ContMDiffOn I 𝓘(ℝ, E) ∞ e e.source)
   (hes : ContMDiffOn 𝓘(ℝ, E) I ∞ e.symm e.target)
-
-include hes in
-/-- If `e` intertwines `g • ·` with a linear map `A` on its source and `g • ·` preserves the form
-`η`, then `η` read through `e.symm` is `A`-invariant on the target of `e`. -/
-private theorem mpullback_symm_map [SMul G M] {g : G} {A : E →L[ℝ] E} {k : ℕ}
-    {η : RoughForm I M ℝ k} (hg : MDifferentiable I I (fun x : M ↦ g • x))
-    (hηg : mpullback I I (fun x : M ↦ g • x) η = η)
-    (hA : ∀ z ∈ e.source, g • z ∈ e.source ∧ e (g • z) = A (e z)) {y : E} (hy : y ∈ e.target) :
-    mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) A (mpullback 𝓘(ℝ, E) I e.symm η) y =
-      mpullback 𝓘(ℝ, E) I e.symm η y := by
-  have hds {z : E} (hz : z ∈ e.target) : MDifferentiableAt 𝓘(ℝ, E) I e.symm z :=
-    ((hes z hz).contMDiffAt (e.open_target.mem_nhds hz)).mdifferentiableAt (by simp)
-  have heq : e.symm ∘ A =ᶠ[𝓝 y] (fun x : M ↦ g • x) ∘ e.symm := by
-    filter_upwards [e.open_target.mem_nhds hy] with z hz
-    exact (symm_map_of_intertwines hA hz).2
-  rw [← mpullback_comp_at A.mdifferentiableAt (hds (symm_map_of_intertwines hA hy).1),
-    heq.mpullback_eq, mpullback_comp_at (hds hy) (hg _), hηg]
 
 include he hes in
 /-- Let `e` be a chart in which `g • ·` acts by the linear map `ρ g`, and in which the form `η` on
@@ -190,16 +161,22 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
   -- the origin.
   let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := mpullback 𝓘(ℝ, E) I e.symm form.1
   have hηe {x : M} (hx : x ∈ e.source) : mpullback I 𝓘(ℝ, E) e η x = form.1 x :=
-    e.mpullback_mpullback_symm he hes form.1 hx
+    e.mpullback_mpullback_symm form.1 hx
+      ((he.contMDiffAt (e.open_source.mem_nhds hx)).mdifferentiableAt (by simp))
+      ((hes.contMDiffAt (e.open_target.mem_nhds (e.map_source hx))).mdifferentiableAt (by simp))
   have hη0 (a b : TangentSpace I x₀) : η 0 ![a, b] = form.eval₂ x₀ a b := by
-    rw [SmoothBundleForm.eval₂_apply, ← hηe hx₀e, mpullback_apply, hderiv.mfderiv, hex₀]
-    -- `fun i ↦ id (![a, b] i)` is `![a, b]` by definition.
+    have hid (v : TangentSpace I x₀) : mfderiv I 𝓘(ℝ, E) e x₀ v = v := by
+      rw [hderiv.mfderiv]
+      exact ContinuousLinearMap.id_apply (R₁ := ℝ) (M₁ := E) v
+    rw [SmoothBundleForm.eval₂_apply, ← hηe hx₀e, mpullback_apply_pair, hid, hid, hex₀]
+    -- The two sides differ only in the type of the entries of `![a, b]`, `TangentSpace I x₀` on
+    -- one side and `E` on the other, which agree by definition.
     rfl
   have hηρ (g : G) {y : E} (hy : y ∈ e.target) :
       (η (ρ g y)).compContinuousLinearMap (ρ g) = η y := by
-    have h := mpullback_symm_map hes
-      ((ContMDiffSMul.contMDiff_const_smul (I := IG) (n := ∞) g).mdifferentiable (by simp))
-      (by simpa using congrArg Subtype.val (hG g)) (hequiv g) hy
+    have h := e.mpullback_mpullback_symm_of_intertwines (hes.mdifferentiableOn (by simp))
+      (by simpa using congrArg Subtype.val (hG g)) (hequiv g) hy (ρ g).mdifferentiableAt
+      ((ContMDiffSMul.contMDiff_const_smul (I := IG) (n := ∞) g).mdifferentiable (by simp) _)
     rw [mpullback_eq_flat] at h
     calc (η (ρ g y)).compContinuousLinearMap (ρ g)
         = (η (ρ g y)).compContinuousLinearMap (fderiv ℝ (ρ g) y) := by rw [(ρ g).fderiv]
@@ -209,7 +186,8 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     exists_equivariant_diffeomorph_compContinuousLinearMap_fderiv_eq (r := ⊤)
       (isCompact_range hρc).isBounded (fun g ↦ map_zero (ρ g)) le_top e.open_target
       (hex₀ ▸ e.map_source hx₀e) (form.contDiffOn_mpullback e.open_target hes)
-      (fun y hy ↦ hform.isClosed.extDeriv_mpullback_eq_zero e.open_target hes hy)
+      (fun y hy ↦
+        hform.isClosed.extDeriv_mpullback_eq_zero e.open_target (hes.of_le (by simp)) hy)
       (fun v hv ↦ isNondegenerate_iff_separatingLeft.1 hform.isNondegenerate x₀ v fun w ↦
         (hη0 v w).symm.trans (hv w))
       fun g y hy ↦ hηρ g hy
@@ -220,7 +198,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
   · have hvec : (fun i ↦ mfderiv I 𝓘(ℝ, E) chart x (![v, w] i)) =
         ![mvfderiv I chart x v, mvfderiv I chart x w] := by
       ext i
-      fin_cases i <;> rfl
+      fin_cases i <;> simp [mvfderiv_apply_eq_mfderiv_apply]
     rw [SmoothBundleForm.eval₂_apply, hcη x hx, hvec]
     exact (hη0 _ _).trans (hform.isNondegenerate.symplecticFormAt_apply x₀ _ _).symm
   · refine forall_congr' fun g ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
