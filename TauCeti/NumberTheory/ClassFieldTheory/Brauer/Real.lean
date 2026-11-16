@@ -32,6 +32,8 @@ it solely by whether a Brauer class is zero. The complex Brauer group is trivial
 
 ## Main definitions and results
 
+* `natCard_absoluteGaloisGroup_real`, `finite_absoluteGaloisGroup_real`: `AbsoluteGaloisGroup ℝ`
+  has order `2` and is finite.
 * `realBrEquivRelative`: comparison with the relative cohomology of `ℂ/ℝ`.
 * `realInvEquiv`: the identification `Br ℝ ≃+ ZMod 2`.
 * `realInv`: the injective real invariant with two-torsion image in `ℚ/ℤ`.
@@ -57,6 +59,16 @@ private def realNormQuotientEquiv : Additive (ℝˣ ⧸ normGroup ℝ ℂ) ≃+ 
   let e : ℝˣ ⧸ normGroup ℝ ℂ ≃* ℤˣ := normGroup_real_complex ▸ Units.signEquiv ℝ
   exact (e.trans (zmodMulEquivOfGenerator hg hc).symm).toAdditiveLeft
 
+/-- The absolute Galois group of `ℝ` has order `2`. -/
+theorem natCard_absoluteGaloisGroup_real : Nat.card (AbsoluteGaloisGroup ℝ) = 2 := by
+  have : IsAlgClosure ℝ ℂ := ⟨inferInstance, inferInstance⟩
+  rw [Nat.card_congr (IsSepClosure.equiv ℝ (SeparableClosure ℝ) ℂ).autCongr.toEquiv,
+    IsGalois.card_aut_eq_finrank, Complex.finrank_real_complex]
+
+/-- The absolute Galois group of `ℝ` is finite. -/
+instance finite_absoluteGaloisGroup_real : Finite (AbsoluteGaloisGroup ℝ) :=
+  Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_real]; decide)
+
 /-- The continuous-cohomology Brauer group of `ℝ` agrees with the relative cohomology of
 `ℂ/ℝ`, using an identification of the separable closure with `ℂ`.
 
@@ -66,8 +78,6 @@ def realBrEquivRelative :
     Br ℝ ≃+ groupCohomology.H2 (Rep.ofMulDistribMulAction (ℂ ≃ₐ[ℝ] ℂ) ℂˣ) := by
   letI : IsAlgClosure ℝ ℂ := ⟨inferInstance, inferInstance⟩
   let eC := IsSepClosure.equiv ℝ (SeparableClosure ℝ) ℂ
-  letI : Finite (AbsoluteGaloisGroup ℝ) :=
-    Finite.of_equiv (ℂ ≃ₐ[ℝ] ℂ) eC.autCongr.toEquiv.symm
   letI : TopologicalSpace (Additive ℂˣ) := ⊥
   letI : DiscreteTopology (Additive ℂˣ) := ⟨rfl⟩
   letI : ContinuousSMul (ℂ ≃ₐ[ℝ] ℂ) (Additive ℂˣ) := ⟨continuous_of_discreteTopology⟩

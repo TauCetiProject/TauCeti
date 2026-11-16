@@ -72,7 +72,8 @@ theorem infiniteInvAt_torsionWeilBrauerPairing (w : InfinitePlace K)
           (W.torsionRes τ' m a) (W.torsionRes τ' m b)) := by
   have := hm.neZero_natCast
   rw [infiniteInvAt_apply, W.brBaseChange_torsionWeilBrauerPairing m hm τ']
-  exact ((W⁄w.Completion).toRatAddCircle_infiniteTateWeilPairing m _ _).symm
+  exact ((W⁄w.Completion).toRatAddCircle_infiniteTateWeilPairing m
+    (by simpa using hm.map (algebraMap K w.Completion)) _ _).symm
 
 /-- The local Tate pairings of restrictions of two global classes vanish at all but finitely
 many finite places. -/
@@ -144,6 +145,6 @@ theorem finsum_localTateWeilPairing_add_sum_infiniteTateWeilPairing_eq_zero
   convert W.finsum_toRatAddCircle_localTateWeilPairing_add_sum_infiniteInvMap_eq_zero
     m hm a b τ τ' using 2
   refine Finset.sum_congr rfl fun w _ ↦ ?_
-  exact (W⁄w.Completion).toRatAddCircle_infiniteTateWeilPairing m _ _
-
+  exact (W⁄w.Completion).toRatAddCircle_infiniteTateWeilPairing m
+    (by simpa using hm.map (algebraMap K w.Completion)) _ _
 end WeierstrassCurve

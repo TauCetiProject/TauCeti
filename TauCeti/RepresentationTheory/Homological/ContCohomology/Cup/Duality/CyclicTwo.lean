@@ -21,8 +21,7 @@ Let `G` be a topological group of order two, `M` a topological `G`-module killed
    `|H¹(G, InternalHom G M N)| = |H¹(G, M)|` for finite discrete `M` over any topological `G`.
 2. **Degree-one duality:** For discrete `G`, the norm on `N` vanishes, so `H²(G, N) ≃+ H⁰(G, N)`
    evaluates `(1, 1)` cup products as `(b g) (a g)`. Equal cardinalities give bijectivity of
-   `dualityMap1 G M N` and of its composition with any injective `H²(G, N) →+ ZMod n`. Subsingleton
-   `G` companions cover complex archimedean places uniformly.
+   `dualityMap1 G M N` and of its composition with any injective `H²(G, N) →+ ZMod n`.
 
 ## References
 
@@ -44,53 +43,6 @@ private theorem exists_gen_of_natCard_eq_two {G : Type uG} [Group G] (hG : Nat.c
   refine ⟨g, hg1, hguniq, hgg, fun x => ((eq_or_ne x 1).imp_right (hguniq x)).elim
     (fun hx => hx ▸ ⟨0, zpow_zero g⟩) (fun hx => by rw [hx]; exact ⟨1, zpow_one g⟩)⟩
 
-section TwoTorsion
-
-variable {G : Type uG} [Group G] [TopologicalSpace G]
-  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribMulAction G M] [ContinuousSMul G M]
-
-/-- **First continuous cohomology of a group of order two is `2`-torsion.** -/
-theorem two_nsmul_H1_eq_zero_of_natCard_eq_two (hG : Nat.card G = 2) (x : H1 G M) :
-    2 • x = 0 := by
-  obtain ⟨g, _, _, hgg, hzpow⟩ := exists_gen_of_natCard_eq_two hG
-  induction x using QuotientAddGroup.induction_on with
-  | _ f =>
-    rw [← QuotientAddGroup.mk_nsmul]
-    refine (H1pi_eq_zero_iff_exists_smul_sub_eq g hzpow (2 • f)).mpr ⟨-f.val g, ?_⟩
-    have hcoc := (mem_Z1_iff.mp f.property).2 g g
-    rw [hgg, map_one_of_mem_Z1 f.property] at hcoc
-    rw [AddSubgroup.coe_nsmul, two_nsmul, Pi.add_apply, smul_neg,
-      eq_neg_of_add_eq_zero_left hcoc.symm, neg_neg, sub_neg_eq_add]
-
-/-- **Second continuous cohomology of a topological group of order two is `2`-torsion.** -/
-theorem two_nsmul_H2_eq_zero_of_natCard_eq_two [ContinuousMul G] (hG : Nat.card G = 2)
-    (x : H2 G M) : 2 • x = 0 := by
-  obtain ⟨g, _, hguniq, hgg, _⟩ := exists_gen_of_natCard_eq_two hG
-  induction x using QuotientAddGroup.induction_on with
-  | _ f =>
-    obtain ⟨hfcont, hfcoc⟩ := mem_Z2_iff.mp f.property
-    rw [← QuotientAddGroup.mk_nsmul, QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf,
-      mem_B2_iff']
-    refine ⟨fun u => f.val (u, 1) + f.val (u, g),
-      (hfcont.comp (Continuous.prodMk_left 1)).add (hfcont.comp (Continuous.prodMk_left g)),
-      fun u v => ?_⟩
-    have hsum : f.val (u, v * 1) + f.val (u, v * g) = f.val (u, 1) + f.val (u, g) := by
-      rcases (eq_or_ne v 1).imp_right (hguniq v) with rfl | hv
-      · rw [one_mul, one_mul]
-      · rw [hv, mul_one, hgg, add_comm]
-    have hcomb := congr_arg₂ (· + ·) (hfcoc u v 1) (hfcoc u v g)
-    rw [AddSubgroup.coe_nsmul, two_nsmul, Pi.add_apply, smul_add]
-    exact (eq_of_sub_eq_zero (by
-      calc f.val (u, v) + f.val (u, v) -
-            (u • f.val (v, 1) + u • f.val (v, g) - (f.val (u * v, 1) + f.val (u * v, g)) +
-              (f.val (u, 1) + f.val (u, g)))
-          = (f.val (u * v, 1) + f.val (u, v) + (f.val (u * v, g) + f.val (u, v))) -
-              (u • f.val (v, 1) + f.val (u, v * 1) + (u • f.val (v, g) + f.val (u, v * g))) +
-              (f.val (u, v * 1) + f.val (u, v * g) - (f.val (u, 1) + f.val (u, g))) := by abel
-        _ = 0 := by rw [hcomb, hsum, sub_self, sub_self, add_zero])).symm
-
-end TwoTorsion
 
 section EulerHelpers
 
@@ -135,17 +87,22 @@ private theorem range_normHom_le_H0 {g : G} (hguniq : ∀ x : G, x ≠ 1 → x =
 
 private noncomputable def z1OfMemKerNorm [TopologicalSpace G] [DiscreteTopology G]
     [TopologicalSpace M] [IsTopologicalAddGroup M] {g : G} (hg1 : g ≠ 1)
-    (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgg : g * g = 1) (m : (normHom M g).ker) : Z1 G M := by
-  classical
-  refine ⟨fun x => if x = 1 then 0 else m.1, mem_Z1_iff.mpr ⟨continuous_of_discreteTopology, ?_⟩⟩
-  intro x y
-  rcases (eq_or_ne x 1).imp_right (hguniq x) with rfl | hx <;>
-    rcases (eq_or_ne y 1).imp_right (hguniq y) with rfl | hy
-  · simp
-  · simp [hy, hg1]
-  · simp [hx, hg1]
-  · simp only [hx, hy, hgg, ↓reduceIte, ite_eq_right_iff.mpr fun h => absurd h hg1]
-    exact ((add_comm (g • m.1) m.1).trans (AddMonoidHom.mem_ker.mp m.2)).symm
+    (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgg : g * g = 1) (m : (normHom M g).ker) : Z1 G M :=
+  open scoped Classical in
+  ⟨fun x => if x = 1 then 0 else m.1, mem_Z1_iff.mpr ⟨continuous_of_discreteTopology, fun x y => by
+    rcases (eq_or_ne x 1).imp_right (hguniq x) with rfl | hx <;>
+      rcases (eq_or_ne y 1).imp_right (hguniq y) with rfl | hy
+    · simp
+    · simp [hy, hg1]
+    · simp [hx, hg1]
+    · simp only [hx, hy, hgg, hg1, ↓reduceIte]
+      exact ((add_comm (g • m.1) m.1).trans (AddMonoidHom.mem_ker.mp m.2)).symm⟩⟩
+
+private theorem z1OfMemKerNorm_val_gen [TopologicalSpace G] [DiscreteTopology G]
+    [TopologicalSpace M] [IsTopologicalAddGroup M] {g : G} (hg1 : g ≠ 1)
+    (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgg : g * g = 1) (m : (normHom M g).ker) :
+    (z1OfMemKerNorm hg1 hguniq hgg m).val g = m.1 := by
+  simp [z1OfMemKerNorm, hg1]
 
 private def evalZ1AtGen [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
     {g : G} (hgg : g * g = 1) : Z1 G M →+ (normHom M g).ker where
@@ -155,6 +112,12 @@ private def evalZ1AtGen [TopologicalSpace G] [TopologicalSpace M] [IsTopological
     exact (add_comm (f.val g) (g • f.val g)).trans h.symm⟩
   map_zero' := rfl
   map_add' _ _ := rfl
+
+private theorem evalZ1AtGen_z1OfMemKerNorm [TopologicalSpace G] [DiscreteTopology G]
+    [TopologicalSpace M] [IsTopologicalAddGroup M] {g : G} (hg1 : g ≠ 1)
+    (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgg : g * g = 1) (m : (normHom M g).ker) :
+    evalZ1AtGen hgg (z1OfMemKerNorm hg1 hguniq hgg m) = m :=
+  Subtype.ext (z1OfMemKerNorm_val_gen hg1 hguniq hgg m)
 
 private noncomputable def h1EquivKerNormQuot [TopologicalSpace G] [DiscreteTopology G]
     [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M] {g : G} (hg1 : g ≠ 1)
@@ -176,9 +139,8 @@ private noncomputable def h1EquivKerNormQuot [TopologicalSpace G] [DiscreteTopol
     induction q using QuotientAddGroup.induction_on with
     | _ m =>
       refine ⟨(z1OfMemKerNorm hg1 hguniq hgg m : H1 G M), ?_⟩
-      rw [QuotientAddGroup.lift_mk, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply]
-      classical
-      exact congrArg QuotientAddGroup.mk (Subtype.ext (ite_eq_right_iff.mpr fun h => absurd h hg1))
+      rw [QuotientAddGroup.lift_mk, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
+        evalZ1AtGen_z1OfMemKerNorm]
 
 private def h0InternalHomEquivQuotHom {N : Type uN} [AddCommGroup N] [DistribMulAction G N]
     {g : G} (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgN : ∀ y : N, g • y = -y) :
@@ -219,21 +181,16 @@ private theorem subsingleton_H1_of_not_discreteTopology [TopologicalSpace G] {g 
       have hfg : f.val g ≠ 0 := hne
       apply hndisc
       rw [discreteTopology_iff_isOpen_singleton]
-      have hf1 : f.val 1 = 0 := map_one_of_mem_Z1 f.property
-      have hfcont : Continuous f.val := (mem_Z1_iff.mp f.property).1
       intro z
-      rcases (eq_or_ne z 1).imp_right (hguniq z) with rfl | hz
-      · convert hfcont.isOpen_preimage {0} (isOpen_discrete _)
-        ext u
-        rcases (eq_or_ne u 1).imp_right (hguniq u) with rfl | hu
-        · simp [hf1]
-        · simp [hu, hg1, hfg]
-      · rw [hz]
-        convert hfcont.isOpen_preimage {f.val g} (isOpen_discrete _)
-        ext u
-        rcases (eq_or_ne u 1).imp_right (hguniq u) with rfl | hu
-        · simp [hf1, hg1.symm, hfg.symm]
-        · simp [hu]
+      convert (mem_Z1_iff.mp f.property).1.isOpen_preimage {f.val z} (isOpen_discrete _)
+      ext u
+      have hf1 : f.val 1 = 0 := map_one_of_mem_Z1 f.property
+      rcases (eq_or_ne z 1).imp_right (hguniq z) with rfl | rfl <;>
+        rcases (eq_or_ne u 1).imp_right (hguniq u) with rfl | rfl
+      · simp
+      · simp [hf1, hg1, hfg]
+      · simp [hf1, hg1.symm, hfg.symm]
+      · simp
 
 end EulerHelpers
 
@@ -241,7 +198,9 @@ section EulerCharacteristic
 
 variable {G : Type uG} [Group G]
 
-/-- **Euler characteristic for a discrete group of order two** (`0 = 0` when `M` is infinite). -/
+/-- **Euler characteristic for a discrete group of order two**: for a `G`-module `M` killed by
+`n ≠ 0` and `N ≃+ ZMod n` with inversion action `g • y = -y` (`g ≠ 1`),
+`|M| * |H¹(G, M)| = |H⁰(G, M)| * |H⁰(G, InternalHom G M N)|` (`0 = 0` when `M` is infinite). -/
 theorem natCard_mul_natCard_H1_of_natCard_eq_two [TopologicalSpace G] [DiscreteTopology G]
     (hG : Nat.card G = 2) {M : Type uM} [AddCommGroup M] [TopologicalSpace M]
     [IsTopologicalAddGroup M] [DistribMulAction G M] [ContinuousSMul G M]
@@ -404,22 +363,15 @@ private theorem dualityMap1_injective_of_discrete [DiscreteTopology G]
         simp only [ψ, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply, hmk, map_zero]
       rw [hgm, add_neg_cancel]
     let b := z1OfMemKerNorm hg1 hguniq hgg ⟨InternalHom.of G ψ, hψker⟩
-    have hbval : b.val g = InternalHom.of G ψ := by
-      classical
-      exact ite_eq_right_iff.mpr fun h => absurd h hg1
     have heval := coe_cyclicTwoH2ToH0_dualityMap1_mk hg1 hguniq hgg hzpow (hN g hg1) a b
-    rw [hx, AddMonoidHom.zero_apply, map_zero, AddSubgroup.coe_zero, hbval] at heval
+    rw [hx, AddMonoidHom.zero_apply, map_zero, AddSubgroup.coe_zero,
+      z1OfMemKerNorm_val_gen] at heval
     exact hf ((AddEquiv.map_eq_zero_iff e.symm).mp heval.symm)
 
-private theorem bijective_to_hom_of_subsingleton {A B C : Type*} [Zero A] [AddZeroClass B]
-    [AddZeroClass C] [Subsingleton A] [Subsingleton B] (f : A → B →+ C) (hf0 : f 0 = 0) :
-    Function.Bijective f :=
-  ⟨fun x y _ => Subsingleton.elim x y,
-    fun _ => ⟨0, hf0.trans (AddMonoidHom.ext fun b => by simp [Subsingleton.elim b 0])⟩⟩
-
-/-- **Postcomposing `dualityMap1` with any injective invariant `H²(G, N) →+ ZMod n` is
-bijective.** -/
-theorem bijective_compHom_dualityMap1_of_natCard_eq_two (hG : Nat.card G = 2)
+/-- **Postcomposing `dualityMap1` with any injective `H²(G, N) →+ ZMod n` is bijective** over a
+topological group `G` of order two, for a finite discrete `G`-module `M` killed by `n ≠ 0` and
+discrete `N ≃+ ZMod n` with inversion action `g • y = -y` (`g ≠ 1`). -/
+theorem compHom_comp_dualityMap1_bijective_of_natCard_eq_two (hG : Nat.card G = 2)
     {n : ℕ} [NeZero n] (e : N ≃+ ZMod n) (hM : ∀ m : M, n • m = 0)
     (hN : ∀ g : G, g ≠ 1 → ∀ y : N, g • y = -y) {ι : H2 G N →+ ZMod n}
     (hι : Function.Injective ι) :
@@ -447,9 +399,12 @@ theorem bijective_compHom_dualityMap1_of_natCard_eq_two (hG : Nat.card G = 2)
   · obtain ⟨g, hg1, hguniq, _, _⟩ := exists_gen_of_natCard_eq_two hG
     have := subsingleton_H1_of_not_discreteTopology hg1 hguniq hdisc (M := M)
     have := subsingleton_H1_of_not_discreteTopology hg1 hguniq hdisc (M := InternalHom G M N)
-    exact bijective_to_hom_of_subsingleton _ (map_zero _)
+    exact ⟨fun x y _ => Subsingleton.elim x y,
+      fun _ => ⟨0, AddMonoidHom.ext fun b => by simp [Subsingleton.elim b 0]⟩⟩
 
-/-- **Degree-one evaluation duality for a topological group of order two.** -/
+/-- **Degree-one evaluation duality for a topological group of order two**, for a finite discrete
+`G`-module `M` killed by `n ≠ 0` and discrete `N ≃+ ZMod n` with inversion action `g • y = -y`
+(`g ≠ 1`). -/
 theorem dualityMap1_bijective_of_natCard_eq_two (hG : Nat.card G = 2)
     {n : ℕ} [NeZero n] (e : N ≃+ ZMod n) (hM : ∀ m : M, n • m = 0)
     (hN : ∀ g : G, g ≠ 1 → ∀ y : N, g • y = -y) : Function.Bijective (dualityMap1 G M N) := by
@@ -464,63 +419,15 @@ theorem dualityMap1_bijective_of_natCard_eq_two (hG : Nat.card G = 2)
         (AddMonoidHom.compHom ι :
           (H1 G (InternalHom G M N) →+ H2 G N) →+ (H1 G (InternalHom G M N) →+ ZMod n)) :=
       fun _ _ hf => AddMonoidHom.ext fun y => hι (DFunLike.congr_fun hf y)
-    have hbij := bijective_compHom_dualityMap1_of_natCard_eq_two hG e hM hN hι
+    have hbij := compHom_comp_dualityMap1_bijective_of_natCard_eq_two hG e hM hN hι
     exact ⟨dualityMap1_injective_of_discrete hG e hM hN,
       fun b => let ⟨a, ha⟩ := hbij.2 (AddMonoidHom.compHom ι b); ⟨a, hcompInj ha⟩⟩
   · obtain ⟨g, hg1, hguniq, _, _⟩ := exists_gen_of_natCard_eq_two hG
     have := subsingleton_H1_of_not_discreteTopology hg1 hguniq hdisc (M := M)
     have := subsingleton_H1_of_not_discreteTopology hg1 hguniq hdisc (M := InternalHom G M N)
-    exact bijective_to_hom_of_subsingleton _ (map_zero _)
+    exact ⟨fun x y _ => Subsingleton.elim x y,
+      fun _ => ⟨0, AddMonoidHom.ext fun b => by simp [Subsingleton.elim b 0]⟩⟩
 
 end DegreeOneDuality
-
-section SubsingletonGroup
-
-/-- **Euler characteristic for a trivial group.** -/
-theorem natCard_sq_mul_natCard_H1_of_subsingleton {G : Type uG} [Group G] [TopologicalSpace G]
-    [Subsingleton G] {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M] {N : Type uN} [AddCommGroup N]
-    [DistribMulAction G N] {n : ℕ} [NeZero n] (e : N ≃+ ZMod n) (hM : ∀ m : M, n • m = 0) :
-    Nat.card M ^ 2 * Nat.card (H1 G M) =
-      Nat.card (H0 G M) * Nat.card (H0 G (InternalHom G M N)) := by
-  have h1 : Nat.card (H1 G M) = 1 :=
-    Nat.card_eq_one_iff_unique.mpr ⟨subsingleton_H1_of_subsingleton G M, ⟨0⟩⟩
-  have hH0M : H0 G M = ⊤ :=
-    H0_eq_top_of_smul_eq_self fun g m => by rw [Subsingleton.elim g 1, one_smul]
-  have hH0M' : H0 G (InternalHom G M N) = ⊤ :=
-    H0_eq_top_of_smul_eq_self fun g φ => by rw [Subsingleton.elim g 1, one_smul]
-  rw [h1, mul_one, sq, hH0M, hH0M', Nat.card_congr (AddSubgroup.topEquiv (G := M)).toEquiv,
-    Nat.card_congr (AddSubgroup.topEquiv (G := InternalHom G M N)).toEquiv,
-    InternalHom.natCard_of_addEquiv_zmod e hM]
-
-/-- **Degree-one evaluation duality for a trivial group.** -/
-theorem dualityMap1_bijective_of_subsingleton {G : Type uG} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] (hG : Subsingleton G) {M : Type uM} [AddCommGroup M]
-    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
-    [Finite M] {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction G N] [ContinuousSMul G N] : Function.Bijective (dualityMap1 G M N) := by
-  have : Subsingleton G := hG
-  have := subsingleton_H1_of_subsingleton G M
-  have := subsingleton_H1_of_subsingleton G (InternalHom G M N)
-  exact bijective_to_hom_of_subsingleton _ (map_zero _)
-
-/-- **Postcomposing `dualityMap1` with any homomorphism out of `H²(G, N)` is bijective** when `G`
-is a subsingleton. -/
-theorem bijective_compHom_dualityMap1_of_subsingleton {G : Type uG} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] (hG : Subsingleton G) {M : Type uM} [AddCommGroup M]
-    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
-    [Finite M] {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction G N] [ContinuousSMul G N] {P : Type*} [AddCommMonoid P]
-    (ι : H2 G N →+ P) :
-    Function.Bijective
-      ((AddMonoidHom.compHom ι :
-          (H1 G (InternalHom G M N) →+ H2 G N) →+ (H1 G (InternalHom G M N) →+ P)).comp
-        (dualityMap1 G M N)) := by
-  have : Subsingleton G := hG
-  have := subsingleton_H1_of_subsingleton G M
-  have := subsingleton_H1_of_subsingleton G (InternalHom G M N)
-  exact bijective_to_hom_of_subsingleton _ (map_zero _)
-
-end SubsingletonGroup
 
 end TauCeti.ContCohomology
