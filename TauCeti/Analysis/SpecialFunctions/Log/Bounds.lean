@@ -15,7 +15,9 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+real cutoff `x` when passing between inclusive and strict prime sums. Finally, monotonicity of
+the logarithm bounds `|log x|` by `|log δ| + log B` on an interval `[δ, B]` with `0 < δ` and
+`1 ≤ B`.
 
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
 including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
@@ -30,6 +32,7 @@ in Hadamard minimum-modulus estimates.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
+* `Real.abs_log_le_of_mem_Icc`: `|log x| ≤ |log δ| + log B` on `[δ, B]`, for `0 < δ` and `1 ≤ B`.
 -/
 
 public section
@@ -76,5 +79,14 @@ theorem posLog_le_sqrt_two_mul_abs (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * 
   refine max_le (Real.sqrt_nonneg _) ?_
   simpa only [Real.log_inv, neg_neg, div_inv_eq_mul, Real.log_abs] using
     (neg_log_le_sqrt_two_div (inv_nonneg.mpr (abs_nonneg x)))
+
+/-- On an interval `[δ, B]` with `0 < δ` and `1 ≤ B`, the logarithm is bounded in absolute
+value by `|log δ| + log B`. -/
+theorem abs_log_le_of_mem_Icc {δ B x : ℝ} (hδ : 0 < δ) (hB : 1 ≤ B) (hx : x ∈ Set.Icc δ B) :
+    |log x| ≤ |log δ| + log B := by
+  have h1 : log δ ≤ log x := log_le_log hδ hx.1
+  have h2 : log x ≤ log B := log_le_log (hδ.trans_le hx.1) hx.2
+  have h3 : 0 ≤ log B := log_nonneg hB
+  refine abs_le.2 ⟨?_, ?_⟩ <;> linarith [neg_abs_le (log δ), le_abs_self (log δ)]
 
 end Real
