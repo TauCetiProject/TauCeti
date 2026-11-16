@@ -396,18 +396,6 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
-/-- Reading the domain point in real coordinates is smooth: the map `(c, z, x) ↦ (c, z, x)` from
-`ℝ × (ℝ × ℝ) × V` to `ℝ × ℂ × V` is `C^n` from the self-model of the product to the product of the
-self-models. Composing with it turns the smoothness of data on `ℝ × ℂ × V` into smoothness in real
-coordinates. -/
-theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm {n : WithTop ℕ∞} :
-    ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
-      (Prod.map id (Prod.map Complex.equivRealProdCLM.symm id) :
-        ℝ × ((ℝ × ℝ) × V) → ℝ × (ℂ × V)) :=
-  contDiff_fst.contMDiff.prodMk
-    ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
-      (contDiff_snd.comp contDiff_snd).contMDiff)
-
 /-- **The family is smooth in real coordinates.** For period-one `C^n` Hamiltonians on a normed
 space, the components of the family are `C^n` jointly in the parameter `c`, the domain point of
 `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
