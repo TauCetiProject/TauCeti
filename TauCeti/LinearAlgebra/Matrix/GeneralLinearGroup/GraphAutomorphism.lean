@@ -9,6 +9,7 @@ public import Mathlib.Data.Fin.Rev
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 import TauCeti.Data.Fin.Rev
 import Mathlib.Tactic.FinCases
 
@@ -488,6 +489,23 @@ theorem typeAGraphAutomorphism_diagGL (r : ℕ) (d : Fin (r + 1) → Aˣ) :
       congr 1
       funext i
       simp [mul_assoc]
+
+/-- Conjugation by the signed reversal matrix reverses the diagonal entries. -/
+@[simp]
+theorem typeAGraphConjugator_mul_diagGL_mul_inv (r : ℕ) (d : Fin (r + 1) → Aˣ) :
+    typeAGraphConjugator r A * diagGL d * (typeAGraphConjugator r A)⁻¹ =
+      diagGL (fun i => d i.rev) := by
+  simpa only [typeAGraphAutomorphism_apply, inverseTranspose_diagGL, inv_inv] using
+    typeAGraphAutomorphism_diagGL (A := A) r (fun i => (d i)⁻¹)
+
+/-- The signed reversal matrix normalizes the diagonal torus. -/
+theorem typeAGraphConjugator_mem_normalizer_diagonalTorus (r : ℕ) :
+    typeAGraphConjugator r A ∈
+      Subgroup.normalizer (diagonalTorus A (r + 1) : Set (GL (Fin (r + 1)) A)) := by
+  rw [typeAGraphConjugator]
+  exact mul_mem
+    (Subgroup.le_normalizer (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩))
+    (permutationGL_mem_normalizer Fin.revPerm)
 
 /-- The pinned type-`A` graph automorphism is natural in the coefficient ring. -/
 @[simp]

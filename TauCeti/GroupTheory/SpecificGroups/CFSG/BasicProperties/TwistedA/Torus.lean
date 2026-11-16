@@ -68,8 +68,8 @@ theorem map_specialIsometryEquivFixedPoints_torus :
     (UnitaryRankOne.torus K σ).map
         (specialIsometryEquivFixedPoints 2 q hv : UnitaryRankOne.Group K σ →* (d).FixedPoints) =
       (unitaryTorusHom q hv).range := by
-  simp only [UnitaryRankOne.torus_def K σ hσ, unitaryTorusHom_def, MonoidHom.range_comp,
-    MulEquiv.toMonoidHom_eq_coe]
+  simp only [UnitaryRankOne.torus_eq_range_torusHom K σ hσ, unitaryTorusHom_def,
+    MonoidHom.range_comp, MulEquiv.toMonoidHom_eq_coe]
 
 /-- The torus parameter gives the stated diagonal matrix over the algebraic closure. -/
 @[simp]
@@ -122,11 +122,12 @@ theorem unitaryFixedWeylRepresentative_inv :
   inv_eq_of_mul_eq_one_right (unitaryFixedWeylRepresentative_mul_self q hv)
 
 /-- Weyl conjugation of the exact torus acts on parameters by inverse field conjugation. -/
+@[simp]
 theorem unitaryFixedWeylRepresentative_mul_unitaryTorusHom_mul_unitaryFixedWeylRepresentative
     (t : Kˣ) :
     unitaryFixedWeylRepresentative q hv * unitaryTorusHom q hv t *
         unitaryFixedWeylRepresentative q hv =
-      unitaryTorusHom q hv ((Units.map (σ).toMonoidHom t)⁻¹) := by
+      unitaryTorusHom q hv ((Units.map (σ : K →* K) t)⁻¹) := by
   simpa only [unitaryFixedWeylRepresentative, unitaryTorusHom,
     MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, map_mul] using
       congrArg (specialIsometryEquivFixedPoints 2 q hv)

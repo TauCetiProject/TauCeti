@@ -201,6 +201,9 @@ the preimage of the diagonal torus of `GL_n(R)`. -/
 def diagonalTorus : Subgroup (SpecialLinearGroup (Fin n) R) :=
   (TauCeti.diagonalTorus R n).comap toGL
 
+instance : IsMulCommutative (diagonalTorus R n) :=
+  (TauCeti.diagonalTorus R n).comap_injective_isMulCommutative toGL_injective
+
 /-- An element of `SL_n(R)` lies in its diagonal torus exactly when it lies in the diagonal torus
 of `GL_n(R)`. -/
 theorem mem_diagonalTorus_iff_toGL_mem {g : SpecialLinearGroup (Fin n) R} :
