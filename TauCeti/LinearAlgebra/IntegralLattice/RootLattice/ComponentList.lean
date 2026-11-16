@@ -275,7 +275,7 @@ theorem componentGlueAlphabetIsometry_def {c d : Component}
 theorem componentGlueAlphabetIsometry_refl (c : Component) :
     componentGlueAlphabetIsometry (IntegralLattice.Isometry.refl c.rootLattice) =
       QuadraticMap.IsometryEquiv.refl c.glueAlphabet.quadratic :=
-  glueAlphabetIsometryOfIsometry_refl c.1 c.2.1 c.2.1 c.2.2
+  glueAlphabetIsometryOfIsometry_refl c.1 c.2.1 c.2.2
 
 /-- An isometry of component root lattices is compatible with the component glue isometries: the
 component glue isometry of the target component carries the transported label to the transport of

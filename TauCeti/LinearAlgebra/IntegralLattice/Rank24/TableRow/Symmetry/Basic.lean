@@ -38,7 +38,7 @@ in `[2(024)0]` does not preserve the glue subgroup: it carries `[33001]` to `[30
 difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.  To lift such a
 block permutation one couples it with componentwise root-lattice self-isometries acting
 nontrivially on the glue alphabets (`coupledLatticeIsometry`,
-`coupled_mem_glueSubgroup_iff_of_glueWords`).
+`apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords`).
 
 ## Main declarations
 
@@ -54,7 +54,7 @@ nontrivially on the glue alphabets (`coupledLatticeIsometry`,
   `TauCeti.RootfulNiemeierType.patternIsometryHom`,
   `TauCeti.RootfulNiemeierType.patternIsometryHom_injective`: the indicated symmetries of the table
   patterns are glue symmetries and act faithfully on `N_r`.
-* `TauCeti.RootfulNiemeierType.coupled_mem_glueSubgroup_iff_of_glueWords`,
+* `TauCeti.RootfulNiemeierType.apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords`,
   `TauCeti.RootfulNiemeierType.coupledLatticeIsometry`: coupled componentwise root-lattice
   self-isometries and row permutations preserving the glue subgroup.
 
@@ -175,7 +175,7 @@ theorem mem_glueSymmetries_of_forall_gluePatterns {g : Equiv.Perm (Fin r.compone
 `φ k` is an additive automorphism of the glue alphabet of component `k` acting on labels as `δ k`,
 then the coupled glue-word map `w ↦ fun k ↦ φ k (piGlueAlphabetCongr … g hg w k)` preserves
 `r.glueSubgroup` as soon as it maps the finite set `r.glueWords` into itself. -/
-theorem coupled_mem_glueSubgroup_iff_of_glueWords
+theorem apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords
     {g : Equiv.Perm (Fin r.components.length)}
     (hg : ∀ k, r.componentType (g k) = r.componentType k)
     (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) ≃+

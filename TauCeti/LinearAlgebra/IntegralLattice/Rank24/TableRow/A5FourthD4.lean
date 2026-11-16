@@ -274,7 +274,7 @@ private theorem val_glueLabelEquiv_symm_a5FourthD4ComponentGlueEquiv
         (a5FourthD4.valid_componentType ⟨4, h⟩) (a5FourthD4ComponentIsometry ⟨4, h⟩)
         (e ⟨j.val, hm⟩))).val = (typeD4TrialityLabelPerm ⟨j.val, hm⟩).val :=
       congrArg Fin.val ((congrArg e.symm
-        (glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv _ _ _ ⟨j.val, hm⟩)).trans
+        (glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv _ ⟨j.val, hm⟩)).trans
         (e.symm_apply_apply _))
     exact h4.trans (by simp [a5FourthD4DigitPerm, hm])
   | ⟨_ + 5, h⟩ => exact False.elim (Nat.not_lt_of_ge (Nat.le_add_left 5 _) h)
@@ -284,7 +284,7 @@ private theorem a5FourthD4ComponentGlueEquiv_mem_glueSubgroup_iff (w : a5FourthD
       (piGlueAlphabetCongr a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
         (a5FourthD4BlockRot⁻¹ : Equiv.Perm (Fin 5)) componentType_a5FourthD4BlockRot_inv w k)) ∈
       a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup := by
-  refine a5FourthD4.coupled_mem_glueSubgroup_iff_of_glueWords
+  refine a5FourthD4.apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords
     (g := (a5FourthD4BlockRot⁻¹ : Equiv.Perm (Fin 5))) componentType_a5FourthD4BlockRot_inv
     a5FourthD4ComponentGlueEquiv a5FourthD4DigitPerm
     val_glueLabelEquiv_symm_a5FourthD4ComponentGlueEquiv ?_ w

@@ -333,15 +333,15 @@ theorem glueAlphabetIsometry_glueAlphabetIsometryOfIsometry {t s : DynkinType} (
 
 /-- The identity root-lattice isometry induces the identity on the glue alphabet. -/
 @[simp]
-theorem glueAlphabetIsometryOfIsometry_refl (t : DynkinType) (hv₁ hv₂ : t.Valid)
+theorem glueAlphabetIsometryOfIsometry_refl (t : DynkinType) (hv : t.Valid)
     (ht : t.IsSimplyLaced) :
-    glueAlphabetIsometryOfIsometry hv₁ hv₂ (IntegralLattice.Isometry.refl (t.rootLattice ht)) =
+    glueAlphabetIsometryOfIsometry hv hv (IntegralLattice.Isometry.refl (t.rootLattice ht)) =
       QuadraticMap.IsometryEquiv.refl (t.glueAlphabet ht).quadratic := by
-  refine DFunLike.ext _ _ fun x ↦ EquivLike.injective (t.glueAlphabetIsometry hv₂ ht) ?_
+  refine DFunLike.ext _ _ fun x ↦ EquivLike.injective (t.glueAlphabetIsometry hv ht) ?_
   rw [glueAlphabetIsometry_glueAlphabetIsometryOfIsometry]
   refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
   rw [Isometry.discriminantGroupEquiv_refl]
-  -- Both `LinearEquiv.refl` and `QuadraticMap.IsometryEquiv.refl` evaluate to `x`, and `hv₁ = hv₂`.
+  -- Both `LinearEquiv.refl` and `QuadraticMap.IsometryEquiv.refl` evaluate to `x`.
   rfl
 
 /-- `glueAlphabetIsometryOfIsometry` preserves composition of root-lattice isometries. -/
@@ -391,42 +391,42 @@ theorem glueAlphabetIsometryOfIsometry_rootLatticeIsometryOfEq {t s : DynkinType
 
 /-- The group identity self-isometry induces the identity on the glue alphabet. -/
 @[simp]
-theorem glueAlphabetIsometryOfIsometry_one (t : DynkinType) (hv₁ hv₂ : t.Valid)
+theorem glueAlphabetIsometryOfIsometry_one (t : DynkinType) (hv : t.Valid)
     (ht : t.IsSimplyLaced) :
-    glueAlphabetIsometryOfIsometry hv₁ hv₂
+    glueAlphabetIsometryOfIsometry hv hv
         (1 : IntegralLattice.Isometry (t.rootLattice ht) (t.rootLattice ht)) =
       QuadraticMap.IsometryEquiv.refl (t.glueAlphabet ht).quadratic := by
   rw [Isometry.one_def, glueAlphabetIsometryOfIsometry_refl]
 
 /-- Group inversion of a root-lattice self-isometry induces `.symm` on the glue alphabet. -/
 @[simp]
-theorem glueAlphabetIsometryOfIsometry_inv {t : DynkinType} (hv₁ hv₂ : t.Valid)
+theorem glueAlphabetIsometryOfIsometry_inv {t : DynkinType} (hv : t.Valid)
     {ht : t.IsSimplyLaced}
     (f : IntegralLattice.Isometry (t.rootLattice ht) (t.rootLattice ht)) :
-    glueAlphabetIsometryOfIsometry hv₁ hv₂ f⁻¹ =
-      (glueAlphabetIsometryOfIsometry hv₂ hv₁ f).symm := by
+    glueAlphabetIsometryOfIsometry hv hv f⁻¹ =
+      (glueAlphabetIsometryOfIsometry hv hv f).symm := by
   rw [Isometry.inv_def, glueAlphabetIsometryOfIsometry_symm]
 
 /-- Group multiplication `f * g` of root-lattice self-isometries induces `g` followed by `f` on the
 glue alphabet. -/
 @[simp]
-theorem glueAlphabetIsometryOfIsometry_mul {t : DynkinType} (hv₁ hv₂ : t.Valid)
+theorem glueAlphabetIsometryOfIsometry_mul {t : DynkinType} (hv : t.Valid)
     {ht : t.IsSimplyLaced}
     (f g : IntegralLattice.Isometry (t.rootLattice ht) (t.rootLattice ht)) :
-    glueAlphabetIsometryOfIsometry hv₁ hv₂ (f * g) =
-      (glueAlphabetIsometryOfIsometry hv₁ hv₁ g).trans
-        (glueAlphabetIsometryOfIsometry hv₁ hv₂ f) := by
-  rw [Isometry.mul_def, glueAlphabetIsometryOfIsometry_trans hv₁ hv₁ hv₂ g f]
+    glueAlphabetIsometryOfIsometry hv hv (f * g) =
+      (glueAlphabetIsometryOfIsometry hv hv g).trans
+        (glueAlphabetIsometryOfIsometry hv hv f) := by
+  rw [Isometry.mul_def, glueAlphabetIsometryOfIsometry_trans hv hv hv g f]
 
 /-- Powers of a root-lattice self-isometry act on the glue alphabet as powers of the induced
 `ℤ`-linear equivalence. -/
 @[simp]
-theorem toLinearEquiv_glueAlphabetIsometryOfIsometry_pow {t : DynkinType} (hv₁ hv₂ : t.Valid)
+theorem toLinearEquiv_glueAlphabetIsometryOfIsometry_pow {t : DynkinType} (hv : t.Valid)
     {ht : t.IsSimplyLaced}
     (f : IntegralLattice.Isometry (t.rootLattice ht) (t.rootLattice ht)) (k : ℕ) :
-    (glueAlphabetIsometryOfIsometry hv₁ hv₂ (f ^ k) :
+    (glueAlphabetIsometryOfIsometry hv hv (f ^ k) :
         t.glueAlphabet ht ≃ₗ[ℤ] t.glueAlphabet ht) =
-      (glueAlphabetIsometryOfIsometry hv₁ hv₂ f :
+      (glueAlphabetIsometryOfIsometry hv hv f :
         t.glueAlphabet ht ≃ₗ[ℤ] t.glueAlphabet ht) ^ k := by
   induction k with
   | zero =>
@@ -439,12 +439,12 @@ theorem toLinearEquiv_glueAlphabetIsometryOfIsometry_pow {t : DynkinType} (hv₁
     simp [FiniteQuadraticModule.Isometry.trans_apply]
 
 /-- Pointwise evaluation of `glueAlphabetIsometryOfIsometry` on a power of a self-isometry. -/
-theorem glueAlphabetIsometryOfIsometry_pow_apply {t : DynkinType} (hv₁ hv₂ : t.Valid)
+theorem glueAlphabetIsometryOfIsometry_pow_apply {t : DynkinType} (hv : t.Valid)
     {ht : t.IsSimplyLaced}
     (f : IntegralLattice.Isometry (t.rootLattice ht) (t.rootLattice ht)) (k : ℕ)
     (x : t.glueAlphabet ht) :
-    glueAlphabetIsometryOfIsometry hv₁ hv₂ (f ^ k) x =
-      ((glueAlphabetIsometryOfIsometry hv₁ hv₂ f :
+    glueAlphabetIsometryOfIsometry hv hv (f ^ k) x =
+      ((glueAlphabetIsometryOfIsometry hv hv f :
         t.glueAlphabet ht ≃ₗ[ℤ] t.glueAlphabet ht) ^ k) x := by
   rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
     toLinearEquiv_glueAlphabetIsometryOfIsometry_pow]

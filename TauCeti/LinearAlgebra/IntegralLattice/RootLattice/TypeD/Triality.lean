@@ -408,18 +408,19 @@ theorem orderOf_typeD4TrialityLabelPerm : orderOf typeD4TrialityLabelPerm = 3 :=
 /-- **Triality cycles the nonzero Conway--Sloane `D₄` labels by `1 ↦ 2 ↦ 3 ↦ 1` (`s ↦ v ↦ c ↦ s`)**
 and fixes `0`. -/
 @[simp]
-theorem glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv (hv₁ hv₂ : (D 4).Valid)
-    (i : Fin 4) :
-    glueAlphabetIsometryOfIsometry hv₁ hv₂ (typeD4Triality ht) ((D 4).glueLabelEquiv ht i) =
+theorem glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv (i : Fin 4) :
+    glueAlphabetIsometryOfIsometry (valid_D.mpr le_rfl) (valid_D.mpr le_rfl)
+        (typeD4Triality ht) ((D 4).glueLabelEquiv ht i) =
       (D 4).glueLabelEquiv ht (typeD4TrialityLabelPerm i) := by
-  apply EquivLike.injective ((D 4).glueAlphabetIsometry hv₂ ht)
+  have hv : (D 4).Valid := valid_D.mpr le_rfl
+  apply EquivLike.injective ((D 4).glueAlphabetIsometry hv ht)
   rw [glueAlphabetIsometry_glueAlphabetIsometryOfIsometry]
   refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-  rw [glueAlphabetIsometry_D_apply_of_even 4 hv₁ ht (by decide),
-    glueAlphabetIsometry_D_apply_of_even 4 hv₂ ht (by decide), typeD4Triality,
+  rw [glueAlphabetIsometry_D_apply_of_even 4 hv ht (by decide),
+    glueAlphabetIsometry_D_apply_of_even 4 hv ht (by decide), typeD4Triality,
     Isometry.discriminantGroupEquiv_conjMulEquiv_apply]
   apply congrArg
-    (rootLatticeIsometryCheckerboard 4 (valid_D.mp hv₂) ht).symm.discriminantGroupEquiv
+    (rootLatticeIsometryCheckerboard 4 le_rfl ht).symm.discriminantGroupEquiv
   rw [zmodTwoProdAddEquivCheckerboardDiscriminantGroup_glueLabelEquiv_D_of_even 4 ht (by decide) i,
     zmodTwoProdAddEquivCheckerboardDiscriminantGroup_glueLabelEquiv_D_of_even 4 ht (by decide)
       (typeD4TrialityLabelPerm i)]
@@ -428,9 +429,10 @@ theorem glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv (hv₁ hv�
 /-- **Powers of `D₄` triality act on the Conway--Sloane `D₄` labels as powers of
 `typeD4TrialityLabelPerm`.** -/
 @[simp]
-theorem glueAlphabetIsometryOfIsometry_typeD4Triality_pow_glueLabelEquiv (hv₁ hv₂ : (D 4).Valid)
+theorem glueAlphabetIsometryOfIsometry_typeD4Triality_pow_glueLabelEquiv
     (k : ℕ) (i : Fin 4) :
-    glueAlphabetIsometryOfIsometry hv₁ hv₂ (typeD4Triality ht ^ k) ((D 4).glueLabelEquiv ht i) =
+    glueAlphabetIsometryOfIsometry (valid_D.mpr le_rfl) (valid_D.mpr le_rfl)
+        (typeD4Triality ht ^ k) ((D 4).glueLabelEquiv ht i) =
       (D 4).glueLabelEquiv ht ((typeD4TrialityLabelPerm ^ k) i) := by
   induction k with
   | zero =>
