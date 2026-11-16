@@ -22,8 +22,8 @@ subspace `BesselPotentialSpace.realSubmodule ℂ h` of `H^s(ℂ)`, through the e
 
 **The exponential.** `TauCeti.Vortex.expGauge hs F` is the gauge `exp (i F)`, computed from the
 continuous representative of the phase `F` (`TauCeti.Vortex.toSubgroup_expGauge`). It is an
-injective homomorphism from the additive group of phases to `G_s`
-(`TauCeti.Vortex.expGauge_add`, `TauCeti.Vortex.expGauge_injective`) and locally Lipschitz in
+additive character, that is a homomorphism from the additive group of phases to `G_s`, which is
+injective (`TauCeti.Vortex.expGauge_injective`) and locally Lipschitz in
 `H^s` (`TauCeti.Vortex.exists_norm_subOne_expGauge_sub_le`). Conversely every gauge `u` with
 `C ‖u - 1‖_{H^s} < 1` is `exp (i F)` for a phase with
 `‖F‖_{H^s} ≤ (1 - C ‖u - 1‖_{H^s})⁻¹ ‖u - 1‖_{H^s}`
@@ -58,75 +58,56 @@ open scoped SchwartzMap BesselPotentialSpace Manifold
 
 variable {s : ℝ}
 
-variable {h : 0 ≤ s}
-
 /-! ### The exponential -/
 
 open SobolevTopologicalGaugeGroup
 
-/-- **The exponential of a real phase**: the gauge `exp (i F) ∈ G_s` of a real phase
-`F ∈ H^s(ℂ)`, `s > 1`, computed from its continuous representative (`toSubgroup_expGauge`). It
-is an injective homomorphism (`expGauge_add`, `expGauge_injective`) and an open embedding
-(`isOpenEmbedding_expGauge`). -/
-def expGauge (hs : 1 < s) (F : realSubmodule ℂ h) : SobolevTopologicalGaugeGroup hs :=
-  (toSubgroup hs).symm
+/-- **The exponential of a real phase**, as an additive character: the gauge `exp (i F) ∈ G_s` of
+a real phase `F ∈ H^s(ℂ)`, `s > 1`, computed from its continuous representative
+(`toSubgroup_expGauge`). It is an injective homomorphism from the additive group of phases
+(`expGauge_injective`) and an open embedding (`isOpenEmbedding_expGauge`). -/
+def expGauge (hs : 1 < s) :
+    AddChar (realSubmodule ℂ (zero_le_one.trans hs.le)) (SobolevTopologicalGaugeGroup hs) where
+  toFun F := (toSubgroup hs).symm
     ⟨fun z ↦ Circle.exp (continuousRep F z),
       exp_mem_sobolevGaugeGroup hs (continuous_continuousRep (finrank_real_complex_lt_two_mul hs) F)
         (continuousRep_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) F)⟩
+  map_zero_eq_one' := by
+    rw [MulEquiv.symm_apply_eq, map_one]
+    refine Subtype.ext (funext fun z ↦ ?_)
+    simp [continuousRep_zero (finrank_real_complex_lt_two_mul hs)]
+  map_add_eq_mul' F G := by
+    rw [MulEquiv.symm_apply_eq, map_mul, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+    refine Subtype.ext (funext fun z ↦ ?_)
+    simp [continuousRep_add (finrank_real_complex_lt_two_mul hs), Circle.exp_add]
 
 /-- The gauge `expGauge hs F` is `z ↦ exp (i F(z))`, for the continuous representative of `F`. -/
 @[simp]
-theorem toSubgroup_expGauge (hs : 1 < s) (F : realSubmodule ℂ h) :
+theorem toSubgroup_expGauge (hs : 1 < s) (F : realSubmodule ℂ (zero_le_one.trans hs.le)) :
     (toSubgroup hs (expGauge hs F) : ℂ → Circle) = fun z ↦ Circle.exp (continuousRep F z) := by
-  rw [expGauge, MulEquiv.apply_symm_apply]
+  rw [expGauge, AddChar.coe_mk, MulEquiv.apply_symm_apply]
 
-private theorem expGauge_eq_iff (hs : 1 < s) {F : realSubmodule ℂ h}
+/-- The exponential of `F` is the gauge `u` exactly when `exp (i F(z)) = u(z)` for every `z`, for
+the continuous representative of `F`. -/
+theorem expGauge_eq_iff (hs : 1 < s) {F : realSubmodule ℂ (zero_le_one.trans hs.le)}
     {u : SobolevTopologicalGaugeGroup hs} :
     expGauge hs F = u ↔
       (fun z ↦ Circle.exp (continuousRep F z)) = (toSubgroup hs u : ℂ → Circle) := by
   rw [← (toSubgroup hs).injective.eq_iff, ← Subtype.coe_inj, toSubgroup_expGauge]
 
-@[simp]
-theorem expGauge_add (hs : 1 < s) (F G : realSubmodule ℂ h) :
-    expGauge hs (F + G) = expGauge hs F * expGauge hs G := by
-  rw [expGauge_eq_iff, map_mul, Subgroup.coe_mul, toSubgroup_expGauge, toSubgroup_expGauge,
-    continuousRep_add (finrank_real_complex_lt_two_mul hs)]
-  funext z
-  simp [Circle.exp_add]
-
-@[simp]
-theorem expGauge_zero (hs : 1 < s) : expGauge hs (0 : realSubmodule ℂ h) = 1 := by
-  have h0 := expGauge_add hs (0 : realSubmodule ℂ h) 0
-  rwa [add_zero, left_eq_mul] at h0
-
-@[simp]
-theorem expGauge_neg (hs : 1 < s) (F : realSubmodule ℂ h) :
-    expGauge hs (-F) = (expGauge hs F)⁻¹ := by
-  rw [eq_inv_iff_mul_eq_one, ← expGauge_add, neg_add_cancel, expGauge_zero]
-
-@[simp]
-theorem expGauge_sub (hs : 1 < s) (F G : realSubmodule ℂ h) :
-    expGauge hs (F - G) = expGauge hs F * (expGauge hs G)⁻¹ := by
-  rw [sub_eq_add_neg, expGauge_add, expGauge_neg]
-
 /-- **The exponential is injective**, since a continuous `H^s` phase is determined by its
 exponential (`TauCeti.Vortex.injOn_exp`). -/
-theorem expGauge_injective (hs : 1 < s) :
-    Function.Injective (expGauge hs : realSubmodule ℂ h → SobolevTopologicalGaugeGroup hs) := by
+theorem expGauge_injective (hs : 1 < s) : Function.Injective (expGauge hs) := by
   intro F G hFG
   have hd := finrank_real_complex_lt_two_mul hs
-  have hphase : continuousRep F = continuousRep G := by
-    refine injOn_exp hs ⟨continuous_continuousRep hd F, continuousRep_mem_realSobolevFunctions hd F⟩
-      ⟨continuous_continuousRep hd G, continuousRep_mem_realSobolevFunctions hd G⟩ ?_
-    simpa only [toSubgroup_expGauge] using congrArg (fun u ↦ (toSubgroup hs u : ℂ → Circle)) hFG
-  refine Subtype.ext (inclusionLp_injective h (Lp.ext ?_))
-  filter_upwards [coeFn_inclusionLp_ae_eq_continuousRep hd F,
-    coeFn_inclusionLp_ae_eq_continuousRep hd G]
-    with z hF hG
-  rw [hF, hG, hphase]
+  refine continuousRep_injective hd <| injOn_exp hs
+    ⟨continuous_continuousRep hd F, continuousRep_mem_realSobolevFunctions hd F⟩
+    ⟨continuous_continuousRep hd G, continuousRep_mem_realSobolevFunctions hd G⟩ ?_
+  simpa only [toSubgroup_expGauge] using congrArg (fun u ↦ (toSubgroup hs u : ℂ → Circle)) hFG
 
 /-- The `L²` function of `expGauge hs F - 1` is `exp (i F) - 1`. -/
-private theorem coeFn_toLp_inclusion_subOne_expGauge (hs : 1 < s) (F : realSubmodule ℂ h) :
+theorem coeFn_toLp_inclusion_subOne_expGauge (hs : 1 < s) (h : 0 ≤ s)
+    (F : realSubmodule ℂ (zero_le_one.trans hs.le)) :
     (inclusion h (subOne (expGauge hs F))).toLp =ᵐ[volume]
       fun z ↦ (Circle.exp (continuousRep F z) : ℂ) - 1 := by
   filter_upwards [coeFn_toLp_inclusion_subOne h (expGauge hs F)] with z hz
@@ -136,27 +117,29 @@ private theorem coeFn_toLp_inclusion_subOne_expGauge (hs : 1 < s) (F : realSubmo
 `‖exp (i F) - exp (i G)‖_{H^s} ≤ exp (C R) ‖F - G‖_{H^s}` for real phases with
 `‖F‖_{H^s}, ‖G‖_{H^s} ≤ R`. -/
 theorem exists_norm_subOne_expGauge_sub_le (hs : 1 < s) :
-    ∃ C, 0 ≤ C ∧ ∀ {F G : realSubmodule ℂ h} {R : ℝ}, ‖F‖ ≤ R → ‖G‖ ≤ R →
+    ∃ C, 0 ≤ C ∧ ∀ {F G : realSubmodule ℂ (zero_le_one.trans hs.le)} {R : ℝ}, ‖F‖ ≤ R → ‖G‖ ≤ R →
       ‖subOne (expGauge hs F) - subOne (expGauge hs G)‖ ≤ Real.exp (C * R) * ‖F - G‖ := by
   obtain ⟨C, hC, hlip⟩ := exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp hs
   refine ⟨C, hC, fun {F G R} hFR hGR ↦ ?_⟩
+  have h : 0 ≤ s := zero_le_one.trans hs.le
   have hd := finrank_real_complex_lt_two_mul hs
-  have key := hlip (coeFn_inclusionLp_ae_eq_continuousRep hd F)
-    (coeFn_inclusionLp_ae_eq_continuousRep hd G)
-    (memSobolev_inclusionLp h (F : H^{s}(ℂ))) (memSobolev_inclusionLp h (G : H^{s}(ℂ))) (R := R)
-    (by rw [toBesselPotentialSpace_memSobolev_inclusionLp]; exact hFR)
-    (by rw [toBesselPotentialSpace_memSobolev_inclusionLp]; exact hGR)
-    (coeFn_toLp_inclusion_subOne_expGauge hs F) (coeFn_toLp_inclusion_subOne_expGauge hs G)
+  have hae (F : realSubmodule ℂ h) :
+      (inclusion h (F : H^{s}(ℂ))).toLp =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) := by
+    rw [toLp_inclusion]
+    exact coeFn_inclusionLp_ae_eq_continuousRep hd F
+  have key := hlip (hae F) (hae G)
+    (memSobolev_toLp_inclusion h _) (memSobolev_toLp_inclusion h _) (R := R)
+    (by rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion])
+    (by rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion])
+    (coeFn_toLp_inclusion_subOne_expGauge hs h F) (coeFn_toLp_inclusion_subOne_expGauge hs h G)
     (memSobolev_toLp_inclusion h _) (memSobolev_toLp_inclusion h _)
-  simp only [toBesselPotentialSpace_memSobolev_toLp_inclusion,
-    toBesselPotentialSpace_memSobolev_inclusionLp] at key
+  simp only [toBesselPotentialSpace_memSobolev_toLp_inclusion] at key
   exact key
 
 /-- **The exponential is continuous** from the real phases to `G_s`. -/
 @[fun_prop, continuity]
-theorem continuous_expGauge (hs : 1 < s) :
-    Continuous (expGauge hs : realSubmodule ℂ h → SobolevTopologicalGaugeGroup hs) := by
-  obtain ⟨C, -, hlip⟩ := exists_norm_subOne_expGauge_sub_le (h := h) hs
+theorem continuous_expGauge (hs : 1 < s) : Continuous (expGauge hs) := by
+  obtain ⟨C, -, hlip⟩ := exists_norm_subOne_expGauge_sub_le hs
   refine continuous_iff.2 (continuous_iff_continuousAt.2 fun F₀ ↦ ?_)
   refine continuousAt_of_locally_lipschitz zero_lt_one (Real.exp (C * (‖F₀‖ + 1))) fun F hF ↦ ?_
   rw [dist_eq_norm, dist_eq_norm]
@@ -169,9 +152,11 @@ such that every `u ∈ G_s` with `‖u - 1‖_{H^s} ≤ R` and `C R < 1` is `exp
 with `‖F‖_{H^s} ≤ (1 - C R)⁻¹ ‖u - 1‖_{H^s}`. The phase is `arg u`. -/
 theorem exists_expGauge_eq_and_norm_le (hs : 1 < s) :
     ∃ C, 0 ≤ C ∧ ∀ {u : SobolevTopologicalGaugeGroup hs} {R : ℝ}, ‖subOne u‖ ≤ R → C * R < 1 →
-      ∃ F : realSubmodule ℂ h, expGauge hs F = u ∧ ‖F‖ ≤ (1 - C * R)⁻¹ * ‖subOne u‖ := by
+      ∃ F : realSubmodule ℂ (zero_le_one.trans hs.le),
+        expGauge hs F = u ∧ ‖F‖ ≤ (1 - C * R)⁻¹ * ‖subOne u‖ := by
   obtain ⟨C, hC, harg⟩ := exists_memSobolev_ae_eq_arg_and_norm_sub_le hs
   refine ⟨C, hC, fun {u R} huR hCR ↦ ?_⟩
+  have h : 0 ≤ s := zero_le_one.trans hs.le
   obtain ⟨A, A', hA, hA', hAs, hAs', hle⟩ := harg (coeFn_toLp_inclusion_subOne h u)
     (coeFn_toLp_inclusion_subOne h (1 : SobolevTopologicalGaugeGroup hs))
     (memSobolev_toLp_inclusion h _)
@@ -197,13 +182,11 @@ theorem exists_expGauge_eq_and_norm_le (hs : 1 < s) :
     filter_upwards [hA] with z hz
     rw [hz, ofReal_im]
   refine ⟨⟨_, hmem⟩, ?_, hle⟩
-  have hcont : Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
-    continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
   have hd := finrank_real_complex_lt_two_mul hs
   have hexp :
       Continuous fun z ↦ (Circle.exp (continuousRep (⟨_, hmem⟩ : realSubmodule ℂ h) z) : ℂ) :=
     continuous_subtype_val.comp (Circle.exp.continuous.comp (continuous_continuousRep hd _))
-  have heq := (Continuous.ae_eq_iff_eq volume hexp hcont).1 <| by
+  have heq := (Continuous.ae_eq_iff_eq volume hexp (continuous_coe_toSubgroup u)).1 <| by
     filter_upwards [coeFn_inclusionLp_ae_eq_continuousRep hd (⟨_, hmem⟩ : realSubmodule ℂ h), hA]
       with w hw hw'
     rw [hincl, hw'] at hw
@@ -215,8 +198,8 @@ theorem exists_expGauge_eq_and_norm_le (hs : 1 < s) :
 /-- Small gauges are exponentials of small phases. -/
 private theorem exists_forall_norm_subOne_lt (hs : 1 < s) {ε : ℝ} (hε : 0 < ε) :
     ∃ η, 0 < η ∧ ∀ u : SobolevTopologicalGaugeGroup hs, ‖subOne u‖ < η →
-      ∃ F : realSubmodule ℂ h, ‖F‖ < ε ∧ expGauge hs F = u := by
-  obtain ⟨C, hC, hex⟩ := exists_expGauge_eq_and_norm_le (h := h) hs
+      ∃ F : realSubmodule ℂ (zero_le_one.trans hs.le), ‖F‖ < ε ∧ expGauge hs F = u := by
+  obtain ⟨C, hC, hex⟩ := exists_expGauge_eq_and_norm_le hs
   refine ⟨min (ε / 2) (2 * (C + 1))⁻¹, by positivity, fun u hu ↦ ?_⟩
   have hu₁ : ‖subOne u‖ < ε / 2 := hu.trans_le (min_le_left _ _)
   have hu₂ : ‖subOne u‖ < (2 * (C + 1))⁻¹ := hu.trans_le (min_le_right _ _)
@@ -234,29 +217,24 @@ private theorem exists_forall_norm_subOne_lt (hs : 1 < s) {ε : ℝ} (hε : 0 < 
     _ ≤ 2 * ‖subOne u‖ := mul_le_mul_of_nonneg_right h2 (norm_nonneg _)
     _ < ε := by linarith
 
-/-- **The exponential is an open map** from the real phases to `G_s`. -/
-theorem isOpenMap_expGauge (hs : 1 < s) :
-    IsOpenMap (expGauge hs : realSubmodule ℂ h → SobolevTopologicalGaugeGroup hs) := by
-  refine isOpenMap_iff_nhds_le.2 fun F U hU ↦ ?_
+/-- **The exponential is an open map** from the real phases to `G_s`: a homomorphism that is
+open at the identity, by `exists_forall_norm_subOne_lt`. -/
+theorem isOpenMap_expGauge (hs : 1 < s) : IsOpenMap (expGauge hs) := by
+  refine (IsTopologicalGroup.isOpenMap_iff_nhds_one (f := (expGauge hs).toMonoidHom)).2
+    fun U hU ↦ ?_
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (mem_map.1 hU)
-  obtain ⟨η, hη, hsmall⟩ := exists_forall_norm_subOne_lt (h := h) hs hε
-  -- The gauges `v` with `‖(exp (i F))⁻¹ v - 1‖ < η` form a neighbourhood of `exp (i F)`.
-  have hcont : Continuous fun v ↦ subOne ((expGauge hs F)⁻¹ * v) :=
-    continuous_subOne.comp (continuous_const.mul continuous_id)
-  have hnhds : {v | ‖subOne ((expGauge hs F)⁻¹ * v)‖ < η} ∈ 𝓝 (expGauge hs F) :=
-    (isOpen_lt (continuous_norm.comp hcont) continuous_const).mem_nhds (by simpa using hη)
+  obtain ⟨η, hη, hsmall⟩ := exists_forall_norm_subOne_lt hs hε
+  have hnhds : {v : SobolevTopologicalGaugeGroup hs | ‖subOne v‖ < η} ∈ 𝓝 1 :=
+    (isOpen_lt (continuous_norm.comp continuous_subOne) continuous_const).mem_nhds
+      (by simpa using hη)
   refine mem_of_superset hnhds fun v hv ↦ ?_
-  obtain ⟨G, hG, hGv⟩ := hsmall _ hv
-  have hv' : v = expGauge hs (F + G) := by rw [expGauge_add, hGv, mul_inv_cancel_left]
-  rw [hv']
-  refine hball ?_
-  rwa [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left]
+  obtain ⟨F, hF, rfl⟩ := hsmall v hv
+  exact hball (show F ∈ Metric.ball 0 ε by simpa using hF)
 
 /-- **The exponential is an open embedding** of the real phases into `G_s`: an injective,
 continuous and open homomorphism. Its image is the open subgroup of the gauges that have a global
 real `H^s` phase. -/
-theorem isOpenEmbedding_expGauge (hs : 1 < s) :
-    IsOpenEmbedding (expGauge hs : realSubmodule ℂ h → SobolevTopologicalGaugeGroup hs) :=
+theorem isOpenEmbedding_expGauge (hs : 1 < s) : IsOpenEmbedding (expGauge hs) :=
   .of_continuous_injective_isOpenMap (continuous_expGauge hs) (expGauge_injective hs)
     (isOpenMap_expGauge hs)
 
@@ -266,7 +244,7 @@ variable {hs : 1 < s}
 
 /-- `F ↦ u exp (i F)` is an open embedding of the real phases into `G_s`. -/
 theorem isOpenEmbedding_mul_expGauge (u : SobolevTopologicalGaugeGroup hs) :
-    IsOpenEmbedding fun F : realSubmodule ℂ h ↦ u * expGauge hs F :=
+    IsOpenEmbedding fun F : realSubmodule ℂ (zero_le_one.trans hs.le) ↦ u * expGauge hs F :=
   (Homeomorph.mulLeft u).isOpenEmbedding.comp (isOpenEmbedding_expGauge hs)
 
 /-- **The chart of `G_s` at `u`**: the inverse of `F ↦ u exp (i F)`, defined on the open coset
@@ -329,7 +307,8 @@ theorem gaugeChart_symm_trans_eqOn_add (u v : SobolevTopologicalGaugeGroup hs) :
   have h₁ := key hF
   have h₀ := key hF₀
   dsimp only
-  rw [add_comm, expGauge_add, expGauge_sub]
+  rw [add_comm, sub_eq_add_neg, AddChar.map_add_eq_mul, AddChar.map_add_eq_mul,
+    AddChar.map_neg_eq_inv]
   calc expGauge hs (((gaugeChart u).symm ≫ₕ gaugeChart v) F)
       = v⁻¹ * (u * expGauge hs F) := by rw [← h₁, inv_mul_cancel_left]
     _ = v⁻¹ * (u * expGauge hs F₀) * (expGauge hs F₀)⁻¹ * expGauge hs F := by group
@@ -345,6 +324,20 @@ instance instChartedSpace :
   chartAt := gaugeChart
   mem_chart_source := mem_gaugeChart_source_self
   chart_mem_atlas u := mem_range_self u
+
+/-- The chart of `G_s` at `u` is `gaugeChart u`. -/
+@[simp]
+theorem chartAt_eq (u : SobolevTopologicalGaugeGroup hs) :
+    chartAt (realSubmodule ℂ (zero_le_one.trans hs.le)) u = gaugeChart u :=
+  rfl
+
+/-- The charts of the atlas of `G_s` are the charts `gaugeChart u`. -/
+theorem mem_atlas_iff
+    {e : OpenPartialHomeomorph (SobolevTopologicalGaugeGroup hs)
+      (realSubmodule ℂ (zero_le_one.trans hs.le))} :
+    e ∈ atlas (realSubmodule ℂ (zero_le_one.trans hs.le)) (SobolevTopologicalGaugeGroup hs) ↔
+      ∃ u, gaugeChart u = e :=
+  Iff.rfl
 
 /-- **`G_s` is a manifold of every smoothness class over `ℝ`**, including analytic: its transition
 maps are translations of the model space (`gaugeChart_symm_trans_eqOn_add`). -/
