@@ -10,8 +10,10 @@ public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Polynomial.Basic
+public import TauCeti.Algebra.Polynomial.Taylor
+public import TauCeti.RingTheory.Polynomial.DegreeLT
+import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
-import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -30,31 +32,43 @@ The kernel of the unrestricted jet map `Polynomial.hasseJet a m` on `R[X]` is th
 by `∏ i, (X - a i) ^ m i`: at one node this is Taylor's formula
 (`Polynomial.X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero`), and the factors are pairwise
 coprime. The map is surjective by the Chinese remainder theorem, so it identifies
-`R[X] ⧸ (∏ i, (X - a i) ^ m i)` with the jet space (`Polynomial.hasseJetQuotientEquiv`); since the
-product is monic of degree `M`, the restriction `Polynomial.hermiteJet a m` to polynomials of
-degree below `M` is bijective (`AdjoinRoot.degreeLTEquiv`).
+`R[X] ⧸ (∏ i, (X - a i) ^ m i)` with the jet space (`Polynomial.hasseJetQuotientEquiv`), factoring
+through the Chinese remainder ring isomorphism `Polynomial.hermiteQuotientEquiv` and the local
+Taylor coordinates `TauCeti.taylorJetQuotientEquiv`. Since the product is monic of degree `M`, the
+restriction `Polynomial.hermiteJet a m` to polynomials of degree below `M` is bijective
+(`AdjoinRoot.degreeLTEquiv`).
 
 ## Main definitions
 
 * `Polynomial.hasseJet a m`: the `R`-linear map `f ↦ ((hasseDeriv k f).eval (a i))_{i, k < m i}`.
 * `Polynomial.hermiteJet a m`: its restriction to `Polynomial.degreeLT R (∑ i, m i)`.
+* `Polynomial.ordinaryHermiteJet a m`: the Hermite jet map built from ordinary derivatives,
+  `f ↦ ((derivative^[k] f).eval (a i))_{i, k < m i}`.
+* `Polynomial.hermiteQuotientEquiv`: for nodes with unit differences, the Chinese remainder ring
+  isomorphism `R[X] ⧸ (∏ i, (X - C (a i)) ^ m i) ≃+* ∀ i, R[X] ⧸ ((X - C (a i)) ^ m i)`.
+* `Polynomial.hasseJetQuotientEquiv`:
+  `R[X] ⧸ (∏ i, (X - C (a i)) ^ m i) ≃ₗ[R] ∀ i, Fin (m i) → R`.
 * `Polynomial.hermiteJetEquiv`: for nodes with unit differences, Hermite interpolation as a linear
   equivalence; its inverse sends a jet datum to its interpolation polynomial.
 * `Polynomial.hermiteBasis`: the basis of `degreeLT R (∑ i, m i)` dual to the Hasse jets.
 
 ## Main results
 
-* `Polynomial.all_jets_vanish_iff_dvd`: over a domain, for injective nodes, the jets of `f` all
-  vanish iff `∏ i, (X - C (a i)) ^ m i ∣ f`; `all_jets_vanish_iff_dvd_of_pairwise_isUnit_sub` is
-  the form over a commutative ring.
-* `Polynomial.hasseJetQuotientEquiv`: `R[X] ⧸ (∏ i, (X - C (a i)) ^ m i) ≃ₗ[R] ∀ i, Fin (m i) → R`.
+* `Polynomial.all_jets_vanish_iff_dvd`: over a commutative ring without zero divisors, for
+  injective nodes, the jets of `f` all vanish iff `∏ i, (X - C (a i)) ^ m i ∣ f`;
+  `all_jets_vanish_iff_dvd_of_pairwise_isUnit_sub` is the form over a commutative ring.
+* `Polynomial.hasseJetQuotientEquiv_eq_taylorJetQuotientEquiv`: `hasseJetQuotientEquiv` is
+  `hermiteQuotientEquiv` followed componentwise by `TauCeti.taylorJetQuotientEquiv`.
 * `Polynomial.hermiteJet_bijective`: over a field, for injective nodes, the Hermite jet map is
   bijective; `hermiteJet_bijective_of_pairwise_isUnit_sub` is the form over a commutative ring.
-* `Polynomial.eq_hermiteJetEquiv_symm_iff`: the interpolation polynomial is the unique polynomial
-  of degree below `∑ i, m i` with the prescribed jets.
-* `Polynomial.map_hermiteJetEquiv_symm`: interpolation commutes with ring homomorphisms.
-* `Polynomial.eval_iterate_derivative_bijective`: the same interpolation with ordinary
-  derivatives, when the factorials `k !` with `k < m i` are units.
+* `Polynomial.eq_hermiteJetEquiv_symm_iff`, `Polynomial.existsUnique_hermite_interpolation`: the
+  interpolation polynomial is the unique polynomial of degree below `∑ i, m i` with the prescribed
+  jets.
+* `Polynomial.hermiteJet_map`, `Polynomial.map_hermiteJetEquiv_symm`: Hermite jets and
+  interpolation commute with ring homomorphisms.
+* `Polynomial.ordinaryHermiteJet_bijective`,
+  `Polynomial.ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub`: the same interpolation with
+  ordinary derivatives, when the factorials `k !` with `k < m i` are units.
 
 ## References
 
@@ -106,6 +120,34 @@ theorem hermiteJet_apply (a : ι → R) (m : ι → ℕ) (f : degreeLT R (∑ i,
     hermiteJet a m f = hasseJet a m f := by
   simp [hermiteJet]
 
+/-- The Hermite jet map commutes with mapping the coefficients and nodes by a ring homomorphism. -/
+theorem hermiteJet_map [Semiring S] (ψ : R →+* S) (a : ι → R) (m : ι → ℕ)
+    (f : degreeLT R (∑ i, m i)) :
+    hermiteJet (fun i => ψ (a i)) m ⟨(f : R[X]).map ψ, map_mem_degreeLT ψ f.2⟩ =
+      fun i k => ψ (hermiteJet a m f i k) := by
+  simpa only [hermiteJet_apply] using hasseJet_map ψ a m f
+
+/-- The Hermite jet map built from ordinary derivatives,
+`f ↦ ((derivative^[k] f).eval (a i))_{i, k < m i}`, on polynomials of degree below `∑ i, m i`. -/
+noncomputable def ordinaryHermiteJet (a : ι → R) (m : ι → ℕ) :
+    degreeLT R (∑ i, m i) →ₗ[R] ∀ i, Fin (m i) → R :=
+  LinearMap.pi fun i => LinearMap.pi fun k =>
+    leval (a i) ∘ₗ (derivative ^ (k : ℕ)) ∘ₗ (degreeLT R (∑ i, m i)).subtype
+
+/-- The coordinates of the ordinary Hermite jet map are the iterated derivatives at the nodes. -/
+@[simp]
+theorem ordinaryHermiteJet_apply (a : ι → R) (m : ι → ℕ) (f : degreeLT R (∑ i, m i)) (i : ι)
+    (k : Fin (m i)) :
+    ordinaryHermiteJet a m f i k = (derivative^[k] (f : R[X])).eval (a i) := by
+  simp [ordinaryHermiteJet, pow_apply_eq_iterate]
+
+/-- The ordinary Hermite jets are the Hasse jets scaled by `k !`. -/
+theorem ordinaryHermiteJet_eq_factorial_mul (a : ι → R) (m : ι → ℕ) (f : degreeLT R (∑ i, m i))
+    (i : ι) (k : Fin (m i)) :
+    ordinaryHermiteJet a m f i k = ((k : ℕ) ! : R) * hermiteJet a m f i k := by
+  rw [ordinaryHermiteJet_apply, hermiteJet_apply, hasseJet_apply, ← factorial_smul_hasseDeriv]
+  simp [nsmul_eq_mul]
+
 end Semiring
 
 section CommRing
@@ -155,6 +197,27 @@ theorem ker_hasseJet :
   simp [Ideal.mem_span_singleton, ← all_jets_vanish_iff_dvd_of_pairwise_isUnit_sub ha m f,
     funext_iff]
 
+/-- When the differences of the nodes are units, the ideal generated by `∏ i, (X - a i) ^ m i`
+is the intersection of the ideals generated by its factors `(X - a i) ^ m i`. -/
+theorem span_prod_X_sub_C_pow_eq_iInf :
+    Ideal.span {∏ i, (X - C (a i)) ^ m i} = ⨅ i, Ideal.span {(X - C (a i)) ^ m i} :=
+  (Ideal.iInf_span_singleton fun _ _ hij => (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow).symm
+
+/-- **Chinese remainder theorem** for `∏ i, (X - a i) ^ m i`, when the differences of the nodes are
+units. -/
+noncomputable def hermiteQuotientEquiv :
+    (R[X] ⧸ Ideal.span {∏ i, (X - C (a i)) ^ m i}) ≃+*
+      ((i : ι) → R[X] ⧸ Ideal.span {(X - C (a i)) ^ m i}) :=
+  (Ideal.quotEquivOfEq (span_prod_X_sub_C_pow_eq_iInf ha m)).trans <|
+    Ideal.quotientInfRingEquivPiQuotient _ fun _ _ hij =>
+      (Ideal.isCoprime_span_singleton_iff _ _).2 (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow
+
+@[simp]
+theorem hermiteQuotientEquiv_mk (f : R[X]) (i : ι) :
+    hermiteQuotientEquiv ha m (Ideal.Quotient.mk _ f) i = Ideal.Quotient.mk _ f := by
+  rw [hermiteQuotientEquiv, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk]
+  exact Ideal.quotientInfRingEquivPiQuotient_mk_apply _ _ _
+
 /-- The jet space is the quotient of `R[X]` by `∏ i, (X - a i) ^ m i`, when the differences of
 the nodes are units: the Hasse jet map identifies the two. -/
 noncomputable def hasseJetQuotientEquiv :
@@ -175,6 +238,17 @@ theorem hasseJetQuotientEquiv_mk (f : R[X]) :
 theorem hasseJetQuotientEquiv_symm_hasseJet (f : R[X]) :
     (hasseJetQuotientEquiv ha m).symm (hasseJet a m f) = Ideal.Quotient.mk _ f := by
   rw [LinearEquiv.symm_apply_eq, hasseJetQuotientEquiv_mk]
+
+/-- The quotient-to-jet equivalence `hasseJetQuotientEquiv` is the Chinese remainder isomorphism
+`hermiteQuotientEquiv` followed componentwise by the local Taylor coordinates
+`TauCeti.taylorJetQuotientEquiv`. -/
+theorem hasseJetQuotientEquiv_eq_taylorJetQuotientEquiv
+    (x : R[X] ⧸ Ideal.span {∏ i, (X - C (a i)) ^ m i}) (i : ι) :
+    hasseJetQuotientEquiv ha m x i =
+      TauCeti.taylorJetQuotientEquiv (a i) (m i) (hermiteQuotientEquiv ha m x i) := by
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  ext k
+  simp
 
 /-- Hermite interpolation as a linear equivalence, when the differences of the nodes are units: a
 polynomial of degree below `∑ i, m i` is determined by its Hasse jets of the orders `k < m i` at
@@ -238,6 +312,14 @@ theorem eq_hermiteJetEquiv_symm_iff {f : R[X]} {c : ∀ i, Fin (m i) → R} :
     ext i k
     simpa using hc i k
 
+/-- Every jet datum has a unique interpolating polynomial of degree below `∑ i, m i`, when the
+differences of the nodes are units. -/
+theorem existsUnique_hermite_interpolation_of_pairwise_isUnit_sub (c : ∀ i, Fin (m i) → R) :
+    ∃! f : R[X], f.degree < ∑ i, m i ∧
+      ∀ i (k : Fin (m i)), (hasseDeriv k f).eval (a i) = c i k :=
+  ⟨(hermiteJetEquiv ha m).symm c, (eq_hermiteJetEquiv_symm_iff ha m).1 rfl,
+    fun _ h => (eq_hermiteJetEquiv_symm_iff ha m).2 h⟩
+
 /-- Hermite interpolation commutes with ring homomorphisms: the interpolation polynomial of the
 image of a jet datum at the image nodes is the image of the interpolation polynomial. In
 particular, for a field extension, the interpolation polynomial of data in the smaller field has
@@ -280,26 +362,21 @@ theorem sum_eval_hasseDeriv_smul_hermiteBasis {f : R[X]} (hf : f.degree < ∑ i,
   have hf' : f ∈ degreeLT R (∑ i, m i) := mem_degreeLT.2 (by simpa using hf)
   simpa using congr_arg Subtype.val ((hermiteBasis ha m).sum_repr ⟨f, hf'⟩)
 
-/-- Hermite interpolation with ordinary derivatives: when the differences of the nodes are units
-and `k !` is a unit for every order `k < m i` that occurs, the jets `(derivative^[k] f).eval (a i)`
-determine a polynomial of degree below `∑ i, m i`, and every such datum is attained. They are
-`k !` times the Hasse jets. -/
-theorem eval_iterate_derivative_bijective (hm : ∀ i, ∀ k < m i, IsUnit (k ! : R)) :
-    Bijective fun (f : degreeLT R (∑ i, m i)) i (k : Fin (m i)) =>
-      (derivative^[k] (f : R[X])).eval (a i) := by
-  have : (fun (f : degreeLT R (∑ i, m i)) i (k : Fin (m i)) =>
-      (derivative^[k] (f : R[X])).eval (a i)) =
-      (fun (c : ∀ i, Fin (m i) → R) i (k : Fin (m i)) => ((k : ℕ) ! : R) * c i k) ∘
-        hermiteJet a m := by
+/-- Hermite interpolation with ordinary derivatives over a commutative ring: when the differences
+of the nodes are units and `k !` is a unit for every order `k < m i` that occurs, the
+ordinary-derivative Hermite jet map on polynomials of degree below `∑ i, m i` is bijective. -/
+theorem ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub
+    (hm : ∀ i, ∀ k < m i, IsUnit (k ! : R)) :
+    Bijective (ordinaryHermiteJet a m) := by
+  let e : (∀ i, Fin (m i) → R) ≃ₗ[R] ∀ i, Fin (m i) → R :=
+    LinearEquiv.piCongrRight fun i =>
+      LinearEquiv.piCongrRight fun k => LinearEquiv.smulOfUnit (hm i k k.2).unit
+  have h : ⇑(ordinaryHermiteJet a m) = e ∘ hermiteJet a m := by
     ext f i k
-    simp [← factorial_smul_hasseDeriv]
-  rw [this]
-  refine Bijective.comp ⟨fun c d h => ?_, fun c => ⟨fun i k => ↑(hm i k k.2).unit⁻¹ * c i k, ?_⟩⟩
-    (hermiteJet_bijective_of_pairwise_isUnit_sub ha m)
-  · ext i k
-    exact (hm i k k.2).mul_left_cancel (congr_fun (congr_fun h i) k)
-  · ext i k
-    simp [← mul_assoc]
+    rw [Function.comp_apply, ordinaryHermiteJet_eq_factorial_mul]
+    simp [e, LinearEquiv.smulOfUnit, Units.smul_def]
+  rw [h]
+  exact e.bijective.comp (hermiteJet_bijective_of_pairwise_isUnit_sub ha m)
 
 end CommRing
 
@@ -307,8 +384,9 @@ section NoZeroDivisors
 
 variable [CommRing R] [NoZeroDivisors R] [Fintype ι] {a : ι → R}
 
-/-- **The kernel of the jet map** over a domain: for injective nodes, the Hasse jets of `f` of the
-orders `k < m i` at the nodes `a i` all vanish iff `∏ i, (X - a i) ^ m i` divides `f`. -/
+/-- **The kernel of the jet map** over a commutative ring without zero divisors: for injective
+nodes, the Hasse jets of `f` of the orders `k < m i` at the nodes `a i` all vanish iff
+`∏ i, (X - a i) ^ m i` divides `f`. -/
 theorem all_jets_vanish_iff_dvd (ha : Injective a) (m : ι → ℕ) (f : R[X]) :
     (∀ i (k : Fin (m i)), (hasseDeriv k f).eval (a i) = 0) ↔ (∏ i, (X - C (a i)) ^ m i) ∣ f := by
   nontriviality R
@@ -332,6 +410,110 @@ theorem hermiteJet_bijective (ha : Injective a) (m : ι → ℕ) : Bijective (he
   hermiteJet_bijective_of_pairwise_isUnit_sub
     (fun _ _ hij => (sub_ne_zero.2 (ha.ne hij)).isUnit) m
 
+/-- Over a field with injective nodes, every jet datum has a unique interpolating polynomial of
+degree below `∑ i, m i`. -/
+theorem existsUnique_hermite_interpolation (ha : Injective a) (m : ι → ℕ)
+    (c : ∀ i, Fin (m i) → K) :
+    ∃! f : K[X], f.degree < ∑ i, m i ∧
+      ∀ i (k : Fin (m i)), (hasseDeriv k f).eval (a i) = c i k :=
+  existsUnique_hermite_interpolation_of_pairwise_isUnit_sub
+    (fun _ _ hij => (sub_ne_zero.2 (ha.ne hij)).isUnit) m c
+
+/-- Hermite interpolation with ordinary derivatives over a field: for injective nodes, when every
+`k !` with `k < m i` is a unit, the ordinary-derivative Hermite jet map is bijective. -/
+theorem ordinaryHermiteJet_bijective (ha : Injective a) (m : ι → ℕ)
+    (hm : ∀ i, ∀ k < m i, IsUnit (k ! : K)) : Bijective (ordinaryHermiteJet a m) :=
+  ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub
+    (fun _ _ hij => (sub_ne_zero.2 (ha.ne hij)).isUnit) m hm
+
 end Field
+
+/-! ### Checks -/
+
+section Examples
+
+/-- One node `c` of multiplicity `2`: `c₀ + c₁ X ↦ (c₀ + c₁ c, c₁)`. -/
+example (c c₀ c₁ : ℚ) (h : C c₀ + C c₁ * X ∈ degreeLT ℚ (∑ i, ![2] i)) :
+    hermiteJet ![c] ![2] ⟨_, h⟩ 0 ⟨0, by simp⟩ = c₀ + c₁ * c ∧
+      hermiteJet ![c] ![2] ⟨_, h⟩ 0 ⟨1, by simp⟩ = c₁ := by
+  simp only [hermiteJet_apply, hasseJet_apply]
+  simp
+
+/-- Simple nodes `0, 1`: `c₀ + c₁ X ↦ (c₀, c₀ + c₁)`, the values at the nodes. -/
+example (c₀ c₁ : ℚ) (h : C c₀ + C c₁ * X ∈ degreeLT ℚ (∑ i, ![1, 1] i)) :
+    hermiteJet ![0, 1] ![1, 1] ⟨_, h⟩ 0 ⟨0, by simp⟩ = c₀ ∧
+      hermiteJet ![0, 1] ![1, 1] ⟨_, h⟩ 1 ⟨0, by simp⟩ = c₀ + c₁ := by
+  simp only [hermiteJet_apply, hasseJet_apply]
+  simp
+
+/-- No nodes: the map from the zero space to the one-point space is bijective. -/
+example : Bijective (hermiteJet (![] : Fin 0 → ℚ) ![]) :=
+  hermiteJet_bijective (injective_of_subsingleton _) _
+
+/-- A repeated node: `X ↦ (0, 0)`, so injectivity of the nodes is necessary. -/
+example : ¬ Injective (hermiteJet ![(0 : ℚ), 0] ![1, 1]) := by
+  intro h
+  have hX : (X : ℚ[X]) ∈ degreeLT ℚ (∑ i, ![1, 1] i) := by
+    simp [mem_degreeLT]
+  refine X_ne_zero (congrArg Subtype.val (@h ⟨X, hX⟩ 0 ?_))
+  ext i k
+  rw [hermiteJet_apply, hasseJet_apply, map_zero, Pi.zero_apply, Pi.zero_apply]
+  fin_cases i <;> fin_cases k <;> simp
+
+/-- In characteristic `2` the ordinary jet of order `2` of `X²` at `0` vanishes, while the Hasse
+jet is `1`. -/
+example (h : (X ^ 2 : (ZMod 2)[X]) ∈ degreeLT (ZMod 2) (∑ i, ![3] i)) :
+    ordinaryHermiteJet ![0] ![3] ⟨_, h⟩ 0 ⟨2, by simp⟩ = 0 ∧
+      hermiteJet ![0] ![3] ⟨_, h⟩ 0 ⟨2, by simp⟩ = 1 := by
+  refine ⟨?_, ?_⟩
+  · rw [ordinaryHermiteJet_eq_factorial_mul]
+    exact zero_mul _
+  · rw [hermiteJet_apply, hasseJet_apply]
+    simpa using eval_hasseDeriv_X_sub_C_pow (0 : ZMod 2) 2 2
+
+/-- In characteristic `2` the ordinary jet map with one node of multiplicity `3` is not injective:
+it kills `X²`, so the unit hypothesis on the factorials is necessary. -/
+example : ¬ Injective (ordinaryHermiteJet ![(0 : ZMod 2)] ![3]) := by
+  intro h
+  have hX : (X ^ 2 : (ZMod 2)[X]) ∈ degreeLT (ZMod 2) (∑ i, ![3] i) := by
+    rw [mem_degreeLT]
+    compute_degree!
+  have h0 : (X ^ 2 : (ZMod 2)[X]) = 0 := by
+    refine congrArg Subtype.val (@h ⟨_, hX⟩ 0 ?_)
+    ext i k
+    rw [ordinaryHermiteJet_apply, map_zero, Pi.zero_apply, Pi.zero_apply]
+    fin_cases i
+    fin_cases k <;> simp [CharTwo.add_self_eq_zero]
+  have := congrArg (fun p : (ZMod 2)[X] => p.coeff 2) h0
+  simp only [coeff_X_pow_self, coeff_zero] at this
+  exact absurd this (by decide)
+
+/-- `X² ∤ X`: the jet of order `1` of `X` at `0` is `1`. -/
+example : ¬ (∏ i, (X - C (![(0 : ℚ)] i)) ^ ![2] i) ∣ X := by
+  rw [← all_jets_vanish_iff_dvd (injective_of_subsingleton _)]
+  intro h
+  simpa [hasseDeriv_one'] using h 0 ⟨1, by simp⟩
+
+/-- `X (X - 1) ∣ X² - X`. -/
+example : (∏ i, (X - C (![(0 : ℚ), 1] i)) ^ ![1, 1] i) ∣ X ^ 2 - X := by
+  rw [← all_jets_vanish_iff_dvd (by decide)]
+  intro i k
+  fin_cases i <;> fin_cases k <;> simp
+
+/-- Worked example: `1 - X²` is the only polynomial of degree below `3` with `f(0) = 1`,
+`f'(0) = 0` and `f(1) = 0`. -/
+example (f : ℚ[X]) (hf : f ∈ degreeLT ℚ 3) (h₀ : f.eval 0 = 1) (h₁ : (derivative f).eval 0 = 0)
+    (h₂ : f.eval 1 = 0) : f = 1 - X ^ 2 := by
+  have hM : ∑ i, ![2, 1] i = 3 := rfl
+  have hg : (1 - X ^ 2 : ℚ[X]) ∈ degreeLT ℚ (∑ i, ![2, 1] i) := by
+    rw [hM, mem_degreeLT]
+    compute_degree!
+  refine congrArg Subtype.val ((hermiteJet_bijective (a := ![(0 : ℚ), 1]) (by decide) ![2, 1]).1
+    (a₁ := ⟨f, hM ▸ hf⟩) (a₂ := ⟨_, hg⟩) ?_)
+  ext i k
+  simp only [hermiteJet_apply, hasseJet_apply]
+  fin_cases i <;> fin_cases k <;> simp [h₀, h₁, h₂]
+
+end Examples
 
 end Polynomial
