@@ -520,27 +520,29 @@ section Computation
 variable (F : S.FreeMonoidal ⥤ D) [F.Monoidal]
 
 @[simp]
-theorem mapWordIso_of (a : S.Obj) : mapWordIso F (of a).as = Iso.refl (F.obj (of a)) :=
+theorem mapWordIso_of (a : S.Obj) : mapWordIso F (.of a) = Iso.refl (F.obj (of a)) :=
   (rfl)
 
 @[simp]
-theorem mapWordIso_tensorUnit_hom : (mapWordIso F (𝟙_ S.FreeMonoidal).as).hom = η F :=
+theorem mapWordIso_tensorUnit_hom :
+    (mapWordIso F (𝟙_ (FreeMonoidalCategory S.Obj))).hom = η F :=
   (rfl)
 
 @[simp]
-theorem mapWordIso_tensor_hom (X Y : S.FreeMonoidal) :
-    (mapWordIso F (X ⊗ Y).as).hom =
-      δ F X Y ≫ ((mapWordIso F X.as).hom ⊗ₘ (mapWordIso F Y.as).hom) :=
+theorem mapWordIso_tensor_hom (X Y : FreeMonoidalCategory S.Obj) :
+    (mapWordIso F (X ⊗ Y)).hom =
+      δ F ⟨X⟩ ⟨Y⟩ ≫ ((mapWordIso F X).hom ⊗ₘ (mapWordIso F Y).hom) :=
   (rfl)
 
 @[simp]
-theorem mapWordIso_tensorUnit_inv : (mapWordIso F (𝟙_ S.FreeMonoidal).as).inv = ε F :=
+theorem mapWordIso_tensorUnit_inv :
+    (mapWordIso F (𝟙_ (FreeMonoidalCategory S.Obj))).inv = ε F :=
   (rfl)
 
 @[simp]
-theorem mapWordIso_tensor_inv (X Y : S.FreeMonoidal) :
-    (mapWordIso F (X ⊗ Y).as).inv =
-      ((mapWordIso F X.as).inv ⊗ₘ (mapWordIso F Y.as).inv) ≫ μ F X Y :=
+theorem mapWordIso_tensor_inv (X Y : FreeMonoidalCategory S.Obj) :
+    (mapWordIso F (X ⊗ Y)).inv =
+      ((mapWordIso F X).inv ⊗ₘ (mapWordIso F Y).inv) ≫ μ F ⟨X⟩ ⟨Y⟩ :=
   (rfl)
 
 end Computation
@@ -556,8 +558,7 @@ theorem mapWordIso_lift (fo : S.Obj → D)
   | of a => rfl
   | unit => rfl
   | tensor X Y hX hY =>
-    refine (mapWordIso_tensor_hom (lift fo fc) ⟨X⟩ ⟨Y⟩).trans ?_
-    dsimp only
+    refine (mapWordIso_tensor_hom (lift fo fc) X Y).trans ?_
     rw [hX, hY, Iso.refl_hom, Iso.refl_hom]
     -- The tensorator of `lift fo fc` is the identity (`lift_δ`), but its source and target are
     -- only definitionally equal to `projectObj fo X ⊗ projectObj fo Y`, so `rw` cannot use it.
@@ -712,20 +713,31 @@ theorem wordIso_eq_mapWordIso (F G : S.FreeMonoidal ⥤ D) [F.Monoidal] [G.Monoi
   induction X with
   | of a =>
     refine (congrArg Iso.hom (wordIso_of F G e a)).trans ?_
-    dsimp only [mapWordIso, projectObjIso, Iso.refl_hom, Iso.refl_inv]
+    rw [mapWordIso_of, mapWordIso_of, projectObjIso_of, Iso.refl_hom, Iso.refl_inv]
     -- The identities are typed at `F.obj ⟨.of a⟩`, which is `F.obj (of a)` only after unfolding
     -- `of`, so `simp` cannot cancel them.
     exact ((Category.id_comp _).trans (Category.comp_id _)).symm
   | unit =>
+    rw [unit_eq_unit, mapWordIso_tensorUnit_hom, mapWordIso_tensorUnit_inv,
+      projectObjIso_tensorUnit]
     refine (wordIso_tensorUnit_hom F G e).trans ?_
-    dsimp only [mapWordIso, projectObjIso, projectObj]
-    simp
+    rw [Iso.refl_hom]
+    -- The identity is typed at `projectObj _ (𝟙_ _)`, which is `𝟙_ D` only after unfolding
+    -- `projectObj`, so `simp` cannot cancel it.
+    exact congrArg (η F ≫ ·) (Category.id_comp _).symm
   | tensor X Y hX hY =>
+    rw [tensor_eq_tensor, mapWordIso_tensor_hom, mapWordIso_tensor_inv, projectObjIso_tensor,
+      tensorIso_hom]
     refine (wordIso_tensor_hom F G e ⟨X⟩ ⟨Y⟩).trans ?_
-    -- Unfolding `projectObj` at the tensor word aligns the objects of the composites.
-    dsimp only [mapWordIso, projectObjIso, projectObj] at hX hY ⊢
-    rw [hX, hY]
-    simp
+    -- `⟨X⟩.as` is `X` by definition.
+    dsimp only
+    -- On the right the tensor products meet at `projectObj _ (X ⊗ Y)`, which is a tensor product
+    -- only after unfolding `projectObj`, so `simp` cannot merge them; the tensors of composites on
+    -- the left are split instead.
+    rw [hX, hY, ← MonoidalCategory.tensorHom_comp_tensorHom,
+      ← MonoidalCategory.tensorHom_comp_tensorHom]
+    conv_lhs => simp only [Category.assoc]
+    exact (Category.assoc _ _ _).symm
 
 /-- A monoidal natural isomorphism between strong monoidal functors out of the free monoidal
 category is the `wordIso` of its components at the generating objects. -/
@@ -748,6 +760,19 @@ theorem wordIso_app {F G : S.FreeMonoidal ⥤ D} [F.Monoidal] [G.Monoidal] (α :
     -- `⟨X⟩ ⊗ ⟨Y⟩` is `⟨X.tensor Y⟩` by definition.
     rfl
 
+/-- From a lift to a strong monoidal functor `G`, `wordIso` is the extension of the isomorphisms
+of generators to tensor words followed by the inverse of the comparison `mapWordIso G`. -/
+theorem wordIso_lift_left {fo : S.Obj → D}
+    (fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g))
+    (G : S.FreeMonoidal ⥤ D) [G.Monoidal] (e : ∀ a, fo a ≅ G.obj (of a))
+    (X : FreeMonoidalCategory S.Obj) :
+    wordIso (lift fo fc) G e X = projectObjIso e X ≪≫ (mapWordIso G X).symm := by
+  refine (wordIso_eq_mapWordIso (lift fo fc) G e X).trans ?_
+  rw [mapWordIso_lift]
+  -- The identity is typed at `projectObj fo X`, which is the source of `projectObjIso e X` only
+  -- after unfolding `lift`, so `rw` cannot use `Iso.refl_trans`.
+  exact Iso.refl_trans _
+
 /-- Between two lifts, `wordIso` is the extension of the isomorphisms of generators to tensor
 words. -/
 @[simp]
@@ -756,12 +781,11 @@ theorem wordIso_lift_lift {fo fo' : S.Obj → D}
     (fc' : ∀ g : S.Coupon, projectObj fo' (S.src g) ⟶ projectObj fo' (S.tgt g))
     (e : ∀ a, fo a ≅ fo' a) (X : FreeMonoidalCategory S.Obj) :
     wordIso (lift fo fc) (lift fo' fc') e X = projectObjIso e X := by
-  refine (wordIso_eq_mapWordIso (lift fo fc) (lift fo' fc') e X).trans ?_
-  ext
-  rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, mapWordIso_lift, mapWordIso_lift]
-  -- The identities are typed at `projectObj (fun a ↦ (lift fo fc).obj (of a)) X`, which is only
-  -- definitionally `projectObj fo X`, so `simp` cannot cancel them.
-  exact (Category.id_comp _).trans (Category.comp_id _)
+  refine (wordIso_lift_left fc (lift fo' fc') e X).trans ?_
+  rw [mapWordIso_lift]
+  -- As in `wordIso_lift_left`, the identity is only definitionally typed at the target of
+  -- `projectObjIso e X`.
+  exact (congrArg (projectObjIso e X ≪≫ ·) (Iso.refl_symm _)).trans (Iso.trans_refl _)
 
 /-- From the lift of the generator images of `F` to `F`, `wordIso` of the identities is the
 inverse of the comparison `mapWordIso F`. -/
@@ -770,18 +794,9 @@ theorem wordIso_lift_refl (F : S.FreeMonoidal ⥤ D) [F.Monoidal]
       projectObj (fun a ↦ F.obj (of a)) (S.tgt g)) (X : FreeMonoidalCategory S.Obj) :
     wordIso (lift (fun a ↦ F.obj (of a)) fc) F (fun a ↦ Iso.refl (F.obj (of a))) X =
       (mapWordIso F X).symm := by
-  ext
-  -- In each case the tensorator or unit comparison of `lift _ fc` contributes an identity typed
-  -- at the objects of `lift _ fc`, which agree with those of `F` only definitionally; the
-  -- remaining composites coincide after unfolding `mapWordIso`.
-  induction X with
-  | of a => exact congrArg Iso.hom (wordIso_of _ F _ a)
-  | unit => exact (wordIso_tensorUnit_hom _ F _).trans (Category.id_comp _)
-  | tensor X Y hX hY =>
-    refine (wordIso_tensor_hom _ F _ ⟨X⟩ ⟨Y⟩).trans ?_
-    dsimp only
-    rw [hX, hY]
-    exact Category.id_comp _
+  refine (wordIso_lift_left fc F _ X).trans ?_
+  rw [projectObjIso_refl]
+  exact Iso.refl_trans _
 
 /-- The extension to tensor words of the components of a monoidal natural isomorphism at the
 generating objects is its component at the word, conjugated by the comparisons `mapWordIso`. -/

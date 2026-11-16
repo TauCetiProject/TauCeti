@@ -134,6 +134,9 @@ def extension : Interpretation S D ⥤ Core (MonoidalFunctor S.FreeMonoidal D) w
   map φ := ⟨@MonoidalFunctor.isoMk _ _ _ _ _ _ (.of _) (.of _)
     (monoidalNatIso (lift_map_coupon_comp_wordIso_hom φ))
     (isMonoidal_monoidalNatIso_hom (lift_map_coupon_comp_wordIso_hom φ))⟩
+  -- `simp` cannot use `MonoidalFunctor.isoMk_hom` on these components, as their monoidality is
+  -- supplied explicitly. By definition of `Core`, `isoMk` and `homMk`, the components at the
+  -- generating objects are those of `monoidalNatIso`, given by `monoidalNatIso_hom_app_of`.
   map_id _ := Core.hom_ext <| MonoidalFunctor.hom_ext <| natTrans_ext fun a ↦
     monoidalNatIso_hom_app_of _ a
   map_comp φ ψ := Core.hom_ext <| MonoidalFunctor.hom_ext <| natTrans_ext fun a ↦
@@ -150,6 +153,24 @@ theorem extension_map_iso_hom_hom_hom_app {I J : Interpretation S D} (φ : I ⟶
     ((extension S D).map φ).iso.hom.hom.hom.app X = (projectObjIso φ.iso X.as).hom :=
   (monoidalNatIso_hom_app _ X).trans (congrArg Iso.hom (wordIso_lift_lift _ _ φ.iso X.as))
 
+variable {S D} in
+/-- The inverses of the components of the extension of a morphism of interpretations are the
+inverses of the extensions of its isomorphisms to tensor words. -/
+@[simp]
+theorem extension_map_iso_inv_hom_hom_app {I J : Interpretation S D} (φ : I ⟶ J)
+    (X : S.FreeMonoidal) :
+    ((extension S D).map φ).iso.inv.hom.hom.app X = (projectObjIso φ.iso X.as).inv := by
+  rw [← MonoidalFunctor.toFunctorIso_inv, ← Iso.app_inv]
+  exact congrArg Iso.inv (Iso.ext (extension_map_iso_hom_hom_hom_app φ X))
+
+variable {S D} in
+/-- The components of the extension of a morphism of interpretations at the generating objects
+are its isomorphisms. -/
+theorem extension_map_iso_hom_hom_hom_app_of {I J : Interpretation S D} (φ : I ⟶ J)
+    (a : S.Obj) : ((extension S D).map φ).iso.hom.hom.hom.app (of a) = (φ.iso a).hom :=
+  -- `(of a).as` is the word `.of a` by definition.
+  (extension_map_iso_hom_hom_hom_app φ (of a)).trans (congrArg Iso.hom (projectObjIso_of φ.iso a))
+
 /-- Restriction of strong monoidal functors out of the free monoidal category to interpretations
 of `S`: the images of the generating objects, and the images of the coupons conjugated by the
 comparisons `FreeMonoidal.mapWordIso`. Monoidal natural isomorphisms restrict to their
@@ -165,8 +186,8 @@ def restriction : Core (MonoidalFunctor S.FreeMonoidal D) ⥤ Interpretation S D
       comm g := by
         rw [projectObjIso_app, projectObjIso_app]
         simp }
-  map_id F := hom_ext fun a ↦ rfl
-  map_comp α β := hom_ext fun a ↦ rfl
+  map_id F := hom_ext fun a ↦ by simp
+  map_comp α β := hom_ext fun a ↦ by simp
 
 variable {S D} in
 /-- Restricting the extension of an interpretation gives back its coupons. -/
@@ -174,7 +195,7 @@ theorem restriction_obj_extension_obj_coupon (I : Interpretation S D) (g : S.Cou
     ((restriction S D).obj ((extension S D).obj I)).coupon g = I.coupon g := by
   -- The restricted coupon is stated for the objects of the restriction; `change` exposes it as
   -- the conjugate of the coupon of `lift I.obj I.coupon`, whose objects are those of `I` only
-  -- after unfolding `lift`, so `rw` cannot reach this form.
+  -- after unfolding `lift`, so neither `rw` nor `dsimp` can reach this form.
   change (mapWordIso (lift I.obj I.coupon) (S.src g)).inv ≫
     (lift I.obj I.coupon).map (FreeMonoidal.coupon g) ≫
       (mapWordIso (lift I.obj I.coupon) (S.tgt g)).hom = I.coupon g
@@ -195,9 +216,13 @@ def unitIso : 𝟭 (Interpretation S D) ≅ extension S D ⋙ restriction S D :=
       -- extension only after unfolding `lift`.
       exact (Category.comp_id _).trans
         ((restriction_obj_extension_obj_coupon I g).symm.trans (Category.id_comp _).symm)⟩)
+    -- The components of `restriction.map` and of identities and composites of interpretations are
+    -- by definition the components at `of a` and the identities and composites of isomorphisms; the
+    -- identities are typed at the objects of `I`, which are those of the restriction of its
+    -- extension only after unfolding `lift`, so `simp` cannot cancel them.
     fun φ ↦ hom_ext fun a ↦
       (Category.comp_id _).trans
-        ((extension_map_iso_hom_hom_hom_app φ (of a)).symm.trans (Category.id_comp _).symm)
+        ((extension_map_iso_hom_hom_hom_app_of φ a).symm.trans (Category.id_comp _).symm)
 
 variable {S D} in
 @[simp]
@@ -240,22 +265,38 @@ private def counitApp (F : Core (MonoidalFunctor S.FreeMonoidal D)) :
     (monoidalNatIso (lift_map_coupon_comp_wordIso_refl_hom F.of.toFunctor))
     (isMonoidal_monoidalNatIso_hom (lift_map_coupon_comp_wordIso_refl_hom F.of.toFunctor))
 
-variable {S D} in
-private theorem counitApp_hom_iso_hom_hom_hom_app_of (F : Core (MonoidalFunctor S.FreeMonoidal D))
-    (a : S.Obj) : (counitApp F).hom.iso.hom.hom.hom.app (of a) = 𝟙 (F.of.obj (of a)) :=
-  monoidalNatIso_hom_app_of _ a
-
 /-- The counit of the equivalence: the extension of the restriction of a strong monoidal functor
 is isomorphic to it, by the identities at the generating objects. -/
 def counitIso : restriction S D ⋙ extension S D ≅ 𝟭 (Core (MonoidalFunctor S.FreeMonoidal D)) :=
   NatIso.ofComponents counitApp fun α ↦ Core.hom_ext <| MonoidalFunctor.hom_ext <|
     natTrans_ext fun a ↦ by
-      simp only [Functor.comp_map, Functor.id_map, coreCategory_comp_iso, Iso.trans_hom,
-        MonoidalFunctor.comp_hom, NatTrans.comp_app, extension_map_iso_hom_hom_hom_app,
-        counitApp_hom_iso_hom_hom_hom_app_of]
-      -- The extension of the restriction of `α` at a generating object is the component of `α`,
-      -- by unfolding `projectObjIso` there; the identities are typed at objects of the lift.
+      have h (F : Core (MonoidalFunctor S.FreeMonoidal D)) :
+          (counitApp F).hom.iso.hom.hom.hom.app (of a) = 𝟙 (F.of.obj (of a)) :=
+        monoidalNatIso_hom_app_of _ a
+      simp only [Functor.comp_obj, Functor.id_obj, Functor.comp_map, coreCategory_comp_iso,
+        Iso.trans_hom, MonoidalFunctor.comp_hom, NatTrans.comp_app,
+        extension_map_iso_hom_hom_hom_app_of, restriction_map_iso, Iso.app_hom,
+        MonoidalFunctor.toFunctorIso_hom, h, Functor.id_map]
+      -- The identities are typed at the objects of the source and target of `α`, which are those
+      -- of the extensions of their restrictions only after unfolding `lift`.
       exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+variable {S D} in
+/-- The counit of the equivalence at a tensor word is the inverse of the comparison
+`FreeMonoidal.mapWordIso`. -/
+theorem counitIso_hom_app_iso_hom_hom_hom_app (F : Core (MonoidalFunctor S.FreeMonoidal D))
+    (X : S.FreeMonoidal) :
+    ((counitIso S D).hom.app F).iso.hom.hom.hom.app X = (mapWordIso F.of.toFunctor X.as).inv :=
+  (monoidalNatIso_hom_app _ X).trans (congrArg Iso.hom (wordIso_lift_refl _ _ X.as))
+
+variable {S D} in
+/-- The inverse of the counit of the equivalence at a tensor word is the comparison
+`FreeMonoidal.mapWordIso`. -/
+theorem counitIso_hom_app_iso_inv_hom_hom_app (F : Core (MonoidalFunctor S.FreeMonoidal D))
+    (X : S.FreeMonoidal) :
+    ((counitIso S D).hom.app F).iso.inv.hom.hom.app X = (mapWordIso F.of.toFunctor X.as).hom := by
+  rw [← MonoidalFunctor.toFunctorIso_inv, ← Iso.app_inv, ← Iso.symm_inv (mapWordIso _ _)]
+  exact congrArg Iso.inv (Iso.ext (counitIso_hom_app_iso_hom_hom_hom_app F X))
 
 variable {S D} in
 /-- The counit of the equivalence is the identity at the generating objects. -/
@@ -263,25 +304,44 @@ variable {S D} in
 theorem counitIso_hom_app_iso_hom_hom_hom_app_of (F : Core (MonoidalFunctor S.FreeMonoidal D))
     (a : S.Obj) :
     ((counitIso S D).hom.app F).iso.hom.hom.hom.app (of a) = 𝟙 (F.of.obj (of a)) :=
-  counitApp_hom_iso_hom_hom_hom_app_of F a
+  -- `(of a).as` is the word `.of a` by definition.
+  (counitIso_hom_app_iso_hom_hom_hom_app F (of a)).trans
+    ((congrArg Iso.inv (mapWordIso_of F.of.toFunctor a)).trans (Iso.refl_inv _))
 
 variable {S D} in
 /-- The inverse of the counit of the equivalence is the identity at the generating objects. -/
 @[simp]
 theorem counitIso_hom_app_iso_inv_hom_hom_app_of (F : Core (MonoidalFunctor S.FreeMonoidal D))
     (a : S.Obj) :
-    ((counitIso S D).hom.app F).iso.inv.hom.hom.app (of a) = 𝟙 (F.of.obj (of a)) := by
-  have h := congrArg (fun φ ↦ φ.hom.hom.app (of a)) ((counitIso S D).hom.app F).iso.hom_inv_id
-  simp only [MonoidalFunctor.comp_hom, NatTrans.comp_app, MonoidalFunctor.id_hom,
-    NatTrans.id_app, counitIso_hom_app_iso_hom_hom_hom_app_of] at h
-  exact (Category.id_comp _).symm.trans h
+    ((counitIso S D).hom.app F).iso.inv.hom.hom.app (of a) = 𝟙 (F.of.obj (of a)) :=
+  -- `(of a).as` is the word `.of a` by definition.
+  (counitIso_hom_app_iso_inv_hom_hom_app F (of a)).trans
+    ((congrArg Iso.hom (mapWordIso_of F.of.toFunctor a)).trans (Iso.refl_hom _))
+
+variable {S D} in
+/-- The inverse of the counit of the equivalence is given by the inverse isomorphisms. -/
+@[simp]
+theorem counitIso_inv_app_iso (F : Core (MonoidalFunctor S.FreeMonoidal D)) :
+    ((counitIso S D).inv.app F).iso = ((counitIso S D).hom.app F).iso.symm :=
+  (rfl)
 
 /-- **The universal property of the free monoidal category on a tensor signature**, in its groupoid
 form: extension and restriction are inverse equivalences between the interpretations of `S` in
 `D` and the strong monoidal functors `S.FreeMonoidal ⥤ D` with monoidal natural isomorphisms. -/
-@[expose, simps! functor inverse]
-def equivCoreMonoidalFunctor : Interpretation S D ≌ Core (MonoidalFunctor S.FreeMonoidal D) :=
-  .mk (extension S D) (restriction S D) (unitIso S D) (counitIso S D)
+@[expose, simps functor inverse unitIso counitIso]
+def equivCoreMonoidalFunctor : Interpretation S D ≌ Core (MonoidalFunctor S.FreeMonoidal D) where
+  functor := extension S D
+  inverse := restriction S D
+  unitIso := unitIso S D
+  counitIso := counitIso S D
+  functor_unitIso_comp _ := Core.hom_ext <| MonoidalFunctor.hom_ext <| natTrans_ext fun a ↦ by
+    simp only [coreCategory_comp_iso, Iso.trans_hom, MonoidalFunctor.comp_hom, NatTrans.comp_app,
+      extension_map_iso_hom_hom_hom_app_of, unitIso_hom_app_iso, Iso.refl_hom,
+      counitIso_hom_app_iso_hom_hom_hom_app_of, coreCategory_id_iso, MonoidalFunctor.id_hom,
+      NatTrans.id_app]
+    -- The first identity is typed at the object of the interpretation, which is that of its
+    -- extension only after unfolding `lift`, so `simp` cannot cancel it.
+    exact Category.id_comp _
 
 end Interpretation
 

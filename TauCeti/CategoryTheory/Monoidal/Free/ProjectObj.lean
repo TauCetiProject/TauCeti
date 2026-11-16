@@ -35,7 +35,7 @@ variable {C : Type u} {D : Type u'} [Category.{v'} D] [MonoidalCategory D] {f g 
 
 /-- The isomorphism between the interpretations of a tensor word induced by isomorphisms
 `e a : f a ≅ g a` of the interpretations of its generators. -/
-@[expose] def projectObjIso (e : ∀ a, f a ≅ g a) :
+def projectObjIso (e : ∀ a, f a ≅ g a) :
     ∀ X : FreeMonoidalCategory C, projectObj f X ≅ projectObj g X
   | .of a => e a
   | .unit => Iso.refl _
