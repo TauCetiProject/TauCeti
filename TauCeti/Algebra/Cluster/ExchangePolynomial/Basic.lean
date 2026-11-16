@@ -19,9 +19,10 @@ with unit endpoints. The coefficients need only form a commutative monoid with z
 unit dilation and unit scaling do not use addition. This allows the same data to describe both
 scalar exchange polynomials and coefficients realized by a merely multiplicative map.
 
-The endpoint dilation factor is the coefficient propagation used when mutating another
-direction. Its integer argument is the divided matrix entry `B (row k) j / r j`, not the
-undivided entry `B (row k) j`; this is the unscaled matrix entry of Chekhov–Shapiro and
+When mutating at the direction `k` whose exchange polynomial is `H`, the endpoint dilation factor
+`H.dilationFactor` is the unit by which the exchange polynomial of another direction `j`, of
+degree `r j`, is dilated. Its integer argument is the divided matrix entry `B (row k) j / r j`,
+not the undivided entry `B (row k) j`; this is the unscaled matrix entry of Chekhov–Shapiro and
 Nakanishi. Reversal and negation of the divided entry invert this factor.
 
 The coefficient transformations follow Chekhov–Shapiro, *Teichmüller spaces of Riemann surfaces
@@ -128,7 +129,9 @@ def dilate (H : ExchangePolynomial K) (κ : Kˣ) : ExchangePolynomial K where
   · intro h
     apply ext (by simpa using congrArg degree h)
     intro i _hi
-    exact κ.isUnit.pow i |>.mul_left_cancel (congrArg (fun F => F.coeff i) h)
+    have hi := congrArg (fun F => F.coeff i) h
+    simp only [coeff_dilate] at hi
+    exact κ.isUnit.pow i |>.mul_left_cancel hi
   · exact congrArg (fun F : ExchangePolynomial K => F.dilate κ)
 
 /-- Scaling multiplies every coefficient by the same unit. -/
@@ -161,7 +164,9 @@ def scale (H : ExchangePolynomial K) (e : Kˣ) : ExchangePolynomial K where
   · intro h
     apply ext (by simpa using congrArg degree h)
     intro i _hi
-    exact e.isUnit.mul_left_cancel (congrArg (fun F => F.coeff i) h)
+    have hi := congrArg (fun F => F.coeff i) h
+    simp only [coeff_scale] at hi
+    exact e.isUnit.mul_left_cancel hi
   · exact congrArg (fun F : ExchangePolynomial K => F.scale e)
 
 @[simp] theorem reverse_scale (H : ExchangePolynomial K) (e : Kˣ) :
@@ -301,8 +306,8 @@ noncomputable def leadingUnit (H : ExchangePolynomial K) : Kˣ := H.isUnit_coeff
   constructor
   · intro h
     have h0 := congrArg (fun F : ExchangePolynomial K => F.coeff 0) h
-    simpa only [coeff_scale] using
-      Units.ext (H.isUnit_coeff_zero.mul_right_cancel h0)
+    simp only [coeff_scale] at h0
+    exact Units.ext (H.isUnit_coeff_zero.mul_right_cancel h0)
   · exact congrArg (H.scale ·)
 
 @[simp] theorem scale_eq_self (H : ExchangePolynomial K) {e : Kˣ} :
@@ -332,8 +337,11 @@ noncomputable def leadingUnit (H : ExchangePolynomial K) : Kˣ := H.isUnit_coeff
   ext
   simp
 
-/-- The propagation factor `h_r^[b]₊ h_0^(-[-b]₊)` at the divided matrix entry
-`b = B (row k) j / r j`, the unscaled matrix entry of Chekhov–Shapiro and Nakanishi. -/
+/-- The propagation factor `h_d^[b]₊ h_0^(-[-b]₊)`, where `H` is the exchange polynomial of the
+mutated direction `k`, of degree `d = H.degree` with endpoint coefficients `h_0` and `h_d`.
+The argument `b = B (row k) j / r j` is the divided matrix entry for another direction `j`, of
+degree `r j`, whose exchange polynomial is dilated by this unit; it is the unscaled matrix entry
+of Chekhov–Shapiro and Nakanishi. -/
 noncomputable def dilationFactor (H : ExchangePolynomial K) (b : ℤ) : Kˣ :=
   H.leadingUnit ^ (b⁺ : ℤ) * (H.constantUnit ^ (b⁻ : ℤ))⁻¹
 

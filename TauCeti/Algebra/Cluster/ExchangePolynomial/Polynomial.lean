@@ -135,7 +135,8 @@ def _root_.Polynomial.toExchangePolynomial (p : R[X]) (hpos : 0 < p.natDegree)
   ext i
   simp
 
-/-- Recover exchange data from their realization with any proofs of the endpoint conditions. -/
+/-- Recover an exchange polynomial from its realization, given any proofs of positive degree
+`0 < H.toPolynomial.natDegree` and of the unit endpoint conditions. -/
 @[simp] theorem toExchangePolynomial_toPolynomial (H : ExchangePolynomial R)
     (hpos : 0 < H.toPolynomial.natDegree) (h0 : IsUnit (H.toPolynomial.coeff 0))
     (hr : IsUnit H.toPolynomial.leadingCoeff) :
