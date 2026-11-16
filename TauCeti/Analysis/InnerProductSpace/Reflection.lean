@@ -36,8 +36,7 @@ In dimension at least two, every vector `v` is sent to `-v` by a linear isometry
 `1` (`TauCeti.exists_det_eq_one_apply_eq_neg`). For nonzero `v`, this is the composition of the
 reflections in the hyperplanes orthogonal to `v` and to a nonzero vector orthogonal to `v`.
 In every nonzero finite dimension, the reflection in the hyperplane orthogonal to a nonzero vector
-is a linear isometry of determinant `-1` (`Submodule.det_reflection_orthogonal_span_singleton`,
-`TauCeti.exists_det_eq_neg_one`), so of negative
+is a linear isometry of determinant `-1` (`TauCeti.exists_det_eq_neg_one`), so of negative
 determinant as a continuous linear map (`TauCeti.exists_det_neg`).
 
 `LinearIsometry.exists_contDiff_path_reflection_orthogonal_range` gives a smooth path from the
@@ -306,10 +305,7 @@ determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vecto
 theorem exists_det_eq_neg_one [Nontrivial F] [FiniteDimensional ℝ F] :
     ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 := by
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  refine ⟨(ℝ ∙ v)ᗮ.reflection, ?_⟩
-  rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
-    finrank_span_singleton hv]
-  simp
+  exact ⟨(ℝ ∙ v)ᗮ.reflection, linearEquiv_det_reflection_orthogonal_singleton hv⟩
 
 /-- A nontrivial finite-dimensional real inner product space has a linear isometry whose
 underlying continuous linear map has negative determinant, the form taken by the
@@ -785,12 +781,5 @@ theorem reflection_mul_add_mul_reflection
           (U.starProjection - V.starProjection)) := by
   simp only [coe_reflection, show (4 : 𝕜) = 2 + 2 by norm_num, add_smul, two_smul]
   noncomm_ring [U.isIdempotentElem_starProjection.eq, V.isIdempotentElem_starProjection.eq]
-
-/-- The reflection across the hyperplane orthogonal to a nonzero vector `v` of a
-finite-dimensional space has determinant `-1`. -/
-theorem det_reflection_orthogonal_span_singleton [FiniteDimensional 𝕜 E] {v : E} (hv : v ≠ 0) :
-    LinearMap.det ((𝕜 ∙ v)ᗮ.reflection.toLinearEquiv : E →ₗ[𝕜] E) = -1 := by
-  have h := (𝕜 ∙ v)ᗮ.det_reflection
-  rwa [orthogonal_orthogonal, finrank_span_singleton hv, pow_one] at h
 
 end Submodule

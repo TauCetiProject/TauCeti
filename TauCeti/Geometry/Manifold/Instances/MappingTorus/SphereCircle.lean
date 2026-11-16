@@ -36,9 +36,11 @@ oriented closed four-manifold. Reflecting only the sphere factor would not do: t
 `ρ × id` is not orientable (`TauCeti.not_orientable_smoothMappingTorus_prodCongr_refl`).
 
 This is the ambient manifold of a classical example in Morse–Bott theory, not developed in this
-file: the height `⟪v, p⟫` and the real part of `w` are invariant under `τ`, so for `0 < ε < 1` the
-function `[t, p, w] ↦ ⟪v, p⟫ + ε Re w` is defined on `X`, with four critical circles, and the space
-of its gradient trajectories between two of them is a Klein bottle. So a Morse–Bott function on an
+file: for a unit vector `u` orthogonal to `v` (for `E = ℝ³` and `v` the second coordinate vector,
+the third one, giving the height `z`), the height `⟪u, p⟫` and the real part of `w` are invariant
+under `τ`, so for `0 < ε < 1` the function `[t, p, w] ↦ ⟪u, p⟫ + ε Re w` is defined on `X`, with
+four critical circles, and the space of its gradient trajectories between two of them is a Klein
+bottle. So a Morse–Bott function on an
 oriented manifold can have nonorientable trajectory spaces between oriented critical submanifolds.
 
 ## Main definitions
@@ -94,7 +96,8 @@ of complex conjugation. -/
 theorem coe_sphereCircleReflection :
     ⇑(sphereCircleReflection v) =
       Prod.map (ℝ ∙ v)ᗮ.reflection.unitSphereEquiv Complex.conjLIE.unitSphereEquiv := by
-  ext x <;> simp [sphereCircleReflection]
+  rw [sphereCircleReflection, Diffeomorph.coe_prodCongr,
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph, LinearIsometryEquiv.coe_unitSphereDiffeomorph]
 
 /-- The sphere coordinate of `τ (p, w)` is the reflection `ρ p` of `p` across `v^⊥`. -/
 @[simp]
@@ -126,7 +129,8 @@ theorem isOrientationPreservingAt_sphereCircleReflection (hv : v ≠ 0)
       (o.sphereOrientation.prod Complex.orientation.sphereOrientation)
       (sphereCircleReflection v) x := by
   have hρ := o.isOrientationReversingAt_unitSphereEquiv
-    ((det_reflection_orthogonal_span_singleton hv).trans_lt neg_one_lt_zero) x.1
+    (by rw [← LinearEquiv.coe_det, linearEquiv_det_reflection_orthogonal_singleton hv]
+        exact neg_one_lt_zero) x.1
   have hκ := Complex.orientation.isOrientationReversingAt_unitSphereEquiv
     (e := Complex.conjLIE) (by rw [Complex.det_conjLIE]; exact neg_one_lt_zero) x.2
   rw [coe_sphereCircleReflection]
@@ -144,6 +148,14 @@ def torusOrientation :
     Manifold.Orientation (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1)))
       (SmoothMappingTorus (sphereCircleReflection v)) (Fin (1 + (2 + 1))) :=
   SmoothMappingTorus.orientation _ _ (isOrientationPreservingAt_sphereCircleReflection hv o)
+
+/-- The orientation of the mapping torus of `τ` is the mapping-torus orientation
+`TauCeti.SmoothMappingTorus.orientation` induced by the `τ`-invariant product orientation, so its
+lemmas, such as `TauCeti.SmoothMappingTorus.isOrientationPreservingAt_uncurry_mk`, apply to it. -/
+theorem torusOrientation_def :
+    torusOrientation hv o =
+      SmoothMappingTorus.orientation _ _ (isOrientationPreservingAt_sphereCircleReflection hv o) :=
+  (rfl)
 
 end sphereCircleReflection
 
@@ -167,14 +179,14 @@ theorem not_orientable_smoothMappingTorus_prodCongr_refl (hv : v ≠ 0) :
   let o := (finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = 2 + 1)).orientation
   let w : sphere (0 : ℂ) 1 := ⟨1, by simp⟩
   have hρ := o.isOrientationReversingAt_unitSphereEquiv
-    ((det_reflection_orthogonal_span_singleton hv).trans_lt neg_one_lt_zero) (Classical.arbitrary _)
+    (by rw [← LinearEquiv.coe_det, linearEquiv_det_reflection_orthogonal_singleton hv]
+        exact neg_one_lt_zero) (Classical.arbitrary _)
   refine SmoothMappingTorus.not_orientable_of_isOrientationReversingAt _
     (o.sphereOrientation.prod Complex.orientation.sphereOrientation)
     (x := (Classical.arbitrary _, w)) ?_
-  have hcoe : ⇑((ℝ ∙ v)ᗮ.reflection.unitSphereDiffeomorph (n := 2) (k := 2) ∞) =
-      (ℝ ∙ v)ᗮ.reflection.unitSphereEquiv := funext fun x ↦ Subtype.ext (by simp)
   rw [← Manifold.Orientation.isOrientationPreservingAt_neg_right,
-    ← Manifold.Orientation.prod_neg_left, Diffeomorph.coe_prodCongr, hcoe, Diffeomorph.coe_refl]
+    ← Manifold.Orientation.prod_neg_left, Diffeomorph.coe_prodCongr,
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph, Diffeomorph.coe_refl]
   exact ((Manifold.Orientation.isOrientationPreservingAt_neg_right _ _ _ _).2 hρ).prodMap
     (Manifold.Orientation.isOrientationPreservingAt_id _ w)
 

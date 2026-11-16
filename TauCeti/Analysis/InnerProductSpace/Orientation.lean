@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Alternating.Curry
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Continuous oriented volume forms
@@ -152,8 +153,7 @@ theorem volumeForm_comp_linearMap (o : Orientation ℝ E (Fin n)) (f : E →ₗ[
     refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   let b := Module.finBasisOfFinrankEq ℝ E (Fact.out : Module.finrank ℝ E = n + 1)
-  rw [AlternatingMap.eq_smul_basis_det b o.volumeForm, smul_apply, smul_apply, b.det_comp,
-    smul_eq_mul, smul_eq_mul, mul_left_comm]
+  exact congr($(AlternatingMap.compLinearMap_eq_det_smul b o.volumeForm f) v)
 
 /-- A linear equivalence `f` preserves positivity of the volume form when the target carries the
 transported orientation: the volume form of `o.map f` is positive on the image of a family of
