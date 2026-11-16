@@ -24,8 +24,8 @@ orthogonal sum of primary generators belonging to four standard families:
 
 This file packages these four generator families into an explicit inductive label type
 `TauCeti.FiniteQuadraticModule.NikulinGenerator`, equips each label with its admissibility
-condition, prime, exponent, additive generator rank, bundled `FiniteQuadraticModule`, and minimal
-`p`-adic realization Gram determinant, and constructs the orthogonal sum
+condition, prime, exponent, additive generator rank, bundled `FiniteQuadraticModule`, and integer
+determinant formula `realizationDet`, and constructs the orthogonal sum
 `TauCeti.FiniteQuadraticModule.orthogonalSumNikulinGenerators` of any finite list of labels.
 
 ## Main definitions
@@ -40,8 +40,8 @@ condition, prime, exponent, additive generator rank, bundled `FiniteQuadraticMod
   generator rank (`1` or `2`) of a label.
 * `TauCeti.FiniteQuadraticModule.NikulinGenerator.toFiniteQuadraticModule`: the concrete finite
   quadratic module attached to a generator label.
-* `TauCeti.FiniteQuadraticModule.NikulinGenerator.realizationDet`: the Gram determinant of the
-  minimal `p`-adic lattice realizing the generator (`θ·p^k`, `θ·2^k`, `-4^k`, or `3·4^k`).
+* `TauCeti.FiniteQuadraticModule.NikulinGenerator.realizationDet`: the integer determinant formula
+  attached to a generator label (`θ·p^k`, `θ·2^k`, `-4^k`, or `3·4^k`).
 * `TauCeti.FiniteQuadraticModule.orthogonalSumNikulinGenerators`: the iterated orthogonal sum of a
   `List NikulinGenerator`.
 
@@ -224,9 +224,9 @@ theorem toFiniteQuadraticModule_dyadicU (k : ℕ) :
 theorem toFiniteQuadraticModule_dyadicV (k : ℕ) :
     (dyadicV k).toFiniteQuadraticModule = FiniteQuadraticModule.dyadicV k := (rfl)
 
-/-- **The Gram determinant of the minimal `p`-adic realization of a generator** (Nikulin,
-Theorem 1.9.1): `θ·p^k` for `q_θ^{(p)}(p^k)`, `θ·2^k` for `q_θ^{(2)}(2^k)`, `-4^k` for
-`u^{(2)}(2^k) = 2^k·U`, and `3·4^k` for `v^{(2)}(2^k) = 2^k·!![2, 1; 1, 2]`. -/
+/-- The integer determinant formula assigned to a generator label following Nikulin, Theorem 1.9.1:
+`θ * p^k` for `oddCyclic p k _ _ θ`, `θ * 2^k` for `dyadicCyclic k _ θ`, `-4^k` for `dyadicU k`,
+and `3 * 4^k` for `dyadicV k`. -/
 def realizationDet : NikulinGenerator → ℤ
   | .oddCyclic p k _ _ θ => θ * (p : ℤ) ^ k
   | .dyadicCyclic k _ θ => θ * 2 ^ k
@@ -311,7 +311,7 @@ theorem rank_toFiniteQuadraticModule {g : NikulinGenerator} (hg : g.IsAdmissible
       have hne : 2 ^ k ≠ 1 := (Nat.one_lt_pow hg.ne' Nat.one_lt_two).ne'
       exact AddGroup.rank_zmod_prod_self hne
 
-/-- The minimal realization Gram determinant of an admissible generator is nonzero. -/
+/-- For an admissible generator `g`, `g.realizationDet` is nonzero. -/
 theorem realizationDet_ne_zero {g : NikulinGenerator} (hg : g.IsAdmissible) :
     g.realizationDet ≠ 0 := by
   cases g with
