@@ -57,6 +57,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Real.neg_one_pow_mul_Gamma_pos`, `Real.tendsto_neg_one_pow_mul_Gamma_nhdsGT_atTop`,
+  `Real.tendsto_neg_one_pow_mul_Gamma_nhdsLT_atTop` — alternating sign of `Real.Gamma` on the
+  negative unit intervals `(-(m + 1), -m)` and its one-sided divergence at each pole `-m`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -275,6 +278,78 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+/-- On each negative unit interval `(-(m + 1), -m)`, the real Gamma function has sign
+`(-1) ^ (m + 1)`. -/
+theorem neg_one_pow_mul_Gamma_pos {m : ℕ} {a : ℝ} (ha : a ∈ Set.Ioo (-(m + 1 : ℝ)) (-(m : ℝ))) :
+    0 < (-1 : ℝ) ^ (m + 1) * Gamma a := by
+  induction m generalizing a with
+  | zero =>
+    simp only [Nat.cast_zero, zero_add, neg_zero] at ha
+    have hG1 : 0 < Gamma (a + 1) := Gamma_pos_of_pos (by linarith [ha.1])
+    have hstep : Gamma (a + 1) = a * Gamma a := Gamma_add_one ha.2.ne
+    have ha_neg : a < 0 := ha.2
+    simp only [zero_add, pow_one, neg_one_mul]
+    nlinarith
+  | succ m ih =>
+    have ha' : a + 1 ∈ Set.Ioo (-(m + 1 : ℝ)) (-(m : ℝ)) := by
+      push_cast at ha
+      exact ⟨by linarith [ha.1], by linarith [ha.2]⟩
+    have hstep : Gamma (a + 1) = a * Gamma a := Gamma_add_one (by push_cast at ha; linarith [ha.2])
+    have hih := ih ha'
+    rw [hstep] at hih
+    have ha_neg : a < 0 := by push_cast at ha; linarith [ha.2]
+    have hfac : (-1 : ℝ) ^ (m + 1 + 1) * Gamma a * (-a) = (-1 : ℝ) ^ (m + 1) * (a * Gamma a) := by
+      rw [pow_succ]; ring
+    nlinarith
+
+/-- Approaching the pole `-m` from the right, `(-1) ^ m * Γ(a) → +∞`. -/
+theorem tendsto_neg_one_pow_mul_Gamma_nhdsGT_atTop (m : ℕ) :
+    Tendsto (fun a : ℝ => (-1 : ℝ) ^ m * Gamma a) (𝓝[>] (-(m : ℝ))) atTop := by
+  have hG0 : ((-1 : ℝ) ^ m * Gamma (-(m : ℝ)))⁻¹ = 0 := by
+    rw [Gamma_neg_nat_eq_zero, mul_zero, inv_zero]
+  have hcont : Continuous fun a : ℝ => ((-1 : ℝ) ^ m * Gamma a)⁻¹ := by
+    have heq : (fun a : ℝ => ((-1 : ℝ) ^ m * Gamma a)⁻¹) =
+        fun a : ℝ => ((-1 : ℝ) ^ m)⁻¹ * (Gamma a)⁻¹ := by
+      ext a; rw [mul_inv]
+    rw [heq]
+    exact continuous_const.mul continuous_inv_Gamma
+  have hpos : ∀ᶠ a in 𝓝[>] (-(m : ℝ)), 0 < ((-1 : ℝ) ^ m * Gamma a)⁻¹ := by
+    cases m with
+    | zero =>
+      filter_upwards [self_mem_nhdsWithin] with a ha
+      have ha_pos : 0 < a := by simpa using ha
+      simpa using inv_pos.mpr (Gamma_pos_of_pos ha_pos)
+    | succ k =>
+      have hlt : -((k + 1 : ℕ) : ℝ) < -(k : ℝ) := by push_cast; linarith
+      filter_upwards [Ioo_mem_nhdsGT hlt] with a ha
+      exact inv_pos.mpr (neg_one_pow_mul_Gamma_pos (m := k) (by push_cast at ha ⊢; exact ha))
+  have hinv : Tendsto (fun a : ℝ => ((-1 : ℝ) ^ m * Gamma a)⁻¹)
+      (𝓝[>] (-(m : ℝ))) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.mpr
+      ⟨hG0 ▸ (hcont.tendsto (-(m : ℝ))).mono_left nhdsWithin_le_nhds, hpos⟩
+  simpa [Function.comp_def, inv_inv] using tendsto_inv_nhdsGT_zero.comp hinv
+
+/-- Approaching the pole `-m` from the left, `(-1) ^ (m + 1) * Γ(a) → +∞`. -/
+theorem tendsto_neg_one_pow_mul_Gamma_nhdsLT_atTop (m : ℕ) :
+    Tendsto (fun a : ℝ => (-1 : ℝ) ^ (m + 1) * Gamma a) (𝓝[<] (-(m : ℝ))) atTop := by
+  have hG0 : ((-1 : ℝ) ^ (m + 1) * Gamma (-(m : ℝ)))⁻¹ = 0 := by
+    rw [Gamma_neg_nat_eq_zero, mul_zero, inv_zero]
+  have hcont : Continuous fun a : ℝ => ((-1 : ℝ) ^ (m + 1) * Gamma a)⁻¹ := by
+    have heq : (fun a : ℝ => ((-1 : ℝ) ^ (m + 1) * Gamma a)⁻¹) =
+        fun a : ℝ => ((-1 : ℝ) ^ (m + 1))⁻¹ * (Gamma a)⁻¹ := by
+      ext a; rw [mul_inv]
+    rw [heq]
+    exact continuous_const.mul continuous_inv_Gamma
+  have hpos : ∀ᶠ a in 𝓝[<] (-(m : ℝ)), 0 < ((-1 : ℝ) ^ (m + 1) * Gamma a)⁻¹ := by
+    have hlt : -(m + 1 : ℝ) < -(m : ℝ) := by linarith
+    filter_upwards [Ioo_mem_nhdsLT hlt] with a ha
+    exact inv_pos.mpr (neg_one_pow_mul_Gamma_pos ha)
+  have hinv : Tendsto (fun a : ℝ => ((-1 : ℝ) ^ (m + 1) * Gamma a)⁻¹)
+      (𝓝[<] (-(m : ℝ))) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.mpr
+      ⟨hG0 ▸ (hcont.tendsto (-(m : ℝ))).mono_left nhdsWithin_le_nhds, hpos⟩
+  simpa [Function.comp_def, inv_inv] using tendsto_inv_nhdsGT_zero.comp hinv
 
 end Real
 
