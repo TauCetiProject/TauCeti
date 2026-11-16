@@ -77,25 +77,22 @@ private theorem cost_w4_ge (β : Fin 4 → S3) : 6 ≤ cost w4 β := by
   have h6 : (6 : ℝ) ≤ cost w4 β := by rw [hc]; linarith
   exact_mod_cast h6
 
-/-- Every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t ≥ 1` and `q ≥ 1`. -/
-private theorem exists_mul_eq (n : ℕ) : ∀ k, k ≤ n → 3 ≤ k →
+/-- Every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t ≥ 1` and `q ≥ 1`
+(`Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt`). -/
+private theorem exists_mul_eq (k : ℕ) (hk : 3 ≤ k) :
     ∃ m q, 0 < q ∧ k = m * q ∧ (m = 4 ∨ ∃ t, 1 ≤ t ∧ m = 2 * t + 1) := by
-  induction n with
-  | zero => intro k hk h3; omega
-  | succ n ih =>
-    intro k hk h3
-    rcases Nat.even_or_odd k with ⟨j, hj⟩ | ⟨t, ht⟩
-    · by_cases hj2 : j = 2
-      · exact ⟨4, 1, by norm_num, by omega, Or.inl rfl⟩
-      · obtain ⟨m, q, hq, hjm, hm⟩ := ih j (by omega) (by omega)
-        exact ⟨m, 2 * q, by omega, by rw [hj, hjm]; ring, hm⟩
-    · exact ⟨k, 1, by norm_num, by ring, Or.inr ⟨t, by omega, ht⟩⟩
+  rcases Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt (by omega : 2 < k) with
+    ⟨q, rfl⟩ | ⟨p, hp, ⟨q, rfl⟩, t, rfl⟩
+  · exact ⟨4, q, by omega, rfl, Or.inl rfl⟩
+  · refine ⟨2 * t + 1, q, Nat.pos_of_ne_zero ?_, rfl, Or.inr ⟨t, ?_, rfl⟩⟩
+    · rintro rfl; simp at hk
+    · have := hp.one_lt; omega
 
 /-- For every `k ≥ 3`, some `Sym(3)` cochain on `K_k` has a positive gauge lower bound `D` with
 `3 N ≤ k D`. -/
 private theorem exists_seed (k : ℕ) (hk : 3 ≤ k) : ∃ (α : Fin k → Fin k → S3) (D : ℕ),
     0 < D ∧ (∀ β, D ≤ cost α β) ∧ 3 * defect α ≤ k * D := by
-  obtain ⟨m, q, hq, rfl, hm⟩ := exists_mul_eq k k le_rfl hk
+  obtain ⟨m, q, hq, rfl, hm⟩ := exists_mul_eq k hk
   obtain ⟨α, D, hD, hcost, hN⟩ : ∃ (α : Fin m → Fin m → S3) (D : ℕ),
       0 < D ∧ (∀ β, D ≤ cost α β) ∧ 3 * defect α ≤ m * D := by
     rcases hm with rfl | ⟨t, ht, rfl⟩
