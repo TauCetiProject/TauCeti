@@ -7,13 +7,14 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.RingTheory.NovikovModule.Topology
+public import TauCeti.RingTheory.NovikovSeries.TensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Vector-valued Novikov series in the coordinates of a basis
 
 Let `H` be a commutative group with a period homomorphism `N : H →+ ℝ`, and let `V` be a module
-over a commutative ring `R`. A Novikov series with coefficients in `V`, an element of
+over a commutative semiring `R`. A Novikov series with coefficients in `V`, an element of
 `NovikovSeries V H N`, is a function `A ↦ v_A` from `H` to `V` with only finitely many nonzero
 values on `{A | N A < C}` for every real `C`. For the second homology `H = H₂(X; ℤ)` of a closed
 symplectic manifold with its area homomorphism, and `V = H^*(X; ℚ)`, this is the completed state
@@ -44,15 +45,15 @@ results on completed combinations apply to vector-valued series:
   `κ_c ∘ κ_b⁻¹` is linear for the Novikov module structures `TauCeti.NovikovModule.module` of both
   sides (`TauCeti.NovikovSeries.basisCoordinates_basisCoordinates_symm_smul`): the Novikov module
   structure transported along `κ_b` does not depend on `b`.
-* **The Cauchy product.** Series with coefficients in `V` and `W` multiply to a series with
-  coefficients in `V ⊗[R] W`, `(v ⋆ w)_C = ∑_(A + A' = C) v_A ⊗ w_(A')`
-  (`TauCeti.NovikovSeries.cauchyProduct`), an `R`-bilinear map. In the coordinates of the bases
+* **The Cauchy product.** The Cauchy product of series with coefficients in `V` and `W`
+  (`TauCeti.NovikovSeries.cauchyProduct`, from `TauCeti.RingTheory.NovikovSeries.TensorProduct`)
+  takes values in series with coefficients in `V ⊗[R] W`. In the coordinates of the bases
   `b`, `c` and `b ⊗ c` it is the kernel product (`TauCeti.NovikovModule.kernelProduct`) of the
   kernel `TauCeti.NovikovSeries.cauchyKernel`, which sends a pair of generators `⟨i, A⟩`,
   `⟨j, A'⟩` to the generator `⟨(i, j), A + A'⟩`
   (`TauCeti.NovikovSeries.basisCoordinates_cauchyProduct`). This kernel has potential bound `0`
   and is unchanged when one input and the output are translated by the same class
-  (`TauCeti.NovikovSeries.cauchyKernel_vadd_left`, `TauCeti.NovikovSeries.cauchyKernel_vadd_right`),
+  (`TauCeti.NovikovSeries.cauchyKernel_vadd_fst`, `TauCeti.NovikovSeries.cauchyKernel_vadd_snd`),
   so in coordinates the Cauchy product is the Novikov-bilinear map
   `TauCeti.NovikovModule.novikovKernelProduct` of this kernel.
 
@@ -64,8 +65,8 @@ For `V = R` with the basis `{1}`, the coordinate of `κ(v)` at the lift `⟨(), 
 * `TauCeti.NovikovSeries.negPeriod ι N`: the potential `⟨i, A⟩ ↦ -N A` on `ι` copies of `H`.
 * `TauCeti.NovikovSeries.basisCoordinates b`: the basis coordinates of a vector-valued Novikov
   series.
-* `TauCeti.NovikovSeries.cauchyProduct`: the Cauchy product of vector-valued Novikov series.
-* `TauCeti.NovikovSeries.cauchyKernel`: its product kernel on basis coordinates.
+* `TauCeti.NovikovSeries.cauchyKernel`: the product kernel of the Cauchy product on basis
+  coordinates.
 
 ## References
 
@@ -90,7 +91,7 @@ namespace NovikovSeries
 
 section Potential
 
-variable {H : Type*} [AddCommGroup H] (ι : Type*) (N : H →+ ℝ)
+variable {H : Type*} [AddGroup H] (ι : Type*) (N : H →+ ℝ)
 
 /-- The potential `⟨i, A⟩ ↦ -N A` on `ι` copies of `H`. A completed combination for this
 potential has only finitely many nonzero coefficients on `{⟨i, A⟩ | N A < C}` for every `C`. -/
@@ -112,10 +113,11 @@ theorem negPeriod_vadd (i : ι) (h p : H) :
 
 end Potential
 
-variable {R V W H ι κ : Type*} [CommRing R] [AddCommGroup V] [Module R V] [AddCommGroup W]
-  [Module R W] [AddCommGroup H] {N : H →+ ℝ}
+variable {R V W H ι κ : Type*} [AddCommGroup H] {N : H →+ ℝ}
 
 section Coordinates
+
+variable [Semiring R] [AddCommMonoid V] [Module R V]
 
 /-- The basis coordinates of a vector-valued Novikov series are a completed combination. -/
 private theorem repr_coeff_mem_novikovModule [Finite ι] (b : Module.Basis ι R V)
@@ -213,9 +215,12 @@ theorem basisCoordinates_mem_gradeBy_iff {𝒱 : D → Submodule R V}
 
 end Grading
 
+end Coordinates
+
 section ChangeOfBasis
 
-variable [Fintype κ] (c : Module.Basis κ R V)
+variable [CommSemiring R] [AddCommMonoid V] [Module R V] [Fintype ι] [Fintype κ]
+  (b : Module.Basis ι R V) (c : Module.Basis κ R V)
 
 /-- **Change of basis.** In the lifts `⟨j, 0⟩`, the coordinates of `κ_c (κ_b⁻¹ a)` are those of
 `a` multiplied by the constant change-of-basis matrix with entries `c.repr (b i) j`. -/
@@ -248,6 +253,10 @@ theorem basisCoordinates_basisCoordinates_symm_smul (β : NovikovSeries R H N)
 
 end ChangeOfBasis
 
+section Filtration
+
+variable [Ring R] [AddCommGroup V] [Module R V] [Fintype ι] (b : Module.Basis ι R V)
+
 /-- **The filtration in basis coordinates.** A vector-valued series vanishes at every exponent of
 period `< C` exactly when its basis coordinates lie in the potential filtration at level `-C`. -/
 theorem basisCoordinates_mem_potentialFiltration_iff {C : ℝ} {v : NovikovSeries V H N} :
@@ -259,106 +268,24 @@ theorem basisCoordinates_mem_potentialFiltration_iff {C : ℝ} {v : NovikovSerie
   ext i
   simpa using h i A hA
 
-end Coordinates
-
-section CauchyProduct
-
-/-- Only finitely many exponents `u` have `v_u ≠ 0` and `w_(h - u) ≠ 0`. -/
-private theorem finite_setOf_coeff_ne_zero_coeff_sub_ne_zero {S : Type*} [Zero S]
-    (v : NovikovSeries V H N) (w : NovikovSeries S H N) (h : H) :
-    {u | v.coeff u ≠ 0 ∧ w.coeff (h - u) ≠ 0}.Finite :=
-  ((finite_setOf_add_eq v w h).image Prod.fst).subset fun u hu =>
-    ⟨(u, h - u), ⟨add_sub_cancel u h, hu.1, hu.2⟩, rfl⟩
-
-/-- Each coefficient of the Cauchy product is a sum with finitely many nonzero terms. -/
-private theorem finite_support_tmul_coeff_sub (v : NovikovSeries V H N) (w : NovikovSeries W H N)
-    (h : H) : (Function.support fun u => v.coeff u ⊗ₜ[R] w.coeff (h - u)).Finite :=
-  (finite_setOf_coeff_ne_zero_coeff_sub_ne_zero v w h).subset fun u hu =>
-    ⟨fun hv => hu (by simp [hv]), fun hw => hu (by simp [hw])⟩
-
-/-- The Cauchy product of two vector-valued Novikov series is a Novikov series. -/
-private theorem tmul_coeff_sub_finite_lt (v : NovikovSeries V H N) (w : NovikovSeries W H N)
-    (C : ℝ) :
-    {h | ∑ᶠ u, v.coeff u ⊗ₜ[R] w.coeff (h - u) ≠ 0 ∧ N h < C}.Finite := by
-  refine ((finite_setOf_period_add_lt v w C).image fun p => p.1 + p.2).subset ?_
-  rintro h ⟨hh, hC⟩
-  obtain ⟨u, hu⟩ : ∃ u, v.coeff u ⊗ₜ[R] w.coeff (h - u) ≠ 0 := by
-    by_contra! hu
-    exact hh (finsum_eq_zero_of_forall_eq_zero hu)
-  refine ⟨(u, h - u), ⟨?_, fun hv => hu (by simp [hv]), fun hw => hu (by simp [hw])⟩,
-    add_sub_cancel u h⟩
-  rwa [add_sub_cancel]
-
-/-- The Cauchy product of two vector-valued Novikov series, before bundling. -/
-private def cauchyProductAux (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
-    NovikovSeries (V ⊗[R] W) H N where
-  coeff h := ∑ᶠ u, v.coeff u ⊗ₜ[R] w.coeff (h - u)
-  finite_lt := tmul_coeff_sub_finite_lt v w
-
-variable (R) in
-/-- **The Cauchy product** of Novikov series with coefficients in `V` and `W`: the series with
-coefficients in `V ⊗[R] W` whose coefficient at `h` is the finite sum
-`∑_(u + u' = h) v_u ⊗ w_(u')`. It is `R`-bilinear. -/
-def cauchyProduct :
-    NovikovSeries V H N →ₗ[R] NovikovSeries W H N →ₗ[R] NovikovSeries (V ⊗[R] W) H N :=
-  LinearMap.mk₂ R cauchyProductAux
-    (fun v v' w => by
-      ext h
-      simp only [cauchyProductAux, coeff_add, TensorProduct.add_tmul]
-      exact finsum_add_distrib (finite_support_tmul_coeff_sub v w h)
-        (finite_support_tmul_coeff_sub v' w h))
-    (fun r v w => by
-      ext h
-      simp only [cauchyProductAux, coeff_smul, ← TensorProduct.smul_tmul' (R := R)]
-      exact (smul_finsum' r (finite_support_tmul_coeff_sub v w h)).symm)
-    (fun v w w' => by
-      ext h
-      simp only [cauchyProductAux, coeff_add, TensorProduct.tmul_add]
-      exact finsum_add_distrib (finite_support_tmul_coeff_sub v w h)
-        (finite_support_tmul_coeff_sub v w' h))
-    (fun r v w => by
-      ext h
-      simp only [cauchyProductAux, coeff_smul, TensorProduct.tmul_smul]
-      exact (smul_finsum' r (finite_support_tmul_coeff_sub v w h)).symm)
-
-/-- The coefficient of the Cauchy product at `h` is `∑_u v_u ⊗ w_(h - u)`. -/
-theorem coeff_cauchyProduct (v : NovikovSeries V H N) (w : NovikovSeries W H N) (h : H) :
-    (cauchyProduct R v w).coeff h = ∑ᶠ u, v.coeff u ⊗ₜ[R] w.coeff (h - u) :=
-  (rfl)
-
-/-- A coefficient of the Cauchy product is a sum over any finite set of exponents `u` containing
-every `u` with `v_u ≠ 0` and `w_(h - u) ≠ 0`. -/
-theorem coeff_cauchyProduct_eq_sum {v : NovikovSeries V H N} {w : NovikovSeries W H N} {h : H}
-    {s : Finset H} (hs : ∀ u, v.coeff u ≠ 0 → w.coeff (h - u) ≠ 0 → u ∈ s) :
-    (cauchyProduct R v w).coeff h = ∑ u ∈ s, v.coeff u ⊗ₜ[R] w.coeff (h - u) := by
-  rw [coeff_cauchyProduct]
-  refine finsum_eq_sum_of_support_subset _ fun u hu => hs u (fun hv => hu ?_) (fun hw => hu ?_)
-  · simp [hv]
-  · simp [hw]
-
-/-- The Cauchy product of two monomials is the monomial of the sum of their exponents. -/
-@[simp]
-theorem cauchyProduct_single_single (A A' : H) (x : V) (y : W) :
-    cauchyProduct R (single (N := N) A x) (single A' y) =
-      (single (A + A') (x ⊗ₜ[R] y) : NovikovSeries (V ⊗[R] W) H N) := by
-  classical
-  ext h
-  rw [coeff_cauchyProduct_eq_sum (s := {A}) fun u hu _ => by
-    by_contra hA
-    exact hu (coeff_single_of_ne (Finset.notMem_singleton.1 hA) x)]
-  by_cases hh : h = A + A'
-  · subst hh
-    simp
-  · rw [Finset.sum_singleton, coeff_single_same, coeff_single_of_ne hh,
-      coeff_single_of_ne (fun h' => hh (by rw [← h']; abel)), TensorProduct.tmul_zero]
+end Filtration
 
 section Kernel
+
+variable [Semiring R]
 
 open scoped Classical in
 /-- **The Cauchy kernel** on basis coordinates: the pair of generators `⟨i, A⟩` and `⟨j, A'⟩`
 goes to the generator `⟨(i, j), A + A'⟩` with coefficient `1`. -/
 def cauchyKernel (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) : (Σ _ : ι × κ, H) → R :=
   Pi.single ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ 1
+
+/-- The Cauchy kernel is `1` at the generator `⟨(i, j), A + A'⟩` and `0` elsewhere. -/
+theorem cauchyKernel_apply [DecidableEq (Σ _ : ι × κ, H)] (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H)
+    (p₀ : Σ _ : ι × κ, H) :
+    cauchyKernel (R := R) p₁ p₂ p₀ = if p₀ = ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ then 1 else 0 := by
+  simp only [cauchyKernel, Pi.single_apply]
+  congr
 
 /-- The Cauchy kernel is `1` at the generator `⟨(i, j), A + A'⟩`. -/
 @[simp]
@@ -370,17 +297,14 @@ theorem cauchyKernel_self (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) :
 theorem cauchyKernel_of_ne {p₁ : Σ _ : ι, H} {p₂ : Σ _ : κ, H} {p₀ : Σ _ : ι × κ, H}
     (hp : p₀ ≠ ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩) : cauchyKernel (R := R) p₁ p₂ p₀ = 0 := by
   classical
-  simp [cauchyKernel, hp]
+  simp [cauchyKernel_apply, hp]
 
 /-- The Cauchy kernel has potential bound `0`: its output generator has exactly the sum of the
 potentials of the input generators. -/
 theorem cauchyKernel_potential_le (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) (p₀ : Σ _ : ι × κ, H)
     (hp : cauchyKernel (R := R) p₁ p₂ p₀ ≠ 0) :
     negPeriod (ι × κ) N p₀ ≤ negPeriod ι N p₁ + negPeriod κ N p₂ + 0 := by
-  classical
-  obtain rfl : p₀ = ⟨(p₁.1, p₂.1), p₁.2 + p₂.2⟩ := by
-    by_contra h
-    exact hp (cauchyKernel_of_ne h)
+  obtain rfl := not_imp_comm.1 cauchyKernel_of_ne hp
   simp only [negPeriod_apply, map_add]
   linarith
 
@@ -392,38 +316,25 @@ theorem cauchyKernel_mem (p₁ : Σ _ : ι, H) (p₂ : Σ _ : κ, H) :
 
 /-- The Cauchy kernel is unchanged when its first input and its output are translated by the
 same `g`. -/
-theorem cauchyKernel_vadd_left (g : H) (i : ι) (A : H) (p₂ : Σ _ : κ, H) (k : ι × κ) (C : H) :
+theorem cauchyKernel_vadd_fst (g : H) (i : ι) (A : H) (p₂ : Σ _ : κ, H) (k : ι × κ) (C : H) :
     cauchyKernel (R := R) ⟨i, g +ᵥ A⟩ p₂ ⟨k, g +ᵥ C⟩ = cauchyKernel ⟨i, A⟩ p₂ ⟨k, C⟩ := by
-  by_cases hC : (⟨k, C⟩ : Σ _ : ι × κ, H) = ⟨(i, p₂.1), A + p₂.2⟩
-  · simp only [Sigma.mk.inj_iff, heq_eq_eq] at hC
-    obtain ⟨rfl, rfl⟩ := hC
-    have hk := cauchyKernel_self (R := R) (⟨i, g +ᵥ A⟩ : Σ _ : ι, H) p₂
-    simp only [vadd_eq_add, add_assoc] at hk ⊢
-    rw [hk, cauchyKernel_self]
-  · rw [cauchyKernel_of_ne (p₁ := ⟨i, A⟩) (p₂ := p₂) hC, cauchyKernel_of_ne fun h => hC ?_]
-    simp only [Sigma.mk.inj_iff, heq_eq_eq, vadd_eq_add, add_assoc, add_right_inj] at h ⊢
-    exact h
+  classical
+  simp [cauchyKernel_apply, add_assoc]
 
 /-- The Cauchy kernel is unchanged when its second input and its output are translated by the
 same `g`. -/
-theorem cauchyKernel_vadd_right (g : H) (p₁ : Σ _ : ι, H) (j : κ) (A : H) (k : ι × κ) (C : H) :
+theorem cauchyKernel_vadd_snd (g : H) (p₁ : Σ _ : ι, H) (j : κ) (A : H) (k : ι × κ) (C : H) :
     cauchyKernel (R := R) p₁ ⟨j, g +ᵥ A⟩ ⟨k, g +ᵥ C⟩ = cauchyKernel p₁ ⟨j, A⟩ ⟨k, C⟩ := by
-  by_cases hC : (⟨k, C⟩ : Σ _ : ι × κ, H) = ⟨(p₁.1, j), p₁.2 + A⟩
-  · simp only [Sigma.mk.inj_iff, heq_eq_eq] at hC
-    obtain ⟨rfl, rfl⟩ := hC
-    have hk := cauchyKernel_self (R := R) p₁ (⟨j, g +ᵥ A⟩ : Σ _ : κ, H)
-    simp only [vadd_eq_add, add_left_comm g] at hk ⊢
-    rw [hk, cauchyKernel_self]
-  · rw [cauchyKernel_of_ne (p₁ := p₁) (p₂ := ⟨j, A⟩) hC, cauchyKernel_of_ne fun h => hC ?_]
-    simp only [Sigma.mk.inj_iff, heq_eq_eq, vadd_eq_add] at h ⊢
-    exact ⟨h.1, add_left_cancel (h.2.trans (add_left_comm _ _ _))⟩
+  classical
+  simp [cauchyKernel_apply, add_left_comm _ g]
 
 end Kernel
 
 /-- **The Cauchy product in basis coordinates** is the kernel product of the Cauchy kernel: for
 bases `b` of `V` and `c` of `W`, the coordinates of `v ⋆ w` in the basis `b ⊗ c` are the kernel
 product of the coordinates of `v` in `b` and of `w` in `c`. -/
-theorem basisCoordinates_cauchyProduct [Fintype ι] [Fintype κ] (b : Module.Basis ι R V)
+theorem basisCoordinates_cauchyProduct [CommSemiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid W] [Module R W] [Fintype ι] [Fintype κ] (b : Module.Basis ι R V)
     (c : Module.Basis κ R W) (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
     basisCoordinates (b.tensorProduct c) (cauchyProduct R v w) =
       NovikovModule.kernelProduct cauchyKernel_potential_le cauchyKernel_mem
@@ -439,20 +350,13 @@ theorem basisCoordinates_cauchyProduct [Fintype ι] [Fintype κ] (b : Module.Bas
       (s := T.image fun u => ((⟨i, u⟩ : Σ _ : ι, H), (⟨j, h - u⟩ : Σ _ : κ, H))) ?_,
     Finset.sum_image fun u _ u' _ huu' => by simpa using congrArg (fun q => q.1.2) huu']
   · refine Finset.sum_congr rfl fun u _ => ?_
-    have hk := cauchyKernel_self (R := R) (⟨i, u⟩ : Σ _ : ι, H) (⟨j, h - u⟩ : Σ _ : κ, H)
-    simp only [add_sub_cancel] at hk
-    simp [hk, mul_comm]
+    simp [cauchyKernel_apply, mul_comm]
   · rintro ⟨⟨i₁, u⟩, ⟨j₁, u'⟩⟩ hv hw hn
-    have hp : (⟨(i, j), h⟩ : Σ _ : ι × κ, H) = ⟨(i₁, j₁), u + u'⟩ := by
-      by_contra hne
-      exact hn (cauchyKernel_of_ne hne)
-    simp only [Sigma.mk.inj_iff, Prod.mk.injEq, heq_eq_eq] at hp
-    obtain ⟨⟨rfl, rfl⟩, rfl⟩ := hp
+    obtain ⟨⟨rfl, rfl⟩, rfl⟩ : ((i, j) = (i₁, j₁)) ∧ h = u + u' := by
+      simpa using not_imp_comm.1 cauchyKernel_of_ne hn
     refine Finset.mem_image.2 ⟨u, hT u (fun h0 => hv (by simp [h0]))
       (fun h0 => hw (by rw [add_sub_cancel_left] at h0; simp [h0])), ?_⟩
     simp
-
-end CauchyProduct
 
 end NovikovSeries
 
