@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 This file supplies evaluation rules for Mathlib's `RootPairing.map`, packages `(e, f, g⁻¹)` as the
 canonical equivalence `RootPairing.equivMap : P.Equiv (P.map e f g)`, and transports
 `RootPairing.IsValuedIn` (hence `RootPairing.IsCrystallographic`) and `RootPairing.IsReduced` to
-`P.map e f g` via `RootPairing.Hom.coroot'_indexEquiv_weightMap` and `RootPairing.Hom.isReduced`.
+`P.map e f g`.
 
 ## References
 
@@ -24,34 +24,9 @@ public section
 
 namespace RootPairing
 
-open Function
-
 variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
-
-/-- Evaluating the coroot functional at `h.indexEquiv j` on `h.weightMap x` agrees with evaluating
-the source coroot functional at `j` on `x`. -/
-theorem Hom.coroot'_indexEquiv_weightMap {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂}
-    (h : P.Hom P₂) (j : ι) (x : M) :
-    P₂.coroot' (h.indexEquiv j) (h.weightMap x) = P.coroot' j x := by
-  have hj : h.coweightMap (P₂.coroot (h.indexEquiv j)) = P.coroot j := by
-    simpa using Hom.coroot_coweightMap_apply P P₂ (h.indexEquiv j) h
-  simpa [coroot', hj] using congr($h.weight_coweight_transpose (P₂.coroot (h.indexEquiv j)) x)
-
-/-- A homomorphism of root pairings with injective weight map transports reducedness from the
-source pairing to the target pairing. -/
-theorem Hom.isReduced {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂}
-    (h : P.Hom P₂) (hinj : Injective h.weightMap) [P.IsReduced] : P₂.IsReduced where
-  eq_or_eq_neg i₂ j₂ hdep := by
-    obtain ⟨i, rfl⟩ := h.indexEquiv.surjective i₂
-    obtain ⟨j, rfl⟩ := h.indexEquiv.surjective j₂
-    rw [h.linearIndependent_root_indexEquiv_iff hinj] at hdep
-    rcases IsReduced.eq_or_eq_neg (P := P) i j hdep with heq | hneg
-    · have himg := congrArg h.weightMap heq
-      exact Or.inl (by rwa [Hom.root_weightMap_apply, Hom.root_weightMap_apply] at himg)
-    · have himg := congrArg h.weightMap hneg
-      exact Or.inr (by rwa [Hom.root_weightMap_apply, map_neg, Hom.root_weightMap_apply] at himg)
 
 section Map
 

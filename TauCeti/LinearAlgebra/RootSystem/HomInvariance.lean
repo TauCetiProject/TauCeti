@@ -46,6 +46,7 @@ weight-space vectors.
   `α = β + γ` and `α = β - γ` between roots.
 * `RootPairing.Hom.linearIndependent_root_indexEquiv_iff`: it preserves and reflects linear
   independence of a pair of roots.
+* `RootPairing.Hom.isReduced`: a homomorphism with injective weight map transports reducedness.
 * `RootPairing.Hom.chainTopCoeff_indexEquiv` and `RootPairing.Hom.chainBotCoeff_indexEquiv`: it
   preserves the two root-string coefficients.
 * `RootPairing.Hom.coroot'_weightMap` and `RootPairing.Hom.weightMap_reflection`: the weight map
@@ -159,6 +160,19 @@ theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
   congr!
   ext k
   fin_cases k <;> simp [Hom.root_weightMap_apply]
+
+/-- A homomorphism of root pairings with injective weight map transports reducedness from the
+source pairing to the target pairing. -/
+theorem isReduced [P.IsReduced] : P₂.IsReduced where
+  eq_or_eq_neg i₂ j₂ hdep := by
+    obtain ⟨i, rfl⟩ := f.indexEquiv.surjective i₂
+    obtain ⟨j, rfl⟩ := f.indexEquiv.surjective j₂
+    rw [f.linearIndependent_root_indexEquiv_iff hf] at hdep
+    rcases IsReduced.eq_or_eq_neg (P := P) i j hdep with heq | hneg
+    · have himg := congrArg f.weightMap heq
+      exact Or.inl (by rwa [Hom.root_weightMap_apply, Hom.root_weightMap_apply] at himg)
+    · have himg := congrArg f.weightMap hneg
+      exact Or.inr (by rwa [Hom.root_weightMap_apply, map_neg, Hom.root_weightMap_apply] at himg)
 
 end Injective
 
