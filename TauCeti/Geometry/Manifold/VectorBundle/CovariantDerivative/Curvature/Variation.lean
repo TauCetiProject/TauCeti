@@ -12,9 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Parametric
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
-import TauCeti.Geometry.Manifold.VectorField.Parametric
 import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
@@ -44,9 +42,10 @@ No metric is involved.
 
 When the vector fields `∇ˢ_X Z` are jointly `C²` for all smooth `X` and `Z`, `Γ'` is a
 differentiable section of `Hom(TM, Hom(TM, TM))`, since on a local frame it is the parameter
-derivative of `∇ˢ_X Z`. Then `∇ᵗΓ'` is the covariant derivative of `Γ'` for the connection induced
-by `∇ᵗ` on this iterated Hom bundle (`CovariantDerivative.hom`), and the formula becomes the
-pointwise identity
+derivative of `∇ˢ_X Z`
+(`TauCeti.Manifold.mdifferentiableAt_deriv_difference_of_hasDerivAt_difference`). Then `∇ᵗΓ'`
+is the covariant derivative of `Γ'` for the connection induced by `∇ᵗ` on this iterated Hom
+bundle (`CovariantDerivative.hom`), and the formula becomes the pointwise identity
 
 `∂ₛ R^s(u, v) w = (∇ᵗ_u Γ')(w, v) - (∇ᵗ_v Γ')(w, u)`
 
@@ -131,56 +130,6 @@ theorem hasDerivAt_curvatureOperator_of_hasDerivAt_difference [IsManifold I 2 M]
   have key (a b c d p q : E) : a - d - p - (c - b - q) = a + b - (c + d) - (p - q) := by abel
   exact (key _ _ _ _ _ _).symm
 
-/-- The derivative `Γ'` of the difference tensors of a family of connections is a differentiable
-section of `Hom(TM, Hom(TM, TM))` at `x` when the vector fields `∇ˢ_X Z` are jointly `C²` in
-`(s, y)` at `(t, x)` for smooth `X` and `Z`: on a local frame near `x`, which agrees with smooth
-global sections, `Γ'` is the `C¹` parameter derivative of `∇ˢ_X Z`. -/
-private theorem mdifferentiableAt_of_hasDerivAt_difference [T2Space M] [IsManifold I ∞ M]
-    {cov : ℝ → CovariantDerivative I E (TangentSpace I : M → Type _)}
-    (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
-    (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
-      ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
-        (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x)) :
-    MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y
-        (C y)) x := by
-  set e := trivializationAt E (TangentSpace I) x
-  set b := Module.finBasis ℝ E
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  obtain ⟨F, hF, hFe⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
-  -- Near `x`, `Γ'(Fⱼ, Fₖ)` is the parameter derivative of `∇ˢ_{Fₖ} Fⱼ`, a `C¹` vector field.
-  have hV (j k : Fin (Module.finrank ℝ E)) : ∀ᶠ y in 𝓝 x,
-      ContMDiffAt I (I.prod 𝓘(ℝ, E)) 1
-        (fun y ↦ TotalSpace.mk' E y (deriv (fun s ↦ cov s (F j) y (F k y)) t)) y :=
-    (contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp
-      (contMDiffAt_deriv_vectorField_of_contMDiffAt (W := fun s y ↦ cov s (F j) y (F k y)) (m := 1)
-        (hreg (F k) (F j) (hF k) (hF j)) (by norm_num))
-  obtain ⟨u, hu, huo, hxu⟩ := eventually_nhds_iff.mp
-    ((e.open_baseSet.eventually_mem hx).and (hC.and ((eventually_all.2 hFe).and
-      (eventually_all.2 fun j ↦ eventually_all.2 (hV j)))))
-  have hin (j k : Fin (Module.finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E)) 1
-      (fun y ↦ TotalSpace.mk' E y (C y (e.localFrame b j y) (e.localFrame b k y))) u := by
-    have heq : ∀ z ∈ u, TotalSpace.mk' E z (C z (e.localFrame b j z) (e.localFrame b k z)) =
-        TotalSpace.mk' E z (deriv (fun s ↦ cov s (F j) z (F k z)) t) := fun z hz ↦ by
-      obtain ⟨-, hCz, hFz, -⟩ := hu z hz
-      rw [← hFz j, ← hFz k]
-      exact congrArg (TotalSpace.mk' E z)
-        (hasDerivAt_covariantDerivative_apply_of_hasDerivAt_difference hCz
-          ((hF j z).mdifferentiableAt (by simp)) (F k z)).deriv.symm
-    exact fun y hy ↦ ((hu y hy).2.2.2 j k).contMDiffWithinAt.congr heq (heq y hy)
-  have hsub : Set.MapsTo id u (e.baseSet ∩ e.baseSet) := fun y hy ↦ ⟨(hu y hy).1, (hu y hy).1⟩
-  have hhom (j : Fin (Module.finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) 1
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) y
-        (C y (e.localFrame b j y))) u :=
-    contMDiffOn_hom_of_localFrame (e := e) (e' := e) b (f := id) contMDiffOn_id hsub (hin j)
-  exact ((contMDiffOn_hom_of_localFrame (e := e)
-    (e' := trivializationAt (E →L[ℝ] E)
-      (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) x) b (f := id) (A := C)
-    contMDiffOn_id (fun y hy ↦ by rw [hom_trivializationAt_baseSet]; exact
-      ⟨(hu y hy).1, (hu y hy).1, (hu y hy).1⟩) hhom).contMDiffAt
-    (huo.mem_nhds hxu)).mdifferentiableAt one_ne_zero
-
 section Tensor
 
 variable [T2Space M] [IsManifold I ∞ M]
@@ -212,7 +161,7 @@ theorem hasDerivAt_curvatureTensor_of_hasDerivAt_difference
   have hXd := (hX x).mdifferentiableAt (by simp)
   have hYd := (hY x).mdifferentiableAt (by simp)
   have hZd := (hZ x).mdifferentiableAt (by simp)
-  have hCd := mdifferentiableAt_of_hasDerivAt_difference hC hreg
+  have hCd := mdifferentiableAt_deriv_difference_of_hasDerivAt_difference hC hreg
   rw [CovariantDerivative.hom_hom_apply _ _ _ hCd hZd hYd,
     CovariantDerivative.hom_hom_apply _ _ _ hCd hZd hXd]
   simp_rw [CovariantDerivative.curvatureTensor_apply _ x hX hY hZ]
