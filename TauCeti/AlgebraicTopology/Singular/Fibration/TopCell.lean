@@ -242,6 +242,9 @@ private def cellDiskPullbackBallInv (e : (p ⁻¹' openCell n j : Set E)) :
     exact (openCellHomeomorph_apply n j _).symm.trans
       (congrArg Subtype.val ((openCellHomeomorph n j).apply_symm_apply ⟨p e, e.2⟩))⟩,
     by
+    -- Membership in `cellDiskPullbackBall` is membership of the `pullbackFst` image in the open
+    -- ball, which holds by definition; `rw [mem_preimage, pullbackFst_apply]` fails here because
+    -- the pullback point also occurs in its proof component, so state the unfolded goal directly.
     change ‖((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm _ : ULift.{u} (Fin n → ℝ))‖ < 1
     rw [coe_uliftClosedBall_symm_apply, ULift.norm_up]
     exact mem_ball_zero_iff.1 ((openCellHomeomorph n j).symm ⟨p e, e.2⟩).2⟩
