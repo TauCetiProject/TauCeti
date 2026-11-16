@@ -168,8 +168,7 @@ theorem simpleCoreflection_inv (i : I) :
 `(sᵢ λ)(h) = λ(sᵢ h)`. -/
 theorem simpleReflection_apply_apply (i : I) (lam : Dual K H) (h : H) :
     R.simpleReflection hA i lam h = lam (R.simpleCoreflection hA i h) := by
-  rw [simpleReflection_apply, simpleCoreflection_apply, LinearMap.sub_apply, map_sub,
-    LinearMap.smul_apply, map_smul, smul_eq_mul, smul_eq_mul, mul_comm]
+  simp [simpleReflection_apply, simpleCoreflection_apply, mul_comm]
 
 /-- The simple reflection is the dual map of the dual simple reflection. -/
 theorem dualMap_simpleCoreflection (i : I) :
@@ -278,6 +277,23 @@ private theorem dual_eval_coroot_root (i j : I) :
     Dual.eval K H (R.coroot i) (R.root j) = (A i j : K) := by
   rw [Dual.eval_apply, root_coroot, Matrix.map_apply]
 
+/-- The Cartan product of two simple roots, as it enters `Module.reflection`, is the image of the
+integer `A i j * A j i`. -/
+private theorem dual_eval_mul_dual_eval (i j : I) :
+    Dual.eval K H (R.coroot i) (R.root j) * Dual.eval K H (R.coroot j) (R.root i) =
+      ((A i j * A j i : ℤ) : K) := by
+  rw [dual_eval_coroot_root, dual_eval_coroot_root, Int.cast_mul]
+
+/-- A Cartan product in `[0, 4)` of entries vanishing together is one of `0`, `1`, `2`, `3`, the
+first only when both entries vanish. -/
+private theorem cartan_product_cases {i j : I} (hzero : A i j = 0 ↔ A j i = 0)
+    (h0 : 0 ≤ A i j * A j i) (h4 : A i j * A j i < 4) :
+    (A i j = 0 ∧ A j i = 0) ∨ A i j * A j i = 1 ∨ A i j * A j i = 2 ∨ A i j * A j i = 3 := by
+  rcases eq_or_ne (A i j * A j i) 0 with h | h
+  · have hij0 : A i j = 0 := (mul_eq_zero.mp h).elim id hzero.mpr
+    exact .inl ⟨hij0, hzero.mp hij0⟩
+  · omega
+
 variable [DecidableEq I]
 
 /-- **The Coxeter relations.** If the entries `A i j` and `A j i` of the integral matrix `A`
@@ -293,22 +309,18 @@ theorem pow_simpleReflection_mul_simpleReflection_eq_one {i j : I}
   split_ifs with h4
   swap
   · exact pow_zero _
-  have hc : (Dual.eval K H (R.coroot i) (R.root j)) * Dual.eval K H (R.coroot j) (R.root i) =
-      ((A i j * A j i : ℤ) : K) := by
-    rw [dual_eval_coroot_root, dual_eval_coroot_root, Int.cast_mul]
+  have hc := R.dual_eval_mul_dual_eval i j
   rw [simpleReflection, simpleReflection]
   -- The Cartan product `c = A i j * A j i < 4` is negative, giving the infinite entry, or one of
   -- `0, 1, 2, 3`.
   rcases lt_or_ge (A i j * A j i) 0 with hneg | hnonneg
   · rw [coxeterOrder_eq_zero_iff.mpr
       (by simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega), pow_zero]
-  obtain h | h | h | h : A i j * A j i = 0 ∨ A i j * A j i = 1 ∨ A i j * A j i = 2 ∨
-      A i j * A j i = 3 := by omega
-  · have hij0 : A i j = 0 := (mul_eq_zero.mp h).elim id hzero.mpr
-    rw [h, coxeterOrder_zero]
+  obtain ⟨hij0, hji0⟩ | h | h | h := cartan_product_cases hzero hnonneg h4
+  · rw [hij0, zero_mul, coxeterOrder_zero]
     exact Module.reflection_mul_reflection_pow_two_eq_one _ _
       (by rw [dual_eval_coroot_root, hij0, Int.cast_zero])
-      (by rw [dual_eval_coroot_root, hzero.mp hij0, Int.cast_zero])
+      (by rw [dual_eval_coroot_root, hji0, Int.cast_zero])
   · rw [h, coxeterOrder_one]
     exact Module.reflection_mul_reflection_pow_three_eq_one _ _ (by rw [hc, h, Int.cast_one])
   · rw [h, coxeterOrder_two]
@@ -328,31 +340,26 @@ theorem orderOf_simpleReflection_mul_simpleReflection [CharZero K] {i j : I}
   rcases eq_or_ne i j with rfl | hij
   · simp
   have hli := R.linearIndependent_root_pair hij
-  have hc : (Dual.eval K H (R.coroot i) (R.root j)) * Dual.eval K H (R.coroot j) (R.root i) =
-      ((A i j * A j i : ℤ) : K) := by
-    rw [dual_eval_coroot_root, dual_eval_coroot_root, Int.cast_mul]
+  have hc := R.dual_eval_mul_dual_eval i j
   rw [simpleReflection, simpleReflection]
   rcases lt_or_ge (A i j * A j i) 4 with h4 | h4
   swap
   · rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le A hij h4]
     exact Module.orderOf_reflection_mul_reflection_eq_zero hli hc h4
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij h4]
-  obtain h | h | h | h : A i j * A j i = 0 ∨ A i j * A j i = 1 ∨ A i j * A j i = 2 ∨
-      A i j * A j i = 3 := by omega
-  · have hij0 : A i j = 0 := (mul_eq_zero.mp h).elim id hzero.mpr
-    rw [h, coxeterOrder_zero]
+  obtain ⟨hij0, hji0⟩ | h | h | h := cartan_product_cases hzero hprod h4
+  · rw [hij0, zero_mul, coxeterOrder_zero]
     exact Module.orderOf_reflection_mul_reflection_eq_two hli
       (by rw [dual_eval_coroot_root, hij0, Int.cast_zero])
-      (by rw [dual_eval_coroot_root, hzero.mp hij0, Int.cast_zero])
+      (by rw [dual_eval_coroot_root, hji0, Int.cast_zero])
   · rw [h, coxeterOrder_one]
-    exact Module.orderOf_reflection_mul_reflection_eq_three hli (by rw [hc, h, Int.cast_one])
+    exact Module.orderOf_reflection_mul_reflection_eq_three (by rw [hc, h, Int.cast_one])
+      (by norm_num)
   · rw [h, coxeterOrder_two]
-    exact Module.orderOf_reflection_mul_reflection_eq_four hli (by rw [hc, h]; norm_num)
+    exact Module.orderOf_reflection_mul_reflection_eq_four (by rw [hc, h]; norm_num) (by norm_num)
   · rw [h, coxeterOrder_three]
-    refine Module.orderOf_reflection_mul_reflection_eq_six hli (by rw [hc, h]; norm_num) ?_
-    rw [dual_eval_coroot_root, Int.cast_ne_zero]
-    rintro h0
-    simp [h0] at h
+    exact Module.orderOf_reflection_mul_reflection_eq_six (by rw [hc, h]; norm_num) (by norm_num)
+      (by norm_num)
 
 /-! ### The homomorphism from the Coxeter group -/
 

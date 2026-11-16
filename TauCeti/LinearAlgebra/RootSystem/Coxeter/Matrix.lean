@@ -30,9 +30,10 @@ independent, so `4` is unavailable to them.
 The translation `TauCeti.coxeterOrder` is defined on all of `ℤ` and takes the Cartan product `4` to
 `1`, which is the mathematically correct value rather than a junk one: product `4` means the two
 roots are proportional, so the two reflections coincide and their product is the identity. That
-choice is what makes the diagonal of the matrix come out as `1` without a case split, since a
-simple root has Cartan product `4` with itself. Products outside `{0, 1, 2, 3, 4}` do not occur
-here and are sent to `0`, Mathlib's encoding of an infinite Coxeter order.
+choice makes every entry of the Coxeter matrix of a base, the diagonal included, the Coxeter order
+of the Cartan product, since a simple root has Cartan product `4` with itself. Products outside
+`{0, 1, 2, 3, 4}` do not occur here and are sent to `0`, Mathlib's encoding of an infinite Coxeter
+order.
 
 The final section checks the smallest of the intended braid relations, the one available before the
 Coxeter presentation of the Weyl group is built: an entry is `2` exactly for orthogonal simple
@@ -44,11 +45,9 @@ roots, and there the two simple reflections commute
 
 * `TauCeti.coxeterOrder` translates a Cartan product into the order of the product of the two
   reflections.
-* `TauCeti.coxeterMatrixOfCartanMatrix` performs that translation on an arbitrary matrix whose
-  diagonal is `2` and whose off-diagonal Cartan products lie in `{0, 1, 2, 3}`.
-* `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` performs it on an arbitrary integer matrix,
-  sending the Cartan products `c ≥ 4` of distinct nodes to an infinite order; this is the Coxeter
-  matrix of the Weyl group of a Kac–Moody realization.
+* `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` performs that translation on an arbitrary
+  integer matrix, sending the Cartan products `c ≥ 4` of distinct nodes to an infinite order; this
+  is the Coxeter matrix of the Weyl group of a Kac–Moody realization.
 * `TauCeti.coxeterMatrixOfBase` is the Coxeter matrix of a base, indexed by its simple roots.
 
 ## Main results
@@ -150,60 +149,24 @@ lemma coxeterOrder_eq_two_iff {c : ℤ} : coxeterOrder c = 2 ↔ c = 0 := by
 
 section OfCartanMatrix
 
-/-- **The Coxeter matrix read off a Cartan matrix.** The entry at a pair of nodes is the Coxeter
-order `TauCeti.coxeterOrder` of their Cartan product; on the diagonal that is `1`, a node having
-Cartan product `4` with itself.
-
-Only two properties of the matrix are used, and both are hypotheses here: its diagonal entries are
-`2`, and off the diagonal its Cartan products lie in `{0, 1, 2, 3}`, the four values that name a
-dihedral order. It is the construction behind `TauCeti.coxeterMatrixOfBase`, applied to the Cartan
-matrix of a base, and behind `TauCeti.DynkinType.coxeterMatrix`, applied to a standard Cartan
-matrix in the Bourbaki numbering.
-
-The body is not exposed: `TauCeti.coxeterMatrixOfCartanMatrix_apply` is the entry API. -/
-def coxeterMatrixOfCartanMatrix {B : Type*} (A : Matrix B B ℤ) (hdiag : ∀ i, A i i = 2)
-    (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)) : CoxeterMatrix B where
-  M := .of fun i j ↦ coxeterOrder (A i j * A j i)
-  isSymm := by
-    ext i j
-    simp [Matrix.transpose_apply, mul_comm]
-  diagonal i := by simp [hdiag i]
-  off_diagonal i j hij := by
-    have := two_le_coxeterOrder (hmem i j hij)
-    simp only [Matrix.of_apply]
-    omega
-
--- `(rfl)`, not `rfl`: the body of `coxeterMatrixOfCartanMatrix` is deliberately left unexposed, and
--- the parenthesised form keeps this proof out of the exported definitional-equality check.
-/-- The entry of the Coxeter matrix of a Cartan matrix at a pair of nodes is `coxeterOrder` applied
-to the product of the two Cartan entries. -/
-@[simp]
-lemma coxeterMatrixOfCartanMatrix_apply {B : Type*} (A : Matrix B B ℤ) (hdiag : ∀ i, A i i = 2)
-    (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)) (i j : B) :
-    coxeterMatrixOfCartanMatrix A hdiag hmem i j = coxeterOrder (A i j * A j i) := (rfl)
-
-/-- **Two distinct nodes carry the Coxeter entry `2` exactly when the Cartan entry between them
-vanishes**, provided the zero pattern of the Cartan matrix is symmetric: the product of the two
-entries then vanishes exactly when the first of them does. On the diagonal both sides fail. -/
-lemma coxeterMatrixOfCartanMatrix_apply_eq_two_iff {B : Type*} (A : Matrix B B ℤ)
-    (hdiag : ∀ i, A i i = 2) (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ))
-    (hsymm : ∀ i j, A i j = 0 → A j i = 0) {i j : B} :
-    coxeterMatrixOfCartanMatrix A hdiag hmem i j = 2 ↔ A i j = 0 := by
-  rw [coxeterMatrixOfCartanMatrix_apply, coxeterOrder_eq_two_iff, mul_eq_zero]
-  exact or_iff_left_iff_imp.mpr (hsymm j i)
-
 /-- **The Coxeter matrix of a generalized Cartan matrix.** Off the diagonal, the entry at a pair of
 nodes is read off their Cartan product `c = A i j * A j i`: it is `TauCeti.coxeterOrder c`, that is
 `2`, `3`, `4`, `6` for `c = 0`, `1`, `2`, `3`, when `c < 4`, and `0`, Mathlib's encoding of an
 infinite order, when `c ≥ 4`. The diagonal entries are `1`.
 
 For a generalized Cartan matrix the Cartan product of two distinct nodes is a nonnegative integer,
-and the product of the two simple reflections of a realization has infinite order exactly when it
-is at least `4`, as in affine type `A₁⁽¹⁾`, where it is `4`. This is why the value `4`, which
-`TauCeti.coxeterOrder` sends to `1` for two proportional roots of a finite root pairing, is sent
-to `0` here. Unlike `TauCeti.coxeterMatrixOfCartanMatrix`, the construction needs no hypothesis on
-the matrix. The body is not exposed: `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne`
-is the entry API off the diagonal, and `CoxeterMatrix.diagonal` gives the diagonal. -/
+and the product of the two simple reflections of a realization over a field of characteristic zero
+has infinite order exactly when it is at least `4`, as in affine type `A₁⁽¹⁾`, where it is `4`. This
+is why the value `4`, which `TauCeti.coxeterOrder` sends to `1` for two proportional roots of a
+finite root pairing, is sent to `0` here. The construction needs no hypothesis on the matrix. In
+finite type, where the diagonal entries are `2` and the Cartan products of distinct nodes lie in
+`{0, 1, 2, 3}`, every entry is `TauCeti.coxeterOrder` of the Cartan product
+(`TauCeti.coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder`); this is the Coxeter
+matrix `TauCeti.coxeterMatrixOfBase` of a base and `TauCeti.DynkinType.coxeterMatrix` of a Dynkin
+type.
+
+The body is not exposed: `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne` is the entry
+API off the diagonal, and `CoxeterMatrix.diagonal` gives the diagonal. -/
 def coxeterMatrixOfGeneralizedCartanMatrix {B : Type*} [DecidableEq B] (A : Matrix B B ℤ) :
     CoxeterMatrix B where
   M := .of fun i j ↦
@@ -218,8 +181,6 @@ def coxeterMatrixOfGeneralizedCartanMatrix {B : Type*} [DecidableEq B] (A : Matr
     · unfold coxeterOrder
       split_ifs <;> omega
     · omega
-
-section GeneralizedCartanMatrix
 
 variable {B : Type*} [DecidableEq B] (A : Matrix B B ℤ)
 
@@ -242,21 +203,32 @@ lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le {i j : B} (hij : i
     (h : 4 ≤ A i j * A j i) : coxeterMatrixOfGeneralizedCartanMatrix A i j = 0 := by
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij, ite_eq_right (not_lt.mpr h)]
 
-/-- **In finite type the two constructions agree**: when the Cartan products of distinct nodes
-lie in `{0, 1, 2, 3}`, the Coxeter matrix of the generalized Cartan matrix is
-`TauCeti.coxeterMatrixOfCartanMatrix`. -/
-lemma coxeterMatrixOfGeneralizedCartanMatrix_eq_coxeterMatrixOfCartanMatrix
-    (hdiag : ∀ i, A i i = 2) (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)) :
-    coxeterMatrixOfGeneralizedCartanMatrix A = coxeterMatrixOfCartanMatrix A hdiag hmem := by
-  ext i j
+/-- **In finite type every entry is the Coxeter order of the Cartan product**: when the diagonal
+entries are `2` and the Cartan products of distinct nodes are less than `4`, the entry at any pair
+of nodes is `TauCeti.coxeterOrder` of their Cartan product. On the diagonal that is
+`TauCeti.coxeterOrder 4 = 1`. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder (hdiag : ∀ i, A i i = 2)
+    (hlt : ∀ i j, i ≠ j → A i j * A j i < 4) (i j : B) :
+    coxeterMatrixOfGeneralizedCartanMatrix A i j = coxeterOrder (A i j * A j i) := by
   rcases eq_or_ne i j with rfl | hij
-  · simp
-  · have h := hmem i j hij
-    simp only [mem_insert_iff, mem_singleton_iff] at h
-    rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij (by omega),
-      coxeterMatrixOfCartanMatrix_apply]
+  · simp [hdiag]
+  · exact coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij (hlt i j hij)
 
-end GeneralizedCartanMatrix
+/-- **Two nodes carry the Coxeter entry `2` exactly when the Cartan entry between them
+vanishes**, provided the diagonal entries are `2` and the zero pattern of the matrix is symmetric:
+the product of the two entries then vanishes exactly when the first of them does. On the diagonal
+both sides fail. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff (hdiag : ∀ i, A i i = 2)
+    (hsymm : ∀ i j, A i j = 0 → A j i = 0) {i j : B} :
+    coxeterMatrixOfGeneralizedCartanMatrix A i j = 2 ↔ A i j = 0 := by
+  rcases eq_or_ne i j with rfl | hij
+  · simp [hdiag]
+  rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij]
+  split_ifs with h4
+  · rw [coxeterOrder_eq_two_iff, mul_eq_zero]
+    exact or_iff_left_iff_imp.mpr (hsymm j i)
+  · refine ⟨fun h ↦ absurd h (by norm_num), fun h ↦ absurd ?_ h4⟩
+    simp [h]
 
 end OfCartanMatrix
 
@@ -342,20 +314,25 @@ checked directly in
 
 The body is not exposed: `TauCeti.coxeterMatrixOfBase_apply` is the entry API. -/
 noncomputable def coxeterMatrixOfBase : CoxeterMatrix b.support :=
-  coxeterMatrixOfCartanMatrix b.cartanMatrix b.cartanMatrix_apply_same
-    fun _ _ hij ↦ cartanMatrix_mul_cartanMatrix_mem_of_ne P b hij
+  open Classical in coxeterMatrixOfGeneralizedCartanMatrix b.cartanMatrix
 
 /-- The entry of the Coxeter matrix of a base at a pair of simple roots is `coxeterOrder` applied
 to the product of the two Cartan entries. -/
 @[simp]
 lemma coxeterMatrixOfBase_apply (i j : b.support) :
-    coxeterMatrixOfBase P b i j = coxeterOrder (b.cartanMatrix i j * b.cartanMatrix j i) :=
-  coxeterMatrixOfCartanMatrix_apply ..
+    coxeterMatrixOfBase P b i j = coxeterOrder (b.cartanMatrix i j * b.cartanMatrix j i) := by
+  classical
+  refine coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder _
+    b.cartanMatrix_apply_same (fun k l hkl ↦ ?_) i j
+  have := cartanMatrix_mul_cartanMatrix_mem_of_ne P b hkl
+  simp only [mem_insert_iff, mem_singleton_iff] at this
+  omega
 
 /-- Off the diagonal the Coxeter matrix of a base takes only the four dihedral values. -/
 lemma coxeterMatrixOfBase_mem_of_ne {i j : b.support} (hij : i ≠ j) :
-    coxeterMatrixOfBase P b i j ∈ ({2, 3, 4, 6} : Set ℕ) :=
-  coxeterOrder_mem (cartanMatrix_mul_cartanMatrix_mem_of_ne P b hij)
+    coxeterMatrixOfBase P b i j ∈ ({2, 3, 4, 6} : Set ℕ) := by
+  rw [coxeterMatrixOfBase_apply]
+  exact coxeterOrder_mem (cartanMatrix_mul_cartanMatrix_mem_of_ne P b hij)
 
 /-- No entry of the Coxeter matrix of a base is infinite: no pair of simple roots of a finite
 crystallographic root pairing generates an infinite dihedral group. -/

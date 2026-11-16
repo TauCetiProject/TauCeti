@@ -25,12 +25,13 @@ roots of a base of a root pairing, this computes the fixed vectors of a Coxeter 
 
 Finally it computes the order of the product `r₁ r₂` of two reflections `r₁ z = z - f(z) x` and
 `r₂ z = z - g(z) y` from their Cartan product `c = f(y) g(x)`, with no root system or inner
-product around. If `f(y) = g(x) = 0`, or `c = 1, 2, 3`, then `(r₁ r₂)ᵐ = 1` for `m = 2, 3, 4, 6`;
-when `x` and `y` are linearly independent, `2 ≠ 0` and, for `c = 3`, `g(x) ≠ 0`, these are the
-exact orders, and over a
-ring of characteristic zero an integral Cartan product `c ≥ 4` gives infinite order. This is
-the rank-two computation behind the Weyl group of a Kac–Moody realization, where the simple roots
-need not belong to any finite root system.
+product around. If `f(y) = g(x) = 0`, or `c = 1, 2, 3`, then `(r₁ r₂)ᵐ = 1` for `m = 2, 3, 4, 6`.
+For `c = 1, 2, 3` these are the exact orders as soon as `3 ≠ 0` and `4 ≠ 0` (as far as they are
+needed), read off the `f`-coordinate of `(r₁ r₂)ⁿ x`, which avoids the value `f(x) = 2`; for
+`f(y) = g(x) = 0` the order is exactly `2` when `x` and `y` are linearly independent and `2 ≠ 0`.
+Over a ring of characteristic zero, an integral Cartan product `c ≥ 4` gives infinite order, again
+for linearly independent `x` and `y`. This is the rank-two computation behind the Weyl group of a
+Kac–Moody realization, where the simple roots need not belong to any finite root system.
 
 ## References
 
@@ -198,23 +199,42 @@ theorem reflection_mul_reflection_pow_six_eq_one (h : f y * g x = 3) :
   rw [reflection_mul_reflection_pow_apply hf hg 6 z 1 (by rw [h]; ring)]
   norm_num [S_two]
 
+/-- **The `f`-coordinate of an iterate of `r₁ r₂` on `x`**: with `c = f y * g x` and `t = c - 2`,
+`f((r₁ r₂)ⁿ x) = 2 (Sₙ(t) + Sₙ₋₁(t)) - Sₙ₋₁(t) c`. Comparing it with `f x = 2` bounds the order of
+`r₁ r₂` from below, with no linear independence of `x` and `y` needed. -/
+theorem apply_reflection_mul_reflection_pow_apply_self (n : ℕ) (t : R := f y * g x - 2)
+    (ht : t = f y * g x - 2 := by rfl) :
+    f (((reflection hf * reflection hg) ^ n) x) =
+      2 * ((S R n).eval t + (S R (n - 1)).eval t) - (S R (n - 1)).eval t * (f y * g x) := by
+  rw [reflection_mul_reflection_pow_apply_self hf hg n t ht, map_add, map_smul, map_smul, hf,
+    smul_eq_mul, smul_eq_mul]
+  ring
+
 variable {hf hg}
 
-/-- If a power `(r₁ r₂)ⁿ` of the product of the reflections in two linearly independent vectors
-is trivial, the two coefficients of `(r₁ r₂)ⁿ x` are those of `x`. -/
-private theorem S_eval_eq_of_pow_eq_one (hxy : LinearIndependent R ![x, y]) {n : ℕ}
-    (hn : (reflection hf * reflection hg) ^ n = 1) :
-    (S R n).eval (f y * g x - 2) + (S R (n - 1)).eval (f y * g x - 2) = 1 ∧
-      (S R (n - 1)).eval (f y * g x - 2) * g x = 0 := by
-  have h := reflection_mul_reflection_pow_apply_self hf hg n
-  rw [hn, FunLike.coe_one_eq_id, id_eq] at h
-  have h' : (1 : R) • x + (0 : R) • y =
-      ((S R n).eval (f y * g x - 2) + (S R (n - 1)).eval (f y * g x - 2)) • x +
-        ((S R (n - 1)).eval (f y * g x - 2) * -g x) • y := by
+/-- If `(r₁ r₂)ⁿ = 1`, the `f`-coordinate of `(r₁ r₂)ⁿ x` is that of `x`, namely `2`. -/
+private theorem two_mul_S_eval_add_S_eval_sub_eq_two {n : ℕ}
+    (hn : (reflection hf * reflection hg) ^ n = 1) (t : R) (ht : t = f y * g x - 2) :
+    2 * ((S R n).eval t + (S R (n - 1)).eval t) - (S R (n - 1)).eval t * (f y * g x) = 2 := by
+  rw [← apply_reflection_mul_reflection_pow_apply_self hf hg n t ht, hn]
+  exact hf
+
+/-- **When `(r₁ r₂)ⁿ` fixes `x`**, for linearly independent `x` and `y`: exactly when the two
+Chebyshev coefficients of `(r₁ r₂)ⁿ x` are those of `x` itself, `1` and `0`. -/
+theorem reflection_mul_reflection_pow_apply_self_eq_self_iff (hxy : LinearIndependent R ![x, y])
+    (n : ℕ) :
+    ((reflection hf * reflection hg) ^ n) x = x ↔
+      (S R n).eval (f y * g x - 2) + (S R (n - 1)).eval (f y * g x - 2) = 1 ∧
+        (S R (n - 1)).eval (f y * g x - 2) * g x = 0 := by
+  rw [reflection_mul_reflection_pow_apply_self hf hg n]
+  refine ⟨fun h ↦ ?_, fun ⟨h₁, h₂⟩ ↦ by
+    rw [h₁, mul_neg, h₂, neg_zero, one_smul, zero_smul, add_zero]⟩
+  have h' : ((S R n).eval (f y * g x - 2) + (S R (n - 1)).eval (f y * g x - 2)) • x +
+      ((S R (n - 1)).eval (f y * g x - 2) * -g x) • y = (1 : R) • x + (0 : R) • y := by
     rw [one_smul, zero_smul, add_zero]
     exact h
   obtain ⟨h₁, h₂⟩ := hxy.eq_of_pair h'
-  exact ⟨h₁.symm, by linear_combination h₂⟩
+  exact ⟨h₁, by linear_combination -h₂⟩
 
 /-- **The product of two reflections each fixing the other's vector has order `2`**: if the
 vectors are linearly independent, `f y = 0`, `g x = 0` and `2 ≠ 0`, then `r₁ r₂` has order
@@ -223,39 +243,41 @@ theorem orderOf_reflection_mul_reflection_eq_two [NeZero (2 : R)]
     (hxy : LinearIndependent R ![x, y]) (hfy : f y = 0) (hgx : g x = 0) :
     orderOf (reflection hf * reflection hg) = 2 := by
   refine orderOf_eq_prime (reflection_mul_reflection_pow_two_eq_one hf hg hfy hgx) fun h1 ↦ ?_
-  have := (S_eval_eq_of_pow_eq_one hxy (n := 1) (by rw [pow_one, h1])).1
+  have := ((reflection_mul_reflection_pow_apply_self_eq_self_iff hxy 1).mp
+    (by rw [pow_one, h1]; rfl)).1
   norm_num [hfy, S_zero, S_one] at this
   exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
 
-/-- **At Cartan product `1` the product of the reflections in two linearly independent vectors
-has order exactly `3`**, over any nontrivial ring. -/
-theorem orderOf_reflection_mul_reflection_eq_three [Nontrivial R]
-    (hxy : LinearIndependent R ![x, y]) (h : f y * g x = 1) :
+/-- **At Cartan product `1` the product of two reflections has order exactly `3`**, provided
+`3 ≠ 0`. -/
+theorem orderOf_reflection_mul_reflection_eq_three (h : f y * g x = 1) (h3 : (3 : R) ≠ 0) :
     orderOf (reflection hf * reflection hg) = 3 := by
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
   refine orderOf_eq_prime (reflection_mul_reflection_pow_three_eq_one hf hg h) fun h1 ↦ ?_
-  have := (S_eval_eq_of_pow_eq_one hxy (n := 1) (by rw [pow_one, h1])).1
+  -- The `f`-coordinate of `r₁ r₂ x` is `2 (S₁(-1) + S₀(-1)) - S₀(-1) = -1`, not `2`.
+  have := two_mul_S_eval_add_S_eval_sub_eq_two (hf := hf) (hg := hg) (n := 1)
+    (by rw [pow_one, h1]) (-1) (by rw [h]; ring)
   norm_num [h, S_zero, S_one] at this
+  exact h3 (by linear_combination -this)
 
-/-- **At Cartan product `2` the product of the reflections in two linearly independent vectors
-has order exactly `4`**, provided `2 ≠ 0`. -/
-theorem orderOf_reflection_mul_reflection_eq_four [NeZero (2 : R)]
-    (hxy : LinearIndependent R ![x, y]) (h : f y * g x = 2) :
+/-- **At Cartan product `2` the product of two reflections has order exactly `4`**, provided
+`4 ≠ 0`. -/
+theorem orderOf_reflection_mul_reflection_eq_four (h : f y * g x = 2) (h4 : (4 : R) ≠ 0) :
     orderOf (reflection hf * reflection hg) = 4 := by
   refine orderOf_eq_of_pow_and_pow_div_prime
     (reflection_mul_reflection_pow_four_eq_one hf hg h) fun p hp hpd ↦ ?_
   obtain rfl : p = 2 :=
     (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (hp.dvd_of_dvd_pow (n := 2) hpd)
   intro h2
-  have := (S_eval_eq_of_pow_eq_one hxy (n := 2) h2).1
+  -- The `f`-coordinate of `(r₁ r₂)² x` is `2 (S₂(0) + S₁(0)) = -2`, not `2`.
+  have := two_mul_S_eval_add_S_eval_sub_eq_two (n := 2) h2 0 (by rw [h]; ring)
   norm_num [h, S_one, S_two] at this
-  exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
+  exact h4 (by linear_combination -this)
 
-/-- **At Cartan product `3` the product of the reflections in two linearly independent vectors
-has order exactly `6`**, provided `2 ≠ 0` and `g x ≠ 0`. The latter holds automatically when `R`
-has no zero divisors and `3 ≠ 0`, for instance in characteristic zero, since `f y * g x = 3`. -/
-theorem orderOf_reflection_mul_reflection_eq_six [NeZero (2 : R)]
-    (hxy : LinearIndependent R ![x, y]) (h : f y * g x = 3) (hgx : g x ≠ 0) :
+/-- **At Cartan product `3` the product of two reflections has order exactly `6`**, provided
+`3 ≠ 0` and `4 ≠ 0`. -/
+theorem orderOf_reflection_mul_reflection_eq_six (h : f y * g x = 3) (h3 : (3 : R) ≠ 0)
+    (h4 : (4 : R) ≠ 0) :
     orderOf (reflection hf * reflection hg) = 6 := by
   refine orderOf_eq_of_pow_and_pow_div_prime
     (reflection_mul_reflection_pow_six_eq_one hf hg h) fun p hp hpd ↦ ?_
@@ -266,14 +288,14 @@ theorem orderOf_reflection_mul_reflection_eq_six [NeZero (2 : R)]
     · exact .inr ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_three).mp h')
   intro hpow
   rcases hp' with rfl | rfl
-  · -- `(r₁ r₂)³ = 1` fails on the `x`-coefficient `S₃(1) + S₂(1) = -1`.
-    have := (S_eval_eq_of_pow_eq_one hxy (n := 3) hpow).1
+  · -- The `f`-coordinate of `(r₁ r₂)³ x` is `2 (S₃(1) + S₂(1)) = -2`, not `2`.
+    have := two_mul_S_eval_add_S_eval_sub_eq_two (n := 3) hpow 1 (by rw [h]; ring)
     norm_num [h, S_three_eval_one, S_two] at this
-    exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
-  · -- `(r₁ r₂)² = 1` fails on the `y`-coefficient `-S₁(1) g x = -g x`.
-    have := (S_eval_eq_of_pow_eq_one hxy (n := 2) hpow).2
-    norm_num [h, S_one] at this
-    exact hgx this
+    exact h4 (by linear_combination -this)
+  · -- The `f`-coordinate of `(r₁ r₂)² x` is `2 (S₂(1) + S₁(1)) - 3 S₁(1) = -1`, not `2`.
+    have := two_mul_S_eval_add_S_eval_sub_eq_two (n := 2) hpow 1 (by rw [h]; ring)
+    norm_num [h, S_one, S_two] at this
+    exact h3 (by linear_combination -this)
 
 /-- **Two reflections with Cartan product at least `4` generate an infinite dihedral group**:
 if the vectors are linearly independent and `f y * g x` is the image of an integer `c ≥ 4`, in a
@@ -283,12 +305,11 @@ theorem orderOf_reflection_mul_reflection_eq_zero [CharZero R]
     (hxy : LinearIndependent R ![x, y]) {c : ℤ} (h : f y * g x = c) (hc : 4 ≤ c) :
     orderOf (reflection hf * reflection hg) = 0 := by
   refine orderOf_eq_zero_iff'.mpr fun n hn hpow ↦ ?_
-  have key := (S_eval_eq_of_pow_eq_one hxy hpow).1
+  have key := ((reflection_mul_reflection_pow_apply_self_eq_self_iff hxy n).mp
+    (LinearEquiv.congr_fun hpow x)).1
   -- Transport the coefficient identity to the integers, where the growth bound applies.
-  have hcast (k : ℤ) : (S R k).eval (f y * g x - 2) = (((S ℤ k).eval (c - 2) : ℤ) : R) := by
-    rw [h, ← map_S (Int.castRingHom R), Polynomial.eval_map,
-      show (c : R) - 2 = Int.castRingHom R (c - 2) by simp, Polynomial.eval₂_hom, eq_intCast]
-  rw [hcast, hcast] at key
+  rw [show f y * g x - 2 = ((c - 2 : ℤ) : R) by rw [h]; push_cast; ring, S_eval_intCast,
+    S_eval_intCast] at key
   have key' : (S ℤ n).eval (c - 2) + (S ℤ (n - 1)).eval (c - 2) = 1 := by exact_mod_cast key
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   have ht : (2 : ℤ) ≤ c - 2 := by linarith

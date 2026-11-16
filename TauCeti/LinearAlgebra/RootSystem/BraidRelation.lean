@@ -12,10 +12,10 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 # The order of a product of two simple reflections
 
 The product of the reflections in two roots `αᵢ`, `αⱼ` changes every weight by an element of the
-span of the two roots. Over a characteristic-zero ring, its order is read off the Cartan product
+span of the two roots. When `3 ≠ 0` and `4 ≠ 0`, its order is read off the Cartan product
 `c = ⟨αᵢ, αⱼ^∨⟩⟨αⱼ, αᵢ^∨⟩`: the values `1`, `2`, `3` give the orders `3`, `4`, `6`. This file proves
-the corresponding upper bounds over an arbitrary commutative ring and these exact orders under
-characteristic zero. It then proves — for two simple roots of a base of a finite crystallographic
+the corresponding upper bounds over an arbitrary commutative ring and these exact orders when `3`
+and `4` are nonzero. It then proves — for two simple roots of a base of a finite crystallographic
 pairing over a characteristic-zero domain, where `c = 0` is the remaining possibility and gives the
 order `2` — that the entries of
 `TauCeti.coxeterMatrixOfBase` really are the orders they are named for, so that the braid relations
@@ -35,12 +35,12 @@ the orthogonal case, already settled in `TauCeti.LinearAlgebra.RootSystem.Coxete
 two reflections commute, and where the order is pinned to `2` only for two distinct simple roots of
 a base.
 
-That the order is no smaller is checked on the single vector `αᵢ`: its `αᵢ^∨`-coordinate along the
-orbit of `g` is again a Chebyshev expression in `c`, and for the relevant powers that expression
-avoids the value `⟨αᵢ, αᵢ^∨⟩ = 2`.
+That the order is no smaller is `Module.orderOf_reflection_mul_reflection_eq_three` and its
+siblings, read in the Weyl group: the `αᵢ^∨`-coordinate of `gⁿ • αᵢ` is again a Chebyshev expression
+in `c`, and for the relevant powers that expression avoids the value `⟨αᵢ, αᵢ^∨⟩ = 2`.
 
 The iterate formulas and upper bounds are stated over an arbitrary commutative ring. The exact-order
-results add characteristic zero, but still concern an arbitrary pair of roots of an arbitrary root
+results add `3 ≠ 0` and `4 ≠ 0`, but still concern an arbitrary pair of roots of an arbitrary root
 pairing, the Cartan product entering only as a hypothesis on `RootPairing.pairing`; no finiteness,
 crystallographic or reducedness assumption is used there. The last section specialises to a pair of
 simple roots of a base, where `TauCeti.cartanMatrix_mul_cartanMatrix_mem_of_ne` confines the Cartan
@@ -57,8 +57,8 @@ product to `{0, 1, 2, 3}` and the case analysis closes.
   product `1`, `2`, `3`, and
   `RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_three`,
   `RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_four`,
-  `RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_six`: the matching exact orders under
-  characteristic zero.
+  `RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_six`: the matching exact orders when `3` and
+  `4` are nonzero.
 * `RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_coxeterMatrixOfBase`: **the entries of
   the Coxeter matrix of a base are the orders of the products of the corresponding simple
   reflections.**
@@ -178,98 +178,62 @@ theorem pow_six_ofIdx_mul_ofIdx_eq_one
 
 /-! ## The order is no smaller
 
-The lower bounds are read off a single vector: the `αᵢ^∨`-coordinate of `gⁿ • αᵢ` is a Chebyshev
-expression in the Cartan product `c`, and comparing it with `⟨αᵢ, αᵢ^∨⟩ = 2` rules out `gⁿ = 1`. -/
+The exact orders are those of the two linear reflections, computed in
+`Module.orderOf_reflection_mul_reflection_eq_three` and its siblings from the `αᵢ^∨`-coordinate of
+`gⁿ • αᵢ`, which avoids the value `⟨αᵢ, αᵢ^∨⟩ = 2`. -/
 
-section LowerBound
-
-private lemma pow_ne_one_of_coroot'_left_ne (n : ℕ)
-    (h : P.coroot' i (((_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ n) • P.root i) ≠ 2) :
+/-- A power of the product of the two reflections is trivial in the Weyl group exactly when the
+same power of the product of the two linear reflections is. -/
+private lemma pow_ofIdx_mul_ofIdx_eq_one_iff (n : ℕ) :
     (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ n ≠ 1 := by
-  intro hpow
-  rw [hpow, one_smul, _root_.RootPairing.root_coroot'_eq_pairing,
-    _root_.RootPairing.pairing_same] at h
-  exact h rfl
+      _root_.RootPairing.weylGroup.ofIdx P j) ^ n = 1 ↔
+      (P.reflection i * P.reflection j) ^ n = 1 := by
+  refine ⟨fun h ↦ LinearEquiv.ext fun x ↦ ?_, fun h ↦
+    RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_⟩
+  · rw [← RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq, h, one_smul]
+    rfl
+  · rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq, h]
+    rfl
 
-private lemma coroot'_left_pow_smul_root (n : ℕ) (t : R)
-    (ht : t = P.pairing i j * P.pairing j i - 2) :
-    P.coroot' i (((_root_.RootPairing.weylGroup.ofIdx P i *
-        _root_.RootPairing.weylGroup.ofIdx P j) ^ n) • P.root i) =
-      2 * ((S R n).eval t + (S R (n - 1)).eval t) -
-        (S R (n - 1)).eval t * (P.pairing i j * P.pairing j i) := by
-  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_root P i j n t ht]
-  simp only [map_add, map_smul, smul_eq_mul, _root_.RootPairing.root_coroot'_eq_pairing,
-    _root_.RootPairing.pairing_same]
-  ring
+/-- The product of the two reflections has the same order in the Weyl group as the product of the
+two linear reflections. -/
+private lemma orderOf_ofIdx_mul_ofIdx :
+    orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
+      _root_.RootPairing.weylGroup.ofIdx P j) = orderOf (P.reflection i * P.reflection j) :=
+  orderOf_eq_orderOf_iff.mpr (RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_eq_one_iff P i j)
 
-variable [CharZero R]
-
-/-- **At Cartan product `1` the product of the two reflections has order exactly `3`.** -/
+/-- **At Cartan product `1` the product of the two reflections has order exactly `3`**, provided
+`3 ≠ 0`. -/
 @[simp, grind =]
 theorem orderOf_ofIdx_mul_ofIdx_eq_three
-    (h : P.pairing i j * P.pairing j i = 1) :
+    (h : P.pairing i j * P.pairing j i = 1) (h3 : (3 : R) ≠ 0) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) = 3 := by
-  have hne : (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ 1 ≠ 1 := by
-    refine RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne P i j 1 ?_
-    rw [RootPairing.weylGroup.coroot'_left_pow_smul_root P i j 1 (-1) (by rw [h]; ring), h]
-    norm_num [S_zero, S_one]
-  refine orderOf_eq_of_pow_and_pow_div_prime
-    (RootPairing.weylGroup.pow_three_ofIdx_mul_ofIdx_eq_one P i j h) fun p hp hpd ↦ ?_
-  have hp' : p = 3 := (Nat.prime_dvd_prime_iff_eq hp Nat.prime_three).mp hpd
-  subst hp'
-  exact hne
+  rw [RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx]
+  exact Module.orderOf_reflection_mul_reflection_eq_three (hf := P.coroot_root_two i)
+    (hg := P.coroot_root_two j) (by simpa [mul_comm] using h) h3
 
-/-- **At Cartan product `2` the product of the two reflections has order exactly `4`.** -/
+/-- **At Cartan product `2` the product of the two reflections has order exactly `4`**, provided
+`4 ≠ 0`. -/
 @[simp, grind =]
 theorem orderOf_ofIdx_mul_ofIdx_eq_four
-    (h : P.pairing i j * P.pairing j i = 2) :
+    (h : P.pairing i j * P.pairing j i = 2) (h4 : (4 : R) ≠ 0) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) = 4 := by
-  have hne : (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ 2 ≠ 1 := by
-    refine RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne P i j 2 ?_
-    rw [RootPairing.weylGroup.coroot'_left_pow_smul_root P i j 2 0 (by rw [h]; ring), h]
-    norm_num [S_one, S_two]
-  refine orderOf_eq_of_pow_and_pow_div_prime
-    (RootPairing.weylGroup.pow_four_ofIdx_mul_ofIdx_eq_one P i j h) fun p hp hpd ↦ ?_
-  have hp' : p = 2 := by
-    have hpd' : p ∣ 2 ^ 2 := by simpa using hpd
-    exact (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (hp.dvd_of_dvd_pow hpd')
-  subst hp'
-  exact hne
+  rw [RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx]
+  exact Module.orderOf_reflection_mul_reflection_eq_four (hf := P.coroot_root_two i)
+    (hg := P.coroot_root_two j) (by simpa [mul_comm] using h) h4
 
-/-- **At Cartan product `3` the product of the two reflections has order exactly `6`.** -/
+/-- **At Cartan product `3` the product of the two reflections has order exactly `6`**, provided
+`3 ≠ 0` and `4 ≠ 0`. -/
 @[simp, grind =]
 theorem orderOf_ofIdx_mul_ofIdx_eq_six
-    (h : P.pairing i j * P.pairing j i = 3) :
+    (h : P.pairing i j * P.pairing j i = 3) (h3 : (3 : R) ≠ 0) (h4 : (4 : R) ≠ 0) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) = 6 := by
-  have hne₂ : (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ 2 ≠ 1 := by
-    refine RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne P i j 2 ?_
-    rw [RootPairing.weylGroup.coroot'_left_pow_smul_root P i j 2 1 (by rw [h]; ring), h]
-    norm_num [S_one, S_two]
-  have hne₃ : (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ 3 ≠ 1 := by
-    refine RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne P i j 3 ?_
-    rw [RootPairing.weylGroup.coroot'_left_pow_smul_root P i j 3 1 (by rw [h]; ring), h]
-    norm_num [S_three_eval_one, S_two]
-  refine orderOf_eq_of_pow_and_pow_div_prime
-    (RootPairing.weylGroup.pow_six_ofIdx_mul_ofIdx_eq_one P i j h) fun p hp hpd ↦ ?_
-  have hp' : p = 2 ∨ p = 3 := by
-    have hpd' : p ∣ 2 * 3 := by simpa using hpd
-    rcases (Nat.Prime.dvd_mul hp).mp hpd' with h' | h'
-    · exact Or.inl ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp h')
-    · exact Or.inr ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_three).mp h')
-  rcases hp' with rfl | rfl
-  · exact hne₃
-  · exact hne₂
-
-end LowerBound
+  rw [RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx]
+  exact Module.orderOf_reflection_mul_reflection_eq_six (hf := P.coroot_root_two i)
+    (hg := P.coroot_root_two j) (by simpa [mul_comm] using h) h3 h4
 
 /-! ## The entries of the Coxeter matrix of a base -/
 
@@ -307,11 +271,12 @@ theorem orderOf_ofIdx_mul_ofIdx_eq_coxeterMatrixOfBase
     rw [h₂]
     exact RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_two_of_coxeterMatrixOfBase_eq_two P b h₂
   · rw [coxeterMatrixOfBase_apply, hc, coxeterOrder_one]
-    exact RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_three P _ _ hcast
+    exact RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_three P _ _ hcast (by norm_num)
   · rw [coxeterMatrixOfBase_apply, hc, coxeterOrder_two]
-    exact RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_four P _ _ hcast
+    exact RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_four P _ _ hcast (by norm_num)
   · rw [coxeterMatrixOfBase_apply, hc, coxeterOrder_three]
-    exact RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_six P _ _ hcast
+    exact RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_six P _ _ hcast (by norm_num)
+      (by norm_num)
 
 /-- **The braid relations of the Coxeter matrix of a base hold in the Weyl group.** This is the
 relation half of the Coxeter presentation of the Weyl group. It is not a `simp` lemma: its

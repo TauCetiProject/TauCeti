@@ -19,13 +19,16 @@ increase by at least `1` at each step, so `n + 1 ≤ Sₙ(t)`.
 The values `Sₙ(t)` are the coefficients of the powers of a product of two reflections whose
 Cartan product is `t + 2`. For `t ≥ 2` the product is a shear or a hyperbolic transformation,
 and the growth proved here shows that it has infinite order. The file also records the value
-`S₃(1) = -1`, which rules out the order `3` for Cartan product `3`.
+`S₃(1) = -1`, which rules out the order `3` for Cartan product `3`, and the value of `Sₙ` at the
+image of an integer, which transports the growth bound from `ℤ` to any ring.
 
 ## Main results
 
 * `Polynomial.Chebyshev.S_eval_add_one_le`: `Sₙ(t) + 1 ≤ Sₙ₊₁(t)` for `t ≥ 2` and `n ≥ 0`.
 * `Polynomial.Chebyshev.natCast_add_one_le_S_eval`: `n + 1 ≤ Sₙ(t)` for `t ≥ 2` and `n ≥ 0`.
 * `Polynomial.Chebyshev.S_three_eval_one`: `S₃(1) = -1`.
+* `Polynomial.Chebyshev.S_eval_intCast`: `Sₙ` over `R` at the image of an integer `c` is the image
+  of `Sₙ` over `ℤ` at `c`.
 -/
 
 public section
@@ -36,6 +39,12 @@ namespace Polynomial.Chebyshev
 theorem S_three_eval_one (R : Type*) [CommRing R] : (S R 3).eval (1 : R) = -1 := by
   have h : S R (3 : ℤ) = X * S R 2 - S R 1 := by simpa using S_add_two R (1 : ℤ)
   simp [h, S_one, S_two]
+
+/-- The value of `Sₙ` over `R` at the image of an integer `c` is the image of its value over `ℤ`
+at `c`. -/
+theorem S_eval_intCast (R : Type*) [CommRing R] (n c : ℤ) :
+    (S R n).eval (c : R) = (((S ℤ n).eval c : ℤ) : R) := by
+  rw [← map_S (Int.castRingHom R), eval_intCast_map, eq_intCast, Int.cast_id]
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] {t : R}
 
