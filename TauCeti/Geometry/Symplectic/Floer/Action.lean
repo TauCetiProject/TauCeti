@@ -71,7 +71,9 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
 
 The action of the loop `u(s, ·)` of a `C¹` map depends continuously on `s`
 (`SymplecticForm.continuous_hamiltonianAction_slice`), and it is bounded in terms of bounds for the
-loop, its speed and the Hamiltonian along it (`SymplecticForm.abs_hamiltonianAction_le`). The action
+loop, its speed and the Hamiltonian along it (`SymplecticForm.abs_hamiltonianAction_le`); hence
+the actions of the loops of `L`-Lipschitz maps with periodic loops in a compact set are bounded
+uniformly in the map (`SymplecticForm.exists_forall_abs_hamiltonianAction_le`). The action
 is continuous for uniform `C¹` convergence of loops
 (`SymplecticForm.tendsto_hamiltonianAction`). Uniform convergence of the loops alone, with a bound
 on their speed, still controls differences of actions: loops `x i` and `y i` with a common uniform
@@ -107,6 +109,8 @@ derivatives.
 * `SymplecticForm.continuous_hamiltonianAction_slice`: the action of the loops of a `C¹` map is
   continuous in the loop parameter.
 * `SymplecticForm.abs_hamiltonianAction_le`: a bound for the action of a loop.
+* `SymplecticForm.exists_forall_abs_hamiltonianAction_le`: a uniform bound for the actions of the
+  loops of Lipschitz maps with periodic loops in a compact set.
 * `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
   convergence of loops.
 * `SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`: loops of bounded speed with a
@@ -547,6 +551,27 @@ theorem abs_hamiltonianAction_le (ω : SymplecticForm V) {x : ℝ → V} {R L B 
     simpa using h
   rw [hamiltonianAction_def]
   exact (abs_add_le _ _).trans (add_le_add harea hHint)
+
+/-- **A uniform bound for the actions of the loops of Lipschitz maps.** For a continuous
+time-dependent Hamiltonian `H` and a compact set `K`, the actions of the loops of an `L`-Lipschitz
+`C¹` map `u` with `1`-periodic loops in `K` are bounded, uniformly in `u`. -/
+theorem exists_forall_abs_hamiltonianAction_le (ω : SymplecticForm V)
+    (hH : Continuous (uncurry H)) {K : Set V} (hK : IsCompact K) (L : NNReal) :
+    ∃ B, ∀ {u : ℝ × ℝ → V}, ContDiff ℝ 1 u → (∀ s, Periodic (fun t ↦ u (s, t)) 1) →
+      (∀ z, u z ∈ K) → LipschitzWith L u →
+        ∀ s, |ω.hamiltonianAction H (fun t ↦ u (s, t))| ≤ B := by
+  obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn continuousOn_id
+  obtain ⟨C, hC⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hH.continuousOn
+  refine ⟨‖ω.toBilinForm.toContinuousBilinearMap‖ * L * R + C,
+    fun {u} hu hper huK hL s ↦ ω.abs_hamiltonianAction_le ?_ ?_ ?_ ?_ ?_ ?_⟩
+  · exact fun t _ ↦
+      (hasDerivAt_slice_right ((hu.differentiable one_ne_zero) (s, t))).differentiableAt
+  · exact hu.contDiffOn.continuousOn_deriv_slice_right isOpen_univ fun _ _ ↦ mem_univ _
+  · simpa using hper s 0
+  · exact fun t _ ↦ (norm_deriv_slice_right_le ((hu.differentiable one_ne_zero) (s, t))).trans
+      (norm_fderiv_le_of_lipschitz ℝ hL)
+  · exact fun t _ ↦ hR _ (huK _)
+  · exact fun t ht ↦ by simpa [← Real.norm_eq_abs] using hC (t, u (s, t)) ⟨ht, huK _⟩
 
 end Slices
 

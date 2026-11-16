@@ -44,7 +44,7 @@ orbit in `K`.
   nondegenerate, and that the trajectories `u_k` are nonstationary with uniformly bounded
   derivatives. Then there are a subsequence `u_(φ n)` and shifts `σ_n` such that the translates
   `(s, t) ↦ u_(φ n)(s + σ_n, t)` converge locally uniformly to a map `g` which is not stationary
-  (`SymplecticForm.exists_strictMono_tendstoLocallyUniformly_comp_add_of_floer`). The ends of
+  (`SymplecticForm.exists_subseq_tendstoLocallyUniformly_comp_add_of_floer`). The ends of
   each `u_k` are orbits whose actions `a₀ < a₁` lie in the finite set of orbit actions
   (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq`), and they
   differ by the energy gap
@@ -55,8 +55,10 @@ orbit in `K`.
   finite set, so along a subsequence they converge to a regular action value, and the
   Arzelà–Ascoli theorem (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`)
   gives a convergent subsequence of the translates. No energy bound is assumed: the actions of
-  loops in `K` of bounded speed are bounded (`TauCeti.SymplecticForm.abs_hamiltonianAction_le`),
-  so each trajectory has finite energy.
+  loops in `K` of bounded speed are bounded
+  (`TauCeti.SymplecticForm.exists_forall_abs_hamiltonianAction_le`), so each trajectory has finite
+  energy and its ends have actions `a₀ < a₁`
+  (`TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`).
 
 The uniform bound on the derivatives excludes bubbling; it is assumed, not proved. The limit `g`
 is only shown to be continuous here; its regularity is not treated. For smooth solutions with
@@ -67,7 +69,7 @@ bounded derivatives, read in the complex coordinate `z = s + i t`, it is the sub
 
 * `SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly`: a limit of Floer
   trajectories normalized at a regular action value is not stationary.
-* `SymplecticForm.exists_strictMono_tendstoLocallyUniformly_comp_add_of_floer`: a sequence of
+* `SymplecticForm.exists_subseq_tendstoLocallyUniformly_comp_add_of_floer`: a sequence of
   nonstationary Floer trajectories with bounded derivatives has translates converging to a
   nonstationary limit.
 
@@ -232,75 +234,6 @@ theorem exists_apply_ne_apply_zero_of_tendstoLocallyUniformly
     linarith
   exact ha ⟨x, ⟨hxper, hxd, hxK⟩, hxa⟩
 
-/-- The actions of the loops of an `L`-Lipschitz `C¹` map `u` with `1`-periodic loops in a compact
-set `K` are bounded, uniformly in `u`. -/
-private theorem exists_forall_abs_hamiltonianAction_le (hH : Continuous (uncurry H))
-    (hK : IsCompact K) (L : ℝ≥0) :
-    ∃ B, ∀ {u : ℝ × ℝ → V}, ContDiff ℝ 1 u → (∀ s, Periodic (fun t ↦ u (s, t)) 1) →
-      (∀ z, u z ∈ K) → LipschitzWith L u →
-        ∀ s, |ω.hamiltonianAction H (fun t ↦ u (s, t))| ≤ B := by
-  obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn continuousOn_id
-  obtain ⟨C, hC⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hH.continuousOn
-  refine ⟨‖ω.toBilinForm.toContinuousBilinearMap‖ * L * R + C,
-    fun {u} hu hper huK hL s ↦ ω.abs_hamiltonianAction_le ?_ ?_ ?_ ?_ ?_ ?_⟩
-  · exact fun t _ ↦
-      (hasDerivAt_slice_right ((hu.differentiable one_ne_zero) (s, t))).differentiableAt
-  · exact hu.contDiffOn.continuousOn_deriv_slice_right isOpen_univ fun _ _ ↦ mem_univ _
-  · simpa using hper s 0
-  · exact fun t _ ↦ (norm_deriv_slice_right_le ((hu.differentiable one_ne_zero) (s, t))).trans
-      (norm_fderiv_le_of_lipschitz ℝ hL)
-  · exact fun t _ ↦ hR _ (huK _)
-  · exact fun t ht ↦ by simpa [← Real.norm_eq_abs] using hC (t, u (s, t)) ⟨ht, huK _⟩
-
-/-- The ends of a nonstationary `L`-Lipschitz Floer trajectory with loops in `K` are orbits in `K`
-of actions `a₀ < a₁`, when the orbits in `K` have finitely many actions. No energy bound is needed:
-the actions of the loops are bounded and increase along the trajectory, so its energy is finite. -/
-private theorem exists_lt_tendsto_hamiltonianAction (hH : ContDiff ℝ 1 (uncurry H))
-    (hHper : Periodic H 1) (hK : IsCompact K)
-    (hfin : (ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
-      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K}).Finite)
-    {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} (hu : ContDiff ℝ 2 u)
-    (hper : ∀ s, Periodic (fun t ↦ u (s, t)) 1) (huK : ∀ z, u z ∈ K) (hc : 0 < c)
-    (hJc : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
-    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hL : LipschitzWith L u) (hns : ∃ s t, u (s, t) ≠ u (0, t)) :
-    ∃ a₀ ∈ ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
-        (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K},
-      ∃ a₁ ∈ ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
-        (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K},
-      a₀ < a₁ ∧ Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 a₀) ∧
-        Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 a₁) := by
-  set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
-  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
-  -- The action is monotone and bounded, so the energy is finite.
-  have hmono : Monotone A := monotoneOn_univ.1
-    (ω.monotoneOn_hamiltonianAction_of_floer isOpen_univ hH hu.contDiffOn (fun s _ ↦ hper s)
-      (fun z hz ↦ hJ z (by simpa using hz)) fun z hz ↦ hfloer z (by simpa using hz))
-  obtain ⟨B, hB⟩ := exists_forall_abs_hamiltonianAction_le (ω := ω) hH.continuous hK L
-  have hbdd (s : ℝ) := abs_le.1 (hB (hu.of_le one_le_two) hper huK hL s)
-  have hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
-      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤ := by
-    rw [ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction hJ hH isOpen_univ
-      hu.contDiffOn (subset_univ _) (fun s ↦ by simpa using hper s 0)
-      (fun z hz ↦ by
-        simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ _ z).1 (hfloer z hz))
-      (tendsto_atBot_ciInf hmono ⟨-B, by rintro _ ⟨s, rfl⟩; exact (hbdd s).1⟩)
-      (tendsto_atTop_ciSup hmono ⟨B, by rintro _ ⟨s, rfl⟩; exact (hbdd s).2⟩)]
-    exact ENNReal.ofReal_ne_top
-  obtain ⟨x₀, x₁, hx₀, hx₁, hbot, htop, hEeq⟩ :=
-    exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq hH hHper hu hper hK
-      (fun s t ↦ huK (s, t)) hc hJc hJM hfloer hE
-  -- The energy gap separates the actions of the two ends.
-  obtain ⟨δ, hδ, hgap⟩ := exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity hH hHper hK hfin
-  have hle := (hgap hu hper (fun s t ↦ huK (s, t)) hc hJc hJM hfloer hns).trans_eq hEeq
-  rw [ENNReal.ofReal_le_ofReal_iff'] at hle
-  refine ⟨_, mem_image_of_mem _ hx₀, _, mem_image_of_mem _ hx₁, ?_, hbot, htop⟩
-  rcases hle with hle | hle <;> linarith
-
 /-- **A sequence of nonstationary Floer trajectories has a nonstationary level.** Let `H` be a
 `C¹` Hamiltonian, `1`-periodic in time, and `K` a compact set such that the `1`-periodic orbits of
 the Hamiltonian vector field with values in `K` have only finitely many actions, for instance
@@ -311,7 +244,7 @@ a common Lipschitz constant `L`. If no `u k` is stationary, then there are a sub
 `u (φ n)` and shifts `σ n` such that the translates `(s, t) ↦ u (φ n) (s + σ n, t)` converge
 locally uniformly to a map `g` which is not stationary: `g(s, t) ≠ g(0, t)` for some `s` and
 `t`. -/
-theorem exists_strictMono_tendstoLocallyUniformly_comp_add_of_floer
+theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_floer
     (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1) (hK : IsCompact K)
     (hfin : (ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
       (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K}).Finite)
@@ -327,8 +260,8 @@ theorem exists_strictMono_tendstoLocallyUniformly_comp_add_of_floer
       TendstoLocallyUniformly (fun n z ↦ u (φ n) (z + (σ n, 0))) g atTop ∧
         ∃ s t, g (s, t) ≠ g (0, t) := by
   -- Each trajectory runs from an orbit of action `a₀ k` to an orbit of larger action `a₁ k`.
-  choose a₀ ha₀ a₁ ha₁ hlt hbot htop using fun k ↦ exists_lt_tendsto_hamiltonianAction hH hHper
-    hK hfin (hu k) (hper k) (huK k) hc (hJc k) (hJM k) (hfloer k) (hL k) (hns k)
+  choose a₀ ha₀ a₁ ha₁ hlt hbot htop using fun k ↦ exists_lt_tendsto_hamiltonianAction_of_floer hH
+    hHper hK hfin (hu k) (hper k) (huK k) hc (hJc k) (hJM k) (hfloer k) (hL k) (hns k)
   -- Between the two end actions there is a regular action value `m (a₀ k, a₁ k)`. These values
   -- range over a finite set, so along a subsequence they converge to a regular action value.
   have hreg (p : ℝ × ℝ) (hp : p.1 < p.2) : ∃ b ∈ Ioo p.1 p.2, b ∉ ω.hamiltonianAction H '' _ :=
