@@ -43,6 +43,9 @@ and vanishes off `Ω`, so an element is determined by its values on `Ω` (`CkHol
 * `TauCeti.CkHolderSpaceOn.iteratedFDeriv`: the bounded continuous `i`-th derivative field on
   `Ω` for `i ≤ k`; `TauCeti.CkHolderSpaceOn.iteratedFDeriv_eq` identifies it with Mathlib's
   `iteratedFDeriv` at points of `Ω`.
+* `TauCeti.CkHolderSpaceOn.iteratedFDerivL` and `TauCeti.CkHolderSpaceOn.iteratedFDerivHolderL`:
+  the derivative fields, and the `k`-th one in the bounded Hölder space of `Ω`, as continuous
+  linear maps.
 * `TauCeti.CkHolderSpaceOn.contDiffOn` and `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv`:
   the regularity of an element; `TauCeti.CkHolderSpaceOn.ofContDiffOn` is the converse
   constructor.
@@ -474,6 +477,54 @@ theorem iteratedFDeriv_add (f g : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
 theorem iteratedFDeriv_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
     (c • f).iteratedFDeriv i = c • f.iteratedFDeriv i := by
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_smul c f
+
+/-- The `k`-th derivative field on `Ω`, as a continuous linear map to the bounded Hölder space
+of `Ω`. -/
+def iteratedFDerivHolderL : CkHolderSpaceOn k α Ω F →L[ℝ] HolderSpace α Ω (E [×k]→L[ℝ] F) :=
+  (WithLp.sndL 1 ℝ _ _).comp toJetL
+
+/-- The linear map `iteratedFDerivHolderL` sends an element to its `k`-th derivative field in the
+bounded Hölder space of `Ω`. -/
+@[simp]
+theorem iteratedFDerivHolderL_apply (f : CkHolderSpaceOn k α Ω F) :
+    iteratedFDerivHolderL f = f.iteratedFDerivHolder := by
+  rw [iteratedFDerivHolderL, ContinuousLinearMap.comp_apply, toJetL_apply, WithLp.sndL_apply,
+    iteratedFDerivHolder, WithLp.ofLp_snd]
+
+/-- The Hölder-space norm of the `k`-th derivative field is controlled by the `C^{k,α}(Ω)`
+norm. -/
+theorem norm_iteratedFDerivHolder_le (f : CkHolderSpaceOn k α Ω F) :
+    ‖f.iteratedFDerivHolder‖ ≤ ‖f‖ := by
+  rw [← norm_toJet, WithLp.prod_norm_eq_of_L1]
+  exact le_add_of_nonneg_left (norm_nonneg _)
+
+/-- The `k`-th derivative map to the bounded Hölder space of `Ω` has operator norm at most
+one. -/
+theorem norm_iteratedFDerivHolderL_le_one :
+    ‖iteratedFDerivHolderL (k := k) (α := α) (Ω := Ω) (F := F)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    rw [iteratedFDerivHolderL_apply, one_mul]
+    exact norm_iteratedFDerivHolder_le f
+
+/-- The `k`-th derivative field of the zero map, in the bounded Hölder space, is zero. -/
+@[simp]
+theorem iteratedFDerivHolder_zero :
+    (0 : CkHolderSpaceOn k α Ω F).iteratedFDerivHolder = 0 := by
+  simpa only [iteratedFDerivHolderL_apply] using
+    (iteratedFDerivHolderL (k := k) (α := α) (Ω := Ω) (F := F)).map_zero
+
+/-- The `k`-th derivative field, in the bounded Hölder space, is additive. -/
+@[simp]
+theorem iteratedFDerivHolder_add (f g : CkHolderSpaceOn k α Ω F) :
+    (f + g).iteratedFDerivHolder = f.iteratedFDerivHolder + g.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_add f g
+
+/-- The `k`-th derivative field, in the bounded Hölder space, commutes with scalar
+multiplication. -/
+@[simp]
+theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) :
+    (c • f).iteratedFDerivHolder = c • f.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_smul c f
 
 /-- At points of `Ω`, the underlying function is the order-zero derivative field evaluated on the
 empty tuple. -/
