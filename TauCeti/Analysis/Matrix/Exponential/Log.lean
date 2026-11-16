@@ -5,12 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.Matrix.Exponential.Derivative
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Order
+import TauCeti.Analysis.Matrix.Exponential.Block
+import TauCeti.Analysis.Matrix.PosDef
+import TauCeti.Analysis.Matrix.RCLike
 
 /-!
 # The logarithm and real powers of positive definite matrices
@@ -23,6 +29,10 @@ definite matrix it agrees with the analytic local inverse of `exp` on the full m
 the inverse function theorem provides because the derivative of `exp` at a Hermitian matrix is
 invertible (`Matrix.IsHermitian.isUnit_expFDeriv`). The real powers `P ^ s = exp (s • log P)` and
 the square root inherit this smoothness.
+
+Pushing matrices into `Matrix n n ℂ` via `Matrix.toComplexStarAlgHom` also transfers the
+C⋆-algebraic operator monotonicity and operator concavity of `CFC.log` to `cfc Real.log` over an
+arbitrary `RCLike` scalar field.
 
 The logarithm is written `cfc Real.log`, which is `CFC.log` whenever the latter is defined;
 `CFC.log` needs a normed `ℝ`-algebra structure, which complex matrices do not carry by default.
@@ -38,7 +48,11 @@ topology is the native matrix topology.
 * `Matrix.IsHermitian.exp_eq_exp_iff`: the exponential is injective on the Hermitian matrices.
 * `Matrix.IsHermitian.commute_exp_iff`: a matrix commutes with the exponential of a Hermitian
   matrix exactly when it commutes with the matrix.
-* `Matrix.PosDef.cfc_log_inv`: `log P⁻¹ = -log P` for positive definite `P`.
+* `Matrix.PosDef.cfc_log_inv`, `Matrix.PosDef.cfc_log_smul`,
+  `Matrix.PosDef.cfc_log_fromBlocks_diagonal`: logarithm of an inverse, positive scalar multiple,
+  and two-block diagonal matrix.
+* `Matrix.PosDef.cfc_log_le_cfc_log`, `Matrix.concaveOn_cfc_log`: Loewner monotonicity and
+  operator concavity of `cfc Real.log` on the positive definite cone over `ℝ` or `ℂ`.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
   every real power and the square root are `C^n` on the positive definite matrices.
@@ -103,6 +117,46 @@ theorem PosDef.cfc_log_inv {P : Matrix n n 𝕜} (hP : P.PosDef) :
       ((P.finite_real_spectrum.image _).continuousOn _) (P.finite_real_spectrum.continuousOn _)
       hP.1.isSelfAdjoint, ← cfc_neg]
   exact cfc_congr fun x _ ↦ Real.log_inv x
+
+/-- Scaling a positive definite matrix by `c > 0` shifts its logarithm by `log c • 1`. -/
+theorem PosDef.cfc_log_smul {P : Matrix n n 𝕜} (hP : P.PosDef) {c : ℝ} (hc : 0 < c) :
+    cfc Real.log (c • P) = Real.log c • 1 + cfc Real.log P := by
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  have hcP : c • P = (c • (1 : Matrix n n 𝕜)) * P := by rw [smul_mul_assoc, one_mul]
+  rw [hcP]
+  simpa only [CFC.log, ← Algebra.algebraMap_eq_smul_one, cfc_algebraMap] using
+    CFC.log_mul_of_commute ((Commute.one_left P).smul_left c)
+      (isStrictlyPositive_iff_posDef.2 (PosDef.one.smul hc))
+      (isStrictlyPositive_iff_posDef.2 hP)
+
+/-- The logarithm of a two-block diagonal positive definite matrix is block diagonal. -/
+theorem PosDef.cfc_log_fromBlocks_diagonal {m : Type*} [Fintype m] [DecidableEq m]
+    {P : Matrix m m 𝕜} {Q : Matrix n n 𝕜} (hP : P.PosDef) (hQ : Q.PosDef) :
+    cfc Real.log (fromBlocks P 0 0 Q) = fromBlocks (cfc Real.log P) 0 0 (cfc Real.log Q) := by
+  have hLP : (cfc Real.log P).IsHermitian :=
+    isHermitian_iff_isSelfAdjoint.2 (cfc_predicate Real.log P)
+  have hLQ : (cfc Real.log Q).IsHermitian :=
+    isHermitian_iff_isSelfAdjoint.2 (cfc_predicate Real.log Q)
+  have hH : (fromBlocks (cfc Real.log P) 0 0 (cfc Real.log Q)).IsHermitian := by
+    simp only [IsHermitian, fromBlocks_conjTranspose, conjTranspose_zero, hLP.eq, hLQ.eq]
+  rw [← hH.cfc_log_exp, exp_fromBlocks_diagonal, hP.exp_cfc_log, hQ.exp_cfc_log]
+
+/-- **Operator monotonicity of the matrix logarithm.** For positive definite `P` and `P ≤ Q` in the
+Loewner order over `ℝ` or `ℂ`, `cfc Real.log P ≤ cfc Real.log Q`. -/
+@[gcongr]
+theorem PosDef.cfc_log_le_cfc_log {P Q : Matrix n n 𝕜} (hP : P.PosDef) (hPQ : P ≤ Q) :
+    cfc Real.log P ≤ cfc Real.log Q := by
+  rw [← toComplexStarAlgHom_le_iff (𝕜 := 𝕜), toComplexStarAlgHom_cfc, toComplexStarAlgHom_cfc]
+  exact CFC.log_le_log (toComplexStarAlgHom_le_iff.2 hPQ)
+    (isStrictlyPositive_iff_posDef.2 (posDef_toComplexStarAlgHom_iff.2 hP))
+
+/-- **Operator concavity of the matrix logarithm** on the positive definite cone over `ℝ` or `ℂ`. -/
+theorem concaveOn_cfc_log : ConcaveOn ℝ {P : Matrix n n 𝕜 | P.PosDef} (cfc Real.log) := by
+  refine ⟨TauCeti.convex_setOfPred_posDef, fun P hP Q hQ a b ha hb hab ↦ ?_⟩
+  simp only [← toComplexStarAlgHom_le_iff (𝕜 := 𝕜), map_add, map_smul, toComplexStarAlgHom_cfc]
+  exact CFC.concaveOn_log.2
+    (isStrictlyPositive_iff_posDef.2 (posDef_toComplexStarAlgHom_iff.2 hP))
+    (isStrictlyPositive_iff_posDef.2 (posDef_toComplexStarAlgHom_iff.2 hQ)) ha hb hab
 
 /-- **Smoothness of the matrix logarithm.** The logarithm is `C^n` on the positive definite
 matrices for every `n : ℕ∞ω`, including `n = ω`, over either the real or the complex scalars. -/
