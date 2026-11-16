@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Quaternion.UnitaryMatrix
-public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
 public import TauCeti.Topology.Algebra.Matrix.CornerBlock
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
@@ -20,7 +19,8 @@ import TauCeti.Topology.Algebra.GroupAction.Transitive
 
 The compact symplectic group `Sp(n + 1) = unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)` acts
 continuously and transitively by isometries on the unit sphere `S^(4n + 3)` of the quaternionic
-coordinate space `ℍⁿ⁺¹ = PiLp 2 (fun _ : Fin (n + 1) ↦ ℍ)`. Evaluating this action at the first
+coordinate space `ℍⁿ⁺¹ = PiLp 2 (fun _ : Fin (n + 1) ↦ ℍ)`
+(`TauCeti.Analysis.Quaternion.UnitaryMatrix`). Evaluating this action at the first
 standard basis vector `e₀` gives the **first-column projection**
 `TauCeti.quaternionUnitaryFirstColumn : Sp(n + 1) → S^(4n + 3)`, `A ↦ A e₀`.
 
@@ -52,8 +52,6 @@ fibre `Sp(n)` around every point of `S^(4n + 3)`
 
 ## Main definitions
 
-* `TauCeti.instMulActionUnitaryMatrixQuaternionSphere`: the isometric left action of
-  `unitary (Matrix ι ι ℍ)` on the unit sphere of `PiLp 2 (fun _ : ι ↦ ℍ)`.
 * `TauCeti.quaternionUnitaryFirstColumn`: the first-column projection
   `Sp(n + 1) → S^(4n + 3)`, `A ↦ A e₀`.
 * `TauCeti.quaternionUnitarySphereQuotientHomeomorph`: the homogeneous-space homeomorphism
@@ -75,9 +73,11 @@ fibre `Sp(n)` around every point of `S^(4n + 3)`
 * N. Steenrod, *The Topology of Fibre Bundles*, Princeton University Press, 1951, §7.4 and §7.6
   (coset spaces and sphere fibrations of the classical symplectic groups).
 * C. Chevalley, *Theory of Lie Groups I*, Princeton University Press, 1946, Chapter I, §§VII–IX.
-* The coset-bundle and Householder local-section layout parallels the complex Stiefel fibration in
-  `TauCeti.Topology.Grassmannian.StiefelFibration.Unitary` and the homogeneous model of `ℍPⁿ` in
-  `TauCeti.Topology.QuaternionicProjectiveSpace.Homogeneous`.
+* The coset-bundle trivialization layout follows the unitary Stiefel fibration over `RCLike 𝕜`
+  (using Gram–Schmidt local sections) in `TauCeti.Topology.Grassmannian.StiefelFibration.Unitary`,
+  the homogeneous-space quotient follows the homogeneous model of `ℍPⁿ` in
+  `TauCeti.Topology.QuaternionicProjectiveSpace.Homogeneous`, and the quaternionic Householder
+  reflection follows `TauCeti.Analysis.Quaternion.UnitaryMatrix`.
 -/
 
 public section
@@ -88,65 +88,6 @@ open Metric MulOpposite Quaternion Set Topology
 open scoped Matrix RightActions
 
 namespace TauCeti
-
-section SphereAction
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- A quaternionic unitary matrix acts on the unit sphere of `ℍⁿ = PiLp 2 (fun _ : ι ↦ ℍ)` by
-left multiplication `A • x = A x`. -/
-instance instSMulUnitaryMatrixQuaternionSphere :
-    SMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
-  smul A x := quaternionUnitaryIsometry ι A • x
-
-theorem quaternionUnitary_smul_sphere_def (A : unitary (Matrix ι ι ℍ))
-    (x : sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) :
-    A • x = quaternionUnitaryIsometry ι A • x :=
-  (rfl)
-
-@[simp]
-theorem coe_quaternionUnitary_smul_sphere (A : unitary (Matrix ι ι ℍ))
-    (x : sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) :
-    ((A • x : sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) : PiLp 2 fun _ : ι ↦ ℍ) =
-      quaternionUnitaryIsometry ι A x :=
-  LinearIsometryEquiv.coe_smul_unitSphere (quaternionUnitaryIsometry ι A) x
-
-/-- The compact symplectic group acts on the unit sphere of `ℍⁿ`. -/
-instance instMulActionUnitaryMatrixQuaternionSphere :
-    MulAction (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
-  one_smul x := by rw [quaternionUnitary_smul_sphere_def, map_one, one_smul]
-  mul_smul A B x := by
-    rw [quaternionUnitary_smul_sphere_def, quaternionUnitary_smul_sphere_def,
-      quaternionUnitary_smul_sphere_def, map_mul, mul_smul]
-
-/-- The compact symplectic group acts on the unit sphere of `ℍⁿ` by isometries. -/
-instance instIsIsometricSMulUnitaryMatrixQuaternionSphere :
-    IsIsometricSMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) :=
-  ⟨fun A ↦ isometry_smul _ (quaternionUnitaryIsometry ι A)⟩
-
-/-- The action of the compact symplectic group on the unit sphere of `ℍⁿ` is jointly continuous. -/
-instance instContinuousSMulUnitaryMatrixQuaternionSphere :
-    ContinuousSMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
-  continuous_smul := continuous_induced_rng.2 <|
-    (continuous_quaternionUnitaryIsometry_apply.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).congr fun p ↦
-        (coe_quaternionUnitary_smul_sphere p.1 p.2).symm
-
-/-- The compact symplectic group `Sp(ι)` acts transitively on the unit sphere of `ℍⁿ` (vacuously
-when `ι` is empty, since the unit sphere is then empty). -/
-instance instIsPretransitiveUnitaryMatrixQuaternionSphere :
-    MulAction.IsPretransitive (unitary (Matrix ι ι ℍ))
-      (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-  · refine ⟨fun x ↦ False.elim ?_⟩
-    have hx : (x : PiLp 2 fun _ : ι ↦ ℍ) = 0 := Subsingleton.elim _ _
-    simpa [hx] using mem_sphere_zero_iff_norm.1 x.2
-  · refine .of_orbit (x₀ := ⟨WithLp.toLp 2 (Pi.single i 1), by simp⟩) fun x ↦ ?_
-    obtain ⟨A, hA⟩ := exists_quaternionUnitaryIsometry_apply_single_eq i
-      (mem_sphere_zero_iff_norm.1 x.2)
-    exact ⟨A, Subtype.ext ((coe_quaternionUnitary_smul_sphere A _).trans hA)⟩
-
-end SphereAction
 
 /-! ### The first-column projection, its fibres, and the homogeneous quotient -/
 
@@ -167,7 +108,7 @@ theorem quaternionUnitaryFirstColumn_one :
     quaternionUnitaryFirstColumn n 1 = ⟨WithLp.toLp 2 (Pi.single 0 1), by simp⟩ :=
   one_smul _ _
 
-theorem quaternionUnitaryFirstColumn_eq_smul_one
+theorem quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one
     (A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) :
     quaternionUnitaryFirstColumn n A = A • quaternionUnitaryFirstColumn n 1 := by
   rw [quaternionUnitaryFirstColumn_one]
@@ -199,20 +140,18 @@ theorem surjective_quaternionUnitaryFirstColumn :
     Function.Surjective (quaternionUnitaryFirstColumn n) := fun b ↦ by
   obtain ⟨A, hA⟩ := MulAction.exists_smul_eq
     (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (quaternionUnitaryFirstColumn n 1) b
-  exact ⟨A, (quaternionUnitaryFirstColumn_eq_smul_one A).trans hA⟩
+  exact ⟨A, (quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one A).trans hA⟩
 
 @[simp]
 theorem quaternionUnitaryFirstColumn_unitaryOneBlockSucc
     (B : unitary (Matrix (Fin n) (Fin n) ℍ)) :
     quaternionUnitaryFirstColumn n (Matrix.unitaryOneBlockSucc ℍ n B) =
       quaternionUnitaryFirstColumn n 1 :=
-  Subtype.ext <| by
-    rw [coe_quaternionUnitaryFirstColumn, Matrix.unitaryOneBlockSucc_mulVec_single_zero,
-      quaternionUnitaryFirstColumn_one]
+  Subtype.ext <| by simp
 
 /-- A quaternionic unitary matrix maps `e₀` to `e₀` if and only if it belongs to the block-diagonal
 subgroup `diag(1, Sp(n))`. -/
-theorem quaternionUnitaryFirstColumn_eq_one_iff
+theorem quaternionUnitaryFirstColumn_eq_quaternionUnitaryFirstColumn_one_iff
     {A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)} :
     quaternionUnitaryFirstColumn n A = quaternionUnitaryFirstColumn n 1 ↔
       A ∈ (Matrix.unitaryOneBlockSucc ℍ n).range := by
@@ -222,14 +161,15 @@ theorem quaternionUnitaryFirstColumn_eq_one_iff
 
 /-- The fibres of `quaternionUnitaryFirstColumn` are the left cosets of the block-diagonal subgroup
 `diag(1, Sp(n))`. -/
-theorem quaternionUnitaryFirstColumn_eq_iff
+theorem quaternionUnitaryFirstColumn_eq_quaternionUnitaryFirstColumn_iff
     {A B : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)} :
     quaternionUnitaryFirstColumn n A = quaternionUnitaryFirstColumn n B ↔
       A⁻¹ * B ∈ (Matrix.unitaryOneBlockSucc ℍ n).range := by
-  rw [← quaternionUnitaryFirstColumn_eq_one_iff, quaternionUnitaryFirstColumn_mul]
+  rw [← quaternionUnitaryFirstColumn_eq_quaternionUnitaryFirstColumn_one_iff,
+    quaternionUnitaryFirstColumn_mul]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← h, quaternionUnitaryFirstColumn_eq_smul_one, inv_smul_smul]
-  · rw [quaternionUnitaryFirstColumn_eq_smul_one, ← h, smul_inv_smul]
+  · rw [← h, quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one, inv_smul_smul]
+  · rw [quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one, ← h, smul_inv_smul]
 
 variable (n) in
 /-- **The stabilizer of `e₀` in `Sp(n + 1)` is `Sp(n)`**: it equals the range of the block-diagonal
@@ -239,8 +179,9 @@ theorem range_unitaryOneBlockSucc_eq_stabilizer :
       MulAction.stabilizer (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ))
         (quaternionUnitaryFirstColumn n 1) := by
   ext A
-  rw [MulAction.mem_stabilizer_iff, ← quaternionUnitaryFirstColumn_eq_smul_one,
-    quaternionUnitaryFirstColumn_eq_one_iff]
+  rw [MulAction.mem_stabilizer_iff,
+    ← quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one,
+    quaternionUnitaryFirstColumn_eq_quaternionUnitaryFirstColumn_one_iff]
 
 variable (n) in
 /-- **The quaternionic sphere is the homogeneous space `Sp(n + 1) / Sp(n)`**: the first-column map
@@ -261,7 +202,7 @@ theorem quaternionUnitarySphereQuotientHomeomorph_mk
       quaternionUnitaryFirstColumn n A :=
   (quotientStabilizerHomeomorph_mk _ (quaternionUnitaryFirstColumn n 1)
     (continuous_id.smul continuous_const) A).trans
-    (quaternionUnitaryFirstColumn_eq_smul_one A).symm
+    (quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one A).symm
 
 /-- The homeomorphism `Sp(n + 1) ⧸ Sp(n) ≃ₜ S^(4n + 3)` is equivariant for the left actions of
 `Sp(n + 1)`. -/
@@ -292,7 +233,8 @@ def quaternionUnitaryFirstColumnFiberHomeomorph :
       quaternionUnitaryFirstColumn n ⁻¹' {quaternionUnitaryFirstColumn n 1} :=
   (Matrix.unitaryOneBlockSuccEquivRange ℍ n).toHomeomorph.trans
     ((Homeomorph.refl _).subtype fun _ ↦ by
-      rw [Set.mem_preimage, Set.mem_singleton_iff, quaternionUnitaryFirstColumn_eq_one_iff]
+      rw [Set.mem_preimage, Set.mem_singleton_iff,
+        quaternionUnitaryFirstColumn_eq_quaternionUnitaryFirstColumn_one_iff]
       rfl)
 
 @[simp]
@@ -309,6 +251,12 @@ theorem unitaryOneBlockSucc_quaternionUnitaryFirstColumnFiberHomeomorph_symm_app
     Matrix.unitaryOneBlockSucc ℍ n
       ((quaternionUnitaryFirstColumnFiberHomeomorph n).symm A) = A := by
   rw [← coe_quaternionUnitaryFirstColumnFiberHomeomorph_apply, Homeomorph.apply_symm_apply]
+
+/-- The identity of `Sp(n)` corresponds to the identity of `Sp(n + 1)` in the fibre over `e₀`. -/
+@[simp]
+theorem quaternionUnitaryFirstColumnFiberHomeomorph_one :
+    quaternionUnitaryFirstColumnFiberHomeomorph n 1 = ⟨1, rfl⟩ :=
+  Subtype.ext (by simp)
 
 end Projection
 
@@ -567,9 +515,9 @@ private theorem coe_firstColumnSection
   simp only [firstColumnSection, hx, ↓reduceDIte]
 
 variable (n) in
-/-- **Normalized continuous local section of `Sp(n + 1) → S^(4n + 3)`.** On the open neighborhood
-`{x ∈ S^(4n + 3) | x₀ ≠ 0}` of `e₀`, there is a continuous map `s` into `Sp(n + 1)` with
-`s e₀ = 1` and `s(x) e₀ = x`. -/
+/-- **Normalized continuous local section of `Sp(n + 1) → S^(4n + 3)`.** On an open neighborhood
+`U` of `e₀`, there is a continuous map `s` into `Sp(n + 1)` with `s e₀ = 1` and `s(x) e₀ = x` for
+all `x ∈ U`. -/
 theorem exists_quaternionUnitaryFirstColumn_localSection :
     ∃ U : Set (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1),
       IsOpen U ∧ quaternionUnitaryFirstColumn n 1 ∈ U ∧
@@ -601,13 +549,14 @@ theorem exists_trivialization_quaternionUnitaryFirstColumn
   have ht : Continuous t := continuous_const_smul g⁻¹
   let e := Subgroup.localSectionTrivializationOfCosetFibers
     (Matrix.unitaryOneBlockSucc ℍ n).range (continuous_quaternionUnitaryFirstColumn n)
-    (fun _ _ ↦ quaternionUnitaryFirstColumn_eq_iff) (t ⁻¹' U) (hU.preimage ht)
-    (fun x ↦ g * s (t x)) (continuousOn_const.mul (hs.comp ht.continuousOn fun _ hx ↦ hx))
+    (fun _ _ ↦ quaternionUnitaryFirstColumn_eq_quaternionUnitaryFirstColumn_iff) (t ⁻¹' U)
+    (hU.preimage ht) (fun x ↦ g * s (t x))
+    (continuousOn_const.mul (hs.comp ht.continuousOn fun _ hx ↦ hx))
     fun x hx ↦ by rw [quaternionUnitaryFirstColumn_mul, hsec _ hx, smul_inv_smul]
   refine ⟨e.transFiberHomeomorph (Matrix.unitaryOneBlockSuccEquivRange ℍ n).symm.toHomeomorph, ?_⟩
   simp only [Bundle.Trivialization.transFiberHomeomorph, e,
     Subgroup.localSectionTrivializationOfCosetFibers_baseSet, Set.mem_preimage, t]
-  rwa [quaternionUnitaryFirstColumn_eq_smul_one, inv_smul_smul]
+  rwa [quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one, inv_smul_smul]
 
 variable (n) in
 /-- **The first-column projection `Sp(n + 1) → S^(4n + 3)` is a Serre fibration**: it is locally

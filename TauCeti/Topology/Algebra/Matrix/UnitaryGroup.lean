@@ -19,7 +19,7 @@ Over any topological star semiring `α`:
   topological groups `Matrix.unitaryReindexContinuousMulEquiv` between `unitary (Matrix m m α)` and
   `unitary (Matrix n n α)`;
 * for a singleton index type `m` (`[Unique m]`), reading off the unique entry via
-  `Matrix.uniqueStarMulEquiv` induces an isomorphism of topological groups
+  `Matrix.uniqueStarRingEquiv` induces an isomorphism of topological groups
   `Matrix.unitaryUniqueContinuousMulEquiv` between `unitary (Matrix m m α)` and `unitary α`.
 
 ## Main definitions
@@ -43,8 +43,7 @@ variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
 topological groups between `unitary (Matrix m m α)` and `unitary (Matrix n n α)`. -/
 def unitaryReindexContinuousMulEquiv (e : m ≃ n) :
     unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α) where
-  __ := (Unitary.mapEquiv
-    { (reindexRingEquiv α e).toMulEquiv with map_star' := fun _ ↦ rfl }).toMulEquiv
+  __ := (Unitary.mapEquiv (.ofClass (reindexStarAlgEquiv ℕ α e))).toMulEquiv
   continuous_toFun := continuous_induced_rng.2 (continuous_subtype_val.matrix_reindex e e)
   continuous_invFun :=
     continuous_induced_rng.2 (continuous_subtype_val.matrix_reindex e.symm e.symm)
@@ -58,8 +57,22 @@ theorem coe_unitaryReindexContinuousMulEquiv_apply (e : m ≃ n) (A : unitary (M
 variable {α} in
 @[simp]
 theorem unitaryReindexContinuousMulEquiv_symm (e : m ≃ n) :
-    (unitaryReindexContinuousMulEquiv α e).symm = unitaryReindexContinuousMulEquiv α e.symm := by
-  rfl
+    (unitaryReindexContinuousMulEquiv α e).symm = unitaryReindexContinuousMulEquiv α e.symm :=
+  ContinuousMulEquiv.ext fun _ ↦ Subtype.ext rfl
+
+variable {α} in
+@[simp]
+theorem unitaryReindexContinuousMulEquiv_refl :
+    unitaryReindexContinuousMulEquiv α (.refl m) = .refl _ :=
+  ContinuousMulEquiv.ext fun _ ↦ Subtype.ext (by simp)
+
+variable {α} in
+@[simp]
+theorem unitaryReindexContinuousMulEquiv_trans {o : Type*} [Fintype o] [DecidableEq o]
+    (e : m ≃ n) (e' : n ≃ o) :
+    (unitaryReindexContinuousMulEquiv α e).trans (unitaryReindexContinuousMulEquiv α e') =
+      unitaryReindexContinuousMulEquiv α (e.trans e') :=
+  ContinuousMulEquiv.ext fun _ ↦ Subtype.ext (by simp)
 
 end Reindex
 
@@ -71,25 +84,30 @@ variable (m α : Type*) [Fintype m] [DecidableEq m] [Unique m]
 /-- Reading off the unique entry identifies `1 × 1` unitary matrices over `α` with `unitary α` as
 topological groups. -/
 def unitaryUniqueContinuousMulEquiv : unitary (Matrix m m α) ≃ₜ* unitary α where
-  __ := (Unitary.mapEquiv (uniqueStarMulEquiv (m := m) (A := α))).toMulEquiv
-  continuous_toFun :=
-    continuous_induced_rng.2
-      ((continuous_apply default).comp ((continuous_apply default).comp continuous_subtype_val))
-  continuous_invFun :=
-    continuous_induced_rng.2 (continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtype_val)
+  __ := (Unitary.mapEquiv (.ofClass (uniqueStarRingEquiv (m := m) (A := α)))).toMulEquiv
+  continuous_toFun := continuous_induced_rng.2 <| by
+    have h : Continuous fun A : unitary (Matrix m m α) ↦ A.1 default default :=
+      (continuous_apply default).comp ((continuous_apply default).comp continuous_subtype_val)
+    exact h.congr fun A ↦ (uniqueStarRingEquiv_apply A.1).symm
+  continuous_invFun := continuous_induced_rng.2 <| by
+    have h : Continuous fun u : unitary α ↦ Matrix.of fun _ _ : m ↦ (u : α) :=
+      continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtype_val
+    exact h.congr fun u ↦ (uniqueStarRingEquiv_symm_apply (m := m) u.1).symm
 
 variable {m α} in
 @[simp]
 theorem coe_unitaryUniqueContinuousMulEquiv_apply (A : unitary (Matrix m m α)) :
     (unitaryUniqueContinuousMulEquiv m α A : α) = A.1 default default := by
-  rfl
+  change uniqueStarRingEquiv A.1 = _
+  exact uniqueStarRingEquiv_apply A.1
 
 variable {m α} in
 @[simp]
 theorem coe_unitaryUniqueContinuousMulEquiv_symm_apply (u : unitary α) :
     ((unitaryUniqueContinuousMulEquiv m α).symm u : Matrix m m α) =
       Matrix.of fun _ _ ↦ (u : α) := by
-  rfl
+  change (uniqueStarRingEquiv (m := m)).symm u.1 = _
+  exact uniqueStarRingEquiv_symm_apply u.1
 
 end Unique
 

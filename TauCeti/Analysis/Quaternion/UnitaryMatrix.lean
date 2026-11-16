@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Geometry.Sphere.LinearIsometry
 import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
@@ -21,7 +22,8 @@ import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
 The compact symplectic group `Sp(n)` is the group `unitary (Matrix ι ι ℍ)` of quaternionic
 matrices `A` with `Aᴴ A = A Aᴴ = 1`. This file shows that it is a compact group, and that it acts
 by real linear isometries on the quaternionic coordinate space `ℍⁿ = PiLp 2 (fun _ : ι ↦ ℍ)`,
-transitively on its unit sphere `S⁴ⁿ⁻¹`.
+continuously and transitively by isometries on its unit sphere `S⁴ⁿ⁻¹`, commuting with right
+multiplication by unit quaternions.
 
 Quaternionic matrices act on column vectors on the left, `x ↦ A x`, and so commute with
 quaternionic scalars acting on the right, `A (x q) = (A x) q`
@@ -49,6 +51,13 @@ then corrects the phase.
   quaternions.
 * `TauCeti.exists_quaternionUnitaryIsometry_apply_single_eq`: `Sp(n)` acts transitively on the
   unit sphere: every unit vector is the image of the basis vector `eᵢ`.
+* `TauCeti.instMulActionUnitaryMatrixQuaternionSphere`,
+  `TauCeti.instSMulCommClassUnitaryMatrixQuaternionSphere`,
+  `TauCeti.instIsIsometricSMulUnitaryMatrixQuaternionSphere`,
+  `TauCeti.instContinuousSMulUnitaryMatrixQuaternionSphere`,
+  `TauCeti.instIsPretransitiveUnitaryMatrixQuaternionSphere`: the continuous, isometric, transitive
+  left action of `Sp(ι)` on the unit sphere of `ℍⁿ`, commuting with right multiplication by unit
+  quaternions.
 
 ## References
 
@@ -262,5 +271,76 @@ theorem exists_quaternionUnitaryIsometry_apply_single_eq (i : ι)
   simp [smul_smul, -MulOpposite.op_star, ← op_mul, self_mul_star, hu]
 
 end Transitive
+
+section SphereAction
+
+variable [DecidableEq ι]
+
+/-- A quaternionic unitary matrix acts on the unit sphere of `ℍⁿ = PiLp 2 (fun _ : ι ↦ ℍ)` by
+left multiplication `A • x = A x`. -/
+instance instSMulUnitaryMatrixQuaternionSphere :
+    SMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
+  smul A x := quaternionUnitaryIsometry ι A • x
+
+/-- The action of a quaternionic unitary matrix on the unit sphere of `ℍⁿ` is the restriction of
+`TauCeti.quaternionUnitaryIsometry`. -/
+theorem quaternionUnitary_smul_sphere_def (A : unitary (Matrix ι ι ℍ))
+    (x : sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) :
+    A • x = quaternionUnitaryIsometry ι A • x :=
+  (rfl)
+
+/-- Coercing `A • x` from the unit sphere to `ℍⁿ` gives `quaternionUnitaryIsometry ι A x`. -/
+@[simp]
+theorem coe_quaternionUnitary_smul_sphere (A : unitary (Matrix ι ι ℍ))
+    (x : sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) :
+    ((A • x : sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) : PiLp 2 fun _ : ι ↦ ℍ) =
+      quaternionUnitaryIsometry ι A x :=
+  LinearIsometryEquiv.coe_smul_unitSphere (quaternionUnitaryIsometry ι A) x
+
+/-- The compact symplectic group acts on the unit sphere of `ℍⁿ`. -/
+instance instMulActionUnitaryMatrixQuaternionSphere :
+    MulAction (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
+  one_smul x := by rw [quaternionUnitary_smul_sphere_def, map_one, one_smul]
+  mul_smul A B x := by
+    rw [quaternionUnitary_smul_sphere_def, quaternionUnitary_smul_sphere_def,
+      quaternionUnitary_smul_sphere_def, map_mul, mul_smul]
+
+/-- The action of the compact symplectic group on the unit sphere of `ℍⁿ` commutes with right
+multiplication by unit quaternions. -/
+instance instSMulCommClassUnitaryMatrixQuaternionSphere :
+    SMulCommClass (unitary (Matrix ι ι ℍ)) (sphere (0 : ℍ) 1)ᵐᵒᵖ
+      (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
+  smul_comm A c x := Subtype.ext <| by
+    simp only [coe_quaternionUnitary_smul_sphere, Sphere.coe_op_sphere_smul,
+      quaternionUnitaryIsometry_op_smul]
+
+/-- The compact symplectic group acts on the unit sphere of `ℍⁿ` by isometries. -/
+instance instIsIsometricSMulUnitaryMatrixQuaternionSphere :
+    IsIsometricSMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) :=
+  ⟨fun A ↦ isometry_smul _ (quaternionUnitaryIsometry ι A)⟩
+
+/-- The action of the compact symplectic group on the unit sphere of `ℍⁿ` is jointly continuous. -/
+instance instContinuousSMulUnitaryMatrixQuaternionSphere :
+    ContinuousSMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
+  continuous_smul := continuous_induced_rng.2 <|
+    (continuous_quaternionUnitaryIsometry_apply.comp
+      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).congr fun p ↦
+        (coe_quaternionUnitary_smul_sphere p.1 p.2).symm
+
+/-- The compact symplectic group `Sp(ι)` acts transitively on the unit sphere of `ℍⁿ` (vacuously
+when `ι` is empty, since the unit sphere is then empty). -/
+instance instIsPretransitiveUnitaryMatrixQuaternionSphere :
+    MulAction.IsPretransitive (unitary (Matrix ι ι ℍ))
+      (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · refine ⟨fun x ↦ False.elim ?_⟩
+    have hx : (x : PiLp 2 fun _ : ι ↦ ℍ) = 0 := Subsingleton.elim _ _
+    simpa [hx] using mem_sphere_zero_iff_norm.1 x.2
+  · refine .of_orbit (x₀ := ⟨WithLp.toLp 2 (Pi.single i 1), by simp⟩) fun x ↦ ?_
+    obtain ⟨A, hA⟩ := exists_quaternionUnitaryIsometry_apply_single_eq i
+      (mem_sphere_zero_iff_norm.1 x.2)
+    exact ⟨A, Subtype.ext ((coe_quaternionUnitary_smul_sphere A _).trans hA)⟩
+
+end SphereAction
 
 end TauCeti

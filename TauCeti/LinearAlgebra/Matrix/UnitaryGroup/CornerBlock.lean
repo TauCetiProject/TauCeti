@@ -172,11 +172,6 @@ theorem col_unitaryOneBlockSucc_zero (B : unitary (Matrix (Fin m) (Fin m) α)) :
   ext p
   refine Fin.cases ?_ (fun i ↦ ?_) p <;> simp [Fin.succ_ne_zero]
 
-/-- A block-diagonal unitary matrix `diag(1, B)` fixes the first standard basis vector `e₀`. -/
-theorem unitaryOneBlockSucc_mulVec_single_zero (B : unitary (Matrix (Fin m) (Fin m) α)) :
-    (unitaryOneBlockSucc α m B).1 *ᵥ Pi.single 0 1 = Pi.single 0 1 := by
-  simp
-
 /-- The block-diagonal embedding `B ↦ diag(1, B)` is injective. -/
 theorem unitaryOneBlockSucc_injective : Function.Injective (unitaryOneBlockSucc α m) :=
   (unitaryProdBlockSucc_injective (α := α) (m := m)).comp fun _ _ h ↦ (Prod.mk.inj h).2

@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import TauCeti.Topology.Algebra.Quaternion.Symplectic.FirstColumn
-public import TauCeti.Topology.Algebra.Quaternion.Unitary
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 public import TauCeti.Topology.Homotopy.SerreFibration.TotalSpace
 
@@ -27,23 +26,12 @@ Starting from the one-point group `Sp(0)`, induction along the fibration tower
 `Sp(0) → Sp(1) → Sp(2) → ⋯` shows that the compact symplectic group
 `Sp(ι) = unitary (Matrix ι ι ℍ)` is simply connected — and hence path-connected and connected — for
 every finite index type `ι` (`TauCeti.instSimplyConnectedSpaceUnitaryMatrixQuaternion`), and in
-fact `2`-connected (`TauCeti.subsingleton_homotopyGroup_unitary_matrix_quaternion`). In rank one,
-reading off the unique matrix entry identifies `Sp(1)` with the unit Hamilton quaternions `S³` and
-with `SU(2)` (`TauCeti.unitaryMatrixQuaternionUniqueHomeomorphSphere`,
-`TauCeti.unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup`).
+fact `2`-connected (`TauCeti.subsingleton_homotopyGroup_unitary_matrix_quaternion`).
 
 Furthermore, since `S^(4n + 3)` is `(4n + 2)`-connected, the long exact homotopy sequence of the
 first-column fibration implies that the block-diagonal embedding `Sp(n) → Sp(n + 1)`,
 `B ↦ diag(1, B)`, is `(4n + 2)`-connected (`TauCeti.isNConnected_unitaryOneBlockSucc_quaternion`):
 it induces bijections on `π_k` for `k < 4n + 2` and a surjection for `k = 4n + 2`.
-
-## Main definitions
-
-* `TauCeti.unitaryMatrixQuaternionUniqueHomeomorphSphere`: for a singleton index type `ι`, the
-  homeomorphism `unitary (Matrix ι ι ℍ) ≃ₜ sphere (0 : ℍ) 1`.
-* `TauCeti.unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup`: for a singleton
-  index type `ι`, the topological group isomorphism
-  `unitary (Matrix ι ι ℍ) ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ`.
 
 ## Main results
 
@@ -74,62 +62,6 @@ open Metric CategoryTheory
 open scoped Quaternion Topology Topology.Homotopy
 
 namespace TauCeti
-
-section RankOne
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Unique ι]
-
-variable (ι) in
-/-- **Rank-one symplectic group and the `3`-sphere**: on a singleton index type `ι`, reading off the
-unique entry identifies `Sp(1) = unitary (Matrix ι ι ℍ)` homeomorphically with the unit quaternion
-sphere `S³ ⊆ ℍ`. -/
-def unitaryMatrixQuaternionUniqueHomeomorphSphere :
-    unitary (Matrix ι ι ℍ) ≃ₜ sphere (0 : ℍ) 1 :=
-  (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).toHomeomorph.trans
-    Quaternion.unitaryHomeomorphSphere
-
-@[simp]
-theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_apply
-    (A : unitary (Matrix ι ι ℍ)) :
-    (unitaryMatrixQuaternionUniqueHomeomorphSphere ι A : ℍ) = A.1 default default := by
-  rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.trans_apply,
-    Quaternion.coe_unitaryHomeomorphSphere_apply]
-  exact Matrix.coe_unitaryUniqueContinuousMulEquiv_apply A
-
-@[simp]
-theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_symm_apply
-    (q : sphere (0 : ℍ) 1) :
-    ((unitaryMatrixQuaternionUniqueHomeomorphSphere ι).symm q).1 =
-      Matrix.of fun _ _ ↦ (q : ℍ) := by
-  rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.symm_trans_apply,
-    ContinuousMulEquiv.toHomeomorph_eq_coe, ContinuousMulEquiv.coe_toHomeomorph_symm]
-  exact (Matrix.coe_unitaryUniqueContinuousMulEquiv_symm_apply _).trans (by simp)
-
-variable (ι) in
-/-- **Rank-one symplectic group and `SU(2)`**: on a singleton index type `ι`, `Sp(1)` is isomorphic
-as a topological group to `Matrix.specialUnitaryGroup (Fin 2) ℂ`. -/
-def unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup :
-    unitary (Matrix ι ι ℍ) ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ :=
-  (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).trans
-    Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup
-
-@[simp]
-theorem unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup_apply
-    (A : unitary (Matrix ι ι ℍ)) :
-    unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup ι A =
-      Quaternion.unitaryEquivSpecialUnitaryGroup
-        (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ A) := by
-  simp [unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup]
-
-@[simp]
-theorem unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup_symm_apply
-    (g : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
-    (unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup ι).symm g =
-      (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).symm
-        (Quaternion.unitaryEquivSpecialUnitaryGroup.symm g) := by
-  simp [unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup]
-
-end RankOne
 
 section Connectivity
 

@@ -181,19 +181,14 @@ its image**: `unitary (Matrix (Fin m) (Fin m) α)` is homeomorphically and multi
 identified with `(Matrix.unitaryOneBlockSucc α m).range`. -/
 noncomputable def unitaryOneBlockSuccEquivRange :
     unitary (Matrix (Fin m) (Fin m) α) ≃ₜ* (unitaryOneBlockSucc α m).range :=
-  let e := MonoidHom.ofInjective (unitaryOneBlockSucc_injective (α := α) (m := m))
-  ContinuousMulEquiv.mk'
-    (e.toEquiv.toHomeomorphOfIsInducing
-      ((isEmbedding_unitaryOneBlockSucc (α := α) (m := m)).isInducing.of_comp
-        (continuous_unitaryOneBlockSucc.subtype_mk _) continuous_subtype_val))
-    e.map_mul
+  ContinuousMulEquiv.mk' (isEmbedding_unitaryOneBlockSucc (α := α) (m := m)).toHomeomorph
+    fun _ _ ↦ Subtype.ext (map_mul _ _ _)
 
 @[simp]
 theorem coe_unitaryOneBlockSuccEquivRange_apply (B : unitary (Matrix (Fin m) (Fin m) α)) :
     (unitaryOneBlockSuccEquivRange α m B : unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)) =
-      unitaryOneBlockSucc α m B := by
-  simp [unitaryOneBlockSuccEquivRange, ContinuousMulEquiv.coe_mk',
-    ← Homeomorph.coe_toEquiv, MonoidHom.ofInjective_apply]
+      unitaryOneBlockSucc α m B :=
+  (isEmbedding_unitaryOneBlockSucc (α := α) (m := m)).toHomeomorph_apply_coe B
 
 @[simp]
 theorem unitaryOneBlockSucc_unitaryOneBlockSuccEquivRange_symm_apply
