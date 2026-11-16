@@ -63,6 +63,8 @@ boundary values are preserved because `e` is a homeomorphism
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
 * `TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`: transferring a Hessian
   estimate for the Laplacian to a constant-coefficient operator along a linear change of variables.
+* `TauCeti.Wkp.IsChangeOfVariables.w1pCompL`: the first-order change of variables
+  `TauCeti.W1p.compL` along a change of variables of order at least one.
 * `TauCeti.Wkp.IsChangeOfVariables.abs_det_fderiv_eq_one`: mutually inverse changes of variables
   with Jacobian determinants at least one in absolute value have Jacobian determinants of absolute
   value one.
@@ -852,18 +854,38 @@ theorem lowerOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p �
   filter_upwards [value_compL_ae h hp u] with x hx
   rw [← value_succ, hx, value_succ]
 
+/-- The first-order change of variables `TauCeti.W1p.compL` along a change of variables `Φ` of
+order at least one: precomposition with `Φ` as a bounded operator `W^{1,p}(V) →L[ℝ] W^{1,p}(U)`. -/
+abbrev IsChangeOfVariables.w1pCompL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤) :
+    W1p mu V p →L[ℝ] W1p mu U p :=
+  W1p.compL Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos h.le_abs_det
+
+/-- The value of `h.w1pCompL hp u` is `u ∘ Φ`, almost everywhere on `U`. -/
+theorem IsChangeOfVariables.value_w1pCompL_ae (h : IsChangeOfVariables (k + 1) U V Φ L c)
+    (hp : p ≠ ⊤) (u : W1p mu V p) :
+    W1p.value (h.w1pCompL hp u) =ᵐ[mu.restrict U] fun x => W1p.value u (Φ x) :=
+  W1p.value_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos
+    h.le_abs_det u
+
+/-- If a map `Ψ`, continuous on `V` and mapping `V` into `U`, is a left inverse of `Φ` on `U`,
+then `h.w1pCompL hp` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
+theorem IsChangeOfVariables.w1pCompL_mem_w1p0Submodule_of_leftInvOn
+    (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤) (hΨ : ContinuousOn Ψ V)
+    (hΨmaps : MapsTo Ψ V U) (hΨΦ : LeftInvOn Ψ Φ U) {u : W1p mu V p}
+    (hu : u ∈ w1p0Submodule mu V p) :
+    h.w1pCompL hp u ∈ w1p0Submodule mu U p :=
+  W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp h.differentiableOn h.injOn h.mapsTo
+    h.norm_fderiv_le h.pos h.le_abs_det hΨ hΨmaps hΨΦ hu
+
 /-- **The chain rule.** The first-order part of `compL h hp u` is the first-order change of
 variables `TauCeti.W1p.compL` of the first-order part of `u`. In particular its weak gradient is
 `DΦ(x)* (∇u)(Φ x)` (`TauCeti.W1p.gradient_compL_ae`).
 Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
 theorem firstOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p (k + 1)) :
-    firstOrder k (compL h hp u) =
-      W1p.compL Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos h.le_abs_det
-        (firstOrder k u) := by
+    firstOrder k (compL h hp u) = h.w1pCompL hp (firstOrder k u) := by
   refine W1p.ext_value (Lp.ext ?_)
-  filter_upwards [value_compL_ae h hp u, W1p.value_compL_ae Φ hp h.differentiableOn h.injOn
-    h.mapsTo h.norm_fderiv_le h.pos h.le_abs_det (firstOrder k u)] with x h1 h2
+  filter_upwards [value_compL_ae h hp u, h.value_w1pCompL_ae hp (firstOrder k u)] with x h1 h2
   rw [h2, value_firstOrder, value_firstOrder, h1]
 
 /-- **Functoriality.** Precomposing with `Φ` and then with `Ψ` is precomposing with `Φ ∘ Ψ`. -/
@@ -935,8 +957,7 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω'
         W1p.value (v : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => χ x * W1p.value u x)
     (ψ : E → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ U'') :
     ∃ v : W1p0 mu Ω' p, W1p.value (v : W1p mu Ω' p) =ᵐ[mu.restrict Ω'] fun x => ψ x *
-      W1p.value (W1p.compL Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-        hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det (W1p.restrictL inf_le_left u)) x := by
+      W1p.value (hΦ.w1pCompL hp (W1p.restrictL inf_le_left u)) x := by
   -- A cutoff `χ`, compactly supported in `O`, equal to one on `Φ (tsupport ψ)`.
   have hK : IsCompact (Φ '' tsupport ψ) := hψc.isCompact.image hΦc
   obtain ⟨χ, -, hχ, -, hχ1, hχc, hχs, -, -, -⟩ :=
@@ -947,16 +968,13 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω'
     filter_upwards [hv] with x hx hxχ
     rw [hx, image_eq_zero_of_notMem_tsupport hxχ, zero_mul]
   have hvO := W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs v.2 hv0
-  have hvΩ' := W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp hΦ.differentiableOn hΦ.injOn
-    hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det hΨ hΨmaps hΨΦ hvO
+  have hvΩ' := hΦ.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp hΨ hΨmaps hΨΦ hvO
   obtain ⟨w, hw⟩ := W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule hψ hψc hvΩ'
   refine ⟨w, ?_⟩
   have hΩO : ((Omega ⊓ O : Opens E) : Set E) ⊆ Omega := fun x hx => hx.1
   filter_upwards [hw,
-    W1p.value_compL_ae Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
-      hΦ.le_abs_det (W1p.restrictL inf_le_left (v : W1p mu Omega p)),
-    W1p.value_compL_ae Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
-      hΦ.le_abs_det (W1p.restrictL inf_le_left u),
+    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left (v : W1p mu Omega p)),
+    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left u),
     hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega p)),
     hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left u),
     hΦ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩO hv)] with x h1 h2 h3 h4 h5 h6
@@ -974,20 +992,16 @@ theorem exists_lowerOrder_eq_restrictL_of_compL {Omega D V Ω' V'' : Opens E} (h
     (hΨ : IsChangeOfVariables 2 (Omega ⊓ V) (Ω' ⊓ V'') Ψ L' c')
     (hΦΨ : RightInvOn Ψ Φ (Omega ⊓ V : Opens E)) {u : W1p mu Omega p}
     {w : Wkp mu (Ω' ⊓ V'') p 2}
-    (hw : lowerOrder 1 w = W1p.restrictL inf_le_left
-      (W1p.compL Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-        hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det (W1p.restrictL hD u))) :
+    (hw : lowerOrder 1 w = W1p.restrictL inf_le_left (hΦ.w1pCompL hp (W1p.restrictL hD u))) :
     ∃ w' : Wkp mu (Omega ⊓ V) p 2, lowerOrder 1 w' = W1p.restrictL inf_le_left u := by
   refine ⟨compL hΨ hp w, ?_⟩
   rw [← firstOrder_one, firstOrder_compL (k := 1), firstOrder_one, hw]
   refine W1p.ext_value (Lp.ext ?_)
   have hΩ'V : ((Ω' ⊓ V'' : Opens E) : Set E) ⊆ Ω' := fun x hx => hx.1
-  filter_upwards [W1p.value_compL_ae (mu := mu) Ψ hp hΨ.differentiableOn hΨ.injOn hΨ.mapsTo
-      hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det _,
+  filter_upwards [hΨ.value_w1pCompL_ae (mu := mu) hp _,
     hΨ.ae_comp (W1p.value_restrictL_ae (mu := mu) (p := p) inf_le_left _),
-    hΨ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩ'V (W1p.value_compL_ae Φ hp
-      hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det
-      (W1p.restrictL hD u))),
+    hΨ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩ'V
+      (hΦ.value_w1pCompL_ae hp (W1p.restrictL hD u))),
     ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae hD u),
     W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
     ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx

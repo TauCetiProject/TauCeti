@@ -680,8 +680,7 @@ theorem exists_forall_energyFormH1_compL_restrictL_eq
     MemLp (pullbackDrift Φ b) ⊤ (mu.restrict Ω') ∧ MemLp (pullbackDensity Φ c) ⊤ (mu.restrict Ω') ∧
       ∃ f' : Lp ℝ 2 (mu.restrict Ω'), ∀ v : W1p0 mu Ω' 2,
         energyFormH1 (pullbackPrincipal Φ a) (pullbackDrift Φ b) (pullbackDensity Φ c)
-          (W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-            hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det (W1p.restrictL hD u)) (v : W1p mu Ω' 2) =
+          (hΦ.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)) (v : W1p mu Ω' 2) =
           ∫ x in Ω', f' x * W1p.value (v : W1p mu Ω' 2) x ∂mu := by
   have hDΩ : (D : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hD
   have hf' := memLp_pullbackDensity hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le

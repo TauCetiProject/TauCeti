@@ -47,8 +47,8 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
   near the image of the support and pulling back.
 * **The flat case.** Near the flat boundary, `u ∘ Φ` is `H²`
   (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_halfSpace`), and
-  precomposing with `Ψ`, a change of variables of order two
-  (`TauCeti.Wkp.IsChangeOfVariables.compL`), carries this back to `u` near the boundary point.
+  precomposing with `Ψ`, a change of variables of order two (`TauCeti.Wkp.compL`), carries this
+  back to `u` near the boundary point (`TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_compL`).
 * **Gluing.** On a bounded domain finitely many such neighbourhoods, together with balls inside
   `Ω` where interior regularity applies
   (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`), cover
