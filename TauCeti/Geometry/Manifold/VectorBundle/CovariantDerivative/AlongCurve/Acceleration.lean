@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Chart
-import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # The covariant acceleration of a curve
@@ -225,16 +224,9 @@ theorem acceleration_comp_const_sub (d t : 𝕜) :
 /-- Translating the parameter preserves covariant acceleration without regularity assumptions. -/
 theorem acceleration_comp_add_const (a t : 𝕜) :
     acceleration cov (fun r ↦ γ (r + a)) t = acceleration cov γ (t + a) := by
-  have hcoord (x : M) :
-      sectionCoord (F := E) (fun r ↦ γ (r + a))
-        (curveVelocity I (fun r ↦ γ (r + a))) x =
-      fun r ↦ sectionCoord (F := E) γ (curveVelocity I γ) x (r + a) := by
-    ext r
-    simp only [sectionCoord_apply, curveVelocity_comp_add_right]
-  rw [acceleration_def, acceleration_def, alongCurve_apply, alongCurve_apply,
-    alongCurveInChartWithin_apply, alongCurveInChartWithin_apply]
-  simp only [derivWithin_univ, hcoord, deriv_comp_add_const, Function.comp_def]
-  rw [deriv_comp_add_const (fun r ↦ extChartAt I (γ (t + a)) (γ r)) a t]
+  have hv : curveVelocity I (fun r ↦ γ (r + a)) = fun r ↦ curveVelocity I γ (r + a) :=
+    funext fun r ↦ curveVelocity_comp_add_right (I := I) γ r a
+  rw [acceleration_def, hv, alongCurve_comp_add_const, acceleration_def]
 
 end Basic
 

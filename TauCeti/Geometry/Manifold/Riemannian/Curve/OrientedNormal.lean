@@ -128,18 +128,18 @@ theorem _root_.Filter.EventuallyEq.orientedUnitNormal_eq
 
 /-- A reparametrization with positive derivative at `t` does not change the oriented unit normal
 at `t`. -/
-theorem orientedUnitNormal_comp_of_pos (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
-    {c t : ℝ} (hφ : HasDerivAt φ c t) (hc : 0 < c) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
+theorem orientedUnitNormal_comp_of_deriv_pos (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) (hφ₀ : 0 < deriv φ t) :
     orientedUnitNormal o (γ ∘ φ) t = orientedUnitNormal o γ (φ t) := by
-  simpa [hφ.deriv, hc] using
-    orientedUnitNormal_comp o hγ hφ.differentiableAt
+  simpa [hφ₀] using
+    orientedUnitNormal_comp o hγ (differentiableAt_of_deriv_ne_zero hφ₀.ne')
 
 /-- A reparametrization with negative derivative at a parameter reverses the oriented unit normal
 there. -/
-theorem orientedUnitNormal_comp_of_neg (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
-    {c t : ℝ} (hφ : HasDerivAt φ c t) (hc : c < 0) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
+theorem orientedUnitNormal_comp_of_deriv_neg (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) (hφ₀ : deriv φ t < 0) :
     orientedUnitNormal o (γ ∘ φ) t = -orientedUnitNormal o γ (φ t) := by
-  simpa [hφ.deriv, hc] using
-    orientedUnitNormal_comp o hγ hφ.differentiableAt
+  simpa [hφ₀] using
+    orientedUnitNormal_comp o hγ (differentiableAt_of_deriv_ne_zero hφ₀.ne)
 
 end TauCeti.Manifold

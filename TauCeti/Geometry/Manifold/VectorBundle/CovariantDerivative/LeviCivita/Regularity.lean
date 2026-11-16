@@ -76,8 +76,9 @@ merely to be written down, are carried for the same reason.
 * `TauCeti.Manifold.contMDiffWithinAt_alongCurveWithin_leviCivitaConnection` and
   `TauCeti.Manifold.contMDiffAt_alongCurve_leviCivitaConnection`: the pointwise forms, with one
   derivative lost from the section lift at a single parameter.
-* `TauCeti.Manifold.contMDiffAt_acceleration_leviCivitaConnection`: the acceleration of a
-  `C^(n+2)` curve has a `C^n` tangent-bundle lift at the parameter in question.
+* `TauCeti.Manifold.contMDiffWithinAt_accelerationWithin_leviCivitaConnection` and
+  `TauCeti.Manifold.contMDiffAt_acceleration_leviCivitaConnection`: the acceleration of a
+  `C^(n+2)` curve has a `C^n` tangent-bundle lift at a parameter, within a set or unrestricted.
 
 ## References
 
@@ -445,17 +446,29 @@ theorem contMDiff_alongCurve_leviCivitaConnection
       (fun r ↦ TotalSpace.mk' E (γ r) (alongCurve (leviCivitaConnection I M) γ V r)) :=
   fun _ ↦ contMDiffAt_alongCurve_leviCivitaConnection hm hk (hV _)
 
+/-- The Levi-Civita acceleration within a set with unique derivatives has a `C^n`
+tangent-bundle lift when the curve is `C^(n+2)` there. -/
+theorem contMDiffWithinAt_accelerationWithin_leviCivitaConnection
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) (hs : UniqueDiffOn ℝ s) (ht : t ∈ s)
+    (hγ : ContMDiffWithinAt 𝓘(ℝ, ℝ) I (n + 2) γ s t) :
+    ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent n
+      (fun r ↦ TotalSpace.mk' E (γ r)
+        (accelerationWithin (leviCivitaConnection I M) γ s r)) s t := by
+  simp only [accelerationWithin_def]
+  apply contMDiffWithinAt_alongCurveWithin_leviCivitaConnection hm hk hs ht
+  rw [← funext (curveVelocityLiftWithin_apply (I := I) γ s)]
+  exact hγ.contMDiffWithinAt_curveVelocityLiftWithin ht
+    (by simp only [add_assoc, one_add_one_eq_two, le_refl]) hs.uniqueMDiffOn
+
 /-- The Levi-Civita acceleration of a curve that is `C^(n+2)` at a parameter has a `C^n`
 tangent-bundle lift there, for a `C^m` manifold and `C^k` metric with `n + 2 ≤ m`, `n + 1 ≤ k`. -/
 theorem contMDiffAt_acceleration_leviCivitaConnection (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
     (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I (n + 2) γ t) :
     ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
       (fun r ↦ TotalSpace.mk' E (γ r) (acceleration (leviCivitaConnection I M) γ r)) t := by
-  simp only [acceleration_def]
-  apply contMDiffAt_alongCurve_leviCivitaConnection hm hk
-  rw [← funext (curveVelocityLift_apply (I := I) γ)]
-  exact hγ.contMDiffAt_curveVelocityLift (m := n + 1)
-    (by simp only [add_assoc, one_add_one_eq_two, le_refl])
+  simpa only [contMDiffWithinAt_univ, accelerationWithin_univ] using
+    contMDiffWithinAt_accelerationWithin_leviCivitaConnection hm hk uniqueDiffOn_univ
+      (mem_univ t) hγ.contMDiffWithinAt
 
 /-- The covariant derivative of a section with a `C²` lift at a parameter has differentiable
 coordinate readings there. Only regularity at that parameter is needed. -/

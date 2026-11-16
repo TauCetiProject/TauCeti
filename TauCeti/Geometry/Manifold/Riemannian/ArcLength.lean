@@ -41,6 +41,7 @@ that energy less than `(b - a) / 2` forces length less than `b - a`.
 * `ContMDiffOn.continuousOn_norm_curveVelocityWithin`: the speed of a `C¹` curve is continuous on
   a parameter set with unique derivatives, and `ContMDiffOn.continuousOn_norm_curveVelocity` is
   its open-set case.
+* `ContMDiffAt.continuousAt_norm_curveVelocity`: speed is continuous at each `C¹` parameter.
 * `ContMDiffOn.setLIntegral_enorm_curveVelocity_lt_top`: a `C¹` curve on an open parameter set
   has finite length on every compact subset of it.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
@@ -118,6 +119,16 @@ theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocityWithin {γ : ℝ → M
     (ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ hs).congr fun t _ ↦
       (curveVelocityLiftWithin_apply (I := I) γ s t).symm
   exact (TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn hlift
+
+/-- The Riemannian speed of a curve that is `C¹` at a parameter is continuous there. -/
+theorem _root_.ContMDiffAt.continuousAt_norm_curveVelocity {γ : ℝ → M} {t : ℝ}
+    (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t) :
+    ContinuousAt (fun r ↦ ‖curveVelocity I γ r‖) t := by
+  have hlift : ContinuousAt
+      (fun r ↦ (TotalSpace.mk' E (γ r) (curveVelocity I γ r) : TangentBundle I M)) t := by
+    rw [← funext (curveVelocityLift_apply (I := I) γ)]
+    exact (hγ.contMDiffAt_curveVelocityLift (m := 0) (by simp)).continuousAt
+  exact (TauCeti.continuous_norm_bundle E (TangentSpace I)).continuousAt.comp hlift
 
 /-- The Riemannian speed of a `C¹` curve on an open parameter set is continuous there. -/
 theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocity {γ : ℝ → M} {O : Set ℝ}

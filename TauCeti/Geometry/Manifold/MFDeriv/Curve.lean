@@ -67,6 +67,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `C^(m + 1)` curve is `C^m` on a unique-differentiability domain, and
   `ContMDiffOn.continuousOn_curveVelocityLiftWithin` is its continuous case, with open-domain and
   unrestricted forms for `curveVelocityLift`.
+* `ContMDiffWithinAt.contMDiffWithinAt_curveVelocityLiftWithin` and
+  `ContMDiffAt.contMDiffAt_curveVelocityLift`: regularity of the velocity lift at a parameter.
 * `TauCeti.Manifold.contMDiffOn_succ_iff_contMDiffOn_curveVelocityLiftWithin`: conversely, a
   differentiable curve whose velocity lift is `C^n` is `C^(n + 1)`, so that a curve is `C^(n + 1)`
   exactly when it is differentiable with `C^n` velocity lift. This is the bootstrapping step for
@@ -748,45 +750,39 @@ theorem eq_curveVelocityLift_of_hasMFDerivAt {z : 𝕜 → TangentBundle I M} {t
   exact eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt uniqueDiffWithinAt_univ
     hz.hasMFDerivWithinAt hw
 
+/-- The within-domain velocity lift of a curve that is `C^n` within a set with unique
+manifold derivatives is `C^m` there when `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffWithinAt.contMDiffWithinAt_curveVelocityLiftWithin
+    {m n : ℕ∞ω} {u : Set 𝕜}
+    (hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I n γ u t) (ht : t ∈ u) (hmn : m + 1 ≤ n)
+    (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
+    ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLiftWithin I γ u) u t := by
+  let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun r ↦
+    TotalSpace.mk' 𝕜 r ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) r).symm 1)
+  have hι : ContMDiffAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι t :=
+    contMDiffAt_vectorSpace_iff_contDiffAt.2 contDiffAt_const
+  have hcomp := (hγ.contMDiffWithinAt_tangentMapWithin (x₀ := ι t) ht hmn hu).comp t
+    hι.contMDiffWithinAt (fun _ hr ↦ hr)
+  exact hcomp.congr (fun r _ ↦
+    (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) r).symm)
+    (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
+
 /-- The within-domain velocity lift of a `C^n` curve is `C^m` on a domain with unique manifold
 derivatives, when `m + 1 ≤ n`. -/
 theorem _root_.ContMDiffOn.contMDiffOn_curveVelocityLiftWithin {m n : ℕ∞ω} {u : Set 𝕜}
     (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I n γ u) (hmn : m + 1 ≤ n)
     (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
-    ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLiftWithin I γ u) u := by
-  let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun t ↦
-    TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)
-  have hι : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι := by
-    intro t
-    rw [contMDiffAt_totalSpace_iff]
-    refine ⟨contMDiffAt_id, ?_⟩
-    refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
-    filter_upwards with r
-    rw [trivializationAt_model_space_apply]
-    rfl
-  have htangent := hγ.contMDiffOn_tangentMapWithin hmn hu
-  have hcomp := htangent.comp hι.contMDiffOn (fun t ht ↦ by simpa [ι] using ht)
-  refine hcomp.congr fun t _ ↦ ?_
-  exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
+    ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLiftWithin I γ u) u :=
+  fun t ht ↦ (hγ t ht).contMDiffWithinAt_curveVelocityLiftWithin ht hmn hu
 
 /-- The velocity lift of a curve that is `C^n` at a parameter is `C^m` there when
 `m + 1 ≤ n`. -/
 theorem _root_.ContMDiffAt.contMDiffAt_curveVelocityLift {m n : ℕ∞ω}
     (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I n γ t) (hmn : m + 1 ≤ n) :
     ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLift I γ) t := by
-  let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun r ↦
-    TotalSpace.mk' 𝕜 r ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) r).symm 1)
-  have hι : ContMDiffAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι t := by
-    rw [contMDiffAt_totalSpace_iff]
-    refine ⟨contMDiffAt_id, ?_⟩
-    refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
-    filter_upwards with r
-    rw [trivializationAt_model_space_apply]
-    rfl
-  have hcomp := (hγ.contMDiffAt_tangentMap (X := ι t) hmn).comp t hι
-  refine hcomp.congr_of_eventuallyEq (Filter.Eventually.of_forall fun r ↦ ?_)
-  rw [Function.comp_apply, ← curveVelocityLiftWithin_univ, ← tangentMapWithin_univ]
-  exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) r).symm
+  simpa only [contMDiffWithinAt_univ, curveVelocityLiftWithin_univ] using
+    hγ.contMDiffWithinAt.contMDiffWithinAt_curveVelocityLiftWithin (Set.mem_univ t) hmn
+      uniqueMDiffOn_univ
 
 /-- The velocity lift of a `C^n` curve is `C^m` when `m + 1 ≤ n`. -/
 theorem _root_.ContMDiff.contMDiff_curveVelocityLift {m n : ℕ∞ω}

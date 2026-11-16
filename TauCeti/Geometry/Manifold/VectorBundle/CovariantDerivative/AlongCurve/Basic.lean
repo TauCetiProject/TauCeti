@@ -525,6 +525,19 @@ theorem alongCurve_comp_const_sub (d t : 𝕜) :
     alongCurveInChartWithin_apply, hcoord]
   simp only [derivWithin_univ, hchart, deriv_comp_const_sub, map_neg, ← neg_add]
 
+/-- Translating the parameter preserves the covariant derivative of a transported field,
+without regularity assumptions on the curve or field. -/
+theorem alongCurve_comp_add_const (a t : 𝕜) :
+    alongCurve cov (fun r ↦ γ (r + a)) (fun r ↦ V (r + a)) t =
+      alongCurve cov γ V (t + a) := by
+  -- Express a translation as two reflections, each valid without regularity assumptions.
+  have key : ∀ f : 𝕜 → 𝕜, (fun r ↦ a - (0 - r)) = f →
+      alongCurve cov (fun r ↦ γ (f r)) (fun r ↦ V (f r)) t = alongCurve cov γ V (f t) := by
+    rintro _ rfl
+    refine (alongCurve_comp_const_sub cov (fun s ↦ γ (a - s)) (fun s ↦ V (a - s)) 0 t).trans ?_
+    rw [alongCurve_comp_const_sub, neg_neg]
+  exact key _ (funext fun r ↦ by rw [zero_sub, sub_neg_eq_add, add_comm])
+
 /-! ### Finite sums -/
 
 /-- Covariant differentiation within a parameter set commutes with finite sums of fields having
