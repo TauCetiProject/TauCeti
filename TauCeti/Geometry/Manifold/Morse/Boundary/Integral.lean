@@ -176,10 +176,8 @@ theorem exists_reverse_eq {𝔬' : MorseOrientation f X} (h : 𝔬.chart = 𝔬'
   by_cases hp : o p = o₀ p
   · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_true_eq_false, ↓reduceIte]
   · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_false_eq_true, ↓reduceIte]
-    have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
-        Module.finrank ℝ ({i // (chart p).weight i < 0} → ℝ) := by
-      rw [Fintype.card_fin, (chart p).finrank_negativeWeight_fun]
-    exact (((o p).eq_or_eq_neg (o₀ p) hcard).resolve_left hp).symm
+    exact (((o p).eq_or_eq_neg (o₀ p)
+      (chart p).card_fin_manifoldMorseIndex_eq_finrank).resolve_left hp).symm
 
 end MorseOrientation
 
@@ -355,8 +353,7 @@ theorem nonempty_morseOrientation (hX : IsAdaptedPseudoGradient f X) :
     Nonempty (MorseOrientation f X) := by
   choose φ hφ using fun p : criticalPoints 𝓘(ℝ, E) f ↦
     hX.exists_morseChart p (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2)
-  exact ⟨⟨φ, hφ, fun p ↦
-    (Module.finBasisOfFinrankEq ℝ _ (φ p).finrank_negativeWeight_fun).orientation⟩⟩
+  exact ⟨⟨φ, hφ, fun p ↦ (φ p).negativeOrientation⟩⟩
 
 end IsAdaptedPseudoGradient
 

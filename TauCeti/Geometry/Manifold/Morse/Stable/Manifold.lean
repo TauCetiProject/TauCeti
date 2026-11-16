@@ -103,6 +103,13 @@ theorem finrank_negativeWeight_fun :
   rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card',
     Fintype.card_subtype, Set.toFinset_ofPred]
 
+/-- The number of orientation coordinates is the dimension of the space of coordinates of negative
+weight, so that its orientations are opposite to each other. -/
+theorem card_fin_manifoldMorseIndex_eq_finrank :
+    Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) =
+      Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) := by
+  rw [Fintype.card_fin, φ.finrank_negativeWeight_fun]
+
 /-- The vector of the model whose coordinates in the Morse chart `φ` are `c` in the directions of
 negative weight and `0` in the directions of positive weight. -/
 noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] E :=

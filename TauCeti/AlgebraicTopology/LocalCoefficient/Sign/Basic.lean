@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ULift
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
+import TauCeti.LinearAlgebra.Pi.SignChange
 
 /-!
 # The sign local system of a covering with an involution
@@ -85,38 +86,22 @@ variable {σ : E → E} {hσ : p ∘ σ = p} (hfix : ∀ e, σ e ≠ e)
   (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
 
 include hfix hfib in
-private theorem signFiber_bijective_eval {x : X} (e : p ⁻¹' {x}) :
+private theorem signFiber_eval_bijective {x : X} (e : p ⁻¹' {x}) :
     Function.Bijective fun f : signFiber R σ hσ x ↦ (f : p ⁻¹' {x} → R) e := by
-  classical
-  have hσe : Function.fiberMap σ hσ x e ≠ e := fun h ↦
-    hfix e ((Function.fiberMap_apply_coe σ hσ x e).symm.trans (congrArg Subtype.val h))
+  refine eval_bijective_of_mem_iff_apply_eq_neg (σ := Function.fiberMap σ hσ x)
+    (fun e' h ↦ hfix e'
+      ((Function.fiberMap_apply_coe σ hσ x e').symm.trans (congrArg Subtype.val h)))
+    (fun e' ↦ ?_) fun _ ↦ mem_signFiber_iff
   -- Every point of the fibre is `e` or `σ e`.
-  have hcases (e' : p ⁻¹' {x}) : e' = e ∨ e' = Function.fiberMap σ hσ x e := by
-    rcases hfib e e' (e'.2.trans e.2.symm) with h | h
-    · exact .inl (Subtype.ext h)
-    · exact .inr (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm))
-  refine ⟨fun f g hfg ↦ Subtype.ext (funext fun e' ↦ ?_), fun r ↦ ?_⟩
-  · rcases hcases e' with rfl | rfl
-    · exact hfg
-    · rw [mem_signFiber_iff.1 f.2, mem_signFiber_iff.1 g.2]
-      exact congrArg Neg.neg hfg
-  · refine ⟨⟨fun e' ↦ if e' = e then r else -r, mem_signFiber_iff.2 fun e' ↦ ?_⟩, ?_⟩
-    · rcases hcases e' with rfl | rfl
-      · simp [hσe]
-      · -- `σ (σ e)` lies over `x`, and it is not `σ e`, since `σ` has no fixed points.
-        have hσσ : Function.fiberMap σ hσ x (Function.fiberMap σ hσ x e) = e := by
-          rcases hcases (Function.fiberMap σ hσ x (Function.fiberMap σ hσ x e)) with h | h
-          · exact h
-          · exact absurd (congrArg Subtype.val h) (by
-              simpa only [Function.fiberMap_apply_coe] using hfix _)
-        simp [hσσ, hσe]
-    · simp
+  rcases hfib e e' (e'.2.trans e.2.symm) with h | h
+  · exact .inl (Subtype.ext h)
+  · exact .inr (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm))
 
 /-- When the fibres of `p` are the pairs `{e, σ e}` with `σ e ≠ e`, evaluation at a point `e` of
 the fibre over `x` identifies the functions changing sign under `σ` with `R`. -/
 def signFiberEquiv {x : X} (e : p ⁻¹' {x}) : signFiber R σ hσ x ≃ₗ[R] R :=
   LinearEquiv.ofBijective ((LinearMap.proj e).comp (signFiber R σ hσ x).subtype)
-    (signFiber_bijective_eval hfix hfib e)
+    (signFiber_eval_bijective hfix hfib e)
 
 @[simp]
 theorem signFiberEquiv_apply {x : X} (e : p ⁻¹' {x}) (f : signFiber R σ hσ x) :
