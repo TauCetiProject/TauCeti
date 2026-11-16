@@ -32,7 +32,8 @@ universe u v
 
 namespace Graph
 
-variable {α : Type u} {β : Type v} {G : Graph α β}
+variable {α : Type u} {β : Type v}
+variable {G : Graph α β}
 
 /-! ### Vertex blocks -/
 
