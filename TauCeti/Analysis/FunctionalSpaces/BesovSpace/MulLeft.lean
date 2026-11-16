@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Postcomp
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
