@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
 
 /-!
 # Compactness along the ends of pairs of pants
 
 Let `K` be a Hamiltonian perturbation on the pair of pants `S = ℂ ∖ {0, 1}` with values in a
-symplectic vector space `(V, ω)`, equal to `H_q(t) dt` beyond a height `T₀ > 0` on each end `q`,
+symplectic vector space `(V, ω)`, equal to `H_q(t) dt` beyond a height `T₀` on each end `q`,
 for period-one Hamiltonians `H_q`, such as the pair-of-pants perturbation
-`TauCeti.Floer.pairOfPantsPerturbation` with `T₀ = 2`. Let `J(z, x)` be a family of `ω`-tame
-almost complex structures on `S × V` which is cylindrical on the end `q` beyond `T₀`:
-`J(φ_q(±s, t), x) = J_q(t, x)` for `s ≥ T₀`, for a `C²` family `J_q`. The compactness theorem for
-pairs of pants, in the namespace `TauCeti.SymplecticForm`,
+`TauCeti.Floer.pairOfPantsPerturbation` with `T₀ = 2`. Let `J(z, x)` be a family of almost
+complex structures on `S × V` which is cylindrical on the end `q` beyond `T₀`:
+`J(φ_q(±s, t), x) = J_q(t, x)` for `s ≥ T₀`, for a `C²` family `J_q` of `ω`-tame structures. The
+compactness theorem for pairs of pants, in the namespace `TauCeti.SymplecticForm`,
 (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsPerturbation`)
 applies on a fixed compact window of `S`. Breaking along the end `q` concerns windows that move
 off to the puncture instead: a sequence of solutions `uₖ` is read along the end at heights `Rₖ`,
@@ -30,7 +30,8 @@ every end. When `Rₖ → ∞` the limits of the `vₖ` are the Floer cylinders 
 end `q`.
 
 This file proves that the `vₖ` converge off finitely many bubbling points, uniformly in the
-heights.
+heights, from two facts about the translated ends proved in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit`.
 
 * **One equation for all heights.** Beyond `T₀` the end `q` is a half-cylinder whose Floer datum
   is the cylindrical datum `H'_q(t) dt`, `J'_q(t, x)` of the positive end, with
@@ -46,7 +47,7 @@ heights.
   therefore applies to the `vₖ` on a fixed window, with a threshold `δ` that does not depend on
   the heights. The main result, in the namespace `TauCeti.SymplecticForm`,
   (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart`) fixes
-  a compact window `D ⊆ (T₀, ∞) × (t₀, t₀ + 1)` of the positive end chart and a compact set
+  a compact window `D ⊆ (max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end chart and a compact set
   `B ⊆ V`, and gives `δ > 0` such that for every open `Ω ⊆ D`, all heights `Rₖ ≥ 0` and every
   sequence of solutions with energy at most `E` and `vₖ(Ω) ⊆ B`, a subsequence of the `vₖ`
   converges locally uniformly on `Ω` off a finite set `Z` with `#Z * δ ≤ E`.
@@ -76,89 +77,15 @@ namespace TauCeti.SymplecticForm
 
 open Floer
 
-section TranslatedEnd
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ} {T₀ : ℝ}
-  {u : ℝ × ℝ → V}
-
-/-- **The translated ends of a Floer pair of pants solve one cylindrical Floer equation.** Let
-`K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and
-solve the Floer equation `(du - X_K)^{0,1} = 0` there, for a structure `J` which on the end `q`
-beyond `T₀` is `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`. Then for every height `R`, the translated
-end `v(z) = u(φ'_q(z + (R, 0)))` solves `∂_s v + J'_q(t, v) (∂_t v - X_{H'_q(t)}(v)) = 0` at every
-point `z` with `max T₀ 0 < z.1 + R`, for the datum `H'_q` and the structure
-`J'_q(t, x) = J_q(±t, x)` of the positive end, which do not depend on `R`. -/
-theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t))
-    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal) {J : ℝ × ℝ → AlmostComplexStructure V}
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv (fun z x ↦ K (equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ K (equivRealProdCLM.symm z) x I) u z : ℝ × ℝ →ₗ[ℝ] V))
-    {q : Puncture} {Jq : ℝ → V → AlmostComplexStructure V}
-    (hJ : ∀ s t, T₀ ≤ s →
-      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
-    (R : ℝ) {z : ℝ × ℝ} (hz : max T₀ 0 < z.1 + R) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (Jq (q.endSign * z.2) (u (positiveEndChart q (z + (R, 0)))))
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
-        (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z : ℝ × ℝ →ₗ[ℝ] V) := by
-  have h := isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical hKH hH hHd
-    hu hfloer hJ (ζ := z + (R, 0)) (by simpa using hz)
-  have heq : ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
-      (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z =
-        ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
-          (u ∘ positiveEndChart q) (z + (R, 0)) := by
-    rw [← ω.perturbedFDeriv_comp_add_right]
-    exact ω.perturbedFDeriv_congr _ rfl (by simp)
-  rw [heq]
-  simpa using h
-
-/-- **The energy of a translated end of a Floer pair of pants.** Under the hypotheses of
-`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, let `R` be a
-height and `s` a measurable set whose translate `s + (R, 0)` lies in a band
-`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width one. Then the energy of the translated end
-`z ↦ u(φ'_q(z + (R, 0)))` for the end Hamiltonian `H'_q` over `s` is at most the energy of `u`
-over `S`. -/
-theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t))
-    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal) (q : Puncture) (R : ℝ)
-    {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) {t₀ : ℝ}
-    (hst : ∀ z ∈ s, z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
-    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun w ↦ positiveEndHamiltonian H q w.2) (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z) ≤
-      ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ K (equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (equivRealProdCLM.symm z) x I) u z) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0)
-    (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q)
-  have hc : MeasurePreserving (· + ((R, 0) : ℝ × ℝ)) volume volume :=
-    (measurePreserving_add_right volume R).prod (measurePreserving_add_right volume 0)
-  have hemb := measurableEmbedding_addRight ((R, 0) : ℝ × ℝ)
-  calc _ = ∫⁻ z in s, ENNReal.ofReal (e (z + (R, 0))) :=
-        lintegral_congr fun z ↦ congrArg ENNReal.ofReal
-          (ω.floerEnergyDensity_cylindrical_comp_add_right _ (u ∘ positiveEndChart q) R z)
-    _ = ∫⁻ z in (· + ((R, 0) : ℝ × ℝ)) '' s, ENNReal.ofReal (e z) :=
-        hc.setLIntegral_comp_emb hemb (fun z ↦ ENNReal.ofReal (e z)) s
-    _ ≤ _ := setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset hKH hH hHd hu q
-        (hemb.measurableSet_image' hs) (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz)
-
-end TranslatedEnd
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
 /-- **The translated ends of Floer solutions on `S` converge off finitely many bubbling points.**
-Let `K` be equal to `H_r(t) dt` beyond `T₀ > 0` on each end `r`, for period-one Hamiltonians
-`H_r` which are differentiable on `V`, and `C³` on the end `q`. Let `J(z, x)` be `ω`-tame
-structures on `S × V`, `S = ℂ ∖ {0, 1}` read in real coordinates, which on the end `q` beyond
-`T₀` are `J(φ_q(±s, t), x) = J_q(t, x)` for a `C²` family `J_q`. Fix compact sets
-`D ⊆ (T₀, ∞) × (t₀, t₀ + 1)` and `B ⊆ V`. There is a threshold `δ > 0` with the following
+Let `K` be equal to `H_r(t) dt` beyond `T₀` on each end `r`, for period-one Hamiltonians
+`H_r` which are differentiable on `V`, and `C³` on the end `q`. Let `J(z, x)` be structures on
+`S × V`, `S = ℂ ∖ {0, 1}` read in real coordinates, which on the end `q` beyond `T₀` are
+`J(φ_q(±s, t), x) = J_q(t, x)` for a `C²` family `J_q` of `ω`-tame structures. Fix compact sets
+`D ⊆ (max T₀ 0, ∞) × (t₀, t₀ + 1)` and `B ⊆ V`. There is a threshold `δ > 0` with the following
 property. Let `uₖ` be `C³` solutions of `(du - X_K)^{0,1} = 0` on `S`
 for `J(z, u)` with energy at most `E ≥ 0`, let `Rₖ ≥ 0` be heights, and let the translated ends
 `vₖ(z) = uₖ(φ'_q(z + (Rₖ, 0)))` map an open `Ω ⊆ D` into `B`. Then there are a subsequence `φ`,
@@ -167,17 +94,17 @@ every disc about a point of `Z` eventually carries energy at least `δ` for the 
 `H'_q dt`, the differentials of the `vₖ` are uniformly bounded on every compact subset of
 `Ω \ Z`, and `v_{φ n} → v` locally uniformly on `Ω \ Z`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart
-    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ} (hT₀ : 0 < T₀)
+    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
     (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t))
-    {J : ℝ × ℝ → V → AlmostComplexStructure V}
-    (hJt : ∀ z ∈ thricePuncturedSphereReal, ∀ x, ω.Tames (J z x)) {q : Puncture}
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {q : Puncture}
     (hHq : ContDiff ℝ 3 (uncurry (H q))) {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJqt : ∀ t x, ω.Tames (Jq t x))
     (hJq : ContDiff ℝ 2 fun p : ℝ × V ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x)
     {D : Set (ℝ × ℝ)} {B : Set V} {t₀ : ℝ} (hD : IsCompact D)
-    (hDT : D ⊆ Ioi T₀ ×ˢ Ioo t₀ (t₀ + 1)) (hB : IsCompact B) :
+    (hDT : D ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) (hB : IsCompact B) :
     ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
       IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) →
       (∀ k, ContDiffOn ℝ 3 (u k) thricePuncturedSphereReal) →
@@ -200,10 +127,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) B ∧
         TendstoLocallyUniformlyOn (fun n z ↦ u (φ n) (positiveEndChart q (z + (R (φ n), 0)))) v
           atTop (Ω \ ↑Z) := by
-  -- The structures of the end tame `ω`, being structures of `S`.
-  have hJqt (t : ℝ) (x : V) : ω.Tames (Jq t x) := by
-    rw [← hJ T₀ t x le_rfl]
-    exact hJt _ (endChart_mem_thricePuncturedSphereReal (by simpa [← mul_assoc] using hT₀)) x
   -- The cylindrical datum of the positive end is smooth.
   have hKt : ContDiff ℝ 3 (uncurry fun w : ℝ × ℝ ↦ positiveEndHamiltonian H q w.2) :=
     (contDiff_uncurry_positiveEndHamiltonian hHq).comp
@@ -215,12 +138,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
     (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jq (q.endSign * z.2)) isOpen_univ contDiffOn_const
     hKt.contDiffOn hJq'.contDiffOn hD hB (subset_univ _) fun _ _ x _ ↦ hJqt _ x
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huK ↦ ?_⟩
-  -- The translated windows lie in the band `(T₀, ∞) × (t₀, t₀ + 1)` of the positive end chart.
+  -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
+  -- chart.
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
       z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
     obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
     refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi, max_eq_left hT₀.le]
+    simp only [Prod.fst_add, mem_Ioi]
     linarith [hR k, mem_Ioi.1 h₁]
   have hvC (k : ℕ) : ContDiffOn ℝ 3 (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
     (hu k).comp ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contDiffOn
