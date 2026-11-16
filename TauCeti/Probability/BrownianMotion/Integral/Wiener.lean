@@ -398,11 +398,9 @@ theorem hasLaw_wienerIntegral_toLp (hB : IsPreBrownianReal B P) {T : ℝ≥0} {f
       (gaussianReal 0 (∫ t, f t ^ 2 ∂timeMeasure T).toNNReal) P := by
   have hnorm : ‖hf.toLp f‖₊ ^ 2 = (∫ t, f t ^ 2 ∂timeMeasure T).toNNReal := by
     apply NNReal.coe_injective
-    rw [NNReal.coe_pow, coe_nnNorm, ← real_inner_self_eq_norm_sq, L2.inner_def,
+    rw [NNReal.coe_pow, coe_nnNorm, hf.norm_toLp_sq,
       Real.coe_toNNReal _ (integral_nonneg fun _ ↦ sq_nonneg _)]
-    refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp] with t ht
-    simp [ht, sq]
+    simp only [Real.norm_eq_abs, sq_abs]
   rw [← hnorm]
   exact hB.hasLaw_wienerIntegral T _
 
