@@ -99,7 +99,7 @@ theorem torusEval_coe_apply (b : Basis d ℤ X) (f : AddMonoidAlgebra R X) (x : 
 
 /-- The Fourier coefficient of the evaluation of `f` at the coordinates of a weight `μ` is the
 multiplicity of `μ` in `f`, whichever lattice basis is used. -/
-@[simp↓]
+@[simp↓ high]
 theorem mFourierCoeff_torusEval_repr (b : Basis d ℤ X) (f : AddMonoidAlgebra R X) (μ : X) :
     mFourierCoeff (b.torusEval f) (b.repr μ) = algebraMap R ℂ (f.coeff μ) := by
   induction f using AddMonoidAlgebra.induction_linear with
@@ -118,7 +118,7 @@ theorem mFourierCoeff_torusEval_repr (b : Basis d ℤ X) (f : AddMonoidAlgebra R
 
 /-- **Fourier coefficients of a finite character.** The `n`-th Fourier coefficient of the
 evaluation of `f` on the torus is the coefficient of `f` at the weight with coordinates `n`. -/
-@[simp]
+@[simp↓]
 theorem mFourierCoeff_torusEval (b : Basis d ℤ X) (f : AddMonoidAlgebra R X) (n : d → ℤ) :
     mFourierCoeff (b.torusEval f) n = algebraMap R ℂ (f.coeff (b.equivFun.symm n)) := by
   rw [← b.equivFun.apply_symm_apply n, equivFun_apply, mFourierCoeff_torusEval_repr,
