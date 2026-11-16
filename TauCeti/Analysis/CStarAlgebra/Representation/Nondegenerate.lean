@@ -41,6 +41,10 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
   `mul_multiplierExtension_eq_snd`, the uniqueness statement
   `eq_multiplierExtension_of_apply_coe`, and the strong-limit formula
   `tendsto_multiplierExtension_apply`.
+* `NonUnitalStarAlgHom.isNondegenerate_of_subsingleton`,
+  `NonUnitalStarAlgHom.not_isNondegenerate_of_subsingleton`,
+  `NonUnitalStarAlgHom.isNondegenerate_conjStarAlgEquiv_comp_iff`: degenerate-carrier edge cases
+  and invariance of nondegeneracy under unitary equivalence.
 
 ## References
 
@@ -242,5 +246,30 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
     π.IsNondegenerate ↔ Dense (Submodule.span ℂ (⋃ i, Set.range (π (g i))) : Set H) := by
   simp_rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
     topologicalClosure_span_range_comp_eq hg]
+
+/-- Every representation on a zero Hilbert space is nondegenerate. -/
+theorem isNondegenerate_of_subsingleton [Subsingleton H] (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
+    π.IsNondegenerate :=
+  isNondegenerate_iff_forall_apply_eq_zero.2 fun ξ _ => Subsingleton.elim ξ 0
+
+/-- No representation of a zero C⋆-algebra on a nontrivial Hilbert space is nondegenerate. -/
+theorem not_isNondegenerate_of_subsingleton [Subsingleton A] [Nontrivial H]
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : ¬ π.IsNondegenerate := by
+  intro hπ
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : H)
+  exact hξ <| (isNondegenerate_iff_forall_apply_eq_zero.1 hπ) ξ fun a => by
+    rw [Subsingleton.elim a 0, map_zero, _root_.zero_apply]
+
+/-- Conjugating a representation by a linear isometric equivalence preserves nondegeneracy. -/
+theorem isNondegenerate_conjStarAlgEquiv_comp_iff {K : Type*}
+    [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (U : H ≃ₗᵢ[ℂ] K) :
+    (U.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp π).IsNondegenerate ↔ π.IsNondegenerate := by
+  simp only [isNondegenerate_iff_forall_apply_eq_zero, comp_apply,
+    StarAlgEquiv.toNonUnitalStarAlgHom_apply, LinearIsometryEquiv.conjStarAlgEquiv_apply_apply,
+    map_eq_zero_iff U U.injective]
+  refine ⟨fun h ξ hξ => U.injective ?_, fun h η hη => U.symm.injective ?_⟩
+  · simpa only [map_zero] using h (U ξ) fun a => by simpa only [U.symm_apply_apply] using hξ a
+  · simpa only [map_zero] using h (U.symm η) hη
 
 end NonUnitalStarAlgHom
