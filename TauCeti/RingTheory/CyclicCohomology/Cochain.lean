@@ -222,6 +222,18 @@ theorem hochschildFace_castSucc (j : Fin (n + 1)) (a : Fin (n + 2) → A) :
     hochschildFace j.castSucc a = Fin.contractNth j.castSucc (· * ·) a := by
   simp [hochschildFace]
 
+/-- The zeroth Hochschild face multiplies the first two entries of a tuple. -/
+theorem hochschildFace_zero_eq_contractNth (a : Fin (n + 2) → A) :
+    hochschildFace 0 a = Fin.contractNth 0 (· * ·) a := by
+  simpa [Fin.castSucc_zero] using hochschildFace_castSucc (0 : Fin (n + 1)) a
+
+/-- Any Hochschild face strictly before the last multiplies the corresponding adjacent entries. -/
+theorem hochschildFace_eq_contractNth_of_lt_last {i : Fin (n + 2)} (hi : i < Fin.last (n + 1))
+    (a : Fin (n + 2) → A) :
+    hochschildFace i a = Fin.contractNth i (· * ·) a := by
+  have hi' : i = Fin.castSucc ⟨i.1, hi⟩ := rfl
+  rw [hi', hochschildFace_castSucc]
+
 /-- The last Hochschild face is the zeroth face of the cyclically rotated tuple. -/
 theorem hochschildFace_last_eq_contractNth (a : Fin (n + 2) → A) :
     hochschildFace (Fin.last (n + 1)) a =

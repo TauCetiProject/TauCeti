@@ -455,16 +455,11 @@ theorem matrixCochainExtension_barCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
     (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) :
     matrixCochainExtension ι (n + 1) (barCoboundary R A M n φ) =
       barCoboundary R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
-  ext a
-  have hface (i : Fin (n + 1)) :
-      matrixCochainExtension ι n φ (Fin.contractNth i.castSucc (· * ·) a) =
-        ∑ p, φ (Fin.contractNth i.castSucc (· * ·) (pathEntries a p)) := by
-    rw [← hochschildFace_castSucc, ← hochschildCoface_apply,
-      ← matrixCochainExtension_hochschildCoface, matrixCochainExtension_apply_eq_sum_pathEntries]
-    simp only [hochschildCoface_apply, hochschildFace_castSucc]
-  rw [barCoboundary_apply, matrixCochainExtension_apply_eq_sum_pathEntries]
-  simp only [barCoboundary_apply, hface, Finset.smul_sum]
-  exact Finset.sum_comm
+  rw [eq_sub_of_add_eq (hochschildCoboundary_eq_barCoboundary_add φ).symm,
+    eq_sub_of_add_eq
+      (hochschildCoboundary_eq_barCoboundary_add (matrixCochainExtension ι n φ)).symm,
+    map_sub, map_zsmul, matrixCochainExtension_hochschildCoboundary,
+    matrixCochainExtension_hochschildCoface]
 
 end Coboundary
 

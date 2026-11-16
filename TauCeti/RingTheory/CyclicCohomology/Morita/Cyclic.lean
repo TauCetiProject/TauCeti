@@ -38,22 +38,26 @@ cohomology `HCⁿ(A; M)` (`TauCeti.cyclicCohomology.matrixExtension`).
 
 ## Main definitions
 
-* `TauCeti.matrixCyclicTotalCochainExtension`, `TauCeti.cyclicTotalHomologyMatrixExtension`,
-  `TauCeti.cyclicTotalHomologyMatrixEquiv`: matrix extension and Morita equivalence on the total
-  cyclic bicomplex and its cohomology.
-* `TauCeti.cyclicCohomology.matrixEquiv`: the Morita linear equivalence on cyclic cohomology over
-  a `ℚ`-algebra.
+* `TauCeti.matrixCyclicTotalCochainExtension`, `TauCeti.matrixCyclicTotalCochainCornerRestriction`,
+  `TauCeti.cyclicTotalHomologyMatrixExtension`,
+  `TauCeti.cyclicTotalHomologyMatrixCornerRestriction`, `TauCeti.cyclicTotalHomologyMatrixEquiv`:
+  matrix extension, diagonal corner restriction, and Morita equivalence on the total cyclic
+  bicomplex and its cohomology.
+* `TauCeti.cyclicCohomology.matrixCornerRestriction`, `TauCeti.cyclicCohomology.matrixEquiv`:
+  diagonal corner restriction and the Morita linear equivalence on cyclic cohomology.
 * `TauCeti.periodicCyclicCohomology.matrixExtension`,
-  `TauCeti.periodicCyclicCohomology.matrixEquiv`: matrix extension and Morita equivalence on
-  periodic cyclic cohomology.
+  `TauCeti.periodicCyclicCohomology.matrixCornerRestriction`,
+  `TauCeti.periodicCyclicCohomology.matrixEquiv`: matrix extension, diagonal corner restriction,
+  and Morita equivalence on periodic cyclic cohomology.
 
 ## Main results
 
 * `TauCeti.bijective_cyclicTotalHomologyMatrixExtension`: matrix Morita invariance of the
   cohomology of the total cyclic bicomplex over any commutative ring.
-* `TauCeti.cyclicCohomology.bijective_matrixExtension_of_isUnit`,
-  `TauCeti.cyclicCohomology.bijective_matrixExtension`: matrix Morita invariance of cyclic
-  cohomology.
+* `TauCeti.cyclicCohomology.matrixExtension_injective`,
+  `TauCeti.cyclicCohomology.bijective_matrixExtension_of_isUnit`,
+  `TauCeti.cyclicCohomology.bijective_matrixExtension`: injectivity over any commutative ring and
+  matrix Morita invariance of cyclic cohomology.
 * `TauCeti.periodicCyclicCohomology.bijective_matrixExtension`: matrix Morita invariance of
   periodic cyclic cohomology over any commutative ring.
 
@@ -110,6 +114,48 @@ theorem cyclicTotalToHochschild_matrixCyclicTotalCochainExtension (ι : Type*) [
       matrixCochainExtension ι m (cyclicTotalToHochschild R A M m x) := by
   simp
 
+/-- Rowwise diagonal corner restriction on total cochains of degree `m` of the cyclic
+bicomplex. -/
+def matrixCyclicTotalCochainCornerRestriction {ι : Type*} [DecidableEq ι] (r : ι) (m : ℕ) :
+    cyclicTotalCochains R (Matrix ι ι A) M m →ₗ[R] cyclicTotalCochains R A M m where
+  toFun x := ⟨fun q ↦ matrixCornerCochainRestriction r q (x.1 q),
+    mem_cyclicTotalCochains_iff.2 fun q hq ↦ by
+      rw [coe_cyclicTotalCochains_apply_of_lt x hq, map_zero]⟩
+  map_add' _ _ := Subtype.ext (funext fun _ ↦ map_add _ _ _)
+  map_smul' c x := Subtype.ext (funext fun q ↦ by
+    simp only [SetLike.val_smul, Pi.smul_apply, map_smul, RingHom.id_apply])
+
+/-- Diagonal corner restriction of a total cochain applies `matrixCornerCochainRestriction` to
+every row. -/
+@[simp]
+theorem coe_matrixCyclicTotalCochainCornerRestriction_apply {ι : Type*} [DecidableEq ι] (r : ι)
+    (m : ℕ) (x : cyclicTotalCochains R (Matrix ι ι A) M m) (q : ℕ) :
+    (matrixCyclicTotalCochainCornerRestriction r m x).1 q =
+      matrixCornerCochainRestriction r q (x.1 q) := by
+  rfl
+
+/-- Diagonal corner restriction is a left inverse to matrix extension on total cochains. -/
+@[simp]
+theorem matrixCyclicTotalCochainCornerRestriction_matrixCyclicTotalCochainExtension
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) (m : ℕ) (x : cyclicTotalCochains R A M m) :
+    matrixCyclicTotalCochainCornerRestriction r m (matrixCyclicTotalCochainExtension ι m x) = x :=
+  Subtype.ext (funext fun _ ↦ by simp)
+
+/-- Diagonal corner restriction on total cochains commutes with the periodicity shift `S`. -/
+theorem matrixCyclicTotalCochainCornerRestriction_cyclicTotalPeriodicity
+    {ι : Type*} [DecidableEq ι] (r : ι) (m : ℕ) (x : cyclicTotalCochains R (Matrix ι ι A) M m) :
+    matrixCyclicTotalCochainCornerRestriction r (m + 2)
+        (cyclicTotalPeriodicity R (Matrix ι ι A) M m x) =
+      cyclicTotalPeriodicity R A M m (matrixCyclicTotalCochainCornerRestriction r m x) :=
+  Subtype.ext (funext fun _ ↦ by simp)
+
+/-- Diagonal corner restriction on total cochains commutes with projection onto column zero. -/
+theorem cyclicTotalToHochschild_matrixCyclicTotalCochainCornerRestriction
+    {ι : Type*} [DecidableEq ι] (r : ι) (m : ℕ) (x : cyclicTotalCochains R (Matrix ι ι A) M m) :
+    cyclicTotalToHochschild R A M m (matrixCyclicTotalCochainCornerRestriction r m x) =
+      matrixCornerCochainRestriction r m (cyclicTotalToHochschild R (Matrix ι ι A) M m x) := by
+  simp
+
 end TotalCochains
 
 section TotalHorizontal
@@ -137,6 +183,18 @@ theorem matrixCyclicTotalCochainExtension_cyclicCochainsToTotal (ι : Type*) [Fi
   by_cases hq : q = m
   · subst hq; simp
   · simp [Pi.single_eq_of_ne hq]
+
+/-- Diagonal corner restriction commutes with the horizontal differentials `1 - λ` and `N` of the
+cyclic bicomplex. -/
+theorem matrixCornerCochainRestriction_cyclicBicomplexHorizontal {ι : Type*} [DecidableEq ι]
+    (r : ι) (p q : ℕ)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ Matrix ι ι A) M) :
+    matrixCornerCochainRestriction r q (cyclicBicomplexHorizontal R (Matrix ι ι A) M p q ψ) =
+      cyclicBicomplexHorizontal R A M p q (matrixCornerCochainRestriction r q ψ) := by
+  ext a
+  rcases Nat.even_or_odd p with hp | hp
+  · simp [hp, cyclicOperator_apply, Function.comp_def]
+  · simp [hp, cyclicNorm_apply, Function.comp_def]
 
 end TotalHorizontal
 
@@ -171,15 +229,6 @@ theorem matrixCyclicTotalCochainExtension_cyclicTotalDifferential (ι : Type*) [
       matrixCochainExtension_cyclicBicomplexVertical,
       matrixCochainExtension_cyclicBicomplexHorizontal]
 
-end TotalDifferential
-
-/-! ### Matrix Morita invariance for the total complex of the cyclic bicomplex -/
-
-section TotalHomology
-
-variable {R A M : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
 /-- Matrix extension maps total cocycles of the cyclic bicomplex to total cocycles. -/
 theorem matrixCyclicTotalCochainExtension_mem_ker (ι : Type*) [Fintype ι] (m : ℕ)
     {x : cyclicTotalCochains R A M m}
@@ -189,69 +238,83 @@ theorem matrixCyclicTotalCochainExtension_mem_ker (ι : Type*) [Fintype ι] (m :
   rw [LinearMap.mem_ker] at hx ⊢
   rw [← matrixCyclicTotalCochainExtension_cyclicTotalDifferential, hx, map_zero]
 
-private theorem cyclicTotalHomologyMk_matrixCyclicTotalCochainExtension_eq {ι : Type*} [Fintype ι]
-    {n : ℕ} {x y : LinearMap.ker (cyclicTotalDifferential R A M n)}
-    (h : cyclicTotalHomologyMk R A M n x = cyclicTotalHomologyMk R A M n y) :
-    cyclicTotalHomologyMk R (Matrix ι ι A) M n
-        ⟨matrixCyclicTotalCochainExtension ι n x.1,
-          matrixCyclicTotalCochainExtension_mem_ker ι n x.2⟩ =
-      cyclicTotalHomologyMk R (Matrix ι ι A) M n
-        ⟨matrixCyclicTotalCochainExtension ι n y.1,
-          matrixCyclicTotalCochainExtension_mem_ker ι n y.2⟩ := by
-  have hxy : x - y + y = x := Subtype.ext (sub_add_cancel x.1 y.1)
-  have h0 : cyclicTotalHomologyMk R A M n (x - y) = 0 := by
-    apply add_right_cancel (b := cyclicTotalHomologyMk R A M n y)
-    rw [← map_add, hxy, zero_add, h]
-  have h1 : cyclicTotalHomologyMk R (Matrix ι ι A) M n
-      ⟨matrixCyclicTotalCochainExtension ι n (x - y).1,
-        matrixCyclicTotalCochainExtension_mem_ker ι n (x - y).2⟩ = 0 := by
-    cases n with
-    | zero =>
-      rw [cyclicTotalHomologyMk_zero_eq_zero_iff] at h0 ⊢
-      have h0' : (x - y).1 = 0 := congrArg Subtype.val h0
-      exact Subtype.ext (by simp [h0'])
-    | succ m =>
-      rw [cyclicTotalHomologyMk_succ_eq_zero_iff] at h0 ⊢
-      obtain ⟨w, hw⟩ := h0
-      exact ⟨matrixCyclicTotalCochainExtension ι m w, by
-        rw [← matrixCyclicTotalCochainExtension_cyclicTotalDifferential, hw]⟩
-  have hadd : (⟨matrixCyclicTotalCochainExtension ι n (x - y).1,
-        matrixCyclicTotalCochainExtension_mem_ker ι n (x - y).2⟩ :
-        LinearMap.ker (cyclicTotalDifferential R (Matrix ι ι A) M n)) +
-      ⟨matrixCyclicTotalCochainExtension ι n y.1,
-        matrixCyclicTotalCochainExtension_mem_ker ι n y.2⟩ =
-      ⟨matrixCyclicTotalCochainExtension ι n x.1,
-        matrixCyclicTotalCochainExtension_mem_ker ι n x.2⟩ :=
-    Subtype.ext (by rw [Submodule.coe_add, ← map_add, ← Submodule.coe_add, hxy])
-  rw [← hadd, map_add, h1, zero_add]
+/-- Diagonal corner restriction commutes with the vertical differentials `b` and `-b'` of the
+cyclic bicomplex. -/
+theorem matrixCornerCochainRestriction_cyclicBicomplexVertical {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (r : ι) (p q : ℕ)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ Matrix ι ι A) M) :
+    matrixCornerCochainRestriction r (q + 1) (cyclicBicomplexVertical R (Matrix ι ι A) M p q ψ) =
+      cyclicBicomplexVertical R A M p q (matrixCornerCochainRestriction r q ψ) := by
+  rcases Nat.even_or_odd p with hp | hp
+  · simp [hp, matrixCornerCochainRestriction_hochschildCoboundary]
+  · simp only [cyclicBicomplexVertical_of_odd hp, LinearMap.neg_apply, map_neg]
+    congr 1
+    rw [eq_sub_of_add_eq (hochschildCoboundary_eq_barCoboundary_add ψ).symm,
+      eq_sub_of_add_eq
+        (hochschildCoboundary_eq_barCoboundary_add (matrixCornerCochainRestriction r q ψ)).symm,
+      map_sub, map_zsmul, matrixCornerCochainRestriction_hochschildCoboundary,
+      matrixCornerCochainRestriction_hochschildCoface]
+
+/-- Diagonal corner restriction on total cochains commutes with the total differential of the
+cyclic bicomplex. -/
+theorem matrixCyclicTotalCochainCornerRestriction_cyclicTotalDifferential {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (r : ι) (m : ℕ) (x : cyclicTotalCochains R (Matrix ι ι A) M m) :
+    matrixCyclicTotalCochainCornerRestriction r (m + 1)
+        (cyclicTotalDifferential R (Matrix ι ι A) M m x) =
+      cyclicTotalDifferential R A M m (matrixCyclicTotalCochainCornerRestriction r m x) := by
+  refine Subtype.ext (funext fun q ↦ ?_)
+  cases q with
+  | zero =>
+    simp [cyclicTotalDifferential_apply_zero,
+      matrixCornerCochainRestriction_cyclicBicomplexHorizontal]
+  | succ q =>
+    simp [cyclicTotalDifferential_apply_succ, map_add,
+      matrixCornerCochainRestriction_cyclicBicomplexVertical,
+      matrixCornerCochainRestriction_cyclicBicomplexHorizontal]
+
+/-- Diagonal corner restriction maps matrix total cocycles of the cyclic bicomplex to total
+cocycles. -/
+theorem matrixCyclicTotalCochainCornerRestriction_mem_ker {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (r : ι) (m : ℕ) {x : cyclicTotalCochains R (Matrix ι ι A) M m}
+    (hx : x ∈ LinearMap.ker (cyclicTotalDifferential R (Matrix ι ι A) M m)) :
+    matrixCyclicTotalCochainCornerRestriction r m x ∈
+      LinearMap.ker (cyclicTotalDifferential R A M m) := by
+  rw [LinearMap.mem_ker] at hx ⊢
+  rw [← matrixCyclicTotalCochainCornerRestriction_cyclicTotalDifferential, hx, map_zero]
+
+end TotalDifferential
+
+/-! ### Matrix Morita invariance for the total complex of the cyclic bicomplex -/
+
+section TotalHomology
+
+variable {R A M : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 variable (M) in
 /-- Matrix extension on the cohomology `Hⁿ(Tot)` of the total complex of Connes' cyclic
 bicomplex. -/
 def cyclicTotalHomologyMatrixExtension (ι : Type*) [Fintype ι] (n : ℕ) :
     (cyclicTotalComplex R A M).homology n →ₗ[R]
-      (cyclicTotalComplex R (Matrix ι ι A) M).homology n where
-  toFun c :=
-    let x := Function.surjInv (cyclicTotalHomologyMk_surjective (R := R) (A := A) (M := M) n) c
-    cyclicTotalHomologyMk R (Matrix ι ι A) M n
-      ⟨matrixCyclicTotalCochainExtension ι n x.1,
-        matrixCyclicTotalCochainExtension_mem_ker ι n x.2⟩
-  map_add' c₁ c₂ := by
-    let s := Function.surjInv (cyclicTotalHomologyMk_surjective (R := R) (A := A) (M := M) n)
-    have hs (c) : cyclicTotalHomologyMk R A M n (s c) = c :=
-      Function.surjInv_eq (cyclicTotalHomologyMk_surjective (R := R) (A := A) (M := M) n) c
-    have h := cyclicTotalHomologyMk_matrixCyclicTotalCochainExtension_eq (ι := ι)
-      (x := s (c₁ + c₂)) (y := s c₁ + s c₂) (by rw [map_add, hs, hs, hs])
-    rw [h, ← map_add]
-    congr 1; exact Subtype.ext (map_add _ _ _)
-  map_smul' r c := by
-    let s := Function.surjInv (cyclicTotalHomologyMk_surjective (R := R) (A := A) (M := M) n)
-    have hs (c) : cyclicTotalHomologyMk R A M n (s c) = c :=
-      Function.surjInv_eq (cyclicTotalHomologyMk_surjective (R := R) (A := A) (M := M) n) c
-    have h := cyclicTotalHomologyMk_matrixCyclicTotalCochainExtension_eq (ι := ι)
-      (x := s (r • c)) (y := r • s c) (by rw [map_smul, hs, hs])
-    rw [RingHom.id_apply, h, ← map_smul]
-    congr 1; exact Subtype.ext (map_smul _ _ _)
+      (cyclicTotalComplex R (Matrix ι ι A) M).homology n :=
+  (cyclicTotalHomologyMk R A M n).liftOfSurjective
+    (M := LinearMap.ker (cyclicTotalDifferential R A M n)) (cyclicTotalHomologyMk_surjective n)
+    ⟨cyclicTotalHomologyMk R (Matrix ι ι A) M n ∘ₗ
+        (matrixCyclicTotalCochainExtension (R := R) (A := A) (M := M) ι n).restrict
+          fun _ hx ↦ matrixCyclicTotalCochainExtension_mem_ker ι n hx,
+      fun x hx ↦ by
+        rw [LinearMap.mem_ker] at hx ⊢
+        rw [LinearMap.comp_apply]
+        cases n with
+        | zero =>
+          rw [cyclicTotalHomologyMk_zero_eq_zero_iff] at hx ⊢
+          exact Subtype.ext (by simp [congrArg Subtype.val hx])
+        | succ m =>
+          rw [cyclicTotalHomologyMk_succ_eq_zero_iff] at hx ⊢
+          obtain ⟨w, hw⟩ := hx
+          exact ⟨matrixCyclicTotalCochainExtension ι m w, by
+            rw [← matrixCyclicTotalCochainExtension_cyclicTotalDifferential, hw,
+              LinearMap.restrict_apply]⟩⟩
 
 /-- Matrix extension on total cohomology sends the class of a total cocycle to the class of its
 rowwise matrix extension. -/
@@ -262,7 +325,62 @@ theorem cyclicTotalHomologyMatrixExtension_mk {ι : Type*} [Fintype ι] {n : ℕ
       cyclicTotalHomologyMk R (Matrix ι ι A) M n
         ⟨matrixCyclicTotalCochainExtension ι n x.1,
           matrixCyclicTotalCochainExtension_mem_ker ι n x.2⟩ := by
-  exact cyclicTotalHomologyMk_matrixCyclicTotalCochainExtension_eq (Function.surjInv_eq _ _)
+  exact LinearMap.equivOfSurjective_apply
+    (M := LinearMap.ker (cyclicTotalDifferential R A M n)) (cyclicTotalHomologyMk_surjective n) _
+
+variable (M) in
+/-- Diagonal corner restriction on the cohomology `Hⁿ(Tot)` of the total complex of Connes'
+cyclic bicomplex. -/
+def cyclicTotalHomologyMatrixCornerRestriction {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι)
+    (n : ℕ) :
+    (cyclicTotalComplex R (Matrix ι ι A) M).homology n →ₗ[R]
+      (cyclicTotalComplex R A M).homology n :=
+  (cyclicTotalHomologyMk R (Matrix ι ι A) M n).liftOfSurjective
+    (M := LinearMap.ker (cyclicTotalDifferential R (Matrix ι ι A) M n))
+    (cyclicTotalHomologyMk_surjective n)
+    ⟨cyclicTotalHomologyMk R A M n ∘ₗ
+        (matrixCyclicTotalCochainCornerRestriction (R := R) (A := A) (M := M) r n).restrict
+          fun _ hx ↦ matrixCyclicTotalCochainCornerRestriction_mem_ker r n hx,
+      fun x hx ↦ by
+        rw [LinearMap.mem_ker] at hx ⊢
+        rw [LinearMap.comp_apply]
+        cases n with
+        | zero =>
+          rw [cyclicTotalHomologyMk_zero_eq_zero_iff] at hx ⊢
+          exact Subtype.ext (by simp [congrArg Subtype.val hx])
+        | succ m =>
+          rw [cyclicTotalHomologyMk_succ_eq_zero_iff] at hx ⊢
+          obtain ⟨w, hw⟩ := hx
+          exact ⟨matrixCyclicTotalCochainCornerRestriction r m w, by
+            rw [← matrixCyclicTotalCochainCornerRestriction_cyclicTotalDifferential, hw,
+              LinearMap.restrict_apply]⟩⟩
+
+/-- Diagonal corner restriction on total cohomology sends the class of a matrix total cocycle to
+the class of its restriction to the `(r, r)` diagonal corner. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixCornerRestriction_mk {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (r : ι) {n : ℕ} (x : LinearMap.ker (cyclicTotalDifferential R (Matrix ι ι A) M n)) :
+    cyclicTotalHomologyMatrixCornerRestriction M r n
+        (cyclicTotalHomologyMk R (Matrix ι ι A) M n x) =
+      cyclicTotalHomologyMk R A M n
+        ⟨matrixCyclicTotalCochainCornerRestriction r n x.1,
+          matrixCyclicTotalCochainCornerRestriction_mem_ker r n x.2⟩ := by
+  exact LinearMap.equivOfSurjective_apply
+    (M := LinearMap.ker (cyclicTotalDifferential R (Matrix ι ι A) M n))
+    (cyclicTotalHomologyMk_surjective n) _
+
+/-- Diagonal corner restriction is a left inverse to matrix extension on total cohomology. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixCornerRestriction_cyclicTotalHomologyMatrixExtension
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) (n : ℕ)
+    (c : (cyclicTotalComplex R A M).homology n) :
+    cyclicTotalHomologyMatrixCornerRestriction M r n
+        (cyclicTotalHomologyMatrixExtension M ι n c) = c := by
+  obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective n c
+  simp only [cyclicTotalHomologyMatrixExtension_mk, cyclicTotalHomologyMatrixCornerRestriction_mk]
+  congr 1
+  exact Subtype.ext (matrixCyclicTotalCochainCornerRestriction_matrixCyclicTotalCochainExtension
+    r n x.1)
 
 /-- Matrix extension on total cohomology commutes with projection `I : Hⁿ(Tot) → HHⁿ`. -/
 theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMatrixExtension
@@ -274,8 +392,7 @@ theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMatrixExte
   obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective n c
   simp only [cyclicTotalHomologyMatrixExtension_mk,
     homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
-    hochschildCohomology.matrixExtension_mk]
-  rfl
+    hochschildCohomology.matrixExtension_mk, coe_matrixCyclicTotalCochainExtension_apply]
 
 /-- Matrix extension on total cohomology commutes with the periodicity operator
 `S : Hᵐ(Tot) → Hᵐ⁺²(Tot)`. -/
@@ -290,6 +407,20 @@ theorem cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixExtension
     cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk]
   congr 1
   exact Subtype.ext (matrixCyclicTotalCochainExtension_cyclicTotalPeriodicity ι m x.1).symm
+
+/-- Diagonal corner restriction on total cohomology commutes with the periodicity operator
+`S : Hᵐ(Tot) → Hᵐ⁺²(Tot)`. -/
+theorem cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixCornerRestriction
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) (m : ℕ)
+    (c : (cyclicTotalComplex R (Matrix ι ι A) M).homology m) :
+    cyclicTotalHomologyPeriodicity R A M m (cyclicTotalHomologyMatrixCornerRestriction M r m c) =
+      cyclicTotalHomologyMatrixCornerRestriction M r (m + 2)
+        (cyclicTotalHomologyPeriodicity R (Matrix ι ι A) M m c) := by
+  obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective m c
+  simp only [cyclicTotalHomologyMatrixCornerRestriction_mk,
+    cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk]
+  congr 1
+  exact Subtype.ext (matrixCyclicTotalCochainCornerRestriction_cyclicTotalPeriodicity r m x.1).symm
 
 /-- Matrix extension on total cohomology commutes with the transition maps `S^(j - i)`. -/
 theorem cyclicTotalHomologyPeriodicTransition_cyclicTotalHomologyMatrixExtension
@@ -308,6 +439,7 @@ theorem cyclicTotalHomologyPeriodicTransition_cyclicTotalHomologyMatrixExtension
       ModuleCat.comp_apply, ModuleCat.comp_apply, ih,
       cyclicTotalHomologyPeriodicTransition_succ, cyclicTotalHomologyPeriodicTransition_succ,
       cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixExtension]
+    -- `n + 2 * (j + 1)` is definitionally `(n + 2 * j) + 2` (`Nat.mul_succ`).
     rfl
 
 end TotalHomology
@@ -423,6 +555,29 @@ theorem cyclicTotalHomologyMatrixEquiv_apply {ι : Type*} [Fintype ι] [Nonempty
     cyclicTotalHomologyMatrixEquiv M ι n c = cyclicTotalHomologyMatrixExtension M ι n c := by
   rfl
 
+/-- For a unital algebra, matrix extension is a left inverse to diagonal corner restriction on
+total cohomology. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyMatrixCornerRestriction
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) (n : ℕ)
+    (c : (cyclicTotalComplex R (Matrix ι ι A) M).homology n) :
+    cyclicTotalHomologyMatrixExtension M ι n
+        (cyclicTotalHomologyMatrixCornerRestriction M r n c) = c := by
+  have : Nonempty ι := ⟨r⟩
+  obtain ⟨c', rfl⟩ := (bijective_cyclicTotalHomologyMatrixExtension (R := R) (A := A) (M := M)
+    ι n).2 c
+  rw [cyclicTotalHomologyMatrixCornerRestriction_cyclicTotalHomologyMatrixExtension]
+
+/-- The inverse of `cyclicTotalHomologyMatrixEquiv` is given by diagonal corner restriction at any
+index `r : ι`. -/
+theorem cyclicTotalHomologyMatrixEquiv_symm_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [Nonempty ι] (r : ι) (n : ℕ) (c : (cyclicTotalComplex R (Matrix ι ι A) M).homology n) :
+    (cyclicTotalHomologyMatrixEquiv M ι n).symm c =
+      cyclicTotalHomologyMatrixCornerRestriction M r n c :=
+  (bijective_cyclicTotalHomologyMatrixExtension ι n).1 <| by
+    rw [← cyclicTotalHomologyMatrixEquiv_apply, LinearEquiv.apply_symm_apply,
+      cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyMatrixCornerRestriction]
+
 end TotalMorita
 
 /-! ### Matrix Morita invariance of cyclic cohomology -/
@@ -433,6 +588,71 @@ section General
 
 variable {R : Type*} [CommRing R] {A : Type*} [Ring A] [Algebra R A]
   {M : Type*} [AddCommGroup M] [Module R M]
+
+private theorem coe_cyclicCochainsMap_singleLinearMap {ι : Type*} [DecidableEq ι] (r : ι) (n : ℕ)
+    (ψ : cyclicCochains R (Matrix ι ι A) M n) :
+    (cyclicCochainsMap M (Matrix.singleLinearMap R r r) n ψ :
+        MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) =
+      matrixCornerCochainRestriction r n ψ.1 := by
+  ext; simp
+
+variable (M) in
+/-- Restriction to the `(r, r)` diagonal corner on cyclic cohomology. -/
+def matrixCornerRestriction {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) (n : ℕ) :
+    cyclicCohomology R (Matrix ι ι A) M n →ₗ[R] cyclicCohomology R A M n :=
+  desc n (mk R A M n ∘ₗ
+      (cyclicCochainsMap (R := R) (A := A) (B := Matrix ι ι A) M
+        (Matrix.singleLinearMap R r r) n).restrict
+      fun ψ hψ ↦ by
+        rw [mem_cyclicCocycles_iff] at hψ ⊢
+        rw [coe_cyclicCochainsMap_singleLinearMap,
+          ← matrixCornerCochainRestriction_hochschildCoboundary, hψ, map_zero])
+    fun ψ hψ ↦ (mk_eq_zero_iff _ _ _ n _).2 <| by
+      cases n with
+      | zero =>
+        rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hψ ⊢
+        simp [hψ]
+      | succ m =>
+        obtain ⟨η, hη⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hψ
+        refine (mem_cyclicCoboundaries_succ_iff _ _ _).2
+          ⟨cyclicCochainsMap M (Matrix.singleLinearMap R r r) m η, Subtype.ext ?_⟩
+        rw [LinearMap.restrict_apply, coe_cyclicHochschildCoboundary_apply,
+          coe_cyclicCochainsMap_singleLinearMap, coe_cyclicCochainsMap_singleLinearMap,
+          ← matrixCornerCochainRestriction_hochschildCoboundary, ← hη,
+          coe_cyclicHochschildCoboundary_apply]
+
+/-- Diagonal corner restriction on cyclic cohomology sends the class of a matrix cyclic cocycle to
+the class of its pullback along the `(r, r)` corner embedding. -/
+@[simp]
+theorem matrixCornerRestriction_mk {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) {n : ℕ}
+    (ψ : cyclicCocycles R (Matrix ι ι A) M n) :
+    matrixCornerRestriction M r n (mk R (Matrix ι ι A) M n ψ) =
+      mk R A M n ⟨cyclicCochainsMap M (Matrix.singleLinearMap R r r) n ψ.1, by
+        rw [mem_cyclicCocycles_iff,
+          show (cyclicCochainsMap M (Matrix.singleLinearMap R r r) n ψ.1 :
+              MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) =
+              matrixCornerCochainRestriction r n ψ.1.1 by ext; simp,
+          ← matrixCornerCochainRestriction_hochschildCoboundary,
+          (mem_cyclicCocycles_iff R (Matrix ι ι A) M).1 ψ.2, map_zero]⟩ := by
+  exact desc_mk _ _ _ ψ
+
+/-- Diagonal corner restriction is a left inverse to matrix extension on cyclic cohomology. -/
+@[simp]
+theorem matrixCornerRestriction_matrixExtension {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (r : ι) (n : ℕ) (c : cyclicCohomology R A M n) :
+    matrixCornerRestriction M r n (matrixExtension M ι n c) = c := by
+  obtain ⟨φ, rfl⟩ := mk_surjective R A M n c
+  simp only [matrixExtension_mk, matrixCornerRestriction_mk]
+  congr 1
+  refine Subtype.ext (Subtype.ext ?_)
+  ext x
+  simp [matrixCochainExtension_single]
+
+/-- Over any commutative ring `R`, matrix extension on cyclic cohomology is injective. -/
+theorem matrixExtension_injective (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] (n : ℕ) :
+    Function.Injective (matrixExtension (R := R) (A := A) M ι n) := by
+  obtain ⟨r⟩ := ‹Nonempty ι›
+  exact Function.LeftInverse.injective (matrixCornerRestriction_matrixExtension r n)
 
 /-- Matrix extension on cyclic cohomology commutes with `I : HCⁿ → HHⁿ`. -/
 theorem toHochschild_matrixExtension (ι : Type*) [Fintype ι] [DecidableEq ι] (n : ℕ)
@@ -485,6 +705,16 @@ theorem bijective_matrixExtension_of_isUnit
       (cyclicTotalHomologyMatrixExtension_homologyMap_cyclicCochainComplexToTotal ι n c).symm
   exact (Function.Bijective.of_comp_iff' hjM _).1 (hcomm.symm ▸ hTot.comp hjA)
 
+/-- When `1, 2, …, n` are invertible in `R`, matrix extension is a left inverse to diagonal corner
+restriction on cyclic cohomology. -/
+theorem matrixExtension_matrixCornerRestriction_of_isUnit {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (r : ι) (n : ℕ) (hR : ∀ q < n, IsUnit ((q : R) + 1))
+    (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    matrixExtension M ι n (matrixCornerRestriction M r n c) = c := by
+  have : Nonempty ι := ⟨r⟩
+  obtain ⟨c', rfl⟩ := (bijective_matrixExtension_of_isUnit (R := R) (A := A) (M := M) ι n hR).2 c
+  rw [matrixCornerRestriction_matrixExtension]
+
 end General
 
 section Rational
@@ -502,6 +732,16 @@ theorem bijective_matrixExtension
   bijective_matrixExtension_of_isUnit ι n fun q _ ↦ by
     simpa using (Nat.cast_add_one_ne_zero (R := ℚ) q).isUnit.map (algebraMap ℚ R)
 
+/-- Over a `ℚ`-algebra, matrix extension is a left inverse to diagonal corner restriction on cyclic
+cohomology. -/
+@[simp]
+theorem matrixExtension_matrixCornerRestriction {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (r : ι) (n : ℕ) (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    matrixExtension M ι n (matrixCornerRestriction M r n c) = c := by
+  have : Nonempty ι := ⟨r⟩
+  obtain ⟨c', rfl⟩ := (bijective_matrixExtension (R := R) (A := A) (M := M) ι n).2 c
+  rw [matrixCornerRestriction_matrixExtension]
+
 /-- Over a `ℚ`-algebra, matrix extension on cyclic cohomology commutes with Connes' periodicity
 operator `S : HCᵐ → HCᵐ⁺²`. -/
 theorem periodicity_matrixExtension (ι : Type*) [Fintype ι] [DecidableEq ι] (m : ℕ)
@@ -517,6 +757,22 @@ theorem periodicity_matrixExtension (ι : Type*) [Fintype ι] [DecidableEq ι] (
     ← cyclicTotalHomologyMatrixExtension_homologyMap_cyclicCochainComplexToTotal,
     cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixExtension]
 
+/-- Over a `ℚ`-algebra, matrix extension on cyclic cohomology commutes with the transition maps
+`S^(j - i)`. -/
+theorem periodicTransition_matrixExtension (ι : Type*) [Fintype ι] [DecidableEq ι] (n : ℕ)
+    {i j : ℕ} (h : i ≤ j) (c : cyclicCohomology R A M (n + 2 * i)) :
+    periodicTransition R (Matrix ι ι A) M n h (matrixExtension M ι (n + 2 * i) c) =
+      matrixExtension M ι (n + 2 * j) (periodicTransition R A M n h c) := by
+  induction j, h using Nat.le_induction with
+  | base => simp
+  | succ j hij ih =>
+    rw [← periodicTransition_comp R (Matrix ι ι A) M n hij (Nat.le_add_right j 1),
+      ← periodicTransition_comp R A M n hij (Nat.le_add_right j 1),
+      ModuleCat.comp_apply, ModuleCat.comp_apply, ih,
+      periodicTransition_succ, periodicTransition_succ, periodicity_matrixExtension]
+    -- `n + 2 * (j + 1)` is definitionally `(n + 2 * j) + 2` (`Nat.mul_succ`).
+    rfl
+
 variable (M) in
 /-- **Matrix Morita equivalence of cyclic cohomology**, as an `R`-linear equivalence
 `HCⁿ(A; M) ≃ₗ[R] HCⁿ(Matrix ι ι A; M)` over a `ℚ`-algebra. -/
@@ -530,6 +786,13 @@ theorem matrixEquiv_apply {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty �
     (c : cyclicCohomology R A M n) :
     matrixEquiv M ι n c = matrixExtension M ι n c := by
   rfl
+
+/-- The inverse of `matrixEquiv` is given by diagonal corner restriction at any index `r : ι`. -/
+theorem matrixEquiv_symm_apply {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] (r : ι)
+    (n : ℕ) (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    (matrixEquiv M ι n).symm c = matrixCornerRestriction M r n c :=
+  (bijective_matrixExtension ι n).1 <| by
+    rw [← matrixEquiv_apply, LinearEquiv.apply_symm_apply, matrixExtension_matrixCornerRestriction]
 
 end Rational
 
@@ -569,6 +832,71 @@ theorem matrixExtension_ι (ι : Type*) [Fintype ι] (n k : ℕ)
         (cyclicTotalHomologyMatrixExtension M ι (n + 2 * k) x) :=
   periodicCyclicCohomology.lift_ι _ _ k x
 
+private theorem cyclicTotalHomologyMatrixExtension_eqToHom {ι : Type*} [Fintype ι]
+    {m₁ m₂ : ℕ} (h : m₁ = m₂) (x : (cyclicTotalComplex R A M).homology m₁) :
+    cyclicTotalHomologyMatrixExtension M ι m₂
+        (eqToHom (congrArg (fun m ↦ (cyclicTotalComplex R A M).homology m) h) x) =
+      eqToHom (congrArg (fun m ↦ (cyclicTotalComplex R (Matrix ι ι A) M).homology m) h)
+        (cyclicTotalHomologyMatrixExtension M ι m₁ x) := by
+  subst h
+  simp
+
+/-- Matrix extension on periodic cyclic cohomology commutes with the `2`-periodicity
+isomorphism `(shiftIso _ _ _ n).hom : HP^(n+2) → HP^n`. -/
+theorem shiftIso_hom_matrixExtension (ι : Type*) [Fintype ι] (n : ℕ)
+    (x : periodicCyclicCohomology R A M (n + 2)) :
+    (shiftIso R (Matrix ι ι A) M n).hom (matrixExtension M ι (n + 2) x) =
+      matrixExtension M ι n ((shiftIso R A M n).hom x) := by
+  obtain ⟨k, z, rfl⟩ := exists_ι_eq x
+  rw [matrixExtension_ι, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ι_shiftIso_hom,
+    ι_shiftIso_hom, ModuleCat.comp_apply, ModuleCat.comp_apply, matrixExtension_ι,
+    cyclicTotalHomologyMatrixExtension_eqToHom (show n + 2 + 2 * k = n + 2 * (k + 1) by omega)]
+
+/-- Matrix extension on periodic cyclic cohomology commutes with the inverse `2`-periodicity
+isomorphism `(shiftIso _ _ _ n).inv : HP^n → HP^(n+2)`. -/
+theorem shiftIso_inv_matrixExtension (ι : Type*) [Fintype ι] (n : ℕ)
+    (x : periodicCyclicCohomology R A M n) :
+    (shiftIso R (Matrix ι ι A) M n).inv (matrixExtension M ι n x) =
+      matrixExtension M ι (n + 2) ((shiftIso R A M n).inv x) := by
+  apply ((ConcreteCategory.isIso_iff_bijective (shiftIso R (Matrix ι ι A) M n).hom).1
+    inferInstance).1
+  rw [← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply,
+    shiftIso_hom_matrixExtension, ← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply]
+
+variable (M) in
+/-- Diagonal corner restriction `HPⁿ(Matrix ι ι A; M) → HPⁿ(A; M)` on periodic cyclic cohomology,
+induced on the direct limit by diagonal corner restriction on the total cyclic bicomplex. -/
+def matrixCornerRestriction {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) (n : ℕ) :
+    periodicCyclicCohomology R (Matrix ι ι A) M n →ₗ[R] periodicCyclicCohomology R A M n :=
+  periodicCyclicCohomology.lift
+    (fun k ↦ (periodicCyclicCohomology.ι R A M n k).hom ∘ₗ
+      cyclicTotalHomologyMatrixCornerRestriction M r (n + 2 * k))
+    fun k x ↦ by
+      simp only [LinearMap.comp_apply]
+      refine (congrArg (periodicCyclicCohomology.ι R A M n (k + 1))
+        (cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixCornerRestriction
+          r (n + 2 * k) x).symm).trans ?_
+      rw [← ModuleCat.comp_apply, cyclicTotalHomologyPeriodicity_ι]
+
+/-- Diagonal corner restriction on periodic cyclic cohomology commutes with the canonical stage
+maps `H^(n+2k)(Tot) → HPⁿ`. -/
+@[simp]
+theorem matrixCornerRestriction_ι {ι : Type*} [Fintype ι] [DecidableEq ι] (r : ι) (n k : ℕ)
+    (x : (cyclicTotalComplex R (Matrix ι ι A) M).homology (n + 2 * k)) :
+    matrixCornerRestriction M r n (periodicCyclicCohomology.ι R (Matrix ι ι A) M n k x) =
+      periodicCyclicCohomology.ι R A M n k
+        (cyclicTotalHomologyMatrixCornerRestriction M r (n + 2 * k) x) :=
+  periodicCyclicCohomology.lift_ι _ _ k x
+
+/-- Diagonal corner restriction is a left inverse to matrix extension on periodic cyclic
+cohomology. -/
+@[simp]
+theorem matrixCornerRestriction_matrixExtension {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (r : ι) (n : ℕ) (x : periodicCyclicCohomology R A M n) :
+    matrixCornerRestriction M r n (matrixExtension M ι n x) = x := by
+  obtain ⟨k, z, rfl⟩ := exists_ι_eq x
+  simp
+
 end Map
 
 section Morita
@@ -602,6 +930,16 @@ theorem bijective_matrixExtension (ι : Type*) [Fintype ι] [Nonempty ι] (n : �
     obtain ⟨w, rfl⟩ := (bijective_cyclicTotalHomologyMatrixExtension ι (n + 2 * k)).2 z
     exact ⟨periodicCyclicCohomology.ι R A M n k w, matrixExtension_ι ι n k w⟩
 
+/-- For a unital algebra, matrix extension is a left inverse to diagonal corner restriction on
+periodic cyclic cohomology. -/
+@[simp]
+theorem matrixExtension_matrixCornerRestriction {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (r : ι) (n : ℕ) (x : periodicCyclicCohomology R (Matrix ι ι A) M n) :
+    matrixExtension M ι n (matrixCornerRestriction M r n x) = x := by
+  have : Nonempty ι := ⟨r⟩
+  obtain ⟨x', rfl⟩ := (bijective_matrixExtension (R := R) (A := A) (M := M) ι n).2 x
+  rw [matrixCornerRestriction_matrixExtension]
+
 variable (M) in
 /-- **Matrix Morita equivalence of periodic cyclic cohomology**, as an `R`-linear equivalence
 `HPⁿ(A; M) ≃ₗ[R] HPⁿ(Matrix ι ι A; M)` over any commutative ring `R`. -/
@@ -615,6 +953,13 @@ theorem matrixEquiv_apply {ι : Type*} [Fintype ι] [Nonempty ι] (n : ℕ)
     (c : periodicCyclicCohomology R A M n) :
     matrixEquiv M ι n c = matrixExtension M ι n c := by
   rfl
+
+/-- The inverse of `matrixEquiv` is given by diagonal corner restriction at any index `r : ι`. -/
+theorem matrixEquiv_symm_apply {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] (r : ι)
+    (n : ℕ) (c : periodicCyclicCohomology R (Matrix ι ι A) M n) :
+    (matrixEquiv M ι n).symm c = matrixCornerRestriction M r n c :=
+  (bijective_matrixExtension ι n).1 <| by
+    rw [← matrixEquiv_apply, LinearEquiv.apply_symm_apply, matrixExtension_matrixCornerRestriction]
 
 end Morita
 

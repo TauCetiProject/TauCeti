@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
 
 /-!
@@ -16,9 +17,11 @@ Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_sin
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units. `Matrix.sum_mul_single_eq_mul_mul_single`
-and `Matrix.sum_single_eq_single_mul` contract a sum of matrix units weighted by a column or row
-of a matrix into a single matrix product.
+expands a linear map on matrices along the matrix units. `Matrix.sum_mul_single_eq_mul_mul_single`,
+`Matrix.sum_single_eq_mul_single`, and `Matrix.sum_single_eq_single_mul` contract sums of matrix
+units weighted by a column or row of a matrix into a single matrix product.
+`Matrix.singleNonUnitalAlgHom` packages the `(r, r)` diagonal corner embedding as a homomorphism of
+nonunital algebras.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -71,6 +74,18 @@ public theorem Matrix.sum_mul_single_eq_mul_mul_single {l m n p R : Type*} [NonA
     rw [Matrix.mul_apply]
   · simp [Matrix.mul_single_apply_of_ne (hbj := hv)]
 
+/-- Summing `Matrix.single t r (a t s)` over `t` computes `a * Matrix.single s r 1`. -/
+public theorem Matrix.sum_single_eq_mul_single {l m n R : Type*} [NonAssocSemiring R]
+    [Fintype l] [Fintype m] [DecidableEq l] [DecidableEq m] [DecidableEq n]
+    (r : n) (s : m) (a : Matrix l m R) :
+    ∑ t : l, Matrix.single t r (a t s) = a * Matrix.single s r (1 : R) := by
+  ext u v
+  rw [Matrix.sum_apply]
+  by_cases hv : v = r
+  · subst hv
+    simp [Matrix.mul_single_apply_same, Matrix.single_apply]
+  · simp [Matrix.mul_single_apply_of_ne (hbj := hv), Ne.symm hv]
+
 /-- Summing `Matrix.single r t (a s t)` over `t` computes `Matrix.single r s 1 * a`. -/
 public theorem Matrix.sum_single_eq_single_mul {l m n R : Type*} [NonAssocSemiring R]
     [Fintype m] [Fintype n] [DecidableEq l] [DecidableEq m] [DecidableEq n]
@@ -82,3 +97,32 @@ public theorem Matrix.sum_single_eq_single_mul {l m n R : Type*} [NonAssocSemiri
   · subst hu
     simp [Matrix.single_mul_apply_same, Matrix.single_apply]
   · simp [Matrix.single_mul_apply_of_ne (h := hu), Ne.symm hu]
+
+/-- Embedding `A` into the `(r, r)` diagonal corner of `Matrix ι ι A` as a homomorphism of
+nonunital algebras. -/
+public def Matrix.singleNonUnitalAlgHom (R : Type*) {ι A : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Fintype ι] [DecidableEq ι]
+    (r : ι) : A →ₙₐ[R] Matrix ι ι A where
+  toFun := Matrix.single r r
+  map_zero' := Matrix.single_zero r r
+  map_add' := Matrix.single_add r r
+  map_smul' c a := (Matrix.smul_single c r r a).symm
+  map_mul' a b := (Matrix.single_mul_single_same a r r r b).symm
+
+/-- The diagonal corner embedding `Matrix.singleNonUnitalAlgHom` sends `a` to
+`Matrix.single r r a`. -/
+@[simp]
+public theorem Matrix.singleNonUnitalAlgHom_apply (R : Type*) {ι A : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Fintype ι] [DecidableEq ι]
+    (r : ι) (a : A) :
+    Matrix.singleNonUnitalAlgHom R r a = Matrix.single r r a := by
+  rfl
+
+/-- As a linear map, `Matrix.singleNonUnitalAlgHom` is `Matrix.singleLinearMap R r r`. -/
+@[simp]
+public theorem Matrix.coe_singleNonUnitalAlgHom_eq_singleLinearMap (R : Type*) {ι A : Type*}
+    [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A] [Fintype ι] [DecidableEq ι] (r : ι) :
+    ((Matrix.singleNonUnitalAlgHom R (A := A) r : A →ₙₐ[R] Matrix ι ι A) : A →ₗ[R] Matrix ι ι A) =
+      Matrix.singleLinearMap R r r := by
+  ext a
+  rfl

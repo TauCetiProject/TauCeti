@@ -153,72 +153,32 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
     congr 1
     ring
 
-private theorem sum_fin_filter_le {m : ℕ} (j : Fin (m + 2)) (f : Fin (m + 3) → G) :
-    ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 3) ↦ (i : ℕ) ≤ j), f i =
-      (∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) < j), f i.castSucc) +
-        f j.castSucc := by
-  have hbij : ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 3) ↦ (i : ℕ) ≤ j), f i =
-      ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) ≤ j), f i.castSucc :=
-    (Finset.sum_bij (fun (i : Fin (m + 2)) _ ↦ i.castSucc) (fun _ hi ↦ by simpa using hi)
-      (fun _ _ _ _ h ↦ Fin.castSucc_injective _ h)
-      (fun i hi ↦ by
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
-        refine ⟨⟨i.1, by omega⟩, ?_, rfl⟩
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and]; exact hi)
-      fun _ _ ↦ rfl).symm
-  rw [hbij, ← Finset.sum_filter_add_sum_filter_not _ (fun i : Fin (m + 2) ↦ (i : ℕ) < j)]
-  congr 1
-  · exact Finset.sum_congr
-      (by ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and]; omega) fun _ _ ↦ rfl
-  · refine Finset.sum_eq_single j (fun i hi hij ↦ ?_) (fun hj ↦ (hj (by simp)).elim)
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt] at hi
-    exact (hij (Fin.ext (by omega))).elim
-
-private theorem sum_fin_filter_gt {m : ℕ} (j : Fin (m + 2)) (f : Fin (m + 3) → G) :
-    ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 3) ↦ ¬(i : ℕ) ≤ j), f i =
-      f j.succ +
-        ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) < i), f i.succ := by
-  have hbij : ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 3) ↦ ¬(i : ℕ) ≤ j), f i =
-      ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) ≤ i), f i.succ :=
-    (Finset.sum_bij (fun (i : Fin (m + 2)) _ ↦ i.succ)
-      (fun i hi ↦ by
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le, Fin.val_succ] at hi ⊢
-        omega)
-      (fun _ _ _ _ h ↦ Fin.succ_injective _ h)
-      (fun i hi ↦ by
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hi
-        refine ⟨⟨i.1 - 1, by omega⟩, ?_, Fin.ext (by simp; omega)⟩
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and]; omega)
-      fun _ _ ↦ rfl).symm
-  rw [hbij, ← Finset.sum_filter_add_sum_filter_not _ (fun i : Fin (m + 2) ↦ (j : ℕ) < i), add_comm]
-  congr 1
-  · refine Finset.sum_eq_single j (fun i hi hij ↦ ?_) (fun hj ↦ (hj (by simp)).elim)
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt] at hi
-    exact (hij (Fin.ext (by omega))).elim
-  · exact Finset.sum_congr
-      (by ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and]; omega) fun _ _ ↦ rfl
-
-private theorem sum_fin_split {m : ℕ} (j : Fin (m + 2)) (f : Fin (m + 3) → G) :
-    ∑ i : Fin (m + 3), f i =
-      (∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) < j), f i.castSucc) +
-        f j.castSucc + f j.succ +
-        (∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) < i), f i.succ) := by
-  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun i : Fin (m + 3) ↦ (i : ℕ) ≤ j),
-    sum_fin_filter_le, sum_fin_filter_gt]
+private theorem sum_fin_split {n : ℕ} (j : Fin (n + 1)) (f : Fin (n + 2) → G) :
+    ∑ i : Fin (n + 2), f i =
+      (∑ i ∈ Finset.Iio j, f i.castSucc) + f j.castSucc + f j.succ +
+        (∑ i ∈ Finset.Ioi j, f i.succ) := by
+  have hgt : Finset.univ.filter (fun i : Fin (n + 2) ↦ ¬i ≤ j.castSucc) = Finset.Ici j.succ := by
+    ext i
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_Ici, Fin.le_def,
+      Fin.val_castSucc, Fin.val_succ]
+    omega
+  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun i : Fin (n + 2) ↦ i ≤ j.castSucc),
+    Finset.filter_ge_eq_Iic, hgt, Fin.sum_Iic_castSucc, Fin.sum_Ici_succ,
+    ← Finset.sum_Iio_add_eq_sum_Iic, ← Finset.add_sum_Ioi_eq_sum_Ici]
   abel
 
-private theorem sum_neg_one_pow_diag_band {m : ℕ} (F : Fin (m + 2) → Fin (m + 3) → G)
-    (hdiag : ∀ k : Fin (m + 1), F k.castSucc k.succ.castSucc = F k.succ k.succ.castSucc) :
-    (∑ j : Fin (m + 2), (-1 : ℤ) ^ ((j : ℕ) + j.castSucc) • F j j.castSucc) +
-      (∑ j : Fin (m + 2), (-1 : ℤ) ^ ((j : ℕ) + j.succ) • F j j.succ) =
-      F 0 0 - F (Fin.last (m + 1)) (Fin.last (m + 2)) := by
-  rw [Fin.sum_univ_succ (f := fun j : Fin (m + 2) ↦
+private theorem sum_neg_one_pow_diag_band {n : ℕ} (F : Fin (n + 1) → Fin (n + 2) → G)
+    (hdiag : ∀ k : Fin n, F k.castSucc k.succ.castSucc = F k.succ k.succ.castSucc) :
+    (∑ j : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + j.castSucc) • F j j.castSucc) +
+      (∑ j : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + j.succ) • F j j.succ) =
+      F 0 0 - F (Fin.last n) (Fin.last (n + 1)) := by
+  rw [Fin.sum_univ_succ (f := fun j : Fin (n + 1) ↦
       (-1 : ℤ) ^ ((j : ℕ) + j.castSucc) • F j j.castSucc),
-    Fin.sum_univ_castSucc (f := fun j : Fin (m + 2) ↦
+    Fin.sum_univ_castSucc (f := fun j : Fin (n + 1) ↦
       (-1 : ℤ) ^ ((j : ℕ) + j.succ) • F j j.succ)]
   have hcancel :
-      (∑ k : Fin (m + 1), (-1 : ℤ) ^ ((k.succ : ℕ) + k.succ.castSucc) • F k.succ k.succ.castSucc) +
-        (∑ k : Fin (m + 1),
+      (∑ k : Fin n, (-1 : ℤ) ^ ((k.succ : ℕ) + k.succ.castSucc) • F k.succ k.succ.castSucc) +
+        (∑ k : Fin n,
           (-1 : ℤ) ^ ((k.castSucc : ℕ) + k.castSucc.succ) • F k.castSucc k.castSucc.succ) = 0 := by
     rw [← Finset.sum_add_distrib]
     refine Finset.sum_eq_zero fun k _ ↦ ?_
@@ -226,53 +186,45 @@ private theorem sum_neg_one_pow_diag_band {m : ℕ} (F : Fin (m + 2) → Fin (m 
     have hexp : k.1 + 1 + (k.1 + 1) = k.1 + (k.1 + 1) + 1 := by omega
     have hcoeff : (-1 : ℤ) ^ (k.1 + (k.1 + 1)) * -1 + (-1 : ℤ) ^ (k.1 + (k.1 + 1)) = 0 := by ring
     rw [hexp, pow_succ, hcoeff, zero_smul]
-  have hs0 : (-1 : ℤ) ^ (((0 : Fin (m + 2)) : ℕ) + (0 : Fin (m + 2)).castSucc) •
-      F 0 (0 : Fin (m + 2)).castSucc = F 0 0 := by simp
-  have hslast : (-1 : ℤ) ^ (((Fin.last (m + 1)) : ℕ) + (Fin.last (m + 1)).succ) •
-      F (Fin.last (m + 1)) (Fin.last (m + 1)).succ =
-      -F (Fin.last (m + 1)) (Fin.last (m + 2)) := by
+  have hs0 : (-1 : ℤ) ^ (((0 : Fin (n + 1)) : ℕ) + (0 : Fin (n + 1)).castSucc) •
+      F 0 (0 : Fin (n + 1)).castSucc = F 0 0 := by simp
+  have hslast : (-1 : ℤ) ^ (((Fin.last n) : ℕ) + (Fin.last n).succ) •
+      F (Fin.last n) (Fin.last n).succ =
+      -F (Fin.last n) (Fin.last (n + 1)) := by
     simp only [Fin.succ_last, Fin.val_last]
-    have hexp : m + 1 + (m + 2) = 2 * (m + 1) + 1 := by omega
+    have hexp : n + (n + 1) = 2 * n + 1 := by omega
     rw [hexp, pow_succ, pow_mul, neg_one_sq, one_pow, one_mul, neg_one_smul]
-  rw [hs0, hslast, add_assoc, ← add_assoc (∑ k : Fin (m + 1), _), hcancel, zero_add,
-    sub_eq_add_neg]
+  rw [hs0, hslast, add_assoc, ← add_assoc (∑ k : Fin n, _), hcancel, zero_add, sub_eq_add_neg]
 
-private theorem sum_neg_one_pow_lower_tri {m : ℕ}
-    (F : Fin (m + 2) → Fin (m + 3) → G) (E : Fin (m + 1) → Fin (m + 2) → G)
-    (hlo : ∀ (j : Fin (m + 1)) (i : Fin (m + 2)), (i : ℕ) ≤ j → F j.succ i.castSucc = E j i) :
-    (∑ j : Fin (m + 2), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) < j),
+private theorem sum_neg_one_pow_lower_tri {n : ℕ}
+    (F : Fin (n + 1) → Fin (n + 2) → G) (E : Fin n → Fin (n + 1) → G)
+    (hlo : ∀ (j : Fin n) (i : Fin (n + 1)), (i : ℕ) ≤ j → F j.succ i.castSucc = E j i) :
+    (∑ j : Fin (n + 1), ∑ i ∈ Finset.Iio j,
         (-1 : ℤ) ^ ((j : ℕ) + i.castSucc) • F j i.castSucc) =
-      -∑ j : Fin (m + 1), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) ≤ j),
-        (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
-  have hempty : Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) < (0 : Fin (m + 2))) = ∅ := by
-    ext; simp
+      -∑ j : Fin n, ∑ i ∈ Finset.Iic j.castSucc, (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
+  have hempty : Finset.Iio (0 : Fin (n + 1)) = ∅ := by ext; simp
   rw [Fin.sum_univ_succ, hempty, Finset.sum_empty, zero_add, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Finset.sum_neg_distrib]
-  refine Finset.sum_congr (by ext i; simp) fun i hi ↦ ?_
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
+  refine Finset.sum_congr (by ext i; simp [Fin.lt_def, Fin.le_def]) fun i hi ↦ ?_
+  simp only [Finset.mem_Iic, Fin.le_def, Fin.val_castSucc] at hi
   simp only [hlo j i hi, Fin.val_succ, Fin.val_castSucc, ← neg_smul]
   congr 1
   rw [add_right_comm, pow_succ, mul_neg_one]
 
-private theorem sum_neg_one_pow_upper_tri {m : ℕ}
-    (F : Fin (m + 2) → Fin (m + 3) → G) (E : Fin (m + 1) → Fin (m + 2) → G)
-    (hhi : ∀ (j : Fin (m + 1)) (i : Fin (m + 2)), (j : ℕ) < i → F j.castSucc i.succ = E j i) :
-    (∑ j : Fin (m + 2), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) < i),
+private theorem sum_neg_one_pow_upper_tri {n : ℕ}
+    (F : Fin (n + 1) → Fin (n + 2) → G) (E : Fin n → Fin (n + 1) → G)
+    (hhi : ∀ (j : Fin n) (i : Fin (n + 1)), (j : ℕ) < i → F j.castSucc i.succ = E j i) :
+    (∑ j : Fin (n + 1), ∑ i ∈ Finset.Ioi j,
         (-1 : ℤ) ^ ((j : ℕ) + i.succ) • F j i.succ) =
-      -∑ j : Fin (m + 1), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) < i),
-        (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
-  have hempty :
-      Finset.univ.filter (fun i : Fin (m + 2) ↦ (Fin.last (m + 1) : ℕ) < i) = ∅ := by
-    ext i
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.notMem_empty, iff_false,
-      not_lt, Fin.val_last]
-    exact Nat.le_of_lt_succ i.2
+      -∑ j : Fin n, ∑ i ∈ Finset.Ioi j.castSucc, (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
+  have hempty : Finset.Ioi (Fin.last n) = ∅ := by
+    rw [← Fin.top_eq_last, Finset.Ioi_top]
   rw [Fin.sum_univ_castSucc, hempty, Finset.sum_empty, add_zero, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Finset.sum_neg_distrib]
-  refine Finset.sum_congr (by ext i; simp) fun i hi ↦ ?_
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  simp only [Finset.mem_Ioi, Fin.lt_def, Fin.val_castSucc] at hi
   simp only [hhi j i hi, Fin.val_castSucc, Fin.val_succ, ← neg_smul]
   congr 1
   rw [← add_assoc, pow_succ, mul_neg_one]
@@ -281,49 +233,48 @@ private theorem sum_neg_one_pow_upper_tri {m : ℕ}
 relations: when adjacent diagonal terms agree (`F k.castSucc k.succ.castSucc = F k.succ
 k.succ.castSucc`) and the strictly lower and upper triangles match `E`, the sum
 `(∑ j, (-1)ʲ • ∑ i, (-1)ⁱ • F j i) + (∑ i, (-1)ⁱ • ∑ j, (-1)ʲ • E j i)` telescopes to
-`F 0 0 - F (Fin.last (m + 1)) (Fin.last (m + 2))`. With `F j i = h_j (δ_i ψ)` and
+`F 0 0 - F (Fin.last n) (Fin.last (n + 1))`. With `F j i = h_j (δ_i ψ)` and
 `E j i = δ_i (h_j ψ)` this is the combinatorial core of `H ∘ b + b ∘ H = h₀ ∘ δ₀ - hₙ ∘ δₙ₊₁`. -/
-theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_add_eq_sub {G : Type*} [AddCommGroup G] {m : ℕ}
-    (F : Fin (m + 2) → Fin (m + 3) → G) (E : Fin (m + 1) → Fin (m + 2) → G)
-    (hdiag : ∀ k : Fin (m + 1), F k.castSucc k.succ.castSucc = F k.succ k.succ.castSucc)
-    (hlo : ∀ (j : Fin (m + 1)) (i : Fin (m + 2)), (i : ℕ) ≤ j → F j.succ i.castSucc = E j i)
-    (hhi : ∀ (j : Fin (m + 1)) (i : Fin (m + 2)), (j : ℕ) < i → F j.castSucc i.succ = E j i) :
-    (∑ j : Fin (m + 2), (-1 : ℤ) ^ (j : ℕ) •
-        ∑ i : Fin (m + 3), (-1 : ℤ) ^ (i : ℕ) • F j i) +
-      (∑ i : Fin (m + 2), (-1 : ℤ) ^ (i : ℕ) •
-        ∑ j : Fin (m + 1), (-1 : ℤ) ^ (j : ℕ) • E j i) =
-      F 0 0 - F (Fin.last (m + 1)) (Fin.last (m + 2)) := by
-  have hS1 : (∑ j : Fin (m + 2), (-1 : ℤ) ^ (j : ℕ) •
-      ∑ i : Fin (m + 3), (-1 : ℤ) ^ (i : ℕ) • F j i) =
-      ∑ j : Fin (m + 2), ∑ i : Fin (m + 3), (-1 : ℤ) ^ ((j : ℕ) + i) • F j i :=
+theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_add_eq_sub {G : Type*} [AddCommGroup G] {n : ℕ}
+    (F : Fin (n + 1) → Fin (n + 2) → G) (E : Fin n → Fin (n + 1) → G)
+    (hdiag : ∀ k : Fin n, F k.castSucc k.succ.castSucc = F k.succ k.succ.castSucc)
+    (hlo : ∀ (j : Fin n) (i : Fin (n + 1)), (i : ℕ) ≤ j → F j.succ i.castSucc = E j i)
+    (hhi : ∀ (j : Fin n) (i : Fin (n + 1)), (j : ℕ) < i → F j.castSucc i.succ = E j i) :
+    (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • F j i) +
+      (∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) •
+        ∑ j : Fin n, (-1 : ℤ) ^ (j : ℕ) • E j i) =
+      F 0 0 - F (Fin.last n) (Fin.last (n + 1)) := by
+  have hS1 : (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • F j i) =
+      ∑ j : Fin (n + 1), ∑ i : Fin (n + 2), (-1 : ℤ) ^ ((j : ℕ) + i) • F j i :=
     Finset.sum_congr rfl fun j _ ↦ by
       rw [Finset.smul_sum]; exact Finset.sum_congr rfl fun i _ ↦ by rw [smul_smul, ← pow_add]
-  have hS2 : (∑ i : Fin (m + 2), (-1 : ℤ) ^ (i : ℕ) •
-      ∑ j : Fin (m + 1), (-1 : ℤ) ^ (j : ℕ) • E j i) =
-      ∑ j : Fin (m + 1), ∑ i : Fin (m + 2), (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
+  have hS2 : (∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) •
+      ∑ j : Fin n, (-1 : ℤ) ^ (j : ℕ) • E j i) =
+      ∑ j : Fin n, ∑ i : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Finset.smul_sum]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [smul_smul, ← pow_add, add_comm]
-  have hsplit : (∑ j : Fin (m + 2), ∑ i : Fin (m + 3), (-1 : ℤ) ^ ((j : ℕ) + i) • F j i) =
-      (∑ j : Fin (m + 2), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) < j),
+  have hsplit : (∑ j : Fin (n + 1), ∑ i : Fin (n + 2), (-1 : ℤ) ^ ((j : ℕ) + i) • F j i) =
+      (∑ j : Fin (n + 1), ∑ i ∈ Finset.Iio j,
         (-1 : ℤ) ^ ((j : ℕ) + i.castSucc) • F j i.castSucc) +
-      (∑ j : Fin (m + 2), (-1 : ℤ) ^ ((j : ℕ) + j.castSucc) • F j j.castSucc) +
-      (∑ j : Fin (m + 2), (-1 : ℤ) ^ ((j : ℕ) + j.succ) • F j j.succ) +
-      (∑ j : Fin (m + 2), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) < i),
+      (∑ j : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + j.castSucc) • F j j.castSucc) +
+      (∑ j : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + j.succ) • F j j.succ) +
+      (∑ j : Fin (n + 1), ∑ i ∈ Finset.Ioi j,
         (-1 : ℤ) ^ ((j : ℕ) + i.succ) • F j i.succ) := by
     simp only [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun j _ ↦ sum_fin_split j fun i ↦ (-1 : ℤ) ^ ((j : ℕ) + i) • F j i
   have htri :
-      (∑ j : Fin (m + 1), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (i : ℕ) ≤ j),
-        (-1 : ℤ) ^ ((j : ℕ) + i) • E j i) +
-      (∑ j : Fin (m + 1), ∑ i ∈ Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) < i),
-        (-1 : ℤ) ^ ((j : ℕ) + i) • E j i) =
-      ∑ j : Fin (m + 1), ∑ i : Fin (m + 2), (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
+      (∑ j : Fin n, ∑ i ∈ Finset.Iic j.castSucc, (-1 : ℤ) ^ ((j : ℕ) + i) • E j i) +
+      (∑ j : Fin n, ∑ i ∈ Finset.Ioi j.castSucc, (-1 : ℤ) ^ ((j : ℕ) + i) • E j i) =
+      ∑ j : Fin n, ∑ i : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + i) • E j i := by
     rw [← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    have hfilt : Finset.univ.filter (fun i : Fin (m + 2) ↦ (j : ℕ) < i) =
-        Finset.univ.filter (fun i : Fin (m + 2) ↦ ¬(i : ℕ) ≤ j) := by ext; simp
+    rw [← Finset.filter_ge_eq_Iic, ← Finset.filter_lt_eq_Ioi]
+    have hfilt : Finset.univ.filter (fun i : Fin (n + 1) ↦ j.castSucc < i) =
+        Finset.univ.filter (fun i : Fin (n + 1) ↦ ¬i ≤ j.castSucc) := by ext; simp
     rw [hfilt, Finset.sum_filter_add_sum_filter_not]
   rw [hS1, hS2, hsplit, sum_neg_one_pow_lower_tri F E hlo, sum_neg_one_pow_upper_tri F E hhi,
     ← htri, ← sum_neg_one_pow_diag_band F hdiag]
