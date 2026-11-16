@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Coeff
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
+
+import Mathlib.Algebra.Polynomial.Derivative
 
 /-!
 # The polynomial `(1 + X) ^ n - 1`
@@ -37,6 +40,8 @@ polynomials at `I` are closed under finite products, including the empty product
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
   distinguished at every ideal containing `p`.
+* `TauCeti.Polynomial.squarefree_one_add_X_pow_sub_one`: over a domain in which `(m : R) ≠ 0`,
+  `(1 + X) ^ m - 1` is squarefree.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
@@ -90,6 +95,45 @@ theorem isDistinguishedAt_one_add_X_pow_sub_one {p : ℕ} (hp : p.Prime) {I : Id
   · simp [coeff_one_add_X_pow]
   · rw [coeff_sub, coeff_one_add_X_pow, coeff_one, ite_eq_right hk0.ne', sub_zero]
     exact I.mem_of_dvd (Nat.cast_dvd_cast (hp.dvd_choose_pow hk0.ne' hk.ne)) hI
+
+/-- Over an integral domain `R`, if `(m : R) ≠ 0`, then `(1 + X) ^ m - 1` is squarefree:
+`(1 + X) * ω' - m * ω = m` forces any repeated factor to be a constant dividing the leading
+coefficient `1` of the monic polynomial `ω`. -/
+theorem squarefree_one_add_X_pow_sub_one [IsDomain R] {m : ℕ} (hm : (m : R) ≠ 0) :
+    Squarefree ((1 + X) ^ m - 1 : R[X]) := by
+  have hm0 : m ≠ 0 := by rintro rfl; exact hm (by simp)
+  intro F hF
+  set ω : R[X] := (1 + X) ^ m - 1
+  obtain ⟨Q, hQ⟩ := hF
+  -- `(1 + X) · ω' - m · ω = m`, and `F` divides both `ω` and `ω'`.
+  have hderiv_ω : derivative ω = C (m : R) * (1 + X) ^ (m - 1) := by
+    simp [ω, derivative_pow]
+  have hid : (1 + X) * derivative ω - C (m : R) * ω = C (m : R) := by
+    rw [hderiv_ω]
+    have hpow : (1 + X : R[X]) * (1 + X) ^ (m - 1) = (1 + X) ^ m := mul_pow_sub_one hm0 _
+    calc (1 + X) * (C (m : R) * (1 + X) ^ (m - 1)) - C (m : R) * ω
+        = C (m : R) * ((1 + X) * (1 + X) ^ (m - 1)) - C (m : R) * ω := by ring
+      _ = C (m : R) * (1 + X) ^ m - C (m : R) * ((1 + X) ^ m - 1) := by rw [hpow]
+      _ = C (m : R) := by ring
+  have hFdvd_ω : F ∣ ω := ⟨F * Q, by rw [hQ, mul_assoc]⟩
+  have hFdvd_dω : F ∣ derivative ω := by
+    refine ⟨2 * derivative F * Q + F * derivative Q, ?_⟩
+    rw [hQ, derivative_mul, derivative_mul]
+    ring
+  have hFdvd_C : F ∣ C (m : R) :=
+    hid ▸ dvd_sub (dvd_mul_of_dvd_right hFdvd_dω _) (dvd_mul_of_dvd_right hFdvd_ω _)
+  have hdeg0 : F.natDegree = 0 :=
+    Nat.eq_zero_of_le_zero ((natDegree_le_of_dvd hFdvd_C (C_ne_zero.mpr hm)).trans (by simp))
+  have hFC : F = C (F.coeff 0) := eq_C_of_natDegree_eq_zero hdeg0
+  obtain ⟨S, hS⟩ := hFdvd_ω
+  have hlc : F.coeff 0 * S.coeff m = 1 := by
+    have hcoeff := congrArg (fun P : R[X] ↦ P.coeff m) hS
+    rw [hFC, coeff_C_mul] at hcoeff
+    have hmon : ω.coeff m = 1 := by
+      rw [← natDegree_one_add_X_pow_sub_one (R := R) m]
+      exact (monic_one_add_X_pow_sub_one hm0).leadingCoeff
+    exact hcoeff.symm.trans hmon
+  exact hFC ▸ (IsUnit.of_mul_eq_one (S.coeff m) hlc).map C
 
 end Polynomial
 

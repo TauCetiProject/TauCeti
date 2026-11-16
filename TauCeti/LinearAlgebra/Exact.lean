@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Prod
 
+import TauCeti.GroupTheory.Index.Exact
+
 /-!
 # Exact sequences of linear maps
 
@@ -27,7 +29,10 @@ exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_f
 `TauCeti.exact_ker_comp` attached to a surjection and a further map, the exact sequence
 `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
 (`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence `0 → ker f → M → range f → 0`
-of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and cokernels
+of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the preservation of finiteness by a
+linear map with finite kernel and cokernel (`LinearMap.finite_iff_of_finite_ker_of_finite_coker`)
+and finiteness of the kernel of a restriction (`LinearMap.finite_ker_restrict`), the isomorphisms
+on kernels and cokernels
 induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
@@ -598,6 +603,18 @@ theorem surjective_prod_of_comp_eq_zero {R U V B A : Type*} [Semiring R]
   rw [prod_apply, Function.prod, map_add, map_add, ← comp_apply g,
     hgf, LinearMap.zero_apply, add_zero, ← comp_apply h, hu, add_sub_cancel]
 
+/-- Restricting a semilinear map with finite kernel to invariant submodules gives a map with
+finite kernel. -/
+theorem finite_ker_restrict {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂] {τ₁₂ : R →+* R₂}
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂]
+    {p : Submodule R M} {q : Submodule R₂ M₂} (f : M →ₛₗ[τ₁₂] M₂)
+    (hf : ∀ x ∈ p, f x ∈ q) [Finite (ker f)] :
+    Finite (ker (f.restrict hf)) :=
+  Finite.of_injective
+    (fun x : ker (f.restrict hf) ↦
+      (⟨x.1.1, mem_ker.mpr (congrArg Subtype.val (mem_ker.mp x.2))⟩ : ker f))
+    fun _ _ h ↦ Subtype.ext (Subtype.ext (Subtype.mk.inj h))
+
 section Ring
 
 variable {R : Type*} [Ring R] {M N P : Type*} [AddCommGroup M] [Module R M]
@@ -608,6 +625,18 @@ the inclusion of the kernel and the corestriction `f.rangeRestrict`. -/
 theorem exact_subtype_rangeRestrict (f : M →ₗ[R] N) :
     Function.Exact (ker f).subtype f.rangeRestrict := by
   rw [exact_iff, ker_rangeRestrict, Submodule.range_subtype]
+
+/-- A linear map with finite kernel and cokernel preserves finiteness of the ambient module:
+`M` is finite if and only if `N` is. -/
+theorem finite_iff_of_finite_ker_of_finite_coker (φ : M →ₗ[R] N)
+    [Finite (ker φ)] [Finite (N ⧸ range φ)] :
+    Finite M ↔ Finite N :=
+  ⟨fun _ ↦
+    have : Finite (range φ) := Finite.of_surjective _ φ.surjective_rangeRestrict
+    (exact_subtype_mkQ (range φ)).finite,
+  fun _ ↦
+    have : Finite (range φ) := Finite.of_injective _ (range φ).injective_subtype
+    φ.exact_subtype_rangeRestrict.finite⟩
 
 section KerCokerComp
 

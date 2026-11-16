@@ -50,6 +50,8 @@ No finiteness of the residue field of `O` is needed.
 * `Polynomial.IsDistinguishedAt.isPrime_span_coe_iff` and
   `Polynomial.IsDistinguishedAt.prime_coe_iff`: a distinguished polynomial over an adically
   complete ring is prime as a power series if and only if it is prime as a polynomial.
+* `Polynomial.IsDistinguishedAt.coe_dvd_coe_iff`: divisibility of polynomials in `A⟦X⟧` by a
+  distinguished polynomial reflects divisibility in `A[X]`.
 * `Polynomial.IsDistinguishedAt.coe_mem_nonZeroDivisors`: a distinguished polynomial over a ring
   Hausdorff for the ideal is a non-zero-divisor of the power series ring.
 * `PowerSeries.prime_iff_of_isDiscreteValuationRing`: the prime elements of `O⟦X⟧` are the
@@ -94,6 +96,15 @@ theorem prime_coe_iff (H : g.IsDistinguishedAt I) [IsAdicComplete I A] :
   have hg : g ≠ 0 := H.monic.ne_zero
   rw [← Ideal.span_singleton_prime hg,
     ← Ideal.span_singleton_prime (Polynomial.coe_eq_zero_iff.not.2 hg), H.isPrime_span_coe_iff]
+
+/-- A polynomial distinguished at `I`, over an `I`-adically complete ring, divides another
+polynomial in `A⟦X⟧` if and only if it divides it in `A[X]`. -/
+theorem coe_dvd_coe_iff (H : g.IsDistinguishedAt I) [IsAdicComplete I A] {f : A[X]} :
+    (g : PowerSeries A) ∣ (f : PowerSeries A) ↔ g ∣ f := by
+  refine ⟨fun h ↦ ?_, _root_.map_dvd Polynomial.coeToPowerSeries.ringHom⟩
+  rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem] at h ⊢
+  apply H.algEquivQuotient.injective
+  simpa [map_zero] using h
 
 /-- A polynomial distinguished at `I`, over a ring that is Hausdorff for `I`, is a non-zero-divisor
 of the power series ring: by the uniqueness of Weierstrass division, `g * q = 0` forces `q = 0`. -/

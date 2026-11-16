@@ -727,8 +727,7 @@ theorem natCard_eq_natCard_residueField_pow_length {R M : Type*} [CommRing R] [I
       have hcardS : Nat.card S = Nat.card (s ⟨k, by omega⟩) :=
         Nat.card_congr (Submodule.comapSubtypeEquivOfLe hcov.le).toEquiv
       rw [S.card_eq_card_quotient_mul_card, hcardS, ih (by omega), Nat.card_congr e.toEquiv,
-        pow_succ]
-      rfl
+        pow_succ, IsLocalRing.ResidueField]
   have hlen := Module.length_compositionSeries s hhead hlast
   rw [← hlen, ENat.toNat_natCast, ← hstep s.length (Nat.lt_succ_self _)]
   have htop : s ⟨s.length, Nat.lt_succ_self _⟩ = ⊤ := hlast

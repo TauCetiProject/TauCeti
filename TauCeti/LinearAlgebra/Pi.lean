@@ -33,6 +33,8 @@ weights.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `Submodule.finite_pi_univ_iff`: a finite dependent product `Submodule.pi Set.univ S` is finite
+  if and only if every factor submodule `S i` is finite.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
   coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
   the image coordinate.
@@ -107,6 +109,21 @@ public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R
   obtain ⟨a, ha⟩ := mem_span_singleton.mp hmem
   have := congrFun ha i
   simp [hij] at this
+
+/-- A finite dependent product `Submodule.pi Set.univ S` is finite if and only if every factor
+submodule `S i` is finite. -/
+public theorem finite_pi_univ_iff {R ι : Type*} {M : ι → Type*} [Semiring R] [Finite ι]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (S : ∀ i, Submodule R (M i)) :
+    Finite ↥(Submodule.pi Set.univ S) ↔ ∀ i, Finite (S i) := by
+  have : ∀ j, Nonempty (S j) := fun j ↦ ⟨0⟩
+  let e : ↥(Submodule.pi Set.univ S) ≃ ∀ i, S i :=
+    { toFun f i := ⟨f.1 i, f.2 i (Set.mem_univ i)⟩
+      invFun f := ⟨fun i ↦ (f i).1, fun i _ ↦ (f i).2⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  rw [Equiv.finite_iff e]
+  exact ⟨fun _ i ↦ Finite.of_surjective (fun f : ∀ j, S j ↦ f i) (Function.surjective_eval i),
+    fun _ ↦ inferInstance⟩
 
 end Submodule
 

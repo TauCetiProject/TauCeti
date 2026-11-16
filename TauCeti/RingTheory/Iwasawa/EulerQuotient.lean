@@ -175,8 +175,9 @@ theorem natCard_quotSMulTop_elementary {ϖ : O} (hϖ : Irreducible ϖ) {a b : �
       Ideal.absNorm_eq_natCard]
 
 /-- **Finiteness of the cokernel on a torsion elementary module.** Over a complete discrete
-valuation ring with finite residue field, a polynomial `G` with nonzero reduction modulo the
-maximal ideal has finite cokernel on `∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)` if and only if
+valuation ring with finite residue field, let `ϖ` be a uniformiser, let the `Fⱼ` be distinguished
+at the maximal ideal, and let `G` be a polynomial with nonzero reduction modulo the maximal ideal.
+Then `G` has finite cokernel on `∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)` if and only if
 `Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`. -/
 theorem finite_quotSMulTop_elementary_iff [Finite (ResidueField O)] {ϖ : O} (hϖ : Irreducible ϖ)
     {a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]}

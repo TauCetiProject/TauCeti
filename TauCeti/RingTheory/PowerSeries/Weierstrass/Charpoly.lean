@@ -51,6 +51,8 @@ factor of `g`, and `T` acts on it with characteristic polynomial that distinguis
   killed by `g` is finite over `A`, by restriction of scalars from `A⟦X⟧ ⧸ (g)`.
 * `PowerSeries.IsWeierstrassFactorizationAt.infinite_quotient`: over an infinite ring,
   `A⟦X⟧ ⧸ (g)` is infinite when `deg f > 0`.
+* `PowerSeries.IsWeierstrassFactorizationAt.finite_submodule_iff_eq_bot`: over an infinite
+  integral domain, an `A⟦X⟧`-submodule of `A⟦X⟧ ⧸ (g)` is finite iff it is trivial.
 * `PowerSeries.IsWeierstrassFactorizationAt.natCard_quotSMulTop_quotient_span_C`: for `a : A`, the
   quotient `A⟦X⟧ ⧸ (a, g)` has `#(A ⧸ (a)) ^ deg f` elements.
 * `PowerSeries.IsWeierstrassFactorizationAt.minpoly_mk_X`: the minimal polynomial of the class of
@@ -145,6 +147,26 @@ theorem infinite_quotient [Infinite A] (hf : 0 < f.natDegree) :
   have := H.free_quotient
   have := Module.nontrivial_of_finrank_pos (R := A) (H.finrank_quotient.symm ▸ hf)
   exact Module.Free.infinite A _
+
+/-- For a Weierstrass factorization `g = f * h` over an infinite integral domain `A`, an
+`A⟦X⟧`-submodule of `A⟦X⟧ ⧸ (g)` is finite if and only if it is trivial, since `A⟦X⟧ ⧸ (g)` is
+free over `A`. -/
+theorem finite_submodule_iff_eq_bot [IsDomain A] [Infinite A]
+    (S : Submodule A⟦X⟧ (A⟦X⟧ ⧸ Ideal.span {g})) :
+    Finite S ↔ S = ⊥ := by
+  refine ⟨fun hfin ↦ ?_, fun h ↦ by rw [h]; infer_instance⟩
+  by_contra hne
+  obtain ⟨x, hxS, hx0⟩ := (Submodule.ne_bot_iff S).mp hne
+  have := H.free_quotient
+  let φ : A → S := fun c ↦ ⟨C c • x, S.smul_mem (C c) hxS⟩
+  have hsmul (c : A) : C c • x = c • x := algebraMap_smul A⟦X⟧ c x
+  have hinj : Function.Injective φ := fun c₁ c₂ hc ↦ by
+    have hval : c₁ • x = c₂ • x := by
+      have := congrArg Subtype.val hc
+      simpa [φ, hsmul] using this
+    have hsub : (c₁ - c₂) • x = 0 := by rw [sub_smul, hval, sub_self]
+    exact sub_eq_zero.mp ((smul_eq_zero.mp hsub).resolve_right hx0)
+  exact not_finite_iff_infinite.mpr (Infinite.of_injective φ hinj) hfin
 
 /-- For a Weierstrass factorization `g = f * h` and any `a : A`, the quotient of `A⟦X⟧ ⧸ (a)` by
 `g` is `A⟦X⟧ ⧸ (a, g) ≃ (A ⧸ (a)) ^ deg f`, so it has `#(A ⧸ (a)) ^ deg f` elements. -/

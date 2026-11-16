@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
+import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Pointwise scalar actions on submodules
@@ -39,6 +41,9 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.smul_prod`, `Submodule.smul_pi_univ`: pointwise scalar multiplication distributes
+  over binary products and unrestricted dependent products of submodules.
+* `Submodule.finite_smul_top_subtype_iff`: `r • (⊤ : Submodule R S)` is finite iff `r • S` is.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -63,6 +68,40 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- Pointwise scalar multiplication distributes over the product of two submodules. -/
+theorem smul_prod {α R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [Monoid α] [DistribMulAction α M] [DistribMulAction α N]
+    [SMulCommClass α R M] [SMulCommClass α R N] (a : α) (S : Submodule R M) (T : Submodule R N) :
+    a • S.prod T = (a • S).prod (a • T) := by
+  ext ⟨x, y⟩
+  simp only [mem_smul_pointwise_iff_exists, mem_prod, Prod.ext_iff, Prod.smul_fst, Prod.smul_snd]
+  exact ⟨fun ⟨⟨u, v⟩, ⟨hu, hv⟩, hxu, hyv⟩ ↦ ⟨⟨u, hu, hxu⟩, ⟨v, hv, hyv⟩⟩,
+    fun ⟨⟨u, hu, hxu⟩, ⟨v, hv, hyv⟩⟩ ↦ ⟨⟨u, v⟩, ⟨hu, hv⟩, hxu, hyv⟩⟩
+
+/-- Pointwise scalar multiplication distributes over the unrestricted dependent product
+`Submodule.pi Set.univ S`. -/
+theorem smul_pi_univ {α R ι : Type*} {M : ι → Type*} [Semiring R] [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] [Monoid α] [∀ i, DistribMulAction α (M i)]
+    [∀ i, SMulCommClass α R (M i)] (a : α) (S : ∀ i, Submodule R (M i)) :
+    a • Submodule.pi Set.univ S = Submodule.pi Set.univ fun i ↦ a • S i := by
+  ext f
+  simp only [mem_smul_pointwise_iff_exists, mem_pi, Set.mem_univ, forall_true_left, funext_iff,
+    Pi.smul_apply]
+  refine ⟨fun ⟨g, hg, hgf⟩ i ↦ ⟨g i, hg i, hgf i⟩, fun hf ↦ ?_⟩
+  choose g hg hgf using hf
+  exact ⟨g, hg, hgf⟩
+
+/-- Inside a submodule `S`, the scaled submodule `r • (⊤ : Submodule R S)` is finite if and only
+if `r • S` is finite in the ambient module. -/
+theorem finite_smul_top_subtype_iff {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (r : R) (S : Submodule R M) :
+    Finite ↥(r • (⊤ : Submodule R S)) ↔ Finite ↥(r • S) := by
+  have hmap : (r • (⊤ : Submodule R S)).map S.subtype = r • S := by
+    rw [Submodule.map_pointwise_smul, Submodule.map_subtype_top]
+  exact Equiv.finite_iff
+    ((Submodule.equivMapOfInjective S.subtype S.subtype_injective _).trans
+      (LinearEquiv.ofEq _ _ hmap)).toEquiv
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
