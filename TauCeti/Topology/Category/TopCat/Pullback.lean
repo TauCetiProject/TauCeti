@@ -22,6 +22,8 @@ same fibres as `p`: its fibre over `b'` is the fibre of `p` over `g b'`
 (`TopCat.Hom.fiberPullbackFstIso`). A map `f` over `B` induces a map of base changes
 (`TopCat.pullbackMapOfCompEq`), which is `f` on these fibres
 (`TopCat.Hom.fiberPullbackFstIso_hom_naturality`).
+The inclusion `e ↦ (k, e)` of a fibre of `p` into the base change along `g` at a point `k` over
+it is `TopCat.Hom.pullbackFiberι`.
 -/
 
 public section
@@ -149,6 +151,21 @@ lemma fiberPullbackFstIso_hom_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B')
 lemma fiberPullbackFstIso_inv_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B') (x : p.fiber (g b')) :
     ((p.fiberPullbackFstIso g b').inv x : ↑(TopCat.of { q : B' × E // g q.1 = p q.2 })) =
       ⟨(b', x.1), x.2.symm⟩ := (rfl)
+
+/-- The inclusion `e ↦ (k, e)` of the fibre of `p` over `b` into the base change
+`{(k, e) | g k = p e}` of `p` along `g : K ⟶ B`, at a point `k` of `K` over `b`. For `b = g k` it
+is the inclusion of the fibre of the base change over `k`, read through
+`TopCat.Hom.fiberPullbackFstIso`; the equation `g k = b` lets the fibre be named by its point of
+`B`, as for the end points of a path. -/
+@[expose] def pullbackFiberι {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
+    (h : g k = b) : p.fiber b ⟶ TopCat.of {x : K × E // g x.1 = p x.2} :=
+  TopCat.ofHom ⟨fun e ↦ ⟨(k, e.1), h.trans (e.2 : p e.1 = b).symm⟩, by fun_prop⟩
+
+/-- The inclusion of a fibre into a base change sends `e` to `(k, e)`. -/
+@[simp]
+lemma coe_pullbackFiberι_apply {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
+    (h : g k = b) (e : p.fiber b) : (p.pullbackFiberι g h e : K × E) = (k, e.1) :=
+  (rfl)
 
 /-- The identifications `TopCat.Hom.fiberPullbackFstIso` of the fibres of base changes are natural
 in maps over the base: on fibres, the map of base changes induced by `f` is the map of fibres

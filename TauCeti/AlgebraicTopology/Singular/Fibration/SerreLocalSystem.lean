@@ -8,11 +8,8 @@ module
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalSystem
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
-public import TauCeti.Topology.Category.TopCat.Pullback
-public import TauCeti.Topology.Category.TopCat.WeakEquivalence
-public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
-public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
-public import TauCeti.Topology.Homotopy.SerreFibration.Connected
+public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.TopCat.Path
 
 /-!
 # The local system of fibre homology of a Serre fibration
@@ -35,11 +32,12 @@ transport as its monodromy, it is the coefficient system of the second page
 
 All of this is a special case of transport over an arbitrary contractible parameter space `K`
 (`TauCeti.TopCat.pullbackFiberTransport`): for a map `g : K → B` and points `k₀, k₁` of `K`, the
-fibre inclusions into the base change of `p` along `g` at `k₀` and `k₁` induce isomorphisms on
-homology, so they compose to a map between the homology of the fibres over `g k₀` and `g k₁`. This
-transport is transitive, natural in maps of parameter spaces over `B` and in maps of fibrations,
-and trivial along paths in `K` on which `g` is constant. Homotopy invariance follows by taking for
-`K` the square, on which a homotopy of paths is defined.
+fibre inclusions `TopCat.Hom.pullbackFiberι` into the base change of `p` along `g` at `k₀` and `k₁`
+are weak homotopy equivalences (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`). They
+induce isomorphisms on homology, so they compose to a map between the homology of the fibres over
+`g k₀` and `g k₁`. This transport is transitive, natural in maps of parameter spaces over `B` and
+in maps of fibrations, and trivial along paths in `K` on which `g` is constant. Homotopy invariance
+follows by taking for `K` the square, on which a homotopy of paths is defined.
 
 When `p` has a lifting function `Λ`, so that it is a Hurewicz fibration with a transport map
 `Λ.transport γ` between its fibres, the transport on homology is the map induced by
@@ -57,7 +55,6 @@ Serre fibration.
 
 ## Main definitions
 
-* `TopCat.Hom.pullbackFiberι`: the inclusion of a fibre of `p` into a base change of `p`.
 * `TauCeti.TopCat.pullbackFiberTransport`: transport on homology over a contractible parameter
   space.
 * `TauCeti.TopCat.fiberHomologyTransport`: transport on homology along a path.
@@ -67,8 +64,6 @@ Serre fibration.
 
 ## Main results
 
-* `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`: over a contractible parameter space,
-  the fibre inclusions into a base change of a Serre fibration are weak homotopy equivalences.
 * `TauCeti.TopCat.fiberHomologyTransport_congr`, `TauCeti.TopCat.fiberHomologyTransport_refl`,
   `TauCeti.TopCat.fiberHomologyTransport_trans`: transport is invariant under homotopy and
   functorial.
@@ -92,27 +87,6 @@ open CategoryTheory AlgebraicTopology unitInterval
 
 universe w u
 
-namespace TopCat.Hom
-
-variable {E B K : TopCat.{u}}
-
-/-- The inclusion `e ↦ (k, e)` of the fibre of `p` over `b` into the base change
-`{(k, e) | g k = p e}` of `p` along `g : K ⟶ B`, at a point `k` of `K` over `b`. For `b = g k` it
-is the inclusion of the fibre of the base change over `k`, read through
-`TopCat.Hom.fiberPullbackFstIso`; the equation `g k = b` lets the fibre be named by its point of
-`B`, as for the end points of a path. -/
-def pullbackFiberι (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B} (h : g k = b) :
-    p.fiber b ⟶ TopCat.of {x : K × E // g x.1 = p x.2} :=
-  TopCat.ofHom ⟨fun e ↦ ⟨(k, e.1), h.trans (e.2 : p e.1 = b).symm⟩, by fun_prop⟩
-
-/-- The inclusion of a fibre into a base change sends `e` to `(k, e)`. -/
-@[simp]
-lemma coe_pullbackFiberι_apply (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B} (h : g k = b)
-    (e : p.fiber b) : (p.pullbackFiberι g h e : K × E) = (k, e.1) :=
-  (rfl)
-
-end TopCat.Hom
-
 namespace TauCeti.TopCat
 
 variable {E B : TopCat.{u}} {p : E ⟶ B}
@@ -125,28 +99,6 @@ variable {K : TopCat.{u}}
 
 variable (hp : serreFibrations p)
 include hp
-
-/-- **Fibre inclusions over a contractible base are weak homotopy equivalences.** If `p` is a Serre
-fibration and `K` is contractible, the inclusion of the fibre of `p` over `g k` into the base change
-of `p` along `g : K ⟶ B`, at `k`, is a weak homotopy equivalence. -/
-theorem isWeakHomotopyEquivalence_pullbackFiberι [ContractibleSpace K] (g : K ⟶ B) {k : K}
-    {b : B} (h : g k = b) :
-    (p.pullbackFiberι g h).hom.IsWeakHomotopyEquivalence := by
-  subst h
-  -- Up to the identification of the fibres of the base change, this is the inclusion of the fibre
-  -- of the base change over `k`, which is `n`-connected for every `n` since `K` has no homotopy.
-  have hι : p.pullbackFiberι g rfl =
-      (p.fiberPullbackFstIso g k).inv ≫ (_root_.TopCat.pullbackFst g p).fiberι k := by
-    ext e <;>
-    · rw [ConcreteCategory.comp_apply, TopCat.Hom.fiberι_apply,
-        TopCat.Hom.fiberPullbackFstIso_inv_apply_coe]
-      rfl
-  rw [hι, _root_.TopCat.hom_comp]
-  refine ContinuousMap.IsWeakHomotopyEquivalence.comp ?_
-    ((mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _))
-  exact ContinuousMap.isWeakHomotopyEquivalence_iff_forall_isNConnected.2 fun _ ↦
-    isNConnected_fiberι_of_mem_serreFibrations (mem_serreFibrations_pullbackFst hp g)
-      fun _ _ ↦ inferInstance
 
 variable {R : Type w} [Ring R] (M : ModuleCat.{u} R) (n : ℕ)
 
@@ -298,102 +250,7 @@ end Pullback
 
 section Path
 
-/-- The unit interval `TopCat.I` is contractible. -/
-private instance : ContractibleSpace TopCat.I.{u} :=
-  have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-  TopCat.I.homeomorph.contractibleSpace
-
-/-- The unit square, lifted to the universe `u`, is contractible. -/
-private instance : ContractibleSpace (TopCat.of (ULift.{u} (I × I))) :=
-  have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-  Homeomorph.ulift.contractibleSpace
-
 variable {b₀ b₁ b₂ : B}
-
-/-- The midpoint of the unit interval `TopCat.I`. -/
-private def midpoint : TopCat.I.{u} :=
-  TopCat.I.homeomorph.symm ⟨1 / 2, by norm_num, by norm_num⟩
-
-/-- The first half of the interval, as a self-map of `TopCat.I`, along which the concatenation of
-two paths restricts to the first path. -/
-private def firstHalf : TopCat.I.{u} ⟶ TopCat.I.{u} :=
-  TopCat.ofHom ⟨fun t ↦ TopCat.I.homeomorph.symm ⟨TopCat.I.homeomorph t / 2,
-    div_nonneg (TopCat.I.homeomorph t).2.1 zero_le_two,
-    by linarith [(TopCat.I.homeomorph t).2.2]⟩, by fun_prop⟩
-
-/-- The second half of the interval, as a self-map of `TopCat.I`, along which the concatenation
-of two paths restricts to the second path. -/
-private def secondHalf : TopCat.I.{u} ⟶ TopCat.I.{u} :=
-  TopCat.ofHom ⟨fun t ↦ TopCat.I.homeomorph.symm ⟨(TopCat.I.homeomorph t + 1) / 2,
-    by linarith [(TopCat.I.homeomorph t).2.1], by linarith [(TopCat.I.homeomorph t).2.2]⟩,
-    by fun_prop⟩
-
-private lemma coe_homeomorph_midpoint : (TopCat.I.homeomorph midpoint.{u} : ℝ) = 1 / 2 :=
-  (rfl)
-
-private lemma coe_homeomorph_firstHalf_apply (t : TopCat.I.{u}) :
-    (TopCat.I.homeomorph (firstHalf t) : ℝ) = TopCat.I.homeomorph t / 2 :=
-  (rfl)
-
-private lemma coe_homeomorph_secondHalf_apply (t : TopCat.I.{u}) :
-    (TopCat.I.homeomorph (secondHalf t) : ℝ) = (TopCat.I.homeomorph t + 1) / 2 :=
-  (rfl)
-
-private lemma firstHalf_zero : firstHalf (0 : TopCat.I.{u}) = 0 :=
-  TopCat.I.ext (Subtype.ext (by rw [coe_homeomorph_firstHalf_apply]; simp))
-
-private lemma firstHalf_one : firstHalf (1 : TopCat.I.{u}) = midpoint :=
-  TopCat.I.ext (Subtype.ext (by rw [coe_homeomorph_firstHalf_apply, coe_homeomorph_midpoint]; simp))
-
-private lemma secondHalf_zero : secondHalf (0 : TopCat.I.{u}) = midpoint :=
-  TopCat.I.ext (Subtype.ext (by
-    rw [coe_homeomorph_secondHalf_apply, coe_homeomorph_midpoint]; simp))
-
-private lemma secondHalf_one : secondHalf (1 : TopCat.I.{u}) = 1 :=
-  TopCat.I.ext (Subtype.ext (by rw [coe_homeomorph_secondHalf_apply]; norm_num))
-
-private lemma pathEquiv_symm_trans_hom_midpoint (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
-    (TopCat.pathEquiv.symm (γ.trans δ)).hom midpoint = b₁ := by
-  have hc : (TopCat.I.homeomorph midpoint.{u} : ℝ) ≤ 1 / 2 := by
-    rw [coe_homeomorph_midpoint]
-  change γ.trans δ (TopCat.I.homeomorph midpoint) = b₁
-  rw [Path.trans_apply, dite_eq_left hc]
-  refine (congrArg γ (Subtype.ext ?_)).trans γ.target
-  dsimp only
-  rw [coe_homeomorph_midpoint]
-  norm_num
-
-private lemma firstHalf_comp_pathEquiv_symm_trans_hom (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
-    firstHalf ≫ (TopCat.pathEquiv.symm (γ.trans δ)).hom = (TopCat.pathEquiv.symm γ).hom := by
-  ext t
-  have hc : (TopCat.I.homeomorph (firstHalf t) : ℝ) ≤ 1 / 2 := by
-    rw [coe_homeomorph_firstHalf_apply]; linarith [(TopCat.I.homeomorph t).2.2]
-  change γ.trans δ (TopCat.I.homeomorph (firstHalf t)) = γ (TopCat.I.homeomorph t)
-  rw [Path.trans_apply, dite_eq_left hc]
-  refine congrArg γ (Subtype.ext ?_)
-  dsimp only
-  rw [coe_homeomorph_firstHalf_apply]
-  ring
-
-private lemma secondHalf_comp_pathEquiv_symm_trans_hom (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
-    secondHalf ≫ (TopCat.pathEquiv.symm (γ.trans δ)).hom = (TopCat.pathEquiv.symm δ).hom := by
-  ext t
-  change γ.trans δ (TopCat.I.homeomorph (secondHalf t)) = δ (TopCat.I.homeomorph t)
-  rw [Path.trans_apply]
-  split_ifs with h
-  · -- Only the starting point of `δ` lies in the first half, where both paths are at `b₁`.
-    rw [coe_homeomorph_secondHalf_apply] at h
-    have ht : (TopCat.I.homeomorph t : ℝ) = 0 :=
-      le_antisymm (by linarith) (TopCat.I.homeomorph t).2.1
-    rw [show TopCat.I.homeomorph t = 0 from Subtype.ext ht, Path.source]
-    refine (congrArg γ (Subtype.ext ?_)).trans γ.target
-    dsimp only
-    rw [coe_homeomorph_secondHalf_apply, ht]
-    norm_num
-  · refine congrArg δ (Subtype.ext ?_)
-    dsimp only
-    rw [coe_homeomorph_secondHalf_apply]
-    ring
 
 variable (hp : serreFibrations p) {R : Type w} [Ring R] (M : ModuleCat.{u} R) (n : ℕ)
 include hp
@@ -492,17 +349,17 @@ theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
   -- are transport along `γ` and along `δ`.
   rw [fiberHomologyTransport_eq, fiberHomologyTransport_eq, fiberHomologyTransport_eq,
     ← pullbackFiberTransport_comp_pullbackFiberTransport hp M n _ _
-      (pathEquiv_symm_trans_hom_midpoint γ δ),
-    pullbackFiberTransport_comp_left hp M n _ _ firstHalf
-      (firstHalf_comp_pathEquiv_symm_trans_hom γ δ)
-      firstHalf_zero firstHalf_one (TopCat.pathEquiv.symm γ).hom₀
+      (TopCat.pathEquiv_symm_trans_hom_midpoint γ δ),
+    pullbackFiberTransport_comp_left hp M n _ _ TopCat.I.firstHalf
+      (TopCat.firstHalf_comp_pathEquiv_symm_trans_hom γ δ)
+      TopCat.I.firstHalf_zero TopCat.I.firstHalf_one (TopCat.pathEquiv.symm γ).hom₀
       (TopCat.pathEquiv.symm γ).hom₁
-      (TopCat.pathEquiv.symm (γ.trans δ)).hom₀ (pathEquiv_symm_trans_hom_midpoint γ δ),
-    pullbackFiberTransport_comp_left hp M n _ _ secondHalf
-      (secondHalf_comp_pathEquiv_symm_trans_hom γ δ)
-      secondHalf_zero secondHalf_one (TopCat.pathEquiv.symm δ).hom₀
+      (TopCat.pathEquiv.symm (γ.trans δ)).hom₀ (TopCat.pathEquiv_symm_trans_hom_midpoint γ δ),
+    pullbackFiberTransport_comp_left hp M n _ _ TopCat.I.secondHalf
+      (TopCat.secondHalf_comp_pathEquiv_symm_trans_hom γ δ)
+      TopCat.I.secondHalf_zero TopCat.I.secondHalf_one (TopCat.pathEquiv.symm δ).hom₀
       (TopCat.pathEquiv.symm δ).hom₁
-      (pathEquiv_symm_trans_hom_midpoint γ δ) (TopCat.pathEquiv.symm (γ.trans δ)).hom₁]
+      (TopCat.pathEquiv_symm_trans_hom_midpoint γ δ) (TopCat.pathEquiv.symm (γ.trans δ)).hom₁]
 
 /-- **The local system of fibre homology of a Serre fibration** `b ↦ Hₙ(p⁻¹(b); M)`, with
 singular homology with coefficients in a module `M`. The class of a path acts by transport along
@@ -529,6 +386,7 @@ def serreFiberLocalSystemObjIso (b : FundamentalGroupoid B) :
   Iso.refl _
 
 /-- The local system of fibre homology sends the class of a path to transport along it. -/
+@[simp]
 theorem serreFiberLocalSystem_map_mk {b₀ b₁ : FundamentalGroupoid B}
     (γ : Path b₀.as b₁.as) :
     (serreFiberLocalSystem hp M n).map (Path.Homotopic.Quotient.mk γ) =
@@ -595,6 +453,7 @@ def serreFiberLocalSystemIsoFiberLocalSystem
 
 /-- The components of `TauCeti.TopCat.serreFiberLocalSystemIsoFiberLocalSystem` are the
 comparisons of simplicial and cubical singular homology of the fibres. -/
+@[simp]
 theorem serreFiberLocalSystemIsoFiberLocalSystem_hom_app
     (Λ : LiftingFunction p.hom) (k : Type u) [Ring k] (b : FundamentalGroupoid B) :
     (serreFiberLocalSystemIsoFiberLocalSystem hp n Λ k).hom.app b =
@@ -650,6 +509,7 @@ def serreFiberLocalSystemMap :
 
 /-- On the fibre over `b`, the map of local systems induced by a map of Serre fibrations is the map
 induced on homology by the map of fibres. -/
+@[simp]
 theorem serreFiberLocalSystemMap_app (b : FundamentalGroupoid B) :
     (sq.serreFiberLocalSystemMap hp hp' M n).app b =
       (serreFiberLocalSystemObjIso hp M n b).hom ≫

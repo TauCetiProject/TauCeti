@@ -1,0 +1,83 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Topology.Homotopy.TopCat.Path
+public import TauCeti.Topology.Category.TopCat.Interval
+
+/-!
+# Paths as morphisms out of `TopCat.I`
+
+Mathlib's `TopCat.pathEquiv` identifies a path `γ` in `X : TopCat` with a morphism
+`(TopCat.pathEquiv.symm γ).hom : TopCat.I ⟶ X`, which sends `t` to `γ (TopCat.I.homeomorph t)`
+(`TopCat.pathEquiv_symm_hom_apply`). Along the reparametrizations `TopCat.I.firstHalf` and
+`TopCat.I.secondHalf` of the two halves of the interval, the morphism of a concatenation `γ.trans δ`
+restricts to the morphisms of `γ` and of `δ`, and it sends `TopCat.I.midpoint` to the point at
+which they meet.
+-/
+
+public section
+
+open CategoryTheory
+
+universe u
+
+namespace TopCat
+
+variable {X : TopCat.{u}} {x₀ x₁ x₂ : X}
+
+/-- The morphism `TopCat.I ⟶ X` of a path `γ` sends `t` to `γ (TopCat.I.homeomorph t)`. -/
+@[simp]
+lemma pathEquiv_symm_hom_apply (γ : _root_.Path x₀ x₁) (t : I.{u}) :
+    (pathEquiv.symm γ).hom t = γ (I.homeomorph t) :=
+  (rfl)
+
+/-- The concatenation of two paths passes through their common end point at the midpoint. -/
+lemma pathEquiv_symm_trans_hom_midpoint (γ : _root_.Path x₀ x₁) (δ : _root_.Path x₁ x₂) :
+    (pathEquiv.symm (γ.trans δ)).hom I.midpoint = x₁ := by
+  have hc : (I.homeomorph I.midpoint.{u} : ℝ) ≤ 1 / 2 := by
+    rw [I.coe_homeomorph_midpoint]
+  rw [pathEquiv_symm_hom_apply, Path.trans_apply, dite_eq_left hc]
+  refine (congrArg γ (Subtype.ext ?_)).trans γ.target
+  dsimp only
+  rw [I.coe_homeomorph_midpoint]
+  norm_num
+
+/-- On the first half of the interval, the concatenation of two paths is the first path. -/
+lemma firstHalf_comp_pathEquiv_symm_trans_hom (γ : _root_.Path x₀ x₁) (δ : _root_.Path x₁ x₂) :
+    I.firstHalf ≫ (pathEquiv.symm (γ.trans δ)).hom = (pathEquiv.symm γ).hom := by
+  ext t
+  have hc : (I.homeomorph (I.firstHalf t) : ℝ) ≤ 1 / 2 := by
+    rw [I.coe_homeomorph_firstHalf_apply]; linarith [(I.homeomorph t).2.2]
+  rw [ConcreteCategory.comp_apply, pathEquiv_symm_hom_apply, pathEquiv_symm_hom_apply,
+    Path.trans_apply, dite_eq_left hc]
+  refine congrArg γ (Subtype.ext ?_)
+  dsimp only
+  rw [I.coe_homeomorph_firstHalf_apply]
+  ring
+
+/-- On the second half of the interval, the concatenation of two paths is the second path. -/
+lemma secondHalf_comp_pathEquiv_symm_trans_hom (γ : _root_.Path x₀ x₁) (δ : _root_.Path x₁ x₂) :
+    I.secondHalf ≫ (pathEquiv.symm (γ.trans δ)).hom = (pathEquiv.symm δ).hom := by
+  ext t
+  rw [ConcreteCategory.comp_apply, pathEquiv_symm_hom_apply, pathEquiv_symm_hom_apply,
+    Path.trans_apply]
+  split_ifs with h
+  · -- Only the starting point of `δ` lies in the first half, where both paths are at `x₁`.
+    rw [I.coe_homeomorph_secondHalf_apply] at h
+    have ht : (I.homeomorph t : ℝ) = 0 :=
+      le_antisymm (by linarith) (I.homeomorph t).2.1
+    rw [show I.homeomorph t = 0 from Subtype.ext ht, Path.source]
+    refine (congrArg γ (Subtype.ext ?_)).trans γ.target
+    dsimp only
+    rw [I.coe_homeomorph_secondHalf_apply, ht]
+    norm_num
+  · refine congrArg δ (Subtype.ext ?_)
+    dsimp only
+    rw [I.coe_homeomorph_secondHalf_apply]
+    ring
+
+end TopCat
