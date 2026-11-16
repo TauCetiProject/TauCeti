@@ -21,8 +21,8 @@ on `U`:
 * for a closed smooth form `η`, it is closed at every point of `U`
   (`TauCeti.SmoothForm.IsClosed.extDeriv_mpullback_eq_zero`).
 
-Both are the open-set cases of the corresponding statements for within-set pullbacks,
-`ContMDiffAt.mpullback_form` and `TauCeti.extDerivWithin_mpullbackWithin`.
+They follow from the pointwise statements `ContMDiffAt.mpullback_form` and
+`TauCeti.mpullback_mextDeriv_at` (naturality of the exterior derivative).
 
 The typical `φ` is the inverse of a chart `e : M → E` other than a preferred one, for instance a
 chart adapted to a group action, so that a form on `M` can be read in that chart and fed to flat
@@ -96,18 +96,10 @@ theorem contDiffOn_mpullback (η : SmoothForm I M F k) (hU : IsOpen U)
 theorem IsClosed.extDeriv_mpullback_eq_zero {η : SmoothForm I M F k} (hη : η.IsClosed)
     (hU : IsOpen U) (hφ : ContMDiffOn 𝓘(ℝ, E') I 2 φ U) {y : E'} (hy : y ∈ U) :
     extDeriv (TauCeti.mpullback 𝓘(ℝ, E') I φ η.1 : E' → E' [⋀^Fin k]→L[ℝ] F) y = 0 := by
-  -- On the open set `U`, the pullback is the within-set pullback, whose exterior derivative is
-  -- the pullback of `dη = 0`.
-  have hloc : EventuallyEq (𝓝 y) (β := E' [⋀^Fin k]→L[ℝ] F)
-      (TauCeti.mpullback 𝓘(ℝ, E') I φ η.1) (TauCeti.mpullbackWithin 𝓘(ℝ, E') I φ U η.1) := by
-    filter_upwards [hU.mem_nhds hy] with z hz
-    exact (TauCeti.mpullbackWithin_eq_mpullback (F := F) (hU.uniqueMDiffOn z hz)
-      (((hφ z hz).contMDiffAt (hU.mem_nhds hz)).mdifferentiableAt (by simp)) η.1).symm
-  have h := extDerivWithin_mpullbackWithin (hφ y hy) hU.uniqueDiffOn
-    (subset_closure (by rwa [hU.interior_eq])) hy
-    ((η.contMDiff (φ y)).mdifferentiableAt (by simp))
-  rw [(isClosed_def η).1 hη, TauCeti.mpullbackWithin_zero] at h
-  exact hloc.extDeriv_eq.trans ((extDerivWithin_of_isOpen hU hy).symm.trans h)
+  -- `d (φ^* η) = φ^* dη = 0` at `y`, by naturality of the exterior derivative.
+  rw [← mextDeriv_eq_extDeriv, ← mpullback_mextDeriv_at ((hφ y hy).contMDiffAt (hU.mem_nhds hy))
+    ((η.contMDiff (φ y)).of_le (by simp)), (isClosed_def η).1 hη, TauCeti.mpullback_zero]
+  rfl
 
 end SmoothForm
 
