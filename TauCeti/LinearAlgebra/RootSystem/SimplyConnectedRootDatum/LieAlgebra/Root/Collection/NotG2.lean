@@ -142,10 +142,10 @@ private theorem commutator_mem_higher_roots
           2 • (t.simplyConnectedRootDatum ht).root β ∉
             Set.range (t.simplyConnectedRootDatum ht).root := by
         rintro ⟨d, hd⟩
-        exact hexclude ⟨⟨δ, hδQ⟩, ⟨d, by
-          simpa only [Equiv.refl_apply, two_zsmul, two_nsmul] using
-            (RootPairing.root_eq_add_zsmul_iff_of_pairingIn
-              (Equiv.refl _) (t.pairingIn_rationalRootSystem ht) d α β 2).mpr hd⟩⟩
+        have hiff := RootPairing.root_eq_add_zsmul_iff_of_pairingIn
+          (Equiv.refl _) (t.pairingIn_rationalRootSystem ht) d α β 2
+        simp only [Equiv.refl_apply, ofNat_zsmul] at hiff
+        exact hexclude ⟨⟨δ, hδQ⟩, ⟨d, hiff.mpr hd⟩⟩
       rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
         ρ M hM hnil hγZ hδ (not_three_nsmul_add_mem_range_root α β hlin) hb]
       exact H.mul_mem (hmem hα hβ rfl hγ _) (hdouble hα hβ rfl hγ hδQ _)
