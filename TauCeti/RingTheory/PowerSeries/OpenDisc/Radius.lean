@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.Entire.Topology
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
-import TauCeti.RingTheory.PowerSeries.Rescale
+public import TauCeti.RingTheory.PowerSeries.Rescale
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.RingTheory.PowerSeries.OpenDisc.Bounded
 
 /-!
 # Radius restriction, inclusions, and rescaling on open discs
@@ -163,18 +164,27 @@ theorem coeff_rescaleHom (u : R) (hu : ‖u‖ * S₀ ≤ R₀) (f : OnOpenDisc.
   coeff_rescale (f : R⟦X⟧) u n
 
 /-- Rescaling fixes constant series. -/
-@[simp]
 theorem rescaleHom_C (u : R) (hu : ‖u‖ * S₀ ≤ R₀) (a : R) :
     rescaleHom u hu (OnOpenDisc.polynomialHom (Polynomial.C a)) =
       OnOpenDisc.polynomialHom (Polynomial.C a) :=
   Subtype.ext (by simp)
 
 /-- Rescaling sends the variable `X` to `u X`. -/
-@[simp]
 theorem rescaleHom_X (u : R) (hu : ‖u‖ * S₀ ≤ R₀) :
     rescaleHom u hu (OnOpenDisc.polynomialHom Polynomial.X) =
       OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X) :=
   Subtype.ext (by simp [rescale_X])
+
+/-- On polynomials, `rescaleHom` substitutes `u X` for `X`. -/
+@[simp]
+theorem rescaleHom_polynomialHom (u : R) (hu : ‖u‖ * S₀ ≤ R₀) (p : Polynomial R) :
+    rescaleHom u hu (OnOpenDisc.polynomialHom p) =
+      OnOpenDisc.polynomialHom (p.comp (Polynomial.C u * Polynomial.X)) := by
+  have heq : (rescaleHom u hu).comp OnOpenDisc.polynomialHom =
+      OnOpenDisc.polynomialHom.comp (Polynomial.compRingHom (Polynomial.C u * Polynomial.X)) :=
+    Polynomial.ringHom_ext (fun a ↦ by simp [rescaleHom_C]) (by simp [rescaleHom_X])
+  simpa only [RingHom.comp_apply, Polynomial.coe_compRingHom_apply] using
+    RingHom.congr_fun heq p
 
 /-- Rescaling commutes with scalar multiplication from any base algebra. -/
 @[simp]
@@ -192,8 +202,8 @@ theorem rescaleHom_zero (hu : ‖(0 : R)‖ * S₀ ≤ R₀) (f : OnOpenDisc.sub
 
 /-- Rescaling by `1` at the same radius is the identity. -/
 @[simp]
-theorem rescaleHom_one [NormOneClass R] (f : OnOpenDisc.subring R R₀) :
-    rescaleHom (1 : R) (by simp) f = f :=
+theorem rescaleHom_one (h1 : ‖(1 : R)‖ * R₀ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    rescaleHom (1 : R) h1 f = f :=
   Subtype.ext (by simp)
 
 /-- Rescaling homomorphisms compose by multiplying their scalars. -/
@@ -239,10 +249,8 @@ noncomputable def rescaleEquiv (u : Rˣ) (hu : TauCeti.IsNormMulUnit (u : R))
           by_cases hu0 : ‖(u : R)‖ = 0
           · rw [hu0, zero_mul] at hrs
             exact onOpenDisc_of_nonpos hrs.symm.le _
-          · have hnorm : ‖((u⁻¹ : Rˣ) : R)‖ * R₀ ≤ S₀ := by
-              rw [TauCeti.NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, ← hrs,
-                inv_mul_cancel_left₀ hu0]
-            exact ((OnOpenDisc.mem_subring.mp f.2).mono hnorm).rescale⟩
+          · exact ((OnOpenDisc.mem_subring.mp f.2).mono
+              (hu.norm_units_inv_mul hu0 hrs).le).rescale⟩
       map_one' := Subtype.ext (map_one _)
       map_mul' := fun f g ↦ Subtype.ext (map_mul _ (f : R⟦X⟧) g)
       map_zero' := Subtype.ext (map_zero _)
@@ -373,14 +381,13 @@ theorem denseRange_inclusion_isRestricted :
 theorem uniformContinuous_inclusion_isRestricted [Fact (0 < R₀)] :
     UniformContinuous
       (Subring.inclusion (IsRestricted.subring_le_onOpenDiscSubring (R := R) R₀)) := by
-  refine uniformContinuous_iff.mpr fun r ↦ ?_
-  refine AddMonoidHomClass.uniformContinuous_of_bound
-    ((restrict r).toAddMonoidHom.comp
-      (Subring.inclusion (IsRestricted.subring_le_onOpenDiscSubring R₀)).toAddMonoidHom) 1
-    fun f ↦ ?_
-  rw [one_mul, TauCeti.PowerSeries.norm_eq_gaussNorm, TauCeti.PowerSeries.norm_eq_gaussNorm]
-  simpa using TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _)
-    r.2.1.le r.2.2.le (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted f.2)
+  have heq : ⇑(Subring.inclusion (IsRestricted.subring_le_onOpenDiscSubring (R := R) R₀)) =
+      Subring.inclusion HasGaussNorm.subring_le_onOpenDiscSubring ∘
+        Subring.inclusion IsRestricted.subring_le_hasGaussNormSubring :=
+    funext fun _ ↦ Subtype.ext (by simp)
+  rw [heq]
+  exact TauCeti.PowerSeries.HasGaussNorm.uniformContinuous_inclusion_onOpenDiscSubring.comp
+    TauCeti.PowerSeries.HasGaussNorm.isometry_inclusion_isRestrictedSubring.uniformContinuous
 
 /-- For `0 < R₀`, the inclusion of series restricted at `R₀` into series on the open disc of radius
 `R₀` is continuous. -/
@@ -429,11 +436,7 @@ theorem uniformContinuous_rescaleHom [Fact (0 < R₀)] (u : R) (hu : ‖u‖ * S
   intro s
   rw [map_zero]
   have hus0 : 0 ≤ ‖u‖ * (s : ℝ) := mul_nonneg (norm_nonneg u) s.2.1.le
-  have husR : ‖u‖ * (s : ℝ) < R₀ := by
-    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
-    · simpa [← hu0] using (Fact.out : 0 < R₀)
-    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
-  obtain ⟨r, hsr, hrR⟩ := exists_between husR
+  obtain ⟨r, hsr, hrR⟩ := exists_between (TauCeti.norm_mul_lt_of_mul_le Fact.out s.2.2 hu)
   let r' : Set.Ioo (0 : ℝ) R₀ := ⟨r, hus0.trans_lt hsr, hrR⟩
   let : Fact (0 < (r' : ℝ)) := ⟨r'.2.1⟩
   refine squeeze_zero_norm (norm_restrict_rescaleHom_le u hu s r' hsr.le) ?_
@@ -456,11 +459,8 @@ theorem norm_restrict_rescaleEquiv (u : Rˣ) (hu : TauCeti.IsNormMulUnit (u : R)
     PowerSeries.gaussNorm_eq, PowerSeries.gaussNorm_eq]
   congr 1
   funext n
-  rw [coe_restrict, coe_restrict, coe_rescaleEquiv, coeff_rescale]
-  simpa [PowerSeries.coeff, Finsupp.prod_single_index] using
-    MvPowerSeries.norm_coeff_rescale_mul_prod (σ := Unit) (fun _ ↦ (u : R)) (fun _ ↦ hu)
-      (r := fun _ ↦ (r : ℝ)) (s := fun _ ↦ (s : ℝ)) (fun _ ↦ hsr) (f : R⟦X⟧)
-      (Finsupp.single () n)
+  simpa only [coe_restrict, coe_rescaleEquiv] using
+    PowerSeries.norm_coeff_rescale_mul_pow (f : R⟦X⟧) hu hsr n
 
 /-- For positive radii `R₀` and `S₀`, rescaling by a multiplicative unit `u` with `‖u‖ * S₀ = R₀`
 is a uniform equivalence between the open-disc algebras. -/
@@ -472,10 +472,7 @@ noncomputable def rescaleUniformEquiv [Fact (0 < R₀)] [Fact (0 < S₀)] (u : R
   uniformContinuous_invFun := by
     have hu0 : ‖(u : R)‖ ≠ 0 := fun h0 ↦
       (Fact.out : 0 < R₀).ne' (by simpa [h0] using hrs.symm)
-    have hinv : ‖((u⁻¹ : Rˣ) : R)‖ * R₀ ≤ S₀ := by
-      rw [TauCeti.NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, ← hrs,
-        inv_mul_cancel_left₀ hu0]
-    exact uniformContinuous_rescaleHom ((u⁻¹ : Rˣ) : R) hinv
+    exact uniformContinuous_rescaleHom ((u⁻¹ : Rˣ) : R) (hu.norm_units_inv_mul hu0 hrs).le
 
 /-- `rescaleUniformEquiv` agrees with `rescaleEquiv` on elements. -/
 @[simp]

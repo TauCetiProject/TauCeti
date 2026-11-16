@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.AnalyticSubst
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Affine changes of coordinates on open discs
@@ -20,9 +21,10 @@ On smaller closed discs, `affineHom` satisfies `‖restrict s (affineHom ha u hu
 whenever `‖a‖ ≤ r` and `‖u‖ * s ≤ r`, without assuming `‖1‖ = 1`, and is therefore continuous for
 the open-disc Gauss topologies. When `0 < S₀`, `affineHom` agrees with analytic substitution
 (`TauCeti.PowerSeries.OnOpenDisc.analyticSubst`) by the linear polynomial `a + u X`, specializing to
-both `taylorHom` and `rescaleHom`. When `u` is a multiplicative unit with `‖u‖ * S₀ = R₀`, composing
-`taylorEquiv` and `rescaleEquiv` upgrades `affineHom` to a ring isomorphism (`affineEquiv`) and,
-for `0 < S₀`, a homeomorphism (`affineHomeomorph`) of open-disc algebras.
+`rescaleHom` (for `0 < R₀`) and, when additionally `‖1‖ = 1`, to `taylorHom`. When `u` is a
+multiplicative unit with `‖u‖ * S₀ = R₀`, composing `taylorEquiv` and `rescaleEquiv` upgrades
+`affineHom` to a ring isomorphism (`affineEquiv`) and, for `0 < S₀`, a homeomorphism
+(`affineHomeomorph`) of open-disc algebras.
 
 ## Main definitions
 
@@ -79,19 +81,30 @@ theorem coe_affineHom (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ * S₀ ≤ R�
   simp [affineHom]
 
 /-- `affineHom` fixes constant series. -/
-@[simp]
 theorem affineHom_C (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ * S₀ ≤ R₀) (c : R) :
     affineHom ha u hu (OnOpenDisc.polynomialHom (Polynomial.C c)) =
       OnOpenDisc.polynomialHom (Polynomial.C c) := by
   simp [affineHom]
 
 /-- `affineHom` sends `X` to the linear polynomial `a + u X`. -/
-@[simp]
 theorem affineHom_X (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ * S₀ ≤ R₀) :
     affineHom ha u hu (OnOpenDisc.polynomialHom Polynomial.X) =
       OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X) := by
   rw [affineHom, RingHom.comp_apply, taylorHom_polynomialHom, Polynomial.taylor_X, map_add,
     map_add, rescaleHom_X, rescaleHom_C, add_comm, ← map_add]
+
+/-- On polynomials, `affineHom` substitutes the linear polynomial `a + u X` for `X`. -/
+@[simp]
+theorem affineHom_polynomialHom (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ * S₀ ≤ R₀)
+    (p : Polynomial R) :
+    affineHom ha u hu (OnOpenDisc.polynomialHom p) =
+      OnOpenDisc.polynomialHom (p.comp (Polynomial.C a + Polynomial.C u * Polynomial.X)) := by
+  have heq : (affineHom ha u hu).comp OnOpenDisc.polynomialHom =
+      OnOpenDisc.polynomialHom.comp
+        (Polynomial.compRingHom (Polynomial.C a + Polynomial.C u * Polynomial.X)) :=
+    Polynomial.ringHom_ext (fun c ↦ by simp [affineHom_C]) (by simp [affineHom_X])
+  simpa only [RingHom.comp_apply, Polynomial.coe_compRingHom_apply] using
+    RingHom.congr_fun heq p
 
 /-- At centre `0`, `affineHom` specializes to `rescaleHom`. -/
 @[simp]
@@ -104,8 +117,8 @@ theorem affineHom_zero_left [Fact (0 < R₀)] (u : R) (hu : ‖u‖ * S₀ ≤ R
 @[simp]
 theorem affineHom_one_right (ha : ‖a‖ < R₀) (h1 : ‖(1 : R)‖ * R₀ ≤ R₀)
     (f : OnOpenDisc.subring R R₀) :
-    affineHom ha 1 h1 f = taylorHom ha f :=
-  Subtype.ext (by simp [affineHom])
+    affineHom ha 1 h1 f = taylorHom ha f := by
+  simp [affineHom]
 
 /-- On smaller closed discs, `affineHom` is bounded by any source closed-disc Gauss norm whose
 radius bounds both `‖a‖` and `‖u‖ s`. No `NormOneClass` hypothesis is needed. -/
@@ -130,11 +143,8 @@ theorem norm_restrict_affinePoly_lt (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ 
     (s : Set.Ioo (0 : ℝ) S₀) :
     ‖restrict s (OnOpenDisc.polynomialHom
       (Polynomial.C a + Polynomial.C u * Polynomial.X) : OnOpenDisc.subring R S₀)‖ < R₀ := by
-  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
-  have hus : ‖u‖ * (s : ℝ) < R₀ := by
-    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
-    · simpa [← hu0] using hR₀
-    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
+  have hus : ‖u‖ * (s : ℝ) < R₀ :=
+    TauCeti.norm_mul_lt_of_mul_le ((norm_nonneg a).trans_lt ha) s.2.2 hu
   refine (TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_).trans_lt (max_lt ha hus)
   rw [coe_restrict, OnOpenDisc.coe_polynomialHom, Polynomial.coeff_coe]
   rcases n with _ | _ | n
@@ -192,11 +202,9 @@ theorem evalAt_affineHom {A : Type*} [NormedRing A] [Algebra R A] [IsBoundedSMul
     (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ * S₀ ≤ R₀) (hx : ‖x‖ < S₀)
     (f : OnOpenDisc.subring R R₀) :
     (affineHom ha u hu f : R⟦X⟧).evalAt x = (f : R⟦X⟧).evalAt (u • x + algebraMap R A a) := by
-  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
-  have hux : ‖u • x‖ < R₀ := by
-    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
-    · exact (norm_smul_le u x).trans_lt (by simpa [← hu0] using hR₀)
-    · exact (norm_smul_le u x).trans_lt ((mul_lt_mul_of_pos_left hx hu0).trans_le hu)
+  have hux : ‖u • x‖ < R₀ :=
+    (norm_smul_le u x).trans_lt
+      (TauCeti.norm_mul_lt_of_mul_le ((norm_nonneg a).trans_lt ha) hx hu)
   rw [affineHom, RingHom.comp_apply, evalAt_rescaleHom, evalAt_taylorHom ha hux]
 
 /-- Hasse derivatives under an affine coordinate change satisfy
@@ -204,16 +212,14 @@ theorem evalAt_affineHom {A : Type*} [NormedRing A] [Algebra R A] [IsBoundedSMul
 theorem hasseDeriv_affineHom (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ * S₀ ≤ R₀) (k : ℕ)
     (f : OnOpenDisc.subring R R₀) :
     hasseDeriv k (affineHom ha u hu f) = u ^ k • affineHom ha u hu (hasseDeriv k f) := by
-  rw [affineHom, RingHom.comp_apply, hasseDeriv_rescaleHom, hasseDeriv_taylorHom]
-  rfl
+  simp only [affineHom, RingHom.comp_apply, hasseDeriv_rescaleHom, hasseDeriv_taylorHom]
 
 /-- The ordinary derivative under an affine coordinate change satisfies
 `(f(a + u X))' = u · f'(a + u X)`. -/
 theorem derivative_affineHom (ha : ‖a‖ < R₀) (u : R) (hu : ‖u‖ * S₀ ≤ R₀)
     (f : OnOpenDisc.subring R R₀) :
     derivative (affineHom ha u hu f) = u • affineHom ha u hu (derivative f) := by
-  rw [affineHom, RingHom.comp_apply, derivative_rescaleHom, derivative_taylorHom]
-  rfl
+  simp only [affineHom, RingHom.comp_apply, derivative_rescaleHom, derivative_taylorHom]
 
 /-- Invertible affine coordinate change `f(X) ↦ f(a + u X)` between open-disc algebras when `u` is a
 multiplicative unit with `‖u‖ * S₀ = R₀`. -/

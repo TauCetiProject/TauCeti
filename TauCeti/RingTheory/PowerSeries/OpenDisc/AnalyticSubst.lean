@@ -326,18 +326,6 @@ theorem mapHom_analyticSubst {S : Type*} [NormedCommRing S] [IsUltrametricDist S
   exact RingHom.congr_fun heq f
 
 omit [Fact (0 < T₀)] in
-/-- Contractive coefficient homomorphisms preserve the strict closed-disc norm bound on the inner
-series and commute with analytic substitution. -/
-theorem mapHom_analyticSubst_of_norm_le {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
-    [CompleteSpace S] (φ : R →+* S) (hφ : ∀ x, ‖φ x‖ ≤ ‖x‖) (f : OnOpenDisc.subring R R₀) :
-    mapHom φ (C := 1) (fun x ↦ by simpa using hφ x) (analyticSubst g hg f) =
-      analyticSubst (mapHom φ (C := 1) (fun x ↦ by simpa using hφ x) g)
-        (fun s ↦ (norm_restrict_mapHom_le φ (C := 1) (fun x ↦ by simpa using hφ x) s g).trans_lt
-          (by simpa using hg s))
-        (mapHom φ (C := 1) (fun x ↦ by simpa using hφ x) f) :=
-  mapHom_analyticSubst g hg φ _ _ f
-
-omit [Fact (0 < T₀)] in
 /-- **The chain rule for analytic substitution** on open discs:
 `derivative (analyticSubst g hg f) = analyticSubst g hg (derivative f) * derivative g`. -/
 theorem derivative_analyticSubst (f : OnOpenDisc.subring R R₀) :

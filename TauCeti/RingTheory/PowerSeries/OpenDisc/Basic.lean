@@ -360,7 +360,7 @@ noncomputable instance OnOpenDisc.instAlgebraSubring {S : Type*} [CommSemiring S
 theorem OnOpenDisc.coe_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
     (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) := by
   calc
-    _ = algebraMap S R⟦X⟧ s := (rfl)
+    _ = algebraMap S R⟦X⟧ s := RingHom.codRestrict_apply _ _ _ s
     _ = _ := PowerSeries.algebraMap_apply
 
 /-- Scalars act on open-disc series as on their underlying formal power series. -/

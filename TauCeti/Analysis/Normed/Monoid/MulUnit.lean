@@ -22,7 +22,8 @@ the norm. In a commutative norm-one monoid, finite products of multiplicative un
 multiplicative units, with the product of the norms as norm.
 
 An element of nonzero norm scaling all norms exactly forces `‖1‖ = 1`. Any unit `u` scaling all
-norms exactly has inverse of norm `‖u‖⁻¹`; if `‖u‖ = 0`, every norm vanishes.
+norms exactly has inverse of norm `‖u‖⁻¹`, reversing any scaling `‖u‖ S₀ = R₀` when `‖u‖ ≠ 0`; if
+`‖u‖ = 0`, every norm vanishes.
 
 ## References
 
@@ -141,6 +142,13 @@ theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
   · rw [NormedRing.norm_units_inv_of_norm_mul hu.norm_mul,
       eq_inv_mul_iff_mul_eq₀ hu0]
     simpa [← mul_assoc] using (hu.norm_mul (((u⁻¹ : Rˣ) : R) * x)).symm
+
+/-- If a multiplicative unit `u` of nonzero norm satisfies `‖u‖ * S₀ = R₀`, then its inverse
+satisfies `‖u⁻¹‖ * R₀ = S₀`. -/
+theorem norm_units_inv_mul {u : Rˣ} (hu : IsNormMulUnit (u : R)) (hu0 : ‖(u : R)‖ ≠ 0)
+    {R₀ S₀ : ℝ} (hrs : ‖(u : R)‖ * S₀ = R₀) :
+    ‖((u⁻¹ : Rˣ) : R)‖ * R₀ = S₀ := by
+  rw [NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, ← hrs, inv_mul_cancel_left₀ hu0]
 
 end IsNormMulUnit
 
