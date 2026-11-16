@@ -11,6 +11,8 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 import TauCeti.NumberTheory.LSeries.RiemannZeta
 
@@ -65,27 +67,18 @@ open Complex Metric
 
 namespace Complex
 
-private theorem norm_natCast_add_one (n : ℕ) : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
-  simpa using Complex.norm_natCast (n + 1)
-
-private theorem one_add_add_natCast_ne_zero_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) (n : ℕ) :
-    1 + z + (n : ℂ) ≠ 0 := by
-  intro h
-  have hre := congrArg Complex.re h
-  have hzre : -‖z‖ ≤ z.re := neg_le_of_abs_le (abs_re_le_norm z)
-  simp only [add_re, one_re, natCast_re, zero_re] at hre
-  linarith
-
 private theorem hasSum_gaussTerm_geometric {z : ℂ} (hz : ‖z‖ < 1) (n : ℕ) :
     HasSum (fun k : ℕ ↦ (-1) ^ k * z ^ (k + 1) / ((n : ℂ) + 1) ^ (k + 2))
       (1 / ((n : ℂ) + 1) - 1 / (1 + z + n)) := by
   let w : ℂ := -z / ((n : ℂ) + 1)
   have hn1 : (1 : ℝ) ≤ (n : ℝ) + 1 := by linarith
   have hw : ‖w‖ < 1 := by
-    rw [norm_div, norm_neg, norm_natCast_add_one]
+    rw [norm_div, norm_neg, ← Nat.cast_add_one, Complex.norm_natCast, Nat.cast_add_one]
     exact (div_le_self (norm_nonneg z) hn1).trans_lt hz
   have hn0 : (n : ℂ) + 1 ≠ 0 := n.cast_add_one_ne_zero
-  have hzn0 : 1 + z + (n : ℂ) ≠ 0 := one_add_add_natCast_ne_zero_of_norm_lt_one hz n
+  have hzn0 : 1 + z + (n : ℂ) ≠ 0 := by
+    have hre : 0 < (1 + z).re := TauCeti.re_pos_of_norm_sub_one_lt_one (by simpa using hz)
+    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using ne_neg_natCast_of_re_pos hre n
   have h1w : 1 - w = (1 + z + n) / ((n : ℂ) + 1) := by
     dsimp [w]
     field_simp [hn0]
@@ -118,7 +111,8 @@ private theorem summable_uncurry_digamma_double {z : ℂ} (hz : ‖z‖ < 1) :
     summable_mul_of_summable_norm hu hv
   refine hmul.of_norm_bounded fun ⟨n, k⟩ ↦ ?_
   simp only [Function.uncurry_apply_pair, norm_div, norm_mul, norm_pow, norm_neg, norm_one,
-    one_pow, one_mul, norm_natCast_add_one]
+    one_pow, one_mul]
+  rw [← Nat.cast_add_one (R := ℂ), Complex.norm_natCast, Nat.cast_add_one]
   have hpow : ((n : ℝ) + 1) ^ 2 ≤ ((n : ℝ) + 1) ^ (k + 2) :=
     pow_le_pow_right₀ (by linarith) (by omega)
   rw [one_div_mul_eq_div]
@@ -130,8 +124,7 @@ private theorem hasSum_zeta_pow_term (z : ℂ) (k : ℕ) :
   have hsum_real : Summable fun n : ℕ ↦ 1 / ((n : ℝ) + 1) ^ (k + 2) := by
     simpa using (summable_nat_add_iff 1).mpr (Real.summable_one_div_nat_pow.mpr (by omega))
   have hsum : Summable fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ (k + 2) := by
-    refine .of_norm_bounded hsum_real fun n ↦ ?_
-    simp [norm_natCast_add_one]
+    simpa using Complex.summable_ofReal.mpr hsum_real
   have hzeta : riemannZeta (k + 2) = ∑' n : ℕ, 1 / ((n : ℂ) + 1) ^ (k + 2) := by
     rw [zeta_eq_tsum_one_div_nat_add_one_cpow (by simp; linarith)]
     refine tsum_congr fun n ↦ ?_
@@ -152,8 +145,8 @@ theorem hasSum_digamma_one_add_add_eulerMascheroniConstant {z : ℂ} (hz : ‖z�
   have hrow := hdouble.prod_fiberwise (hasSum_gaussTerm_geometric hz)
   have hcol := ((Equiv.prodComm ℕ ℕ).hasSum_iff.mpr hdouble).prod_fiberwise
     (hasSum_zeta_pow_term z)
-  have hpoles : ∀ m : ℕ, 1 + z ≠ -(m : ℂ) := fun m hm ↦
-    one_add_add_natCast_ne_zero_of_norm_lt_one hz m (by linear_combination hm)
+  have hpoles : ∀ m : ℕ, 1 + z ≠ -(m : ℂ) :=
+    ne_neg_natCast_of_re_pos (TauCeti.re_pos_of_norm_sub_one_lt_one (by simpa using hz))
   have hgauss : HasSum (fun n : ℕ ↦ 1 / ((n : ℂ) + 1) - 1 / (1 + z + n))
       (digamma (1 + z) + Real.eulerMascheroniConstant) := by
     have heq := digamma_eq_gaussSeries hpoles

@@ -94,34 +94,17 @@ theorem gammaRadius_zero : gammaRadius 0 = 1 := by
 theorem gammaRadius_one : gammaRadius 1 = 0 := by
   simp [gammaRadius_def]
 
-private theorem inv_natCast_le_half {N : ℕ} (hN : 2 ≤ N) : 1 / (N : ℝ) ≤ 1 / 2 := by
-  have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
-  exact one_div_le_one_div_of_le two_pos hN2
-
-private theorem inv_two_mul_natCast_le_quarter {N : ℕ} (hN : 2 ≤ N) :
-    1 / (2 * (N : ℝ)) ≤ 1 / 4 := by
-  have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
-  rw [div_le_div_iff₀ (by linarith) (by norm_num)]
-  linarith
-
 /-- For every `N ≠ 1`, `gammaRadius N` is strictly positive. -/
 theorem gammaRadius_pos {N : ℕ} (hN : N ≠ 1) : 0 < gammaRadius N := by
   rcases eq_or_ne N 0 with rfl | hN0
   · simp
-  · have hN2 : 2 ≤ N := by omega
+  · have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast (by omega : 2 ≤ N)
     rw [gammaRadius_def]
-    have h1 : 1 / (N : ℝ) ≤ 1 / 2 := inv_natCast_le_half hN2
-    have h2 : 1 / (2 * (N : ℝ)) ≤ 1 / 4 := inv_two_mul_natCast_le_quarter hN2
+    have h1 : 1 / (N : ℝ) ≤ 1 / 2 := one_div_le_one_div_of_le two_pos hN2
+    have h2 : 1 / (2 * (N : ℝ)) ≤ 1 / 4 := one_div_le_one_div_of_le (by norm_num) (by linarith)
     have hg2 : 0 < Real.Gamma (1 - 1 / (N : ℝ)) := Real.Gamma_pos_of_pos (by linarith)
     have hg3 : 0 < Real.Gamma (1 - 1 / (2 * (N : ℝ))) := Real.Gamma_pos_of_pos (by linarith)
     positivity
-
-private theorem gamma_sq_mul_gamma_add_half_sq (y : ℝ) :
-    Real.Gamma y ^ 2 * Real.Gamma (y + 1 / 2) ^ 2 =
-      Real.Gamma (2 * y) ^ 2 * ((2 : ℝ) ^ (1 - 2 * y)) ^ 2 * Real.sqrt Real.pi ^ 2 := by
-  have hd := Real.Gamma_mul_Gamma_add_half y
-  linear_combination (Real.Gamma y * Real.Gamma (y + 1 / 2) +
-    Real.Gamma (2 * y) * (2 : ℝ) ^ (1 - 2 * y) * Real.sqrt Real.pi) * hd
 
 private theorem gammaRadius_eq_div_of_two_le {N : ℕ} (hN : 2 ≤ N) :
     gammaRadius N =
@@ -130,7 +113,7 @@ private theorem gammaRadius_eq_div_of_two_le {N : ℕ} (hN : 2 ≤ N) :
   have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
   have hN0 : (N : ℝ) ≠ 0 := by linarith
   set x : ℝ := 1 / (N : ℝ) with hx_def
-  have hx : x ≤ 1 / 2 := inv_natCast_le_half hN
+  have hx : x ≤ 1 / 2 := one_div_le_one_div_of_le two_pos hN2
   have hx0 : 0 < x := by rw [hx_def]; positivity
   have hm : ((N : ℝ) - 1) / (2 * (N : ℝ)) = (1 - x) / 2 := by rw [hx_def]; field_simp [hN0]
   have hp : ((N : ℝ) + 1) / (2 * (N : ℝ)) = (1 + x) / 2 := by rw [hx_def]; field_simp [hN0]
@@ -138,14 +121,14 @@ private theorem gammaRadius_eq_div_of_two_le {N : ℕ} (hN : 2 ≤ N) :
     rw [hx_def]; field_simp [hN0]; ring
   have hm' : 1 - 1 / (2 * (N : ℝ)) = (1 - x) / 2 + 1 / 2 := by
     rw [hx_def]; field_simp [hN0]; ring
-  have hsq_pos := gamma_sq_mul_gamma_add_half_sq ((1 + x) / 2)
+  have hd_pos := Real.Gamma_mul_Gamma_add_half ((1 + x) / 2)
   have hp1 : 2 * ((1 + x) / 2) = 1 + x := by ring
   have hp2 : 1 - (1 + x) = -x := by ring
-  rw [hp1, hp2] at hsq_pos
-  have hsq_neg := gamma_sq_mul_gamma_add_half_sq ((1 - x) / 2)
+  rw [hp1, hp2] at hd_pos
+  have hd_neg := Real.Gamma_mul_Gamma_add_half ((1 - x) / 2)
   have hm1 : 2 * ((1 - x) / 2) = 1 - x := by ring
   have hm2 : 1 - (1 - x) = x := by ring
-  rw [hm1, hm2] at hsq_neg
+  rw [hm1, hm2] at hd_neg
   have hpow : (16 : ℝ) ^ x * ((2 : ℝ) ^ (-x)) ^ 2 = ((2 : ℝ) ^ x) ^ 2 := by
     have h16 : (16 : ℝ) = (2 : ℝ) ^ (4 : ℝ) := by norm_num
     rw [h16, ← Real.rpow_mul zero_le_two, ← Real.rpow_natCast ((2 : ℝ) ^ (-x)),
@@ -153,16 +136,21 @@ private theorem gammaRadius_eq_div_of_two_le {N : ℕ} (hN : 2 ≤ N) :
       ← Real.rpow_natCast ((2 : ℝ) ^ x), ← Real.rpow_mul zero_le_two]
     congr 1; push_cast; ring
   have hg_d1 : Real.Gamma ((1 - x) / 2 + 1 / 2) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hg_d2 : Real.Gamma (1 + x) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hg_d4 : Real.Gamma (1 - x) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hpi : Real.sqrt Real.pi ≠ 0 := (Real.sqrt_pos.mpr Real.pi_pos).ne'
+  have hg_d2 : Real.Gamma (1 - x) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
   rw [gammaRadius_def, hm, hp, hp', hm', ← hx_def, div_eq_div_iff (by positivity) (by positivity)]
-  apply mul_right_cancel₀ (mul_ne_zero (pow_ne_zero 2 hg_d2) (pow_ne_zero 2 hpi))
-  linear_combination
-    (16 : ℝ) ^ x * Real.Gamma (1 - x) ^ 2 * Real.Gamma (1 + x) ^ 2 * Real.sqrt Real.pi ^ 2 *
-        hsq_pos -
-      Real.Gamma (1 + x) ^ 4 * Real.sqrt Real.pi ^ 2 * hsq_neg +
-      Real.Gamma (1 - x) ^ 2 * Real.Gamma (1 + x) ^ 4 * Real.sqrt Real.pi ^ 4 * hpow
+  calc (16 : ℝ) ^ x * Real.Gamma ((1 + x) / 2 + 1 / 2) ^ 2 * Real.Gamma (1 - x) *
+          (Real.Gamma ((1 + x) / 2) ^ 2 * Real.Gamma (1 - x))
+      = (16 : ℝ) ^ x * (Real.Gamma ((1 + x) / 2) * Real.Gamma ((1 + x) / 2 + 1 / 2)) ^ 2 *
+          Real.Gamma (1 - x) ^ 2 := by ring
+    _ = (16 : ℝ) ^ x * ((2 : ℝ) ^ (-x)) ^ 2 *
+          (Real.Gamma (1 + x) ^ 2 * Real.Gamma (1 - x) ^ 2 * Real.sqrt Real.pi ^ 2) := by
+          rw [hd_pos]; ring
+    _ = (Real.Gamma (1 - x) * (2 : ℝ) ^ x * Real.sqrt Real.pi) ^ 2 *
+          Real.Gamma (1 + x) ^ 2 := by rw [hpow]; ring
+    _ = (Real.Gamma ((1 - x) / 2) * Real.Gamma ((1 - x) / 2 + 1 / 2)) ^ 2 *
+          Real.Gamma (1 + x) ^ 2 := by rw [← hd_neg]
+    _ = Real.Gamma ((1 - x) / 2) ^ 2 * Real.Gamma (1 + x) *
+          (Real.Gamma ((1 - x) / 2 + 1 / 2) ^ 2 * Real.Gamma (1 + x)) := by ring
 
 /-- **Alternative Gamma formula for `gammaRadius`** (via Legendre's duplication formula):
 for `N ≠ 0`,
@@ -292,8 +280,9 @@ private theorem log_gammaRadius_sub_div_eq {N : ℕ} (hN : 2 ≤ N) :
             Real.eulerMascheroniConstant * (-1 / (2 * (N : ℝ)))) +
           (Real.log (Real.Gamma (1 + 1 / (N : ℝ))) +
             Real.eulerMascheroniConstant * (1 / (N : ℝ)))) := by
-  have h1 : 1 / (N : ℝ) ≤ 1 / 2 := inv_natCast_le_half hN
-  have h2 : 1 / (2 * (N : ℝ)) ≤ 1 / 4 := inv_two_mul_natCast_le_quarter hN
+  have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
+  have h1 : 1 / (N : ℝ) ≤ 1 / 2 := one_div_le_one_div_of_le two_pos hN2
+  have h2 : 1 / (2 * (N : ℝ)) ≤ 1 / 4 := one_div_le_one_div_of_le (by norm_num) (by linarith)
   have hg1 : 0 < Real.Gamma (1 + 1 / (2 * (N : ℝ))) := Real.Gamma_pos_of_pos (by positivity)
   have hg2 : 0 < Real.Gamma (1 - 1 / (N : ℝ)) := Real.Gamma_pos_of_pos (by linarith)
   have hg3 : 0 < Real.Gamma (1 - 1 / (2 * (N : ℝ))) := Real.Gamma_pos_of_pos (by linarith)
@@ -362,15 +351,12 @@ private theorem hasSum_log_gammaRadius_sub_div_of_two_le {N : ℕ} (hN : 2 ≤ N
       (Real.log (gammaRadius N) - Real.log 16 / (N : ℝ)) := by
   have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
   have hN0 : (N : ℝ) ≠ 0 := by linarith
-  have hx1 : |1 / (2 * (N : ℝ))| < 1 := by
-    rw [abs_of_nonneg (by positivity)]; linarith [inv_two_mul_natCast_le_quarter hN]
-  have hx2 : |-1 / (N : ℝ)| < 1 := by
-    rw [neg_div, abs_neg, abs_of_nonneg (by positivity)]; linarith [inv_natCast_le_half hN]
-  have hx3 : |-1 / (2 * (N : ℝ))| < 1 := by
-    rw [neg_div, abs_neg, abs_of_nonneg (by positivity)]
-    linarith [inv_two_mul_natCast_le_quarter hN]
-  have hx4 : |1 / (N : ℝ)| < 1 := by
-    rw [abs_of_nonneg (by positivity)]; linarith [inv_natCast_le_half hN]
+  have h1 : 1 / (N : ℝ) ≤ 1 / 2 := one_div_le_one_div_of_le two_pos hN2
+  have h2 : 1 / (2 * (N : ℝ)) ≤ 1 / 4 := one_div_le_one_div_of_le (by norm_num) (by linarith)
+  have hx1 : |1 / (2 * (N : ℝ))| < 1 := by rw [abs_of_nonneg (by positivity)]; linarith
+  have hx4 : |1 / (N : ℝ)| < 1 := by rw [abs_of_nonneg (by positivity)]; linarith
+  have hx2 : |-1 / (N : ℝ)| < 1 := by simpa [neg_div] using hx4
+  have hx3 : |-1 / (2 * (N : ℝ))| < 1 := by simpa [neg_div] using hx1
   have hs : HasSum (combinedLogGammaTerm N) (Real.log (gammaRadius N) - Real.log 16 / (N : ℝ)) := by
     have h := (((Real.hasSum_log_Gamma_one_add_add_eulerMascheroniConstant_mul hx1).mul_left 2).add
       (Real.hasSum_log_Gamma_one_add_add_eulerMascheroniConstant_mul hx2)).sub
