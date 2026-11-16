@@ -32,7 +32,7 @@ pulled back along linear maps.
 
 public section
 
-open MeasureTheory Function
+open MeasureTheory
 open scoped FourierTransform
 
 variable {V E : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -61,31 +61,24 @@ theorem integral_mul_comp_eq_integral_fourier_mul_fourier (A : V →L[ℝ] W) {g
     (hg : Continuous g) (hgi : Integrable g) (hFg : Integrable (𝓕 g)) {ψ : V → ℂ}
     (hψ : Integrable ψ) :
     ∫ x, ψ x * g (A x) = ∫ η, 𝓕 g η * 𝓕 ψ (-(A†) η) := by
-  set F : V → W → ℂ := fun x η ↦ ψ x * (𝐞 ⟪(A†) η, x⟫ * 𝓕 g η)
-  have hFi : Integrable (uncurry F) (volume.prod volume) := by
-    refine Integrable.mono' (hψ.norm.mul_prod hFg.norm) ?_ (.of_forall fun p ↦ ?_)
-    · have he : Continuous fun p : V × W ↦ (𝐞 ⟪(A†) p.2, p.1⟫ : ℂ) :=
-        continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
-      exact hψ.aestronglyMeasurable.comp_fst.mul
-        (he.aestronglyMeasurable.mul hFg.aestronglyMeasurable.comp_snd)
-    · simp [F, uncurry]
-  -- Fourier inversion for `g`.
-  have hinv (y : W) : g y = ∫ η, 𝐞 ⟪η, y⟫ • 𝓕 g η := by
-    rw [← Real.fourierInv_eq, hg.fourierInv_fourier_eq hgi hFg]
+  -- The pairing `L x η = -⟪A x, η⟫`, so that both Fourier integrals below have phase `⟪A x, η⟫`.
+  set L : V →ₗ[ℝ] W →ₗ[ℝ] ℝ := -(innerₗ W ∘ₗ (A : V →ₗ[ℝ] W))
+  have hL : Continuous fun p : V × W ↦ L p.1 p.2 := by
+    simp only [L, LinearMap.neg_apply, LinearMap.comp_apply, innerₗ_apply_apply, coe_coe]
+    fun_prop
   calc ∫ x, ψ x * g (A x)
-      = ∫ x, ∫ η, F x η := by
+      = ∫ x, ψ x • VectorFourier.fourierIntegral 𝐞 volume L.flip (𝓕 g) x := by
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
         dsimp only
-        rw [hinv (A x), ← integral_const_mul]
-        congr 1 with η
-        simp [F, Circle.smul_def, adjoint_inner_left]
-    _ = ∫ η, ∫ x, F x η := integral_integral_swap hFi
+        rw [← congrFun (hg.fourierInv_fourier_eq hgi hFg) (A x), Real.fourierInv_eq]
+        simp [VectorFourier.fourierIntegral, L, real_inner_comm]
+    _ = ∫ η, VectorFourier.fourierIntegral 𝐞 volume L ψ η • 𝓕 g η :=
+        (VectorFourier.integral_fourierIntegral_smul_eq_flip Real.continuous_fourierChar hL hψ
+          hFg).symm
     _ = ∫ η, 𝓕 g η * 𝓕 ψ (-(A†) η) := by
         refine integral_congr_ae (.of_forall fun η ↦ ?_)
         dsimp only
-        rw [Real.fourier_eq ψ, ← integral_const_mul]
-        congr 1 with x
-        simp only [F, Circle.smul_def, inner_neg_right, neg_neg, real_inner_comm, smul_eq_mul]
-        ring
+        rw [smul_eq_mul, mul_comm, Real.fourier_eq ψ]
+        simp [VectorFourier.fourierIntegral, L, adjoint_inner_right]
 
 end ContinuousLinearMap
