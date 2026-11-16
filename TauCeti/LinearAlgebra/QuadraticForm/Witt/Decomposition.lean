@@ -52,13 +52,10 @@ decomposition follows from the regular one.
   class of rank two is the hyperbolic class.
 * `TauCeti.RegularFormClass.eq_hyperbolicClass_iff_not_anisotropic_of_rank_eq_two`: a class of
   rank two is the hyperbolic class exactly when it is isotropic.
-* `TauCeti.RegularFormClass.mk_binary_eq_hyperbolicClass_iff`: the plane `⟨a, b⟩` is hyperbolic
-  exactly when `-ab` is a square.
 * `TauCeti.RegularFormClass.wittIndex_mk_binary_of_isSquare`,
   `TauCeti.RegularFormClass.wittIndex_mk_binary_of_not_isSquare`,
-  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_isSquare`,
-  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_not_isSquare`: the Witt index and the
-  anisotropic part of `⟨a, b⟩`.
+  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_isSquare`: the Witt index of `⟨a, b⟩`,
+  and its anisotropic part when it is hyperbolic.
 * `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an
   isometry of quadratic forms.
 * `QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`: a regular form represents
@@ -154,28 +151,13 @@ theorem RegularFormClass.anisotropic_of_rank_le_one {x : RegularFormClass K} (hx
       exact hv.resolve_left (w 0).ne_zero
 
 /-- **Isotropy of a diagonal plane.** The class of `⟨a, b⟩` is anisotropic exactly when `-ab` is
-not a square: a zero `(x, y) ≠ 0` of `a x² + b y²` has `y ≠ 0`, and `-ab = (a x / y)²`. -/
+not a square. -/
 @[simp high]
 theorem RegularFormClass.anisotropic_mk_binary_iff (a b : Kˣ) :
     RegularFormClass.Anisotropic (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) ↔
       ¬IsSquare (-(a * b)) := by
   rw [RegularFormClass.anisotropic_mk, presentedForm_two, ← Units.isSquare_coe_iff]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Units.val_neg, Units.val_mul]
-  refine ⟨fun h ⟨r, hr⟩ ↦ ?_, fun h x hx ↦ ?_⟩
-  · have := h ![r, a] (by
-      simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-        Matrix.cons_val_one, smul_eq_mul]
-      linear_combination -(a : K) * hr)
-    simpa using congrFun this 1
-  · simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, smul_eq_mul] at hx
-    by_cases h1 : x 1 = 0
-    · have h0 : x 0 = 0 := by simpa [h1] using hx
-      funext i
-      fin_cases i <;> simp [h0, h1]
-    · exact absurd ⟨a * x 0 / x 1, by
-        rw [div_mul_div_comm, eq_div_iff (mul_ne_zero h1 h1)]
-        linear_combination -(a : K) * hx⟩ h
+  simpa using anisotropic_binary_iff (a : K) (b : K)
 
 section Hyperbolic
 
@@ -409,14 +391,6 @@ theorem RegularFormClass.eq_hyperbolicClass_iff_not_anisotropic_of_rank_eq_two
   rw [h, ← add_zero (hyperbolicClass K)] at ha
   exact not_anisotropic_hyperbolicClass_add 0 ha
 
-/-- **Hyperbolicity of a diagonal plane.** The class of `⟨a, b⟩` is the hyperbolic class exactly
-when `-ab` is a square. -/
-@[simp]
-theorem RegularFormClass.mk_binary_eq_hyperbolicClass_iff (a b : Kˣ) :
-    Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ = hyperbolicClass K ↔ IsSquare (-(a * b)) := by
-  rw [RegularFormClass.eq_hyperbolicClass_iff_not_anisotropic_of_rank_eq_two
-    (RegularFormClass.rank_mk _), RegularFormClass.anisotropic_mk_binary_iff, not_not]
-
 /-- The Witt index of `⟨a, b⟩` is `1` when `-ab` is a square. -/
 @[simp]
 theorem RegularFormClass.wittIndex_mk_binary_of_isSquare {a b : Kˣ} (h : IsSquare (-(a * b))) :
@@ -439,15 +413,6 @@ theorem RegularFormClass.wittIndex_mk_binary_of_not_isSquare {a b : Kˣ}
     RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 0 :=
   RegularFormClass.wittIndex_eq_zero_iff.mpr
     ((RegularFormClass.anisotropic_mk_binary_iff a b).mpr h)
-
-/-- The class of `⟨a, b⟩` is its own anisotropic part when `-ab` is not a square. -/
--- Not `@[simp]`: `simp` already proves it from `anisotropic_mk_binary_iff` and
--- `anisotropicPart_eq_self`.
-theorem RegularFormClass.anisotropicPart_mk_binary_of_not_isSquare {a b : Kˣ}
-    (h : ¬IsSquare (-(a * b))) :
-    RegularFormClass.anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
-      Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ :=
-  RegularFormClass.anisotropicPart_eq_self ((RegularFormClass.anisotropic_mk_binary_iff a b).mpr h)
 
 end Decomposition
 

@@ -120,21 +120,19 @@ theorem RegularFormClass.wittIndex_baseChange_eq_iff (c : RegularFormClass K) :
     have hzero := RegularFormClass.wittIndex_eq_zero_iff.mpr ha
     omega
 
-/-- The anisotropic part commutes with base change exactly when the extended anisotropic part
-remains anisotropic. -/
-theorem RegularFormClass.anisotropicPart_baseChange_eq_iff (c : RegularFormClass K) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    RegularFormClass.anisotropicPart (c.baseChange L) = c.anisotropicPart.baseChange L ↔
-      RegularFormClass.Anisotropic (c.anisotropicPart.baseChange L) := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  exact ⟨fun h ↦ h ▸ RegularFormClass.anisotropic_anisotropicPart _,
-    c.anisotropicPart_baseChange⟩
-
 section Binary
 
 variable [Invertible (2 : L)]
+
+/-- The anisotropic part commutes with base change exactly when the extended anisotropic part
+remains anisotropic. -/
+theorem RegularFormClass.anisotropicPart_baseChange_eq_iff (c : RegularFormClass K) :
+    RegularFormClass.anisotropicPart (c.baseChange L) = c.anisotropicPart.baseChange L ↔
+      RegularFormClass.Anisotropic (c.anisotropicPart.baseChange L) := by
+  refine ⟨fun h ↦ h ▸ RegularFormClass.anisotropic_anisotropicPart _, ?_⟩
+  obtain rfl : ‹Invertible (2 : L)› =
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm := Subsingleton.elim _ _
+  exact c.anisotropicPart_baseChange
 
 /-- **The anisotropic part does not commute with base change in general.** If `-ab` is not a
 square in `K` but becomes one in `L`, the extension of the anisotropic plane `⟨a, b⟩` is
@@ -148,11 +146,10 @@ theorem RegularFormClass.anisotropicPart_baseChange_mk_binary_ne {a b : Kˣ}
         (RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩)) ≠
       RegularFormClass.baseChange L
         (RegularFormClass.anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩)) := by
-  obtain rfl : ‹Invertible (2 : L)› =
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm := Subsingleton.elim _ _
+  have ha := (RegularFormClass.anisotropic_mk_binary_iff a b).mpr hK
   rw [Ne, RegularFormClass.anisotropicPart_baseChange_eq_iff,
-    RegularFormClass.anisotropicPart_mk_binary_of_not_isSquare hK,
-    RegularFormClass.baseChange_mk_binary, RegularFormClass.anisotropic_mk_binary_iff, not_not]
+    RegularFormClass.anisotropicPart_eq_self ha, RegularFormClass.baseChange_mk,
+    RegularFormPresentation.baseChange_binary, RegularFormClass.anisotropic_mk_binary_iff, not_not]
   exact Units.isSquare_coe_iff.mp (by simpa using hL)
 
 end Binary

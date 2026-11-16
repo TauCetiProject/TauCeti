@@ -247,7 +247,7 @@ theorem not_isSquare_intCast_of_not_isSquare_zmod {a : ℤ} {k : ℕ}
   exact h ⟨PadicInt.toZModPow k c, by rw [← map_mul, hc, map_intCast]⟩
 
 /-- If `p ≢ 1 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Combined with
-`TauCeti.anisotropic_binary_one_one_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
+`TauCeti.anisotropic_binary_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
 over `ℚ_[p]` for such primes. -/
 theorem not_isSquare_neg_one_of_mod_four_ne_one (hp : p % 4 ≠ 1) :
     ¬ IsSquare (-1 : ℚ_[p]) := by

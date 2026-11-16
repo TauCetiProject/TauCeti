@@ -48,7 +48,8 @@ example :
 example :
     wittIndex (Quotient.mk (regularFormSetoid ℝ) ⟨2, ![1, 1]⟩) <
       wittIndex (baseChange ℂ (Quotient.mk (regularFormSetoid ℝ) ⟨2, ![1, 1]⟩)) := by
-  rw [baseChange_mk_binary, wittIndex_mk_binary_of_not_isSquare (by simp),
+  rw [baseChange_mk, RegularFormPresentation.baseChange_binary,
+    wittIndex_mk_binary_of_not_isSquare (by simp),
     wittIndex_mk_binary_of_isSquare (Units.isSquare_coe_iff.mp ⟨Complex.I, by simp⟩)]
   exact zero_lt_one
 
