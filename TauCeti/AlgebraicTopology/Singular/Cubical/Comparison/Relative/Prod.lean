@@ -96,9 +96,7 @@ instance mono_cubicalChainComplexMap_prodLeftMap :
   obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective _).1 h₁.epi_g x
   set f := Hom.fst (prodLeftMap (𝟙 Q) P.map)
   have hf : Topology.IsEmbedding f := P.isEmbedding_map.prodMap Topology.IsEmbedding.id
-  have hz := ConcreteCategory.congr_hom
-    (congrArg (fun φ ↦ φ.f n) (π_cubicalChainComplexMap k (prodLeftMap (𝟙 Q) P.map))) z
-  rw [comp_f, comp_f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hz
+  have hz := cubicalChainComplexMap_f_cokernel_π_f_apply k (prodLeftMap (𝟙 Q) P.map) n z
   -- The image of `z` in the chains of `X × Y` is supported in `X × B` and in `A × Y`.
   obtain ⟨w, hw⟩ := (ShortComplex.moduleCat_exact_iff _).1 h₂.exact _ (hz.symm.trans hx)
   have hz₁ : NormalizedCubicalChain.map k f.hom n z ∈

@@ -319,7 +319,8 @@ theorem mem_range_normalizedCubicalChainComplex_map_f_iff (P : TopPair.{u}) {n :
 
 /-- The map of relative chains induced by a map of pairs, on the class of a chain of the ambient
 space. -/
-private theorem cubicalChainComplexMap_f_cokernel_π_f_apply {P P' : TopPair.{u}} (f : P ⟶ P')
+@[simp]
+theorem cubicalChainComplexMap_f_cokernel_π_f_apply {P P' : TopPair.{u}} (f : P ⟶ P')
     (n : ℕ) (c : ((normalizedCubicalChainComplex k).obj P.fst).X n) :
     (cubicalChainComplexMap k f).f n
         ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n c) =
@@ -492,9 +493,7 @@ theorem cubicalChainComplexMap_f_cubicalChainOfCube {P P' : TopPair.{u}} (f : P 
     (c : SingularCube P.fst m) :
     (cubicalChainComplexMap k f).f m (cubicalChainOfCube k c) =
       cubicalChainOfCube k ((Hom.fst f).hom.comp c) := by
-  rw [cubicalChainOfCube_def, cubicalChainOfCube_def, ← ModuleCat.comp_apply,
-    ← HomologicalComplex.comp_f, π_cubicalChainComplexMap, HomologicalComplex.comp_f,
-    ModuleCat.comp_apply]
+  rw [cubicalChainOfCube_def, cubicalChainOfCube_def, cubicalChainComplexMap_f_cokernel_π_f_apply]
   simp [NormalizedCubicalChain.map_ofCube]
 
 /-- A singular cube sending the boundary of the cube into the subspace is a relative cycle. -/
