@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
-public import TauCeti.Analysis.CStarAlgebra.Multiplier
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 
 /-!
 # Annihilators and essential ideals in C⋆-algebras
