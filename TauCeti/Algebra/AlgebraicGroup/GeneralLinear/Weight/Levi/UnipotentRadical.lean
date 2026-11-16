@@ -9,11 +9,11 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.StandardC
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
 
 /-!
-# Triviality of the unipotent radical of a weight Levi
+# Normal smooth unipotent subgroups of a weight Levi are trivial
 
 Over an algebraically closed field, every normal smooth unipotent closed subgroup of a
-general-linear weight Levi is trivial. In particular, the unipotent radical is trivial.
-The statements allow repeated weights, arbitrary characteristic, and rank zero. They provide
+general-linear weight Levi is trivial.
+The statement allows repeated weights, arbitrary characteristic, and rank zero. It provides
 the normal-subgroup input for reductivity of block-diagonal Levi subgroups and for identifying
 the unipotent radical of their parabolics.
 
@@ -58,18 +58,6 @@ theorem eq_augmentation_weightLevi_of_isNormal_of_smoothUnipotent
     (eqToIso (weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w).symm)
     (isCompletelyReducible_weightLeviStandardComodule w k)
     (isFaithful_weightLeviStandardComodule k w) I hI hU
-
-/-- The unipotent radical of every weight Levi over an algebraically closed field is trivial.
-Contravariantly, its defining ideal is the augmentation ideal. -/
-@[simp]
-theorem unipotentRadicalDefiningIdeal_weightLeviFiniteTypeCoordinateHopfAlgebra :
-    FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-        (weightLeviFiniteTypeCoordinateHopfAlgebra k w) =
-      HopfIdeal.augmentation k (weightLeviFiniteTypeCoordinateHopfAlgebra k w) := by
-  rw [FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_augmentation_iff]
-  intro I hI
-  exact eq_augmentation_weightLevi_of_isNormal_of_smoothUnipotent k w I
-    hI.isNormal hI.smoothUnipotent
 
 end
 

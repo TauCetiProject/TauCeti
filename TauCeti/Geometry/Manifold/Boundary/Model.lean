@@ -17,16 +17,15 @@ coordinate hyperplane where the zeroth coordinate vanishes; deleting that coordi
 continuous linear equivalence with `EuclideanSpace ℝ (Fin n)`.
 
 The construction is the standard-model prerequisite for putting a manifold structure on the
-boundary of a manifold modeled on a Euclidean half-space, as prescribed by Layer 1 of the
-GeometricTopology roadmap.  The parametrization and projection API below is intended to let
-boundary charts use this identification without unfolding its coordinate construction.  The file
-also splits the ambient Euclidean space into boundary and normal coordinates; the boundary
-inclusion and the standard product collar both use this one coordinate equivalence, and
-`TauCeti.euclideanFinConsEquiv` is the same equivalence with the boundary coordinates given as a
-function on `Fin k`, reindexed along `k = n`.  Finally,
-`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a
-linear functional that is positive off the hyperplane near a boundary point within the half-space
-as a positive multiple of the boundary coordinate.
+boundary of a manifold modeled on a Euclidean half-space.  The parametrization and projection API
+below is intended to let boundary charts use this identification without unfolding its coordinate
+construction.  The file also splits the ambient Euclidean space into boundary and normal
+coordinates; the boundary inclusion and the standard product collar both use this one coordinate
+equivalence, and `TauCeti.euclideanFinConsEquiv` is the same equivalence with the boundary
+coordinates given as a function on `Fin k`, reindexed along `k = n`.  Finally,
+`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a linear functional
+that is positive off the hyperplane near a boundary point within the half-space as a positive
+multiple of the boundary coordinate.
 -/
 
 public section

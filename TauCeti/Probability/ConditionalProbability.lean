@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
+public import TauCeti.MeasureTheory.Measure.Support
 
 /-!
 # Conditional measures and the law of total probability
@@ -68,6 +69,19 @@ public section
 
 open MeasureTheory Set
 open scoped ENNReal NNReal
+
+/-- On a discrete space, conditioning on a finite-mass event retains precisely the original
+support points in that event. A null event gives empty support. -/
+theorem MeasureTheory.Measure.support_cond {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] [MeasurableSingletonClass X]
+    (μ : Measure X) (s : Set X) (hμs : μ s ≠ ⊤) :
+    (ProbabilityTheory.cond μ s).support = μ.support ∩ s := by
+  rw [ProbabilityTheory.cond,
+    Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr hμs)]
+  ext x
+  simp only [Measure.mem_support_iff_measure_singleton_pos, Set.mem_inter_iff,
+    Measure.restrict_apply (measurableSet_singleton x)]
+  by_cases hx : x ∈ s <;> simp [hx]
 
 namespace ProbabilityTheory
 

@@ -7,14 +7,19 @@ module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
-import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Ideal
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.Algebra.DirectSum.Component
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Common affine neighborhoods in projective spectra
 
-Every finite set of relevant homogeneous primes misses one homogeneous element of positive
-degree. Its basic open is affine. Pulling back that open along an affine morphism gives a
-common affine neighborhood of a prescribed finite set in its source.
+A homogeneous ideal not contained in any prime of a finite set contains a positive-degree
+homogeneous element avoiding the entire set. Its affine basic open can be chosen inside any
+prescribed open. Affine morphisms and locally closed immersions into projective spectra
+therefore admit common affine neighbourhoods of finite subsets inside prescribed opens.
 
 No field, finite generation, degree-one generation or nonempty-set hypothesis is required.
 The homogeneous prime-avoidance argument raises two sections to a common degree before adding
@@ -34,109 +39,162 @@ orbits used in descent of projective Picard charts.
 
 public section
 
-variable {coefficients gradedPiece : Type*} [CommRing coefficients]
-  [SetLike gradedPiece coefficients] [AddSubgroupClass gradedPiece coefficients]
-  {grading : ℕ → gradedPiece} [GradedRing grading]
+variable {A σ : Type*} [CommRing A] [SetLike σ A]
+
+section
+
+variable [AddSubmonoidClass σ A] {𝒜 : ℕ → σ} [GradedRing 𝒜]
 
 namespace ProjectiveSpectrum
 
-/-- A finite set of relevant homogeneous primes misses a common homogeneous element
-of positive degree. -/
-theorem exists_homogeneous_notMem_of_finset (points : Finset (ProjectiveSpectrum grading)) :
-    ∃ degree > 0, ∃ homogeneousElement ∈ grading degree,
-      ∀ point ∈ points, homogeneousElement ∉ point.asHomogeneousIdeal := by
+/-- A homogeneous ideal missing `x` contains a positive-degree homogeneous element vanishing
+at every point of a finite set none of whose primes is contained in the prime of `x`. -/
+theorem exists_homogeneous_mem_notMem_of_finset_not_le (x : ProjectiveSpectrum 𝒜)
+    (points : Finset (ProjectiveSpectrum 𝒜)) (hsep : ∀ y ∈ points, ¬ y ≤ x)
+    {I : HomogeneousIdeal 𝒜} (hI : ¬ I ≤ x.asHomogeneousIdeal) :
+    ∃ n > 0, ∃ a ∈ 𝒜 n, a ∈ I ∧
+      (∀ y ∈ points, a ∈ y.asHomogeneousIdeal) ∧ a ∉ x.asHomogeneousIdeal := by
+  classical
+  have hother (y : points) : ∃ n, ∃ a ∈ 𝒜 n,
+      a ∈ y.1.asHomogeneousIdeal ∧ a ∉ x.asHomogeneousIdeal :=
+    y.1.asHomogeneousIdeal.isHomogeneous.exists_mem_notMem_of_not_subset (hsep y y.2)
+  choose d a ha hay hax using hother
+  obtain ⟨n, hn, b, hb, hbx⟩ := x.exists_le_mem_notMem 1
+  obtain ⟨m, c, hc, hcI, hcx⟩ :=
+    I.isHomogeneous.exists_mem_notMem_of_not_subset hI
+  let q := b * c * ∏ y ∈ points.attach, a y
+  refine ⟨n + m + ∑ y ∈ points.attach, d y, by omega, q, ?_, ?_, ?_, ?_⟩
+  · exact SetLike.mul_mem_graded (SetLike.mul_mem_graded hb hc)
+      (SetLike.prod_mem_graded _ _ _ (fun y _ ↦ ha y))
+  · exact I.toIdeal.mul_mem_right _ (I.toIdeal.mul_mem_left b hcI)
+  · intro y hy
+    exact Ideal.mul_mem_left _ _ (Ideal.mem_of_dvd _
+      (Finset.dvd_prod_of_mem _ (Finset.mem_attach _ ⟨y, hy⟩)) (hay ⟨y, hy⟩))
+  · apply x.isPrime.mul_notMem (x.isPrime.mul_notMem hbx hcx)
+    rw [Ideal.IsPrime.prod_mem_iff (hp := x.isPrime)]
+    push Not
+    exact fun y _ ↦ hax y
+
+/-- A homogeneous ideal missing each point in a finite set contains one positive-degree
+homogeneous element missing all of them. -/
+theorem exists_homogeneous_mem_notMem_of_finset {I : HomogeneousIdeal 𝒜}
+    (points : Finset (ProjectiveSpectrum 𝒜))
+    (hI : ∀ x ∈ points, ¬ I ≤ x.asHomogeneousIdeal) :
+    ∃ n > 0, ∃ a ∈ 𝒜 n, a ∈ I ∧ ∀ x ∈ points, a ∉ x.asHomogeneousIdeal := by
   classical
   induction points using Finset.strongInduction with
-  | H points inductionHypothesis =>
-    rcases points.eq_empty_or_nonempty with rfl | nonemptyPoints
-    · exact ⟨1, one_pos, 0, zero_mem _, by simp⟩
-    obtain ⟨minimalPoint, minimality⟩ := points.exists_minimal nonemptyPoints
-    obtain ⟨degree, positiveDegree, homogeneousElement, homogeneous, avoidsOthers⟩ :=
-      inductionHypothesis (points.erase minimalPoint)
-        (Finset.erase_ssubset minimality.prop)
-    by_cases outsideMinimal : homogeneousElement ∉ minimalPoint.asHomogeneousIdeal
-    · refine ⟨degree, positiveDegree, homogeneousElement, homogeneous, fun point membership ↦ ?_⟩
-      by_cases equality : point = minimalPoint
-      · exact equality ▸ outsideMinimal
-      · exact avoidsOthers point (Finset.mem_erase.mpr ⟨equality, membership⟩)
-    rw [not_not] at outsideMinimal
-    have separatingSection (point : points.erase minimalPoint) :
-        ∃ degree, ∃ homogeneousElement ∈ grading degree,
-          homogeneousElement ∈ point.1.asHomogeneousIdeal ∧
-            homogeneousElement ∉ minimalPoint.asHomogeneousIdeal := by
-      have notBelow : ¬ point.1.asHomogeneousIdeal ≤ minimalPoint.asHomogeneousIdeal :=
-        fun inclusion ↦ (Finset.mem_erase.mp point.2).1
-          (le_antisymm inclusion (minimality.2 (Finset.mem_erase.mp point.2).2 inclusion))
-      exact HomogeneousIdeal.exists_homogeneous_mem_notMem_of_not_le notBelow
-    choose separatingDegree separatingElement separatingHomogeneous inOtherPrime
-      outsideMinimalPrime using separatingSection
-    let index := (AlgebraicGeometry.Proj.affineOpenCover grading).idx minimalPoint
-    let initialDegree := index.1.val
-    have positiveInitialDegree : 0 < initialDegree := index.1.property
-    let initialElement : coefficients := index.2
-    have initialHomogeneous : initialElement ∈ grading initialDegree := index.2.property
-    have initialOutside : initialElement ∉ minimalPoint.asHomogeneousIdeal := by
-      have membership := (AlgebraicGeometry.Proj.affineOpenCover grading).covers minimalPoint
-      -- The chosen cover index is its away chart; exposing that chart identifies its
-      -- range with the basic open via opensRange_awayι.
-      change minimalPoint ∈ (AlgebraicGeometry.Proj.awayι grading initialElement
-        initialHomogeneous positiveInitialDegree).opensRange at membership
-      rwa [AlgebraicGeometry.Proj.opensRange_awayι] at membership
-    -- Multiply the separating sections with a positive-degree section missing the minimum.
-    let totalDegree := initialDegree +
-      ∑ point ∈ (points.erase minimalPoint).attach, separatingDegree point
-    let productSection := initialElement *
-      ∏ point ∈ (points.erase minimalPoint).attach, separatingElement point
-    have productHomogeneous : productSection ∈ grading totalDegree :=
-      SetLike.mul_mem_graded initialHomogeneous
-        (SetLike.prod_mem_graded _ _ _ (fun point _ ↦ separatingHomogeneous point))
-    have productOutside : productSection ∉ minimalPoint.asHomogeneousIdeal := by
-      refine minimalPoint.isPrime.mul_notMem initialOutside ?_
-      rw [Ideal.IsPrime.prod_mem_iff (hp := minimalPoint.isPrime)]
-      push Not
-      exact fun point _ ↦ outsideMinimalPrime point
-    have productInOther (point : points.erase minimalPoint) :
-        productSection ∈ point.1.asHomogeneousIdeal :=
-      Ideal.mul_mem_left _ _ (Ideal.mem_of_dvd _
-        (Finset.dvd_prod_of_mem _ (Finset.mem_attach _ point)) (inOtherPrime point))
-    have positiveTotalDegree : 0 < totalDegree :=
-      lt_of_lt_of_le positiveInitialDegree (Nat.le_add_right _ _)
-    -- Raise both sections to a common degree before adding, preserving every avoidance.
-    refine ⟨degree * totalDegree, Nat.mul_pos positiveDegree positiveTotalDegree,
-      homogeneousElement ^ totalDegree + productSection ^ degree, add_mem ?_ ?_,
-      fun point membership ↦ ?_⟩
-    · simpa [mul_comm] using SetLike.pow_mem_graded totalDegree homogeneous
-    · simpa using SetLike.pow_mem_graded degree productHomogeneous
-    · by_cases equality : point = minimalPoint
-      · subst equality
-        intro inPrime
-        exact productOutside (point.isPrime.mem_of_pow_mem degree
-          ((Ideal.add_mem_iff_right _
-            (Ideal.pow_mem_of_mem _ outsideMinimal totalDegree positiveTotalDegree)).mp inPrime))
-      · have inErased : point ∈ points.erase minimalPoint :=
-          Finset.mem_erase.mpr ⟨equality, membership⟩
-        intro inPrime
-        exact avoidsOthers point inErased (point.isPrime.mem_of_pow_mem totalDegree
-          ((Ideal.add_mem_iff_left _
-            (Ideal.pow_mem_of_mem _ (productInOther ⟨point, inErased⟩)
-              degree positiveDegree)).mp inPrime))
+  | H points ih =>
+    rcases points.eq_empty_or_nonempty with rfl | hne
+    · exact ⟨1, one_pos, 0, zero_mem _, I.zero_mem, by simp⟩
+    obtain ⟨x, hx⟩ := points.exists_minimal hne
+    obtain ⟨n, hn, a, ha, haI, havoid⟩ := ih (points.erase x) (Finset.erase_ssubset hx.prop)
+      (fun y hy ↦ hI y (Finset.mem_of_mem_erase hy))
+    by_cases hax : a ∉ x.asHomogeneousIdeal
+    · refine ⟨n, hn, a, ha, haI, fun y hy ↦ ?_⟩
+      by_cases hyx : y = x
+      · exact hyx ▸ hax
+      · exact havoid y (Finset.mem_erase.mpr ⟨hyx, hy⟩)
+    rw [not_not] at hax
+    obtain ⟨m, hm, b, hb, hbI, hbothers, hbx⟩ :=
+      x.exists_homogeneous_mem_notMem_of_finset_not_le (points.erase x)
+        (fun y hy hyx ↦ (Finset.mem_erase.mp hy).1
+          (le_antisymm hyx (hx.2 (Finset.mem_erase.mp hy).2 hyx))) (hI x hx.prop)
+    refine ⟨n * m, Nat.mul_pos hn hm, a ^ m + b ^ n, add_mem ?_ ?_,
+      I.add_mem (I.toIdeal.pow_mem_of_mem haI m hm) (I.toIdeal.pow_mem_of_mem hbI n hn),
+      fun y hy ↦ ?_⟩
+    · simpa [mul_comm] using SetLike.pow_mem_graded m ha
+    · exact SetLike.pow_mem_graded n hb
+    · by_cases hyx : y = x
+      · subst y
+        exact x.isPrime.pow_add_pow_notMem hax hbx hm
+      · have hy' := Finset.mem_erase.mpr ⟨hyx, hy⟩
+        rw [add_comm]
+        exact y.isPrime.pow_add_pow_notMem (hbothers y hy') (havoid y hy') hn
+
+/-- A finite set of relevant homogeneous primes misses a common homogeneous element of
+positive degree. -/
+theorem exists_homogeneous_notMem_of_finset (points : Finset (ProjectiveSpectrum 𝒜)) :
+    ∃ n > 0, ∃ a ∈ 𝒜 n, ∀ x ∈ points, a ∉ x.asHomogeneousIdeal := by
+  obtain ⟨n, hn, a, ha, _, havoid⟩ :=
+    exists_homogeneous_mem_notMem_of_finset (I := ⊤) points
+      (fun x _ h ↦ x.isPrime.ne_top (top_le_iff.mp h))
+  exact ⟨n, hn, a, ha, havoid⟩
 
 end ProjectiveSpectrum
 
-open CategoryTheory
+end
+
+open CategoryTheory AlgebraicGeometry
 open scoped AlgebraicGeometry
 
-/-- A finite set in the source of an affine morphism to a projective spectrum lies in a common
-affine open, without any assumption on the coefficient ring or the grading. -/
+variable [AddSubgroupClass σ A] {𝒜 : ℕ → σ} [GradedRing 𝒜]
+
+/-- A finite set of a projective spectrum admits a common affine basic open inside any
+prescribed open containing the set. No field or finiteness assumption on the graded ring is
+needed. -/
+theorem AlgebraicGeometry.Proj.exists_isAffineOpen_basicOpen_superset
+    {s : Set (Proj 𝒜)} {W : (Proj 𝒜).Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ n > 0, ∃ a ∈ 𝒜 n, s ⊆ Proj.basicOpen 𝒜 a ∧ Proj.basicOpen 𝒜 a ≤ W := by
+  classical
+  let I := ProjectiveSpectrum.vanishingIdeal (𝒜 := 𝒜) (W : Set (Proj 𝒜))ᶜ
+  have hI (x : ProjectiveSpectrum 𝒜) (hx : x ∈ hs.toFinset) :
+      ¬ I ≤ x.asHomogeneousIdeal := by
+    intro h
+    have hxzero : x ∈ ProjectiveSpectrum.zeroLocus 𝒜 (I : Set A) := h
+    rw [ProjectiveSpectrum.zeroLocus_vanishingIdeal_eq_closure] at hxzero
+    -- The scheme and projective spectrum have the same underlying topological space.
+    have hxclosure : x ∈ closure ((W : Set (Proj 𝒜))ᶜ) := hxzero
+    rw [W.isOpen.isClosed_compl.closure_eq] at hxclosure
+    exact hxclosure (hsW (hs.mem_toFinset.mp hx))
+  obtain ⟨n, hn, a, ha, haI, havoid⟩ :=
+    ProjectiveSpectrum.exists_homogeneous_mem_notMem_of_finset hs.toFinset hI
+  refine ⟨n, hn, a, ha, ?_, ?_⟩
+  · intro x hx
+    rw [SetLike.mem_coe, Proj.mem_basicOpen]
+    exact havoid x (hs.mem_toFinset.mpr hx)
+  · intro x hx
+    by_contra hxW
+    exact (Proj.mem_basicOpen 𝒜 a x).mp hx
+      ((ProjectiveSpectrum.mem_vanishingIdeal _ _).mp haI x hxW)
+
+/-- A finite set in the source of an affine morphism to a projective spectrum lies in a
+common affine open inside any prescribed open containing it. The graded ring is arbitrary. -/
 theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_proj
-    {X : AlgebraicGeometry.Scheme} (f : X ⟶ AlgebraicGeometry.Proj grading)
-    [AlgebraicGeometry.IsAffineHom f] {s : Set X} (hs : s.Finite) :
-    ∃ U : X.Opens, AlgebraicGeometry.IsAffineOpen U ∧ s ⊆ U := by
+    {X : Scheme} (f : X ⟶ Proj 𝒜) [IsAffineHom f]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ U : X.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
   classical
   obtain ⟨n, hn, a, ha, havoid⟩ :=
-    ProjectiveSpectrum.exists_homogeneous_notMem_of_finset (grading := grading)
-      (hs.image f.base).toFinset
-  refine ⟨f ⁻¹ᵁ AlgebraicGeometry.Proj.basicOpen grading a,
-    (AlgebraicGeometry.Proj.isAffineOpen_basicOpen grading a ha hn).preimage f, ?_⟩
-  intro x hx
-  exact havoid (f x) ((hs.image f.base).mem_toFinset.mpr (Set.mem_image_of_mem f.base hx))
+    ProjectiveSpectrum.exists_homogeneous_notMem_of_finset (𝒜 := 𝒜) (hs.image f).toFinset
+  let V := f ⁻¹ᵁ Proj.basicOpen 𝒜 a
+  have hV : IsAffineOpen V := (Proj.isAffineOpen_basicOpen 𝒜 a ha hn).preimage f
+  have hsV : s ⊆ V := by
+    intro x hx
+    rw [SetLike.mem_coe, f.mem_preimage, Proj.mem_basicOpen]
+    exact havoid (f x) ((hs.image f).mem_toFinset.mpr (Set.mem_image_of_mem f hx))
+  obtain ⟨r, hsr, hrW⟩ := hV.exists_basicOpen_superset_le hs hsV hsW
+  exact ⟨X.basicOpen r, hV.basicOpen r, hsr, hrW⟩
+
+/-- A finite set in a locally closed subscheme of a projective spectrum lies in a common
+affine open inside any prescribed open. This includes quasi-projective open subschemes. -/
+theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isImmersion_proj
+    {X : Scheme} (f : X ⟶ Proj 𝒜) [IsImmersion f]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ U : X.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨n, hn, a, ha, hsa, haV⟩ := Proj.exists_isAffineOpen_basicOpen_superset
+    (W := f.coborderRange)
+    (hs.image f) (by
+      rintro _ ⟨x, _, rfl⟩
+      exact subset_coborder (Set.mem_range_self x))
+  have hA : IsAffineOpen (f.coborderRange.ι ⁻¹ᵁ Proj.basicOpen 𝒜 a) :=
+    (Proj.isAffineOpen_basicOpen 𝒜 a ha hn).preimage_of_isOpenImmersion
+      f.coborderRange.ι (by simpa only [Scheme.Opens.opensRange_ι] using haV)
+  let V := f ⁻¹ᵁ Proj.basicOpen 𝒜 a
+  have hV : IsAffineOpen V := by
+    dsimp only [V]
+    rw [← f.liftCoborder_ι, Scheme.Hom.comp_preimage]
+    exact hA.preimage f.liftCoborder
+  have hsV : s ⊆ V := fun x hx ↦ f.mem_preimage.mpr
+    (hsa (Set.mem_image_of_mem f hx))
+  obtain ⟨r, hsr, hrW⟩ := hV.exists_basicOpen_superset_le hs hsV hsW
+  exact ⟨X.basicOpen r, hV.basicOpen r, hsr, hrW⟩

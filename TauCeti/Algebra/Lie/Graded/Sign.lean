@@ -5,9 +5,9 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Algebra.Lie.Graded
 public import Mathlib.Basic.Sign.Basic
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Algebra.Lie.Graded.Supported
 
 /-!
 # Sign subalgebras of a graded Lie algebra
@@ -53,20 +53,13 @@ variable {ι R L A : Type*} [AddCommMonoid ι]
 
 /-- The sum of homogeneous pieces whose degree has sign `s` under `θ`.
 The positive, zero and negative sums are each closed under the Lie bracket. -/
-def signSubalgebra (s : SignType) : LieSubalgebra R L where
-  toSubmodule := ⨆ n : {n // SignType.sign (θ n) = s}, ℒ n
-  lie_mem' {x y} hx hy := by
-    let S := ⨆ n : {n // SignType.sign (θ n) = s}, ℒ n
-    refine Submodule.iSup_induction _ (motive := fun x => ⁅x, y⁆ ∈ S) hx
-      (fun n x hx => ?_) (by simp [S])
-      (fun x z hx hz => by simpa only [add_lie] using S.add_mem hx hz)
-    refine Submodule.iSup_induction _ (motive := fun y => ⁅x, y⁆ ∈ S) hy
-      (fun m y hy => ?_) (by simp [S])
-      (fun y z hy hz => by simpa only [lie_add] using S.add_mem hy hz)
-    have hnm : SignType.sign (θ (n.val + m.val)) = s := by
+def signSubalgebra (s : SignType) : LieSubalgebra R L :=
+  supportedLieSubalgebra ℒ {
+    carrier := {n | SignType.sign (θ n) = s}
+    add_mem' := by
+      intro n m hn hm
+      simp only [Set.mem_ofPred_eq] at hn hm ⊢
       rw [map_add]
-      have hn := n.property
-      have hm := m.property
       cases s with
       | zero => simp_all
       | neg =>
@@ -75,8 +68,7 @@ def signSubalgebra (s : SignType) : LieSubalgebra R L where
       | pos =>
         simp only [SignType.pos_eq_one, sign_eq_one_iff] at hn hm ⊢
         exact Left.add_pos_of_pos_of_nonneg hn hm.le
-    exact Submodule.mem_iSup_of_mem ⟨n.val + m.val, hnm⟩
-      (SetLike.GradedBracket.bracket_mem hx hy)
+  }
 
 omit [IsOrderedAddMonoid A] [SetLike.GradedBracket ℒ ℒ] in
 /-- The underlying module is the sum over the specified sign fiber. -/
@@ -84,7 +76,9 @@ omit [IsOrderedAddMonoid A] [SetLike.GradedBracket ℒ ℒ] in
 theorem signSubalgebra_toSubmodule [IsOrderedAddMonoid A] [SetLike.GradedBracket ℒ ℒ]
     (s : SignType) :
     (signSubalgebra ℒ θ s).toSubmodule =
-      ⨆ n : {n // SignType.sign (θ n) = s}, ℒ n := (rfl)
+      ⨆ n : {n // SignType.sign (θ n) = s}, ℒ n := by
+  simp only [signSubalgebra, supportedLieSubalgebra_toSubmodule, iSup_subtype,
+    AddSubsemigroup.mem_mk, Set.mem_ofPred_eq]
 
 /-- Every homogeneous piece belongs to the subalgebra of its sign. -/
 theorem le_signSubalgebra (n : ι) :
@@ -139,33 +133,14 @@ variable [DecidableEq ι] [DirectSum.Decomposition ℒ]
 theorem mem_signSubalgebra_iff {s : SignType} {x : L} :
     x ∈ signSubalgebra ℒ θ s ↔
       ∀ n, SignType.sign (θ n) ≠ s → (DirectSum.decompose ℒ x n : L) = 0 := by
-  constructor
-  · intro hx n hn
-    rw [← LieSubalgebra.mem_toSubmodule, signSubalgebra_toSubmodule] at hx
-    refine Submodule.iSup_induction _
-      (motive := fun x => (DirectSum.decompose ℒ x n : L) = 0) hx
-      (fun m x hx => ?_) (by simp) (fun x y hx hy => by simp [hx, hy])
-    exact DirectSum.decompose_of_mem_ne ℒ hx (fun h => hn (h ▸ m.property))
-  · intro hx
-    classical
-    rw [← DirectSum.sum_support_decompose ℒ x, ← LieSubalgebra.mem_toSubmodule,
-      signSubalgebra_toSubmodule]
-    apply Submodule.sum_mem
-    intro n _
-    by_cases hs : SignType.sign (θ n) = s
-    · exact Submodule.mem_iSup_of_mem ⟨n, hs⟩ (DirectSum.decompose ℒ x n).property
-    · rw [hx n hs]
-      exact Submodule.zero_mem _
+  simp only [signSubalgebra, mem_supportedLieSubalgebra_iff, AddSubsemigroup.mem_mk,
+    Set.mem_ofPred_eq]
 
 /-- Sign subalgebras are stable under every homogeneous projection. -/
 theorem isHomogeneous_signSubalgebra (s : SignType) :
     DirectSum.SetLike.IsHomogeneous ℒ (signSubalgebra ℒ θ s) := by
-  intro n x hx
-  by_cases hs : SignType.sign (θ n) = s
-  · rw [← hs]
-    exact le_signSubalgebra ℒ θ n (DirectSum.decompose ℒ x n).property
-  · rw [(mem_signSubalgebra_iff ℒ θ).mp hx n hs]
-    exact (signSubalgebra ℒ θ s).zero_mem
+  unfold signSubalgebra
+  exact isHomogeneous_supportedLieSubalgebra ℒ _
 
 /-- Collecting homogeneous pieces by sign gives an internal module decomposition. -/
 theorem isInternal_signSubalgebra :

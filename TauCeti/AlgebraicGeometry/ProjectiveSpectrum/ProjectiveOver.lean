@@ -82,12 +82,21 @@ instance IsProjectiveOver.isProper [X.IsProjectiveOver R] : IsProper (X ↘ Spec
   rw [← comp_over f (Spec (.of R))]
   infer_instance
 
-/-- Every finite set of a scheme projective over an affine base lies in a common affine open.
-No field or rational-point hypothesis is needed. -/
+/-- A finite subset of a scheme projective over an affine base has a common affine
+neighbourhood inside any prescribed open containing it. -/
 theorem exists_isAffineOpen_superset_of_isProjectiveOver [X.IsProjectiveOver R]
-    {s : Set X} (hs : s.Finite) :
-    ∃ U : X.Opens, IsAffineOpen U ∧ s ⊆ U := by
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ U : X.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
   obtain ⟨M, _, _, _, f, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  exact f.exists_isAffineOpen_superset_of_proj hs
+  exact f.exists_isAffineOpen_superset_of_proj hs hsW
+
+/-- A finite subset of a scheme immersed in a scheme projective over an affine base has a
+common affine neighbourhood inside any prescribed open containing it. -/
+theorem Hom.exists_isAffineOpen_superset_of_isImmersion_isProjectiveOver
+    [X.IsProjectiveOver R] {Z : Scheme.{u}} (f : Z ⟶ X) [IsImmersion f]
+    {s : Set Z} {W : Z.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ U : Z.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨M, _, _, _, g, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
+  exact (f ≫ g).exists_isAffineOpen_superset_of_isImmersion_proj hs hsW
 
 end AlgebraicGeometry.Scheme

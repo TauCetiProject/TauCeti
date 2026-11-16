@@ -18,9 +18,10 @@ conditional expectation unchanged almost everywhere. These identities allow mart
 identities to be transported to a completed stochastic basis without identifying its
 measurable space with the original one.
 
-Only sigma-finiteness on the original conditioning σ-algebra is required. Observables are
-assumed almost everywhere strongly measurable for the original measure; integrability is
-not required, consistently with the zero convention for nonintegrable conditional expectations.
+Only null-set augmentation requires sigma-finiteness on the original conditioning σ-algebra;
+ambient completion alone does not. Observables are assumed almost everywhere strongly measurable
+for the original measure; integrability is not required, consistently with the zero convention
+for nonintegrable conditional expectations.
 -/
 
 public section
@@ -68,16 +69,21 @@ variable {Ω E : Type*} {m m₀ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-- Completion of the ambient measure preserves conditional expectation onto an original
 sub-σ-algebra. -/
-theorem condExp_completion (hm : m ≤ m₀) [SigmaFinite (μ.trim hm)]
-    (hf : AEStronglyMeasurable f μ) :
+theorem condExp_completion (hm : m ≤ m₀) (hf : AEStronglyMeasurable f μ) :
     @condExp Ω E m (eventuallyMeasurableSpace m₀ (ae μ)) _ _ μ.completion f
       =ᵐ[μ] μ[f | m] := by
-  have h := MeasurePreserving.condExp_comap (mα := eventuallyMeasurableSpace m₀ (ae μ))
-    (mβ := m₀) μ.measurePreserving_id_completion hm hf
-  convert h using 1
-  · exact μ.ae_completion.symm
-  · simp only [Function.comp_id, MeasurableSpace.comap_id]
-  · simp only [Function.comp_id]
+  by_cases hσ : SigmaFinite (μ.trim hm)
+  · have h := MeasurePreserving.condExp_comap (mα := eventuallyMeasurableSpace m₀ (ae μ))
+      (mβ := m₀) μ.measurePreserving_id_completion hm hf
+    convert h using 1
+    · exact μ.ae_completion.symm
+    · simp only [Function.comp_id, MeasurableSpace.comap_id]
+    · simp only [Function.comp_id]
+  · have hσ' : ¬SigmaFinite (@Measure.trim Ω m (eventuallyMeasurableSpace m₀ (ae μ))
+        μ.completion (hm.trans le_eventuallyMeasurableSpace)) := by
+      rwa [μ.trim_completion hm]
+    rw [condExp_of_not_sigmaFinite (hm.trans le_eventuallyMeasurableSpace) hσ',
+      condExp_of_not_sigmaFinite hm hσ]
 
 /-- Completing the ambient space and adjoining its null sets to the conditioning σ-algebra
 preserves conditional expectation. The augmentation uses ambient null sets, not merely null

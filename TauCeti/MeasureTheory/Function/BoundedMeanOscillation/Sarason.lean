@@ -120,7 +120,7 @@ omit [NormedSpace ℝ F] in
 private theorem measurable_nearPairIntegrand (hf : StronglyMeasurable f) (c : E) (r t : ℝ) :
     Measurable fun q : (E × E) × E => nearPairIntegrand f c r t q.1.1 q.1.2 q.2 := by
   refine Measurable.ite ?_ ((hf.comp_measurable measurable_fst.snd).sub
-    (hf.comp_measurable measurable_snd)).enorm measurable_const
+    (hf.comp_measurable measurable_snd)).eNorm measurable_const
   exact (measurableSet_lt (measurable_fst.fst.dist measurable_const) measurable_const).inter
     ((measurableSet_lt (measurable_fst.snd.dist measurable_fst.fst) measurable_const).inter
       (measurableSet_lt (measurable_snd.dist measurable_fst.fst) measurable_const))
@@ -217,7 +217,7 @@ private theorem setLAverage_setLAverage_enorm_convolution_sub_le {ψ : E → ℝ
   have hKm : Measurable fun q : (E × E) × E => K q.1.1 q.1.2 q.2 :=
     (ENNReal.measurable_ofReal.comp (hψ.measurable.comp measurable_snd)).mul
       ((hf.comp_measurable (measurable_fst.fst.sub measurable_snd)).sub
-        (hf.comp_measurable (measurable_fst.snd.sub measurable_snd))).enorm
+        (hf.comp_measurable (measurable_fst.snd.sub measurable_snd))).eNorm
   have hψl : ∫⁻ z, ENNReal.ofReal (ψ z) ∂μ = 1 := by
     rw [← ofReal_integral_eq_lintegral_ofReal (hψ.integrable_of_hasCompactSupport hψc)
       (ae_of_all _ hψ0), hψ1, ENNReal.ofReal_one]
@@ -227,7 +227,7 @@ private theorem setLAverage_setLAverage_enorm_convolution_sub_le {ψ : E → ℝ
         simp only [setLAverage_eq']
         exact lintegral_mono fun x => lintegral_mono fun y =>
           (enorm_convolution_lsmul_sub_convolution_lsmul_le hψ hψc hfi x y).trans_eq
-            (lintegral_congr fun z => by rw [Real.enorm_of_nonneg (hψ0 z)])
+            (lintegral_congr fun z => by rw [Real.eNorm_of_nonneg (hψ0 z)])
     _ = ∫⁻ z, ENNReal.ofReal (ψ z) * ∫⁻ x, ∫⁻ y, ‖f (x - z) - f (y - z)‖ₑ ∂ν ∂ν ∂μ := by
         have hswap (x : E) : ∫⁻ y, ∫⁻ z, K x y z ∂μ ∂ν = ∫⁻ z, ∫⁻ y, K x y z ∂ν ∂μ :=
           lintegral_lintegral_swap
@@ -409,12 +409,12 @@ private theorem edist_convolution_le (hf : MemBMO f μ) {ψ : E → ℝ} (hψ : 
       (hd.smul_const m), hm, sub_zero, ← integral_sub hix hiy]
     simp only [sub_smul]
   have hball : μ (ball x (2 * t)) = μ (ball (0 : E) (2 * t)) := Measure.addHaar_ball_center μ x _
-  rw [edist_eq_enorm_sub, heq]
-  refine (enorm_integral_le_lintegral_enorm _).trans ?_
+  rw [eDist_eq_eNorm_sub, heq]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
   calc ∫⁻ w, ‖(ψ (x - w) - ψ (y - w)) • (f w - m)‖ₑ ∂μ
       ≤ ∫⁻ w, (ball x (2 * t)).indicator (fun w => η * ‖f w - m‖ₑ) w ∂μ := by
         refine lintegral_mono fun w => ?_
-        rw [enorm_smul]
+        rw [eNorm_smul]
         by_cases hw : w ∈ ball x (2 * t)
         · rw [indicator_of_mem hw]
           gcongr
@@ -429,7 +429,7 @@ private theorem edist_convolution_le (hf : MemBMO f μ) {ψ : E → ℝ} (hψ : 
           simp [hψ0 _ (by linarith : t < ‖x - w‖), hψ0 _ hyw]
     _ = η * (μ (ball x (2 * t)) * ⨍⁻ w in ball x (2 * t), ‖f w - m‖ₑ ∂μ) := by
         have hm : AEMeasurable (fun w => ‖f w - m‖ₑ) (μ.restrict (ball x (2 * t))) :=
-          (hf.locallyIntegrable.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.restrict
+          (hf.locallyIntegrable.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm.restrict
         rw [lintegral_indicator measurableSet_ball, lintegral_const_mul'' _ hm,
           measure_mul_setLAverage _ measure_ball_lt_top.ne]
     _ ≤ η * (μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ) := by
@@ -460,7 +460,7 @@ theorem MemBMO.uniformContinuous_convolution (hf : MemBMO f μ) {ψ : E → ℝ}
     Metric.uniformContinuous_iff.1 (hψc.uniformContinuous_of_continuous hψ) η hη
   refine ⟨min t δ, lt_min ht hδ, fun {x y} hxy => ?_⟩
   have hw (w : E) : ‖ψ (x - w) - ψ (y - w)‖ₑ ≤ ENNReal.ofReal η := by
-    rw [← edist_eq_enorm_sub, edist_dist]
+    rw [← eDist_eq_eNorm_sub, edist_dist]
     refine ENNReal.ofReal_le_ofReal (hψδ ?_).le
     rw [dist_sub_right]
     exact hxy.trans_le (min_le_right _ _)

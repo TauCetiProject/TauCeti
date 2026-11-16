@@ -50,7 +50,7 @@ example : (1 : ℕ) • point ≠ 0 ∧ addOrderOf point ∣ 1 * 2 := by
 example : 7 ∣ Nat.gcd (batch.map (Function.uncurry Pair.cross)).prod.val 35 := by
   apply prime_dvd_gcd_prod_cross_of_addOrderOf_dvd_mul (p := 7) (A := 0) (B := 1)
     (M := 1) (q := 2) (i := 1) (w := 1) (j := 1) (R := ⟨7, 1⟩) (S := ⟨0, 1⟩)
-    (by decide) (by decide) point batch (by simp [batch])
+    (by decide) point batch (by simp [batch])
   · simp [point, addOrderOf_twoTorsionPoint]
   · exact .inl (by norm_num)
   · simpa only [one_mul, one_zsmul, one_nsmul] using representatives_point.1
@@ -61,7 +61,7 @@ example : 1 < Nat.gcd (batch.map (Function.uncurry Pair.cross)).prod.val 35 ∧
     Nat.gcd (batch.map (Function.uncurry Pair.cross)).prod.val 35 < 35 := by
   refine one_lt_gcd_prod_cross_and_lt_of_addOrderOf_dvd_mul (p := 7) (A := 0) (B := 1)
     (M := 1) (q := 2) (i := 1) (w := 1) (j := 1) (R := ⟨7, 1⟩) (S := ⟨0, 1⟩)
-    (by decide) (by decide) point batch (by simp [batch])
+    (by decide) point batch (by simp [batch])
     (by simp [point, addOrderOf_twoTorsionPoint]) (.inl (by norm_num)) ?_ ?_
     (by decide : Nat.Prime 5) (by decide) ?_
   · simpa only [one_mul, one_zsmul, one_nsmul] using representatives_point.1

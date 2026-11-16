@@ -51,6 +51,21 @@ block form and restricts to `K₀ p` near time zero. Neither compactness nor fin
 `P` is needed. The endpoint `φ^* K₀ p` of each path is the pullback of the given family; no
 separate endpoint family is chosen.
 
+The symplectomorphism may vary with the parameter as well. For a family `Φ p` of
+symplectomorphisms of `(M, σ)` the vertical families of `Φ p` built from `K₀ p` live on the same
+space `(ℝ × ℝ) × M`, while their descents live on the different mapping tori of the `Φ p`. On the
+slab `k - 1/3 < t < k + 4/3` the vertical family only involves the two structures
+`(Φ p ^ k)^* K₀ p` and `(Φ p ^ (k + 1))^* K₀ p`, so it is jointly smooth there as soon as these
+two families are (`TauCeti.SmoothMappingTorus.contMDiffOn_seamFamily_family`). For `k = 0` they
+are `K₀ p` and the endpoint family `(Φ p)^* K₀ p`, so smoothness on this slab needs no smooth
+dependence of `Φ p` on `p`. For each fixed `p` the seam identity determines the family at all
+other times from this slab, but joint smoothness at all times requires every pullback
+`(Φ p ^ k)^* K₀ p` to be jointly smooth
+(`TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMDiff_seamStructure`). If `Φ p x`
+and `(Φ p)⁻¹ x` are jointly smooth in `(p, x)`, then so are all the powers `Φ p ^ k`, the
+pullbacks `(Φ p ^ k)^* K₀ p` are jointly smooth, and the vertical families are jointly smooth
+for all times (`TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMDiff`).
+
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.seamStructure hσ hJ₀ k`: the structure `(φ ^ k)^* J₀`.
@@ -63,9 +78,13 @@ separate endpoint family is chosen.
 * `TauCeti.SmoothMappingTorus.contMDiff_seamFamily`: the vertical family is jointly smooth.
 * `TauCeti.SmoothMappingTorus.mfderiv_symm_seamFamily`: the seam identity.
 * `TauCeti.SmoothMappingTorus.compatible_seamFamily`: the family is `σ`-compatible.
+* `TauCeti.SmoothMappingTorus.seamPath_floor_eq_of_mem_Ioo`: on the slab `k - 1/3 < t < k + 4/3`
+  the vertical family is the single Cayley path from `J_k` to `J_(k + 1)`.
 * `TauCeti.SmoothMappingTorus.seamFamily_of_mem_Icc`,
   `TauCeti.SmoothMappingTorus.seamFamily_eq_of_mem_Icc`: the family is `J_k` on the collar of
   width `1/3` around the integer time `k`, and `J₀` around time `0`.
+* `TauCeti.SmoothMappingTorus.seamAlmostComplexStructure_def`: the descended structure is
+  `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure` of the seam family.
 * `TauCeti.SmoothMappingTorus.compatible_seamAlmostComplexStructure`: the descended structure is
   compatible with `Ω`.
 * `TauCeti.SmoothMappingTorus.seamAlmostComplexStructure_mk`: in the coordinates `(s, t, x)` with
@@ -74,6 +93,13 @@ separate endpoint family is chosen.
   `TauCeti.SmoothMappingTorus.contMDiff_seamAlmostComplexStructure_family`: for a smooth family
   of compatible structures `K₀ p`, the vertical families and the descended structures depend
   smoothly on the parameter `p`.
+* `TauCeti.SmoothMappingTorus.contMDiffOn_seamFamily_family`: for a family of symplectomorphisms
+  `Φ p`, the vertical families are jointly smooth on the slab `k - 1/3 < t < k + 4/3` when the
+  structures `(Φ p ^ k)^* K₀ p` and `(Φ p ^ (k + 1))^* K₀ p` are.
+* `TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMDiff_seamStructure`,
+  `TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMDiff`: they are jointly smooth
+  everywhere when all the structures `(Φ p ^ k)^* K₀ p` are, in particular when `Φ p` and its
+  inverse depend smoothly on `p`.
 
 ## References
 
@@ -125,6 +151,12 @@ theorem seamStructure_add_one (k : ℤ) :
   rw [seamStructure, seamStructure, zpow_add_one, Diffeomorph.mul_def,
     SmoothAlmostComplexStructure.pullback_trans]
 
+/-- The structure `(φ ^ 1)^* J₀` is the pullback `φ^* J₀`, the endpoint of the first piece of the
+vertical family. -/
+@[simp]
+theorem seamStructure_one : seamStructure φ J₀ 1 = J₀.pullback φ := by
+  rw [seamStructure, zpow_one]
+
 /-! ### The pieces of the vertical family -/
 
 /-- The piece of the vertical family on the time interval `[k, k + 1]`: the smooth Cayley path
@@ -161,21 +193,23 @@ theorem seamPath_add_one (k : ℤ) (t : ℝ) :
   push_cast
   ring
 
-/-- Near every time `t₀`, the vertical family is given by the single piece on
-`[⌊t₀⌋, ⌊t₀⌋ + 1]`, on a neighbourhood of `t₀` that does not depend on `J₀`. -/
-theorem eventually_seamPath_floor_eq (t₀ : ℝ) :
-    ∀ᶠ t in 𝓝 t₀, ∀ {J₀ : SmoothAlmostComplexStructure I M} (hJ₀ : σ.Compatible J₀),
-      seamPath hσ hJ₀ ⌊t⌋ t = seamPath hσ hJ₀ ⌊t₀⌋ t := by
-  have h₀ := Int.floor_le t₀
-  have h₁ := Int.lt_floor_add_one t₀
-  have hlo : (⌊t₀⌋ : ℝ) - 1 / 3 < t₀ := by linarith
-  filter_upwards [Ioo_mem_nhds hlo h₁] with t ht J₀ hJ₀
-  rcases le_or_gt (⌊t₀⌋ : ℝ) t with hk | hk
-  · rw [Int.floor_eq_iff.2 ⟨hk, ht.2⟩]
-  · have hfl : ⌊t⌋ = ⌊t₀⌋ - 1 :=
+/-- On the open slab `k - 1/3 < t < k + 4/3`, the vertical family is given by the single piece on
+`[k, k + 1]`: the neighbouring pieces agree with it on the collars. -/
+theorem seamPath_floor_eq_of_mem_Ioo {k : ℤ} {t : ℝ}
+    (ht : t ∈ Ioo ((k : ℝ) - 1 / 3) (k + 4 / 3)) :
+    seamPath hσ hJ₀ ⌊t⌋ t = seamPath hσ hJ₀ k t := by
+  rcases lt_or_ge t k with hk | hk
+  · have hfl : ⌊t⌋ = k - 1 :=
       Int.floor_eq_iff.2 ⟨by push_cast; linarith [ht.1], by push_cast; linarith⟩
     rw [hfl]
     exact seamPath_sub_one hσ hJ₀ ⟨ht.1.le, by linarith⟩
+  rcases lt_or_ge t (k + 1) with hk' | hk'
+  · rw [Int.floor_eq_iff.2 ⟨hk, hk'⟩]
+  · have hfl : ⌊t⌋ = k + 1 :=
+      Int.floor_eq_iff.2 ⟨by push_cast; linarith, by push_cast; linarith [ht.2]⟩
+    rw [hfl]
+    simpa using (seamPath_sub_one hσ hJ₀ (k := k + 1)
+      ⟨by push_cast; linarith, by push_cast; linarith [ht.2]⟩).symm
 
 /-! ### The vertical family -/
 
@@ -193,34 +227,31 @@ section Family
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
   {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+  {Φ : P → M ≃ₘ⟮I, I⟯ M} (hΦ : ∀ p, SmoothForm.mpullback (Φ p) (Φ p).contMDiff σ = σ)
   {K₀ : P → SmoothAlmostComplexStructure I M} (hK₀ : ∀ p, σ.Compatible (K₀ p))
-  (hs : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-    (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
-      ((K₀ q.1).toEndomorphism q.2)))
 
-include hs in
-/-- The structures `(φ ^ k)^* K₀ p` depend smoothly on `p` when `K₀ p` does. -/
-private theorem contMDiff_seamStructure_family (k : ℤ) :
-    ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+/-- Let `Φ p` be a family of symplectomorphisms and `K₀ p` a family of compatible structures,
+depending on a parameter `p` in a manifold `P`. If the structures `(Φ p ^ k)^* K₀ p` and
+`(Φ p ^ (k + 1))^* K₀ p` are jointly smooth in `(p, x)`, then the seam-compatible vertical
+families of `Φ p` built from the `K₀ p` are jointly smooth in `(p, ((s, t), x))` on the slab
+`k - 1/3 < t < k + 4/3`. For `k = 0` these are the families `K₀ p` and of endpoints
+`(Φ p)^* K₀ p`; no smooth dependence of `Φ p` on `p` is assumed. -/
+theorem contMDiffOn_seamFamily_family (k : ℤ)
+    (hk : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
       (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
-        ((seamStructure φ (K₀ q.1) k).toEndomorphism q.2)) :=
-  SmoothAlmostComplexStructure.contMDiff_pullback_family (φ ^ k) hs
-
-include hs in
-/-- For a family `K₀ p` of `σ`-compatible structures depending smoothly on a parameter `p` in a
-manifold `P`, the seam-compatible vertical families built from the `K₀ p` depend smoothly on
-`(p, ((s, t), x))`. -/
-theorem contMDiff_seamFamily_family :
-    ContMDiff (IP.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+        ((seamStructure (Φ q.1) (K₀ q.1) k).toEndomorphism q.2)))
+    (hk₁ : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((seamStructure (Φ q.1) (K₀ q.1) (k + 1)).toEndomorphism q.2))) :
+    ContMDiffOn (IP.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
       (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
-        (LinearMap.toContinuousLinearMap (seamFamily hσ (hK₀ q.1) q.2).toLinearMap)) :=
-    fun q₀ ↦ by
-  -- Near `q₀`, the family is a single Cayley path between two families of pulled back
-  -- structures, with parameter `(p, (s, t))`, which is jointly smooth.
-  set k := ⌊q₀.2.1.2⌋
+        (LinearMap.toContinuousLinearMap (seamFamily (hΦ q.1) (hK₀ q.1) q.2).toLinearMap))
+      {q | q.2.1.2 ∈ Ioo ((k : ℝ) - 1 / 3) (k + 4 / 3)} := by
+  -- On the slab, the family is a single Cayley path between the two given families, with
+  -- parameter `(p, (s, t))`, which is jointly smooth.
   have hc : ContMDiff (IP.prod 𝓘(ℝ, ℝ × ℝ)) 𝓘(ℝ) ∞
       (fun r : P × (ℝ × ℝ) ↦ 3 * (r.2.2 - k) - 1) :=
     (ContDiff.contMDiff (by fun_prop : ContDiff ℝ ∞
@@ -229,24 +260,87 @@ theorem contMDiff_seamFamily_family :
       (fun r : (P × (ℝ × ℝ)) × M ↦ (r.1.1, r.2)) :=
     (contMDiff_fst.comp contMDiff_fst).prodMk contMDiff_snd
   have hpath := (SmoothTwoForm.Compatible.contMDiff_cayleyPath_family
-    (K₀ := fun r : P × (ℝ × ℝ) ↦ seamStructure φ (K₀ r.1) k)
-    (K₁ := fun r : P × (ℝ × ℝ) ↦ seamStructure φ (K₀ r.1) (k + 1))
-    (fun r ↦ compatible_seamStructure hσ (hK₀ r.1) k)
-    (fun r ↦ compatible_seamStructure hσ (hK₀ r.1) (k + 1))
-    ((contMDiff_seamStructure_family hs k).comp hreassoc)
-    ((contMDiff_seamStructure_family hs (k + 1)).comp hreassoc) hc).comp
+    (K₀ := fun r : P × (ℝ × ℝ) ↦ seamStructure (Φ r.1) (K₀ r.1) k)
+    (K₁ := fun r : P × (ℝ × ℝ) ↦ seamStructure (Φ r.1) (K₀ r.1) (k + 1))
+    (fun r ↦ compatible_seamStructure (hΦ r.1) (hK₀ r.1) k)
+    (fun r ↦ compatible_seamStructure (hΦ r.1) (hK₀ r.1) (k + 1))
+    (hk.comp hreassoc) (hk₁.comp hreassoc) hc).comp
       (((contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
         (contMDiff_snd.comp contMDiff_snd)) :
         ContMDiff (IP.prod (𝓘(ℝ, ℝ × ℝ).prod I)) ((IP.prod 𝓘(ℝ, ℝ × ℝ)).prod I) ∞
           (fun q : P × ((ℝ × ℝ) × M) ↦ ((q.1, q.2.1), q.2.2)))
-  refine (hpath q₀).congr_of_eventuallyEq ?_
-  filter_upwards [(continuous_snd.comp (continuous_fst.comp continuous_snd)).continuousAt
-    |>.preimage_mem_nhds (eventually_seamPath_floor_eq hσ q₀.2.1.2)] with q hq
+  have hopen : IsOpen {q : P × ((ℝ × ℝ) × M) | q.2.1.2 ∈ Ioo ((k : ℝ) - 1 / 3) (k + 4 / 3)} :=
+    isOpen_Ioo.preimage (by fun_prop)
+  refine fun q₀ hq₀ ↦ ((hpath q₀).congr_of_eventuallyEq ?_).contMDiffWithinAt
+  filter_upwards [hopen.mem_nhds hq₀] with q hq
   rw [seamFamily, SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
     LinearMap.toContinuousLinearMap_coe]
   exact congrArg (fun K : SmoothAlmostComplexStructure I M ↦
     TotalSpace.mk' (E →L[ℝ] E) (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
-      (K.toEndomorphism q.2.2)) (hq (hK₀ q.1))
+      (K.toEndomorphism q.2.2)) (seamPath_floor_eq_of_mem_Ioo (hΦ q.1) (hK₀ q.1) hq)
+
+/-- Let `Φ p` be a family of symplectomorphisms and `K₀ p` a family of compatible structures,
+depending on a parameter `p` in a manifold `P`. If all the structures `(Φ p ^ k)^* K₀ p` are
+jointly smooth in `(p, x)`, then the seam-compatible vertical families of `Φ p` built from the
+`K₀ p` are jointly smooth in `(p, ((s, t), x))`. -/
+theorem contMDiff_seamFamily_family_of_contMDiff_seamStructure
+    (hs : ∀ k : ℤ, ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((seamStructure (Φ q.1) (K₀ q.1) k).toEndomorphism q.2))) :
+    ContMDiff (IP.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+        (LinearMap.toContinuousLinearMap (seamFamily (hΦ q.1) (hK₀ q.1) q.2).toLinearMap)) :=
+    fun q₀ ↦ by
+  -- Every time `t₀` lies in the slab around `⌊t₀⌋`.
+  have h₀ := Int.floor_le q₀.2.1.2
+  have h₁ := Int.lt_floor_add_one q₀.2.1.2
+  have hopen : IsOpen {q : P × ((ℝ × ℝ) × M) |
+      q.2.1.2 ∈ Ioo ((⌊q₀.2.1.2⌋ : ℝ) - 1 / 3) (⌊q₀.2.1.2⌋ + 4 / 3)} :=
+    isOpen_Ioo.preimage (by fun_prop)
+  exact (contMDiffOn_seamFamily_family hΦ hK₀ ⌊q₀.2.1.2⌋ (hs _) (hs _)).contMDiffAt
+    (hopen.mem_nhds ⟨by linarith, by linarith⟩)
+
+/-- For a family `K₀ p` of `σ`-compatible structures depending smoothly on a parameter `p` in a
+manifold `P`, the seam-compatible vertical families built from the `K₀ p` depend smoothly on
+`(p, ((s, t), x))`. -/
+theorem contMDiff_seamFamily_family
+    (hs : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((K₀ q.1).toEndomorphism q.2))) :
+    ContMDiff (IP.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+        (LinearMap.toContinuousLinearMap (seamFamily hσ (hK₀ q.1) q.2).toLinearMap)) :=
+  -- This is the case of the constant family `Φ p = φ`, for which the structures
+  -- `(φ ^ k)^* K₀ p` depend smoothly on `p` when `K₀ p` does.
+  contMDiff_seamFamily_family_of_contMDiff_seamStructure (Φ := fun _ ↦ φ) (fun _ ↦ hσ) hK₀
+    fun k ↦ SmoothAlmostComplexStructure.contMDiff_pullback_family (φ ^ k) hs
+
+/-- Let `Φ p` be a family of symplectomorphisms of `(M, σ)` and `K₀ p` a family of compatible
+structures, depending on a parameter `p` in a manifold `P`. If `Φ p x`, `(Φ p)⁻¹ x` and `K₀ p x`
+are jointly smooth in `(p, x)`, then the seam-compatible vertical families of `Φ p` built from the
+`K₀ p` are jointly smooth in `(p, ((s, t), x))`. -/
+theorem contMDiff_seamFamily_family_of_contMDiff [IsManifold IP ∞ P]
+    (hΦs : ContMDiff (IP.prod I) I ∞ fun q : P × M ↦ Φ q.1 q.2)
+    (hΦs' : ContMDiff (IP.prod I) I ∞ fun q : P × M ↦ (Φ q.1).symm q.2)
+    (hs : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((K₀ q.1).toEndomorphism q.2))) :
+    ContMDiff (IP.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+        (LinearMap.toContinuousLinearMap (seamFamily (hΦ q.1) (hK₀ q.1) q.2).toLinearMap)) := by
+  -- The powers `Φ p ^ k` and their inverses `Φ p ^ (-k)` are jointly smooth families of
+  -- diffeomorphisms, so the pullbacks `(Φ p ^ k)^* K₀ p` are jointly smooth.
+  refine contMDiff_seamFamily_family_of_contMDiff_seamStructure hΦ hK₀ fun k ↦ ?_
+  refine SmoothAlmostComplexStructure.contMDiff_pullback_family_of_contMDiff
+    (h := fun p ↦ Φ p ^ k) (Diffeomorph.contMDiff_zpow_apply hΦs hΦs' k) ?_ hs
+  simpa only [zpow_neg, Diffeomorph.inv_apply] using
+    Diffeomorph.contMDiff_zpow_apply hΦs hΦs' (-k)
 
 end Family
 
@@ -316,6 +410,13 @@ def seamAlmostComplexStructure :
       (UnitAddCircle × SmoothMappingTorus φ) :=
   suspensionAlmostComplexStructure φ (contMDiff_seamFamily hσ hJ₀) (seamFamily_add_fst hσ hJ₀)
     (mfderiv_symm_seamFamily hσ hJ₀)
+
+/-- The seam structure is the block structure descended from the seam family. -/
+theorem seamAlmostComplexStructure_def :
+    seamAlmostComplexStructure hσ hJ₀ = suspensionAlmostComplexStructure φ
+      (contMDiff_seamFamily hσ hJ₀) (seamFamily_add_fst hσ hJ₀)
+      (mfderiv_symm_seamFamily hσ hJ₀) := by
+  rw [seamAlmostComplexStructure]
 
 /-- In the coordinates `(s, t, x)`, the descended structure sends `a ∂_s + b ∂_t + v` at
 `([s], [t, x])` to `-b ∂_s + a ∂_t + K_((s, t), x) v`. -/

@@ -91,7 +91,7 @@ theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(�
       rw [← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (hψφ i x)
     · simp [image_eq_zero_of_notMem_tsupport fun h => hx (hψW i h)]
-  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact enorm_sum_le _ _
+  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact eNorm_sum_le _ _
     _ ≤ ∑ i : s, localMass T (W i) * c i := Finset.sum_le_sum fun i _ =>
         enorm_apply_le_localMass_mul_of_forall_enorm_le T (hψW i) (hψc i)
     _ ≤ ∑ i, localMass T (W i) * c i := by
@@ -169,7 +169,7 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
         simp only [setLIntegral_const, mul_comm]
     _ ≤ ∑ j : Fin N, ∫⁻ x in levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by
         refine Finset.sum_le_sum fun j _ => setLIntegral_mono
-          (hφc.enorm.measurable.add measurable_const) fun x hx => ?_
+          (hφc.eNorm.measurable.add measurable_const) fun x hx => ?_
         rw [← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _) (by positivity)]
         exact ENNReal.ofReal_le_ofReal (by linarith [(mem_levelSet hε hx).1])
     _ = ∫⁻ x in ⋃ j : Fin N, levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by

@@ -302,7 +302,7 @@ private lemma sum_intersection_mul_chainTest_nonpos (hc : T.IsSelfIntersectionMi
     split_ifs <;> omega
   rcases lt_or_ge (r + 1) t with hrt | hrt
   · -- an interior component
-    rw [hc.interior_sum_eq hcard _ hr0 hrt, hself, T.intersection_comm (c r) (c (r - 1)),
+    rw [hc.interior_sum_eq _ hr0 hrt, hself, T.intersection_comm (c r) (c (r - 1)),
       hedge (r - 1) r (by omega) hr, hedge r (r + 1) rfl hrt]
     have h₀ := hall (r - 1) (by omega)
     have h₁ := hint r hr0 hrt
@@ -481,7 +481,7 @@ private lemma chain_row_forkTest_nonpos
     have hprev_ne_last : r - 1 ≠ t - 1 := by omega
     have hr_ne_last : r ≠ t - 1 := by omega
     rw [hprev_succ] at hprev
-    rw [hc.interior_sum_eq hcardt _ hr0 hrt, hself, hedge r hrt, hprev]
+    rw [hc.interior_sum_eq _ hr0 hrt, hself, hedge r hrt, hprev]
     simp only [hprev_ne_last, hr_ne_last, ↓reduceIte]
     by_cases hrb : r = t - 2
     · -- the forked component meets both leaves

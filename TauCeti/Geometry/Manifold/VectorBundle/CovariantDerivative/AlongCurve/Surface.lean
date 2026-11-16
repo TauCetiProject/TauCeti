@@ -171,7 +171,7 @@ theorem alongCurve_curveVelocity_comm
       (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) :
     alongCurve cov (f u) (fun r ↦ curveVelocity I (fun q ↦ f q r) u) v =
       alongCurve cov (fun q ↦ f q v) (fun q ↦ curveVelocity I (f q) v) u := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have hone : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 1 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v) :=
     hf.of_le (le_trans (by norm_num) le_minSmoothness)
   have hbase : f u v ∈ (trivializationAt E (TangentSpace I) (f u v)).baseSet :=
