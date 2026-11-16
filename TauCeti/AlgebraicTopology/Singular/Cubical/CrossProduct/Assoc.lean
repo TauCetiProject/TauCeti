@@ -219,6 +219,18 @@ theorem crossProduct_point_right (a : NormalizedCubicalChain X R p) (y : Y) :
   | H a =>
     rw [ofCube_def, crossProduct_mk, cast_mk, map_mk, CubicalChain.crossProduct_point_right]
 
+/-- Pushing forward the cross product with a point on the right is pushing forward along the slice
+through that point. Since `p + 0` reduces to `p`, no reindexing is needed. -/
+theorem map_crossProduct_ofCube_point (f : C(X × Y, Z)) (a : NormalizedCubicalChain X R p)
+    (y : Y) :
+    map R f (p + 0) (crossProduct X Y R p 0 a (ofCube Y R (SingularCube.point y))) =
+      map R (f.comp ((ContinuousMap.id X).prodMk (ContinuousMap.const X y))) p a := by
+  have key : cast R (Nat.add_zero p)
+      (map R f (p + 0) (crossProduct X Y R p 0 a (ofCube Y R (SingularCube.point y)))) =
+        map R (f.comp ((ContinuousMap.id X).prodMk (ContinuousMap.const X y))) p a := by
+    rw [← map_cast, crossProduct_point_right, map_comp, LinearMap.comp_apply]
+  simpa using key
+
 /-- **The augmentation is multiplicative** on the cross product of normalized `0`-chains. -/
 theorem augment_crossProduct (a : NormalizedCubicalChain X R 0)
     (b : NormalizedCubicalChain Y R 0) :
