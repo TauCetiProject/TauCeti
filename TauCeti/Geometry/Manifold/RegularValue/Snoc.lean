@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Pi
 
 /-!
 # Appending a function to a regular family
@@ -17,9 +18,6 @@ keeps `x` regular as soon as the differential of `g` at `x` does not vanish on s
 `ker dF_x` (`TauCeti.IsRegularPoint.snoc`): the family `(F₁, …, F_k, g)` then has independent
 differentials. This is how families of independent functions, such as involutive families on a
 symplectic manifold, are enlarged one function at a time.
-
-Appending a component with `Fin.snoc` also preserves differentiability and smoothness
-(`MDifferentiableAt.finSnoc`, `ContMDiffAt.finSnoc`, `ContMDiff.finSnoc`).
 -/
 
 public section
@@ -27,35 +25,7 @@ public section
 open scoped Manifold
 
 variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {k : ℕ} {F : M → Fin k → E'} {g : M → E'}
-
-/-- Appending a differentiable component `g` to a differentiable family `F` with `Fin.snoc` gives
-a differentiable family. -/
-theorem MDifferentiableAt.finSnoc {x : M} (hF : MDifferentiableAt I 𝓘(𝕜, Fin k → E') F x)
-    (hg : MDifferentiableAt I 𝓘(𝕜, E') g x) :
-    MDifferentiableAt I 𝓘(𝕜, Fin (k + 1) → E')
-      (fun y ↦ Fin.snoc (α := fun _ ↦ E') (F y) (g y)) x := by
-  refine mdifferentiableAt_pi_space.2 fun i ↦ ?_
-  induction i using Fin.lastCases with
-  | last => simpa using hg
-  | cast j => simpa using mdifferentiableAt_pi_space.1 hF j
-
-/-- Appending a `C^n` component `g` to a `C^n` family `F` with `Fin.snoc` gives a `C^n` family. -/
-theorem ContMDiffAt.finSnoc {n : WithTop ℕ∞} {x : M} (hF : ContMDiffAt I 𝓘(𝕜, Fin k → E') n F x)
-    (hg : ContMDiffAt I 𝓘(𝕜, E') n g x) :
-    ContMDiffAt I 𝓘(𝕜, Fin (k + 1) → E') n
-      (fun y ↦ Fin.snoc (α := fun _ ↦ E') (F y) (g y)) x := by
-  refine contMDiffAt_pi_module_iff.2 fun i ↦ ?_
-  induction i using Fin.lastCases with
-  | last => simpa using hg
-  | cast j => simpa using contMDiffAt_pi_module_iff.1 hF j
-
-/-- Appending a `C^n` component `g` to a `C^n` family `F` with `Fin.snoc` gives a `C^n` family. -/
-theorem ContMDiff.finSnoc {n : WithTop ℕ∞} (hF : ContMDiff I 𝓘(𝕜, Fin k → E') n F)
-    (hg : ContMDiff I 𝓘(𝕜, E') n g) :
-    ContMDiff I 𝓘(𝕜, Fin (k + 1) → E') n (fun y ↦ Fin.snoc (α := fun _ ↦ E') (F y) (g y)) :=
-  fun x ↦ (hF x).finSnoc (hg x)
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
 
 namespace TauCeti
 

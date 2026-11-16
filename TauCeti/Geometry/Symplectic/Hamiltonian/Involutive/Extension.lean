@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 import TauCeti.Geometry.Manifold.RegularValue.Snoc
+import TauCeti.Geometry.Manifold.ContMDiff.Pi
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Geometry.Manifold.Flow.Straightening
