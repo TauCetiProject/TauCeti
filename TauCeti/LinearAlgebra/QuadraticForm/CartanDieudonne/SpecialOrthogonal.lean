@@ -40,7 +40,7 @@ open TauCeti.QuadraticMap
 universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [NeZero (2 : K)]
+  [FiniteDimensional K V]
 
 /-- The product of two reflections, as an element of the special orthogonal group. -/
 noncomputable def reflectionPairSpecialOrthogonal
@@ -53,7 +53,6 @@ noncomputable def reflectionPairSpecialOrthogonal
         (reflectionOrthogonal Q v).2
     · simp⟩
 
-omit [NeZero (2 : K)] in
 /-- The underlying orthogonal isometry of a pair of reflections. -/
 @[simp] theorem reflectionPairSpecialOrthogonal_toOrthogonal
     (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
@@ -63,7 +62,6 @@ omit [NeZero (2 : K)] in
   simp only [coe_specialOrthogonalToOrthogonal, Subgroup.coe_mul,
     reflectionPairSpecialOrthogonal]
 
-omit [NeZero (2 : K)] in
 /-- A pair of reflections acts by applying the second reflection, then the first. -/
 @[simp] theorem reflectionPairSpecialOrthogonal_apply
     (Q : QuadraticForm K V) (u v x : V) [Invertible (Q u)] [Invertible (Q v)] :
