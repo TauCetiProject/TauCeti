@@ -37,14 +37,6 @@ theorem volume_closedBall_eq_euclidean {U : Type*} [NormedAddCommGroup U] [Inner
   rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume, ←
     e.isometry.euclideanHausdorffMeasure_image, himg,
     EuclideanSpace.euclideanHausdorffMeasure_eq_volume, addHaar_closedBall_center]
-/-- Rescaling the radius in a `k`-dimensional density quotient. -/
-theorem div_volume_closedBall_eq_pow_mul (k : ℕ) (m : ℝ≥0∞) {c : ℝ≥0} (hc : 0 < c) {r : ℝ} (hr : 0 ≤
-    r) : m / volume (cb (0 : EuclideanSpace ℝ (Fin k)) r) = (c : ℝ≥0∞) ^ k * (m / volume (cb (0 :
-    EuclideanSpace ℝ (Fin k)) (c * r))) := by
-  rw [addHaar_closedBall_mul volume 0 c.coe_nonneg hr, finrank_euclideanSpace_fin,
-    ENNReal.ofReal_pow c.coe_nonneg, ENNReal.ofReal_coe_nnreal, ← mul_div_assoc,
-    ENNReal.mul_div_mul_left _ _ (pow_ne_zero _ (ENNReal.coe_ne_zero.2 hc.ne')) (ENNReal.pow_ne_top
-    ENNReal.coe_ne_top)]
 /-- Bound `volume t ≤ L ^ dim U * μHE[dim U] (f '' t)` along an `L`-antilipschitz restriction. -/
 theorem volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith {U V : Type*}
     [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] [MeasurableSpace U]
@@ -119,7 +111,7 @@ private lemma tendsto_volume_div_zero_of_antilipschitzWith {U V : Type*} [Normed
     (volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith hi inter_subset_left).trans
     (by gcongr)
   refine (ENNReal.div_le_div_right hle _).trans_eq ?_
-  rw [mul_div_assoc, div_volume_closedBall_eq_pow_mul (finrank ℝ U) _ hC hρ0.le, ← mul_assoc, ←
+  rw [mul_div_assoc, div_volume_closedBall_eq_mul (finrank ℝ U) _ hC hρ0.le, ← mul_assoc, ←
     mul_pow, ← ENNReal.coe_mul]; rfl
 end TauCeti
 namespace HasFDerivWithinAt

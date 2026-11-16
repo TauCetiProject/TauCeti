@@ -121,9 +121,6 @@ theorem LocallyLipschitzOn.tsum_fiber_congr_ae_fun {E : Set X} {f : X → Y} (hf
     (hf.euclideanHausdorffMeasure_image_eq_zero_of_subset inter_subset_right d hN0)] with y hy
   exact tsum_congr fun x => not_not.mp fun hne => hy ⟨x.1, ⟨hne, x.2.1⟩, x.2.2⟩
 end NullImage
-private lemma locS {V W : Type*} [PseudoMetricSpace V] [PseudoEMetricSpace W] {E : Set V} {g : V →
-    W} (hg : LocallyLipschitz g) : LocallyLipschitzOn E g := hg.comp_locallyLipschitzOn
-    (LipschitzWith.id.lipschitzOnWith.locallyLipschitzOn (s := E))
 section RectifiableAreaFormula
 open TauCeti
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -374,32 +371,33 @@ include hg hE hEm
 /-- Weighted tangential area formula with multiplicity for locally Lipschitz maps. -/
 theorem lintegral_tangentialJacobian_mul_eq_lintegral_tsum {w : V → ℝ≥0∞} (hw : AEMeasurable w
     (μHE[k].restrict E)) : (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y, ∑' x : F[y], w x ∂μHE[k]
-    := (locS hg).lintegral_tangentialJacobian_mul_eq_lintegral_tsum hE hEm hw
+    := hg.locallyLipschitzOn.lintegral_tangentialJacobian_mul_eq_lintegral_tsum hE hEm hw
 /-- Unweighted tangential area formula with multiplicity for locally Lipschitz maps. -/
 theorem lintegral_tangentialJacobian_eq_lintegral_encard : (∫⁻ x in E, ofReal (J x) ∂μHE[k]) = ∫⁻ y,
-    ((E ∩ g ⁻¹' {y}).encard : ℝ≥0∞) ∂μHE[k] := (locS
-    hg).lintegral_tangentialJacobian_eq_lintegral_encard hE hEm
+    ((E ∩ g ⁻¹' {y}).encard : ℝ≥0∞) ∂μHE[k] :=
+    hg.locallyLipschitzOn.lintegral_tangentialJacobian_eq_lintegral_encard hE hEm
 /-- Weighted injective tangential area formula for locally Lipschitz maps. -/
 theorem lintegral_image_eq_lintegral_tangentialJacobian_mul (hinj : InjOn g E) (w : W → ℝ≥0∞) : (∫⁻
-    y in g '' E, w y ∂μHE[k]) = ∫⁻ x in E, ofReal (J x) * w (g x) ∂μHE[k] := (locS
-    hg).lintegral_image_eq_lintegral_tangentialJacobian_mul hE hEm hinj w
+    y in g '' E, w y ∂μHE[k]) = ∫⁻ x in E, ofReal (J x) * w (g x) ∂μHE[k] :=
+    hg.locallyLipschitzOn.lintegral_image_eq_lintegral_tangentialJacobian_mul hE hEm hinj w
 /-- Injective tangential area formula for locally Lipschitz maps. -/
 theorem lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image (hinj : InjOn g E) : (∫⁻ x
-    in E, ofReal (J x) ∂μHE[k]) = μHE[k] (g '' E) := (locS
-    hg).lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image hE hEm hinj
+    in E, ofReal (J x) ∂μHE[k]) = μHE[k] (g '' E) :=
+    hg.locallyLipschitzOn.lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image hE hEm
+      hinj
 /-- Rank-deficient tangential derivatives have null images (`LocallyLipschitz`). -/
 theorem euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt (hrank : ∀ᵐ x
     ∂μHE[k], x ∈ E → finrank ℝ (LinearMap.range (D x).toLinearMap) < k) : μHE[k] (g '' E) = 0 :=
-    (locS hg) |>.euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt hE hEm
-    hrank
+    hg.locallyLipschitzOn
+    |>.euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt hE hEm hrank
 /-- Real weighted tangential area formula with multiplicity for locally Lipschitz maps. -/
 theorem integral_tangentialJacobian_mul_eq_integral_tsum {w : V → ℝ≥0} (hw : AEMeasurable w
     (μHE[k].restrict E)) (hint : IntegrableOn (fun x => J x * (w x : ℝ)) E μHE[k]) : (∫ x in E, J x
-    * (w x : ℝ) ∂μHE[k]) = ∫ y, ∑' x : F[y], (w x : ℝ) ∂μHE[k] := (locS
-    hg).integral_tangentialJacobian_mul_eq_integral_tsum hE hEm hw hint
+    * (w x : ℝ) ∂μHE[k]) = ∫ y, ∑' x : F[y], (w x : ℝ) ∂μHE[k] :=
+    hg.locallyLipschitzOn.integral_tangentialJacobian_mul_eq_integral_tsum hE hEm hw hint
 /-- Real unweighted tangential area formula for locally Lipschitz maps. -/
 theorem integral_tangentialJacobian_eq_integral_ncard (hint : IntegrableOn (J) E μHE[k]) : (∫ x in
-    E, J x ∂μHE[k]) = ∫ y, ((E ∩ g ⁻¹' {y}).ncard : ℝ) ∂μHE[k] := (locS
-    hg).integral_tangentialJacobian_eq_integral_ncard hE hEm hint
+    E, J x ∂μHE[k]) = ∫ y, ((E ∩ g ⁻¹' {y}).ncard : ℝ) ∂μHE[k] :=
+    hg.locallyLipschitzOn.integral_tangentialJacobian_eq_integral_ncard hE hEm hint
 end LocallyLipschitz
 end RectifiableAreaFormula

@@ -119,9 +119,6 @@ private lemma ae_patch_tangential {V W : Type*} [NormedAddCommGroup V] [InnerPro
   exact ⟨u, huB, rfl, hinj, hf_diff.hasFDerivAt.hasFDerivWithinAt, hgf_w,
     by simpa only [U, finrank_euclideanSpace_fin] using htan, hdens, hdiff'⟩
 end TauCeti
-private lemma toLoc {X Y : Type*} [PseudoMetricSpace X] [PseudoEMetricSpace Y] {s : Set X} {f : X →
-    Y} (hf : LocallyLipschitz f) : LocallyLipschitzOn s f := hf.comp_locallyLipschitzOn
-    (LipschitzWith.id.lipschitzOnWith.locallyLipschitzOn (s := s))
 section RectifiableRademacher
 open TauCeti
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -304,12 +301,13 @@ variable (hg : LocallyLipschitz g) (hE : CountablyRectifiable k E) (hEm : NullMe
 include hg hE hEm
 /-- Almost-everywhere tangential differentiability for locally Lipschitz maps. -/
 theorem ae_hasTangentialFDerivAt [NormedSpace ℝ W] [FiniteDimensional ℝ W] : ∀ᵐ x ∂μHE[k], x ∈ E →
-    HasTangentialFDerivAt k E g (D x) x := (toLoc hg).ae_hasTangentialFDerivAt hE hEm
+    HasTangentialFDerivAt k E g (D x) x := hg.locallyLipschitzOn.ae_hasTangentialFDerivAt hE hEm
 /-- Measurability of `tangentialFDeriv` for locally Lipschitz maps. -/
 theorem aemeasurable_tangentialFDeriv [NormedSpace ℝ W] [FiniteDimensional ℝ W] : AEMeasurable (D)
-    (μHE[k].restrict E) := (toLoc hg).aemeasurable_tangentialFDeriv hE hEm
+    (μHE[k].restrict E) := hg.locallyLipschitzOn.aemeasurable_tangentialFDeriv hE hEm
 /-- Measurability of `tangentialJacobian` for locally Lipschitz maps. -/
 theorem aemeasurable_tangentialJacobian [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] :
-    AEMeasurable (J) (μHE[k].restrict E) := (toLoc hg).aemeasurable_tangentialJacobian hE hEm
+    AEMeasurable (J) (μHE[k].restrict E) :=
+    hg.locallyLipschitzOn.aemeasurable_tangentialJacobian hE hEm
 end LocallyLipschitz
 end RectifiableRademacher
