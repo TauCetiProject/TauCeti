@@ -55,6 +55,8 @@ centre gives the `Γ.withCenter` readings.
   quotient group finite-index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
+* `MonoidHom.finiteIndex_range_of_injective_comp`: if the range of `φ₂.comp φ₁` has finite index
+  and `φ₂` is injective, then the range of `φ₁` has finite index.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
@@ -212,6 +214,15 @@ theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.rang
   exact Nat.mul_ne_zero
     (Subgroup.finiteIndex_of_le hle).index_ne_zero
     Subgroup.FiniteIndex.index_ne_zero
+
+/-- If the range of `φ₂.comp φ₁` has finite index and `φ₂` is injective, then the range of `φ₁`
+has finite index. -/
+@[to_additive /-- If the range of `φ₂.comp φ₁` has finite index and `φ₂` is injective, then the
+range of `φ₁` has finite index. -/]
+theorem finiteIndex_range_of_injective_comp (φ₁ : A →* B) (φ₂ : B →* C)
+    (hφ₂ : Function.Injective φ₂) [(φ₂.comp φ₁).range.FiniteIndex] : φ₁.range.FiniteIndex := by
+  simpa only [MonoidHom.range_comp, Subgroup.comap_map_eq_self_of_injective hφ₂] using
+    (inferInstance : ((φ₂.comp φ₁).range.comap φ₂).FiniteIndex)
 
 end MonoidHom
 
