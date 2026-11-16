@@ -24,11 +24,6 @@ The strip maximum principle below requires growth only along the open strip, hol
 there and continuity on its closure. It applies in particular after normalizing boundary
 estimates for convexity arguments. A three-lines corollary interpolates two constant edge
 bounds geometrically, without assuming boundedness inside the strip in advance.
-
-The analytic principles are Mathlib's `PhragmenLindelof.vertical_strip` and
-`Complex.HadamardThreeLines.norm_le_interp_of_mem_verticalClosedStrip'`; the new inputs are the
-rescaling and finite-order comparisons for their growth hypotheses and the upgrade from asymptotic
-to global vertical-line bounds.
 -/
 
 public section

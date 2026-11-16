@@ -31,11 +31,6 @@ constant-edge Phragmén–Lindelöf theorem, the interior growth hypothesis cann
 `[0, 1]`, `z ↦ exp (sin (π z))` has norm `1` on both boundary lines and growth rate `c = π`, yet is
 unbounded on `Re z = 1 / 2`.
 
-The analytic inputs are Mathlib's `_root_.PhragmenLindelof.vertical_strip` and
-`Complex.HadamardThreeLines.norm_le_interp_of_mem_verticalClosedStrip'`, combined with
-`TauCeti.PhragmenLindelof.isBigO_exp_rpow_exp_exp_vertical_strip` after normalizing the polynomial
-edge bounds by a holomorphic logarithmic weight symmetric across the strip.
-
 ## Main results
 
 * `TauCeti.PhragmenLindelof.norm_le_mul_rpow_interp_of_isBigO_exp_exp`: polynomial-edge
@@ -52,11 +47,12 @@ edge bounds by a holomorphic logarithmic weight symmetric across the strip.
 
 ## References
 
-* E. C. Titchmarsh, *The Theory of Functions*, 2nd ed., Oxford University Press, 1939, §5.65.
+* E. C. Titchmarsh, *The Theory of Functions*, 2nd ed., Oxford University Press, 1939,
+  §§5.65, 9.41.
 * E. C. Titchmarsh, *The Theory of the Riemann Zeta-Function*, 2nd ed., Oxford University Press,
-  1986, §§5.1, 9.41.
+  1986, §5.1.
 * H. Iwaniec and E. Kowalski, *Analytic Number Theory*, AMS Colloquium Publications **53**, 2004,
-  §5.1.
+  §§5.1–5.2.
 -/
 
 public section
