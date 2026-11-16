@@ -19,6 +19,8 @@ hypotheses on `q` or `ι`. When `q ≠ 0`, conjugation by `K_y` equals `rescale`
 ## References
 
 * J. C. Jantzen, *Lectures on Quantum Groups*, GSM 6, AMS, 1996, §4.6.
+* Generalizes `TauCeti.QuantumGroups.UqSl2.Rescale` (`TauCeti.UqSl2.rescale`,
+  `TauCeti.UqSl2.toAlgEquiv_conjAct_kUnit`).
 -/
 
 public section
@@ -31,11 +33,8 @@ variable {K ι X Y : Type*} [Field K] [AddCommGroup X] [AddCommGroup Y]
 private noncomputable def rescaleAlgHom (c : ι → Kˣ) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] QuantizedEnvelopingAlgebra D q :=
   lift
-    { e i := (c i : K) • e D q i
-      f i := (c i : K)⁻¹ • f D q i
-      k y := k D q y
-      k_zero := k_zero
-      k_mul_k := k_mul_k
+    { e i := (c i : K) • e D q i, f i := (c i : K)⁻¹ • f D q i, k y := k D q y
+      k_zero := k_zero, k_mul_k := k_mul_k
       k_mul_e y i := by rw [mul_smul_comm, k_mul_e, smul_mul_assoc, smul_comm]
       k_mul_f y i := by rw [mul_smul_comm, k_mul_f, smul_mul_assoc, smul_comm]
       e_mul_f_sub_f_mul_e_self i := by
@@ -44,8 +43,8 @@ private noncomputable def rescaleAlgHom (c : ι → Kˣ) :
       e_mul_f_sub_f_mul_e_of_ne hij := by
         rw [smul_mul_smul_comm, smul_mul_smul_comm, mul_comm (c _ : K)⁻¹, ← smul_sub,
           e_mul_f_sub_f_mul_e_of_ne hij, smul_zero]
-      serre_e hij := serre_smul (serre_e hij)
-      serre_f hij := serre_smul (serre_f hij) }
+      serre_e hij := by rw [serre_smul, serre_e hij, smul_zero]
+      serre_f hij := by rw [serre_smul, serre_f hij, smul_zero] }
 
 private theorem rescaleAlgHom_one :
     rescaleAlgHom D q 1 = AlgHom.id K (QuantizedEnvelopingAlgebra D q) := by
@@ -68,13 +67,16 @@ noncomputable def rescale :
 variable {D q}
 
 @[simp] theorem rescale_e (c : ι → Kˣ) (i : ι) :
-    rescale D q c (e D q i) = (c i : K) • e D q i := lift_e _ i
+    rescale D q c (e D q i) = (c i : K) • e D q i := by
+  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.ofAlgHom_apply]; exact lift_e _ i
 
 @[simp] theorem rescale_f (c : ι → Kˣ) (i : ι) :
-    rescale D q c (f D q i) = (c i : K)⁻¹ • f D q i := lift_f _ i
+    rescale D q c (f D q i) = (c i : K)⁻¹ • f D q i := by
+  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.ofAlgHom_apply]; exact lift_f _ i
 
 @[simp] theorem rescale_k (c : ι → Kˣ) (y : Y) :
-    rescale D q c (k D q y) = k D q y := lift_k _ y
+    rescale D q c (k D q y) = k D q y := by
+  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.ofAlgHom_apply]; exact lift_k _ y
 
 /-- For `q ≠ 0`, conjugation by `kUnit D q y` equals `rescale` at `i ↦ q^⟨αᵢ, y⟩`. -/
 theorem toAlgEquiv_conjAct_kUnit {q : K} (hq : q ≠ 0) (y : Y) :

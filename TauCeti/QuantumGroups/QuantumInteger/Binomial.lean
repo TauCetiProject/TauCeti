@@ -49,8 +49,8 @@ comparisons of quantum divided-power relations at opposite parameters.
   `[n choose k]_{-q} = (-1)^{k(n-k)} [n choose k]_q`.
 * `TauCeti.quantumBinomial_one_right`: `[n choose 1]_q = [n]_q` when `q - q⁻¹ ≠ 0`.
 * `TauCeti.quantumBinomial_one`: the classical specialization `[n choose k]_1 = n.choose k`.
-* `TauCeti.mul_pow_of_mul_eq_smul_mul` and `TauCeti.add_pow_of_mul_eq_smul_mul`: straightening
-  `(x y)^n` for `y x = c • (x y)`, and the `q`-binomial theorem for `y x = q² x y` with `q ≠ 0`.
+* `TauCeti.add_pow_of_mul_eq_smul_mul`: the `q`-binomial theorem for `y x = q² x y` with
+  `q ≠ 0`.
 * `TauCeti.coeff_prod_range_one_add_C_mul_X`: Cauchy's binomial theorem in coefficient form, the
   coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`, and
   `TauCeti.sum_range_neg_one_pow_mul_zpow_mul_quantumBinomial`, its vanishing evaluation at
@@ -386,24 +386,5 @@ theorem sum_range_neg_one_pow_mul_zpow_mul_quantumBinomial {q : K} (hq : q ≠ 0
   rw [eval_eq_sum_range' hdeg] at heval
   rw [← heval]
   refine sum_congr rfl fun k _ ↦ by rw [coeff_prod_range_one_add_C_mul_X hq]; ring
-
-/-- If `y x = c • (x y)`, then `(x y)^n = c^(n(n-1)/2) • (x^n y^n)`. -/
-theorem mul_pow_of_mul_eq_smul_mul {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    {c : R} {x y : A} (h : y * x = c • (x * y)) (n : ℕ) :
-    (x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n) := by
-  have hpow (m : ℕ) : y ^ m * x = c ^ m • (x * y ^ m) := by
-    have hxy : SemiconjBy x (c • y) y := by rw [SemiconjBy, mul_smul_comm, h]
-    rw [← (hxy.pow_right m).eq, smul_pow, mul_smul_comm]
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have hexp : (n + 1) * n / 2 = n * (n - 1) / 2 + n := by
-      rcases n with _ | k
-      · rfl
-      · rw [show (k + 1 + 1) * (k + 1) = (k + 1) * k + (k + 1) * 2 by ring, Nat.add_sub_cancel,
-          Nat.add_mul_div_right _ _ zero_lt_two]
-    rw [pow_succ, ih, Nat.add_sub_cancel, hexp, pow_add, smul_mul_assoc, mul_assoc (x ^ n),
-      ← mul_assoc (y ^ n), hpow, smul_mul_assoc, mul_smul_comm, smul_smul]
-    simp only [pow_succ, mul_assoc]
 
 end TauCeti

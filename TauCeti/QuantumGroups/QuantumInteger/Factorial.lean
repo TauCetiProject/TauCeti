@@ -10,6 +10,7 @@ public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 import Mathlib.Tactic
+import TauCeti.Algebra.Group.Action.Pow
 
 /-!
 # Quantum factorials
@@ -43,8 +44,8 @@ specializes to `n!` at `v = 1`.
   `ℓ > 0`, then `[n]_q! ≠ 0` iff `n < ℓ`.
 * `TauCeti.quantumBinomial_mul_quantumFactorial_mul_quantumFactorial`: for `k ≤ n`,
   `[n choose k]_q [k]_q! [n - k]_q! = [n]_q!`, with no hypothesis on `q`.
-* `TauCeti.inv_quantumFactorial_smul_add_pow`: the divided-power form of the `q`-binomial
-  theorem, `(x + y)^(n) = ∑_k q^(k(n-k)) x^(k) y^(n-k)` when `y x = q² x y` and `[n]_q! ≠ 0`.
+* `TauCeti.quantumDividedPower_add`: the divided-power form of the `q`-binomial theorem,
+  `(x + y)^(n) = ∑_k q^(k(n-k)) x^(k) y^(n-k)` when `y x = q² x y` and `[n]_q! ≠ 0`.
 * `TauCeti.laurentEval_laurentQuantumFactorial` and
   `TauCeti.laurentEval_one_laurentQuantumFactorial`: `[n]_v!` specializes to `[n]_q!` at `v = q`
   when `q - q⁻¹ ≠ 0`, and to `n!` at `v = 1`; in particular `[n]_v! ≠ 0`
@@ -211,26 +212,6 @@ theorem quantumBinomial_eq_div {q : K} {n k : ℕ} (hn : quantumFactorial q n �
       (quantumFactorial_ne_zero_of_le (Nat.sub_le n k) hn)), ← mul_assoc,
     quantumBinomial_mul_quantumFactorial_mul_quantumFactorial q hk]
 
-/-- **The divided-power `q`-binomial theorem**: if `y x = q² x y` and `[n]_q! ≠ 0`, then the
-divided power `(x + y)^(n) = (x + y)^n / [n]_q!` expands as
-`∑_k q^(k(n-k)) x^(k) y^(n-k)`, with `x^(k) = x^k / [k]_q!`. -/
-theorem inv_quantumFactorial_smul_add_pow {A : Type*} [Semiring A] [Algebra K A] {q : K}
-    {x y : A} (h : y * x = q ^ 2 • (x * y)) {n : ℕ} (hn : quantumFactorial q n ≠ 0) :
-    (quantumFactorial q n)⁻¹ • (x + y) ^ n = ∑ k ∈ range (n + 1),
-      q ^ (k * (n - k)) •
-        ((quantumFactorial q k)⁻¹ • x ^ k * (quantumFactorial q (n - k))⁻¹ • y ^ (n - k)) := by
-  rcases eq_or_ne n 0 with rfl | hn₀
-  · simp
-  have hq := ne_zero_of_sub_inv_ne_zero (sub_inv_ne_zero_of_quantumFactorial_ne_zero hn₀ hn)
-  rw [add_pow_of_mul_eq_smul_mul hq h, smul_sum]
-  refine sum_congr rfl fun k hk => ?_
-  have hkn : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
-  rw [smul_mul_smul_comm, smul_smul, smul_smul, quantumBinomial_eq_div hn hkn]
-  congr 1
-  have := quantumFactorial_ne_zero_of_le hkn hn
-  have := quantumFactorial_ne_zero_of_le (Nat.sub_le n k) hn
-  field_simp
-
 /-! ### Quantum divided powers -/
 
 section DividedPower
@@ -244,35 +225,29 @@ noncomputable def quantumDividedPower (q : K) (x : A) (n : ℕ) : A :=
 
 theorem quantumDividedPower_def (q : K) (x : A) (n : ℕ) :
     quantumDividedPower q x n = (quantumFactorial q n)⁻¹ • x ^ n := (rfl)
-
-@[simp]
-theorem quantumDividedPower_zero (q : K) (x : A) : quantumDividedPower q x 0 = 1 := by
+@[simp] theorem quantumDividedPower_zero (q : K) (x : A) : quantumDividedPower q x 0 = 1 := by
   simp [quantumDividedPower_def]
-
 theorem quantumDividedPower_one {q : K} (hq : q - q⁻¹ ≠ 0) (x : A) :
-    quantumDividedPower q x 1 = x := by
-  simp [quantumDividedPower_def, hq]
-
-@[simp]
-theorem quantumDividedPower_inv (q : K) (x : A) (n : ℕ) :
-    quantumDividedPower q⁻¹ x n = quantumDividedPower q x n := by
-  simp [quantumDividedPower_def]
-
-@[simp]
-theorem quantumDividedPower_smul (q c : K) (x : A) (n : ℕ) :
+    quantumDividedPower q x 1 = x := by simp [quantumDividedPower_def, hq]
+@[simp] theorem quantumDividedPower_inv (q : K) (x : A) (n : ℕ) :
+    quantumDividedPower q⁻¹ x n = quantumDividedPower q x n := by simp [quantumDividedPower_def]
+@[simp] theorem quantumDividedPower_smul (q c : K) (x : A) (n : ℕ) :
     quantumDividedPower q (c • x) n = c ^ n • quantumDividedPower q x n := by
   rw [quantumDividedPower_def, quantumDividedPower_def, smul_pow, smul_comm]
-
 theorem quantumFactorial_smul_quantumDividedPower {q : K} (x : A) {n : ℕ}
-    (hn : quantumFactorial q n ≠ 0) :
-    quantumFactorial q n • quantumDividedPower q x n = x ^ n := by
+    (hn : quantumFactorial q n ≠ 0) : quantumFactorial q n • quantumDividedPower q x n = x ^ n := by
   simp [quantumDividedPower_def, smul_smul, hn]
-
-@[simp]
-theorem map_quantumDividedPower {F B : Type*} [Semiring B] [Algebra K B]
+@[simp] theorem map_quantumDividedPower {F B : Type*} [Semiring B] [Algebra K B]
     [FunLike F A B] [AlgHomClass F K A B] (φ : F) (q : K) (x : A) (n : ℕ) :
     φ (quantumDividedPower q x n) = quantumDividedPower q (φ x) n := by
   simp [quantumDividedPower_def]
+@[simp] theorem op_quantumDividedPower (q : K) (x : A) (n : ℕ) :
+    MulOpposite.op (quantumDividedPower q x n) = quantumDividedPower q (MulOpposite.op x) n := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, MulOpposite.op_smul, MulOpposite.op_pow]
+@[simp] theorem unop_quantumDividedPower (q : K) (x : Aᵐᵒᵖ) (n : ℕ) :
+    MulOpposite.unop (quantumDividedPower q x n) =
+      quantumDividedPower q (MulOpposite.unop x) n := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, MulOpposite.unop_smul, MulOpposite.unop_pow]
 
 /-- Straightening: `x^(a) x^(b) = [a + b choose a]_q • x^(a + b)` when `[a + b]_q! ≠ 0`. -/
 theorem quantumDividedPower_mul_quantumDividedPower {q : K} (x : A) {a b : ℕ}
@@ -286,27 +261,40 @@ theorem quantumDividedPower_mul_quantumDividedPower {q : K} (x : A) {a b : ℕ}
     quantumBinomial_eq_div h (Nat.le_add_right a b), Nat.add_sub_cancel_left]
   congr 1; field_simp
 
-/-- Divided-power `q`-binomial theorem: if `y x = q² • (x y)` and `[n]_q! ≠ 0`, then
+/-- **The divided-power `q`-binomial theorem**: if `y x = q² • (x y)` and `[n]_q! ≠ 0`, then
 `(x + y)^(n) = ∑_k q^(k(n-k)) • (x^(k) y^(n-k))`. -/
 theorem quantumDividedPower_add {q : K} {x y : A} (h : y * x = q ^ 2 • (x * y)) {n : ℕ}
     (hn : quantumFactorial q n ≠ 0) :
     quantumDividedPower q (x + y) n = ∑ k ∈ range (n + 1),
-      q ^ (k * (n - k)) • (quantumDividedPower q x k * quantumDividedPower q y (n - k)) :=
-  inv_quantumFactorial_smul_add_pow h hn
+      q ^ (k * (n - k)) • (quantumDividedPower q x k * quantumDividedPower q y (n - k)) := by
+  rcases eq_or_ne n 0 with rfl | hn₀
+  · simp
+  have hq := ne_zero_of_sub_inv_ne_zero (sub_inv_ne_zero_of_quantumFactorial_ne_zero hn₀ hn)
+  rw [quantumDividedPower_def, add_pow_of_mul_eq_smul_mul hq h, smul_sum]
+  refine sum_congr rfl fun k hk => ?_
+  have hkn : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
+  rw [quantumDividedPower_def, quantumDividedPower_def, smul_mul_smul_comm, smul_smul, smul_smul,
+    quantumBinomial_eq_div hn hkn]
+  congr 1
+  have := quantumFactorial_ne_zero_of_le hkn hn
+  have := quantumFactorial_ne_zero_of_le (Nat.sub_le n k) hn
+  field_simp
 
-/-- If `y x = q² • (x y)`, then `(x y)^(n) = q^(n(n-1)) • (x^n y^(n))`. -/
-theorem quantumDividedPower_mul_of_mul_eq_smul_mul (q : K) {x y : A}
-    (h : y * x = q ^ 2 • (x * y)) (n : ℕ) :
-    quantumDividedPower q (x * y) n = q ^ (n * (n - 1)) • (x ^ n * quantumDividedPower q y n) := by
-  rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_of_mul_eq_smul_mul h, ← pow_mul,
-    Nat.two_mul_div_two_of_even (Nat.even_mul_pred_self n), smul_comm, mul_smul_comm]
+/-- If `y x = c • (x y)`, then `(x y)^(n) = c^(n(n-1)/2) • (x^n y^(n))`. -/
+theorem quantumDividedPower_mul_of_mul_eq_smul_mul (q : K) {c : K} {x y : A}
+    (h : y * x = c • (x * y)) (n : ℕ) :
+    quantumDividedPower q (x * y) n =
+      c ^ (n * (n - 1) / 2) • (x ^ n * quantumDividedPower q y n) := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_of_mul_eq_smul_mul h, smul_comm,
+    mul_smul_comm]
 
-/-- Right-factor form: if `y x = q² • (x y)`, then `(x y)^(n) = q^(n(n-1)) • (x^(n) y^n)`. -/
-theorem quantumDividedPower_mul_right_of_mul_eq_smul_mul (q : K) {x y : A}
-    (h : y * x = q ^ 2 • (x * y)) (n : ℕ) :
-    quantumDividedPower q (x * y) n = q ^ (n * (n - 1)) • (quantumDividedPower q x n * y ^ n) := by
-  rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_of_mul_eq_smul_mul h, ← pow_mul,
-    Nat.two_mul_div_two_of_even (Nat.even_mul_pred_self n), smul_comm, smul_mul_assoc]
+/-- Right-factor form: if `y x = c • (x y)`, then `(x y)^(n) = c^(n(n-1)/2) • (x^(n) y^n)`. -/
+theorem quantumDividedPower_mul_right_of_mul_eq_smul_mul (q : K) {c : K} {x y : A}
+    (h : y * x = c • (x * y)) (n : ℕ) :
+    quantumDividedPower q (x * y) n =
+      c ^ (n * (n - 1) / 2) • (quantumDividedPower q x n * y ^ n) := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_of_mul_eq_smul_mul h, smul_comm,
+    smul_mul_assoc]
 
 end DividedPower
 
