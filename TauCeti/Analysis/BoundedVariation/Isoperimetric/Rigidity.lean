@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.Normed.Module.RCLike.Real
-import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.BoundedVariation.Isoperimetric.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -116,11 +115,6 @@ private theorem eq_univ_and_ball_of_finrank_zero {s : Set E} (hn : finrank ℝ E
     (mem_parallelepiped_iff _ _).2 ⟨0, ⟨le_rfl, fun _ ↦ zero_le_one⟩, Subsingleton.elim _ _⟩
   exact ⟨hsuniv, hball, by rw [hball, ← hb, b.volume_parallelepiped]⟩
 
-/-- Equality in `ℝ≥0∞` is preserved under canceling a positive natural exponent. -/
-private theorem ennreal_eq_of_pow_eq {a b : ℝ≥0∞} {n : ℕ} (hn : n ≠ 0) (h : a ^ n = b ^ n) :
-    a = b :=
-  ENNReal.rpow_left_injective (Nat.cast_ne_zero.2 hn) (by simpa only [ENNReal.rpow_natCast] using h)
-
 end TauCeti
 
 namespace MeasureTheory.NullMeasurableSet
@@ -168,7 +162,7 @@ theorem perimeter_pow_eq_iff_exists_ae_eq_ball
             hSm.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
               (hSvol.symm ▸ hμs) (hSvol.symm ▸ hs0)
       exact ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq hs hμs hP e he
-        (ennreal_eq_of_pow_eq hn hSpow)
+        ((ENNReal.pow_right_strictMono hn).injective hSpow)
     exact (hs.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected
       hn (pos_iff_ne_zero.2 hs0) hμs hsections).1 heq
   · rintro ⟨c, r, hr, hsr⟩
@@ -191,7 +185,7 @@ theorem perimeter_eq_ofReal_iff_exists_ae_eq_ball
   rw [← hs.perimeter_pow_eq_iff_exists_ae_eq_ball hμs hs0,
     finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity)]
-  exact ⟨fun h ↦ by rw [h], ennreal_eq_of_pow_eq hn⟩
+  exact (ENNReal.pow_right_strictMono hn).injective.eq_iff.symm
 
 /-- **Unconditional isoperimetric rigidity, real-valued form.** A null-measurable set `s` of finite
 positive volume satisfies `P(s).toReal = n ω_n^(1/n) |s|^(1 - 1/n)` if and only if `s` agrees almost
