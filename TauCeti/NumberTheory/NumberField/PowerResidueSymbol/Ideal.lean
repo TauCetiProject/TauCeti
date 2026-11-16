@@ -37,6 +37,8 @@ zero ideal, which has no prime factors, is the trivial character.
   `𝔞` and `𝔟`.
 * `Ideal.powerResidueSymbolIdeal_mul_right_intCast`: the same for a rational integer `m`, read in
   each quotient.
+* `Ideal.powerResidueSymbolIdeal_prod_right`: `(α / ∏ i ∈ s, 𝔞 i)_n = ∏ i ∈ s, (α / 𝔞 i)_n` for
+  nonzero ideals `𝔞 i`.
 * `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
 * `Ideal.powerResidueSymbolIdeal_top`: `(α / 𝓞 K)_n = 1`.
 * `Ideal.powerResidueSymbolIdeal_bot`: the symbol at the zero ideal is the trivial character.
@@ -164,6 +166,25 @@ theorem powerResidueSymbolIdeal_mul_right_intCast (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 
     powerResidueSymbolIdeal (𝔞 * 𝔟) n (m : 𝓞 K ⧸ 𝔞 * 𝔟) =
       powerResidueSymbolIdeal 𝔞 n (m : 𝓞 K ⧸ 𝔞) * powerResidueSymbolIdeal 𝔟 n (m : 𝓞 K ⧸ 𝔟) := by
   simpa using powerResidueSymbolIdeal_mul_right (n := n) h𝔞 h𝔟 (m : 𝓞 K)
+
+/-- **Multiplicativity in a finite product of ideals.**
+`(α / ∏ i ∈ s, 𝔞 i)_n = ∏ i ∈ s, (α / 𝔞 i)_n` when every factor `𝔞 i` (`i ∈ s`) is nonzero. -/
+theorem powerResidueSymbolIdeal_prod_right {ι : Type*} {s : Finset ι} {𝔞 : ι → Ideal (𝓞 K)}
+    (h𝔞 : ∀ i ∈ s, 𝔞 i ≠ ⊥) (α : 𝓞 K) :
+    powerResidueSymbolIdeal (∏ i ∈ s, 𝔞 i) n (Quotient.mk (∏ i ∈ s, 𝔞 i) α) =
+      ∏ i ∈ s, powerResidueSymbolIdeal (𝔞 i) n (Quotient.mk (𝔞 i) α) := by
+  classical
+  induction s using Finset.induction with
+  | empty =>
+    rw [Finset.prod_empty, Finset.prod_empty, one_eq_top, powerResidueSymbolIdeal_top]
+  | insert i s his ih =>
+    have hi : 𝔞 i ≠ ⊥ := h𝔞 i (Finset.mem_insert_self i s)
+    have hs : ∀ j ∈ s, 𝔞 j ≠ ⊥ := fun j hj ↦ h𝔞 j (Finset.mem_insert_of_mem hj)
+    have hprod : ∏ j ∈ s, 𝔞 j ≠ ⊥ := by
+      rw [← zero_eq_bot]
+      exact Finset.prod_ne_zero_iff.mpr fun j hj ↦ (zero_eq_bot (R := 𝓞 K)).symm ▸ hs j hj
+    rw [Finset.prod_insert his, Finset.prod_insert his,
+      powerResidueSymbolIdeal_mul_right hi hprod, ih hs]
 
 /-- `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`. -/
 theorem powerResidueSymbolIdeal_pow_right (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) (k : ℕ) :
