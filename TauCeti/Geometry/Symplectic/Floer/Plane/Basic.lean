@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RealChart
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
@@ -62,7 +63,8 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
   the end lift of the negative plane is that of the positive plane composed with `z ↦ -z`
   (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`), so the loops of the negative plane are
   those of the positive plane traversed backwards
-  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`).
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`), and its angular coordinate
+  is the negative of that of the positive plane (`TauCeti.Floer.PSSPlane.im_endCoord_negative`).
 
 The angular coordinate is defined only modulo `1`, which is why `H` is required to have period
 one. Smoothness across the ray where it jumps reuses the corresponding statement for the end at
@@ -266,6 +268,22 @@ theorem re_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
   obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
   simp [hk]
 
+/-- The real chart of the end lift of a PSS plane at a point `(ε s, t)` is the image of
+`ε s + i t`. -/
+theorem realChart_cylindricalEndLift_endSign_mul (p : PSSPlane) (s t : ℝ) :
+    TauCeti.Complex.realChart p.cylindricalEndLift (p.endSign * s, t) =
+      Complex.equivRealProdCLM (p.cylindricalEndLift (↑(p.endSign * s) + ↑t * Complex.I)) := by
+  rw [TauCeti.Complex.realChart_apply, Complex.equivRealProdCLM_symm_apply]
+
+/-- A family of period one in the angular coordinate takes the same value at the angular
+coordinate of the image of a cylinder point under the end lift as at the angular coordinate of the
+point itself. -/
+theorem apply_im_endCoord_cylindricalEndLift {α : Type*} {f : ℝ → α} (hf : Function.Periodic f 1)
+    (p : PSSPlane) (z : ℂ) : f (p.endCoord (p.cylindricalEndLift z)).im = f z.im := by
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
+  rw [hk]
+  simpa using hf.int_mul k z.im
+
 /-- The norm of the image of a cylinder point is `exp (2π ε s)`. -/
 theorem norm_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
     ‖p.cylindricalEndLift z‖ = Real.exp (2 * π * (p.endSign * z.re)) := by
@@ -285,6 +303,12 @@ theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
       -p.endSign * (ThricePuncturedSphere.Puncture.zero.endCoord w).im := by
   simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
     Complex.arg_mul_real]
+  ring
+
+/-- The angular coordinate of the negative plane is the negative of that of the positive plane. -/
+theorem im_endCoord_negative (w : ℂ) :
+    (negative.endCoord w).im = -(positive.endCoord w).im := by
+  simp only [im_endCoord, endSign_negative, endSign_positive]
   ring
 
 section Periodic

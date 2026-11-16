@@ -164,18 +164,12 @@ theorem hamiltonianAction_positiveEndHamiltonian {q : Puncture} (hH : Periodic (
     ω.hamiltonianAction (positiveEndHamiltonian H q) x =
       q.endSign * ω.hamiltonianAction (H q) (fun t ↦ x (q.endSign * t)) := by
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
-  · have hH' : positiveEndHamiltonian H q = H q := by
-      funext t y
-      simp [positiveEndHamiltonian_apply, h]
-    simp [hH', h]
-  · have hH' : positiveEndHamiltonian H q = fun t y ↦ -H q (-t) y := by
-      funext t y
-      simp [positiveEndHamiltonian_apply, h]
-    have hx' : Periodic (fun t ↦ x (-t)) 1 := by
+  · simp [positiveEndHamiltonian_of_endSign_eq_one H h, h]
+  · have hx' : Periodic (fun t ↦ x (-t)) 1 := by
       simpa only [h, neg_one_mul] using periodic_comp_endSign_mul (q := q) hx
     have h' := ω.hamiltonianAction_comp_neg hH hx'
     simp only [neg_neg] at h'
-    rw [hH', h]
+    rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h, h]
     simpa using h'
 
 /-! ### The ends of a Floer pair of pants as Floer half-cylinders -/
