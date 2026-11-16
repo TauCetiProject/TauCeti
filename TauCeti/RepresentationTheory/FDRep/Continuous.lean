@@ -115,10 +115,11 @@ instance [ContinuousAdd k] : (isContinuous k G).IsClosedUnderBinaryProducts :=
 object and `TauCeti.ContFDRep k G` has a zero object. -/
 instance : (isContinuous k G).ContainsZero where
   exists_zero := ⟨0, isZero_zero _, fun f v => by
-    -- The forgetful functor to `Rep k G` keeps the zero object, whose carrier is a subsingleton.
-    have : Subsingleton ((forget₂ (FDRep k G) (Rep k G)).obj 0).V :=
-      (Rep.isZero_iff _).mp (Functor.map_isZero _ (isZero_zero _))
-    have hv : v = 0 := Subsingleton.elim (α := ((forget₂ (FDRep k G) (Rep k G)).obj 0).V) v 0
+    -- The identity of the zero object is its zero endomorphism; evaluate both at `v`. (`id_zero`
+    -- is excluded so that `simp` unfolds `𝟙 0` to the identity map rather than to `0`.)
+    have hv : v = 0 := by
+      simpa [-id_zero] using
+        LinearMap.congr_fun congr(($((isZero_zero (FDRep k G)).eq_of_src (𝟙 _) 0)).hom.hom.hom) v
     simp only [hv, map_zero]
     exact continuous_const⟩
 

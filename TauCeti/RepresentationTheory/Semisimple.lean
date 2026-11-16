@@ -122,16 +122,16 @@ theorem nonempty_equiv_of_finrank_intertwiningMap_eq [FiniteDimensional k V]
   have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule σ).mp ‹_›
   refine TauCeti.Representation.nonempty_equiv_iff.mpr <|
     IsSemisimpleModule.nonempty_linearEquiv_of_finrank_linearMap_eq (k := k)
-      (fun S _ ↦ ?_) (fun S _ ↦ ?_)
+      (fun S _ ↦ ?_) (fun S _ ↦ ?_) <;>
   -- A simple submodule of the associated module is carried by an irreducible subrepresentation `τ`,
-  -- whose intertwiners are the module maps out of that submodule.
-  · obtain ⟨τ, rfl⟩ : ∃ τ : Subrepresentation ρ, τ.asSubmodule = S :=
-      ⟨.ofSubmodule' S, by ext; rfl⟩
+  -- whose intertwiners are the module maps out of that submodule; `τ` lives in `ρ` or in `σ`, and
+  -- the matching hypothesis `hρ` or `hσ` is found by its type.
+  · obtain ⟨τ, rfl⟩ : ∃ τ : Subrepresentation _, τ.asSubmodule = S :=
+      Subrepresentation.subrepresentationSubmoduleOrderIso.surjective S
     simpa only [finrank_intertwiningMap_eq_finrank_linearMap_asSubmodule] using
-      hρ τ (Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›)
-  · obtain ⟨τ, rfl⟩ : ∃ τ : Subrepresentation σ, τ.asSubmodule = S :=
-      ⟨.ofSubmodule' S, by ext; rfl⟩
-    simpa only [finrank_intertwiningMap_eq_finrank_linearMap_asSubmodule] using
-      hσ τ (Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›)
+      ‹∀ τ' : Subrepresentation _, IsAtom τ' →
+        Module.finrank k (IntertwiningMap τ'.toRepresentation ρ) =
+          Module.finrank k (IntertwiningMap τ'.toRepresentation σ)› τ
+        (Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›)
 
 end Representation
