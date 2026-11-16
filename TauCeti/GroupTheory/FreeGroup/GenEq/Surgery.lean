@@ -283,6 +283,21 @@ theorem numBases_removePair {μ : Fin Ω.numBases} (h : μ ≠ Ω.dual μ) :
     (Ω.removePair μ).numBases = Ω.numBases - 2 := by
   rw [numBases_removeBases, Finset.card_pair h]
 
+/-- A base of `Ω` with `μ, Δ(μ)` removed is, as a base of `Ω`, different from `μ`. -/
+theorem orderEmbOfFin_removePair_ne {μ : Fin Ω.numBases} (ν : Fin (Ω.removePair μ).numBases) :
+    ({μ, Ω.dual μ}ᶜ : Finset (Fin Ω.numBases)).orderEmbOfFin rfl ν ≠ μ := by
+  have hν := Finset.mem_compl.1 (Finset.orderEmbOfFin_mem ({μ, Ω.dual μ}ᶜ : Finset _) rfl ν)
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hν
+  exact hν.1
+
+/-- A base of `Ω` with `μ, Δ(μ)` removed is, as a base of `Ω`, different from `Δ(μ)`. -/
+theorem orderEmbOfFin_removePair_ne_dual {μ : Fin Ω.numBases}
+    (ν : Fin (Ω.removePair μ).numBases) :
+    ({μ, Ω.dual μ}ᶜ : Finset (Fin Ω.numBases)).orderEmbOfFin rfl ν ≠ Ω.dual μ := by
+  have hν := Finset.mem_compl.1 (Finset.orderEmbOfFin_mem ({μ, Ω.dual μ}ᶜ : Finset _) rfl ν)
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hν
+  exact hν.2
+
 /-- If no boundary connection passes through `μ`, then `Ω*` presents the same group as the system
 of `Ω` with `μ, Δ(μ)` removed together with the basic equation of `μ`, or with that of `Δ(μ)`. -/
 theorem normalClosure_toSystem_eq_insert_removePair {μ : Fin Ω.numBases}

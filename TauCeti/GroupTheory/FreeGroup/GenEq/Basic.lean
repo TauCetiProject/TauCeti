@@ -155,6 +155,17 @@ theorem segment_true (i j : ℕ) : Ω.segment i j true =
 theorem segment_false (i j : ℕ) : Ω.segment i j false = FreeGroup.invRev (Ω.segment i j true) := by
   simp [segment]
 
+/-- The letters of `h[i, j]` are the items `hₖ` with `i ≤ k < j`, each with exponent `1`. -/
+theorem mem_segment_true_iff {i j : ℕ} {p : (Fin Ω.numItems ⊕ A) × Bool} :
+    p ∈ Ω.segment i j true ↔
+      ∃ k : Fin Ω.numItems, (i ≤ k ∧ (k : ℕ) < j) ∧ (Sum.inl k, true) = p := by
+  have hmem (k : Fin Ω.numItems) :
+      k ∈ ((List.finRange Ω.numItems).take j).drop i ↔ i ≤ k ∧ (k : ℕ) < j := by
+    simp only [List.mem_iff_getElem, List.getElem_drop, List.getElem_take, List.getElem_finRange,
+      List.length_drop, List.length_take, List.length_finRange, Fin.ext_iff, Fin.val_cast]
+    exact ⟨by grind, fun h => ⟨k - i, by grind⟩⟩
+  simp only [segment_true, List.mem_map, hmem]
+
 /-- A homomorphism out of the free group on the items and constants evaluates `h[i, j] ^ ±1` as
 its value on `h[i, j]`, or the inverse of that value. -/
 theorem lift_mk_segment {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) (i j : ℕ) (s : Bool) :
@@ -223,12 +234,8 @@ theorem toGX_segment_mem_avoiding {i j : ℕ} (s : Bool) {k : Fin Ω.numItems}
   have htrue :
       EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j true)) ∈ GX.avoiding k := by
     refine EqIneqSystem.toGX_mk_mem_avoiding fun p hp => ?_
-    rw [segment_true] at hp
-    obtain ⟨k', hk', rfl⟩ := List.mem_map.1 hp
-    obtain ⟨m, hm, rfl⟩ := List.mem_iff_getElem.1 hk'
-    simp only [List.length_drop, List.length_take, List.length_finRange] at hm
-    simp only [List.getElem_drop, List.getElem_take, List.getElem_finRange, ne_eq, Sum.inl.injEq,
-      Fin.ext_iff, Fin.val_cast]
+    obtain ⟨k', hk', rfl⟩ := Ω.mem_segment_true_iff.1 hp
+    simp only [ne_eq, Sum.inl.injEq, Fin.ext_iff]
     omega
   cases s
   · rw [toGX_segment_false]
@@ -266,14 +273,10 @@ theorem exists_mem_substituteVars_segment_iff (u : Fin Ω.numItems → List (A �
     {i j : ℕ} {s : Bool} {a : A} :
     (∃ l ∈ substituteVars u (Ω.segment i j s), l.1 = a) ↔
       ∃ k : Fin Ω.numItems, i ≤ k ∧ (k : ℕ) < j ∧ ∃ l ∈ u k, l.1 = a := by
-  have hmem (k : Fin Ω.numItems) :
-      k ∈ ((List.finRange Ω.numItems).take j).drop i ↔ i ≤ k ∧ (k : ℕ) < j := by
-    simp only [List.mem_iff_getElem, List.getElem_drop, List.getElem_take, List.getElem_finRange,
-      List.length_drop, List.length_take, List.length_finRange, Fin.ext_iff, Fin.val_cast]
-    exact ⟨by grind, fun h => ⟨k - i, by grind⟩⟩
   have htrue : (∃ l ∈ substituteVars u (Ω.segment i j true), l.1 = a) ↔
       ∃ k : Fin Ω.numItems, i ≤ k ∧ (k : ℕ) < j ∧ ∃ l ∈ u k, l.1 = a := by
-    simp only [segment_true, substituteVars_map_inl, List.mem_flatMap, hmem]
+    simp only [substituteVars, List.mem_flatMap, mem_segment_true_iff, exists_exists_and_eq_and,
+      FreeGroup.substituteLetter_true, Sum.elim_inl]
     grind
   cases s
   · rw [← htrue, segment_false, substituteVars_invRev]

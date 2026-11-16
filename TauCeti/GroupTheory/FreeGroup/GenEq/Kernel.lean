@@ -78,7 +78,7 @@ is trivial, and removing it frees no generator.
   `F[h]/ncl(Ω₁*) ≅ (F[h]/ncl(Ω*)) ∗ ⟨z⟩` for an elimination by rule (a) and by rule (b), with its
   values on the words of `W`, on the basic equation of the eliminated base and on the items not in
   `W`.
-* `TauCeti.GenEq.exists_bijective_systemGroup_removePair`: removing an eliminable base from a
+* `TauCeti.GenEq.exists_bijective_gHom_systemGroup_removePair`: removing an eliminable base from a
   generalised equation without boundary connections adds a free factor `⟨z⟩` to the presented
   group, by an `F(A)`-isomorphism sending the basic equation of the base to `z`.
 * `TauCeti.GenEq.isFreeItem_removePair_of_degree_eq_one`: an item of degree one of a base is free
@@ -155,9 +155,7 @@ variable {Ω} in
 theorem isFreeItem_removePair_of_degree_eq_one {μ : Fin Ω.numBases} {k : Fin Ω.numItems}
     (hk : k ∈ Ω.baseItems μ) (hdeg : Ω.degree k = 1) : (Ω.removePair μ).IsFreeItem k := by
   refine (isFreeItem_iff _).2 ⟨fun ν hkν => ?_, fun hc => ?_⟩
-  · have hν := Finset.mem_compl.1 (Finset.orderEmbOfFin_mem ({μ, Ω.dual μ} : Finset _)ᶜ rfl ν)
-    exact notMem_baseItems_of_degree_eq_one hk hdeg
-      (fun h => hν (by rw [h]; exact Finset.mem_insert_self _ _))
+  · exact notMem_baseItems_of_degree_eq_one hk hdeg (orderEmbOfFin_removePair_ne ν)
       (Ω.mem_baseItems.2 ((Ω.removePair μ).mem_baseItems.1 hkν))
   · obtain ⟨b, hb, h⟩ := (isConstantItem_iff _).1 hc
     exact not_isConstantItem_of_degree_eq_one hk hdeg ((isConstantItem_iff _).2 ⟨b, hb, h⟩)
@@ -213,26 +211,27 @@ variable {Ω}
 /-- Case (a): an item of degree one of `μ` occurs in no other base. -/
 private theorem separates_of_degree_eq_one {μ : Fin Ω.numBases} {k : Fin Ω.numItems}
     (hk : k ∈ Ω.baseItems μ) (hdeg : Ω.degree k = 1) : Ω.Separates μ 1 k where
-  map_inl _ := rfl
+  map_inl _ := MulAut.one_apply _ _
   mem_baseItems := hk
-  map_inr := rfl
-  map_segment := rfl
+  map_inr := MulAut.one_apply _ _
+  map_segment := MulAut.one_apply _ _
   mem_avoiding_segment ν hν := by
     have hkν := notMem_baseItems_of_degree_eq_one hk hdeg hν
     rw [mem_baseItems] at hkν
+    rw [MulAut.one_apply]
     exact Ω.toGX_segment_mem_avoiding _ (by omega)
-  mem_avoiding_const b hb :=
-    GX.inr_of_mem_avoiding fun h => not_isConstantItem_of_degree_eq_one hk hdeg
+  mem_avoiding_const b hb := by
+    rw [MulAut.one_apply]
+    exact GX.inr_of_mem_avoiding fun h => not_isConstantItem_of_degree_eq_one hk hdeg
       ((isConstantItem_iff _).2 ⟨b, hb, h⟩)
   mem_avoiding_connection c hc hν hν' := by
     -- both sides are words in items of the base of the connection and of its dual
     obtain ⟨h₁, h₂, h₃, h₄⟩ := Ω.bounds_of_mem_connections c hc
     rw [Fin.lt_def] at h₁ h₂ h₃ h₄
     have hkν := notMem_baseItems_of_degree_eq_one hk hdeg hν
-    have hkν' := notMem_baseItems_of_degree_eq_one hk hdeg (ν := Ω.dual c.2.1)
-      fun h => hν' ((Ω.dual_involutive c.2.1).symm.trans (congrArg Ω.dual h))
+    have hkν' := notMem_baseItems_of_degree_eq_one hk hdeg (mt Ω.dual_involutive.eq_iff.1 hν')
     rw [mem_baseItems] at hkν hkν'
-    rw [boundaryEquation_fst]
+    rw [MulAut.one_apply, MulAut.one_apply, boundaryEquation_fst]
     refine ⟨Ω.toGX_segment_mem_avoiding _ (by omega), ?_⟩
     by_cases hs : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1)
     · rw [Ω.boundaryEquation_snd_of_sign_eq hs]
@@ -419,19 +418,15 @@ private theorem Separates.mem_avoiding_toSystem {μ : Fin Ω.numBases}
     refine ((Ω.removePair μ).forall_mem_equations).2
       ⟨fun ν' => ?_, fun b hb => ?_, fun c hc' => ?_⟩
     · rw [basicEquation_removeBases, basicEquation_fst, basicEquation_snd]
-      have hν := Finset.mem_compl.1 (Finset.orderEmbOfFin_mem ({μ, Ω.dual μ} : Finset _)ᶜ rfl ν')
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hν
-      exact ⟨h.mem_avoiding_segment' hν.1 _, h.mem_avoiding_segment'
-        (fun h' => hν.2 ((Ω.dual_involutive _).symm.trans (congrArg Ω.dual h'))) _⟩
+      exact ⟨h.mem_avoiding_segment' (orderEmbOfFin_removePair_ne ν') _, h.mem_avoiding_segment'
+        (mt Ω.dual_involutive.eq_iff.1 (orderEmbOfFin_removePair_ne_dual ν')) _⟩
     · obtain ⟨j, a, s⟩ := b
       refine ⟨by simpa [EqIneqSystem.toGX_eq_lift, FreeGroup.lift_mk] using
         h.mem_avoiding_const _ hb, ?_⟩
       cases s <;> simp [EqIneqSystem.toGX_eq_lift, FreeGroup.lift_mk, h.map_inl]
     · rw [boundaryEquation_removeBases]
-      have hν := Finset.mem_compl.1
-        (Finset.orderEmbOfFin_mem ({μ, Ω.dual μ} : Finset _)ᶜ rfl c.2.1)
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hν
-      exact h.mem_avoiding_connection _ ((mem_connections_removeBases _).1 hc') hν.1 hν.2
+      exact h.mem_avoiding_connection _ ((mem_connections_removeBases _).1 hc')
+        (orderEmbOfFin_removePair_ne c.2.1) (orderEmbOfFin_removePair_ne_dual c.2.1)
   obtain ⟨e, he, rfl⟩ := (mem_toSystem_iff _).1 ht
   rw [map_mul, map_inv, map_mul, map_inv]
   exact mul_mem (key e he).1 (inv_mem (key e he).2)
@@ -546,8 +541,8 @@ theorem exists_mulEquiv_removePair_of_degree_eq_one {μ : Fin Ω.numBases}
       ∀ w : GX (FreeGroup A) (Fin Ω.numItems),
         eval (MonoidHom.id (SystemGroup (FreeGroup A) Ω.toSystem)) (fun _ => 1)
             (e (w : SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem)) =
-          (w : SystemGroup (FreeGroup A) Ω.toSystem) :=
-  (separates_of_degree_eq_one hk hdeg).exists_mulEquiv hc hd
+          (w : SystemGroup (FreeGroup A) Ω.toSystem) := by
+  simpa only [MulAut.one_apply] using (separates_of_degree_eq_one hk hdeg).exists_mulEquiv hc hd
 
 /-- **Elimination of a base by rule (b).** Let `Ω` have no boundary connections and let `i`,
 different from the first and the last boundary, be an end-point of a base `μ` which is not its own
@@ -614,7 +609,7 @@ eliminable, the group presented by the system of `Ω` with the pair `μ, Δ(μ)`
 `F(A)`-isomorphic to the free product of the group presented by `Ω*` with an infinite cyclic group
 `⟨z⟩`, by an isomorphism sending the basic equation of `μ` to `z`; sending `z` to `1` gives back
 the homomorphism induced by the identity on the items. -/
-theorem exists_bijective_systemGroup_removePair (hc : Ω.connections = ∅) {μ : Fin Ω.numBases}
+theorem exists_bijective_gHom_systemGroup_removePair (hc : Ω.connections = ∅) {μ : Fin Ω.numBases}
     (hμ : Ω.IsEliminable μ) :
     ∃ e : GHom (SystemGroup.coeff (Ω.removePair μ).toSystem)
         ((inl : SystemGroup (FreeGroup A) Ω.toSystem →*

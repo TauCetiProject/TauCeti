@@ -77,7 +77,7 @@ variable {τ x}
 private theorem toCoprod_of_mem_avoiding (T : Set (GX G X)) {a : GX G X} (ha : a ∈ GX.avoiding x) :
     toCoprod τ x T a = inl (τ.symm a : SystemGroup G T) := by
   rw [toCoprod, GX.eval_update_of_mem_avoiding _ ha, ← eq_eval]
-  rfl
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply]
 
 private theorem toCoprod_inr_self (T : Set (GX G X)) :
     toCoprod τ x T (inr (FreeGroup.of x)) = inr (FreeGroup.of ()) := by
@@ -86,7 +86,7 @@ private theorem toCoprod_inr_self (T : Set (GX G X)) :
 private theorem retract_of_mem_avoiding (S : Set (GX G X)) {a : GX G X} (ha : a ∈ GX.avoiding x) :
     retract τ x S a = (τ.symm a : SystemGroup G S) := by
   rw [retract, GX.eval_update_of_mem_avoiding _ ha, ← eq_eval]
-  rfl
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply]
 
 private theorem retract_inr_self (S : Set (GX G X)) : retract τ x S (inr (FreeGroup.of x)) = 1 := by
   simp [retract]
@@ -99,7 +99,7 @@ private theorem lift_comp_toCoprod (hσx : τ.symm (inr (FreeGroup.of x)) = s)
     {φ : SystemGroup G T →* SystemGroup G S} (hφ : ∀ w : GX G X, φ w = retract τ x S (τ w)) :
     (lift φ (FreeGroup.lift fun _ => (s : SystemGroup G S))).comp (toCoprod τ x T) =
       symmMk τ S :=
-  GX.hom_ext_of_avoiding (x := x)
+  GX.ext_hom_of_avoiding (x := x)
     (fun a ha => by simp [hφ, toCoprod_of_mem_avoiding T ha, retract_of_mem_avoiding S ha])
     (by simp [toCoprod_inr_self, hσx])
 
@@ -108,7 +108,7 @@ the class map of `τ⁻¹` into `G_T`, provided `s` is trivial in `G_T`. -/
 private theorem comp_retract (hσx : τ.symm (inr (FreeGroup.of x)) = s)
     (hsT : (s : SystemGroup G T) = 1) {ψ : SystemGroup G S →* GX (SystemGroup G T) Unit}
     (hψ : ∀ w : GX G X, ψ w = toCoprod τ x T (τ w)) : ψ.comp (retract τ x S) = inlSymmMk τ T :=
-  GX.hom_ext_of_avoiding (x := x)
+  GX.ext_hom_of_avoiding (x := x)
     (fun a ha => by simp [hψ, toCoprod_of_mem_avoiding T ha, retract_of_mem_avoiding S ha])
     (by simp [retract_inr_self, hσx, hsT])
 
@@ -117,7 +117,7 @@ private theorem comp_retract (hσx : τ.symm (inr (FreeGroup.of x)) = s)
 private theorem eval_comp_toCoprod (hσx : τ.symm (inr (FreeGroup.of x)) = s)
     (hsT : (s : SystemGroup G T) = 1) :
     (eval (MonoidHom.id (SystemGroup G T)) fun _ => 1).comp (toCoprod τ x T) = symmMk τ T :=
-  GX.hom_ext_of_avoiding (x := x) (fun a ha => by simp [toCoprod_of_mem_avoiding T ha])
+  GX.ext_hom_of_avoiding (x := x) (fun a ha => by simp [toCoprod_of_mem_avoiding T ha])
     (by simp [toCoprod_inr_self, hσx, hsT])
 
 /-- The homomorphism `G_S → G_T ∗ ⟨z⟩` induced by `toCoprod ∘ τ`. -/
@@ -129,6 +129,11 @@ private def elimHom (τ : MulAut (GX G X)) (x : X) (hS : ∀ t ∈ S, τ t ∈ G
         toCoprod_of_mem_avoiding T (hS t ht)]
       simp [(QuotientGroup.eq_one_iff t).2 (hT ht)]
 
+private theorem elimHom_mk (τ : MulAut (GX G X)) (x : X) (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x)
+    (hT : S ⊆ normalClosure T) (w : GX G X) :
+    elimHom τ x hS hT (w : SystemGroup G S) = toCoprod τ x T (τ w) := by
+  rw [elimHom, QuotientGroup.lift_mk, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+
 /-- The homomorphism `G_T → G_S` induced by `retract ∘ τ`. -/
 private def elimInvHom (hs : τ s = inr (FreeGroup.of x)) (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x)
     (hT : normalClosure T = normalClosure (insert s S)) : SystemGroup G T →* SystemGroup G S :=
@@ -138,6 +143,11 @@ private def elimInvHom (hs : τ s = inr (FreeGroup.of x)) (hS : ∀ t ∈ S, τ 
     · rw [hs, retract_inr_self]
     · rw [retract_of_mem_avoiding S (hS t ht)]
       simpa using (QuotientGroup.eq_one_iff _).2 (subset_normalClosure ht))
+
+private theorem elimInvHom_mk (hs : τ s = inr (FreeGroup.of x))
+    (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x) (hT : normalClosure T = normalClosure (insert s S))
+    (w : GX G X) : elimInvHom hs hS hT (w : SystemGroup G T) = retract τ x S (τ w) := by
+  rw [elimInvHom, QuotientGroup.lift_mk, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
 
 /-- The case `τ s = x` of `elimEquiv`. -/
 private def elimEquivAux (hs : τ s = inr (FreeGroup.of x)) (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x)
@@ -149,18 +159,17 @@ private def elimEquivAux (hs : τ s = inr (FreeGroup.of x)) (hS : ∀ t ∈ S, �
   (elimHom τ x hS ((Set.subset_insert s S).trans hST)).toMulEquiv
     (lift (elimInvHom hs hS hT) (FreeGroup.lift fun _ => (s : SystemGroup G S)))
     (QuotientGroup.monoidHom_ext _ <| MonoidHom.ext fun w => by
-      simpa [elimHom] using DFunLike.congr_fun (lift_comp_toCoprod hσx (φ := elimInvHom hs hS hT)
-        fun w => QuotientGroup.lift_mk _ _ w) (τ w))
+      simpa [elimHom_mk] using
+        DFunLike.congr_fun (lift_comp_toCoprod hσx (elimInvHom_mk hs hS hT)) (τ w))
     (hom_ext (QuotientGroup.monoidHom_ext _ <| MonoidHom.ext fun w => by
-        simpa [elimInvHom] using DFunLike.congr_fun (comp_retract hσx hsT
-          (ψ := elimHom τ x hS ((Set.subset_insert s S).trans hST))
-          fun w => QuotientGroup.lift_mk _ _ w) (τ w))
-      (FreeGroup.ext_hom _ _ fun _ => by simp [elimHom, hs, toCoprod_inr_self]))
+        simpa [elimInvHom_mk] using
+          DFunLike.congr_fun (comp_retract hσx hsT (elimHom_mk τ x hS _)) (τ w))
+      (FreeGroup.ext_hom _ _ fun _ => by simp [elimHom_mk, hs, toCoprod_inr_self]))
 
 private theorem elimEquivAux_mk (hs : τ s = inr (FreeGroup.of x))
     (hS : ∀ t ∈ S, τ t ∈ GX.avoiding x) (hT : normalClosure T = normalClosure (insert s S))
-    (w : GX G X) : elimEquivAux hs hS hT (w : SystemGroup G S) = toCoprod τ x T (τ w) :=
-  rfl
+    (w : GX G X) : elimEquivAux hs hS hT (w : SystemGroup G S) = toCoprod τ x T (τ w) := by
+  rw [elimEquivAux, MonoidHom.toMulEquiv_apply, elimHom_mk]
 
 end Elimination
 
@@ -232,10 +241,10 @@ theorem eval_elimEquiv_mk (w : GX G X) :
       (elimEquiv τ hu hv hs hS hT (w : SystemGroup G S)) = (w : SystemGroup G T) := by
   have hsT : (s : SystemGroup G T) = 1 :=
     (QuotientGroup.eq_one_iff s).2 (hT ▸ subset_normalClosure (Set.mem_insert s S))
-  rw [elimEquiv, elimEquivAux_mk]
-  exact (DFunLike.congr_fun (eval_comp_toCoprod
-    ((MulEquiv.symm_apply_eq _).2 (by simp [hs, hu, hv, mul_assoc])) hsT) _).trans
-      (congrArg _ (MulEquiv.symm_apply_apply _ w))
+  rw [elimEquiv, elimEquivAux_mk, ← MonoidHom.comp_apply, eval_comp_toCoprod
+    ((MulEquiv.symm_apply_eq _).2 (by simp [hs, hu, hv, mul_assoc])) hsT]
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
+    QuotientGroup.mk'_apply]
 
 end ElimEquiv
 
