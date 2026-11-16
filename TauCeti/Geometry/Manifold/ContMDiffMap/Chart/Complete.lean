@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.ContinuousMap.CompactConvergence
 
 /-!
@@ -137,8 +138,6 @@ theorem completeSpace_manifoldWeakWhitney [CompleteSpace F] {n : ℕ∞ω} [IsMa
   -- Each coordinate derivative of the Cauchy filter converges with compact convergence.
   have hconv (x : M) (m : ℕ) (hm : (m : ℕ∞ω) ≤ r) : ∃ g : C((extChartAt I x).target,
       E [×m]→L[𝕜] F), Tendsto (fun f ↦ chartIteratedFDeriv f x m hm) 𝓕 (𝓝 g) := by
-    have : LocallyCompactSpace (extChartAt I x).target :=
-      (isOpen_extChartAt_target x).locallyCompactSpace
     have hfun : (⇑(chartIteratedFDerivLinearMap (F := F) (n := (r : ℕ∞ω)) (I := I) x m hm)) =
         fun f ↦ chartIteratedFDeriv f x m hm :=
       funext fun f ↦ chartIteratedFDerivLinearMap_apply x m hm f
@@ -156,8 +155,6 @@ theorem completeSpace_manifoldWeakWhitney [CompleteSpace F] {n : ℕ∞ω} [IsMa
     simp only [q, hm, ↓reduceDIte, Subtype.val_injective.extend_apply]
   obtain ⟨h, hh⟩ := exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn (l := 𝓕)
     (f := fun f : C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯ ↦ f) (q := q) fun x m hm ↦ by
-      have : LocallyCompactSpace (extChartAt I x).target :=
-        (isOpen_extChartAt_target x).locallyCompactSpace
       apply tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe.mpr
       have ht := ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 (hg x m hm)
       convert ht using 1

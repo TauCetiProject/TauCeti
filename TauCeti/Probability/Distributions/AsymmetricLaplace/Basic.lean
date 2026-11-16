@@ -512,7 +512,7 @@ private lemma measureReal_asymmetricLaplaceMeasure {s : Set ℝ} (hs : Measurabl
     (asymmetricLaplaceMeasure m l r).real s = ∫ y in s, asymmetricLaplacePDFReal m l r y := by
   rw [asymmetricLaplaceMeasure_eq_withDensity, funext (asymmetricLaplacePDF_eq_ofReal m l r)]
   exact measureReal_withDensity_ofReal (ae_of_all _ (asymmetricLaplacePDFReal_nonneg m l r)) hs
-    (integrable_asymmetricLaplacePDFReal m l r).integrableOn
+    (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
 
 /-- **The cumulative distribution function of the asymmetric Laplace law.** -/
 theorem cdf_asymmetricLaplaceMeasure_eq (hl : 0 < l) (hr : 0 < r) (m x : ℝ) :

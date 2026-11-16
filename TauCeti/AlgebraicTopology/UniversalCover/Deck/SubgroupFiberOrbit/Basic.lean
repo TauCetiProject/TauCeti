@@ -299,7 +299,7 @@ lemma subgroupFiberOrbitQuotientEquiv_mapOfLE (h : E ≃ₜ F) (hpq : ∀ e, q (
   rfl
 
 /-- Quotienting a fibre by the trivial deck subgroup gives the fibre itself. -/
-noncomputable def subgroupFiberOrbitQuotientBotEquiv :
+def subgroupFiberOrbitQuotientBotEquiv :
     SubgroupFiberOrbitQuotient (⊥ : Subgroup (deck p)) b ≃ p ⁻¹' {b} :=
   TauCeti.MulAction.orbitRelQuotientBotEquiv (G := deck p) (X := p ⁻¹' {b})
 

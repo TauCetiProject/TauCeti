@@ -315,7 +315,6 @@ theorem finrank_ker_trajectoryOperator_hessianOperator_negativeGradientFlow
       (continuous_hessianOperator_negativeGradientFlow hf hfs y) AL hAL,
     squareIntegrableSolutions_hessianOperator_negativeGradientFlow hp hq hfs hf hyu hys]
 
-open WeakDerivStep in
 /-- **The linearized operator is onto exactly at transverse trajectories.** Let `f` be a `C²`
 function with globally Lipschitz gradient on a finite-dimensional real inner product space, and
 `y` a point on a negative-gradient trajectory from a nondegenerate critical point `p` to a
@@ -338,25 +337,8 @@ theorem surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff
     (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y
   have hbot := Flow.mem_unstableSet.1 hyu
   have htop := Flow.mem_stableSet.1 hys
-  have hindex := hγ.index_trajectoryOperator_hessianOperator hfs hp hq hbot htop hAL
-  have hclosed := (hγ.isFredholm_trajectoryOperator_hessianOperator hfs hp hq hbot htop
-    hAL).isClosed_range
-  -- The Hessian is symmetric, so the coefficient is its own pointwise adjoint.
-  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      AL s = ContinuousLinearMap.adjoint (AL s) := by
-    filter_upwards [hAL] with s hs
-    rw [hs]
-    exact hfs.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.clm_adjoint_eq.symm
-  -- The kernel of the formal adjoint is finite dimensional: it is a space of solutions of a linear
-  -- equation on `E`.
-  have hA := (continuous_hessianOperator_negativeGradientFlow hf hfs y).neg
-  have := (kerTrajectoryOperatorEquiv hA (-AL) (by
-    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
-    simp only [hs, Pi.neg_apply, hAs])).symm.finiteDimensional
-  rw [index_trajectoryOperator_of_isClosed_range hadj hclosed,
-    finrank_ker_trajectoryOperator_hessianOperator_negativeGradientFlow hp hq hfs hf hyu hys
-      hAL] at hindex
-  rw [surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed, ← Submodule.finrank_eq_zero]
+  rw [hγ.surjective_trajectoryOperator_hessianOperator_iff_finrank_ker hfs hp hq hbot htop hAL,
+    finrank_ker_trajectoryOperator_hessianOperator_negativeGradientFlow hp hq hfs hf hyu hys hAL]
   -- Compare dimensions: `dim (Tᵘ ⊔ Tˢ) + dim (Tᵘ ⊓ Tˢ) = ind p + (dim E - ind q)`.
   have hsum := Submodule.finrank_sup_add_finrank_inf_eq
     (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y))

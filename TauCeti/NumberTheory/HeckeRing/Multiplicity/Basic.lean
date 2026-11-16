@@ -211,4 +211,26 @@ lemma mulMap_eq_of_mk_eq {H₁ H₂ H₃ : Subgroup G} [IsHeckeTriple Δ H₁ H�
     mulMap H₁ H₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
   mulMapOf_eq_of_mk_eq h
 
+/-- **If the product set of two double cosets lies in the double coset of `d`, so does every
+product of coset representatives**, from bare containments: `mulMapOf` is constant with value
+the double coset of `d`. -/
+theorem mulMapOf_eq_of_mul_subset_doubleCoset {H₁ H₂ H₃ : Subgroup G}
+    {h₁ : H₁.toSubmonoid ≤ Δ} {h₂ : H₂.toSubmonoid ≤ Δ} {g₁ g₂ d : Δ}
+    (hd : doubleCoset (g₁ : G) H₁ H₂ * doubleCoset (g₂ : G) H₂ H₃ ⊆ doubleCoset (d : G) H₁ H₃)
+    (p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)) :
+    mulMapOf h₁ h₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  (mulMapOf_eq_mk h₁ h₂ H₃ g₁ g₂ p).trans <| mk_eq_mk_of_mem <| hd <| Set.mul_mem_mul
+    (mem_doubleCoset.mpr ⟨p.1.out, p.1.out.2, 1, H₂.one_mem, (mul_one _).symm⟩)
+    (mem_doubleCoset.mpr ⟨p.2.out, p.2.out.2, 1, H₃.one_mem, (mul_one _).symm⟩)
+
+/-- If the product set of two double cosets lies in the double coset of `d`, so does every
+product of coset representatives: the Hecke-triple form of
+`mulMapOf_eq_of_mul_subset_doubleCoset`. -/
+theorem mulMap_eq_of_mul_subset_doubleCoset {H₁ H₂ H₃ : Subgroup G} [IsHeckeTriple Δ H₁ H₂]
+    {g₁ g₂ d : Δ}
+    (hd : doubleCoset (g₁ : G) H₁ H₂ * doubleCoset (g₂ : G) H₂ H₃ ⊆ doubleCoset (d : G) H₁ H₃)
+    (p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)) :
+    mulMap H₁ H₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  mulMapOf_eq_of_mul_subset_doubleCoset hd p
+
 end HeckeCoset
