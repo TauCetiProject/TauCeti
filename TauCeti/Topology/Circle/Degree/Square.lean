@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Homotopy.Cube.Basic
+public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 
 /-!
 # The degree of a circle-valued map around the boundary of the square
@@ -32,10 +33,7 @@ laws of a winding number:
   is the sum of the degrees of its two halves, read through the affine maps
   `TauCeti.squareLeftHalf` and `TauCeti.squareRightHalf` of `I²` onto `s ≤ 1/2` and `s ≥ 1/2`
   (`TauCeti.squareBoundaryDegree_eq_add`). This is the subdivision along the first coordinate
-  that Mathlib uses to multiply classes of `π₂` (`GenLoop.transAt 0`): the concatenation
-  `GenLoop.transAt 0 q p` runs `q` on the left half and `p` on the right half
-  (`GenLoop.transAt_apply_squareLeftHalf`, `GenLoop.transAt_apply_squareRightHalf`) and is the base
-  point on the seam (`GenLoop.transAt_apply_of_coe_eq_half`).
+  that Mathlib uses to multiply classes of `π₂` (`GenLoop.transAt 0`).
 
 The proofs read the degree as the sum of the angles swept along the four edges
 (`Circle.angleChange`): the shared edge `s = 1/2` of the two halves is run once in each
@@ -45,14 +43,10 @@ direction and cancels.
 
 * `TauCeti.squareBoundaryLoop`: the boundary of the square as a loop based at `(0, 0)`.
 * `TauCeti.squareBoundaryDegree`: the degree of a circle-valued map around the boundary.
-* `TauCeti.squareLeftHalf`, `TauCeti.squareRightHalf`: the affine maps of the square onto its left
-  and right halves.
 
 ## Main results
 
 * `TauCeti.squareBoundaryDegree_eq_degree`: the degree is that of the loop `Γ ∘ ∂I²`.
-* `GenLoop.transAt_apply_squareLeftHalf`, `GenLoop.transAt_apply_squareRightHalf`: the halves of a
-  concatenation of spheres.
 * `TauCeti.squareBoundaryDegree_congr`, `TauCeti.squareBoundaryDegree_mul`,
   `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
   `TauCeti.squareBoundaryDegree_eq_of_homotopy`, `TauCeti.squareBoundaryDegree_eq_add`: the laws
@@ -209,36 +203,6 @@ theorem squareBoundaryDegree_eq_zero_of_continuous (h : Continuous Γ) :
 
 /-! ### Subdivision along the first coordinate -/
 
-/-- The affine map `(s, t) ↦ (s / 2, t)` of the square onto its left half. -/
-def squareLeftHalf : C(Fin 2 → I, Fin 2 → I) where
-  toFun y := ![⟨(y 0 : ℝ) / 2, by linarith [unitInterval.nonneg (y 0)],
-    by linarith [unitInterval.le_one (y 0)]⟩, y 1]
-  continuous_toFun := by fun_prop
-
-/-- The affine map `(s, t) ↦ ((s + 1) / 2, t)` of the square onto its right half. -/
-def squareRightHalf : C(Fin 2 → I, Fin 2 → I) where
-  toFun y := ![⟨((y 0 : ℝ) + 1) / 2, by linarith [unitInterval.nonneg (y 0)],
-    by linarith [unitInterval.le_one (y 0)]⟩, y 1]
-  continuous_toFun := by fun_prop
-
-@[simp]
-theorem coe_squareLeftHalf_apply_zero (y : Fin 2 → I) :
-    (squareLeftHalf y 0 : ℝ) = y 0 / 2 :=
-  (rfl)
-
-@[simp]
-theorem squareLeftHalf_apply_one (y : Fin 2 → I) : squareLeftHalf y 1 = y 1 :=
-  (rfl)
-
-@[simp]
-theorem coe_squareRightHalf_apply_zero (y : Fin 2 → I) :
-    (squareRightHalf y 0 : ℝ) = (y 0 + 1) / 2 :=
-  (rfl)
-
-@[simp]
-theorem squareRightHalf_apply_one (y : Fin 2 → I) : squareRightHalf y 1 = y 1 :=
-  (rfl)
-
 /-- The vertical segment `s = 1/2` along which the square is subdivided. -/
 private def squareSeam : Set (Fin 2 → I) := {y | (y 0 : ℝ) = 1 / 2}
 
@@ -358,62 +322,3 @@ theorem squareBoundaryDegree_eq_add
   exact_mod_cast (mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) hsum).symm
 
 end TauCeti
-
-/-! ### Concatenation of spheres -/
-
-namespace GenLoop
-
-open TauCeti
-
-variable {X : Type*} [TopologicalSpace X] {x : X}
-
-/-- The concatenation `GenLoop.transAt 0 q p` runs `q` on the left half of the square. -/
-theorem transAt_apply_squareLeftHalf (p q : Ω^ (Fin 2) X x) (y : Fin 2 → I) :
-    transAt 0 q p (squareLeftHalf y) = q y := by
-  have hle : ((squareLeftHalf y 0 : I) : ℝ) ≤ 1 / 2 := by
-    simp only [coe_squareLeftHalf_apply_zero]
-    linarith [unitInterval.le_one (y 0)]
-  rw [transAt, coe_copy, ite_eq_left hle]
-  congr 1
-  funext i
-  fin_cases i
-  · have h2 : (2 : ℝ) * (squareLeftHalf y 0 : I) = y 0 := by
-      rw [coe_squareLeftHalf_apply_zero]
-      ring
-    simp only [Fin.zero_eta, Function.update_self, h2, Set.projIcc_val]
-  · simp
-
-/-- The concatenation `GenLoop.transAt 0 q p` runs `p` on the right half of the square. -/
-theorem transAt_apply_squareRightHalf (p q : Ω^ (Fin 2) X x) (y : Fin 2 → I) :
-    transAt 0 q p (squareRightHalf y) = p y := by
-  rw [transAt, coe_copy]
-  split_ifs with hle
-  · -- Only the left edge `s = 0` is mapped to the seam, and both sides are the base point there.
-    have hy : (y 0 : ℝ) = 0 := by
-      rw [coe_squareRightHalf_apply_zero] at hle
-      linarith [unitInterval.nonneg (y 0)]
-    have h2 : (2 : ℝ) * (squareRightHalf y 0 : I) = 1 := by
-      rw [coe_squareRightHalf_apply_zero, hy]
-      ring
-    refine (boundary q _ ⟨0, Or.inr ?_⟩).trans (boundary p y ⟨0, Or.inl ?_⟩).symm
-    · rw [Function.update_self, h2]
-      exact Subtype.ext (by simp)
-    · exact Subtype.ext hy
-  · congr 1
-    funext i
-    fin_cases i
-    · have h2 : (2 : ℝ) * (squareRightHalf y 0 : I) - 1 = y 0 := by
-        rw [coe_squareRightHalf_apply_zero]
-        ring
-      simp only [Fin.zero_eta, Function.update_self, h2, Set.projIcc_val]
-    · simp
-
-/-- The concatenation `GenLoop.transAt 0 q p` is the base point on the seam `s = 1/2`. -/
-theorem transAt_apply_of_coe_eq_half (p q : Ω^ (Fin 2) X x) {y : Fin 2 → I}
-    (hy : (y 0 : ℝ) = 1 / 2) : transAt 0 q p y = x := by
-  rw [transAt, coe_copy, ite_eq_left hy.le]
-  refine boundary q _ ⟨0, Or.inr ?_⟩
-  rw [Function.update_self, hy]
-  exact Subtype.ext (by norm_num)
-
-end GenLoop

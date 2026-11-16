@@ -21,7 +21,8 @@ loop of determinants.
 
 * `ContinuousLinearEquiv.normalizedDet`: the point `det A / ‖det A‖` of the circle.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
-* `ContinuousLinearEquiv.normalizedDet_trans`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
+  `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
 -/
@@ -60,11 +61,24 @@ theorem normalizedDet_trans (A B : E ≃L[ℂ] E) :
   have hdet : LinearMap.det ((A.trans B).toLinearEquiv : E →ₗ[ℂ] E) =
       LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) *
         LinearMap.det (B.toLinearEquiv : E →ₗ[ℂ] E) := by
-    rw [mul_comm, ← LinearMap.det_comp]
-    rfl
+    rw [ContinuousLinearEquiv.trans_toLinearEquiv, LinearEquiv.coe_trans, LinearMap.det_comp,
+      mul_comm]
   ext1
   simp only [coe_normalizedDet, Circle.coe_mul, hdet, norm_mul, Complex.ofReal_mul]
   ring
+
+/-- The identity has normalized determinant `1`. -/
+@[simp]
+theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 1 := by
+  have h : ((ContinuousLinearEquiv.refl ℂ E).toLinearEquiv : E →ₗ[ℂ] E) = LinearMap.id :=
+    LinearMap.ext fun v ↦ refl_apply ℂ E v
+  ext1
+  simp [coe_normalizedDet, h]
+
+/-- The normalized determinant of the inverse is the inverse of the normalized determinant. -/
+@[simp]
+theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
+  eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
 
 end ContinuousLinearEquiv
 

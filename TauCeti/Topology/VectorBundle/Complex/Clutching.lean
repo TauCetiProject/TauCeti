@@ -52,9 +52,10 @@ additive under the concatenation `GenLoop.transAt 0` that defines the product of
 because a frame along the concatenation restricts to frames along both halves
 (`TauCeti.clutchingNumber_transAt`).
 
-The bundle may be the tangent bundle of a manifold with an almost complex structure, made a complex
-vector bundle by `TauCeti.Bundle.ContinuousComplexStructure`; then this is the first Chern number
-of spheres in an almost complex or symplectic manifold.
+The bundle may be the tangent bundle `(TX, J)` of a manifold with an almost complex structure `J`,
+made a complex vector bundle by
+`TauCeti.ContMDiffAlmostComplexStructure.toContinuousComplexStructure`; this gives the clutching
+number of the almost complex tangent bundle on spheres.
 
 ## Main definitions
 
@@ -65,8 +66,6 @@ of spheres in an almost complex or symplectic manifold.
 
 ## Main results
 
-* `TauCeti.exists_continuous_frame`: every map from a contractible paracompact space admits a
-  frame of `E` along it.
 * `TauCeti.clutchingNumber_eq_squareBoundaryDegree`: the clutching number may be computed from any
   frame and any trivialization near `x`.
 * `TauCeti.clutchingNumber_eq_of_homotopic`: homotopy invariance.
@@ -184,12 +183,6 @@ theorem continuousOn_clutchingFunction
   refine hA.normalizedDet.inv.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
   simp [A, clutchingFunction_of_mem hy, hy]
 
-omit [FiniteDimensional ℂ F] in
-/-- A continuous frame `φ` along `f` determines `f`, which is therefore continuous. -/
-theorem continuous_of_continuous_frame
-    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) : Continuous f :=
-  (FiberBundle.continuous_proj F E).comp (hφ.comp (Continuous.prodMk_left 0))
-
 /-- Two continuous frames along the same map differ by a continuous family of automorphisms of
 `F`, so the normalized determinant of `(φ y)⁻¹ ∘ ψ y` is continuous on the whole domain. -/
 theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
@@ -209,43 +202,15 @@ theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
 
 end ClutchingFunction
 
-/-! ### Frames over contractible spaces -/
-
-section Frame
-
-variable [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
-  [FiniteDimensional ℂ F]
-
-/-- **Frames over contractible spaces.** Along every continuous map `f` from a contractible
-paracompact R₁ space, for instance a cube, a finite-rank complex vector bundle `E` has a frame:
-complex-linear isomorphisms `φ y : F ≃ E (f y)` depending continuously on `y`. This is the
-triviality of the pullback bundle `f *ᵖ E`. -/
-theorem exists_continuous_frame [R1Space B] [ParacompactSpace B] [ContractibleSpace B]
-    {f : B → X} (hf : Continuous f) : ∃ φ : ∀ y, F ≃L[ℂ] E (f y),
-      Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2) := by
-  let g : C(B, X) := ⟨f, hf⟩
-  have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
-  have : ∀ y, IsTopologicalAddGroup ((g *ᵖ E) y) := fun y ↦
-    inferInstanceAs (IsTopologicalAddGroup (E (f y)))
-  have : ∀ y, ContinuousSMul ℂ ((g *ᵖ E) y) := fun y ↦
-    inferInstanceAs (ContinuousSMul ℂ (E (f y)))
-  obtain ⟨e, he, hbase⟩ :=
-    exists_trivialization_baseSet_eq_univ_of_contractibleSpace ℂ F (g *ᵖ E)
-  have hb (y : B) : y ∈ e.baseSet := hbase ▸ mem_univ y
-  refine ⟨fun y ↦ (e.continuousLinearEquivAt ℂ y (hb y)).symm, ?_⟩
-  have hsymm : Continuous fun q : B × F ↦ TotalSpace.mk' F q.1 (e.symm q.1 q.2) :=
-    e.continuousOn_symm.comp_continuous continuous_id fun q ↦ ⟨hb q.1, mem_univ _⟩
-  -- `Pullback.lift` and the inverse of `continuousLinearEquivAt` are the identity on fibres.
-  exact (Pullback.continuous_lift F E g).comp hsymm
-
-end Frame
-
 /-! ### The clutching number -/
 
 section ClutchingNumber
 
 variable [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
   [FiniteDimensional ℂ F] {x : X}
+
+/-- The finite-dimensional model fibre is complete, as `TauCeti.exists_continuous_frame` needs. -/
+private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
 
 variable (F E) in
 /-- The **clutching number** of a complex vector bundle `E` on a sphere `p : I² → X` based at `x`
@@ -255,7 +220,8 @@ clutching function of a frame of `E` along `p`, read in the trivialization
 (`TauCeti.clutchingNumber_eq_squareBoundaryDegree`). -/
 def clutchingNumber (p : Ω^ (Fin 2) X x) : ℤ :=
   squareBoundaryDegree
-    (clutchingFunction p (exists_continuous_frame (F := F) (E := E) (map_continuous p)).choose
+    (clutchingFunction p
+      (exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)).choose
       (trivializationAt F E x))
 
 /-- **The clutching number from any frame and any trivialization.** The clutching number of a
@@ -266,8 +232,8 @@ theorem clutchingNumber_eq_squareBoundaryDegree (p : Ω^ (Fin 2) X x)
     {φ : ∀ y, F ≃L[ℂ] E (p y)}
     (hφ : Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (p q.1) (φ q.1 q.2)) :
     clutchingNumber F E p = squareBoundaryDegree (clutchingFunction p φ e) := by
-  obtain hφ₀ := (exists_continuous_frame (F := F) (E := E) (map_continuous p)).choose_spec
-  set φ₀ := (exists_continuous_frame (F := F) (E := E) (map_continuous p)).choose
+  obtain hφ₀ := (exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)).choose_spec
+  set φ₀ := (exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)).choose
   set e₀ := trivializationAt F E x
   have hx₀ : x ∈ e₀.baseSet := mem_baseSet_trivializationAt F E x
   have hc₀ : ContinuousOn (clutchingFunction p φ₀ e₀) (Cube.boundary (Fin 2)) :=
@@ -297,7 +263,7 @@ theorem clutchingNumber_eq_of_homotopic {p q : Ω^ (Fin 2) X x} (h : GenLoop.Hom
     clutchingNumber F E p = clutchingNumber F E q := by
   obtain ⟨H⟩ := h
   have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-  obtain ⟨Θ, hΘ⟩ := exists_continuous_frame (F := F) (E := E) (map_continuous H)
+  obtain ⟨Θ, hΘ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous H)
   set e₀ := trivializationAt F E x
   have hx₀ : x ∈ e₀.baseSet := mem_baseSet_trivializationAt F E x
   have hHx (τ : I) (y : Fin 2 → I) (hy : y ∈ Cube.boundary (Fin 2)) : H (τ, y) = x :=
@@ -325,7 +291,7 @@ theorem clutchingNumber_transAt (p q : Ω^ (Fin 2) X x) :
     clutchingNumber F E (GenLoop.transAt 0 q p) =
       clutchingNumber F E q + clutchingNumber F E p := by
   set f := GenLoop.transAt 0 q p
-  obtain ⟨Ψ, hΨ⟩ := exists_continuous_frame (F := F) (E := E) (map_continuous f)
+  obtain ⟨Ψ, hΨ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous f)
   set e₀ := trivializationAt F E x
   have hx₀ : x ∈ e₀.baseSet := mem_baseSet_trivializationAt F E x
   -- The concatenation is the base point on the boundary and on the seam `s = 1/2`, so its
@@ -335,7 +301,7 @@ theorem clutchingNumber_transAt (p q : Ω^ (Fin 2) X x) :
     refine (continuousOn_clutchingFunction hΨ e₀).mono fun y hy ↦ ?_
     rcases hy with hy | hy
     · exact mem_preimage.2 (mem_of_eq_of_mem (GenLoop.boundary f y hy) hx₀)
-    · exact mem_preimage.2 (mem_of_eq_of_mem (GenLoop.transAt_apply_of_coe_eq_half p q hy) hx₀)
+    · exact mem_preimage.2 (mem_of_eq_of_mem (GenLoop.transAt_apply_of_coe_eq_half 0 q p hy) hx₀)
   -- The two halves of the concatenation are `q` and `p`, with the halves of the frame `Ψ`.
   let qL : Ω^ (Fin 2) X x := ⟨f.1.comp squareLeftHalf, fun y hy ↦
     (GenLoop.transAt_apply_squareLeftHalf p q y).trans (GenLoop.boundary q y hy)⟩
