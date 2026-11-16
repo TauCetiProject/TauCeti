@@ -28,11 +28,10 @@ factor, of the same order.
 
 ## Main results
 
-* `Monoid.CoprodI.isConj_of_iff`, `Monoid.Coprod.isConj_inl_iff`, `Monoid.Coprod.isConj_inr_iff`:
-  conjugacy in a free product restricts faithfully to each factor.
-* `Monoid.CoprodI.isConj_of_of_ne`, `Monoid.Coprod.isConj_inl_inr_iff`,
-  `Monoid.Coprod.isConj_inr_inl_iff`: elements of distinct factors are conjugate only when both
-  are `1`.
+* `Monoid.CoprodI.isConj_of_iff`: conjugacy in an indexed free product restricts faithfully to each
+  factor (see `TauCeti.GroupTheory.Coprod.Conj` for the binary free product).
+* `Monoid.CoprodI.isConj_of_of_ne`, `Monoid.CoprodI.eq_of_isConj_of`: elements of distinct factors
+  of an indexed free product are conjugate only when both are `1`.
 * `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`: a nonempty reduced word whose endpoints lie
   in distinct factors has infinite order.
 * `Monoid.CoprodI.eq_one_or_exists_isConj_of_of_isOfFinOrder`, `Monoid.CoprodI.isOfFinOrder_iff`,
@@ -312,33 +311,6 @@ private theorem finTwoFamilyEquivCoprod_of_one (M : Type u₁) (N : Type u₂)
   rfl
 
 variable {M : Type u₁} {N : Type u₂} [Monoid M] [Monoid N]
-
-/-- Two elements of `M` are conjugate in `M ∗ N` if and only if they are conjugate in `M`.
-
-Not `@[simp]`: when `M` and `N` are groups, `isConj_iff` simplifies the left-hand side. -/
-theorem isConj_inl_iff {x y : M} : IsConj (inl x : M ∗ N) (inl y) ↔ IsConj x y :=
-  ⟨fun h ↦ by simpa using fst.map_isConj h, (inl : M →* M ∗ N).map_isConj⟩
-
-/-- Two elements of `N` are conjugate in `M ∗ N` if and only if they are conjugate in `N`.
-
-Not `@[simp]`: when `M` and `N` are groups, `isConj_iff` simplifies the left-hand side. -/
-theorem isConj_inr_iff {x y : N} : IsConj (inr x : M ∗ N) (inr y) ↔ IsConj x y :=
-  ⟨fun h ↦ by simpa using snd.map_isConj h, (inr : N →* M ∗ N).map_isConj⟩
-
-/-- An element of `M` and an element of `N` are conjugate in `M ∗ N` if and only if both are `1`. -/
-theorem isConj_inl_inr_iff {x : M} {y : N} :
-    IsConj (inl x : M ∗ N) (inr y) ↔ x = 1 ∧ y = 1 := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · have hx : IsConj x 1 := by simpa using fst.map_isConj h
-    have hy : IsConj 1 y := by simpa using snd.map_isConj h
-    exact ⟨isConj_one_left.mp hx, isConj_one_right.mp hy⟩
-  · rintro ⟨rfl, rfl⟩
-    simp
-
-/-- An element of `N` and an element of `M` are conjugate in `M ∗ N` if and only if both are `1`. -/
-theorem isConj_inr_inl_iff {x : N} {y : M} :
-    IsConj (inr x : M ∗ N) (inl y) ↔ x = 1 ∧ y = 1 := by
-  rw [isConj_comm, isConj_inl_inr_iff, and_comm]
 
 /-- In `M ∗ N`, the product `inl x * inr y` of two nonidentity elements from distinct factors does
 not have finite order. -/
