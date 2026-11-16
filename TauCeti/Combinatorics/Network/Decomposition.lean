@@ -145,9 +145,9 @@ theorem WeightedClosedWalk.ext {c₁ c₂ : WeightedClosedWalk Q K}
   cases hweight
   rfl
 
-section AddCommMonoid
+section AddMonoid
 
-variable [AddCommMonoid K]
+variable [AddMonoid K]
 
 /-- The assignment of a weighted walk: its walk weighted by its weight. -/
 noncomputable def WeightedWalk.assignment (p : WeightedWalk Q K) : Assignment Q K :=
@@ -165,7 +165,7 @@ theorem WeightedClosedWalk.assignment_def (c : WeightedClosedWalk Q K) :
     c.assignment = walkAssignment c.walk c.weight :=
   (rfl)
 
-end AddCommMonoid
+end AddMonoid
 
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 

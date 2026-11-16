@@ -217,7 +217,7 @@ theorem weightedWalkEquiv_trans {X : Type u''} {N'' : Network K X}
 
 /-- The assignment of a transported weighted walk is the transported assignment. -/
 @[simp]
-theorem assignment_weightedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
+theorem assignment_weightedWalkEquiv [AddMonoid R] (e : N ≃ₙ N')
     (p : WeightedWalk N.Hom R) :
     (e.weightedWalkEquiv R p).assignment = e.assignmentEquiv R p.assignment := by
   rw [weightedWalkEquiv_apply, WeightedWalk.assignment_def, WeightedWalk.assignment_def]
@@ -225,7 +225,7 @@ theorem assignment_weightedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
 
 /-- The assignment of a pulled-back weighted walk is the pulled-back assignment. -/
 @[simp]
-theorem assignment_weightedWalkEquiv_symm [AddCommMonoid R] (e : N ≃ₙ N')
+theorem assignment_weightedWalkEquiv_symm [AddMonoid R] (e : N ≃ₙ N')
     (p : WeightedWalk N'.Hom R) :
     ((e.weightedWalkEquiv R).symm p).assignment =
       (e.assignmentEquiv R).symm p.assignment := by
@@ -394,7 +394,7 @@ theorem weightedClosedWalkEquiv_trans {X : Type u''} {N'' : Network K X}
 
 /-- The assignment of a transported weighted closed walk is the transported assignment. -/
 @[simp]
-theorem assignment_weightedClosedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
+theorem assignment_weightedClosedWalkEquiv [AddMonoid R] (e : N ≃ₙ N')
     (c : WeightedClosedWalk N.Hom R) :
     (e.weightedClosedWalkEquiv R c).assignment = e.assignmentEquiv R c.assignment := by
   rw [weightedClosedWalkEquiv_apply, WeightedClosedWalk.assignment_def,
@@ -403,7 +403,7 @@ theorem assignment_weightedClosedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
 
 /-- The assignment of a pulled-back weighted closed walk is the pulled-back assignment. -/
 @[simp]
-theorem assignment_weightedClosedWalkEquiv_symm [AddCommMonoid R] (e : N ≃ₙ N')
+theorem assignment_weightedClosedWalkEquiv_symm [AddMonoid R] (e : N ≃ₙ N')
     (c : WeightedClosedWalk N'.Hom R) :
     ((e.weightedClosedWalkEquiv R).symm c).assignment =
       (e.assignmentEquiv R).symm c.assignment := by
