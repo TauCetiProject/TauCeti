@@ -143,8 +143,7 @@ residue field `Q ⧸ m` is `t m`. -/
 private theorem eq_equivPi_symm_iff {t : ∀ m : MaximalSpectrum Q, Q ⧸ m.asIdeal} {x : Q} :
     x = (IsArtinianRing.equivPi Q).symm t ↔ ∀ m : MaximalSpectrum Q,
       Ideal.Quotient.mk m.asIdeal x = t m := by
-  rw [AlgEquiv.eq_symm_apply, funext_iff]
-  rfl
+  simp_rw [AlgEquiv.eq_symm_apply, funext_iff, IsArtinianRing.equivPi_apply]
 
 /-- The element with components `t` is a unit exactly when every component is nonzero. -/
 private theorem isUnit_equivPi_symm_iff {t : ∀ m : MaximalSpectrum Q, Q ⧸ m.asIdeal} :
@@ -155,7 +154,7 @@ private theorem isUnit_equivPi_symm_iff {t : ∀ m : MaximalSpectrum Q, Q ⧸ m.
 private theorem equivPi_symm_eq_zero_iff {t : ∀ m : MaximalSpectrum Q, Q ⧸ m.asIdeal} :
     (IsArtinianRing.equivPi Q).symm t = 0 ↔ ∀ m, t m = 0 := by
   rw [map_eq_zero_iff _ (IsArtinianRing.equivPi Q).symm.injective, funext_iff]
-  rfl
+  simp_rw [Pi.zero_apply]
 
 section Graded
 
