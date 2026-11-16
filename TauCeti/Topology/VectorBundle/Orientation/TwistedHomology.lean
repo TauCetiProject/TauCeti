@@ -17,23 +17,23 @@ Let `E → B` be a real vector bundle over a connected base and `o(E)` its orien
 with the two orientations of `E_b` as its generators. Its zeroth homology `H₀(B; o(E))` sees
 whether `E` is orientable:
 
-* if `E` has an orientation, it trivializes `o(E)`, and `H₀(B; o(E)) ≅ R`
-  (`TauCeti.VectorBundleOrientation.twistedHomology₀Equiv`); this identification sends the class
-  of an element of any fibre to its value at the chosen orientation of that fibre;
+* if `E` has an orientation, it trivializes `o(E)`, and if moreover `B` is path-connected,
+  `H₀(B; o(E)) ≅ R` (`TauCeti.VectorBundleOrientation.twistedHomology₀Equiv`); this
+  identification sends the class of an element of any fibre to its value at the chosen
+  orientation of that fibre;
 * if `E` is not orientable and `B` is locally path-connected, some loop reverses the orientation of
   a fibre
   (`VectorBundleOrientationCover.exists_monodromyRepresentation_signLocalSystem_eq_neg_one`),
   and `H₀(B; o(E)) ≅ R ⧸ 2R`
   (`TauCeti.VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo`).
 
-With integer coefficients, `H₀(B; o(E))` is therefore `ℤ` or `ℤ/2`, and it is isomorphic to `ℤ`
-exactly when `E` is orientable
+With integer coefficients and `B` locally path-connected, `H₀(B; o(E))` is therefore `ℤ` or
+`ℤ/2`, and it is isomorphic to `ℤ` exactly when `E` is orientable
 (`TauCeti.VectorBundleOrientation.nonempty_iff_nonempty_twistedHomology₀_linearEquiv_int`). For
 instance, for the Möbius line over the circle, which is not orientable, it is `ℤ/2`, not the `ℤ`
-of constant coefficients. This group is
-the coefficient group in the bottom degree of the Thom isomorphism
-`H_{n+r}(E, E₀; ℤ) ≅ H_n(B; o(E))` of a rank `r` bundle, for instance across the level of a
-Morse–Bott critical submanifold, where `E` is its negative normal bundle.
+of constant coefficients. This group is the coefficient group in the bottom degree of the Thom
+isomorphism `H_{n+r}(E, E₀; ℤ) ≅ H_n(B; o(E))` of a rank `r` bundle, for instance across the level
+of a Morse–Bott critical submanifold, where `E` is its negative normal bundle.
 
 ## Main definitions
 
@@ -119,7 +119,8 @@ namespace VectorBundleOrientation
 /-- **Zeroth homology of an oriented orientation system.** Over a path-connected base, an
 orientation `o` of `E` identifies `H₀(B; o(E))` with `R`. It sends the class of an element of the
 fibre over any point `b'` to its value at the orientation `o b'` of `E_b'`; the basepoint `b` is
-only used in the construction (`twistedHomology₀Equiv_ιTwistedHomology₀`). -/
+only used in the construction (`twistedHomology₀Equiv_ιTwistedHomology₀`,
+`twistedHomology₀Equiv_eq`). -/
 def twistedHomology₀Equiv [PathConnectedSpace B] (o : VectorBundleOrientation F E ι) (b : B) :
     twistedHomology.{u, uB, max uE uι u} (VectorBundleOrientationCover.signLocalSystem F E R hι) 0
       ≃ₗ[R] R :=
@@ -164,6 +165,15 @@ theorem twistedHomology₀Equiv_symm_apply [PathConnectedSpace B]
         ((VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b')).symm r) :=
   (LinearEquiv.symm_apply_eq _).2 (by
     rw [twistedHomology₀Equiv_ιTwistedHomology₀, LinearEquiv.apply_symm_apply])
+
+omit [FiniteDimensional ℝ F] in
+/-- The identification of `H₀(B; o(E))` with `R` given by `o` does not depend on the basepoint
+used to construct it. -/
+theorem twistedHomology₀Equiv_eq [PathConnectedSpace B] (o : VectorBundleOrientation F E ι)
+    (b b' : B) :
+    twistedHomology₀Equiv (R := R) hι o b = twistedHomology₀Equiv hι o b' :=
+  LinearEquiv.symm_bijective.injective <| LinearEquiv.ext fun r ↦ by
+    rw [twistedHomology₀Equiv_symm_apply hι o b b r, twistedHomology₀Equiv_symm_apply hι o b' b r]
 
 /-- **Orientability from zeroth twisted homology.** A real vector bundle over a connected, locally
 path-connected base is orientable exactly when the zeroth homology of its integral orientation
