@@ -172,10 +172,6 @@ instance kanComplex_sHom (A B : CatInftyΔ.{u}) : KanComplex (sHom A B) :=
     inferInstanceAs (Quasicategory ((ihom A.obj.toSSet).obj B.obj.toSSet))
   core.kanComplex
 
-/-- The mapping simplicial sets of `CatInftyΔ` are quasicategories. -/
-instance (A B : CatInftyΔ.{u}) : Quasicategory (sHom A B) :=
-  inferInstance
-
 end CatInftyΔ
 
 /-- The homotopy coherent nerve `catInfty` of the locally Kan simplicial category `CatInftyΔ` is a
