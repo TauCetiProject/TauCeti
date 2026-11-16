@@ -9,12 +9,11 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Flow.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Isomorphism
 
 /-!
-# Isomorphism invariance of weighted multigraph cuts and flows
+# Isomorphism invariance of weighted multigraph flows
 
 A multigraph isomorphism `f : Graph.Iso G H` carries edge capacities `c : E(G) → K` to the
 capacities `c ∘ f.edgeEquiv.symm` on `H`. This file proves that this relabelling preserves the
-weighted cut function, the aggregated pair capacities, and the flows of the bidirected network
-together with their values and maximality.
+flows of the bidirected network together with their values and maximality.
 
 `Graph.Iso.edgeCutCapacity_map` has exactly the shape of the set-function compatibility hypothesis
 of the generic relabelling results along a vertex equivalence, such as
@@ -30,81 +29,34 @@ which retains edge identities, so parallel edges and loops are transported indiv
 
 ## Main definitions
 
-* `Graph.Iso.bidirectedHomEquiv`: the equivalence of bidirected arrows induced by an isomorphism.
 * `Graph.Iso.assignmentEquiv`: transport of assignments on the bidirected arrow families.
 * `Graph.Iso.flowEquiv`: transport of `s`–`t` flows of a weighted multigraph.
 
 ## Main results
 
-* `Graph.Iso.edgeCutCapacity_map`: an isomorphism preserves weighted cut capacities.
-* `Graph.Iso.pairCapacity_map`: an isomorphism preserves the aggregated pair capacities.
+* `Graph.Iso.assignmentEquiv_refl`, `Graph.Iso.assignmentEquiv_trans`, and
+  `Graph.Iso.assignmentEquiv_symm`: assignment transport is functorial.
+* `Graph.Iso.flowEquiv_refl_toFun`, `Graph.Iso.flowEquiv_trans_toFun`, and
+  `Graph.Iso.flowEquiv_symm_toFun`: the corresponding characterization laws for flows.
 * `Graph.Iso.val_flowEquiv`, `Graph.Iso.isMaximum_flowEquiv_iff`: flow transport preserves the
   value and maximality of a flow.
 -/
 
 public section
 
-open Finset TauCeti
+open TauCeti
 
-universe u v u' v' w w'
+universe u v u' v' u'' v'' w w'
 
 namespace Graph
 
 namespace Iso
 
 variable {α : Type u} {β : Type v} {α' : Type u'} {β' : Type v'} {K : Type w}
-variable {G : Graph α β} {H : Graph α' β'}
+variable {α'' : Type u''} {β'' : Type v''}
+variable {G : Graph α β} {H : Graph α' β'} {I : Graph α'' β''}
 
-/-! ### Cut capacities -/
-
-/-- A graph isomorphism preserves the capacity of every cut once the edge capacities are
-relabelled along it. -/
-theorem edgeCutCapacity_map [Fintype E(G)] [Fintype E(H)] [AddCommMonoid K] (f : Iso G H)
-    (c : E(G) → K) (S : Finset V(G)) :
-    H.edgeCutCapacity (c ∘ f.edgeEquiv.symm) (S.map f.vertexEquiv.toEmbedding) =
-      G.edgeCutCapacity c S := by
-  classical
-  rw [edgeCutCapacity_def, edgeCutCapacity_def, coe_map, Equiv.coe_toEmbedding,
-    ← mapVertexSet_image_val]
-  exact (Fintype.sum_equiv f.edgeEquiv _ _ fun e ↦ by
-    simp [f.edgeEquiv_mem_edgeCut_mapVertexSet_iff]).symm
-
-/-- A graph isomorphism preserves the aggregated capacity of every unordered pair of actual
-vertices once the edge capacities are relabelled along it. -/
-theorem pairCapacity_map [Fintype E(G)] [Fintype E(H)] [AddCommMonoid K] (f : Iso G H)
-    (c : E(G) → K) (p : Sym2 V(G)) :
-    H.pairCapacity (c ∘ f.edgeEquiv.symm) (p.map f.vertexEquiv) = G.pairCapacity c p := by
-  classical
-  rw [pairCapacity_def, pairCapacity_def]
-  exact (Fintype.sum_equiv f.edgeEquiv _ _ fun e ↦ by
-    simp [Sym2.isDiag_map f.vertexEquiv.injective,
-      (Sym2.map.injective f.vertexEquiv.injective).eq_iff]).symm
-
-/-! ### Bidirected arrows and assignments -/
-
-/-- The equivalence between bidirected arrows induced by a graph isomorphism. It sends an arrow
-to the arrow of the corresponding edge between the corresponding vertices. -/
-def bidirectedHomEquiv (f : Iso G H) (x y : V(G)) :
-    G.BidirectedHom x y ≃ H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y) where
-  toFun := f.mapHom
-  invFun b := ⟨f.edgeEquiv.symm ⟨b.1, b.2.edge_mem⟩,
-    (f.map_isLink_iff (f.edgeEquiv.symm ⟨b.1, b.2.edge_mem⟩) x y).1 (by simpa using b.2)⟩
-  left_inv a := Subtype.ext (by simp)
-  right_inv b := Subtype.ext (by simp)
-
-/-- The isomorphism of bidirected arrows is arrow transport along the graph isomorphism. -/
-@[simp]
-theorem bidirectedHomEquiv_apply (f : Iso G H) {x y : V(G)} (a : G.BidirectedHom x y) :
-    f.bidirectedHomEquiv x y a = f.mapHom a :=
-  (rfl)
-
-/-- The underlying edge of the inverse image of a bidirected arrow is the inverse image of its
-edge. -/
-@[simp]
-theorem bidirectedHomEquiv_symm_apply_fst (f : Iso G H) {x y : V(G)}
-    (b : H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y)) :
-    ((f.bidirectedHomEquiv x y).symm b).1 = f.edgeEquiv.symm ⟨b.1, b.2.edge_mem⟩ :=
-  (rfl)
+/-! ### Assignments -/
 
 /-- An assignment on the bidirected arrows takes equal values on arrows with the same edge and
 endpoints, even when the endpoints are only propositionally equal. -/
@@ -149,6 +101,32 @@ theorem assignmentEquiv_symm_apply (f : Iso G H) {R : Type w'}
     (ψ : Assignment H.BidirectedHom R) {x y : V(G)} (a : G.BidirectedHom x y) :
     (f.assignmentEquiv R).symm ψ a = ψ (f.mapHom a) :=
   (rfl)
+
+/-- Inverse assignment transport is transport along the inverse graph isomorphism. -/
+theorem assignmentEquiv_symm (f : Iso G H) (R : Type w') :
+    (f.assignmentEquiv R).symm = f.symm.assignmentEquiv R := by
+  apply Equiv.ext
+  intro ψ
+  funext x y a
+  exact apply_eq_of_fst_eq ψ _ _ (by simp) (by simp) (by simp)
+
+/-- Transport along the identity graph isomorphism is the identity on assignments. -/
+@[simp]
+theorem assignmentEquiv_refl (G : Graph α β) (R : Type w') :
+    (Iso.refl G).assignmentEquiv R = Equiv.refl (Assignment G.BidirectedHom R) := by
+  apply Equiv.ext
+  intro φ
+  funext x y a
+  exact apply_eq_of_fst_eq φ _ a (by simp) (by simp) (by simp)
+
+/-- Transporting assignments along a composite is the composite of the assignment transports. -/
+@[simp]
+theorem assignmentEquiv_trans (f : Iso G H) (g : Iso H I) (R : Type w') :
+    (f.trans g).assignmentEquiv R = (f.assignmentEquiv R).trans (g.assignmentEquiv R) := by
+  apply Equiv.ext
+  intro φ
+  funext x y a
+  exact apply_eq_of_fst_eq φ _ _ (by simp) (by simp) (by simp)
 
 /-- Assignment transport preserves the zero assignment. -/
 @[simp]
@@ -218,8 +196,11 @@ def flowEquiv (f : Iso G H) (c : E(G) → K) (s t : V(G)) :
   invFun ψ :=
     { toFun := (f.assignmentEquiv K).symm ψ.toFun
       mem_Icc :=
-        ⟨f.assignmentEquiv_le_assignmentEquiv_iff.1 (by simpa using ψ.mem_Icc.1),
-          f.assignmentEquiv_le_assignmentEquiv_iff.1 (by simpa using ψ.mem_Icc.2)⟩
+        ⟨f.assignmentEquiv_le_assignmentEquiv_iff.1
+            (by simpa only [assignmentEquiv_zero, Equiv.apply_symm_apply] using ψ.mem_Icc.1),
+          f.assignmentEquiv_le_assignmentEquiv_iff.1
+            (by simpa only [Equiv.apply_symm_apply, assignmentEquiv_bidirectedCapacity]
+              using ψ.mem_Icc.2)⟩
       conserve := fun x hxs hxt ↦ by
         rw [excessAt_assignmentEquiv_symm]
         exact ψ.conserve _ (f.vertexEquiv.injective.ne hxs) (f.vertexEquiv.injective.ne hxt)
@@ -242,6 +223,32 @@ theorem flowEquiv_symm_apply_toFun (f : Iso G H) {c : E(G) → K} {s t : V(G)}
     (ψ : Flow (H.bidirectedCapacity (c ∘ f.edgeEquiv.symm)) (f.vertexEquiv s) (f.vertexEquiv t)) :
     ((f.flowEquiv c s t).symm ψ).toFun = (f.assignmentEquiv K).symm ψ.toFun :=
   (rfl)
+
+/-- The assignment of a flow transported along the identity graph isomorphism is unchanged. -/
+theorem flowEquiv_refl_toFun (c : E(G) → K) (s t : V(G))
+    (φ : Flow (G.bidirectedCapacity c) s t) :
+    ((Iso.refl G).flowEquiv c s t φ).toFun = φ.toFun := by
+  rw [flowEquiv_apply_toFun, assignmentEquiv_refl]
+  rfl
+
+/-- The assignment transported along a composite isomorphism is obtained by applying the two flow
+transports in order. -/
+theorem flowEquiv_trans_toFun [Fintype V(I)] [∀ x y, Fintype (I.BidirectedHom x y)]
+    (f : Iso G H) (g : Iso H I) (c : E(G) → K) (s t : V(G))
+    (φ : Flow (G.bidirectedCapacity c) s t) :
+    ((f.trans g).flowEquiv c s t φ).toFun =
+      (g.flowEquiv (c ∘ f.edgeEquiv.symm) (f.vertexEquiv s) (f.vertexEquiv t)
+        (f.flowEquiv c s t φ)).toFun := by
+  simp only [flowEquiv_apply_toFun, assignmentEquiv_trans, Equiv.trans_apply]
+
+/-- Pulling back a flow is assignmentwise the same as transporting it along the inverse graph
+isomorphism, with the already relabelled capacities and terminals. -/
+theorem flowEquiv_symm_toFun (f : Iso G H) {c : E(G) → K} {s t : V(G)}
+    (ψ : Flow (H.bidirectedCapacity (c ∘ f.edgeEquiv.symm))
+      (f.vertexEquiv s) (f.vertexEquiv t)) :
+    ((f.flowEquiv c s t).symm ψ).toFun =
+      (f.symm.flowEquiv (c ∘ f.edgeEquiv.symm) (f.vertexEquiv s) (f.vertexEquiv t) ψ).toFun := by
+  rw [flowEquiv_symm_apply_toFun, assignmentEquiv_symm, flowEquiv_apply_toFun]
 
 /-- Flow transport preserves the value of a flow. -/
 @[simp]
