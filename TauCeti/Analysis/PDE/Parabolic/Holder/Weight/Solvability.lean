@@ -45,6 +45,8 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 * `eq_euclideanInitialDataCLE_symm_iff_exp_mul`: `u = exp ℓ * v` solves the weighted Cauchy
   problem if and only if `v` is given by the inverse initial-data isomorphism of the conjugated
   operator.
+* `existsUnique_exp_mul`: the weighted Cauchy problem has exactly one solution in the weighted
+  class.
 * `existsUnique_one_add_exp_mul`: on the line, the Cauchy problem has exactly one solution in the
   class `u / (1 + exp x) ∈ C_b^{2+α,1+α/2}`.
 * `exists_norm_euclideanInitialDataCLE_weighted_symm_le`: the uniform bound on the weighted
@@ -116,6 +118,43 @@ theorem eq_euclideanInitialDataCLE_symm_iff_exp_mul {ℓ : EuclideanSpace ℝ ι
   refine and_congr_right' ⟨fun h x ↦ by rw [hu₀, h], fun h ↦ CkHolderSpace.ext fun x ↦ ?_⟩
   exact mul_left_cancel₀ (exp_pos (ℓ x)).ne' ((hu₀ x).symm.trans (h x))
 
+/-- **Unique solvability of the weighted Cauchy problem.** Let `w = exp ℓ` be a spatial weight as
+in `eq_euclideanInitialDataCLE_symm_iff_exp_mul`. For uniformly elliptic `a` and data
+`f ∈ C_b^{α,α/2}`, `g ∈ C_b^{2,α}`, there is exactly one `v ∈ C_b^{2+α,1+α/2}` such that `u = w v`
+is a classical solution of `P u = w f`, `u(·, 0) = w g`. -/
+theorem existsUnique_exp_mul (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    {ℓ : EuclideanSpace ℝ ι → ℝ} (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    ∃! v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
+      ∀ u : EuclideanSpace ℝ ι → ℝ → ℝ,
+        (∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s)) →
+        (∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u x) (Icc 0 T) t -
+          (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+              (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+            ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+            c (slabMk x t) * u x t) = exp (ℓ x) * f (slabMk x t)) ∧
+          ∀ x, u x 0 = exp (ℓ x) * g x := by
+  have key (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT)
+      (u : EuclideanSpace ℝ ι → ℝ → ℝ)
+      (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s)) :=
+    eq_euclideanInitialDataCLE_symm_iff_exp_mul (hα₀ := hα₀) (hα₁ := hα₁) (b := b) (c := c)
+      (ha := ha) hℓ hdℓ hd2ℓ v hu f g
+  refine ⟨_, fun u hu ↦ (key _ u hu).1 rfl, fun v hv ↦ ?_⟩
+  have hext (y : EuclideanSpace ℝ ι) (s : Icc (0 : ℝ) T) :
+      exp (ℓ y) * timeExtension hT.le v y s = exp (ℓ y) * v (slabMk y s) := by
+    rw [timeExtension_of_mem]
+  exact (key v (fun y s ↦ exp (ℓ y) * timeExtension hT.le v y s) hext).2
+    (hv (fun y s ↦ exp (ℓ y) * timeExtension hT.le v y s) hext)
+
 end Solution
 
 /-! ### The weight `1 + exp x` on the line -/
@@ -150,22 +189,7 @@ theorem existsUnique_one_add_exp_mul (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (
     contDiff_log_one_add_exp_and_exists_fderiv_eq (ι := ι) (α := α) hα₁.le
   have hw (x : EuclideanSpace ℝ ι) : exp (log (1 + exp (x default))) = 1 + exp (x default) :=
     exp_log (by positivity)
-  set e := euclideanInitialDataCLE hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
-    (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha
-  have key (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT)
-      (u : EuclideanSpace ℝ ι → ℝ → ℝ)
-      (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = (1 + exp (y default)) * v (slabMk y s)) :=
-    eq_euclideanInitialDataCLE_symm_iff_exp_mul (hα₀ := hα₀) (hα₁ := hα₁) (b := b) (c := c)
-      (ha := ha) (hℓ.of_le le_top) hdℓ hd2ℓ v
-      (u := u) (fun y s ↦ by rw [hw]; exact hu y s) f g
-  simp only [hw] at key
-  refine ⟨e.symm (f, g), fun u hu ↦ (key _ u hu).1 rfl, fun v hv ↦ ?_⟩
-  have hext (y : EuclideanSpace ℝ ι) (s : Icc (0 : ℝ) T) :
-      (1 + exp (y default)) * timeExtension hT.le v y s =
-        (1 + exp (y default)) * v (slabMk y s) := by
-    rw [timeExtension_of_mem]
-  exact (key v (fun y s ↦ (1 + exp (y default)) * timeExtension hT.le v y s) hext).2
-    (hv (fun y s ↦ (1 + exp (y default)) * timeExtension hT.le v y s) hext)
+  simpa only [hw] using existsUnique_exp_mul hα₀ hα₁ hT b c ha (hℓ.of_le le_top) hdℓ hd2ℓ f g
 
 end Line
 
@@ -175,27 +199,36 @@ section Estimates
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The weighted coefficients are bounded by `K (1 + 3 n L + n² (L + L²))` when the coefficients
-are bounded by `K` and the derivatives of the logarithm of the weight by `L`, where `n` is the
-dimension. -/
-private theorem norm_weightedCoeff_le {t₀ t₁ : ℝ} {K L : ℝ}
+variable (ι) in
+/-- The bound `K (1 + 3 n L + n² (L + L²))` on the coefficients of the conjugated operator, where
+`K` bounds the coefficients, `L` bounds the derivatives of the logarithm of the weight and `n` is
+the dimension. -/
+private def weightedCoeffBound (K L : ℝ≥0) : ℝ≥0 :=
+  K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L))
+
+/-- The coefficients `aⁱʲ` and the weighted coefficients are bounded by `weightedCoeffBound ι K L`
+when the coefficients are bounded by `K` and the derivatives of the logarithm of the weight by
+`L`. -/
+private theorem norm_weightedCoeff_le {t₀ t₁ : ℝ} {K L : ℝ≥0}
     {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
     {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
     {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
     {dℓ : ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
     {d2ℓ : ι → ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
-    (hL : 0 ≤ L) (hak : ∀ i j, ‖a i j‖ ≤ K) (hbk : ∀ i, ‖b i‖ ≤ K) (hck : ‖c‖ ≤ K)
+    (hak : ∀ i j, ‖a i j‖ ≤ K) (hbk : ∀ i, ‖b i‖ ≤ K) (hck : ‖c‖ ≤ K)
     (hdℓ : ∀ i, ‖dℓ i‖ ≤ L) (hd2ℓ : ∀ i j, ‖d2ℓ i j‖ ≤ L) :
-    (∀ i, ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤
-      K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L))) ∧
-    ‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ ≤
-      K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L)) := by
-  have hK : 0 ≤ K := (norm_nonneg _).trans hck
+    (∀ i j, ‖a i j‖ ≤ weightedCoeffBound ι K L) ∧
+      (∀ i, ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤ weightedCoeffBound ι K L) ∧
+      ‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ ≤ weightedCoeffBound ι K L := by
+  simp only [weightedCoeffBound, NNReal.coe_mul, NNReal.coe_add, NNReal.coe_one, NNReal.coe_pow,
+    NNReal.coe_natCast, NNReal.coe_ofNat]
+  have hK : (0 : ℝ) ≤ K := K.2
+  have hL : (0 : ℝ) ≤ L := L.2
   have hn : (0 : ℝ) ≤ Fintype.card ι := Nat.cast_nonneg _
   have hb (i : ι) : ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤
       K + Fintype.card ι * (2 * K * L) := by
     refine (norm_euclideanWeightedFirstOrderCoeff_le a b dℓ i).trans (add_le_add (hbk i) ?_)
-    calc ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ ≤ ∑ _j : ι, 2 * K * L :=
+    calc ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ ≤ ∑ _j : ι, 2 * (K : ℝ) * L :=
           Finset.sum_le_sum fun j _ ↦ by
             nlinarith [hak i j, hak j i, hdℓ j, norm_nonneg (dℓ j), norm_nonneg (a i j)]
       _ = _ := by simp
@@ -204,7 +237,7 @@ private theorem norm_weightedCoeff_le {t₀ t₁ : ℝ} {K L : ℝ}
     refine (norm_euclideanWeightedZerothOrderCoeff_le a b c dℓ d2ℓ).trans
       (add_le_add (add_le_add hck ?_) ?_)
     · calc ∑ i, ∑ j, ‖a i j‖ * (‖d2ℓ i j‖ + ‖dℓ i‖ * ‖dℓ j‖) ≤
-            ∑ _i : ι, ∑ _j : ι, K * (L + L * L) :=
+            ∑ _i : ι, ∑ _j : ι, (K : ℝ) * (L + L * L) :=
             Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ by
               gcongr
               · exact hak i j
@@ -212,18 +245,15 @@ private theorem norm_weightedCoeff_le {t₀ t₁ : ℝ} {K L : ℝ}
               · exact hdℓ i
               · exact hdℓ j
         _ = _ := by simp [sq]; ring
-    · calc ∑ i, ‖b i‖ * ‖dℓ i‖ ≤ ∑ _i : ι, K * L :=
+    · calc ∑ i, ‖b i‖ * ‖dℓ i‖ ≤ ∑ _i : ι, (K : ℝ) * L :=
             Finset.sum_le_sum fun i _ ↦ by gcongr; exacts [hbk i, hdℓ i]
         _ = _ := by simp
-  refine ⟨fun i ↦ (hb i).trans ?_, hc.trans ?_⟩ <;> nlinarith [mul_nonneg hK hL,
-    mul_nonneg (mul_nonneg hK hL) hL, mul_nonneg hn (mul_nonneg hK hL),
+  refine ⟨fun i j ↦ (hak i j).trans (le_mul_of_one_le_right hK ?_), fun i ↦ (hb i).trans ?_,
+    hc.trans ?_⟩
+  · exact le_add_of_le_of_nonneg (le_add_of_nonneg_right (by positivity)) (by positivity)
+  all_goals nlinarith [mul_nonneg hK hL, mul_nonneg (mul_nonneg hK hL) hL,
+    mul_nonneg hn (mul_nonneg hK hL),
     mul_nonneg (mul_nonneg hn hn) (mul_nonneg hK (add_nonneg hL (mul_nonneg hL hL)))]
-
-/-- The constant `K (1 + 3 n L + n² (L + L²))` of `norm_weightedCoeff_le` is at least `K`. -/
-private theorem le_mul_one_add_card_mul {K L : ℝ} (hK : 0 ≤ K) (hL : 0 ≤ L) :
-    K ≤ K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L)) :=
-  le_mul_of_one_le_right hK
-    (le_add_of_le_of_nonneg (le_add_of_nonneg_right (by positivity)) (by positivity))
 
 /-- For a fixed weight whose logarithm has derivatives bounded by `L`, the differences of the
 weighted coefficients of two coefficient triples are controlled by the differences of the
@@ -289,15 +319,11 @@ theorem exists_norm_euclideanInitialDataCLE_weighted_symm_le (hα₀ : 0 < α) (
         ‖(euclideanInitialDataCLE hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
           (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ)
             ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖ ≤ C := by
-  set K' : ℝ≥0 := K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L))
-  have hK' : (K' : ℝ) = K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L)) := by
-    push_cast [K']; rfl
-  have hKK' : (K : ℝ) ≤ K' := hK' ▸ le_mul_one_add_card_mul K.2 L.2
-  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K' T₀
+  obtain ⟨C, hC, hest⟩ :=
+    exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam (weightedCoeffBound ι K L) T₀
   refine ⟨C, hC, fun T hT hTT₀ a b c dℓ d2ℓ ha hak hbk hck hdℓ hd2ℓ ↦ ?_⟩
-  obtain ⟨hb, hc⟩ := norm_weightedCoeff_le L.2 hak hbk hck hdℓ hd2ℓ
-  exact hest T hT hTT₀ a _ _ ha (fun i j ↦ (hak i j).trans hKK') (fun i ↦ (hb i).trans_eq hK'.symm)
-    (hc.trans_eq hK'.symm)
+  obtain ⟨ha', hb, hc⟩ := norm_weightedCoeff_le hak hbk hck hdℓ hd2ℓ
+  exact hest T hT hTT₀ a _ _ ha ha' hb hc
 
 /-- **Lipschitz dependence of the weighted solution operator on the coefficients.** Under the
 bounds of `exists_norm_euclideanInitialDataCLE_weighted_symm_le`, for a fixed weight the weighted
@@ -325,21 +351,15 @@ theorem exists_norm_euclideanInitialDataCLE_weighted_symm_sub_le (hα₀ : 0 < �
             (euclideanWeightedZerothOrderCoeff a' b' c' dℓ d2ℓ)
               ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
           C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
-  set K' : ℝ≥0 := K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L))
-  have hK' : (K' : ℝ) = K * (1 + 3 * Fintype.card ι * L + Fintype.card ι ^ 2 * (L + L * L)) := by
-    push_cast [K']; rfl
-  have hKK' : (K : ℝ) ≤ K' := hK' ▸ le_mul_one_add_card_mul K.2 L.2
-  obtain ⟨C, hC, hest⟩ :=
-    exists_norm_euclideanInitialDataCLE_symm_sub_le (ι := ι) hα₀ hα₁ hlam K' T₀
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_sub_le (ι := ι) hα₀ hα₁ hlam
+    (weightedCoeffBound ι K L) T₀
   refine ⟨C * (1 + 3 * L + L * L), by positivity, fun T hT hTT₀ a a' b b' c c' dℓ d2ℓ ha ha'
     hak hbk hck hak' hbk' hck' hdℓ hd2ℓ ↦ ?_⟩
-  obtain ⟨hb, hc⟩ := norm_weightedCoeff_le L.2 hak hbk hck hdℓ hd2ℓ
-  obtain ⟨hb', hc'⟩ := norm_weightedCoeff_le L.2 hak' hbk' hck' hdℓ hd2ℓ
+  obtain ⟨hak₁, hb, hc⟩ := norm_weightedCoeff_le hak hbk hck hdℓ hd2ℓ
+  obtain ⟨hak₁', hb', hc'⟩ := norm_weightedCoeff_le hak' hbk' hck' hdℓ hd2ℓ
   obtain ⟨hbw, hcw⟩ := norm_weightedCoeff_sub_le (a := a) (a' := a') (b := b) (b' := b') (c := c)
     (c' := c') L.2 hdℓ hd2ℓ
-  refine (hest T hT hTT₀ a a' _ _ _ _ ha ha' (fun i j ↦ (hak i j).trans hKK')
-    (fun i ↦ (hb i).trans_eq hK'.symm) (hc.trans_eq hK'.symm) (fun i j ↦ (hak' i j).trans hKK')
-    (fun i ↦ (hb' i).trans_eq hK'.symm) (hc'.trans_eq hK'.symm)).trans ?_
+  refine (hest T hT hTT₀ a a' _ _ _ _ ha ha' hak₁ hb hc hak₁' hb' hc').trans ?_
   set A := ∑ i, ∑ j, ‖a i j - a' i j‖
   set B := ∑ i, ‖b i - b' i‖
   have hA : 0 ≤ A := Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦ norm_nonneg _
