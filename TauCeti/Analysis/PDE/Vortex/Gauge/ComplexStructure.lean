@@ -46,10 +46,10 @@ Consequences:
 
 * **The kernel is a complex vector space.** The `C²` square-integrable kernel of `L_x`
   (`TauCeti.Vortex.gaugeFixedKernel`) is preserved by `J`, which restricts to an almost complex
-  structure on the kernel (`TauCeti.Vortex.gaugeFixedKernelComplexStructure`), making it a complex
-  vector space by `TauCeti.AlmostComplexStructure.complexModule`. Weak solutions
+  structure on the kernel (`TauCeti.Vortex.gaugeFixedKernelAlmostComplexStructure`), making it a
+  complex vector space by `TauCeti.AlmostComplexStructure.complexModule`. Weak solutions
   of `L_x y = f` are carried to weak solutions of `L_x (J y) = J' f`
-  (`TauCeti.Vortex.integral_inner_variationComplexStructure_gaugeFixedAdjoint_eq`).
+  (`TauCeti.Vortex.integral_inner_variationComplexStructure_gaugeFixedAdjoint_eq_integral_inner`).
 * **The principal-part map is complex linear.** The section variation of `J y` is
   `δα(J y) = i δα(y)` (`TauCeti.Vortex.sectionValue_variationComplexStructure`), so the principal
   parts of `δα / α` at the zeros of `α` are multiplied by `i`
@@ -61,11 +61,13 @@ Consequences:
   By the above, this identification respects the complex structures.
 * **The Sobolev realization is complex linear.** On `H¹(ℂ)⁴`, `J` acts by the same signed
   permutation of coordinates, an almost complex structure
-  (`TauCeti.Vortex.sobolevVariationComplexStructure`), and the
+  (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure`), and the
   realization `TauCeti.Vortex.sobolevGaugeFixedOperator a : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` intertwines it with
-  `J'` (`TauCeti.Vortex.sobolevGaugeFixedOperator_sobolevVariationComplexStructure`). In
+  `J'` (`TauCeti.Vortex.sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure`). In
   particular its kernel is preserved by `J`
-  (`TauCeti.Vortex.sobolevVariationComplexStructure_mem_ker_sobolevGaugeFixedOperator`).
+  (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure_mem_ker_sobolevGaugeFixedOperator`), and
+  `J` restricts to an almost complex structure on that kernel
+  (`TauCeti.Vortex.sobolevGaugeFixedKernelAlmostComplexStructure`).
 
 These are the inputs for orienting the determinant line of the vortex deformation operator by
 the complex orientation of its kernel.
@@ -231,7 +233,7 @@ theorem sectionValue_variationComplexStructure (y : ℂ → EuclideanSpace ℝ (
 /-- **The first-order part of `L_x` is complex linear.** On the gradients `g` of the coordinates
 of a variation, `J` acts by `(g₀, g₁, g₂, g₃) ↦ (-g₁, g₀, -g₃, g₂)`, and the first-order part
 intertwines this with `J'`. -/
-theorem gaugeFixedFirstOrder_complexStructure (g : Fin 4 → ℂ) :
+theorem gaugeFixedFirstOrder_eq_targetComplexStructure (g : Fin 4 → ℂ) :
     gaugeFixedFirstOrder ![-g 1, g 0, -g 3, g 2] =
       targetComplexStructure (gaugeFixedFirstOrder g) := by
   ext i; fin_cases i <;> simp [inner_neg_left] <;> ring
@@ -277,7 +279,7 @@ theorem gaugeFixedAdjointSymbol_targetComplexStructure (d : ℂ →L[ℝ] ℝ)
 
 /-- Pairing `J u` with `L_x* η` is pairing `u` with `-L_x* (J' η)`, pointwise and hence after
 integration. -/
-theorem integral_inner_variationComplexStructure_gaugeFixedAdjoint
+theorem integral_inner_variationComplexStructure_gaugeFixedAdjoint_eq_neg_integral
     (x u η : ℂ → EuclideanSpace ℝ (Fin 4)) :
     ∫ z, ⟪variationComplexStructure (u z), gaugeFixedAdjoint x η z⟫ =
       -∫ z, ⟪u z, gaugeFixedAdjoint x (fun w ↦ targetComplexStructure (η w)) z⟫ := by
@@ -287,7 +289,7 @@ theorem integral_inner_variationComplexStructure_gaugeFixedAdjoint
 
 /-- **`J` carries weak solutions to weak solutions.** If `y` solves `L_x y = f` weakly against
 `Cⁿ` compactly supported test fields, then `J y` solves `L_x (J y) = J' f` weakly. -/
-theorem integral_inner_variationComplexStructure_gaugeFixedAdjoint_eq
+theorem integral_inner_variationComplexStructure_gaugeFixedAdjoint_eq_integral_inner
     {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop ℕ∞}
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ n η → HasCompactSupport η →
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫)
@@ -298,7 +300,7 @@ theorem integral_inner_variationComplexStructure_gaugeFixedAdjoint_eq
     targetComplexStructure.contDiff.comp hη
   have hJηc : HasCompactSupport fun w ↦ targetComplexStructure (η w) :=
     hηc.comp_left (map_zero _)
-  rw [integral_inner_variationComplexStructure_gaugeFixedAdjoint, hweak _ hJη hJηc,
+  rw [integral_inner_variationComplexStructure_gaugeFixedAdjoint_eq_neg_integral, hweak _ hJη hJηc,
     ← integral_neg]
   congr 1 with z
   rw [inner_targetComplexStructure_left]
@@ -316,7 +318,7 @@ theorem variationComplexStructure_comp_mem_gaugeFixedKernel {x y : ℂ → Eucli
 /-- **The complex structure of the kernel of `L_x`.** The restriction of `J` to the `C²`
 square-integrable kernel of the gauge-fixed operator, an almost complex structure; through
 `TauCeti.AlmostComplexStructure.complexModule` it makes the kernel a complex vector space. -/
-def gaugeFixedKernelComplexStructure (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+def gaugeFixedKernelAlmostComplexStructure (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     AlmostComplexStructure (gaugeFixedKernel x) where
   toLinearMap := (variationComplexStructure.toLinearEquiv.toLinearMap.compLeft ℂ).restrict
     fun _ ↦ variationComplexStructure_comp_mem_gaugeFixedKernel
@@ -325,9 +327,9 @@ def gaugeFixedKernelComplexStructure (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
 
 /-- The complex structure of the kernel acts by `J` pointwise. -/
 @[simp]
-theorem coe_gaugeFixedKernelComplexStructure_apply (x : ℂ → EuclideanSpace ℝ (Fin 4))
+theorem coe_gaugeFixedKernelAlmostComplexStructure_apply (x : ℂ → EuclideanSpace ℝ (Fin 4))
     (y : gaugeFixedKernel x) (z : ℂ) :
-    (gaugeFixedKernelComplexStructure x y : ℂ → EuclideanSpace ℝ (Fin 4)) z =
+    (gaugeFixedKernelAlmostComplexStructure x y : ℂ → EuclideanSpace ℝ (Fin 4)) z =
       variationComplexStructure ((y : ℂ → EuclideanSpace ℝ (Fin 4)) z) :=
   (rfl)
 
@@ -347,11 +349,9 @@ theorem principalPart_variationComplexStructure {n : ℂ → ℕ}
     (hy : ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) {z : ℂ} {j : ℕ}
     (hj : j < n z) :
     principalPart x ν (fun w ↦ variationComplexStructure (y w)) z j =
-      I * principalPart x ν y z j := by
-  rw [principalPart_eq_iteratedDeriv hα hν (G := fun w ↦ I * G w) (H := fun w ↦ I * H w)
-      (continuous_const.mul hG) ((differentiable_const _).mul hH)
-      (fun w ↦ by rw [sectionValue_variationComplexStructure, hy w]; ring) hj,
-    principalPart_eq_iteratedDeriv hα hν hG hH hy hj, iteratedDeriv_const_mul_field]
+      I * principalPart x ν y z j :=
+  principalPart_eq_mul_of_sectionValue_eq_mul hα hν hG hH hy I
+    (sectionValue_variationComplexStructure y) hj
 
 /-- **The principal-part map is complex linear.** On a real vector space `V` of variations whose
 section variations decompose as `δα = α G + e^ν H`, the principal-part map sends `J y` to `i`
@@ -378,38 +378,40 @@ local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens 
 
 /-- The almost complex structure `J` on `H¹(ℂ)⁴`, the domain of `sobolevGaugeFixedOperator`: the
 signed permutation `(y₀, y₁, y₂, y₃) ↦ (-y₁, y₀, -y₃, y₂)` of the four coordinates. -/
-def sobolevVariationComplexStructure :
+def sobolevVariationAlmostComplexStructure :
     AlmostComplexStructure (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) where
   toLinearMap := LinearMap.pi (R := ℝ) (φ := fun _ : Fin 4 ↦ W1p (volume : Measure ℂ) ⊤ 2)
     ![-LinearMap.proj 1, LinearMap.proj 0, -LinearMap.proj 3, LinearMap.proj 2]
   square_neg := LinearMap.ext fun y ↦ by funext j; fin_cases j <;> simp
 
 /-- The coordinates of `J y` in `H¹(ℂ)⁴`. -/
-theorem sobolevVariationComplexStructure_apply (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevVariationComplexStructure y = ![-y 1, y 0, -y 3, y 2] := by
+theorem sobolevVariationAlmostComplexStructure_apply (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevVariationAlmostComplexStructure y = ![-y 1, y 0, -y 3, y 2] := by
   funext j; fin_cases j <;> rfl
 
-@[simp] theorem sobolevVariationComplexStructure_apply_zero
-    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : sobolevVariationComplexStructure y 0 = -y 1 :=
+@[simp] theorem sobolevVariationAlmostComplexStructure_apply_zero
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevVariationAlmostComplexStructure y 0 = -y 1 :=
   (rfl)
 
-@[simp] theorem sobolevVariationComplexStructure_apply_one
-    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : sobolevVariationComplexStructure y 1 = y 0 :=
+@[simp] theorem sobolevVariationAlmostComplexStructure_apply_one
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : sobolevVariationAlmostComplexStructure y 1 = y 0 :=
   (rfl)
 
-@[simp] theorem sobolevVariationComplexStructure_apply_two
-    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : sobolevVariationComplexStructure y 2 = -y 3 :=
+@[simp] theorem sobolevVariationAlmostComplexStructure_apply_two
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevVariationAlmostComplexStructure y 2 = -y 3 :=
   (rfl)
 
-@[simp] theorem sobolevVariationComplexStructure_apply_three
-    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : sobolevVariationComplexStructure y 3 = y 2 :=
+@[simp] theorem sobolevVariationAlmostComplexStructure_apply_three
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : sobolevVariationAlmostComplexStructure y 3 = y 2 :=
   (rfl)
 
 /-- **The Sobolev realization of `L_x` is complex linear.** For every `L∞` coefficient class `a`,
 the realization `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` sends `J y` to `J' (L_a y)`. -/
-theorem sobolevGaugeFixedOperator_sobolevVariationComplexStructure
+theorem sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure
     (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevGaugeFixedOperator a (sobolevVariationComplexStructure y) =
+    sobolevGaugeFixedOperator a (sobolevVariationAlmostComplexStructure y) =
       targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp
         (sobolevGaugeFixedOperator a y) := by
   refine Lp.ext ?_
@@ -417,34 +419,51 @@ theorem sobolevGaugeFixedOperator_sobolevVariationComplexStructure
     rw [W1p.gradient_neg]; exact Lp.coeFn_neg _
   have hv (j : Fin 4) : W1p.value (-y j) =ᵐ[μ⊤] fun z ↦ -W1p.value (y j) z := by
     rw [W1p.value_neg]; exact Lp.coeFn_neg _
-  filter_upwards [sobolevGaugeFixedOperator_apply_ae a (sobolevVariationComplexStructure y),
+  filter_upwards [sobolevGaugeFixedOperator_apply_ae a (sobolevVariationAlmostComplexStructure y),
     sobolevGaugeFixedOperator_apply_ae a y,
     ContinuousLinearMap.coeFn_compLp
       targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
       (sobolevGaugeFixedOperator a y),
     hg 1, hg 3, hv 1, hv 3] with z hJ h hc hg₁ hg₃ hv₁ hv₃
   rw [hJ, hc, h]
-  have hgrad : (fun j ↦ W1p.gradient (sobolevVariationComplexStructure y j) z) =
+  have hgrad : (fun j ↦ W1p.gradient (sobolevVariationAlmostComplexStructure y j) z) =
       ![-W1p.gradient (y 1) z, W1p.gradient (y 0) z, -W1p.gradient (y 3) z,
         W1p.gradient (y 2) z] := by
     funext j; fin_cases j <;> simp [hg₁, hg₃]
-  have hval : (WithLp.toLp 2 fun j ↦ W1p.value (sobolevVariationComplexStructure y j) z :
+  have hval : (WithLp.toLp 2 fun j ↦ W1p.value (sobolevVariationAlmostComplexStructure y j) z :
       EuclideanSpace ℝ (Fin 4)) =
       variationComplexStructure (WithLp.toLp 2 fun j ↦ W1p.value (y j) z) := by
     ext j; fin_cases j <;> simp [hv₁, hv₃]
-  rw [hgrad, hval, gaugeFixedFirstOrder_complexStructure (fun j ↦ W1p.gradient (y j) z),
+  rw [hgrad, hval, gaugeFixedFirstOrder_eq_targetComplexStructure (fun j ↦ W1p.gradient (y j) z),
     gaugeFixedZerothOrder_variationComplexStructure]
   simp
 
 /-- **The kernel of the Sobolev realization is preserved by `J`.** -/
-theorem sobolevVariationComplexStructure_mem_ker_sobolevGaugeFixedOperator
+theorem sobolevVariationAlmostComplexStructure_mem_ker_sobolevGaugeFixedOperator
     {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
     (hy : y ∈ (sobolevGaugeFixedOperator a).ker) :
-    sobolevVariationComplexStructure y ∈ (sobolevGaugeFixedOperator a).ker := by
+    sobolevVariationAlmostComplexStructure y ∈ (sobolevGaugeFixedOperator a).ker := by
   simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hy ⊢
-  rw [sobolevGaugeFixedOperator_sobolevVariationComplexStructure, hy]
+  rw [sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure, hy]
   exact (targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLpₗ (p := 2)
     (μ := μ⊤)).map_zero
+
+/-- **The complex structure of the kernel of the Sobolev realization.** The restriction of `J` to
+the kernel of `sobolevGaugeFixedOperator a`, an almost complex structure; through
+`TauCeti.AlmostComplexStructure.complexModule` it makes the kernel a complex vector space. -/
+def sobolevGaugeFixedKernelAlmostComplexStructure (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    AlmostComplexStructure (sobolevGaugeFixedOperator a).ker :=
+  sobolevVariationAlmostComplexStructure.restrict _ fun _ ↦
+    sobolevVariationAlmostComplexStructure_mem_ker_sobolevGaugeFixedOperator
+
+/-- The complex structure of the kernel of the Sobolev realization acts by `J`. This is not a
+`simp` lemma: the carrier of the kernel mentions `((⊤ : Opens ℂ) : Set ℂ)`, which `simp` rewrites
+to `Set.univ` inside the type, so the left-hand side is not in `simp` normal form. -/
+theorem coe_sobolevGaugeFixedKernelAlmostComplexStructure_apply
+    (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : (sobolevGaugeFixedOperator a).ker) :
+    (sobolevGaugeFixedKernelAlmostComplexStructure a y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) =
+      sobolevVariationAlmostComplexStructure y :=
+  AlmostComplexStructure.coe_restrict_apply _ _ _ y
 
 end Sobolev
 
