@@ -46,28 +46,9 @@ inverse `TauCeti.GradedAlgebra.baseChangeLiftInv` is graded as well.
   homomorphism exhibiting its target as a base change.
 * `TauCeti.GradedAlgebra.bijective_baseChangeLift`: the graded comparison `S ⊗[R] A → B` of a
   graded ring homomorphism exhibiting `B` as the base change of `A` is bijective.
-* `GradedRingHom.mem_of_map_mem`: an injective graded ring homomorphism reflects homogeneity, so
-  the inverse of a bijective one is again graded.
 -/
 
 public section
-
-namespace GradedRingHom
-
-variable {ι A B σ τ : Type*} [Semiring A] [Semiring B] [SetLike σ A] [SetLike τ B]
-  [AddSubmonoidClass σ A] [AddSubmonoidClass τ B] [DecidableEq ι] [AddMonoid ι]
-  {𝒜 : ι → σ} {ℬ : ι → τ} [GradedRing 𝒜] [GradedRing ℬ]
-
-/-- An injective graded ring homomorphism reflects homogeneity: if `f a` lies in `ℬ i`, then `a`
-lies in `𝒜 i`. In particular, the inverse of a bijective graded ring homomorphism is graded. -/
-theorem mem_of_map_mem (f : 𝒜 →+*ᵍ ℬ) (hf : Function.Injective f) {a : A} {i : ι}
-    (ha : f a ∈ ℬ i) : a ∈ 𝒜 i := by
-  -- `f` carries the degree-`i` component of `a` to that of `f a`, which is `f a` itself
-  have h : f (DirectSum.decompose 𝒜 a i) = f a := by
-    rw [f.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ ha]
-  exact hf h ▸ SetLike.coe_mem _
-
-end GradedRingHom
 
 namespace HomogeneousIdeal
 
@@ -209,8 +190,8 @@ variable (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
 exhibiting `B` as the base change of `A`, which is graded as well. -/
 noncomputable def baseChangeLiftInv : ℬ →+*ᵍ (fun n ↦ (𝒜 n).baseChange S) where
   __ := (RingEquiv.ofBijective _ (bijective_baseChangeLift hf)).symm.toRingHom
-  map_mem {n b} hb := (baseChangeLift 𝒜 f hfR).mem_of_map_mem
-    (bijective_baseChangeLift hf).injective (by
+  map_mem {n b} hb := (Graded.map_mem_iff_of_injective (baseChangeLift 𝒜 f hfR)
+    (bijective_baseChangeLift hf).injective).1 (by
       simpa [← RingEquiv.ofBijective_apply _ (bijective_baseChangeLift hf)] using hb)
 
 /-- `baseChangeLiftInv` is a right inverse of the graded comparison map. -/

@@ -20,7 +20,7 @@ weak-star closure of its bidual image lies in the range of the canonical map. Th
 to transfer Banach–Alaoglu compactness back to the weak topology.
 In particular, in a reflexive seminormed space over a proper field, where the canonical map is
 surjective, every norm-bounded set has weakly compact closure
-(`TauCeti.isCompact_closure_toWeakSpace`).
+(`TauCeti.isCompact_closure_toWeakSpace_of_isBounded`).
 
 Finally, every linear map from a vector space into the bidual of a normed space lifts into the
 space on the subspace of vectors sent into the canonical image (`LinearMap.exists_lift_doubleDual`).
@@ -84,7 +84,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
 
 /-- In a reflexive seminormed space over a proper nontrivially normed field, every norm-bounded
 set has weakly compact closure. -/
-theorem isCompact_closure_toWeakSpace
+theorem isCompact_closure_toWeakSpace_of_isBounded
     (hE : Function.Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hs : IsBounded s) :
     IsCompact (closure (toWeakSpace 𝕜 E '' s)) := by
   apply NormedSpace.isCompact_closure_weakSpace_of_isBounded 𝕜 E
