@@ -740,12 +740,8 @@ theorem map_mem_eigenspace_chirality (hσ : ∀ r : ℝ, σ (algebraMap ℝ K r)
     {U : W →ₛₗ[σ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w)) {ε : K} {w : W}
     (hw : w ∈ Module.End.eigenspace (ρ (chirality Q o)) ε) :
     U w ∈ Module.End.eigenspace (ρ' (chirality Q o)) (σ ε) := by
-  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q) hσ
-    (fun v ↦ LinearMap.ext (hU v)) (chirality Q o)
-  have hw' : U (ρ (chirality Q o) w) = ρ' (chirality Q o) (U w) := by
-    simpa [map_id] using LinearMap.congr_fun h w
   rw [Module.End.mem_eigenspace_iff] at hw ⊢
-  rw [← hw', hw, map_smulₛₗ]
+  rw [← map_apply_of_forall_ιₛₗ hσ hU, hw, map_smulₛₗ]
 
 variable {o} in
 /-- A semilinear map `U` of Clifford modules over the same quadratic space, whose twist `σ` fixes

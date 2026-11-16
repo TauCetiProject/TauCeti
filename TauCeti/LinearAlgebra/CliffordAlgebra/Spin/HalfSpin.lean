@@ -236,9 +236,8 @@ target (`CliffordAlgebra.map_mem_eigenspace_chirality`). -/
 theorem map_coe_halfSpinRep_apply (s : spinGroup Q) {ψ : eigenspace (ρ (chirality Q o)) ε}
     {ψ' : eigenspace (ρ' (chirality Q o)) ε'} (hψ : j ψ = ψ') :
     j (halfSpinRep o ρ ε s ψ) = halfSpinRep o ρ' ε' s ψ' := by
-  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q)
-    (fun r ↦ Complex.conj_ofReal r) (U := j) (fun v ↦ LinearMap.ext (hj v)) s
-  simpa [map_id, ← hψ] using LinearMap.congr_fun h ψ
+  simpa [← hψ] using map_apply_of_forall_ιₛₗ (fun r ↦ Complex.conj_ofReal r) hj
+    (s : CliffordAlgebra Q) ψ
 
 /-- **Charge conjugation of spinors intertwines the half-spin representations of `Spinᶜ(4)` with
 their charge conjugates**: for a conjugate-linear map `j` commuting with Clifford multiplication,
