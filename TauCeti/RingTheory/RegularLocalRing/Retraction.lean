@@ -117,7 +117,8 @@ private theorem spanFinrank_map_add_spanFinrank_le (g : A →ₐ[R] R) :
       · have : gens i ∈ RingHom.ker g := hker ▸ subset_span ⟨i, hi, rfl⟩
         have h0 : g (gens i) = 0 := RingHom.mem_ker.mp this
         simp [h0]
-      · exact subset_span ⟨⟨i - count, by omega⟩, congrArg (g ∘ gens) (Fin.ext (by simp; omega))⟩
+      · exact subset_span
+          ⟨⟨i - count, by omega⟩, congrArg (g ∘ gens) (Fin.ext (by dsimp only; omega))⟩
   have h₂ : (maximalIdeal R).spanFinrank ≤ size - count :=
     (Submodule.FG.spanFinrank_le_iff_exists_fin_generating_family
       (maximalIdeal R).fg_of_isNoetherianRing _).mpr ⟨_, hR⟩
@@ -225,7 +226,8 @@ theorem Algebra.IsSmoothAt.of_isRegularLocalRing {R S : Type*} [CommRing R] [Com
   let Rp := Localization.AtPrime p
   let Sq := Localization.AtPrime q
   let := Localization.AtPrime.algebraOfLiesOver p q
-  let g' : Sq →ₐ[Rp] Rp := { g with commutes' := fun r ↦ congr($hg r) }
+  let g' : Sq →ₐ[Rp] Rp := { g with
+    commutes' := fun r ↦ by rw [Localization.AtPrime.algebraMap_eq p q]; exact congr($hg r) }
   have := g'.flat_of_isRegularLocalRing
   have : Algebra.EssFiniteType Rp Sq := .of_comp R _ _
   have := g'.formallySmooth_residueField_tensor_of_isRegularLocalRing

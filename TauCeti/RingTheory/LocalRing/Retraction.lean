@@ -34,10 +34,8 @@ namespace AlgHom
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
 /-- The structure map of an algebra with a retraction is a local homomorphism. -/
-theorem isLocalHom_algebraMap (g : A →ₐ[R] R) : IsLocalHom (algebraMap R A) := by
-  have : (g : A →+* R).comp (algebraMap R A) = RingHom.id R := by ext; simp
-  have : IsLocalHom ((g : A →+* R).comp (algebraMap R A)) := by rw [this]; infer_instance
-  exact isLocalHom_of_comp _ (g : A →+* R)
+theorem isLocalHom_algebraMap (g : A →ₐ[R] R) : IsLocalHom (algebraMap R A) :=
+  isLocalHom_of_leftInverse g fun r ↦ by simp
 
 variable [IsLocalRing R] [IsLocalRing A]
 
