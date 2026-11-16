@@ -62,11 +62,11 @@ open LinearMap
 
 section Semiring
 
-variable {R : Type u} [CommSemiring R] {E : Type v} [AddCommMonoid E] [Module R E]
+variable {R : Type u} [Semiring R] {E : Type v} [AddCommMonoid E] [Module R E]
 
 /-- If evaluation identifies `N` with its double `E`-dual for a commuting scalar action `S` on `E`,
 then precomposition `(M →ₗ[R] N) → ((N →ₗ[R] E) →ₗ[S] (M →ₗ[R] E))` is bijective for every
-`R`-module `M`. No injectivity or finiteness hypothesis is needed. -/
+`R`-module `M`. No injectivity, finiteness, or commutativity hypothesis is needed. -/
 theorem bijective_lcomp_of_evalEquiv (S : Type*) [Semiring S] [Module S E]
     [SMulCommClass R S E] [SMulCommClass S R E] {M : Type w} [AddCommMonoid M] [Module R M]
     {N : Type z} [AddCommMonoid N] [Module R N]
@@ -78,18 +78,16 @@ theorem bijective_lcomp_of_evalEquiv (S : Type*) [Semiring S] [Module S E]
     rw [he, he]
     exact LinearMap.congr_fun (LinearMap.congr_fun hf φ) m
   · intro g
-    let evalG : M →ₗ[R] ((N →ₗ[R] E) →ₗ[S] E) :=
-      { toFun m :=
-          { toFun φ := g φ m
-            map_add' φ₁ φ₂ := by simp
-            map_smul' s φ := by simp }
-        map_add' m₁ m₂ := LinearMap.ext fun φ ↦ by simp
-        map_smul' r m := LinearMap.ext fun φ ↦ by simp }
-    refine ⟨e.symm.toLinearMap.comp evalG, ?_⟩
+    refine ⟨e.symm.toLinearMap.comp g.flip, ?_⟩
     ext φ m
-    have h := congrArg (fun ψ : (N →ₗ[R] E) →ₗ[S] E ↦ ψ φ) (e.apply_symm_apply (evalG m))
-    simpa only [lcomp_apply, comp_apply, LinearEquiv.coe_coe, he, evalG, coe_mk,
-      AddHom.coe_mk] using h
+    have h := congrArg (fun ψ : (N →ₗ[R] E) →ₗ[S] E ↦ ψ φ) (e.apply_symm_apply (g.flip m))
+    simpa only [lcomp_apply, comp_apply, LinearEquiv.coe_coe, he, flip_apply] using h
+
+end Semiring
+
+section CommSemiring
+
+variable {R : Type u} [CommSemiring R] {E : Type v} [AddCommMonoid E] [Module R E]
 
 /-- If evaluation `N → Hom_R(Hom_R(N, E), E)` is bijective, then precomposition
 `(M →ₗ[R] N) → ((N →ₗ[R] E) →ₗ[R] (M →ₗ[R] E))` is bijective for every `R`-module `M`. -/
@@ -121,7 +119,7 @@ theorem surjective_applyₗ_pi_of_end_eq_smul
   simpa only [LinearMap.applyₗ_apply_apply] using
     hf.trans (by simpa [ψ] using hψ.symm)
 
-end Semiring
+end CommSemiring
 
 variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E]
 

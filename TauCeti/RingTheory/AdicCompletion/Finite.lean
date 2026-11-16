@@ -45,7 +45,6 @@ their restrictions to the module.
   `AdicCompletion.ofTensorProduct` is surjective.
 * `AdicCompletion.finite`: the `I`-adic completion of a finite `R`-module is a finite module over
   `AdicCompletion I R`.
-* `AdicCompletion.small`: the `I`-adic completion of a small module is small.
 
 ## References
 
@@ -125,8 +124,3 @@ of `R`. No Noetherian hypothesis on `R` is needed. -/
 instance AdicCompletion.finite [Module.Finite R M] :
     Module.Finite (AdicCompletion I R) (AdicCompletion I M) :=
   Module.Finite.of_surjective (ofTensorProduct I M) (ofTensorProduct_surjective_of_finite I M)
-
-universe v in
-/-- The `I`-adic completion of a `v`-small module is `v`-small. -/
-instance AdicCompletion.small [Small.{v} M] : Small.{v} (AdicCompletion I M) :=
-  small_of_injective (f := Subtype.val) fun _ _ h ↦ Subtype.ext h

@@ -34,6 +34,8 @@ algebraic facts about `I` on which the flasqueness of the associated quasi-coher
 
 ## Main declarations
 
+* `Ideal.exists_pow_smul_sup_linearMap_of_mem_primaryComponent`: over a Noetherian ring, a linear
+  map from a submodule of a finite module into `Γ_𝔞(M)` extends by zero on `𝔞ᵐ • ⊤` for some `m`;
 * `Ideal.injective_primaryComponent`: `Γ_𝔞(I)` is an injective module;
 * `Submonoid.surjective_of_isLocalizedModule`: every localization map out of `I` is
   surjective;
@@ -53,6 +55,38 @@ universe u v
 
 namespace Ideal
 
+/-- Over a Noetherian commutative ring, any linear map `g : N →ₗ[R] M` from a submodule of a finite
+module `P` whose values lie in `𝔞.primaryComponent M` extends to `N ⊔ 𝔞 ^ m • ⊤` (for some `m`)
+vanishing on `𝔞 ^ m • ⊤`. -/
+theorem exists_pow_smul_sup_linearMap_of_mem_primaryComponent {R P M : Type*} [CommRing R]
+    [IsNoetherianRing R] [AddCommGroup P] [Module R P] [Module.Finite R P]
+    [AddCommGroup M] [Module R M] (𝔞 : Ideal R) (N : Submodule R P) (g : N →ₗ[R] M)
+    (hg : ∀ x, g x ∈ 𝔞.primaryComponent M) :
+    ∃ (m : ℕ) (g' : ↥(N ⊔ 𝔞 ^ m • (⊤ : Submodule R P)) →ₗ[R] M),
+      (∀ x (hx : x ∈ N), g' ⟨x, Submodule.mem_sup_left hx⟩ = g ⟨x, hx⟩) ∧
+      (∀ y (hy : y ∈ 𝔞 ^ m • (⊤ : Submodule R P)), g' ⟨y, Submodule.mem_sup_right hy⟩ = 0) := by
+  have : Module.Finite R N := Module.Finite.iff_fg.mpr (IsNoetherian.noetherian N)
+  obtain ⟨n, hn⟩ := 𝔞.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent g hg
+  have hker : 𝔞 ^ n • (⊤ : Submodule R N) ≤ LinearMap.ker g :=
+    Submodule.smul_le.mpr fun r hr x _ ↦ by
+      rw [LinearMap.mem_ker, map_smul]
+      exact (mem_torsionBySet_iff _ _).mp (hn x) ⟨r, hr⟩
+  -- By Artin–Rees, `𝔞^(n + k) • ⊤ ⊓ N ≤ 𝔞^n • N`, on which `g` vanishes.
+  obtain ⟨k, hk⟩ := Ideal.exists_pow_inf_eq_pow_smul 𝔞 N
+  have hvanish : ∀ x : N, (x : P) ∈ 𝔞 ^ (n + k) • (⊤ : Submodule R P) → g x = 0 := fun x hx ↦ by
+    have hmem : (x : P) ∈ 𝔞 ^ n • N := by
+      have h := hk (n + k) (Nat.le_add_left k n)
+      rw [Nat.add_sub_cancel] at h
+      exact Submodule.smul_mono le_rfl inf_le_right (h.le ⟨hx, x.2⟩)
+    exact hker ((Submodule.mem_smul_top_iff (𝔞 ^ n) N x).mpr hmem)
+  let φ : P →ₗ.[R] M := ⟨N, g⟩
+  let ψ : P →ₗ.[R] M := ⟨𝔞 ^ (n + k) • ⊤, 0⟩
+  have hagree : ∀ (x : φ.domain) (y : ψ.domain), (x : P) = y → φ x = ψ y := fun x y hxy ↦
+    (hvanish x (hxy ▸ y.2)).trans (LinearMap.zero_apply _).symm
+  refine ⟨n + k, (φ.sup ψ hagree).toFun, fun x hx ↦ ?_, fun y hy ↦ ?_⟩
+  · exact (LinearPMap.sup_apply hagree ⟨x, hx⟩ 0 _ (add_zero x)).trans (by simp [φ, ψ])
+  · exact (LinearPMap.sup_apply hagree 0 ⟨y, hy⟩ _ (zero_add y)).trans (by simp [φ, ψ])
+
 variable {R : Type u} [CommRing R] [IsNoetherianRing R] {M : Type v} [AddCommGroup M]
   [Module R M] [Small.{v} R] [Module.Injective R M]
 
@@ -61,68 +95,23 @@ variable {R : Type u} [CommRing R] [IsNoetherianRing R] {M : Type v} [AddCommGro
 instance injective_primaryComponent (𝔞 : Ideal R) :
     Module.Injective R (𝔞.primaryComponent M) := by
   refine Module.Baer.injective fun 𝔟 g ↦ ?_
-  let g' : 𝔟 →ₗ[R] M := (𝔞.primaryComponent M).subtype ∘ₗ g
-  -- `g` is killed by `𝔞ⁿ`, and by Artin–Rees `𝔞ᵐ ∩ 𝔟 ⊆ 𝔞ⁿ 𝔟` for `m` large.
-  obtain ⟨n, hn⟩ := exists_le_torsionBySet_pow_of_le_primaryComponent 𝔞
-    (P := LinearMap.range g') (by
-      rw [LinearMap.range_eq_map]
-      exact (IsNoetherian.noetherian (⊤ : Submodule R 𝔟)).map _)
-    (by
-      rintro _ ⟨x, rfl⟩
-      exact (g x).2)
-  obtain ⟨k, hk⟩ := Ideal.exists_pow_inf_eq_pow_smul 𝔞 (𝔟 : Submodule R R)
-  have hvanish : ∀ x : 𝔟, (x : R) ∈ 𝔞 ^ (n + k) → g' x = 0 := by
-    intro x hx
-    have hmem : (x : R) ∈ 𝔞 ^ n • (𝔟 : Submodule R R) := by
-      have h := hk (n + k) (Nat.le_add_left k n)
-      rw [Nat.add_sub_cancel] at h
-      have hx' : (x : R) ∈ 𝔞 ^ (n + k) • (⊤ : Submodule R R) ⊓ 𝔟 := by
-        refine ⟨?_, x.2⟩
-        rwa [Ideal.smul_eq_mul, Ideal.mul_top]
-      rw [h] at hx'
-      exact Submodule.smul_mono le_rfl inf_le_right hx'
-    -- `g'` vanishes on `𝔞ⁿ 𝔟`, since its values are killed by `𝔞ⁿ`.
-    have key : ∀ y ∈ 𝔞 ^ n • (𝔟 : Submodule R R), ∀ hy : y ∈ 𝔟, g' ⟨y, hy⟩ = 0 := by
-      intro y hy
-      induction hy using Submodule.smul_induction_on' with
-      | smul r hr z hz =>
-        intro _
-        have : g' ⟨r • z, 𝔟.smul_mem r hz⟩ = r • g' ⟨z, hz⟩ := by
-          rw [← map_smul]
-          rfl
-        rw [this]
-        exact (mem_torsionBySet_iff _ _).mp (hn ⟨⟨z, hz⟩, rfl⟩) ⟨r, hr⟩
-      | add y₁ hy₁ y₂ hy₂ ih₁ ih₂ =>
-        intro hy
-        have hy₁' : y₁ ∈ 𝔟 := Submodule.smul_le_right hy₁
-        have hy₂' : y₂ ∈ 𝔟 := Submodule.smul_le_right hy₂
-        have : g' ⟨y₁ + y₂, hy⟩ = g' ⟨y₁, hy₁'⟩ + g' ⟨y₂, hy₂'⟩ := by
-          rw [← map_add]
-          rfl
-        rw [this, ih₁ hy₁', ih₂ hy₂', add_zero]
-    exact key x hmem x.2
-  -- Extend `g'` by zero on `𝔞^(n + k)`, and then to all of `R` by injectivity of `M`.
-  let φ : R →ₗ.[R] M := ⟨𝔟, g'⟩
-  let ψ : R →ₗ.[R] M := ⟨𝔞 ^ (n + k), 0⟩
-  have H : ∀ (x : φ.domain) (y : ψ.domain), (x : R) = y → φ x = ψ y := by
-    intro x y hxy
-    exact (hvanish x (hxy ▸ y.2)).trans (LinearMap.zero_apply _).symm
+  obtain ⟨m, g', hg'𝔟, hg'𝔞⟩ :=
+    𝔞.exists_pow_smul_sup_linearMap_of_mem_primaryComponent (𝔟 : Submodule R R)
+      ((𝔞.primaryComponent M).subtype ∘ₗ g) fun x ↦ (g x).2
   obtain ⟨h, hh⟩ := Module.Baer.of_injective (R := R) (Q := M) inferInstance
-    (𝔟 ⊔ 𝔞 ^ (n + k)) (φ.sup ψ H).toFun
-  have hh₀ : ∀ r ∈ 𝔞 ^ (n + k), h r = 0 := by
-    intro r hr
-    rw [hh r (Submodule.mem_sup_right hr)]
-    exact (LinearPMap.sup_apply H 0 ⟨r, hr⟩ _ (zero_add r)).trans (by simp [φ, ψ])
-  -- The value `h 1` is killed by `𝔞^(n + k)`, so it lies in the primary component.
+    (𝔟 ⊔ 𝔞 ^ m • (⊤ : Submodule R R)) g'
+  have hh₀ : ∀ r ∈ 𝔞 ^ m, h r = 0 := fun r hr ↦ by
+    have hr' : r ∈ 𝔞 ^ m • (⊤ : Submodule R R) := by rwa [Ideal.smul_eq_mul, Ideal.mul_top]
+    exact (hh r (Submodule.mem_sup_right hr')).trans (hg'𝔞 r hr')
+  -- The value `h 1` is killed by `𝔞^m`, so it lies in the primary component.
   have hmem : h 1 ∈ 𝔞.primaryComponent M := by
-    refine (primaryComponent_mem _ _ _).mpr ⟨n + k, (mem_torsionBySet_iff _ _).mpr ?_⟩
+    refine (primaryComponent_mem _ _ _).mpr ⟨m, (mem_torsionBySet_iff _ _).mpr ?_⟩
     rintro ⟨r, hr⟩
     rw [← map_smul, smul_eq_mul, mul_one]
     exact hh₀ r hr
   refine ⟨LinearMap.toSpanSingleton R _ ⟨h 1, hmem⟩, fun x hx ↦ Subtype.ext ?_⟩
   simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul, ← map_smul, smul_eq_mul, mul_one]
-  rw [hh x (Submodule.mem_sup_left hx)]
-  exact (LinearPMap.sup_apply H ⟨x, hx⟩ 0 _ (add_zero x)).trans (by simp [φ, ψ, g'])
+  exact (hh x (Submodule.mem_sup_left hx)).trans (hg'𝔟 x hx)
 
 end Ideal
 

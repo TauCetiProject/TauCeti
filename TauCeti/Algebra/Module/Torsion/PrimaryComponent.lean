@@ -66,6 +66,13 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
   set.
 * `Ideal.primaryComponent_quotient_primaryComponent`: for finitely generated `𝔞`,
   `Γ_𝔞(N ⧸ Γ_𝔞(N)) = 0`.
+* `Submodule.restrictScalars_torsionBySet_map` and `Submodule.mem_torsionBySet_map_iff`: in a
+  scalar tower `R → S` acting on `M`, the `I S`-torsion submodule restricts to the `I`-torsion
+  submodule.
+* `Ideal.restrictScalars_primaryComponent_map`, `Ideal.mem_primaryComponent_map_iff`, and
+  `Ideal.mem_primaryComponent_linearMap_of_finite`: in a scalar tower `R → S` acting on `M`, the
+  `I S`-primary component restricts to the `I`-primary component, and every `S`-linear map from a
+  finite `S`-module into an `I`-power-torsion module is killed by a power of `I`.
 
 ## References
 
@@ -173,6 +180,38 @@ theorem surjOn_pPowerTorsion_of_exact [AddCommMonoid M] [Module A M]
 end Exact
 
 end TauCeti
+
+namespace Submodule
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+
+/-- Restricting scalars of the `(I.map (algebraMap R S))`-torsion submodule gives the
+`I`-torsion submodule. -/
+@[simp]
+theorem restrictScalars_torsionBySet_map (I : Ideal R) :
+    (torsionBySet S M ↑(I.map (algebraMap R S))).restrictScalars R = torsionBySet R M ↑I := by
+  ext x
+  simp only [Submodule.restrictScalars_mem, mem_torsionBySet_iff]
+  constructor
+  · intro hx ⟨r, hr⟩
+    simpa only [algebraMap_smul] using hx ⟨algebraMap R S r, Ideal.mem_map_of_mem _ hr⟩
+  · rintro hx ⟨c, hc⟩
+    dsimp only
+    refine Submodule.span_induction ?_ (zero_smul _ x)
+      (fun a b _ _ ha hb ↦ by rw [add_smul, ha, hb, add_zero])
+      (fun a b _ hb ↦ by rw [smul_eq_mul, mul_smul, hb, smul_zero]) hc
+    rintro _ ⟨r, hr, rfl⟩
+    rw [algebraMap_smul]
+    exact hx ⟨r, hr⟩
+
+/-- An element is killed by the extended ideal `I.map (algebraMap R S)` iff it is killed by `I`. -/
+theorem mem_torsionBySet_map_iff (I : Ideal R) {x : M} :
+    x ∈ torsionBySet S M ↑(I.map (algebraMap R S)) ↔ x ∈ torsionBySet R M ↑I := by
+  simpa only [Submodule.restrictScalars_mem] using
+    SetLike.ext_iff.mp (restrictScalars_torsionBySet_map (S := S) (M := M) I) x
+
+end Submodule
 
 namespace Ideal
 
@@ -300,5 +339,42 @@ theorem primaryComponent_quotient_primaryComponent {N : Type*} [AddCommGroup N] 
     mem_primaryComponent_span_iff] at hn
   obtain ⟨k, hk⟩ := hn g hg
   exact ⟨k + n, by rw [pow_add, mul_smul, hk]⟩
+
+/-- Restricting scalars of the `(I.map (algebraMap R S))`-primary component recovers the
+`I`-primary component. -/
+@[simp]
+theorem restrictScalars_primaryComponent_map {S M : Type*} [CommRing S] [Algebra R S]
+    [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M] (I : Ideal R) :
+    ((I.map (algebraMap R S)).primaryComponent M).restrictScalars R = I.primaryComponent M := by
+  ext x
+  simp only [Submodule.restrictScalars_mem, primaryComponent_mem, ← Ideal.map_pow,
+    Submodule.mem_torsionBySet_map_iff]
+
+/-- An element lies in the `(I.map (algebraMap R S))`-primary component iff it lies in the
+`I`-primary component. -/
+@[simp]
+theorem mem_primaryComponent_map_iff {S M : Type*} [CommRing S] [Algebra R S]
+    [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M] (I : Ideal R) {x : M} :
+    x ∈ (I.map (algebraMap R S)).primaryComponent M ↔ x ∈ I.primaryComponent M := by
+  simpa only [Submodule.restrictScalars_mem] using
+    SetLike.ext_iff.mp (restrictScalars_primaryComponent_map (S := S) (M := M) I) x
+
+/-- Every `S`-linear map from a finite `S`-module into an `I`-power-torsion module is killed by a
+power of `I`. -/
+theorem mem_primaryComponent_linearMap_of_finite {S M N : Type*} [CommRing S] [Algebra R S]
+    [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+    [AddCommMonoid N] [Module S N] [Module.Finite S N]
+    (I : Ideal R) (hM : ∀ x : M, x ∈ I.primaryComponent M) (f : N →ₗ[S] M) :
+    f ∈ I.primaryComponent (N →ₗ[S] M) := by
+  obtain ⟨n, hn⟩ :=
+    (I.map (algebraMap R S)).exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f
+      fun _ ↦ (mem_primaryComponent_map_iff I).mpr (hM _)
+  refine (primaryComponent_mem _ I f).mpr ⟨n, (mem_torsionBySet_iff _ _).mpr
+    fun ⟨r, hr⟩ ↦ LinearMap.ext fun x ↦ ?_⟩
+  have hxn : f x ∈ torsionBySet R M ↑(I ^ n) := by
+    rw [← Submodule.mem_torsionBySet_map_iff (S := S), Ideal.map_pow]
+    exact hn x
+  simpa only [LinearMap.smul_apply, LinearMap.zero_apply] using
+    (mem_torsionBySet_iff _ _).mp hxn ⟨r, hr⟩
 
 end Ideal

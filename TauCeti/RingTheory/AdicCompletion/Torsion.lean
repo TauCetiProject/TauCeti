@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Finite
-import Mathlib.RingTheory.Filtration
+import TauCeti.Algebra.Module.Injective.Noetherian
 import TauCeti.RingTheory.AdicCompletion.Algebra
 
 /-!
@@ -372,57 +372,6 @@ theorem torsionLiftEquiv_symm_apply
 
 end TauCeti.AdicCompletion
 
-namespace TauCeti.AdicCompletion
-
-variable {R : Type*} [CommRing R] {I : Ideal R}
-variable {M : Type*} [AddCommGroup M] [Module R M]
-variable [Module (_root_.AdicCompletion I R) M] [IsScalarTower R (_root_.AdicCompletion I R) M]
-
-/-- An element killed by `I ^ n` is also killed by the `n`-th power of the extended ideal in the
-completion, for any completion-module structure extending the `R`-action. -/
-theorem mem_torsionBySet_map_pow_of_mem_torsionBySet {x : M} {n : ℕ}
-    (hx : x ∈ Submodule.torsionBySet R M ↑(I ^ n)) :
-    x ∈ Submodule.torsionBySet (_root_.AdicCompletion I R) M
-      ↑((I.map (algebraMap R (_root_.AdicCompletion I R))) ^ n) := by
-  rw [← Ideal.map_pow, Submodule.mem_torsionBySet_iff]
-  rintro ⟨c, hc⟩
-  dsimp only
-  refine Submodule.span_induction ?_ (zero_smul _ x)
-    (fun a b _ _ ha hb ↦ by rw [add_smul, ha, hb, add_zero])
-    (fun a b _ hb ↦ by rw [smul_eq_mul, mul_smul, hb, smul_zero]) hc
-  rintro _ ⟨r, hr, rfl⟩
-  rw [algebraMap_smul]
-  exact (Submodule.mem_torsionBySet_iff _ _).mp hx ⟨r, hr⟩
-
-/-- An `I`-power-torsion element is also `(I.map _)`-power-torsion for any compatible
-`AdicCompletion I R`-action. -/
-theorem mem_primaryComponent_map_of_mem_primaryComponent {x : M}
-    (hx : x ∈ Ideal.primaryComponent M I) :
-    x ∈ Ideal.primaryComponent M (I.map (algebraMap R (_root_.AdicCompletion I R))) := by
-  obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem M I x).mp hx
-  exact (Ideal.primaryComponent_mem M _ x).mpr
-    ⟨n, mem_torsionBySet_map_pow_of_mem_torsionBySet hn⟩
-
-/-- Every `AdicCompletion I R`-linear map from a finite `AdicCompletion I R`-module into an
-`I`-power-torsion module is killed by a power of `I`. -/
-theorem mem_primaryComponent_linearMap_of_finite {N : Type*} [AddCommGroup N]
-    [Module (_root_.AdicCompletion I R) N] [Module.Finite (_root_.AdicCompletion I R) N]
-    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
-    (f : N →ₗ[_root_.AdicCompletion I R] M) :
-    f ∈ Ideal.primaryComponent (N →ₗ[_root_.AdicCompletion I R] M) I := by
-  let Ihat := I.map (algebraMap R (_root_.AdicCompletion I R))
-  obtain ⟨n, hn⟩ := Ihat.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f
-    fun _ ↦ mem_primaryComponent_map_of_mem_primaryComponent (hM _)
-  refine (Ideal.primaryComponent_mem _ I f).mpr ⟨n, (Submodule.mem_torsionBySet_iff _ _).mpr
-    fun ⟨r, hr⟩ ↦ LinearMap.ext fun x ↦ ?_⟩
-  have hr' : algebraMap R (_root_.AdicCompletion I R) r ∈ Ihat ^ n := by
-    rw [← Ideal.map_pow]
-    exact Ideal.mem_map_of_mem _ hr
-  have hx := (Submodule.mem_torsionBySet_iff _ _).mp (hn x) ⟨_, hr'⟩
-  simpa only [LinearMap.smul_apply, LinearMap.zero_apply, algebraMap_smul] using hx
-
-end TauCeti.AdicCompletion
-
 namespace AdicCompletion
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
@@ -436,13 +385,12 @@ theorem smul_eq_of_mem_torsionBySet (a : AdicCompletion I R) (hI : I.FG) {x : M}
     (ha : evalₐ I n a = Ideal.Quotient.mk (I ^ n) r) :
     a • x = r • x := by
   have hmem : a - algebraMap R (AdicCompletion I R) r ∈
-      (I.map (algebraMap R (AdicCompletion I R))) ^ n := by
-    rw [← Ideal.map_pow, ← ker_evalₐ_eq_map_pow hI n, RingHom.mem_ker, map_sub, ha,
-      algebraMap_apply, evalₐ_of]
+      (I ^ n).map (algebraMap R (AdicCompletion I R)) := by
+    rw [← ker_evalₐ_eq_map_pow hI n, RingHom.mem_ker, map_sub, ha, algebraMap_apply, evalₐ_of]
     simp
   have hzero : (a - algebraMap R (AdicCompletion I R) r) • x = 0 :=
     (Submodule.mem_torsionBySet_iff _ _).mp
-      (TauCeti.AdicCompletion.mem_torsionBySet_map_pow_of_mem_torsionBySet hx) ⟨_, hmem⟩
+      ((Submodule.mem_torsionBySet_map_iff (S := AdicCompletion I R) (I ^ n)).mpr hx) ⟨_, hmem⟩
   rw [sub_smul, algebraMap_smul, sub_eq_zero] at hzero
   exact hzero
 
@@ -499,12 +447,12 @@ def restrictScalarsEquivOfPrimaryComponent (hI : I.FG)
 theorem restrictScalarsEquivOfPrimaryComponent_apply (hI : I.FG)
     [Module (_root_.AdicCompletion I R) N] [IsScalarTower R (_root_.AdicCompletion I R) N]
     (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
-    (f : M →ₗ[_root_.AdicCompletion I R] N) (x : M) :
-    restrictScalarsEquivOfPrimaryComponent hI hM f x = f x := (rfl)
+    (f : M →ₗ[_root_.AdicCompletion I R] N) :
+    restrictScalarsEquivOfPrimaryComponent hI hM f = f.restrictScalars R := (rfl)
 
 /-- The inverse of `restrictScalarsEquivOfPrimaryComponent` preserves values. -/
 @[simp]
-theorem restrictScalarsEquivOfPrimaryComponent_symm_apply (hI : I.FG)
+theorem restrictScalarsEquivOfPrimaryComponent_symm_apply_apply (hI : I.FG)
     [Module (_root_.AdicCompletion I R) N] [IsScalarTower R (_root_.AdicCompletion I R) N]
     (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
     (f : M →ₗ[R] N) (x : M) :
@@ -571,79 +519,39 @@ theorem moduleInjective_of_primaryComponent {R : Type u} [CommRing R] {I : Ideal
   let Rhat := _root_.AdicCompletion I R
   let Ihat : Ideal Rhat := I.map (algebraMap R Rhat)
   refine Module.Baer.injective fun J g ↦ ?_
-  -- Since `R̂` is Noetherian, `J` is finitely generated, so `Î^n` kills the range of `g`.
-  have : Module.Finite Rhat J := Module.Finite.iff_fg.mpr (IsNoetherian.noetherian J)
-  obtain ⟨n, hn⟩ := Ihat.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent g
-    fun _ ↦ mem_primaryComponent_map_of_mem_primaryComponent (hE _)
-  -- By Artin–Rees in `R̂`, `Î^(n + k) ⊓ J ≤ Î^n • J`, on which `g` vanishes.
-  obtain ⟨k, hk⟩ := Ideal.exists_pow_inf_eq_pow_smul Ihat (J : Submodule Rhat Rhat)
-  have hvanish : ∀ x : J, (x : Rhat) ∈ Ihat ^ (n + k) → g x = 0 := by
-    intro x hx
-    have hmem : (x : Rhat) ∈ Ihat ^ n • (J : Submodule Rhat Rhat) := by
-      have h := hk (n + k) (Nat.le_add_left k n)
-      rw [Nat.add_sub_cancel] at h
-      have hx' : (x : Rhat) ∈ Ihat ^ (n + k) • (⊤ : Submodule Rhat Rhat) ⊓ J := by
-        refine ⟨?_, x.2⟩
-        rwa [Ideal.smul_eq_mul, Ideal.mul_top]
-      rw [h] at hx'
-      exact Submodule.smul_mono le_rfl inf_le_right hx'
-    have key : ∀ y ∈ Ihat ^ n • (J : Submodule Rhat Rhat), ∀ hy : y ∈ J, g ⟨y, hy⟩ = 0 := by
-      intro y hy
-      induction hy using Submodule.smul_induction_on' with
-      | smul a ha z hz =>
-        intro _
-        have hgz : g ⟨a • z, J.smul_mem a hz⟩ = a • g ⟨z, hz⟩ := by
-          rw [← map_smul]
-          rfl
-        rw [hgz]
-        exact (Submodule.mem_torsionBySet_iff _ _).mp (hn ⟨z, hz⟩) ⟨a, ha⟩
-      | add y₁ hy₁ y₂ hy₂ ih₁ ih₂ =>
-        intro hy
-        have hy₁' : y₁ ∈ J := Submodule.smul_le_right hy₁
-        have hy₂' : y₂ ∈ J := Submodule.smul_le_right hy₂
-        have hadd : g ⟨y₁ + y₂, hy⟩ = g ⟨y₁, hy₁'⟩ + g ⟨y₂, hy₂'⟩ := by
-          rw [← map_add]
-          rfl
-        rw [hadd, ih₁ hy₁', ih₂ hy₂', add_zero]
-    exact key x hmem x.2
-  -- Extend `g` by zero on `Î^(n + k)`, then to an `R`-linear map `h : R̂ → E` by `R`-injectivity.
-  let φ : Rhat →ₗ.[Rhat] E := ⟨J, g⟩
-  let ψ : Rhat →ₗ.[Rhat] E := ⟨Ihat ^ (n + k), 0⟩
-  have hagree : ∀ (x : φ.domain) (y : ψ.domain), (x : Rhat) = y → φ x = ψ y := fun x y hxy ↦
-    (hvanish x (hxy ▸ y.2)).trans (LinearMap.zero_apply _).symm
-  let g₁ : (J ⊔ Ihat ^ (n + k) : Ideal Rhat) →ₗ[Rhat] E := (φ.sup ψ hagree).toFun
+  -- Extend `g` by zero on some `Î^m`, then to an `R`-linear map `h : R̂ → E` by `R`-injectivity.
+  obtain ⟨m, g₁, hg₁J, hg₁I⟩ :=
+    Ihat.exists_pow_smul_sup_linearMap_of_mem_primaryComponent (J : Submodule Rhat Rhat) g
+      fun _ ↦ (I.mem_primaryComponent_map_iff (S := Rhat)).mpr (hE _)
   obtain ⟨h, hh⟩ := Module.Injective.extension_property R E _ Rhat
-    ((J ⊔ Ihat ^ (n + k) : Ideal Rhat).restrictScalars R).subtype
+    ((J ⊔ Ihat ^ m • (⊤ : Submodule Rhat Rhat) : Submodule Rhat Rhat).restrictScalars R).subtype
     (Submodule.injective_subtype _) (g₁.restrictScalars R)
-  have hhJ : ∀ x (hx : x ∈ J), h x = g ⟨x, hx⟩ := fun x hx ↦ by
-    have h1 := LinearMap.congr_fun hh ⟨x, Submodule.mem_sup_left hx⟩
-    exact h1.trans ((LinearPMap.sup_apply hagree ⟨x, hx⟩ 0 _ (add_zero x)).trans
-      (by simp [φ, ψ]))
-  have hhI : ∀ c ∈ Ihat ^ (n + k), h c = 0 := fun c hc ↦ by
-    have h1 := LinearMap.congr_fun hh ⟨c, Submodule.mem_sup_right hc⟩
-    exact h1.trans ((LinearPMap.sup_apply hagree 0 ⟨c, hc⟩ _ (zero_add c)).trans
-      (by simp [φ, ψ]))
-  -- Since `h` vanishes on `Î^(n + k)`, every value of `h` is killed by `I^(n + k)`, so `h` is
-  -- automatically `R̂`-linear by the residue formula.
+  have hhJ : ∀ x (hx : x ∈ J), h x = g ⟨x, hx⟩ := fun x hx ↦
+    (LinearMap.congr_fun hh ⟨x, Submodule.mem_sup_left hx⟩).trans (hg₁J x hx)
+  have hhI : ∀ c ∈ Ihat ^ m, h c = 0 := fun c hc ↦ by
+    have hc' : c ∈ Ihat ^ m • (⊤ : Submodule Rhat Rhat) := by rwa [Ideal.smul_eq_mul, Ideal.mul_top]
+    exact (LinearMap.congr_fun hh ⟨c, Submodule.mem_sup_right hc'⟩).trans (hg₁I c hc')
+  -- Since `h` vanishes on `Î^m`, every value of `h` is killed by `I^m`, so `h` is `R̂`-linear.
   have hsmul : ∀ (a b : Rhat), h (a • b) = a • h b := fun a b ↦ by
-    have hb : h b ∈ Submodule.torsionBySet R E ↑(I ^ (n + k)) := by
+    have hb : h b ∈ Submodule.torsionBySet R E ↑(I ^ m) := by
       refine (Submodule.mem_torsionBySet_iff _ _).mpr fun ⟨s, hs⟩ ↦ ?_
       dsimp only
       rw [← h.map_smul, Algebra.smul_def]
-      refine hhI _ (Ideal.mul_mem_right b _ ?_)
-      rw [← Ideal.map_pow]
-      exact Ideal.mem_map_of_mem _ hs
-    obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (evalₐ I (n + k) a)
-    have hdiff : (a - algebraMap R Rhat r) * b ∈ Ihat ^ (n + k) := by
-      refine Ideal.mul_mem_right b _ ?_
-      rw [← Ideal.map_pow, ← ker_evalₐ_eq_map_pow hI, RingHom.mem_ker, map_sub, ← hr,
-        algebraMap_apply, evalₐ_of]
-      simp
-    have hzero : h ((a - algebraMap R Rhat r) * b) = 0 := hhI _ hdiff
-    have heq : h (a • b) = r • h b := by
+      exact hhI _ (Ideal.mul_mem_right b _
+        (Ideal.map_pow (algebraMap R Rhat) I m ▸ Ideal.mem_map_of_mem _ hs))
+    obtain ⟨r, hr⟩ := exists_sub_algebraMap_mem_map_pow hI m a
+    have hzero : h ((a - algebraMap R Rhat r) * b) = 0 :=
+      hhI _ (Ideal.mul_mem_right b _ (Ideal.map_pow (algebraMap R Rhat) I m ▸ hr))
+    have hzero' : (a - algebraMap R Rhat r) • h b = 0 :=
+      (Submodule.mem_torsionBySet_iff _ _).mp
+        ((Submodule.mem_torsionBySet_map_iff (S := Rhat) (I ^ m)).mpr hb) ⟨_, hr⟩
+    have hlhs : h (a • b) = r • h b := by
       rw [smul_eq_mul, ← sub_add_cancel a (algebraMap R Rhat r), add_mul, map_add, hzero, zero_add,
         ← Algebra.smul_def, map_smul]
-    exact heq.trans (a.smul_eq_of_mem_torsionBySet hI r hb hr.symm).symm
-  exact ⟨{ h with map_smul' := hsmul }, fun x hx ↦ hhJ x hx⟩
+    have hrhs : a • h b = r • h b := by
+      rw [← sub_eq_zero, ← algebraMap_smul Rhat r (h b), ← sub_smul]
+      exact hzero'
+    exact hlhs.trans hrhs.symm
+  exact ⟨{ h with map_smul' := hsmul }, hhJ⟩
 
 end TauCeti.AdicCompletion
