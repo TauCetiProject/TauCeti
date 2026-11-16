@@ -57,26 +57,24 @@ only if `δ ∈ nonZeroDivisors R`, and an isomorphism if and only if `IsUnit δ
   `TLDiagCat ⥤ D` into an `R`-linear category `D` to an additive `R`-linear functor `TLCat R δ ⥤ D`.
 * `TauCeti.TLCat.cup`, `TauCeti.TLCat.cap`: the cup `of 0 ⟶ of 2` and cap `of 2 ⟶ of 0`.
 * `TauCeti.TLCat.endZeroAlgEquiv`: the `R`-algebra isomorphism `End (of 0) ≃ₐ[R] R`.
-* `TauCeti.TLCat.dragRight`, `TauCeti.TLCat.dragLeft`, `TauCeti.TLCat.rotateHom`,
-  `TauCeti.TLCat.verticalReflectHom`, `TauCeti.TLCat.reflectHom`: the linear equivalences on
-  morphism modules induced by corner-dragging, counterclockwise rotation, and vertical and
-  horizontal reflection of diagrams.
-* `TauCeti.TLCat.mapRingHom`: the additive base-change functor `TLCat R δ ⥤ TLCat S δ'` along a ring
-  homomorphism `φ : R →+* S` with `φ δ = δ'`.
 
 ## Main results
 
 * `TauCeti.TLCat.diagBasis_comp_diagBasis`: **the loop rule** on basis matchings.
 * `TauCeti.TLCat.finrank_hom_of_add_eq_two_mul`, `TauCeti.TLCat.finrank_end_of`: when
   `X.as + Y.as = 2 * k`, the module `X ⟶ Y` is free of rank `catalan k`; in particular `End (of n)`
-  has rank `catalan n`, and `X ⟶ Y` vanishes when `X.as + Y.as` is odd.
+  has rank `catalan n`.
+* `TauCeti.TLCat.hom_eq_zero_of_not_even`, `TauCeti.TLCat.finrank_hom_of_odd`: when
+  `X.as + Y.as` is odd, `X ⟶ Y` vanishes and has rank `0`.
 * `TauCeti.TLCat.cup_comp_cap`: `cup ≫ cap = δ • 𝟙 (of 0)`.
 * `TauCeti.TLCat.mono_diagBasis_zero_left`, `TauCeti.TLCat.epi_diagBasis_zero_right`: every basis
   morphism out of `of 0` is a monomorphism and every basis morphism into `of 0` is an epimorphism
   (in particular `Mono cup` and `Epi cap` for every `R` and `δ`), whereas `cap` is never a
-  monomorphism and `cup` is never an epimorphism over a nontrivial ring.
-* `TauCeti.TLCat.mono_smul_id_zero_iff`, `TauCeti.TLCat.isIso_smul_id_zero_iff`: `r • 𝟙 (of 0)` is a
-  monomorphism (or epimorphism) iff `r ∈ nonZeroDivisors R`, and an isomorphism iff `IsUnit r`.
+  monomorphism (`TauCeti.TLCat.not_mono_cap`) and `cup` is never an epimorphism
+  (`TauCeti.TLCat.not_epi_cup`) over a nontrivial ring.
+* `TauCeti.TLCat.mono_smul_id_zero_iff`, `TauCeti.TLCat.epi_smul_id_zero_iff`,
+  `TauCeti.TLCat.isIso_smul_id_zero_iff`: `r • 𝟙 (of 0)` is a monomorphism (or epimorphism) iff
+  `r ∈ nonZeroDivisors R`, and an isomorphism iff `IsUnit r`.
 
 ## Implementation notes
 
@@ -450,16 +448,16 @@ theorem finrank_hom_of_add_eq_two_mul [StrongRankCondition R] {X Y : TLCat R δ}
   rw [finrank_hom, h, PlanarMatching.card_planarMatching]
 
 @[simp]
-theorem finrank_hom_of_same [StrongRankCondition R] (n : ℕ) :
-    Module.finrank R ((of n : TLCat R δ) ⟶ of n) = catalan n :=
-  finrank_hom_of_add_eq_two_mul (two_mul n).symm
+theorem finrank_hom_self [StrongRankCondition R] (X : TLCat R δ) :
+    Module.finrank R (X ⟶ X) = catalan X.as :=
+  finrank_hom_of_add_eq_two_mul (two_mul X.as).symm
 
 /-- **Catalan rank of endomorphism algebras.** The endomorphism `R`-algebra `End (of n)` is free of
 rank `catalan n`. -/
 @[simp]
 theorem finrank_end_of [StrongRankCondition R] (n : ℕ) :
     Module.finrank R (End (of n : TLCat R δ)) = catalan n :=
-  (End.linearEquiv (R := R) (X := (of n : TLCat R δ))).finrank_eq.trans (finrank_hom_of_same n)
+  (End.linearEquiv (R := R) (X := (of n : TLCat R δ))).finrank_eq.trans (finrank_hom_self (of n))
 
 /-! ### The linearization functor and universal property -/
 
@@ -504,12 +502,11 @@ instance : (linearize R δ).EssSurj where
 `TLCat R δ` over `R`. -/
 theorem span_range_linearize_map (X Y : TLDiagCat) :
     Submodule.span R (Set.range ((linearize R δ).map : (X ⟶ Y) → _)) = ⊤ := by
-  rw [eq_top_iff, ← (diagBasis ((linearize R δ).obj X) ((linearize R δ).obj Y)).span_eq,
-    Submodule.span_le]
+  cases X with | of n =>
+  cases Y with | of m =>
+  rw [eq_top_iff, ← (diagBasis (of n) (of m)).span_eq, Submodule.span_le]
   rintro _ ⟨x, rfl⟩
-  refine Submodule.subset_span ⟨TLDiagCat.Hom.mk ⟨x, 0⟩, ?_⟩
-  simp only [linearize_map, pow_zero, one_smul]
-  rfl
+  exact Submodule.subset_span ⟨TLDiagCat.Hom.mk ⟨x, 0⟩, by simp⟩
 
 section UniversalProperty
 
@@ -589,10 +586,13 @@ instance : (liftDiag F hF).Linear R where
 @[simp]
 theorem liftDiag_map_linearize_map {X Y : TLDiagCat} (f : X ⟶ Y) :
     (liftDiag F hF).map ((linearize R δ).map f) = F.map f := by
-  rw [linearize_map, Functor.map_smul,
-    liftDiag_map_diagBasis F hF (X := of X.as) (Y := of Y.as) f.diagram.matching,
-    ← liftDiag_map_mk_circles F hF f.diagram.matching f.diagram.circles]
-  rfl
+  cases X with | of n =>
+  cases Y with | of m =>
+  cases f with | mk d =>
+  cases d with | mk x c =>
+  dsimp only at x ⊢
+  rw [linearize_map_mk, Functor.map_smul, liftDiag_map_diagBasis F hF (X := of n) (Y := of m),
+    ← liftDiag_map_mk_circles F hF]
 
 /-- `linearize R δ` followed by `liftDiag F hF` is naturally isomorphic to `F`. -/
 noncomputable def linearizeLiftDiagIso : linearize R δ ⋙ liftDiag F hF ≅ F :=
@@ -701,21 +701,20 @@ theorem cap_comp_cup_comp_cap_comp_cup :
   rw [Category.assoc, ← Category.assoc cup cap cup, cup_comp_cap, Linear.smul_comp,
     Category.id_comp, Linear.comp_smul]
 
-/-- Over a nontrivial ring, `cap ≫ cup` is linearly independent of `𝟙 (of 2)`: in particular it is
-never a scalar multiple of `𝟙 (of 2)` for any `r : R`. -/
+/-- Over a nontrivial ring, `cap ≫ cup` is never a scalar multiple of `𝟙 (of 2)` for any
+`r : R`. -/
 theorem cap_comp_cup_ne_smul_id [Nontrivial R] (r : R) :
     (cap : (of 2 : TLCat R δ) ⟶ of 0) ≫ cup ≠ r • 𝟙 (of 2 : TLCat R δ) := by
   intro h
-  have hne : (TLDiagram.cap.comp TLDiagram.cup).matching ≠ PlanarMatching.nested 2 := by
+  have hne : PlanarMatching.nested 2 ≠ (TLDiagram.cap.comp TLDiagram.cup).matching := by
     intro hm
     have h0 := congrFun (congrArg (fun x : PlanarMatching 4 => ⇑x.1.val) hm) 0
     simp only [TLDiagram.cap_comp_cup_matching_val, PlanarMatching.nested_val] at h0
     exact absurd h0 (by decide)
-  have hc := DFunLike.congr_fun (congrArg Hom.coeff h)
-    (TLDiagram.cap.comp TLDiagram.cup).matching
-  rw [cap_comp_cup_eq_diagBasis, coeff_diagBasis, coeff_smul, coeff_id, Finsupp.coe_smul,
-    Pi.smul_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne hne, smul_zero] at hc
-  exact one_ne_zero hc
+  rw [cap_comp_cup_eq_diagBasis] at h
+  generalize (TLDiagram.cap.comp TLDiagram.cup).matching = m at h hne
+  have hc := DFunLike.congr_fun (congrArg Hom.coeff h) m
+  simp [coeff_diagBasis (X := of 2) (Y := of 2), hne] at hc
 
 /-- Every endomorphism of the empty boundary `of 0` is a scalar multiple of `𝟙 (of 0)`. -/
 theorem end_zero_eq_smul_id (f : (of 0 : TLCat R δ) ⟶ of 0) :
@@ -742,7 +741,9 @@ theorem endZeroAlgEquiv_apply (f : End (of 0 : TLCat R δ)) :
 theorem endZeroAlgEquiv_symm_apply (r : R) :
     endZeroAlgEquiv.symm r = algebraMap R (End (of 0 : TLCat R δ)) r := (rfl)
 
-theorem endZeroAlgEquiv_of_linearize_map (f : (TLDiagCat.of 0 : TLDiagCat) ⟶ .of 0) :
+/-- Under `endZeroAlgEquiv`, a linearized diagram on the empty boundary evaluates to `δ` raised to
+its number of closed circles. -/
+theorem endZeroAlgEquiv_linearize_map (f : (TLDiagCat.of 0 : TLDiagCat) ⟶ .of 0) :
     endZeroAlgEquiv (End.of ((linearize R δ).map f)) = δ ^ f.diagram.circles := by
   have hm : f.diagram.matching = PlanarMatching.nested 0 :=
     Subsingleton.elim (α := PlanarMatching 0) _ _
@@ -750,66 +751,70 @@ theorem endZeroAlgEquiv_of_linearize_map (f : (TLDiagCat.of 0 : TLDiagCat) ⟶ .
 
 /-! ### Monomorphisms, epimorphisms, and non-generic `δ` -/
 
+/-- Postcomposing a morphism `f : X ⟶ of 0` with a basis morphism `diagBasis (of 0) Y y`
+pushes forward its planar-matching coefficients along `x ↦ glueMiddle 0 (x.append y)`. -/
+theorem coeff_comp_diagBasis_zero (f : X ⟶ of 0) (y : PlanarMatching (0 + Y.as)) :
+    (f ≫ diagBasis (of 0) Y y).coeff =
+      Finsupp.mapDomain (fun x : PlanarMatching (X.as + 0) =>
+        PlanarMatching.glueMiddle 0 (x.append y)) f.coeff := by
+  rw [coeff_comp, coeff_diagBasis]
+  induction f.coeff using Finsupp.induction_linear with
+  | zero => simp
+  | add u₁ u₂ ih₁ ih₂ => simp [Finsupp.mapDomain_add, ih₁, ih₂]
+  | single x a =>
+    rw [compCoeff_single_single]
+    simp
+
+/-- Precomposing a morphism `g : of 0 ⟶ Z` with a basis morphism `diagBasis X (of 0) x`
+pushes forward its planar-matching coefficients along `z ↦ glueMiddle 0 (x.append z)`. -/
+theorem coeff_diagBasis_zero_comp (x : PlanarMatching (X.as + 0)) (g : of 0 ⟶ Z) :
+    (diagBasis X (of 0) x ≫ g).coeff =
+      Finsupp.mapDomain (fun z : PlanarMatching (0 + Z.as) =>
+        PlanarMatching.glueMiddle 0 (x.append z)) g.coeff := by
+  rw [coeff_comp, coeff_diagBasis]
+  induction g.coeff using Finsupp.induction_linear with
+  | zero => simp
+  | add v₁ v₂ ih₁ ih₂ => simp [Finsupp.mapDomain_add, ih₁, ih₂]
+  | single z b =>
+    rw [compCoeff_single_single]
+    simp
+
+private theorem glueMiddle_zero_append_left_injective {n m : ℕ} (y : PlanarMatching (0 + m)) :
+    Function.Injective (fun x : PlanarMatching (n + 0) =>
+      PlanarMatching.glueMiddle 0 (x.append y)) := by
+  intro x₁ x₂ hx
+  simp only [PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hx
+  refine PlanarMatching.ext fun i => Fin.castAdd_injective (n + 0) (0 + m) ?_
+  have hi := congrFun (congrArg (fun z : PlanarMatching _ => ⇑z.1.val) hx)
+    (Fin.castAdd (0 + m) i)
+  simpa only [PlanarMatching.append_val_castAdd] using hi
+
+private theorem glueMiddle_zero_append_right_injective {n m : ℕ} (x : PlanarMatching (n + 0)) :
+    Function.Injective (fun z : PlanarMatching (0 + m) =>
+      PlanarMatching.glueMiddle 0 (x.append z)) := by
+  intro z₁ z₂ hz
+  simp only [PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hz
+  refine PlanarMatching.ext fun j => Fin.natAdd_injective (0 + m) (n + 0) ?_
+  have hj := congrFun (congrArg (fun w : PlanarMatching _ => ⇑w.1.val) hz)
+    (Fin.natAdd (n + 0) j)
+  simpa only [PlanarMatching.append_val_natAdd] using hj
+
 /-- Every planar-matching basis morphism out of the empty boundary `of 0` is a monomorphism, for
 every commutative ring `R` and every loop value `δ : R`: gluing along `0` points closes no circle
 and appends `y` injectively to each matching on `X.as + 0`. -/
 theorem mono_diagBasis_zero_left {Y : TLCat R δ} (y : PlanarMatching (0 + Y.as)) :
-    Mono (diagBasis (of 0) Y y) := by
-  refine ⟨fun {X} f₁ f₂ h => ?_⟩
-  let ι : PlanarMatching (X.as + 0) → PlanarMatching (X.as + Y.as) :=
-    fun x => PlanarMatching.glueMiddle 0 (x.append y)
-  have hι : Function.Injective ι := by
-    intro x₁ x₂ hx
-    simp only [ι, PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hx
-    refine PlanarMatching.ext fun i => Fin.castAdd_injective (X.as + 0) (0 + Y.as) ?_
-    have hi := congrFun (congrArg (fun z : PlanarMatching _ => ⇑z.1.val) hx)
-      (Fin.castAdd (0 + Y.as) i)
-    simpa only [PlanarMatching.append_val_castAdd] using hi
-  have hmap (f : X ⟶ of 0) :
-      (f ≫ diagBasis (of 0) Y y).coeff = Finsupp.mapDomain ι f.coeff :=
-    LinearMap.congr_fun
-      (f := (coeffLinearEquiv X Y).toLinearMap.comp
-        (Linear.rightComp R X (diagBasis (of 0) Y y)))
-      (g := (Finsupp.lmapDomain R R ι).comp (coeffLinearEquiv X (of 0)).toLinearMap)
-      ((diagBasis X (of 0)).ext fun x => by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Linear.rightComp_apply,
-          Finsupp.lmapDomain_apply]
-        rw [diagBasis_comp_diagBasis (X := X) (Y := of 0) (Z := Y), coeffLinearEquiv_apply,
-          coeffLinearEquiv_apply, coeff_smul, coeff_diagBasis, coeff_diagBasis]
-        simp [ι]) f
-  have hc := congrArg Hom.coeff h
-  rw [hmap, hmap] at hc
-  exact hom_ext (Finsupp.mapDomain_injective hι hc)
+    Mono (diagBasis (of 0) Y y) :=
+  ⟨fun f₁ f₂ h => hom_ext <|
+    Finsupp.mapDomain_injective (glueMiddle_zero_append_left_injective y) <| by
+      rw [← coeff_comp_diagBasis_zero, ← coeff_comp_diagBasis_zero, h]⟩
 
 /-- Every planar-matching basis morphism into the empty boundary `of 0` is an epimorphism, for
 every commutative ring `R` and every loop value `δ : R`. -/
 theorem epi_diagBasis_zero_right {X : TLCat R δ} (x : PlanarMatching (X.as + 0)) :
-    Epi (diagBasis X (of 0) x) := by
-  refine ⟨fun {Z} g₁ g₂ h => ?_⟩
-  let ι : PlanarMatching (0 + Z.as) → PlanarMatching (X.as + Z.as) :=
-    fun z => PlanarMatching.glueMiddle 0 (x.append z)
-  have hι : Function.Injective ι := by
-    intro z₁ z₂ hz
-    simp only [ι, PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hz
-    refine PlanarMatching.ext fun j => Fin.natAdd_injective (0 + Z.as) (X.as + 0) ?_
-    have hj := congrFun (congrArg (fun w : PlanarMatching _ => ⇑w.1.val) hz)
-      (Fin.natAdd (X.as + 0) j)
-    simpa only [PlanarMatching.append_val_natAdd] using hj
-  have hmap (g : of 0 ⟶ Z) :
-      (diagBasis X (of 0) x ≫ g).coeff = Finsupp.mapDomain ι g.coeff :=
-    LinearMap.congr_fun
-      (f := (coeffLinearEquiv X Z).toLinearMap.comp
-        (Linear.leftComp R Z (diagBasis X (of 0) x)))
-      (g := (Finsupp.lmapDomain R R ι).comp (coeffLinearEquiv (of 0) Z).toLinearMap)
-      ((diagBasis (of 0) Z).ext fun z => by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Linear.leftComp_apply,
-          Finsupp.lmapDomain_apply]
-        rw [diagBasis_comp_diagBasis (X := X) (Y := of 0) (Z := Z), coeffLinearEquiv_apply,
-          coeffLinearEquiv_apply, coeff_smul, coeff_diagBasis, coeff_diagBasis]
-        simp [ι]) g
-  have hc := congrArg Hom.coeff h
-  rw [hmap, hmap] at hc
-  exact hom_ext (Finsupp.mapDomain_injective hι hc)
+    Epi (diagBasis X (of 0) x) :=
+  ⟨fun g₁ g₂ h => hom_ext <|
+    Finsupp.mapDomain_injective (glueMiddle_zero_append_right_injective x) <| by
+      rw [← coeff_diagBasis_zero_comp, ← coeff_diagBasis_zero_comp, h]⟩
 
 /-- `cup` is unconditionally a monomorphism for every `R` and `δ`. -/
 instance : Mono (cup : (of 0 : TLCat R δ) ⟶ of 2) :=
@@ -837,45 +842,34 @@ theorem not_epi_cup [Nontrivial R] : ¬ Epi (cup : (of 0 : TLCat R δ) ⟶ of 2)
     simp [Preadditive.comp_sub]
   exact cap_comp_cup_ne_smul_id δ (sub_eq_zero.mp ((cancel_epi cup).mp hkill))
 
+private theorem eq_zero_of_smul_id_zero_eq_zero {s : R}
+    (h : s • 𝟙 (of 0 : TLCat R δ) = 0) : s = 0 := by
+  simpa using congrArg (fun f : (of 0 : TLCat R δ) ⟶ of 0 => f.coeff (PlanarMatching.nested 0)) h
+
+private theorem smul_injective_of_mem_nonZeroDivisors {r : R} (hr : r ∈ nonZeroDivisors R)
+    {X Y : TLCat R δ} : Function.Injective (fun f : X ⟶ Y => r • f) := by
+  intro f₁ f₂ h
+  refine hom_ext (Finsupp.ext fun x => sub_eq_zero.mp (mem_nonZeroDivisors_iff_left.mp hr _ ?_))
+  have hx := DFunLike.congr_fun (congrArg Hom.coeff h) x
+  simpa [mul_sub, sub_eq_zero] using hx
+
 /-- A scalar endomorphism `r • 𝟙 (of 0)` of the empty boundary is a monomorphism if and only if
 `r` is a non-zero-divisor in `R`. -/
 theorem mono_smul_id_zero_iff (r : R) :
-    Mono (r • 𝟙 (of 0 : TLCat R δ)) ↔ r ∈ nonZeroDivisors R := by
-  rw [mem_nonZeroDivisors_iff_right]
-  refine ⟨fun hmono s hsr => ?_, fun hr => ⟨fun {X} f₁ f₂ h => ?_⟩⟩
-  · have hcomp :
-        (s • 𝟙 (of 0 : TLCat R δ)) ≫ (r • 𝟙 (of 0 : TLCat R δ)) =
-          0 ≫ (r • 𝟙 (of 0 : TLCat R δ)) := by
-      simp [smul_smul, mul_comm r s, hsr]
-    have hs := (cancel_mono (r • 𝟙 (of 0 : TLCat R δ))).mp hcomp
-    simpa using DFunLike.congr_fun (congrArg Hom.coeff hs) (PlanarMatching.nested 0)
-  · refine hom_ext (Finsupp.ext fun x => sub_eq_zero.mp (hr _ ?_))
-    have hx := DFunLike.congr_fun (congrArg Hom.coeff h) x
-    simp only [Linear.comp_smul, Category.comp_id, coeff_smul, Finsupp.coe_smul, Pi.smul_apply,
-      smul_eq_mul] at hx
-    calc (f₁.coeff x - f₂.coeff x) * r = r * f₁.coeff x - r * f₂.coeff x := by
-          rw [sub_mul, mul_comm, mul_comm _ r]
-      _ = 0 := sub_eq_zero.mpr hx
+    Mono (r • 𝟙 (of 0 : TLCat R δ)) ↔ r ∈ nonZeroDivisors R :=
+  ⟨fun _ => mem_nonZeroDivisors_iff_left.mpr fun s hsr =>
+    eq_zero_of_smul_id_zero_eq_zero ((cancel_mono (r • 𝟙 (of 0 : TLCat R δ))).mp <| by
+      simp [smul_smul, hsr]),
+    fun hr => ⟨fun f₁ f₂ h => smul_injective_of_mem_nonZeroDivisors hr (by simpa using h)⟩⟩
 
 /-- A scalar endomorphism `r • 𝟙 (of 0)` of the empty boundary is an epimorphism if and only if
 `r` is a non-zero-divisor in `R`. -/
 theorem epi_smul_id_zero_iff (r : R) :
-    Epi (r • 𝟙 (of 0 : TLCat R δ)) ↔ r ∈ nonZeroDivisors R := by
-  rw [mem_nonZeroDivisors_iff_right]
-  refine ⟨fun hepi s hsr => ?_, fun hr => ⟨fun {Z} g₁ g₂ h => ?_⟩⟩
-  · have hcomp :
-        (r • 𝟙 (of 0 : TLCat R δ)) ≫ (s • 𝟙 (of 0 : TLCat R δ)) =
-          (r • 𝟙 (of 0 : TLCat R δ)) ≫ 0 := by
-      simp [smul_smul, hsr]
-    have hs := (cancel_epi (r • 𝟙 (of 0 : TLCat R δ))).mp hcomp
-    simpa using DFunLike.congr_fun (congrArg Hom.coeff hs) (PlanarMatching.nested 0)
-  · refine hom_ext (Finsupp.ext fun z => sub_eq_zero.mp (hr _ ?_))
-    have hz := DFunLike.congr_fun (congrArg Hom.coeff h) z
-    simp only [Linear.smul_comp, Category.id_comp, coeff_smul, Finsupp.coe_smul, Pi.smul_apply,
-      smul_eq_mul] at hz
-    calc (g₁.coeff z - g₂.coeff z) * r = r * g₁.coeff z - r * g₂.coeff z := by
-          rw [sub_mul, mul_comm, mul_comm _ r]
-      _ = 0 := sub_eq_zero.mpr hz
+    Epi (r • 𝟙 (of 0 : TLCat R δ)) ↔ r ∈ nonZeroDivisors R :=
+  ⟨fun _ => mem_nonZeroDivisors_iff_right.mpr fun s hsr =>
+    eq_zero_of_smul_id_zero_eq_zero ((cancel_epi (r • 𝟙 (of 0 : TLCat R δ))).mp <| by
+      simp [smul_smul, hsr]),
+    fun hr => ⟨fun g₁ g₂ h => smul_injective_of_mem_nonZeroDivisors hr (by simpa using h)⟩⟩
 
 /-- A scalar endomorphism `r • 𝟙 (of 0)` of the empty boundary is an isomorphism if and only if
 `r` is a unit in `R`. -/
@@ -889,417 +883,20 @@ theorem isIso_smul_id_zero_iff (r : R) :
 
 /-- The image of `TLDiagCat.circle` in `TLCat R δ` is a monomorphism if and only if
 `δ ∈ nonZeroDivisors R`. -/
-theorem mono_linearize_circle_iff :
+theorem mono_linearize_map_circle_iff :
     Mono ((linearize R δ).map TLDiagCat.circle) ↔ δ ∈ nonZeroDivisors R := by
   rw [linearize_map_circle, mono_smul_id_zero_iff]
 
 /-- The image of `TLDiagCat.circle` in `TLCat R δ` is an epimorphism if and only if
 `δ ∈ nonZeroDivisors R`. -/
-theorem epi_linearize_circle_iff :
+theorem epi_linearize_map_circle_iff :
     Epi ((linearize R δ).map TLDiagCat.circle) ↔ δ ∈ nonZeroDivisors R := by
   rw [linearize_map_circle, epi_smul_id_zero_iff]
 
 /-- The image of `TLDiagCat.circle` in `TLCat R δ` is an isomorphism if and only if `IsUnit δ`. -/
-theorem isIso_linearize_circle_iff :
+theorem isIso_linearize_map_circle_iff :
     IsIso ((linearize R δ).map TLDiagCat.circle) ↔ IsUnit δ := by
   rw [linearize_map_circle, isIso_smul_id_zero_iff]
-
-/-! ### Corner-dragging, rotation, and reflection linear equivalences -/
-
-/-- **Dragging the bottom-right corner up**, lifted linearly to morphism modules of `TLCat R δ`. -/
-noncomputable def dragRight (n m : ℕ) :
-    ((of (n + 1) : TLCat R δ) ⟶ of m) ≃ₗ[R] ((of n : TLCat R δ) ⟶ of (m + 1)) :=
-  (diagBasis (of (n + 1)) (of m)).equiv (diagBasis (of n) (of (m + 1)))
-    (PlanarMatching.cast (Nat.add_right_comm n 1 m))
-
-@[simp]
-theorem dragRight_diagBasis (n m : ℕ) (x : PlanarMatching (n + 1 + m)) :
-    dragRight (R := R) (δ := δ) n m (diagBasis (of (n + 1)) (of m) x) =
-      diagBasis (of n) (of (m + 1)) (PlanarMatching.cast (Nat.add_right_comm n 1 m) x) := by
-  simp [dragRight]
-
-@[simp]
-theorem dragRight_symm_diagBasis (n m : ℕ) (x : PlanarMatching (n + (m + 1))) :
-    (dragRight (R := R) (δ := δ) n m).symm (diagBasis (of n) (of (m + 1)) x) =
-      diagBasis (of (n + 1)) (of m) (PlanarMatching.cast (Nat.add_right_comm n 1 m).symm x) := by
-  simp [dragRight]
-
-@[simp]
-theorem dragRight_linearize_map (n m : ℕ) (f : TLDiagCat.of (n + 1) ⟶ .of m) :
-    dragRight (R := R) (δ := δ) n m ((linearize R δ).map f) =
-      (linearize R δ).map (TLDiagCat.Hom.mk (TLDiagram.dragRight n m f.diagram)) := by
-  rw [linearize_map, map_smul, dragRight_diagBasis]
-  simp [linearize_map]
-
-/-- **Dragging the bottom-left corner up**, lifted linearly to morphism modules of `TLCat R δ`. -/
-noncomputable def dragLeft (n m : ℕ) :
-    ((of (n + 1) : TLCat R δ) ⟶ of m) ≃ₗ[R] ((of n : TLCat R δ) ⟶ of (m + 1)) :=
-  (diagBasis (of (n + 1)) (of m)).equiv (diagBasis (of n) (of (m + 1)))
-    ((PlanarMatching.rotate (n + 1 + m)).symm.trans
-      (PlanarMatching.cast (Nat.add_right_comm n 1 m)))
-
-@[simp]
-theorem dragLeft_diagBasis (n m : ℕ) (x : PlanarMatching (n + 1 + m)) :
-    dragLeft (R := R) (δ := δ) n m (diagBasis (of (n + 1)) (of m) x) =
-      diagBasis (of n) (of (m + 1))
-        (PlanarMatching.cast (Nat.add_right_comm n 1 m)
-          ((PlanarMatching.rotate (n + 1 + m)).symm x)) := by
-  simp [dragLeft]
-
-@[simp]
-theorem dragLeft_symm_diagBasis (n m : ℕ) (x : PlanarMatching (n + (m + 1))) :
-    (dragLeft (R := R) (δ := δ) n m).symm (diagBasis (of n) (of (m + 1)) x) =
-      diagBasis (of (n + 1)) (of m)
-        (PlanarMatching.rotate (n + 1 + m)
-          (PlanarMatching.cast (Nat.add_right_comm n 1 m).symm x)) := by
-  simp [dragLeft]
-
-@[simp]
-theorem dragLeft_linearize_map (n m : ℕ) (f : TLDiagCat.of (n + 1) ⟶ .of m) :
-    dragLeft (R := R) (δ := δ) n m ((linearize R δ).map f) =
-      (linearize R δ).map (TLDiagCat.Hom.mk (TLDiagram.dragLeft n m f.diagram)) := by
-  rw [linearize_map, map_smul, dragLeft_diagBasis]
-  simp [linearize_map]
-
-/-- **Counterclockwise rotation** of boundary points, lifted linearly to a module automorphism of
-`(of n : TLCat R δ) ⟶ of m`. -/
-noncomputable def rotateHom (n m : ℕ) :
-    ((of n : TLCat R δ) ⟶ of m) ≃ₗ[R] ((of n : TLCat R δ) ⟶ of m) :=
-  (diagBasis (of n) (of m)).equiv (diagBasis (of n) (of m)) (PlanarMatching.rotate (n + m))
-
-@[simp]
-theorem rotateHom_diagBasis (n m : ℕ) (x : PlanarMatching (n + m)) :
-    rotateHom (R := R) (δ := δ) n m (diagBasis (of n) (of m) x) =
-      diagBasis (of n) (of m) (PlanarMatching.rotate (n + m) x) := by
-  simp [rotateHom]
-
-@[simp]
-theorem rotateHom_symm_diagBasis (n m : ℕ) (x : PlanarMatching (n + m)) :
-    (rotateHom (R := R) (δ := δ) n m).symm (diagBasis (of n) (of m) x) =
-      diagBasis (of n) (of m) ((PlanarMatching.rotate (n + m)).symm x) := by
-  simp [rotateHom]
-
-@[simp]
-theorem rotateHom_linearize_map (n m : ℕ) (f : TLDiagCat.of n ⟶ .of m) :
-    rotateHom (R := R) (δ := δ) n m ((linearize R δ).map f) =
-      (linearize R δ).map (TLDiagCat.Hom.mk (TLDiagram.rotate n m f.diagram)) := by
-  rw [linearize_map, map_smul, rotateHom_diagBasis]
-  simp [linearize_map]
-
-/-- Rotating once counterclockwise and then dragging the bottom-left corner up equals dragging the
-bottom-right corner up, as linear equivalences on morphism modules. -/
-theorem rotateHom_trans_dragLeft (n m : ℕ) :
-    (rotateHom (R := R) (δ := δ) (n + 1) m).trans (dragLeft n m) = dragRight n m := by
-  rw [rotateHom, dragLeft, dragRight, Module.Basis.equiv_trans]
-  congr 1
-  ext x
-  simp
-
-@[simp]
-theorem dragLeft_rotateHom (n m : ℕ) (f : (of (n + 1) : TLCat R δ) ⟶ of m) :
-    dragLeft n m (rotateHom (n + 1) m f) = dragRight n m f :=
-  LinearEquiv.congr_fun (rotateHom_trans_dragLeft n m) f
-
-private theorem rotateHom_iterate_eq_equiv (n m k : ℕ) (f : (of n : TLCat R δ) ⟶ of m) :
-    (rotateHom n m)^[k] f =
-      (diagBasis (of n) (of m)).equiv (diagBasis (of n) (of m))
-        (PlanarMatching.rotate (n + m) ^ k) f := by
-  induction k with
-  | zero =>
-    rw [pow_zero, Equiv.Perm.one_def, Module.Basis.equiv_refl]
-    rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply', ih]
-    have heq :
-        ((diagBasis (of n : TLCat R δ) (of m)).equiv (diagBasis (of n : TLCat R δ) (of m))
-          (PlanarMatching.rotate (n + m) ^ k)).trans (rotateHom n m) =
-        (diagBasis (of n : TLCat R δ) (of m)).equiv (diagBasis (of n : TLCat R δ) (of m))
-          (PlanarMatching.rotate (n + m) ^ (k + 1)) := by
-      rw [rotateHom, Module.Basis.equiv_trans]
-      congr 1
-      refine Equiv.ext fun x => ?_
-      simp [pow_succ', Equiv.Perm.mul_apply]
-    exact LinearEquiv.congr_fun heq f
-
-/-- Rotating `n + m` times around the boundary of `of n ⟶ of m` is the identity. -/
-@[simp]
-theorem rotateHom_iterate_self (n m : ℕ) (f : (of n : TLCat R δ) ⟶ of m) :
-    (rotateHom n m)^[n + m] f = f := by
-  rw [rotateHom_iterate_eq_equiv, PlanarMatching.rotate_pow_self, Equiv.Perm.one_def,
-    Module.Basis.equiv_refl]
-  rfl
-
-theorem dragRight_id_one :
-    dragRight 0 1 (𝟙 (of 1 : TLCat R δ)) = (cup : (of 0 : TLCat R δ) ⟶ of 2) := by
-  rw [id_eq_diagBasis, dragRight_diagBasis, cup_eq_diagBasis]
-  exact congrArg (diagBasis (of 0 : TLCat R δ) (of 2))
-    (by simpa using congrArg TLDiagram.matching TLDiagram.dragRight_id_one)
-
-theorem dragLeft_id_one :
-    dragLeft 0 1 (𝟙 (of 1 : TLCat R δ)) = (cup : (of 0 : TLCat R δ) ⟶ of 2) := by
-  rw [id_eq_diagBasis, dragLeft_diagBasis, cup_eq_diagBasis]
-  exact congrArg (diagBasis (of 0 : TLCat R δ) (of 2))
-    (by simpa using congrArg TLDiagram.matching TLDiagram.dragLeft_id_one)
-
-theorem dragRight_symm_id_one :
-    (dragRight 1 0).symm (𝟙 (of 1 : TLCat R δ)) = (cap : (of 2 : TLCat R δ) ⟶ of 0) := by
-  rw [id_eq_diagBasis, dragRight_symm_diagBasis, cap_eq_diagBasis]
-  exact congrArg (diagBasis (of 2 : TLCat R δ) (of 0))
-    (by simpa using congrArg TLDiagram.matching TLDiagram.dragRight_symm_id_one)
-
-/-- **Vertical reflection** (turning a diagram upside down), lifted linearly to morphism modules
-`((of n : TLCat R δ) ⟶ of m) ≃ₗ[R] (of m ⟶ of n)`. -/
-noncomputable def verticalReflectHom (n m : ℕ) :
-    ((of n : TLCat R δ) ⟶ of m) ≃ₗ[R] ((of m : TLCat R δ) ⟶ of n) :=
-  (diagBasis (of n) (of m)).equiv (diagBasis (of m) (of n))
-    ((PlanarMatching.reflect (n + m)).trans (PlanarMatching.cast (Nat.add_comm n m)))
-
-@[simp]
-theorem verticalReflectHom_diagBasis (n m : ℕ) (x : PlanarMatching (n + m)) :
-    verticalReflectHom (R := R) (δ := δ) n m (diagBasis (of n) (of m) x) =
-      diagBasis (of m) (of n)
-        (PlanarMatching.cast (Nat.add_comm n m) (PlanarMatching.reflect (n + m) x)) := by
-  simp [verticalReflectHom]
-
-@[simp]
-theorem verticalReflectHom_linearize_map (n m : ℕ) (f : TLDiagCat.of n ⟶ .of m) :
-    verticalReflectHom (R := R) (δ := δ) n m ((linearize R δ).map f) =
-      (linearize R δ).map (TLDiagCat.Hom.mk (TLDiagram.verticalReflect n m f.diagram)) := by
-  rw [linearize_map, map_smul, verticalReflectHom_diagBasis]
-  simp [linearize_map]
-
-theorem verticalReflectHom_trans_verticalReflectHom (n m : ℕ) :
-    (verticalReflectHom (R := R) (δ := δ) n m).trans (verticalReflectHom m n) =
-      LinearEquiv.refl R _ := by
-  rw [verticalReflectHom, verticalReflectHom, Module.Basis.equiv_trans,
-    ← Module.Basis.equiv_refl (diagBasis (of n) (of m))]
-  congr 1
-  refine Equiv.ext fun x => ?_
-  have h := congrArg TLDiagram.matching
-    (TLDiagram.verticalReflect_verticalReflect (⟨x, 0⟩ : TLDiagram n m))
-  simpa only [TLDiagram.matching_verticalReflect, Equiv.trans_apply, Equiv.refl_apply] using h
-
-@[simp]
-theorem verticalReflectHom_verticalReflectHom (n m : ℕ) (f : (of n : TLCat R δ) ⟶ of m) :
-    verticalReflectHom m n (verticalReflectHom n m f) = f :=
-  LinearEquiv.congr_fun (verticalReflectHom_trans_verticalReflectHom n m) f
-
-@[simp]
-theorem verticalReflectHom_symm (n m : ℕ) :
-    (verticalReflectHom (R := R) (δ := δ) n m).symm = verticalReflectHom m n :=
-  LinearEquiv.ext fun f =>
-    (LinearEquiv.symm_apply_eq _).mpr (verticalReflectHom_verticalReflectHom m n f).symm
-
-@[simp]
-theorem verticalReflectHom_id (n : ℕ) :
-    verticalReflectHom n n (𝟙 (of n : TLCat R δ)) = 𝟙 (of n : TLCat R δ) := by
-  rw [id_eq_diagBasis, verticalReflectHom_diagBasis]
-  have h := congrArg TLDiagram.matching (TLDiagram.verticalReflect_id n)
-  rw [TLDiagram.matching_verticalReflect, TLDiagram.matching_id] at h
-  exact congrArg (diagBasis (of n : TLCat R δ) (of n)) h
-
-@[simp]
-theorem verticalReflectHom_cup :
-    verticalReflectHom 0 2 (cup : (of 0 : TLCat R δ) ⟶ of 2) = cap := by
-  rw [cup_eq_diagBasis, verticalReflectHom_diagBasis, cap_eq_diagBasis]
-  have h := congrArg TLDiagram.matching TLDiagram.verticalReflect_cup
-  rw [TLDiagram.matching_verticalReflect] at h
-  exact congrArg (diagBasis (of 2 : TLCat R δ) (of 0)) h
-
-@[simp]
-theorem verticalReflectHom_cap :
-    verticalReflectHom 2 0 (cap : (of 2 : TLCat R δ) ⟶ of 0) = cup := by
-  rw [cap_eq_diagBasis, verticalReflectHom_diagBasis, cup_eq_diagBasis]
-  have h := congrArg TLDiagram.matching TLDiagram.verticalReflect_cap
-  rw [TLDiagram.matching_verticalReflect] at h
-  exact congrArg (diagBasis (of 0 : TLCat R δ) (of 2)) h
-
-/-- **Horizontal (left–right) reflection**, lifted linearly to a module involution of
-`(of n : TLCat R δ) ⟶ of m`. -/
-noncomputable def reflectHom (n m : ℕ) :
-    ((of n : TLCat R δ) ⟶ of m) ≃ₗ[R] ((of n : TLCat R δ) ⟶ of m) :=
-  (diagBasis (of n) (of m)).equiv (diagBasis (of n) (of m))
-    ((PlanarMatching.reflect (n + m)).trans (PlanarMatching.rotate (n + m) ^ n))
-
-@[simp]
-theorem reflectHom_diagBasis (n m : ℕ) (x : PlanarMatching (n + m)) :
-    reflectHom (R := R) (δ := δ) n m (diagBasis (of n) (of m) x) =
-      diagBasis (of n) (of m)
-        ((PlanarMatching.rotate (n + m) ^ n) (PlanarMatching.reflect (n + m) x)) := by
-  simp [reflectHom]
-
-@[simp]
-theorem reflectHom_linearize_map (n m : ℕ) (f : TLDiagCat.of n ⟶ .of m) :
-    reflectHom (R := R) (δ := δ) n m ((linearize R δ).map f) =
-      (linearize R δ).map (TLDiagCat.Hom.mk (TLDiagram.reflect n m f.diagram)) := by
-  rw [linearize_map, map_smul, reflectHom_diagBasis]
-  simp [linearize_map]
-
-theorem reflectHom_trans_reflectHom (n m : ℕ) :
-    (reflectHom (R := R) (δ := δ) n m).trans (reflectHom n m) = LinearEquiv.refl R _ := by
-  rw [reflectHom, Module.Basis.equiv_trans, ← Module.Basis.equiv_refl (diagBasis (of n) (of m))]
-  congr 1
-  refine Equiv.ext fun x => ?_
-  have h := congrArg TLDiagram.matching (TLDiagram.reflect_reflect (⟨x, 0⟩ : TLDiagram n m))
-  simpa only [TLDiagram.matching_reflect, Equiv.trans_apply, Equiv.refl_apply] using h
-
-@[simp]
-theorem reflectHom_reflectHom (n m : ℕ) (f : (of n : TLCat R δ) ⟶ of m) :
-    reflectHom n m (reflectHom n m f) = f :=
-  LinearEquiv.congr_fun (reflectHom_trans_reflectHom n m) f
-
-@[simp]
-theorem reflectHom_symm (n m : ℕ) :
-    (reflectHom (R := R) (δ := δ) n m).symm = reflectHom n m :=
-  LinearEquiv.ext fun f =>
-    (LinearEquiv.symm_apply_eq _).mpr (reflectHom_reflectHom n m f).symm
-
-theorem verticalReflectHom_trans_reflectHom (n m : ℕ) :
-    (verticalReflectHom (R := R) (δ := δ) n m).trans (reflectHom m n) =
-      (reflectHom n m).trans (verticalReflectHom n m) := by
-  rw [verticalReflectHom, reflectHom, reflectHom, Module.Basis.equiv_trans,
-    Module.Basis.equiv_trans]
-  congr 1
-  refine Equiv.ext fun x => ?_
-  have h := congrArg TLDiagram.matching
-    (TLDiagram.reflect_verticalReflect (⟨x, 0⟩ : TLDiagram n m))
-  simpa only [TLDiagram.matching_reflect, TLDiagram.matching_verticalReflect,
-    Equiv.trans_apply] using h
-
-theorem reflectHom_verticalReflectHom (n m : ℕ) (f : (of n : TLCat R δ) ⟶ of m) :
-    reflectHom m n (verticalReflectHom n m f) =
-      verticalReflectHom n m (reflectHom n m f) :=
-  LinearEquiv.congr_fun (verticalReflectHom_trans_reflectHom n m) f
-
-theorem dragRight_trans_reflectHom (n m : ℕ) :
-    (dragRight (R := R) (δ := δ) n m).trans (reflectHom n (m + 1)) =
-      (reflectHom (n + 1) m).trans (dragLeft n m) := by
-  rw [dragRight, reflectHom, reflectHom, dragLeft, Module.Basis.equiv_trans,
-    Module.Basis.equiv_trans]
-  congr 1
-  refine Equiv.ext fun x => ?_
-  have h := congrArg TLDiagram.matching
-    (TLDiagram.reflect_dragRight (⟨x, 0⟩ : TLDiagram (n + 1) m))
-  simpa only [TLDiagram.matching_reflect, TLDiagram.matching_dragRight,
-    TLDiagram.matching_dragLeft, Equiv.trans_apply] using h
-
-theorem reflectHom_dragRight (n m : ℕ) (f : (of (n + 1) : TLCat R δ) ⟶ of m) :
-    reflectHom n (m + 1) (dragRight n m f) = dragLeft n m (reflectHom (n + 1) m f) :=
-  LinearEquiv.congr_fun (dragRight_trans_reflectHom n m) f
-
-/-! ### Base change along a ring homomorphism -/
-
-section BaseChange
-
-variable {S : Type v} [CommRing S] {δ' : S}
-
-/-- **Base change of the Temperley–Lieb category** along a ring homomorphism `φ : R →+* S` sending
-`δ` to `δ'`: preserves objects and applies `φ` to every planar-matching coefficient.
-
-Marked `@[expose, implicit_reducible]` so `((mapRingHom φ hδ).obj X)` reduces in dependent morphism
-types `(mapRingHom φ hδ).obj X ⟶ (mapRingHom φ hδ).obj Y` without `eqToHom`. -/
-@[expose, implicit_reducible]
-noncomputable def mapRingHom (φ : R →+* S) (hδ : φ δ = δ') : TLCat R δ ⥤ TLCat S δ' where
-  obj X := of X.as
-  map f := ⟨Finsupp.mapRange φ φ.map_zero f.coeff⟩
-  map_id X := hom_ext <| by simp
-  map_comp f g := hom_ext <| by
-    simp only [coeff_comp]
-    induction f.coeff using Finsupp.induction_linear with
-    | zero => simp
-    | add u₁ u₂ ih₁ ih₂ => simp [Finsupp.mapRange_add, ih₁, ih₂]
-    | single x a =>
-      induction g.coeff using Finsupp.induction_linear with
-      | zero => simp
-      | add v₁ v₂ ih₁ ih₂ => simp [Finsupp.mapRange_add, ih₁, ih₂]
-      | single y b =>
-        simp [compCoeff_single_single, hδ]
-
-@[simp]
-theorem mapRingHom_obj_as (φ : R →+* S) (hδ : φ δ = δ') (X : TLCat R δ) :
-    ((mapRingHom φ hδ).obj X).as = X.as := (rfl)
-
-@[simp]
-theorem mapRingHom_obj_of (φ : R →+* S) (hδ : φ δ = δ') (n : ℕ) :
-    (mapRingHom φ hδ).obj (of n) = of n := (rfl)
-
-@[simp]
-theorem coeff_mapRingHom_map (φ : R →+* S) (hδ : φ δ = δ') {X Y : TLCat R δ} (f : X ⟶ Y) :
-    ((mapRingHom φ hδ).map f).coeff = Finsupp.mapRange φ φ.map_zero f.coeff := (rfl)
-
-instance (φ : R →+* S) (hδ : φ δ = δ') : (mapRingHom φ hδ).Additive where
-  map_add {_ _} f g := hom_ext (Finsupp.ext fun x => by simp)
-
-@[simp]
-theorem mapRingHom_map_diagBasis (φ : R →+* S) (hδ : φ δ = δ')
-    {X Y : TLCat R δ} (x : PlanarMatching (X.as + Y.as)) :
-    (mapRingHom φ hδ).map (diagBasis X Y x) =
-      diagBasis ((mapRingHom φ hδ).obj X) ((mapRingHom φ hδ).obj Y) x :=
-  hom_ext <| by simp
-
-@[simp]
-theorem mapRingHom_map_smul (φ : R →+* S) (hδ : φ δ = δ') {X Y : TLCat R δ}
-    (r : R) (f : X ⟶ Y) :
-    (mapRingHom φ hδ).map (r • f) = φ r • (mapRingHom φ hδ).map f :=
-  hom_ext (Finsupp.ext fun x => by simp)
-
-@[simp]
-theorem mapRingHom_map_linearize_map (φ : R →+* S) (hδ : φ δ = δ')
-    {X Y : TLDiagCat} (f : X ⟶ Y) :
-    (mapRingHom φ hδ).map ((linearize R δ).map f) = (linearize S δ').map f := by
-  rw [linearize_map, mapRingHom_map_smul, map_pow, hδ,
-    mapRingHom_map_diagBasis φ hδ (X := of X.as) (Y := of Y.as) f.diagram.matching]
-  rfl
-
-@[simp]
-theorem mapRingHom_map_cup (φ : R →+* S) (hδ : φ δ = δ') :
-    (mapRingHom φ hδ).map (cup : (of 0 : TLCat R δ) ⟶ of 2) = cup :=
-  mapRingHom_map_diagBasis φ hδ (X := of 0) (Y := of 2) TLDiagram.cup.matching
-
-@[simp]
-theorem mapRingHom_map_cap (φ : R →+* S) (hδ : φ δ = δ') :
-    (mapRingHom φ hδ).map (cap : (of 2 : TLCat R δ) ⟶ of 0) = cap :=
-  mapRingHom_map_diagBasis φ hδ (X := of 2) (Y := of 0) TLDiagram.cap.matching
-
-/-- Base change along `RingHom.id R` is naturally isomorphic to the identity functor. -/
-noncomputable def mapRingHomIdIso :
-    mapRingHom (RingHom.id R) (rfl : RingHom.id R δ = δ) ≅ 𝟭 (TLCat R δ) :=
-  NatIso.ofComponents (fun X => Iso.refl X) fun {X Y} f => by
-    cases X; cases Y
-    dsimp only [Functor.id_obj, Functor.id_map, Iso.refl_hom, mapRingHom]
-    rw [Category.comp_id, Category.id_comp]
-    exact hom_ext (Finsupp.ext fun _ => by simp)
-
-@[simp]
-theorem mapRingHomIdIso_hom_app (X : TLCat R δ) :
-    (mapRingHomIdIso (R := R) (δ := δ)).hom.app X = 𝟙 X := (rfl)
-
-@[simp]
-theorem mapRingHomIdIso_inv_app (X : TLCat R δ) :
-    (mapRingHomIdIso (R := R) (δ := δ)).inv.app X = 𝟙 X := (rfl)
-
-/-- Composing two base-change functors is naturally isomorphic to base change along the composite
-ring homomorphism. -/
-noncomputable def mapRingHomCompIso {T : Type*} [CommRing T] {δ'' : T}
-    (φ : R →+* S) (hδ : φ δ = δ') (ψ : S →+* T) (hδ' : ψ δ' = δ'') :
-    mapRingHom φ hδ ⋙ mapRingHom ψ hδ' ≅
-      mapRingHom (ψ.comp φ) (by rw [RingHom.comp_apply, hδ, hδ']) :=
-  NatIso.ofComponents (fun _ => Iso.refl _) fun f => by
-    dsimp only [Functor.comp_obj, Functor.comp_map, Iso.refl_hom]
-    rw [Category.comp_id, Category.id_comp]
-    exact hom_ext (Finsupp.ext fun _ => by simp)
-
-@[simp]
-theorem mapRingHomCompIso_hom_app {T : Type*} [CommRing T] {δ'' : T}
-    (φ : R →+* S) (hδ : φ δ = δ') (ψ : S →+* T) (hδ' : ψ δ' = δ'') (X : TLCat R δ) :
-    (mapRingHomCompIso φ hδ ψ hδ').hom.app X = 𝟙 (of X.as) := (rfl)
-
-@[simp]
-theorem mapRingHomCompIso_inv_app {T : Type*} [CommRing T] {δ'' : T}
-    (φ : R →+* S) (hδ : φ δ = δ') (ψ : S →+* T) (hδ' : ψ δ' = δ'') (X : TLCat R δ) :
-    (mapRingHomCompIso φ hδ ψ hδ').inv.app X = 𝟙 (of X.as) := (rfl)
-
-end BaseChange
 
 end Category
 
@@ -1329,10 +926,9 @@ example :
     ((cup : (of 0 : TLCat (ZMod 6) 2) ⟶ of 2) ≫ cap) ≠ 0 ∧
       ¬ Mono ((cup : (of 0 : TLCat (ZMod 6) 2) ⟶ of 2) ≫ cap) := by
   refine ⟨fun h => ?_, ?_⟩
-  · have h0 := DFunLike.congr_fun (congrArg Hom.coeff h) (PlanarMatching.nested 0)
-    rw [cup_comp_cap] at h0
-    simp only [coeff_smul, coeff_id, coeff_zero, Finsupp.coe_smul, Finsupp.coe_zero,
-      Pi.smul_apply, Pi.zero_apply, Finsupp.single_eq_same, smul_eq_mul, mul_one] at h0
+  · have h0 : (2 : ZMod 6) = 0 := by
+      simpa [cup_comp_cap] using congrArg
+        (fun f : (of 0 : TLCat (ZMod 6) 2) ⟶ of 0 => f.coeff (PlanarMatching.nested 0)) h
     exact absurd h0 (by decide)
   · rw [cup_comp_cap, mono_smul_id_zero_iff, mem_nonZeroDivisors_iff_right]
     push Not
