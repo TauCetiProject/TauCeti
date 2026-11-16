@@ -53,6 +53,7 @@ and adds companion statements used for compactness and finite approximation of f
   exhausting bands `[-Rₙ, Rₙ] × ℝ` has a subsequence converging locally uniformly on the plane.
   In particular, so do the translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a
   half-plane `s ≥ b` with values in a compact set.
+  The same holds on exhausting squares `[-Rₙ, Rₙ]²`.
 * The `C`-Lipschitz maps `X → Y` whose value at a fixed point `x₀` lies in a closed set `K` form a
   compact subset of `C(X, Y)` when the closed `(C * dist x x₀)`-thickening of `K` is compact for
   every `x`, in particular when `Y` is proper and `K` is compact. For paths on `I`, compactness
