@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Sums over dyadic scales
@@ -53,8 +54,6 @@ kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
   `2^{jα} gⱼ ≤ a` and `2^{jα} gⱼ ≤ b 2^j d` sums to at most `C (a + b) d^α`.
 * `TauCeti.rpow_mul_one_add_rpow_neg_le`: `(2^j)^s (1 + 2^j r)^(-N) ≤ ρ^(-N) (2^(s - N))^j` for
   `r ≥ ρ > 0`.
-* `TauCeti.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A^δ B^(1 - δ)` for
-  `0 ≤ δ ≤ 1`.
 * `TauCeti.exists_norm_le_of_hasSum_of_le_of_le`: a series whose terms are bounded by
   `D (2^j)^(s + 1) d` and by `C (2^j)^s (1 + 2^j r)^(-N)` sums to at most
   `E D^δ C^(1 - δ) d^δ r^(-(s + δ))`.
@@ -299,16 +298,6 @@ theorem rpow_mul_one_add_rpow_neg_le {s ρ r : ℝ} {N : ℕ} (hρ : 0 < ρ) (hr
     _ = ρ ^ (-(N : ℝ)) * ((2 : ℝ) ^ (s - N)) ^ j := by
         rw [← sub_eq_add_neg, Real.rpow_pow_comm zero_le_two]
 
-/-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
-every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
-theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤ A) (hB : P ≤ B)
-    (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) : P ≤ A ^ δ * B ^ (1 - δ) := by
-  calc P = P ^ δ * P ^ (1 - δ) := by
-        rw [← Real.rpow_add' hP (by norm_num), add_sub_cancel, Real.rpow_one]
-    _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (Real.rpow_le_rpow hP hA hδ0)
-        (Real.rpow_le_rpow hP hB (by linarith)) (by positivity)
-        (Real.rpow_nonneg (hP.trans hA) _)
-
 /-- **Summing interpolated dyadic bounds.** For `0 < δ < 1` and `0 < s + δ < N (1 - δ)` there is
 `E ≥ 0` such that, if `L = ∑ⱼ fⱼ` in a normed group with `‖fⱼ‖ ≤ D (2^j)^(s + 1) d` and
 `‖fⱼ‖ ≤ C (2^j)^s (1 + 2^j r)^(-N)` for all `j`, where `C, D, d ≥ 0` and `r > 0`, then
@@ -327,7 +316,8 @@ theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < 
   -- The interpolated bound of the `j`-th term.
   have hterm (j : ℕ) : ‖f j‖ ≤ c * (((2 : ℝ) ^ j) ^ (s + δ) *
       (1 + 2 ^ j * r) ^ (-(N * (1 - δ)))) := by
-    refine (le_rpow_mul_rpow_of_le_of_le (norm_nonneg _) (hA j) (hB j) hδ0.le hδ1.le).trans_eq ?_
+    refine (Real.le_rpow_mul_rpow_of_le_of_le (norm_nonneg _) (hA j) (hB j) hδ0.le
+      hδ1.le).trans_eq ?_
     have hexp : ((2 : ℝ) ^ j) ^ (s + δ) = ((2 : ℝ) ^ j) ^ ((s + 1) * δ) *
         ((2 : ℝ) ^ j) ^ (s * (1 - δ)) := by
       rw [← Real.rpow_add (by positivity)]

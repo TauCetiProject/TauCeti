@@ -129,6 +129,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_one_sub_mul_mul_rpow`: `(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for
   `0 ≤ c`.
+* `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
+  `0 ≤ P` and `0 ≤ δ ≤ 1`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -358,6 +360,16 @@ theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
     (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
   rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
     ← rpow_add' hc (by simp), sub_add_cancel, rpow_one]
+
+/-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
+every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
+theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤ A) (hB : P ≤ B)
+    (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) : P ≤ A ^ δ * B ^ (1 - δ) := by
+  calc P = P ^ δ * P ^ (1 - δ) := by
+        rw [← rpow_add' hP (by norm_num), add_sub_cancel, rpow_one]
+    _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (rpow_le_rpow hP hA hδ0)
+        (rpow_le_rpow hP hB (by linarith)) (by positivity)
+        (rpow_nonneg (hP.trans hA) _)
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)

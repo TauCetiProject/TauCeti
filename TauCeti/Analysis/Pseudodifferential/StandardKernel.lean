@@ -522,11 +522,6 @@ theorem IsUniform.exists_norm_offDiagonalKernel_le [CompleteSpace V] [CompleteSp
   rw [tsum_mul_left, mul_assoc]
   exact mul_le_mul_of_nonneg_left hle hC0
 
-/-- `(r / 2)^(-p) = 2^p r^(-p)`. -/
-private theorem div_two_rpow_neg {r : ℝ} (hr : 0 ≤ r) (p : ℝ) :
-    (r / 2) ^ (-p) = 2 ^ p * r ^ (-p) := by
-  rw [Real.div_rpow hr zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
-
 /-- The common step of the two smoothness estimates. If the increments of the piece kernels
 between `(x, y)` and `(x', y')` are at most `D (2^j)^(m + n + 1) d`, and both points are at
 distance at least `r / 2` from the diagonal, then the increment of the kernel is at most
@@ -560,7 +555,7 @@ private theorem IsUniform.exists_norm_offDiagonalKernel_sub_le_of_increment [Com
   · refine (norm_sub_le _ _).trans ?_
     rw [two_mul, add_mul, add_mul]
     exact add_le_add (hsize j hxy) (hsize j hxy')
-  · rw [div_two_rpow_neg hr.le]
+  · rw [Real.div_rpow hr.le zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul]
     ring
 
 /-- **The smoothness estimate in the second variable.** The kernel of a uniform symbol `a` of
