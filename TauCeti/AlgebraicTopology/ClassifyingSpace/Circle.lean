@@ -186,9 +186,8 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyi
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (Multiplicative ℤ) ℤ)).inv
           (Finsupp.single (Circle.fundamentalGroupMulEquiv 1 γ) 1)) := by
   rw [classifyingSpaceFirstHomologyAddEquivGroupHomology_apply,
-    classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace]
-  exact groupHomology.H1AddEquivOfIsTrivial_symm_tmul
-    (A := Rep.trivial ℤ (Multiplicative ℤ) ℤ) _ 1
+    classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace,
+    TensorProduct.rid_symm_apply, groupHomology.H1AddEquivOfIsTrivial_symm_tmul]
 
 /-- The counterclockwise loop `Circle.expLoop` corresponds, under
 `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, to the class in `H₁(ℤ, ℤ)` of the
