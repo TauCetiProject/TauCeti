@@ -473,6 +473,18 @@ variable {R : Type*} [Ring R] {M N : Type*} [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {𝒢 : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
   [DirectSum.Decomposition 𝒢] [DirectSum.Decomposition 𝒩]
 
+/-- Summing the components of `y` of degrees `i - 1`, over a set of degrees `i` containing the
+support of `y` shifted up by one, recovers `y`. -/
+private theorem sum_decompose_sub_one [∀ (i) (x : 𝒩 i), Decidable (x ≠ 0)] {F : Finset ℤ}
+    (y : N) (hF : (decompose 𝒩 y).support.image (· + 1) ⊆ F) :
+    ∑ i ∈ F, (decompose 𝒩 y (i - 1) : N) = y := by
+  rw [← Finset.sum_subset hF fun i _ hi ↦ by
+      rw [DFinsupp.notMem_support_iff.1 fun h ↦
+        hi (Finset.mem_image.2 ⟨_, h, sub_add_cancel i 1⟩), ZeroMemClass.coe_zero],
+    Finset.sum_image fun _ _ _ _ h ↦ add_right_cancel h]
+  exact (Finset.sum_congr rfl fun i _ ↦ by rw [add_sub_cancel_right]).trans
+    (sum_support_decompose 𝒩 y)
+
 /-- **Relative cycles are relative boundaries once homogeneous ones are.** For maps of graded
 modules `Φ : M → N`, of degree `0`, and differentials `dM`, `dN` of degree `1`, and homogeneous
 submodules `A` of `M` and `S`, `T` of `N`: if every homogeneous pair `(x, y)` with `dM x ∈ A`,
@@ -494,22 +506,15 @@ theorem exists_relative_boundary_of_forall_homogeneous {dM : M →ₗ[R] M} {dN 
     refine H i _ (SetLike.coe_mem _) _ (SetLike.coe_mem _) ?_ (hT _ hy) ?_
     · rw [hdM.map_decompose]
       exact hA _ hx
-    · rw [hΦ.map_decompose, hdN.map_decompose, add_zero, sub_add_cancel, ← Submodule.coe_sub,
-        ← DirectSum.sub_apply, ← decompose_sub]
-      exact hS _ hxy
+    · rw [hΦ.map_decompose, hdN.map_decompose, add_zero, sub_add_cancel]
+      simpa [decompose_sub] using hS i hxy
   choose u v hv hu huv using key
   let F : Finset ℤ := (decompose 𝒢 x).support ∪ (decompose 𝒩 y).support.image (· + 1)
   have hx' : ∑ i ∈ F, (decompose 𝒢 x i : M) = x := by
     rw [← Finset.sum_subset Finset.subset_union_left fun i _ hi ↦ by
       rw [DFinsupp.notMem_support_iff.1 hi, ZeroMemClass.coe_zero]]
     exact sum_support_decompose 𝒢 x
-  have hy' : ∑ i ∈ F, (decompose 𝒩 y (i - 1) : N) = y := by
-    rw [← Finset.sum_subset Finset.subset_union_right fun i _ hi ↦ by
-        rw [DFinsupp.notMem_support_iff.1 fun h ↦
-          hi (Finset.mem_image.2 ⟨_, h, sub_add_cancel i 1⟩), ZeroMemClass.coe_zero],
-      Finset.sum_image fun _ _ _ _ h ↦ add_right_cancel h]
-    exact (Finset.sum_congr rfl fun i _ ↦ by rw [add_sub_cancel_right]).trans
-      (sum_support_decompose 𝒩 y)
+  have hy' := sum_decompose_sub_one y (F := F) Finset.subset_union_right
   refine ⟨∑ i ∈ F, u i, ∑ i ∈ F, v i, sum_mem fun i _ ↦ hv i, ?_, ?_⟩
   · rw [map_sum, ← hx', ← Finset.sum_sub_distrib]
     exact sum_mem fun i _ ↦ hu i

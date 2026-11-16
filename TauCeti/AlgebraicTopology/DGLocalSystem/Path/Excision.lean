@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Skeleton
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RelativeQuasiIso
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Fibration.CubicalCells
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
 
@@ -78,11 +78,29 @@ private abbrev pathFromEndpoint (B : Type u) [TopologicalSpace B] (b : B) :
 
 variable (b C) in
 /-- The pullback of the based path fibration to the disks of the `n`-cells, as the pullback
-`TauCeti.TopCat.cellPullback` of a map in `TopCat`. -/
+`TauCeti.TopCat.cellPullback` of a map in `TopCat`. Both spaces are subtypes of the product of the
+disks of the `n`-cells with `P_b B`, since the carrier of `TopCat.of X` is `X` by definition, so the
+homeomorphism is the identity on the underlying pairs and only the two defining equations, which
+are symmetric to each other, differ. -/
 private def cellPullbackHomeomorph (n : ℕ) :
     MoorePathPullback (sigmaCellMap C n) b ≃ₜ TopCat.cellPullback (pathFromEndpoint B b) C n :=
   Homeomorph.subtype (Homeomorph.refl _) fun _ ↦ by
     simp [MoorePathFrom.endpoint_apply, eq_comm]
+
+omit [T2Space B] in
+variable (b C) in
+/-- `cellPullbackHomeomorph` is the identity on the underlying pairs. -/
+private theorem cellPullbackHomeomorph_apply_fst (n : ℕ)
+    (z : MoorePathPullback (sigmaCellMap C n) b) : (cellPullbackHomeomorph b C n z).1 = z.1 :=
+  rfl
+
+omit [T2Space B] in
+variable (b C) in
+/-- The inverse of `cellPullbackHomeomorph` is the identity on the underlying pairs. -/
+private theorem cellPullbackHomeomorph_symm_apply_fst (n : ℕ)
+    (z : TopCat.cellPullback (pathFromEndpoint B b) C n) :
+    ((cellPullbackHomeomorph b C n).symm z).1 = z.1 :=
+  rfl
 
 variable (b C) in
 /-- The preimage of `Xⁿ` is the `n`-th stage of the skeletal filtration. -/
@@ -111,7 +129,8 @@ private theorem toMoorePathFrom_eq (n : ℕ) (z : MoorePathPullback (sigmaCellMa
   refine MoorePathFrom.ext ?_
   rw [MoorePathPullback.toMoorePathFrom_toMoorePath, MoorePathPullback.path_mk]
   exact (congrArg MoorePathFrom.toMoorePath
-    (TopCat.coe_cellPullbackPairMap_fst_apply n (cellPullbackHomeomorph b C n ⟨(d, γ), h⟩))).symm
+    ((TopCat.coe_cellPullbackPairMap_fst_apply n (cellPullbackHomeomorph b C n ⟨(d, γ), h⟩)).trans
+      (congrArg Prod.snd (cellPullbackHomeomorph_apply_fst b C n ⟨(d, γ), h⟩)))).symm
 
 omit [T2Space B] in
 variable (b C) in
@@ -126,7 +145,9 @@ private theorem image_symm_range_cellPullbackPair_map (n : ℕ) :
     Set.mem_ofPred_eq]
   refine ⟨?_, fun hd ↦ ⟨_, ⟨⟨cellPullbackHomeomorph b C n ⟨(d, γ), h⟩, hd⟩, rfl⟩, rfl⟩⟩
   rintro ⟨_, ⟨v, rfl⟩, hv⟩
-  have hd : v.1.1.1 = d := congrArg (fun z ↦ z.1.1) hv
+  have hd : v.1.1.1 = d :=
+    (congrArg Prod.fst (cellPullbackHomeomorph_symm_apply_fst b C n _)).symm.trans
+      (congrArg (fun z ↦ z.1.1) hv)
   rw [← hd]
   exact v.2
 

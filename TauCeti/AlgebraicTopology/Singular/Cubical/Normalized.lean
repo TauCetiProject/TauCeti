@@ -329,6 +329,19 @@ theorem map_comp_apply (g : C(Y, Z)) (f : C(X, Y)) {n : ℕ} (c : NormalizedCubi
     map R (g.comp f) n c = map R g n (map R f n c) := by
   rw [map_comp, LinearMap.comp_apply]
 
+/-- Pushing chains forward along a homeomorphism and back is the identity. -/
+@[simp]
+theorem map_symm_map_apply (e : X ≃ₜ Y) {n : ℕ} (c : NormalizedCubicalChain X R n) :
+    map R (e.symm : C(Y, X)) n (map R (e : C(X, Y)) n c) = c := by
+  rw [← map_comp_apply]
+  simp
+
+/-- Pushing chains forward along the inverse of a homeomorphism and back is the identity. -/
+@[simp]
+theorem map_map_symm_apply (e : X ≃ₜ Y) {n : ℕ} (c : NormalizedCubicalChain Y R n) :
+    map R (e : C(X, Y)) n (map R (e.symm : C(Y, X)) n c) = c := by
+  simpa using map_symm_map_apply R e.symm c
+
 /-- Normalization preserves injectivity of a map of spaces. No embedding hypothesis is needed. -/
 theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
     Function.Injective (map R f n) := by

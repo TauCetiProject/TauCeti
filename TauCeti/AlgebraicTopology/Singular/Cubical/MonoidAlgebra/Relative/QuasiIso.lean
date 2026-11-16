@@ -76,14 +76,6 @@ private theorem d_mem_range_map_f_iff (P : TopPair.{u}) {Y : Type u} [Topologica
       cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff, ← map_boundary_apply,
       map_mem_supportedIn_image_iff R hι]
 
-/-- Pushing chains forward along a homeomorphism and back is the identity. -/
-private theorem map_symm_map_apply {Z W : Type*} [TopologicalSpace Z] [TopologicalSpace W]
-    (e : Z ≃ₜ W) {m : ℕ} (a : NormalizedCubicalChain Z R m) :
-    NormalizedCubicalChain.map R (e.symm : C(W, Z)) m
-      (NormalizedCubicalChain.map R (e : C(Z, W)) m a) = a := by
-  rw [← NormalizedCubicalChain.map_comp_apply]
-  simp
-
 /-! ### Quasi-isomorphisms of relative chains, read on chains of other spaces
 
 Throughout, `f : P ⟶ P'` is a map of pairs, `e : Z ≃ₜ P.fst` identifies a space `Z` with the
@@ -116,7 +108,7 @@ private theorem map_eq_map_map (m : ℕ) (a : NormalizedCubicalChain Z R m) :
     NormalizedCubicalChain.map R Φ m a = NormalizedCubicalChain.map R ι m
       (NormalizedCubicalChain.map R (TopPair.Hom.fst f).hom m
         (NormalizedCubicalChain.map R (e : C(Z, P.fst)) m a)) := by
-  rw [← map_map_homeomorph_symm f e Φ hΦ, map_symm_map_apply]
+  rw [← map_map_homeomorph_symm f e Φ hΦ, NormalizedCubicalChain.map_symm_map_apply]
 
 include hΦ hι in
 open NormalizedCubicalChain in
@@ -145,10 +137,9 @@ private theorem exists_sub_sub_mem_supportedIn {m : ℕ}
   have hc := (map_mem_supportedIn_image_iff R hι _ _).2
     ((TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff R P' _).1 hc)
   convert hc using 1
-  rw [map_map_homeomorph_symm f e Φ hΦ, ← map_boundary_apply,
-    ← normalizedCubicalChainComplexXEquiv_d_apply,
-    ← normalizedCubicalChainComplexXEquiv_map_f_apply, map_sub, map_sub, map_sub, map_sub,
-    LinearEquiv.apply_symm_apply]
+  simp only [map_sub, LinearEquiv.apply_symm_apply, normalizedCubicalChainComplexXEquiv_d_apply,
+    normalizedCubicalChainComplexXEquiv_map_f_apply, map_map_homeomorph_symm f e Φ hΦ,
+    map_boundary_apply]
 
 include hΦ hι in
 open NormalizedCubicalChain in
@@ -166,25 +157,24 @@ private theorem exists_sub_boundary_mem_supportedIn {m : ℕ}
   rw [← range_map_eq_supportedIn_range R hι.isInducing] at hc
   obtain ⟨c, rfl⟩ := hc
   -- The chain `x` of `Z`, as a chain of the ambient space of `P`.
-  have hx' := map_symm_map_apply e x
   obtain ⟨a, ha⟩ := hinj ((normalizedCubicalChainComplexXEquiv P.fst m).symm (map R e m x))
     ((d_mem_range_map_f_iff H P e.symm.isEmbedding _).2
-      (by rwa [LinearEquiv.apply_symm_apply, hx']))
+      (by rwa [LinearEquiv.apply_symm_apply, map_symm_map_apply]))
     ((normalizedCubicalChainComplexXEquiv P'.fst (m + 1)).symm c)
     ((TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff R P' _).2
       ((map_mem_supportedIn_image_iff R hι _ _).1 (by
       convert hxc using 1
-      rw [map_sub, normalizedCubicalChainComplexXEquiv_map_f_apply,
-        normalizedCubicalChainComplexXEquiv_d_apply, LinearEquiv.apply_symm_apply,
-        LinearEquiv.apply_symm_apply, map_sub, map_eq_map_map f e Φ hΦ,
-        ← map_boundary_apply])))
+      simp only [map_sub, LinearEquiv.apply_symm_apply,
+        normalizedCubicalChainComplexXEquiv_d_apply,
+        normalizedCubicalChainComplexXEquiv_map_f_apply, map_eq_map_map f e Φ hΦ,
+        map_boundary_apply])))
   refine ⟨map R (e.symm : C(P.fst, Z)) (m + 1)
     (normalizedCubicalChainComplexXEquiv P.fst (m + 1) a), ?_⟩
   have ha := (map_mem_supportedIn_image_iff R (ι := (e.symm : C(P.fst, Z))) e.symm.isEmbedding _
     _).2 ((TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff R P _).1 ha)
   convert ha using 1
-  rw [map_sub, map_sub, LinearEquiv.apply_symm_apply, hx',
-    normalizedCubicalChainComplexXEquiv_d_apply, ← map_boundary_apply]
+  simp only [map_sub, LinearEquiv.apply_symm_apply, map_symm_map_apply,
+    normalizedCubicalChainComplexXEquiv_d_apply, map_boundary_apply]
 
 include hΦ hι in
 open NormalizedCubicalChain in
