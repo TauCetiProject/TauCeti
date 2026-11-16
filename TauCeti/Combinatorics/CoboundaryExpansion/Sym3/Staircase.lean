@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
+import TauCeti.Combinatorics.SimpleGraph.Staircase
 import TauCeti.GroupTheory.Perm.ParityRetract
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -19,12 +20,17 @@ transposition `t01` on the pairs `p < q` with `p` odd and `q` even and `1` elsew
 Kozlov's staircase graph of the partition `(t, t - 1, …, 1)` with one isolated vertex `0`
 (`SimpleGraph.staircase 1 t` up to relabelling).
 
+The relabelling is an explicit graph isomorphism from `SimpleGraph.staircase 1 t`, along which
+Kozlov's cut-minimality, edge count and odd-triangle count are transported:
+
 * `Sym3.stair_cost_lower`: every `Sym(3)` gauge costs at least `t (t + 1)`. The parity retraction
   onto `{1, t01}` (`Equiv.Perm.movedNorm_parityRetract_le`) bounds the cost below by twice the
-  `𝔽₂` cost of the sign pattern of the gauge, and cut-minimality of the staircase bounds that
-  below by the number `t (t + 1) / 2` of staircase edges.
-* `Sym3.stair_defect_mul`: `3 N = (2 t + 1) · t (t + 1)`, from the count
-  `N = 2 (1² + 2² + ⋯ + t²)` of the triangles with an odd number of staircase edges.
+  `𝔽₂` cost of the sign pattern of the gauge, and cut-minimality of the staircase
+  (`SimpleGraph.isCutMinimal_staircase`) bounds that below by the number `t (t + 1) / 2` of
+  staircase edges (`SimpleGraph.two_mul_card_edgeFinset_staircase`).
+* `Sym3.stair_defect_mul`: `3 N = (2 t + 1) · t (t + 1)`, since `N` is twice the number of
+  triangles with an odd number of staircase edges
+  (`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`).
 
 ## References
 
@@ -41,10 +47,7 @@ namespace TauCeti.Sym3
 
 open Finset
 
-/-! ## Indicator, parity and the staircase -/
-
-/-- `1` for `true`, `0` for `false`. -/
-private def bnat (b : Bool) : ℕ := if b then 1 else 0
+/-! ## Parity and the staircase -/
 
 /-- The staircase edge predicate on positions `p < q`: `p` odd and `q` even. -/
 def stEdge (p q : ℕ) : Bool := decide (p % 2 = 1) && decide (q % 2 = 0)
@@ -58,31 +61,8 @@ def stair (k : ℕ) : Fin k → Fin k → S3 := fun p q => if stEdge p.val q.val
 private def oddPerm (σ : S3) : Bool := decide (σ = t01) || decide (σ = t12) || decide (σ = t02)
 
 /-- `oddPerm` is the sign: `true` exactly for the odd permutations. -/
-private theorem oddPerm_eq_decide (σ : S3) : oddPerm σ = decide (Equiv.Perm.sign σ = -1) := by
-  have h01 : Equiv.Perm.sign t01 = -1 := Equiv.Perm.sign_swap (by decide)
-  have h12 : Equiv.Perm.sign t12 = -1 := Equiv.Perm.sign_swap (by decide)
-  have h02 : Equiv.Perm.sign t02 = -1 := Equiv.Perm.sign_swap (by decide)
-  have hc1 : Equiv.Perm.sign c1 = 1 := by
-    rw [c1, Equiv.Perm.sign_mul, ← t01, ← t12, h01, h12]
-    rfl
-  have hc2 : Equiv.Perm.sign c2 = 1 := by
-    rw [c2, Equiv.Perm.sign_mul, ← t01, ← t12, h01, h12]
-    rfl
-  have h := mem_S3list σ
-  simp only [S3list, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [Equiv.Perm.sign_one]
-    decide
-  · rw [h01]
-    decide
-  · rw [h12]
-    decide
-  · rw [h02]
-    decide
-  · rw [hc1]
-    decide
-  · rw [hc2]
-    decide
+private theorem oddPerm_eq_decide : ∀ σ : S3, oddPerm σ = decide (Equiv.Perm.sign σ = -1) := by
+  decide
 
 /-- The sign of a permutation as a Boolean is additive (`xor`) along products. -/
 private theorem oddPerm_mul (σ τ : S3) : oddPerm (σ * τ) = xor (oddPerm σ) (oddPerm τ) := by
@@ -97,19 +77,19 @@ private theorem t01_isSwap : t01.IsSwap := ⟨0, 1, by decide, rfl⟩
 ones. -/
 private theorem movedNorm_parityRetract_t01 (σ : S3) :
     Equiv.Perm.movedNorm (Fin 3) (Equiv.Perm.parityRetract t01_isSwap σ) =
-      2 * (bnat (oddPerm σ) : ℝ) := by
+      2 * (Bool.toNat (oddPerm σ) : ℝ) := by
   have ht := t01_isSwap
   rw [oddPerm_eq_decide]
   rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ
   · rw [Equiv.Perm.parityRetract_of_sign_eq_one ht hσ, hσ]
-    simp [bnat, Units.ext_iff]
+    simp [Units.ext_iff]
   · rw [Equiv.Perm.parityRetract_of_sign_eq_neg_one ht hσ, ht.movedNorm, hσ]
-    simp [bnat]
+    simp
 
 /-- **Parity retraction, one edge.** An odd edge term moves at least two points
 (`Equiv.Perm.movedNorm_parityRetract_le`). -/
 private theorem st_par_bound (a b : S3) (e : Bool) :
-    2 * bnat (xor (xor (oddPerm a) (oddPerm b)) e) ≤
+    2 * Bool.toNat (xor (xor (oddPerm a) (oddPerm b)) e) ≤
       moved (a⁻¹ * (if e then t01 else 1) * b) := by
   have hodd :
       xor (xor (oddPerm a) (oddPerm b)) e = oddPerm (a⁻¹ * (if e then t01 else 1) * b) := by
@@ -127,398 +107,270 @@ private theorem st_par_bound (a b : S3) (e : Bool) :
 number of its edges carry `t01`. -/
 private theorem st_moved_tri (a b c : Bool) :
     moved ((if a then t01 else 1) * (if b then t01 else 1) * (if c then t01 else 1)⁻¹) =
-      2 * bnat (xor (xor a b) c) := by
+      2 * Bool.toNat (xor (xor a b) c) := by
   cases a <;> cases b <;> cases c <;> decide
 
-/-- No staircase edge ends at an odd position. -/
-private theorem stEdge_of_odd (p q : ℕ) (hq : q % 2 = 1) : stEdge p q = false := by
-  unfold stEdge
-  rw [hq]
-  simp
+/-! ## The staircase graph on positions -/
 
-/-- A pair ending at an even position is an edge exactly when it starts at an odd one. -/
-private theorem stEdge_of_even (p q : ℕ) (hq : q % 2 = 0) : stEdge p q = decide (p % 2 = 1) := by
-  unfold stEdge
-  rw [hq]
-  simp
+/-- The staircase as a graph on `Fin n`: `p < q` are adjacent when `stEdge p q` holds. -/
+private def stGraph (n : ℕ) : SimpleGraph (Fin n) :=
+  SimpleGraph.fromRel fun p q => p < q ∧ stEdge p.val q.val = true
 
-/-! ## From `Fin` sums to sums over `range` -/
+/-- Adjacency in `stGraph` is decidable. -/
+private instance (n : ℕ) : DecidableRel (stGraph n).Adj := fun p q => by
+  unfold stGraph
+  infer_instance
 
-/-- Truncating a sum over `range n` by the indicator of `u < v` (`v ≤ n`) gives a sum over
-`range v`. -/
-private theorem st_sum_lt (n v : ℕ) (hv : v ≤ n) (f : ℕ → ℕ) :
-    (∑ u ∈ range n, if u < v then f u else 0) = ∑ u ∈ range v, f u := by
-  rw [← Finset.sum_filter]; congr 1; ext u; simp only [mem_filter, mem_range]; omega
+/-- On a pair `p < q`, adjacency in `stGraph` is `stEdge`. -/
+private theorem stGraph_adj_of_lt {n : ℕ} {p q : Fin n} (h : p < q) :
+    decide ((stGraph n).Adj p q) = stEdge p.val q.val := by
+  have hn : ¬ q < p := not_lt.mpr h.le
+  rw [Bool.eq_iff_iff, decide_eq_true_iff]
+  simp [stGraph, SimpleGraph.fromRel_adj, h, h.ne, hn]
 
-/-- A sum over the edges `u < v` of `K_n`, as a sum over `range`. -/
-private theorem st_fin_pair (n : ℕ) (G : ℕ → ℕ → ℕ) :
-    (∑ u : Fin n, ∑ v : Fin n, if u < v then G u.val v.val else 0) =
-      ∑ v ∈ range n, ∑ u ∈ range v, G u v := by
-  have hA : (∑ u : Fin n, ∑ v : Fin n, if u < v then G u.val v.val else 0) =
-      ∑ u ∈ range n, ∑ v ∈ range n, if u < v then G u v else 0 := by
-    refine Eq.trans ?_ (Fin.sum_univ_eq_sum_range
-      (fun u => ∑ v ∈ range n, if u < v then G u v else 0) n)
-    refine Finset.sum_congr rfl fun u _ => ?_
-    refine Eq.trans ?_ (Fin.sum_univ_eq_sum_range
-      (fun v => if u.val < v then G u.val v else 0) n)
-    refine Finset.sum_congr rfl fun v _ => ?_
-    -- `Fin.sum_univ_eq_sum_range` reads the summand at the `val`s; `Fin` order is `val` order.
-    show (if u < v then G u.val v.val else 0) = (if u.val < v.val then G u.val v.val else 0)
-    by_cases h : u < v
-    · rw [ite_eq_left h, ite_eq_left (show u.val < v.val from h)]
-    · rw [ite_eq_right h, ite_eq_right (show ¬ (u.val < v.val) from h)]
-  rw [hA, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun v hv => ?_
-  exact st_sum_lt n v (Finset.mem_range.mp hv).le (fun u => G u v)
+/-- The relabelling of `SimpleGraph.staircase 1 t` onto the positions `0, …, 2t`: the rows go to
+the odd positions, the columns to the nonzero even positions, the loose vertex to `0`. -/
+private def stRelabel (t : ℕ) : Fin (1 * t) ⊕ Fin (1 * t) ⊕ Fin 1 → Fin (2 * t + 1)
+  | .inl i => ⟨2 * i.val + 1, by have := i.isLt; omega⟩
+  | .inr (.inl j) => ⟨2 * (t - j.val), by omega⟩
+  | .inr (.inr _) => ⟨0, by omega⟩
 
-/-- Reordering a triple sum over `range n` from `u, v, w` to `w, v, u`. -/
-private theorem sum_range_rotate3 (n : ℕ) (F : ℕ → ℕ → ℕ → ℕ) :
-    (∑ u ∈ range n, ∑ v ∈ range n, ∑ w ∈ range n, F u v w) =
-      ∑ w ∈ range n, ∑ v ∈ range n, ∑ u ∈ range n, F u v w := by
-  calc _ = ∑ v ∈ range n, ∑ u ∈ range n, ∑ w ∈ range n, F u v w := Finset.sum_comm
-    _ = ∑ v ∈ range n, ∑ w ∈ range n, ∑ u ∈ range n, F u v w :=
-        Finset.sum_congr rfl fun v _ => Finset.sum_comm
-    _ = _ := Finset.sum_comm
+/-- `stRelabel` is a bijection: odd positions are rows, nonzero even positions are columns. -/
+private theorem stRelabel_bijective (t : ℕ) : Function.Bijective (stRelabel t) := by
+  refine ⟨?_, fun p => ?_⟩
+  · rintro (i | j | k) (i' | j' | k') h <;>
+      simp only [stRelabel, Fin.ext_iff, Sum.inl.injEq, Sum.inr.injEq,
+        reduceCtorEq] at h ⊢ <;>
+      first
+        | (have := i.isLt; have := i'.isLt; omega)
+        | (have := j.isLt; have := j'.isLt; omega)
+        | (have := k.isLt; have := k'.isLt; omega)
+        | (have := i.isLt; have := j'.isLt; omega)
+        | (have := j.isLt; have := i'.isLt; omega)
+        | (have := j.isLt; omega)
+        | (have := j'.isLt; omega)
+  · have hp := p.isLt
+    by_cases h0 : p.val = 0
+    · exact ⟨.inr (.inr 0), Fin.ext (by simp [stRelabel, h0])⟩
+    by_cases hodd : p.val % 2 = 1
+    · exact ⟨.inl ⟨p.val / 2, by omega⟩, Fin.ext (by simp only [stRelabel]; omega)⟩
+    · exact ⟨.inr (.inl ⟨t - p.val / 2, by omega⟩), Fin.ext (by simp only [stRelabel]; omega)⟩
 
-/-- A sum over the triangles `u < v < w` of `K_n`, as a sum over `range`. -/
-private theorem st_fin_triple (n : ℕ) (Y : ℕ → ℕ → ℕ → ℕ) :
-    (∑ u : Fin n, ∑ v : Fin n, ∑ w : Fin n,
-      if u < v ∧ v < w then Y u.val v.val w.val else 0) =
-      ∑ w ∈ range n, ∑ v ∈ range w, ∑ u ∈ range v, Y u v w := by
-  have hA : (∑ u : Fin n, ∑ v : Fin n, ∑ w : Fin n,
-      if u < v ∧ v < w then Y u.val v.val w.val else 0) =
-      ∑ u ∈ range n, ∑ v ∈ range n, ∑ w ∈ range n,
-        if u < v ∧ v < w then Y u v w else 0 := by
-    refine Eq.trans ?_ (Fin.sum_univ_eq_sum_range
-      (fun u => ∑ v ∈ range n, ∑ w ∈ range n, if u < v ∧ v < w then Y u v w else 0) n)
-    refine Finset.sum_congr rfl fun u _ => ?_
-    refine Eq.trans ?_ (Fin.sum_univ_eq_sum_range
-      (fun v => ∑ w ∈ range n, if u.val < v ∧ v < w then Y u.val v w else 0) n)
-    refine Finset.sum_congr rfl fun v _ => ?_
-    refine Eq.trans ?_ (Fin.sum_univ_eq_sum_range
-      (fun w => if u.val < v.val ∧ v.val < w then Y u.val v.val w else 0) n)
-    refine Finset.sum_congr rfl fun w _ => ?_
-    -- As in `st_fin_pair`: the summand read at the `val`s, with `Fin` order as `val` order.
-    show (if u < v ∧ v < w then Y u.val v.val w.val else 0) =
-      (if u.val < v.val ∧ v.val < w.val then Y u.val v.val w.val else 0)
-    by_cases h : u < v ∧ v < w
-    · rw [ite_eq_left h, ite_eq_left (show u.val < v.val ∧ v.val < w.val from h)]
-    · rw [ite_eq_right h, ite_eq_right (show ¬ (u.val < v.val ∧ v.val < w.val) from h)]
-  rw [hA, sum_range_rotate3]
-  refine Finset.sum_congr rfl fun w hw => ?_
-  have hw' : w < n := Finset.mem_range.mp hw
-  have e : ∀ v, (∑ u ∈ range n, if u < v ∧ v < w then Y u v w else 0) =
-      if v < w then ∑ u ∈ range v, Y u v w else 0 := by
-    intro v
-    by_cases hv : v < w
-    · rw [ite_eq_left hv]
-      refine Eq.trans ?_ (st_sum_lt n v (by omega) (fun u => Y u v w))
-      refine Finset.sum_congr rfl fun u _ => ?_
-      by_cases hu : u < v
-      · rw [ite_eq_left (And.intro hu hv), ite_eq_left hu]
-      · rw [ite_eq_right (show ¬ (u < v ∧ v < w) from fun h => hu h.1), ite_eq_right hu]
-    · rw [ite_eq_right hv]
-      exact Finset.sum_eq_zero fun u _ =>
-        ite_eq_right (show ¬ (u < v ∧ v < w) from fun h => hv h.2)
-  simp only [e]
-  exact st_sum_lt n w hw'.le (fun v => ∑ u ∈ range v, Y u v w)
+/-- `stRelabel` carries the staircase adjacency `i + j < t` to `stEdge` on positions. -/
+private theorem stRelabel_adj (t : ℕ) (a b : Fin (1 * t) ⊕ Fin (1 * t) ⊕ Fin 1) :
+    (stGraph (2 * t + 1)).Adj (stRelabel t a) (stRelabel t b) ↔
+      (SimpleGraph.staircase 1 t).Adj a b := by
+  rcases a with i | j | k <;> rcases b with i' | j' | k' <;>
+    simp [stGraph, SimpleGraph.fromRel_adj, stRelabel, stEdge, Fin.ext_iff] <;>
+    omega
 
-/-! ## The `F₂` counts on positions -/
+/-- `stGraph (2 t + 1)` is `SimpleGraph.staircase 1 t`, relabelled. -/
+private noncomputable def stIso (t : ℕ) : SimpleGraph.staircase 1 t ≃g stGraph (2 * t + 1) where
+  toEquiv := Equiv.ofBijective (stRelabel t) (stRelabel_bijective t)
+  map_rel_iff' {a b} := stRelabel_adj t a b
 
-/-- The term of the pair `p < q` under the sign pattern `σ`: odd exactly when the edge term
-is a transposition. -/
-private def gx (σ : ℕ → Bool) (p q : ℕ) : ℕ := bnat (xor (xor (σ p) (σ q)) (stEdge p q))
+/-- `2 · #edges = t (t + 1)`, from `SimpleGraph.two_mul_card_edgeFinset_staircase`. -/
+private theorem two_mul_card_edgeFinset_stGraph (t : ℕ) :
+    2 * #(stGraph (2 * t + 1)).edgeFinset = t * (t + 1) := by
+  rw [← (stIso t).card_edgeFinset_eq, SimpleGraph.two_mul_card_edgeFinset_staircase]
+  ring
 
-/-- The `F₂` cost of the sign pattern `σ` on the first `n` positions. -/
-private def cutF (σ : ℕ → Bool) (n : ℕ) : ℕ := ∑ q ∈ range n, ∑ p ∈ range q, gx σ p q
+/-! ## Counting edges and triangles on `Fin n` -/
 
-/-- The number of staircase edges among the first `n` positions. -/
-private def stE (n : ℕ) : ℕ := ∑ q ∈ range n, ∑ p ∈ range q, bnat (stEdge p q)
+/-- A finset of off-diagonal unordered pairs, counted over the pairs `u < v`. -/
+private theorem card_eq_sum_lt {n : ℕ} (F : Finset (Sym2 (Fin n))) (hF : ∀ u, s(u, u) ∉ F) :
+    #F = ∑ u : Fin n, ∑ v : Fin n, if u < v ∧ s(u, v) ∈ F then 1 else 0 := by
+  rw [← Fintype.sum_prod_type' (fun u v => if u < v ∧ s(u, v) ∈ F then 1 else 0),
+    ← Finset.card_filter]
+  symm
+  refine card_bij (fun p _ => s(p.1, p.2)) (fun p hp => (mem_filter.mp hp).2.2) ?_ ?_
+  · rintro ⟨a, b⟩ ha ⟨a', b'⟩ hb h
+    have ha' := (mem_filter.mp ha).2.1
+    have hb' := (mem_filter.mp hb).2.1
+    rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rfl
+    · exact absurd (ha'.trans hb') (lt_irrefl _)
+  · intro e he
+    induction e using Sym2.ind with
+    | _ u v =>
+      rcases lt_trichotomy u v with h | rfl | h
+      · exact ⟨(u, v), by simp [h, he], rfl⟩
+      · exact absurd he (hF u)
+      · exact ⟨(v, u), by simp [h, Sym2.eq_swap ▸ he], Sym2.eq_swap⟩
 
-/-- The pairs `u < v < n` with `u` even and `v` odd, written as the triangle term at an even
-third vertex. -/
-private def stP (n : ℕ) : ℕ :=
-  ∑ v ∈ range n, ∑ u ∈ range v,
-    bnat (xor (xor (stEdge u v) (decide (v % 2 = 1))) (decide (u % 2 = 1)))
+/-- The edges inside `{a, b, c}` are those among its three pairs. -/
+private theorem filter_subset_triple {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj]
+    {a b c : Fin n} :
+    {e ∈ H.edgeFinset | e.toFinset ⊆ {a, b, c}} =
+      ({s(a, b), s(b, c), s(a, c)} : Finset (Sym2 (Fin n))).filter (· ∈ H.edgeFinset) := by
+  ext e
+  induction e using Sym2.ind with
+  | _ x y =>
+    simp only [mem_filter, mem_insert, mem_singleton, Sym2.toFinset_mk_eq, insert_subset_iff,
+      singleton_subset_iff, SimpleGraph.mem_edgeFinset, SimpleGraph.mem_edgeSet]
+    constructor
+    · rintro ⟨hxy, hx, hy⟩
+      refine ⟨?_, hxy⟩
+      rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;>
+        simp_all [Sym2.eq_swap]
+    · rintro ⟨h | h | h, hxy⟩ <;>
+        rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hxy]
 
-/-- The number of broken triangles (an odd number of staircase edges) among the first `n`
-positions. -/
-private def stT (n : ℕ) : ℕ :=
-  ∑ w ∈ range n, ∑ v ∈ range w, ∑ u ∈ range v,
-    bnat (xor (xor (stEdge u v) (stEdge v w)) (stEdge u w))
+/-- A triangle `a < b < c` is odd exactly when an odd number of its three pairs are edges. -/
+private theorem mem_oddTriangleFinset_triple {n : ℕ} (H : SimpleGraph (Fin n))
+    [DecidableRel H.Adj] {a b c : Fin n} (hab : a < b) (hbc : b < c) :
+    {a, b, c} ∈ H.oddTriangleFinset ↔
+      xor (xor (decide (H.Adj a b)) (decide (H.Adj b c))) (decide (H.Adj a c)) = true := by
+  have hac := hab.trans hbc
+  have h3 : #({a, b, c} : Finset (Fin n)) = 3 := by
+    rw [card_insert_of_notMem (by simp [hab.ne, hac.ne]),
+      card_insert_of_notMem (by simp [hbc.ne]), card_singleton]
+  have h1 : s(a, b) ∉ ({s(b, c), s(a, c)} : Finset (Sym2 (Fin n))) := by
+    simp [hab.ne, hac.ne, hbc.ne, hab.ne']
+  have h2 : s(b, c) ∉ ({s(a, c)} : Finset (Sym2 (Fin n))) := by
+    simp [hab.ne', hac.ne']
+  rw [SimpleGraph.mem_oddTriangleFinset, filter_subset_triple, card_filter,
+    sum_insert h1, sum_insert h2, sum_singleton]
+  simp only [h3, true_and, SimpleGraph.mem_edgeFinset, SimpleGraph.mem_edgeSet]
+  by_cases x : H.Adj a b <;> by_cases y : H.Adj b c <;> by_cases z : H.Adj a c <;>
+    simp [x, y, z, Nat.odd_iff]
 
-/-- Adding position `n` adds the terms of the pairs `p < n`. -/
-private theorem st_cutF_succ (σ : ℕ → Bool) (n : ℕ) :
-    cutF σ (n + 1) = cutF σ n + ∑ p ∈ range n, gx σ p n := by
-  unfold cutF
-  exact Finset.sum_range_succ (fun q => ∑ p ∈ range q, gx σ p q) n
+/-- The sorted triples `u < v < w` spanning an odd triangle. -/
+private def oddTriples {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj] :
+    Finset (Fin n × Fin n × Fin n) :=
+  {p | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ {p.1, p.2.1, p.2.2} ∈ H.oddTriangleFinset}
 
-/-- Adding position `n` adds the edges `p < n`. -/
-private theorem st_stE_succ (n : ℕ) : stE (n + 1) = stE n + ∑ p ∈ range n, bnat (stEdge p n) := by
-  unfold stE
-  exact Finset.sum_range_succ (fun q => ∑ p ∈ range q, bnat (stEdge p q)) n
+/-- An odd triangle is the set of a unique sorted triple (`Finset.orderEmbOfFin`). -/
+private theorem card_oddTriples {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj] :
+    #(oddTriples H) = #H.oddTriangleFinset := by
+  refine card_bij (fun p _ => {p.1, p.2.1, p.2.2})
+    (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_
+  · rintro ⟨a, b, c⟩ ha ⟨a', b', c'⟩ hb h
+    obtain ⟨-, hab, hbc, hs⟩ := mem_filter.mp ha
+    obtain ⟨-, hab', hbc', -⟩ := mem_filter.mp hb
+    have h3 := (SimpleGraph.mem_oddTriangleFinset.mp hs).1
+    simp only at h hab hbc hab' hbc' h3
+    have hf := orderEmbOfFin_unique h3 (f := ![a, b, c]) (fun i => by fin_cases i <;> simp)
+      (Fin.strictMono_iff_lt_succ.mpr fun i => by fin_cases i <;> simpa)
+    have hf' := orderEmbOfFin_unique (h ▸ h3) (f := ![a', b', c'])
+      (fun i => by fin_cases i <;> simp) (Fin.strictMono_iff_lt_succ.mpr fun i => by
+        fin_cases i <;> simpa)
+    simp only [h] at hf
+    have := hf.trans hf'.symm
+    exact Prod.ext (congrFun this 0) (Prod.ext (congrFun this 1) (congrFun this 2))
+  · intro s hs
+    have h3 := (SimpleGraph.mem_oddTriangleFinset.mp hs).1
+    set g := s.orderEmbOfFin h3
+    have hs3 : ({g 0, g 1, g 2} : Finset (Fin n)) = s := by
+      rw [← image_orderEmbOfFin_univ s h3]
+      ext x
+      simp only [mem_insert, mem_singleton, mem_image, mem_univ, true_and]
+      constructor
+      · rintro (rfl | rfl | rfl) <;> exact ⟨_, rfl⟩
+      · rintro ⟨i, rfl⟩
+        fin_cases i <;> simp [g]
+    refine ⟨(g 0, g 1, g 2), ?_, hs3⟩
+    simp only [oddTriples, mem_filter, mem_univ, true_and, hs3, hs, and_true]
+    exact ⟨g.strictMono (by decide), g.strictMono (by decide)⟩
 
-/-- Adding position `n` adds the pairs `u < n`. -/
-private theorem st_stP_succ (n : ℕ) : stP (n + 1) = stP n +
-    ∑ u ∈ range n, bnat (xor (xor (stEdge u n) (decide (n % 2 = 1))) (decide (u % 2 = 1))) := by
-  unfold stP
-  exact Finset.sum_range_succ (fun v => ∑ u ∈ range v,
-    bnat (xor (xor (stEdge u v) (decide (v % 2 = 1))) (decide (u % 2 = 1)))) n
+/-- `Bool.toNat b` as an indicator. -/
+private theorem toNat_eq_ite (b : Bool) : Bool.toNat b = if b = true then 1 else 0 := by
+  cases b <;> rfl
 
-/-- Adding position `n` adds the triangles with largest vertex `n`. -/
-private theorem st_stT_succ (n : ℕ) : stT (n + 1) = stT n +
-    ∑ v ∈ range n, ∑ u ∈ range v, bnat (xor (xor (stEdge u v) (stEdge v n)) (stEdge u n)) := by
-  unfold stT
-  exact Finset.sum_range_succ (fun w => ∑ v ∈ range w, ∑ u ∈ range v,
-    bnat (xor (xor (stEdge u v) (stEdge v w)) (stEdge u w))) n
-
-/-- Among the positions `0, …, 2t`, exactly `t` are odd. -/
-private theorem st_cnt_odd (t : ℕ) : ∑ p ∈ range (2 * t + 1), bnat (decide (p % 2 = 1)) = t := by
-  induction t with
-  | zero => simp [bnat]
-  | succ t ih =>
-    have h1 : (2 * t + 1) % 2 = 1 := by omega
-    have h2 : (2 * t + 1 + 1) % 2 = 0 := by omega
-    rw [show 2 * (t + 1) + 1 = 2 * t + 1 + 1 + 1 by ring, Finset.sum_range_succ,
-      Finset.sum_range_succ, ih, h1, h2]
-    rfl
-
-/-- Among the positions `0, …, 2t`, exactly `t + 1` are even. -/
-private theorem st_cnt_even (t : ℕ) :
-    ∑ p ∈ range (2 * t + 1), bnat (!decide (p % 2 = 1)) = t + 1 := by
-  induction t with
-  | zero => rfl
-  | succ t ih =>
-    have h1 : (2 * t + 1) % 2 = 1 := by omega
-    have h2 : (2 * t + 1 + 1) % 2 = 0 := by omega
-    rw [show 2 * (t + 1) + 1 = 2 * t + 1 + 1 + 1 by ring, Finset.sum_range_succ,
-      Finset.sum_range_succ, ih, h1, h2]
-    rfl
-
-/-- One earlier position against the two newest positions: if their signs agree it contributes
-at least its oddness, if they differ at least its evenness. -/
-private theorem st_pair_bound (x A B o : Bool) :
-    (if A = B then bnat o else bnat (!o)) ≤
-      bnat (xor (xor x A) false) + bnat (xor (xor x B) o) := by
-  cases x <;> cases A <;> cases B <;> cases o <;> decide
-
-/-- The new edge between the two newest positions is odd whenever their signs agree. -/
-private theorem st_ab_bound (A B : Bool) :
-    (if A = B then 1 else 0) ≤ bnat (xor (xor A B) (decide (1 = 1))) := by
-  cases A <;> cases B <;> decide
-
-/-- **Cut-minimality.** Every sign pattern on the staircase of `K_{2t+1}` costs at least the
-number of edges `t(t+1)/2`. Adding the two newest positions `2t+1` (a new `v`, whose only
-neighbour is the new `y`) and `2t+2` (a new `y`, joined to every `v`, the new one included) adds
-at least `t + 1`: if their signs agree,
-each of the `t` odd earlier positions contributes one and the new edge one; if they differ, each of
-the `t + 1` even earlier positions contributes one. -/
-private theorem st_cutF_ge (t : ℕ) : ∀ σ : ℕ → Bool, t * (t + 1) ≤ 2 * cutF σ (2 * t + 1) := by
-  induction t with
-  | zero => intro σ; simp
-  | succ t ih =>
-    intro σ
-    have ha : (2 * t + 1) % 2 = 1 := by omega
-    have hb : (2 * t + 1 + 1) % 2 = 0 := by omega
-    have hp : ∀ p, (if σ (2 * t + 1) = σ (2 * t + 1 + 1) then bnat (decide (p % 2 = 1))
-        else bnat (!decide (p % 2 = 1))) ≤ gx σ p (2 * t + 1) + gx σ p (2 * t + 1 + 1) := by
-      intro p
-      unfold gx
-      rw [stEdge_of_odd p _ ha, stEdge_of_even p _ hb]
-      exact st_pair_bound _ _ _ _
-    have hab : (if σ (2 * t + 1) = σ (2 * t + 1 + 1) then 1 else 0) ≤
-        gx σ (2 * t + 1) (2 * t + 1 + 1) := by
-      unfold gx
-      rw [stEdge_of_even _ _ hb, ha]
-      exact st_ab_bound _ _
-    rw [show 2 * (t + 1) + 1 = 2 * t + 1 + 1 + 1 by ring, st_cutF_succ, st_cutF_succ,
-      Finset.sum_range_succ _ (2 * t + 1)]
-    have hi := ih σ
-    by_cases h : σ (2 * t + 1) = σ (2 * t + 1 + 1)
-    · have hc := st_cnt_odd t
-      have hle : ∑ p ∈ range (2 * t + 1), bnat (decide (p % 2 = 1)) ≤
-          ∑ p ∈ range (2 * t + 1), (gx σ p (2 * t + 1) + gx σ p (2 * t + 1 + 1)) :=
-        Finset.sum_le_sum fun p _ => by
-          have := hp p
-          rwa [ite_eq_left h] at this
-      rw [Finset.sum_add_distrib] at hle
-      have h3 : 1 ≤ gx σ (2 * t + 1) (2 * t + 1 + 1) := by
-        have := hab
-        rwa [ite_eq_left h] at this
-      nlinarith
-    · have hc := st_cnt_even t
-      have hle : ∑ p ∈ range (2 * t + 1), bnat (!decide (p % 2 = 1)) ≤
-          ∑ p ∈ range (2 * t + 1), (gx σ p (2 * t + 1) + gx σ p (2 * t + 1 + 1)) :=
-        Finset.sum_le_sum fun p _ => by
-          have := hp p
-          rwa [ite_eq_right h] at this
-      rw [Finset.sum_add_distrib] at hle
-      nlinarith
-
-/-- The staircase on `K_{2t+1}` has `t(t+1)/2` edges. -/
-private theorem st_edges (t : ℕ) : 2 * stE (2 * t + 1) = t * (t + 1) := by
-  induction t with
-  | zero => simp [stE]
-  | succ t ih =>
-    have ha : (2 * t + 1) % 2 = 1 := by omega
-    have hb : (2 * t + 1 + 1) % 2 = 0 := by omega
-    have r1 : ∑ p ∈ range (2 * t + 1), bnat (stEdge p (2 * t + 1)) = 0 :=
-      Finset.sum_eq_zero fun p _ => by rw [stEdge_of_odd p _ ha]; rfl
-    have hs : ∀ p, bnat (stEdge p (2 * t + 1 + 1)) = bnat (decide (p % 2 = 1)) := fun p => by
-      rw [stEdge_of_even p _ hb]
-    have r2 : ∑ p ∈ range (2 * t + 1 + 1), bnat (stEdge p (2 * t + 1 + 1)) = t + 1 := by
-      rw [Finset.sum_range_succ]
-      simp only [hs]
-      rw [st_cnt_odd t, ha]
-      rfl
-    rw [show 2 * (t + 1) + 1 = 2 * t + 1 + 1 + 1 by ring, st_stE_succ, st_stE_succ, r1, r2]
-    nlinarith
-
-/-- The triangle term of `stP` at an odd last vertex is the evenness of `u`. -/
-private theorem st_row_odd (u q : ℕ) (hq : q % 2 = 1) :
-    bnat (xor (xor (stEdge u q) (decide (q % 2 = 1))) (decide (u % 2 = 1))) =
-      bnat (!decide (u % 2 = 1)) := by
-  rw [stEdge_of_odd u q hq, hq]
-  generalize decide (u % 2 = 1) = o
-  cases o <;> rfl
-
-/-- The triangle term of `stP` at an even last vertex vanishes. -/
-private theorem st_row_even (u q : ℕ) (hq : q % 2 = 0) :
-    bnat (xor (xor (stEdge u q) (decide (q % 2 = 1))) (decide (u % 2 = 1))) = 0 := by
-  rw [stEdge_of_even u q hq, hq]
-  generalize decide (u % 2 = 1) = o
-  cases o <;> rfl
-
-/-- `2 · #{u < v < 2t+2 : u even, v odd} = (t+1)(t+2)`. -/
-private theorem st_P (t : ℕ) : 2 * stP (2 * t + 2) = (t + 1) * (t + 2) := by
-  induction t with
-  | zero => decide
-  | succ t ih =>
-    have hc : (2 * t + 2) % 2 = 0 := by omega
-    have hd : (2 * t + 2 + 1) % 2 = 1 := by omega
-    have r1 : ∑ u ∈ range (2 * t + 2),
-        bnat (xor (xor (stEdge u (2 * t + 2)) (decide ((2 * t + 2) % 2 = 1)))
-          (decide (u % 2 = 1))) = 0 :=
-      Finset.sum_eq_zero fun u _ => st_row_even u _ hc
-    have hce := st_cnt_even (t + 1)
-    rw [show 2 * (t + 1) + 1 = 2 * t + 2 + 1 by ring] at hce
-    have r2 : ∑ u ∈ range (2 * t + 2 + 1),
-        bnat (xor (xor (stEdge u (2 * t + 2 + 1)) (decide ((2 * t + 2 + 1) % 2 = 1)))
-          (decide (u % 2 = 1))) = t + 1 + 1 :=
-      (Finset.sum_congr rfl fun u _ => st_row_odd u _ hd).trans hce
-    rw [show 2 * (t + 1) + 2 = 2 * t + 2 + 1 + 1 by ring, st_stP_succ, st_stP_succ, r1, r2]
-    nlinarith
-
-/-- A triangle whose largest vertex is odd is broken exactly when its first edge is an edge. -/
-private theorem st_tri_odd (u v w : ℕ) (hw : w % 2 = 1) :
-    bnat (xor (xor (stEdge u v) (stEdge v w)) (stEdge u w)) = bnat (stEdge u v) := by
-  rw [stEdge_of_odd v w hw, stEdge_of_odd u w hw]
-  simp
-
-/-- A triangle whose largest vertex is even reduces to the `stP` term. -/
-private theorem st_tri_even (u v w : ℕ) (hw : w % 2 = 0) :
-    bnat (xor (xor (stEdge u v) (stEdge v w)) (stEdge u w)) =
-      bnat (xor (xor (stEdge u v) (decide (v % 2 = 1))) (decide (u % 2 = 1))) := by
-  rw [stEdge_of_even v w hw, stEdge_of_even u w hw]
-
-/-- **The triangle count.** `6 · #{broken triangles} = t(t+1)(2t+1)`: adding the two newest
-positions breaks `(t+1)²` new triangles. -/
-private theorem st_tri (t : ℕ) : 6 * stT (2 * t + 1) = t * (t + 1) * (2 * t + 1) := by
-  induction t with
-  | zero => simp [stT]
-  | succ t ih =>
-    have ha : (2 * t + 1) % 2 = 1 := by omega
-    have hb : (2 * t + 1 + 1) % 2 = 0 := by omega
-    have r1 : ∑ v ∈ range (2 * t + 1), ∑ u ∈ range v,
-        bnat (xor (xor (stEdge u v) (stEdge v (2 * t + 1))) (stEdge u (2 * t + 1))) =
-          stE (2 * t + 1) := by
-      unfold stE
-      exact Finset.sum_congr rfl fun v _ => Finset.sum_congr rfl fun u _ =>
-        st_tri_odd u v _ ha
-    have r2 : ∑ v ∈ range (2 * t + 1 + 1), ∑ u ∈ range v,
-        bnat (xor (xor (stEdge u v) (stEdge v (2 * t + 1 + 1))) (stEdge u (2 * t + 1 + 1))) =
-          stP (2 * t + 1 + 1) := by
-      unfold stP
-      exact Finset.sum_congr rfl fun v _ => Finset.sum_congr rfl fun u _ =>
-        st_tri_even u v _ hb
-    have hE := st_edges t
-    have hP := st_P t
-    rw [show 2 * t + 2 = 2 * t + 1 + 1 by ring] at hP
-    rw [show 2 * (t + 1) + 1 = 2 * t + 1 + 1 + 1 by ring, st_stT_succ, st_stT_succ, r1, r2]
-    nlinarith
+/-- The odd triangles of a graph on `Fin n`, counted over the triples `u < v < w`. -/
+private theorem card_oddTriangleFinset_eq_sum {n : ℕ} (H : SimpleGraph (Fin n))
+    [DecidableRel H.Adj] :
+    #H.oddTriangleFinset = ∑ u : Fin n, ∑ v : Fin n, ∑ w : Fin n, if u < v ∧ v < w then
+      (xor (xor (decide (H.Adj u v)) (decide (H.Adj v w))) (decide (H.Adj u w))).toNat
+      else 0 := by
+  rw [← card_oddTriples, oddTriples, card_filter]
+  simp only [Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
+    Finset.sum_congr rfl fun w _ => ?_
+  by_cases h : u < v ∧ v < w
+  · simp only [h.1, h.2, true_and, mem_oddTriangleFinset_triple H h.1 h.2, toNat_eq_ite,
+      ↓reduceIte]
+  · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
 
 /-! ## The staircase cochain: gauge distance and defect -/
 
-/-- The sign pattern of a gauge, on positions. -/
-private def sgnPat {n : ℕ} (β : Fin n → S3) (i : ℕ) : Bool :=
-  if h : i < n then oddPerm (β ⟨i, h⟩) else false
-
-/-- At a vertex, the sign pattern is the sign of the gauge. -/
-private theorem sgnPat_val {n : ℕ} (β : Fin n → S3) (u : Fin n) :
-    sgnPat β u.val = oddPerm (β u) := by
-  simp [sgnPat]
-
-/-- **Parity retraction.** A `Sym(3)` gauge of the staircase costs at least twice the `F₂` count
-of its sign pattern. -/
-private theorem stair_cost_ge (n : ℕ) (β : Fin n → S3) :
-    2 * cutF (sgnPat β) n ≤ cost (stair n) β := by
-  calc 2 * cutF (sgnPat β) n = ∑ v ∈ range n, ∑ u ∈ range v, 2 * gx (sgnPat β) u v := by
-        simp only [cutF, Finset.mul_sum]
-    _ = ∑ u : Fin n, ∑ v : Fin n, (if u < v then 2 * gx (sgnPat β) u.val v.val else 0) :=
-        (st_fin_pair n (fun a b => 2 * gx (sgnPat β) a b)).symm
-    _ ≤ ∑ u : Fin n, ∑ v : Fin n,
-          (if u < v then moved ((β u)⁻¹ * stair n u v * β v) else 0) := by
-        apply Finset.sum_le_sum
-        intro u _
-        apply Finset.sum_le_sum
-        intro v _
-        by_cases huv : u < v
-        · rw [ite_eq_left huv, ite_eq_left huv]
-          unfold gx
-          rw [sgnPat_val, sgnPat_val]
-          exact st_par_bound (β u) (β v) (stEdge u.val v.val)
-        · simp [huv]
-    _ = cost (stair n) β := (cost_eq_sum _ _).symm
-
-/-- Every gauge of the staircase on `K_{2t+1}` costs at least `t(t+1)`. -/
+/-- **Cut-minimality, transported.** A `Sym(3)` gauge of the staircase on `K_{2t+1}` costs at
+least twice the number `t (t + 1) / 2` of staircase edges: the parity retraction bounds each edge
+term below by twice its `𝔽₂` term. Those terms count the symmetric difference of the staircase
+edges `E` with the cut of the sign pattern `S` of the gauge, which has at least `#E` elements by
+`SimpleGraph.isCutMinimal_staircase`, transported along `stIso`. -/
 theorem stair_cost_lower (t : ℕ) (β : Fin (2 * t + 1) → S3) :
-    t * (t + 1) ≤ cost (stair (2 * t + 1)) β :=
-  (st_cutF_ge t (sgnPat β)).trans (stair_cost_ge _ β)
+    t * (t + 1) ≤ cost (stair (2 * t + 1)) β := by
+  let S : Set (Fin (2 * t + 1)) := {u | oddPerm (β u) = true}
+  have hcm := (SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff (stGraph (2 * t + 1))).mp
+    ((stIso t).isCutMinimal_iff.mp (SimpleGraph.isCutMinimal_staircase 1 t)) S
+  set F := symmDiff (stGraph (2 * t + 1)).edgeFinset
+    ((⊤ : SimpleGraph (Fin (2 * t + 1))).between S Sᶜ).edgeFinset
+  have hF : #F = ∑ u, ∑ v, if u < v then
+      Bool.toNat (xor (xor (oddPerm (β u)) (oddPerm (β v))) (stEdge u.val v.val)) else 0 := by
+    rw [card_eq_sum_lt F (fun u => by simp [F, mem_symmDiff])]
+    refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
+    by_cases huv : u < v
+    · have he := stGraph_adj_of_lt huv
+      rw [Bool.eq_iff_iff, decide_eq_true_iff] at he
+      simp only [huv, true_and, ↓reduceIte, F, mem_symmDiff, SimpleGraph.mem_edgeFinset,
+        SimpleGraph.mem_edgeSet, SimpleGraph.between_adj, SimpleGraph.top_adj, he, huv.ne, ne_eq,
+        not_false_eq_true, S, Set.mem_ofPred_eq, Set.mem_compl_iff]
+      cases oddPerm (β u) <;> cases oddPerm (β v) <;> cases stEdge u.val v.val <;> simp
+    · simp [huv]
+  calc t * (t + 1) = 2 * #(stGraph (2 * t + 1)).edgeFinset :=
+        (two_mul_card_edgeFinset_stGraph t).symm
+    _ ≤ 2 * #F := Nat.mul_le_mul_left 2 hcm
+    _ = ∑ u, ∑ v, if u < v then
+          2 * (xor (xor (oddPerm (β u)) (oddPerm (β v))) (stEdge u.val v.val)).toNat
+        else 0 := by
+        rw [hF, Finset.mul_sum]
+        refine Finset.sum_congr rfl fun u _ => ?_
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun v _ => by split_ifs <;> simp
+    _ ≤ ∑ u, ∑ v, if u < v then moved ((β u)⁻¹ * stair (2 * t + 1) u v * β v) else 0 := by
+        gcongr with u _ v _
+        split_ifs
+        · exact st_par_bound (β u) (β v) (stEdge u.val v.val)
+        · exact le_rfl
+    _ = cost (stair (2 * t + 1)) β := (cost_eq_sum _ _).symm
 
 /-- The term of a triangle `u < v < w` in the staircase defect, as a parity of edge labels. -/
 private theorem stair_tri_term (n : ℕ) (u v w : Fin n) :
     (if u < v ∧ v < w then
       moved (val (stair n) u v * val (stair n) v w * val (stair n) w u) else 0) =
       if u < v ∧ v < w then
-        2 * bnat (xor (xor (stEdge u.val v.val) (stEdge v.val w.val)) (stEdge u.val w.val))
+        2 * Bool.toNat (xor (xor (decide ((stGraph n).Adj u v)) (decide ((stGraph n).Adj v w)))
+          (decide ((stGraph n).Adj u w)))
       else 0 := by
   by_cases h : u < v ∧ v < w
-  · rw [ite_eq_left h, ite_eq_left h]
+  · rw [ite_eq_left h, ite_eq_left h, stGraph_adj_of_lt h.1, stGraph_adj_of_lt h.2,
+      stGraph_adj_of_lt (h.1.trans h.2)]
     have huw : ¬ w < u := not_lt.mpr (h.1.trans h.2).le
     unfold Sym3.val
     rw [ite_eq_left h.1, ite_eq_left h.2, ite_eq_right huw]
     exact st_moved_tri (stEdge u.val v.val) (stEdge v.val w.val) (stEdge u.val w.val)
   · rw [ite_eq_right h, ite_eq_right h]
 
-/-- The defect of the staircase is twice its number of broken triangles. -/
-private theorem stair_defect (n : ℕ) : defect (stair n) = 2 * stT n := by
-  calc defect (stair n) = ∑ u : Fin n, ∑ v : Fin n, ∑ w : Fin n,
-        (if u < v ∧ v < w then
-          2 * bnat (xor (xor (stEdge u.val v.val) (stEdge v.val w.val)) (stEdge u.val w.val))
-        else 0) := by
-        rw [defect_eq_sum]
-        exact Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
-          Finset.sum_congr rfl fun w _ => stair_tri_term n u v w
-    _ = ∑ w ∈ range n, ∑ v ∈ range w, ∑ u ∈ range v,
-          2 * bnat (xor (xor (stEdge u v) (stEdge v w)) (stEdge u w)) :=
-        st_fin_triple n (fun a b c => 2 * bnat (xor (xor (stEdge a b) (stEdge b c)) (stEdge a c)))
-    _ = 2 * stT n := by simp only [stT, Finset.mul_sum]
+/-- The defect of the staircase is twice its number of odd triangles. -/
+private theorem stair_defect (n : ℕ) : defect (stair n) = 2 * #(stGraph n).oddTriangleFinset := by
+  rw [defect_eq_sum, card_oddTriangleFinset_eq_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun u _ => ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun v _ => ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun w _ => ?_
+  rw [stair_tri_term]
+  split_ifs <;> simp
 
-/-- **`N/D = m/3` for the staircase.** `3N = (2t+1) · D` with `D = t(t+1)`. -/
+/-- **`N/D = m/3` for the staircase.** `3N = (2t+1) · D` with `D = t(t+1)`, from
+`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`. -/
 theorem stair_defect_mul (t : ℕ) :
     3 * defect (stair (2 * t + 1)) = (2 * t + 1) * (t * (t + 1)) := by
+  have h := SimpleGraph.three_mul_card_oddTriangleFinset_staircase 1 t
+  rw [(stIso t).card_oddTriangleFinset_eq, (stIso t).card_edgeFinset_eq] at h
+  have hE := two_mul_card_edgeFinset_stGraph t
   rw [stair_defect]
-  have h := st_tri t
   nlinarith
 
 end TauCeti.Sym3
