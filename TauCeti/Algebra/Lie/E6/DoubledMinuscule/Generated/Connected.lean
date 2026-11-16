@@ -13,15 +13,24 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 /-!
 # Geometric connectedness of the generated doubled type-E₆ subgroup
 
-Over every field, the numbered root subgroups and weight torus generate a geometrically
-connected closed subgroup. Each generator is an affine line or split torus, hence geometrically
-connected. The common-kernel criterion transfers this property to their generated subgroup.
+The numbered root subgroups and the weight torus of the doubled minuscule carrier generate a
+closed subgroup of `GL₅₄`. Over every field this subgroup is geometrically connected: each
+generator is an affine line or a split torus, hence geometrically connected, and the closed
+subgroup they generate inherits this property. This supplies the connectedness input for
+recognizing the explicit carrier as a pinned split group of type `E₆`.
 
-Smoothness, reductivity and identification with a pinned group require separate arguments.
+The integral carrier is presently known to contain the generated subgroup. The result here
+concerns the generated subgroup; identifying it with the integral carrier after base change
+requires a separate comparison.
 
-The proof uses `TauCeti.Algebra.AlgebraicGroup.Connected.Generated` and the existing additive
-and diagonalizable coordinate-algebra APIs, as in
-`TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`.
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+* R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
+* `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`, geometric connectedness of common-kernel
+  quotients.
+* `TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`, the analogous result for the tripled
+  type-`D₄` generated subgroup.
 -/
 
 public section

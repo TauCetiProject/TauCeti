@@ -16,16 +16,24 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 /-!
 # Geometric connectedness of the generated short-root type-F₄ carrier
 
-After scalar extension to any field of characteristic 2, the numbered root subgroups and
-rank-4 weight torus generate a geometrically connected closed subgroup of `GL_26`. The
-generated coordinate algebra is the common-kernel quotient over that field. Existing coordinate
-isomorphisms identify each generator codomain with an affine line or split torus. Both are
-geometrically connected, so the shared common-kernel criterion applies directly.
+After scalar extension to any field of characteristic two, the eight numbered root subgroups
+and the rank-four weight torus generate a geometrically connected closed subgroup of `GL₂₆`.
+Their coordinate algebras are scalar extensions of a polynomial algebra and a Laurent
+polynomial algebra, respectively, so each generator is geometrically connected, and the closed
+subgroup they generate inherits this property.
 
-The prime-field carrier corollary below follows from this result. Identification of the
-carrier with a pinned group requires a separate argument.
+Since this generated subgroup is the scalar extension of the prime-field carrier, the carrier
+itself is geometrically connected
+(`TauCeti.F4ShortRoot.PrimeField.geometricallyConnectedCommHopfAlgProperty_quotient_definingIdeal`).
+Geometric connectedness is one of the inputs, alongside smoothness and triviality of the
+unipotent radical, to the reductivity of the short-root carrier and of its scalar extensions
+(`TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Reductive`).
 
-The general criterion is in `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`.
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+* `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`, geometric connectedness of common-kernel
+  quotients.
 -/
 
 public section

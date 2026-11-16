@@ -15,16 +15,23 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 /-!
 # Geometric connectedness of the generated short-root type-G₂ carrier
 
-After scalar extension to any field of characteristic 3, the numbered root subgroups and
-rank-2 weight torus generate a geometrically connected closed subgroup of `GL_7`. The
-generated coordinate algebra is the common-kernel quotient over that field. Existing coordinate
-isomorphisms identify each generator codomain with an affine line or split torus. Both are
-geometrically connected, so the shared common-kernel criterion applies directly.
+After scalar extension to any field of characteristic three, the four numbered root subgroups
+and the rank-two weight torus generate a geometrically connected closed subgroup of `GL₇`.
+Their coordinate algebras are scalar extensions of a polynomial algebra and a Laurent
+polynomial algebra, respectively, so each generator is geometrically connected, and the closed
+subgroup they generate inherits this property. The scalar-extension identification transfers
+this property to the prime-field carrier itself.
 
-The prime-field carrier corollary below follows from this result. Identification of the
-carrier with a pinned group requires a separate argument.
+This supplies a geometric property of the generated subgroup needed when comparing the
+short-root carrier with a pinned simply connected type-`G₂` group scheme.
 
-The general criterion is in `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`.
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+* `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`, geometric connectedness of common-kernel
+  quotients.
+* `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Connected`: the carrier/base-change
+  connectedness comparison.
 -/
 
 public section

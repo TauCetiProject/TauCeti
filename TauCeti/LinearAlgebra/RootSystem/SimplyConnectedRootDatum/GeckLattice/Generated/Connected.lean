@@ -13,15 +13,28 @@ import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 /-!
 # Geometric connectedness of the generated Geck subgroup
 
-Over every field, the numbered root subgroups and weight torus generate a geometrically
-connected closed subgroup. Each generator is an affine line or split torus, hence geometrically
-connected. The common-kernel criterion transfers this property to their generated subgroup.
+Over every field, the numbered Geck root subgroups and the Geck weight torus of a valid Dynkin
+type generate a geometrically connected closed subgroup of `GLₙ`. Each generator, an affine line
+or a split torus, is geometrically connected, and the closed subgroup they generate inherits that
+property.
 
-Smoothness, reductivity and identification with a pinned group require separate arguments.
+Connectedness is one of the geometric properties a split reductive group scheme has, so it is an
+input to recognizing the Geck carrier as the pinned simply connected group of its type.
 
-The proof uses `TauCeti.Algebra.AlgebraicGroup.Connected.Generated` and the existing additive
-and diagonalizable coordinate-algebra APIs, as in
-`TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`.
+## Main results
+
+* `TauCeti.DynkinType.geometricallyConnectedCommHopfAlgProperty_geckGeneratedCoordinateHopfAlgebra`:
+  the generated subgroup is geometrically connected over every field.
+
+## References
+
+* M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
+  Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
+* J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+
+The argument follows the parallel minuscule statements in
+`TauCeti.Algebra.Lie.E6.Minuscule.Generated.Connected` and
+`TauCeti.Algebra.Lie.E7.Minuscule.Generated.Connected`.
 -/
 
 public section

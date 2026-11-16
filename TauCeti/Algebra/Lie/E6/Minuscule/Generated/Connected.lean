@@ -13,15 +13,18 @@ import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 /-!
 # Geometric connectedness of the generated type-E₆ minuscule subgroup
 
-Over every field, the numbered root subgroups and weight torus generate a geometrically
-connected closed subgroup. Each generator is an affine line or split torus, hence geometrically
-connected. The common-kernel criterion transfers this property to their generated subgroup.
+The numbered simple-root subgroups and the weight torus of the full-weight type-`E₆` minuscule
+carrier are affine lines and a split torus, which are geometrically connected over every field.
+The closed subgroup they generate is therefore geometrically connected over every field.
 
-Smoothness, reductivity and identification with a pinned group require separate arguments.
+Connectedness is one of the two geometric inputs, smoothness being the other, to recognizing this
+explicit carrier as a split reductive group of type `E₆`. The result concerns the generated
+subgroup; it says nothing about the base change of the integral carrier, which contains it.
 
-The proof uses `TauCeti.Algebra.AlgebraicGroup.Connected.Generated` and the existing additive
-and diagonalizable coordinate-algebra APIs, as in
-`TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`.
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+* R. Steinberg, *Lectures on Chevalley Groups*, §3.
 -/
 
 public section
