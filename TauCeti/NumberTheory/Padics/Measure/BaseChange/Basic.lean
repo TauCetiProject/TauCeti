@@ -7,16 +7,14 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
-public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.BaseChange
+public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
 public import TauCeti.Topology.ContinuousMap.AutomaticContinuity
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.RingTheory.TensorProduct.Maps
-import Mathlib.Topology.Algebra.Module.Compact
-import TauCeti.Topology.Algebra.Ring.Basic
 
 /-!
-# Finite free base change of abstract measures and completed group algebras
+# Finite free base change of abstract measures
 
 Let `R` be a compact topological commutative ring and `O` a Hausdorff topological commutative
 `R`-algebra that is finite and free as an `R`-module and has continuous `R`-scalar action
@@ -42,15 +40,9 @@ When `G` is a locally compact topological monoid (not necessarily commutative or
 `extendScalars O` respects right convolution, upgrading `baseChangeLinearEquiv O` to an `O`-algebra
 isomorphism `baseChangeAlgEquiv O : O ⊗[R] D(G, R) ≃ₐ[O] D(G, O)` sending `a ⊗ₜ dirac R x` to
 `a • dirac O x`. On `ℤ_p`, `mapScalars l` and `extendScalars O` act coefficientwise on the Amice
-transform (`coeff_amiceTransform_mapScalars`, `amiceTransform_extendScalars`).
-
-On a profinite group `Γ` over `ℤ_p`, comparing `baseChangeAlgEquiv O` with
-`completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ` and the integral-measure isomorphism
-`completedGroupAlgebraEquiv : D(Γ, ℤ_[p]) ≃ₐ[ℤ_[p]] ℤ_[p][[Γ]]` shows that
-`toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` is an isomorphism of `O`-algebras
-(`completedGroupAlgebraEquivOfFreeOfFinite`). When `O` is a normed commutative ring, this
-isomorphism is moreover a homeomorphism from the weak topology on `D(Γ, O)` to the inverse-limit
-topology on `O[[Γ]]`, making `(D(Γ, O), WeakTopology)` a compact topological ring.
+transform (`coeff_amiceTransform_mapScalars`, `amiceTransform_extendScalars`). The comparison with
+the completed group algebra `O[[Γ]]` of a profinite group `Γ` is developed in
+`TauCeti.NumberTheory.Padics.Measure.BaseChange.CompletedGroupAlgebra`.
 
 The continuity assumption `ContinuousSMul ℤ_p O` is essential: equipping `O = ℤ_p` with an
 archimedean norm `|ι(·)|` via an abstract field embedding `ι : ℚ_p → ℂ` produces a free rank-one
@@ -72,9 +64,6 @@ records that `ContinuousSMul ℤ_[p] O` fails whenever `p^n • (1 : O)` does no
   `D(G, R) →+* D(G, O)` on a locally compact topological monoid `G`.
 * `AbstractMeasure.baseChangeAlgEquiv O`: the `O`-algebra isomorphism
   `O ⊗[R] D(G, R) ≃ₐ[O] D(G, O)` on a locally compact topological monoid `G`.
-* `AbstractMeasure.completedGroupAlgebraEquivOfFreeOfFinite p O`: the `O`-algebra isomorphism
-  `D(Γ, O) ≃ₐ[O] completedGroupAlgebra O Γ` for a profinite group `Γ` and a finite free Hausdorff
-  topological `ℤ_p`-algebra `O` with continuous `ℤ_p`-action (`ContinuousSMul ℤ_[p] O`).
 
 ## Main results
 
@@ -94,11 +83,6 @@ records that `ContinuousSMul ℤ_[p] O` fails whenever `p^n • (1 : O)` does no
   Amice-transform formulas for `mapScalars` and `extendScalars` on `ℤ_p`.
 * `AbstractMeasure.continuous_mapScalars_weak`, `AbstractMeasure.continuous_extendScalars_weak`:
   weak-topology continuity of `mapScalars` and `extendScalars` over normed commutative rings.
-* `AbstractMeasure.toCompletedGroupAlgebra_baseChangeAlgEquiv`: compatibility of measure base change
-  with `toCompletedGroupAlgebra` and `completedGroupAlgebra.baseChangeEquiv`.
-* `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite`,
-  `AbstractMeasure.isTopologicalRing_weak_of_free_of_finite`,
-  `AbstractMeasure.compactSpace_weak_of_free_of_finite`.
 
 ## References
 
@@ -109,7 +93,7 @@ records that `ContinuousSMul ℤ_[p] O` fails whenever `p^n • (1 : O)` does no
 
 public noncomputable section
 
-open ContinuousMap TauCeti
+open ContinuousMap
 open scoped PowerSeries TensorProduct
 
 namespace AbstractMeasure
@@ -746,262 +730,10 @@ theorem amiceTransform_extendScalars [Module.Free ℤ_[p] O] (μ : D(ℤ_[p], �
 
 end Amice
 
-section CompletedGroupAlgebra
-
-variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [CompactSpace Γ]
-
-section CompactGroup
-
-variable {R O : Type*} [ContinuousMul Γ] [LocallyCompactSpace Γ]
-  [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [CompactSpace R]
-  [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-  [Algebra R O] [ContinuousSMul R O] [Module.Free R O] [Module.Finite R O]
-
-omit [Module.Free R O] in
-/-- `toCompletedGroupAlgebra` intertwines `mapScalars l` on measures with
-`completedGroupAlgebra.mapAddMonoidHom` along `l.toAddMonoidHom`. -/
-@[simp]
-theorem toCompletedGroupAlgebra_mapScalars (l : O →ₗ[R] R) (ν : D(Γ, O)) :
-    toCompletedGroupAlgebra (mapScalars l ν) =
-      completedGroupAlgebra.mapAddMonoidHom Γ l.toAddMonoidHom (toCompletedGroupAlgebra ν) := by
-  ext U a
-  rw [completedGroupAlgebra.coeff_proj_mapAddMonoidHom, proj_toCompletedGroupAlgebra,
-    proj_toCompletedGroupAlgebra, ContinuousMonoidHom.finiteProjectionAlgHom_coeff,
-    ContinuousMonoidHom.finiteProjectionAlgHom_coeff, finiteProjection_mapScalars,
-    Finsupp.mapRange_apply, LinearMap.toAddMonoidHom_coe]
-
-/-- `toCompletedGroupAlgebra` intertwines `extendScalars O` on measures with
-`completedGroupAlgebra.mapRingHom` along `algebraMap R O`. -/
-@[simp]
-theorem toCompletedGroupAlgebra_extendScalars (μ : D(Γ, R)) :
-    toCompletedGroupAlgebra (extendScalars O μ) =
-      completedGroupAlgebra.mapRingHom Γ (algebraMap R O) (toCompletedGroupAlgebra μ) := by
-  ext U a
-  rw [completedGroupAlgebra.coeff_proj_mapRingHom, proj_toCompletedGroupAlgebra,
-    proj_toCompletedGroupAlgebra, ContinuousMonoidHom.finiteProjectionAlgHom_coeff,
-    ContinuousMonoidHom.finiteProjectionAlgHom_coeff, finiteProjection_extendScalars,
-    Finsupp.mapRange_apply]
-
-/-- `toCompletedGroupAlgebra` intertwines `baseChangeAlgEquiv O` on `O ⊗[R] D(Γ, R)` with
-`completedGroupAlgebra.baseChangeEquiv R O Γ` on `O ⊗[R] R[[Γ]]`. -/
-theorem toCompletedGroupAlgebra_baseChangeAlgEquiv (z : O ⊗[R] D(Γ, R)) :
-    toCompletedGroupAlgebra (baseChangeAlgEquiv O z) =
-      completedGroupAlgebra.baseChangeEquiv R O Γ
-        (Algebra.TensorProduct.map (AlgHom.id O O) toCompletedGroupAlgebra z) := by
-  refine TensorProduct.inductionOn z ?_ fun z₁ z₂ hz₁ hz₂ ↦ by
-    rw [map_add, map_add, map_add, map_add, hz₁, hz₂]
-  intro a μ
-  simp
-
-end CompactGroup
-
-section ProfinitePadicInt
-
-variable [IsTopologicalGroup Γ] [TotallyDisconnectedSpace Γ]
-
-/-- **Surjectivity of `toCompletedGroupAlgebra` for finite free Hausdorff `ℤ_p`-algebras.** For a
-profinite group `Γ` and a Hausdorff topological commutative `ℤ_p`-algebra `O` that is finite and
-free over `ℤ_p` with continuous `ℤ_p`-action (`ContinuousSMul ℤ_[p] O`), every element of `O[[Γ]]`
-arises from an `O`-valued measure on `Γ`. -/
-theorem toCompletedGroupAlgebra_surjective_of_free_of_finite (p : ℕ) [Fact p.Prime]
-    (O : Type*) [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    Function.Surjective
-      (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
-  intro y
-  let e : O ⊗[ℤ_[p]] D(Γ, ℤ_[p]) ≃ₐ[O] O ⊗[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ :=
-    Algebra.TensorProduct.congr (AlgEquiv.refl : O ≃ₐ[O] O)
-      (completedGroupAlgebraEquiv (Γ := Γ) (p := p))
-  refine ⟨baseChangeAlgEquiv O (e.symm ((completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ).symm y)),
-    ?_⟩
-  rw [toCompletedGroupAlgebra_baseChangeAlgEquiv, ← toAlgHom_completedGroupAlgebraEquiv (p := p),
-    ← AlgEquiv.refl_toAlgHom, ← Algebra.TensorProduct.congr_apply, e.apply_symm_apply,
-    AlgEquiv.apply_symm_apply]
-
-/-- **`O`-valued measures are the completed group algebra (Rodrigues Jacinto–Williams,
-Proposition 3.16).** For a profinite group `Γ` and a Hausdorff topological commutative
-`ℤ_p`-algebra `O` that is finite and free over `ℤ_p` with continuous `ℤ_p`-action, `D(Γ, O)` is
-canonically isomorphic as an `O`-algebra to `O[[Γ]]`. -/
-def completedGroupAlgebraEquivOfFreeOfFinite (p : ℕ) [Fact p.Prime]
-    (O : Type*) [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    D(Γ, O) ≃ₐ[O] completedGroupAlgebra O Γ :=
-  AlgEquiv.ofBijective toCompletedGroupAlgebra
-    ⟨toCompletedGroupAlgebra_injective, toCompletedGroupAlgebra_surjective_of_free_of_finite p O⟩
-
-/-- The forward map of `completedGroupAlgebraEquivOfFreeOfFinite p O` is
-`toCompletedGroupAlgebra`. -/
-@[simp]
-theorem coe_completedGroupAlgebraEquivOfFreeOfFinite {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O) = toCompletedGroupAlgebra :=
-  funext <| AlgEquiv.ofBijective_apply _ _
-
-/-- Forgetting invertibility of `completedGroupAlgebraEquivOfFreeOfFinite p O` gives
-`toCompletedGroupAlgebra`. -/
-@[simp]
-theorem toAlgHom_completedGroupAlgebraEquivOfFreeOfFinite {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    (completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toAlgHom = toCompletedGroupAlgebra :=
-  AlgEquiv.toAlgHom_ofBijective _ _
-
-/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` is a left inverse to
-`toCompletedGroupAlgebra`. -/
-@[simp]
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_toCompletedGroupAlgebra
-    {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (ν : D(Γ, O)) :
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm (toCompletedGroupAlgebra ν) = ν :=
-  (completedGroupAlgebraEquivOfFreeOfFinite p O).symm_apply_apply ν
-
-/-- `toCompletedGroupAlgebra` is a right inverse to
-`(completedGroupAlgebraEquivOfFreeOfFinite p O).symm`. -/
-@[simp]
-theorem toCompletedGroupAlgebra_completedGroupAlgebraEquivOfFreeOfFinite_symm
-    {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (y : completedGroupAlgebra O Γ) :
-    toCompletedGroupAlgebra ((completedGroupAlgebraEquivOfFreeOfFinite p O).symm y) = y :=
-  (completedGroupAlgebraEquivOfFreeOfFinite p O).apply_symm_apply y
-
-/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` sends the group element `γ` in `O[[Γ]]`
-to `dirac O γ`. -/
-@[simp]
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_of {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (γ : Γ) :
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm (completedGroupAlgebra.of O Γ γ) =
-      dirac O γ := by
-  rw [← toCompletedGroupAlgebra_dirac,
-    completedGroupAlgebraEquivOfFreeOfFinite_symm_toCompletedGroupAlgebra]
-
-/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` intertwines coefficient extension along
-`algebraMap ℤ_[p] O` on `ℤ_p[[Γ]]` with `extendScalars O ∘ completedGroupAlgebraEquiv.symm`. -/
-@[simp]
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_mapRingHom {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (x : completedGroupAlgebra ℤ_[p] Γ) :
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm
-        (completedGroupAlgebra.mapRingHom Γ (algebraMap ℤ_[p] O) x) =
-      extendScalars O (completedGroupAlgebraEquiv.symm x) := by
-  apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
-  simp
-
-/-- In any finite `ℤ_p`-basis `b` of `O`, `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm`
-extracts each scalar coordinate in `ℤ_p[[Γ]]`, converts it to an integral measure, and recombines
-in `D(Γ, O)`. -/
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_apply {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℤ_[p] O) (y : completedGroupAlgebra O Γ) :
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm y =
-      ∑ i : ι, b i • extendScalars O
-        (completedGroupAlgebraEquiv.symm
-          (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) := by
-  apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
-  rw [AlgEquiv.apply_symm_apply, coe_completedGroupAlgebraEquivOfFreeOfFinite]
-  have hsum : ∑ i : ι, b i • extendScalars O
-      (completedGroupAlgebraEquiv.symm
-        (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) =
-      baseChangeAlgEquiv O (∑ i : ι, b i ⊗ₜ[ℤ_[p]]
-        completedGroupAlgebraEquiv.symm
-          (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) := by
-    simp [map_sum]
-  rw [hsum, toCompletedGroupAlgebra_baseChangeAlgEquiv]
-  simp only [map_sum, Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq,
-    toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm]
-  rw [← map_sum, ← completedGroupAlgebra.baseChangeEquiv_symm_apply b y,
-    AlgEquiv.apply_symm_apply]
-
-open Topology in
-/-- **Weak-topology homeomorphism for finite free normed `ℤ_p`-algebras.** For a profinite group
-`Γ` and a normed commutative `ℤ_p`-algebra `O` that is finite and free over `ℤ_p` with continuous
-`ℤ_p`-action (`ContinuousSMul ℤ_[p] O`), `toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` is a
-homeomorphism from the weak topology on measures to the inverse-limit topology on the completed
-group algebra. -/
-theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (p : ℕ) [Fact p.Prime]
-    (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    @IsHomeomorph _ _ (WeakTopology (X := Γ) (R := O) (E := O)) _
-      (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
-  let _ : TopologicalSpace D(Γ, O) := WeakTopology
-  let _ : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
-  let b := Module.Free.chooseBasis ℤ_[p] O
-  have hZp_coe : ⇑(completedGroupAlgebraEquiv (Γ := Γ) (p := p)).toEquiv =
-      ⇑(toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) :=
-    funext fun μ ↦ completedGroupAlgebraEquiv_apply μ
-  have hZp_symm : Continuous ⇑(completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm :=
-    ((completedGroupAlgebraEquiv (Γ := Γ) (p := p)).toEquiv.isHomeomorph_iff.mp
-      (by rw [hZp_coe]; exact isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p))).2
-  have hsymm_cont :
-      Continuous ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).symm := by
-    have hcont_i (i : _) :
-        Continuous (fun y : completedGroupAlgebra O Γ ↦
-          extendScalars O ((completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm
-            (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y))) :=
-      (continuous_extendScalars_weak (X := Γ) (R := ℤ_[p]) (O := O)).comp
-        (hZp_symm.comp
-          (completedGroupAlgebra.continuous_mapAddMonoidHom
-            (b.coord i).continuous_of_finite_of_compactSpace))
-    refine continuous_induced_rng.mpr (continuous_pi fun f : C(Γ, O) ↦ ?_)
-    simp only [Function.comp_apply]
-    have hfun : (fun y : completedGroupAlgebra O Γ ↦
-        (completedGroupAlgebraEquivOfFreeOfFinite p O).symm y f) =
-        fun y ↦ ∑ i, b i *
-          extendScalars O ((completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm
-            (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) f := by
-      ext y
-      rw [← coe_toCLMEquiv, completedGroupAlgebraEquivOfFreeOfFinite_symm_apply b y,
-        map_sum, _root_.sum_apply]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simp [smul_eq_mul]
-    rw [hfun]
-    exact continuous_finsetSum _ fun i _ ↦
-      continuous_const.mul (((continuous_apply f).comp continuous_induced_dom).comp (hcont_i i))
-  have hO_coe : ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toEquiv =
-      ⇑(toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
-    rw [AlgEquiv.toEquiv_eq_coe, AlgEquiv.coe_toEquiv, coe_completedGroupAlgebraEquivOfFreeOfFinite]
-  rw [← hO_coe]
-  exact (completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toEquiv.isHomeomorph_iff.mpr
-    ⟨by rw [hO_coe]; exact continuous_toCompletedGroupAlgebra, hsymm_cont⟩
-
-open Topology in
-/-- For a profinite group `Γ` and a finite free normed `ℤ_p`-algebra `O` with continuous
-`ℤ_p`-action, `D(Γ, O)` is a topological ring for convolution and the weak topology. -/
-theorem isTopologicalRing_weak_of_free_of_finite (p : ℕ) [Fact p.Prime]
-    (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    @IsTopologicalRing D(Γ, O) WeakTopology _ := by
-  let _ : TopologicalSpace D(Γ, O) := WeakTopology
-  exact (isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (Γ := Γ) p O)
-    |>.isInducing.isTopologicalRing (toCompletedGroupAlgebra (Γ := Γ) (R := O))
-
-/-- **Weak compactness of `O`-valued measures.** For a profinite group `Γ` and a finite free normed
-`ℤ_p`-algebra `O` with continuous `ℤ_p`-action, `D(Γ, O)` is compact for the weak topology. -/
-theorem compactSpace_weak_of_free_of_finite (p : ℕ) [Fact p.Prime]
-    (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    @CompactSpace D(Γ, O) (WeakTopology (X := Γ) (R := O) (E := O)) := by
-  let _ : TopologicalSpace D(Γ, O) := WeakTopology
-  have : CompactSpace O := Module.Finite.compactSpace ℤ_[p] O
-  exact ((isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (Γ := Γ) p O).homeomorph
-    _).symm.compactSpace
-
-end ProfinitePadicInt
-
-end CompletedGroupAlgebra
-
 section Examples
 
-variable {p : ℕ} [Fact p.Prime] {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
-  [IsTopologicalGroup Γ] [CompactSpace Γ] [TotallyDisconnectedSpace Γ]
+variable {p : ℕ} [Fact p.Prime] {G : Type*} [Monoid G] [TopologicalSpace G]
+  [ContinuousMul G] [LocallyCompactSpace G]
 
 /-! Sanity checks:
 * for `O = ℤ_p`, `baseChangeAlgEquiv ℤ_[p]` is the canonical left-unit equivalence
@@ -1013,8 +745,8 @@ variable {p : ℕ} [Fact p.Prime] {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
   `ℤ_p`-action cannot be continuous. -/
 
 example :
-    baseChangeAlgEquiv (G := Γ) (R := ℤ_[p]) ℤ_[p] =
-      Algebra.TensorProduct.lid ℤ_[p] D(Γ, ℤ_[p]) :=
+    baseChangeAlgEquiv (G := G) (R := ℤ_[p]) ℤ_[p] =
+      Algebra.TensorProduct.lid ℤ_[p] D(G, ℤ_[p]) :=
   AlgEquiv.ext fun z ↦
     TensorProduct.inductionOn z
       (fun r μ ↦ by
@@ -1023,17 +755,17 @@ example :
       fun z₁ z₂ hz₁ hz₂ ↦ by rw [map_add, map_add, hz₁, hz₂]
 
 example (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] (x : Γ) :
+    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] (x : G) :
     baseChangeAlgEquiv O ((1 : O) ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x) = dirac O x := by
   simp
 
 example (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] {a b : O} (hab : a ≠ b) (x : Γ) :
+    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] {a b : O} (hab : a ≠ b) (x : G) :
     baseChangeAlgEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x) ≠
       baseChangeAlgEquiv O (b ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x) := by
   intro h
   apply hab
-  have h1 := congrArg (fun ν : D(Γ, O) ↦ ν 1) h
+  have h1 := congrArg (fun ν : D(G, O) ↦ ν 1) h
   simpa using h1
 
 example (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O]

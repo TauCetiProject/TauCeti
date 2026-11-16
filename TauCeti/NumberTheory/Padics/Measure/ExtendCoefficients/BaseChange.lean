@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Measure.BaseChange
+public import TauCeti.NumberTheory.Padics.Measure.BaseChange.Basic
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Algebra
 import TauCeti.NumberTheory.Padics.Measure.IntegralUnitBall
 
