@@ -17,7 +17,7 @@ import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Algebra.Group.Pointwise
 import Mathlib.Topology.Compactness.LocallyCompact
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 
 /-!
 # Properly supported binary kernels
