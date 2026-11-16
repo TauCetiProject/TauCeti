@@ -52,9 +52,6 @@ example.
   local diffeomorphism the converse holds as well.
 * `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
   two-form back to a symplectic form exactly when the form is symplectic.
-* `TauCeti.SmoothTwoForm.isLocalDiffeomorph_of_isNondegenerate_mpullback`: conversely, a map
-  between manifolds of the same finite dimension pulling a two-form back to a nondegenerate form
-  is a local diffeomorphism.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_forall_ker_bilinFormAt_mpullback`: nondegeneracy
   characterized by pullback kernels along a surjective smooth map with surjective derivatives.
 * `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: a form on the base of such a map is
@@ -246,19 +243,6 @@ theorem _root_.IsLocalDiffeomorph.isSymplectic_mpullback_iff {f : M₂ → M}
       (hf.isNondegenerate_mpullback_iff hsurj).1 h.isNondegenerate⟩,
     fun h ↦ ⟨(hf.isClosed_mpullback_iff hsurj).2 h.isClosed,
       (hf.isNondegenerate_mpullback_iff hsurj).2 h.isNondegenerate⟩⟩
-
-/-- **A map pulling a two-form back to a nondegenerate form is a local diffeomorphism**, when its
-source is boundaryless and has the same finite dimension as its target: its differential is
-injective, since a vector it kills pairs to zero with every vector under the pulled-back form, so
-the inverse function theorem applies. -/
-theorem isLocalDiffeomorph_of_isNondegenerate_mpullback [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ E₂] [I₂.Boundaryless] {f : M₂ → M} (hf : ContMDiff I₂ I ∞ f)
-    (h : IsNondegenerate (SmoothForm.mpullback f hf σ))
-    (hdim : Module.finrank ℝ E₂ = Module.finrank ℝ E) : IsLocalDiffeomorph I₂ I ∞ f := fun x ↦
-  TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv hf.contMDiffOn isOpen_univ (Set.mem_univ x)
-    BoundarylessManifold.isInteriorPoint (by simp)
-    ((injective_iff_map_eq_zero _).2 fun v hv ↦ isNondegenerate_iff_separatingLeft.1 h x v
-      fun w ↦ by rw [SmoothForm.eval₂_mpullback, hv, SmoothBundleForm.eval₂_zero_left]) hdim
 
 end Transport
 

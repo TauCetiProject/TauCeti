@@ -607,7 +607,7 @@ with `θ` at the points of `f(Q)` whenever one argument is tangent to `f(Q)`. Th
 neighbourhoods `U₀` of `f(Q)` and `U₁` of `Ψ(f(Q))` and a diffeomorphism `φ : U₀ → U₁` which
 agrees with `Ψ` on `f(Q)` and pulls the restriction of `σ` back to the restriction of `θ`. -/
 theorem IsSymplectic.exists_diffeomorph_opens_of_isCoisotropicMap_of_eval₂_eq
-    [FiniteDimensional ℝ F] {θ : SmoothTwoForm I M} (hθ : θ.IsSymplectic) {f : Q → M}
+    {θ : SmoothTwoForm I M} (hθ : θ.IsSymplectic) {f : Q → M}
     (hfe : Manifold.IsSmoothEmbedding J I ∞ f) (hf : hθ.isNondegenerate.IsCoisotropicMap J f)
     {σ : SmoothTwoForm K N} (hσ : σ.IsClosed) (Ψ : PartialDiffeomorph I K M N ∞)
     (hsrc : ∀ q, f q ∈ Ψ.source)
@@ -652,15 +652,12 @@ theorem IsSymplectic.exists_diffeomorph_opens_of_isCoisotropicMap_of_eval₂_eq
     have h' := Ψ.toPartialEquiv.injOn (Θ (ι z)).2 (Θ (ι z')).2 h
     have hv := congrArg Subtype.val (Θ.injective (Subtype.ext h') : ι z = ι z')
     exact Subtype.ext hv
-  -- `Φ` is a local diffeomorphism, since it pulls `σ` back to a nondegenerate form.
-  have hloc : IsLocalDiffeomorph I K ∞ Φ := by
-    obtain ⟨q⟩ | hQ := isEmpty_or_nonempty U₀
-    · exact fun z ↦ isEmptyElim z
-    refine isLocalDiffeomorph_of_isNondegenerate_mpullback hΦ
-      (hΦσ ▸ hθ.isNondegenerate.mpullback_subtype_val U₀) ?_
-    obtain ⟨z⟩ := hQ
-    exact ((Ψ.isLocalDiffeomorphAt I K ∞ (Θ (ι z)).2).mfderivToContinuousLinearEquiv
-      (by simp)).toLinearEquiv.finrank_eq
+  -- `Φ` is a composite of local diffeomorphisms.
+  have hloc : IsLocalDiffeomorph I K ∞ Φ := fun z ↦
+    (IsLocalDiffeomorphAt.of_comp_left (hιval ▸ isLocalDiffeomorph_subtype_val z)
+        (isLocalDiffeomorph_subtype_val _) hι.continuous.continuousAt).comp
+      (hg := (Θ.isLocalDiffeomorph _).comp (hg := (isLocalDiffeomorph_subtype_val _).comp
+        (hg := Ψ.isLocalDiffeomorphAt I K ∞ (Θ (ι z)).2)))
   have hq (q : Q) : f q ∈ U₀ := ⟨⟨f q, hsrc q⟩, hfA (Set.mem_range_self q), rfl⟩
   refine ⟨U₀, hloc.image, hloc.diffeomorphOfInjective hinj, fun q ↦ ⟨hq q, ?_⟩, ?_⟩
   · rw [IsLocalDiffeomorph.coe_diffeomorphOfInjective_apply]
