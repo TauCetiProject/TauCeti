@@ -111,6 +111,24 @@ def sl2ZModThreeJ : SL(2, ZMod 3) :=
 def sl2ZModThreeT : SL(2, ZMod 3) :=
   ⟨!![1, 1; 0, 1], by decide⟩
 
+/-- The underlying matrix of `TauCeti.sl2ZModThreeI` is `!![0, -1; 1, 0]`. -/
+@[simp]
+theorem coe_sl2ZModThreeI :
+    (sl2ZModThreeI : Matrix (Fin 2) (Fin 2) (ZMod 3)) = !![0, -1; 1, 0] :=
+  (rfl)
+
+/-- The underlying matrix of `TauCeti.sl2ZModThreeJ` is `!![1, 1; 1, -1]`. -/
+@[simp]
+theorem coe_sl2ZModThreeJ :
+    (sl2ZModThreeJ : Matrix (Fin 2) (Fin 2) (ZMod 3)) = !![1, 1; 1, -1] :=
+  (rfl)
+
+/-- The underlying matrix of `TauCeti.sl2ZModThreeT` is `!![1, 1; 0, 1]`. -/
+@[simp]
+theorem coe_sl2ZModThreeT :
+    (sl2ZModThreeT : Matrix (Fin 2) (Fin 2) (ZMod 3)) = !![1, 1; 0, 1] :=
+  (rfl)
+
 /-- `TauCeti.sl2ZModThreeI` squares to `-1`. -/
 @[simp]
 theorem sl2ZModThreeI_sq : sl2ZModThreeI ^ 2 = -1 := by decide
@@ -119,27 +137,26 @@ theorem sl2ZModThreeI_sq : sl2ZModThreeI ^ 2 = -1 := by decide
 @[simp]
 theorem sl2ZModThreeJ_sq : sl2ZModThreeJ ^ 2 = -1 := by decide
 
-/-- `TauCeti.sl2ZModThreeJ` and `TauCeti.sl2ZModThreeI` have equal squares. -/
-theorem sl2ZModThreeJ_sq_eq_I_sq : sl2ZModThreeJ ^ 2 = sl2ZModThreeI ^ 2 := by decide
-
 /-- Conjugation by `TauCeti.sl2ZModThreeJ` inverts `TauCeti.sl2ZModThreeI`. -/
-theorem sl2ZModThreeJ_conj_I :
+theorem sl2ZModThreeJ_conj_sl2ZModThreeI :
     sl2ZModThreeJ * sl2ZModThreeI * sl2ZModThreeJ⁻¹ = sl2ZModThreeI⁻¹ := by decide
 
 /-- `TauCeti.sl2ZModThreeT` has cube `1`. -/
 @[simp]
-theorem sl2ZModThreeT_cubed : sl2ZModThreeT ^ 3 = 1 := by decide
+theorem sl2ZModThreeT_pow_three : sl2ZModThreeT ^ 3 = 1 := by decide
 
-/-- Conjugation by `TauCeti.sl2ZModThreeT` sends `I` to `J`. -/
-theorem sl2ZModThreeT_conj_I :
+/-- Conjugation by `TauCeti.sl2ZModThreeT` sends `sl2ZModThreeI` to `sl2ZModThreeJ`. -/
+theorem sl2ZModThreeT_conj_sl2ZModThreeI :
     sl2ZModThreeT * sl2ZModThreeI * sl2ZModThreeT⁻¹ = sl2ZModThreeJ := by decide
 
-/-- Conjugation by `TauCeti.sl2ZModThreeT` sends `J` to `I * J`. -/
-theorem sl2ZModThreeT_conj_J :
+/-- Conjugation by `TauCeti.sl2ZModThreeT` sends `sl2ZModThreeJ` to
+`sl2ZModThreeI * sl2ZModThreeJ`. -/
+theorem sl2ZModThreeT_conj_sl2ZModThreeJ :
     sl2ZModThreeT * sl2ZModThreeJ * sl2ZModThreeT⁻¹ = sl2ZModThreeI * sl2ZModThreeJ := by decide
 
-/-- Conjugation by `TauCeti.sl2ZModThreeT` sends `I * J` to `I`. -/
-theorem sl2ZModThreeT_conj_IJ :
+/-- Conjugation by `TauCeti.sl2ZModThreeT` sends `sl2ZModThreeI * sl2ZModThreeJ` to
+`sl2ZModThreeI`. -/
+theorem sl2ZModThreeT_conj_sl2ZModThreeI_mul_sl2ZModThreeJ :
     sl2ZModThreeT * (sl2ZModThreeI * sl2ZModThreeJ) * sl2ZModThreeT⁻¹ = sl2ZModThreeI := by decide
 
 /-- `TauCeti.sl2ZModThreeI` has exact order `4`. -/
@@ -158,10 +175,10 @@ theorem orderOf_sl2ZModThreeJ : orderOf sl2ZModThreeJ = 4 :=
 @[simp]
 theorem orderOf_sl2ZModThreeT : orderOf sl2ZModThreeT = 3 := by
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  exact orderOf_eq_prime sl2ZModThreeT_cubed (by decide)
+  exact orderOf_eq_prime sl2ZModThreeT_pow_three (by decide)
 
 /-- `TauCeti.sl2ZModThreeI` and `TauCeti.sl2ZModThreeT` generate `SL(2, ZMod 3)`. -/
-theorem closure_sl2ZModThreeI_T :
+theorem closure_sl2ZModThreeI_sl2ZModThreeT :
     Subgroup.closure ({sl2ZModThreeI, sl2ZModThreeT} : Set SL(2, ZMod 3)) = ⊤ := by
   let φ : SL(2, ℤ) →* SL(2, ZMod 3) :=
     Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod 3))
@@ -180,24 +197,24 @@ theorem closure_sl2ZModThreeI_T :
 /-- The injective homomorphism `QuaternionGroup 2 →* SL(2, ZMod 3)` sending `a 1` to
 `sl2ZModThreeI` and `xa 0` to `sl2ZModThreeJ`. -/
 def sl2ZModThreeQuaternionHom : QuaternionGroup 2 →* SL(2, ZMod 3) :=
-  quaternionHom sl2ZModThreeJ_sq_eq_I_sq sl2ZModThreeJ_conj_I
+  quaternionHom (sl2ZModThreeJ_sq.trans sl2ZModThreeI_sq.symm) sl2ZModThreeJ_conj_sl2ZModThreeI
 
 /-- `TauCeti.sl2ZModThreeQuaternionHom` maps `a i` to `sl2ZModThreeI ^ (ZMod.cast i : ℤ)`. -/
 @[simp]
 theorem sl2ZModThreeQuaternionHom_a (i : ZMod (2 * 2)) :
     sl2ZModThreeQuaternionHom (.a i) = sl2ZModThreeI ^ (ZMod.cast i : ℤ) :=
-  quaternionHom_a sl2ZModThreeJ_sq_eq_I_sq sl2ZModThreeJ_conj_I i
+  quaternionHom_a _ _ i
 
 /-- `TauCeti.sl2ZModThreeQuaternionHom` maps `xa i` to
 `sl2ZModThreeJ * sl2ZModThreeI ^ (ZMod.cast i : ℤ)`. -/
 @[simp]
 theorem sl2ZModThreeQuaternionHom_xa (i : ZMod (2 * 2)) :
     sl2ZModThreeQuaternionHom (.xa i) = sl2ZModThreeJ * sl2ZModThreeI ^ (ZMod.cast i : ℤ) :=
-  quaternionHom_xa sl2ZModThreeJ_sq_eq_I_sq sl2ZModThreeJ_conj_I i
+  quaternionHom_xa _ _ i
 
 /-- `TauCeti.sl2ZModThreeQuaternionHom` is injective. -/
 theorem sl2ZModThreeQuaternionHom_injective : Function.Injective sl2ZModThreeQuaternionHom :=
-  quaternionHom_injective sl2ZModThreeJ_sq_eq_I_sq sl2ZModThreeJ_conj_I orderOf_sl2ZModThreeI
+  quaternionHom_injective _ _ orderOf_sl2ZModThreeI
 
 /-- `TauCeti.sl2ZModThreeQuaternionHom` sends the central involution `a 2` of `QuaternionGroup 2`
 to `-1`. -/
@@ -211,6 +228,19 @@ theorem sl2ZModThreeQuaternionHom_a_two :
 def sl2ZModThreeQuaternionSubgroup : Subgroup SL(2, ZMod 3) :=
   sl2ZModThreeQuaternionHom.range
 
+/-- `TauCeti.sl2ZModThreeQuaternionSubgroup` is the range of
+`TauCeti.sl2ZModThreeQuaternionHom`. -/
+theorem sl2ZModThreeQuaternionSubgroup_eq_range :
+    sl2ZModThreeQuaternionSubgroup = sl2ZModThreeQuaternionHom.range :=
+  (rfl)
+
+/-- Every value of `TauCeti.sl2ZModThreeQuaternionHom` belongs to
+`TauCeti.sl2ZModThreeQuaternionSubgroup`. -/
+@[simp]
+theorem sl2ZModThreeQuaternionHom_mem_sl2ZModThreeQuaternionSubgroup (x : QuaternionGroup 2) :
+    sl2ZModThreeQuaternionHom x ∈ sl2ZModThreeQuaternionSubgroup :=
+  ⟨x, rfl⟩
+
 /-- An element of `SL(2, ZMod 3)` lies in `TauCeti.sl2ZModThreeQuaternionSubgroup` if and only if
 it is in the image of `TauCeti.sl2ZModThreeQuaternionHom`. -/
 theorem mem_sl2ZModThreeQuaternionSubgroup_iff {g : SL(2, ZMod 3)} :
@@ -221,7 +251,7 @@ theorem mem_sl2ZModThreeQuaternionSubgroup_iff {g : SL(2, ZMod 3)} :
 `sl2ZModThreeJ`. -/
 theorem sl2ZModThreeQuaternionSubgroup_eq_closure :
     sl2ZModThreeQuaternionSubgroup = Subgroup.closure {sl2ZModThreeI, sl2ZModThreeJ} :=
-  range_quaternionHom sl2ZModThreeJ_sq_eq_I_sq sl2ZModThreeJ_conj_I
+  range_quaternionHom _ _
 
 /-- The isomorphism `QuaternionGroup 2 ≃* sl2ZModThreeQuaternionSubgroup`. -/
 noncomputable def sl2ZModThreeQuaternionEquiv :
@@ -237,14 +267,14 @@ theorem coe_sl2ZModThreeQuaternionEquiv (x : QuaternionGroup 2) :
 
 /-- `TauCeti.sl2ZModThreeI` belongs to `TauCeti.sl2ZModThreeQuaternionSubgroup`. -/
 @[simp]
-theorem sl2ZModThreeI_mem_quaternionSubgroup :
+theorem sl2ZModThreeI_mem_sl2ZModThreeQuaternionSubgroup :
     sl2ZModThreeI ∈ sl2ZModThreeQuaternionSubgroup := by
   rw [sl2ZModThreeQuaternionSubgroup_eq_closure]
   exact Subgroup.subset_closure (by simp)
 
 /-- `TauCeti.sl2ZModThreeJ` belongs to `TauCeti.sl2ZModThreeQuaternionSubgroup`. -/
 @[simp]
-theorem sl2ZModThreeJ_mem_quaternionSubgroup :
+theorem sl2ZModThreeJ_mem_sl2ZModThreeQuaternionSubgroup :
     sl2ZModThreeJ ∈ sl2ZModThreeQuaternionSubgroup := by
   rw [sl2ZModThreeQuaternionSubgroup_eq_closure]
   exact Subgroup.subset_closure (by simp)
@@ -278,43 +308,39 @@ theorem index_sl2ZModThreeQuaternionSubgroup :
 
 /-- `TauCeti.sl2ZModThreeQuaternionSubgroup` is a `2`-group. -/
 theorem isPGroup_sl2ZModThreeQuaternionSubgroup :
-    IsPGroup 2 sl2ZModThreeQuaternionSubgroup := by
-  have hcard : Nat.card sl2ZModThreeQuaternionSubgroup = 2 ^ 3 := by
-    rw [natCard_sl2ZModThreeQuaternionSubgroup]
-    decide
-  exact IsPGroup.of_card hcard
+    IsPGroup 2 sl2ZModThreeQuaternionSubgroup :=
+  (isPGroup_quaternionGroup_two_pow 1).of_equiv sl2ZModThreeQuaternionEquiv
 
 /-- `TauCeti.sl2ZModThreeQuaternionSubgroup` is not commutative. -/
 theorem not_isMulCommutative_sl2ZModThreeQuaternionSubgroup :
-    ¬ IsMulCommutative sl2ZModThreeQuaternionSubgroup := by
-  intro h
-  have : IsMulCommutative (QuaternionGroup 2) :=
-    ⟨⟨fun x y => sl2ZModThreeQuaternionEquiv.injective (by
-      rw [map_mul, map_mul, mul_comm'])⟩⟩
-  exact not_isMulCommutative_quaternionGroup (by decide) this
+    ¬ IsMulCommutative sl2ZModThreeQuaternionSubgroup :=
+  fun _ => not_isMulCommutative_quaternionGroup (by decide)
+    sl2ZModThreeQuaternionEquiv.symm.surjective.isMulCommutative
 
 /-- `TauCeti.sl2ZModThreeQuaternionSubgroup` is normal in `SL(2, ZMod 3)`. -/
 instance sl2ZModThreeQuaternionSubgroup_normal : sl2ZModThreeQuaternionSubgroup.Normal := by
-  rw [← Subgroup.normalizer_eq_top_iff, eq_top_iff, ← closure_sl2ZModThreeI_T,
+  rw [← Subgroup.normalizer_eq_top_iff, eq_top_iff, ← closure_sl2ZModThreeI_sl2ZModThreeT,
     Subgroup.closure_le]
   rintro x (rfl | rfl)
-  · exact Subgroup.le_normalizer sl2ZModThreeI_mem_quaternionSubgroup
+  · exact Subgroup.le_normalizer sl2ZModThreeI_mem_sl2ZModThreeQuaternionSubgroup
   · refine Subgroup.mem_normalizer_iff_map_conj_eq.mpr (le_antisymm ?_ ?_)
     · rw [Subgroup.map_le_iff_le_comap]
       nth_rw 1 [sl2ZModThreeQuaternionSubgroup_eq_closure]
       rw [Subgroup.closure_le]
       rintro y (rfl | rfl)
-      · simp [MulAut.conj_apply, sl2ZModThreeT_conj_I]
-      · simpa [MulAut.conj_apply, sl2ZModThreeT_conj_J] using
-          mul_mem sl2ZModThreeI_mem_quaternionSubgroup sl2ZModThreeJ_mem_quaternionSubgroup
+      · simp [MulAut.conj_apply, sl2ZModThreeT_conj_sl2ZModThreeI]
+      · simpa [MulAut.conj_apply, sl2ZModThreeT_conj_sl2ZModThreeJ] using
+          mul_mem sl2ZModThreeI_mem_sl2ZModThreeQuaternionSubgroup
+            sl2ZModThreeJ_mem_sl2ZModThreeQuaternionSubgroup
     · nth_rw 1 [sl2ZModThreeQuaternionSubgroup_eq_closure]
       rw [Subgroup.closure_le]
       rintro y (rfl | rfl)
       · exact ⟨sl2ZModThreeI * sl2ZModThreeJ,
-          mul_mem sl2ZModThreeI_mem_quaternionSubgroup sl2ZModThreeJ_mem_quaternionSubgroup,
-          by simpa [MulAut.conj_apply] using sl2ZModThreeT_conj_IJ⟩
-      · exact ⟨sl2ZModThreeI, sl2ZModThreeI_mem_quaternionSubgroup,
-          by simpa [MulAut.conj_apply] using sl2ZModThreeT_conj_I⟩
+          mul_mem sl2ZModThreeI_mem_sl2ZModThreeQuaternionSubgroup
+            sl2ZModThreeJ_mem_sl2ZModThreeQuaternionSubgroup,
+          by simpa [MulAut.conj_apply] using sl2ZModThreeT_conj_sl2ZModThreeI_mul_sl2ZModThreeJ⟩
+      · exact ⟨sl2ZModThreeI, sl2ZModThreeI_mem_sl2ZModThreeQuaternionSubgroup,
+          by simpa [MulAut.conj_apply] using sl2ZModThreeT_conj_sl2ZModThreeI⟩
 
 /-- `TauCeti.sl2ZModThreeQuaternionSubgroup` packaged as a Sylow `2`-subgroup of `SL(2, ZMod 3)`. -/
 def sl2ZModThreeSylowTwo : Sylow 2 SL(2, ZMod 3) :=
@@ -372,60 +398,25 @@ private theorem mem_quaternionSubgroup_cases {q : SL(2, ZMod 3)}
     · exact Or.inr (Or.inr (Or.inr (Or.inl (by decide))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by decide)))))
 
-private theorem coset_sl2ZModThreeQuaternionSubgroup_mul_mem {x y : SL(2, ZMod 3)}
-    (hx : x ∈ sl2ZModThreeQuaternionSubgroup)
-    (hy : y ∈ sl2ZModThreeQuaternionSubgroup ∨
-      sl2ZModThreeT⁻¹ * y ∈ sl2ZModThreeQuaternionSubgroup ∨
-      sl2ZModThreeT * y ∈ sl2ZModThreeQuaternionSubgroup) :
-    x * y ∈ sl2ZModThreeQuaternionSubgroup ∨
-      sl2ZModThreeT⁻¹ * (x * y) ∈ sl2ZModThreeQuaternionSubgroup ∨
-      sl2ZModThreeT * (x * y) ∈ sl2ZModThreeQuaternionSubgroup := by
-  rcases hy with hy0 | hy1 | hy2
-  · exact Or.inl (mul_mem hx hy0)
-  · refine Or.inr (Or.inl ?_)
-    have hconj : sl2ZModThreeT⁻¹ * x * sl2ZModThreeT ∈ sl2ZModThreeQuaternionSubgroup := by
-      simpa [inv_inv] using
-        sl2ZModThreeQuaternionSubgroup_normal.conj_mem x hx sl2ZModThreeT⁻¹
-    have hreassoc :
-        (sl2ZModThreeT⁻¹ * x * sl2ZModThreeT) * (sl2ZModThreeT⁻¹ * y) =
-          sl2ZModThreeT⁻¹ * (x * y) := by
-      group
-    simpa only [hreassoc] using mul_mem hconj hy1
-  · refine Or.inr (Or.inr ?_)
-    have hconj : sl2ZModThreeT * x * sl2ZModThreeT⁻¹ ∈ sl2ZModThreeQuaternionSubgroup :=
-      sl2ZModThreeQuaternionSubgroup_normal.conj_mem x hx sl2ZModThreeT
-    have hreassoc :
-        (sl2ZModThreeT * x * sl2ZModThreeT⁻¹) * (sl2ZModThreeT * y) =
-          sl2ZModThreeT * (x * y) := by
-      group
-    simpa only [hreassoc] using mul_mem hconj hy2
-
 private theorem coset_sl2ZModThreeQuaternionSubgroup (g : SL(2, ZMod 3)) :
     g ∈ sl2ZModThreeQuaternionSubgroup ∨
       sl2ZModThreeT⁻¹ * g ∈ sl2ZModThreeQuaternionSubgroup ∨
       sl2ZModThreeT * g ∈ sl2ZModThreeQuaternionSubgroup := by
-  have hg : g ∈ Subgroup.closure ({sl2ZModThreeI, sl2ZModThreeT} : Set SL(2, ZMod 3)) := by
-    rw [closure_sl2ZModThreeI_T]
-    exact Subgroup.mem_top g
-  have hT_eq : sl2ZModThreeT * sl2ZModThreeT = sl2ZModThreeT⁻¹ := by decide
-  have hTinv_eq : sl2ZModThreeT⁻¹ * sl2ZModThreeT⁻¹ = sl2ZModThreeT := by decide
-  induction hg using Subgroup.closure_induction_left with
-  | one => exact Or.inl (one_mem _)
-  | mul_left s hs y _ hy =>
-    rcases hs with rfl | rfl
-    · exact coset_sl2ZModThreeQuaternionSubgroup_mul_mem sl2ZModThreeI_mem_quaternionSubgroup hy
-    · rcases hy with hy0 | hy1 | hy2
-      · exact Or.inr (Or.inl (by simpa using hy0))
-      · exact Or.inr (Or.inr (by rwa [← mul_assoc, hT_eq]))
-      · exact Or.inl hy2
-  | inv_mul_cancel s hs y _ hy =>
-    rcases hs with rfl | rfl
-    · exact coset_sl2ZModThreeQuaternionSubgroup_mul_mem
-        (inv_mem sl2ZModThreeI_mem_quaternionSubgroup) hy
-    · rcases hy with hy0 | hy1 | hy2
-      · exact Or.inr (Or.inr (by simpa using hy0))
-      · exact Or.inl hy1
-      · exact Or.inr (Or.inl (by rwa [← mul_assoc, hTinv_eq]))
+  have hcardT : Nat.card (Subgroup.zpowers sl2ZModThreeT) = 3 := by
+    rw [Nat.card_zpowers, orderOf_sl2ZModThreeT]
+  have hcomp : (Subgroup.zpowers sl2ZModThreeT).IsComplement' sl2ZModThreeQuaternionSubgroup :=
+    Subgroup.isComplement'_of_coprime
+      (by rw [hcardT, natCard_sl2ZModThreeQuaternionSubgroup, natCard_sl2_zmod_three])
+      (by rw [hcardT, natCard_sl2ZModThreeQuaternionSubgroup]; decide)
+  obtain ⟨⟨⟨t, ht⟩, ⟨q, hq⟩⟩, htq⟩ := (hcomp.existsUnique g).exists
+  rw [SetLike.mem_coe, mem_zpowers_iff_mem_range_orderOf, orderOf_sl2ZModThreeT] at ht
+  obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp ht
+  rw [Finset.mem_range] at hk
+  interval_cases k
+  · exact Or.inl (by simpa [← htq] using hq)
+  · exact Or.inr (Or.inl (by simpa [← htq] using hq))
+  · have hT2 : sl2ZModThreeT ^ 2 = sl2ZModThreeT⁻¹ := by decide
+    exact Or.inr (Or.inr (by simpa [← htq, hT2] using hq))
 
 /-- **Outer conjugation moves every order-four quaternion element across `±`-pairs.** If `g` lies
 outside `sl2ZModThreeQuaternionSubgroup` and `q` is one of the six elements of
@@ -466,15 +457,11 @@ theorem not_exists_isLocalComplement_center_sl2ZModThreeQuaternionSubgroup :
       (Subgroup.zpowers (QuaternionGroup.a 2 : QuaternionGroup 2)).map
         sl2ZModThreeQuaternionEquiv.toMonoidHom =
       (Subgroup.center SL(2, ZMod 3)).subgroupOf sl2ZModThreeQuaternionSubgroup := by
-    rw [MonoidHom.map_zpowers, Matrix.SpecialLinearGroup.center_eq_zpowers_neg_one]
-    ext y
-    rw [Subgroup.mem_subgroupOf]
-    have ha2 : sl2ZModThreeQuaternionEquiv (QuaternionGroup.a 2) =
-        ⟨-1, neg_one_mem_sl2ZModThreeQuaternionSubgroup⟩ :=
-      Subtype.ext sl2ZModThreeQuaternionHom_a_two
-    rw [MulEquiv.coe_toMonoidHom, ha2]
-    exact ⟨fun ⟨k, hk⟩ => ⟨k, by simpa using congrArg Subtype.val hk⟩,
-      fun ⟨k, hk⟩ => ⟨k, Subtype.ext (by simpa using hk)⟩⟩
+    rw [← Subgroup.map_subtype_inj, Subgroup.map_map,
+      Subgroup.map_subgroupOf_eq_of_le center_le_sl2ZModThreeQuaternionSubgroup,
+      MonoidHom.map_zpowers, Matrix.SpecialLinearGroup.center_eq_zpowers_neg_one]
+    simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom,
+      coe_sl2ZModThreeQuaternionEquiv, sl2ZModThreeQuaternionHom_a_two]
   have hcomp :
       ((Subgroup.zpowers (QuaternionGroup.a 2 : QuaternionGroup 2)).map
         sl2ZModThreeQuaternionEquiv.toMonoidHom).IsComplement'
@@ -487,9 +474,7 @@ theorem not_exists_isLocalComplement_center_sl2ZModThreeQuaternionSubgroup :
 complement in `SL(2, ZMod 3)`. -/
 theorem not_exists_isComplement'_center_sl2_zmod_three :
     ¬ ∃ D : Subgroup SL(2, ZMod 3), (Subgroup.center SL(2, ZMod 3)).IsComplement' D := by
-  rintro ⟨D, hD⟩
-  exact not_exists_isLocalComplement_center_sl2ZModThreeQuaternionSubgroup
-    ⟨D ⊓ sl2ZModThreeQuaternionSubgroup,
-      hD.isLocalComplement_inf center_le_sl2ZModThreeQuaternionSubgroup⟩
+  have : NeZero (2 : ZMod 3) := ⟨by decide⟩
+  exact Matrix.SpecialLinearGroup.not_exists_isComplement'_center
 
 end TauCeti

@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.SpecificGroups.Quaternion
 import Mathlib.Algebra.Group.TypeTags.Finite
 import Mathlib.Data.ZMod.QuotientGroup
-import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Quaternion-group infrastructure
@@ -37,9 +36,9 @@ For nonzero `n`, `QuaternionGroup.a n` is the unique element of order two
 `Subgroup.zpowers (QuaternionGroup.a n)` (`TauCeti.center_quaternionGroup_eq_zpowers`).  When
 `n = 2 ^ k`, `QuaternionGroup (2 ^ k)` is a `2`-group in which every nontrivial subgroup contains
 `QuaternionGroup.a (2 ^ k)` (`TauCeti.quaternionGroup_a_two_pow_mem_of_ne_bot`), so no proper
-nontrivial subgroup has a complement (`TauCeti.isComplement'_quaternionGroup_iff`).  The file also
-records the exponent of `QuaternionGroup 2`, the quaternion group of order eight, in the form used
-by its explicit Dixon-prime certificate.
+nontrivial subgroup has a complement (`TauCeti.isComplement'_quaternionGroup_two_pow_iff`).  The
+file also records the exponent of `QuaternionGroup 2`, the quaternion group of order eight, in the
+form used by its explicit Dixon-prime certificate.
 
 ## Main definitions
 
@@ -72,9 +71,10 @@ by its explicit Dixon-prime certificate.
   `Subgroup.zpowers (QuaternionGroup.a n)`, nor the centre (when `n ≠ 1`), nor the rotation
   subgroup admits a complement in `QuaternionGroup n`.
 * `TauCeti.quaternionGroup_a_two_pow_mem_of_ne_bot`,
-  `TauCeti.disjoint_subgroup_quaternionGroup_iff`, `TauCeti.isComplement'_quaternionGroup_iff`:
-  every nontrivial subgroup of `QuaternionGroup (2 ^ k)` contains `QuaternionGroup.a (2 ^ k)`, so
-  only `⊥` and `⊤` admit complements.
+  `TauCeti.disjoint_subgroup_quaternionGroup_two_pow_iff`,
+  `TauCeti.isComplement'_quaternionGroup_two_pow_iff`: every nontrivial subgroup of
+  `QuaternionGroup (2 ^ k)` contains `QuaternionGroup.a (2 ^ k)`, so only `⊥` and `⊤` admit
+  complements.
 * `TauCeti.exponent_quaternionGroup_two`: `QuaternionGroup 2` has exponent four.
 
 ## References
@@ -321,24 +321,11 @@ theorem sq_eq_one_quaternionGroup_iff [NeZero n] {g : QuaternionGroup n} :
       exact absurd hg quaternionGroup_a_self_ne_one
     | a i =>
       rw [sq, QuaternionGroup.a_mul_a, QuaternionGroup.one_def, QuaternionGroup.a.injEq] at hg
-      have hn : 0 < n := NeZero.pos n
-      have hlt : i.val < 2 * n := i.val_lt
-      have hmod : (i.val + i.val) % (2 * n) = 0 := by
-        simpa [ZMod.val_add] using congrArg ZMod.val hg
-      obtain ⟨k, hk⟩ := Nat.dvd_of_mod_eq_zero hmod
-      have : Fact (0 < 2 * n) := ⟨by omega⟩
-      rcases k with _ | _ | k
-      · left
-        have hi0 : i = 0 := ZMod.val_injective (2 * n) (by simpa using hk)
-        rw [hi0, QuaternionGroup.a_zero]
+      rcases (ZMod.neg_eq_self_iff i).mp (neg_eq_iff_add_eq_zero.mpr hg) with rfl | hi
+      · exact Or.inl QuaternionGroup.a_zero
       · right
-        have hin : i = (n : ZMod (2 * n)) := ZMod.val_injective (2 * n) (by
-          rw [ZMod.val_natCast, Nat.mod_eq_of_lt (by omega)]
-          omega)
-        rw [hin]
-      · exfalso
-        have hmul : 2 * n * 2 ≤ i.val + i.val := hk ▸ Nat.mul_le_mul_left _ (by omega)
-        omega
+        have hval : i.val = n := Nat.eq_of_mul_eq_mul_left zero_lt_two hi
+        rw [← i.natCast_zmod_val, hval]
   · rintro (rfl | rfl)
     · exact one_pow 2
     · exact quaternionGroup_a_self_sq n
@@ -384,22 +371,15 @@ theorem center_quaternionGroup_eq_zpowers {n : ℕ} (hn : n ≠ 1) :
     have h0 := hg (QuaternionGroup.xa 0)
     rw [QuaternionGroup.xa_mul_a, QuaternionGroup.a_mul_xa, zero_add, zero_sub,
       QuaternionGroup.xa.injEq] at h0
-    have hsq : (QuaternionGroup.a i : QuaternionGroup n) ^ 2 = 1 := by
-      rw [sq, QuaternionGroup.a_mul_a]
-      nth_rw 1 [h0]
-      rw [neg_add_cancel, QuaternionGroup.a_zero]
-    rcases eq_zero_or_neZero n with rfl | _
-    · obtain ⟨k, rfl⟩ := ZMod.intCast_surjective i
-      rw [sq, QuaternionGroup.a_mul_a, QuaternionGroup.one_def, QuaternionGroup.a.injEq,
-        ← Int.cast_add, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.mul_zero, Int.natCast_zero,
-        zero_dvd_iff] at hsq
-      have hk : k = 0 := by omega
-      rw [hk, Int.cast_zero, QuaternionGroup.a_zero]
+    rcases (ZMod.neg_eq_self_iff i).mp h0.symm with rfl | hi
+    · rw [QuaternionGroup.a_zero]
       exact one_mem _
-    · rcases sq_eq_one_quaternionGroup_iff.mp hsq with hai | hai
-      · rw [hai]
+    · rcases eq_zero_or_neZero n with rfl | _
+      · have hi0 : i = 0 := i.val_eq_zero.mp (by omega)
+        rw [hi0, QuaternionGroup.a_zero]
         exact one_mem _
-      · rw [hai]
+      · have hval : i.val = n := Nat.eq_of_mul_eq_mul_left zero_lt_two hi
+        rw [← i.natCast_zmod_val, hval]
         exact Subgroup.mem_zpowers _
 
 /-- `QuaternionGroup n` is commutative if and only if `n = 1` (where it is cyclic of order four). -/
@@ -407,17 +387,15 @@ theorem center_quaternionGroup_eq_zpowers {n : ℕ} (hn : n ≠ 1) :
 theorem isMulCommutative_quaternionGroup_iff {n : ℕ} :
     IsMulCommutative (QuaternionGroup n) ↔ n = 1 := by
   refine ⟨fun h => ?_, ?_⟩
-  · have h1 : (QuaternionGroup.a 1 : QuaternionGroup n) * QuaternionGroup.xa 0 =
-        QuaternionGroup.xa 0 * QuaternionGroup.a 1 := mul_comm' _ _
-    rw [QuaternionGroup.a_mul_xa, QuaternionGroup.xa_mul_a, zero_sub, zero_add,
-      QuaternionGroup.xa.injEq] at h1
-    have h2 : ((2 : ℕ) : ZMod (2 * n)) = (1 : ZMod (2 * n)) - (-1) := by push_cast; ring
-    rw [h1, sub_self] at h2
-    have hdvd := (ZMod.natCast_eq_zero_iff 2 (2 * n)).mp h2
-    exact Nat.dvd_one.mp ((mul_dvd_mul_iff_left (by decide : 2 ≠ 0)).mp (by simpa using hdvd))
+  · by_contra hn
+    have hmem : (QuaternionGroup.xa 0 : QuaternionGroup n) ∈
+        Subgroup.zpowers (QuaternionGroup.a n) := by
+      rw [← center_quaternionGroup_eq_zpowers hn, Subgroup.center_eq_top]
+      exact Subgroup.mem_top _
+    exact xa_notMem_quaternionRotations 0
+      (Subgroup.zpowers_le.mpr (a_mem_quaternionRotations n) hmem)
   · rintro rfl
-    have := QuaternionGroup.quaternionGroup_one_isCyclic
-    exact ⟨⟨fun x y => Commute.all x y⟩⟩
+    exact QuaternionGroup.quaternionGroup_one_isCyclic.isMulCommutative
 
 /-- For `n ≠ 1`, `QuaternionGroup n` is not commutative. -/
 theorem not_isMulCommutative_quaternionGroup {n : ℕ} (hn : n ≠ 1) :
@@ -477,29 +455,17 @@ of `QuaternionGroup (2 ^ k)`. -/
 theorem quaternionGroup_a_two_pow_mem_of_ne_bot {k : ℕ}
     {H : Subgroup (QuaternionGroup (2 ^ k))} (hH : H ≠ ⊥) :
     QuaternionGroup.a ((2 ^ k : ℕ) : ZMod (2 * 2 ^ k)) ∈ H := by
-  by_contra ha
-  apply hH
-  rw [Subgroup.eq_bot_iff_forall]
-  intro g hgH
-  by_contra hg1
-  have hdvd : orderOf g ∣ 2 ^ (k + 2) :=
-    natCard_quaternionGroup_two_pow k ▸ orderOf_dvd_natCard (x := g)
-  obtain ⟨m, -, hm⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp hdvd
-  have hm0 : m ≠ 0 := fun h => by subst h; exact hg1 (orderOf_eq_one_iff.mp hm)
-  have hpow2 : (g ^ (2 ^ (m - 1))) ^ 2 = 1 := by
-    rw [← pow_mul, ← pow_succ, Nat.sub_add_cancel (Nat.pos_of_ne_zero hm0), ← hm,
-      pow_orderOf_eq_one]
-  have hpow_ne : g ^ (2 ^ (m - 1)) ≠ 1 :=
-    pow_ne_one_of_lt_orderOf (by simp) (by
-      rw [hm]
-      exact Nat.pow_lt_pow_right (by decide) (Nat.sub_lt (Nat.pos_of_ne_zero hm0) zero_lt_one))
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have hord : orderOf (g ^ (2 ^ (m - 1))) = 2 := orderOf_eq_prime hpow2 hpow_ne
-  exact ha ((orderOf_eq_two_quaternionGroup_iff.mp hord) ▸ pow_mem hgH (2 ^ (m - 1)))
+  have hdvd : 2 ∣ Nat.card H :=
+    ((isPGroup_quaternionGroup_two_pow k).to_subgroup H).card_eq_or_dvd.resolve_left
+      (mt Subgroup.card_eq_one.mp hH)
+  obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' (G := H) 2 hdvd
+  rw [← Subgroup.orderOf_coe, orderOf_eq_two_quaternionGroup_iff] at hx
+  exact hx ▸ x.2
 
 /-- Two subgroups of `QuaternionGroup (2 ^ k)` are disjoint if and only if at least one of them is
 trivial. -/
-theorem disjoint_subgroup_quaternionGroup_iff {k : ℕ}
+theorem disjoint_subgroup_quaternionGroup_two_pow_iff {k : ℕ}
     {H K : Subgroup (QuaternionGroup (2 ^ k))} :
     Disjoint H K ↔ H = ⊥ ∨ K = ⊥ := by
   refine ⟨fun h => ?_, ?_⟩
@@ -511,11 +477,11 @@ theorem disjoint_subgroup_quaternionGroup_iff {k : ℕ}
 
 /-- **Subgroup complements in `QuaternionGroup (2 ^ k)`.** Only `⊥` and `⊤` have complements in
 `QuaternionGroup (2 ^ k)`. -/
-theorem isComplement'_quaternionGroup_iff {k : ℕ}
+theorem isComplement'_quaternionGroup_two_pow_iff {k : ℕ}
     {H K : Subgroup (QuaternionGroup (2 ^ k))} :
     H.IsComplement' K ↔ (H = ⊥ ∧ K = ⊤) ∨ (H = ⊤ ∧ K = ⊥) := by
   refine ⟨fun h => ?_, ?_⟩
-  · rcases disjoint_subgroup_quaternionGroup_iff.mp h.disjoint with rfl | rfl
+  · rcases disjoint_subgroup_quaternionGroup_two_pow_iff.mp h.disjoint with rfl | rfl
     · exact Or.inl ⟨rfl, Subgroup.isComplement'_bot_left.mp h⟩
     · exact Or.inr ⟨Subgroup.isComplement'_bot_right.mp h, rfl⟩
   · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
