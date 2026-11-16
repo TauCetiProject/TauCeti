@@ -18,7 +18,8 @@ the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimen
 form used in normalizing constants. It also shows that every finite-dimensional real inner
 product space has a closed ball of volume one about the origin, that a closed ball of
 radius `r` in a one-dimensional space has volume `2 * r`, that a ball of radius `r` in `ℝ × ℝ`, a
-square of side `2 * r` for the sup norm, has real volume `(2 * r) ^ 2`, and that a disc of radius
+square of side `2 * r` for the sup norm, has real volume `(2 * r) ^ 2`, so that a pointwise bound
+`g ≤ A * f + B` on it integrates to `∫ g ≤ A * ∫ f + B * (2 * r) ^ 2`, and that a disc of radius
 `r` in `ℂ` has real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
 -/
 
@@ -82,6 +83,19 @@ theorem volume_real_ball_prod (z : ℝ × ℝ) {r : ℝ} (hr : 0 ≤ r) :
   rw [measureReal_def, ← ball_prod_same, Measure.volume_eq_prod, Measure.prod_prod,
     Real.volume_ball, Real.volume_ball, ← ENNReal.ofReal_mul (by positivity),
     ENNReal.toReal_ofReal (by positivity), sq]
+
+/-- On a ball of radius `r ≥ 0` in `ℝ × ℝ`, a square of area `(2 * r) ^ 2`, a pointwise bound
+`g ≤ A * f + B` integrates to `∫ g ≤ A * ∫ f + B * (2 * r) ^ 2`. -/
+theorem setIntegral_ball_prod_le_mul_add {f g : ℝ × ℝ → ℝ} {z : ℝ × ℝ} {r A B : ℝ} (hr : 0 ≤ r)
+    (hg : IntegrableOn g (ball z r)) (hf : IntegrableOn f (ball z r))
+    (h : ∀ y ∈ ball z r, g y ≤ A * f y + B) :
+    ∫ y in ball z r, g y ≤ A * (∫ y in ball z r, f y) + B * (2 * r) ^ 2 := by
+  have hBi : IntegrableOn (fun _ ↦ B) (ball z r) := integrableOn_const measure_ball_lt_top.ne
+  calc ∫ y in ball z r, g y ≤ ∫ y in ball z r, (A * f y + B) :=
+        setIntegral_mono_on hg ((hf.const_mul A).add hBi) measurableSet_ball h
+    _ = A * (∫ y in ball z r, f y) + B * (2 * r) ^ 2 := by
+        rw [integral_add (hf.const_mul A) hBi, integral_const_mul, setIntegral_const,
+          volume_real_ball_prod z hr, smul_eq_mul, mul_comm ((2 * r) ^ 2)]
 
 end Real
 
