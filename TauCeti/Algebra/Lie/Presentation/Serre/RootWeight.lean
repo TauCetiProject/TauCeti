@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Presentation.Serre.Killing
 public import TauCeti.Algebra.Lie.Presentation.Serre.Reflection
 public import TauCeti.Algebra.Lie.Presentation.Serre.Word
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.LinearAlgebra.Submodule.Independent
 import TauCeti.Algebra.Group.Subsemigroup.Pointwise
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.RootWeight
 
