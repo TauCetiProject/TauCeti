@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.FaceCount
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Cone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
+import Mathlib.Order.Preorder.Finite
 
 /-!
 # A finite cone collapses to its apex
@@ -61,21 +62,21 @@ variable {ι : Type*} [DecidableEq ι] {K : _root_.PreAbstractSimplicialComplex 
 
 Maximality is used twice: a coface of `σ` missing the apex is `σ` itself, and a coface `ω`
 containing the apex has `ω.erase v` a coface of `σ` missing the apex, hence equal to `σ`. -/
-private theorem IsCone.isFreePair (h : IsCone K v) (hσ : σ ∈ K) (hv : v ∉ σ)
-    (hmax : ∀ ⦃τ : Finset ι⦄, τ ∈ K → v ∉ τ → σ ⊆ τ → τ = σ) :
+private theorem IsCone.isFreePair (h : IsCone K v)
+    (hmax : Maximal (fun τ : Finset ι => τ ∈ K ∧ v ∉ τ) σ) :
     IsFreePair K σ (insert v σ) where
-  lower_mem := hσ
-  upper_mem := h.insert_mem hσ
-  lower_ssubset_upper := Finset.ssubset_insert hv
+  lower_mem := hmax.prop.1
+  upper_mem := h.insert_mem hmax.prop.1
+  lower_ssubset_upper := Finset.ssubset_insert hmax.prop.2
   eq_lower_or_eq_upper ω hω hσω := by
     by_cases hvω : v ∈ ω
     · refine Or.inr ?_
-      have hsub : σ ⊆ ω.erase v := Finset.subset_erase.mpr ⟨hσω, hv⟩
+      have hsub : σ ⊆ ω.erase v := Finset.subset_erase.mpr ⟨hσω, hmax.prop.2⟩
       have hmem : ω.erase v ∈ K :=
         (K.isRelLowerSet_faces hω).2 (Finset.erase_subset _ _)
-          (((K.isRelLowerSet_faces hσ).1).mono hsub)
-      rw [← hmax hmem (Finset.notMem_erase _ _) hsub, Finset.insert_erase hvω]
-    · exact Or.inl (hmax hω hvω hσω)
+          (((K.isRelLowerSet_faces hmax.prop.1).1).mono hsub)
+      rw [← hmax.eq_of_ge ⟨hmem, Finset.notMem_erase _ _⟩ hsub, Finset.insert_erase hvω]
+    · exact Or.inl (hmax.eq_of_ge ⟨hω, hvω⟩ hσω)
 
 /-- A cone with apex `v` that is not the one-vertex complex at `v` has a face missing `v`. -/
 theorem IsCone.exists_notMem_of_ne_point (h : IsCone K v) (hne : K ≠ point v) :
@@ -107,13 +108,13 @@ private theorem collapsesTo_point_aux (v : ι) :
     rcases eq_or_ne K (point v) with rfl | hne
     · exact CollapsesTo.refl _
     obtain ⟨σ₀, hσ₀, hv₀⟩ := h.exists_notMem_of_ne_point hne
-    obtain ⟨σ, hσ, hvσ, hmax⟩ := exists_maximal_notMem_of_mem hfin hσ₀ hv₀
+    obtain ⟨σ, hmax⟩ := (hfin.sep (v ∉ ·)).exists_maximal ⟨σ₀, hσ₀, hv₀⟩
     have hcollapse : ElementaryCollapsesTo K (deletion K σ) :=
-      ElementaryCollapsesTo.of_isFreePair (h.isFreePair hσ hvσ hmax) rfl
+      ElementaryCollapsesTo.of_isFreePair (h.isFreePair hmax) rfl
     have hlt := hcollapse.ncard_faces_lt hfin
     exact CollapsesTo.head hcollapse
       (ih _ (hfin.subset deletion_le) (by omega)
-        (isCone_deletion h (K.isRelLowerSet_faces hσ).1 hvσ))
+        (isCone_deletion h (K.isRelLowerSet_faces hmax.prop.1).1 hmax.prop.2))
 
 /-- **A finite cone collapses to its apex** (Rourke--Sanderson, *Introduction to
 Piecewise-Linear Topology*, Chapter 3). -/
