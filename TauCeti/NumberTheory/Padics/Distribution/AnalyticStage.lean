@@ -656,25 +656,19 @@ variable {E : Type*} [NormedAddCommGroup E] (S : Type*) [Semiring S] [Module S E
 
 variable (p) in
 /-- **Disc-row decomposition of an analytic stage.** A coefficient vector in `LA_h(E)` is
-isometrically a finite family `ZMod (p ^ h) → C₀(ℕ, E)` of null sequences, one on each disc of
-level `h`. -/
-noncomputable def rowsEquiv (h : ℕ) :
-    AnalyticStage p h E ≃ₗᵢ[S] (ZMod (p ^ h) → C₀(ℕ, E)) :=
+isometrically a finite family `ZMod (p ^ h) → C₀(ℕ, E)` of null sequences, one per disc. -/
+noncomputable def rowsEquiv (h : ℕ) : AnalyticStage p h E ≃ₗᵢ[S] (ZMod (p ^ h) → C₀(ℕ, E)) :=
   have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
   (ZeroAtInftyContinuousMap.curryEquiv S E).trans
     (ZeroAtInftyContinuousMap.equivFunOnFintype S C₀(ℕ, E))
 
 /-- Evaluating `rowsEquiv p S h c` at `(a, n)` reads the coefficient `c (a, n)`. -/
-@[simp]
-theorem rowsEquiv_apply {h : ℕ} (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (n : ℕ) :
-    rowsEquiv p S h c a n = c (a, n) := by
-  simp [rowsEquiv]
+@[simp] theorem rowsEquiv_apply {h : ℕ} (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (n : ℕ) :
+    rowsEquiv p S h c a n = c (a, n) := by simp [rowsEquiv]
 
 /-- Assembling rows via `(rowsEquiv p S h).symm` evaluates `f` at `(i.1, i.2)`. -/
-@[simp]
-theorem rowsEquiv_symm_apply {h : ℕ} (f : ZMod (p ^ h) → C₀(ℕ, E)) (i : ZMod (p ^ h) × ℕ) :
-    (rowsEquiv p S h).symm f i = f i.1 i.2 := by
-  simp [rowsEquiv]
+@[simp] theorem rowsEquiv_symm_apply {h : ℕ} (f : ZMod (p ^ h) → C₀(ℕ, E)) (i : ZMod (p ^ h) × ℕ) :
+    (rowsEquiv p S h).symm f i = f i.1 i.2 := by simp [rowsEquiv]
 
 omit hp in
 variable (p) in
@@ -682,9 +676,8 @@ variable (p) in
 isometrically `C₀(ℕ, E)`. -/
 noncomputable def levelZeroEquiv : AnalyticStage p 0 E ≃ₗᵢ[S] C₀(ℕ, E) :=
   ZeroAtInftyContinuousMap.congrLeft S E
-    { toFun := Prod.snd
-      invFun := fun n ↦ (0, n)
-      left_inv := fun ⟨a, _⟩ ↦ by
+    { toFun := Prod.snd, invFun := fun n ↦ (0, n)
+      left_inv := fun ⟨_, _⟩ ↦ by
         have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
         exact Prod.ext (Subsingleton.elim _ _) rfl
       right_inv := fun _ ↦ rfl
@@ -693,31 +686,25 @@ noncomputable def levelZeroEquiv : AnalyticStage p 0 E ≃ₗᵢ[S] C₀(ℕ, E)
 
 omit hp in
 /-- At level `0`, `levelZeroEquiv` reads the coefficient on the unique disc `0`. -/
-@[simp]
-theorem levelZeroEquiv_apply (c : AnalyticStage p 0 E) (n : ℕ) :
+@[simp] theorem levelZeroEquiv_apply (c : AnalyticStage p 0 E) (n : ℕ) :
     levelZeroEquiv p S c n = c (0, n) := by
-  rw [levelZeroEquiv, ZeroAtInftyContinuousMap.congrLeft_apply]
-  rfl
+  rw [levelZeroEquiv, ZeroAtInftyContinuousMap.congrLeft_apply]; rfl
 
 omit hp in
 /-- Evaluating `(levelZeroEquiv p S).symm c` at `i` projects onto the degree `i.2`. -/
 theorem levelZeroEquiv_symm_apply (c : C₀(ℕ, E)) (i : ZMod (p ^ 0) × ℕ) :
     (levelZeroEquiv p S).symm c i = c i.2 := by
   rw [levelZeroEquiv, ZeroAtInftyContinuousMap.congrLeft_symm,
-    ZeroAtInftyContinuousMap.congrLeft_apply]
-  rfl
+    ZeroAtInftyContinuousMap.congrLeft_apply]; rfl
 
 variable [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E]
   [SMulCommClass ℤ_[p] S E]
 
-/-- At level `0`, the stage element `(levelZeroEquiv p S).symm c` evaluates at `x : ℤ_p` as the
-global power series `∑ₙ xⁿ • cₙ`. -/
+/-- At level `0`, `(levelZeroEquiv p S).symm c` evaluates at `x : ℤ_p` as `∑ₙ xⁿ • cₙ`. -/
 theorem hasSum_eval_levelZeroEquiv_symm (c : C₀(ℕ, E)) (x : ℤ_[p]) :
     HasSum (fun n ↦ x ^ n • c n) (eval S ((levelZeroEquiv p S).symm c) x) := by
   have : NeZero (p ^ 0) := ⟨by simp⟩
-  have hx : ((0 : ZMod (p ^ 0)).val : ℤ_[p]) + (p : ℤ_[p]) ^ 0 * x = x := by
-    rw [pow_zero]
-    simp
+  have hx : ((0 : ZMod (p ^ 0)).val : ℤ_[p]) + (p : ℤ_[p]) ^ 0 * x = x := by rw [pow_zero]; simp
   simpa only [levelZeroEquiv_symm_apply, hx] using
     hasSum_eval_natCast_val_add_mul S ((levelZeroEquiv p S).symm c) 0 x
 

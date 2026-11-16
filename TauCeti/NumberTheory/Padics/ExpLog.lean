@@ -173,6 +173,19 @@ open scoped PowerSeries
 
 variable {p : ℕ} [hp : Fact p.Prime] {i : ℕ}
 
+private theorem pow_prime_ne_zero (i : ℕ) : (p : ℚ_[p]) ^ i ≠ 0 :=
+  pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
+
+private theorem norm_pow_mul_coe_le (i : ℕ) (x : ℤ_[p]) :
+    ‖(p : ℚ_[p]) ^ i * x‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
+  rw [norm_mul, Padic.norm_p_pow]
+  exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
+    (PadicInt.norm_le_one x)
+
+private theorem pow_mul_sub_one_mul {n : ℕ} (hn : n ≠ 0) :
+    (p : ℚ_[p]) ^ (i * n) = (p : ℚ_[p]) ^ (i * (n - 1)) * (p : ℚ_[p]) ^ i := by
+  rw [← pow_add, ← Nat.mul_succ, Nat.succ_eq_add_one, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
+
 private theorem isRestricted_of_hasSum_coe {f : ℤ_[p]⟦X⟧} {s : ℚ_[p]}
     (hf : HasSum (fun n ↦ ((PowerSeries.coeff n f : ℤ_[p]) : ℚ_[p]) * (1 : ℚ_[p]) ^ n) s) :
     f.IsRestricted 1 := by
@@ -186,53 +199,42 @@ private theorem coe_evalAt_of_hasSum_coe {f : ℤ_[p]⟦X⟧} (hf : f.IsRestrict
     ((f.evalAt x : ℤ_[p]) : ℚ_[p]) = s := by
   rw [← PadicInt.Coe.ringHom_apply]
   exact ((hf.hasSum_evalAt (PadicInt.norm_le_one x)).map PadicInt.Coe.ringHom
-    PadicInt.isEmbedding_coe_ringHom.continuous).unique <|
-      hs.congr_fun fun n ↦ by simp
+    PadicInt.isEmbedding_coe_ringHom.continuous).unique (hs.congr_fun fun n ↦ by simp)
 
 private theorem norm_deepLogTerm_le_one (hi : i ≠ 0) {n : ℕ} (hn : n ≠ 0) :
     ‖(-1 : ℚ_[p]) ^ (n + 1) * (p : ℚ_[p]) ^ (i * (n - 1)) / (n : ℚ_[p])‖ ≤ 1 := by
   rw [mul_div_assoc, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
-  have hv : padicValNat p n ≤ i * (n - 1) := by
-    rw [Nat.padicValNat_def]
-    have hlt : multiplicity p n < n :=
-      Nat.lt_two_pow_self.trans_le <|
-        (Nat.pow_le_pow_left hp.out.two_le _).trans
-          (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) (pow_multiplicity_dvd p n))
-    exact (Nat.le_sub_one_of_lt hlt).trans (Nat.le_mul_of_pos_left _ (Nat.pos_of_ne_zero hi))
-  exact Padic.norm_pow_div_natCast_le_one hn hv
+  refine Padic.norm_pow_div_natCast_le_one hn ?_
+  rw [Nat.padicValNat_def]
+  have hlt : multiplicity p n < n := Nat.lt_two_pow_self.trans_le <|
+    (Nat.pow_le_pow_left hp.out.two_le _).trans
+      (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) (pow_multiplicity_dvd p n))
+  exact (Nat.le_sub_one_of_lt hlt).trans (Nat.le_mul_of_pos_left _ (Nat.pos_of_ne_zero hi))
 
 private theorem norm_deepExpTerm_le_one (hi : 1 < (p - 1) * i) {n : ℕ} (hn : n ≠ 0) :
     ‖(p : ℚ_[p]) ^ (i * (n - 1)) / (n.factorial : ℚ_[p])‖ ≤ 1 := by
   have hi0 : 1 ≤ i := Nat.pos_of_ne_zero (Padic.ne_zero_of_one_lt_mul hi)
   have hleg := sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn
   rw [← Nat.padicValNat_def] at hleg
-  have hv : padicValNat p n.factorial ≤ i * (n - 1) := by
-    have hp1 : 1 ≤ p - 1 := by have := hp.out.two_le; omega
-    calc padicValNat p n.factorial
-        ≤ (p - 1) * padicValNat p n.factorial := Nat.le_mul_of_pos_left _ hp1
-      _ ≤ n - 1 := by omega
-      _ ≤ i * (n - 1) := Nat.le_mul_of_pos_left _ hi0
+  have hp1 : 1 ≤ p - 1 := by have := hp.out.two_le; omega
+  have hv : padicValNat p n.factorial ≤ i * (n - 1) :=
+    (Nat.le_mul_of_pos_left _ hp1).trans ((by omega : _ ≤ n - 1).trans
+      (Nat.le_mul_of_pos_left _ hi0))
   exact Padic.norm_pow_div_natCast_le_one n.factorial_ne_zero hv
 
 /-- The `p`-adic integer power series
 `(p^i)⁻¹ log (1 + p^i X) = ∑_{n ≥ 1} (-1)^(n+1) p^(i(n-1))/n X^n` at any nonzero depth `i ≠ 0`. -/
 noncomputable def deepLogSeries (hi : i ≠ 0) : ℤ_[p]⟦X⟧ :=
-  PowerSeries.mk fun n ↦
-    if hn : n = 0 then 0
-    else ⟨(-1 : ℚ_[p]) ^ (n + 1) * (p : ℚ_[p]) ^ (i * (n - 1)) / (n : ℚ_[p]),
+  PowerSeries.mk fun n ↦ if hn : n = 0 then 0 else
+    ⟨(-1 : ℚ_[p]) ^ (n + 1) * (p : ℚ_[p]) ^ (i * (n - 1)) / (n : ℚ_[p]),
       norm_deepLogTerm_le_one hi hn⟩
 
-@[simp]
-theorem constantCoeff_deepLogSeries (hi : i ≠ 0) :
+@[simp] theorem constantCoeff_deepLogSeries (hi : i ≠ 0) :
     PowerSeries.constantCoeff (deepLogSeries (p := p) hi) = 0 := by
-  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, deepLogSeries, PowerSeries.coeff_mk]
-  simp
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, deepLogSeries, PowerSeries.coeff_mk]; simp
 
-@[simp]
-theorem coeff_one_deepLogSeries (hi : i ≠ 0) :
-    PowerSeries.coeff 1 (deepLogSeries (p := p) hi) = 1 := by
-  ext
-  simp [deepLogSeries]
+@[simp] theorem coeff_one_deepLogSeries (hi : i ≠ 0) :
+    PowerSeries.coeff 1 (deepLogSeries (p := p) hi) = 1 := by ext; simp [deepLogSeries]
 
 theorem coe_coeff_deepLogSeries_of_ne_zero (hi : i ≠ 0) {n : ℕ} (hn : n ≠ 0) :
     ((PowerSeries.coeff n (deepLogSeries (p := p) hi) : ℤ_[p]) : ℚ_[p]) =
@@ -244,11 +246,8 @@ theorem coe_coeff_deepLogSeries_of_ne_zero (hi : i ≠ 0) {n : ℕ} (hn : n ≠ 
 theorem hasSum_coeff_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
     HasSum (fun n ↦ ((PowerSeries.coeff n (deepLogSeries hi) : ℤ_[p]) : ℚ_[p]) * (x : ℚ_[p]) ^ n)
       (log (1 + (p : ℚ_[p]) ^ i * x) / (p : ℚ_[p]) ^ i) := by
-  have hpi : (p : ℚ_[p]) ^ i ≠ 0 := pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
   have hx1 : ‖1 + (p : ℚ_[p]) ^ i * x - 1‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
-    rw [add_sub_cancel_left, norm_mul, Padic.norm_p_pow]
-    exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
-      (PadicInt.norm_le_one x)
+    rw [add_sub_cancel_left]; exact norm_pow_mul_coe_le i x
   have hu1 : Units.mk0 (1 + (p : ℚ_[p]) ^ i * x) (Padic.ne_zero_of_norm_sub_one_le hi hx1) ∈
       TauCeti.unitFiltration ℚ_[p] 1 :=
     (Padic.mem_unitFiltration_iff_norm_sub_one_le one_ne_zero).mpr <| hx1.trans <|
@@ -258,25 +257,17 @@ theorem hasSum_coeff_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp [constantCoeff_deepLogSeries]
   · rw [coe_coeff_deepLogSeries_of_ne_zero hi hn]
-    simp only [Units.val_mk0, add_sub_cancel_left, mul_pow, ← pow_mul]
-    have hexp : (p : ℚ_[p]) ^ (i * n) = (p : ℚ_[p]) ^ (i * (n - 1)) * (p : ℚ_[p]) ^ i := by
-      rw [← pow_add]
-      congr 1
-      have : i * (n - 1) + i = i * (n - 1 + 1) := by ring
-      rw [this, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
-    rw [hexp]
-    field_simp [hpi]
+    simp only [Units.val_mk0, add_sub_cancel_left, mul_pow, ← pow_mul, pow_mul_sub_one_mul hn]
+    field_simp [pow_prime_ne_zero (p := p) i]
 
 /-- **Restrictedness of the normalized deep logarithm series.** At any nonzero depth `i ≠ 0`,
 `deepLogSeries hi` is restricted at radius `1`. -/
-theorem isRestricted_deepLogSeries (hi : i ≠ 0) :
-    (deepLogSeries (p := p) hi).IsRestricted 1 :=
+theorem isRestricted_deepLogSeries (hi : i ≠ 0) : (deepLogSeries (p := p) hi).IsRestricted 1 :=
   isRestricted_of_hasSum_coe (hasSum_coeff_deepLogSeries (p := p) hi 1)
 
 /-- **Evaluation of `deepLogSeries`.** For `i ≠ 0` and `x : ℤ_p`,
 `((deepLogSeries hi).evalAt x : ℚ_p) = log (1 + p^i x) / p^i`. -/
-@[simp]
-theorem coe_evalAt_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
+@[simp] theorem coe_evalAt_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
     (((deepLogSeries (p := p) hi).evalAt x : ℤ_[p]) : ℚ_[p]) =
       log (1 + (p : ℚ_[p]) ^ i * x) / (p : ℚ_[p]) ^ i :=
   coe_evalAt_of_hasSum_coe (isRestricted_deepLogSeries hi) x (hasSum_coeff_deepLogSeries hi x)
@@ -285,28 +276,20 @@ theorem coe_evalAt_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
 theorem pow_mul_coe_evalAt_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
     (p : ℚ_[p]) ^ i * ((deepLogSeries (p := p) hi).evalAt x : ℤ_[p]) =
       log (1 + (p : ℚ_[p]) ^ i * x) := by
-  have hpi : (p : ℚ_[p]) ^ i ≠ 0 := pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  rw [coe_evalAt_deepLogSeries hi x, mul_div_cancel₀ _ hpi]
+  rw [coe_evalAt_deepLogSeries hi x, mul_div_cancel₀ _ (pow_prime_ne_zero i)]
 
 /-- The `p`-adic integer power series `(p^i)⁻¹ (exp (p^i X) - 1) = ∑_{n ≥ 1} p^(i(n-1))/n! X^n`
 at a depth `i` in the convergence range `1 < (p - 1) * i`. -/
 noncomputable def deepExpSeries (hi : 1 < (p - 1) * i) : ℤ_[p]⟦X⟧ :=
-  PowerSeries.mk fun n ↦
-    if hn : n = 0 then 0
-    else ⟨(p : ℚ_[p]) ^ (i * (n - 1)) / (n.factorial : ℚ_[p]),
-      norm_deepExpTerm_le_one hi hn⟩
+  PowerSeries.mk fun n ↦ if hn : n = 0 then 0 else
+    ⟨(p : ℚ_[p]) ^ (i * (n - 1)) / (n.factorial : ℚ_[p]), norm_deepExpTerm_le_one hi hn⟩
 
-@[simp]
-theorem constantCoeff_deepExpSeries (hi : 1 < (p - 1) * i) :
+@[simp] theorem constantCoeff_deepExpSeries (hi : 1 < (p - 1) * i) :
     PowerSeries.constantCoeff (deepExpSeries (p := p) hi) = 0 := by
-  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, deepExpSeries, PowerSeries.coeff_mk]
-  simp
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, deepExpSeries, PowerSeries.coeff_mk]; simp
 
-@[simp]
-theorem coeff_one_deepExpSeries (hi : 1 < (p - 1) * i) :
-    PowerSeries.coeff 1 (deepExpSeries (p := p) hi) = 1 := by
-  ext
-  simp [deepExpSeries]
+@[simp] theorem coeff_one_deepExpSeries (hi : 1 < (p - 1) * i) :
+    PowerSeries.coeff 1 (deepExpSeries (p := p) hi) = 1 := by ext; simp [deepExpSeries]
 
 theorem coe_coeff_deepExpSeries_of_ne_zero (hi : 1 < (p - 1) * i) {n : ℕ} (hn : n ≠ 0) :
     ((PowerSeries.coeff n (deepExpSeries (p := p) hi) : ℤ_[p]) : ℚ_[p]) =
@@ -318,26 +301,17 @@ theorem coe_coeff_deepExpSeries_of_ne_zero (hi : 1 < (p - 1) * i) {n : ℕ} (hn 
 theorem hasSum_coeff_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
     HasSum (fun n ↦ ((PowerSeries.coeff n (deepExpSeries hi) : ℤ_[p]) : ℚ_[p]) * (x : ℚ_[p]) ^ n)
       ((exp ((p : ℚ_[p]) ^ i * x) - 1) / (p : ℚ_[p]) ^ i) := by
-  have hpi : (p : ℚ_[p]) ^ i ≠ 0 := pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  have hx : ‖(p : ℚ_[p]) ^ i * x‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
-    rw [norm_mul, Padic.norm_p_pow]
-    exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
-      (PadicInt.norm_le_one x)
-  have hexp := (TauCeti.hasSum_exp_of_mem_maximalIdeal_pow (Padic.toMaximalIdealPow hx)
+  have hexp := (TauCeti.hasSum_exp_of_mem_maximalIdeal_pow
+    (Padic.toMaximalIdealPow (norm_pow_mul_coe_le i x))
     (Padic.absoluteRamificationIndex_lt hi)).update 0 0
   simp only [Padic.toMaximalIdealPow, pow_zero, Nat.factorial_zero, Nat.cast_one, div_one,
     zero_sub, neg_add_eq_sub] at hexp
   refine (hexp.div_const ((p : ℚ_[p]) ^ i)).congr_fun fun n ↦ ?_
   rcases eq_or_ne n 0 with rfl | hn
   · simp [constantCoeff_deepExpSeries]
-  · rw [Function.update_of_ne hn, coe_coeff_deepExpSeries_of_ne_zero hi hn, mul_pow, ← pow_mul]
-    have hexp_pow : (p : ℚ_[p]) ^ (i * n) = (p : ℚ_[p]) ^ (i * (n - 1)) * (p : ℚ_[p]) ^ i := by
-      rw [← pow_add]
-      congr 1
-      have : i * (n - 1) + i = i * (n - 1 + 1) := by ring
-      rw [this, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
-    rw [hexp_pow]
-    field_simp [hpi]
+  · rw [Function.update_of_ne hn, coe_coeff_deepExpSeries_of_ne_zero hi hn, mul_pow, ← pow_mul,
+      pow_mul_sub_one_mul hn]
+    field_simp [pow_prime_ne_zero (p := p) i]
 
 /-- **Restrictedness of the normalized deep exponential series.** At a depth `i` with
 `1 < (p - 1) * i`, `deepExpSeries hi` is restricted at radius `1`. -/
@@ -347,8 +321,7 @@ theorem isRestricted_deepExpSeries (hi : 1 < (p - 1) * i) :
 
 /-- **Evaluation of `deepExpSeries`.** For `1 < (p - 1) * i` and `x : ℤ_p`,
 `((deepExpSeries hi).evalAt x : ℚ_p) = (exp (p^i x) - 1) / p^i`. -/
-@[simp]
-theorem coe_evalAt_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
+@[simp] theorem coe_evalAt_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
     (((deepExpSeries hi).evalAt x : ℤ_[p]) : ℚ_[p]) =
       (exp ((p : ℚ_[p]) ^ i * x) - 1) / (p : ℚ_[p]) ^ i :=
   coe_evalAt_of_hasSum_coe (isRestricted_deepExpSeries hi) x (hasSum_coeff_deepExpSeries hi x)
@@ -356,52 +329,33 @@ theorem coe_evalAt_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
 /-- Evaluated at `x : ℤ_p`, `1 + p^i · (deepExpSeries hi)(x) = exp (p^i x)`. -/
 theorem one_add_pow_mul_coe_evalAt_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
     1 + (p : ℚ_[p]) ^ i * ((deepExpSeries hi).evalAt x : ℤ_[p]) = exp ((p : ℚ_[p]) ^ i * x) := by
-  have hpi : (p : ℚ_[p]) ^ i ≠ 0 := pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  rw [coe_evalAt_deepExpSeries hi x, mul_div_cancel₀ _ hpi, add_sub_cancel]
+  rw [coe_evalAt_deepExpSeries hi x, mul_div_cancel₀ _ (pow_prime_ne_zero i), add_sub_cancel]
 
 /-- **Analytic left inverse.** In the deep convergence range `1 < (p - 1) * i`, `deepLogSeries`
 inverts `deepExpSeries` under evaluation on `ℤ_p`. -/
-@[simp]
-theorem evalAt_deepLogSeries_evalAt_deepExpSeries (hi' : i ≠ 0) (hi : 1 < (p - 1) * i)
-    (x : ℤ_[p]) :
-    (deepLogSeries (p := p) hi').evalAt ((deepExpSeries hi).evalAt x) = x := by
+@[simp] theorem evalAt_deepLogSeries_evalAt_deepExpSeries (hi' : i ≠ 0) (hi : 1 < (p - 1) * i)
+    (x : ℤ_[p]) : (deepLogSeries (p := p) hi').evalAt ((deepExpSeries hi).evalAt x) = x := by
   apply PadicInt.ext
-  have hpi : (p : ℚ_[p]) ^ i ≠ 0 := pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  have hx : ‖(p : ℚ_[p]) ^ i * x‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
-    rw [norm_mul, Padic.norm_p_pow]
-    exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
-      (PadicInt.norm_le_one x)
   rw [coe_evalAt_deepLogSeries, one_add_pow_mul_coe_evalAt_deepExpSeries,
-    Padic.log_exp hi hx, mul_div_cancel_left₀ _ hpi]
+    Padic.log_exp hi (norm_pow_mul_coe_le i x), mul_div_cancel_left₀ _ (pow_prime_ne_zero i)]
 
 /-- **Analytic right inverse.** In the deep convergence range `1 < (p - 1) * i`, `deepExpSeries`
 inverts `deepLogSeries` under evaluation on `ℤ_p`. -/
-@[simp]
-theorem evalAt_deepExpSeries_evalAt_deepLogSeries (hi : 1 < (p - 1) * i) (hi' : i ≠ 0)
-    (x : ℤ_[p]) :
-    (deepExpSeries hi).evalAt ((deepLogSeries (p := p) hi').evalAt x) = x := by
+@[simp] theorem evalAt_deepExpSeries_evalAt_deepLogSeries (hi : 1 < (p - 1) * i) (hi' : i ≠ 0)
+    (x : ℤ_[p]) : (deepExpSeries hi).evalAt ((deepLogSeries (p := p) hi').evalAt x) = x := by
   apply PadicInt.ext
-  have hpi : (p : ℚ_[p]) ^ i ≠ 0 := pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
   have hu : ‖1 + (p : ℚ_[p]) ^ i * x - 1‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
-    rw [add_sub_cancel_left, norm_mul, Padic.norm_p_pow]
-    exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
-      (PadicInt.norm_le_one x)
+    rw [add_sub_cancel_left]; exact norm_pow_mul_coe_le i x
   rw [coe_evalAt_deepExpSeries, pow_mul_coe_evalAt_deepLogSeries,
-    Padic.exp_log hi hu, add_sub_cancel_left, mul_div_cancel_left₀ _ hpi]
+    Padic.exp_log hi hu, add_sub_cancel_left, mul_div_cancel_left₀ _ (pow_prime_ne_zero i)]
 
 /-- **Formal left inverse.** In `ℤ_p⟦X⟧`, substituting `deepExpSeries hi` into `deepLogSeries hi'`
 gives `X`. -/
-@[simp]
-theorem subst_deepLogSeries_deepExpSeries (hi' : i ≠ 0) (hi : 1 < (p - 1) * i) :
+@[simp] theorem subst_deepLogSeries_deepExpSeries (hi' : i ≠ 0) (hi : 1 < (p - 1) * i) :
     (deepLogSeries (p := p) hi').subst (deepExpSeries hi) = PowerSeries.X := by
   let c : ℚ_[p] := (p : ℚ_[p]) ^ i
-  have hc : c ≠ 0 := pow_ne_zero i (Nat.cast_ne_zero.mpr hp.out.ne_zero)
   have hexp_pow {n : ℕ} (hn : n ≠ 0) : c * (p : ℚ_[p]) ^ (i * (n - 1)) = c ^ n := by
-    dsimp only [c]
-    rw [← pow_mul, ← pow_add]
-    congr 1
-    have : i + i * (n - 1) = i * (n - 1 + 1) := by ring
-    rw [this, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
+    dsimp only [c]; rw [← pow_mul, mul_comm c, ← pow_mul_sub_one_mul hn]
   have hL : c • PowerSeries.map PadicInt.Coe.ringHom (deepLogSeries (p := p) hi') =
       PowerSeries.rescale c (PowerSeries.log ℚ_[p]) := by
     ext n
@@ -411,8 +365,7 @@ theorem subst_deepLogSeries_deepExpSeries (hi' : i ≠ 0) (hi : 1 < (p - 1) * i)
     · simp [constantCoeff_deepLogSeries]
     · simp only [hn, ↓reduceIte, coe_coeff_deepLogSeries_of_ne_zero hi' hn, map_div₀, map_pow,
         map_neg, map_one, map_natCast]
-      rw [← mul_div_assoc, ← mul_assoc, mul_comm c, mul_assoc, hexp_pow hn]
-      ring
+      rw [← mul_div_assoc, ← mul_assoc, mul_comm c, mul_assoc, hexp_pow hn]; ring
   have hE : c • MvPowerSeries.map PadicInt.Coe.ringHom (deepExpSeries hi) =
       PowerSeries.rescale c (PowerSeries.exp ℚ_[p] - 1) := by
     change c • PowerSeries.map PadicInt.Coe.ringHom (deepExpSeries hi) = _
@@ -430,16 +383,14 @@ theorem subst_deepLogSeries_deepExpSeries (hi' : i ≠ 0) (hi : 1 < (p - 1) * i)
   have hsub_EQ :
       PowerSeries.HasSubst (MvPowerSeries.map PadicInt.Coe.ringHom (deepExpSeries hi)) :=
     .of_constantCoeff_zero' <| by
-      change PowerSeries.constantCoeff
-        (PowerSeries.map PadicInt.Coe.ringHom (deepExpSeries hi)) = 0
+      change PowerSeries.constantCoeff (PowerSeries.map PadicInt.Coe.ringHom _) = 0
       rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
         PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_deepExpSeries, map_zero]
   have hsub_cX : PowerSeries.HasSubst (c • PowerSeries.X : ℚ_[p]⟦X⟧) :=
     .of_constantCoeff_zero' (by simp)
   have hc_sub : c • PowerSeries.map PadicInt.Coe.ringHom
       ((deepLogSeries (p := p) hi').subst (deepExpSeries hi)) = c • PowerSeries.X := by
-    change c • MvPowerSeries.map PadicInt.Coe.ringHom
-      ((deepLogSeries (p := p) hi').subst (deepExpSeries hi)) = c • PowerSeries.X
+    change c • MvPowerSeries.map PadicInt.Coe.ringHom _ = c • PowerSeries.X
     rw [PowerSeries.map_subst hsub_E, ← PowerSeries.subst_smul hsub_EQ, hL,
       PowerSeries.rescale_eq_subst, PowerSeries.subst_comp_subst_apply hsub_cX hsub_EQ,
       PowerSeries.subst_smul hsub_EQ, PowerSeries.subst_X hsub_EQ, hE,
@@ -450,14 +401,12 @@ theorem subst_deepLogSeries_deepExpSeries (hi' : i ≠ 0) (hi : 1 < (p - 1) * i)
   have hn := congrArg (PowerSeries.coeff n) hc_sub
   simp only [PowerSeries.coeff_smul, PowerSeries.coeff_map, PadicInt.Coe.ringHom_apply,
     smul_eq_mul] at hn
-  rcases eq_or_ne n 1 with rfl | hn1
-  · simpa [PowerSeries.coeff_one_X] using mul_left_cancel₀ hc hn
-  · simpa [PowerSeries.coeff_X, hn1] using mul_left_cancel₀ hc hn
+  by_cases hn1 : n = 1 <;>
+    simpa [PowerSeries.coeff_X, hn1] using mul_left_cancel₀ (pow_prime_ne_zero (p := p) i) hn
 
 /-- **Formal right inverse.** In `ℤ_p⟦X⟧`, substituting `deepLogSeries hi'` into `deepExpSeries hi`
 gives `X`. -/
-@[simp]
-theorem subst_deepExpSeries_deepLogSeries (hi : 1 < (p - 1) * i) (hi' : i ≠ 0) :
+@[simp] theorem subst_deepExpSeries_deepLogSeries (hi : 1 < (p - 1) * i) (hi' : i ≠ 0) :
     (deepExpSeries hi).subst (deepLogSeries (p := p) hi') = PowerSeries.X :=
   PowerSeries.subst_eq_X_of_subst_eq_X (deepLogSeries (p := p) hi')
     (constantCoeff_deepLogSeries hi') (by simp [coeff_one_deepLogSeries])

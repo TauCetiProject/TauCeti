@@ -81,15 +81,12 @@ theorem zeroExtend_apply_of_isUnit (κ : WeightSpace p R) {x : ℤ_[p]} (hx : Is
     ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, ContinuousMap.coe_ofClass,
     weightTest_apply, hu]
 
-@[simp]
-theorem zeroExtend_coe_unit (κ : WeightSpace p R) (u : ℤ_[p]ˣ) :
+@[simp] theorem zeroExtend_coe_unit (κ : WeightSpace p R) (u : ℤ_[p]ˣ) :
     κ.zeroExtend u = κ u := by
-  have hu : u.isUnit.unit = u := Units.ext u.isUnit.unit_spec
-  rw [zeroExtend_apply_of_isUnit κ u.isUnit, hu]
+  rw [zeroExtend_apply_of_isUnit κ u.isUnit, Units.ext u.isUnit.unit_spec]
 
 /-- At a non-unit `x ∈ pℤ_p`, `κ.zeroExtend x = 0`. -/
-@[simp]
-theorem zeroExtend_apply_of_not_isUnit (κ : WeightSpace p R) {x : ℤ_[p]} (hx : ¬IsUnit x) :
+@[simp] theorem zeroExtend_apply_of_not_isUnit (κ : WeightSpace p R) {x : ℤ_[p]} (hx : ¬IsUnit x) :
     κ.zeroExtend x = 0 :=
   ContinuousMap.zeroExtendClopenFn_apply_not_mem _ _ (mt (PadicInt.mem_unitsClopen p).mp hx)
 
@@ -97,8 +94,7 @@ theorem zeroExtend_apply_of_not_isUnit (κ : WeightSpace p R) {x : ℤ_[p]} (hx 
 theorem zeroExtend_apply_zero (κ : WeightSpace p R) : κ.zeroExtend 0 = 0 :=
   κ.zeroExtend_apply_of_not_isUnit not_isUnit_zero
 
-@[simp]
-theorem zeroExtend_apply_one (κ : WeightSpace p R) : κ.zeroExtend 1 = 1 := by
+@[simp] theorem zeroExtend_apply_one (κ : WeightSpace p R) : κ.zeroExtend 1 = 1 := by
   simpa using κ.zeroExtend_coe_unit 1
 
 /-- Because `pℤ_p` is a prime ideal (`IsUnit (x * y) ↔ IsUnit x ∧ IsUnit y`), the zero-extension
@@ -129,27 +125,21 @@ theorem zeroExtend_apply_pow (κ : WeightSpace p R) (x : ℤ_[p]) (n : ℕ) :
 theorem zeroExtend_one :
     (1 : WeightSpace p R).zeroExtend =
       ContinuousMap.zeroExtendClopenFn (PadicInt.unitsClopen p) 1 := by
-  ext x
-  by_cases hx : IsUnit x
-  · have hmem : x ∈ PadicInt.unitsClopen p := (PadicInt.mem_unitsClopen p).mpr hx
-    simp [zeroExtend_apply_of_isUnit _ hx, hmem]
-  · have hnmem : x ∉ PadicInt.unitsClopen p := mt (PadicInt.mem_unitsClopen p).mp hx
-    simp [hx, hnmem]
+  ext x; by_cases hx : IsUnit x
+  · simp [zeroExtend_apply_of_isUnit _ hx, (PadicInt.mem_unitsClopen p).mpr hx]
+  · simp [hx, mt (PadicInt.mem_unitsClopen p).mp hx]
 
-@[simp]
-theorem zeroExtend_one_apply_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) :
+@[simp] theorem zeroExtend_one_apply_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) :
     (1 : WeightSpace p R).zeroExtend x = 1 := by
   simp [zeroExtend_apply_of_isUnit _ hx]
 
 /-- A weight is determined by its zero-extension to `ℤ_p`. -/
 theorem zeroExtend_injective : Function.Injective (zeroExtend (p := p) (R := R)) :=
-  fun κ κ' h ↦ ContinuousMonoidHom.ext fun u ↦ Units.ext <| by
+  fun _ _ h ↦ ContinuousMonoidHom.ext fun u ↦ Units.ext <| by
     simpa only [zeroExtend_coe_unit] using DFunLike.congr_fun h (u : ℤ_[p])
 
-@[simp]
-theorem zeroExtend_inj {κ κ' : WeightSpace p R} :
-    κ.zeroExtend = κ'.zeroExtend ↔ κ = κ' :=
-  zeroExtend_injective.eq_iff
+@[simp] theorem zeroExtend_inj {κ κ' : WeightSpace p R} :
+    κ.zeroExtend = κ'.zeroExtend ↔ κ = κ' := zeroExtend_injective.eq_iff
 
 end MonoidWithZero
 
@@ -157,26 +147,18 @@ section CommMonoidWithZero
 
 variable {R : Type*} [CommMonoidWithZero R] [TopologicalSpace R] [ContinuousMul R]
 
-@[simp]
-theorem zeroExtend_mul (κ κ' : WeightSpace p R) :
+@[simp] theorem zeroExtend_mul (κ κ' : WeightSpace p R) :
     (κ * κ').zeroExtend = κ.zeroExtend * κ'.zeroExtend := by
-  ext x
-  by_cases hx : IsUnit x
-  · simp [zeroExtend_apply_of_isUnit _ hx]
-  · simp [hx]
+  ext x; by_cases hx : IsUnit x <;> simp [zeroExtend_apply_of_isUnit, hx]
 
 /-- Positive powers of a weight commute with zero-extension (at `n = 0`, `(κ ^ 0).zeroExtend`
 vanishes on `pℤ_p` while `κ.zeroExtend ^ 0 = 1` everywhere). -/
 theorem zeroExtend_pow (κ : WeightSpace p R) {n : ℕ} (hn : n ≠ 0) :
     (κ ^ n).zeroExtend = κ.zeroExtend ^ n := by
-  ext x
-  by_cases hx : IsUnit x
-  · simp [zeroExtend_apply_of_isUnit _ hx]
-  · simp [hx, zero_pow hn]
+  ext x; by_cases hx : IsUnit x <;> simp [zeroExtend_apply_of_isUnit, hx, zero_pow hn]
 
-@[simp]
-theorem zeroExtend_pow_apply_of_isUnit (κ : WeightSpace p R) (n : ℕ) {x : ℤ_[p]} (hx : IsUnit x) :
-    (κ ^ n).zeroExtend x = κ.zeroExtend x ^ n := by
+@[simp] theorem zeroExtend_pow_apply_of_isUnit (κ : WeightSpace p R) (n : ℕ) {x : ℤ_[p]}
+    (hx : IsUnit x) : (κ ^ n).zeroExtend x = κ.zeroExtend x ^ n := by
   simp [zeroExtend_apply_of_isUnit _ hx]
 
 end CommMonoidWithZero
@@ -192,27 +174,25 @@ theorem zeroExtend_eq_zeroExtendClopen (S : Type*) [Semiring S] [Module S R]
     κ.zeroExtend = ContinuousMap.zeroExtendClopen S (PadicInt.unitsClopen p)
       ((κ.weightTest : C(ℤ_[p]ˣ, R)).comp
         ((PadicInt.unitsHomeomorphIsUnit p).symm : C(PadicInt.unitsClopen p, ℤ_[p]ˣ))) := by
-  ext x
-  by_cases hx : x ∈ PadicInt.unitsClopen p <;> simp [zeroExtend, hx]
+  ext x; by_cases hx : x ∈ PadicInt.unitsClopen p <;> simp [zeroExtend, hx]
 
 /-- Zero-extension preserves the supremum norm of the underlying test character on `ℤ_pˣ`. -/
 theorem norm_zeroExtend (κ : WeightSpace p R) :
     ‖κ.zeroExtend‖ = ‖(κ.weightTest : C(ℤ_[p]ˣ, R))‖ := by
   rw [zeroExtend, ContinuousMap.norm_zeroExtendClopenFn]
+  let g := (κ.weightTest : C(ℤ_[p]ˣ, R)).comp
+    ((PadicInt.unitsHomeomorphIsUnit p).symm : C(PadicInt.unitsClopen p, ℤ_[p]ˣ))
   exact le_antisymm
-    ((ContinuousMap.norm_le _ (norm_nonneg _)).mpr fun x ↦
+    ((ContinuousMap.norm_le _ (norm_nonneg _)).mpr fun _ ↦
       ContinuousMap.norm_coe_le_norm (κ.weightTest : C(ℤ_[p]ˣ, R)) _)
     ((ContinuousMap.norm_le _ (norm_nonneg _)).mpr fun u ↦ by
-      simpa only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
-        Homeomorph.symm_apply_apply] using ContinuousMap.norm_coe_le_norm
-          ((κ.weightTest : C(ℤ_[p]ˣ, R)).comp
-            ((PadicInt.unitsHomeomorphIsUnit p).symm : C(PadicInt.unitsClopen p, ℤ_[p]ˣ)))
-          (PadicInt.unitsHomeomorphIsUnit p u))
+      simpa only [g, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
+        Homeomorph.symm_apply_apply] using
+        ContinuousMap.norm_coe_le_norm g (PadicInt.unitsHomeomorphIsUnit p u))
 
 /-- For a multiplicative seminorm with `‖1‖ = 1`, every zero-extended weight has supremum norm `1`.
 -/
-@[simp]
-theorem norm_zeroExtend_eq_one [NormMulClass R] [NormOneClass R] (κ : WeightSpace p R) :
+@[simp] theorem norm_zeroExtend_eq_one [NormMulClass R] [NormOneClass R] (κ : WeightSpace p R) :
     ‖κ.zeroExtend‖ = 1 := by
   refine le_antisymm ((ContinuousMap.norm_le _ zero_le_one).mpr fun x ↦ ?_) ?_
   · by_cases hx : IsUnit x
@@ -221,18 +201,15 @@ theorem norm_zeroExtend_eq_one [NormMulClass R] [NormOneClass R] (κ : WeightSpa
   · simpa only [zeroExtend_apply_one, norm_one] using ContinuousMap.norm_coe_le_norm κ.zeroExtend 1
 
 /-- On units of `ℤ_p`, `(inclusion R).zeroExtend` agrees with `padicIntAlgebraMap p R`. -/
-@[simp]
-theorem zeroExtend_inclusion_apply_of_isUnit [NormedAlgebra ℚ_[p] R] {x : ℤ_[p]} (hx : IsUnit x) :
-    (inclusion (p := p) R).zeroExtend x = padicIntAlgebraMap p R x := by
+@[simp] theorem zeroExtend_inclusion_apply_of_isUnit [NormedAlgebra ℚ_[p] R] {x : ℤ_[p]}
+    (hx : IsUnit x) : (inclusion (p := p) R).zeroExtend x = padicIntAlgebraMap p R x := by
   rw [zeroExtend_apply_of_isUnit _ hx, coe_inclusion_apply, IsUnit.unit_spec]
 
 /-- Over any commutative seminormed `ℚ_p`-algebra with `‖1‖ = 1` (without requiring a
 multiplicative norm), the zero-extension of every integer-power weight `inclusion K ^ m` (`m ∈ ℤ`)
 has supremum norm `1`. -/
-@[simp]
-theorem norm_zeroExtend_inclusion_zpow {K : Type*} [SeminormedCommRing K] [NormOneClass K]
-    [NormedAlgebra ℚ_[p] K] (m : ℤ) :
-    ‖(inclusion (p := p) K ^ m).zeroExtend‖ = 1 := by
+@[simp] theorem norm_zeroExtend_inclusion_zpow {K : Type*} [SeminormedCommRing K] [NormOneClass K]
+    [NormedAlgebra ℚ_[p] K] (m : ℤ) : ‖(inclusion (p := p) K ^ m).zeroExtend‖ = 1 := by
   refine le_antisymm ((ContinuousMap.norm_le _ zero_le_one).mpr fun x ↦ ?_) ?_
   · by_cases hx : IsUnit x
     · rw [zeroExtend_apply_of_isUnit _ hx, ContinuousMonoidHom.zpow_apply, ← map_zpow,

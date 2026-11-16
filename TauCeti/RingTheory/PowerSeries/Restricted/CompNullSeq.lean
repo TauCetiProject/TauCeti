@@ -89,21 +89,18 @@ theorem norm_coeff_mul_le {f g : R⟦X⟧} {r s : ℝ} (hf : ∀ k, ‖coeff k f
 /-- Over an ultrametric seminormed ring, if every coefficient of `g` has norm at most `r`, then
 every coefficient of a positive power `g ^ n` (`n ≠ 0`) has norm at most `r ^ n`. -/
 theorem norm_coeff_pow_le {g : R⟦X⟧} {r : ℝ} (hgn : ∀ k, ‖coeff k g‖ ≤ r) {n : ℕ} (hn : n ≠ 0)
-    (k : ℕ) :
-    ‖coeff k (g ^ n)‖ ≤ r ^ n := by
+    (k : ℕ) : ‖coeff k (g ^ n)‖ ≤ r ^ n := by
   induction n generalizing k with
   | zero => exact absurd rfl hn
   | succ n ih =>
     rcases eq_or_ne n 0 with rfl | hn0
     · simpa using hgn k
-    · rw [pow_succ, pow_succ]
-      exact norm_coeff_mul_le (ih hn0) hgn k
+    · rw [pow_succ, pow_succ]; exact norm_coeff_mul_le (ih hn0) hgn k
 
 /-- Over an ultrametric seminormed ring, every positive power of a power series whose coefficients
 have norm at most `1` also has coefficients of norm at most `1`. -/
 theorem norm_coeff_pow_le_one {g : R⟦X⟧} (hgn : ∀ k, ‖coeff k g‖ ≤ 1) {n : ℕ} (hn : n ≠ 0)
-    (k : ℕ) :
-    ‖coeff k (g ^ n)‖ ≤ 1 := by
+    (k : ℕ) : ‖coeff k (g ^ n)‖ ≤ 1 := by
   simpa only [one_pow] using norm_coeff_pow_le hgn hn k
 
 end CoeffBounds
@@ -118,9 +115,7 @@ variable {R E : Type*} [NormedRing R] [IsUltrametricDist R]
 private theorem norm_coeff_pow_smul_le (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (e : E) (n k : ℕ) :
     ‖coeff k (g ^ n) • e‖ ≤ ‖e‖ := by
   rcases eq_or_ne n 0 with rfl | hn
-  · rcases eq_or_ne k 0 with rfl | hk
-    · simp
-    · simp [coeff_one, hk]
+  · rcases eq_or_ne k 0 with rfl | hk <;> simp [coeff_one, *]
   · exact (norm_smul_le _ _).trans
       (mul_le_of_le_one_left (norm_nonneg e) (norm_coeff_pow_le_one hgn hn k))
 
@@ -133,9 +128,7 @@ private theorem tendsto_coeff_pow_cofinite (hg : g.IsRestricted 1) (n : ℕ) :
 private theorem norm_coeff_pow_le_max_one (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (k n : ℕ) :
     ‖coeff k (g ^ n)‖ ≤ max 1 ‖(1 : R)‖ := by
   rcases eq_or_ne n 0 with rfl | hn
-  · rcases eq_or_ne k 0 with rfl | hk
-    · simp
-    · simp [coeff_one, hk]
+  · rcases eq_or_ne k 0 with rfl | hk <;> simp [coeff_one, *]
   · exact (norm_coeff_pow_le_one hgn hn k).trans (le_max_left 1 ‖(1 : R)‖)
 
 variable [IsUltrametricDist E] [CompleteSpace E]
@@ -154,8 +147,7 @@ variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCo
 
 /-- The `k`-th entry of `compNullSeq` is the unconditional sum `∑ n, coeff k (g ^ n) • b n`. -/
 theorem hasSum_compNullSeq_apply (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ ≤ 1)
-    (b : C₀(ℕ, E)) (k : ℕ) :
-    HasSum (fun n ↦ coeff k (g ^ n) • b n) (compNullSeq S hg hgn b k) :=
+    (b : C₀(ℕ, E)) (k : ℕ) : HasSum (fun n ↦ coeff k (g ^ n) • b n) (compNullSeq S hg hgn b k) :=
   Matrix.hasSum_toZeroAtInftySMulCLM_apply S (Matrix.of fun k n ↦ coeff k (g ^ n)) _ _ b k
 
 /-- The `k`-th entry of `compNullSeq` is `∑' n, coeff k (g ^ n) • b n`. -/
@@ -164,36 +156,28 @@ theorem compNullSeq_apply (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ 
   (hasSum_compNullSeq_apply S hg hgn b k).tsum_eq.symm
 
 /-- `compNullSeq` sends the basis element `single m e` to `k ↦ coeff k (g ^ m) • e`. -/
-@[simp]
-theorem compNullSeq_single_apply (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ ≤ 1)
+@[simp] theorem compNullSeq_single_apply (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ ≤ 1)
     (m : ℕ) (e : E) (k : ℕ) :
     compNullSeq S hg hgn (ZeroAtInftyContinuousMap.single m e) k = coeff k (g ^ m) • e :=
   Matrix.toZeroAtInftySMulCLM_single_apply S (Matrix.of fun k n ↦ coeff k (g ^ n)) _ _ m e k
 
 /-- Pulling back along `X` is the identity on `C₀(ℕ, E)`. -/
-@[simp]
-theorem compNullSeq_X (hX : (X : R⟦X⟧).IsRestricted 1) (hXn : ∀ k, ‖coeff k (X : R⟦X⟧)‖ ≤ 1) :
+@[simp] theorem compNullSeq_X (hX : (X : R⟦X⟧).IsRestricted 1)
+    (hXn : ∀ k, ‖coeff k (X : R⟦X⟧)‖ ≤ 1) :
     compNullSeq S hX hXn = ContinuousLinearMap.id S C₀(ℕ, E) := by
   ext b k
-  rw [compNullSeq_apply, ContinuousLinearMap.id_apply, tsum_eq_single k]
-  · simp
-  · intro n hn
-    simp [coeff_X_pow, hn.symm]
+  rw [compNullSeq_apply, ContinuousLinearMap.id_apply,
+    tsum_eq_single k fun n hn ↦ by simp [coeff_X_pow, hn.symm]]
+  simp
 
 /-- Pulling back along `0 : R⟦X⟧` retains only the constant term `single 0 (b 0)`. -/
 theorem compNullSeq_zero (h0 : (0 : R⟦X⟧).IsRestricted 1) (h0n : ∀ k, ‖coeff k (0 : R⟦X⟧)‖ ≤ 1)
-    (b : C₀(ℕ, E)) :
-    compNullSeq S h0 h0n b = ZeroAtInftyContinuousMap.single 0 (b 0) := by
+    (b : C₀(ℕ, E)) : compNullSeq S h0 h0n b = ZeroAtInftyContinuousMap.single 0 (b 0) := by
   ext k
-  rw [compNullSeq_apply, tsum_eq_single 0]
-  · rcases eq_or_ne k 0 with rfl | hk
-    · simp
-    · simp [coeff_one, hk]
-  · intro n hn
-    simp [zero_pow hn]
+  rw [compNullSeq_apply, tsum_eq_single 0 fun n hn ↦ by simp [zero_pow hn]]
+  rcases eq_or_ne k 0 with rfl | hk <;> simp [coeff_one, *]
 
-/-- `compNullSeq` commutes with postcomposition by any uniformly bounded continuous `R`-linear map.
--/
+/-- `compNullSeq` commutes with postcomposition by a uniformly bounded continuous `R`-linear map. -/
 theorem compLeft_compNullSeq {F : Type*} [NormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
     [IsUltrametricDist F] [CompleteSpace F]
     (S' : Type*) [Semiring S'] [Module S' F] [ContinuousConstSMul S' F] [SMulCommClass R S' F]
@@ -201,8 +185,7 @@ theorem compLeft_compNullSeq {F : Type*} [NormedAddCommGroup F] [Module R F] [Is
     (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (b : C₀(ℕ, E)) :
     ZeroAtInftyContinuousMap.compLeft u hu (compNullSeq S hg hgn b) =
       compNullSeq S' hg hgn (ZeroAtInftyContinuousMap.compLeft u hu b) := by
-  ext k
-  rw [ZeroAtInftyContinuousMap.compLeft_apply]
+  ext k; rw [ZeroAtInftyContinuousMap.compLeft_apply]
   refine ((hasSum_compNullSeq_apply S hg hgn b k).mapL u).unique ?_
   simpa [Function.comp_def] using
     hasSum_compNullSeq_apply S' hg hgn (ZeroAtInftyContinuousMap.compLeft u hu b) k
@@ -223,21 +206,18 @@ theorem opNorm_compNullSeq_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] 
     simpa using norm_compNullSeq_le 𝕜 hg hgn b
 
 /-- When `g` has zero constant coefficient, the `0`-th term of the pulled-back sequence is `b 0`. -/
-@[simp]
-theorem compNullSeq_apply_zero_of_constantCoeff_eq_zero (hg : g.IsRestricted 1)
+@[simp] theorem compNullSeq_apply_zero_of_constantCoeff_eq_zero (hg : g.IsRestricted 1)
     (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (hg0 : constantCoeff g = 0) (b : C₀(ℕ, E)) :
     compNullSeq S hg hgn b 0 = b 0 := by
-  rw [compNullSeq_apply, tsum_eq_single 0]
-  · simp
-  · intro n hn
-    rw [coeff_zero_eq_constantCoeff_apply, map_pow, hg0, zero_pow hn, zero_smul]
+  rw [compNullSeq_apply, tsum_eq_single 0 fun n hn ↦ by
+    rw [coeff_zero_eq_constantCoeff_apply, map_pow, hg0, zero_pow hn, zero_smul]]
+  simp
 
 /-- Since `g ^ 0 = 1` contributes nothing in positive degrees, every coefficient
 `compNullSeq S hg hgn b k` (`k ≠ 0`) is bounded by any bound `B ≥ 0` on `‖b n‖` for `n ≠ 0`. -/
 theorem norm_compNullSeq_apply_le_of_ne_zero (hg : g.IsRestricted 1)
     (hgn : ∀ k, ‖coeff k g‖ ≤ 1) {b : C₀(ℕ, E)} {B : ℝ} (hB0 : 0 ≤ B)
-    (hB : ∀ n ≠ 0, ‖b n‖ ≤ B) {k : ℕ} (hk : k ≠ 0) :
-    ‖compNullSeq S hg hgn b k‖ ≤ B := by
+    (hB : ∀ n ≠ 0, ‖b n‖ ≤ B) {k : ℕ} (hk : k ≠ 0) : ‖compNullSeq S hg hgn b k‖ ≤ B := by
   rw [compNullSeq_apply]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hB0 fun n ↦ ?_
   rcases eq_or_ne n 0 with rfl | hn
@@ -253,8 +233,7 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {f g : R⟦X⟧}
 /-- Substituting a unit-ball series `f` with zero constant term into a unit-ball series `g`
 preserves the unit-ball coefficient bound (without needing `NormOneClass R`). -/
 theorem norm_coeff_subst_le_one (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (hfn : ∀ k, ‖coeff k f‖ ≤ 1)
-    (hf0 : constantCoeff f = 0) (k : ℕ) :
-    ‖coeff k (g.subst f)‖ ≤ 1 := by
+    (hf0 : constantCoeff f = 0) (k : ℕ) : ‖coeff k (g.subst f)‖ ≤ 1 := by
   rw [coeff_subst_eq_sum_range g hf0 k]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun m _ ↦ ?_
   rcases eq_or_ne m 0 with rfl | hm
@@ -271,33 +250,28 @@ restricted at radius `1` yields a series restricted at radius `1`. -/
 theorem isRestricted_subst_one (hg : g.IsRestricted 1) (hf : f.IsRestricted 1)
     (hfn : ∀ k, ‖coeff k f‖ ≤ 1) (hf0 : constantCoeff f = 0) :
     PowerSeries.IsRestricted 1 (g.subst f) := by
-  rw [isRestricted_iff']
-  simp only [one_pow, mul_one]
+  rw [isRestricted_iff']; simp only [one_pow, mul_one]
   refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
   have hg_lim : Tendsto (fun m ↦ ‖coeff m g‖) atTop (𝓝 0) := by
     simpa only [one_pow, mul_one] using (isRestricted_iff' 1 g).mp hg
   obtain ⟨M, hM⟩ := Metric.tendsto_atTop.mp hg_lim (ε / 2) (half_pos hε)
   have hhead : ∀ m ∈ Finset.range (M + 1),
       ∀ᶠ k in atTop, ‖coeff m g * coeff k (f ^ m)‖ < ε / 2 := fun m _ ↦ by
-    have hfm : Tendsto (fun k ↦ coeff k (f ^ m)) atTop (𝓝 0) := by
-      simpa only [Nat.cofinite_eq_atTop] using tendsto_coeff_pow_cofinite hf m
     have hm_lim : Tendsto (fun k ↦ coeff m g * coeff k (f ^ m)) atTop (𝓝 0) := by
-      simpa only [mul_zero] using hfm.const_mul (coeff m g)
+      simpa only [Nat.cofinite_eq_atTop, mul_zero] using
+        (tendsto_coeff_pow_cofinite hf m).const_mul (coeff m g)
     exact NormedAddGroup.tendsto_nhds_zero.mp hm_lim (ε / 2) (half_pos hε)
   obtain ⟨K, hK⟩ := eventually_atTop.mp ((Finset.range (M + 1)).eventually_all.mpr hhead)
   refine ⟨K, fun k hk ↦ ?_⟩
   rw [Real.dist_eq, sub_zero, abs_norm, coeff_subst_eq_sum_range g hf0 k]
   refine (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (half_pos hε).le
     fun m _ ↦ ?_).trans_lt (half_lt_self hε)
+  rw [smul_eq_mul]
   rcases lt_or_ge m (M + 1) with hm | hm
-  · rw [smul_eq_mul]
-    exact (hK k hk m (Finset.mem_range.mpr hm)).le
-  · have hm0 : m ≠ 0 := by omega
-    have hgm : ‖coeff m g‖ < ε / 2 := by
-      simpa [Real.dist_eq, abs_norm] using hM m (by omega)
-    rw [smul_eq_mul]
-    exact (norm_mul_le _ _).trans <|
-      (mul_le_of_le_one_right (norm_nonneg _) (norm_coeff_pow_le_one hfn hm0 k)).trans hgm.le
+  · exact (hK k hk m (Finset.mem_range.mpr hm)).le
+  · have hgm : ‖coeff m g‖ < ε / 2 := by simpa [Real.dist_eq, abs_norm] using hM m (by omega)
+    exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
+      (norm_coeff_pow_le_one hfn (by omega) k)).trans hgm.le
 
 /-- **Contravariant functoriality of `compNullSeq` under formal substitution.** When `f` has zero
 constant coefficient, pulling back along `g` and then along `f` equals pulling back along
@@ -326,16 +300,10 @@ theorem compNullSeq_subst {E : Type*} [NormedAddCommGroup E] [Module R E] [IsBou
       (fun n ↦ ∑ m ∈ Finset.range (k + 1), coeff k (f ^ m) • (coeff m (g ^ n) • b n))
       (∑ m ∈ Finset.range (k + 1), coeff k (f ^ m) • compNullSeq S hg hgn b m) :=
     hasSum_sum fun m _ ↦ (hasSum_compNullSeq_apply S hg hgn b m).const_smul (coeff k (f ^ m))
-  have heq (n : ℕ) :
-      coeff k ((g.subst f) ^ n) • b n =
-        ∑ m ∈ Finset.range (k + 1), coeff k (f ^ m) • (coeff m (g ^ n) • b n) := by
-    symm
-    calc ∑ m ∈ Finset.range (k + 1), coeff k (f ^ m) • (coeff m (g ^ n) • b n)
-        = (∑ m ∈ Finset.range (k + 1), coeff m (g ^ n) • coeff k (f ^ m)) • b n := by
-          rw [Finset.sum_smul]
-          exact Finset.sum_congr rfl fun m _ ↦ by rw [smul_smul, smul_eq_mul, mul_comm]
-      _ = coeff k ((g.subst f) ^ n) • b n := by
-          rw [← coeff_subst_eq_sum_range (g ^ n) hf0 k, subst_pow hsub_f]
+  have heq (n : ℕ) : coeff k ((g.subst f) ^ n) • b n =
+      ∑ m ∈ Finset.range (k + 1), coeff k (f ^ m) • (coeff m (g ^ n) • b n) := by
+    rw [← subst_pow hsub_f, coeff_subst_eq_sum_range (g ^ n) hf0 k, Finset.sum_smul]
+    exact Finset.sum_congr rfl fun m _ ↦ by rw [smul_smul, smul_eq_mul, mul_comm]
   exact (hsum.congr_fun heq).unique (hasSum_compNullSeq_apply S _ _ b k)
 
 end Subst

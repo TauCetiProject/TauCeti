@@ -132,31 +132,29 @@ theorem not_exists_eval_zero_eq_zeroExtend {R : Type*} [NormedRing R] [Nontrivia
   have hg_eval : AnalyticStage.eval ℤ_[p] g = 0 := by
     ext w
     have hw : ¬IsUnit ((p : ℤ_[p]) * w) := PadicInt.not_isUnit_iff_dvd.mpr ⟨w, rfl⟩
-    rw [AnalyticStage.eval_levelZeroEquiv_symm_apply]
     have hsum : (∑' m, w ^ m • row₀ m) =
         AnalyticStage.eval ℤ_[p] f₁ (((0 : ZMod (p ^ 1)).val : ℤ_[p]) + (p : ℤ_[p]) ^ 1 * w) := by
       rw [AnalyticStage.eval_natCast_val_add_mul]
       exact tsum_congr fun m ↦ by rw [AnalyticStage.rowsEquiv_apply]
-    rw [hsum, AnalyticStage.eval_transition, ZMod.val_zero, Nat.cast_zero, zero_add, pow_one,
-      hf_eq, zeroExtend_apply_of_not_isUnit κ hw, ContinuousMap.zero_apply]
+    rw [AnalyticStage.eval_levelZeroEquiv_symm_apply, hsum, AnalyticStage.eval_transition,
+      ZMod.val_zero, Nat.cast_zero, zero_add, pow_one, hf_eq, zeroExtend_apply_of_not_isUnit κ hw,
+      ContinuousMap.zero_apply]
   have hg0 : g = 0 := AnalyticStage.eval_injective ℤ_[p] hpR (by rw [hg_eval, map_zero])
   have hf0 : f = 0 := by
     have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
     ext ⟨a, m⟩
     rw [_root_.zero_apply]
-    have ha : a = 0 := Subsingleton.elim a 0
-    subst ha
-    have hgm : g (0, m) = 0 := by rw [hg0, _root_.zero_apply]
-    have hm : (p : ℤ_[p]) ^ m • f (0, m) = 0 := by
-      have hg_app : g (0, m) = (p : ℤ_[p]) ^ m • f (0, m) := by
-        have hcast : ((0 : ZMod (p ^ 0)).cast : ZMod (p ^ 1)) = 0 := by
-          rw [ZMod.cast_eq_val, pow_zero]
-          simp
-        rw [AnalyticStage.levelZeroEquiv_symm_apply]
-        dsimp only [row₀, f₁]
-        rw [AnalyticStage.rowsEquiv_apply, ← hcast]
-        exact AnalyticStage.transition_apply_cast ℤ_[p] f 0 m
-      exact hg_app.symm.trans hgm
+    obtain rfl : a = 0 := Subsingleton.elim a 0
+    have hcast : ((0 : ZMod (p ^ 0)).cast : ZMod (p ^ 1)) = 0 := by
+      rw [ZMod.cast_eq_val, pow_zero]; simp
+    have hm : (p : ℤ_[p]) ^ m • f (0, m) = 0 :=
+      calc (p : ℤ_[p]) ^ m • f (0, m)
+          = f₁ ((0 : ZMod (p ^ 0)).cast, m) :=
+            (AnalyticStage.transition_apply_cast ℤ_[p] f 0 m).symm
+        _ = g (0, m) := by
+            dsimp only [g, row₀, f₁]
+            rw [AnalyticStage.levelZeroEquiv_symm_apply, AnalyticStage.rowsEquiv_apply, hcast]
+        _ = 0 := by rw [hg0, _root_.zero_apply]
     exact hpR.pow m (hm.trans (smul_zero _).symm)
   have h1 : κ.zeroExtend 1 = 0 := by rw [← hf_eq 1, hf0, map_zero, ContinuousMap.zero_apply]
   exact one_ne_zero (κ.zeroExtend_apply_one.symm.trans h1)
@@ -179,25 +177,19 @@ private theorem zeroExtend_one_add_pow_mul {R : Type*} [MonoidWithZero R] [Topol
   have hh := padicUnitsDepth_add_ne_zero p j
   let u₁ : unitsPrincipal p h := unitsPrincipalMk hh ⟨z, add_sub_cancel_left _ _⟩
   let u₀ : unitsPrincipal p k := ⟨u₁, unitsPrincipal_antitone p (Nat.le_add_right k j) u₁.2⟩
-  have hu₀_val : ((u₀ : ℤ_[p]ˣ) : ℤ_[p]) = 1 + (p : ℤ_[p]) ^ h * z :=
-    coe_unitsPrincipalMk hh _
+  have hu₀_val : ((u₀ : ℤ_[p]ˣ) : ℤ_[p]) = 1 + (p : ℤ_[p]) ^ h * z := coe_unitsPrincipalMk hh _
   have hlog : (unitsPrincipalLogEquiv p u₀).toAdd =
       (p : ℤ_[p]) ^ j * (deepLogSeries (p := p) hh).evalAt z := by
     apply PadicInt.ext
-    have hpk : (p : ℚ_[p]) ^ padicUnitsDepth p ≠ 0 :=
-      pow_ne_zero _ (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-    have hpj : (p : ℚ_[p]) ^ j ≠ 0 := pow_ne_zero j (Nat.cast_ne_zero.mpr hp.out.ne_zero)
+    have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
     rw [coe_unitsPrincipalLogEquiv_apply, hu₀_val, PadicInt.coe_mul, PadicInt.coe_pow,
       PadicInt.coe_natCast, coe_evalAt_deepLogSeries hh z]
-    push_cast
-    dsimp only [h, k]
+    push_cast; dsimp only [h, k]
     rw [pow_add (p : ℚ_[p]) (padicUnitsDepth p) j]
-    field_simp [hpk, hpj]
-  have hu₀_symm : (u₀ : ℤ_[p]ˣ) =
-       ((unitsPrincipalLogEquiv p).symm
-        (.ofAdd ((p : ℤ_[p]) ^ j * (deepLogSeries (p := p) hh).evalAt z)) : ℤ_[p]ˣ) := by
-    congr 1
-    rw [← hlog, ofAdd_toAdd, ContinuousMulEquiv.symm_apply_apply]
+    field_simp [pow_ne_zero (padicUnitsDepth p) hp0, pow_ne_zero j hp0]
+  have hu₀_symm : (u₀ : ℤ_[p]ˣ) = ((unitsPrincipalLogEquiv p).symm
+      (.ofAdd ((p : ℤ_[p]) ^ j * (deepLogSeries (p := p) hh).evalAt z)) : ℤ_[p]ˣ) := by
+    congr 1; rw [← hlog, ofAdd_toAdd, ContinuousMulEquiv.symm_apply_apply]
   rw [← hu₀_val, zeroExtend_coe_unit, hu₀_symm, principalChar_apply]
 
 /-- On any unit disc `a + p ^ (k + j) ℤ_p` (`IsUnit a`), `κ.zeroExtend (a.val + p ^ (k + j) w)`
@@ -212,36 +204,36 @@ private theorem zeroExtend_natCast_val_add_mul_of_isUnit {R : Type*} [MonoidWith
           ((↑u⁻¹ : ℤ_[p]) * w)) := by
   intro u
   have hfac : (a.val : ℤ_[p]) + (p : ℤ_[p]) ^ (padicUnitsDepth p + j) * w =
-      (u : ℤ_[p]) * (1 + (p : ℤ_[p]) ^ (padicUnitsDepth p + j) * ((↑u⁻¹ : ℤ_[p]) * w)) := by
+      (u : ℤ_[p]) * (1 + (p : ℤ_[p]) ^ (padicUnitsDepth p + j) * ((↑u⁻¹ : ℤ_[p]) * w)) :=
     calc (a.val : ℤ_[p]) + (p : ℤ_[p]) ^ (padicUnitsDepth p + j) * w
-        = (u : ℤ_[p]) + ((u : ℤ_[p]) * ↑u⁻¹) *
-            ((p : ℤ_[p]) ^ (padicUnitsDepth p + j) * w) := by
+        = (u : ℤ_[p]) + ((u : ℤ_[p]) * ↑u⁻¹) * ((p : ℤ_[p]) ^ (padicUnitsDepth p + j) * w) := by
           rw [u.mul_inv, one_mul, IsUnit.unit_spec]
-      _ = (u : ℤ_[p]) * (1 + (p : ℤ_[p]) ^ (padicUnitsDepth p + j) * ((↑u⁻¹ : ℤ_[p]) * w)) := by
-          ring
+      _ = _ := by ring
   rw [hfac, zeroExtend_apply_mul, zeroExtend_coe_unit, zeroExtend_one_add_pow_mul]
 
 end DiscHelpers
 
 section DiscExpansion
 
--- The shifted additive character `s ↦ κ.principalChar (p ^ j * s)` of `ℤ_p`.
-private noncomputable def shiftedPrincipalChar {M : Type*} [Monoid M] [TopologicalSpace M]
-    (κ : WeightSpace p M) (j : ℕ) : AddChar ℤ_[p] M :=
+section ShiftedPrincipalChar
+
+variable {M : Type*} [Monoid M] [TopologicalSpace M] (κ : WeightSpace p M) (j : ℕ)
+
+private noncomputable def shiftedPrincipalChar : AddChar ℤ_[p] M :=
   κ.principalChar.compAddMonoidHom (AddMonoidHom.mulLeft ((p : ℤ_[p]) ^ j))
 
-private theorem continuous_shiftedPrincipalChar {M : Type*} [Monoid M] [TopologicalSpace M]
-    (κ : WeightSpace p M) (j : ℕ) : Continuous (shiftedPrincipalChar κ j) :=
+private theorem continuous_shiftedPrincipalChar : Continuous (shiftedPrincipalChar κ j) :=
   (κ.continuous_principalChar.comp
-    ((continuous_const (y := (p : ℤ_[p]) ^ j)).mul continuous_id)).congr fun s ↦ by
+    ((continuous_const (y := (p : ℤ_[p]) ^ j)).mul continuous_id)).congr fun _ ↦ by
       simp [shiftedPrincipalChar]
 
-private theorem shiftedPrincipalChar_one {M : Type*} [Monoid M] [TopologicalSpace M]
-    (κ : WeightSpace p M) (j : ℕ) :
+private theorem shiftedPrincipalChar_one :
     shiftedPrincipalChar κ j 1 = κ (padicUnitsGenerator p ^ p ^ j) := by
   rw [shiftedPrincipalChar, AddChar.compAddMonoidHom_apply, AddMonoidHom.coe_mulLeft, mul_one,
     ← Nat.cast_pow, ← nsmul_one, AddChar.map_nsmul_eq_pow, principalChar_one, map_pow,
     Units.val_pow_eq_pow_val]
+
+end ShiftedPrincipalChar
 
 variable {R : Type*} [NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [Module ℚ_[p] R]
   [IsBoundedSMul ℚ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
@@ -268,46 +260,37 @@ theorem principalChar_pow_mul_eq_addChar (κ : WeightSpace p R) (j : ℕ) (s : �
       (by rw [shiftedPrincipalChar_one, add_sub_cancel])
   simpa [shiftedPrincipalChar] using DFunLike.congr_fun heq s
 
--- Rescaling `deepLogSeries` by a unit of `ℤ_p` preserves restrictedness at radius `1`.
 private theorem isRestricted_rescale_deepLogSeries (j : ℕ) (u : ℤ_[p]ˣ) :
     (PowerSeries.rescale (u : ℤ_[p])
       (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j))).IsRestricted 1 := by
   refine PowerSeries.IsRestricted.rescale ?_
-  rw [PadicInt.isUnit_iff.mp u.isUnit, one_mul]
-  exact isRestricted_deepLogSeries _
+  rw [PadicInt.isUnit_iff.mp u.isUnit, one_mul]; exact isRestricted_deepLogSeries _
 
--- Level-`0` Amice expansion of `s ↦ κ.principalChar (p ^ j * s)`, scaled on the left by `κ(u)`.
 private noncomputable def discExpansionScaledRow (κ : WeightSpace p R) (j : ℕ)
     (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0) (u : ℤ_[p]ˣ) :
     C₀(ℕ, R) :=
   (κ u : R) • AnalyticStage.levelZeroEquiv p ℤ_[p]
     (AnalyticStage.addCharExpansion p 0 ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht)
 
-@[simp]
-private theorem discExpansionScaledRow_apply (κ : WeightSpace p R) (j : ℕ)
-    (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0) (u : ℤ_[p]ˣ)
-    (n : ℕ) :
-    discExpansionScaledRow κ j ht u n =
-      (κ u : R) * AnalyticStage.addCharExpansion p 0
-        ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht (0, n) := by
-  simp [discExpansionScaledRow]
+@[simp] private theorem discExpansionScaledRow_apply (κ : WeightSpace p R) (j : ℕ)
+    (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0) (u : ℤ_[p]ˣ) (n : ℕ) :
+    discExpansionScaledRow κ j ht u n = (κ u : R) *
+      AnalyticStage.addCharExpansion p 0 ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht (0, n) :=
+  by simp [discExpansionScaledRow]
 
 /-- **Expansion of a weight on the discs of `ℤ_p` at level `padicUnitsDepth p + j`.** Given a
 weight `κ : WeightSpace p R` into a complete ultrametric Banach algebra `R` over `ℤ_p` and `ℚ_p`
 with `‖κ(γ ^ (p ^ j)) - 1‖ < amiceRadius p 0`, `κ.discExpansion j ht` vanishes on non-unit discs
 and pulls back the level-`0` Amice expansion of `s ↦ κ.principalChar (p ^ j * s)` (scaled on the
-left by `κ(u_a)`) along `w ↦ (p ^ h)⁻¹ log(1 + p ^ h u_a⁻¹ w)` on each unit disc `a + p ^ h ℤ_p`.
--/
+left by `κ(u_a)`) along `w ↦ (p ^ h)⁻¹ log(1 + p ^ h u_a⁻¹ w)` on each unit disc `a + p ^ h ℤ_p`. -/
 noncomputable def discExpansion (κ : WeightSpace p R) (j : ℕ)
     (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0) :
     AnalyticStage p (padicUnitsDepth p + j) R :=
   (AnalyticStage.rowsEquiv p ℤ_[p] (padicUnitsDepth p + j)).symm fun a ↦
     if ha : IsUnit a then
       let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
-      TauCeti.PowerSeries.compNullSeq ℤ_[p]
-        (isRestricted_rescale_deepLogSeries j u⁻¹)
-        (fun _ ↦ PadicInt.norm_le_one _)
-        (discExpansionScaledRow κ j ht u)
+      TauCeti.PowerSeries.compNullSeq ℤ_[p] (isRestricted_rescale_deepLogSeries j u⁻¹)
+        (fun _ ↦ PadicInt.norm_le_one _) (discExpansionScaledRow κ j ht u)
     else 0
 
 private theorem discExpansion_apply_of_isUnit_eq_compNullSeq (κ : WeightSpace p R) (j : ℕ)
@@ -315,30 +298,22 @@ private theorem discExpansion_apply_of_isUnit_eq_compNullSeq (κ : WeightSpace p
     {a : ZMod (p ^ (padicUnitsDepth p + j))} (ha : IsUnit a) (m : ℕ) :
     let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
     κ.discExpansion j ht (a, m) =
-      TauCeti.PowerSeries.compNullSeq ℤ_[p]
-        (isRestricted_rescale_deepLogSeries j u⁻¹)
-        (fun _ ↦ PadicInt.norm_le_one _)
-        (discExpansionScaledRow κ j ht u) m := by
+      TauCeti.PowerSeries.compNullSeq ℤ_[p] (isRestricted_rescale_deepLogSeries j u⁻¹)
+        (fun _ ↦ PadicInt.norm_le_one _) (discExpansionScaledRow κ j ht u) m := by
   simp [discExpansion, ha]
 
 /-- **Expansion of a weight from its coordinate bound.** For `‖κ.coord‖ < amiceRadius p j`, the
 expansion of `κ.zeroExtend` in `AnalyticStage p (padicUnitsDepth p + j) R` obtained from
 `WeightSpace.discExpansion`. -/
 noncomputable def discExpansionOfCoord (κ : WeightSpace p R) (j : ℕ)
-    (hT : ‖κ.coord‖ < amiceRadius p j) :
-    AnalyticStage p (padicUnitsDepth p + j) R :=
-  κ.discExpansion j <| by
-    rw [apply_padicUnitsGenerator_pow]
-    exact norm_one_add_pow_sub_one_lt_of_norm_lt hT
+    (hT : ‖κ.coord‖ < amiceRadius p j) : AnalyticStage p (padicUnitsDepth p + j) R :=
+  κ.discExpansion j (by
+    rw [apply_padicUnitsGenerator_pow]; exact norm_one_add_pow_sub_one_lt_of_norm_lt hT)
 
-@[simp]
-theorem discExpansionOfCoord_eq_discExpansion (κ : WeightSpace p R) (j : ℕ)
+@[simp] theorem discExpansionOfCoord_eq_discExpansion (κ : WeightSpace p R) (j : ℕ)
     (hT : ‖κ.coord‖ < amiceRadius p j) :
-    κ.discExpansionOfCoord j hT =
-      κ.discExpansion j (by
-        rw [apply_padicUnitsGenerator_pow]
-        exact norm_one_add_pow_sub_one_lt_of_norm_lt hT) :=
-  (rfl)
+    κ.discExpansionOfCoord j hT = κ.discExpansion j (by
+      rw [apply_padicUnitsGenerator_pow]; exact norm_one_add_pow_sub_one_lt_of_norm_lt hT) := by rfl
 
 /-- On every unit residue class `a`, the `m`-th coefficient of `κ.discExpansion` is the pullback
 along `rescale u_a⁻¹ (deepLogSeries (padicUnitsDepth_add_ne_zero p j))` of
@@ -348,24 +323,20 @@ theorem discExpansion_apply_of_isUnit (κ : WeightSpace p R) (j : ℕ)
     {a : ZMod (p ^ (padicUnitsDepth p + j))} (ha : IsUnit a) (m : ℕ) :
     let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
     κ.discExpansion j ht (a, m) =
-      ∑' n, PowerSeries.coeff m
-          (PowerSeries.rescale (↑u⁻¹ : ℤ_[p])
-            (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j)) ^ n) •
-        ((κ u : R) *
-          AnalyticStage.addCharExpansion p 0
-            ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht (0, n)) := by
+      ∑' n, PowerSeries.coeff m (PowerSeries.rescale (↑u⁻¹ : ℤ_[p])
+          (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j)) ^ n) •
+        ((κ u : R) * AnalyticStage.addCharExpansion p 0
+          ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht (0, n)) := by
   intro u
   rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha m,
     TauCeti.PowerSeries.compNullSeq_apply]
   simp [u]
 
 /-- On every non-unit residue class `a`, all coefficients of `κ.discExpansion` vanish. -/
-@[simp]
-theorem discExpansion_apply_of_not_isUnit (κ : WeightSpace p R) (j : ℕ)
+@[simp] theorem discExpansion_apply_of_not_isUnit (κ : WeightSpace p R) (j : ℕ)
     (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0)
     {a : ZMod (p ^ (padicUnitsDepth p + j))} (ha : ¬IsUnit a) (m : ℕ) :
-    κ.discExpansion j ht (a, m) = 0 := by
-  simp [discExpansion, ha]
+    κ.discExpansion j ht (a, m) = 0 := by simp [discExpansion, ha]
 
 /-- On every unit residue class `a`, the constant coefficient of `κ.discExpansion` is the value of
 `κ` at the natural unit representative `a.val` of `a`. -/
@@ -374,40 +345,31 @@ theorem discExpansion_apply_zero_of_isUnit (κ : WeightSpace p R) (j : ℕ)
     {a : ZMod (p ^ (padicUnitsDepth p + j))} (ha : IsUnit a) :
     κ.discExpansion j ht (a, 0) =
       κ ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit := by
-  have hg0 : PowerSeries.constantCoeff
-      (PowerSeries.rescale
-        (↑(((PadicInt.isUnit_natCast_val_iff
-          (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit)⁻¹ : ℤ_[p])
-        (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j))) = 0 := by
-    rw [PowerSeries.constantCoeff_rescale, constantCoeff_deepLogSeries]
-  have hval0 : (0 : ZMod (p ^ 0)).val = 0 := by
-    rw [pow_zero]
-    simp
+  have hg0 : ∀ z : ℤ_[p], PowerSeries.constantCoeff
+      (PowerSeries.rescale z (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j))) = 0 :=
+    fun _ ↦ by rw [PowerSeries.constantCoeff_rescale, constantCoeff_deepLogSeries]
+  have hval0 : (0 : ZMod (p ^ 0)).val = 0 := by rw [pow_zero]; simp
   rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha 0,
-    TauCeti.PowerSeries.compNullSeq_apply_zero_of_constantCoeff_eq_zero ℤ_[p] _ _ hg0,
+    TauCeti.PowerSeries.compNullSeq_apply_zero_of_constantCoeff_eq_zero ℤ_[p] _ _ (hg0 _),
     discExpansionScaledRow_apply, AnalyticStage.addCharExpansion_apply_zero, hval0, pow_zero,
     mul_one]
 
 /-- On every residue class `a`, the constant coefficient of `κ.discExpansion` is
 `κ.zeroExtend a.val` (equal to `κ(u_a)` on unit discs and `0` on non-unit discs). -/
-@[simp]
-theorem discExpansion_apply_zero (κ : WeightSpace p R) (j : ℕ)
+@[simp] theorem discExpansion_apply_zero (κ : WeightSpace p R) (j : ℕ)
     (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0)
     (a : ZMod (p ^ (padicUnitsDepth p + j))) :
     κ.discExpansion j ht (a, 0) = κ.zeroExtend (a.val : ℤ_[p]) := by
   by_cases ha : IsUnit a
-  · have hau : IsUnit (a.val : ℤ_[p]) :=
-      (PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha
-    rw [discExpansion_apply_zero_of_isUnit κ j ht ha, zeroExtend_apply_of_isUnit κ hau]
+  · rw [discExpansion_apply_zero_of_isUnit κ j ht ha, zeroExtend_apply_of_isUnit κ
+      ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha)]
   · have hanu : ¬IsUnit (a.val : ℤ_[p]) := by
       rwa [PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j)]
     rw [discExpansion_apply_of_not_isUnit κ j ht ha 0, zeroExtend_apply_of_not_isUnit κ hanu]
 
 /-- **Evaluation of `discExpansion`.** Over any complete ultrametric Banach algebra `R` over `ℤ_p`
-and `ℚ_p`, `κ.discExpansion j ht` evaluates to the continuous zero-extension `κ.zeroExtend` on
-`ℤ_p`. -/
-@[simp]
-theorem eval_discExpansion (S : Type*) [Semiring S] [Module S R] [ContinuousConstSMul S R]
+and `ℚ_p`, `κ.discExpansion j ht` evaluates to `κ.zeroExtend` on `ℤ_p`. -/
+@[simp] theorem eval_discExpansion (S : Type*) [Semiring S] [Module S R] [ContinuousConstSMul S R]
     [SMulCommClass ℤ_[p] S R] (κ : WeightSpace p R) (j : ℕ)
     (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0) :
     AnalyticStage.eval S (κ.discExpansion j ht) = κ.zeroExtend := by
@@ -417,25 +379,21 @@ theorem eval_discExpansion (S : Type*) [Semiring S] [Module S R] [ContinuousCons
   rw [PadicInt.discHomeomorph_apply, AnalyticStage.eval_natCast_val_add_mul]
   by_cases ha : IsUnit a
   · let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
-    let t := (κ (padicUnitsGenerator p ^ p ^ j) : R) - 1
-    let c₀ := AnalyticStage.addCharExpansion p 0 t ht
+    let c₀ := AnalyticStage.addCharExpansion p 0 ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht
     simp_rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha]
     rw [TauCeti.PowerSeries.tsum_pow_smul_compNullSeq ℤ_[p] _ _ _ (PadicInt.norm_le_one w)]
     let z := (PowerSeries.rescale (↑u⁻¹ : ℤ_[p])
       (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j))).evalAt w
-    have h0z : ((0 : ZMod (p ^ 0)).val : ℤ_[p]) + (p : ℤ_[p]) ^ 0 * z = z := by
-      rw [pow_zero]
-      simp
+    have h0z : ((0 : ZMod (p ^ 0)).val : ℤ_[p]) + (p : ℤ_[p]) ^ 0 * z = z := by rw [pow_zero]; simp
     have hsum_c₀ : HasSum (fun n ↦ z ^ n • c₀ (0, n)) (AnalyticStage.eval ℤ_[p] c₀ z) := by
       simpa only [h0z] using AnalyticStage.hasSum_eval_natCast_val_add_mul ℤ_[p] c₀ 0 z
     have hmul_sum : (∑' n, z ^ n • discExpansionScaledRow κ j ht u n) =
-        (κ u : R) * AnalyticStage.eval ℤ_[p] c₀ z := by
-      refine ((hsum_c₀.mul_left (κ u : R)).congr_fun fun n ↦ ?_).tsum_eq
-      rw [discExpansionScaledRow_apply, mul_smul_comm]
+        (κ u : R) * AnalyticStage.eval ℤ_[p] c₀ z :=
+      ((hsum_c₀.mul_left (κ u : R)).congr_fun fun n ↦ by
+        rw [discExpansionScaledRow_apply, mul_smul_comm]).tsum_eq
     rw [hmul_sum, AnalyticStage.eval_addCharExpansion ℤ_[p] ht
       (tendsto_apply_padicUnitsGenerator_pow_sub_one_pow κ j),
-      ← principalChar_pow_mul_eq_addChar,
-      zeroExtend_natCast_val_add_mul_of_isUnit κ j ha w]
+      ← principalChar_pow_mul_eq_addChar, zeroExtend_natCast_val_add_mul_of_isUnit κ j ha w]
     simp only [z, PowerSeries.evalAt_rescale, smul_eq_mul, u]
   · have hnu : ¬IsUnit ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) := by
       rwa [PadicInt.isUnit_natCast_val_add_mul_iff (padicUnitsDepth_add_ne_zero p j)]
@@ -451,17 +409,14 @@ theorem norm_discExpansion_apply_le_of_ne_zero (κ : WeightSpace p R) (j : ℕ)
     ‖κ.discExpansion j ht (a, m)‖ ≤
       ‖(κ u : R)‖ * (‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ / amiceRadius p 0) := by
   intro u
-  let t := (κ (padicUnitsGenerator p ^ p ^ j) : R) - 1
-  have hr0 : 0 < amiceRadius p 0 := amiceRadius_pos 0
-  have hB0 : 0 ≤ ‖(κ u : R)‖ * (‖t‖ / amiceRadius p 0) :=
-    mul_nonneg (norm_nonneg _) (div_nonneg (norm_nonneg t) hr0.le)
+  have hB0 : 0 ≤ ‖(κ u : R)‖ *
+      (‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ / amiceRadius p 0) :=
+    mul_nonneg (norm_nonneg _) (div_nonneg (norm_nonneg _) (amiceRadius_pos 0).le)
   rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha m]
-  refine TauCeti.PowerSeries.norm_compNullSeq_apply_le_of_ne_zero ℤ_[p] _ _ hB0
-    (fun n hn ↦ ?_) hm
+  refine TauCeti.PowerSeries.norm_compNullSeq_apply_le_of_ne_zero ℤ_[p] _ _ hB0 (fun n hn ↦ ?_) hm
   rw [discExpansionScaledRow_apply]
-  refine (norm_mul_le _ _).trans ?_
-  exact mul_le_mul_of_nonneg_left
-    (AnalyticStage.norm_addCharExpansion_apply_le_of_ne_zero ht 0 hn) (norm_nonneg _)
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left
+    (AnalyticStage.norm_addCharExpansion_apply_le_of_ne_zero ht 0 hn) (norm_nonneg _))
 
 /-- **Gauss norm on unit discs.** Over any complete ultrametric Banach algebra `R`, on each unit
 disc `a` the largest coefficient norm of `κ.discExpansion j ht` is `‖κ(u_a)‖`, attained at degree
@@ -473,31 +428,24 @@ theorem isGreatest_norm_discExpansion_of_isUnit (κ : WeightSpace p R) (j : ℕ)
     IsGreatest (Set.range fun m ↦ ‖κ.discExpansion j ht (a, m)‖) ‖(κ u : R)‖ := by
   intro u
   refine ⟨⟨0, by dsimp only; rw [discExpansion_apply_zero_of_isUnit κ j ht ha]⟩, ?_⟩
-  rintro _ ⟨m, rfl⟩
-  dsimp only
+  rintro _ ⟨m, rfl⟩; dsimp only
   rcases eq_or_ne m 0 with rfl | hm
   · rw [discExpansion_apply_zero_of_isUnit κ j ht ha]
-  · have h1 : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ / amiceRadius p 0 ≤ 1 :=
-      (div_le_one (amiceRadius_pos 0)).mpr ht.le
-    exact (norm_discExpansion_apply_le_of_ne_zero κ j ht ha hm).trans
-      (mul_le_of_le_one_right (norm_nonneg _) h1)
+  · exact (norm_discExpansion_apply_le_of_ne_zero κ j ht ha hm).trans
+      (mul_le_of_le_one_right (norm_nonneg _) ((div_le_one (amiceRadius_pos 0)).mpr ht.le))
 
 /-- **Exact stage norm of `discExpansion`.** Over any complete ultrametric Banach algebra `R`, the
 analytic-stage norm of `κ.discExpansion j ht` equals the supremum norm `‖κ.zeroExtend‖`. -/
-@[simp]
-theorem norm_discExpansion (κ : WeightSpace p R) (j : ℕ)
+@[simp] theorem norm_discExpansion (κ : WeightSpace p R) (j : ℕ)
     (ht : ‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0) :
     ‖κ.discExpansion j ht‖ = ‖κ.zeroExtend‖ := by
   refine le_antisymm ((ZeroAtInftyContinuousMap.norm_le (norm_nonneg _)).mpr fun ⟨a, m⟩ ↦ ?_) ?_
   · by_cases ha : IsUnit a
-    · let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
-      have hle : ‖κ.discExpansion j ht (a, m)‖ ≤ ‖(κ u : R)‖ :=
-        (isGreatest_norm_discExpansion_of_isUnit κ j ht ha).2 ⟨m, rfl⟩
-      exact hle.trans (by
-        simpa only [zeroExtend_coe_unit] using ContinuousMap.norm_coe_le_norm κ.zeroExtend u)
+    · exact ((isGreatest_norm_discExpansion_of_isUnit κ j ht ha).2 ⟨m, rfl⟩).trans <| by
+        simpa only [zeroExtend_coe_unit] using ContinuousMap.norm_coe_le_norm κ.zeroExtend
+          ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
     · simp [ha]
-  · rw [← eval_discExpansion ℤ_[p] κ j ht]
-    exact AnalyticStage.norm_eval_le ℤ_[p] _
+  · rw [← eval_discExpansion ℤ_[p] κ j ht]; exact AnalyticStage.norm_eval_le ℤ_[p] _
 
 end DiscExpansion
 
@@ -543,10 +491,9 @@ theorem exists_norm_eq_one_and_eval_eq_zeroExtend_of_norm_coord_lt (κ : WeightS
 complete normed field over `ℚ_p`) is analytic on the discs of `ℤ_p` at all large levels**, realized
 by a coefficient vector of norm `1`. -/
 theorem eventually_exists_eval_eq_zeroExtend (κ : WeightSpace p K) :
-    ∀ᶠ h in atTop,
-      ∃ f : AnalyticStage p h K, ‖f‖ = 1 ∧ AnalyticStage.eval S f = κ.zeroExtend := by
-  have hlim := (tendsto_amiceRadius (p := p)).eventually (lt_mem_nhds (norm_coord_lt_one κ))
-  obtain ⟨J, hJ⟩ := eventually_atTop.mp hlim
+    ∀ᶠ h in atTop, ∃ f : AnalyticStage p h K, ‖f‖ = 1 ∧ AnalyticStage.eval S f = κ.zeroExtend := by
+  obtain ⟨J, hJ⟩ := eventually_atTop.mp <|
+    (tendsto_amiceRadius (p := p)).eventually (lt_mem_nhds (norm_coord_lt_one κ))
   refine eventually_atTop.mpr ⟨padicUnitsDepth p + J, fun h hh ↦ ?_⟩
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le ((Nat.le_add_right _ J).trans hh)
   exact exists_norm_eq_one_and_eval_eq_zeroExtend_of_norm_coord_lt S κ (hJ j (by omega))
@@ -578,12 +525,11 @@ theorem norm_coord_lt_amiceRadius_of_eval_one_add_pow_mul (κ : WeightSpace p K)
   let h := padicUnitsDepth p + j
   have hh := one_lt_sub_one_mul_padicUnitsDepth_add (p := p) j
   have h1val : ((1 : ZMod (p ^ h)).val : ℤ_[p]) = 1 := by
-    have hgt : 1 < p ^ h := Nat.one_lt_pow (padicUnitsDepth_add_ne_zero p j) hp.out.one_lt
-    rw [ZMod.val_one'' hgt.ne', Nat.cast_one]
+    rw [ZMod.val_one'' (Nat.one_lt_pow (padicUnitsDepth_add_ne_zero p j) hp.out.one_lt).ne',
+      Nat.cast_one]
   let row₁ : C₀(ℕ, K) := AnalyticStage.rowsEquiv p ℤ_[p] h f 1
-  let c₀ : C₀(ℕ, K) :=
-    TauCeti.PowerSeries.compNullSeq ℤ_[p]
-      (isRestricted_deepExpSeries hh) (fun _ ↦ PadicInt.norm_le_one _) row₁
+  let c₀ : C₀(ℕ, K) := TauCeti.PowerSeries.compNullSeq ℤ_[p]
+    (isRestricted_deepExpSeries hh) (fun _ ↦ PadicInt.norm_le_one _) row₁
   let f₀ : AnalyticStage p 0 K := (AnalyticStage.levelZeroEquiv p ℤ_[p]).symm c₀
   have hf₀ : ⇑(AnalyticStage.eval ℤ_[p] f₀) =
       PadicInt.addChar_of_value_at_one ((κ (padicUnitsGenerator p ^ p ^ j) : K) - 1)
@@ -592,17 +538,14 @@ theorem norm_coord_lt_amiceRadius_of_eval_one_add_pow_mul (κ : WeightSpace p K)
     rw [AnalyticStage.eval_levelZeroEquiv_symm_apply,
       TauCeti.PowerSeries.tsum_pow_smul_compNullSeq ℤ_[p] _ _ _ (PadicInt.norm_le_one s)]
     let w := (deepExpSeries hh).evalAt s
-    have hev₁ : (∑' n, w ^ n • row₁ n) =
-        AnalyticStage.eval S f (1 + (p : ℤ_[p]) ^ h * w) := by
+    have hev₁ : (∑' n, w ^ n • row₁ n) = AnalyticStage.eval S f (1 + (p : ℤ_[p]) ^ h * w) := by
       rw [← h1val, AnalyticStage.eval_natCast_val_add_mul]
       exact tsum_congr fun n ↦ by rw [AnalyticStage.rowsEquiv_apply]
     have hexp_unit : 1 + (p : ℤ_[p]) ^ h * w =
         (((unitsPrincipalLogEquiv p).symm (.ofAdd ((p : ℤ_[p]) ^ j * s)) : ℤ_[p]ˣ) : ℤ_[p]) := by
       apply PadicInt.ext
-      rw [coe_unitsPrincipalLogEquiv_symm_apply, toAdd_ofAdd]
-      push_cast
-      rw [← mul_assoc, ← pow_add]
-      exact one_add_pow_mul_coe_evalAt_deepExpSeries hh s
+      rw [coe_unitsPrincipalLogEquiv_symm_apply, toAdd_ofAdd]; push_cast
+      rw [← mul_assoc, ← pow_add]; exact one_add_pow_mul_coe_evalAt_deepExpSeries hh s
     rw [hev₁, hf w, hexp_unit, zeroExtend_coe_unit, ← principalChar_apply,
       principalChar_pow_mul_eq_addChar]
   rw [← norm_apply_padicUnitsGenerator_pow_sub_one_lt_iff]
@@ -624,8 +567,7 @@ multiplicative ultrametric norm, `κ.zeroExtend` lies in the image of
 `AnalyticStage p (padicUnitsDepth p + j) K` if and only if
 `‖κ(γ ^ (p ^ j)) - 1‖ < amiceRadius p 0`. -/
 theorem exists_eval_eq_zeroExtend_iff_norm_sub_one_lt (κ : WeightSpace p K) {j : ℕ} :
-    (∃ f : AnalyticStage p (padicUnitsDepth p + j) K,
-      AnalyticStage.eval S f = κ.zeroExtend) ↔
+    (∃ f : AnalyticStage p (padicUnitsDepth p + j) K, AnalyticStage.eval S f = κ.zeroExtend) ↔
       ‖(κ (padicUnitsGenerator p ^ p ^ j) : K) - 1‖ < amiceRadius p 0 := by
   rw [exists_eval_eq_zeroExtend_iff S, norm_apply_padicUnitsGenerator_pow_sub_one_lt_iff]
 
@@ -675,49 +617,43 @@ theorem exists_eval_eq_zeroExtend_inclusion_zpow_mul {K : Type*} [NormedCommRing
     ∃ f : AnalyticStage p h K,
       ‖f‖ = 1 ∧ AnalyticStage.eval S f = (inclusion (p := p) K ^ m * ψ).zeroExtend := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le ((le_max_right M (padicUnitsDepth p)).trans hh)
-  have hM : M ≤ padicUnitsDepth p + j := (le_max_left M (padicUnitsDepth p)).trans hh
   have hψ' : unitsPrincipal p (padicUnitsDepth p + j) ≤ ψ.toMonoidHom.ker :=
-    (unitsPrincipal_antitone p hM).trans hψ
+    (unitsPrincipal_antitone p ((le_max_left M (padicUnitsDepth p)).trans hh)).trans hψ
   have ht := norm_apply_inclusion_zpow_mul_padicUnitsGenerator_pow_sub_one_lt m hψ'
   exact ⟨(inclusion (p := p) K ^ m * ψ).discExpansion j ht,
     norm_discExpansion_eq_one _ j ht, by simp⟩
 
--- Binomial polynomial stage `(a, m) ↦ (n choose m) a.val^(n - m) p^(h m)` on unit discs.
-private noncomputable def binomialPolyStage {R : Type*} [NormedCommRing R]
-    [NormedAlgebra ℚ_[p] R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] (n h : ℕ) :
+section BinomialPoly
+
+variable {R : Type*} [NormedCommRing R] [NormedAlgebra ℚ_[p] R] [Algebra ℤ_[p] R]
+  [IsBoundedSMul ℤ_[p] R]
+
+private noncomputable def binomialPolyStage (n h : ℕ) :
     AnalyticStage.polynomialSubmodule (p := p) (h := h) (E := R) ℤ_[p] n :=
   have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
   (AnalyticStage.polynomialEquiv (p := p) (h := h) (E := R) ℤ_[p] n).symm fun i ↦
-    if IsUnit i.1 then
-      padicIntAlgebraMap p R
-        ((n.choose i.2 : ℤ_[p]) * (i.1.val : ℤ_[p]) ^ (n - i.2) *
-          (p : ℤ_[p]) ^ (h * i.2))
+    if IsUnit i.1 then padicIntAlgebraMap p R
+      ((n.choose i.2 : ℤ_[p]) * (i.1.val : ℤ_[p]) ^ (n - i.2) * (p : ℤ_[p]) ^ (h * i.2))
     else 0
 
-private theorem binomialPolyStage_apply_of_isUnit {R : Type*} [NormedCommRing R]
-    [NormedAlgebra ℚ_[p] R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] (n h : ℕ)
-    {a : ZMod (p ^ h)} (ha : IsUnit a) (m : ℕ) :
-    (binomialPolyStage (p := p) (R := R) n h).val (a, m) =
-      padicIntAlgebraMap p R
-        ((n.choose m : ℤ_[p]) * (a.val : ℤ_[p]) ^ (n - m) *
-          (p : ℤ_[p]) ^ (h * m)) := by
+private theorem binomialPolyStage_apply_of_isUnit (n h : ℕ) {a : ZMod (p ^ h)} (ha : IsUnit a)
+    (m : ℕ) :
+    (binomialPolyStage (p := p) (R := R) n h).val (a, m) = padicIntAlgebraMap p R
+      ((n.choose m : ℤ_[p]) * (a.val : ℤ_[p]) ^ (n - m) * (p : ℤ_[p]) ^ (h * m)) := by
   have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
   rw [binomialPolyStage, AnalyticStage.polynomialEquiv_symm_apply]
   split_ifs with hm
   · simp
   · simp [Nat.choose_eq_zero_of_lt (lt_of_not_ge hm)]
 
-private theorem binomialPolyStage_apply_of_not_isUnit {R : Type*} [NormedCommRing R]
-    [NormedAlgebra ℚ_[p] R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] (n h : ℕ)
-    {a : ZMod (p ^ h)} (ha : ¬IsUnit a) (m : ℕ) :
-    (binomialPolyStage (p := p) (R := R) n h).val (a, m) = 0 := by
+private theorem binomialPolyStage_apply_of_not_isUnit (n h : ℕ) {a : ZMod (p ^ h)} (ha : ¬IsUnit a)
+    (m : ℕ) : (binomialPolyStage (p := p) (R := R) n h).val (a, m) = 0 := by
   have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
-  rw [binomialPolyStage, AnalyticStage.polynomialEquiv_symm_apply]
-  split_ifs <;> simp
+  rw [binomialPolyStage, AnalyticStage.polynomialEquiv_symm_apply]; split_ifs <;> simp
 
-private theorem eval_binomialPolyStage {R : Type*} [NormedCommRing R]
-    [NormedAlgebra ℚ_[p] R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
-    [IsUltrametricDist R] [CompleteSpace R] (n : ℕ) {h : ℕ} (hh : h ≠ 0) :
+variable [IsUltrametricDist R] [CompleteSpace R]
+
+private theorem eval_binomialPolyStage (n : ℕ) {h : ℕ} (hh : h ≠ 0) :
     AnalyticStage.eval ℤ_[p] (binomialPolyStage (p := p) (R := R) n h).val =
       (inclusion (p := p) R ^ n).zeroExtend := by
   ext x
@@ -731,9 +667,7 @@ private theorem eval_binomialPolyStage {R : Type*} [NormedCommRing R]
     refine Finset.sum_congr rfl fun l _ ↦ ?_
     rw [binomialPolyStage_apply_of_isUnit n h hb l, Algebra.smul_def,
       algebraMap_padicInt_eq_padicIntAlgebraMap, ← map_mul]
-    congr 1
-    rw [mul_pow, ← pow_mul]
-    ring
+    congr 1; rw [mul_pow, ← pow_mul]; ring
   · have hbnu : ¬IsUnit ((b.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) := by
       rwa [PadicInt.isUnit_natCast_val_add_mul_iff hh]
     simp only [binomialPolyStage_apply_of_not_isUnit n h hb, smul_zero, Finset.sum_const_zero]
@@ -743,21 +677,20 @@ private theorem eval_binomialPolyStage {R : Type*} [NormedCommRing R]
 Banach `ℚ_p`-algebras.** On every unit disc `a + p ^ (k + j) ℤ_p`, `discExpansion` of
 `inclusion R ^ n` has the exact binomial polynomial coefficients
 `(n choose m) a.val ^ (n - m) p ^ ((k + j) m)` (which vanish for `n < m`). -/
-theorem discExpansion_inclusion_pow_apply {R : Type*} [NormedCommRing R] [NormedAlgebra ℚ_[p] R]
-    [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
-    (n j : ℕ)
+theorem discExpansion_inclusion_pow_apply (n j : ℕ)
     (ht :
       ‖((inclusion (p := p) R ^ n) (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ < amiceRadius p 0)
     {a : ZMod (p ^ (padicUnitsDepth p + j))} (ha : IsUnit a) (m : ℕ) :
     (inclusion (p := p) R ^ n).discExpansion j ht (a, m) =
-      padicIntAlgebraMap p R
-        ((n.choose m : ℤ_[p]) * (a.val : ℤ_[p]) ^ (n - m) *
-          (p : ℤ_[p]) ^ ((padicUnitsDepth p + j) * m)) := by
+      padicIntAlgebraMap p R ((n.choose m : ℤ_[p]) * (a.val : ℤ_[p]) ^ (n - m) *
+        (p : ℤ_[p]) ^ ((padicUnitsDepth p + j) * m)) := by
   have heq : (inclusion (p := p) R ^ n).discExpansion j ht =
       (binomialPolyStage (p := p) (R := R) n (padicUnitsDepth p + j)).val :=
     AnalyticStage.eval_injective ℤ_[p] isSMulRegular_padicInt_prime <| by
       rw [eval_discExpansion, eval_binomialPolyStage n (padicUnitsDepth_add_ne_zero p j)]
   rw [heq, binomialPolyStage_apply_of_isUnit n _ ha m]
+
+end BinomialPoly
 
 end LocallyAlgebraic
 
@@ -787,9 +720,8 @@ theorem discExpansionOfCoord_inclusion_pow_apply (n j : ℕ)
       norm_coord_inclusion_pow_lt_amiceRadius n j)
     {a : ZMod (p ^ (padicUnitsDepth p + j))} (ha : IsUnit a) (m : ℕ) :
     (inclusion (p := p) K ^ n).discExpansionOfCoord j hT (a, m) =
-      padicIntAlgebraMap p K
-        ((n.choose m : ℤ_[p]) * (a.val : ℤ_[p]) ^ (n - m) *
-          (p : ℤ_[p]) ^ ((padicUnitsDepth p + j) * m)) := by
+      padicIntAlgebraMap p K ((n.choose m : ℤ_[p]) * (a.val : ℤ_[p]) ^ (n - m) *
+        (p : ℤ_[p]) ^ ((padicUnitsDepth p + j) * m)) := by
   simp [discExpansion_inclusion_pow_apply, ha]
 
 end Field
