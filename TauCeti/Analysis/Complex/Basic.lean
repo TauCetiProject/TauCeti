@@ -33,6 +33,9 @@ When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number'
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal.
+
+The canonical embedding of an `RCLike` field into `ℂ` is bundled as
+`TauCeti.toComplexStarAlgHom`, so real star-algebra constructions can be transported to `ℂ`.
 -/
 
 public section
@@ -60,6 +63,28 @@ theorem Complex.norm_one_add_sub_conj_mul_inv_ofReal_sub (z : ℂ) (r : ℝ) :
   rw [heq, norm_div, hnorm, div_self (norm_ne_zero_iff.mpr hne)]
 
 namespace TauCeti
+
+/-- The canonical real star-algebra embedding of an `RCLike` field into `ℂ`. -/
+noncomputable def toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] : 𝕜 →⋆ₐ[ℝ] ℂ where
+  toFun x := (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I
+  map_zero' := by simp
+  map_one' := by simp
+  map_add' := by intros; simp only [map_add, Complex.ofReal_add]; ring
+  map_mul' := by
+    intro x y
+    simp only [RCLike.mul_re, RCLike.mul_im, Complex.ofReal_sub, Complex.ofReal_mul,
+      Complex.ofReal_add]
+    ring_nf
+    rw [Complex.I_sq]
+    ring
+  commutes' := by intro r; simp
+  map_star' := by intro x; simp [RCLike.star_def, mul_comm]
+
+/-- The canonical complex embedding sends a scalar to its real and imaginary components. -/
+@[simp]
+theorem toComplexStarAlgHom_apply {𝕜 : Type*} [RCLike 𝕜] (x : 𝕜) :
+    toComplexStarAlgHom 𝕜 x = (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I :=
+  (rfl)
 
 open ComplexConjugate Metric
 

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Analysis.Matrix.Resolvent.RankBound
 public import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
+public import TauCeti.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.WeakConvergence
 
 /-!
@@ -36,78 +38,39 @@ namespace Matrix
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [Nonempty n] [RCLike 𝕜]
 
-/-- For `0 ≤ ε` and nonreal `z`, adding a real diagonal `d` changes the empirical spectral
-transform at `z` by at most `ε / |z.im| ^ 2` plus the number of entries exceeding `ε` in
-absolute value divided by `Fintype.card n * |z.im|`. -/
-theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le
-    (A : Matrix n n 𝕜) (hA : A.IsHermitian) (d : n → ℝ)
+/-- The complex case, where the operator-norm and rank resolvent estimates apply directly. -/
+private theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le_complex
+    (B : Matrix n n ℂ) (hB : B.IsHermitian) (d : n → ℝ)
     {ε : ℝ} (hε : 0 ≤ ε) {z : ℂ} (hz : z.im ≠ 0) :
-    ‖resolventTransform ((A + diagonal (fun i ↦ (d i : 𝕜))).spectralMeasure
-          (hA.add (by simp [isHermitian_diagonal_iff, isSelfAdjoint_iff])) : Measure ℝ) z -
-        resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ ≤
+    ‖resolventTransform ((B + diagonal (fun i ↦ (d i : ℂ))).spectralMeasure
+          (hB.add (isHermitian_diagonal_ofReal d)) : Measure ℝ) z -
+        resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ ≤
       ε / |z.im| ^ 2 +
         ((Finset.univ.filter fun i ↦ ε < |d i|).card : ℝ) /
           ((Fintype.card n : ℝ) * |z.im|) := by
   classical
-  -- Transfer to complex matrices, retaining the real eigenvalue measure.
-  let f : 𝕜 →⋆ₐ[ℝ] ℂ := {
-    toFun := fun x ↦ (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I
-    map_zero' := by simp
-    map_one' := by simp
-    map_add' := by intros; simp only [map_add, Complex.ofReal_add]; ring
-    map_mul' := by
-      intro x y
-      simp only [RCLike.mul_re, RCLike.mul_im, Complex.ofReal_sub, Complex.ofReal_mul,
-        Complex.ofReal_add]
-      ring_nf
-      rw [Complex.I_sq]
-      ring
-    commutes' := by intro r; simp
-    map_star' := by intro x; simp [RCLike.star_def, mul_comm] }
-  let B := A.map f
-  have hB : B.IsHermitian := hA.map f (map_star f)
-  have hf (r : ℝ) : f (r : 𝕜) = (r : ℂ) := f.commutes r
-  have hmap : (A + diagonal (fun i ↦ (d i : 𝕜))).map f =
-      B + diagonal (fun i ↦ (d i : ℂ)) := by
-    ext i j
-    by_cases hij : i = j <;> simp [B, hij, map_add, hf]
-  rw [← spectralMeasure_map A hA f,
-    ← spectralMeasure_map (A + diagonal (fun i ↦ (d i : 𝕜))) _ f]
-  simp only [hmap]
   -- Separate the diagonal into small entries and the sparse remainder.
-  let s : n → ℂ := fun i ↦ if |d i| ≤ ε then (d i : ℂ) else 0
-  let t : n → ℂ := fun i ↦ if |d i| ≤ ε then 0 else (d i : ℂ)
-  have hs : (diagonal s).IsHermitian := by
-    apply isHermitian_diagonal_iff.2
-    intro i
-    dsimp [s]
-    split_ifs <;> simp [isSelfAdjoint_iff]
-  have ht : (diagonal t).IsHermitian := by
-    apply isHermitian_diagonal_iff.2
-    intro i
-    dsimp [t]
-    split_ifs <;> simp [isSelfAdjoint_iff]
-  have hsplit : B + diagonal (fun i ↦ (d i : ℂ)) = (B + diagonal s) + diagonal t := by
+  let s : n → ℝ := fun i ↦ if |d i| ≤ ε then d i else 0
+  let t : n → ℝ := fun i ↦ if |d i| ≤ ε then 0 else d i
+  let S := diagonal (fun i ↦ (s i : ℂ))
+  let T := diagonal (fun i ↦ (t i : ℂ))
+  have hs : S.IsHermitian := isHermitian_diagonal_ofReal s
+  have ht : T.IsHermitian := isHermitian_diagonal_ofReal t
+  have hsplit : B + diagonal (fun i ↦ (d i : ℂ)) = (B + S) + T := by
     rw [add_assoc, diagonal_add]
     congr 2
     ext i
-    dsimp [s, t]
-    split_ifs <;> simp
-  have hnorm : ‖diagonal s‖ ≤ ε := by
+    by_cases hi : |d i| ≤ ε <;> simp [s, t, hi]
+  have hnorm : ‖S‖ ≤ ε := by
     rw [l2_opNorm_diagonal]
     apply (pi_norm_le_iff_of_nonneg hε).2
     intro i
-    dsimp [s]
-    split_ifs with hi
-    · simpa only [Complex.norm_real, Real.norm_eq_abs] using hi
-    · simpa using hε
-  have hrank : (diagonal t).rank ≤ (Finset.univ.filter fun i ↦ ε < |d i|).card := by
+    by_cases hi : |d i| ≤ ε <;> simp [s, hi, Real.norm_eq_abs, hε]
+  have hrank : T.rank ≤ (Finset.univ.filter fun i ↦ ε < |d i|).card := by
     rw [rank_diagonal, Fintype.card_subtype]
     apply Finset.card_le_card
-    intro i hi
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
-    by_contra! h
-    exact hi (by simp [t, h])
+    intro i
+    by_cases hi : ε < |d i| <;> simp [t, ← not_lt, hi]
   -- The two resolvent estimates control these parts independently of the ambient matrix.
   simp only [hsplit]
   have hsmall := norm_resolventTransform_spectralMeasure_sub_le_matrix
@@ -115,19 +78,39 @@ theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le
   have hlarge := (hB.add hs |>.add ht).norm_resolventTransform_spectralMeasure_sub_le_rank
     (hB.add hs) hz
   simp only [add_sub_cancel_left, norm_neg, sub_add_cancel_left] at hsmall hlarge
+  refine (norm_sub_le_norm_sub_add_norm_sub _
+    (resolventTransform ((B + S).spectralMeasure (hB.add hs) : Measure ℝ) z) _).trans ?_
   calc
-    _ ≤ ‖resolventTransform (((B + diagonal s) + diagonal t).spectralMeasure
-            ((hB.add hs).add ht) : Measure ℝ) z -
-          resolventTransform ((B + diagonal s).spectralMeasure (hB.add hs) : Measure ℝ) z‖ +
-        ‖resolventTransform ((B + diagonal s).spectralMeasure (hB.add hs) : Measure ℝ) z -
-          resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ :=
-      norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ (diagonal t).rank / ((Fintype.card n : ℝ) * |z.im|) +
-        |z.im|⁻¹ * ‖diagonal s‖ * |z.im|⁻¹ := add_le_add hlarge hsmall
+    _ ≤ T.rank / ((Fintype.card n : ℝ) * |z.im|) +
+        |z.im|⁻¹ * ‖S‖ * |z.im|⁻¹ := add_le_add hlarge hsmall
     _ ≤ ((Finset.univ.filter fun i ↦ ε < |d i|).card : ℝ) /
           ((Fintype.card n : ℝ) * |z.im|) + |z.im|⁻¹ * ε * |z.im|⁻¹ := by
       gcongr
     _ = _ := by ring
+
+/-- For `0 ≤ ε` and nonreal `z`, adding a real diagonal `d` changes the empirical spectral
+transform at `z` by at most `ε / |z.im| ^ 2` plus the number of entries exceeding `ε` in
+absolute value divided by `Fintype.card n * |z.im|`. -/
+theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le
+    (A : Matrix n n 𝕜) (hA : A.IsHermitian) (d : n → ℝ)
+    {ε : ℝ} (hε : 0 ≤ ε) {z : ℂ} (hz : z.im ≠ 0) :
+    ‖resolventTransform ((A + diagonal (fun i ↦ (d i : 𝕜))).spectralMeasure
+          (hA.add (isHermitian_diagonal_ofReal d)) : Measure ℝ) z -
+        resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ ≤
+      ε / |z.im| ^ 2 +
+        ((Finset.univ.filter fun i ↦ ε < |d i|).card : ℝ) /
+          ((Fintype.card n : ℝ) * |z.im|) := by
+  let f := TauCeti.toComplexStarAlgHom 𝕜
+  have hAf := hA.map f (map_star f)
+  have hmap : (A + diagonal (fun i ↦ (d i : 𝕜))).map f =
+      A.map f + diagonal (fun i ↦ (d i : ℂ)) := by
+    simp [Matrix.map_add f (map_add f), diagonal_map (map_zero f), f]
+  rw [← spectralMeasure_map A f hAf,
+    ← spectralMeasure_map (A + diagonal (fun i ↦ (d i : 𝕜))) f
+      ((hA.add (isHermitian_diagonal_ofReal d)).map f (map_star f))]
+  simp only [hmap]
+  exact norm_resolventTransform_spectralMeasure_add_diagonal_sub_le_complex
+    (A.map f) hAf d hε hz
 
 variable {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)]
   [∀ i, Nonempty (m i)] {l : Filter ι}
@@ -143,7 +126,7 @@ theorem tendsto_resolventTransform_spectralMeasure_add_diagonal_sub
     {z : ℂ} (hz : z.im ≠ 0) :
     Tendsto (fun i ↦
       resolventTransform ((A i + diagonal (fun j ↦ (d i j : 𝕜))).spectralMeasure
-          ((hA i).add (by simp [isHermitian_diagonal_iff, isSelfAdjoint_iff])) : Measure ℝ) z -
+          ((hA i).add (isHermitian_diagonal_ofReal (d i))) : Measure ℝ) z -
         resolventTransform ((A i).spectralMeasure (hA i) : Measure ℝ) z) l (𝓝 0) := by
   classical
   apply tendsto_zero_iff_norm_tendsto_zero.2
@@ -178,7 +161,7 @@ theorem tendsto_spectralMeasure_add_diagonal_iff [l.IsCountablyGenerated]
       ((Finset.univ.filter fun j ↦ ε < |d i j|).card : ℝ) / Fintype.card (m i)) l (𝓝 0))
     (μ : ProbabilityMeasure ℝ) :
     Tendsto (fun i ↦ (A i + diagonal (fun j ↦ (d i j : 𝕜))).spectralMeasure
-        ((hA i).add (by simp [isHermitian_diagonal_iff, isSelfAdjoint_iff]))) l (𝓝 μ) ↔
+        ((hA i).add (isHermitian_diagonal_ofReal (d i)))) l (𝓝 μ) ↔
       Tendsto (fun i ↦ (A i).spectralMeasure (hA i)) l (𝓝 μ) := by
   rw [ProbabilityMeasure.tendsto_iff_tendsto_resolventTransform,
     ProbabilityMeasure.tendsto_iff_tendsto_resolventTransform]

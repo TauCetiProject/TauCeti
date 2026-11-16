@@ -49,7 +49,7 @@ theorem ae_tendsto_spectralMeasure_add_diagonal_div_iff {𝕜 : Type*} [RCLike �
     ∀ᵐ ω ∂P, ∀ μ : ProbabilityMeasure ℝ,
       Tendsto (fun n ↦
         (A n ω + diagonal (fun i : Fin (n + 1) ↦ ((η i ω / b (n + 1) : ℝ) : 𝕜))).spectralMeasure
-          ((hA n ω).add (by simp [isHermitian_diagonal_iff, isSelfAdjoint_iff])))
+          ((hA n ω).add (isHermitian_diagonal_ofReal _)))
         atTop (𝓝 μ) ↔
       Tendsto (fun n ↦ (A n ω).spectralMeasure (hA n ω)) atTop (𝓝 μ) := by
   classical

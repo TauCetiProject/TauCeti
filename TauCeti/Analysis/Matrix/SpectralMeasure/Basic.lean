@@ -131,17 +131,38 @@ Hermitian matrix. In particular, real symmetric matrices have the same spectral 
 viewed as complex Hermitian matrices. -/
 @[simp]
 theorem spectralMeasure_map {𝕜' : Type*} [RCLike 𝕜'] (A : Matrix n n 𝕜)
-    (hA : A.IsHermitian) (f : 𝕜 →⋆ₐ[ℝ] 𝕜') :
-    (A.map f).spectralMeasure (hA.map f (map_star f)) = A.spectralMeasure hA := by
+    (f : 𝕜 →⋆ₐ[ℝ] 𝕜') (hAf : (A.map f).IsHermitian) :
+    (A.map f).spectralMeasure hAf =
+      A.spectralMeasure ((isHermitian_map_iff (map_star f) f.toRingHom.injective).mp hAf) := by
+  have hA := (isHermitian_map_iff (map_star f) f.toRingHom.injective).mp hAf
   rw [spectralMeasure_def, spectralMeasure_def]
   apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
   have h := congrArg (Multiset.map RCLike.re)
     (hA.splits_charpoly.roots_map f.toRingHom)
   have hchar : (A.map f).charpoly = A.charpoly.map f.toRingHom := charpoly_map A _
-  rw [← hchar, (hA.map f (map_star f)).roots_charpoly_eq_eigenvalues,
+  rw [← hchar, hAf.roots_charpoly_eq_eigenvalues,
     hA.roots_charpoly_eq_eigenvalues] at h
   have hf (r : ℝ) : f (r : 𝕜) = (r : 𝕜') := f.commutes r
   simpa [Multiset.map_map, Function.comp_def, hf] using h
+
+/-- Viewing a real symmetric matrix over an `RCLike` field preserves its spectral measure. -/
+@[simp]
+theorem spectralMeasure_map_algebraMap (A : Matrix n n ℝ)
+    (hA : (A.map (algebraMap ℝ 𝕜)).IsHermitian) :
+    (A.map (algebraMap ℝ 𝕜)).spectralMeasure hA =
+      A.spectralMeasure ((isHermitian_map_iff (map_star (RCLike.ofRealStarAlgHom 𝕜))
+        (algebraMap ℝ 𝕜).injective).mp hA) :=
+  spectralMeasure_map A (RCLike.ofRealStarAlgHom 𝕜) hA
+
+/-- Viewing a real symmetric matrix as a complex Hermitian matrix preserves its spectral
+measure. -/
+@[simp]
+theorem spectralMeasure_map_ofReal (A : Matrix n n ℝ)
+    (hA : (A.map ((↑) : ℝ → ℂ)).IsHermitian) :
+    (A.map ((↑) : ℝ → ℂ)).spectralMeasure hA =
+      A.spectralMeasure ((isHermitian_map_iff (map_star (RCLike.ofRealStarAlgHom ℂ))
+        Complex.ofReal_injective).mp hA) :=
+  spectralMeasure_map A (RCLike.ofRealStarAlgHom ℂ) hA
 
 /-- The empirical spectral measure depends continuously on the Hermitian matrix for the weak
 topology on probability measures. -/
