@@ -159,13 +159,14 @@ def IsInjectiveEnvelope.fgModuleCatMatlisDualRegularEquiv (hf : IsInjectiveEnvel
 /-- The Matlis dual of `D A` is the regular right module, by evaluation. -/
 def IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso
     (hf : IsInjectiveEnvelope f) :
-    hf.fgModuleCatMatlisDual.obj (op (hf.fgModuleCatMatlisDualRegular (A := A))) ≅
+    (hf.fgModuleCatMatlisDuality (A := A)).functor.obj (op hf.fgModuleCatMatlisDualRegular) ≅
       FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ :=
   (hf.fgModuleCatMatlisDuality (A := A)).counitIso.app _
 
 attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra in
 /-- The inverse of `D (D A) ≅ Aᵐᵒᵖ` sends `a` to evaluation at `a`. A pre-simp lemma
-(`simp↓`): it applies before `fgModuleCatMatlisDual_obj_obj` rewrites the type of the morphism. -/
+(`simp↓`): it applies before `fgModuleCatMatlisDuality_functor_obj_obj` rewrites the type of the
+morphism. -/
 @[simp↓]
 theorem IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso_inv_apply
     (hf : IsInjectiveEnvelope f) (a : Aᵐᵒᵖ) (φ : (hf.fgModuleCatMatlisDualRegular (A := A)).obj) :
@@ -173,7 +174,9 @@ theorem IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegular
       (ModuleCat.matlisDualObjEquiv R E (hf.fgModuleCatMatlisDualRegular (A := A)).obj
         ((hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).inv.hom a)) φ =
       MatlisDual.equivLinearMap R E Aᵐᵒᵖ (hf.fgModuleCatMatlisDualRegularEquiv φ) a := by
-  refine (hf.moduleCatEvalIsoOp_hom_apply (A := A) (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _ a φ).trans ?_
+  have := hf.moduleInjective
+  refine (ModuleCat.matlisDualEvalIsoOp_hom_apply (A := A) hf.length_quotient_linearMap_eq_one
+    (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _ a φ).trans ?_
   exact (@MatlisDual.congrOp_apply R _ E _ _ A _ _ Aᵐᵒᵖ _ _ _ _ (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _
     (ModuleCat.moduleOfAlgebra R _) _ (ModuleCat.isScalarTower_moduleOfAlgebra R _)
     (LinearEquiv.refl _ _) (ModuleCat.matlisDualOpObjEquiv R E _ φ) a).symm
