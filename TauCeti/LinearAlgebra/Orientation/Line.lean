@@ -8,17 +8,19 @@ module
 public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.LinearAlgebra.Orientation
 import TauCeti.LinearAlgebra.Orientation.Basic
-import TauCeti.LinearAlgebra.Ray
+import TauCeti.LinearAlgebra.Pi.SignChange
 
 /-!
 # The orientation line of a vector space
 
-For a module `M` over an ordered field `𝕜` and a ring `R`, the **orientation line** of `M` with
-coefficients in `R` (`TauCeti.orientationLine R 𝕜 M ι`) is the `R`-module of the functions on the
-orientations of `M` that change sign with the orientation: the `g` with `g (-o) = -g o`. When the
-index type `ι` has the dimension of `M`, so that `M` has exactly two opposite orientations, it is a
-free `R`-module of rank one, with no preferred generator: evaluation at any orientation `o`
-identifies it with `R` (`Orientation.orientationLineEquiv`), and evaluation at `-o` is the opposite
+For a module `M` over an ordered commutative ring `𝕜` and a ring `R`, the **orientation line** of
+`M` with coefficients in `R` (`TauCeti.orientationLine R 𝕜 M ι`) is the `R`-module of the functions
+on the orientations of `M` that change sign with the orientation: the `g` with `g (-o) = -g o`.
+When `𝕜` is a linearly ordered field and the index type `ι` has the dimension of `M`, so that `M`
+has exactly two opposite orientations, it is a free `R`-module of rank one, with no preferred
+generator: evaluation at any orientation `o` identifies it with `R`
+(`Orientation.orientationLineEquiv`, an instance of
+`TauCeti.bijective_eval_of_mem_iff_apply_eq_neg`), and evaluation at `-o` is the opposite
 identification. For `R = ℤ` this is the orientation group `o(M)` of `M`, whose two generators are
 the two orientations. It is the fibre of the sign local system of an orientation double cover
 (`TauCeti.signFiber`), for a single vector space rather than the fibres of a bundle.
@@ -44,7 +46,9 @@ on those of `N` taking the value `g o` at the image of `o`.
   identification with `R`.
 * `LinearEquiv.orientationLineCongr_apply_map`: the transported function at the transported
   orientation.
-* `LinearEquiv.orientationLineCongr_symm`: transport along the inverse isomorphism.
+* `LinearEquiv.orientationLineCongr_symm`, `LinearEquiv.orientationLineCongr_refl` and
+  `LinearEquiv.orientationLineCongr_trans`: transport along the inverse isomorphism, the identity
+  and a composite.
 
 ## References
 
@@ -95,15 +99,21 @@ section Field
 variable {R : Type*} [Ring R] {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   {M : Type*} [AddCommGroup M] [Module 𝕜 M] {ι : Type*}
 
+/-- Evaluation at an orientation is bijective on the orientation line, when `ι` has the dimension
+of `M`: the orientations are `o` and `-o`. -/
+private theorem orientationLine_bijective_eval [Fintype ι] (h : Fintype.card ι = finrank 𝕜 M)
+    (o : Orientation 𝕜 M ι) :
+    Function.Bijective fun g : orientationLine R 𝕜 M ι ↦ (g : Orientation 𝕜 M ι → R) o :=
+  bijective_eval_of_mem_iff_apply_eq_neg (σ := Neg.neg) (fun o' ↦ (Module.Ray.ne_neg_self o').symm)
+    (fun o' : Orientation 𝕜 M ι ↦ o'.eq_or_eq_neg_of_card_eq_finrank o h)
+    fun _ ↦ mem_orientationLine_iff
+
 /-- Two elements of the orientation line agree as soon as they agree at one orientation, when `ι`
 has the dimension of `M`. -/
 theorem orientationLine_ext [Fintype ι] (h : Fintype.card ι = finrank 𝕜 M)
     (o : Orientation 𝕜 M ι) {g g' : orientationLine R 𝕜 M ι}
-    (hg : (g : Orientation 𝕜 M ι → R) o = (g' : Orientation 𝕜 M ι → R) o) : g = g' := by
-  refine Subtype.ext (funext fun o' ↦ ?_)
-  rcases o'.eq_or_eq_neg_of_card_eq_finrank o h with rfl | rfl
-  · exact hg
-  · rw [orientationLine_apply_neg, orientationLine_apply_neg, hg]
+    (hg : (g : Orientation 𝕜 M ι → R) o = (g' : Orientation 𝕜 M ι → R) o) : g = g' :=
+  (orientationLine_bijective_eval h o).1 hg
 
 end Field
 
@@ -116,25 +126,13 @@ open TauCeti
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   {M : Type*} [AddCommGroup M] [Module 𝕜 M] {ι : Type*} [Fintype ι]
 
-/-- The element of the orientation line taking the value `r` at the orientation `o`, and so `-r`
-at `-o`. -/
-private noncomputable def orientationLineSingle (R : Type*) [Ring R] (o : Orientation 𝕜 M ι)
-    (h : Fintype.card ι = finrank 𝕜 M) (r : R) : orientationLine R 𝕜 M ι := by
-  classical
-  refine ⟨fun o' ↦ if o' = o then r else -r, fun o' ↦ ?_⟩
-  rcases o'.eq_or_eq_neg_of_card_eq_finrank o h with rfl | rfl
-  · simp [(Module.Ray.ne_neg_self o').symm]
-  · simp [Module.Ray.neg_neg, (Module.Ray.ne_neg_self o).symm]
-
 variable (o : Orientation 𝕜 M ι) (R : Type*) [Ring R] (h : Fintype.card ι = finrank 𝕜 M)
 
 /-- **Evaluation at an orientation** identifies the orientation line with the coefficients, when
 `ι` has the dimension of `M`. -/
 noncomputable def orientationLineEquiv : orientationLine R 𝕜 M ι ≃ₗ[R] R :=
   LinearEquiv.ofBijective ((LinearMap.proj o).comp (orientationLine R 𝕜 M ι).subtype)
-    ⟨fun _ _ hg ↦ orientationLine_ext h o hg, fun r ↦ ⟨orientationLineSingle R o h r, by
-      classical
-      simp [orientationLineSingle]⟩⟩
+    (orientationLine_bijective_eval h o)
 
 variable {o R h}
 
@@ -205,5 +203,19 @@ theorem orientationLineCongr_apply_map (g : orientationLine R 𝕜 M ι) (o : Or
 theorem orientationLineCongr_symm :
     (e.orientationLineCongr R).symm = e.symm.orientationLineCongr (ι := ι) R :=
   LinearEquiv.ext fun g ↦ Subtype.ext (funext fun o ↦ by simp [orientationLineCongr])
+
+variable (𝕜 M ι R) in
+/-- Transport along the identity is the identity. -/
+@[simp]
+theorem orientationLineCongr_refl :
+    (LinearEquiv.refl 𝕜 M).orientationLineCongr (ι := ι) R = LinearEquiv.refl R _ :=
+  LinearEquiv.ext fun g ↦ Subtype.ext (funext fun o ↦ by simp)
+
+/-- Transport along a composite is the composite of the transports. -/
+@[simp]
+theorem orientationLineCongr_trans {P : Type*} [AddCommGroup P] [Module 𝕜 P] (e' : N ≃ₗ[𝕜] P) :
+    (e.trans e').orientationLineCongr (ι := ι) R =
+      (e.orientationLineCongr R).trans (e'.orientationLineCongr R) :=
+  LinearEquiv.ext fun g ↦ Subtype.ext (funext fun o ↦ by simp [Orientation.map_trans])
 
 end LinearEquiv

@@ -17,8 +17,9 @@ the free module on the critical points, once the unstable manifold of every crit
 been oriented. This file constructs the same boundary without choosing orientations: the chains
 are the elements of the orientation lines of the unstable manifolds.
 
-Fix a Morse chart `φ p` at each critical point `p`. It identifies the tangent space of the unstable
-manifold of `p` at `p` with its space `Vp` of coordinates of negative weight. The **orientation
+Fix a Morse chart `φ p` at each critical point `p`; the comparisons below need `X` to be linear
+in these charts. It identifies the tangent space of the unstable manifold of `p` at `p` with its
+space `Vp` of coordinates of negative weight. The **orientation
 line** of `p` with coefficients in a ring `R` (`TauCeti.MorseChart.unstableOrientationLine`) is
 the `R`-module `o(p)` of the functions on the orientations of `Vp` that change sign with the
 orientation (`TauCeti.orientationLine`); it is free of rank one, and each orientation of `Vp` is
@@ -33,9 +34,10 @@ so the product does not depend on the orientation `op` of `Vp`
 count, so the result lies in `o(q)`. The **boundary** on orientation lines
 (`TauCeti.IsAdaptedPseudoGradient.orientationLineBoundary`) is the sum of these maps.
 
-Orientation data `𝔬 : TauCeti.MorseOrientation f X` in the charts `φ` turn this boundary into the
-integral boundary: evaluating each `c p` at the chosen orientation of `p` is an isomorphism from
-the chains on orientation lines to the free module on the critical points
+Orientation data `𝔬 : TauCeti.MorseOrientation f X` in the charts `φ`, which exist exactly when
+`X` is linear in them, turn this boundary into the integral boundary: evaluating each `c p` at
+the chosen orientation of `p` is an isomorphism from the chains on orientation lines to the free
+module on the critical points
 (`TauCeti.MorseOrientation.orientationLineEquiv`), and it intertwines the two boundaries
 (`TauCeti.IsAdaptedPseudoGradient.orientationLineEquiv_orientationLineBoundary`). In particular,
 the boundary on orientation lines squares to zero exactly when the integral boundary does, for any
@@ -52,7 +54,11 @@ boundaries defined in the two families of charts
 (`TauCeti.orientationLineChartEquiv_orientationLineBoundary`), because the
 signed counts do not depend on the charts
 (`TauCeti.IsAdaptedPseudoGradient.signedTrajectoryCount_map_negativeChange`). So the integral Morse
-boundary is defined, up to canonical isomorphism, by `f` and `X` alone.
+boundary is defined, up to canonical isomorphism, by `f` and `X` alone, among the Morse charts in
+which `X` is linear (which exist, `TauCeti.IsAdaptedPseudoGradient.nonempty_morseOrientation`).
+The transports are coherent: the one from a family of charts to itself is the identity
+(`TauCeti.orientationLineChartEquiv_self`), and they compose
+(`TauCeti.orientationLineChartEquiv_trans_orientationLineChartEquiv`).
 
 ## Main definitions
 
@@ -75,8 +81,11 @@ boundary is defined, up to canonical isomorphism, by `f` and `X` alone.
   orientations identify the boundary on orientation lines with the integral Morse boundary.
 * `TauCeti.IsAdaptedPseudoGradient.orientationLineBoundary_comp_self_eq_zero_iff`: the boundary on
   orientation lines squares to zero if and only if the integral Morse boundary does.
-* `TauCeti.orientationLineChartEquiv_orientationLineBoundary`: the
-  boundary on orientation lines does not depend on the Morse charts.
+* `TauCeti.orientationLineChartEquiv_orientationLineBoundary`: the boundary on orientation lines
+  does not depend on the Morse charts in which `X` is linear.
+* `TauCeti.orientationLineChartEquiv_self` and
+  `TauCeti.orientationLineChartEquiv_trans_orientationLineChartEquiv`: the transports between
+  families of Morse charts are coherent.
 
 ## References
 
@@ -141,6 +150,13 @@ theorem orientationLineChartEquiv_apply
     orientationLineChartEquiv φ φ' R c p =
       ((φ p).negativeChange (φ' p)).orientationLineCongr R (c p) :=
   (rfl)
+
+variable {φ R} in
+/-- The transport of the chains on orientation lines from a family of Morse charts to itself is
+the identity. -/
+@[simp]
+theorem orientationLineChartEquiv_self : orientationLineChartEquiv φ φ R = LinearEquiv.refl R _ :=
+  LinearEquiv.ext fun c ↦ funext fun p ↦ by simp
 
 end ChartChange
 
@@ -231,7 +247,8 @@ variable (φ : (p : criticalPoints 𝓘(ℝ, E) f) → MorseChart E f p) (R : Ty
 `c p` in the orientation line of the unstable manifold at each critical point `p` (in the Morse
 chart `φ p`) whose component at `q` is the sum, over the critical points `p` with
 `ind p = ind q + 1`, of the trajectory maps `o(p) → o(q)` applied to `c p`. No orientation is
-chosen. Read in any orientations, it is the integral Morse boundary
+chosen. When `X` is linear in the charts `φ`, so that `φ = 𝔬.chart` for orientation data `𝔬`,
+reading it in any orientations gives the integral Morse boundary
 (`TauCeti.IsAdaptedPseudoGradient.orientationLineEquiv_orientationLineBoundary`). -/
 noncomputable def orientationLineBoundary :
     ((p : criticalPoints 𝓘(ℝ, E) f) → (φ p).unstableOrientationLine R) →ₗ[R]
@@ -316,9 +333,13 @@ theorem orientationLineBoundary_comp_self_eq_zero_iff :
 
 end Orientation
 
+end IsAdaptedPseudoGradient
+
 section ChartChange
 
-variable {hX} {φ φ' : (p : criticalPoints 𝓘(ℝ, E) f) → MorseChart E f p} {R : Type*} [Ring R]
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  {hX : IsAdaptedPseudoGradient f X} {φ φ' : (p : criticalPoints 𝓘(ℝ, E) f) → MorseChart E f p}
+  {R : Type*} [Ring R]
 
 /-- **The boundary on orientation lines does not depend on the Morse charts.** If `X` is linear in
 the Morse charts `φ` and in the Morse charts `φ'`, the transport of the chains on orientation lines
@@ -343,17 +364,40 @@ theorem orientationLineChartEquiv_orientationLineBoundary (hf : IsMorse 𝓘(ℝ
   refine orientationLine_ext (φ' q).card_fin_morseIndex_eq_finrank
     (Orientation.map _ ((φ q).negativeChange (φ' q)) (o q)) ?_
   rw [orientationLineChartEquiv_apply, LinearEquiv.orientationLineCongr_apply_map,
-    orientationLineBoundary_apply hf c o q,
-    orientationLineBoundary_apply (φ := φ') hf _
+    IsAdaptedPseudoGradient.orientationLineBoundary_apply hf c o q,
+    IsAdaptedPseudoGradient.orientationLineBoundary_apply (φ := φ') hf _
       (fun p ↦ Orientation.map _ ((φ p).negativeChange (φ' p)) (o p)) q]
   refine finsum_congr fun p ↦ ?_
   split_ifs with hpq
   · rw [orientationLineChartEquiv_apply, LinearEquiv.orientationLineCongr_apply_map,
-      signedTrajectoryCount_map_negativeChange (hφ p) (hφ' p) (hφ q) (hφ' q) hf]
+      IsAdaptedPseudoGradient.signedTrajectoryCount_map_negativeChange (hφ p) (hφ' p) (hφ q)
+        (hφ' q) hf]
   · rfl
 
-end ChartChange
+variable (hX) in
+include hX in
+/-- **The transports of the chains on orientation lines compose** for three families of Morse
+charts in which `X` is linear, since the changes of negative coordinates do
+(`TauCeti.IsAdaptedPseudoGradient.negativeChange_trans_negativeChange`). -/
+theorem orientationLineChartEquiv_trans_orientationLineChartEquiv (hf : IsMorse 𝓘(ℝ, E) f)
+    {φ'' : (p : criticalPoints 𝓘(ℝ, E) f) → MorseChart E f p}
+    (hφ : ∀ p : criticalPoints 𝓘(ℝ, E) f, ∀ y ∈ (φ p).toChart.source,
+      (φ p).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ p).toChart y (X y)) =
+        fun i ↦ -((φ p).weight i * (φ p).coord ((φ p).toChart y) i))
+    (hφ' : ∀ p : criticalPoints 𝓘(ℝ, E) f, ∀ y ∈ (φ' p).toChart.source,
+      (φ' p).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ' p).toChart y (X y)) =
+        fun i ↦ -((φ' p).weight i * (φ' p).coord ((φ' p).toChart y) i))
+    (hφ'' : ∀ p : criticalPoints 𝓘(ℝ, E) f, ∀ y ∈ (φ'' p).toChart.source,
+      (φ'' p).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ'' p).toChart y (X y)) =
+        fun i ↦ -((φ'' p).weight i * (φ'' p).coord ((φ'' p).toChart y) i)) :
+    (orientationLineChartEquiv φ φ' R).trans (orientationLineChartEquiv φ' φ'' R) =
+      orientationLineChartEquiv φ φ'' R :=
+  LinearEquiv.ext fun c ↦ funext fun p ↦ by
+    rw [LinearEquiv.trans_apply, orientationLineChartEquiv_apply, orientationLineChartEquiv_apply,
+      orientationLineChartEquiv_apply, ← LinearEquiv.trans_apply,
+      ← LinearEquiv.orientationLineCongr_trans,
+      hX.negativeChange_trans_negativeChange (hφ p) (hφ' p) hf (hφ'' p)]
 
-end IsAdaptedPseudoGradient
+end ChartChange
 
 end TauCeti
