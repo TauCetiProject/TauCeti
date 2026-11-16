@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Probability.Process.Stopping
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
 # Dyadic approximation of stopping times
@@ -21,10 +19,8 @@ continuity of the filtration is needed. These approximations allow countable-ran
 identities to be passed to right-continuous processes at bounded stopping times.
 
 On a fixed finite horizon `T`, `dyadicGrid d T` clips the mesh-`2⁻ᵈ` grid at `T` in
-`dyadicCount d T` steps, `dyadicStopIndex d T u` locates `min T (dyadicCeilTime d u)` as a grid
-point, and `tendsto_lintegral_ite_le_of_tendsto_of_le` (specialized to
-`tendsto_lintegral_dyadicCeilTime`) gives convergence to zero of the lower `L²` cutoff error
-whenever `s ↦ ‖f s‖ₑ ^ 2` is almost everywhere measurable with finite lower integral.
+`dyadicCount d T` steps and `dyadicStopIndex d T u` locates `min T (dyadicCeilTime d u)` as a grid
+point.
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit.
@@ -40,7 +36,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set
-open scoped ENNReal NNReal Topology
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -233,8 +229,7 @@ theorem dyadicGrid_def (d : ℕ) (T : ℝ≥0) (k : ℕ) :
     dyadicGrid d T k = min ((k : ℝ≥0) / 2 ^ d) T := (rfl)
 
 /-- Grid index in `{0, …, dyadicCount d T}` realizing `min T (dyadicCeilTime d u)`. -/
-def dyadicStopIndex (d : ℕ) (T : ℝ≥0) (u : WithTop ℝ≥0) : ℕ :=
-  match u with
+def dyadicStopIndex (d : ℕ) (T : ℝ≥0) : WithTop ℝ≥0 → ℕ
   | ⊤ => dyadicCount d T
   | (r : ℝ≥0) => min ⌈r * 2 ^ d⌉₊ (dyadicCount d T)
 
@@ -248,7 +243,7 @@ theorem dyadicStopIndex_coe (d : ℕ) (T : ℝ≥0) (r : ℝ≥0) :
 
 /-- At `0`, `dyadicStopIndex d T` equals `0`. -/
 @[simp] theorem dyadicStopIndex_zero (d : ℕ) (T : ℝ≥0) : dyadicStopIndex d T 0 = 0 := by
-  change min ⌈(0 : ℝ≥0) * 2 ^ d⌉₊ (dyadicCount d T) = 0; simp
+  rw [← WithTop.coe_zero, dyadicStopIndex_coe]; simp
 
 /-- The horizon-clipped dyadic grid is nondecreasing in the step index. -/
 theorem dyadicGrid_mono (d : ℕ) (T : ℝ≥0) : Monotone (dyadicGrid d T) :=
@@ -259,9 +254,9 @@ theorem dyadicGrid_mono (d : ℕ) (T : ℝ≥0) : Monotone (dyadicGrid d T) :=
 
 /-- At `dyadicCount d T` steps, the horizon-clipped dyadic grid reaches `T`. -/
 @[simp] theorem dyadicGrid_count (d : ℕ) (T : ℝ≥0) : dyadicGrid d T (dyadicCount d T) = T := by
-  rw [dyadicGrid, dyadicCount]
-  refine min_eq_right ((le_div_iff₀ (by positivity)).2 ?_)
-  exact_mod_cast (Nat.lt_floor_add_one (T * 2 ^ d)).le
+  rw [dyadicGrid_def, dyadicCount_def]
+  exact min_eq_right <| (le_div_iff₀ (by positivity)).2 <| by
+    exact_mod_cast (Nat.lt_floor_add_one (T * 2 ^ d)).le
 
 /-- Every point of `dyadicGrid d T` lies in `[0, T]`. -/
 theorem dyadicGrid_le (d : ℕ) (T : ℝ≥0) (k : ℕ) : dyadicGrid d T k ≤ T := min_le_right _ _
@@ -280,9 +275,9 @@ theorem dyadicGrid_of_ge (d : ℕ) (T : ℝ≥0) {k : ℕ} (hk : dyadicCount d T
 /-- Every step of `dyadicGrid d T` has length at most `2⁻ᵈ`. -/
 theorem dyadicGrid_add_one_sub_le (d : ℕ) (T : ℝ≥0) (k : ℕ) :
     dyadicGrid d T (k + 1) - dyadicGrid d T k ≤ (2 ^ d : ℝ≥0)⁻¹ := by
-  rw [dyadicGrid_def, dyadicGrid_def, tsub_le_iff_right,
-    show ((k + 1 : ℕ) : ℝ≥0) / 2 ^ d = (k : ℝ≥0) / 2 ^ d + (2 ^ d : ℝ≥0)⁻¹ by
-      push_cast; rw [add_div, one_div]]
+  have hstep : ((k + 1 : ℕ) : ℝ≥0) / 2 ^ d = (k : ℝ≥0) / 2 ^ d + (2 ^ d : ℝ≥0)⁻¹ := by
+    push_cast; rw [add_div, one_div]
+  rw [dyadicGrid_def, dyadicGrid_def, tsub_le_iff_right, hstep]
   rcases le_total T ((k : ℝ≥0) / 2 ^ d) with hT | hk
   · rw [min_eq_right hT]; exact (min_le_right _ _).trans le_add_self
   · rw [min_eq_left hk, add_comm]; exact min_le_left _ _
@@ -297,18 +292,15 @@ theorem dyadicStopIndex_le (d : ℕ) (T : ℝ≥0) (u : WithTop ℝ≥0) :
     dyadicGrid d T (dyadicStopIndex d T u) =
       (min (T : WithTop ℝ≥0) (dyadicCeilTime d u)).untopA := by
   cases u with
-  | top =>
-    dsimp only [dyadicStopIndex]
-    rw [dyadicGrid_count, dyadicCeilTime_top, min_top_right, WithTop.untopA, WithTop.untopD_coe]
+  | top => rw [dyadicStopIndex_top, dyadicGrid_count, dyadicCeilTime_top, min_top_right,
+      WithTop.untopA, WithTop.untopD_coe]
   | coe r =>
-    dsimp only [dyadicStopIndex]
-    rw [dyadicCeilTime_coe, ← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe]
-    by_cases hle : ⌈r * 2 ^ d⌉₊ ≤ dyadicCount d T
+    rw [dyadicStopIndex_coe, dyadicCeilTime_coe, ← WithTop.coe_min, WithTop.untopA,
+      WithTop.untopD_coe]
+    rcases le_total ⌈r * 2 ^ d⌉₊ (dyadicCount d T) with hle | hge
     · simp [min_eq_left hle, dyadicGrid, min_comm]
-    · have hge := le_of_not_ge hle
-      have hT : T ≤ (⌈r * 2 ^ d⌉₊ : ℝ≥0) / 2 ^ d :=
-        (le_min_iff.1 ((dyadicGrid_count d T).symm.trans_le (dyadicGrid_mono d T hge))).1
-      rw [min_eq_right hge, dyadicGrid_count, min_eq_left hT]
+    · rw [min_eq_right hge, dyadicGrid_count, min_eq_left
+        (le_min_iff.1 ((dyadicGrid_count d T).symm.trans_le (dyadicGrid_mono d T hge))).1]
 
 /-- Evaluating any process at `dyadicGrid d T (dyadicStopIndex d T (τ ω))` equals the process
 stopped at `dyadicCeilTime d ∘ τ` at horizon `T`. -/
@@ -325,80 +317,23 @@ theorem dyadicGrid_lt_dyadicCeilTime_iff (d : ℕ) (T : ℝ≥0) (u : WithTop �
     (dyadicGrid d T k : WithTop ℝ≥0) < dyadicCeilTime d u ↔ k < dyadicStopIndex d T u := by
   cases u with
   | top =>
-    dsimp only [dyadicStopIndex]; rw [dyadicCeilTime_top]
-    exact ⟨fun _ ↦ hk, fun _ ↦ WithTop.coe_lt_top _⟩
+    rw [dyadicStopIndex_top, dyadicCeilTime_top]; exact ⟨fun _ ↦ hk, fun _ ↦ WithTop.coe_lt_top _⟩
   | coe r =>
-    dsimp only [dyadicStopIndex]
-    rw [dyadicGrid_of_lt d T hk, dyadicCeilTime_coe, WithTop.coe_lt_coe,
+    rw [dyadicStopIndex_coe, dyadicGrid_of_lt d T hk, dyadicCeilTime_coe, WithTop.coe_lt_coe,
       div_lt_div_iff_of_pos_right (by positivity), Nat.cast_lt, lt_min_iff]
     exact ⟨fun h ↦ ⟨h, hk⟩, fun h ↦ h.1⟩
 
 /-- On each half-open step `(dyadicGrid d T k, dyadicGrid d T (k + 1)]`, membership in
-`[0, dyadicCeilTime d u]` is determined by the left-endpoint event
-`dyadicGrid d T k < dyadicCeilTime d u`. -/
+`[0, dyadicCeilTime d u]` is determined by `dyadicGrid d T k < dyadicCeilTime d u`. -/
 theorem coe_le_dyadicCeilTime_iff_of_mem_Ioc (d : ℕ) (T : ℝ≥0) (u : WithTop ℝ≥0)
     {k : ℕ} (hk : k < dyadicCount d T) {s : ℝ≥0}
     (hs : s ∈ Ioc (dyadicGrid d T k) (dyadicGrid d T (k + 1))) :
     (s : WithTop ℝ≥0) ≤ dyadicCeilTime d u ↔
-      (dyadicGrid d T k : WithTop ℝ≥0) < dyadicCeilTime d u := by
-  refine ⟨fun hs_le ↦ (WithTop.coe_lt_coe.2 hs.1).trans_le hs_le, fun hlt ↦ ?_⟩
-  have hs_le : s ≤ (min (T : WithTop ℝ≥0) (dyadicCeilTime d u)).untopA := hs.2.trans
-    ((dyadicGrid_mono d T ((dyadicGrid_lt_dyadicCeilTime_iff d T u hk).1 hlt)).trans_eq
-      (dyadicGrid_dyadicStopIndex d T u))
-  exact ((WithTop.le_untopA_iff ((min_le_left _ _).trans_lt (WithTop.coe_lt_top T)).ne).1
-    hs_le).trans (min_le_right _ _)
-
-/-- Along any countably generated filter `l` on which `v` converges to `u` eventually from above,
-the lower square-norm error between the cutoffs of `f` on `{s | s ≤ v a}` and on `{s | s ≤ u}`
-tends to zero whenever `s ↦ ‖f s‖ₑ ^ 2` is `μ`-almost everywhere measurable with finite lower
-integral. -/
-theorem tendsto_lintegral_ite_le_of_tendsto_of_le {α ι E : Type*} [LinearOrder ι]
-    [TopologicalSpace ι] [OrderTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
-    [SeminormedAddCommGroup E] {l : Filter α} [l.IsCountablyGenerated]
-    {μ : Measure ι} {f : ι → E} {v : α → WithTop ι} {u : WithTop ι}
-    (hv : Tendsto v l (𝓝 u)) (hle : ∀ᶠ a in l, u ≤ v a)
-    (hf : AEMeasurable (fun s ↦ ‖f s‖ₑ ^ 2) μ) (hfin : ∫⁻ s, ‖f s‖ₑ ^ 2 ∂μ ≠ ∞) :
-    Tendsto (fun a ↦ ∫⁻ s,
-      ‖(if (s : WithTop ι) ≤ v a then f s else 0) -
-        (if (s : WithTop ι) ≤ u then f s else 0)‖ₑ ^ 2 ∂μ) l (𝓝 0) := by
-  have hset (w : WithTop ι) : MeasurableSet {s : ι | (s : WithTop ι) ≤ w} := by
-    cases w with
-    | top => simp
-    | coe r => simp only [WithTop.coe_le_coe]; exact measurableSet_Iic
-  let S (a : α) : Set ι := {s | (s : WithTop ι) ≤ v a} \ {s | (s : WithTop ι) ≤ u}
-  have hind : ∀ᶠ a in l,
-      (∫⁻ s, ‖(if (s : WithTop ι) ≤ v a then f s else 0) -
-        (if (s : WithTop ι) ≤ u then f s else 0)‖ₑ ^ 2 ∂μ) =
-        ∫⁻ s, (S a).indicator (fun r ↦ ‖f r‖ₑ ^ 2) s ∂μ :=
-    hle.mono fun a ha ↦ lintegral_congr_ae (.of_forall fun s ↦ by
-      by_cases hs : (s : WithTop ι) ≤ u
-      · simp [S, hs, hs.trans ha]
-      · by_cases hsv : (s : WithTop ι) ≤ v a <;> simp [S, hs, hsv])
-  have hpt (s : ι) : Tendsto (fun a ↦ (S a).indicator (fun r ↦ ‖f r‖ₑ ^ 2) s) l (𝓝 0) := by
-    by_cases hs : (s : WithTop ι) ≤ u
-    · exact tendsto_const_nhds.congr fun a ↦
-        (indicator_of_notMem (fun (h : s ∈ S a) ↦ h.2 hs) _).symm
-    · exact tendsto_const_nhds.congr' <| (hv.eventually (eventually_lt_nhds (not_le.1 hs))).mono
-        fun a ha ↦ (indicator_of_notMem (fun (h : s ∈ S a) ↦ ha.not_ge h.1) _).symm
-  have hdom : Tendsto (fun a ↦ ∫⁻ s, (S a).indicator (fun r ↦ ‖f r‖ₑ ^ 2) s ∂μ) l (𝓝 0) := by
-    simpa only [lintegral_zero] using tendsto_lintegral_filter_of_dominated_convergence'
-      (F := fun a ↦ (S a).indicator (fun r ↦ ‖f r‖ₑ ^ 2)) (fun s ↦ ‖f s‖ₑ ^ 2)
-      (.of_forall fun _ ↦ hf.indicator ((hset _).diff (hset _)))
-      (.of_forall fun _ ↦ .of_forall fun s ↦ indicator_le_self' (fun _ _ ↦ zero_le) s)
-      hfin (.of_forall hpt)
-  exact hdom.congr' (hind.mono fun _ h ↦ h.symm)
-
-/-- Along the dyadic ceilings of any time `u : WithTop ℝ≥0`, the lower square-norm error between
-the cutoff of `f` on `[0, dyadicCeilTime d u]` and on `[0, u]` tends to zero whenever
-`s ↦ ‖f s‖ₑ ^ 2` is `μ`-almost everywhere measurable with finite lower integral. -/
-theorem tendsto_lintegral_dyadicCeilTime {E : Type*} [SeminormedAddCommGroup E]
-    {μ : Measure ℝ≥0} {f : ℝ≥0 → E} {u : WithTop ℝ≥0}
-    (hf : AEMeasurable (fun s ↦ ‖f s‖ₑ ^ 2) μ) (hfin : ∫⁻ s, ‖f s‖ₑ ^ 2 ∂μ ≠ ∞) :
-    Tendsto (fun d ↦ ∫⁻ s,
-      ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime d u then f s else 0) -
-        (if (s : WithTop ℝ≥0) ≤ u then f s else 0)‖ₑ ^ 2 ∂μ) atTop (𝓝 0) :=
-  tendsto_lintegral_ite_le_of_tendsto_of_le (tendsto_dyadicCeilTime u)
-    (.of_forall fun d ↦ le_dyadicCeilTime d u) hf hfin
+      (dyadicGrid d T k : WithTop ℝ≥0) < dyadicCeilTime d u :=
+  ⟨fun hs_le ↦ (WithTop.coe_lt_coe.2 hs.1).trans_le hs_le, fun hlt ↦
+    ((WithTop.le_untopA_iff ((min_le_left _ _).trans_lt (WithTop.coe_lt_top T)).ne).1 <|
+      hs.2.trans ((dyadicGrid_mono d T ((dyadicGrid_lt_dyadicCeilTime_iff d T u hk).1 hlt))
+        |>.trans_eq (dyadicGrid_dyadicStopIndex d T u))).trans (min_le_right _ _)⟩
 
 end TauCeti
 

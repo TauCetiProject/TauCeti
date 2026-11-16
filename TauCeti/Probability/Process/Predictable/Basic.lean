@@ -30,11 +30,12 @@ version, even when the filtration is neither complete nor right-continuous. This
 literal predictability of the original process or everywhere left continuity of the selected
 version.
 
-The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
-time dependence can be combined with predictable processes. A predictably measurable function
-remains strongly predictable when extended by zero outside a measurable set of times, every sample
-path of a strongly predictable process is strongly measurable in time, and an `ℱ s`-strongly
-measurable random variable extended by zero outside `(s, t]` or `(s, ∞)` is strongly predictable.
+The time projection is measurable for the predictable sigma-algebra, so deterministic strongly
+measurable time functions are strongly predictable (`StronglyMeasurable.isStronglyPredictable`). A
+predictably measurable function remains strongly predictable when extended by zero outside a
+measurable set of times, every sample path of a strongly predictable process is strongly measurable
+in time, and an `ℱ s`-strongly measurable random variable extended by zero outside `(s, t]` or
+`(s, ∞)` is strongly predictable.
 
 ## References
 
@@ -373,9 +374,15 @@ theorem Measurable.isStronglyPredictable_ite_zero {ι Ω E : Type*}
 theorem MeasureTheory.IsStronglyPredictable.stronglyMeasurable_path {ι Ω E : Type*} [LinearOrder ι]
     [OrderBot ι] [TopologicalSpace ι] [OrderClosedTopology ι] [MeasurableSpace ι]
     [OpensMeasurableSpace ι] {m : MeasurableSpace Ω} [TopologicalSpace E] {ℱ : Filtration ι m}
-    {H : ι → Ω → E} (hH : IsStronglyPredictable ℱ H) (ω : Ω) :
-    StronglyMeasurable (fun t ↦ H t ω) :=
+    {H : ι → Ω → E} (hH : IsStronglyPredictable ℱ H) (ω : Ω) : StronglyMeasurable (H · ω) :=
   (hH.mono ℱ.predictable_le_prod).comp_measurable measurable_prodMk_right
+
+/-- Every deterministic strongly measurable function of time is strongly predictable. -/
+theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable {ι Ω E : Type*} [LinearOrder ι]
+    [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    [MeasurableSpace ι] [BorelSpace ι] {m : MeasurableSpace Ω} [TopologicalSpace E]
+    (ℱ : Filtration ι m) {u : ι → E} (hu : StronglyMeasurable u) :
+    IsStronglyPredictable ℱ (fun t _ ↦ u t) := hu.comp_measurable ℱ.measurable_fst_predictable
 
 /-- If `I ×ˢ A` is predictable for every `ℱ s`-measurable `A`, extending an `ℱ s`-strongly
 measurable function by zero outside `I` yields a strongly predictable process. -/

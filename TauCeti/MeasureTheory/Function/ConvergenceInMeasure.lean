@@ -28,17 +28,17 @@ squared deviations required only eventually along the filter.
 
 ## Main results
 
-* `MeasureTheory.TendstoInMeasure.add`, `MeasureTheory.TendstoInMeasure.const_smul`,
+* `MeasureTheory.TendstoInMeasure.add`, `const_smul`,
   `MeasureTheory.AEStronglyMeasurable.tendstoInMeasure_smul`: algebraic operations preserving
   convergence in measure.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
-* `TauCeti.tendsto_measure_ge_zero_const_mul`, `TauCeti.tendsto_measure_ge_zero_mul_of_ae_lt_top`,
-  and `TauCeti.tendsto_measure_ge_zero_of_ae_le`: positive tail-measure convergence to zero under
-  constant scaling, finite-measure almost-everywhere finite random weights, and eventual
-  almost-everywhere bounds `E ≤ E₁ + E₂` (including threshold `∞`).
-* `TauCeti.tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm`: `L²(μ.prod ν)` convergence to
-  zero forces the `ν`-tail measure of the `μ`-slice lower square integrals to tend to zero.
+* `TauCeti.tendsto_measure_ge_zero_const_mul`, `tendsto_measure_ge_zero_mul_of_ae_lt_top`,
+  `tendsto_measure_ge_zero_of_ae_le`: tail-measure convergence under scaling, a.e.-finite weights,
+  and a.e. sum bounds (including `∞`).
+* `TauCeti.tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm` and
+  `tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm`: `Lᵖ(μ.prod ν)` convergence (`0 < p < ∞`)
+  forces `ν`-tail measures of `μ`-slice `p`-th power integrals to tend to zero.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist`: the `edist`
   form, for an `ℝ≥0∞`-valued rate and a target with an extended distance.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_dist`: the `dist`
@@ -133,16 +133,14 @@ theorem tendsto_measure_ge_zero_const_mul {E : ι → α → ℝ≥0∞} {c : �
   rcases eq_or_ne c 0 with rfl | hc0
   · simp only [zero_mul, not_le_of_gt hε, Set.ofPred_false, measure_empty]; exact tendsto_const_nhds
   rcases eq_or_ne ε ∞ with rfl | _
-  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h 1 one_pos)
+  · exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h 1 one_pos)
       (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by_contra fun hnot ↦
         (ENNReal.mul_lt_top hc.lt_top ((not_le.1 hnot).trans ENNReal.one_lt_top)).not_ge hx
-  · refine (h (ε / c) (ENNReal.div_pos hε.ne' hc)).congr' (.of_forall fun i ↦ ?_)
-    congr 1; ext x
-    simp only [Set.mem_ofPred_eq, ENNReal.div_le_iff_le_mul (.inl hc0) (.inl hc), mul_comm]
+  · exact (h (ε / c) (ENNReal.div_pos hε.ne' hc)).congr fun i ↦ congrArg μ <| Set.ext fun x ↦ by
+      simp only [Set.mem_ofPred_eq, ENNReal.div_le_iff_le_mul (.inl hc0) (.inl hc), mul_comm]
 
-/-- On a finite measure space, multiplying an `ℝ≥0∞`-valued family by a fixed `μ`-almost everywhere
-measurable and `μ`-almost everywhere finite weight preserves convergence of all positive tail
-measures to zero (including at threshold `∞`). -/
+/-- On a finite measure space, multiplying an `ℝ≥0∞`-valued family by an a.e. measurable,
+a.e. finite weight preserves convergence of all positive tail measures to zero (including `∞`). -/
 theorem tendsto_measure_ge_zero_mul_of_ae_lt_top [IsFiniteMeasure μ]
     {E : ι → α → ℝ≥0∞} {c : α → ℝ≥0∞} (hc : AEMeasurable c μ) (hfin : ∀ᵐ x ∂μ, c x < ∞)
     (h : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0))
@@ -150,27 +148,24 @@ theorem tendsto_measure_ge_zero_mul_of_ae_lt_top [IsFiniteMeasure μ]
     Tendsto (fun i ↦ μ {x | ε ≤ c x * E i x}) l (𝓝 0) := by
   rw [ENNReal.tendsto_nhds_zero]; intro δ hδ
   let A (M : ℕ) : Set α := {x | (M : ℝ≥0∞) ≤ c x}
-  have hA_inter : μ (⋂ M, A M) = 0 :=
-    measure_mono_null (fun x hx ↦ by
-      simp only [Set.mem_iInter, Set.mem_ofPred_eq, not_lt, top_le_iff] at hx ⊢
-      exact by_contra fun hne ↦ (ENNReal.exists_nat_gt hne).elim fun M hM ↦ hM.not_ge (hx M))
-      (ae_iff.1 hfin)
-  have hA_lim : Tendsto (μ ∘ A) atTop (𝓝 0) := hA_inter ▸ tendsto_measure_iInter_atTop
+  have hA_null : μ (⋂ M, A M) = 0 := measure_mono_null (fun x hx ↦ by
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq, not_lt, top_le_iff] at hx ⊢
+    exact by_contra fun hne ↦ (ENNReal.exists_nat_gt hne).elim fun M hM ↦ hM.not_ge (hx M))
+    (ae_iff.1 hfin)
+  have hA_lim : Tendsto (μ ∘ A) atTop (𝓝 0) := hA_null ▸ tendsto_measure_iInter_atTop
     (fun _ ↦ hc.nullMeasurable measurableSet_Ici)
     (fun _ _ hMN _ (hx : (_ : ℝ≥0∞) ≤ _) ↦ (Nat.cast_le.2 hMN).trans hx) ⟨0, measure_ne_top μ _⟩
-  have hhalf : 0 < δ / 2 := ENNReal.half_pos hδ.ne'
-  obtain ⟨M, hM⟩ := (hA_lim.eventually (eventually_le_nhds hhalf)).exists
+  obtain ⟨M, hM⟩ := (hA_lim.eventually (eventually_le_nhds (ENNReal.half_pos hδ.ne'))).exists
   filter_upwards [(tendsto_measure_ge_zero_const_mul (ENNReal.natCast_ne_top M) h hε).eventually
-    (eventually_le_nhds hhalf)] with i hi
-  have hsub : {x | ε ≤ c x * E i x} ⊆ A M ∪ {x | ε ≤ (M : ℝ≥0∞) * E i x} := fun x hx ↦
-    if hxM : (M : ℝ≥0∞) ≤ c x then .inl hxM else .inr (show ε ≤ (M : ℝ≥0∞) * E i x from
-      hx.trans (by gcongr; exact le_of_not_ge hxM))
-  exact ((measure_mono hsub).trans (measure_union_le _ _)).trans
-    ((add_le_add hM hi).trans_eq (ENNReal.add_halves δ))
+    (eventually_le_nhds (ENNReal.half_pos hδ.ne'))] with i hi
+  refine (measure_mono (t := A M ∪ {x | ε ≤ (M : ℝ≥0∞) * E i x}) fun x hx ↦
+    if hxM : (M : ℝ≥0∞) ≤ c x then .inl hxM else .inr <|
+      Set.mem_ofPred.2 <| (Set.mem_ofPred.1 hx).trans (by gcongr; exact le_of_not_ge hxM)).trans
+    ((measure_union_le (A M) _).trans ((add_le_add hM hi).trans_eq (ENNReal.add_halves δ)))
 
-/-- If `E` is eventually bounded `μ`-almost everywhere by `E₁ + E₂`, and all positive tail measures
-of `E₁` and `E₂` tend to zero along `l`, then all positive tail measures of `E` tend to zero along
-`l` (including at threshold `∞`). -/
+/-- If `E` is eventually bounded `μ`-a.e. by `E₁ + E₂` and all positive tail measures of `E₁` and
+`E₂` tend to zero along `l`, then all positive tail measures of `E` tend to zero along `l`
+(including at threshold `∞`). -/
 theorem tendsto_measure_ge_zero_of_ae_le {E E₁ E₂ : ι → α → ℝ≥0∞}
     (h₁ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E₁ i x}) l (𝓝 0))
     (h₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E₂ i x}) l (𝓝 0))
@@ -178,124 +173,56 @@ theorem tendsto_measure_ge_zero_of_ae_le {E E₁ E₂ : ι → α → ℝ≥0∞
     Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0) := by
   let δ := min 1 (ε / 2)
   have hδ : 0 < δ := lt_min one_pos (ENNReal.div_pos hε.ne' (by norm_num))
-  have hsum : Tendsto (fun i ↦ μ {x | δ ≤ E₁ i x} + μ {x | δ ≤ E₂ i x}) l (𝓝 0) := by
-    simpa using (h₁ δ hδ).add (h₂ δ hδ)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa only [add_zero] using (h₁ δ hδ).add (h₂ δ hδ))
     (Eventually.of_forall fun _ ↦ zero_le) (hle.mono fun i hi ↦
       (measure_mono_ae (hi.mono fun x hx hge ↦ by_contra fun hnot ↦ ?_)).trans
         (measure_union_le _ _))
-  dsimp only [δ] at hnot
-  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, lt_min_iff] at hnot
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, δ, lt_min_iff] at hnot
   rcases eq_or_ne ε ∞ with rfl | _
   · exact (hx.trans_lt (ENNReal.add_lt_top.2 ⟨hnot.1.1.trans ENNReal.one_lt_top,
       hnot.2.1.trans ENNReal.one_lt_top⟩)).not_ge hge
   · exact (hx.trans_lt ((ENNReal.add_lt_add hnot.1.2 hnot.2.2).trans_eq
       (ENNReal.add_halves ε))).not_ge hge
 
-/-- If `eLpNorm (f i) 2 (μ.prod ν)` tends to zero along `l` for `SFinite` measures `μ` and `ν`,
-then the `ν`-measure of the slices where `∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ` exceeds any positive
-threshold `ε` (including `∞`) tends to zero along `l`. No explicit measurability hypothesis on `f`
-is needed, since `eLpNorm (f i) 2 (μ.prod ν) < ∞` eventually forces `AEStronglyMeasurable`. -/
-theorem tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm
+/-- If `eLpNorm (f i) p (μ.prod ν) → 0` for `0 < p < ∞` and `SFinite` measures `μ`, `ν`, then the
+`ν`-measure of slices where `∫⁻ x, ‖f i (x, y)‖ₑ ^ p.toReal ∂μ ≥ ε` tends to zero for every `ε > 0`
+(including `∞`). No explicit measurability hypothesis on `f` is needed. -/
+theorem tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm
     {β ε' : Type*} [MeasurableSpace β] {ν : Measure β} [SFinite μ] [SFinite ν]
-    [TopologicalSpace ε'] [ContinuousENorm ε'] {f : ι → α × β → ε'}
-    (hlim : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν)) l (𝓝 0))
+    [TopologicalSpace ε'] [ContinuousENorm ε'] {f : ι → α × β → ε'} {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hlim : Tendsto (fun i ↦ eLpNorm (f i) p (μ.prod ν)) l (𝓝 0))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
-  let δ := min 1 ε
-  have hδ0 : δ ≠ 0 := (lt_min one_pos hε).ne'
-  have hδtop : δ ≠ ∞ := ((min_le_left 1 ε).trans_lt ENNReal.one_lt_top).ne
-  have hev : ∀ᶠ i in l, AEStronglyMeasurable (f i) (μ.prod ν) :=
-    (hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)).mono fun i hi ↦
-      by_contra fun hnot ↦ hi.ne (eLpNorm_of_not_aestronglyMeasurable hnot)
-  have hdiv : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν) ^ 2 / δ) l (𝓝 0) := by
-    simpa using ENNReal.Tendsto.div_const (ENNReal.Tendsto.pow (n := 2) hlim) (.inr hδ0)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hdiv
-    (Eventually.of_forall fun _ ↦ zero_le) (hev.mono fun i hsm ↦ ?_)
-  have hm : AEMeasurable (fun p ↦ ‖f i p‖ₑ ^ 2) (μ.prod ν) := hsm.eNorm.pow_const 2
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ p.toReal ∂μ}) l (𝓝 0) := by
+  have hδ0 : min 1 ε ≠ 0 := (lt_min one_pos hε).ne'
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by
+      simpa only [Function.comp_def, ENNReal.zero_rpow_of_pos (ENNReal.toReal_pos hp0 hp),
+        ENNReal.zero_div] using ENNReal.Tendsto.div_const
+          (((ENNReal.continuous_rpow_const (y := p.toReal)).tendsto 0).comp hlim) (.inr hδ0))
+    (.of_forall fun _ ↦ zero_le)
+    ((hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)).mono fun i hi ↦ ?_)
+  have hsm := aestronglyMeasurable_of_eLpNorm_ne_top hi.ne; have hm := hsm.eNorm.pow_const p.toReal
   refine (measure_mono fun _ hy ↦ (min_le_right 1 ε).trans hy).trans
-    ((MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left' hδ0 hδtop).trans_eq ?_)
-  rw [← lintegral_prod_symm _ hm,
-    TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (by norm_num : 2 ≠ 0) hsm]; rfl
+    ((MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left' hδ0
+      ((min_le_left 1 ε).trans_lt ENNReal.one_lt_top).ne).trans_eq ?_)
+  rw [← lintegral_prod_symm _ hm, MeasureTheory.lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hsm]
+
+/-- Natural-power form of `tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm` for `n ≠ 0`. -/
+theorem tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm
+    {β ε' : Type*} [MeasurableSpace β] {ν : Measure β} [SFinite μ] [SFinite ν]
+    [TopologicalSpace ε'] [ContinuousENorm ε'] {f : ι → α × β → ε'} {n : ℕ} (hn : n ≠ 0)
+    (hlim : Tendsto (fun i ↦ eLpNorm (f i) n (μ.prod ν)) l (𝓝 0)) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ n ∂μ}) l (𝓝 0) := by
+  simpa only [ENNReal.toReal_natCast, ENNReal.rpow_natCast] using
+    tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm
+      (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n) hlim hε
 
 end TauCeti
 
 namespace MeasureTheory
 
-open Filter ENNReal Topology
-
-/-- Pointwise sums of functions converging in measure converge in measure to the sum of the
-limits, for any measure and filter and without measurability hypotheses. -/
-theorem TendstoInMeasure.add {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-    [SeminormedAddCommGroup E] {l : Filter ι} {f₁ f₂ : ι → Ω → E} {g₁ g₂ : Ω → E}
-    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
-    TendstoInMeasure μ (fun i ω ↦ f₁ i ω + f₂ i ω) l (fun ω ↦ g₁ ω + g₂ ω) := by
-  refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-  have hsum : Tendsto (fun i ↦ μ {ω | ε / 2 ≤ ‖f₁ i ω - g₁ ω‖} +
-      μ {ω | ε / 2 ≤ ‖f₂ i ω - g₂ ω‖}) l (𝓝 0) := by
-    simpa using ((tendstoInMeasure_iff_norm.1 h₁) _ (half_pos hε)).add
-      ((tendstoInMeasure_iff_norm.1 h₂) _ (half_pos hε))
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
-    (fun _ ↦ zero_le) fun i ↦ (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
-  simp only [Set.mem_union, Set.mem_ofPred_eq] at hω ⊢
-  by_contra! hnot
-  have := norm_add_le (f₁ i ω - g₁ ω) (f₂ i ω - g₂ ω)
-  rw [← add_sub_add_comm] at this; linarith
-
-/-- Pointwise scalar multiplication by a constant preserves convergence in measure whenever
-`(c • ·)` is uniformly continuous, for any measure and filter and without measurability
-hypotheses. -/
-theorem TendstoInMeasure.const_smul {Ω M E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-    [PseudoEMetricSpace E] [SMul M E] [UniformContinuousConstSMul M E]
-    {l : Filter ι} {f : ι → Ω → E} {g : Ω → E}
-    (h : TendstoInMeasure μ f l g) (c : M) :
-    TendstoInMeasure μ (fun i ω ↦ c • f i ω) l (fun ω ↦ c • g ω) := fun ε hε ↦ by
-  obtain ⟨δ, hδ, huc⟩ := EMetric.uniformContinuous_iff.1
-    (uniformContinuous_const_smul c : UniformContinuous fun x : E ↦ c • x) ε hε
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h δ hδ)
-    (fun _ ↦ zero_le) fun i ↦ measure_mono fun _ hω ↦ by_contra fun hlt ↦
-      (huc (not_le.1 hlt)).not_ge hω
-
-/-- Pointwise negation preserves convergence in measure, for any measure and filter and without
-measurability hypotheses. -/
-theorem TendstoInMeasure.neg {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-    [SeminormedAddCommGroup E] {l : Filter ι} {f : ι → Ω → E} {g : Ω → E}
-    (h : TendstoInMeasure μ f l g) :
-    TendstoInMeasure μ (fun i ω ↦ -f i ω) l (fun ω ↦ -g ω) := by
-  simpa only [neg_one_smul] using h.const_smul (-1 : ℤ)
-
-/-- Pointwise subtraction preserves convergence in measure, for any measure and filter and without
-measurability hypotheses. -/
-theorem TendstoInMeasure.sub {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-    [SeminormedAddCommGroup E] {l : Filter ι} {f₁ f₂ : ι → Ω → E} {g₁ g₂ : Ω → E}
-    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
-    TendstoInMeasure μ (fun i ω ↦ f₁ i ω - f₂ i ω) l (fun ω ↦ g₁ ω - g₂ ω) := by
-  simpa only [sub_eq_add_neg] using h₁.add h₂.neg
-
-/-- On a finite measure space, pointwise scalar multiplication by an almost-everywhere strongly
-measurable scalar function preserves convergence in measure along any filter. -/
-theorem AEStronglyMeasurable.tendstoInMeasure_smul {Ω 𝕜 E ι : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} [IsFiniteMeasure μ] [SeminormedAddCommGroup 𝕜] [SeminormedAddCommGroup E]
-    [DistribSMul 𝕜 E] [IsBoundedSMul 𝕜 E] {l : Filter ι} {c : Ω → 𝕜}
-    (hc : AEStronglyMeasurable c μ) {f : ι → Ω → E} {g : Ω → E}
-    (h : TendstoInMeasure μ f l g) :
-    TendstoInMeasure μ (fun i ω ↦ c ω • f i ω) l (fun ω ↦ c ω • g ω) := by
-  refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-  have hE (δ : ℝ≥0∞) (hδ : 0 < δ) : Tendsto (fun i ↦ μ {ω | δ ≤ ‖f i ω - g ω‖ₑ}) l (𝓝 0) := by
-    rcases eq_or_ne δ ∞ with rfl | hδtop
-    · simp only [not_le_of_gt eNorm_lt_top, Set.ofPred_false, measure_empty]
-      exact tendsto_const_nhds
-    · refine ((tendstoInMeasure_iff_norm.1 h) δ.toReal (ENNReal.toReal_pos hδ.ne' hδtop)).congr'
-        (.of_forall fun i ↦ ?_)
-      congr 1; ext ω
-      simp [← ofReal_norm, ENNReal.le_ofReal_iff_toReal_le hδtop (norm_nonneg _)]
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (TauCeti.tendsto_measure_ge_zero_mul_of_ae_lt_top hc.eNorm
-      (.of_forall fun _ ↦ eNorm_lt_top) hE (ENNReal.ofReal_pos.2 hε))
-    (fun _ ↦ zero_le) fun i ↦ measure_mono fun ω hω ↦ ?_
-  have he := ENNReal.ofReal_le_ofReal (hω.trans (by
-    simpa only [smul_sub] using norm_smul_le (c ω) (f i ω - g ω)))
-  rwa [Set.mem_ofPred_eq, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
+open Filter Topology
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/
@@ -313,5 +240,55 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
     (Eventually.of_forall fun _ ↦ zero_le) ?_
   filter_upwards [hint] with k hk
   exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
+
+section TendstoInMeasure
+
+open ENNReal
+
+variable {Ω E ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω} {l : Filter ι}
+  {f f₁ f₂ : ι → Ω → E} {g g₁ g₂ : Ω → E}
+
+/-- Pointwise scalar multiplication by a constant preserves convergence in measure whenever
+`(c • ·)` is uniformly continuous, for any measure and filter without measurability hypotheses. -/
+theorem TendstoInMeasure.const_smul {M : Type*} [PseudoEMetricSpace E] [SMul M E]
+    [UniformContinuousConstSMul M E] (h : TendstoInMeasure μ f l g) (c : M) :
+    TendstoInMeasure μ (fun i ω ↦ c • f i ω) l (fun ω ↦ c • g ω) := fun ε hε ↦ by
+  obtain ⟨δ, hδ, huc⟩ := EMetric.uniformContinuous_iff.1
+    (uniformContinuous_const_smul c : UniformContinuous fun x : E ↦ c • x) ε hε
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h δ hδ)
+    (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ hω ↦ by_contra fun hlt ↦
+      (huc (not_le.1 hlt)).not_ge hω
+
+variable [SeminormedAddCommGroup E]
+
+/-- Pointwise sums of functions converging in measure converge in measure to the sum of the
+limits, for any measure and filter without measurability hypotheses. -/
+theorem TendstoInMeasure.add (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun i ω ↦ f₁ i ω + f₂ i ω) l (fun ω ↦ g₁ ω + g₂ ω) :=
+  fun _ hε ↦ TauCeti.tendsto_measure_ge_zero_of_ae_le h₁ h₂
+    (.of_forall fun _ ↦ .of_forall fun _ ↦ edist_add_add_le _ _ _ _) hε
+
+/-- Pointwise negation preserves convergence in measure, for any measure and filter. -/
+theorem TendstoInMeasure.neg (h : TendstoInMeasure μ f l g) :
+    TendstoInMeasure μ (fun i ω ↦ -f i ω) l (fun ω ↦ -g ω) := by
+  simpa only [neg_one_smul] using h.const_smul (-1 : ℤ)
+
+/-- Pointwise subtraction preserves convergence in measure, for any measure and filter. -/
+theorem TendstoInMeasure.sub (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun i ω ↦ f₁ i ω - f₂ i ω) l (fun ω ↦ g₁ ω - g₂ ω) := by
+  simpa only [sub_eq_add_neg] using h₁.add h₂.neg
+
+/-- On a finite measure space, pointwise scalar multiplication by an a.e. strongly measurable
+scalar function preserves convergence in measure along any filter. -/
+theorem AEStronglyMeasurable.tendstoInMeasure_smul {𝕜 : Type*} [IsFiniteMeasure μ]
+    [SeminormedAddCommGroup 𝕜] [DistribSMul 𝕜 E] [IsBoundedSMul 𝕜 E] {c : Ω → 𝕜}
+    (hc : AEStronglyMeasurable c μ) (h : TendstoInMeasure μ f l g) :
+    TendstoInMeasure μ (fun i ω ↦ c ω • f i ω) l (fun ω ↦ c ω • g ω) := fun _ hε ↦
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (TauCeti.tendsto_measure_ge_zero_mul_of_ae_lt_top hc.eNorm (.of_forall fun _ ↦ eNorm_lt_top)
+      h hε) (fun _ ↦ zero_le) fun i ↦ measure_mono fun ω hω ↦ Set.mem_ofPred.2 <|
+    hω.trans <| (edist_smul_le (c ω) (f i ω) (g ω)).trans_eq (ENNReal.smul_def _ _)
+
+end TendstoInMeasure
 
 end MeasureTheory

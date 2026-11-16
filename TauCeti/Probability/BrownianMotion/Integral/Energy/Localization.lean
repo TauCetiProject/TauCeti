@@ -11,6 +11,7 @@ public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 public import Mathlib.Probability.Process.LocalProperty
+import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
 import TauCeti.Probability.Process.LocalProperty
 
 /-!
@@ -113,19 +114,16 @@ theorem brownianIntegrable_ite_le_energyLocalizer [IsFiniteMeasure P]
     (hH : LocallyBrownianIntegrable ℱ P H) (C : ℝ≥0) :
     BrownianIntegrable ℱ P
       (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H C ω then H t ω else 0) := by
-  have hτ : IsStoppingTime ℱ (nnvolume.energyLocalizer H C) :=
-    hH.isStronglyPredictable.isStoppingTime_energyLocalizer nnvolume C
-  refine (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer C).congr
-    (hH.isStronglyPredictable.ite_le hτ) fun T ↦ ?_
-  have htime : ∀ᵐ t ∂(volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ), t ∈ Iic T := by
-    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
-    exact (Probability.ae_mem_Ioc_timeMeasure T).mono fun _ ht ↦ ht.2
-  filter_upwards [Measure.quasiMeasurePreserving_fst.tendsto_ae htime,
-    Measure.quasiMeasurePreserving_snd.tendsto_ae hH.ae_accumulatedEnergy_lt_top] with p ht hfin
+  refine brownianIntegrable_iff_timeMeasure.2
+    ⟨hH.isStronglyPredictable.ite_le
+      (hH.isStronglyPredictable.isStoppingTime_energyLocalizer nnvolume C), fun T ↦
+      (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer C).memLp_timeMeasure T
+        |>.ae_eq ?_⟩
+  filter_upwards
+    [Measure.quasiMeasurePreserving_fst.tendsto_ae (Probability.ae_mem_Ioc_timeMeasure T),
+      Measure.quasiMeasurePreserving_snd.tendsto_ae hH.ae_accumulatedEnergy_lt_top] with p ht hfin
   dsimp only [Function.uncurry]
-  have hcut : nnvolume.finiteEnergyCutoff H p.1 p.2 = H p.1 p.2 :=
-    nnvolume.finiteEnergyCutoff_eqOn (hfin T) ht
-  rw [hcut]
+  split_ifs; exacts [nnvolume.finiteEnergyCutoff_eqOn (hfin T) ht.2, rfl]
 
 /-- Along the integer closed-level energy localizers, the pathwise square-energy error on each
 finite horizon tends to zero in measure under a finite sample measure. -/
@@ -134,7 +132,8 @@ theorem tendsto_measure_lintegral_energyLocalizer [IsFiniteMeasure P]
     Tendsto (fun n : ℕ ↦ P {ω | ε ≤ ∫⁻ s,
       ‖(if (s : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω then
           H s ω else 0) - H s ω‖ₑ ^ 2 ∂Probability.timeMeasure T}) atTop (𝓝 0) :=
-  hH.isLocalizingSequence_energyLocalizer.toIsPreLocalizingSequence.tendsto_measure_lintegral_ite_le
-    H ((Probability.ae_mem_Ioc_timeMeasure T).mono fun _ hs ↦ hs.2) hε
+  tendsto_measure_lintegral_ite_le_pow_of_tendsto_measure_le
+    (hH.isLocalizingSequence_energyLocalizer.toIsPreLocalizingSequence.tendsto_measure_le T)
+    H ((Probability.ae_mem_Ioc_timeMeasure T).mono fun _ hs ↦ hs.2) two_ne_zero hε
 
 end TauCeti.LocallyBrownianIntegrable

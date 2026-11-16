@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
 import Mathlib.MeasureTheory.Integral.Indicator
@@ -33,9 +32,7 @@ merely adapted replacement at a general stopping time requires additional measur
 For any native local property, the stopped stages converge almost surely at each fixed time
 to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
 Under a finite measure, the sublevel events `{ω | τ n ω ≤ T}` of any pre-localizing sequence
-have measure tending to zero (`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_le`), so
-pathwise lower square-norm cutoff errors on `(-∞, T]` tend to zero in measure
-(`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_lintegral_ite_le`).
+have measure tending to zero (`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_le`).
 
 Cutting localizing times off at the initial time outside increasing, exhausting initial events
 preserves localization (`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`). The corresponding
@@ -54,7 +51,7 @@ transports to the larger filtration, while monotonicity and divergence are uncha
 public section
 
 open MeasureTheory Filter TopologicalSpace
-open scoped ENNReal Topology
+open scoped Topology
 
 namespace ProbabilityTheory
 
@@ -90,25 +87,6 @@ theorem IsPreLocalizingSequence.tendsto_measure_le {ι Ω : Type*} [LinearOrder 
       (fun n ↦ ℱ.le T _ (hτ.isStoppingTime n T)) <| hτ.tendsto_top.mono fun ω hω ↦ by
         filter_upwards [hω.eventually (Ioi_mem_nhds (WithTop.coe_lt_top T))] with n hn
         simp [hn.not_ge]
-
-/-- Under a finite sample measure `P` and any time measure `μ` supported almost everywhere in
-`(-∞, T]`, cutting any process `H` off at a pre-localizing sequence `τ` produces pathwise lower
-square-norm errors whose positive tail measures tend to zero. Neither measurability of `H`,
-finiteness of its energy, nor monotonicity of `τ` is needed. -/
-theorem IsPreLocalizingSequence.tendsto_measure_lintegral_ite_le {ι Ω E : Type*} [LinearOrder ι]
-    [TopologicalSpace ι] [OrderTopology ι] [MeasurableSpace ι] {mΩ : MeasurableSpace Ω}
-    [SeminormedAddCommGroup E] {ℱ : Filtration ι mΩ} {P : Measure Ω} [IsFiniteMeasure P]
-    {μ : Measure ι} {τ : ℕ → Ω → WithTop ι}
-    (hτ : IsPreLocalizingSequence ℱ τ P) (H : ι → Ω → E) {T : ι} (hμ : ∀ᵐ s ∂μ, s ≤ T)
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun n ↦ P {ω | ε ≤ ∫⁻ s,
-      ‖(if (s : WithTop ι) ≤ τ n ω then H s ω else 0) - H s ω‖ₑ ^ 2 ∂μ}) atTop (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hτ.tendsto_measure_le T)
-    (fun _ ↦ zero_le) fun n ↦ measure_mono fun ω (hω : ε ≤ _) ↦ by_contra fun hnot ↦ ?_
-  have hzero : (∫⁻ s, ‖(if (s : WithTop ι) ≤ τ n ω then H s ω else 0) - H s ω‖ₑ ^ 2 ∂μ) = 0 :=
-    (lintegral_congr_ae (hμ.mono fun s hs ↦ by
-      simp [((WithTop.coe_le_coe.2 hs).trans (not_le.1 hnot).le)])).trans lintegral_zero
-  exact hε.not_ge (hzero ▸ hω)
 
 variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}

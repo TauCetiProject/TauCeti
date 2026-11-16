@@ -55,23 +55,23 @@ private theorem stoppedProcess_dyadicCeilTime
   obtain ⟨n, g, a, hg, ha, hE, _⟩ := hI.exists_seq_approx T
   choose N r b _ hr hb _ hhold hgains using fun m ↦
     Finance.exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime hτ d T (hg m) (ha m)
-  refine ⟨N, r, b, fun m ↦ (hr m).monotoneOn, hb, fun ε hε ↦ ?_, fun ε hε ↦ ?_⟩
-  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hE ε hε)
-      (fun _ ↦ zero_le) fun m ↦ measure_mono fun ω (hω : ε ≤ _) ↦ hω.trans (lintegral_mono_ae ?_)
-    filter_upwards [Probability.ae_mem_Ioc_timeMeasure T] with s hs
-    rw [hhold m s hs.2 ω]; split_ifs <;> simp
-  · let S : Finset ℝ≥0 := (range (dyadicCount d T + 1)).image (dyadicGrid d T)
-    have hsum : Tendsto (fun m ↦ ∑ v ∈ S,
-        P {ω | ε ≤ edist (Finance.simpleGains (g m) (n m) (a m) W v ω) (I v ω)}) atTop (𝓝 0) := by
-      rw [← sum_const_zero (s := S)]
-      exact tendsto_finsetSum S fun v hv ↦ by
-        obtain ⟨k, _, rfl⟩ := mem_image.1 hv
-        exact hI.tendstoInMeasure_simpleGains_of_le hW (dyadicGrid_le d T k) hg ha hE ε hε
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
-      (fun _ ↦ zero_le) fun m ↦ (measure_mono fun ω hω ↦ ?_).trans (measure_biUnion_finset_le S _)
-    refine mem_biUnion (mem_image.2 ⟨dyadicStopIndex d T (τ ω),
-      mem_range.2 (Nat.lt_succ_of_le (dyadicStopIndex_le d T (τ ω))), rfl⟩) ?_
-    simpa only [mem_ofPred_eq, eval_dyadicGrid_dyadicStopIndex, hgains m W T le_rfl ω] using hω
+  refine ⟨N, r, b, fun m ↦ (hr m).monotoneOn, hb, fun ε hε ↦
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hE ε hε) (fun _ ↦ zero_le)
+      fun m ↦ measure_mono fun ω (hω : ε ≤ _) ↦ hω.trans <| lintegral_mono_ae <|
+        (Probability.ae_mem_Ioc_timeMeasure T).mono fun s hs ↦ by
+          rw [hhold m s hs.2 ω]; split_ifs <;> simp, fun ε hε ↦ ?_⟩
+  let S : Finset ℝ≥0 := (range (dyadicCount d T + 1)).image (dyadicGrid d T)
+  have hsum : Tendsto (fun m ↦ ∑ v ∈ S,
+      P {ω | ε ≤ edist (Finance.simpleGains (g m) (n m) (a m) W v ω) (I v ω)}) atTop (𝓝 0) := by
+    rw [← sum_const_zero (s := S)]
+    exact tendsto_finsetSum S fun v hv ↦ let ⟨k, _, hk⟩ := mem_image.1 hv
+      hk ▸ hI.tendstoInMeasure_simpleGains_of_le hW (dyadicGrid_le d T k) hg ha hE ε hε
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum (fun _ ↦ zero_le) fun m ↦
+    (measure_mono fun ω hω ↦ mem_biUnion
+      (mem_image.2 ⟨dyadicStopIndex d T (τ ω),
+        mem_range.2 (Nat.lt_succ_of_le (dyadicStopIndex_le d T (τ ω))), rfl⟩) <| by
+          simpa only [mem_ofPred_eq, eval_dyadicGrid_dyadicStopIndex,
+            hgains m W T le_rfl ω] using hω).trans (measure_biUnion_finset_le S _)
 
 namespace IsItoIntegral
 
@@ -82,12 +82,11 @@ theorem stoppedProcess (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (MeasureTheory.stoppedProcess I τ) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hId (d : ℕ) := stoppedProcess_dyadicCeilTime hW hI hτ d
   refine of_seq (hI.isStronglyPredictable.ite_le hτ)
-    (hI.ae_continuous.mono fun _ hc ↦ hc.stoppedProcess) hId
+    (hI.ae_continuous.mono fun _ hc ↦ hc.stoppedProcess) (stoppedProcess_dyadicCeilTime hW hI hτ)
     (fun T _ hε ↦ hI.locallyBrownianIntegrable.tendsto_measure_lintegral_dyadicCeilTime hτ T hε)
     fun T ↦ tendstoInMeasure_of_tendsto_ae
-      (fun d ↦ (hId d).aestronglyMeasurable
+      (fun d ↦ (stoppedProcess_dyadicCeilTime hW hI hτ d).aestronglyMeasurable
         (fun s ↦ ((hW.martingale.stronglyAdapted s).mono (ℱ.le s)).aestronglyMeasurable) T)
       (hI.ae_continuous.mono fun ω hω ↦
         tendsto_stoppedProcess_dyadicCeilTime I τ T ω hω.continuousAt.continuousWithinAt)
@@ -99,11 +98,8 @@ theorem ite_Ioc {σ : Ω → WithTop ℝ≥0} (hW : Probability.IsFilteredPreBro
     IsItoIntegral ℱ P W
       (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (MeasureTheory.stoppedProcess I τ - MeasureTheory.stoppedProcess I (σ ⊓ τ)) := by
-  suffices h : (fun (t : ℝ≥0) ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
-      (fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
-        fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ (σ ⊓ τ) ω then H t ω else 0 by
-    exact h ▸ (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW (hσ.min hτ))
-  ext t ω; simp only [Pi.sub_apply, Pi.inf_apply, le_inf_iff, ← not_le (a := (t : WithTop ℝ≥0))]
+  convert (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW (hσ.min hτ)) using 1
+  ext t ω; simp only [Pi.sub_apply, le_inf_iff, ← not_le (a := (t : WithTop ℝ≥0))]
   split_ifs <;> simp_all
 
 /-- **Predictable `ℱ s`-multiplier rule on `(s, τ]`.** Against a filtered pre-Brownian motion,
@@ -116,18 +112,10 @@ theorem ite_Ioc_mul (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
       (fun t ω ↦ if s < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then ξ ω * H t ω else 0)
       (fun t ω ↦ ξ ω * (MeasureTheory.stoppedProcess I τ t ω -
         MeasureTheory.stoppedProcess I τ (min s t) ω)) := by
-  have hH_eq : (fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then
-      (if s < t then ξ ω * H t ω else 0) else 0) =
-      fun (t : ℝ≥0) ω ↦ if s < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then ξ ω * H t ω else 0 := by
-    ext t ω; split_ifs <;> simp_all
-  have hI_eq : MeasureTheory.stoppedProcess (fun u ω ↦ ξ ω * (I u ω - I (min s u) ω)) τ =
-      fun t ω ↦ ξ ω * (MeasureTheory.stoppedProcess I τ t ω -
-        MeasureTheory.stoppedProcess I τ (min s t) ω) := by
-    change MeasureTheory.stoppedProcess ((fun _ ↦ ξ) * (I - fun u ↦ I (min s u))) τ = _
-    rw [MeasureTheory.stoppedProcess_mul, MeasureTheory.stoppedProcess_const,
-      MeasureTheory.stoppedProcess_sub, MeasureTheory.stoppedProcess_const_min]
-    rfl
-  exact hH_eq ▸ hI_eq ▸ (hI.ite_lt_mul hW s hξ).stoppedProcess hW hτ
+  convert (hI.ite_lt_mul hW s hξ).stoppedProcess hW hτ using 1
+  · ext t ω; split_ifs <;> simp_all
+  · ext t ω; rw [← congr_fun₂ (MeasureTheory.stoppedProcess_const_min I τ s) t ω]
+    simp only [MeasureTheory.stoppedProcess]
 
 /-- **Local congruence of Itô integrals.** Against a filtered pre-Brownian motion and at a stopping
 time `τ`, two Itô integrals whose integrands agree `(timeMeasure T).prod P`-almost everywhere on
@@ -136,10 +124,9 @@ theorem stoppedProcess_indist_of_ae_eq (hW : Probability.IsFilteredPreBrownianRe
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (hτ : IsStoppingTime ℱ τ)
     (hHK : ∀ T : ℝ≥0, ∀ᵐ p ∂(Probability.timeMeasure T).prod P,
       (p.1 : WithTop ℝ≥0) ≤ τ p.2 → H p.1 p.2 = K p.1 p.2) :
-    MeasureTheory.stoppedProcess I τ ≡ᵐ[P] MeasureTheory.stoppedProcess J τ := by
-  refine (hI.stoppedProcess hW hτ).indist_of_ae_eq_prod hW (hJ.stoppedProcess hW hτ) fun T ↦ ?_
-  filter_upwards [hHK T] with p hp
-  dsimp only [Function.uncurry]; split_ifs with h <;> [exact hp h; rfl]
+    MeasureTheory.stoppedProcess I τ ≡ᵐ[P] MeasureTheory.stoppedProcess J τ :=
+  (hI.stoppedProcess hW hτ).indist_of_ae_eq_prod hW (hJ.stoppedProcess hW hτ) fun T ↦
+    (hHK T).mono fun _ hp ↦ by dsimp only [Function.uncurry]; split_ifs with h <;> [exact hp h; rfl]
 
 /-- **Local martingale property of the Itô integral.** Every strongly progressive Itô integral
 against a filtered pre-Brownian motion is a native local martingale on the raw filtration. -/
@@ -147,14 +134,13 @@ theorem locally_martingale (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hProg : IsStronglyProgressive ℱ I) :
     Locally (fun U ↦ Martingale U ℱ P) ℱ I P := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hH := hI.locallyBrownianIntegrable
-  have hτ := hH.isLocalizingSequence_energyLocalizer
+  have hH := hI.locallyBrownianIntegrable; have hτ := hH.isLocalizingSequence_energyLocalizer
   refine hProg.locally_martingale_of_ae_stopped_eq hτ (fun n ↦
     (hI.stoppedProcess hW (hτ.isStoppingTime n)).martingale hW
       (hH.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1))
-      (hProg.stoppedProcess (hτ.isStoppingTime n)).stronglyAdapted) fun n t ↦ .of_forall fun ω ↦ ?_
-  rw [stoppedProcess_indicator_comm']; exact (Set.indicator_of_mem
-    (nnvolume.energyLocalizer_pos H (by positivity : (0 : ℝ≥0) < n + 1) ω) _).symm
+      (hProg.stoppedProcess (hτ.isStoppingTime n)).stronglyAdapted) fun n t ↦ .of_forall fun ω ↦ by
+    rw [stoppedProcess_indicator_comm']
+    exact (Set.indicator_of_mem (nnvolume.energyLocalizer_pos H (by positivity) ω) _).symm
 
 end IsItoIntegral
 
@@ -166,23 +152,21 @@ theorem LocallyBrownianIntegrable.exists_isItoIntegral
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (hH : LocallyBrownianIntegrable ℱ P H) :
     ∃ I : ℝ≥0 → Ω → ℝ, IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧
       Locally (fun U ↦ Martingale U ℱ P) ℱ I P := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let τn (n : ℕ) := nnvolume.energyLocalizer H ((n : ℝ≥0) + 1)
-  have hτ := hH.isLocalizingSequence_energyLocalizer
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure; have hτ := hH.isLocalizingSequence_energyLocalizer
   choose U hU_ito hU_pred _ using fun n : ℕ ↦
     (hH.brownianIntegrable_ite_le_energyLocalizer ((n : ℝ≥0) + 1)).exists_isItoIntegral hW hcont
   obtain ⟨X, hX_prog, hX_cont, hX_stop⟩ := exists_isStronglyProgressive_patch_stoppedProcess
     hτ.tendsto_top (fun n ↦ (hU_pred n).isStronglyProgressive) (fun n ↦ (hU_ito n).ae_continuous)
     fun n m hnm ↦ ((hU_ito m).stoppedProcess hW (hτ.isStoppingTime n)).indist_of_ae_eq hW
       (hU_ito n) fun _ ↦ .of_forall fun ω ↦ .of_forall fun t ↦ by
-        have hmono : τn n ω ≤ τn m ω :=
-          nnvolume.monotone_energyLocalizer H ω (by exact_mod_cast Nat.add_le_add_right hnm 1)
+        have hmono := nnvolume.monotone_energyLocalizer H ω
+          (by exact_mod_cast Nat.add_le_add_right hnm 1 : (n : ℝ≥0) + 1 ≤ (m : ℝ≥0) + 1)
         dsimp only; split_ifs with h1 h2 <;> [rfl; exact (h2 (h1.trans hmono)).elim; rfl]
   obtain ⟨I, hI_pred, hIX⟩ :=
     hX_prog.stronglyAdapted.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
       (hX_cont.mono fun _ hc ↦ hc.isLeftContinuous)
   have hI_ito : IsItoIntegral ℱ P W H I := IsItoIntegral.of_seq hH.isStronglyPredictable
-    (by filter_upwards [hX_cont, hIX] with _ hc hω using hc.congr (fun t ↦ (hω t).symm)) hU_ito
+    (by filter_upwards [hX_cont, hIX] with _ hc hω using hc.congr fun t ↦ (hω t).symm) hU_ito
     (fun T _ hε ↦ hH.tendsto_measure_lintegral_energyLocalizer T hε) fun T ↦
     tendstoInMeasure_of_tendsto_ae (fun n ↦ ((hU_pred n).isStronglyProgressive.stronglyAdapted T
       |>.mono (ℱ.le T)).aestronglyMeasurable) (by
