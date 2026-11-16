@@ -44,6 +44,7 @@ namespace CategoryTheory.Subobject
 variable {C : Type u} [Category.{v} C] [Abelian C] {X Y : C}
 
 /-- The kernel of the cokernel of a monomorphism `f` is the subobject represented by `f`. -/
+@[simp]
 lemma kernelSubobject_cokernel_π {W : C} (f : W ⟶ Y) [Mono f] :
     kernelSubobject (cokernel.π f) = mk f := by
   rw [← imageSubobject_mono f]
@@ -51,6 +52,7 @@ lemma kernelSubobject_cokernel_π {W : C} (f : W ⟶ Y) [Mono f] :
     (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f))).symm
 
 /-- Along an epimorphism, the image of the preimage of a subobject is that subobject. -/
+@[simp]
 lemma exists_obj_pullback_obj_of_epi (p : Y ⟶ X) [Epi p] (K : Subobject X) :
     («exists» p).obj ((pullback p).obj K) = K := by
   rw [exists_eq_imageSubobject, ← (isPullback p K).w, imageSubobject_comp_eq_of_epi,

@@ -27,7 +27,9 @@ both directions. Taking preimages of a presentation of `Y` inside `X` gives a pr
 inside `A` (`SubquotientPresentation.trans`); in particular a pair `I ≤ K` of subobjects of `X`
 gives a presentation of the cokernel of `I ⟶ K` inside `A` by the preimages of `I` and `K`
 (`SubquotientPresentation.subquotient`). This composition is associative and has the identity
-presentation `(⊥, ⊤)` of an object inside itself as a unit on both sides.
+presentation `(⊥, ⊤)` of an object inside itself as a unit on both sides. For `I ≤ I′ ≤ K′ ≤ K`
+in `X`, the presentation of the cokernel of `I′ ≤ K′` is, up to the identification of the
+cokernels, the one obtained in two steps through the cokernel of `I ≤ K`.
 
 ## Main definitions
 
@@ -44,19 +46,24 @@ presentation `(⊥, ⊤)` of an object inside itself as a unit on both sides.
   pair `I ≤ K` of subobjects of `X`.
 * `TauCeti.SubquotientPresentation.refl`: the identity presentation `(⊥, ⊤)`.
 * `TauCeti.SubquotientPresentation.mapIso`: transport along an isomorphism `X ≅ Y`.
+* `TauCeti.SubquotientPresentation.isoOfEq`: the isomorphism between two objects presented by the
+  same subobjects.
 
 ## Main results
 
-* `TauCeti.SubquotientPresentation.isGLB_image_preimage_iff`,
-  `TauCeti.SubquotientPresentation.isLUB_image_preimage_iff`: preimages preserve and reflect
+* `TauCeti.SubquotientPresentation.isGLB_preimage_iff`,
+  `TauCeti.SubquotientPresentation.isLUB_preimage_iff`: preimages preserve and reflect
   greatest lower bounds and least upper bounds of nonempty families; and
   `TauCeti.SubquotientPresentation.preimage_image_of_isGLB`,
   `TauCeti.SubquotientPresentation.preimage_image_of_isLUB`: such a bound of a family of preimages
   is itself a preimage.
 * `TauCeti.SubquotientPresentation.preimage_trans`, `TauCeti.SubquotientPresentation.trans_assoc`:
   preimages compose, and composition of presentations is associative.
-* `TauCeti.SubquotientPresentation.refl_preimage`, `TauCeti.SubquotientPresentation.trans_refl`,
+* `TauCeti.SubquotientPresentation.preimage_refl`, `TauCeti.SubquotientPresentation.trans_refl`,
   `TauCeti.SubquotientPresentation.refl_trans`: the identity presentation is a unit.
+* `TauCeti.SubquotientPresentation.trans_subquotient_image`,
+  `TauCeti.SubquotientPresentation.subquotient_subquotient_image`: naturality of the presentation
+  of a cokernel.
 
 ## References
 
@@ -191,10 +198,10 @@ lemma pullback_Z_arrow_preimage (K : Subobject X) :
     (Subobject.pullback P.Z.arrow).obj (P.preimage K) = (Subobject.pullback P.π).obj K :=
   pullback_map_self _ _
 
-lemma preimage_mono : Monotone P.preimage :=
+lemma preimage_monotone : Monotone P.preimage :=
   fun _ _ h ↦ (map _).monotone ((Subobject.pullback _).monotone h)
 
-lemma image_mono : Monotone P.image :=
+lemma image_monotone : Monotone P.image :=
   fun _ _ h ↦ («exists» _).monotone ((Subobject.pullback _).monotone h)
 
 lemma preimage_le_Z (K : Subobject X) : P.preimage K ≤ P.Z := by
@@ -210,12 +217,14 @@ lemma preimage_top : P.preimage ⊤ = P.Z := by
   rw [preimage, pullback_top, Subobject.map_top, mk_arrow]
 
 lemma B_le_preimage (K : Subobject X) : P.B ≤ P.preimage K :=
-  P.preimage_bot.symm.trans_le (P.preimage_mono bot_le)
+  P.preimage_bot.symm.trans_le (P.preimage_monotone bot_le)
 
+/-- The image of the preimage of a subobject of `X` is that subobject. -/
 @[simp]
 lemma image_preimage (K : Subobject X) : P.image (P.preimage K) = K := by
   rw [image, preimage, pullback_map_self, exists_obj_pullback_obj_of_epi]
 
+/-- A subobject of `A` in the interval `[B, Z]` is the preimage of its image. -/
 lemma preimage_image {S : Subobject A} (h₁ : P.B ≤ S) (h₂ : S ≤ P.Z) :
     P.preimage (P.image S) = S := by
   rw [image, preimage, pullback_obj_exists_obj_of_kernelSubobject_le,
@@ -228,7 +237,7 @@ lemma preimage_injective : Function.Injective P.preimage :=
 
 @[simp]
 lemma preimage_le_preimage_iff {K L : Subobject X} : P.preimage K ≤ P.preimage L ↔ K ≤ L :=
-  ⟨fun h ↦ by simpa using P.image_mono h, fun h ↦ P.preimage_mono h⟩
+  ⟨fun h ↦ by simpa using P.image_monotone h, fun h ↦ P.preimage_monotone h⟩
 
 @[simp]
 lemma preimage_inj {K L : Subobject X} : P.preimage K = P.preimage L ↔ K = L :=
@@ -270,40 +279,34 @@ lemma preimage_image_of_isLUB (hs : s.Nonempty) {S : Subobject A}
     (h.2 (Set.forall_mem_image.2 fun L _ ↦ P.preimage_le_Z L))
 
 /-- Preimages preserve and reflect greatest lower bounds of nonempty families. -/
-lemma isGLB_image_preimage_iff (hs : s.Nonempty) {K : Subobject X} :
+lemma isGLB_preimage_iff (hs : s.Nonempty) {K : Subobject X} :
     IsGLB (P.preimage '' s) (P.preimage K) ↔ IsGLB s K := by
-  refine ⟨fun h ↦ ⟨fun L hL ↦ ?_, fun L hL ↦ ?_⟩, fun h ↦ ⟨?_, fun S hS ↦ ?_⟩⟩
-  · exact P.preimage_le_preimage_iff.1 (h.1 (Set.mem_image_of_mem _ hL))
-  · exact P.preimage_le_preimage_iff.1
-      (h.2 (Set.forall_mem_image.2 fun M hM ↦ P.preimage_mono (hL hM)))
-  · exact Set.forall_mem_image.2 fun L hL ↦ P.preimage_mono (h.1 hL)
-  · -- `S ⊔ B` is still a lower bound, and it lies in the interval `[B, Z]`.
-    obtain ⟨K₀, hK₀⟩ := hs
-    have hlow : ∀ L ∈ s, S ⊔ P.B ≤ P.preimage L := fun L hL ↦
-      sup_le (hS (Set.mem_image_of_mem _ hL)) (P.B_le_preimage L)
-    have hmem := P.preimage_image le_sup_right ((hlow K₀ hK₀).trans (P.preimage_le_Z K₀))
-    calc S ≤ S ⊔ P.B := le_sup_left
-      _ = P.preimage (P.image (S ⊔ P.B)) := hmem.symm
-      _ ≤ P.preimage K := P.preimage_mono
-        (h.2 fun L hL ↦ P.preimage_le_preimage_iff.1 (hmem.trans_le (hlow L hL)))
+  refine ⟨fun h ↦ h.of_image P.preimage_le_preimage_iff,
+    fun h ↦ ⟨P.preimage_monotone.mem_lowerBounds_image h.1, fun S hS ↦ ?_⟩⟩
+  -- `S ⊔ B` is still a lower bound, and it lies in the interval `[B, Z]`.
+  obtain ⟨K₀, hK₀⟩ := hs
+  have hlow : ∀ L ∈ s, S ⊔ P.B ≤ P.preimage L := fun L hL ↦
+    sup_le (hS (Set.mem_image_of_mem _ hL)) (P.B_le_preimage L)
+  have hmem := P.preimage_image le_sup_right ((hlow K₀ hK₀).trans (P.preimage_le_Z K₀))
+  calc S ≤ S ⊔ P.B := le_sup_left
+    _ = P.preimage (P.image (S ⊔ P.B)) := hmem.symm
+    _ ≤ P.preimage K := P.preimage_monotone
+      (h.2 fun L hL ↦ P.preimage_le_preimage_iff.1 (hmem.trans_le (hlow L hL)))
 
 /-- Preimages preserve and reflect least upper bounds of nonempty families. -/
-lemma isLUB_image_preimage_iff (hs : s.Nonempty) {K : Subobject X} :
+lemma isLUB_preimage_iff (hs : s.Nonempty) {K : Subobject X} :
     IsLUB (P.preimage '' s) (P.preimage K) ↔ IsLUB s K := by
-  refine ⟨fun h ↦ ⟨fun L hL ↦ ?_, fun L hL ↦ ?_⟩, fun h ↦ ⟨?_, fun S hS ↦ ?_⟩⟩
-  · exact P.preimage_le_preimage_iff.1 (h.1 (Set.mem_image_of_mem _ hL))
-  · exact P.preimage_le_preimage_iff.1
-      (h.2 (Set.forall_mem_image.2 fun M hM ↦ P.preimage_mono (hL hM)))
-  · exact Set.forall_mem_image.2 fun L hL ↦ P.preimage_mono (h.1 hL)
-  · -- `S ⊓ Z` is still an upper bound, and it lies in the interval `[B, Z]`.
-    obtain ⟨K₀, hK₀⟩ := hs
-    have hup : ∀ L ∈ s, P.preimage L ≤ S ⊓ P.Z := fun L hL ↦
-      le_inf (hS (Set.mem_image_of_mem _ hL)) (P.preimage_le_Z L)
-    have hmem := P.preimage_image ((P.B_le_preimage K₀).trans (hup K₀ hK₀)) inf_le_right
-    calc P.preimage K ≤ P.preimage (P.image (S ⊓ P.Z)) := P.preimage_mono
-          (h.2 fun L hL ↦ P.preimage_le_preimage_iff.1 ((hup L hL).trans_eq hmem.symm))
-      _ = S ⊓ P.Z := hmem
-      _ ≤ S := inf_le_left
+  refine ⟨fun h ↦ h.of_image P.preimage_le_preimage_iff,
+    fun h ↦ ⟨P.preimage_monotone.mem_upperBounds_image h.1, fun S hS ↦ ?_⟩⟩
+  -- `S ⊓ Z` is still an upper bound, and it lies in the interval `[B, Z]`.
+  obtain ⟨K₀, hK₀⟩ := hs
+  have hup : ∀ L ∈ s, P.preimage L ≤ S ⊓ P.Z := fun L hL ↦
+    le_inf (hS (Set.mem_image_of_mem _ hL)) (P.preimage_le_Z L)
+  have hmem := P.preimage_image ((P.B_le_preimage K₀).trans (hup K₀ hK₀)) inf_le_right
+  calc P.preimage K ≤ P.preimage (P.image (S ⊓ P.Z)) := P.preimage_monotone
+        (h.2 fun L hL ↦ P.preimage_le_preimage_iff.1 ((hup L hL).trans_eq hmem.symm))
+    _ = S ⊓ P.Z := hmem
+    _ ≤ S := inf_le_left
 
 end Bounds
 
@@ -323,7 +326,7 @@ lemma preimageπ_arrow (K : Subobject X) :
 
 @[reassoc]
 lemma preimageπ_ofLE {K L : Subobject X} (h : K ≤ L) :
-    P.preimageπ K ≫ ofLE K L h = ofLE _ _ (P.preimage_mono h) ≫ P.preimageπ L := by
+    P.preimageπ K ≫ ofLE K L h = ofLE _ _ (P.preimage_monotone h) ≫ P.preimageπ L := by
   rw [← cancel_mono L.arrow]
   simp [ofLE_comp_ofLE_assoc]
 
@@ -349,7 +352,7 @@ lemma pullback_arrow_preimage (K L : Subobject X) :
 /-- The subquotient presentation inside `A` of an object presented inside `X`: its subobjects
 are the preimages of those of the presentation inside `X`. -/
 @[expose] noncomputable def trans (Q : SubquotientPresentation X Y) : SubquotientPresentation A Y :=
-  ofEpi (P.preimage_mono Q.le) (P.preimageπ Q.Z ≫ Q.π) (by
+  ofEpi (P.preimage_monotone Q.le) (P.preimageπ Q.Z ≫ Q.π) (by
     rw [← pullback_kernelSubobject, kernelSubobject_π, pullback_arrow_preimage])
 
 variable (Q : SubquotientPresentation X Y)
@@ -363,7 +366,17 @@ lemma trans_Z : (P.trans Q).Z = P.preimage Q.Z := (rfl)
 @[simp]
 lemma π_trans : (P.trans Q).π = P.preimageπ Q.Z ≫ Q.π := π_ofEpi _ _ _
 
+/-- The projection of a composite presentation, as a morphism out of `P.preimage Q.Z`. -/
+lemma π_trans' :
+    (P.trans Q).π = ofLE _ (P.preimage Q.Z) (P.trans_Z Q).le ≫ P.preimageπ Q.Z ≫ Q.π := by
+  rw [π_trans]
+  conv_lhs => rw [← Category.id_comp (P.preimageπ Q.Z ≫ Q.π), ← ofLE_refl (P.preimage Q.Z)]
+  -- The larger subobject of `P.trans Q` is `P.preimage Q.Z` by definition, but `trans_Z` cannot
+  -- be rewritten in the source of `P.preimageπ Q.Z`.
+  rfl
+
 /-- Taking preimages along a composite presentation is taking preimages twice. -/
+@[simp]
 lemma preimage_trans (K : Subobject Y) : (P.trans Q).preimage K = P.preimage (Q.preimage K) := by
   -- Inside the preimage of `Q.Z`, both sides consist of the maps `x` with `x ≫ ρ ≫ Q.π`
   -- landing in `K`, where `ρ = P.preimageπ Q.Z`.
@@ -376,7 +389,7 @@ lemma preimage_trans (K : Subobject Y) : (P.trans Q).preimage K = P.preimage (Q.
       Category.assoc]
     exact Iff.rfl
   have h₁ : (P.trans Q).preimage K ≤ P.preimage Q.Z := (P.trans Q).preimage_le_Z K
-  have h₂ : P.preimage (Q.preimage K) ≤ P.preimage Q.Z := P.preimage_mono (Q.preimage_le_Z K)
+  have h₂ : P.preimage (Q.preimage K) ≤ P.preimage Q.Z := P.preimage_monotone (Q.preimage_le_Z K)
   have k₁ := (key (ofLE _ _ h₁)).1
   have k₂ := (key (ofLE _ _ h₂)).2
   rw [ofLE_arrow] at k₁ k₂
@@ -387,11 +400,9 @@ projections. -/
 lemma preimageπ_trans (K : Subobject Y) :
     (P.trans Q).preimageπ K =
       ofLE _ _ (P.preimage_trans Q K).le ≫ P.preimageπ (Q.preimage K) ≫ Q.preimageπ K := by
-  rw [← cancel_mono K.arrow, preimageπ_arrow, π_trans, Category.assoc, Category.assoc,
-    preimageπ_arrow, P.preimageπ_ofLE_assoc (Q.preimage_le_Z K), ofLE_comp_ofLE_assoc]
-  -- The two inclusions differ only by `trans_Z`, which holds by definition and cannot be
-  -- rewritten since it occurs in the type of the inclusion.
-  rfl
+  rw [← cancel_mono K.arrow, preimageπ_arrow, π_trans', ofLE_comp_ofLE_assoc, Category.assoc,
+    Category.assoc, preimageπ_arrow, P.preimageπ_ofLE_assoc (Q.preimage_le_Z K),
+    ofLE_comp_ofLE_assoc]
 
 /-- Composition of subquotient presentations is associative. -/
 lemma trans_assoc {V : C} (R : SubquotientPresentation Y V) :
@@ -399,9 +410,8 @@ lemma trans_assoc {V : C} (R : SubquotientPresentation Y V) :
   ext (P.preimage_trans Q R.B) (P.preimage_trans Q R.Z) (by
     -- Both sides are the inclusion into `P.preimage (Q.preimage R.Z)` followed by
     -- `P.preimageπ (Q.preimage R.Z) ≫ Q.preimageπ R.Z ≫ R.π`.
-    simp only [π_trans, preimageπ_trans, Category.assoc]
-    -- The remaining difference is `trans_Z` inside the types of the inclusions.
-    rfl)
+    simp only [π_trans', preimageπ_trans, preimageπ_ofLE_assoc, ofLE_comp_ofLE_assoc,
+      Category.assoc])
 
 end Trans
 
@@ -481,26 +491,24 @@ lemma π_refl : (refl X).π = (refl X).Z.arrow := π_ofEpi _ _ _
 
 /-- Transport along the identity presentation is the identity. -/
 @[simp]
-lemma refl_preimage (K : Subobject X) : (refl X).preimage K = K := by
+lemma preimage_refl (K : Subobject X) : (refl X).preimage K = K := by
   rw [preimage, π_refl, map_arrow_pullback_arrow_obj_of_le (Z := (refl X).Z) le_top]
 
 variable (P : SubquotientPresentation A X)
 
+/-- The identity presentation is a right unit for composition. -/
 @[simp]
 lemma trans_refl : P.trans (refl X) = P :=
   ext P.preimage_bot P.preimage_top (by
-    rw [π_trans, π_refl, preimageπ_arrow]
-    -- The remaining difference is `trans_Z` inside the types of the inclusions.
-    rfl)
+    rw [π_trans', π_refl, preimageπ_arrow, ofLE_comp_ofLE_assoc])
 
+/-- The identity presentation is a left unit for composition. -/
 @[simp]
 lemma refl_trans : (refl A).trans P = P :=
-  ext (refl_preimage P.B) (refl_preimage P.Z) (by
-    have h : (refl A).preimageπ P.Z = ofLE _ _ (refl_preimage P.Z).le := by
+  ext (preimage_refl P.B) (preimage_refl P.Z) (by
+    have h : (refl A).preimageπ P.Z = ofLE _ _ (preimage_refl P.Z).le := by
       rw [← cancel_mono P.Z.arrow, preimageπ_arrow, π_refl, ofLE_arrow, ofLE_arrow]
-    rw [π_trans, h]
-    -- The remaining difference is `trans_Z` inside the types of the inclusions.
-    rfl)
+    rw [π_trans', h, ofLE_comp_ofLE_assoc])
 
 end Refl
 
@@ -525,13 +533,85 @@ lemma mapIso_Z (e : X ≅ Y) : (P.mapIso e).Z = P.Z := (rfl)
 lemma π_mapIso (e : X ≅ Y) : (P.mapIso e).π = P.π ≫ e.hom :=
   (Category.assoc _ _ _).symm
 
+/-- The projection of a transported presentation, as a morphism out of `P.Z`. -/
+lemma π_mapIso' (e : X ≅ Y) : (P.mapIso e).π = ofLE _ P.Z (P.mapIso_Z e).le ≫ P.π ≫ e.hom := by
+  rw [π_mapIso]
+  conv_lhs => rw [← Category.id_comp (P.π ≫ e.hom), ← ofLE_refl P.Z]
+  -- The larger subobject of `P.mapIso e` is `P.Z` by definition, but `mapIso_Z` cannot be
+  -- rewritten in the source of `P.π`.
+  rfl
+
 @[simp]
 lemma preimage_mapIso (e : X ≅ Y) (K : Subobject Y) :
     (P.mapIso e).preimage K = P.preimage ((Subobject.pullback e.hom).obj K) := by
   rw [preimage, preimage, π_mapIso]
   exact congrArg (map P.Z.arrow).obj (pullback_comp P.π e.hom K)
 
+/-- Composing with a presentation transported along an isomorphism is transporting the composite
+along that isomorphism. -/
+lemma trans_mapIso (Q : SubquotientPresentation X Y) (e : Y ≅ W) :
+    P.trans (Q.mapIso e) = (P.trans Q).mapIso e :=
+  ext (by simp) (by simp) (by
+    simp only [π_trans', π_mapIso', preimageπ_ofLE_assoc, ofLE_comp_ofLE_assoc, Category.assoc])
+
+/-- The isomorphism between two objects presented inside `A` by the same subobjects: it is
+induced by the identity of the larger subobject. -/
+noncomputable def isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
+    X ≅ Y :=
+  P.iso.symm ≪≫ cokernel.mapIso _ _ (Subobject.isoOfEq _ _ hB) (Subobject.isoOfEq _ _ hZ)
+    (by simp [ofLE_comp_ofLE]) ≪≫ P'.iso
+
+/-- The projection of `P` followed by `P.isoOfEq P' hB hZ` is the projection of `P'`. -/
+@[reassoc (attr := simp)]
+lemma π_isoOfEq_hom (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
+    P.π ≫ (P.isoOfEq P' hB hZ).hom = ofLE P.Z P'.Z hZ.le ≫ P'.π := by
+  simp [isoOfEq, ← cokernel_π_iso_hom]
+
+/-- Transporting a presentation along the isomorphism to another presentation by the same
+subobjects gives that presentation. -/
+@[simp]
+lemma mapIso_isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
+    P.mapIso (P.isoOfEq P' hB hZ) = P' :=
+  ext hB hZ (by rw [π_mapIso', π_isoOfEq_hom, ofLE_comp_ofLE_assoc])
+
 end MapIso
+
+section Naturality
+
+variable (P : SubquotientPresentation A X)
+
+/-- For a presentation `Q` of `Y` inside `X` and subobjects `I′ ≤ K′` of `X` in the interval
+`[Q.B, Q.Z]`, presenting inside `A` the cokernel of the images of `I′` and `K′` in `Y` is
+presenting the cokernel of `I′ ≤ K′`, up to the identification of the two cokernels. -/
+lemma trans_subquotient_image (Q : SubquotientPresentation X Y) {I' K' : Subobject X}
+    (hI : Q.B ≤ I') (h' : I' ≤ K') (hK : K' ≤ Q.Z) :
+    (P.trans Q).subquotient (Q.image I') (Q.image K') (Q.image_monotone h') =
+      (P.subquotient I' K' h').mapIso ((quotient I' K' h').isoOfEq
+        (Q.subquotient (Q.image I') (Q.image K') (Q.image_monotone h'))
+        (by rw [quotient_B, subquotient_B, Q.preimage_image hI (h'.trans hK)])
+        (by rw [quotient_Z, subquotient_Z, Q.preimage_image (hI.trans h') hK])) :=
+  calc (P.trans Q).subquotient (Q.image I') (Q.image K') (Q.image_monotone h')
+      _ = P.trans (Q.subquotient (Q.image I') (Q.image K') (Q.image_monotone h')) :=
+        P.trans_assoc _ _
+      _ = P.trans ((quotient I' K' h').mapIso _) := by rw [mapIso_isoOfEq]
+      _ = _ := P.trans_mapIso _ _
+
+/-- Naturality of the presentation of a cokernel: for `I ≤ I′ ≤ K′ ≤ K` in `X`, presenting the
+cokernel of `I′ ≤ K′` directly inside `A`, and presenting it in two steps, first the cokernel of
+`I ≤ K` and then inside it the cokernel of the images of `I′` and `K′`, agree up to the
+identification of the two cokernels. -/
+lemma subquotient_subquotient_image {I I' K' K : Subobject X} (h : I ≤ K) (hI : I ≤ I')
+    (h' : I' ≤ K') (hK : K' ≤ K) :
+    (P.subquotient I K h).subquotient ((quotient I K h).image I') ((quotient I K h).image K')
+        ((quotient I K h).image_monotone h') =
+      (P.subquotient I' K' h').mapIso ((quotient I' K' h').isoOfEq
+        ((quotient I K h).subquotient ((quotient I K h).image I') ((quotient I K h).image K')
+          ((quotient I K h).image_monotone h'))
+        (by rw [quotient_B, subquotient_B, preimage_image _ hI (h'.trans hK)])
+        (by rw [quotient_Z, subquotient_Z, preimage_image _ (hI.trans h') hK])) :=
+  P.trans_subquotient_image _ hI h' hK
+
+end Naturality
 
 end SubquotientPresentation
 

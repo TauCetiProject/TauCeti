@@ -64,6 +64,7 @@ lemma kernelSubobject_le_pullback_obj {X Y : C} (p : Y ⟶ X) [HasKernel p]
   le_of_factors (pullback_factors p K _ (by rw [kernelSubobject_arrow_comp]; exact factors_zero))
 
 /-- The kernel of a morphism is the preimage of the bottom subobject. -/
+@[simp]
 lemma pullback_obj_bot [HasZeroObject C] {X Y : C} (p : Y ⟶ X)
     [HasKernel p] : (pullback p).obj ⊥ = kernelSubobject p :=
   le_antisymm (le_kernelSubobject _ _ ((bot_factors_iff_zero _).1
