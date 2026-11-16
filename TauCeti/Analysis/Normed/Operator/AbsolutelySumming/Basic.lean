@@ -9,10 +9,6 @@ public import TauCeti.Analysis.Normed.Lp.Weak
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Basic.Denumerable
-import Mathlib.Topology.Algebra.InfiniteSum.Real
-import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
 # Absolutely summing operators
@@ -582,6 +578,7 @@ def summingGauge : OperatorGauge 𝕜 E F where
 
 variable {𝕜 p E F}
 
+/-- The `p`-summing gauge evaluated at an operator is its `p`-summing norm `πₚ`. -/
 @[simp]
 theorem summingGauge_apply (T : E →L[𝕜] F) : summingGauge 𝕜 p E F T = T.summingENorm p := (rfl)
 
@@ -597,9 +594,10 @@ theorem lowerSemicontinuous_summingGauge : LowerSemicontinuous (summingGauge �
   ContinuousLinearMap.lowerSemicontinuous_summingENorm
 
 variable (𝕜 p E F) in
-/-- The operator ideal `Πₚ(E, F)` of absolutely `p`-summing operators, normed by the
-`p`-summing norm `πₚ`. It is a Banach space when `F` is complete, and its inclusion
-`OperatorGauge.Carrier.toContinuousLinearMapL` into the bounded operators is a contraction. -/
+/-- The operator ideal `Πₚ(E, F)` of absolutely `p`-summing operators. When `F` is a normed
+space it is normed by the `p`-summing norm `πₚ`; it is then a Banach space when `F` is complete,
+and its inclusion `OperatorGauge.Carrier.toContinuousLinearMapL` into the bounded operators is a
+contraction. -/
 abbrev AbsolutelySumming := (summingGauge 𝕜 p E F).Carrier
 
 namespace AbsolutelySumming
@@ -614,6 +612,7 @@ def mk' {T : E →L[𝕜] F} (hT : T ∈ absolutelySummingOperators 𝕜 p E F) 
     AbsolutelySumming 𝕜 p E F :=
   ⟨T, by simpa using hT⟩
 
+/-- The operator underlying `mk' hT` is the operator `T` it was built from. -/
 @[simp]
 theorem toContinuousLinearMap_mk' {T : E →L[𝕜] F}
     (hT : T ∈ absolutelySummingOperators 𝕜 p E F) : (mk' hT).toContinuousLinearMap = T := (rfl)
@@ -622,6 +621,7 @@ theorem toContinuousLinearMap_mk' {T : E →L[𝕜] F}
 def smulRight (f : StrongDual 𝕜 E) (y : F) : AbsolutelySumming 𝕜 p E F :=
   mk' (smulRight_mem_absolutelySummingOperators f y)
 
+/-- The operator underlying `smulRight f y` is the rank-one operator `f.smulRight y`. -/
 @[simp]
 theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (y : F) :
     (smulRight (p := p) f y).toContinuousLinearMap = f.smulRight y := (rfl)
@@ -678,6 +678,7 @@ def postcomp (A : F →L[𝕜] G) : AbsolutelySumming 𝕜 p E F →L[𝕜] Abso
       ofReal_norm, ofReal_norm, ofReal_norm, enorm_eq_summingENorm, enorm_eq_summingENorm]
     exact A.summingENorm_comp_left_le _
 
+/-- The operator underlying `postcomp p E A T` is the composite `A ∘L T`. -/
 @[simp]
 theorem toContinuousLinearMap_postcomp (A : F →L[𝕜] G) (T : AbsolutelySumming 𝕜 p E F) :
     (postcomp p E A T).toContinuousLinearMap = A ∘L T.toContinuousLinearMap := (rfl)
@@ -702,6 +703,7 @@ def precomp (B : D →L[𝕜] E) : AbsolutelySumming 𝕜 p E F →L[𝕜] Absol
       mul_comm]
     exact ContinuousLinearMap.summingENorm_comp_right_le _ B
 
+/-- The operator underlying `precomp p F B T` is the composite `T ∘L B`. -/
 @[simp]
 theorem toContinuousLinearMap_precomp (B : D →L[𝕜] E) (T : AbsolutelySumming 𝕜 p E F) :
     (precomp p F B T).toContinuousLinearMap = T.toContinuousLinearMap ∘L B := (rfl)
@@ -735,6 +737,7 @@ def inclusion {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) :
     exact ENNReal.toReal_mono T.toContinuousLinearMap_mem.ne
       (ContinuousLinearMap.summingENorm_le_summingENorm_of_exponent_le hpq _)
 
+/-- The operator underlying `inclusion 𝕜 E F hpq T` is the operator underlying `T`. -/
 @[simp]
 theorem toContinuousLinearMap_inclusion {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
     (T : AbsolutelySumming 𝕜 p E F) :
