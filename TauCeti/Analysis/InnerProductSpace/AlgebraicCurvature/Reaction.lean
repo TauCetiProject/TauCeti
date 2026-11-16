@@ -157,6 +157,12 @@ theorem reactionComponent_apply {ι : Type*} [Fintype ι] (b : OrthonormalBasis 
         2 * (∑ p, ∑ q, r ![b i, b p, b l, b q] * r ![b j, b p, b k, b q]) :=
   (rfl)
 
+private theorem domDomCongr_swap_one_two_apply (r : FourTensor V) (a b c d : V) :
+    r.domDomCongr (Equiv.swap 1 2) ![a, b, c, d] = r ![a, c, b, d] := by
+  rw [ContinuousMultilinearMap.domDomCongr_apply]
+  congr 1
+  funext i; fin_cases i <;> rfl
+
 /-- The bilinear form `(x, y) ↦ r ![u, x, z, y]` slicing the second and fourth slots of a
 four-tensor. -/
 private def secondFourthSlice (r : FourTensor V) (u z : V) : BilinForm ℝ V :=
@@ -165,9 +171,7 @@ private def secondFourthSlice (r : FourTensor V) (u z : V) : BilinForm ℝ V :=
 @[simp]
 private theorem secondFourthSlice_apply (r : FourTensor V) (u z x y : V) :
     secondFourthSlice r u z x y = r ![u, x, z, y] := by
-  rw [secondFourthSlice, lastSlice_apply, ContinuousMultilinearMap.domDomCongr_apply]
-  congr 1
-  funext i; fin_cases i <;> rfl
+  rw [secondFourthSlice, lastSlice_apply, domDomCongr_swap_one_two_apply]
 
 private theorem abs_sum_mul_last_le {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (r s : FourTensor V) (u v z w : V) :
@@ -177,9 +181,9 @@ private theorem abs_sum_mul_last_le {ι : Type*} [Fintype ι] (b : OrthonormalBa
       ‖lastSlice t a c x y‖ ≤ (‖t‖ * ‖a‖ * ‖c‖) * ‖x‖ * ‖y‖ := by
     simpa only [lastSlice_apply, Fin.prod_univ_four, Fin.isValue, Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val, mul_assoc] using t.le_opNorm ![a, c, x, y]
-  have h := b.orthonormal.norm_sum_mul_bilinForm_le Finset.univ Finset.univ
+  have h := b.orthonormal.norm_sum_sum_apply_mul_apply_le b.orthonormal Finset.univ Finset.univ
     (hslice r u v) (hslice s z w)
-  simp only [lastSlice_apply, Real.norm_eq_abs, Finset.card_univ] at h
+  simp only [lastSlice_apply, Real.norm_eq_abs, Finset.card_univ, min_self] at h
   exact h.trans_eq (by ring)
 
 private theorem abs_sum_mul_second_fourth_le {ι : Type*} [Fintype ι]
@@ -188,10 +192,7 @@ private theorem abs_sum_mul_second_fourth_le {ι : Type*} [Fintype ι]
       (Fintype.card ι : ℝ) * ‖r‖ * ‖s‖ * (‖u‖ * ‖v‖ * ‖z‖ * ‖w‖) := by
   have h := abs_sum_mul_last_le b
     (r.domDomCongr (Equiv.swap 1 2)) (s.domDomCongr (Equiv.swap 1 2)) u z v w
-  have hswap (t : FourTensor V) (a c x y : V) :
-      t.domDomCongr (Equiv.swap 1 2) ![a, c, x, y] = t ![a, x, c, y] := by
-    rw [← lastSlice_apply]; exact secondFourthSlice_apply t a c x y
-  simp only [hswap, ContinuousMultilinearMap.norm_domDomCongr] at h
+  simp only [domDomCongr_swap_one_two_apply, ContinuousMultilinearMap.norm_domDomCongr] at h
   exact h.trans_eq (by ring)
 
 section FiniteDimensional
@@ -223,10 +224,7 @@ private def pairMixedFourTensor (r s : FourTensor V) (x y : V) : FourTensor V :=
 @[simp]
 private theorem pairMixedFourTensor_apply (r s : FourTensor V) (x y u v z w : V) :
     pairMixedFourTensor r s x y ![u, v, z, w] = r ![u, x, z, y] * s ![v, x, w, y] := by
-  have h12 (a b c d : V) : (fun i ↦ ![a, b, c, d] (Equiv.swap 1 2 i)) = ![a, c, b, d] := by
-    funext i; fin_cases i <;> rfl
-  simp only [pairMixedFourTensor, ContinuousMultilinearMap.domDomCongr_apply, h12,
-    pairFirstFourTensor_apply]
+  simp only [pairMixedFourTensor, domDomCongr_swap_one_two_apply, pairFirstFourTensor_apply]
 
 /-- The four-tensor `(u, v, z, w) ↦ r(u, x, w, y) * s(v, x, z, y)` for fixed `x, y : V`. -/
 private def pairCrossFourTensor (r s : FourTensor V) (x y : V) : FourTensor V :=
@@ -394,6 +392,10 @@ private theorem reactionBilinearSum_comp_of_comp_adjoint_eq_id {W ι κ : Type*}
     sum_mul_last_comp_of_comp_adjoint_eq_id bW bV hP,
     sum_mul_secondFourth_comp_of_comp_adjoint_eq_id bW bV hP]
 
+private theorem reactionBilinear_apply_eq (r s : FourTensor V) :
+    reactionBilinear V r s = reactionBilinearRaw r s := by
+  rw [reactionBilinear, LinearMap.mkContinuous₂_apply, reactionBilinearLM, LinearMap.mk₂_apply]
+
 /-- Basis independence of `reactionBilinear`: in every orthonormal basis `b` of `V`,
 `reactionBilinear V r s` is given by the symmetrized double contraction over `b`. -/
 theorem reactionBilinear_apply_orthonormalBasis {ι : Type*} [Fintype ι]
@@ -405,8 +407,7 @@ theorem reactionBilinear_apply_orthonormalBasis {ι : Type*} [Fintype ι]
           s ![u, b p, z, b q] * r ![v, b p, w, b q])) -
         (∑ p, ∑ q, (r ![u, b p, w, b q] * s ![v, b p, z, b q] +
           s ![u, b p, w, b q] * r ![v, b p, z, b q])) := by
-  rw [reactionBilinear, LinearMap.mkContinuous₂_apply, reactionBilinearLM, LinearMap.mk₂_apply,
-    reactionBilinearRaw_apply]
+  rw [reactionBilinear_apply_eq, reactionBilinearRaw_apply]
   simpa only [ContinuousLinearMap.id_apply] using
     reactionBilinearSum_comp_of_comp_adjoint_eq_id (stdOrthonormalBasis ℝ V) b (P := .id ℝ V)
       (by simp [ContinuousLinearMap.adjoint_id]) r s u v z w
@@ -419,8 +420,9 @@ theorem reactionBilinear_self (r : FourTensor V) :
 
 /-- `reactionBilinear V` is symmetric in its two four-tensor arguments. -/
 theorem reactionBilinear_comm (r s : FourTensor V) :
-    reactionBilinear V r s = reactionBilinear V s r :=
-  reactionBilinearRaw_comm r s
+    reactionBilinear V r s = reactionBilinear V s r := by
+  rw [reactionBilinear_apply_eq, reactionBilinear_apply_eq]
+  exact reactionBilinearRaw_comm r s
 
 /-- Operator-level symmetry of `reactionBilinear V`: flipping its two arguments leaves it
 unchanged. -/
@@ -682,8 +684,9 @@ theorem reactionTensor_compContinuousLinearMap_fstL {U : Type*}
 
 /-- For each pair of four-tensors `r, s`, `‖reactionBilinear V r s‖ ≤ 5 * dim V * ‖r‖ * ‖s‖`. -/
 theorem norm_reactionBilinear_apply_le (r s : FourTensor V) :
-    ‖reactionBilinear V r s‖ ≤ 5 * (Module.finrank ℝ V : ℝ) * ‖r‖ * ‖s‖ :=
-  norm_reactionBilinearLM_le r s
+    ‖reactionBilinear V r s‖ ≤ 5 * (Module.finrank ℝ V : ℝ) * ‖r‖ * ‖s‖ := by
+  rw [reactionBilinear, LinearMap.mkContinuous₂_apply]
+  exact norm_reactionBilinearLM_le r s
 
 /-- The operator norm of `reactionBilinear V` is at most `5 * dim V`. -/
 theorem norm_reactionBilinear_le : withEndOperatorNorms V in

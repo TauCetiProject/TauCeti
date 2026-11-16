@@ -26,10 +26,11 @@ curvature:
   orthonormal family `e` preserves their inner product,
   `⟪∑ i, ⟪b i, x⟫ • e i, ∑ i, ⟪b i, y⟫ • e i⟫ = ⟪x, y⟫`.
 * `Orthonormal.norm_sum_conj_smul`, `Orthonormal.norm_sum_apply_smul_le`,
-  `Orthonormal.norm_sum_apply_mul_apply_le`, and `Orthonormal.norm_sum_mul_bilinForm_le`:
-  conjugate-coefficient norm invariance and norm bounds for linear combinations and
-  Cauchy–Schwarz contractions of bounded linear functionals and bilinear forms along orthonormal
-  families.
+  `Orthonormal.sum_norm_apply_sq_le`, `Orthonormal.sum_norm_apply_mul_norm_apply_le`,
+  `Orthonormal.norm_sum_apply_mul_apply_le`, `Orthonormal.sum_sum_norm_apply_mul_norm_apply_le`,
+  and `Orthonormal.norm_sum_sum_apply_mul_apply_le`: conjugate-coefficient norm invariance,
+  Bessel-type bounds, and termwise and outer Cauchy–Schwarz norm bounds for linear functionals and
+  scalar-valued bilinear maps along orthonormal families.
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
 * `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
@@ -136,8 +137,7 @@ theorem norm_sum_conj_smul {b : ι → E} (hb : Orthonormal 𝕜 b) (s : Finset 
   have hsq : ‖∑ q ∈ s, conj (c q) • b q‖ ^ 2 = ‖∑ q ∈ s, c q • b q‖ ^ 2 := by
     rw [norm_sq_eq_re_inner (𝕜 := 𝕜), norm_sq_eq_re_inner (𝕜 := 𝕜), hb.inner_sum, hb.inner_sum]
     congr 1
-    exact Finset.sum_congr rfl fun _ _ ↦ by
-      rw [RingHomCompTriple.comp_apply, RingHom.id_apply, mul_comm]
+    exact Finset.sum_congr rfl fun _ _ ↦ by rw [RCLike.conj_conj, mul_comm]
   nlinarith [norm_nonneg (∑ q ∈ s, conj (c q) • b q), norm_nonneg (∑ q ∈ s, c q • b q)]
 
 /-- For an orthonormal family `b` and a linear functional `θ` satisfying `‖θ z‖ ≤ C * ‖z‖`
@@ -160,43 +160,112 @@ theorem norm_sum_apply_smul_le {G : Type*} [FunLike G E 𝕜] [LinearMapClass G 
       _ = C * ‖w‖ := by rw [norm_sum_conj_smul hb]
   nlinarith [norm_nonneg w]
 
-/-- Cauchy–Schwarz bound on the contraction `∑ q ∈ s, φ (b q) * ψ (b q)` of two bounded linear
-functionals along an orthonormal family `b`. -/
-theorem norm_sum_apply_mul_apply_le {G₁ G₂ : Type*}
-    [FunLike G₁ E 𝕜] [LinearMapClass G₁ 𝕜 E 𝕜]
-    [FunLike G₂ E 𝕜] [LinearMapClass G₂ 𝕜 E 𝕜]
-    {b : ι → E} (hb : Orthonormal 𝕜 b) (s : Finset ι) {φ : G₁} {ψ : G₂} {A B : ℝ}
-    (hA : 0 ≤ A) (hB : 0 ≤ B) (hφ : ∀ z, ‖φ z‖ ≤ A * ‖z‖) (hψ : ∀ z, ‖ψ z‖ ≤ B * ‖z‖) :
-    ‖∑ q ∈ s, φ (b q) * ψ (b q)‖ ≤ A * B := by
-  set x := ∑ q ∈ s, conj (φ (b q)) • b q
-  set y := ∑ q ∈ s, ψ (b q) • b q
-  have hxy : ∑ q ∈ s, φ (b q) * ψ (b q) = ⟪x, y⟫_𝕜 := by
-    rw [hb.inner_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ by rw [RingHomCompTriple.comp_apply, RingHom.id_apply]
-  have hx : ‖x‖ ≤ A := by
-    rw [norm_sum_conj_smul hb]
-    exact hb.norm_sum_apply_smul_le s hA hφ
-  have hy : ‖y‖ ≤ B := hb.norm_sum_apply_smul_le s hB hψ
-  rw [hxy]
-  exact (norm_inner_le_norm x y).trans (mul_le_mul hx hy (norm_nonneg _) hA)
+/-- Bessel-type bound for a bounded linear functional `θ` (`‖θ z‖ ≤ C * ‖z‖`) along an orthonormal
+family `b`: `∑ q ∈ s, ‖θ (b q)‖ ^ 2 ≤ C ^ 2`. -/
+theorem sum_norm_apply_sq_le {G : Type*} [FunLike G E 𝕜] [LinearMapClass G 𝕜 E 𝕜]
+    {b : ι → E} (hb : Orthonormal 𝕜 b) (s : Finset ι) {θ : G} {C : ℝ}
+    (hθ : ∀ z, ‖θ z‖ ≤ C * ‖z‖) :
+    ∑ q ∈ s, ‖θ (b q)‖ ^ 2 ≤ C ^ 2 := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨q₀, _⟩
+  · simpa using sq_nonneg C
+  · have hC : 0 ≤ C := (norm_nonneg _).trans ((hθ (b q₀)).trans_eq (by simp [hb.1 q₀]))
+    have hnorm : ∑ q ∈ s, ‖θ (b q)‖ ^ 2 = ‖∑ q ∈ s, θ (b q) • b q‖ ^ 2 := by
+      rw [norm_sq_eq_re_inner (𝕜 := 𝕜), hb.inner_sum, map_sum]
+      exact Finset.sum_congr rfl fun _ _ ↦ by rw [RCLike.conj_mul]; norm_cast
+    rw [hnorm]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hb.norm_sum_apply_smul_le s hC hθ) 2
 
-/-- Cauchy–Schwarz bound on the double contraction `∑ i ∈ s, ∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)`
-of two bounded bilinear forms along an orthonormal family `b`. -/
-theorem norm_sum_mul_bilinForm_le {b : ι → E} (hb : Orthonormal 𝕜 b) (s t : Finset ι)
-    {Φ Ψ : LinearMap.BilinForm 𝕜 E} {A B : ℝ}
+/-- Cauchy–Schwarz bound on the termwise-norm contraction `∑ q ∈ s, ‖φ (u q)‖ * ‖ψ (v q)‖` of two
+bounded linear functionals along orthonormal families `u` in `E` and `v` in `F`. -/
+theorem sum_norm_apply_mul_norm_apply_le {F G₁ G₂ : Type*}
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [FunLike G₁ E 𝕜] [LinearMapClass G₁ 𝕜 E 𝕜]
+    [FunLike G₂ F 𝕜] [LinearMapClass G₂ 𝕜 F 𝕜]
+    {u : ι → E} (hu : Orthonormal 𝕜 u) {v : ι → F} (hv : Orthonormal 𝕜 v)
+    (s : Finset ι) {φ : G₁} {ψ : G₂} {A B : ℝ}
+    (hA : 0 ≤ A) (hB : 0 ≤ B) (hφ : ∀ z, ‖φ z‖ ≤ A * ‖z‖) (hψ : ∀ z, ‖ψ z‖ ≤ B * ‖z‖) :
+    ∑ q ∈ s, ‖φ (u q)‖ * ‖ψ (v q)‖ ≤ A * B := by
+  have hsq : (∑ q ∈ s, ‖φ (u q)‖ * ‖ψ (v q)‖) ^ 2 ≤ (A * B) ^ 2 := by
+    calc (∑ q ∈ s, ‖φ (u q)‖ * ‖ψ (v q)‖) ^ 2
+        ≤ (∑ q ∈ s, ‖φ (u q)‖ ^ 2) * (∑ q ∈ s, ‖ψ (v q)‖ ^ 2) :=
+          Finset.sum_mul_sq_le_sq_mul_sq s (fun q ↦ ‖φ (u q)‖) (fun q ↦ ‖ψ (v q)‖)
+      _ ≤ A ^ 2 * B ^ 2 :=
+          mul_le_mul (hu.sum_norm_apply_sq_le s hφ) (hv.sum_norm_apply_sq_le s hψ)
+            (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _) (sq_nonneg A)
+      _ = (A * B) ^ 2 := by ring
+  exact (sq_le_sq₀ (Finset.sum_nonneg fun _ _ ↦ by positivity) (mul_nonneg hA hB)).1 hsq
+
+/-- Cauchy–Schwarz bound on the contraction `∑ q ∈ s, φ (u q) * ψ (v q)` of two bounded linear
+functionals along orthonormal families `u` in `E` and `v` in `F`. -/
+theorem norm_sum_apply_mul_apply_le {F G₁ G₂ : Type*}
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [FunLike G₁ E 𝕜] [LinearMapClass G₁ 𝕜 E 𝕜]
+    [FunLike G₂ F 𝕜] [LinearMapClass G₂ 𝕜 F 𝕜]
+    {u : ι → E} (hu : Orthonormal 𝕜 u) {v : ι → F} (hv : Orthonormal 𝕜 v)
+    (s : Finset ι) {φ : G₁} {ψ : G₂} {A B : ℝ}
+    (hA : 0 ≤ A) (hB : 0 ≤ B) (hφ : ∀ z, ‖φ z‖ ≤ A * ‖z‖) (hψ : ∀ z, ‖ψ z‖ ≤ B * ‖z‖) :
+    ‖∑ q ∈ s, φ (u q) * ψ (v q)‖ ≤ A * B := by
+  calc ‖∑ q ∈ s, φ (u q) * ψ (v q)‖
+      ≤ ∑ q ∈ s, ‖φ (u q) * ψ (v q)‖ := norm_sum_le _ _
+    _ = ∑ q ∈ s, ‖φ (u q)‖ * ‖ψ (v q)‖ := Finset.sum_congr rfl fun _ _ ↦ norm_mul _ _
+    _ ≤ A * B := hu.sum_norm_apply_mul_norm_apply_le hv s hA hB hφ hψ
+
+/-- Cauchy–Schwarz bound on the termwise-norm double contraction
+`∑ i ∈ s, ∑ j ∈ t, ‖Φ (u i) (v j)‖ * ‖Ψ (u i) (v j)‖` of two bounded scalar-valued bilinear maps
+along orthonormal families `u` in `E` and `v` in `F`. -/
+theorem sum_sum_norm_apply_mul_norm_apply_le {F κ : Type*}
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {u : ι → E} (hu : Orthonormal 𝕜 u) {v : κ → F} (hv : Orthonormal 𝕜 v)
+    (s : Finset ι) (t : Finset κ) {Φ Ψ : E →ₗ[𝕜] F →ₗ[𝕜] 𝕜} {A B : ℝ}
     (hΦ : ∀ x y, ‖Φ x y‖ ≤ A * ‖x‖ * ‖y‖) (hΨ : ∀ x y, ‖Ψ x y‖ ≤ B * ‖x‖ * ‖y‖) :
-    ‖∑ i ∈ s, ∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)‖ ≤ s.card * (A * B) := by
-  calc ‖∑ i ∈ s, ∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)‖
-      ≤ ∑ i ∈ s, ‖∑ j ∈ t, Φ (b i) (b j) * Ψ (b i) (b j)‖ := norm_sum_le _ _
-    _ ≤ ∑ _i ∈ s, A * B := Finset.sum_le_sum fun i _ ↦ by
-        have hA : 0 ≤ A :=
-          (norm_nonneg _).trans ((hΦ (b i) (b i)).trans_eq (by simp [hb.1 i]))
-        have hB : 0 ≤ B :=
-          (norm_nonneg _).trans ((hΨ (b i) (b i)).trans_eq (by simp [hb.1 i]))
-        exact hb.norm_sum_apply_mul_apply_le t hA hB
-          (fun z ↦ by simpa only [hb.1 i, mul_one] using hΦ (b i) z)
-          (fun z ↦ by simpa only [hb.1 i, mul_one] using hΨ (b i) z)
-    _ = s.card * (A * B) := by simp
+    ∑ i ∈ s, ∑ j ∈ t, ‖Φ (u i) (v j)‖ * ‖Ψ (u i) (v j)‖ ≤
+      (min s.card t.card : ℕ) * (A * B) := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨i₀, _⟩
+  · simp
+  rcases t.eq_empty_or_nonempty with rfl | ⟨j₀, _⟩
+  · simp
+  have hA : 0 ≤ A :=
+    (norm_nonneg _).trans ((hΦ (u i₀) (v j₀)).trans_eq (by simp [hu.1 i₀, hv.1 j₀]))
+  have hB : 0 ≤ B :=
+    (norm_nonneg _).trans ((hΨ (u i₀) (v j₀)).trans_eq (by simp [hu.1 i₀, hv.1 j₀]))
+  have hleft : ∑ i ∈ s, ∑ j ∈ t, ‖Φ (u i) (v j)‖ * ‖Ψ (u i) (v j)‖ ≤ s.card * (A * B) := by
+    calc ∑ i ∈ s, ∑ j ∈ t, ‖Φ (u i) (v j)‖ * ‖Ψ (u i) (v j)‖
+        ≤ ∑ _i ∈ s, A * B := Finset.sum_le_sum fun i _ ↦
+            hv.sum_norm_apply_mul_norm_apply_le hv t hA hB
+              (fun z ↦ by simpa only [hu.1 i, mul_one] using hΦ (u i) z)
+              (fun z ↦ by simpa only [hu.1 i, mul_one] using hΨ (u i) z)
+      _ = s.card * (A * B) := by simp
+  have hright : ∑ i ∈ s, ∑ j ∈ t, ‖Φ (u i) (v j)‖ * ‖Ψ (u i) (v j)‖ ≤ t.card * (A * B) := by
+    rw [Finset.sum_comm]
+    calc ∑ j ∈ t, ∑ i ∈ s, ‖Φ (u i) (v j)‖ * ‖Ψ (u i) (v j)‖
+        ≤ ∑ _j ∈ t, A * B := Finset.sum_le_sum fun j _ ↦ by
+            simpa only [LinearMap.flip_apply] using
+              hu.sum_norm_apply_mul_norm_apply_le hu s hA hB
+                (φ := Φ.flip (v j)) (ψ := Ψ.flip (v j))
+                (fun z ↦ by simpa only [LinearMap.flip_apply, hv.1 j, mul_one] using hΦ z (v j))
+                (fun z ↦ by simpa only [LinearMap.flip_apply, hv.1 j, mul_one] using hΨ z (v j))
+      _ = t.card * (A * B) := by simp
+  rw [Nat.cast_min, min_mul_of_nonneg _ _ (mul_nonneg hA hB)]
+  exact le_min hleft hright
+
+/-- Cauchy–Schwarz bound on the double contraction
+`∑ i ∈ s, ∑ j ∈ t, Φ (u i) (v j) * Ψ (u i) (v j)` of two bounded scalar-valued bilinear maps along
+orthonormal families `u` in `E` and `v` in `F`. -/
+theorem norm_sum_sum_apply_mul_apply_le {F κ : Type*}
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {u : ι → E} (hu : Orthonormal 𝕜 u) {v : κ → F} (hv : Orthonormal 𝕜 v)
+    (s : Finset ι) (t : Finset κ) {Φ Ψ : E →ₗ[𝕜] F →ₗ[𝕜] 𝕜} {A B : ℝ}
+    (hΦ : ∀ x y, ‖Φ x y‖ ≤ A * ‖x‖ * ‖y‖) (hΨ : ∀ x y, ‖Ψ x y‖ ≤ B * ‖x‖ * ‖y‖) :
+    ‖∑ i ∈ s, ∑ j ∈ t, Φ (u i) (v j) * Ψ (u i) (v j)‖ ≤
+      (min s.card t.card : ℕ) * (A * B) := by
+  calc ‖∑ i ∈ s, ∑ j ∈ t, Φ (u i) (v j) * Ψ (u i) (v j)‖
+      ≤ ∑ i ∈ s, ‖∑ j ∈ t, Φ (u i) (v j) * Ψ (u i) (v j)‖ := norm_sum_le _ _
+    _ ≤ ∑ i ∈ s, ∑ j ∈ t, ‖Φ (u i) (v j) * Ψ (u i) (v j)‖ :=
+        Finset.sum_le_sum fun _ _ ↦ norm_sum_le _ _
+    _ = ∑ i ∈ s, ∑ j ∈ t, ‖Φ (u i) (v j)‖ * ‖Ψ (u i) (v j)‖ :=
+        Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ norm_mul _ _
+    _ ≤ (min s.card t.card : ℕ) * (A * B) :=
+        hu.sum_sum_norm_apply_mul_norm_apply_le hv s t hΦ hΨ
 
 end Orthonormal
 
