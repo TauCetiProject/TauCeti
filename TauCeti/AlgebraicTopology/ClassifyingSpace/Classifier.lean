@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Hom.Conj
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
 import TauCeti.AlgebraicTopology.PathComponent
 import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
@@ -38,7 +40,10 @@ and `Y` in independent universes:
 * **Unbased classification (`TauCeti.homotopicQuotientEquivMonoidHomConjQuotient`,
   `TauCeti.homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex`):** when `Y` is path
   connected, free homotopy classes `[X, Y]` are in canonical bijection with conjugacy classes of
-  homomorphisms `π₁(X, x₀) →* π₁(Y, y₀)` (`TauCeti.monoidHomConjSetoid`).
+  homomorphisms `π₁(X, x₀) →* π₁(Y, y₀)` (`TauCeti.monoidHomConjSetoid`), with explicit computation
+  along any basepoint-connecting path
+  (`TauCeti.homotopicQuotientEquivMonoidHomConjQuotient_mk_of_path`,
+  `TauCeti.homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_path`).
 
 To construct pointed maps out of an arbitrary CW complex `C` into a space in another universe,
 we first produce a universal pointed map `u : C → cellularClassifyingSpace R` in the universe of
@@ -56,8 +61,6 @@ the presentation complex (`TauCeti.exists_mapOfEq_cellularClassifyingSpace_of_su
 * `TauCeti.pointedHomotopyEquivMonoidHom` and
   `TauCeti.pointedHomotopyEquivMonoidHomOfCWComplex`: the bijection between pointed homotopy
   classes `[(X, x₀), (Y, y₀)]_*` and `π₁(X, x₀) →* π₁(Y, y₀)`.
-* `TauCeti.monoidHomConjSetoid`: conjugacy of group homomorphisms `G →* H` by inner automorphisms
-  of `H`.
 * `TauCeti.homotopicQuotientEquivMonoidHomConjQuotient` and
   `TauCeti.homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex`: the bijection between free
   homotopy classes `[X, Y]` and `Quotient (monoidHomConjSetoid (π₁(X, x₀)) (π₁(Y, y₀)))`.
@@ -70,6 +73,9 @@ the presentation complex (`TauCeti.exists_mapOfEq_cellularClassifyingSpace_of_su
   complex admits a pointed map to a cellular classifying space inducing an isomorphism on `π₁`.
 * `TauCeti.exists_mapOfEq` and `TauCeti.exists_mapOfEq_of_cwComplex`: Hatcher's Proposition 1B.9
   (existence of pointed maps inducing any prescribed homomorphism on `π₁`).
+* `TauCeti.homotopicQuotientEquivMonoidHomConjQuotient_mk_of_path` and
+  `TauCeti.homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_path`: computation of the
+  unbased classification bijection on an arbitrary map via a path from `f x₀` to `y₀`.
 
 ## References
 
@@ -88,36 +94,7 @@ universe u v
 
 namespace TauCeti
 
-/-! ### Sphere null-homotopy and universe-polymorphic extension over cellular classifying spaces -/
-
-/-- Every map from the `(n - 1)`-sphere (`n ≥ 3`) into a path-connected space `S` with
-`π_{n-1}(S, s₀) = 0` is freely null-homotopic. -/
-private lemma nullhomotopic_sphere_of_subsingleton_homotopyGroup {S : Type v}
-    [TopologicalSpace S] [PathConnectedSpace S] (s₀ : S) {n : ℕ} (hn : 3 ≤ n)
-    (hS : Subsingleton (π_ (n - 1) S s₀))
-    (g : C(sphere (0 : Fin n → ℝ) 1, S)) : g.Nullhomotopic := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-  have hfin : finrank ℝ (EuclideanSpace ℝ (Fin ((m + 2) + 1))) = finrank ℝ (Fin (m + 3) → ℝ) := by
-    simp
-  let e := sphereHomeomorphOfFinrankEq hfin
-  let g' : C(sphere (0 : EuclideanSpace ℝ (Fin ((m + 2) + 1))) 1, S) :=
-    g.comp (e : C(sphere (0 : EuclideanSpace ℝ (Fin ((m + 2) + 1))) 1,
-      sphere (0 : Fin (m + 3) → ℝ) 1))
-  let z : S := g' (sphereNorthPole (m + 2))
-  have : Subsingleton (π_ (m + 2) S z) :=
-    (homotopyGroupEquivOfPath (PathConnectedSpace.somePath s₀ z)).subsingleton_congr.mp hS
-  let p : Ω^ (Fin (m + 2)) S z := (GenLoop.sphereEquiv (m + 2) S z).symm ⟨g', rfl⟩
-  have hp : (GenLoop.toSphere p).Nullhomotopic :=
-    (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere p).1
-      (Subsingleton.elim (α := π_ (m + 2) S z) ⟦p⟧ 1)
-  have hg' : GenLoop.toSphere p = g' := by
-    rw [← GenLoop.coe_sphereEquiv_apply, (GenLoop.sphereEquiv (m + 2) S z).apply_symm_apply]
-  rw [hg'] at hp
-  obtain ⟨y, ⟨H⟩⟩ := hp
-  refine ⟨y, ⟨(H.compContinuousMap (e.symm : C(sphere (0 : Fin (m + 3) → ℝ) 1,
-    sphere (0 : EuclideanSpace ℝ (Fin ((m + 2) + 1))) 1))).cast ?_ rfl⟩⟩
-  ext x
-  exact congrArg g (e.apply_symm_apply x)
+/-! ### Universe-polymorphic extension over cellular classifying spaces -/
 
 /-- Extend a map `f₀ : PresentationComplex R → S` into a path-connected space `S` (in any universe)
 whose homotopy groups `π_{n+2}(S, s₀)` vanish across the cells of `cellularClassifyingSpace R`. -/
@@ -141,10 +118,8 @@ private lemma exists_extension_cellularClassifyingSpace_of_subsingleton {S : Typ
         exact (isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι 2
           (TopCat.of (PresentationComplex R)) (PresentationComplex.basepoint R) (by omega)).false
           (c.toRelCWComplexCellEquiv m i)
-      have hWm : Subsingleton (π_ (m - 1) W w₀) := by
-        obtain ⟨k, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by omega⟩
-        exact hW k
-      exact nullhomotopic_sphere_of_subsingleton_homotopyGroup w₀ hm hWm g)
+      obtain ⟨k, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by omega⟩
+      exact nullhomotopic_sphere_of_subsingleton_homotopyGroup (by simp) (hW k) g)
     (f₀.comp (hEmb.symm : C(range incl, PresentationComplex R)))
   let eUniv : cellularClassifyingSpace R ≃ₜ (univ : Set (cellularClassifyingSpace R)) :=
     (Homeomorph.Set.univ (cellularClassifyingSpace R)).symm
@@ -232,8 +207,11 @@ private lemma exists_bijective_mapOfEq_killHomotopyGroups_skeletonLT {C : Set X}
   have : PathConnectedSpace (TopCat.of E) := ‹PathConnectedSpace E›
   let inclK := killHomotopyGroupsIncl 2 (TopCat.of E) a₀
   obtain ⟨u₀, hu₀_ext⟩ := exists_extension_skeletonLT_of_nullhomotopic (C := C) 3
-    (fun m hm _ g ↦ nullhomotopic_sphere_of_subsingleton_homotopyGroup (inclK a₀) hm
-      (subsingleton_homotopyGroup_killHomotopyGroups 2 (TopCat.of E) a₀ (by omega)) g) inclK.hom
+    (fun m hm _ g ↦ by
+      obtain ⟨k, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by omega⟩
+      exact nullhomotopic_sphere_of_subsingleton_homotopyGroup (n := k + 2) (x := inclK a₀)
+        (by simp) (subsingleton_homotopyGroup_killHomotopyGroups 2 (TopCat.of E) a₀ (by omega)) g)
+    inclK.hom
   have hu₀ : u₀ (inclusion hEC a₀) = inclK a₀ := hu₀_ext a₀
   refine ⟨a₀, ‹PathConnectedSpace E›, u₀, hu₀, ?_⟩
   have hcomp : u₀.comp (ContinuousMap.inclusion hEC) = inclK.hom := ContinuousMap.ext hu₀_ext
@@ -253,30 +231,6 @@ private lemma exists_bijective_mapOfEq_killHomotopyGroups_skeletonLT {C : Set X}
         (rfl : inclusion hEC a₀ = _) hu₀ (rfl : inclK a₀ = _) g)
   exact (Function.Bijective.of_comp_iff (FundamentalGroup.mapOfEq u₀ hu₀) hbij_inclE).1
     (hcomp_fn.symm ▸ hbij_inclK)
-
-/-- Two pointed maps whose composites are homotopic to the identity relative to the base points
-induce mutually inverse bijections on fundamental groups. -/
-private lemma mapOfEq_bijective_of_homotopicRel_id {A B : Type*}
-    [TopologicalSpace A] [TopologicalSpace B] {a₀ : A} {b₀ : B}
-    {f : C(A, B)} {r : C(B, A)} (hf : f a₀ = b₀) (hr : r b₀ = a₀)
-    (hrf : (r.comp f).HomotopicRel (.id A) {a₀})
-    (hfr : (f.comp r).HomotopicRel (.id B) {b₀}) :
-    Function.Bijective (FundamentalGroup.mapOfEq r hr) := by
-  have hfr₀ : (f.comp r) b₀ = b₀ := (congrArg f hr).trans hf
-  have hrf₀ : (r.comp f) a₀ = a₀ := (congrArg r hf).trans hr
-  have hleft : Function.LeftInverse (FundamentalGroup.mapOfEq f hf)
-      (FundamentalGroup.mapOfEq r hr) := fun x ↦
-    (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq rfl hr hf hfr₀ x).trans
-      ((FundamentalGroup.mapOfEq_eq_of_homotopicRel hfr₀
-        (rfl : ContinuousMap.id B b₀ = b₀) (mem_singleton b₀) hfr |> DFunLike.congr_fun <| x).trans
-        (FundamentalGroup.mapOfEq_id rfl x))
-  have hright : Function.RightInverse (FundamentalGroup.mapOfEq f hf)
-      (FundamentalGroup.mapOfEq r hr) := fun y ↦
-    (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq rfl hf hr hrf₀ y).trans
-      ((FundamentalGroup.mapOfEq_eq_of_homotopicRel hrf₀
-        (rfl : ContinuousMap.id A a₀ = a₀) (mem_singleton a₀) hrf |> DFunLike.congr_fun <| y).trans
-        (FundamentalGroup.mapOfEq_id rfl y))
-  exact ⟨hleft.injective, hright.surjective⟩
 
 /-- Composing the map into `killHomotopyGroups 2 E a₀` with a pointed homotopy inverse of
 `cellularClassifyingSpaceHomotopyEquiv` produces a map into a cellular classifying space inducing
@@ -319,7 +273,8 @@ private lemma exists_bijective_mapOfEq_cellularClassifyingSpace_some {C : Set X}
   obtain ⟨r, hr, hre, her⟩ :=
     (hasHomotopyExtensionProperty_singleton_univ (cellularClassifyingSpaceBasepoint R))
       |>.exists_basedInverse_homotopicRel (hasHomotopyExtensionProperty_singleton_univ k₀) e he
-  have hbij_r := mapOfEq_bijective_of_homotopicRel_id he hr hre her
+  have hbij_r := (⟨r, e.toFun, her.homotopic, hre.homotopic⟩ :
+    K ≃ₕ cellularClassifyingSpace R).fundamentalGroup_mapOfEq_bijective hr
   refine ⟨FundamentalGroup K k₀, R, inclusion hEC a₀, r.comp u₀, (congrArg r hu₀).trans hr, ?_⟩
   have hru : ⇑(FundamentalGroup.mapOfEq (r.comp u₀) ((congrArg r hu₀).trans hr)) =
       ⇑(FundamentalGroup.mapOfEq r hr) ∘ ⇑(FundamentalGroup.mapOfEq u₀ hu₀) :=
@@ -414,33 +369,6 @@ theorem exists_mapOfEq_of_cwComplex [CWComplex (univ : Set X)] [PathConnectedSpa
   rw [hb, FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq hcomp _ hf hf',
     hf'φ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, ← hb]
 
-/-- **Pointed homotopy classification of maps into an aspherical space (Hatcher, Proposition 1B.9,
-pointed form).** For a path-connected Hausdorff CW complex `C` with base point `x₀` and a based
-space `(Y, y₀)` with `πₙ(Y, y₀) = 0` for `n ≥ 2`, sending a pointed map `(C, x₀) → (Y, y₀)` to its
-induced homomorphism on `π₁` is a bijection from pointed homotopy classes to
-`π₁(C, x₀) →* π₁(Y, y₀)`. -/
-def pointedHomotopyEquivMonoidHom {C : Set X} [CWComplex C] [PathConnectedSpace C]
-    (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀)) :
-    Quotient (pointedHomotopySetoid x₀ y₀) ≃
-      (FundamentalGroup C x₀ →* FundamentalGroup Y y₀) :=
-  Equiv.ofBijective
-    (Quotient.lift (fun f : {f : C(C, Y) // f x₀ = y₀} ↦ FundamentalGroup.mapOfEq f.1 f.2)
-      fun f g h ↦ FundamentalGroup.mapOfEq_eq_of_homotopicRel f.2 g.2 (mem_singleton x₀)
-        (pointedHomotopySetoid_iff.1 h))
-    ⟨Quotient.ind₂ fun f g hfg ↦ Quotient.sound
-        (pointedHomotopySetoid_iff.2 (homotopicRel_of_mapOfEq_eq hY f.2 g.2 hfg)),
-      fun φ ↦ by
-        obtain ⟨f, hf, hfφ⟩ := exists_mapOfEq hY φ
-        exact ⟨⟦⟨f, hf⟩⟧, hfφ⟩⟩
-
-@[simp]
-theorem pointedHomotopyEquivMonoidHom_mk {C : Set X} [CWComplex C] [PathConnectedSpace C]
-    (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀))
-    (f : {f : C(C, Y) // f x₀ = y₀}) :
-    pointedHomotopyEquivMonoidHom x₀ hY ⟦f⟧ = FundamentalGroup.mapOfEq f.1 f.2 := by
-  unfold pointedHomotopyEquivMonoidHom
-  rfl
-
 /-- **Pointed homotopy classification of maps out of a CW complex on `univ` (Hatcher, Proposition
 1B.9, pointed form).** -/
 def pointedHomotopyEquivMonoidHomOfCWComplex [CWComplex (univ : Set X)] [PathConnectedSpace X]
@@ -465,26 +393,29 @@ theorem pointedHomotopyEquivMonoidHomOfCWComplex_mk [CWComplex (univ : Set X)]
   unfold pointedHomotopyEquivMonoidHomOfCWComplex
   rfl
 
+/-- **Pointed homotopy classification of maps into an aspherical space (Hatcher, Proposition 1B.9,
+pointed form).** For a path-connected Hausdorff CW complex `C` with base point `x₀` and a based
+space `(Y, y₀)` with `πₙ(Y, y₀) = 0` for `n ≥ 2`, sending a pointed map `(C, x₀) → (Y, y₀)` to its
+induced homomorphism on `π₁` is a bijection from pointed homotopy classes to
+`π₁(C, x₀) →* π₁(Y, y₀)`. -/
+def pointedHomotopyEquivMonoidHom {C : Set X} [CWComplex C] [PathConnectedSpace C]
+    (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀)) :
+    Quotient (pointedHomotopySetoid x₀ y₀) ≃
+      (FundamentalGroup C x₀ →* FundamentalGroup Y y₀) :=
+  letI := cwComplexUniv C
+  pointedHomotopyEquivMonoidHomOfCWComplex x₀ hY
+
+@[simp]
+theorem pointedHomotopyEquivMonoidHom_mk {C : Set X} [CWComplex C] [PathConnectedSpace C]
+    (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀))
+    (f : {f : C(C, Y) // f x₀ = y₀}) :
+    pointedHomotopyEquivMonoidHom x₀ hY ⟦f⟧ = FundamentalGroup.mapOfEq f.1 f.2 := by
+  let _ := cwComplexUniv C
+  exact pointedHomotopyEquivMonoidHomOfCWComplex_mk x₀ hY f
+
 end CW
 
 /-! ### Unbased homotopy classification via conjugacy classes of homomorphisms -/
-
-/-- **Conjugacy of group homomorphisms** by inner automorphisms of the target group: two
-homomorphisms `φ, ψ : G →* H` are related when there exists `c : H` with `c * φ a * c⁻¹ = ψ a`
-for every `a : G`. -/
-def monoidHomConjSetoid (G H : Type*) [Group G] [Group H] : Setoid (G →* H) where
-  r φ ψ := ∃ c : H, ∀ a : G, c * φ a * c⁻¹ = ψ a
-  iseqv :=
-    { refl := fun φ ↦ ⟨1, fun a ↦ by simp⟩
-      symm := fun ⟨c, hc⟩ ↦ ⟨c⁻¹, fun a ↦ by
-        have h := congrArg (fun x ↦ c⁻¹ * x * c) (hc a).symm
-        simpa [mul_assoc] using h⟩
-      trans := fun ⟨c₁, hc₁⟩ ⟨c₂, hc₂⟩ ↦ ⟨c₂ * c₁, fun a ↦ by
-        simp [mul_assoc, ← hc₁ a, ← hc₂ a]⟩ }
-
-theorem monoidHomConjSetoid_iff {G H : Type*} [Group G] [Group H] {φ ψ : G →* H} :
-    monoidHomConjSetoid G H φ ψ ↔ ∃ c : H, ∀ a : G, c * φ a * c⁻¹ = ψ a :=
-  Iff.rfl
 
 section Unbased
 
@@ -571,13 +502,33 @@ def homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex [CWComplex (univ : Se
           (Quotient.exact h)),
       Quotient.ind fun ψ ↦ by
         obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_of_cwComplex hY ψ
-        refine ⟨Quotient.mk s f, Quotient.sound ?_⟩
+        refine ⟨Quotient.mk s f, Quotient.sound (monoidHomConjSetoid_iff.2 ?_)⟩
         rcases hf with rfl
         let α := PathConnectedSpace.somePath (f x₀) (f x₀)
         refine ⟨FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk α), fun a ↦ ?_⟩
         rw [← MulAut.conj_apply, ← FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj, ← hfψ,
           FundamentalGroup.mapOfEq_rfl]
         exact (FundamentalGroup.fundamentalGroupMulEquivOfPath α).apply_symm_apply _⟩
+
+/-- On any map `f : C(X, Y)` and any path `γ : Path (f x₀) y₀`,
+`homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex` sends the free homotopy class of `f` to
+the conjugacy class of `(fundamentalGroupMulEquivOfPath γ).toMonoidHom.comp (map f x₀)`. -/
+theorem homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_path
+    [CWComplex (univ : Set X)] [PathConnectedSpace X] (x₀ : X) {y₀ : Y}
+    (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀)) (f : C(X, Y)) (γ : Path (f x₀) y₀) :
+    homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex x₀ hY
+        (Quotient.mk ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ f) =
+      Quotient.mk (monoidHomConjSetoid _ _)
+        ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom.comp
+          (FundamentalGroup.map f x₀)) := by
+  unfold homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex
+  refine Quotient.sound (monoidHomConjSetoid_iff.2 ?_)
+  let α := PathConnectedSpace.somePath y₀ (f x₀)
+  refine ⟨FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (α.trans γ)), fun a ↦ ?_⟩
+  rw [← MulAut.conj_apply, ← FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply]
+  exact congrArg (FundamentalGroup.fundamentalGroupMulEquivOfPath γ)
+    ((FundamentalGroup.fundamentalGroupMulEquivOfPath α).apply_symm_apply _)
 
 /-- On any map `f : C(X, Y)` sending `x₀` to `y₀`,
 `homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex` sends the class of `f` to the conjugacy
@@ -590,13 +541,8 @@ theorem homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_eq
         (Quotient.mk ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ f) =
       Quotient.mk (monoidHomConjSetoid _ _) (FundamentalGroup.mapOfEq f hf) := by
   rcases hf with rfl
-  unfold homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex
-  refine Quotient.sound ?_
-  let α := PathConnectedSpace.somePath (f x₀) (f x₀)
-  refine ⟨FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk α), fun a ↦ ?_⟩
-  rw [← MulAut.conj_apply, ← FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj,
-    FundamentalGroup.mapOfEq_rfl]
-  exact (FundamentalGroup.fundamentalGroupMulEquivOfPath α).apply_symm_apply _
+  simpa [FundamentalGroup.mapOfEq_rfl] using
+    homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_path x₀ hY f (Path.refl (f x₀))
 
 /-- **Unbased homotopy classification of maps into a path-connected aspherical space (Hatcher,
 Proposition 1B.9).** -/
@@ -606,6 +552,20 @@ def homotopicQuotientEquivMonoidHomConjQuotient {C : Set X} [CWComplex C] [PathC
       Quotient (monoidHomConjSetoid (FundamentalGroup C x₀) (FundamentalGroup Y y₀)) :=
   letI := cwComplexUniv C
   homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex x₀ hY
+
+/-- On any map `f : C(C, Y)` and any path `γ : Path (f x₀) y₀`,
+`homotopicQuotientEquivMonoidHomConjQuotient` sends the free homotopy class of `f` to the
+conjugacy class of `(fundamentalGroupMulEquivOfPath γ).toMonoidHom.comp (map f x₀)`. -/
+theorem homotopicQuotientEquivMonoidHomConjQuotient_mk_of_path {C : Set X} [CWComplex C]
+    [PathConnectedSpace C] (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀))
+    (f : C(C, Y)) (γ : Path (f x₀) y₀) :
+    homotopicQuotientEquivMonoidHomConjQuotient x₀ hY
+        (Quotient.mk ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ f) =
+      Quotient.mk (monoidHomConjSetoid _ _)
+        ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom.comp
+          (FundamentalGroup.map f x₀)) := by
+  let _ := cwComplexUniv C
+  exact homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_path x₀ hY f γ
 
 /-- On any map `f : C(C, Y)` sending `x₀` to `y₀`,
 `homotopicQuotientEquivMonoidHomConjQuotient` sends the class of `f` to the conjugacy class of

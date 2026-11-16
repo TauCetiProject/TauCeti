@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
+import TauCeti.Topology.CWComplex.Classical.Skeleton.Compression
 
 /-!
 # The zero-skeleton of a CW complex
 
 The points of the zero-skeleton correspond to zero-cells. Its topology is discrete, while the
-preceding skeleton is empty.
+preceding skeleton is empty. For any nonempty relative CW complex, the zero-skeleton is nonempty
+(`TauCeti.zeroSkeletonNonempty`, `TauCeti.nonempty_skeletonLT_one`).
 -/
 
 public section
@@ -23,6 +25,25 @@ open Topology Topology.RelCWComplex
 universe w
 
 namespace TauCeti
+
+section RelCWComplex
+
+variable {X : Type w} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
+
+/-- The zero-skeleton of a nonempty relative CW complex is nonempty: every point of the complex is
+joined to it by a path (`TauCeti.exists_joined_skeletonLT`). -/
+theorem nonempty_skeletonLT_one (hC : C.Nonempty) : (skeletonLT C 1 : Set X).Nonempty := by
+  obtain ⟨x, hx⟩ := hC
+  obtain ⟨a, -⟩ := exists_joined_skeletonLT (C := C) (n := 0) (by simp)
+    (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex ⟨x, hx⟩
+  exact ⟨a.1, a.2⟩
+
+/-- The zero-skeleton of a nonempty relative CW complex is a nonempty type. -/
+instance zeroSkeletonNonempty [Nonempty C] : Nonempty (↑(skeletonLT C ((1 : ℕ) : ℕ∞))) :=
+  let ⟨x⟩ := ‹Nonempty C›
+  (nonempty_skeletonLT_one (C := C) ⟨x.1, x.2⟩).to_subtype
+
+end RelCWComplex
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 

@@ -357,8 +357,8 @@ theorem quotient_map_eq_quotient_map_comp_cellularClassifyingSpace {G H : GrpCat
     (classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace R e
       a).symm).trans (φ.hom.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq _).symm
 
-/-- **The comparison between the cellular and simplicial classifying spaces is an isomorphism in
-`PointedHomotopyCat`.** -/
+/-- **The comparison of the cellular classifying space with Milnor's classifying space is an
+isomorphism in `PointedHomotopyCat`.** -/
 def cellularClassifyingSpacePointedHomotopyIso {G : GrpCat.{u}}
     (e : PresentedGroup R ≃* G) :
     PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R) ≅

@@ -293,7 +293,7 @@ private lemma exists_singletonControl_skeletonLT {n : ℕ} (j : cell C n) {x : X
               ((map n i).left_inv ((source_eq n i).symm ▸ mem_ball_zero_iff.2 hy)).symm.trans
                 (congrArg (map n i).symm h)
           simp [hy_eq]
-      · rw [show K i = ContinuousMap.const _ 1 from ite_eq_right hij, ContinuousMap.const_apply]
+      · simp only [K, hij, ↓reduceIte, ContinuousMap.const_apply]
         refine ⟨fun h ↦ absurd h one_ne_zero, fun h ↦ False.elim ?_⟩
         exact (disjoint_openCell_of_ne (by simpa using hij)).notMem_of_mem_left
           ⟨y, mem_ball_zero_iff.2 hy, rfl⟩ (h ▸ hx)
@@ -301,8 +301,8 @@ private lemma exists_singletonControl_skeletonLT {n : ℕ} (j : cell C n) {x : X
     obtain hz' | ⟨i, y, hy, hzy⟩ := mem_skeletonLT_or_exists_map z.2
     · rw [hu_skel () z hz'] at hz
       exact (lt_irrefl _ hz).elim
-    · rw [show z = ⟨map n i y, map_mem_skeletonLT_succ i hy.le⟩ from Subtype.ext hzy.symm,
-        hu_cell i () ⟨y, mem_closedBall_zero_iff.2 hy.le⟩] at hz
+    · have hsub : z = ⟨map n i y, map_mem_skeletonLT_succ i hy.le⟩ := Subtype.ext hzy.symm
+      rw [hsub, hu_cell i () ⟨y, mem_closedBall_zero_iff.2 hy.le⟩] at hz
       by_cases hij : i = j
       · subst hij
         simp only [K, ↓reduceIte, ContinuousMap.coe_mk] at hz

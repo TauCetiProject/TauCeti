@@ -68,11 +68,15 @@ endpoints of a corestricted subpath, with that corestriction. The last two are u
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
 
 The path-homotopy quotient API also records that reversing twice is the identity, that the
-reverse of the constant class is constant, and that mapping a composite class and casting its
-endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_trans_cast`).
-`Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
-`Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
-pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+reverse of the constant class is constant, left and right cancellation of concatenation
+(`Path.Homotopic.Quotient.trans_left_cancel`, `Path.Homotopic.Quotient.trans_right_cancel`),
+naturality of homotopy traces along path classes (`Path.Homotopic.Quotient.map_trans_evalAt`),
+endpoint-cast rules (`Path.Homotopic.Quotient.cast_trans`, `Path.Homotopic.Quotient.symm_cast`,
+`Path.Homotopic.Quotient.cast_refl_trans`, `Path.Homotopic.Quotient.trans_cast_refl`), and that
+mapping a composite class and casting its endpoints composes the cast images of the factors
+(`Path.Homotopic.Quotient.map_trans_cast`). `Path.refl_trans_eq_reparam`, the left counterpart of
+Mathlib's `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps
+along a pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
 -/
 
 public section
@@ -650,6 +654,60 @@ theorem eq_of_trans_symm {γ γ' : Homotopic.Quotient x₀ x₁}
   induction γ' using Quotient.ind with | mk γ' =>
   simp only [← mk_trans, ← mk_symm, ← mk_refl] at h
   exact Quotient.sound (Homotopic.of_trans_symm (Quotient.exact h))
+
+/-- Right cancellation in the path-homotopy quotient: if `γ.trans e = δ.trans e`, then `γ = δ`. -/
+theorem trans_right_cancel {x₀ x₁ x₂ : X} {γ δ : Homotopic.Quotient x₀ x₁}
+    {e : Homotopic.Quotient x₁ x₂} (h : γ.trans e = δ.trans e) : γ = δ := by
+  induction γ using Quotient.ind with | mk γ =>
+  induction δ using Quotient.ind with | mk δ =>
+  induction e using Quotient.ind with | mk e =>
+  simp only [← mk_trans] at h
+  exact Quotient.sound (Homotopic.trans_right_cancel (Quotient.exact h))
+
+/-- Left cancellation in the path-homotopy quotient: if `e.trans γ = e.trans δ`, then `γ = δ`. -/
+theorem trans_left_cancel {x₀ x₁ x₂ : X} {e : Homotopic.Quotient x₀ x₁}
+    {γ δ : Homotopic.Quotient x₁ x₂} (h : e.trans γ = e.trans δ) : γ = δ := by
+  induction e using Quotient.ind with | mk e =>
+  induction γ using Quotient.ind with | mk γ =>
+  induction δ using Quotient.ind with | mk δ =>
+  simp only [← mk_trans] at h
+  exact Quotient.sound (Homotopic.trans_left_cancel (Quotient.exact h))
+
+/-- Naturality of homotopy traces on path-homotopy classes: for a homotopy `F` from `f` to `g` and
+a class `P` from `x₁` to `x₂`, `(P.map f).trans (mk (F.evalAt x₂))` equals
+`(mk (F.evalAt x₁)).trans (P.map g)`. -/
+theorem map_trans_evalAt {Y : Type*} [TopologicalSpace Y] {f g : C(X, Y)} (F : f.Homotopy g)
+    {x₁ x₂ : X} (P : Homotopic.Quotient x₁ x₂) :
+    (P.map f).trans (mk (F.evalAt x₂)) = (mk (F.evalAt x₁)).trans (P.map g) := by
+  induction P using Quotient.ind with
+  | mk p =>
+    simp only [← mk_map, ← mk_trans]
+    exact Quotient.sound (Homotopic.map_trans_evalAt F p)
+
+/-- Casting the endpoints of a composite of path-homotopy classes composes the cast factors. -/
+theorem cast_trans {a b c : X} (P : Homotopic.Quotient a b) (Q : Homotopic.Quotient b c)
+    {x₀ x₁ x₂ : X} (h₀ : x₀ = a) (h₁ : x₁ = b) (h₂ : x₂ = c) :
+    (P.trans Q).cast h₀ h₂ = (P.cast h₀ h₁).trans (Q.cast h₁ h₂) := by
+  subst h₀ h₁ h₂
+  simp only [cast_rfl_rfl]
+
+/-- Reversing a cast path-homotopy class casts the reversed class with swapped endpoint proofs. -/
+theorem symm_cast {a b : X} (P : Homotopic.Quotient a b) {x₀ x₁ : X} (h₀ : x₀ = a) (h₁ : x₁ = b) :
+    (P.cast h₀ h₁).symm = P.symm.cast h₁ h₀ := by
+  subst h₀ h₁
+  simp only [cast_rfl_rfl]
+
+/-- Composing on the left with a cast reflexivity class casts the left endpoint. -/
+theorem cast_refl_trans {u v w : X} (h : v = u) (P : Homotopic.Quotient v w) :
+    ((refl u).cast rfl h).trans P = P.cast h.symm rfl := by
+  subst h
+  simp
+
+/-- Composing on the right with a cast reflexivity class casts the right endpoint. -/
+theorem trans_cast_refl {u v w : X} (P : Homotopic.Quotient u v) (h : v = w) :
+    P.trans ((refl w).cast h rfl) = P.cast rfl h.symm := by
+  subst h
+  simp
 
 end Quotient
 end Path.Homotopic
