@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Fibration.ArbitraryBase
 
@@ -97,27 +97,6 @@ lemma serreSpectralObjectIsoCubical_hom (C : Set B) {D : Set B} [RelCWComplex C 
   chainFiltrationSpectralObjectIso_hom _ _
 
 end SpectralObject
-
-section Sigma
-
-variable (R : Type u) [Ring R] {J : Type u} (Z : J → _root_.TopCat.{u}) (q : ℕ)
-
-/-- On a coproduct, the sum of the comparisons `TauCeti.singularCubicalHomologyIso` is the sum of
-the maps induced on homology by `TauCeti.singularToCubical`. -/
-lemma sigmaMapIso_singularCubicalHomologyIso_hom :
-    (Sigma.mapIso fun j ↦ singularCubicalHomologyIso R (Z j) q).hom =
-      Limits.Sigma.map fun j ↦ HomologicalComplex.homologyMap ((singularToCubical R).app (Z j)) q :=
-  Sigma.hom_ext _ _ fun j ↦ by simp
-
-/-- On a coproduct, the sum of the inverses of the comparisons
-`TauCeti.singularCubicalHomologyIso` is the sum of the maps induced on homology by
-`TauCeti.cubicalToSingular`. -/
-lemma sigmaMapIso_singularCubicalHomologyIso_inv :
-    (Sigma.mapIso fun j ↦ singularCubicalHomologyIso R (Z j) q).inv =
-      Limits.Sigma.map fun j ↦ HomologicalComplex.homologyMap ((cubicalToSingular R).app (Z j)) q :=
-  Sigma.hom_ext _ _ fun j ↦ by simp
-
-end Sigma
 
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p) (R : Type u) [Ring R]
 

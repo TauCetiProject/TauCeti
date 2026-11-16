@@ -21,8 +21,9 @@ complex by the preimages of the skeleta
 
 A singular simplex has compact image, so it lies in some `X q`. Hence, with coefficients in a
 module `M`, every singular chain of `Y` lies in some stage of the filtration of the singular
-chains by those of the `X q` (`TauCeti.exists_mem_range_chainFiltration_arrow`). This is
-the exhaustiveness hypothesis of the convergence theorems for filtered complexes in
+chains by those of the `X q`
+(`TauCeti.exists_mem_range_chainFiltration_singularChainComplexFunctor_arrow`). This is the
+exhaustiveness hypothesis of the convergence theorems for filtered complexes in
 `TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive`, which therefore apply to
 `TauCeti.filteredSpaceSpectralSequence`:
 
@@ -74,7 +75,7 @@ private def filteredSpaceCocone (hX : Monotone X) :
 /-- **Singular chains of an exhaustive filtration of a space.** If every compact subset of `Y` lies
 in some `X q`, every singular chain of `Y`, in each degree of the reindexed chain complex, lies in
 some stage of the filtration by the singular chains of the `X q`. -/
-theorem exists_mem_range_chainFiltration_arrow (hX : Monotone X)
+theorem exists_mem_range_chainFiltration_singularChainComplexFunctor_arrow (hX : Monotone X)
     (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) (m : ℤ)
     (x : (((TopCat.toSSet.obj Y).chainComplex M).extend ComplexShape.embeddingDownNat).X m) :
     ∃ q, x ∈ LinearMap.range
@@ -117,7 +118,7 @@ theorem exists_mem_range_filteredSpaceAbutmentFiltrationι
     (x : (filteredSpaceSpectralObject M hX).abutment n) :
     ∃ q, x ∈ LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q n).hom :=
   CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι _ _
-    (exists_mem_range_chainFiltration_arrow M hX hK n) x
+    (exists_mem_range_chainFiltration_singularChainComplexFunctor_arrow M hX hK n) x
 
 /-- **The filtration of the abutment reaches `Hₙ(Y)`.** For an exhaustive filtration of a space, if
 the relative homology `Hₙ(X (i + 1), X i)` vanishes for every `i ≥ b`, then the `b`th piece of the
@@ -129,8 +130,8 @@ theorem isIso_filteredSpaceAbutmentFiltrationι_of_exhaustive
         M n)) :
     IsIso ((filteredSpaceSpectralObject M hX).abutmentFiltrationι b (-n)) :=
   CochainComplex.isIso_filtrationAbutmentFiltrationι_of_exhaustive _ _
-    (exists_mem_range_chainFiltration_arrow M hX hK _) fun i hi ↦
-      isZero_homology_cokernel_chainFiltration M _ _ fun n' hn' ↦ by
+    (exists_mem_range_chainFiltration_singularChainComplexFunctor_arrow M hX hK _) fun i hi ↦
+      isZero_homology_cokernel_chainFiltration_singularChainComplexFunctor M _ _ fun n' hn' ↦ by
         obtain rfl : n' = n := by lia
         exact hvanish i hi
 
@@ -149,11 +150,12 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive
     ((filteredSpaceSpectralSequence M hX).page r).X pq ≅
       cokernel ((filteredSpaceSpectralObject M hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive _ _ r hr pq
-    (exists_mem_range_chainFiltration_arrow M hX hK _)
+    (exists_mem_range_chainFiltration_singularChainComplexFunctor_arrow M hX hK _)
     ((chainFiltration ((AlgebraicTopology.singularChainComplexFunctor _).obj M) X
       _).isZero_homology_of_eq_bot
       (chainFiltration_singularChainComplexFunctor_eq_bot M
         (Set.subset_empty_iff.1 (ha ▸ hX hra))) _)
-    fun i hi ↦ isZero_homology_cokernel_chainFiltration M _ _ (hvanish i hi)
+    fun i hi ↦
+      isZero_homology_cokernel_chainFiltration_singularChainComplexFunctor M _ _ (hvanish i hi)
 
 end TauCeti
