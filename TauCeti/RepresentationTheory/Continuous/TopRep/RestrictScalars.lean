@@ -146,8 +146,7 @@ section Restriction
 universe u v
 
 variable {k : Type v} [Ring k] [TopologicalSpace k]
-  {G H : Type u} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
-  [IsTopologicalGroup G] [IsTopologicalGroup H]
+  {G H : Type u} [Group G] [Group H]
 
 /-- The scalar-restricted coefficient map used when the acting group changes. -/
 noncomputable def resRestrictScalarsIntMap (phi : H →* G) {X : TopRep.{u} k G}
@@ -162,8 +161,6 @@ noncomputable def resRestrictScalarsIntMap (phi : H →* G) {X : TopRep.{u} k G}
         change f.hom (X.ρ (phi h) x) = Y.ρ h (f.hom x)
         exact DFunLike.congr_fun (f.hom.isIntertwining' h) x }
 
-omit [TopologicalSpace G] [TopologicalSpace H] [IsTopologicalGroup G]
-  [IsTopologicalGroup H] in
 /-- `resRestrictScalarsIntMap` has the same underlying function as the original coefficient map. -/
 @[simp]
 theorem resRestrictScalarsIntMap_hom_apply (phi : H →* G) {X : TopRep.{u} k G}
