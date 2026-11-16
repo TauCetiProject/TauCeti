@@ -10,27 +10,10 @@ public import TauCeti.LinearAlgebra.Density.Basic
 /-!
 # Linear pullback of densities
 
-Unlike alternating maps, a density on `W` does not pull back along linear maps from spaces of a
-different dimension, because its transformation law uses the ambient endomorphism determinant. It
-does pull back along every linear endomorphism of `V` (`TauCeti.Density.compEnd`), along every
-linear equivalence `V ≃ₗ[ℝ] W` (`TauCeti.Density.compLinearEquiv`), and hence along every
-linear map `L : V →ₗ[ℝ] W` between linearly equivalent real vector spaces
-(`TauCeti.Density.compLinearMapOfEquiv`), independently of the chosen equivalence. No
-finite-dimensionality assumption is needed.
-
-## Main definitions
-
-* `TauCeti.Density.compEnd`: pullback of a density along a linear endomorphism.
-* `TauCeti.Density.compLinearEquiv`: pullback of a density along a linear equivalence.
-* `TauCeti.Density.compLinearMapOfEquiv`: pullback of a density along any linear map between
-  linearly equivalent spaces.
-
-## Main results
-
-* `TauCeti.Density.compEnd_apply_eq_abs_det_mul`: endomorphism pullback multiplies every tuple
-  value by `|LinearMap.det L|`.
-* `TauCeti.Density.compLinearMapOfEquiv_eq`: `compLinearMapOfEquiv` is independent of the chosen
-  linear equivalence.
+Pullback of a density along any linear map `L : V →ₗ[ℝ] W` between linearly equivalent real vector
+spaces (`TauCeti.Density.compLinearMap`, requiring only `Nonempty (V ≃ₗ[ℝ] W)`), specialized to
+endomorphisms (`compEnd`) and linear equivalences (`compLinearEquiv`), with functoriality,
+determinant scaling (`compEnd_eq_abs_det_smul`), and invertibility (`compLinearEquiv_injective`).
 -/
 
 public section
@@ -39,62 +22,110 @@ noncomputable section
 
 namespace TauCeti.Density
 
+section LinearMap
+
+variable {U V W : Type*} [AddCommGroup U] [Module ℝ U]
+  [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W] {m : ℕ}
+
+/-- Pullback of a density along `L : V →ₗ[ℝ] W` between linearly equivalent spaces. -/
+def compLinearMap (μ : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W)) : Density V m where
+  toFun v := μ (L ∘ v)
+  map_comp T v := by
+    obtain ⟨e⟩ := h
+    let S : W →ₗ[ℝ] W := L.comp e.symm.toLinearMap
+    let T' : W →ₗ[ℝ] W := (e : V →ₗ[ℝ] W) ∘ₗ T ∘ₗ (e.symm : W →ₗ[ℝ] V)
+    have h₁ : L ∘ (T ∘ v) = ((S.comp T' : W →ₗ[ℝ] W) : W → W) ∘ (e ∘ v) := by ext i; simp [S, T']
+    have h₂ : L ∘ v = (S : W → W) ∘ (e ∘ v) := by ext i; simp [S]
+    rw [h₁, μ.comp_apply, LinearMap.det_comp, abs_mul, mul_assoc,
+      mul_left_comm |LinearMap.det S|, ← μ.comp_apply, ← h₂, LinearMap.det_conj T e]
+
+/-- Evaluation of `compLinearMap` on a tuple of vectors. -/
+@[simp] theorem compLinearMap_apply (μ : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W))
+    (v : Fin m → V) : μ.compLinearMap L h v = μ (L ∘ v) := (rfl)
+
+/-- Pullback along `LinearMap.id` is the identity. -/
+@[simp] theorem compLinearMap_id (μ : Density V m) (h : Nonempty (V ≃ₗ[ℝ] V)) :
+    μ.compLinearMap LinearMap.id h = μ := by ext; simp
+
+/-- `compLinearMap` is contravariant under composition. -/
+theorem compLinearMap_comp (μ : Density W m) (L : U →ₗ[ℝ] V) (M : V →ₗ[ℝ] W)
+    (h₁ : Nonempty (U ≃ₗ[ℝ] V)) (h₂ : Nonempty (V ≃ₗ[ℝ] W)) :
+    μ.compLinearMap (M.comp L) (h₁.elim fun e₁ ↦ h₂.elim fun e₂ ↦ ⟨e₁.trans e₂⟩) =
+      (μ.compLinearMap M h₂).compLinearMap L h₁ := by ext; simp [Function.comp_assoc]
+
+/-- Pulling back zero via `compLinearMap` gives zero. -/
+@[simp] theorem zero_compLinearMap (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W)) :
+    (0 : Density W m).compLinearMap L h = 0 := by ext; simp
+
+/-- `compLinearMap` distributes over addition. -/
+@[simp] theorem add_compLinearMap (μ ν : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W)) :
+    (μ + ν).compLinearMap L h = μ.compLinearMap L h + ν.compLinearMap L h := by ext; simp
+
+/-- `compLinearMap` commutes with scalar multiplication. -/
+@[simp] theorem smul_compLinearMap {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ] (c : R)
+    (μ : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W)) :
+    (c • μ).compLinearMap L h = c • μ.compLinearMap L h := by ext; simp
+
+/-- `compLinearMap` commutes with negation. -/
+@[simp] theorem neg_compLinearMap (μ : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W)) :
+    (-μ).compLinearMap L h = -μ.compLinearMap L h := by ext; simp
+
+/-- `compLinearMap` distributes over subtraction. -/
+@[simp] theorem sub_compLinearMap (μ ν : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W)) :
+    (μ - ν).compLinearMap L h = μ.compLinearMap L h - ν.compLinearMap L h := by ext; simp
+
+end LinearMap
+
 section End
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] {m : ℕ}
 
-/-- Pullback of a density along a linear endomorphism. No finite-dimensionality assumption is
-needed because `LinearMap.det` is multiplicative on endomorphisms in general. -/
-def compEnd (μ : Density V m) (L : V →ₗ[ℝ] V) : Density V m where
-  toFun v := μ (L ∘ v)
-  map_comp T v := by
-    have hcomp : L ∘ (T ∘ v) = ((L.comp T : V →ₗ[ℝ] V) : V → V) ∘ v := rfl
-    rw [hcomp, μ.comp_apply, LinearMap.det_comp, abs_mul, mul_assoc,
-      mul_left_comm |LinearMap.det L|, ← μ.comp_apply]
+/-- Pullback of a density along a linear endomorphism. -/
+def compEnd (μ : Density V m) (L : V →ₗ[ℝ] V) : Density V m := μ.compLinearMap L ⟨.refl ℝ V⟩
 
 /-- Evaluation of `compEnd` on a tuple of vectors. -/
-@[simp]
-theorem compEnd_apply (μ : Density V m) (L : V →ₗ[ℝ] V) (v : Fin m → V) :
+@[simp] theorem compEnd_apply (μ : Density V m) (L : V →ₗ[ℝ] V) (v : Fin m → V) :
     μ.compEnd L v = μ (L ∘ v) := (rfl)
 
-/-- Pulling back a density along an endomorphism multiplies every tuple value by the absolute
-determinant of the endomorphism. -/
-theorem compEnd_apply_eq_abs_det_mul (μ : Density V m) (L : V →ₗ[ℝ] V) (v : Fin m → V) :
-    μ.compEnd L v = |LinearMap.det L| * μ v :=
-  μ.comp_apply L v
+/-- For an endomorphism, `compLinearMap` agrees with `compEnd`. -/
+theorem compLinearMap_eq_compEnd (μ : Density V m) (L : V →ₗ[ℝ] V) (h : Nonempty (V ≃ₗ[ℝ] V)) :
+    μ.compLinearMap L h = μ.compEnd L := by ext; simp
 
-/-- Pullback along the identity endomorphism is the identity on densities. -/
-@[simp]
-theorem compEnd_id (μ : Density V m) : μ.compEnd LinearMap.id = μ := by ext; rfl
+/-- Endomorphism pullback multiplies every tuple value by `|LinearMap.det L|`. -/
+theorem compEnd_apply_eq_abs_det_mul (μ : Density V m) (L : V →ₗ[ℝ] V) (v : Fin m → V) :
+    μ.compEnd L v = |LinearMap.det L| * μ v := μ.comp_apply L v
+
+/-- Endomorphism pullback scales a density by `|LinearMap.det L|`. -/
+theorem compEnd_eq_abs_det_smul (μ : Density V m) (L : V →ₗ[ℝ] V) :
+    μ.compEnd L = |LinearMap.det L| • μ := by ext v; exact μ.comp_apply L v
+
+/-- Pullback along `LinearMap.id` is the identity. -/
+@[simp] theorem compEnd_id (μ : Density V m) : μ.compEnd LinearMap.id = μ := compLinearMap_id μ _
 
 /-- Endomorphism pullback is contravariant under composition. -/
 theorem compEnd_comp (μ : Density V m) (L M : V →ₗ[ℝ] V) :
-    μ.compEnd (M.comp L) = (μ.compEnd M).compEnd L := by ext; rfl
+    μ.compEnd (M.comp L) = (μ.compEnd M).compEnd L := compLinearMap_comp μ L M _ _
 
-/-- Pulling back the zero density along an endomorphism gives zero. -/
-@[simp]
-theorem zero_compEnd (L : V →ₗ[ℝ] V) : (0 : Density V m).compEnd L = 0 := by ext; rfl
+/-- Pulling back zero along an endomorphism gives zero. -/
+@[simp] theorem zero_compEnd (L : V →ₗ[ℝ] V) :
+    (0 : Density V m).compEnd L = 0 := zero_compLinearMap L _
 
-/-- Endomorphism pullback distributes over addition of densities. -/
-@[simp]
-theorem add_compEnd (μ ν : Density V m) (L : V →ₗ[ℝ] V) :
-    (μ + ν).compEnd L = μ.compEnd L + ν.compEnd L := by ext; rfl
+/-- Endomorphism pullback distributes over addition. -/
+@[simp] theorem add_compEnd (μ ν : Density V m) (L : V →ₗ[ℝ] V) :
+    (μ + ν).compEnd L = μ.compEnd L + ν.compEnd L := add_compLinearMap μ ν L _
 
 /-- Endomorphism pullback commutes with scalar multiplication. -/
-@[simp]
-theorem smul_compEnd {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ]
-    (c : R) (μ : Density V m) (L : V →ₗ[ℝ] V) :
-    (c • μ).compEnd L = c • μ.compEnd L := by ext; rfl
+@[simp] theorem smul_compEnd {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ] (c : R)
+    (μ : Density V m) (L : V →ₗ[ℝ] V) :
+    (c • μ).compEnd L = c • μ.compEnd L := smul_compLinearMap c μ L _
 
 /-- Endomorphism pullback commutes with negation. -/
-@[simp]
-theorem neg_compEnd (μ : Density V m) (L : V →ₗ[ℝ] V) :
-    (-μ).compEnd L = -μ.compEnd L := by ext; rfl
+@[simp] theorem neg_compEnd (μ : Density V m) (L : V →ₗ[ℝ] V) :
+    (-μ).compEnd L = -μ.compEnd L := neg_compLinearMap μ L _
 
-/-- Endomorphism pullback distributes over subtraction of densities. -/
-@[simp]
-theorem sub_compEnd (μ ν : Density V m) (L : V →ₗ[ℝ] V) :
-    (μ - ν).compEnd L = μ.compEnd L - ν.compEnd L := by ext; rfl
+/-- Endomorphism pullback distributes over subtraction. -/
+@[simp] theorem sub_compEnd (μ ν : Density V m) (L : V →ₗ[ℝ] V) :
+    (μ - ν).compEnd L = μ.compEnd L - ν.compEnd L := sub_compLinearMap μ ν L _
 
 end End
 
@@ -103,97 +134,75 @@ section Equiv
 variable {U V W : Type*} [AddCommGroup U] [Module ℝ U]
   [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W] {m : ℕ}
 
-/-- Pullback of a density along a linear equivalence, with no finite-dimensionality assumption. -/
-def compLinearEquiv (μ : Density W m) (e : V ≃ₗ[ℝ] W) : Density V m where
-  toFun v := μ (e ∘ v)
-  map_comp T v := by
-    let T' : W →ₗ[ℝ] W := (e : V →ₗ[ℝ] W) ∘ₗ T ∘ₗ (e.symm : W →ₗ[ℝ] V)
-    have hconj : (e : V → W) ∘ (T ∘ v) = (T' : W → W) ∘ (e ∘ v) := by ext i; simp [T']
-    rw [hconj, μ.comp_apply, LinearMap.det_conj T e]
+/-- Pullback of a density along a linear equivalence. -/
+def compLinearEquiv (μ : Density W m) (e : V ≃ₗ[ℝ] W) : Density V m := μ.compLinearMap e ⟨e⟩
 
 /-- Evaluation of `compLinearEquiv` on a tuple of vectors. -/
-@[simp]
-theorem compLinearEquiv_apply (μ : Density W m) (e : V ≃ₗ[ℝ] W) (v : Fin m → V) :
+@[simp] theorem compLinearEquiv_apply (μ : Density W m) (e : V ≃ₗ[ℝ] W) (v : Fin m → V) :
     μ.compLinearEquiv e v = μ (e ∘ v) := (rfl)
 
-/-- Pullback along the identity linear equivalence is the identity on densities. -/
-@[simp]
-theorem compLinearEquiv_refl (μ : Density V m) :
-    μ.compLinearEquiv (LinearEquiv.refl ℝ V) = μ := by ext; rfl
+/-- Pulling back along `e.toLinearMap` agrees with `compLinearEquiv e`. -/
+@[simp] theorem compLinearMap_toLinearMap (μ : Density W m) (e : V ≃ₗ[ℝ] W)
+    (h : Nonempty (V ≃ₗ[ℝ] W)) : μ.compLinearMap e.toLinearMap h = μ.compLinearEquiv e := by
+  ext; simp
+
+/-- Pulling back along an automorphism agrees with `compEnd e.toLinearMap`. -/
+theorem compLinearEquiv_eq_compEnd (μ : Density V m) (e : V ≃ₗ[ℝ] V) :
+    μ.compLinearEquiv e = μ.compEnd e.toLinearMap := by ext; simp
+
+/-- Pullback along `LinearEquiv.refl` is the identity. -/
+@[simp] theorem compLinearEquiv_refl (μ : Density V m) :
+    μ.compLinearEquiv (LinearEquiv.refl ℝ V) = μ := compLinearMap_id μ _
 
 /-- Pullback along linear equivalences is contravariant under `LinearEquiv.trans`. -/
 theorem compLinearEquiv_trans (μ : Density W m) (e₁ : U ≃ₗ[ℝ] V) (e₂ : V ≃ₗ[ℝ] W) :
-    μ.compLinearEquiv (e₁.trans e₂) = (μ.compLinearEquiv e₂).compLinearEquiv e₁ := by ext; rfl
+    μ.compLinearEquiv (e₁.trans e₂) = (μ.compLinearEquiv e₂).compLinearEquiv e₁ :=
+  compLinearMap_comp μ e₁.toLinearMap e₂.toLinearMap ⟨e₁⟩ ⟨e₂⟩
 
-/-- Pulling back the zero density along a linear equivalence gives zero. -/
-@[simp]
-theorem zero_compLinearEquiv (e : V ≃ₗ[ℝ] W) :
-    (0 : Density W m).compLinearEquiv e = 0 := by ext; rfl
+/-- Pulling back along `e` then `e.symm` recovers `μ`. -/
+@[simp] theorem compLinearEquiv_compLinearEquiv_symm (μ : Density W m) (e : V ≃ₗ[ℝ] W) :
+    (μ.compLinearEquiv e).compLinearEquiv e.symm = μ := by
+  rw [← compLinearEquiv_trans, LinearEquiv.symm_trans_self, compLinearEquiv_refl]
 
-/-- Pullback along a linear equivalence distributes over addition of densities. -/
-@[simp]
-theorem add_compLinearEquiv (μ ν : Density W m) (e : V ≃ₗ[ℝ] W) :
-    (μ + ν).compLinearEquiv e = μ.compLinearEquiv e + ν.compLinearEquiv e := by ext; rfl
+/-- Pulling back along `e.symm` then `e` recovers `μ`. -/
+@[simp] theorem compLinearEquiv_symm_compLinearEquiv (μ : Density V m) (e : V ≃ₗ[ℝ] W) :
+    (μ.compLinearEquiv e.symm).compLinearEquiv e = μ := by
+  rw [← compLinearEquiv_trans, LinearEquiv.self_trans_symm, compLinearEquiv_refl]
+
+/-- Pullback along a linear equivalence is injective. -/
+theorem compLinearEquiv_injective (e : V ≃ₗ[ℝ] W) :
+    Function.Injective (fun μ : Density W m ↦ μ.compLinearEquiv e) :=
+  Function.LeftInverse.injective (g := fun μ ↦ μ.compLinearEquiv e.symm)
+    fun μ ↦ μ.compLinearEquiv_compLinearEquiv_symm e
+
+/-- Pulling back zero along a linear equivalence gives zero. -/
+@[simp] theorem zero_compLinearEquiv (e : V ≃ₗ[ℝ] W) :
+    (0 : Density W m).compLinearEquiv e = 0 := zero_compLinearMap e.toLinearMap _
+
+/-- A density pulled back along `e` vanishes iff the original density vanishes. -/
+@[simp] theorem compLinearEquiv_eq_zero_iff (μ : Density W m) (e : V ≃ₗ[ℝ] W) :
+    μ.compLinearEquiv e = 0 ↔ μ = 0 :=
+  ⟨fun h ↦ compLinearEquiv_injective e (h.trans (zero_compLinearEquiv e).symm),
+    fun h ↦ by rw [h, zero_compLinearEquiv]⟩
+
+/-- Pullback along a linear equivalence distributes over addition. -/
+@[simp] theorem add_compLinearEquiv (μ ν : Density W m) (e : V ≃ₗ[ℝ] W) :
+    (μ + ν).compLinearEquiv e = μ.compLinearEquiv e + ν.compLinearEquiv e :=
+  add_compLinearMap μ ν _ _
 
 /-- Pullback along a linear equivalence commutes with scalar multiplication. -/
-@[simp]
-theorem smul_compLinearEquiv {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ]
-    (c : R) (μ : Density W m) (e : V ≃ₗ[ℝ] W) :
-    (c • μ).compLinearEquiv e = c • μ.compLinearEquiv e := by ext; rfl
+@[simp] theorem smul_compLinearEquiv {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ] (c : R)
+    (μ : Density W m) (e : V ≃ₗ[ℝ] W) :
+    (c • μ).compLinearEquiv e = c • μ.compLinearEquiv e := smul_compLinearMap c μ _ _
 
 /-- Pullback along a linear equivalence commutes with negation. -/
-@[simp]
-theorem neg_compLinearEquiv (μ : Density W m) (e : V ≃ₗ[ℝ] W) :
-    (-μ).compLinearEquiv e = -μ.compLinearEquiv e := by ext; rfl
+@[simp] theorem neg_compLinearEquiv (μ : Density W m) (e : V ≃ₗ[ℝ] W) :
+    (-μ).compLinearEquiv e = -μ.compLinearEquiv e := neg_compLinearMap μ _ _
 
-/-- Pullback along a linear equivalence distributes over subtraction of densities. -/
-@[simp]
-theorem sub_compLinearEquiv (μ ν : Density W m) (e : V ≃ₗ[ℝ] W) :
-    (μ - ν).compLinearEquiv e = μ.compLinearEquiv e - ν.compLinearEquiv e := by ext; rfl
-
-/-- Pullback of a density along any linear map `L : V →ₗ[ℝ] W` when a linear equivalence
-`e : V ≃ₗ[ℝ] W` is available. The resulting density depends only on `μ` and `L`,
-not on `e`. -/
-def compLinearMapOfEquiv (μ : Density W m) (e : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W) : Density V m :=
-  (μ.compLinearEquiv e).compEnd ((e.symm : W →ₗ[ℝ] V).comp L)
-
-/-- Evaluation of `compLinearMapOfEquiv` on a tuple of vectors. -/
-@[simp]
-theorem compLinearMapOfEquiv_apply (μ : Density W m) (e : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W)
-    (v : Fin m → V) : μ.compLinearMapOfEquiv e L v = μ (L ∘ v) := by
-  simp only [compLinearMapOfEquiv, compEnd_apply, compLinearEquiv_apply]; congr 1; ext; simp
-
-/-- `compLinearMapOfEquiv` is independent of the chosen linear equivalence between `V` and `W`. -/
-theorem compLinearMapOfEquiv_eq (μ : Density W m) (e₁ e₂ : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W) :
-    μ.compLinearMapOfEquiv e₁ L = μ.compLinearMapOfEquiv e₂ L := by ext; simp
-
-/-- Pulling back the zero density via `compLinearMapOfEquiv` gives zero. -/
-@[simp]
-theorem zero_compLinearMapOfEquiv (e : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W) :
-    (0 : Density W m).compLinearMapOfEquiv e L = 0 := by ext; simp
-
-/-- `compLinearMapOfEquiv` distributes over addition of densities. -/
-@[simp]
-theorem add_compLinearMapOfEquiv (μ ν : Density W m) (e : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W) :
-    (μ + ν).compLinearMapOfEquiv e L =
-      μ.compLinearMapOfEquiv e L + ν.compLinearMapOfEquiv e L := by ext; simp
-
-/-- `compLinearMapOfEquiv` commutes with scalar multiplication. -/
-@[simp]
-theorem smul_compLinearMapOfEquiv {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ]
-    (c : R) (μ : Density W m) (e : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W) :
-    (c • μ).compLinearMapOfEquiv e L = c • μ.compLinearMapOfEquiv e L := by ext; simp
-
-/-- `compLinearMapOfEquiv` commutes with negation. -/
-@[simp]
-theorem neg_compLinearMapOfEquiv (μ : Density W m) (e : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W) :
-    (-μ).compLinearMapOfEquiv e L = -μ.compLinearMapOfEquiv e L := by ext; simp
-
-/-- `compLinearMapOfEquiv` distributes over subtraction of densities. -/
-@[simp]
-theorem sub_compLinearMapOfEquiv (μ ν : Density W m) (e : V ≃ₗ[ℝ] W) (L : V →ₗ[ℝ] W) :
-    (μ - ν).compLinearMapOfEquiv e L =
-      μ.compLinearMapOfEquiv e L - ν.compLinearMapOfEquiv e L := by ext; simp
+/-- Pullback along a linear equivalence distributes over subtraction. -/
+@[simp] theorem sub_compLinearEquiv (μ ν : Density W m) (e : V ≃ₗ[ℝ] W) :
+    (μ - ν).compLinearEquiv e = μ.compLinearEquiv e - ν.compLinearEquiv e :=
+  sub_compLinearMap μ ν _ _
 
 end Equiv
 

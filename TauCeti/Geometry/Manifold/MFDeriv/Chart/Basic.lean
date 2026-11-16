@@ -112,6 +112,11 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative with the canonical source tangent identification.
 * `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
   unique derivatives, the derivative of the inverse chart is its derivative within the model range.
+* `TauCeti.mfderivWithin_extChartAt_symm_apply_eq_trivializationAt_symm` and
+  `TauCeti.mfderivWithin_extChartAt_symm_eq_comp_fderivWithin`: on a chart target, the within-range
+  derivative of `(extChartAt I α).symm` evaluates as the inverse preferred tangent-bundle
+  trivialization, and on chart overlaps factors through the within-range coordinate-change
+  derivative.
 * `TauCeti.eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt` and
   `TauCeti.eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt`:
   transport differentiability near a point between a product of manifolds and model spaces
@@ -700,6 +705,49 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On the target of a preferred extended chart, the within-range derivative of
+`(extChartAt I α).symm` evaluates as the inverse preferred tangent-bundle trivialization at `α`. -/
+theorem mfderivWithin_extChartAt_symm_apply_eq_trivializationAt_symm (α : M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (v : E) :
+    mfderivWithin 𝓘(𝕜, E) I (extChartAt I α).symm (range I) y v =
+      (trivializationAt E (TangentSpace I) α).symm ((extChartAt I α).symm y) v := by
+  have hx : (extChartAt I α).symm y ∈ (chartAt H α).source := by
+    simpa only [extChartAt_source] using (extChartAt I α).map_target hy
+  -- `TangentSpace 𝓘(𝕜, E) y` is definitionally `E`.
+  rw [← (trivializationAt E (TangentSpace I) α).symmL_apply (R := 𝕜)
+    (by rwa [TangentBundle.trivializationAt_baseSet]),
+    TangentBundle.symmL_trivializationAt hx, (extChartAt I α).right_inv hy]; rfl
+
+/-- On an overlap of preferred extended charts, the within-range derivative of
+`(extChartAt I x₀).symm` factors through `(extChartAt I x).symm` and the within-range derivative of
+`extChartAt I x ∘ (extChartAt I x₀).symm`. -/
+theorem mfderivWithin_extChartAt_symm_eq_comp_fderivWithin {x₀ x : M} {z : E}
+    (hz : z ∈ (extChartAt I x₀).target)
+    (hx : (extChartAt I x₀).symm z ∈ (extChartAt I x).source) :
+    mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z =
+      (mfderivWithin 𝓘(𝕜, E) I (extChartAt I x).symm (range I)
+        (extChartAt I x ((extChartAt I x₀).symm z))).comp
+        (fderivWithin 𝕜 (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z) := by
+  have hpre : (extChartAt I x₀).symm ⁻¹' (extChartAt I x).source ∈ 𝓝[range I] z :=
+    (continuousAt_extChartAt_symm'' hz).continuousWithinAt.preimage_mem_nhdsWithin
+      (extChartAt_source_mem_nhds' hx)
+  have hcoord : ((extChartAt I x).symm ∘ (extChartAt I x ∘ (extChartAt I x₀).symm))
+      =ᶠ[𝓝[range I] z] (extChartAt I x₀).symm :=
+    Filter.Eventually.mono hpre fun _ ha ↦ (extChartAt I x).left_inv ha
+  have hcomp := mfderivWithin_comp_of_preimage_mem_nhdsWithin_of_eq
+    (I' := 𝓘(𝕜, E)) (I'' := I) (u := range I) z
+    (mdifferentiableWithinAt_extChartAt_symm ((extChartAt I x).map_source hx))
+    ((contDiffWithinAt_ext_coord_change (𝕜 := 𝕜) (n := 1) x x₀ (by
+      rw [PartialEquiv.trans_source]
+      exact ⟨by simpa only [PartialEquiv.symm_source] using hz, hx⟩)).differentiableWithinAt
+        (by simp)).mdifferentiableWithinAt
+    (Filter.Eventually.mono hpre fun _ ha ↦
+      extChartAt_target_subset_range x ((extChartAt I x).map_source ha))
+    (I.uniqueDiffOn.uniqueDiffWithinAt
+      (extChartAt_target_subset_range x₀ hz)).uniqueMDiffWithinAt rfl
+  rwa [hcoord.mfderivWithin_eq ((extChartAt I x).left_inv hx),
+    mfderivWithin_eq_fderivWithin] at hcomp
 
 /-- The derivative of a model-valued map in an arbitrary preferred chart is its actual
 manifold derivative composed with the inverse tangent chart. Both sides vanish when the map is not
