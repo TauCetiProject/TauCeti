@@ -107,6 +107,8 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 * `MeasureTheory.Measure.pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm` — the product measure
   of a set is the integral of the measures of its fibres over the coordinates satisfying a
   predicate.
+* `MeasureTheory.Measure.pi_Ioc_ae_eq_pi_Ico` — the boxes `∏ (fᵢ, gᵢ]` and `∏ [fᵢ, gᵢ)` agree up
+  to a null set.
 
 ## Implementation
 
@@ -478,5 +480,15 @@ theorem pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm {ι : Type*} [Fintype ι
   rw [← (measurePreserving_piEquivPiSubtypeProd μ p).symm.measure_preimage hs.nullMeasurableSet,
     Measure.prod_apply_symm ((MeasurableEquiv.piEquivPiSubtypeProd α p).symm.measurable hs)]
   rfl
+
+/-- **Half-open boxes agree up to a null set.** For a product of measures with null singletons, the
+boxes `∏ i ∈ s, (fᵢ, gᵢ]` and `∏ i ∈ s, [fᵢ, gᵢ)` differ by a null set. For instance the unit cube
+`∏ i, (aᵢ, aᵢ + 1]`, over which Mathlib integrates functions on the torus
+(`UnitAddTorus.lintegral_preimage`), agrees with the cube `∏ i, [aᵢ, aᵢ + 1)`. -/
+theorem pi_Ioc_ae_eq_pi_Ico {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    [∀ i, PartialOrder (α i)] {μ : ∀ i, Measure (α i)} [∀ i, SigmaFinite (μ i)]
+    [∀ i, NullSingletonClass (μ i)] {s : Set ι} {f g : ∀ i, α i} :
+    (s.pi fun i ↦ Ioc (f i) (g i)) =ᵐ[Measure.pi μ] s.pi fun i ↦ Ico (f i) (g i) :=
+  ae_eq_set_pi fun _ _ ↦ Ico_ae_eq_Ioc.symm
 
 end MeasureTheory.Measure

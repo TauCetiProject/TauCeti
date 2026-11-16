@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.Torus.Kernel
 import Mathlib.Algebra.Module.ZLattice.Basic
 import TauCeti.Algebra.Module.ZLattice.ZSpanEquiv
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
@@ -236,7 +237,8 @@ theorem lintegral_enorm_periodize_le {f : (d → ℝ) → ℂ} (hf : AEMeasurabl
   have hcube : {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)} =ᵐ[volume]
       ZSpan.fundamentalDomain b := by
     rw [ZSpan.fundamentalDomain_pi_basisFun]
-    simpa only [Pi.zero_apply, zero_add] using TauCeti.UnitAddTorus.setOf_mem_Ioc_ae_eq_pi_Ico 0
+    simpa [Set.pi, volume_pi] using Measure.pi_Ioc_ae_eq_pi_Ico
+      (μ := fun _ : d ↦ (volume : Measure ℝ)) (s := univ) (f := 0) (g := 1)
   -- The integral over the torus is the integral over the unit cube.
   have hlift : ∫⁻ z, ‖periodize f z‖ₑ =
       ∫⁻ x in {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)},

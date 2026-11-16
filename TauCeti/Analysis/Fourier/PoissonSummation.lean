@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Fourier.ChangeOfVariables
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Algebra.Module.ZLattice.ZSpanEquiv
 import TauCeti.Analysis.Fourier.Monomial
-import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -154,8 +154,9 @@ private theorem coords_preimage_ae_eq_fundamentalDomain :
     simp only [mem_preimage, mem_univ_pi, coords_apply, ZSpan.mem_fundamentalDomain,
       o.coe_toBasis_repr_apply, Pi.zero_apply, zero_add]
   rw [← hset]
-  exact o.measurePreserving_coords.quasiMeasurePreserving.preimage_ae_eq
-    (TauCeti.UnitAddTorus.setOf_mem_Ioc_ae_eq_pi_Ico 0)
+  refine o.measurePreserving_coords.quasiMeasurePreserving.preimage_ae_eq ?_
+  simpa [Set.pi, volume_pi] using Measure.pi_Ioc_ae_eq_pi_Ico
+    (μ := fun _ : ι ↦ (volume : Measure ℝ)) (s := univ) (f := 0) (g := 1)
 
 end OrthonormalBasis
 

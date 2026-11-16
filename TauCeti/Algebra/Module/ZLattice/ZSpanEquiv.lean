@@ -24,6 +24,8 @@ file packages that bijection, built from Mathlib's `Module.Basis.restrictScalars
 * `Module.Basis.coe_zspanEquiv_apply`: the lattice vector with coordinates `n` is
   `∑ i, n i • b i`.
 * `Module.Basis.repr_zspanEquiv_apply`: its coordinates in the basis `b` are `n`.
+* `Module.Basis.zspanEquiv_symm_apply`: the inverse sends a lattice vector to its coordinates in
+  the basis `b`.
 -/
 
 public section
@@ -41,10 +43,18 @@ noncomputable def zspanEquiv [Finite ι] : (ι → ℤ) ≃ₗ[ℤ] span ℤ (ra
   (b.restrictScalars ℤ).equivFun.symm
 
 /-- The lattice vector `b.zspanEquiv n` has coordinates `n` in the basis `b`. -/
+@[simp]
 theorem repr_zspanEquiv_apply [Finite ι] (n : ι → ℤ) (i : ι) :
     b.repr (zspanEquiv b n) i = n i := by
   rw [← b.restrictScalars_repr_apply ℤ, zspanEquiv, ← Basis.equivFun_apply,
     LinearEquiv.apply_symm_apply, eq_intCast]
+
+/-- The inverse of `b.zspanEquiv` sends a lattice vector to its coordinates in the basis `b`. -/
+@[simp]
+theorem zspanEquiv_symm_apply [Finite ι] (v : span ℤ (range b)) (i : ι) :
+    (b.zspanEquiv.symm v i : R) = b.repr v i := by
+  obtain ⟨n, rfl⟩ := b.zspanEquiv.surjective v
+  simp
 
 variable [Fintype ι]
 

@@ -25,7 +25,8 @@ needed: where the integral defining `f̂(n)` diverges, both sides vanish.
 By linearity, convolution of an integrable `f` with a trigonometric polynomial `∑ c_n e_n` is the
 Fourier multiplier `f ↦ ∑ c_n f̂(n) e_n` (`UnitAddTorus.sum_mul_mFourier_convolution`). This is
 how convolution operators on `Lᵖ(𝕋ᵈ)` with trigonometric polynomial kernels, such as the periodic
-Littlewood–Paley blocks (`ContinuousMap.convolutionLp`), are identified with Fourier multipliers.
+Littlewood–Paley blocks (`MeasureTheory.Integrable.convolutionLp`), are identified with Fourier
+multipliers.
 -/
 
 public section
