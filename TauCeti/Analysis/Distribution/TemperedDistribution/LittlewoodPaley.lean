@@ -34,8 +34,8 @@ so that `Δ₀ u` carries the frequencies of `u` in the ball of radius `φ.rOut`
 the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`. Their partial sums are the low-pass truncations
 `∑_{j ≤ N} Δⱼ u = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 u)`, and these converge to `u`: every tempered
 distribution is reconstructed from its Littlewood–Paley blocks, `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`. This
-is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) • f → f` of Schwartz
-functions (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`).
+is deduced, by duality, from the convergence of the truncations `φ (R⁻¹ ·) • f → f` of Schwartz
+functions as `R → ∞` (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump`).
 
 The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
 `|j - k| ≥ L`. The same holds between the blocks `Δⱼ` and `Δ'ₖ` built from two bump functions
