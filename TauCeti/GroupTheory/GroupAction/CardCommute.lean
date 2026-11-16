@@ -12,6 +12,7 @@ public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Nat.Cast.Field
 import Mathlib.GroupTheory.GroupAction.CardCommute
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The class formula with orbit-wise stabilizer orders
@@ -48,7 +49,7 @@ theorem card_eq_finsum_card_group_div_cardStabilizerOnOrbit (𝕜 : Type*) [Divi
       ∑ᶠ ω : orbitRel.Quotient G α, (Nat.card G : 𝕜) / cardStabilizerOnOrbit ω := by
   classical
   have hG : (Nat.card G : 𝕜) ≠ 0 := NeZero.ne _
-  have := Nat.finite_of_card_ne_zero fun h ↦ hG (by rw [h, Nat.cast_zero])
+  have := finite_of_natCast_card_ne_zero hG
   -- The order of a stabilizer divides `|G|`, so it is nonzero in `𝕜` as well.
   have hdvd (ω : orbitRel.Quotient G α) : cardStabilizerOnOrbit ω ∣ Nat.card G := by
     induction ω using Quotient.inductionOn' with | h a => ?_
@@ -59,16 +60,9 @@ theorem card_eq_finsum_card_group_div_cardStabilizerOnOrbit (𝕜 : Type*) [Divi
     exact hG (by rw [hk, Nat.cast_mul, h, zero_mul])
   cases finite_or_infinite α with
   | inr hα =>
-    -- Every point is `g • ω.out` for its orbit `ω`, so there are infinitely many orbits.
-    have : Infinite (orbitRel.Quotient G α) := by
-      by_contra h
-      have := not_infinite_iff_finite.mp h
-      have : Finite α :=
-        Finite.of_surjective (fun x : G × orbitRel.Quotient G α ↦ x.1 • x.2.out) fun a ↦ by
-          obtain ⟨g, hg⟩ :=
-            Quotient.exact' (Quotient.out_eq' (Quotient.mk'' a : orbitRel.Quotient G α))
-          exact ⟨(g⁻¹, Quotient.mk'' a), by simp [← hg]⟩
-      exact not_finite α
+    -- A finite group has finite orbits, so there are infinitely many orbits.
+    have : Infinite (orbitRel.Quotient G α) :=
+      ⟨fun _ ↦ hα.not_finite (Finite.of_finite_mulAction_orbitRel_quotient G α)⟩
     rw [Nat.card_eq_zero_of_infinite, Nat.cast_zero, finsum_of_infinite_support]
     rw [Function.support_eq_univ fun ω ↦ div_ne_zero hG (hstab ω)]
     exact Set.infinite_univ

@@ -129,10 +129,8 @@ theorem coe_neg (p : poles K) : ((-p : poles K) : Fin 3 → ℝ) = -p :=
   rfl
 
 /-- A pole is distinct from its antipode. -/
-theorem neg_ne_self (p : poles K) : -p ≠ p := fun h ↦ coe_ne_zero p <| by
-  have h2 : (2 : ℝ) • (p : Fin 3 → ℝ) = 0 := by
-    rw [two_smul, ← sub_neg_eq_add, ← coe_neg, h, sub_self]
-  exact (smul_eq_zero.mp h2).resolve_left two_ne_zero
+theorem neg_ne_self (p : poles K) : -p ≠ p :=
+  mt (congrArg Subtype.val) (_root_.neg_ne_self.mpr (coe_ne_zero p))
 
 /-- The action of `K` on the poles commutes with the antipodal map. -/
 @[simp]

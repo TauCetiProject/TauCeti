@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.CrossProduct
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # The axis of a rotation of `ℝ³`
@@ -144,8 +145,7 @@ theorem exists_dotProduct_self_eq_one_mulVec_eq_self_of_mem_specialOrthogonalGro
     (hg : g ∈ specialOrthogonalGroup n ℝ) : ∃ v, v ⬝ᵥ v = 1 ∧ g *ᵥ v = v := by
   obtain ⟨v, hv, hgv⟩ := exists_ne_zero_mulVec_eq_self_of_mem_specialOrthogonalGroup hn hg
   have hpos : 0 < v ⬝ᵥ v :=
-    (Fintype.sum_nonneg fun i ↦ mul_self_nonneg (v i)).lt_of_ne
-      (Ne.symm (dotProduct_self_eq_zero.not.mpr hv))
+    (dotProduct_self_nonneg v).lt_of_ne' (dotProduct_self_eq_zero.not.mpr hv)
   refine ⟨(Real.sqrt (v ⬝ᵥ v))⁻¹ • v, ?_, by rw [mulVec_smul, hgv]⟩
   simp only [smul_dotProduct, dotProduct_smul, smul_eq_mul]
   field_simp
