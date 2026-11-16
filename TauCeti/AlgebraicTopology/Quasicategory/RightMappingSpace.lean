@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
+public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
@@ -29,11 +31,12 @@ We realise it as a subcomplex of `SimplexCategory.joinVertex.op ⋙ X`, the simp
 `- ⋆ ⦋0⦌` with a final vertex, the restriction to `SimplexCategory` of the join of
 `AugmentedSimplexCategory` (see `TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex`).
 
-If `X` is a quasicategory, every horn `Λ[n, i]` with `0 < i` in `Hom^R_X(x, y)` has a filler: in
-`X` it is an inner horn `Λ[n + 1, i]` whose last face is the constant simplex at `x`. Thus
-`Hom^R_X(x, y)` is again a quasicategory, in which all horns except possibly the ones `Λ[n, 0]`
-can be filled. (That the remaining horns can also be filled, making `Hom^R_X(x, y)` a Kan complex,
-is Joyal's theorem on special outer horns, which this file does not prove.)
+If `X` is a quasicategory, every horn `Λ[n, i]` in `Hom^R_X(x, y)` has a filler, so `Hom^R_X(x, y)`
+is a Kan complex (HTT Proposition 1.2.2.3). For `0 < i`, the horn lifts to an inner horn
+`Λ[n + 1, i]` in `X` whose last face is the constant simplex at `x`; for `i = 0`, it lifts to an
+outer horn `Λ[n + 1, 0]` in `X` whose initial edge lies in that constant last face and is therefore
+the identity edge at `x`, so Joyal's special outer-horn theorem
+(`SSet.Quasicategory.hornFilling_zero`) provides a filler.
 
 If `X` is strict Segal, for instance the nerve of a category, then every simplex of
 `Hom^R_X(x, y)` is totally degenerate: its spine consists of degenerate edges at `x` followed by
@@ -43,7 +46,8 @@ to `y`.
 A map of simplicial sets `f : X ⟶ Y` induces maps `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`, which are
 the maps on mapping spaces whose invertibility up to weak equivalence makes `f` fully faithful.
 The projections of a product identify the right mapping spaces of `X ⊗ Y` with the products of
-those of `X` and `Y`.
+those of `X` and `Y`, and right mapping spaces commute with universe lifts
+(`SSet.rightMappingSpace.uliftIso`).
 
 ## Main definitions
 
@@ -55,20 +59,23 @@ those of `X` and `Y`.
   `f : X ⟶ Y`.
 * `SSet.rightMappingSpace.prodIso`: the isomorphism
   `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁)) ≅ Hom^R_X(x₀, x₁) ⊗ Hom^R_Y(y₀, y₁)`.
+* `SSet.rightMappingSpace.uliftIso`: right mapping spaces commute with `SSet.uliftFunctor`.
 
 ## Main results
 
 * `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)`, and
   `SSet.rightMappingSpace.coe_δ`, `SSet.rightMappingSpace.coe_σ`: their faces and degeneracies
   are those in `X` avoiding, respectively fixing, the last vertex.
-* `SSet.rightMappingSpace.hornFilling`: if `X` is a quasicategory, the horns `Λ[n, i]` with
-  `i ≠ 0` in `Hom^R_X(x, y)` have fillers.
-* `SSet.rightMappingSpace.quasicategory`: the right mapping spaces of a quasicategory are
-  quasicategories.
+* `SSet.rightMappingSpace.hornFilling`, `SSet.rightMappingSpace.hornFilling_zero`: if `X` is a
+  quasicategory, every horn in `Hom^R_X(x, y)` has a filler.
+* `SSet.rightMappingSpace.kanComplex`: the right mapping spaces of a quasicategory are Kan
+  complexes (and hence quasicategories, `SSet.rightMappingSpace.quasicategory`).
 * `SSet.rightMappingSpace.isIso_map_iff_bijective`: for strict Segal simplicial sets, `f` induces
   an isomorphism of right mapping spaces exactly when it is bijective on edges.
 * `SSet.rightMappingSpace.isIso_map_ι`: a subcomplex containing all simplices of a right mapping
   space has the same right mapping space.
+* `SSet.rightMappingSpace.isIso_map_fullEnhancedSubcategory_ι`: the inclusion of a full enhanced
+  subcategory induces isomorphisms on right mapping spaces.
 
 ## References
 
@@ -264,15 +271,12 @@ private theorem isCompatible_liftFace
       -- `(j.castSucc.castPred _).castSucc = j.castSucc`.
       exact h
 
-/-- If `X` is a quasicategory, every horn `Λ[n + 1, i]` with `i ≠ 0` in the right mapping space
-`Hom^R_X(x, y)` can be filled. -/
-theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
-    (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u})) :
+/-- Any filler in `X` of the lifted horn `Λ[n + 2, i.castSucc]` lies in `Hom^R_X(x, y)` and
+fills `σ₀`. -/
+private theorem exists_filler_of_lift
+    (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u}))
+    (τ : Δ[n + 2] ⟶ X) (hτ : (isCompatible_liftFace σ₀).desc = Λ[n + 2, i.castSucc].ι ≫ τ) :
     ∃ σ : Δ[n + 1] ⟶ (X.rightMappingSpace x y : SSet.{u}), σ₀ = Λ[n + 1, i].ι ≫ σ := by
-  -- Fill the inner horn of `X` whose faces are those of `σ₀` and the constant simplex at `x`.
-  obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling
-    (Fin.castSucc_pos_iff.2 (Fin.pos_iff_ne_zero.2 hi)) (Fin.castSucc_lt_last i)
-    (isCompatible_liftFace σ₀).desc
   set t : X _⦋n + 2⦌ := yonedaEquiv τ with ht
   have hface (k : Fin (n + 3)) (hk : k ≠ i.castSucc) :
       X.δ k t = liftFace σ₀ k hk := by
@@ -282,14 +286,19 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
   have hmem : t ∈ (X.rightMappingSpace x y).obj (op ⦋n + 1⦌) := by
     refine (mem_rightMappingSpace_iff _).2 ⟨?_, ?_⟩
     · rw [hface _ (Fin.castSucc_lt_last i).ne', liftFace_last]
-    · -- The last vertex of the filler is the last vertex of its face opposite to `0`.
-      have h0 : Fin.castSucc (0 : Fin (n + 2)) ≠ i.castSucc :=
-        fun h ↦ hi (Fin.castSucc_injective _ h).symm
-      have h := ((mem_rightMappingSpace_iff _).1 (hornFace_mem σ₀ 0 hi.symm)).2
-      rw [← liftFace_castSucc σ₀ 0 hi.symm h0, ← hface _ h0, SimplicialObject.δ,
+    · -- The last vertex of the filler is the last vertex of any face `j₀ ≠ i` of the horn.
+      let j₀ : Fin (n + 2) := if i = 0 then 1 else 0
+      have hj₀ : j₀ ≠ i := by
+        dsimp [j₀]
+        split_ifs with h
+        · exact h ▸ one_ne_zero
+        · exact Ne.symm h
+      have hj₀' : j₀.castSucc ≠ i.castSucc := fun h ↦ hj₀ (Fin.castSucc_injective _ h)
+      have h := ((mem_rightMappingSpace_iff _).1 (hornFace_mem σ₀ j₀ hj₀)).2
+      rw [← liftFace_castSucc σ₀ j₀ hj₀ hj₀', ← hface _ hj₀', SimplicialObject.δ,
         ← Functor.map_comp_apply, ← op_comp] at h
       rw [← joinVertexInr_mk] at h ⊢
-      exact (congrArg (fun g ↦ X.map g.op t) (joinVertexInr_comp_δ_castSucc 0)).symm.trans h
+      exact (congrArg (fun g ↦ X.map g.op t) (joinVertexInr_comp_δ_castSucc j₀)).symm.trans h
   let s : (X.rightMappingSpace x y : SSet.{u}) _⦋n + 1⦌ := ⟨t, hmem⟩
   refine ⟨yonedaEquiv.symm s, horn.hom_ext _ _ fun j hj ↦ Subtype.ext ?_⟩
   have hR : (Λ[n + 1, i].ι ≫ yonedaEquiv.symm s).app _ (horn.face i j hj) =
@@ -300,10 +309,63 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
   rw [hR, coe_δ, hface _ fun h ↦ hj (Fin.castSucc_injective _ h), liftFace_castSucc σ₀ j hj]
   rfl
 
+/-- If `X` is a quasicategory, every horn `Λ[n + 1, i]` with `i ≠ 0` in the right mapping space
+`Hom^R_X(x, y)` can be filled. -/
+theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
+    (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u})) :
+    ∃ σ : Δ[n + 1] ⟶ (X.rightMappingSpace x y : SSet.{u}), σ₀ = Λ[n + 1, i].ι ≫ σ := by
+  -- Fill the inner horn of `X` whose faces are those of `σ₀` and the constant simplex at `x`.
+  obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling
+    (Fin.castSucc_pos_iff.2 (Fin.pos_iff_ne_zero.2 hi)) (Fin.castSucc_lt_last i)
+    (isCompatible_liftFace σ₀).desc
+  exact exists_filler_of_lift σ₀ τ hτ
+
+/-- If `X` is a quasicategory, every horn `Λ[n + 1, 0]` in the right mapping space
+`Hom^R_X(x, y)` can be filled: its lift to `Λ[n + 2, 0]` in `X` has initial edge in the constant
+last face at `x`, which is the identity edge at `x`, so Joyal's special outer-horn theorem
+applies. -/
+theorem hornFilling_zero [X.Quasicategory]
+    (σ₀ : (Λ[n + 1, 0] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u})) :
+    ∃ σ : Δ[n + 1] ⟶ (X.rightMappingSpace x y : SSet.{u}), σ₀ = Λ[n + 1, 0].ι ≫ σ := by
+  have hf : horn.IsCompatible (i := (0 : Fin (n + 3)))
+      (fun k hk ↦ yonedaEquiv.symm (liftFace σ₀ k hk)) :=
+    isCompatible_liftFace σ₀
+  have hinit : hf.desc.app _ (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
+      (Edge.id x).edge := by
+    have hedge : horn.edge.{u} (n + 2) 0 0 1 (Fin.zero_le _) (by simp) =
+        (horn.ι (0 : Fin (n + 3)) (Fin.last (n + 2)) (Fin.last_pos.ne')).app _
+          (stdSimplex.edge (n + 1) 0 1 (Fin.zero_le _)) := by
+      rw [horn.ι_app_edge]
+      refine Subtype.ext (stdSimplex.ext _ _ fun k ↦ ?_)
+      fin_cases k <;> simp [stdSimplex.edge]
+    rw [hedge, horn.IsCompatible.desc_app_ι_app]
+    simp only [liftFace, ↓reduceDIte]
+    rw [← stdSimplex.objEquiv.symm_apply_apply (stdSimplex.edge (n + 1) 0 1 (Fin.zero_le _)),
+      yonedaEquiv_symm_app_objEquiv_symm, ← Functor.map_comp_apply, ← op_comp,
+      Edge.id_edge, SimplicialObject.σ_def]
+    exact congrArg (fun f : ⦋1⦌ ⟶ ⦋0⦌ ↦ X.map f.op x) (Subsingleton.elim _ _)
+  obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling_zero hf.desc
+    ((Edge.isEquivalence_iff_of_edge_eq (e := Edge.mk' _) (e' := Edge.id x)
+      (by rw [Edge.mk'_edge, hinit])).2 (Edge.isEquivalence_id x))
+  exact exists_filler_of_lift σ₀ τ hτ
+
+/-- **HTT Proposition 1.2.2.3**: the right mapping spaces of a quasicategory are Kan complexes. -/
+instance kanComplex [X.Quasicategory] :
+    KanComplex (X.rightMappingSpace x y : SSet.{u}) := by
+  rw [KanComplex.iff]
+  intro n i f hf
+  obtain ⟨σ, hσ⟩ : ∃ σ : Δ[n + 1] ⟶ (X.rightMappingSpace x y : SSet.{u}),
+      hf.desc = Λ[n + 1, i].ι ≫ σ := by
+    by_cases hi : i = 0
+    · subst hi
+      exact hornFilling_zero hf.desc
+    · exact hornFilling hi hf.desc
+  exact ⟨σ, fun j hj ↦ by rw [← horn.ι_ι_assoc i j hj, ← hσ, hf.ι_desc]⟩
+
 /-- The right mapping spaces of a quasicategory are quasicategories. -/
 instance quasicategory [X.Quasicategory] :
-    (X.rightMappingSpace x y : SSet.{u}).Quasicategory where
-  hornFilling' _ _ σ₀ h0 _ := hornFilling h0.ne' σ₀
+    (X.rightMappingSpace x y : SSet.{u}).Quasicategory :=
+  inferInstance
 
 /-! ### Strict Segal simplicial sets -/
 
@@ -482,6 +544,28 @@ theorem isIso_map_ι {A : X.Subcomplex} (x y : (A : SSet.{u}) _⦋0⦌)
   refine ⟨⟨⟨s.1, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
   exact Subtype.ext (map_app_coe A.ι _)
 
+/-- The inclusion of a full enhanced subcategory induces an isomorphism on right mapping spaces:
+every vertex of a simplex of `Hom^R_X(x, y)` is either `x` or `y`, so the whole simplex already
+lies in the full enhanced subcategory. -/
+instance isIso_map_fullEnhancedSubcategory_ι (P : X _⦋0⦌ → Prop)
+    (x y : (X.fullEnhancedSubcategory P : SSet.{u}) _⦋0⦌) :
+    IsIso (map x y (X.fullEnhancedSubcategory P).ι) := by
+  refine isIso_map_ι x y fun n s ↦ ?_
+  let σ : X _⦋n + 1⦌ := s.1
+  refine (mem_fullEnhancedSubcategory_obj_iff_forall_fin P σ).2 ?_
+  obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff (n := n) σ).1 s.2
+  refine Fin.lastCases ?_ fun j ↦ ?_
+  · rw [h₂]
+    exact (mem_fullEnhancedSubcategory_obj_zero_iff P _).1 y.2
+  · have hcomp : SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc =
+        SimplexCategory.const ⦋0⦌ ⦋n⦌ j ≫ SimplexCategory.δ (Fin.last (n + 1)) := by
+      ext i
+      exact (congrArg Fin.val (congrFun Fin.succAbove_last j)).symm
+    rw [hcomp, op_comp, Functor.map_comp_apply]
+    change P (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ j).op (X.δ (Fin.last (n + 1)) σ))
+    rw [h₁, map_map_const_zero, const_eq_id]
+    simpa using (mem_fullEnhancedSubcategory_obj_zero_iff P _).1 x.2
+
 end map
 
 /-! ### Products -/
@@ -540,6 +624,48 @@ theorem prodIso_inv_ι :
   (rfl)
 
 end prod
+
+/-! ### Universe lifts -/
+
+section ulift
+
+universe v
+
+variable (X : SSet.{u}) (x y : X _⦋0⦌)
+
+/-- The right mapping space of a universe lift is the universe lift of the right mapping space. -/
+def uliftIso :
+    ((uliftFunctor.{v}.obj X).rightMappingSpace (ULift.up x) (ULift.up y) : SSet.{max u v}) ≅
+      uliftFunctor.{v}.obj (X.rightMappingSpace x y : SSet.{u}) where
+  hom :=
+    { app _ := ↾fun s ↦ ULift.up ⟨s.1.down,
+        ⟨congrArg ULift.down s.2.1, congrArg ULift.down s.2.2⟩⟩
+      naturality _ _ _ := rfl }
+  inv :=
+    { app _ := ↾fun s ↦ ⟨ULift.up s.down.1,
+        ⟨congrArg ULift.up s.down.2.1, congrArg ULift.up s.down.2.2⟩⟩
+      naturality _ _ _ := rfl }
+  hom_inv_id := rfl
+  inv_hom_id := rfl
+
+/-- Under `uliftIso`, the inclusion of the lifted right mapping space is the universe lift of the
+inclusion of the right mapping space. -/
+@[reassoc (attr := simp)]
+theorem uliftIso_hom_ι :
+    (uliftIso.{u, v} X x y).hom ≫ uliftFunctor.{v}.map (X.rightMappingSpace x y).ι =
+      ((uliftFunctor.{v}.obj X).rightMappingSpace (ULift.up x) (ULift.up y)).ι :=
+  (rfl)
+
+/-- Under `uliftIso.inv`, the inclusion of the lifted right mapping space pulls back to the universe
+lift of the inclusion of the right mapping space. -/
+@[reassoc (attr := simp)]
+theorem uliftIso_inv_ι :
+    (uliftIso.{u, v} X x y).inv ≫
+        ((uliftFunctor.{v}.obj X).rightMappingSpace (ULift.up x) (ULift.up y)).ι =
+      uliftFunctor.{v}.map (X.rightMappingSpace x y).ι :=
+  (rfl)
+
+end ulift
 
 end rightMappingSpace
 

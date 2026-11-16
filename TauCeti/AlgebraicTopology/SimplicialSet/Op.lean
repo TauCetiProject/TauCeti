@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 
@@ -16,8 +17,10 @@ of every simplex, and `SSet.stdSimplex.opIso n : Δ[n]ᵒᵖ ≅ Δ[n]` identifi
 standard simplex with itself. This file records that `SSet.opFunctor` is an equivalence of
 categories, and the compatibilities of `SSet.stdSimplex.opIso` with maps of standard simplices,
 with the involution, and with the Yoneda bijection. Reversal also restricts to an isomorphism
-on simplex boundaries (`SSet.boundary.opIso`). They are what one needs to transport
-constructions on simplicial sets, such as joins and slices, along the opposite.
+on simplex boundaries (`SSet.boundary.opIso`) and on horns (`SSet.horn.opIso`), showing in
+particular that the opposite of a quasicategory is a quasicategory (`SSet.Quasicategory.op`).
+They are what one needs to transport constructions on simplicial sets, such as joins, slices, and
+outer-horn filling, along the opposite.
 
 ## Main results
 
@@ -30,6 +33,11 @@ constructions on simplicial sets, such as joins and slices, along the opposite.
   an `n`-simplex of `Xᵒᵖ` is the opposite of the map `Δ[n] ⟶ X` given by the same simplex of `X`.
 * `SSet.boundary.opIso`: boundary reversal, compatible with the boundary inclusions and vertices.
 * `SSet.boundary.exists_extension_iff_op`: boundary extension is invariant under reversal.
+* `SSet.horn.opIso`: horn reversal `Λ[n, i]ᵒᵖ ≅ Λ[n, i.rev]`, compatible with horn inclusions and
+  edges.
+* `SSet.horn.exists_extension_iff_op`: horn extension is invariant under reversal.
+* `SSet.Quasicategory.op`, `SSet.quasicategory_op_iff`: a simplicial set is a quasicategory
+  exactly when its opposite is.
 * `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged.
 * `SSet.Edge.CompStruct.opEquiv`: a `2`-simplex of `X` exhibiting `e₀₂` as a composite of `e₀₁`
   and `e₁₂` is a `2`-simplex of `Xᵒᵖ` exhibiting the opposite of `e₀₂` as a composite of the
@@ -185,6 +193,101 @@ lemma exists_extension_iff_op {X : SSet.{u}} {n : ℕ} (σ₀ : (∂Δ[n] : SSet
     simp
 
 end boundary
+
+namespace horn
+
+/-- Restriction of standard-simplex reversal to horn simplices. -/
+private def opObjEquiv' (n : ℕ) (i : Fin (n + 1)) (d : SimplexCategoryᵒᵖ) :
+    (opFunctor.obj (Λ[n, i] : SSet.{u})).obj d ≃ (Λ[n, i.rev] : SSet.{u}).obj d :=
+  opObjEquiv.trans (Equiv.subtypeEquiv
+    (opObjEquiv.symm.trans ((stdSimplex.opIso ⦋n⦌).app d).toEquiv) (fun x ↦ by
+      have h := Set.ext_iff.mp (congrArg (fun A ↦ A.obj d) (op_horn.{u} i))
+        ((stdSimplex.opIso ⦋n⦌).hom.app d (opObjEquiv.symm x))
+      simpa only [Subcomplex.preimage_obj, Set.mem_preimage, Subcomplex.mem_op_obj_iff,
+        Iso.hom_inv_id_app_apply, Equiv.apply_symm_apply, Equiv.trans_apply,
+        Iso.toEquiv_fun, Iso.app_hom] using h))
+
+/-- Reversing the vertices identifies the opposite of the horn `Λ[n, i]` with the horn
+`Λ[n, i.rev]`. -/
+def opIso (n : ℕ) (i : Fin (n + 1)) :
+    opFunctor.obj (Λ[n, i] : SSet.{u}) ≅ (Λ[n, i.rev] : SSet.{u}) :=
+  NatIso.ofComponents (fun d ↦ (opObjEquiv' n i d).toIso) (by
+    intro d e f
+    ext x
+    apply Subtype.ext
+    exact NatTrans.naturality_apply (stdSimplex.opIso ⦋n⦌).hom f
+      (opObjEquiv.symm (opObjEquiv x).1))
+
+/-- Horn reversal is the restriction of standard-simplex reversal. -/
+@[reassoc (attr := simp)]
+lemma opIso_hom_ι (n : ℕ) (i : Fin (n + 1)) :
+    (opIso.{u} n i).hom ≫ Λ[n, i.rev].ι =
+      opFunctor.map Λ[n, i].ι ≫ (stdSimplex.opIso ⦋n⦌).hom :=
+  (rfl)
+
+/-- The inverse horn reversal is the restriction of the inverse simplex reversal. -/
+@[reassoc (attr := simp)]
+lemma opIso_inv_opFunctor_map_ι (n : ℕ) (i : Fin (n + 1)) :
+    (opIso.{u} n i).inv ≫ opFunctor.map Λ[n, i].ι =
+      Λ[n, i.rev].ι ≫ (stdSimplex.opIso ⦋n⦌).inv :=
+  (rfl)
+
+/-- Horn reversal sends an edge from `a` to `b` of `Λ[n, i.rev]` to the reversed edge from `b.rev`
+to `a.rev` of `Λ[n, i]`. -/
+lemma opIso_inv_app_edge {n : ℕ} (i a b : Fin (n + 1)) (hab : a ≤ b)
+    (H : Finset.card {i.rev, a, b} ≤ n) (H' : Finset.card {i, b.rev, a.rev} ≤ n) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      (opIso.{u} n i).inv.app _ (edge n i.rev a b hab H)) =
+      opObjEquiv.symm (edge n i b.rev a.rev (Fin.rev_le_rev.2 hab) H') := by
+  apply opObjEquiv.injective
+  apply Subtype.ext
+  ext j
+  fin_cases j <;>
+    simp [opIso, opObjEquiv', stdSimplex.opObjEquiv_opObjEquiv_symm_apply]
+
+/-- A horn map extends to a simplex if and only if its reversal does. -/
+lemma exists_extension_iff_op {X : SSet.{u}} {n : ℕ} {i : Fin (n + 1)}
+    (σ₀ : (Λ[n, i] : SSet) ⟶ X) :
+    (∃ σ : Δ[n] ⟶ X, σ₀ = Λ[n, i].ι ≫ σ) ↔
+      ∃ τ : Δ[n] ⟶ X.op, (opIso n i).inv ≫ opFunctor.map σ₀ = Λ[n, i.rev].ι ≫ τ := by
+  constructor
+  · rintro ⟨σ, rfl⟩
+    exact ⟨(stdSimplex.opIso ⦋n⦌).inv ≫ opFunctor.map σ, by
+      simp [opFunctor.map_comp, ← Category.assoc]⟩
+  · rintro ⟨τ, hτ⟩
+    refine ⟨opFunctor.preimage ((stdSimplex.opIso ⦋n⦌).hom ≫ τ), ?_⟩
+    apply opFunctor.map_injective
+    rw [opFunctor.map_comp, Functor.map_preimage, ← Category.assoc,
+      ← opIso_hom_ι, Category.assoc, ← hτ]
+    simp
+
+end horn
+
+/-- The opposite of a quasicategory is a quasicategory. -/
+instance Quasicategory.op {X : SSet.{u}} [Quasicategory X] : Quasicategory X.op where
+  hornFilling' n i σ₀ h0 hn := by
+    have h0' : 0 < i.rev := by
+      rw [← Fin.rev_last]
+      exact Fin.rev_lt_rev.2 hn
+    have hn' : i.rev < Fin.last (n + 2) := by
+      rw [← Fin.rev_zero]
+      exact Fin.rev_lt_rev.2 h0
+    obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling (S := X) h0' hn'
+      ((horn.opIso (n + 2) i).inv ≫ opFunctor.map σ₀ ≫ opFunctorCompOpFunctorIso.hom.app X)
+    refine (horn.exists_extension_iff_op σ₀).2 ⟨τ ≫ opFunctorCompOpFunctorIso.inv.app X, ?_⟩
+    have h := hτ =≫ opFunctorCompOpFunctorIso.inv.app X
+    simpa [Category.assoc] using h
+
+/-- A simplicial set is a quasicategory exactly when its opposite is. -/
+lemma quasicategory_op_iff {X : SSet.{u}} : Quasicategory X.op ↔ Quasicategory X := by
+  refine ⟨fun _ ↦ ⟨fun n i σ₀ h0 hn ↦ ?_⟩, fun _ ↦ inferInstance⟩
+  have h0' : 0 < i.rev := by
+    rw [← Fin.rev_last]
+    exact Fin.rev_lt_rev.2 hn
+  have hn' : i.rev < Fin.last (n + 2) := by
+    rw [← Fin.rev_zero]
+    exact Fin.rev_lt_rev.2 h0
+  exact (horn.exists_extension_iff_op σ₀).2 (Quasicategory.hornFilling h0' hn' _)
 
 namespace Edge
 

@@ -9,7 +9,8 @@ public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
 public import Mathlib.AlgebraicTopology.SimplicialNerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
-public import TauCeti.AlgebraicTopology.Quasicategory.Core
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
+public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
 
 /-!
 # The simplicial category of quasicategories and `Cat∞`
@@ -25,11 +26,11 @@ Restricting to quasicategories gives the simplicial category `SSet.CatInftyΔ`, 
 Definition 3.0.0.1). The underlying ordinary category of `SSet.CatInftyΔ` is the category of
 quasicategories and maps of simplicial sets.
 
-The mapping simplicial sets of `SSet.CatInftyΔ` are quasicategories, and for a Kan complex `B`
-the core of `Fun(A, B)` is all of `Fun(A, B)`. That the core of every quasicategory is a Kan
-complex is Joyal's theorem on special outer horns, which is not proved here. It makes
-`SSet.CatInftyΔ` locally Kan, and hence `SSet.catInfty` a quasicategory (HTT Proposition
-1.1.5.10).
+The mapping simplicial sets of `SSet.CatInftyΔ` are cores of function complexes into
+quasicategories, hence Kan complexes (`SSet.CatInftyΔ.kanComplex_sHom`) by
+`SSet.core.kanComplex`. Thus `SSet.CatInftyΔ` is locally Kan, and its simplicial nerve
+`SSet.catInfty` is a quasicategory (`SSet.catInfty.quasicategory`, HTT Proposition 1.1.5.10). For
+a Kan complex `B`, the core of `Fun(A, B)` is all of `Fun(A, B)` (`SSet.core_sHom_eq_top`).
 
 ## Main definitions
 
@@ -46,7 +47,9 @@ complex is Joyal's theorem on special outer horns, which is not proved here. It 
   characterized by `SSet.CoreEnriched.eId_ι`, `SSet.CoreEnriched.eComp_ι` and
   `SSet.CoreEnriched.eHomEquiv_ι`.
 * `SSet.core_sHom_eq_top`: into a Kan complex, the core of a function complex is everything.
-* The mapping simplicial sets of `SSet.CatInftyΔ` are quasicategories.
+* `SSet.CatInftyΔ.kanComplex_sHom`: the mapping simplicial sets of `SSet.CatInftyΔ` are Kan
+  complexes.
+* `SSet.catInfty.quasicategory`: `SSet.catInfty` is a quasicategory.
 
 ## References
 
@@ -156,22 +159,27 @@ abbrev CatInftyΔ : Type (u + 1) :=
   ObjectProperty.FullSubcategory fun A : CoreEnriched.{u} ↦ Quasicategory A.toSSet
 
 /-- The simplicial (homotopy coherent) nerve of `CatInftyΔ`, HTT's `Cat∞` of small quasicategories,
-whose objects are the quasicategories in universe `u`. It is a quasicategory once the cores of
-quasicategories are known to be Kan complexes. -/
+whose objects are the quasicategories in universe `u`. It is a quasicategory
+(`SSet.catInfty.quasicategory`), as `CatInftyΔ` is locally Kan. -/
 noncomputable abbrev catInfty : SSet.{u + 1} :=
   SimplicialNerve CatInftyΔ.{u}
 
 namespace CatInftyΔ
 
-/-- The mapping simplicial sets of `CatInftyΔ` are quasicategories, as cores of function complexes
+/-- The mapping simplicial sets of `CatInftyΔ` are Kan complexes, as cores of function complexes
 into quasicategories. -/
-instance (A B : CatInftyΔ.{u}) : Quasicategory (sHom A B) :=
+instance kanComplex_sHom (A B : CatInftyΔ.{u}) : KanComplex (sHom A B) :=
   have := B.property
   -- The function complex of `SSet` is Mathlib's internal hom `(ihom A).obj B`.
   have : Quasicategory (sHom A.obj.toSSet B.obj.toSSet) :=
     inferInstanceAs (Quasicategory ((ihom A.obj.toSSet).obj B.obj.toSSet))
-  core.quasicategory
+  core.kanComplex
 
 end CatInftyΔ
+
+/-- **HTT Proposition 1.1.5.10**: `Cat∞` is a quasicategory, as the simplicial nerve of the
+locally Kan simplicial category `CatInftyΔ`. -/
+instance catInfty.quasicategory : Quasicategory catInfty.{u} :=
+  CategoryTheory.SimplicialNerve.quasicategory CatInftyΔ.{u}
 
 end SSet
