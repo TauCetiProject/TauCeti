@@ -10,6 +10,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Topology.MetricSpace.SphericallyComplete
 import Mathlib.LinearAlgebra.LinearPMap
+import TauCeti.Analysis.Normed.Module.Seminorm.Nonarchimedean
 
 /-!
 # Nonarchimedean Hahn–Banach theorem for seminorms and locally convex spaces
@@ -60,43 +61,6 @@ public section
 
 open Metric Set Submodule Topology
 open scoped NNReal
-
-section SeminormOperations
-
-variable {R V ι : Type*} [SeminormedRing R] [AddCommGroup V] [Module R V]
-
-namespace IsNonarchimedean
-
-/-- Scaling a nonarchimedean seminorm by a nonnegative real preserves the ultrametric
-inequality. -/
-theorem smul_seminorm {p : Seminorm R V} (hp : IsNonarchimedean p) (c : ℝ≥0) :
-    IsNonarchimedean (c • p) := fun x y ↦ by
-  simp only [FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul]
-  exact (mul_le_mul_of_nonneg_left (hp x y) c.2).trans_eq (mul_max_of_nonneg _ _ c.2)
-
-/-- The pointwise supremum of two nonarchimedean seminorms is nonarchimedean. -/
-theorem sup_seminorm {p q : Seminorm R V} (hp : IsNonarchimedean p) (hq : IsNonarchimedean q) :
-    IsNonarchimedean (p ⊔ q) := fun x y ↦ by
-  simp only [Pi.sup_apply, sup_le_iff]
-  exact ⟨(hp x y).trans (max_le_max le_sup_left le_sup_left),
-    (hq x y).trans (max_le_max le_sup_right le_sup_right)⟩
-
-end IsNonarchimedean
-
-/-- A finite supremum of nonarchimedean seminorms is nonarchimedean. -/
-theorem TauCeti.isNonarchimedean_finsetSup {p : ι → Seminorm R V} {s : Finset ι}
-    (hp : ∀ i ∈ s, IsNonarchimedean (p i)) : IsNonarchimedean (s.sup p : Seminorm R V) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    intro x y
-    simp [Seminorm.bot_eq_zero]
-  | insert a t _ ih =>
-    rw [Finset.sup_insert]
-    exact (hp a (Finset.mem_insert_self a t)).sup_seminorm
-      (ih fun i hi ↦ hp i (Finset.mem_insert_of_mem hi))
-
-end SeminormOperations
 
 namespace LinearMap
 

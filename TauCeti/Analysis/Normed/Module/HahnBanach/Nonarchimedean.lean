@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.LocallyConvex.HahnBanach.Nonarchimedean
 import Mathlib.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Normed.Module.Bases.Orthogonal
+import TauCeti.Analysis.Normed.Module.Seminorm.Nonarchimedean
 
 /-!
 # Nonarchimedean Hahn–Banach theorem for normed spaces
@@ -23,12 +24,14 @@ is spherically complete, and the norm values of `V` need not lie in the value gr
 field `K`.
 
 When the scalar field `K` itself is ultrametric and spherically complete, this yields the standard
-normed corollaries:
-* exact separation of a vector from a subspace by a functional of norm `(infDist v U)⁻¹`;
+corollaries:
+* exact separation of a vector outside the closure of a subspace by a functional of norm
+  `(infDist v U)⁻¹`;
 * exact norm-preserving functionals (`ℓ x = 1`, `‖ℓ‖ = ‖x‖⁻¹`) for every vector of nonzero norm;
-* isometric embedding of `V` into its strong bidual `V''`, without assuming `‖V‖ ⊆ ‖K‖`;
-* characterization of subspace closures by vanishing continuous functionals and separation of
-  points by `StrongDual K V`;
+* norm preservation of the canonical evaluation map `V →ₗᵢ[K] V''` into the strong bidual, without
+  assuming `‖V‖ ⊆ ‖K‖` (hence an isometric embedding when `V` is normed);
+* characterization of subspace closures by vanishing continuous functionals, and separation of
+  points by `StrongDual K V` when `V` is normed;
 * contractive (`‖P‖ ≤ 1`) continuous projections onto every spherically complete subspace and, in
   particular, onto every finite-dimensional subspace, making all such subspaces topologically
   complemented.
@@ -46,9 +49,10 @@ normed corollaries:
   `ℓ x = 1` and `‖ℓ‖ = ‖x‖⁻¹`.
 * `NormedSpace.norm_inclusionInDoubleDual_of_sphericallyComplete` and
   `NormedSpace.inclusionInDoubleDualLiOfSphericallyComplete`: the canonical map into the strong
-  bidual is a linear isometry.
+  bidual preserves norms (and is an isometric embedding when `V` is normed).
 * `Submodule.mem_closure_iff_forall_strongDual_eq_zero_of_sphericallyComplete` and
-  `TauCeti.separatingDual_of_sphericallyComplete`: weak-vs-norm closure and separating dual.
+  `TauCeti.separatingDual_of_sphericallyComplete`: closure characterization by vanishing continuous
+  functionals, and separating dual when `V` is normed.
 * `Submodule.exists_proj_norm_le_one_of_sphericallyComplete`,
   `Submodule.closedComplemented_of_sphericallyComplete`,
   `Submodule.exists_proj_norm_le_one_of_finiteDimensional_of_sphericallyComplete`, and
@@ -207,6 +211,7 @@ variable (K V : Type*) [NontriviallyNormedField K] [IsUltrametricDist K]
 /-- The canonical evaluation map from an ultrapseudometric seminormed space over a spherically
 complete ultrametric field into its strong bidual preserves norms exactly, even when the values of
 the norm on `V` do not lie in the value group of `K`. -/
+@[simp]
 theorem norm_inclusionInDoubleDual_of_sphericallyComplete (x : V) :
     ‖inclusionInDoubleDual K V x‖ = ‖x‖ := by
   refine le_antisymm (double_dual_bound K V x) ?_
