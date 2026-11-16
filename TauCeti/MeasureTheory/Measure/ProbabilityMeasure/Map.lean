@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 import Mathlib.MeasureTheory.Measure.DiracProba
@@ -32,6 +33,10 @@ continuous curve of probability measures.
 to vary together with the parameter of a jointly continuous map. It combines Mathlib's
 `ProbabilityMeasure.continuous_prod` and `continuous_diracProba` by representing the
 parameter as a Dirac factor.
+
+On the nonnegative real half-line, square-root and squaring pushforwards preserve and reflect
+weak convergence (`MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_map_sqrt` and
+`MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_map_sq`).
 -/
 
 public section
@@ -95,5 +100,60 @@ lemma continuous_map_of_ae_continuous (P : ProbabilityMeasure Ω) {f : T → Ω 
     Continuous fun t ↦ P.map (f t) :=
   continuous_iff_seqContinuous.2 fun _ t hx ↦ (tendstoInDistribution_of_ae_tendsto
     (fun _ ↦ hf _) (hf t) (hcont.mono fun _ h ↦ (h.tendsto t).comp hx)).tendsto
+
+end MeasureTheory.ProbabilityMeasure
+
+namespace MeasureTheory.ProbabilityMeasure
+
+/-- Square roots undo the squaring pushforward of a nonnegative real probability law. -/
+@[simp]
+theorem map_sqrt_map_sq (μ : ProbabilityMeasure ℝ) (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
+    (μ.map (fun x ↦ x ^ 2)).map Real.sqrt = μ := by
+  apply toMeasure_injective
+  simp only [toMeasure_map, Measure.map_sqrt_map_sq _ hμ]
+
+/-- Squaring undoes the square-root pushforward of a nonnegative real probability law. -/
+@[simp]
+theorem map_sq_map_sqrt (μ : ProbabilityMeasure ℝ) (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
+    (μ.map Real.sqrt).map (fun x ↦ x ^ 2) = μ := by
+  apply toMeasure_injective
+  simp only [toMeasure_map, Measure.map_sq_map_sqrt _ hμ]
+
+/-- Weak convergence of eventually nonnegative real probability laws is equivalent to
+weak convergence of their square-root pushforwards, for any filter. -/
+theorem tendsto_iff_tendsto_map_sqrt
+    {ι : Type*} {l : Filter ι} {μs : ι → ProbabilityMeasure ℝ} {μ : ProbabilityMeasure ℝ}
+    (hμs : ∀ᶠ i in l, ∀ᵐ x ∂(μs i : Measure ℝ), 0 ≤ x)
+    (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
+    Filter.Tendsto μs l (nhds μ) ↔
+      Filter.Tendsto (fun i ↦ (μs i).map Real.sqrt) l (nhds (μ.map Real.sqrt)) := by
+  constructor
+  · exact fun h ↦ (continuous_map Real.continuous_sqrt).tendsto μ |>.comp h
+  · intro h
+    have hs := (continuous_map (by fun_prop : Continuous (fun x : ℝ ↦ x ^ 2)))
+      |>.tendsto (μ.map Real.sqrt) |>.comp h
+    rw [map_sq_map_sqrt μ hμ] at hs
+    apply hs.congr'
+    filter_upwards [hμs] with i hi
+    exact map_sq_map_sqrt (μs i) hi
+
+/-- Weak convergence of eventually nonnegative real probability laws is equivalent to
+weak convergence of their squaring pushforwards, for any filter. -/
+theorem tendsto_iff_tendsto_map_sq
+    {ι : Type*} {l : Filter ι} {μs : ι → ProbabilityMeasure ℝ} {μ : ProbabilityMeasure ℝ}
+    (hμs : ∀ᶠ i in l, ∀ᵐ x ∂(μs i : Measure ℝ), 0 ≤ x)
+    (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
+    Filter.Tendsto μs l (nhds μ) ↔
+      Filter.Tendsto (fun i ↦ (μs i).map (fun x ↦ x ^ 2)) l
+        (nhds (μ.map (fun x ↦ x ^ 2))) := by
+  constructor
+  · exact fun h ↦ (continuous_map (by fun_prop)).tendsto μ |>.comp h
+  · intro h
+    have hs := (continuous_map Real.continuous_sqrt)
+      |>.tendsto (μ.map (fun x ↦ x ^ 2)) |>.comp h
+    rw [map_sqrt_map_sq μ hμ] at hs
+    apply hs.congr'
+    filter_upwards [hμs] with i hi
+    exact map_sqrt_map_sq (μs i) hi
 
 end MeasureTheory.ProbabilityMeasure
