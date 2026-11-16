@@ -291,6 +291,16 @@ algebra. -/
 theorem one_mem_weightFiltration_one : (1 : MvPolynomial σ R) ∈ weightFiltration R w 1 :=
   weightFiltration_mono zero_le_one SetLike.GradedOne.one_mem
 
+/-- The weight Rees algebra is an algebra over the polynomial parameter ring `R[t]`. -/
+noncomputable instance weightReesAlgebraAlgebra : Algebra R[X] (weightReesAlgebra R w) :=
+  TauCeti.coeffSubalgebra.algebra (weightFiltration R w) (one_mem_weightFiltration_one R w)
+
+/-- The parameter-ring algebra structure on `weightReesAlgebra` extends the `R`-algebra
+structure. -/
+noncomputable instance weightReesAlgebraIsScalarTower :
+    IsScalarTower R R[X] (weightReesAlgebra R w) :=
+  TauCeti.coeffSubalgebra.isScalarTower (weightFiltration R w) (one_mem_weightFiltration_one R w)
+
 /-- The endomorphism of `(MvPolynomial σ R)[t]` substituting `X i * t ^ w i` for `X i` and fixing
 `t`; it is injective with image the Rees algebra. It is the case `c = X` of `weightReesAeval`. -/
 noncomputable def weightReesHom : (MvPolynomial σ R)[X] →ₐ[R] (MvPolynomial σ R)[X] :=
