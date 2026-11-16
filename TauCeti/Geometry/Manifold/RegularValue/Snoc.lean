@@ -38,7 +38,7 @@ theorem IsRegularPoint.finSnoc {F : M → Fin k → 𝕜} {g : M → 𝕜} {x : 
     (hgw : mvfderiv I g x w ≠ 0) :
     IsRegularPoint I 𝓘(𝕜, Fin (k + 1) → 𝕜) (fun y ↦ Fin.snoc (α := fun _ ↦ 𝕜) (F y) (g y)) x := by
   have hFd := hF.mdifferentiableAt
-  have hd := hFd.finSnoc hg
+  have hd := hFd.finSnoc (E' := fun _ ↦ 𝕜) hg
   have hFw : mvfderiv I F x w = 0 := by
     rw [← ker_mvfderiv] at hw
     exact hw

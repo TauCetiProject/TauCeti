@@ -29,7 +29,7 @@ the factors. The smoothness of the coordinate insertions is `TauCeti.contMDiff_u
 
 A map into the product has derivative the product of the derivatives of its components
 (`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`). Appending a differentiable component to a
-differentiable family of maps into a model space with `Fin.snoc` gives a differentiable family
+differentiable family of maps into normed spaces with `Fin.snoc` gives a differentiable family
 (`MDifferentiableAt.finSnoc`).
 
 ## Main declarations
@@ -56,14 +56,15 @@ section FinSnoc
 
 variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {k : ℕ} {F : M → Fin k → E'} {g : M → E'}
+  {k : ℕ} {E' : Fin (k + 1) → Type*} [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)]
+  {F : M → ∀ j : Fin k, E' j.castSucc} {g : M → E' (Fin.last k)}
 
 /-- Appending a differentiable component `g` to a differentiable family `F` with `Fin.snoc` gives
 a differentiable family. -/
-theorem MDifferentiableAt.finSnoc {x : M} (hF : MDifferentiableAt I 𝓘(𝕜, Fin k → E') F x)
-    (hg : MDifferentiableAt I 𝓘(𝕜, E') g x) :
-    MDifferentiableAt I 𝓘(𝕜, Fin (k + 1) → E')
-      (fun y ↦ Fin.snoc (α := fun _ ↦ E') (F y) (g y)) x := by
+theorem MDifferentiableAt.finSnoc {x : M}
+    (hF : MDifferentiableAt I 𝓘(𝕜, ∀ j : Fin k, E' j.castSucc) F x)
+    (hg : MDifferentiableAt I 𝓘(𝕜, E' (Fin.last k)) g x) :
+    MDifferentiableAt I 𝓘(𝕜, ∀ i, E' i) (fun y ↦ Fin.snoc (α := E') (F y) (g y)) x := by
   refine mdifferentiableAt_pi_space.2 fun i ↦ ?_
   induction i using Fin.lastCases with
   | last => simpa using hg

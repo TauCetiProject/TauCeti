@@ -174,7 +174,7 @@ theorem exists_isRegularPoint_castLE {n k : ℕ} (hn : 2 * n ≤ finrank ℝ E) 
   | succ d ih =>
     -- Append one function `g`, then extend the `k + 1` functions by induction.
     obtain ⟨g, hg, hgF, hreg'⟩ := hσ.exists_isRegularPoint_finSnoc hF hcomm hreg (by omega)
-    have hF' := hF.finSnoc hg
+    have hF' := hF.finSnoc (E' := fun _ ↦ ℝ) hg
     have hcomm' (i j : Fin (k + 1)) :
         σ.poissonBracket (fun y ↦ Fin.snoc (α := fun _ ↦ ℝ) (F y) (g y) i)
           (fun y ↦ Fin.snoc (α := fun _ ↦ ℝ) (F y) (g y) j) =ᶠ[𝓝 x] fun _ ↦ 0 := by
