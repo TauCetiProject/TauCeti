@@ -346,7 +346,7 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     hqr
   -- The time exponents satisfy `1 / p₁ + 1 / p > 1`, since `q, q₁ > 2`.
   have hp : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hpq.lt.le
-  have hpp := one_lt_inv_add_inv_of_holderConjugate hpq hpq₁ hq hq₁
+  have hpp := one_lt_inv_add_inv_of_holderConjugate hpq hpq₁ hq hq₁.le
   set K : ℝ≥0∞ := (1 - 2 ^ (-((p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹
   have hK : K ≠ ∞ :=
     inv_one_sub_two_rpow_neg_ne_top (ENNReal.coe_ne_zero.2 hpq₁.ne_zero) hp hpp
