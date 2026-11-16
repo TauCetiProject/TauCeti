@@ -13,7 +13,9 @@ public import TauCeti.Geometry.Manifold.Submersion.Split
 
 For transverse maps `f : X → N` and `g : Y → N`, the projections from the equal-value
 subtype have tangent images `df⁻¹(range dg)` and `dg⁻¹(range df)`, respectively.
-Consequently the projection to `X` is a submersion when `g` is a submersion, and the
+In particular, any map into `N` is transverse to a `C^n` submersion (`1 ≤ n`) in either factor
+(`TauCeti.transverse_of_isSubmersion_right`, `TauCeti.transverse_of_isSubmersion_left`), and
+consequently the projection to `X` is a submersion when `g` is a submersion, while the
 projection to `Y` is a submersion when `f` is. These results use the previously constructed
 transverse fibre-product atlas and its inherited topology, including for an empty fibre
 product. No Hausdorff or countability assumptions are needed.
@@ -44,7 +46,30 @@ variable {EX HX X EY HY Y EN HN N : Type*}
   [TopologicalSpace X] [ChartedSpace HX X]
   [TopologicalSpace Y] [ChartedSpace HY Y]
   [TopologicalSpace N] [ChartedSpace HN N]
-  {n : ℕ∞ω} [IsManifold IX n X] [IsManifold IY n Y] [IsManifold IN n N]
+  {n : ℕ∞ω}
+
+/-- Any map into `N` is transverse to a `C^n` submersion (`1 ≤ n`) in the second factor. -/
+theorem transverse_of_isSubmersion_right (f : X → N) {g : Y → N} (hn : 1 ≤ n)
+    (hg : Manifold.IsSubmersion IY IN n g) (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  have hsurj : Surjective (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+      (mfderiv IY IN g p.2)) :=
+    (tangentSpaceCast IN (g p.2) (f p.1)).surjective.comp (hg.surjective_mfderiv hn0 p.2)
+  rw [LinearMap.range_eq_top.2 hsurj, sup_top_eq]
+
+/-- Any map into `N` is transverse to a `C^n` submersion (`1 ≤ n`) in the first factor. -/
+theorem transverse_of_isSubmersion_left {f : X → N} (g : Y → N) (hn : 1 ≤ n)
+    (hf : Manifold.IsSubmersion IX IN n f) (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  rw [LinearMap.range_eq_top.2 (hf.surjective_mfderiv hn0 p.1), top_sup_eq]
+
+variable [IsManifold IX n X] [IsManifold IY n Y] [IsManifold IN n N]
   [IX.Boundaryless] [IY.Boundaryless] [IN.Boundaryless]
   [FiniteDimensional ℝ EX] [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EN]
   {f : X → N} {g : Y → N}
