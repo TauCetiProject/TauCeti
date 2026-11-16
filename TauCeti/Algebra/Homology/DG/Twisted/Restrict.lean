@@ -237,21 +237,12 @@ end ContinuationCocycle
 
 end Maps
 
-/-! ### Extension by zero and restriction preserve the total degree -/
+/-! ### Restriction preserves the total degree -/
 
 section TotalGrading
 
 variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
   {P : Type uP} {ind : P → ℤ} {ℳ : ℤ → Submodule R M} {n : ℤ} (S : Set P)
-
-/-- Extension by zero from a set `S` of generators to `P` preserves the total degree. -/
-theorem dite_mem_twistedTotalGrading [DecidablePred (· ∈ S)] {f : S → M}
-    (hf : f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n) :
-    (fun x ↦ if hx : x ∈ S then f ⟨x, hx⟩ else 0) ∈ twistedTotalGrading ℳ ind n := by
-  refine mem_twistedTotalGrading_iff.mpr fun x ↦ ?_
-  split_ifs with hx
-  · exact mem_twistedTotalGrading_iff.mp hf ⟨x, hx⟩
-  · exact zero_mem _
 
 /-- Restriction from `P` to a set `S` of generators preserves the total degree. -/
 theorem domRestrict_mem_twistedTotalGrading {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
@@ -284,11 +275,11 @@ theorem surjective_toRestrict_continuationHom_f (T : Set P) [DecidablePred (· �
       (((ContinuationCocycle.toRestrict m h.map_one_eq_zero T hT).continuationHom hM).f n) := by
   intro g
   refine ⟨(twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm
-    ⟨_, dite_mem_twistedTotalGrading T (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _)
-      (TwistingCocycle.twisting _) hM n g).2⟩,
+    ⟨_, extendByZero_mem_twistedTotalGrading (twistedCochainComplexXEquiv
+      (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM n g).2⟩,
     (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM
       n).injective (Subtype.ext (funext fun y ↦ ?_))⟩
-  simp [y.2]
+  simp
 
 variable (S T : Set P) [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
   (hS : ∀ x y, x ∈ S → y ∉ S → m.m x y = 0) (hST : ∀ x, x ∈ T ↔ x ∉ S)

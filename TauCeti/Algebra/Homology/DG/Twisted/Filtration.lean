@@ -172,18 +172,26 @@ theorem indexExtend_mem_twistedIndexFiltration (f : {x : P // ind x = p} → M) 
     indexExtend R M ind p f ∈ twistedIndexFiltration (R := R) ind p :=
   (mem_twistedIndexFiltration_iff _).2 fun _ hx ↦ indexExtend_apply_of_ne f hx.ne'
 
+/-- A family of total degree `n` on a set `S` of generators, extended by zero, has total
+degree `n`. -/
+theorem extendByZero_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ} {S : Set P}
+    {f : S → M} (hf : f ∈ twistedTotalGrading ℳ (fun x : S ↦ ind x) n) :
+    Function.ExtendByZero.linearMap R M (Subtype.val : S → P) f ∈ twistedTotalGrading ℳ ind n :=
+  mem_twistedTotalGrading_iff.2 fun x ↦ by
+    by_cases hx : x ∈ S
+    · rw [Function.ExtendByZero.linearMap_apply, Subtype.val_injective.extend_apply f 0 ⟨x, hx⟩]
+      exact mem_twistedTotalGrading_iff.1 hf ⟨x, hx⟩
+    · rw [Function.ExtendByZero.linearMap_apply,
+        Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.2)]
+      exact zero_mem _
+
 /-- A family of total degree `n` on the generators of index `p`, extended by zero, has total
 degree `n`. -/
 theorem indexExtend_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ}
     {f : {x : P // ind x = p} → M}
     (hf : f ∈ twistedTotalGrading ℳ (fun x : {x : P // ind x = p} ↦ ind x) n) :
     indexExtend R M ind p f ∈ twistedTotalGrading ℳ ind n :=
-  mem_twistedTotalGrading_iff.2 fun x ↦ by
-    by_cases hx : ind x = p
-    · rw [indexExtend_apply_of_eq f hx]
-      exact mem_twistedTotalGrading_iff.1 hf ⟨x, hx⟩
-    · rw [indexExtend_apply_of_ne f hx]
-      exact zero_mem _
+  extendByZero_mem_twistedTotalGrading (S := {x | ind x = p}) hf
 
 end IndexExtend
 
