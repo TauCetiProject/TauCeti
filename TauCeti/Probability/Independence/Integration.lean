@@ -14,16 +14,59 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 /-!
 # Integrability and expectations of products and quadratic forms under independence
 
+A finite product of independent integrable variables is integrable
+(`ProbabilityTheory.iIndepFun.integrable_fun_prod`).
 The product of two independent square-integrable real random variables is square integrable
 (`ProbabilityTheory.IndepFun.memLp_two_mul`). For a finite family of pairwise independent
 mean-zero square-integrable `RCLike`-valued random variables `W` and `A : Matrix ι ι 𝕜`,
 `star W ⬝ᵥ A *ᵥ W` is integrable with expectation `∑ i, A i i * E[‖W i‖ ^ 2]`
 (`TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun`).
+Independent sections also transfer probability bounds to an independent random parameter
+(`ProbabilityTheory.IndepFun.measureReal_preimage_le`).
 -/
 
 public section
 
 open MeasureTheory
+
+namespace ProbabilityTheory.iIndepFun
+
+/-- A product over a finite subset of an independent family of integrable variables is
+integrable. The index type need not be finite. -/
+theorem integrable_finsetProd {Ω ι E : Type*} [MeasurableSpace Ω]
+    [NormedCommRing E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {P : Measure Ω} {X : ι → Ω → E}
+    (h : iIndepFun X P) (s : Finset ι) (hX : ∀ i ∈ s, Integrable (X i) P) :
+    Integrable (fun ω ↦ ∏ i ∈ s, X i ω) P := by
+  classical
+  have := h.isProbabilityMeasure
+  let Y (i : ι) (ω : Ω) := ‖X i ω‖
+  have hY : iIndepFun Y P := h.comp (fun _ ↦ norm) (fun _ ↦ continuous_norm.measurable)
+  have hm (i : s) : AEMeasurable (Y i) P := (hX i i.property).norm.aemeasurable
+  have hint : Integrable (fun x : s → ℝ ↦ ∏ i, x i)
+      (Measure.pi fun i : s ↦ P.map (Y i)) :=
+    Integrable.fintype_prod fun (i : s) ↦
+      (integrable_map_measure
+        (hX i i.property).norm.aestronglyMeasurable.aestronglyMeasurable_id_map
+        (hm i)).2 (hX i i.property).norm
+  rw [← (hY.restrict s).map_fun_eq_pi_map hm] at hint
+  have hp := hint.comp_aemeasurable (aemeasurable_pi_iff.2 hm)
+  have hprod : Integrable (fun ω ↦ ∏ i ∈ s, Y i ω) P :=
+    hp.congr (.of_forall fun ω ↦ Finset.prod_coe_sort s (fun i ↦ Y i ω))
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simpa only [Finset.prod_empty] using integrable_const (1 : E)
+  · exact hprod.mono' (s.aestronglyMeasurable_fun_prod fun i hi ↦ (hX i hi).aestronglyMeasurable)
+      (.of_forall fun ω ↦ s.norm_prod_le' hs (fun i ↦ X i ω))
+
+/-- A finite product of independent integrable random variables is integrable. -/
+theorem integrable_fun_prod {Ω ι E : Type*} [MeasurableSpace Ω] [Fintype ι]
+    [NormedCommRing E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {P : Measure Ω} {X : ι → Ω → E}
+    (h : iIndepFun X P) (hX : ∀ i, Integrable (X i) P) :
+    Integrable (fun ω ↦ ∏ i, X i ω) P :=
+  h.integrable_finsetProd Finset.univ (fun i _ ↦ hX i)
+
+end ProbabilityTheory.iIndepFun
 
 namespace ProbabilityTheory.IndepFun
 
@@ -36,6 +79,29 @@ theorem memLp_two_mul {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   simpa only [Pi.mul_def, mul_pow, Function.comp_def, id_eq] using
     (h.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
       hX.integrable_sq hY.integrable_sq
+
+/-- Bound an event of two independent random variables by an almost-everywhere bound on its
+sections. The section is measured under the law of the second variable. -/
+theorem measureReal_preimage_le {Ω α β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    {P : Measure Ω} [IsProbabilityMeasure P] {X : Ω → α} {Y : Ω → β}
+    (hXY : IndepFun X Y P) (hX : AEMeasurable X P) (hY : AEMeasurable Y P)
+    {s : Set (α × β)} (hs : MeasurableSet s) {b : ℝ}
+    (h : ∀ᵐ x ∂P.map X, (P.map Y).real (Prod.mk x ⁻¹' s) ≤ b) :
+    P.real ((fun ω ↦ (X ω, Y ω)) ⁻¹' s) ≤ b := by
+  have hb : 0 ≤ b := by
+    obtain ⟨x, hx⟩ := h.exists
+    exact (measureReal_nonneg).trans hx
+  rw [← map_measureReal_apply_of_aemeasurable (hX.prodMk hY) hs,
+    hXY.map_prod_eq_prod_map_map hX hY]
+  apply (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).1
+  rw [Measure.prod_apply hs]
+  calc
+    ∫⁻ x, P.map Y (Prod.mk x ⁻¹' s) ∂P.map X ≤ ∫⁻ _, ENNReal.ofReal b ∂P.map X := by
+      apply lintegral_mono_ae
+      filter_upwards [h] with x hx
+      exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).2 hx
+    _ = ENNReal.ofReal b := by simp
 
 end ProbabilityTheory.IndepFun
 

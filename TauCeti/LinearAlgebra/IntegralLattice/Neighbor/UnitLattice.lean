@@ -250,7 +250,7 @@ theorem nonempty_isometry_checkerboardPlusLattice_of_isNeighbor_unitLattice (hn 
   rcases Int.even_or_odd (∑ i, k i) with hk2 | hk2
   · -- The glue vector is congruent to the spinor: `L` is `Dₙ⁺` itself.
     refine nonempty_isometry_checkerboardPlusLattice_of_signedEquiv hn h.form_eq hL 1
-      (mem_checkerboardCarrier_of k (fun i ↦ ?_) hk2)
+      (mem_checkerboardCarrier_of_even_sum k (fun i ↦ ?_) hk2)
     simp [hk i]
   -- Otherwise changing the sign of the first coordinate carries it into the spinor coset.
   have hpos : 0 < n := by
@@ -259,7 +259,7 @@ theorem nonempty_isometry_checkerboardPlusLattice_of_isNeighbor_unitLattice (hn 
     · exact hpos
   refine nonempty_isometry_checkerboardPlusLattice_of_signedEquiv hn h.form_eq hL
     (Pi.mulSingle ⟨0, hpos⟩ (-1))
-    (mem_checkerboardCarrier_of (k - Pi.single ⟨0, hpos⟩ (2 * k ⟨0, hpos⟩ + 1))
+    (mem_checkerboardCarrier_of_even_sum (k - Pi.single ⟨0, hpos⟩ (2 * k ⟨0, hpos⟩ + 1))
       (fun i ↦ ?_) ?_)
   · rw [Pi.sub_apply, signedEquiv_apply, checkerboardSpinor_apply]
     rcases eq_or_ne i ⟨0, hpos⟩ with rfl | hij
