@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -35,6 +36,11 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   real and imaginary parts of a complex-valued covector `P`.
 * `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
+* `TauCeti.twoVectorAlternatingSum θ a b c`: the alternating sum
+  `θ(a)(b, c) - θ(b)(a, c) + θ(c)(a, b)` of a map with values in two-vectors, which is
+  `dω(a, b, c)` for `θ v = ∇_v ω` and a torsion-free connection. It is linear in `θ` and
+  alternating in `a`, `b`, `c` (`TauCeti.twoVectorAlternatingSum_swap₁₂`,
+  `TauCeti.twoVectorAlternatingSum_swap₂₃`).
 
 ## Main results
 
@@ -50,6 +56,7 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
+  `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
@@ -318,6 +325,20 @@ theorem inner_ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (x : ⋀[�
   conv_lhs => rw [b.ιMulti_two_eq_sum u w]
   simp only [inner_add_right, real_inner_smul_right]
 
+/-- A two-vector is the sum of its coordinates times the basis vectors `bᵢ ∧ bⱼ`, `i < j`, of
+`⋀² E` induced by an orthonormal basis `b` indexed by `Fin 4`. -/
+theorem eq_sum_inner_smul_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E) (x : ⋀[ℝ]^2 E) :
+    x = ⟪x, ιMulti ℝ 2 ![b 0, b 1]⟫ • ιMulti ℝ 2 ![b 0, b 1] +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 2]⟫ • ιMulti ℝ 2 ![b 0, b 2] +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 3]⟫ • ιMulti ℝ 2 ![b 0, b 3] +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ • ιMulti ℝ 2 ![b 1, b 2] +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ • ιMulti ℝ 2 ![b 1, b 3] +
+      ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ • ιMulti ℝ 2 ![b 2, b 3] := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [b.inner_ιMulti_two_eq_sum x u w]
+  simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
+  ring
+
 /-- The squared norm of a two-vector is the sum of the squares of its coordinates in the
 basis `bᵢ ∧ bⱼ`, `i < j`, induced by an orthonormal basis `b` indexed by `Fin 4`. -/
 theorem norm_sq_eq_sum_sq_inner_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E)
@@ -329,18 +350,7 @@ theorem norm_sq_eq_sum_sq_inner_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E)
       ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ ^ 2 +
       ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ ^ 2 := by
   -- Expand the second factor of `⟪x, x⟫` in the basis `bᵢ ∧ bⱼ`.
-  have hx : x = ⟪x, ιMulti ℝ 2 ![b 0, b 1]⟫ • ιMulti ℝ 2 ![b 0, b 1] +
-      ⟪x, ιMulti ℝ 2 ![b 0, b 2]⟫ • ιMulti ℝ 2 ![b 0, b 2] +
-      ⟪x, ιMulti ℝ 2 ![b 0, b 3]⟫ • ιMulti ℝ 2 ![b 0, b 3] +
-      ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ • ιMulti ℝ 2 ![b 1, b 2] +
-      ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ • ιMulti ℝ 2 ![b 1, b 3] +
-      ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ • ιMulti ℝ 2 ![b 2, b 3] := by
-    refine ext_inner_ιMulti_two fun u w ↦ ?_
-    rw [b.inner_ιMulti_two_eq_sum x u w]
-    simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two,
-      ← b.repr_apply_apply]
-    ring
-  have h := congrArg (fun y ↦ ⟪x, y⟫) hx
+  have h := congrArg (fun y ↦ ⟪x, y⟫) (b.eq_sum_inner_smul_ιMulti_two x)
   simp only [inner_add_right, real_inner_smul_right] at h
   rw [← real_inner_self_eq_norm_sq, h]
   ring
@@ -447,5 +457,59 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
   linarith
 
 end TwoVectorContraction
+
+section TwoVectorAlternatingSum
+
+/-- The **alternating sum** `θ(a)(b, c) - θ(b)(a, c) + θ(c)(a, b)` of a map `θ` from `V` to
+two-vectors, each two-vector `η` read as the two-form `(u, w) ↦ ⟪η, u ∧ w⟫`. When `θ v = ∇_v ω`
+is the covariant derivative of a two-form `ω` for a torsion-free connection, it is the exterior
+derivative `dω(a, b, c)`. -/
+noncomputable def twoVectorAlternatingSum (θ : V → ⋀[ℝ]^2 V) (a b c : V) : ℝ :=
+  ⟪θ a, ιMulti ℝ 2 ![b, c]⟫ - ⟪θ b, ιMulti ℝ 2 ![a, c]⟫ + ⟪θ c, ιMulti ℝ 2 ![a, b]⟫
+
+theorem twoVectorAlternatingSum_def (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ a b c =
+      ⟪θ a, ιMulti ℝ 2 ![b, c]⟫ - ⟪θ b, ιMulti ℝ 2 ![a, c]⟫ + ⟪θ c, ιMulti ℝ 2 ![a, b]⟫ :=
+  (rfl)
+
+@[simp]
+theorem twoVectorAlternatingSum_zero (a b c : V) :
+    twoVectorAlternatingSum (0 : V → ⋀[ℝ]^2 V) a b c = 0 := by
+  simp [twoVectorAlternatingSum_def]
+
+@[simp]
+theorem twoVectorAlternatingSum_add (θ η : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (θ + η) a b c =
+      twoVectorAlternatingSum θ a b c + twoVectorAlternatingSum η a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.add_apply, inner_add_left]
+  ring
+
+@[simp]
+theorem twoVectorAlternatingSum_smul (r : ℝ) (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (r • θ) a b c = r * twoVectorAlternatingSum θ a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.smul_apply, real_inner_smul_left]
+  ring
+
+@[simp]
+theorem twoVectorAlternatingSum_neg (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (-θ) a b c = -twoVectorAlternatingSum θ a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.neg_apply, inner_neg_left]
+  ring
+
+/-- The alternating sum changes sign when its first two arguments are swapped. -/
+theorem twoVectorAlternatingSum_swap₁₂ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ b a c = -twoVectorAlternatingSum θ a b c := by
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, ιMulti_two_swap a b,
+    inner_neg_right]
+  ring
+
+/-- The alternating sum changes sign when its last two arguments are swapped. -/
+theorem twoVectorAlternatingSum_swap₂₃ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ a c b = -twoVectorAlternatingSum θ a b c := by
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, ιMulti_two_swap b c,
+    inner_neg_right]
+  ring
+
+end TwoVectorAlternatingSum
 
 end TauCeti
