@@ -85,8 +85,11 @@ target space needs no measurable singletons. -/
 @[simp]
 theorem toMatrix_comp [Fintype β] [MeasurableSingletonClass β] (κ : Kernel α β)
     (η : Kernel β γ) [IsFiniteKernel κ] [IsFiniteKernel η] :
-    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix :=
-  funext fun a => funext (comp_apply_singleton_eq_vecMul η (κ a))
+    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix := by
+  refine Matrix.ext fun a c => ?_
+  rw [Matrix.mul_apply, toMatrix_apply, Kernel.comp_apply,
+    comp_apply_singleton_eq_vecMul η (κ a) c]
+  simp [Matrix.vecMul, dotProduct]
 
 /-- The identity kernel has the identity transition matrix. -/
 @[simp]
