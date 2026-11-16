@@ -40,6 +40,10 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
 
+Both actions preserve `Cⁿ` fields (`TauCeti.Vortex.contDiff_translateField`,
+`TauCeti.Vortex.contDiff_rotateField`) and, by composition, the smooth framed gauge group
+(`TauCeti.Vortex.comp_add_mem_framedGaugeGroup`, `TauCeti.Vortex.comp_mul_mem_framedGaugeGroup`).
+
 These are identities of smooth differential expressions; their Sobolev completions, and the
 induced action on the divisor of a vortex, are not treated here.
 
@@ -93,6 +97,11 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
     translateField a (translateField b x) = translateField (a + b) x := by
   funext z
   simp [add_assoc]
+
+/-- Translations preserve `Cⁿ` fields. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) :=
+  hx.comp (contDiff_id.add contDiff_const)
 
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
@@ -194,6 +203,14 @@ theorem translateField_gaugeTransform (a : ℂ) (g : ℂ → Circle)
   simp only [translateField_apply, gaugeTransform_apply, gaugeForm_apply,
     fderiv_comp_add_right (f := fun w ↦ (g w : ℂ)) a]
 
+/-- A gauge of the smooth framed group composed with a translation is again in the smooth
+framed group. -/
+theorem comp_add_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) (a : ℂ) :
+    (fun w ↦ u (w + a)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_id.add contDiff_const),
+    ht.comp (Homeomorph.addRight a).map_cocompact.le⟩
+
 @[simp]
 theorem translateField_vacuumField (a : ℂ) : translateField a vacuumField = vacuumField := by
   funext z
@@ -273,6 +290,18 @@ theorem rotateField_translateField (u : Circle) (a : ℂ) (x : ℂ → Euclidean
     rw [mul_add, mul_inv_cancel_left₀ (Circle.coe_ne_zero u)]
   ext z i
   fin_cases i <;> simp [h]
+
+/-- Rotations preserve `Cⁿ` fields. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun z ↦ x ((u : ℂ) * z) i :=
+    (contDiff_euclidean.1 hx i).comp (contDiff_const.mul contDiff_id)
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · simpa using (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · simpa using hc 2
+  · simpa using hc 3
 
 /-- The action of a rotation on the target `ℝ ⊕ ℝ ⊕ ℂ` of the gauge-fixed operator: the
 gauge-fixing and curvature rows are transported, and the complex `∂bar` row is transported
@@ -556,6 +585,14 @@ theorem rotateField_gaugeTransform (u : Circle) (g : ℂ → Circle)
   fin_cases i <;>
     simp [gaugeTransform_apply, gaugeForm_comp_mul, clm_apply_coe, clm_apply_coe_mul_I,
       -gaugeForm_apply] <;> ring
+
+/-- A gauge of the smooth framed group composed with multiplication by a nonzero constant, such
+as a rotation, is again in the smooth framed group. -/
+theorem comp_mul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) {c : ℂ}
+    (hc : c ≠ 0) : (fun w ↦ u (c * w)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_const.mul contDiff_id),
+    ht.comp (Filter.tendsto_cocompact_mul_left₀ hc)⟩
 
 @[simp]
 theorem rotateField_vacuumField (u : Circle) : rotateField u vacuumField = vacuumField := by
