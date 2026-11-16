@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.Topology.Homotopy.Attach
+public import TauCeti.Topology.Maps.IsClosedEmbedding
 
 /-!
 # Relative homology of an attachment
@@ -27,7 +28,7 @@ attachment of a closed disc along its boundary sphere, where `O` is the outer ha
 bundle, where the same push runs in every fibre.
 
 The proof thickens `X` to the open set `N = X ∪ φ(O)`
-(`TauCeti.isOpen_union_image_of_isClosedEmbedding`). The deformation `H` shows that
+(`Topology.IsClosedEmbedding.isOpen_union_image`). The deformation `H` shows that
 `(A, S) ⟶ (A, O)` induces isomorphisms, and its extension by the identity of `X`
 (`TauCeti.attachHomotopy`) that `(Z, X) ⟶ (Z, N)` does
 (`TopPair.isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy`). Finally the complement of `X`
@@ -36,6 +37,10 @@ lies in the image of `φ`, so excision for the open cover of `Z` by `N` and the 
 
 ## Main results
 
+* `TopPair.isOpen_cond_union_image_compl`, `TopPair.iUnion_cond_union_image_compl` and
+  `TopPair.cond_union_image_compl_subset_range_or_subset_range_fst`: the open cover of `Z` by
+  `X ∪ φ(O)` and the complement of `X` to which excision is applied, in homology and in
+  cohomology.
 * `TopPair.isIso_singularHomologyMap_ofSubsetMap_union_image`: excision of the complement of the
   attached space from the thickened pair `(Z, X ∪ φ(O))`.
 * `TopPair.isIso_singularHomologyMap_of_attach`: attaching along a subspace with a deformation
@@ -58,25 +63,49 @@ universe w v u
 
 namespace TopPair
 
+section Cover
+
+variable {A Z : TopCat.{w}} {O : Set A} {X : Set Z} (φ : A ⟶ Z)
+
+/-- If an injective map `φ : A → Z` sends a point into `X` only if it lies in `O`, the subspace `O`
+of `(A, O)` is the full preimage of the subspace of `(Z, X ∪ φ(O))`. -/
+lemma mem_range_map_of_fst_ofSubsetMap_union_image_mem (hφ : Function.Injective φ)
+    (hφX : ∀ a, φ a ∈ X → a ∈ O) (hφO : MapsTo φ O (X ∪ φ '' O)) (a : (ofSubset O).fst)
+    (ha : Hom.fst (ofSubsetMap φ hφO) a ∈ range (ofSubset (X ∪ φ '' O)).map) :
+    a ∈ range (ofSubset O).map := by
+  rw [range_ofSubset_map, ofSubsetMap_fst] at ha
+  rw [range_ofSubset_map]
+  obtain hX' | ⟨b, hb, hba⟩ := ha
+  exacts [hφX a hX', hφ hba ▸ hb]
+
+/-- Under the hypotheses of `Topology.IsClosedEmbedding.isOpen_union_image`, with `X` closed, the
+thickening `X ∪ φ(O)` and the complement of `X` are open. -/
+lemma isOpen_cond_union_image_compl (hX : IsClosed X) (hφ : IsClosedEmbedding φ) (hO : IsOpen O)
+    (hφX : ∀ a, φ a ∈ X → a ∈ O) (hcover : X ∪ range φ = univ) (b : Bool) :
+    IsOpen (bif b then X ∪ φ '' O else Xᶜ) := by
+  cases b
+  exacts [hX.isOpen_compl, hφ.isOpen_union_image hO hφX hcover]
+
+/-- The thickening `X ∪ φ(O)` and the complement of `X` cover `Z`. -/
+lemma iUnion_cond_union_image_compl :
+    ⋃ b : Bool, (bif b then X ∪ φ '' O else Xᶜ) = univ :=
+  union_eq_iUnion.symm.trans (eq_univ_of_forall fun z ↦ (em (z ∈ X)).imp Or.inl id)
+
+/-- If `X` together with the image of `φ` is all of `Z`, the thickening `X ∪ φ(O)` is the subspace
+of `(Z, X ∪ φ(O))` and the complement of `X` lies in the image of `φ`: this is the cover to which
+the excision theorems for maps of pairs are applied. -/
+lemma cond_union_image_compl_subset_range_or_subset_range_fst (hcover : X ∪ range φ = univ)
+    (hφO : MapsTo φ O (X ∪ φ '' O)) (b : Bool) :
+    (bif b then X ∪ φ '' O else Xᶜ) ⊆ range (ofSubset (X ∪ φ '' O)).map ∨
+      (bif b then X ∪ φ '' O else Xᶜ) ⊆ range (Hom.fst (ofSubsetMap φ hφO)) := by
+  cases b
+  · rw [ofSubsetMap_fst]
+    exact Or.inr fun z hz ↦ (hcover.symm ▸ mem_univ z : z ∈ X ∪ _).resolve_left hz
+  · exact Or.inl (range_ofSubset_map (X := Z) (B := X ∪ φ '' O)).ge
+
+end Cover
+
 variable {P : TopPair.{w}} {Z : TopCat.{w}} {X : Set Z} {O : Set P.fst}
-
-/-- The subspace of a pair is the range of its embedding, so a map of pairs `f : P ⟶ (Z, X)` sends
-it into `X`. -/
-theorem mapsTo_range_map_of_hom (f : P ⟶ ofSubset X) :
-    MapsTo (Hom.fst f) (range P.map) X := by
-  rintro _ ⟨s, rfl⟩
-  rw [← Hom.w_apply f s]
-  exact (Hom.snd f s).2
-
-/-- A pair is isomorphic to the pair of its ambient space and the range of its embedding, by the
-identity of the ambient space. -/
-theorem isIso_ofHom_id_rangeFactorization (P : TopPair.{w}) :
-    IsIso (TopPair.ofHom (Y := ofSubset (range P.map)) (𝟙 P.fst)
-      (TopCat.ofHom ⟨rangeFactorization P.map, P.map.hom.continuous.rangeFactorization⟩)) :=
-  have : IsIso (Hom.fst (TopPair.ofHom (Y := ofSubset (range P.map)) (𝟙 P.fst)
-      (TopCat.ofHom ⟨rangeFactorization P.map, P.map.hom.continuous.rangeFactorization⟩))) :=
-    inferInstanceAs (IsIso (𝟙 P.fst))
-  isIso_of_isIso_fst_of_surjective_snd _ rangeFactorization_surjective
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
 
@@ -89,25 +118,12 @@ theorem isIso_singularHomologyMap_ofSubsetMap_union_image {A : TopCat.{w}} {O : 
     (φ : A ⟶ Z) (hX : IsClosed X) (hφ : IsClosedEmbedding φ) (hO : IsOpen O)
     (hφX : ∀ a, φ a ∈ X → a ∈ O) (hcover : X ∪ range φ = univ)
     (hφO : MapsTo φ O (X ∪ φ '' O)) :
-    IsIso (TopPair.singularHomologyMap (ofSubsetMap φ hφO) R n) := by
-  refine isIso_singularHomologyMap_of_open_cover R (ofSubsetMap φ hφO)
-    (by rw [ofSubsetMap_fst]; exact hφ.isEmbedding) ?_
-    (fun b : Bool ↦ bif b then X ∪ φ '' O else Xᶜ) ?_ ?_ ?_ n
-  · intro a ha
-    rw [range_ofSubset_map, ofSubsetMap_fst] at ha
-    rw [range_ofSubset_map]
-    obtain hX' | ⟨b, hb, hba⟩ := ha
-    exacts [hφX a hX', hφ.injective hba ▸ hb]
-  · rintro (_ | _)
-    exacts [hX.isOpen_compl, isOpen_union_image_of_isClosedEmbedding hφ hO hφX hcover]
-  · exact eq_univ_of_forall fun z ↦ mem_iUnion.2 <| by
-      by_cases hz : z ∈ X
-      · exact ⟨true, Or.inl hz⟩
-      · exact ⟨false, hz⟩
-  · rintro (_ | _)
-    · rw [ofSubsetMap_fst]
-      exact Or.inr fun z hz ↦ (hcover.symm ▸ mem_univ z : z ∈ X ∪ _).resolve_left hz
-    · exact Or.inl (range_ofSubset_map (X := Z) (B := X ∪ φ '' O)).ge
+    IsIso (TopPair.singularHomologyMap (ofSubsetMap φ hφO) R n) :=
+  isIso_singularHomologyMap_of_open_cover R (ofSubsetMap φ hφO)
+    (by rw [ofSubsetMap_fst]; exact hφ.isEmbedding)
+    (mem_range_map_of_fst_ofSubsetMap_union_image_mem φ hφ.injective hφX hφO) _
+    (isOpen_cond_union_image_compl φ hX hφ hO hφX hcover) (iUnion_cond_union_image_compl φ)
+    (cond_union_image_compl_subset_range_or_subset_range_fst φ hcover hφO) n
 
 /-- **Attaching along a subspace with a deformation neighbourhood induces isomorphisms on relative
 homology.** Let `f : (A, S) ⟶ (Z, X)` be a map of pairs with `X` closed in `Z`, whose map
@@ -127,12 +143,6 @@ theorem isIso_singularHomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClose
   -- The map `φ` with its codomain read as `Z` rather than as the ambient space of `(Z, X)`.
   let g : P.fst ⟶ Z := Hom.fst f
   have hφS : MapsTo g (range P.map) X := mapsTo_range_map_of_hom f
-  -- First replace `P` by the pair of `A` and the range of its embedding.
-  set e := TopPair.ofHom (Y := ofSubset (range P.map)) (𝟙 P.fst)
-    (TopCat.ofHom ⟨rangeFactorization P.map, P.map.hom.continuous.rangeFactorization⟩)
-  have : IsIso e := isIso_ofHom_id_rangeFactorization P
-  have hfe : f = e ≫ ofSubsetMap g hφS :=
-    hom_ext_of_fst _ (by rw [Hom.fst_comp, ofSubsetMap_fst]; exact (Category.id_comp g).symm)
   -- The deformation of `A` and its extension to `Z` enlarge both subspaces.
   have hSO' : MapsTo (𝟙 P.fst) (range P.map) O := hSO
   have hXN : MapsTo (𝟙 Z) X (X ∪ g '' O) := fun _ hz ↦ Or.inl hz
@@ -157,19 +167,20 @@ theorem isIso_singularHomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClose
   -- The comparison square: both composites are `φ` on the ambient spaces.
   have hsq : ofSubsetMap g hφS ≫ ofSubsetMap (𝟙 Z) hXN =
       ofSubsetMap (𝟙 P.fst) hSO' ≫ ofSubsetMap g hφO :=
-    hom_ext_of_fst _ (by
-      rw [Hom.fst_comp, Hom.fst_comp, ofSubsetMap_fst, ofSubsetMap_fst, ofSubsetMap_fst,
-        ofSubsetMap_fst]
-      exact (Category.comp_id g).trans (Category.id_comp g).symm)
+    ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ ((Category.comp_id g).trans (Category.id_comp g).symm)
   have : IsIso (TopPair.singularHomologyMap (ofSubsetMap g hφS) R n ≫
       TopPair.singularHomologyMap (ofSubsetMap (𝟙 Z) hXN) R n) := by
     rw [← singularHomologyMap_comp, hsq, singularHomologyMap_comp]
     infer_instance
   have := IsIso.of_isIso_comp_right (TopPair.singularHomologyMap (ofSubsetMap g hφS) R n)
     (TopPair.singularHomologyMap (ofSubsetMap (𝟙 Z) hXN) R n)
+  -- Finally `f` factors through the isomorphism of `P` with the pair of `A` and the range of its
+  -- embedding.
+  have hfe : f = (isoOfSubsetRange P).hom ≫ ofSubsetMap g hφS :=
+    (isoOfSubsetRange_hom_comp_ofSubsetMap f).symm
   rw [hfe, singularHomologyMap_comp]
-  have : IsIso (TopPair.singularHomologyMap e R n) :=
-    inferInstanceAs (IsIso (TopPair.singularHomologyMapIso R (asIso e) n).hom)
+  have : IsIso (TopPair.singularHomologyMap (isoOfSubsetRange P).hom R n) :=
+    inferInstanceAs (IsIso (TopPair.singularHomologyMapIso R (isoOfSubsetRange P) n).hom)
   infer_instance
 
 end TopPair

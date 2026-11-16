@@ -13,20 +13,15 @@ public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 Let `Z` be obtained from a closed subset `X` by attaching a space `A` along a subset `S`: a closed
 embedding `φ : A → Z` sends a point into `X` only if it lies in `S`, and `X` together with the
-image of `φ` is all of `Z`. This file records two facts about such an attachment.
+image of `φ` is all of `Z`. A deformation `H` of `A` which fixes `S` pointwise extends to a
+deformation of `Z` which fixes `X` pointwise, by the identity on `X` and by `φ ∘ H` on the image of
+`φ` (`TauCeti.attachHomotopy`). It is the gluing of the two along the closed pieces `X` and the
+image of `φ` (`ContinuousMap.glueClosedEmbeddings`).
 
-* A deformation `H` of `A` which fixes `S` pointwise extends to a deformation of `Z` which fixes
-  `X` pointwise, by the identity on `X` and by `φ ∘ H` on the image of `φ`
-  (`TauCeti.attachHomotopy`). It is the gluing of the two along the closed pieces `X` and the image
-  of `φ` (`ContinuousMap.glueClosedEmbeddings`).
-* For an open subset `O` of `A` containing the points sent into `X`, the thickening `X ∪ φ(O)` of
-  `X` is open in `Z` (`TauCeti.isOpen_union_image_of_isClosedEmbedding`): its complement is the
-  image of the closed set `A ∖ O`.
-
-These are the topological inputs of the comparison of the relative homology of the attachment
-`(Z, X)` with that of `(A, S)`, when `S` has an open neighbourhood `O` which a deformation of `A`
-fixing `S` pushes into `S`: the thickening `X ∪ φ(O)` is then an open neighbourhood of `X` which
-the extended deformation pushes into `X`.
+This is a topological input of the comparison of the relative homology of the attachment `(Z, X)`
+with that of `(A, S)`, when `S` has an open neighbourhood `O` which a deformation of `A` fixing `S`
+pushes into `S`: the thickening `X ∪ φ(O)` is then an open neighbourhood of `X`
+(`Topology.IsClosedEmbedding.isOpen_union_image`) which the extended deformation pushes into `X`.
 
 ## References
 
@@ -45,25 +40,7 @@ namespace TauCeti
 
 variable {A Z : Type*} [TopologicalSpace A] [TopologicalSpace Z] {S O : Set A} {X : Set Z}
   {φ : C(A, Z)}
-
-/-- **The thickening of the attaching subspace is open.** Let `φ : A → Z` be a closed embedding
-such that `X` together with the image of `φ` is all of `Z`, and let `O` be an open subset of `A`
-containing every point which `φ` sends into `X`. Then `X ∪ φ(O)` is open in `Z`: its complement is
-the image of the closed set `A ∖ O`. -/
-theorem isOpen_union_image_of_isClosedEmbedding (hφ : IsClosedEmbedding φ) (hO : IsOpen O)
-    (hφX : ∀ a, φ a ∈ X → a ∈ O) (hcover : X ∪ range φ = univ) : IsOpen (X ∪ φ '' O) := by
-  have hc : (X ∪ φ '' O)ᶜ = φ '' Oᶜ := by
-    ext z
-    refine ⟨fun hz ↦ ?_, ?_⟩
-    · obtain ⟨a, rfl⟩ : z ∈ range φ :=
-        (hcover.symm ▸ mem_univ z : z ∈ X ∪ range φ).resolve_left fun hzX ↦ hz (Or.inl hzX)
-      exact ⟨a, fun ha ↦ hz (Or.inr ⟨a, ha, rfl⟩), rfl⟩
-    · rintro ⟨a, ha, rfl⟩ (hX | ⟨b, hb, hba⟩)
-      exacts [ha (hφX a hX), ha (hφ.injective hba ▸ hb)]
-  rw [← isClosed_compl_iff, hc]
-  exact hφ.isClosedMap _ hO.isClosed_compl
-
-variable (hφ : IsClosedEmbedding φ) (hX : IsClosed X) (hφX : ∀ a, φ a ∈ X → a ∈ S)
+  (hφ : IsClosedEmbedding φ) (hX : IsClosed X) (hφX : ∀ a, φ a ∈ X → a ∈ S)
   (hcover : X ∪ range φ = univ) (H : C(I × A, A)) (hHS : ∀ t, ∀ a ∈ S, H (t, a) = a)
 
 /-- **Extending a deformation over an attachment.** Let `Z` be obtained from the closed subset `X`

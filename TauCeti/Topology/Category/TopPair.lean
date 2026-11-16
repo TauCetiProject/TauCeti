@@ -30,11 +30,16 @@ pair `(X, s)` (`TopPair.ofInclusionIsoOfSubset`).
 
 A map of pairs which is an isomorphism of the ambient spaces and is surjective on the subspaces is
 an isomorphism of pairs (`TopPair.isIso_of_isIso_fst_of_surjective_snd`): the inverse on the
-subspaces is continuous because subspaces are embedded.
+subspaces is continuous because subspaces are embedded. Every pair `P = (X, A)` is isomorphic, by
+the identity of `X`, to the pair of `X` and the range of its embedding (`TopPair.isoOfSubsetRange`),
+and a map of pairs `P ⟶ (Y, B)` factors through this isomorphism as the map of pairs induced by its
+ambient map (`TopPair.isoOfSubsetRange_hom_comp_ofSubsetMap`).
 
 The disjoint union `TopPair.sigma P = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of pairs `P i = (Xᵢ, Aᵢ)`,
 with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of the family in
-`TopPair` (`TopPair.sigmaCofanIsColimit`).  Relative singular homology is additive along it.
+`TopPair` (`TopPair.sigmaCofanIsColimit`), and the ambient map out of it induced by maps of pairs
+is `ContinuousMap.sigma` of their ambient maps (`TopPair.sigmaCofanIsColimit_desc_fst`).  Relative
+singular homology is additive along it.
 
 A continuous map into the ambient space of a pair with values in the subspace corestricts to a
 continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
@@ -97,12 +102,25 @@ lemma ofInclusion_congr {X : TopCat.{u}} {s t s' t' : Set X} (h : s ⊆ t) (h' :
   subst hs ht
   rfl
 
+/-- The embedding of the pair `(t, s)` of nested subsets has range the preimage of `s` in `t`. -/
+lemma range_ofInclusion_map {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) :
+    Set.range (ofInclusion h).map = Subtype.val ⁻¹' s :=
+  Set.range_inclusion h
+
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
 
 /-- The embedding of the pair `(X, B)` has range `B`. -/
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
+
+/-- The subspace of a pair is the range of its embedding, so a map of pairs `f : P ⟶ (X, B)`
+sends it into `B`. -/
+lemma mapsTo_range_map_of_hom {P : TopPair.{u}} (f : P ⟶ ofSubset B) :
+    Set.MapsTo (Hom.fst f) (Set.range P.map) B := by
+  rintro _ ⟨s, rfl⟩
+  rw [← Hom.w_apply f s]
+  exact (Hom.snd f s).2
 
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
@@ -353,6 +371,31 @@ lemma isIso_of_isIso_fst_of_surjective_snd [IsIso (Hom.fst f)]
   exact ⟨TopPair.ofHom (inv (Hom.fst f)) (TopCat.ofHom ⟨g, hgc⟩) (by ext b; exact hmap b),
     hom_ext_of_fst _ (IsIso.hom_inv_id _), hom_ext_of_fst _ (IsIso.inv_hom_id _)⟩
 
+/-- A pair `(X, A)` is isomorphic, by the identity of `X`, to the pair of `X` and the range of the
+embedding of `A`. -/
+noncomputable def isoOfSubsetRange (P : TopPair.{u}) : P ≅ ofSubset (Set.range P.map) where
+  hom := TopPair.ofHom (𝟙 P.fst) (TopCat.ofHom ⟨_, P.isEmbedding_map.toHomeomorph.continuous⟩)
+    (by ext; rfl)
+  inv := TopPair.ofHom (𝟙 P.fst)
+    (TopCat.ofHom ⟨_, P.isEmbedding_map.toHomeomorph.symm.continuous⟩)
+    (by ext y; exact congrArg Subtype.val (P.isEmbedding_map.toHomeomorph.apply_symm_apply y))
+  hom_inv_id := hom_ext_of_fst _ (Category.id_comp _)
+  inv_hom_id := hom_ext_of_fst _ (Category.id_comp _)
+
+@[simp]
+lemma isoOfSubsetRange_hom_fst (P : TopPair.{u}) : Hom.fst (isoOfSubsetRange P).hom = 𝟙 P.fst :=
+  (rfl)
+
+@[simp]
+lemma isoOfSubsetRange_inv_fst (P : TopPair.{u}) : Hom.fst (isoOfSubsetRange P).inv = 𝟙 P.fst :=
+  (rfl)
+
+/-- A map of pairs `f : P ⟶ (X, B)` factors through the isomorphism of `P` with the pair of its
+ambient space and the range of its embedding, as the map of pairs induced by its ambient map. -/
+lemma isoOfSubsetRange_hom_comp_ofSubsetMap (φ : P ⟶ ofSubset B) :
+    (isoOfSubsetRange P).hom ≫ ofSubsetMap (Hom.fst φ) (mapsTo_range_map_of_hom φ) = φ :=
+  hom_ext_of_fst _ (Category.id_comp _)
+
 end isIso
 
 section sigma
@@ -381,6 +424,16 @@ abbrev sigmaι (i : ι) : P i ⟶ sigma P :=
 abbrev sigmaCofan : Cofan P :=
   Cofan.mk (sigma P) (sigmaι P)
 
+/-- A point of the disjoint union of a family of pairs lies in its subspace exactly when its
+component lies in the subspace of its summand. -/
+lemma mem_range_sigma_map {x : (sigma P).fst} :
+    x ∈ Set.range (sigma P).map ↔ x.2 ∈ Set.range (P x.1).map := by
+  constructor
+  · rintro ⟨⟨i, a⟩, rfl⟩
+    exact ⟨a, rfl⟩
+  · rintro ⟨a, ha⟩
+    exact ⟨⟨x.1, a⟩, Sigma.ext rfl (heq_of_eq ha)⟩
+
 /-- The disjoint union of a family of topological pairs is their coproduct in `TopPair`. -/
 def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
   Cofan.IsColimit.mk _
@@ -397,6 +450,18 @@ def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
       ext ⟨i, x⟩ : 2
       · exact ConcreteCategory.congr_hom (congrArg Hom.snd (hm i)) x
       · exact ConcreteCategory.congr_hom (congrArg Hom.fst (hm i)) x)
+
+/-- The ambient map out of the disjoint union of a family of pairs induced by maps of pairs
+`g i : P i ⟶ Q` is the map `ContinuousMap.sigma` which is `g i` on the summand of `i`. -/
+lemma sigmaCofanIsColimit_desc_fst {Q : TopPair.{u}} (g : ∀ i, P i ⟶ Q) :
+    Hom.fst (Cofan.IsColimit.desc (sigmaCofanIsColimit P) g) =
+      TopCat.ofHom (ContinuousMap.sigma fun i ↦ (Hom.fst (g i)).hom) :=
+  (rfl)
+
+lemma sigmaCofanIsColimit_desc_fst_apply {Q : TopPair.{u}} (g : ∀ i, P i ⟶ Q)
+    (x : (sigma P).fst) :
+    Hom.fst (Cofan.IsColimit.desc (sigmaCofanIsColimit P) g) x = Hom.fst (g x.1) x.2 :=
+  (rfl)
 
 end sigma
 

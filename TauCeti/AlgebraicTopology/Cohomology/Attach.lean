@@ -57,25 +57,12 @@ theorem isIso_singularCohomologyMap_ofSubsetMap_union_image {A : TopCat.{w}} {O 
     (φ : A ⟶ Z) (hX : IsClosed X) (hφ : IsClosedEmbedding φ) (hO : IsOpen O)
     (hφX : ∀ a, φ a ∈ X → a ∈ O) (hcover : X ∪ range φ = univ)
     (hφO : MapsTo φ O (X ∪ φ '' O)) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (ofSubsetMap φ hφO) n) := by
-  refine isIso_singularCohomologyMap_of_open_cover (ofSubsetMap φ hφO)
-    (by rw [ofSubsetMap_fst]; exact hφ.isEmbedding) ?_
-    (fun b : Bool ↦ bif b then X ∪ φ '' O else Xᶜ) ?_ ?_ ?_ n
-  · intro a ha
-    rw [range_ofSubset_map, ofSubsetMap_fst] at ha
-    rw [range_ofSubset_map]
-    obtain hX' | ⟨b, hb, hba⟩ := ha
-    exacts [hφX a hX', hφ.injective hba ▸ hb]
-  · rintro (_ | _)
-    exacts [hX.isOpen_compl, isOpen_union_image_of_isClosedEmbedding hφ hO hφX hcover]
-  · exact eq_univ_of_forall fun z ↦ mem_iUnion.2 <| by
-      by_cases hz : z ∈ X
-      · exact ⟨true, Or.inl hz⟩
-      · exact ⟨false, hz⟩
-  · rintro (_ | _)
-    · rw [ofSubsetMap_fst]
-      exact Or.inr fun z hz ↦ (hcover.symm ▸ mem_univ z : z ∈ X ∪ _).resolve_left hz
-    · exact Or.inl (range_ofSubset_map (X := Z) (B := X ∪ φ '' O)).ge
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (ofSubsetMap φ hφO) n) :=
+  isIso_singularCohomologyMap_of_open_cover (ofSubsetMap φ hφO)
+    (by rw [ofSubsetMap_fst]; exact hφ.isEmbedding)
+    (mem_range_map_of_fst_ofSubsetMap_union_image_mem φ hφ.injective hφX hφO) _
+    (isOpen_cond_union_image_compl φ hX hφ hO hφX hcover) (iUnion_cond_union_image_compl φ)
+    (cond_union_image_compl_subset_range_or_subset_range_fst φ hcover hφO) n
 
 /-- **Attaching along a subspace with a deformation neighbourhood induces isomorphisms on relative
 cohomology.** Under the hypotheses of `TopPair.isIso_singularHomologyMap_of_attach`, the map of
@@ -91,12 +78,6 @@ theorem isIso_singularCohomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClo
   -- The map `φ` with its codomain read as `Z` rather than as the ambient space of `(Z, X)`.
   let g : P.fst ⟶ Z := Hom.fst f
   have hφS : MapsTo g (range P.map) X := mapsTo_range_map_of_hom f
-  -- First replace `P` by the pair of `A` and the range of its embedding.
-  set e := TopPair.ofHom (Y := ofSubset (range P.map)) (𝟙 P.fst)
-    (TopCat.ofHom ⟨rangeFactorization P.map, P.map.hom.continuous.rangeFactorization⟩)
-  have : IsIso e := isIso_ofHom_id_rangeFactorization P
-  have hfe : f = e ≫ ofSubsetMap g hφS :=
-    hom_ext_of_fst _ (by rw [Hom.fst_comp, ofSubsetMap_fst]; exact (Category.id_comp g).symm)
   -- The deformation of `A` and its extension to `Z` enlarge both subspaces.
   have hSO' : MapsTo (𝟙 P.fst) (range P.map) O := hSO
   have hXN : MapsTo (𝟙 Z) X (X ∪ g '' O) := fun _ hz ↦ Or.inl hz
@@ -123,10 +104,7 @@ theorem isIso_singularCohomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClo
   -- The comparison square: both composites are `φ` on the ambient spaces.
   have hsq : ofSubsetMap g hφS ≫ ofSubsetMap (𝟙 Z) hXN =
       ofSubsetMap (𝟙 P.fst) hSO' ≫ ofSubsetMap g hφO :=
-    hom_ext_of_fst _ (by
-      rw [Hom.fst_comp, Hom.fst_comp, ofSubsetMap_fst, ofSubsetMap_fst, ofSubsetMap_fst,
-        ofSubsetMap_fst]
-      exact (Category.comp_id g).trans (Category.id_comp g).symm)
+    ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ ((Category.comp_id g).trans (Category.id_comp g).symm)
   have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (ofSubsetMap (𝟙 Z) hXN) n ≫ TopPair.singularCohomologyMap (ofSubsetMap g hφS) n) := by
     rw [← singularCohomologyMap_comp, hsq, singularCohomologyMap_comp]
@@ -134,9 +112,14 @@ theorem isIso_singularCohomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClo
   have := IsIso.of_isIso_comp_left
     (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (ofSubsetMap (𝟙 Z) hXN) n)
     (TopPair.singularCohomologyMap (ofSubsetMap g hφS) n)
+  -- Finally `f` factors through the isomorphism of `P` with the pair of `A` and the range of its
+  -- embedding.
+  have hfe : f = (isoOfSubsetRange P).hom ≫ ofSubsetMap g hφS :=
+    (isoOfSubsetRange_hom_comp_ofSubsetMap f).symm
   rw [hfe, singularCohomologyMap_comp]
-  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) e n) :=
-    (singularCohomologyFunctor R k M n).map_isIso e.op
+  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (isoOfSubsetRange P).hom n) :=
+    (singularCohomologyFunctor R k M n).map_isIso (isoOfSubsetRange P).hom.op
   infer_instance
 
 end TopPair
