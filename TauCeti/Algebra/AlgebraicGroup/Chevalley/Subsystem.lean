@@ -289,9 +289,15 @@ theorem subsystemPoints_empty (A : Type v) [CommRing A] :
 
 /-- Writing lattice operators in the weight basis identifies the lattice and point subgroups. -/
 noncomputable def subsystemSubgroupMulEquivPoints (A : Type v) [CommRing A] :
-    D.subsystemSubgroup S (CommAlgCat.of ℤ A) ≃* D.subsystemPoints S A :=
-  ((Units.mapEquiv (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv).subgroupMap
-    _).trans (Subgroup.subgroupOfEquivOfLe (D.map_subsystemSubgroup_le_points S A)).symm
+    D.subsystemSubgroup S (CommAlgCat.of ℤ A) ≃* D.subsystemPoints S A := by
+  let f : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice) →*
+      Matrix.GeneralLinearGroup (Fin D.dim) A :=
+    Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
+  have hf : Function.Injective f :=
+    Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv.injective
+  exact ((D.subsystemSubgroup S (CommAlgCat.of ℤ A)).equivMapOfInjective f hf).trans
+    (Subgroup.subgroupOfEquivOfLe (H := (D.subsystemSubgroup S (CommAlgCat.of ℤ A)).map f)
+      (D.map_subsystemSubgroup_le_points S A)).symm
 
 /-- The lattice-to-points equivalence is the weight-basis matrix map. -/
 @[simp]
@@ -299,8 +305,12 @@ theorem coe_subsystemSubgroupMulEquivPoints_apply (A : Type v) [CommRing A]
     (g : D.subsystemSubgroup S (CommAlgCat.of ℤ A)) :
     ((D.subsystemSubgroupMulEquivPoints S A g : D.points A) :
       Matrix.GeneralLinearGroup (Fin D.dim) A) =
-      Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv g.val :=
-  (rfl)
+      Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv g.val := by
+  -- Reduce the composition and subgroup restriction, then use the matrix-map coercion lemma.
+  dsimp only [subsystemSubgroupMulEquivPoints, MulEquiv.trans, Subgroup.subgroupOfEquivOfLe]
+  exact Subgroup.coe_equivMapOfInjective_apply _ _
+    (Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv.injective)
+    g
 
 /-- The inverse lattice-to-points equivalence recovers the operator from its matrix. -/
 @[simp]
@@ -309,8 +319,14 @@ theorem coe_subsystemSubgroupMulEquivPoints_symm_apply (A : Type v) [CommRing A]
     ((D.subsystemSubgroupMulEquivPoints S A).symm g :
       LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice)) =
       Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).symm.toMulEquiv
-        (g : D.points A).val :=
-  (rfl)
+        (g : D.points A).val := by
+  apply Units.map_injective
+    (f := (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv.toMonoidHom)
+    (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv.injective
+  rw [MulEquiv.toMonoidHom_eq_coe, ← D.coe_subsystemSubgroupMulEquivPoints_apply,
+    MulEquiv.apply_symm_apply]
+  ext1
+  simp
 
 /-- The lattice-to-points equivalence sends each root generator to its point realization. -/
 @[simp]

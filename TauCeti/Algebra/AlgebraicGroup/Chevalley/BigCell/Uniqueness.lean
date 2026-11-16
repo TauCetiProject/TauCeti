@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 
 /-!
 # Uniqueness of Chevalley big-cell factors
@@ -23,13 +21,13 @@ actual character lattice, including for proper sublattices of the full weight la
 maps. Injectivity supplies uniqueness of factors in its image; no assertion that the image
 is open, or that Weyl translates cover the group scheme, is made.
 
-The proof specializes `kostantSubsystemSubgroup_mul_torus_mul_injective` from
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel`. The reversed
-height order makes negative roots upper unitriangular and positive roots lower unitriangular.
-The coordinate weights span the actual character lattice, making its torus
-parametrization faithful even over nonreduced rings. The transport from lattice operators
-to datum points uses `ChevalleyDatum.subsystemPoints` from
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem`.
+The proof uses the opposite-intersection theorems from
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite` and `Subgroup.mul_injective_of_disjoint`.
+Those intersections follow from the triangularity of the root subgroups in a height-ordered
+weight basis. The coordinate weights span the actual character lattice, making its torus
+parametrization faithful even over nonreduced rings, as proved by
+`ChevalleyDatum.torusPoints_injective` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic`.
 
 ## References
 
@@ -48,54 +46,6 @@ universe v w
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 variable (A : Type v) [CommRing A]
 
-attribute [local instance high] Algebra.toModule
-
-private theorem negativeSubgroup_mul_torus_mul_positiveSubgroup_injective :
-    Function.Injective (fun x : D.negativeSubgroup (CommAlgCat.of ℤ A) ×
-        ((Fin t.rank → Aˣ) × D.positiveSubgroup (CommAlgCat.of ℤ A)) =>
-      (x.1 : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice)) *
-        kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A) x.2.1 *
-          x.2.2) := by
-  let e := orderedWeightIndexEquiv (t.weightDegree ht) D.weight
-  -- Form the inequalities before installing the lifted order on the same finite type.
-  have hneg : ∀ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-      ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
-        D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ →
-          OrderDual.toDual (e r) < OrderDual.toDual (e s) := by
-    intro γ hγ r s m hm hrs
-    exact OrderDual.toDual_lt_toDual.mpr
-      (orderedWeightIndexEquiv_lt_of_eq_add_nsmul_of_neg (t.weightDegree ht) D.weight
-        (t.weightDegree_root_neg ht hγ) hm hrs)
-  have hpos : ∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-      ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
-        D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ →
-          OrderDual.toDual (e s) < OrderDual.toDual (e r) := by
-    intro γ hγ r s m hm hrs
-    exact OrderDual.toDual_lt_toDual.mpr
-      (orderedWeightIndexEquiv_lt_of_eq_add_nsmul (t.weightDegree ht) D.weight
-        (t.weightDegree_root_pos ht hγ) hm hrs)
-  -- Reverse the height order: the first factor is the negative subgroup.
-  let : LinearOrder (Fin D.dim) :=
-    LinearOrder.lift' (OrderDual.toDual ∘ e) (OrderDual.toDual.injective.comp e.injective)
-  have h := kostantSubsystemSubgroup_mul_torus_mul_injective
-    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
-    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
-    (isNilpotent_apply_ι_chevalleySystem D.representation
-      D.isNilpotent_representation_rootGenerator)
-    D.basis D.weight (t.simplyConnectedRootDatum ht).root D.coordinateWeight
-    D.isCartanWeightVector_basis
-    (negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
-    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
-    hneg hpos A
-    (kostantTorusPoints_injective D.lattice D.basis D.coordinateWeight
-      D.span_range_coordinateWeight_eq_top)
-  rw [D.negativeSubgroup_def, D.positiveSubgroup_def, D.subsystemSubgroup_def,
-    D.subsystemSubgroup_def]
-  exact h
-
 /-- Multiplication of negative, actual-torus and positive factors inside the datum points.
 Its image is the set of points admitting a big-cell factorization. -/
 noncomputable def bigCellMul
@@ -112,28 +62,24 @@ theorem bigCellMul_apply
 parameter uniquely, over every commutative ring. -/
 theorem bigCellMul_injective : Function.Injective (D.bigCellMul A) := by
   rintro ⟨u, s, v⟩ ⟨u', s', v'⟩ h
-  obtain ⟨a, rfl⟩ := (D.negativeSubgroupMulEquivPoints A).surjective u
-  obtain ⟨a', rfl⟩ := (D.negativeSubgroupMulEquivPoints A).surjective u'
-  obtain ⟨b, rfl⟩ := (D.positiveSubgroupMulEquivPoints A).surjective v
-  obtain ⟨b', rfl⟩ := (D.positiveSubgroupMulEquivPoints A).surjective v'
-  have hmat := congrArg (D.points A).subtype h
-  simp only [bigCellMul_apply, map_mul, Subgroup.subtype_apply] at hmat
-  rw [D.coe_negativeSubgroupMulEquivPoints_apply,
-    D.coe_negativeSubgroupMulEquivPoints_apply, D.coe_positiveSubgroupMulEquivPoints_apply,
-    D.coe_positiveSubgroupMulEquivPoints_apply, D.coe_torusPoints, D.coe_torusPoints] at hmat
-  have hlat : a.val * kostantTorusPoints D.lattice D.basis D.coordinateWeight
-      (CommAlgCat.of ℤ A) s * b.val =
-      a'.val * kostantTorusPoints D.lattice D.basis D.coordinateWeight
-        (CommAlgCat.of ℤ A) s' * b'.val := by
-    apply Units.map_injective
-      (f := (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom)
-      (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
-    simpa only [map_mul, MulEquiv.toMonoidHom_eq_coe,
-      basisMatrix_kostantTorusPoints] using hmat
-  have hcoords := D.negativeSubgroup_mul_torus_mul_positiveSubgroup_injective A
-    (a₁ := (a, s, b)) (a₂ := (a', s', b')) hlat
-  exact congrArg (fun x => (D.negativeSubgroupMulEquivPoints A x.1, x.2.1,
-    D.positiveSubgroupMulEquivPoints A x.2.2)) hcoords
+  have houter := Subgroup.mul_injective_of_disjoint
+    (disjoint_iff.mpr (D.negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot A))
+    (a₁ := (u, ⟨D.torusPoints A s * v.val,
+      Subgroup.mul_mem _ (Subgroup.mem_sup_right ⟨s, rfl⟩)
+        (Subgroup.mem_sup_left v.property)⟩))
+    (a₂ := (u', ⟨D.torusPoints A s' * v'.val,
+      Subgroup.mul_mem _ (Subgroup.mem_sup_right ⟨s', rfl⟩)
+        (Subgroup.mem_sup_left v'.property)⟩))
+    (by simpa only [bigCellMul_apply, mul_assoc] using h)
+  have hinner := Subgroup.mul_injective_of_disjoint
+    (disjoint_iff.mpr (D.positivePoints_inf_range_torusPoints_eq_bot A)).symm
+    (a₁ := (⟨D.torusPoints A s, ⟨s, rfl⟩⟩, v))
+    (a₂ := (⟨D.torusPoints A s', ⟨s', rfl⟩⟩, v'))
+    (congrArg (fun x => x.2.val) houter)
+  have hu := congrArg Prod.fst houter
+  have hs := D.torusPoints_injective A (congrArg (fun x => x.1.val) hinner)
+  have hv := congrArg Prod.snd hinner
+  exact Prod.ext hu (Prod.ext hs hv)
 
 /-- The identity factors multiply to the identity point. -/
 @[simp]
