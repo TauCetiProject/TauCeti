@@ -135,10 +135,10 @@ namespace Hom
 section ConductorCohomology
 
 variable {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFinite f] [IsModification f]
-  [IsNoetherian X] [IrreducibleSpace X] [Nonempty X]
+  [IsNoetherian X] [IrreducibleSpace X]
 
 /-- **Vanishing of higher cohomology of the conductor-cokernel.** For a finite modification
-`f : Y ⟶ X` of a nonempty irreducible Noetherian scheme `X` of Krull dimension at most one, the
+`f : Y ⟶ X` of an irreducible Noetherian scheme `X` of Krull dimension at most one, the
 cokernel `coker(𝒪_X ⟶ f_* 𝒪_Y)` has vanishing cohomology in all positive degrees, since it is
 pushed forward along a closed immersion from the Artinian (hence affine) conductor subscheme. -/
 theorem subsingleton_cohomology_succ_cokernel_unitToPushforwardObjUnit
@@ -290,7 +290,7 @@ diagonal (for instance a separated one) of dimension at most one with
 every degree `n ≥ 2`. -/
 theorem subsingleton_cohomology_unit_iff_of_two_le_of_isModification {X Y : Scheme.{u}}
     [IsAffineHom (pullback.diagonal (terminal.from X))]
-    [IsNoetherian X] [IrreducibleSpace X] [Nonempty X] (hX : topologicalKrullDim X ≤ 1)
+    [IsNoetherian X] [IrreducibleSpace X] (hX : topologicalKrullDim X ≤ 1)
     (f : Y ⟶ X) [IsFinite f] [IsModification f] [IsSchemeTheoreticallyDominant f]
     (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (Cohomology (SheafOfModules.unit X.ringCatSheaf : X.Modules) n) ↔
