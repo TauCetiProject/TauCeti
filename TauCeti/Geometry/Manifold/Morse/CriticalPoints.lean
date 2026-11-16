@@ -119,6 +119,9 @@ polynomial in the Morse inequalities.
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.IsMorse.morseIndexNegEquiv`: for `i + k = dim M`, the critical points of index `k` for
+  `-f` are those of index `i` for `f`, by
+  `TauCeti.IsMorse.manifoldMorseIndex_neg_add_manifoldMorseIndex`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
   nonempty compact manifold the minimum is a critical point of index `0` and, for a Morse function,
   the maximum is one of index the dimension.
@@ -1210,6 +1213,53 @@ theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
   · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
       hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
+
+/-- At a critical point of a Morse function `f`, the Morse indices of `-f` and `f` add up to the
+dimension of `M`. -/
+theorem IsMorse.manifoldMorseIndex_neg_add_manifoldMorseIndex (hf : IsMorse I f)
+    (hx : x ∈ criticalPoints I f) :
+    manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E :=
+  (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+    hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+
+/-- **Reversing the Morse index.** For `i + k = dim M`, the critical points of index `k` for `-f`
+are the critical points of index `i` for `f`. -/
+noncomputable def IsMorse.morseIndexNegEquiv (hf : IsMorse I f) {i k : ℕ}
+    (hik : i + k = Module.finrank ℝ E) :
+    {q : criticalPoints I (-f) // manifoldMorseIndex I (-f) q = k} ≃
+      {p : criticalPoints I f // manifoldMorseIndex I f p = i} where
+  toFun q := ⟨Set.equivOfEq (criticalPoints_neg (I := I) (f := f)) q.1, by
+    have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.1.2)
+    have := q.2
+    simp only [Set.equivOfEq_apply]
+    omega⟩
+  invFun p := ⟨(Set.equivOfEq (criticalPoints_neg (I := I) (f := f))).symm p.1, by
+    have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex p.1.2
+    have := p.2
+    simp only [Set.equivOfEq_symm_apply]
+    omega⟩
+  left_inv q := by ext; rfl
+  right_inv p := by ext; rfl
+
+/-- The critical point of index `i` for `f` corresponding to a critical point of index `k` for `-f`
+is the same critical point. -/
+@[simp]
+theorem IsMorse.coe_morseIndexNegEquiv_apply (hf : IsMorse I f) {i k : ℕ}
+    (hik : i + k = Module.finrank ℝ E)
+    (q : {q : criticalPoints I (-f) // manifoldMorseIndex I (-f) q = k}) :
+    (hf.morseIndexNegEquiv hik q : criticalPoints I f) =
+      Set.equivOfEq (criticalPoints_neg (I := I) (f := f)) q.1 :=
+  (rfl)
+
+/-- The critical point of index `k` for `-f` corresponding to a critical point of index `i` for `f`
+is the same critical point. -/
+@[simp]
+theorem IsMorse.coe_morseIndexNegEquiv_symm_apply (hf : IsMorse I f) {i k : ℕ}
+    (hik : i + k = Module.finrank ℝ E)
+    (p : {p : criticalPoints I f // manifoldMorseIndex I f p = i}) :
+    ((hf.morseIndexNegEquiv hik).symm p : criticalPoints I (-f)) =
+      (Set.equivOfEq (criticalPoints_neg (I := I) (f := f))).symm p.1 :=
+  (rfl)
 
 /-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a manifold of dimension `m`, the
 signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by the factor `(-1)ᵐ`,

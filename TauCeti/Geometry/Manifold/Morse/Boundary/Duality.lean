@@ -29,27 +29,26 @@ Morse indices `n - ind_f`, and the trajectories of `-X` are those of `X` run bac
 the chain of `-f` with the same values on the critical points
 (`IsMorseSmale.morseCochainToNegChain`) identifies the cochain module of `f` in degree `i` with the
 chain module of `-f` in degree `k` whenever `i + k = n`
-(`IsMorseSmale.bijective_morseCochainToNegChain`), and this identification carries the Morse
+(`IsMorseSmale.bijective_morseCochainToNegChain`, built on the index reversal
+`TauCeti.IsMorse.morseIndexNegEquiv`), and this identification carries the Morse
 coboundary of `f` to the Morse boundary of `-f`
 (`IsMorseSmale.morseCochainToNegChain_d_comp`). Hence the Morse cohomology of `f` in degree `i` is
 isomorphic to the Morse homology of `-f` in degree `n - i`
 (`IsMorseSmale.morseCohomologyEquivNegHomology`): the Morse complex of `-f` is the dual of the
 Morse complex of `f`, reindexed by `k ↦ n - k`. Combined with the Kronecker pairing, the mod-two
 Morse homology of `-f` in degree `k` has the dimension of that of `f` in degree `n - k`
-(`IsMorseSmale.finrank_homology_morseComplex_neg`). This is the Morse-theoretic form of mod-two
-Poincaré duality, which needs no orientation of `M`; with integral coefficients the comparison
-also involves the orientations of the unstable manifolds.
+(`IsMorseSmale.finrank_homology_morseComplex_neg`). This comparison of `-f` with `f` needs no
+orientation of `M`; with integral coefficients it also involves the orientations of the unstable
+manifolds. It gives mod-two Poincaré duality once Morse homology is known to be independent of the
+Morse–Smale pair, which is not proved here.
 
 ## Main declarations
-
-* `TauCeti.IsMorse.morseIndexNegEquiv`: for `i + k = n`, the critical points of index `k` for `-f`
-  are those of index `i` for `f`.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
 * `morseCochainComplex`: the mod-two Morse cochain complex.
 * `morseCohomologyEquiv`: the Kronecker pairing identifies the Morse cohomology in degree `i` with
-  the dual of the Morse homology in degree `i`.
+  the dual of the Morse homology in degree `i` (`morseCohomologyEquiv_apply`).
 * `finrank_homology_morseCochainComplex`: the Morse cohomology and homology have the same
   dimension in each degree.
 * `morseCochainToNegChain`: a cochain of `f` read as a chain of `-f`.
@@ -57,7 +56,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 * `morseCochainToNegChain_d_comp`, `morseCochainComplex_d_comp_ofHom`: it carries the Morse
   coboundary of `f` to the Morse boundary of `-f`.
 * `morseCohomologyEquivNegHomology`: the Morse cohomology of `f` in degree `i` is the Morse homology
-  of `-f` in degree `k`, for `i + k = n`.
+  of `-f` in degree `k`, for `i + k = n`; `morseCohomologyEquivNegHomology_homologyπ` computes it
+  on the class of a cocycle.
 * `finrank_homology_morseComplex_neg`: the mod-two Morse homology of `-f` in degree `k` has the
   dimension of that of `f` in degree `n - k`.
 
@@ -83,51 +83,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type u} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
-
-namespace IsMorse
-
-/-- **Reversing the Morse index.** For `i + k = n`, the critical points of index `k` for `-f` are
-the critical points of index `i` for `f`. -/
-noncomputable def morseIndexNegEquiv (hf : IsMorse 𝓘(ℝ, E) f) {i k : ℕ}
-    (hik : i + k = finrank ℝ E) :
-    {q : criticalPoints 𝓘(ℝ, E) (-f) // manifoldMorseIndex 𝓘(ℝ, E) (-f) q = k} ≃
-      {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = i} where
-  toFun q := ⟨⟨q.1.1, by simpa using q.1.2⟩, by
-    have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (by simpa using q.1.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-    have := q.2
-    dsimp only
-    omega⟩
-  invFun p := ⟨⟨p.1.1, by simp⟩, by
-    have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      p.1.2).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-    have := p.2
-    dsimp only
-    omega⟩
-  left_inv q := by ext; rfl
-  right_inv p := by ext; rfl
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The critical point of index `i` for `f` corresponding to a critical point of index `k` for `-f`
-is the same point of `M`. -/
-@[simp]
-theorem coe_morseIndexNegEquiv_apply (hf : IsMorse 𝓘(ℝ, E) f) {i k : ℕ}
-    (hik : i + k = finrank ℝ E)
-    (q : {q : criticalPoints 𝓘(ℝ, E) (-f) // manifoldMorseIndex 𝓘(ℝ, E) (-f) q = k}) :
-    ((hf.morseIndexNegEquiv hik q : criticalPoints 𝓘(ℝ, E) f) : M) = q :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The critical point of index `k` for `-f` corresponding to a critical point of index `i` for `f`
-is the same point of `M`. -/
-@[simp]
-theorem coe_morseIndexNegEquiv_symm_apply (hf : IsMorse 𝓘(ℝ, E) f) {i k : ℕ}
-    (hik : i + k = finrank ℝ E)
-    (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = i}) :
-    (((hf.morseIndexNegEquiv hik).symm p : criticalPoints 𝓘(ℝ, E) (-f)) : M) = p :=
-  (rfl)
-
-end IsMorse
 
 namespace IsAdaptedPseudoGradient
 
@@ -176,6 +131,17 @@ noncomputable def morseCohomologyEquiv (i : ℕ) :
   haveI := Module.injective_object_of_injective_module (ZMod 2) (ULift.{u} (ZMod 2))
   ChainComplex.kroneckerEquiv (ZMod 2) (h.morseComplex hf)
     (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) i
+
+/-- The identification of Morse cohomology with the dual of Morse homology is the Kronecker
+pairing. -/
+@[simp]
+theorem morseCohomologyEquiv_apply (i : ℕ) (x : (h.morseCochainComplex hf).homology i) :
+    h.morseCohomologyEquiv hf i x =
+      ChainComplex.kronecker (ZMod 2) (h.morseComplex hf)
+        (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) i x :=
+  haveI := Module.injective_of_isSemisimpleRing (ZMod 2) (ULift.{u} (ZMod 2))
+  haveI := Module.injective_object_of_injective_module (ZMod 2) (ULift.{u} (ZMod 2))
+  ChainComplex.kroneckerEquiv_apply _ x
 
 /-- The mod-two Morse cohomology is finite-dimensional. -/
 instance finite_homology_morseCochainComplex (i : ℕ) :
@@ -239,8 +205,11 @@ theorem morseCochainToNegChain_apply_of_add_eq {i k : ℕ} (hik : i + k = finran
       (a (Finsupp.single (hf.morseIndexNegEquiv hik q) 1)).down := by
   rw [morseCochainToNegChain_apply]
   split_ifs with hq
-  · rfl
-  · exact absurd (hf.morseIndexNegEquiv hik q).2 hq
+  · -- Both are `q`, read as a critical point of index `i` for `f`.
+    congr 3
+    ext
+    simp
+  · exact absurd (by simpa using (hf.morseIndexNegEquiv hik q).2) hq
 
 /-- Outside complementary degrees, a cochain of `f` gives the zero chain of `-f`: no critical
 point has index `k` for `-f` and index `i` for `f` unless `i + k = n`. -/
@@ -249,8 +218,7 @@ theorem morseCochainToNegChain_eq_zero {i k : ℕ} (hik : i + k ≠ finrank ℝ 
   ext a q
   rw [morseCochainToNegChain_apply]
   split_ifs with hq
-  · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (by simpa using q.1.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  · have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.1.2)
     exact absurd (by rw [← this, q.2, hq, add_comm]) hik
   · rfl
 
@@ -288,25 +256,22 @@ theorem morseCochainToNegChain_d_comp (i k : ℕ)
   let _ := Fintype.ofFinite {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = i}
   let _ := Fintype.ofFinite
     {r : criticalPoints 𝓘(ℝ, E) (-f) // manifoldMorseIndex 𝓘(ℝ, E) (-f) r = k + 1}
-  -- A linear map out of a free module is determined by its values on the basis vectors.
+  -- A linear form on a free module is determined by its values on the basis vectors
+  -- (`Finsupp.llift`). This is stated for plain `Finsupp`s, since the instances on the terms of
+  -- the Morse complex keep the `Finsupp.llift` lemmas from rewriting there directly.
   have expand {A : Type u} (g : (A →₀ ZMod 2) →ₗ[ZMod 2] ULift.{u} (ZMod 2)) (x : A →₀ ZMod 2) :
       (g x).down = x.sum fun p c ↦ c * (g (Finsupp.single p 1)).down := by
-    induction x using Finsupp.induction_linear with
-    | zero => simp
-    | add x y hx hy =>
-      rw [map_add, ULift.add_down, hx, hy,
-        Finsupp.sum_add_index' (fun _ ↦ zero_mul _) fun _ _ _ ↦ add_mul ..]
-    | single p c =>
-      rw [Finsupp.sum_single_index (zero_mul _), ← Finsupp.smul_single_one, map_smul,
-        ULift.smul_down, smul_eq_mul]
+    rw [← LinearEquiv.apply_symm_apply (Finsupp.llift _ (ZMod 2) (ZMod 2) A) g,
+      Finsupp.llift_apply, Finsupp.lift_apply, ← ULift.moduleEquiv_apply (R := ZMod 2),
+      map_finsuppSum]
+    simp
   ext q
   rw [morseBoundaryAt_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
     morseCochainToNegChain_apply]
   split_ifs with hqi
   · -- `q` has index `i + 1` for `f`, so the degrees `i` and `k + 1` are complementary.
     have hik : i + (k + 1) = finrank ℝ E := by
-      have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-        (by simpa using q.1.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+      have := hf.manifoldMorseIndex_neg_add_manifoldMorseIndex (by simpa using q.1.2)
       have := q.2
       omega
     refine (congrArg ULift.down (ModuleCat.comp_apply _ _ _)).trans ?_
@@ -315,8 +280,10 @@ theorem morseCochainToNegChain_d_comp (i k : ℕ)
     rw [Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
     refine Fintype.sum_equiv (hf.morseIndexNegEquiv hik).symm _ _ fun p ↦ ?_
     rw [morseBoundaryAt_single_apply, one_mul, morseCochainToNegChain_apply_of_add_eq h hf hik,
-      Equiv.apply_symm_apply, morseBoundaryCoeff_neg, mul_comm]
-    rfl
+      Equiv.apply_symm_apply, h.morseBoundaryCoeff_neg hf, mul_comm,
+      IsMorse.coe_morseIndexNegEquiv_symm_apply, Equiv.apply_symm_apply]
+    -- Both sides read `q` as the same critical point `Set.equivOfEq criticalPoints_neg q` of `f`.
+    congr 2
   · -- Otherwise no trajectory of `X` joins `q` to a critical point of index `i` for `f`.
     refine (Finset.sum_eq_zero fun r _ ↦ ?_).symm
     rw [morseCochainToNegChain_apply]
@@ -326,10 +293,10 @@ theorem morseCochainToNegChain_d_comp (i k : ℕ)
       simpa [hri] using hqi
     · rw [zero_mul]
 
-/-- **Cochains of `f` and chains of `-f` form isomorphic complexes.** Reading cochains of `f` as
-chains of `-f` intertwines the coboundary of the Morse cochain complex of `f` from index `i` to
-index `i + 1` with the differential of the Morse chain complex of `-f` from index `k + 1` to
-index `k`. -/
+/-- **Reading cochains of `f` as chains of `-f` commutes with the differentials.** It intertwines
+the coboundary of the Morse cochain complex of `f` from index `i` to index `i + 1` with the
+differential of the Morse chain complex of `-f` from index `k + 1` to index `k`. The maps are
+bijective only in complementary degrees (`IsMorseSmale.bijective_morseCochainToNegChain`). -/
 theorem morseCochainComplex_d_comp_ofHom (i k : ℕ) :
     (h.morseCochainComplex hf).d i (i + 1) ≫
         ModuleCat.ofHom (h.morseCochainToNegChain hf (i + 1) k) =
@@ -397,9 +364,57 @@ noncomputable def morseCohomologyEquivNegHomology {i k : ℕ} (hik : i + k = fin
     (ShortComplex.homologyMapIso (((h.neg hf).morseComplex hf.neg).isoSc' (k + 1) k (k - 1)
       (by simp) (by rcases k with _ | k <;> simp))).symm).toLinearEquiv
 
-/-- **Mod-two Poincaré duality for Morse homology.** For `i + k = n`, the mod-two Morse homology of
-`-f`, for the pseudo-gradient `-X`, in degree `k` has the same dimension as the mod-two Morse
-homology of `f` in degree `i`. -/
+/-- A cocycle of `f` of index `i`, read as a chain of `-f` of index `k`, is a cycle of `-f`, for
+`i + k = n`. -/
+theorem iCycles_comp_ofHom_morseCochainToNegChain_comp_d {i k : ℕ}
+    (hik : i + k = finrank ℝ E) :
+    ((h.morseCochainComplex hf).iCycles i ≫ ModuleCat.ofHom (h.morseCochainToNegChain hf i k)) ≫
+      ((h.neg hf).morseComplex hf.neg).d k (k - 1) = 0 := by
+  -- Reading cochains as chains commutes with the differentials leaving index `i` and `k`.
+  calc _ = (h.morseCochainComplex hf).iCycles i ≫ (h.morseCochainToNegChainSc hf hik).τ₂ ≫
+        (((h.neg hf).morseComplex hf.neg).sc' (k + 1) k (k - 1)).g := Category.assoc _ _ _
+    _ = (h.morseCochainComplex hf).iCycles i ≫
+        ((h.morseCochainComplex hf).sc' (i - 1) i (i + 1)).g ≫
+          (h.morseCochainToNegChainSc hf hik).τ₃ := by rw [ShortComplex.Hom.comm₂₃]
+    _ = 0 := ((h.morseCochainComplex hf).iCycles_d_assoc _ _ _).trans zero_comp
+
+/-- **The identification of Morse cohomology of `f` with Morse homology of `-f` on classes.** For
+`i + k = n`, it sends the class of a cocycle of `f` to the class of the same cocycle read as a
+cycle of `-f`. -/
+theorem morseCohomologyEquivNegHomology_homologyπ {i k : ℕ} (hik : i + k = finrank ℝ E)
+    (x : (h.morseCochainComplex hf).cycles i) :
+    h.morseCohomologyEquivNegHomology hf hik ((h.morseCochainComplex hf).homologyπ i x) =
+      ((h.neg hf).morseComplex hf.neg).homologyπ k
+        (((h.neg hf).morseComplex hf.neg).liftCycles
+          ((h.morseCochainComplex hf).iCycles i ≫
+            ModuleCat.ofHom (h.morseCochainToNegChain hf i k))
+          (k - 1) (by rcases k with _ | k <;> simp)
+          (h.iCycles_comp_ofHom_morseCochainToNegChain_comp_d hf hik) x) := by
+  rw [morseCohomologyEquivNegHomology, Iso.toLinearEquiv_apply, ← ConcreteCategory.comp_apply,
+    ← ConcreteCategory.comp_apply]
+  refine ConcreteCategory.congr_hom ?_ x
+  simp only [Iso.trans_hom, ShortComplex.homologyMapIso_hom, asIso_hom, Iso.symm_hom,
+    ShortComplex.homologyMapIso_inv]
+  dsimp only [HomologicalComplex.homologyπ, HomologicalComplex.liftCycles,
+    HomologicalComplex.iCycles]
+  -- Each step of the composite is induced on cycles, where it acts as `morseCochainToNegChain`.
+  simp only [ShortComplex.homologyπ_naturality_assoc, ShortComplex.homologyπ_naturality]
+  simp only [← Category.assoc]
+  congr 1
+  rw [← cancel_mono (ShortComplex.iCycles _)]
+  simp only [Category.assoc, ShortComplex.cyclesMap_i, ShortComplex.cyclesMap_i_assoc,
+    ShortComplex.liftCycles_i]
+  simp only [HomologicalComplex.shortComplexFunctor_obj_X₂,
+    HomologicalComplex.shortComplexFunctor'_obj_X₂, Iso.app_hom,
+    HomologicalComplex.natIsoSc'_hom_app_τ₂, Iso.app_inv, HomologicalComplex.natIsoSc'_inv_app_τ₂,
+    Category.comp_id, Category.id_comp]
+  -- The middle component of `morseCochainToNegChainSc` is `morseCochainToNegChain`, by definition.
+  rfl
+
+/-- **The Morse homologies of `-f` and `f` in complementary degrees.** For `i + k = n`, the mod-two
+Morse homology of `-f`, for the pseudo-gradient `-X`, in degree `k` has the same dimension as the
+mod-two Morse homology of `f` in degree `i`. This gives mod-two Poincaré duality once Morse
+homology is known to be independent of the Morse–Smale pair, which is not proved here. -/
 theorem finrank_homology_morseComplex_neg {i k : ℕ} (hik : i + k = finrank ℝ E) :
     finrank (ZMod 2) (((h.neg hf).morseComplex hf.neg).homology k) =
       finrank (ZMod 2) ((h.morseComplex hf).homology i) := by
