@@ -60,14 +60,11 @@ theorem mem_smoothLocus_of_isRegularLocalRing (f : X ⟶ S) [LocallyOfFinitePres
     [IsRegularLocalRing (X.presheaf.stalk (σ s))] : σ s ∈ f.smoothLocus := by
   have hfs : f (σ s) = s := by simp [← Scheme.Hom.comp_apply, hσ]
   have : IsRegularLocalRing (S.presheaf.stalk (f (σ s))) := by rw [hfs]; infer_instance
-  -- the stalk map of `f` at `σ s` has a left inverse, induced by `σ`
-  have hid : ∀ h : S ⟶ S, h = 𝟙 S → IsIso (h.stalkMap s) := by
-    rintro _ rfl
-    rw [Scheme.Hom.stalkMap_id]
-    exact IsIso.id _
+  -- the stalk map of `f` at `σ s` has a left inverse, induced by `σ`; `stalkMap_congr_hom`
+  -- transports `hσ` across the dependent stalk types via `stalkCongr`
   have : IsIso (f.stalkMap (σ s) ≫ σ.stalkMap s) := by
-    rw [← Scheme.Hom.stalkMap_comp]
-    exact hid _ hσ
+    rw [← Scheme.Hom.stalkMap_comp, Scheme.Hom.stalkMap_congr_hom _ _ hσ, Scheme.Hom.stalkMap_id]
+    exact IsIso.comp_isIso' (Iso.isIso_hom _) (IsIso.id _)
   have hr : f.stalkMap (σ s) ≫ σ.stalkMap s ≫ inv (f.stalkMap (σ s) ≫ σ.stalkMap s) = 𝟙 _ := by
     simp only [← Category.assoc, IsIso.hom_inv_id]
   -- pass to affine charts around `s` and `σ s`
