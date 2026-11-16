@@ -15,44 +15,24 @@ Let `E → B` be a real vector bundle whose fibres carry norms, and let `r : B �
 function on the base. The closed disc bundle `D_r(E)` and sphere bundle `S_r(E)` of radius `r`
 consist of the vectors of norm at most `r(π(v))` and equal to `r(π(v))`
 (`TauCeti.discBundleOfRadius`, `TauCeti.sphereBundleOfRadius`), forming the topological pair
-`(D_r(E), S_r(E))` (`TauCeti.discSpherePairOfRadius`). For the constant radius `1`, `D_1(E)` and
-`S_1(E)` agree with the unit disc bundle and unit sphere bundle of
-`TauCeti.Topology.VectorBundle.SphereBundle.Basic` (`TauCeti.discBundleOfRadius_const_one`,
+`(D_r(E), S_r(E))` (`TauCeti.discSpherePairOfRadius`). At constant radius `1`, `D_1(E)` and `S_1(E)`
+agree with the unit disc and sphere bundles (`TauCeti.discBundleOfRadius_const_one`,
 `TauCeti.sphereBundleOfRadius_const_one`).
 
 When `r` is continuous and everywhere positive, fibrewise multiplication by `r ∘ π` and `(r ∘ π)⁻¹`
 defines homeomorphisms `D(E) ≃ₜ D_r(E)` (`TauCeti.discBundleHomeomorphOfRadius`) and
 `S(E) ≃ₜ S_r(E)` (`TauCeti.sphereBundleHomeomorphOfRadius`), and hence an isomorphism of pairs
-`(D(E), S(E)) ≅ (D_r(E), S_r(E))` (`TauCeti.discSpherePairIsoOfRadius`). Neither homeomorphism
-needs continuity of the fibre norm on the total space: scalar multiplication on a topological
-vector bundle is jointly continuous (`Continuous.smul_totalSpace`).
+`(D(E), S(E)) ≅ (D_r(E), S_r(E))` (`TauCeti.discSpherePairIsoOfRadius`), using joint continuity of
+scalar multiplication on the total space (`Continuous.smul_totalSpace`).
 
-In the Thom pair `(E, E₀)`, the straight-line rescaling `((1 - t) + t · r(π(v))) • v` stays off
-the zero section at every time `t ∈ [0, 1]` because `(0, ∞)` is convex. It therefore gives a
-homotopy of maps of pairs (`TauCeti.discSpherePairOfRadiusHomotopy`) between the unit inclusion
-`(D(E), S(E)) ⟶ (E, E₀)` and the composite `(D(E), S(E)) ≅ (D_r(E), S_r(E)) ⟶ (E, E₀)`.
-Consequently the rescaling isomorphism commutes with the induced maps to and from the Thom pair on
-relative singular homology and cohomology
-(`TauCeti.singularHomologyMap_discSpherePairIsoOfRadius_hom_comp`,
-`TauCeti.singularCohomologyMap_discSpherePairOfRadiusMap_comp_hom`), and when the fibre norm is
-continuous on `E`, the inclusion `(D_r(E), S_r(E)) ⟶ (E, E₀)` induces isomorphisms on relative
-singular homology and cohomology in every degree
+In the Thom pair `(E, E₀)`, straight-line rescaling `((1 - t) + t · r(π(v))) • v` stays off the
+zero section at every `t ∈ [0, 1]` by convexity of `(0, ∞)`, giving a homotopy of maps of pairs
+(`TauCeti.discSpherePairOfRadiusHomotopy`) between `(D(E), S(E)) ⟶ (E, E₀)` and
+`(D(E), S(E)) ≅ (D_r(E), S_r(E)) ⟶ (E, E₀)`. When the fibre norm is continuous on `E`, the
+inclusion `(D_r(E), S_r(E)) ⟶ (E, E₀)` (`TauCeti.discSpherePairOfRadiusMap`) therefore induces
+isomorphisms on relative singular homology and cohomology in every degree
 (`TauCeti.isIso_singularHomologyMap_discSpherePairOfRadiusMap`,
 `TauCeti.isIso_singularCohomologyMap_discSpherePairOfRadiusMap`).
-
-## Main definitions and results
-
-* `TauCeti.discBundleOfRadius`, `TauCeti.sphereBundleOfRadius`, `TauCeti.discSpherePairOfRadius`:
-  the closed disc bundle, sphere bundle and disc-sphere pair `(D_r(E), S_r(E))` of radius `r`.
-* `TauCeti.discSpherePairOfRadiusMap`: the inclusion `(D_r(E), S_r(E)) ⟶ (E, E₀)` for nowhere-zero
-  radius `r`.
-* `TauCeti.discBundleHomeomorphOfRadius`, `TauCeti.sphereBundleHomeomorphOfRadius`,
-  `TauCeti.discSpherePairIsoOfRadius`: radial rescaling identifications with the unit bundles and
-  pair for continuous positive `r`.
-* `TauCeti.discSpherePairOfRadiusHomotopy`: homotopy compatibility with the Thom pair.
-* `TauCeti.isIso_singularHomologyMap_discSpherePairOfRadiusMap`,
-  `TauCeti.isIso_singularCohomologyMap_discSpherePairOfRadiusMap`: `(D_r(E), S_r(E)) ⟶ (E, E₀)`
-  induces isomorphisms on relative singular homology and cohomology.
 
 ## References
 
@@ -235,8 +215,7 @@ private lemma homotopyRescale_mem_zeroSectionCompl [TopologicalSpace (TotalSpace
     {r : B → ℝ} (hrpos : ∀ b, 0 < r b) (p : I × (discSpherePair F E).snd) :
     TotalSpace.mk' F p.2.1.proj ((1 - (p.1 : ℝ) + (p.1 : ℝ) * r p.2.1.proj) • p.2.1.2) ∈
       zeroSectionCompl F E := by
-  have hv : p.2.1.2 ≠ 0 :=
-    norm_ne_zero_iff.1 ((mem_sphereBundle.1 p.2.2).symm ▸ one_ne_zero)
+  have hv : p.2.1.2 ≠ 0 := norm_ne_zero_iff.1 ((mem_sphereBundle.1 p.2.2).symm ▸ one_ne_zero)
   exact mem_zeroSectionCompl.2 <| smul_ne_zero (by
     simpa using (convex_Ioi (0 : ℝ) one_pos (hrpos p.2.1.proj)
       (sub_nonneg.2 p.1.2.2) p.1.2.1 (sub_add_cancel 1 _)).ne') hv
@@ -247,26 +226,31 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [N
   (E : B → Type w) [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
 
+private def rescaleTotalSpaceHomeomorph {r : B → ℝ} (hr : Continuous r) (hrpos : ∀ b, 0 < r b) :
+    TotalSpace F E ≃ₜ TotalSpace F E where
+  toFun v := TotalSpace.mk' F v.proj (r v.proj • v.2)
+  invFun v := TotalSpace.mk' F v.proj ((r v.proj)⁻¹ • v.2)
+  left_inv := fun ⟨b, x⟩ ↦ by simp [TotalSpace.mk', inv_mul_cancel₀ (hrpos b).ne', smul_smul]
+  right_inv := fun ⟨b, x⟩ ↦ by simp [TotalSpace.mk', mul_inv_cancel₀ (hrpos b).ne', smul_smul]
+  continuous_toFun := Continuous.smul_totalSpace
+    (hr.comp (FiberBundle.continuous_proj F E)) continuous_id
+  continuous_invFun := Continuous.smul_totalSpace
+    ((hr.comp (FiberBundle.continuous_proj F E)).inv₀ fun v ↦ (hrpos v.proj).ne') continuous_id
+
 /-- Fibrewise rescaling `v ↦ r(π(v)) • v` identifies the unit disc bundle `D(E)` with the closed
 disc bundle `D_r(E)` of any continuous positive radius `r : B → ℝ`. -/
 def discBundleHomeomorphOfRadius {r : B → ℝ} (hr : Continuous r) (hrpos : ∀ b, 0 < r b) :
     discBundle F E ≃ₜ discBundleOfRadius F E r where
-  toFun v := ⟨TotalSpace.mk' F v.1.proj (r v.1.proj • v.1.2),
+  toFun v := ⟨rescaleTotalSpaceHomeomorph F E hr hrpos v.1,
     rescale_mem_discBundleOfRadius F E hrpos v⟩
-  invFun v := ⟨TotalSpace.mk' F v.1.proj ((r v.1.proj)⁻¹ • v.1.2),
+  invFun v := ⟨(rescaleTotalSpaceHomeomorph F E hr hrpos).symm v.1,
     invRescale_mem_discBundle F E hrpos v⟩
-  left_inv v := Subtype.ext <| by
-    obtain ⟨⟨b, x⟩, _⟩ := v
-    simp [TotalSpace.mk', inv_mul_cancel₀ (hrpos b).ne', smul_smul]
-  right_inv v := Subtype.ext <| by
-    obtain ⟨⟨b, x⟩, _⟩ := v
-    simp [TotalSpace.mk', mul_inv_cancel₀ (hrpos b).ne', smul_smul]
-  continuous_toFun := Continuous.subtype_mk
-    (Continuous.smul_totalSpace (hr.comp ((FiberBundle.continuous_proj F E).comp
-      continuous_subtype_val)) continuous_subtype_val) _
-  continuous_invFun := Continuous.subtype_mk
-    (Continuous.smul_totalSpace ((hr.comp ((FiberBundle.continuous_proj F E).comp
-      continuous_subtype_val)).inv₀ fun v ↦ (hrpos v.1.proj).ne') continuous_subtype_val) _
+  left_inv v := Subtype.ext ((rescaleTotalSpaceHomeomorph F E hr hrpos).symm_apply_apply v.1)
+  right_inv v := Subtype.ext ((rescaleTotalSpaceHomeomorph F E hr hrpos).apply_symm_apply v.1)
+  continuous_toFun :=
+    ((rescaleTotalSpaceHomeomorph F E hr hrpos).continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun := ((rescaleTotalSpaceHomeomorph F E hr hrpos).symm.continuous.comp
+    continuous_subtype_val).subtype_mk _
 
 @[simp]
 theorem coe_discBundleHomeomorphOfRadius_apply {r : B → ℝ} (hr : Continuous r)
@@ -286,22 +270,16 @@ theorem coe_discBundleHomeomorphOfRadius_symm_apply {r : B → ℝ} (hr : Contin
 bundle `S_r(E)` of any continuous positive radius `r : B → ℝ`. -/
 def sphereBundleHomeomorphOfRadius {r : B → ℝ} (hr : Continuous r) (hrpos : ∀ b, 0 < r b) :
     sphereBundle F E ≃ₜ sphereBundleOfRadius F E r where
-  toFun v := ⟨TotalSpace.mk' F v.1.proj (r v.1.proj • v.1.2),
+  toFun v := ⟨rescaleTotalSpaceHomeomorph F E hr hrpos v.1,
     rescale_mem_sphereBundleOfRadius F E hrpos v⟩
-  invFun v := ⟨TotalSpace.mk' F v.1.proj ((r v.1.proj)⁻¹ • v.1.2),
+  invFun v := ⟨(rescaleTotalSpaceHomeomorph F E hr hrpos).symm v.1,
     invRescale_mem_sphereBundle F E hrpos v⟩
-  left_inv v := Subtype.ext <| by
-    obtain ⟨⟨b, x⟩, _⟩ := v
-    simp [TotalSpace.mk', inv_mul_cancel₀ (hrpos b).ne', smul_smul]
-  right_inv v := Subtype.ext <| by
-    obtain ⟨⟨b, x⟩, _⟩ := v
-    simp [TotalSpace.mk', mul_inv_cancel₀ (hrpos b).ne', smul_smul]
-  continuous_toFun := Continuous.subtype_mk
-    (Continuous.smul_totalSpace (hr.comp ((FiberBundle.continuous_proj F E).comp
-      continuous_subtype_val)) continuous_subtype_val) _
-  continuous_invFun := Continuous.subtype_mk
-    (Continuous.smul_totalSpace ((hr.comp ((FiberBundle.continuous_proj F E).comp
-      continuous_subtype_val)).inv₀ fun v ↦ (hrpos v.1.proj).ne') continuous_subtype_val) _
+  left_inv v := Subtype.ext ((rescaleTotalSpaceHomeomorph F E hr hrpos).symm_apply_apply v.1)
+  right_inv v := Subtype.ext ((rescaleTotalSpaceHomeomorph F E hr hrpos).apply_symm_apply v.1)
+  continuous_toFun :=
+    ((rescaleTotalSpaceHomeomorph F E hr hrpos).continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun := ((rescaleTotalSpaceHomeomorph F E hr hrpos).symm.continuous.comp
+    continuous_subtype_val).subtype_mk _
 
 @[simp]
 theorem coe_sphereBundleHomeomorphOfRadius_apply {r : B → ℝ} (hr : Continuous r)
@@ -359,6 +337,14 @@ theorem discSpherePairIsoOfRadius_inv_snd_apply {r : B → ℝ} (hr : Continuous
       (sphereBundleHomeomorphOfRadius F E hr hrpos).symm v :=
   (rfl)
 
+private lemma continuous_homotopyRescale {r : B → ℝ} (hr : Continuous r) :
+    Continuous fun p : I × TotalSpace F E ↦
+      TotalSpace.mk' F p.2.proj ((1 - (p.1 : ℝ) + (p.1 : ℝ) * r p.2.proj) • p.2.2) := by
+  have ht : Continuous fun p : I × TotalSpace F E ↦ (p.1 : ℝ) :=
+    continuous_subtype_val.comp continuous_fst
+  exact Continuous.smul_totalSpace (F := F) (E := E) ((continuous_const.sub ht).add
+    (ht.mul (hr.comp ((FiberBundle.continuous_proj F E).comp continuous_snd)))) continuous_snd
+
 /-- Straight-line rescaling `((1 - t) + t · r(π(v))) • v` on `D(E)` stays off the zero section on
 `S(E)` at every time `t ∈ [0, 1]`, giving a homotopy of maps of pairs between the unit inclusion
 `(D(E), S(E)) ⟶ (E, E₀)` and `(D(E), S(E)) ≅ (D_r(E), S_r(E)) ⟶ (E, E₀)`. -/
@@ -369,15 +355,9 @@ def discSpherePairOfRadiusHomotopy {r : B → ℝ} (hr : Continuous r) (hrpos : 
   fst :=
     { toFun p := TotalSpace.mk' F p.2.1.proj
         ((1 - (p.1 : ℝ) + (p.1 : ℝ) * r p.2.1.proj) • p.2.1.2)
-      continuous_toFun := by
-        have ht : Continuous fun p : I × (discSpherePair F E).fst ↦ (p.1 : ℝ) :=
-          continuous_subtype_val.comp continuous_fst
-        have hv : Continuous fun p : I × (discSpherePair F E).fst ↦ p.2.1 :=
-          continuous_subtype_val.comp continuous_snd
-        exact Continuous.smul_totalSpace (F := F) (E := E) ((continuous_const.sub ht).add
-          (ht.mul (hr.comp ((FiberBundle.continuous_proj F E).comp hv)))) hv
-      map_zero_left v := by
-        simpa [TotalSpace.mk'] using (discSpherePairMap_fst_apply F E v).symm
+      continuous_toFun :=
+        (continuous_homotopyRescale F E hr).comp (continuous_id.prodMap continuous_subtype_val)
+      map_zero_left v := by simpa [TotalSpace.mk'] using (discSpherePairMap_fst_apply F E v).symm
       map_one_left v := by
         simp only [Icc.coe_one, sub_self, one_mul, zero_add]
         exact ((congrArg (TopPair.Hom.fst (discSpherePairOfRadiusMap F E fun b ↦ (hrpos b).ne'))
@@ -388,14 +368,8 @@ def discSpherePairOfRadiusHomotopy {r : B → ℝ} (hr : Continuous r) (hrpos : 
     { toFun p := ⟨TotalSpace.mk' F p.2.1.proj
         ((1 - (p.1 : ℝ) + (p.1 : ℝ) * r p.2.1.proj) • p.2.1.2),
         homotopyRescale_mem_zeroSectionCompl F E hrpos p⟩
-      continuous_toFun := by
-        have ht : Continuous fun p : I × (discSpherePair F E).snd ↦ (p.1 : ℝ) :=
-          continuous_subtype_val.comp continuous_fst
-        have hv : Continuous fun p : I × (discSpherePair F E).snd ↦ p.2.1 :=
-          continuous_subtype_val.comp continuous_snd
-        exact Continuous.subtype_mk (Continuous.smul_totalSpace (F := F) (E := E)
-          ((continuous_const.sub ht).add
-            (ht.mul (hr.comp ((FiberBundle.continuous_proj F E).comp hv)))) hv) _
+      continuous_toFun := ((continuous_homotopyRescale F E hr).comp
+        (continuous_id.prodMap continuous_subtype_val)).subtype_mk _
       map_zero_left v := Subtype.ext <| by
         simpa [TotalSpace.mk'] using (discSpherePairMap_snd_apply F E v).symm
       map_one_left v := Subtype.ext <| by
@@ -445,14 +419,12 @@ theorem isIso_singularHomologyMap_discSpherePairOfRadiusMap
     IsIso (TopPair.singularHomologyMap
       (discSpherePairOfRadiusMap F E fun b ↦ (hrpos b).ne') R n) := by
   have := isIso_singularHomologyMap_discSpherePairMap F E hnorm R n
-  have := TopPair.isIso_singularHomologyMap (discSpherePairIsoOfRadius F E hr hrpos).hom
-    (discSpherePairIsoOfRadius F E hr hrpos).inv
-    (by rw [Iso.hom_inv_id]; exact TopPair.Homotopy.refl _)
-    (by rw [Iso.inv_hom_id]; exact TopPair.Homotopy.refl _) R n
+  have : IsIso (TopPair.singularHomologyMap
+      (discSpherePairIsoOfRadius F E hr hrpos).hom R n) :=
+    (TopPair.singularHomologyMapIso R (discSpherePairIsoOfRadius F E hr hrpos) n).isIso_hom
   have : IsIso (TopPair.singularHomologyMap (discSpherePairIsoOfRadius F E hr hrpos).hom R n ≫
       TopPair.singularHomologyMap (discSpherePairOfRadiusMap F E fun b ↦ (hrpos b).ne') R n) := by
-    rw [singularHomologyMap_discSpherePairIsoOfRadius_hom_comp]
-    infer_instance
+    rw [singularHomologyMap_discSpherePairIsoOfRadius_hom_comp]; infer_instance
   exact IsIso.of_isIso_comp_left
     (TopPair.singularHomologyMap (discSpherePairIsoOfRadius F E hr hrpos).hom R n) _
 
@@ -468,15 +440,17 @@ theorem isIso_singularCohomologyMap_discSpherePairOfRadiusMap
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (discSpherePairOfRadiusMap F E fun b ↦ (hrpos b).ne') n) := by
   have := isIso_singularCohomologyMap_discSpherePairMap F E hnorm R k M n
-  have := TopPair.isIso_singularCohomologyMap (discSpherePairIsoOfRadius F E hr hrpos).hom
-    (discSpherePairIsoOfRadius F E hr hrpos).inv
-    (by rw [Iso.hom_inv_id]; exact TopPair.Homotopy.refl _)
-    (by rw [Iso.inv_hom_id]; exact TopPair.Homotopy.refl _) R k M n
+  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (discSpherePairIsoOfRadius F E hr hrpos).hom n) :=
+    ⟨TopPair.singularCohomologyMap (discSpherePairIsoOfRadius F E hr hrpos).inv n,
+      by rw [← TopPair.singularCohomologyMap_comp, Iso.inv_hom_id,
+        TopPair.singularCohomologyMap_id],
+      by rw [← TopPair.singularCohomologyMap_comp, Iso.hom_inv_id,
+        TopPair.singularCohomologyMap_id]⟩
   have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (discSpherePairOfRadiusMap F E fun b ↦ (hrpos b).ne') n ≫
       TopPair.singularCohomologyMap (discSpherePairIsoOfRadius F E hr hrpos).hom n) := by
-    rw [singularCohomologyMap_discSpherePairOfRadiusMap_comp_hom]
-    infer_instance
+    rw [singularCohomologyMap_discSpherePairOfRadiusMap_comp_hom]; infer_instance
   exact IsIso.of_isIso_comp_right _
     (TopPair.singularCohomologyMap (discSpherePairIsoOfRadius F E hr hrpos).hom n)
 

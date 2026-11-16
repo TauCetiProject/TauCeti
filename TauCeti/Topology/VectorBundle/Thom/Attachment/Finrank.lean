@@ -14,7 +14,7 @@ import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 /-!
 # Dimensions, rank bounds and point-base specialization for disc-bundle attachments
 
-From the direct-sum Thom-pair decompositions established in
+From the direct-sum Thom-pair decompositions of
 `TauCeti.Topology.VectorBundle.Thom.Attachment.Basic`, this file derives quantitative and
 rank-filtered consequences for spaces `Z` obtained from a closed subset `X` by attaching a finite
 family of closed disc bundles `D_{rᵢ}(Eᵢ)` along their sphere bundles `S_{rᵢ}(Eᵢ)`:
@@ -46,8 +46,6 @@ family of closed disc bundles `D_{rᵢ}(Eᵢ)` along their sphere bundles `S_{r�
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press (1963),
   §3 and §5.
 -/
-
-public section
 
 noncomputable section
 
@@ -83,17 +81,6 @@ private lemma ι_biproductSubtypeIsoOfIsZero_hom {C : Type u} [Category.{v} C]
       (biproductSubtypeIsoOfIsZero M P hzero).hom = biproduct.ι M x.1 :=
   biproduct.ι_desc _ _
 
-@[simps]
-private def singularHomologyMapIso {C : Type u} [Category.{v} C] [Abelian C]
-    [HasCoproducts.{w} C] {P Q : TopPair.{w}} (e : P ≅ Q) (R : C) (n : ℕ) :
-    P.singularHomology R n ≅ Q.singularHomology R n where
-  hom := TopPair.singularHomologyMap e.hom R n
-  inv := TopPair.singularHomologyMap e.inv R n
-  hom_inv_id := by
-    rw [← TopPair.singularHomologyMap_comp, e.hom_inv_id, TopPair.singularHomologyMap_id]
-  inv_hom_id := by
-    rw [← TopPair.singularHomologyMap_comp, e.inv_hom_id, TopPair.singularHomologyMap_id]
-
 private def singularHomologyCongrDegreeIso {C : Type u} [Category.{v} C] [Abelian C]
     [HasCoproducts.{w} C] (P : TopPair.{w}) (R : C) {m n : ℕ} (h : m = n) :
     P.singularHomology R m ≅ P.singularHomology R n :=
@@ -116,25 +103,24 @@ variable {k : Type*} [DivisionRing k]
 private lemma finite_biproduct_moduleCat {ι : Type*} [Finite ι] (V : ι → ModuleCat.{w} k)
     (hV : ∀ i, Module.Finite k (V i)) : Module.Finite k (⨁ V : ModuleCat.{w} k) := by
   obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
-  let iso := (biproduct.whiskerEquiv e.symm fun _ ↦ Iso.refl _).symm ≪≫
-    ModuleCat.biproductIsoPi (fun j : Fin m ↦ V (e.symm j))
-  exact Module.Finite.equiv iso.symm.toLinearEquiv
+  exact Module.Finite.equiv (((biproduct.whiskerEquiv e.symm fun _ ↦ Iso.refl _).symm ≪≫
+    ModuleCat.biproductIsoPi (fun j : Fin m ↦ V (e.symm j)))).symm.toLinearEquiv
 
 private lemma finrank_biproduct_moduleCat {ι : Type*} [Fintype ι] (V : ι → ModuleCat.{w} k)
     (hV : ∀ i, Module.Finite k (V i)) :
     finrank k (⨁ V : ModuleCat.{w} k) = ∑ i, finrank k (V i) := by
   obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
-  let iso := (biproduct.whiskerEquiv e.symm fun _ ↦ Iso.refl _).symm ≪≫
-    ModuleCat.biproductIsoPi (fun j : Fin m ↦ V (e.symm j))
-  rw [iso.toLinearEquiv.finrank_eq, Module.finrank_pi_fintype,
-    ← Equiv.sum_comp e.symm (fun i ↦ finrank k (V i))]
+  rw [(((biproduct.whiskerEquiv e.symm fun _ ↦ Iso.refl _).symm ≪≫
+      ModuleCat.biproductIsoPi (fun j : Fin m ↦ V (e.symm j)))).toLinearEquiv.finrank_eq,
+    Module.finrank_pi_fintype, ← Equiv.sum_comp e.symm (fun i ↦ finrank k (V i))]
 
 end ModuleCatBiproduct
 
+public section
+
 section Finrank
 
-variable {ι : Type*} [Finite ι]
-  {B : ι → Type w} {F : ι → Type uF} {E : ∀ i, B i → Type w}
+variable {ι : Type*} {B : ι → Type w} {F : ι → Type uF} {E : ∀ i, B i → Type w}
   [∀ i, TopologicalSpace (B i)] [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℝ (F i)]
   [∀ i b, NormedAddCommGroup (E i b)] [∀ i b, NormedSpace ℝ (E i b)]
   [∀ i, TopologicalSpace (TotalSpace (F i) (E i))] [∀ i, FiberBundle (F i) (E i)]
@@ -155,7 +141,7 @@ include hnorm hr hrpos hf hX hfX hdisj hfcover in
 /-- **Finite-dimensionality of relative homology for a finite disc-bundle attachment.** Over a
 division ring `k`, if each Thom-pair homology `Hₙ(Eᵢ, (Eᵢ)₀; V)` is finite-dimensional, then so is
 `Hₙ(Z, X; V)`. -/
-theorem finite_singularHomology_of_attach_discBundlesOfRadius
+theorem finite_singularHomology_of_attach_discBundlesOfRadius [Finite ι]
     {k : Type*} [DivisionRing k] (V : ModuleCat.{w} k) (n : ℕ)
     (hfin : ∀ i, Module.Finite k ((thomPair (F i) (E i)).singularHomology V n : ModuleCat k)) :
     Module.Finite k ((TopPair.ofSubset (X := TopCat.of Z) X).singularHomology V n : ModuleCat k) :=
@@ -163,29 +149,11 @@ theorem finite_singularHomology_of_attach_discBundlesOfRadius
   Module.Finite.equiv (singularHomologyIsoThomPairsOfAttachDiscBundlesOfRadius
     hnorm hr hrpos hf hX hfX hdisj hfcover V n).toLinearEquiv
 
-end Finrank
-
+include hnorm hr hrpos hf hX hfX hdisj hfcover in
 /-- **Dimension additivity for a finite disc-bundle attachment.** Over a division ring `k`, if each
 Thom-pair homology `Hₙ(Eᵢ, (Eᵢ)₀; V)` is finite-dimensional, then
 `dim Hₙ(Z, X; V) = ∑ᵢ dim Hₙ(Eᵢ, (Eᵢ)₀; V)`. -/
-theorem finrank_singularHomology_of_attach_discBundlesOfRadius_eq_sum
-    {ι : Type*} [Fintype ι]
-    {B : ι → Type w} {F : ι → Type uF} {E : ∀ i, B i → Type w}
-    [∀ i, TopologicalSpace (B i)] [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℝ (F i)]
-    [∀ i b, NormedAddCommGroup (E i b)] [∀ i b, NormedSpace ℝ (E i b)]
-    [∀ i, TopologicalSpace (TotalSpace (F i) (E i))] [∀ i, FiberBundle (F i) (E i)]
-    [∀ i, VectorBundle ℝ (F i) (E i)]
-    (hnorm : ∀ i, Continuous fun v : TotalSpace (F i) (E i) ↦ ‖v.2‖)
-    {r : ∀ i, B i → ℝ} (hr : ∀ i, Continuous (r i)) (hrpos : ∀ i b, 0 < r i b)
-    {Z : Type w} [TopologicalSpace Z] {X : Set Z}
-    {f : ∀ i, discSpherePairOfRadius (F i) (E i) (r i) ⟶ TopPair.ofSubset (X := TopCat.of Z) X}
-    (hf : ∀ i, IsClosedEmbedding (TopPair.Hom.fst (f i))) (hX : IsClosed X)
-    (hfX : ∀ i (v : discBundleOfRadius (F i) (E i) (r i)),
-      TopPair.Hom.fst (f i) v ∈ X →
-        (v : TotalSpace (F i) (E i)) ∈ sphereBundleOfRadius (F i) (E i) (r i))
-    (hdisj : Pairwise fun i j ↦
-      Disjoint (range (TopPair.Hom.fst (f i)) \ X) (range (TopPair.Hom.fst (f j)) \ X))
-    (hfcover : X ∪ ⋃ i, range (TopPair.Hom.fst (f i)) = univ)
+theorem finrank_singularHomology_of_attach_discBundlesOfRadius_eq_sum [Fintype ι]
     {k : Type*} [DivisionRing k] (V : ModuleCat.{w} k) (n : ℕ)
     (hfin : ∀ i, Module.Finite k ((thomPair (F i) (E i)).singularHomology V n : ModuleCat k)) :
     finrank k ((TopPair.ofSubset (X := TopCat.of Z) X).singularHomology V n : ModuleCat k) =
@@ -193,6 +161,8 @@ theorem finrank_singularHomology_of_attach_discBundlesOfRadius_eq_sum
   rw [← (singularHomologyIsoThomPairsOfAttachDiscBundlesOfRadius
     hnorm hr hrpos hf hX hfX hdisj hfcover V n).toLinearEquiv.finrank_eq]
   exact finrank_biproduct_moduleCat _ hfin
+
+end Finrank
 
 /-! ### Below-rank vanishing and rank-degree `H₀` without orientation -/
 
@@ -316,6 +286,20 @@ instance isIso_fiberThomPairMap_of_subsingleton
     rw [fiberThomPairMap_eq_ofSubsetMap]
     exact Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)
 
+private def fiberEuclideanPairIso
+    {B : Type w} [TopologicalSpace B] [Subsingleton B]
+    (F : Type uF) [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    (E : B → Type w) [TopologicalSpace (TotalSpace F E)]
+    [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
+    [FiberBundle F E] [VectorBundle ℝ F E] (b : B) :
+    TopPair.ofSubset (X := TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ F)))))
+      ({0}ᶜ : Set _) ≅ thomPair F E :=
+  (((trivializationAt F E b).continuousLinearEquivAt ℝ b
+      (mem_baseSet_trivializationAt F E b)).trans
+    (LinearEquiv.ofFinrankEq F _
+      (finrank_euclideanSpace_ulift_fin _).symm).toContinuousLinearEquiv).complZeroPairIso.symm ≪≫
+    asIso (fiberThomPairMap F E b)
+
 /-- Over a subsingleton base, the relative singular homology of the Thom pair `(E, E₀)` vanishes
 in every degree `n ≠ finrank ℝ F`, for arbitrary abelian coefficients with coproducts (without
 filtered-colimit hypotheses). -/
@@ -330,20 +314,12 @@ theorem isZero_singularHomology_thomPair_of_subsingleton_of_ne
     IsZero ((thomPair F E).singularHomology R n) := by
   by_cases hB : Nonempty B
   · obtain ⟨b⟩ := hB
-    let F' := EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ F)))
-    let L₁ := (trivializationAt F E b).continuousLinearEquivAt ℝ b
-      (mem_baseSet_trivializationAt F E b)
-    let L₂ : F ≃L[ℝ] F' :=
-      (LinearEquiv.ofFinrankEq F F'
-        (finrank_euclideanSpace_ulift_fin _).symm).toContinuousLinearEquiv
-    let isoPair : TopPair.ofSubset (X := TopCat.of F') ({0}ᶜ : Set F') ≅ thomPair F E :=
-      (L₁.trans L₂).complZeroPairIso.symm ≪≫ asIso (fiberThomPairMap F E b)
-    exact (isZero_singularHomology_complSingleton_of_ne R (OpenPartialHomeomorph.refl F')
-      (mem_univ (0 : F')) (finrank_euclideanSpace_ulift_fin (finrank ℝ F)) hn).of_iso
-        (singularHomologyMapIso isoPair.symm R n)
+    exact (isZero_singularHomology_complSingleton_of_ne R (OpenPartialHomeomorph.refl _)
+      (mem_univ 0) (finrank_euclideanSpace_ulift_fin (finrank ℝ F)) hn).of_iso
+        (TopPair.singularHomologyMapIso R (fiberEuclideanPairIso F E b).symm n)
   · have : IsEmpty B := not_nonempty_iff.1 hB
-    have hsurj : Function.Surjective (thomPair F E).map := fun v ↦ isEmptyElim v.proj
-    exact TopPair.isZero_singularHomology_of_surjective_map (thomPair F E) R hsurj n
+    exact TopPair.isZero_singularHomology_of_surjective_map (thomPair F E) R
+      (fun v ↦ isEmptyElim v.proj) n
 
 /-- Over a one-point base (`Unique B`), the relative singular homology of the Thom pair `(E, E₀)`
 in the rank degree `finrank ℝ F` is isomorphic to one copy of the coefficients `R`, obtained by
@@ -359,20 +335,9 @@ def singularHomologyThomPairIsoOfUnique
     [FiberBundle F E] [VectorBundle ℝ F E]
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) :
     (thomPair F E).singularHomology R (finrank ℝ F) ≅ R :=
-  let b : B := default
-  let F' := EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ F)))
-  let L₁ := (trivializationAt F E b).continuousLinearEquivAt ℝ b
-    (mem_baseSet_trivializationAt F E b)
-  let L₂ : F ≃L[ℝ] F' :=
-    (LinearEquiv.ofFinrankEq F F'
-      (finrank_euclideanSpace_ulift_fin _).symm).toContinuousLinearEquiv
-  (singularHomologyMapIso
-      ((L₁.trans L₂).complZeroPairIso.symm ≪≫ asIso (fiberThomPairMap F E b)) R
-      (finrank ℝ F)).symm ≪≫
-    singularHomologyCongrDegreeIso
-      (TopPair.ofSubset (X := TopCat.of F') ({0}ᶜ : Set F')) R
-      (finrank_euclideanSpace_ulift_fin (finrank ℝ F)).symm ≪≫
-    singularHomologyComplSingletonFinrankIso R (OpenPartialHomeomorph.refl F') (mem_univ (0 : F'))
+  (TopPair.singularHomologyMapIso R (fiberEuclideanPairIso F E default) (finrank ℝ F)).symm ≪≫
+    singularHomologyCongrDegreeIso _ R (finrank_euclideanSpace_ulift_fin (finrank ℝ F)).symm ≪≫
+    singularHomologyComplSingletonFinrankIso R (OpenPartialHomeomorph.refl _) (mem_univ 0)
 
 section PointAttachment
 
@@ -449,5 +414,7 @@ theorem finrank_singularHomology_of_attach_discBundlesOfRadius_of_unique_base
 end PointAttachment
 
 end PointBase
+
+end
 
 end TauCeti
