@@ -73,33 +73,19 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [BraidedCatego
   {E' : Type u₄} [Category.{v₄} E'] [MonoidalCategory E'] [BraidedCategory E']
 
 /-- Bundle an unbundled strong braided monoidal functor `F : C ⥤ D`. -/
+@[simps toFunctor]
 abbrev of (F : C ⥤ D) [F.Braided] : BraidedFunctor C D where
   toFunctor := F
 
-/-- The functor underlying `BraidedFunctor.of F` is `F`. -/
-@[simp]
-theorem of_toFunctor (F : C ⥤ D) [F.Braided] : (of F).toFunctor = F :=
-  (rfl)
-
 /-- The bundled lax braided functor underlying a strong braided functor. -/
+@[simps toFunctor]
 abbrev toLaxBraidedFunctor (F : BraidedFunctor C D) : LaxBraidedFunctor C D where
   toFunctor := F.toFunctor
 
 /-- The bundled lax monoidal functor underlying a strong braided functor. -/
+@[simps toFunctor]
 abbrev toLaxMonoidalFunctor (F : BraidedFunctor C D) : LaxMonoidalFunctor C D where
   toFunctor := F.toFunctor
-
-/-- Passing to `LaxBraidedFunctor` retains the underlying functor. -/
-@[simp]
-theorem toLaxBraidedFunctor_toFunctor (F : BraidedFunctor C D) :
-    F.toLaxBraidedFunctor.toFunctor = F.toFunctor :=
-  (rfl)
-
-/-- Passing to `LaxMonoidalFunctor` retains the underlying functor. -/
-@[simp]
-theorem toLaxMonoidalFunctor_toFunctor (F : BraidedFunctor C D) :
-    F.toLaxMonoidalFunctor.toFunctor = F.toFunctor :=
-  (rfl)
 
 /-- Forgetting from `BraidedFunctor` to `LaxBraidedFunctor` and then `LaxMonoidalFunctor` agrees
 with forgetting directly to `LaxMonoidalFunctor`. -/
@@ -172,17 +158,13 @@ theorem hom_ext {F G : BraidedFunctor C D} {α β : F ⟶ G} (h : α.hom = β.ho
   Hom.ext h
 
 /-- Construct a morphism in `BraidedFunctor C D` from a monoidal natural transformation. -/
+@[expose, simps]
 def homMk {F G : BraidedFunctor C D} (f : F.toFunctor ⟶ G.toFunctor) [NatTrans.IsMonoidal f] :
     F ⟶ G :=
   ⟨f, inferInstance⟩
 
-/-- `homMk` retains the supplied natural transformation. -/
-@[simp]
-theorem homMk_hom {F G : BraidedFunctor C D} (f : F.toFunctor ⟶ G.toFunctor)
-    [NatTrans.IsMonoidal f] : (homMk f).hom = f :=
-  (rfl)
-
 /-- Construct an isomorphism in `BraidedFunctor C D` from a monoidal natural isomorphism. -/
+@[expose, simps! hom_hom inv_hom]
 def isoMk {F G : BraidedFunctor C D} (e : F.toFunctor ≅ G.toFunctor)
     [NatTrans.IsMonoidal e.hom] : F ≅ G where
   hom := homMk e.hom
@@ -190,20 +172,9 @@ def isoMk {F G : BraidedFunctor C D} (e : F.toFunctor ≅ G.toFunctor)
   hom_inv_id := hom_ext e.hom_inv_id
   inv_hom_id := hom_ext e.inv_hom_id
 
-/-- The forward morphism of `isoMk e` has underlying natural transformation `e.hom`. -/
-@[simp]
-theorem isoMk_hom_hom {F G : BraidedFunctor C D} (e : F.toFunctor ≅ G.toFunctor)
-    [NatTrans.IsMonoidal e.hom] : (isoMk e).hom.hom = e.hom :=
-  (rfl)
-
-/-- The inverse morphism of `isoMk e` has underlying natural transformation `e.inv`. -/
-@[simp]
-theorem isoMk_inv_hom {F G : BraidedFunctor C D} (e : F.toFunctor ≅ G.toFunctor)
-    [NatTrans.IsMonoidal e.hom] : (isoMk e).inv.hom = e.inv :=
-  (rfl)
-
 /-- Construct an isomorphism in `BraidedFunctor C D` from objectwise isomorphisms compatible with
 morphisms, the unit comparison, and the tensor comparison. -/
+@[expose, simps! hom_hom_app inv_hom_app]
 def isoOfComponents {F G : BraidedFunctor C D} (e : ∀ X, F.obj X ≅ G.obj X)
     (naturality : ∀ {X Y : C} (f : X ⟶ Y), F.map f ≫ (e Y).hom = (e X).hom ≫ G.map f := by
       cat_disch)
@@ -211,28 +182,7 @@ def isoOfComponents {F G : BraidedFunctor C D} (e : ∀ X, F.obj X ≅ G.obj X)
     (tensor : ∀ X Y, μ F.toFunctor X Y ≫ (e (X ⊗ Y)).hom =
       ((e X).hom ⊗ₘ (e Y).hom) ≫ μ G.toFunctor X Y := by cat_disch) :
     F ≅ G :=
-  haveI : NatTrans.IsMonoidal (NatIso.ofComponents e naturality).hom := ⟨unit, tensor⟩
-  isoMk (NatIso.ofComponents e naturality)
-
-/-- The forward component at `X` of `isoOfComponents` is `(e X).hom`. -/
-@[simp]
-theorem isoOfComponents_hom_hom_app {F G : BraidedFunctor C D} (e : ∀ X, F.obj X ≅ G.obj X)
-    (naturality : ∀ {X Y : C} (f : X ⟶ Y), F.map f ≫ (e Y).hom = (e X).hom ≫ G.map f)
-    (unit : ε F.toFunctor ≫ (e (𝟙_ C)).hom = ε G.toFunctor)
-    (tensor : ∀ X Y, μ F.toFunctor X Y ≫ (e (X ⊗ Y)).hom =
-      ((e X).hom ⊗ₘ (e Y).hom) ≫ μ G.toFunctor X Y) (X : C) :
-    (isoOfComponents e naturality unit tensor).hom.hom.app X = (e X).hom :=
-  (rfl)
-
-/-- The inverse component at `X` of `isoOfComponents` is `(e X).inv`. -/
-@[simp]
-theorem isoOfComponents_inv_hom_app {F G : BraidedFunctor C D} (e : ∀ X, F.obj X ≅ G.obj X)
-    (naturality : ∀ {X Y : C} (f : X ⟶ Y), F.map f ≫ (e Y).hom = (e X).hom ≫ G.map f)
-    (unit : ε F.toFunctor ≫ (e (𝟙_ C)).hom = ε G.toFunctor)
-    (tensor : ∀ X Y, μ F.toFunctor X Y ≫ (e (X ⊗ Y)).hom =
-      ((e X).hom ⊗ₘ (e Y).hom) ≫ μ G.toFunctor X Y) (X : C) :
-    (isoOfComponents e naturality unit tensor).inv.hom.app X = (e X).inv :=
-  (rfl)
+  @isoMk _ _ _ _ _ _ _ _ _ _ (NatIso.ofComponents e naturality) ⟨unit, tensor⟩
 
 /-! ### Forgetful functors -/
 
@@ -241,43 +191,19 @@ section Forget
 variable (C D)
 
 /-- The faithful forgetful functor from strong braided functors to ordinary functors. -/
-@[expose]
+@[expose, simps]
 def forgetToFunctor : BraidedFunctor C D ⥤ C ⥤ D where
   obj F := F.toFunctor
   map α := α.hom
-
-/-- `forgetToFunctor` takes a bundled strong braided functor to its underlying functor. -/
-@[simp]
-theorem forgetToFunctor_obj (F : BraidedFunctor C D) :
-    (forgetToFunctor C D).obj F = F.toFunctor :=
-  (rfl)
-
-/-- `forgetToFunctor` takes a morphism to its underlying natural transformation. -/
-@[simp]
-theorem forgetToFunctor_map {F G : BraidedFunctor C D} (α : F ⟶ G) :
-    (forgetToFunctor C D).map α = α.hom :=
-  (rfl)
 
 instance : (forgetToFunctor C D).Faithful where
   map_injective h := hom_ext h
 
 /-- The fully faithful forgetful functor from strong braided functors to lax monoidal functors. -/
-@[expose]
+@[expose, simps obj map_hom]
 def forgetToLaxMonoidal : BraidedFunctor C D ⥤ LaxMonoidalFunctor C D where
   obj F := F.toLaxMonoidalFunctor
   map α := ⟨α.hom, α.isMonoidal⟩
-
-/-- `forgetToLaxMonoidal` sends `F` to `F.toLaxMonoidalFunctor`. -/
-@[simp]
-theorem forgetToLaxMonoidal_obj (F : BraidedFunctor C D) :
-    (forgetToLaxMonoidal C D).obj F = F.toLaxMonoidalFunctor :=
-  (rfl)
-
-/-- The natural transformation underlying `(forgetToLaxMonoidal C D).map α` is `α.hom`. -/
-@[simp]
-theorem forgetToLaxMonoidal_map_hom {F G : BraidedFunctor C D} (α : F ⟶ G) :
-    ((forgetToLaxMonoidal C D).map α).hom = α.hom :=
-  (rfl)
 
 /-- Forgetting from strong braided functors to lax monoidal functors is fully faithful. -/
 def fullyFaithfulForgetToLaxMonoidal : (forgetToLaxMonoidal C D).FullyFaithful where
@@ -290,22 +216,10 @@ instance : (forgetToLaxMonoidal C D).Faithful :=
   (fullyFaithfulForgetToLaxMonoidal C D).faithful
 
 /-- The fully faithful forgetful functor from strong braided functors to lax braided functors. -/
-@[expose]
+@[expose, simps! obj map_hom_hom]
 def forgetToLaxBraided : BraidedFunctor C D ⥤ LaxBraidedFunctor C D where
   obj F := F.toLaxBraidedFunctor
   map α := InducedCategory.homMk ⟨α.hom, α.isMonoidal⟩
-
-/-- `forgetToLaxBraided` sends `F` to `F.toLaxBraidedFunctor`. -/
-@[simp]
-theorem forgetToLaxBraided_obj (F : BraidedFunctor C D) :
-    (forgetToLaxBraided C D).obj F = F.toLaxBraidedFunctor :=
-  (rfl)
-
-/-- The natural transformation underlying `(forgetToLaxBraided C D).map α` is `α.hom`. -/
-@[simp]
-theorem forgetToLaxBraided_map_hom_hom {F G : BraidedFunctor C D} (α : F ⟶ G) :
-    ((forgetToLaxBraided C D).map α).hom.hom = α.hom :=
-  (rfl)
 
 /-- Forgetting from strong braided functors to lax braided functors is fully faithful. -/
 def fullyFaithfulForgetToLaxBraided : (forgetToLaxBraided C D).FullyFaithful where
@@ -340,107 +254,42 @@ abbrev comp (F : BraidedFunctor C D) (G : BraidedFunctor D E) : BraidedFunctor C
   of (F.toFunctor ⋙ G.toFunctor)
 
 /-- Horizontal composition of morphisms of strong braided functors. -/
+@[expose, simps!]
 def hcomp {F₁ F₂ : BraidedFunctor C D} {G₁ G₂ : BraidedFunctor D E}
     (α : F₁ ⟶ F₂) (β : G₁ ⟶ G₂) : F₁.comp G₁ ⟶ F₂.comp G₂ :=
   homMk (α.hom ◫ β.hom)
 
-/-- Horizontal composition acts by horizontal composition on underlying natural transformations. -/
-@[simp]
-theorem hcomp_hom {F₁ F₂ : BraidedFunctor C D} {G₁ G₂ : BraidedFunctor D E}
-    (α : F₁ ⟶ F₂) (β : G₁ ⟶ G₂) : (hcomp α β).hom = α.hom ◫ β.hom :=
-  (rfl)
-
 /-- Precomposition with a strong braided functor `F : BraidedFunctor C D`. -/
-@[expose]
+@[expose, simps! obj map_hom]
 def whiskeringLeft (F : BraidedFunctor C D)
     (E : Type u₃) [Category.{v₃} E] [MonoidalCategory E] [BraidedCategory E] :
     BraidedFunctor D E ⥤ BraidedFunctor C E where
   obj G := F.comp G
   map β := homMk (Functor.whiskerLeft F.toFunctor β.hom)
 
-/-- `whiskeringLeft F E` acts on objects by `F.comp`. -/
-@[simp]
-theorem whiskeringLeft_obj (F : BraidedFunctor C D) (G : BraidedFunctor D E) :
-    (whiskeringLeft F E).obj G = F.comp G :=
-  (rfl)
-
-/-- `whiskeringLeft F E` acts on morphisms by `Functor.whiskerLeft`. -/
-@[simp]
-theorem whiskeringLeft_map_hom (F : BraidedFunctor C D) {G₁ G₂ : BraidedFunctor D E}
-    (β : G₁ ⟶ G₂) : ((whiskeringLeft F E).map β).hom = Functor.whiskerLeft F.toFunctor β.hom :=
-  (rfl)
-
 /-- Postcomposition with a strong braided functor `G : BraidedFunctor D E`. -/
-@[expose]
+@[expose, simps! obj map_hom]
 def whiskeringRight (C : Type u₁) [Category.{v₁} C] [MonoidalCategory C] [BraidedCategory C]
     (G : BraidedFunctor D E) :
     BraidedFunctor C D ⥤ BraidedFunctor C E where
   obj F := F.comp G
   map α := homMk (Functor.whiskerRight α.hom G.toFunctor)
 
-/-- `whiskeringRight C G` acts on objects by `fun F ↦ F.comp G`. -/
-@[simp]
-theorem whiskeringRight_obj (F : BraidedFunctor C D) (G : BraidedFunctor D E) :
-    (whiskeringRight C G).obj F = F.comp G :=
-  (rfl)
-
-/-- `whiskeringRight C G` acts on morphisms by `Functor.whiskerRight`. -/
-@[simp]
-theorem whiskeringRight_map_hom {F₁ F₂ : BraidedFunctor C D} (α : F₁ ⟶ F₂)
-    (G : BraidedFunctor D E) :
-    ((whiskeringRight C G).map α).hom = Functor.whiskerRight α.hom G.toFunctor :=
-  (rfl)
-
 /-- Left unitor isomorphism `(id C).comp F ≅ F` in `BraidedFunctor C D`. -/
+@[expose, simps! hom_hom inv_hom]
 def leftUnitor (F : BraidedFunctor C D) : (id C).comp F ≅ F :=
   isoMk F.toFunctor.leftUnitor
 
-/-- Forward underlying natural transformation of `leftUnitor`. -/
-@[simp]
-theorem leftUnitor_hom_hom (F : BraidedFunctor C D) :
-    (leftUnitor F).hom.hom = F.toFunctor.leftUnitor.hom :=
-  (rfl)
-
-/-- Inverse underlying natural transformation of `leftUnitor`. -/
-@[simp]
-theorem leftUnitor_inv_hom (F : BraidedFunctor C D) :
-    (leftUnitor F).inv.hom = F.toFunctor.leftUnitor.inv :=
-  (rfl)
-
 /-- Right unitor isomorphism `F.comp (id D) ≅ F` in `BraidedFunctor C D`. -/
+@[expose, simps! hom_hom inv_hom]
 def rightUnitor (F : BraidedFunctor C D) : F.comp (id D) ≅ F :=
   isoMk F.toFunctor.rightUnitor
 
-/-- Forward underlying natural transformation of `rightUnitor`. -/
-@[simp]
-theorem rightUnitor_hom_hom (F : BraidedFunctor C D) :
-    (rightUnitor F).hom.hom = F.toFunctor.rightUnitor.hom :=
-  (rfl)
-
-/-- Inverse underlying natural transformation of `rightUnitor`. -/
-@[simp]
-theorem rightUnitor_inv_hom (F : BraidedFunctor C D) :
-    (rightUnitor F).inv.hom = F.toFunctor.rightUnitor.inv :=
-  (rfl)
-
 /-- Associator isomorphism `(F.comp G).comp H ≅ F.comp (G.comp H)` in `BraidedFunctor C E'`. -/
+@[expose, simps! hom_hom inv_hom]
 def associator (F : BraidedFunctor C D) (G : BraidedFunctor D E) (H : BraidedFunctor E E') :
     (F.comp G).comp H ≅ F.comp (G.comp H) :=
   isoMk (Functor.associator F.toFunctor G.toFunctor H.toFunctor)
-
-/-- Forward underlying natural transformation of `associator`. -/
-@[simp]
-theorem associator_hom_hom (F : BraidedFunctor C D) (G : BraidedFunctor D E)
-    (H : BraidedFunctor E E') :
-    (associator F G H).hom.hom = (Functor.associator F.toFunctor G.toFunctor H.toFunctor).hom :=
-  (rfl)
-
-/-- Inverse underlying natural transformation of `associator`. -/
-@[simp]
-theorem associator_inv_hom (F : BraidedFunctor C D) (G : BraidedFunctor D E)
-    (H : BraidedFunctor E E') :
-    (associator F G H).inv.hom = (Functor.associator F.toFunctor G.toFunctor H.toFunctor).inv :=
-  (rfl)
 
 end BraidedFunctor
 

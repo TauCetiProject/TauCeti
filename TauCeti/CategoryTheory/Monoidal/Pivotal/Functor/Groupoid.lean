@@ -104,30 +104,27 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [BraidedCatego
   [RigidCategory D] [PivotalCategory D] [BalancedCategory D]
   {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E] [BraidedCategory E]
   [RigidCategory E] [PivotalCategory E] [BalancedCategory E]
+  (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
+  (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
+  (hE : (inferInstance : BalancedCategory E) = balancedOfBraidedPivotal E)
 
 /-- View a bundled pivotal-preserving braided functor as a balanced functor along compatibility of
 the balanced and pivotal structures. -/
-abbrev BraidedPivotalFunctor.toBalancedFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (F : BraidedPivotalFunctor C D) : BalancedFunctor C D where
+abbrev BraidedPivotalFunctor.toBalancedFunctorOfEq (F : BraidedPivotalFunctor C D) :
+    BalancedFunctor C D where
   toBraidedFunctor := F.toBraidedFunctor
   isBalanced := (F.toFunctor.isBalanced_iff_isPivotal_of_eq hC hD).mpr F.isPivotal
 
 /-- View a bundled balanced functor as a pivotal-preserving braided functor along compatibility of
 the balanced and pivotal structures. -/
-abbrev BalancedFunctor.toBraidedPivotalFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (F : BalancedFunctor C D) : BraidedPivotalFunctor C D where
+abbrev BalancedFunctor.toBraidedPivotalFunctorOfEq (F : BalancedFunctor C D) :
+    BraidedPivotalFunctor C D where
   toBraidedFunctor := F.toBraidedFunctor
   isPivotal := (F.toFunctor.isBalanced_iff_isPivotal_of_eq hC hD).mp F.isBalanced
 
 /-- Converting a pivotal braided functor to a balanced functor and back is the identity. -/
 @[simp]
 theorem BalancedFunctor.toBraidedPivotalFunctorOfEq_toBalancedFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
     (F : BraidedPivotalFunctor C D) :
     (F.toBalancedFunctorOfEq hC hD).toBraidedPivotalFunctorOfEq hC hD = F :=
   (rfl)
@@ -135,32 +132,25 @@ theorem BalancedFunctor.toBraidedPivotalFunctorOfEq_toBalancedFunctorOfEq
 /-- Converting a balanced functor to a pivotal braided functor and back is the identity. -/
 @[simp]
 theorem BraidedPivotalFunctor.toBalancedFunctorOfEq_toBraidedPivotalFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
     (F : BalancedFunctor C D) :
     (F.toBraidedPivotalFunctorOfEq hC hD).toBalancedFunctorOfEq hC hD = F :=
   (rfl)
 
 /-- Converting the identity pivotal braided functor gives the identity balanced functor. -/
 @[simp]
-theorem BraidedPivotalFunctor.toBalancedFunctorOfEq_id
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C) :
+theorem BraidedPivotalFunctor.toBalancedFunctorOfEq_id :
     (BraidedPivotalFunctor.id C).toBalancedFunctorOfEq hC hC = BalancedFunctor.id C :=
   (rfl)
 
 /-- Converting the identity balanced functor gives the identity pivotal braided functor. -/
 @[simp]
-theorem BalancedFunctor.toBraidedPivotalFunctorOfEq_id
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C) :
+theorem BalancedFunctor.toBraidedPivotalFunctorOfEq_id :
     (BalancedFunctor.id C).toBraidedPivotalFunctorOfEq hC hC = BraidedPivotalFunctor.id C :=
   (rfl)
 
 /-- Converting pivotal braided functors to balanced functors commutes with composition. -/
 @[simp]
 theorem BraidedPivotalFunctor.toBalancedFunctorOfEq_comp
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (hE : (inferInstance : BalancedCategory E) = balancedOfBraidedPivotal E)
     (F : BraidedPivotalFunctor C D) (G : BraidedPivotalFunctor D E) :
     (F.comp G).toBalancedFunctorOfEq hC hE =
       (F.toBalancedFunctorOfEq hC hD).comp (G.toBalancedFunctorOfEq hD hE) :=
@@ -169,9 +159,6 @@ theorem BraidedPivotalFunctor.toBalancedFunctorOfEq_comp
 /-- Converting balanced functors to pivotal braided functors commutes with composition. -/
 @[simp]
 theorem BalancedFunctor.toBraidedPivotalFunctorOfEq_comp
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (hE : (inferInstance : BalancedCategory E) = balancedOfBraidedPivotal E)
     (F : BalancedFunctor C D) (G : BalancedFunctor D E) :
     (F.comp G).toBraidedPivotalFunctorOfEq hC hE =
       (F.toBraidedPivotalFunctorOfEq hC hD).comp (G.toBraidedPivotalFunctorOfEq hD hE) :=
@@ -179,76 +166,30 @@ theorem BalancedFunctor.toBraidedPivotalFunctorOfEq_comp
 
 /-- The functor from pivotal-preserving strong braided functors to twist-preserving strong braided
 functors, for compatible pivotal and balanced structures. -/
-@[expose]
-def braidedPivotalToBalancedFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+@[expose, simps! obj map_hom]
+def braidedPivotalToBalancedFunctorOfEq :
     BraidedPivotalFunctor C D ⥤ BalancedFunctor C D where
   obj F := F.toBalancedFunctorOfEq hC hD
   map α := InducedCategory.homMk α.hom
 
-/-- `braidedPivotalToBalancedFunctorOfEq` acts on objects via `toBalancedFunctorOfEq`. -/
-@[simp]
-theorem braidedPivotalToBalancedFunctorOfEq_obj
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (F : BraidedPivotalFunctor C D) :
-    (braidedPivotalToBalancedFunctorOfEq hC hD).obj F = F.toBalancedFunctorOfEq hC hD :=
-  (rfl)
-
-/-- `braidedPivotalToBalancedFunctorOfEq` preserves the underlying morphism in
-`BraidedFunctor C D`. -/
-@[simp]
-theorem braidedPivotalToBalancedFunctorOfEq_map_hom
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    {F G : BraidedPivotalFunctor C D} (α : F ⟶ G) :
-    ((braidedPivotalToBalancedFunctorOfEq hC hD).map α).hom = α.hom :=
-  (rfl)
-
 /-- The functor from twist-preserving strong braided functors to pivotal-preserving strong braided
 functors, for compatible pivotal and balanced structures. -/
-@[expose]
-def balancedToBraidedPivotalFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+@[expose, simps! obj map_hom]
+def balancedToBraidedPivotalFunctorOfEq :
     BalancedFunctor C D ⥤ BraidedPivotalFunctor C D where
   obj F := F.toBraidedPivotalFunctorOfEq hC hD
   map α := InducedCategory.homMk α.hom
 
-/-- `balancedToBraidedPivotalFunctorOfEq` acts on objects via `toBraidedPivotalFunctorOfEq`. -/
-@[simp]
-theorem balancedToBraidedPivotalFunctorOfEq_obj
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (F : BalancedFunctor C D) :
-    (balancedToBraidedPivotalFunctorOfEq hC hD).obj F = F.toBraidedPivotalFunctorOfEq hC hD :=
-  (rfl)
-
-/-- `balancedToBraidedPivotalFunctorOfEq` preserves the underlying morphism in
-`BraidedFunctor C D`. -/
-@[simp]
-theorem balancedToBraidedPivotalFunctorOfEq_map_hom
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    {F G : BalancedFunctor C D} (α : F ⟶ G) :
-    ((balancedToBraidedPivotalFunctorOfEq hC hD).map α).hom = α.hom :=
-  (rfl)
-
 /-- The two conversion functors compose strictly to the identity on `BraidedPivotalFunctor C D`. -/
 @[simp]
-theorem braidedPivotalToBalancedFunctorOfEq_comp_inv
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+theorem braidedPivotalToBalancedFunctorOfEq_comp_inv :
     braidedPivotalToBalancedFunctorOfEq hC hD ⋙ balancedToBraidedPivotalFunctorOfEq hC hD =
       𝟭 (BraidedPivotalFunctor C D) :=
   Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq rfl
 
 /-- The two conversion functors compose strictly to the identity on `BalancedFunctor C D`. -/
 @[simp]
-theorem balancedToBraidedPivotalFunctorOfEq_comp_inv
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+theorem balancedToBraidedPivotalFunctorOfEq_comp_inv :
     balancedToBraidedPivotalFunctorOfEq hC hD ⋙ braidedPivotalToBalancedFunctorOfEq hC hD =
       𝟭 (BalancedFunctor C D) :=
   Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq rfl
@@ -256,9 +197,7 @@ theorem balancedToBraidedPivotalFunctorOfEq_comp_inv
 /-- Passing from pivotal braided functors to balanced functors commutes with forgetting to
 `BraidedFunctor C D`. -/
 @[simp]
-theorem braidedPivotalToBalancedFunctorOfEq_comp_forget
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+theorem braidedPivotalToBalancedFunctorOfEq_comp_forget :
     braidedPivotalToBalancedFunctorOfEq hC hD ⋙ BalancedFunctor.forget C D =
       BraidedPivotalFunctor.forget C D :=
   Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq rfl
@@ -266,20 +205,14 @@ theorem braidedPivotalToBalancedFunctorOfEq_comp_forget
 /-- Passing from balanced functors to pivotal braided functors commutes with forgetting to
 `BraidedFunctor C D`. -/
 @[simp]
-theorem balancedToBraidedPivotalFunctorOfEq_comp_forget
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+theorem balancedToBraidedPivotalFunctorOfEq_comp_forget :
     balancedToBraidedPivotalFunctorOfEq hC hD ⋙ BraidedPivotalFunctor.forget C D =
       BalancedFunctor.forget C D :=
   Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq rfl
 
 /-- Precomposition of pivotal braided functors intertwines with precomposition of balanced
 functors. -/
-theorem whiskeringLeft_comp_braidedPivotalToBalancedFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (hE : (inferInstance : BalancedCategory E) = balancedOfBraidedPivotal E)
-    (F : BraidedPivotalFunctor C D) :
+theorem whiskeringLeft_comp_braidedPivotalToBalancedFunctorOfEq (F : BraidedPivotalFunctor C D) :
     BraidedPivotalFunctor.whiskeringLeft F E ⋙ braidedPivotalToBalancedFunctorOfEq hC hE =
       braidedPivotalToBalancedFunctorOfEq hD hE ⋙
         BalancedFunctor.whiskeringLeft (F.toBalancedFunctorOfEq hC hD) E :=
@@ -287,11 +220,7 @@ theorem whiskeringLeft_comp_braidedPivotalToBalancedFunctorOfEq
 
 /-- Postcomposition of pivotal braided functors intertwines with postcomposition of balanced
 functors. -/
-theorem whiskeringRight_comp_braidedPivotalToBalancedFunctorOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (hE : (inferInstance : BalancedCategory E) = balancedOfBraidedPivotal E)
-    (G : BraidedPivotalFunctor D E) :
+theorem whiskeringRight_comp_braidedPivotalToBalancedFunctorOfEq (G : BraidedPivotalFunctor D E) :
     BraidedPivotalFunctor.whiskeringRight C G ⋙ braidedPivotalToBalancedFunctorOfEq hC hE =
       braidedPivotalToBalancedFunctorOfEq hC hD ⋙
         BalancedFunctor.whiskeringRight C (G.toBalancedFunctorOfEq hD hE) :=
@@ -300,9 +229,7 @@ theorem whiskeringRight_comp_braidedPivotalToBalancedFunctorOfEq
 /-- **Equivalence of pivotal-preserving and twist-preserving braided functor categories** for any
 braided rigid categories equipped with compatible pivotal and balanced structures. -/
 @[expose]
-def braidedPivotalBalancedFunctorEquivOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+def braidedPivotalBalancedFunctorEquivOfEq :
     BraidedPivotalFunctor C D ≌ BalancedFunctor C D where
   functor := braidedPivotalToBalancedFunctorOfEq hC hD
   inverse := balancedToBraidedPivotalFunctorOfEq hC hD
@@ -313,18 +240,14 @@ def braidedPivotalBalancedFunctorEquivOfEq
 /-- **Equivalence of pivotal-preserving and twist-preserving braided functor groupoids** for any
 braided rigid categories equipped with compatible pivotal and balanced structures. -/
 @[expose]
-def braidedPivotalBalancedFunctorCoreEquivOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+def braidedPivotalBalancedFunctorCoreEquivOfEq :
     Core (BraidedPivotalFunctor C D) ≌ Core (BalancedFunctor C D) :=
   (braidedPivotalBalancedFunctorEquivOfEq hC hD).core
 
 /-- On functor groupoids, converting pivotal preservation to twist preservation commutes with
 forgetting to `Core (BraidedFunctor C D)`. -/
 @[simp]
-theorem braidedPivotalBalancedFunctorCoreEquivOfEq_functor_comp_forget
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+theorem braidedPivotalBalancedFunctorCoreEquivOfEq_functor_comp_forget :
     (braidedPivotalBalancedFunctorCoreEquivOfEq hC hD).functor ⋙ (BalancedFunctor.forget C D).core =
       (BraidedPivotalFunctor.forget C D).core :=
   Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (Core.hom_ext rfl)
@@ -332,9 +255,7 @@ theorem braidedPivotalBalancedFunctorCoreEquivOfEq_functor_comp_forget
 /-- On functor groupoids, converting twist preservation to pivotal preservation commutes with
 forgetting to `Core (BraidedFunctor C D)`. -/
 @[simp]
-theorem braidedPivotalBalancedFunctorCoreEquivOfEq_inverse_comp_forget
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D) :
+theorem braidedPivotalBalancedFunctorCoreEquivOfEq_inverse_comp_forget :
     (braidedPivotalBalancedFunctorCoreEquivOfEq hC hD).inverse ⋙
         (BraidedPivotalFunctor.forget C D).core =
       (BalancedFunctor.forget C D).core :=
@@ -343,9 +264,6 @@ theorem braidedPivotalBalancedFunctorCoreEquivOfEq_inverse_comp_forget
 /-- On functor groupoids, precomposition intertwines the equivalence between pivotal-preserving and
 twist-preserving braided functors. -/
 theorem whiskeringLeft_core_comp_braidedPivotalBalancedFunctorCoreEquivOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (hE : (inferInstance : BalancedCategory E) = balancedOfBraidedPivotal E)
     (F : BraidedPivotalFunctor C D) :
     (BraidedPivotalFunctor.whiskeringLeft F E).core ⋙
         (braidedPivotalBalancedFunctorCoreEquivOfEq hC hE).functor =
@@ -356,9 +274,6 @@ theorem whiskeringLeft_core_comp_braidedPivotalBalancedFunctorCoreEquivOfEq
 /-- On functor groupoids, postcomposition intertwines the equivalence between pivotal-preserving and
 twist-preserving braided functors. -/
 theorem whiskeringRight_core_comp_braidedPivotalBalancedFunctorCoreEquivOfEq
-    (hC : (inferInstance : BalancedCategory C) = balancedOfBraidedPivotal C)
-    (hD : (inferInstance : BalancedCategory D) = balancedOfBraidedPivotal D)
-    (hE : (inferInstance : BalancedCategory E) = balancedOfBraidedPivotal E)
     (G : BraidedPivotalFunctor D E) :
     (BraidedPivotalFunctor.whiskeringRight C G).core ⋙
         (braidedPivotalBalancedFunctorCoreEquivOfEq hC hE).functor =
@@ -410,16 +325,11 @@ theorem braidedPivotalBalancedFunctorCoreEquiv_functor_id :
     (braidedPivotalBalancedFunctorCoreEquiv C C).functor.obj (.mk (.id C)) = .mk (.id C) :=
   (rfl)
 
+variable {C D E} in
 /-- `braidedPivotalBalancedFunctorCoreEquiv` sends a composite of pivotal braided functors to the
 composite of the corresponding balanced functors. -/
 @[simp]
 theorem braidedPivotalBalancedFunctorCoreEquiv_functor_comp
-    {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [BraidedCategory C]
-    [RigidCategory C] [PivotalCategory C]
-    {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D] [BraidedCategory D]
-    [RigidCategory D] [PivotalCategory D]
-    {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E] [BraidedCategory E]
-    [RigidCategory E] [PivotalCategory E]
     (F : BraidedPivotalFunctor C D) (G : BraidedPivotalFunctor D E) :
     letI := balancedOfBraidedPivotal C
     letI := balancedOfBraidedPivotal D
@@ -525,16 +435,11 @@ theorem balancedBraidedPivotalFunctorCoreEquiv_functor_id :
     (balancedBraidedPivotalFunctorCoreEquiv C C).functor.obj (.mk (.id C)) = .mk (.id C) :=
   (rfl)
 
+variable {C D E} in
 /-- `balancedBraidedPivotalFunctorCoreEquiv` sends a composite of balanced functors to the composite
 of the corresponding pivotal braided functors. -/
 @[simp]
 theorem balancedBraidedPivotalFunctorCoreEquiv_functor_comp
-    {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [BraidedCategory C]
-    [RigidCategory C] [BalancedCategory C]
-    {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D] [BraidedCategory D]
-    [RigidCategory D] [BalancedCategory D]
-    {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E] [BraidedCategory E]
-    [RigidCategory E] [BalancedCategory E]
     (F : BalancedFunctor C D) (G : BalancedFunctor D E) :
     letI := pivotalOfBalanced C
     letI := pivotalOfBalanced D
