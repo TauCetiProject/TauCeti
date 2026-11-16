@@ -531,6 +531,21 @@ theorem W1p.value_smul_ae (c : ℝ) (u : W1p mu Omega p) :
     ⇑(W1p.value (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(W1p.value u) := by
   simpa only [← W1p.valueL_apply, map_smul] using Lp.coeFn_smul c (W1p.value u)
 
+/-- The value of the midpoint of two Sobolev functions is almost everywhere the average of their
+values. -/
+theorem W1p.value_midpoint_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.value (midpoint ℝ u v)) =ᵐ[mu.restrict Omega]
+      fun x => (W1p.value u x + W1p.value v x) / 2 := by
+  filter_upwards [W1p.value_smul_ae (⅟2 : ℝ) (u + v), W1p.value_add_ae u v] with x hs ha
+  rw [midpoint_eq_smul_add, hs, Pi.smul_apply, ha, Pi.add_apply, smul_eq_mul, invOf_eq_inv]
+  ring
+
+/-- The weak gradient of the midpoint of two Sobolev functions is the midpoint of their weak
+gradients. -/
+@[simp]
+theorem W1p.gradient_midpoint (u v : W1p mu Omega p) :
+    W1p.gradient (midpoint ℝ u v) = midpoint ℝ (W1p.gradient u) (W1p.gradient v) :=
+  (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).toLinearMap.toAffineMap.map_midpoint u v
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/
@@ -567,6 +582,16 @@ theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖
 /-- The extended norm of a Sobolev function controls the extended norm of its weak gradient. -/
 theorem W1p.enorm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ₑ ≤ ‖u‖ₑ :=
   eNorm_le_iff_norm_le.2 (W1p.norm_gradient_le u)
+
+/-- Almost everywhere on `Ω`, the difference of the weak gradients is bounded by the
+`W^{1,∞}` distance. -/
+theorem W1p.ae_norm_gradient_sub_le_dist (u v : W1p mu Omega ⊤) :
+    ∀ᵐ x ∂mu.restrict Omega, ‖W1p.gradient u x - W1p.gradient v x‖ ≤ dist u v := by
+  filter_upwards [Lp.ae_norm_le_norm_top (W1p.gradient u - W1p.gradient v),
+    Lp.coeFn_sub (W1p.gradient u) (W1p.gradient v)] with x hx hcoe
+  have hn : ‖W1p.gradient u - W1p.gradient v‖ ≤ dist u v := by
+    simpa only [dist_eq_norm, W1p.gradient_sub] using W1p.norm_gradient_le (u - v)
+  simpa only [hcoe, Pi.sub_apply] using hx.trans hn
 
 /-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
 theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst : s ⊆ t)
@@ -612,12 +637,6 @@ theorem W1p.coe_ae_eq_toLp_value_gradient (u : W1p mu Omega p) :
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
     ‖u‖ ^ 2 = ‖W1p.value u‖ ^ 2 + ‖W1p.gradient u‖ ^ 2 :=
   Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u.1
-
-/-- The squared pointwise norm of a Sobolev gradient is integrable. -/
-theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
-    Integrable (fun x => ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-  (memLp_two_iff_integrable_sq_norm (Lp.memLp (W1p.gradient u)).aestronglyMeasurable).1
-    (Lp.memLp (W1p.gradient u))
 
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :

@@ -351,7 +351,6 @@ end TensorProduct
 
 end AdjoinRoot
 
-
 namespace Polynomial
 
 variable {R : Type*} [CommRing R]
