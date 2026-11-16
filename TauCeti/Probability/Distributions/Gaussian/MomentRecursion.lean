@@ -32,9 +32,9 @@ products.
   affine functions of a real Gaussian.
 * `TauCeti.Probability.integral_clm_mul_prod_pi_gaussianReal`: the recurrence for affine forms
   of independent standard Gaussians.
-* `TauCeti.Probability.integral_clm_mul_prod_add_multivariateGaussian`: the affine real-linear
+* `TauCeti.Probability.integral_clm_sub_mul_prod_add_multivariateGaussian`: the affine real-linear
   observable recurrence, with centered specialization
-  `TauCeti.Probability.integral_clm_mul_prod_sub_multivariateGaussian`.
+  `TauCeti.Probability.integral_clm_sub_mul_prod_sub_multivariateGaussian`.
 * `TauCeti.Probability.integral_sub_mul_prod_add_multivariateGaussian`: the real coordinate
   recurrence for a multivariate Gaussian, with centered and zero-mean raw specializations.
 * `ProbabilityTheory.IsGaussian.integral_sub_clm_mul_prod_clm`: the recurrence for linear
@@ -193,7 +193,7 @@ variable [Fintype κ] [DecidableEq κ]
 /-- The Gaussian moment recursion for real or complex real-linear observables, with
 arbitrary affine shifts on the remaining factors. The contraction coefficients are bilinear
 second moments, without complex conjugation. No covariance-validity hypothesis is required. -/
-theorem integral_clm_mul_prod_add_multivariateGaussian {𝕜 : Type*} [RCLike 𝕜]
+theorem integral_clm_sub_mul_prod_add_multivariateGaussian {𝕜 : Type*} [RCLike 𝕜]
     (m : EuclideanSpace ℝ κ) (S : Matrix κ κ ℝ) (s : Finset ι)
     (L₀ : EuclideanSpace ℝ κ →L[ℝ] 𝕜) (L : ι → EuclideanSpace ℝ κ →L[ℝ] 𝕜) (c : ι → 𝕜) :
     (∫ x, L₀ (x - m) * ∏ i ∈ s, (L i x + c i) ∂multivariateGaussian m S) =
@@ -239,7 +239,7 @@ theorem integral_sub_mul_prod_add_multivariateGaussian (m : EuclideanSpace ℝ �
         S k (f i) := by
     simpa [covariance] using covariance_eval_multivariateGaussian (μ := m) hS k (f i)
   simpa only [EuclideanSpace.coe_proj, PiLp.sub_apply, hcoeff] using
-    integral_clm_mul_prod_add_multivariateGaussian m S s (EuclideanSpace.proj k)
+    integral_clm_sub_mul_prod_add_multivariateGaussian m S s (EuclideanSpace.proj k)
       (fun i ↦ EuclideanSpace.proj (f i)) c
 
 /-- The centered mixed-moment recursion at an arbitrary Gaussian mean. Each covariance
@@ -263,14 +263,14 @@ theorem integral_eval_mul_prod_multivariateGaussian {S : Matrix κ κ ℝ} (hS :
 /-- The centered Gaussian moment recursion for real or complex real-linear observables.
 The contraction coefficients are bilinear second moments, without complex conjugation.
 No nondegeneracy or covariance-validity hypothesis is required. -/
-theorem integral_clm_mul_prod_sub_multivariateGaussian {𝕜 : Type*} [RCLike 𝕜]
+theorem integral_clm_sub_mul_prod_sub_multivariateGaussian {𝕜 : Type*} [RCLike 𝕜]
     (m : EuclideanSpace ℝ κ) (S : Matrix κ κ ℝ) (s : Finset ι)
     (L₀ : EuclideanSpace ℝ κ →L[ℝ] 𝕜) (L : ι → EuclideanSpace ℝ κ →L[ℝ] 𝕜) :
     (∫ x, L₀ (x - m) * ∏ i ∈ s, L i (x - m) ∂multivariateGaussian m S) =
       ∑ i ∈ s, (∫ x, L₀ (x - m) * L i (x - m) ∂multivariateGaussian m S) *
         ∫ x, ∏ j ∈ s.erase i, L j (x - m) ∂multivariateGaussian m S := by
   simpa only [← sub_eq_add_neg, map_sub] using
-    integral_clm_mul_prod_add_multivariateGaussian m S s L₀ L (fun i ↦ -L i m)
+    integral_clm_sub_mul_prod_add_multivariateGaussian m S s L₀ L (fun i ↦ -L i m)
 
 end Multivariate
 
@@ -310,7 +310,7 @@ theorem integral_sub_clm_mul_prod_clm (μ : Measure E) [IsGaussian μ]
     simp only [id_eq] at h
     rw [← h, hpush _ (by fun_prop)]
     simp only [hG]
-  have h := TauCeti.Probability.integral_clm_mul_prod_add_multivariateGaussian
+  have h := TauCeti.Probability.integral_clm_sub_mul_prod_add_multivariateGaussian
     (∫ y, y ∂μ.map T) (TauCeti.covMatrix (μ.map T))
     (univ : Finset s) (G none) (fun i ↦ G (some i)) (fun i ↦ c i)
   rw [← TauCeti.Probability.eq_multivariateGaussian_covMatrix (μ.map T)] at h
