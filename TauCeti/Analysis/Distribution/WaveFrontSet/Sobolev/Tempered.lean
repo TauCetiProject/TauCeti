@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.Regularization
+import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
@@ -69,9 +70,9 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
 * `Distribution.sobolevSingularSupport_eq_empty_iff_forall_memSobolev_cutoffTempered`: the
   distributions with empty `H^s` singular support are those with `φ T ∈ H^s` for every `φ`.
 * `TemperedDistribution.isLocallySobolevAt_toDistribution_iff`,
-  `TemperedDistribution.MemSobolev.sobolevSingularSupport_toDistribution`,
-  `TemperedDistribution.MemSobolev.sobolevWaveFrontSet_toDistribution`: local Sobolev regularity
-  of tempered distributions, and of elements of `H^s`.
+  `TemperedDistribution.MemSobolev.sobolevSingularSupport_toDistribution_eq_empty`,
+  `TemperedDistribution.MemSobolev.sobolevWaveFrontSet_toDistribution_eq_empty`: local Sobolev
+  regularity of tempered distributions, and of elements of `H^s`.
 * `TemperedDistribution.memSobolev_of_isCompact_dsupport_of_forall_isLocallySobolevAt`,
   `TemperedDistribution.memSobolev_iff_sobolevSingularSupport_toDistribution_eq_empty`: a tempered
   distribution with compact support lies in `H^s` exactly when it is `H^s` near every point.
@@ -248,8 +249,7 @@ theorem memSobolev_cutoffTempered_of_forall_isLocallySobolevAt
     (fun _ ↦ isOpen_interior) fun x hx ↦
       mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
   rw [← hψφ, cutoffTempered_sum_cutoff]
-  exact Finset.sum_induction _ (MemSobolev s 2) (fun _ _ ↦ MemSobolev.add)
-    (memSobolev_fun_zero E ℂ s 2) fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+  exact MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
 
 /-- **Local `H^s` regularity on all of `Ω`.** A distribution has empty `H^s` singular support,
 that is, it is `H^s` near every point of `Ω`, exactly when `φ T ∈ H^s` for every test function
@@ -293,17 +293,17 @@ theorem MemSobolev.isLocallySobolevAt_toDistribution (hu : MemSobolev s 2 u) (hx
   simpa using hu.smulLeftCLM (toSchwartzMapCLM ℝ φ)
 
 /-- A tempered distribution in `H^s` has empty `H^s` singular support as a distribution on `Ω`. -/
-theorem MemSobolev.sobolevSingularSupport_toDistribution (hu : MemSobolev s 2 u) :
+theorem MemSobolev.sobolevSingularSupport_toDistribution_eq_empty (hu : MemSobolev s 2 u) :
     (toDistribution Ω u).sobolevSingularSupport s = ∅ :=
   eq_empty_iff_forall_notMem.2 fun _ hx ↦
     (mem_sobolevSingularSupport_iff.1 hx).2 (hu.isLocallySobolevAt_toDistribution
       (mem_sobolevSingularSupport_iff.1 hx).1)
 
 /-- A tempered distribution in `H^s` has empty `H^s` wave front set as a distribution on `Ω`. -/
-theorem MemSobolev.sobolevWaveFrontSet_toDistribution (hu : MemSobolev s 2 u) :
+theorem MemSobolev.sobolevWaveFrontSet_toDistribution_eq_empty (hu : MemSobolev s 2 u) :
     (toDistribution Ω u).sobolevWaveFrontSet s = ∅ :=
   sobolevSingularSupport_eq_empty_iff_sobolevWaveFrontSet_eq_empty.1
-    hu.sobolevSingularSupport_toDistribution
+    hu.sobolevSingularSupport_toDistribution_eq_empty
 
 /-- **From local to global regularity for tempered distributions.** A tempered distribution with
 compact support which is `H^s` near every point of its support lies in `H^s`. -/
@@ -334,7 +334,7 @@ point. -/
 theorem memSobolev_iff_sobolevSingularSupport_toDistribution_eq_empty
     (hu : IsCompact (dsupport u)) :
     MemSobolev s 2 u ↔ (toDistribution ⊤ u).sobolevSingularSupport s = ∅ :=
-  ⟨MemSobolev.sobolevSingularSupport_toDistribution, fun h ↦
+  ⟨MemSobolev.sobolevSingularSupport_toDistribution_eq_empty, fun h ↦
     memSobolev_of_isCompact_dsupport_of_forall_isLocallySobolevAt hu fun x _ ↦
       (notMem_sobolevSingularSupport_iff (mem_univ x)).1 (h ▸ notMem_empty x)⟩
 
