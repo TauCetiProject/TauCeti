@@ -43,6 +43,12 @@ Its Ricci contraction is `(n - 1) g` and its scalar contraction is `n (n - 1)`, 
 is the four-tensor of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`,
 the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
+Given a family `b : ι → V` in a real inner product space, the rank-one coordinate four-tensors
+`TauCeti.FourTensor.coordFourTensor b i j k l` evaluate `(u, v, z, w)` to
+`⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`, have operator norm `‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖`, pull
+back naturally along linear isometries, and expand every four-tensor from its components in a
+finite orthonormal basis (`TauCeti.FourTensor.sum_coordFourTensor_eq`).
+
 ## Main definitions
 
 * `TauCeti.FourTensor V`: continuous real four-linear forms on `V`.
@@ -55,6 +61,8 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
 * `TauCeti.FourTensor.constantCurvature`: the constant-curvature tensor of curvature `1`.
+* `TauCeti.FourTensor.coordFourTensor`: the rank-one coordinate four-tensor
+  `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`.
 
 ## Main statements
 
@@ -77,6 +85,8 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.ricci_constantCurvature` and `TauCeti.FourTensor.scalar_constantCurvature`.
 * `TauCeti.FourTensor.inner_eq_mul_constantCurvature`: a curvature operator of constant curvature
   `κ` has four-tensor `κ` times the constant-curvature tensor.
+* `TauCeti.FourTensor.norm_coordFourTensor` and `TauCeti.FourTensor.sum_coordFourTensor_eq`:
+  operator norm and orthonormal-basis coordinate expansion for `coordFourTensor`.
 
 ## References
 
@@ -525,6 +535,126 @@ theorem inner_eq_mul_constantCurvature {R : V → V → V → V} {κ : ℝ}
   ring
 
 end InnerProductSpace
+
+section CoordFourTensor
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+
+/-- The rank-one four-tensor `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫` attached to four
+vectors of a family `b`. -/
+def coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) : FourTensor V :=
+  (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).compContinuousLinearMap
+    ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]
+
+/-- Evaluation of `coordFourTensor` on four vectors. -/
+@[simp]
+theorem coordFourTensor_apply {ι : Type*} (b : ι → V) (i j k l : ι) (u v z w : V) :
+    coordFourTensor b i j k l ![u, v, z, w] =
+      ⟪b i, u⟫_ℝ * ⟪b j, v⟫_ℝ * ⟪b k, z⟫_ℝ * ⟪b l, w⟫_ℝ := by
+  simp [coordFourTensor, ContinuousMultilinearMap.mkPiAlgebraFin_apply, List.ofFn_succ, mul_assoc]
+
+/-- The operator norm of `coordFourTensor b i j k l` is `‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖`. -/
+@[simp]
+theorem norm_coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) :
+    ‖coordFourTensor b i j k l‖ = ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖ := by
+  apply le_antisymm
+  · refine ((ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).norm_compContinuousLinearMap_le
+      ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]).trans_eq ?_
+    simp [Fin.prod_univ_four, innerSL_apply_norm, mul_assoc]
+  · set P := ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖
+    by_cases hP : P = 0
+    · rw [hP]; exact norm_nonneg _
+    · have hPpos : 0 < P := lt_of_le_of_ne (by positivity) (Ne.symm hP)
+      have hle := (coordFourTensor b i j k l).le_opNorm ![b i, b j, b k, b l]
+      rw [coordFourTensor_apply, Fin.prod_univ_four] at hle
+      simp only [real_inner_self_eq_norm_sq, Real.norm_eq_abs, Matrix.cons_val_zero,
+        Matrix.cons_val_one, Matrix.cons_val, Fin.isValue] at hle
+      have hsq : |‖b i‖ ^ 2 * ‖b j‖ ^ 2 * ‖b k‖ ^ 2 * ‖b l‖ ^ 2| = P * P := by
+        rw [abs_of_nonneg (by positivity)]; simp only [P]; ring
+      rw [hsq] at hle
+      exact le_of_mul_le_mul_right hle hPpos
+
+/-- Every coordinate four-tensor of an orthonormal family has unit operator norm. -/
+theorem norm_coordFourTensor_of_orthonormal {ι : Type*} {b : ι → V} (hb : Orthonormal ℝ b)
+    (i j k l : ι) : ‖coordFourTensor b i j k l‖ = 1 := by
+  simp [hb.1]
+
+/-- Pulling back `coordFourTensor (f ∘ b)` along a linear isometry `f` gives `coordFourTensor b`. -/
+@[simp]
+theorem coordFourTensor_compContinuousLinearMap_linearIsometry {ι : Type*} (f : W →ₗᵢ[ℝ] V)
+    (b : ι → W) (i j k l : ι) :
+    (coordFourTensor (f ∘ b) i j k l).compContinuousLinearMap
+      (fun _ ↦ f.toContinuousLinearMap) = coordFourTensor b i j k l := by
+  ext m
+  have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
+  rw [hm, compContinuousLinearMap_apply_vec]
+  simp
+
+private theorem sum_inner_mul_apply_first {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r : FourTensor V) (u v z w : V) :
+    ∑ i, ⟪b i, u⟫_ℝ * r ![b i, v, z, w] = r ![u, v, z, w] := by
+  let φ : V →ₗ[ℝ] ℝ :=
+    { toFun := fun x ↦ r ![x, v, z, w]
+      map_add' := fun _ _ ↦ apply_add_first ..
+      map_smul' := fun _ _ ↦ apply_smul_first .. }
+  simpa [φ] using congrArg φ (b.sum_repr' u)
+
+private theorem sum_inner_mul_apply_second {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r : FourTensor V) (u v z w : V) :
+    ∑ j, ⟪b j, v⟫_ℝ * r ![u, b j, z, w] = r ![u, v, z, w] := by
+  let φ : V →ₗ[ℝ] ℝ :=
+    { toFun := fun x ↦ r ![u, x, z, w]
+      map_add' := fun _ _ ↦ apply_add_second ..
+      map_smul' := fun _ _ ↦ apply_smul_second .. }
+  simpa [φ] using congrArg φ (b.sum_repr' v)
+
+private theorem sum_inner_mul_apply_third {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r : FourTensor V) (u v z w : V) :
+    ∑ k, ⟪b k, z⟫_ℝ * r ![u, v, b k, w] = r ![u, v, z, w] := by
+  let φ : V →ₗ[ℝ] ℝ :=
+    { toFun := fun x ↦ r ![u, v, x, w]
+      map_add' := fun _ _ ↦ apply_add_third ..
+      map_smul' := fun _ _ ↦ apply_smul_third .. }
+  simpa [φ] using congrArg φ (b.sum_repr' z)
+
+private theorem sum_inner_mul_apply_fourth {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r : FourTensor V) (u v z w : V) :
+    ∑ l, ⟪b l, w⟫_ℝ * r ![u, v, z, b l] = r ![u, v, z, w] := by
+  let φ : V →ₗ[ℝ] ℝ :=
+    { toFun := fun x ↦ r ![u, v, z, x]
+      map_add' := fun _ _ ↦ apply_add_fourth ..
+      map_smul' := fun _ _ ↦ apply_smul_fourth .. }
+  simpa [φ] using congrArg φ (b.sum_repr' w)
+
+/-- Every four-tensor on `V` is the sum of its components in an orthonormal basis `b` against the
+corresponding coordinate four-tensors `coordFourTensor b i j k l`. -/
+theorem sum_coordFourTensor_eq {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r : FourTensor V) :
+    (∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] • coordFourTensor b i j k l) = r := by
+  ext m
+  have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
+  rw [hm]
+  simp only [sum_apply, smul_apply, coordFourTensor_apply, smul_eq_mul]
+  have h4 (i j k : ι) :
+      ∑ l, r ![b i, b j, b k, b l] *
+          (⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * ⟪b k, m 2⟫_ℝ * ⟪b l, m 3⟫_ℝ) =
+        ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * ⟪b k, m 2⟫_ℝ * r ![b i, b j, b k, m 3] := by
+    rw [← sum_inner_mul_apply_fourth b r (b i) (b j) (b k) (m 3), Finset.mul_sum]
+    exact Finset.sum_congr rfl fun l _ ↦ by ring
+  have h3 (i j : ι) :
+      ∑ k, ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * ⟪b k, m 2⟫_ℝ * r ![b i, b j, b k, m 3] =
+        ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * r ![b i, b j, m 2, m 3] := by
+    rw [← sum_inner_mul_apply_third b r (b i) (b j) (m 2) (m 3), Finset.mul_sum]
+    exact Finset.sum_congr rfl fun k _ ↦ by ring
+  have h2 (i : ι) :
+      ∑ j, ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * r ![b i, b j, m 2, m 3] =
+        ⟪b i, m 0⟫_ℝ * r ![b i, m 1, m 2, m 3] := by
+    rw [← sum_inner_mul_apply_second b r (b i) (m 1) (m 2) (m 3), Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  simp_rw [h4, h3, h2, sum_inner_mul_apply_first]
+
+end CoordFourTensor
 
 end FourTensor
 
