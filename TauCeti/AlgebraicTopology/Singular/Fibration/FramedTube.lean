@@ -189,6 +189,7 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplPreimageIso_hom
 identification of the fibre over `0` of the normal coordinate with the part of `E` over the core,
 followed by the inverse of `TauCeti.TopCat.singularHomologyPreimageNeZeroIso` and the inclusion
 of pairs of excision. -/
+@[reassoc]
 lemma singularHomologyComplPreimageIso_inv (h : IsFramedTube f τ) (hf : IsClosed (range f))
     (hp : serreFibrations p) (n m : ℕ) (hnm : n + finrank ℝ V = m) :
     (h.singularHomologyComplPreimageIso R hf hp n m hnm).inv =

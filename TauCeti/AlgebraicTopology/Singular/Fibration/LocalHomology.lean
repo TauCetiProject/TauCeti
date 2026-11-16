@@ -11,13 +11,17 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.Topology.OpenPartialHomeomorph.Ball
 
 /-!
-# Local homology of a Serre fibration along a fibre
+# Local homology of a Serre fibration along a closed set
 
-Let `p : E → B` be a Serre fibration over a `T₁` space `B` and `b` a point of `B` in the source
-of an open partial homeomorphism `e : B → V` to a real normed space of finite dimension `r`, such
-as a chart of a topological manifold modelled on `V`. The **local homology of `E` along the
-fibre** `F = p⁻¹(b)` is the relative singular homology `Hₖ(E, E ∖ F)`. This file computes it,
-with coefficients in a ring `R`:
+Let `p : E → B` be a Serre fibration. This file computes the local homology `Hₖ(E, E ∖ p⁻¹(C))`
+of `E` along the part over a closed set `C` of `B` that has a **normal coordinate**
+(`TauCeti.TopCat.singularHomologyComplPreimageIsoOfProj`, see the computation below), and then
+specializes it to a fibre, where `C` is a point.
+
+Suppose `B` is `T₁` and `b` is a point of `B` in the source of an open partial homeomorphism
+`e : B → V` to a real normed space of finite dimension `r`, such as a chart of a topological
+manifold modelled on `V`. The **local homology of `E` along the fibre** `F = p⁻¹(b)` is the
+relative singular homology `Hₖ(E, E ∖ F)`. With coefficients in a ring `R`:
 
 * `Hₘ(E, E ∖ F; R) = 0` for `m < r` (`TauCeti.TopCat.isZero_singularHomology_complFiber`);
 * `Hₙ₊ᵣ(E, E ∖ F; R) ≅ Hₙ(F; R)` (`TauCeti.TopCat.singularHomologyComplFiberIso`).
