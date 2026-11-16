@@ -129,6 +129,27 @@ theorem doubleDualTrace_add {X : C} (b c : X ⟶ (Xᘁ : C)ᘁ) :
     doubleDualTrace (b + c) = doubleDualTrace b + doubleDualTrace c := by
   simp [doubleDualTrace_def]
 
+/-- The trace commutes with finite sums. -/
+@[simp]
+theorem doubleDualTrace_sum {ι : Type*} {X : C} (s : Finset ι) (b : ι → (X ⟶ (Xᘁ : C)ᘁ)) :
+    doubleDualTrace (∑ i ∈ s, b i) = ∑ i ∈ s, doubleDualTrace (b i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [hi, ih]
+
+/-- The trace commutes with negation. -/
+@[simp]
+theorem doubleDualTrace_neg {X : C} (b : X ⟶ (Xᘁ : C)ᘁ) :
+    doubleDualTrace (-b) = -doubleDualTrace b :=
+  eq_neg_of_add_eq_zero_left (by rw [← doubleDualTrace_add, neg_add_cancel, doubleDualTrace_zero])
+
+/-- The trace commutes with subtraction. -/
+@[simp]
+theorem doubleDualTrace_sub {X : C} (b c : X ⟶ (Xᘁ : C)ᘁ) :
+    doubleDualTrace (b - c) = doubleDualTrace b - doubleDualTrace c := by
+  rw [sub_eq_add_neg, doubleDualTrace_add, doubleDualTrace_neg, sub_eq_add_neg]
+
 /-- The trace is `R`-linear in an `R`-linear monoidal category. -/
 @[simp]
 theorem doubleDualTrace_smul {R : Type*} [Semiring R] [Linear R C] [MonoidalLinear R C] {X : C}
