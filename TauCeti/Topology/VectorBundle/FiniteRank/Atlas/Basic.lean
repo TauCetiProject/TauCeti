@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.VectorBundle.Core.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
+import TauCeti.Topology.VectorBundle.Core.Trivial
+
 /-!
 # Small variable-rank vector-bundle atlases
 
@@ -20,6 +22,12 @@ The reconstructed total space is a native `Bundle.TotalSpace`, with the topology
 disjoint union of the core total spaces. Each core total space embeds openly, with image
 exactly its rank stratum. Thus its existing Mathlib vector-bundle topology is retained,
 rather than replaced by the product topology on coordinates.
+
+`FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId` identifies the reconstructed total
+space of any atlas with identity transitions on chart overlaps with the disjoint union of the
+stratum products, via `VectorBundleCore.globalTrivializationOfCoordChangeEqId`. In particular,
+`FiniteRankAtlas.trivial` constructs the trivial atlas of any locally constant rank, with
+`FiniteRankAtlas.trivialTotalSpaceHomeomorph` as its specialization.
 
 `FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata, in any fibre
 universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction with
@@ -135,6 +143,16 @@ theorem range_stratum (n : ℕ) :
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
 
+/-- Every point of a rank stratum lies in its own preferred chart domain. -/
+theorem mem_baseSet_self (n : ℕ) (x : {x : X // A.rank x = n}) :
+    x ∈ (A.charts n).baseSet x := by
+  simpa only [A.indexAt_eq] using (A.charts n).mem_baseSet_at x
+
+/-- At any point of a rank stratum, the preferred trivialization is the chart labelled by it. -/
+theorem trivializationAt_charts (n : ℕ) (x : {x : X // A.rank x = n}) :
+    trivializationAt (Fin n → 𝕜) (A.charts n).Fiber x = (A.charts n).localTriv x := by
+  rw [VectorBundleCore.trivializationAt, VectorBundleCore.localTrivAt, A.indexAt_eq]
+
 section Continuity
 
 variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
@@ -174,6 +192,127 @@ theorem continuous_zeroSection :
     (F := Fin n → 𝕜) (E := (A.charts n).Fiber)).congr (fun _ => rfl)
 
 end Continuity
+
+section Trivial
+
+private def stratumHomeomorphOfCoordChangeEqId
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v) (n : ℕ) :
+    (A.charts n).TotalSpace ≃ₜ {x : X // A.rank x = n} × (Fin n → 𝕜) where
+  toFun p := (p.proj, p.2)
+  invFun p := ⟨p.1, p.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by
+    let t := (A.charts n).globalTrivializationOfCoordChangeEqId (hcoord n)
+    have hs : t.source = Set.univ := by
+      rw [t.source_eq, VectorBundleCore.globalTrivializationOfCoordChangeEqId_baseSet,
+        Set.preimage_univ]
+    exact (continuousOn_univ.1 (hs ▸ t.continuousOn_toFun)).congr fun q =>
+      (A.charts n).globalTrivializationOfCoordChangeEqId_apply (hcoord n) q
+  continuous_invFun := by
+    let t := (A.charts n).globalTrivializationOfCoordChangeEqId (hcoord n)
+    have hs : t.source = Set.univ := by
+      rw [t.source_eq, VectorBundleCore.globalTrivializationOfCoordChangeEqId_baseSet,
+        Set.preimage_univ]
+    have ht : t.target = Set.univ := by
+      rw [t.target_eq, VectorBundleCore.globalTrivializationOfCoordChangeEqId_baseSet,
+        Set.univ_prod_univ]
+    exact (continuousOn_univ.1 (ht ▸ t.continuousOn_invFun)).congr fun p => by
+      have hq : t ⟨p.1, p.2⟩ = p :=
+        (A.charts n).globalTrivializationOfCoordChangeEqId_apply (hcoord n) ⟨p.1, p.2⟩
+      have h := t.toOpenPartialHomeomorph.left_inv
+        (hs.symm ▸ Set.mem_univ (⟨p.1, p.2⟩ : (A.charts n).TotalSpace))
+      rwa [Trivialization.coe_coe, hq] at h
+
+/-- The reconstructed total space of any atlas whose transitions are the identity on all chart
+overlaps is homeomorphic to the disjoint union of the product spaces over its rank strata. -/
+def totalSpaceHomeomorphOfCoordChangeEqId
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v) :
+    TotalSpace Unit A.Fiber ≃ₜ Σ n : ℕ, {x : X // A.rank x = n} × (Fin n → 𝕜) :=
+  A.totalSpaceHomeomorph.symm.trans
+    { toEquiv := Equiv.sigmaCongrRight fun n =>
+        (A.stratumHomeomorphOfCoordChangeEqId hcoord n).toEquiv
+      continuous_toFun := continuous_sigma fun n =>
+        continuous_sigmaMk.comp (A.stratumHomeomorphOfCoordChangeEqId hcoord n).continuous
+      continuous_invFun := continuous_sigma fun n =>
+        continuous_sigmaMk.comp (A.stratumHomeomorphOfCoordChangeEqId hcoord n).symm.continuous }
+
+@[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_apply
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v)
+    (p : TotalSpace Unit A.Fiber) :
+    A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.2)⟩ :=
+  (rfl)
+
+@[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v)
+    (n : ℕ) (x : {x : X // A.rank x = n}) (v : Fin n → 𝕜) :
+    (A.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm ⟨n, (x, v)⟩ =
+      ⟨x.1, fun i => v (Fin.cast x.2 i)⟩ := (rfl)
+
+variable (𝕜)
+
+/-- The trivial variable-rank atlas of locally constant rank `r`, with global chart domains
+and identity transitions on every rank stratum. This also works over an empty base or with
+unbounded rank. -/
+-- Expose the rank projection so the dependent coordinate fibres reduce to `Fin (r x) → 𝕜`.
+@[expose] def trivial (r : LocallyConstant X ℕ) : FiniteRankAtlas 𝕜 X where
+  rank := r
+  charts _ :=
+    { baseSet := fun _ => Set.univ
+      isOpen_baseSet := fun _ => isOpen_univ
+      indexAt := id
+      mem_baseSet_at := fun _ => Set.mem_univ _
+      coordChange := fun _ _ _ => ContinuousLinearMap.id 𝕜 _
+      coordChange_self := fun _ _ _ _ => rfl
+      continuousOn_coordChange := fun _ _ => continuousOn_const
+      coordChange_comp := fun _ _ _ _ _ _ => rfl }
+  indexAt_eq _ _ := rfl
+
+@[simp] theorem rank_trivial (r : LocallyConstant X ℕ) :
+    (trivial 𝕜 r).rank = r := (rfl)
+
+@[simp] theorem localTriv_baseSet_trivial (r : LocallyConstant X ℕ) (n : ℕ)
+    (x : {x : X // r x = n}) :
+    (((trivial 𝕜 r).charts n).localTriv x).baseSet = Set.univ := (rfl)
+
+@[simp] theorem coordChange_trivial (r : LocallyConstant X ℕ) (n : ℕ)
+    (i j x : {x : X // r x = n}) :
+    ((trivial 𝕜 r).charts n).coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin n → 𝕜) := (rfl)
+
+/-- The reconstructed total space of a trivial variable-rank atlas is homeomorphic to the
+disjoint union of the product spaces over its rank strata. -/
+def trivialTotalSpaceHomeomorph (r : LocallyConstant X ℕ) :
+    TotalSpace Unit (trivial 𝕜 r).Fiber ≃ₜ Σ n : ℕ, {x : X // r x = n} × (Fin n → 𝕜) :=
+  (trivial 𝕜 r).totalSpaceHomeomorphOfCoordChangeEqId fun _ _ _ _ _ _ => rfl
+
+@[simp] theorem trivialTotalSpaceHomeomorph_apply (r : LocallyConstant X ℕ)
+    (p : TotalSpace Unit (trivial 𝕜 r).Fiber) :
+    trivialTotalSpaceHomeomorph 𝕜 r p = ⟨r p.proj, (⟨p.proj, rfl⟩, p.2)⟩ := (rfl)
+
+@[simp] theorem trivialTotalSpaceHomeomorph_symm_apply (r : LocallyConstant X ℕ)
+    (n : ℕ) (x : {x : X // r x = n}) (v : Fin n → 𝕜) :
+    (trivialTotalSpaceHomeomorph 𝕜 r).symm ⟨n, (x, v)⟩ =
+      ⟨x.1, fun i => v (Fin.cast x.2 i)⟩ := (rfl)
+
+/-- A map into the total space of a trivial variable-rank atlas is continuous exactly when
+its coordinate vectors vary continuously on every rank stratum. -/
+theorem continuous_mk_trivial_iff {Y : Type*} [TopologicalSpace Y] {b : Y → X}
+    (hb : Continuous b) (r : LocallyConstant X ℕ) (s : ∀ y, (trivial 𝕜 r).Fiber (b y)) :
+    Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit (trivial 𝕜 r).Fiber)) ↔
+      ∀ n : ℕ, Continuous (fun y : {y : Y // r (b y) = n} =>
+        (fun i => s y (Fin.cast y.2.symm i) : Fin n → 𝕜)) := by
+  rw [(trivial 𝕜 r).continuous_mk_iff_rankStrata hb s]
+  refine forall_congr' fun n =>
+    ((trivial 𝕜 r).stratumHomeomorphOfCoordChangeEqId
+      (fun _ _ _ _ _ _ => rfl) n).isEmbedding.continuous_iff.trans ?_
+  exact ⟨fun h => continuous_snd.comp h,
+    fun h => ((hb.comp continuous_subtype_val).subtype_mk fun y => y.2).prodMk h⟩
+
+end Trivial
 
 section Reconstruction
 
