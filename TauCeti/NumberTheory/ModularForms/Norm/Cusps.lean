@@ -102,7 +102,7 @@ def TSL : 𝒮ℒ := (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict Modular
 lemma coe_TSL_zpow (j : ℤ) :
     ((TSL ^ j : 𝒮ℒ) : GL (Fin 2) ℝ) = ((ModularGroup.T ^ j : SL(2, ℤ)) : GL (Fin 2) ℝ) := by
   rw [TSL, ← map_zpow, MonoidHom.coe_rangeRestrict,
-    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
 
 /-- The **cusp translation orbits** of `𝒢`: the orbits of left translation by `T` on the coset
 space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. The orbit of the coset of `x` represents the cusp `x⁻¹ ∞` of `𝒢`, indexed
@@ -230,7 +230,7 @@ lemma cuspTranslationOrbitWidth_mk_dvd_iff {Γ : Subgroup SL(2, ℤ)} (γ : SL(2
     have hT : ((TSL ^ m : 𝒮ℒ) : GL (Fin 2) ℝ) =
         Matrix.SpecialLinearGroup.mapGL ℝ (ModularGroup.T ^ m) := by
       rw [← zpow_natCast, coe_TSL_zpow, zpow_natCast,
-        TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+        Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
     simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, map_inv, hT,
       map_mul]
   rw [cuspTranslationOrbitWidth_mk, minimalPeriod_TSL_dvd_iff, hconj,
