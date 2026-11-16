@@ -19,7 +19,7 @@ Let `A = ⨁ₙ 𝒜 n` be an `ℕ`-graded commutative `R`-algebra and `d ≠ 0`
 Both schemes are covered by the standard charts of the homogeneous elements `f ∈ 𝒜 (d k)`,
 `k > 0`: for `Proj A^{(d)}` these are all its standard charts, and for `Proj A` they suffice
 because `D₊(a) = D₊(aᵈ)`. On such a chart the isomorphism is `Spec` of the identification
-`A^{(d)}_{(f)} ≅ A_{(f)}` of homogeneous localizations, and these chart isomorphisms are
+`A_{(f)} ≅ A^{(d)}_{(f)}` of homogeneous localizations, and these chart isomorphisms are
 compatible with the transitions between charts.
 
 ## Main definitions
@@ -33,15 +33,21 @@ compatible with the transitions between charts.
 * `AlgebraicGeometry.Proj.awayι_veroneseIso_hom` and
   `AlgebraicGeometry.Proj.awayι_veroneseIso_inv`: on the standard chart of `f ∈ 𝒜 (d k)`,
   `k > 0`, the isomorphism and its inverse are `Spec` of the chart isomorphisms
-  `A^{(d)}_{(f)} ≃ A_{(f)}`.
-* `AlgebraicGeometry.Proj.veroneseIso_hom_preimage_basicOpen`: the isomorphism identifies the
-  standard opens `D₊(f)` of `Proj A^{(d)}` and `Proj A`.
-* `AlgebraicGeometry.Proj.map_veroneseMap_comp_veroneseIso_hom`: the isomorphism is natural in
-  graded ring homomorphisms, through `Proj.map`.
+  `A_{(f)} ≃ A^{(d)}_{(f)}` and `A^{(d)}_{(f)} ≃ A_{(f)}` respectively.
+* `AlgebraicGeometry.Proj.veroneseIso_hom_preimage_basicOpen` and
+  `AlgebraicGeometry.Proj.veroneseIso_inv_preimage_basicOpen`: the isomorphism identifies the
+  standard opens `D₊(f)` of `Proj A^{(d)}` and `Proj A`, for every `f ∈ A^{(d)}`.
+* `AlgebraicGeometry.Proj.mem_asHomogeneousIdeal_veroneseIso_inv` and
+  `AlgebraicGeometry.Proj.toIdeal_asHomogeneousIdeal_veroneseIso_inv`: the point of `Proj A^{(d)}`
+  corresponding to a point of `Proj A` is the contraction of its homogeneous prime ideal to
+  `A^{(d)}`.
+* `AlgebraicGeometry.Proj.map_veroneseMap_comp_veroneseIso_hom` and
+  `AlgebraicGeometry.Proj.map_comp_veroneseIso_inv`: the isomorphism is natural in graded ring
+  homomorphisms, through `Proj.map`.
 * `AlgebraicGeometry.Proj.veroneseIso_hom_toSpecZero`,
   `AlgebraicGeometry.Proj.veroneseIso_inv_toSpecZero` and
   `AlgebraicGeometry.Proj.veroneseIso_hom_toSpecCoeff`: the isomorphism lies over
-  `Spec A₀`, the degree-zero parts being identified, and over `Spec R`.
+  `Spec A₀ ≅ Spec A^{(d)}_0`, the degree-zero parts being identified, and over `Spec R`.
 
 ## References
 
@@ -62,8 +68,7 @@ section
 variable {R : Type*} {A : Type u} [CommRing R] [CommRing A] [Algebra R A]
   (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] (d : ℕ)
 
-/-- The standard opens `D₊(f)` of `Proj A` with `f ∈ 𝒜 (d k)`, `k > 0`, cover `Proj A`: a point
-outside `D₊(a)` for a homogeneous `a` of positive degree is outside `D₊(aᵈ)`. -/
+/-- The standard opens `D₊(f)` of `Proj A` with `f ∈ 𝒜 (d k)`, `k > 0`, cover `Proj A`. -/
 theorem iSup_basicOpen_veronese_eq_top :
     ⨆ i : Σ k : ℕ+, veroneseGrading 𝒜 d k, basicOpen 𝒜 ((i.2 : veronese 𝒜 d) : A) = ⊤ := by
   refine top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ?_
@@ -87,9 +92,7 @@ private noncomputable def veroneseAffineOpenCover : (Proj 𝒜).AffineOpenCover 
   idx x := (TopologicalSpace.Opens.mem_iSup.mp
     ((iSup_basicOpen_veronese_eq_top 𝒜 d).ge (Set.mem_univ x))).choose
   covers x := by
-    -- the chart of the cover at `idx x` is `awayι 𝒜 f` by definition
-    change x ∈ (awayι 𝒜 _ _ _).opensRange
-    rw [opensRange_awayι]
+    simp only [← Scheme.Hom.coe_opensRange, SetLike.mem_coe, opensRange_awayι]
     exact (TopologicalSpace.Opens.mem_iSup.mp
       ((iSup_basicOpen_veronese_eq_top 𝒜 d).ge (Set.mem_univ x))).choose_spec
 
@@ -122,7 +125,8 @@ private theorem SpecMap_awayMap_toProjChart {f g x : veronese 𝒜 d} {k k' : �
   rw [toProjChart, toProjChart, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp, ← this,
     CommRingCat.ofHom_comp, Spec.map_comp_assoc, SpecMap_awayMap_awayι]
   -- the charts of `x` differ only in the form `d k + d k'` or `d (k + k')` of its degree
-  congr 1
+  congr 2
+  exact (mul_add d k k').symm
 
 private theorem SpecMap_awayMap_fromProjChart {f g x : veronese 𝒜 d} {k k' : ℕ}
     (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) (hg : g ∈ veroneseGrading 𝒜 d k')
@@ -206,8 +210,8 @@ private theorem awayι_projToVeronese_veroneseToProj {f : veronese 𝒜 d} {k : 
 
 /-- **The projective spectrum of a Veronese subalgebra.** For `d ≠ 0`, the projective spectra of
 `A^{(d)} = ⨁ₖ 𝒜 (d k)` and of `A` are isomorphic. On the chart of `f ∈ 𝒜 (d k)`, `k > 0`, it is
-`Spec` of the isomorphism `A^{(d)}_{(f)} ≃ A_{(f)}`
-(`AlgebraicGeometry.Proj.awayι_veroneseIso_hom`). -/
+`Spec` of the inverse `A_{(f)} ≃ A^{(d)}_{(f)}` of the isomorphism of homogeneous localizations
+`TauCeti.GradedAlgebra.awayVeroneseEquiv` (`AlgebraicGeometry.Proj.awayι_veroneseIso_hom`). -/
 noncomputable def veroneseIso : Proj (veroneseGrading 𝒜 d) ≅ Proj 𝒜 where
   hom := veroneseToProj 𝒜 d
   inv := projToVeronese 𝒜 d
@@ -217,7 +221,7 @@ noncomputable def veroneseIso : Proj (veroneseGrading 𝒜 d) ≅ Proj 𝒜 wher
     (awayι_projToVeronese_veroneseToProj 𝒜 d i.2.2 i.1.pos).trans (Category.comp_id _).symm
 
 /-- On the standard chart of `f ∈ 𝒜 (d k)`, `k > 0`, the isomorphism
-`Proj A^{(d)} ≅ Proj A` is `Spec` of the chart isomorphism `A^{(d)}_{(f)} ≃ A_{(f)}`. -/
+`Proj A^{(d)} ≅ Proj A` is `Spec` of the inverse chart isomorphism `A_{(f)} ≃ A^{(d)}_{(f)}`. -/
 @[reassoc]
 theorem awayι_veroneseIso_hom {f : veronese 𝒜 d} {k : ℕ} (hf : f ∈ veroneseGrading 𝒜 d k)
     (hk : 0 < k) :
@@ -227,7 +231,7 @@ theorem awayι_veroneseIso_hom {f : veronese 𝒜 d} {k : ℕ} (hf : f ∈ veron
   awayι_veroneseToProj 𝒜 d hf hk
 
 /-- On the standard chart of `f ∈ 𝒜 (d k)`, `k > 0`, the isomorphism
-`Proj A ≅ Proj A^{(d)}` is `Spec` of the inverse chart isomorphism `A_{(f)} ≃ A^{(d)}_{(f)}`. -/
+`Proj A ≅ Proj A^{(d)}` is `Spec` of the chart isomorphism `A^{(d)}_{(f)} ≃ A_{(f)}`. -/
 @[reassoc]
 theorem awayι_veroneseIso_inv {f : veronese 𝒜 d} {k : ℕ} (hf : f ∈ veroneseGrading 𝒜 d k)
     (hk : 0 < k) :
@@ -237,9 +241,7 @@ theorem awayι_veroneseIso_inv {f : veronese 𝒜 d} {k : ℕ} (hf : f ∈ veron
         awayι (veroneseGrading 𝒜 d) f hf hk :=
   awayι_projToVeronese 𝒜 d hf hk
 
-/-- The isomorphism `Proj A^{(d)} ≅ Proj A` identifies the standard opens `D₊(f)` for
-`f ∈ 𝒜 (d k)`, `k > 0`. -/
-theorem veroneseIso_hom_preimage_basicOpen {f : veronese 𝒜 d} {k : ℕ}
+private theorem veroneseIso_hom_preimage_basicOpen_of_pos {f : veronese 𝒜 d} {k : ℕ}
     (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) :
     (veroneseIso 𝒜 d).hom ⁻¹ᵁ basicOpen 𝒜 (f : A) = basicOpen (veroneseGrading 𝒜 d) f := by
   rw [← Scheme.Hom.inv_image, ← opensRange_awayι 𝒜 _ (mem_veroneseGrading.1 hf)
@@ -253,9 +255,75 @@ theorem veroneseIso_hom_preimage_basicOpen {f : veronese 𝒜 d} {k : ℕ}
     exact awayι_veroneseIso_inv 𝒜 d hf hk
   · rw [Scheme.Hom.opensRange_comp_of_isIso, opensRange_awayι]
 
+private theorem veroneseIso_hom_preimage_basicOpen_of_mem {f : veronese 𝒜 d} {k : ℕ}
+    (hf : f ∈ veroneseGrading 𝒜 d k) :
+    (veroneseIso 𝒜 d).hom ⁻¹ᵁ basicOpen 𝒜 (f : A) = basicOpen (veroneseGrading 𝒜 d) f := by
+  -- compare the two opens on a standard open `D₊(g)`, `g` of positive degree, through `D₊(fg)`
+  ext x
+  obtain ⟨j, hj, g, hg, hx⟩ : ∃ j, 0 < j ∧ ∃ g ∈ veroneseGrading 𝒜 d j, x ∈ basicOpen _ g := by
+    by_contra! H
+    exact x.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le _).mpr fun j hj g hg ↦ by
+      simpa using H j hj g hg)
+  have hx' : x ∈ (veroneseIso 𝒜 d).hom ⁻¹ᵁ basicOpen 𝒜 (g : A) := by
+    rwa [veroneseIso_hom_preimage_basicOpen_of_pos 𝒜 d hg hj]
+  have := congrArg (x ∈ ·) (veroneseIso_hom_preimage_basicOpen_of_pos 𝒜 d
+    (SetLike.mul_mem_graded hf hg) (hj.trans_le (Nat.le_add_left j k)))
+  simp only [Subalgebra.coe_mul, basicOpen_mul, Scheme.Hom.preimage_inf,
+    TopologicalSpace.Opens.mem_inf, eq_iff_iff] at this
+  tauto
+
+/-- The isomorphism `Proj A^{(d)} ≅ Proj A` identifies the standard opens `D₊(f)` of
+`Proj A^{(d)}` and `Proj A`. -/
+@[simp]
+theorem veroneseIso_hom_preimage_basicOpen (f : veronese 𝒜 d) :
+    (veroneseIso 𝒜 d).hom ⁻¹ᵁ basicOpen 𝒜 (f : A) = basicOpen (veroneseGrading 𝒜 d) f := by
+  classical
+  rw [basicOpen_eq_iSup_proj, basicOpen_eq_iSup_proj, Scheme.Hom.preimage_iSup]
+  refine le_antisymm (iSup_le fun n ↦ ?_) (iSup_le fun k ↦ le_iSup_of_le (d * k) ?_)
+  · by_cases hn : d ∣ n
+    · obtain ⟨k, rfl⟩ := hn
+      rw [GradedRing.proj_apply, ← coe_decompose_veroneseGrading,
+        veroneseIso_hom_preimage_basicOpen_of_mem 𝒜 d (SetLike.coe_mem _)]
+      exact le_iSup (fun k ↦ basicOpen _ (GradedRing.proj (veroneseGrading 𝒜 d) k f)) k
+    · rw [GradedRing.proj_apply, decompose_coe_eq_zero_of_not_dvd f hn, basicOpen_zero,
+        Scheme.Hom.preimage_bot]
+      exact bot_le
+  · rw [GradedRing.proj_apply, GradedRing.proj_apply, ← coe_decompose_veroneseGrading,
+      veroneseIso_hom_preimage_basicOpen_of_mem 𝒜 d (SetLike.coe_mem _)]
+
+/-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` identifies the standard opens `D₊(f)` of
+`Proj A^{(d)}` and `Proj A`. -/
+@[simp]
+theorem veroneseIso_inv_preimage_basicOpen (f : veronese 𝒜 d) :
+    (veroneseIso 𝒜 d).inv ⁻¹ᵁ basicOpen (veroneseGrading 𝒜 d) f = basicOpen 𝒜 (f : A) := by
+  rw [← veroneseIso_hom_preimage_basicOpen, ← Scheme.Hom.comp_preimage, Iso.inv_hom_id,
+    Scheme.Hom.id_preimage]
+
+/-- An element `f` of `A^{(d)}` lies in the homogeneous prime ideal of the point of
+`Proj A^{(d)}` corresponding to a point `x` of `Proj A` if and only if it lies in that of `x`. -/
+@[simp]
+theorem mem_asHomogeneousIdeal_veroneseIso_inv (x : Proj 𝒜) (f : veronese 𝒜 d) :
+    f ∈ ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal ↔ (f : A) ∈ x.asHomogeneousIdeal :=
+  not_iff_not.mp (congrArg (x ∈ ·) (veroneseIso_inv_preimage_basicOpen 𝒜 d f)).to_iff
+
+/-- The homogeneous prime ideal of the point of `Proj A^{(d)}` corresponding to a point `x` of
+`Proj A` is the contraction of that of `x` to `A^{(d)}`. -/
+theorem toIdeal_asHomogeneousIdeal_veroneseIso_inv (x : Proj 𝒜) :
+    ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal.toIdeal =
+      x.asHomogeneousIdeal.toIdeal.comap (veronese 𝒜 d).val :=
+  Ideal.ext <| mem_asHomogeneousIdeal_veroneseIso_inv 𝒜 d x
+
+/-- An element `f` of `A^{(d)}` lies in the homogeneous prime ideal of the point of `Proj A`
+corresponding to a point `y` of `Proj A^{(d)}` if and only if it lies in that of `y`. -/
+@[simp]
+theorem coe_mem_asHomogeneousIdeal_veroneseIso_hom (y : Proj (veroneseGrading 𝒜 d))
+    (f : veronese 𝒜 d) :
+    (f : A) ∈ ((veroneseIso 𝒜 d).hom y).asHomogeneousIdeal ↔ f ∈ y.asHomogeneousIdeal :=
+  not_iff_not.mp (congrArg (y ∈ ·) (veroneseIso_hom_preimage_basicOpen 𝒜 d f)).to_iff
+
 section Map
 
-variable {R' : Type*} {B : Type u} [CommRing R'] [CommRing B] [Algebra R' B]
+variable {𝒜} {R' : Type*} {B : Type u} [CommRing R'] [CommRing B] [Algebra R' B]
   {ℬ : ℕ → Submodule R' B} [GradedAlgebra ℬ]
 
 /-- The isomorphism `Proj A^{(d)} ≅ Proj A` is natural in graded ring homomorphisms `f : A → B`
@@ -283,10 +351,19 @@ theorem map_veroneseMap_comp_veroneseIso_hom (f : 𝒜 →+*ᵍ ℬ)
   exact (mapAffineOpenCover _ (irrelevant_le_map_veroneseMap d f hf)).openCover.hom_ext _ _
     fun i ↦ this _ _ i.2.2 i.1.pos
 
+/-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` is natural in graded ring homomorphisms
+`f : A → B` inducing morphisms `Proj B ⟶ Proj A`. -/
+@[reassoc]
+theorem map_comp_veroneseIso_inv (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) :
+    map f hf ≫ (veroneseIso 𝒜 d).inv =
+      (veroneseIso ℬ d).inv ≫ map (veroneseMap d f) (irrelevant_le_map_veroneseMap d f hf) := by
+  rw [Iso.comp_inv_eq, Category.assoc, map_veroneseMap_comp_veroneseIso_hom, Iso.inv_hom_id_assoc]
+
 end Map
 
-/-- The isomorphism `Proj A^{(d)} ≅ Proj A` lies over the identification `A^{(d)}_0 ≃ A_0` of
-the degree-zero parts. -/
+/-- The isomorphism `Proj A^{(d)} ≅ Proj A` lies over `Spec` of the identification
+`A_0 ≃ A^{(d)}_0` of the degree-zero parts. -/
 @[reassoc (attr := simp)]
 theorem veroneseIso_hom_toSpecZero :
     (veroneseIso 𝒜 d).hom ≫ toSpecZero 𝒜 = toSpecZero (veroneseGrading 𝒜 d) ≫
@@ -302,8 +379,8 @@ theorem veroneseIso_hom_toSpecZero :
   exact (affineOpenCover (veroneseGrading 𝒜 d)).openCover.hom_ext _ _ fun i ↦
     this _ _ i.2.2 i.1.pos
 
-/-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` lies over the identification
-`A_0 ≃ A^{(d)}_0` of the degree-zero parts. -/
+/-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` lies over `Spec` of the identification
+`A^{(d)}_0 ≃ A_0` of the degree-zero parts. -/
 @[reassoc (attr := simp)]
 theorem veroneseIso_inv_toSpecZero :
     (veroneseIso 𝒜 d).inv ≫ toSpecZero (veroneseGrading 𝒜 d) = toSpecZero 𝒜 ≫
