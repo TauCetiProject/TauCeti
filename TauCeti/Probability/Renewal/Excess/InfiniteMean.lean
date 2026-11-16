@@ -66,8 +66,10 @@ theorem tendsto_measureReal_renewalExcess_le_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub hindep hid
-    ((P.map (T 0)).measure_singleton_zero_lt_one_of_mean_eq_top hmean) x
+  have hzero : (P.map (T 0)) {0} < 1 :=
+    (P.map (T 0)).measure_singleton_lt_one_of_lintegral_pos (f := fun u ↦ (u : ℝ≥0∞))
+      (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
+  exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub hindep hid hzero x
     ((P.map (T 0)).tendsto_renewalFunction_add_sub_of_mean_eq_top hmean x)
 
 /-- For i.i.d. nonnegative increments of infinite extended mean, lattice or nonlattice, the
@@ -93,8 +95,7 @@ theorem tendsto_cdf_renewalExcess_of_mean_eq_top
     Tendsto (fun t ↦ cdf (P.map (fun ω ↦ (renewalExcess T t ω : ℝ))) x) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
   have hT (n : ℕ) : AEMeasurable (T n) P := (hid n).aemeasurable_fst
-  have hae (t : ℝ≥0) : AEMeasurable (fun ω ↦ (renewalExcess T t ω : ℝ)) P := by fun_prop
-  simp_rw [Measure.cdf_map P _ (hae _), measureReal_preimage_coe_renewalExcess_Iic]
+  simp_rw [Measure.cdf_map_coe_nnreal P (aemeasurable_renewalExcess hT _)]
   split_ifs
   · exact tendsto_measureReal_renewalExcess_le_of_mean_eq_top hindep hid hmean x.toNNReal
   · exact tendsto_const_nhds

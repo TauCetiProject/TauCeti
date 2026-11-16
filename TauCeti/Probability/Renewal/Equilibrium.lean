@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.LayerCake
+public import TauCeti.Probability.Renewal.Lattice.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -99,6 +100,17 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_on
   apply (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).1
   filter_upwards [hae] with u hu
   simpa using hu
+
+/-- For a nonlattice measure on `ℝ≥0`, the candidate equilibrium excess-life measure has total
+mass one if and only if the extended mean is finite. -/
+theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_not_isLattice
+    (F : Measure ℝ≥0) (hNL : ¬ F.IsLattice) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ := by
+  rw [F.isProbabilityMeasure_equilibriumExcessLaw_iff, and_iff_right]
+  intro hz
+  refine hNL (IsLatticeSpan.isLattice (a := 1) ⟨zero_lt_one, ?_⟩)
+  filter_upwards [(lintegral_eq_zero_iff measurable_coe_nnreal_ennreal).1 hz] with u hu
+  exact ⟨0, by simpa using hu.symm⟩
 
 /-- With infinite mean the candidate excess-life measure is zero. -/
 @[simp] theorem equilibriumExcessLaw_eq_zero_of_mean_eq_top (F : Measure ℝ≥0)

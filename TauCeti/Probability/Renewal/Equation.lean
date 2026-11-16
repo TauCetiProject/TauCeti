@@ -58,8 +58,10 @@ renewal-limit coefficients. For `u ≤ t`, the window is `(t - u, t]`; for `t < 
 * `TauCeti.Probability.apply_zero_of_eq_add_renewalConv` — the initial value
   `g 0 = h 0 / (1 - F.real {0})`.
 * `TauCeti.Probability.renewalConv_renewalMeasure_eq_add` — `h ∗ U` solves `g = h + g ∗ F`.
-* `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_conv`,
-  `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_sub_dirac` — the equivalent formulas
+* `TauCeti.Probability.renewalConv_eq_add_sub_dirac`,
+  `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_conv`,
+  `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_sub_dirac` — splitting off the initial
+  point mass `δ₀` as `h ∗ ν = h + h ∗ (ν - δ₀)`, and for renewal measures
   `h ∗ U = h + h ∗ (F ∗ U) = h + h ∗ (U - δ₀)`.
 * `MeasureTheory.Measure.renewalConv_measureReal_Iic_renewalMeasure` — the convolution of
   `F [0, ·]` with `U` is the real-valued renewal function.
@@ -260,6 +262,16 @@ theorem renewalConv_add_measure (hμ : IntegrableOn (fun s ↦ h (t - s)) (Iic t
   simp only [renewalConv_def, Measure.restrict_add]
   exact integral_add_measure hμ hν
 
+/-- If `ν` dominates `δ₀` and the shifted forcing is integrable on `[0, t]` under `ν`, then
+`(h ∗ ν) t = h t + (h ∗ (ν - δ₀)) t`. -/
+theorem renewalConv_eq_add_sub_dirac (hν : Measure.dirac 0 ≤ ν)
+    (hint : IntegrableOn (fun s ↦ h (t - s)) (Iic t) ν) :
+    renewalConv h ν t = h t + renewalConv h (ν - Measure.dirac 0) t := by
+  have hdirac : IntegrableOn (fun s ↦ h (t - s)) (Iic t) (Measure.dirac 0) :=
+    (integrable_dirac (by simp)).integrableOn
+  conv_lhs => rw [← Measure.sub_add_cancel_of_le hν, add_comm]
+  rw [renewalConv_add_measure hdirac (hint.mono_measure Measure.sub_le), renewalConv_dirac_zero]
+
 /-! ### Associativity -/
 
 /-- The inner integral of the iterated convolution: integrating the integrand of
@@ -334,6 +346,16 @@ theorem renewalConv_renewalMeasure (hh : Measurable h) (hC : ∀ s ≤ t, |h s| 
 
 end Series
 
+/-- The convolution `h ∗ U` equals the forcing plus its convolution with `U - δ₀`, the renewal
+measure with the artificial initial point mass removed, whenever `s ↦ h (t - s)` is integrable
+on `[0, t]` under `U`. -/
+theorem renewalConv_renewalMeasure_eq_add_sub_dirac
+    (hint : IntegrableOn (fun s ↦ h (t - s)) (Iic t) μ.renewalMeasure) :
+    renewalConv h μ.renewalMeasure t =
+      h t + renewalConv h (μ.renewalMeasure - Measure.dirac 0) t :=
+  renewalConv_eq_add_sub_dirac
+    (Measure.convolutionPower_zero μ ▸ μ.convolutionPower_le_renewalMeasure 0) hint
+
 /-! ### The renewal equation -/
 
 section RenewalEquation
@@ -373,15 +395,6 @@ theorem renewalConv_renewalMeasure_eq_add_conv [SFinite μ] (hh : Measurable h)
   rw [renewalConv_renewalMeasure_eq_add hh hC,
     renewalConv_renewalConv hh hC measure_Iic_lt_top.ne measure_Iic_lt_top.ne,
     Measure.conv_comm]
-
-/-- The solution `h ∗ U` equals the forcing plus its convolution with `U - δ₀`, the renewal measure
-with the artificial initial point mass removed. -/
-theorem renewalConv_renewalMeasure_eq_add_sub_dirac [SFinite μ] (hh : Measurable h)
-    (hC : ∀ s ≤ t, |h s| ≤ C) :
-    renewalConv h μ.renewalMeasure t =
-      h t + renewalConv h (μ.renewalMeasure - Measure.dirac 0) t := by
-  rw [Measure.renewalMeasure_sub_dirac_zero]
-  exact renewalConv_renewalMeasure_eq_add_conv hh hC
 
 /-- **The homogeneous renewal equation has only the trivial solution.** If the renewal measure of
 `F` is locally finite and `d` is measurable, bounded on each `[0, t]`, and satisfies `d = d ∗ F`,
@@ -443,7 +456,8 @@ theorem eq_add_renewalConv_sub_dirac [SFinite μ] (hh : Measurable h)
   rw [eq_renewalConv_renewalMeasure hh hhb hg hgb hgeq]
   ext t
   obtain ⟨_, hC⟩ := hhb t
-  exact renewalConv_renewalMeasure_eq_add_sub_dirac hh hC
+  exact renewalConv_renewalMeasure_eq_add_sub_dirac
+    (integrableOn_Iic_sub hh hC measure_Iic_lt_top.ne)
 
 end RenewalEquation
 

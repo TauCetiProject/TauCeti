@@ -31,8 +31,9 @@ theorems. Atoms at zero are allowed.
 * `MeasureTheory.Measure.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top`,
   `MeasureTheory.Measure.tendsto_renewalMeasure_Ioc_of_mean_eq_top`: the mass of `(t, t + x]`
   under `F.renewalMeasure` tends to zero.
-* `MeasureTheory.Measure.tendsto_renewalConv_indicator_Iio_of_mean_eq_top`,
-  `MeasureTheory.Measure.tendsto_renewalConv_of_mean_eq_top`,
+* `MeasureTheory.Measure.tendsto_renewalConv_indicator_Iio_of_mean_eq_top`: vanishing of bounded
+  forcing truncated to `[0, A)` under infinite mean, without monotonicity or measurability.
+* `MeasureTheory.Measure.tendsto_renewalConv_of_mean_eq_top`,
   `MeasureTheory.Measure.tendsto_renewalConv_sub_dirac_of_mean_eq_top`: vanishing of monotone
   renewal convolutions under infinite mean.
 * `TauCeti.Probability.tendsto_of_eq_add_renewalConv_of_mean_eq_top`: vanishing at infinity of
@@ -54,6 +55,11 @@ namespace MeasureTheory.Measure
 open TauCeti.Probability
 
 variable (F : Measure ℝ≥0) [IsProbabilityMeasure F]
+
+private lemma measure_singleton_zero_lt_one_of_mean_eq_top
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) : F {0} < 1 :=
+  F.measure_singleton_lt_one_of_lintegral_pos (f := fun u ↦ (u : ℝ≥0∞))
+    (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
 
 /-- For any probability measure on `ℝ≥0` of infinite extended mean, lattice or nonlattice, every
 fixed-window increment of the real-valued renewal function tends to zero at infinity. Atoms at
@@ -87,18 +93,17 @@ theorem tendsto_renewalMeasure_Ioc_of_mean_eq_top
     ENNReal.tendsto_ofReal (F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean x)
 
 /-- For any probability measure on `ℝ≥0` of infinite extended mean, lattice or nonlattice, the
-convolution of `F.renewalMeasure` with a forcing function that is nonincreasing on `[0, A]` and
-cut off at age `A` tends to zero at infinity. Neither positivity nor global integrability of the
-forcing is required. -/
+convolution of `F.renewalMeasure` with a forcing function bounded on `[0, A)` and cut off at age
+`A` tends to zero at infinity. Neither monotonicity, measurability, nor any hypothesis at `A` is
+required. -/
 theorem tendsto_renewalConv_indicator_Iio_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) {h : ℝ≥0 → ℝ}
-    (A : ℝ≥0) (hh : AntitoneOn h (Iic A)) :
+    (A : ℝ≥0) {C : ℝ} (hC : ∀ s < A, |h s| ≤ C) :
     Tendsto (renewalConv ((Iio A).indicator h) F.renewalMeasure) atTop (𝓝 0) := by
   let : IsLocallyFiniteMeasure F.renewalMeasure :=
     F.isLocallyFiniteMeasure_renewalMeasure (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean)
-  simpa using F.renewalMeasure.tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
-    (r := 0) (fun d ↦ by simpa using F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean d)
-    A hh
+  exact F.renewalMeasure.tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc_nhds_zero
+    (F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean A) hC
 
 /-- For any probability measure on `ℝ≥0` of infinite extended mean, lattice or nonlattice, the
 convolution of `F.renewalMeasure` with any nonnegative, nonincreasing, Lebesgue-integrable

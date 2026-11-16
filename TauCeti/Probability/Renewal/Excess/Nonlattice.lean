@@ -43,9 +43,6 @@ separate measurability or `P(T 0 = 0) < 1` hypothesis is required.
 
 ## Main statements
 
-* `MeasureTheory.Measure.isProbabilityMeasure_equilibriumExcessLaw_iff_of_not_isLattice`:
-  for any nonlattice measure on `ℝ≥0`, `F.equilibriumExcessLaw` has total mass one precisely when
-  `F` has finite extended mean.
 * `TauCeti.Probability.tendsto_measureReal_renewalExcess_le_of_not_isLattice`,
   `TauCeti.Probability.tendsto_measureReal_renewalExcess_le_integral_tail_of_not_isLattice`:
   convergence of `P(E t ≤ x)` to the normalized integrated interarrival tail, including infinite
@@ -69,21 +66,6 @@ public section
 
 open Filter MeasureTheory ProbabilityTheory Set
 open scoped ENNReal NNReal Topology
-
-namespace MeasureTheory.Measure
-
-/-- For a nonlattice measure on `ℝ≥0`, the candidate equilibrium excess-life measure has total
-mass one if and only if the extended mean is finite. -/
-theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_not_isLattice
-    (F : Measure ℝ≥0) (hNL : ¬ F.IsLattice) :
-    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ := by
-  rw [F.isProbabilityMeasure_equilibriumExcessLaw_iff, and_iff_right]
-  intro hz
-  refine hNL (IsLatticeSpan.isLattice (a := 1) ⟨zero_lt_one, ?_⟩)
-  filter_upwards [(lintegral_eq_zero_iff measurable_coe_nnreal_ennreal).1 hz] with u hu
-  exact ⟨0, by simpa using hu.symm⟩
-
-end MeasureTheory.Measure
 
 namespace TauCeti.Probability
 

@@ -110,9 +110,7 @@ theorem tendsto_cdf_renewalExcess_of_tendsto_measureReal_Ioc
   have := ((P.map (T 0)).isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
     hzero).2 hmean
   have hT (n : ℕ) : AEMeasurable (T n) P := (hid n).aemeasurable_fst
-  have hae (s : ℝ≥0) : AEMeasurable (fun ω ↦ (renewalExcess T s ω : ℝ)) P := by fun_prop
-  simp_rw [Measure.cdf_map P _ (hae _), measureReal_preimage_coe_renewalExcess_Iic,
-    cdf_eq_real]
+  simp_rw [Measure.cdf_map_coe_nnreal P (aemeasurable_renewalExcess hT _), cdf_eq_real]
   split_ifs with hx
   · simpa only [Real.coe_toNNReal x hx] using
       (tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc

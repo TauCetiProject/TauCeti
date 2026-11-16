@@ -53,9 +53,8 @@ respectively. These representations are the input of the limit theorem for the e
   `TauCeti.Probability.aemeasurable_renewalExcess`,
   `TauCeti.Probability.renewalExcess_congr_ae`: measurability and almost-everywhere invariance
   of the excess.
-* `TauCeti.Probability.measureReal_renewalExcess_le_eq_one_sub`,
-  `TauCeti.Probability.measureReal_preimage_coe_renewalExcess_Iic`: complement and real-sublevel
-  identities for the excess.
+* `TauCeti.Probability.measureReal_renewalExcess_le_eq_one_sub`: complement identity for the
+  excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
   `P(x < E t) = (F> (· + x) ∗ U) t`.
@@ -170,22 +169,6 @@ theorem aemeasurable_renewalExcess (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ�
     AEMeasurable (renewalExcess T t) P :=
   (measurable_renewalExcess (fun n ↦ (hT n).measurable_mk) t).aemeasurable.congr
     ((renewalExcess_congr_ae fun n ↦ (hT n).ae_eq_mk.symm).mono fun _ hω ↦ hω t)
-
-/-- At any real threshold `x`, the real measure of the preimage of `Iic x` under the real-valued
-excess at time `t` equals `P.real {ω | renewalExcess T t ω ≤ x.toNNReal}` for `0 ≤ x` and `0` for
-`x < 0`. -/
-theorem measureReal_preimage_coe_renewalExcess_Iic (t : ℝ≥0) (x : ℝ) :
-    P.real ((fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' Iic x) =
-      if 0 ≤ x then P.real {ω | renewalExcess T t ω ≤ x.toNNReal} else 0 := by
-  split_ifs with hx
-  · congr 1
-    ext ω
-    simp only [mem_preimage, mem_Iic, mem_ofPred_eq, ← NNReal.coe_le_coe, Real.coe_toNNReal x hx]
-  · have hempty : (fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' Iic x = ∅ := by
-      ext ω
-      simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false]
-      exact not_le_of_gt ((lt_of_not_ge hx).trans_le (renewalExcess T t ω).coe_nonneg)
-    rw [hempty, measureReal_empty]
 
 /-- For almost-everywhere measurable increments on a probability space, the excess sublevel
 probability at time `t` is one minus the strict-superlevel probability. -/

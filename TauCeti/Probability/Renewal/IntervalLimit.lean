@@ -16,8 +16,9 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 Convergence of interval masses implies convergence of convolution against monotone
 forcing truncated to a bounded age interval. The forcing may have jumps and need not
 have either sign. Uniform-mesh Darboux bounds preserve the half-open endpoint conventions
-even when the integrating measure has atoms. The measure need only be finite on bounded
-intervals; it need not be a renewal measure.
+even when the integrating measure has atoms. When the interval masses tend to zero, mere
+boundedness on `[0, A)` suffices without monotonicity or measurability. The measure need
+only be finite on bounded intervals; it need not be a renewal measure.
 
 For a renewal measure, uniform tail truncation extends this to every nonnegative decreasing
 Lebesgue-integrable forcing function, and hence to every measurable, locally bounded solution
@@ -157,6 +158,32 @@ theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
       (hbounds n).2] with t ht hle
     exact hle.trans_lt ht
 
+/-- If the forward interval masses `μ.real (Ioc t (t + A))` tend to zero, convolution with any
+forcing function bounded on `[0, A)` and cut off at age `A` tends to zero at infinity. Neither
+monotonicity, measurability, nor any hypothesis at `A` is required. -/
+theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc_nhds_zero
+    (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] {A : ℝ≥0}
+    (hlim : Tendsto (fun t : ℝ≥0 ↦ μ.real (Ioc t (t + A))) atTop (𝓝 0))
+    {h : ℝ≥0 → ℝ} {C : ℝ} (hC : ∀ s < A, |h s| ≤ C) :
+    Tendsto (renewalConv ((Iio A).indicator h) μ) atTop (𝓝 0) := by
+  have ht : Tendsto (fun t : ℝ≥0 ↦ t - A) atTop atTop := by
+    refine tendsto_atTop.2 fun c ↦ ?_
+    filter_upwards [eventually_ge_atTop (c + A)] with t hct
+    exact le_tsub_of_add_le_right hct
+  have href : Tendsto (fun t : ℝ≥0 ↦ μ.real (Ioc (t - A) t)) atTop (𝓝 0) := by
+    refine (hlim.comp ht).congr' ?_
+    filter_upwards [eventually_ge_atTop A] with t hAt
+    simp [tsub_add_cancel_of_le hAt]
+  refine squeeze_zero_norm' (a := fun t ↦ max C 0 * μ.real (Ioc (t - A) t)) ?_
+    (by simpa using href.const_mul (max C 0))
+  filter_upwards [eventually_ge_atTop A] with t hAt
+  have he : Iio A = Ico 0 A := by ext s; simp
+  rw [he, renewalConv_indicator_Ico zero_le hAt, tsub_zero]
+  refine norm_setIntegral_le_of_norm_le_const measure_Ioc_lt_top fun s hs ↦ ?_
+  have hts : t - s < A := ((NNReal.mem_Ioc_tsub_iff s zero_le hAt).1 (by simpa using hs)).2.2
+  rw [Real.norm_eq_abs]
+  exact (hC _ hts).trans (le_max_left C 0)
+
 private lemma abs_le_apply_zero_of_antitone {h : ℝ≥0 → ℝ} (hh : Antitone h)
     (h₀ : ∀ x, 0 ≤ h x) (x : ℝ≥0) : |h x| ≤ h 0 := by
   rw [abs_of_nonneg (h₀ x)]
@@ -232,8 +259,9 @@ theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
         (NNReal.tendsto_coe_atTop.2 tendsto_id)
   have he (t : ℝ≥0) : renewalConv h (μ.renewalMeasure - dirac 0) t =
       renewalConv h μ.renewalMeasure t - h t := by
-    have heq := renewalConv_renewalMeasure_eq_add_sub_dirac (μ := μ) hh.measurable
-      (t := t) (C := h 0) (fun s _ => abs_le_apply_zero_of_antitone hh h₀ s)
+    have heq := renewalConv_renewalMeasure_eq_add_sub_dirac (μ := μ) (t := t)
+      (integrableOn_Iic_sub hh.measurable
+        (fun s _ => abs_le_apply_zero_of_antitone hh h₀ s) measure_Iic_lt_top.ne)
     linarith
   rw [funext he]
   simpa only [sub_zero] using

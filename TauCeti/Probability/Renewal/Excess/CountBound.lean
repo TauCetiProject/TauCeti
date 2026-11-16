@@ -42,13 +42,34 @@ lemma renewalExcess_le_iff_renewalCountNat_lt {ω : Ω}
   rw [← Nat.succ_le_iff, le_renewalCountNat_iff hω, ← add_renewalExcess hω t]
   exact (add_le_add_iff_left t).symm
 
-variable [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
+variable [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- For an almost surely nonexplosive process, the measure of `{renewalExcess T t ≤ x}` plus the
+extended expected count at time `t` is bounded by the extended expected count at `t + x`. Neither
+finiteness of `P`, independence, nor identical distribution is required. -/
+theorem measure_renewalExcess_le_add_lintegral_renewalCount_le {t x : ℝ≥0}
+    (hnull : NullMeasurableSet {ω | renewalExcess T t ω ≤ x} P)
+    (hne : ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop) :
+    P {ω | renewalExcess T t ω ≤ x} + ∫⁻ ω, renewalCount T t ω ∂P ≤
+      ∫⁻ ω, renewalCount T (t + x) ω ∂P := by
+  rw [← lintegral_indicator_one₀ hnull,
+    ← lintegral_add_left' (f := {ω | renewalExcess T t ω ≤ x}.indicator 1)
+      (aemeasurable_const.indicator₀ hnull)]
+  refine lintegral_mono_ae ?_
+  filter_upwards [hne] with ω hω
+  rw [← natCast_renewalCountNat hω t, ← natCast_renewalCountNat hω (t + x)]
+  by_cases hx : renewalExcess T t ω ≤ x
+  · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hx, ↓reduceIte, Pi.one_apply]
+    rw [add_comm]
+    exact_mod_cast Nat.succ_le_of_lt ((renewalExcess_le_iff_renewalCountNat_lt hω).1 hx)
+  · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hx, ↓reduceIte, zero_add]
+    exact_mod_cast monotone_renewalCountNat T ω le_self_add
 
 /-- For an almost surely nonexplosive process with integrable counts at both endpoints,
 the measure of the event of an excess at most `x` is bounded by the integral of the count increment.
-Independence and identical distribution of increments are not required. -/
+Independence, identical distribution, strict increment measurability, and finiteness of `P` are not
+required. -/
 theorem measureReal_renewalExcess_le_le_integral_sub
-    (hT : ∀ n, Measurable (T n))
     (hne : ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop)
     (t x : ℝ≥0)
     (ht : Integrable (fun ω ↦ (renewalCountNat T t ω : ℝ)) P)
@@ -56,23 +77,34 @@ theorem measureReal_renewalExcess_le_le_integral_sub
     P.real {ω | renewalExcess T t ω ≤ x} ≤
       (∫ ω, (renewalCountNat T (t + x) ω : ℝ) ∂P) -
         ∫ ω, (renewalCountNat T t ω : ℝ) ∂P := by
-  have hs : MeasurableSet {ω | renewalExcess T t ω ≤ x} :=
-    measurableSet_le (measurable_renewalExcess hT t) measurable_const
-  rw [← integral_indicator_one hs, ← integral_sub htx ht]
-  refine integral_mono_ae ((integrable_const (1 : ℝ)).indicator hs) (htx.sub ht) ?_
-  filter_upwards [hne] with ω hω
-  have hmono : (renewalCountNat T t ω : ℝ) ≤ renewalCountNat T (t + x) ω :=
-    Nat.cast_le.mpr (monotone_renewalCountNat T ω le_self_add)
-  by_cases hx : renewalExcess T t ω ≤ x
-  · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hx, ↓reduceIte, Pi.one_apply]
-    have hlt := (renewalExcess_le_iff_renewalCountNat_lt hω).1 hx
-    have hle : (renewalCountNat T t ω : ℝ) + 1 ≤ renewalCountNat T (t + x) ω := by
-      exact_mod_cast Nat.succ_le_of_lt hlt
-    linarith
-  · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hx, ↓reduceIte]
-    linarith
+  have hnull : NullMeasurableSet {ω | renewalExcess T t ω ≤ x} P := by
+    refine ((htx.sub ht).aemeasurable.nullMeasurableSet_preimage
+      (measurableSet_Ioi (a := (0 : ℝ)))).congr ?_
+    refine eventuallyEqSet_iff.2 ?_
+    filter_upwards [hne] with ω hω
+    simp [renewalExcess_le_iff_renewalCountNat_lt hω, sub_pos]
+  have hle := measure_renewalExcess_le_add_lintegral_renewalCount_le hnull hne
+  have hlint (s : ℝ≥0) (hs : Integrable (fun ω ↦ (renewalCountNat T s ω : ℝ)) P) :
+      ∫⁻ ω, renewalCount T s ω ∂P =
+        ENNReal.ofReal (∫ ω, (renewalCountNat T s ω : ℝ) ∂P) := by
+    rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun _ ↦ Nat.cast_nonneg _)
+        hs.aestronglyMeasurable, ENNReal.ofReal_toReal]
+    · refine lintegral_congr_ae ?_
+      filter_upwards [hne] with ω hω
+      rw [← natCast_renewalCountNat hω s, ENNReal.ofReal_natCast]
+    · refine ne_of_lt (lt_of_le_of_lt (lintegral_mono_ae ?_) hs.hasFiniteIntegral)
+      filter_upwards with ω
+      rw [Real.eNorm_eq_ofReal (Nat.cast_nonneg _)]
+  rw [hlint t ht, hlint (t + x) htx] at hle
+  have hPfin : P {ω | renewalExcess T t ω ≤ x} ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top (le_self_add.trans hle)
+  have hreal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
+  rw [ENNReal.toReal_add hPfin ENNReal.ofReal_ne_top,
+    ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ Nat.cast_nonneg _),
+    ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ Nat.cast_nonneg _),
+    ← measureReal_def] at hreal
+  linarith
 
-omit [IsFiniteMeasure P] in
 /-- For i.i.d. nonnegative increments with `(P.map (T 0)) {0} < 1`, the excess distribution
 function is bounded by the renewal-function increment. The bound applies also to infinite-mean
 interarrival laws, laws with an atom at zero, and almost-everywhere measurable increments. -/
@@ -90,21 +122,9 @@ theorem measureReal_renewalExcess_le_le_renewalFunction_sub
   have hnull : NullMeasurableSet {ω | renewalExcess T t ω ≤ x} P :=
     (aemeasurable_renewalExcess (fun n ↦ (hid n).aemeasurable_fst) t).nullMeasurableSet_preimage
       measurableSet_Iic
-  have hle : P {ω | renewalExcess T t ω ≤ x} + (P.map (T 0)).renewalFunction t ≤
-      (P.map (T 0)).renewalFunction (t + x) := by
-    rw [← lintegral_indicator_one₀ hnull, ← lintegral_renewalCount hindep hid t,
-      ← lintegral_renewalCount hindep hid (t + x),
-      ← lintegral_add_left' (f := {ω | renewalExcess T t ω ≤ x}.indicator 1)
-        (aemeasurable_const.indicator₀ hnull)]
-    refine lintegral_mono_ae ?_
-    filter_upwards [ae_tendsto_arrival_atTop hindep hid hzero'] with ω hω
-    rw [← natCast_renewalCountNat hω t, ← natCast_renewalCountNat hω (t + x)]
-    by_cases hx : renewalExcess T t ω ≤ x
-    · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hx, ↓reduceIte, Pi.one_apply]
-      rw [add_comm]
-      exact_mod_cast Nat.succ_le_of_lt ((renewalExcess_le_iff_renewalCountNat_lt hω).1 hx)
-    · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hx, ↓reduceIte, zero_add]
-      exact_mod_cast monotone_renewalCountNat T ω le_self_add
+  have hle := measure_renewalExcess_le_add_lintegral_renewalCount_le hnull
+    (ae_tendsto_arrival_atTop hindep hid hzero')
+  rw [lintegral_renewalCount hindep hid t, lintegral_renewalCount hindep hid (t + x)] at hle
   have hfin : (P.map (T 0)).renewalFunction (t + x) ≠ ∞ :=
     ((P.map (T 0)).renewalFunction_lt_top hzero (t + x)).ne
   have hfin' : (P.map (T 0)).renewalFunction t ≠ ∞ :=
