@@ -272,13 +272,24 @@ theorem basisCoordinates_cauchyProduct [CommSemiring R] [AddCommMonoid V] [Modul
         (basisCoordinates b v) (basisCoordinates c w) := by
   classical
   ext ⟨⟨i, j⟩, h⟩
-  rw [basisCoordinates_apply_val, coeff_cauchyProduct, map_sum, Finset.sum_apply',
-    NovikovModule.kernelProduct_apply_val_eq_sum _ _ _ _ _
-      (s := (finite_setOf_add_eq v w h).toFinset.image
-        fun p => ((⟨i, p.1⟩ : Σ _ : ι, H), (⟨j, p.2⟩ : Σ _ : κ, H))) ?_,
-    Finset.sum_image fun p _ p' _ hpp' => Prod.ext_iff.2 (by simpa using hpp')]
-  · refine Finset.sum_congr rfl fun p hp => ?_
-    simp [cauchyKernel_apply, ((Set.Finite.mem_toFinset _).1 hp).1, mul_comm]
+  -- Both sides are sums over the generator pairs `(⟨i, u⟩, ⟨j, u'⟩)` with `(u, u')` a pair of
+  -- support exponents adding up to `h`.
+  let S := (finite_setOf_add_eq v w h).toFinset.image
+    fun p => ((⟨i, p.1⟩ : Σ _ : ι, H), (⟨j, p.2⟩ : Σ _ : κ, H))
+  have hS {q} (hq : q ∈ S) : q = (⟨i, q.1.2⟩, ⟨j, q.2.2⟩) ∧ q.1.2 + q.2.2 = h := by
+    obtain ⟨p, hp, rfl⟩ := Finset.mem_image.1 hq
+    exact ⟨rfl, ((Set.Finite.mem_toFinset _).1 hp).1⟩
+  rw [NovikovModule.kernelProduct_apply_val_eq_sum (s := S) (hs := ?_), basisCoordinates_apply_val,
+    coeff_cauchyProduct_eq_sum_of_injOn (F := S) (f := fun q => (q.1.2, q.2.2))
+      (fun q hq => (hS hq).2) ?_ ?_, map_sum, Finset.sum_apply']
+  · refine Finset.sum_congr rfl fun q hq => ?_
+    rw [(hS hq).1]
+    simp [cauchyKernel_apply, (hS hq).2, mul_comm]
+  · exact fun u u' huu' hu hu' => ⟨(⟨i, u⟩, ⟨j, u'⟩),
+      Finset.mem_image.2 ⟨(u, u'), (Set.Finite.mem_toFinset _).2 ⟨huu', hu, hu'⟩, rfl⟩, rfl⟩
+  · intro q hq q' hq' hqq'
+    rw [(hS hq).1, (hS hq').1]
+    exact congrArg (fun p : H × H => ((⟨i, p.1⟩ : Σ _ : ι, H), (⟨j, p.2⟩ : Σ _ : κ, H))) hqq'
   · rintro ⟨⟨i₁, u⟩, ⟨j₁, u'⟩⟩ hv hw hn
     obtain ⟨⟨rfl, rfl⟩, rfl⟩ : ((i, j) = (i₁, j₁)) ∧ h = u + u' := by
       simpa using not_imp_comm.1 cauchyKernel_of_ne hn
