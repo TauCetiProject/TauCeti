@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
-public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameterCurvature
+public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 import TauCeti.Analysis.InnerProductSpace.Comass
 
 /-!
