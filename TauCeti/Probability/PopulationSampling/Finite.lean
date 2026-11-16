@@ -54,11 +54,10 @@ of the latter's sampling law, without separation assumptions on the value space.
   `sampleWithoutReplacement_le_sampleWithReplacement_add_exact_collision`,
   `sampleWithReplacement_le_sampleWithoutReplacement_add_exact_collision`: the stronger bounds
   retaining the exact index-collision event and its falling-factorial formula;
-* `sampleWithoutReplacement_eq_zero_iff`, `sampleWithReplacement_eq_zero_iff`,
-  `sampleWithoutReplacement_eq_sampleWithReplacement`: the infeasible and subsingleton-sample
-  regimes;
-* `sampleWithoutReplacement_dirac_const`, `sampleWithReplacement_dirac_const`,
-  `sampleWithoutReplacement_dirac_eq_sampleWithReplacement_dirac_of_const`: constant populations.
+* `sampleWithoutReplacement_eq_zero_of_isEmpty`, `sampleWithoutReplacement_eq_zero_of_card_lt`,
+  `sampleWithReplacement_eq_zero_of_isEmpty`,
+  `sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton`: the infeasible and
+  subsingleton-sample regimes.
 
 ## References
 
@@ -86,8 +85,10 @@ selection `k : ι → κ`; then return the sample `i ↦ x (k i)`. This is `samp
 uniform law on injective index maps. If no injective selection exists, Mathlib's `uniformOn`
 convention makes this the zero measure.
 
-The results below take the population index finite with measurable singletons: uniform counting
-then distributes mass over finitely many injective selections. -/
+Deterministic evaluation, probability-mass preservation, and collision bounds below take
+`[Finite κ] [MeasurableSingletonClass κ]` (with `[Countable κ]` sufficing for measurable
+observations), whereas finite-measure preservation, infeasible-selection vanishing, and
+subsingleton-sample agreement require neither. -/
 def sampleWithoutReplacement {ι κ : Type*} [MeasurableSpace κ] (ρ : Measure (κ → α)) :
     Measure (ι → α) :=
   samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ
@@ -106,11 +107,11 @@ instance isFiniteMeasure_sampleWithoutReplacement {ι κ : Type*} [MeasurableSpa
   infer_instance
 
 /-- When no embedding `ι ↪ κ` exists, sampling without replacement is the zero measure. -/
-@[simp]
+@[simp high]
 theorem sampleWithoutReplacement_eq_zero_of_isEmpty {ι κ : Type*} [MeasurableSpace κ]
     [IsEmpty (ι ↪ κ)] (ρ : Measure (κ → α)) :
     sampleWithoutReplacement (ι := ι) ρ = 0 := by
-  simp [sampleWithoutReplacement_def, samplePopulation_def]
+  simp [sampleWithoutReplacement_def]
 
 /-- When the sample size exceeds the population size, no injective selection exists and sampling
 without replacement is the zero measure. -/
@@ -119,13 +120,6 @@ theorem sampleWithoutReplacement_eq_zero_of_card_lt {ι κ : Type*} [Fintype ι]
     sampleWithoutReplacement (ι := ι) ρ = 0 := by
   have : IsEmpty (ι ↪ κ) := ⟨fun e => h.not_ge (Fintype.card_le_of_embedding e)⟩
   exact sampleWithoutReplacement_eq_zero_of_isEmpty ρ
-
-/-- For an s-finite population law over a finite index type with measurable singletons, sampling
-without replacement vanishes if and only if no embedding `ι ↪ κ` exists or `ρ = 0`. -/
-theorem sampleWithoutReplacement_eq_zero_iff {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] {ρ : Measure (κ → α)} [SFinite ρ] :
-    sampleWithoutReplacement (ι := ι) ρ = 0 ↔ IsEmpty (ι ↪ κ) ∨ ρ = 0 := by
-  rw [sampleWithoutReplacement_def, samplePopulation_eq_zero_iff, uniformOn_injective_eq_zero_iff]
 
 /-- Sampling a deterministic population without replacement is the pushforward of uniform
 injective selections. -/
@@ -201,9 +195,11 @@ on all index maps (`sampleWithReplacement_eq_samplePopulation_uniformOn`): the s
 as `sampleWithoutReplacement` without the injectivity constraint. If `κ` is empty but `ι` is not,
 no index map exists, and Mathlib's `uniformOn` convention makes this the zero measure.
 
-The sample index is finite because the selection law is a finite product. Apart from the
-finite-law instance, the results below take the population index finite with measurable
-singletons. -/
+The sample index is finite because the selection law is a finite product. Deterministic
+evaluation, the empirical-product mixture, probability-mass preservation, and collision bounds
+below take `[Finite κ] [MeasurableSingletonClass κ]` (with `[Countable κ]` sufficing for
+measurable observations), whereas finite-measure preservation, infeasible-selection vanishing,
+and subsingleton-sample agreement require neither. -/
 def sampleWithReplacement [Fintype ι] (ρ : Measure (κ → α)) : Measure (ι → α) :=
   samplePopulation (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) ρ
 
@@ -221,29 +217,30 @@ instance isFiniteMeasure_sampleWithReplacement [Fintype ι] (ρ : Measure (κ �
 
 /-- When no selection `ι → κ` exists (i.e. `ι` is nonempty and `κ` is empty), sampling with
 replacement is the zero measure. -/
-@[simp]
+@[simp high]
 theorem sampleWithReplacement_eq_zero_of_isEmpty [Fintype ι] [IsEmpty (ι → κ)]
     (ρ : Measure (κ → α)) :
     sampleWithReplacement (ι := ι) ρ = 0 := by
-  simp [sampleWithReplacement_def, samplePopulation_def,
+  simp [sampleWithReplacement_def,
     Measure.eq_zero_of_isEmpty (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ))]
 
 /-- On a subsingleton sample index (samples of size `0` or `1`), sampling without replacement and
 sampling with replacement have the exact same law for every population law `ρ`, with no finiteness
 or measurable-singleton hypothesis on `κ`. -/
-theorem sampleWithoutReplacement_eq_sampleWithReplacement [Fintype ι] [Subsingleton ι]
-    (ρ : Measure (κ → α)) :
+@[simp]
+theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton [Fintype ι]
+    [Subsingleton ι] (ρ : Measure (κ → α)) :
     sampleWithoutReplacement (ι := ι) ρ = sampleWithReplacement (ι := ι) ρ := by
   rw [sampleWithoutReplacement_def, sampleWithReplacement_def,
-    uniformOn_injective_of_subsingleton, uniformOn_univ_pi_of_subsingleton]
+    uniformOn_injective_of_subsingleton, pi_uniformOn_univ_of_subsingleton]
 
-/-- Cardinality form of `sampleWithoutReplacement_eq_sampleWithReplacement`: when `|ι| ≤ 1`,
-sampling without replacement and sampling with replacement coincide. -/
+/-- Cardinality form of `sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton`: when
+`|ι| ≤ 1`, sampling without replacement and sampling with replacement coincide. -/
 theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_card_le_one [Fintype ι]
     (h : Fintype.card ι ≤ 1) (ρ : Measure (κ → α)) :
     sampleWithoutReplacement (ι := ι) ρ = sampleWithReplacement (ι := ι) ρ := by
   have : Subsingleton ι := Fintype.card_le_one_iff_subsingleton.1 h
-  exact sampleWithoutReplacement_eq_sampleWithReplacement ρ
+  exact sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton ρ
 
 variable [MeasurableSingletonClass κ]
 
@@ -252,15 +249,6 @@ theorem sampleWithReplacement_eq_samplePopulation_uniformOn [Fintype ι] [Finite
     (ρ : Measure (κ → α)) :
     sampleWithReplacement (ι := ι) ρ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ := by
   rw [sampleWithReplacement_def, ← uniformOn_pi, Set.pi_univ]
-
-/-- For an s-finite population law over a finite index type with measurable singletons, sampling
-with replacement vanishes if and only if the selection space `ι → κ` is empty or `ρ = 0`. -/
-theorem sampleWithReplacement_eq_zero_iff [Fintype ι] [Finite κ]
-    {ρ : Measure (κ → α)} [SFinite ρ] :
-    sampleWithReplacement (ι := ι) ρ = 0 ↔ IsEmpty (ι → κ) ∨ ρ = 0 := by
-  rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_eq_zero_iff,
-    uniformOn_eq_zero]
-  simp [Set.finite_univ, Set.univ_eq_empty_iff]
 
 /-- Sampling a deterministic population with replacement is the pushforward of uniform
 selections, without an injectivity constraint. -/
@@ -302,40 +290,6 @@ theorem sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype [Fintype ι] 
         (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure := by
   simp_rw [sampleWithReplacement_eq_samplePopulation_uniformOn,
     samplePopulation_eq_bind_population, pi_empiricalMeasureOfFintype_eq_map_uniformOn]
-
-/-- Sampling a constant population without replacement gives the Dirac measure at the constant
-sample whenever an injective selection exists. -/
-theorem sampleWithoutReplacement_dirac_const [Finite κ] (e : ι ↪ κ) (c : α) :
-    sampleWithoutReplacement (ι := ι) (Measure.dirac (fun _ : κ => c)) =
-      Measure.dirac (fun _ : ι => c) := by
-  have : Finite ι := Finite.of_injective e e.injective
-  let _ : IsProbabilityMeasure (uniformOn {k : ι → κ | Function.Injective k}) :=
-    isProbabilityMeasure_uniformOn (Set.toFinite _) ⟨e, e.injective⟩
-  rw [sampleWithoutReplacement_def, samplePopulation_dirac_const, measure_univ, one_smul]
-
-/-- Sampling a constant population with replacement gives the Dirac measure at the constant sample
-whenever a selection exists. -/
-theorem sampleWithReplacement_dirac_const [Fintype ι] [Finite κ] [Nonempty (ι → κ)] (c : α) :
-    sampleWithReplacement (ι := ι) (Measure.dirac (fun _ : κ => c)) =
-      Measure.dirac (fun _ : ι => c) := by
-  rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_dirac_const,
-    measure_univ, one_smul]
-
-/-- For a deterministic population whose entries are all equal, sampling without replacement and
-sampling with replacement coincide whenever an injective selection exists. -/
-theorem sampleWithoutReplacement_dirac_eq_sampleWithReplacement_dirac_of_const
-    [Fintype ι] [Finite κ] {x : κ → α} (hx : ∀ k₁ k₂, x k₁ = x k₂) (e : ι ↪ κ) :
-    sampleWithoutReplacement (ι := ι) (Measure.dirac x) =
-      sampleWithReplacement (ι := ι) (Measure.dirac x) := by
-  cases isEmpty_or_nonempty κ with
-  | inl hκ =>
-    have : IsEmpty ι := Function.isEmpty e
-    exact sampleWithoutReplacement_eq_sampleWithReplacement (Measure.dirac x)
-  | inr hκ =>
-    obtain ⟨k₀⟩ := hκ
-    let _ : Nonempty (ι → κ) := ⟨e⟩
-    have hconst : x = fun _ => x k₀ := funext fun k => hx k k₀
-    rw [hconst, sampleWithoutReplacement_dirac_const e, sampleWithReplacement_dirac_const]
 
 section Bounds
 

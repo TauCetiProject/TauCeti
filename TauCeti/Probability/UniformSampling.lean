@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
+public import TauCeti.MeasureTheory.Measure.Count.Basic
 import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
@@ -37,12 +38,13 @@ estimate is the classical union bound over unordered coordinate pairs, using
 
 ## Main results
 
-* `uniformOn_not_injective_le` and `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`
-  bound the uniform-measure mass of collisions;
+* `MeasurableEquiv.map_uniformOn` transports `uniformOn` along measurable equivalences;
+* `uniformOn_not_injective_le`, `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`, and
+  their `.real` companions bound the uniform-measure mass of collisions;
 * `uniformOn_injective_apply_eq`, `uniformOn_not_injective_apply_eq`, and their `.real` forms
   compute the exact uniform-measure masses;
-* `uniformOn_injective_eq_zero_iff`, `uniformOn_injective_of_subsingleton`, and
-  `uniformOn_univ_pi_of_subsingleton` treat the infeasible and subsingleton-sample regimes;
+* `uniformOn_injective_eq_zero_of_isEmpty`, `uniformOn_injective_of_subsingleton`, and
+  `pi_uniformOn_univ_of_subsingleton` treat the infeasible and subsingleton-sample regimes;
 * `uniformOn_inter_le_add_compl` and `uniformOn_le_inter_add_compl` give the general conditioning
   comparison;
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
@@ -65,6 +67,15 @@ open scoped ENNReal
 namespace TauCeti
 
 namespace Probability
+
+/-- A measurable equivalence pushes a uniform measure forward to the uniform measure on the image
+set, without any finiteness or measurable-singleton assumption. -/
+theorem _root_.MeasurableEquiv.map_uniformOn {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (e : α ≃ᵐ β) (s : Set α) :
+    (uniformOn s).map e = uniformOn (e '' s) := by
+  nth_rw 1 [← Set.preimage_image_eq s e.injective]
+  rw [uniformOn, uniformOn, ProbabilityTheory.cond, ProbabilityTheory.cond,
+    Measure.map_smul _ e.measurable.aemeasurable, ← e.restrict_map, ← e.map_apply, e.map_count]
 
 /-- The real-valued mass of an event under a uniform measure is the ratio of its cardinality to
 the cardinality of the sampling set. This also covers the zero measure when the sampling set is
@@ -151,30 +162,30 @@ theorem uniformOn_not_injective_le_one_sub_descFactorial_div_pow [MeasurableSpac
   · simp [Measure.eq_zero_of_isEmpty (uniformOn (Set.univ : Set (ι → κ)))]
   · exact uniformOn_not_injective_apply_eq.le
 
+/-- Real-valued form of `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`. -/
+theorem uniformOn_real_not_injective_le_one_sub_descFactorial_div_pow [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] :
+    (uniformOn (Set.univ : Set (ι → κ))).real {f | ¬ Function.Injective f} ≤
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι := by
+  have hfin : (1 : ℝ≥0∞) - (Fintype.card κ).descFactorial (Fintype.card ι) /
+      (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
+  simpa [measureReal_def, toReal_one_sub_descFactorial_div_pow] using
+    ENNReal.toReal_mono hfin uniformOn_not_injective_le_one_sub_descFactorial_div_pow
+
 end
 
 section Degenerate
 
 /-- When no embedding `ι ↪ κ` exists, there are no injective maps and the uniform measure on
 injective selections is zero. -/
-@[simp]
+@[simp high]
 theorem uniformOn_injective_eq_zero_of_isEmpty [MeasurableSpace κ] [IsEmpty (ι ↪ κ)] :
     uniformOn {f : ι → κ | Function.Injective f} = 0 := by
   have h : {f : ι → κ | Function.Injective f} = ∅ :=
     Set.eq_empty_of_forall_notMem fun f hf => isEmptyElim (⟨f, hf⟩ : ι ↪ κ)
   simp [h]
-
-/-- For a finite target with measurable singletons, the uniform measure on injective maps `ι → κ`
-vanishes if and only if no embedding `ι ↪ κ` exists. No finiteness assumption on `ι` is needed:
-when `ι` is infinite there is no embedding into `κ` and both sides hold. -/
-theorem uniformOn_injective_eq_zero_iff [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] :
-    uniformOn {f : ι → κ | Function.Injective f} = 0 ↔ IsEmpty (ι ↪ κ) := by
-  refine ⟨fun h => ⟨fun e => ?_⟩, fun _ => uniformOn_injective_eq_zero_of_isEmpty⟩
-  have : Finite ι := Finite.of_injective e e.injective
-  let _ : IsProbabilityMeasure (uniformOn {f : ι → κ | Function.Injective f}) :=
-    isProbabilityMeasure_uniformOn (Set.toFinite _) ⟨e, e.injective⟩
-  exact NeZero.ne _ h
 
 /-- On a subsingleton sample index, every map `ι → κ` is injective, so the uniform measure on
 injective selections coincides with the uniform measure on all selections. -/
@@ -185,7 +196,7 @@ theorem uniformOn_injective_of_subsingleton [Subsingleton ι] [MeasurableSpace �
   exact Set.eq_univ_of_forall fun f => Function.injective_of_subsingleton f
 
 /-- On a subsingleton sample index, no selection has a coordinate collision. -/
-@[simp]
+@[simp high]
 theorem uniformOn_not_injective_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
     (s : Set (ι → κ)) :
     uniformOn s {f : ι → κ | ¬ Function.Injective f} = 0 := by
@@ -193,23 +204,20 @@ theorem uniformOn_not_injective_of_subsingleton [Subsingleton ι] [MeasurableSpa
     Set.eq_empty_of_forall_notMem fun f hf => hf (Function.injective_of_subsingleton f)
   simp [h]
 
+/-- Real-valued form of `uniformOn_not_injective_of_subsingleton`. -/
+@[simp high]
+theorem uniformOn_real_not_injective_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
+    (s : Set (ι → κ)) :
+    (uniformOn s).real {f : ι → κ | ¬ Function.Injective f} = 0 := by
+  simp [measureReal_def]
+
 /-- On a subsingleton sample index, the product of uniform laws on `κ` coincides with the uniform
 law on `ι → κ` without any finiteness or measurable-singleton assumption on `κ`. -/
-theorem uniformOn_univ_pi_of_subsingleton [Fintype ι] [Subsingleton ι] [MeasurableSpace κ] :
+theorem pi_uniformOn_univ_of_subsingleton [Fintype ι] [Subsingleton ι] [MeasurableSpace κ] :
     (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) =
       uniformOn (Set.univ : Set (ι → κ)) := by
   rcases isEmpty_or_nonempty ι with hι | ⟨i₀⟩
-  · rw [Measure.pi_of_empty]
-    have huniv : ({isEmptyElim} : Set (ι → κ)) = Set.univ :=
-      Set.eq_univ_of_forall fun f => Subsingleton.elim f isEmptyElim
-    have : MeasurableSingletonClass (ι → κ) := ⟨fun f => by
-      have hf : ({f} : Set (ι → κ)) = Set.univ :=
-        Set.eq_univ_of_forall fun g => Subsingleton.elim g f
-      exact hf ▸ .univ⟩
-    ext s hs
-    classical
-    rw [← huniv, uniformOn_singleton, Measure.dirac_apply' _ hs]
-    simp [Set.indicator]
+  · rw [Measure.pi_of_empty, uniformOn, Subsingleton.count_eq_dirac isEmptyElim, cond_univ]
   · obtain ⟨i₀⟩ := i₀
     let _ : Unique ι := uniqueOfSubsingleton i₀
     obtain rfl : ‹Fintype ι› = Unique.fintype := Subsingleton.elim _ _
@@ -218,12 +226,7 @@ theorem uniformOn_univ_pi_of_subsingleton [Fintype ι] [Subsingleton ι] [Measur
         uniformOn (Set.univ : Set κ) :=
       (measurePreserving_funUnique (uniformOn (Set.univ : Set κ)) ι).map_eq
     have hmap₂ : (uniformOn (Set.univ : Set (ι → κ))).map e = uniformOn (Set.univ : Set κ) := by
-      ext s hs
-      rw [Measure.map_apply e.measurable hs, uniformOn, uniformOn, cond_apply .univ,
-        cond_apply .univ, Set.univ_inter, Set.univ_inter, Measure.count_apply .univ,
-        Measure.count_apply .univ, Measure.count_apply (hs.preimage e.measurable),
-        Measure.count_apply hs, Set.encard_univ, Set.encard_univ, ENat.card_congr e.toEquiv,
-        Set.encard_preimage_of_injective_subset_range e.injective (by simp)]
+      simpa [e.surjective.range_eq] using e.map_uniformOn Set.univ
     calc
       (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ))
           = ((Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)).map e).map e.symm :=
@@ -327,6 +330,18 @@ theorem uniformOn_not_injective_le [MeasurableSpace κ] [MeasurableSingletonClas
         _ = (Fintype.card ι).choose 2 / Fintype.card κ := by
           rw [Finset.sum_const, nsmul_eq_mul, card_coordinatePairs]
           simp [div_eq_mul_inv]
+
+/-- Real-valued form of `uniformOn_not_injective_le`, valid without `[Nonempty κ]`. -/
+theorem uniformOn_real_not_injective_le [MeasurableSpace κ] [MeasurableSingletonClass κ] :
+    (uniformOn (Set.univ : Set (ι → κ))).real {x | ¬Function.Injective x} ≤
+      (Fintype.card ι).choose 2 / (Fintype.card κ : ℝ) := by
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · have : {x : ι → κ | ¬Function.Injective x} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun x hx => hx fun a => isEmptyElim (x a)
+    simp [this, measureReal_def]
+  · have hfin : ((Fintype.card ι).choose 2 : ℝ≥0∞) / Fintype.card κ ≠ ∞ :=
+      ENNReal.div_ne_top (ENNReal.natCast_ne_top _) (by simp [Fintype.card_ne_zero])
+    simpa [measureReal_def] using ENNReal.toReal_mono hfin uniformOn_not_injective_le
 
 end
 
