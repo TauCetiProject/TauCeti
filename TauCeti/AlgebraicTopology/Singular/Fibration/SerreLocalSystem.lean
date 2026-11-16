@@ -58,7 +58,6 @@ Serre fibration.
 ## Main definitions
 
 * `TopCat.Hom.pullbackFiberι`: the inclusion of a fibre of `p` into a base change of `p`.
-* `Path.toTopCatHom`: a path as a morphism of `TopCat` out of the lifted unit interval.
 * `TauCeti.TopCat.pullbackFiberTransport`: transport on homology over a contractible parameter
   space.
 * `TauCeti.TopCat.fiberHomologyTransport`: transport on homology along a path.
@@ -113,30 +112,6 @@ lemma coe_pullbackFiberι_apply (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B} (h :
   (rfl)
 
 end TopCat.Hom
-
-namespace Path
-
-variable {B : TopCat.{u}} {b₀ b₁ : B}
-
-/-- A path in `B`, as a morphism of `TopCat` from the unit interval `TopCat.I` in the universe of
-`B`. The base change of a fibration along it is the restriction of the fibration to the path. -/
-abbrev toTopCatHom (γ : Path b₀ b₁) : TopCat.I.{u} ⟶ B :=
-  TopCat.ofHom (γ.toContinuousMap.comp (TopCat.I.homeomorph : C(TopCat.I.{u}, I)))
-
-/-- The path as a morphism of `TopCat` sends `t` to `γ t`. -/
-lemma toTopCatHom_apply (γ : Path b₀ b₁) (t : TopCat.I.{u}) :
-    γ.toTopCatHom t = γ (TopCat.I.homeomorph t) :=
-  (rfl)
-
-/-- The path as a morphism of `TopCat` starts at the start of the path. -/
-lemma toTopCatHom_zero (γ : Path b₀ b₁) : γ.toTopCatHom (0 : TopCat.I.{u}) = b₀ := by
-  rw [toTopCatHom_apply, TopCat.I.homeomorph_zero, γ.source]
-
-/-- The path as a morphism of `TopCat` ends at the end of the path. -/
-lemma toTopCatHom_one (γ : Path b₀ b₁) : γ.toTopCatHom (1 : TopCat.I.{u}) = b₁ := by
-  rw [toTopCatHom_apply, TopCat.I.homeomorph_one, γ.target]
-
-end Path
 
 namespace TauCeti.TopCat
 
@@ -377,34 +352,34 @@ private lemma secondHalf_zero : secondHalf (0 : TopCat.I.{u}) = midpoint :=
 private lemma secondHalf_one : secondHalf (1 : TopCat.I.{u}) = 1 :=
   TopCat.I.ext (Subtype.ext (by rw [coe_homeomorph_secondHalf_apply]; norm_num))
 
-private lemma toTopCatHom_trans_midpoint (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
-    (γ.trans δ).toTopCatHom midpoint = b₁ := by
+private lemma pathEquiv_symm_trans_hom_midpoint (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
+    (TopCat.pathEquiv.symm (γ.trans δ)).hom midpoint = b₁ := by
   have hc : (TopCat.I.homeomorph midpoint.{u} : ℝ) ≤ 1 / 2 := by
     rw [coe_homeomorph_midpoint]
-  rw [Path.toTopCatHom_apply]
-  simp only [Path.trans_apply, hc, ↓reduceDIte]
+  change γ.trans δ (TopCat.I.homeomorph midpoint) = b₁
+  rw [Path.trans_apply, dite_eq_left hc]
   refine (congrArg γ (Subtype.ext ?_)).trans γ.target
   dsimp only
   rw [coe_homeomorph_midpoint]
   norm_num
 
-private lemma firstHalf_comp_toTopCatHom_trans (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
-    firstHalf ≫ (γ.trans δ).toTopCatHom = γ.toTopCatHom := by
+private lemma firstHalf_comp_pathEquiv_symm_trans_hom (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
+    firstHalf ≫ (TopCat.pathEquiv.symm (γ.trans δ)).hom = (TopCat.pathEquiv.symm γ).hom := by
   ext t
   have hc : (TopCat.I.homeomorph (firstHalf t) : ℝ) ≤ 1 / 2 := by
     rw [coe_homeomorph_firstHalf_apply]; linarith [(TopCat.I.homeomorph t).2.2]
-  rw [ConcreteCategory.comp_apply, Path.toTopCatHom_apply, Path.toTopCatHom_apply]
-  simp only [Path.trans_apply, hc, ↓reduceDIte]
+  change γ.trans δ (TopCat.I.homeomorph (firstHalf t)) = γ (TopCat.I.homeomorph t)
+  rw [Path.trans_apply, dite_eq_left hc]
   refine congrArg γ (Subtype.ext ?_)
   dsimp only
   rw [coe_homeomorph_firstHalf_apply]
   ring
 
-private lemma secondHalf_comp_toTopCatHom_trans (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
-    secondHalf ≫ (γ.trans δ).toTopCatHom = δ.toTopCatHom := by
+private lemma secondHalf_comp_pathEquiv_symm_trans_hom (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
+    secondHalf ≫ (TopCat.pathEquiv.symm (γ.trans δ)).hom = (TopCat.pathEquiv.symm δ).hom := by
   ext t
-  rw [ConcreteCategory.comp_apply, Path.toTopCatHom_apply, Path.toTopCatHom_apply,
-    Path.trans_apply]
+  change γ.trans δ (TopCat.I.homeomorph (secondHalf t)) = δ (TopCat.I.homeomorph t)
+  rw [Path.trans_apply]
   split_ifs with h
   · -- Only the starting point of `δ` lies in the first half, where both paths are at `b₁`.
     rw [coe_homeomorph_secondHalf_apply] at h
@@ -430,13 +405,13 @@ over `b₀` into the base change `γ*E` of `p` along `γ`, followed by the inver
 def fiberHomologyTransport (γ : Path b₀ b₁) :
     ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b₀) ⟶
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b₁) :=
-  pullbackFiberTransport hp M n γ.toTopCatHom (k₀ := 0) (k₁ := 1) γ.toTopCatHom_zero
-    γ.toTopCatHom_one
+  pullbackFiberTransport hp M n (TopCat.pathEquiv.symm γ).hom (k₀ := 0) (k₁ := 1)
+    (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁
 
 private lemma fiberHomologyTransport_eq (γ : Path b₀ b₁) :
     fiberHomologyTransport hp M n γ =
-      pullbackFiberTransport hp M n γ.toTopCatHom (k₀ := 0) (k₁ := 1) γ.toTopCatHom_zero
-        γ.toTopCatHom_one :=
+      pullbackFiberTransport hp M n (TopCat.pathEquiv.symm γ).hom (k₀ := 0) (k₁ := 1)
+        (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ :=
   (rfl)
 
 /-- **Characterization of transport along a path.** Transport along `γ` followed by the inclusion
@@ -446,9 +421,11 @@ theorem fiberHomologyTransport_comp_map_pullbackFiberι
     (γ : Path b₀ b₁) :
     fiberHomologyTransport hp M n γ ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-          (p.pullbackFiberι γ.toTopCatHom (k := 1) γ.toTopCatHom_one) =
+          (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 1)
+            (TopCat.pathEquiv.symm γ).hom₁) =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-        (p.pullbackFiberι γ.toTopCatHom (k := 0) γ.toTopCatHom_zero) := by
+        (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0)
+          (TopCat.pathEquiv.symm γ).hom₀) := by
   rw [fiberHomologyTransport_eq]
   exact pullbackFiberTransport_comp_map_pullbackFiberι hp M n _ _ _
 
@@ -459,9 +436,11 @@ theorem eq_fiberHomologyTransport_iff (γ : Path b₀ b₁)
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b₁)) :
     f = fiberHomologyTransport hp M n γ ↔
       f ≫ ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-          (p.pullbackFiberι γ.toTopCatHom (k := 1) γ.toTopCatHom_one) =
+          (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 1)
+            (TopCat.pathEquiv.symm γ).hom₁) =
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-          (p.pullbackFiberι γ.toTopCatHom (k := 0) γ.toTopCatHom_zero) := by
+          (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0)
+            (TopCat.pathEquiv.symm γ).hom₀) := by
   rw [fiberHomologyTransport_eq]
   exact eq_pullbackFiberTransport_iff hp M n _ _ _ f
 
@@ -470,7 +449,7 @@ theorem eq_fiberHomologyTransport_iff (γ : Path b₀ b₁)
 theorem fiberHomologyTransport_refl (b : B) :
     fiberHomologyTransport hp M n (Path.refl b) = 𝟙 _ := by
   rw [fiberHomologyTransport_eq]
-  exact pullbackFiberTransport_eq_id hp M n (Path.refl b).toTopCatHom (b := b)
+  exact pullbackFiberTransport_eq_id hp M n (TopCat.pathEquiv.symm (Path.refl b)).hom (b := b)
     ⟨⟨fun t ↦ TopCat.I.homeomorph.symm t, by fun_prop⟩, rfl, rfl⟩ (fun _ ↦ rfl) rfl rfl
 
 /-- **Transport is invariant under homotopy of paths** relative to their end points. -/
@@ -513,15 +492,17 @@ theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
   -- are transport along `γ` and along `δ`.
   rw [fiberHomologyTransport_eq, fiberHomologyTransport_eq, fiberHomologyTransport_eq,
     ← pullbackFiberTransport_comp_pullbackFiberTransport hp M n _ _
-      (toTopCatHom_trans_midpoint γ δ),
+      (pathEquiv_symm_trans_hom_midpoint γ δ),
     pullbackFiberTransport_comp_left hp M n _ _ firstHalf
-      (firstHalf_comp_toTopCatHom_trans γ δ)
-      firstHalf_zero firstHalf_one γ.toTopCatHom_zero γ.toTopCatHom_one
-      (γ.trans δ).toTopCatHom_zero (toTopCatHom_trans_midpoint γ δ),
+      (firstHalf_comp_pathEquiv_symm_trans_hom γ δ)
+      firstHalf_zero firstHalf_one (TopCat.pathEquiv.symm γ).hom₀
+      (TopCat.pathEquiv.symm γ).hom₁
+      (TopCat.pathEquiv.symm (γ.trans δ)).hom₀ (pathEquiv_symm_trans_hom_midpoint γ δ),
     pullbackFiberTransport_comp_left hp M n _ _ secondHalf
-      (secondHalf_comp_toTopCatHom_trans γ δ)
-      secondHalf_zero secondHalf_one δ.toTopCatHom_zero δ.toTopCatHom_one
-      (toTopCatHom_trans_midpoint γ δ) (γ.trans δ).toTopCatHom_one]
+      (secondHalf_comp_pathEquiv_symm_trans_hom γ δ)
+      secondHalf_zero secondHalf_one (TopCat.pathEquiv.symm δ).hom₀
+      (TopCat.pathEquiv.symm δ).hom₁
+      (pathEquiv_symm_trans_hom_midpoint γ δ) (TopCat.pathEquiv.symm (γ.trans δ)).hom₁]
 
 /-- **The local system of fibre homology of a Serre fibration** `b ↦ Hₙ(p⁻¹(b); M)`, with
 singular homology with coefficients in a module `M`. The class of a path acts by transport along
@@ -569,8 +550,10 @@ theorem fiberHomologyTransport_eq_singularHomologyMap_fiberTransport
     fiberHomologyTransport hp M n γ =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (fiberTransport Λ γ) := by
   refine ((eq_fiberHomologyTransport_iff hp M n γ _).2 ?_).symm
-  let H : _root_.TopCat.Homotopy (p.pullbackFiberι γ.toTopCatHom (k := 0) γ.toTopCatHom_zero)
-      (fiberTransport Λ γ ≫ p.pullbackFiberι γ.toTopCatHom (k := 1) γ.toTopCatHom_one) :=
+  let H : _root_.TopCat.Homotopy
+      (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0) (TopCat.pathEquiv.symm γ).hom₀)
+      (fiberTransport Λ γ ≫
+        p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 1) (TopCat.pathEquiv.symm γ).hom₁) :=
     { toFun x := ⟨(TopCat.I.homeomorph.symm x.1, Λ.lift x.2.1 γ.toContinuousMap
           (γ.source.trans (x.2.2 : p x.2.1 = b₀).symm) x.1),
         (Λ.apply_lift _ _ _ x.1).symm⟩
@@ -661,8 +644,9 @@ def serreFiberLocalSystemMap :
     congr 1
     rw [← Category.assoc, ← Category.assoc]
     congr 1
-    exact pullbackFiberTransport_naturality hp M n sq hp' γ.toTopCatHom
-      (γ.map g.hom.continuous).toTopCatHom (𝟙 _) rfl γ.toTopCatHom_zero γ.toTopCatHom_one _ _
+    exact pullbackFiberTransport_naturality hp M n sq hp' (TopCat.pathEquiv.symm γ).hom
+      (TopCat.pathEquiv.symm (γ.map g.hom.continuous)).hom (𝟙 _) rfl
+      (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ _ _
 
 /-- On the fibre over `b`, the map of local systems induced by a map of Serre fibrations is the map
 induced on homology by the map of fibres. -/
