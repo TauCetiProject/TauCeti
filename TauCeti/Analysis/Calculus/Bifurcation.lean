@@ -8,12 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Convex.Function
-import Mathlib.Analysis.Calculus.ContDiff.Comp
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -104,48 +103,17 @@ namespace TauCeti
 
 variable {F : ℝ × ℝ → ℝ}
 
-/-- The iterated partial derivatives of `F` in its first variable, as Fréchet derivatives. -/
-private noncomputable def partialFst (F : ℝ × ℝ → ℝ) : ℕ → ℝ × ℝ → ℝ
-  | 0 => F
-  | k + 1 => fun p => fderiv ℝ (partialFst F k) p (1, 0)
+/-- The `k`-th partial derivative of `F` in its first variable, as a function of the point. The
+proofs below use that `partialFst F k (x, t)` is definitionally `deriv^[k] (fun y => F (y, t)) x`
+to pass between the two forms. -/
+private noncomputable def partialFst (F : ℝ × ℝ → ℝ) (k : ℕ) (p : ℝ × ℝ) : ℝ :=
+  deriv^[k] (fun y => F (y, p.2)) p.1
 
-private theorem partialFst_zero : partialFst F 0 = F := rfl
-
-private theorem partialFst_succ (k : ℕ) :
-    partialFst F (k + 1) = fun p => fderiv ℝ (partialFst F k) p (1, 0) := rfl
-
-/-- Near a point where `F` is `Cⁿ`, the `k`-th derivatives of the slices `y ↦ F (y, t)` are the
-values of the `C^(n-k)` function `partialFst F k`. -/
-private theorem eventually_partialFst {n : ℕ} {p₀ : ℝ × ℝ} (hF : ContDiffAt ℝ n F p₀) :
-    ∀ k ≤ n, ∀ᶠ p in 𝓝 p₀, ContDiffAt ℝ (n - k : ℕ) (partialFst F k) p ∧
-      deriv^[k] (fun y => F (y, p.2)) =ᶠ[𝓝 p.1] fun y => partialFst F k (y, p.2) := by
-  intro k
-  induction k with
-  | zero =>
-    intro _
-    exact (hF.eventually (by simp)).mono fun p hp => ⟨by simpa [partialFst_zero] using hp, .rfl⟩
-  | succ k ih =>
-    intro hk
-    filter_upwards [(ih (by omega)).eventually_nhds] with p hp
-    have hcd : ContDiffAt ℝ ((n - (k + 1) : ℕ) + 1 : ℕ) (partialFst F k) p := by
-      rw [show n - (k + 1) + 1 = n - k by omega]
-      exact hp.self_of_nhds.1
-    refine ⟨?_, ?_⟩
-    · rw [partialFst_succ]
-      exact (hcd.fderiv_right (by push_cast; rfl)).clm_apply contDiffAt_const
-    · have ht : Tendsto (fun y : ℝ => (y, p.2)) (𝓝 p.1) (𝓝 p) := by
-        simpa using ((continuous_id.prodMk continuous_const :
-          Continuous fun y : ℝ => (y, p.2)).tendsto p.1)
-      filter_upwards [ht.eventually hp] with y hy
-      rw [Function.iterate_succ_apply', hy.2.deriv_eq, partialFst_succ]
-      exact (hasDerivAt_slice_left
-        ((hy.1.differentiableAt (by exact_mod_cast (show n - k ≠ 0 by omega))))).deriv
-
-/-- Pointwise form of `eventually_partialFst`. -/
-private theorem eventually_iterate_deriv_eq {n : ℕ} {p₀ : ℝ × ℝ} (hF : ContDiffAt ℝ n F p₀)
-    {k : ℕ} (hk : k ≤ n) :
-    ∀ᶠ p in 𝓝 p₀, deriv^[k] (fun y => F (y, p.2)) p.1 = partialFst F k p :=
-  (eventually_partialFst hF k hk).mono fun _ hp => hp.2.self_of_nhds
+/-- Near a point where `F` is `Cⁿ`, the function `partialFst F k` is `C^(n-k)`. -/
+private theorem eventually_contDiffAt_partialFst {n : ℕ} {p₀ : ℝ × ℝ} (hF : ContDiffAt ℝ n F p₀)
+    (k : ℕ) (hk : k ≤ n) : ∀ᶠ p in 𝓝 p₀, ContDiffAt ℝ (n - k : ℕ) (partialFst F k) p :=
+  (hF.eventually (by simp)).mono fun _ hp =>
+    hp.contDiffAt_iterate_deriv_fst (by exact_mod_cast (show n - k + k ≤ n by omega))
 
 /-! ### Zeros of the slices -/
 
@@ -280,25 +248,23 @@ private theorem exists_fold_box (hF : ContDiffAt ℝ 2 F 0)
   have hbF : fderiv ℝ F (0, 0) (0, 1) = b :=
     (hasDerivAt_slice_right (hF0.differentiableAt two_ne_zero)).deriv.symm
   have hval : 0 < partialFst F 2 (0, 0) := by
-    rw [← (eventually_iterate_deriv_eq hF0 le_rfl).self_of_nhds, ← iteratedDeriv_eq_iterate]
+    rw [partialFst, ← iteratedDeriv_eq_iterate]
     exact h₂
   have hcontt : ContinuousAt (fun p => b * fderiv ℝ F p (0, 1)) (0, 0) :=
     continuousAt_const.mul ((hF0.continuousAt_fderiv two_ne_zero).clm_apply continuousAt_const)
-  have hev : ∀ᶠ p in 𝓝 ((0 : ℝ), (0 : ℝ)), ContDiffAt ℝ (2 : ℕ) F p ∧
-      deriv^[2] (fun y => F (y, p.2)) p.1 = partialFst F 2 p ∧ 0 < partialFst F 2 p ∧
+  have hev : ∀ᶠ p in 𝓝 ((0 : ℝ), (0 : ℝ)), ContDiffAt ℝ (2 : ℕ) F p ∧ 0 < partialFst F 2 p ∧
       0 < b * fderiv ℝ F p (0, 1) := by
-    filter_upwards [hF0.eventually (by simp), eventually_iterate_deriv_eq hF0 le_rfl,
-      ((eventually_partialFst hF0 2 le_rfl).self_of_nhds.1.continuousAt).eventually
+    filter_upwards [hF0.eventually (by simp),
+      ((eventually_contDiffAt_partialFst hF0 2 le_rfl).self_of_nhds.continuousAt).eventually
         (lt_mem_nhds hval),
       hcontt.eventually (lt_mem_nhds (show (0 : ℝ) < b * fderiv ℝ F (0, 0) (0, 1) by
-        rw [hbF]; exact mul_self_pos.2 hb))] with p h₁ h₂ h₃ h₄
-    exact ⟨h₁, h₂, h₃, h₄⟩
+        rw [hbF]; exact mul_self_pos.2 hb))] with p h₁ h₂ h₃
+    exact ⟨h₁, h₂, h₃⟩
   obtain ⟨δ₀, hδ₀, hbox⟩ := Metric.eventually_nhds_iff_ball.1 hev
   refine ⟨δ₀, hδ₀, fun hx ht => ?_⟩
-  obtain ⟨hcd, h2, h2pos, hbpos⟩ := hbox _ (mem_ball_of_abs_lt hx ht)
+  obtain ⟨hcd, h2pos, hbpos⟩ := hbox _ (mem_ball_of_abs_lt hx ht)
   have hdF := hcd.differentiableAt two_ne_zero
-  dsimp only at h2
-  exact ⟨hasDerivAt_slice_left hdF, hasDerivAt_slice_right hdF, h2 ▸ h2pos, hbpos⟩
+  exact ⟨hasDerivAt_slice_left hdF, hasDerivAt_slice_right hdF, h2pos, hbpos⟩
 
 /-- On the box around a fold point, the slices are strictly convex on `[-δ, δ]`. -/
 private theorem strictConvexOn_of_foldBox {δ₀ δ t : ℝ}
@@ -341,7 +307,7 @@ theorem eventually_fold (hF : ContDiffAt ℝ 2 F 0) (h₀ : F 0 = 0)
   have hsign : ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → (0 < deriv (fun s => F (0, s)) 0 * t →
       F (x, 0) < F (x, t)) ∧ (deriv (fun s => F (0, s)) 0 * t < 0 → F (x, t) < F (x, 0)) :=
     fun hx ht => by
-      simpa only [sub_zero] using sign_sub_of_hasDerivAt (a := 0) ordConnected_Ioo
+      simpa only [sub_zero] using lt_and_lt_of_hasDerivAt_of_mul_pos (a := 0) ordConnected_Ioo
         (fun s hs => (hbox hx (abs_lt.2 hs)).hasDerivAt_snd)
         (fun s hs => (hbox hx (abs_lt.2 hs)).mul_deriv_snd_pos) ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
   filter_upwards [Ioo_mem_nhdsGT hδ₀] with δ ⟨hδpos, hδδ₀⟩
@@ -380,7 +346,6 @@ private structure PitchforkBox (F : ℝ × ℝ → ℝ) (x t : ℝ) : Prop where
   hasDerivAt_partialFst_snd :
     HasDerivAt (fun s => partialFst F 1 (x, s)) (fderiv ℝ (partialFst F 1) (x, t) (0, 1)) t
   continuousAt_partialFst_two : ContinuousAt (fun y => partialFst F 2 (y, t)) x
-  deriv2_eq : deriv^[2] (fun y => F (y, t)) x = partialFst F 2 (x, t)
   deriv3_pos : 0 < deriv^[3] (fun y => F (y, t)) x
   mul_deriv_snd_pos :
     0 < deriv (fun s => deriv (fun y => F (y, s)) 0) 0 * fderiv ℝ (partialFst F 1) (x, t) (0, 1)
@@ -398,42 +363,36 @@ private theorem exists_pitchfork_box (hF : ContDiffAt ℝ 3 F 0)
     rw [Prod.mk_zero_zero]
     exact_mod_cast hF
   rw [← Prod.mk_zero_zero] at hodd
-  have hE₁ := eventually_partialFst hF0 1 (by norm_num)
-  have hcd₁ : ContDiffAt ℝ (2 : ℕ) (partialFst F 1) (0, 0) := hE₁.self_of_nhds.1
+  have hE₁ := eventually_contDiffAt_partialFst hF0 1 (by norm_num)
+  have hcd₁ : ContDiffAt ℝ (2 : ℕ) (partialFst F 1) (0, 0) := hE₁.self_of_nhds
   -- `b` is the derivative in `t` of `partialFst F 1` at the origin.
-  have hbF : fderiv ℝ (partialFst F 1) (0, 0) (0, 1) = b := by
-    have heq : (fun s => deriv (fun x => F (x, s)) 0) =ᶠ[𝓝 0]
-        fun s => partialFst F 1 (0, s) :=
-      (((continuous_const.prodMk continuous_id).tendsto 0).eventually hE₁).mono fun s hs =>
-        hs.2.self_of_nhds
-    rw [hb_def, heq.deriv_eq]
-    exact (hasDerivAt_slice_right (hcd₁.differentiableAt two_ne_zero)).deriv.symm
+  have hbF : fderiv ℝ (partialFst F 1) (0, 0) (0, 1) = b :=
+    (hasDerivAt_slice_right (hcd₁.differentiableAt two_ne_zero)).deriv.symm
   have hval : 0 < partialFst F 3 (0, 0) := by
-    rw [← (eventually_iterate_deriv_eq hF0 le_rfl).self_of_nhds, ← iteratedDeriv_eq_iterate]
+    rw [partialFst, ← iteratedDeriv_eq_iterate]
     exact h₃
   have hcontt : ContinuousAt (fun p => b * fderiv ℝ (partialFst F 1) p (0, 1)) (0, 0) :=
     continuousAt_const.mul ((hcd₁.continuousAt_fderiv two_ne_zero).clm_apply continuousAt_const)
   have hev : ∀ᶠ p in 𝓝 ((0 : ℝ), (0 : ℝ)), ContDiffAt ℝ (3 : ℕ) F p ∧
       ContDiffAt ℝ (2 : ℕ) (partialFst F 1) p ∧ ContDiffAt ℝ (1 : ℕ) (partialFst F 2) p ∧
-      deriv^[2] (fun y => F (y, p.2)) p.1 = partialFst F 2 p ∧
-      deriv^[3] (fun y => F (y, p.2)) p.1 = partialFst F 3 p ∧ 0 < partialFst F 3 p ∧
-      0 < b * fderiv ℝ (partialFst F 1) p (0, 1) ∧ F (-p.1, p.2) = -F p := by
-    filter_upwards [hF0.eventually (by simp), hE₁, eventually_partialFst hF0 2 (by norm_num),
-      eventually_iterate_deriv_eq hF0 le_rfl,
-      ((eventually_partialFst hF0 3 le_rfl).self_of_nhds.1.continuousAt).eventually
+      0 < partialFst F 3 p ∧ 0 < b * fderiv ℝ (partialFst F 1) p (0, 1) ∧
+      F (-p.1, p.2) = -F p := by
+    filter_upwards [hF0.eventually (by simp), hE₁,
+      eventually_contDiffAt_partialFst hF0 2 (by norm_num),
+      ((eventually_contDiffAt_partialFst hF0 3 le_rfl).self_of_nhds.continuousAt).eventually
         (lt_mem_nhds hval),
       hcontt.eventually (lt_mem_nhds (show (0 : ℝ) < b * fderiv ℝ (partialFst F 1) (0, 0) (0, 1)
-        by rw [hbF]; exact mul_self_pos.2 hb)), hodd] with p h₁ h₂ h₃ h₄ h₅ h₆ h₇
-    exact ⟨h₁, h₂.1, h₃.1, h₃.2.self_of_nhds, h₄, h₅, h₆, h₇⟩
+        by rw [hbF]; exact mul_self_pos.2 hb)), hodd] with p h₁ h₂ h₃ h₄ h₅ h₆
+    exact ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩
   obtain ⟨δ₀, hδ₀, hbox⟩ := Metric.eventually_nhds_iff_ball.1 hev
   refine ⟨δ₀, hδ₀, fun hx ht => ?_⟩
-  obtain ⟨hcd, hcd₁, hcd₂, h2, h3, h3pos, hbpos, hoddp⟩ := hbox _ (mem_ball_of_abs_lt hx ht)
-  dsimp only at h2 h3 hoddp
-  exact ⟨hasDerivAt_slice_left (hcd.differentiableAt (by simp)),
+  obtain ⟨hcd, hcd₁, hcd₂, h3pos, hbpos, hoddp⟩ := hbox _ (mem_ball_of_abs_lt hx ht)
+  dsimp only at hoddp
+  exact ⟨(hasDerivAt_slice_left (hcd.differentiableAt (by simp))).differentiableAt.hasDerivAt,
     (hasDerivAt_slice_right (hcd.differentiableAt (by simp))).continuousAt,
     hasDerivAt_slice_right (hcd₁.differentiableAt two_ne_zero),
-    (hasDerivAt_slice_left (hcd₂.differentiableAt one_ne_zero)).continuousAt, h2, h3 ▸ h3pos,
-    hbpos, hoddp⟩
+    (hasDerivAt_slice_left (hcd₂.differentiableAt one_ne_zero)).continuousAt, h3pos, hbpos,
+    hoddp⟩
 
 /-- On the box around a pitchfork point, the slices are strictly convex on `[0, δ]`. -/
 private theorem strictConvexOn_of_pitchforkBox {δ₀ δ t : ℝ}
@@ -444,8 +403,7 @@ private theorem strictConvexOn_of_pitchforkBox {δ₀ δ t : ℝ}
   have hc2 : ContinuousOn (fun y => partialFst F 2 (y, t)) (Icc 0 δ) := fun x hx =>
     (hbox (hIcc hx) ht).continuousAt_partialFst_two.continuousWithinAt
   refine strictConvexOn_Icc_of_deriv3_pos (fun x hx =>
-    (hbox (hIcc hx) ht).hasDerivAt_fst.continuousAt.continuousWithinAt) ?_
-    (hc2.congr fun x hx => (hbox (hIcc hx) ht).deriv2_eq)
+    (hbox (hIcc hx) ht).hasDerivAt_fst.continuousAt.continuousWithinAt) ?_ hc2
     fun x hx => (hbox (hIcc (Ioo_subset_Icc_self hx)) ht).deriv3_pos
   -- The slice is odd near `0`, so its second derivative vanishes there.
   rw [← iteratedDeriv_eq_iterate, iteratedDeriv_two_eq_zero_of_eventually_odd]
@@ -482,7 +440,7 @@ theorem eventually_pitchfork (hF : ContDiffAt ℝ 3 F 0)
   have hsign : ∀ {t : ℝ}, |t| < δ₀ →
       (0 < b * t → 0 < partialFst F 1 (0, t)) ∧ (b * t < 0 → partialFst F 1 (0, t) < 0) :=
     fun ht => by
-      simpa only [h00, sub_zero] using sign_sub_of_hasDerivAt (a := 0) ordConnected_Ioo
+      simpa only [h00, sub_zero] using lt_and_lt_of_hasDerivAt_of_mul_pos (a := 0) ordConnected_Ioo
         (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).hasDerivAt_partialFst_snd)
         (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).mul_deriv_snd_pos) ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
   filter_upwards [Ioo_mem_nhdsGT hδ₀] with δ ⟨hδpos, hδδ₀⟩

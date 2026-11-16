@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 The derivative of a function that is odd near `x` takes the same value at `-x` and `x`, and the
 derivative of a function that is even near `x` takes opposite values there. Consequently the
 second derivative at `0` of a function that is odd near `0` vanishes, provided the codomain has no
-`2`-torsion.
+additive torsion.
 
 ## Main results
 

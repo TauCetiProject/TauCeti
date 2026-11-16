@@ -31,7 +31,8 @@ For a real function, a positive one-sided derivative at `a` fixes the sign of `f
 `x` near `a` on that side: if the right derivative at `a` is positive, then `f a < f x` for every
 `x > a` close to `a`, and if the left derivative at `a` is positive, then `f x < f a` for every
 `x < a` close to `a`. More globally, if `b f'` is positive on an interval containing `a` and `t`,
-then `f t - f a` has the sign of `b (t - a)` (`TauCeti.sign_sub_of_hasDerivAt`).
+then `f a < f t` when `b (t - a) > 0` and `f t < f a` when `b (t - a) < 0`
+(`TauCeti.lt_and_lt_of_hasDerivAt_of_mul_pos`).
 
 Comparing the slopes of two curves leaving a common point with the same right derivative shows
 that they do not separate linearly: their distance is `o(s - t)` at parameter `s`.
@@ -53,8 +54,8 @@ A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f
 * `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
 * `TauCeti.hasDerivWithinAt_zero_iff_tendsto_div`: for `f 0 = 0`, the derivative at `0` within
   `s` is the limit of `f(t) / t` within `s \ {0}`.
-* `TauCeti.sign_sub_of_hasDerivAt`: if `b f'` is positive on an interval, then `f t - f a` has
-  the sign of `b (t - a)` there.
+* `TauCeti.lt_and_lt_of_hasDerivAt_of_mul_pos`: if `b f'` is positive on an interval, then
+  `f a < f t` when `b (t - a) > 0` and `f t < f a` when `b (t - a) < 0` there.
 * `HasDerivWithinAt.tendsto_div_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
   `a` is the right derivative at `0`.
 -/
@@ -135,10 +136,10 @@ theorem hasDerivWithinAt_zero_iff_tendsto_div {𝕜 : Type*} [NontriviallyNormed
   simp [hasDerivWithinAt_iff_tendsto_slope, slope_fun_def_field, hf0]
 
 /-- If `b f'` is positive on an interval `D`, where `f'` is the derivative of `f`, then for
-`a, t ∈ D` the increment `f t - f a` has the sign of `b (t - a)`. -/
-theorem sign_sub_of_hasDerivAt {D : Set ℝ} {f f' : ℝ → ℝ} {a b t : ℝ} (hD : D.OrdConnected)
-    (hd : ∀ s ∈ D, HasDerivAt f (f' s) s) (hpos : ∀ s ∈ D, 0 < b * f' s) (ha : a ∈ D)
-    (ht : t ∈ D) : (0 < b * (t - a) → f a < f t) ∧ (b * (t - a) < 0 → f t < f a) := by
+`a, t ∈ D` we have `f a < f t` when `b (t - a) > 0` and `f t < f a` when `b (t - a) < 0`. -/
+theorem lt_and_lt_of_hasDerivAt_of_mul_pos {D : Set ℝ} {f f' : ℝ → ℝ} {a b t : ℝ}
+    (hD : D.OrdConnected) (hd : ∀ s ∈ D, HasDerivAt f (f' s) s) (hpos : ∀ s ∈ D, 0 < b * f' s)
+    (ha : a ∈ D) (ht : t ∈ D) : (0 < b * (t - a) → f a < f t) ∧ (b * (t - a) < 0 → f t < f a) := by
   have hmono : StrictMonoOn (fun s => b * f s) D := by
     refine strictMonoOn_of_deriv_pos hD.convex
       (fun s hs => ((hd s hs).continuousAt.const_mul b).continuousWithinAt) fun s hs => ?_
