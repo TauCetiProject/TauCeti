@@ -219,13 +219,19 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
   have := he.finite_range_of_isIdempotentElem he'
   have := he.projective_range_of_isIdempotentElem he'
   let u_res : e.range →L[R] e.range := u.restrict hu
-  have hri : e.rangeRestrict.comp e.range.subtypeL = .id R e.range :=
-    ContinuousLinearMap.ext fun ⟨_, y, rfl⟩ ↦ Subtype.ext congr($he'.eq y)
+  have hri : e.rangeRestrict.comp e.range.subtypeL = .id R e.range := by
+    ext ⟨_, y, rfl⟩ : 1
+    apply Subtype.ext
+    simpa only [comp_apply, Submodule.subtypeL_apply, coe_rangeRestrict,
+      Set.rangeFactorization_coe, id_apply, coe_coe, mul_apply_eq_comp] using congr($he'.eq y)
   have hM : TauCeti.HasPr R e.range :=
     (isPrCompact_iff_isRowCompact.2 he).hasPr_source.of_retract
       e.range.subtypeL e.rangeRestrict hri
   have hu_res := isPrCompact_of_finite (R := R) (M := e.range) (L := e.range) hM hM u_res
-  have hext : e.range.subtypeL.comp (u_res.comp e.rangeRestrict) = u * e := by ext x; rfl
+  have hext : e.range.subtypeL.comp (u_res.comp e.rangeRestrict) = u * e := by
+    ext x : 1
+    rw [comp_apply, comp_apply, Submodule.subtypeL_apply, coe_restrict_apply hu,
+      coe_rangeRestrict, Set.rangeFactorization_coe, mul_apply_eq_comp]
   have hchar := charPowerSeries_eq_projectiveCharpolyRev (R := R) (M := e.range) hM u_res
   rw [← hext, ← hu_res.charPowerSeries_eq hri, hchar]
 

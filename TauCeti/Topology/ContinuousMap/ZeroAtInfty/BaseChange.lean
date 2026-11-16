@@ -175,6 +175,7 @@ theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
 
 /-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
 extension. -/
+@[simp]
 theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
     Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf := by

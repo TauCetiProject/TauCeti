@@ -47,7 +47,7 @@ polynomials term by term. The reverse of a scalar multiple of a product of linea
 nonzero roots is again such a product in the reciprocal roots
 (`Polynomial.reverse_C_mul_prod_X_sub_C`). Reflection at a degree bound stays within that bound,
 also after a coefficient map, and its coefficient at the bound is the constant coefficient; when a
-coefficient map preserves the degree—in particular when the leading coefficient is a unit—it
+coefficient map does not kill the leading coefficient, or when the leading coefficient is a unit, it
 commutes with reversal (`Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
 `Polynomial.reverse_map_of_isUnit_leadingCoeff`).
 The reverse of
@@ -198,6 +198,11 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
     (p.map f).reverse = p.reverse.map f := by
   nontriviality S
   exact reverse_map_of_leadingCoeff_ne_zero f (hp.map f).ne_zero
+
+/-- The reversal of `1` is `1`. -/
+@[simp]
+theorem reverse_one [Semiring R] : (1 : R[X]).reverse = 1 := by
+  rw [← C_1, reverse_C, C_1]
 
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/

@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Div
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
@@ -94,10 +95,12 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
-* `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire` and
-  `TauCeti.PowerSeries.eq_of_coe_dvd_and_natDegree_le`: left cancellation of polynomials with
-  invertible leading coefficient against entire series, and equality of normalised polynomials of
-  bounded degree under divisibility in entire series.
+* `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire`,
+  `TauCeti.PowerSeries.coe_subring_dvd_iff`, and
+  `TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le`: left cancellation of polynomials with
+  invertible leading coefficient against entire series, equivalence of polynomial divisibility with
+  divisibility in entire series, and equality of polynomials of bounded degree agreeing at a
+  left-regular coefficient.
 
 ## References
 
@@ -720,51 +723,45 @@ theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧
   have hdiv := congrArg (fun F : R⟦X⟧ ↦ F.divByMonic Q₁) hmul
   rwa [hS.coe_mul_divByMonic_cancel_left hq₁, hS'.coe_mul_divByMonic_cancel_left hq₁] at hdiv
 
-/-- Over a complete ultrametric norm-one ring, if `Q` has `Q(0) = 1` and invertible leading
-coefficient, `P` has `P(0) = 1` and `deg P ≤ deg Q`, and `Q` divides `P` in the subring of entire
-power series, then `P = Q`. -/
-theorem eq_of_coe_dvd_and_natDegree_le {Q P : Polynomial R} (hQ0 : Q.coeff 0 = 1)
-    (hQ : IsUnit Q.leadingCoeff) (hP0 : P.coeff 0 = 1) (hdeg : P.natDegree ≤ Q.natDegree)
+/-- Over a complete ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
+with invertible leading coefficient in the subring of entire power series is equivalent to ordinary
+polynomial divisibility `Q ∣ P`. -/
+theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
+    (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
+      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ ↔ Q ∣ P := by
+  refine ⟨?_, ?_⟩
+  · set c := Ring.inverse Q.leadingCoeff
+    have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
+    set Q₁ : Polynomial R := Polynomial.C c * Q
+    have hq₁ : Q₁.Monic := Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one hc
+    rintro ⟨⟨G, hG⟩, hPG⟩
+    replace hG : G.IsEntire := IsEntire.mem_subring.mp hG
+    have hPG' : (P : R⟦X⟧) = (Q₁ : R⟦X⟧) * (PowerSeries.C Q.leadingCoeff * G) := by
+      have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := congrArg Subtype.val hPG
+      have h2 : (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff = (Q : R⟦X⟧) := by
+        calc (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff
+            = PowerSeries.C (c * Q.leadingCoeff) * (Q : R⟦X⟧) := by
+              simp only [Q₁, Polynomial.coe_mul, Polynomial.coe_C, map_mul]; ring
+          _ = (Q : R⟦X⟧) := by rw [hc, map_one, one_mul]
+      rw [h1, ← h2, mul_assoc]
+    have hdiv := congrArg (fun F : R⟦X⟧ ↦ F.divByMonic Q₁) hPG'
+    rw [PowerSeries.divByMonic_coe P hq₁,
+      ((isEntire_C Q.leadingCoeff).mul hG).coe_mul_divByMonic_cancel_left hq₁] at hdiv
+    have hPK : P = Q₁ * (P /ₘ Q₁) :=
+      Polynomial.coe_inj.mp (by rw [Polynomial.coe_mul, hdiv, ← hPG'])
+    exact ⟨Polynomial.C c * (P /ₘ Q₁), by simpa only [Q₁, mul_assoc, mul_left_comm] using hPK⟩
+  · rintro ⟨K, rfl⟩
+    exact ⟨⟨K, IsEntire.mem_subring.mpr (isEntire_coe K)⟩, Subtype.ext (Polynomial.coe_mul Q K)⟩
+
+/-- Over a complete ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q`
+divides `P` in the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q`
+share a left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
+theorem eq_of_coe_dvd_of_natDegree_le {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff)
     (hdvd : (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩) :
-    P = Q := by
-  have : Nontrivial R := NormOneClass.nontrivial
-  set c := Ring.inverse Q.leadingCoeff
-  have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
-  set Q₁ : Polynomial R := Polynomial.C c * Q
-  have hq₁ : Q₁.Monic := Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one hc
-  have hq₁d : Q₁.natDegree = Q.natDegree :=
-    Polynomial.natDegree_C_mul_eq_of_mul_eq_one (by rw [mul_comm]; exact hc)
-  obtain ⟨⟨G, hG⟩, hPG⟩ := hdvd
-  replace hG : G.IsEntire := IsEntire.mem_subring.mp hG
-  have hPG' : (P : R⟦X⟧) = (Q₁ : R⟦X⟧) * (PowerSeries.C Q.leadingCoeff * G) := by
-    have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := congrArg Subtype.val hPG
-    have h2 : (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff = (Q : R⟦X⟧) := by
-      calc (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff
-          = PowerSeries.C (c * Q.leadingCoeff) * (Q : R⟦X⟧) := by
-            simp only [Q₁, Polynomial.coe_mul, Polynomial.coe_C, map_mul]; ring
-        _ = (Q : R⟦X⟧) := by rw [hc, map_one, one_mul]
-    rw [h1, ← h2, mul_assoc]
-  have hdiv := congrArg (fun F : R⟦X⟧ ↦ F.divByMonic Q₁) hPG'
-  rw [PowerSeries.divByMonic_coe P hq₁,
-    ((isEntire_C Q.leadingCoeff).mul hG).coe_mul_divByMonic_cancel_left hq₁] at hdiv
-  have hPK : P = Q₁ * (P /ₘ Q₁) :=
-    Polynomial.coe_inj.mp (by rw [Polynomial.coe_mul, hdiv, ← hPG'])
-  set K := P /ₘ Q₁
-  have hK0 : K ≠ 0 := by
-    rintro hK
-    rw [hK, mul_zero] at hPK
-    exact (one_ne_zero : (1 : R) ≠ 0) (by simpa [hPK] using hP0.symm)
-  have hKd : K.natDegree = 0 := by
-    have := hq₁.natDegree_mul' hK0
-    rw [← hPK, hq₁d] at this; omega
-  rw [Polynomial.eq_C_of_natDegree_eq_zero hKd] at hPK
-  have hmulQ : Q₁ * Polynomial.C (K.coeff 0) = Polynomial.C (c * K.coeff 0) * Q := by
-    simp only [Q₁, map_mul]; ring
-  have hPQ : P = Polynomial.C (c * K.coeff 0) * Q := hPK.trans hmulQ
-  have hcK : c * K.coeff 0 = 1 := by
-    simpa [Polynomial.coeff_C_mul, hQ0] using
-      (congrArg (fun F : Polynomial R ↦ F.coeff 0) hPQ).symm.trans hP0
-  simpa [hcK] using hPQ
+      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩)
+    (hdeg : P.natDegree ≤ Q.natDegree) {k : ℕ} (hQk : IsLeftRegular (Q.coeff k))
+    (hk : P.coeff k = Q.coeff k) :
+    P = Q :=
+  Polynomial.eq_of_dvd_of_natDegree_le_of_coeff_eq hQ ((coe_subring_dvd_iff hQ).mp hdvd) hdeg hQk hk
 
 end TauCeti.PowerSeries
