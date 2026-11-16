@@ -9,8 +9,8 @@ public import TauCeti.Analysis.Distribution.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
-import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 

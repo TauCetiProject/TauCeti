@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.SmulLeft
-import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
@@ -32,6 +32,12 @@ The extension is unique: a tempered distribution is determined by its values on 
 supported Schwartz functions (`TemperedDistribution.ext_real`), on which it must be `T (φ ψ)`. It
 only depends on the cutoff near the support of `T`.
 
+Cutting off commutes with the operations of differential operators up to derivatives of the
+cutoff: multiplication by a smooth function moves into the cutoff, derivatives obey the Leibniz
+rule `∂_v (φ T) = (∂_v φ) T + φ ∂_v T`, and where a second cutoff `χ` equals one, the derivatives
+of `χ T` are those of `T`. These identities let a differential operator acting on a distribution
+on `Ω` be replaced by one acting on the tempered distribution `χ T`.
+
 ## Main declarations
 
 * `Distribution.cutoffTempered T φ`: the tempered distribution `φ T`.
@@ -39,13 +45,13 @@ only depends on the cutoff near the support of `T`.
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
-* `Distribution.cutoffTempered_smulLeftCLM`: cutting off `g T`, for a smooth real function `g`, by
-  `φ` is cutting off `T` by `g φ`.
-* `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `ψ = 1` on the support of `φ`,
-  then `φ ∂^m (ψ T) = φ ∂^m T`. This is how a differential operator applied to the tempered
-  distribution `ψ T` is compared with the cut-off of the differential operator applied to `T`.
-* `Distribution.smulLeftCLM_cutoffTempered_of_eqOn_one`: if `ψ = 1` on the support of `φ`, then
-  `φ (ψ T) = φ T`.
+* `Distribution.cutoffTempered_add`, `Distribution.cutoffTempered_smul`,
+  `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
+* `Distribution.lineDerivOp_cutoffTempered`: the Leibniz rule for `φ T`.
+* `Distribution.smulLeftCLM_cutoffTempered`,
+  `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `χ = 1` on the support of
+  `φ`, then `φ (χ T) = φ T` and `φ ∂^m (χ T) = φ ∂^m T`.
 
 ## References
 
@@ -57,7 +63,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Set TopologicalSpace TestFunction MeasureTheory LineDeriv
+open Complex Filter Set TopologicalSpace TestFunction MeasureTheory
 open scoped Distributions Topology SchwartzMap ContDiff
 
 namespace Distribution
@@ -169,6 +175,13 @@ theorem cutoffTempered_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) 
   ext ψ
   simp only [smul_apply, cutoffTempered_def, complexPairing_smul, smul_eq_mul]
 
+/-- The tempered distribution `φ T` is additive in `T` over finite sums. -/
+@[simp]
+theorem cutoffTempered_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (∑ i ∈ s, T i).cutoffTempered φ = ∑ i ∈ s, (T i).cutoffTempered φ :=
+  map_sum (AddMonoidHom.mk' (fun S : 𝓓'(Ω, ℂ) ↦ S.cutoffTempered φ)
+    fun S S' ↦ cutoffTempered_add S S' φ) T s
+
 /-- The tempered distribution `φ T` is additive in the cutoff `φ`. -/
 @[simp]
 theorem cutoffTempered_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ φ' : 𝓓(Ω, ℂ)) :
@@ -183,68 +196,92 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
   ext ψ
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
 
-/-- The cut-off of a finite sum of distributions is the sum of their cut-offs. -/
-@[simp]
-theorem cutoffTempered_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
-    (∑ i ∈ s, T i).cutoffTempered φ = ∑ i ∈ s, (T i).cutoffTempered φ :=
-  map_sum (AddMonoidHom.mk' (fun S : 𝓓'(Ω, ℂ) ↦ S.cutoffTempered φ)
-    fun S S' ↦ cutoffTempered_add S S' φ) T s
+end Cutoff
 
-/-- Cutting off `g T` by `φ`, for a smooth real function `g`, is cutting off `T` by the test
-function `g φ`. -/
+section Operations
+
+open LineDeriv
+open scoped LineDeriv
+
+/-- Multiplying `T` by a smooth real function `g` before cutting off by `φ` is cutting `T` off by
+the test function `g φ`. -/
+@[simp]
 theorem cutoffTempered_smulLeftCLM {g : E → ℝ} (hg : ContDiff ℝ ∞ g) (T : 𝓓'(Ω, ℂ))
     (φ : 𝓓(Ω, ℂ)) :
-    (Distribution.smulLeftCLM hg T).cutoffTempered φ =
-      T.cutoffTempered (TestFunction.smulLeftCLM hg φ) := by
+    (smulLeftCLM hg T).cutoffTempered φ = T.cutoffTempered (TestFunction.smulLeftCLM hg φ) := by
   ext ψ
-  rw [cutoffTempered_def, complexPairing_smulLeftCLM]
-  refine (cutoffTempered_apply T _ fun x ↦ ?_).symm
-  simp only [TestFunction.smulLeftCLM_apply, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-    Complex.real_smul]
+  rw [cutoffTempered_def, complexPairing_smulLeftCLM, cutoffTempered_def]
+  congr 1
+  ext x
+  simp [mul_assoc]
+
+/-- **The Leibniz rule for `φ T`**: `∂_v (φ T) = (∂_v φ) T + φ ∂_v T`. -/
+theorem lineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (v : E) :
+    ∂_{v} (T.cutoffTempered φ) = T.cutoffTempered (∂_{v} φ) + (∂_{v} T).cutoffTempered φ := by
+  ext ψ
+  -- The Leibniz rule for the test function `φ ψ`.
+  have hprod : ∂_{v} (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) (ψ.smooth ⊤) φ) =
+      bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) (ψ.smooth ⊤) (∂_{v} φ) +
+        bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) ((∂_{v} ψ).smooth ⊤) φ := by
+    ext x
+    have hφ : DifferentiableAt ℝ φ x := (φ.contDiff.differentiable (by simp)).differentiableAt
+    simp only [TestFunction.lineDerivOp_apply_eq_fderiv, add_apply, bilinLeftCLM_apply,
+      ContinuousLinearMap.mul_apply', SchwartzMap.lineDerivOp_apply_eq_fderiv]
+    rw [← Pi.mul_def, fderiv_mul hφ ψ.differentiableAt]
+    simp only [add_apply, smul_apply, smul_eq_mul]
+    ring
+  have hneg : bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) ((-∂_{v} ψ).smooth ⊤) φ =
+      -bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) ((∂_{v} ψ).smooth ⊤) φ := by
+    ext x
+    simp
+  rw [TemperedDistribution.lineDerivOp_apply_apply, add_apply, cutoffTempered_def,
+    cutoffTempered_def, cutoffTempered_def, complexPairing_lineDerivOp, hprod, hneg, map_add,
+    map_neg]
   ring
 
-/-- **Derivatives of a cut-off distribution where the cutoff is `1`.** If `ψ = 1` on the support of
-`φ`, then multiplying a derivative `∂^m (ψ T)` of the tempered distribution `ψ T` by `φ` gives the
-cut-off `φ ∂^m T` of the derivative of `T`: near the support of `φ`, the derivatives of `ψ` do not
-contribute. -/
-theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(Ω, ℂ)}
-    (h : EqOn (ψ : E → ℂ) 1 (tsupport φ)) {n : ℕ} (m : Fin n → E) :
-    TemperedDistribution.smulLeftCLM ℂ φ (∂^{m} (T.cutoffTempered ψ)) =
-      (∂^{m} T).cutoffTempered φ := by
-  ext f
-  -- The test function `φ f`, whose derivatives are those of the Schwartz function `φ f`.
-  set χ : 𝓓(Ω, ℂ) := bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) (f.smooth ⊤) φ
-  have hχ : ∀ x, χ x = φ x * f x := fun x ↦ by simp [χ, mul_comm]
-  have hφ : (φ : E → ℂ).HasTemperateGrowth :=
-    φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  have hχf : (χ : E → ℂ) = SchwartzMap.smulLeftCLM ℂ (φ : E → ℂ) f := by
-    ext x
-    rw [hχ, SchwartzMap.smulLeftCLM_apply_apply hφ, smul_eq_mul]
-  set D := ∂^{m ∘ Fin.rev} χ
-  have hD := TestFunction.coe_iteratedLineDerivOp_eq_of_coe_eq hχf (m ∘ Fin.rev)
-  rw [TemperedDistribution.smulLeftCLM_apply_apply,
-    TemperedDistribution.iteratedLineDerivOp_apply_apply, cutoffTempered_apply (∂^{m} T) φ hχ,
-    complexPairing_iteratedLineDerivOp, smul_eq_mul]
+/-- **Cutting off a cut-off distribution.** If `χ = 1` on the support of `φ`, then
+`φ (χ T) = φ T`. -/
+theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport φ, χ x = 1) :
+    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (T.cutoffTempered χ) = T.cutoffTempered φ := by
+  ext ψ
+  rw [TemperedDistribution.smulLeftCLM_apply_apply, cutoffTempered_def, cutoffTempered_def]
   congr 1
-  refine cutoffTempered_apply T ψ fun x ↦ ?_
-  rw [← congrFun hD x]
-  have hχφ : tsupport (χ : E → ℂ) ⊆ tsupport φ := by
-    rw [funext hχ]
-    exact tsupport_mul_subset_left
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
+    SchwartzMap.smulLeftCLM_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff),
+    smul_eq_mul]
   by_cases hx : x ∈ tsupport φ
-  · rw [h hx, Pi.one_apply, one_mul]
-  · have hD0 : x ∉ tsupport D := fun hxD ↦ hx <|
-      (TestFunction.tsupport_iteratedLineDerivOp_subset χ _).trans hχφ hxD
-    rw [image_eq_zero_of_notMem_tsupport hD0, mul_zero]
+  · rw [h x hx]
+    ring
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
-/-- **Localizing a cut-off distribution.** If `ψ = 1` on the support of `φ`, then multiplying the
-tempered distribution `ψ T` by `φ` gives the cut-off `φ T`. -/
-theorem smulLeftCLM_cutoffTempered_of_eqOn_one (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(Ω, ℂ)}
-    (h : EqOn (ψ : E → ℂ) 1 (tsupport φ)) :
-    TemperedDistribution.smulLeftCLM ℂ φ (T.cutoffTempered ψ) = T.cutoffTempered φ := by
-  simpa only [iteratedLineDerivOp_fin_zero] using
-    smulLeftCLM_iteratedLineDerivOp_cutoffTempered T h Fin.elim0
+/-- **Derivatives of a cut-off distribution where the cutoff is one.** If `χ = 1` on the support
+of `φ`, then cutting the derivative `∂^m (χ T)` off by `φ` gives `φ ∂^m T`. -/
+theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport φ, χ x = 1) {k : ℕ} (m : Fin k → E) :
+    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (∂^{m} (T.cutoffTempered χ)) =
+      (∂^{m} T).cutoffTempered φ := by
+  induction k generalizing φ with
+  | zero => exact smulLeftCLM_cutoffTempered T h
+  | succ k ih =>
+    -- `φ ∂_v R = ∂_v (φ R) - (∂_v φ) R`, and both cutoffs `φ` and `∂_v φ` are supported where
+    -- `χ = 1`.
+    set v := m 0
+    set R := ∂^{Fin.tail m} (T.cutoffTempered χ)
+    have hfd : (fun x ↦ fderiv ℝ φ x v) = ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) :=
+      funext fun x ↦ (TestFunction.lineDerivOp_apply_eq_fderiv φ v x).symm
+    have hL : TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (∂_{v} R) =
+        ∂_{v} (TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) R) -
+          TemperedDistribution.smulLeftCLM ℂ ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) R := by
+      rw [TemperedDistribution.lineDerivOp_smulLeftCLM
+        (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff), hfd]
+      abel
+    rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, hL, ih h,
+      ih fun x hx ↦ h x (TestFunction.tsupport_lineDerivOp_subset φ v hx),
+      lineDerivOp_cutoffTempered]
+    abel
 
-end Cutoff
+end Operations
 
 end Distribution

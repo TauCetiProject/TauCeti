@@ -214,17 +214,20 @@ private lemma exists_chart_value_interpolation {D : Set E} (f : C(D, Y))
   · intro x hx
     simpa [dist_eq_norm, d] using hd_lt x hx
 
+omit [FiniteDimensional ℝ F] in
 /-- **Homotoping a map off a point of a higher-dimensional chart** (Hatcher, Lemma 4.10). Let
 `D` be a closed subset of `E`, and let `φ` be a chart of the Hausdorff space `Y` into `F` whose
-target contains `ball c r`. If `dim E < dim F`, then every map `f : D → Y` is homotopic, relative
-to the points that `f` does not send into `φ.symm '' ball c r`, to a map `g` missing the point
-`φ.symm p` for some `p ∈ ball c r`. The map `g` sends the points that `f` sends into the chart
-into the chart. -/
+target contains `ball c r`. If `finrank ℝ E < finrank ℝ F` (so `F` is finite dimensional), then
+every map `f : D → Y` is homotopic, relative to the points that `f` does not send into
+`φ.symm '' ball c r`, to a map `g` missing the point `φ.symm p` for some `p ∈ ball c r`. The map
+`g` sends the points that `f` sends into the chart into the chart. -/
 theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed D)
     (hEF : finrank ℝ E < finrank ℝ F) (φ : OpenPartialHomeomorph Y F) {c : F} {r : ℝ}
     (hr : 0 < r) (hφ : ball c r ⊆ φ.target) :
     ∃ g : C(D, Y), Nonempty (f.HomotopyRel g (f ⁻¹' (φ.symm '' ball c r))ᶜ) ∧
       (∀ x, f x ∈ φ.source → g x ∈ φ.source) ∧ ∃ p ∈ ball c r, φ.symm p ∉ range g := by
+  -- `hEF` forces `F` to be finite dimensional, since `finrank` is `0` otherwise.
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (Nat.zero_lt_of_lt hEF)
   obtain ⟨G, hG, hGu, p, hp, hpG⟩ := exists_differentiable_approx_notMem_range f hD hEF φ hr hφ
   obtain ⟨w, hw, hcl, hseg, hS, hwG, hwd⟩ :=
     exists_chart_value_interpolation f φ hr hφ hG.continuous hGu

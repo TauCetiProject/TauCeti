@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -19,7 +21,7 @@ whole real line, natural powers multiplied by an exponentially decaying factor, 
 which a bare exponential is integrable on a right half-line, and integrability and the integral
 of the two-sided exponential; and, on a finite-dimensional real normed space, integrability of the
 radial exponential `exp (-a ‖x‖)` for every additive Haar measure, by integrating in polar
-coordinates.
+coordinates, and the resulting `Lᵖ` membership of continuous functions decaying at that rate.
 
 Mathlib supplies the *sufficient* direction of the right-half-line integrability criterion,
 `integrableOn_exp_mul_Ioi`, for a negative rate.  `integrableOn_exp_mul_Ioi_iff` adds the converse,
@@ -44,6 +46,9 @@ inclusion.
   `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
+* `TauCeti.memLp_exp_neg_mul_norm`: it lies in every `Lᵖ`.
+* `Continuous.memLp_of_isBigO_exp_neg_mul_norm`: so does every continuous function which is
+  `O(exp (-(a * ‖·‖)))` at infinity.
 -/
 
 public section
@@ -131,6 +136,44 @@ theorem integrable_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSp
     exact (integrable_const (1 : ℝ)).congr (.of_forall fun x ↦ by simp [Subsingleton.elim x 0])
   · refine (integrable_fun_norm_addHaar μ (f := fun t ↦ Real.exp (-(a * t)))).mpr ?_
     simpa only [smul_eq_mul] using integrableOn_pow_mul_exp_neg_mul_Ioi _ ha
+
+/-- The radial exponential `exp (-a ‖x‖)` lies in every `Lᵖ` for every additive Haar measure on a
+finite-dimensional real normed space, when `0 < a`: its `p`-th power is the radial exponential
+with rate `p a`. -/
+theorem memLp_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
+    MemLp (fun x : E ↦ Real.exp (-(a * ‖x‖))) p μ := by
+  have hm : AEStronglyMeasurable (fun x : E ↦ Real.exp (-(a * ‖x‖))) μ :=
+    (by fun_prop : Continuous fun x : E ↦ Real.exp (-(a * ‖x‖))).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · refine memLp_top_of_bound hm 1 (.of_forall fun x ↦ ?_)
+    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_one_iff, neg_nonpos]
+    positivity
+  · rw [← integrable_norm_rpow_iff hm hp0 hptop]
+    refine (integrable_exp_neg_mul_norm μ (mul_pos (ENNReal.toReal_pos hp0 hptop) ha)).congr
+      (.of_forall fun x ↦ ?_)
+    dsimp only
+    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), ← Real.exp_mul]
+    ring_nf
+
+/-- A continuous function which is `O(exp (-a ‖x‖))` at infinity, for some `0 < a`, lies in every
+`Lᵖ` for every additive Haar measure on a finite-dimensional real normed space. -/
+theorem _root_.Continuous.memLp_of_isBigO_exp_neg_mul_norm {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] {f : E → F}
+    (hf : Continuous f) {a : ℝ} (ha : 0 < a)
+    (hdec : f =O[Filter.cocompact E] fun x ↦ Real.exp (-(a * ‖x‖))) (p : ℝ≥0∞) :
+    MemLp f p μ := by
+  obtain ⟨C, hC⟩ := hdec.bound
+  obtain ⟨K, hK⟩ := exists_forall_le_mul_exp_of_eventually_le hf.norm
+    (hC.mono fun x hx ↦ by rwa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hx)
+  refine ((memLp_exp_neg_mul_norm μ ha p).const_mul K).of_le hf.aestronglyMeasurable
+    (.of_forall fun x ↦ (hK x).trans ?_)
+  rw [Real.norm_eq_abs]
+  exact le_abs_self _
 
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :

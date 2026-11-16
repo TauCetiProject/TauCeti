@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
@@ -27,10 +26,7 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
-* `TestFunction.tsupport_lineDerivOp_subset`, `TestFunction.tsupport_iteratedLineDerivOp_subset`:
-  `∂_{v} φ` and `∂^{m} φ` are supported in the support of `φ`.
-* `TestFunction.coe_iteratedLineDerivOp_eq_of_coe_eq`: a test function and a Schwartz function
-  with the same values have the same repeated directional derivatives.
+* `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
   factor equal to `1` on `Ω`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
@@ -58,7 +54,7 @@ public section
 namespace TestFunction
 
 open LineDeriv TopologicalSpace
-open scoped ContDiff Distributions SchwartzMap
+open scoped ContDiff Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E}
@@ -78,28 +74,6 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
   exact tsupport_fderiv_apply_subset ℝ v
-
-/-- A repeated directional derivative of a test function is supported in the support of the
-function. -/
-theorem tsupport_iteratedLineDerivOp_subset (φ : 𝓓(Ω, F)) {n : ℕ} (m : Fin n → E) :
-    tsupport (∂^{m} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [iteratedLineDerivOp_succ_left]
-    exact (tsupport_lineDerivOp_subset _ _).trans (ih _)
-
-/-- A test function and a Schwartz function with the same values have the same repeated
-directional derivatives. -/
-theorem coe_iteratedLineDerivOp_eq_of_coe_eq {φ : 𝓓(Ω, F)} {f : 𝓢(E, F)}
-    (h : (φ : E → F) = f) {n : ℕ} (m : Fin n → E) :
-    ((∂^{m} φ : 𝓓(Ω, F)) : E → F) = (∂^{m} f : 𝓢(E, F)) := by
-  induction n with
-  | zero => simpa using h
-  | succ n ih =>
-    ext x
-    rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, lineDerivOp_apply_eq_fderiv,
-      SchwartzMap.lineDerivOp_apply_eq_fderiv, ih (Fin.tail m)]
 
 /-- Scaling a first derivative of a test function on `Ω` by a function equal to `1` on `Ω` does not
 change it, since the derivative vanishes off `Ω`. -/

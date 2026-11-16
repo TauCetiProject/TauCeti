@@ -17,21 +17,18 @@ Mathlib defines the directional derivative of a tempered distribution by duality
 Laplacian of a tempered distribution is then `∂₁² f + ∂₂² f`, with `∂₁` and `∂₂` the derivatives
 along `1` and `I`, as for Schwartz functions (`SchwartzMap.laplacian_eq_lineDerivOp_one_I`). These
 are the identities needed to compute compositions of constant-coefficient first-order operators
-on tempered distributions. Repeated derivatives transfer to the Schwartz function in reverse
-order, with one sign per derivative. Directional differentiation of the tempered distribution
-given by a Schwartz function commutes with a continuous real-linear map applied to its values,
-and repeated differentiation of such a distribution is the repeated derivative of the function.
+on tempered distributions. Directional differentiation of the tempered distribution given by a
+Schwartz function also commutes with a continuous real-linear map applied to its values, and its
+iterated directional derivatives are those of the Schwartz function.
 
 ## Main results
 
 * `TemperedDistribution.lineDerivOp_comm`: `∂_v ∂_w f = ∂_w ∂_v f`.
 * `TemperedDistribution.laplacian_eq_lineDerivOp_one_I`: `Δ f = ∂₁² f + ∂₂² f` on `ℂ`.
-* `TemperedDistribution.iteratedLineDerivOp_apply_apply`:
-  `(∂^m f) u = (-1)^n f (∂^(m ∘ rev) u)` for `n` directions `m`.
-* `TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq`: `∂^m` of the tempered
-  distribution given by a Schwartz function `f` is the one given by `∂^m f`.
 * `TemperedDistribution.lineDerivOp_toTemperedDistributionCLM_postcompCLM`:
   `∂_v (L ∘ f) = L ∘ ∂_v f` for a Schwartz function `f` viewed as a tempered distribution.
+* `TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq`: iterated directional
+  derivatives of a Schwartz function viewed as a tempered distribution.
 -/
 
 public section
@@ -55,18 +52,6 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢'(ℂ, F)) :
     Δ f = ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} f) + ∂_{Complex.I} (∂_{Complex.I} f) := by
   simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
 
-/-- Repeated directional differentiation of a tempered distribution transfers to the Schwartz
-function in reverse order, with sign `(-1)^n`. -/
-@[simp]
-theorem iteratedLineDerivOp_apply_apply (f : 𝓢'(E, F)) {n : ℕ} (m : Fin n → E) (u : 𝓢(E, ℂ)) :
-    (∂^{m} f) u = (-1 : ℂ) ^ n • f (∂^{m ∘ Fin.rev} u) := by
-  induction n generalizing u with
-  | zero => simp
-  | succ n ih =>
-    rw [LineDeriv.iteratedLineDerivOp_succ_left, lineDerivOp_apply_apply, map_neg, ih,
-      LineDeriv.iteratedLineDerivOp_succ_right, pow_succ, mul_smul]
-    simp [Fin.init_def, Fin.tail_def, Function.comp_def, Fin.rev_castSucc]
-
 variable [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] [FiniteDimensional ℝ E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -77,13 +62,13 @@ theorem lineDerivOp_toTemperedDistributionCLM_postcompCLM (L : G →L[ℝ] F) (f
       toTemperedDistributionCLM E F μ ((∂_{m} f).postcompCLM L) := by
   rw [lineDerivOp_toTemperedDistributionCLM_eq, TauCeti.lineDerivOp_postcompCLM]
 
-/-- Repeated directional differentiation of the tempered distribution given by a Schwartz function
-`f` gives the tempered distribution of the repeated derivative of `f`. -/
-theorem iteratedLineDerivOp_toTemperedDistributionCLM_eq (f : 𝓢(E, F)) {n : ℕ} (m : Fin n → E) :
+/-- Iterated directional derivatives of the tempered distribution given by a Schwartz function are
+the tempered distributions of its iterated directional derivatives. -/
+theorem iteratedLineDerivOp_toTemperedDistributionCLM_eq (f : 𝓢(E, F)) {k : ℕ} (m : Fin k → E) :
     ∂^{m} (toTemperedDistributionCLM E F μ f) = toTemperedDistributionCLM E F μ (∂^{m} f) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
+  induction k with
+  | zero => rfl
+  | succ k ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left, ih,
       lineDerivOp_toTemperedDistributionCLM_eq]
 

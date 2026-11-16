@@ -61,11 +61,10 @@ induction starts from the polynomial growth of the localized Fourier transform, 
 
 ## Main results
 
-* `TauCeti.exists_pos_mul_pow_le_norm_constCoeffPrincipalSymbol`: an elliptic principal symbol
-  is bounded below by `c₀ ‖ξ‖ ^ M`, and
-  `TauCeti.exists_pos_forall_constCoeffPrincipalSymbol_ne_zero`: ellipticity survives small
-  changes of the coefficients.
-
+* `TauCeti.eventually_forall_constCoeffPrincipalSymbol_ne_zero`: for coefficients depending
+  continuously on a point, ellipticity at a point holds at all nearby points.
+* `TauCeti.constCoeffPrincipalSymbol_laplacian`: the principal symbol of the Laplacian is
+  `‖ξ‖ ^ 2`.
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp`: if `P T` is
   microlocally smooth at `(x, ξ)` and `σ_M(P)(ξ) ≠ 0`, then `T` is microlocally smooth there.
 * `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`:
@@ -192,72 +191,46 @@ theorem exists_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset �
       Real.norm_of_nonneg ht.le, norm_smul, Real.norm_of_nonneg ht.le, mul_pow, mul_left_comm]
     exact mul_lt_mul_of_pos_left hη (pow_pos ht M)
 
-/-- The principal symbol is bounded by `(∑ i ∈ s, ‖c i‖ ∏ₗ ‖m i l‖) ‖ξ‖ ^ M`. -/
-theorem norm_constCoeffPrincipalSymbol_le {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
-    (m : ∀ i, Fin (k i) → E) (M : ℕ) (ξ : E) :
-    ‖constCoeffPrincipalSymbol s c m M ξ‖ ≤ (∑ i ∈ s, ‖c i‖ * ∏ l, ‖m i l‖) * ‖ξ‖ ^ M := by
-  rw [constCoeffPrincipalSymbol_def, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun i hi ↦ ?_).trans
-    (Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ s) fun i _ _ ↦ by positivity))
-  rw [norm_mul, norm_prod, mul_assoc, ← (Finset.mem_filter.1 hi).2]
-  gcongr
-  calc ∏ l, ‖(⟪m i l, ξ⟫ : ℂ)‖ ≤ ∏ l, (‖m i l‖ * ‖ξ‖) :=
-        Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun l _ ↦ by
-          rw [Complex.norm_real, Real.norm_eq_abs]
-          exact abs_real_inner_le_norm _ _
-    _ = (∏ l, ‖m i l‖) * ‖ξ‖ ^ k i := by
-        rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+/-- **Ellipticity is an open condition.** For coefficients `c x` depending continuously on a
+parameter `x` at `x₀`, if the principal symbol with coefficients `c x₀` vanishes at no `ξ ≠ 0`,
+then the same holds for all `x` near `x₀`. -/
+theorem eventually_forall_constCoeffPrincipalSymbol_ne_zero [FiniteDimensional ℝ E]
+    {X : Type*} [TopologicalSpace X] {ι : Type*} {s : Finset ι} {c : X → ι → ℂ} {x₀ : X}
+    (hc : ∀ i ∈ s, ContinuousAt (fun x ↦ c x i) x₀) {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
+    (h : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s (c x₀) m M ξ ≠ 0) :
+    ∀ᶠ x in 𝓝 x₀, ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s (c x) m M ξ ≠ 0 := by
+  have hcont (ξ : E) :
+      ContinuousAt (fun p : X × E ↦ constCoeffPrincipalSymbol s (c p.1) m M p.2) (x₀, ξ) := by
+    simp only [constCoeffPrincipalSymbol_def]
+    refine tendsto_finsetSum _ fun i hi ↦ ?_
+    have hci : ContinuousAt (fun p : X × E ↦ c p.1 i) (x₀, ξ) :=
+      ContinuousAt.comp (f := Prod.fst) (x := (x₀, ξ)) (hc i (Finset.mem_filter.1 hi).1)
+        continuousAt_fst
+    exact hci.mul (Continuous.continuousAt (by fun_prop))
+  -- On the compact unit sphere the principal symbol stays nonzero near `x₀`.
+  have hS := (isCompact_sphere (0 : E) 1).eventually_forall_of_forall_eventually
+    (P := fun x ξ ↦ constCoeffPrincipalSymbol s (c x) m M ξ ≠ 0) fun ξ hξ ↦
+      (hcont ξ).eventually_ne (h ξ (ne_zero_of_mem_unit_sphere ⟨ξ, hξ⟩))
+  filter_upwards [hS] with x hx ξ hξ
+  -- Homogeneity reduces a nonzero `ξ` to the unit sphere.
+  have hn : ‖ξ‖ ≠ 0 := norm_ne_zero_iff.2 hξ
+  have hu : ‖ξ‖⁻¹ • ξ ∈ Metric.sphere (0 : E) 1 := by
+    simp [norm_smul, hn]
+  have hξ' : ξ = ‖ξ‖ • (‖ξ‖⁻¹ • ξ) := by rw [smul_smul, mul_inv_cancel₀ hn, one_smul]
+  rw [hξ', constCoeffPrincipalSymbol_smul]
+  exact mul_ne_zero (pow_ne_zero _ (ofReal_ne_zero.2 hn)) (hx _ hu)
 
-variable [FiniteDimensional ℝ E] in
-/-- **Ellipticity bound.** If the principal symbol vanishes at no `ξ ≠ 0`, then it is bounded below
-by `c₀ ‖ξ‖ ^ M` for some `c₀ > 0`: by homogeneity it suffices to bound it below on the unit
-sphere, which is compact. -/
-theorem exists_pos_mul_pow_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset ι}
-    {c : ι → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
-    (h : ∀ ξ, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0) :
-    ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ ξ, ξ ≠ 0 → c₀ * ‖ξ‖ ^ M ≤ ‖constCoeffPrincipalSymbol s c m M ξ‖ := by
-  by_cases hE : ∃ ξ : E, ξ ≠ 0
-  · obtain ⟨ξ₁, hξ₁⟩ := hE
-    have : Nontrivial E := nontrivial_of_ne ξ₁ 0 hξ₁
-    obtain ⟨ξ₀, hξ₀, hmin⟩ := (isCompact_sphere (0 : E) 1).exists_isMinOn
-      (NormedSpace.sphere_nonempty.2 zero_le_one)
-      (continuous_constCoeffPrincipalSymbol s c m M).norm.continuousOn
-    have hξ₀0 : ξ₀ ≠ 0 := ne_zero_of_mem_unit_sphere ⟨ξ₀, hξ₀⟩
-    refine ⟨_, norm_pos_iff.2 (h ξ₀ hξ₀0), fun ξ hξ ↦ ?_⟩
-    have hnorm : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-    have hunit : ‖ξ‖⁻¹ • ξ ∈ Metric.sphere (0 : E) 1 := by
-      simp [norm_smul, hnorm.ne']
-    have hσξ : constCoeffPrincipalSymbol s c m M ξ =
-        (‖ξ‖ : ℂ) ^ M * constCoeffPrincipalSymbol s c m M (‖ξ‖⁻¹ • ξ) := by
-      rw [← constCoeffPrincipalSymbol_smul, smul_smul, mul_inv_cancel₀ hnorm.ne', one_smul]
-    rw [hσξ, norm_mul, norm_pow, Complex.norm_real, Real.norm_of_nonneg hnorm.le]
-    exact (mul_comm _ _).le.trans (mul_le_mul_of_nonneg_left (hmin hunit) (by positivity))
-  · exact ⟨1, one_pos, fun ξ hξ ↦ absurd ⟨ξ, hξ⟩ hE⟩
-
-variable [FiniteDimensional ℝ E] in
-/-- **Ellipticity is open in the coefficients.** If the principal symbol of `∑ i ∈ s, c i ∂^(m i)`
-vanishes at no `ξ ≠ 0`, then neither does that of `∑ i ∈ s, d i ∂^(m i)` for all coefficients `d`
-close enough to `c`. -/
-theorem exists_pos_forall_constCoeffPrincipalSymbol_ne_zero {ι : Type*} {s : Finset ι}
-    {c : ι → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
-    (h : ∀ ξ, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0) :
-    ∃ δ : ℝ, 0 < δ ∧ ∀ d : ι → ℂ, ∑ i ∈ s, ‖d i - c i‖ * ∏ l, ‖m i l‖ < δ →
-      ∀ ξ, ξ ≠ 0 → constCoeffPrincipalSymbol s d m M ξ ≠ 0 := by
-  obtain ⟨c₀, hc₀, hσ⟩ := exists_pos_mul_pow_le_norm_constCoeffPrincipalSymbol h
-  refine ⟨c₀, hc₀, fun d hd ξ hξ hdξ ↦ ?_⟩
-  -- The principal symbol is additive in the coefficients.
-  have hadd : constCoeffPrincipalSymbol s d m M ξ =
-      constCoeffPrincipalSymbol s c m M ξ +
-        constCoeffPrincipalSymbol s (fun i ↦ d i - c i) m M ξ := by
-    simp only [constCoeffPrincipalSymbol_def, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  have hc : ‖constCoeffPrincipalSymbol s c m M ξ‖ =
-      ‖constCoeffPrincipalSymbol s (fun i ↦ d i - c i) m M ξ‖ := by
-    rw [eq_neg_of_add_eq_zero_left (hadd.symm.trans hdξ), norm_neg]
-  have hpos : 0 < ‖ξ‖ ^ M := pow_pos (norm_pos_iff.2 hξ) M
-  have hle := (hσ ξ hξ).trans (hc.trans_le
-    (norm_constCoeffPrincipalSymbol_le s (fun i ↦ d i - c i) m M ξ))
-  nlinarith
+/-- **The principal symbol of the Laplacian.** For an orthonormal basis `b`, the principal symbol
+of `∑ i, ∂_{b i} ∂_{b i}` is `∑ i, ⟪b i, ξ⟫ ^ 2 = ‖ξ‖ ^ 2`. -/
+theorem constCoeffPrincipalSymbol_laplacian {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    (ξ : E) :
+    constCoeffPrincipalSymbol Finset.univ (fun _ ↦ 1) (fun i ↦ ![b i, b i]) 2 ξ =
+      ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
+  have hsum : ∑ i, ⟪b i, ξ⟫ * ⟪b i, ξ⟫ = ‖ξ‖ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner ξ ξ]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm]
+  rw [← hsum]
+  simp [constCoeffPrincipalSymbol, Fin.prod_univ_two]
 
 end TauCeti
 
@@ -649,14 +622,7 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
     (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun ξ hξ ↦ ?_) T
   · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, iteratedLineDerivOp_one, Fin.tail]
       using h
-  have hsum : ∑ i, ⟪b i, ξ⟫ * ⟪b i, ξ⟫ = ‖ξ‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner ξ ξ]
-    exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm]
-  have hval : constCoeffPrincipalSymbol Finset.univ (fun _ ↦ 1) (fun i ↦ ![b i, b i]) 2 ξ =
-      ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
-    rw [← hsum]
-    simp [constCoeffPrincipalSymbol, Fin.prod_univ_two]
-  rw [hval]
+  rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 
 /-- **Elliptic regularity for the Laplacian.** `Δ T` and `T` have the same singular support. -/

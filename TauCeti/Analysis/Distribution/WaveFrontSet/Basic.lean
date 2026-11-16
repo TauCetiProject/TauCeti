@@ -15,6 +15,7 @@ import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.InnerProductSpace.Adjoint

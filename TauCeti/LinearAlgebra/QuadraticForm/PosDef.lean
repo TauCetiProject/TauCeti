@@ -44,6 +44,8 @@ the one that turns an orbit lying in a level set into a periodic orbit.
   the form is positive semidefinite and nondegenerate.
 * `QuadraticMap.posDef_weightedSumSquares_iff`: a diagonal form over a linearly ordered ring is
   positive definite exactly when all of its weights are positive.
+* `TauCeti.exists_posDef_quadraticForm`: every finitely generated free module over a strictly
+  linearly ordered commutative ring admits a positive-definite quadratic form.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
@@ -159,6 +161,17 @@ theorem posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate {R M : Type*} [
 end LinearMap.BilinForm
 
 namespace TauCeti
+
+/-- Every finitely generated free module over a strictly linearly ordered commutative ring admits a
+positive-definite quadratic form. -/
+theorem exists_posDef_quadraticForm (R W : Type*) [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W] :
+    ∃ Q₀ : QuadraticForm R W, Q₀.PosDef := by
+  classical
+  let b := Module.Free.chooseBasis R W
+  exact ⟨_, ((QuadraticMap.posDef_weightedSumSquares_iff
+    (fun _ : Module.Free.ChooseBasisIndex R W ↦ (1 : R))).mpr fun _ ↦ zero_lt_one).comp
+    b.equivFun.toLinearMap b.equivFun.injective⟩
 
 /-- Over `ℤ` a bound on the square is a bound on the absolute value: a nonzero integer is at most
 its own square in absolute value. -/

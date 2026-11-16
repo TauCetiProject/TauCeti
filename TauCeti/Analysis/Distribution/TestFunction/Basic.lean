@@ -18,14 +18,11 @@ Conversely, for a real test function `ψ` and a vector `v : F`, any continuous l
 of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce statements about
 `F`-valued test functions to statements about real-valued ones. Pointwise complex conjugation,
 postcomposition with `Complex.conjCLE`, is an involution on complex test functions.
-Postcomposition never enlarges the topological support.
 
 ## Main declarations
 
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
   postcomposing with `L₂ ∘L L₁`.
-* `TestFunction.tsupport_postcompCLM_subset`: postcomposition does not enlarge the topological
-  support.
 * `TestFunction.postcompCLM_conj_postcompCLM_conj`: conjugating a complex test function twice
   gives it back.
 * `TestFunction.sum_postcompCLM_toSpanSingleton_coord`: an `F`-valued test function is the sum
@@ -62,15 +59,6 @@ theorem postcompCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [A
     (φ : 𝓓^{n}(Ω, F)) :
     postcompCLM L₂ (postcompCLM L₁ φ) = postcompCLM (L₂ ∘L L₁) φ :=
   rfl
-
-/-- Postcomposing a test function with a continuous linear map does not enlarge its topological
-support. -/
-theorem tsupport_postcompCLM_subset {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜]
-    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : F →L[𝕜] G) (φ : 𝓓^{n}(Ω, F)) :
-    tsupport (postcompCLM L φ) ⊆ tsupport φ := by
-  rw [postcompCLM_apply]
-  exact tsupport_comp_subset (map_zero L) φ
 
 /-- Conjugating a complex test function twice gives it back. -/
 @[simp]

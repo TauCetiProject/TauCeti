@@ -21,9 +21,9 @@ import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Distribution.Order
-import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support

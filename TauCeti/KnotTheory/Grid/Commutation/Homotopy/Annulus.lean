@@ -47,15 +47,8 @@ theorem isEmpty_and_isEmpty_iff (P : GridHexagonBetween a s t x y)
     (r : GridRectangleBetween y x) :
     P.IsEmpty ∧ r.IsEmpty ↔ r.left = P.left ∧ P.left = a := by
   rw [P.toGridRectangleBetween.isEmpty_and_isEmpty_iff r]
-  have hnot : P.top ≠ finRotate n P.bottom := by
-    intro h
-    have hrows := Grid.cIco_eq_singleton_iff.mpr ⟨rfl, h, P.bottom_ne_top⟩
-    have hs : s = P.bottom := by
-      simpa only [← P.bottom_def, ← P.top_def, hrows, Finset.mem_singleton]
-        using P.lower_mem
-    have ht := P.upper_mem
-    simp only [hs, ← P.top_def, h, Grid.cIoo_finRotate_eq_empty,
-      Finset.notMem_empty] at ht
+  have hnot : P.top ≠ finRotate n P.bottom :=
+    Grid.ne_finRotate_of_mem_cIoo (Grid.cIoo_subset_cIoo_left_of_mem_cIco P.lower_mem P.upper_mem)
   constructor
   · rintro (⟨hl, hr⟩ | ⟨_, hr⟩)
     · exact ⟨hl, (finRotate n).injective (hr.symm.trans P.right_eq)⟩
@@ -171,15 +164,8 @@ theorem isEmpty_and_isEmpty_iff (P : GridInitialHexagonBetween a s t x y)
     P.IsEmpty ∧ r.IsEmpty ↔
       r.left = P.left ∧ P.right = finRotate n (finRotate n a) := by
   rw [P.toGridRectangleBetween.isEmpty_and_isEmpty_iff r]
-  have hnot : P.top ≠ finRotate n P.bottom := by
-    intro h
-    have hrows := Grid.cIco_eq_singleton_iff.mpr ⟨rfl, h, P.bottom_ne_top⟩
-    have hs : s = P.bottom := by
-      simpa only [← P.bottom_def, ← P.top_def, hrows, Finset.mem_singleton]
-        using P.lower_mem
-    have ht := P.upper_mem
-    simp only [hs, ← P.top_def, h, Grid.cIoo_finRotate_eq_empty,
-      Finset.notMem_empty] at ht
+  have hnot : P.top ≠ finRotate n P.bottom :=
+    Grid.ne_finRotate_of_mem_cIoo (Grid.cIoo_subset_cIoo_left_of_mem_cIco P.lower_mem P.upper_mem)
   constructor
   · rintro (⟨hl, hr⟩ | ⟨_, hr⟩)
     · exact ⟨hl, P.left_eq ▸ hr⟩

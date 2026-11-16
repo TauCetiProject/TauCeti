@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.DifferentialSymbol
-public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
-import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
 # Differential operators as classical pseudodifferential operators
@@ -41,10 +38,6 @@ For the differential symbol of order `m`:
   when the symbol of its top-order summands is invertible at every nonzero frequency;
 * `TauCeti.ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol`: compactly
   supported coefficients give a symbol with compact spatial support;
-* `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id`: for scalar
-  coefficients `βᵢ` of temperate growth, the bounded operator `H^r → H^{r - m}` given by the
-  symbol (`TauCeti.Symbol.quantizeSobolev`) is the differential operator `∑ i ∈ s, βᵢ ∂^{vᵢ}`
-  applied to `u ∈ H^r` as a tempered distribution;
 * `TauCeti.ClassicalSymbol.negLaplacian`: the classical symbol of the negative Laplacian
   `-∑ⱼ ∂ⱼ²`, with full symbol `‖ξ‖²` (`TauCeti.ClassicalSymbol.coefficient_toSymbol_negLaplacian`)
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
@@ -63,7 +56,7 @@ public section
 
 noncomputable section
 
-open scoped ContDiff RealInnerProductSpace LineDeriv SchwartzMap BesselPotentialSpace
+open scoped ContDiff RealInnerProductSpace LineDeriv SchwartzMap
 
 namespace TauCeti
 
@@ -171,51 +164,6 @@ theorem hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol
   rw [coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def]
   refine Finset.sum_eq_zero fun i hi ↦ ?_
   rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (Set.mem_biUnion hi h), smul_zero]
-
-section Sobolev
-
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {β : ι → CoordinateSpace n → ℂ} (hβ : ∀ i ∈ s, (β i).HasTemperateGrowth)
-
-/-- **Differential operators on Bessel-potential spaces.** For scalar coefficients `βᵢ` of
-temperate growth, such as smooth compactly supported ones, whose symbol has compact spatial
-support, the bounded operator `H^r → H^{r - m}` given by the classical symbol of
-`u ↦ ∑ i ∈ s, βᵢ ∂^{vᵢ} u` is that differential operator, applied to `u ∈ H^r` as a tempered
-distribution. -/
-theorem toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id
-    (ha : (ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ H)
-      (fun i hi ↦ (hβ i hi).1.smul contDiff_const) hk).toSymbol.HasCompactSpatialSupport)
-    (r : ℝ) (u : H^{r}(CoordinateSpace n, H)) :
-    ((ofDifferentialSymbol m s v _ _ hk).toSymbol.quantizeSobolev ha r u).toDistr =
-      ∑ i ∈ s, TemperedDistribution.smulLeftCLM H (β i) (∂^{v i} u.toDistr) := by
-  set a := (ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ H)
-    (fun i hi ↦ (hβ i hi).1.smul contDiff_const) hk).toSymbol
-  -- Both sides are continuous in `u`, so it suffices to compare them on Schwartz functions.
-  have hdense := SchwartzMap.denseRange_toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := H)
-    (p := 2) r ENNReal.ofNat_ne_top
-  refine congrFun (hdense.equalizer
-    (g := fun u : H^{r}(CoordinateSpace n, H) ↦ (a.quantizeSobolev ha r u).toDistr)
-    (h := fun u : H^{r}(CoordinateSpace n, H) ↦
-      ∑ i ∈ s, TemperedDistribution.smulLeftCLM H (β i) (∂^{v i} u.toDistr))
-    (BesselPotentialSpace.continuous_toDistr.comp (a.quantizeSobolev ha r).continuous)
-    (continuous_finsetSum _ fun i _ ↦ (TemperedDistribution.smulLeftCLM H (β i)).continuous.comp
-      ((LineDeriv.iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, H) (v i)).continuous.comp
-        BesselPotentialSpace.continuous_toDistr)) ?_) u
-  funext w
-  ext φ
-  simp only [Function.comp_apply, Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
-    SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
-    TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
-    TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq, ← map_sum,
-    SchwartzMap.toTemperedDistributionCLM_apply_apply]
-  refine MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  simp only [a, quantizeSchwartzValue_ofDifferentialSymbol, sum_apply,
-    smul_apply, ContinuousLinearMap.id_apply]
-  congr 1
-  exact Finset.sum_congr rfl fun i hi ↦ by
-    rw [SchwartzMap.smulLeftCLM_apply_apply (hβ i hi)]
-
-end Sobolev
 
 /-! ### The Laplacian -/
 

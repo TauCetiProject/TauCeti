@@ -10,8 +10,8 @@ public import Mathlib.Analysis.Distribution.Support
 import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
-import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -36,9 +36,7 @@ conjugation of the values, `mapCLM conjCLE`, is an involution on complex distrib
   test functions, as a continuous complex-linear map.
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
 * `Distribution.complexPairing_lineDerivOp`: it turns derivatives of `T` into derivatives of the
-  test function, `(∂_{v} T) φ = - T (∂_{v} φ)`, and
-  `Distribution.complexPairing_iteratedLineDerivOp` iterates this:
-  `(∂^{m} T) φ = (-1)^n T (∂^{m ∘ rev} φ)` for `n` directions `m`.
+  test function, `(∂_{v} T) φ = - T (∂_{v} φ)`.
 * `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
@@ -73,15 +71,8 @@ def complexPairing (T : 𝓓'^{n}(Ω, ℂ)) : 𝓓^{n}(Ω, ℂ) →L[ℂ] ℂ wh
     simp only [map_add]
     ring
   map_smul' c φ := by
-    have hre : postcompCLM (𝕜 := ℝ) reCLM (c • φ) =
-        c.re • postcompCLM (𝕜 := ℝ) reCLM φ - c.im • postcompCLM (𝕜 := ℝ) imCLM φ := by
-      ext t
-      simp
-    have him : postcompCLM (𝕜 := ℝ) imCLM (c • φ) =
-        c.re • postcompCLM (𝕜 := ℝ) imCLM φ + c.im • postcompCLM (𝕜 := ℝ) reCLM φ := by
-      ext t
-      simp
-    simp only [hre, him, map_sub, map_add, map_smul, RingHom.id_apply, real_smul]
+    simp only [postcompCLM_reCLM_smul, postcompCLM_imCLM_smul, map_sub, map_add, map_smul,
+      RingHom.id_apply, real_smul]
     conv_rhs => rw [← re_add_im c]
     ring_nf
     rw [I_sq]
@@ -99,13 +90,7 @@ is `T` itself. -/
 @[simp]
 theorem complexPairing_postcompCLM_ofRealCLM (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℝ)) :
     T.complexPairing (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = T φ := by
-  have hre : postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
-    ext t
-    simp
-  have him : postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
-    ext t
-    simp
-  simp [complexPairing_apply, hre, him]
+  simp [complexPairing_apply]
 
 @[simp]
 theorem complexPairing_add (T S : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
@@ -128,18 +113,6 @@ theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, �
   simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
     TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, lineDerivCLM_postcompCLM]
   ring
-
-/-- Repeated derivatives of `T` transfer to the complex test function in reverse order, with sign
-`(-1)^n`: `(∂^{m} T) φ = (-1)^n T (∂^{m ∘ rev} φ)`. -/
-theorem complexPairing_iteratedLineDerivOp (T : 𝓓'(Ω, ℂ)) {n : ℕ} (m : Fin n → E)
-    (φ : 𝓓(Ω, ℂ)) :
-    (∂^{m} T).complexPairing φ = (-1) ^ n * T.complexPairing (∂^{m ∘ Fin.rev} φ) := by
-  induction n generalizing φ with
-  | zero => simp
-  | succ n ih =>
-    rw [iteratedLineDerivOp_succ_left, complexPairing_lineDerivOp, ih,
-      iteratedLineDerivOp_succ_right (m ∘ Fin.rev), pow_succ]
-    simp [Fin.init_def, Fin.tail_def, Function.comp_def, Fin.rev_castSucc]
 
 /-- The complex-linear extension of the complex point mass at `x` evaluates a complex test
 function at `x`. -/
