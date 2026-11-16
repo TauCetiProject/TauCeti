@@ -104,6 +104,11 @@ theorem dq_single (i : Fin 4) (r : ℝ) :
 theorem coe_dq : ⇑dq = (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm :=
   (rfl)
 
+/-- Every quaternion has coordinates: `dq` is onto. -/
+theorem dq_surjective : Function.Surjective dq := by
+  rw [coe_dq]
+  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.surjective
+
 /-- The Euclidean norm of the quaternion with coordinates `x` is the norm of `x` in
 `EuclideanSpace ℝ (Fin 4)`. -/
 theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
@@ -111,6 +116,35 @@ theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
   congr 2
   simp only [coe_dq, _root_.Quaternion.equivTuple]
   exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+
+/-- Each coordinate of `x` is bounded by the Euclidean norm of the quaternion `dq x`. -/
+theorem abs_le_norm_dq (x : Fin 4 → ℝ) (i : Fin 4) : |x i| ≤ ‖dq x‖ := by
+  rw [norm_dq, ← Real.norm_eq_abs]
+  exact PiLp.norm_apply_le (WithLp.toLp 2 x) i
+
+/-- If every coordinate of `x` has absolute value at most `d`, then `‖dq x‖ ≤ 2 * d`: the
+vertices of a coordinate cube of half-side `d` lie at Euclidean distance `2 * d` from its
+centre. -/
+theorem norm_dq_le_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hx : ∀ i, |x i| ≤ d) :
+    ‖dq x‖ ≤ 2 * d := by
+  have hd : 0 ≤ d := (abs_nonneg _).trans (hx 0)
+  have hsq (i : Fin 4) : x i ^ 2 ≤ d ^ 2 := by
+    simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg (x i)) (hx i) 2
+  rw [norm_dq, EuclideanSpace.norm_eq, Real.sqrt_le_iff]
+  refine ⟨by positivity, ?_⟩
+  simp only [Real.norm_eq_abs, sq_abs, Fin.sum_univ_four]
+  linarith [hsq 0, hsq 1, hsq 2, hsq 3]
+
+/-- If every coordinate of `x` has absolute value less than `d`, then `‖dq x‖ < 2 * d`: the open
+coordinate cube of half-side `d` lies in the open ball of radius `2 * d` about its centre. -/
+theorem norm_dq_lt_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hx : ∀ i, |x i| < d) :
+    ‖dq x‖ < 2 * d := by
+  have hd : 0 < d := (abs_nonneg _).trans_lt (hx 0)
+  have hsq (i : Fin 4) : x i ^ 2 < d ^ 2 := by
+    simpa only [sq_abs] using pow_lt_pow_left₀ (hx i) (abs_nonneg (x i)) two_ne_zero
+  rw [norm_dq, EuclideanSpace.norm_eq, Real.sqrt_lt' (by positivity)]
+  simp only [Real.norm_eq_abs, sq_abs, Fin.sum_univ_four]
+  linarith [hsq 0, hsq 1, hsq 2, hsq 3]
 
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
 with them. -/

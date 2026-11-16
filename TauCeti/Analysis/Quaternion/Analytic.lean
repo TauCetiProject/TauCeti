@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Analytic.BochnerIntegral
 public import TauCeti.Analysis.Analytic.Composition
 public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Quaternion.Kernel
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Analysis.Analytic.CPolynomialDef
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Real.Sqrt
@@ -544,6 +545,47 @@ theorem contDiffOn_integral_mul_cauchyFueterKernel
   (analyticOnNhd_integral_mul_cauchyFueterKernel φ hg).contDiffOn_of_completeSpace
 
 end BoundaryPotentials
+
+/-! ### Set integrals over compact pieces -/
+
+section SetIntegralPotentials
+
+variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  {μ : Measure X} {S : Set X} {ψ : X → ℍ} {q₀ : ℍ} {δ : ℝ} {g : X → ℍ}
+
+/-- Power-series expansion on `eball q₀ ((√2 - 1) δ)` of a left Cauchy–Fueter potential
+`q ↦ ∫ x in S, cauchyFueterKernel (ψ x) q * g x ∂μ` over a compact measurable set `S` on which
+`ψ` is continuous and stays at distance at least `δ > 0` from `q₀`. -/
+theorem exists_hasFPowerSeriesOnBall_setIntegral_cauchyFueterKernel_mul (hS : IsCompact S)
+    (hSm : MeasurableSet S) (hψ : ContinuousOn ψ S) (hδ₀ : 0 < δ)
+    (hδ : ∀ x ∈ S, δ ≤ ‖ψ x - q₀‖) (hg : IntegrableOn g S μ) :
+    ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
+      HasFPowerSeriesOnBall (fun q ↦ ∫ x in S, cauchyFueterKernel (ψ x) q * g x ∂μ) p q₀
+        (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  have : CompactSpace S := isCompact_iff_compactSpace.mp hS
+  let φ : C(S, ℍ) := ⟨S.domRestrict ψ, hψ.domRestrict⟩
+  have hφ (z : S) : φ z ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le (hδ z z.2)))
+  exact ⟨_, (hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul φ hφ hδ₀ (fun z ↦ hδ z z.2)
+    ((integrableOn_iff_comap_subtypeVal hSm).mp hg)).congr fun q _ ↦
+      integral_subtype_comap hSm fun x ↦ cauchyFueterKernel (ψ x) q * g x⟩
+
+/-- Power-series expansion on `eball q₀ ((√2 - 1) δ)` of a right Cauchy–Fueter potential
+`q ↦ ∫ x in S, g x * cauchyFueterKernel (ψ x) q ∂μ` over a compact measurable set `S` on which
+`ψ` is continuous and stays at distance at least `δ > 0` from `q₀`. -/
+theorem exists_hasFPowerSeriesOnBall_setIntegral_mul_cauchyFueterKernel (hS : IsCompact S)
+    (hSm : MeasurableSet S) (hψ : ContinuousOn ψ S) (hδ₀ : 0 < δ)
+    (hδ : ∀ x ∈ S, δ ≤ ‖ψ x - q₀‖) (hg : IntegrableOn g S μ) :
+    ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
+      HasFPowerSeriesOnBall (fun q ↦ ∫ x in S, g x * cauchyFueterKernel (ψ x) q ∂μ) p q₀
+        (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  have : CompactSpace S := isCompact_iff_compactSpace.mp hS
+  let φ : C(S, ℍ) := ⟨S.domRestrict ψ, hψ.domRestrict⟩
+  have hφ (z : S) : φ z ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le (hδ z z.2)))
+  exact ⟨_, (hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel φ hφ hδ₀ (fun z ↦ hδ z z.2)
+    ((integrableOn_iff_comap_subtypeVal hSm).mp hg)).congr fun q _ ↦
+      integral_subtype_comap hSm fun x ↦ g x * cauchyFueterKernel (ψ x) q⟩
+
+end SetIntegralPotentials
 
 /-! ### Finite sums of compact face potentials -/
 
