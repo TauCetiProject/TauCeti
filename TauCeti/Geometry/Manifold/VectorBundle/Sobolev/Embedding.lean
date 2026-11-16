@@ -40,9 +40,6 @@ the resulting tuples are again the components of the same section
 
 ## Main results
 
-* `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
-  into the chartwise Sobolev spaces whose values are those of the components of a Sobolev section
-  assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
 * `TauCeti.SobolevSection.exists_sobolevEmbeddingL`: **the Sobolev embedding**
   `W^{k+1,p}(V) → W^{k,p⋆}(V)` for Sobolev sections.
 * `TauCeti.SobolevSection.exists_sobolevEmbeddingL_of_inv_add_eq`: its iterate
@@ -69,40 +66,6 @@ universe u
 
 namespace TauCeti
 
-section Components
-
-variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] {C : SectionChartData E F S}
-  {μ : Measure E} [μ.IsAddHaarMeasure] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {k k' : ℕ}
-
-/-- **Maps into Sobolev sections from their components.** If continuous linear maps `Φ i m` from
-the Sobolev sections of order `k` and exponent `p` to `W^{k',q}(C.image i)` have, almost everywhere,
-the values of the components `w i m`, then they are the components of a continuous linear map into
-the Sobolev sections of order `k'` and exponent `q`. It keeps the underlying section: its chart
-data are those of `w`. -/
-theorem SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq
-    (Φ : ∀ (i : Fin C.n) (_ : Fin (finrank ℝ F)),
-      C.sobolevSections μ p k →L[ℝ] Wkp μ (C.image i) q k')
-    (hΦ : ∀ i m w, Wkp.value k' (Φ i m w) =ᵐ[μ.restrict (C.image i)]
-      Wkp.value k ((w : C.SobolevData μ p k) i m)) :
-    ∃ T : C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ q k',
-      ∀ w i, C.chartValueL μ q k' i (T w) =ᵐ[μ.restrict (C.image i)] C.chartValueL μ p k i w := by
-  -- The chart data of the assembled tuple are those of `w`, component by component.
-  have hchart (w : C.sobolevSections μ p k) (i : Fin C.n) :
-      C.chartValueL μ q k' i (fun i m ↦ Φ i m w) =ᵐ[μ.restrict (C.image i)]
-        C.chartValueL μ p k i w := by
-    filter_upwards [C.chartValueL_apply_ae μ q k' i (fun i m ↦ Φ i m w),
-      C.chartValueL_apply_ae μ p k i w, ae_all_iff.2 (hΦ i · w)] with y hq hp hm
-    rw [hq, hp]
-    exact Finset.sum_congr rfl fun m _ ↦ by rw [hm m]
-  refine ⟨(ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi (Φ i)).codRestrict
-    (C.sobolevSections μ q k') fun w ↦ ?_, fun w i ↦ hchart w i⟩
-  obtain ⟨s, hs⟩ := C.exists_section μ p k w
-  exact (C.mem_sobolevSections_iff μ q k').2 ⟨s, fun i ↦ (hchart w i).trans (hs i)⟩
-
-end Components
-
 section Sobolev
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {M : Type*}
@@ -116,29 +79,6 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
 
 variable (μ : Measure E) [μ.IsAddHaarMeasure]
-
-/-- Functions agreeing almost everywhere on an open set `Q` agree almost everywhere after
-composition with the chart coordinate change `(A.chart j).symm ≫ₕ A.chart i`, on an open set `P`
-of chart-`j` coordinates in the overlap that this coordinate change maps into `Q`. -/
-private theorem ae_comp_chart_symm_trans {i j : Fin A.n} {P Q : Opens E}
-    (hP : (P : Set E) ⊆ A.overlap i j)
-    (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q) {g₁ g₂ : E → ℝ}
-    (hg : g₁ =ᵐ[μ.restrict Q] g₂) :
-    ∀ᵐ y ∂μ.restrict P,
-      g₁ (((A.chart j).symm ≫ₕ A.chart i) y) = g₂ (((A.chart j).symm ≫ₕ A.chart i) y) := by
-  have h₀ : ∀ᵐ z ∂μ.restrict (A.sectionChartData.image i), z ∈ Q → g₁ z = g₂ z :=
-    ae_restrict_of_ae ((ae_restrict_iff' Q.isOpen.measurableSet).1 hg)
-  have h₁ := A.sectionChartData.aeTransition_iff.1 (A.aeTransition_sectionChartData μ) (i' := j) h₀
-  filter_upwards [ae_restrict_of_ae_restrict_of_subset hP h₁,
-    ae_restrict_mem P.isOpen.measurableSet] with y hy hyP
-  obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 (hP hyP)
-  rw [A.sectionChartData_transition_of_mem (hP hyP), A.transition_chart hx.2] at hy
-  have hφ : ((A.chart j).symm ≫ₕ A.chart i) (A.chart j x) = A.chart i x := by
-    rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      (A.chart j).left_inv (A.dom_subset_chart_source j hx.2)]
-  have hQx := hPQ hyP
-  rw [hφ] at hQx ⊢
-  exact hy hQx
 
 variable [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -191,8 +131,9 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
         Wkp.value k (Emb i (u i l)) (((A.chart j).symm ≫ₕ A.chart i) y) =
           Wkp.value (k + 1) (Wkp.restrictL (hQi i) (k + 1) (u i l))
             (((A.chart j).symm ≫ₕ A.chart i) y) :=
-      ae_all_iff.2 fun l ↦ ae_comp_chart_symm_trans A μ (hP i j) (hPQ i j) ((hEmb i (u i l)).trans
-        (Wkp.value_restrictL_ae (hQi i) (k + 1) (u i l)).symm)
+      (A.exists_isChangeOfVariables_chart_symm_trans k (hPc i j) (hPD i j)
+        (hPQ i j)).choose_spec.choose_spec.ae_comp (ae_all_iff.2 fun l ↦ (hEmb i (u i l)).trans
+          (Wkp.value_restrictL_ae (hQi i) (k + 1) (u i l)).symm)
     filter_upwards [A.value_transferL_ae μ pstar k hpstar i j (hPc i j) (hPD i j) (hPQ i j)
         (D i w) m,
       A.value_transferL_ae μ p (k + 1) hp i j (hPc i j) (hPD i j) (hPQ i j)
