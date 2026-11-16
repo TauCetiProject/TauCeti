@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.ConstantContinuation
-import TauCeti.Geometry.Manifold.IntegralCurve.Prod
 
 /-!
 # The mod-two continuation map

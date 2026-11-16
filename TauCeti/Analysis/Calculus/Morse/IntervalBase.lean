@@ -771,10 +771,7 @@ theorem exists_eq_intervalBaseOrbit_of_isIntegralCurve (hC : 0 < C) {γ : ℝ �
     have h1 : γ 0 = 1 := le_antisymm (hmem 0).2 h
     rw [h1, ite_eq_right_iff.2 (by norm_num)] at hbot
     norm_num at hbot
-  set τ := intervalBaseTimeCoordinate (γ 0) / C
-  have hq : intervalBaseOrbit C τ = γ 0 := by
-    rw [intervalBaseOrbit_eq_intervalBaseOrbit_one, mul_div_cancel₀ _ hC.ne',
-      intervalBaseOrbit_one_intervalBaseTimeCoordinate ⟨hpos, hlt⟩]
+  obtain ⟨τ, hq⟩ := exists_intervalBaseOrbit_eq hC.ne' ⟨hpos, hlt⟩
   refine ⟨τ, funext fun s ↦ ?_⟩
   rw [congrFun hflow s, ← hq, intervalBaseFlow_intervalBaseOrbit]
 
