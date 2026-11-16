@@ -281,25 +281,9 @@ Nothing here needs an even dimension, a nondegenerate form, an invertible `2`, o
 finite-dimensional isotropic summand. A nonzero spinor lies in the exterior algebra of a
 finite-dimensional subspace `W₀ ≤ W`, where creation and contraction operators generate every
 endomorphism and so carry it to `1`; these operators extend from `W₀` to `W`, and left
-multiplication by any spinor is again a Fock operator. Only the stronger statement that the Fock
-action is onto `Module.End K S`, `TauCeti.spinAction_surjective`, needs `W` to be
-finite-dimensional. -/
-
-/-- Left multiplication by a multivector is the Fock action of some Clifford element. -/
-private theorem exists_spinAction_eq_mul {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V]
-    [Module K V] {Q : QuadraticForm K V} (P : SpinPolarizationData Q) (a : ExteriorAlgebra K P.W) :
-    ∃ y : CliffordAlgebra Q, ∀ b, spinAction Q P y b = a * b := by
-  induction a using ExteriorAlgebra.induction with
-  | algebraMap r => exact ⟨algebraMap K _ r, fun b => by simp [Algebra.smul_def]⟩
-  | ι m => exact ⟨CliffordAlgebra.ι Q (m : V), fun b => spinAction_ι_wedge P m b⟩
-  | mul a b ha hb =>
-    obtain ⟨x, hx⟩ := ha
-    obtain ⟨y, hy⟩ := hb
-    exact ⟨x * y, fun c => by simp [hx, hy, mul_assoc]⟩
-  | add a b ha hb =>
-    obtain ⟨x, hx⟩ := ha
-    obtain ⟨y, hy⟩ := hb
-    exact ⟨x + y, fun c => by simp [hx, hy, add_mul]⟩
+multiplication by any spinor is again a Fock operator (`TauCeti.exists_spinAction_eq_mul`). Only the
+stronger statement that the Fock action is onto `Module.End K S`, `TauCeti.spinAction_surjective`,
+needs `W` to be finite-dimensional. -/
 
 section Simple
 
