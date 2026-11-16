@@ -29,11 +29,12 @@ finite, countable, satisfiable, or relational.
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, §4.2.
 * E. G. K. López-Escobar, *An interpolation theorem for denumerably long formulas*,
   Fundamenta Mathematicae **57** (1965), 253–272.
-* The finite elimination argument generalizes the unsigned argument in
-  `TauCeti.ModelTheory.Interpolation.Craig`, following the constant-abstraction method of
+* The finite elimination argument follows the constant-abstraction method of
   `cameronfreer/infinitary-logic`, checkpoint `518a366cba97b1ae8c4dc64a297a396939bc3e0b`,
-  `InfinitaryLogic/Methods/Interpolation/ConstantElimination.lean`. Here both signed occurrence
-  sets are preserved exactly, constants may have any index type, and universes are arbitrary.
+  `InfinitaryLogic/Methods/Interpolation/ConstantElimination.lean`, supplying the witness- and
+  constant-elimination steps for `TauCeti.ModelTheory.Interpolation.Lyndon` and
+  `TauCeti.ModelTheory.Interpolation.Malitz`. Here both signed occurrence sets are preserved
+  exactly, constants may have any index type, and universes are arbitrary.
 -/
 
 public section

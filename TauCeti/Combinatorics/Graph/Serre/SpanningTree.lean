@@ -314,6 +314,10 @@ theorem eq_of_src_eq_of_tgt_eq {e f : Γ.E} (he : e ∈ T.darts) (hf : f ∈ T.d
 theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
   T.isTree.isAcyclic.src_ne_tgt ⟨e, he⟩
 
+/-- A spanning tree of a graph with at most one vertex, such as a rose, has no darts. -/
+instance [Subsingleton Γ.V] : IsEmpty T.darts :=
+  T.isTree.isAcyclic.isEmpty_dart_of_subsingleton
+
 section Map
 
 variable {Δ : SerreGraph} (f : Γ.Hom Δ) (T' : Δ.SpanningTree)
@@ -414,12 +418,9 @@ def roseTree (α : Type*) : (rose α).SpanningTree where
 
 @[simp] theorem roseTree_darts (α : Type*) : (roseTree α).darts = ∅ := (rfl)
 
-/-- A rose has exactly one spanning tree, with no darts: each petal is a reduced loop. -/
+/-- A rose has exactly one spanning tree, the one with no darts. -/
 instance (α : Type*) : Unique (rose α).SpanningTree where
   default := roseTree α
-  uniq T := by
-    ext e
-    simp only [roseTree_darts, Set.mem_empty_iff_false, iff_false]
-    exact fun he => T.src_ne_tgt he rfl
+  uniq T := SpanningTree.ext ((Set.eq_empty_of_isEmpty T.darts).trans (roseTree_darts α).symm)
 
 end TauCeti.SerreGraph

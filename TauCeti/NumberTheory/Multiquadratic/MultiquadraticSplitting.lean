@@ -204,10 +204,8 @@ theorem ncard_primesOver_multiquadratic_iff {ι : Type*} (d : ι → ℤ) (r : �
   -- `K` is Galois over `ℚ`: transport the multiquadratic `isGalois` along `htop`.
   have hr' : ∀ i, r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) := by
     intro i; rw [hr i]; simp
-  have : IsGalois ℚ K := by
-    have hg := TauCeti.Multiquadratic.isGalois (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr'
-    rw [htop] at hg
-    exact isGalois_iff_isGalois_top.mp hg
+  have : IsGalois ℚ K :=
+    TauCeti.Multiquadratic.isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) hr' htop
   -- Fix a prime `Q` of `𝓞 K` above `p`.
   have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   have : (span {(p : ℤ)} : Ideal ℤ).IsMaximal :=

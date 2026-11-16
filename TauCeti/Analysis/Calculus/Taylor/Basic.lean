@@ -11,18 +11,19 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Topology.MetricSpace.Lebesgue
 
 /-!
 # Taylor polynomials and remainder estimates
 
 Remainder bounds and identities for Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`,
-including uniform second-order estimates for functions C² near a compact interval and for
+including uniform second-order estimates for functions C² near compact sets and for
 families whose spatial second derivatives are jointly continuous on a compact cylinder.
 The file provides:
 
-* **Uniform second-order remainder.** For a function C² near a compact interval, the
+* **Uniform second-order remainder.** For a function C² near a compact set, the
   second-order Taylor remainder is bounded by `ε * (y - x)²` whenever the increment is
-  sufficiently small, uniformly over endpoints in the interval.
+  sufficiently small, uniformly over expansion points in the set.
 * **Size of the remainder.** From the Lagrange form of the remainder, if `|f⁽ⁿ⁺¹⁾| ≤ M` between
   `x₀` and `x`, then `|f x - T(x)| ≤ M |x - x₀|ⁿ⁺¹ / (n+1)!`, where `T` is the Taylor polynomial
   of order `n` expanded at `x₀`.
@@ -49,7 +50,10 @@ function divided by its parameter is completely monotone.
 * `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le_param`: the uniform quadratic
   remainder estimate for compact parameter families.
 * `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le`: a uniform small-coefficient
-  second-order remainder estimate on a compact interval.
+  second-order remainder estimate on a compact interval. The variant
+  `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact` applies to any
+  compact set, requiring C² regularity only on a neighborhood of that set rather than on
+  an entire interval containing it.
 * `TauCeti.abs_sub_taylorWithinEval_le`: a bound on the Taylor remainder when the next derivative
   is bounded, with the error proportional to `|x - x₀|^(n+1)`.
 * `TauCeti.le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg`: if
@@ -175,6 +179,39 @@ theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b
   obtain ⟨δ, hδ, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le_param
     (isCompact_singleton (x := (0 : ℝ))) (f := fun _ ↦ f) (fun _ _ ↦ hf) h₂ hε
   exact ⟨δ, hδ, hTaylor 0 (mem_singleton 0)⟩
+
+/-- Uniform second-order Taylor remainder estimate for a function C² near a compact set.
+The function need only be C² in a neighborhood of each point of the set, rather than across
+its convex hull when the set is disconnected. The evaluation point need not lie in the set. -/
+theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact {f : ℝ → ℝ}
+    {s : Set ℝ} (hf : ∀ z ∈ s, ContDiffAt ℝ 2 f z) (hs : IsCompact s)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ x ∈ s, ∀ y, |y - x| < δ →
+      |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
+  have hlocal (z : s) : ∃ U : Set ℝ, U ∈ 𝓝 (z : ℝ) ∧
+      ∀ x ∈ U, ∀ y ∈ U,
+        |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
+    obtain ⟨a, b, _, hab, hsub⟩ := exists_Icc_mem_subset_of_mem_nhds
+      ((hf z z.property).eventually (by norm_num))
+    obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le
+      (fun x hx ↦ hsub hx) hε
+    refine ⟨Icc a b ∩ Metric.ball (z : ℝ) (η / 2),
+      Filter.inter_mem hab (Metric.ball_mem_nhds _ (half_pos hη)), ?_⟩
+    intro x hx y hy
+    apply hTaylor x hx.1 y hy.1
+    rw [← Real.dist_eq]
+    have hx' := Metric.mem_ball.1 hx.2
+    have hy' := Metric.mem_ball.1 hy.2
+    have := dist_triangle y (z : ℝ) x
+    rw [dist_comm (z : ℝ) x] at this
+    linarith
+  choose U hU hTaylor using hlocal
+  obtain ⟨δ, hδ, hcover⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds (c := U) hs
+    (fun x hx ↦ ⟨⟨x, hx⟩, hU ⟨x, hx⟩⟩)
+  refine ⟨δ, hδ, fun x hx y hxy ↦ ?_⟩
+  obtain ⟨z, hball⟩ := hcover x hx
+  exact hTaylor z x (hball (Metric.mem_ball_self hδ)) y
+    (hball (by simpa only [Metric.mem_ball, Real.dist_eq] using hxy))
 
 /-- **The Taylor remainder has a sign.** Let `f` be `C^(n+1)` on a set `s` of unique
 differentiability containing `[x, y]`, with `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`. Then the Taylor
