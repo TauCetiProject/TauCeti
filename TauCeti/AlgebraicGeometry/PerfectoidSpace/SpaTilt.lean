@@ -18,7 +18,7 @@ assume its tilt `B♭ = uniformTilt p B` is a Tate ring (which holds whenever `B
 Tate ring, or more generally receives a continuous homomorphism from a perfectoid Tate ring).
 Given a Huber pair `P = (B, B⁺)` with tilted pair `P♭ = (B♭, B♭⁺)`, a point `x ∈ Spa(B, B⁺)`
 represented by a continuous valuation `v_x` pulls back along the multiplicative sharp map
-`♯ : B♭ → B` (`x ↦ x⁽⁰⁾`) to a continuous valuation `v_x ∘ ♯` (`uniformTilt.sharpValuation`) on
+`♯ : B♭ → B` (`x ↦ x⁽⁰⁾`) to a continuous valuation `v_x ∘ ♯` (`Valuation.uniformTilt`) on
 `B♭` taking values `≤ 1` on `B♭⁺`.
 
 This defines the *tilting map* `spaTilt P : spa P.plus → spa (P.tilt (p := p)).plus`, which:
@@ -37,7 +37,8 @@ This defines the *tilting map* `spaTilt P : spa P.plus → spa (P.tilt (p := p))
 
 ## Main results
 
-* `TauCeti.PerfectoidSpace.spaTilt_val`: underlying valuation-spectrum point via `sharpValuation`.
+* `TauCeti.PerfectoidSpace.spaTilt_val`: underlying valuation-spectrum point via
+  `Valuation.uniformTilt`.
 * `TauCeti.PerfectoidSpace.spaTilt_vle_iff`, `TauCeti.PerfectoidSpace.spaTilt_vlt_iff`:
   valuative comparisons at `spaTilt P x` are comparisons at `x` after applying `♯`.
 * `TauCeti.PerfectoidSpace.mem_supp_spaTilt_iff`, `TauCeti.PerfectoidSpace.supp_spaTilt`:
@@ -84,24 +85,24 @@ variable {p : ℕ} [hp : Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B]
 point `x♭` whose underlying valuation is `v_x ∘ ♯` (Scholze, *Perfectoid spaces*, Theorem 6.3;
 Kedlaya, *AWS 2017*, Lemma 2.6.12). -/
 noncomputable def spaTilt (P : Pair B) (x : spa P.plus) : spa (P.tilt (p := p)).plus :=
-  ⟨ofValuation (uniformTilt.sharpValuation x.1.valuation
+  ⟨ofValuation (x.1.valuation.uniformTilt
       ((isContinuous_def x.1).mp ((mem_spa_iff P.plus x.1).mp x.2).1)),
     (mem_spa_iff _ _).mpr
       ⟨(isContinuous_ofValuation_iff _).mpr
-          (uniformTilt.sharpValuation_isContinuous x.1.valuation
+          (x.1.valuation.isContinuous_uniformTilt
             ((isContinuous_def x.1).mp ((mem_spa_iff P.plus x.1).mp x.2).1)),
         fun a ha ↦ by
-          rw [vle_ofValuation, uniformTilt.sharpValuation_apply, uniformTilt.sharpValuation_apply,
+          rw [vle_ofValuation, Valuation.uniformTilt_apply, Valuation.uniformTilt_apply,
             valuation_le_iff, map_one]
           rw [Pair.tilt_plus] at ha
           exact ((mem_spa_iff P.plus x.1).mp x.2).2 _
             (uniformTilt.mem_plusSubring_iff_coeff_zero.mp ha)⟩⟩
 
 /-- The underlying valuation-spectrum point of `spaTilt P x` is represented by
-`uniformTilt.sharpValuation` applied to a representative valuation of `x`. -/
+`Valuation.uniformTilt` applied to a representative valuation of `x`. -/
 theorem spaTilt_val (P : Pair B) (x : spa P.plus) :
     (spaTilt (p := p) P x).1 =
-      ofValuation (uniformTilt.sharpValuation x.1.valuation
+      ofValuation (x.1.valuation.uniformTilt
         ((isContinuous_def x.1).mp ((mem_spa_iff P.plus x.1).mp x.2).1)) :=
   (rfl)
 
@@ -110,8 +111,7 @@ theorem spaTilt_val (P : Pair B) (x : spa P.plus) :
 theorem spaTilt_vle_iff (P : Pair B) (x : spa P.plus) (f g : uniformTilt p B) :
     (spaTilt (p := p) P x).1.toValuativeRel.vle f g ↔
       x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
-  rw [spaTilt_val, vle_ofValuation, uniformTilt.sharpValuation_apply,
-    uniformTilt.sharpValuation_apply]
+  rw [spaTilt_val, vle_ofValuation, Valuation.uniformTilt_apply, Valuation.uniformTilt_apply]
   exact valuation_le_iff x.1 _ _
 
 /-- **Strict comparison under `spaTilt`**: `(spaTilt P x)(f) < (spaTilt P x)(g)` iff
@@ -189,11 +189,11 @@ theorem spaTilt_preimage_mem_spaRationalFamily (P : Pair B)
   obtain ⟨T₀, s₀, hT₀, rfl⟩ := mem_spaRationalFamily_iff.mp hU
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := uniformTilt p B)
   obtain ⟨N, T, s, -, -, hEq⟩ :=
-    ValuationSpectrum.exists_rationalSubset_eq_insert_pseudoUniformizer_pow
-      (P.tilt (p := p)).plus (P.tilt (p := p)).isRingOfIntegralElements.isOpen hϖ T₀ s₀ hT₀
+    (P.tilt (p := p)).plus.exists_rationalSubset_eq_insert_pseudoUniformizer_pow
+      (P.tilt (p := p)).isRingOfIntegralElements.isOpen hϖ T₀ s₀ hT₀
   rw [hEq, spaTilt_preimage_rationalSubset]
   exact mem_spaRationalFamily_iff.mpr
-    ⟨_, _, uniformTilt.isOpen_span_image_coeff_zero_of_exists_isUnit _
+    ⟨_, _, (insert (ϖ ^ N) T).isOpen_span_image_uniformTilt_coeff_zero_of_exists_isUnit
       ⟨ϖ ^ N, Finset.mem_insert_self _ _, hϖ.isUnit.pow N⟩, rfl⟩
 
 /-- Rational opens pull back along `spaTilt P` to rational opens. -/

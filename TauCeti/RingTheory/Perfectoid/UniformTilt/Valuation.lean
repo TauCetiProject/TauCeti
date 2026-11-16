@@ -20,15 +20,13 @@ support (`Valuation.IsContinuous.eventually_eq`) yields the ultrametric inequali
 
 ## Main definitions
 
-* `TauCeti.Perfectoid.uniformTilt.sharpValuation`: pullback of a continuous valuation on `B` along
+* `Valuation.uniformTilt`: pullback of a continuous valuation on `B` along
   `♯ : uniformTilt p B → B`.
 
 ## Main results
 
-* `TauCeti.Perfectoid.uniformTilt.sharpValuation_apply`: evaluation formula
-  `sharpValuation v hv a = v (coeff p B 0 a)`.
-* `TauCeti.Perfectoid.uniformTilt.sharpValuation_isContinuous`: `sharpValuation v hv` is
-  continuous.
+* `Valuation.uniformTilt_apply`: evaluation formula `v.uniformTilt hv a = v (coeff p B 0 a)`.
+* `Valuation.isContinuous_uniformTilt`: `v.uniformTilt hv` is continuous.
 
 ## References
 
@@ -40,8 +38,9 @@ support (`Valuation.IsContinuous.eventually_eq`) yields the ultrametric inequali
 public section
 
 open Filter Topology TauCeti.Huber
+open TauCeti.Perfectoid.uniformTilt (coeff coeff_add coeff_pow_p_pow continuous_coeff)
 
-namespace TauCeti.Perfectoid.uniformTilt
+namespace Valuation
 
 variable {p : ℕ} [hp : Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B]
   [IsUniformAddGroup B] [IsTopologicalRing B] [IsTateRing B] [CompleteSpace B] [T2Space B]
@@ -49,8 +48,9 @@ variable {p : ℕ} [hp : Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B]
 
 /-- Pulling back a continuous valuation `v` on `B` along the sharp map `♯ : uniformTilt p B → B`
 yields a valuation on `uniformTilt p B`. -/
-noncomputable def sharpValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
-    (v : Valuation B Γ₀) (hv : v.IsContinuous) : Valuation (uniformTilt p B) Γ₀ where
+noncomputable def uniformTilt {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+    (v : Valuation B Γ₀) (hv : v.IsContinuous) :
+    Valuation (TauCeti.Perfectoid.uniformTilt p B) Γ₀ where
   toFun a := v (coeff p B 0 a)
   map_zero' := by simp
   map_one' := by simp
@@ -71,20 +71,20 @@ noncomputable def sharpValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZero
           pow_le_pow_left' (v.map_add _ _) (p ^ m)
         _ = max (v (coeff p B 0 a)) (v (coeff p B 0 b)) := by rw [max_pow, ha, hb]
 
-/-- Evaluating `sharpValuation v hv` at `a` applies `v` to the zeroth coordinate `a♯`. -/
+/-- Evaluating `v.uniformTilt hv` at `a` applies `v` to the zeroth coordinate `a♯`. -/
 @[simp]
-theorem sharpValuation_apply {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
-    (v : Valuation B Γ₀) (hv : v.IsContinuous) (a : uniformTilt p B) :
-    sharpValuation (p := p) v hv a = v (coeff p B 0 a) :=
+theorem uniformTilt_apply {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+    (v : Valuation B Γ₀) (hv : v.IsContinuous) (a : TauCeti.Perfectoid.uniformTilt p B) :
+    v.uniformTilt (p := p) hv a = v (coeff p B 0 a) :=
   (rfl)
 
 /-- The pullback of a continuous valuation `v` on `B` along `♯ : uniformTilt p B → B` is
 continuous on `uniformTilt p B`. -/
-theorem sharpValuation_isContinuous {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+theorem isContinuous_uniformTilt {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
     (v : Valuation B Γ₀) (hv : v.IsContinuous) :
-    (sharpValuation (p := p) v hv).IsContinuous := by
+    (v.uniformTilt (p := p) hv).IsContinuous := by
   rw [Valuation.isContinuous_def]
   intro b
   exact ((Valuation.isContinuous_def.mp hv) (coeff p B 0 b)).preimage (continuous_coeff 0)
 
-end TauCeti.Perfectoid.uniformTilt
+end Valuation
