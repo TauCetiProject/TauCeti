@@ -18,20 +18,16 @@ This module connects the categorical universal property and base-change equivale
 `CategoryTheory.Comma L R` with the comma topologies on objects and total arrows:
 
 * `CategoryTheory.Comma.objectHomeomorph` upgrades `CategoryTheory.Comma.objectEquiv` to a
-  homeomorphism between `Comma L R` and the topological fiber product of `Prod.map L.obj R.obj` with
+  homeomorphism with the topological fiber product of `Prod.map L.obj R.obj` and
   `(left, right) : Quiver.Total T → T × T`, with no continuity assumptions on `L`, `R`, or `T`.
 * `CategoryTheory.Comma.isTopologicallyContinuous_iff` characterizes `IsTopologicallyContinuous` for
   functors into `Comma L R` in terms of the two projections and the structure-arrow map into
   `Quiver.Total T`, yielding `IsTopologicallyContinuous` for `Comma.fst`, `Comma.snd`, `Comma.lift`,
-  `Comma.preLeft`, `Comma.preRight`, `Comma.post`, `Comma.mapLeft`, `Comma.mapRight`,
-  `Comma.flipFunctor`, `Comma.fromRight`, `Comma.fromLeft`, `Comma.assocFunctor`,
-  `Comma.assocInverse`, `Comma.pastingRightFunctor`, `Comma.pastingRightInverse`,
-  `Comma.pastingLeftFunctor`, and `Comma.pastingLeftInverse`.
+  `Comma.preLeft`, `Comma.preRight`, `Comma.post`, `Comma.mapLeft`, `Comma.mapRight`, and the
+  symmetry, identity, associativity, and pasting functors.
 * `CategoryTheory.Comma.preLeftHomeomorph`, `CategoryTheory.Comma.isOpenMap_preLeft_obj`, and
-  `CategoryTheory.Comma.preLeftIsomorphismClassesHomeomorph` (together with their `preRight` duals
-  and natural-isomorphism invariance via `CategoryTheory.Equivalence.isomorphismClassesHomeomorph`)
-  prove refinement invariance of the coarse space `Quotient (isIsomorphicSetoid (Comma L R))` along
-  open surjective fully faithful refinements.
+  `CategoryTheory.Comma.preLeftIsomorphismClassesHomeomorph` (and their `preRight` duals) prove
+  refinement invariance of the coarse space along open surjective fully faithful refinements.
 
 ## References
 
@@ -57,20 +53,18 @@ variable {A : Type u₁} [Category.{v₁} A] {B : Type u₂} [Category.{v₂} B]
 `(left, right) : Quiver.Total T → T × T`, with no continuity hypotheses on `L`, `R`, or `T`. -/
 def objectHomeomorph (L : A ⥤ T) (R : B ⥤ T) :
     Comma L R ≃ₜ
-      {p : (A × B) × Quiver.Total T //
-        Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)} where
+      {p : (A × B) × Quiver.Total T // Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)} where
   toEquiv := objectEquiv L R
   continuous_toFun :=
     (((continuous_left.prodMk continuous_right).prodMk continuous_totalHom).subtype_mk
       fun _ ↦ rfl).congr fun X ↦ Subtype.ext (objectEquiv_apply_coe L R X).symm
-  continuous_invFun := by
-    refine continuous_iff.mpr ⟨?_, ?_, ?_⟩
-    · exact (continuous_fst.comp (continuous_fst.comp continuous_subtype_val)).congr
-        fun p ↦ (objectEquiv_symm_apply_left L R p).symm
-    · exact (continuous_snd.comp continuous_subtype_val).congr
-        fun p ↦ (objectEquiv_symm_apply_totalHom L R p).symm
-    · exact (continuous_snd.comp (continuous_fst.comp continuous_subtype_val)).congr
-        fun p ↦ (objectEquiv_symm_apply_right L R p).symm
+  continuous_invFun := continuous_iff.mpr
+    ⟨(continuous_fst.comp (continuous_fst.comp continuous_subtype_val)).congr
+        fun p ↦ (objectEquiv_symm_apply_left L R p).symm,
+      (continuous_snd.comp continuous_subtype_val).congr
+        fun p ↦ (objectEquiv_symm_apply_totalHom L R p).symm,
+      (continuous_snd.comp (continuous_fst.comp continuous_subtype_val)).congr
+        fun p ↦ (objectEquiv_symm_apply_right L R p).symm⟩
 
 @[simp]
 theorem coe_objectHomeomorph (L : A ⥤ T) (R : B ⥤ T) :
@@ -115,15 +109,12 @@ theorem isTopologicallyContinuous_iff {L : A ⥤ T} {R : B ⥤ T}
       (H ⋙ fst L R).IsTopologicallyContinuous ∧
         (H ⋙ snd L R).IsTopologicallyContinuous ∧
         Continuous fun d : D ↦ (⟨_, _, (H.obj d).hom⟩ : Quiver.Total T) := by
-  constructor
-  · intro hH
-    exact ⟨hH.comp (isTopologicallyContinuous_fst L R),
-      hH.comp (isTopologicallyContinuous_snd L R),
-      continuous_totalHom.comp hH.continuous_obj⟩
-  · rintro ⟨hl, hr, hhom⟩
-    have hobj : Continuous H.obj := continuous_iff.mpr ⟨hl.continuous_obj, hhom, hr.continuous_obj⟩
-    exact ⟨hobj, continuous_total_iff.mpr
-      ⟨hobj.comp hsD, hobj.comp htD, hl.continuous_mapTotal, hr.continuous_mapTotal⟩⟩
+  refine ⟨fun hH ↦ ⟨hH.comp (isTopologicallyContinuous_fst L R),
+    hH.comp (isTopologicallyContinuous_snd L R), continuous_totalHom.comp hH.continuous_obj⟩, ?_⟩
+  rintro ⟨hl, hr, hhom⟩
+  have hobj : Continuous H.obj := continuous_iff.mpr ⟨hl.continuous_obj, hhom, hr.continuous_obj⟩
+  exact ⟨hobj, continuous_total_iff.mpr
+    ⟨hobj.comp hsD, hobj.comp htD, hl.continuous_mapTotal, hr.continuous_mapTotal⟩⟩
 
 /-- Topological universal property of `Comma.lift`: when `D` has continuous source and target on
 total arrows, `Comma.lift F G α` is continuous on objects and total arrows if and only if `F` and
@@ -174,8 +165,7 @@ theorem isTopologicallyContinuous_mapLeft {L₁ L₂ : A ⥤ T} (R : B ⥤ T) (l
     ⟨isTopologicallyContinuous_fst _ _, isTopologicallyContinuous_snd _ _, ?_⟩
   convert hcompT.comp
     (((hl.comp continuous_left).prodMk continuous_totalHom).subtype_mk fun _ ↦ rfl) using 1
-  funext X
-  simp [Quiver.Total.comp_def]
+  funext X; simp [Quiver.Total.comp_def]
 
 /-- Whiskering on the right by a natural transformation `r : R₁ ⟶ R₂` with continuous components in
 `Quiver.Total T` induces a continuous functor `Comma L R₁ ⥤ Comma L R₂` when composition in `T` is
@@ -189,8 +179,7 @@ theorem isTopologicallyContinuous_mapRight (L : A ⥤ T) {R₁ R₂ : B ⥤ T} (
     ⟨isTopologicallyContinuous_fst _ _, isTopologicallyContinuous_snd _ _, ?_⟩
   convert hcompT.comp
     ((continuous_totalHom.prodMk (hr.comp continuous_right)).subtype_mk fun _ ↦ rfl) using 1
-  funext X
-  simp [Quiver.Total.comp_def]
+  funext X; simp [Quiver.Total.comp_def]
 
 /-- Over a groupoid `T` with continuous inversion on total arrows, `Comma.flipFunctor L R` is
 continuous on objects and total arrows. -/
@@ -261,8 +250,7 @@ theorem isTopologicallyContinuous_pastingRightFunctor (L : A ⥤ T) {R : B ⥤ T
   convert hcompT.comp
     ((((continuous_totalHom (L := L) (R := R)).comp continuous_left).prodMk
       (hR.comp (continuous_totalHom (L := snd L R) (R := M)))).subtype_mk fun _ ↦ rfl) using 1
-  funext P
-  simp [Quiver.Total.comp_def]
+  funext P; simp [Quiver.Total.comp_def]
 
 /-- The right-pasting section `Comma.pastingRightInverse L R M` is continuous on objects and total
 arrows when `M` is continuous and `B` has continuous units. -/
@@ -290,8 +278,7 @@ theorem isTopologicallyContinuous_pastingLeftFunctor (N : D ⥤ A) {L : A ⥤ T}
     (((hL.comp (continuous_totalHom (L := N) (R := fst L R))).prodMk
       ((continuous_totalHom (L := L) (R := R)).comp continuous_right)).subtype_mk
       fun _ ↦ rfl) using 1
-  funext P
-  simp [Quiver.Total.comp_def]
+  funext P; simp [Quiver.Total.comp_def]
 
 /-- The left-pasting section `Comma.pastingLeftInverse N L R` is continuous on objects and total
 arrows when `N` is continuous and `A` has continuous units. -/
@@ -318,17 +305,13 @@ variable {A' : Type u₁} [Category.{v₁} A'] {A : Type u₁} [Category.{v₁} 
 theorem surjective_preLeft_obj {C : Type u₄} [Category.{v₄} C]
     (F : C ⥤ A) (L : A ⥤ T) (R : B ⥤ T) (hFs : Function.Surjective F.obj) :
     Function.Surjective (preLeft F L R).obj := by
-  rintro ⟨a, b, h⟩
-  obtain ⟨c, rfl⟩ := hFs a
-  exact ⟨⟨c, b, h⟩, rfl⟩
+  rintro ⟨a, b, h⟩; obtain ⟨c, rfl⟩ := hFs a; exact ⟨⟨c, b, h⟩, rfl⟩
 
 /-- Surjectivity of `F.obj` lifts to `(Comma.preRight L F R).obj`. -/
 theorem surjective_preRight_obj {C : Type u₄} [Category.{v₄} C]
     (L : A ⥤ T) (F : C ⥤ B) (R : B ⥤ T) (hFs : Function.Surjective F.obj) :
     Function.Surjective (preRight L F R).obj := by
-  rintro ⟨a, b, h⟩
-  obtain ⟨c, rfl⟩ := hFs b
-  exact ⟨⟨a, c, h⟩, rfl⟩
+  rintro ⟨a, b, h⟩; obtain ⟨c, rfl⟩ := hFs b; exact ⟨⟨a, c, h⟩, rfl⟩
 
 variable [TopologicalSpace A'] [TopologicalSpace A]
   [TopologicalSpace B'] [TopologicalSpace B]
@@ -341,18 +324,9 @@ def preLeftHomeomorph {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
     (F : C ⥤ A) (L : A ⥤ T) (R : B ⥤ T) (hF : Continuous F.obj) :
     Comma (F ⋙ L) R ≃ₜ {q : C × Comma L R // F.obj q.1 = q.2.left} where
   toFun X := ⟨(X.left, (preLeft F L R).obj X), rfl⟩
-  invFun q :=
-    { left := q.1.1
-      right := q.1.2.right
-      hom := eqToHom (congrArg L.obj q.2) ≫ q.1.2.hom }
-  left_inv X := by
-    cases X
-    simp
-  right_inv := by
-    rintro ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩
-    dsimp only at hq
-    subst hq
-    simp [preLeft]
+  invFun q := ⟨q.1.1, q.1.2.right, eqToHom (congrArg L.obj q.2) ≫ q.1.2.hom⟩
+  left_inv X := by cases X; simp
+  right_inv := by rintro ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩; dsimp only at hq; subst hq; simp [preLeft]
   continuous_toFun :=
     ((continuous_left (L := F ⋙ L) (R := R)).prodMk
       ((continuous_iff (L := L) (R := R)).mpr
@@ -365,10 +339,7 @@ def preLeftHomeomorph {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
         (continuous_right (L := L) (R := R)).comp (continuous_snd.comp continuous_subtype_val)⟩
     convert (continuous_totalHom (L := L) (R := R)).comp
       (continuous_snd.comp continuous_subtype_val) using 1
-    funext ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩
-    dsimp only at hq
-    subst hq
-    simp
+    funext ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩; dsimp only at hq; subst hq; simp
 
 @[simp]
 theorem preLeftHomeomorph_apply_coe {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
@@ -382,18 +353,9 @@ def preRightHomeomorph {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
     (L : A ⥤ T) (F : C ⥤ B) (R : B ⥤ T) (hF : Continuous F.obj) :
     Comma L (F ⋙ R) ≃ₜ {q : C × Comma L R // F.obj q.1 = q.2.right} where
   toFun X := ⟨(X.right, (preRight L F R).obj X), rfl⟩
-  invFun q :=
-    { left := q.1.2.left
-      right := q.1.1
-      hom := q.1.2.hom ≫ eqToHom (congrArg R.obj q.2.symm) }
-  left_inv X := by
-    cases X
-    simp
-  right_inv := by
-    rintro ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩
-    dsimp only at hq
-    subst hq
-    simp [preRight]
+  invFun q := ⟨q.1.2.left, q.1.1, q.1.2.hom ≫ eqToHom (congrArg R.obj q.2.symm)⟩
+  left_inv X := by cases X; simp
+  right_inv := by rintro ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩; dsimp only at hq; subst hq; simp [preRight]
   continuous_toFun :=
     ((continuous_right (L := L) (R := F ⋙ R)).prodMk
       ((continuous_iff (L := L) (R := R)).mpr
@@ -406,10 +368,7 @@ def preRightHomeomorph {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
         ?_, continuous_fst.comp continuous_subtype_val⟩
     convert (continuous_totalHom (L := L) (R := R)).comp
       (continuous_snd.comp continuous_subtype_val) using 1
-    funext ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩
-    dsimp only at hq
-    subst hq
-    simp
+    funext ⟨⟨c, ⟨a, b, h⟩⟩, hq⟩; dsimp only at hq; subst hq; simp
 
 @[simp]
 theorem preRightHomeomorph_apply_coe {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
@@ -427,15 +386,12 @@ theorem isOpenMap_preLeft_obj {C : Type u₄} [Category.{v₄} C] [TopologicalSp
       (Z.left, (⟨_, _, Z.hom⟩ : Quiver.Total T), Z.right)) ⁻¹' W) =
       (fun Y : Comma L R ↦ (Y.left, (⟨_, _, Y.hom⟩ : Quiver.Total T), Y.right)) ⁻¹'
         (_root_.Prod.map F.obj id '' W) := by
-    ext Y
-    constructor
-    · rintro ⟨X, hXW, rfl⟩
-      exact ⟨(X.left, (⟨_, _, X.hom⟩ : Quiver.Total T), X.right), hXW, rfl⟩
-    · rcases Y with ⟨a, bY, h⟩
-      rintro ⟨⟨c, t, b⟩, hcW, hct⟩
-      simp only [_root_.Prod.map_apply, id_eq, _root_.Prod.mk.injEq] at hct
-      obtain ⟨rfl, rfl, rfl⟩ := hct
-      exact ⟨⟨c, b, h⟩, hcW, rfl⟩
+    ext Y; refine ⟨fun ⟨X, hXW, hXY⟩ ↦ hXY ▸ ⟨(X.left, ⟨_, _, X.hom⟩, X.right), hXW, rfl⟩, ?_⟩
+    rcases Y with ⟨a, bY, h⟩
+    rintro ⟨⟨c, t, b⟩, hcW, hct⟩
+    simp only [_root_.Prod.map_apply, id_eq, _root_.Prod.mk.injEq] at hct
+    obtain ⟨rfl, rfl, rfl⟩ := hct
+    exact ⟨⟨c, b, h⟩, hcW, rfl⟩
   rw [hEq]
   exact (hFo.prodMap IsOpenMap.id W hW).preimage
     (continuous_left.prodMk (continuous_totalHom.prodMk continuous_right))
@@ -451,15 +407,12 @@ theorem isOpenMap_preRight_obj {C : Type u₄} [Category.{v₄} C] [TopologicalS
       (Z.left, (⟨_, _, Z.hom⟩ : Quiver.Total T), Z.right)) ⁻¹' W) =
       (fun Y : Comma L R ↦ (Y.left, (⟨_, _, Y.hom⟩ : Quiver.Total T), Y.right)) ⁻¹'
         (_root_.Prod.map id (_root_.Prod.map id F.obj) '' W) := by
-    ext Y
-    constructor
-    · rintro ⟨X, hXW, rfl⟩
-      exact ⟨(X.left, (⟨_, _, X.hom⟩ : Quiver.Total T), X.right), hXW, rfl⟩
-    · rcases Y with ⟨aY, b, h⟩
-      rintro ⟨⟨a, t, c⟩, hcW, hct⟩
-      simp only [_root_.Prod.map_apply, id_eq, _root_.Prod.mk.injEq] at hct
-      obtain ⟨rfl, rfl, rfl⟩ := hct
-      exact ⟨⟨a, c, h⟩, hcW, rfl⟩
+    ext Y; refine ⟨fun ⟨X, hXW, hXY⟩ ↦ hXY ▸ ⟨(X.left, ⟨_, _, X.hom⟩, X.right), hXW, rfl⟩, ?_⟩
+    rcases Y with ⟨aY, b, h⟩
+    rintro ⟨⟨a, t, c⟩, hcW, hct⟩
+    simp only [_root_.Prod.map_apply, id_eq, _root_.Prod.mk.injEq] at hct
+    obtain ⟨rfl, rfl, rfl⟩ := hct
+    exact ⟨⟨a, c, h⟩, hcW, rfl⟩
   rw [hEq]
   exact (IsOpenMap.id.prodMap (IsOpenMap.id.prodMap hFo) W hW).preimage
     (continuous_left.prodMk (continuous_totalHom.prodMk continuous_right))

@@ -32,35 +32,14 @@ We first prove two general cancellation lemmas for topologically continuous func
 categories (`CategoryTheory.Functor.IsTopologicallyContinuous.contMDiff_mapTotal` and
 `CategoryTheory.Functor.IsTopologicallyContinuous.isLocalDiffeomorph_mapTotal`): because
 `Quiver.Total.left ∘ F.toPrefunctor.mapTotal = F.obj ∘ Quiver.Total.left`, smoothness or local
-diffeomorphicity of `F.obj` automatically lifts to total arrows whenever the target source map is a
-`C^n` local diffeomorphism.
+diffeomorphicity of `F.obj` lifts to total arrows whenever the target source map is a `C^n` local
+diffeomorphism.
 
-Applied to `Comma L R`, when `Comma L R` embeds smoothly into `(A × B) × Quiver.Total T` (for
-instance via `CategoryTheory.Comma.isSmoothEmbedding_objects` under fiberwise transversality), the
-sources of `A`, `B`, and `T` are `C^n` local diffeomorphisms, the targets of `A` and `B` are `C^n`,
-and `L.obj` is `C^n`, the target map `Quiver.Total.right` on `Comma L R` is also a `C^n` local
-diffeomorphism (`CategoryTheory.Comma.isLocalDiffeomorph_target`). Together with the synthesized
-`IsTopologicalGroupoid (Comma L R)` instance and `TauCeti.IsTopologicalGroupoid`, this makes all
-remaining groupoid structure maps (units, inversion, composable pairs, and composition) `C^n` local
-diffeomorphisms. We also record smooth functoriality of `Comma.fst`, `Comma.snd`, and `Comma.lift`
-on both objects and total arrows.
-
-## Main definitions and results
-
-* `CategoryTheory.Functor.IsTopologicallyContinuous.contMDiff_mapTotal`,
-  `CategoryTheory.Functor.IsTopologicallyContinuous.isLocalDiffeomorph_mapTotal`: automatic arrow
-  smoothness and local diffeomorphicity for topologically continuous functors into étale targets.
-* `CategoryTheory.Comma.chartedSpaceArrows`, `CategoryTheory.Comma.isManifold_arrows`,
-  `CategoryTheory.Comma.isLocalDiffeomorph_source`: the pulled-back `C^n` manifold structure on
-  `Quiver.Total (Comma L R)`.
-* `CategoryTheory.Comma.contMDiff_fst_mapTotal`, `CategoryTheory.Comma.contMDiff_snd_mapTotal`,
-  `CategoryTheory.Comma.isLocalDiffeomorph_fst_mapTotal`,
-  `CategoryTheory.Comma.isLocalDiffeomorph_snd_mapTotal`: smoothness and étale base-change on total
-  arrows for the comma projections.
-* `CategoryTheory.Comma.contMDiff_target`, `CategoryTheory.Comma.isLocalDiffeomorph_target`:
-  smoothness and local diffeomorphicity of the target map on `Quiver.Total (Comma L R)`.
-* `CategoryTheory.Comma.contMDiff_lift_obj_iff`, `CategoryTheory.Comma.contMDiff_lift_mapTotal`:
-  smooth universal property of `Comma.lift` on objects and total arrows.
+When `Comma L R` embeds smoothly into `(A × B) × Quiver.Total T`, the sources of `A`, `B`, and `T`
+are `C^n` local diffeomorphisms, the targets of `A` and `B` are `C^n`, and `L.obj` is `C^n`, the
+target map `Quiver.Total.right` on `Comma L R` is also a `C^n` local diffeomorphism
+(`CategoryTheory.Comma.isLocalDiffeomorph_target`). We also record smooth functoriality of
+`Comma.fst`, `Comma.snd`, and `Comma.lift` on both objects and total arrows.
 
 ## References
 
@@ -78,15 +57,14 @@ section Functor
 namespace CategoryTheory.Functor.IsTopologicallyContinuous
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
-  {EC : Type*} [NormedAddCommGroup EC] [NormedSpace 𝕜 EC]
-  {HC : Type*} [TopologicalSpace HC] {IC : ModelWithCorners 𝕜 EC HC}
-  {EJC : Type*} [NormedAddCommGroup EJC] [NormedSpace 𝕜 EJC]
-  {HJC : Type*} [TopologicalSpace HJC] {JC : ModelWithCorners 𝕜 EJC HJC}
-  {ED : Type*} [NormedAddCommGroup ED] [NormedSpace 𝕜 ED]
-  {HD : Type*} [TopologicalSpace HD] {ID : ModelWithCorners 𝕜 ED HD}
-  {EJD : Type*} [NormedAddCommGroup EJD] [NormedSpace 𝕜 EJD]
-  {HJD : Type*} [TopologicalSpace HJD] {JD : ModelWithCorners 𝕜 EJD HJD}
-  {C D : Type*} [Category C] [Category D]
+  {EC HC EJC HJC ED HD EJD HJD C D : Type*}
+  [NormedAddCommGroup EC] [NormedSpace 𝕜 EC] [TopologicalSpace HC] {IC : ModelWithCorners 𝕜 EC HC}
+  [NormedAddCommGroup EJC] [NormedSpace 𝕜 EJC] [TopologicalSpace HJC]
+  {JC : ModelWithCorners 𝕜 EJC HJC}
+  [NormedAddCommGroup ED] [NormedSpace 𝕜 ED] [TopologicalSpace HD] {ID : ModelWithCorners 𝕜 ED HD}
+  [NormedAddCommGroup EJD] [NormedSpace 𝕜 EJD] [TopologicalSpace HJD]
+  {JD : ModelWithCorners 𝕜 EJD HJD}
+  [Category C] [Category D]
   [TopologicalSpace C] [ChartedSpace HC C]
   [TopologicalSpace (Quiver.Total C)] [ChartedSpace HJC (Quiver.Total C)]
   [TopologicalSpace D] [ChartedSpace HD D]
@@ -124,22 +102,18 @@ end Functor
 namespace CategoryTheory.Comma
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
-  {EA : Type*} [NormedAddCommGroup EA] [NormedSpace 𝕜 EA]
-  {HA : Type*} [TopologicalSpace HA] {IA : ModelWithCorners 𝕜 EA HA}
-  {EJA : Type*} [NormedAddCommGroup EJA] [NormedSpace 𝕜 EJA]
-  {HJA : Type*} [TopologicalSpace HJA] {JA : ModelWithCorners 𝕜 EJA HJA}
-  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
-  {EJB : Type*} [NormedAddCommGroup EJB] [NormedSpace 𝕜 EJB]
-  {HJB : Type*} [TopologicalSpace HJB] {JB : ModelWithCorners 𝕜 EJB HJB}
-  {ET : Type*} [NormedAddCommGroup ET] [NormedSpace 𝕜 ET]
-  {HT : Type*} [TopologicalSpace HT] {IT : ModelWithCorners 𝕜 ET HT}
-  {EJT : Type*} [NormedAddCommGroup EJT] [NormedSpace 𝕜 EJT]
-  {HJT : Type*} [TopologicalSpace HJT] {JT : ModelWithCorners 𝕜 EJT HJT}
-  {EK : Type*} [NormedAddCommGroup EK] [NormedSpace 𝕜 EK]
-  {HK : Type*} [TopologicalSpace HK] {IK : ModelWithCorners 𝕜 EK HK}
-  {A B T : Type*} [Category A] [IsGroupoid A] [Category B] [IsGroupoid B]
-  [Category T] [IsGroupoid T]
+  {EA HA EJA HJA EB HB EJB HJB ET HT EJT HJT EK HK A B T : Type*}
+  [NormedAddCommGroup EA] [NormedSpace 𝕜 EA] [TopologicalSpace HA] {IA : ModelWithCorners 𝕜 EA HA}
+  [NormedAddCommGroup EJA] [NormedSpace 𝕜 EJA] [TopologicalSpace HJA]
+  {JA : ModelWithCorners 𝕜 EJA HJA}
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  [NormedAddCommGroup EJB] [NormedSpace 𝕜 EJB] [TopologicalSpace HJB]
+  {JB : ModelWithCorners 𝕜 EJB HJB}
+  [NormedAddCommGroup ET] [NormedSpace 𝕜 ET] [TopologicalSpace HT] {IT : ModelWithCorners 𝕜 ET HT}
+  [NormedAddCommGroup EJT] [NormedSpace 𝕜 EJT] [TopologicalSpace HJT]
+  {JT : ModelWithCorners 𝕜 EJT HJT}
+  [NormedAddCommGroup EK] [NormedSpace 𝕜 EK] [TopologicalSpace HK] {IK : ModelWithCorners 𝕜 EK HK}
+  [Category A] [IsGroupoid A] [Category B] [IsGroupoid B] [Category T] [IsGroupoid T]
   {L : A ⥤ T} {R : B ⥤ T}
   [TopologicalSpace A] [TopologicalSpace (Quiver.Total A)] [IsTopologicalGroupoid A]
   [TopologicalSpace B] [TopologicalSpace (Quiver.Total B)] [IsTopologicalGroupoid B]
@@ -208,50 +182,11 @@ theorem compatible_chartedSpaceArrows [IsManifold IK n (Comma L R)]
   (isLocalHomeomorph_source_of_isTopologicalGroupoid
     hL_cont hR_cont hsA hsB).compatible_chartedSpaceComap hsc
 
-section UniversalProperty
-
-variable {EN : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
-  {HN : Type*} [TopologicalSpace HN] {IN : ModelWithCorners 𝕜 EN HN}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
-  {f : N → Quiver.Total (Comma L R)} {s : Set N} {z : N}
-
-/-- A map into `Quiver.Total (Comma L R)` is `C^n` within `s` at `z` iff it is continuous there and
-its composite with the source map is `C^n` within `s` at `z`. -/
-theorem contMDiffWithinAt_arrows_iff
-    (hL_cont : L.IsTopologicallyContinuous) (hR_cont : R.IsTopologicallyContinuous)
-    (hsA : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total A → A))
-    (hsB : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total B → B)) :
-    letI := chartedSpaceArrows (HK := HK) hL_cont hR_cont hsA hsB
-    ContMDiffWithinAt IN IK n f s z ↔
-      ContinuousWithinAt f s z ∧ ContMDiffWithinAt IN IK n (Quiver.Total.left ∘ f) s z :=
-  (isLocalHomeomorph_source_of_isTopologicalGroupoid
-    hL_cont hR_cont hsA hsB).contMDiffWithinAt_chartedSpaceComap_iff
-
-/-- A map into `Quiver.Total (Comma L R)` is `C^n` at `z` iff it is continuous at `z` and its
-composite with the source map is `C^n` at `z`. -/
-theorem contMDiffAt_arrows_iff
-    (hL_cont : L.IsTopologicallyContinuous) (hR_cont : R.IsTopologicallyContinuous)
-    (hsA : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total A → A))
-    (hsB : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total B → B)) :
-    letI := chartedSpaceArrows (HK := HK) hL_cont hR_cont hsA hsB
-    ContMDiffAt IN IK n f z ↔ ContinuousAt f z ∧ ContMDiffAt IN IK n (Quiver.Total.left ∘ f) z :=
-  (isLocalHomeomorph_source_of_isTopologicalGroupoid
-    hL_cont hR_cont hsA hsB).contMDiffAt_chartedSpaceComap_iff
-
-/-- A map into `Quiver.Total (Comma L R)` is `C^n` on `s` iff it is continuous on `s` and its
-composite with the source map is `C^n` on `s`. -/
-theorem contMDiffOn_arrows_iff
-    (hL_cont : L.IsTopologicallyContinuous) (hR_cont : R.IsTopologicallyContinuous)
-    (hsA : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total A → A))
-    (hsB : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total B → B)) :
-    letI := chartedSpaceArrows (HK := HK) hL_cont hR_cont hsA hsB
-    ContMDiffOn IN IK n f s ↔ ContinuousOn f s ∧ ContMDiffOn IN IK n (Quiver.Total.left ∘ f) s :=
-  (isLocalHomeomorph_source_of_isTopologicalGroupoid
-    hL_cont hR_cont hsA hsB).contMDiffOn_chartedSpaceComap_iff
-
 /-- A map into `Quiver.Total (Comma L R)` is `C^n` iff it is continuous and its composite with the
 source map is `C^n`. -/
-theorem contMDiff_arrows_iff
+theorem contMDiff_arrows_iff {EN HN N : Type*}
+    [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN] {IN : ModelWithCorners 𝕜 EN HN}
+    [TopologicalSpace N] [ChartedSpace HN N] {f : N → Quiver.Total (Comma L R)}
     (hL_cont : L.IsTopologicallyContinuous) (hR_cont : R.IsTopologicallyContinuous)
     (hsA : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total A → A))
     (hsB : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total B → B)) :
@@ -259,8 +194,6 @@ theorem contMDiff_arrows_iff
     ContMDiff IN IK n f ↔ Continuous f ∧ ContMDiff IN IK n (Quiver.Total.left ∘ f) :=
   (isLocalHomeomorph_source_of_isTopologicalGroupoid
     hL_cont hR_cont hsA hsB).contMDiff_chartedSpaceComap_iff
-
-end UniversalProperty
 
 section Projections
 
@@ -351,8 +284,7 @@ theorem contMDiff_target
     letI := chartedSpaceArrows (HK := HK) hL_cont hR_cont
       hsA.isLocalHomeomorph hsB.isLocalHomeomorph
     ContMDiff IK IK n (Quiver.Total.right : Quiver.Total (Comma L R) → Comma L R) := by
-  let := chartedSpaceArrows (HK := HK) hL_cont hR_cont
-    hsA.isLocalHomeomorph hsB.isLocalHomeomorph
+  let := chartedSpaceArrows (HK := HK) hL_cont hR_cont hsA.isLocalHomeomorph hsB.isLocalHomeomorph
   rw [hemb.contMDiff_iff_comp]
   have hfA : ContMDiff IK IA n (fun f : Quiver.Total (Comma L R) ↦ f.right.left) := by
     simpa only [Function.comp_def, Prefunctor.mapTotal_right, Functor.toPrefunctor_obj, fst_obj]
@@ -383,8 +315,7 @@ theorem isLocalDiffeomorph_target
     letI := chartedSpaceArrows (HK := HK) hL_cont hR_cont
       hsA.isLocalHomeomorph hsB.isLocalHomeomorph
     IsLocalDiffeomorph IK IK n (Quiver.Total.right : Quiver.Total (Comma L R) → Comma L R) := by
-  let := chartedSpaceArrows (HK := HK) hL_cont hR_cont
-    hsA.isLocalHomeomorph hsB.isLocalHomeomorph
+  let := chartedSpaceArrows (HK := HK) hL_cont hR_cont hsA.isLocalHomeomorph hsB.isLocalHomeomorph
   -- Inversion is `C^n` and involutive, hence a `C^n` diffeomorphism intertwining source and target.
   have hinv : ContMDiff IK IK n (fun f : Quiver.Total (Comma L R) ↦
       (⟨f.right, f.left, inv f.hom⟩ : Quiver.Total (Comma L R))) :=
@@ -404,11 +335,11 @@ theorem isLocalDiffeomorph_target
 
 section Lift
 
-variable {EW : Type*} [NormedAddCommGroup EW] [NormedSpace 𝕜 EW]
-  {HW : Type*} [TopologicalSpace HW] {IW : ModelWithCorners 𝕜 EW HW}
-  {EJW : Type*} [NormedAddCommGroup EJW] [NormedSpace 𝕜 EJW]
-  {HJW : Type*} [TopologicalSpace HJW] {JW : ModelWithCorners 𝕜 EJW HJW}
-  {W : Type*} [Category W] [TopologicalSpace W] [ChartedSpace HW W]
+variable {EW HW EJW HJW W : Type*}
+  [NormedAddCommGroup EW] [NormedSpace 𝕜 EW] [TopologicalSpace HW] {IW : ModelWithCorners 𝕜 EW HW}
+  [NormedAddCommGroup EJW] [NormedSpace 𝕜 EJW] [TopologicalSpace HJW]
+  {JW : ModelWithCorners 𝕜 EJW HJW}
+  [Category W] [TopologicalSpace W] [ChartedSpace HW W]
 
 omit [IsGroupoid A] [IsGroupoid B] [IsGroupoid T]
   [TopologicalSpace (Quiver.Total A)] [IsTopologicalGroupoid A] [ChartedSpace HJA (Quiver.Total A)]
@@ -460,5 +391,3 @@ end SmoothEmbedding
 end ArrowsChartedSpace
 
 end CategoryTheory.Comma
-
-end

@@ -175,14 +175,8 @@ def isomorphismClassesHomeomorph (e : C ≌ D)
     Quotient (isIsomorphicSetoid C) ≃ₜ Quotient (isIsomorphicSetoid D) where
   toFun := Quotient.map' e.functor.obj fun _ _ ⟨i⟩ ↦ ⟨e.functor.mapIso i⟩
   invFun := Quotient.map' e.inverse.obj fun _ _ ⟨i⟩ ↦ ⟨e.inverse.mapIso i⟩
-  left_inv := by
-    intro q
-    induction q using Quotient.inductionOn with
-    | h x => exact Quotient.sound ⟨(e.unitIso.app x).symm⟩
-  right_inv := by
-    intro q
-    induction q using Quotient.inductionOn with
-    | h y => exact Quotient.sound ⟨e.counitIso.app y⟩
+  left_inv q := Quotient.inductionOn q fun x ↦ Quotient.sound ⟨(e.unitIso.app x).symm⟩
+  right_inv q := Quotient.inductionOn q fun y ↦ Quotient.sound ⟨e.counitIso.app y⟩
   continuous_toFun := hf.quotient_map' _
   continuous_invFun := hg.quotient_map' _
 
@@ -197,10 +191,5 @@ theorem isomorphismClassesHomeomorph_symm (e : C ≌ D)
     (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) :
     (e.isomorphismClassesHomeomorph hf hg).symm = e.symm.isomorphismClassesHomeomorph hg hf :=
   (rfl)
-
-theorem isomorphismClassesHomeomorph_symm_apply_mk (e : C ≌ D)
-    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) (y : D) :
-    (e.isomorphismClassesHomeomorph hf hg).symm (Quotient.mk _ y) =
-      Quotient.mk _ (e.inverse.obj y) := (rfl)
 
 end CategoryTheory.Equivalence
