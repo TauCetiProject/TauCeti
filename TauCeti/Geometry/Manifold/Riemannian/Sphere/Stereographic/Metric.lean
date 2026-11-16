@@ -29,9 +29,8 @@ geodesics and second fundamental forms on the sphere.
 
 ## Formalization source
 
-Adapted from Yangyang Li's stereographic metric formalization, ported by Riccardo Brasca
-in [TauCetiProject/TauCeti, commit 9768616](https://github.com/TauCetiProject/TauCeti/commit/9768616463e4fdfaa0ff40318ac7d7b9f0717622)
-under the Apache 2.0 license.
+Adapted from Yangyang Li's stereographic metric formalization under the Apache 2.0 license.
+The port is by Riccardo Brasca.
 
 ## References
 
@@ -56,7 +55,7 @@ private theorem conformalFactor_ne_zero {s : ℝ} (hs : s ≠ 0) (x : E) :
 
 variable [InnerProductSpace ℝ E]
 
-/-- The spherical coordinate metric, with equatorial scale one and Mathlib scale two. -/
+/-- The stereographic coordinate metric, with equatorial scale one and Mathlib scale two. -/
 def metric (s : ℝ) (x : E) : E →L[ℝ] E →L[ℝ] ℝ :=
   (2 * s / (s ^ 2 + ‖x‖ ^ 2)) ^ 2 • innerSL ℝ
 
@@ -152,17 +151,20 @@ theorem metric_apply_eq_inner_mfderiv {n : ℕ} [Fact (Module.finrank ℝ E = n 
         (mfderiv (𝓡 n) (𝓡 n) (fun z ↦ (stereographic' n v).symm ((2 / s) • z)) y b) := by
   have hsymm : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / s) • y) :=
     mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
-  have hscale :=
-    ((2 / s) • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n))).hasFDerivAt (x := y)
-  have hd (a : TangentSpace (𝓡 n) y) :
+  have hscale : HasFDerivAt (fun z : EuclideanSpace ℝ (Fin n) ↦ (2 / s) • z)
+      ((2 / s) • ContinuousLinearMap.id ℝ _) y :=
+    (hasFDerivAt_id y).const_smul (2 / s)
+  have hd (a : EuclideanSpace ℝ (Fin n)) :
       mfderiv (𝓡 n) (𝓡 n) (fun z ↦ (stereographic' n v).symm ((2 / s) • z)) y a =
         mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / s) • y) ((2 / s) • a) := by
-    erw [mfderiv_comp_apply y hsymm hscale.differentiableAt.mdifferentiableAt,
-      mfderiv_eq_fderiv, hscale.fderiv]
-    -- The tangent-space identification of a model vector space is the identity.
-    rfl
-  -- Model tangent spaces are canonically identified with the model space.
-  erw [hd a, hd b, TauCeti.inner_mfderiv_stereographic'_symm v
+    have hcomp := mfderiv_comp y hsymm hscale.differentiableAt.mdifferentiableAt
+    rw [mfderiv_eq_fderiv, hscale.fderiv] at hcomp
+    have happ := congrArg (fun L ↦ L ((NormedSpace.fromTangentSpace y).symm a)) hcomp
+    simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearEquiv.coe_coe] at happ
+    -- The model tangent-space identifications in mfderiv_eq_fderiv are identities.
+    convert! happ using 1
+  rw [hd a, hd b, TauCeti.inner_mfderiv_stereographic'_symm v
     ((2 / s) • y) ((2 / s) • a) ((2 / s) • b), metric_apply]
   simp only [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
     real_inner_smul_left, real_inner_smul_right]

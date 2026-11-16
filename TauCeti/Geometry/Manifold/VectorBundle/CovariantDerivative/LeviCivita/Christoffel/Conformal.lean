@@ -23,9 +23,7 @@ the point of computation; negative factors are allowed as well.
 ## Formalization source
 
 The computation is adapted and generalized from Yangyang Li's stereographic metric
-formalization, ported by Riccardo Brasca in
-[TauCetiProject/TauCeti, commit 9768616](https://github.com/TauCetiProject/TauCeti/commit/9768616463e4fdfaa0ff40318ac7d7b9f0717622)
-under the Apache 2.0 license.
+formalization under the Apache 2.0 license. The port is by Riccardo Brasca.
 
 ## References
 
@@ -93,9 +91,10 @@ theorem christoffelSecondKind_smul_innerSL_apply {f : E → ℝ} {x : E}
       ext w
       simp [christoffelFirstKind_apply]
     simp [hfirst]
-  rw [hconst, zero_add]
-  congr 2
-  rw [hinner, ContinuousLinearMap.inverse_equiv]
-  rfl
+  have hgrad : (innerSL ℝ).inverse (fderiv ℝ f x) = gradient f x := by
+    rw [hinner, ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, ← toDual_gradient]
+    exact (InnerProductSpace.toDual ℝ E).symm_apply_apply _
+  rw [hconst, zero_add, innerSL_apply_apply ℝ, hgrad]
 
 end TauCeti.Manifold
