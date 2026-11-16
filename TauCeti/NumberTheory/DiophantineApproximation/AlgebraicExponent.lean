@@ -444,12 +444,12 @@ private theorem mobius_mem_algebraicApproximations {n : ℕ} {ξ w w' : ℝ} {a 
   refine ⟨⟨hβ_alg, hβ_deg, hβ_pos, ?_⟩, hinv⟩
   have hK₁ : 0 ≤ K₁ := by
     have := abs_pos.2 hξ; positivity
+  have hexp₀ : w' + 1 + (-w' - 1) = 0 := by ring
   have hexp : w - w' + (-w - 1) = -w' - 1 := by ring
   calc ‖((((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d) : ℝ) : ℂ) - β‖
       ≤ K₁ * H ^ (-w - 1) := hβ_le.trans (mul_le_mul_of_nonneg_left hle hK₁)
     _ = K₁ * K₂ ^ (w' + 1) * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by
-        rw [mul_assoc K₁, ← Real.rpow_add hK₂, show w' + 1 + (-w' - 1) = 0 by ring,
-          Real.rpow_zero, mul_one]
+        rw [mul_assoc K₁, ← Real.rpow_add hK₂, hexp₀, Real.rpow_zero, mul_one]
     _ ≤ H ^ (w - w') * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by gcongr
     _ = (K₂ * H) ^ (-w' - 1) := by
         rw [mul_right_comm, ← Real.rpow_add hH₀, hexp, mul_comm, Real.mul_rpow hK₂.le hH₀.le]

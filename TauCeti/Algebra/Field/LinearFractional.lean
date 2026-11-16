@@ -148,8 +148,10 @@ theorem apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le
   have hden : (c' : 𝕜) * t + d' = m * (c * t + d) := by rw [hc', hd']; ring
   have hnum : (a' : 𝕜) * t + b' = m * (a * t + b) := by rw [ha', hb']; ring
   have ht' : (c' : 𝕜) * t + d' ≠ 0 := by rw [hden]; exact mul_ne_zero hm ht
-  rw [show ((a : 𝕜) * t + b) / ((c : 𝕜) * t + d) = ((a' : 𝕜) * t + b') / ((c' : 𝕜) * t + d') by
-    rw [hden, hnum, mul_div_mul_left _ _ hm]]
+  have hscale :
+      ((a : 𝕜) * t + b) / ((c : 𝕜) * t + d) = ((a' : 𝕜) * t + b') / ((c' : 𝕜) * t + d') := by
+    rw [hden, hnum, mul_div_mul_left _ _ hm]
+  rw [hscale]
   -- Apply the integer bound to `(a', b'; c', d')` and to its adjugate `(d', -b'; -c', a')`.
   refine le_antisymm (hle t hdet' ht') ?_
   set u : 𝕜 := ((a' : 𝕜) * t + b') / ((c' : 𝕜) * t + d')
