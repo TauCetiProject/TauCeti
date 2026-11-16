@@ -218,9 +218,9 @@ private theorem toReal_eLpNorm_indicator_sub_reflection_indicator_comp_le
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal := by
   rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hF.eLpNorm_ne_top)
-    (eLpNorm_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection_le
-      (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry (by exact_mod_cast hq) H.isOpen.measurableSet
-      U.isOpen.measurableSet hU)
+    (eLpNorm_indicator_sub_comp_indicator_comp_hyperplaneReflection_le
+      (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map (by exact_mod_cast hq)
+      H.isOpen.measurableSet U.isOpen.measurableSet hU)
 
 /-- **De Giorgi's theorem with a right-hand side up to a flat boundary.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
@@ -341,8 +341,8 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
     (H : Set (EuclideanSpace ℝ ι)).indicator F x -
       (ℝ ∙ ν)ᗮ.reflection ((H : Set (EuclideanSpace ℝ ι)).indicator F (hyperplaneReflection ν c₀ x))
   have hG : MemLp G q (mu.restrict U) :=
-    memLp_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection
-      (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
+    memLp_indicator_sub_comp_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.continuous
+      (ℝ ∙ ν)ᗮ.reflection.norm_map H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
     toReal_eLpNorm_indicator_sub_reflection_indicator_comp_le hU (one_lt_two.trans hq).le hFq
@@ -430,8 +430,8 @@ theorem
       2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal :=
     toReal_eLpNorm_indicator_sub_indicator_comp_le hU (by exact_mod_cast hr.le) hfr
   have hG : MemLp G q (mu.restrict U) :=
-    memLp_indicator_sub_linearIsometry_indicator_comp_hyperplaneReflection
-      (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
+    memLp_indicator_sub_comp_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.continuous
+      (ℝ ∙ ν)ᗮ.reflection.norm_map H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
     toReal_eLpNorm_indicator_sub_reflection_indicator_comp_le hU (one_lt_two.trans hq).le hFq

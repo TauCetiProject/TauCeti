@@ -368,36 +368,6 @@ theorem W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL (hp : p 
           ((hg.comp_measurePreserving hρ).integrable_mul hv)]
         simp_rw [sub_mul]
 
-
-/-- Reflecting a field `b ∈ Lᵖ(U)` to `x ↦ R (b (ρ x))`, where `R = (ℝ ∙ ν)ᗮ.reflection` is the
-linear part of `ρ`, keeps it in `Lᵖ(U)`. -/
-private theorem memLp_reflection_comp_hyperplaneReflection {s : ENNReal}
-    (hU : MapsTo (hyperplaneReflection ν c) U U) {b : E → E} (hb : MemLp b s (mu.restrict U)) :
-    MemLp (fun x => (ℝ ∙ ν)ᗮ.reflection (b (hyperplaneReflection ν c x))) s (mu.restrict U) := by
-  have hbρ : MemLp (b ∘ hyperplaneReflection ν c) s (mu.restrict U) :=
-    hb.comp_measurePreserving
-      (measurePreserving_restrict_hyperplaneReflection hU U.isOpen.measurableSet)
-  exact hbρ.of_le ((ℝ ∙ ν)ᗮ.reflection.continuous.comp_aestronglyMeasurable
-    hbρ.aestronglyMeasurable) (ae_of_all _ fun x => ((ℝ ∙ ν)ᗮ.reflection.norm_map _).le)
-
-/-- Since the linear part `R = (ℝ ∙ ν)ᗮ.reflection` of `ρ` is a self-adjoint involution and `ρ`
-preserves `mu.restrict U`, testing `g` against `R (w ∘ ρ)` on `U` is testing `R (g ∘ ρ)` against
-`w`. -/
-private theorem setIntegral_inner_reflection_comp_hyperplaneReflection
-    (hU : MapsTo (hyperplaneReflection ν c) U U) (g w : E → E) :
-    ∫ x in U, ⟪g x, (ℝ ∙ ν)ᗮ.reflection (w (hyperplaneReflection ν c x))⟫_ℝ ∂mu =
-      ∫ x in U, ⟪(ℝ ∙ ν)ᗮ.reflection (g (hyperplaneReflection ν c x)), w x⟫_ℝ ∂mu := by
-  set ρ := hyperplaneReflection ν c
-  set R := (ℝ ∙ ν)ᗮ.reflection
-  have h := MeasurePreserving.integral_comp
-    (measurePreserving_restrict_hyperplaneReflection (μ := mu) hU U.isOpen.measurableSet)
-    ρ.toHomeomorph.measurableEmbedding fun x => ⟪R (g (ρ x)), w x⟫_ℝ
-  simp only [ρ, hyperplaneReflection_hyperplaneReflection] at h
-  rw [← h]
-  refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  simp only
-  rw [← R.inner_map_map, Submodule.reflection_reflection]
-
 /-- **Testing a vector field against the reflected difference.** Let `H = {x | c < ⟪x, ν⟫}` and
 let `U` be an open set mapped into itself by the reflection `ρ` in the hyperplane `∂H`, whose
 linear part is `R = (ℝ ∙ ν)ᗮ.reflection`. For `φ ∈ W^{1,p}_0(U)`, `p < ∞`, and a vector field
@@ -446,13 +416,17 @@ theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp
         · simp [g, hx]
     _ = ∫ x in U, ⟪g x, w x⟫_ℝ ∂mu -
           ∫ x in U, ⟪(ℝ ∙ ν)ᗮ.reflection (g (hyperplaneReflection ν c x)), w x⟫_ℝ ∂mu := by
-        rw [← setIntegral_inner_reflection_comp_hyperplaneReflection hU, ← integral_sub
-          (hg.integrable_inner_of_holderTriple hw)
-          (hg.integrable_inner_of_holderTriple (memLp_reflection_comp_hyperplaneReflection hU hw))]
+        rw [← setIntegral_inner_reflection_comp_hyperplaneReflection hU U.isOpen.measurableSet,
+          ← integral_sub (hg.integrable_inner_of_holderTriple hw)
+          (hg.integrable_inner_of_holderTriple (memLp_comp_comp_hyperplaneReflection
+            (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map U.isOpen.measurableSet
+            hU hw))]
         simp_rw [inner_sub_right]
     _ = ∫ x in U, ⟪g x - (ℝ ∙ ν)ᗮ.reflection (g (hyperplaneReflection ν c x)), w x⟫_ℝ ∂mu := by
         rw [← integral_sub (hg.integrable_inner_of_holderTriple hw)
-          ((memLp_reflection_comp_hyperplaneReflection hU hg).integrable_inner_of_holderTriple hw)]
+          ((memLp_comp_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.continuous
+            (ℝ ∙ ν)ᗮ.reflection.norm_map U.isOpen.measurableSet hU
+              hg).integrable_inner_of_holderTriple hw)]
         simp_rw [inner_sub_left]
 
 end TauCeti
