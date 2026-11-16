@@ -12,43 +12,46 @@ public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
+import TauCeti.RingTheory.Valuation.NormNormalization
 
 /-!
 # Counting zeros with multiplicity by Newton polygons
 
-Let `K` be a complete ultrametric normed field whose norm comes from a real additive valuation `v`
-with base `b > 1`, so `‖x‖ = b ^ (-v x)` for `x ≠ 0`. Let `f` be a series restricted at `b ^ σ`,
-prepared there as `f = u * P` with `u` a unit of the ring of series restricted at `b ^ σ` and `P`
-a polynomial. The multiplicity of a zero `a` of `f` in the closed disc `‖a‖ ≤ b ^ σ`, the order of
-the good zero `PowerSeries.IsGoodZero f a h`, is the root multiplicity of `a` in `P`
+Let `K` be a normed field whose norm comes from a real additive valuation `v` with base `b > 1`,
+so `‖x‖ = b ^ (-v x)` for `x ≠ 0` (making `K` ultrametric). Let `f` be a series restricted at
+`b ^ σ`, prepared there as `f = u * P` with `u` a unit of the ring of series restricted at `b ^ σ`
+and `P` a polynomial. The multiplicity of a zero `a` of `f` in the closed disc `‖a‖ ≤ b ^ σ`, the
+order of the good zero `PowerSeries.IsGoodZero f a h`, is the root multiplicity of `a` in `P`
 (`PowerSeries.isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul`), and every root of `P` lies in
 that closed disc (`TauCeti.PowerSeries.IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul`), so
-over an algebraically closed `K` the zeros of `f` there number the degree in which `f` is
+over a complete algebraically closed `K` the zeros of `f` there number the degree in which `f` is
 distinguished (`TauCeti.PowerSeries.IsDistinguished.exists_card_eq_isGoodZero`), both proved with
 Strassmann's theorem. Reading the roots of `P` off its Newton polygon turns this into
 exact counts with multiplicity on spheres and open discs:
 
 * when the Newton polygon of `f` has a finite face of slope `σ` and `P` splits, the multiplicity
   of the slope `σ` is the number of roots of `P` on the sphere `‖a‖ = b ^ σ`, counted with
-  multiplicity (`PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`). Over an
-  algebraically closed `K` it is therefore the number of zeros of `f` of norm `b ^ σ`, counted
-  with multiplicity (`PowerSeries.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`). If that
-  face runs from `l` to `j` and `P` splits, then `P` has exactly `l` roots in the open disc
-  `‖a‖ < b ^ σ` (`PowerSeries.card_filter_roots_norm_lt_of_isUnit_mul`), so over an algebraically
-  closed `K` the zeros of `f` there number `l`, counted with multiplicity
+  multiplicity (`PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`). Over a
+  complete algebraically closed `K` it is therefore the number of zeros of `f` of norm `b ^ σ`,
+  counted with multiplicity (`PowerSeries.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`). If
+  that face runs from `l` to `j` and `P` splits, then `P` has exactly `l` roots in the open disc
+  `‖a‖ < b ^ σ` (`PowerSeries.card_filter_roots_norm_lt_of_isUnit_mul`), so over a complete
+  algebraically closed `K` the zeros of `f` there number `l`, counted with multiplicity
   (`PowerSeries.exists_card_eq_isGoodZero_of_isFiniteFace`).
 
-In any complete normed field extension `L` over which a prepared polynomial `P` (or the canonical
-disc polynomial of `TauCeti.PowerSeries.IsDiscPreparation`) splits, the endpoints `l ≤ u` of a
-finite face of slope `σ` are the lowest dominant and distinguished degrees of `f` at `b ^ σ`
+In any complete normed field extension `L` (without assuming `K` is complete) over which a prepared
+polynomial `P` (or the canonical disc polynomial of `TauCeti.PowerSeries.IsDiscPreparation`)
+splits, the endpoints `l ≤ u` of a finite face of slope `σ` are the lowest dominant and
+distinguished degrees of `f` at `b ^ σ`
 (`PowerSeries.isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon`), so
 `PowerSeries.zeroMultiset f (b ^ σ) L` has `u` elements in the closed disc, `l` in the open disc,
-and `newtonSlopeMultiplicity f v σ = u - l` on the sphere. Over an algebraically closed `L` these
-three counts hold unconditionally at every finite face where `f` is restricted, including on the
-boundary of convergence.
+and `newtonSlopeMultiplicity f v σ = u - l` on the sphere. Every finite face of slope `σ` lies
+strictly inside `f.radius` (`PowerSeries.lt_radius_of_isFiniteFace_newtonPolygon`), so `f` is
+automatically restricted at `b ^ σ`, and over an algebraically closed complete `L` these three
+counts hold unconditionally at every finite face.
 
-At any radius `b ^ σ` strictly smaller than `f.radius`, a nonzero series automatically has a finite
-face of slope `σ` (`PowerSeries.exists_isFiniteFace_newtonPolygon_of_lt_radius`), whose endpoints
+Conversely, at any radius `b ^ σ` strictly smaller than `f.radius`, a nonzero series has a finite
+face of slope `σ` (`PowerSeries.exists_isFiniteFace_newtonPolygon_iff_lt_radius`), whose endpoints
 are `f.order.toNat` plus the numbers of finite unit edges of slope `< σ` and `≤ σ`
 (`PowerSeries.left_eq_toNat_order_add_ncard_unitSlope_lt`,
 `PowerSeries.right_eq_toNat_order_add_ncard_unitSlope_le`). Hence inside `f.radius` — and in
@@ -66,7 +69,7 @@ eigenvalues with their algebraic multiplicities.
 * `PowerSeries.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`,
   `PowerSeries.exists_card_eq_isGoodZero_of_isFiniteFace`,
   `PowerSeries.IsEntire.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`: `IsGoodZero` counts
-  over an algebraically closed base field.
+  over a complete algebraically closed base field.
 * `PowerSeries.card_zeroMultiset_eq_of_isFiniteFace_of_isUnit_mul`,
   `PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace_of_isUnit_mul`,
   `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_isUnit_mul` (and
@@ -76,8 +79,8 @@ eigenvalues with their algebraic multiplicities.
   `PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace`,
   `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq`: closed-disc,
   open-disc, and sphere zero counts at a finite face in an algebraically closed complete extension.
-* `PowerSeries.card_zeroMultiset_eq_of_lt_radius`,
-  `PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_lt_radius`,
+* `PowerSeries.card_zeroMultiset_eq_toNat_order_add_ncard_unitSlope_le_of_lt_radius`,
+  `PowerSeries.card_filter_zeroMultiset_norm_lt_eq_toNat_order_add_ncard_unitSlope_lt_of_lt_radius`,
   `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_lt_radius` (and
   `PowerSeries.IsEntire` specialisations): zero counts inside `f.radius` directly in terms of the
   order at zero and Newton polygon slopes.
@@ -226,56 +229,69 @@ namespace PowerSeries
 
 section ZeroMultiset
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+variable {K : Type*} [NormedField K]
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (L : Type*) [NormedField L] [NormedAlgebra K L]
   [CompleteSpace L] {f : K⟦X⟧}
 
 include hb hv
 
-/-- **Closed-disc zero count at a finite face, split case.** Suppose `f` is restricted at `b ^ σ`,
-its Newton polygon has a finite face of slope `σ` from `l` to `u`, and `f = e * P` with `e` a
-restricted unit and `P` a polynomial of degree at most `u` splitting over `L`. Then `f` has `u`
-zeros in the closed disc `‖x‖ ≤ b ^ σ` of `L`, counted with multiplicity. -/
+section IsUnitMul
+
+variable [IsUltrametricDist K]
+
+/-- **Closed-disc zero count at a finite face, split case.** Suppose the Newton polygon of `f` has
+a finite face of slope `σ` from `l` to `u`, and `f = e * P` with `e` a unit of the ring of series
+restricted at `b ^ σ` and `P` a polynomial splitting over `L`. Then `f` has `u` zeros in the closed
+disc `‖x‖ ≤ b ^ σ` of `L`, counted with multiplicity. -/
 theorem card_zeroMultiset_eq_of_isFiniteFace_of_isUnit_mul {σ : ℝ} {l u : ℕ}
     {e : IsRestricted.subring (R := K) (b ^ σ)} {P : Polynomial K}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u)
-    (he : IsUnit e) (hPdeg : P.natDegree ≤ u) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u)
+    (he : IsUnit e) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
     (hs : (P.map (algebraMap K L)).Splits) :
-    (f.zeroMultiset (b ^ σ) L).card = u :=
-  (isDistinguished_of_isFiniteFace v hb hv hfr hface).card_zeroMultiset_eq_of_isUnit_mul
-    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hPdeg hf hs
+    (f.zeroMultiset (b ^ σ) L).card = u := by
+  have hfr : f.IsRestricted (b ^ σ) :=
+    hf ▸ (IsRestricted.subring (R := K) (b ^ σ)).mul_mem e.2
+      (TauCeti.PowerSeries.isRestricted_polynomial P)
+  exact (isDistinguished_of_isFiniteFace v hb hv hfr hface).card_zeroMultiset_eq_of_isUnit_mul
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hf hs
 
 /-- **Open-disc zero count at a finite face, split case.** Under the hypotheses of
 `PowerSeries.card_zeroMultiset_eq_of_isFiniteFace_of_isUnit_mul`, `f` has `l` zeros in the open
 disc `‖x‖ < b ^ σ` of `L`, counted with multiplicity. -/
 theorem card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace_of_isUnit_mul {σ : ℝ} {l u : ℕ}
     {e : IsRestricted.subring (R := K) (b ^ σ)} {P : Polynomial K}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u)
-    (he : IsUnit e) (hPdeg : P.natDegree ≤ u) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u)
+    (he : IsUnit e) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
     (hs : (P.map (algebraMap K L)).Splits) :
     ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ < b ^ σ)).card = l := by
-  obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
+  have hfr : f.IsRestricted (b ^ σ) :=
+    hf ▸ (IsRestricted.subring (R := K) (b ^ σ)).mul_mem e.2
+      (TauCeti.PowerSeries.isRestricted_polynomial P)
+  obtain ⟨hl, _⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hfr) hface
-  exact hl.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul hu
-    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hPdeg hf hs
+  exact hl.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hf hs
 
 /-- **Sphere zero count at a finite face, split case.** Under the hypotheses of
 `PowerSeries.card_zeroMultiset_eq_of_isFiniteFace_of_isUnit_mul`, the multiplicity of the slope `σ`
 is the number of zeros of `f` on the sphere `‖x‖ = b ^ σ` of `L`, counted with multiplicity. -/
 theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_isUnit_mul {σ : ℝ}
     {l u : ℕ} {e : IsRestricted.subring (R := K) (b ^ σ)} {P : Polynomial K}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u)
-    (he : IsUnit e) (hPdeg : P.natDegree ≤ u) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u)
+    (he : IsUnit e) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
     (hs : (P.map (algebraMap K L)).Splits) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
+  have hfr : f.IsRestricted (b ^ σ) :=
+    hf ▸ (IsRestricted.subring (R := K) (b ^ σ)).mul_mem e.2
+      (TauCeti.PowerSeries.isRestricted_polynomial P)
   obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hfr) hface
   rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface,
     TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hu hl
-      (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hPdeg hf hs]
+      (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hf hs]
 
-variable [CompleteSpace K]
+end IsUnitMul
 
 /-- **Closed-disc zero count for a split disc polynomial.** Suppose the Newton polygon of `f` has a
 finite face of slope `σ` from `l` to `u`, and `f = P * U` is a normalised preparation on
@@ -286,6 +302,7 @@ theorem card_zeroMultiset_eq_of_isFiniteFace_of_isDiscPreparation {σ : ℝ} {l 
     (hP : TauCeti.PowerSeries.IsDiscPreparation (b ^ σ) d f P U)
     (hs : (P.map (algebraMap K L)).Splits) :
     (f.zeroMultiset (b ^ σ) L).card = u := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
   obtain ⟨_, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     hP.isDistinguished.hasGaussNorm hface
   rw [hP.card_zeroMultiset_eq_of_splits (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hs,
@@ -299,6 +316,7 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace_of_isDiscPreparation
     (hP : TauCeti.PowerSeries.IsDiscPreparation (b ^ σ) d f P U)
     (hs : (P.map (algebraMap K L)).Splits) :
     ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ < b ^ σ)).card = l := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
   obtain ⟨hl, _⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     hP.isDistinguished.hasGaussNorm hface
   exact hP.card_filter_zeroMultiset_norm_lt_eq_of_splits hl
@@ -313,6 +331,7 @@ theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_isDiscPre
     (hP : TauCeti.PowerSeries.IsDiscPreparation (b ^ σ) d f P U)
     (hs : (P.map (algebraMap K L)).Splits) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
   obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     hP.isDistinguished.hasGaussNorm hface
   rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface,
@@ -322,34 +341,41 @@ theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_isDiscPre
 
 variable [IsAlgClosed L]
 
-/-- **Closed-disc zero count at a finite face.** If `f` is restricted at `b ^ σ` and its Newton
-polygon has a finite face of slope `σ` from `l` to `u`, then in any algebraically closed complete
-normed field extension `L` the zeros of `f` in `‖x‖ ≤ b ^ σ`, counted with multiplicity, number
-`u`. The radius may lie on the boundary of convergence. -/
+/-- **Closed-disc zero count at a finite face.** If the Newton polygon of `f` has a finite face of
+slope `σ` from `l` to `u`, then in any algebraically closed complete normed field extension `L` the
+zeros of `f` in `‖x‖ ≤ b ^ σ`, counted with multiplicity, number `u`. -/
 theorem card_zeroMultiset_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
-    (f.zeroMultiset (b ^ σ) L).card = u :=
-  (isDistinguished_of_isFiniteFace v hb hv hfr hface).card_zeroMultiset_eq
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    (f.zeroMultiset (b ^ σ) L).card = u := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  have hfr : f.IsRestricted (b ^ σ) :=
+    isRestricted_of_lt_radius (lt_radius_of_isFiniteFace_newtonPolygon f v hb hv hface)
+  exact (isDistinguished_of_isFiniteFace v hb hv hfr hface).card_zeroMultiset_eq
     (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hfr
 
-/-- **Open-disc zero count at a finite face.** If `f` is restricted at `b ^ σ` and its Newton
-polygon has a finite face of slope `σ` from `l` to `u`, then in any algebraically closed complete
-normed field extension `L` the zeros of `f` in `‖x‖ < b ^ σ`, counted with multiplicity, number
-`l`. The radius may lie on the boundary of convergence. -/
+/-- **Open-disc zero count at a finite face.** If the Newton polygon of `f` has a finite face of
+slope `σ` from `l` to `u`, then in any algebraically closed complete normed field extension `L` the
+zeros of `f` in `‖x‖ < b ^ σ`, counted with multiplicity, number `l`. -/
 theorem card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ < b ^ σ)).card = l := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  have hfr : f.IsRestricted (b ^ σ) :=
+    isRestricted_of_lt_radius (lt_radius_of_isFiniteFace_newtonPolygon f v hb hv hface)
   obtain ⟨hl, _⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hfr) hface
   exact hl.card_filter_zeroMultiset_norm_lt_eq (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hfr
 
-/-- **Slope multiplicities count zeros on a sphere.** If `f` is restricted at `b ^ σ` and its
-Newton polygon has a finite face of slope `σ`, then in any algebraically closed complete normed
-field extension `L` the multiplicity of the slope `σ` is the number of zeros of `f` with
-`‖x‖ = b ^ σ`, counted with multiplicity. The radius may lie on the boundary of convergence. -/
+/-- **Slope multiplicities count zeros on a sphere.** If the Newton polygon of `f` has a finite
+face of slope `σ`, then in any algebraically closed complete normed field extension `L` the
+multiplicity of the slope `σ` is the number of zeros of `f` with `‖x‖ = b ^ σ`, counted with
+multiplicity. -/
 theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq {σ : ℝ} {l u : ℕ}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  have hfr : f.IsRestricted (b ^ σ) :=
+    isRestricted_of_lt_radius (lt_radius_of_isFiniteFace_newtonPolygon f v hb hv hface)
   obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hfr) hface
   rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface,
@@ -362,35 +388,33 @@ than the radius of a nonzero series `f`, the multiplicity of the slope `σ` in t
 theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_lt_radius {σ : ℝ}
     (hf0 : f ≠ 0) (hσ : ‖b ^ σ‖ₑ < f.radius) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
-  obtain ⟨l, u, hface⟩ := exists_isFiniteFace_newtonPolygon_of_lt_radius f v hb hv hf0 hσ
-  exact newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq v hb hv L
-    (isRestricted_of_lt_radius hσ) hface
+  obtain ⟨l, u, hface⟩ := (exists_isFiniteFace_newtonPolygon_iff_lt_radius f v hb hv hf0).mpr hσ
+  exact newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq v hb hv L hface
 
 /-- **Open-disc zero count inside the disc of convergence.** At every radius `b ^ σ` strictly
 smaller than the radius of a nonzero series `f`, the number of zeros of `f` in `‖x‖ < b ^ σ` in
 `L`, counted with multiplicity, is `f.order.toNat` plus the number of finite unit edges of the
 Newton polygon of `f` of slope strictly less than `σ`. -/
-theorem card_filter_zeroMultiset_norm_lt_eq_of_lt_radius {σ : ℝ}
+theorem card_filter_zeroMultiset_norm_lt_eq_toNat_order_add_ncard_unitSlope_lt_of_lt_radius {σ : ℝ}
     (hf0 : f ≠ 0) (hσ : ‖b ^ σ‖ₑ < f.radius) :
     ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ < b ^ σ)).card =
       f.order.toNat +
         {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) i < σ}.ncard := by
-  obtain ⟨l, u, hface⟩ := exists_isFiniteFace_newtonPolygon_of_lt_radius f v hb hv hf0 hσ
-  rw [card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace v hb hv L
-    (isRestricted_of_lt_radius hσ) hface,
+  obtain ⟨l, u, hface⟩ := (exists_isFiniteFace_newtonPolygon_iff_lt_radius f v hb hv hf0).mpr hσ
+  rw [card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace v hb hv L hface,
     left_eq_toNat_order_add_ncard_unitSlope_lt (fun _ ↦ v.top_iff.mp) hface]
 
 /-- **Closed-disc zero count inside the disc of convergence.** At every radius `b ^ σ` strictly
 smaller than the radius of a nonzero series `f`, the number of zeros of `f` in `‖x‖ ≤ b ^ σ` in
 `L`, counted with multiplicity, is `f.order.toNat` plus the number of finite unit edges of the
 Newton polygon of `f` of slope at most `σ`. -/
-theorem card_zeroMultiset_eq_of_lt_radius {σ : ℝ}
+theorem card_zeroMultiset_eq_toNat_order_add_ncard_unitSlope_le_of_lt_radius {σ : ℝ}
     (hf0 : f ≠ 0) (hσ : ‖b ^ σ‖ₑ < f.radius) :
     (f.zeroMultiset (b ^ σ) L).card =
       f.order.toNat +
         {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) i ≤ σ}.ncard := by
-  obtain ⟨l, u, hface⟩ := exists_isFiniteFace_newtonPolygon_of_lt_radius f v hb hv hf0 hσ
-  rw [card_zeroMultiset_eq_of_isFiniteFace v hb hv L (isRestricted_of_lt_radius hσ) hface,
+  obtain ⟨l, u, hface⟩ := (exists_isFiniteFace_newtonPolygon_iff_lt_radius f v hb hv hf0).mpr hσ
+  rw [card_zeroMultiset_eq_of_isFiniteFace v hb hv L hface,
     right_eq_toNat_order_add_ncard_unitSlope_le (fun _ ↦ v.top_iff.mp) hface]
 
 /-- **Slope multiplicities of entire series count zeros.** For a nonzero entire series `f` and any
@@ -407,22 +431,24 @@ theorem IsEntire.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq (hf
 algebraically closed complete normed field extension `L`, the number of zeros of `f` in `L` with
 `‖x‖ < b ^ σ`, counted with multiplicity, is `f.order.toNat` plus the number of finite unit edges
 of the Newton polygon of `f` of slope strictly less than `σ`. -/
-theorem IsEntire.card_filter_zeroMultiset_norm_lt_eq (hf : f.IsEntire) (hf0 : f ≠ 0) (σ : ℝ) :
+theorem IsEntire.card_filter_zeroMultiset_norm_lt_eq_toNat_order_add_ncard_unitSlope_lt
+    (hf : f.IsEntire) (hf0 : f ≠ 0) (σ : ℝ) :
     ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ < b ^ σ)).card =
       f.order.toNat +
         {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) i < σ}.ncard :=
-  PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_lt_radius v hb hv L hf0
-    (radius_eq_top_iff.mpr hf ▸ eNorm_lt_top)
+  PowerSeries.card_filter_zeroMultiset_norm_lt_eq_toNat_order_add_ncard_unitSlope_lt_of_lt_radius
+    v hb hv L hf0 (radius_eq_top_iff.mpr hf ▸ eNorm_lt_top)
 
 /-- **Closed-disc zero count for an entire series.** For a nonzero entire series `f` and any
 algebraically closed complete normed field extension `L`, the number of zeros of `f` in `L` with
 `‖x‖ ≤ b ^ σ`, counted with multiplicity, is `f.order.toNat` plus the number of finite unit edges
 of the Newton polygon of `f` of slope at most `σ`. -/
-theorem IsEntire.card_zeroMultiset_eq (hf : f.IsEntire) (hf0 : f ≠ 0) (σ : ℝ) :
+theorem IsEntire.card_zeroMultiset_eq_toNat_order_add_ncard_unitSlope_le (hf : f.IsEntire)
+    (hf0 : f ≠ 0) (σ : ℝ) :
     (f.zeroMultiset (b ^ σ) L).card =
       f.order.toNat +
         {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) i ≤ σ}.ncard :=
-  PowerSeries.card_zeroMultiset_eq_of_lt_radius v hb hv L hf0
+  PowerSeries.card_zeroMultiset_eq_toNat_order_add_ncard_unitSlope_le_of_lt_radius v hb hv L hf0
     (radius_eq_top_iff.mpr hf ▸ eNorm_lt_top)
 
 end ZeroMultiset

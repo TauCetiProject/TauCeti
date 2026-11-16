@@ -122,10 +122,8 @@ private theorem newtonPolygon_toNat_order_ne_top_and_le (hv : ∀ x, v x = ⊤ �
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact hface.left_ne_top (by simp)
-  have hadm : IsAdmissible fun n => v (coeff n f) := by
-    by_contra hnadm
-    exact hface.left_ne_top
-      (by rw [newtonPolygon_def, lowerConvexEnvelope_of_not_isAdmissible hnadm]; rfl)
+  have hadm : IsAdmissible fun n => v (coeff n f) :=
+    isAdmissible_of_lowerConvexEnvelope_ne_top (newtonPolygon_def f v ▸ hface.left_ne_top)
   have hord : (f.order.toNat : ℕ∞) = f.order :=
     ENat.natCast_toNat (order_finite_iff_ne_zero.mpr hf0).ne
   refine ⟨?_, fun n hn => not_lt.mp fun hlt =>

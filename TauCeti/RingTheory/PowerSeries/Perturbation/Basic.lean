@@ -27,6 +27,25 @@ namespace TauCeti.PowerSeries
 
 open _root_.PowerSeries
 
+section SeminormedRing
+
+variable {R : Type*} [SeminormedRing R]
+
+/-- The Gauss norm of a difference is symmetric in its arguments. -/
+theorem gaussNorm_sub_comm (f g : PowerSeries R) (c : ℝ) :
+    (f - g).gaussNorm norm c = (g - f).gaussNorm norm c := by
+  simp only [gaussNorm_eq, map_sub, norm_sub_rev]
+
+/-- A power series strictly dominating its difference with another series in Gauss norm is
+nonzero. -/
+theorem ne_zero_of_gaussNorm_sub_lt {f g : PowerSeries R} {c : ℝ}
+    (h : (f - g).gaussNorm norm c < f.gaussNorm norm c) : f ≠ 0 := by
+  rintro rfl
+  exact ((PowerSeries.gaussNorm_nonneg norm c (0 - g) norm_nonneg).trans_lt h).ne'
+    (PowerSeries.gaussNorm_zero norm c (by simp))
+
+end SeminormedRing
+
 section CoefficientBounds
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
@@ -65,14 +84,12 @@ theorem gaussNorm_eq_of_gaussNorm_sub_lt (hc : 0 ≤ c)
     simpa only [sub_eq_add_neg] using hasGaussNorm_add hc hf hneg
   have hrev : (g - f).HasGaussNorm norm c := by
     simpa only [PowerSeries.HasGaussNorm, map_sub, norm_sub_rev] using hsub
-  have heq : (g - f).gaussNorm norm c = (f - g).gaussNorm norm c := by
-    simp_rw [PowerSeries.gaussNorm_eq, map_sub, norm_sub_rev (g.coeff _)]
   have hfle := PowerSeries.gaussNorm_add_le_max norm c (f - g) g hc norm_nonneg
     IsUltrametricDist.isNonarchimedean_norm hsub hg
   rw [sub_add_cancel] at hfle
   have hgle := PowerSeries.gaussNorm_add_le_max norm c (g - f) f hc norm_nonneg
     IsUltrametricDist.isNonarchimedean_norm hrev hf
-  rw [sub_add_cancel, heq, max_eq_right h.le] at hgle
+  rw [sub_add_cancel, gaussNorm_sub_comm g f c, max_eq_right h.le] at hgle
   exact le_antisymm (le_of_not_gt fun hlt ↦ (max_lt h hlt).not_ge hfle) hgle
 
 /-- A perturbation strictly smaller in Gauss norm preserves exactly the degrees at which the

@@ -6,18 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
-public import TauCeti.NumberTheory.NewtonPolygon.ZeroCount
+public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
 public import TauCeti.NumberTheory.Padics.LogGauge
+public import TauCeti.RingTheory.PowerSeries.Radius
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
+import TauCeti.NumberTheory.NewtonPolygon.Radius
 import TauCeti.RingTheory.PowerSeries.Perturbation.Basic
 
 /-!
 # Boundary zeros along an infinite horizontal Newton ray over `ℚ_[p]` and `ℂ_[p]`
 
 Inside the disc of convergence (`‖b ^ σ‖ₑ < f.radius`), the Newton polygon of a nonzero series has
-a finite face of slope `σ` (`PowerSeries.exists_isFiniteFace_newtonPolygon_of_lt_radius`), and its
+a finite face of slope `σ` (`PowerSeries.exists_isFiniteFace_newtonPolygon_iff_lt_radius`), and its
 endpoints determine the exact closed-disc, open-disc, and sphere zero counts
-(`PowerSeries.card_zeroMultiset_eq_of_lt_radius`,
-`PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_lt_radius`,
+(`PowerSeries.card_zeroMultiset_eq_toNat_order_add_ncard_unitSlope_le_of_lt_radius`,
+`PowerSeries.card_filter_zeroMultiset_norm_lt_eq_toNat_order_add_ncard_unitSlope_lt_of_lt_radius`,
 `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_lt_radius`).
 
 At the boundary of convergence (`‖b ^ σ‖ₑ = f.radius`), a restricted series need not have a finite
@@ -40,7 +43,7 @@ However, their active indices at `r = 1` differ:
   dominant degree `0` and distinguished degree `1` at `1`. By the nonarchimedean Rouché theorem it
   has `0` zeros in `‖x‖ < 1` and `1` zero on the unit sphere `‖x‖ = 1` of `ℂ_[p]`; moreover, its
   normalised disc polynomial at `1` over `ℚ_[p]` has degree `1` and therefore splits over `ℚ_[p]`,
-  so this unique unit-sphere zero already lies in `ℚ_[p]`.
+  so it has a unique zero in `‖x‖ ≤ 1` of `ℚ_[p]` and that zero lies on `‖x‖ = 1`.
 
 ## References
 
@@ -102,23 +105,14 @@ theorem perturbedUnitRaySeries_eq_add :
   · simp [Real.sqrt_one]
   · simp [coeff_X]
 
-private theorem ceil_sqrt_sq (k : ℕ) : ⌈Real.sqrt ((k ^ 2 : ℕ) : ℝ)⌉₊ = k := by
-  rw [Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg k), Nat.ceil_natCast]
+private theorem one_add_X_eq_X_sub_C_neg_one : (1 + X : ℚ_[p]⟦X⟧) = X - C (-1) := by
+  rw [map_neg, map_one, sub_neg_eq_add, add_comm]
 
-private theorem tendsto_ceil_sqrt_atTop : Tendsto (fun n : ℕ => ⌈Real.sqrt n⌉₊) atTop atTop := by
-  refine tendsto_atTop_atTop.mpr fun k => ⟨k ^ 2, fun n hn => ?_⟩
-  calc k = ⌈Real.sqrt ((k ^ 2 : ℕ) : ℝ)⌉₊ := (ceil_sqrt_sq k).symm
-    _ ≤ ⌈Real.sqrt n⌉₊ := Nat.ceil_mono (Real.sqrt_le_sqrt (by exact_mod_cast hn))
+private theorem isRestricted_one_add_X : (1 + X : ℚ_[p]⟦X⟧).IsRestricted 1 := by
+  rw [one_add_X_eq_X_sub_C_neg_one]
+  exact TauCeti.PowerSeries.isRestricted_X_sub_C (-1 : ℚ_[p])
 
-private theorem isRestricted_X_one : (X : ℚ_[p]⟦X⟧).IsRestricted 1 := by
-  rw [← Polynomial.coe_X]
-  exact TauCeti.PowerSeries.isRestricted_polynomial Polynomial.X
-
-private theorem isRestricted_one_add_X : (1 + X : ℚ_[p]⟦X⟧).IsRestricted 1 :=
-  (IsRestricted.subring (R := ℚ_[p]) 1).add_mem
-    (IsRestricted.subring (R := ℚ_[p]) 1).one_mem isRestricted_X_one
-
-/-! ### Restrictedness at the boundary and exact radius `1` -/
+/-! ### Restrictedness at the boundary -/
 
 /-- `unitRaySeries p` is restricted on the closed unit disc `r = 1`. -/
 theorem isRestricted_unitRaySeries : (unitRaySeries p).IsRestricted 1 := by
@@ -126,7 +120,8 @@ theorem isRestricted_unitRaySeries : (unitRaySeries p).IsRestricted 1 := by
   have hp1 : (p : ℝ)⁻¹ < 1 :=
     inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
   have h0 : Tendsto (fun n : ℕ => ((p : ℝ)⁻¹) ^ ⌈Real.sqrt n⌉₊) atTop (nhds 0) :=
-    (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) hp1).comp tendsto_ceil_sqrt_atTop
+    (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) hp1).comp
+      (tendsto_nat_ceil_atTop.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop))
   refine h0.congr' (eventually_atTop.mpr ⟨1, fun n hn => ?_⟩)
   have hn0 : n ≠ 0 := by omega
   simp [hn0]
@@ -134,61 +129,11 @@ theorem isRestricted_unitRaySeries : (unitRaySeries p).IsRestricted 1 := by
 /-- `perturbedUnitRaySeries p` is restricted on the closed unit disc `r = 1`. -/
 theorem isRestricted_perturbedUnitRaySeries : (perturbedUnitRaySeries p).IsRestricted 1 := by
   rw [perturbedUnitRaySeries_eq_add, smul_eq_C_mul]
-  have hC : (C (1 - (p : ℚ_[p])) : ℚ_[p]⟦X⟧).IsRestricted 1 := by
-    rw [← Polynomial.coe_C]
-    exact TauCeti.PowerSeries.isRestricted_polynomial _
   exact (IsRestricted.subring (R := ℚ_[p]) 1).add_mem isRestricted_unitRaySeries
-    ((IsRestricted.subring (R := ℚ_[p]) 1).mul_mem hC isRestricted_X_one)
+    ((IsRestricted.subring (R := ℚ_[p]) 1).mul_mem (isRestricted_C 1 _)
+      (X_eq (R := ℚ_[p]) ▸ isRestricted_monomial 1 1 1))
 
-/-- Any series agreeing with `(p : ℚ_[p]) ^ k` along squares `k ^ 2` for `k ≥ 2` is not restricted
-at any radius `r > 1`. -/
-private theorem not_isRestricted_of_one_lt {f : ℚ_[p]⟦X⟧}
-    (hsq : ∀ k, 2 ≤ k → coeff (k ^ 2) f = (p : ℚ_[p]) ^ k) {r : ℝ} (hr : 1 < r) :
-    ¬f.IsRestricted r := by
-  intro hfr
-  have htend0 : Tendsto (fun n : ℕ => ‖coeff n f‖ * r ^ n) atTop (nhds 0) :=
-    Nat.cofinite_eq_atTop ▸ (isRestricted_iff r f).mp hfr
-  have htend : Tendsto (fun k : ℕ => ‖coeff (k ^ 2) f‖ * r ^ (k ^ 2)) atTop (nhds 0) :=
-    htend0.comp (tendsto_atTop_atTop.mpr fun N =>
-      ⟨N, fun k hk => hk.trans (Nat.le_self_pow two_ne_zero k)⟩)
-  have hlt1 : ∀ᶠ k in atTop, ‖coeff (k ^ 2) f‖ * r ^ (k ^ 2) < 1 :=
-    htend.eventually (gt_mem_nhds zero_lt_one)
-  have hbig : ∀ᶠ k in atTop, (p : ℝ) ≤ r ^ k :=
-    (tendsto_pow_atTop_atTop_of_one_lt hr).eventually (Filter.eventually_ge_atTop (p : ℝ))
-  obtain ⟨k, ⟨hk2, hklt⟩, hkp⟩ :=
-    ((eventually_ge_atTop 2).and hlt1 |>.and hbig).exists
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
-  have hge1 : 1 ≤ ‖coeff (k ^ 2) f‖ * r ^ (k ^ 2) := by
-    rw [hsq k hk2, norm_pow, Padic.norm_p, sq, pow_mul, ← mul_pow]
-    exact one_le_pow₀ ((le_inv_mul_iff₀ hp0).mpr (by linarith))
-  exact hklt.not_ge hge1
-
-/-- `unitRaySeries p` has exact radius of convergence `1`. -/
-@[simp]
-theorem radius_unitRaySeries : (unitRaySeries p).radius = 1 := by
-  refine le_antisymm (le_of_not_gt fun hlt => ?_) ?_
-  · obtain ⟨r, h1r, hrf⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hlt
-    have hr1 : 1 < (r : ℝ) := by exact_mod_cast h1r
-    refine not_isRestricted_of_one_lt (fun k hk => ?_) hr1
-      (isRestricted_of_lt_radius (by simpa using hrf))
-    have hk0 : k ≠ 0 := by omega
-    simp [hk0]
-  · simpa using le_radius_of_isRestricted (isRestricted_unitRaySeries (p := p))
-
-/-- `perturbedUnitRaySeries p` has exact radius of convergence `1`. -/
-@[simp]
-theorem radius_perturbedUnitRaySeries : (perturbedUnitRaySeries p).radius = 1 := by
-  refine le_antisymm (le_of_not_gt fun hlt => ?_) ?_
-  · obtain ⟨r, h1r, hrf⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hlt
-    have hr1 : 1 < (r : ℝ) := by exact_mod_cast h1r
-    refine not_isRestricted_of_one_lt (fun k hk => ?_) hr1
-      (isRestricted_of_lt_radius (by simpa using hrf))
-    have hk0 : k ≠ 0 := by omega
-    have hk1 : k ≠ 1 := by omega
-    simp [hk0, hk1]
-  · simpa using le_radius_of_isRestricted (isRestricted_perturbedUnitRaySeries (p := p))
-
-/-! ### Identical infinite-ray Newton polygons and absence of finite faces -/
+/-! ### Identical infinite-ray Newton polygons, exact radius `1`, and absence of finite faces -/
 
 private theorem newtonPolygon_eq_zero_of_sq {f : ℚ_[p]⟦X⟧}
     (hnonneg : ∀ n, 0 ≤ padicRealValuation p (coeff n f)) (hc0 : coeff 0 f = 1)
@@ -197,11 +142,8 @@ private theorem newtonPolygon_eq_zero_of_sq {f : ℚ_[p]⟦X⟧}
   set v := padicRealValuation p
   have hadm : IsAdmissible fun n => v (coeff n f) :=
     isAdmissible_iff.mpr ⟨0, 0, fun n => by simpa using hnonneg n⟩
-  have hconv0 : IsConvexSeq (0 : ℕ → WithTop ℝ) := by
-    convert isConvexSeq_affine 0 0 with n
-    simp
-  have hge0 : (0 : ℕ → WithTop ℝ) ≤ f.newtonPolygon v :=
-    le_newtonPolygon hconv0 hnonneg
+  have hge0 : (0 : ℕ → WithTop ℝ) ≤ f.newtonPolygon v := fun n => by
+    simpa using le_newtonPolygon (isConvexSeq_affine 0 0) (fun k => by simpa using hnonneg k) n
   have h0eq : f.newtonPolygon v 0 = 0 :=
     le_antisymm (by simpa [hc0] using f.newtonPolygon_le hadm 0) (hge0 0)
   ext n
@@ -226,13 +168,13 @@ private theorem newtonPolygon_eq_zero_of_sq {f : ℚ_[p]⟦X⟧}
     ((le_max_left n 2).trans (le_max_right m _)).trans (Nat.le_self_pow two_ne_zero k)
   have hk_top : f.newtonPolygon v (k ^ 2) ≠ ⊤ :=
     ne_top_of_le_ne_top WithTop.coe_ne_top (hsq_le k hk2)
-  have hchord := (f.isConvexSeq_newtonPolygon v).chord_inequality
-    (by simp [h0eq]) hk_top (Nat.zero_le n) hnk
+  have hchord : ((k : ℝ) ^ 2) * (f.newtonPolygon v n).untop₀ ≤
+      (n : ℝ) * (f.newtonPolygon v (k ^ 2)).untop₀ := by
+    simpa [h0eq] using (f.isConvexSeq_newtonPolygon v).chord_inequality
+      (by simp [h0eq]) hk_top (Nat.zero_le n) hnk
   have hkuntop : (f.newtonPolygon v (k ^ 2)).untop₀ ≤ k := by
     have h := hsq_le k hk2
     rwa [← WithTop.coe_untop₀_of_ne_top hk_top, WithTop.coe_le_coe] at h
-  rw [Nat.cast_zero, sub_zero, sub_zero, h0eq, WithTop.untop₀_zero, mul_zero, zero_add,
-    Nat.cast_pow] at hchord
   have hle : ((k : ℝ) ^ 2) * (f.newtonPolygon v n).untop₀ ≤ (n : ℝ) * k :=
     hchord.trans (mul_le_mul_of_nonneg_left hkuntop (Nat.cast_nonneg n))
   have hk0 : (0 : ℝ) < k := by positivity
@@ -264,33 +206,52 @@ theorem newtonPolygon_perturbedUnitRaySeries :
     have hk1 : k ≠ 1 := by omega
     simp [hk0, hk1]
 
-private theorem not_isFiniteFace_zero_seq {l u : ℕ} :
-    ¬IsFiniteFace (0 : ℕ → WithTop ℝ) 0 l u := by
-  intro h
-  obtain ⟨hl, c, _, hface⟩ := isFiniteFace_iff.mp h
-  have hlc : l ∈ supportingFace (0 : ℕ → WithTop ℝ) 0 c := hface.symm.subset ⟨le_rfl, hl⟩
-  have hc0 : c = 0 := by
-    rw [mem_supportingFace, Pi.zero_apply, zero_mul, add_zero, ← WithTop.coe_zero,
-      WithTop.coe_eq_coe] at hlc
-    exact hlc.symm
-  have hu1 : u + 1 ∈ supportingFace (0 : ℕ → WithTop ℝ) 0 c := by
-    simp [mem_supportingFace, hc0]
-  exact absurd (hface.subset hu1).2 (Nat.not_succ_le_self u)
+private theorem radius_eq_one_of_newtonPolygon_eq_zero {f : ℚ_[p]⟦X⟧}
+    (hres : f.IsRestricted 1) (hinf : {n | coeff n f ≠ 0}.Infinite)
+    (hnp : f.newtonPolygon (padicRealValuation p) = 0) :
+    f.radius = 1 := by
+  have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
+  have hadm : IsAdmissible fun n => padicRealValuation p (coeff n f) :=
+    (f.isAdmissible_addValuation_coeff_iff_exists_isRestricted (padicRealValuation p) hp1
+      fun _ hx => norm_eq_rpow_neg_padicRealValuation hx).mpr ⟨1, zero_lt_one, hres⟩
+  have : Nonempty (finiteEdges (0 : ℕ → WithTop ℝ)) := ⟨⟨0, by simp⟩⟩
+  have hslope : (⨆ i : finiteEdges (0 : ℕ → WithTop ℝ),
+      (unitSlope (0 : ℕ → WithTop ℝ) i : EReal)) = 0 := by
+    simp [unitSlope_def]
+  rw [f.radius_eq_exp_iSup_unitSlope_newtonPolygon (padicRealValuation p) hp1
+    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) hadm hinf, hnp, hslope, zero_mul,
+    EReal.exp_zero]
+
+/-- `unitRaySeries p` has exact radius of convergence `1`. -/
+@[simp]
+theorem radius_unitRaySeries : (unitRaySeries p).radius = 1 := by
+  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_unitRaySeries
+    (Set.infinite_univ.mono fun n _ => ?_) newtonPolygon_unitRaySeries
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  by_cases hn : n = 0 <;> simp [hn, hp0]
+
+/-- `perturbedUnitRaySeries p` has exact radius of convergence `1`. -/
+@[simp]
+theorem radius_perturbedUnitRaySeries : (perturbedUnitRaySeries p).radius = 1 := by
+  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_perturbedUnitRaySeries
+    (Set.infinite_univ.mono fun n _ => ?_) newtonPolygon_perturbedUnitRaySeries
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rcases n with _ | _ | n <;> simp [hp0]
 
 /-- `unitRaySeries p` has no finite face of slope `0`. -/
-theorem not_exists_isFiniteFace_unitRaySeries :
+theorem not_exists_isFiniteFace_unitRaySeries_zero :
     ¬∃ l u : ℕ, IsFiniteFace ((unitRaySeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
   rintro ⟨l, u, h⟩
-  rw [newtonPolygon_unitRaySeries] at h
-  exact not_isFiniteFace_zero_seq h
+  exact not_isFiniteFace_affine 0 0 l u
+    (by simpa [newtonPolygon_unitRaySeries, Pi.zero_def] using h)
 
 /-- `perturbedUnitRaySeries p` has no finite face of slope `0`. -/
-theorem not_exists_isFiniteFace_perturbedUnitRaySeries :
+theorem not_exists_isFiniteFace_perturbedUnitRaySeries_zero :
     ¬∃ l u : ℕ,
       IsFiniteFace ((perturbedUnitRaySeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
   rintro ⟨l, u, h⟩
-  rw [newtonPolygon_perturbedUnitRaySeries] at h
-  exact not_isFiniteFace_zero_seq h
+  exact not_isFiniteFace_affine 0 0 l u
+    (by simpa [newtonPolygon_perturbedUnitRaySeries, Pi.zero_def] using h)
 
 /-- The slope multiplicity at `0` of `unitRaySeries p` is the `Set.ncard` junk value `0`, because
 infinitely many unit edges have slope `0`. -/
@@ -316,121 +277,77 @@ theorem gaussNorm_unitRaySeries_sub_one :
     (unitRaySeries p - 1).gaussNorm norm 1 = (p : ℝ)⁻¹ := by
   have hp1 : (p : ℝ)⁻¹ ≤ 1 :=
     inv_le_one_of_one_le₀ (Nat.one_le_cast.mpr (Fact.out : p.Prime).pos)
-  apply le_antisymm
-  · rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun n => ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · have hne : ⌈Real.sqrt n⌉₊ ≠ 0 :=
-        (Nat.ceil_pos.mpr (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)))).ne'
-      have hcoeff : coeff n (unitRaySeries p - 1) = (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊ := by
-        simp [hn]
-      rw [hcoeff, one_pow, mul_one, norm_pow, Padic.norm_p]
-      exact pow_le_of_le_one (by positivity) hp1 hne
-  · have hsub_res : (unitRaySeries p - 1).IsRestricted 1 :=
-      (IsRestricted.subring (R := ℚ_[p]) 1).sub_mem isRestricted_unitRaySeries
-        (IsRestricted.subring (R := ℚ_[p]) 1).one_mem
-    have hbd : (unitRaySeries p - 1).HasGaussNorm (norm : ℚ_[p] → ℝ) 1 :=
-      TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p]) hsub_res
-    have h1 := PowerSeries.le_gaussNorm (R := ℚ_[p]) norm 1 (unitRaySeries p - 1) hbd 1
-    have hc1 : ‖coeff 1 (unitRaySeries p - 1)‖ * 1 ^ 1 = (p : ℝ)⁻¹ := by
-      simp [Real.sqrt_one]
-    rwa [hc1] at h1
+  have hc1 : ‖coeff 1 (unitRaySeries p - 1)‖ * 1 ^ 1 = (p : ℝ)⁻¹ := by
+    simp [Real.sqrt_one]
+  refine (TauCeti.PowerSeries.gaussNorm_eq_of_forall_le (s := 1) fun n => ?_).trans hc1
+  rw [hc1]
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · have hne : ⌈Real.sqrt n⌉₊ ≠ 0 :=
+      (Nat.ceil_pos.mpr (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)))).ne'
+    have hcoeff : coeff n (unitRaySeries p - 1) = (p : ℚ_[p]) ^ ⌈Real.sqrt n⌉₊ := by
+      simp [hn]
+    rw [hcoeff, one_pow, mul_one, norm_pow, Padic.norm_p]
+    exact pow_le_of_le_one (by positivity) hp1 hne
 
 /-- At radius `1`, `perturbedUnitRaySeries p` is within `p⁻² < 1` of `1 + X`. -/
 theorem gaussNorm_perturbedUnitRaySeries_sub_one_add_X :
     (perturbedUnitRaySeries p - (1 + X)).gaussNorm norm 1 = ((p : ℝ)⁻¹) ^ 2 := by
   have hp1 : (p : ℝ)⁻¹ ≤ 1 :=
     inv_le_one_of_one_le₀ (Nat.one_le_cast.mpr (Fact.out : p.Prime).pos)
-  apply le_antisymm
-  · rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun n => ?_
-    rcases n with _ | _ | n
-    · simp
-    · simp
-    · have h2 : 2 ≤ ⌈Real.sqrt (n + 2 : ℕ)⌉₊ := by
-        refine Nat.lt_ceil.mpr ?_
-        rw [Nat.cast_one, Real.lt_sqrt zero_le_one, one_pow]
-        exact_mod_cast (by omega : 1 < n + 2)
-      have hn1 : n + 2 ≠ 1 := by omega
-      have hcoeff : coeff (n + 2) (perturbedUnitRaySeries p - (1 + X)) =
-          (p : ℚ_[p]) ^ ⌈Real.sqrt (n + 2 : ℕ)⌉₊ := by
-        simp [hn1, coeff_X]
-      rw [hcoeff, one_pow, mul_one, norm_pow, Padic.norm_p]
-      exact pow_le_pow_of_le_one (by positivity) hp1 h2
-  · have hsub_res : (perturbedUnitRaySeries p - (1 + X)).IsRestricted 1 :=
-      (IsRestricted.subring (R := ℚ_[p]) 1).sub_mem
-        isRestricted_perturbedUnitRaySeries isRestricted_one_add_X
-    have hbd : (perturbedUnitRaySeries p - (1 + X)).HasGaussNorm (norm : ℚ_[p] → ℝ) 1 :=
-      TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p]) hsub_res
-    have h2 := PowerSeries.le_gaussNorm (R := ℚ_[p]) norm 1
-      (perturbedUnitRaySeries p - (1 + X)) hbd 2
-    have hceil2 : ⌈Real.sqrt 2⌉₊ = 2 := by
-      refine le_antisymm (Nat.ceil_le.mpr ?_) (Nat.lt_ceil.mpr ?_)
-      · rw [Real.sqrt_le_iff]
-        norm_num
-      · rw [Nat.cast_one, Real.lt_sqrt zero_le_one]
-        norm_num
-    have hc2 : ‖coeff 2 (perturbedUnitRaySeries p - (1 + X))‖ * 1 ^ 2 = ((p : ℝ)⁻¹) ^ 2 := by
-      simp [coeff_X, hceil2]
-    rwa [hc2] at h2
+  have hceil2 : ⌈Real.sqrt 2⌉₊ = 2 := by
+    refine le_antisymm (Nat.ceil_le.mpr ?_) (Nat.lt_ceil.mpr ?_)
+    · rw [Real.sqrt_le_iff]
+      norm_num
+    · rw [Nat.cast_one, Real.lt_sqrt zero_le_one]
+      norm_num
+  have hc2 : ‖coeff 2 (perturbedUnitRaySeries p - (1 + X))‖ * 1 ^ 2 = ((p : ℝ)⁻¹) ^ 2 := by
+    simp [coeff_X, hceil2]
+  refine (TauCeti.PowerSeries.gaussNorm_eq_of_forall_le (s := 2) fun n => ?_).trans hc2
+  rw [hc2]
+  rcases n with _ | _ | n
+  · simp
+  · simp
+  · have h2 : 2 ≤ ⌈Real.sqrt (n + 2 : ℕ)⌉₊ := by
+      refine Nat.lt_ceil.mpr ?_
+      rw [Nat.cast_one, Real.lt_sqrt zero_le_one, one_pow]
+      exact_mod_cast (by omega : 1 < n + 2)
+    have hn1 : n + 2 ≠ 1 := by omega
+    have hcoeff : coeff (n + 2) (perturbedUnitRaySeries p - (1 + X)) =
+        (p : ℚ_[p]) ^ ⌈Real.sqrt (n + 2 : ℕ)⌉₊ := by
+      simp [hn1, coeff_X]
+    rw [hcoeff, one_pow, mul_one, norm_pow, Padic.norm_p]
+    exact pow_le_pow_of_le_one (by positivity) hp1 h2
 
-private theorem isDistinguished_one_series :
-    TauCeti.PowerSeries.IsDistinguished 1 0 (1 : ℚ_[p]⟦X⟧) := by
-  have h := TauCeti.PowerSeries.isDistinguished_monomial (R := ℚ_[p]) zero_lt_one
-    (one_ne_zero : (1 : ℚ_[p]) ≠ 0) 0
-  rwa [monomial_zero_eq_C_apply, map_one] at h
-
-private theorem gaussNorm_one_eq_one : (1 : ℚ_[p]⟦X⟧).gaussNorm norm 1 = 1 := by
-  have h := (isDistinguished_one_series (p := p)).norm_coeff_mul_pow_eq.symm
-  simpa [coeff_one] using h
+private theorem gaussNorm_one_add_X_eq_one : (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 = 1 := by
+  rw [one_add_X_eq_X_sub_C_neg_one, TauCeti.PowerSeries.gaussNorm_X_sub_C]
+  simp
 
 private theorem isDistinguished_one_add_X :
     TauCeti.PowerSeries.IsDistinguished 1 1 (1 + X : ℚ_[p]⟦X⟧) := by
-  have hbd : (1 + X : ℚ_[p]⟦X⟧).HasGaussNorm (norm : ℚ_[p] → ℝ) 1 :=
-    TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p]) isRestricted_one_add_X
-  have hgn : (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 = 1 := by
-    apply le_antisymm
-    · rw [PowerSeries.gaussNorm_eq]
-      refine ciSup_le fun n => ?_
-      rcases n with _ | _ | n <;> simp [coeff_X]
-    · have h1 := PowerSeries.le_gaussNorm (R := ℚ_[p]) norm 1 (1 + X) hbd 1
-      have hc1 : ‖coeff 1 (1 + X : ℚ_[p]⟦X⟧)‖ * 1 ^ 1 = 1 := by simp [coeff_X]
-      rwa [hc1] at h1
-  refine ⟨?_, fun m hm => ?_⟩
-  · rw [hgn]
-    simp [coeff_X]
-  · rw [hgn]
-    rcases m with _ | _ | m
-    · omega
-    · omega
-    · simp [coeff_X]
-
-private theorem gaussNorm_one_add_X_eq_one : (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 = 1 := by
-  have h := (isDistinguished_one_add_X (p := p)).norm_coeff_mul_pow_eq.symm
-  have hc1 : ‖coeff 1 (1 + X : ℚ_[p]⟦X⟧)‖ * 1 ^ 1 = 1 := by simp [coeff_X]
-  rwa [hc1] at h
+  rw [one_add_X_eq_X_sub_C_neg_one]
+  exact TauCeti.PowerSeries.isDistinguished_X_sub_C zero_lt_one (by simp)
 
 private theorem isLowestDominant_one_add_X :
     TauCeti.PowerSeries.IsLowestDominant 1 0 (1 + X : ℚ_[p]⟦X⟧) := by
-  have hd := isDistinguished_one_add_X (p := p)
-  refine ⟨hd.gaussNorm_pos, ?_, fun m hm => absurd hm m.not_lt_zero⟩
-  rw [gaussNorm_one_add_X_eq_one]
-  simp
+  rw [one_add_X_eq_X_sub_C_neg_one]
+  exact TauCeti.PowerSeries.isLowestDominant_zero_X_sub_C zero_lt_one (by simp)
+
+private theorem gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt :
+    ((1 + X : ℚ_[p]⟦X⟧) - perturbedUnitRaySeries p).gaussNorm norm 1 <
+      (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 := by
+  rw [TauCeti.PowerSeries.gaussNorm_sub_comm, gaussNorm_perturbedUnitRaySeries_sub_one_add_X,
+    gaussNorm_one_add_X_eq_one]
+  exact pow_lt_one₀ (by positivity)
+    (inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)) (by decide)
 
 /-- `unitRaySeries p` is distinguished of degree `0` at radius `1`. -/
 theorem isDistinguished_unitRaySeries :
     TauCeti.PowerSeries.IsDistinguished 1 0 (unitRaySeries p) := by
-  have h1d := isDistinguished_one_series (p := p)
-  have hsub : (1 - unitRaySeries p).gaussNorm norm 1 < (1 : ℚ_[p]⟦X⟧).gaussNorm norm 1 := by
-    have hrev : (1 - unitRaySeries p).gaussNorm norm 1 =
-        (unitRaySeries p - 1).gaussNorm norm 1 := by
-      simp_rw [PowerSeries.gaussNorm_eq, map_sub, norm_sub_rev]
-    rw [hrev, gaussNorm_unitRaySeries_sub_one, gaussNorm_one_eq_one]
-    exact inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
-  exact (TauCeti.PowerSeries.isDistinguished_iff_of_gaussNorm_sub_lt (R := ℚ_[p]) zero_le_one
-    h1d.hasGaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p])
-      isRestricted_unitRaySeries) hsub).mp h1d
+  refine (TauCeti.PowerSeries.gaussNorm_sub_one_lt_one_iff zero_lt_one
+    isRestricted_unitRaySeries constantCoeff_unitRaySeries).mp ?_
+  rw [gaussNorm_unitRaySeries_sub_one]
+  exact inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
 
 /-- `unitRaySeries p` has lowest dominant degree `0` at radius `1`. -/
 theorem isLowestDominant_unitRaySeries :
@@ -439,36 +356,21 @@ theorem isLowestDominant_unitRaySeries :
 
 /-- `perturbedUnitRaySeries p` is distinguished of degree `1` at radius `1`. -/
 theorem isDistinguished_perturbedUnitRaySeries :
-    TauCeti.PowerSeries.IsDistinguished 1 1 (perturbedUnitRaySeries p) := by
-  have h1Xd := isDistinguished_one_add_X (p := p)
-  have hsub : ((1 + X : ℚ_[p]⟦X⟧) - perturbedUnitRaySeries p).gaussNorm norm 1 <
-      (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 := by
-    have hrev : ((1 + X : ℚ_[p]⟦X⟧) - perturbedUnitRaySeries p).gaussNorm norm 1 =
-        (perturbedUnitRaySeries p - (1 + X)).gaussNorm norm 1 := by
-      simp_rw [PowerSeries.gaussNorm_eq, map_sub, norm_sub_rev]
-    rw [hrev, gaussNorm_perturbedUnitRaySeries_sub_one_add_X, gaussNorm_one_add_X_eq_one]
-    exact pow_lt_one₀ (by positivity)
-      (inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)) (by decide)
-  exact (TauCeti.PowerSeries.isDistinguished_iff_of_gaussNorm_sub_lt (R := ℚ_[p]) zero_le_one
-    h1Xd.hasGaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p])
-      isRestricted_perturbedUnitRaySeries) hsub).mp h1Xd
+    TauCeti.PowerSeries.IsDistinguished 1 1 (perturbedUnitRaySeries p) :=
+  (TauCeti.PowerSeries.isDistinguished_iff_of_gaussNorm_sub_lt (R := ℚ_[p]) zero_le_one
+    (isDistinguished_one_add_X (p := p)).hasGaussNorm
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p])
+      isRestricted_perturbedUnitRaySeries)
+    gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt).mp isDistinguished_one_add_X
 
 /-- `perturbedUnitRaySeries p` has lowest dominant degree `0` at radius `1`. -/
 theorem isLowestDominant_perturbedUnitRaySeries :
-    TauCeti.PowerSeries.IsLowestDominant 1 0 (perturbedUnitRaySeries p) := by
-  have h1Xd := isDistinguished_one_add_X (p := p)
-  have h1Xl := isLowestDominant_one_add_X (p := p)
-  have hsub : ((1 + X : ℚ_[p]⟦X⟧) - perturbedUnitRaySeries p).gaussNorm norm 1 <
-      (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 := by
-    have hrev : ((1 + X : ℚ_[p]⟦X⟧) - perturbedUnitRaySeries p).gaussNorm norm 1 =
-        (perturbedUnitRaySeries p - (1 + X)).gaussNorm norm 1 := by
-      simp_rw [PowerSeries.gaussNorm_eq, map_sub, norm_sub_rev]
-    rw [hrev, gaussNorm_perturbedUnitRaySeries_sub_one_add_X, gaussNorm_one_add_X_eq_one]
-    exact pow_lt_one₀ (by positivity)
-      (inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)) (by decide)
-  exact (TauCeti.PowerSeries.isLowestDominant_iff_of_gaussNorm_sub_lt (R := ℚ_[p]) zero_le_one
-    h1Xd.hasGaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p])
-      isRestricted_perturbedUnitRaySeries) hsub).mp h1Xl
+    TauCeti.PowerSeries.IsLowestDominant 1 0 (perturbedUnitRaySeries p) :=
+  (TauCeti.PowerSeries.isLowestDominant_iff_of_gaussNorm_sub_lt (R := ℚ_[p]) zero_le_one
+    (isDistinguished_one_add_X (p := p)).hasGaussNorm
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := ℚ_[p])
+      isRestricted_perturbedUnitRaySeries)
+    gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt).mp isLowestDominant_one_add_X
 
 /-! ### Exact zero counts over `ℂ_[p]` and `ℚ_[p]` -/
 
@@ -483,25 +385,17 @@ theorem zeroMultiset_unitRaySeries_padicComplex :
 theorem setOf_norm_le_one_and_evalAt_unitRaySeries_eq_zero :
     {x : ℂ_[p] | ‖x‖ ≤ 1 ∧ (unitRaySeries p).evalAt x = 0} = ∅ := by
   classical
-  rw [isRestricted_unitRaySeries.setOf_norm_le_and_evalAt_eq_zero zero_lt_one
-    isDistinguished_unitRaySeries.ne_zero, zeroMultiset_unitRaySeries_padicComplex]
+  rw [isRestricted_unitRaySeries.setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
+    zero_lt_one isDistinguished_unitRaySeries.ne_zero, zeroMultiset_unitRaySeries_padicComplex]
   simp
 
-/-- By the nonarchimedean Rouché theorem on `‖x‖ ≤ 1`, `perturbedUnitRaySeries p` has the same
-closed-disc zero count in `ℂ_[p]` as `1 + X`, namely `1`. -/
+/-- `perturbedUnitRaySeries p` has `1` zero in the closed unit disc `‖x‖ ≤ 1` of `ℂ_[p]`, counted
+with multiplicity. -/
 theorem card_zeroMultiset_perturbedUnitRaySeries_padicComplex :
     ((perturbedUnitRaySeries p).zeroMultiset 1 ℂ_[p]).card = 1 := by
-  have hsub : (perturbedUnitRaySeries p - (1 + X)).gaussNorm norm 1 <
-      (perturbedUnitRaySeries p).gaussNorm norm 1 := by
-    have hgn : (perturbedUnitRaySeries p).gaussNorm norm 1 = 1 := by
-      have h := (isLowestDominant_perturbedUnitRaySeries (p := p)).norm_coeff_mul_pow_eq.symm
-      have hc0 : ‖coeff 0 (perturbedUnitRaySeries p)‖ * 1 ^ 0 = 1 := by simp
-      rwa [hc0] at h
-    rw [gaussNorm_perturbedUnitRaySeries_sub_one_add_X, hgn]
-    exact pow_lt_one₀ (by positivity)
-      (inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)) (by decide)
-  rw [TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt (L := ℂ_[p]) zero_lt_one
-    isRestricted_perturbedUnitRaySeries isRestricted_one_add_X hsub]
+  rw [(TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt (L := ℂ_[p]) zero_lt_one
+    isRestricted_one_add_X isRestricted_perturbedUnitRaySeries
+    gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt).symm]
   exact isDistinguished_one_add_X.card_zeroMultiset_eq zero_lt_one isRestricted_one_add_X
 
 /-- `perturbedUnitRaySeries p` has `0` zeros in the open unit disc `‖x‖ < 1` of `ℂ_[p]`. -/
@@ -518,46 +412,52 @@ theorem card_filter_zeroMultiset_perturbedUnitRaySeries_norm_eq_one_padicComplex
   TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq isDistinguished_perturbedUnitRaySeries
     isLowestDominant_perturbedUnitRaySeries zero_lt_one isRestricted_perturbedUnitRaySeries
 
-/-- Because the normalised disc polynomial of `perturbedUnitRaySeries p` at `r = 1` over `ℚ_[p]`
-has degree `1` and therefore splits over `ℚ_[p]`, `perturbedUnitRaySeries p` already has `1` zero
-on the unit sphere `‖x‖ = 1` of `ℚ_[p]`, counted with multiplicity. -/
-theorem card_filter_zeroMultiset_perturbedUnitRaySeries_norm_eq_one_padic :
-    (((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ = 1)).card = 1 := by
+private theorem exists_isDiscPreparation_perturbedUnitRaySeries_splits :
+    ∃ (P : Polynomial ℚ_[p]) (U : ℚ_[p]⟦X⟧),
+      TauCeti.PowerSeries.IsDiscPreparation 1 1 (perturbedUnitRaySeries p) P U ∧
+        (P.map (algebraMap ℚ_[p] ℚ_[p])).Splits := by
   obtain ⟨P, U, hP⟩ := (isDistinguished_perturbedUnitRaySeries (p := p)).exists_isDiscPreparation
     zero_lt_one isRestricted_perturbedUnitRaySeries constantCoeff_perturbedUnitRaySeries
-  have hs : (P.map (algebraMap ℚ_[p] ℚ_[p])).Splits :=
-    Polynomial.Splits.of_natDegree_le_one (Polynomial.natDegree_map_le.trans hP.natDegree_eq.le)
+  exact ⟨P, U, hP, Polynomial.Splits.of_natDegree_le_one
+    (Polynomial.natDegree_map_le.trans hP.natDegree_eq.le)⟩
+
+/-- `perturbedUnitRaySeries p` has `1` zero on the unit sphere `‖x‖ = 1` of `ℚ_[p]`, counted with
+multiplicity. -/
+theorem card_filter_zeroMultiset_perturbedUnitRaySeries_norm_eq_one_padic :
+    (((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ = 1)).card = 1 := by
+  obtain ⟨P, U, hP, hs⟩ := exists_isDiscPreparation_perturbedUnitRaySeries_splits (p := p)
   exact hP.card_filter_zeroMultiset_norm_eq_eq_of_splits
     isLowestDominant_perturbedUnitRaySeries zero_lt_one hs
 
-/-- `perturbedUnitRaySeries p` has a unique zero in the closed unit disc of `ℚ_[p]`, and that zero
-lies on the unit sphere `‖x‖ = 1`. -/
-theorem existsUnique_norm_le_one_and_evalAt_perturbedUnitRaySeries_eq_zero :
-    ∃! x : ℚ_[p], ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0 ∧ ‖x‖ = 1 := by
+/-- Every zero of `perturbedUnitRaySeries p` in the closed unit disc `‖x‖ ≤ 1` of `ℚ_[p]` lies on
+the unit sphere `‖x‖ = 1`. -/
+theorem norm_eq_one_of_norm_le_one_of_evalAt_perturbedUnitRaySeries_eq_zero {x : ℚ_[p]}
+    (hx : ‖x‖ ≤ 1) (h0 : (perturbedUnitRaySeries p).evalAt x = 0) : ‖x‖ = 1 := by
   classical
-  obtain ⟨P, U, hP⟩ := (isDistinguished_perturbedUnitRaySeries (p := p)).exists_isDiscPreparation
-    zero_lt_one isRestricted_perturbedUnitRaySeries constantCoeff_perturbedUnitRaySeries
-  have hs : (P.map (algebraMap ℚ_[p] ℚ_[p])).Splits :=
-    Polynomial.Splits.of_natDegree_le_one (Polynomial.natDegree_map_le.trans hP.natDegree_eq.le)
-  have hcard1 : ((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).card = 1 :=
-    hP.card_zeroMultiset_eq_of_splits zero_lt_one hs
-  have hsphere : (((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ = 1)).card = 1 :=
-    card_filter_zeroMultiset_perturbedUnitRaySeries_norm_eq_one_padic
-  obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp hcard1
-  have hnorm : ‖a‖ = 1 := by
-    rw [ha] at hsphere
-    by_contra hne
-    simp [Multiset.filter_singleton, hne] at hsphere
+  obtain ⟨P, U, hP, hs⟩ := exists_isDiscPreparation_perturbedUnitRaySeries_splits (p := p)
+  have hopen : ((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ < 1) = 0 :=
+    Multiset.card_eq_zero.mp (hP.card_filter_zeroMultiset_norm_lt_eq_of_splits
+      isLowestDominant_perturbedUnitRaySeries zero_lt_one hs)
+  refine hx.eq_of_not_lt fun hlt => ?_
+  have hmem : x ∈ ((perturbedUnitRaySeries p).zeroMultiset 1 ℚ_[p]).filter (‖·‖ < 1) :=
+    Multiset.mem_filter.mpr ⟨(isRestricted_perturbedUnitRaySeries.mem_zeroMultiset_iff
+      zero_lt_one isDistinguished_perturbedUnitRaySeries.ne_zero).mpr ⟨hx, by simpa using h0⟩, hlt⟩
+  simp [hopen] at hmem
+
+/-- `perturbedUnitRaySeries p` has a unique zero in the closed unit disc `‖x‖ ≤ 1` of `ℚ_[p]`. -/
+theorem existsUnique_norm_le_one_and_evalAt_perturbedUnitRaySeries_eq_zero :
+    ∃! x : ℚ_[p], ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0 := by
+  classical
+  obtain ⟨P, U, hP, hs⟩ := exists_isDiscPreparation_perturbedUnitRaySeries_splits (p := p)
+  obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp (hP.card_zeroMultiset_eq_of_splits zero_lt_one hs)
   have hset : {x : ℚ_[p] | ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0} = {a} := by
-    rw [isRestricted_perturbedUnitRaySeries.setOf_norm_le_and_evalAt_eq_zero (L := ℚ_[p])
-      zero_lt_one isDistinguished_perturbedUnitRaySeries.ne_zero, ha]
-    simp
-  refine ⟨a, ?_, fun y ⟨hy1, hy0, _⟩ => ?_⟩
-  · have ha_mem : a ∈ {x : ℚ_[p] | ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0} := by
-      simp [hset]
-    exact ⟨ha_mem.1, ha_mem.2, hnorm⟩
-  · have hy_mem : y ∈ {x : ℚ_[p] | ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0} :=
-      ⟨hy1, hy0⟩
-    simpa [hset] using hy_mem
+    simpa [ha] using
+      isRestricted_perturbedUnitRaySeries.setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
+        (L := ℚ_[p]) zero_lt_one (isDistinguished_perturbedUnitRaySeries (p := p)).ne_zero
+  refine ⟨a, ?_, fun y hy => ?_⟩
+  · have : a ∈ ({a} : Set ℚ_[p]) := Set.mem_singleton a
+    rwa [← hset] at this
+  · have : y ∈ {x : ℚ_[p] | ‖x‖ ≤ 1 ∧ (perturbedUnitRaySeries p).evalAt x = 0} := hy
+    simpa [hset] using this
 
 end TauCeti.NewtonPolygonBoundaryZerosExample

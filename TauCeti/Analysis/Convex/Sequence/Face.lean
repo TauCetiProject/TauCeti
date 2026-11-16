@@ -632,6 +632,20 @@ theorem IsSupportingLine.finite_supportingFace {h : ℕ → WithTop ℝ} {τ d �
     linarith
   exact Set.mem_Iic.mpr (Nat.cast_le.mp (hn'.trans (Nat.le_ceil _)))
 
+/-- A real affine height sequence on the whole natural line has no finite face of its own slope,
+since its contact set with that line is all of `ℕ`. -/
+theorem not_isFiniteFace_affine (d σ : ℝ) (l u : ℕ) :
+    ¬IsFiniteFace (fun n : ℕ => ((d + σ * n : ℝ) : WithTop ℝ)) σ l u := by
+  rintro ⟨hl, c, _, hface⟩
+  have hlc : l ∈ supportingFace (fun n : ℕ => ((d + σ * n : ℝ) : WithTop ℝ)) σ c :=
+    hface.symm.subset ⟨le_rfl, hl⟩
+  have hcd : c = d := by
+    rw [mem_supportingFace, WithTop.coe_eq_coe] at hlc
+    linarith
+  have hu1 : u + 1 ∈ supportingFace (fun n : ℕ => ((d + σ * n : ℝ) : WithTop ℝ)) σ c := by
+    simp [mem_supportingFace, hcd]
+  exact Nat.not_succ_le_self u (hface.subset hu1).2
+
 /-! ### Supporting faces of lower convex envelopes -/
 
 namespace IsLowerConvexEnvelope

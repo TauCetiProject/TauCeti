@@ -37,10 +37,10 @@ The formula covers every case at once:
   supremum of the finite slopes of the Newton polygon, so the radius is `b` to the power of that
   supremum. In particular such a series is entire exactly when its Newton slopes are unbounded.
 
-At every radius `b ^ σ` strictly smaller than `radius f`, a nonzero series is restricted at a
-strictly larger radius, so its Newton polygon has a finite face of slope `σ`. At a finite positive
-radius the limiting slope alone decides nothing about restrictedness at the radius itself, and
-restrictedness at one positive radius does not bound the slopes.
+At every radius `b ^ σ`, the Newton polygon of a nonzero series has a finite face of slope `σ`
+if and only if `b ^ σ` is strictly smaller than `radius f`. At a finite positive radius the
+limiting slope alone decides nothing about restrictedness at the radius itself, and restrictedness
+at one positive radius does not bound the slopes.
 
 ## Main results
 
@@ -54,8 +54,9 @@ restrictedness at one positive radius does not bound the slopes.
   `PowerSeries.isEntire_iff_iSup_unitSlope_newtonPolygon_eq_top`: for admissible, infinitely
   supported coefficient heights, the radius is `b` to the power of the supremum of the finite
   Newton slopes, and the series is entire exactly when these slopes are unbounded.
-* `PowerSeries.exists_isFiniteFace_newtonPolygon_of_lt_radius`: at every radius `b ^ σ` strictly
-  inside `radius f`, the Newton polygon of a nonzero series has a finite face of slope `σ`.
+* `PowerSeries.lt_radius_of_isFiniteFace_newtonPolygon` and
+  `PowerSeries.exists_isFiniteFace_newtonPolygon_iff_lt_radius`: a nonzero series has a finite
+  Newton face of slope `σ` exactly at the radii `b ^ σ` strictly inside `radius f`.
 
 ## References
 
@@ -180,24 +181,69 @@ theorem isEntire_iff_iSup_unitSlope_newtonPolygon_eq_top
   rw [isEntire_iff_linearGrowthInf_eq_top f v hb hv, newtonPolygon_def,
     linearGrowthInf_eq_iSup_unitSlope_lowerConvexEnvelope hf (by simpa using hinf)]
 
-/-- **Finite faces inside the disc of convergence.** At every radius `b ^ σ` strictly below the
-radius of a nonzero series `f`, the Newton polygon of `f` has a finite face of slope `σ`. -/
-theorem exists_isFiniteFace_newtonPolygon_of_lt_radius {σ : ℝ} (hf0 : f ≠ 0)
-    (hσ : ‖b ^ σ‖ₑ < f.radius) :
-    ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
+/-- Every finite face of the Newton polygon of `f` lies strictly inside the disc of convergence of
+`f`. -/
+theorem lt_radius_of_isFiniteFace_newtonPolygon {σ : ℝ} {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) : ‖b ^ σ‖ₑ < f.radius := by
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  have hadm : IsAdmissible fun n => v (coeff n f) :=
+    isAdmissible_of_lowerConvexEnvelope_ne_top (newtonPolygon_def f v ▸ hface.left_ne_top)
+  rcases {n | coeff n f ≠ 0}.finite_or_infinite with hfin | hinf
+  · have hent : f.IsEntire := isEntire_iff.mpr fun r => by
+      rw [isRestricted_iff]
+      exact tendsto_nhds_of_eventually_eq
+        (Filter.mem_of_superset hfin.compl_mem_cofinite fun n hn => by
+          have hn0 : coeff n f = 0 := not_ne_iff.mp hn
+          simp [hn0])
+    exact radius_eq_top_iff.mpr hent ▸ eNorm_lt_top
+  · have hex : ∃ m, u < m ∧ coeff m f ≠ 0 := by
+      by_contra! hle
+      exact hinf ((Set.finite_Iic u).subset fun m hm => le_of_not_gt fun hum => hm (hle m hum))
+    obtain ⟨m, hum, hm0⟩ := hex
+    have hPm : f.newtonPolygon v m ≠ ⊤ :=
+      ne_top_of_le_ne_top (v.ne_top_iff.mpr hm0) (f.newtonPolygon_le hadm m)
+    have hu1 : f.newtonPolygon v (u + 1) ≠ ⊤ :=
+      (f.isConvexSeq_newtonPolygon v).ne_top_of_le_of_le hface.right_ne_top hPm
+        (Nat.le_succ u) hum
+    have huedge : u ∈ finiteEdges (f.newtonPolygon v) :=
+      mem_finiteEdges.mpr ⟨hface.right_ne_top, hu1⟩
+    have hστ : σ < unitSlope (f.newtonPolygon v) u :=
+      hface.lt_unitSlope (f.isConvexSeq_newtonPolygon v) huedge le_rfl
+    let μ := (σ + unitSlope (f.newtonPolygon v) u) / 2
+    have hσμ : σ < μ := left_lt_add_div_two.mpr hστ
+    have hμτ : (μ : EReal) < (unitSlope (f.newtonPolygon v) u : EReal) :=
+      EReal.coe_lt_coe_iff.mpr (add_div_two_lt_right.mpr hστ)
+    have hτle : (unitSlope (f.newtonPolygon v) u : EReal) ≤
+        linearGrowthInf fun n => (v (coeff n f)).toEReal := by
+      rw [linearGrowthInf_eq_iSup_unitSlope_lowerConvexEnvelope hadm (by simpa using hinf),
+        ← newtonPolygon_def]
+      exact le_iSup (fun i : finiteEdges (f.newtonPolygon v) =>
+        (unitSlope (f.newtonPolygon v) i : EReal)) ⟨u, huedge⟩
+    have hbσ : 0 < b ^ σ := Real.rpow_pos_of_pos hb0 σ
+    have hlt : ‖b ^ σ‖ₑ < ENNReal.ofReal (b ^ μ) := by
+      rw [Real.eNorm_eq_ofReal hbσ.le]
+      exact (ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hb0 μ)).mpr
+        (Real.rpow_lt_rpow_of_exponent_lt hb hσμ)
+    exact hlt.trans_le (ofReal_rpow_le_radius f v hb hv (hμτ.trans_le hτle))
+
+/-- **Finite faces and the disc of convergence.** For a nonzero series `f`, the Newton polygon of
+`f` has a finite face of slope `σ` if and only if the radius `b ^ σ` lies strictly below
+`f.radius`. -/
+theorem exists_isFiniteFace_newtonPolygon_iff_lt_radius {σ : ℝ} (hf0 : f ≠ 0) :
+    (∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u) ↔ ‖b ^ σ‖ₑ < f.radius := by
+  refine ⟨fun ⟨_, _, hface⟩ => lt_radius_of_isFiniteFace_newtonPolygon f v hb hv hface,
+    fun hσ => ?_⟩
   have hb0 : 0 < b := zero_lt_one.trans hb
   have hbσ : 0 < b ^ σ := Real.rpow_pos_of_pos hb0 σ
   obtain ⟨r, hσr, hrf⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hσ
   have hlt : b ^ σ < (r : ℝ) := by
-    rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnNorm, Real.norm_eq_abs,
-      abs_of_pos hbσ] at hσr
-    exact hσr
+    simpa [abs_of_pos hbσ] using NNReal.coe_lt_coe.mpr (eNorm_lt_coe.mp hσr)
   have hr0 : 0 < (r : ℝ) := hbσ.trans hlt
   have hres : f.IsRestricted (b ^ Real.logb b r) := by
     rw [Real.rpow_logb hb0 hb.ne' hr0]
     exact isRestricted_of_lt_radius (by simpa using hrf)
   exact exists_isFiniteFace_newtonPolygon_of_hasGaussNorm f v hb hv
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hres) hf0
-    (((Real.lt_logb_iff_rpow_lt hb hr0).mpr hlt))
+    ((Real.lt_logb_iff_rpow_lt hb hr0).mpr hlt)
 
 end PowerSeries
