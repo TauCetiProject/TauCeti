@@ -182,14 +182,15 @@ end EilenbergMacLane
 open EilenbergMacLane in
 /-- **Every `K(A, n + 2)` space receives a weak homotopy equivalence from the presentation
 model.** For a surjection `ψ : Hₙ₊₂(W; ℤ) → A` from the homology of the wedge of spheres, a
-`K(A, n + 2)` space `Z` and an isomorphism `e : πₙ₊₂(Z, z) ≃ A`, there is a weak homotopy
-equivalence `F` from `killHomotopyGroups (n + 3) (presentation A n ψ)` to `Z` sending the base point
-to `z` and realizing `e`: its restriction to the wedge induces `θ ∘ ψ` on `Hₙ₊₂`, where
+`K(G, n + 2)` space `Z` and an isomorphism `e : πₙ₊₂(Z, z) ≃ A` (making `Z` a `K(A, n + 2)`
+space), there is a weak homotopy equivalence `F` from
+`killHomotopyGroups (n + 3) (presentation A n ψ)` to `Z` sending the base point to `z` and
+realizing `e`: its restriction to the wedge induces `θ ∘ ψ` on `Hₙ₊₂`, where
 `θ : A ≃ πₙ₊₂(Z, z) ≃ Hₙ₊₂(Z; ℤ)` is `e⁻¹` followed by the Hurewicz isomorphism. So any two
 `K(A, n + 2)` spaces have the same weak homotopy type. -/
 theorem IsEilenbergMacLaneSpace.exists_isWeakHomotopyEquivalence_killHomotopyGroups
     {A : Type} [AddCommGroup A] {n : ℕ}
-    {Z : TopCat.{0}} {z : Z} (hZ : IsEilenbergMacLaneSpace (Multiplicative A) (n + 2) Z z)
+    {Z : TopCat.{0}} {z : Z} {G : Type*} [Group G] (hZ : IsEilenbergMacLaneSpace G (n + 2) Z z)
     (e : π_ (n + 2) Z z ≃* Multiplicative A)
     {ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
       (sphereWedge A (n + 2)) →ₗ[ℤ] A} (hψ : Function.Surjective ψ) :
