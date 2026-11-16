@@ -207,25 +207,12 @@ theorem productMap_injective_of_transcendental [IsDomain (F ⊗[k] k')] {x : F}
       (fun _ _ _ _ ↦ IsIntegral.add) (fun _ _ ↦ IsIntegral.neg)
       (fun _ _ _ _ ↦ IsIntegral.mul) hz
     rcases hy with ⟨f, rfl⟩ | ⟨c, rfl⟩
-    · have hf := Algebra.IsIntegral.isIntegral (R := k⟮x⟯) f
-      refine ⟨(minpoly k⟮x⟯ f).map
-          (Algebra.TensorProduct.includeLeft : k⟮x⟯ →ₐ[k] k⟮x⟯ ⊗[k] k').toRingHom,
-        (minpoly.monic hf).map _, ?_⟩
-      have haeval : (Algebra.TensorProduct.includeLeft : F →ₐ[k] F ⊗[k] k')
-          (aeval f (minpoly k⟮x⟯ f)) = 0 := by
-        rw [minpoly.aeval, map_zero]
-      rw [← haeval, aeval_def, eval₂_eq_sum_range, eval₂_eq_sum_range, map_sum,
-        natDegree_map_eq_of_injective (Algebra.TensorProduct.includeLeft_injective
-          (algebraMap k k').injective)]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [coeff_map, map_mul, map_pow]
-      change ρ (((minpoly k⟮x⟯ f).coeff i) ⊗ₜ[k] 1) * (f ⊗ₜ[k] (1 : k')) ^ i =
-        (algebraMap k⟮x⟯ F ((minpoly k⟮x⟯ f).coeff i) ⊗ₜ[k] 1) * (f ⊗ₜ[k] 1) ^ i
-      simp [ρ]
-    · refine ⟨X - C (1 ⊗ₜ[k] c), monic_X_sub_C _, ?_⟩
-      rw [eval₂_sub, eval₂_X, eval₂_C]
-      change (1 : F) ⊗ₜ[k] c - ρ (1 ⊗ₜ[k] c) = 0
-      simp [ρ]
+    · exact (Algebra.IsIntegral.isIntegral (R := k⟮x⟯) f).map_of_comp_eq
+        (Algebra.TensorProduct.includeLeft : k⟮x⟯ →ₐ[k] k⟮x⟯ ⊗[k] k').toRingHom
+        (Algebra.TensorProduct.includeLeft : F →ₐ[k] F ⊗[k] k').toRingHom
+        (by ext y; simp [RingHom.algebraMap_toAlgebra, ρ])
+    · simpa [RingHom.algebraMap_toAlgebra, ρ] using
+        (isIntegral_algebraMap (R := k⟮x⟯ ⊗[k] k') (A := F ⊗[k] k') (x := 1 ⊗ₜ[k] c))
   refine (injective_iff_map_eq_zero π).mpr fun u hu ↦ ?_
   obtain ⟨P, hPmonic, hPu⟩ := hInt u
   generalize hn : P.natDegree = n
