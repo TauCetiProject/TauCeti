@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.RingTheory.Polynomial.DegreeLT
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
+import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -288,17 +289,16 @@ polynomial of degree below `∑ i, m i` is determined by its Hasse jets of the o
 the nodes `a i`, and every jet datum is attained. -/
 def hermiteJetEquiv : degreeLT R (∑ i, m i) ≃ₗ[R] ∀ i, Fin (m i) → R :=
   LinearEquiv.ofEq _ _ (by nontriviality R; rw [natDegree_prod_X_sub_C_pow]) ≪≫ₗ
-    AdjoinRoot.degreeLTEquiv (monic_prod_X_sub_C_pow univ a m) ≪≫ₗ hasseJetQuotientEquiv ha m
+    AdjoinRoot.degreeLTEquiv (monic_prod_X_sub_C_pow univ a m) ≪≫ₗ
+      (quotientSpanEquivAdjoinRoot _).symm ≪≫ₗ hasseJetQuotientEquiv ha m
 
 @[simp]
 theorem hermiteJetEquiv_apply (f : degreeLT R (∑ i, m i)) :
     hermiteJetEquiv ha m f = hermiteJet a m f := by
-  rw [hermiteJet_eq_hasseJet, ← hasseJetQuotientEquiv_mk ha m]
-  -- `AdjoinRoot g` is `R[X] ⧸ Ideal.span {g}` and `AdjoinRoot.mk g` is `Ideal.Quotient.mk _`
-  -- definitionally, and `LinearEquiv.ofEq` preserves the underlying polynomial.
-  exact congr_arg (hasseJetQuotientEquiv ha m) <| AdjoinRoot.degreeLTEquiv_apply
-    (monic_prod_X_sub_C_pow univ a m)
-    (LinearEquiv.ofEq _ _ (by nontriviality R; rw [natDegree_prod_X_sub_C_pow]) f)
+  simp only [hermiteJetEquiv, LinearEquiv.trans_apply, AdjoinRoot.degreeLTEquiv_apply,
+    LinearEquiv.coe_ofEq_apply]
+  rw [← quotientSpanEquivAdjoinRoot_mk, LinearEquiv.symm_apply_apply,
+    hasseJetQuotientEquiv_mk, hermiteJet_eq_hasseJet]
 
 /-- The Hermite interpolation polynomial realizes the prescribed Hasse jet datum. -/
 @[simp]
