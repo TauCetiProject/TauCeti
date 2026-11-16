@@ -15,7 +15,9 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 A test function can be written as a finite sum of tests subordinate to any open cover of its
 support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
 continuity of the additive map is not required. Every compact subset of the domain also has a
-cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
+cutoff test function equal to one on a neighbourhood of it, which can be supported in any open
+neighbourhood of it inside the domain and multiplied by a prescribed value
+(`TestFunction.exists_eventually_eq_tsupport_subset`), and every point of the domain has a
 test function with a prescribed value there, supported in a given neighbourhood of the point.
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
@@ -158,6 +160,16 @@ theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω
     ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ ∀ x, χ x ∈ Icc 0 1 := by
   obtain ⟨χ, hχ01, hχ1, -⟩ := exists_cutoff_tsupport_subset (n := n) hK Ω.isOpen hKΩ subset_rfl
   exact ⟨χ, hχ1, hχ01⟩
+
+/-- A compact subset `K` of an open set `W` contained in the domain has a test function equal to a
+prescribed value `v` on a neighbourhood of `K`, whose topological support lies in `W`. -/
+theorem exists_eventually_eq_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) (v : F) :
+    ∃ φ : 𝓓^{n}(Ω, F), (∀ᶠ x in 𝓝ˢ K, φ x = v) ∧ tsupport φ ⊆ W := by
+  obtain ⟨χ, -, hχ1, hχW⟩ := exists_cutoff_tsupport_subset (n := n) hK hW hKW hWΩ
+  refine ⟨⟨fun x ↦ χ x • v, χ.contDiff.smul contDiff_const, χ.hasCompactSupport.smul_right,
+    ((tsupport_smul_subset_left _ _).trans hχW).trans hWΩ⟩, hχ1.mono fun x hx ↦ by simp [hx],
+    (tsupport_smul_subset_left _ _).trans hχW⟩
 
 /-- Every point of the domain has a test function taking a prescribed value at it and supported
 in a given neighbourhood of it. -/
