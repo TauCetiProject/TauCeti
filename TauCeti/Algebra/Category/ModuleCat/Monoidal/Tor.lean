@@ -16,12 +16,12 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.QuotientResolution
 import Mathlib.Algebra.Category.ModuleCat.Descent
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequence
-import Mathlib.LinearAlgebra.DirectSum.TensorProduct
 import Mathlib.RingTheory.Flat.CategoryTheory
 import Mathlib.RingTheory.Flat.Tensor
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 import TauCeti.CategoryTheory.Abelian.LeftDerived
+import TauCeti.LinearAlgebra.DirectSum.TensorProduct
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.End.TensorProduct
@@ -297,17 +297,6 @@ theorem isZero_Tor_succ_quotient_iSup {X : ModuleCat.{u} A} {ι : Type*} [Nonemp
   refine ⟨(Submodule.factor (le_iSup N i)).rTensor _ z, ?_⟩
   rw [LinearMap.lTensor_rTensor_comm, hz, ← LinearMap.rTensor_comp_apply, Submodule.factor_comp_mk]
 
-private lemma directSumLeft_lTensor {ι : Type u} [DecidableEq ι] (X : ι → ModuleCat.{u} A)
-    {Y Z : ModuleCat.{u} A} (g : Y →ₗ[A] Z) (t : (DirectSum ι fun i ↦ X i) ⊗[A] Y) :
-    TensorProduct.directSumLeft A A (fun i ↦ X i) Z (g.lTensor (DirectSum ι fun i ↦ X i) t) =
-      DirectSum.lmap (fun i ↦ g.lTensor (X i))
-        (TensorProduct.directSumLeft A A (fun i ↦ X i) Y t) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul x y =>
-    ext i
-    simp [TensorProduct.directSumLeft_tmul]
-  | add t₁ t₂ h₁ h₂ => simp [map_add, h₁, h₂]
-
 /-- **`Tor` of a direct sum**: if `Torₙ(Xᵢ, M)` vanishes for every `i`, then `Torₙ(⨁ Xᵢ, M)`
 vanishes. -/
 theorem isZero_Tor_directSum {ι : Type u} (X : ι → ModuleCat.{u} A)
@@ -332,14 +321,14 @@ theorem isZero_Tor_directSum {ι : Type u} (X : ι → ModuleCat.{u} A)
     intro y hy
     let y' := TensorProduct.directSumLeft A A (fun i ↦ X i) (P.complex.X (n + 1)) y
     have hy' (i : ι) : d₁.lTensor (X i) (y' i) = 0 := by
-      have h0 := congrArg (fun f ↦ f i) (directSumLeft_lTensor X d₁ y)
+      have h0 := congrArg (fun f ↦ f i) (TensorProduct.directSumLeft_lTensor (S := A) d₁ y)
       simpa [y', hy] using h0.symm
     choose z hz using fun i ↦ h i (y' i) (hy' i)
     let z' : DirectSum ι fun i ↦ X i ⊗[A] P.complex.X (n + 2) :=
       ∑ i ∈ y'.support, DirectSum.lof A ι (fun i ↦ X i ⊗[A] P.complex.X (n + 2)) i (z i)
     refine ⟨(TensorProduct.directSumLeft A A (fun i ↦ X i) (P.complex.X (n + 2))).symm z', ?_⟩
     apply (TensorProduct.directSumLeft A A (fun i ↦ X i) (P.complex.X (n + 1))).injective
-    rw [directSumLeft_lTensor, LinearEquiv.apply_symm_apply]
+    rw [TensorProduct.directSumLeft_lTensor, LinearEquiv.apply_symm_apply]
     simp only [z', map_sum, DirectSum.lmap_lof, hz]
     exact DirectSum.sum_support_of y'
 

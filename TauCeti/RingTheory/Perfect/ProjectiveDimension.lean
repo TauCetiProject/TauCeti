@@ -170,6 +170,24 @@ end IsPerfectClosure
 
 namespace TauCeti
 
+/-- Over a subsingleton ring every module has projective dimension `< n`, while along a ring
+homomorphism from a ring of prime exponential characteristic `p` into a nontrivial ring, the target
+inherits `ExpChar R p`. -/
+private lemma hasProjectiveDimensionLT_of_ringHom_expChar {A R : Type u} [CommRing A] [CommRing R]
+    (f : A →+* R) (p : ℕ) [Fact p.Prime] [ExpChar A p] (M : ModuleCat.{u} R) (n : ℕ)
+    (h : [CharP A p] → [ExpChar R p] → HasProjectiveDimensionLT M n) :
+    HasProjectiveDimensionLT M n := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · have : Subsingleton M := Module.subsingleton R M
+    have := (ModuleCat.isZero_of_subsingleton M).hasProjectiveDimensionLT_zero
+    exact hasProjectiveDimensionLT_of_ge M 0 n (Nat.zero_le n)
+  have hp : p.Prime := Fact.out
+  have : CharP A p := (expChar_prime_iff (R := A) hp).1 inferInstance
+  have : CharP R p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+    rw [← map_natCast f, CharP.cast_eq_zero, map_zero]
+  have : ExpChar R p := .prime hp
+  exact h
+
 /-- **Projective dimension does not increase along a surjection of perfect rings.** If
 `f : P →+* R` is a surjective homomorphism of perfect rings of prime characteristic `p`, then
 every `R`-module whose restriction to `P` has projective dimension `< n` has projective dimension
@@ -178,19 +196,11 @@ theorem hasProjectiveDimensionLT_of_surjective_of_perfectRing {P R : Type u} [Co
     [CommRing R] (f : P →+* R) (p : ℕ) [Fact p.Prime] [ExpChar P p] [PerfectRing P p]
     [PerfectRing R p] (hf : Function.Surjective f) (M : ModuleCat.{u} R) {n : ℕ}
     (hM : HasProjectiveDimensionLT ((ModuleCat.restrictScalars f).obj M) n) :
-    HasProjectiveDimensionLT M n := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · have : Subsingleton M := Module.subsingleton R M
-    have := (ModuleCat.isZero_of_subsingleton M).hasProjectiveDimensionLT_zero
-    exact hasProjectiveDimensionLT_of_ge M 0 n (Nat.zero_le n)
-  have hp : p.Prime := Fact.out
-  have : CharP P p := (expChar_prime_iff (R := P) hp).1 inferInstance
-  have : CharP R p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
-    rw [← map_natCast f, CharP.cast_eq_zero, map_zero]
-  have : ExpChar R p := .prime hp
-  algebraize [f]
-  exact ModuleCat.hasProjectiveDimensionLT_of_surjective_of_isZero_Tor_succ hf M hM
-    fun k _ ↦ TauCeti.isZero_Tor_succ_of_perfectRing (p := p) R R k
+    HasProjectiveDimensionLT M n :=
+  hasProjectiveDimensionLT_of_ringHom_expChar f p M n fun [CharP P p] [ExpChar R p] ↦ by
+    algebraize [f]
+    exact ModuleCat.hasProjectiveDimensionLT_of_surjective_of_isZero_Tor_succ hf M hM
+      fun k _ ↦ TauCeti.isZero_Tor_succ_of_perfectRing (p := p) R R k
 
 /-- **Projective dimension does not increase along a surjection of perfect rings.** For a
 surjective homomorphism `f : P →+* R` of perfect rings of prime characteristic `p`,
@@ -217,23 +227,16 @@ closure) `i : K →+* L` of `K` in prime characteristic `p` has projective dimen
 theorem hasProjectiveDimensionLE_succ_of_surjective [Fact p.Prime] (hF : (frobenius K p).Flat)
     {d : ℕ} (h : ∀ N : ModuleCat.{u} K, HasProjectiveDimensionLE N d) {R : Type u} [CommRing R]
     [PerfectRing R p] (f : L →+* R) (hf : Function.Surjective f) (M : ModuleCat.{u} R) :
-    HasProjectiveDimensionLE M (d + 1) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · have : Subsingleton M := Module.subsingleton R M
-    have := (ModuleCat.isZero_of_subsingleton M).hasProjectiveDimensionLT_zero
-    exact hasProjectiveDimensionLT_of_ge M 0 (d + 2) (Nat.zero_le _)
-  have hp : p.Prime := Fact.out
-  have : CharP K p := (expChar_prime_iff (R := K) hp).1 inferInstance
-  have : CharP R p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
-    rw [← map_natCast (f.comp i), CharP.cast_eq_zero, map_zero]
-  have : ExpChar R p := .prime hp
-  let g := PerfectRing.lift (PerfectClosure.of K p) (f.comp i) p
-  have hg : Function.Surjective g := (PerfectRing.lift_surjective_iff ..).2 fun z ↦ by
-    obtain ⟨w, rfl⟩ := hf z
-    obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem i p w
-    exact ⟨n, y, by rw [RingHom.comp_apply, hy, map_pow]⟩
-  exact TauCeti.hasProjectiveDimensionLT_of_surjective_of_perfectRing g p hg M
-    (IsPerfectClosure.hasProjectiveDimensionLE_succ (PerfectClosure.of K p) p hF h _)
+    HasProjectiveDimensionLE M (d + 1) :=
+  TauCeti.hasProjectiveDimensionLT_of_ringHom_expChar (f.comp i) p M (d + 2)
+    fun [CharP K p] [ExpChar R p] ↦ by
+    let g := PerfectRing.lift (PerfectClosure.of K p) (f.comp i) p
+    have hg : Function.Surjective g := (PerfectRing.lift_surjective_iff ..).2 fun z ↦ by
+      obtain ⟨w, rfl⟩ := hf z
+      obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem i p w
+      exact ⟨n, y, by rw [RingHom.comp_apply, hy, map_pow]⟩
+    exact TauCeti.hasProjectiveDimensionLT_of_surjective_of_perfectRing g p hg M
+      (IsPerfectClosure.hasProjectiveDimensionLE_succ (PerfectClosure.of K p) p hF h _)
 
 include i p in
 /-- **Bhatt and Scholze, Proposition 11.31.** Over any perfect quotient `R` of a `p`-radical

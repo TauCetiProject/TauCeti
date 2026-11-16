@@ -58,6 +58,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring homomorphism `f : R →+* S` making `S` a projective `R`-module.
 * `RingEquiv.projective_restrictScalars_iff`: projectivity is invariant under restriction of
   scalars along a ring isomorphism.
+* `ModuleCat.isScalarTower_restrictScalars`: restricting scalars of an `S`-module along
+  `algebraMap R S` satisfies `IsScalarTower R S`.
 * `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
 -/
@@ -219,6 +221,12 @@ end Function.Exact
 namespace ModuleCat
 
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
+
+/-- For an `R`-algebra `S` and an `S`-module `M`, the `R`-action obtained by restricting scalars
+along `algebraMap R S` is compatible with the `S`-action. -/
+theorem isScalarTower_restrictScalars (M : ModuleCat.{v} S) :
+    IsScalarTower R S ((restrictScalars.{v} (algebraMap R S)).obj M) :=
+  IsScalarTower.of_algebraMap_smul fun r m ↦ (restrictScalars.smul_def (algebraMap R S) r m).symm
 
 /-- For an `S`-module `M` whose `R`-module structure factors through `algebraMap R S`,
 restricting the scalars of `M` along `algebraMap R S` gives back `M` as an `R`-module. -/

@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 public import Mathlib.CategoryTheory.Monoidal.Tor
+import Mathlib.Algebra.Algebra.Epi
 import Mathlib.LinearAlgebra.TensorProduct.Projective
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
 import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 
 /-!
 # Projective dimension under `Tor`-acyclic base change and homological epimorphisms
@@ -29,12 +31,11 @@ hypothesis of `ModuleCat.hasProjectiveDimensionLT_tensorProduct` to `Tor`-acycli
 module `X`.
 
 A particularly useful instance is a **surjective homological epimorphism** `A → B`, meaning a
-surjection from a commutative ring `A` to an `A`-algebra `B` satisfying `Tor_{k+1}^A(B, B) = 0` for
-all `k` (equivalently `B ⊗^L_A B ≃ B`). For any `B`-module `M`, resolving `M` by free `B`-modules
-and using that `N ⊗[A] B ≃ N` functorially for all `B`-modules `N` shows by induction on `n` that
-`Tor_{n+1}^A(M, B) = 0` (`ModuleCat.isZero_Tor_succ_of_surjective_of_isZero_Tor_succ`). Combining
-this with `Tor`-acyclic base change and the identification `B ⊗[A] M ≃ M` yields
-`pd_B M ≤ pd_A M`
+surjection satisfying `Tor_{k+1}^A(B, B) = 0` for all `k` (equivalently `B ⊗^L_A B ≃ B`). For any
+`B`-module `M`, resolving `M` by free `B`-modules and using that `B ⊗[A] N ≃ N` functorially for
+all `B`-modules `N` (`TensorProduct.lid'`) shows by induction on `n` that `Tor_{n+1}^A(M, B) = 0`
+(`ModuleCat.isZero_Tor_succ_of_surjective_of_isZero_Tor_succ`). Combining this with `Tor`-acyclic
+base change and the identification `B ⊗[A] M ≃ M` yields `pd_B M ≤ pd_A M`
 (`ModuleCat.projectiveDimension_le_restrictScalars_of_surjective_of_isZero_Tor_succ`).
 
 ## Main results
@@ -69,21 +70,6 @@ universe u
 section TorAcyclicBaseChange
 
 variable {A : Type u} [CommRing A] (B : Type u) [Ring B] [Algebra A B]
-
-/-- For an `A`-linear map `g : M → N`, `B ⊗[A] g` is injective whenever `g ⊗[A] B` is injective. -/
-private lemma lTensor_injective_of_rTensor_injective {M N : Type u} [AddCommGroup M] [Module A M]
-    [AddCommGroup N] [Module A N] {g : M →ₗ[A] N} (hg : Function.Injective (g.rTensor B)) :
-    Function.Injective (AlgebraTensorModule.lTensor B B g) := by
-  have hcomm : ∀ t : B ⊗[A] M,
-      TensorProduct.comm A B N (AlgebraTensorModule.lTensor B B g t) =
-        g.rTensor B (TensorProduct.comm A B M t) := fun t ↦ by
-    induction t using TensorProduct.inductionOn with
-    | tmul b m => rfl
-    | add x y hx hy => rw [map_add, map_add, map_add, map_add, hx, hy]
-  intro x y hxy
-  apply (TensorProduct.comm A B M).injective
-  apply hg
-  rw [← hcomm, ← hcomm, hxy]
 
 /-- **Projective dimension under `Tor`-acyclic base change.** If `X` has projective dimension
 `< n` over `A` and `Tor_{k+1}^A(X, B) = 0` for all `k + 1 < n`, then `B ⊗[A] X` has projective
@@ -122,7 +108,7 @@ theorem hasProjectiveDimensionLT_tensorProduct_of_isZero_Tor (X : ModuleCat.{u} 
             simp)).ShortExact := by
         refine shortComplex_shortExact _ ?_ ?_ (LinearMap.lTensor_surjective B hf)
         · exact lTensor_exact B (LinearMap.exact_subtype_ker_map f) hf
-        · exact lTensor_injective_of_rTensor_injective B
+        · exact (LinearMap.lTensor_inj_iff_rTensor_inj B f.ker.subtype).2
             (hS.rTensor_injective_of_isZero_Tor_one (of A B) (hTor 0 (by omega)))
       have hBP : Projective (of B (B ⊗[A] P)) :=
         (IsProjective.iff_projective _).1 inferInstance
@@ -142,73 +128,15 @@ section SurjectiveHomologicalEpi
 
 variable {A B : Type u} [CommRing A] [Ring B] [Algebra A B]
 
-/-- For a surjection `A → B` and a `B`-module `M`, the multiplication map `B ⊗[A] M → M` is a
-`B`-linear equivalence. -/
-private noncomputable def lidOfSurjective (hsurj : Function.Surjective (algebraMap A B))
-    (M : ModuleCat.{u} B) :
-    B ⊗[A] ((restrictScalars (algebraMap A B)).obj M) ≃ₗ[B] M := by
-  let _ : Module A M := ((restrictScalars (algebraMap A B)).obj M).isModule
-  have : IsScalarTower A B M := ⟨fun a b m ↦ by
-    change (a • b) • m = algebraMap A B a • (b • m)
-    rw [Algebra.smul_def, mul_smul]⟩
-  have hsmul (b : B) (m : M) :
-      (1 : B) ⊗ₜ[A] (b • m : (restrictScalars (algebraMap A B)).obj M) = b ⊗ₜ[A] m := by
-    obtain ⟨a, rfl⟩ := hsurj b
-    change (1 : B) ⊗ₜ[A] (a • (m : (restrictScalars (algebraMap A B)).obj M)) =
-      algebraMap A B a ⊗ₜ[A] m
-    rw [← TensorProduct.smul_tmul, Algebra.smul_def, mul_one]
-  refine LinearEquiv.ofLinearMap
-    (AlgebraTensorModule.lift
-      { toFun := fun b ↦
-          { toFun := fun m ↦ b • m
-            map_add' := smul_add b
-            map_smul' := fun a m ↦ by
-              change b • (algebraMap A B a • m) = algebraMap A B a • (b • m)
-              rw [← mul_smul, ← mul_smul, Algebra.commutes] }
-        map_add' := fun b₁ b₂ ↦ by ext m; exact add_smul b₁ b₂ m
-        map_smul' := fun b₁ b₂ ↦ by ext m; exact mul_smul b₁ b₂ m })
-    { toFun := fun m ↦ (1 : B) ⊗ₜ[A] m
-      map_add' := fun m₁ m₂ ↦ tmul_add (1 : B) m₁ m₂
-      map_smul' := fun b m ↦ (hsmul b m).trans <| by
-        change b ⊗ₜ[A] m = (b * 1) ⊗ₜ[A] m
-        rw [mul_one] }
-    (by ext m; exact one_smul B m)
-    (AlgebraTensorModule.ext fun b m ↦ hsmul b m)
-
-/-- For a surjection `A → B` and a `B`-module `M`, the multiplication map `M ⊗[A] B → M` is an
-`A`-linear equivalence. -/
-private noncomputable def ridOfSurjective (hsurj : Function.Surjective (algebraMap A B))
-    (M : ModuleCat.{u} B) :
-    ((restrictScalars (algebraMap A B)).obj M) ⊗[A] B ≃ₗ[A]
-      ((restrictScalars (algebraMap A B)).obj M) := by
-  let _ : Module A M := ((restrictScalars (algebraMap A B)).obj M).isModule
-  have : IsScalarTower A B M := ⟨fun a b m ↦ by
-    change (a • b) • m = algebraMap A B a • (b • m)
-    rw [Algebra.smul_def, mul_smul]⟩
-  exact TensorProduct.comm A _ B ≪≫ₗ (lidOfSurjective hsurj M).restrictScalars A
-
-private lemma ridOfSurjective_rTensor (hsurj : Function.Surjective (algebraMap A B))
-    {M N : ModuleCat.{u} B} (g : M ⟶ N)
-    (t : ((restrictScalars (algebraMap A B)).obj M) ⊗[A] B) :
-    ridOfSurjective hsurj N (((restrictScalars (algebraMap A B)).map g).hom.rTensor B t) =
-      ((restrictScalars (algebraMap A B)).map g).hom (ridOfSurjective hsurj M t) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul m b => exact (g.hom.map_smul b m).symm
-  | add x y hx hy => rw [map_add, map_add, map_add, map_add, hx, hy]
-
 /-- Restricting scalars on a free `B`-module `ι →₀ B` yields `ι →₀ B` as an `A`-module, so `Tor`
 vanishes on it whenever `Tor` vanishes on `B`. -/
 private lemma isZero_Tor_restrictScalars_finsupp {ι : Type u} {n : ℕ}
     (hB : IsZero (((Tor (ModuleCat.{u} A) n).obj (of A B)).obj (of A B))) :
     IsZero (((Tor (ModuleCat.{u} A) n).obj
-      ((restrictScalars (algebraMap A B)).obj (of B (ι →₀ B)))).obj (of A B)) := by
-  let e : of A (ι →₀ B) ≃ₗ[A] (restrictScalars (algebraMap A B)).obj (of B (ι →₀ B)) :=
-    { AddEquiv.refl (ι →₀ B) with
-      map_smul' := fun a g ↦ Finsupp.ext fun i ↦ by
-        change a • g i = algebraMap A B a * g i
-        rw [Algebra.smul_def] }
-  exact (isZero_Tor_finsupp (ι := ι) (of A B) (of A B) hB).of_iso
-    (((Tor (ModuleCat.{u} A) n).mapIso e.toModuleIso).app (of A B)).symm
+      ((restrictScalars (algebraMap A B)).obj (of B (ι →₀ B)))).obj (of A B)) :=
+  (isZero_Tor_finsupp (ι := ι) (of A B) (of A B) hB).of_iso
+    (((Tor (ModuleCat.{u} A) n).mapIso
+      (restrictScalarsAlgebraMapIso (R := A) (S := B) (ι →₀ B))).app (of A B))
 
 /-- Restricting scalars on the canonical free `B`-presentation of `M` yields a short exact sequence
 in `ModuleCat A`. -/
@@ -229,18 +157,31 @@ theorem isZero_Tor_succ_of_surjective_of_isZero_Tor_succ
       ((restrictScalars (algebraMap A B)).obj M)).obj (of A B)) := by
   induction n generalizing M with
   | zero =>
-    -- Resolve `M` by a free `B`-module `M →₀ B`; since `N ⊗[A] B ≃ N` functorially for
-    -- `B`-modules, `ker f ⊗[A] B → (M →₀ B) ⊗[A] B` is injective, and `Tor₁(M →₀ B, B) = 0`.
+    -- Resolve `M` by a free `B`-module `M →₀ B`; since `B ⊗[A] N ≃ N` functorially for
+    -- `B`-modules (`TensorProduct.lid'`), `B ⊗[A] ker f → B ⊗[A] (M →₀ B)` is injective, hence so
+    -- is `ker f ⊗[A] B → (M →₀ B) ⊗[A] B`, and `Tor₁(M →₀ B, B) = 0`.
+    let : CommSemiring B :=
+      { ‹Ring B› with
+        mul_comm := fun b₁ b₂ ↦ by obtain ⟨a, rfl⟩ := hsurj b₁; exact Algebra.commutes a b₂ }
+    have := Algebra.isEpi_of_surjective_algebraMap A B hsurj
     let f : (M →₀ B) →ₗ[B] M := Finsupp.linearCombination B id
     let S := (restrictScalars (algebraMap A B)).mapShortComplex.obj f.shortComplexKer
     have hS : S.ShortExact := shortExact_restrictScalars_finsupp M
     have hF : IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X₂).obj (of A B)) :=
       isZero_Tor_restrictScalars_finsupp (hBB 0 le_rfl)
-    have hinj : Function.Injective (S.f.hom.rTensor B) := fun x y hxy ↦
-      (ridOfSurjective hsurj (of B f.ker)).injective <| Subtype.val_injective <|
-        (ridOfSurjective_rTensor hsurj f.shortComplexKer.f x).symm.trans <|
-          (congrArg (ridOfSurjective hsurj f.shortComplexKer.X₂) hxy).trans
-            (ridOfSurjective_rTensor hsurj f.shortComplexKer.f y)
+    have := isScalarTower_restrictScalars (R := A) (of B f.ker)
+    have := isScalarTower_restrictScalars (R := A) (of B (M →₀ B))
+    let e₁ := TensorProduct.lid' A B ((restrictScalars (algebraMap A B)).obj (of B f.ker))
+    let e₂ := TensorProduct.lid' A B ((restrictScalars (algebraMap A B)).obj (of B (M →₀ B)))
+    have hinj : Function.Injective (S.f.hom.rTensor B) := by
+      rw [← LinearMap.lTensor_inj_iff_rTensor_inj]
+      have hnat : e₂.toLinearMap.restrictScalars A ∘ₗ S.f.hom.lTensor B =
+          S.f.hom ∘ₗ e₁.toLinearMap.restrictScalars A :=
+        TensorProduct.ext' fun b x ↦ (f.ker.subtype.map_smul b x).symm
+      refine Function.Injective.of_comp (f := e₂) ?_
+      have hcomp : ⇑e₂ ∘ ⇑(S.f.hom.lTensor B) = ⇑S.f.hom ∘ ⇑e₁ := congrArg DFunLike.coe hnat
+      rw [hcomp]
+      exact Subtype.val_injective.comp e₁.injective
     exact hS.isZero_Tor_one_X₃ (of A B) hF hinj
   | succ k ih =>
     let f : (M →₀ B) →ₗ[B] M := Finsupp.linearCombination B id
@@ -257,13 +198,19 @@ theorem hasProjectiveDimensionLT_of_surjective_of_isZero_Tor_succ
     (hM : HasProjectiveDimensionLT ((restrictScalars (algebraMap A B)).obj M) n)
     (hBB : ∀ k, k + 1 < n → IsZero (((Tor (ModuleCat.{u} A) (k + 1)).obj (of A B)).obj (of A B))) :
     HasProjectiveDimensionLT M n := by
+  let : CommSemiring B :=
+    { ‹Ring B› with
+      mul_comm := fun b₁ b₂ ↦ by obtain ⟨a, rfl⟩ := hsurj b₁; exact Algebra.commutes a b₂ }
+  have := Algebra.isEpi_of_surjective_algebraMap A B hsurj
+  have := isScalarTower_restrictScalars (R := A) M
   have hTor : ∀ k, k + 1 < n → IsZero (((Tor (ModuleCat.{u} A) (k + 1)).obj
       ((restrictScalars (algebraMap A B)).obj M)).obj (of A B)) :=
     fun k hk ↦ isZero_Tor_succ_of_surjective_of_isZero_Tor_succ hsurj M fun j hj ↦
       hBB j (by omega)
   have _ := hasProjectiveDimensionLT_tensorProduct_of_isZero_Tor B
     ((restrictScalars (algebraMap A B)).obj M) hM hTor
-  exact hasProjectiveDimensionLT_of_iso (lidOfSurjective hsurj M).toModuleIso n
+  exact hasProjectiveDimensionLT_of_iso
+    (TensorProduct.lid' A B ((restrictScalars (algebraMap A B)).obj M)).toModuleIso n
 
 /-- **Projective dimension along a surjective homological epimorphism.** If `A → B` is a surjective
 ring homomorphism with `Tor_{k+1}^A(B, B) = 0` for all `k`, then `pd_B M ≤ pd_A M` for every

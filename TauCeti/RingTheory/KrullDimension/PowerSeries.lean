@@ -37,6 +37,10 @@ This is the power series analogue of Mathlib's `Polynomial.ringKrullDim_of_isNoe
 
 * `PowerSeries.ringKrullDim_of_isNoetherianRing`: for a Noetherian ring `R`,
   `dim R⟦X⟧ = dim R + 1`.
+* `MvPowerSeries.ringKrullDim_le_of_embedding`: an embedding `τ ↪ σ` of variable sets gives
+  `dim R⟦τ⟧ ≤ dim R⟦σ⟧`.
+* `MvPowerSeries.ringKrullDim_eq_top_of_infinite`: for a nontrivial commutative ring `R` and an
+  infinite set of variables `σ`, `dim R⟦σ⟧ = ⊤`.
 * `MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite`: for a Noetherian ring `R` and a
   finite set of variables `σ`, `dim R⟦σ⟧ = dim R + Nat.card σ`.
 * `MvPowerSeries.ringKrullDim_of_isNoetherianRing`: for a Noetherian ring `R` and any set of
@@ -67,7 +71,49 @@ end PowerSeries
 
 namespace MvPowerSeries
 
-variable {R : Type*} [CommRing R] [IsNoetherianRing R]
+variable {R : Type*} [CommRing R]
+
+/-- Setting all variables outside the image of an embedding `f : τ ↪ σ` to zero exhibits
+`MvPowerSeries τ R` as a quotient of `MvPowerSeries σ R`, so `dim R⟦τ⟧ ≤ dim R⟦σ⟧`. -/
+theorem ringKrullDim_le_of_embedding {σ τ : Type*} (f : τ ↪ σ) :
+    ringKrullDim (MvPowerSeries τ R) ≤ ringKrullDim (MvPowerSeries σ R) := by
+  classical
+  let e : ({x : σ // x ∉ Set.range f} ⊕ τ) ≃ σ :=
+    (Equiv.sumCongr (Equiv.refl _) (Equiv.ofInjective f f.injective)).trans
+      ((Equiv.sumComm _ _).trans (Equiv.Set.sumCompl (Set.range f)))
+  let π : MvPowerSeries σ R →+* MvPowerSeries τ R :=
+    constantCoeff.comp <|
+      (sumAlgEquiv R {x : σ // x ∉ Set.range f} τ).toRingHom.comp
+        (renameEquiv R e.symm).toRingHom
+  have hconst : Function.Surjective
+      (constantCoeff (σ := {x : σ // x ∉ Set.range f}) (R := MvPowerSeries τ R)) :=
+    fun g ↦ ⟨C g, constantCoeff_C g⟩
+  exact ringKrullDim_le_of_surjective π <|
+    hconst.comp ((sumAlgEquiv _ _ _).surjective.comp (renameEquiv R _).surjective)
+
+/-- **Infinite variables give infinite Krull dimension.** Over a nontrivial commutative ring `R`,
+a formal power series ring in infinitely many variables has Krull dimension `⊤`. -/
+@[simp]
+theorem ringKrullDim_eq_top_of_infinite [Nontrivial R] {σ : Type*} [Infinite σ] :
+    ringKrullDim (MvPowerSeries σ R) = ⊤ := by
+  rw [ENat.WithBot.eq_top_iff_forall_ge]
+  intro n
+  have hfin : (n : WithBot ℕ∞) ≤ ringKrullDim (MvPowerSeries (Fin n) R) := by
+    induction n with
+    | zero =>
+      have : Nontrivial (MvPowerSeries (Fin 0) R) := (C_injective (R := R)).nontrivial
+      simpa using ringKrullDim_nonneg_of_nontrivial (R := MvPowerSeries (Fin 0) R)
+    | succ n ih =>
+      rw [ringKrullDim_eq_of_ringEquiv (finSuccEquiv R n).toRingEquiv]
+      calc ((n + 1 : ℕ) : WithBot ℕ∞)
+        _ = (n : WithBot ℕ∞) + 1 := by simp
+        _ ≤ ringKrullDim (MvPowerSeries (Fin n) R) + 1 := by gcongr
+        _ ≤ ringKrullDim (PowerSeries (MvPowerSeries (Fin n) R)) :=
+          ringKrullDim_succ_le_ringKrullDim_powerseries
+  exact hfin.trans <|
+    ringKrullDim_le_of_embedding ((Fin.valEmbedding).trans (Infinite.natEmbedding σ))
+
+variable [IsNoetherianRing R]
 
 /-- **The dimension of a multivariate power series ring in finitely many variables.** Over a
 Noetherian ring `R`, adjoining finitely many formal power series variables raises the Krull
@@ -96,45 +142,6 @@ theorem ringKrullDim_of_isNoetherianRing {σ : Type*} :
   by_cases hσ : Finite σ
   · rw [ringKrullDim_of_isNoetherianRing_of_finite, ENat.card_eq_coe_natCard, WithBot.coe_natCast]
   · have : Infinite σ := not_finite_iff_infinite.mp hσ
-    have htop : ringKrullDim R + ((⊤ : ℕ∞) : WithBot ℕ∞) = ⊤ :=
-      top_unique <| by
-        simpa [add_comm] using
-          add_le_add_right (ringKrullDim_nonneg_of_nontrivial (R := R)) (⊤ : WithBot ℕ∞)
-    rw [ENat.card_eq_top_of_infinite, htop]
-    -- Setting all variables outside an `(n + 1)`-element subset to zero gives a surjection onto
-    -- `MvPowerSeries (Fin (n + 1)) R`, whose Krull dimension is at least `n + 1`.
-    refine eq_top_iff.mpr (le_of_forall_lt fun a ha ↦ ?_)
-    induction a using WithBot.recBotCoe with
-    | bot =>
-      have : Nontrivial (MvPowerSeries σ R) := (C_injective (R := R) (σ := σ)).nontrivial
-      exact lt_of_lt_of_le (WithBot.bot_lt_coe 0) ringKrullDim_nonneg_of_nontrivial
-    | coe a =>
-      induction a with
-      | top => exact absurd ha (lt_irrefl _)
-      | coe n =>
-        classical
-        let f : Fin (n + 1) ↪ σ := (Fin.valEmbedding).trans (Infinite.natEmbedding σ)
-        let e : (Fin (n + 1) ⊕ {x : σ // x ∉ Set.range f}) ≃ σ :=
-          (Equiv.sumCongr (Equiv.ofInjective f f.injective) (Equiv.refl _)).trans
-            (Equiv.Set.sumCompl (Set.range f))
-        let π : MvPowerSeries σ R →+* MvPowerSeries (Fin (n + 1)) R :=
-          constantCoeff.comp <|
-            (sumAlgEquiv R {x : σ // x ∉ Set.range f} (Fin (n + 1))).toRingHom.comp
-              (renameEquiv R (e.symm.trans (Equiv.sumComm _ _))).toRingHom
-        have hconst : Function.Surjective
-            (constantCoeff (σ := {x : σ // x ∉ Set.range f})
-              (R := MvPowerSeries (Fin (n + 1)) R)) :=
-          fun g ↦ ⟨C g, constantCoeff_C g⟩
-        have hπ : Function.Surjective π :=
-          hconst.comp ((sumAlgEquiv _ _ _).surjective.comp (renameEquiv R _).surjective)
-        have hle : ((n + 1 : ℕ) : WithBot ℕ∞) ≤ ringKrullDim (MvPowerSeries σ R) := by
-          calc ((n + 1 : ℕ) : WithBot ℕ∞) = 0 + ((n + 1 : ℕ) : WithBot ℕ∞) := (zero_add _).symm
-            _ ≤ ringKrullDim R + Nat.card (Fin (n + 1)) := by
-              rw [Nat.card_eq_fintype_card, Fintype.card_fin]
-              exact add_le_add (ringKrullDim_nonneg_of_nontrivial (R := R)) le_rfl
-            _ = ringKrullDim (MvPowerSeries (Fin (n + 1)) R) :=
-              ringKrullDim_of_isNoetherianRing_of_finite.symm
-            _ ≤ ringKrullDim (MvPowerSeries σ R) := ringKrullDim_le_of_surjective π hπ
-        exact lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self n) hle
+    simp [WithBot.coe_bot_le.mp (ringKrullDim_nonneg_of_nontrivial (R := R))]
 
 end MvPowerSeries

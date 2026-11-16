@@ -13,6 +13,7 @@ import Mathlib.FieldTheory.PerfectClosure
 import Mathlib.RingTheory.AdicCompletion.LocalRing
 import Mathlib.RingTheory.KrullDimension.Field
 import Mathlib.RingTheory.Localization.AtPrime.Basic
+import TauCeti.Algebra.CharP.Frobenius.Localization
 import TauCeti.RingTheory.AdicCompletion.Flat.Frobenius
 import TauCeti.RingTheory.AdicCompletion.LocalRing
 import TauCeti.RingTheory.Flat.ProjectiveDimension
@@ -157,14 +158,8 @@ theorem IsRegularRing.of_flat_frobenius {R : Type u} [CommRing R] [IsNoetherianR
   have : CharP (Localization.AtPrime J) p := (CharP.charP_iff_prime_eq_zero hp').2 <| by
     rw [← map_natCast (algebraMap R _), CharP.cast_eq_zero, map_zero]
   have : ExpChar (Localization.AtPrime J) p := .prime hp'
-  have hQ : J = J.comap (frobenius R p) :=
-    Ideal.ext fun a ↦ (hJ.pow_mem_iff_mem p hp'.pos).symm
-  have hloc : frobenius (Localization.AtPrime J) p =
-      Localization.localRingHom J J (frobenius R p) hQ :=
-    IsLocalization.ringHom_ext J.primeCompl <| RingHom.ext fun a ↦ by
-      simp [Localization.localRingHom_to_map, frobenius_def]
   exact IsRegularLocalRing.of_flat_frobenius p hp <|
-    hloc ▸ RingHom.Flat.localRingHom h J J hQ
+    frobenius_localization_atPrime_eq_localRingHom p J ▸ RingHom.Flat.localRingHom h J J _
 
 /-- **Kunz's theorem for local rings.** A Noetherian local ring of exponential characteristic
 `p > 1` is regular if and only if its Frobenius endomorphism is flat. -/
