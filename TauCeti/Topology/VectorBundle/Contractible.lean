@@ -28,6 +28,10 @@ homotopic to a constant map at some point `y`, so the pullbacks of `E` along the
 isomorphic. The first pullback is `E` itself and the second is the product bundle with fibre
 `E y`, which a trivialization of `E` near `y` identifies with `F`.
 
+Pulling back along a continuous map `f : B → X` gives a **frame of `E` along `f`**, a family of
+linear isomorphisms `φ y : F ≃ E (f y)` for which `(y, v) ↦ φ y v` is continuous into the total
+space of `E` (`TauCeti.exists_continuous_frame`).
+
 For a finite-rank real bundle with a continuous fibre metric, Gram–Schmidt applied to such a
 global trivialization (`Bundle.Trivialization.orthonormal`) makes it isometric on every fibre
 (`TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`). So `E` is
@@ -51,6 +55,8 @@ needed.
 
 * `TauCeti.exists_trivialization_baseSet_eq_univ_of_contractibleSpace`: a vector bundle over a
   contractible paracompact R₁ base has a linear trivialization over the whole base.
+* `TauCeti.exists_continuous_frame`: a vector bundle has a frame along every continuous map from
+  a contractible paracompact R₁ space.
 * `TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`: for a
   finite-rank real bundle with continuous fibre metric, the trivialization can be chosen
   isometric on every fibre.
@@ -139,6 +145,44 @@ theorem exists_trivialization_baseSet_eq_univ_of_contractibleSpace :
     proj_toFun _ _ := rfl }, ⟨fun b _ ↦ (Ψ b).toLinearEquiv.toLinearMap.isLinear⟩, rfl⟩
 
 end Linear
+
+section Frame
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B X : Type*} [TopologicalSpace B] [TopologicalSpace X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : X → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] {f : B → X}
+
+/-- A continuous frame `φ` along `f` determines `f`, which is therefore continuous. -/
+theorem continuous_of_continuous_frame {φ : ∀ y, F ≃L[𝕜] E (f y)}
+    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) : Continuous f :=
+  (FiberBundle.continuous_proj F E).comp (hφ.comp (Continuous.prodMk_left 0))
+
+/-- **Frames over contractible spaces.** Along every continuous map `f` from a contractible
+paracompact R₁ space, for instance a cube, a vector bundle `E` has a frame: linear isomorphisms
+`φ y : F ≃ E (f y)` depending continuously on `y`. This is the triviality of the pullback bundle
+`f *ᵖ E`. -/
+theorem exists_continuous_frame [NormedAlgebra ℝ 𝕜] [CompleteSpace F] [VectorBundle 𝕜 F E]
+    [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul 𝕜 (E x)]
+    [R1Space B] [ParacompactSpace B] [ContractibleSpace B] (hf : Continuous f) :
+    ∃ φ : ∀ y, F ≃L[𝕜] E (f y),
+      Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2) := by
+  let g : C(B, X) := ⟨f, hf⟩
+  have : ∀ y, IsTopologicalAddGroup ((g *ᵖ E) y) := fun y ↦
+    inferInstanceAs (IsTopologicalAddGroup (E (f y)))
+  have : ∀ y, ContinuousSMul 𝕜 ((g *ᵖ E) y) := fun y ↦
+    inferInstanceAs (ContinuousSMul 𝕜 (E (f y)))
+  obtain ⟨e, he, hbase⟩ :=
+    exists_trivialization_baseSet_eq_univ_of_contractibleSpace 𝕜 F (g *ᵖ E)
+  have hb (y : B) : y ∈ e.baseSet := hbase ▸ mem_univ y
+  refine ⟨fun y ↦ (e.continuousLinearEquivAt 𝕜 y (hb y)).symm, ?_⟩
+  have hsymm : Continuous fun q : B × F ↦ TotalSpace.mk' F q.1 (e.symm q.1 q.2) :=
+    e.continuousOn_symm.comp_continuous continuous_id fun q ↦ ⟨hb q.1, mem_univ _⟩
+  -- `Pullback.lift` and the inverse of `continuousLinearEquivAt` are the identity on fibres.
+  exact (Pullback.continuous_lift F E g).comp hsymm
+
+end Frame
 
 section Riemannian
 
