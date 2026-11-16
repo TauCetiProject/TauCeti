@@ -107,6 +107,22 @@ private theorem sum_eq_zero_of_sum_ncard_eq_two {S : Finset (criticalPoints 𝓘
   rw [Finset.sum_congr rfl hc, ← Nat.cast_sum, hcount]
   exact ZMod.natCast_self 2
 
+/-- If the sets `s x` for `x ∈ T` are the images under an injective `w : Fin 2 → β` of the
+fibres of a labelling `a : Fin 2 → α` with values in `T`, their sizes add up to `2`. -/
+private theorem sum_ncard_eq_two_of_eq_image {α β : Type*} {T : Finset α} {s : α → Set β}
+    {w : Fin 2 → β} {a : Fin 2 → α}
+    (hwinj : Injective w) (ha : ∀ i, a i ∈ T) (hs : ∀ x ∈ T, s x = w '' {i | a i = x}) :
+    ∑ x ∈ T, (s x).ncard = 2 := by
+  classical
+  calc ∑ x ∈ T, (s x).ncard
+      = ∑ x ∈ T, (Finset.univ.filter fun i ↦ a i = x).card :=
+        Finset.sum_congr rfl fun x hx ↦ by
+          rw [hs x hx, ncard_image_of_injective _ hwinj, ← ncard_coe_finset, Finset.coe_filter]
+          simp
+    _ = (Finset.univ : Finset (Fin 2)).card :=
+        (Finset.card_eq_sum_card_fiberwise fun i _ ↦ ha i).symm
+    _ = 2 := by simp
+
 variable [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M]
 
 /-- The **mod-two fundamental chain** of a Morse function on a compact manifold of dimension `n`:
@@ -218,20 +234,10 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
     (hT : ∀ p, p ∈ T ↔
       mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
     ∑ p ∈ T, (hX.morseTrajectorySlice p q).ncard = 2 := by
-  classical
   obtain ⟨w, a, ha, -, -, hwinj, hslice⟩ :=
     exists_morseTrajectorySlice_eq_image_of_add_one_eq_finrank h hf hq hind
-  calc ∑ p ∈ T, (hX.morseTrajectorySlice p q).ncard
-      = ∑ p ∈ T, (Finset.univ.filter fun i ↦ a i = p).card :=
-        Finset.sum_congr rfl fun p hp ↦ by
-          have hpq : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f)
-            (by have := ((hT p).1 hp).2; omega)
-          rw [hslice p hpq, ncard_image_of_injective _ hwinj, ← ncard_coe_finset,
-            Finset.coe_filter]
-          simp
-    _ = (Finset.univ : Finset (Fin 2)).card :=
-        (Finset.card_eq_sum_card_fiberwise (by intro i _; simpa using (hT _).2 (ha i))).symm
-    _ = 2 := by simp
+  refine sum_ncard_eq_two_of_eq_image hwinj (fun i ↦ (hT _).2 (ha i)) fun p hp ↦ hslice p ?_
+  exact ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by have := ((hT p).1 hp).2; omega)
 
 /-- **Two trajectories leave a critical point of index `1`.** Summed over the critical points `q`
 of index `0`, the numbers of trajectories from a critical point `p` of index `1` to `q` add up to
@@ -241,17 +247,10 @@ private theorem sum_ncard_morseTrajectorySlice_of_eq_one {p : M}
     {T : Finset M}
     (hT : ∀ q, q ∈ T ↔ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f q = 0) :
     ∑ q ∈ T, (hX.morseTrajectorySlice p q).ncard = 2 := by
-  -- Reversing the flow turns this into the count of trajectories reaching `p` for `-X`.
-  have hsum (x : M) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :=
-    (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
-      ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-  simp_rw [← hX.neg_morseTrajectorySlice hf]
-  refine sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank (h.neg hf) hf.neg
-    (mfderiv_neg_eq_zero_iff.2 hp) (by have := hsum p hp; omega) fun q ↦ ?_
-  rw [hT q, mfderiv_neg_eq_zero_iff]
-  refine and_congr_right fun hq ↦ ?_
-  have := hsum q hq
-  constructor <;> intro <;> omega
+  obtain ⟨w, b, hb, -, -, hwinj, hslice⟩ :=
+    exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one h hf hp hind
+  refine sum_ncard_eq_two_of_eq_image hwinj (fun i ↦ (hT _).2 (hb i)) fun q hq ↦ hslice q ?_
+  exact ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by rw [hind, ((hT q).1 hq).2]; omega)
 
 /-- The coefficients of the boundary of the critical points of index `n` at a critical point `q`
 add up to zero. -/
