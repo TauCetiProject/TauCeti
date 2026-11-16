@@ -52,6 +52,9 @@ a heat kernel assumes `0 < t`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
 * `TauCeti.fourier_heatKernel`: `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
+* `TauCeti.heatKernel_convolution_cexp_inner`, `TauCeti.heatKernel_convolution_sin_inner`: the
+  plane waves are eigenfunctions of the heat flow,
+  `K_t ⋆ exp (i ⟪ξ, ·⟫) = exp (-t ‖ξ‖²) exp (i ⟪ξ, ·⟫)`, and likewise for `sin ⟪ξ, ·⟫`.
 * `TauCeti.fourierInv_exp_neg_mul_norm_sq`: the inverse Fourier transform of `exp(-4π² t ‖ξ‖²)`
   is `K_t`.
 * `TauCeti.fourier_heatKernel_convolution`: `𝓕 (K_t ⋆ f)(ξ) = exp(-4π² t ‖ξ‖²) • 𝓕 f(ξ)` for
@@ -105,6 +108,13 @@ theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
 @[simp]
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
   simp [heatKernel_apply]
+
+/-- At a positive time the heat kernel is radially nonincreasing: it is no larger at the point
+farther from the origin. -/
+theorem heatKernel_le_heatKernel_of_norm_le {t : ℝ} (ht : 0 < t) {x y : E} (h : ‖x‖ ≤ ‖y‖) :
+    heatKernel t y ≤ heatKernel t x := by
+  rw [heatKernel_apply, heatKernel_apply]
+  gcongr
 
 /-- **Parabolic scaling of the heat kernel.** For `t > 0`, `K_t` is the `L¹`-normalized dilation
 of `K_1` by the factor `(√t)⁻¹`: `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` with `n = dim E`. -/
@@ -326,6 +336,48 @@ theorem fourier_heatKernel {t : ℝ} (ht : 0 < t) (ξ : E) :
     simp only [c, neg_div]
     rw [rpow_neg (by positivity), inv_mul_cancel₀ (by positivity)]
   rw [hpow, hexp, ← mul_assoc, ← Complex.ofReal_mul, hc, Complex.ofReal_one, one_mul]
+
+/-- **The plane waves are eigenfunctions of the heat flow.** For `t > 0` and `ξ ∈ E`,
+`K_t ⋆ exp (i ⟪ξ, ·⟫) = exp (-t ‖ξ‖²) exp (i ⟪ξ, ·⟫)`. -/
+theorem heatKernel_convolution_cexp_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
+    (heatKernel t ⋆ fun y ↦ Complex.exp (⟪ξ, y⟫ * Complex.I)) x =
+      exp (-(t * ‖ξ‖ ^ 2)) • Complex.exp (⟪ξ, x⟫ * Complex.I) := by
+  -- The integral is the Fourier transform of `K_t` at `ξ / 2π`.
+  have hF := fourier_heatKernel ht ((2 * π)⁻¹ • ξ)
+  rw [Real.fourier_eq'] at hF
+  have hexp : -(4 * π ^ 2 * t * ‖(2 * π)⁻¹ • ξ‖ ^ 2) = -(t * ‖ξ‖ ^ 2) := by
+    simp [norm_smul, mul_pow, abs_of_pos pi_pos]
+    field_simp
+    ring
+  rw [hexp] at hF
+  rw [convolution_lsmul, Complex.real_smul, ← hF, ← integral_mul_const]
+  congr 1
+  ext y
+  have hphase : -2 * π * ⟪y, (2 * π)⁻¹ • ξ⟫ = -⟪ξ, y⟫ := by
+    rw [inner_smul_right, real_inner_comm]
+    field_simp
+  simp only [hphase, Complex.real_smul, smul_eq_mul, inner_sub_right]
+  push_cast
+  rw [sub_mul, Complex.exp_sub]
+  field_simp
+  simp [mul_assoc, ← Complex.exp_add]
+
+/-- **The heat flow of a sine wave.** For `t > 0` and `ξ ∈ E`,
+`K_t ⋆ sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`. -/
+theorem heatKernel_convolution_sin_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
+    (heatKernel t ⋆ fun y ↦ sin ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * sin ⟪ξ, x⟫ := by
+  have hint : Integrable fun y ↦ heatKernel t y • Complex.exp (⟪ξ, x - y⟫ * Complex.I) :=
+    (integrable_heatKernel ht).smul_of_top_left (memLp_top_of_bound
+      (by fun_prop : Continuous fun y ↦ Complex.exp (⟪ξ, x - y⟫ * Complex.I)).aestronglyMeasurable
+      1 (ae_of_all _ fun y ↦ by rw [Complex.norm_exp_ofReal_mul_I]))
+  -- The imaginary part of `r • exp (i a)` is `r sin a`.
+  have him (r a : ℝ) : (r • Complex.exp (a * Complex.I)).im = r * sin a := by
+    rw [Complex.real_smul, Complex.im_ofReal_mul, Complex.exp_ofReal_mul_I_im]
+  have h := congrArg Complex.im (heatKernel_convolution_cexp_inner ht ξ x)
+  rw [convolution_lsmul, ← RCLike.im_to_complex, ← integral_im hint] at h
+  simp only [RCLike.im_to_complex, him] at h
+  rw [convolution_lsmul, ← h]
+  simp only [smul_eq_mul]
 
 /-- **The heat kernel is the inverse Fourier transform of the heat symbol.** For `t > 0`,
 `𝓕⁻ (ξ ↦ exp(-4π² t ‖ξ‖²)) = K_t`. This is Fourier inversion applied to
