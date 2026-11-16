@@ -366,6 +366,24 @@ theorem coe_cubeRightHalf_apply_self (i : N) (y : I^N) :
 theorem cubeRightHalf_apply_of_ne {i j : N} (h : j ≠ i) (y : I^N) : cubeRightHalf i y j = y j := by
   simp [cubeRightHalf, h]
 
+/-- Restoring the `i`-th coordinate undoes `cubeLeftHalf i`. -/
+@[simp]
+theorem update_cubeLeftHalf_self (i : N) (y : I^N) :
+    Function.update (cubeLeftHalf i y) i (y i) = y := by
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
+
+/-- Restoring the `i`-th coordinate undoes `cubeRightHalf i`. -/
+@[simp]
+theorem update_cubeRightHalf_self (i : N) (y : I^N) :
+    Function.update (cubeRightHalf i y) i (y i) = y := by
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
+
 end Halves
 
 /-- The cube `I^N` is path connected: every point is joined to the corner `0` by the pointwise

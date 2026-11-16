@@ -72,12 +72,7 @@ theorem transAt_apply_cubeLeftHalf (i : N) (f g : Ω^ N X x) (y : I^N) :
     transAt i f g (cubeLeftHalf i y) = f y := by
   rw [transAt_apply_of_le i f g (a := y i)
     (by rw [coe_cubeLeftHalf_apply_self]; linarith [unitInterval.le_one (y i)])
-    (by rw [coe_cubeLeftHalf_apply_self]; ring)]
-  congr 1
-  ext j
-  rcases eq_or_ne j i with rfl | h
-  · simp
-  · simp [h]
+    (by rw [coe_cubeLeftHalf_apply_self]; ring), update_cubeLeftHalf_self]
 
 /-- The concatenation `transAt i f g` runs `g` on the half `tᵢ ≥ 1/2` of the cube, read through
 `TauCeti.cubeRightHalf i`. -/
@@ -89,12 +84,7 @@ theorem transAt_apply_cubeRightHalf (i : N) (f g : Ω^ N X x) (y : I^N) :
     exact (boundary g y ⟨i, Or.inl (Subtype.ext h.symm)⟩).symm
   · rw [transAt_apply_of_lt i f g (a := y i)
       (by rw [coe_cubeRightHalf_apply_self]; linarith)
-      (by rw [coe_cubeRightHalf_apply_self]; ring)]
-    congr 1
-    ext j
-    rcases eq_or_ne j i with rfl | h
-    · simp
-    · simp [h]
+      (by rw [coe_cubeRightHalf_apply_self]; ring), update_cubeRightHalf_self]
 
 /-- `symmAt i f` runs `f` backwards in the `i`-th direction. -/
 @[simp]

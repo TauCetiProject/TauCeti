@@ -258,6 +258,18 @@ theorem clutchingNumber_eq_squareBoundaryDegree (p : Ω^ (Fin 2) X x)
     squareBoundaryDegree_eq_zero_of_continuous hK, squareBoundaryDegree_const, add_zero, add_zero,
     clutchingNumber]
 
+/-- **Restricting a frame.** If a sphere is `f ∘ k` for a continuous map `k` from the square into
+the domain of `f`, its clutching number is the degree around the boundary of the square of the
+clutching function of any continuous frame along `f`, restricted along `k`. -/
+theorem clutchingNumber_eq_squareBoundaryDegree_comp {f : C(B, X)} {Ψ : ∀ y, F ≃L[ℂ] E (f y)}
+    (hΨ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (Ψ q.1 q.2))
+    (k : C(Fin 2 → I, B)) (hk : ∀ y ∈ Cube.boundary (Fin 2), f (k y) = x)
+    (e : Trivialization F (π F E)) [e.IsLinear ℂ] (hx : x ∈ e.baseSet) :
+    clutchingNumber F E ⟨f.comp k, hk⟩ = squareBoundaryDegree (clutchingFunction f Ψ e ∘ k) := by
+  rw [clutchingNumber_eq_squareBoundaryDegree ⟨f.comp k, hk⟩ e hx (φ := fun y ↦ Ψ (k y))
+    (hΨ.comp ((k.continuous.comp continuous_fst).prodMk continuous_snd))]
+  exact congrArg squareBoundaryDegree (funext fun y ↦ clutchingFunction_comp f k Ψ e y)
+
 /-- **Homotopy invariance.** Spheres based at `x` that are homotopic relative to the boundary of
 the square have the same clutching number. -/
 theorem clutchingNumber_eq_of_homotopic {p q : Ω^ (Fin 2) X x} (h : GenLoop.Homotopic p q) :
@@ -273,11 +285,8 @@ theorem clutchingNumber_eq_of_homotopic {p q : Ω^ (Fin 2) X x} (h : GenLoop.Hom
   let ι (τ : I) : C(Fin 2 → I, I × (Fin 2 → I)) := ⟨fun y ↦ (τ, y), by fun_prop⟩
   let slice (τ : I) : Ω^ (Fin 2) X x := ⟨H.toContinuousMap.comp (ι τ), hHx τ⟩
   have hslice (τ : I) : clutchingNumber F E (slice τ) =
-      squareBoundaryDegree (fun y ↦ clutchingFunction H Θ e₀ (τ, y)) := by
-    rw [clutchingNumber_eq_squareBoundaryDegree (slice τ) e₀ hx₀ (φ := fun y ↦ Θ (ι τ y))
-      (hΘ.comp (((ι τ).continuous.comp continuous_fst).prodMk continuous_snd))]
-    exact congrArg squareBoundaryDegree
-      (funext fun y ↦ clutchingFunction_comp H (ι τ) Θ e₀ y)
+      squareBoundaryDegree (fun y ↦ clutchingFunction H Θ e₀ (τ, y)) :=
+    clutchingNumber_eq_squareBoundaryDegree_comp (f := H.toContinuousMap) hΘ (ι τ) (hHx τ) e₀ hx₀
   have hH : ContinuousOn (clutchingFunction H Θ e₀) (univ ×ˢ Cube.boundary (Fin 2)) :=
     (continuousOn_clutchingFunction hΘ e₀).mono fun w hw ↦ by
       simp [hHx w.1 w.2 hw.2, hx₀]
@@ -310,19 +319,12 @@ theorem clutchingNumber_transAt (p q : Ω^ (Fin 2) X x) :
     (GenLoop.transAt_apply_cubeRightHalf 0 q p y).trans (GenLoop.boundary p y hy)⟩
   have hqL : qL = q := GenLoop.ext _ _ (GenLoop.transAt_apply_cubeLeftHalf 0 q p)
   have hpR : pR = p := GenLoop.ext _ _ (GenLoop.transAt_apply_cubeRightHalf 0 q p)
-  have hqLc : clutchingFunction qL (fun y ↦ Ψ ((cubeLeftHalf 0) y)) e₀ =
-      clutchingFunction f Ψ e₀ ∘ cubeLeftHalf 0 :=
-    funext (clutchingFunction_comp f (cubeLeftHalf 0) Ψ e₀)
-  have hpRc : clutchingFunction pR (fun y ↦ Ψ ((cubeRightHalf 0) y)) e₀ =
-      clutchingFunction f Ψ e₀ ∘ cubeRightHalf 0 :=
-    funext (clutchingFunction_comp f (cubeRightHalf 0) Ψ e₀)
   rw [clutchingNumber_eq_squareBoundaryDegree f e₀ hx₀ hΨ, squareBoundaryDegree_eq_add hcont,
     ← hqL, ← hpR,
-    clutchingNumber_eq_squareBoundaryDegree qL e₀ hx₀ (φ := fun y ↦ Ψ ((cubeLeftHalf 0) y))
-      (hΨ.comp (((cubeLeftHalf 0).continuous.comp continuous_fst).prodMk continuous_snd)),
-    clutchingNumber_eq_squareBoundaryDegree pR e₀ hx₀ (φ := fun y ↦ Ψ ((cubeRightHalf 0) y))
-      (hΨ.comp (((cubeRightHalf 0).continuous.comp continuous_fst).prodMk continuous_snd)),
-    hqLc, hpRc]
+    clutchingNumber_eq_squareBoundaryDegree_comp (f := f.1) hΨ (cubeLeftHalf 0) _ e₀ hx₀,
+    clutchingNumber_eq_squareBoundaryDegree_comp (f := f.1) hΨ (cubeRightHalf 0) _ e₀ hx₀]
+  -- The coercions `⇑f` and `⇑f.1` agree by definition (`GenLoop.coe_coe`).
+  rfl
 
 variable (F E x) in
 /-- The **clutching number homomorphism** `π₂(X, x) → ℤ` of a finite-rank complex vector bundle
