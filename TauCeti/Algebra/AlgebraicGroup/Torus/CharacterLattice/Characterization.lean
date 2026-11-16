@@ -5,8 +5,10 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Torus.CharacterLattice.Basic
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.CharacterLattice
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
+import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Torsion
+import TauCeti.Algebra.Group.Equiv.Pow
 
 /-!
 # Detecting tori by geometric characters
@@ -30,14 +32,6 @@ universe u
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-/-- The geometric character group of a torus has no nontrivial torsion. -/
-theorem torusCommHopfAlgProperty.isMulTorsionFree_geometricCharacterGroup
-    (hH : torusCommHopfAlgProperty k H) :
-    IsMulTorsionFree (CommHopfAlgCat.geometricCharacterGroup H.obj) := by
-  obtain ⟨n, ⟨e⟩⟩ := exists_characterLattice_addEquiv_of_torus k H hH
-  exact Function.Injective.isMulTorsionFree
-    (AddEquiv.toMultiplicative e).toMonoidHom (AddEquiv.toMultiplicative e).injective
-
 /-- In a diagonalizable presentation over the algebraic closure, a group is a torus
 exactly when the presenting character group is torsion-free. -/
 theorem torus_iff_isMulTorsionFree_of_baseChange_iso_coordinateRing
@@ -47,11 +41,10 @@ theorem torus_iff_isMulTorsionFree_of_baseChange_iso_coordinateRing
     torusCommHopfAlgProperty k H ↔ IsMulTorsionFree G := by
   constructor
   · intro hH
-    let _ := hH.isMulTorsionFree_geometricCharacterGroup
-    let e := CommHopfAlgCat.geometricCharacterGroupEquivOfIso k H G i
-    exact Function.Injective.isMulTorsionFree e.symm.toMonoidHom e.symm.injective
+    exact (CommHopfAlgCat.geometricCharacterGroupEquivOfIso k H G i).isMulTorsionFree_iff.mp
+      (CommHopfAlgCat.isMulTorsionFree_geometricCharacterGroup H.obj
+        (hH.geometricallyReduced k H) (hH.geometricallyConnected k H))
   · intro hG
-    let _ := hG
     obtain ⟨n, ⟨j⟩⟩ := (splitTorusCommHopfAlgProperty_iff _ _).mp
       (splitTorusCommHopfAlgProperty_coordinateRing (AlgebraicClosure k) G)
     exact (torusCommHopfAlgProperty_iff k H).mpr ⟨n, ⟨j ≪≫ i⟩⟩
@@ -64,14 +57,7 @@ theorem multiplicativeTypeCommHopfAlgProperty.torus_iff_isMulTorsionFree_geometr
       IsMulTorsionFree (CommHopfAlgCat.geometricCharacterGroup H.obj) := by
   obtain ⟨G, ⟨i⟩⟩ :=
     (multiplicativeTypeCommHopfAlgProperty_iff_exists_iso_coordinateRing k H).mp hH
-  let e := CommHopfAlgCat.geometricCharacterGroupEquivOfIso k H G i
-  rw [torus_iff_isMulTorsionFree_of_baseChange_iso_coordinateRing G i]
-  constructor
-  · intro hG
-    let _ := hG
-    exact Function.Injective.isMulTorsionFree e.toMonoidHom e.injective
-  · intro hG
-    let _ := hG
-    exact Function.Injective.isMulTorsionFree e.symm.toMonoidHom e.symm.injective
+  exact (torus_iff_isMulTorsionFree_of_baseChange_iso_coordinateRing G i).trans
+    (CommHopfAlgCat.geometricCharacterGroupEquivOfIso k H G i).isMulTorsionFree_iff.symm
 
 end TauCeti
