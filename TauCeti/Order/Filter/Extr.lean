@@ -8,10 +8,11 @@ module
 public import Mathlib.Order.Filter.Extr
 
 /-!
-# Minima on sublevels
+# Minima on sublevels and infimum identification
 
 A minimum on a sublevel transfers to the full admissible set. At a minimizer, the
-sublevel at the minimum value is exactly the set of all minimizers.
+sublevel at the minimum value is exactly the set of all minimizers, and in a conditionally
+complete lattice the attained value agrees with `sInf (f '' s)`.
 -/
 
 public section
@@ -39,3 +40,16 @@ theorem IsMinOn.minimizers_eq_sublevel {X β : Type*} [Preorder β] {f : X → �
   ext x
   exact ⟨fun hx ↦ ⟨hx.1, hx.2 hu⟩,
     fun hx ↦ ⟨hx.1, fun y hy ↦ hx.2.trans (h hy)⟩⟩
+
+/-- In a conditionally complete lattice, an admissible minimizer attains `sInf (f '' S)`. -/
+theorem IsMinOn.csInf_eq {X β : Type*} [ConditionallyCompleteLattice β] {f : X → β}
+    {S : Set X} {u : X} (h : IsMinOn f S u) (hu : u ∈ S) :
+    sInf (f '' S) = f u :=
+  IsLeast.csInf_eq ⟨mem_image_of_mem f hu, fun _ ⟨_, hx, hxeq⟩ ↦ hxeq ▸ h hx⟩
+
+/-- When `f '' S` is bounded below in a conditionally complete lattice, an admissible point
+minimizes `f` on `S` if and only if its value equals `sInf (f '' S)`. -/
+theorem TauCeti.isMinOn_iff_eq_csInf {X β : Type*} [ConditionallyCompleteLattice β] {f : X → β}
+    {S : Set X} {u : X} (hu : u ∈ S) (hb : BddBelow (f '' S)) :
+    IsMinOn f S u ↔ f u = sInf (f '' S) :=
+  ⟨fun h ↦ (h.csInf_eq hu).symm, fun h _ hx ↦ h.symm ▸ csInf_le hb (mem_image_of_mem f hx)⟩
