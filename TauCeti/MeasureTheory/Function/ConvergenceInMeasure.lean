@@ -48,6 +48,19 @@ measurable.
   finite measure spaces along arbitrary filters.
 * `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
   theorem, obtained by pairing and unary composition.
+* `MeasureTheory.TendstoInMeasure.continuousAt_const_comp`: local continuous mapping at a constant
+  limit, without finiteness or measurability assumptions.
+* `MeasureTheory.TendstoInMeasure.add`, `MeasureTheory.TendstoInMeasure.neg`,
+  `MeasureTheory.TendstoInMeasure.sub`, `MeasureTheory.TendstoInMeasure.const_smul`, and
+  `MeasureTheory.TendstoInMeasure.const_mul`: linear and ring algebra for convergence in measure.
+* `MeasureTheory.TendstoInMeasure.of_edist_le_on`,
+  `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on`, and
+  `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on_prob`: domination on events whose complements
+  have vanishing measure.
+* `MeasureTheory.tendstoInMeasure_iff_lt_dist`,
+  `MeasureTheory.tendstoInMeasure_iff_measureReal_lt_dist`, and
+  `MeasureTheory.tendstoInMeasure_const_of_tendsto`: strict-distance characterizations and
+  deterministic convergence.
 
 ## Source
 
@@ -198,11 +211,178 @@ theorem continuous_comp₂ {α ι E₁ E₂ E₃ : Type*} [MeasurableSpace α] {
       (fun x ↦ φ (g₁ x) (g₂ x)) :=
   (h₁.prodMk h₂).continuous_comp hφ hf
 
+/-- A map continuous at a constant `c` preserves convergence in measure to `c`, for any measure and
+filter, with no measurability or finiteness assumptions. -/
+theorem continuousAt_const_comp {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
+    [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂] {l : Filter ι} {f : ι → α → E₁} {c : E₁}
+    (h : TendstoInMeasure μ f l (fun _ ↦ c)) {φ : E₁ → E₂} (hφ : ContinuousAt φ c) :
+    TendstoInMeasure μ (fun i x ↦ φ (f i x)) l (fun _ ↦ φ c) := by
+  intro ε hε
+  obtain ⟨δ, hδ, hδ_le⟩ := EMetric.continuousAt_iff.1 hφ ε hε
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h δ hδ)
+    (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ ?_
+  simp only [Set.mem_ofPred_eq] at hx ⊢
+  by_contra! hlt
+  exact not_le_of_gt (hδ_le hlt) hx
+
+/-- Addition preserves convergence in measure, for any measure and filter. -/
+theorem add {α ι E : Type*} [MeasurableSpace α] {μ : Measure α} [SeminormedAddCommGroup E]
+    {l : Filter ι} {f₁ f₂ : ι → α → E} {g₁ g₂ : α → E}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun i x ↦ f₁ i x + f₂ i x) l (fun x ↦ g₁ x + g₂ x) := by
+  rw [tendstoInMeasure_iff_norm] at h₁ h₂ ⊢
+  intro ε hε
+  have hsum := (h₁ (ε / 2) (half_pos hε)).add (h₂ (ε / 2) (half_pos hε))
+  rw [zero_add] at hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+    (fun _ ↦ zero_le) fun i ↦ ?_
+  refine (measure_mono fun x hx ↦ ?_).trans
+    (measure_union_le {x | ε / 2 ≤ ‖f₁ i x - g₁ x‖} {x | ε / 2 ≤ ‖f₂ i x - g₂ x‖})
+  by_contra hmem
+  rw [Set.mem_union, not_or] at hmem
+  have h1 : ‖f₁ i x - g₁ x‖ < ε / 2 := not_le.1 hmem.1
+  have h2 : ‖f₂ i x - g₂ x‖ < ε / 2 := not_le.1 hmem.2
+  have htri : ‖f₁ i x + f₂ i x - (g₁ x + g₂ x)‖ ≤ ‖f₁ i x - g₁ x‖ + ‖f₂ i x - g₂ x‖ := by
+    rw [add_sub_add_comm]
+    exact norm_add_le _ _
+  linarith [Set.mem_ofPred_eq.mp hx]
+
+/-- Negation preserves convergence in measure, for any measure and filter. -/
+theorem neg {α ι E : Type*} [MeasurableSpace α] {μ : Measure α} [SeminormedAddCommGroup E]
+    {l : Filter ι} {f : ι → α → E} {g : α → E} (h : TendstoInMeasure μ f l g) :
+    TendstoInMeasure μ (fun i x ↦ -f i x) l (fun x ↦ -g x) := by
+  rw [tendstoInMeasure_iff_norm] at h ⊢
+  intro ε hε
+  simpa only [neg_sub_neg, norm_sub_rev] using h ε hε
+
+/-- Subtraction preserves convergence in measure, for any measure and filter. -/
+theorem sub {α ι E : Type*} [MeasurableSpace α] {μ : Measure α} [SeminormedAddCommGroup E]
+    {l : Filter ι} {f₁ f₂ : ι → α → E} {g₁ g₂ : α → E}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun i x ↦ f₁ i x - f₂ i x) l (fun x ↦ g₁ x - g₂ x) := by
+  simpa only [sub_eq_add_neg] using h₁.add h₂.neg
+
+/-- Scaling by a fixed scalar preserves convergence in measure, for any measure and filter. -/
+theorem const_smul {α ι 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [SeminormedAddGroup 𝕜] [SeminormedAddCommGroup E] [DistribSMul 𝕜 E] [IsBoundedSMul 𝕜 E]
+    {l : Filter ι} {f : ι → α → E} {g : α → E} (h : TendstoInMeasure μ f l g) (c : 𝕜) :
+    TendstoInMeasure μ (fun i x ↦ c • f i x) l (fun x ↦ c • g x) := by
+  rw [tendstoInMeasure_iff_norm] at h ⊢
+  intro ε hε
+  rcases eq_or_lt_of_le (norm_nonneg c) with hc | hc
+  · refine tendsto_const_nhds.congr fun i ↦ ?_
+    have hempty : {x | ε ≤ ‖c • f i x - c • g x‖} = ∅ :=
+      Set.eq_empty_iff_forall_notMem.2 fun x hx ↦ by
+        have hle : ‖c • f i x - c • g x‖ ≤ 0 := by
+          rw [← smul_sub]
+          simpa [← hc] using norm_smul_le c (f i x - g x)
+        linarith [Set.mem_ofPred_eq.mp hx]
+    simp [hempty]
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (h (ε / ‖c‖) (by positivity)) (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ ?_
+    have hle : ε ≤ ‖c‖ * ‖f i x - g x‖ := by
+      have h1 : ‖c • f i x - c • g x‖ ≤ ‖c‖ * ‖f i x - g x‖ := by
+        rw [← smul_sub]
+        exact norm_smul_le c (f i x - g x)
+      exact (Set.mem_ofPred_eq.mp hx).trans h1
+    exact (div_le_iff₀' hc).2 hle
+
+/-- Left multiplication by a fixed constant preserves convergence in measure, for any measure and
+filter. -/
+theorem const_mul {α ι R : Type*} [MeasurableSpace α] {μ : Measure α} [NonUnitalSeminormedRing R]
+    {l : Filter ι} {f : ι → α → R} {g : α → R} (h : TendstoInMeasure μ f l g) (c : R) :
+    TendstoInMeasure μ (fun i x ↦ c * f i x) l (fun x ↦ c * g x) :=
+  h.const_smul c
+
+/-- If `edist (g i x) (g₀ x) ≤ edist (f i x) (f₀ x)` on events `A i` whose complements have
+measure tending to `0`, and `f → f₀` in measure, then `g → g₀` in measure. -/
+theorem of_edist_le_on {α ι E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [EDist E] [EDist F] {l : Filter ι} {f : ι → α → E} {f₀ : α → E}
+    {g : ι → α → F} {g₀ : α → F} {A : ι → Set α}
+    (hf : TendstoInMeasure μ f l f₀) (hA : Tendsto (fun i ↦ μ (A i)ᶜ) l (𝓝 0))
+    (hle : ∀ᶠ i in l, ∀ x ∈ A i, edist (g i x) (g₀ x) ≤ edist (f i x) (f₀ x)) :
+    TendstoInMeasure μ g l g₀ := by
+  intro ε hε
+  have hsum := (hf ε hε).add hA
+  rw [zero_add] at hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hle] with i hi
+  refine (measure_mono fun x hx ↦ ?_).trans
+    (measure_union_le {x | ε ≤ edist (f i x) (f₀ x)} (A i)ᶜ)
+  by_cases hxA : x ∈ A i
+  · exact Or.inl ((Set.mem_ofPred_eq.mp hx).trans (hi x hxA))
+  · exact Or.inr hxA
+
+/-- If `‖g i x‖ ≤ ‖f i x‖` on events `A i` whose complements have measure tending to `0`, and
+`f → 0` in measure, then `g → 0` in measure. -/
+theorem zero_of_norm_le_on {α ι E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [SeminormedAddGroup E] [SeminormedAddGroup F] {l : Filter ι}
+    {f : ι → α → E} {g : ι → α → F} {A : ι → Set α}
+    (hf : TendstoInMeasure μ f l (fun _ ↦ 0)) (hA : Tendsto (fun i ↦ μ (A i)ᶜ) l (𝓝 0))
+    (hle : ∀ᶠ i in l, ∀ x ∈ A i, ‖g i x‖ ≤ ‖f i x‖) :
+    TendstoInMeasure μ g l (fun _ ↦ 0) := by
+  refine hf.of_edist_le_on hA ?_
+  filter_upwards [hle] with i hi x hx
+  simpa only [edist_dist, dist_zero_right] using ENNReal.ofReal_le_ofReal (hi x hx)
+
+/-- If `‖g i x‖ ≤ ‖f i x‖` on eventually null-measurable events `A i` of probability tending to `1`,
+and `f → 0` in probability, then `g → 0` in probability. -/
+theorem zero_of_norm_le_on_prob {α ι E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsProbabilityMeasure μ] [SeminormedAddGroup E] [SeminormedAddGroup F]
+    {l : Filter ι} {f : ι → α → E} {g : ι → α → F} {A : ι → Set α}
+    (hf : TendstoInMeasure μ f l (fun _ ↦ 0))
+    (hmeas : ∀ᶠ i in l, NullMeasurableSet (A i) μ)
+    (hA : Tendsto (fun i ↦ μ (A i)) l (𝓝 1))
+    (hle : ∀ᶠ i in l, ∀ x ∈ A i, ‖g i x‖ ≤ ‖f i x‖) :
+    TendstoInMeasure μ g l (fun _ ↦ 0) := by
+  refine hf.zero_of_norm_le_on ?_ hle
+  have h := ENNReal.Tendsto.sub tendsto_const_nhds hA (Or.inl ENNReal.one_ne_top)
+  rw [tsub_self] at h
+  refine h.congr' ?_
+  filter_upwards [hmeas] with i hi
+  exact (prob_compl_eq_one_sub₀ hi).symm
+
 end MeasureTheory.TendstoInMeasure
 
 namespace MeasureTheory
 
 open Filter Topology
+
+/-- Convergence in measure expressed with strict distance inequalities `ε < dist (f i x) (g x)`. -/
+theorem tendstoInMeasure_iff_lt_dist {α ι E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [PseudoMetricSpace E] {l : Filter ι} {f : ι → α → E} {g : α → E} :
+    TendstoInMeasure μ f l g ↔
+      ∀ ε > 0, Tendsto (fun i ↦ μ {x | ε < dist (f i x) (g x)}) l (𝓝 0) := by
+  rw [tendstoInMeasure_iff_dist]
+  refine ⟨fun h ε hε ↦ ?_, fun h ε hε ↦ ?_⟩
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε) (fun _ ↦ zero_le)
+      fun i ↦ measure_mono fun x (hx : ε < dist (f i x) (g x)) ↦ le_of_lt hx
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h (ε / 2) (half_pos hε))
+      (fun _ ↦ zero_le) fun i ↦ measure_mono
+      fun x (hx : ε ≤ dist (f i x) (g x)) ↦ (half_lt_self hε).trans_le hx
+
+/-- For a finite measure, convergence in measure is equivalent to `μ.real {ε < dist (f i) g} → 0`
+for every `ε > 0`. -/
+theorem tendstoInMeasure_iff_measureReal_lt_dist {α ι E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [PseudoMetricSpace E] {l : Filter ι} {f : ι → α → E} {g : α → E} :
+    TendstoInMeasure μ f l g ↔
+      ∀ ε > 0, Tendsto (fun i ↦ μ.real {x | ε < dist (f i x) (g x)}) l (𝓝 0) := by
+  rw [tendstoInMeasure_iff_lt_dist]
+  congr! with ε _
+  simp_rw [measureReal_def, ENNReal.tendsto_toReal_zero_iff (fun _ ↦ measure_ne_top _ _)]
+
+/-- Deterministic convergence implies convergence in measure of the corresponding constant
+functions, for any measure and filter. -/
+theorem tendstoInMeasure_const_of_tendsto {α ι E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [PseudoEMetricSpace E] {l : Filter ι} {c : ι → E} {a : E} (h : Tendsto c l (𝓝 a)) :
+    TendstoInMeasure μ (fun i _ ↦ c i) l (fun _ ↦ a) := by
+  intro ε hε
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [EMetric.tendsto_nhds.1 h ε hε] with i hi
+  have hempty : {_x : α | ε ≤ edist (c i) a} = ∅ :=
+    Set.eq_empty_iff_forall_notMem.2 fun _ hx ↦ not_le_of_gt hi hx
+  simp [hempty]
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/
