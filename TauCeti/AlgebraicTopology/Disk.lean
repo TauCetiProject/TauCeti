@@ -19,7 +19,9 @@ import TauCeti.Topology.UnitInterval.OpenSquare
 /-!
 # Euclidean disks and their boundaries
 
-The closed Euclidean disk is contractible, and its boundary is path-connected when the disk has
+The closed Euclidean disk is contractible, explicitly by the straight-line contraction
+`TauCeti.diskContraction` onto its centre `TauCeti.diskCenter`, and its boundary is
+path-connected when the disk has
 dimension at least two, so `TopCat.sphere (n + 1)` is path-connected
 (`TauCeti.TopCat.pathConnectedSpace_sphere`).  The disk is a `T₃` space, in particular Hausdorff,
 so the inclusion of its boundary sphere is a closed embedding
@@ -268,6 +270,34 @@ lemma diskCenter_notMem_range_diskBoundaryInclusion (n : ℕ) :
     diskCenter.{u} n ∉ Set.range (TopCat.diskBoundaryInclusion.{u} n) := by
   rw [mem_range_diskBoundaryInclusion_iff, coe_diskCenter_down]
   simp
+
+/-- The straight-line contraction of the disk `TopCat.disk n` onto its centre: at time `t` it
+sends `x` to `(1 - t) • x`. -/
+def diskContraction (n : ℕ) :
+    (ContinuousMap.id (TopCat.disk.{u} n)).Homotopy
+      (ContinuousMap.const (TopCat.disk.{u} n) (diskCenter n)) where
+  toFun p := (ULift.up ⟨(unitInterval.symm p.1 : ℝ) •
+      ((p.2 : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)),
+      (convex_closedBall _ _).smul_mem_of_zero_mem (Metric.mem_closedBall_self zero_le_one)
+        (p.2 : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
+        (unitInterval.symm p.1).2⟩ :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
+  continuous_toFun := continuous_uliftUp.comp <| Continuous.subtype_mk
+    ((continuous_subtype_val.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
+      (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))) _
+  map_zero_left _ := ULift.ext (Subtype.ext (by simp))
+  map_one_left _ := ULift.ext (Subtype.ext (by simp))
+
+/-- The straight-line contraction sends `x` at time `t` to `(1 - t) • x`. -/
+@[simp]
+lemma coe_diskContraction_apply_down (n : ℕ) (t : unitInterval) (x : TopCat.disk.{u} n) :
+    (((diskContraction n (t, x) : TopCat.disk.{u} n) :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) =
+      (1 - (t : ℝ)) • ((x : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) :=
+  (rfl)
 
 /-- A point of the disk is sent to the unit sphere of the sup norm by
 `TauCeti.diskHomeomorphClosedBall` exactly when it lies on the boundary sphere. -/
