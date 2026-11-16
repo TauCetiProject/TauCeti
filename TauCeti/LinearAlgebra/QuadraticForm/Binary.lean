@@ -41,6 +41,9 @@ represented value carries the whole content of the first theorem: every quadrati
 
 ## Main results
 
+* `TauCeti.represents_weightedSumSquares_binary_iff`,
+  `TauCeti.represents_weightedSumSquares_one_neg_iff`: coordinate equations for scalar
+  representation by `⟨a, b⟩` and `⟨1, -d⟩`.
 * `TauCeti.mem_unitValueSet_binary_iff_equivalent`: the representation normal form, Lam I.2.3 (2).
 * `TauCeti.equivalent_binaryNormalForm_inv`: the two spellings `a b c` and `a b c⁻¹` of the
   forced second coefficient present the same form.
@@ -65,6 +68,21 @@ universe u
 section CommSemiring
 
 variable {R : Type u} [CommSemiring R]
+
+/-- A binary diagonal form `⟨a, b⟩` represents `c` if and only if `a x² + b y² = c` has a
+solution. -/
+theorem represents_weightedSumSquares_binary_iff (a b c : R) :
+    Represents (weightedSumSquares R ![a, b]) c ↔ ∃ x y : R, a * x ^ 2 + b * y ^ 2 = c := by
+  rw [represents_iff, Set.mem_range]
+  constructor
+  · rintro ⟨v, hv⟩
+    exact ⟨v 0, v 1, by
+      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two, mul_comm, mul_left_comm,
+        mul_assoc] using hv⟩
+  · rintro ⟨x, y, hxy⟩
+    exact ⟨![x, y], by
+      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two, mul_comm, mul_left_comm,
+        mul_assoc] using hxy⟩
 
 /-- A binary diagonal form represents its first coefficient. -/
 theorem represents_binary_left (a b : R) : Represents (weightedSumSquares R ![a, b]) a :=
@@ -94,6 +112,13 @@ end CommSemiring
 section CommRing
 
 variable {R : Type u} [CommRing R]
+
+/-- The binary norm form `⟨1, -d⟩` represents `a` if and only if `a = x² - d * y²` has a
+solution. -/
+theorem represents_weightedSumSquares_one_neg_iff (d a : R) :
+    Represents (weightedSumSquares R ![1, -d]) a ↔ ∃ x y : R, a = x ^ 2 - d * y ^ 2 := by
+  rw [represents_weightedSumSquares_binary_iff]
+  simp only [one_mul, neg_mul, ← sub_eq_add_neg, eq_comm]
 
 /-- The **binary representation normal form** as an explicit change of variables: a solution of
 `a x² + b y² = c` with `c` invertible carries `⟨c, a * b * c⟩` to `⟨a, b⟩`.

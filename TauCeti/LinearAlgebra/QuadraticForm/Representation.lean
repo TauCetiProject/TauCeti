@@ -97,6 +97,20 @@ theorem IsRepresentedBy.trans
   obtain ⟨g, hg⟩ := h₂₃
   exact ⟨g.comp f, hg.comp hf⟩
 
+/-- The orthogonal product of two represented quadratic maps is represented by the orthogonal
+product of the ambient maps. -/
+theorem IsRepresentedBy.prod {M₁ M₂ M₁' M₂' : Type*}
+    [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+    [AddCommMonoid M₁'] [Module R M₁'] [AddCommMonoid M₂'] [Module R M₂']
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    {Q₁' : QuadraticMap R M₁' N} {Q₂' : QuadraticMap R M₂' N}
+    (h₁ : Q₁.IsRepresentedBy Q₁') (h₂ : Q₂.IsRepresentedBy Q₂') :
+    (Q₁.prod Q₂).IsRepresentedBy (Q₁'.prod Q₂') := by
+  obtain ⟨f₁, hf₁⟩ := h₁
+  obtain ⟨f₂, hf₂⟩ := h₂
+  exact ⟨f₁.prodMap f₂, fun x y h ↦
+    Prod.ext (hf₁ (by simpa using congrArg Prod.fst h)) (hf₂ (by simpa using congrArg Prod.snd h))⟩
+
 /-- An equivalent quadratic map is represented by the other map. -/
 theorem Equivalent.isRepresentedBy
     {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
@@ -144,6 +158,12 @@ theorem Equivalent.anisotropic_iff
     Q₁.Anisotropic ↔ Q₂.Anisotropic :=
   ⟨fun h₁ => not_not.mp fun h₂ => h.symm.isRepresentedBy.not_anisotropic h₂ h₁,
     fun h₂ => not_not.mp fun h₁ => h.isRepresentedBy.not_anisotropic h₁ h₂⟩
+
+/-- Scaling a quadratic map by a unit does not change its anisotropy. -/
+@[simp]
+theorem anisotropic_smul_iff {a : R} (ha : IsUnit a) (Q : QuadraticMap R M N) :
+    (a • Q).Anisotropic ↔ Q.Anisotropic := by
+  simp only [Anisotropic, smul_apply, ha.smul_eq_zero]
 
 /-- Replacing either quadratic map by an equivalent one preserves representation. -/
 theorem Equivalent.isRepresentedBy_congr
@@ -216,6 +236,39 @@ theorem Represents.prod
   obtain ⟨w, hw⟩ := h₂
   exact ⟨(v, w), by simp [QuadraticMap.prod_apply, hv, hw]⟩
 
+/-- The orthogonal sum of a zero quadratic map and `Q` represents the same values as `Q`. -/
+@[simp]
+theorem represents_zero_prod_iff {M' : Type*} [AddCommMonoid M'] [Module R M']
+    (Q : QuadraticMap R M' N) (a : N) :
+    Represents ((0 : QuadraticMap R M N).prod Q) a ↔ Represents Q a := by
+  constructor
+  · rintro ⟨⟨_, y⟩, hy⟩
+    exact ⟨y, by simpa using hy⟩
+  · rintro ⟨y, hy⟩
+    exact ⟨(0, y), by simpa using hy⟩
+
+/-- The orthogonal sum of `Q` and a zero quadratic map represents the same values as `Q`. -/
+@[simp]
+theorem represents_prod_zero_iff {M' : Type*} [AddCommMonoid M'] [Module R M']
+    (Q : QuadraticMap R M' N) (a : N) :
+    Represents (Q.prod (0 : QuadraticMap R M N)) a ↔ Represents Q a :=
+  (IsometryEquiv.prodComm Q (0 : QuadraticMap R M N)).represents_iff a |>.trans
+    (represents_zero_prod_iff Q a)
+
+/-- Descending a quadratic map to the quotient by a submodule of its radical does not change
+the values it represents. -/
+@[simp]
+theorem represents_lift_iff {R M N : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup N]
+    [Module R M] [Module R N] (Q : QuadraticMap R M N) {W : Submodule R M}
+    (hW : W ≤ Q.radical) (a : N) :
+    Represents (Q.lift W hW) a ↔ Represents Q a := by
+  constructor
+  · rintro ⟨x, hx⟩
+    induction x using Submodule.Quotient.induction_on with
+    | H m => exact ⟨m, by simpa using hx⟩
+  · rintro ⟨m, hm⟩
+    exact ⟨Submodule.Quotient.mk m, by simpa using hm⟩
+
 /-- If one factor represents a nonzero value `a` and the other represents `-a`, then their
 orthogonal product is isotropic. -/
 theorem not_anisotropic_prod_of_represents_neg
@@ -271,6 +324,36 @@ theorem Represents.of_isSquare_div {K V : Type*} [Semifield K] [AddCommMonoid V]
   simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- Over a field, a quadratic map represented by a map on a finite-dimensional space of the same
+dimension is isometric to it. -/
+theorem IsRepresentedBy.equivalent_of_finrank_eq {W P : Type*}
+    [AddCommGroup W] [Module K W] [AddCommMonoid P] [Module K P] [FiniteDimensional K W]
+    {Q : QuadraticMap K V P} {R : QuadraticMap K W P}
+    (h : Q.IsRepresentedBy R) (hrank : Module.finrank K V = Module.finrank K W) :
+    Q.Equivalent R := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff Q R).mp h
+  have : FiniteDimensional K V := Module.Finite.of_injective f hf
+  have hbij : Function.Bijective f :=
+    ⟨hf, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hf⟩
+  exact ⟨{ toLinearEquiv := LinearEquiv.ofBijective f hbij, map_app' := hfQ }⟩
+
+/-- **A represented finite-dimensional regular form splits off from an arbitrary ambient form.**
+If a finite-dimensional regular form `Q₁` is represented by `Q`, then `Q ≅ Q₁ ⊥ Q|_P` where `P` is
+the orthogonal complement of the image of `Q₁`. Neither finiteness nor nondegeneracy of `Q` is
+needed. -/
+theorem IsRepresentedBy.exists_equivalent_prod_restrict [Invertible (2 : K)]
+    {V₁ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
+    {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁} (h : Q₁.IsRepresentedBy Q)
+    (hQ₁ : Q₁.Nondegenerate) :
+    ∃ P : Submodule K V, Q.Equivalent (Q₁.prod (Q.restrict P)) := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff Q₁ Q).mp h
+  let e : Q₁.IsometryEquiv (Q.restrict (LinearMap.range f)) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f hf
+      map_app' := hfQ }
+  have hW := e.nondegenerate_iff.mp hQ₁
+  exact ⟨_, ⟨(IsometryEquiv.prodRestrictOrthogonal Q _ hW.isCompl_orthogonal).symm.trans
+    (e.symm.prod (IsometryEquiv.refl _))⟩⟩
 
 /-- **A represented finite-dimensional regular form splits off.** If a finite-dimensional regular
 form `Q₁` is represented by a regular form `Q`, then `Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which
