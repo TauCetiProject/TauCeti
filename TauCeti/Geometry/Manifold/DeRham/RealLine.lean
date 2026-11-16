@@ -42,6 +42,8 @@ supported. Surjectivity comes from a normalized bump function times `dx`
   with integral zero is compactly supported exact.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`: integration
   `H¹_c(ℝ) → ℝ` is bijective, for either orientation of `ℝ`.
+* `TauCeti.compactlySupportedDeRhamCohomology.integral_mk_funSMulₗ_realLineCoordForm`: for
+  compactly supported smooth `g`, the class of `g dx` integrates to `∫ g`.
 
 ## References
 
@@ -128,5 +130,33 @@ theorem compactlySupportedDeRhamCohomology.bijective_integral_real
   · rw [compactlySupportedDeRhamCohomology.integral_neg]
     exact ⟨fun x y hxy ↦ hi (neg_injective hxy),
       fun y ↦ (hs (-y)).imp fun x hx ↦ by simp [hx]⟩
+
+/-- For compactly supported smooth `g`, the one-form `g dx` of the line is compactly supported and
+closed. -/
+theorem funSMulₗ_realLineCoordForm_mem_compactlySupportedClosedForms {g : C^∞⟮𝓘(ℝ), ℝ; ℝ⟯}
+    (hgc : HasCompactSupport g) :
+    SmoothForm.funSMulₗ g SmoothForm.realLineCoordForm ∈
+      compactlySupportedClosedForms 𝓘(ℝ) ℝ 1 := by
+  refine (mem_compactlySupportedClosedForms _).mpr ⟨(mem_compactlySupportedForms _).mpr ?_,
+    mem_closedForms_of_finrank_le 𝓘(ℝ) (by simp) _⟩
+  rw [SmoothForm.coe_funSMulₗ]
+  exact hgc.isCompact.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _)
+
+/-- For compactly supported smooth `g`, the integral of the class of `g dx` in `H¹_c(ℝ)` against
+the standard orientation is `∫ g`. -/
+theorem compactlySupportedDeRhamCohomology.integral_mk_funSMulₗ_realLineCoordForm
+    {g : C^∞⟮𝓘(ℝ), ℝ; ℝ⟯} (hgc : HasCompactSupport g) :
+    compactlySupportedDeRhamCohomology.integral Manifold.Orientation.real
+        (compactlySupportedDeRhamCohomology.mk 𝓘(ℝ) 1
+          ⟨_, funSMulₗ_realLineCoordForm_mem_compactlySupportedClosedForms hgc⟩) =
+      ∫ r, g r := by
+  rw [compactlySupportedDeRhamCohomology.integral_mk, integralTopForm_real_eq_integral
+    (SmoothForm.isSmoothForm _ |>.of_le (by simp)) ((mem_compactlySupportedForms _).mp
+      ((mem_compactlySupportedClosedForms _).mp
+        (funSMulₗ_realLineCoordForm_mem_compactlySupportedClosedForms hgc)).1)]
+  simp only [SmoothForm.coe_funSMulₗ, ContinuousAlternatingMap.coe_smul, Pi.smul_apply,
+    SmoothForm.realLineCoordForm_apply]
+  -- The value of `g dx` on the unit vector `1` is `g r • 1 = g r`.
+  exact congrArg (fun f : ℝ → ℝ ↦ ∫ r, f r) (funext fun r ↦ mul_one (g r))
 
 end TauCeti
