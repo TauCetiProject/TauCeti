@@ -73,6 +73,30 @@ which it is `k`-edge-connected. It is `⊤` when there is at most one vertex. -/
 noncomputable def edgeConnectivity : ℕ∞ :=
   ⨆ (k : ℕ) (_ : G.IsEdgeConnected k), (k : ℕ∞)
 
+/-- Injective graph homomorphisms preserve local edge reachability. -/
+theorem IsEdgeReachable.map {W : Type*} {H : SimpleGraph W} {u v : V}
+    (h : G.IsEdgeReachable k u v) (f : G →g H) (hf : Function.Injective f) :
+    H.IsEdgeReachable k (f u) (f v) := by
+  intro s hs
+  let f' : G.deleteEdges (Sym2.map f ⁻¹' s) →g H.deleteEdges s :=
+    { toFun := f
+      map_rel' {a b} hab := by
+        rw [deleteEdges_adj] at hab ⊢
+        exact ⟨f.map_adj hab.1, by simpa using hab.2⟩ }
+  apply (h (lt_of_le_of_lt ?_ hs)).map f'
+  rw [← (Sym2.map.injective hf).encard_image]
+  exact Set.encard_le_encard (Set.image_preimage_subset _ _)
+
+namespace Iso
+
+/-- Local edge reachability is invariant under graph isomorphism. -/
+theorem isEdgeReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) (u v : V) :
+    H.IsEdgeReachable k (e u) (e v) ↔ G.IsEdgeReachable k u v :=
+  ⟨fun h ↦ by simpa using h.map e.symm.toHom e.symm.injective,
+    fun h ↦ h.map e.toHom e.injective⟩
+
+end Iso
+
 /-- Local edge reachability records exactly the thresholds at which two vertices are
 edge-reachable. -/
 theorem isEdgeReachable_iff_le_edgeReachability {u v : V} :
@@ -83,6 +107,14 @@ theorem isEdgeReachable_iff_le_edgeReachability {u v : V} :
   cases k with
   | top => simp [isEdgeReachable_top_iff_forall_nat, hnat, ENat.eq_top_iff_forall_ge]
   | coe n => exact hnat n
+
+/-- Local edge reachability is at most `k` exactly when every reachable natural threshold is at
+most `k`. -/
+theorem edgeReachability_le_iff {u v : V} :
+    G.edgeReachability u v ≤ k ↔ ∀ n : ℕ, G.IsEdgeReachable n u v → (n : ℕ∞) ≤ k := by
+  refine ⟨fun h n hn ↦ (isEdgeReachable_iff_le_edgeReachability.mp hn).trans h, fun h ↦ ?_⟩
+  exact ENat.forall_natCast_le_iff_le.mp fun n hn ↦
+    h n (isEdgeReachable_iff_le_edgeReachability.mpr hn)
 
 /-- Edge connectivity records exactly the thresholds at which the graph is edge-connected. -/
 theorem isEdgeConnected_iff_le_edgeConnectivity : G.IsEdgeConnected k ↔ k ≤ G.edgeConnectivity := by
@@ -114,6 +146,25 @@ theorem edgeReachability_comm (u v : V) : G.edgeReachability u v = G.edgeReachab
 theorem edgeReachability_self (u : V) : G.edgeReachability u u = ⊤ :=
   top_unique (isEdgeReachable_iff_le_edgeReachability.mp .rfl)
 
+/-- Local edge reachability satisfies the ultrametric triangle inequality. -/
+theorem min_edgeReachability_le (u v w : V) :
+    min (G.edgeReachability u v) (G.edgeReachability v w) ≤ G.edgeReachability u w :=
+  ENat.forall_natCast_le_iff_le.mp fun _ hk ↦
+    isEdgeReachable_iff_le_edgeReachability.mp
+      ((isEdgeReachable_iff_le_edgeReachability.mpr (le_min_iff.mp hk).1).trans
+        (isEdgeReachable_iff_le_edgeReachability.mpr (le_min_iff.mp hk).2))
+
+namespace Iso
+
+/-- Local numerical edge reachability is unchanged by a graph isomorphism. -/
+@[simp]
+theorem edgeReachability_eq {W : Type*} {H : SimpleGraph W} (e : G ≃g H) (u v : V) :
+    H.edgeReachability (e u) (e v) = G.edgeReachability u v :=
+  ENat.eq_of_forall_natCast_le_iff fun _ ↦ by
+    simp only [← isEdgeReachable_iff_le_edgeReachability, e.isEdgeReachable_iff]
+
+end Iso
+
 /-- Edge connectivity is the infimum of the local edge reachabilities between all pairs of
 vertices. -/
 theorem edgeConnectivity_eq_iInf_edgeReachability (G : SimpleGraph V) :
@@ -141,6 +192,17 @@ theorem edgeReachability_le_degree {u v : V} (huv : u ≠ v) [Fintype (G.neighbo
     G.edgeReachability u v ≤ G.degree u :=
   ENat.forall_natCast_le_iff_le.mp fun _ hk ↦
     ((isEdgeReachable_iff_le_edgeReachability.mpr hk).le_degree huv)
+
+/-- On a finite vertex type, local edge reachability is `⊤` exactly on the diagonal. -/
+@[simp]
+theorem edgeReachability_eq_top_iff [Finite V] {u v : V} :
+    G.edgeReachability u v = ⊤ ↔ u = v := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ edgeReachability_self u⟩
+  by_contra huv
+  let _ := Fintype.ofFinite V
+  classical
+  exact ENat.natCast_ne_top (G.degree u)
+    (top_le_iff.1 (h ▸ G.edgeReachability_le_degree huv))
 
 /-- On at least two vertices, edge connectivity is at most the degree of every vertex of finite
 degree. -/
