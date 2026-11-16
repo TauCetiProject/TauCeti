@@ -54,10 +54,9 @@ separable closure of `K` in `Ω`.
 
 ## References
 
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Ch. I §1 and
-  Ch. VI §1, for the Galois correspondence over an infinite extension.
-* J. S. Milne, *Fields and Galois Theory*, Ch. 7, for Krull's correspondence between closed
-  normal subgroups and Galois subextensions.
+* J. S. Milne, *Fields and Galois Theory*, Ch. 7 (Prop. 7.12 and Thm. 7.13), for the Galois
+  correspondence over an infinite extension: Krull's correspondence between closed subgroups and
+  intermediate fields, and between closed normal subgroups and Galois subextensions.
 -/
 
 public section

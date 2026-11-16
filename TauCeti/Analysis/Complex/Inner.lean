@@ -23,6 +23,8 @@ real inner product is a rotation by a unit complex number.
 * `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
+* `Complex.inner_one_smul_I_sub_inner_I_smul_one` -- the infinitesimal rotation
+  `z ↦ ⟪z, 1⟫_ℝ i - ⟪z, i⟫_ℝ` of the plane is multiplication by `i`.
 * `Complex.I_mul_I_mul` -- `i (i z) = -z`.
 * `Complex.real_inner_I_mul_left` -- multiplication by `i` is skew-adjoint:
   `⟪i x, y⟫_ℝ = -⟪x, i y⟫_ℝ`.
@@ -57,6 +59,11 @@ theorem inner_mul_mul_of_norm_eq_one (hζ : ‖ζ‖ = 1) (a b : ℂ) :
 /-- The real inner product of `z` with `i` is the imaginary part of `z`. -/
 theorem real_inner_I_right (z : ℂ) : inner ℝ z I = z.im := by
   simp [Complex.inner]
+
+/-- The infinitesimal rotation `z ↦ ⟪z, 1⟫ i - ⟪z, i⟫` of the plane `ℂ` is multiplication by `i`. -/
+theorem inner_one_smul_I_sub_inner_I_smul_one (z : ℂ) :
+    inner ℝ z 1 • I - inner ℝ z I • (1 : ℂ) = I * z := by
+  apply Complex.ext <;> simp [Complex.inner]
 
 /-- Multiplying twice by `i` negates. -/
 @[simp]

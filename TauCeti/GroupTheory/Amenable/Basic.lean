@@ -60,8 +60,6 @@ public section
 
 noncomputable section
 
-open scoped BoundedContinuousFunction
-
 namespace TauCeti
 
 variable {G H K : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
