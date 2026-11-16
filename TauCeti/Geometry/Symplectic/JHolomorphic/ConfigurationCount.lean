@@ -182,6 +182,14 @@ theorem compatibleConfigurations_mono (h : s ⊆ t) :
     compatibleConfigurations r cls s A ⊆ compatibleConfigurations r cls t A :=
   fun _ hl ↦ ⟨hl.1.trans h, hl.2⟩
 
+/-- The configurations of the candidates of `s` satisfying `p` are the configurations of `s` all
+of whose components satisfy `p`. -/
+theorem mem_compatibleConfigurations_sep_iff {p : ι → Prop} :
+    l ∈ compatibleConfigurations r cls {c ∈ s | p c} A ↔
+      l ∈ compatibleConfigurations r cls s A ∧ ∀ c ∈ l.support, p c :=
+  ⟨fun ⟨hsub, hl⟩ ↦ ⟨⟨fun _ hc ↦ (hsub hc).1, hl⟩, fun _ hc ↦ (hsub hc).2⟩,
+    fun ⟨⟨hsub, hl⟩, hp⟩ ↦ ⟨fun c hc ↦ ⟨hsub hc, hp c hc⟩, hl⟩⟩
+
 /-- The empty configuration has class zero. -/
 theorem zero_mem_compatibleConfigurations_iff :
     0 ∈ compatibleConfigurations r cls s A ↔ A = 0 := by
