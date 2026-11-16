@@ -11,8 +11,6 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
-import TauCeti.Analysis.InnerProductSpace.Harmonic.IteratedFDeriv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.LogNorm
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Taylor
 import TauCeti.Analysis.SpecialFunctions.Complex.Analytic
@@ -39,17 +37,17 @@ holomorphic polynomial (`TauCeti.planarMultipolePolynomial`) whose real part giv
 and the **sharp** convergence radius `‖x‖` (`TauCeti.radius_planarMultipoleSeries`,
 `TauCeti.hasFPowerSeriesOnBall_planarNewtonianKernel_sub`).
 
-Combining locally uniform convergence on `ball 0 ‖x‖` with the interior derivative estimates for
-harmonic functions (`TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd`) shows that on
-every closed disk `closedBall 0 r` with `r < ‖x‖`, the partial sums converge uniformly together
-with iterated derivatives of every order to `y ↦ G(x - y)`. Consequently, any continuous linear
-functional on functions on `closedBall 0 r` for the `C^k` topology that annihilates global harmonic
-polynomials also annihilates `y ↦ G(x - y)` for `‖x‖ > r`, supplying the exterior step in the
-duality proof of harmonic Runge approximation in dimension two. Transporting along an orthonormal
-identification with `ℂ` gives the corresponding sharp power series and global harmonic-polynomial
-`C^k` approximation theorems for `y ↦ log ‖x - y‖` in two-dimensional real inner product spaces
-and on `EuclideanSpace ℝ (Fin 2)`, pairing with `TauCeti.harmonicAt_log_norm_sub_of_finrank_eq_two`
-and `exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub`.
+Applying `HasFPowerSeriesOnBall.tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt` shows
+that on every closed disk `closedBall 0 r` with `r < ‖x‖`, the partial sums converge uniformly
+together with iterated derivatives of every order to `y ↦ G(x - y)`. Consequently, any continuous
+linear functional on functions on `closedBall 0 r` for the `C^k` topology that annihilates global
+harmonic polynomials also annihilates `y ↦ G(x - y)` for `‖x‖ > r`, supplying the exterior step in
+the duality proof of harmonic Runge approximation in dimension two. Transporting along an
+orthonormal identification with `ℂ` gives the corresponding sharp power series and global
+harmonic-polynomial `C^k` approximation theorems for `y ↦ log ‖x - y‖` in two-dimensional real
+inner product spaces and on `EuclideanSpace ℝ (Fin 2)`, pairing with
+`TauCeti.harmonicAt_log_norm_sub_of_finrank_eq_two` and
+`exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub`.
 
 ## Main declarations
 
@@ -114,50 +112,39 @@ theorem planarMultipoleSeries_def (x : ℂ) :
 
 /-- The degree-zero term of `planarMultipoleSeries x` is the constant `planarNewtonianKernel x`. -/
 @[simp]
-theorem planarMultipoleSeries_zero_apply (x : ℂ) (v : Fin 0 → ℂ) :
+theorem planarMultipoleSeries_apply_zero (x : ℂ) (v : Fin 0 → ℂ) :
     planarMultipoleSeries x 0 v = planarNewtonianKernel x := by
   simp [planarMultipoleSeries_def, FormalMultilinearSeries.restrictScalars,
     FormalMultilinearSeries.ofScalars]
 
 /-- In positive degree `k + 1`, `planarMultipoleSeries x` evaluates to
 `(2 * π * (k + 1))⁻¹ * Re ((∏ i, v i) / x ^ (k + 1))`. -/
-theorem planarMultipoleSeries_succ_apply (x : ℂ) (k : ℕ) (v : Fin (k + 1) → ℂ) :
+@[simp]
+theorem planarMultipoleSeries_apply_succ (x : ℂ) (k : ℕ) (v : Fin (k + 1) → ℂ) :
     planarMultipoleSeries x (k + 1) v =
       (2 * Real.pi * (k + 1))⁻¹ * ((∏ i, v i) / x ^ (k + 1)).re := by
-  simp only [planarMultipoleSeries_def, FormalMultilinearSeries.add_apply,
-    constFormalMultilinearSeries_apply_of_ne_zero (Nat.succ_ne_zero k), zero_add,
-    FormalMultilinearSeries.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compFormalMultilinearSeries_apply,
-    ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
-    smul_apply, ContinuousLinearMap.coe_restrictScalars',
-    FormalMultilinearSeries.restrictScalars, ContinuousMultilinearMap.coe_restrictScalars,
-    FormalMultilinearSeries.ofScalars, ContinuousMultilinearMap.mkPiAlgebraFin_apply,
-    smul_eq_mul, Complex.reCLM_apply]
   have hprod : (∏ i : Fin (k + 1), x⁻¹ * v i) = (∏ i, v i) / x ^ (k + 1) := by
     rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_fin, inv_pow, div_eq_mul_inv,
       mul_comm]
-  have hre : (((k + 1 : ℕ) : ℂ)⁻¹ * ((∏ i, v i) / x ^ (k + 1))).re =
-      ((k + 1 : ℝ))⁻¹ * ((∏ i, v i) / x ^ (k + 1)).re := by
-    have hc : (((k + 1 : ℕ) : ℂ)⁻¹) = (((k + 1 : ℝ)⁻¹ : ℝ) : ℂ) := by push_cast; rfl
-    rw [hc, Complex.re_ofReal_mul]
-  rw [List.prod_ofFn]
-  simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
-  rw [hprod, hre, ← mul_assoc, ← mul_inv]
+  have hre (z : ℂ) : (((k : ℂ) + 1)⁻¹ * z).re = ((k : ℝ) + 1)⁻¹ * z.re := by
+    rw [show ((k : ℂ) + 1)⁻¹ = (((k + 1 : ℝ)⁻¹ : ℝ) : ℂ) by simp, Complex.re_ofReal_mul]
+  simp [-Complex.mul_re, -List.ofFn_succ, planarMultipoleSeries_def,
+    FormalMultilinearSeries.restrictScalars, FormalMultilinearSeries.ofScalars, List.prod_ofFn,
+    hprod, hre]
+  ring
 
 /-- On the diagonal, the `(k + 1)`-st multipole term is
 `(2 * π * (k + 1))⁻¹ * Re ((y / x) ^ (k + 1))`. -/
 theorem planarMultipoleSeries_apply_const_succ (x y : ℂ) (k : ℕ) :
     (planarMultipoleSeries x (k + 1) fun _ ↦ y) =
       (2 * Real.pi * (k + 1))⁻¹ * ((y / x) ^ (k + 1)).re := by
-  rw [planarMultipoleSeries_succ_apply, Finset.prod_const, Finset.card_fin, div_pow]
+  simp [div_pow]
 
 /-- At the origin, `planarMultipoleSeries 0` is the zero series. -/
 @[simp]
 theorem planarMultipoleSeries_zero : planarMultipoleSeries 0 = 0 := by
   ext k v
-  cases k with
-  | zero => simp
-  | succ k => simp [planarMultipoleSeries_succ_apply]
+  cases k <;> simp
 
 /-- For `N + 1` terms, the partial sum of `planarMultipoleSeries x` splits into the constant
 `G(x)` and the harmonic modes `1 ≤ k ≤ N`. -/
@@ -166,7 +153,7 @@ theorem planarMultipoleSeries_partialSum_succ (x y : ℂ) (N : ℕ) :
       planarNewtonianKernel x +
         ∑ k ∈ Finset.Ico 1 (N + 1), (2 * Real.pi * k)⁻¹ * ((y / x) ^ k).re := by
   rw [FormalMultilinearSeries.partialSum, Finset.sum_range_eq_add_Ico _ (Nat.succ_pos N),
-    planarMultipoleSeries_zero_apply]
+    planarMultipoleSeries_apply_zero]
   congr 1
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   cases k with
@@ -261,12 +248,12 @@ theorem eval_planarMultipolePolynomial_re (x : ℂ) (N : ℕ) (y : ℂ) :
 theorem harmonicAt_planarMultipoleSeries_apply (x : ℂ) (k : ℕ) (z : ℂ) :
     HarmonicAt (fun y ↦ planarMultipoleSeries x k fun _ ↦ y) z := by
   cases k with
-  | zero => simp [planarMultipoleSeries_zero_apply]
+  | zero => simp
   | succ k =>
     have hfun : (fun y ↦ planarMultipoleSeries x (k + 1) fun _ ↦ y) =
         (2 * Real.pi * (k + 1))⁻¹ • fun y : ℂ ↦ ((y / x) ^ (k + 1)).re := by
       ext y
-      simp [planarMultipoleSeries_apply_const_succ]
+      simp [div_pow]
     rw [hfun]
     have han : AnalyticAt ℂ (fun y : ℂ ↦ (y / x) ^ (k + 1)) z := by
       simp only [div_eq_mul_inv]
@@ -286,20 +273,15 @@ theorem hasFPowerSeriesOnBall_planarNewtonianKernel_sub {x : ℂ} (hx : x ≠ 0)
       (planarMultipoleSeries x) 0 ‖x‖₊ := by
   set u : ℂ →L[ℝ] ℂ := (x⁻¹ • ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ
   have hu0 : u 0 = 0 := map_zero u
-  have hc : HasFPowerSeriesOnBall
-      (fun z : ℂ ↦ (2 * Real.pi)⁻¹ * (-Complex.log (1 - z)).re)
-      ((((2 * Real.pi)⁻¹ • Complex.reCLM).compFormalMultilinearSeries
-        ((FormalMultilinearSeries.ofScalars ℂ fun k : ℕ ↦ (k : ℂ)⁻¹).restrictScalars ℝ)))
-      (u 0) 1 := by
-    rw [hu0]
-    exact ((2 * Real.pi)⁻¹ • Complex.reCLM).comp_hasFPowerSeriesOnBall
-      (hasFPowerSeriesOnBall_neg_clog_one_sub.restrictScalars (𝕜 := ℝ))
+  have hc := ((2 * Real.pi)⁻¹ • Complex.reCLM).comp_hasFPowerSeriesOnBall
+    (hasFPowerSeriesOnBall_neg_clog_one_sub.restrictScalars (𝕜 := ℝ))
+  rw [← hu0] at hc
   have hcomp := hc.compContinuousLinearMap
   have hurad : (1 : ℝ≥0∞) / ‖u‖ₑ = ‖x‖₊ := by
     have hunorm : ‖u‖ = ‖x‖⁻¹ := by
       simp [u, ContinuousLinearMap.norm_restrictScalars, norm_smul, ContinuousLinearMap.norm_id]
-    rw [← ofReal_norm, hunorm, ← coe_nnNorm, ← NNReal.coe_inv, ENNReal.ofReal_coe_nnreal,
-      ENNReal.coe_inv (nnNorm_ne_zero_iff.2 hx), div_eq_mul_inv, one_mul, inv_inv]
+    rw [← ofReal_norm, hunorm, ENNReal.ofReal_inv_of_pos (norm_pos_iff.2 hx)]
+    simp [ofReal_norm, eNorm_eq_nnNorm]
   rw [hurad] at hcomp
   have hconst : HasFPowerSeriesOnBall (fun _ : ℂ ↦ planarNewtonianKernel x)
       (constFormalMultilinearSeries ℝ ℂ (planarNewtonianKernel x)) 0 ‖x‖₊ :=
@@ -320,7 +302,8 @@ theorem hasFPowerSeriesOnBall_planarNewtonianKernel_sub {x : ℂ} (hx : x ≠ 0)
   have hfac : x - y = x * (1 - x⁻¹ * y) := by
     rw [mul_sub, mul_one, ← mul_assoc, mul_inv_cancel₀ hx, one_mul]
   simp only [Pi.add_apply, Function.comp_apply, u, ContinuousLinearMap.coe_restrictScalars',
-    smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul, Complex.neg_re, Complex.log_re]
+    smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul, Complex.reCLM_apply, Complex.neg_re,
+    Complex.log_re]
   rw [hfac, planarNewtonianKernel_mul hx h1sub, planarNewtonianKernel_def (1 - x⁻¹ * y)]
   ring
 
@@ -351,9 +334,8 @@ theorem radius_planarMultipoleSeries {x : ℂ} (hx : x ≠ 0) :
   have hterm : (fun k : ℕ ↦ ‖planarMultipoleSeries x (k + 1) fun _ ↦ x‖) =
       fun k : ℕ ↦ (2 * Real.pi)⁻¹ * ((k + 1 : ℕ) : ℝ)⁻¹ := by
     ext k
-    have hpos : 0 ≤ (2 * Real.pi * (k + 1 : ℝ))⁻¹ := by positivity
-    rw [planarMultipoleSeries_apply_const_succ, div_self hx, one_pow,
-      Complex.one_re, mul_one, Real.norm_of_nonneg hpos, mul_inv, Nat.cast_add, Nat.cast_one]
+    simp [hx, abs_of_nonneg (by positivity : (0 : ℝ) ≤ k + 1)]
+    ring
   rw [Function.comp_def, hterm] at hs
   have hharm : Summable fun k : ℕ ↦ ((k + 1 : ℕ) : ℝ)⁻¹ := by
     simpa [← mul_assoc, mul_inv_cancel₀ Real.two_pi_pos.ne'] using hs.mul_left (2 * Real.pi)
@@ -390,24 +372,16 @@ theorem tendstoUniformlyOn_iteratedFDeriv_planarMultipoleSeries_partialSum
   · rw [Metric.closedBall_eq_empty.2 hr0]
     exact tendstoUniformlyOn_empty
   have hx : x ≠ 0 := norm_pos_iff.1 (hr0.trans_lt hr)
-  have hlim := (hasFPowerSeriesOnBall_planarNewtonianKernel_sub hx).tendstoLocallyUniformlyOn
-  rw [Metric.eball_coe, coe_nnNorm] at hlim
-  simp only [zero_add] at hlim
-  have hP (N : ℕ) : HarmonicOnNhd ((planarMultipoleSeries x).partialSum N) (ball 0 ‖x‖) :=
-    fun z _ ↦ harmonicAt_planarMultipoleSeries_partialSum x N z
-  have hG : HarmonicOnNhd (fun y ↦ planarNewtonianKernel (x - y)) (ball 0 ‖x‖) := by
-    intro y hy
-    have hyx : y ≠ x := by
-      rintro rfl
-      exact (mem_ball_zero_iff.1 hy).false
+  have h0 : HarmonicAt (fun y ↦ planarNewtonianKernel (x - y)) 0 := by
     have hfun : (fun z ↦ planarNewtonianKernel (z - x)) =
-        fun z ↦ planarNewtonianKernel (x - z) := by
-      ext z
-      exact planarNewtonianKernel_sub_comm z x
-    simpa [hfun] using harmonicAt_planarNewtonianKernel_sub hyx
-  exact (tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_ball).1
-    (hlim.iteratedFDeriv_of_harmonicOnNhd (.of_forall hP) hG isOpen_ball k)
-    (closedBall 0 r) (closedBall_subset_ball hr) (isCompact_closedBall 0 r)
+        fun z ↦ planarNewtonianKernel (x - z) :=
+      funext fun z ↦ planarNewtonianKernel_sub_comm z x
+    simpa [hfun] using harmonicAt_planarNewtonianKernel_sub (Ne.symm hx)
+  have hlt : ENNReal.ofReal r < ‖x‖₊ := by
+    rw [← ENNReal.ofReal_coe_nnreal, coe_nnNorm]
+    exact (ENNReal.ofReal_lt_ofReal_iff (norm_pos_iff.2 hx)).2 hr
+  have hp := hasFPowerSeriesOnBall_planarNewtonianKernel_sub hx
+  simpa using hp.tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt h0 hlt k
 
 /-- **Uniform `C^k` convergence of the real parts of the holomorphic multipole polynomials.** -/
 theorem tendstoUniformlyOn_iteratedFDeriv_eval_planarMultipolePolynomial_re
@@ -440,8 +414,12 @@ theorem exists_hasFPowerSeriesOnBall_log_norm_of_finrank_eq_two
   let l : E ≃ₗᵢ[ℝ] ℂ := ((stdOrthonormalBasis ℝ E).reindex (finCongr hE)).repr.trans
     Complex.orthonormalBasisOneI.repr.symm
   have hla : l a ≠ 0 := by simpa using ha
-  have hser := ((hasFPowerSeriesOnBall_planarNewtonianKernel hla).const_smul
-    (c := -(2 * Real.pi))).compContinuousLinearMap (u := l.toLinearIsometry.toContinuousLinearMap)
+  have hser0 : HasFPowerSeriesOnBall (-(2 * Real.pi) • planarNewtonianKernel)
+      (-(2 * Real.pi) • planarMultipoleSeries (-l a))
+      (l.toLinearIsometry.toContinuousLinearMap a) ‖l a‖₊ := by
+    rw [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+    exact (hasFPowerSeriesOnBall_planarNewtonianKernel hla).const_smul (c := -(2 * Real.pi))
+  have hser := hser0.compContinuousLinearMap
   have hrad_ball : (‖l a‖₊ : ℝ≥0∞) / ‖l.toLinearIsometry.toContinuousLinearMap‖ₑ = ‖a‖₊ := by
     simp
   rw [hrad_ball] at hser
@@ -499,33 +477,19 @@ theorem exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv
     rw [norm_zero] at hr
     rw [Metric.closedBall_eq_empty.2 hr]
     exact tendstoUniformlyOn_empty
-  obtain ⟨p, -, hp, hharm⟩ :=
+  obtain ⟨p, -, hp, -⟩ :=
     exists_hasFPowerSeriesOnBall_log_norm_sub_of_finrank_eq_two finrank_euclideanSpace_fin hx
-  have hP (N : ℕ) : HarmonicOnNhd (p.partialSum N) univ :=
-    fun z _ ↦ HarmonicAt.sum fun k _ ↦ hharm k z
-  refine ⟨p.partialSum, fun N z ↦ hP N z (mem_univ z), fun N ↦ ?_, fun {r} hr k ↦ ?_⟩
-  · have hsum : p.partialSum N = ∑ k ∈ Finset.range N, fun y ↦ p k fun _ ↦ y := by
-      ext y
-      simp [FormalMultilinearSeries.partialSum]
-    rw [hsum]
-    refine Submodule.sum_mem _ fun k hk ↦
-      polynomialsDegLE_mono (Fin 2) (Finset.mem_range.1 hk).le ?_
-    simpa using (p k).toMultilinearMap.apply_const_mem_polynomialsDegLE
-  · have hlim := hp.tendstoLocallyUniformlyOn
-    rw [Metric.eball_coe, coe_nnNorm] at hlim
-    simp only [zero_add] at hlim
-    have hG : HarmonicOnNhd (fun y ↦ Real.log ‖x - y‖) (ball 0 ‖x‖) := by
-      intro y hy
-      have hyx : y ≠ x := by
-        rintro rfl
-        exact (mem_ball_zero_iff.1 hy).false
-      have hfun : (fun z ↦ Real.log ‖z - x‖) = fun z ↦ Real.log ‖x - z‖ := by
-        ext z
-        exact congrArg Real.log (norm_sub_rev z x)
-      simpa [hfun] using harmonicAt_log_norm_sub_of_finrank_eq_two finrank_euclideanSpace_fin hyx
-    exact (tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_ball).1
-      (hlim.iteratedFDeriv_of_harmonicOnNhd (.of_forall fun N ↦ (hP N).mono (subset_univ _))
-        hG isOpen_ball k)
-      (closedBall 0 r) (closedBall_subset_ball hr) (isCompact_closedBall 0 r)
+  have h0 : HarmonicAt (fun y ↦ Real.log ‖x - y‖) 0 := by
+    have hfun : (fun z ↦ Real.log ‖z - x‖) = fun z ↦ Real.log ‖x - z‖ :=
+      funext fun z ↦ congrArg Real.log (norm_sub_rev z x)
+    simpa [hfun] using
+      harmonicAt_log_norm_sub_of_finrank_eq_two finrank_euclideanSpace_fin (Ne.symm hx)
+  refine ⟨p.partialSum, fun N z ↦ hp.hasFPowerSeriesAt.harmonicAt_partialSum h0 N z,
+    fun N ↦ polynomialsDegLE_mono _ (Nat.sub_le N 1) (p.partialSum_mem_polynomialsDegLE N),
+    fun {r} hr k ↦ ?_⟩
+  have hlt : ENNReal.ofReal r < ‖x‖₊ := by
+    rw [← ENNReal.ofReal_coe_nnreal, coe_nnNorm]
+    exact (ENNReal.ofReal_lt_ofReal_iff (norm_pos_iff.2 hx)).2 hr
+  simpa using hp.tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt h0 hlt k
 
 end TauCeti

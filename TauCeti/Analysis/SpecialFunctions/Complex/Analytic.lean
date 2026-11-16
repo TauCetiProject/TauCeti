@@ -54,21 +54,28 @@ theorem hasFPowerSeriesOnBall_neg_clog_one_sub :
     simpa [FormalMultilinearSeries.ofScalars_apply_eq, div_eq_mul_inv] using
       Complex.hasSum_taylorSeries_neg_log hz1
 
-/-- **The formal power series `∑ₙ -(-1)ⁿ zⁿ / n` represents `Complex.log (1 + z)` on the unit
-disk.** This upgrades Mathlib's `hasFPowerSeriesAt_clog_one_add` to radius `1`. -/
-theorem hasFPowerSeriesOnBall_clog_one_add :
-    HasFPowerSeriesOnBall (fun z : ℂ ↦ Complex.log (1 + z))
-      (.ofScalars ℂ fun n ↦ -(-1 : ℂ) ^ n / n) 0 1 := by
-  have h0 : HasFPowerSeriesOnBall (fun z : ℂ ↦ -Complex.log (1 - z))
-      (.ofScalars ℂ fun n ↦ (n : ℂ)⁻¹) ((-ContinuousLinearMap.id ℂ ℂ) 0) 1 := by
-    simpa using hasFPowerSeriesOnBall_neg_clog_one_sub
+/-- Transforming a unit-disk power series of `z ↦ -f (1 - z)` into that of `z ↦ f (1 + z)`. -/
+private theorem hasFPowerSeriesOnBall_of_neg_sub {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {f : 𝕜 → 𝕜} (hf : HasFPowerSeriesOnBall (fun z ↦ -f (1 - z))
+      (.ofScalars 𝕜 fun n ↦ (n : 𝕜)⁻¹) 0 1) :
+    HasFPowerSeriesOnBall (fun z ↦ f (1 + z)) (.ofScalars 𝕜 fun n ↦ -(-1 : 𝕜) ^ n / n) 0 1 := by
+  have h0 : HasFPowerSeriesOnBall (fun z ↦ -f (1 - z))
+      (.ofScalars 𝕜 fun n ↦ (n : 𝕜)⁻¹) ((-ContinuousLinearMap.id 𝕜 𝕜) 0) 1 := by
+    simpa using hf
   convert h0.compContinuousLinearMap.neg using 1
   · ext z
     simp [sub_neg_eq_add]
   · rw [FormalMultilinearSeries.ofScalars_comp_neg_id]
     ext n
     simp [FormalMultilinearSeries.ofScalars, div_eq_mul_inv]
-  · simp [← ofReal_norm, norm_neg, ContinuousLinearMap.norm_id]
+  · simp [← ofReal_norm, ContinuousLinearMap.norm_id]
+
+/-- **The formal power series `∑ₙ -(-1)ⁿ zⁿ / n` represents `Complex.log (1 + z)` on the unit
+disk.** This upgrades Mathlib's `hasFPowerSeriesAt_clog_one_add` to radius `1`. -/
+theorem hasFPowerSeriesOnBall_clog_one_add :
+    HasFPowerSeriesOnBall (fun z : ℂ ↦ Complex.log (1 + z))
+      (.ofScalars ℂ fun n ↦ -(-1 : ℂ) ^ n / n) 0 1 :=
+  hasFPowerSeriesOnBall_of_neg_sub hasFPowerSeriesOnBall_neg_clog_one_sub
 
 /-- **The formal power series `∑ₙ -(-1)ⁿ (z - 1)ⁿ / n` represents `Complex.log` on the unit disk
 around `1`.** This upgrades Mathlib's `hasFPowerSeriesAt_clog_one` to radius `1`. -/
@@ -92,14 +99,8 @@ theorem hasFPowerSeriesOnBall_neg_log_one_sub :
           ℝ).compContinuousLinearMap Complex.ofRealLI.toContinuousLinearMap) =
         .ofScalars ℝ fun n ↦ (n : ℝ)⁻¹ := by
     ext n
-    simp only [ContinuousLinearMap.compFormalMultilinearSeries_apply,
-      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
-      FormalMultilinearSeries.compContinuousLinearMap_apply,
-      FormalMultilinearSeries.restrictScalars, ContinuousMultilinearMap.coe_restrictScalars,
-      FormalMultilinearSeries.ofScalars, smul_apply, ContinuousMultilinearMap.mkPiAlgebraFin_apply,
-      List.prod_ofFn, LinearIsometry.coe_toContinuousLinearMap, Complex.ofRealLI_apply,
-      Complex.reCLM_apply, smul_eq_mul]
-    simp
+    simp [-FormalMultilinearSeries.apply_eq_prod_smul_coeff,
+      FormalMultilinearSeries.ofScalars, FormalMultilinearSeries.restrictScalars, List.prod_ofFn]
   rw [hrad, hser] at hre
   exact hre.congr fun x _ ↦ by simp [← Complex.ofReal_one, ← Complex.ofReal_sub,
     Complex.log_ofReal_re]
@@ -108,17 +109,8 @@ theorem hasFPowerSeriesOnBall_neg_log_one_sub :
 This upgrades Mathlib's `hasFPowerSeriesAt_log_one_add` to radius `1`. -/
 theorem hasFPowerSeriesOnBall_log_one_add :
     HasFPowerSeriesOnBall (fun x : ℝ ↦ Real.log (1 + x))
-      (.ofScalars ℝ fun n ↦ -(-1 : ℝ) ^ n / n) 0 1 := by
-  have h0 : HasFPowerSeriesOnBall (fun x : ℝ ↦ -Real.log (1 - x))
-      (.ofScalars ℝ fun n ↦ (n : ℝ)⁻¹) ((-ContinuousLinearMap.id ℝ ℝ) 0) 1 := by
-    simpa using hasFPowerSeriesOnBall_neg_log_one_sub
-  convert h0.compContinuousLinearMap.neg using 1
-  · ext x
-    simp [sub_neg_eq_add]
-  · rw [FormalMultilinearSeries.ofScalars_comp_neg_id]
-    ext n
-    simp [FormalMultilinearSeries.ofScalars, div_eq_mul_inv]
-  · simp [← ofReal_norm, norm_neg, ContinuousLinearMap.norm_id]
+      (.ofScalars ℝ fun n ↦ -(-1 : ℝ) ^ n / n) 0 1 :=
+  hasFPowerSeriesOnBall_of_neg_sub hasFPowerSeriesOnBall_neg_log_one_sub
 
 /-- **The formal power series `∑ₙ -(-1)ⁿ (x - 1)ⁿ / n` represents `Real.log` on `(0, 2)`.**
 This upgrades Mathlib's `hasFPowerSeriesAt_log_one` to radius `1`. -/
