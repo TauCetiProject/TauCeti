@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.Basic
+public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.ResidueField
 
 import TauCeti.RingTheory.Affinoid.Continuity
 import TauCeti.RingTheory.Huber.Restricted.Noetherian
+import TauCeti.Topology.Algebra.Ring.Subring
 
 /-!
 # Affinoid algebras are the algebras topologically of finite type
@@ -41,6 +43,12 @@ with their Banach topology. In particular they are strongly noetherian Tate ring
 (`TauCeti.IsAffinoidAlgebra.isStronglyNoetherian`), and their adic spectra are affinoid adic
 spaces (`TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isAffinoidAlgebra`).
 
+We also record the integral-presentation converse: any `K`-compatible ring homomorphism
+`φ : 𝒪[K]⟨X₁, …, Xₙ⟩ →+* A` extends uniquely to a `K`-algebra homomorphism
+`π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A` with `π(K⟨X₁, …, Xₙ⟩°) = φ.range`. When `φ` surjects onto an open
+subring `A₀ : Subring A` for a topology on `A` with separately continuous multiplication and
+`algebraMap K A` continuous at `0`, `π` is surjective onto `A`, so `A` is affinoid.
+
 ## Main results
 
 * `TauCeti.IsAffinoidAlgebra.isTopologicallyFiniteType`: a complete ultrametric normed affinoid
@@ -50,6 +58,11 @@ spaces (`TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isAff
   being affinoid.
 * `TauCeti.IsAffinoidAlgebra.isStronglyNoetherian`: a complete ultrametric normed affinoid
   `K`-algebra is strongly noetherian.
+* `RingHom.existsUnique_algHom_of_restrictedMvPowerSeriesCompletion`: unique extension of a
+  `K`-compatible homomorphism `𝒪[K]⟨X₁, …, Xₙ⟩ →+* A` to `K⟨X₁, …, Xₙ⟩ →ₐ[K] A`.
+* `TauCeti.Huber.exists_surjective_algHom_map_unitClosedBall_eq` and
+  `TauCeti.Huber.isAffinoidAlgebra_of_restrictedMvPowerSeriesCompletion`: an open subring presented
+  as a `K`-compatible quotient of `𝒪[K]⟨X₁, …, Xₙ⟩` yields a surjective Tate presentation of `A`.
 
 ## References
 
@@ -103,5 +116,104 @@ theorem Huber.isTopologicallyFiniteType_algebraMap_iff_isAffinoidAlgebra :
     IsTopologicallyFiniteType (algebraMap K B) ↔ IsAffinoidAlgebra K B :=
   ⟨fun h ↦ (isAffinoidAlgebra_iff K B).mpr h.exists_surjective_algHom,
     IsAffinoidAlgebra.isTopologicallyFiniteType⟩
+
+section IntegralPresentation
+
+open _root_.MvPowerSeries Filter Topology TauCeti.MvPowerSeries
+open scoped NormedField Valued
+
+local notation "Tate " τ:max => IsRestricted.subring (R := K) (fun _ : τ ↦ 1)
+
+/-- **Unique extension of an integral presentation to a `K`-algebra Tate homomorphism.** Let `K` be
+a complete nontrivially normed ultrametric field, `A` a commutative `K`-algebra, and
+`φ : restrictedMvPowerSeriesCompletion n 𝒪[K] →+* A` a ring homomorphism compatible with
+`algebraMap K A` on `𝒪[K]`. Then there is a unique `K`-algebra homomorphism
+`π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A` extending
+`φ ∘ (restrictedMvPowerSeriesCompletionIntegerEquiv n).symm` on `K⟨X₁, …, Xₙ⟩°`, and its Gauss
+unit-ball image `(Subring.unitClosedBall _).map π.toRingHom` equals `φ.range`. -/
+theorem _root_.RingHom.existsUnique_algHom_of_restrictedMvPowerSeriesCompletion {n : ℕ}
+    {A : Type*} [CommRing A] [Algebra K A]
+    (φ : restrictedMvPowerSeriesCompletion n 𝒪[K] →+* A)
+    (hφ_alg : ∀ c : 𝒪[K], φ (algebraMap 𝒪[K] _ c) = algebraMap K A c) :
+    ∃! π : Tate (Fin n) →ₐ[K] A,
+      (∀ f : Subring.unitClosedBall (Tate (Fin n)),
+        π f = φ ((restrictedMvPowerSeriesCompletionIntegerEquiv n).symm f)) ∧
+      (Subring.unitClosedBall (Tate (Fin n))).map π.toRingHom = φ.range := by
+  -- Transport `φ` to a `K°`-compatible ring homomorphism on `K⟨X₁, …, Xₙ⟩°`.
+  let e := restrictedMvPowerSeriesCompletionIntegerEquiv (K := K) n
+  let ψ : Subring.unitClosedBall (Tate (Fin n)) →+* A := φ.comp e.symm.toRingHom
+  have hψ (c : Subring.unitClosedBall K) :
+      ψ (unitClosedBallCoeffHom c) = algebraMap K A (c : K) := by
+    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      restrictedMvPowerSeriesCompletionIntegerEquiv_symm_unitClosedBallCoeffHom,
+      hφ_alg, coe_integerUnitClosedBallEquiv_symm]
+  -- Extend uniquely from `K⟨X₁, …, Xₙ⟩°` to `K⟨X₁, …, Xₙ⟩` and compute the unit-ball image.
+  obtain ⟨π, hπ_ball, hπ_uniq⟩ := ψ.existsUnique_algHom_of_unitClosedBall hψ
+  have hπ_eq (f : Subring.unitClosedBall (Tate (Fin n))) : π f = φ (e.symm f) := by
+    simpa only [ψ, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe] using hπ_ball f
+  have hmap : (Subring.unitClosedBall (Tate (Fin n))).map π.toRingHom = φ.range := by
+    ext a
+    simp only [Subring.mem_map, RingHom.mem_range]
+    refine ⟨fun ⟨f, hf, hfa⟩ ↦ ⟨e.symm ⟨f, hf⟩, by
+        simpa only [← hfa, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using (hπ_eq ⟨f, hf⟩).symm⟩,
+      fun ⟨w, hw⟩ ↦ ⟨e w, (e w).2, by
+        simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, e.symm_apply_apply, hw] using
+          hπ_eq (e w)⟩⟩
+  exact ⟨π, ⟨hπ_eq, hmap⟩, fun π' ⟨hπ', _⟩ ↦ hπ_uniq π' fun f ↦ by
+    simpa only [ψ, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe] using hπ' f⟩
+
+/-- **Topological integral presentations make `A` an affinoid algebra.** Let `K` be a complete
+nontrivially normed ultrametric field, `A` a topological `K`-algebra with separately continuous
+multiplication and `algebraMap K A` continuous at `0`, and `A₀ : Subring A` an open subring
+receiving a `K`-compatible surjective ring homomorphism from
+`restrictedMvPowerSeriesCompletion n 𝒪[K]`. Then the canonical extension `π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A`
+is **surjective onto `A`** and satisfies `(Subring.unitClosedBall _).map π.toRingHom = A₀`; in
+particular `IsAffinoidAlgebra K A` holds. -/
+theorem Huber.exists_surjective_algHom_map_unitClosedBall_eq {n : ℕ}
+    {A : Type*} [CommRing A] [Algebra K A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+    (hcont : ContinuousAt (algebraMap K A) 0) {A₀ : Subring A} (hA₀ : IsOpen (A₀ : Set A))
+    (φ : restrictedMvPowerSeriesCompletion n 𝒪[K] →+* A₀) (hφ_surj : Function.Surjective φ)
+    (hφ_alg : ∀ c : 𝒪[K], (φ (algebraMap 𝒪[K] _ c) : A) = algebraMap K A c) :
+    ∃ π : Tate (Fin n) →ₐ[K] A, Function.Surjective π ∧
+      (∀ f : Subring.unitClosedBall (Tate (Fin n)),
+        π f = φ ((restrictedMvPowerSeriesCompletionIntegerEquiv n).symm f)) ∧
+      (Subring.unitClosedBall (Tate (Fin n))).map π.toRingHom = A₀ := by
+  have hrange : (A₀.subtype.comp φ).range = A₀ := by
+    ext a
+    refine ⟨fun ⟨w, hw⟩ ↦ hw ▸ (φ w).2, fun ha ↦ ?_⟩
+    obtain ⟨w, hw⟩ := hφ_surj ⟨a, ha⟩
+    exact ⟨w, congrArg Subtype.val hw⟩
+  obtain ⟨π, ⟨hπ_ball, hπ_map⟩, -⟩ :=
+    (A₀.subtype.comp φ).existsUnique_algHom_of_restrictedMvPowerSeriesCompletion hφ_alg
+  rw [hrange] at hπ_map
+  refine ⟨π, fun a ↦ ?_,
+    fun f ↦ by simpa only [RingHom.comp_apply, Subring.coe_subtype] using hπ_ball f, hπ_map⟩
+  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
+  have hs : IsTopologicallyNilpotent (algebraMap K A ϖ) := by
+    simpa only [IsTopologicallyNilpotent, Function.comp_def, ← map_pow,
+      ← map_zero (algebraMap K A)] using
+      hcont.tendsto.comp (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hϖ1)
+  obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hs hA₀ a
+  rw [← map_pow, mul_comm, ← hπ_map] at hk
+  obtain ⟨g, -, hg⟩ := hk
+  refine ⟨(ϖ ^ k)⁻¹ • g, ?_⟩
+  rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hg
+  rw [map_smul, hg, ← Algebra.smul_def, inv_smul_smul₀ (pow_ne_zero k (norm_pos_iff.mp hϖ0))]
+
+/-- Corollary of `TauCeti.Huber.exists_surjective_algHom_map_unitClosedBall_eq`: over a complete
+nontrivially normed ultrametric field `K`, any topological `K`-algebra with separately continuous
+multiplication and `algebraMap K A` continuous at `0` containing an open subring presented as a
+`K`-compatible quotient of `𝒪[K]⟨X₁, …, Xₙ⟩` is an affinoid `K`-algebra. -/
+theorem Huber.isAffinoidAlgebra_of_restrictedMvPowerSeriesCompletion {n : ℕ}
+    {A : Type*} [CommRing A] [Algebra K A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+    (hcont : ContinuousAt (algebraMap K A) 0) {A₀ : Subring A} (hA₀ : IsOpen (A₀ : Set A))
+    (φ : restrictedMvPowerSeriesCompletion n 𝒪[K] →+* A₀) (hφ_surj : Function.Surjective φ)
+    (hφ_alg : ∀ c : 𝒪[K], (φ (algebraMap 𝒪[K] _ c) : A) = algebraMap K A c) :
+    IsAffinoidAlgebra K A := by
+  obtain ⟨π, hπ, -⟩ :=
+    Huber.exists_surjective_algHom_map_unitClosedBall_eq hcont hA₀ φ hφ_surj hφ_alg
+  exact (isAffinoidAlgebra_iff K A).mpr ⟨n, π, hπ⟩
+
+end IntegralPresentation
 
 end TauCeti

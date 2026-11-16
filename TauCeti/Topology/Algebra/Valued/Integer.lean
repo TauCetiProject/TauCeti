@@ -8,8 +8,11 @@ module
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import Mathlib.Topology.Algebra.LinearTopology
+public import TauCeti.Analysis.Normed.Ring.UnitBall
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import Mathlib.RingTheory.Noetherian.Basic
+import Mathlib.RingTheory.PrincipalIdealDomain
 
 /-!
 # Integer rings of valued rings and nonarchimedean normed fields
@@ -21,6 +24,11 @@ For an arbitrary valued ring, its integer ring has a linear topology, and it is
 complete when the ring is complete. These instances support topological evaluation
 of power series with integral coefficients.
 
+As a subring of `K`, `𝒪[K]` equals `Subring.unitClosedBall K` (`TauCeti.integer_eq_unitClosedBall`),
+yielding the identity ring equivalence `TauCeti.integerUnitClosedBallEquiv : 𝒪[K] ≃+* K°`.
+Accordingly, `𝒪[K]` is a discrete valuation ring if and only if it is noetherian, if and only if
+there is a strict norm gap `ρ < 1` above `{‖a‖ < 1}`.
+
 Every `𝒪[K]`-linear map between finite products of copies of `K` is `K`-linear, since `K` is the
 fraction field of `𝒪[K]`; hence it is continuous and carries bounded sets to bounded sets. If the
 norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the maximal ideal
@@ -29,6 +37,11 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 A ring homomorphism `φ : K → L` of nonarchimedean fields with `‖φ x‖ ≤ ‖x‖` maps `𝒪[K]` into
 `𝒪[L]`, and the restriction is local, so it induces a homomorphism of residue fields. Such maps
 are the coefficient maps along which reductions modulo the maximal ideal are functorial.
+
+## Main definitions
+
+* `TauCeti.integerUnitClosedBallEquiv`: the identity ring equivalence `𝒪[K] ≃+* K°` for a
+  nontrivially normed ultrametric field `K`.
 
 ## Main results
 
@@ -41,6 +54,8 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   nonzero element.
 * `Valued.integer.smul_def`: on a `K`-module, `𝒪[K]` acts through the inclusion `𝒪[K] → K`.
 * `Valued.integer.dvd_iff_norm_le`: divisibility in `𝒪[K]` is comparison of norms.
+* `Valued.integer.smul_mem_span_singleton_of_norm_le`: `c • y ∈ Ideal.span {x}` in `𝒪[K]`
+  whenever `‖(c : K)‖ ≤ ‖(x : K)‖`.
 * `Valued.integer.submodule_mem_of_norm_le`: an `𝒪[K]`-submodule of `K` contains every element
   of norm at most that of one of its elements.
 * `Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal`: every `𝒪[K]`-linear map
@@ -54,6 +69,11 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   `K`-space is continuous.
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
   products of `K` preserve and reflect bounded sets.
+* `TauCeti.integer_eq_unitClosedBall`: `𝒪[K] = Subring.unitClosedBall K` as subrings of `K`.
+* `TauCeti.isDiscreteValuationRing_integer_iff_isNoetherianRing` and
+  `TauCeti.isDiscreteValuationRing_integer_iff_exists_forall_norm_le`: `𝒪[K]` is a discrete
+  valuation ring if and only if it is noetherian, if and only if some `ρ < 1` bounds all norms
+  strictly below `1`.
 * `TauCeti.not_fg_maximalIdeal_integer`: for a densely normed field the maximal ideal of `𝒪[K]`
   is not finitely generated.
 -/
@@ -134,6 +154,14 @@ theorem Valued.integer.dvd_iff_norm_le {a b : Valued.integer K} :
     b ∣ a ↔ ‖(a : K)‖ ≤ ‖(b : K)‖ := by
   rw [(Valuation.integer.integers _).dvd_iff_le]
   simp [NormedField.v_eq_valuation, Algebra.algebraMap_ofSubsemiring_apply, ← NNReal.coe_le_coe]
+
+/-- **Principal ideal containment from norm comparison in `𝒪[K]`.** For `x, c, y ∈ 𝒪[K]`, if
+`‖(c : K)‖ ≤ ‖(x : K)‖` then `c • y ∈ Ideal.span {x}`. -/
+theorem Valued.integer.smul_mem_span_singleton_of_norm_le {x c y : Valued.integer K}
+    (hc : ‖(c : K)‖ ≤ ‖(x : K)‖) : c • y ∈ Ideal.span {x} :=
+  Ideal.mem_span_singleton.mpr <| Valued.integer.dvd_iff_norm_le.mpr <| by
+    simpa only [smul_eq_mul, Subring.coe_mul, norm_mul] using
+      (mul_le_of_le_one_right (norm_nonneg _) (Valued.integer.mem_iff.mp y.2)).trans hc
 
 /-- An `𝒪[K]`-submodule of `K` containing `y` contains every `x` with `‖x‖ ≤ ‖y‖`. -/
 theorem Valued.integer.submodule_mem_of_norm_le {M : Submodule (Valued.integer K) K} {x y : K}
@@ -258,6 +286,50 @@ theorem Valued.integer.exists_seq_mem_maximalIdeal :
 end DenselyNormed
 
 namespace TauCeti
+
+section NontriviallyNormedField
+
+open scoped Valued
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+
+/-- **The valuation ring `𝒪[K]` and the closed unit ball `K⁰` are the same subring of `K`.** -/
+theorem integer_eq_unitClosedBall : 𝒪[K] = Subring.unitClosedBall K :=
+  Subring.ext fun _ ↦ Valued.integer.mem_iff.trans Subring.mem_unitClosedBall.symm
+
+/-- **The identity ring equivalence `𝒪[K] ≃+* Subring.unitClosedBall K`** for a nontrivially
+normed ultrametric field `K`. -/
+noncomputable def integerUnitClosedBallEquiv : 𝒪[K] ≃+* Subring.unitClosedBall K :=
+  RingEquiv.subringCongr integer_eq_unitClosedBall
+
+@[simp]
+theorem coe_integerUnitClosedBallEquiv (x : 𝒪[K]) :
+    (integerUnitClosedBallEquiv x : K) = x := by
+  simp [integerUnitClosedBallEquiv]
+
+@[simp]
+theorem coe_integerUnitClosedBallEquiv_symm (x : Subring.unitClosedBall K) :
+    (integerUnitClosedBallEquiv.symm x : K) = x := by
+  simp [integerUnitClosedBallEquiv]
+
+/-- **Over a nontrivially normed ultrametric field, `𝒪[K]` is a discrete valuation ring if and only
+if it is noetherian.** -/
+theorem isDiscreteValuationRing_integer_iff_isNoetherianRing :
+    IsDiscreteValuationRing 𝒪[K] ↔ IsNoetherianRing 𝒪[K] := by
+  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ?_⟩
+  obtain ⟨a, ham, ha0⟩ := Valued.integer.exists_mem_maximalIdeal_coe_ne_zero (K := K)
+  exact ⟨fun h ↦ ha0 (by simpa [h] using ham)⟩
+
+/-- **Over a nontrivially normed ultrametric field, `𝒪[K]` is a discrete valuation ring if and only
+if some `ρ < 1` bounds every norm strictly below `1`.** -/
+theorem isDiscreteValuationRing_integer_iff_exists_forall_norm_le :
+    IsDiscreteValuationRing 𝒪[K] ↔ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ := by
+  rw [isDiscreteValuationRing_integer_iff_isNoetherianRing,
+    ← isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le]
+  exact ⟨fun _ ↦ isNoetherianRing_of_ringEquiv 𝒪[K] (integerUnitClosedBallEquiv (K := K)),
+    fun _ ↦ isNoetherianRing_of_ringEquiv _ (integerUnitClosedBallEquiv (K := K)).symm⟩
+
+end NontriviallyNormedField
 
 variable {K : Type*} [DenselyNormedField K] [IsUltrametricDist K]
 
