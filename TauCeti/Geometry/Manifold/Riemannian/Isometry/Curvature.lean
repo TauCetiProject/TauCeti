@@ -44,7 +44,8 @@ In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 * `mfderiv_curvatureOperator_mpullback`: the curvature operator of pulled-back smooth vector fields
   is the pullback of the curvature operator; `curvatureOperator_mpullback` is its vector-field
   form.
-* `mfderiv_curvatureTensor`: **naturality of the Riemann curvature tensor**.
+* `mfderiv_curvatureTensor`: **naturality of the Riemann curvature tensor**, and
+  `curvatureTensor_eq_zero_iff`: vanishing of the curvature tensor is preserved and reflected.
 * `inner_curvatureTensor_mfderiv` and `sectionalCurvature_mfderiv`: preservation of the curvature
   tensor paired with the metric, and of sectional curvature.
 * `ricciTensor_mfderiv` and `scalarCurvature_map`: preservation of the Ricci tensor and of the
@@ -151,6 +152,25 @@ theorem mfderiv_curvatureTensor (hf : IsLocalRiemannianIsometry I J f) (x : M)
     curvatureTensor_apply _ _ (hf.contMDiff_mpullback hX) (hf.contMDiff_mpullback hY)
       (hf.contMDiff_mpullback hZ)]
   exact hf.mfderiv_curvatureOperator_mpullback hX hY hZ x
+
+/-- Vanishing of the Riemann curvature tensor is preserved and reflected by a local Riemannian
+isometry. -/
+theorem curvatureTensor_eq_zero_iff (hf : IsLocalRiemannianIsometry I J f) (x : M) :
+    (leviCivitaConnection J N).curvatureTensor (f x) = 0 ↔
+      (leviCivitaConnection I M).curvatureTensor x = 0 := by
+  constructor
+  · intro h
+    ext u v w
+    apply hf.mfderiv_injective x
+    rw [hf.mfderiv_curvatureTensor, h]
+    simp
+  · intro h
+    ext u v w
+    obtain ⟨u', rfl⟩ := hf.mfderiv_surjective x u
+    obtain ⟨v', rfl⟩ := hf.mfderiv_surjective x v
+    obtain ⟨w', rfl⟩ := hf.mfderiv_surjective x w
+    rw [← hf.mfderiv_curvatureTensor, h]
+    simp
 
 /-- A local Riemannian isometry preserves the curvature tensor paired with the metric:
 `⟪R(df_x u, df_x v) (df_x w), df_x z⟫ = ⟪R(u, v) w, z⟫`. -/

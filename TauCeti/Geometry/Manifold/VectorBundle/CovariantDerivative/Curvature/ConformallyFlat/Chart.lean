@@ -8,68 +8,67 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Flat
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ConformallyFlat.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
-import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Scaling
 
 /-!
 # Local conformal factors and conformal Euclidean coordinate charts
 
-`Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat` requires around every point `x` a
+`Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat` (and its pointwise counterpart
+`Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlatAt`) requires around each point `x` a
 globally smooth positive conformal factor `f : M → ℝ` making `f g` flat near `x`. Classically,
 local conformal flatness is phrased either using a positive factor defined only on an open
 neighbourhood of `x`, or using a smooth coordinate chart onto an open Euclidean ball in which `g`
-is a positive smooth multiple of the Euclidean metric. This file proves that all three descriptions
-agree, with no dimension bound.
+is a positive smooth multiple of the Euclidean metric. This file proves that the first two
+descriptions agree on any smooth manifold with corners, while all three agree at interior points
+and on boundaryless manifolds, with no dimension bound.
 
 First, for an arbitrary smooth manifold with corners `M`:
-* restricting a conformally rescaled metric to an open submanifold commutes with conformal rescaling
-  (`rescale_restrictOpenTangentSpace`), and a locally defined smooth positive factor `φ : W → ℝ` on
-  an open neighbourhood `W` of `x` extends via its logarithm and a smooth bump function to a
-  globally smooth positive `f : M → ℝ` agreeing with `φ` near `x`, so flatness of `f g` near `x` is
-  equivalent to existence of an open neighbourhood `W` of `x` and a local positive factor flattening
-  `g|_W` on `W` (`eventually_curvatureTensor_rescale_eq_zero_iff_opens`,
-  `isLocallyConformallyFlat_iff_forall_exists_opens_rescale`);
+* a locally defined smooth positive factor `φ : W → ℝ` on an open neighbourhood `W` of `x` extends
+  via `ContMDiff.exists_contMDiffMap_pos_eventuallyEq_comp_subtype_val` to a globally smooth
+  positive `f : M → ℝ` agreeing with `φ` near `x`, so flatness of `f g` near `x` is equivalent to
+  existence of an open neighbourhood `W` of `x` and a local positive factor making `φ (g|_W)` flat
+  on `W` (`eventually_curvatureTensor_rescale_eq_zero_iff_of_eventuallyEq_opens`,
+  `isLocallyConformallyFlatAt_iff_exists_opens_curvatureTensor_rescale_eq_zero`,
+  `isLocallyConformallyFlat_iff_forall_exists_opens_curvatureTensor_rescale_eq_zero`);
 * restricting a locally conformally flat metric to an open submanifold preserves local conformal
   flatness, and local conformal flatness can be tested on any open cover
-  (`IsLocallyConformallyFlat.restrictOpenTangentSpace`,
-  `isLocallyConformallyFlat_iff_forall_exists_opens_isLocallyConformallyFlat`);
-* dividing a flattening factor by its value at `x₀` normalizes `f x₀ = 1` without changing the
-  vanishing of the curvature tensor (`IsLocallyConformallyFlat.exists_apply_eq_one`).
+  (`IsLocallyConformallyFlatAt.restrictOpenTangentSpace`,
+  `IsLocallyConformallyFlat.restrictOpenTangentSpace`,
+  `isLocallyConformallyFlat_iff_forall_exists_opens_isLocallyConformallyFlat`).
 
 Second, combining the local-factor characterization with the local Euclidean-isometry
-characterization of flat metrics (`TauCeti.Geometry.Manifold.Riemannian.Isometry.Flat`), flatness
-of a conformal rescaling near an interior point `x₀` is equivalent both to a `RiemannianIsometry`
-from `(W, φ (g|_W))` onto an open Euclidean ball centred at the origin and to a smooth
-diffeomorphism `Ψ : W ≃ₘ^∞ Metric.ball 0 r` sending `x₀` to `0` under which `g|_W` is `ψ` times the
-pullback of the Euclidean inner product
-(`eventually_curvatureTensor_rescale_eq_zero_iff_riemannianIsometry_ball_of_isInteriorPoint`,
-`eventually_curvatureTensor_rescale_eq_zero_iff_diffeomorph_ball_inner_eq_of_isInteriorPoint`). On
-a boundaryless manifold this characterizes `g.IsLocallyConformallyFlat` by conformal Euclidean
+characterization of flat metrics (`TauCeti.Geometry.Manifold.Riemannian.Isometry.Flat`), local
+conformal flatness at an interior point `x₀` is equivalent both to a `RiemannianIsometry` from
+`(W, φ (g|_W))` onto an open Euclidean ball centred at the origin and to a smooth diffeomorphism
+`Ψ : W ≃ₘ^∞ Metric.ball 0 r` sending `x₀` to `0` under which `g|_W` is `ψ` times the pullback of
+the Euclidean inner product
+(`isLocallyConformallyFlatAt_iff_exists_riemannianIsometry_ball_of_isInteriorPoint`,
+`isLocallyConformallyFlatAt_iff_exists_diffeomorph_ball_inner_eq_of_isInteriorPoint`). On a
+boundaryless manifold this characterizes `g.IsLocallyConformallyFlat` by conformal Euclidean
 coordinate charts (`isLocallyConformallyFlat_iff_forall_exists_riemannianIsometry_ball`,
-`isLocallyConformallyFlat_iff_forall_exists_diffeomorph_ball_inner_eq`). Conversely, local
-Riemannian isometries from conformally rescaled open neighbourhoods into any real inner-product
-space `F` imply local conformal flatness without any boundaryless or finite-dimensionality
-assumption on `F` (`isLocallyConformallyFlat_of_forall_exists_isLocalRiemannianIsometry`).
+`isLocallyConformallyFlat_iff_forall_exists_diffeomorph_ball_inner_eq`). Conversely, a conformal
+local Riemannian isometry from an open neighbourhood of `x₀` into any real inner-product space `F`
+gives local conformal flatness at `x₀` without any boundaryless or finite-dimensionality assumption
+on `F` (`isLocallyConformallyFlatAt_of_isLocalRiemannianIsometry`,
+`isLocallyConformallyFlat_of_forall_exists_isLocalRiemannianIsometry`).
 
 ## Main results
 
 In `Bundle.ContMDiffRiemannianMetric`:
 
-* `rescale_restrictOpenTangentSpace`: compatibility of `rescale` and `restrictOpenTangentSpace`.
-* `eventually_curvatureTensor_rescale_eq_zero_of_eventuallyEq_opens`,
-  `eventually_curvatureTensor_rescale_eq_zero_iff_opens`, and
-  `isLocallyConformallyFlat_iff_forall_exists_opens_rescale`: equivalence between global and
-  open-neighbourhood conformal factors.
-* `IsLocallyConformallyFlat.restrictOpenTangentSpace` and
+* `eventually_curvatureTensor_rescale_eq_zero_iff_of_eventuallyEq_opens`,
+  `isLocallyConformallyFlatAt_iff_exists_opens_curvatureTensor_rescale_eq_zero`, and
+  `isLocallyConformallyFlat_iff_forall_exists_opens_curvatureTensor_rescale_eq_zero`: equivalence
+  between global and open-neighbourhood conformal factors.
+* `IsLocallyConformallyFlatAt.restrictOpenTangentSpace`,
+  `IsLocallyConformallyFlat.restrictOpenTangentSpace`, and
   `isLocallyConformallyFlat_iff_forall_exists_opens_isLocallyConformallyFlat`: open-submanifold
-  locality of `IsLocallyConformallyFlat`.
-* `IsLocallyConformallyFlat.exists_apply_eq_one`: normalization `f x₀ = 1` of a flattening factor.
-* `isLocallyConformallyFlat_of_forall_exists_isLocalRiemannianIsometry`: sufficient condition from
-  conformal local Riemannian isometries into a real inner-product space.
-* `eventually_curvatureTensor_rescale_eq_zero_iff_riemannianIsometry_ball_of_isInteriorPoint` and
-  `eventually_curvatureTensor_rescale_eq_zero_iff_diffeomorph_ball_inner_eq_of_isInteriorPoint`:
+  locality of local conformal flatness.
+* `isLocallyConformallyFlatAt_of_isLocalRiemannianIsometry` and
+  `isLocallyConformallyFlat_of_forall_exists_isLocalRiemannianIsometry`: pointwise and global
+  sufficient conditions from conformal local Riemannian isometries into a real inner-product space.
+* `isLocallyConformallyFlatAt_iff_exists_riemannianIsometry_ball_of_isInteriorPoint` and
+  `isLocallyConformallyFlatAt_iff_exists_diffeomorph_ball_inner_eq_of_isInteriorPoint`:
   interior-point characterizations by conformal Euclidean ball charts.
 * `isLocallyConformallyFlat_iff_forall_exists_riemannianIsometry_ball` and
   `isLocallyConformallyFlat_iff_forall_exists_diffeomorph_ball_inner_eq`: global characterizations
@@ -90,23 +89,11 @@ noncomputable section
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-section RescaleRestrict
+section DiffeomorphEquiv
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- Conformally rescaling the restriction of a `C^n` metric to an open submanifold `U` by `f ∘ (↑)`
-agrees with restricting `g.rescale f` to `U`. -/
-theorem rescale_restrictOpenTangentSpace [IsManifold I 1 M] {n : ℕ∞ω}
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M)
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x)
-    (hfU : ContMDiff I 𝓘(ℝ) n (f ∘ (Subtype.val : U → M)))
-    (hfU_pos : ∀ y : U, 0 < (f ∘ (Subtype.val : U → M)) y) :
-    (g.restrictOpenTangentSpace U).rescale (f ∘ Subtype.val) hfU hfU_pos =
-      (g.rescale f hf hf_pos).restrictOpenTangentSpace U := by
-  ext y u v
-  simp only [restrictOpenTangentSpace_inner, rescale_inner, Function.comp_apply]
 
 /-- On an open submanifold `W`, existence of a smooth positive conformal factor `φ` and a
 `RiemannianIsometry` from `(W, φ (g|_W))` onto an open subset `V` of a real inner-product space `F`
@@ -144,10 +131,7 @@ private theorem exists_riemannianIsometry_opens_iff_exists_diffeomorph_inner_eq 
     have hΨ_inner := Ψ.inner_mfderiv y u v
     rw [inner_riemannianBundle ((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos) y u v,
       rescale_inner] at hΨ_inner
-    -- Coercing `Ψ : RiemannianIsometry ...` to a function is definitionally `Ψ.toDiffeomorph`.
-    change (g.restrictOpenTangentSpace W).inner y u v =
-      (φ y)⁻¹ * Inner.inner ℝ (mfderiv I 𝓘(ℝ, F) Ψ y u) (mfderiv I 𝓘(ℝ, F) Ψ y v)
-    rw [hΨ_inner, inv_mul_cancel_left₀ (hφ_pos y).ne']
+    rw [Ψ.coe_toDiffeomorph, hΨ_inner, inv_mul_cancel_left₀ (hφ_pos y).ne']
   · rintro ⟨d, ψ, hψ, hψ_pos, hd₀, hinner⟩
     have hφ : ContMDiff I 𝓘(ℝ) ∞ (fun y : W ↦ (ψ y)⁻¹) := hψ.inv₀ fun y ↦ (hψ_pos y).ne'
     have hφ_pos (y : W) : 0 < (ψ y)⁻¹ := inv_pos.2 (hψ_pos y)
@@ -165,7 +149,7 @@ private theorem exists_riemannianIsometry_opens_iff_exists_diffeomorph_inner_eq 
       inner_riemannianBundle ((g.restrictOpenTangentSpace W).rescale _ hφ hφ_pos) y u v,
       rescale_inner, hinner y u v, inv_mul_cancel_left₀ (hψ_pos y).ne']
 
-end RescaleRestrict
+end DiffeomorphEquiv
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -173,61 +157,56 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-! ### Local conformal factors and open submanifolds -/
 
-/-- A smooth positive function `φ` on an open neighbourhood `W` of `x` agrees near `⟨x, hxW⟩` with
-the restriction of a globally smooth positive function `f : M → ℝ`, obtained by extending `log φ`
-by a smooth bump function and exponentiating. -/
-private theorem exists_contMDiff_pos_eventuallyEq_of_opens {W : Opens M} {x : M} (hxW : x ∈ W)
-    {φ : W → ℝ} (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) (hφ_pos : ∀ y, 0 < φ y) :
-    ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f), (∀ z, 0 < f z) ∧
-      (f ∘ (Subtype.val : W → M)) =ᶠ[𝓝 ⟨x, hxW⟩] φ := by
-  have hlog : ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) (fun y : W ↦ Real.log (φ y)) :=
-    (hφ.log fun y ↦ (hφ_pos y).ne').of_le (by simp)
-  obtain ⟨G, hG_eq⟩ := (ContMDiffMap.contMDiffOn_extend W ⟨_, hlog⟩
-    0).exists_contMDiffMap_eventuallyEq (W.isOpen.mem_nhds hxW)
-  refine ⟨fun z ↦ Real.exp (G z), Real.contDiff_exp.comp_contMDiff G.contMDiff,
-    fun _ ↦ Real.exp_pos _, ?_⟩
-  refine ((continuous_subtype_val.tendsto ⟨x, hxW⟩).eventually hG_eq).mono fun y hy ↦ ?_
-  simpa [Function.comp_apply, hy, Subtype.val_injective.extend_apply] using Real.exp_log (hφ_pos y)
-
 /-- If a globally smooth positive factor `f : M → ℝ` agrees near `xW : W` on an open submanifold `W`
-with a smooth positive factor `φ : W → ℝ` making `φ (g|_W)` flat near `xW`, then `f g` is flat near
-`(xW : M)`. -/
-theorem eventually_curvatureTensor_rescale_eq_zero_of_eventuallyEq_opens
+with a smooth positive factor `φ : W → ℝ`, then `f g` is flat near `(xW : M)` if and only if
+`φ (g|_W)` is flat near `xW`. -/
+theorem eventually_curvatureTensor_rescale_eq_zero_iff_of_eventuallyEq_opens
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     {W : Opens M} (xW : W) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ z, 0 < f z)
     {φ : W → ℝ} (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) (hφ_pos : ∀ y, 0 < φ y)
-    (hf_eq : (f ∘ (Subtype.val : W → M)) =ᶠ[𝓝 xW] φ)
-    (hflat : ∀ᶠ y : W in 𝓝 xW,
-      (letI : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
-          ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I W).curvatureTensor y) = 0) :
-    ∀ᶠ y in 𝓝 (xW : M), (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+    (hf_eq : (f ∘ (Subtype.val : W → M)) =ᶠ[𝓝 xW] φ) :
+    (∀ᶠ y in 𝓝 (xW : M), (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 := by
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0) ↔
+    ∀ᶠ y : W in 𝓝 xW, (letI : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
+        ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I W).curvatureTensor y) = 0 := by
   have hinner : ∀ᶠ y : W in 𝓝 xW,
       ((g.rescale f hf hf_pos).restrictOpenTangentSpace W).inner y =
         ((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).inner y :=
     hf_eq.mono fun y hy ↦ by
       ext u v
       simp only [restrictOpenTangentSpace_inner, rescale_inner]
-      rw [← hy]
-      rfl
-  have hWflat : ∀ᶠ y : W in 𝓝 xW,
-      (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+      rw [← hy, Function.comp_apply]
+  have hpt : ∀ᶠ y : W in 𝓝 xW,
+      ((letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
           ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor (y : M)) = 0 := by
-    filter_upwards [hinner.eventually_nhds, hflat] with y hy hyflat
-    rw [← curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
-      (g.rescale f hf hf_pos) W y]
-    exact (curvatureTensor_leviCivitaConnection_eq_zero_iff_of_eventually_inner_eq hy).2 hyflat
-  refine eventually_of_mem (W.isOpen.isOpenEmbedding_subtypeVal.image_mem_nhds.2 hWflat) ?_
-  rintro _ ⟨y, hy, rfl⟩
-  exact hy
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor (y : M)) = 0) ↔
+      ((letI : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
+          ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I W).curvatureTensor y) = 0) :=
+    hinner.eventually_nhds.mono fun y hy ↦ by
+      rw [← curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
+        (g.rescale f hf hf_pos) W y,
+        curvatureTensor_leviCivitaConnection_eq_of_eventually_inner_eq hy]
+  constructor
+  · intro hflat
+    filter_upwards [(continuous_subtype_val.tendsto xW).eventually hflat, hpt] with y hy hyiff
+    exact hyiff.1 hy
+  · intro hflat
+    have hWflat : ∀ᶠ y : W in 𝓝 xW,
+        (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+            ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+          (CovariantDerivative.leviCivitaConnection I M).curvatureTensor (y : M)) = 0 := by
+      filter_upwards [hflat, hpt] with y hy hyiff
+      exact hyiff.2 hy
+    refine eventually_of_mem (W.isOpen.isOpenEmbedding_subtypeVal.image_mem_nhds.2 hWflat) ?_
+    rintro _ ⟨y, hy, rfl⟩
+    exact hy
 
 /-- If an open neighbourhood `W` of `x` carries a smooth positive factor `φ : W → ℝ` making
-`φ (g|_W)` flat near `⟨x, hxW⟩`, then `M` carries a globally smooth positive factor `f : M → ℝ`
-making `f g` flat near `x`. -/
-private theorem exists_eventually_curvatureTensor_rescale_eq_zero_of_opens
+`φ (g|_W)` flat near `⟨x, hxW⟩`, then `g` is locally conformally flat at `x`. -/
+private theorem isLocallyConformallyFlatAt_of_opens
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     {W : Opens M} {x : M} (hxW : x ∈ W) {φ : W → ℝ} (hφ : ContMDiff I 𝓘(ℝ) ∞ φ)
     (hφ_pos : ∀ y, 0 < φ y)
@@ -235,48 +214,45 @@ private theorem exists_eventually_curvatureTensor_rescale_eq_zero_of_opens
       (letI : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
           ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
         (CovariantDerivative.leviCivitaConnection I W).curvatureTensor y) = 0) :
-    ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ z, 0 < f z),
-      ∀ᶠ y in 𝓝 x, (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
-          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 := by
-  obtain ⟨f, hf, hf_pos, hf_eq⟩ := exists_contMDiff_pos_eventuallyEq_of_opens hxW hφ hφ_pos
-  exact ⟨f, hf, hf_pos, g.eventually_curvatureTensor_rescale_eq_zero_of_eventuallyEq_opens
-    ⟨x, hxW⟩ hf hf_pos hφ hφ_pos hf_eq hflat⟩
+    g.IsLocallyConformallyFlatAt x := by
+  obtain ⟨G, hG_pos, hG_eq⟩ :=
+    (hφ.of_le (by simp : (⊤ : ℕ∞) ≤ ∞)).exists_contMDiffMap_pos_eventuallyEq_comp_subtype_val
+      (x := ⟨x, hxW⟩) hφ_pos
+  exact g.isLocallyConformallyFlatAt_iff.2 ⟨G, G.contMDiff, hG_pos,
+    (g.eventually_curvatureTensor_rescale_eq_zero_iff_of_eventuallyEq_opens ⟨x, hxW⟩
+      G.contMDiff hG_pos hφ hφ_pos hG_eq).2 hflat⟩
 
-/-- **Global versus open-neighbourhood conformal factors at a point.** A smooth metric `g` admits a
-globally smooth positive factor `f : M → ℝ` flattening `f g` near `x` if and only if `x` has an open
-neighbourhood `W` with a smooth positive factor `φ : W → ℝ` making `φ (g|_W)` flat on `W`. -/
-theorem eventually_curvatureTensor_rescale_eq_zero_iff_opens
+/-- **Global versus open-neighbourhood conformal factors at a point.** A smooth metric `g` is
+locally conformally flat at `x` if and only if `x` has an open neighbourhood `W` with a smooth
+positive factor `φ : W → ℝ` making `φ (g|_W)` flat on `W`. -/
+theorem isLocallyConformallyFlatAt_iff_exists_opens_curvatureTensor_rescale_eq_zero
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {x : M} :
-    (∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ z, 0 < f z),
-      ∀ᶠ y in 𝓝 x, (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
-          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0) ↔
-    ∃ (W : Opens M) (_ : x ∈ W) (φ : W → ℝ) (hφ : ContMDiff I 𝓘(ℝ) ∞ φ)
-      (hφ_pos : ∀ y, 0 < φ y),
-      ∀ y : W, (letI : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
-          ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I W).curvatureTensor y) = 0 := by
+    g.IsLocallyConformallyFlatAt x ↔
+      ∃ (W : Opens M) (_ : x ∈ W) (φ : W → ℝ) (hφ : ContMDiff I 𝓘(ℝ) ∞ φ)
+        (hφ_pos : ∀ y, 0 < φ y),
+        ∀ y : W, (letI : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
+            ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
+          (CovariantDerivative.leviCivitaConnection I W).curvatureTensor y) = 0 := by
   constructor
-  · rintro ⟨f, hf, hf_pos, hflat⟩
+  · intro hg
+    obtain ⟨f, hf, hf_pos, hflat⟩ := g.isLocallyConformallyFlatAt_iff.1 hg
     obtain ⟨U, hUflat, hUopen, hxU⟩ := eventually_nhds_iff.1 hflat
     let W : Opens M := ⟨U, hUopen⟩
-    have hφ : ContMDiff I 𝓘(ℝ) ∞ (f ∘ (Subtype.val : W → M)) := hf.comp contMDiff_subtype_val
-    have hEq := g.rescale_restrictOpenTangentSpace W hf hf_pos hφ fun y ↦ hf_pos y.1
-    refine ⟨W, hxU, f ∘ Subtype.val, hφ, fun y ↦ hf_pos y.1, fun y ↦ ?_⟩
+    have hEq := g.restrictOpenTangentSpace_rescale W f hf hf_pos
+    refine ⟨W, hxU, f ∘ Subtype.val, hf.comp contMDiff_subtype_val, fun y ↦ hf_pos y.1, fun y ↦ ?_⟩
     let _ : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
       ⟨((g.rescale f hf hf_pos).restrictOpenTangentSpace W).toRiemannianMetric⟩
-    rw [curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq (by rw [hEq]; rfl) y]
+    rw [curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
+      (congrArg ContMDiffRiemannianMetric.toRiemannianMetric hEq) y]
     exact (curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
       (g.rescale f hf hf_pos) W y).2 (hUflat y.1 y.2)
   · rintro ⟨W, hxW, φ, hφ, hφ_pos, hflat⟩
-    exact g.exists_eventually_curvatureTensor_rescale_eq_zero_of_opens hxW hφ hφ_pos
-      (Eventually.of_forall hflat)
+    exact g.isLocallyConformallyFlatAt_of_opens hxW hφ hφ_pos (Eventually.of_forall hflat)
 
 /-- **Local conformal flatness via local conformal factors.** A smooth metric `g` is locally
 conformally flat if and only if every point `x` has an open neighbourhood `W` and a smooth positive
 function `φ : W → ℝ` such that `φ (g|_W)` has vanishing curvature tensor on `W`. -/
-theorem isLocallyConformallyFlat_iff_forall_exists_opens_rescale
+theorem isLocallyConformallyFlat_iff_forall_exists_opens_curvatureTensor_rescale_eq_zero
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
     g.IsLocallyConformallyFlat ↔
       ∀ x : M, ∃ (W : Opens M) (_ : x ∈ W) (φ : W → ℝ) (hφ : ContMDiff I 𝓘(ℝ) ∞ φ)
@@ -284,27 +260,30 @@ theorem isLocallyConformallyFlat_iff_forall_exists_opens_rescale
         ∀ y : W, (letI : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
             ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
           (CovariantDerivative.leviCivitaConnection I W).curvatureTensor y) = 0 :=
-  g.isLocallyConformallyFlat_iff.trans
-    (forall_congr' fun _ ↦ g.eventually_curvatureTensor_rescale_eq_zero_iff_opens)
+  g.isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.trans
+    (forall_congr' fun _ ↦
+      g.isLocallyConformallyFlatAt_iff_exists_opens_curvatureTensor_rescale_eq_zero)
+
+/-- Restricting a metric that is locally conformally flat at `(x : M)` to an open submanifold `U`
+containing `x` preserves local conformal flatness at `x`. -/
+theorem IsLocallyConformallyFlatAt.restrictOpenTangentSpace
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {U : Opens M} {x : U}
+    (hg : g.IsLocallyConformallyFlatAt (x : M)) :
+    (g.restrictOpenTangentSpace U).IsLocallyConformallyFlatAt x := by
+  obtain ⟨f, hf, hf_pos, hflat⟩ := g.isLocallyConformallyFlatAt_iff.1 hg
+  exact (g.restrictOpenTangentSpace U).isLocallyConformallyFlatAt_iff.2
+    ⟨f ∘ Subtype.val, hf.comp contMDiff_subtype_val, fun y ↦ hf_pos y.1,
+      (g.eventually_curvatureTensor_rescale_eq_zero_iff_of_eventuallyEq_opens x hf hf_pos
+        (hf.comp contMDiff_subtype_val) (fun y ↦ hf_pos y.1) EventuallyEq.rfl).1 hflat⟩
 
 /-- Restricting a locally conformally flat metric to an open submanifold yields a locally
 conformally flat metric. -/
 theorem IsLocallyConformallyFlat.restrictOpenTangentSpace
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     (hg : g.IsLocallyConformallyFlat) (U : Opens M) :
-    (g.restrictOpenTangentSpace U).IsLocallyConformallyFlat := by
-  rw [isLocallyConformallyFlat_iff]
-  intro x
-  obtain ⟨f, hf, hf_pos, hflat⟩ := g.isLocallyConformallyFlat_iff.1 hg x.1
-  have hφ : ContMDiff I 𝓘(ℝ) ∞ (f ∘ (Subtype.val : U → M)) := hf.comp contMDiff_subtype_val
-  have hEq := g.rescale_restrictOpenTangentSpace U hf hf_pos hφ fun y ↦ hf_pos y.1
-  refine ⟨f ∘ Subtype.val, hφ, fun y ↦ hf_pos y.1, ?_⟩
-  refine ((continuous_subtype_val.tendsto x).eventually hflat).mono fun y hy ↦ ?_
-  let _ : RiemannianBundle (fun z : U ↦ TangentSpace I z) :=
-    ⟨((g.rescale f hf hf_pos).restrictOpenTangentSpace U).toRiemannianMetric⟩
-  rw [curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq (by rw [hEq]; rfl) y]
-  exact (curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
-    (g.rescale f hf hf_pos) U y).2 hy
+    (g.restrictOpenTangentSpace U).IsLocallyConformallyFlat :=
+  (g.restrictOpenTangentSpace U).isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.2
+    fun x ↦ (hg.isLocallyConformallyFlatAt x.1).restrictOpenTangentSpace
 
 /-- **Locality of `IsLocallyConformallyFlat`.** A smooth metric `g` is locally conformally flat if
 and only if every point has an open neighbourhood on which the restricted metric is locally
@@ -314,40 +293,39 @@ theorem isLocallyConformallyFlat_iff_forall_exists_opens_isLocallyConformallyFla
     g.IsLocallyConformallyFlat ↔
       ∀ x : M, ∃ W : Opens M, x ∈ W ∧ (g.restrictOpenTangentSpace W).IsLocallyConformallyFlat := by
   refine ⟨fun hg x ↦ ⟨⊤, trivial, hg.restrictOpenTangentSpace ⊤⟩,
-    fun h ↦ g.isLocallyConformallyFlat_iff.2 fun x ↦ ?_⟩
+    fun h ↦ g.isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.2 fun x ↦ ?_⟩
   obtain ⟨W, hxW, hW⟩ := h x
   obtain ⟨φ, hφ, hφ_pos, hflat⟩ :=
-    (g.restrictOpenTangentSpace W).isLocallyConformallyFlat_iff.1 hW ⟨x, hxW⟩
-  exact g.exists_eventually_curvatureTensor_rescale_eq_zero_of_opens hxW hφ hφ_pos hflat
-
-/-- **Pointwise normalization of a flattening conformal factor.** If `g` is locally conformally
-flat, then around every point `x₀` there is a smooth positive conformal factor `f : M → ℝ`
-normalized by `f x₀ = 1` such that `f g` is flat near `x₀`. -/
-theorem IsLocallyConformallyFlat.exists_apply_eq_one
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-    (hg : g.IsLocallyConformallyFlat) (x₀ : M) :
-    ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ y, 0 < f y),
-      f x₀ = 1 ∧
-      ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 := by
-  obtain ⟨f₀, hf₀, hf₀_pos, hflat⟩ := g.isLocallyConformallyFlat_iff.1 hg x₀
-  set c : ℝ := (f₀ x₀)⁻¹
-  have hc : 0 < c := inv_pos.2 (hf₀_pos x₀)
-  have hf : ContMDiff I 𝓘(ℝ) ∞ (fun y ↦ c * f₀ y) := contMDiff_const.mul hf₀
-  have hf_pos (y : M) : 0 < c * f₀ y := mul_pos hc (hf₀_pos y)
-  have hEq : g.rescale (fun y ↦ c * f₀ y) hf hf_pos =
-      (g.rescale f₀ hf₀ hf₀_pos).rescale (fun _ ↦ c) contMDiff_const (fun _ ↦ hc) :=
-    (g.rescale_rescale (hf := hf₀) (hf_pos := hf₀_pos) (fun _ ↦ c) contMDiff_const
-      (fun _ ↦ hc)).symm
-  refine ⟨fun y ↦ c * f₀ y, hf, hf_pos, inv_mul_cancel₀ (hf₀_pos x₀).ne', hflat.mono fun y hy ↦ ?_⟩
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨((g.rescale f₀ hf₀ hf₀_pos).rescale (fun _ ↦ c) contMDiff_const
-      (fun _ ↦ hc)).toRiemannianMetric⟩
-  rw [curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq (by rw [hEq]; rfl) y,
-    (g.rescale f₀ hf₀ hf₀_pos).curvatureTensor_leviCivitaConnection_rescale_const hc y, hy]
+    (g.restrictOpenTangentSpace W).isLocallyConformallyFlatAt_iff.1
+      (hW.isLocallyConformallyFlatAt ⟨x, hxW⟩)
+  exact g.isLocallyConformallyFlatAt_of_opens hxW hφ hφ_pos hflat
 
 /-! ### Comparison with conformal Euclidean coordinate charts -/
+
+/-- **Pointwise sufficient condition from a conformal local Riemannian isometry.** If `x₀` lies in
+an open neighbourhood `W` carrying a smooth positive factor `φ : W → ℝ` and a
+`TauCeti.IsLocalRiemannianIsometry` from `(W, φ (g|_W))` into a real inner-product space `F`, then
+`g` is locally conformally flat at `x₀`. Finite-dimensionality of `F` is derived automatically from
+invertibility of the differential, and no boundaryless assumption is needed. -/
+theorem isLocallyConformallyFlatAt_of_isLocalRiemannianIsometry
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {W : Opens M} {x₀ : M} (hx₀W : x₀ ∈ W) {φ : W → ℝ} (hφ : ContMDiff I 𝓘(ℝ) ∞ φ)
+    (hφ_pos : ∀ y, 0 < φ y) {Φ : W → F}
+    (hΦ : letI : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
+        ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩;
+      TauCeti.IsLocalRiemannianIsometry I 𝓘(ℝ, F) Φ) :
+    g.IsLocallyConformallyFlatAt x₀ := by
+  let gW := (g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos
+  let _ : RiemannianBundle (fun y : W ↦ TangentSpace I y) := ⟨gW.toRiemannianMetric⟩
+  let _ := Bundle.instIsContMDiffRiemannianBundle gW
+  obtain ⟨A, -⟩ := hΦ.isInvertible_mfderiv ⟨x₀, hx₀W⟩
+  have : FiniteDimensional ℝ (TangentSpace I (⟨x₀, hx₀W⟩ : W)) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace I) (⟨x₀, hx₀W⟩ : W)
+  have : FiniteDimensional ℝ F :=
+    (A.trans (NormedSpace.fromTangentSpace (Φ ⟨x₀, hx₀W⟩))).toLinearEquiv.finiteDimensional
+  refine g.isLocallyConformallyFlatAt_of_opens hx₀W hφ hφ_pos (Eventually.of_forall fun y ↦ ?_)
+  exact (hΦ.curvatureTensor_eq_zero_iff y).1 (curvatureTensor_leviCivitaConnection_model_space _)
 
 /-- **Sufficient criterion for local conformal flatness from conformal local Riemannian
 isometries.** If every point `x` has an open neighbourhood `W` carrying a smooth positive factor
@@ -362,94 +340,69 @@ theorem isLocallyConformallyFlat_of_forall_exists_isLocalRiemannianIsometry
       letI : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
         ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩
       TauCeti.IsLocalRiemannianIsometry I 𝓘(ℝ, F) Φ) :
-    g.IsLocallyConformallyFlat := by
-  rw [g.isLocallyConformallyFlat_iff_forall_exists_opens_rescale]
-  intro x
-  obtain ⟨W, hxW, φ, hφ, hφ_pos, Φ, hΦ⟩ := h x
-  let gW := (g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos
-  let _ : RiemannianBundle (fun y : W ↦ TangentSpace I y) := ⟨gW.toRiemannianMetric⟩
-  have : IsContMDiffRiemannianBundle I ∞ E (fun y : W ↦ TangentSpace I y) :=
-    ⟨gW.inner, gW.contMDiff, fun _ _ _ ↦ rfl⟩
-  obtain ⟨A, -⟩ := hΦ.isInvertible_mfderiv ⟨x, hxW⟩
-  have : FiniteDimensional ℝ (TangentSpace I (⟨x, hxW⟩ : W)) :=
-    VectorBundle.finiteDimensional ℝ E (TangentSpace I) (⟨x, hxW⟩ : W)
-  have : FiniteDimensional ℝ F :=
-    (A.trans (NormedSpace.fromTangentSpace (Φ ⟨x, hxW⟩))).toLinearEquiv.finiteDimensional
-  refine ⟨W, hxW, φ, hφ, hφ_pos, fun y ↦ ?_⟩
-  exact TauCeti.curvatureTensor_leviCivitaConnection_eq_zero_of_isLocalRiemannianIsometry
-    (W := (⊤ : Opens W)) (hΦ.comp (TauCeti.IsLocalRiemannianIsometry.subtype_val ⊤)) trivial
+    g.IsLocallyConformallyFlat :=
+  g.isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.2 fun x ↦ by
+    obtain ⟨W, hxW, φ, hφ, hφ_pos, Φ, hΦ⟩ := h x
+    exact g.isLocallyConformallyFlatAt_of_isLocalRiemannianIsometry hxW hφ hφ_pos hΦ
 
 /-- **Interior-point characterization by a conformal Riemannian isometry onto a Euclidean ball.**
-Near an interior point `x₀`, existence of a smooth positive conformal factor flattening `g` is
-equivalent to existence of an open neighbourhood `W` of `x₀`, a smooth positive `φ : W → ℝ`, and a
-`RiemannianIsometry` from `(W, φ (g|_W))` onto `Metric.ball 0 r` sending `x₀` to `0`. -/
-theorem eventually_curvatureTensor_rescale_eq_zero_iff_riemannianIsometry_ball_of_isInteriorPoint
+At an interior point `x₀`, `g` is locally conformally flat at `x₀` if and only if there exist an
+open neighbourhood `W` of `x₀`, a smooth positive `φ : W → ℝ`, and a `RiemannianIsometry` from
+`(W, φ (g|_W))` onto `Metric.ball 0 r` sending `x₀` to `0`. -/
+theorem isLocallyConformallyFlatAt_iff_exists_riemannianIsometry_ball_of_isInteriorPoint
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {x₀ : M}
     (hx₀ : I.IsInteriorPoint x₀) :
-    (∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ z, 0 < f z),
-      ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
-          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0) ↔
-    ∃ (W : Opens M) (hx₀W : x₀ ∈ W) (r : ℝ) (_ : 0 < r)
-      (φ : W → ℝ) (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) (hφ_pos : ∀ y, 0 < φ y),
-      letI : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
-        ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩
-      ∃ Ψ : TauCeti.RiemannianIsometry I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) W
-          (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
-            Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
-        (Ψ ⟨x₀, hx₀W⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0 := by
+    g.IsLocallyConformallyFlatAt x₀ ↔
+      ∃ (W : Opens M) (hx₀W : x₀ ∈ W) (r : ℝ) (_ : 0 < r)
+        (φ : W → ℝ) (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) (hφ_pos : ∀ y, 0 < φ y),
+        letI : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
+          ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩
+        ∃ Ψ : TauCeti.RiemannianIsometry I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) W
+            (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
+              Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
+          (Ψ ⟨x₀, hx₀W⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0 := by
   constructor
-  · rintro ⟨f, hf, hf_pos, hflat⟩
+  · intro hg
+    obtain ⟨f, hf, hf_pos, hflat⟩ := g.isLocallyConformallyFlatAt_iff.1 hg
     obtain ⟨W, hx₀W, r, hr, Ψ, hΨ₀⟩ :=
       (eventually_curvatureTensor_leviCivitaConnection_eq_zero_iff_of_isInteriorPoint
         (g.rescale f hf hf_pos) hx₀).1 hflat
-    have hφ : ContMDiff I 𝓘(ℝ) ∞ (f ∘ (Subtype.val : W → M)) := hf.comp contMDiff_subtype_val
     have hEq := congrArg ContMDiffRiemannianMetric.toRiemannianMetric
-      (g.rescale_restrictOpenTangentSpace W hf hf_pos hφ fun y ↦ hf_pos y.1).symm
-    exact ⟨W, hx₀W, r, hr, f ∘ Subtype.val, hφ, fun y ↦ hf_pos y.1, hEq ▸ ⟨Ψ, hΨ₀⟩⟩
+      (g.restrictOpenTangentSpace_rescale W f hf hf_pos)
+    exact ⟨W, hx₀W, r, hr, f ∘ Subtype.val, hf.comp contMDiff_subtype_val, fun y ↦ hf_pos y.1,
+      hEq ▸ ⟨Ψ, hΨ₀⟩⟩
   · rintro ⟨W, hx₀W, r, -, φ, hφ, hφ_pos, Ψ, -⟩
-    rw [g.eventually_curvatureTensor_rescale_eq_zero_iff_opens]
-    let gW := (g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos
-    let _ : RiemannianBundle (fun z : W ↦ TangentSpace I z) := ⟨gW.toRiemannianMetric⟩
-    have : IsContMDiffRiemannianBundle I ∞ E (fun z : W ↦ TangentSpace I z) :=
-      ⟨gW.inner, gW.contMDiff, fun _ _ _ ↦ rfl⟩
-    let B : Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) :=
-      ⟨Metric.ball 0 r, Metric.isOpen_ball⟩
-    have hiso := ((TauCeti.IsLocalRiemannianIsometry.subtype_val B).comp
-      Ψ.isLocalRiemannianIsometry).comp
-      (TauCeti.IsLocalRiemannianIsometry.subtype_val (⊤ : Opens W))
-    exact ⟨W, hx₀W, φ, hφ, hφ_pos, fun y ↦
-      TauCeti.curvatureTensor_leviCivitaConnection_eq_zero_of_isLocalRiemannianIsometry
-        hiso trivial⟩
+    let _ : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
+      ⟨((g.restrictOpenTangentSpace W).rescale φ hφ hφ_pos).toRiemannianMetric⟩
+    exact g.isLocallyConformallyFlatAt_of_isLocalRiemannianIsometry hx₀W hφ hφ_pos
+      ((TauCeti.IsLocalRiemannianIsometry.subtype_val
+        (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
+          Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))))).comp Ψ.isLocalRiemannianIsometry)
 
-/-- **Interior-point characterization by a conformal Euclidean coordinate chart.** Near an interior
-point `x₀`, existence of a smooth positive conformal factor flattening `g` is equivalent to
-existence of an open neighbourhood `W` of `x₀`, a smooth diffeomorphism `Ψ` of `W` onto an open
-Euclidean ball centred at `0` sending `x₀` to `0`, and a smooth positive function `ψ : W → ℝ` such
-that `g|_W` is `ψ` times the pullback of the Euclidean inner product along `Ψ`. -/
-theorem eventually_curvatureTensor_rescale_eq_zero_iff_diffeomorph_ball_inner_eq_of_isInteriorPoint
+/-- **Interior-point characterization by a conformal Euclidean coordinate chart.** At an interior
+point `x₀`, `g` is locally conformally flat at `x₀` if and only if there exist an open
+neighbourhood `W` of `x₀`, a smooth diffeomorphism `Ψ` of `W` onto an open Euclidean ball centred
+at `0` sending `x₀` to `0`, and a smooth positive function `ψ : W → ℝ` such that `g|_W` is `ψ`
+times the pullback of the Euclidean inner product along `Ψ`. -/
+theorem isLocallyConformallyFlatAt_iff_exists_diffeomorph_ball_inner_eq_of_isInteriorPoint
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {x₀ : M}
     (hx₀ : I.IsInteriorPoint x₀) :
-    (∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ z, 0 < f z),
-      ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
-          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0) ↔
-    ∃ (W : Opens M) (hx₀W : x₀ ∈ W) (r : ℝ) (_ : 0 < r)
-      (Ψ : W ≃ₘ^∞⟮I, 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))⟯
-        (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
-          Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))))
-      (ψ : W → ℝ),
-      ContMDiff I 𝓘(ℝ) ∞ ψ ∧ (∀ y, 0 < ψ y) ∧
-      (Ψ ⟨x₀, hx₀W⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0 ∧
-      ∀ (y : W) (u v : TangentSpace I y),
-        (g.restrictOpenTangentSpace W).inner y u v =
-          ψ y * Inner.inner ℝ
-            (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
-              ((Subtype.val : _ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∘ Ψ) y u)
-            (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
-              ((Subtype.val : _ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∘ Ψ) y v) := by
-  rw [g.eventually_curvatureTensor_rescale_eq_zero_iff_riemannianIsometry_ball_of_isInteriorPoint
-    hx₀]
+    g.IsLocallyConformallyFlatAt x₀ ↔
+      ∃ (W : Opens M) (hx₀W : x₀ ∈ W) (r : ℝ) (_ : 0 < r)
+        (Ψ : W ≃ₘ^∞⟮I, 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))⟯
+          (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
+            Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))))
+        (ψ : W → ℝ),
+        ContMDiff I 𝓘(ℝ) ∞ ψ ∧ (∀ y, 0 < ψ y) ∧
+        (Ψ ⟨x₀, hx₀W⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0 ∧
+        ∀ (y : W) (u v : TangentSpace I y),
+          (g.restrictOpenTangentSpace W).inner y u v =
+            ψ y * Inner.inner ℝ
+              (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
+                ((Subtype.val : _ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∘ Ψ) y u)
+              (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
+                ((Subtype.val : _ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∘ Ψ) y v) := by
+  rw [g.isLocallyConformallyFlatAt_iff_exists_riemannianIsometry_ball_of_isInteriorPoint hx₀]
   exact exists_congr fun W ↦ exists_congr fun hx₀W ↦ exists_congr fun r ↦ exists_congr fun _ ↦
     exists_riemannianIsometry_opens_iff_exists_diffeomorph_inner_eq g W ⟨x₀, hx₀W⟩
       ⟨Metric.ball 0 r, Metric.isOpen_ball⟩ 0
@@ -473,8 +426,8 @@ theorem isLocallyConformallyFlat_iff_forall_exists_riemannianIsometry_ball
             (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
               Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
           (Ψ ⟨x, hxW⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0 :=
-  g.isLocallyConformallyFlat_iff.trans <| forall_congr' fun _ ↦
-    g.eventually_curvatureTensor_rescale_eq_zero_iff_riemannianIsometry_ball_of_isInteriorPoint
+  g.isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.trans <| forall_congr' fun _ ↦
+    g.isLocallyConformallyFlatAt_iff_exists_riemannianIsometry_ball_of_isInteriorPoint
       BoundarylessManifold.isInteriorPoint
 
 /-- **Conformal Euclidean coordinate-chart characterization of local conformal flatness.** On a
@@ -499,8 +452,8 @@ theorem isLocallyConformallyFlat_iff_forall_exists_diffeomorph_ball_inner_eq
                 ((Subtype.val : _ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∘ Ψ) y u)
               (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
                 ((Subtype.val : _ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∘ Ψ) y v) :=
-  g.isLocallyConformallyFlat_iff.trans <| forall_congr' fun _ ↦
-    g.eventually_curvatureTensor_rescale_eq_zero_iff_diffeomorph_ball_inner_eq_of_isInteriorPoint
+  g.isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.trans <| forall_congr' fun _ ↦
+    g.isLocallyConformallyFlatAt_iff_exists_diffeomorph_ball_inner_eq_of_isInteriorPoint
       BoundarylessManifold.isInteriorPoint
 
 end Boundaryless

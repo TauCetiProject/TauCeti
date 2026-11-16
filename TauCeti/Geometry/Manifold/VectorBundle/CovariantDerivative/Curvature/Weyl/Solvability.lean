@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.FDeriv.QuadraticMap
 import TauCeti.Analysis.ODE.Frobenius
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
-import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.ConformalCurvature
@@ -62,11 +61,10 @@ and extending from the coordinate domain by a smooth bump function gives the glo
 
 ## Main results
 
-* `TauCeti.Manifold.exists_eventually_hessian_eq_model_space`: on a normed space with a smooth
-  Riemannian metric whose Weyl and Cotton tensors vanish near `x₀`, the conformal flattening
-  equation has a smooth solution near `x₀` with any prescribed value and gradient at `x₀`.
-* `TauCeti.Manifold.exists_eventually_hessian_eq_of_isInteriorPoint`: the same result near an
-  interior point of an arbitrary smooth Riemannian manifold.
+* `TauCeti.Manifold.exists_eventually_hessian_eq_of_isInteriorPoint`: near an interior point `x₀`
+  of a smooth Riemannian manifold whose Weyl and Cotton tensors vanish near `x₀`, the conformal
+  flattening equation has a smooth solution near `x₀` with any prescribed value and gradient at
+  `x₀`.
 * `TauCeti.Manifold.exists_eventually_hessian_eq`: specialization to boundaryless manifolds.
 
 ## References
@@ -320,7 +318,7 @@ with `φ x₀ = c` and `grad φ x₀ = ξ` solving the conformal flattening equa
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x₀`, where `P` is the Schouten tensor. When `E` has
 dimension at least `3`, this says equivalently that `e^(2φ) g` has vanishing Schouten tensor near
 `x₀`. -/
-theorem exists_eventually_hessian_eq_model_space {x₀ : E}
+private theorem exists_eventually_hessian_eq_model_space {x₀ : E}
     (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
     (c : ℝ) (ξ : TangentSpace 𝓘(ℝ, E) x₀) :
     ∃ φ : E → ℝ, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient 𝓘(ℝ, E) φ x₀ = ξ ∧
@@ -415,13 +413,12 @@ private theorem exists_pullback_parametrization_of_isInteriorPoint {x₀ : M}
     U.isOpen.isOpenEmbedding_subtypeVal.comp Φ.symm.toHomeomorph.isOpenEmbedding
   refine ⟨f, Φ ⟨x₀, hx₀U⟩, gE, by simp [f], hemb, fun {ψ} hψ ↦ ?_, ?_⟩
   · have hψΦ : ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) (ψ ∘ Φ) := (hψ.comp Φ.contMDiff).of_le (by simp)
-    obtain ⟨G, hG_eq⟩ := (ContMDiffMap.contMDiffOn_extend U ⟨ψ ∘ Φ, hψΦ⟩
-      0).exists_contMDiffMap_eventuallyEq (U.isOpen.mem_nhds hx₀U)
+    obtain ⟨G, hG_eq⟩ := hψΦ.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := ⟨x₀, hx₀U⟩)
     refine ⟨G, G.contMDiff, ?_⟩
-    have hf_tendsto : Tendsto f (𝓝 (Φ ⟨x₀, hx₀U⟩)) (𝓝 x₀) := by
-      simpa [f] using hemb.continuous.tendsto (Φ ⟨x₀, hx₀U⟩)
-    exact (hf_tendsto.eventually hG_eq).mono fun z hz ↦ by
-      simpa [f, Subtype.val_injective.extend_apply] using hz
+    have hΦ_tendsto : Tendsto Φ.symm (𝓝 (Φ ⟨x₀, hx₀U⟩)) (𝓝 ⟨x₀, hx₀U⟩) := by
+      simpa using Φ.symm.continuous.tendsto (Φ ⟨x₀, hx₀U⟩)
+    exact (hΦ_tendsto.eventually hG_eq).mono fun z hz ↦ by
+      simpa [f] using hz
   · let _ : RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) := ⟨gE.toRiemannianMetric⟩
     refine
       { contMDiff := hf_smooth.of_le le_self_add
