@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import TauCeti.AlgebraicGeometry.LineBundle.Quotient
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 
@@ -38,8 +36,6 @@ Both statements specialize unconditionally (without Noetherian or freeness hypot
 -/
 
 public section
-
-noncomputable section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicGeometry
 
@@ -130,5 +126,3 @@ theorem exists_forall_ge_epi_biproduct_twistingSheaf
     (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) F
 
 end TauCeti.SymmetricAlgebra
-
-end

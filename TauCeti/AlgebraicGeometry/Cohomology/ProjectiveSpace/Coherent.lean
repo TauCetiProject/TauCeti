@@ -8,17 +8,13 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
-import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
-import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
-import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
+import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.ProjectionFormula
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
-import TauCeti.AlgebraicGeometry.LineBundle.Dual
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Presentation
-import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
 import TauCeti.RingTheory.Finiteness.Finsupp
 
 /-!
@@ -71,8 +67,8 @@ Finally, any finite `R`-module `M` is a quotient of `R^{r+2}`, giving a closed i
 sheaves along closed immersions preserves coherence
 (`AlgebraicGeometry.Scheme.Modules.isFinitePresentation_pushforward_of_isFinite`), preserves
 cohomology `R`-linearly (`AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquiv`), and
-satisfies the projection formula
-(`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pushforwardTensorRightIso`), transferring both
+satisfies the projection formula on cohomology
+(`AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardTensorRightIso`), transferring both
 finiteness and vanishing to arbitrary closed subschemes of `Proj (Sym_R M)`.
 
 ## References
@@ -87,8 +83,6 @@ finiteness and vanishing to arbitrary closed subschemes of `Proj (Sym_R M)`.
 -/
 
 public section
-
-noncomputable section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicGeometry
 open AlgebraicGeometry.Scheme.Modules
@@ -222,26 +216,6 @@ end Module.Basis
 
 /-! ### Reduction from `Proj (Sym_R M)` and projective schemes over `R` to projective space -/
 
-/-- Transfer vanishing of `H^q(Proj (Sym_R P), (i_* F) ⊗ 𝒪(m))` to `H^q(X, F ⊗ i^* 𝒪(m))` along a
-closed immersion `i : X ⟶ Proj (Sym_R P)` via the projection formula and closed-immersion
-cohomology invariance. -/
-private theorem subsingleton_cohomology_tensor_pullback_twistingSheaf
-    {R P : Type u} [CommRing R] [AddCommMonoid P] [Module R P] {X : Scheme.{u}}
-    (i : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R P)) [IsClosedImmersion i]
-    (F : X.Modules) (m : ℤ) (q : ℕ)
-    (h : Subsingleton (Cohomology ((pushforward i).obj F ⊗
-      (Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R P) m :
-        (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R P)).Modules)) q)) :
-    Subsingleton (Cohomology (F ⊗ (Scheme.Modules.pullback i).obj
-      (Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R P) m :
-        (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R P)).Modules)) q) :=
-  let E : FiniteLocallyFreeSheaf (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R P)) :=
-    (InvertibleSheaf.toFiniteLocallyFree _).obj
-      ⟨Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R P) m, inferInstance⟩
-  (i.subsingleton_cohomology_pushforward_iff _ q).mp
-    ((subsingleton_cohomology_congr
-      (FiniteLocallyFreeSheaf.pushforwardTensorRightIso i E F) q).mp h)
-
 namespace TauCeti.SymmetricAlgebra
 
 variable (R M : Type u) [CommRing R] [AddCommMonoid M] [Module R M]
@@ -252,14 +226,8 @@ dimension even when `M` is cyclic or zero). -/
 private theorem exists_surjective_pi_fin_add_two [Module.Finite R M] :
     ∃ (r : ℕ) (φ : (Fin (r + 2) → R) →ₗ[R] M), Function.Surjective φ := by
   obtain ⟨r, φ₀, hφ₀⟩ := Module.Finite.exists_fin' R M
-  let π : (Fin (r + 2) → R) →ₗ[R] (Fin r → R) :=
-    { toFun := fun v i ↦ v (Fin.castAdd 2 i)
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  have hπ : Function.Surjective π := fun w ↦
-    ⟨fun j ↦ if hj : j.1 < r then w ⟨j.1, hj⟩ else 0,
-      funext fun i ↦ by simp [π, i.isLt]⟩
-  exact ⟨r, φ₀.comp π, hφ₀.comp hπ⟩
+  exact ⟨r, φ₀.comp (LinearMap.funLeft R R (Fin.castAdd 2)),
+    hφ₀.comp (Fin.castAdd_injective r 2).surjective_comp_right⟩
 
 /-- **Serre's finiteness theorem on `Proj (Sym_R M)`.** Over a Noetherian ring `R`, for any finite
 `R`-module `M` (not assumed free or projective) and any quasi-coherent module `F` of finite type
@@ -293,7 +261,7 @@ theorem exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf [IsNoether
   refine ⟨m₀, fun m hm q hq ↦ ?_⟩
   exact (subsingleton_cohomology_congr
       ((tensorLeft F).mapIso (Proj.pullbackTwistingSheafMapSymmetricAlgebraIso φ hφ m)).symm q).mpr
-    (subsingleton_cohomology_tensor_pullback_twistingSheaf g F m q (hm₀ m hm q hq))
+    ((g.subsingleton_cohomology_pushforward_tensor_iff_of_isInvertible F _ q).mp (hm₀ m hm q hq))
 
 end TauCeti.SymmetricAlgebra
 
@@ -330,8 +298,6 @@ theorem Hom.exists_forall_ge_subsingleton_cohomology_tensor_pullback_twistingShe
     TauCeti.SymmetricAlgebra.exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf R M
       ((pushforward i).obj F)
   exact ⟨m₀, fun m hm q hq ↦
-    subsingleton_cohomology_tensor_pullback_twistingSheaf i F m q (hm₀ m hm q hq)⟩
+    (i.subsingleton_cohomology_pushforward_tensor_iff_of_isInvertible F _ q).mp (hm₀ m hm q hq)⟩
 
 end AlgebraicGeometry.Scheme
-
-end

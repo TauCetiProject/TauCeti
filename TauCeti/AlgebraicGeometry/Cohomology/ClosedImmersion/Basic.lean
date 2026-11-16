@@ -15,8 +15,10 @@ public import TauCeti.Topology.Sheaves.Cohomology.Basic
 
 For a closed immersion `f : X ⟶ Y` and a sheaf of modules `M` on `X`,
 `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)`, naturally in `M`. This allows cohomology computations
-on a closed subscheme to be performed on the ambient scheme. No quasi-coherence,
-Noetherianity or properness assumption is needed for this additive comparison.
+on a closed subscheme to be performed on the ambient scheme; in particular,
+`AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_iff` equates cohomology vanishing
+for `f_* M` on `Y` and `M` on `X`. No quasi-coherence, Noetherianity or properness assumption is
+needed for this additive comparison.
 
 ## References
 

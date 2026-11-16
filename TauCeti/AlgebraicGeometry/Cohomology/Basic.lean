@@ -28,7 +28,8 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
   `Scheme.Modules.cohomologyOnRes` its restriction maps,
   `Scheme.Modules.cohomologyOnMap` its functoriality in the coefficient sheaf,
   `Scheme.Modules.cohomologyOnZeroEquiv` the identification of `H⁰(U, M)` with `Γ(M, U)`, and
-  `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`.
+  `Scheme.Modules.cohomologyOnTopIso` the natural identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`
+  (`AlgebraicGeometry.Scheme.Modules.cohomologyOnTopIso_hom_cohomologyOnMap`).
 
 The construction is stated for every sheaf of modules, which is the natural generality of sheaf
 cohomology. In particular it applies to finitely presented sheaves through their underlying

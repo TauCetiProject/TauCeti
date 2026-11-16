@@ -21,10 +21,12 @@ algebra `⨁ n, 𝒜 n`, the lift into the degree-one summand is degree-preservi
 (`SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule`).
 
 In particular, a linear map `M → N` induces a degree-preserving map of symmetric algebras, the
-graded lift into the degree-one part of `Sym N`; its underlying map is `SymmetricAlgebra.map`. The
-bundled graded map allows linear equivalences to act on the projective spectrum of the symmetric
-algebra. Conversely, an algebra homomorphism of symmetric algebras is induced by a unique linear
-map exactly when the images of its generators lie in degree one (`existsUnique_map_eq_iff`).
+graded lift into the degree-one part of `Sym N`, preserving the base-ring structure in degree zero
+(`SymmetricAlgebra.gradedLift_gradedZeroRingHom_algebraMap`); its underlying map is
+`SymmetricAlgebra.map`. The bundled graded map allows linear equivalences to act on the projective
+spectrum of the symmetric algebra. Conversely, an algebra homomorphism of symmetric algebras is
+induced by a unique linear map exactly when the images of its generators lie in degree one
+(`existsUnique_map_eq_iff`).
 -/
 
 public section

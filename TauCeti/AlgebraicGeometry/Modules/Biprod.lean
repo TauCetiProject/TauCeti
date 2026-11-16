@@ -21,6 +21,7 @@ hypotheses to stay within the default typeclass search-size bound.
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Modules.instHasFiniteBiproducts`: `X.Modules` has finite biproducts.
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_biprod`,
   `AlgebraicGeometry.Scheme.Modules.isFiniteType_biprod`,
   `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_biprod` and
@@ -47,6 +48,10 @@ namespace AlgebraicGeometry.Scheme.Modules
 open AlgebraicGeometry CategoryTheory Limits TauCeti
 
 universe u
+
+/-- The category of `𝒪_X`-modules has finite biproducts. -/
+instance instHasFiniteBiproducts (X : Scheme.{u}) : HasFiniteBiproducts X.Modules :=
+  Abelian.hasFiniteBiproducts
 
 variable {X : Scheme.{u}} (M N : X.Modules)
 
@@ -107,27 +112,15 @@ instance isClosedUnderFiniteProducts_isFinitePresentation (X : Scheme.{u}) :
 /-- A finite biproduct of quasi-coherent `𝒪ₓ`-modules is quasi-coherent. -/
 instance isQuasicoherent_biproduct {J : Type*} [Finite J] (F : J → X.Modules)
     [HasBiproduct F] [∀ j, (F j).IsQuasicoherent] :
-    (⨁ F).IsQuasicoherent := by
-  have := Fintype.ofFinite J
-  have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
-  let e : Fin (Fintype.card J) ≃ J := (Fintype.equivFin J).symm
-  let G : Fin (Fintype.card J) → X.Modules := fun i ↦ F (e i)
-  exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
-    ((biproduct.isoProduct G).symm ≪≫
-      biproduct.whiskerEquiv (f := G) (g := F) e fun _ ↦ Iso.refl _)
-    ((SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_pi G fun _ ↦ inferInstance)
+    (⨁ F).IsQuasicoherent :=
+  (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_isLimit_fan (biproduct.isLimit F)
+    fun _ ↦ inferInstance
 
 /-- A finite biproduct of finitely presented `𝒪ₓ`-modules is finitely presented. -/
 instance isFinitePresentation_biproduct {J : Type*} [Finite J] (F : J → X.Modules)
     [HasBiproduct F] [∀ j, (F j).IsFinitePresentation] :
-    (⨁ F).IsFinitePresentation := by
-  have := Fintype.ofFinite J
-  have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
-  let e : Fin (Fintype.card J) ≃ J := (Fintype.equivFin J).symm
-  let G : Fin (Fintype.card J) → X.Modules := fun i ↦ F (e i)
-  exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
-    ((biproduct.isoProduct G).symm ≪≫
-      biproduct.whiskerEquiv (f := G) (g := F) e fun _ ↦ Iso.refl _)
-    ((SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_pi G fun _ ↦ inferInstance)
+    (⨁ F).IsFinitePresentation :=
+  (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_isLimit_fan (biproduct.isLimit F)
+    fun _ ↦ inferInstance
 
 end AlgebraicGeometry.Scheme.Modules

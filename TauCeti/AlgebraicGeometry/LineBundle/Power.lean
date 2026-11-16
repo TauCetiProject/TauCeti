@@ -86,6 +86,8 @@ noncomputable def tensorPowObjIso (L : InvertibleSheaf X) :
       whiskerRightIso (tensorPowObjIso L n) (L.obj : X.Modules) ≪≫
       TauCeti.tensorPowSuccIso (L.obj : X.Modules) n
 
+/-- At `0`, `tensorPowObjIso` identifies `(L.tensorPow 0).obj` with `𝒪_X` via
+`trivialObjIsoUnit`. -/
 @[simp]
 lemma tensorPowObjIso_zero (L : InvertibleSheaf X) :
     L.tensorPowObjIso 0 =
@@ -93,6 +95,8 @@ lemma tensorPowObjIso_zero (L : InvertibleSheaf X) :
         trivialObjIsoUnit X :=
   (rfl)
 
+/-- Recursive step of `tensorPowObjIso` at `n + 1` via `tensorProductObjIso` and
+`TauCeti.tensorPowSuccIso`. -/
 lemma tensorPowObjIso_succ (L : InvertibleSheaf X) (n : ℕ) :
     L.tensorPowObjIso (n + 1) =
       eqToIso (congrArg (fun K : InvertibleSheaf X ↦ (K.obj : X.Modules)) (L.tensorPow_succ n)) ≪≫

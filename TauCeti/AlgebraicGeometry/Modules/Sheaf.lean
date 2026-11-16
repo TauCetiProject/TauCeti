@@ -22,7 +22,6 @@ isomorphism criterion using sections over the members of a basis.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.instHasFiniteBiproducts`: `X.Modules` has finite biproducts;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf`, the functor sending an `𝒪_X`-module to its
   underlying sheaf of abelian groups, with instances saying that it is additive and preserves
   finite limits and finite colimits;
@@ -54,11 +53,6 @@ namespace AlgebraicGeometry
 universe u
 
 noncomputable section
-
-/-- The category of `𝒪_X`-modules has finite biproducts. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.instHasFiniteBiproducts (X : Scheme.{u}) :
-    HasFiniteBiproducts X.Modules :=
-  Abelian.hasFiniteBiproducts
 
 /-- Composition of scheme-module morphisms acts sectionwise by composition. -/
 @[simp]
@@ -108,6 +102,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso {M N : X.Modules
   inv_hom_id := e.inv_hom_id
 
 variable {X} in
+/-- The forward morphism of `toSheafOfModulesIso e` is `e.hom`. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso_hom {M N : X.Modules}
     (e : M ≅ N) :
@@ -115,6 +110,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso_hom {M N : X.M
   (rfl)
 
 variable {X} in
+/-- The inverse morphism of `toSheafOfModulesIso e` is `e.inv`. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso_inv {M N : X.Modules}
     (e : M ≅ N) :

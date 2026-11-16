@@ -5,19 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
+public import TauCeti.AlgebraicGeometry.Modules.Biprod
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.AffineSections
-import Mathlib.Algebra.Category.Grp.EpiMono
-import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
-import Mathlib.CategoryTheory.Sites.EpiMono
-import TauCeti.CategoryTheory.Monoidal.InvertibleObject
 
 /-!
 # Global generation and quotient presentations via ample line bundles
@@ -181,6 +176,7 @@ private theorem isLocallySurjective_freeHomEquiv_symm_of_span_eq_top (E : X.Modu
 
 /-- If a family of global sections of a quasi-coherent module `E` spans `Γ(E, U i)` over every
 member `U i` of an affine open cover of `X`, then it defines a `GeneratingSections` of `E`. -/
+-- Exposed so the dependent field `.s` accepts indices `k : I` directly in public signatures.
 @[expose]
 def generatingSectionsOfSpanEqTop (E : X.Modules) [E.IsQuasicoherent]
     {ι : Type*} {U : ι → X.Opens} (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)

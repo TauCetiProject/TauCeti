@@ -131,6 +131,7 @@ variable {R M P : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- A surjective `R`-linear map `φ : P →ₗ[R] M` induces a closed immersion of projective spectra
 `Proj (Sym_R M) ⟶ Proj (Sym_R P)` over `Spec R`. -/
+-- Exposed so scheme pullbacks along this morphism unify with pullbacks along `Proj.map`.
 @[expose]
 noncomputable def mapSymmetricAlgebraOfSurjective (φ : P →ₗ[R] M) (hφ : Function.Surjective φ) :
     Proj (homogeneousSubmodule R M) ⟶ Proj (homogeneousSubmodule R P) :=

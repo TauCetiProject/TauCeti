@@ -92,8 +92,7 @@ theorem higherDirectImageBasicOpenSectionsAddEquiv_top_smul (r : Γ(Y, ⊤))
     f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩ (f.appTop r • x) =
       r • f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩ x := by
   refine (f.higherDirectImageBasicOpenSectionsAddEquiv_smul M n ⟨1, Y.basicOpen_one⟩ r x).trans ?_
-  -- the inclusion of `⊤` into itself is the identity
-  rw [show (⊤ : Y.Opens).leTop = 𝟙 _ from rfl, op_id, CategoryTheory.Functor.map_id]
+  rw [Subsingleton.elim (⊤ : Y.Opens).leTop (𝟙 _), op_id, CategoryTheory.Functor.map_id]
   rfl
 
 /-- For a quasi-compact quasi-separated morphism `f : X ⟶ Y` over `Spec R` with affine target `Y`
@@ -103,14 +102,14 @@ def cohomologyHigherDirectImageGlobalSectionsLinearEquiv (R : Type u) [CommRing 
     [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [f.IsOver (Spec (.of R))] :
     Cohomology M n ≃ₗ[R] Γ((f.higherDirectImage n).obj M, ⊤) :=
   let e := f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩
-  (cohomologyOnTopBaseLinearEquiv M R n).symm.trans
-    (show cohomologyOn M n (f ⁻¹ᵁ ⊤) ≃ₗ[R] Γ((f.higherDirectImage n).obj M, ⊤) from
-      e.toLinearEquiv fun r x ↦ by
-        have hr : f.appTop (baseRingToGlobalSections R Y r) = baseRingToGlobalSections R X r := by
-          rw [baseRingToGlobalSections_apply, baseRingToGlobalSections_apply,
-            ← CommRingCat.comp_apply, ← comp_appTop, HomIsOver.comp_over]
-        rw [base_smul_cohomologyOn, ← hr,
-          f.higherDirectImageBasicOpenSectionsAddEquiv_top_smul, base_smul_globalSections])
+  let e' : cohomologyOn M n (f ⁻¹ᵁ ⊤) ≃ₗ[R] Γ((f.higherDirectImage n).obj M, ⊤) :=
+    e.toLinearEquiv fun r x ↦ by
+      have hr : f.appTop (baseRingToGlobalSections R Y r) = baseRingToGlobalSections R X r := by
+        rw [baseRingToGlobalSections_apply, baseRingToGlobalSections_apply,
+          ← CommRingCat.comp_apply, ← comp_appTop, HomIsOver.comp_over]
+      rw [base_smul_cohomologyOn, ← hr,
+        f.higherDirectImageBasicOpenSectionsAddEquiv_top_smul, base_smul_globalSections]
+  (cohomologyOnTopBaseLinearEquiv M R n).symm.trans e'
 
 /-- Evaluation of `cohomologyHigherDirectImageGlobalSectionsLinearEquiv` via
 `higherDirectImageBasicOpenSectionsAddEquiv` on `D(1) = ⊤`. -/
@@ -136,7 +135,7 @@ private lemma moduleSpecΓ_smul_aux (A : CommRingCat.{u}) (N : (Spec A).Modules)
       (Scheme.ΓSpecIso A).inv r • x := by
   -- `moduleSpecΓFunctor.obj N` and `Γ(N, ⊤)` share `Tilde`'s `A`-module structure.
   change r • x = (Scheme.ΓSpecIso A).inv r • x
-  rw [Scheme.Modules.smul_Spec_def, show (⊤ : (Spec A).Opens).leTop = 𝟙 _ from rfl, op_id,
+  rw [Scheme.Modules.smul_Spec_def, Subsingleton.elim (⊤ : (Spec A).Opens).leTop (𝟙 _), op_id,
     CategoryTheory.Functor.map_id]
   rfl
 
@@ -153,15 +152,15 @@ quasi-separated scheme `X` over `Spec R` and a quasi-coherent `𝒪_X`-module `M
 def cohomologyHigherDirectImageSpecΓLinearEquiv :
     Cohomology M n ≃ₗ[R]
       (moduleSpecΓFunctor (R := .of R)).obj (((X ↘ Spec (.of R)).higherDirectImage n).obj M) :=
-  letI : (Spec (.of R)).Over (Spec (.of R)) := ⟨𝟙 _⟩
-  have : (X ↘ Spec (.of R)).IsOver (Spec (.of R)) := ⟨by exact Category.comp_id _⟩
+  have hid : ((Spec (.of R)) ↘ Spec (.of R)) = 𝟙 _ := by simp [specOverSpec_over]
+  have : (X ↘ Spec (.of R)).IsOver (Spec (.of R)) := ⟨by rw [hid, Category.comp_id]⟩
   let N := ((X ↘ Spec (.of R)).higherDirectImage n).obj M
+  -- `(moduleSpecΓFunctor.obj N)` has the same underlying additive group as `Γ(N, ⊤)`.
   let eΓ : Γ(N, ⊤) ≃+ (moduleSpecΓFunctor (R := .of R)).obj N := AddEquiv.refl _
   ((X ↘ Spec (.of R)).cohomologyHigherDirectImageGlobalSectionsLinearEquiv M n R).trans
     (eΓ.toLinearEquiv fun r y ↦ by
-      rw [base_smul_globalSections, baseRingToGlobalSections_apply]
-      have hid : ((Spec (.of R)) ↘ Spec (.of R)) = 𝟙 _ := rfl
-      rw [hid, Scheme.Hom.id_appTop, CommRingCat.id_apply]
+      rw [base_smul_globalSections, baseRingToGlobalSections_apply, hid,
+        Scheme.Hom.id_appTop, CommRingCat.id_apply]
       exact (moduleSpecΓ_smul_aux (.of R) N r y).symm)
 
 /-- Evaluation of `cohomologyHigherDirectImageSpecΓLinearEquiv` via
