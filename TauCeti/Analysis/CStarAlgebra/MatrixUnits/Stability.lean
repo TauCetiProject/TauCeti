@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Algebra.Star.MatrixUnits
 public import TauCeti.Analysis.CStarAlgebra.PartialIsometry
 public import TauCeti.Analysis.CStarAlgebra.Projection.Stability
+import Mathlib.Algebra.Star.NonUnitalSubalgebra
 
 /-!
 # Norm stability of matrix units in C⋆-algebras
@@ -29,7 +29,7 @@ within `ε` of an exact system in `s` (and unital when `‖matrixUnitSupport x -
 ## References
 
 * B. Blackadar, *Operator Algebras*, Springer (2006), Proposition II.8.3.23.
-* K. R. Davidson, *C*-Algebras by Example*, Amer. Math. Soc. (1996), Chapter III, §7.
+* K. R. Davidson, *C⋆-Algebras by Example*, Amer. Math. Soc. (1996), Section III.3.
 -/
 
 public section

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Star.MatrixUnits
-public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
+import TauCeti.Analysis.CStarAlgebra.Basic
 
 /-!
 # Unitary conjugacy of nearby systems of matrix units in a C⋆-algebra
@@ -22,7 +22,8 @@ component of `1` (`Joined 1 u`), conjugates `e` entrywise to `f`, satisfies
 ## Main results
 
 * `TauCeti.IsMatrixUnitSystem.norm_matrixUnitIntertwiner_sub_one_le`,
-  `TauCeti.IsMatrixUnitSystem.exists_unitary_conjugate[_mem]`,
+  `TauCeti.IsMatrixUnitSystem.exists_unitary_conjugate_mem`,
+  `TauCeti.IsMatrixUnitSystem.exists_unitary_conjugate`,
   `TauCeti.IsMatrixUnitSystem.exists_unitization_unitary_conjugate`.
 
 ## References
@@ -122,7 +123,7 @@ end
 
 /-- **Unitary conjugacy of nearby matrix-unit systems in a non-unital C⋆-algebra**: if
 `‖f r i j - e r i j‖ ≤ δ` with `6 * (∑ r, card (n r)) * δ ≤ 1`, there exists
-`u : unitary (Unitization ℂ A)` with `u.fst = 1`, `Joined 1 u`,
+`u : unitary (Unitization ℂ A)` with `(u : Unitization ℂ A).fst = 1`, `Joined 1 u`,
 `(u : Unitization ℂ A) * e r i j * star (u : Unitization ℂ A) = f r i j`, and
 `‖(u : Unitization ℂ A) - 1‖ ≤ 8 * (∑ r, card (n r)) * δ`. -/
 theorem exists_unitization_unitary_conjugate {κ A : Type*} {n : κ → Type*} [Fintype κ]

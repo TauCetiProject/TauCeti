@@ -8,13 +8,13 @@ module
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.CharZero.Defs
 public import Mathlib.Algebra.Field.Defs
-public import Mathlib.Algebra.Star.Module
 public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Algebra.Star.Pi
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.Algebra.Star.Projection.Family
+import Mathlib.Algebra.Star.Module
 
 /-!
 # Systems of matrix units in a star ring
@@ -23,8 +23,8 @@ Multi-block **systems of matrix units** `e : ∀ r : κ, n r → n r → R` alge
 embeddings of `⨁ᵣ M_{n(r)}(ℂ)` into a C⋆-algebra, governing AF algebras and operator K-theory.
 Partial-isometry families with block-constant initial projections and pairwise-orthogonal final
 projections generate matrix units via `v r i * star (v r j)`, and over a characteristic-zero field
-`𝕜` the averaging intertwiner `matrixUnitIntertwiner 𝕜 e f` satisfies `f r i j * z = z * e r i j`
-with `z = 1` when `e = f`.
+`𝕜` the intertwiner `z = matrixUnitIntertwiner 𝕜 e f` satisfies `f r i j * z = z * e r i j` with
+`z = 1` when `e = f`.
 
 ## Main results
 

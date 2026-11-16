@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
 /-!
 # Perturbation, subalgebra preservation, and intertwining for polar unitaries
@@ -44,31 +44,26 @@ variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [StarOrderedRing A]
   [TopologicalSpace A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
   [NonnegSpectrumClass ℝ A] [T2Space A]
 
-private lemma sqrt_eq_cfc_real_sqrt [IsSemitopologicalRing A] {x : A} (hx : 0 ≤ x) :
-    CFC.sqrt x = cfc Real.sqrt x := by
-  rw [CFC.sqrt_eq_cfc, cfc_nnreal_eq_real NNReal.sqrt x hx]
-  exact cfc_congr fun t ht ↦ by
-    rw [Real.coe_sqrt, Real.coe_toNNReal t (spectrum_nonneg_of_nonneg hx ht)]
+section
+variable [IsSemitopologicalRing A]
 
 /-- Right CFC formula `(a.polarUnitary : A) = a * cfc (fun x : ℝ ↦ (√x)⁻¹) (star a * a)`. -/
-theorem coe_polarUnitary_eq_mul_cfc_inv_sqrt [IsSemitopologicalRing A] (a : Aˣ) :
+theorem coe_polarUnitary_eq_mul_cfc_inv_sqrt (a : Aˣ) :
     (a.polarUnitary : A) = (a : A) * cfc (fun x : ℝ ↦ (√x)⁻¹) (star (a : A) * a) := by
   have hx := isStrictlyPositive_star_mul a
   rw [show cfc (fun t : ℝ ↦ (√t)⁻¹) (star (a : A) * a) = (CFC.sqrt (star (a : A) * a))⁻¹ʳ by
-    rw [sqrt_eq_cfc_real_sqrt hx.nonneg, cfc_inv (f := Real.sqrt) (a := star (a : A) * a)
-      (fun _ ht ↦ (Real.sqrt_pos.mpr
-        ((StarOrderedRing.isStrictlyPositive_iff_spectrum_pos _).mp hx _ ht)).ne')
-      Real.continuous_sqrt.continuousOn hx.nonneg.isSelfAdjoint]]
+    rw [CFC.sqrt_eq_real_sqrt _ hx.nonneg, cfcₙ_eq_cfc, cfc_inv _ _ (fun _ ht ↦ (Real.sqrt_pos.mpr
+      ((StarOrderedRing.isStrictlyPositive_iff_spectrum_pos _).mp hx _ ht)).ne') (by fun_prop)]]
   conv_lhs => rw [← mul_one (a.polarUnitary : A),
     ← mul_inverse_cancel _ (isStrictlyPositive_sqrt_star_mul a).isUnit]
   rw [← mul_assoc, a.polarUnitary_mul_sqrt_star_mul]
 
 /-- Any unital `⋆`-ring homomorphism commutes with `Units.polarUnitary`. -/
-theorem map_polarUnitary [IsSemitopologicalRing A] {B F : Type*} [PartialOrder B] [Ring B]
-    [StarRing B] [StarOrderedRing B] [TopologicalSpace B] [Algebra ℝ B]
-    [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint] [NonnegSpectrumClass ℝ B]
-    [IsSemitopologicalRing B] [T2Space B] [FunLike F A B] [RingHomClass F A B] [StarHomClass F A B]
-    (a : Aˣ) (φ : F) : ((Units.map (φ : A →* B) a).polarUnitary : B) = φ (a.polarUnitary : A) := by
+theorem map_polarUnitary {B F : Type*} [PartialOrder B] [Ring B] [StarRing B] [StarOrderedRing B]
+    [TopologicalSpace B] [Algebra ℝ B] [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint]
+    [NonnegSpectrumClass ℝ B] [IsSemitopologicalRing B] [T2Space B] [FunLike F A B]
+    [RingHomClass F A B] [StarHomClass F A B] (a : Aˣ) (φ : F) :
+    φ (a.polarUnitary : A) = ((Units.map (φ : A →* B) a).polarUnitary : B) := by
   set q : A := CFC.sqrt (star (a : A) * a)
   have hφq : 0 ≤ φ q := by
     rw [show q = star (CFC.sqrt q) * CFC.sqrt q by
@@ -77,9 +72,28 @@ theorem map_polarUnitary [IsSemitopologicalRing A] {B F : Type*} [PartialOrder B
   let v : unitary B := ⟨φ (a.polarUnitary : A), Unitary.mem_iff.mpr
     ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem a.polarUnitary.2, map_one],
      by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem a.polarUnitary.2, map_one]⟩⟩
-  exact congrArg Subtype.val ((Units.map (φ : A →* B) a).polarUnitary_eq_of_mul_eq' (v := v) hφq <|
+  exact (congrArg Subtype.val ((Units.map (φ : A →* B) a).polarUnitary_eq_of_mul_eq' (v := v) hφq <|
     by simp only [v, q, Units.coe_map, MonoidHom.coe_ofClass, ← map_mul,
-      a.polarUnitary_mul_sqrt_star_mul])
+      a.polarUnitary_mul_sqrt_star_mul])).symm
+
+/-- Adjoint-compatible intertwining relations `y * a = a * x` and `star a * y = x * star a` pass to
+`a.polarUnitary`. -/
+theorem mul_polarUnitary_eq_polarUnitary_mul (a : Aˣ) {x y : A}
+    (h1 : y * (a : A) = (a : A) * x) (h2 : star (a : A) * y = x * star (a : A)) :
+    y * (a.polarUnitary : A) = (a.polarUnitary : A) * x := by
+  have hcomm : Commute (star (a : A) * a) x := by
+    rw [Commute, SemiconjBy, mul_assoc, ← h1, ← mul_assoc, h2, mul_assoc]
+  rw [a.coe_polarUnitary_eq_mul_cfc_inv_sqrt, ← mul_assoc, h1, mul_assoc,
+    ((star_mul_self_nonneg _).isSelfAdjoint.commute_cfc hcomm _).symm.eq, ← mul_assoc]
+
+/-- Adjoint-compatible intertwining relations `y * a = a * x` and `star a * y = x * star a` yield
+exact unitary conjugation `(a.polarUnitary : A) * x * star (a.polarUnitary : A) = y`. -/
+theorem conjugate_polarUnitary (a : Aˣ) {x y : A}
+    (h1 : y * (a : A) = (a : A) * x) (h2 : star (a : A) * y = x * star (a : A)) :
+    (a.polarUnitary : A) * x * star (a.polarUnitary : A) = y := by
+  rw [← a.mul_polarUnitary_eq_polarUnitary_mul h1 h2, mul_assoc,
+    Unitary.mul_star_self_of_mem a.polarUnitary.2, mul_one]
+end
 
 /-- `a.polarUnitary` belongs to any closed unital `⋆`-subalgebra containing `(a : A)`. -/
 theorem polarUnitary_mem [IsTopologicalRing A] [ContinuousStar A] [StarModule ℝ A] {𝕜' S : Type*}
@@ -88,24 +102,6 @@ theorem polarUnitary_mem [IsTopologicalRing A] [ContinuousStar A] [StarModule �
     (a : Aˣ) (ha : (a : A) ∈ s) : (a.polarUnitary : A) ∈ s := by
   rw [a.coe_polarUnitary_eq_mul_cfc_inv_sqrt]
   exact mul_mem ha (cfc_mem (𝕜 := ℝ) (𝕜' := 𝕜') _ (mul_mem (star_mem ha) ha))
-
-/-- Adjoint-compatible intertwining relations `y * a = a * x` and `star a * y = x * star a` pass to
-`a.polarUnitary`. -/
-theorem mul_polarUnitary_eq_polarUnitary_mul [IsTopologicalRing A] (a : Aˣ) {x y : A}
-    (h1 : y * (a : A) = (a : A) * x) (h2 : star (a : A) * y = x * star (a : A)) :
-    y * (a.polarUnitary : A) = (a.polarUnitary : A) * x := by
-  have hcomm : Commute (star (a : A) * a) x := by
-    rw [Commute, SemiconjBy, mul_assoc, ← h1, ← mul_assoc, h2, mul_assoc]
-  rw [a.coe_polarUnitary_eq_mul_cfc_inv_sqrt, ← mul_assoc, h1, mul_assoc,
-    (hcomm.cfc_real (fun t : ℝ ↦ (√t)⁻¹)).symm.eq, ← mul_assoc]
-
-/-- Adjoint-compatible intertwining relations `y * a = a * x` and `star a * y = x * star a` yield
-exact unitary conjugation `(a.polarUnitary : A) * x * star (a.polarUnitary : A) = y`. -/
-theorem conjugate_polarUnitary [IsTopologicalRing A] (a : Aˣ) {x y : A}
-    (h1 : y * (a : A) = (a : A) * x) (h2 : star (a : A) * y = x * star (a : A)) :
-    (a.polarUnitary : A) * x * star (a.polarUnitary : A) = y := by
-  rw [← a.mul_polarUnitary_eq_polarUnitary_mul h1 h2, mul_assoc,
-    Unitary.mul_star_self_of_mem a.polarUnitary.2, mul_one]
 end
 
 section
@@ -122,7 +118,7 @@ theorem norm_polarUnitary_sub_one_le_sq_add (a : Aˣ) :
     exact norm_add₃_le.trans (by rw [CStarRing.norm_star_mul_self, norm_star, sq]; linarith)
   have hs_sub : ‖CFC.sqrt h - 1‖ ≤ ‖h - 1‖ := by
     rw [show CFC.sqrt h - 1 = cfc (fun t : ℝ ↦ √t - 1) h by
-      rw [cfc_sub Real.sqrt (fun _ ↦ 1) h, sqrt_eq_cfc_real_sqrt hh0,
+      rw [cfc_sub Real.sqrt (fun _ ↦ 1) h, CFC.sqrt_eq_real_sqrt _ hh0, cfcₙ_eq_cfc,
         cfc_const_one ℝ h hh0.isSelfAdjoint]]
     refine norm_cfc_le (norm_nonneg _) fun x hx ↦ ?_
     have habs : |x - 1| ≤ ‖h - 1‖ := by
@@ -159,5 +155,5 @@ theorem fst_polarUnitary {A : Type*} [NonUnitalCStarAlgebra A]
   let _ := CStarAlgebra.spectralOrder ℂ; let _ := CStarAlgebra.spectralOrderedRing ℂ
   have hmap : Units.map (Unitization.fstHom ℂ A : Unitization ℂ A →* ℂ) a = 1 :=
     Units.ext <| by simp [ha]
-  simpa [hmap, polarUnitary_one] using (a.map_polarUnitary (Unitization.fstHom ℂ A)).symm
+  simpa [hmap, polarUnitary_one] using a.map_polarUnitary (Unitization.fstHom ℂ A)
 end Units

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.Projection.Stability
+import Mathlib.Algebra.Star.NonUnitalSubalgebra
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
 /-!
 # Norm stability of partial isometries in C⋆-algebras

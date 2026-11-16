@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.NonUnitalSubalgebra
 public import Mathlib.Algebra.Star.Orthogonal
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import Mathlib.Analysis.CStarAlgebra.Projection
-public import Mathlib.Topology.Algebra.Indicator
-public import Mathlib.Topology.Order.DenselyOrdered
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+import Mathlib.Algebra.Star.NonUnitalSubalgebra
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import Mathlib.Topology.Order.DenselyOrdered
 import TauCeti.Topology.Algebra.Indicator
 
 /-!
@@ -29,9 +28,10 @@ For self-adjoint `a` with `‖a * a - a‖ < 1 / 4`, `spectralProjectionIoiHalf 
 ## Main results
 
 * `TauCeti.spectralProjectionIoiHalf`, `IsStarProjection.eq_of_le_of_norm_sub_lt_one`,
-  `IsSelfAdjoint.norm_spectralProjectionIoiHalf_sub_le`,
-  `TauCeti.exists_isStarProjection_mem_of_approx`, `TauCeti.exists_pos_isStarProjection[_mem]`,
-  `TauCeti.exists_pos_pairwise_isStarOrtho_isStarProjection[_mem]`.
+  `IsSelfAdjoint.norm_spectralProjectionIoiHalf_sub_le`, `TauCeti.exists_pos_isStarProjection`,
+  `TauCeti.exists_isStarProjection_mem_of_approx`, `TauCeti.exists_pos_isStarProjection_mem`,
+  `TauCeti.exists_pos_pairwise_isStarOrtho_isStarProjection_mem`,
+  `TauCeti.exists_pos_pairwise_isStarOrtho_isStarProjection`.
 
 ## References
 
@@ -105,13 +105,14 @@ theorem continuousOn_indicator_Ioi_half (ha : IsSelfAdjoint a) (h : ‖a * a - a
   continuousOn_const.continuousOn_indicator_of_disjoint_frontier <| by
     simpa [frontier_Ioi] using ha.notMem_quasispectrum_half_of_norm_mul_self_sub_lt h
 
-/-- Continuous non-unital `⋆`-algebra homomorphisms preserve `TauCeti.spectralProjectionIoiHalf`
-whenever `1 / 2 ∉ quasispectrum ℝ a`. -/
-theorem map_spectralProjectionIoiHalf {B F : Type*} [NonUnitalCStarAlgebra B] [FunLike F A B]
-    [NonUnitalAlgHomClass F ℝ A B] [StarHomClass F A B] (ha : IsSelfAdjoint a)
-    (h : (1 / 2 : ℝ) ∉ quasispectrum ℝ a) (φ : F) (hφ : Continuous φ) :
+/-- Continuous non-unital `𝕜'`-`⋆`-algebra homomorphisms (over any `ℝ`-algebra `𝕜'`, including `ℝ`
+and `ℂ`) preserve `TauCeti.spectralProjectionIoiHalf` whenever `1 / 2 ∉ quasispectrum ℝ a`. -/
+theorem map_spectralProjectionIoiHalf {𝕜' B F : Type*} [CommRing 𝕜'] [Algebra ℝ 𝕜']
+    [NonUnitalCStarAlgebra B] [Module 𝕜' A] [Module 𝕜' B] [IsScalarTower ℝ 𝕜' A]
+    [IsScalarTower ℝ 𝕜' B] [FunLike F A B] [NonUnitalAlgHomClass F 𝕜' A B] [StarHomClass F A B]
+    (ha : IsSelfAdjoint a) (h : (1 / 2 : ℝ) ∉ quasispectrum ℝ a) (φ : F) (hφ : Continuous φ) :
     φ (spectralProjectionIoiHalf a) = spectralProjectionIoiHalf (φ a) :=
-  NonUnitalStarAlgHomClass.map_cfcₙ φ _ a
+  NonUnitalStarAlgHomClass.map_cfcₙ (S := 𝕜') φ _ a
     (continuousOn_const.continuousOn_indicator_of_disjoint_frontier <| by
       rwa [frontier_Ioi, Set.disjoint_singleton_left]) (by simp) hφ ha (ha.map φ)
 
