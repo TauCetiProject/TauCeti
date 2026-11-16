@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Quasilinear divergence-form equations on an interval
@@ -32,6 +32,19 @@ coefficient `a = A(·, ū)`, with `λ ≤ a ≤ M`, the global Hölder estimate
 `TauCeti.PDE.exists_norm_intervalRepresentativeL_le_and_holderWith` applies to it, with a constant
 that does not depend on `A` beyond `λ` and `M`.
 
+Without uniqueness, the solutions are described as a set, and that set behaves well under
+perturbation of the data. Let `Aₙ → A` locally uniformly in `y` for almost every `x`, with common
+bounds `λ ≤ Aₙ ≤ M`, let `fₙ → f` and `Fₙ → F` in `L¹`, and let the boundary values converge. Then
+every sequence of solutions `uₙ` of the problems with data `(Aₙ, fₙ, Fₙ, gₙ)` has a subsequence
+whose continuous representatives converge uniformly to that of a solution of the limit problem
+(`TauCeti.PDE.exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq`). Hence the
+continuous representatives of the solutions of one problem form a compact subset of
+`C([x₀, x₁])`
+(`TauCeti.PDE.isCompact_image_intervalRepresentativeL_setOf_forall_setIntegral_eq`), and the
+solution set depends upper semicontinuously on the data: every open set containing the solutions of
+the limit problem contains those of the `n`-th problem for all large `n`
+(`TauCeti.PDE.eventually_image_intervalRepresentativeL_setOf_forall_setIntegral_eq_subset`).
+
 ## The argument
 
 The proof is Schauder's compact-map argument. For a fixed measurable coefficient `a` with
@@ -53,6 +66,16 @@ Schauder's fixed-point theorem (`TauCeti.schauderFixedPoint_closedConvex_continu
 closed ball of `C([x₀, x₁])` then gives `u = T u`. By
 `TauCeti.PDE.exists_w1p_intervalRepresentativeL_eq`, the fixed point is the continuous
 representative of a Sobolev class solving the linear problem with coefficient `A(·, u)`.
+
+For the stability theorem, every solution `uₙ` is the explicit solution of the linear problem with
+the frozen coefficient `aₙ = Aₙ(·, ūₙ)` and its own data
+(`TauCeti.PDE.intervalRepresentativeL_eq_add_intervalIntegral_intervalDirichletSlope`). The
+explicit solution depends Lipschitz continuously on the data
+(`TauCeti.PDE.integral_abs_intervalDirichletSlope_sub_le`), so `ūₙ` is uniformly close to the
+explicit solution `wₙ` with the coefficient `aₙ` and the limit data. The `wₙ` lie in a compact set,
+so a subsequence converges to some `w`; along it `aₙ → A(·, w)` almost everywhere, by locally
+uniform convergence, and continuity in the coefficient identifies `w` as the explicit solution with
+coefficient `A(·, w)`, that is, as a solution of the limit problem.
 
 ## References
 
@@ -102,6 +125,15 @@ private theorem exists_intervalDirichletSolution_eq_self (hx : x₀ < x₁) (hla
 
 variable {p : ENNReal} [Fact (1 ≤ p)] {f F : ℝ → ℝ} {A : ℝ → ℝ → ℝ}
 
+/-- The coefficient `A(·, v)` frozen at `v ∈ C([x₀, x₁])` is almost everywhere strongly measurable
+on `(x₀, x₁)` when `A` is a Carathéodory function there. -/
+private theorem aestronglyMeasurable_apply_projIcc (hx : x₀ ≤ x₁)
+    (hAm : ∀ y, AEStronglyMeasurable (fun t => A t y) (volume.restrict (Ioo x₀ x₁)))
+    (hAc : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (A t)) (v : C(Icc x₀ x₁, ℝ)) :
+    AEStronglyMeasurable (fun t => A t (v (projIcc x₀ x₁ hx t))) (volume.restrict (Ioo x₀ x₁)) :=
+  (v.continuous.comp continuous_projIcc).aestronglyMeasurable.apply_of_forall_of_continuousAt
+    hAm (hAc.mono fun _ ht => ht.continuousAt)
+
 /-- **Existence for the quasilinear Dirichlet problem on an interval.** Let `x₀ < x₁` and let
 `A : ℝ → ℝ → ℝ` be a Carathéodory function on `(x₀, x₁)`: `t ↦ A t y` is almost everywhere strongly
 measurable on `(x₀, x₁)` for every `y`, and `A t` is continuous for almost every `t ∈ (x₀, x₁)`.
@@ -126,19 +158,15 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x₁) (h
   -- Freeze the coefficient at `v ∈ C([x₀, x₁])`: `a v = A(·, v)`. It is measurable because `A`
   -- is a Carathéodory function.
   set a : C(Icc x₀ x₁, ℝ) → ℝ → ℝ := fun v t => A t (v (projIcc x₀ x₁ hx.le t))
-  have ham : ∀ v, AEStronglyMeasurable (a v) (volume.restrict (Ioo x₀ x₁)) := fun v =>
-    (v.continuous.comp continuous_projIcc).aestronglyMeasurable.apply_of_forall_of_continuousAt
-      hAm (hAc.mono fun _ ht => ht.continuousAt)
+  have ham : ∀ v, AEStronglyMeasurable (a v) (volume.restrict (Ioo x₀ x₁)) :=
+    aestronglyMeasurable_apply_projIcc hx.le hAm hAc
   have haM : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a v t ∧ a v t ≤ M :=
     fun v => hA.mono fun _ ht => ht _
   have hlim : ∀ (vn : ℕ → C(Icc x₀ x₁, ℝ)) (v : C(Icc x₀ x₁, ℝ)), Tendsto vn atTop (𝓝 v) →
       ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun n => a (vn n) t) atTop (𝓝 (a v t)) :=
     fun vn v hv => hAc.mono fun _ ht =>
       (ht.tendsto _).comp (((continuous_eval_const _).tendsto v).comp hv)
-  have hG : IntegrableOn (fun t => (∫ s in x₀..t, f s) + F t) (Ioo x₀ x₁) :=
-    ((TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-      (left_mem_Icc.2 hx.le)).integrableOn_Icc.mono_set Ioo_subset_Icc_self).add
-      (hF.integrable Fact.out)
+  have hG := integrableOn_intervalIntegral_add hx hf (hF.integrable Fact.out)
   -- A fixed point `ū` of the solution map solves the linear problem with coefficient `a ū`, and
   -- is the continuous representative of that solution.
   obtain ⟨ū, hū⟩ := exists_intervalDirichletSolution_eq_self hx hlam ham haM hlim hG fun v =>
@@ -149,5 +177,185 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x₁) (h
     ext y
     rw [hrep, ← DFunLike.congr_fun hū y, intervalDirichletSolution_apply]
   exact ⟨u, htr, by rwa [hū']⟩
+
+/-! ### Families of problems -/
+
+/-- If `Aₖ t → A t` locally uniformly for almost every `t`, with `Aₖ t` continuous, and `vₖ → v` in
+`C([x₀, x₁])`, then the frozen coefficients `Aₖ(·, vₖ)` converge almost everywhere on `(x₀, x₁)`
+to `A(·, v)`. -/
+private theorem ae_tendsto_apply_projIcc (hx : x₀ ≤ x₁) {An : ℕ → ℝ → ℝ → ℝ}
+    (hAc : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (An n t))
+    (hAlim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      TendstoLocallyUniformly (fun n => An n t) (A t) atTop)
+    {vk : ℕ → C(Icc x₀ x₁, ℝ)} {v : C(Icc x₀ x₁, ℝ)} (hv : Tendsto vk atTop (𝓝 v)) :
+    ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun k => An k t (vk k (projIcc x₀ x₁ hx t)))
+      atTop (𝓝 (A t (v (projIcc x₀ x₁ hx t)))) := by
+  filter_upwards [hAlim, ae_all_iff.2 hAc] with t h1 h2
+  exact h1.tendsto_comp (h1.continuous (Frequently.of_forall h2)).continuousAt
+    (((continuous_eval_const _).tendsto v).comp hv)
+
+/-- **Stability of the quasilinear problem under perturbation of the data.** Let `x₀ < x₁` and
+`λ > 0`, and let `Aₙ` be Carathéodory functions on `(x₀, x₁)` with `λ ≤ Aₙ ≤ M` that converge, for
+almost every `t`, locally uniformly in `y` to `A t`. Let `fₙ → f` and `Fₙ → F` in `L¹(x₀, x₁)`,
+with `F ∈ Lᵖ`, and let the boundary values converge, `gₙ → g`. If each `uₙ ∈ W^{1,p}(x₀, x₁)` solves
+the problem with data `(Aₙ, fₙ, Fₙ, gₙ)`,
+
+`-(Aₙ(x, uₙ) uₙ')' = fₙ + Fₙ'`, `uₙ(x₀) = gₙ.1`, `uₙ(x₁) = gₙ.2`,
+
+then a subsequence of the continuous representatives `ūₙ` converges uniformly on `[x₀, x₁]` to the
+continuous representative of a solution `u ∈ W^{1,p}(x₀, x₁)` of the limit problem with data
+`(A, f, F, g)`. No regularity of the limit coefficient `A` is assumed: it is a Carathéodory
+function with the same bounds, being a locally uniform limit. -/
+theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq (hx : x₀ < x₁)
+    (hlam : 0 < lam) {An : ℕ → ℝ → ℝ → ℝ} {fn Fn : ℕ → ℝ → ℝ} {gn : ℕ → ℝ × ℝ} {g : ℝ × ℝ}
+    (hAm : ∀ n y, AEStronglyMeasurable (fun t => An n t y) (volume.restrict (Ioo x₀ x₁)))
+    (hAc : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (An n t))
+    (hA : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ∀ y, lam ≤ An n t y ∧ An n t y ≤ M)
+    (hAlim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      TendstoLocallyUniformly (fun n => An n t) (A t) atTop)
+    (hfn : ∀ n, IntegrableOn (fn n) (Ioo x₀ x₁)) (hf : IntegrableOn f (Ioo x₀ x₁))
+    (hflim : Tendsto (fun n => ∫ t in Ioo x₀ x₁, |fn n t - f t|) atTop (𝓝 0))
+    (hFn : ∀ n, IntegrableOn (Fn n) (Ioo x₀ x₁)) (hF : MemLp F p (volume.restrict (Ioo x₀ x₁)))
+    (hFlim : Tendsto (fun n => ∫ t in Ioo x₀ x₁, |Fn n t - F t|) atTop (𝓝 0))
+    (hglim : Tendsto gn atTop (𝓝 g)) {un : ℕ → W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p}
+    (hun : ∀ n, W1p.intervalTraceL hx (un n) = gn n ∧
+      ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+        ∫ t in Ioo x₀ x₁, An n t (W1p.intervalRepresentativeL hx (un n) (projIcc x₀ x₁ hx.le t)) *
+            W1p.gradient (un n) t * deriv φ t =
+          (∫ t in Ioo x₀ x₁, fn n t * φ t) - ∫ t in Ioo x₀ x₁, Fn n t * deriv φ t) :
+    ∃ u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p,
+      (W1p.intervalTraceL hx u = g ∧
+        ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+          ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+              W1p.gradient u t * deriv φ t =
+            (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) ∧
+      ∃ ψ : ℕ → ℕ, StrictMono ψ ∧
+        Tendsto (fun k => W1p.intervalRepresentativeL hx (un (ψ k))) atTop
+          (𝓝 (W1p.intervalRepresentativeL hx u)) := by
+  have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
+  -- The frozen coefficients `aₙ = Aₙ(·, ūₙ)`.
+  set ū : ℕ → C(Icc x₀ x₁, ℝ) := fun n => W1p.intervalRepresentativeL hx (un n)
+  set an : ℕ → ℝ → ℝ := fun n t => An n t (ū n (projIcc x₀ x₁ hx.le t))
+  have ham : ∀ n, AEStronglyMeasurable (an n) (volume.restrict (Ioo x₀ x₁)) := fun n =>
+    aestronglyMeasurable_apply_projIcc hx.le (hAm n) (hAc n) (ū n)
+  have hanM : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ an n t ∧ an n t ≤ M :=
+    fun n => (hA n).mono fun _ ht => ht _
+  set G : ℝ → ℝ := fun t => (∫ s in x₀..t, f s) + F t
+  have hG : IntegrableOn G (Ioo x₀ x₁) :=
+    integrableOn_intervalIntegral_add hx hf (hF.integrable Fact.out)
+  -- `ūₙ` is uniformly close to the explicit solution `wₙ` with the coefficient `aₙ` and the limit
+  -- data.
+  have hs : ∀ n, IntegrableOn (intervalDirichletSlope x₀ x₁ g.1 g.2 G (an n)) (Ioo x₀ x₁) :=
+    fun n => integrableOn_intervalDirichletSlope hlam _ _ (ham n) ((hanM n).mono fun _ h => h.1) hG
+  set w : ℕ → C(Icc x₀ x₁, ℝ) := fun n => intervalDirichletSolution hx.le g.1 g.2 (hs n)
+  have hclose : Tendsto (fun n => dist (ū n) (w n)) atTop (𝓝 0) :=
+    tendsto_dist_intervalRepresentativeL_intervalDirichletSolution hx hlam ham hanM hfn hf hflim
+      hFn (hF.integrable Fact.out) hFlim hglim (fun n => (hun n).1) (fun n => (hun n).2) hs
+  -- The explicit solutions `wₙ` lie in a compact set, so a subsequence converges, and so does the
+  -- corresponding subsequence of `ūₙ`.
+  obtain ⟨w', -, ψ, hψ, hwψ⟩ := (isCompact_closure_range_intervalDirichletSolution hx hlam ham
+    hanM hG hs).tendsto_subseq fun n => subset_closure (mem_range_self n)
+  have hūψ : Tendsto (fun k => ū (ψ k)) atTop (𝓝 w') :=
+    hwψ.congr_dist ((hclose.comp hψ.tendsto_atTop).congr fun _ => dist_comm _ _)
+  -- Along it the frozen coefficients converge almost everywhere to `a = A(·, w')`.
+  set a : ℝ → ℝ := fun t => A t (w' (projIcc x₀ x₁ hx.le t))
+  have halim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      Tendsto (fun k => an (ψ k) t) atTop (𝓝 (a t)) :=
+    ae_tendsto_apply_projIcc hx.le (fun k => hAc (ψ k))
+      (hAlim.mono fun _ ht => ht.comp_tendsto hψ.tendsto_atTop) hūψ
+  have ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)) :=
+    aestronglyMeasurable_of_tendsto_ae atTop (fun k => ham (ψ k)) halim
+  have haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M := by
+    filter_upwards [halim, ae_all_iff.2 hanM] with t h1 h2
+    exact ⟨ge_of_tendsto' h1 fun k => (h2 (ψ k)).1, le_of_tendsto' h1 fun k => (h2 (ψ k)).2⟩
+  -- The limit `w'` is the explicit solution with coefficient `a` and the limit data.
+  have hsa : IntegrableOn (intervalDirichletSlope x₀ x₁ g.1 g.2 G a) (Ioo x₀ x₁) :=
+    integrableOn_intervalDirichletSlope hlam _ _ ha (haM.mono fun _ h => h.1) hG
+  have hw' : w' = intervalDirichletSolution hx.le g.1 g.2 hsa :=
+    tendsto_nhds_unique hwψ (tendsto_intervalDirichletSolution hx hlam g.1 g.2 (fun k => ham (ψ k))
+      (fun k => (hanM (ψ k)).mono fun _ h => h.1) ha (haM.mono fun _ h => h.1) hG halim _ hsa)
+  -- It is the continuous representative of a solution of the limit problem.
+  obtain ⟨u, hrep, htr, hweak⟩ := exists_w1p_intervalRepresentativeL_eq (p := p) hx hlam ha
+    (haM.mono fun _ h => h.1) hf hF g.1 g.2
+  have hu : W1p.intervalRepresentativeL hx u = w' := by
+    ext y
+    rw [hrep, hw', intervalDirichletSolution_apply]
+  exact ⟨u, ⟨htr, by rw [hu]; exact hweak⟩, ψ, hψ, by rw [hu]; exact hūψ⟩
+
+/-- **The solution set is compact.** Under the hypotheses of the existence theorem
+`TauCeti.PDE.exists_intervalTraceL_eq_and_forall_setIntegral_eq`, the continuous representatives
+of all solutions `u ∈ W^{1,p}(x₀, x₁)` of the quasilinear problem with data `(A, f, F, g)` form a
+compact subset of `C([x₀, x₁])`. It is nonempty by that theorem. -/
+theorem isCompact_image_intervalRepresentativeL_setOf_forall_setIntegral_eq (hx : x₀ < x₁)
+    (hlam : 0 < lam)
+    (hAm : ∀ y, AEStronglyMeasurable (fun t => A t y) (volume.restrict (Ioo x₀ x₁)))
+    (hAc : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (A t))
+    (hA : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ∀ y, lam ≤ A t y ∧ A t y ≤ M)
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : MemLp F p (volume.restrict (Ioo x₀ x₁)))
+    (g : ℝ × ℝ) :
+    IsCompact (W1p.intervalRepresentativeL hx ''
+      {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p | W1p.intervalTraceL hx u = g ∧
+        ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+          ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+              W1p.gradient u t * deriv φ t =
+            (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t}) := by
+  refine IsSeqCompact.isCompact fun v hv => ?_
+  choose un hun hunv using hv
+  -- The constant family of problems converges to the problem itself.
+  have hAlim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      TendstoLocallyUniformly (fun _ : ℕ => A t) (A t) atTop :=
+    ae_of_all _ fun t => tendstoLocallyUniformly_const (A t)
+  obtain ⟨u, hu, ψ, hψ, hlim⟩ :=
+    exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq hx hlam (fun _ => hAm)
+      (fun _ => hAc) (fun _ => hA) hAlim (fun _ => hf) hf (by simp)
+      (fun _ => hF.integrable Fact.out) hF (by simp) tendsto_const_nhds hun
+  refine ⟨_, ⟨u, hu, rfl⟩, ψ, hψ, ?_⟩
+  simpa only [Function.comp_def, ← hunv] using hlim
+
+/-- **Upper semicontinuity of the solution set.** Under the hypotheses of
+`TauCeti.PDE.exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq`, let `U` be an
+open subset of `C([x₀, x₁])` containing the continuous representatives of all solutions of the
+limit problem with data `(A, f, F, g)`. Then for all large `n`, `U` also contains the continuous
+representatives of all solutions of the problem with data `(Aₙ, fₙ, Fₙ, gₙ)`. -/
+theorem eventually_image_intervalRepresentativeL_setOf_forall_setIntegral_eq_subset
+    (hx : x₀ < x₁) (hlam : 0 < lam) {An : ℕ → ℝ → ℝ → ℝ} {fn Fn : ℕ → ℝ → ℝ} {gn : ℕ → ℝ × ℝ}
+    {g : ℝ × ℝ}
+    (hAm : ∀ n y, AEStronglyMeasurable (fun t => An n t y) (volume.restrict (Ioo x₀ x₁)))
+    (hAc : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (An n t))
+    (hA : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ∀ y, lam ≤ An n t y ∧ An n t y ≤ M)
+    (hAlim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      TendstoLocallyUniformly (fun n => An n t) (A t) atTop)
+    (hfn : ∀ n, IntegrableOn (fn n) (Ioo x₀ x₁)) (hf : IntegrableOn f (Ioo x₀ x₁))
+    (hflim : Tendsto (fun n => ∫ t in Ioo x₀ x₁, |fn n t - f t|) atTop (𝓝 0))
+    (hFn : ∀ n, IntegrableOn (Fn n) (Ioo x₀ x₁)) (hF : MemLp F p (volume.restrict (Ioo x₀ x₁)))
+    (hFlim : Tendsto (fun n => ∫ t in Ioo x₀ x₁, |Fn n t - F t|) atTop (𝓝 0))
+    (hglim : Tendsto gn atTop (𝓝 g)) {U : Set C(Icc x₀ x₁, ℝ)} (hU : IsOpen U)
+    (hSU : W1p.intervalRepresentativeL hx ''
+      {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p | W1p.intervalTraceL hx u = g ∧
+        ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+          ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+              W1p.gradient u t * deriv φ t =
+            (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t} ⊆ U) :
+    ∀ᶠ n in atTop, W1p.intervalRepresentativeL hx ''
+      {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p | W1p.intervalTraceL hx u = gn n ∧
+        ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+          ∫ t in Ioo x₀ x₁, An n t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+              W1p.gradient u t * deriv φ t =
+            (∫ t in Ioo x₀ x₁, fn n t * φ t) - ∫ t in Ioo x₀ x₁, Fn n t * deriv φ t} ⊆ U := by
+  by_contra h
+  -- Otherwise a subsequence of problems has solutions `uₖ` with `ūₖ ∉ U`.
+  obtain ⟨ψ, hψ, hψU⟩ := extraction_of_frequently_atTop (not_eventually.1 h)
+  choose un hun hunU using fun k => not_subset.1 (hψU k)
+  choose u' hu' hu'rep using hun
+  have hψt := hψ.tendsto_atTop
+  obtain ⟨u, hu, ψ', -, hlim⟩ :=
+    exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq hx hlam
+      (fun k => hAm (ψ k)) (fun k => hAc (ψ k)) (fun k => hA (ψ k))
+      (hAlim.mono fun _ ht => ht.comp_tendsto hψt)
+      (fun k => hfn (ψ k)) hf (hflim.comp hψt) (fun k => hFn (ψ k)) hF (hFlim.comp hψt)
+      (hglim.comp hψt) (un := u') hu'
+  -- Their limit lies in `U`, which is open, so the `ūₖ` eventually do too.
+  obtain ⟨k, hk⟩ := (hlim.eventually (hU.mem_nhds (hSU ⟨u, hu, rfl⟩))).exists
+  exact hunU (ψ' k) (hu'rep (ψ' k) ▸ hk)
 
 end TauCeti.PDE
