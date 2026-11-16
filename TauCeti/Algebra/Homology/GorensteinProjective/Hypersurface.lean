@@ -88,8 +88,8 @@ theorem hasProjectiveDimensionLE_restrictScalars_of_isSyzygy
       hasProjectiveDimensionLT_restrictScalars_of_projective hw T.X₂
     have hX₃_dim : HasProjectiveDimensionLE (F.obj T.X₃) ((r + 1) + 1) :=
       ih (r := r + 1) hX₃ fun N ↦
-        hasProjectiveDimensionLT_of_ge N (r + 1 + (k + 1) + 1) ((r + 1) + 1 + k + 1)
-          (have := hd N; by omega)
+        haveI := hd N
+        hasProjectiveDimensionLT_of_ge N (r + 1 + (k + 1) + 1) ((r + 1) + 1 + k + 1) (by omega)
     have : HasProjectiveDimensionLT (F.obj T.X₁) (r + 2) :=
       (hT.map_of_exact F).hasProjectiveDimensionLT_X₁ (r + 2)
         (hasProjectiveDimensionLT_of_ge (F.obj T.X₂) 2 (r + 2) (by omega)) hX₃_dim
@@ -106,7 +106,8 @@ theorem hasProjectiveDimensionLE_one_restrictScalars_of_isSyzygy
     HasProjectiveDimensionLE
       ((restrictScalars.{v} (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1 :=
   hasProjectiveDimensionLE_restrictScalars_of_isSyzygy (r := 0) hw hM fun N ↦
-    hasProjectiveDimensionLT_of_ge N (d + 1) (0 + 1 + k + 1) (have := hd N; by omega)
+    haveI := hd N
+    hasProjectiveDimensionLT_of_ge N (d + 1) (0 + 1 + k + 1) (by omega)
 
 end ModuleCat
 
