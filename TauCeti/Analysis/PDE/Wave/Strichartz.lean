@@ -93,8 +93,7 @@ private theorem halfWavePropagator_comp_apply_adjoint (m : Lp ℂ ∞ (volume : 
         (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ (star m) g)) := by
   rw [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply, ContinuousLinearMap.comp_apply,
     fourierMultiplierCLM_halfWavePropagator_apply, fourierMultiplierCLM_halfWavePropagator_apply,
-    halfWavePropagator_def, halfWavePropagator_def, halfWavePropagator_def,
-    ← phasePropagator_add_apply, ← sub_eq_add_neg]
+    ← halfWavePropagator_add_apply, ← sub_eq_add_neg]
 
 /-- The decay of the Riesz–Thorin bound: if `(q, r)` is wave-admissible, `a = 1 / r` and
 `c = 2^j`, then
