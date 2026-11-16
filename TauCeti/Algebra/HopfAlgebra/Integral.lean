@@ -85,6 +85,29 @@ theorem IsLeftInvariantIntegral.sum_sum_mul {a b : H} {ι κ : Type*}
       h (ra.right i * rb.right j) • (ra.left i * rb.left j) = h (a * b) • (1 : H) := by
   simpa [Finset.sum_product] using hh.sum_smul (ra.mul rb)
 
+/-- Pairing a left invariant integral with a right invariant integral on the same bialgebra
+relates their values through their values at `1`. -/
+theorem IsLeftInvariantIntegral.apply_mul_apply_one {h₁ h₂ : H →ₗ[R] R}
+    (h₁L : h₁.IsLeftInvariantIntegral) (h₂R : h₂.IsRightInvariantIntegral) (a : H) :
+    h₁ a * h₂ 1 = h₂ a * h₁ 1 := by
+  classical
+  let r := ℛ R a
+  have hL := congrArg h₂ (h₁L.sum_smul r)
+  have hR := congrArg h₁ (h₂R.sum_smul r)
+  simp only [map_sum, map_smul, smul_eq_mul] at hL hR
+  calc h₁ a * h₂ 1 = ∑ i ∈ r.index, h₁ (r.right i) * h₂ (r.left i) := hL.symm
+    _ = ∑ i ∈ r.index, h₂ (r.left i) * h₁ (r.right i) :=
+      Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
+    _ = h₂ a * h₁ 1 := hR
+
+/-- A normalized left invariant integral and a normalized right invariant integral on the same
+bialgebra coincide. -/
+theorem IsLeftInvariantIntegral.eq_of_isRightInvariantIntegral {h₁ h₂ : H →ₗ[R] R}
+    (h₁L : h₁.IsLeftInvariantIntegral) (h₂R : h₂.IsRightInvariantIntegral)
+    (h₁1 : h₁ 1 = 1) (h₂1 : h₂ 1 = 1) : h₁ = h₂ := by
+  ext a
+  simpa [h₁1, h₂1] using h₁L.apply_mul_apply_one h₂R a
+
 end Bialgebra
 
 section Hopf
