@@ -83,14 +83,15 @@ of the sheaf of hyperfunctions.
 * `CategoryTheory.Sheaf.isZero_stalk_supportedHSheaf_of_notMem`: the stalks of `𝓗_Sⁿ(F)` at
   points outside `S` vanish;
 * `CategoryTheory.Sheaf.isZero_supportedHSheaf_succ_of_isFlasque`: `𝓗_Sⁿ⁺¹(F) = 0` for a flasque
-  sheaf `F`.
+  sheaf `F`;
 * `CategoryTheory.Sheaf.supportedSectionsFunctor S`: the supported-section functor `Γ_S`, which
-  is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`) and through which
+  is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`; as an instance,
+  `CategoryTheory.Sheaf.preservesFiniteLimits_supportedSectionsFunctor`) and through which
   `H_S⁰(W, F) ≃+ Γ_S(W, F)` is natural in `F`
   (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.shortExact_map_supportedSectionsFunctor`: `Γ_S` preserves a short exact
   sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `𝓗_S¹(F₁) = 0`;
-* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation.
+* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation;
 * `CategoryTheory.Sheaf.isSheaf_supportedHPresheaf_of_isZero_supportedHSheaf`: if `𝓗_S^q(F) = 0`
   for `q < n`, the presheaf `W ↦ H_Sⁿ(W, F)` is a sheaf;
 * `CategoryTheory.Sheaf.supportedHSectionsEquiv`: under the same hypothesis,
@@ -429,6 +430,15 @@ theorem exact_map_supportedSectionsFunctor (hT : T.Exact) [Mono T.f] :
     simp
   · rw [← cancel_mono (T.X₁.supportedSectionsι S), ← cancel_mono T.f]
     simp [← hm]
+
+/-- The supported-section functor `Γ_S` is left exact: it preserves finite limits, since it
+preserves monomorphisms and the exactness of `F₁ ⟶ F₂ ⟶ F₃` when `F₁ ⟶ F₂` is a monomorphism. -/
+instance preservesFiniteLimits_supportedSectionsFunctor :
+    PreservesFiniteLimits (supportedSectionsFunctor S) := by
+  rw [Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono]
+  intro T hT
+  have := hT.mono_f
+  exact ⟨exact_map_supportedSectionsFunctor S hT.exact, mono_supportedSectionsFunctor_map S T.f⟩
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
 then `Γ_S(F₂) ⟶ Γ_S(F₃)` is an epimorphism: a section of `F₃` supported in `S` lifts locally to a
@@ -852,40 +862,16 @@ theorem bijective_postcomp_mk₀_supportedSectionsι
     have hT : T.ShortExact := TauCeti.injectiveCokernelSequence_shortExact F
     have hT' := shortExact_map_supportedSectionsFunctor S hT (h 0)
     -- the inclusions `Γ_S(Fᵢ) ⟶ Fᵢ` form a morphism of short exact sequences `Γ_S(T) ⟶ T`
-    have hcomm : (T.map (supportedSectionsFunctor S)).g ≫ T.X₃.supportedSectionsι S =
-        T.X₂.supportedSectionsι S ≫ T.g :=
-      supportedSectionsFunctor_map_ι S T.g
     let φ : T.map (supportedSectionsFunctor S) ⟶ T :=
       { τ₁ := T.X₁.supportedSectionsι S
         τ₂ := T.X₂.supportedSectionsι S
         τ₃ := T.X₃.supportedSectionsι S
         comm₁₂ := (supportedSectionsFunctor_map_ι S T.f).symm
-        comm₂₃ := hcomm.symm }
+        comm₂₃ := (supportedSectionsFunctor_map_ι S T.g).symm }
     -- the statement holds in degree `j` for the flasque sheaf `F₂` and for `F₃`
     have ih₂ := ih T.X₂ fun q ↦ isZero_supportedHSheaf_succ_of_isFlasque _ S q
     have ih₃ := ih T.X₃ fun q ↦ isZero_supportedHSheaf_X₃_of_shortExact S hT (h (q + 1))
-    have hδ (y : (T.X₃.supportedSectionsSheaf S).supportedH Z W j) :
-        (y.comp hT'.extClass rfl).comp (Ext.mk₀ φ.τ₁) (add_zero _) =
-          (y.comp (Ext.mk₀ φ.τ₃) (add_zero j)).comp hT.extClass rfl := by
-      rw [Ext.comp_assoc_of_third_deg_zero, ShortComplex.ShortExact.extClass_naturality hT' hT φ,
-        Ext.comp_assoc_of_second_deg_zero]
-    refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
-    · -- `x` is the connecting image of `y`, since `H_Z^{j+1}(W, Γ_S(F₂)) = 0`
-      obtain ⟨y, rfl⟩ := Ext.covariant_sequence_exact₁ _ hT' x (Subsingleton.elim _ _) rfl
-      -- the image of `y` in `H_Z^j(W, F₃)` comes from `H_Z^j(W, F₂)`, hence from
-      -- `H_Z^j(W, Γ_S(F₂))`
-      obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ rfl ((hδ y).symm.trans hx)
-      obtain ⟨z', rfl⟩ := ih₂.2 z
-      have hy : z'.comp (Ext.mk₀ (T.map (supportedSectionsFunctor S)).g) (add_zero j) = y := by
-        refine ih₃.1 ?_
-        simp only [AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply,
-          Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀] at hz ⊢
-        rw [hcomm]
-        exact hz
-      rw [← hy, Ext.comp_assoc_of_second_deg_zero, hT'.comp_extClass, Ext.comp_zero]
-    · obtain ⟨y, rfl⟩ := Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
-      obtain ⟨y', rfl⟩ := ih₃.2 y
-      exact ⟨_, hδ y'⟩
+    exact hT'.postcomp_mk₀_τ₁_bijective hT φ _ j ih₂.2 ih₃
 
 /-- The base case `n = 1` of the degenerate edge comparison in positive degrees, for `Γ_S(F)`
 flasque and `𝓗_S^q(F) = 0` for `q ≥ 2`: `H_Z^k(-, F) ≅ H_Z^{j+1}(-, 𝓗_S¹(F))` for `k = j + 2`. -/
@@ -964,7 +950,7 @@ private def supportedHPresheafEdgeIsoOfIsZeroSucc
 variable {n : ℕ}
 
 /-- The degenerate edge comparison in degree zero, `H_Zⁿ(-, F) ≅ H_Z⁰(-, 𝓗_Sⁿ(F))`, as an
-isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by
+isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by the inverse of
 `H_Z⁰(W, 𝓗_Sⁿ(F)) ≃+ Γ_Z(W, 𝓗_Sⁿ(F))`. -/
 private def supportedHPresheafEdgeIsoZero (h : ∀ q < n, IsZero (F.supportedHSheaf S q))
     (hZS : Z ≤ S) : F.supportedHPresheaf Z n ≅ (F.supportedHSheaf S n).supportedHPresheaf Z 0 :=

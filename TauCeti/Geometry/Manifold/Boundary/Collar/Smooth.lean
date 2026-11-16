@@ -1,0 +1,267 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
+public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+
+/-!
+# Smooth collars of a manifold with boundary
+
+A smooth collar of a manifold with boundary `M` is a smooth embedding `c : ∂M × [0, 1) → M`
+with open image whose restriction to `∂M × {0}` is the inclusion of the boundary. Here `∂M`
+carries the canonical manifold structure `TauCeti.boundaryChartedSpace`, modeled on
+`EuclideanSpace ℝ (Fin n)`, and the depth parameter `[0, 1)` is the open subspace
+`TauCeti.EuclideanHalfSpace.normalIioOpens 1` of the one-dimensional half-space model, so
+`∂M × [0, 1)` is a manifold over `(𝓡 n).prod (𝓡∂ 1)`.
+
+Since source and target have the same dimension, a smooth embedding with open image is the same
+as an injective local diffeomorphism, and this is how the structure records it: the fields are
+`IsLocalDiffeomorph`, injectivity and the zero-slice equation. Openness of the image and the
+open-embedding property are consequences (`TauCeti.SmoothCollar.isOpen_range`,
+`TauCeti.SmoothCollar.isOpenEmbedding`).
+
+A collar is data rather than a property: a boundary has many collars, for example the
+reparametrizations `TauCeti.SmoothCollar.reparam` of a given one. A smooth collar
+forgets to the topological predicate `TauCeti.IsCollar` once its depth parameter is read as the
+real interval `[0, 1)` (`TauCeti.SmoothCollar.isCollar`).
+
+## Main definitions
+
+* `TauCeti.SmoothCollar`: a `C^k` smooth collar of a manifold modeled on `EuclideanHalfSpace`.
+* `TauCeti.SmoothCollar.opensRange`: its image, an open neighbourhood of the boundary.
+* `TauCeti.SmoothCollar.diffeomorphOpensRange`: the collar as a diffeomorphism onto its image.
+* `TauCeti.SmoothCollar.reparam`: the collar precomposed with `id × ψ` for an injective local
+  diffeomorphism `ψ` of `[0, 1)` fixing `0`.
+* `TauCeti.SmoothCollar.ofIsEmpty`: the empty collar of a manifold with empty boundary.
+
+## Main results
+
+* `TauCeti.SmoothCollar.isOpenEmbedding`: a smooth collar is an open embedding.
+* `TauCeti.SmoothCollar.boundary_subset_range`: its image contains the boundary.
+* `TauCeti.SmoothCollar.isCollar`: a smooth collar is a topological collar of the boundary
+  inclusion.
+
+The local smooth collars, defined near single boundary points, are
+`TauCeti.IsProductCollarChart.diffeomorphProd`.
+
+## References
+
+* M. Hirsch, *Differential Topology*, Springer GTM 33 (1976), Chapter 4, Theorem 6.1.
+* J. Lee, *Introduction to Smooth Manifolds*, Springer GTM 218, 2nd ed. (2013), Theorem 9.25.
+-/
+
+public section
+
+noncomputable section
+
+open Function Set Topology
+
+open scoped Manifold ContDiff
+
+namespace TauCeti
+
+open _root_.TauCeti.EuclideanHalfSpace
+
+variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
+
+variable (n k M) in
+/-- A `C^k` **smooth collar** of a manifold with boundary `M`, modeled on the Euclidean
+half-space: an injective `C^k` local diffeomorphism `c : ∂M × [0, 1) → M` whose zero slice is the
+inclusion of the boundary. Equivalently, `c` is a `C^k` embedding with open image; openness is
+`SmoothCollar.isOpen_range`.
+
+The boundary carries the canonical manifold structure `boundaryChartedSpace`, and the depth
+parameter is the open subspace `normalIioOpens 1` of the one-dimensional half-space model. -/
+structure SmoothCollar where
+  /-- The underlying map of a smooth collar. Use the coercion to a function instead. -/
+  toFun : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1 → M
+  isLocalDiffeomorph' : IsLocalDiffeomorph ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k toFun
+  injective' : Injective toFun
+  apply_zero' : ∀ x, toFun (x, normalIioOpensZero one_pos) = x
+
+namespace SmoothCollar
+
+instance : FunLike (SmoothCollar n k M) (↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) M where
+  coe := toFun
+  coe_injective c d h := by
+    cases c
+    cases d
+    congr
+
+/-- The structure field `toFun` is the coercion to a function. -/
+@[simp]
+theorem toFun_eq_coe (c : SmoothCollar n k M) : c.toFun = ⇑c := rfl
+
+/-- The coercion of a smooth collar built from its fields is the underlying map. -/
+@[simp]
+theorem coe_mk (f : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1 → M)
+    (h₁ : IsLocalDiffeomorph ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k f) (h₂ : Injective f)
+    (h₃ : ∀ x, f (x, normalIioOpensZero one_pos) = x) :
+    ⇑(⟨f, h₁, h₂, h₃⟩ : SmoothCollar n k M) = f := rfl
+
+/-- Two smooth collars with the same underlying map are equal. -/
+@[ext]
+theorem ext {c d : SmoothCollar n k M} (h : ∀ p, c p = d p) : c = d := DFunLike.ext _ _ h
+
+variable (c : SmoothCollar n k M)
+
+/-- A smooth collar is a `C^k` local diffeomorphism. -/
+protected theorem isLocalDiffeomorph :
+    IsLocalDiffeomorph ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k c :=
+  c.isLocalDiffeomorph'
+
+/-- A smooth collar is injective. -/
+protected theorem injective : Injective c := c.injective'
+
+/-- The zero slice of a smooth collar is the inclusion of the boundary. -/
+@[simp]
+theorem apply_zero (x : ↥((𝓡∂ (n + 1)).boundary M)) : c (x, normalIioOpensZero one_pos) = x :=
+  c.apply_zero' x
+
+/-- A smooth collar is `C^k`. -/
+protected theorem contMDiff : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k c :=
+  c.isLocalDiffeomorph.contMDiff
+
+/-- A smooth collar is continuous. -/
+protected theorem continuous : Continuous c := c.isLocalDiffeomorph.isLocalHomeomorph.continuous
+
+/-- A smooth collar is an open embedding. -/
+theorem isOpenEmbedding : IsOpenEmbedding c :=
+  c.isLocalDiffeomorph.isLocalHomeomorph.isOpenEmbedding_of_injective c.injective
+
+/-- The image of a smooth collar is open. -/
+theorem isOpen_range : IsOpen (range c) := c.isLocalDiffeomorph.isOpen_range
+
+/-- The image of a smooth collar contains the boundary. -/
+theorem boundary_subset_range : (𝓡∂ (n + 1)).boundary M ⊆ range c := fun x hx ↦
+  ⟨(⟨x, hx⟩, normalIioOpensZero one_pos), c.apply_zero _⟩
+
+/-- The image of a smooth collar, an open neighbourhood of the boundary. This is Mathlib's
+`IsLocalDiffeomorph.image` of the underlying local diffeomorphism. -/
+def opensRange : TopologicalSpace.Opens M := c.isLocalDiffeomorph.image
+
+/-- The image of a smooth collar is the range of its underlying map. -/
+@[simp]
+theorem coe_opensRange : (c.opensRange : Set M) = range c := c.isLocalDiffeomorph.image_coe
+
+/-- A point lies in the image of a smooth collar exactly when the collar reaches it. -/
+@[simp]
+theorem mem_opensRange {x : M} : x ∈ c.opensRange ↔ ∃ p, c p = x := (Iff.rfl)
+
+/-- Every value of a smooth collar lies in its image. -/
+theorem apply_mem_opensRange (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
+    c p ∈ c.opensRange :=
+  ⟨p, rfl⟩
+
+/-- The image of a smooth collar is a neighbourhood of the boundary. -/
+theorem opensRange_mem_nhdsSet : (c.opensRange : Set M) ∈ 𝓝ˢ ((𝓡∂ (n + 1)).boundary M) :=
+  c.isOpen_range.mem_nhdsSet.2 c.boundary_subset_range
+
+/-- **A smooth collar is a diffeomorphism onto its image**, the open subset `c.opensRange` with
+the charts Mathlib restricts to it. -/
+def diffeomorphOpensRange :
+    (↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) ≃ₘ^k⟮(𝓡 n).prod (𝓡∂ 1), 𝓡∂ (n + 1)⟯
+      c.opensRange :=
+  c.isLocalDiffeomorph.diffeomorphOfInjective c.injective
+
+/-- The diffeomorphism onto the image of a smooth collar evaluates as the collar. -/
+@[simp]
+theorem coe_diffeomorphOpensRange_apply (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
+    (c.diffeomorphOpensRange p : M) = c p :=
+  c.isLocalDiffeomorph.coe_diffeomorphOfInjective_apply c.injective p
+
+/-- The inverse of the diffeomorphism onto the image of a smooth collar sends a boundary point
+to its zero slice. -/
+@[simp]
+theorem diffeomorphOpensRange_symm_apply_boundary (x : ↥((𝓡∂ (n + 1)).boundary M)) :
+    c.diffeomorphOpensRange.symm ⟨x, c.mem_opensRange.2 ⟨_, c.apply_zero x⟩⟩ =
+      (x, normalIioOpensZero one_pos) :=
+  c.diffeomorphOpensRange.symm_apply_eq.2 (Subtype.ext (by simp))
+
+/-- A point of `∂M × [0, 1)` is sent to the boundary exactly when its depth is zero. -/
+@[simp]
+theorem apply_mem_boundary_iff (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
+    c p ∈ (𝓡∂ (n + 1)).boundary M ↔ p.2 = normalIioOpensZero one_pos := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact congrArg Prod.snd (c.injective (c.apply_zero ⟨c p, h⟩).symm)
+  · obtain ⟨x, t⟩ := p
+    obtain rfl : t = normalIioOpensZero one_pos := h
+    simp
+
+/-- **A smooth collar is a topological collar** of the boundary inclusion, once its depth
+parameter is read as the real interval `[0, 1)` through `homeomorphNormalIioOpens`. -/
+theorem isCollar :
+    IsCollar (Subtype.val : ↥((𝓡∂ (n + 1)).boundary M) → M)
+      (c ∘ Prod.map id (homeomorphNormalIioOpens 1).symm) :=
+  ⟨c.isOpenEmbedding.comp
+      (IsOpenEmbedding.id.prodMap (homeomorphNormalIioOpens 1).symm.isOpenEmbedding),
+    fun _ ↦ by simp⟩
+
+include c in
+/-- The boundary inclusion of a manifold with a smooth collar is topologically collared. -/
+theorem isCollared : IsCollared (Subtype.val : ↥((𝓡∂ (n + 1)).boundary M) → M) :=
+  c.isCollar.isCollared
+
+/-- **Reparametrizing the depth of a collar.** Precomposing a smooth collar with `id × ψ` for an
+injective `C^k` local diffeomorphism `ψ` of `[0, 1)` fixing `0` gives a smooth collar. -/
+def reparam (ψ : normalIioOpens 1 → normalIioOpens 1) (hψ : IsLocalDiffeomorph (𝓡∂ 1) (𝓡∂ 1) k ψ)
+    (hψi : Injective ψ) (hψ0 : ψ (normalIioOpensZero one_pos) = normalIioOpensZero one_pos) :
+    SmoothCollar n k M where
+  toFun := c ∘ Prod.map id ψ
+  isLocalDiffeomorph' p :=
+    (((Diffeomorph.refl (𝓡 n) _ k).isLocalDiffeomorph.prodMap hψ) p).comp _ _
+      (c.isLocalDiffeomorph _)
+  injective' := c.injective.comp (injective_id.prodMap hψi)
+  apply_zero' x := by simp [hψ0]
+
+variable {ψ : normalIioOpens 1 → normalIioOpens 1} (hψ : IsLocalDiffeomorph (𝓡∂ 1) (𝓡∂ 1) k ψ)
+  (hψi : Injective ψ) (hψ0 : ψ (normalIioOpensZero one_pos) = normalIioOpensZero one_pos)
+
+/-- The reparametrized collar is the collar precomposed with `id × ψ`. -/
+@[simp]
+theorem reparam_apply (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
+    c.reparam ψ hψ hψi hψ0 p = c (p.1, ψ p.2) := (rfl)
+
+/-- Reparametrizing the depth of a collar can only shrink its image. -/
+theorem opensRange_reparam_le : (c.reparam ψ hψ hψi hψ0).opensRange ≤ c.opensRange := by
+  rintro _ ⟨p, rfl⟩
+  exact ⟨(p.1, ψ p.2), rfl⟩
+
+/-- Reparametrizing the depth by a surjective `ψ` does not change the image of a collar. -/
+theorem opensRange_reparam (hψs : Surjective ψ) :
+    (c.reparam ψ hψ hψi hψ0).opensRange = c.opensRange := by
+  refine le_antisymm (c.opensRange_reparam_le hψ hψi hψ0) ?_
+  rintro _ ⟨⟨x, t⟩, rfl⟩
+  obtain ⟨s, rfl⟩ := hψs t
+  exact ⟨(x, s), rfl⟩
+
+section Empty
+
+variable [IsEmpty ((𝓡∂ (n + 1)).boundary M)]
+
+variable (n k M) in
+/-- **The empty collar.** A manifold with empty boundary has a smooth collar, the empty map. -/
+def ofIsEmpty : SmoothCollar n k M where
+  toFun p := isEmptyElim p.1
+  isLocalDiffeomorph' p := isEmptyElim p.1
+  injective' p := isEmptyElim p.1
+  apply_zero' x := isEmptyElim x
+
+/-- A manifold with empty boundary has exactly one smooth collar. -/
+instance : Unique (SmoothCollar n k M) where
+  default := ofIsEmpty n k M
+  uniq _ := ext fun p ↦ isEmptyElim p.1
+
+end Empty
+
+end SmoothCollar
+
+end TauCeti

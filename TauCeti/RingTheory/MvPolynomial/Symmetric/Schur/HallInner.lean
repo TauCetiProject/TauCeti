@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
-public import Mathlib.LinearAlgebra.Dual.Basis
+public import TauCeti.LinearAlgebra.BilinearForm.BasisToDual
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.HsymmPart
@@ -100,26 +99,22 @@ theorem hallInner_schurPolyBasis_left (μ : {ν : n.Partition // ν.parts.card �
 /-- **The Hall inner product is the dot product of Schur coordinates.** -/
 theorem hallInner_apply (p q : symmetricHomogeneousSubmodule σ R n) :
     hallInner σ R n p q =
-      ∑ μ, (schurPolyBasis σ R n).repr p μ * (schurPolyBasis σ R n).repr q μ := by
-  conv_lhs => rw [← (schurPolyBasis σ R n).sum_repr q]
-  simp only [map_sum, map_smul, hallInner_schurPolyBasis_right, smul_eq_mul, mul_comm]
+      ∑ μ, (schurPolyBasis σ R n).repr p μ * (schurPolyBasis σ R n).repr q μ :=
+  Module.Basis.toDual_apply_eq_sum _ p q
 
 /-- **The Hall inner product is symmetric.** -/
 theorem hallInner_comm (p q : symmetricHomogeneousSubmodule σ R n) :
-    hallInner σ R n p q = hallInner σ R n q p := by
-  simp only [hallInner_apply, mul_comm]
+    hallInner σ R n p q = hallInner σ R n q p :=
+  Module.Basis.toDual_comm _ p q
 
 /-- **The Hall inner product is a symmetric bilinear form.** -/
 theorem isSymm_hallInner : (hallInner σ R n).IsSymm :=
-  LinearMap.BilinForm.isSymm_def.mpr hallInner_comm
+  Module.Basis.isSymm_toDual _
 
 /-- **The Hall inner product is nondegenerate**: a symmetric polynomial orthogonal to every Schur
 polynomial has all its Schur coordinates `0`. -/
-theorem nondegenerate_hallInner : (hallInner σ R n).Nondegenerate := by
-  have hl : LinearMap.SeparatingLeft (hallInner σ R n) := fun p hp =>
-    (schurPolyBasis σ R n).ext_elem fun μ => by
-      rw [← hallInner_schurPolyBasis_right, hp, map_zero, Finsupp.zero_apply]
-  exact ⟨hl, fun q hq => hl q fun p => by rw [hallInner_comm]; exact hq p⟩
+theorem nondegenerate_hallInner : (hallInner σ R n).Nondegenerate :=
+  Module.Basis.nondegenerate_toDual _
 
 /-- **The Schur polynomials are orthonormal for the Hall inner product**, stated for partitions:
 `⟨s_λ, s_μ⟩ = δ_{λμ}` whenever `μ` has at most `Fintype.card σ` parts.  No bound on `λ` is needed:
