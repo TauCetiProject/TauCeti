@@ -561,6 +561,23 @@ theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
 theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup :=
   hp
 
+/-- A concatenation is a trail exactly when both parts are trails and use disjoint edge
+identities. -/
+@[simp]
+theorem isTrail_append (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsTrail ↔ p.IsTrail ∧ q.IsTrail ∧ p.edges.Disjoint q.edges := by
+  simp [isTrail_def, List.nodup_append']
+
+/-- The left part of a concatenated trail is a trail. -/
+theorem IsTrail.of_append_left {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsTrail) : p.IsTrail := by
+  simpa using (isTrail_append p q).mp hpq |>.1
+
+/-- The right part of a concatenated trail is a trail. -/
+theorem IsTrail.of_append_right {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsTrail) : q.IsTrail := by
+  simpa using (isTrail_append p q).mp hpq |>.2.1
+
 /-- The left part of a concatenated path is a path. -/
 theorem IsPath.of_append_left {p : G.Walk x y} {q : G.Walk y z}
     (hpq : (p.append q).IsPath) : p.IsPath := by
@@ -572,6 +589,42 @@ theorem IsPath.of_append_right {p : G.Walk x y} {q : G.Walk y z}
     (hpq : (p.append q).IsPath) : q.IsPath := by
   rw [isPath_def, support_append_eq_support_dropLast_append] at hpq
   exact hpq.of_append_right
+
+/-- A concatenation is a path exactly when both parts are paths and the support of the left
+part is disjoint from the support of the right part after its initial vertex. -/
+theorem isPath_append (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsPath ↔
+      p.IsPath ∧ q.IsPath ∧ p.support.Disjoint q.support.tail := by
+  rw [isPath_def, isPath_def, isPath_def, support_append, List.nodup_append']
+  constructor
+  · rintro ⟨hp, hqt, hd⟩
+    refine ⟨hp, ?_, hd⟩
+    rw [← q.cons_tail_support, List.nodup_cons]
+    exact ⟨fun hy ↦ hd p.end_mem_support hy, hqt⟩
+  · rintro ⟨hp, hq, hd⟩
+    exact ⟨hp, hq.tail, hd⟩
+
+/-- Symmetric form of `isPath_append`, using the support of the left part before its terminal
+vertex. -/
+theorem isPath_append' (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsPath ↔
+      p.IsPath ∧ q.IsPath ∧ p.support.dropLast.Disjoint q.support := by
+  rw [isPath_def, isPath_def, isPath_def, support_append_eq_support_dropLast_append,
+    List.nodup_append']
+  constructor
+  · rintro ⟨hpd, hq, hd⟩
+    refine ⟨?_, hq, hd⟩
+    have hy : y ∉ p.support.dropLast := fun h ↦ hd h q.start_mem_support
+    have hs : p.support.dropLast ++ [y] = p.support := by
+      simpa only [getLast_support] using List.dropLast_append_getLast p.support_ne_nil
+    rw [← hs, List.nodup_append']
+    refine ⟨hpd, by simp, ?_⟩
+    intro a ha hay
+    simp only [List.mem_singleton] at hay
+    subst a
+    exact hy ha
+  · rintro ⟨hp, hq, hd⟩
+    exact ⟨p.support.dropLast_sublist.nodup hp, hq, hd⟩
 
 @[simp]
 theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : β} (h : G.IsLink e x y) :
