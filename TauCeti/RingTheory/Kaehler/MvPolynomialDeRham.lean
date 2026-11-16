@@ -595,7 +595,7 @@ private theorem diffShift_D_X (D : Derivation R (MvPolynomial σ B) (MvPolynomia
 degree-zero `R`-derivation acting as `D` on zero-forms and sending `dXᵢ` to `d(D Xᵢ)`. -/
 def lieDeriv (D : Derivation R (MvPolynomial σ B) (MvPolynomial σ B)) :
     Module.End R (ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])) :=
-  coeffPart D + (TauCeti.ExteriorAlgebra.liftDeriv (diffShift D)).restrictScalars R
+  coeffPart D + (ExteriorAlgebra.liftDeriv (diffShift D)).restrictScalars R
 
 /-- On zero-forms, `lieDeriv D` acts by `D`. -/
 @[simp]
@@ -617,7 +617,7 @@ theorem lieDeriv_mul (D : Derivation R (MvPolynomial σ B) (MvPolynomial σ B))
     (α β : ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])) :
     lieDeriv D (α * β) = lieDeriv D α * β + α * lieDeriv D β := by
   simp only [lieDeriv, LinearMap.add_apply, LinearMap.coe_restrictScalars, coeffPart_mul,
-    TauCeti.ExteriorAlgebra.liftDeriv_mul, add_mul, mul_add]
+    ExteriorAlgebra.liftDeriv_mul, add_mul, mul_add]
   abel
 
 /-- Action of `lieDeriv D` on a polynomial multiple `p • α` of a form. -/
@@ -639,7 +639,7 @@ theorem lieDeriv_involute (D : Derivation R (MvPolynomial σ B) (MvPolynomial σ
     lieDeriv D (CliffordAlgebra.involute (Q := (0 : QuadraticForm (MvPolynomial σ B) _)) α) =
       CliffordAlgebra.involute (Q := (0 : QuadraticForm (MvPolynomial σ B) _)) (lieDeriv D α) := by
   simp only [lieDeriv, LinearMap.add_apply, LinearMap.coe_restrictScalars, coeffPart_involute,
-    TauCeti.ExteriorAlgebra.liftDeriv_involute, map_add]
+    ExteriorAlgebra.liftDeriv_involute, map_add]
 
 /-- `lieDeriv D` preserves each exterior power `⋀[MvPolynomial σ B]^n (Ω[MvPolynomial σ B⁄B])`. -/
 theorem lieDeriv_mem_exteriorPower (D : Derivation R (MvPolynomial σ B) (MvPolynomial σ B))
@@ -647,7 +647,7 @@ theorem lieDeriv_mem_exteriorPower (D : Derivation R (MvPolynomial σ B) (MvPoly
     (hα : α ∈ ⋀[MvPolynomial σ B]^n (Ω[MvPolynomial σ B⁄B])) :
     lieDeriv D α ∈ ⋀[MvPolynomial σ B]^n (Ω[MvPolynomial σ B⁄B]) :=
   add_mem (coeffPart_mem_exteriorPower D hα)
-    (TauCeti.ExteriorAlgebra.liftDeriv_mem_exteriorPower (diffShift D) hα)
+    (ExteriorAlgebra.liftDeriv_mem_exteriorPower (diffShift D) hα)
 
 /-- **Uniqueness of the Lie derivative**: any `R`-linear degree-zero derivation of polynomial
 forms agreeing with `D` on zero-forms and with `d(D Xᵢ)` on `dXᵢ` equals `lieDeriv D`. -/

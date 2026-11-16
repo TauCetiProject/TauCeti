@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.ExteriorPower.Basic
 # Degree-zero derivations of an exterior algebra
 
 Every `R`-linear endomorphism `f : M →ₗ[R] M` extends uniquely to an `R`-linear degree-zero
-derivation `TauCeti.ExteriorAlgebra.liftDeriv f` of `ExteriorAlgebra R M`, characterized by
+derivation `ExteriorAlgebra.liftDeriv f` of `ExteriorAlgebra R M`, characterized by
 `liftDeriv f (ι R m) = ι R (f m)` and the Leibniz rule
 `liftDeriv f (x * y) = liftDeriv f x * y + x * liftDeriv f y`.
 
@@ -26,19 +26,19 @@ the grade involution, preserves each exterior power `⋀[R]^n M`, acts as multip
 
 ## Main definitions
 
-* `TauCeti.ExteriorAlgebra.liftDeriv`: the `R`-linear map lifting endomorphisms of `M` to
+* `ExteriorAlgebra.liftDeriv`: the `R`-linear map lifting endomorphisms of `M` to
   degree-zero derivations of `ExteriorAlgebra R M`.
 
 ## Main results
 
-* `TauCeti.ExteriorAlgebra.liftDeriv_ι`: `liftDeriv f (ι R m) = ι R (f m)`.
-* `TauCeti.ExteriorAlgebra.liftDeriv_mul`: the Leibniz rule for `liftDeriv f`.
-* `TauCeti.ExteriorAlgebra.liftDeriv_unique`: uniqueness among degree-zero derivations.
-* `TauCeti.ExteriorAlgebra.liftDeriv_comp_sub_comp`: compatibility with the commutator bracket.
-* `TauCeti.ExteriorAlgebra.liftDeriv_mem_exteriorPower`: `liftDeriv f` preserves `⋀[R]^n M`.
-* `TauCeti.ExteriorAlgebra.liftDeriv_id_of_mem_exteriorPower`: `liftDeriv id` acts as `n • ·` on
+* `ExteriorAlgebra.liftDeriv_ι`: `liftDeriv f (ι R m) = ι R (f m)`.
+* `ExteriorAlgebra.liftDeriv_mul`: the Leibniz rule for `liftDeriv f`.
+* `ExteriorAlgebra.liftDeriv_unique`: uniqueness among degree-zero derivations.
+* `ExteriorAlgebra.liftDeriv_comp_sub_comp`: compatibility with the commutator bracket.
+* `ExteriorAlgebra.liftDeriv_mem_exteriorPower`: `liftDeriv f` preserves `⋀[R]^n M`.
+* `ExteriorAlgebra.liftDeriv_id_of_mem_exteriorPower`: `liftDeriv id` acts as `n • ·` on
   `⋀[R]^n M`.
-* `TauCeti.ExteriorAlgebra.liftDeriv_ιMulti`: action on a wedge product of vectors.
+* `ExteriorAlgebra.liftDeriv_ιMulti`: action on a wedge product of vectors.
 
 ## Implementation notes
 
@@ -51,9 +51,9 @@ including in characteristic two, because `ι R m * ι R m = 0` and
 
 public section
 
-open ExteriorAlgebra TrivSqZeroExt
+open TrivSqZeroExt
 
-namespace TauCeti.ExteriorAlgebra
+namespace ExteriorAlgebra
 
 noncomputable section
 
@@ -201,7 +201,8 @@ theorem liftDeriv_mem_exteriorPower (f : M →ₗ[R] M) {n : ℕ} {x : ExteriorA
   | mem_mul m hm i x hx ih =>
     obtain ⟨v, rfl⟩ := hm
     rw [liftDeriv_mul, liftDeriv_ι]
-    exact add_mem (ι_mul_mem_exteriorPower (f v) hx) (ι_mul_mem_exteriorPower v ih)
+    exact add_mem (TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower (f v) hx)
+      (TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower v ih)
 
 /-- **Euler degree operator**: lifting the identity endomorphism multiplies the `n`-th exterior
 power by `n`. -/
@@ -250,4 +251,4 @@ theorem liftDeriv_ιMulti (f : M →ₗ[R] M) {n : ℕ} (v : Fin n → M) :
 
 end
 
-end TauCeti.ExteriorAlgebra
+end ExteriorAlgebra
