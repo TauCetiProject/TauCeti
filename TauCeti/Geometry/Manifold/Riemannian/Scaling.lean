@@ -53,9 +53,10 @@ differentiable fields; this determines the curvature tensor.
   `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale_const`: the curvature
   and Ricci tensors of `c g` and `g` coincide.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
-* `Bundle.ContMDiffRiemannianMetric.subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos` and
-  `Bundle.ContMDiffRiemannianMetric.finrank_eq_zero_of_inner_eq_smul_of_nonpos`: metrics with
-  `g' = a g` at a point `x` for a constant `a ≤ 0` exist only over a zero tangent space at `x`.
+* `Bundle.ContMDiffRiemannianMetric.subsingleton_of_inner_eq_smul_of_nonpos` and
+  `Bundle.ContMDiffRiemannianMetric.finrank_eq_zero_of_inner_eq_smul_of_nonpos`: bundle metrics
+  with `g' = a g` on the fibre over a point `x` for some `a ≤ 0` exist only when that fibre, and
+  the model fibre, are zero.
 * `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul` and
   `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_inv_mul_of_inner_eq_smul`:
   `Ric(g') = Ric(g)` and `Scal(g') = a⁻¹ Scal(g)` for a metric `g'` known only to satisfy
@@ -96,6 +97,39 @@ namespace Bundle.ContMDiffRiemannianMetric
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+section Nonpos
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] {n n' : ℕ∞ω}
+
+omit [FiniteDimensional ℝ E] in
+/-- If two bundle metrics satisfy `g' = a g` on the fibre over a point `x` for some `a ≤ 0`, then
+that fibre is zero. -/
+theorem subsingleton_of_inner_eq_smul_of_nonpos
+    {g' : ContMDiffRiemannianMetric I n' F V} {g : ContMDiffRiemannianMetric I n F V} {a : ℝ}
+    {x : M} (h : g'.inner x = a • g.inner x) (ha : a ≤ 0) : Subsingleton (V x) := by
+  have hzero (u : V x) : u = 0 := by
+    by_contra hu
+    have h' := g'.pos x u hu
+    rw [h, smul_apply, smul_apply, smul_eq_mul] at h'
+    nlinarith [g.pos x u hu]
+  exact subsingleton_iff.2 fun v w ↦ (hzero v).trans (hzero w).symm
+
+omit [FiniteDimensional ℝ E] in
+/-- If two bundle metrics satisfy `g' = a g` on the fibre over a point `x` for some `a ≤ 0`, then
+the model fibre `F` is zero-dimensional. -/
+theorem finrank_eq_zero_of_inner_eq_smul_of_nonpos
+    {g' : ContMDiffRiemannianMetric I n' F V} {g : ContMDiffRiemannianMetric I n F V} {a : ℝ}
+    {x : M} (h : g'.inner x = a • g.inner x) (ha : a ≤ 0) : Module.finrank ℝ F = 0 := by
+  have := subsingleton_of_inner_eq_smul_of_nonpos h ha
+  rw [← ((trivializationAt F V x).linearEquivAt ℝ x
+    (FiberBundle.mem_baseSet_trivializationAt' x)).finrank_eq]
+  exact Module.finrank_zero_of_subsingleton
+
+end Nonpos
 
 section MetricCompatible
 
@@ -307,27 +341,6 @@ theorem scalarCurvature_rescale_const (x : M) :
   rw [scalarCurvature_rescale_eq_sum g _ _ b, ricciTensor_leviCivitaConnection_rescale_const g hc x,
     scalarCurvature_def, CovariantDerivative.scalarCurvature_eq_sum _ x b]
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only over zero tangent spaces. -/
-theorem subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos
-    {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ}
-    {x : M} (h : g'.inner x = a • g.inner x) (ha : a ≤ 0) :
-    Subsingleton (TangentSpace I x) := by
-  have hzero (u : TangentSpace I x) : u = 0 := by
-    by_contra hu
-    have h' := g'.pos x u hu
-    rw [h, smul_apply, smul_apply, smul_eq_mul] at h'
-    nlinarith [g.pos x u hu]
-  exact subsingleton_iff.2 fun v w ↦ (hzero v).trans (hzero w).symm
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only in dimension zero. -/
-theorem finrank_eq_zero_of_inner_eq_smul_of_nonpos
-    {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ}
-    {x : M} (h : g'.inner x = a • g.inner x) (ha : a ≤ 0) : Module.finrank ℝ E = 0 := by
-  have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos h ha
-  simp [← TauCeti.finrank_tangentSpace (I := I) x, Module.finrank_zero_of_subsingleton]
-
 /-- Metrics which are constant multiples of each other, `g' = a g`, have the same Ricci tensor.
 No sign condition on `a` is needed: positivity of both metrics forces `0 < a` unless the tangent
 spaces are zero, and then both Ricci tensors vanish. This is the form used for a family of metrics
@@ -395,7 +408,7 @@ theorem ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul
   simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul, inner_riemannianBundle, h,
     smul_apply]
   rcases eq_or_ne a 0 with rfl | ha
-  · have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos (h x) le_rfl
+  · have := subsingleton_of_inner_eq_smul_of_nonpos (h x) le_rfl
     simp [Subsingleton.elim u 0]
   · field_simp
 
