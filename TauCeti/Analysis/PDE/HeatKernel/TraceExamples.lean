@@ -28,8 +28,8 @@ continuity of `g`. This file records three examples showing what this does and d
 * **A bounded datum that is not uniformly continuous.** For `e ≠ 0` and the sign
   `f(x) = sign ⟪e, x⟫` of a linear form, `‖S(t) f - f‖_∞ = 1` for every `t > 0`
   (`TauCeti.eLpNorm_heatKernel_convolution_sign_inner_sub`). So the heat flow is not strongly
-  continuous on `L^∞` (`TauCeti.not_tendsto_eLpNorm_heatKernel_convolution_sign_inner_sub`), and
-  the initial datum is attained uniformly only on the uniformly continuous functions.
+  continuous on `L^∞` (`TauCeti.not_tendsto_eLpNorm_heatKernel_convolution_sign_inner_sub`): the
+  uniform attainment fails for this bounded datum, which is not uniformly continuous.
 * **A bounded family that is not uniformly equicontinuous.** The plane waves are eigenfunctions
   of the heat flow, `S(t) sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`
   (`TauCeti.heatKernel_convolution_sin_inner`). The family `sin ⟪ξ, ·⟫`, `ξ ∈ E`, is bounded by
@@ -94,7 +94,8 @@ theorem heatKernel_convolution_sign_inner_neg (e : E) (t : ℝ) (x : E) :
   rw [convolution_lsmul, convolution_lsmul, ← integral_neg, ← integral_neg_eq_self]
   congr 1
   ext y
-  rw [heatKernel_neg, neg_sub_neg, ← neg_sub, inner_neg_right, Real.sign_neg, smul_neg]
+  rw [show -x - -y = -(x - y) by abel]
+  simp only [heatKernel_neg, inner_neg_right, Real.sign_neg, smul_neg]
 
 omit [FiniteDimensional ℝ E] in
 /-- `sign ⟪e, ·⟫` is measurable. -/
@@ -126,7 +127,7 @@ theorem heatKernel_convolution_sign_inner_nonneg (ht : 0 < t) {x : E} (hx : 0 �
     rcases lt_trichotomy 0 ⟪e, z⟫ with hz | hz | hz
     · rw [Real.sign_of_pos hz]
       linarith [heatKernel_le_heatKernel_of_norm_le ht
-        (norm_sub_le_norm_sub_reflection_orthogonal_singleton hz hx)]
+        (norm_sub_le_norm_sub_reflection_orthogonal_singleton hz.le hx)]
     · simp [← hz]
     · rw [Real.sign_of_neg hz]
       have h := norm_sub_le_norm_sub_reflection_orthogonal_singleton
@@ -202,7 +203,7 @@ theorem eLpNorm_heatKernel_convolution_sign_inner_sub (he : e ≠ 0) (ht : 0 < t
     exact (((hu.comp (continuous_id.smul continuous_const)).sub continuous_const).eNorm.tendsto
       0).mono_left nhdsWithin_le_nhds
   refine le_of_tendsto hlim (eventually_nhdsWithin_of_forall fun (s : ℝ) (hs : s ∈ Ioi 0) ↦ ?_)
-  have h := hcont.enorm_le_eLpNorm_top (μ := volume) hU (x := s • e) (hpos s hs)
+  have h := (hcont.continuousAt (hU.mem_nhds (hpos s hs))).eNorm_le_eLpNorm_top (μ := volume)
   rwa [Real.sign_of_pos (hpos s hs)] at h
 
 /-- **The heat flow is not strongly continuous on `L^∞`.** For `e ≠ 0`,
@@ -225,52 +226,9 @@ section PlaneWave
 
 variable {t : ℝ}
 
-/-- **The plane waves are eigenfunctions of the heat flow.** For `t > 0` and `ξ ∈ E`,
-`S(t) exp (i ⟪ξ, ·⟫) = exp (-t ‖ξ‖²) exp (i ⟪ξ, ·⟫)`. -/
-theorem heatKernel_convolution_cexp_inner (ht : 0 < t) (ξ x : E) :
-    (heatKernel t ⋆ fun y ↦ Complex.exp (⟪ξ, y⟫ * Complex.I)) x =
-      Real.exp (-(t * ‖ξ‖ ^ 2)) • Complex.exp (⟪ξ, x⟫ * Complex.I) := by
-  -- The integral is the Fourier transform of `K_t` at `ξ / 2π`.
-  have hF := fourier_heatKernel ht ((2 * π)⁻¹ • ξ)
-  rw [Real.fourier_eq'] at hF
-  have hexp : -(4 * π ^ 2 * t * ‖(2 * π)⁻¹ • ξ‖ ^ 2) = -(t * ‖ξ‖ ^ 2) := by
-    rw [norm_smul, mul_pow, Real.norm_eq_abs, abs_inv, abs_of_pos (by positivity)]
-    field_simp
-    ring
-  rw [hexp] at hF
-  rw [convolution_lsmul, Complex.real_smul, ← hF, ← integral_mul_const]
-  congr 1
-  ext y
-  have hphase : -2 * π * ⟪y, (2 * π)⁻¹ • ξ⟫ = -⟪ξ, y⟫ := by
-    rw [inner_smul_right, real_inner_comm]
-    field_simp
-  rw [hphase, Complex.real_smul, smul_eq_mul, inner_sub_right, mul_comm _ (heatKernel t y : ℂ),
-    mul_assoc, ← Complex.exp_add]
-  congr 2
-  push_cast
-  ring
-
-/-- **The heat flow of a sine wave.** For `t > 0` and `ξ ∈ E`,
-`S(t) sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`. -/
-theorem heatKernel_convolution_sin_inner (ht : 0 < t) (ξ x : E) :
-    (heatKernel t ⋆ fun y ↦ Real.sin ⟪ξ, y⟫) x = Real.exp (-(t * ‖ξ‖ ^ 2)) * Real.sin ⟪ξ, x⟫ := by
-  have hint : Integrable fun y ↦ heatKernel t y • Complex.exp (⟪ξ, x - y⟫ * Complex.I) :=
-    (integrable_heatKernel ht).smul_of_top_left (memLp_top_of_bound
-      (by fun_prop : Continuous fun y ↦ Complex.exp (⟪ξ, x - y⟫ * Complex.I)).aestronglyMeasurable
-      1 (ae_of_all _ fun y ↦ by rw [Complex.norm_exp_ofReal_mul_I]))
-  have h := congrArg Complex.im (heatKernel_convolution_cexp_inner ht ξ x)
-  have him := integral_im hint
-  simp only [RCLike.im_to_complex] at him
-  rw [convolution_lsmul, ← him, Complex.real_smul, Complex.im_ofReal_mul,
-    Complex.exp_ofReal_mul_I_im] at h
-  rw [convolution_lsmul, ← h]
-  congr 1
-  ext y
-  rw [Complex.real_smul, Complex.im_ofReal_mul, Complex.exp_ofReal_mul_I_im, smul_eq_mul]
-
-/-- For `ξ ≠ 0` and `t > 0`, the heat flow moves the sine wave `sin ⟪ξ, ·⟫` by exactly
+/-- For `t > 0`, the heat flow moves the sine wave `sin ⟪ξ, ·⟫` by exactly
 `‖S(t) sin ⟪ξ, ·⟫ - sin ⟪ξ, ·⟫‖_∞ = 1 - exp (-t ‖ξ‖²)`. -/
-theorem eLpNorm_heatKernel_convolution_sin_inner_sub {ξ : E} (hξ : ξ ≠ 0) (ht : 0 < t) :
+theorem eLpNorm_heatKernel_convolution_sin_inner_sub (ht : 0 < t) (ξ : E) :
     eLpNorm (fun x ↦ (heatKernel t ⋆ fun y ↦ Real.sin ⟪ξ, y⟫) x - Real.sin ⟪ξ, x⟫) ∞ volume =
       ENNReal.ofReal (1 - Real.exp (-(t * ‖ξ‖ ^ 2))) := by
   set c := 1 - Real.exp (-(t * ‖ξ‖ ^ 2))
@@ -286,13 +244,15 @@ theorem eLpNorm_heatKernel_convolution_sin_inner_sub {ξ : E} (hξ : ξ ≠ 0) (
     refine eLpNormEssSup_le_of_ae_bound (ae_of_all _ fun x ↦ ?_)
     rw [norm_neg, norm_mul, Real.norm_of_nonneg hc]
     exact mul_le_of_le_one_right hc (Real.abs_sin_le_one _)
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · simp [c]
   -- At the point `x₀ = (π / 2 / ‖ξ‖²) • ξ` the sine equals `1`.
   set x₀ : E := (π / 2 / ‖ξ‖ ^ 2) • ξ
   have hx₀ : Real.sin ⟪ξ, x₀⟫ = 1 := by
     rw [inner_smul_right, real_inner_self_eq_norm_sq,
       div_mul_cancel₀ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 hξ)), Real.sin_pi_div_two]
-  have h := (by fun_prop : Continuous fun x : E ↦ -(c * Real.sin ⟪ξ, x⟫)).continuousOn
-    |>.enorm_le_eLpNorm_top (μ := volume) isOpen_univ (mem_univ x₀)
+  have h := (by fun_prop : Continuous fun x : E ↦ -(c * Real.sin ⟪ξ, x⟫)).continuousAt
+    |>.eNorm_le_eLpNorm_top (μ := volume) (x := x₀)
   rwa [hx₀, mul_one, eNorm_neg, Real.eNorm_of_nonneg hc] at h
 
 /-- **The heat flow does not attain a bounded family uniformly without a common modulus of
@@ -312,8 +272,7 @@ theorem tendsto_eLpNorm_heatKernel_convolution_sin_inner_smul_sub {e : E} (he : 
     have h := (ENNReal.continuous_ofReal.tendsto (1 - 0)).comp
       ((tendsto_const_nhds : Tendsto (fun _ : ℝ ↦ (1 : ℝ)) atTop (𝓝 1)).sub hexp)
     rwa [sub_zero, ENNReal.ofReal_one] at h
-  refine h1.congr' ((eventually_gt_atTop 0).mono fun k hk ↦ ?_)
-  exact (eLpNorm_heatKernel_convolution_sin_inner_sub (smul_ne_zero hk.ne' he) ht).symm
+  exact h1.congr fun k ↦ (eLpNorm_heatKernel_convolution_sin_inner_sub ht (k • e)).symm
 
 end PlaneWave
 
