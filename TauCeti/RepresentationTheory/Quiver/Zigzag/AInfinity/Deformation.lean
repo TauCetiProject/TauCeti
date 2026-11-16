@@ -8,8 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Multilinear.Basis
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.IntrinsicFormality.Criterion
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Tree
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Idempotents
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Isomorphism
 
@@ -48,14 +47,16 @@ the relation quotient `nonisolatedZigzagQuotient k G`. In particular:
   `HH^{n, 2 - n}` (`n ≥ 3`) of `zigzagStrictAInfinityAlgebra` implies intrinsic formality over every
   commutative ring
   (`TauCeti.isZigzagAlgebraIntrinsicallyFormal_of_forall_hochschildVanishesAt_nonisolated`).
-* Over a nontrivial commutative ring in which `2` is invertible, a connected graph with a vertex of
-  degree at least four, two distinct vertices of degree at least three, or a copy of affine `Dₙ`
-  (`n ≥ 4`) admits a non-formal quartic deformation and is not intrinsically formal.
-* Over a nontrivial `ℚ`-algebra (in particular over any field of characteristic zero), every finite
-  tree not isomorphic to a Dynkin diagram admits a non-formal loop deformation in arity `4`, `6`,
-  `8` or `12` and is not intrinsically formal
-  (`SimpleGraph.IsTree.exists_isZigzagAInfinityDeformation_not_isFormal` and
-  `SimpleGraph.IsTree.not_isZigzagAlgebraIntrinsicallyFormal`).
+* On any connected graph with at least two vertices, a non-formal loop deformation on
+  `nonisolatedZigzagQuotient` transports to a non-formal minimal strictly unital `A∞` deformation on
+  `zigzagAlgebra k G`, refuting intrinsic formality
+  (`TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra`);
+  for the resulting degree, affine, and non-Dynkin tree non-formality theorems (and Liu--Wang's
+  Example 4.7) see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`,
+  `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`,
+  `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic`,
+  `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.E`, and
+  `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Tree`.
 
 ## Main definitions
 
@@ -66,8 +67,6 @@ the relation quotient `nonisolatedZigzagQuotient k G`. In particular:
 * `TauCeti.zigzagAlgebraLoopAInfinityAlgebra`: loop deformations transported along
   `zigzagAlgebraEquivNonisolated` to `zigzagAlgebra k G` on connected graphs with at least two
   vertices.
-* `TauCeti.zigzagAlgebraLiuWangAffineD4`: Liu--Wang's Example 4.7 transported to the public affine
-  `D₄` zigzag algebra.
 * `TauCeti.IsZigzagAlgebraIntrinsicallyFormal`: intrinsic formality of the path-graded public zigzag
   algebra with respect to minimal strictly unital `A∞` deformations.
 
@@ -83,17 +82,16 @@ the relation quotient `nonisolatedZigzagQuotient k G`. In particular:
 * `TauCeti.isZigzagAlgebraIntrinsicallyFormal_of_forall_hochschildVanishesAt` and
   `TauCeti.isZigzagAlgebraIntrinsicallyFormal_of_forall_hochschildVanishesAt_nonisolated`:
   Kadeishvili's vanishing criterion for `IsZigzagAlgebraIntrinsicallyFormal`.
+* `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra`: any
+  non-formal loop deformation on `nonisolatedZigzagQuotient` refutes
+  `IsZigzagAlgebraIntrinsicallyFormal` on a connected graph with at least two vertices.
 * `SimpleGraph.Iso.isZigzagAlgebraIntrinsicallyFormal_iff`: invariance of
   `IsZigzagAlgebraIntrinsicallyFormal` under graph isomorphism (across arbitrary vertex universes).
-* `SimpleGraph.IsTree.exists_isZigzagAInfinityDeformation_not_isFormal` and
-  `SimpleGraph.IsTree.not_isZigzagAlgebraIntrinsicallyFormal`: over a nontrivial `ℚ`-algebra, every
-  finite non-Dynkin tree admits a non-formal `IsZigzagAInfinityDeformation` and fails
-  `IsZigzagAlgebraIntrinsicallyFormal`.
 
 ## References
 
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
-  https://arxiv.org/abs/2301.06757, Section 4 and Example 4.7.
+  https://arxiv.org/abs/2301.06757, Section 4.
 * M. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 3, for the
   path-length grading and the `A₁` dual-number convention.
 * T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison
@@ -518,56 +516,6 @@ theorem zigzagAlgebraLoopAInfinityAlgebra_m_eq_zero (hconn : G.Connected) [Nontr
     rw [zigzagAlgebraLoopAInfinityAlgebra_m_apply, zigzagLoopAInfinityAlgebra_m_eq_zero c hc h₂ hn,
       zero_apply, zero_apply, map_zero]
 
-/-! #### Liu--Wang's Example 4.7 on the public affine `D₄` zigzag algebra -/
-
-private instance : (AffineDynkinType.D 4).nodes.AtLeastTwo := ⟨by decide⟩
-
-variable (k) in
-/-- **Liu--Wang's quartic `A∞` algebra on the public affine `D₄` zigzag algebra** (Example 4.7),
-with scalar `c`: the transport of `TauCeti.liuWangAffineD4AInfinityAlgebra` along
-`zigzagAlgebraEquivNonisolated`. -/
-noncomputable def zigzagAlgebraLiuWangAffineD4 (c : k) :
-    AInfinityAlgebra k (zigzagAlgebra k (AffineDynkinType.D 4).graph) :=
-  zigzagAlgebraLoopAInfinityAlgebra
-    (AffineDynkinType.graph_connected (AffineDynkinType.valid_D.2 le_rfl))
-    (liuWangAffineD4Coefficients k c) (fst_eq_snd_of_mem_support_liuWangAffineD4Coefficients c)
-
-/-- The internal grading of `zigzagAlgebraLiuWangAffineD4` is `zigzagAlgebraInternalGrading`. -/
-@[simp]
-theorem zigzagAlgebraLiuWangAffineD4_grading (c : k) :
-    (zigzagAlgebraLiuWangAffineD4 k c).grading =
-      zigzagAlgebraInternalGrading k (AffineDynkinType.D 4).graph :=
-  zigzagAlgebraLoopAInfinityAlgebra_grading _ _ _
-
-/-- The binary operation of `zigzagAlgebraLiuWangAffineD4` is multiplication in
-`zigzagAlgebra k (AffineDynkinType.D 4).graph`. -/
-@[simp]
-theorem zigzagAlgebraLiuWangAffineD4_m_two_apply (c : k)
-    (x : Fin 2 → zigzagAlgebra k (AffineDynkinType.D 4).graph) :
-    (zigzagAlgebraLiuWangAffineD4 k c).m 2 x = x 0 * x 1 :=
-  (isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra _ _ _).m_two x
-
-/-- Every operation of `zigzagAlgebraLiuWangAffineD4` other than `m₂` and `m₄` vanishes. -/
-theorem zigzagAlgebraLiuWangAffineD4_m_eq_zero (c : k) {m : ℕ} (h₂ : m ≠ 2) (h₄ : m ≠ 4) :
-    (zigzagAlgebraLiuWangAffineD4 k c).m m = 0 :=
-  zigzagAlgebraLoopAInfinityAlgebra_m_eq_zero _ _ _ h₂ h₄
-
-/-- Liu--Wang's affine `D₄` algebra is a minimal strictly unital `A∞` deformation of the public
-affine `D₄` zigzag algebra. -/
-theorem isZigzagAInfinityDeformation_zigzagAlgebraLiuWangAffineD4 (c : k) :
-    IsZigzagAInfinityDeformation k (AffineDynkinType.D 4).graph
-      (zigzagAlgebraLiuWangAffineD4 k c) :=
-  isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra _ _ _
-
-/-- Liu--Wang's symmetric four-rotation quartic algebra on the public affine `D₄` zigzag algebra is
-formal for every scalar `c` (its `m₄` is a backtrack coboundary). -/
-theorem isFormal_zigzagAlgebraLiuWangAffineD4 (c : k) :
-    (zigzagAlgebraLiuWangAffineD4 k c).IsFormal := by
-  rw [zigzagAlgebraLiuWangAffineD4, isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff]
-  simp only [liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients]
-  exact isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients _ _
-    fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs ne_symm_of_mem_liuWangAffineD4BacktrackPairs
-
 end Pullback
 
 /-! ### Intrinsic formality of the public zigzag algebra -/
@@ -741,107 +689,11 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfini
     hf (zigzagAlgebraLoopAInfinityAlgebra hconn c hc)
       (isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hconn c hc)
 
-/-- **Connected graphs with a vertex of degree at least four are not intrinsically formal**, over
-every nontrivial commutative ring in which `2` is invertible. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_of_four_le_degree [Nontrivial k]
-    [Invertible (2 : k)] (hconn : G.Connected) {v : V} [Fintype (G.neighborSet v)]
-    (hv : 4 ≤ G.degree v) : ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V := G.nontrivial_of_degree_ne_zero (by omega : G.degree v ≠ 0)
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree
-    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hv
-  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
-
-/-- **Connected graphs with two distinct vertices of degree at least three are not intrinsically
-formal**, over every nontrivial commutative ring in which `2` is invertible. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_of_three_le_degree [Nontrivial k]
-    [Invertible (2 : k)] (hconn : G.Connected) {v w : V} [Fintype (G.neighborSet v)]
-    [Fintype (G.neighborSet w)] (hvw : v ≠ w) (hv : 3 ≤ G.degree v) (hw : 3 ≤ G.degree w) :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V := ⟨⟨v, w, hvw⟩⟩
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree
-    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial)
-    hvw (hconn.preconnected v w) hv hw
-  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
-
-/-- **Connected graphs containing a copy of affine `Dₙ` (`n ≥ 4`) are not intrinsically formal**,
-over every nontrivial commutative ring in which `2` is invertible. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D [Nontrivial k]
-    [Invertible (2 : k)] (hconn : G.Connected) {n : ℕ} (hn : 4 ≤ n)
-    (hG : (AffineDynkinType.D n).graph.IsContained G) :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V :=
-    AffineDynkinType.nontrivial_of_graph_isContained (AffineDynkinType.valid_D.2 hn) hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
-    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hn hG
-  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
-
-/-- **The public affine `Dₙ` zigzag algebra (`n ≥ 4`) is not intrinsically formal**, over every
-nontrivial commutative ring in which `2` is invertible. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_affineD [Nontrivial k] [Invertible (2 : k)]
-    {n : ℕ} (hn : 4 ≤ n) :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k (AffineDynkinType.D n).graph :=
-  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D
-    (AffineDynkinType.graph_connected (AffineDynkinType.valid_D.2 hn)) hn .rfl
-
-/-- **Connected graphs containing a copy of affine `E₆` are not intrinsically formal**, over every
-nontrivial `ℚ`-algebra. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6 [Nontrivial k] [Algebra ℚ k]
-    (hconn : G.Connected) (hG : AffineDynkinType.E6.graph.IsContained G) :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V :=
-    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E6 hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6
-    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
-  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
-
-/-- **The public affine `E₆` zigzag algebra is not intrinsically formal**, over every nontrivial
-`ℚ`-algebra. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE6 [Nontrivial k] [Algebra ℚ k] :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E6.graph :=
-  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6
-    (AffineDynkinType.graph_connected (by decide)) .rfl
-
-/-- **Connected graphs containing a copy of affine `E₇` are not intrinsically formal**, over every
-nontrivial `ℚ`-algebra. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7 [Nontrivial k] [Algebra ℚ k]
-    (hconn : G.Connected) (hG : AffineDynkinType.E7.graph.IsContained G) :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V :=
-    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E7 hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7
-    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
-  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
-
-/-- **The public affine `E₇` zigzag algebra is not intrinsically formal**, over every nontrivial
-`ℚ`-algebra. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE7 [Nontrivial k] [Algebra ℚ k] :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E7.graph :=
-  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7
-    (AffineDynkinType.graph_connected (by decide)) .rfl
-
-/-- **Connected graphs containing a copy of affine `E₈` are not intrinsically formal**, over every
-nontrivial `ℚ`-algebra. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8 [Nontrivial k] [Algebra ℚ k]
-    (hconn : G.Connected) (hG : AffineDynkinType.E8.graph.IsContained G) :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V :=
-    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E8 hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8
-    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
-  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
-
-/-- **The public affine `E₈` zigzag algebra is not intrinsically formal**, over every nontrivial
-`ℚ`-algebra. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE8 [Nontrivial k] [Algebra ℚ k] :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E8.graph :=
-  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8
-    (AffineDynkinType.graph_connected (by decide)) .rfl
-
 end IntrinsicFormality
 
 end TauCeti
 
-/-! ### Graph-isomorphism invariance and non-Dynkin trees -/
+/-! ### Graph-isomorphism invariance -/
 
 namespace SimpleGraph.Iso
 
@@ -861,39 +713,3 @@ theorem isZigzagAlgebraIntrinsicallyFormal_iff (k : Type w) [CommRing k]
     exact hH _ (h𝒜.isZigzagAInfinityDeformation_comapGraphIso e.symm)
 
 end SimpleGraph.Iso
-
-namespace SimpleGraph.IsTree
-
-open TauCeti
-
-universe u w
-
-variable {k : Type w} [CommRing k] [Nontrivial k] [Algebra ℚ k]
-  {V : Type u} [Finite V] {G : SimpleGraph V}
-
-/-- **Every finite non-Dynkin tree admits a non-formal minimal strictly unital `A∞` deformation** of
-its public zigzag algebra `zigzagAlgebra k G`, over any nontrivial `ℚ`-algebra (in particular over
-any field of characteristic zero). -/
-theorem exists_isZigzagAInfinityDeformation_not_isFormal (hG : G.IsTree)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
-    ∃ 𝒜 : AInfinityAlgebra k (zigzagAlgebra k G),
-      IsZigzagAInfinityDeformation k G 𝒜 ∧ ¬𝒜.IsFormal := by
-  obtain ⟨t, ht, -, h⟩ :=
-    hG.connected.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
-  have : Nontrivial V := t.nontrivial_of_graph_isContained ht h
-  obtain ⟨_, _, _, c, hc, hnf⟩ := hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra
-    (k := k) (hns := hG.connected.preconnected.exists_adj_of_nontrivial) hD
-  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
-    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
-    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected c hc).not.mpr hnf⟩
-
-/-- **The public zigzag algebra of a finite non-Dynkin tree is not intrinsically formal**, over any
-nontrivial `ℚ`-algebra (in particular over any field of characteristic zero). This proves the
-non-Dynkin implication of Liu and Wang's Theorem 1.1 on `TauCeti.zigzagAlgebra k G`. -/
-theorem not_isZigzagAlgebraIntrinsicallyFormal (hG : G.IsTree)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
-    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  obtain ⟨𝒜, h𝒜, hnf⟩ := hG.exists_isZigzagAInfinityDeformation_not_isFormal (k := k) hD
-  exact fun hf ↦ hnf (hf 𝒜 h𝒜)
-
-end SimpleGraph.IsTree

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction.Invariance
 public import TauCeti.Combinatorics.SimpleGraph.Degree
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Deformation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass
 
 /-!
@@ -66,11 +67,13 @@ particular they cover the affine `Dₙ` graphs, see
   statements that the strict zigzag algebra is not intrinsically formal.
 * `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree`,
   `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree`,
-  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree` and
-  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree`: a non-formal
-  quartic loop deformation exists, and the strict zigzag algebra is not intrinsically formal, when
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree`,
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree`,
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_four_le_degree` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_three_le_degree`: a non-formal quartic loop
+  deformation exists, and the strict and public zigzag algebras are not intrinsically formal, when
   `G` has a vertex of degree at least four or two distinct vertices of degree at least three joined
-  by a walk.
+  by a walk (connected in the public case).
 
 ## References
 
@@ -196,6 +199,16 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree (k := k) (hns := hns) hv
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
+/-- **Connected graphs with a vertex of degree at least four are not intrinsically formal**, over
+every nontrivial commutative ring in which `2` is invertible. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_four_le_degree [Nontrivial k]
+    [Invertible (2 : k)] (hconn : G.Connected) {v : V} [Fintype (G.neighborSet v)]
+    (hv : 4 ≤ G.degree v) : ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V := G.nontrivial_of_degree_ne_zero (by omega : G.degree v ≠ 0)
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hv
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
+
 /-! ### Two branch vertices joined by a walk -/
 
 /-- **A non-formal quartic deformation at two branch vertices.** Assume that `2` is invertible and
@@ -290,5 +303,17 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degre
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree
     (k := k) (hns := hns) hvw hr hv hw
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
+
+/-- **Connected graphs with two distinct vertices of degree at least three are not intrinsically
+formal**, over every nontrivial commutative ring in which `2` is invertible. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_three_le_degree [Nontrivial k]
+    [Invertible (2 : k)] (hconn : G.Connected) {v w : V} [Fintype (G.neighborSet v)]
+    [Fintype (G.neighborSet w)] (hvw : v ≠ w) (hv : 3 ≤ G.degree v) (hw : 3 ≤ G.degree w) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V := ⟨⟨v, w, hvw⟩⟩
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial)
+    hvw (hconn.preconnected v w) hv hw
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.E
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Deformation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.E
@@ -50,17 +51,26 @@ icosahedral groups.
 * `TauCeti.not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra`: if `G` contains a copy of
   the affine diagram `E₆`, then `HH^{6, -4}(Z, Z) ≠ 0`.
 * `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6`,
-  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E6` and
-  `TauCeti.not_isIntrinsicallyFormal_affineE6`: over a nontrivial `ℚ`-algebra, an arity-six loop
-  deformation is not formal and `Z` is not intrinsically formal.
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E6`,
+  `TauCeti.not_isIntrinsicallyFormal_affineE6`,
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE6`: over a nontrivial `ℚ`-algebra, an
+  arity-six loop deformation is not formal and the strict and public zigzag algebras are not
+  intrinsically formal.
 * `TauCeti.not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra`,
   `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7`,
-  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E7` and
-  `TauCeti.not_isIntrinsicallyFormal_affineE7`: the same for affine `E₇` in arity eight.
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E7`,
+  `TauCeti.not_isIntrinsicallyFormal_affineE7`,
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE7`: the same for affine `E₇` in arity
+  eight.
 * `TauCeti.not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra`,
   `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8`,
-  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E8` and
-  `TauCeti.not_isIntrinsicallyFormal_affineE8`: the same for affine `E₈` in arity twelve.
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E8`,
+  `TauCeti.not_isIntrinsicallyFormal_affineE8`,
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE8`: the same for affine `E₈` in arity
+  twelve.
 
 ## References
 
@@ -142,6 +152,24 @@ theorem not_isIntrinsicallyFormal_affineE6 [Nontrivial k] [Algebra ℚ k] :
       (AffineDynkinType.exists_adj_graph (t := .E6) (by decide))).IsIntrinsicallyFormal :=
   not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E6 .rfl
 
+/-- **Connected graphs containing a copy of affine `E₆` are not intrinsically formal**, over every
+nontrivial `ℚ`-algebra. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6 [Nontrivial k] [Algebra ℚ k]
+    (hconn : G.Connected) (hG : AffineDynkinType.E6.graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E6 hG
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
+
+/-- **The public affine `E₆` zigzag algebra is not intrinsically formal**, over every nontrivial
+`ℚ`-algebra. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE6 [Nontrivial k] [Algebra ℚ k] :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E6.graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6
+    (AffineDynkinType.graph_connected (by decide)) .rfl
+
 /-! ### Affine `E₇` -/
 
 /-- The closed walk of the backtracks through the nodes `2`, `2`, `2` and `5` at the trivalent node
@@ -203,6 +231,24 @@ theorem not_isIntrinsicallyFormal_affineE7 [Nontrivial k] [Algebra ℚ k] :
     ¬(zigzagStrictAInfinityAlgebra k
       (AffineDynkinType.exists_adj_graph (t := .E7) (by decide))).IsIntrinsicallyFormal :=
   not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E7 .rfl
+
+/-- **Connected graphs containing a copy of affine `E₇` are not intrinsically formal**, over every
+nontrivial `ℚ`-algebra. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7 [Nontrivial k] [Algebra ℚ k]
+    (hconn : G.Connected) (hG : AffineDynkinType.E7.graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E7 hG
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
+
+/-- **The public affine `E₇` zigzag algebra is not intrinsically formal**, over every nontrivial
+`ℚ`-algebra. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE7 [Nontrivial k] [Algebra ℚ k] :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E7.graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7
+    (AffineDynkinType.graph_connected (by decide)) .rfl
 
 /-! ### Affine `E₈` -/
 
@@ -271,5 +317,23 @@ theorem not_isIntrinsicallyFormal_affineE8 [Nontrivial k] [Algebra ℚ k] :
     ¬(zigzagStrictAInfinityAlgebra k
       (AffineDynkinType.exists_adj_graph (t := .E8) (by decide))).IsIntrinsicallyFormal :=
   not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E8 .rfl
+
+/-- **Connected graphs containing a copy of affine `E₈` are not intrinsically formal**, over every
+nontrivial `ℚ`-algebra. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8 [Nontrivial k] [Algebra ℚ k]
+    (hconn : G.Connected) (hG : AffineDynkinType.E8.graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E8 hG
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
+
+/-- **The public affine `E₈` zigzag algebra is not intrinsically formal**, over every nontrivial
+`ℚ`-algebra. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE8 [Nontrivial k] [Algebra ℚ k] :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E8.graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8
+    (AffineDynkinType.graph_connected (by decide)) .rfl
 
 end TauCeti

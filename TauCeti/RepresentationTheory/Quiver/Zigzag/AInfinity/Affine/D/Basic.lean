@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Deformation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 
@@ -28,14 +29,24 @@ only branch node has four neighbours, is treated in
 
 ## Main results
 
-* `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D` and
-  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D`: when `2` is
-  invertible and `G` contains a copy of affine `Dₙ` (`n ≥ 4`), some quartic loop deformation is not
-  formal and the strict zigzag algebra of `G` is not intrinsically formal.
+* `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D`,
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D`: when `2` is invertible and `G`
+  contains a copy of affine `Dₙ` (`n ≥ 4`), some quartic loop deformation is not formal and the
+  strict and public zigzag algebras of `G` are not intrinsically formal (connected in the public
+  case).
 * `TauCeti.not_hochschildVanishesAt_four_affineD`: `HH^{4, -2}` of the affine `Dₙ` zigzag algebra
   is nonzero for `n ≥ 5`.
-* `TauCeti.not_isIntrinsicallyFormal_affineD`: the affine `Dₙ` zigzag algebra is not
-  intrinsically formal for `n ≥ 5`, when `2` is invertible.
+* `TauCeti.not_isIntrinsicallyFormal_affineD` and
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineD`: the strict (`n ≥ 5`) and public
+  (`n ≥ 4`) affine `Dₙ` zigzag algebras are not intrinsically formal when `2` is invertible.
+
+## References
+
+* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+  https://arxiv.org/abs/2301.06757, Sections 3 and 4.
+* T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison
+  cohomologies*, Trudy Tbiliss. Mat. Inst. 91 (1988), 19--27.
 -/
 
 public section
@@ -109,5 +120,25 @@ theorem not_isIntrinsicallyFormal_affineD [Nontrivial k] [Invertible (2 : k)] {n
     ¬(zigzagStrictAInfinityAlgebra k (AffineDynkinType.exists_adj_graph (t := .D n)
       (AffineDynkinType.valid_D.2 (by omega)))).IsIntrinsicallyFormal :=
   not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D (by omega) .rfl
+
+/-- **Connected graphs containing a copy of affine `Dₙ` (`n ≥ 4`) are not intrinsically formal**,
+over every nontrivial commutative ring in which `2` is invertible. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D [Nontrivial k]
+    [Invertible (2 : k)] {V : Type u} [Finite V] {G : SimpleGraph V} (hconn : G.Connected)
+    {n : ℕ} (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained (AffineDynkinType.valid_D.2 hn) hG
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
+    (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hn hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
+
+/-- **The public affine `Dₙ` zigzag algebra (`n ≥ 4`) is not intrinsically formal**, over every
+nontrivial commutative ring in which `2` is invertible. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineD [Nontrivial k] [Invertible (2 : k)]
+    {n : ℕ} (hn : 4 ≤ n) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k (AffineDynkinType.D n).graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D
+    (AffineDynkinType.graph_connected (AffineDynkinType.valid_D.2 hn)) hn .rfl
 
 end TauCeti
