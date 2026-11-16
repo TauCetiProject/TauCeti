@@ -217,8 +217,8 @@ theorem tensorPathChainOneIso_inv_apply
     (tensorPathChainOneIso.{u, w, v} B a R M).inv m =
       BalancedTensorProduct.tmul R (loopChainAlgebra B a R) m
         (pathChainPoint R (MoorePathBetween.loopHomeomorph a 1)) := by
-  rw [tensorPathChainOneIso, isoMk_inv_apply]
-  exact tensorPathChainPoint_apply M _ m
+  rw [tensorPathChainOneIso, isoMk_inv_apply, LinearEquiv.coe_symm_mk,
+    tensorPathChainPoint_apply]
 
 /-- The isomorphism `M ⊗ C_*(P_{a→a} B) ≅ M` is natural in `M`. -/
 @[reassoc]
