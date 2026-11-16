@@ -19,8 +19,7 @@ towers of field extensions, and transport along ring isomorphisms.
 
 A separable element of an algebra over a separably closed field belongs to the image of that
 field when the ambient algebra is a domain. The algebra can be noncommutative, and no algebraicity
-or separability assumption is needed on its other elements. Consequently every embedding of a
-separable extension into an extension of a separably closed field `Ω` lands in `Ω`.
+or separability assumption is needed on its other elements.
 
 ## Quadratics over a separably closed field
 
@@ -51,8 +50,6 @@ its conclusion, so instance search could not find it.
 
 * `IsSeparable.mem_bot_of_isSepClosed`: a separable element of a domain algebra belongs to the
   bottom subalgebra.
-* `IsSepClosed.bijective_toAlgHom_comp`: the embeddings of a separable extension into an extension
-  `Ω'` of a separably closed field `Ω` are those into `Ω`.
 * `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`: a quadratic `a X² + b X + c` with `a ≠ 0`
   and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
@@ -71,28 +68,6 @@ theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed 
   rw [Algebra.mem_bot]
   exact minpoly.mem_range_of_degree_eq_one K x <|
     IsSepClosed.degree_eq_one_of_irreducible K (minpoly.irreducible hx.isIntegral) hx
-
-/-- **Embeddings of a separable extension into an extension of a separably closed field.** Let
-`E / K` be a separable extension, `Ω` a separably closed field over `K` and `Ω'` an extension of
-`Ω`. Then composing with `Ω → Ω'` is a bijection from the `K`-embeddings `E → Ω` onto the
-`K`-embeddings `E → Ω'`: the image of `E` in `Ω'` is separable over `Ω`, hence contained in it. -/
-theorem IsSepClosed.bijective_toAlgHom_comp (K E Ω Ω' : Type*) [Field K] [Field E] [Field Ω]
-    [Field Ω'] [Algebra K E] [Algebra K Ω] [Algebra K Ω'] [Algebra Ω Ω'] [IsScalarTower K Ω Ω']
-    [IsSepClosed Ω] [Algebra.IsSeparable K E] :
-    Function.Bijective ((IsScalarTower.toAlgHom K Ω Ω').comp : (E →ₐ[K] Ω) → (E →ₐ[K] Ω')) := by
-  set g := IsScalarTower.toAlgHom K Ω Ω'
-  refine ⟨fun a b h ↦ AlgHom.ext fun e ↦ g.injective congr($h e), fun a ↦ ?_⟩
-  have h : a.range ≤ g.range := by
-    rintro _ ⟨e, rfl⟩
-    obtain ⟨c, hc⟩ := Algebra.mem_bot.mp <| IsSeparable.mem_bot_of_isSepClosed (K := Ω)
-      (((Algebra.IsSeparable.isSeparable K e).map a a.injective).tower_top Ω)
-    exact ⟨c, hc⟩
-  refine ⟨(AlgEquiv.ofInjective g g.injective).symm.toAlgHom.comp
-    ((Subalgebra.inclusion h).comp a.rangeRestrict), AlgHom.ext fun e ↦ ?_⟩
-  have := congr(Subtype.val $((AlgEquiv.ofInjective g g.injective).apply_symm_apply
-    (Subalgebra.inclusion h (a.rangeRestrict e))))
-  rw [AlgEquiv.ofInjective_apply] at this
-  simpa using this
 
 /-- `2` stays nonzero in the separable closure of a field in which it is nonzero, since the
 algebra map is injective. -/

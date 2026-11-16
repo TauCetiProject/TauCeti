@@ -11,7 +11,6 @@ public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
-import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.AlgebraicGeometry.Morphisms.Epi
 import TauCeti.CategoryTheory.MorphismProperty.Limits
 import TauCeti.RingTheory.Unramified.Fiber
@@ -252,14 +251,18 @@ theorem Scheme.Hom.bijective_comp_of_formallyUnramified (f : X ⟶ Y)
   have : IsScalarTower (Y.residueField (f x)) Ω Ω' := .of_algebraMap_eq' rfl
   let a' : X.residueField x →ₐ[Y.residueField (f x)] Ω' :=
     { a.hom with commutes' r := congr($hab r) }
-  obtain ⟨a₂, ha₂⟩ := (IsSepClosed.bijective_toAlgHom_comp _ _ Ω Ω').2 a'
+  obtain ⟨a₂, ha₂⟩ := (Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits Ω' Ω fun r ↦
+    IsSepClosed.splits_codomain _ (Algebra.IsSeparable.isSeparable _ r)).surjective a'
   -- Bundle `a₂` as a morphism out of `κ(x)` itself, so that it composes with `f.residueFieldMap x`.
   obtain ⟨c, hc⟩ : ∃ c : X.residueField x ⟶ .of Ω, ∀ r, c.hom r = a₂ r :=
     ⟨CommRingCat.ofHom (a₂ : X.residueField x →+* Ω), fun _ ↦ rfl⟩
   have hca : c ≫ g = a := by
     ext r
     rw [CommRingCat.comp_apply, hc]
-    exact congr($ha₂ r)
+    have := congr($ha₂ r)
+    rw [Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits_apply_apply] at this
+    -- `algebraMap Ω Ω'` is `g` and `a'` is `a`, by construction of the algebra structures.
+    exact this
   have hcb : f.residueFieldMap x ≫ c = b := by
     ext r
     rw [CommRingCat.comp_apply, hc]
