@@ -15,7 +15,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 
 Let `M` be a smooth Hausdorff manifold without boundary modelled on a finite-dimensional real inner
 product space `E`, let `V → M` be a smooth real vector bundle with finite-dimensional model fibre
-`F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p < ∞` and every order
+`F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p ≤ ∞` and every order
 `k`, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` of `TauCeti.SectionChartData.lowerOrderL` is a
 compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`).
 
@@ -99,8 +99,8 @@ namespace SobolevSection
 
 /-- **Rellich's theorem for Sobolev sections.** On a compact manifold without boundary, given by a
 finite bundle atlas of a Hausdorff manifold, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` is a compact
-operator for every order `k` and every `1 ≤ p < ∞`. -/
-theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
+operator for every order `k` and every `1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_lowerOrderL [T2Space M] :
     IsCompactOperator (A.sectionChartData.lowerOrderL μ p k) := by
   obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := A.exists_transfer_cover
   have hPj (i j : Fin A.n) : P i j ≤ A.image j :=
@@ -129,9 +129,9 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
   -- transferred from the chart-`i` data on `Q i`.
   refine Wkp.isCompactOperator_of_restrictL (fun i ↦ hPj i j) (hcov j) fun i ↦ ?_
   convert (hrel i).clm_comp ((ContinuousLinearMap.proj m).comp
-    (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
+    (A.transferL μ p k i j (hPc i j) (hPD i j) (hPQ i j))) using 1
   funext w
-  exact A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2 (hP i j)
+  exact A.restrictL_eq_transferL μ p k (A.sectionChartData.lowerOrderL μ p k w).2 (hP i j)
     (hPc i j) (hPD i j) (hQi i) (hPQ i j) m
 
 end SobolevSection
