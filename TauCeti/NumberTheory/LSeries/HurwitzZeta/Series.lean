@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
-import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -26,8 +25,9 @@ and at `c = 1 / 2` the odd-integer sum yields `((2 : ℂ) ^ s - 1) * riemannZeta
 ## Main definitions and results
 
 * `TauCeti.complexHurwitzSeries`: the Dirichlet-type series `∑' n : ℕ, exp (-s * log (n + c))`.
-* `TauCeti.summable_norm_complexHurwitzSeries_term` and `TauCeti.hasSum_complexHurwitzSeries`:
-  absolute convergence on `1 < s.re` for arbitrary `c : ℂ` and principal-power form away from `-ℕ`.
+* `TauCeti.summable_norm_complexHurwitzSeries_term`, `TauCeti.hasSum_complexHurwitzSeries`, and
+  `TauCeti.hasSum_complexHurwitzSeries_of_re_pos`: absolute convergence on `1 < s.re` for
+  arbitrary `c : ℂ` and principal-power form away from `-ℕ`.
 * `TauCeti.complexHurwitzSeries_add_one_right`: shift identity
   `complexHurwitzSeries s (c + 1) = complexHurwitzSeries s c - c ^ (-s)` for `c ≠ 0`.
 * `TauCeti.complexHurwitzSeries_ofReal_eq_hurwitzZeta`: agreement with `HurwitzZeta.hurwitzZeta`
@@ -67,17 +67,19 @@ theorem complexHurwitzSeries_eq_tsum_cpow {c : ℂ} (hc : ∀ n : ℕ, c ≠ -(n
   have hne : (n : ℂ) + c ≠ 0 := fun h => hc n (eq_neg_of_add_eq_zero_right h)
   rw [cpow_def_of_ne_zero hne, mul_comm]
 
+private theorem re_natCast_add_floor_add_one_pos (c : ℂ) (n : ℕ) :
+    0 < (((n + (⌊1 - c.re⌋₊ + 1) : ℕ) : ℂ) + c).re := by
+  have hlt : 1 - c.re < (⌊1 - c.re⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
+  simp only [add_re, natCast_re, Nat.cast_add, Nat.cast_one, one_re]
+  linarith [Nat.cast_nonneg (α := ℝ) n]
+
 /-- For `1 < s.re` and any `c : ℂ`, the principal-power series `∑' n : ℕ, ‖(n + c) ^ (-s)‖` is
 summable. -/
 theorem summable_norm_natCast_add_cpow_neg {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     Summable (fun n : ℕ => ‖((n : ℂ) + c) ^ (-s)‖) := by
   set N : ℕ := ⌊1 - c.re⌋₊ + 1
-  have hN : (N : ℂ) + c ∈ slitPlane := by
-    refine mem_slitPlane_iff.mpr (Or.inl ?_)
-    have hlt : 1 - c.re < (⌊1 - c.re⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
-    simp only [N, add_re, natCast_re]
-    push_cast
-    linarith
+  have hN : (N : ℂ) + c ∈ slitPlane :=
+    mem_slitPlane_iff.mpr (Or.inl (by simpa [N] using re_natCast_add_floor_add_one_pos c 0))
   obtain ⟨U, hU, -, C, -, hbound⟩ :=
     exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow hN (-s)
   have hp : Summable (fun n : ℕ => (1 + (n : ℝ)) ^ (-s.re)) :=
@@ -95,13 +97,8 @@ theorem summable_norm_complexHurwitzSeries_term {s : ℂ} (hs : 1 < s.re) (c : �
   set N : ℕ := ⌊1 - c.re⌋₊ + 1
   refine (summable_nat_add_iff N).mp
     (((summable_nat_add_iff N).mpr (summable_norm_natCast_add_cpow_neg hs c)).congr fun n => ?_)
-  have hne : (((n + N : ℕ) : ℂ) + c) ≠ 0 := by
-    intro h0
-    have hre := congrArg Complex.re h0
-    have hlt : 1 - c.re < (⌊1 - c.re⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
-    simp only [N, add_re, natCast_re, zero_re] at hre
-    push_cast at hre
-    linarith [Nat.cast_nonneg (α := ℝ) n]
+  have hne : (((n + N : ℕ) : ℂ) + c) ≠ 0 := fun h0 =>
+    (re_natCast_add_floor_add_one_pos c n).ne' (by rw [h0, zero_re])
   rw [cpow_def_of_ne_zero hne, mul_comm]
 
 /-- For `1 < s.re` and any `c : ℂ`, the defining terms of `complexHurwitzSeries s c` are
@@ -122,6 +119,14 @@ theorem hasSum_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (hc : ∀ n : �
   rw [complexHurwitzSeries_eq_tsum_cpow hc]
   exact (summable_natCast_add_cpow_neg hs c).hasSum
 
+/-- On `1 < s.re` and `0 < c.re`, `n ↦ (n + c) ^ (-s)` has sum `complexHurwitzSeries s c`. -/
+theorem hasSum_complexHurwitzSeries_of_re_pos {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
+    HasSum (fun n : ℕ => ((n : ℂ) + c) ^ (-s)) (complexHurwitzSeries s c) :=
+  hasSum_complexHurwitzSeries hs fun n h => by
+    have hre := congrArg Complex.re h
+    simp only [neg_re, natCast_re] at hre
+    linarith [Nat.cast_nonneg (α := ℝ) n]
+
 /-- Shifting the complex Hurwitz parameter `c ≠ 0` by `1` removes the `n = 0` term `c ^ (-s)`. -/
 theorem complexHurwitzSeries_add_one_right {s c : ℂ} (hs : 1 < s.re) (hc : c ≠ 0) :
     complexHurwitzSeries s (c + 1) = complexHurwitzSeries s c - c ^ (-s) := by
@@ -137,11 +142,7 @@ circle-parametrized `HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s`. -/
 theorem complexHurwitzSeries_ofReal_eq_hurwitzZeta {s : ℂ} {x : ℝ} (hs : 1 < s.re)
     (hx : x ∈ Ioc 0 1) :
     complexHurwitzSeries s x = HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s := by
-  have hne : ∀ n : ℕ, (x : ℂ) ≠ -(n : ℂ) := fun n h => by
-    have hre := congrArg Complex.re h
-    simp only [ofReal_re, neg_re, natCast_re] at hre
-    linarith [hx.1, Nat.cast_nonneg (α := ℝ) n]
-  have h1 := hasSum_complexHurwitzSeries hs hne
+  have h1 := hasSum_complexHurwitzSeries_of_re_pos (c := (x : ℂ)) hs (by simpa using hx.1)
   have h2 := HurwitzZeta.hasSum_hurwitzZeta_of_one_lt_re (Ioc_subset_Icc_self hx) hs
   exact h1.unique (h2.congr_fun fun _ => by rw [cpow_neg, one_div])
 
@@ -160,23 +161,16 @@ theorem complexHurwitzSeries_two_one :
 `complexHurwitzSeries s (1 / 2) = (2 ^ s - 1) * riemannZeta s`. -/
 theorem complexHurwitzSeries_one_half_right {s : ℂ} (hs : 1 < s.re) :
     complexHurwitzSeries s (1 / 2) = ((2 : ℂ) ^ s - 1) * riemannZeta s := by
-  have hhalf_ne : ∀ n : ℕ, (1 / 2 : ℂ) ≠ -(n : ℂ) := fun n h => by
-    have hre := congrArg Complex.re h
-    simp only [one_div, inv_re, re_ofNat, normSq_ofNat, neg_re, natCast_re] at hre
-    linarith [Nat.cast_nonneg (α := ℝ) n]
-  have hone_ne : ∀ n : ℕ, (1 : ℂ) ≠ -(n : ℂ) := fun n h => by
-    have hre := congrArg Complex.re h
-    simp only [one_re, neg_re, natCast_re] at hre
-    linarith [Nat.cast_nonneg (α := ℝ) n]
   have hzeta : HasSum (fun k : ℕ => ((k : ℂ) + 1) ^ (-s)) (riemannZeta s) := by
     rw [← complexHurwitzSeries_one_right hs]
-    exact hasSum_complexHurwitzSeries hs hone_ne
+    exact hasSum_complexHurwitzSeries_of_re_pos hs (by simp)
   have heven : HasSum (fun k : ℕ => (((2 * k : ℕ) : ℂ) + 1) ^ (-s))
       ((2 : ℂ) ^ (-s) * complexHurwitzSeries s (1 / 2)) :=
-    ((hasSum_complexHurwitzSeries hs hhalf_ne).mul_left ((2 : ℂ) ^ (-s))).congr_fun fun k => by
-      have hmul := ofReal_mul_cpow (r := 2) zero_le_two ((k : ℂ) + 1 / 2) (-s)
-      simp only [ofReal_ofNat] at hmul
-      rw [← hmul]; congr 1; push_cast; ring
+    ((hasSum_complexHurwitzSeries_of_re_pos hs (by norm_num)).mul_left ((2 : ℂ) ^ (-s))).congr_fun
+      fun k => by
+        have hmul := ofReal_mul_cpow (r := 2) zero_le_two ((k : ℂ) + 1 / 2) (-s)
+        simp only [ofReal_ofNat] at hmul
+        rw [← hmul]; congr 1; push_cast; ring
   have hodd : HasSum (fun k : ℕ => (((2 * k + 1 : ℕ) : ℂ) + 1) ^ (-s))
       ((2 : ℂ) ^ (-s) * riemannZeta s) :=
     (hzeta.mul_left ((2 : ℂ) ^ (-s))).congr_fun fun k => by
@@ -204,9 +198,9 @@ theorem complexHurwitzSeries_two_one_add_I_sub_two_add_I :
   have hshift := complexHurwitzSeries_add_one_right (s := 2) (by norm_num) hne
   have h2I : (1 + I : ℂ) + 1 = 2 + I := by ring
   have hsq : (1 + I : ℂ) ^ (2 : ℕ) = 2 * I := by rw [sq]; ring_nf; simp
-  have hcast : (2 : ℂ) = ((2 : ℕ) : ℂ) := by norm_cast
   rw [h2I] at hshift
-  rw [hshift, sub_sub_cancel, cpow_neg, hcast, cpow_natCast, hsq, mul_inv, inv_I]
+  rw [hshift, sub_sub_cancel]
+  simp only [cpow_neg, cpow_ofNat, hsq, mul_inv, inv_I]
   ring
 
 end TauCeti

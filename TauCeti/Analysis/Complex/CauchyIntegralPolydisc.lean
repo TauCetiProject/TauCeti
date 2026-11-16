@@ -46,8 +46,9 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   `ContinuousOn.analyticOnNhd_of_differentiableAt_update`,
   `ContinuousOn.analyticAt_of_differentiableAt_prod`,
   `ContinuousOn.analyticOnNhd_of_differentiableAt_prod`: **Osgood's lemma.** A function on
-  `ι → ℂ` (for a finite type `ι`) or `ℂ × ℂ` which is continuous on an open set and complex
-  differentiable in each variable separately there is analytic on it.
+  `ι → ℂ` (for a finite type `ι`) or a product `V₁ × V₂` of finite-dimensional complex normed
+  spaces which is continuous on an open set and complex differentiable in each variable or factor
+  separately there is analytic on it.
 * `TauCeti.analyticOnNhd_iff_continuousOn_and_differentiableAt_update`: on an open subset of
   `ι → ℂ`, analyticity is equivalent to continuity together with separate complex
   differentiability.
@@ -329,30 +330,61 @@ theorem analyticOnNhd_iff_continuousOn_and_differentiableAt_update (hs : IsOpen 
   ⟨fun h => ⟨h.continuousOn, fun y hy i => (h y hy).differentiableAt.comp_update i⟩,
     fun h => h.1.analyticOnNhd_of_differentiableAt_update hs h.2⟩
 
-/-- **Osgood's lemma on `ℂ × ℂ`.** A function on `ℂ × ℂ` which is continuous on a neighbourhood of
-a point and complex differentiable in each coordinate separately on that neighbourhood is analytic
-at the point. -/
-theorem _root_.ContinuousOn.analyticAt_of_differentiableAt_prod {f : ℂ × ℂ → E}
-    {s : Set (ℂ × ℂ)} {p : ℂ × ℂ} (hc : ContinuousOn f s) (hs : s ∈ 𝓝 p)
+/-- **Osgood's lemma on a product of finite-dimensional complex normed spaces.** A function on
+`V₁ × V₂` which is continuous on a neighbourhood of a point and complex differentiable in each
+factor separately on that neighbourhood is analytic at the point. -/
+theorem _root_.ContinuousOn.analyticAt_of_differentiableAt_prod
+    {V₁ V₂ : Type*} [NormedAddCommGroup V₁] [NormedSpace ℂ V₁] [FiniteDimensional ℂ V₁]
+    [NormedAddCommGroup V₂] [NormedSpace ℂ V₂] [FiniteDimensional ℂ V₂]
+    {f : V₁ × V₂ → E} {s : Set (V₁ × V₂)} {p : V₁ × V₂}
+    (hc : ContinuousOn f s) (hs : s ∈ 𝓝 p)
     (hd₁ : ∀ q ∈ s, DifferentiableAt ℂ (fun x => f (x, q.2)) q.1)
     (hd₂ : ∀ q ∈ s, DifferentiableAt ℂ (fun y => f (q.1, y)) q.2) :
     AnalyticAt ℂ f p := by
-  let φ : (Fin 2 → ℂ) → ℂ × ℂ := fun w => (w 0, w 1)
-  have hφ : Continuous φ := (continuous_apply 0).prodMk (continuous_apply 1)
-  have han : AnalyticAt ℂ (f ∘ φ) ![p.1, p.2] := by
-    refine (hc.comp hφ.continuousOn (mapsTo_preimage φ s)).analyticAt_of_differentiableAt_update
-      (hφ.continuousAt.preimage_mem_nhds (by simpa [φ] using hs)) fun w hw i => ?_
-    fin_cases i
-    · simpa [φ] using hd₁ (φ w) hw
-    · simpa [φ] using hd₂ (φ w) hw
-  have hpi : AnalyticAt ℂ (fun q : ℂ × ℂ => ![q.1, q.2]) p :=
-    analyticAt_pi_iff.mpr fun i => by fin_cases i; exacts [analyticAt_fst, analyticAt_snd]
-  exact han.comp_of_eq hpi rfl
+  let e₁ := (Module.finBasis ℂ V₁).equivFunL
+  let e₂ := (Module.finBasis ℂ V₂).equivFunL
+  let eS := (LinearEquiv.sumArrowLequivProdArrow
+    (Fin (Module.finrank ℂ V₁)) (Fin (Module.finrank ℂ V₂)) ℂ ℂ).symm.toContinuousLinearEquiv
+  let M : (V₁ × V₂) ≃L[ℂ] (Fin (Module.finrank ℂ V₁) ⊕ Fin (Module.finrank ℂ V₂) → ℂ) :=
+    (e₁.prodCongr e₂).trans eS
+  have hM : ∀ w, M.symm w = (e₁.symm (w ∘ Sum.inl), e₂.symm (w ∘ Sum.inr)) := fun w => by
+    simp [M, eS, LinearEquiv.sumArrowLequivProdArrow, Equiv.sumArrowEquivProdArrow]
+  have han : AnalyticAt ℂ (f ∘ M.symm) (M p) := by
+    refine (hc.comp M.symm.continuous.continuousOn
+      (mapsTo_preimage M.symm s)).analyticAt_of_differentiableAt_update
+      (M.symm.continuous.continuousAt.preimage_mem_nhds (by rwa [M.symm_apply_apply]))
+      fun w hw i => ?_
+    cases i with
+    | inl j =>
+      have hcomp : (fun x => (f ∘ M.symm) (update w (Sum.inl j) x)) =
+          fun x => f (e₁.symm (update (w ∘ Sum.inl) j x), e₂.symm (w ∘ Sum.inr)) := by
+        ext x
+        simp only [Function.comp_apply, hM]
+        refine congrArg f (Prod.ext (congrArg e₁.symm ?_) (congrArg e₂.symm ?_))
+        · ext k; simp [Function.update_apply]
+        · ext k; simp
+      rw [hcomp]
+      exact ((hd₁ (M.symm w) hw).comp (w ∘ Sum.inl) e₁.symm.differentiableAt).comp_update j
+    | inr j =>
+      have hcomp : (fun x => (f ∘ M.symm) (update w (Sum.inr j) x)) =
+          fun x => f (e₁.symm (w ∘ Sum.inl), e₂.symm (update (w ∘ Sum.inr) j x)) := by
+        ext x
+        simp only [Function.comp_apply, hM]
+        refine congrArg f (Prod.ext (congrArg e₁.symm ?_) (congrArg e₂.symm ?_))
+        · ext k; simp
+        · ext k; simp [Function.update_apply]
+      rw [hcomp]
+      exact ((hd₂ (M.symm w) hw).comp (w ∘ Sum.inr) e₂.symm.differentiableAt).comp_update j
+  have hf : (f ∘ M.symm) ∘ M = f := funext fun q => congrArg f (M.symm_apply_apply q)
+  exact hf ▸ han.comp (M.analyticAt p)
 
-/-- **Osgood's lemma on `ℂ × ℂ`.** A function on `ℂ × ℂ` which is continuous on an open set and
-complex differentiable in each coordinate separately on it is analytic on it. -/
-theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_prod {f : ℂ × ℂ → E}
-    {s : Set (ℂ × ℂ)} (hc : ContinuousOn f s) (hs : IsOpen s)
+/-- **Osgood's lemma on a product of finite-dimensional complex normed spaces.** A function on
+`V₁ × V₂` which is continuous on an open set and complex differentiable in each factor separately
+on it is analytic on it. -/
+theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_prod
+    {V₁ V₂ : Type*} [NormedAddCommGroup V₁] [NormedSpace ℂ V₁] [FiniteDimensional ℂ V₁]
+    [NormedAddCommGroup V₂] [NormedSpace ℂ V₂] [FiniteDimensional ℂ V₂]
+    {f : V₁ × V₂ → E} {s : Set (V₁ × V₂)} (hc : ContinuousOn f s) (hs : IsOpen s)
     (hd₁ : ∀ q ∈ s, DifferentiableAt ℂ (fun x => f (x, q.2)) q.1)
     (hd₂ : ∀ q ∈ s, DifferentiableAt ℂ (fun y => f (q.1, y)) q.2) :
     AnalyticOnNhd ℂ f s :=

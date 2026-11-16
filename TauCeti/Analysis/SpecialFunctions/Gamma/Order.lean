@@ -17,7 +17,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
 The entire reciprocal of `Complex.Gamma` has a simple zero at each nonpositive integer,
 with derivative `(-1)^n n!` at `-n`; accordingly, its divided difference
-`dslope (fun s ↦ (Gamma s)⁻¹) (-m)` is entire, clears `(s + m)⁻¹`, and evaluates to `(-1)^n n!`
+`dslope (fun s ↦ (Gamma s)⁻¹) (-m)` clears `(s + m)⁻¹` and evaluates to `(-1)^n n!`
 at `-n` when `m = n` and `0` at all other nonpositive integers. Hence Gamma has a simple pole at
 each such point, with residue `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`), and has
 order zero everywhere else. Deligne's factors inherit exactly the pole lattices
@@ -66,14 +66,6 @@ theorem hasDerivAt_inv_Gamma_neg_nat (n : ℕ) :
     convert hd using 1
     simp only [Nat.factorial_succ, pow_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
     ring
-
-/-- The divided difference of `(Gamma ·)⁻¹` at any basepoint is entire. -/
-@[fun_prop]
-theorem differentiable_dslope_inv_Gamma (a : ℂ) :
-    Differentiable ℂ (dslope (fun s : ℂ ↦ (Gamma s)⁻¹) a) :=
-  differentiableOn_univ.mp
-    ((differentiable_one_div_Gamma.differentiableOn.analyticOnNhd isOpen_univ).dslope
-      a).differentiableOn
 
 /-- Multiplying the divided difference of `(Gamma ·)⁻¹` at `-m` by `s + m` recovers `(Gamma s)⁻¹`
 everywhere, since `(Gamma (-m))⁻¹ = 0`. -/
