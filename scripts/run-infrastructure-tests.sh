@@ -57,6 +57,7 @@ python3 scripts/test_lake_cache_publish.py
 python3 scripts/test_merge_queue_throughput.py
 python3 scripts/test_docs_facts.py
 python3 scripts/test_finalize_batch.py
+python3 scripts/test_setup_failure_status.py
 python3 scripts/perf/test_perf.py
 python3 scripts/test_claims_access.py
 python3 scripts/test_lint_dot_notation.py
