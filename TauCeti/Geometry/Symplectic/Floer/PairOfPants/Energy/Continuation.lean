@@ -572,8 +572,7 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
   have hKc := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
     (K := pairOfPantsContinuationPerturbation G H L) fun w x ↦
-      (contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L w x).comp ((w : ℂ), x)
-        (f := fun p : ℂ × M ↦ (L, p)) (contMDiffAt_const.prodMk contMDiffAt_id)
+      contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L w x
   have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
     (contMDiffAt_pairOfPantsPerturbation hH hHs)
   have hRc := (integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation ω hG hH hGs
@@ -884,8 +883,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq
   rw [IntegrableOn, Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal] at hR
   exact hω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm
     (K := pairOfPantsContinuationPerturbation G H L)
-    (fun w x ↦ (contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L w x).comp
-      ((w : ℂ), x) (f := fun p : ℂ × M ↦ (L, p)) (contMDiffAt_const.prodMk contMDiffAt_id))
+    (contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L)
     (fun _ _ x hw ↦ pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le hw x) hH hu
     (fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)) hA hR hh
 

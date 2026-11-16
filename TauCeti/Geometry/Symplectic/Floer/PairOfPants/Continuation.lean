@@ -53,6 +53,8 @@ its topological part plus that constant.
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsContinuationPerturbation`: the perturbation is smooth
   jointly in the neck positions and on `S × M`, for smooth Hamiltonians on a manifold `M`;
+  `TauCeti.Floer.contMDiffAt_pairOfPantsContinuationPerturbation_prod` is its restriction to
+  fixed neck positions, and
   `TauCeti.Floer.contDiffAt_pairOfPantsContinuationPerturbation_prod` is the `Cⁿ` statement on
   `S × V` for fixed neck positions and a vector space target.
 * `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_forall_le`:
@@ -273,6 +275,18 @@ theorem contMDiffAt_pairOfPantsContinuationPerturbation {n : ℕ∞}
   exact ((contMDiffAt_smoothTransition_endCoord_comp q hf contMDiffAt_const hw).smul (hGq.add
     (hσ.smul (hHq.sub hGq)))).smul hA
 
+/-- For fixed neck positions `L`, the perturbation is `Cⁿ` jointly in the point `w` of `S` and
+the target point `x`. -/
+theorem contMDiffAt_pairOfPantsContinuationPerturbation_prod {n : ℕ∞}
+    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (G q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q)))
+    (L : Puncture → ℝ) (w : ThricePuncturedSphere) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × M => pairOfPantsContinuationPerturbation G H L p.1 p.2) ((w : ℂ), x) :=
+  (contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L w x).comp ((w : ℂ), x)
+    (f := fun p : ℂ × M => (L, p)) (contMDiffAt_const.prodMk contMDiffAt_id)
+
 /-- The perturbation is `Cⁿ` jointly in the domain point of `S` and the target point, for
 `Cⁿ` inner and outer Hamiltonians. -/
 theorem contDiffAt_pairOfPantsContinuationPerturbation_prod {V : Type*} [NormedAddCommGroup V]
@@ -282,11 +296,10 @@ theorem contDiffAt_pairOfPantsContinuationPerturbation_prod {V : Type*} [NormedA
     (x : V) :
     ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsContinuationPerturbation G H L p.1 p.2) (w, x) :=
   (contMDiffAt_prod_modelWithCornersSelf_iff.1
-    ((contMDiffAt_pairOfPantsContinuationPerturbation hG hH
+    (contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH
       (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hGs q).contMDiff)
       (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) L ⟨w, hw⟩
-      x).comp (w, x) (f := fun p : ℂ × V => (L, p))
-        (contMDiffAt_const.prodMk contMDiffAt_id))).contDiffAt
+      x)).contDiffAt
 
 section RealCoordinates
 
@@ -439,9 +452,8 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
   -- The perturbation is differentiable jointly, hence separately, in the domain and target
   -- points, at points of `S`.
   have hJ {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) :=
-    ((contMDiffAt_pairOfPantsContinuationPerturbation (n := 1) hG hH hGs hHs L ⟨w, hw⟩ x).comp
-      (w, x) (f := fun p : ℂ × M ↦ (L, p))
-      (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
+    (contMDiffAt_pairOfPantsContinuationPerturbation_prod (n := 1) hG hH hGs hHs L ⟨w, hw⟩
+      x).mdifferentiableAt one_ne_zero
   refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
     (fun w hw x v ↦ ((hJ hw x).comp (f := fun w' : ℂ ↦ (w', x)) w
       (mdifferentiableAt_id.prodMk mdifferentiableAt_const)).differentiableAt.clm_apply
@@ -547,9 +559,8 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
         z (u z)) thricePuncturedSphereReal := by
   refine ω.integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip
     (fun _ hw y ↦ pairOfPantsContinuationPerturbation_eq_zero_of_forall_le hw y)
-    (fun w x ↦ ((contMDiffAt_pairOfPantsContinuationPerturbation (n := 1) hG hH hGs hHs L w
-      x).comp ((w : ℂ), x) (f := fun p : ℂ × M ↦ (L, p))
-      (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero) fun q ↦ ?_
+    (fun w x ↦ (contMDiffAt_pairOfPantsContinuationPerturbation_prod (n := 1) hG hH hGs hHs L w
+      x).mdifferentiableAt one_ne_zero) fun q ↦ ?_
   -- In the coordinates of the end the pulled-back curvature along `u` is the function `F`.
   set F : ℝ × ℝ → ℝ := fun w ↦ q.endSign *
     (deriv smoothTransition (q.endSign * w.1 - 1) *
