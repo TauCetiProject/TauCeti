@@ -180,8 +180,8 @@ private theorem shapiroMap_comp_mackeyTerm (s : G) (n : ℕ) :
   -- trace from the Mackey subgroup to `V`.
   rw [mackeyTerm_def, hpair]
   simp only [← Category.assoc]
-  rw [shapiroMap_comp_map_of_conj U (mackeySubgroup s U V) M s κ (fun w => hκ w) f hf
-    mackeySubgroup_le_conj n, Category.assoc (coeffMap _ n),
+  rw [shapiroMap_comp_map_of_conj U (mackeySubgroup s U V) M s κ (fun w => hκ w) f hf n,
+    Category.assoc (coeffMap _ n),
     ← shapiroMap_trans V (mackeySubgroup s U V) hWV M n]
   simp only [Category.assoc, shapiroMap_comp_corestriction]
   rw [← shapiroMap_naturality V (DiscreteCoind V ((mackeySubgroup s U V).subgroupOf V) M)

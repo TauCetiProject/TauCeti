@@ -156,7 +156,8 @@ variable (hψ : Pairwise (Disjoint on fun i ↦ (ψ i).source))
   (hf : ∀ i, ∀ y ∈ (ψ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ i y j ^ 2)
 include hψ hf
 
-/-- Milnor's function at a chart point `x`, in the coordinates `(u, v) = e (ψ x)`. -/
+/-- `f` and Milnor's function at a chart point `x`, in the coordinates `(u, v)` given by
+`EuclideanSpace.sumComplEquivProd` applied to `ψ i x`. -/
 private theorem milnorFunction_of_mem_source (hx : x ∈ (ψ i).source) :
     f x = c + (-‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i x)).1‖ ^ 2 +
           ‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i x)).2‖ ^ 2) ∧
@@ -522,8 +523,8 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Spac
 `M` with pairwise disjoint sources, each containing the closed ball of radius `√(2ε)` about `0`
 in its target, in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. Suppose the band
 `f⁻¹[c - ε, c + ε]` is compact and its critical points lie in the chart sources. The cell of the
-chart `ψ i` is the disc `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of the first `k i` coordinates, read in
-`M`.
+chart `ψ i` is the disc `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of the first `min (k i) n` coordinates,
+read in `M`.
 
 Then the intersection with `{f ≤ c + ε}` of the lower sublevel `{f ≤ c - ε}` with these cells
 attached is a strong deformation retract of `{f ≤ c + ε}`: there is a retraction of

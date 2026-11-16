@@ -747,18 +747,14 @@ universal point. -/
 theorem pointRepresentationEquivComodule_apply
     (Theta : PointRepresentation (R := R) (H := H) (V := V)) :
     pointRepresentationEquivComodule Theta = PointRepresentation.toComodule Theta :=
-  by
-    unfold pointRepresentationEquivComodule
-    rfl
+  (rfl)
 
 /-- The inverse map of the representation--comodule equivalence is the point action induced by a
 coaction. -/
 @[simp]
 theorem pointRepresentationEquivComodule_symm_apply (rho : Comodule R H V) :
     pointRepresentationEquivComodule.symm rho = PointRepresentation.ofComodule rho :=
-  by
-    unfold pointRepresentationEquivComodule
-    rfl
+  (rfl)
 
 end HopfAlgebra
 

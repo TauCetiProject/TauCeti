@@ -39,13 +39,12 @@ public section
 
 namespace LinearMap
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
 
-omit [Module.Free ℤ N] in
 /-- An injective `ℤ`-linear map into a finitely generated abelian group of the same rank
 has an inverse up to multiplication by a nonzero natural number `c`. -/
-theorem exists_comp_eq_nsmul_id_of_injective {f : M →ₗ[ℤ] N} (hf : Function.Injective f)
-    (hrank : Module.finrank ℤ M = Module.finrank ℤ N) :
+theorem exists_comp_eq_nsmul_id_of_injective [Module.Finite ℤ N] {f : M →ₗ[ℤ] N}
+    (hf : Function.Injective f) (hrank : Module.finrank ℤ M = Module.finrank ℤ N) :
     ∃ c : ℕ, c ≠ 0 ∧ ∃ g : N →ₗ[ℤ] M, f ∘ₗ g = c • LinearMap.id ∧ g ∘ₗ f = c • LinearMap.id := by
   have : Finite (N ⧸ range f) := by
     have hq := (range f).finrank_quotient_add_finrank
@@ -64,7 +63,6 @@ theorem exists_comp_eq_nsmul_id_of_injective {f : M →ₗ[ℤ] N} (hf : Functio
   apply hf
   simpa using congr($hfg (f x))
 
-omit [Module.Free ℤ N] [Module.Finite ℤ N] in
 /-- **The index of the image of a map is the absolute value of its determinant**: for bases `b` of
 `M` and `c` of `N` indexed by the same finite type, the image of a `ℤ`-linear map `f : M → N` has
 index `|det (toMatrix b c f)|`. A non-injective `f` has image of infinite index, hence index `0`,
