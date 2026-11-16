@@ -352,7 +352,8 @@ theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart {κ : ℝ} (hκ : 0 <
   -- Apply the fixed-level estimate at `m₀ + η` for `m₀ = u(y) + R F / (ε₀ λ)`, and let `η → 0`.
   set m₀ := u y + R * F / (ε₀ * lam)
   have hm₀ : 0 ≤ R * F / (ε₀ * lam) := by positivity
-  have hle := le_ofReal_of_forall_pos_le_ofReal (φ := fun η ↦ D * (m₀ + η)) (by fun_prop)
+  have hle := le_ofReal_of_forall_pos_le_ofReal (φ := fun η ↦ D * (m₀ + η))
+    (by fun_prop : Continuous _).continuousWithinAt
     fun η hη ↦ H (m := m₀ + η) (by positivity) ha hLam hcont hu hnonneg hsuper (by
       refine (congrArg (ENNReal.ofReal R * ·) hEF).le.trans ?_
       rw [← ENNReal.ofReal_mul hR.le]
@@ -485,7 +486,8 @@ theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart_of_wkp
   -- Apply the estimate with margin `ζ` at `F = ‖f⁺‖`, and let `ζ → 0`.
   have hle := le_ofReal_of_forall_pos_le_ofReal
     (φ := fun ζ ↦ C * R ^ ((Fintype.card ι : ℝ) / p) *
-      (ū y + 2 * ζ + (1 + 3 * ζ) * (R / lam * (F + ζ)))) (by fun_prop)
+      (ū y + 2 * ζ + (1 + 3 * ζ) * (R / lam * (F + ζ))))
+    (by fun_prop : Continuous _).continuousWithinAt
     fun ζ hζ ↦ H u hRΩ ha hLam hcont hū hnonneg hsuper ENNReal.toReal_nonneg hEF.le hζ y hy
   refine hle.trans_eq ?_
   rw [hEF, ofReal_mul_ofReal_add_ofReal_mul_ofReal _ huy (by positivity) ENNReal.toReal_nonneg]
