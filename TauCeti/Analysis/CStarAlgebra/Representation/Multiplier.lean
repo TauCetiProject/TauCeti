@@ -126,9 +126,10 @@ theorem tendsto_nonUnitalMultiplierExtension_apply [PartialOrder A] {l : Filter 
     (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (ξ : H) :
     Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (π.nonUnitalMultiplierExtension m ξ)) := by
   rw [π.nonUnitalMultiplierExtension_eq_extendByZero, Submodule.extendByZero_apply]
+  have := hl.neBot
   have hlim := (π.essentialSubspace.subtypeL.continuous.tendsto _).comp
-    (tendsto_multiplierExtension_apply π.isNondegenerate_restrictEssentialSubspace hl m
-      (π.essentialSubspace.orthogonalProjectionOnto ξ))
+    (tendsto_multiplierExtension_apply π.isNondegenerate_restrictEssentialSubspace
+      hl.eventually_norm hl.tendsto_mul_right m (π.essentialSubspace.orthogonalProjectionOnto ξ))
   refine hlim.congr fun e => ?_
   calc (π.restrictEssentialSubspace (m.fst e)
         (π.essentialSubspace.orthogonalProjectionOnto ξ) : H)
