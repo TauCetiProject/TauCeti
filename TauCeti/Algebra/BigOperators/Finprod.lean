@@ -27,8 +27,9 @@ On pairwise disjoint sets, a product of indicators glues different functions on 
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
 function, is a finite sum over the support of the weights.
 A product over a finset is compared with the `finprod` of a finitely supported family whose
-factors off the finset are all at least `1`, or all at most `1`. Finally, left multiplication by a
-left-regular element commutes with `finsum` even when the support is infinite.
+factors off the finset are all at least `1`, or all at most `1`. A `finsum` whose terms are fixed by
+multiplication by an element is fixed by it. Finally, left multiplication by a left-regular
+element commutes with `finsum` even when the support is infinite.
 
 ## Main results
 
@@ -64,6 +65,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
+* `TauCeti.mul_finsum_of_forall` and `TauCeti.finsum_mul_of_forall`: a `finsum` whose terms are
+  fixed by left, respectively right, multiplication by `c` is fixed by it, whatever the support.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
   `finsum`, whatever the support.
 * `Multiset.finsum_count_eq_card`: the multiplicities of a multiset add up to its cardinality.
@@ -296,6 +299,22 @@ theorem finsum_smul_inv_smul {G X R V : Type*} [Group G] [MulAction G X] [AddCom
   simp [mul_smul]
 
 end WeightedSum
+
+section FixedByMul
+
+variable {ι R : Type*} [NonUnitalNonAssocSemiring R] {f : ι → R} {c : R}
+
+/-- A `finsum` whose terms are all fixed by left multiplication by `c` is fixed by it, without any
+finiteness assumption on the support. -/
+theorem mul_finsum_of_forall (h : ∀ i, c * f i = f i) : c * ∑ᶠ i, f i = ∑ᶠ i, f i :=
+  finsum_induction (fun x => c * x = x) (mul_zero c) (fun x y hx hy => by rw [mul_add, hx, hy]) h
+
+/-- A `finsum` whose terms are all fixed by right multiplication by `c` is fixed by it, without
+any finiteness assumption on the support. -/
+theorem finsum_mul_of_forall (h : ∀ i, f i * c = f i) : (∑ᶠ i, f i) * c = ∑ᶠ i, f i :=
+  finsum_induction (fun x => x * c = x) (zero_mul c) (fun x y hx hy => by rw [add_mul, hx, hy]) h
+
+end FixedByMul
 
 end TauCeti
 
