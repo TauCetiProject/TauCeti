@@ -90,7 +90,11 @@ theorem exists_homotopyEquiv_pushout_comp_sublevelRetraction (hf : ContMDiff I �
   obtain ⟨e₂, he₂⟩ := exists_sublevelHomotopyEquiv hf htb hctb hregtb
   -- Change the base of the attachment from `M_s` to `M_a` along `r`.
   obtain ⟨E, -, hE⟩ := er.exists_homotopyEquiv_pushout j hj hA α
-  refine ⟨r, fun x hx ↦ congrArg Subtype.val (hr ⟨x, hx⟩), ?_⟩
+  refine ⟨r, fun x hx ↦ ?_, ?_⟩
+  · have h := hr ⟨x, hx⟩
+    rw [show ContinuousMap.inclusion _ (⟨x, hx⟩ : {y | f y ≤ a}) = x from
+      Subtype.ext (ContinuousMap.inclusion_apply_coe _ _)] at h
+    rw [h]
   rw [her]
   refine ⟨E.symm.trans (e.trans e₂), fun z ↦ ?_⟩
   rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, he₂, hE,

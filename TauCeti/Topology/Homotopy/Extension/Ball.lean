@@ -87,21 +87,16 @@ theorem ballRadialDen_def (p : I × closedBall (0 : E) 1) :
     ballRadialDen p = max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) := (rfl)
 
 omit [NormedSpace ℝ E] in
-private lemma ballRadialProjection_den_pos (p : I × closedBall (0 : E) 1) :
-    0 < max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) :=
-  lt_of_lt_of_le (by have := p.1.2.2; linarith) (le_max_left _ _)
-
-omit [NormedSpace ℝ E] in
 /-- The radial denominator is positive. -/
 theorem ballRadialDen_pos (p : I × closedBall (0 : E) 1) : 0 < ballRadialDen p := by
   rw [ballRadialDen_def]
-  exact ballRadialProjection_den_pos p
+  exact lt_of_lt_of_le (by have := p.1.2.2; linarith) (le_max_left _ _)
 
 omit [NormedSpace ℝ E] in
 /-- The radial denominator is continuous. -/
-theorem continuous_ballRadialDen : Continuous (ballRadialDen (E := E)) := by
-  rw [show ballRadialDen (E := E) = _ from funext ballRadialDen_def]
-  fun_prop
+theorem continuous_ballRadialDen : Continuous (ballRadialDen (E := E)) :=
+  (by fun_prop : Continuous fun p : I × closedBall (0 : E) 1 ↦
+    max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)).congr fun p ↦ (ballRadialDen_def p).symm
 
 /-- Radial projection of the cylinder over the closed unit ball away from the point at height `2`
 on its axis, written in the ambient coordinates `ℝ × E`. The scale factor is the smaller of the
@@ -130,7 +125,8 @@ theorem ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
   have ht0 := p.1.2.1
   have ht1 := p.1.2.2
   have hn1 := mem_closedBall_zero_iff.1 p.2.2
-  have hd := ballRadialProjection_den_pos p
+  have hd := ballRadialDen_pos p
+  rw [ballRadialDen_def] at hd
   have hd1 := le_max_left (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
   have hd2 := le_max_right (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
   have hdle : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) ≤ 2 :=
@@ -160,7 +156,8 @@ theorem ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
 cylinder. -/
 theorem ballRadialProjection_fst_le (p : I × closedBall (0 : E) 1) :
     (ballRadialProjection p).1 ≤ p.1 := by
-  have hd := ballRadialProjection_den_pos p
+  have hd := ballRadialDen_pos p
+  rw [ballRadialDen_def] at hd
   have ht1 := p.1.2.2
   have hn1 := mem_closedBall_zero_iff.1 p.2.2
   have hdle : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) ≤ 2 :=
