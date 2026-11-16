@@ -42,6 +42,8 @@ its coefficients.
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_add`: `Γ(s) Γ(s + a)` is integrable on every
+  vertical line `Re s = σ` with neither `σ` nor `σ + Re a` a nonpositive integer.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
 * `Complex.integral_cpow_neg_mul_Gamma`: the same formula as the unnormalised vertical integral
   `∫ y^{-(σ + i t)} Γ(σ + i t) dt = 2π e⁻ʸ`.
@@ -142,6 +144,20 @@ theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     (Eventually.of_forall fun t ↦ by simpa using hC t)
   refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun t ↦ ?_)
   refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
+  simpa using congrArg re h
+
+/-- On every vertical line `Re t = σ` with neither `σ` nor `σ + Re a` a nonpositive integer, the
+product `Γ(t) Γ(t + a)` is integrable. -/
+theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
+    (haσ : ∀ n : ℕ, σ + a.re ≠ -n) :
+    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ := by
+  have hadd (y : ℝ) : σ + y * I + a = ↑(σ + a.re) + ↑(y + a.im) * I := by
+    apply Complex.ext <;> simp
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
+  refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
+    (Eventually.of_forall fun y ↦ by simpa [hadd] using hC (y + a.im))
+  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
+  refine (differentiableAt_Gamma _ fun m h ↦ haσ m ?_).continuousAt.comp (by fun_prop)
   simpa using congrArg re h
 
 /-- Mellin inversion for the Gamma function: on every vertical line `Re s = σ > 0`,

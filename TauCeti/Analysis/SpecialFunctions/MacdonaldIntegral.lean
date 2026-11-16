@@ -10,7 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 
 /-!
@@ -29,13 +31,16 @@ is a product of two Gamma functions (the integral form of DLMF 10.43.19):
 `∫₀^∞ c^{t - 1} Q_a(c) dc = Γ(t) Γ(t + a)`   for `Re t > 0`, `Re (t + a) > 0`.
 
 The product `Γ(t) Γ(t + a)` is integrable on every vertical line avoiding the poles of both
-factors, and `Q_a` is continuous, so Mellin inversion recovers `Q_a` as the Mellin–Barnes integral
+factors (`Complex.verticalIntegrable_Gamma_mul_Gamma_add`), and `Q_a` is continuous, so Mellin
+inversion recovers `Q_a` as the Mellin–Barnes integral
 
 `Q_a(c) = (1 / 2π) ∫ c^{-(σ + i y)} Γ(σ + i y) Γ(σ + a + i y) dy`   for `σ > 0`, `σ + Re a > 0`.
 
-This is the starting point of the residue expansion of `Q_a(c)` in the powers `c^k` and
-`c^{a + k}`, obtained by shifting the line to the left across the simple poles of
-`Γ(t) Γ(t + a)` at `t = -k` and `t = -a - k`; that expansion is not proved here.
+This is the starting point of the residue expansion of `Q_a(c)`, obtained by shifting the line
+to the left across the poles of `Γ(t) Γ(t + a)` at `t = -k` and `t = -a - k`. For `a` not an
+integer these poles are simple and the expansion is in the powers `c^k` and `c^{a + k}`; for
+integer `a` the two families overlap in double poles, which contribute terms `c^m log c`. That
+expansion is not proved here.
 
 The substitution `s = (ζ / 2) e^u` turns Schläfli's integral for `K_p` (DLMF 10.32.9) into the
 Macdonald integral: for real `ζ > 0` and complex `p`,
@@ -55,8 +60,6 @@ DLMF 9.13.4, the generalized Airy function `A_n` of Swanson and Headley is
   and is continuous there.
 * `Complex.hasMellin_integral_cpow_mul_exp_neg_add_div_Ioi`: the Mellin transform of `Q_a` is
   `Γ(t) Γ(t + a)`.
-* `Complex.verticalIntegrable_Gamma_mul_Gamma_add`: `Γ(t) Γ(t + a)` is integrable on every
-  vertical line `Re t = σ` with neither `σ` nor `σ + Re a` a nonpositive integer.
 * `Complex.mellinInv_Gamma_mul_Gamma_add`: the Mellin–Barnes integral of `Q_a`.
 * `Complex.integral_exp_neg_mul_cosh_mul_cosh_Ioi`: Schläfli's integral as a Macdonald integral.
 * `Complex.integrable_exp_mul_mul_exp_neg_mul_cosh`: `e^{p u} e^{-ζ cosh u}` is integrable on the
@@ -70,6 +73,13 @@ DLMF 9.13.4, the generalized Airy function `A_n` of Swanson and Headley is
 * NIST Digital Library of Mathematical Functions, equations 9.13.4, 10.32.9, 10.32.10 and
   10.43.19.
 * G. N. Watson, *A Treatise on the Theory of Bessel Functions*, 2nd ed., §6.22.
+
+The Mellin-inversion proof of `Complex.mellinInv_Gamma_mul_Gamma_add` follows that of
+`Complex.mellinInv_Gamma_mul_Gamma_sub` in
+`TauCeti/Analysis/SpecialFunctions/Gamma/MellinBarnes.lean`, and the holomorphy proof of
+`Complex.differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi` follows that of
+`Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi` in
+`TauCeti/Analysis/SpecialFunctions/Gamma/IntegralComplexRate.lean`.
 -/
 
 public section
@@ -192,20 +202,6 @@ theorem hasMellin_integral_cpow_mul_exp_neg_add_div_Ioi {a t : ℂ} (ht : 0 < t.
     refine setIntegral_congr_fun measurableSet_Ioi fun s _ ↦ ?_
     ring
 
-/-- On every vertical line `Re t = σ` with neither `σ` nor `σ + Re a` a nonpositive integer, the
-product `Γ(t) Γ(t + a)` is integrable. -/
-theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
-    (haσ : ∀ n : ℕ, σ + a.re ≠ -n) :
-    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ := by
-  have hadd (y : ℝ) : σ + y * I + a = ↑(σ + a.re) + ↑(y + a.im) * I := by
-    apply Complex.ext <;> simp
-  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
-  refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
-    (Eventually.of_forall fun y ↦ by simpa [hadd] using hC (y + a.im))
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ haσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
-
 /-- **The Mellin–Barnes integral of the Macdonald integral.** On every vertical line
 `Re t = σ` with `σ > 0` and `σ + Re a > 0`, Mellin inversion of `Γ(t) Γ(t + a)` gives
 `∫₀^∞ s^{a - 1} e^{-s - c/s} ds` for `c > 0`. -/
@@ -311,13 +307,8 @@ integrands of `integrable_exp_mul_mul_exp_neg_mul_cosh` at `p` and `-p`. -/
 private lemma norm_cosh_mul_le (p w : ℂ) (u : ℝ) :
     ‖Complex.cosh (p * u)‖ * ‖w‖ ≤ ‖cexp (p * u) * w‖ + ‖cexp (-p * u) * w‖ := by
   have hcosh : ‖Complex.cosh (p * u)‖ ≤ ‖cexp (p * u)‖ + ‖cexp (-p * u)‖ := by
-    rw [Complex.cosh, norm_div, neg_mul]
-    calc ‖cexp (p * u) + cexp (-(p * u))‖ / ‖(2 : ℂ)‖
-        ≤ (‖cexp (p * u)‖ + ‖cexp (-(p * u))‖) / 1 := by
-          gcongr
-          · exact norm_add_le _ _
-          · simp
-      _ = _ := div_one _
+    rw [neg_mul]
+    linarith [norm_cosh_le (p * u), norm_nonneg (cexp (p * u)), norm_nonneg (cexp (-(p * u)))]
   rw [norm_mul, norm_mul, ← add_mul]
   gcongr
 
@@ -330,21 +321,6 @@ theorem integrableOn_exp_neg_mul_cosh_mul_cosh_Ioi {ζ : ℂ} (hζ : 0 < ζ.re) 
     (Measurable.aestronglyMeasurable (by fun_prop)) (Eventually.of_forall fun u ↦ ?_)
   rw [norm_mul, mul_comm]
   exact norm_cosh_mul_le p _ u
-
-/-- For `x ≥ 0` and `0 < δ ≤ r`, `x e^{-r x} ≤ (2 / δ) e^{-(δ / 2) x}`, since `y ≤ e^y`. -/
-private lemma exp_neg_mul_mul_le {r δ x : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (hx : 0 ≤ x) :
-    Real.exp (-(r * x)) * x ≤ 2 / δ * Real.exp (-(δ / 2 * x)) := by
-  have hy := Real.add_one_le_exp (δ / 2 * x)
-  have h1 : Real.exp (-(r * x)) ≤ Real.exp (-(δ / 2 * x)) * Real.exp (-(δ / 2 * x)) := by
-    rw [← Real.exp_add]
-    gcongr
-    nlinarith
-  have h2 : Real.exp (-(δ / 2 * x)) * x ≤ 2 / δ := by
-    rw [le_div_iff₀ hδ, Real.exp_neg, inv_mul_eq_div, div_mul_eq_mul_div,
-      div_le_iff₀ (exp_pos _)]
-    nlinarith
-  calc _ ≤ Real.exp (-(δ / 2 * x)) * Real.exp (-(δ / 2 * x)) * x := by gcongr
-    _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
 
 /-- **Schläfli's integral is holomorphic** in `ζ` on the right half-plane: for every complex `p`,
 `ζ ↦ ∫₀^∞ e^{-ζ cosh u} cosh (p u) du` is complex differentiable on `Re ζ > 0`. -/
@@ -384,7 +360,8 @@ theorem differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi (p : ℂ) :
           simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
           ring
       _ ≤ ‖Complex.cosh (p * u)‖ * (2 / δ * Real.exp (-(δ / 2 * Real.cosh u))) :=
-          mul_le_mul_of_nonneg_left (exp_neg_mul_mul_le hδ0 (hre ζ hζ).le hc.le) (norm_nonneg _)
+          mul_le_mul_of_nonneg_left (TauCeti.exp_neg_mul_mul_le hδ0 (hre ζ hζ).le hc.le)
+            (norm_nonneg _)
       _ = 2 / δ * (‖Complex.cosh (p * u)‖ * ‖w u‖) := by
           simp only [hw, norm_exp, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
           ring
