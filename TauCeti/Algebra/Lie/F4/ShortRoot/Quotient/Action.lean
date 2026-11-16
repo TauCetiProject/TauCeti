@@ -41,12 +41,6 @@ noncomputable section
     (f4ShortRootSubspace_lie_mem x
       (f4ModularRootVector_mem_shortRootSubspace α hα))
 
-/-- A short root vector vanishes after quotienting by the short-root ideal. -/
-theorem f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short (α : Fin 48) (hα : f4Length α = 1) :
-    f4ShortRootSubspace.mkQ (f4ModularRootVector α) = 0 := by
-  rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-  exact f4ModularRootVector_mem_shortRootSubspace α hα
-
 /-- The opposite-root first-order quotient column is the corresponding coroot lift. -/
 theorem f4ShortRootSubspace_mkQ_lie_rootVector_opposite (α : Fin 48) :
     f4ShortRootSubspace.mkQ
@@ -72,11 +66,12 @@ theorem f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge
           f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv α)) :
     f4ShortRootSubspace.mkQ ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = 0 := by
   by_cases hα : f4Length α = 1
-  · rw [Submodule.mkQ_apply, f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_short α hα]
+  · exact (Submodule.mkQ_apply _ _).trans
+      (f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_short α hα _)
   have hα := (f4Length_eq_one_or_eq_two α).resolve_left hα
   by_cases hβ : f4Length β = 1
-  · rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact f4ShortRootSubspace_lie_mem _ (f4ModularRootVector_mem_shortRootSubspace β hβ)
+  · exact (Submodule.mkQ_apply _ _).trans ((Submodule.Quotient.mk_eq_zero _).2
+      (f4ShortRootSubspace_lie_mem _ (f4ModularRootVector_mem_shortRootSubspace β hβ)))
   have hβ := (f4Length_eq_one_or_eq_two β).resolve_left hβ
   let H := F4.cartanSubalgebra valid_F4
   have hsum := f4KillingRoot_add_ne_zero_of_ne_opposite α β
@@ -92,7 +87,8 @@ theorem f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge
     apply hno (f4SpecialIsogenyIndexEquiv δ) hδshort
     exact (f4_root_add_iff_specialIsogenyIndexEquiv_root_add_of_long
       α β δ hα hβ hδlong).1 hsource
-  rw [f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β hbot, map_zero]
+  exact (congrArg f4ShortRootSubspace.mkQ
+    (f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β hbot)).trans (map_zero _)
 
 /-- Transport a target root edge to a first-order quotient column between source roots of equal
 length. Both sides vanish when the sources are short, since the target `γ` is then short, and when
@@ -108,16 +104,17 @@ theorem f4ShortRootSubspace_mkQ_lie_rootVector_of_specialMap_add
   · have hγ' := f4Length_eq_two_of_root_eq_add_of_long_long _ _ _
       ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff α).2 hα)
       ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff β).2 (hαβ.symm.trans hα)) hmap
-    rw [f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ
-        ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).1 hγ'),
-      Submodule.mkQ_apply, f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_short α hα]
+    exact ((Submodule.mkQ_apply _ _).trans
+      (f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_short α hα _)).trans
+        ((Submodule.mkQ_apply _ _).trans (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ
+          ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).1 hγ'))).symm
   have hα := (f4Length_eq_one_or_eq_two α).resolve_left hα
   have hβ := hαβ.symm.trans hα
   by_cases hγ : f4Length γ = 1
   · have hγ' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).2 hγ
-    rw [f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ]
-    refine f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge α β ?_
-      fun δ hδ hδeq => ?_
+    refine (f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge α β ?_
+      fun δ hδ hδeq => ?_).trans ((Submodule.mkQ_apply _ _).trans
+        (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ)).symm
     · -- the special permutation commutes with negation, so an opposite pair would sum to zero
       rintro rfl
       have hσopp : f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex α) =
@@ -142,9 +139,10 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_long
     (hα : f4Length (f4SignedSimpleRootIndex k) = 2)
     (hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k)) :
     f4ShortRootSubspace.mkQ
-      (f4ModularDividedAdjointSquare k (f4ModularRootVector β)) = 0 := by
-  rw [f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k β
-    (f4_dividedPower_two_ad_rootVector_eq_zero_of_long _ β hα hopp), map_zero]
+      (f4ModularDividedAdjointSquare k (f4ModularRootVector β)) = 0 :=
+  (congrArg f4ShortRootSubspace.mkQ
+    (f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k β
+      (f4_dividedPower_two_ad_rootVector_eq_zero_of_long _ β hα hopp))).trans (map_zero _)
 
 /-- The exceptional divided-square quotient column is the source root-vector lift. -/
 theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4) :
@@ -173,9 +171,11 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
       (f4ModularDividedAdjointSquare k (f4ModularRootVector β)) = 0 := by
   by_cases hβ : f4Length β = 1
   · by_cases hopp : β = f4OppositeRootIndex (f4SignedSimpleRootIndex k)
-    · rw [hopp, f4ShortRootSubspace_mkQ_dividedSquare_rootVector_opposite,
-        f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short _ hα]
-    rw [f4ModularDividedAdjointSquare_rootVector_eq_zero_of_short k β hβ hopp, map_zero]
+    · rw [hopp, f4ShortRootSubspace_mkQ_dividedSquare_rootVector_opposite]
+      exact (Submodule.mkQ_apply _ _).trans
+        (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short _ hα)
+    exact (congrArg f4ShortRootSubspace.mkQ
+      (f4ModularDividedAdjointSquare_rootVector_eq_zero_of_short k β hβ hopp)).trans (map_zero _)
   · have hβ := (f4Length_eq_one_or_eq_two β).resolve_left hβ
     have hzero := f4ModularDividedAdjointSquare_rootVector_eq_zero_of_no_endpoint k β
       (fun γ hγ ↦ by
@@ -185,7 +185,7 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMa
         apply hno (f4SpecialIsogenyIndexEquiv γ) hγshort
         exact (f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
           (f4SignedSimpleRootIndex k) β γ hα hγlong).1 hγ)
-    rw [hzero, map_zero]
+    exact (congrArg f4ShortRootSubspace.mkQ hzero).trans (map_zero _)
 
 /-- Transport a target root edge to a short-source divided-square quotient column. -/
 theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
@@ -199,9 +199,9 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
         (f4ModularDividedAdjointSquare k (f4ModularRootVector β)) =
       f4ShortRootSubspace.mkQ (f4ModularRootVector γ) := by
   by_cases hγ : f4Length γ = 1
-  · rw [f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ]
-    refine f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMap_edge
-      k β hα fun δ hδ hδeq => ?_
+  · refine (f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMap_edge
+      k β hα fun δ hδ hδeq => ?_).trans ((Submodule.mkQ_apply _ _).trans
+        (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ)).symm
     have hδγ := f4SimplyConnectedRootDatum.root.injective (hδeq.trans hmap.symm)
     have h2 := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).2 hγ
     rw [← hδγ, hδ] at h2

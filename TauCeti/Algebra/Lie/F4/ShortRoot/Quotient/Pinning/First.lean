@@ -112,7 +112,8 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_eq_firstColumn_of_specialMap
   by_cases hγ : f4Length γ = 1
   · calc
       _ = f4ShortRootQuotientToIdealEquiv 0 := congrArg f4ShortRootQuotientToIdealEquiv
-        (hquot.trans (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ))
+        (hquot.trans ((Submodule.mkQ_apply _ _).trans
+          (f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short γ hγ)))
       _ = 0 := map_zero _
       _ = _ := (f4ShortRootIdealFirstColumn_eq_zero_of_short_add_short_eq_long (isogenyReverse k)
         iβ _ ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).2 hγ)
