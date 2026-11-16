@@ -726,7 +726,8 @@ on a boundaryless manifold, `h` a smooth time-dependent function and `x` a point
 the strict Moser partial isotopy `φ_(s,t)`. If at every time `u` between `s` and `t` the slice
 `h_u` solves the Reeb-direction equation `R_(α_u) h_u = -(∂_t α_u)(R_(α_u))` on a neighbourhood of
 the point `φ_(s,u) x` of the trajectory of `x`, then `φ_(s,t)` pulls `α_t` back to `α_s` at `x`.
-Nothing is assumed about `h` away from the trajectory of `x`. -/
+The Reeb-direction equation is assumed only near the trajectory of `x`; `h` must still be smooth
+everywhere. -/
 theorem mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc {s t : ℝ} {x : M}
     (hx : x ∈ (strictMoserPartialDiffeomorph hc hh s t).source)
     (hR : ∀ u ∈ Set.uIcc s t, ∀ᶠ y in 𝓝 (strictMoserPartialDiffeomorph hc hh s u x),
@@ -793,11 +794,8 @@ of which the strict Moser vector field vanishes at all times, and let `U ⊆ ℝ
 on which `h_t` solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` and which
 contains `(u, x)` for every `x ∈ K` and every time `u` between `s` and `t`. Then there is a smooth
 partial diffeomorphism `φ` of `M`, whose source and target are open neighbourhoods of `K`, which
-fixes every point of `K` and pulls `α_t` back to `α_s` on its source. The proof takes `φ` to be
-the restriction of the strict Moser partial isotopy
-`TauCeti.SmoothForm.strictMoserPartialDiffeomorph` to the points whose trajectories stay in `U`;
-the statement does not record this. Neither `K` nor `M` need be compact, and `K` need not be
-closed. -/
+fixes every point of `K` and pulls `α_t` back to `α_s` on its source. Neither `K` nor `M` need be
+compact, and `K` need not be closed. -/
 theorem exists_partialDiffeomorph_mpullback_eq {K : Set M}
     (hK : ∀ x ∈ K, ∀ u, α.strictMoserVectorField h u x = 0) {U : Set (ℝ × M)} (hU : IsOpen U)
     {s t : ℝ} (hKU : ∀ x ∈ K, ∀ u ∈ Set.uIcc s t, (u, x) ∈ U)
