@@ -62,6 +62,14 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace TemperedDistribution
 
+omit [CompleteSpace F] in
+/-- `J^{-δ}` is the Fourier multiplier with symbol `(1 + ‖ξ‖²) ^ (-δ / 2)`, the Fourier transform
+of the Bessel kernel `G_δ` (`TauCeti.fourier_besselKernel`). -/
+private theorem besselPotential_neg_eq_fourierMultiplierCLM (δ : ℝ) :
+    besselPotential E F (-δ) =
+      fourierMultiplierCLM F (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (-δ / 2) : ℝ) : ℂ)) := by
+  rw [besselPotential]
+
 /-- **The Bessel potential of negative order is convolution with the Bessel kernel.** For `δ > 0`
 and `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, the tempered distribution `J^{-δ} f` pairs with every test function
 `φ` as the convolution `G_δ ⋆ f` does. -/
@@ -69,8 +77,9 @@ theorem besselPotential_neg_toTemperedDistribution_apply {δ : ℝ} (hδ : 0 < �
     [Fact (1 ≤ p)] (f : Lp F p (volume : Measure E)) (φ : 𝓢(E, ℂ)) :
     besselPotential E F (-δ) (f : 𝓢'(E, F)) φ =
       ∫ x, φ x • ((fun y ↦ (besselKernel δ y : ℂ)) ⋆[ContinuousLinearMap.lsmul ℂ ℂ]
-        (f : E → F)) x :=
-  fourierMultiplierCLM_toTemperedDistribution_apply_of_fourier_eq
+        (f : E → F)) x := by
+  rw [besselPotential_neg_eq_fourierMultiplierCLM]
+  exact fourierMultiplierCLM_toTemperedDistribution_apply_of_fourier_eq
     (integrable_besselKernel hδ).ofReal (by fun_prop) (funext (fourier_besselKernel hδ)) f φ
 
 omit [CompleteSpace F] in
@@ -152,6 +161,7 @@ theorem exists_besselPotential_neg_eq_and_norm_le {δ : ℝ} (hδ : 0 < δ) {p q
     exact (div_lt_one (by exact_mod_cast Module.finrank_pos)).1 (by linarith [inv_pos.2 hq])
   obtain ⟨C, hC⟩ := exists_eLpNorm_besselKernel_convolution_le (F := F) hδ hδn hp hpq
   refine ⟨C, fun f ↦ ?_⟩
+  rw [besselPotential_neg_eq_fourierMultiplierCLM]
   obtain ⟨g, hg, -, hgf⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq_of_eLpNorm_le
     (integrable_besselKernel hδ).ofReal (by fun_prop) (funext (fourier_besselKernel hδ)) f
     (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_lt_top f).ne)
