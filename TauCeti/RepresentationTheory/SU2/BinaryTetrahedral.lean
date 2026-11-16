@@ -74,6 +74,12 @@ def binaryTetrahedralCoords : Finset (Fin 4 → ℤ) :=
   {![2, 0, 0, 0], ![-2, 0, 0, 0], ![0, 2, 0, 0], ![0, -2, 0, 0], ![0, 0, 2, 0], ![0, 0, -2, 0],
     ![0, 0, 0, 2], ![0, 0, 0, -2]} ∪ Fintype.piFinset fun _ => {1, -1}
 
+/-- The explicit list of doubled coordinate vectors, for finite checks by `decide`. -/
+theorem binaryTetrahedralCoords_def : binaryTetrahedralCoords =
+    {![2, 0, 0, 0], ![-2, 0, 0, 0], ![0, 2, 0, 0], ![0, -2, 0, 0], ![0, 0, 2, 0], ![0, 0, -2, 0],
+      ![0, 0, 0, 2], ![0, 0, 0, -2]} ∪ Fintype.piFinset fun _ => {1, -1} :=
+  (rfl)
+
 /-- **The 24 doubled coordinate vectors are distinct.** -/
 @[simp]
 theorem card_binaryTetrahedralCoords : binaryTetrahedralCoords.card = 24 := by
