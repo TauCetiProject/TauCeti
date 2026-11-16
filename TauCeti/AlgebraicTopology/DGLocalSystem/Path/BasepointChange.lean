@@ -149,31 +149,6 @@ theorem pathChainToLoopChain_differential (δ : MoorePathBetween B a b)
   simp only [pathChainToLoopChain, LinearMap.comp_apply, LinearEquiv.coe_coe,
     cubicalChainModuleEquiv_differential, cubicalChainDifferential_cubicalChainSumMap]
 
-variable (R) in
-/-- The `0`-chain of a path. -/
-def pathChainPoint (δ : MoorePathBetween B a b) :
-    cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R :=
-  cubicalChainModuleLof _ _ R 0 (NormalizedCubicalChain.ofCube _ R (SingularCube.point δ))
-
-/-- The `0`-chain of a path is the class of the constant `0`-cube at the path. -/
-theorem pathChainPoint_def (δ : MoorePathBetween B a b) :
-    pathChainPoint R δ =
-      cubicalChainModuleLof (MoorePathBetween B a b) (MooreLoopSpace B b) R 0
-        (NormalizedCubicalChain.ofCube (MoorePathBetween B a b) R (SingularCube.point δ)) :=
-  (rfl)
-
-/-- The `0`-chain of a path has degree `0`. -/
-theorem pathChainPoint_mem (δ : MoorePathBetween B a b) :
-    pathChainPoint R δ ∈
-      cubicalChainModuleGrading (MoorePathBetween B a b) (MooreLoopSpace B b) R 0 :=
-  mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨0, _, by simp, rfl⟩)
-
-/-- The `0`-chain of a path is a cycle. -/
-@[simp]
-theorem cubicalChainModuleDifferential_pathChainPoint (δ : MoorePathBetween B a b) :
-    cubicalChainModuleDifferential _ _ R (pathChainPoint R δ) = 0 :=
-  cubicalChainModuleDifferential_lof_zero _
-
 /-- Acting on the `0`-chain of `δ` after `pathChainToLoopChain` is the push-forward of appending
 `δ⁻¹` and then `δ`. -/
 theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
@@ -189,7 +164,7 @@ theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
           (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun =
         (MoorePathBetween.append δ a).comp (MoorePathBetween.append δ.symm a) :=
       ContinuousMap.ext fun x ↦ MoorePathBetween.ext (by simp [MoorePath.trans_assoc])
-    rw [pathChainToLoopChain_lof, pathChainPoint, lof_smul_cubicalChainModuleLof,
+    rw [pathChainToLoopChain_lof, pathChainPoint_def, lof_smul_cubicalChainModuleLof,
       cubicalChainModuleLinearMap_lof, ← cubicalChainModuleLof_cast (Nat.add_zero q),
       NormalizedCubicalChain.leftAct_def, ← NormalizedCubicalChain.map_cast,
       NormalizedCubicalChain.crossProduct_point_right, ← h, NormalizedCubicalChain.map_comp,
@@ -211,7 +186,7 @@ theorem exists_pathChainToLoopChain_pathChainPoint_eq_one_add (δ : MoorePathBet
       simp [SingularCube.point_apply]
   rw [map_neg, cubicalChainDifferential_lof_succ, NormalizedCubicalChain.boundary_prism_zero]
   simp only [NormalizedCubicalChain.map_ofCube, hpt]
-  simp [pathChainPoint, ← cubicalChainLof_one, NormalizedCubicalChain.one_def,
+  simp [pathChainPoint_def, ← cubicalChainLof_one, NormalizedCubicalChain.one_def,
     NormalizedCubicalChain.map_ofCube]
 
 section BasepointChange
@@ -409,10 +384,8 @@ theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
   let := (tensorBimoduleObj N (pathChainBimodule B a b R)).scalarTower
   let := (tensorBimoduleObj N (pathChainBimodule B a b R)).gradedSMul
   rcases isEmpty_or_nonempty (MoorePathBetween B a b) with hB | hB
-  · -- Without Moore paths from `a` to `b`, there are no path chains, so both tensor products
-    -- vanish.
-    rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists]
-    exact fun _ _ _ _ ↦ ⟨0, 0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  · -- Without Moore paths from `a` to `b`, both tensor products vanish.
+    exact DGRightModuleHom.isQuasiIso_of_subsingleton _
   · obtain ⟨δ⟩ := hB
     exact DGRightModuleHom.isQuasiIso_of_homotopyRetract
       (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))) (f.toLinearMap.restrictScalars R)
