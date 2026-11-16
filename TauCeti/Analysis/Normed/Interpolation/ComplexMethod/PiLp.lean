@@ -16,59 +16,34 @@ import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Poisson
 /-!
 # Complex interpolation of finite vector-valued sequence spaces
 
-Given an index type `ι`, exponents `q₀, q₁ : ℝ≥0∞`, and a family of compatible couples
-`C : ∀ i : ι, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)`, the spaces `PiLp q₀ X₀` and `PiLp q₁ X₁`
-embed coordinatewise into the ambient product `∀ i, V i`, forming the compatible couple
-`CompatibleCouple.piLp C q₀ q₁`.
+Given a finite index type `ι`, exponents `1 ≤ q₀, q₁, q ≤ ∞`, a family of compatible couples
+`C : ∀ i : ι, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)`, and `θ : ℝ` satisfying the Riesz–Thorin
+relation `q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹`, we prove the finite-index
+case of **Bergh–Löfström, Theorem 5.1.2** (including `∞` endpoints), with no completeness, duality,
+or density assumptions on `C i`:
 
-When `ι` is finite and `1 ≤ q₀, q₁, q ≤ ∞`, we prove over `ℂ` the **finite-index case of
-Bergh–Löfström, Theorem 5.1.2**, including the `∞`-endpoints `q₀ = ∞` and `q₁ = ∞`: whenever
-`θ : ℝ` satisfies the Riesz–Thorin exponent relation
-
-`q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹`,
-
-the coordinatewise map is a linear isometric equivalence
-
-`(piLp C q₀ q₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ] PiLp q (fun i => (C i).ComplexMethodSpace θ)`
-
-(`CompatibleCouple.ComplexMethodSpace.piLpEquiv`), with no completeness, duality, or density
-assumptions on the couples `C i`. Specializing `C i` to the constant couples `refl ℂ (X i)` yields
-the isometric identification `[ℓ_{q₀}^N(E), ℓ_{q₁}^N(E)]_θ ≃ₗᵢ[ℂ] ℓ_q^N(E)`
-(`CompatibleCouple.ComplexMethodSpace.piLpReflEquiv`), which in particular supplies the two-term
-vector-valued `ℓ_q^2` interpolation identity for Clarkson's inequalities.
+`(piLp C q₀ q₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ] PiLp q (fun i => (C i).ComplexMethodSpace θ)`.
 
 ## Main declarations
 
 * `CompatibleCouple.piLp`: the `PiLp` couple `(PiLp q₀ X₀, PiLp q₁ X₁)` in `∀ i, V i`.
-* `CompatibleCouple.piLpSumEquiv`: `(piLp C q₀ q₁).SumSpace ≃L[𝕜] ∀ i, (C i).SumSpace`.
-* `CompatibleCouple.piLpStripTracesEquiv`:
-  `(piLp C q₀ q₁).stripTraces ≃L[ℂ] ∀ i, (C i).stripTraces`.
-* `CompatibleCouple.ComplexMethodSpace.piLpContinuousLinearEquiv`: the coordinatewise continuous
-  linear equivalence `(piLp C q₀ q₁).ComplexMethodSpace θ ≃L[ℂ] PiLp q (fun i => [X₀ i, X₁ i]_θ)`
-  for arbitrary `1 ≤ q₀, q₁ ≤ ∞`, `q : ℝ≥0∞`, and `θ : ℝ`.
-* `CompatibleCouple.ComplexMethodSpace.piLpEquiv`: **Bergh–Löfström, Theorem 5.1.2** on finite
-  index types, upgrading `piLpContinuousLinearEquiv` to a linear isometric equivalence when
-  `1 / q = (1 - θ) / q₀ + θ / q₁`.
-* `CompatibleCouple.ComplexMethodSpace.reflEquiv`: `[X, X]_θ ≃ₗᵢ[ℂ] X` for `0 ≤ θ ≤ 1`.
-* `CompatibleCouple.ComplexMethodSpace.piLpReflEquiv`:
-  `[PiLp q₀ X, PiLp q₁ X]_θ ≃ₗᵢ[ℂ] PiLp q X` for `0 ≤ θ ≤ 1` and `1 / q = (1 - θ) / q₀ + θ / q₁`.
+* `CompatibleCouple.piLpSumEquiv`, `CompatibleCouple.piLpStripTracesEquiv`: canonical coordinatewise
+  equivalences for the sum space and admissible boundary traces.
+* `CompatibleCouple.ComplexMethodSpace.piLpContinuousLinearEquiv`: coordinatewise continuous linear
+  equivalence `(piLp C q₀ q₁).ComplexMethodSpace θ ≃L[ℂ] PiLp q (fun i => [X₀ i, X₁ i]_θ)`.
+* `CompatibleCouple.ComplexMethodSpace.piLpEquiv`: **Bergh–Löfström, Theorem 5.1.2** upgrading
+  `piLpContinuousLinearEquiv` to a linear isometric equivalence under the exponent relation.
+* `CompatibleCouple.ComplexMethodSpace.reflEquiv`, `piLpReflEquiv`: `[X, X]_θ ≃ₗᵢ[ℂ] X` and
+  `[PiLp q₀ X, PiLp q₁ X]_θ ≃ₗᵢ[ℂ] PiLp q X` for `0 ≤ θ ≤ 1`.
 
 ## Implementation notes
 
-For `0 < θ < 1`, the upper bound on `‖piLpContinuousLinearEquiv … u‖` applies Bergh–Löfström's
-uniform Poisson estimate (`CompatibleCouple.ComplexMethodSpace.norm_mk_le_integral_stripPoisson`)
-in each coordinate, followed by the log-convex Hölder inequality in `PiLp` and Minkowski's integral
-inequality in `PiLp q₀ (fun _ => ℝ)` and `PiLp q₁ (fun _ => ℝ)` via
-`MeasureTheory.eval_integral_piLp`. Because the Poisson kernels `stripPoisson₀ θ` and
-`stripPoisson₁ θ` are independent of the coordinate `i`, no Hahn–Banach selection or completeness
-is required.
-
-For the reverse bound when `q < ∞` and `0 < θ < 1`, near-optimal trace representatives `g i` with
-`‖g i‖ < b i` (`b i = ‖v i‖ + δ`) are rescaled coordinatewise by the entire scalar multipliers
-`z ↦ exp (((1 - z) α₀ + z α₁ - 1) log (b i / B))`, where `B = ‖b‖_{ℓ^q}` and
-`α_j = q.toReal * (q_j⁻¹).toReal`; these equal `1` at `z = θ` and normalize both `PiLp q₀` and
-`PiLp q₁` boundary norms to at most `B`. At the endpoints `θ = 0` (`q = q₀`) and `θ = 1`
-(`q = q₁`), `norm_mk_zero` and `norm_mk_one` yield the isometric identity directly.
+For `0 < θ < 1`, the upper norm bound applies `norm_mk_le_integral_stripPoisson` coordinatewise,
+then log-convex Hölder in `PiLp` and Minkowski's integral inequality via
+`MeasureTheory.eval_integral_piLp`. For the reverse bound (`q < ∞`), near-optimal traces `g i` with
+`‖g i‖ < b i` (`b i = ‖v i‖ + δ`, `B = ‖b‖_{ℓ^q}`) are rescaled by
+`z ↦ exp (((1 - z) α₀ + z α₁ - 1) log (b i / B))` with `α_j = q.toReal * (q_j⁻¹).toReal`.
+Endpoints `θ = 0, 1` follow directly from `norm_mk_zero` and `norm_mk_one`.
 
 ## References
 
@@ -193,8 +168,7 @@ def piLpSumEquiv (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q�
     ∑ i : ι, ((C i).sumLift _ _ (hsingle i)).comp (ContinuousLinearMap.proj i)
   refine ContinuousLinearEquiv.equivOfInverse fwd inv (fun u => ?_) (fun v => ?_)
   · obtain ⟨x₀, x₁, rfl⟩ := (piLp C q₀ q₁).exists_fstToSum_add_sndToSum_eq u
-    apply (piLp C q₀ q₁).sumSpace_ext
-    ext j
+    apply (piLp C q₀ q₁).sumSpace_ext; ext j
     simp only [fwd, inv, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.proj_apply, ContinuousLinearMap.pi_apply, map_add, map_sum,
       sumLift_fstToSum, sumLift_sndToSum, PiLp.proj_apply, sumSpaceEmbed_fstToSum,
@@ -203,15 +177,13 @@ def piLpSumEquiv (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q�
     rw [Fintype.sum_eq_single j (fun i hij => by simp [PiLp.single_eq_of_ne _ hij.symm]),
       Fintype.sum_eq_single j (fun i hij => by simp [PiLp.single_eq_of_ne _ hij.symm])]
     simp
-  · ext j
-    obtain ⟨y₀, y₁, hy⟩ := (C j).exists_fstToSum_add_sndToSum_eq (v j)
-    apply (C j).sumSpace_ext
+  · ext j; apply (C j).sumSpace_ext
     have hsum : (C j).sumSpaceEmbed (fwd (inv v) j) =
         ∑ i : ι, (C j).sumSpaceEmbed (fwd ((C i).sumLift _ _ (hsingle i) (v i)) j) := by
       simp [inv, map_sum]
     rw [hsum, Fintype.sum_eq_single j]
-    · rw [← hy]
-      simp [fwd, sumLift_fstToSum, sumLift_sndToSum, piLpSingleCLM_apply]
+    · obtain ⟨y₀, y₁, hy⟩ := (C j).exists_fstToSum_add_sndToSum_eq (v j)
+      rw [← hy]; simp [fwd, sumLift_fstToSum, sumLift_sndToSum, piLpSingleCLM_apply]
     · intro i hij
       obtain ⟨z₀, z₁, hz⟩ := (C i).exists_fstToSum_add_sndToSum_eq (v i)
       rw [← hz]
@@ -268,33 +240,25 @@ def piLpStripTracesEquiv (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i
     ∑ i : ι, (stripTracesMap (piLpSingleCLM q₀ i) (piLpSingleCLM q₁ i)
       (piLpSingle_inter C q₀ q₁ i)).comp (ContinuousLinearMap.proj i)
   have hinv_fst (k : ∀ i, (C i).stripTraces) (t : ℝ) (j : ι) :
-      ((inv k : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t) j =
-        (k j : C₀(ℝ, X₀ j) × C₀(ℝ, X₁ j)).1 t := by
+      ((inv k).val.1 t) j = (k j).val.1 t := by
     simp only [inv, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.proj_apply, Submodule.coe_sum, Prod.fst_sum, WithLp.ofLp_sum,
       stripTracesMap_apply_fst, piLpSingleCLM_apply]
     rw [Fintype.sum_eq_single j (fun i hij => PiLp.single_eq_of_ne q₀ hij.symm _),
       PiLp.single_eq_same]
   have hinv_snd (k : ∀ i, (C i).stripTraces) (t : ℝ) (j : ι) :
-      ((inv k : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 t) j =
-        (k j : C₀(ℝ, X₀ j) × C₀(ℝ, X₁ j)).2 t := by
+      ((inv k).val.2 t) j = (k j).val.2 t := by
     simp only [inv, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.proj_apply, Submodule.coe_sum, Prod.snd_sum, WithLp.ofLp_sum,
       stripTracesMap_apply_snd, piLpSingleCLM_apply]
     rw [Fintype.sum_eq_single j (fun i hij => PiLp.single_eq_of_ne q₁ hij.symm _),
       PiLp.single_eq_same]
-  refine ContinuousLinearEquiv.equivOfInverse fwd inv (fun g => ?_) (fun h => ?_)
-  · apply Subtype.ext
-    refine Prod.ext (ZeroAtInftyContinuousMap.ext fun t => ?_)
-      (ZeroAtInftyContinuousMap.ext fun t => ?_)
-    · ext j; rw [hinv_fst]; simp [fwd]
-    · ext j; rw [hinv_snd]; simp [fwd]
-  · ext j : 1
-    apply Subtype.ext
-    refine Prod.ext (ZeroAtInftyContinuousMap.ext fun t => ?_)
-      (ZeroAtInftyContinuousMap.ext fun t => ?_)
-    · simp [fwd, hinv_fst]
-    · simp [fwd, hinv_snd]
+  refine ContinuousLinearEquiv.equivOfInverse fwd inv (fun g => Subtype.ext (Prod.ext
+      (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => by rw [hinv_fst]; simp [fwd])
+      (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => by rw [hinv_snd]; simp [fwd])))
+    (fun h => funext fun j => Subtype.ext (Prod.ext
+      (ZeroAtInftyContinuousMap.ext fun t => by simp [fwd, hinv_fst])
+      (ZeroAtInftyContinuousMap.ext fun t => by simp [fwd, hinv_snd])))
 
 @[simp]
 theorem piLpStripTracesEquiv_apply_fst (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
@@ -418,19 +382,15 @@ private theorem norm_toLp_norm {p : ℝ≥0∞} [Fact (1 ≤ p)] {β : ι → Ty
     ‖WithLp.toLp p (fun i => ‖x i‖)‖ = ‖x‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
   · simp [PiLp.norm_eq_ciSup]
-  · have hp0 : 0 < p.toReal :=
-      ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
-    simp [PiLp.norm_eq_sum hp0]
+  · simp [PiLp.norm_eq_sum (ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp)]
 
 private theorem norm_le_norm_toLp_of_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {β : ι → Type*}
     [∀ i, SeminormedAddCommGroup (β i)] (x : PiLp p β) {a : ι → ℝ} (ha : ∀ i, ‖x i‖ ≤ a i) :
     ‖x‖ ≤ ‖WithLp.toLp p a‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
   · rw [← PiLp.norm_ofLp, pi_norm_le_iff_of_nonneg (norm_nonneg _)]
-    exact fun i => (ha i).trans ((le_abs_self (a i)).trans
-      (PiLp.norm_apply_le (WithLp.toLp ∞ a) i))
-  · have hp0 : 0 < p.toReal :=
-      ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
+    exact fun i => (ha i).trans ((le_abs_self (a i)).trans (PiLp.norm_apply_le (WithLp.toLp ∞ a) i))
+  · have hp0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
     rw [PiLp.norm_eq_sum hp0 x, PiLp.norm_eq_sum hp0 (WithLp.toLp p a)]
     gcongr with i
     exact (ha i).trans (le_abs_self (a i))
@@ -439,75 +399,35 @@ private theorem norm_toLp_integral_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : ι 
     (hf : ∀ i, Integrable (f i)) :
     ‖WithLp.toLp p (fun i => ∫ t, f i t)‖ ≤ ∫ t, ‖WithLp.toLp p (fun i => f i t)‖ := by
   let F : ℝ → PiLp p (fun _ : ι => ℝ) := fun t => WithLp.toLp p (fun i => f i t)
-  have heq : WithLp.toLp p (fun i => ∫ t, f i t) = ∫ t, F t := by
-    ext i
-    exact (MeasureTheory.eval_integral_piLp (f := F) hf i).symm
-  rw [heq]
+  rw [show WithLp.toLp p (fun i => ∫ t, f i t) = ∫ t, F t by
+    ext i; exact (MeasureTheory.eval_integral_piLp (f := F) hf i).symm]
   exact norm_integral_le_integral_norm F
 
-private theorem norm_toLp_integral_stripPoisson₀_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {θ : ℝ}
-    (hθ : θ ∈ Ioo 0 1) {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] (f : C₀(ℝ, PiLp p β)) :
-    ‖WithLp.toLp p (fun i => (1 - θ)⁻¹ * ∫ t, ‖f t i‖ * stripPoisson₀ θ t)‖ ≤ ‖f‖ := by
-  have h1θ : 0 < 1 - θ := sub_pos.2 hθ.2
-  have hint (i : ι) : Integrable (fun t => ‖f t i‖ * stripPoisson₀ θ t) :=
-    (integrable_stripPoisson₀ θ).bdd_mul
-      ((PiLp.continuous_apply p β i).comp f.continuous).norm.aestronglyMeasurable
+private theorem norm_toLp_integral_weighted_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {β : ι → Type*}
+    [∀ i, NormedAddCommGroup (β i)] (f : C₀(ℝ, PiLp p β)) {w : ℝ → ℝ} {α : ℝ}
+    (hα : 0 < α) (hw_int : Integrable w) (hw_nonneg : ∀ t, 0 ≤ w t) (hw_sum : ∫ t, w t = α) :
+    ‖WithLp.toLp p (fun i => α⁻¹ * ∫ t, ‖f t i‖ * w t)‖ ≤ ‖f‖ := by
+  have hint (i : ι) : Integrable (fun t => ‖f t i‖ * w t) :=
+    hw_int.bdd_mul ((PiLp.continuous_apply p β i).comp f.continuous).norm.aestronglyMeasurable
       (ae_of_all _ fun t => by
         rw [Real.norm_of_nonneg (norm_nonneg _)]
         exact (PiLp.norm_apply_le (f t) i).trans (ZeroAtInftyContinuousMap.norm_coe_le_norm f t))
-  have hsmul : WithLp.toLp p (fun i => (1 - θ)⁻¹ * ∫ t, ‖f t i‖ * stripPoisson₀ θ t) =
-      (1 - θ)⁻¹ • WithLp.toLp p (fun i => ∫ t, ‖f t i‖ * stripPoisson₀ θ t) := by rfl
-  rw [hsmul, norm_smul, Real.norm_of_nonneg (inv_pos.2 h1θ).le]
-  calc (1 - θ)⁻¹ * ‖WithLp.toLp p (fun i => ∫ t, ‖f t i‖ * stripPoisson₀ θ t)‖
-      ≤ (1 - θ)⁻¹ * ∫ t, ‖WithLp.toLp p (fun i => ‖f t i‖ * stripPoisson₀ θ t)‖ :=
-        mul_le_mul_of_nonneg_left (norm_toLp_integral_le _ hint) (inv_pos.2 h1θ).le
-    _ ≤ (1 - θ)⁻¹ * ∫ t, ‖f‖ * stripPoisson₀ θ t := by
+  change ‖α⁻¹ • WithLp.toLp p (fun i => ∫ t, ‖f t i‖ * w t)‖ ≤ ‖f‖
+  rw [norm_smul, Real.norm_of_nonneg (inv_pos.2 hα).le]
+  calc α⁻¹ * ‖WithLp.toLp p (fun i => ∫ t, ‖f t i‖ * w t)‖
+      ≤ α⁻¹ * ∫ t, ‖WithLp.toLp p (fun i => ‖f t i‖ * w t)‖ :=
+        mul_le_mul_of_nonneg_left (norm_toLp_integral_le _ hint) (inv_pos.2 hα).le
+    _ ≤ α⁻¹ * ∫ t, ‖f‖ * w t := by
         refine mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
-          (ae_of_all _ fun _ => norm_nonneg _) ((integrable_stripPoisson₀ θ).const_mul ‖f‖)
-          (ae_of_all _ fun t => ?_)) (inv_pos.2 h1θ).le
+          (ae_of_all _ fun _ => norm_nonneg _) (hw_int.const_mul ‖f‖)
+          (ae_of_all _ fun t => ?_)) (inv_pos.2 hα).le
+        have hfactor : WithLp.toLp p (fun i => ‖f t i‖ * w t) =
+            w t • WithLp.toLp p (fun i => ‖f t i‖) := by ext i; simp [mul_comm]
         dsimp only
-        have hfactor : WithLp.toLp p (fun i => ‖f t i‖ * stripPoisson₀ θ t) =
-            stripPoisson₀ θ t • WithLp.toLp p (fun i => ‖f t i‖) := by
-          ext i; simp [mul_comm]
-        rw [hfactor, norm_smul, Real.norm_of_nonneg (stripPoisson₀_pos hθ t).le,
-          norm_toLp_norm (f t), mul_comm]
+        rw [hfactor, norm_smul, Real.norm_of_nonneg (hw_nonneg t), norm_toLp_norm (f t), mul_comm]
         exact mul_le_mul_of_nonneg_right (ZeroAtInftyContinuousMap.norm_coe_le_norm f t)
-          (stripPoisson₀_pos hθ t).le
-    _ = ‖f‖ := by
-        rw [integral_const_mul, integral_stripPoisson₀ ⟨hθ.1, hθ.2.le⟩, mul_comm ‖f‖,
-          inv_mul_cancel_left₀ h1θ.ne']
-
-private theorem norm_toLp_integral_stripPoisson₁_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {θ : ℝ}
-    (hθ : θ ∈ Ioo 0 1) {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] (f : C₀(ℝ, PiLp p β)) :
-    ‖WithLp.toLp p (fun i => θ⁻¹ * ∫ t, ‖f t i‖ * stripPoisson₁ θ t)‖ ≤ ‖f‖ := by
-  have hθ0 : 0 < θ := hθ.1
-  have hint (i : ι) : Integrable (fun t => ‖f t i‖ * stripPoisson₁ θ t) :=
-    (integrable_stripPoisson₁ θ).bdd_mul
-      ((PiLp.continuous_apply p β i).comp f.continuous).norm.aestronglyMeasurable
-      (ae_of_all _ fun t => by
-        rw [Real.norm_of_nonneg (norm_nonneg _)]
-        exact (PiLp.norm_apply_le (f t) i).trans (ZeroAtInftyContinuousMap.norm_coe_le_norm f t))
-  have hsmul : WithLp.toLp p (fun i => θ⁻¹ * ∫ t, ‖f t i‖ * stripPoisson₁ θ t) =
-      θ⁻¹ • WithLp.toLp p (fun i => ∫ t, ‖f t i‖ * stripPoisson₁ θ t) := by rfl
-  rw [hsmul, norm_smul, Real.norm_of_nonneg (inv_pos.2 hθ0).le]
-  calc θ⁻¹ * ‖WithLp.toLp p (fun i => ∫ t, ‖f t i‖ * stripPoisson₁ θ t)‖
-      ≤ θ⁻¹ * ∫ t, ‖WithLp.toLp p (fun i => ‖f t i‖ * stripPoisson₁ θ t)‖ :=
-        mul_le_mul_of_nonneg_left (norm_toLp_integral_le _ hint) (inv_pos.2 hθ0).le
-    _ ≤ θ⁻¹ * ∫ t, ‖f‖ * stripPoisson₁ θ t := by
-        refine mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
-          (ae_of_all _ fun _ => norm_nonneg _) ((integrable_stripPoisson₁ θ).const_mul ‖f‖)
-          (ae_of_all _ fun t => ?_)) (inv_pos.2 hθ0).le
-        dsimp only
-        have hfactor : WithLp.toLp p (fun i => ‖f t i‖ * stripPoisson₁ θ t) =
-            stripPoisson₁ θ t • WithLp.toLp p (fun i => ‖f t i‖) := by
-          ext i; simp [mul_comm]
-        rw [hfactor, norm_smul, Real.norm_of_nonneg (stripPoisson₁_pos hθ t).le,
-          norm_toLp_norm (f t), mul_comm]
-        exact mul_le_mul_of_nonneg_right (ZeroAtInftyContinuousMap.norm_coe_le_norm f t)
-          (stripPoisson₁_pos hθ t).le
-    _ = ‖f‖ := by
-        rw [integral_const_mul, integral_stripPoisson₁ ⟨hθ.1.le, hθ.2⟩, mul_comm ‖f‖,
-          inv_mul_cancel_left₀ hθ0.ne']
+          (hw_nonneg t)
+    _ = ‖f‖ := by rw [integral_const_mul, hw_sum, mul_comm ‖f‖, inv_mul_cancel_left₀ hα.ne']
 
 private theorem norm_toLp_rpow_mul_rpow_le_of_right_eq_top {q₀ q : ℝ≥0∞} [Fact (1 ≤ q₀)]
     [Fact (1 ≤ q)] {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (hq₀ : q₀ ≠ ∞)
@@ -516,13 +436,11 @@ private theorem norm_toLp_rpow_mul_rpow_le_of_right_eq_top {q₀ q : ℝ≥0∞}
     ‖WithLp.toLp q (fun i => a i ^ (1 - θ) * b i ^ θ)‖ ≤
       ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp ∞ b‖ ^ θ := by
   have h1θ : 0 < 1 - θ := sub_pos.2 hθ.2
-  have hq₀0 : q₀ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne'
   have hq_top : q ≠ ∞ := by
     rw [← ENNReal.inv_ne_zero, hq]
     exact mul_ne_zero (ENNReal.ofReal_pos.2 h1θ).ne' (ENNReal.inv_ne_zero.2 hq₀)
-  have hq0 : 0 < q.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
-  have hq₀_pos : 0 < q₀.toReal := ENNReal.toReal_pos hq₀0 hq₀
+  have hq0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
+  have hq₀_pos := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne' hq₀
   have hqr : (1 - θ) * q.toReal = q₀.toReal := by
     have htr := congrArg ENNReal.toReal hq
     rw [ENNReal.toReal_inv, ENNReal.toReal_mul, ENNReal.toReal_ofReal h1θ.le,
@@ -539,28 +457,24 @@ private theorem norm_toLp_rpow_mul_rpow_le_of_right_eq_top {q₀ q : ℝ≥0∞}
         rw [Real.norm_of_nonneg (mul_nonneg (Real.rpow_nonneg (ha i) _)
           (Real.rpow_nonneg (hb i) _)), Real.mul_rpow (Real.rpow_nonneg (ha i) _)
           (Real.rpow_nonneg (hb i) _), ← Real.rpow_mul (ha i), hqr, abs_of_nonneg (ha i)]
-        refine mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (Real.rpow_nonneg (hb i) _)
-          (Real.rpow_le_rpow (hb i) ?_ hθ.1.le) hq0.le) (Real.rpow_nonneg (ha i) _)
-        exact (le_abs_self (b i)).trans (PiLp.norm_apply_le (WithLp.toLp ∞ b) i)
+        exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (Real.rpow_nonneg (hb i) _)
+          (Real.rpow_le_rpow (hb i) ((le_abs_self (b i)).trans
+            (PiLp.norm_apply_le (WithLp.toLp ∞ b) i)) hθ.1.le) hq0.le) (Real.rpow_nonneg (ha i) _)
     _ = ((∑ i, ‖a i‖ ^ q₀.toReal) ^ (1 / q₀.toReal)) ^ (1 - θ) * ‖WithLp.toLp ∞ b‖ ^ θ := by
         rw [← Finset.sum_mul, Real.mul_rpow (Finset.sum_nonneg fun i _ => by positivity)
           (by positivity), ← Real.rpow_mul (Real.rpow_nonneg (norm_nonneg _) _),
           mul_one_div_cancel hq0.ne', Real.rpow_one,
           ← Real.rpow_mul (Finset.sum_nonneg fun i _ => by positivity)]
-        congr 2
-        rw [← hqr]
-        field_simp [hq0.ne', h1θ.ne']
+        congr 2; rw [← hqr]; field_simp [hq0.ne', h1θ.ne']
 
 private theorem one_sub_mul_toReal_inv_add {q₀ q₁ q : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)]
     [Fact (1 ≤ q)] {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (hq_top : q ≠ ∞)
     (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) :
     (1 - θ) * (q.toReal * (q₀⁻¹).toReal) + θ * (q.toReal * (q₁⁻¹).toReal) = 1 := by
-  have hq0 : 0 < q.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
-  have hq₀0 : q₀ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne'
-  have hq₁0 : q₁ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ q₁)).ne'
-  have htr := congrArg ENNReal.toReal
-    (TauCeti.inv_eq_ofReal_of_inv_eq hq₀0 hq₁0 ⟨hθ.1.le, hθ.2.le⟩ hq)
+  have hq0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
+  have htr := congrArg ENNReal.toReal (TauCeti.inv_eq_ofReal_of_inv_eq
+    (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne'
+    (zero_lt_one.trans_le (Fact.out : 1 ≤ q₁)).ne' ⟨hθ.1.le, hθ.2.le⟩ hq)
   rw [ENNReal.toReal_inv, ENNReal.toReal_ofReal (add_nonneg
     (mul_nonneg (sub_pos.2 hθ.2).le ENNReal.toReal_nonneg)
     (mul_nonneg hθ.1.le ENNReal.toReal_nonneg))] at htr
@@ -577,24 +491,20 @@ private theorem norm_toLp_rpow_mul_rpow_le_of_ne_top {q₀ q₁ q : ℝ≥0∞} 
       ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp q₁ b‖ ^ θ := by
   have h1θ : 0 < 1 - θ := sub_pos.2 hθ.2
   have hq_top : q ≠ ∞ := fun htop => hq₀ ((TauCeti.eq_top_iff_of_inv_eq hθ hq).1 htop).1
-  have hq0 : 0 < q.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
-  have hq₀_pos : 0 < q₀.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne' hq₀
-  have hq₁_pos : 0 < q₁.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q₁)).ne' hq₁
+  have hq0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
+  have hq₀_pos := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne' hq₀
+  have hq₁_pos := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q₁)).ne' hq₁
   let p₀ := q₀.toReal / ((1 - θ) * q.toReal)
   let p₁ := q₁.toReal / (θ * q.toReal)
   have hp_sum : p₀⁻¹ + p₁⁻¹ = 1 := by
-    dsimp only [p₀, p₁]
-    rw [inv_div, inv_div]
+    dsimp only [p₀, p₁]; rw [inv_div, inv_div]
     convert one_sub_mul_toReal_inv_add hθ hq_top hq using 1
     simp [ENNReal.toReal_inv, div_eq_mul_inv, mul_assoc]
   have hp₀_pos : 0 < p₀⁻¹ := inv_pos.2 (div_pos hq₀_pos (mul_pos h1θ hq0))
   have hp₁_pos : 0 < p₁⁻¹ := inv_pos.2 (div_pos hq₁_pos (mul_pos hθ.1 hq0))
-  have hpconj : p₀.HolderConjugate p₁ := Real.holderConjugate_iff.2
-    ⟨by simpa only [inv_inv] using (one_lt_inv₀ hp₀_pos).2 (by linarith), hp_sum⟩
-  have hholder := Real.inner_le_Lp_mul_Lq_of_nonneg Finset.univ hpconj
+  have hholder := Real.inner_le_Lp_mul_Lq_of_nonneg Finset.univ
+    (Real.holderConjugate_iff.2 ⟨by
+      simpa only [inv_inv] using (one_lt_inv₀ hp₀_pos).2 (by linarith), hp_sum⟩)
     (f := fun i => a i ^ ((1 - θ) * q.toReal)) (g := fun i => b i ^ (θ * q.toReal))
     (fun i _ => Real.rpow_nonneg (ha i) _) (fun i _ => Real.rpow_nonneg (hb i) _)
   rw [PiLp.norm_eq_sum hq0, PiLp.norm_eq_sum hq₀_pos, PiLp.norm_eq_sum hq₁_pos]
@@ -630,21 +540,16 @@ private theorem norm_toLp_rpow_mul_rpow_le {q₀ q₁ q : ℝ≥0∞} [Fact (1 �
       rw [PiLp.norm_toLp, pi_norm_le_iff_of_nonneg (by positivity)]
       intro i
       rw [Real.norm_of_nonneg (mul_nonneg (Real.rpow_nonneg (ha i) _) (Real.rpow_nonneg (hb i) _))]
-      exact mul_le_mul
-        (Real.rpow_le_rpow (ha i) ((le_abs_self (a i)).trans
+      exact mul_le_mul (Real.rpow_le_rpow (ha i) ((le_abs_self (a i)).trans
           (PiLp.norm_apply_le (WithLp.toLp ∞ a) i)) (sub_pos.2 hθ.2).le)
         (Real.rpow_le_rpow (hb i) ((le_abs_self (b i)).trans
           (PiLp.norm_apply_le (WithLp.toLp ∞ b) i)) hθ.1.le)
         (Real.rpow_nonneg (hb i) _) (by positivity)
-    · have hθ' : 1 - θ ∈ Ioo 0 1 := ⟨sub_pos.2 hθ.2, sub_lt_self 1 hθ.1⟩
-      have hq' : q⁻¹ = ENNReal.ofReal (1 - (1 - θ)) * q₁⁻¹ := by
-        simpa [sub_sub_cancel] using hq
-      have hcomm : (fun i => a i ^ (1 - θ) * b i ^ θ) =
-          fun i => b i ^ (1 - (1 - θ)) * a i ^ (1 - θ) := by
-        ext i; rw [sub_sub_cancel, mul_comm]
-      rw [hcomm, mul_comm]
-      simpa only [sub_sub_cancel] using
-        norm_toLp_rpow_mul_rpow_le_of_right_eq_top hθ' hq₁ hq' hb ha
+    · rw [show (fun i => a i ^ (1 - θ) * b i ^ θ) =
+        fun i => b i ^ (1 - (1 - θ)) * a i ^ (1 - θ) by ext i; rw [sub_sub_cancel, mul_comm],
+        mul_comm]
+      simpa only [sub_sub_cancel] using norm_toLp_rpow_mul_rpow_le_of_right_eq_top
+        ⟨sub_pos.2 hθ.2, sub_lt_self 1 hθ.1⟩ hq₁ (by simpa [sub_sub_cancel] using hq) hb ha
   · rcases eq_or_ne q₁ ∞ with rfl | hq₁
     · exact norm_toLp_rpow_mul_rpow_le_of_right_eq_top hθ hq₀ (by simpa using hq) ha hb
     · exact norm_toLp_rpow_mul_rpow_le_of_ne_top hθ hq₀ hq₁ hq ha hb
@@ -652,28 +557,22 @@ private theorem norm_toLp_rpow_mul_rpow_le {q₀ q₁ q : ℝ≥0∞} [Fact (1 �
 /-! ### Forward and inverse norm bounds on `piLpContinuousLinearEquiv` -/
 
 private theorem norm_piLpContinuousLinearEquiv_zero
-    (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
-    (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).ComplexMethodSpace 0) :
+    (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)]
+    [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).ComplexMethodSpace 0) :
     ‖piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  have hnorm (i : ι) : ‖piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g) i‖ =
-      ‖((g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 0) i‖ := by
-    rw [piLpContinuousLinearEquiv_mk_apply, norm_mk_zero, piLpStripTracesEquiv_apply_fst]
   rw [← norm_toLp_norm (piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g))]
-  simp_rw [hnorm]
-  rw [norm_toLp_norm, norm_mk_zero]
+  simp_rw [piLpContinuousLinearEquiv_mk_apply, norm_mk_zero, piLpStripTracesEquiv_apply_fst]
+  rw [norm_toLp_norm]
 
 private theorem norm_piLpContinuousLinearEquiv_one
-    (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
-    (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).ComplexMethodSpace 1) :
+    (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)]
+    [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).ComplexMethodSpace 1) :
     ‖piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  have hnorm (i : ι) : ‖piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g) i‖ =
-      ‖((g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 0) i‖ := by
-    rw [piLpContinuousLinearEquiv_mk_apply, norm_mk_one, piLpStripTracesEquiv_apply_snd]
   rw [← norm_toLp_norm (piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g))]
-  simp_rw [hnorm]
-  rw [norm_toLp_norm, norm_mk_one]
+  simp_rw [piLpContinuousLinearEquiv_mk_apply, norm_mk_one, piLpStripTracesEquiv_apply_snd]
+  rw [norm_toLp_norm]
 
 private theorem norm_piLpContinuousLinearEquiv_le (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     {q₀ q₁ q : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q)] {θ : ℝ}
@@ -682,22 +581,16 @@ private theorem norm_piLpContinuousLinearEquiv_le (C : ∀ i, CompatibleCouple �
     ‖piLpContinuousLinearEquiv C q₀ q₁ q θ u‖ ≤ ‖u‖ := by
   by_cases hθ : θ ∈ Icc (0 : ℝ) 1
   · rcases eq_or_lt_of_le hθ.1 with rfl | hθ0
-    · have hqq₀ : q = q₀ := inv_injective (by simpa using hq)
-      subst q
+    · have : q = q₀ := inv_injective (by simpa using hq); subst q
       exact (norm_piLpContinuousLinearEquiv_zero C q₀ q₁ u).le
     · rcases eq_or_lt_of_le hθ.2 with rfl | hθ1
-      · have hqq₁ : q = q₁ := inv_injective (by simpa using hq)
-        subst q
+      · have : q = q₁ := inv_injective (by simpa using hq); subst q
         exact (norm_piLpContinuousLinearEquiv_one C q₀ q₁ u).le
       · have hθoo : θ ∈ Ioo (0 : ℝ) 1 := ⟨hθ0, hθ1⟩
         refine le_of_forall_gt fun r hr => ?_
         obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 hr
-        let a : ι → ℝ := fun i =>
-          (1 - θ)⁻¹ * ∫ t, ‖((g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t) i‖ *
-            stripPoisson₀ θ t
-        let b : ι → ℝ := fun i =>
-          θ⁻¹ * ∫ t, ‖((g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 t) i‖ *
-            stripPoisson₁ θ t
+        let a : ι → ℝ := fun i => (1 - θ)⁻¹ * ∫ t, ‖g.val.1 t i‖ * stripPoisson₀ θ t
+        let b : ι → ℝ := fun i => θ⁻¹ * ∫ t, ‖g.val.2 t i‖ * stripPoisson₁ θ t
         have ha (i : ι) : 0 ≤ a i := mul_nonneg (inv_pos.2 (sub_pos.2 hθ1)).le
           (integral_nonneg fun t => mul_nonneg (norm_nonneg _) (stripPoisson₀_pos hθoo t).le)
         have hb (i : ι) : 0 ≤ b i := mul_nonneg (inv_pos.2 hθ0).le
@@ -707,20 +600,19 @@ private theorem norm_piLpContinuousLinearEquiv_le (C : ∀ i, CompatibleCouple �
           rw [piLpContinuousLinearEquiv_mk_apply]
           simpa only [piLpStripTracesEquiv_apply_fst, piLpStripTracesEquiv_apply_snd] using
             norm_mk_le_integral_stripPoisson hθoo (piLpStripTracesEquiv C q₀ q₁ g i)
-        have ha_norm := norm_toLp_integral_stripPoisson₀_le hθoo
-          (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1
-        have hb_norm := norm_toLp_integral_stripPoisson₁_le hθoo
-          (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2
-        have hg1 : ‖(g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1‖ ≤ ‖g‖ :=
-          (norm_fst_le (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁))).trans_eq (Submodule.norm_coe g)
-        have hg2 : ‖(g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2‖ ≤ ‖g‖ :=
-          (norm_snd_le (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁))).trans_eq (Submodule.norm_coe g)
+        have ha_norm := (norm_toLp_integral_weighted_le g.val.1 (sub_pos.2 hθ1)
+          (integrable_stripPoisson₀ θ) (fun t => (stripPoisson₀_pos hθoo t).le)
+          (integral_stripPoisson₀ ⟨hθ0, hθ1.le⟩)).trans
+          ((norm_fst_le g.val).trans_eq (Submodule.norm_coe g))
+        have hb_norm := (norm_toLp_integral_weighted_le g.val.2 hθ0 (integrable_stripPoisson₁ θ)
+          (fun t => (stripPoisson₁_pos hθoo t).le) (integral_stripPoisson₁ ⟨hθ0.le, hθ1⟩)).trans
+          ((norm_snd_le g.val).trans_eq (Submodule.norm_coe g))
         refine ((norm_le_norm_toLp_of_le _ hpt).trans
           (norm_toLp_rpow_mul_rpow_le hθoo hq ha hb)).trans_lt (lt_of_le_of_lt ?_ hg)
         calc ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp q₁ b‖ ^ θ
             ≤ ‖g‖ ^ (1 - θ) * ‖g‖ ^ θ :=
-              mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) (ha_norm.trans hg1) (sub_pos.2 hθ1).le)
-                (Real.rpow_le_rpow (norm_nonneg _) (hb_norm.trans hg2) hθ0.le)
+              mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) ha_norm (sub_pos.2 hθ1).le)
+                (Real.rpow_le_rpow (norm_nonneg _) hb_norm hθ0.le)
                 (Real.rpow_nonneg (norm_nonneg _) _) (Real.rpow_nonneg (norm_nonneg _) _)
           _ = ‖g‖ := by rw [← Real.rpow_add_of_nonneg (norm_nonneg _) (sub_pos.2 hθ1).le hθ0.le,
               sub_add_cancel, Real.rpow_one]
@@ -731,10 +623,8 @@ private theorem norm_toLp_mul_div_rpow_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {B q
     ‖WithLp.toLp p (fun i => B * (b i / B) ^ (qr * (p⁻¹).toReal))‖ ≤ B := by
   rcases eq_or_ne p ∞ with rfl | hp
   · rw [PiLp.norm_toLp, pi_norm_le_iff_of_nonneg hB.le]
-    intro i
-    simp [abs_of_pos hB]
-  · have hp0 : 0 < p.toReal :=
-      ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
+    intro i; simp [abs_of_pos hB]
+  · have hp0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
     rw [PiLp.norm_eq_sum hp0]
     have hterm (i : ι) : ‖B * (b i / B) ^ (qr * (p⁻¹).toReal)‖ ^ p.toReal =
         B ^ p.toReal * (b i ^ qr / B ^ qr) := by
@@ -754,52 +644,47 @@ private theorem exists_stripTraces_rescale {E₀ E₁ W : Type*}
     (hα : (1 - θ) * α₀ + θ * α₁ = 1) (hb : 0 < b) (hB : 0 < B) (g : C₀.stripTraces)
     (hg : ‖g‖ < b) :
     ∃ g' : C₀.stripTraces, mk θ g' = mk θ g ∧
-      (∀ t : ℝ, ‖(g' : C₀(ℝ, E₀) × C₀(ℝ, E₁)).1 t‖ ≤ B * (b / B) ^ α₀) ∧
-      (∀ t : ℝ, ‖(g' : C₀(ℝ, E₀) × C₀(ℝ, E₁)).2 t‖ ≤ B * (b / B) ^ α₁) := by
+      (∀ t : ℝ, ‖g'.val.1 t‖ ≤ B * (b / B) ^ α₀) ∧
+      (∀ t : ℝ, ‖g'.val.2 t‖ ≤ B * (b / B) ^ α₁) := by
   let L : ℝ := Real.log (b / B)
   let c : ℂ → ℂ := fun z => Complex.exp ((((1 - z) * (α₀ : ℂ) + z * (α₁ : ℂ)) - 1) * (L : ℂ))
-  have hc_diff : Differentiable ℂ c := by unfold c; fun_prop
   have hc_norm (z : ℂ) : ‖c z‖ = (b / B) ^ ((1 - z.re) * α₀ + z.re * α₁ - 1) := by
     rw [Complex.norm_exp, Real.rpow_def_of_pos (div_pos hb hB)]
-    congr 1
-    simp only [sub_re, add_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, one_re]
+    congr 1; simp only [sub_re, add_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, one_re]
     ring
   let M : ℝ := max ((α₀ - 1) * L) ((α₁ - 1) * L)
   have hK (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1) : ‖c z‖ ≤ Real.exp M := by
     rw [hc_norm, Real.rpow_def_of_pos (div_pos hb hB)]
-    refine Real.exp_le_exp.2 (le_trans (le_of_eq (by ring :
+    refine Real.exp_le_exp.2 ((le_of_eq (by ring :
       L * ((1 - z.re) * α₀ + z.re * α₁ - 1) =
-        (1 - z.re) * ((α₀ - 1) * L) + z.re * ((α₁ - 1) * L))) ?_)
+        (1 - z.re) * ((α₀ - 1) * L) + z.re * ((α₁ - 1) * L))).trans ?_)
     calc (1 - z.re) * ((α₀ - 1) * L) + z.re * ((α₁ - 1) * L)
         ≤ (1 - z.re) * M + z.re * M := add_le_add
           (mul_le_mul_of_nonneg_left (le_max_left _ _) (sub_nonneg.2 hz.2))
           (mul_le_mul_of_nonneg_left (le_max_right _ _) hz.1)
       _ = M := by ring
-  obtain ⟨g', hg₀', hg₁', heq⟩ :=
-    exists_stripTraces_smul_of_diffContOnCl g hc_diff.diffContOnCl hK
+  obtain ⟨g', hg₀', hg₁', heq⟩ := exists_stripTraces_smul_of_diffContOnCl g
+    (by unfold c; fun_prop : Differentiable ℂ c).diffContOnCl hK
   have hcθ : c θ = 1 := by
     dsimp only [c]
     have h0 : (((1 - (θ : ℂ)) * (α₀ : ℂ) + (θ : ℂ) * (α₁ : ℂ)) - 1) = 0 := by
       exact_mod_cast sub_eq_zero.2 hα
     rw [h0, zero_mul, Complex.exp_zero]
-  have hmul (α : ℝ) : (b / B) ^ (α - 1) * b = B * (b / B) ^ α := by
-    calc (b / B) ^ (α - 1) * b = B * ((b / B) ^ (α - 1) * (b / B) ^ (1 : ℝ)) := by
-          rw [Real.rpow_one]; field_simp [hB.ne']
-      _ = B * (b / B) ^ α := by rw [← Real.rpow_add (div_pos hb hB), sub_add_cancel]
+  have hmul (α x : ℝ) (hx : x ≤ b) : (b / B) ^ (α - 1) * x ≤ B * (b / B) ^ α :=
+    (mul_le_mul_of_nonneg_left hx (Real.rpow_nonneg (div_pos hb hB).le _)).trans_eq <| by
+      calc (b / B) ^ (α - 1) * b = B * ((b / B) ^ (α - 1) * (b / B) ^ (1 : ℝ)) := by
+            rw [Real.rpow_one]; field_simp [hB.ne']
+        _ = B * (b / B) ^ α := by rw [← Real.rpow_add (div_pos hb hB), sub_add_cancel]
   refine ⟨g', by rw [heq hθ, hcθ, one_smul], fun t => ?_, fun t => ?_⟩
   · rw [hg₀', norm_smul, hc_norm]
     simp only [mul_I_re, ofReal_im, neg_zero, sub_zero, one_mul, zero_mul, add_zero]
-    have ht1 : ‖(g : C₀(ℝ, E₀) × C₀(ℝ, E₁)).1 t‖ ≤ b :=
-      ((ZeroAtInftyContinuousMap.norm_coe_le_norm (g : C₀(ℝ, E₀) × C₀(ℝ, E₁)).1 t).trans
-        ((norm_fst_le (g : C₀(ℝ, E₀) × C₀(ℝ, E₁))).trans_eq (Submodule.norm_coe g))).trans hg.le
-    exact (mul_le_mul_of_nonneg_left ht1 (Real.rpow_nonneg (div_pos hb hB).le _)).trans_eq (hmul α₀)
+    exact hmul α₀ _ (((ZeroAtInftyContinuousMap.norm_coe_le_norm g.val.1 t).trans
+      ((norm_fst_le g.val).trans_eq (Submodule.norm_coe g))).trans hg.le)
   · rw [hg₁', norm_smul, hc_norm]
     simp only [add_re, one_re, mul_I_re, ofReal_im, neg_zero, add_zero, sub_self, zero_mul,
       one_mul, zero_add]
-    have ht2 : ‖(g : C₀(ℝ, E₀) × C₀(ℝ, E₁)).2 t‖ ≤ b :=
-      ((ZeroAtInftyContinuousMap.norm_coe_le_norm (g : C₀(ℝ, E₀) × C₀(ℝ, E₁)).2 t).trans
-        ((norm_snd_le (g : C₀(ℝ, E₀) × C₀(ℝ, E₁))).trans_eq (Submodule.norm_coe g))).trans hg.le
-    exact (mul_le_mul_of_nonneg_left ht2 (Real.rpow_nonneg (div_pos hb hB).le _)).trans_eq (hmul α₁)
+    exact hmul α₁ _ (((ZeroAtInftyContinuousMap.norm_coe_le_norm g.val.2 t).trans
+      ((norm_snd_le g.val).trans_eq (Submodule.norm_coe g))).trans hg.le)
 
 private theorem norm_symm_le_of_eq_top (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     {q₀ q₁ : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
@@ -811,39 +696,30 @@ private theorem norm_symm_le_of_eq_top (C : ∀ i, CompatibleCouple ℂ (X₀ i)
   have hex (i : ι) : ∃ g : (C i).stripTraces, mk θ g = v i ∧ ‖g‖ < ‖v‖ + ε :=
     norm_lt_iff.1 ((PiLp.norm_apply_le v i).trans_lt (lt_add_of_pos_right ‖v‖ hε))
   choose g hg_mk hg_norm using hex
-  have hv_eq : v = WithLp.toLp ∞ (fun i => mk θ (g i)) := PiLp.ext fun i => (hg_mk i).symm
   let G : (piLp C ∞ ∞).stripTraces := (piLpStripTracesEquiv C ∞ ∞).symm g
-  have hsymm : (piLpContinuousLinearEquiv C ∞ ∞ ∞ θ).symm v = mk θ G := by
-    rw [hv_eq, piLpContinuousLinearEquiv_symm_mk]
   have hB : 0 ≤ ‖v‖ + ε := add_nonneg (norm_nonneg v) hε.le
-  have hG : ‖(G : C₀(ℝ, PiLp ∞ X₀) × C₀(ℝ, PiLp ∞ X₁))‖ ≤ ‖v‖ + ε := by
+  have hG : ‖G.val‖ ≤ ‖v‖ + ε := by
     rw [Prod.norm_def]
-    refine max_le ?_ ?_
-    · refine (ZeroAtInftyContinuousMap.norm_le hB).2 fun t => ?_
-      rw [← PiLp.norm_ofLp, pi_norm_le_iff_of_nonneg hB]
-      intro i
+    refine max_le ((ZeroAtInftyContinuousMap.norm_le hB).2 fun t => ?_)
+      ((ZeroAtInftyContinuousMap.norm_le hB).2 fun t => ?_)
+    · rw [← PiLp.norm_ofLp, pi_norm_le_iff_of_nonneg hB]; intro i
       rw [piLpStripTracesEquiv_symm_apply_fst]
-      exact ((ZeroAtInftyContinuousMap.norm_coe_le_norm
-        (g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).1 t).trans
-        ((norm_fst_le (g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i))).trans_eq
-          (Submodule.norm_coe (g i)))).trans (hg_norm i).le
-    · refine (ZeroAtInftyContinuousMap.norm_le hB).2 fun t => ?_
-      rw [← PiLp.norm_ofLp, pi_norm_le_iff_of_nonneg hB]
-      intro i
+      exact ((ZeroAtInftyContinuousMap.norm_coe_le_norm (g i).val.1 t).trans
+        ((norm_fst_le (g i).val).trans_eq (Submodule.norm_coe (g i)))).trans (hg_norm i).le
+    · rw [← PiLp.norm_ofLp, pi_norm_le_iff_of_nonneg hB]; intro i
       rw [piLpStripTracesEquiv_symm_apply_snd]
-      exact ((ZeroAtInftyContinuousMap.norm_coe_le_norm
-        (g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).2 t).trans
-        ((norm_snd_le (g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i))).trans_eq
-          (Submodule.norm_coe (g i)))).trans (hg_norm i).le
-  rw [hsymm]
+      exact ((ZeroAtInftyContinuousMap.norm_coe_le_norm (g i).val.2 t).trans
+        ((norm_snd_le (g i).val).trans_eq (Submodule.norm_coe (g i)))).trans (hg_norm i).le
+  rw [show (piLpContinuousLinearEquiv C ∞ ∞ ∞ θ).symm v = mk θ G by
+    rw [show v = WithLp.toLp ∞ (fun i => mk θ (g i)) from PiLp.ext fun i => (hg_mk i).symm,
+      piLpContinuousLinearEquiv_symm_mk]]
   exact (norm_mk_le G).trans ((Submodule.norm_coe G).symm.trans_le hG)
 
 private theorem exists_pos_perturbation [Nonempty ι] {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq_top : q ≠ ∞)
     {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)] (v : PiLp q β) {ε : ℝ} (hε : 0 < ε) :
     ∃ (b : ι → ℝ) (B : ℝ), 0 < B ∧ B ≤ ‖v‖ + ε ∧ (∀ i, 0 < b i ∧ ‖v i‖ < b i) ∧
       ∑ i, b i ^ q.toReal = B ^ q.toReal := by
-  have hq0 : 0 < q.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
+  have hq0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
   let u1 : PiLp q (fun _ : ι => ℝ) := WithLp.toLp q (fun _ => 1)
   let δ : ℝ := ε / (‖u1‖ + 1)
   have hδ : 0 < δ := div_pos hε (by positivity)
@@ -854,21 +730,18 @@ private theorem exists_pos_perturbation [Nonempty ι] {q : ℝ≥0∞} [Fact (1 
   have hB : 0 < B := (hb i₀).trans_le ((le_abs_self (b i₀)).trans
     (PiLp.norm_apply_le (WithLp.toLp q b) i₀))
   refine ⟨b, B, hB, ?_, fun i => ⟨hb i, lt_add_of_pos_right ‖v i‖ hδ⟩, ?_⟩
-  · have hsplit : WithLp.toLp q b = WithLp.toLp q (fun i => ‖v i‖) + δ • u1 := by
-      ext i; simp [b, u1]
-    have hδu : δ * ‖u1‖ ≤ ε := by
-      dsimp only [δ]
-      rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  · have hδu : δ * ‖u1‖ ≤ ε := by
+      dsimp only [δ]; rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
       nlinarith [norm_nonneg u1, hε.le]
     calc B ≤ ‖WithLp.toLp q (fun i => ‖v i‖)‖ + ‖δ • u1‖ := by
-          dsimp only [B]; rw [hsplit]; exact norm_add_le _ _
+          dsimp only [B]; rw [show WithLp.toLp q b = WithLp.toLp q (fun i => ‖v i‖) + δ • u1 by
+            ext i; simp [b, u1]]
+          exact norm_add_le _ _
       _ = ‖v‖ + δ * ‖u1‖ := by rw [norm_toLp_norm, norm_smul, Real.norm_of_nonneg hδ.le]
       _ ≤ ‖v‖ + ε := add_le_add_right hδu ‖v‖
   · have hBeq : B = (∑ i, b i ^ q.toReal) ^ (1 / q.toReal) := by
-      dsimp only [B]
-      rw [PiLp.norm_eq_sum hq0]
-      congr 1; refine Finset.sum_congr rfl fun i _ => ?_
-      rw [Real.norm_of_nonneg (hb i).le]
+      dsimp only [B]; rw [PiLp.norm_eq_sum hq0]
+      congr 1; exact Finset.sum_congr rfl fun i _ => by rw [Real.norm_of_nonneg (hb i).le]
     rw [hBeq, one_div, Real.rpow_inv_rpow (Finset.sum_nonneg fun i _ => by positivity) hq0.ne']
 
 private theorem norm_symm_le_of_ne_top (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
@@ -882,31 +755,27 @@ private theorem norm_symm_le_of_ne_top (C : ∀ i, CompatibleCouple ℂ (X₀ i)
   refine le_of_forall_pos_le_add fun ε hε => ?_
   obtain ⟨b, B, hB, hB_le, hb, hsum⟩ := exists_pos_perturbation hq_top v hε
   have hex (i : ι) : ∃ g' : (C i).stripTraces, mk θ g' = v i ∧
-      (∀ t, ‖(g' : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).1 t‖ ≤
-        B * (b i / B) ^ (q.toReal * (q₀⁻¹).toReal)) ∧
-      (∀ t, ‖(g' : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).2 t‖ ≤
-        B * (b i / B) ^ (q.toReal * (q₁⁻¹).toReal)) := by
+      (∀ t, ‖g'.val.1 t‖ ≤ B * (b i / B) ^ (q.toReal * (q₀⁻¹).toReal)) ∧
+      (∀ t, ‖g'.val.2 t‖ ≤ B * (b i / B) ^ (q.toReal * (q₁⁻¹).toReal)) := by
     obtain ⟨g, hg_eq, hg⟩ := norm_lt_iff.1 (hb i).2
     obtain ⟨g', hg'_eq, hg'₀, hg'₁⟩ :=
       exists_stripTraces_rescale ⟨hθ.1.le, hθ.2.le⟩ hα (hb i).1 hB g hg
     exact ⟨g', hg'_eq.trans hg_eq, hg'₀, hg'₁⟩
   choose g' hg'_mk hg'_0 hg'_1 using hex
-  have hv_eq : v = WithLp.toLp q (fun i => mk θ (g' i)) := PiLp.ext fun i => (hg'_mk i).symm
   let G : (piLp C q₀ q₁).stripTraces := (piLpStripTracesEquiv C q₀ q₁).symm g'
-  have hsymm : (piLpContinuousLinearEquiv C q₀ q₁ q θ).symm v = mk θ G := by
-    rw [hv_eq, piLpContinuousLinearEquiv_symm_mk]
-  have hG : ‖(G : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁))‖ ≤ B := by
+  have hG : ‖G.val‖ ≤ B := by
     rw [Prod.norm_def]
-    refine max_le ?_ ?_
-    · exact (ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
+    exact max_le ((ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
         (norm_le_norm_toLp_of_le _ fun i => by
           rw [piLpStripTracesEquiv_symm_apply_fst]; exact hg'_0 i t).trans
-          (norm_toLp_mul_div_rpow_le hB (fun i => (hb i).1) hsum)
-    · exact (ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
+          (norm_toLp_mul_div_rpow_le hB (fun i => (hb i).1) hsum))
+      ((ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
         (norm_le_norm_toLp_of_le _ fun i => by
           rw [piLpStripTracesEquiv_symm_apply_snd]; exact hg'_1 i t).trans
-          (norm_toLp_mul_div_rpow_le hB (fun i => (hb i).1) hsum)
-  rw [hsymm]
+          (norm_toLp_mul_div_rpow_le hB (fun i => (hb i).1) hsum))
+  rw [show (piLpContinuousLinearEquiv C q₀ q₁ q θ).symm v = mk θ G by
+    rw [show v = WithLp.toLp q (fun i => mk θ (g' i)) from PiLp.ext fun i => (hg'_mk i).symm,
+      piLpContinuousLinearEquiv_symm_mk]]
   exact ((norm_mk_le G).trans ((Submodule.norm_coe G).symm.trans_le hG)).trans hB_le
 
 private theorem norm_piLpContinuousLinearEquiv_symm_le
@@ -917,13 +786,11 @@ private theorem norm_piLpContinuousLinearEquiv_symm_le
     ‖(piLpContinuousLinearEquiv C q₀ q₁ q θ).symm v‖ ≤ ‖v‖ := by
   by_cases hθ : θ ∈ Icc (0 : ℝ) 1
   · rcases eq_or_lt_of_le hθ.1 with rfl | hθ0
-    · have hqq₀ : q = q₀ := inv_injective (by simpa using hq)
-      subst q
+    · have : q = q₀ := inv_injective (by simpa using hq); subst q
       exact (norm_piLpContinuousLinearEquiv_zero C q₀ q₁ _).symm.trans_le
         (by rw [ContinuousLinearEquiv.apply_symm_apply])
     · rcases eq_or_lt_of_le hθ.2 with rfl | hθ1
-      · have hqq₁ : q = q₁ := inv_injective (by simpa using hq)
-        subst q
+      · have : q = q₁ := inv_injective (by simpa using hq); subst q
         exact (norm_piLpContinuousLinearEquiv_one C q₀ q₁ _).symm.trans_le
           (by rw [ContinuousLinearEquiv.apply_symm_apply])
       · rcases eq_or_ne q ∞ with rfl | hq_top
