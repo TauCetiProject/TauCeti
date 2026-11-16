@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.AlgebraicGeometry.Modules.Unit
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
@@ -31,7 +32,6 @@ subscheme `V(I)`. Since `ι` is affine, `ι_* 𝒪_{V(I)}` is quasi-coherent, an
 
 ## Main declarations
 
-* `Scheme.Modules.unit X`: the structure sheaf `𝒪_X` as an object of `X.Modules`.
 * `Scheme.IdealSheafData.pushforwardSubscheme`: the direct image `ι_* 𝒪_{V(I)}`, with the
   restriction `Scheme.IdealSheafData.toPushforwardSubscheme : 𝒪_X ⟶ ι_* 𝒪_{V(I)}`.
 * `Scheme.IdealSheafData.shortExact_toPushforwardSubscheme`: the sequence
@@ -50,13 +50,6 @@ open CategoryTheory Limits Opposite TopologicalSpace
 
 universe u
 
-/-- The structure sheaf `𝒪_X` as an object of `X.Modules`. Since `X.Modules` is not reducibly
-`SheafOfModules X.ringCatSheaf`, morphisms of `X.Modules` out of `𝒪_X`, such as the restriction
-`Scheme.IdealSheafData.toPushforwardSubscheme`, are stated with this object to stay well-typed at
-reducible transparency, where `rw` and `simp` work. -/
-noncomputable abbrev AlgebraicGeometry.Scheme.Modules.unit (X : Scheme.{u}) : X.Modules :=
-  SheafOfModules.unit X.ringCatSheaf
-
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 noncomputable section
@@ -72,7 +65,7 @@ abbrev pushforwardSubscheme : X.Modules :=
 a morphism of `𝒪_X`-modules. Its target is pinned to `Scheme.Modules.pushforward`: `simp` does not
 identify sections of it with those of the defeq target `SheafOfModules.pushforward` that Mathlib
 gives `SheafOfModules.unitToPushforwardObjUnit`, and no zero morphism is synthesized there. -/
-@[expose] def toPushforwardSubscheme : Scheme.Modules.unit X ⟶ I.pushforwardSubscheme :=
+def toPushforwardSubscheme : Scheme.Modules.unit X ⟶ I.pushforwardSubscheme :=
   SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom
 
 /-- A section of `𝒪_X` restricts to zero on `V(I)` exactly when it is a section of `I`. -/

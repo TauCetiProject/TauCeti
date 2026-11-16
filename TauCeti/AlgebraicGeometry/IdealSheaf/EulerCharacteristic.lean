@@ -33,9 +33,12 @@ scheme `D` give
 More generally, for a vector bundle `E` of constant rank `r` on `X`, tensoring the sequence with
 `E` gives `0 ⟶ E ⊗ I ⟶ E ⟶ E ⊗ ι_* 𝒪_D ⟶ 0`. By the projection formula the last term is the
 direct image of the pullback of `E` to `D` (`Scheme.IdealSheafData.tensorPushforwardSubschemeIso`),
+so its cohomology is that of the pullback of `E` to `D`
+(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff` and
+`Scheme.IdealSheafData.eulerCharBelow_tensor_pushforwardSubscheme`). The pullback is
 a vector bundle of rank `r` on a scheme finite over `k`
-and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`): it has
-finite-dimensional `H⁰`, vanishing `H¹` and Euler characteristic `r · dim_k Γ(D, 𝒪_D)`
+and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`), so the last
+term has finite-dimensional `H⁰`, vanishing `H¹` and Euler characteristic `r · dim_k Γ(D, 𝒪_D)`
 (`Scheme.IdealSheafData.finiteDimensional_cohomology_zero_tensor_pushforward`,
 `Scheme.IdealSheafData.subsingleton_cohomology_one_tensor_pushforward` and
 `Scheme.IdealSheafData.eulerCharBelow_tensor_pushforward`). So `E ⊗ I` has
@@ -90,6 +93,26 @@ def tensorPushforwardSubschemeIso (E : FiniteLocallyFreeSheaf X) :
   eqToIso (congrArg (fun F ↦ E.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj F)
       (TauCeti.SheafOfModules.tensorUnit_eq I.subscheme.sheaf).symm) ≪≫
     FiniteLocallyFreeSheaf.tensorPushforwardUnitIso I.subschemeι E
+
+/-- `χ(X, E ⊗ ι_* 𝒪_{V(I)}) = χ(V(I), ι^* E)` for a vector bundle `E` on `X`: by the projection
+formula `E ⊗ ι_* 𝒪_{V(I)}` is the direct image of `ι^* E` along the closed immersion `ι`. -/
+theorem eulerCharBelow_tensor_pushforwardSubscheme (E : FiniteLocallyFreeSheaf X) (n : ℕ) :
+    eulerCharBelow k X (E.obj ⊗ I.pushforwardSubscheme) n =
+      eulerCharBelow k I.subscheme
+        ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E).obj n := by
+  rw [eulerCharBelow_congr k (I.tensorPushforwardSubschemeIso E) n,
+    Scheme.Hom.eulerCharBelow_pushforward I.subschemeι k]
+
+/-- `H^i(X, E ⊗ ι_* 𝒪_{V(I)})` is finite-dimensional over `k` exactly when `H^i(V(I), ι^* E)` is,
+for a vector bundle `E` on `X`: by the projection formula `E ⊗ ι_* 𝒪_{V(I)}` is the direct image
+of `ι^* E` along the closed immersion `ι`. -/
+theorem finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff
+    (E : FiniteLocallyFreeSheaf X) (i : ℕ) :
+    FiniteDimensional k (Cohomology (E.obj ⊗ I.pushforwardSubscheme) i) ↔
+      FiniteDimensional k
+        (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E).obj i) :=
+  (finiteDimensional_cohomology_congr k (I.tensorPushforwardSubschemeIso E) i).trans
+    (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k _ i)
 
 section Finite
 

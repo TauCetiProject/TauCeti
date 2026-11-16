@@ -55,7 +55,10 @@ noncomputable section
 
 variable {X : Scheme.{u}} (I J : X.IdealSheafData)
 
-/-- The inclusion `I ⟶ 𝒪_X`, with target the structure sheaf as an object of `X.Modules`. -/
+/-- The inclusion `I ⟶ 𝒪_X` as a morphism of `X.Modules`. `I.sheafι` is a morphism of
+`SheafOfModules X.ringCatSheaf`, whose category structure is not reducibly that of `X.Modules`.
+Stated with `I.sheafι`, the sums of composites below find no `Add` instance on morphisms, and `rw`
+does not match the composites with morphisms of `X.Modules` such as `toPushforwardSubscheme`. -/
 private abbrev sheafι' : I.sheaf ⟶ Scheme.Modules.unit X := I.sheafι
 
 variable {I J}
@@ -121,6 +124,13 @@ private lemma inr_sumToSup_sheafι :
     biprod.inr ≫ sumToSup ≫ (I ⊔ J).sheafι' = J.sheafι' :=
   (biprod.inr_desc_assoc _ _ _).trans ((I ⊔ J).sheafLift_ι _ _)
 
+private lemma sumToSup_sheafι :
+    sumToSup ≫ (I ⊔ J).sheafι' = biprod.fst ≫ I.sheafι' + biprod.snd ≫ J.sheafι' := by
+  rw [← biprod.desc_eq]
+  refine biprod.hom_ext' _ _ ?_ ?_
+  · rw [inl_sumToSup_sheafι, biprod.inl_desc]
+  · rw [inr_sumToSup_sheafι, biprod.inr_desc]
+
 /-- Over an affine open the sections of `I ⊔ J` are sums of sections of `I` and of `J`, so the sum
 map `I ⊞ J ⟶ I ⊔ J` is an epimorphism. -/
 private lemma epi_sumToSup : Epi (sumToSup (I := I) (J := J)) := by
@@ -172,6 +182,21 @@ abbrev mayerVietoris : ShortComplex X.Modules where
     rw [← cancel_epi (I ⊓ J).toPushforwardSubscheme]
     simp
 
+variable (I J) in
+/-- The first map of the Mayer–Vietoris sequence is the lift of the two restrictions. -/
+@[simp]
+lemma mayerVietoris_f : (mayerVietoris I J).f =
+    biprod.lift (pushforwardSubschemeMap inf_le_left) (-pushforwardSubschemeMap inf_le_right) :=
+  rfl
+
+variable (I J) in
+/-- The second map of the Mayer–Vietoris sequence is the sum of the two restrictions. -/
+@[simp]
+lemma mayerVietoris_g : (mayerVietoris I J).g =
+    biprod.desc (pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J))
+      (pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J)) :=
+  rfl
+
 /-- A regular function vanishing on `V(I ⊔ J)` is, after refining its source, a sum of a section of
 `I` and a section of `J`. -/
 private lemma exists_eq_add_of_comp_toPushforwardSubscheme_sup_eq_zero {A : X.Modules}
@@ -185,14 +210,8 @@ private lemma exists_eq_add_of_comp_toPushforwardSubscheme_sup_eq_zero {A : X.Mo
   obtain ⟨A', π, _, d, hd⟩ := surjective_up_to_refinements_of_epi sumToSup (hS.exact.lift _ hy)
   refine ⟨A', π, inferInstance, d ≫ biprod.fst, d ≫ biprod.snd, ?_⟩
   have h := hd =≫ (I ⊔ J).sheafι'
-  rw [Category.assoc, hS.exact.lift_f, Category.assoc] at h
-  rw [Category.assoc, Category.assoc]
-  calc π ≫ y = d ≫ sumToSup ≫ (I ⊔ J).sheafι' := h
-    _ = d ≫ (biprod.fst ≫ biprod.inl + biprod.snd ≫ biprod.inr) ≫ sumToSup ≫
-        (I ⊔ J).sheafι' := by rw [biprod.total, Category.id_comp]
-    _ = _ := by
-      rw [Preadditive.add_comp, Preadditive.comp_add, Category.assoc, Category.assoc,
-        inl_sumToSup_sheafι, inr_sumToSup_sheafι]
+  rw [Category.assoc, hS.exact.lift_f, Category.assoc, sumToSup_sheafι] at h
+  simpa only [Category.assoc, Preadditive.comp_add] using h
 
 variable (I J)
 
@@ -200,10 +219,7 @@ variable (I J)
 and on `V(J)` vanishes on `V(I ⊓ J)`. -/
 private lemma mono_mayerVietoris_f : Mono (mayerVietoris I J).f := by
   refine Preadditive.mono_of_cancel_zero _ fun {T} h hh ↦ ?_
-  -- Restate the types through the definition of `mayerVietoris`.
-  change T ⟶ (I ⊓ J).pushforwardSubscheme at h
-  have hh : h ≫ biprod.lift (pushforwardSubschemeMap inf_le_left)
-      (-pushforwardSubschemeMap inf_le_right) = 0 := hh
+  rw [mayerVietoris_f] at hh
   -- Lift `h` to `𝒪_X` after a refinement of its source.
   obtain ⟨T', π, _, x, hx⟩ :=
     surjective_up_to_refinements_of_epi (I ⊓ J).toPushforwardSubscheme h
@@ -228,10 +244,7 @@ private lemma epi_mayerVietoris_g : Epi (mayerVietoris I J).g := by
 private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
   rw [ShortComplex.exact_iff_exact_up_to_refinements]
   intro A x₂ hx₂
-  -- Restate the types through the definition of `mayerVietoris`.
-  change A ⟶ I.pushforwardSubscheme ⊞ J.pushforwardSubscheme at x₂
-  have hx₂ : x₂ ≫ biprod.desc (pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J))
-      (pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J)) = 0 := hx₂
+  rw [mayerVietoris_g] at hx₂
   -- Lift both components of `x₂` to `𝒪_X` after refining `A`.
   obtain ⟨A₁, π₁, _, a, ha⟩ :=
     surjective_up_to_refinements_of_epi I.toPushforwardSubscheme (x₂ ≫ biprod.fst)
@@ -240,18 +253,13 @@ private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
   -- The sum of the lifts vanishes on `V(I ⊔ J)`, so it is a section of `I ⊔ J` ...
   have hx₂' : x₂ ≫ biprod.fst ≫ pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J) +
       x₂ ≫ biprod.snd ≫ pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J) = 0 := by
-    refine Eq.trans ?_ hx₂
-    rw [biprod.desc_eq]
-    exact (Preadditive.comp_add _ _ _ _ _ _).symm
+    simpa only [biprod.desc_eq, Preadditive.comp_add] using hx₂
   have e₁ : a ≫ (I ⊔ J).toPushforwardSubscheme =
       π₁ ≫ x₂ ≫ biprod.fst ≫ pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J) := by
-    rw [← toPushforwardSubscheme_pushforwardSubschemeMap (le_sup_left : I ≤ I ⊔ J),
-      ← Category.assoc a, ← ha, Category.assoc, Category.assoc]
+    rw [reassoc_of% ha, toPushforwardSubscheme_pushforwardSubschemeMap]
   have e₂ : b ≫ (I ⊔ J).toPushforwardSubscheme =
       π₂ ≫ π₁ ≫ x₂ ≫ biprod.snd ≫ pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J) := by
-    rw [← toPushforwardSubscheme_pushforwardSubschemeMap (le_sup_right : J ≤ I ⊔ J),
-      ← Category.assoc b, ← hb]
-    rw [Category.assoc, Category.assoc, Category.assoc]
+    rw [reassoc_of% hb, toPushforwardSubscheme_pushforwardSubschemeMap]
   have hab : (π₂ ≫ a + b) ≫ (I ⊔ J).toPushforwardSubscheme = 0 := by
     rw [Preadditive.add_comp, Category.assoc, e₁, e₂]
     simpa only [Category.assoc, Preadditive.comp_add, comp_zero] using π₂ ≫= π₁ ≫= hx₂'
@@ -262,9 +270,7 @@ private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
     (π₃ ≫ π₂ ≫ a - c ≫ I.sheafι') ≫ (I ⊓ J).toPushforwardSubscheme, ?_⟩
   have hb' : π₃ ≫ π₂ ≫ a - c ≫ I.sheafι' = e ≫ J.sheafι' - π₃ ≫ b := by
     rw [sub_eq_sub_iff_add_eq_add, hce, add_comm]
-  -- `(mayerVietoris I J).f` is the lift of the two restrictions.
-  change (π₃ ≫ π₂ ≫ π₁) ≫ x₂ = _ ≫ biprod.lift (pushforwardSubschemeMap inf_le_left)
-    (-pushforwardSubschemeMap inf_le_right)
+  rw [mayerVietoris_f]
   apply biprod.hom_ext
   · simp only [Category.assoc, biprod.lift_fst, toPushforwardSubscheme_pushforwardSubschemeMap,
       Preadditive.sub_comp]

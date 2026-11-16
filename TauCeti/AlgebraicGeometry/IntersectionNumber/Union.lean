@@ -40,9 +40,12 @@ the same identity for `𝒪_X` gives additivity of degrees. No vanishing of `H²
 is not assumed to be a curve, and no hypothesis on the singularities of `V(I)` and `V(J)`
 enters.
 
-By induction, on a reduced scheme `X` covered by a nonempty finite family of closed subsets which
-pairwise meet in finitely many points, the degree of a line bundle is the sum of its degrees on the
-reduced closed subschemes on these subsets
+By induction this gives additivity of degrees over a closed cover. Let `X` be a reduced scheme,
+quasi-compact, quasi-separated and locally of finite type over `k`, covered by a nonempty finite
+family of closed subsets which pairwise meet in finitely many points, and such that line bundles
+restricted to the reduced closed subschemes on these subsets have finite-dimensional `H⁰` and `H¹`.
+Then the degree of a line bundle on `X` is the sum of its
+degrees on these reduced closed subschemes
 (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_eq_sum_intersectionNumber_vanishingIdeal`).
 Applied to a reduced proper curve over `k`, such as a nodal curve, and the cover by its irreducible
 components, this expresses the degree of a line bundle as the sum of its degrees on the components,
@@ -77,22 +80,6 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 
 /-! ### Euler characteristics along the Mayer–Vietoris sequence -/
 
-private lemma eulerCharBelow_tensor_pushforwardSubscheme (E : FiniteLocallyFreeSheaf X)
-    (I : X.IdealSheafData) (n : ℕ) :
-    eulerCharBelow k X (E.obj ⊗ I.pushforwardSubscheme) n =
-      eulerCharBelow k I.subscheme
-        ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E).obj n := by
-  rw [eulerCharBelow_congr k (I.tensorPushforwardSubschemeIso E) n,
-    Scheme.Hom.eulerCharBelow_pushforward I.subschemeι k]
-
-private lemma finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff
-    (E : FiniteLocallyFreeSheaf X) (I : X.IdealSheafData) (i : ℕ) :
-    FiniteDimensional k (Cohomology (E.obj ⊗ I.pushforwardSubscheme) i) ↔
-      FiniteDimensional k
-        (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E).obj i) :=
-  (finiteDimensional_cohomology_congr k (I.tensorPushforwardSubschemeIso E) i).trans
-    (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k _ i)
-
 section MayerVietoris
 
 variable {r : ℕ} (E : FiniteLocallyFreeSheaf.FixedRank X r) (I J : X.IdealSheafData)
@@ -120,9 +107,9 @@ omit [IsFinite ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k))] in
 include hI hJ in
 private lemma finiteDimensional_cohomology_tensorMayerVietoris_X₂ {i : ℕ} (hi : i < 2) :
     FiniteDimensional k (Cohomology (tensorMayerVietoris E I J).X₂ i) := by
-  have := (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k E.obj I i).mpr
+  have := (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k I E.obj i).mpr
     (hI i hi)
-  have := (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k E.obj J i).mpr
+  have := (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k J E.obj i).mpr
     (hJ i hi)
   exact (finiteDimensional_cohomology_congr k (tensorMayerVietorisX₂Iso E I J) i).mpr
     inferInstance
@@ -149,7 +136,7 @@ finite-dimensional cohomology, then so do `H⁰` and `H¹` of its restriction to
 theorem FiniteLocallyFreeSheaf.FixedRank.finiteDimensional_cohomology_pullback_subschemeι_inf
     {i : ℕ} (hi : i < 2) : FiniteDimensional k
       (Cohomology ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj i) :=
-  (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k E.obj (I ⊓ J) i).mp
+  (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k (I ⊓ J) E.obj i).mp
     (finiteDimensional_cohomology_tensorMayerVietoris_X₁ k E I J hI hJ hi)
 
 include hI hJ in
@@ -179,16 +166,16 @@ theorem FiniteLocallyFreeSheaf.FixedRank.eulerCharBelow_pullback_subschemeι_inf
     (fun i hi ↦ finiteDimensional_cohomology_tensorMayerVietoris_X₂ k E I J hI hJ hi) hδ
   rw [eulerCharBelow_congr k (tensorMayerVietorisX₂Iso E I J) 2,
     eulerCharBelow_biprod k _ _ 2
-      (fun i hi ↦ (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k E.obj I i).mpr
+      (fun i hi ↦ (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k I E.obj i).mpr
         (hI i hi))
-      (fun i hi ↦ (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k E.obj J i).mpr
+      (fun i hi ↦ (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k J E.obj i).mpr
         (hJ i hi)),
     eulerCharBelow_tensor_pushforwardSubscheme, eulerCharBelow_tensor_pushforwardSubscheme] at h
   -- The first and last terms are `E ⊗ 𝒪_{V(I ⊓ J)}` and `E ⊗ 𝒪_{V(I ⊔ J)}`.
   have h₁ : eulerCharBelow k X (tensorMayerVietoris E I J).X₁ 2 =
       eulerCharBelow k (I ⊓ J).subscheme
         ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj 2 :=
-    eulerCharBelow_tensor_pushforwardSubscheme k E.obj (I ⊓ J) 2
+    eulerCharBelow_tensor_pushforwardSubscheme k (I ⊓ J) E.obj 2
   have h₃ : eulerCharBelow k X (tensorMayerVietoris E I J).X₃ 2 =
       r * ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k)).finrank s :=
     eulerCharBelow_tensor_pushforward k (I ⊔ J) E s
@@ -200,124 +187,107 @@ end MayerVietoris
 /-! ### Degrees on a union of closed subschemes -/
 
 variable {k} (I J : X.IdealSheafData) [IsFinite ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k))]
-  (hI : ∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k
-    (Cohomology ((InvertibleSheaf.pullback I.subschemeι).obj L).obj i))
-  (hJ : ∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k
-    (Cohomology ((InvertibleSheaf.pullback J.subschemeι).obj L).obj i))
 
-omit [IsFinite ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k))] in
-include hI hJ in
-/-- The finiteness hypotheses on `V(I)` and `V(J)`, for the vector bundle underlying `L`. -/
-private lemma finiteDimensional_cohomology_pullback_toFixedRankOne (L : InvertibleSheaf X) :
-    (∀ i < 2, FiniteDimensional k (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj
-      ((InvertibleSheaf.toFixedRankOne X).obj L).obj).obj i)) ∧
-    ∀ i < 2, FiniteDimensional k (Cohomology ((FiniteLocallyFreeSheaf.pullback J.subschemeι).obj
-      ((InvertibleSheaf.toFixedRankOne X).obj L).obj).obj i) := by
-  refine ⟨fun i hi ↦ ?_, fun i hi ↦ ?_⟩
-  · rw [InvertibleSheaf.pullback_toFixedRankOne_obj_obj]
-    exact hI L i hi
-  · rw [InvertibleSheaf.pullback_toFixedRankOne_obj_obj]
-    exact hJ L i hi
+/-- The finiteness hypothesis on `V(I)` for a line bundle `L`, for the vector bundle underlying
+`L`. -/
+private lemma finiteDimensional_cohomology_pullback_toFixedRankOne {L : InvertibleSheaf X}
+    (hI : ∀ i < 2, FiniteDimensional k
+      (Cohomology ((InvertibleSheaf.pullback I.subschemeι).obj L).obj i)) :
+    ∀ i < 2, FiniteDimensional k (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj
+      ((InvertibleSheaf.toFixedRankOne X).obj L).obj).obj i) := fun i hi ↦ by
+  rw [InvertibleSheaf.pullback_toFixedRankOne_obj_obj]
+  exact hI i hi
 
 namespace InvertibleSheaf
 
-include hI hJ in
 /-- **Finiteness of cohomology on a union.** If the closed subschemes `V(I)` and `V(J)` meet in a
-scheme finite over `k`, and the restrictions to them of line bundles on `X` have
-finite-dimensional cohomology, then so do `H⁰` and `H¹` of their restrictions to `V(I ⊓ J)`. -/
-theorem finiteDimensional_cohomology_pullback_subschemeι_inf (L : InvertibleSheaf X) {i : ℕ}
-    (hi : i < 2) : FiniteDimensional k
+scheme finite over `k`, and the restrictions of a line bundle `L` to them have finite-dimensional
+cohomology, then so do `H⁰` and `H¹` of its restriction to `V(I ⊓ J)`. -/
+theorem finiteDimensional_cohomology_pullback_subschemeι_inf (L : InvertibleSheaf X)
+    (hI : ∀ i < 2, FiniteDimensional k
+      (Cohomology ((InvertibleSheaf.pullback I.subschemeι).obj L).obj i))
+    (hJ : ∀ i < 2, FiniteDimensional k
+      (Cohomology ((InvertibleSheaf.pullback J.subschemeι).obj L).obj i))
+    {i : ℕ} (hi : i < 2) : FiniteDimensional k
       (Cohomology ((InvertibleSheaf.pullback (I ⊓ J).subschemeι).obj L).obj i) := by
-  obtain ⟨h₁, h₂⟩ := finiteDimensional_cohomology_pullback_toFixedRankOne I J hI hJ L
   have h := ((InvertibleSheaf.toFixedRankOne X).obj
-    L).finiteDimensional_cohomology_pullback_subschemeι_inf k I J h₁ h₂ hi
+    L).finiteDimensional_cohomology_pullback_subschemeι_inf k I J
+      (finiteDimensional_cohomology_pullback_toFixedRankOne I hI)
+      (finiteDimensional_cohomology_pullback_toFixedRankOne J hJ) hi
   rwa [InvertibleSheaf.pullback_toFixedRankOne_obj_obj] at h
 
 end InvertibleSheaf
 
 namespace LineBundleClass
 
-/-- The intersection number of the class of `L` with a closed subscheme `V(I)` is
-`χ(L|_{V(I)}) - χ(𝒪_X|_{V(I)})`. -/
-private lemma intersectionNumber_subschemeι_mk (I : X.IdealSheafData) (L : InvertibleSheaf X) :
-    intersectionNumber k I.subschemeι (mk L) =
-      eulerCharBelow k I.subscheme ((InvertibleSheaf.pullback I.subschemeι).obj L).obj 2 -
-        eulerCharBelow k I.subscheme
-          ((InvertibleSheaf.pullback I.subschemeι).obj (InvertibleSheaf.trivial X)).obj 2 := by
-  have h := intersectionNumber_one k I.subschemeι
-  rw [← mk_trivial, intersectionNumber_mk, InvertibleSheaf.eulerDegree_def] at h
-  rw [intersectionNumber_mk, InvertibleSheaf.eulerDegree_def]
-  linarith
-
-include hI hJ in
 /-- **Additivity of degrees on a union of closed subschemes.** If the closed subschemes `V(I)` and
 `V(J)` of a scheme over `k` meet in a scheme finite over `k`, and the restrictions to them of line
 bundles on `X` have finite-dimensional cohomology, then the degree of a line-bundle class on the
 union `V(I ⊓ J)` is the sum of its degrees on `V(I)` and on `V(J)`. -/
-theorem intersectionNumber_subschemeι_inf (a : LineBundleClass X) :
+theorem intersectionNumber_subschemeι_inf
+    (hI : ∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k
+      (Cohomology ((InvertibleSheaf.pullback I.subschemeι).obj L).obj i))
+    (hJ : ∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k
+      (Cohomology ((InvertibleSheaf.pullback J.subschemeι).obj L).obj i))
+    (a : LineBundleClass X) :
     intersectionNumber k (I ⊓ J).subschemeι a =
       intersectionNumber k I.subschemeι a + intersectionNumber k J.subschemeι a := by
   obtain ⟨L, rfl⟩ := mk_surjective a
   have key (L : InvertibleSheaf X) := by
-    obtain ⟨h₁, h₂⟩ := finiteDimensional_cohomology_pullback_toFixedRankOne I J hI hJ L
     have h := ((InvertibleSheaf.toFixedRankOne X).obj
-      L).eulerCharBelow_pullback_subschemeι_inf_add k I J h₁ h₂ default
+      L).eulerCharBelow_pullback_subschemeι_inf_add k I J
+        (finiteDimensional_cohomology_pullback_toFixedRankOne I (hI L))
+        (finiteDimensional_cohomology_pullback_toFixedRankOne J (hJ L)) default
     simp only [InvertibleSheaf.pullback_toFixedRankOne_obj_obj] at h
     exact h
   have hL := key L
   have hT := key (InvertibleSheaf.trivial X)
-  rw [intersectionNumber_subschemeι_mk, intersectionNumber_subschemeι_mk,
-    intersectionNumber_subschemeι_mk]
+  rw [intersectionNumber_mk_eq_eulerCharBelow_sub, intersectionNumber_mk_eq_eulerCharBelow_sub,
+    intersectionNumber_mk_eq_eulerCharBelow_sub]
   linarith
 
 variable [LocallyOfFiniteType (X ↘ Spec (.of k))]
 
 /-- Additivity of degrees, with the finiteness of cohomology, over the union of a nonempty finite
 family of closed subsets which pairwise meet in finitely many points. -/
-private lemma intersectionNumber_finset_inf (s : Finset (Closeds X))
+private lemma intersectionNumber_vanishingIdeal_finset_sup (s : Finset (Closeds X))
     (hmeet : ∀ Z ∈ s, ∀ W ∈ s, Z ≠ W → ((Z ⊓ W : Closeds X) : Set X).Finite)
     (hcoh : ∀ Z ∈ s, ∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k
       (Cohomology ((InvertibleSheaf.pullback (vanishingIdeal Z).subschemeι).obj L).obj i))
     (t : Finset (Closeds X)) (ht : t.Nonempty) (hts : t ⊆ s) :
-    (∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k
-      (Cohomology ((InvertibleSheaf.pullback (t.inf vanishingIdeal).subschemeι).obj L).obj i)) ∧
-    ∀ a : LineBundleClass X, intersectionNumber k (t.inf vanishingIdeal).subschemeι a =
+    (∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k (Cohomology
+      ((InvertibleSheaf.pullback (vanishingIdeal (t.sup id)).subschemeι).obj L).obj i)) ∧
+    ∀ a : LineBundleClass X, intersectionNumber k (vanishingIdeal (t.sup id)).subschemeι a =
       ∑ Z ∈ t, intersectionNumber k (vanishingIdeal Z).subschemeι a := by
-  revert hts
   induction ht using Finset.Nonempty.cons_induction with
   | singleton W =>
-    intro hts
-    rw [Finset.inf_singleton]
+    rw [Finset.sup_singleton, id_eq]
     exact ⟨hcoh W (hts (Finset.mem_singleton_self W)), fun a ↦ (Finset.sum_singleton _ _).symm⟩
   | cons W t hW _ ih =>
-    intro hts
     obtain ⟨ihc, ihd⟩ := ih ((Finset.subset_cons hW).trans hts)
     have hWs := hts (Finset.mem_cons_self W t)
-    -- `V(I_W)` meets the union of the members of `t` in finitely many points.
-    have : IsFinite ((vanishingIdeal W ⊔ t.inf vanishingIdeal).subschemeι ≫
+    -- `W` meets the union of the members of `t` in finitely many points.
+    have : IsFinite ((vanishingIdeal W ⊔ vanishingIdeal (t.sup id)).subschemeι ≫
         X ↘ Spec (.of k)) := by
       refine isFinite_subschemeι_comp_of_finite k _ ?_
-      -- The ideal sheaf of the union of the members of `t` is the meet of their ideal sheaves.
-      have ht : t.inf vanishingIdeal = vanishingIdeal (t.sup id) := by
-        simp [Finset.inf_eq_iInf, Finset.sup_eq_iSup]
-      rw [support_sup, ht, Closeds.coe_inf, coe_support_vanishingIdeal,
-        coe_support_vanishingIdeal, Closeds.coe_finset_sup, Finset.sup_set_eq_biUnion,
-        Set.inter_iUnion₂]
+      rw [support_sup, Closeds.coe_inf, coe_support_vanishingIdeal, coe_support_vanishingIdeal,
+        Closeds.coe_finset_sup, Finset.sup_set_eq_biUnion, Set.inter_iUnion₂]
       refine t.finite_toSet.biUnion fun Z hZ ↦ ?_
       exact hmeet W hWs Z (hts (Finset.subset_cons hW hZ)) (ne_of_mem_of_not_mem hZ hW).symm
-    rw [Finset.inf_cons]
-    refine ⟨fun L i hi ↦ InvertibleSheaf.finiteDimensional_cohomology_pullback_subschemeι_inf _ _
-      (hcoh W hWs) ihc L hi, fun a ↦ ?_⟩
+    rw [Finset.sup_cons, id_eq, vanishingIdeal_sup]
+    refine ⟨fun L i hi ↦ InvertibleSheaf.finiteDimensional_cohomology_pullback_subschemeι_inf _ _ L
+      (hcoh W hWs L) (ihc L) hi, fun a ↦ ?_⟩
     rw [Finset.sum_cons, ← ihd a]
     exact intersectionNumber_subschemeι_inf _ _ (hcoh W hWs) ihc a
 
-/-- **Additivity of degrees over a closed cover.** Let `X` be a reduced scheme, quasi-compact and
-locally of finite type over a field `k`, covered by a nonempty finite family `s` of closed subsets
-which pairwise meet in finitely many points, and such that line bundles restricted to the reduced
-closed subschemes on the members of `s` have finite-dimensional `H⁰` and `H¹`. Then the degree of
-a line-bundle class on `X` is the sum of its degrees on these reduced closed subschemes. For a
-reduced proper curve, such as a nodal curve, and its irreducible components, this is the
-additivity of degrees over the components. -/
+/-- **Additivity of degrees over a closed cover.** Let `X` be a reduced scheme over a field `k`,
+quasi-compact, quasi-separated and locally of finite type over `k`, covered by a nonempty finite
+family `s` of closed subsets which pairwise meet in finitely many points, and such that line
+bundles restricted to the reduced closed subschemes on the members of `s` have finite-dimensional
+`H⁰` and `H¹`. Then the degree of a line-bundle class on `X` is the sum of its degrees on these
+reduced closed subschemes. For a reduced proper curve, such as a nodal curve, and the cover by its
+irreducible components, this is the additivity of degrees over the components, once the components
+meet in finitely many points and line bundles on them have finite-dimensional cohomology. -/
 theorem eulerDegree_eq_sum_intersectionNumber_vanishingIdeal [QuasiCompact (X ↘ Spec (.of k))]
     [IsReduced X] [QuasiSeparatedSpace X] (s : Finset (Closeds X)) (hs : s.Nonempty)
     (hcover : s.sup id = ⊤)
@@ -327,13 +297,9 @@ theorem eulerDegree_eq_sum_intersectionNumber_vanishingIdeal [QuasiCompact (X �
     (a : LineBundleClass X) :
     eulerDegree k a = ∑ Z ∈ s, intersectionNumber k (vanishingIdeal Z).subschemeι a := by
   have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
-  have h := (intersectionNumber_finset_inf s hmeet hcoh s hs subset_rfl).2 a
-  -- The members of `s` cover the reduced scheme `X`, so their ideal sheaves meet in `⊥`.
-  have hbot : s.inf vanishingIdeal = (⊥ : X.IdealSheafData) := by
-    have hs : s.inf vanishingIdeal = vanishingIdeal (s.sup id) := by
-      simp [Finset.inf_eq_iInf, Finset.sup_eq_iSup]
-    rw [hs, hcover, vanishingIdeal_top, Scheme.nilradical_eq_bot]
-  rw [hbot] at h
+  have h := (intersectionNumber_vanishingIdeal_finset_sup s hmeet hcoh s hs subset_rfl).2 a
+  -- The members of `s` cover the reduced scheme `X`, so the ideal sheaf of their union is `⊥`.
+  rw [hcover, vanishingIdeal_top, Scheme.nilradical_eq_bot] at h
   rw [← h, intersectionNumber_def]
   exact (eulerDegree_pullback_of_isIso (k := k) _ (comp_over _ _) a).symm
 
