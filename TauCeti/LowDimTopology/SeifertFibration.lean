@@ -193,7 +193,7 @@ private theorem nonempty_homeomorph_circle_of_isCoprime {p q : ℤ} (hq : q ≠ 
     · obtain ⟨h₁, h₂⟩ := Prod.ext_iff.1 h
       have hp : t ^ p = s ^ p :=
         Circle.coe_injective (mul_right_cancel₀ ha (congrArg Subtype.val h₁))
-      exact eq_of_zpow_eq_zpow_of_isCoprime hpq hp (mul_right_cancel h₂)
+      exact hpq.eq_of_zpow_eq_zpow hp (mul_right_cancel h₂)
     · ext b
       exact ⟨fun ⟨t, ht⟩ ↦ ⟨t, by rw [← ht], by rw [← ht]⟩,
         fun ⟨t, h₁, h₂⟩ ↦ ⟨t, Prod.ext (Subtype.ext h₁) h₂⟩⟩
