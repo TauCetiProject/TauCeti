@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.QuarticReciprocity.IntCast
-import TauCeti.Algebra.GroupWithZero.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
@@ -210,7 +210,7 @@ private theorem coe_mul_powerResidueSymbolIdeal_add_mul_eq_zpow {ζ : K} {hζ : 
   have hL_sym : ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π₂) : 𝓞 K) :
       K) * ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ (τ π₁)) : 𝓞 K) :
       K) = (-1) ^ ((m ^ 2 - 1) / 8) := by
-    have h := hζ.coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd hm_odd dvd_rfl
+    have h := hζ.powerResidueSymbolIdeal_span_intCast_mk_add_mul_of_dvd hm_odd dvd_rfl
       (hζ.isCoprime_mul_sub_mul_mul_add_mul_of_four hab hcd
         ((isCoprime_span_singleton_iff _ _).mp hcop).symm)
     rw [← hprod] at h
@@ -251,8 +251,8 @@ private theorem coe_quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsP
   have hmasterK := congrArg (algebraMap (𝓞 K) K) (mul_powerResidueSymbolIdeal_add_mul_eq hτ hcop)
   simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap] at hmasterK
   rw [coe_mul_powerResidueSymbolIdeal_add_mul_eq_zpow hτ hπ₁ hπ₂ hab hcd hcop,
-    hπ₂.coe_powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime hcd, hτπ₁,
-    hτπ₁_prim.coe_powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime hab.neg_right,
+    hπ₂.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime hcd, hτπ₁,
+    hτπ₁_prim.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime hab.neg_right,
     ← zpow_add₀ (by norm_num)] at hmasterK
   set eL : ℤ := (m ^ 2 - 1) / 8 + ((m - 1) / 2) * ((c - 1) / 2) + ((m - 1) / 2) * ((a - 1) / 2)
   set eR : ℤ := ((c ^ 2 - 1) / 8 + ((c - 1) / 2) * ((c - 1) / 2)) +

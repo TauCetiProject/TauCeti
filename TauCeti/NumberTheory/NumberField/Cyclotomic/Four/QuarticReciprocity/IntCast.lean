@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.GaussSum
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Complex
-import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
@@ -55,9 +54,7 @@ reciprocity between arbitrary primary elements is deduced in
   and a rational integer `a ≡ 1 (mod 4)`.
 * `TauCeti.IsPrimaryGaussian.quartic_reciprocity_natCast_of_odd`:
   `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4` for primary `π` and an odd natural number `q`.
-* `IsPrimitiveRoot.coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd`,
-  `TauCeti.IsPrimaryGaussian.coe_powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime`:
-  `((x + y i) / n)_4 = (-1) ^ ((n² - 1) / 8)` when `n` is odd, `n ∣ x`, and `gcd(y, n) = 1`, and
+* `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime`:
   `(c / (c + d i))_4 = (-1) ^ ((c² - 1) / 8 + ((c - 1) / 2)²)` for primary `c + d i` with
   `gcd(c, d) = 1`.
 
@@ -520,24 +517,9 @@ theorem IsPrimaryGaussian.quartic_reciprocity_natCast_of_odd {π : 𝓞 K} (hπ 
       omega
   rw [← ha_cast, hπ.quartic_reciprocity_intCast ha_mod.1, ha_mod.2]
 
-/-- For an odd integer `n`, `x` divisible by `n`, and `y` coprime to `n`,
-`((x + y i) / n)_4 = (-1) ^ ((n² - 1) / 8)`, read in `K`. -/
-theorem _root_.IsPrimitiveRoot.coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd {ζ : K}
-    (hζ : IsPrimitiveRoot ζ 4) {n x y : ℤ} (hn : Odd n) (hxn : n ∣ x) (hyn : IsCoprime y n) :
-    ((powerResidueSymbolIdeal (span {(n : 𝓞 K)}) 4
-        (Ideal.Quotient.mk _ ((x : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger)) : 𝓞 K) : K) =
-      (-1) ^ ((n ^ 2 - 1) / 8) := by
-  obtain ⟨q, rfl⟩ := hxn
-  have hmk : Ideal.Quotient.mk (span {(n : 𝓞 K)})
-      (((n * q : ℤ) : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger) =
-      Ideal.Quotient.mk (span {(n : 𝓞 K)}) ((y : 𝓞 K) * hζ.toInteger) :=
-    Ideal.Quotient.eq.mpr (mem_span_singleton.mpr ⟨q, by push_cast; ring⟩)
-  rw [hmk, map_mul, map_mul, map_intCast, powerResidueSymbolIdeal_intCast_four hyn, one_mul]
-  exact hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd hn
-
 /-- For primary `π = c + d i` with coprime coordinates, `(c / π)_4` read in `K` equals
 `(-1) ^ ((c² - 1) / 8 + ((c - 1) / 2)²)`. -/
-theorem IsPrimaryGaussian.coe_powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime {ζ : K}
+theorem IsPrimaryGaussian.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime {ζ : K}
     {hζ : IsPrimitiveRoot ζ 4} {c d : ℤ}
     (hπ : IsPrimaryGaussian ((c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger)) (hcd : IsCoprime c d) :
     ((powerResidueSymbolIdeal (span {(c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger}) 4
@@ -546,7 +528,7 @@ theorem IsPrimaryGaussian.coe_powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCo
   have hcoord := (hζ.isPrimaryGaussian_add_mul_iff (a := c) (b := d)).mp hπ
   have hc_odd : Odd c := by rw [Int.odd_iff]; simp only [Int.ModEq] at hcoord; omega
   rw [hπ.coe_quartic_reciprocity_intCast_add_mul_of_odd hc_odd,
-    hζ.coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd hc_odd dvd_rfl hcd.symm,
+    hζ.powerResidueSymbolIdeal_span_intCast_mk_add_mul_of_dvd hc_odd dvd_rfl hcd.symm,
     ← zpow_add₀ (by norm_num)]
 
 /-! ### Examples -/
