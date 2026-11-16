@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
+import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Periodic orbits at the ends of finite-energy Floer half-cylinders in a manifold
@@ -209,27 +210,24 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_of_floer_o
       (contMDiffOn_iff_contDiffOn.1 (he.comp_contMDiffOn hu))
       (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) (hK.image he.continuous)
       (fun s hs t ↦ mem_image_of_mem e (huK s hs t)) hYc hYper hfin
-  -- The limit lies in the closed set `e(K)`.
-  have hmem : ∀ t, ∃ p ∈ K, e p = x' t := fun t ↦ (hK.image he.continuous).isClosed.mem_of_tendsto
-    (hconv.tendsto_at t) (Eventually.of_forall fun n ↦ mem_image_of_mem e (huK _ (hφa n) t))
-  choose x hxK hx using hmem
+  -- The limit is read back in `K` through `e`.
+  have : Nonempty M := ⟨u (a + 1, 0)⟩
+  obtain ⟨x, hxc, hxK, hx, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := univ)
+    he.continuous.continuousOn he_inj (x := fun n t ↦ u (φ n, t))
+    (fun n t _ ↦ huK _ (hφa n) t)
+    (continuous_iff_continuousAt.2 fun t ↦ (hx' t).continuousAt).continuousOn
+    fun t _ ↦ hconv.tendsto_at t
+  rw [continuousOn_univ] at hxc
+  replace hxK (t : ℝ) : x t ∈ K := hxK (mem_univ t)
+  replace hx (t : ℝ) : e (x t) = x' t := hx (mem_univ t)
   have hex : e ∘ x = x' := funext hx
-  have hxc : Continuous x := by
-    have h : Continuous fun t ↦ (⟨x t, hxK t⟩ : K) :=
-      hemb.isEmbedding.continuous_iff.2 <| hex ▸
-        continuous_iff_continuousAt.2 fun t ↦ (hx' t).continuousAt
-    exact continuous_subtype_val.comp h
   refine ⟨x, mem_periodicSolutions.2 ⟨fun t ↦ ?_, fun t ↦ he_inj (hxK _) (hxK _)
     (by rw [hx, hx, hx'per t])⟩, hxK, φ, hφa, hφ, hex ▸ hconv, fun t ↦ ?_,
     hL2.congr fun n ↦ intervalIntegral.integral_congr fun t _ ↦ ?_⟩
   · refine hxc.continuousAt.hasMFDerivAt_of_hasDerivAt_comp (hde _ (hxK t)) ?_
     rw [hex, ← hYe' t _ (hxK t), hx]
     exact hx' t
-  · -- Inside `K`, convergence is measured by `e`.
-    have h : Tendsto (fun n ↦ (⟨u (φ n, t), huK _ (hφa n) t⟩ : K)) atTop (𝓝 ⟨x t, hxK t⟩) :=
-      hemb.isEmbedding.tendsto_nhds_iff.2 <| by
-        simpa only [comp_def, hx] using hconv.tendsto_at t
-    exact (continuous_subtype_val.tendsto _).comp h
+  · exact hpt t (mem_univ t)
   · rw [sliceDefect_comp_eq_mvfderiv_sub (he.mdifferentiableAt one_ne_zero)
       (hmd (φ n, t) ⟨hφa n, mem_univ t⟩) (hYe' t _ (huK _ (hφa n) t))]
 
