@@ -136,26 +136,26 @@ variable {EG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimens
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [MulAction G M] [ContMDiffSMul IG I ∞ G M] [ProperSMul G M]
 
-/-- **Transverse slice tubes at free points of proper smooth actions.** Let a finite-dimensional
-real Lie group `G` act smoothly and properly on a finite-dimensional boundaryless smooth manifold
-`M`, and let `x : M` have trivial stabilizer. Then there exist a slice
-`σ : (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) → M` sending `0` to `x` and an open
-neighbourhood `U` of `0` on which `σ` is smooth and such that the slice map `(g, s) ↦ g • σ s` is
-injective on `G × U` and a smooth local diffeomorphism at every point of `G × U`. -/
-theorem exists_injOn_isLocalDiffeomorphOn_smul_slice {x : M}
-    (hx : MulAction.stabilizer G x = ⊥) :
-    ∃ (σ : (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) → M)
-      (U : Set (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)),
-      σ 0 = x ∧ IsOpen U ∧ 0 ∈ U ∧
-      ContMDiffOn 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) I ∞ σ U ∧
-      InjOn (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦ p.1 • σ p.2)
-        (univ ×ˢ U) ∧
-      IsLocalDiffeomorphOn
-        (IG.prod 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)) I ∞
-        (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦ p.1 • σ p.2)
-        (univ ×ˢ U) := by
-  have : CompleteSpace EG := FiniteDimensional.completeSpace ℝ EG
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+variable (IG G I) in
+/-- Transverse slice tube data around `x : M`: a slice `σ` sending `0` to `x` and an open
+neighbourhood `U` of `0` on which `σ` is smooth and `(g, s) ↦ g • σ s` is an injective smooth local
+diffeomorphism on `G × U`. -/
+private structure SliceTube (x : M) where
+  σ : (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) → M
+  U : Set (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
+  σ_zero : σ 0 = x
+  isOpen : IsOpen U
+  zero_mem : 0 ∈ U
+  contMDiffOn : ContMDiffOn 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) I ∞ σ U
+  injOn : InjOn (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦ p.1 • σ p.2)
+    (univ ×ˢ U)
+  isLocalDiffeomorphOn : IsLocalDiffeomorphOn
+    (IG.prod 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)) I ∞
+    (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦ p.1 • σ p.2)
+    (univ ×ˢ U)
+
+private theorem nonempty_sliceTube {x : M} (hx : MulAction.stabilizer G x = ⊥) :
+    Nonempty (SliceTube IG G I x) := by
   have : T2Space G := IG.t2Space_of_lieGroup ∞
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   have hiso := isotropy_fundamental_eq_bot_of_stabilizer_eq_bot (I := IG) (I' := I) hx
@@ -204,8 +204,36 @@ theorem exists_injOn_isLocalDiffeomorphOn_smul_slice {x : M}
       hlocU.contMDiffOn.comp (contMDiff_const.prodMk contMDiff_id).contMDiffOn
         fun s hs ↦ ⟨mem_univ _, hs⟩
     simpa only [one_smul] using h1
-  exact ⟨σ, U, hσ0, hU_open, h0U, hσU,
-    hinjU₀.mono (prod_mono_right fun _ hu ↦ (hU_sub hu).1), hlocU⟩
+  exact ⟨{
+    σ := σ
+    U := U
+    σ_zero := hσ0
+    isOpen := hU_open
+    zero_mem := h0U
+    contMDiffOn := hσU
+    injOn := hinjU₀.mono (prod_mono_right fun _ hu ↦ (hU_sub hu).1)
+    isLocalDiffeomorphOn := hlocU }⟩
+
+/-- **Transverse slice tubes at free points of proper smooth actions.** Let a finite-dimensional
+real Lie group `G` act smoothly and properly on a finite-dimensional boundaryless smooth manifold
+`M`, and let `x : M` have trivial stabilizer. Then there exist a slice
+`σ : (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) → M` sending `0` to `x` and an open
+neighbourhood `U` of `0` on which `σ` is smooth and such that the slice map `(g, s) ↦ g • σ s` is
+injective on `G × U` and a smooth local diffeomorphism at every point of `G × U`. -/
+theorem exists_injOn_isLocalDiffeomorphOn_smul_slice {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    ∃ (σ : (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) → M)
+      (U : Set (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)),
+      σ 0 = x ∧ IsOpen U ∧ 0 ∈ U ∧
+      ContMDiffOn 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) I ∞ σ U ∧
+      InjOn (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦ p.1 • σ p.2)
+        (univ ×ˢ U) ∧
+      IsLocalDiffeomorphOn
+        (IG.prod 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)) I ∞
+        (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦ p.1 • σ p.2)
+        (univ ×ˢ U) :=
+  let ⟨t⟩ := nonempty_sliceTube (IG := IG) (I := I) hx
+  ⟨t.σ, t.U, t.σ_zero, t.isOpen, t.zero_mem, t.contMDiffOn, t.injOn, t.isLocalDiffeomorphOn⟩
 
 end PointwiseSlice
 
@@ -221,66 +249,35 @@ variable {EG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimens
   (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [MulAction G M] [ContMDiffSMul IG I ∞ G M] [ProperSMul G M] [IsCancelSMul G M]
 
-/-- Chosen slice map `Fin (dim M - dim G) → ℝ → M` through `x`. -/
-private def sliceFn (x : M) : (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) → M :=
-  (exists_injOn_isLocalDiffeomorphOn_smul_slice (IG := IG) (G := G) (I := I)
-    (IsCancelSMul.stabilizer_eq_bot x)).choose
+/-- Chosen transverse slice tube around `x : M`. -/
+private def sliceTube (x : M) : SliceTube IG G I x :=
+  (nonempty_sliceTube (IG := IG) (G := G) (I := I) (IsCancelSMul.stabilizer_eq_bot x)).some
 
 /-- Chosen open slice parameter domain around `0` for `x`. -/
 private def sliceOpens (x : M) :
     TopologicalSpace.Opens (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) :=
-  let h := (exists_injOn_isLocalDiffeomorphOn_smul_slice (IG := IG) (G := G) (I := I)
-    (IsCancelSMul.stabilizer_eq_bot x)).choose_spec
-  ⟨h.choose, h.choose_spec.2.1⟩
-
-private theorem sliceFn_zero (x : M) : sliceFn IG G I M x 0 = x :=
-  (exists_injOn_isLocalDiffeomorphOn_smul_slice (IG := IG) (G := G) (I := I)
-    (IsCancelSMul.stabilizer_eq_bot x)).choose_spec.choose_spec.1
-
-private theorem zero_mem_sliceOpens (x : M) : (0 : Fin _ → ℝ) ∈ sliceOpens IG G I M x :=
-  (exists_injOn_isLocalDiffeomorphOn_smul_slice (IG := IG) (G := G) (I := I)
-    (IsCancelSMul.stabilizer_eq_bot x)).choose_spec.choose_spec.2.2.1
-
-private theorem contMDiffOn_sliceFn (x : M) :
-    ContMDiffOn 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) I ∞
-      (sliceFn IG G I M x) (sliceOpens IG G I M x) :=
-  (exists_injOn_isLocalDiffeomorphOn_smul_slice (IG := IG) (G := G) (I := I)
-    (IsCancelSMul.stabilizer_eq_bot x)).choose_spec.choose_spec.2.2.2.1
-
-private theorem injOn_smul_sliceFn (x : M) :
-    InjOn (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦
-      p.1 • sliceFn IG G I M x p.2) (univ ×ˢ (sliceOpens IG G I M x : Set _)) :=
-  (exists_injOn_isLocalDiffeomorphOn_smul_slice (IG := IG) (G := G) (I := I)
-    (IsCancelSMul.stabilizer_eq_bot x)).choose_spec.choose_spec.2.2.2.2.1
-
-private theorem isLocalDiffeomorphOn_smul_sliceFn (x : M) :
-    IsLocalDiffeomorphOn
-      (IG.prod 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)) I ∞
-      (fun p : G × (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ↦
-        p.1 • sliceFn IG G I M x p.2)
-      (univ ×ˢ (sliceOpens IG G I M x : Set _)) :=
-  (exists_injOn_isLocalDiffeomorphOn_smul_slice (IG := IG) (G := G) (I := I)
-    (IsCancelSMul.stabilizer_eq_bot x)).choose_spec.choose_spec.2.2.2.2.2
+  ⟨(sliceTube IG G I M x).U, (sliceTube IG G I M x).isOpen⟩
 
 /-- The open slice-chart parametrization `u ↦ ⟦σ_x u⟧` of the orbit space near `⟦x⟧`. -/
 private def sliceChart (x : M) (u : sliceOpens IG G I M x) : MulAction.orbitRel.Quotient G M :=
-  Quotient.mk (MulAction.orbitRel G M) (sliceFn IG G I M x u)
+  Quotient.mk (MulAction.orbitRel G M) ((sliceTube IG G I M x).σ u)
 
 private theorem contMDiff_sliceFn_coe (x : M) :
     ContMDiff 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) I ∞
-      (fun u : sliceOpens IG G I M x ↦ sliceFn IG G I M x u) :=
-  (contMDiffOn_sliceFn IG G I M x).comp_contMDiff contMDiff_subtype_val fun u ↦ u.2
+      (fun u : sliceOpens IG G I M x ↦ (sliceTube IG G I M x).σ u) :=
+  (sliceTube IG G I M x).contMDiffOn.comp_contMDiff contMDiff_subtype_val fun u ↦ u.2
 
 private theorem isOpenEmbedding_sliceChart (x : M) :
     IsOpenEmbedding (sliceChart IG G I M x) :=
-  MulAction.isOpenEmbedding_quotientMk_slice (sliceOpens IG G I M x).isOpen
-    (injOn_smul_sliceFn IG G I M x)
-    (isLocalDiffeomorphOn_smul_sliceFn IG G I M x).isLocalHomeomorphOn
+  MulAction.isOpenEmbedding_quotientMk_slice (sliceTube IG G I M x).isOpen
+    (sliceTube IG G I M x).injOn
+    (sliceTube IG G I M x).isLocalDiffeomorphOn.isLocalHomeomorphOn
 
 private theorem exists_sliceChart_eq (q : MulAction.orbitRel.Quotient G M) :
     ∃ (x : M) (u : sliceOpens IG G I M x), sliceChart IG G I M x u = q :=
   Quotient.inductionOn q fun x ↦
-    ⟨x, ⟨0, zero_mem_sliceOpens IG G I M x⟩, congrArg (Quotient.mk _) (sliceFn_zero IG G I M x)⟩
+    ⟨x, ⟨0, (sliceTube IG G I M x).zero_mem⟩,
+      congrArg (Quotient.mk _) (sliceTube IG G I M x).σ_zero⟩
 
 /-- Any smooth map `f : P → M` whose value at `z` meets the orbit of `σ_y v` factors modulo `G`
 near `z` through a smooth map into `sliceOpens y`. Applied to another slice this gives smooth
@@ -297,8 +294,8 @@ private theorem exists_contMDiffAt_sliceChart_comp_eq
         sliceChart IG G I M y ∘ T =ᶠ[𝓝 z] Quotient.mk (MulAction.orbitRel G M) ∘ f := by
   classical
   obtain ⟨t, ht_smooth, -, ht_ev⟩ :=
-    exists_contMDiffAt_quotientMk_slice_eq_iff (sliceOpens IG G I M y).isOpen
-      (injOn_smul_sliceFn IG G I M y) (isLocalDiffeomorphOn_smul_sliceFn IG G I M y)
+    exists_contMDiffAt_quotientMk_slice_eq_iff (sliceTube IG G I M y).isOpen
+      (sliceTube IG G I M y).injOn (sliceTube IG G I M y).isLocalDiffeomorphOn
       hf v.2 hv
   let T : P → sliceOpens IG G I M y := fun z' ↦
     if h : t z' ∈ sliceOpens IG G I M y then ⟨t z', h⟩ else v
@@ -390,8 +387,8 @@ theorem contMDiff_quotientMk_freeProperQuotient :
   intro x
   obtain ⟨T, hT_smooth, hT_eq⟩ :=
     FreeProperQuotient.exists_contMDiffAt_sliceChart_comp_eq IG G I M
-      (f := id) contMDiffAt_id x ⟨0, FreeProperQuotient.zero_mem_sliceOpens IG G I M x⟩
-      (congrArg (Quotient.mk _) (FreeProperQuotient.sliceFn_zero IG G I M x))
+      (f := id) contMDiffAt_id x ⟨0, (FreeProperQuotient.sliceTube IG G I M x).zero_mem⟩
+      (congrArg (Quotient.mk _) (FreeProperQuotient.sliceTube IG G I M x).σ_zero)
   exact ((isLocalDiffeomorph_sliceChart (IG := IG) x (T x)).contMDiffAt.comp x
     hT_smooth).congr_of_eventuallyEq hT_eq.symm
 
@@ -403,10 +400,10 @@ theorem surjective_mfderiv_quotientMk_freeProperQuotient (x : M) :
   let := freeProperQuotientChartedSpace IG G I M
   let K := 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
   let u₀ : FreeProperQuotient.sliceOpens IG G I M x :=
-    ⟨0, FreeProperQuotient.zero_mem_sliceOpens IG G I M x⟩
+    ⟨0, (FreeProperQuotient.sliceTube IG G I M x).zero_mem⟩
   let g : FreeProperQuotient.sliceOpens IG G I M x → M :=
-    fun u ↦ FreeProperQuotient.sliceFn IG G I M x u
-  have hgu₀ : g u₀ = x := FreeProperQuotient.sliceFn_zero IG G I M x
+    fun u ↦ (FreeProperQuotient.sliceTube IG G I M x).σ u
+  have hgu₀ : g u₀ = x := (FreeProperQuotient.sliceTube IG G I M x).σ_zero
   have hq : MDifferentiableAt I K (Quotient.mk (MulAction.orbitRel G M)) x :=
     (contMDiff_quotientMk_freeProperQuotient (IG := IG) x).mdifferentiableAt (by simp)
   have hg : MDifferentiableAt K I g u₀ :=
@@ -418,6 +415,18 @@ theorem surjective_mfderiv_quotientMk_freeProperQuotient (x : M) :
   refine ⟨mfderiv K I g u₀ v, ?_⟩
   rw [← mfderiv_comp_apply_of_eq u₀ hq hg hgu₀ v]
   exact hv
+
+variable (IG G I) in
+/-- At every `x : M`, the orbit tangent space has dimension `dim EG`, hence `dim EG ≤ dim E`. -/
+private theorem finrank_orbitTangent_and_le (x : M) :
+    Module.finrank ℝ ((InfinitesimalAction.fundamental IG G I M).orbitTangent x) =
+      Module.finrank ℝ EG ∧
+    Module.finrank ℝ EG ≤ Module.finrank ℝ E := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  have h := finrank_orbitTangent_fundamental_of_stabilizer_eq_bot (I := IG) (I' := I)
+    (IsCancelSMul.stabilizer_eq_bot (G := G) x)
+  exact ⟨h, h ▸ Submodule.finrank_le _⟩
 
 /-- **The orbit projection of a free proper smooth Lie group action is a smooth submersion with
 complement `EG`.** -/
@@ -433,17 +442,7 @@ theorem isSubmersionOfComplement_quotientMk_freeProperQuotient :
     (contMDiff_quotientMk_freeProperQuotient (IG := IG) (G := G) (I := I) (M := M)).contMDiffOn
       |>.isSubmersionAtOfComplement_of_surjective_mfderiv isOpen_univ (mem_univ x) (by simp)
         (surjective_mfderiv_quotientMk_freeProperQuotient (IG := IG) (G := G) (I := I) (M := M) x)
-  -- At `x : M`, the orbit tangent space embeds into `E` with dimension `dim EG`, so
-  -- `dim EG ≤ dim E` and the standard complement has dimension `dim EG`.
-  have : CompleteSpace EG := FiniteDimensional.completeSpace ℝ EG
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have : T2Space G := IG.t2Space_of_lieGroup ∞
-  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
-  have hdimO := finrank_orbitTangent_fundamental_of_stabilizer_eq_bot (I := IG) (I' := I)
-    (IsCancelSMul.stabilizer_eq_bot (G := G) x)
-  have hle : Module.finrank ℝ EG ≤ Module.finrank ℝ E := by
-    rw [← hdimO]
-    exact Submodule.finrank_le _
+  obtain ⟨_, hle⟩ := finrank_orbitTangent_and_le IG G I x
   let L : (Fin (Module.finrank ℝ E -
       Module.finrank ℝ (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)) → ℝ) ≃L[ℝ] EG :=
     ContinuousLinearEquiv.ofFinrankEq (by
@@ -469,10 +468,6 @@ theorem ker_mfderiv_quotientMk_freeProperQuotient (x : M) :
       (Quotient.mk (MulAction.orbitRel G M)) x).ker =
       (InfinitesimalAction.fundamental IG G I M).orbitTangent x := by
   let := freeProperQuotientChartedSpace IG G I M
-  have : CompleteSpace EG := FiniteDimensional.completeSpace ℝ EG
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have : T2Space G := IG.t2Space_of_lieGroup ∞
-  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   have : FiniteDimensional ℝ (TangentSpace I x) :=
     (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
   let K := 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
@@ -497,10 +492,7 @@ theorem ker_mfderiv_quotientMk_freeProperQuotient (x : M) :
     rw [hconst, mfderiv_const, zero_apply] at hcomp
     exact hcomp.symm
   -- Both subspaces have dimension `dim EG`, hence coincide.
-  have hdimO := finrank_orbitTangent_fundamental_of_stabilizer_eq_bot (I := IG) (I' := I)
-    (IsCancelSMul.stabilizer_eq_bot (G := G) x)
-  have hle_dim : Module.finrank ℝ EG ≤ Module.finrank ℝ E :=
-    hdimO ▸ Submodule.finrank_le _
+  obtain ⟨hdimO, hle_dim⟩ := finrank_orbitTangent_and_le IG G I x
   have hdimK : Module.finrank ℝ D.ker = Module.finrank ℝ EG := by
     have hk := D.toLinearMap.finrank_ker_eq_sub_of_surjective
       (surjective_mfderiv_quotientMk_freeProperQuotient (IG := IG) (G := G) x)
@@ -863,8 +855,8 @@ theorem maximalAtlas_freeProperQuotient_eq
     rw [hφ.toOpenPartialHomeomorph_target]
     rintro _ ⟨w, rfl⟩
     refine ContMDiffAt.contMDiffWithinAt ?_
-    refine ((hq.isSubmersionAt (FreeProperQuotient.sliceFn IG G I M x w)).contMDiffAt_comp_iff
-      le_rfl).1 ?_
+    refine ((hq.isSubmersionAt
+        ((FreeProperQuotient.sliceTube IG G I M x).σ w)).contMDiffAt_comp_iff le_rfl).1 ?_
     obtain ⟨T, hT_smooth, hT_eq⟩ :=
       FreeProperQuotient.exists_contMDiffAt_sliceChart_comp_eq IG G I M
         (f := id) contMDiffAt_id x w rfl
@@ -882,9 +874,9 @@ theorem maximalAtlas_freeProperQuotient_eq
   have hu : u ∈ Φ.source := by simp [Φ, e]
   exact isLocalDiffeomorphAt_of_eqOn (Φ := Φ) hu fun _ _ ↦ by simp [Φ, e, φ]
 
-/-- **Discrete Lie groups act by smooth local diffeomorphisms onto the free proper quotient.** When
-`G` carries the discrete topology, the orbit projection `M → M ⧸ G` is a smooth local
-diffeomorphism for `TauCeti.freeProperQuotientChartedSpace`. -/
+/-- **For discrete `G`, the orbit projection is a smooth local diffeomorphism.** When the Lie group
+`G` carries the discrete topology, `Quotient.mk (MulAction.orbitRel G M) : M → M ⧸ G` is a smooth
+local diffeomorphism for `TauCeti.freeProperQuotientChartedSpace`. -/
 theorem isLocalDiffeomorph_quotientMk_freeProperQuotient_of_discreteTopology
     [DiscreteTopology G] :
     letI := freeProperQuotientChartedSpace IG G I M
@@ -893,8 +885,6 @@ theorem isLocalDiffeomorph_quotientMk_freeProperQuotient_of_discreteTopology
       (Quotient.mk (MulAction.orbitRel G M)) := by
   let := freeProperQuotientChartedSpace IG G I M
   have := isManifold_freeProperQuotient (IG := IG) (G := G) (I := I) (M := M)
-  have : CompleteSpace EG := FiniteDimensional.completeSpace ℝ EG
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let K := 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
   intro x
   -- Since `G` is discrete, the orbit map is locally constant at `1`, so `𝔤 · x = 0`.
@@ -905,13 +895,8 @@ theorem isLocalDiffeomorph_quotientMk_freeProperQuotient_of_discreteTopology
     have hr := range_mfderiv_smul_const (I := IG) (I' := I) x (1 : G)
     rw [← one_smul G x, ← hr, hconst.mfderiv_eq, mfderiv_const]
     exact LinearMap.range_zero
-  have : T2Space G := IG.t2Space_of_lieGroup ∞
-  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   have hdimG : Module.finrank ℝ EG = 0 := by
-    have hdimO := finrank_orbitTangent_fundamental_of_stabilizer_eq_bot (I := IG) (I' := I)
-      (IsCancelSMul.stabilizer_eq_bot (G := G) x)
-    rw [horb, finrank_bot] at hdimO
-    exact hdimO.symm
+    rw [← (finrank_orbitTangent_and_le IG G I x).1, horb, finrank_bot]
   have hinj : Injective (mfderiv I K (Quotient.mk (MulAction.orbitRel G M)) x) :=
     LinearMap.ker_eq_bot.1
       ((ker_mfderiv_quotientMk_freeProperQuotient (IG := IG) (G := G) x).trans horb)
