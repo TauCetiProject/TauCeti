@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
 import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.LinearAlgebra.FixedSubmodule
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
@@ -26,34 +27,35 @@ simply-laced or orthogonality hypothesis is imposed:
 * **Uniqueness**: over a characteristic-zero domain, two orbit-sum realizations of `(P, b, σ)` are
   equal (`RootPairing.OrbitSumRealization.instSubsingleton`). Indeed `RootPairing.IsRootSystem.ext`
   identifies the underlying root pairings from the evaluation and root-vector equations, and
-  `RootPairing.Base.ext` then identifies the bases from the simple-support equation.
-* **Positivity**: when `σ` permutes the simple roots of `b`, a folded root is positive for the
-  folded base if and only if it is the orbit sum of a positive root of `b`
+  `RootPairing.Base.ext` then identifies the bases from the simple-support characterization.
+* **Positivity**: over a characteristic-zero ring, a folded root is positive for the folded base if
+  and only if it is the orbit sum of a positive root of `b`
   (`RootPairing.OrbitSumRealization.isPos_iff`).
-* **Fixed-space simple-orbit frame**: when `P` is a root system and `σ` permutes the simple roots
-  of `b`, the simple-orbit sums are linearly independent and, over a characteristic-zero field,
-  span the fixed submodule (`RootPairing.linearIndepOn_orbitSum_support`,
-  `RootPairing.span_fixedSubmodule_orbitSum_support_eq_top`).
-* **Identity fold**: for `σ = 1`, every finite reduced crystallographic root system admits an
-  orbit-sum realization isomorphic to `(P, b)` (`RootPairing.OrbitSumRealization.one`,
-  `RootPairing.OrbitSumRealization.equivOne`), including in rank zero.
-* **Transport along intertwining equivalences**: a based equivalence of root pairings intertwining
-  two automorphisms transports orbit-sum realizations and induces a based equivalence between any
-  two realizations (`RootPairing.OrbitSumRealization.map`,
-  `RootPairing.OrbitSumRealization.equivOfIntertwining`).
+* **Identity fold**: for `σ = 1` over any commutative ring, every finite reduced crystallographic
+  root system admits an orbit-sum realization isomorphic to `(P, b)`
+  (`RootPairing.OrbitSumRealization.one`, `RootPairing.OrbitSumRealization.oneEquiv`), including in
+  rank zero; over a characteristic-zero domain, `RootPairing.OrbitSumRealization.equivOne` gives the
+  canonical equivalence to any orbit-sum realization of `1`.
+* **Transport along intertwining equivalences**: over any commutative ring, a based equivalence of
+  root pairings intertwining two automorphisms transports orbit-sum realizations along an induced
+  based equivalence (`RootPairing.OrbitSumRealization.map`,
+  `RootPairing.OrbitSumRealization.mapEquiv`); over a characteristic-zero domain, an intertwining
+  equivalence induces an equivalence between any two realizations, carrying the base when the
+  equivalence is based (`RootPairing.OrbitSumRealization.equivOfIntertwining`,
+  `RootPairing.OrbitSumRealization.baseMap_equivOfIntertwining`).
 
 ## Main definitions
 
-* `RootPairing.foldedIndex`: the folded root index attached to a root index `i` via its orbit sum.
 * `RootPairing.OrbitSumRealization`: bundled specification of an orbit-sum fold on the fixed
   submodule and its dual.
-* `RootPairing.OrbitSumRealization.one`: the orbit-sum realization of the identity automorphism.
-* `RootPairing.OrbitSumRealization.equivOne`: the canonical equivalence from `P` to an orbit-sum
-  realization of `1 : P.Aut`.
-* `RootPairing.OrbitSumRealization.map`: transport of an orbit-sum realization along an
-  intertwining based equivalence.
-* `RootPairing.OrbitSumRealization.equivOfIntertwining`: the equivalence between two orbit-sum
-  realizations induced by an intertwining equivalence.
+* `RootPairing.OrbitSumRealization.one` and `RootPairing.OrbitSumRealization.oneEquiv`: the
+  orbit-sum realization of `1 : P.Aut` and its equivalence with `P` over any commutative ring.
+* `RootPairing.OrbitSumRealization.equivOne`: the canonical equivalence from `P` to any orbit-sum
+  realization of `1 : P.Aut` over a characteristic-zero domain.
+* `RootPairing.OrbitSumRealization.map` and `RootPairing.OrbitSumRealization.mapEquiv`: transport of
+  an orbit-sum realization along an intertwining based equivalence over any commutative ring.
+* `RootPairing.OrbitSumRealization.equivOfIntertwining`: the equivalence between any two orbit-sum
+  realizations induced by an intertwining equivalence over a characteristic-zero domain.
 
 ## Main results
 
@@ -62,12 +64,8 @@ simply-laced or orthogonality hypothesis is imposed:
 * `RootPairing.OrbitSumRealization.coroot_eq_of_preReflection_mapsTo`: each folded coroot functional
   is uniquely determined by its reflection stability on the folded roots.
 * `RootPairing.OrbitSumRealization.isPos_foldedIndex_iff` and
-  `RootPairing.OrbitSumRealization.isPos_iff`: folded positivity agrees with original positivity.
-* `RootPairing.foldedIndex_eq_iff_mem_orbitIndices_of_mem_support`: two simple roots determine the
-  same folded root index if and only if they lie in the same `σ`-orbit.
-* `RootPairing.linearIndepOn_orbitSum_support` and
-  `RootPairing.span_fixedSubmodule_orbitSum_support_eq_top`: the simple-orbit sums are linearly
-  independent and span the fixed submodule.
+  `RootPairing.OrbitSumRealization.isPos_iff`: folded positivity agrees with original positivity
+  over a characteristic-zero ring.
 
 ## References
 
@@ -79,108 +77,6 @@ public section
 namespace RootPairing
 
 open Finset Function Set Submodule TauCeti
-
-section FoldedIndex
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : RootPairing ι R M N) [Finite ι] (σ : P.Aut)
-
-/-- The folded root index attached to `i`, namely its orbit sum viewed in `P.foldedIndices σ`. -/
-noncomputable def foldedIndex (i : ι) : P.foldedIndices σ :=
-  ⟨P.orbitSum σ i, P.orbitSum_mem_foldedIndices σ i⟩
-
-@[simp]
-theorem coe_foldedIndex (i : ι) :
-    ((P.foldedIndex σ i : P.foldedIndices σ) : M) = P.orbitSum σ i := by
-  rw [foldedIndex]
-
-theorem foldedIndex_surjective : Surjective (P.foldedIndex σ) := fun u ↦ by
-  obtain ⟨i, hi⟩ := P.mem_foldedIndices.mp u.2
-  exact ⟨i, Subtype.ext hi⟩
-
-@[simp]
-theorem foldedIndex_indexEquiv (i : ι) :
-    P.foldedIndex σ (σ.indexEquiv i) = P.foldedIndex σ i :=
-  Subtype.ext (P.orbitSum_indexEquiv σ i)
-
-variable {P σ} in
-/-- Two indices in the same `σ`-orbit determine the same folded root index. -/
-theorem foldedIndex_eq_of_mem {i j : ι} (h : j ∈ P.orbitIndices σ i) :
-    P.foldedIndex σ j = P.foldedIndex σ i :=
-  Subtype.ext (P.orbitSum_eq_of_mem h)
-
-/-- Each folded root vector lies in the fixed submodule of `σ.weightMap`. -/
-theorem coe_mem_fixedSubmodule (u : P.foldedIndices σ) :
-    (u : M) ∈ LinearMap.fixedSubmodule σ.weightMap := by
-  obtain ⟨i, hi⟩ := P.mem_foldedIndices.mp u.2
-  exact hi ▸ P.orbitSum_mem_fixedSubmodule σ i
-
-variable {P σ} in
-/-- If `σ` maps `b.support` into itself, the entire `σ`-orbit of a simple root lies in
-`b.support`. -/
-theorem mem_support_of_mem_orbitIndices {b : P.Base}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {s k : ι}
-    (hs : s ∈ b.support) (hk : k ∈ P.orbitIndices σ s) : k ∈ b.support := by
-  obtain ⟨m, rfl⟩ := P.mem_orbitIndices_iff_exists_pow.mp hk
-  clear hk
-  induction m with
-  | zero => exact hs
-  | succ m ih =>
-    rw [pow_succ', Equiv.Perm.mul_apply]
-    exact hσ _ ih
-
-end FoldedIndex
-
-/-! ### Auxiliary helpers for automorphism powers and pairing pushforwards -/
-
-section Helpers
-
-variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
-
-private theorem weightMap_pow_root (P : RootPairing ι R M N) (σ : P.Aut) (t : ℕ) (j : ι) :
-    (σ ^ t : P.Aut).weightMap (P.root j) = P.root ((σ.indexEquiv ^ t) j) := by
-  induction t with
-  | zero => simp
-  | succ t ih =>
-    have hmul : (σ ^ (t + 1) : P.Aut).weightMap (P.root j) =
-        σ.weightMap ((σ ^ t : P.Aut).weightMap (P.root j)) := by
-      rw [pow_succ']
-      rfl
-    rw [hmul, ih, Hom.root_weightMap_apply, pow_succ', Equiv.Perm.mul_apply]
-
-private theorem weightMap_pow_of_fixed {P : RootPairing ι R M N} {σ : P.Aut} {x : M}
-    (hx : σ.weightMap x = x) (t : ℕ) : (σ ^ t : P.Aut).weightMap x = x := by
-  induction t with
-  | zero => simp
-  | succ t ih => simp [pow_succ', Equiv.mul_eq_comp, ih, hx]
-
-/-- The canonical equivalence from `P` to `P.map e f g`. -/
-private def equivMap (P : RootPairing ι R M N)
-    (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂) (g : N ≃ₗ[R] N₂) : P.Equiv (P.map e f g) where
-  weightMap := f.toLinearMap
-  coweightMap := g.symm.toLinearMap
-  indexEquiv := e
-  weight_coweight_transpose := by ext; simp [RootPairing.map]
-  root_weightMap := by ext; simp [RootPairing.map]
-  coroot_coweightMap := by ext; simp [RootPairing.map]
-  bijective_weightMap := f.bijective
-  bijective_coweightMap := g.symm.bijective
-
-private theorem isReduced_of_equiv {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
-    [P.IsReduced] (e : P.Equiv Q) : Q.IsReduced where
-  eq_or_eq_neg i j hij := by
-    obtain ⟨i₀, rfl⟩ := e.indexEquiv.surjective i
-    obtain ⟨j₀, rfl⟩ := e.indexEquiv.surjective j
-    rw [e.toHom.linearIndependent_root_indexEquiv_iff e.bijective_weightMap.injective] at hij
-    rcases IsReduced.eq_or_eq_neg (P := P) i₀ j₀ hij with hpos | hneg
-    · refine .inl ?_
-      rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, hpos]
-    · refine .inr ?_
-      rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, hneg, map_neg]
-
-end Helpers
 
 /-! ### Specification of an orbit-sum realization -/
 
@@ -210,11 +106,12 @@ structure OrbitSumRealization (P : RootPairing ι R M N) [Finite ι]
   /-- Each folded root is its orbit-sum vector in the ambient space. -/
   root_eq : ∀ i, (pairing.root i : M) = (i : M)
   /-- Simple folded roots are exactly the orbit sums of the original simple roots. -/
-  base_eq : ∀ i, i ∈ base.support ↔
+  mem_support_base_iff : ∀ i, i ∈ base.support ↔
     ∃ j ∈ b.support, P.orbitSum σ j = (i : M)
 
 attribute [instance] OrbitSumRealization.rootSystem
   OrbitSumRealization.reduced OrbitSumRealization.crystallographic
+attribute [simp] OrbitSumRealization.evaluation OrbitSumRealization.root_eq
 
 namespace OrbitSumRealization
 
@@ -227,22 +124,12 @@ theorem toLinearMap_eq :
   ext x y
   exact F.evaluation x y
 
-@[simp]
-theorem toLinearMap_apply (x : LinearMap.fixedSubmodule σ.weightMap)
-    (y : Module.Dual R (LinearMap.fixedSubmodule σ.weightMap)) :
-    F.pairing.toLinearMap x y = y x :=
-  F.evaluation x y
-
 /-- Each coroot functional `F.pairing.coroot' i` coincides with the dual vector
 `F.pairing.coroot i`. -/
 theorem coroot'_eq_coroot (i : P.foldedIndices σ) :
     F.pairing.coroot' i = F.pairing.coroot i := by
   ext x
   exact F.evaluation x (F.pairing.coroot i)
-
-@[simp]
-theorem coe_root (i : P.foldedIndices σ) : (F.pairing.root i : M) = (i : M) :=
-  F.root_eq i
 
 /-- The ambient vector of the folded root at `P.foldedIndex σ j` is `P.orbitSum σ j`. -/
 theorem coe_root_foldedIndex (j : ι) :
@@ -253,19 +140,19 @@ theorem coe_root_foldedIndex (j : ι) :
 theorem range_coe_root :
     range (fun i : P.foldedIndices σ ↦ (F.pairing.root i : M)) = P.foldedIndices σ := by
   ext x
-  simp only [Set.mem_range, coe_root]
+  simp only [Set.mem_range, F.root_eq]
   exact ⟨fun ⟨i, hi⟩ ↦ hi ▸ i.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
 
 /-- The folded root index of a simple root of `b` lies in the folded base support. -/
 theorem foldedIndex_mem_support_base {j : ι} (hj : j ∈ b.support) :
     P.foldedIndex σ j ∈ F.base.support :=
-  (F.base_eq _).mpr ⟨j, hj, (P.coe_foldedIndex σ j).symm⟩
+  (F.mem_support_base_iff _).mpr ⟨j, hj, (P.coe_foldedIndex σ j).symm⟩
 
 /-- The folded base support is the image of `b.support` under `P.foldedIndex σ`. -/
 theorem support_base_eq_image [DecidableEq (P.foldedIndices σ)] :
     F.base.support = b.support.image (P.foldedIndex σ) := by
   ext u
-  rw [Finset.mem_image, F.base_eq]
+  rw [Finset.mem_image, F.mem_support_base_iff]
   exact ⟨fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, Subtype.ext ((P.coe_foldedIndex σ j).trans hju)⟩,
     fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, (P.coe_foldedIndex σ j).symm.trans (congrArg Subtype.val hju)⟩⟩
 
@@ -302,13 +189,13 @@ theorem coroot_eq_of_preReflection_mapsTo (i : P.foldedIndices σ)
     (hf₁ : f (F.pairing.root i) = 2)
     (hf₂ : MapsTo (Module.preReflection (F.pairing.root i) f)
       (range F.pairing.root) (range F.pairing.root)) :
-    f = F.pairing.coroot i := by
+    F.pairing.coroot i = f := by
   have : Module.IsReflexive R (LinearMap.fixedSubmodule σ.weightMap) :=
     .of_isPerfPair F.pairing.toLinearMap
   rw [← F.coroot'_eq_coroot]
-  exact Module.Dual.eq_of_preReflection_mapsTo (finite_range F.pairing.root)
+  exact (Module.Dual.eq_of_preReflection_mapsTo (finite_range F.pairing.root)
     IsRootSystem.span_root_eq_top hf₁ hf₂
-    (F.pairing.coroot_root_two i) (F.pairing.mapsTo_reflection_root i)
+    (F.pairing.coroot_root_two i) (F.pairing.mapsTo_reflection_root i)).symm
 
 end Uniqueness
 
@@ -333,8 +220,8 @@ private theorem nsmul_root_foldedIndex_mem_posRootCone {j : ι} (hj : b.IsPos j)
     rw [← P.sum_range_root_pow_apply_eq_nsmul (hper j)]
     have hpow (t : ℕ) : P.root ((σ.indexEquiv ^ t) j) =
         ∑ k ∈ b.support, n k • P.root ((σ.indexEquiv ^ t) k) := by
-      rw [← weightMap_pow_root P σ t j, hn, map_sum]
-      exact Finset.sum_congr rfl fun k _ ↦ by rw [map_nsmul, weightMap_pow_root]
+      rw [← Equiv.weightMap_pow_root σ t j, hn, map_sum]
+      exact Finset.sum_congr rfl fun k _ ↦ by rw [map_nsmul, Equiv.weightMap_pow_root]
     simp_rw [hpow]
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -372,6 +259,7 @@ private theorem isPos_foldedIndex_of_isPos {j : ι} (hj : b.IsPos j) :
 
 /-- **Folded positivity on indexed orbit sums.** For any `j : ι`, `P.foldedIndex σ j` is positive
 for `F.base` if and only if `j` is positive for `b`. -/
+@[simp]
 theorem isPos_foldedIndex_iff (j : ι) :
     F.base.IsPos (P.foldedIndex σ j) ↔ b.IsPos j := by
   refine ⟨fun h ↦ ?_, F.isPos_foldedIndex_of_isPos⟩
@@ -391,158 +279,18 @@ root, and conversely every positive original root has a positive orbit sum. -/
 theorem isPos_iff (u : P.foldedIndices σ) :
     F.base.IsPos u ↔ ∃ j, b.IsPos j ∧ P.orbitSum σ j = (u : M) := by
   obtain ⟨j₀, rfl⟩ := P.foldedIndex_surjective σ u
-  refine ⟨fun hu ↦ ⟨j₀, F.isPos_foldedIndex_iff j₀ |>.mp hu, P.coe_foldedIndex σ j₀⟩, ?_⟩
+  refine ⟨fun hu ↦ ⟨j₀, (F.isPos_foldedIndex_iff j₀).mp hu, (P.coe_foldedIndex σ j₀).symm⟩, ?_⟩
   rintro ⟨j, hj, hju⟩
   have heq : P.foldedIndex σ j = P.foldedIndex σ j₀ :=
     Subtype.ext ((P.coe_foldedIndex σ j).trans hju)
-  rw [← heq]
-  exact (F.isPos_foldedIndex_iff j).mpr hj
+  rw [← heq, F.isPos_foldedIndex_iff]
+  exact hj
 
 end Positivity
 
 end OrbitSumRealization
 
 end Realization
-
-/-! ### Linear independence and spanning of simple-orbit sums -/
-
-section SimpleOrbitFrame
-
-section CommRing
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [Finite ι] [P.IsRootSystem]
-
-variable {P} in
-/-- In the simple-root basis `b.toWeightBasis`, the `s`-coordinate of a simple-orbit sum
-`P.orbitSum σ s'` is `1` if `s` belongs to the `σ`-orbit of `s'` and `0` otherwise. -/
-theorem toWeightBasis_repr_orbitSum_of_mem_support [DecidableEq ι] {b : P.Base} {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {s s' : ι}
-    (hs : s ∈ b.support) (hs' : s' ∈ b.support) :
-    b.toWeightBasis.repr (P.orbitSum σ s') ⟨s, hs⟩ =
-      if s ∈ P.orbitIndices σ s' then 1 else 0 := by
-  rw [P.orbitSum_def, map_sum, Finsupp.finsetSum_apply]
-  have hterm (x : ι) (hx : x ∈ P.orbitIndices σ s') :
-      b.toWeightBasis.repr (P.root x) ⟨s, hs⟩ = if x = s then 1 else 0 := by
-    have hxb : x ∈ b.support := P.mem_support_of_mem_orbitIndices hσ hs' hx
-    have hroot : P.root x = b.toWeightBasis ⟨x, hxb⟩ := (b.toWeightBasis_apply ⟨x, hxb⟩).symm
-    rw [hroot, Module.Basis.repr_self, Finsupp.single_apply]
-    simp [Subtype.ext_iff, eq_comm]
-  rw [Finset.sum_congr rfl hterm]
-  by_cases hmem : s ∈ P.orbitIndices σ s'
-  · rw [ite_eq_left_iff.mpr fun h ↦ (h hmem).elim, Finset.sum_ite_eq' (P.orbitIndices σ s') s,
-      ite_eq_left_iff.mpr fun h ↦ (h hmem).elim]
-  · rw [ite_eq_right_iff.mpr fun h ↦ (hmem h).elim]
-    exact Finset.sum_eq_zero fun x hx ↦
-      ite_eq_right_iff.mpr fun hxs ↦ (hmem (hxs ▸ hx)).elim
-
-variable {P} in
-/-- Two simple roots of `b` determine the same folded root index if and only if they lie in the
-same `σ`-orbit. -/
-theorem foldedIndex_eq_iff_mem_orbitIndices_of_mem_support [Nontrivial R] {b : P.Base} {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {s s' : ι}
-    (hs : s ∈ b.support) (hs' : s' ∈ b.support) :
-    P.foldedIndex σ s = P.foldedIndex σ s' ↔ s ∈ P.orbitIndices σ s' := by
-  classical
-  refine ⟨fun h ↦ ?_, P.foldedIndex_eq_of_mem⟩
-  have heq : P.orbitSum σ s = P.orbitSum σ s' := by
-    simpa [coe_foldedIndex] using congrArg Subtype.val h
-  have hrepr := congrArg (fun v ↦ b.toWeightBasis.repr v ⟨s, hs⟩) heq
-  rw [P.toWeightBasis_repr_orbitSum_of_mem_support hσ hs hs,
-    P.toWeightBasis_repr_orbitSum_of_mem_support hσ hs hs'] at hrepr
-  simp only [P.self_mem_orbitIndices σ s, ↓reduceIte] at hrepr
-  by_contra hnot
-  simp only [hnot, ↓reduceIte] at hrepr
-  exact one_ne_zero hrepr
-
-/-- The simple-orbit sums of a based automorphism are linearly independent over `R`, because
-distinct simple orbits have disjoint supports in the simple-root basis `b.toWeightBasis`. -/
-theorem linearIndepOn_orbitSum_support {b : P.Base} {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
-    LinearIndepOn R (fun u : P.foldedIndices σ ↦ (u : M))
-      (P.foldedIndex σ '' (b.support : Set ι)) := by
-  nontriviality R
-  classical
-  rw [linearIndepOn_iff']
-  intro t c htsub hsum u hu
-  obtain ⟨s, hs, rfl⟩ := htsub (Finset.mem_coe.mpr hu)
-  have hrepr := congrArg (fun x ↦ b.toWeightBasis.repr x ⟨s, hs⟩) hsum
-  rw [map_sum, map_zero, Finsupp.finsetSum_apply, Finsupp.zero_apply] at hrepr
-  have hcoord (v : P.foldedIndices σ) (hv : v ∈ t) :
-      b.toWeightBasis.repr (c v • (v : M)) ⟨s, hs⟩ =
-        if v = P.foldedIndex σ s then c v else 0 := by
-    obtain ⟨s', hs', rfl⟩ := htsub (Finset.mem_coe.mpr hv)
-    rw [map_smul, Finsupp.smul_apply, smul_eq_mul, coe_foldedIndex,
-      P.toWeightBasis_repr_orbitSum_of_mem_support hσ hs hs']
-    by_cases hvs : P.foldedIndex σ s' = P.foldedIndex σ s
-    · have hmem : s ∈ P.orbitIndices σ s' :=
-        (P.foldedIndex_eq_iff_mem_orbitIndices_of_mem_support hσ hs hs').mp hvs.symm
-      simp [hvs, hmem]
-    · have hmem : s ∉ P.orbitIndices σ s' := fun hm ↦
-        hvs ((P.foldedIndex_eq_iff_mem_orbitIndices_of_mem_support hσ hs hs').mpr hm).symm
-      simp [hvs, hmem]
-  rw [Finset.sum_congr rfl hcoord, Finset.sum_ite_eq' t (P.foldedIndex σ s)] at hrepr
-  simpa [hu] using hrepr
-
-end CommRing
-
-section Field
-
-variable {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
-  [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι] [P.IsRootSystem]
-
-/-- The simple-orbit sums span the fixed submodule `LinearMap.fixedSubmodule σ.weightMap`. -/
-theorem span_fixedSubmodule_orbitSum_support_eq_top (b : P.Base) (σ : P.Aut) :
-    span K ((fun j : b.support ↦
-      (⟨P.orbitSum σ j, P.orbitSum_mem_fixedSubmodule σ j⟩ :
-        LinearMap.fixedSubmodule σ.weightMap)) '' univ) = ⊤ := by
-  have := Fintype.ofFinite ι
-  let m : ℕ := orderOf σ.indexEquiv
-  have hm : 0 < m := orderOf_pos σ.indexEquiv
-  have hmK : (m : K) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-  have hper (k : ι) : (σ.indexEquiv ^ m) k = k := by
-    rw [orderOf_dvd_iff_pow_eq_one.mp dvd_rfl, Equiv.Perm.coe_one, id_eq]
-  rw [eq_top_iff]
-  rintro ⟨x, hx⟩ -
-  have hxpow := weightMap_pow_of_fixed (LinearMap.mem_fixedSubmodule_iff.mp hx)
-  have hrepr : x = ∑ s : b.support, b.toWeightBasis.repr x s • P.root s := by
-    simpa using (b.toWeightBasis.sum_repr x).symm
-  have hsum : (m : K) • x =
-      ∑ s : b.support,
-        (b.toWeightBasis.repr x s * (m / #(P.orbitIndices σ s) : ℕ)) • P.orbitSum σ s := by
-    calc (m : K) • x
-        = ∑ t ∈ range m, (σ ^ t : P.Aut).weightMap x := by
-            simp [hxpow, Nat.cast_smul_eq_nsmul]
-      _ = ∑ t ∈ range m, ∑ s : b.support,
-            b.toWeightBasis.repr x s • P.root ((σ.indexEquiv ^ t) s) := by
-            refine Finset.sum_congr rfl fun t _ ↦ ?_
-            conv_lhs => rw [hrepr]
-            rw [map_sum]
-            exact Finset.sum_congr rfl fun s _ ↦ by rw [map_smul, weightMap_pow_root]
-      _ = ∑ s : b.support, b.toWeightBasis.repr x s •
-            ∑ t ∈ range m, P.root ((σ.indexEquiv ^ t) s) := by
-            rw [Finset.sum_comm]
-            exact Finset.sum_congr rfl fun s _ ↦ (Finset.smul_sum ..).symm
-      _ = ∑ s : b.support,
-            (b.toWeightBasis.repr x s * (m / #(P.orbitIndices σ s) : ℕ)) • P.orbitSum σ s := by
-            refine Finset.sum_congr rfl fun s _ ↦ ?_
-            rw [P.sum_range_root_pow_apply_eq_nsmul (hper s), ← Nat.cast_smul_eq_nsmul K, smul_smul]
-  have hvec : (⟨x, hx⟩ : LinearMap.fixedSubmodule σ.weightMap) =
-      ∑ s : b.support,
-        ((m : K)⁻¹ * (b.toWeightBasis.repr x s * (m / #(P.orbitIndices σ s) : ℕ))) •
-          (⟨P.orbitSum σ s, P.orbitSum_mem_fixedSubmodule σ s⟩ :
-            LinearMap.fixedSubmodule σ.weightMap) := by
-    apply Subtype.ext
-    calc x = (m : K)⁻¹ • ((m : K) • x) := by rw [inv_smul_smul₀ hmK]
-      _ = _ := by
-        rw [hsum, Finset.smul_sum]
-        simp [smul_smul]
-  rw [hvec]
-  exact sum_mem fun s _ ↦ smul_mem _ _ (subset_span ⟨s, mem_univ s, rfl⟩)
-
-end Field
-
-end SimpleOrbitFrame
 
 /-! ### The identity automorphism -/
 
@@ -557,15 +305,23 @@ private noncomputable def foldedIndicesOneEquiv (P : RootPairing ι R M N) [Fini
     ⟨fun _ _ h ↦ P.root.injective (by simpa using congrArg Subtype.val h),
       P.foldedIndex_surjective 1⟩
 
+private theorem foldedIndicesOneEquiv_apply (P : RootPairing ι R M N) [Finite ι] (i : ι) :
+    foldedIndicesOneEquiv P i = P.foldedIndex 1 i :=
+  _root_.Equiv.ofBijective_apply _ _ i
+
 /-- The linear isomorphism between `M` and the fixed submodule of `(1 : P.Aut).weightMap`. -/
 private def fixedSubmoduleOneEquiv (P : RootPairing ι R M N) :
     M ≃ₗ[R] LinearMap.fixedSubmodule (1 : P.Aut).weightMap where
-  toFun m := ⟨m, LinearMap.mem_fixedSubmodule_iff.mpr rfl⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  toFun m := ⟨m, LinearMap.mem_fixedSubmodule_iff.mpr (by simp)⟩
+  map_add' _ _ := Subtype.ext rfl
+  map_smul' _ _ := Subtype.ext rfl
   invFun x := x
   left_inv _ := rfl
-  right_inv _ := rfl
+  right_inv _ := Subtype.ext rfl
+
+private theorem coe_fixedSubmoduleOneEquiv_apply (P : RootPairing ι R M N) (m : M) :
+    (fixedSubmoduleOneEquiv P m : M) = m :=
+  (rfl)
 
 namespace OrbitSumRealization
 
@@ -577,65 +333,102 @@ noncomputable def one (P : RootPairing ι R M N) [Finite ι]
     P.OrbitSumRealization b 1 :=
   let eM := fixedSubmoduleOneEquiv P
   let eN : N ≃ₗ[R] Module.Dual R (LinearMap.fixedSubmodule (1 : P.Aut).weightMap) :=
-    (eM.dualMap.trans P.flip.toPerfPair.symm).symm
+    (eM.dualMap.trans P.toLinearMap.flip.toPerfPair.symm).symm
   let eι := foldedIndicesOneEquiv P
-  let e := equivMap P eι eM eN
+  let e := P.equivMap eι eM eN
   { pairing := P.map eι eM eN
     base := b.map e
     rootSystem := inferInstance
-    reduced := isReduced_of_equiv e
+    reduced := e.isReduced
     crystallographic := e.toHom.isValuedIn ℤ
     evaluation := fun x y ↦ by
-      have hx : e.weightEquiv (eM.symm x) = x := eM.apply_symm_apply x
-      have hy : e.coweightEquiv y = P.toLinearMap.flip.toPerfPair.symm (eM.dualMap y) := rfl
-      rw [← hx, e.toLinearMap_weightEquiv, hy, P.toLinearMap.apply_toPerfPair_flip, hx]
-      exact congrArg y (eM.apply_symm_apply x)
+      have hx : e.weightEquiv (eM.symm x) = x := by
+        rw [Equiv.weightEquiv_apply, equivMap_weightMap, LinearEquiv.coe_coe, eM.apply_symm_apply]
+      have hy : e.coweightEquiv y = P.toLinearMap.flip.toPerfPair.symm (eM.dualMap y) := by
+        rw [Equiv.coweightEquiv_apply, equivMap_coweightMap, LinearEquiv.coe_coe,
+          LinearEquiv.symm_symm, LinearEquiv.trans_apply]
+      rw [← hx, e.toLinearMap_weightEquiv, hy, P.toLinearMap.apply_toPerfPair_flip,
+        LinearEquiv.dualMap_apply, eM.apply_symm_apply, hx]
     root_eq := fun u ↦ by
       obtain ⟨j, rfl⟩ := eι.surjective u
-      have hj : (eι j : M) = P.root j := by
-        have : eι j = P.foldedIndex 1 j := rfl
-        rw [this, P.coe_foldedIndex, P.orbitSum_one]
-      have hr : (P.map eι eM eN).root (e.indexEquiv j) = e.weightMap (P.root j) :=
-        (Hom.root_weightMap_apply P _ j e.toHom).symm
-      exact (congrArg Subtype.val hr).trans hj.symm
-    base_eq := fun u ↦ by
+      have hr := (e.toHom.root_weightMap_apply P (P.map eι eM eN) j).symm
+      rw [equivMap_indexEquiv, equivMap_weightMap, LinearEquiv.coe_coe] at hr
+      rw [hr, coe_fixedSubmoduleOneEquiv_apply, foldedIndicesOneEquiv_apply, P.coe_foldedIndex,
+        P.orbitSum_one]
+    mem_support_base_iff := fun u ↦ by
       classical
       rw [b.support_map_eq e, Finset.mem_image]
-      have he (j : ι) : (e.indexEquiv j : M) = P.root j := by
-        have : e.indexEquiv j = P.foldedIndex 1 j := rfl
-        rw [this, P.coe_foldedIndex, P.orbitSum_one]
-      refine ⟨fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, by rw [← hju, he, P.orbitSum_one]⟩,
-        fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, Subtype.ext (by rw [he, ← P.orbitSum_one j, hju])⟩⟩ }
+      simp only [e, equivMap_indexEquiv, eι, foldedIndicesOneEquiv_apply, P.orbitSum_one]
+      exact ⟨fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, by rw [← hju, P.coe_foldedIndex, P.orbitSum_one]⟩,
+        fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, Subtype.ext (by rw [P.coe_foldedIndex, P.orbitSum_one, hju])⟩⟩ }
 
-/-- The canonical equivalence from `P` to any orbit-sum realization `F` of `1 : P.Aut`, acting as
+/-- The canonical equivalence from `P` to `(one P b).pairing` over any commutative ring, acting as
 the identity on ambient weight vectors. -/
+noncomputable def oneEquiv (P : RootPairing ι R M N) [Finite ι]
+    [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] (b : P.Base) :
+    P.Equiv (one P b).pairing :=
+  P.equivMap (foldedIndicesOneEquiv P) (fixedSubmoduleOneEquiv P)
+    ((fixedSubmoduleOneEquiv P).dualMap.trans P.toLinearMap.flip.toPerfPair.symm).symm
+
+/-- The weight map of `oneEquiv P b` acts as the identity when coerced to `M`.
+
+Not a `simp` lemma: `RootPairing.Equiv.toHom_one` and `RootPairing.Hom.weightMap_one` rewrite
+`(1 : P.Aut).weightMap` to `LinearMap.id` inside the implicit `DFunLike.coe` codomain type on the
+left-hand side, which triggers the `simpNF` linter. -/
+theorem coe_oneEquiv_weightMap (P : RootPairing ι R M N) [Finite ι]
+    [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] (b : P.Base) (x : M) :
+    ((oneEquiv P b).weightMap x : M) = x := by
+  rw [oneEquiv, equivMap_weightMap, LinearEquiv.coe_coe, coe_fixedSubmoduleOneEquiv_apply]
+
+@[simp]
+theorem oneEquiv_indexEquiv (P : RootPairing ι R M N) [Finite ι]
+    [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] (b : P.Base) (i : ι) :
+    (oneEquiv P b).indexEquiv i = P.foldedIndex 1 i := by
+  rw [oneEquiv, equivMap_indexEquiv, foldedIndicesOneEquiv_apply]
+
+@[simp]
+theorem baseMap_oneEquiv (P : RootPairing ι R M N) [Finite ι]
+    [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] (b : P.Base) :
+    b.map (oneEquiv P b) = (one P b).base := by
+  classical
+  refine Base.ext (Finset.ext fun u ↦ ?_)
+  rw [b.support_map_eq (oneEquiv P b), Finset.mem_image, (one P b).mem_support_base_iff]
+  simp only [oneEquiv_indexEquiv, P.orbitSum_one]
+  exact ⟨fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, by rw [← hju, P.coe_foldedIndex, P.orbitSum_one]⟩,
+    fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, Subtype.ext (by rw [P.coe_foldedIndex, P.orbitSum_one, hju])⟩⟩
+
+/-- The canonical equivalence from `P` to any orbit-sum realization `F` of `1 : P.Aut` over a
+characteristic-zero domain, acting as the identity on ambient weight vectors. -/
 noncomputable def equivOne {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
     [P.IsRootSystem] {b : P.Base} (F : P.OrbitSumRealization b 1) : P.Equiv F.pairing :=
   Equiv.mk' P F.pairing (fixedSubmoduleOneEquiv P) (foldedIndicesOneEquiv P) fun i ↦
     Subtype.ext <| by
-      have hi : (foldedIndicesOneEquiv P) i = P.foldedIndex 1 i := rfl
-      rw [hi, F.coe_root_foldedIndex, P.orbitSum_one]
-      rfl
+      rw [coe_fixedSubmoduleOneEquiv_apply, F.root_eq, foldedIndicesOneEquiv_apply,
+        P.coe_foldedIndex, P.orbitSum_one]
 
-/-- The weight equivalence `F.equivOne` embeds `M` as the identity into the ambient module. -/
+/-- The weight map of `F.equivOne` acts as the identity when coerced to `M`.
+
+Not a `simp` lemma: `RootPairing.Equiv.toHom_one` and `RootPairing.Hom.weightMap_one` rewrite
+`(1 : P.Aut).weightMap` to `LinearMap.id` inside the implicit `DFunLike.coe` codomain type on the
+left-hand side, which triggers the `simpNF` linter. -/
 theorem coe_equivOne_weightMap {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
     [P.IsRootSystem] {b : P.Base} (F : P.OrbitSumRealization b 1) (x : M) :
     (F.equivOne.weightMap x : M) = x := by
-  rfl
+  rw [equivOne, Equiv.mk'_weightMap, LinearEquiv.coe_coe, coe_fixedSubmoduleOneEquiv_apply]
 
 @[simp]
 theorem equivOne_indexEquiv {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
     [P.IsRootSystem] {b : P.Base} (F : P.OrbitSumRealization b 1) (i : ι) :
     F.equivOne.indexEquiv i = P.foldedIndex 1 i := by
-  rfl
+  rw [equivOne, Equiv.mk'_indexEquiv, foldedIndicesOneEquiv_apply]
 
 @[simp]
-theorem map_equivOne {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
+theorem baseMap_equivOne {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
     [P.IsRootSystem] {b : P.Base} (F : P.OrbitSumRealization b 1) :
     b.map F.equivOne = F.base := by
   classical
   refine Base.ext (Finset.ext fun u ↦ ?_)
-  rw [b.support_map_eq F.equivOne, Finset.mem_image, F.base_eq]
+  rw [b.support_map_eq F.equivOne, Finset.mem_image, F.mem_support_base_iff]
   refine ⟨fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, by simpa using congrArg Subtype.val hju⟩,
     fun ⟨j, hj, hju⟩ ↦ ⟨j, hj, Subtype.ext (by simpa using hju)⟩⟩
 
@@ -650,35 +443,14 @@ section Intertwining
 variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
-  {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂}
-
-/-- If an equivalence `e : P.Equiv P₂` of root systems intertwines `σ` and `τ` on root indices, it
-intertwines their weight-space actions. -/
-theorem Equiv.weightMap_aut_of_indexEquiv [P.IsRootSystem] (e : P.Equiv P₂) {σ : P.Aut}
-    {τ : P₂.Aut} (h : ∀ j, e.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (e.indexEquiv j))
-    (x : M) : e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x) := by
-  have hlin : e.weightMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightMap :=
-    LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P)) fun j ↦ by
-      simp only [LinearMap.comp_apply, Hom.root_weightMap_apply, h j]
-  exact LinearMap.congr_fun hlin x
-
-/-- If `e : P.Equiv P₂` intertwines `σ.weightMap` and `τ.weightMap`, it intertwines `σ.indexEquiv`
-and `τ.indexEquiv`. -/
-theorem Equiv.indexEquiv_aut_of_weightMap (e : P.Equiv P₂) {σ : P.Aut} {τ : P₂.Aut}
-    (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) (j : ι) :
-    e.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (e.indexEquiv j) := by
-  apply P₂.root.injective
-  rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, he, Hom.root_weightMap_apply,
-    Hom.root_weightMap_apply]
-
-variable [Finite ι] [Finite ι₂]
+  {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂} [Finite ι] [Finite ι₂]
 
 /-- The bijection `P.foldedIndices σ ≃ P₂.foldedIndices τ` induced by an intertwining equivalence
 `e : P.Equiv P₂`. -/
 private noncomputable def foldedIndicesEquivOfIntertwining (e : P.Equiv P₂) {σ : P.Aut}
     {τ : P₂.Aut} (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) :
     P.foldedIndices σ ≃ P₂.foldedIndices τ :=
-  have hidx := e.indexEquiv_aut_of_weightMap he
+  have hidx := e.toHom.indexEquiv_apply_of_weightMap (σ := σ.toHom) (τ := τ.toHom) he
   { toFun u := ⟨e.weightMap (u : M), P₂.mem_foldedIndices.mpr <| by
       obtain ⟨j, hj⟩ := P.mem_foldedIndices.mp u.2
       exact ⟨e.indexEquiv j, by rw [← hj, P.weightMap_orbitSum e hidx j]⟩⟩
@@ -691,22 +463,38 @@ private noncomputable def foldedIndicesEquivOfIntertwining (e : P.Equiv P₂) {�
     left_inv u := Subtype.ext (e.weightEquiv_symm_weightMap (u : M))
     right_inv v := Subtype.ext (e.weightMap_weightEquiv_symm (v : M₂)) }
 
-/-- The linear equivalence between fixed submodules induced by an intertwining equivalence
-`e : P.Equiv P₂`. -/
-private noncomputable def fixedSubmoduleEquivOfIntertwining (e : P.Equiv P₂) {σ : P.Aut}
-    {τ : P₂.Aut} (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) :
-    LinearMap.fixedSubmodule σ.weightMap ≃ₗ[R] LinearMap.fixedSubmodule τ.weightMap where
-  toFun x := ⟨e.weightMap x.1, LinearMap.mem_fixedSubmodule_iff.mpr <| by
-    rw [← he, LinearMap.mem_fixedSubmodule_iff.mp x.2]⟩
-  map_add' x y := Subtype.ext (map_add e.weightMap x.1 y.1)
-  map_smul' c x := Subtype.ext (map_smul e.weightMap c x.1)
-  invFun y := ⟨e.weightEquiv.symm y.1, LinearMap.mem_fixedSubmodule_iff.mpr <| by
-    apply e.bijective_weightMap.injective
-    rw [he, e.weightMap_weightEquiv_symm, LinearMap.mem_fixedSubmodule_iff.mp y.2]⟩
-  left_inv x := Subtype.ext (e.weightEquiv_symm_weightMap x.1)
-  right_inv y := Subtype.ext (e.weightMap_weightEquiv_symm y.1)
+@[simp]
+private theorem coe_foldedIndicesEquivOfIntertwining_apply (e : P.Equiv P₂) {σ : P.Aut}
+    {τ : P₂.Aut} (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x))
+    (u : P.foldedIndices σ) :
+    (foldedIndicesEquivOfIntertwining e he u : M₂) = e.weightMap (u : M) := by
+  simp [foldedIndicesEquivOfIntertwining]
 
 namespace OrbitSumRealization
+
+/-- Shared characterization of the transported simple-root support under an intertwining based
+equivalence `e : P.Equiv P₂`. -/
+private theorem mem_image_foldedIndicesEquivOfIntertwining_iff
+    {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
+    [DecidableEq (P₂.foldedIndices τ)]
+    (F : P.OrbitSumRealization b σ) (e : P.Equiv P₂)
+    (hbase : ∀ j, e.indexEquiv j ∈ b₂.support ↔ j ∈ b.support)
+    (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x))
+    (v : P₂.foldedIndices τ) :
+    v ∈ F.base.support.image (foldedIndicesEquivOfIntertwining e he) ↔
+      ∃ k ∈ b₂.support, P₂.orbitSum τ k = (v : M₂) := by
+  have hidx := e.toHom.indexEquiv_apply_of_weightMap (σ := σ.toHom) (τ := τ.toHom) he
+  rw [Finset.mem_image]
+  refine ⟨fun ⟨u, hu, huv⟩ ↦ ?_, fun ⟨k, hk, hkv⟩ ↦ ?_⟩
+  · obtain ⟨j, hj, hju⟩ := (F.mem_support_base_iff u).mp hu
+    refine ⟨e.indexEquiv j, (hbase j).mpr hj, ?_⟩
+    rw [← P.weightMap_orbitSum e hidx j, hju, ← congrArg Subtype.val huv,
+      coe_foldedIndicesEquivOfIntertwining_apply]
+  · obtain ⟨j, rfl⟩ := e.indexEquiv.surjective k
+    refine ⟨P.foldedIndex σ j, F.foldedIndex_mem_support_base ((hbase j).mp hk),
+      Subtype.ext ?_⟩
+    rw [coe_foldedIndicesEquivOfIntertwining_apply, P.coe_foldedIndex,
+      P.weightMap_orbitSum e hidx j, hkv]
 
 /-- Transport an orbit-sum realization along a based equivalence `e : P.Equiv P₂` intertwining `σ`
 and `τ`. -/
@@ -715,34 +503,70 @@ noncomputable def map {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Au
     (hbase : ∀ j, e.indexEquiv j ∈ b₂.support ↔ j ∈ b.support)
     (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) :
     P₂.OrbitSumRealization b₂ τ :=
-  let eM := fixedSubmoduleEquivOfIntertwining e he
+  let eM := e.weightEquiv.fixedSubmoduleCongr (LinearMap.ext he)
   let eN := eM.symm.dualMap
   let eι := foldedIndicesEquivOfIntertwining e he
-  let eqv := equivMap F.pairing eι eM eN
+  let eqv := F.pairing.equivMap eι eM eN
   { pairing := F.pairing.map eι eM eN
     base := F.base.map eqv
     rootSystem := inferInstance
-    reduced := isReduced_of_equiv eqv
+    reduced := eqv.isReduced
     crystallographic := eqv.toHom.isValuedIn ℤ
     evaluation := fun x y ↦ by simp [RootPairing.map, eN, eM]
     root_eq := fun v ↦ by
       obtain ⟨u, rfl⟩ := eι.surjective v
-      simp [RootPairing.map, eM, fixedSubmoduleEquivOfIntertwining,
-        eι, foldedIndicesEquivOfIntertwining]
-    base_eq := fun v ↦ by
+      simp [RootPairing.map, eM, eι]
+    mem_support_base_iff := fun v ↦ by
       classical
-      have hidx := e.indexEquiv_aut_of_weightMap he
-      rw [F.base.support_map_eq eqv, Finset.mem_image]
-      refine ⟨fun ⟨u, hu, huv⟩ ↦ ?_, fun ⟨k, hk, hkv⟩ ↦ ?_⟩
-      · obtain ⟨j, hj, hju⟩ := (F.base_eq u).mp hu
-        refine ⟨e.indexEquiv j, (hbase j).mpr hj, ?_⟩
-        rw [← P.weightMap_orbitSum e hidx j, hju]
-        simpa [eqv, equivMap, eι, foldedIndicesEquivOfIntertwining] using congrArg Subtype.val huv
-      · obtain ⟨j, rfl⟩ := e.indexEquiv.surjective k
-        have hj : j ∈ b.support := (hbase j).mp hk
-        refine ⟨P.foldedIndex σ j, F.foldedIndex_mem_support_base hj, Subtype.ext ?_⟩
-        simpa [eqv, equivMap, eι, foldedIndicesEquivOfIntertwining,
-          P.weightMap_orbitSum e hidx j] using hkv }
+      rw [F.base.support_map_eq eqv]
+      simp only [eqv, equivMap_indexEquiv, eι]
+      exact mem_image_foldedIndicesEquivOfIntertwining_iff F e hbase he v }
+
+/-- The canonical equivalence from `F.pairing` to `(F.map e hbase he).pairing` over any commutative
+ring, carrying each fixed vector and orbit-sum index to its image under `e.weightMap`. -/
+noncomputable def mapEquiv {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
+    (F : P.OrbitSumRealization b σ) (e : P.Equiv P₂)
+    (hbase : ∀ j, e.indexEquiv j ∈ b₂.support ↔ j ∈ b.support)
+    (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) :
+    F.pairing.Equiv (F.map e hbase he).pairing :=
+  F.pairing.equivMap (foldedIndicesEquivOfIntertwining e he)
+    (e.weightEquiv.fixedSubmoduleCongr (LinearMap.ext he))
+    (e.weightEquiv.fixedSubmoduleCongr (LinearMap.ext he)).symm.dualMap
+
+@[simp]
+theorem coe_mapEquiv_weightMap {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
+    (F : P.OrbitSumRealization b σ) (e : P.Equiv P₂)
+    (hbase : ∀ j, e.indexEquiv j ∈ b₂.support ↔ j ∈ b.support)
+    (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x))
+    (x : LinearMap.fixedSubmodule σ.weightMap) :
+    (((F.mapEquiv e hbase he).weightMap x :
+      LinearMap.fixedSubmodule τ.weightMap) : M₂) = e.weightMap (x : M) := by
+  simp [mapEquiv, map]
+
+@[simp]
+theorem coe_mapEquiv_indexEquiv {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
+    (F : P.OrbitSumRealization b σ) (e : P.Equiv P₂)
+    (hbase : ∀ j, e.indexEquiv j ∈ b₂.support ↔ j ∈ b.support)
+    (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x))
+    (u : P.foldedIndices σ) :
+    (((F.mapEquiv e hbase he).indexEquiv u : P₂.foldedIndices τ) : M₂) =
+      e.weightMap (u : M) := by
+  simp [mapEquiv, map]
+
+@[simp]
+theorem baseMap_mapEquiv {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
+    (F : P.OrbitSumRealization b σ) (e : P.Equiv P₂)
+    (hbase : ∀ j, e.indexEquiv j ∈ b₂.support ↔ j ∈ b.support)
+    (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) :
+    F.base.map (F.mapEquiv e hbase he) = (F.map e hbase he).base := by
+  classical
+  refine Base.ext (Finset.ext fun v ↦ ?_)
+  rw [F.base.support_map_eq (F.mapEquiv e hbase he), (F.map e hbase he).mem_support_base_iff]
+  have heq : (F.mapEquiv e hbase he).indexEquiv = foldedIndicesEquivOfIntertwining e he := by
+    ext u
+    simp [mapEquiv, map]
+  rw [heq]
+  exact mem_image_foldedIndicesEquivOfIntertwining_iff F e hbase he v
 
 /-- **Equivalence of realizations induced by an intertwining equivalence.** Over a
 characteristic-zero domain, an equivalence `e : P.Equiv P₂` intertwining `σ` and `τ` induces an
@@ -753,9 +577,9 @@ noncomputable def equivOfIntertwining [CharZero R] [IsDomain R]
     (F : P.OrbitSumRealization b σ) (F₂ : P₂.OrbitSumRealization b₂ τ) (e : P.Equiv P₂)
     (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) :
     F.pairing.Equiv F₂.pairing :=
-  Equiv.mk' F.pairing F₂.pairing (fixedSubmoduleEquivOfIntertwining e he)
-    (foldedIndicesEquivOfIntertwining e he) fun u ↦
-    Subtype.ext (by simp [fixedSubmoduleEquivOfIntertwining, foldedIndicesEquivOfIntertwining])
+  Equiv.mk' F.pairing F₂.pairing
+    (e.weightEquiv.fixedSubmoduleCongr (LinearMap.ext he))
+    (foldedIndicesEquivOfIntertwining e he) fun u ↦ Subtype.ext (by simp)
 
 @[simp]
 theorem coe_equivOfIntertwining_weightMap [CharZero R] [IsDomain R]
@@ -765,7 +589,7 @@ theorem coe_equivOfIntertwining_weightMap [CharZero R] [IsDomain R]
     (x : LinearMap.fixedSubmodule σ.weightMap) :
     (((F.equivOfIntertwining F₂ e he).weightMap x :
       LinearMap.fixedSubmodule τ.weightMap) : M₂) = e.weightMap (x : M) := by
-  simp [equivOfIntertwining, Equiv.mk', fixedSubmoduleEquivOfIntertwining]
+  simp [equivOfIntertwining]
 
 @[simp]
 theorem coe_equivOfIntertwining_indexEquiv [CharZero R] [IsDomain R]
@@ -775,27 +599,25 @@ theorem coe_equivOfIntertwining_indexEquiv [CharZero R] [IsDomain R]
     (u : P.foldedIndices σ) :
     (((F.equivOfIntertwining F₂ e he).indexEquiv u : P₂.foldedIndices τ) : M₂) =
       e.weightMap (u : M) := by
-  simp [equivOfIntertwining, Equiv.mk', foldedIndicesEquivOfIntertwining]
+  simp [equivOfIntertwining]
 
-@[simp]
-theorem map_equivOfIntertwining [CharZero R] [IsDomain R]
+/-- When an intertwining equivalence `e : P.Equiv P₂` carries `b.support` to `b₂.support`, the
+induced equivalence `F.equivOfIntertwining F₂ e he` carries `F.base` to `F₂.base`. -/
+theorem baseMap_equivOfIntertwining [CharZero R] [IsDomain R]
     {b : P.Base} {b₂ : P₂.Base} {σ : P.Aut} {τ : P₂.Aut}
     (F : P.OrbitSumRealization b σ) (F₂ : P₂.OrbitSumRealization b₂ τ) (e : P.Equiv P₂)
     (hbase : ∀ j, e.indexEquiv j ∈ b₂.support ↔ j ∈ b.support)
     (he : ∀ x, e.weightMap (σ.weightMap x) = τ.weightMap (e.weightMap x)) :
     F.base.map (F.equivOfIntertwining F₂ e he) = F₂.base := by
   classical
-  have hidx := e.indexEquiv_aut_of_weightMap he
   refine Base.ext (Finset.ext fun v ↦ ?_)
-  rw [F.base.support_map_eq (F.equivOfIntertwining F₂ e he), Finset.mem_image, F₂.base_eq]
-  refine ⟨fun ⟨u, hu, huv⟩ ↦ ?_, fun ⟨k, hk, hkv⟩ ↦ ?_⟩
-  · obtain ⟨j, hj, hju⟩ := (F.base_eq u).mp hu
-    refine ⟨e.indexEquiv j, (hbase j).mpr hj, ?_⟩
-    rw [← P.weightMap_orbitSum e hidx j, hju]
-    simpa using congrArg Subtype.val huv
-  · obtain ⟨j, rfl⟩ := e.indexEquiv.surjective k
-    refine ⟨P.foldedIndex σ j, F.foldedIndex_mem_support_base ((hbase j).mp hk), Subtype.ext ?_⟩
-    simpa [P.weightMap_orbitSum e hidx j] using hkv
+  rw [F.base.support_map_eq (F.equivOfIntertwining F₂ e he), F₂.mem_support_base_iff]
+  have heq :
+      (F.equivOfIntertwining F₂ e he).indexEquiv = foldedIndicesEquivOfIntertwining e he := by
+    ext u
+    simp [equivOfIntertwining]
+  rw [heq]
+  exact mem_image_foldedIndicesEquivOfIntertwining_iff F e hbase he v
 
 end OrbitSumRealization
 

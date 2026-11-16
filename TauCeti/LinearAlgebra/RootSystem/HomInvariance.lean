@@ -34,13 +34,17 @@ weight-space vectors.
 
 * `RootPairing.Hom.weightMap_mem_range_root_iff`: the weight map carries roots to roots and
   nothing else to a root.
-* `RootPairing.Hom.isValuedIn`: the target root pairing takes values in any coefficient ring in
-  which the source root pairing takes values.
+* `RootPairing.Hom.isValuedIn` and `RootPairing.Hom.isReduced`: the target root pairing inherits
+  coefficient-valuedness, and when the weight map is injective it inherits reducedness
+  (`RootPairing.Equiv.isReduced` for equivalences).
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
   coefficient subring.
 * `RootPairing.Hom.indexEquiv_reflectionPerm`: it commutes with `RootPairing.reflectionPerm`, and
   therefore with the negation of an index, which is `RootPairing.reflectionPerm i i` by definition
   and is rewritten to that form by the `simp` lemma `RootPairing.indexNeg_neg`.
+* `RootPairing.Hom.weightMap_apply_of_indexEquiv` and
+  `RootPairing.Hom.indexEquiv_apply_of_weightMap`: intertwining of endomorphisms on root indices and
+  on weight spaces determine one another (given root spanning for the former).
 * `RootPairing.Hom.root_indexEquiv_eq_add_iff` and
   `RootPairing.Hom.root_indexEquiv_eq_sub_iff`: it preserves and reflects the relations
   `α = β + γ` and `α = β - γ` between roots.
@@ -122,6 +126,27 @@ theorem weightMap_reflection (f : P.Hom P₂) (i : ι) (x : M) :
   rw [reflection_apply, reflection_apply, map_sub, map_smul, Hom.root_weightMap_apply,
     coroot'_weightMap]
 
+/-- If a homomorphism `f : P.Hom P₂` intertwines endomorphisms `σ : P.End` and `τ : P₂.End` on
+root indices and the roots of `P` span `M`, then `f.weightMap` intertwines `σ.weightMap` and
+`τ.weightMap`. -/
+theorem weightMap_apply_of_indexEquiv (f : P.Hom P₂) {σ : P.End} {τ : P₂.End}
+    (hspan : P.rootSpan R = ⊤)
+    (h : ∀ j, f.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (f.indexEquiv j)) (x : M) :
+    f.weightMap (σ.weightMap x) = τ.weightMap (f.weightMap x) := by
+  have hlin : f.weightMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ f.weightMap :=
+    LinearMap.ext_on_range hspan fun j ↦ by
+      simp only [LinearMap.comp_apply, Hom.root_weightMap_apply, h j]
+  exact LinearMap.congr_fun hlin x
+
+/-- If `f.weightMap` intertwines `σ.weightMap` and `τ.weightMap` for `f : P.Hom P₂`, `σ : P.End`,
+and `τ : P₂.End`, then `f.indexEquiv` intertwines `σ.indexEquiv` and `τ.indexEquiv`. -/
+theorem indexEquiv_apply_of_weightMap (f : P.Hom P₂) {σ : P.End} {τ : P₂.End}
+    (hf : ∀ x, f.weightMap (σ.weightMap x) = τ.weightMap (f.weightMap x)) (j : ι) :
+    f.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (f.indexEquiv j) := by
+  apply P₂.root.injective
+  rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, hf,
+    Hom.root_weightMap_apply, Hom.root_weightMap_apply]
+
 section Injective
 
 variable (f : P.Hom P₂) (hf : Injective f.weightMap)
@@ -160,6 +185,19 @@ theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
   ext k
   fin_cases k <;> simp [Hom.root_weightMap_apply]
 
+/-- A homomorphism of root pairings with injective weight map transports reducedness to the target
+pairing. -/
+theorem isReduced [P.IsReduced] : P₂.IsReduced where
+  eq_or_eq_neg i j hij := by
+    obtain ⟨i₀, rfl⟩ := f.indexEquiv.surjective i
+    obtain ⟨j₀, rfl⟩ := f.indexEquiv.surjective j
+    rw [f.linearIndependent_root_indexEquiv_iff hf] at hij
+    rcases IsReduced.eq_or_eq_neg (P := P) i₀ j₀ hij with hpos | hneg
+    · refine .inl ?_
+      rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, hpos]
+    · refine .inr ?_
+      rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, hneg, map_neg]
+
 end Injective
 
 section Chain
@@ -189,5 +227,9 @@ theorem chainBotCoeff_indexEquiv (i j : ι) :
 end Chain
 
 end Hom
+
+/-- An equivalence of root pairings transports reducedness to the target pairing. -/
+theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=
+  e.toHom.isReduced e.bijective_weightMap.injective
 
 end RootPairing

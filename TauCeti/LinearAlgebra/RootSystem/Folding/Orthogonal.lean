@@ -5,42 +5,42 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Component.Base
-public import TauCeti.LinearAlgebra.RootSystem.Component.InvariantForm
-public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.SimplyLaced
 public import TauCeti.LinearAlgebra.RootSystem.Folding.Realization
+public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.SimplyLaced
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
-import Mathlib.Data.Finset.NoncommProd
-import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Hom
-import TauCeti.LinearAlgebra.RootSystem.InvariantForm.UniqueScale
+import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+import TauCeti.Data.Finset.NoncommProd
+import TauCeti.Data.Int.SumSquares
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 
 /-!
 # The orthogonal orbit-sum fold of a simply-laced root system
 
-Let `P` be a finite reduced crystallographic root system over a linearly ordered field `K` (such as
-`ℝ`), `b` a base of `P` whose Cartan matrix is simply laced, and `σ` an automorphism of `P`
-permuting the simple roots of `b` such that distinct simple roots in each `σ`-orbit are pairwise
-orthogonal. Following Stembridge (*Folding by automorphisms*, 2008), this file constructs the
-folded root system `RootPairing.orthogonalFold` as an `OrbitSumRealization` on the fixed submodule
-`LinearMap.fixedSubmodule σ.weightMap` and establishes its metric, Cartan, and reflection formulas:
+Let `P` be a finite reduced crystallographic root pairing, `b` a base of `P` whose Cartan matrix is
+simply laced, and `σ` an automorphism of `P` permuting the simple roots of `b` such that distinct
+simple roots in each `σ`-orbit are pairwise orthogonal. Following Stembridge (*Folding by
+automorphisms*, 2008), this file propagates pairwise orthogonality from the simple `σ`-orbits to all
+root `σ`-orbits over any characteristic-zero domain, constructs the folded root system
+`RootPairing.orthogonalFold` as an `OrbitSumRealization` over any characteristic-zero field, and
+establishes the coroot, Cartan, and reflection formulas for pairwise-orthogonal orbits on any
+`OrbitSumRealization`:
 
-* **Component-normalized invariant form** (`RootPairing.simplyLacedForm`): rescaling the canonical
-  positive-definite root form on each irreducible component gives the unique positive-definite
-  invariant form taking value `2` on every root, invariant under all automorphisms of `P`.
-* **Commuting block reflections** (`RootPairing.orbitReflection`): for any pairwise-orthogonal
-  `σ`-orbit, the commuting product of its reflections in `P.weylGroup` is an involution in
-  `P.weylGroup` commuting with `σ` that acts on `σ`-fixed weights `x` as
-  `x - P.coroot' i x • P.orbitSum σ i`.
+* **Commuting block reflections** (`RootPairing.orbitReflection`): when the reflections of a
+  `σ`-orbit pairwise commute in `P.weylGroup`, their commuting product in `P.weylGroup` is an
+  involution commuting with `σ`; when the orbit is pairwise orthogonal, it acts on `σ`-fixed weights
+  `x` as `x - P.coroot' i x • P.orbitSum σ i`.
 * **Height descent and Stembridge's Claim 4** (`RootPairing.pairing_eq_zero_of_mem_orbitIndices`,
-  `RootPairing.isOrthogonal_of_mem_orbitIndices`): positive height descent under the simple block
-  reflections moves every root into `b.support`, transporting pairwise orthogonality from the simple
-  `σ`-orbits to *every* root `σ`-orbit. Consequently each orbit sum `P.orbitSum σ r` has squared
-  norm `2 * #(P.orbitIndices σ r)` (`RootPairing.simplyLacedForm_orbitSum_self`), and two indices
-  have the same orbit sum if and only if they lie in the same `σ`-orbit
-  (`RootPairing.foldedIndex_eq_iff_mem_orbitIndices`).
-* **The orthogonal fold** (`RootPairing.orthogonalFold`): the unique `P.OrbitSumRealization b σ`,
-  together with the formulas valid on *any* `F : P.OrbitSumRealization b σ`:
+  `RootPairing.pairwise_isOrthogonal_orbitIndices`): over any characteristic-zero domain, positive
+  height descent under the simple block reflections moves every root into `b.support`, transporting
+  pairwise orthogonality from the simple `σ`-orbits to *every* root `σ`-orbit. Over a
+  characteristic-zero field, each orbit sum `P.orbitSum σ r` has squared norm
+  `2 * #(P.orbitIndices σ r)` under `P.simplyLacedForm`
+  (`RootPairing.simplyLacedForm_orbitSum_self`), and two indices have the same orbit sum if and only
+  if they lie in the same `σ`-orbit (`RootPairing.foldedIndex_eq_iff_mem_orbitIndices`).
+* **The orthogonal fold** (`RootPairing.orthogonalFold`): over any characteristic-zero field `K`,
+  the unique `P.OrbitSumRealization b σ`, together with the formulas valid on *any*
+  `F : P.OrbitSumRealization b σ` for pairwise-orthogonal orbits:
   - `F.coroot'_foldedIndex_apply`: `F.pairing.coroot' (P.foldedIndex σ r) x = P.coroot' r x`;
   - `F.pairingIn_foldedIndex`: the folded Cartan pairing is `∑ k ∈ P.orbitIndices σ r, ⟨αₖ, αₜ^∨⟩`;
   - `F.card_orbitIndices_mul_pairingIn_foldedIndex` and `F.pairing_foldedIndex_eq_neg_card_div`:
@@ -51,26 +51,23 @@ folded root system `RootPairing.orthogonalFold` as an `OrbitSumRealization` on t
 
 ## Main definitions
 
-* `RootPairing.simplyLacedForm`: the positive-definite invariant form normalized to `2` on every
-  root of a finite simply-laced root system.
 * `RootPairing.orbitReflection`: the commuting product of reflections over a `σ`-orbit in
   `P.weylGroup`.
-* `RootPairing.orthogonalFold`: the `OrbitSumRealization` of an orthogonal diagram fold.
+* `RootPairing.orthogonalFold`: the `OrbitSumRealization` of an orthogonal diagram fold over a
+  characteristic-zero field.
 
 ## Main results
 
-* `RootPairing.InvariantForm.apply_root_root_eq_of_componentOf_eq`: when `b.cartanMatrix` is simply
-  laced, every invariant form is constant on the roots of each irreducible component.
 * `RootPairing.commute_coe_orbitReflection` and `RootPairing.orbitReflection_smul_of_fixed`: block
   reflections commute with `σ` and act as rank-one reflections along orbit sums on fixed weights.
 * `RootPairing.pairing_eq_zero_of_mem_orbitIndices` and
-  `RootPairing.isOrthogonal_of_mem_orbitIndices`: every root `σ`-orbit is pairwise orthogonal
+  `RootPairing.pairwise_isOrthogonal_orbitIndices`: every root `σ`-orbit is pairwise orthogonal
   (Stembridge, Claim 4).
 * `RootPairing.simplyLacedForm_orbitSum_self`: `(βₒ, βₒ) = 2 * |O|`.
 * `RootPairing.OrbitSumRealization.coroot'_foldedIndex_apply`,
   `RootPairing.OrbitSumRealization.pairing_foldedIndex_eq_neg_card_div`, and
   `RootPairing.OrbitSumRealization.coe_reflection_foldedIndex`: coroot, oriented Cartan, and
-  reflection comparisons for any `OrbitSumRealization`.
+  reflection comparisons for pairwise-orthogonal orbits on any `OrbitSumRealization`.
 
 ## References
 
@@ -84,214 +81,12 @@ namespace RootPairing
 
 open Finset Function Set Submodule TauCeti
 
-/-! ### Component-normalized invariant form on a simply-laced root system -/
-
-section SimplyLacedForm
-
-section CommRing
-
-variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} [Finite ι] [P.IsReduced] [P.IsCrystallographic]
-
-omit [CharZero R] [IsDomain R] [Finite ι] [P.IsReduced] in
-/-- Along a walk in `diagramGraph b.cartanMatrix` of a simply-laced base `b`, any invariant form
-assigns equal squared lengths to the simple roots. -/
-private theorem apply_simpleRoot_eq_of_reachable (B : P.InvariantForm) (b : P.Base)
-    (hsl : b.cartanMatrix.IsSimplyLaced) {u v : b.support}
-    (h : (diagramGraph b.cartanMatrix).Reachable u v) :
-    B.form (P.root u) (P.root u) = B.form (P.root v) (P.root v) := by
-  obtain ⟨w⟩ := h
-  induction w with
-  | nil => rfl
-  | @cons a c d hadj _ ih =>
-    rw [← ih]
-    obtain ⟨hne, hmat, hmat'⟩ := diagramGraph_adj.mp hadj
-    have hac : b.cartanMatrix a c = -1 := (hsl hne).resolve_left hmat
-    have hca : b.cartanMatrix c a = -1 := (hsl hne.symm).resolve_left hmat'
-    have hp (x y : b.support) (hxy : b.cartanMatrix x y = -1) : P.pairing x y = -1 := by
-      have : P.pairingIn ℤ x y = -1 := by
-        simpa [Base.cartanMatrix, Base.cartanMatrixIn_def] using hxy
-      rw [← P.algebraMap_pairingIn ℤ, this]
-      simp
-    have hswap := B.pairing_mul_eq_pairing_mul_swap (a : ι) c
-    rw [hp c a hca, hp a c hac] at hswap
-    linear_combination -hswap
-
-/-- Every root `k` has the same squared length under `B` as a simple root in its irreducible
-component. -/
-private theorem exists_mem_support_apply_root_eq (B : P.InvariantForm) (b : P.Base) (k : ι) :
-    ∃ s : b.support, P.componentOf (s : ι) = P.componentOf k ∧
-      B.form (P.root k) (P.root k) = B.form (P.root s) (P.root s) := by
-  refine b.induction_reflect k
-    (p := fun k ↦ ∃ s : b.support, P.componentOf (s : ι) = P.componentOf k ∧
-      B.form (P.root k) (P.root k) = B.form (P.root s) (P.root s))
-    (fun i ⟨s, hcomp, hlen⟩ ↦ ⟨s, hcomp.trans (componentOf_reflectionPerm i i).symm, by
-      rw [root_reflectionPerm, B.apply_reflection_reflection, hlen]⟩)
-    (fun i hi ↦ ⟨⟨i, hi⟩, rfl, rfl⟩)
-    (fun i j ⟨s, hcomp, hlen⟩ _ ↦ ⟨s, hcomp.trans (componentOf_reflectionPerm j i).symm, by
-      rw [root_reflectionPerm, B.apply_reflection_reflection, hlen]⟩)
-
-/-- **Equal root lengths on each component.** When `b.cartanMatrix` is simply laced, every invariant
-form on `P` takes the same value `B(α, α)` on all roots belonging to the same irreducible
-component. -/
-theorem InvariantForm.apply_root_root_eq_of_componentOf_eq (B : P.InvariantForm) (b : P.Base)
-    (hsl : b.cartanMatrix.IsSimplyLaced) {i j : ι} (hij : P.componentOf i = P.componentOf j) :
-    B.form (P.root i) (P.root i) = B.form (P.root j) (P.root j) := by
-  obtain ⟨s₁, hc₁, hl₁⟩ := exists_mem_support_apply_root_eq B b i
-  obtain ⟨s₂, hc₂, hl₂⟩ := exists_mem_support_apply_root_eq B b j
-  have hreach : P.nonorthogonalGraph.Reachable (s₁ : ι) (s₂ : ι) :=
-    SimpleGraph.ConnectedComponent.exact (hc₁.trans (hij.trans hc₂.symm))
-  rw [hl₁, hl₂]
-  exact apply_simpleRoot_eq_of_reachable B b hsl (b.reachable_nonorthogonalGraph_iff.mp hreach)
-
-end CommRing
-
-section OrderedField
-
-variable {ι K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
-  (P : RootPairing ι K M N) [Finite ι] [P.IsRootSystem]
-
-omit [Finite ι] in
-private theorem toInvariantForm_posDef [Fintype ι] :
-    P.toInvariantForm.form.toQuadraticMap.PosDef :=
-  P.rootForm_posDef
-
-/-- Auxiliary positive-definite invariant form bundled with its positivity proof, rescaling
-`P.toInvariantForm` to `2` on a representative root of each component. -/
-private noncomputable def simplyLacedFormPair :
-    {B : P.InvariantForm // B.form.toQuadraticMap.PosDef} :=
-  letI := Fintype.ofFinite ι
-  (InvariantForm.posDefEquivScale P.toInvariantForm (toInvariantForm_posDef P)).symm fun C ↦
-    ⟨2 / P.toInvariantForm.form (P.root C.nonempty_supp.some) (P.root C.nonempty_supp.some),
-      div_pos two_pos (P.rootForm_posDef _ (P.ne_zero _))⟩
-
-/-- **Component-normalized invariant form.** Rescales `P.toInvariantForm` on each irreducible
-component so that a representative root of that component has squared length `2`. When `P` admits a
-base `b` with `b.cartanMatrix.IsSimplyLaced`, every root has squared length `2`
-(`RootPairing.simplyLacedForm_root_self`), making `P.simplyLacedForm` the unique invariant form with
-`B(αᵢ, αᵢ) = 2` for all `i` (`RootPairing.eq_simplyLacedForm_of_root_self`), independent of `b` and
-of the component representatives. -/
-noncomputable def simplyLacedForm : P.InvariantForm :=
-  P.simplyLacedFormPair.1
-
-/-- `P.simplyLacedForm` is positive definite. -/
-theorem posDef_simplyLacedForm : P.simplyLacedForm.form.toQuadraticMap.PosDef :=
-  P.simplyLacedFormPair.2
-
-section SimplyLaced
-
-variable [P.IsReduced] [P.IsCrystallographic]
-
-theorem simplyLacedForm_root_self (b : P.Base) (hsimply : b.cartanMatrix.IsSimplyLaced) (i : ι) :
-    P.simplyLacedForm.form (P.root i) (P.root i) = 2 := by
-  rw [simplyLacedForm, simplyLacedFormPair,
-    InvariantForm.form_posDefEquivScale_symm_apply_of_mem _ _ _
-      (root_mem_componentSpace i) (root_mem_componentSpace i)]
-  let : Fintype ι := Fintype.ofFinite ι
-  have hcomp : P.componentOf (P.componentOf i).nonempty_supp.some = P.componentOf i :=
-    ((P.componentOf i).mem_supp_iff _).mp (P.componentOf i).nonempty_supp.some_mem
-  have heq := P.toInvariantForm.apply_root_root_eq_of_componentOf_eq b hsimply hcomp
-  dsimp only
-  rw [heq, div_mul_cancel₀ _ (P.toInvariantForm.ne_zero i)]
-
-/-- Pairing against `P.root i` under `P.simplyLacedForm` coincides with the coroot functional
-`P.coroot' i` when `b.cartanMatrix` is simply laced. -/
-theorem simplyLacedForm_apply_root (b : P.Base) (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (x : M) (i : ι) :
-    P.simplyLacedForm.form x (P.root i) = P.coroot' i x := by
-  have h := P.simplyLacedForm.two_mul_apply_root x i
-  rw [P.simplyLacedForm_root_self b hsimply i, mul_comm (P.coroot' i x)] at h
-  exact mul_left_cancel₀ two_ne_zero h
-
-theorem simplyLacedForm_root_apply (b : P.Base) (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (i : ι) (x : M) :
-    P.simplyLacedForm.form (P.root i) x = P.coroot' i x := by
-  have hsymm : P.simplyLacedForm.form (P.root i) x = P.simplyLacedForm.form x (P.root i) := by
-    simpa using (P.simplyLacedForm.symm.eq x (P.root i)).symm
-  rw [hsymm, P.simplyLacedForm_apply_root b hsimply]
-
-/-- Uniqueness of `P.simplyLacedForm`: when `b.cartanMatrix` is simply laced, any invariant form
-taking value `2` on every root equals `P.simplyLacedForm`. -/
-theorem eq_simplyLacedForm_of_root_self (b : P.Base) (hsimply : b.cartanMatrix.IsSimplyLaced)
-    {B : P.InvariantForm} (hB : ∀ i, B.form (P.root i) (P.root i) = 2) :
-    B = P.simplyLacedForm := by
-  refine (InvariantForm.componentEquiv (P := P)).injective (funext fun C ↦ ?_)
-  obtain ⟨i, hi⟩ := C.nonempty_supp
-  have hcomp : P.componentOf i = C := (C.mem_supp_iff i).mp hi
-  ext x y
-  have hscale : InvariantForm.componentScale P.simplyLacedForm B C = 1 := by
-    rw [← hcomp, InvariantForm.componentScale_eq_div, hB i,
-      P.simplyLacedForm_root_self b hsimply i, div_self two_ne_zero]
-  simp [InvariantForm.form_apply_eq_componentScale_mul P.simplyLacedForm B x.2 y.2, hscale]
-
-/-- Every automorphism of a simply-laced root system `P` preserves `P.simplyLacedForm`. -/
-theorem simplyLacedForm_weightMap (b : P.Base) (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (g : P.Aut) (x y : M) :
-    P.simplyLacedForm.form (g.weightMap x) (g.weightMap y) = P.simplyLacedForm.form x y := by
-  have hcomap : InvariantForm.comap g.toHom P.simplyLacedForm = P.simplyLacedForm :=
-    P.eq_simplyLacedForm_of_root_self b hsimply fun i ↦ by
-      rw [InvariantForm.comap_form_apply, g.toHom.root_weightMap_apply,
-        P.simplyLacedForm_root_self b hsimply]
-  simpa [InvariantForm.comap_form_apply] using
-    congrArg (fun B : P.InvariantForm ↦ B.form x y) hcomap
-
-end SimplyLaced
-
-end OrderedField
-
-end SimplyLacedForm
-
 /-! ### Commuting block reflections -/
 
 section OrbitReflection
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N) [Finite ι]
-
-/-- Auxiliary reindexing rule for `Finset.noncommProd` along an embedding. -/
-private theorem noncommProd_map {α α' β : Type*} [Monoid β] (s : Finset α) (e : α ↪ α')
-    (f : α' → β) (comm : ((s.map e : Finset α') : Set α').Pairwise (Commute on f)) :
-    (s.map e).noncommProd f comm =
-      s.noncommProd (fun x ↦ f (e x)) (fun _ hx _ hy hne ↦
-        comm (mem_map_of_mem e hx) (mem_map_of_mem e hy) (e.injective.ne hne)) := by
-  simp_rw [Finset.noncommProd, Finset.map_val, Multiset.map_map]
-  rfl
-
-omit [Finite ι] in
-/-- Reflections in pairwise orthogonal roots pairwise commute in `P.weylGroup`. -/
-theorem pairwise_commute_of_isOrthogonal {S : Finset ι}
-    (hS : (S : Set ι).Pairwise P.IsOrthogonal) :
-    (S : Set ι).Pairwise (Commute on weylGroup.ofIdx P) :=
-  fun _ hj _ hk hne ↦ weylGroup.commute_ofIdx_of_isOrthogonal P (hS hj hk hne)
-
-omit [Finite ι] in
-/-- Auxiliary action formula for a commuting product of pairwise orthogonal root reflections. -/
-private theorem noncommProd_ofIdx_smul {S : Finset ι}
-    (hS : (S : Set ι).Pairwise P.IsOrthogonal) (x : M) :
-    S.noncommProd (weylGroup.ofIdx P) (pairwise_commute_of_isOrthogonal P hS) • x =
-      x - ∑ j ∈ S, P.coroot' j x • P.root j := by
-  induction S using Finset.cons_induction with
-  | empty => rw [Finset.noncommProd_empty, one_smul, Finset.sum_empty, sub_zero]
-  | cons a s ha ih =>
-    rw [Finset.noncommProd_cons, mul_smul, ih (hS.mono (by intro z hz; exact mem_cons_of_mem hz)),
-      weylGroup.ofIdx_smul, Equiv.reflection_smul, map_sub, map_sum, P.reflection_apply]
-    have hfix : ∑ j ∈ s, (P.reflection a) (P.coroot' j x • P.root j) =
-        ∑ j ∈ s, P.coroot' j x • P.root j :=
-      Finset.sum_congr rfl fun j hj ↦ by
-        rw [map_smul, (hS (mem_cons_self a s) (mem_cons_of_mem hj)
-          (ne_of_mem_of_not_mem hj ha).symm).reflection_apply_right]
-    rw [hfix, Finset.sum_cons, sub_sub]
-
-omit [Finite ι] in
-/-- Auxiliary involution identity for a commuting product of reflections in `P.weylGroup`. -/
-private theorem noncommProd_ofIdx_mul_self {S : Finset ι}
-    (hcomm : (S : Set ι).Pairwise (Commute on weylGroup.ofIdx P)) :
-    S.noncommProd (weylGroup.ofIdx P) hcomm * S.noncommProd (weylGroup.ofIdx P) hcomm = 1 := by
-  rw [← Finset.noncommProd_mul_distrib (weylGroup.ofIdx P) (weylGroup.ofIdx P) hcomm hcomm hcomm]
-  exact (Finset.noncommProd_eq_pow_card S _ _ 1
-    fun j _ ↦ weylGroup.ofIdx_mul_self P j).trans (one_pow _)
 
 /-- The **orbit reflection** attached to `i : ι` under `σ`: when the reflections of
 `P.orbitIndices σ i` pairwise commute in `P.weylGroup`, this is their commuting product in
@@ -302,23 +97,16 @@ noncomputable def orbitReflection (σ : P.Aut) (i : ι) : P.weylGroup := by
     (P.orbitIndices σ i).noncommProd (weylGroup.ofIdx P) h
   else 1
 
-@[simp]
-theorem orbitReflection_indexEquiv (σ : P.Aut) (i : ι) :
-    P.orbitReflection σ (σ.indexEquiv i) = P.orbitReflection σ i := by
-  classical
-  exact congrArg
-    (fun S : Finset ι ↦ if h : (S : Set ι).Pairwise (Commute on weylGroup.ofIdx P) then
-      S.noncommProd (weylGroup.ofIdx P) h else 1)
-    (P.orbitIndices_indexEquiv σ i)
-
 variable {P} in
 theorem orbitReflection_eq_of_mem {σ : P.Aut} {i j : ι} (h : j ∈ P.orbitIndices σ i) :
     P.orbitReflection σ j = P.orbitReflection σ i := by
-  classical
-  exact congrArg
-    (fun S : Finset ι ↦ if hc : (S : Set ι).Pairwise (Commute on weylGroup.ofIdx P) then
-      S.noncommProd (weylGroup.ofIdx P) hc else 1)
-    (P.orbitIndices_eq_of_mem h)
+  simp only [orbitReflection]
+  rw [P.orbitIndices_eq_of_mem h]
+
+@[simp]
+theorem orbitReflection_indexEquiv (σ : P.Aut) (i : ι) :
+    P.orbitReflection σ (σ.indexEquiv i) = P.orbitReflection σ i :=
+  P.orbitReflection_eq_of_mem (P.indexEquiv_mem_orbitIndices_iff.mpr (P.self_mem_orbitIndices σ i))
 
 @[simp]
 theorem orbitReflection_one (i : ι) : P.orbitReflection 1 i = weylGroup.ofIdx P i := by
@@ -327,67 +115,74 @@ theorem orbitReflection_one (i : ι) : P.orbitReflection 1 i = weylGroup.ofIdx P
     exact Set.pairwise_singleton _ _
   simp only [orbitReflection, P.orbitIndices_one, hcomm, ↓reduceDIte, Finset.noncommProd_singleton]
 
-section OrthogonalOrbit
-
-variable {P} {σ : P.Aut} {i : ι}
-
-/-- When `P.orbitIndices σ i` is pairwise orthogonal, `P.orbitReflection σ i` is the commuting
-product of `weylGroup.ofIdx P j` over `j ∈ P.orbitIndices σ i`. -/
-theorem orbitReflection_eq_noncommProd
-    (horth : (P.orbitIndices σ i : Set ι).Pairwise P.IsOrthogonal) :
-    P.orbitReflection σ i = (P.orbitIndices σ i).noncommProd (weylGroup.ofIdx P)
-      (pairwise_commute_of_isOrthogonal P horth) := by
+variable {P} in
+/-- When the reflections of `P.orbitIndices σ i` pairwise commute in `P.weylGroup`,
+`P.orbitReflection σ i` is their commuting product. -/
+theorem orbitReflection_eq_noncommProd {σ : P.Aut} {i : ι}
+    (hcomm : (P.orbitIndices σ i : Set ι).Pairwise (Commute on weylGroup.ofIdx P)) :
+    P.orbitReflection σ i = (P.orbitIndices σ i).noncommProd (weylGroup.ofIdx P) hcomm := by
   classical
-  simp only [orbitReflection, pairwise_commute_of_isOrthogonal P horth, ↓reduceDIte]
+  simp only [orbitReflection, hcomm, ↓reduceDIte]
 
-/-- An orthogonal orbit reflection has order dividing `2` in `P.weylGroup`. -/
-theorem orbitReflection_mul_self (horth : (P.orbitIndices σ i : Set ι).Pairwise P.IsOrthogonal) :
+variable {P} in
+/-- When the reflections of `P.orbitIndices σ i` do not pairwise commute in `P.weylGroup`,
+`P.orbitReflection σ i` defaults to `1`. -/
+theorem orbitReflection_eq_one_of_not_pairwise_commute {σ : P.Aut} {i : ι}
+    (hcomm : ¬ (P.orbitIndices σ i : Set ι).Pairwise (Commute on weylGroup.ofIdx P)) :
+    P.orbitReflection σ i = 1 := by
+  classical
+  simp only [orbitReflection, hcomm, ↓reduceDIte]
+
+/-- Every orbit reflection has order dividing `2` in `P.weylGroup`. -/
+@[simp]
+theorem orbitReflection_mul_self (σ : P.Aut) (i : ι) :
     P.orbitReflection σ i * P.orbitReflection σ i = 1 := by
-  rw [P.orbitReflection_eq_noncommProd horth]
-  exact noncommProd_ofIdx_mul_self P _
+  by_cases hcomm : (P.orbitIndices σ i : Set ι).Pairwise (Commute on weylGroup.ofIdx P)
+  · rw [P.orbitReflection_eq_noncommProd hcomm]
+    exact weylGroup.noncommProd_ofIdx_mul_self P hcomm
+  · rw [P.orbitReflection_eq_one_of_not_pairwise_commute hcomm, mul_one]
 
-theorem orbitReflection_inv (horth : (P.orbitIndices σ i : Set ι).Pairwise P.IsOrthogonal) :
+@[simp]
+theorem orbitReflection_inv (σ : P.Aut) (i : ι) :
     (P.orbitReflection σ i)⁻¹ = P.orbitReflection σ i :=
-  inv_eq_iff_mul_eq_one.mpr (P.orbitReflection_mul_self horth)
+  inv_eq_iff_mul_eq_one.mpr (P.orbitReflection_mul_self σ i)
 
 /-- **Block reflections commute with `σ`.** Conjugating `P.orbitReflection σ i` by `σ` permutes its
 commuting reflection factors along `σ.indexEquiv`, leaving the product unchanged. -/
-theorem commute_coe_orbitReflection (horth : (P.orbitIndices σ i : Set ι).Pairwise P.IsOrthogonal) :
+theorem commute_coe_orbitReflection (σ : P.Aut) (i : ι) :
     Commute (P.orbitReflection σ i : P.Aut) σ := by
-  have hcomm := pairwise_commute_of_isOrthogonal P horth
-  have hfix : σ.weylGroupEquiv (P.orbitReflection σ i) = P.orbitReflection σ i := by
-    rw [P.orbitReflection_eq_noncommProd horth, Finset.map_noncommProd]
-    have hmap : (P.orbitIndices σ i).map σ.indexEquiv.toEmbedding = P.orbitIndices σ i :=
-      (P.map_orbitIndices σ (fun _ ↦ rfl) i).trans (P.orbitIndices_indexEquiv σ i)
-    have hcomm' : (((P.orbitIndices σ i).map σ.indexEquiv.toEmbedding : Finset ι) : Set ι).Pairwise
-        (Commute on weylGroup.ofIdx P) := by
-      rw [hmap]
-      exact hcomm
-    refine (Finset.noncommProd_congr rfl
-      (fun j _ ↦ σ.weylGroupEquiv_ofIdx j) _).trans ?_
-    exact (noncommProd_map (P.orbitIndices σ i) σ.indexEquiv.toEmbedding
-      (weylGroup.ofIdx P) hcomm').symm.trans (Finset.noncommProd_congr hmap (fun _ _ ↦ rfl) _)
-  have haut : σ * (P.orbitReflection σ i : P.Aut) * σ⁻¹ = (P.orbitReflection σ i : P.Aut) := by
-    have hcoe := congrArg (Subtype.val : P.weylGroup → P.Aut) hfix
-    rw [Equiv.coe_weylGroupEquiv, Equiv.autCongr_apply] at hcoe
-    exact mul_assoc σ (P.orbitReflection σ i : P.Aut) σ⁻¹ ▸ hcoe
-  exact Commute.symm (mul_inv_eq_iff_eq_mul.mp haut)
+  by_cases hcomm : (P.orbitIndices σ i : Set ι).Pairwise (Commute on weylGroup.ofIdx P)
+  · have hfix : σ.weylGroupEquiv (P.orbitReflection σ i) = P.orbitReflection σ i := by
+      rw [P.orbitReflection_eq_noncommProd hcomm, Finset.map_noncommProd]
+      have hmap : (P.orbitIndices σ i).map σ.indexEquiv.toEmbedding = P.orbitIndices σ i :=
+        (P.map_orbitIndices σ (fun _ ↦ rfl) i).trans (P.orbitIndices_indexEquiv σ i)
+      have hcomm' :
+          (((P.orbitIndices σ i).map σ.indexEquiv.toEmbedding : Finset ι) : Set ι).Pairwise
+            (Commute on weylGroup.ofIdx P) := by
+        rw [hmap]
+        exact hcomm
+      refine (Finset.noncommProd_congr rfl
+        (fun j _ ↦ σ.weylGroupEquiv_ofIdx j) _).trans ?_
+      exact (Finset.noncommProd_map (P.orbitIndices σ i) σ.indexEquiv.toEmbedding
+        (weylGroup.ofIdx P) hcomm').symm.trans (Finset.noncommProd_congr hmap (fun _ _ ↦ rfl) _)
+    have haut : σ * (P.orbitReflection σ i : P.Aut) * σ⁻¹ = (P.orbitReflection σ i : P.Aut) := by
+      have hcoe := congrArg (Subtype.val : P.weylGroup → P.Aut) hfix
+      rw [Equiv.coe_weylGroupEquiv, Equiv.autCongr_apply] at hcoe
+      exact mul_assoc σ (P.orbitReflection σ i : P.Aut) σ⁻¹ ▸ hcoe
+    exact Commute.symm (mul_inv_eq_iff_eq_mul.mp haut)
+  · rw [P.orbitReflection_eq_one_of_not_pairwise_commute hcomm, Subgroup.coe_one]
+    exact Commute.one_left σ
+
+section OrthogonalOrbit
+
+variable {P} {σ : P.Aut} {i : ι}
 
 /-- Action of `P.orbitReflection σ i` on any ambient weight `x : M`. -/
 theorem orbitReflection_smul (horth : (P.orbitIndices σ i : Set ι).Pairwise P.IsOrthogonal)
     (x : M) :
     P.orbitReflection σ i • x = x - ∑ j ∈ P.orbitIndices σ i, P.coroot' j x • P.root j := by
-  rw [P.orbitReflection_eq_noncommProd horth, noncommProd_ofIdx_smul P horth]
-
-/-- On a `σ`-fixed weight `x`, all coroots in a `σ`-orbit take the same value. -/
-theorem coroot'_eq_of_mem_orbitIndices_of_fixed {x : M} (hx : σ.weightMap x = x)
-    {j : ι} (hj : j ∈ P.orbitIndices σ i) : P.coroot' j x = P.coroot' i x := by
-  obtain ⟨m, rfl⟩ := P.mem_orbitIndices_iff_exists_pow.mp hj
-  clear hj
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [pow_succ', Equiv.Perm.mul_apply, ← hx, σ.toHom.coroot'_weightMap, hx, ih]
+  rw [P.orbitReflection_eq_noncommProd (weylGroup.pairwise_commute_ofIdx_of_isOrthogonal P horth),
+    weylGroup.noncommProd_ofIdx_smul P horth]
 
 /-- **Action of `P.orbitReflection σ i` on `σ`-fixed weights.** On `E^σ`, the commuting block
 reflection acts as the rank-one reflection subtracting `P.coroot' i x • P.orbitSum σ i`. -/
@@ -398,18 +193,8 @@ theorem orbitReflection_smul_of_fixed (horth : (P.orbitIndices σ i : Set ι).Pa
   congr 1
   exact Finset.sum_congr rfl fun j hj ↦ by rw [P.coroot'_eq_of_mem_orbitIndices_of_fixed hx hj]
 
-/-- For a pairwise orthogonal `σ`-orbit, `P.coroot' i (P.orbitSum σ i) = 2`. -/
-theorem coroot'_orbitSum_self (horth : (P.orbitIndices σ i : Set ι).Pairwise P.IsOrthogonal) :
-    P.coroot' i (P.orbitSum σ i) = 2 := by
-  classical
-  rw [P.orbitSum_def, map_sum, Finset.sum_eq_single i]
-  · simp
-  · intro j hj hne
-    rw [root_coroot'_eq_pairing, (horth hj (P.self_mem_orbitIndices σ i) hne).1]
-  · exact fun h ↦ (h (P.self_mem_orbitIndices σ i)).elim
-
 /-- `P.orbitReflection σ i` negates every root in `P.orbitIndices σ i`. -/
-theorem weylGroupToPerm_orbitReflection_self
+theorem weylGroupToPerm_orbitReflection_of_mem
     (horth : (P.orbitIndices σ i : Set ι).Pairwise P.IsOrthogonal)
     {j : ι} (hj : j ∈ P.orbitIndices σ i) :
     P.weylGroupToPerm (P.orbitReflection σ i) j = P.reflectionPerm j j := by
@@ -429,40 +214,33 @@ theorem weylGroupToPerm_orbitReflection_self
 theorem map_orbitIndices_of_commute {w : P.weylGroup} (hw : Commute (w : P.Aut) σ) (r : ι) :
     (P.orbitIndices σ r).map (P.weylGroupToPerm w).toEmbedding =
       P.orbitIndices σ (P.weylGroupToPerm w r) := by
-  have hidx (j : ι) : (w : P.Aut).indexEquiv (σ.indexEquiv j) =
-      σ.indexEquiv ((w : P.Aut).indexEquiv j) :=
-    congrArg (fun g : P.Aut ↦ g.indexEquiv j) hw.eq
-  exact P.map_orbitIndices (w : P.Aut) hidx r
+  have hperm : P.weylGroupToPerm w = (w : P.Aut).indexEquiv :=
+    _root_.Equiv.Perm.ext (P.weylGroupToPerm_apply w)
+  rw [hperm]
+  exact P.map_orbitIndices (w : P.Aut) (Equiv.indexEquiv_commute hw) r
 
 /-- Any element `w : P.weylGroup` commuting with `σ` carries `P.orbitSum σ r` to
 `P.orbitSum σ (P.weylGroupToPerm w r)`. -/
 theorem smul_orbitSum_of_commute {w : P.weylGroup} (hw : Commute (w : P.Aut) σ) (r : ι) :
     w • P.orbitSum σ r = P.orbitSum σ (P.weylGroupToPerm w r) := by
-  have hidx (j : ι) : (w : P.Aut).indexEquiv (σ.indexEquiv j) =
-      σ.indexEquiv ((w : P.Aut).indexEquiv j) :=
-    congrArg (fun g : P.Aut ↦ g.indexEquiv j) hw.eq
-  exact P.weightMap_orbitSum (w : P.Aut) hidx r
+  rw [Subgroup.smul_def, Equiv.smul_weight_eq_weightMap, P.weylGroupToPerm_apply]
+  exact P.weightMap_orbitSum (w : P.Aut) (Equiv.indexEquiv_commute hw) r
 
 end OrthogonalOrbit
 
 end OrbitReflection
 
-/-! ### Height descent, Stembridge Claim 4, and orbit-sum norms -/
+/-! ### Height descent and Stembridge's Claim 4 -/
 
-section OrthogonalFold
+section SimpleOrbitOrthogonal
 
-variable {ι K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
-  (P : RootPairing ι K M N) [Finite ι] [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic]
+variable {ι R M N : Type*} [CommRing R] [IsDomain R] [NeZero (2 : R)]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] {b : P.Base} {σ : P.Aut}
 
-section Descent
-
-variable {P} {b : P.Base} {σ : P.Aut}
-
-omit [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] in
 /-- Under the simple-orbit orthogonality hypothesis, the `σ`-orbit of any simple root is pairwise
 `P.IsOrthogonal`. -/
-theorem isOrthogonal_orbitIndices_of_mem_support
+theorem pairwise_isOrthogonal_orbitIndices_of_mem_support
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
     {s : ι} (hs : s ∈ b.support) :
@@ -470,199 +248,251 @@ theorem isOrthogonal_orbitIndices_of_mem_support
   intro j hj k hk hne
   have hj' : j ∈ b.support := P.mem_support_of_mem_orbitIndices hσ hs hj
   have hk' : k ∈ P.orbitIndices σ j := (P.orbitIndices_eq_of_mem hj).symm ▸ hk
-  exact P.isOrthogonal_iff_pairing_eq_zero.mpr (horth j hj' k hk' hne)
+  have hp : P.pairing j k = 0 := horth j hj' k hk' hne
+  exact ⟨hp, P.pairing_eq_zero_iff'.mp hp⟩
 
-/-- Under `P.simplyLacedForm`, pairing a `σ`-fixed weight `x` against `P.orbitSum σ r` multiplies
-`P.coroot' r x` by `#(P.orbitIndices σ r)`. -/
-theorem simplyLacedForm_apply_orbitSum_of_fixed (b : P.Base)
-    (hsimply : b.cartanMatrix.IsSimplyLaced) {σ : P.Aut} {x : M} (hx : σ.weightMap x = x) (r : ι) :
-    P.simplyLacedForm.form x (P.orbitSum σ r) = #(P.orbitIndices σ r) * P.coroot' r x := by
-  rw [P.orbitSum_def, map_sum]
-  have hterm (j : ι) (hj : j ∈ P.orbitIndices σ r) :
-      P.simplyLacedForm.form x (P.root j) = P.coroot' r x := by
-    rw [P.simplyLacedForm_apply_root b hsimply, P.coroot'_eq_of_mem_orbitIndices_of_fixed hx hj]
-  rw [Finset.sum_congr rfl hterm, Finset.sum_const, nsmul_eq_mul]
+end SimpleOrbitOrthogonal
 
-/-- Every positive orbit sum has positive pairing with at least one simple coroot. -/
-private theorem exists_mem_support_coroot'_orbitSum_pos
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced) {r : ι} (hr : b.IsPos r) :
-    ∃ s ∈ b.support, 0 < P.coroot' s (P.orbitSum σ r) := by
-  have hpos : 0 < P.simplyLacedForm.form (P.orbitSum σ r) (P.orbitSum σ r) :=
-    P.posDef_simplyLacedForm _ (P.orbitSum_ne_zero hσ r)
-  obtain ⟨f, hf⟩ := (mem_posRootCone P b).mp (P.orbitSum_mem_posRootCone hσ hr)
-  have hexp : P.simplyLacedForm.form (P.orbitSum σ r) (P.orbitSum σ r) =
-      ∑ s ∈ b.support, f s • P.coroot' s (P.orbitSum σ r) := by
-    conv_lhs =>
-      arg 1
-      rw [hf]
-    rw [map_sum, LinearMap.sum_apply]
-    exact Finset.sum_congr rfl fun s _ ↦ by
-      rw [map_nsmul, LinearMap.smul_apply, P.simplyLacedForm_root_apply b hsimply]
-  rw [hexp] at hpos
-  by_contra! hle
-  exact hpos.not_ge (Finset.sum_nonpos fun s hs ↦ nsmul_nonpos (hle s hs) (f s))
+section Descent
 
-/-- Auxiliary arithmetic: if a sum of squares of natural numbers over `S` equals `1`, one summand
-equals `1` and all other summands vanish. -/
-private theorem exists_eq_one_of_sum_mul_self_eq_one {α : Type*} {S : Finset α} {f : α → ℕ}
-    (h : ∑ k ∈ S, f k * f k = 1) :
-    ∃ k₀ ∈ S, f k₀ = 1 ∧ ∀ k ∈ S, k ≠ k₀ → f k = 0 := by
-  classical
-  have hne : ∃ k₀ ∈ S, f k₀ * f k₀ ≠ 0 := by
-    by_contra! h0
-    rw [Finset.sum_eq_zero fun k hk ↦ h0 k hk] at h
-    omega
-  obtain ⟨k₀, hk₀, hfk₀⟩ := hne
-  rw [← Finset.add_sum_erase S (fun k ↦ f k * f k) hk₀] at h
-  have hrest : ∑ k ∈ S.erase k₀, f k * f k = 0 := by omega
-  have hone : f k₀ = 1 := by nlinarith
-  refine ⟨k₀, hk₀, hone, fun k hk hne' ↦ ?_⟩
-  have hk0 : f k * f k = 0 :=
-    (Finset.sum_eq_zero_iff.mp hrest) k (Finset.mem_erase.mpr ⟨hne', hk⟩)
-  nlinarith
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] [P.IsReduced] [P.IsCrystallographic]
+  {b : P.Base} {σ : P.Aut}
 
-/-- If a positive root `r` has zero simple-root coordinate outside an orthogonal simple orbit
+omit [CharZero R] [IsDomain R] [P.IsReduced] [P.IsCrystallographic] in
+/-- Every element of `Subgroup.closure (P.orbitReflection σ '' b.support)` commutes with `σ`. -/
+private theorem commute_of_mem_closure_orbitReflection
+    {w : P.weylGroup} (hw : w ∈ Subgroup.closure (P.orbitReflection σ '' (b.support : Set ι))) :
+    Commute (w : P.Aut) σ := by
+  induction hw using Subgroup.closure_induction with
+  | mem g hg =>
+    obtain ⟨s, -, rfl⟩ := hg
+    exact P.commute_coe_orbitReflection σ s
+  | one => simp
+  | mul _ _ _ _ ih₁ ih₂ => exact ih₁.mul_left ih₂
+  | inv _ _ ih => exact ih.inv_left
+
+omit [P.IsReduced] in
+/-- Every positive orbit sum pairs positively in `ℤ` with at least one simple coroot. -/
+private theorem exists_mem_support_sum_pairingIn_pos
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) {q : ι} (hq : b.IsPos q) :
+    ∃ s ∈ b.support, 0 < ∑ j ∈ P.orbitIndices σ q, P.pairingIn ℤ j s := by
+  let _ := Fintype.ofFinite ι
+  let B := P.posRootForm ℤ
+  obtain ⟨f, hf⟩ := (mem_posRootCone P b).mp (P.orbitSum_mem_posRootCone hσ hq)
+  set c : b.support → ℤ := fun k ↦ f k
+  have hc : ¬ c ≤ 0 := fun hle ↦ P.orbitSum_ne_zero hσ q <| by
+    rw [hf]
+    refine Finset.sum_eq_zero fun k hk ↦ ?_
+    have hk0 : (f k : ℤ) ≤ 0 := hle ⟨k, hk⟩
+    have hfk : f k = 0 := by omega
+    rw [hfk, zero_smul]
+  obtain ⟨s, -, hsp⟩ := B.posForm.exists_pos_and_pos_apply_sum_smul
+    (v := fun k : b.support ↦ P.rootSpanMem ℤ k)
+    (fun _ ↦ P.posRootForm_posForm_pos_of_ne_zero ℤ)
+    (.of_comp (P.rootSpan ℤ).subtype (b.linearIndepOn_root.restrict_scalars' ℤ))
+    (fun k l hkl ↦ (B.posForm_apply_root_root_le_zero_iff k l).mpr <|
+      b.pairingIn_le_zero_of_ne (Subtype.coe_ne_coe.mpr hkl) k.2 l.2)
+    hc
+  have hspan_eq : ∑ l : b.support, c l • P.rootSpanMem ℤ l =
+      ∑ j ∈ P.orbitIndices σ q, P.rootSpanMem ℤ j := by
+    apply Subtype.ext
+    push_cast
+    rw [Finset.sum_coe_sort b.support (fun k ↦ (f k : ℤ) • P.root k)]
+    simpa only [c, P.orbitSum_def, natCast_zsmul] using hf.symm
+  rw [hspan_eq, map_sum, LinearMap.sum_apply] at hsp
+  have h2pos : 0 < 2 * ∑ j ∈ P.orbitIndices σ q,
+      B.posForm (P.rootSpanMem ℤ j) (P.rootSpanMem ℤ s) := by omega
+  have hform (j : ι) : 2 * B.posForm (P.rootSpanMem ℤ j) (P.rootSpanMem ℤ s) =
+      P.pairingIn ℤ j s * B.rootLength s := by
+    apply FaithfulSMul.algebraMap_injective ℤ R
+    simp only [map_mul, map_ofNat, RootPositiveForm.algebraMap_posForm, algebraMap_pairingIn,
+      RootPositiveForm.algebraMap_rootLength]
+    exact B.two_mul_apply_root_root j s
+  rw [Finset.mul_sum, Finset.sum_congr rfl fun j _ ↦ hform j, ← Finset.sum_mul] at h2pos
+  refine ⟨s, s.2, ?_⟩
+  exact pos_of_mul_pos_left h2pos (B.rootLength_pos s).le
+
+/-- If a root `r` is a natural combination of the roots in an orthogonal simple orbit
 `P.orbitIndices σ s`, then `r` belongs to `P.orbitIndices σ s`. -/
-private theorem mem_orbitIndices_of_isPos_of_repr_eq_zero
+private theorem mem_orbitIndices_of_root_eq_sum
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    {s r : ι} (hs : s ∈ b.support) (hr : b.IsPos r)
-    (hzero : ∀ t : b.support, (t : ι) ∉ P.orbitIndices σ s →
-      b.toWeightBasis.repr (P.root r) t = 0) :
+    {s r : ι} (hs : s ∈ b.support) {f : ι → ℕ}
+    (hsub : P.root r = ∑ k ∈ P.orbitIndices σ s, f k • P.root k) :
     r ∈ P.orbitIndices σ s := by
   classical
-  obtain ⟨f, -, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b r).mpr hr)
-  have hrepr (t : b.support) : b.toWeightBasis.repr (P.root r) t = (f t : K) := by
-    rw [hf, ← Finset.sum_coe_sort b.support, map_sum, Finsupp.finsetSum_apply]
-    simp_rw [← b.toWeightBasis_apply, map_nsmul, Module.Basis.repr_self, Finsupp.smul_apply,
-      Finsupp.single_apply]
-    simp
-  have hsub : P.root r = ∑ k ∈ P.orbitIndices σ s, f k • P.root k := by
-    rw [hf]
-    refine (Finset.sum_subset (fun k hk ↦ P.mem_support_of_mem_orbitIndices hσ hs hk) ?_).symm
-    intro k hk hnot
-    have hfk : (f k : K) = 0 := (hrepr ⟨k, hk⟩).symm.trans (hzero ⟨k, hk⟩ hnot)
-    rw [Nat.cast_eq_zero.mp hfk, zero_smul]
-  have horth_s := P.isOrthogonal_orbitIndices_of_mem_support hσ horth hs
-  have hnorm : P.simplyLacedForm.form (P.root r) (P.root r) =
-      ((2 * ∑ k ∈ P.orbitIndices σ s, f k * f k : ℕ) : K) := by
-    conv_lhs => rw [hsub]
-    simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
-    rw [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    rw [Finset.sum_eq_single k]
-    · rw [P.simplyLacedForm_root_self b hsimply k]
-      push_cast
-      simp only [nsmul_eq_mul]
-      ring
+  let _ := Fintype.ofFinite ι
+  let B := (P.posRootForm ℤ).toInvariantForm
+  have horth_s := P.pairwise_isOrthogonal_orbitIndices_of_mem_support hσ horth hs
+  have hsubZ : P.root r = ∑ k ∈ P.orbitIndices σ s, (f k : ℤ) • P.root k := by
+    simpa only [natCast_zsmul] using hsub
+  have hpair (k : ι) (hk : k ∈ P.orbitIndices σ s) :
+      P.pairingIn ℤ r k = 2 * (f k : ℤ) := by
+    rw [P.pairingIn_eq_sum_of_root_eq_sum hsubZ k, Finset.sum_eq_single k]
+    · rw [pairingIn_same, mul_comm]
     · intro l hl hlk
-      rw [P.simplyLacedForm_apply_root b hsimply (P.root l) k, P.root_coroot'_eq_pairing k l,
-        (horth_s hl hk hlk).1, nsmul_zero]
+      have hl0 : P.pairingIn ℤ l k = 0 := by
+        apply FaithfulSMul.algebraMap_injective ℤ R
+        rw [P.algebraMap_pairingIn ℤ, (horth_s hl hk hlk).1, map_zero]
+      rw [hl0, mul_zero]
     · exact fun h ↦ (h hk).elim
-  rw [P.simplyLacedForm_root_self b hsimply r] at hnorm
-  have hsq : ∑ k ∈ P.orbitIndices σ s, f k * f k = 1 := by
-    have h2 : 2 * ∑ k ∈ P.orbitIndices σ s, f k * f k = 2 := by exact_mod_cast hnorm.symm
-    omega
-  obtain ⟨k₀, hk₀, hfk₀, hrest⟩ := exists_eq_one_of_sum_mul_self_eq_one hsq
+  have hcomp (k : ι) (hk : k ∈ P.orbitIndices σ s) (hfk : f k ≠ 0) :
+      P.componentOf k = P.componentOf r := by
+    by_cases hrk : k = r
+    · rw [hrk]
+    · refine SimpleGraph.ConnectedComponent.sound (SimpleGraph.Adj.reachable ?_)
+      rw [P.nonorthogonalGraph_adj]
+      refine ⟨hrk, fun ho ↦ ?_⟩
+      have hp0 : P.pairingIn ℤ r k = 0 := by
+        apply FaithfulSMul.algebraMap_injective ℤ R
+        rw [P.algebraMap_pairingIn ℤ, ho.2, map_zero]
+      have := hpair k hk
+      omega
+  have hlen (k : ι) (hk : k ∈ P.orbitIndices σ s) :
+      (f k ^ 2 : ℕ) • B.form (P.root k) (P.root k) =
+        (f k ^ 2 : ℕ) • B.form (P.root r) (P.root r) := by
+    by_cases hfk : f k = 0
+    · simp [hfk]
+    · rw [B.apply_root_root_eq_of_componentOf_eq b hsimply (hcomp k hk hfk)]
+  have hnorm : B.form (P.root r) (P.root r) =
+      (∑ k ∈ P.orbitIndices σ s, f k ^ 2) • B.form (P.root r) (P.root r) := by
+    calc B.form (P.root r) (P.root r)
+        = B.form (∑ k ∈ P.orbitIndices σ s, f k • P.root k)
+            (∑ l ∈ P.orbitIndices σ s, f l • P.root l) := by rw [← hsub]
+      _ = ∑ k ∈ P.orbitIndices σ s, (f k ^ 2 : ℕ) • B.form (P.root k) (P.root k) := by
+          simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
+          refine Finset.sum_congr rfl fun k hk ↦ ?_
+          rw [Finset.sum_eq_single k]
+          · rw [smul_smul, sq]
+          · intro l hl hlk
+            rw [(B.apply_root_root_zero_iff l k).mpr (horth_s hl hk hlk).1, smul_zero]
+          · exact fun h ↦ (h hk).elim
+      _ = ∑ k ∈ P.orbitIndices σ s, (f k ^ 2 : ℕ) • B.form (P.root r) (P.root r) :=
+          Finset.sum_congr rfl hlen
+      _ = (∑ k ∈ P.orbitIndices σ s, f k ^ 2) • B.form (P.root r) (P.root r) := by
+          rw [← Finset.sum_smul]
+  have hsqZ : ∑ k : P.orbitIndices σ s, (f k : ℤ) ^ 2 = 1 := by
+    have hcast : (((∑ k ∈ P.orbitIndices σ s, f k ^ 2 : ℕ) : R) - 1) *
+        B.form (P.root r) (P.root r) = 0 := by
+      rw [sub_mul, one_mul, ← nsmul_eq_mul, ← hnorm, sub_self]
+    have h1 : ((∑ k ∈ P.orbitIndices σ s, f k ^ 2 : ℕ) : R) = 1 :=
+      sub_eq_zero.mp ((mul_eq_zero.mp hcast).resolve_right (B.ne_zero r))
+    have hnat : ∑ k ∈ P.orbitIndices σ s, f k ^ 2 = 1 := by exact_mod_cast h1
+    rw [Finset.sum_coe_sort (P.orbitIndices σ s) (fun k ↦ (f k : ℤ) ^ 2)]
+    exact_mod_cast hnat
+  obtain ⟨k₀, hk₀⟩ := sum_sq_eq_one_iff.mp hsqZ
+  have hk₀_one : f k₀ = 1 ∧ ∀ k : P.orbitIndices σ s, k ≠ k₀ → f k = 0 := by
+    rcases hk₀ with hk₀ | hk₀
+    · refine ⟨?_, fun k hne ↦ ?_⟩
+      · have := congrFun hk₀ k₀; simp at this; omega
+      · have := congrFun hk₀ k; simp [hne] at this; omega
+    · exfalso
+      have := congrFun hk₀ k₀
+      simp at this
   have hroot : P.root r = P.root k₀ := by
-    rw [hsub, Finset.sum_eq_single k₀, hfk₀, one_smul]
-    · exact fun k hk hne ↦ by rw [hrest k hk hne, zero_smul]
-    · exact fun h ↦ (h hk₀).elim
-  exact P.root.injective hroot ▸ hk₀
-
-omit [P.IsReduced] [P.IsCrystallographic] in
-/-- All roots in a `σ`-orbit have equal height, so `heightLinearMap` on `P.orbitSum σ r` equals
-`#(P.orbitIndices σ r) * b.height r`. -/
-private theorem heightLinearMap_orbitSum
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (r : ι) :
-    heightLinearMap P b (P.orbitSum σ r) = #(P.orbitIndices σ r) * (b.height r : K) := by
-  have hht (j : ι) (hj : j ∈ P.orbitIndices σ r) : b.height j = b.height r := by
-    obtain ⟨m, rfl⟩ := P.mem_orbitIndices_iff_exists_pow.mp hj
-    clear hj
-    induction m with
-    | zero => rfl
-    | succ m ih => rw [pow_succ', Equiv.Perm.mul_apply, b.height_indexEquiv σ hσ, ih]
-  rw [P.orbitSum_def, map_sum]
-  have hterm (j : ι) (hj : j ∈ P.orbitIndices σ r) :
-      heightLinearMap P b (P.root j) = (b.height r : K) := by
-    rw [heightLinearMap_root, hht j hj]
-  rw [Finset.sum_congr rfl hterm, Finset.sum_const, nsmul_eq_mul]
+    rw [hsub, ← Finset.sum_coe_sort (P.orbitIndices σ s), Finset.sum_eq_single k₀,
+      hk₀_one.1, one_smul]
+    · exact fun k _ hne ↦ by rw [hk₀_one.2 k hne, zero_smul]
+    · exact fun h ↦ (h (Finset.mem_univ k₀)).elim
+  exact P.root.injective hroot ▸ k₀.2
 
 /-- **Height descent step.** Applying a simple block reflection `P.orbitReflection σ s` with
-`0 < P.coroot' s (P.orbitSum σ r)` to a positive root `r` either witnesses `r ∈ P.orbitIndices σ s`
-or produces a positive root of strictly smaller height. -/
+`0 < ∑ j ∈ P.orbitIndices σ r, P.pairingIn ℤ j s` to a positive root `r` either witnesses
+`r ∈ P.orbitIndices σ s` or produces a positive root of strictly smaller height. -/
 private theorem mem_orbitIndices_or_height_lt
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
     {s r : ι} (hs : s ∈ b.support) (hr : b.IsPos r)
-    (hpos : 0 < P.coroot' s (P.orbitSum σ r)) :
+    (hpos : 0 < ∑ j ∈ P.orbitIndices σ r, P.pairingIn ℤ j s) :
     r ∈ P.orbitIndices σ s ∨
       (b.IsPos (P.weylGroupToPerm (P.orbitReflection σ s) r) ∧
         b.height (P.weylGroupToPerm (P.orbitReflection σ s) r) < b.height r) := by
-  have horth_s := P.isOrthogonal_orbitIndices_of_mem_support hσ horth hs
-  have hcomm_s := P.commute_coe_orbitReflection horth_s
+  classical
+  have horth_s := P.pairwise_isOrthogonal_orbitIndices_of_mem_support hσ horth hs
+  have hcomm_s := P.commute_coe_orbitReflection σ s
   set r' := P.weylGroupToPerm (P.orbitReflection σ s) r
+  set z : ℤ := ∑ j ∈ P.orbitIndices σ r, P.pairingIn ℤ j s
   by_cases hr' : b.IsPos r'
   · right
     refine ⟨hr', ?_⟩
-    have horb : P.orbitSum σ r' =
-        P.orbitSum σ r - P.coroot' s (P.orbitSum σ r) • P.orbitSum σ s := by
-      rw [← P.smul_orbitSum_of_commute hcomm_s r,
-        P.orbitReflection_smul_of_fixed horth_s (P.weightMap_orbitSum_self σ r)]
+    have hz : (z : R) = P.coroot' s (P.orbitSum σ r) := by
+      rw [P.orbitSum_def, map_sum, Int.cast_sum]
+      exact Finset.sum_congr rfl fun j _ ↦ by
+        simpa [root_coroot'_eq_pairing] using P.algebraMap_pairingIn ℤ j s
+    have horb : P.orbitSum σ r = P.orbitSum σ r' + z • P.orbitSum σ s := by
+      have hsub : P.orbitSum σ r' = P.orbitSum σ r - z • P.orbitSum σ s := by
+        rw [← P.smul_orbitSum_of_commute hcomm_s r,
+          P.orbitReflection_smul_of_fixed horth_s (P.weightMap_orbitSum_self σ r), ← hz,
+          Int.cast_smul_eq_zsmul]
+      rw [hsub, sub_add_cancel]
+    let U := P.orbitIndices σ r' ∪ P.orbitIndices σ s
+    have hrel : ∑ j ∈ P.orbitIndices σ r, (1 : ℤ) • P.root j =
+        ∑ j ∈ U, ((if j ∈ P.orbitIndices σ r' then (1 : ℤ) else 0) +
+          (if j ∈ P.orbitIndices σ s then z else 0)) • P.root j := by
+      simp_rw [add_smul, ite_smul, one_smul, zero_smul]
+      rw [Finset.sum_add_distrib, Finset.sum_ite_mem, Finset.sum_ite_mem,
+        Finset.union_inter_cancel_left, Finset.union_inter_cancel_right, ← Finset.smul_sum,
+        ← P.orbitSum_def, ← P.orbitSum_def, ← P.orbitSum_def, horb]
+    have hht := sum_mul_height_eq_of_sum_zsmul_root_eq P b hrel
+    simp_rw [add_mul, ite_mul, one_mul, zero_mul] at hht
+    rw [Finset.sum_add_distrib, Finset.sum_ite_mem, Finset.sum_ite_mem,
+      Finset.union_inter_cancel_left, Finset.union_inter_cancel_right,
+      Finset.sum_congr rfl fun j hj ↦ P.height_eq_of_mem_orbitIndices hσ hj,
+      Finset.sum_congr rfl fun j hj ↦ P.height_eq_of_mem_orbitIndices hσ hj,
+      Finset.sum_congr rfl fun j hj ↦
+        congrArg (z * ·) ((P.height_eq_of_mem_orbitIndices hσ hj).trans
+          (b.height_eq_one_iff.mpr hs)),
+      mul_one, Finset.sum_const, Finset.sum_const, Finset.sum_const,
+      nsmul_eq_mul, nsmul_eq_mul, nsmul_eq_mul] at hht
     have hcard : #(P.orbitIndices σ r') = #(P.orbitIndices σ r) := by
       rw [← P.map_orbitIndices_of_commute hcomm_s r, Finset.card_map]
-    have hht := congrArg (heightLinearMap P b) horb
-    rw [map_sub, map_smul, smul_eq_mul, P.heightLinearMap_orbitSum hσ r',
-      P.heightLinearMap_orbitSum hσ r, P.heightLinearMap_orbitSum hσ s,
-      b.height_eq_one_iff.mpr hs, Int.cast_one, mul_one, hcard] at hht
-    have hd_pos : (0 : K) < #(P.orbitIndices σ r) := Nat.cast_pos.mpr (P.card_orbitIndices_pos σ r)
-    have hs_pos : (0 : K) < #(P.orbitIndices σ s) := Nat.cast_pos.mpr (P.card_orbitIndices_pos σ s)
-    have hltK : (b.height r' : K) < (b.height r : K) := by
-      nlinarith [mul_pos hpos hs_pos, hd_pos]
-    exact Int.cast_lt.mp hltK
+    rw [hcard] at hht
+    have : 0 < (#(P.orbitIndices σ r) : ℤ) :=
+      Int.natCast_pos.mpr (P.card_orbitIndices_pos σ r)
+    have : 0 < (#(P.orbitIndices σ s) : ℤ) :=
+      Int.natCast_pos.mpr (P.card_orbitIndices_pos σ s)
+    nlinarith
   · left
-    refine P.mem_orbitIndices_of_isPos_of_repr_eq_zero hσ hsimply horth hs hr fun t ht ↦ ?_
-    have hge : 0 ≤ b.toWeightBasis.repr (P.root r) t :=
-      toWeightBasis_repr_nonneg_of_mem_posRootCone
-        (root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b r).mpr hr)) t
-    have hneg : P.root (P.reflectionPerm r' r') ∈ posRootCone P b :=
-      root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b _).mpr
-        ((isPos_reflectionPerm_self_iff_mem_negRoots P b r').mpr ((mem_negRoots P b r').mpr hr')))
-    have hle' : 0 ≤ b.toWeightBasis.repr (-P.root r') t := by
-      simpa [root_reflectionPerm] using toWeightBasis_repr_nonneg_of_mem_posRootCone hneg t
-    have heq_coord : b.toWeightBasis.repr (P.root r') t = b.toWeightBasis.repr (P.root r) t := by
-      have hroot' : P.root r' = P.root r - ∑ k ∈ P.orbitIndices σ s,
-          P.coroot' k (P.root r) • P.root k := by
-        rw [← P.weylGroup_apply_root, P.orbitReflection_smul horth_s]
-      rw [hroot', map_sub, map_sum, Finsupp.sub_apply, Finsupp.finsetSum_apply]
-      have hsum0 : ∑ k ∈ P.orbitIndices σ s,
-          b.toWeightBasis.repr (P.coroot' k (P.root r) • P.root k) t = 0 :=
-        Finset.sum_eq_zero fun k hk ↦ by
-          have hkb : k ∈ b.support := P.mem_support_of_mem_orbitIndices hσ hs hk
-          have hne : (⟨k, hkb⟩ : b.support) ≠ t := fun h ↦ ht (h ▸ hk)
-          rw [map_smul, ← b.toWeightBasis_apply ⟨k, hkb⟩, Module.Basis.repr_self,
-            Finsupp.smul_apply, Finsupp.single_eq_of_ne hne.symm, smul_zero]
-      rw [hsum0, sub_zero]
-    rw [map_neg, Finsupp.neg_apply, heq_coord, Left.nonneg_neg_iff] at hle'
-    exact le_antisymm hle' hge
-
-omit [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] in
-/-- Every element of `Subgroup.closure (P.orbitReflection σ '' b.support)` commutes with `σ`. -/
-private theorem commute_of_mem_closure_orbitReflection
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    {w : P.weylGroup} (hw : w ∈ Subgroup.closure (P.orbitReflection σ '' (b.support : Set ι))) :
-    Commute (w : P.Aut) σ := by
-  induction hw using Subgroup.closure_induction with
-  | mem g hg =>
-    obtain ⟨s, hs, rfl⟩ := hg
-    exact P.commute_coe_orbitReflection (P.isOrthogonal_orbitIndices_of_mem_support hσ horth hs)
-  | one => simp
-  | mul _ _ _ _ ih₁ ih₂ => exact ih₁.mul_left ih₂
-  | inv _ _ ih => exact ih.inv_left
+    obtain ⟨f, -, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b r).mpr hr)
+    obtain ⟨g, -, hg⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b _).mpr
+      ((isPos_reflectionPerm_self_iff_mem_negRoots P b r').mpr ((mem_negRoots P b r').mpr hr')))
+    have hroot' : P.root r' =
+        P.root r - ∑ k ∈ P.orbitIndices σ s, P.pairingIn ℤ r k • P.root k := by
+      rw [← P.weylGroup_apply_root, P.orbitReflection_smul horth_s]
+      congr 1
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [root_coroot'_eq_pairing, ← P.algebraMap_pairingIn ℤ r k, algebraMap_int_eq,
+        Int.coe_castRingHom, Int.cast_smul_eq_zsmul]
+    have hli : LinearIndepOn ℤ P.root (b.support : Set ι) :=
+      b.linearIndepOn_root.restrict_scalars' ℤ
+    have hcomb : ∑ k ∈ b.support,
+        ((f k : ℤ) + (g k : ℤ) -
+          if k ∈ P.orbitIndices σ s then P.pairingIn ℤ r k else 0) • P.root k = 0 := by
+      have hite : ∑ k ∈ b.support,
+          (if k ∈ P.orbitIndices σ s then P.pairingIn ℤ r k else 0) • P.root k =
+          ∑ k ∈ P.orbitIndices σ s, P.pairingIn ℤ r k • P.root k := by
+        simp_rw [ite_smul, zero_smul]
+        rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr
+          (fun k hk ↦ P.mem_support_of_mem_orbitIndices hσ hs hk)]
+      simp_rw [sub_smul, add_smul, natCast_zsmul]
+      rw [Finset.sum_sub_distrib, Finset.sum_add_distrib, ← hf, ← hg,
+        root_reflectionPerm, reflection_apply_self, hite]
+      rw [hroot']
+      abel
+    have hcoeff := linearIndepOn_iff'.mp hli b.support _ subset_rfl hcomb
+    have hsub : P.root r = ∑ k ∈ P.orbitIndices σ s, f k • P.root k := by
+      rw [hf]
+      refine (Finset.sum_subset (fun k hk ↦ P.mem_support_of_mem_orbitIndices hσ hs hk) ?_).symm
+      intro k hk hnot
+      have hk0 := hcoeff k hk
+      simp only [hnot, ↓reduceIte, sub_zero] at hk0
+      have hfk : f k = 0 := by omega
+      rw [hfk, zero_smul]
+    exact P.mem_orbitIndices_of_root_eq_sum hσ hsimply horth hs hsub
 
 /-- **Simple-orbit generation of root orbits.** The subgroup of `P.weylGroup` generated by the
 simple block reflections `P.orbitReflection σ s` (`s ∈ b.support`) moves every root index into
@@ -684,7 +514,7 @@ theorem exists_mem_closure_orbitReflection_mem_support
       omega
     | succ n ih =>
       intro q hq hle
-      obtain ⟨s, hs, hsp⟩ := P.exists_mem_support_coroot'_orbitSum_pos hσ hsimply hq
+      obtain ⟨s, hs, hsp⟩ := P.exists_mem_support_sum_pairingIn_pos hσ hq
       rcases P.mem_orbitIndices_or_height_lt hσ hsimply horth hs hq hsp with hmem | ⟨hq', hlt⟩
       · exact ⟨1, Subgroup.one_mem _, P.mem_support_of_mem_orbitIndices hσ hs hmem⟩
       · have hpos' := one_le_height_of_mem_posRoots P b ((mem_posRoots P b _).mpr hq')
@@ -697,25 +527,22 @@ theorem exists_mem_closure_orbitReflection_mem_support
   · have hr₀ : b.IsPos (P.reflectionPerm r r) :=
       (isPos_reflectionPerm_self_iff_mem_negRoots P b r).mpr ((mem_negRoots P b r).mpr hr)
     obtain ⟨w₀, hw₀, hs₀⟩ := hpos_case _ _ hr₀ le_rfl
-    set s₀ := P.weylGroupToPerm w₀ (P.reflectionPerm r r)
+    set s₀ := P.weylGroupToPerm w₀ (P.reflectionPerm r r) with hs₀_def
     have hneg : P.weylGroupToPerm w₀ r = P.reflectionPerm s₀ s₀ := by
-      apply P.root.injective
-      rw [← P.weylGroup_apply_root, root_reflectionPerm, reflection_apply_self,
-        ← P.weylGroup_apply_root, root_reflectionPerm, reflection_apply_self, smul_neg, neg_neg]
+      rw [P.weylGroupToPerm_apply, hs₀_def, P.weylGroupToPerm_apply,
+        ← (w₀ : P.Aut).toHom.indexEquiv_reflectionPerm, P.reflectionPerm_reflectionPerm_self]
     have hs₀_fix : P.weylGroupToPerm (P.orbitReflection σ s₀) (P.reflectionPerm s₀ s₀) = s₀ := by
-      -- `orbitReflection σ s₀` is an involution negating `s₀`, so it sends `-s₀` back to `s₀`.
-      apply P.root.injective
-      rw [← P.weylGroup_apply_root, root_reflectionPerm, reflection_apply_self, smul_neg,
-        P.weylGroup_apply_root, P.weylGroupToPerm_orbitReflection_self
-          (P.isOrthogonal_orbitIndices_of_mem_support hσ horth hs₀) (P.self_mem_orbitIndices σ s₀),
-        root_reflectionPerm, reflection_apply_self, neg_neg]
+      have horth_s₀ := P.pairwise_isOrthogonal_orbitIndices_of_mem_support hσ horth hs₀
+      rw [← P.weylGroupToPerm_orbitReflection_of_mem horth_s₀ (P.self_mem_orbitIndices σ s₀),
+        ← _root_.Equiv.Perm.mul_apply, ← map_mul, P.orbitReflection_mul_self, map_one,
+        _root_.Equiv.Perm.coe_one, id_eq]
     refine ⟨P.orbitReflection σ s₀ * w₀,
       Subgroup.mul_mem _ (Subgroup.subset_closure ⟨s₀, hs₀, rfl⟩) hw₀, ?_⟩
     rw [map_mul, _root_.Equiv.Perm.mul_apply, hneg, hs₀_fix]
     exact hs₀
 
-/-- **Stembridge's Claim 4.** In a finite simply-laced root system, if `σ` permutes `b.support` with
-pairwise orthogonal simple orbits, then *every* root `σ`-orbit is pairwise orthogonal. -/
+/-- **Stembridge's Claim 4.** In a finite simply-laced root pairing, if `σ` permutes `b.support`
+with pairwise orthogonal simple orbits, then *every* root `σ`-orbit is pairwise orthogonal. -/
 theorem pairing_eq_zero_of_mem_orbitIndices
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
@@ -723,37 +550,28 @@ theorem pairing_eq_zero_of_mem_orbitIndices
     {r j : ι} (hj : j ∈ P.orbitIndices σ r) (hne : r ≠ j) :
     P.pairing r j = 0 := by
   obtain ⟨w, hw, hs⟩ := P.exists_mem_closure_orbitReflection_mem_support hσ hsimply horth r
-  have hcomm := P.commute_of_mem_closure_orbitReflection hσ horth hw
+  have hcomm := P.commute_of_mem_closure_orbitReflection (b := b) hw
   have hj' : P.weylGroupToPerm w j ∈ P.orbitIndices σ (P.weylGroupToPerm w r) := by
     rw [← P.map_orbitIndices_of_commute hcomm r]
     exact mem_map_of_mem _ hj
   have hne' : P.weylGroupToPerm w r ≠ P.weylGroupToPerm w j :=
     (P.weylGroupToPerm w).injective.ne hne
-  have hpair : P.pairing ((w : P.Aut).indexEquiv r) ((w : P.Aut).indexEquiv j) = P.pairing r j :=
-    (w : P.Aut).toHom.pairing
+  have hpair : P.pairing (P.weylGroupToPerm w r) (P.weylGroupToPerm w j) = P.pairing r j := by
+    rw [P.weylGroupToPerm_apply, P.weylGroupToPerm_apply]
+    exact (w : P.Aut).toHom.pairing
   exact hpair.symm.trans (horth _ hs _ hj' hne')
 
 /-- Pairwise `P.IsOrthogonal` formulation of Stembridge's Claim 4 for every root orbit. -/
-theorem isOrthogonal_of_mem_orbitIndices
+theorem pairwise_isOrthogonal_orbitIndices
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0) (r : ι) :
     (P.orbitIndices σ r : Set ι).Pairwise P.IsOrthogonal := by
   intro j hj k hk hne
   have hk' : k ∈ P.orbitIndices σ j := (P.orbitIndices_eq_of_mem hj).symm ▸ hk
-  exact P.isOrthogonal_iff_pairing_eq_zero.mpr
-    (P.pairing_eq_zero_of_mem_orbitIndices hσ hsimply horth hk' hne)
-
-/-- **Squared norm of an orbit sum** (Stembridge, equation (2)): under `P.simplyLacedForm`, each
-orbit sum `P.orbitSum σ r` has squared norm `2 * #(P.orbitIndices σ r)`. -/
-theorem simplyLacedForm_orbitSum_self
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0) (r : ι) :
-    P.simplyLacedForm.form (P.orbitSum σ r) (P.orbitSum σ r) =
-      2 * #(P.orbitIndices σ r) := by
-  rw [P.simplyLacedForm_apply_orbitSum_of_fixed b hsimply (P.weightMap_orbitSum_self σ r) r,
-    P.coroot'_orbitSum_self (P.isOrthogonal_of_mem_orbitIndices hσ hsimply horth r), mul_comm]
+  have hp : P.pairing j k = 0 :=
+    P.pairing_eq_zero_of_mem_orbitIndices hσ hsimply horth hk' hne
+  exact ⟨hp, P.pairing_eq_zero_iff'.mp hp⟩
 
 /-- If a positive root's orbit sum is a scalar multiple of a simple root's orbit sum, the scalar is
 `1` and the root lies in that simple orbit. -/
@@ -761,29 +579,54 @@ private theorem eq_one_and_mem_of_isPos_of_orbitSum_eq_smul
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    {r s : ι} {c : K} (hr : b.IsPos r) (hs : s ∈ b.support)
+    {r s : ι} {c : R} (hr : b.IsPos r) (hs : s ∈ b.support)
     (heq : P.orbitSum σ r = c • P.orbitSum σ s) :
     c = 1 ∧ r ∈ P.orbitIndices σ s := by
   classical
-  have hmem : r ∈ P.orbitIndices σ s := by
-    refine P.mem_orbitIndices_of_isPos_of_repr_eq_zero hσ hsimply horth hs hr fun t ht ↦ ?_
-    have hsum0 : ∑ j ∈ P.orbitIndices σ r, b.toWeightBasis.repr (P.root j) t = 0 := by
-      have h1 := congrArg (fun v ↦ b.toWeightBasis.repr v t) heq
-      rw [P.orbitSum_def, map_sum, Finsupp.finsetSum_apply, map_smul, Finsupp.smul_apply,
-        smul_eq_mul, P.toWeightBasis_repr_orbitSum_of_mem_support hσ t.2 hs] at h1
-      simpa only [ht, ↓reduceIte, mul_zero] using h1
-    have hnn (j : ι) (hj : j ∈ P.orbitIndices σ r) : 0 ≤ b.toWeightBasis.repr (P.root j) t :=
-      toWeightBasis_repr_nonneg_of_mem_posRootCone
-        (root_mem_posRootCone_of_mem_posRoots P b
-          ((mem_posRoots P b j).mpr ((P.isPos_iff_of_mem_orbitIndices hσ hj).mpr hr))) t
-    exact (Finset.sum_eq_zero_iff_of_nonneg hnn).mp hsum0 r (P.self_mem_orbitIndices σ r)
-  have horb := P.orbitSum_eq_of_mem hmem
-  rw [horb] at heq
-  have hc : c - 1 = 0 := by
+  have hpos_mem (j : ι) : j ∈ P.orbitIndices σ r → b.IsPos j :=
+    fun hj ↦ (P.isPos_iff_of_mem_orbitIndices hσ hj).mpr hr
+  choose g hg using fun j : P.orbitIndices σ r ↦
+    exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b j.1).mpr (hpos_mem j.1 j.2))
+  have hlhs : P.orbitSum σ r =
+      ∑ k ∈ b.support, ((∑ j : P.orbitIndices σ r, g j k : ℕ) : R) • P.root k := by
+    rw [P.orbitSum_def, ← Finset.sum_coe_sort (P.orbitIndices σ r)]
+    calc ∑ j : P.orbitIndices σ r, P.root j
+        = ∑ j : P.orbitIndices σ r, ∑ k ∈ b.support, (g j k : R) • P.root k :=
+            Finset.sum_congr rfl fun j _ ↦ by
+              simpa only [Nat.cast_smul_eq_nsmul] using (hg j).2
+      _ = ∑ k ∈ b.support, ((∑ j : P.orbitIndices σ r, g j k : ℕ) : R) • P.root k := by
+            rw [Finset.sum_comm]
+            exact Finset.sum_congr rfl fun k _ ↦ by rw [Nat.cast_sum, Finset.sum_smul]
+  have hrhs : c • P.orbitSum σ s =
+      ∑ k ∈ b.support, (if k ∈ P.orbitIndices σ s then c else 0) • P.root k := by
+    simp_rw [ite_smul, zero_smul]
+    rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr
+      (fun k hk ↦ P.mem_support_of_mem_orbitIndices hσ hs hk), ← Finset.smul_sum, ← P.orbitSum_def]
+  have hdiff : ∑ k ∈ b.support,
+      (((∑ j : P.orbitIndices σ r, g j k : ℕ) : R) -
+        if k ∈ P.orbitIndices σ s then c else 0) • P.root k = 0 := by
+    simp_rw [sub_smul]
+    rw [Finset.sum_sub_distrib, ← hlhs, ← hrhs, heq, sub_self]
+  have hcoeff := linearIndepOn_iff'.mp b.linearIndepOn_root b.support _ subset_rfl hdiff
+  let r₀ : P.orbitIndices σ r := ⟨r, P.self_mem_orbitIndices σ r⟩
+  have hsub : P.root r = ∑ k ∈ P.orbitIndices σ s, g r₀ k • P.root k := by
+    rw [(hg r₀).2]
+    refine (Finset.sum_subset (fun k hk ↦ P.mem_support_of_mem_orbitIndices hσ hs hk) ?_).symm
+    intro k hk hnot
+    have hk0 := hcoeff k hk
+    simp only [hnot, ↓reduceIte, sub_zero] at hk0
+    have hsum0 : ∑ j : P.orbitIndices σ r, g j k = 0 := by exact_mod_cast hk0
+    have hgk : g r₀ k = 0 := (Finset.sum_eq_zero_iff.mp hsum0) r₀ (Finset.mem_univ r₀)
+    rw [hgk, zero_smul]
+  have hmem : r ∈ P.orbitIndices σ s :=
+    P.mem_orbitIndices_of_root_eq_sum hσ hsimply horth hs hsub
+  have horth_s := P.pairwise_isOrthogonal_orbitIndices_of_mem_support hσ horth hs
+  have h2 : (c - 1) * 2 = 0 := by
     have h0 : (c - 1) • P.orbitSum σ s = 0 := by
-      rw [sub_smul, one_smul, ← heq, sub_self]
-    exact (smul_eq_zero.mp h0).resolve_right (P.orbitSum_ne_zero hσ s)
-  exact ⟨sub_eq_zero.mp hc, hmem⟩
+      rw [sub_smul, one_smul, ← heq, P.orbitSum_eq_of_mem hmem, sub_self]
+    simpa [map_smul, smul_eq_mul, P.coroot'_orbitSum_self horth_s] using
+      congrArg (P.coroot' s) h0
+  exact ⟨sub_eq_zero.mp ((mul_eq_zero.mp h2).resolve_right two_ne_zero), hmem⟩
 
 /-- **Proportionality of orbit sums.** Under the orthogonal-fold hypotheses, `P.orbitSum σ r₁ =
 c • P.orbitSum σ r₂` implies `(c = 1 ∧ r₁ ∈ P.orbitIndices σ r₂)` or
@@ -792,13 +635,13 @@ theorem eq_one_or_neg_one_of_orbitSum_eq_smul
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    {r₁ r₂ : ι} {c : K} (heq : P.orbitSum σ r₁ = c • P.orbitSum σ r₂) :
+    {r₁ r₂ : ι} {c : R} (heq : P.orbitSum σ r₁ = c • P.orbitSum σ r₂) :
     (c = 1 ∧ r₁ ∈ P.orbitIndices σ r₂) ∨
       (c = -1 ∧ r₁ ∈ P.orbitIndices σ (P.reflectionPerm r₂ r₂)) := by
   obtain ⟨w, hw, hs⟩ := P.exists_mem_closure_orbitReflection_mem_support hσ hsimply horth r₂
-  have hcomm := P.commute_of_mem_closure_orbitReflection hσ horth hw
+  have hcomm := P.commute_of_mem_closure_orbitReflection (b := b) hw
   set r₁' := P.weylGroupToPerm w r₁
-  set s := P.weylGroupToPerm w r₂
+  set s := P.weylGroupToPerm w r₂ with hs_def
   have heq' : P.orbitSum σ r₁' = c • P.orbitSum σ s := by
     rw [← P.smul_orbitSum_of_commute hcomm r₁, ← P.smul_orbitSum_of_commute hcomm r₂, heq,
       smul_comm]
@@ -815,19 +658,14 @@ theorem eq_one_or_neg_one_of_orbitSum_eq_smul
       rw [P.orbitSum_reflectionPerm_self, heq', neg_smul]
     obtain ⟨hc, hm⟩ :=
       P.eq_one_and_mem_of_isPos_of_orbitSum_eq_smul hσ hsimply horth hpos_neg hs heq_neg
-    have hneg_pull : r₁' ∈ P.orbitIndices σ (P.reflectionPerm s s) := by
-      obtain ⟨m, hm⟩ := P.mem_orbitIndices_iff_exists_pow.mp hm
-      have hpow (n : ℕ) : (σ.indexEquiv ^ n) (P.reflectionPerm s s) =
-          P.reflectionPerm ((σ.indexEquiv ^ n) s) ((σ.indexEquiv ^ n) s) := by
-        induction n with
-        | zero => simp
-        | succ n ih =>
-          simp only [pow_succ', _root_.Equiv.Perm.mul_apply, ih,
-            σ.toHom.indexEquiv_reflectionPerm]
-      refine P.mem_orbitIndices_iff_exists_pow.mpr ⟨m, ?_⟩
-      rw [hpow m, hm, P.reflectionPerm_reflectionPerm_self]
-    have hs_neg : P.reflectionPerm s s = P.weylGroupToPerm w (P.reflectionPerm r₂ r₂) :=
-      ((w : P.Aut).toHom.indexEquiv_reflectionPerm r₂ r₂).symm
+    have hneg_pull : r₁' ∈ P.orbitIndices σ (P.reflectionPerm s s) :=
+      P.mem_orbitIndices.mpr <| by
+        simpa [P.reflectionPerm_reflectionPerm_self] using
+          (P.mem_orbitIndices.mp hm).map (g := fun z ↦ P.reflectionPerm z z) fun z ↦
+            (σ.toHom.indexEquiv_reflectionPerm z z).symm
+    have hs_neg : P.reflectionPerm s s = P.weylGroupToPerm w (P.reflectionPerm r₂ r₂) := by
+      rw [hs_def, P.weylGroupToPerm_apply, P.weylGroupToPerm_apply]
+      exact ((w : P.Aut).toHom.indexEquiv_reflectionPerm r₂ r₂).symm
     exact .inr ⟨by linear_combination -hc, hpull (hs_neg ▸ hneg_pull)⟩
 
 /-- **Injectivity of orbit sums on `σ`-orbits.** Under the orthogonal-fold hypotheses, two root
@@ -839,42 +677,70 @@ theorem foldedIndex_eq_iff_mem_orbitIndices
     (r₁ r₂ : ι) :
     P.foldedIndex σ r₁ = P.foldedIndex σ r₂ ↔ r₁ ∈ P.orbitIndices σ r₂ := by
   refine ⟨fun h ↦ ?_, P.foldedIndex_eq_of_mem⟩
-  have heq : P.orbitSum σ r₁ = (1 : K) • P.orbitSum σ r₂ := by
+  have heq : P.orbitSum σ r₁ = (1 : R) • P.orbitSum σ r₂ := by
     simpa [coe_foldedIndex] using congrArg Subtype.val h
   rcases P.eq_one_or_neg_one_of_orbitSum_eq_smul hσ hsimply horth heq with ⟨-, hm⟩ | ⟨hc, -⟩
   · exact hm
-  · exfalso; norm_num at hc
+  · exfalso
+    have h2 : (2 : R) = 0 := by linear_combination hc
+    exact two_ne_zero h2
 
 end Descent
 
-/-! ### Construction of the orthogonal fold -/
+/-! ### Orbit-sum norms and construction of the orthogonal fold -/
+
+section OrthogonalFold
+
+variable {ι K M N : Type*} [Field K] [CharZero K]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+  (P : RootPairing ι K M N) [Finite ι] [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic]
+
+section Norms
+
+variable {P}
+
+/-- Under `P.simplyLacedForm`, pairing a `σ`-fixed weight `x` against `P.orbitSum σ r` multiplies
+`P.coroot' r x` by `#(P.orbitIndices σ r)`. -/
+theorem simplyLacedForm_apply_orbitSum_of_fixed (b : P.Base)
+    (hsimply : b.cartanMatrix.IsSimplyLaced) {σ : P.Aut} {x : M} (hx : σ.weightMap x = x) (r : ι) :
+    P.simplyLacedForm.form x (P.orbitSum σ r) = #(P.orbitIndices σ r) * P.coroot' r x := by
+  rw [P.orbitSum_def, map_sum]
+  have hterm (j : ι) (hj : j ∈ P.orbitIndices σ r) :
+      P.simplyLacedForm.form x (P.root j) = P.coroot' r x := by
+    rw [P.simplyLacedForm_apply_root b hsimply, P.coroot'_eq_of_mem_orbitIndices_of_fixed hx hj]
+  rw [Finset.sum_congr rfl hterm, Finset.sum_const, nsmul_eq_mul]
+
+/-- **Squared norm of an orbit sum** (Stembridge, equation (2)): under `P.simplyLacedForm`, each
+orbit sum `P.orbitSum σ r` has squared norm `2 * #(P.orbitIndices σ r)`. -/
+theorem simplyLacedForm_orbitSum_self {b : P.Base} {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
+    (hsimply : b.cartanMatrix.IsSimplyLaced)
+    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0) (r : ι) :
+    P.simplyLacedForm.form (P.orbitSum σ r) (P.orbitSum σ r) =
+      2 * #(P.orbitIndices σ r) := by
+  rw [P.simplyLacedForm_apply_orbitSum_of_fixed b hsimply (P.weightMap_orbitSum_self σ r) r,
+    P.coroot'_orbitSum_self (P.pairwise_isOrthogonal_orbitIndices hσ hsimply horth r), mul_comm]
+
+end Norms
 
 section Construction
 
 variable (b : P.Base) (σ : P.Aut)
 
-omit [LinearOrder K] [IsStrictOrderedRing K] [P.IsRootSystem] [P.IsReduced]
-  [P.IsCrystallographic] in
+omit [CharZero K] [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] in
 /-- Root embedding of `P.foldedIndices σ` into `LinearMap.fixedSubmodule σ.weightMap`. -/
 private def foldedRootEmb :
     P.foldedIndices σ ↪ LinearMap.fixedSubmodule σ.weightMap :=
-  ⟨fun u ↦ ⟨(u : M), P.coe_mem_fixedSubmodule σ u⟩,
+  ⟨fun u ↦ ⟨(u : M), P.coe_foldedIndices_mem_fixedSubmodule σ u⟩,
     fun _ _ h ↦ Subtype.ext (congrArg (Subtype.val : LinearMap.fixedSubmodule σ.weightMap → M) h)⟩
 
-omit [LinearOrder K] [IsStrictOrderedRing K] [P.IsRootSystem] [P.IsReduced]
-  [P.IsCrystallographic] in
+omit [CharZero K] [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic] in
 @[simp]
 private theorem coe_foldedRootEmb (u : P.foldedIndices σ) :
     (P.foldedRootEmb σ u : M) = (u : M) :=
   rfl
 
-omit [LinearOrder K] [IsStrictOrderedRing K] [P.IsRootSystem] [P.IsReduced]
-  [P.IsCrystallographic] in
-private theorem coe_foldedRootEmb_foldedIndex (r : ι) :
-    (P.foldedRootEmb σ (P.foldedIndex σ r) : M) = P.orbitSum σ r :=
-  P.coe_foldedIndex σ r
-
-omit [P.IsReduced] [P.IsCrystallographic] in
+omit [P.IsReduced] in
 /-- Candidate coroot functional attached to `u : P.foldedIndices σ`, defined directly on `E^σ` from
 `P.simplyLacedForm` without choosing an orbit representative. -/
 private noncomputable def foldedCorootFun
@@ -902,44 +768,99 @@ private theorem foldedCorootFun_injective
     (hsimply : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0) :
     Injective (P.foldedCorootFun σ) := by
+  let _ := Fintype.ofFinite ι
+  let B := P.posRootForm ℤ
   intro u₁ u₂ h
   obtain ⟨r₁, rfl⟩ := P.foldedIndex_surjective σ u₁
   obtain ⟨r₂, rfl⟩ := P.foldedIndex_surjective σ u₂
-  have hpos₁ : 0 < P.simplyLacedForm.form (P.orbitSum σ r₁) (P.orbitSum σ r₁) :=
-    P.posDef_simplyLacedForm _ (P.orbitSum_ne_zero hσ r₁)
-  have hpos₂ : 0 < P.simplyLacedForm.form (P.orbitSum σ r₂) (P.orbitSum σ r₂) :=
-    P.posDef_simplyLacedForm _ (P.orbitSum_ne_zero hσ r₂)
-  set c₁ : K := 2 / P.simplyLacedForm.form (P.orbitSum σ r₁) (P.orbitSum σ r₁)
-  set c₂ : K := 2 / P.simplyLacedForm.form (P.orbitSum σ r₂) (P.orbitSum σ r₂)
-  set z : LinearMap.fixedSubmodule σ.weightMap :=
-    c₁ • P.foldedRootEmb σ (P.foldedIndex σ r₁) - c₂ • P.foldedRootEmb σ (P.foldedIndex σ r₂)
-  have hz_coe : (z : M) = c₁ • P.orbitSum σ r₁ - c₂ • P.orbitSum σ r₂ := by
-    simp [z]
-  have hz : P.simplyLacedForm.form (z : M) (z : M) = 0 := by
-    have heval : c₁ * P.simplyLacedForm.form (z : M) (P.orbitSum σ r₁) =
-        c₂ * P.simplyLacedForm.form (z : M) (P.orbitSum σ r₂) := by
-      simpa [foldedCorootFun, coe_foldedIndex, c₁, c₂] using LinearMap.congr_fun h z
-    calc P.simplyLacedForm.form (z : M) (z : M)
-        = c₁ * P.simplyLacedForm.form (z : M) (P.orbitSum σ r₁) -
-            c₂ * P.simplyLacedForm.form (z : M) (P.orbitSum σ r₂) := by
-            conv_lhs =>
-              arg 2
-              rw [hz_coe]
-            rw [map_sub, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-      _ = 0 := sub_eq_zero.mpr heval
-  have hz0 : (z : M) = 0 := by
+  have hcor (x : LinearMap.fixedSubmodule σ.weightMap) :
+      P.coroot' r₁ (x : M) = P.coroot' r₂ (x : M) := by
+    simpa [P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth] using LinearMap.congr_fun h x
+  have hB_orb (r : ι) {x : M} (hx : σ.weightMap x = x) :
+      2 * P.RootForm x (P.orbitSum σ r) =
+        (((#(P.orbitIndices σ r) : ℤ) * B.rootLength r : ℤ) : K) * P.coroot' r x := by
+    rw [P.orbitSum_def, map_sum, Finset.mul_sum]
+    have hterm (j : ι) (hj : j ∈ P.orbitIndices σ r) :
+        2 * P.RootForm x (P.root j) = (B.rootLength r : K) * P.coroot' r x := by
+      obtain ⟨m, hm⟩ := P.mem_orbitIndices_iff_exists_pow.mp hj
+      have hlen : P.RootForm (P.root j) (P.root j) = (B.rootLength r : K) := by
+        rw [← hm, ← Equiv.weightMap_pow_root σ m r, (σ ^ m : P.Aut).toHom.rootForm_weightMap]
+        exact (B.algebraMap_rootLength r).symm
+      have h2 := B.toInvariantForm.two_mul_apply_root x j
+      simp only [B, posRootForm, RootPositiveForm.toInvariantForm_form] at h2
+      rw [hlen, P.coroot'_eq_of_mem_orbitIndices_of_fixed hx hj] at h2
+      linear_combination h2
+    rw [Finset.sum_congr rfl hterm, Finset.sum_const, nsmul_eq_mul]
+    push_cast
+    ring
+  set m₁ : ℤ := (#(P.orbitIndices σ r₁) : ℤ) * B.rootLength r₁
+  set m₂ : ℤ := (#(P.orbitIndices σ r₂) : ℤ) * B.rootLength r₂
+  have hm₁ : 0 < m₁ :=
+    mul_pos (Int.natCast_pos.mpr (P.card_orbitIndices_pos σ r₁)) (B.rootLength_pos r₁)
+  have hm₂ : 0 < m₂ :=
+    mul_pos (Int.natCast_pos.mpr (P.card_orbitIndices_pos σ r₂)) (B.rootLength_pos r₂)
+  set v₁ : P.rootSpan ℤ := ∑ j ∈ P.orbitIndices σ r₁, P.rootSpanMem ℤ j
+  set v₂ : P.rootSpan ℤ := ∑ j ∈ P.orbitIndices σ r₂, P.rootSpanMem ℤ j
+  set z : P.rootSpan ℤ := m₂ • v₁ - m₁ • v₂
+  have hz_coe : (z : M) = (m₂ : K) • P.orbitSum σ r₁ - (m₁ : K) • P.orbitSum σ r₂ := by
+    simp [z, v₁, v₂, P.orbitSum_def, Int.cast_smul_eq_zsmul]
+  have hz_fix : σ.weightMap (z : M) = (z : M) := by
+    rw [hz_coe, map_sub, map_smul, map_smul, P.weightMap_orbitSum_self, P.weightMap_orbitSum_self]
+  have hz_cor : P.coroot' r₁ (z : M) = P.coroot' r₂ (z : M) :=
+    hcor ⟨(z : M), LinearMap.mem_fixedSubmodule_iff.mpr hz_fix⟩
+  have hz_form : P.RootForm (z : M) (z : M) = 0 := by
+    have h2 : 2 * P.RootForm (z : M) (z : M) = 0 := by
+      calc 2 * P.RootForm (z : M) (z : M)
+          = (m₂ : K) * (2 * P.RootForm (z : M) (P.orbitSum σ r₁)) -
+              (m₁ : K) * (2 * P.RootForm (z : M) (P.orbitSum σ r₂)) := by
+              conv_lhs => arg 2; arg 2; rw [hz_coe]
+              rw [map_sub, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
+              ring
+        _ = (m₂ : K) * ((m₁ : K) * P.coroot' r₁ (z : M)) -
+              (m₁ : K) * ((m₂ : K) * P.coroot' r₂ (z : M)) := by
+              rw [hB_orb r₁ hz_fix, hB_orb r₂ hz_fix]
+        _ = 0 := by rw [hz_cor]; ring
+    exact (mul_eq_zero.mp h2).resolve_left two_ne_zero
+  have hz0 : z = 0 := by
     by_contra hne
-    exact (P.posDef_simplyLacedForm (z : M) hne).ne' hz
-  have hc₁ : 0 < c₁ := div_pos two_pos hpos₁
-  have hc₂ : 0 < c₂ := div_pos two_pos hpos₂
-  have hsmul : P.orbitSum σ r₁ = (c₁⁻¹ * c₂) • P.orbitSum σ r₂ := by
-    have hsub : c₁ • P.orbitSum σ r₁ = c₂ • P.orbitSum σ r₂ :=
-      sub_eq_zero.mp (hz_coe ▸ hz0)
-    rw [← inv_smul_smul₀ hc₁.ne' (P.orbitSum σ r₁), hsub, smul_smul]
+    have hpos := P.posRootForm_posForm_pos_of_ne_zero ℤ hne
+    have hcast : ((B.posForm z z : ℤ) : K) = 0 :=
+      (P.algebraMap_posRootForm_posForm ℤ z z).trans hz_form
+    exact hpos.ne' (Int.cast_eq_zero.mp hcast)
+  have hm₂K : (m₂ : K) ≠ 0 := Int.cast_ne_zero.mpr hm₂.ne'
+  have hsmul : P.orbitSum σ r₁ = ((m₂ : K)⁻¹ * (m₁ : K)) • P.orbitSum σ r₂ := by
+    have hsub : (m₂ : K) • P.orbitSum σ r₁ = (m₁ : K) • P.orbitSum σ r₂ :=
+      sub_eq_zero.mp (hz_coe ▸ congrArg Subtype.val hz0)
+    rw [← inv_smul_smul₀ hm₂K (P.orbitSum σ r₁), hsub, smul_smul]
   rcases P.eq_one_or_neg_one_of_orbitSum_eq_smul hσ hsimply horth hsmul with ⟨_, hm⟩ | ⟨hc, -⟩
   · exact P.foldedIndex_eq_of_mem hm
   · exfalso
-    linarith [mul_pos (inv_pos.mpr hc₁) hc₂]
+    have hsumK : ((m₁ + m₂ : ℤ) : K) = 0 := by
+      push_cast
+      have hmul := congrArg ((m₂ : K) * ·) hc
+      rw [← mul_assoc, mul_inv_cancel₀ hm₂K, one_mul, mul_neg_one] at hmul
+      linear_combination hmul
+    have hsumZ : m₁ + m₂ = 0 := Int.cast_eq_zero.mp hsumK
+    omega
+
+/-- Shared pre-reflection calculation on `P.foldedRootEmb σ`. -/
+private theorem preReflection_foldedCorootFun_foldedRootEmb
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
+    (hsimply : b.cartanMatrix.IsSimplyLaced)
+    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
+    (r t : ι) :
+    Module.preReflection (P.foldedRootEmb σ (P.foldedIndex σ r))
+      (P.foldedCorootFun σ (P.foldedIndex σ r))
+      (P.foldedRootEmb σ (P.foldedIndex σ t)) =
+      P.foldedRootEmb σ (P.foldedIndex σ (P.weylGroupToPerm (P.orbitReflection σ r) t)) := by
+  have horth_r := P.pairwise_isOrthogonal_orbitIndices hσ hsimply horth r
+  apply Subtype.ext
+  rw [Module.preReflection_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower,
+    P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth r,
+    coe_foldedRootEmb, coe_foldedRootEmb, coe_foldedRootEmb,
+    P.coe_foldedIndex, P.coe_foldedIndex, P.coe_foldedIndex,
+    ← P.orbitReflection_smul_of_fixed horth_r (P.weightMap_orbitSum_self σ t),
+    P.smul_orbitSum_of_commute (P.commute_coe_orbitReflection σ r) t]
 
 /-- Auxiliary construction of the folded `RootPairing` via `RootPairing.mk''`. -/
 private noncomputable def orthogonalFoldPairing
@@ -957,24 +878,15 @@ private noncomputable def orthogonalFoldPairing
       obtain ⟨r, rfl⟩ := P.foldedIndex_surjective σ u
       rw [Module.Dual.eval_apply]
       exact (P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth r _).trans
-        (by rw [coe_foldedRootEmb_foldedIndex]; exact
-          P.coroot'_orbitSum_self (P.isOrthogonal_of_mem_orbitIndices hσ hsimply horth r)))
+        (by rw [coe_foldedRootEmb, P.coe_foldedIndex]; exact
+          P.coroot'_orbitSum_self (P.pairwise_isOrthogonal_orbitIndices hσ hsimply horth r)))
     (by
       intro u x hx
       obtain ⟨v, rfl⟩ := hx
       obtain ⟨r, rfl⟩ := P.foldedIndex_surjective σ u
       obtain ⟨t, rfl⟩ := P.foldedIndex_surjective σ v
-      have horth_r := P.isOrthogonal_of_mem_orbitIndices hσ hsimply horth r
-      refine ⟨P.foldedIndex σ (P.weylGroupToPerm (P.orbitReflection σ r) t), Subtype.ext ?_⟩
-      simp only [Module.preReflection_apply, Module.Dual.eval_apply, LinearMap.flip_apply]
-      have hc := P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth r
-        (P.foldedRootEmb σ (P.foldedIndex σ t))
-      dsimp [corootEmb]
-      rw [hc, coe_foldedRootEmb_foldedIndex, P.coe_foldedIndex, P.coe_foldedIndex,
-        P.coe_foldedIndex,
-        ← P.orbitReflection_smul_of_fixed horth_r (P.weightMap_orbitSum_self σ t),
-        P.smul_orbitSum_of_commute (P.commute_coe_orbitReflection horth_r) t]
-      rfl)
+      exact ⟨P.foldedIndex σ (P.weylGroupToPerm (P.orbitReflection σ r) t),
+        (P.preReflection_foldedCorootFun_foldedRootEmb b σ hσ hsimply horth r t).symm⟩)
     (top_unique <| (P.span_fixedSubmodule_orbitSum_support_eq_top b σ).symm.trans_le <|
       Submodule.span_mono <| by
         rintro _ ⟨s, -, rfl⟩
@@ -1008,18 +920,26 @@ private theorem orthogonalFoldPairing_coroot' (u : P.foldedIndices σ)
     (P.orthogonalFoldPairing b σ hσ hsimply horth).coroot' u x = P.foldedCorootFun σ u x :=
   rfl
 
+/-- Shared sum expansion for the pairing of two folded indices in `orthogonalFoldPairing`. -/
+private theorem orthogonalFoldPairing_toLinearMap_root_coroot (r t : ι) :
+    (P.orthogonalFoldPairing b σ hσ hsimply horth).toLinearMap
+      ((P.orthogonalFoldPairing b σ hσ hsimply horth).root (P.foldedIndex σ r))
+      ((P.orthogonalFoldPairing b σ hσ hsimply horth).coroot (P.foldedIndex σ t)) =
+      ((∑ k ∈ P.orbitIndices σ r, P.pairingIn ℤ k t : ℤ) : K) := by
+  rw [orthogonalFoldPairing_toLinearMap, orthogonalFoldPairing_coroot, orthogonalFoldPairing_root,
+    P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth t, coe_foldedRootEmb,
+    P.coe_foldedIndex, P.orbitSum_def, map_sum, Int.cast_sum]
+  exact Finset.sum_congr rfl fun k _ ↦ by
+    simpa [root_coroot'_eq_pairing] using (P.algebraMap_pairingIn ℤ k t).symm
+
 private theorem orthogonalFoldPairing_int (u v : P.foldedIndices σ) :
     ∃ z : ℤ, (z : K) = (P.orthogonalFoldPairing b σ hσ hsimply horth).toLinearMap
       ((P.orthogonalFoldPairing b σ hσ hsimply horth).root u)
       ((P.orthogonalFoldPairing b σ hσ hsimply horth).coroot v) := by
   obtain ⟨r, rfl⟩ := P.foldedIndex_surjective σ u
   obtain ⟨t, rfl⟩ := P.foldedIndex_surjective σ v
-  refine ⟨∑ k ∈ P.orbitIndices σ r, P.pairingIn ℤ k t, ?_⟩
-  rw [orthogonalFoldPairing_toLinearMap, orthogonalFoldPairing_coroot, orthogonalFoldPairing_root,
-    P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth t, coe_foldedRootEmb_foldedIndex,
-    P.orbitSum_def, map_sum, Int.cast_sum]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  simpa [root_coroot'_eq_pairing] using P.algebraMap_pairingIn ℤ k t
+  exact ⟨∑ k ∈ P.orbitIndices σ r, P.pairingIn ℤ k t,
+    (P.orthogonalFoldPairing_toLinearMap_root_coroot b σ hσ hsimply horth r t).symm⟩
 
 private theorem orthogonalFoldPairing_isRootSystem :
     (P.orthogonalFoldPairing b σ hσ hsimply horth).IsRootSystem := by
@@ -1054,14 +974,9 @@ private theorem orthogonalFoldPairing_reflectionPerm (r t : ι) :
         (P.foldedIndex σ r) (P.foldedIndex σ t) =
       P.foldedIndex σ (P.weylGroupToPerm (P.orbitReflection σ r) t) := by
   let Ψ := P.orthogonalFoldPairing b σ hσ hsimply horth
-  have horth_r := P.isOrthogonal_of_mem_orbitIndices hσ hsimply horth r
   apply Ψ.root.injective
-  apply Subtype.ext
-  rw [Ψ.root_reflectionPerm, Ψ.reflection_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower]
-  simp only [Ψ, orthogonalFoldPairing_coroot', orthogonalFoldPairing_root,
-    P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth r, coe_foldedRootEmb_foldedIndex]
-  rw [← P.orbitReflection_smul_of_fixed horth_r (P.weightMap_orbitSum_self σ t),
-    P.smul_orbitSum_of_commute (P.commute_coe_orbitReflection horth_r) t]
+  rw [Ψ.root_reflectionPerm, Ψ.reflection_apply]
+  exact P.preReflection_foldedCorootFun_foldedRootEmb b σ hσ hsimply horth r t
 
 /-- One step of `ℤ`-span descent along a simple block reflection `P.orbitReflection σ s₀`. -/
 private theorem orthogonalFoldPairing_inSpan_of_orbitReflection
@@ -1081,8 +996,7 @@ private theorem orthogonalFoldPairing_inSpan_of_orbitReflection
   let supp := b.support.image (P.foldedIndex σ)
   have hinvol : P.weylGroupToPerm (P.orbitReflection σ s₀)
       (P.weylGroupToPerm (P.orbitReflection σ s₀) q) = q := by
-    rw [← _root_.Equiv.Perm.mul_apply, ← map_mul, P.orbitReflection_mul_self
-      (P.isOrthogonal_orbitIndices_of_mem_support hσ horth hs₀), map_one,
+    rw [← _root_.Equiv.Perm.mul_apply, ← map_mul, P.orbitReflection_mul_self, map_one,
       _root_.Equiv.Perm.coe_one, id_eq]
   have hrefl := P.orthogonalFoldPairing_reflectionPerm b σ hσ hsimply horth s₀
     (P.weylGroupToPerm (P.orbitReflection σ s₀) q)
@@ -1122,7 +1036,7 @@ private theorem orthogonalFoldPairing_mem_span_int
     | inv_mem g hg =>
       obtain ⟨s₀, hs₀, rfl⟩ := hg
       intro q hq
-      rw [P.orbitReflection_inv (P.isOrthogonal_orbitIndices_of_mem_support hσ horth hs₀)] at hq
+      rw [P.orbitReflection_inv] at hq
       exact P.orthogonalFoldPairing_inSpan_of_orbitReflection b σ hσ hsimply horth hs₀ hq
     | mul w₁ w₂ _ _ ih₁ ih₂ =>
       exact fun q hq ↦ ih₂ q (ih₁ (P.weylGroupToPerm w₂ q) (by simpa [map_mul] using hq))
@@ -1137,7 +1051,7 @@ private theorem orthogonalFoldPairing_mem_span_int
 end PrivateProperties
 
 /-- **The orthogonal orbit-sum fold** (Stembridge, Claim 1). For a finite simply-laced root system
-`P` over a linearly ordered field `K`, a base `b`, and an automorphism `σ` permuting `b.support`
+`P` over a characteristic-zero field `K`, a base `b`, and an automorphism `σ` permuting `b.support`
 with pairwise orthogonal simple orbits, the distinct orbit sums form a reduced crystallographic root
 system on `LinearMap.fixedSubmodule σ.weightMap` and its linear dual with base given by the
 simple-orbit sums. -/
@@ -1148,15 +1062,15 @@ noncomputable def orthogonalFold
     P.OrbitSumRealization b σ := by
   classical
   let Ψ := P.orthogonalFoldPairing b σ hσ hsimply horth
-  letI := P.orthogonalFoldPairing_isRootSystem b σ hσ hsimply horth
-  letI := P.orthogonalFoldPairing_isReduced b σ hσ hsimply horth
-  letI := P.orthogonalFoldPairing_isCrystallographic b σ hσ hsimply horth
+  have := P.orthogonalFoldPairing_isRootSystem b σ hσ hsimply horth
+  have := P.orthogonalFoldPairing_isReduced b σ hσ hsimply horth
+  have := P.orthogonalFoldPairing_isCrystallographic b σ hσ hsimply horth
   let supp := b.support.image (P.foldedIndex σ)
   have h₀ : LinearIndepOn K Ψ.root (supp : Set (P.foldedIndices σ)) := by
     have hcoe : (supp : Set (P.foldedIndices σ)) = P.foldedIndex σ '' (b.support : Set ι) := by
       simp [supp]
     rw [hcoe]
-    have hli := P.linearIndepOn_orbitSum_support hσ
+    have hli := P.linearIndepOn_coe_foldedIndex_image_support hσ
     exact LinearIndepOn.of_comp (LinearMap.fixedSubmodule σ.weightMap).subtype hli
   have h₁ : Set.Pairwise (supp : Set (P.foldedIndices σ)) fun u v ↦ Ψ.pairingIn ℤ u v ≤ 0 := by
     intro u hu v hv huv
@@ -1165,12 +1079,8 @@ noncomputable def orthogonalFold
     have hsum : Ψ.pairingIn ℤ (P.foldedIndex σ s₁) (P.foldedIndex σ s₂) =
         ∑ k ∈ P.orbitIndices σ s₁, P.pairingIn ℤ k s₂ := by
       apply FaithfulSMul.algebraMap_injective ℤ K
-      rw [Ψ.algebraMap_pairingIn ℤ, ← Ψ.root_coroot'_eq_pairing]
-      simp only [Ψ, orthogonalFoldPairing_coroot', orthogonalFoldPairing_root,
-        P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth s₂, coe_foldedRootEmb_foldedIndex]
-      rw [P.orbitSum_def, map_sum, map_sum]
-      exact Finset.sum_congr rfl fun k _ ↦ by
-        simpa [root_coroot'_eq_pairing] using (P.algebraMap_pairingIn ℤ k s₂).symm
+      rw [Ψ.algebraMap_pairingIn ℤ, algebraMap_int_eq, Int.coe_castRingHom]
+      exact P.orthogonalFoldPairing_toLinearMap_root_coroot b σ hσ hsimply horth s₁ s₂
     rw [hsum]
     refine Finset.sum_nonpos fun k hk ↦ ?_
     have hks₂ : k ≠ s₂ := fun h ↦ huv (h ▸ (P.foldedIndex_eq_of_mem hk).symm)
@@ -1182,9 +1092,9 @@ noncomputable def orthogonalFold
       rootSystem := inferInstance
       reduced := inferInstance
       crystallographic := inferInstance
-      evaluation := fun _ _ ↦ rfl
-      root_eq := fun _ ↦ rfl
-      base_eq := fun u ↦ by
+      evaluation := P.orthogonalFoldPairing_toLinearMap b σ hσ hsimply horth
+      root_eq := fun _ ↦ by simp [Ψ]
+      mem_support_base_iff := fun u ↦ by
         rw [Base.mkOfPairwiseLEZero_support]
         simp only [supp, Finset.mem_image]
         exact ⟨fun ⟨j, hj, hju⟩ ↦
@@ -1201,68 +1111,102 @@ theorem nonempty_orbitSumRealization_of_isSimplyLaced
 
 end Construction
 
+end OrthogonalFold
+
 /-! ### Characteristic formulas on any `OrbitSumRealization` -/
 
 namespace OrbitSumRealization
 
-variable {P} {b : P.Base} {σ : P.Aut} (F : P.OrbitSumRealization b σ)
+section CommRing
 
-/-- **Folded coroot evaluation.** On any `F : P.OrbitSumRealization b σ` under the orthogonal-fold
-hypotheses, evaluating the folded coroot functional at `P.foldedIndex σ r` on a fixed weight `x`
-equals `P.coroot' r x`. -/
-theorem coroot'_foldedIndex_apply
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    (r : ι) (x : LinearMap.fixedSubmodule σ.weightMap) :
-    F.pairing.coroot' (P.foldedIndex σ r) x = P.coroot' r (x : M) := by
-  obtain rfl : F = P.orthogonalFold b σ hσ hsimply horth :=
-    Subsingleton.elim F (P.orthogonalFold b σ hσ hsimply horth)
-  exact P.foldedCorootFun_foldedIndex_apply b σ hσ hsimply horth r x
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] {b : P.Base} {σ : P.Aut}
+  (F : P.OrbitSumRealization b σ)
 
-@[simp]
-theorem coroot_foldedIndex_apply
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    (r : ι) (x : LinearMap.fixedSubmodule σ.weightMap) :
+/-- **Folded coroot evaluation.** On any `F : P.OrbitSumRealization b σ`, for any pairwise
+orthogonal `σ`-orbit `P.orbitIndices σ r`, evaluating `F.pairing.coroot (P.foldedIndex σ r)` on a
+fixed weight `x` equals `P.coroot' r x`. -/
+theorem coroot_foldedIndex_apply {r : ι}
+    (horth_r : (P.orbitIndices σ r : Set ι).Pairwise P.IsOrthogonal)
+    (x : LinearMap.fixedSubmodule σ.weightMap) :
     F.pairing.coroot (P.foldedIndex σ r) x = P.coroot' r (x : M) := by
-  rw [← F.coroot'_eq_coroot, F.coroot'_foldedIndex_apply hσ hsimply horth]
+  let f : Module.Dual R (LinearMap.fixedSubmodule σ.weightMap) :=
+    (P.coroot' r).comp (LinearMap.fixedSubmodule σ.weightMap).subtype
+  have hcor : F.pairing.coroot (P.foldedIndex σ r) = f := by
+    refine F.coroot_eq_of_preReflection_mapsTo (P.foldedIndex σ r) ?_ ?_
+    · rw [LinearMap.comp_apply, Submodule.coe_subtype, F.coe_root_foldedIndex]
+      exact P.coroot'_orbitSum_self horth_r
+    · rintro _ ⟨v, rfl⟩
+      obtain ⟨t, rfl⟩ := P.foldedIndex_surjective σ v
+      refine ⟨P.foldedIndex σ (P.weylGroupToPerm (P.orbitReflection σ r) t), Subtype.ext ?_⟩
+      rw [F.coe_root_foldedIndex, Module.preReflection_apply, Submodule.coe_sub,
+        Submodule.coe_smul_of_tower, LinearMap.comp_apply, Submodule.coe_subtype,
+        F.coe_root_foldedIndex, F.coe_root_foldedIndex,
+        ← P.orbitReflection_smul_of_fixed horth_r (P.weightMap_orbitSum_self σ t),
+        P.smul_orbitSum_of_commute (P.commute_coe_orbitReflection σ r) t]
+  exact LinearMap.congr_fun hcor x
 
-/-- **Folded root-coroot pairing.** Pairing `P.foldedIndex σ r` with the coroot of
-`P.foldedIndex σ t` sums `P.pairing k t` over `k ∈ P.orbitIndices σ r`. -/
-theorem pairing_foldedIndex
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    (r t : ι) :
+/-- `coroot'` form of `coroot_foldedIndex_apply`. -/
+theorem coroot'_foldedIndex_apply {r : ι}
+    (horth_r : (P.orbitIndices σ r : Set ι).Pairwise P.IsOrthogonal)
+    (x : LinearMap.fixedSubmodule σ.weightMap) :
+    F.pairing.coroot' (P.foldedIndex σ r) x = P.coroot' r (x : M) := by
+  rw [F.coroot'_eq_coroot, F.coroot_foldedIndex_apply horth_r]
+
+/-- **Folded root-coroot pairing.** When `P.orbitIndices σ t` is pairwise orthogonal, pairing
+`P.foldedIndex σ r` with the coroot of `P.foldedIndex σ t` sums `P.pairing k t` over
+`k ∈ P.orbitIndices σ r`. -/
+theorem pairing_foldedIndex (r : ι) {t : ι}
+    (horth_t : (P.orbitIndices σ t : Set ι).Pairwise P.IsOrthogonal) :
     F.pairing.pairing (P.foldedIndex σ r) (P.foldedIndex σ t) =
       ∑ k ∈ P.orbitIndices σ r, P.pairing k t := by
-  rw [← F.pairing.root_coroot'_eq_pairing, F.coroot'_foldedIndex_apply hσ hsimply horth,
+  rw [← F.pairing.root_coroot'_eq_pairing, F.coroot'_foldedIndex_apply horth_t,
     F.coe_root_foldedIndex, P.orbitSum_def, map_sum]
   exact Finset.sum_congr rfl fun k _ ↦ P.root_coroot'_eq_pairing t k
 
+/-- **Reflection comparison.** On any `F : P.OrbitSumRealization b σ`, for any pairwise orthogonal
+`σ`-orbit `P.orbitIndices σ r`, the folded reflection in `P.foldedIndex σ r` restricts the
+commuting block reflection `P.orbitReflection σ r` to `LinearMap.fixedSubmodule σ.weightMap`. -/
+theorem coe_reflection_foldedIndex {r : ι}
+    (horth_r : (P.orbitIndices σ r : Set ι).Pairwise P.IsOrthogonal)
+    (x : LinearMap.fixedSubmodule σ.weightMap) :
+    ((F.pairing.reflection (P.foldedIndex σ r) x :
+      LinearMap.fixedSubmodule σ.weightMap) : M) =
+      P.orbitReflection σ r • (x : M) := by
+  rw [F.pairing.reflection_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower,
+    F.coroot'_foldedIndex_apply horth_r, F.coe_root_foldedIndex,
+    P.orbitReflection_smul_of_fixed horth_r (LinearMap.mem_fixedSubmodule_iff.mp x.2)]
+
+/-- Folded `reflectionPerm` agrees with the index permutation action of `P.orbitReflection σ r`
+whenever `P.orbitIndices σ r` is pairwise orthogonal. -/
+theorem reflectionPerm_foldedIndex {r : ι}
+    (horth_r : (P.orbitIndices σ r : Set ι).Pairwise P.IsOrthogonal) (t : ι) :
+    F.pairing.reflectionPerm (P.foldedIndex σ r) (P.foldedIndex σ t) =
+      P.foldedIndex σ (P.weylGroupToPerm (P.orbitReflection σ r) t) := by
+  apply F.pairing.root.injective
+  apply Subtype.ext
+  rw [F.pairing.root_reflectionPerm, F.coe_reflection_foldedIndex horth_r, F.coe_root_foldedIndex,
+    F.coe_root_foldedIndex, P.smul_orbitSum_of_commute (P.commute_coe_orbitReflection σ r) t]
+
 /-- Integer-valued form of `pairing_foldedIndex`. -/
-theorem pairingIn_foldedIndex
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    (r t : ι) :
+theorem pairingIn_foldedIndex [P.IsCrystallographic] (r : ι) {t : ι}
+    (horth_t : (P.orbitIndices σ t : Set ι).Pairwise P.IsOrthogonal) :
     F.pairing.pairingIn ℤ (P.foldedIndex σ r) (P.foldedIndex σ t) =
       ∑ k ∈ P.orbitIndices σ r, P.pairingIn ℤ k t := by
-  apply FaithfulSMul.algebraMap_injective ℤ K
-  rw [F.pairing.algebraMap_pairingIn ℤ, F.pairing_foldedIndex hσ hsimply horth, map_sum]
+  apply FaithfulSMul.algebraMap_injective ℤ R
+  rw [F.pairing.algebraMap_pairingIn ℤ, F.pairing_foldedIndex r horth_t, map_sum]
   exact Finset.sum_congr rfl fun k _ ↦ (P.algebraMap_pairingIn ℤ k t).symm
 
 /-- **Oriented Cartan edge-count identity in `ℤ`** (Stembridge, equation (3)): for simple roots
-`s₁, s₂ ∈ b.support` in distinct `σ`-orbits, `#(P.orbitIndices σ s₂)` times the folded Cartan
-integer `⟨β_{s₁}, β_{s₂}^∨⟩` equals minus the number of non-orthogonal pairs between
-`P.orbitIndices σ s₁` and `P.orbitIndices σ s₂`. -/
-theorem card_orbitIndices_mul_pairingIn_foldedIndex
+`s₁, s₂ ∈ b.support` in distinct `σ`-orbits with `P.orbitIndices σ s₂` pairwise orthogonal,
+`#(P.orbitIndices σ s₂)` times the folded Cartan integer `⟨β_{s₁}, β_{s₂}^∨⟩` equals minus the
+number of non-orthogonal pairs between `P.orbitIndices σ s₁` and `P.orbitIndices σ s₂`. -/
+theorem card_orbitIndices_mul_pairingIn_foldedIndex [DecidableEq R] [P.IsCrystallographic]
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    {s₁ s₂ : ι} (hs₁ : s₁ ∈ b.support) (hs₂ : s₂ ∈ b.support)
+    {s₁ s₂ : ι} (horth_s₂ : (P.orbitIndices σ s₂ : Set ι).Pairwise P.IsOrthogonal)
+    (hs₁ : s₁ ∈ b.support) (hs₂ : s₂ ∈ b.support)
     (hne : P.foldedIndex σ s₁ ≠ P.foldedIndex σ s₂) :
     (#(P.orbitIndices σ s₂) : ℤ) *
         F.pairing.pairingIn ℤ (P.foldedIndex σ s₁) (P.foldedIndex σ s₂) =
@@ -1275,7 +1219,10 @@ theorem card_orbitIndices_mul_pairingIn_foldedIndex
     have hrow (t' : ι) (ht' : t' ∈ P.orbitIndices σ s₂) :
         ∑ k ∈ P.orbitIndices σ s₁, P.pairingIn ℤ k t' =
           F.pairing.pairingIn ℤ (P.foldedIndex σ s₁) (P.foldedIndex σ s₂) := by
-      rw [← F.pairingIn_foldedIndex hσ hsimply horth, P.foldedIndex_eq_of_mem ht']
+      have horth_t' : (P.orbitIndices σ t' : Set ι).Pairwise P.IsOrthogonal := by
+        rw [P.orbitIndices_eq_of_mem ht']
+        exact horth_s₂
+      rw [← F.pairingIn_foldedIndex s₁ horth_t', P.foldedIndex_eq_of_mem ht']
     rw [Finset.sum_congr rfl hrow, Finset.sum_const, nsmul_eq_mul]
   rw [hprod]
   have hterm (p : ι × ι) (hp : p ∈ P.orbitIndices σ s₁ ×ˢ P.orbitIndices σ s₂) :
@@ -1303,14 +1250,23 @@ theorem card_orbitIndices_mul_pairingIn_foldedIndex
   rw [Finset.sum_congr rfl hterm, Finset.sum_ite, Finset.sum_const_zero, add_zero,
     Finset.sum_const, nsmul_eq_mul, mul_neg_one]
 
+end CommRing
+
+section Field
+
+variable {ι K M N : Type*} [Field K] [CharZero K] [DecidableEq K]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+  {P : RootPairing ι K M N} [Finite ι] [P.IsCrystallographic] {b : P.Base} {σ : P.Aut}
+  (F : P.OrbitSumRealization b σ)
+
 /-- **Oriented Cartan entry as edge count divided by target-orbit size** (Stembridge, equation (3)):
-for simple roots `s₁, s₂ ∈ b.support` in distinct `σ`-orbits,
-`⟨β_{s₁}, β_{s₂}^∨⟩ = -N_{O₁, O₂} / |O₂|`. -/
+for simple roots `s₁, s₂ ∈ b.support` in distinct `σ`-orbits with `P.orbitIndices σ s₂` pairwise
+orthogonal, `⟨β_{s₁}, β_{s₂}^∨⟩ = -N_{O₁, O₂} / |O₂|`. -/
 theorem pairing_foldedIndex_eq_neg_card_div
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    {s₁ s₂ : ι} (hs₁ : s₁ ∈ b.support) (hs₂ : s₂ ∈ b.support)
+    {s₁ s₂ : ι} (horth_s₂ : (P.orbitIndices σ s₂ : Set ι).Pairwise P.IsOrthogonal)
+    (hs₁ : s₁ ∈ b.support) (hs₂ : s₂ ∈ b.support)
     (hne : P.foldedIndex σ s₁ ≠ P.foldedIndex σ s₂) :
     F.pairing.pairing (P.foldedIndex σ s₁) (P.foldedIndex σ s₂) =
       -(#((P.orbitIndices σ s₁ ×ˢ P.orbitIndices σ s₂).filter
@@ -1318,42 +1274,14 @@ theorem pairing_foldedIndex_eq_neg_card_div
   have hd : (#(P.orbitIndices σ s₂) : K) ≠ 0 :=
     Nat.cast_ne_zero.mpr (P.card_orbitIndices_pos σ s₂).ne'
   have hint := congrArg (Int.cast (R := K))
-    (F.card_orbitIndices_mul_pairingIn_foldedIndex hσ hsimply horth hs₁ hs₂ hne)
+    (F.card_orbitIndices_mul_pairingIn_foldedIndex hσ hsimply horth_s₂ hs₁ hs₂ hne)
   push_cast at hint
   rw [eq_div_iff hd, mul_comm, ← F.pairing.algebraMap_pairingIn ℤ, algebraMap_int_eq,
     Int.coe_castRingHom]
   exact hint
 
-/-- **Reflection comparison.** On any `F : P.OrbitSumRealization b σ`, the folded reflection in
-`P.foldedIndex σ r` restricts the commuting block reflection `P.orbitReflection σ r` to the fixed
-submodule `LinearMap.fixedSubmodule σ.weightMap`. -/
-theorem coe_reflection_foldedIndex
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    (r : ι) (x : LinearMap.fixedSubmodule σ.weightMap) :
-    ((F.pairing.reflection (P.foldedIndex σ r) x :
-      LinearMap.fixedSubmodule σ.weightMap) : M) =
-      P.orbitReflection σ r • (x : M) := by
-  rw [F.pairing.reflection_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower,
-    F.coroot'_foldedIndex_apply hσ hsimply horth, F.coe_root_foldedIndex,
-    P.orbitReflection_smul_of_fixed (P.isOrthogonal_of_mem_orbitIndices hσ hsimply horth r)
-      (LinearMap.mem_fixedSubmodule_iff.mp x.2)]
-
-/-- Folded `reflectionPerm` agrees with the index permutation action of `P.orbitReflection σ r`. -/
-theorem reflectionPerm_foldedIndex
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
-    (hsimply : b.cartanMatrix.IsSimplyLaced)
-    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
-    (r t : ι) :
-    F.pairing.reflectionPerm (P.foldedIndex σ r) (P.foldedIndex σ t) =
-      P.foldedIndex σ (P.weylGroupToPerm (P.orbitReflection σ r) t) := by
-  obtain rfl : F = P.orthogonalFold b σ hσ hsimply horth :=
-    Subsingleton.elim F (P.orthogonalFold b σ hσ hsimply horth)
-  exact P.orthogonalFoldPairing_reflectionPerm b σ hσ hsimply horth r t
+end Field
 
 end OrbitSumRealization
-
-end OrthogonalFold
 
 end RootPairing
