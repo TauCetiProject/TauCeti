@@ -36,8 +36,9 @@ This file establishes both halves of that phenomenon:
    `u = TauCeti.sphereComplexFrameFst`, and setting `v = x ⨯₃ star u`
    (`TauCeti.sphereComplexFrameSnd`) completes `(u, v, x)` to a `3 × 3` unitary matrix
    `TauCeti.sphereComplexFrameMatrix ∈ Matrix.unitaryGroup (Fin 3) C(S², ℂ)`. Its first two columns
-   form an explicit Hermitian-orthonormal `C(S², ℂ)`-basis `TauCeti.tangentSectionsComplexBasis` of
-   `tangentSections (Fin 3) ℂ`, rendering `tangentSections (Fin 3) ℂ` free of rank two.
+   form an explicit Hermitian-orthonormal `C(S², ℂ)`-basis
+   `TauCeti.tangentSectionsSphereTwoComplexBasis` of `tangentSections (Fin 3) ℂ`, rendering
+   `tangentSections (Fin 3) ℂ` free of rank two.
 
 ## Main definitions
 
@@ -46,13 +47,16 @@ This file establishes both halves of that phenomenon:
   tangentSections ι S`.
 * `TauCeti.tangentSectionsComplexifyEquiv`: balanced complexification
   `R_ℂ ⊗_R tangentSections ι ℝ ≃ₗ[R_ℂ] tangentSections ι ℂ`.
-* `TauCeti.sphereComplexUnnormVec`, `TauCeti.sphereComplexNormInv`,
-  `TauCeti.sphereComplexFrameFst`, `TauCeti.sphereComplexFrameSnd`: the explicit nowhere-vanishing
+* `TauCeti.sphereComplexUnnormVec`: the unnormalized nowhere-vanishing complex tangent field
+  `w(x) = (1, i, 0) - (x₀ + i x₁) x` on `S²`.
+* `TauCeti.sphereComplexNormInv`, `TauCeti.sphereComplexNormInvComplex`: the `ℝ`- and `ℂ`-valued
+  normalizing factors `x ↦ (√(1 + x₂²))⁻¹` on `S²`.
+* `TauCeti.sphereComplexFrameFst`, `TauCeti.sphereComplexFrameSnd`: the explicit nowhere-vanishing
   Hermitian-orthonormal complex tangent fields on `S²`.
 * `TauCeti.sphereComplexFrameMatrix`: the `3 × 3` matrix with columns `(u, v, x)` in
   `Matrix.unitaryGroup (Fin 3) C(S², ℂ)`.
-* `TauCeti.tangentSectionsComplexEquiv`, `TauCeti.tangentSectionsComplexBasis`,
-  `TauCeti.tangentSectionsComplexTrivializationEquiv`: the rank-two `C(S², ℂ)`-linear
+* `TauCeti.tangentSectionsSphereTwoComplexEquiv`, `TauCeti.tangentSectionsSphereTwoComplexBasis`,
+  `TauCeti.tangentSectionsSphereTwoComplexTrivializationEquiv`: the rank-two `C(S², ℂ)`-linear
   trivialization and basis of `tangentSections (Fin 3) ℂ`, together with the composite isomorphism
   `R_ℂ ⊗_R P ≃ₗ[R_ℂ] R_ℂ²`.
 
@@ -170,7 +174,7 @@ theorem tangentSectionsExtendEquiv_symm_apply [DecidableEq ι] (φ : R →ₐ[�
   have hwj := congrFun hw j
   simp only [map_sum, Submodule.coe_sum, Finset.sum_apply, coe_tangentSectionsExtendEquiv_tmul]
   rw [← hwj, vecMul_apply_eq_sum, ← map_sphereTangentProjMatrix φ hφ]
-  rfl
+  simp only [Matrix.map_apply]
 
 variable (ι) in
 /-- **Balanced complexification of continuous tangent sections.** Extending scalars along the
@@ -234,19 +238,25 @@ theorem dotProduct_sphereCoord_sphereComplexUnnormVec :
 theorem star_sphereComplexUnnormVec_dotProduct_self :
     star sphereComplexUnnormVec ⬝ᵥ sphereComplexUnnormVec =
       1 + sphereCoord ℂ (2 : Fin 3) ^ 2 := by
-  ext x
-  have hsq : ((x : EuclideanSpace ℝ (Fin 3)) 0 : ℂ) ^ 2 +
-      ((x : EuclideanSpace ℝ (Fin 3)) 1 : ℂ) ^ 2 +
-      ((x : EuclideanSpace ℝ (Fin 3)) 2 : ℂ) ^ 2 = 1 := by
-    simpa [Fin.sum_univ_three] using
-      congrArg (· x) (sum_sphereCoord_sq (R := ℂ) (ι := Fin 3))
-  simp only [sphereComplexUnnormVec, dotProduct, Fin.sum_univ_three, Pi.star_apply,
-    Pi.sub_apply]
-  simp [sphereComplexSeed]
+  have hsq : sphereCoord ℂ (0 : Fin 3) ^ 2 +
+      sphereCoord ℂ (1 : Fin 3) ^ 2 +
+      sphereCoord ℂ (2 : Fin 3) ^ 2 = 1 := by
+    simpa only [Fin.sum_univ_three] using sum_sphereCoord_sq (R := ℂ) (ι := Fin 3)
+  let cI : C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ) := ContinuousMap.const _ Complex.I
+  have hcI_star : star cI = -cI := by
+    ext x
+    simp [cI]
+  have hcI_sq : cI ^ 2 = -1 := by
+    ext x
+    simp [cI]
+  have hseed : sphereComplexSeed = ![1, cI, 0] := rfl
+  simp only [sphereComplexUnnormVec, hseed, dotProduct, Fin.sum_univ_three, Pi.star_apply,
+    Pi.sub_apply, Pi.smul_apply, smul_eq_mul, cons_val_zero, cons_val_one, cons_val_two,
+    head_cons, tail_cons, star_sub, star_mul', star_add, star_one, star_zero,
+    star_sphereCoord_apply, hcI_star]
   linear_combination
-    (((x : EuclideanSpace ℝ (Fin 3)) 0 : ℂ) ^ 2 -
-      Complex.I ^ 2 * ((x : EuclideanSpace ℝ (Fin 3)) 1 : ℂ) ^ 2 - 1) * hsq +
-    (((x : EuclideanSpace ℝ (Fin 3)) 1 : ℂ) ^ 2 - 1) * Complex.I_sq
+    (sphereCoord ℂ (0 : Fin 3) ^ 2 - cI ^ 2 * sphereCoord ℂ (1 : Fin 3) ^ 2 - 1) * hsq +
+    (sphereCoord ℂ (1 : Fin 3) ^ 2 - 1) * hcI_sq
 
 /-- The strictly positive continuous normalizing factor `x ↦ (√(1 + x₂²))⁻¹` on `S²`. -/
 def sphereComplexNormInv : C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℝ) where
@@ -276,12 +286,19 @@ def sphereComplexNormInvComplex : C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, �
   (algebraMap ℝ ℂ).compLeftContinuous _ Complex.continuous_ofReal sphereComplexNormInv
 
 @[simp]
+theorem sphereComplexNormInvComplex_apply (x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
+    sphereComplexNormInvComplex x =
+      ((Real.sqrt (1 + ((x : EuclideanSpace ℝ (Fin 3)) 2) ^ 2) : ℂ))⁻¹ := by
+  simp [sphereComplexNormInvComplex]
+
+@[simp]
 theorem star_sphereComplexNormInvComplex :
     star sphereComplexNormInvComplex = sphereComplexNormInvComplex := by
   ext x
   exact Complex.conj_ofReal (sphereComplexNormInv x)
 
-private theorem sphereComplexNormInvComplex_sq_mul :
+/-- Over `C(S², ℂ)`, the square of `sphereComplexNormInvComplex` is the inverse of `1 + x₂²`. -/
+theorem sphereComplexNormInvComplex_sq_mul :
     sphereComplexNormInvComplex ^ 2 * (1 + sphereCoord ℂ (2 : Fin 3) ^ 2) = 1 := by
   rw [sphereComplexNormInvComplex]
   have h := congrArg
@@ -341,9 +358,8 @@ theorem star_sphereComplexFrameFst_dotProduct_self :
   have h : star sphereComplexFrameFst ⬝ᵥ sphereComplexFrameFst =
       sphereComplexNormInvComplex ^ 2 *
         (star sphereComplexUnnormVec ⬝ᵥ sphereComplexUnnormVec) := by
-    ext x
-    simp [sphereComplexFrameFst_def, sphereComplexNormInvComplex, dotProduct,
-      Fin.sum_univ_three]
+    simp only [sphereComplexFrameFst_def, dotProduct, Fin.sum_univ_three, Pi.star_apply,
+      Pi.smul_apply, smul_eq_mul, star_mul', star_sphereComplexNormInvComplex]
     ring
   rw [h, star_sphereComplexUnnormVec_dotProduct_self, sphereComplexNormInvComplex_sq_mul]
 
@@ -387,17 +403,22 @@ theorem sphereComplexFrameMatrix_def :
   (rfl)
 
 @[simp]
+theorem sphereComplexFrameMatrix_apply (i j : Fin 3) :
+    sphereComplexFrameMatrix i j =
+      ![sphereComplexFrameFst, sphereComplexFrameSnd, sphereCoord ℂ] j i :=
+  (rfl)
+
+@[simp]
 theorem conjTranspose_mul_sphereComplexFrameMatrix :
     sphereComplexFrameMatrixᴴ * sphereComplexFrameMatrix = 1 := by
-  let M : Matrix (Fin 3) (Fin 3) C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ) :=
-    ![sphereComplexFrameFst, sphereComplexFrameSnd, sphereCoord ℂ]
-  have hdef : sphereComplexFrameMatrix = Mᵀ := rfl
-  rw [hdef, transpose_conjTranspose]
   refine Matrix.ext fun i j ↦ ?_
-  have hmul : (M.map star * Mᵀ) i j = star (M i) ⬝ᵥ M j := by
-    simp [Matrix.mul_apply, dotProduct]
+  have hmul : (sphereComplexFrameMatrixᴴ * sphereComplexFrameMatrix) i j =
+      star (![sphereComplexFrameFst, sphereComplexFrameSnd, sphereCoord ℂ] i) ⬝ᵥ
+        ![sphereComplexFrameFst, sphereComplexFrameSnd, sphereCoord ℂ] j := by
+    simp only [Matrix.mul_apply, conjTranspose_apply, sphereComplexFrameMatrix_apply, dotProduct,
+      Pi.star_apply]
   rw [hmul]
-  fin_cases i <;> fin_cases j <;> simp [M]
+  fin_cases i <;> fin_cases j <;> simp
 
 /-- `(sphereComplexFrameFst, sphereComplexFrameSnd, sphereCoord ℂ)` defines an element of the
 unitary group `U₃(C(S², ℂ))`. -/
@@ -418,23 +439,26 @@ theorem sphereComplexFrame_reconstruct
     (star sphereComplexFrameFst ⬝ᵥ z) • sphereComplexFrameFst +
       (star sphereComplexFrameSnd ⬝ᵥ z) • sphereComplexFrameSnd +
       (sphereCoord ℂ ⬝ᵥ z) • sphereCoord ℂ = z := by
-  let M : Matrix (Fin 3) (Fin 3) C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ) :=
-    Matrix.of ![sphereComplexFrameFst, sphereComplexFrameSnd, sphereCoord ℂ]
-  have hdef : sphereComplexFrameMatrix = Mᵀ := rfl
-  have hmul : (sphereComplexFrameMatrix * sphereComplexFrameMatrixᴴ) *ᵥ z = z := by
-    rw [sphereComplexFrameMatrix_mul_conjTranspose, one_mulVec]
-  rw [← mulVec_mulVec, hdef, transpose_conjTranspose,
-    mulVec_transpose, vecMul_eq_sum, Fin.sum_univ_three] at hmul
-  have h0 : (M.map star *ᵥ z) 0 = star sphereComplexFrameFst ⬝ᵥ z := by
-    simp [M, mulVec, dotProduct]
-  have h1 : (M.map star *ᵥ z) 1 = star sphereComplexFrameSnd ⬝ᵥ z := by
-    simp [M, mulVec, dotProduct]
-  have h2 : (M.map star *ᵥ z) 2 = sphereCoord ℂ ⬝ᵥ z := by
-    simp [M, mulVec, dotProduct]
-  have hr0 : M 0 = sphereComplexFrameFst := rfl
-  have hr1 : M 1 = sphereComplexFrameSnd := rfl
-  have hr2 : M 2 = sphereCoord ℂ := rfl
-  rw [h0, h1, h2, hr0, hr1, hr2] at hmul
+  have hmul : sphereComplexFrameMatrix *ᵥ (sphereComplexFrameMatrixᴴ *ᵥ z) = z := by
+    rw [mulVec_mulVec, sphereComplexFrameMatrix_mul_conjTranspose, one_mulVec]
+  have hcols (c : Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) :
+      sphereComplexFrameMatrix *ᵥ c =
+        c 0 • sphereComplexFrameFst + c 1 • sphereComplexFrameSnd + c 2 • sphereCoord ℂ := by
+    refine funext fun i ↦ ?_
+    simp only [mulVec, dotProduct, Fin.sum_univ_three, sphereComplexFrameMatrix_apply,
+      cons_val_zero, cons_val_one, cons_val_two, head_cons, tail_cons, Pi.add_apply,
+      Pi.smul_apply, smul_eq_mul]
+    ring
+  have h0 : (sphereComplexFrameMatrixᴴ *ᵥ z) 0 = star sphereComplexFrameFst ⬝ᵥ z := by
+    simp only [mulVec, dotProduct, conjTranspose_apply, sphereComplexFrameMatrix_apply,
+      cons_val_zero, Pi.star_apply]
+  have h1 : (sphereComplexFrameMatrixᴴ *ᵥ z) 1 = star sphereComplexFrameSnd ⬝ᵥ z := by
+    simp only [mulVec, dotProduct, conjTranspose_apply, sphereComplexFrameMatrix_apply,
+      cons_val_one, cons_val_zero, Pi.star_apply]
+  have h2 : (sphereComplexFrameMatrixᴴ *ᵥ z) 2 = sphereCoord ℂ ⬝ᵥ z := by
+    simp only [mulVec, dotProduct, conjTranspose_apply, sphereComplexFrameMatrix_apply,
+      cons_val_two, head_cons, tail_cons, star_sphereCoord_apply]
+  rw [hcols, h0, h1, h2] at hmul
   exact hmul
 
 /-- Every complex tangent section on `S²` expands uniquely along `sphereComplexFrameFst` and
@@ -446,15 +470,14 @@ theorem sphereComplexFrame_reconstruct_of_mem_tangentSections
       (star sphereComplexFrameSnd ⬝ᵥ z) • sphereComplexFrameSnd = z := by
   have h := sphereComplexFrame_reconstruct z
   have h0 : (0 : C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) •
-      sphereCoord (ι := Fin 3) ℂ = 0 := by
-    ext i x
-    simp
+      sphereCoord (ι := Fin 3) ℂ = 0 :=
+    funext fun _ ↦ zero_mul _
   rwa [mem_tangentSections_iff.mp hz, h0, add_zero] at h
 
 /-- **Explicit rank-two trivialization of `tangentSections (Fin 3) ℂ` over `C(S², ℂ)`.**
 Sends `(c₀, c₁)` to `c₀ • sphereComplexFrameFst + c₁ • sphereComplexFrameSnd`, with inverse
 `z ↦ (star sphereComplexFrameFst ⬝ᵥ z, star sphereComplexFrameSnd ⬝ᵥ z)`. -/
-def tangentSectionsComplexEquiv :
+def tangentSectionsSphereTwoComplexEquiv :
     (Fin 2 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) ≃ₗ[
       C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)]
       tangentSections (Fin 3) ℂ where
@@ -465,21 +488,18 @@ def tangentSectionsComplexEquiv :
         (Submodule.smul_mem _ (c 1) sphereComplexFrameSnd_mem_tangentSections)⟩
   invFun z := ![star sphereComplexFrameFst ⬝ᵥ z.1, star sphereComplexFrameSnd ⬝ᵥ z.1]
   map_add' c d := by
-    refine Subtype.ext ?_
-    ext i x
-    simp [add_mul]
+    refine Subtype.ext (funext fun i ↦ ?_)
+    simp only [Submodule.coe_add, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
   map_smul' a c := by
-    refine Subtype.ext ?_
-    ext i x
-    simp
+    refine Subtype.ext (funext fun i ↦ ?_)
+    simp only [RingHom.id_apply, SetLike.val_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
   left_inv c := by
     have hlin (u : Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) :
         u ⬝ᵥ (c 0 • sphereComplexFrameFst + c 1 • sphereComplexFrameSnd) =
           c 0 * (u ⬝ᵥ sphereComplexFrameFst) + c 1 * (u ⬝ᵥ sphereComplexFrameSnd) := by
-      ext x
-      simp [dotProduct, Fin.sum_univ_three]
+      simp only [dotProduct, Fin.sum_univ_three, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
       ring
     ext j
     fin_cases j <;> simp [hlin]
@@ -487,25 +507,26 @@ def tangentSectionsComplexEquiv :
     Subtype.ext (sphereComplexFrame_reconstruct_of_mem_tangentSections z.2)
 
 @[simp]
-theorem coe_tangentSectionsComplexEquiv_apply
+theorem coe_tangentSectionsSphereTwoComplexEquiv_apply
     (c : Fin 2 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) :
-    (tangentSectionsComplexEquiv c : Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) =
+    (tangentSectionsSphereTwoComplexEquiv c :
+      Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) =
       c 0 • sphereComplexFrameFst + c 1 • sphereComplexFrameSnd :=
   (rfl)
 
 @[simp]
-theorem tangentSectionsComplexEquiv_symm_apply
+theorem tangentSectionsSphereTwoComplexEquiv_symm_apply
     (z : tangentSections (Fin 3) ℂ) :
-    tangentSectionsComplexEquiv.symm z =
+    tangentSectionsSphereTwoComplexEquiv.symm z =
       ![star sphereComplexFrameFst ⬝ᵥ z.1, star sphereComplexFrameSnd ⬝ᵥ z.1] :=
   (rfl)
 
-/-- `tangentSectionsComplexEquiv` is unitary with respect to the `C(S², ℂ)`-valued Hermitian
-pairing `star a ⬝ᵥ b`. -/
-theorem star_tangentSectionsComplexEquiv_dotProduct
+/-- `tangentSectionsSphereTwoComplexEquiv` is unitary with respect to the `C(S², ℂ)`-valued
+Hermitian pairing `star a ⬝ᵥ b`. -/
+theorem star_tangentSectionsSphereTwoComplexEquiv_dotProduct
     (c d : Fin 2 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) :
-    star (tangentSectionsComplexEquiv c : Fin 3 → _) ⬝ᵥ
-      (tangentSectionsComplexEquiv d : Fin 3 → _) = star c ⬝ᵥ d := by
+    star (tangentSectionsSphereTwoComplexEquiv c : Fin 3 → _) ⬝ᵥ
+      (tangentSectionsSphereTwoComplexEquiv d : Fin 3 → _) = star c ⬝ᵥ d := by
   have hexpand :
       star (c 0 • sphereComplexFrameFst + c 1 • sphereComplexFrameSnd) ⬝ᵥ
         (d 0 • sphereComplexFrameFst + d 1 • sphereComplexFrameSnd) =
@@ -513,10 +534,11 @@ theorem star_tangentSectionsComplexEquiv_dotProduct
           star (c 0) * d 1 * (star sphereComplexFrameFst ⬝ᵥ sphereComplexFrameSnd) +
           star (c 1) * d 0 * (star sphereComplexFrameSnd ⬝ᵥ sphereComplexFrameFst) +
           star (c 1) * d 1 * (star sphereComplexFrameSnd ⬝ᵥ sphereComplexFrameSnd) := by
-    ext x
-    simp [dotProduct, Fin.sum_univ_three]
+    simp only [dotProduct, Fin.sum_univ_three, Pi.star_apply, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul, star_add, star_mul']
     ring
-  rw [coe_tangentSectionsComplexEquiv_apply, coe_tangentSectionsComplexEquiv_apply, hexpand]
+  rw [coe_tangentSectionsSphereTwoComplexEquiv_apply,
+    coe_tangentSectionsSphereTwoComplexEquiv_apply, hexpand]
   simp only [star_sphereComplexFrameFst_dotProduct_self,
     star_sphereComplexFrameFst_dotProduct_snd, star_sphereComplexFrameSnd_dotProduct_fst,
     star_sphereComplexFrameSnd_dotProduct_self, mul_one, mul_zero, add_zero]
@@ -524,51 +546,53 @@ theorem star_tangentSectionsComplexEquiv_dotProduct
 
 /-- The explicit `C(S², ℂ)`-basis `(sphereComplexFrameFst, sphereComplexFrameSnd)` of
 `tangentSections (Fin 3) ℂ`. -/
-def tangentSectionsComplexBasis :
+def tangentSectionsSphereTwoComplexBasis :
     Module.Basis (Fin 2) C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)
       (tangentSections (Fin 3) ℂ) :=
   Module.Basis.map
     (Pi.basisFun C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ) (Fin 2))
-    tangentSectionsComplexEquiv
+    tangentSectionsSphereTwoComplexEquiv
 
 @[simp]
-theorem coe_tangentSectionsComplexBasis_zero :
-    (tangentSectionsComplexBasis 0 : Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) =
+theorem coe_tangentSectionsSphereTwoComplexBasis_zero :
+    (tangentSectionsSphereTwoComplexBasis 0 :
+      Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) =
       sphereComplexFrameFst := by
   ext i x
-  simp [tangentSectionsComplexBasis, Pi.basisFun_apply]
+  simp [tangentSectionsSphereTwoComplexBasis, Pi.basisFun_apply]
 
 @[simp]
-theorem coe_tangentSectionsComplexBasis_one :
-    (tangentSectionsComplexBasis 1 : Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) =
+theorem coe_tangentSectionsSphereTwoComplexBasis_one :
+    (tangentSectionsSphereTwoComplexBasis 1 :
+      Fin 3 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) =
       sphereComplexFrameSnd := by
   ext i x
-  simp [tangentSectionsComplexBasis, Pi.basisFun_apply]
+  simp [tangentSectionsSphereTwoComplexBasis, Pi.basisFun_apply]
 
 instance : Module.Free C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)
     (tangentSections (Fin 3) ℂ) :=
-  Module.Free.of_basis tangentSectionsComplexBasis
+  Module.Free.of_basis tangentSectionsSphereTwoComplexBasis
 
 /-- **Balanced complexification trivializes the tangent-section module on `S²`.** Composing
-`tangentSectionsComplexifyEquiv (Fin 3)` with `tangentSectionsComplexEquiv.symm` identifies the
-balanced scalar extension `C(S², ℂ) ⊗_{C(S², ℝ)} tangentSections (Fin 3) ℝ` with the free rank-two
-module `C(S², ℂ)²` (contrast with `not_free_tangentSections_fin_three`). -/
-def tangentSectionsComplexTrivializationEquiv :
+`tangentSectionsComplexifyEquiv (Fin 3)` with `tangentSectionsSphereTwoComplexEquiv.symm` identifies
+the balanced scalar extension `C(S², ℂ) ⊗_{C(S², ℝ)} tangentSections (Fin 3) ℝ` with the free
+rank-two module `C(S², ℂ)²` (contrast with `not_free_tangentSections_fin_three`). -/
+def tangentSectionsSphereTwoComplexTrivializationEquiv :
     BalancedExtension
       ((algebraMap ℝ ℂ).compLeftContinuous (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
         Complex.continuous_ofReal)
       (tangentSections (Fin 3) ℝ) ≃ₗ[C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)]
       (Fin 2 → C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℂ)) :=
-  (tangentSectionsComplexifyEquiv (Fin 3)).trans tangentSectionsComplexEquiv.symm
+  (tangentSectionsComplexifyEquiv (Fin 3)).trans tangentSectionsSphereTwoComplexEquiv.symm
 
 @[simp]
-theorem tangentSectionsComplexTrivializationEquiv_apply
+theorem tangentSectionsSphereTwoComplexTrivializationEquiv_apply
     (z : BalancedExtension
       ((algebraMap ℝ ℂ).compLeftContinuous (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
         Complex.continuous_ofReal)
       (tangentSections (Fin 3) ℝ)) :
-    tangentSectionsComplexTrivializationEquiv z =
-      tangentSectionsComplexEquiv.symm (tangentSectionsComplexifyEquiv (Fin 3) z) :=
+    tangentSectionsSphereTwoComplexTrivializationEquiv z =
+      tangentSectionsSphereTwoComplexEquiv.symm (tangentSectionsComplexifyEquiv (Fin 3) z) :=
   (rfl)
 
 end ComplexFrame
