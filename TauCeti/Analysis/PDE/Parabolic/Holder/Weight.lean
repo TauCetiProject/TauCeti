@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 public import TauCeti.Analysis.Holder.Algebra
 public import TauCeti.Analysis.SpecialFunctions.Sigmoid
+import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -94,10 +95,8 @@ theorem hasFDerivAt_exp_smul {x : E} (hℓ : DifferentiableAt ℝ ℓ x)
     (v : ParabolicC2HolderSpace α E F ht) (t : Icc t₀ t₁) :
     HasFDerivAt (fun y ↦ exp (ℓ y) • v (slabMk y t))
       (exp (ℓ x) • (spatialFDerivL v (slabMk x t) + (fderiv ℝ ℓ x).smulRight (v (slabMk x t))))
-      x := by
-  convert (hℓ.hasFDerivAt.exp).smul (v.hasSpatialFDerivAt t x) using 1
-  ext h
-  simp [smul_add, smul_smul]
+      x :=
+  TauCeti.hasFDerivAt_exp_smul hℓ.hasFDerivAt (v.hasSpatialFDerivAt t x)
 
 /-- The spatial gradient of a weighted map, as a function of the base point. -/
 theorem fderiv_exp_smul (hℓ : Differentiable ℝ ℓ) (v : ParabolicC2HolderSpace α E F ht)
@@ -516,10 +515,8 @@ variable {A : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] E →L[ℝ]
 theorem hasFDerivAt_exp_smul_slice (hφ : ∀ x, HasFDerivAt φ (ℓ x) x)
     (v : ParabolicC2HolderSpace α E F ht) (t : Icc t₀ t₁) (x : E) :
     HasFDerivAt (fun y ↦ Real.exp (φ y) • v (slabMk y t))
-      (Real.exp (φ x) • (spatialFDerivL v (slabMk x t) + (ℓ x).smulRight (v (slabMk x t)))) x := by
-  refine (((hφ x).exp).smul (v.hasSpatialFDerivAt t x)).congr_fderiv ?_
-  ext h
-  simp [smul_add, smul_smul]
+      (Real.exp (φ x) • (spatialFDerivL v (slabMk x t) + (ℓ x).smulRight (v (slabMk x t)))) x :=
+  TauCeti.hasFDerivAt_exp_smul (hφ x) (v.hasSpatialFDerivAt t x)
 
 /-- **The Hessian of a weighted slice.** For `v ∈ C_b^{2+α,1+α/2}`, `ℓ = Dφ` and `M = D²φ`, the
 gradient of `y ↦ exp (φ y) • v (y, t)` has derivative
