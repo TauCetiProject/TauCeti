@@ -49,6 +49,10 @@ compatible with: the total-degree grading of the underlying tensor product of gr
   their restrictions to the two factors.
 * `TauCeti.gradedTensor_tmul_one_mul_one_tmul_comm`: the images of homogeneous elements of the two
   factors supercommute.
+* `TauCeti.isHomogeneous_mul'_of_gradedAlgebra` and `TauCeti.instGradedAlgebraTensorProduct`:
+  multiplication of an internally `ℤ`-graded algebra has degree zero, and the ordinary tensor
+  product `A ⊗[R] B` (without Koszul signs) is also an internally `ℤ`-graded algebra for the
+  total-degree grading.
 
 The grading of the underlying module is `TauCeti.InternalGrading.tensorProduct` and the Koszul
 multiplication is Mathlib's `GradedTensorProduct`; only their compatibility is proved here.
@@ -371,3 +375,74 @@ theorem gradedTensorAlgHom_ext {C : Type uC} [Ring C] [Algebra R C]
       congrArg GradedAlgHom.toAlgHom hb
 
 end TauCeti
+
+section OrdinaryTensorProduct
+
+open scoped DirectSum TensorProduct
+
+namespace TauCeti
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra R B]
+  (𝒜 : ℤ → Submodule R A) (ℬ : ℤ → Submodule R B)
+  [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+
+/-- Multiplication of an internally `ℤ`-graded algebra is homogeneous of degree zero for the
+total-degree tensor-product grading. -/
+theorem isHomogeneous_mul'_of_gradedAlgebra :
+    TauCeti.LinearMap.IsHomogeneous (_root_.LinearMap.mul' R A)
+      ((InternalGrading.ofDecomposition 𝒜).tensorProduct
+        (InternalGrading.ofDecomposition 𝒜)).piece 𝒜 0 := by
+  let G := InternalGrading.ofDecomposition 𝒜
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro n z hz
+  refine G.tensorProduct_piece_le G (C := (𝒜 (n + 0)).comap (_root_.LinearMap.mul' R A))
+    (fun p a ha b hb ↦ ?_) hz
+  simp only [G, InternalGrading.ofDecomposition_piece] at ha hb
+  rw [Submodule.mem_comap, _root_.LinearMap.mul'_apply]
+  simpa only [add_sub_cancel, add_zero] using SetLike.mul_mem_graded ha hb
+
+/-- The total-degree grading of the ordinary tensor product `A ⊗[R] B` of two internally
+`ℤ`-graded algebras is a graded monoid. -/
+instance instGradedMonoidTensorProduct :
+    SetLike.GradedMonoid
+      ((InternalGrading.ofDecomposition 𝒜).tensorProduct
+        (InternalGrading.ofDecomposition ℬ)).piece where
+  one_mem := by
+    let G := InternalGrading.ofDecomposition 𝒜
+    let H := InternalGrading.ofDecomposition ℬ
+    have h1A : (1 : A) ∈ G.piece 0 := by
+      simpa only [G, InternalGrading.ofDecomposition_piece] using SetLike.one_mem_graded 𝒜
+    have h1B : (1 : B) ∈ H.piece 0 := by
+      simpa only [H, InternalGrading.ofDecomposition_piece] using SetLike.one_mem_graded ℬ
+    change (1 : A) ⊗ₜ[R] (1 : B) ∈ (G.tensorProduct H).piece 0
+    simpa only [add_zero] using InternalGrading.tmul_mem_tensorProduct G H h1A h1B
+  mul_mem m n x y hx hy := by
+    let G := InternalGrading.ofDecomposition 𝒜
+    let H := InternalGrading.ofDecomposition ℬ
+    refine G.tensorProduct_piece_le H
+      (C := ((G.tensorProduct H).piece (m + n)).comap (_root_.LinearMap.mulRight R y))
+      (fun p a ha b hb ↦ ?_) hx
+    rw [Submodule.mem_comap, _root_.LinearMap.mulRight_apply]
+    refine G.tensorProduct_piece_le H
+      (C := ((G.tensorProduct H).piece (m + n)).comap (_root_.LinearMap.mulLeft R (a ⊗ₜ[R] b)))
+      (fun r a' ha' b' hb' ↦ ?_) hy
+    simp only [G, H, InternalGrading.ofDecomposition_piece] at ha hb ha' hb'
+    rw [Submodule.mem_comap, _root_.LinearMap.mulLeft_apply, Algebra.TensorProduct.tmul_mul_tmul]
+    have hdeg : (p + r) + ((m - p) + (n - r)) = m + n := by ring
+    rw [← hdeg]
+    exact InternalGrading.tmul_mem_tensorProduct G H
+      (by simpa only [G, InternalGrading.ofDecomposition_piece] using SetLike.mul_mem_graded ha ha')
+      (by simpa only [H, InternalGrading.ofDecomposition_piece] using SetLike.mul_mem_graded hb hb')
+
+/-- The ordinary tensor product `A ⊗[R] B` of two internally `ℤ`-graded algebras is internally
+`ℤ`-graded for the total-degree grading. -/
+noncomputable instance instGradedAlgebraTensorProduct :
+    GradedAlgebra
+      ((InternalGrading.ofDecomposition 𝒜).tensorProduct
+        (InternalGrading.ofDecomposition ℬ)).piece :=
+  (InternalGrading.isInternal _).gradedAlgebra
+
+end TauCeti
+
+end OrdinaryTensorProduct

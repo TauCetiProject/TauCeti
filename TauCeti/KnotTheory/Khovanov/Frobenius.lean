@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Coalgebra.Equiv
 public import Mathlib.RingTheory.Coalgebra.IsFrobenius
 public import Mathlib.RingTheory.Coalgebra.TensorProduct
+public import TauCeti.Algebra.Algebra.Frobenius.DualNumber
 public import TauCeti.Algebra.DualNumber.TensorProduct
 public import TauCeti.Algebra.DualNumber.Trace
 
@@ -48,6 +49,17 @@ numbers, so it is installed only as scoped instances in `TauCeti.Khovanov`; `ope
 * `TauCeti.Khovanov.baseChangeCoalgEquiv`: for a commutative `R`-algebra `S`, the algebra
   isomorphism `S ⊗[R] R[ε] ≃ S[ε]` is an isomorphism of `S`-coalgebras, so the Khovanov
   Frobenius algebra over `S` is the base change of the one over `R`.
+* `TauCeti.Khovanov.frobeniusCoalgebra_sndHom_eq_coalgebra`: the Frobenius coalgebra reconstructed
+  from `TrivSqZeroExt.sndHom R R` via `LinearMap.frobeniusCoalgebra` equals
+  `TauCeti.Khovanov.coalgebra R`.
+* `TauCeti.Khovanov.handleElement_eq`, `TauCeti.Khovanov.counit_handleElement`,
+  `TauCeti.Khovanov.handleElement_sq`: the handle element is `2 * ε`, with counit `2` and square
+  `0`.
+* `TauCeti.Khovanov.isHomogeneous_counit_dualNumberIntegerGrade`,
+  `TauCeti.Khovanov.isHomogeneous_comul_dualNumberIntegerGrade`,
+  `TauCeti.Khovanov.baseChangeCoalgEquiv_eq_toCoalgEquivOfIsFrobenius`: degree compatibility with
+  `TauCeti.dualNumberIntegerGrade` and agreement of `baseChangeCoalgEquiv` with the general
+  Frobenius transport equivalence.
 
 ## References
 
@@ -159,5 +171,72 @@ theorem coe_baseChangeCoalgEquiv :
     ⇑(baseChangeCoalgEquiv R S) = dualNumberAlgebraTensorAlgEquiv R S := (rfl)
 
 end BaseChange
+
+section Comparison
+
+variable (R)
+
+/-- The Frobenius coalgebra reconstructed from `TrivSqZeroExt.sndHom R R` via
+`LinearMap.frobeniusCoalgebra` equals the Khovanov coalgebra `TauCeti.Khovanov.coalgebra R`. -/
+theorem frobeniusCoalgebra_sndHom_eq_coalgebra :
+    (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra = coalgebra R :=
+  LinearMap.frobeniusCoalgebra_eq (TrivSqZeroExt.sndHom R R) (coalgebra R) rfl (isFrobenius R)
+
+/-- The comultiplication reconstructed from `TrivSqZeroExt.sndHom R R` equals the Khovanov
+comultiplication on `R[ε]`. -/
+theorem frobeniusCoalgebra_sndHom_comul_eq_comul :
+    (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra.comul =
+      Coalgebra.comul (R := R) (A := R[ε]) :=
+  congrArg (fun c : Coalgebra R R[ε] ↦ c.comul) (frobeniusCoalgebra_sndHom_eq_coalgebra R)
+
+/-- The handle element of the Khovanov Frobenius algebra `R[ε]` is `2 * ε`. -/
+@[simp]
+theorem handleElement_eq : Coalgebra.handleElement R R[ε] = 2 * ε := by
+  simp [Coalgebra.handleElement_def, two_mul]
+
+/-- The Khovanov counit evaluates the handle element to `2`. -/
+theorem counit_handleElement :
+    Coalgebra.counit (R := R) (Coalgebra.handleElement R R[ε]) = 2 := by
+  simp [two_mul, one_add_one_eq_two]
+
+/-- The handle element of the Khovanov Frobenius algebra squares to zero. -/
+theorem handleElement_sq : Coalgebra.handleElement R R[ε] ^ 2 = 0 := by
+  simp [sq, mul_assoc, mul_left_comm]
+
+/-- With `deg ε = 2`, the Khovanov counit is homogeneous of degree `-2`. -/
+theorem isHomogeneous_counit_dualNumberIntegerGrade :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
+      (dualNumberIntegerGrade R) (trivialGrading R R) (-2) :=
+  isHomogeneous_sndHom_dualNumberIntegerGrade R
+
+/-- With `deg ε = 2`, the Khovanov comultiplication is homogeneous of degree `2`. -/
+theorem isHomogeneous_comul_dualNumberIntegerGrade :
+    letI := dualNumberIntegerGradedAlgebra R
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
+      (dualNumberIntegerGrade R)
+      ((InternalGrading.ofDecomposition (dualNumberIntegerGrade R)).tensorProduct
+        (InternalGrading.ofDecomposition (dualNumberIntegerGrade R))).piece 2 := by
+  let := dualNumberIntegerGradedAlgebra R
+  exact (Coalgebra.IsFrobenius.isHomogeneous_comul_iff_isHomogeneous_counit
+    (dualNumberIntegerGrade R) 2).mpr (isHomogeneous_counit_dualNumberIntegerGrade R)
+
+variable (S : Type*) [CommSemiring S] [Algebra R S]
+
+/-- Base change `S ⊗[R] R[ε] ≃ₐ[S] S[ε]` preserves the Khovanov counit. -/
+theorem counit_comp_dualNumberAlgebraTensorAlgEquiv :
+    Coalgebra.counit (R := S) (A := S[ε]) ∘ₗ
+        (dualNumberAlgebraTensorAlgEquiv R S).toLinearMap =
+      Coalgebra.counit (R := S) (A := S ⊗[R] R[ε]) :=
+  sndHom_comp_dualNumberAlgebraTensorAlgEquiv R S
+
+/-- `baseChangeCoalgEquiv R S` agrees with the canonical Frobenius coalgebra equivalence induced by
+the trace-preserving algebra isomorphism `dualNumberAlgebraTensorAlgEquiv R S`. -/
+theorem baseChangeCoalgEquiv_eq_toCoalgEquivOfIsFrobenius :
+    baseChangeCoalgEquiv R S =
+      (dualNumberAlgebraTensorAlgEquiv R S).toCoalgEquivOfIsFrobenius
+        (counit_comp_dualNumberAlgebraTensorAlgEquiv R S) :=
+  CoalgEquiv.ext fun _ ↦ by simp
+
+end Comparison
 
 end TauCeti.Khovanov
