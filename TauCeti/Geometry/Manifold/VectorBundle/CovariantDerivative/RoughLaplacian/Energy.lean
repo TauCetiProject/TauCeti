@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Pairing
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -56,16 +56,15 @@ or `τ` has.
 
 ## Main results
 
-* `CovariantDerivative.innerCovariantDerivative`: the pointwise inner product `⟪∇σ, ∇τ⟫`; it is
-  smooth (`CovariantDerivative.contMDiff_innerCovariantDerivative`), and `⟪∇σ, ∇σ⟫ = 0` exactly
-  where `∇σ = 0` (`CovariantDerivative.innerCovariantDerivative_self_eq_zero_iff`).
 * `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian`,
   `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_isCompact_left`:
   **the energy identity**, when `τ`, respectively `σ`, has compact support.
-* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_comm`: the rough
+* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right`: the rough
   Laplacian is formally self-adjoint.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_self_nonneg`: it is
   nonnegative.
+* `CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero`: a compactly
+  supported smooth section with `∇*∇ σ = 0` is parallel.
 * `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff`: on a compact manifold a
   smooth section satisfies `∇*∇ σ = 0` if and only if it is parallel.
 
@@ -97,100 +96,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [FiberBundle F V]
   (cov : CovariantDerivative I F V) {σ τ : Π x : M, V x}
 
-/-! ### The pointwise inner product of covariant derivatives -/
-
-/-- The pointwise inner product `⟪∇σ, ∇τ⟫ = ∑ᵢ ⟪∇_{eᵢ} σ, ∇_{eᵢ} τ⟫` of the covariant
-derivatives of two sections at `x`, for any orthonormal basis `eᵢ` of the tangent space
-(`CovariantDerivative.innerCovariantDerivative_eq_sum`): the metric trace of the bilinear form
-`(u, v) ↦ ⟪∇_u σ, ∇_v τ⟫`. It is the inner product of `∇σ` and `∇τ` as sections of `T*M ⊗ V`,
-and `⟪∇σ, ∇σ⟫ = |∇σ|²` is the squared Hilbert–Schmidt norm of `∇σ` at `x`. -/
-def innerCovariantDerivative (σ τ : Π x : M, V x) (x : M) : ℝ :=
-  TauCeti.bilinFormTrace ((innerₗ (V x)).compl₁₂ (cov σ x : TangentSpace I x →ₗ[ℝ] V x)
-    (cov τ x : TangentSpace I x →ₗ[ℝ] V x))
-
-/-- The inner product of covariant derivatives in an orthonormal basis:
-`⟪∇σ, ∇τ⟫ = ∑ᵢ ⟪∇_{eᵢ} σ, ∇_{eᵢ} τ⟫`. -/
-theorem innerCovariantDerivative_eq_sum (σ τ : Π x : M, V x) (x : M) {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
-    cov.innerCovariantDerivative σ τ x = ∑ i, ⟪cov σ x (b i), cov τ x (b i)⟫ := by
-  simp only [innerCovariantDerivative, TauCeti.bilinFormTrace_eq_sum _ b,
-    LinearMap.compl₁₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
-
-/-- The inner product of covariant derivatives is symmetric: `⟪∇σ, ∇τ⟫ = ⟪∇τ, ∇σ⟫`. -/
-theorem innerCovariantDerivative_comm (σ τ : Π x : M, V x) (x : M) :
-    cov.innerCovariantDerivative σ τ x = cov.innerCovariantDerivative τ σ x := by
-  simp only [cov.innerCovariantDerivative_eq_sum _ _ x (stdOrthonormalBasis ℝ _),
-    real_inner_comm (cov σ x _)]
-
-/-- `⟪∇σ, ∇σ⟫ = ∑ᵢ |∇_{eᵢ} σ|²` in an orthonormal basis. -/
-theorem innerCovariantDerivative_self_eq_sum (σ : Π x : M, V x) (x : M) {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
-    cov.innerCovariantDerivative σ σ x = ∑ i, ‖cov σ x (b i)‖ ^ 2 := by
-  simp only [cov.innerCovariantDerivative_eq_sum _ _ x b, real_inner_self_eq_norm_sq]
-
-/-- `⟪∇σ, ∇σ⟫ = |∇σ|²` is nonnegative. -/
-theorem innerCovariantDerivative_self_nonneg (σ : Π x : M, V x) (x : M) :
-    0 ≤ cov.innerCovariantDerivative σ σ x := by
-  rw [cov.innerCovariantDerivative_self_eq_sum σ x (stdOrthonormalBasis ℝ _)]
-  positivity
-
-/-- `⟪∇σ, ∇σ⟫` vanishes at `x` exactly when the covariant derivative of `σ` vanishes at `x`. -/
-theorem innerCovariantDerivative_self_eq_zero_iff (σ : Π x : M, V x) (x : M) :
-    cov.innerCovariantDerivative σ σ x = 0 ↔ cov σ x = 0 := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [cov.innerCovariantDerivative_self_eq_sum σ x b,
-    Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ by positivity]
-  simp only [Finset.mem_univ, true_implies, pow_eq_zero_iff two_ne_zero, norm_eq_zero]
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h i ↦ by simp [h]⟩
-  rw [← b.sum_repr' v]
-  simp [h]
-
 section Smooth
 
 variable [VectorBundle ℝ F V] [T2Space M] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [ContMDiffVectorBundle ∞ F V I] [IsContMDiffRiemannianBundle I ∞ F V]
   [ContMDiffCovariantDerivative cov ∞]
-
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [T2Space M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [ContMDiffVectorBundle ∞ F V I] [IsContMDiffRiemannianBundle I ∞ F V] in
-/-- The covariant derivative of a smooth section along a member of a chart frame is smooth at
-every point of the chart source. -/
-private theorem contMDiffAt_apply_chartLocalFrame (hσ : CMDiff ∞ (T% σ)) (α : M) {x : M}
-    (hx : x ∈ (chartAt H α).source) (j : Fin (Module.finrank ℝ E)) :
-    CMDiffAt ∞ (T% (fun y ↦ cov σ y (chartLocalFrame (I := I) α j y))) x := by
-  have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
-  have hframe : ContMDiffAt I (I.prod 𝓘(ℝ, E)) ∞
-      (fun y : M ↦ TotalSpace.mk' E y (chartLocalFrame (I := I) α j y)) x := by
-    have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-    exact (contMDiffOn_chartLocalFrame (I := I) (n := ∞) α j).contMDiffAt
-      ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds (by simpa using hx))
-  exact ((contMDiffOn_univ.mp
-    (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ'.contMDiffOn)) x).clm_bundle_apply hframe
-
-omit [T2Space M] [ContMDiffVectorBundle ∞ F V I] in
-/-- The inner product `⟪∇σ, ∇τ⟫` of the covariant derivatives of two smooth sections is a smooth
-function. -/
-theorem contMDiff_innerCovariantDerivative (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) :
-    ContMDiff I 𝓘(ℝ) ∞ (cov.innerCovariantDerivative σ τ) := by
-  intro x
-  have hopen : IsOpen (chartAt H x).source := (chartAt H x).open_source
-  -- On the chart source, the metric trace is read off with the inverse Gram matrix.
-  have heq : (fun y ↦ ∑ i, ∑ j, chartInvGramMatrix (I := I) x y i j *
-      ⟪cov σ y (chartLocalFrame (I := I) x i y), cov τ y (chartLocalFrame (I := I) x j y)⟫)
-      =ᶠ[𝓝 x] cov.innerCovariantDerivative σ τ := by
-    filter_upwards [hopen.mem_nhds (mem_chart_source H x)] with y hy
-    simp only [innerCovariantDerivative, bilinFormTrace_eq_sum_chartInvGramMatrix x hy,
-      LinearMap.compl₁₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
-  refine ContMDiffAt.congr_of_eventuallyEq ?_ heq.symm
-  refine contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦ ?_
-  have hG : ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ chartInvGramMatrix (I := I) x y i j) x := by
-    have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-    exact (contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) x i j).contMDiffAt
-      ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds (by simp))
-  exact hG.mul ((cov.contMDiffAt_apply_chartLocalFrame hσ x (mem_chart_source H x) i).inner_bundle
-    (cov.contMDiffAt_apply_chartLocalFrame hτ x (mem_chart_source H x) j))
 
 /-! ### The vector field dual to `⟪∇σ, τ⟫` -/
 
@@ -212,9 +123,13 @@ private theorem contMDiff_pairingField (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff 
     ContMDiff I I.tangent ∞ (T% (cov.pairingField σ τ)) := by
   intro x
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
   refine contMDiffAt_rieszDual (n := ∞) x (mem_chart_source H x) fun j ↦ ?_
+  have hframe : CMDiffAt ∞ (T% (chartLocalFrame (I := I) x j)) x :=
+    (contMDiffOn_chartLocalFrame (I := I) (n := ∞) x j).contMDiffAt
+      ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds (by simp))
   simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm] using
-    (cov.contMDiffAt_apply_chartLocalFrame hσ x (mem_chart_source H x) j).inner_bundle (hτ x)
+    (cov.contMDiffAt_apply hframe hσ').inner_bundle (hτ x)
 
 /-- The divergence of the vector field dual to `⟪∇σ, τ⟫` is `⟪∇σ, ∇τ⟫ - ⟪∇*∇ σ, τ⟫`. -/
 private theorem divergence_pairingField [FiniteDimensional ℝ F] (hcov : cov.IsMetricCompatible)
@@ -268,22 +183,6 @@ local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [T2Space M]
-  [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] [IsContMDiffRiemannianBundle I ∞ F V]
-  [ContMDiffCovariantDerivative cov ∞] [I.Boundaryless] [SigmaCompactSpace M]
-  [MeasurableSpace M] [BorelSpace M] in
-/-- The covariant derivative of a smooth section vanishes off the closure of its nonzero locus. -/
-private theorem apply_eq_zero_of_notMem_closure (hσ : CMDiff ∞ (T% σ)) {y : M}
-    (hy : y ∉ closure {x | σ x ≠ 0}) : cov σ y = 0 := by
-  have hev : ∀ᶠ z in 𝓝 y, σ z = (0 : Π x : M, V x) z := by
-    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hy] with z hz
-    by_contra h
-    exact hz (subset_closure h)
-  rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq (hσ.mdifferentiable (by simp) y)
-    (mdifferentiableAt_zeroSection ..) Filter.univ_mem hev]
-  exact congrFun cov.zero y
-
 /-- The energy identity, when the vector field dual to `⟪∇σ, τ⟫` and the function `⟪∇σ, ∇τ⟫`
 both vanish off a compact set. -/
 private theorem integral_inner_roughLaplacian_of_subset (hcov : cov.IsMetricCompatible)
@@ -292,14 +191,8 @@ private theorem integral_inner_roughLaplacian_of_subset (hcov : cov.IsMetricComp
     (hB : ∀ y ∉ K, cov.innerCovariantDerivative σ τ y = 0) :
     ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M := by
-  have hXc : HasCompactSupport (β := E) (cov.pairingField σ τ) :=
-    hK.of_isClosed_subset (isClosed_tsupport _) (closure_minimal (fun y hy ↦ by
-      by_contra h
-      exact hy (hX y h)) hKc)
-  have hBc : HasCompactSupport (cov.innerCovariantDerivative σ τ) :=
-    hK.of_isClosed_subset (isClosed_tsupport _) (closure_minimal (fun y hy ↦ by
-      by_contra h
-      exact hy (hB y h)) hKc)
+  have hXc : HasCompactSupport (β := E) (cov.pairingField σ τ) := .intro' hK hKc hX
+  have hBc : HasCompactSupport (cov.innerCovariantDerivative σ τ) := .intro' hK hKc hB
   have hX1 : ContMDiff I I.tangent 1 (T% (cov.pairingField σ τ)) :=
     (cov.contMDiff_pairingField hσ hτ).of_le (by simp)
   have hBi : Integrable (cov.innerCovariantDerivative σ τ) (riemannianVolume I M) :=
@@ -327,7 +220,7 @@ theorem integral_inner_roughLaplacian (hcov : cov.IsMetricCompatible) (hσ : CMD
       exact hy (subset_closure h)
     simp [pairingField, hτy, LinearIsometryEquiv.map_zero]
   · simp [cov.innerCovariantDerivative_eq_sum σ τ y (stdOrthonormalBasis ℝ _),
-      apply_eq_zero_of_notMem_closure hτ hy]
+      cov.apply_eq_zero_of_notMem_closure hy]
 
 /-- **The energy identity for the rough Laplacian**, when the first section has compact
 support: `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪∇σ, ∇τ⟫ dV`. -/
@@ -337,14 +230,14 @@ theorem integral_inner_roughLaplacian_of_isCompact_left (hcov : cov.IsMetricComp
       ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M :=
   integral_inner_roughLaplacian_of_subset hcov hσ hτ hσc isClosed_closure
     (fun y hy ↦ by
-      simp [pairingField, apply_eq_zero_of_notMem_closure hσ hy, LinearIsometryEquiv.map_zero])
+      simp [pairingField, cov.apply_eq_zero_of_notMem_closure hy, LinearIsometryEquiv.map_zero])
     (fun y hy ↦ by
       simp [cov.innerCovariantDerivative_eq_sum σ τ y (stdOrthonormalBasis ℝ _),
-        apply_eq_zero_of_notMem_closure hσ hy])
+        cov.apply_eq_zero_of_notMem_closure hy])
 
 /-- **The rough Laplacian is formally self-adjoint.** For a metric connection and smooth sections
 `σ` and `τ` where `τ` has compact support, `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
-theorem integral_inner_roughLaplacian_comm (hcov : cov.IsMetricCompatible)
+theorem integral_inner_roughLaplacian_left_eq_right (hcov : cov.IsMetricCompatible)
     (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) (hτc : IsCompact (closure {x | τ x ≠ 0})) :
     ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M := by
@@ -364,34 +257,35 @@ theorem integral_inner_roughLaplacian_self_nonneg (hcov : cov.IsMetricCompatible
   rw [hcov.integral_inner_roughLaplacian hσ hσ hσc]
   exact integral_nonneg fun x ↦ cov.innerCovariantDerivative_self_nonneg σ x
 
+/-- **A compactly supported smooth section in the kernel of the rough Laplacian is parallel.**
+For a metric connection on a Riemannian vector bundle over a manifold without boundary, a smooth
+section `σ` with compact support and `∇*∇ σ = 0` satisfies `∇σ = 0`. -/
+theorem eq_zero_of_roughLaplacian_eq_zero (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0}))
+    (h : cov.roughLaplacian (leviCivitaConnection I M) σ = 0) : cov σ = 0 := by
+  have hint := hcov.integral_inner_roughLaplacian hσ hσ hσc
+  simp only [h, Pi.zero_apply, inner_zero_left, integral_zero] at hint
+  have hcont := (cov.contMDiff_innerCovariantDerivative hσ hσ).continuous
+  have hBc : HasCompactSupport (cov.innerCovariantDerivative σ σ) :=
+    .intro' hσc isClosed_closure fun y hy ↦
+      (cov.innerCovariantDerivative_self_eq_zero_iff σ y).2
+        (cov.apply_eq_zero_of_notMem_closure hy)
+  -- `⟪∇σ, ∇σ⟫` is continuous and nonnegative with integral zero, so it vanishes everywhere.
+  have hzero : cov.innerCovariantDerivative σ σ = 0 :=
+    (hcont.ae_eq_iff_eq _ continuous_zero).1 ((integral_eq_zero_iff_of_nonneg
+      (cov.innerCovariantDerivative_self_nonneg σ) (hcont.integrable_of_hasCompactSupport hBc)).1
+      hint.symm)
+  exact funext fun x ↦ (cov.innerCovariantDerivative_self_eq_zero_iff σ x).1 (congrFun hzero x)
+
 omit [SigmaCompactSpace M] in
 /-- **The kernel of the rough Laplacian on a closed manifold.** For a metric connection on a
 Riemannian vector bundle over a compact manifold without boundary, a smooth section satisfies
 `∇*∇ σ = 0` if and only if it is parallel, `∇σ = 0`. -/
 theorem roughLaplacian_eq_zero_iff [CompactSpace M] (hcov : cov.IsMetricCompatible)
     (hσ : CMDiff ∞ (T% σ)) :
-    cov.roughLaplacian (leviCivitaConnection I M) σ = 0 ↔ cov σ = 0 := by
-  constructor
-  · intro h
-    have hσc : IsCompact (closure {x | σ x ≠ 0}) := isClosed_closure.isCompact
-    have hint := hcov.integral_inner_roughLaplacian hσ hσ hσc
-    simp only [h, Pi.zero_apply, inner_zero_left, integral_zero] at hint
-    have hcont := (cov.contMDiff_innerCovariantDerivative hσ hσ).continuous
-    -- `⟪∇σ, ∇σ⟫` is continuous and nonnegative with integral zero, so it vanishes everywhere.
-    have hzero : cov.innerCovariantDerivative σ σ = 0 :=
-      (hcont.ae_eq_iff_eq _ continuous_zero).1 ((integral_eq_zero_iff_of_nonneg
-        (cov.innerCovariantDerivative_self_nonneg σ)
-        (hcont.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _))).1
-        hint.symm)
-    exact funext fun x ↦ (cov.innerCovariantDerivative_self_eq_zero_iff σ x).1 (congrFun hzero x)
-  · intro hcov0
-    funext x
-    rw [cov.roughLaplacian_eq_sum (leviCivitaConnection I M) σ x (stdOrthonormalBasis ℝ _)]
-    refine neg_eq_zero.2 (Finset.sum_eq_zero fun i _ ↦ ?_)
-    obtain ⟨W, hW, hWx⟩ := exists_contMDiff_section_eq I E ∞ (stdOrthonormalBasis ℝ _ i)
-    have hW0 : (fun y ↦ cov σ y (W y)) = 0 := funext fun y ↦ by simp [hcov0]
-    rw [← hWx, cov.secondCovariantDerivative_apply _ hσ x hW, hW0]
-    simp [hcov0]
+    cov.roughLaplacian (leviCivitaConnection I M) σ = 0 ↔ cov σ = 0 :=
+  ⟨hcov.eq_zero_of_roughLaplacian_eq_zero hσ isClosed_closure.isCompact,
+    cov.roughLaplacian_eq_zero_of_eq_zero _ hσ⟩
 
 end IsMetricCompatible
 
