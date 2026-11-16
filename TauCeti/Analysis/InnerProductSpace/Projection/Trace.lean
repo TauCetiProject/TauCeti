@@ -18,8 +18,9 @@ import Mathlib.Analysis.Matrix.Hermitian
 dimension of its range. In orthonormal coordinates, the same dimension is the sum of the squared
 entry norms (`Submodule.sum_norm_sq_toMatrix_starProjection`). These identities identify the
 mean and the Frobenius parameter in quadratic-form estimates for distances to subspaces.
-The Euclidean-coordinate forms identify the trace and quadratic form of the matrix representing
-the projection onto the orthogonal complement.
+The Euclidean-coordinate forms give the trace, squared Frobenius norm, and operator-norm bound
+`≤ 1` for any orthogonal projection. The quadratic form of the orthogonal-complement projection
+is squared distance to the original subspace.
 
 ## References
 
@@ -94,12 +95,21 @@ theorem l2_opNorm_toEuclideanCLM_symm_starProjection_le [Fintype ι] [DecidableE
 
 /-- The quadratic form of the Euclidean matrix of the orthogonal-complement projection is
 squared distance to the subspace. -/
+theorem star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal
+    [Fintype ι] [DecidableEq ι] (U : Submodule 𝕜 (EuclideanSpace 𝕜 ι)) (x : ι → 𝕜) :
+    star x ⬝ᵥ (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
+      Uᗮ.starProjection *ᵥ x = (Metric.infDist (WithLp.toLp 2 x) (U : Set _) : 𝕜) ^ 2 := by
+  rw [dotProduct_comm, ← EuclideanSpace.inner_toLp_toLp,
+    ← Matrix.toEuclideanCLM_toLp, StarAlgEquiv.apply_symm_apply]
+  exact U.inner_starProjection_orthogonal_eq_infDist_sq _
+
+/-- The real part of the Euclidean quadratic form of the orthogonal-complement projection is
+squared distance to the subspace. -/
 theorem re_star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal
     [Fintype ι] [DecidableEq ι] (U : Submodule 𝕜 (EuclideanSpace 𝕜 ι)) (x : ι → 𝕜) :
     RCLike.re (star x ⬝ᵥ (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
       Uᗮ.starProjection *ᵥ x) = Metric.infDist (WithLp.toLp 2 x) (U : Set _) ^ 2 := by
-  rw [dotProduct_comm, ← EuclideanSpace.inner_toLp_toLp,
-    ← Matrix.toEuclideanCLM_toLp, StarAlgEquiv.apply_symm_apply]
-  exact U.re_inner_starProjection_orthogonal_eq_infDist_sq _
+  simpa using congrArg RCLike.re
+    (U.star_dotProduct_toEuclideanCLM_symm_starProjection_orthogonal x)
 
 end Submodule

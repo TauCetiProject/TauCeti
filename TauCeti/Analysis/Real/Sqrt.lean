@@ -51,6 +51,36 @@ public section
 
 namespace Real
 
+/-- For `0 ≤ a` and `0 ≤ t`, if `t < |a - √r|`, then both `√r * t` and `t ^ 2`
+are strictly less than `|a ^ 2 - r|`. No sign hypothesis on `r` is required. -/
+theorem max_sqrt_mul_sq_lt_abs_sq_sub {a r t : ℝ} (ha : 0 ≤ a) (ht : 0 ≤ t)
+    (h : t < |a - √r|) : max (√r * t) (t ^ 2) < |a ^ 2 - r| := by
+  rcases le_total 0 r with hr | hr
+  swap
+  · rw [sqrt_eq_zero_of_nonpos hr]
+    simp only [sqrt_eq_zero_of_nonpos hr, sub_zero, abs_of_nonneg ha] at h
+    rw [abs_of_nonneg (by nlinarith : 0 ≤ a ^ 2 - r)]
+    simp only [zero_mul, max_eq_right (sq_nonneg t)]
+    nlinarith [mul_self_lt_mul_self ht h]
+  have hab : |a - √r| ≤ a + √r :=
+    abs_le.mpr ⟨by linarith, by nlinarith [sqrt_nonneg r]⟩
+  have heq : |a ^ 2 - r| = |a - √r| * (a + √r) := by
+    rw [← abs_of_nonneg (by positivity : 0 ≤ a + √r), ← abs_mul]
+    congr 1
+    nlinarith [sq_sqrt hr]
+  rw [heq]
+  refine max_lt_iff.mpr ⟨?_, ?_⟩
+  · by_cases hr0 : r = 0
+    · simp only [hr0, sqrt_zero, zero_mul, add_zero, sub_zero, abs_of_nonneg ha] at h ⊢
+      have ha' : 0 < a := ht.trans_lt h
+      positivity
+    · simpa only [mul_comm] using
+        (mul_lt_mul_of_pos_right h (sqrt_pos.mpr (lt_of_le_of_ne hr (Ne.symm hr0)))).trans_le
+          (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left ha) (abs_nonneg (a - √r)))
+  · nlinarith [mul_self_lt_mul_self ht h,
+      mul_le_mul_of_nonneg_left hab (abs_nonneg (a - √r))]
+
+
 /-- Multiplying by `(√a)⁻¹` and squaring divides the square by `a`. -/
 @[simp]
 theorem inv_sqrt_mul_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : ((√a)⁻¹ * x) ^ 2 = x ^ 2 / a := by
