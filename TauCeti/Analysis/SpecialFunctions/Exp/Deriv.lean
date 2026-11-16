@@ -45,10 +45,15 @@ public section
 
 namespace Real
 
+/-- The derivative of an exponential with linear exponent, as a `HasDerivAt` statement. -/
+theorem hasDerivAt_exp_mul (a x : ℝ) :
+    HasDerivAt (fun y : ℝ => exp (a * y)) (a * exp (a * x)) x := by
+  simpa only [mul_comm] using (hasDerivAt_const_mul a).exp
+
 /-- The derivative of an exponential with linear exponent. -/
 @[simp] theorem deriv_exp_mul (a x : ℝ) :
-    deriv (fun y : ℝ => exp (a * y)) x = a * exp (a * x) := by
-  simpa [mul_comm] using (((hasDerivAt_id x).const_mul a).exp).deriv
+    deriv (fun y : ℝ => exp (a * y)) x = a * exp (a * x) :=
+  (hasDerivAt_exp_mul a x).deriv
 
 /-- The norm of the Fréchet derivative of an exponential with linear exponent. -/
 @[simp] theorem norm_fderiv_exp_mul (a x : ℝ) :
