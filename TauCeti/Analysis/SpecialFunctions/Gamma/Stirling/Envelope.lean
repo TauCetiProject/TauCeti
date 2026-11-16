@@ -11,8 +11,6 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Series
 
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.NumberTheory.ZetaValues
 
@@ -191,14 +189,10 @@ theorem iteratedDeriv_realStirlingRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {
           ((u : ℂ) + (x : ℂ)) ^ (2 * n + k) =
       ((∫ u in Ioi (0 : ℝ),
         ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-          (u + x) ^ (2 * n + k) : ℝ) : ℂ) := by
-    refine Eq.trans ?_ (integral_ofReal (𝕜 := ℂ))
-    refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
-    push_cast
-    rfl
-  rw [hint]
-  push_cast
-  rfl
+          (u + x) ^ (2 * n + k) : ℝ) : ℂ) :=
+    (setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ by push_cast; rfl).trans
+      (integral_ofReal (𝕜 := ℂ))
+  rw [hint]; push_cast; rfl
 
 /-- Exact real integral representation of `realStirlingRemainder n` on `(0, ∞)` for `n ≥ 1`. -/
 theorem realStirlingRemainder_eq_integral {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 < x) :
@@ -210,15 +204,10 @@ theorem realStirlingRemainder_eq_integral {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx
   rw [iteratedDeriv_zero, pow_zero, one_mul, add_zero, ← integral_const_mul] at h0
   rw [h0]
   have hfac : ((2 * n)! : ℝ) = (2 * n : ℝ) * ((2 * n - 1)! : ℝ) := by
-    have h1 : 2 * n = (2 * n - 1) + 1 := by omega
-    have hnat : (2 * n)! = (2 * n) * (2 * n - 1)! := by
-      calc (2 * n)! = ((2 * n - 1) + 1)! := by rw [← h1]
-        _ = (2 * n) * (2 * n - 1)! := by rw [Nat.factorial_succ, ← h1]
-    exact_mod_cast hnat
+    exact_mod_cast (Nat.mul_factorial_pred (by omega : 2 * n ≠ 0)).symm
   have hne : ((2 * n - 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
-  rw [hfac]
-  field_simp
+  refine setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ ?_
+  rw [hfac]; field_simp
 
 /-! ### Alzer's complete monotonicity and enveloping theorem on `(0, ∞)` -/
 
@@ -227,31 +216,39 @@ private theorem integrableOn_signed_bernoulli_sub_div_pow_Ioi (n : ℕ) {k : ℕ
     IntegrableOn (fun u : ℝ ↦
       (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
         (u + x) ^ k) (Ioi 0) := by
-  have hk' : -(k : ℝ) < -1 := by
-    have : (2 : ℝ) ≤ k := by exact_mod_cast hk
-    linarith
-  have hpow : IntegrableOn (fun u : ℝ ↦ 1 / (u + x) ^ k) (Ioi 0) :=
-    (integrableOn_add_rpow_Ioi_of_lt hk' (by linarith : -x < 0)).congr_fun
-      (fun u hu ↦ by
-        have hpos : 0 ≤ u + x := by linarith [mem_Ioi.mp hu]
-        dsimp only
-        rw [Real.rpow_neg hpos, Real.rpow_natCast, one_div])
-      measurableSet_Ioi
-  have hmeas : AEStronglyMeasurable (fun u : ℝ ↦
-      (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)))
-      (volume.restrict (Ioi 0)) :=
-    (measurable_const.mul
-      (measurable_const.sub ((continuous_bernoulliFun (2 * n)).measurable.comp measurable_fract)))
-      |>.aestronglyMeasurable
-  have hmul := hpow.bdd_mul hmeas
-    (c := 2 * |(bernoulli (2 * n) : ℝ)|)
-    (Eventually.of_forall fun u ↦ by
-      have hle := abs_bernoulliFun_even_fract_le n u
-      rw [Real.norm_eq_abs, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
-      calc |(bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)|
-          ≤ |(bernoulli (2 * n) : ℝ)| + |bernoulliFun (2 * n) (Int.fract u)| := abs_sub _ _
-        _ ≤ 2 * |(bernoulli (2 * n) : ℝ)| := by linarith)
-  exact hmul.congr (Eventually.of_forall fun u ↦ by ring)
+  have h := (Complex.reCLM.integrable_comp
+    (integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk
+      (Complex.ofReal_mem_slitPlane.mpr hx))).const_mul ((-1 : ℝ) ^ (n + 1))
+  refine h.congr (Eventually.of_forall fun u ↦ ?_)
+  have heq : (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
+      ((u : ℂ) + (x : ℂ)) ^ k =
+      ((((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+        (u + x) ^ k : ℝ) : ℂ) := by push_cast; rfl
+  simp only [Complex.reCLM_apply, heq, Complex.ofReal_re]
+  ring
+
+private theorem signed_iteratedDeriv_realStirlingRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
+    {x : ℝ} (hx : 0 < x) :
+    (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingRemainder n) x =
+      (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
+        ∫ u in Ioi (0 : ℝ),
+          (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+            (u + x) ^ (2 * n + k) := by
+  rw [iteratedDeriv_realStirlingRemainder hn k hx]
+  have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by rw [← mul_pow]; norm_num
+  have hint_mul :
+      (-1 : ℝ) ^ (n + 1) *
+        ∫ u in Ioi (0 : ℝ),
+          ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) / (u + x) ^ (2 * n + k) =
+      ∫ u in Ioi (0 : ℝ),
+        (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+          (u + x) ^ (2 * n + k) := by
+    rw [← integral_const_mul]
+    exact setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ by ring
+  rw [← hint_mul]
+  linear_combination ((((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) * (-1 : ℝ) ^ (n + 1) *
+    ∫ u in Ioi (0 : ℝ), ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+      (u + x) ^ (2 * n + k)) * hk2
 
 private theorem integral_signed_bernoulli_sub_div_pow_pos {n k : ℕ} (hn : 1 ≤ n) (hk : 2 ≤ k)
     {x : ℝ} (hx : 0 < x) :
@@ -268,20 +265,14 @@ private theorem integral_signed_bernoulli_sub_div_pow_pos {n k : ℕ} (hn : 1 �
       (by positivity)
   rw [setIntegral_pos_iff_support_of_nonneg_ae hnn
     (integrableOn_signed_bernoulli_sub_div_pow_Ioi n hk hx)]
-  have hsub : Ioo (0 : ℝ) 1 ⊆ Function.support f ∩ Ioi (0 : ℝ) := by
-    intro u hu
-    refine ⟨?_, hu.1⟩
-    have hfr : Int.fract u = u := Int.fract_eq_self.mpr ⟨hu.1.le, hu.2⟩
+  have hsub : Ioo (0 : ℝ) 1 ⊆ Function.support f ∩ Ioi (0 : ℝ) := fun u hu ↦ by
     have hnum : 0 < (-1 : ℝ) ^ (n + 1) *
         ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
-      rw [hfr]
+      rw [Int.fract_eq_self.mpr ⟨hu.1.le, hu.2⟩]
       exact neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos (by omega : n ≠ 0) hu
     have hu0 : 0 < u := hu.1
-    exact (div_pos hnum (by positivity)).ne'
-  have hvol : (0 : ENNReal) < volume (Ioo (0 : ℝ) 1) := by
-    rw [Real.volume_Ioo]
-    norm_num
-  exact lt_of_lt_of_le hvol (measure_mono hsub)
+    exact ⟨(div_pos hnum (by positivity)).ne', hu.1⟩
+  exact lt_of_lt_of_le (by rw [Real.volume_Ioo]; norm_num) (measure_mono hsub)
 
 /-- For every `n ≥ 1`, `k : ℕ`, and `x > 0`, the signed real Stirling remainder
 `t ↦ (-1)^{n+1} r_n(t)` has strictly alternating `k`-th derivative:
@@ -290,38 +281,8 @@ theorem neg_one_pow_mul_iteratedDeriv_signed_realStirlingRemainder_pos {n : ℕ}
     (k : ℕ) {x : ℝ} (hx : 0 < x) :
     0 < (-1 : ℝ) ^ k *
       iteratedDeriv k (fun t ↦ (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n t) x := by
-  have hsmul : iteratedDeriv k (fun t ↦ (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n t) x =
-      (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingRemainder n) x :=
-    iteratedDeriv_const_mul_field ((-1 : ℝ) ^ (n + 1)) (realStirlingRemainder n)
-  rw [hsmul, iteratedDeriv_realStirlingRemainder hn k hx]
-  have hsq : (-1 : ℝ) ^ k * ((-1 : ℝ) ^ (n + 1) * ((-1 : ℝ) ^ k *
-      (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
-        ∫ u in Ioi (0 : ℝ),
-          ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-            (u + x) ^ (2 * n + k))) =
-      (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
-        ∫ u in Ioi (0 : ℝ),
-          (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-            (u + x) ^ (2 * n + k) := by
-    have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
-      rw [← mul_pow, mul_neg_one, neg_neg, one_pow]
-    have hint_mul :
-        (-1 : ℝ) ^ (n + 1) *
-          ∫ u in Ioi (0 : ℝ),
-            ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-              (u + x) ^ (2 * n + k) =
-        ∫ u in Ioi (0 : ℝ),
-          (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-            (u + x) ^ (2 * n + k) := by
-      rw [← integral_const_mul]
-      refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
-      ring
-    rw [← hint_mul]
-    linear_combination ((((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) * (-1 : ℝ) ^ (n + 1) *
-      ∫ u in Ioi (0 : ℝ),
-        ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-          (u + x) ^ (2 * n + k)) * hk2
-  rw [hsq]
+  rw [iteratedDeriv_const_mul_field ((-1 : ℝ) ^ (n + 1)) (realStirlingRemainder n), ← mul_assoc,
+    signed_iteratedDeriv_realStirlingRemainder hn k hx]
   exact mul_pos (by positivity)
     (integral_signed_bernoulli_sub_div_pow_pos hn (by omega : 2 ≤ 2 * n + k) hx)
 
@@ -343,9 +304,7 @@ theorem neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos (m k : 
     0 < (-1 : ℝ) ^ k * iteratedDeriv k (fun t ↦ -realStirlingRemainder (2 * m + 2) t) x := by
   have h := neg_one_pow_mul_iteratedDeriv_signed_realStirlingRemainder_pos
     (n := 2 * m + 2) (by omega) k hx
-  have hpow : (-1 : ℝ) ^ (2 * m + 2 + 1) = -1 := by
-    have : Odd (2 * m + 2 + 1) := ⟨m + 1, by omega⟩
-    exact this.neg_one_pow
+  have hpow : (-1 : ℝ) ^ (2 * m + 2 + 1) = -1 := Odd.neg_one_pow ⟨m + 1, by omega⟩
   simpa only [hpow, neg_one_mul] using h
 
 /-- For every `m : ℕ`, the odd-order real Stirling remainder `F_m = realStirlingRemainder (2m + 1)`
@@ -406,13 +365,11 @@ theorem abs_realStirlingRemainder_lt_abs_stirlingTerm {n : ℕ} (hn : 1 ≤ n) {
   rw [realStirlingRemainder_succ, pow_succ] at h2
   have hlt : (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n x <
       (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by linarith
-  have hT_pos : 0 < (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := lt_trans h1 hlt
   have habs_r : |realStirlingRemainder n x| = (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n x := by
-    rw [← abs_of_pos h1, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
+    simpa [abs_mul] using abs_of_pos h1
   have habs_T : |stirlingTerm n x| = (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by
-    rw [← abs_of_pos hT_pos, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
-  rw [habs_r, habs_T]
-  exact hlt
+    simpa [abs_mul] using abs_of_pos (lt_trans h1 hlt)
+  rwa [habs_r, habs_T]
 
 /-! ### Digamma brackets on `(0, ∞)` -/
 
@@ -427,60 +384,35 @@ theorem deriv_realStirlingRemainder (n : ℕ) {x : ℝ} (hx : 0 < x) :
   have hmain : HasDerivAt
       (fun t ↦ (t - 1 / 2) * Real.log t - t + Real.log (2 * π) / 2)
       (Real.log x - 1 / (2 * x)) x := by
-    have h1 : HasDerivAt (fun t : ℝ ↦ (t - 1 / 2) * Real.log t)
-        (1 * Real.log x + (x - 1 / 2) * x⁻¹) x :=
-      ((hasDerivAt_id x).sub_const (1 / 2 : ℝ)).mul (Real.hasDerivAt_log hx.ne')
-    refine ((h1.sub (hasDerivAt_id x)).add_const (Real.log (2 * π) / 2)).congr_deriv ?_
-    field_simp
-    ring
+    refine (((((hasDerivAt_id x).sub_const (1 / 2 : ℝ)).mul (Real.hasDerivAt_log hx.ne')).sub
+      (hasDerivAt_id x)).add_const (Real.log (2 * π) / 2)).congr_deriv ?_
+    simp only [id_eq]; field_simp; ring
   have hterm : ∀ j ∈ Finset.Ico 1 n,
       HasDerivAt (fun t : ℝ ↦ stirlingTerm j t)
         (-((bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)))) x := by
     intro j hj
     have hj1 : 1 ≤ j := (Finset.mem_Ico.mp hj).1
-    have hden_ne : (2 * (j : ℝ)) * (2 * (j : ℝ) - 1) ≠ 0 := by
+    have h2j1 : 2 * (j : ℝ) - 1 ≠ 0 := by
       have : (1 : ℝ) ≤ j := by exact_mod_cast hj1
-      have h1 : (0 : ℝ) < 2 * (j : ℝ) := by linarith
-      have h2 : (0 : ℝ) < 2 * (j : ℝ) - 1 := by linarith
-      exact mul_ne_zero h1.ne' h2.ne'
+      linarith
     have hpow : HasDerivAt (fun t : ℝ ↦ t ^ (2 * j - 1))
         (((2 * j - 1 : ℕ) : ℝ) * x ^ (2 * j - 2)) x := by
       simpa [Nat.sub_sub] using (hasDerivAt_id x).fun_pow (2 * j - 1)
-    have hden : HasDerivAt (fun t : ℝ ↦ (2 * (j : ℝ)) * (2 * (j : ℝ) - 1) * t ^ (2 * j - 1))
-        ((2 * (j : ℝ)) * (2 * (j : ℝ) - 1) * (((2 * j - 1 : ℕ) : ℝ) * x ^ (2 * j - 2))) x :=
-      hpow.const_mul _
-    have hinv := (hden.inv (mul_ne_zero hden_ne (pow_ne_zero _ hx.ne'))).const_mul
+    have hinv := ((hpow.const_mul ((2 * (j : ℝ)) * (2 * (j : ℝ) - 1))).inv
+      (mul_ne_zero (mul_ne_zero (by positivity) h2j1) (pow_ne_zero _ hx.ne'))).const_mul
       (bernoulli (2 * j) : ℝ)
     refine (hinv.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ by
       simp only [stirlingTerm, Pi.inv_apply, div_eq_mul_inv])).congr_deriv ?_
     have hc : ((2 * j - 1 : ℕ) : ℝ) = 2 * (j : ℝ) - 1 := by
-      rw [Nat.cast_sub (by omega : 1 ≤ 2 * j)]
-      push_cast
-      rfl
-    have hp1 : x ^ (2 * j - 1) = x ^ (2 * j - 2) * x := by
-      rw [← pow_succ]
-      congr 1
-      omega
-    have hp2 : x ^ (2 * j) = x ^ (2 * j - 2) * x ^ 2 := by
-      rw [← pow_add]
-      congr 1
-      omega
-    rw [hc, hp1, hp2]
+      rw [Nat.cast_sub (by omega : 1 ≤ 2 * j)]; push_cast; rfl
+    have hp1 : x ^ (2 * j - 1) = x ^ (2 * j - 2) * x := by rw [← pow_succ]; congr 1; omega
+    have hp2 : x ^ (2 * j) = x ^ (2 * j - 2) * x ^ 2 := by rw [← pow_add]; congr 1; omega
     have hxpow : x ^ (2 * j - 2) ≠ 0 := pow_ne_zero _ hx.ne'
-    have h2j1 : 2 * (j : ℝ) - 1 ≠ 0 := by
-      have : (1 : ℝ) ≤ j := by exact_mod_cast hj1
-      linarith
-    field_simp
-  have hsum : HasDerivAt (fun t : ℝ ↦ ∑ j ∈ Finset.Ico 1 n, stirlingTerm j t)
-      (∑ j ∈ Finset.Ico 1 n, -((bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)))) x :=
-    HasDerivAt.fun_sum hterm
-  have htot : HasDerivAt (realStirlingRemainder n)
-      (Real.digamma x - (Real.log x - 1 / (2 * x)) -
-        ∑ j ∈ Finset.Ico 1 n, -((bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)))) x :=
-    ((hlogG.sub hmain).sub hsum).congr_of_eventuallyEq
-      (Eventually.of_forall fun t ↦ by simp only [realStirlingRemainder, Pi.sub_apply])
-  rw [htot.deriv, Finset.sum_neg_distrib]
-  ring
+    rw [hc, hp1, hp2]; field_simp
+  have htot : HasDerivAt (realStirlingRemainder n) _ x :=
+    ((hlogG.sub hmain).sub (HasDerivAt.fun_sum hterm)).congr_of_eventuallyEq
+      (Eventually.of_forall fun _ ↦ by simp only [realStirlingRemainder, Pi.sub_apply])
+  rw [htot.deriv, Finset.sum_neg_distrib]; ring
 
 /-- Arbitrary-order upper digamma bracket on `(0, ∞)`: for every `m : ℕ` and `x > 0`,
 `ψ(x) < log x - 1 / (2x) - ∑_{j=1}^{2m} B_{2j} / (2j x^{2j})`. -/
@@ -638,14 +570,10 @@ theorem polygammaStirlingSum_lt_neg_one_pow_mul_iteratedDeriv_digamma {k : ℕ} 
     polygammaStirlingSum k (2 * n) x < (-1 : ℝ) ^ (k + 1) * iteratedDeriv k Real.digamma x := by
   have h := neg_one_pow_mul_iteratedDeriv_realStirlingRemainder_odd_pos n (k + 1) hx
   rw [iteratedDeriv_succ_realStirlingRemainder (2 * n + 1) hk hx] at h
-  simp only [Nat.add_sub_cancel] at h
+  simp only [Nat.add_sub_cancel, mul_add] at h
   have hneg : (-1 : ℝ) ^ (k + 1) * (-1 : ℝ) ^ k = -1 := by
-    rw [pow_succ, mul_right_comm, ← mul_pow]
-    norm_num
-  have hmul : (-1 : ℝ) ^ (k + 1) *
-      (iteratedDeriv k Real.digamma x + (-1 : ℝ) ^ k * polygammaStirlingSum k (2 * n) x) =
-      (-1 : ℝ) ^ (k + 1) * iteratedDeriv k Real.digamma x - polygammaStirlingSum k (2 * n) x := by
-    linear_combination polygammaStirlingSum k (2 * n) x * hneg
+    rw [pow_succ, mul_right_comm, ← mul_pow]; norm_num
+  rw [← mul_assoc, hneg] at h
   linarith
 
 /-- **Alzer's upper polygamma bracket** (Alzer 1997, Theorem 9): for every `k ≥ 1`, `n : ℕ`, and
@@ -655,15 +583,10 @@ theorem neg_one_pow_mul_iteratedDeriv_digamma_lt_polygammaStirlingSum {k : ℕ} 
     (-1 : ℝ) ^ (k + 1) * iteratedDeriv k Real.digamma x < polygammaStirlingSum k (2 * n + 1) x := by
   have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos n (k + 1) hx
   rw [iteratedDeriv_fun_neg, iteratedDeriv_succ_realStirlingRemainder (2 * n + 2) hk hx] at h
-  simp only [show 2 * n + 2 - 1 = 2 * n + 1 by omega] at h
+  simp only [show 2 * n + 2 - 1 = 2 * n + 1 by omega, mul_neg, mul_add] at h
   have hneg : (-1 : ℝ) ^ (k + 1) * (-1 : ℝ) ^ k = -1 := by
-    rw [pow_succ, mul_right_comm, ← mul_pow]
-    norm_num
-  have hmul : (-1 : ℝ) ^ (k + 1) *
-      -(iteratedDeriv k Real.digamma x + (-1 : ℝ) ^ k * polygammaStirlingSum k (2 * n + 1) x) =
-      polygammaStirlingSum k (2 * n + 1) x -
-        (-1 : ℝ) ^ (k + 1) * iteratedDeriv k Real.digamma x := by
-    linear_combination -(polygammaStirlingSum k (2 * n + 1) x * hneg)
+    rw [pow_succ, mul_right_comm, ← mul_pow]; norm_num
+  rw [← mul_assoc, hneg] at h
   linarith
 
 /-! ### Stieltjes' sharp sector bound on the slit plane -/
@@ -678,77 +601,37 @@ theorem norm_iteratedDeriv_stirlingRemainder_le_real {n : ℕ} (hn : 1 ≤ n) (k
         Real.cos (z.arg / 2) ^ (2 * n + k) := by
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
   have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_arg_div_two_pos_of_mem_slitPlane hz
-  rw [iteratedDeriv_stirlingRemainder hn k hz, norm_mul, norm_mul, norm_pow, norm_neg, norm_one,
-    one_pow, one_mul, norm_div, Complex.norm_natCast, Complex.norm_natCast]
-  have hint_dom : IntegrableOn (fun u : ℝ ↦
-      (Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹ *
-        ((-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-          (u + ‖z‖) ^ (2 * n + k))) (Ioi 0) :=
-    (integrableOn_signed_bernoulli_sub_div_pow_Ioi n (by omega : 2 ≤ 2 * n + k) hz_pos).const_mul _
-  have hle_int : ‖∫ u in Ioi (0 : ℝ),
-        (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
-          ((u : ℂ) + z) ^ (2 * n + k)‖ ≤
-      (Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹ *
-        ∫ u in Ioi (0 : ℝ),
-          (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-            (u + ‖z‖) ^ (2 * n + k) := by
-    rw [← integral_const_mul]
-    refine (norm_integral_le_integral_norm _).trans ?_
-    refine setIntegral_mono_on
-      (integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi n (by omega : 2 ≤ 2 * n + k) hz).norm
-      hint_dom measurableSet_Ioi fun u hu ↦ ?_
-    have hu0 : 0 ≤ u := (mem_Ioi.mp hu).le
-    have hnn := neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u
-    have habs : |(bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)| =
-        (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
-      rw [← abs_of_nonneg hnn, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
-    have hsec : Real.cos (z.arg / 2) * (u + ‖z‖) ≤ ‖(u : ℂ) + z‖ := by
-      simpa [add_comm] using Complex.cos_arg_div_two_mul_norm_add_le_norm_add_ofReal z u
-    have hpow : Real.cos (z.arg / 2) ^ (2 * n + k) * (u + ‖z‖) ^ (2 * n + k) ≤
-        ‖(u : ℂ) + z‖ ^ (2 * n + k) := by
-      rw [← mul_pow]
-      exact pow_le_pow_left₀ (by positivity) hsec (2 * n + k)
-    rw [norm_div, Complex.norm_real, Real.norm_eq_abs, norm_pow, habs]
-    calc (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-          ‖(u : ℂ) + z‖ ^ (2 * n + k)
-        ≤ (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-            (Real.cos (z.arg / 2) ^ (2 * n + k) * (u + ‖z‖) ^ (2 * n + k)) :=
-          div_le_div_of_nonneg_left hnn (by positivity) hpow
-      _ = (Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹ *
-            ((-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-              (u + ‖z‖) ^ (2 * n + k)) := by
-          simp only [div_eq_mul_inv, mul_inv]
-          ring
-  have hr_eq :
-      ((-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingRemainder n) ‖z‖) /
-        Real.cos (z.arg / 2) ^ (2 * n + k) =
-      (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
-        ((Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹ *
-          ∫ u in Ioi (0 : ℝ),
-            (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-              (u + ‖z‖) ^ (2 * n + k)) := by
-    rw [iteratedDeriv_realStirlingRemainder hn k hz_pos]
-    have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
-      rw [← mul_pow, mul_neg_one, neg_neg, one_pow]
-    have hint_mul :
-        (-1 : ℝ) ^ (n + 1) *
-          ∫ u in Ioi (0 : ℝ),
-            ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-              (u + ‖z‖) ^ (2 * n + k) =
-        ∫ u in Ioi (0 : ℝ),
-          (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-            (u + ‖z‖) ^ (2 * n + k) := by
-      rw [← integral_const_mul]
-      refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
-      ring
-    rw [← hint_mul, div_eq_mul_inv]
-    linear_combination ((((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) * (-1 : ℝ) ^ (n + 1) *
-      (∫ u in Ioi (0 : ℝ),
-        ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-          (u + ‖z‖) ^ (2 * n + k)) *
-      (Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹) * hk2
-  rw [hr_eq]
-  exact mul_le_mul_of_nonneg_left hle_int (by positivity)
+  rw [iteratedDeriv_stirlingRemainder hn k hz,
+    signed_iteratedDeriv_realStirlingRemainder hn k hz_pos,
+    norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_div,
+    Complex.norm_natCast, Complex.norm_natCast, mul_div_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  rw [div_eq_mul_inv, mul_comm _ (Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹, ← integral_const_mul]
+  refine (norm_integral_le_integral_norm _).trans (setIntegral_mono_on
+    (integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi n (by omega : 2 ≤ 2 * n + k) hz).norm
+    ((integrableOn_signed_bernoulli_sub_div_pow_Ioi n
+      (by omega : 2 ≤ 2 * n + k) hz_pos).const_mul _)
+    measurableSet_Ioi fun u hu ↦ ?_)
+  have hu0 : 0 ≤ u := (mem_Ioi.mp hu).le
+  have hnn := neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u
+  have habs : |(bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)| =
+      (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
+    simpa [abs_mul] using abs_of_nonneg hnn
+  have hsec : Real.cos (z.arg / 2) * (u + ‖z‖) ≤ ‖(u : ℂ) + z‖ := by
+    simpa [add_comm] using Complex.cos_arg_div_two_mul_norm_add_le_norm_add_ofReal z u
+  have hpow : Real.cos (z.arg / 2) ^ (2 * n + k) * (u + ‖z‖) ^ (2 * n + k) ≤
+      ‖(u : ℂ) + z‖ ^ (2 * n + k) := by
+    rw [← mul_pow]; exact pow_le_pow_left₀ (by positivity) hsec (2 * n + k)
+  rw [norm_div, Complex.norm_real, Real.norm_eq_abs, norm_pow, habs]
+  calc (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+        ‖(u : ℂ) + z‖ ^ (2 * n + k)
+      ≤ (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+          (Real.cos (z.arg / 2) ^ (2 * n + k) * (u + ‖z‖) ^ (2 * n + k)) :=
+        div_le_div_of_nonneg_left hnn (by positivity) hpow
+    _ = (Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹ *
+          ((-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+            (u + ‖z‖) ^ (2 * n + k)) := by
+        simp only [div_eq_mul_inv, mul_inv]; ring
 
 /-- **Stieltjes' sharp sector bound** on the slit plane: for every `n ≥ 1` and `z ∈ slitPlane`,
 `‖r_n(z)‖ < ‖T_n(z)‖ / cos (arg z / 2) ^ (2n)`. -/
@@ -758,10 +641,10 @@ theorem norm_stirlingRemainder_lt {n : ℕ} (hn : 1 ≤ n) {z : ℂ} (hz : z ∈
   have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_arg_div_two_pos_of_mem_slitPlane hz
   have hle := norm_iteratedDeriv_stirlingRemainder_le_real hn 0 hz
   simp only [iteratedDeriv_zero, pow_zero, one_mul, add_zero] at hle
-  have hpos := neg_one_pow_succ_mul_realStirlingRemainder_pos hn hz_pos
   have habs_r :
       (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n ‖z‖ = |realStirlingRemainder n ‖z‖| := by
-    rw [← abs_of_pos hpos, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
+    simpa [abs_mul] using
+      (abs_of_pos (neg_one_pow_succ_mul_realStirlingRemainder_pos hn hz_pos)).symm
   rw [habs_r] at hle
   have hlt := abs_realStirlingRemainder_lt_abs_stirlingTerm hn hz_pos
   rw [← norm_stirlingTerm_eq_abs_norm n z] at hlt
@@ -774,8 +657,7 @@ theorem norm_stirlingRemainder_one_lt {z : ℂ} (hz : z ∈ slitPlane) :
   have h := norm_stirlingRemainder_lt le_rfl hz
   rw [stirlingTerm_one, norm_div, norm_one, norm_mul, Complex.norm_ofNat] at h
   convert h using 1
-  simp only [Nat.mul_one, div_eq_mul_inv, mul_inv]
-  ring
+  simp only [Nat.mul_one, div_eq_mul_inv, mul_inv]; ring
 
 /-- Sharp `1 / 12` half-angle bound for all derivatives of the leading Stirling remainder `r₁` on
 the slit plane: for every `k : ℕ` and `z ∈ slitPlane`,
@@ -786,51 +668,33 @@ theorem norm_iteratedDeriv_stirlingRemainder_one_lt (k : ℕ) {z : ℂ} (hz : z 
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
   have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_arg_div_two_pos_of_mem_slitPlane hz
   have hle := norm_iteratedDeriv_stirlingRemainder_le_real le_rfl k hz
-  have h11 : (-1 : ℝ) ^ (1 + 1) = 1 := by norm_num
-  rw [h11, mul_one, show 2 * 1 + k = k + 2 by omega] at hle
+  rw [show (-1 : ℝ) ^ (1 + 1) = 1 by norm_num, mul_one, show 2 * 1 + k = k + 2 by omega] at hle
   -- Since `G₀ = -r₂` is strictly completely monotone,
   -- `(-1)^k r₁^{(k)}(‖z‖) < (-1)^k T₁^{(k)}(‖z‖)`.
   have hG := neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos 0 k hz_pos
   have heq_r2 : (fun t : ℝ ↦ -realStirlingRemainder 2 t) =
       fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹ - realStirlingRemainder 1 t := by
-    ext t
-    rw [realStirlingRemainder_succ, stirlingTerm_one]
-    simp only [one_div, mul_inv]
-    ring
-  have hcd_T1 : ContDiffAt ℝ k (fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹) ‖z‖ :=
-    contDiffAt_const.mul (contDiffAt_id.inv hz_pos.ne')
-  have hcd_r1 : ContDiffAt ℝ k (realStirlingRemainder 1) ‖z‖ :=
-    ((contDiffOn_realStirlingRemainder 1).contDiffAt (isOpen_Ioi.mem_nhds hz_pos)).of_le
-      (by exact_mod_cast le_top)
+    ext t; rw [realStirlingRemainder_succ, stirlingTerm_one]; simp only [one_div, mul_inv]; ring
   simp only [Nat.mul_zero, zero_add] at hG
-  rw [heq_r2, iteratedDeriv_fun_sub hcd_T1 hcd_r1] at hG
+  have hT1_cd : ContDiffAt ℝ k (fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹) ‖z‖ :=
+    contDiffAt_const.mul (contDiffAt_id.inv hz_pos.ne')
+  rw [heq_r2, iteratedDeriv_fun_sub hT1_cd
+    (((contDiffOn_realStirlingRemainder 1).contDiffAt (isOpen_Ioi.mem_nhds hz_pos)).of_le
+      (by exact_mod_cast le_top))] at hG
   have hT1_deriv : iteratedDeriv k (fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹) ‖z‖ =
       (-1 : ℝ) ^ k * ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) := by
-    rw [iteratedDeriv_const_mul_field (12⁻¹ : ℝ) Inv.inv, iteratedDeriv_eq_iterate, iter_deriv_inv]
-    have hz_exp : (-1 - (k : ℕ) : ℤ) = -((k + 1 : ℕ) : ℤ) := by omega
-    rw [hz_exp, zpow_neg, zpow_natCast]
-    simp only [div_eq_mul_inv, mul_inv]
-    ring
-  rw [hT1_deriv] at hG
-  have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
-    rw [← mul_pow, mul_neg_one, neg_neg, one_pow]
-  have hlt_real : (-1 : ℝ) ^ k * iteratedDeriv k (realStirlingRemainder 1) ‖z‖ <
-      (k ! : ℝ) / (12 * ‖z‖ ^ (k + 1)) := by
-    have hmul : (-1 : ℝ) ^ k *
-        ((-1 : ℝ) ^ k * ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) -
-          iteratedDeriv k (realStirlingRemainder 1) ‖z‖) =
-        (k ! : ℝ) / (12 * ‖z‖ ^ (k + 1)) -
-          (-1 : ℝ) ^ k * iteratedDeriv k (realStirlingRemainder 1) ‖z‖ := by
-      linear_combination ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) * hk2
-    linarith
+    rw [iteratedDeriv_const_mul_field (12⁻¹ : ℝ) Inv.inv, iteratedDeriv_eq_iterate, iter_deriv_inv,
+      show (-1 - (k : ℕ) : ℤ) = -((k + 1 : ℕ) : ℤ) by omega, zpow_neg, zpow_natCast]
+    simp only [div_eq_mul_inv, mul_inv]; ring
+  have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by rw [← mul_pow]; norm_num
+  rw [hT1_deriv, mul_sub, ← mul_assoc, hk2, one_mul] at hG
   calc ‖iteratedDeriv k (stirlingRemainder 1) z‖
       ≤ ((-1 : ℝ) ^ k * iteratedDeriv k (realStirlingRemainder 1) ‖z‖) /
           Real.cos (z.arg / 2) ^ (k + 2) := hle
     _ < ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) / Real.cos (z.arg / 2) ^ (k + 2) :=
-        div_lt_div_of_pos_right hlt_real (pow_pos hcos_pos _)
+        div_lt_div_of_pos_right (by linarith) (pow_pos hcos_pos _)
     _ = (k ! : ℝ) / (12 * Real.cos (z.arg / 2) ^ (k + 2) * ‖z‖ ^ (k + 1)) := by
-        simp only [div_eq_mul_inv, mul_inv]
-        ring
+        simp only [div_eq_mul_inv, mul_inv]; ring
 
 private theorem sin_div_two_le_cos_arg_div_two {z : ℂ} {δ : ℝ} (hδ : 0 < δ)
     (hz : |z.arg| ≤ π - δ) : Real.sin (δ / 2) ≤ Real.cos (z.arg / 2) := by

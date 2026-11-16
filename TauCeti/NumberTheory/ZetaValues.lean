@@ -44,14 +44,6 @@ theorem bernoulliFun_ratCast (k : ℕ) (x : ℚ) :
     Polynomial.eval₂_at_apply]
   norm_cast
 
-/-- The positive Fourier normalization factor `(2 * π) ^ (2 * k) / 2 / (2 * k)!` appearing in the
-cosine series of `B_{2k}(x)`. -/
-private theorem bernoulli_fourier_factor_pos (k : ℕ) :
-    0 < (2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ) := by
-  positivity
-
-/-- Euler's `ζ(2k)` identity written with the same Fourier factor as
-`hasSum_one_div_nat_pow_mul_cos`. -/
 private theorem hasSum_one_div_nat_pow_bernoulli {k : ℕ} (hk : k ≠ 0) :
     HasSum (fun n : ℕ ↦ 1 / (n : ℝ) ^ (2 * k))
       ((-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
@@ -62,8 +54,6 @@ private theorem hasSum_one_div_nat_pow_bernoulli {k : ℕ} (hk : k ≠ 0) :
   rw [h2, mul_pow]
   ring
 
-/-- Cosine Fourier series of `B_{2k}(x)` on `[0, 1]` with the factor grouped as in
-`hasSum_one_div_nat_pow_bernoulli`. -/
 private theorem hasSum_cos_div_nat_pow_bernoulliFun {k : ℕ} (hk : k ≠ 0) {x : ℝ}
     (hx : x ∈ Set.Icc (0 : ℝ) 1) :
     HasSum (fun n : ℕ ↦ 1 / (n : ℝ) ^ (2 * k) * Real.cos (2 * π * n * x))
@@ -73,7 +63,6 @@ private theorem hasSum_cos_div_nat_pow_bernoulliFun {k : ℕ} (hk : k ≠ 0) {x 
   rw [← bernoulliFun]
   ring
 
-/-- The cosine series of `B_{2k} - B_{2k}(x)` for `k ≥ 1` and `x ∈ [0, 1]`. -/
 private theorem hasSum_one_sub_cos_div_nat_pow {k : ℕ} (hk : k ≠ 0) {x : ℝ}
     (hx : x ∈ Set.Icc (0 : ℝ) 1) :
     HasSum (fun n : ℕ ↦ (1 - Real.cos (2 * π * n * x)) / (n : ℝ) ^ (2 * k))
@@ -81,8 +70,7 @@ private theorem hasSum_one_sub_cos_div_nat_pow {k : ℕ} (hk : k ≠ 0) {x : ℝ
         ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x)) := by
   convert (hasSum_one_div_nat_pow_bernoulli hk).sub (hasSum_cos_div_nat_pow_bernoulliFun hk hx)
     using 1
-  · ext n
-    ring
+  · ext n; ring
   · ring
 
 /-- The even Bernoulli numbers alternate strictly in sign: for `k ≥ 1`,
@@ -91,24 +79,19 @@ theorem neg_one_pow_succ_mul_bernoulli_even_pos {k : ℕ} (hk : k ≠ 0) :
     0 < (-1 : ℚ) ^ (k + 1) * bernoulli (2 * k) := by
   suffices h : 0 < (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) by exact_mod_cast h
   have h0 := hasSum_one_div_nat_pow_bernoulli hk
-  have hsum_pos : 0 < (-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
-      (bernoulli (2 * k) : ℝ) := by
-    rw [← h0.tsum_eq]
-    refine lt_of_lt_of_le (by norm_num : (0 : ℝ) < 1 / ((1 : ℕ) : ℝ) ^ (2 * k)) ?_
-    exact h0.summable.le_tsum (1 : ℕ) (fun n _ ↦ by positivity)
+  have hlt : 0 < ∑' n : ℕ, 1 / (n : ℝ) ^ (2 * k) :=
+    lt_of_lt_of_le (by norm_num : (0 : ℝ) < 1 / ((1 : ℕ) : ℝ) ^ (2 * k))
+      (h0.summable.le_tsum 1 fun _ _ ↦ by positivity)
+  rw [h0.tsum_eq] at hlt
   exact pos_of_mul_pos_right (by linarith :
       0 < ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
-        ((-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ)))
-    (bernoulli_fourier_factor_pos k).le
+        ((-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ))) (by positivity)
 
 /-- Every even Bernoulli number `B_{2k}` is nonzero. -/
 theorem bernoulli_even_ne_zero (k : ℕ) : bernoulli (2 * k) ≠ 0 := by
   rcases eq_or_ne k 0 with rfl | hk
   · simp
-  · intro h
-    have hpos := neg_one_pow_succ_mul_bernoulli_even_pos hk
-    rw [h, mul_zero] at hpos
-    exact lt_irrefl 0 hpos
+  · intro h; simpa [h] using neg_one_pow_succ_mul_bernoulli_even_pos hk
 
 /-- For `x ∈ [0, 1]`, the difference `B_{2k} - B_{2k}(x)` satisfies
 `0 ≤ (-1) ^ (k + 1) * (B_{2k} - B_{2k}(x))`. -/
@@ -118,14 +101,13 @@ theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_nonneg (k : ℕ) {x : �
   rcases eq_or_ne k 0 with rfl | hk
   · simp [bernoulliFun]
   · have hsum := hasSum_one_sub_cos_div_nat_pow hk hx
-    have hge : 0 ≤ (-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
-        ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x) := by
-      rw [← hsum.tsum_eq]
-      exact tsum_nonneg fun n ↦ div_nonneg (sub_nonneg.mpr (Real.cos_le_one _)) (by positivity)
+    have hge : 0 ≤ ∑' n : ℕ, (1 - Real.cos (2 * π * n * x)) / (n : ℝ) ^ (2 * k) :=
+      tsum_nonneg fun _ ↦ div_nonneg (sub_nonneg.mpr (Real.cos_le_one _)) (by positivity)
+    rw [hsum.tsum_eq] at hge
     exact nonneg_of_mul_nonneg_right (by linarith :
         0 ≤ ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
           ((-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x)))
-      (bernoulli_fourier_factor_pos k)
+      (by positivity)
 
 /-- For `k ≥ 1` and `x ∈ (0, 1)`, the difference `B_{2k} - B_{2k}(x)` strictly has the sign of
 `B_{2k}`: `0 < (-1) ^ (k + 1) * (B_{2k} - B_{2k}(x))`. -/
@@ -134,27 +116,22 @@ theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos {k : ℕ} (hk : k �
     0 < (-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x) := by
   have hsum := hasSum_one_sub_cos_div_nat_pow hk (Set.Ioo_subset_Icc_self hx)
   have hcos : Real.cos (2 * π * x) < 1 := by
-    have hne : Real.cos (2 * π * x) ≠ 1 := by
-      intro h
-      rw [Real.cos_eq_one_iff] at h
-      obtain ⟨m, hm⟩ := h
-      have hm_eq : (m : ℝ) = x :=
-        mul_right_cancel₀ (by positivity : (2 : ℝ) * π ≠ 0) (by linarith [hm])
-      have hm0 : (0 : ℤ) < m := by exact_mod_cast (by linarith [hx.1] : (0 : ℝ) < m)
-      have hm1 : m < (1 : ℤ) := by exact_mod_cast (by linarith [hx.2] : (m : ℝ) < 1)
-      omega
-    exact lt_of_le_of_ne (Real.cos_le_one (2 * π * x)) hne
-  have hterm1 : 0 < (1 - Real.cos (2 * π * ((1 : ℕ) : ℝ) * x)) / ((1 : ℕ) : ℝ) ^ (2 * k) := by
-    simpa only [Nat.cast_one, mul_one, one_pow, div_one, sub_pos] using hcos
-  have hgt : 0 < (-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
-      ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x) := by
-    rw [← hsum.tsum_eq]
-    exact lt_of_lt_of_le hterm1 (hsum.summable.le_tsum (1 : ℕ) fun n _ ↦
-      div_nonneg (sub_nonneg.mpr (Real.cos_le_one _)) (by positivity))
+    refine lt_of_le_of_ne (Real.cos_le_one _) fun h ↦ ?_
+    obtain ⟨m, hm⟩ := (Real.cos_eq_one_iff _).mp h
+    have hmx : (m : ℝ) = x := mul_right_cancel₀ (by positivity : (2 : ℝ) * π ≠ 0) (by linarith)
+    have : (0 : ℤ) < m := by exact_mod_cast hmx.symm ▸ hx.1
+    have : m < 1 := by exact_mod_cast hmx.symm ▸ hx.2
+    omega
+  have hgt : 0 < ∑' n : ℕ, (1 - Real.cos (2 * π * n * x)) / (n : ℝ) ^ (2 * k) :=
+    lt_of_lt_of_le (by simpa using hcos :
+        0 < (1 - Real.cos (2 * π * ((1 : ℕ) : ℝ) * x)) / ((1 : ℕ) : ℝ) ^ (2 * k))
+      (hsum.summable.le_tsum 1 fun _ _ ↦
+        div_nonneg (sub_nonneg.mpr (Real.cos_le_one _)) (by positivity))
+  rw [hsum.tsum_eq] at hgt
   exact pos_of_mul_pos_right (by linarith :
       0 < ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
         ((-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x)))
-    (bernoulli_fourier_factor_pos k).le
+    (by positivity)
 
 /-- On `[0, 1]`, the even Bernoulli polynomial attains its maximum modulus at the endpoints:
 `|B_{2k}(x)| ≤ |B_{2k}|`. -/
@@ -166,26 +143,21 @@ theorem abs_bernoulliFun_even_le (k : ℕ) {x : ℝ} (hx : x ∈ Set.Icc (0 : �
     have hx' := hasSum_cos_div_nat_pow_bernoulliFun hk hx
     have hpos : 0 < (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) := by
       exact_mod_cast neg_one_pow_succ_mul_bernoulli_even_pos hk
-    have habs : |(bernoulli (2 * k) : ℝ)| = (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) := by
-      rw [← abs_of_pos hpos, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
+    have hc : 0 < (2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ) := by positivity
     have hle : |(-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
         bernoulliFun (2 * k) x| ≤
         (-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
           (bernoulli (2 * k) : ℝ) := by
       rw [← hx'.tsum_eq, ← h0.tsum_eq]
-      refine (norm_tsum_le_tsum_norm hx'.summable.norm).trans ?_
-      refine hx'.summable.norm.tsum_mono h0.summable fun n ↦ ?_
+      refine (norm_tsum_le_tsum_norm hx'.summable.norm).trans
+        (hx'.summable.norm.tsum_mono h0.summable fun n ↦ ?_)
       dsimp only
-      rw [Real.norm_eq_abs, abs_mul,
-        abs_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / (n : ℝ) ^ (2 * k))]
+      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (by positivity)]
       exact mul_le_of_le_one_right (by positivity) (Real.abs_cos_le_one _)
-    rw [abs_mul, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul,
-      abs_of_pos (bernoulli_fourier_factor_pos k)] at hle
-    have hle' : ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) * |bernoulliFun (2 * k) x| ≤
-        ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) * |(bernoulli (2 * k) : ℝ)| := by
-      rw [habs]
-      linarith
-    exact le_of_mul_le_mul_left hle' (bernoulli_fourier_factor_pos k)
+    simp only [abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul, abs_of_pos hc] at hle
+    have habs : |(bernoulli (2 * k) : ℝ)| = (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) := by
+      simpa [abs_mul] using abs_of_pos hpos
+    exact le_of_mul_le_mul_left (by rw [habs]; linarith) hc
 
 /-- Periodic form of `neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_nonneg`: for every `k : ℕ`
 and every real `u`, `0 ≤ (-1) ^ (k + 1) * (B_{2k} - B_{2k}({u}))`. -/
