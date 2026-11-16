@@ -115,33 +115,13 @@ theorem _root_.IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoi
 
 section Parameter
 
-omit [Field F'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F'] in
-private theorem isDomain_parameter_tensorProduct {C C' : Type*} [Field C] [Field C']
-    [Algebra k C] [Algebra C F] [IsScalarTower k C F] [Algebra k C'] [Algebra k' C']
-    [Algebra C C'] [IsScalarTower k k' C'] [IsScalarTower k C C']
-    (HC : (IsScalarTower.toAlgHom k k' C').fieldRange.LinearDisjoint C)
-    (hC : constantCompositum C k' C' = ⊤) [IsDomain (F ⊗[k] k')] : IsDomain (C' ⊗[C] F) := by
-  let π₀ := Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k C C')
-    (IsScalarTower.toAlgHom k k' C')
-  let _ : Algebra (C ⊗[k] k') C' := π₀.toRingHom.toAlgebra
-  have : IsScalarTower C (C ⊗[k] k') C' :=
-    .of_algebraMap_eq fun a ↦ by simp [π₀, RingHom.algebraMap_toAlgebra]
-  have : IsFractionRing (C ⊗[k] k') C' := isFractionRing_tensorProduct_of_linearDisjoint HC hC
-  let eDom : ((C ⊗[k] k') ⊗[C] F) ≃+* F ⊗[k] k' :=
-    (Algebra.TensorProduct.comm C (C ⊗[k] k') F).toRingEquiv.trans
-      (Algebra.TensorProduct.cancelBaseChange k C C F k').toRingEquiv
-  have : IsDomain ((C ⊗[k] k') ⊗[C] F) := eDom.toMulEquiv.isDomain
-  exact isDomain_tensorProduct_of_isLocalization (nonZeroDivisors (C ⊗[k] k')) le_rfl C' F
-
 /-- **Linear disjointness over a shared parameter when `F ⊗[k] k'` is a domain.** -/
 theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     (hx' : Transcendental k' (algebraMap F F' x)) [Algebra.IsAlgebraic k⟮x⟯ F]
     [IsDomain (F ⊗[k] k')] : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
   set y := algebraMap F F' x
-  have hle : (k⟮x⟯.map (IsScalarTower.toAlgHom k F F')) ≤ (k'⟮y⟯).restrictScalars k := by
-    rw [IntermediateField.adjoin_map, Set.image_singleton, IntermediateField.adjoin_simple_le_iff]
-    exact IntermediateField.mem_adjoin_simple_self k' y
+  have hle : k⟮x⟯.map (IsScalarTower.toAlgHom k F F') ≤ (k'⟮y⟯).restrictScalars k := by
+    simpa [IntermediateField.adjoin_map] using IntermediateField.mem_adjoin_simple_self k' y
   let ι : k⟮x⟯ →ₐ[k] k'⟮y⟯ :=
     ((IsScalarTower.toAlgHom k F F').comp k⟮x⟯.val).codRestrict
       ((k'⟮y⟯).restrictScalars k).toSubalgebra fun z ↦ hle ⟨z, z.2, rfl⟩
@@ -151,16 +131,14 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
   let x₀ : k⟮x⟯ := ⟨x, IntermediateField.mem_adjoin_simple_self k x⟩
   let y₀ : k'⟮y⟯ := ι x₀
   have hy₀ : Transcendental k' y₀ := (transcendental_algebraMap_iff (k'⟮y⟯).val.injective).mp hx'
-  have hcomp : constantCompositum k⟮x⟯ k' k'⟮y⟯ = ⊤ := by
-    let E : IntermediateField k' k'⟮y⟯ :=
-      (constantCompositum k⟮x⟯ k' k'⟮y⟯).toSubfield.toIntermediateField
-        (algebraMap_mem_constantCompositum _ _ _)
-    have hE : k'⟮y₀⟯ ≤ E := IntermediateField.adjoin_simple_le_iff.mpr
-      ((constantCompositum k⟮x⟯ k' k'⟮y⟯).algebraMap_mem x₀)
-    refine eq_top_iff.mpr fun z _ ↦ hE ?_
+  have hcomp : constantCompositum k⟮x⟯ k' k'⟮y⟯ = ⊤ := eq_top_iff.mpr fun z _ ↦ by
+    have hE : k'⟮y₀⟯ ≤ (constantCompositum k⟮x⟯ k' k'⟮y⟯).toSubfield.toIntermediateField
+        (algebraMap_mem_constantCompositum _ _ _) :=
+      IntermediateField.adjoin_simple_le_iff.mpr
+        ((constantCompositum k⟮x⟯ k' k'⟮y⟯).algebraMap_mem x₀)
     obtain ⟨w, hw, hwz⟩ : (z : F') ∈ (k'⟮y₀⟯).map (k'⟮y⟯).val := by
       rw [IntermediateField.adjoin_map, Set.image_singleton]; exact z.2
-    exact Subtype.ext hwz.symm ▸ hw
+    exact hE (Subtype.ext hwz.symm ▸ hw)
   have HC : (IsScalarTower.toAlgHom k k' k'⟮y⟯).fieldRange.LinearDisjoint k⟮x⟯ := by
     have hle₀ : k⟮x⟯ ≤ (k⟮y₀⟯.map ((k'⟮y⟯).val.restrictScalars k)).comap
         (IsScalarTower.toAlgHom k F F') :=
@@ -170,7 +148,15 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     refine Subalgebra.LinearDisjoint.of_le_right_of_flat
       (IntermediateField.linearDisjoint_adjoin_simple_of_transcendental hy₀) ?_
     rintro _ ⟨z, rfl⟩; obtain ⟨w, hw, hwz⟩ := hle₀ z.2; exact ⟨⟨w, hw⟩, Subtype.ext hwz⟩
-  have : IsDomain (k'⟮y⟯ ⊗[k⟮x⟯] F) := isDomain_parameter_tensorProduct HC hcomp
+  let π₀ := Algebra.TensorProduct.productMap
+    (IsScalarTower.toAlgHom k k⟮x⟯ k'⟮y⟯) (IsScalarTower.toAlgHom k k' k'⟮y⟯)
+  let _ : Algebra (k⟮x⟯ ⊗[k] k') k'⟮y⟯ := π₀.toRingHom.toAlgebra
+  have : IsScalarTower k⟮x⟯ (k⟮x⟯ ⊗[k] k') k'⟮y⟯ :=
+    .of_algebraMap_eq (R := k⟮x⟯) (S := k⟮x⟯ ⊗[k] k') (A := k'⟮y⟯) fun _ ↦ by
+      simp [π₀, RingHom.algebraMap_toAlgebra]
+  have : IsFractionRing _ _ := isFractionRing_tensorProduct_of_linearDisjoint HC hcomp
+  have := isDomain_tensorProduct_of_isLocalization_tensorProduct
+    (nonZeroDivisors (k⟮x⟯ ⊗[k] k')) le_rfl k'⟮y⟯ F
   let _ : Field (k'⟮y⟯ ⊗[k⟮x⟯] F) :=
     (Algebra.TensorProduct.isField_of_isAlgebraic k⟮x⟯ k'⟮y⟯ F (.inr inferInstance)).toField
   let ψ : k'⟮y⟯ ⊗[k⟮x⟯] F →ₐ[k'⟮y⟯] F' :=

@@ -26,8 +26,7 @@ Spanning uses algebraicity of `F/C`: adjoining the algebraic image of `F` to `k'
 already gives the whole field compositum. A transcendental element also remains
 transcendental, so a linearly disjoint extension of constants of a one-variable function
 field is again a one-variable function field. Conversely, preserving the finite degree over
-a shared transcendental parameter `x` (or over `k(t)`) recovers linear disjointness, and
-linear disjointness descends exactness of constants from `k'` in `F'` to `k` in `F`.
+a shared transcendental parameter `x` (or over `k(t)`) recovers linear disjointness.
 
 ## Main results
 
@@ -35,8 +34,6 @@ linear disjointness descends exactness of constants from `k'` in `F'` to `k` in 
 * `TauCeti.finrank_over_adjoin_simple_eq_of_linearDisjoint`: preserve the degree over `k(x)`.
 * `TauCeti.IsFunctionField.of_constantCompositum_eq_top_of_linearDisjoint`: preserve the
   one-variable function-field property under an arbitrary linearly disjoint extension of constants.
-* `IntermediateField.LinearDisjoint.isIntegrallyClosedIn`: exact constants descend along any
-  linearly disjoint extension.
 * `TauCeti.linearDisjoint_of_transcendental_of_finrank_eq` and
   `TauCeti.linearDisjoint_of_finrank_ratFunc_eq`: degree preservation over a shared parameter or
   `k(t)` implies linear disjointness of constants.
@@ -101,20 +98,6 @@ theorem IsFunctionField.of_constantCompositum_eq_top_of_linearDisjoint
   have := hF.finiteDimensional_adjoin hx
   have := finiteDimensional_adjoin_simple_of_constantCompositum_eq_top (k := k) h x
   exact (H.transcendental_algebraMap hx).isFunctionField_adjoin.finite_extension
-
-/-- **Exact constants descend along any linearly disjoint extension.** -/
-theorem _root_.IntermediateField.LinearDisjoint.isIntegrallyClosedIn
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (hex' : IsIntegrallyClosedIn k' F') : IsIntegrallyClosedIn k F := by
-  refine isIntegrallyClosedIn_iff_forall_isAlgebraic.mpr fun x hx ↦ ?_
-  obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex' _
-    ((hx.algHom (IsScalarTower.toAlgHom k F F')).tower_top k')
-  have hmem : algebraMap F F' x ∈
-      (IsScalarTower.toAlgHom k k' F').fieldRange ⊓ (IsScalarTower.toAlgHom k F F').fieldRange :=
-    ⟨⟨c, hc⟩, ⟨x, rfl⟩⟩
-  rw [(IntermediateField.linearDisjoint_iff'.mpr H).inf_eq_bot, IntermediateField.mem_bot] at hmem
-  obtain ⟨a, ha⟩ := hmem
-  exact ⟨a, (algebraMap F F').injective (by rwa [← IsScalarTower.algebraMap_apply k F F'])⟩
 
 /-- **Linear disjointness over a shared parameter from degree preservation.** -/
 theorem linearDisjoint_of_transcendental_of_finrank_eq (h : constantCompositum F k' F' = ⊤) {x : F}

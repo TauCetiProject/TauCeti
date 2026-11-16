@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.FieldTheory.Relrank
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.LinearAlgebra.LinearIndependent.Algebra
 public import TauCeti.RingTheory.AlgebraTower
 public import TauCeti.RingTheory.Algebraic.LinearIndependent
@@ -53,6 +54,8 @@ for algebraic `k' / k`, to the finite subextensions of `k' / k`, and
 `IntermediateField.LinearDisjoint.fieldRange_intermediateField` restricts it to any intermediate
 field. With no algebraicity assumption on the new constants,
 `IntermediateField.LinearDisjoint.transcendental_algebraMap` preserves transcendental elements,
+`IntermediateField.LinearDisjoint.isIntegrallyClosedIn` descends relative integral closure along
+any linearly disjoint extension,
 `IntermediateField.linearDisjoint_adjoin_simple_of_transcendental` and
 `IntermediateField.linearDisjoint_of_transcendental_of_linearIndependent` establish linear
 disjointness from transcendence over `k'` and linear independence of a `k(x)`-basis over `k'(x)`,
@@ -261,6 +264,22 @@ theorem _root_.IntermediateField.LinearDisjoint.transcendental_algebraMap
   have hbound := hd (fun i : Fin (d + 1) ↦ (i : ℕ)) (hli.comp _ Fin.val_injective)
   simp only [Fintype.card_fin] at hbound
   omega
+
+/-- **Relative integral closure descends along any linearly disjoint extension.** If `k'` is
+integrally closed in `E` and the image of `k'` in `E` is linearly disjoint from `F` over `k`,
+then `k` is integrally closed in `F`. -/
+theorem _root_.IntermediateField.LinearDisjoint.isIntegrallyClosedIn
+    (H : (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F)
+    (hex' : IsIntegrallyClosedIn k' E) : IsIntegrallyClosedIn k F := by
+  refine isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k F).injective, fun {x} hx ↦ ?_⟩
+  obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff.mp hex').2
+    ((hx.map (IsScalarTower.toAlgHom k F E)).tower_top)
+  have hmem : algebraMap F E x ∈
+      (IsScalarTower.toAlgHom k k' E).fieldRange ⊓ (IsScalarTower.toAlgHom k F E).fieldRange :=
+    ⟨⟨c, hc⟩, ⟨x, rfl⟩⟩
+  rw [(IntermediateField.linearDisjoint_iff'.mpr H).inf_eq_bot, IntermediateField.mem_bot] at hmem
+  obtain ⟨a, ha⟩ := hmem
+  exact ⟨a, (algebraMap F E).injective (by rwa [← IsScalarTower.algebraMap_apply k F E])⟩
 
 /-- If `y : E` is transcendental over `k'`, then the image of `k'` in `E` and `k(y)` are linearly
 disjoint over `k`. -/

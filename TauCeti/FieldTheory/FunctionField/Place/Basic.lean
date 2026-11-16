@@ -388,18 +388,12 @@ theorem eq_of_valuation_sub_lt_one {f : F} {a b : k} (ha : P.valuation (f - alge
 /-- A place of `F / k` is trivial on a subfield `R` precisely when its valuation ring contains the
 image of `R`. -/
 theorem isTrivialOn_iff_integers_comap_eq_top {R : Type*} [Field R] [Algebra R F] :
-    P.valuation.IsTrivialOn R ↔ P.integers.comap (algebraMap R F) = ⊤ := by
-  refine ⟨fun h ↦ ValuationSubring.ext _ _ fun f ↦ ⟨fun _ ↦ trivial, fun _ ↦ ?_⟩,
-    fun h ↦ ⟨fun f hf ↦ ?_⟩⟩
-  · rw [ValuationSubring.mem_comap, P.mem_integers_iff]
-    rcases eq_or_ne f 0 with rfl | hf; · simp
-    exact (h.eq_one f hf).le
-  · have hmem (x : R) : P.valuation (algebraMap R F x) ≤ 1 :=
-      P.mem_integers_iff.mp (ValuationSubring.mem_comap.mp (h.symm ▸ ValuationSubring.mem_top x))
-    have h2 := hmem f⁻¹
-    rw [map_inv₀, map_inv₀, inv_le_one₀ (zero_lt_iff.mpr ((P.valuation.ne_zero_iff).mpr
-      ((map_ne_zero (algebraMap R F)).mpr hf)))] at h2
-    exact le_antisymm (hmem f) h2
+    P.valuation.IsTrivialOn R ↔ P.integers.comap (algebraMap R F) = ⊤ :=
+  ⟨fun h ↦ ValuationSubring.ext _ _ fun f ↦
+      ⟨fun _ ↦ trivial, fun _ ↦ P.mem_integers_iff.mpr <| by
+        have := h; exact Valuation.IsTrivialOn.valuation_algebraMap_le_one P.valuation f⟩,
+    fun h ↦ .of_le_one P.valuation fun x ↦
+      P.mem_integers_iff.mp (ValuationSubring.mem_comap.mp (h.symm ▸ ValuationSubring.mem_top x))⟩
 
 end Constants
 

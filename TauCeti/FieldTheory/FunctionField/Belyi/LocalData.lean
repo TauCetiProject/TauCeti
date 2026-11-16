@@ -128,13 +128,14 @@ the multiset of ramification indices over each marked place**, because every pla
 residue degree `1` and extends uniquely to a place of `F'` nontrivial on `F`, while places of `F'`
 trivial on `F` never lie over `{0, 1, ∞}`. -/
 theorem map_fst_localData_markedPlace_eq_of_isAlgClosed_base [IsAlgClosed k]
-    (hex : IsIntegrallyClosedIn k F) (hcomp : constantCompositum F k' F' = ⊤)
+    (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) (i : Fin 3) :
     (localData (k' := k') (F' := F') k' (RatFunc k') (markedPlace k' i)).map Prod.fst =
       (localData (k' := k) (F' := F) k (RatFunc k) (markedPlace k i)).map Prod.fst := by
   classical
   have hF : IsFunctionField k F := (IsFunctionField.ratFunc k).finite_extension
+  have hex : IsIntegrallyClosedIn k F := isIntegrallyClosedIn_of_isAlgClosed
   have H := linearDisjoint_of_isGeometricallyReduced_ratFunc hex hX
   have hexU (Q : Place k F) : ∃! Q' : Place k' F',
       Q'.integers.comap (algebraMap F F') = Q.integers :=
@@ -193,8 +194,7 @@ theorem map_fst_localData_markedPlace_eq_parts_weightedRamificationPartition
     rw [← hX₁, ← IsScalarTower.algebraMap_apply F F₁ F', hX]
   have : FiniteDimensional (RatFunc kbar) F₁ :=
     finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp₁ hX₁
-  exact (map_fst_localData_markedPlace_eq_of_isAlgClosed_base
-    (hex.of_constantCompositum_eq_top hcomp₁) hcomp₂ hX₂ i).trans
+  exact (map_fst_localData_markedPlace_eq_of_isAlgClosed_base hcomp₂ hX₂ i).trans
     (map_fst_localData_markedPlace_eq_of_isAlgebraic hex hcomp₁ hX₁ i)
 
 end TauCeti.Place
