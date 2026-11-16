@@ -37,12 +37,12 @@ a product of pairs**. Consequently the Künneth map
 (`TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`). Everything is natural in both
 pairs.
 
-No hypothesis is placed on the subspaces. When the interiors of `A × Y` and `X × B` cover
-`A × Y ∪ X × B`, for instance when `A` and `B` are open, the small-chain theorem identifies the
-homology of `N(P × Q)` with the relative homology of `(X × Y, A × Y ∪ X × B)`; that comparison is
-not made here. For compact manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair
-`(M × N, ∂M × N ∪ M × ∂N)`, and `N(P × Q)` is the complex in which cross products of fundamental
-chains rel boundary are relative cycles.
+No hypothesis is placed on the subspaces. When `A` and `B` are open, the homology of `N(P × Q)`
+is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth theorem holds in
+relative singular homology (`TauCeti.singularHomologyKunnethPair`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`). For compact manifolds `M` and
+`N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair `(M × N, ∂M × N ∪ M × ∂N)`, and `N(P × Q)` is
+the complex in which cross products of fundamental chains rel boundary are relative cycles.
 
 ## Main definitions
 
