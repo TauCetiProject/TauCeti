@@ -48,6 +48,10 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   commutators of arbitrary elements with the kernel of `p ∘ φ`.
 * `MonoidHom.eq_of_comp_eq_of_ker_le_center`: two homomorphisms from a perfect group which agree
   modulo a central subgroup are equal.
+* `MonoidHom.commutatorElement_eq_of_ker_le_center`: under a homomorphism with central kernel,
+  commutators depend only on the images of their arguments.
+* `MonoidHom.commute_commutatorElement_of_ker_le_center`: under a homomorphism with central kernel,
+  an element whose image commutes with the images of `x` and `y` commutes with `⁅x, y⁆`.
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
   `N`, the commutator `⁅a, y ^ n⁆` lies in `N` exactly when `⁅a, y⁆ ^ n` does.
 * `TauCeti.commutatorElement_mul_mul_eq_mul_of_commute`: the commutator of two paired products
@@ -395,6 +399,29 @@ theorem _root_.MonoidHom.eq_of_comp_eq_of_ker_le_center {E H : Type*} [Group E] 
     rw [map_commutatorElement, map_commutatorElement,
       ← commutatorElement_mul_mul_of_mem_center (a := f₂ a) (c := f₂ b) (hz a) (hz b),
       mul_inv_cancel_left, mul_inv_cancel_left]
+
+/-- If `p : G →* M` has central kernel, then a commutator `⁅a, b⁆` depends only on the images
+`p a` and `p b`: elements with the same image differ by a central factor, which drops out of the
+commutator. -/
+theorem _root_.MonoidHom.commutatorElement_eq_of_ker_le_center {M : Type*} [MulOneClass M]
+    {p : G →* M} (hp : p.ker ≤ center G) {a₁ a₂ b₁ b₂ : G}
+    (ha : p a₁ = p a₂) (hb : p b₁ = p b₂) : ⁅a₁, b₁⁆ = ⁅a₂, b₂⁆ := by
+  have hmem {x y : G} (h : p x = p y) : x⁻¹ * y ∈ center G := hp <| by
+    rw [MonoidHom.mem_ker, map_mul, ← h, ← map_mul, inv_mul_cancel, map_one]
+  rw [← mul_inv_cancel_left a₁ a₂, ← mul_inv_cancel_left b₁ b₂,
+    commutatorElement_mul_mul_of_mem_center (hmem ha) (hmem hb)]
+
+/-- If `p : G →* M` has central kernel and `p w` commutes with both `p x` and `p y`, then `w`
+commutes with `⁅x, y⁆`: conjugating `x` and `y` by `w` preserves their `p`-images, hence fixes
+their commutator. -/
+theorem _root_.MonoidHom.commute_commutatorElement_of_ker_le_center {M : Type*} [MulOneClass M]
+    {p : G →* M} (hp : p.ker ≤ center G) {w x y : G}
+    (hx : Commute (p w) (p x)) (hy : Commute (p w) (p y)) : Commute w ⁅x, y⁆ := by
+  have hconj {z : G} (hz : Commute (p w) (p z)) : p (w * z * w⁻¹) = p z := by
+    rw [map_mul, map_mul, hz.eq, ← map_mul, ← map_mul, mul_inv_cancel_right]
+  have h := (conjugate_commutatorElement (g₃ := w) (g₁ := x) (g₂ := y)).trans
+    (p.commutatorElement_eq_of_ker_le_center hp (hconj hx) (hconj hy))
+  exact mul_inv_eq_iff_eq_mul.mp h
 
 /-- **Homomorphisms into a commutative monoid separate elements only in a commutative group.** If
 for every `g ≠ 1` some homomorphism `φ : G →* A` into a commutative monoid has `φ g ≠ 1`, then `G`
