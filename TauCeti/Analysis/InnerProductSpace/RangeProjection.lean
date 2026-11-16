@@ -39,11 +39,13 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
   projection onto the range of `B`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
   `B B†`.
-* `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`, with
+* `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`
+  (`ContinuousLinearMap.gramLeftInverse_def`), with
   `ContinuousLinearMap.continuousAt_gramLeftInverse` and
   `ContinuousLinearMap.contDiffAt_gramLeftInverse`.
-* `ContinuousLinearMap.gramProjection`: the projection `κ (A† A)⁻¹ A† ι` onto the range of `κ`
-  along its `ι`-orthogonal complement (`ContinuousLinearMap.gramProjection_apply_apply`,
+* `ContinuousLinearMap.gramProjection`: the projection `κ (A† A)⁻¹ A† ι`
+  (`ContinuousLinearMap.gramProjection_def`) onto the range of `κ` along its `ι`-orthogonal
+  complement (`ContinuousLinearMap.gramProjection_apply_apply`,
   `ContinuousLinearMap.inner_sub_gramProjection_apply`), continuous and real `C^n` in `κ`
   (`ContinuousLinearMap.continuousAt_gramProjection`,
   `ContinuousLinearMap.contDiffAt_gramProjection`).
@@ -78,6 +80,11 @@ variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [Co
 orthogonal projection onto the range of `A` (`ContinuousLinearMap.starProjection_range_eq`). -/
 noncomputable def gramLeftInverse (A : F →L[𝕜] V) : V →L[𝕜] F :=
   Ring.inverse (adjoint A ∘L A) ∘L adjoint A
+
+/-- The defining formula `(A† A)⁻¹ A†` of `ContinuousLinearMap.gramLeftInverse`. -/
+theorem gramLeftInverse_def (A : F →L[𝕜] V) :
+    gramLeftInverse A = Ring.inverse (adjoint A ∘L A) ∘L adjoint A := by
+  rw [gramLeftInverse]
 
 /-- `(A† A)⁻¹ A†` is a left inverse of `A` when `A† A` is invertible. -/
 theorem gramLeftInverse_comp_self {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
@@ -122,11 +129,12 @@ theorem contDiffAt_gramLeftInverse
     (hi.comp (f := fun B : F →L[𝕜] V ↦ adjoint B ∘L B) A hgram.contDiffAt)).clm_apply
       ha.contDiffAt
 
-/-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, when the Gram operator
-`B† B` is invertible. -/
+/-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, that is `B` composed with
+`ContinuousLinearMap.gramLeftInverse B`, when the Gram operator `B† B` is invertible. -/
 theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProjection]
     (hB : IsUnit (adjoint B ∘L B)) :
-    B.range.starProjection = B ∘L Ring.inverse (adjoint B ∘L B) ∘L adjoint B := by
+    B.range.starProjection = B ∘L gramLeftInverse B := by
+  rw [gramLeftInverse_def]
   ext v
   refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero (LinearMap.mem_range_self _ _) ?_
   rintro _ ⟨x, rfl⟩
@@ -138,7 +146,8 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProje
 theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
     [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
   have h := (isometry_iff_adjoint_comp_self B).1 hB
-  rw [starProjection_range_eq (h ▸ isUnit_one), h, Ring.inverse_one, one_def, id_comp]
+  rw [starProjection_range_eq (h ▸ isUnit_one), gramLeftInverse_def, h, Ring.inverse_one,
+    one_def, id_comp]
 
 end Adjoint
 
@@ -155,6 +164,11 @@ the `ι`-orthogonal complement of that range (`ContinuousLinearMap.gramProjectio
 `ContinuousLinearMap.inner_sub_gramProjection_apply`). -/
 noncomputable def gramProjection (ι : E →L[𝕜] V) (κ : F →L[𝕜] E) : E →L[𝕜] E :=
   κ ∘L gramLeftInverse (ι ∘L κ) ∘L ι
+
+/-- The defining formula `κ (A† A)⁻¹ A† ι` of `ContinuousLinearMap.gramProjection`. -/
+theorem gramProjection_def (ι : E →L[𝕜] V) (κ : F →L[𝕜] E) :
+    gramProjection ι κ = κ ∘L gramLeftInverse (ι ∘L κ) ∘L ι := by
+  rw [gramProjection]
 
 /-- The projection `κ (A† A)⁻¹ A† ι` takes values in the range of `κ`. -/
 theorem gramProjection_apply_mem_range (ι : E →L[𝕜] V) (κ : F →L[𝕜] E) (e : E) :
@@ -313,14 +327,13 @@ variable {𝕜 E F V : Type*} [RCLike 𝕜]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
 
 /-- Near an injective operator `T₀` out of a finite-dimensional space `E`, the orthogonal projection
-onto the range of `T` is `T j (gramLeftInverse B) ι`, where `ι = toComplL` embeds `V` into its
-completion and `B = ι T j`. Here `j : F ≃L E` identifies `E` with a complete inner product space
-`F`, so that the adjoint of `B` exists although `V` need not be complete. -/
+onto the range of `T` is the Gram projection `T j (B† B)⁻¹ B† ι`, where `ι = toComplL` embeds `V`
+into its completion and `B = ι T j`. Here `j : F ≃L E` identifies `E` with a complete inner product
+space `F`, so that the adjoint of `B` exists although `V` need not be complete. -/
 private theorem eventuallyEq_starProjection_range (j : F ≃L[𝕜] E) {T₀ : E →L[𝕜] V}
     (hT₀ : Injective T₀) :
     (fun T : E →L[𝕜] V ↦ T.range.starProjection) =ᶠ[𝓝 T₀] fun T ↦
-      T ∘L (j : F →L[𝕜] E) ∘L
-        gramLeftInverse (toComplL ∘L T ∘L (j : F →L[𝕜] E)) ∘L toComplL := by
+      gramProjection toComplL (T ∘L (j : F →L[𝕜] E)) := by
   have : FiniteDimensional 𝕜 F := j.symm.toLinearEquiv.finiteDimensional
   filter_upwards [isOpen_injective.mem_nhds hT₀] with T hT
   set B := toComplL ∘L T ∘L (j : F →L[𝕜] E) with hB
@@ -336,7 +349,7 @@ private theorem eventuallyEq_starProjection_range (j : F ≃L[𝕜] E) {T₀ : E
   refine coe_injective V ?_
   have hcomm := congr($(LinearIsometry.starProjection_range_comp_comm toComplₗᵢ T) v)
   simp only [toContinuousLinearMap_toComplₗᵢ, hP] at hcomm
-  simpa [B, gramLeftInverse, comp_assoc] using hcomm.symm
+  simpa [B, gramProjection_def, comp_assoc] using hcomm.symm
 
 end GramFormula
 
@@ -358,15 +371,11 @@ theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
   let F := EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))
   let j : F ≃L[𝕜] E := .ofFinrankEq (by simp [F])
   have hj : ContinuousAt (fun y ↦ A y ∘L (j : F →L[𝕜] E)) x := hA.clm_comp continuousAt_const
-  have hB : ContinuousAt (fun y ↦ toComplL ∘L A y ∘L (j : F →L[𝕜] E)) x :=
-    continuousAt_const.clm_comp hj
   have hG := (isUnit_adjoint_comp_self_iff
     ((toComplL : V →L[𝕜] Completion V) ∘L A x ∘L (j : F →L[𝕜] E))).2
     ((coe_injective V).comp (hinj.comp j.injective))
-  have hL := (continuousAt_gramLeftInverse hG).comp
-    (f := fun y ↦ toComplL ∘L A y ∘L (j : F →L[𝕜] E)) hB
-  refine (hj.clm_comp (hL.clm_comp
-    (continuousAt_const (y := (toComplL : V →L[𝕜] Completion V))))).congr_of_eventuallyEq ?_
+  refine ((continuousAt_gramProjection toComplL hG).comp
+    (f := fun y ↦ A y ∘L (j : F →L[𝕜] E)) hj).congr_of_eventuallyEq ?_
   exact (eventuallyEq_starProjection_range j hinj).comp_tendsto hA
 
 end ContinuousAt
@@ -391,19 +400,11 @@ theorem ContDiffAt.starProjection_range {A : X → E →L[𝕜] V} {u₀ : X} {n
   let j : F ≃L[𝕜] E := .ofFinrankEq (by simp [F])
   have hj : ContDiffAt ℝ n (fun u ↦ A u ∘L (j : F →L[𝕜] E)) u₀ :=
     (((compL 𝕜 F E V).flip (j : F →L[𝕜] E)).restrictScalars ℝ).contDiff.contDiffAt.comp u₀ hA
-  have hB : ContDiffAt ℝ n (fun u ↦ toComplL ∘L A u ∘L (j : F →L[𝕜] E)) u₀ := by
-    simpa only [Function.comp_def, bilinearRestrictScalars_apply_apply, compL_apply,
-      comp_assoc] using
-      (((compL 𝕜 F V (Completion V)).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp u₀
-        (contDiffAt_const (c := (toComplL : V →L[𝕜] Completion V)))).clm_apply hj
   have hG := (isUnit_adjoint_comp_self_iff
     ((toComplL : V →L[𝕜] Completion V) ∘L A u₀ ∘L (j : F →L[𝕜] E))).2
     ((coe_injective V).comp (hinj.comp j.injective))
-  have hL := (contDiffAt_gramLeftInverse hG).comp u₀ hB
-  have hLι := (((compL 𝕜 V (Completion V) F).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp
-    u₀ hL).clm_apply (contDiffAt_const (c := (toComplL : V →L[𝕜] Completion V)))
-  refine ((((compL 𝕜 V F V).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp
-    u₀ hj).clm_apply hLι).congr_of_eventuallyEq ?_
+  refine ((contDiffAt_gramProjection toComplL hG).comp u₀
+    (f := fun u ↦ A u ∘L (j : F →L[𝕜] E)) hj).congr_of_eventuallyEq ?_
   exact (eventuallyEq_starProjection_range j hinj).comp_tendsto hA.continuousAt
 
 /-- The orthogonal projection onto the orthogonal complement of the range of a real `C^n` family
