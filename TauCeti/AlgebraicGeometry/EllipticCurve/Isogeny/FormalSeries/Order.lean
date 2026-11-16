@@ -19,28 +19,23 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 
 For an isogeny `φ : W₁ → W₂` of elliptic curves over a field `K`, the formal power series
 `φ.formalSeries ∈ K⟦X⟧` expands the pulled-back uniformizer `-x₂ / y₂` in the source uniformizer
-`z₁ = -x₁ / y₁`. This file computes its order:
+`z₁ = -x₁ / y₁`. This file proves that its order equals the inseparable degree of `φ`:
 
   `φ.formalSeries.order = φ.inseparableDegree`
 
-in every characteristic, including characteristics `2` and `3`.
+in every characteristic, including characteristics `2` and `3`, and characterizes separability
+of `φ` on tangent spaces by `φ.formalSeries.order = 1` or nonzero linear coefficient
+(Silverman IV.4.2).
 
-The proof follows the factorisation `φ = χ ∘ F^r` through the `r`-fold relative Frobenius
-(`TauCeti.Isogeny.exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq`).
+Applied to the multiplication-by-`p` isogeny `[p]` via
+`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`, this equates the height of the formal group of an
+elliptic curve with the exponent `h` in `deg_i [p] = p ^ h` (used in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Classification`).
 
-* On the `r`-fold relative Frobenius `F^r : W → W⁽ᵖʳ⁾`, the pullback raises `x` and `y` to the
-  `p ^ r`-th power, hence raises `-x / y` to the `p ^ r`-th power in every exponential
-  characteristic `p`, so `(F^r).formalSeries = X ^ (p ^ r)`.
-* A separable isogeny `χ` of elliptic curves is unramified at every place
-  (`TauCeti.Isogeny.ramificationIdx_eq_one`), in particular at the place at infinity, so it sends
-  the target uniformizer `-x₂ / y₂` to a uniformizer of the source at infinity; hence
-  `χ.formalSeries` has order `1`.
-* Composition of isogenies corresponds to substitution of formal series (`formalSeries_comp`),
-  and substitution multiplies power-series orders (`PowerSeries.order_subst`), yielding
-  `ord φ.formalSeries = p ^ r = deg_i φ`.
-
-In particular, `φ` is separable exactly when its formal series has order `1`, equivalently when
-its linear coefficient is nonzero (Silverman IV.4.2).
+Only `[W₂.IsElliptic]` is required as an explicit assumption on the order and separability
+theorems, since `TauCeti.Isogeny.isElliptic` supplies `W₁.IsElliptic`. The Frobenius series
+formulas `formalSeries_relativeFrobeniusIsogeny` and `formalSeries_iterateRelativeFrobeniusIsogeny`
+require no nonsingularity hypothesis at all.
 
 ## Main results
 
@@ -101,9 +96,9 @@ theorem formalSeries_relativeFrobeniusIsogeny (p : ℕ) [ExpChar K p]
     (iterateRelativeFrobeniusIsogeny_one p W.toAffine),
     formalSeries_iterateRelativeFrobeniusIsogeny, pow_one]
 
-/-- **A separable isogeny of elliptic curves has formal series of order `1`.** By Hurwitz's
-formula a separable isogeny is unramified at every place, so it pulls back the uniformizer
-`-x₂ / y₂` at infinity to a uniformizer at infinity of the source. -/
+/-- **A separable isogeny of elliptic curves has formal series of order `1`.** Only
+`[W₂.IsElliptic]` is required as an explicit assumption since `TauCeti.Isogeny.isElliptic`
+supplies `W₁.IsElliptic`. -/
 theorem order_formalSeries_of_isSeparable {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] :
@@ -135,9 +130,9 @@ theorem order_formalSeries_of_isSeparable {W₁ W₂ : WeierstrassCurve K} [W₂
   rw [← ENat.natCast_toNat (PowerSeries.order_eq_top.not.mpr φ.formalSeries_ne_zero), htoNat,
     Nat.cast_one]
 
-/-- **The order of the formal series of an isogeny equals its inseparable degree.** Factoring
-`φ = χ ∘ F^r` into the `r`-fold relative Frobenius and a separable isogeny `χ`, the formal series
-is `χ.formalSeries (X ^ (p ^ r))`, whose order is `p ^ r = deg_i φ`. -/
+/-- **The order of the formal series of an isogeny of elliptic curves equals its inseparable
+degree.** Only `[W₂.IsElliptic]` is required as an explicit assumption since
+`TauCeti.Isogeny.isElliptic` supplies `W₁.IsElliptic`. -/
 theorem order_formalSeries_eq_inseparableDegree {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
     φ.formalSeries.order = φ.inseparableDegree := by

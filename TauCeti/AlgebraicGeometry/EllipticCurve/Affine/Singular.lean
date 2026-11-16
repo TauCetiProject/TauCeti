@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 import Mathlib.Algebra.CharP.Two
+import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
@@ -69,6 +71,9 @@ equality. Every statement here holds in any characteristic, including two and th
   discriminant produces a rational singular point.
 * `WeierstrassCurve.Affine.Δ_eq_zero_iff_exists_isSingular`: the resulting characterization of
   singular Weierstrass models over a perfect field.
+* `WeierstrassCurve.Affine.exists_isSingular_and_tangent_root_of_Δ_eq_zero`: over an algebraically
+  closed field, vanishing of the discriminant produces a singular point together with a root of
+  its tangent quadratic.
 * `WeierstrassCurve.Affine.pow_sub_eq_zero_of_isSingular_of_isSingular`: two singular points
   satisfy `(x₂ - x₁) ^ 3 = 0` and `(y₂ - y₁) ^ 4 = 0`.
 * `WeierstrassCurve.Affine.isNilpotent_sub_of_isSingular_of_isSingular`: so each coordinate
@@ -504,6 +509,18 @@ vanishes.** -/
 theorem Δ_eq_zero_iff_exists_isSingular {F : Type*} [Field F] [PerfectField F]
     (W : WeierstrassCurve.Affine F) : W.Δ = 0 ↔ ∃ x y : F, W.IsSingular x y :=
   ⟨exists_isSingular_of_Δ_eq_zero W, fun ⟨_, _, h⟩ ↦ h.Δ_eq_zero⟩
+
+/-- **Over an algebraically closed field, a singular Weierstrass model has a singular point
+together with a root of its tangent quadratic.** That is, vanishing of `Δ` supplies `(x, y)` with
+`W.IsSingular x y` and a slope `α` satisfying `α² + a₁ α - (3 x + a₂) = 0`. -/
+theorem exists_isSingular_and_tangent_root_of_Δ_eq_zero {F : Type*} [Field F] [IsAlgClosed F]
+    (W : WeierstrassCurve.Affine F) (hΔ : W.Δ = 0) :
+    ∃ x y α : F, W.IsSingular x y ∧ α ^ 2 + W.a₁ * α - (3 * x + W.a₂) = 0 := by
+  obtain ⟨x, y, h⟩ := W.exists_isSingular_of_Δ_eq_zero hΔ
+  obtain ⟨α, hα⟩ := IsAlgClosed.exists_root
+    (C 1 * X ^ 2 + C W.a₁ * X + C (-(3 * x + W.a₂)))
+    (by rw [degree_quadratic one_ne_zero]; decide)
+  exact ⟨x, y, α, h, by simpa [sub_eq_add_neg] using hα⟩
 
 /-- **Two singular points of a Weierstrass model have `(x₂ - x₁) ^ 3 = 0` and
 `(y₂ - y₁) ^ 4 = 0`.** The nilpotence and equality forms below follow from these. -/

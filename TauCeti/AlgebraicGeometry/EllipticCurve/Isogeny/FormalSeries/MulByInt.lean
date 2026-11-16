@@ -10,33 +10,29 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.RingTheory.FormalGroup.ZSMul
-import Mathlib.RingTheory.PowerSeries.Evaluation
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Hom
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Free
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Comp
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
+import TauCeti.RingTheory.PowerSeries.Evaluation
 import TauCeti.RingTheory.PowerSeries.PiTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Formal power series of negation and multiplication-by-`n` isogenies
 
 For a Weierstrass curve `W` over a field `K`, the formal power series induced by the negation
-isogeny is the formal group's inverse series (`Isogeny.formalSeries_negIsogeny`). When `W` is
-elliptic, the formal power series induced by every multiplication-by-`n` isogeny `[n]` agrees with
-the formal group's integer multiplication series `[n](X)` (`Isogeny.formalSeries_mulByIntIsogeny`).
+isogeny is the formal group's inverse series (`TauCeti.Isogeny.formalSeries_negIsogeny`). When `W`
+is elliptic, the formal power series induced by every multiplication-by-`n` isogeny `[n]` agrees
+with the formal group's integer multiplication series `[n](X)`
+(`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`).
 
-## Strategy
-
-For negation, the pullback of `-x / y` is `-x / (-y - a₁ x - a₃)`, whose expansion in `K⸨X⸩`
-directly matches `-X / (1 - a₁ X - a₃ w(X))`.
-
-For a positive integer `k`, endow `K` with the discrete uniformity and `K⟦X⟧` with the product
-topology, which is `(X)`-adic and complete. The formal parametrisation
-`WeierstrassCurve.formalPointHom` sends the tautological parameter `X ∈ (X)` to the Laurent
-expansion of the generic point of `W` in `W(K⸨X⸩)`. Since `formalPointHom` is additive, `k • X` in
-the formal group maps to `k` times the generic point, whose local parameter `-x / y` is the formal
-series of `[k]`. Negative integers follow by composing with negation.
+This bridges global invariants of the multiplication-by-`p` isogeny `[p]` — in particular its
+inseparable degree, which equals the order of its formal series by
+`TauCeti.Isogeny.order_formalSeries_eq_inseparableDegree` — to `(formalGroup W).zsmulSeries p` and
+hence to the height of the formal group of `W` in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Classification`.
 
 ## Main results
 
@@ -44,7 +40,6 @@ series of `[k]`. Negative integers follow by composing with negation.
   inverse series.
 * `TauCeti.Isogeny.formalSeries_mulByIntIsogeny`: the formal series of `[n]` is
   `(formalGroup W).zsmulSeries n`.
-* `TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero`: the same statement for `n ≠ 0`.
 
 ## References
 
@@ -122,58 +117,48 @@ private theorem formalGroupPoint_ne_neg_of_ne_zero [UniformSpace K] [DiscreteUni
   let W₀ : WeierstrassCurve K⟦X⟧ := W.baseChange K⟦X⟧
   intro hfix
   have ht0 : (P : K⟦X⟧) ≠ 0 := fun h ↦ hP0 (FormalGroupPoint.ext h)
-  have htf : (P : K⟦X⟧) = W₀.formalInverseEval P := congrArg FormalGroupPoint.val hfix
-  have hmul := W₀.formalInverseEval_mul_formalInverseDenomEval P.hasEval
-  rw [← htf, W₀.formalInverseDenomEval_eq P.hasEval] at hmul
-  have hfac : (P : K⟦X⟧) * (2 - W₀.a₁ * P - W₀.a₃ * W₀.formalWEval P) = 0 := by
-    linear_combination hmul
-  have h2eq : (2 : K⟦X⟧) = PowerSeries.C W.a₁ * P + PowerSeries.C W.a₃ * W₀.formalWEval P := by
-    have h0 := (mul_eq_zero.mp hfac).resolve_left ht0
-    have ha₁ : W₀.a₁ = PowerSeries.C W.a₁ := by
-      simp [W₀, WeierstrassCurve.baseChange, PowerSeries.algebraMap_eq]
-    have ha₃ : W₀.a₃ = PowerSeries.C W.a₃ := by
-      simp [W₀, WeierstrassCurve.baseChange, PowerSeries.algebraMap_eq]
-    rw [ha₁, ha₃] at h0
-    linear_combination h0
+  have h2eq : PowerSeries.C W.a₁ * P + PowerSeries.C W.a₃ * W₀.formalWEval P = 2 := by
+    have h := W₀.a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq P.hasEval ht0
+      (congrArg FormalGroupPoint.val hfix).symm
+    simpa only [W₀, WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁,
+      WeierstrassCurve.map_a₃, PowerSeries.algebraMap_eq] using h
   have hP_const : PowerSeries.constantCoeff (P : K⟦X⟧) = 0 :=
     PowerSeries.X_dvd_iff.mp (Ideal.mem_span_singleton.mp P.property)
-  have hW_mem : W₀.formalWEval P ∈ I := by
-    simpa using W₀.formalWEval_mem (I := I) (k := 1) P.hasEval (by simpa using P.property)
-  have hW_const : PowerSeries.constantCoeff (W₀.formalWEval P) = 0 :=
-    PowerSeries.X_dvd_iff.mp (Ideal.mem_span_singleton.mp hW_mem)
+  -- Away from characteristic `2`, taking constant terms gives `0 = 2`.
   by_cases h2 : (2 : K) = 0
-  · have h2ps : (2 : K⟦X⟧) = 0 := by
-      rw [← map_ofNat (PowerSeries.C (R := K)) 2, h2, map_zero]
-    rw [h2ps] at h2eq
-    by_cases ha₁ : W.a₁ = 0
-    · have ha₃ : W.a₃ ≠ 0 :=
-        (W.a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero W.isUnit_Δ.ne_zero
-          h2).resolve_left (not_not.mpr ha₁)
-      rw [ha₁, map_zero, zero_mul, zero_add] at h2eq
-      have hWne : W₀.formalWEval P ≠ 0 := W₀.formalWEval_ne_zero P.hasEval (pow_ne_zero 3 ht0)
-      exact mul_ne_zero (by simpa using ha₃) hWne h2eq.symm
-    · have hord_fin : (P : K⟦X⟧).order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr ht0
-      have hord_pos : 1 ≤ (P : K⟦X⟧).order :=
-        PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hP_const
-      have hC_ord : (PowerSeries.C W.a₁ : K⟦X⟧).order = 0 := by
-        rw [← not_ne_iff, PowerSeries.order_ne_zero_iff_constCoeff_eq_zero]
-        simpa using ha₁
+  swap
+  · have hW_const : PowerSeries.constantCoeff (W₀.formalWEval P) = 0 :=
+      PowerSeries.X_dvd_iff.mp (Ideal.mem_span_singleton.mp
+        (by simpa using W₀.formalWEval_mem (I := I) (k := 1) P.hasEval (by simpa using P.property)))
+    exact h2 (by simpa [hP_const, hW_const, map_ofNat] using
+      (congrArg PowerSeries.constantCoeff h2eq).symm)
+  -- In characteristic `2`, ellipticity forces `a₁ ≠ 0` or `a₃ ≠ 0`.
+  rw [show (2 : K⟦X⟧) = 0 by rw [← map_ofNat (PowerSeries.C (R := K)) 2, h2, map_zero]] at h2eq
+  by_cases ha₁ : W.a₁ = 0
+  · -- If `a₁ = 0`, then `a₃ ≠ 0` and `w(P) ≠ 0`, contradicting `a₃ w(P) = 0`.
+    have ha₃ : W.a₃ ≠ 0 :=
+      (W.a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero W.isUnit_Δ.ne_zero
+        h2).resolve_left (not_not.mpr ha₁)
+    rw [ha₁, map_zero, zero_mul, zero_add] at h2eq
+    exact mul_ne_zero (by simpa using ha₃) (W₀.formalWEval_ne_zero P.hasEval (pow_ne_zero 3 ht0))
+      h2eq
+  · -- If `a₁ ≠ 0`, compare `X`-orders: `ord(a₁ P) = ord P < 3 * ord P ≤ ord(a₃ w(P))`.
+    have hord_fin : (P : K⟦X⟧).order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr ht0
+    have hord_pos : 1 ≤ (P : K⟦X⟧).order :=
+      PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hP_const
+    have hrhs : 3 * (P : K⟦X⟧).order ≤ (P : K⟦X⟧).order := by
       have hlhs : (PowerSeries.C W.a₁ * (P : K⟦X⟧)).order = (P : K⟦X⟧).order := by
-        rw [PowerSeries.order_mul, hC_ord, zero_add]
-      have hrel : PowerSeries.C W.a₁ * (P : K⟦X⟧) = -(PowerSeries.C W.a₃ * W₀.formalWEval P) := by
-        linear_combination -h2eq
-      have hrhs : 3 * (P : K⟦X⟧).order ≤ (PowerSeries.C W.a₁ * (P : K⟦X⟧)).order := by
-        rw [hrel, PowerSeries.order_neg, W₀.formalWEval_eq_pow_mul_formalUEval P.hasEval,
-          ← mul_assoc, mul_comm (PowerSeries.C W.a₃), mul_assoc, PowerSeries.order_mul,
-          PowerSeries.order_pow, nsmul_eq_mul]
-        exact le_add_right le_rfl
-      rw [hlhs, ← ENat.natCast_toNat hord_fin] at hrhs
-      rw [← ENat.natCast_toNat hord_fin] at hord_pos
-      have h1 : 1 ≤ (P : K⟦X⟧).order.toNat := by exact_mod_cast hord_pos
-      have h3 : 3 * (P : K⟦X⟧).order.toNat ≤ (P : K⟦X⟧).order.toNat := by exact_mod_cast hrhs
-      omega
-  · have hc := congrArg PowerSeries.constantCoeff h2eq
-    exact h2 (by simpa [hP_const, hW_const, map_ofNat] using hc)
+        rw [PowerSeries.order_mul,
+          PowerSeries.order_zero_of_isUnit ((IsUnit.mk0 W.a₁ ha₁).map PowerSeries.C), zero_add]
+      nth_rw 2 [← hlhs]
+      rw [eq_neg_of_add_eq_zero_left h2eq, PowerSeries.order_neg,
+        W₀.formalWEval_eq_pow_mul_formalUEval P.hasEval, ← mul_assoc, mul_comm (PowerSeries.C W.a₃),
+        mul_assoc, PowerSeries.order_mul, PowerSeries.order_pow, nsmul_eq_mul]
+      exact le_add_right le_rfl
+    rw [← ENat.natCast_toNat hord_fin] at hord_pos hrhs
+    have h1 : 1 ≤ (P : K⟦X⟧).order.toNat := by exact_mod_cast hord_pos
+    have h3 : 3 * (P : K⟦X⟧).order.toNat ≤ (P : K⟦X⟧).order.toNat := by exact_mod_cast hrhs
+    omega
 
 /-- Auxiliary parameters for `WeierstrassCurve.formalPointHom` over `K⟦X⟧` exist by taking a
 strictly higher power of `X`. -/
@@ -198,12 +183,9 @@ private theorem exists_aux_formalGroupPoint [UniformSpace K] [DiscreteUniformity
   have hordP : (P : K⟦X⟧).order = ((P : K⟦X⟧).order.toNat : ENat) :=
     (ENat.natCast_toNat (PowerSeries.order_eq_top.not.mpr ht0)).symm
   have hord_negP : ((-P : FormalGroupPoint W₀ I) : K⟦X⟧).order = (P : K⟦X⟧).order := by
-    have hunit_ord : (W₀.formalInverseDenomInvEval P.val).order = 0 := by
-      rw [← not_ne_iff, PowerSeries.order_ne_zero_iff_constCoeff_eq_zero]
-      exact (PowerSeries.isUnit_iff_constantCoeff.mp
-        (W₀.isUnit_formalInverseDenomInvEval P.hasEval)).ne_zero
     rw [FormalGroupPoint.coe_neg, W₀.formalInverseEval_eq P.hasEval, PowerSeries.order_neg,
-      PowerSeries.order_mul, hunit_ord, add_zero]
+      PowerSeries.order_mul,
+      PowerSeries.order_zero_of_isUnit (W₀.isUnit_formalInverseDenomInvEval P.hasEval), add_zero]
   have hordU : (U : K⟦X⟧).order = (m : ENat) := PowerSeries.order_X_pow m
   have hne_ord : (U : K⟦X⟧).order ≠ (P : K⟦X⟧).order := by
     rw [hordU, hordP, ne_eq, Nat.cast_inj]
@@ -211,6 +193,38 @@ private theorem exists_aux_formalGroupPoint [UniformSpace K] [DiscreteUniformity
   refine ⟨U, fun h ↦ hne_ord (congrArg (fun Q : FormalGroupPoint W₀ I ↦ (Q : K⟦X⟧).order) h),
     fun h ↦ hne_ord ((congrArg (fun Q : FormalGroupPoint W₀ I ↦ (Q : K⟦X⟧).order) h).trans
       hord_negP), formalGroupPoint_ne_neg_of_ne_zero W U hU0⟩
+
+open scoped Classical in
+/-- Under `WeierstrassCurve.formalPointHom` over `K⟦X⟧`, the tautological parameter `X` maps to
+the Laurent expansion of the generic point of `W`. -/
+private theorem formalPointHom_X_eq_map_genericPoint [UniformSpace K] [DiscreteUniformity K]
+    [W.IsElliptic] [Fact (IsAdic (Ideal.span {(PowerSeries.X : K⟦X⟧)}))]
+    [IsLinearTopology K⟦X⟧ K⟦X⟧]
+    [@IsScalarTower K K K⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul]
+    (hW : (W.baseChange K⟦X⟧).baseChange K⸨X⸩ = W.baseChange K⸨X⸩)
+    [(W.baseChange K⟦X⟧).baseChange K⸨X⸩ |>.IsElliptic] :
+    (W.baseChange K⟦X⟧).formalPointHom (S := K⸨X⸩) (Ideal.span {(PowerSeries.X : K⟦X⟧)})
+        (exists_aux_formalGroupPoint W) ⟨PowerSeries.X, Ideal.subset_span rfl⟩ =
+      AddEquiv.cast (M := fun V : WeierstrassCurve K⸨X⸩ ↦ V.toAffine.Point) hW.symm
+        (Affine.Point.map W.functionFieldLaurentExpansion W.toAffine.genericPoint) := by
+  let I : Ideal K⟦X⟧ := Ideal.span {(PowerSeries.X : K⟦X⟧)}
+  let W₀ : WeierstrassCurve K⟦X⟧ := W.baseChange K⟦X⟧
+  let P_X : FormalGroupPoint W₀ I := ⟨PowerSeries.X, Ideal.subset_span rfl⟩
+  have hI : IsAdic I := Fact.out
+  rw [WeierstrassCurve.formalPointHom_apply, Affine.genericPoint_eq_some, Affine.Point.map_some,
+    AddEquiv.cast_apply, Affine.Point.cast_some hW.symm]
+  have hWmem : W.formalW ∈ I := by
+    rw [Ideal.mem_span_singleton, PowerSeries.X_dvd_iff]
+    exact W.constantCoeff_formalW
+  have hy : W.functionFieldLaurentExpansion W.toAffine.genericY ≠ 0 :=
+    (map_ne_zero_iff W.functionFieldLaurentExpansion
+      W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
+  refine W₀.formalPoint_eq_some (K := K⸨X⸩) hI P_X.property hWmem _ ?_ ?_
+  · dsimp only [P_X]
+    rw [LaurentSeries.coe_algebraMap, ← W.functionFieldLaurentExpansion_neg_genericX_div_genericY,
+      map_div₀, map_neg, div_mul_cancel₀ _ hy]
+  · rw [LaurentSeries.coe_algebraMap, ← W.functionFieldLaurentExpansion_neg_inv_genericY,
+      map_neg, map_inv₀, neg_mul, inv_mul_cancel₀ hy]
 
 end PowerSeriesFormalGroup
 
@@ -225,41 +239,23 @@ private theorem formalSeries_mulByIntIsogeny_natCast_aux [W.IsElliptic] {k : ℕ
   let I : Ideal K⟦X⟧ := Ideal.span {(PowerSeries.X : K⟦X⟧)}
   have hI : IsAdic I := PowerSeries.WithPiTopology.isAdic_span_X
   have : Fact (IsAdic I) := ⟨hI⟩
-  have : IsLinearTopology K⟦X⟧ K⟦X⟧ := hI.symm ▸ Ideal.isLinearTopology I
+  have : IsLinearTopology K⟦X⟧ K⟦X⟧ := hI.isLinearTopology
   let W₀ : WeierstrassCurve K⟦X⟧ := W.baseChange K⟦X⟧
   have hW : W₀.baseChange K⸨X⸩ = W.baseChange K⸨X⸩ := by
     simp only [W₀, WeierstrassCurve.baseChange, WeierstrassCurve.map_map]
     rw [IsScalarTower.algebraMap_eq K K⟦X⟧ K⸨X⸩]
   have : (W₀.baseChange K⸨X⸩).IsElliptic := hW ▸ inferInstance
   let e := AddEquiv.cast (M := fun V : WeierstrassCurve K⸨X⸩ ↦ V.toAffine.Point) hW.symm
-  -- The tautological parameter `X` maps to the Laurent expansion of the generic point.
   have : @IsScalarTower K K K⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
     .of_algebraMap_eq fun _ ↦ rfl
   let P_X : FormalGroupPoint W₀ I := ⟨PowerSeries.X, Ideal.subset_span rfl⟩
-  have haux := exists_aux_formalGroupPoint W
-  have hPX_img : W₀.formalPointHom (S := K⸨X⸩) I haux P_X =
-      e (Affine.Point.map W.functionFieldLaurentExpansion W.toAffine.genericPoint) := by
-    rw [WeierstrassCurve.formalPointHom_apply, Affine.genericPoint_eq_some, Affine.Point.map_some,
-      AddEquiv.cast_apply, Affine.Point.cast_some hW.symm]
-    have hWmem : W.formalW ∈ I := by
-      rw [Ideal.mem_span_singleton, PowerSeries.X_dvd_iff]
-      exact W.constantCoeff_formalW
-    have hy : W.functionFieldLaurentExpansion W.toAffine.genericY ≠ 0 :=
-      (map_ne_zero_iff W.functionFieldLaurentExpansion
-        W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
-    refine W₀.formalPoint_eq_some (K := K⸨X⸩) hI P_X.property hWmem _ ?_ ?_
-    · dsimp only [P_X]
-      rw [LaurentSeries.coe_algebraMap, ← W.functionFieldLaurentExpansion_neg_genericX_div_genericY,
-        map_div₀, map_neg, div_mul_cancel₀ _ hy]
-    · rw [LaurentSeries.coe_algebraMap, ← W.functionFieldLaurentExpansion_neg_inv_genericY,
-        map_neg, map_inv₀, neg_mul, inv_mul_cancel₀ hy]
   -- Taking `k`-multiples matches `k • P_X` with the pullback of `[k]`.
-  have hk_img : W₀.formalPointHom (S := K⸨X⸩) I haux (k • P_X) =
+  have hk_img : W₀.formalPointHom (S := K⸨X⸩) I (exists_aux_formalGroupPoint W) (k • P_X) =
       e (Affine.Point.map W.functionFieldLaurentExpansion
         (Affine.Point.map (mulByIntIsogeny W.toAffine hk).fieldPullback
           W.toAffine.genericPoint)) := by
-    rw [map_nsmul, hPX_img, ← map_nsmul, ← map_nsmul, ← natCast_zsmul,
-      ← map_mulByIntIsogeny_genericPoint W.toAffine hk]
+    rw [map_nsmul, formalPointHom_X_eq_map_genericPoint W hW, ← map_nsmul, ← map_nsmul,
+      ← natCast_zsmul, ← map_mulByIntIsogeny_genericPoint W.toAffine hk]
   -- Extract the parameter `-x / y` from both sides.
   have hparam :=
     congrArg (fun Q : (W₀.baseChange K⸨X⸩).toAffine.Point ↦ -Q.xCoord / Q.yCoord) hk_img
@@ -268,22 +264,15 @@ private theorem formalSeries_mulByIntIsogeny_natCast_aux [W.IsElliptic] {k : ℕ
     Affine.Point.xCoord_cast hW.symm, Affine.Point.yCoord_cast hW.symm,
     Affine.Point.xCoord_map, Affine.Point.yCoord_map,
     Affine.xCoord_genericPoint, Affine.yCoord_genericPoint, LaurentSeries.coe_algebraMap] at hparam
+  -- Identify the parameter of `k • P_X` with `(formalGroup W).nsmulSeries k`.
   have hmul_val : ((k • P_X : FormalGroupPoint W₀ I) : K⟦X⟧) = (formalGroup W).nsmulSeries k := by
     rw [FormalGroupPoint.coe_nsmul]
     have hmap : (formalGroup W₀).nsmulSeries k =
         ((formalGroup W).nsmulSeries k).map PowerSeries.C := by
       simp only [W₀, WeierstrassCurve.baseChange, WeierstrassCurve.map_formalGroup,
         ← FormalGroup.map_nsmulSeries, PowerSeries.algebraMap_eq]
-    rw [hmap]
-    have hsum : HasSum (fun d : ℕ ↦
-        PowerSeries.monomial d (PowerSeries.coeff d ((formalGroup W).nsmulSeries k)))
-        (PowerSeries.eval₂ (RingHom.id K⟦X⟧) PowerSeries.X
-          (((formalGroup W).nsmulSeries k).map PowerSeries.C)) := by
-      convert PowerSeries.hasSum_eval₂ (φ := RingHom.id K⟦X⟧) continuous_id P_X.hasEval
-        (((formalGroup W).nsmulSeries k).map PowerSeries.C) using 1
-      ext d n
-      simp [P_X, PowerSeries.coeff_monomial, PowerSeries.coeff_X_pow]
-    exact hsum.unique (PowerSeries.hasSum_of_monomials_self _)
+    rw [hmap, PowerSeries.eval₂_map continuous_id PowerSeries.WithPiTopology.continuous_C
+      PowerSeries.HasEval.X, RingHom.id_comp, PowerSeries.eval₂_C_X]
   rw [hmul_val] at hparam
   refine (formalSeries_eq_iff _ _).mpr ?_
   simpa only [map_div₀, map_neg] using hparam
@@ -305,13 +294,5 @@ theorem formalSeries_mulByIntIsogeny [W.IsElliptic] {n : ℤ}
     rw [← negIsogeny_comp_mulByIntIsogeny W.toAffine hk hn, formalSeries_comp,
       formalSeries_negIsogeny, formalSeries_mulByIntIsogeny_natCast_aux W hk,
       FormalGroup.zsmulSeries_neg, FormalGroup.zsmulSeries_natCast]
-
-/-- **The formal power series of `[n]` for `n ≠ 0` is `(formalGroup W).zsmulSeries n`**, with the
-division-polynomial nonvanishing discharged from nonsingularity. -/
--- Not `@[simp]`: `mulByIntIsogenyOfNeZero` is an `abbrev`, so `simp` sees through it to
--- `formalSeries_mulByIntIsogeny`.
-theorem formalSeries_mulByIntIsogenyOfNeZero [W.IsElliptic] {n : ℤ} (hn : n ≠ 0) :
-    (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries = (formalGroup W).zsmulSeries n :=
-  formalSeries_mulByIntIsogeny W _
 
 end TauCeti.Isogeny
