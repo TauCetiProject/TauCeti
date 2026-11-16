@@ -29,7 +29,7 @@ open Polynomial
 
 attribute [local instance] Polynomial.algebra
 
-namespace Polynomial
+namespace TauCeti.Polynomial
 
 /-- A finite family of polynomials lifts over every intermediate field containing a suitable
 finitely generated intermediate field of `K/k`. -/
@@ -47,7 +47,7 @@ theorem exists_intermediateField_fg_lifts_finset (k : Type*) {K : Type*}
   refine ⟨⟨x, hL (IntermediateField.subset_adjoin k (a : Set K) ?_)⟩, rfl⟩
   exact Finset.mem_biUnion.mpr ⟨p, hp, by simpa using hx⟩
 
-end Polynomial
+end TauCeti.Polynomial
 
 namespace Module.Basis
 
@@ -72,7 +72,7 @@ theorem exists_intermediateField_fg_subalgebra_basis (b : Basis ι K[X] B) (s : 
     (Finset.univ.image fun i ↦ b.repr 1 i) ∪
       (Finset.univ.image fun ijl : ι × ι × ι ↦ b.repr (b ijl.1 * b ijl.2.1) ijl.2.2) ∪
       (s.biUnion fun x ↦ Finset.univ.image fun i ↦ b.repr x i)
-  obtain ⟨L₀, hfg, hlifts⟩ := Polynomial.exists_intermediateField_fg_lifts_finset k t
+  obtain ⟨L₀, hfg, hlifts⟩ := TauCeti.Polynomial.exists_intermediateField_fg_lifts_finset k t
   refine ⟨L₀, hfg, ?_⟩
   intro L hL _ _
   have hpoly (p : K[X]) (hp : p ∈ t) : p ∈ Set.range (algebraMap L[X] K[X]) := by

@@ -43,6 +43,8 @@ The image of a base change map spans its target over the extended scalars.
 
 * `Module.Basis.isBaseChange_of_map_basis`: a map carrying a basis to a basis over extended
   scalars is a base-change map.
+* `Module.Basis.isPushout_of_algebraMap_eq`: compatible bases identify an algebra as the scalar
+  extension of an under-semiring model.
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
   product.
 * `IsBaseChange.liftBaseChange_bijective`, `IsBaseChange.liftBaseChange_injective`: the map
@@ -76,6 +78,15 @@ theorem Module.Basis.isBaseChange_of_map_basis
     simp [h]
   have hbase := (IsBaseChange.of_basis A b).comp_equiv c.repr (Finsupp.linearCombination A b)
   rwa [he] at hbase
+
+/-- Compatible bases identify an algebra as the scalar extension of an under-semiring model. -/
+theorem Module.Basis.isPushout_of_algebraMap_eq
+    {A S C B ι : Type*} [CommSemiring A] [CommSemiring S] [CommSemiring C]
+    [CommSemiring B] [Algebra A S] [Algebra A C] [Algebra S B] [Algebra C B]
+    [Algebra A B] [IsScalarTower A S B] [IsScalarTower A C B]
+    (c : Basis ι A C) (b : Basis ι S B)
+    (h : ∀ i, algebraMap C B (c i) = b i) : Algebra.IsPushout A S C B :=
+  ⟨c.isBaseChange_of_map_basis b (IsScalarTower.toAlgHom A C B).toLinearMap h⟩
 
 variable {R S M M' N N' : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']

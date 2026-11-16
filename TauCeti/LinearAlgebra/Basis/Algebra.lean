@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
-public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 import Mathlib.Algebra.Algebra.Operations
 
@@ -19,26 +18,12 @@ when the coordinates of its unit and multiplication table belong to the image of
 `Module.Basis.descendBasis` gives an `A`-basis with the same vectors and coordinates.
 
 For commutative semiring algebras, extension of scalars recovers the original algebra without
-requiring faithfulness. The compatible-basis criterion
-`Module.Basis.isPushout_of_algebraMap_eq` also applies to independently constructed models.
+requiring faithfulness.
 -/
 
 public section
 
 namespace Module.Basis
-
-section Pushout
-
-variable {A S C B ι : Type*} [CommSemiring A] [CommSemiring S] [CommSemiring C]
-  [CommSemiring B] [Algebra A S] [Algebra A C] [Algebra S B] [Algebra C B]
-  [Algebra A B] [IsScalarTower A S B] [IsScalarTower A C B]
-
-/-- Compatible bases identify an algebra as the scalar extension of an under-semiring model. -/
-theorem isPushout_of_algebraMap_eq (c : Basis ι A C) (b : Basis ι S B)
-    (h : ∀ i, algebraMap C B (c i) = b i) : Algebra.IsPushout A S C B :=
-  ⟨c.isBaseChange_of_map_basis b (IsScalarTower.toAlgHom A C B).toLinearMap h⟩
-
-end Pushout
 
 section Descent
 
@@ -175,8 +160,13 @@ variable (b : Basis ι S B) (A)
 /-- Extending scalars from the descended subalgebra recovers the original commutative semiring
 algebra, without requiring faithful scalar action. -/
 instance isPushout_descendSubalgebra :
-    Algebra.IsPushout A S (b.descendSubalgebra A h₁ hmul) B :=
-  ⟨b.isBaseChange_descendSubalgebra A h₁ hmul⟩
+    Algebra.IsPushout A S (b.descendSubalgebra A h₁ hmul) B := by
+  have he : (IsScalarTower.toAlgHom A (b.descendSubalgebra A h₁ hmul) B).toLinearMap =
+      (b.descendSubalgebra A h₁ hmul).val.toLinearMap := by
+    ext x
+    simp
+  rw [Algebra.isPushout_iff, he]
+  exact b.isBaseChange_descendSubalgebra A h₁ hmul
 
 end Pushout
 

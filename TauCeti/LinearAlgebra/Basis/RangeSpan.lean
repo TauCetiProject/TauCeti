@@ -59,7 +59,8 @@ theorem mem_span_range_iff_forall_repr_mem
     x ∈ Submodule.span A (Set.range b) ↔ ∀ i, b.repr x i ∈ Set.range (algebraMap A S) := by
   constructor
   · intro hx i
-    change b.repr x i ∈ (algebraMap A S).rangeS
+    -- Identify the set range with the subsemiring carrier to use closure in span induction.
+    rw [← RingHom.coe_rangeS, SetLike.mem_coe]
     classical
     induction hx using Submodule.span_induction with
     | mem _ hy =>
