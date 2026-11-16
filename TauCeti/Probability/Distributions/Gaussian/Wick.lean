@@ -22,8 +22,11 @@ also covers empty products, odd degrees, and singular positive-semidefinite cova
 
 * `ProbabilityTheory.IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching` is the
   abstract Wick--Isserlis formula for linear observables of a Gaussian measure.
-* `ProbabilityTheory.HasGaussianLaw.integral_prod_sub_eq_sum_perfectMatching` transfers
-  the formula to jointly Gaussian random variables on an arbitrary measurable space.
+* `ProbabilityTheory.HasGaussianLaw.integral_prod_sub_dual_eq_sum_perfectMatching` transfers
+  the formula to linear observables of a Gaussian random variable on an arbitrary measurable
+  space.
+* `ProbabilityTheory.HasGaussianLaw.integral_prod_sub_eq_sum_perfectMatching` specializes it
+  to selected coordinates of a jointly Gaussian family of real random variables.
 * `TauCeti.Probability.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
   specializes the formula to coordinates of a multivariate Gaussian measure.
 * `ProbabilityTheory.HasLaw.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
@@ -107,34 +110,45 @@ end ProbabilityTheory.IsGaussian
 
 namespace ProbabilityTheory.HasGaussianLaw
 
-variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] [DecidableEq ι]
-  {P : Measure Ω} {X : Ω → ι → ℝ}
+variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] [DecidableEq ι] {P : Measure Ω}
 
-/-- **Wick–Isserlis formula for jointly Gaussian random variables.** Joint Gaussianity is
-required; Gaussian marginal laws alone do not suffice. Arbitrary means and correlations,
-repeated coordinates, and degenerate laws are allowed. -/
-theorem integral_prod_sub_eq_sum_perfectMatching (hX : HasGaussianLaw X P) :
-    (∫ ω, ∏ i, (X ω i - ∫ ω', X ω' i ∂P) ∂P) =
+/-- **Wick–Isserlis formula for a Gaussian random variable.** If `X` has a Gaussian law, the
+centered mixed moment of the linear observables `L i (X ω)` is the sum of covariance products
+over perfect matchings of the positions. Observables may repeat, and the law may be
+degenerate. -/
+theorem integral_prod_sub_dual_eq_sum_perfectMatching {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] {X : Ω → E}
+    (hX : HasGaussianLaw X P) (L : ι → StrongDual ℝ E) :
+    (∫ ω, ∏ i, (L i (X ω) - ∫ ω', L i (X ω') ∂P) ∂P) =
       ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
-        Sym2.lift ⟨fun i j ↦ cov[fun ω ↦ X ω i, fun ω ↦ X ω j; P],
+        Sym2.lift ⟨fun i j ↦ cov[fun ω ↦ L i (X ω), fun ω ↦ L j (X ω); P],
           fun _ _ ↦ covariance_comm _ _⟩ e := by
   let := hX.isGaussian_map
-  have hmean (i : ι) :
-      (P.map X)[(ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ)] = ∫ ω, X ω i ∂P := by
-    rw [integral_map hX.aemeasurable
-      (ContinuousLinearMap.proj i).continuous.aestronglyMeasurable]
-    rfl
+  have hmean (i : ι) : (P.map X)[L i] = ∫ ω, L i (X ω) ∂P :=
+    integral_map hX.aemeasurable (L i).continuous.aestronglyMeasurable
   have hcov (i j : ι) :
-      cov[(ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ),
-        (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ); P.map X] =
-        cov[fun ω ↦ X ω i, fun ω ↦ X ω j; P] := by
-    rw [covariance_map (by fun_prop) (by fun_prop) hX.aemeasurable]
-    rfl
-  have h := IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching (P.map X)
-    (fun i ↦ ContinuousLinearMap.proj i)
+      cov[L i, L j; P.map X] = cov[fun ω ↦ L i (X ω), fun ω ↦ L j (X ω); P] :=
+    covariance_map_fun (by fun_prop) (by fun_prop) hX.aemeasurable
+  have h := IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching (P.map X) L
   simp only [hmean, hcov] at h
-  rw [integral_map hX.aemeasurable (by fun_prop)] at h
-  simpa only [ContinuousLinearMap.proj_apply] using h
+  rwa [integral_map hX.aemeasurable (by fun_prop)] at h
+
+/-- **Wick–Isserlis formula for jointly Gaussian random variables.** If the family `X ω k` is
+jointly Gaussian, the centered mixed moment of the coordinates `X ω (f i)` is the sum of
+covariance products over perfect matchings of the positions. Joint Gaussianity is required;
+Gaussian marginal laws alone do not suffice. Arbitrary means and correlations, repeated
+coordinates, infinite coordinate families, and degenerate laws are allowed. -/
+theorem integral_prod_sub_eq_sum_perfectMatching {κ : Type*} {X : Ω → κ → ℝ}
+    (hX : HasGaussianLaw X P) (f : ι → κ) :
+    (∫ ω, ∏ i, (X ω (f i) - ∫ ω', X ω' (f i) ∂P) ∂P) =
+      ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+        Sym2.lift ⟨fun i j ↦ cov[fun ω ↦ X ω (f i), fun ω ↦ X ω (f j); P],
+          fun _ _ ↦ covariance_comm _ _⟩ e := by
+  have hY := hX.map_of_measurable (ContinuousLinearMap.pi fun i ↦ .proj (f i)) <| by
+    simp only [ContinuousLinearMap.coe_pi', ContinuousLinearMap.proj_apply]
+    fun_prop
+  simpa only [Function.comp_apply, ContinuousLinearMap.pi_apply, ContinuousLinearMap.proj_apply]
+    using hY.integral_prod_sub_dual_eq_sum_perfectMatching ContinuousLinearMap.proj
 
 end ProbabilityTheory.HasGaussianLaw
 
