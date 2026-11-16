@@ -121,6 +121,22 @@ theorem tmul_add (m : M) (n n' : N) :
   simp only [tmul, map_add]
 
 @[simp]
+theorem neg_tmul (m : M) (n : N) : tmul k A (-m) n = -tmul k A m n := by
+  simp only [tmul, map_neg, LinearMap.neg_apply]
+
+@[simp]
+theorem tmul_neg (m : M) (n : N) : tmul k A m (-n) = -tmul k A m n := by
+  simp only [tmul, map_neg]
+
+theorem sub_tmul (m m' : M) (n : N) :
+    tmul k A (m - m') n = tmul k A m n - tmul k A m' n := by
+  simp only [tmul, map_sub, LinearMap.sub_apply]
+
+theorem tmul_sub (m : M) (n n' : N) :
+    tmul k A m (n - n') = tmul k A m n - tmul k A m n' := by
+  simp only [tmul, map_sub]
+
+@[simp]
 theorem smul_tmul (r : k) (m : M) (n : N) :
     tmul k A (r • m) n = r • tmul k A m n := by
   simp only [tmul, map_smul, LinearMap.smul_apply]
