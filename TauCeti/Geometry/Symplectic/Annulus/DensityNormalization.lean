@@ -190,14 +190,15 @@ theorem continuous_stripAreaFraction (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (fun _ _ ↦ (continuous_stripColumnMean hρ).intervalIntegrable _ _) 0)
 
 /-- Along each vertical line `{x} × ℝ` the normalization is continuous. -/
-theorem continuous_stripDensityNormalization_curry_right (hρ : Continuous ρ) (x : ℝ) :
+theorem continuous_stripDensityNormalization_curry_right {x : ℝ}
+    (hρ : Continuous fun r ↦ ρ (x, r)) :
     Continuous fun y ↦ stripDensityNormalization ρ (x, y) := by
   refine (continuous_prodMk (f := fun y ↦ (stripDensityNormalization ρ (x, y)).1)
     (g := fun y ↦ (stripDensityNormalization ρ (x, y)).2)).2
     ⟨by simpa using continuous_const, ?_⟩
   simp only [stripDensityNormalization_snd]
   exact continuous_const.mul (continuous_primitive
-    (fun _ _ ↦ (hρ.curry_right (x := x)).intervalIntegrable _ _) 0)
+    (fun _ _ ↦ hρ.intervalIntegrable _ _) 0)
 
 /-- For a density `1`-periodic on the strip, `u(x + 1) = u(x) + 1`: the area fraction is the
 lift of a degree-one map of the circle. -/
@@ -404,18 +405,17 @@ theorem univ_prod_Icc_subset_stripDensityNormalizationSource
 /-- On each vertical line, the second coordinate `y ↦ v(x, y)` of the density normalization is
 strictly increasing on the heights `y` such that `ρ(x, ·)` is positive on the segment between `0`
 and `y`, when the column mean over `x` is positive. -/
-theorem strictMonoOn_stripDensityNormalization_snd (hρ : Continuous ρ) {x : ℝ}
-    (hs : 0 < stripColumnMean ρ x) :
+theorem strictMonoOn_stripDensityNormalization_snd {x : ℝ}
+    (hρ : Continuous fun r ↦ ρ (x, r)) (hs : 0 < stripColumnMean ρ x) :
     StrictMonoOn (fun y ↦ (stripDensityNormalization ρ (x, y)).2)
       {y | (x, y) ∈ stripDensityNormalizationSource ρ} := by
   intro b hb c hc hbc
   simp only [stripDensityNormalization_snd]
   refine mul_lt_mul_of_pos_left ?_ (inv_pos.2 hs)
   -- Between two heights of the source, `ρ(x, ·)` is positive, so the primitive separates them.
-  have hcρ : Continuous fun r ↦ ρ (x, r) := by fun_prop
   have hsub := integral_interval_sub_left (μ := MeasureTheory.volume)
-    (hcρ.intervalIntegrable 0 c) (hcρ.intervalIntegrable 0 b)
-  have hpos := intervalIntegral_pos_of_pos_on (hcρ.intervalIntegrable b c) (fun t ht ↦ by
+    (hρ.intervalIntegrable 0 c) (hρ.intervalIntegrable 0 b)
+  have hpos := intervalIntegral_pos_of_pos_on (hρ.intervalIntegrable b c) (fun t ht ↦ by
     rcases le_or_gt 0 t with h0 | h0
     · exact hc t (mem_uIcc.2 (Or.inl ⟨h0, ht.2.le⟩))
     · exact hb t (mem_uIcc.2 (Or.inr ⟨ht.1.le, h0.le⟩))) hbc
@@ -430,7 +430,8 @@ theorem injOn_stripDensityNormalization (hρ : Continuous ρ)
   have hs := stripColumnMean_pos_of_forall hρ.continuousOn hpos
   obtain rfl : x = x' :=
     (stripAreaFraction_strictMono hρ.continuousOn hs).injective (congrArg Prod.fst h)
-  rw [(strictMonoOn_stripDensityNormalization_snd hρ (hs x)).injOn hp hq (congrArg Prod.snd h)]
+  rw [(strictMonoOn_stripDensityNormalization_snd (by fun_prop) (hs x)).injOn hp hq
+    (congrArg Prod.snd h)]
 
 /-- At a point of the domain of injectivity, the Jacobian determinant of the normalization is
 positive: the normalization preserves orientation. -/
@@ -537,7 +538,7 @@ theorem bijOn_stripDensityNormalization (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 
     (injOn_stripDensityNormalization hc hpos).mono
       (univ_prod_Icc_subset_stripDensityNormalizationSource hpos), fun q hq ↦ ?_⟩
   · -- `v(x, ·)` is monotone on `[0, 1]`, with `v(x, 0) = 0` and `v(x, 1) = 1`.
-    have hv := (strictMonoOn_stripDensityNormalization_snd hc (hs p.1)).monotoneOn
+    have hv := (strictMonoOn_stripDensityNormalization_snd (by fun_prop) (hs p.1)).monotoneOn
     have hmem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : (p.1, y) ∈ stripDensityNormalizationSource ρ' :=
       univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hy⟩
     have h0 := hv (hmem (left_mem_Icc.2 zero_le_one)) (hmem hp.2) hp.2.1
@@ -549,7 +550,8 @@ theorem bijOn_stripDensityNormalization (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 
     obtain ⟨x, hx⟩ := stripAreaFraction_surjective hc.continuousOn hper
       (annulusArea_pos_of_forall hc.continuousOn hpos).ne' q.1
     obtain ⟨y, hy, hxy⟩ := intermediate_value_Icc zero_le_one
-      (continuous_stripDensityNormalization_curry_right hc x).snd.continuousOn
+      (continuous_stripDensityNormalization_curry_right (ρ := ρ') (x := x)
+        (by fun_prop)).snd.continuousOn
       (by simpa [stripDensityNormalization_snd_mk_one (hs x).ne'] using hq.2)
     exact ⟨(x, y), ⟨mem_univ _, hy⟩, Prod.ext (by simpa using hx) hxy⟩
 
