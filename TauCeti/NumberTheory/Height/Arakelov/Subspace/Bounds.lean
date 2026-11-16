@@ -20,7 +20,9 @@ and dot-product duality.
 
 We first bound the relative Arakelov height of a Plücker vector, including
 dependent families with the projective zero convention. Taking degree roots
-gives the absolute Euclidean bound for vectors and subspaces.
+gives the absolute Euclidean bound for vectors and subspaces, which extends to
+arbitrary spanning families of nonzero vectors (without linear independence)
+and to the kernel of a matrix via Euclidean duality.
 
 ## References
 
@@ -122,4 +124,51 @@ theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p :
   rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b]
   exact arakelovMulHeight_plucker_le_prod _
 
+/-- The absolute Euclidean height of the span of any finite family of nonzero vectors is at most
+the product of their absolute Euclidean heights, without any linear-independence hypothesis. -/
+theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {x : m → ι → K}
+    (hx : ∀ i, x i ≠ 0) :
+    (span K (range x)).subspaceHeight ≤ ∏ i, height2 (x i) := by
+  classical
+  obtain ⟨κ, a, ha_inj, hspan, hli⟩ := exists_linearIndependent' K x
+  have : Finite κ := Finite.of_injective a ha_inj
+  have : Fintype κ := Fintype.ofFinite κ
+  let e : Fin (Fintype.card κ) ≃ κ := (Fintype.equivFin κ).symm
+  have hli' : LinearIndependent K (x ∘ a ∘ e) := hli.comp e e.injective
+  have hrange : range (x ∘ a ∘ e) = range (x ∘ a) := by
+    rw [← Function.comp_assoc, Set.range_comp, e.range_eq_univ, Set.image_univ]
+  have himg : ∏ k : κ, height2 (x (a k)) = ∏ i ∈ Finset.univ.image a, height2 (x i) :=
+    (Finset.prod_image (f := fun i ↦ height2 (x i)) fun _ _ _ _ h ↦ ha_inj h).symm
+  have hsub : ∏ i ∈ Finset.univ.image a, height2 (x i) ≤ ∏ i : m, height2 (x i) := by
+    rw [← Finset.prod_sdiff (Finset.subset_univ (Finset.univ.image a))]
+    exact le_mul_of_one_le_left
+      (Finset.prod_nonneg fun _ _ ↦ height2_nonneg _)
+      (Finset.one_le_prod₀ fun i _ ↦ one_le_height2_of_ne_zero (hx i))
+  calc (span K (range x)).subspaceHeight
+      = (span K (range (x ∘ a ∘ e))).subspaceHeight := by rw [hrange, hspan]
+    _ ≤ ∏ j : Fin (Fintype.card κ), height2 (x (a (e j))) := subspaceHeight_le_prod hli'
+    _ = ∏ k : κ, height2 (x (a k)) := Fintype.prod_equiv e _ _ fun _ ↦ rfl
+    _ = ∏ i ∈ Finset.univ.image a, height2 (x i) := himg
+    _ ≤ ∏ i : m, height2 (x i) := hsub
+
 end Submodule
+
+namespace Matrix
+
+open TauCeti Submodule
+
+variable {K m ι : Type*} [Field K] [NumberField K] [Fintype m] [Fintype ι] [LinearOrder ι]
+
+/-- The absolute Euclidean height of the kernel of a matrix with nonzero rows is at most the
+product of the absolute Euclidean heights of its rows, without any row-independence hypothesis. -/
+theorem subspaceHeight_ker_mulVecLin_le_prod {A : Matrix m ι K} (hA : ∀ i, A.row i ≠ 0) :
+    (LinearMap.ker A.mulVecLin).subspaceHeight ≤ ∏ i, height2 (A.row i) := by
+  have hker : LinearMap.ker A.mulVecLin = (span K (range A.row)).euclideanDual := by
+    ext x
+    simp only [LinearMap.mem_ker, Matrix.mulVecLin_apply, mem_euclideanDual_span, Matrix.mulVec,
+      funext_iff, Pi.zero_apply, Matrix.row]
+    exact ⟨fun h _ ⟨i, hi⟩ ↦ hi ▸ h i, fun h i ↦ h ⟨i, rfl⟩⟩
+  rw [hker, subspaceHeight_euclideanDual]
+  exact subspaceHeight_span_range_le_prod hA
+
+end Matrix
