@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
+public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Hom
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
@@ -49,12 +50,21 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
   orbit sum.
 * `RootPairing.weightMap_orbitSum`: an equivalence of root pairings intertwining two automorphisms
   carries orbit sums to orbit sums; in particular `RootPairing.orbitSum_mem_fixedSubmodule` says
-  each orbit sum is fixed by `σ`.
+  each orbit sum is fixed by `σ`, and
+  `RootPairing.coroot'_eq_of_mem_orbitIndices_of_mem_fixedSubmodule` says coroots along a `σ`-orbit
+  agree on `σ`-fixed weights.
 * `RootPairing.orbitSum_reflectionPerm_self`: the orbit sum of a negated root is the negated
   orbit sum.
+* `RootPairing.orbitSum_eq_orbitSum_iff_of_mem_support`,
+  `RootPairing.toWeightBasis_repr_eq_of_mem_orbitIndices`,
+  `RootPairing.sum_support_smul_eq_sum_simpleOrbits`, and `RootPairing.exists_sum_simpleOrbits_eq`:
+  distinct simple orbits have distinct orbit sums, `σ`-fixed weights have orbit-constant simple
+  coordinates, and orbit-constant simple combinations regroup over the simple-orbit sums.
 * `RootPairing.orbitSum_mem_posRootCone` and `RootPairing.orbitSum_ne_zero`: for an automorphism
   permuting the simple roots of a base, the orbit sum of a positive root is a natural combination
   of simple roots, and no orbit sum vanishes (`RootPairing.zero_notMem_foldedIndices`).
+* `RootPairing.InvariantForm.apply_orbitSum_self`: for a `σ`-invariant form, the squared length of
+  a pairwise orthogonal orbit sum is the orbit size times the squared length of a member root.
 
 ## References
 
@@ -258,6 +268,22 @@ theorem orbitSum_mem_fixedSubmodule :
     P.orbitSum σ i ∈ LinearMap.fixedSubmodule σ.weightMap :=
   LinearMap.mem_fixedSubmodule_iff.mpr (weightMap_orbitSum_self P σ i)
 
+section
+
+variable {P σ i}
+
+/-- On any `σ`-fixed weight, all coroot functionals along a `σ`-orbit take the same value. -/
+theorem coroot'_eq_of_mem_orbitIndices_of_mem_fixedSubmodule (h : j ∈ P.orbitIndices σ i)
+    {x : M} (hx : x ∈ LinearMap.fixedSubmodule σ.weightMap) :
+    P.coroot' j x = P.coroot' i x := by
+  have hstep (a : ι) : P.coroot' (σ.indexEquiv a) x = P.coroot' a x := by
+    conv_lhs => rw [← LinearMap.mem_fixedSubmodule_iff.mp hx]
+    exact σ.toHom.coroot'_weightMap a x
+  exact (Equiv.Perm.SameCycle.apply_eq_of_apply_eq (f := fun a ↦ P.coroot' a x)
+    (mem_orbitIndices.mp h) hstep).symm
+
+end
+
 /-! ### Negation -/
 
 /-- The orbit sum of the negative of a root is the negative of its orbit sum. -/
@@ -280,7 +306,91 @@ theorem orbitSum_reflectionPerm_self :
 
 section Base
 
-variable {P σ i} [CharZero R] {b : P.Base}
+variable {P σ i} {b : P.Base}
+
+/-- For an automorphism preserving the simple roots of `b`, every member of a simple orbit is
+again simple. -/
+theorem mem_support_of_mem_orbitIndices
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (hi : i ∈ b.support) (hj : j ∈ P.orbitIndices σ i) : j ∈ b.support := by
+  obtain ⟨k, hk⟩ := mem_orbitIndices_iff_exists_pow.mp hj
+  clear hj
+  subst hk
+  induction k with
+  | zero => simpa using hi
+  | succ n ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply]
+    exact hσ _ ih
+
+/-- For an automorphism permuting the simple roots of `b`, two simple roots have the same orbit
+sum if and only if they lie in the same `σ`-orbit. -/
+theorem orbitSum_eq_orbitSum_iff_of_mem_support [Nontrivial R]
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (hi : i ∈ b.support) (hj : j ∈ b.support) :
+    P.orbitSum σ i = P.orbitSum σ j ↔ j ∈ P.orbitIndices σ i := by
+  classical
+  refine ⟨fun heq ↦ ?_, fun h ↦ (orbitSum_eq_of_mem h).symm⟩
+  have hsub_i : P.orbitIndices σ i ⊆ b.support :=
+    fun a ha ↦ mem_support_of_mem_orbitIndices hσ hi ha
+  have hsub_j : P.orbitIndices σ j ⊆ b.support :=
+    fun a ha ↦ mem_support_of_mem_orbitIndices hσ hj ha
+  have hsum_eq (x : ι) (hsub : P.orbitIndices σ x ⊆ b.support) :
+      P.orbitSum σ x =
+        ∑ a ∈ b.support, (if a ∈ P.orbitIndices σ x then (1 : R) else 0) • P.root a := by
+    rw [orbitSum_def, ← Finset.sum_subset hsub (fun a _ ha ↦ by simp [ha])]
+    exact Finset.sum_congr rfl fun a ha ↦ by simp [ha]
+  have hzero : ∑ a ∈ b.support,
+      ((if a ∈ P.orbitIndices σ i then (1 : R) else 0) -
+        (if a ∈ P.orbitIndices σ j then (1 : R) else 0)) • P.root a = 0 := by
+    simp_rw [sub_smul, Finset.sum_sub_distrib, ← hsum_eq i hsub_i, ← hsum_eq j hsub_j, heq,
+      sub_self]
+  have hcoeff := (linearIndepOn_iff'.mp b.linearIndepOn_root) b.support _ Set.Subset.rfl hzero j hj
+  simp only [self_mem_orbitIndices, ↓reduceIte, sub_eq_zero] at hcoeff
+  by_contra hnot
+  simp only [hnot, ↓reduceIte] at hcoeff
+  exact zero_ne_one hcoeff
+
+/-- For an automorphism permuting the simple roots of `b`, the simple-root coordinates of any
+`σ`-fixed weight are constant along each simple `σ`-orbit. -/
+theorem toWeightBasis_repr_eq_of_mem_orbitIndices [P.IsRootSystem]
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    {v : M} (hv : v ∈ LinearMap.fixedSubmodule σ.weightMap)
+    (hi : i ∈ b.support) (hji : j ∈ P.orbitIndices σ i) :
+    b.toWeightBasis.repr v ⟨j, mem_support_of_mem_orbitIndices hσ hi hji⟩ =
+      b.toWeightBasis.repr v ⟨i, hi⟩ := by
+  classical
+  have hstep (k : ι) (hk : k ∈ b.support) :
+      b.toWeightBasis.repr v ⟨σ.indexEquiv k, hσ k hk⟩ = b.toWeightBasis.repr v ⟨k, hk⟩ := by
+    have hvfix : σ.weightMap v = v := LinearMap.mem_fixedSubmodule_iff.mp hv
+    conv_lhs => rw [← Module.Basis.coord_apply, ← hvfix, ← b.toWeightBasis.sum_repr v]
+    rw [map_sum, map_sum, Finset.sum_eq_single ⟨k, hk⟩]
+    · rw [map_smul, b.toWeightBasis_apply, Hom.root_weightMap_apply, map_smul,
+        Module.Basis.coord_apply, b.toWeightBasis_repr_root ⟨σ.indexEquiv k, hσ k hk⟩,
+        Finsupp.single_eq_same, smul_eq_mul, mul_one]
+    · intro a _ hak
+      rw [map_smul, b.toWeightBasis_apply, Hom.root_weightMap_apply, map_smul,
+        Module.Basis.coord_apply, b.toWeightBasis_repr_root ⟨σ.indexEquiv a.1, hσ a.1 a.2⟩,
+        Finsupp.single_apply,
+        ite_eq_right_iff.mpr (fun h ↦ absurd (Subtype.ext (σ.indexEquiv.injective
+          (congrArg Subtype.val h))) hak),
+        smul_zero]
+    · exact fun hnot ↦ absurd (Finset.mem_univ _) hnot
+  have hmem (m : ℕ) : (σ.indexEquiv ^ m) i ∈ b.support :=
+    mem_support_of_mem_orbitIndices hσ hi (mem_orbitIndices_iff_exists_pow.mpr ⟨m, rfl⟩)
+  have hpow : ∀ n : ℕ, b.toWeightBasis.repr v ⟨(σ.indexEquiv ^ n) i, hmem n⟩ =
+      b.toWeightBasis.repr v ⟨i, hi⟩ := by
+    intro n
+    induction n with
+    | zero => rfl
+    | succ m ih =>
+      have hsub : (⟨(σ.indexEquiv ^ (m + 1)) i, hmem (m + 1)⟩ : b.support) =
+          ⟨σ.indexEquiv ((σ.indexEquiv ^ m) i), hσ _ (hmem m)⟩ :=
+        Subtype.ext (by dsimp only; rw [pow_succ', Equiv.Perm.mul_apply])
+      rw [hsub, hstep _ (hmem m), ih]
+  obtain ⟨n, rfl⟩ := mem_orbitIndices_iff_exists_pow.mp hji
+  exact hpow n
+
+variable [CharZero R]
 
 /-- For an automorphism permuting the simple roots of `b`, the roots of one orbit are all
 positive or all negative. -/
@@ -340,5 +450,89 @@ theorem zero_notMem_foldedIndices [CharZero R] {b : P.Base}
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) : 0 ∉ P.foldedIndices σ := by
   rintro ⟨i, hi⟩
   exact orbitSum_ne_zero hσ i hi
+
+/-- Regrouping a linear combination of simple roots whose coefficients are constant on each simple
+`σ`-orbit as a sum over the distinct simple-orbit sums in `P.foldedIndices σ`. -/
+theorem sum_support_smul_eq_sum_simpleOrbits [Nontrivial R] [DecidableEq M] {b : P.Base}
+    {A : Type*} [DistribSMul A M]
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (c : ι → A) (hc : ∀ {i j}, i ∈ b.support → j ∈ P.orbitIndices σ i → c j = c i)
+    (f : P.foldedIndices σ → A)
+    (hf : ∀ i ∈ b.support, f ⟨P.orbitSum σ i, P.orbitSum_mem_foldedIndices σ i⟩ = c i) :
+    ∑ j ∈ b.support, c j • P.root j =
+      ∑ s ∈ b.support.image (fun j ↦ (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ :
+        P.foldedIndices σ)), f s • (s : M) := by
+  rw [← Finset.sum_fiberwise_of_maps_to (s := b.support)
+    (g := fun j ↦ (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ : P.foldedIndices σ))
+    (fun j hj ↦ Finset.mem_image_of_mem _ hj)]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hs
+  have hfiber : b.support.filter (fun j ↦
+      (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ : P.foldedIndices σ) =
+        ⟨P.orbitSum σ i, P.orbitSum_mem_foldedIndices σ i⟩) =
+      P.orbitIndices σ i := by
+    ext j
+    simp only [Finset.mem_filter, Subtype.mk.injEq]
+    exact ⟨fun ⟨hj, heq⟩ ↦ (orbitSum_eq_orbitSum_iff_of_mem_support hσ hi hj).mp heq.symm,
+      fun hj ↦ ⟨mem_support_of_mem_orbitIndices hσ hi hj, orbitSum_eq_of_mem hj⟩⟩
+  rw [hfiber, hf i hi]
+  dsimp only
+  rw [orbitSum_def, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun j hj ↦ by rw [hc hi hj]
+
+/-- Any linear combination of simple roots whose coefficients are constant on each simple
+`σ`-orbit can be written as a linear combination of the distinct simple-orbit sums in
+`P.foldedIndices σ`. -/
+theorem exists_sum_simpleOrbits_eq [Nontrivial R] [DecidableEq M] {b : P.Base}
+    {A : Type*} [Zero A] [DistribSMul A M]
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (c : ι → A) (hc : ∀ {i j}, i ∈ b.support → j ∈ P.orbitIndices σ i → c j = c i) :
+    ∃ f : P.foldedIndices σ → A,
+      ∑ j ∈ b.support, c j • P.root j =
+        ∑ s ∈ b.support.image (fun j ↦ (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ :
+          P.foldedIndices σ)), f s • (s : M) := by
+  classical
+  set S : Finset (P.foldedIndices σ) :=
+    b.support.image fun j ↦ ⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩
+  refine ⟨fun s ↦ if hs : s ∈ S then c (Finset.mem_image.mp hs).choose else 0,
+    sum_support_smul_eq_sum_simpleOrbits hσ c hc _ fun i hi ↦ ?_⟩
+  have his : (⟨P.orbitSum σ i, P.orbitSum_mem_foldedIndices σ i⟩ : P.foldedIndices σ) ∈ S :=
+    Finset.mem_image_of_mem _ hi
+  rw [dite_eq_left_of_eq_true (eq_true his)]
+  set j := (Finset.mem_image.mp his).choose
+  have hj : j ∈ b.support := (Finset.mem_image.mp his).choose_spec.1
+  have hji : P.orbitSum σ j = P.orbitSum σ i :=
+    congrArg Subtype.val (Finset.mem_image.mp his).choose_spec.2
+  exact (hc hj ((orbitSum_eq_orbitSum_iff_of_mem_support hσ hj hi).mp hji)).symm
+
+/-! ### Orbit sums and invariant forms -/
+
+section InvariantFormNorm
+
+variable [IsDomain R] [NeZero (2 : R)]
+
+/-- For any `σ`-invariant form `B`, the squared length of the orbit sum of a pairwise orthogonal
+root orbit equals the orbit size times the squared length of any root in the orbit. -/
+theorem InvariantForm.apply_orbitSum_self (B : P.InvariantForm)
+    (hB : InvariantForm.comap σ.toHom B = B) {k : ι}
+    (horth : (P.orbitIndices σ k : Set ι).Pairwise P.IsOrthogonal) :
+    B.form (P.orbitSum σ k) (P.orbitSum σ k) =
+      #(P.orbitIndices σ k) • B.form (P.root k) (P.root k) := by
+  have hlen : ∀ a ∈ P.orbitIndices σ k,
+      B.form (P.root a) (P.root a) = B.form (P.root k) (P.root k) := fun a ha ↦
+    (Equiv.Perm.SameCycle.apply_eq_of_apply_eq
+      (f := fun j ↦ B.form (P.root j) (P.root j)) (mem_orbitIndices.mp ha) fun j ↦ by
+        rw [← Hom.root_weightMap_apply, ← InvariantForm.comap_form_apply, hB]).symm
+  have hcross : ∀ a ∈ P.orbitIndices σ k, ∀ c ∈ P.orbitIndices σ k, a ≠ c →
+      B.form (P.root a) (P.root c) = 0 := fun a ha c hc hac ↦ by
+    have h2 := B.two_mul_apply_root_root a c
+    rw [(horth ha hc hac).1, zero_mul] at h2
+    exact (mul_eq_zero.mp h2).resolve_left (NeZero.ne 2)
+  rw [orbitSum_def, map_sum, ← Finset.sum_const]
+  refine Finset.sum_congr rfl fun c hc ↦ ?_
+  rw [map_sum, LinearMap.sum_apply,
+    Finset.sum_eq_single_of_mem c hc (fun a ha hac ↦ hcross a ha c hc hac), hlen c hc]
+
+end InvariantFormNorm
 
 end RootPairing

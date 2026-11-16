@@ -22,9 +22,9 @@ simply laced base `b`, and let `σ` be a based automorphism of `P` whose simple-
 pairwise orthogonal: no two distinct simple roots in the same `σ`-orbit are joined by an edge.
 
 By `RootPairing.pairwise_isOrthogonal_orbitIndices`, every root orbit of `σ` is pairwise orthogonal
-and its orbit sum has squared length `2 |O|` under `b.simplyLacedInvariantForm hsl`. Using the
-duality induced by this form on `E^σ = LinearMap.fixedSubmodule σ.weightMap`, the distinct orbit
-sums `P.foldedIndices σ` form a reduced crystallographic root system on `E^σ` and its linear dual
+and its orbit sum has squared length `2 |O|` under `P.normalizedInvariantForm`. Using the duality
+induced by this form on `E^σ = LinearMap.fixedSubmodule σ.weightMap`, the distinct orbit sums
+`P.foldedIndices σ` form a reduced crystallographic root system on `E^σ` and its linear dual
 (`RootPairing.OrbitSumRealization.ofOrthogonal`).
 
 By uniqueness of orbit-sum realizations (`Subsingleton (P.OrbitSumRealization b σ)`), every
@@ -67,134 +67,6 @@ variable {ι K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   {P : RootPairing ι K M N} [Finite ι] [P.IsRootSystem] [P.IsReduced] [P.IsCrystallographic]
   {b : P.Base} {σ : P.Aut}
 
-omit [LinearOrder K] [IsStrictOrderedRing K] [Finite ι] [P.IsReduced] [P.IsCrystallographic] in
-private theorem coord_root_self (j : b.support) :
-    b.toWeightBasis.coord j (P.root j.1) = 1 := by
-  rw [show P.root j.1 = b.toWeightBasis j from (b.toWeightBasis_apply j).symm,
-    Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same]
-
-omit [LinearOrder K] [IsStrictOrderedRing K] [Finite ι] [P.IsReduced] [P.IsCrystallographic] in
-private theorem coord_root_ne (j : b.support) {a : ι} (ha : a ∈ b.support) (h : a ≠ j.1) :
-    b.toWeightBasis.coord j (P.root a) = 0 := by
-  classical
-  rw [show P.root a = b.toWeightBasis ⟨a, ha⟩ from (b.toWeightBasis_apply ⟨a, ha⟩).symm,
-    Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
-    ite_eq_right_iff.mpr fun heq ↦ absurd (congrArg Subtype.val heq) h]
-
-omit [P.IsReduced] [P.IsCrystallographic] in
-private theorem orbitSum_eq_orbitSum_iff_of_mem_support
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {i j : ι}
-    (hi : i ∈ b.support) (hj : j ∈ b.support) :
-    P.orbitSum σ i = P.orbitSum σ j ↔ j ∈ P.orbitIndices σ i := by
-  classical
-  refine ⟨fun heq ↦ ?_, fun h ↦ (orbitSum_eq_of_mem h).symm⟩
-  have hrepr : ∀ x ∈ b.support,
-      b.toWeightBasis.coord ⟨j, hj⟩ (P.orbitSum σ x) =
-        if j ∈ P.orbitIndices σ x then (1 : K) else 0 := by
-    intro x hx
-    rw [orbitSum_def, map_sum, ← Finset.sum_ite_eq (P.orbitIndices σ x) j (fun _ ↦ (1 : K))]
-    refine Finset.sum_congr rfl fun a ha ↦ ?_
-    by_cases haj : a = j
-    · subst haj; simp [coord_root_self ⟨a, hj⟩]
-    · simp [coord_root_ne ⟨j, hj⟩ (P.mem_support_of_mem_orbitIndices σ hσ hx ha) haj, Ne.symm haj]
-  have h1 := hrepr i hi
-  rw [heq, hrepr j hj, ite_eq_left_iff.mpr fun h ↦ absurd (P.self_mem_orbitIndices σ j) h] at h1
-  by_contra hnot
-  rw [ite_eq_right_iff.mpr fun h ↦ absurd h hnot] at h1
-  exact one_ne_zero h1
-
-omit [P.IsReduced] [P.IsCrystallographic] in
-private theorem simple_fiber_eq_orbitIndices [DecidableEq M]
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {i : ι} (hi : i ∈ b.support) :
-    b.support.filter (fun j ↦
-      (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ : P.foldedIndices σ) =
-        ⟨P.orbitSum σ i, P.orbitSum_mem_foldedIndices σ i⟩) =
-      P.orbitIndices σ i := by
-  ext j
-  simp only [Finset.mem_filter, Subtype.mk.injEq]
-  exact ⟨fun ⟨hj, heq⟩ ↦ (orbitSum_eq_orbitSum_iff_of_mem_support hσ hi hj).mp heq.symm,
-    fun hj ↦ ⟨P.mem_support_of_mem_orbitIndices σ hσ hi hj, orbitSum_eq_of_mem hj⟩⟩
-
-omit [LinearOrder K] [IsStrictOrderedRing K] [Finite ι] [P.IsReduced] [P.IsCrystallographic] in
-private theorem repr_indexEquiv_of_mem_fixedSubmodule
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    {v : M} (hv : v ∈ LinearMap.fixedSubmodule σ.weightMap) {j : ι} (hj : j ∈ b.support) :
-    b.toWeightBasis.repr v ⟨σ.indexEquiv j, hσ j hj⟩ = b.toWeightBasis.repr v ⟨j, hj⟩ := by
-  have hvfix : σ.weightMap v = v := LinearMap.mem_fixedSubmodule_iff.mp hv
-  conv_lhs => rw [← Module.Basis.coord_apply, ← hvfix, ← b.toWeightBasis.sum_repr v]
-  rw [map_sum, map_sum, Finset.sum_eq_single ⟨j, hj⟩]
-  · rw [map_smul, b.toWeightBasis_apply, Hom.root_weightMap_apply, map_smul,
-      coord_root_self ⟨σ.indexEquiv j, hσ j hj⟩, smul_eq_mul, mul_one]
-  · intro a _ haj
-    rw [map_smul, b.toWeightBasis_apply, Hom.root_weightMap_apply, map_smul,
-      coord_root_ne ⟨σ.indexEquiv j, hσ j hj⟩ (hσ a.1 a.2)
-        (fun h ↦ haj (Subtype.ext (σ.indexEquiv.injective h))),
-      smul_zero]
-  · exact fun hnot ↦ absurd (Finset.mem_univ _) hnot
-
-omit [LinearOrder K] [IsStrictOrderedRing K] [P.IsReduced] [P.IsCrystallographic] in
-private theorem repr_eq_of_mem_orbitIndices
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    {v : M} (hv : v ∈ LinearMap.fixedSubmodule σ.weightMap)
-    {i j : ι} (hi : i ∈ b.support) (hji : j ∈ P.orbitIndices σ i) :
-    b.toWeightBasis.repr v ⟨j, P.mem_support_of_mem_orbitIndices σ hσ hi hji⟩ =
-      b.toWeightBasis.repr v ⟨i, hi⟩ := by
-  have hmem (m : ℕ) : (σ.indexEquiv ^ m) i ∈ b.support :=
-    P.mem_support_of_mem_orbitIndices σ hσ hi (mem_orbitIndices_iff_exists_pow.mpr ⟨m, rfl⟩)
-  have hpow : ∀ n : ℕ, b.toWeightBasis.repr v ⟨(σ.indexEquiv ^ n) i, hmem n⟩ =
-      b.toWeightBasis.repr v ⟨i, hi⟩ := by
-    intro n
-    induction n with
-    | zero => rfl
-    | succ m ih =>
-      have hsub : (⟨(σ.indexEquiv ^ (m + 1)) i, hmem (m + 1)⟩ : b.support) =
-          ⟨σ.indexEquiv ((σ.indexEquiv ^ m) i), hσ _ (hmem m)⟩ :=
-        Subtype.ext (by dsimp only; rw [pow_succ', Equiv.Perm.mul_apply])
-      rw [hsub, repr_indexEquiv_of_mem_fixedSubmodule hσ hv (hmem m), ih]
-  obtain ⟨n, rfl⟩ := mem_orbitIndices_iff_exists_pow.mp hji
-  exact hpow n
-
-omit [P.IsReduced] [P.IsCrystallographic] in
-private theorem sum_support_smul_eq_sum_simpleOrbits {A : Type*} [Semiring A] [Module A M]
-    [DecidableEq M] (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    (c : ι → A) (hc : ∀ {i j}, i ∈ b.support → j ∈ P.orbitIndices σ i → c j = c i)
-    (f : P.foldedIndices σ → A)
-    (hf : ∀ i ∈ b.support, f ⟨P.orbitSum σ i, P.orbitSum_mem_foldedIndices σ i⟩ = c i) :
-    ∑ j ∈ b.support, c j • P.root j =
-      ∑ s ∈ b.support.image (fun j ↦ (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ :
-        P.foldedIndices σ)), f s • (s : M) := by
-  rw [← Finset.sum_fiberwise_of_maps_to (s := b.support)
-    (g := fun j ↦ (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ : P.foldedIndices σ))
-    (fun j hj ↦ Finset.mem_image_of_mem _ hj)]
-  refine Finset.sum_congr rfl fun s hs ↦ ?_
-  obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hs
-  rw [simple_fiber_eq_orbitIndices hσ hi, hf i hi]
-  dsimp only
-  rw [orbitSum_def, Finset.smul_sum]
-  exact Finset.sum_congr rfl fun j hj ↦ by rw [hc hi hj]
-
-omit [P.IsReduced] [P.IsCrystallographic] in
-private theorem exists_sum_simpleOrbits_eq {A : Type*} [Semiring A] [Module A M] [DecidableEq M]
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    (c : ι → A) (hc : ∀ {i j}, i ∈ b.support → j ∈ P.orbitIndices σ i → c j = c i) :
-    ∃ f : P.foldedIndices σ → A,
-      ∑ j ∈ b.support, c j • P.root j =
-        ∑ s ∈ b.support.image (fun j ↦ (⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩ :
-          P.foldedIndices σ)), f s • (s : M) := by
-  classical
-  set S : Finset (P.foldedIndices σ) :=
-    b.support.image fun j ↦ ⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩
-  refine ⟨fun s ↦ if hs : s ∈ S then c (Finset.mem_image.mp hs).choose else 0,
-    sum_support_smul_eq_sum_simpleOrbits hσ c hc _ fun i hi ↦ ?_⟩
-  have his : (⟨P.orbitSum σ i, P.orbitSum_mem_foldedIndices σ i⟩ : P.foldedIndices σ) ∈ S :=
-    Finset.mem_image_of_mem _ hi
-  rw [dite_eq_left_of_eq_true (eq_true his)]
-  set j := (Finset.mem_image.mp his).choose
-  have hj : j ∈ b.support := (Finset.mem_image.mp his).choose_spec.1
-  have hji : P.orbitSum σ j = P.orbitSum σ i :=
-    congrArg Subtype.val (Finset.mem_image.mp his).choose_spec.2
-  exact (hc hj ((orbitSum_eq_orbitSum_iff_of_mem_support hσ hj hi).mp hji)).symm
-
 private noncomputable def foldedRoot (P : RootPairing ι K M N) (σ : P.Aut) :
     P.foldedIndices σ ↪ LinearMap.fixedSubmodule σ.weightMap where
   toFun x := ⟨x.1, by
@@ -208,24 +80,22 @@ omit [LinearOrder K] [IsStrictOrderedRing K] [P.IsRootSystem] [P.IsReduced] [P.I
 private theorem coe_foldedRoot (x : P.foldedIndices σ) : (foldedRoot P σ x : M) = (x : M) :=
   rfl
 
-private noncomputable def foldedCorootFun (hsl : b.cartanMatrix.IsSimplyLaced)
+omit [P.IsReduced] [P.IsCrystallographic] in
+private noncomputable def foldedCorootFun
     (x : P.foldedIndices σ) : Module.Dual K (LinearMap.fixedSubmodule σ.weightMap) :=
-  (2 / (b.simplyLacedInvariantForm hsl).form x.1 x.1) •
-    ((b.simplyLacedInvariantForm hsl).form.flip x.1).comp
+  (2 / P.normalizedInvariantForm.form x.1 x.1) •
+    (P.normalizedInvariantForm.form.flip x.1).comp
       (LinearMap.fixedSubmodule σ.weightMap).subtype
 
-omit [P.IsReduced] in
+omit [P.IsReduced] [P.IsCrystallographic] in
 private theorem foldedCorootFun_self
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    (hsl : b.cartanMatrix.IsSimplyLaced) (x : P.foldedIndices σ) :
-    foldedCorootFun hsl x (foldedRoot P σ x) = 2 := by
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (x : P.foldedIndices σ) :
+    foldedCorootFun (P := P) (σ := σ) x (foldedRoot P σ x) = 2 := by
   have hx0 : (x : M) ≠ 0 := fun h ↦ zero_notMem_foldedIndices hσ (h ▸ x.2)
-  have hpos : (b.simplyLacedInvariantForm hsl).form x.1 x.1 ≠ 0 :=
-    (b.posDef_simplyLacedInvariantForm hsl x.1 hx0).ne'
-  have hfl : (b.simplyLacedInvariantForm hsl).form.flip x.1 x.1 =
-      (b.simplyLacedInvariantForm hsl).form x.1 x.1 := rfl
+  have hpos : P.normalizedInvariantForm.form x.1 x.1 ≠ 0 :=
+    (P.posDef_normalizedInvariantForm x.1 hx0).ne'
   simp only [foldedCorootFun, LinearMap.smul_apply, LinearMap.comp_apply,
-    Submodule.coe_subtype, coe_foldedRoot, smul_eq_mul, hfl]
+    Submodule.coe_subtype, coe_foldedRoot, smul_eq_mul, LinearMap.BilinForm.flip_apply]
   exact div_mul_cancel₀ (2 : K) hpos
 
 private theorem foldedCorootFun_orbitSum
@@ -233,23 +103,137 @@ private theorem foldedCorootFun_orbitSum
     (hsl : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
     (k : ι) (v : LinearMap.fixedSubmodule σ.weightMap) :
-    foldedCorootFun hsl ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ v =
+    foldedCorootFun (P := P) (σ := σ) ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ v =
       P.coroot' k (v : M) := by
-  have hform : (b.simplyLacedInvariantForm hsl).form (v : M) (P.orbitSum σ k) =
+  have hform : P.normalizedInvariantForm.form (v : M) (P.orbitSum σ k) =
       (#(P.orbitIndices σ k) : K) * P.coroot' k (v : M) := by
     rw [orbitSum_def, map_sum]
     trans ∑ _a ∈ P.orbitIndices σ k, P.coroot' k (v : M)
     · refine Finset.sum_congr rfl fun a ha ↦ ?_
-      rw [b.simplyLacedInvariantForm_apply_root hsl]
-      exact P.coroot'_eq_of_mem_orbitIndices_of_mem_fixedSubmodule σ ha v.2
+      rw [b.normalizedInvariantForm_apply_root hsl]
+      exact P.coroot'_eq_of_mem_orbitIndices_of_mem_fixedSubmodule ha v.2
     · rw [Finset.sum_const, nsmul_eq_mul]
   have hcard : (#(P.orbitIndices σ k) : K) ≠ 0 :=
     Nat.cast_ne_zero.mpr (P.card_orbitIndices_pos σ k).ne'
-  have hflip : (b.simplyLacedInvariantForm hsl).form.flip (P.orbitSum σ k) (v : M) =
-      (b.simplyLacedInvariantForm hsl).form (v : M) (P.orbitSum σ k) := rfl
   simp only [foldedCorootFun, LinearMap.smul_apply, LinearMap.comp_apply, Submodule.coe_subtype,
-    smul_eq_mul, hflip, b.simplyLacedInvariantForm_orbitSum_self hσ hsl horth k, hform]
+    smul_eq_mul, LinearMap.BilinForm.flip_apply,
+    b.normalizedInvariantForm_orbitSum_self hσ hsl horth k, hform]
   field_simp [hcard]
+
+/-- Positive-orbit scalar rigidity: if the orbit sum of a positive root `k` is a scalar multiple of
+the orbit sum of a simple root `i`, then `k` lies in the `σ`-orbit of `i`, so the two orbit sums
+coincide. -/
+private theorem orbitSum_eq_of_eq_smul_of_mem_support_of_isPos
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (hsl : b.cartanMatrix.IsSimplyLaced)
+    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
+    {i k : ι} (hi : i ∈ b.support) (hk : b.IsPos k) {c : K}
+    (hck : P.orbitSum σ k = c • P.orbitSum σ i) :
+    P.orbitSum σ k = P.orbitSum σ i := by
+  classical
+  -- Express `P.root k` and the remaining positive roots in its orbit in the simple-root basis.
+  obtain ⟨f, -, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b k).mpr hk)
+  obtain ⟨g, hg⟩ := (mem_posRootCone P b).mp (sum_mem fun a ha ↦
+    root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b a).mpr
+      ((isPos_iff_of_mem_orbitIndices hσ (Finset.mem_of_mem_erase ha)).mpr hk)) :
+    ∑ a ∈ (P.orbitIndices σ k).erase k, P.root a ∈ posRootCone P b)
+  have hsum_k : P.orbitSum σ k = ∑ j ∈ b.support, (f j + g j) • P.root j := by
+    rw [orbitSum_def, ← Finset.add_sum_erase _ _ (P.self_mem_orbitIndices σ k), hf, hg,
+      ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun j _ ↦ (add_nsmul _ _ _).symm
+  -- Comparing simple-root coordinates restricts the support of `P.root k` to `P.orbitIndices σ i`.
+  have hzero_out : ∀ j ∈ b.support, j ∉ P.orbitIndices σ i → f j = 0 := by
+    intro j hj hjnot
+    have hrepr_l : b.toWeightBasis.repr (P.orbitSum σ k) ⟨j, hj⟩ = ((f j + g j : ℕ) : K) := by
+      rw [← Module.Basis.coord_apply, hsum_k, map_sum, Finset.sum_eq_single_of_mem j hj]
+      · rw [map_nsmul, Module.Basis.coord_apply, b.toWeightBasis_repr_root ⟨j, hj⟩,
+          Finsupp.single_eq_same, nsmul_eq_mul, mul_one]
+      · intro a ha haj
+        rw [map_nsmul, Module.Basis.coord_apply, b.toWeightBasis_repr_root ⟨a, ha⟩,
+          Finsupp.single_apply,
+          ite_eq_right_iff.mpr fun h ↦ absurd (congrArg Subtype.val h) haj, smul_zero]
+    have hrepr_r : b.toWeightBasis.repr (c • P.orbitSum σ i) ⟨j, hj⟩ = 0 := by
+      rw [← Module.Basis.coord_apply, orbitSum_def, Finset.smul_sum, map_sum]
+      refine Finset.sum_eq_zero fun a ha ↦ ?_
+      have haj : a ≠ j := fun h ↦ hjnot (h ▸ ha)
+      have ha' : a ∈ b.support := P.mem_support_of_mem_orbitIndices hσ hi ha
+      rw [map_smul, Module.Basis.coord_apply, b.toWeightBasis_repr_root ⟨a, ha'⟩,
+        Finsupp.single_apply,
+        ite_eq_right_iff.mpr fun h ↦ absurd (congrArg Subtype.val h) haj, smul_zero]
+    have hfg0' : f j + g j = 0 := Nat.cast_eq_zero.mp (by rw [← hrepr_l, hck, hrepr_r])
+    omega
+  have hfk : P.root k = ∑ a ∈ P.orbitIndices σ i, f a • P.root a := by
+    rw [hf]
+    exact (Finset.sum_subset (fun a ha ↦ P.mem_support_of_mem_orbitIndices hσ hi ha)
+      fun j hj hjnot ↦ by rw [hzero_out j hj hjnot, zero_smul]).symm
+  -- Pairwise orthogonality of `P.orbitIndices σ i` yields `∑ f a ^ 2 = 1`,
+  -- forcing `P.root k = P.root a` for a unique `a ∈ P.orbitIndices σ i`.
+  set B := P.normalizedInvariantForm
+  have horth_i := P.pairwise_isOrthogonal_orbitIndices_of_mem_support σ hσ horth hi
+  have hnorm : B.form (P.root k) (P.root k) =
+      2 * ((∑ a ∈ P.orbitIndices σ i, f a * f a : ℕ) : K) := by
+    rw [hfk, map_sum, Nat.cast_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun a ha ↦ ?_
+    rw [map_sum, LinearMap.sum_apply,
+      Finset.sum_eq_single_of_mem a ha (fun a' ha' hne ↦ by
+        rw [map_nsmul, map_nsmul, LinearMap.smul_apply,
+          b.normalizedInvariantForm_root_root hsl, (horth_i ha' ha hne).1,
+          smul_zero, smul_zero]),
+      map_nsmul, map_nsmul, LinearMap.smul_apply,
+      b.normalizedInvariantForm_root_self hsl, nsmul_eq_mul, nsmul_eq_mul, Nat.cast_mul]
+    ring
+  rw [b.normalizedInvariantForm_root_self hsl] at hnorm
+  have hsq1 : ∑ a ∈ P.orbitIndices σ i, f a * f a = 1 := by
+    have h1 : ((∑ a ∈ P.orbitIndices σ i, f a * f a : ℕ) : K) = 1 :=
+      mul_left_cancel₀ (two_ne_zero (α := K)) (by linear_combination -hnorm)
+    exact_mod_cast h1
+  obtain ⟨a, ha, hfa_ne⟩ :=
+    Finset.exists_ne_zero_of_sum_ne_zero (hsq1.trans_ne one_ne_zero)
+  have hle1 : f a * f a ≤ 1 :=
+    hsq1 ▸ Finset.single_le_sum (f := fun a ↦ f a * f a) (fun _ _ ↦ Nat.zero_le _) ha
+  have hfa_pos : 1 ≤ f a := Nat.pos_of_ne_zero fun h ↦ hfa_ne (by simp [h])
+  have hfa1 : f a = 1 := by nlinarith
+  have hother : ∀ a' ∈ P.orbitIndices σ i, a' ≠ a → f a' = 0 := by
+    intro a' ha' hne
+    rw [← Finset.add_sum_erase _ _ ha, hfa1, mul_one, add_eq_left,
+      Finset.sum_eq_zero_iff] at hsq1
+    exact mul_self_eq_zero.mp (hsq1 a' (Finset.mem_erase.mpr ⟨hne, ha'⟩))
+  have hka : k = a := P.root.injective (by
+    rw [hfk, Finset.sum_eq_single_of_mem a ha (fun a' ha' hne ↦ by rw [hother a' ha' hne,
+      zero_smul]), hfa1, one_smul])
+  rw [hka]
+  exact orbitSum_eq_of_mem ha
+
+/-- Dependent-root transport: if one orbit sum is a scalar multiple of another, transporting the
+base orbit into `b.support` via a product of simple block reflections and applying positive-orbit
+scalar rigidity forces the two orbit sums to agree up to sign. -/
+private theorem orbitSum_eq_or_eq_neg_of_eq_smul
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (hsl : b.cartanMatrix.IsSimplyLaced)
+    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
+    {k₁ k₂ : ι} {c : K} (hc : P.orbitSum σ k₂ = c • P.orbitSum σ k₁) :
+    P.orbitSum σ k₁ = P.orbitSum σ k₂ ∨ P.orbitSum σ k₁ = -P.orbitSum σ k₂ := by
+  obtain ⟨w, hw, hwi⟩ := exists_mem_closure_blockReflection_mem_support hσ hsl horth k₁
+  have hcomm := P.commute_of_mem_closure_blockReflection σ hσ horth hw
+  have hmap_sum (j : ι) : w • P.orbitSum σ j = P.orbitSum σ (P.weylGroupToPerm w j) :=
+    P.weightMap_orbitSum (w : P.Aut)
+      (fun a ↦ congrArg (fun g : P.Aut ↦ g.indexEquiv a) hcomm) j
+  have hw_eq : P.orbitSum σ (P.weylGroupToPerm w k₂) =
+      c • P.orbitSum σ (P.weylGroupToPerm w k₁) := by
+    rw [← hmap_sum k₂, ← hmap_sum k₁, hc, smul_comm]
+  by_cases hpos : b.IsPos (P.weylGroupToPerm w k₂)
+  · have heq := orbitSum_eq_of_eq_smul_of_mem_support_of_isPos hσ hsl horth hwi hpos hw_eq
+    rw [← hmap_sum k₂, ← hmap_sum k₁] at heq
+    have heq' : P.orbitSum σ k₂ = P.orbitSum σ k₁ := by simpa using congrArg (w⁻¹ • ·) heq
+    exact Or.inl heq'.symm
+  · have hpos' : b.IsPos (P.reflectionPerm (P.weylGroupToPerm w k₂) (P.weylGroupToPerm w k₂)) :=
+      (isPos_reflectionPerm_self_iff_mem_negRoots P b _).mpr ((mem_negRoots P b _).mpr hpos)
+    have heq := orbitSum_eq_of_eq_smul_of_mem_support_of_isPos hσ hsl horth hwi hpos' (by
+      rw [orbitSum_reflectionPerm_self, hw_eq, neg_smul])
+    rw [orbitSum_reflectionPerm_self, ← hmap_sum k₂, ← hmap_sum k₁] at heq
+    have heq' : -P.orbitSum σ k₂ = P.orbitSum σ k₁ := by
+      simpa [smul_neg] using congrArg (w⁻¹ • ·) heq
+    exact Or.inr heq'.symm
 
 private theorem foldedRoot_reduced
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
@@ -258,72 +242,6 @@ private theorem foldedRoot_reduced
     (x y : P.foldedIndices σ)
     (hdep : ¬ LinearIndependent K ![foldedRoot P σ x, foldedRoot P σ y]) :
     (x : M) = (y : M) ∨ (x : M) = -(y : M) := by
-  classical
-  have hpos_case : ∀ (i k : ι), i ∈ b.support → b.IsPos k → ∀ c : K,
-      P.orbitSum σ k = c • P.orbitSum σ i → P.orbitSum σ k = P.orbitSum σ i := by
-    intro i k hi hk c hck
-    obtain ⟨f, -, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b k).mpr hk)
-    obtain ⟨g, hg⟩ := (mem_posRootCone P b).mp (sum_mem fun a ha ↦
-      root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b a).mpr
-        ((isPos_iff_of_mem_orbitIndices hσ (Finset.mem_of_mem_erase ha)).mpr hk)) :
-      ∑ a ∈ (P.orbitIndices σ k).erase k, P.root a ∈ posRootCone P b)
-    have hsum_k : P.orbitSum σ k = ∑ j ∈ b.support, (f j + g j) • P.root j := by
-      rw [orbitSum_def, ← Finset.add_sum_erase _ _ (P.self_mem_orbitIndices σ k), hf, hg,
-        ← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun j _ ↦ (add_nsmul _ _ _).symm
-    have hzero_out : ∀ j ∈ b.support, j ∉ P.orbitIndices σ i → f j = 0 := by
-      intro j hj hjnot
-      have hrepr_l : b.toWeightBasis.coord ⟨j, hj⟩ (P.orbitSum σ k) = ((f j + g j : ℕ) : K) := by
-        rw [hsum_k, map_sum, Finset.sum_eq_single_of_mem j hj]
-        · rw [map_nsmul, coord_root_self ⟨j, hj⟩, nsmul_eq_mul, mul_one]
-        · exact fun a ha haj ↦ by rw [map_nsmul, coord_root_ne ⟨j, hj⟩ ha haj, smul_zero]
-      have hrepr_r : b.toWeightBasis.coord ⟨j, hj⟩ (c • P.orbitSum σ i) = 0 := by
-        rw [orbitSum_def, Finset.smul_sum, map_sum]
-        refine Finset.sum_eq_zero fun a ha ↦ ?_
-        have haj : a ≠ j := fun h ↦ hjnot (h ▸ ha)
-        rw [map_smul, coord_root_ne ⟨j, hj⟩ (P.mem_support_of_mem_orbitIndices σ hσ hi ha) haj,
-          smul_zero]
-      have hfg0' : f j + g j = 0 := Nat.cast_eq_zero.mp (by rw [← hrepr_l, hck, hrepr_r])
-      omega
-    have hfk : P.root k = ∑ a ∈ P.orbitIndices σ i, f a • P.root a := by
-      rw [hf]
-      exact (Finset.sum_subset (fun a ha ↦ P.mem_support_of_mem_orbitIndices σ hσ hi ha)
-        fun j hj hjnot ↦ by rw [hzero_out j hj hjnot, zero_smul]).symm
-    set B := b.simplyLacedInvariantForm hsl
-    have horth_i := P.pairwise_isOrthogonal_orbitIndices_of_mem_support σ hσ horth hi
-    have hnorm : B.form (P.root k) (P.root k) =
-        2 * ((∑ a ∈ P.orbitIndices σ i, f a * f a : ℕ) : K) := by
-      rw [hfk, map_sum, Nat.cast_sum, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun a ha ↦ ?_
-      rw [map_sum, LinearMap.sum_apply,
-        Finset.sum_eq_single_of_mem a ha (fun a' ha' hne ↦ by
-          rw [map_nsmul, map_nsmul, LinearMap.smul_apply,
-            b.simplyLacedInvariantForm_root_root hsl, (horth_i ha' ha hne).1,
-            smul_zero, smul_zero]),
-        map_nsmul, map_nsmul, LinearMap.smul_apply,
-        b.simplyLacedInvariantForm_root_self hsl, nsmul_eq_mul, nsmul_eq_mul, Nat.cast_mul]
-      ring
-    rw [b.simplyLacedInvariantForm_root_self hsl] at hnorm
-    have hsq1 : ∑ a ∈ P.orbitIndices σ i, f a * f a = 1 := by
-      have h1 : ((∑ a ∈ P.orbitIndices σ i, f a * f a : ℕ) : K) = 1 :=
-        mul_left_cancel₀ (two_ne_zero (α := K)) (by linear_combination -hnorm)
-      exact_mod_cast h1
-    obtain ⟨a, ha, hfa_ne⟩ :=
-      Finset.exists_ne_zero_of_sum_ne_zero (hsq1.trans_ne one_ne_zero)
-    have hle1 : f a * f a ≤ 1 :=
-      hsq1 ▸ Finset.single_le_sum (f := fun a ↦ f a * f a) (fun _ _ ↦ Nat.zero_le _) ha
-    have hfa_pos : 1 ≤ f a := Nat.pos_of_ne_zero fun h ↦ hfa_ne (by simp [h])
-    have hfa1 : f a = 1 := by nlinarith
-    have hother : ∀ a' ∈ P.orbitIndices σ i, a' ≠ a → f a' = 0 := by
-      intro a' ha' hne
-      rw [← Finset.add_sum_erase _ _ ha, hfa1, mul_one, add_eq_left,
-        Finset.sum_eq_zero_iff] at hsq1
-      exact mul_self_eq_zero.mp (hsq1 a' (Finset.mem_erase.mpr ⟨hne, ha'⟩))
-    have hka : k = a := P.root.injective (by
-      rw [hfk, Finset.sum_eq_single_of_mem a ha (fun a' ha' hne ↦ by rw [hother a' ha' hne,
-        zero_smul]), hfa1, one_smul])
-    rw [hka]
-    exact orbitSum_eq_of_mem ha
   have hxy_dep : ¬ LinearIndependent K ![(x : M), (y : M)] := fun hli ↦ by
     have hcomp : ![(x : M), (y : M)] =
         (LinearMap.fixedSubmodule σ.weightMap).subtype ∘ ![foldedRoot P σ x, foldedRoot P σ y] := by
@@ -343,51 +261,34 @@ private theorem foldedRoot_reduced
     rw [div_eq_inv_mul, mul_smul, ← h1, inv_smul_smul₀ hs0]
   obtain ⟨k₁, hk₁⟩ := mem_foldedIndices.mp x.2
   obtain ⟨k₂, hk₂⟩ := mem_foldedIndices.mp y.2
-  obtain ⟨w, hw, hwi⟩ := exists_mem_closure_blockReflection_mem_support hσ hsl horth k₁
-  have hcomm := P.commute_of_mem_closure_blockReflection σ hσ horth hw
-  have hmap_sum (j : ι) : w • P.orbitSum σ j = P.orbitSum σ (P.weylGroupToPerm w j) :=
-    P.weightMap_orbitSum (w : P.Aut)
-      (fun a ↦ congrArg (fun g : P.Aut ↦ g.indexEquiv a) hcomm) j
-  have hw_eq : P.orbitSum σ (P.weylGroupToPerm w k₂) =
-      (-r / s) • P.orbitSum σ (P.weylGroupToPerm w k₁) := by
-    rw [← hmap_sum k₂, ← hmap_sum k₁, hk₁, hk₂, hy_eq, smul_comm]
-  by_cases hpos : b.IsPos (P.weylGroupToPerm w k₂)
-  · have heq := hpos_case _ _ hwi hpos (-r / s) hw_eq
-    rw [← hmap_sum k₂, ← hmap_sum k₁] at heq
-    exact Or.inl (hk₁.symm.trans ((by simpa using congrArg (w⁻¹ • ·) heq :
-      P.orbitSum σ k₂ = P.orbitSum σ k₁).symm.trans hk₂))
-  · have hpos' : b.IsPos (P.reflectionPerm (P.weylGroupToPerm w k₂) (P.weylGroupToPerm w k₂)) :=
-      (isPos_reflectionPerm_self_iff_mem_negRoots P b _).mpr ((mem_negRoots P b _).mpr hpos)
-    have heq := hpos_case _ _ hwi hpos' (-(-r / s)) (by
-      rw [orbitSum_reflectionPerm_self, hw_eq, neg_smul])
-    rw [orbitSum_reflectionPerm_self, ← hmap_sum k₂, ← hmap_sum k₁] at heq
-    exact Or.inr (hk₁.symm.trans ((by simpa [smul_neg] using congrArg (w⁻¹ • ·) heq :
-      -(P.orbitSum σ k₂) = P.orbitSum σ k₁).symm.trans (congrArg Neg.neg hk₂)))
+  rw [← hk₁, ← hk₂] at hy_eq ⊢
+  exact orbitSum_eq_or_eq_neg_of_eq_smul hσ hsl horth hy_eq
 
 private noncomputable def foldedCoroot
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (hsl : b.cartanMatrix.IsSimplyLaced)
     (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0) :
     P.foldedIndices σ ↪ Module.Dual K (LinearMap.fixedSubmodule σ.weightMap) where
-  toFun := foldedCorootFun hsl
+  toFun := foldedCorootFun (P := P) (σ := σ)
   inj' x y hxy := by
-    set B := b.simplyLacedInvariantForm hsl
+    set B := P.normalizedInvariantForm
     set cx : K := 2 / B.form x.1 x.1
     set cy : K := 2 / B.form y.1 y.1
     have hdiff_zero : cx • foldedRoot P σ x - cy • foldedRoot P σ y = 0 := by
       set u := cx • foldedRoot P σ x - cy • foldedRoot P σ y
       have hu : B.form u.1 u.1 = 0 := by
-        have heval := congrArg (fun f : Module.Dual K (LinearMap.fixedSubmodule σ.weightMap) ↦ f u)
-          hxy
-        simp only [foldedCorootFun, LinearMap.smul_apply, LinearMap.comp_apply,
-          Submodule.coe_subtype, smul_eq_mul] at heval
+        have heval : cx * B.form u.1 x.1 = cy * B.form u.1 y.1 := by
+          have h := congrArg (fun f : Module.Dual K (LinearMap.fixedSubmodule σ.weightMap) ↦ f u)
+            hxy
+          simpa only [foldedCorootFun, LinearMap.smul_apply, LinearMap.comp_apply,
+            Submodule.coe_subtype, smul_eq_mul, LinearMap.BilinForm.flip_apply] using h
         have hbu : B.form u.1 u.1 = cx * B.form u.1 x.1 - cy * B.form u.1 y.1 := by
           simp [u, map_sub, map_smul, smul_eq_mul]
-        rw [hbu, show cx * B.form u.1 x.1 = cy * B.form u.1 y.1 from heval, sub_self]
+        rw [hbu, heval, sub_self]
       by_contra hne
-      exact (b.posDef_simplyLacedInvariantForm hsl u.1 fun h ↦ hne (Subtype.ext h)).ne' hu
+      exact (P.posDef_normalizedInvariantForm u.1 fun h ↦ hne (Subtype.ext h)).ne' hu
     have hcx : cx ≠ 0 := div_ne_zero two_ne_zero
-      (b.posDef_simplyLacedInvariantForm hsl x.1 fun h ↦ zero_notMem_foldedIndices hσ (h ▸ x.2)).ne'
+      (P.posDef_normalizedInvariantForm x.1 fun h ↦ zero_notMem_foldedIndices hσ (h ▸ x.2)).ne'
     have hdep : ¬ LinearIndependent K ![foldedRoot P σ x, foldedRoot P σ y] := by
       rw [LinearIndependent.pair_iff]
       push Not
@@ -395,14 +296,23 @@ private noncomputable def foldedCoroot
     rcases foldedRoot_reduced hσ hsl horth x y hdep with h | h
     · exact Subtype.ext h
     · exfalso
-      have h1 := foldedCorootFun_self hσ hsl x
-      have h2 : foldedCorootFun hsl y (foldedRoot P σ x) = -2 := by
-        rw [show foldedRoot P σ x = -foldedRoot P σ y from Subtype.ext h, map_neg,
-          foldedCorootFun_self hσ hsl y]
+      have h1 := foldedCorootFun_self (P := P) (σ := σ) hσ x
+      have hxy_neg : foldedRoot P σ x = -foldedRoot P σ y :=
+        Subtype.ext (by rw [coe_foldedRoot, Submodule.coe_neg, coe_foldedRoot, h])
+      have h2 : foldedCorootFun (P := P) (σ := σ) y (foldedRoot P σ x) = -2 := by
+        rw [hxy_neg, map_neg, foldedCorootFun_self (P := P) (σ := σ) hσ y]
       rw [hxy, h2] at h1
       linarith
 
-omit [P.IsReduced] [P.IsCrystallographic] in
+private theorem foldedCoroot_apply
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (hsl : b.cartanMatrix.IsSimplyLaced)
+    (horth : ∀ i ∈ b.support, ∀ j ∈ P.orbitIndices σ i, i ≠ j → P.pairing i j = 0)
+    (x : P.foldedIndices σ) :
+    foldedCoroot hσ hsl horth x = foldedCorootFun (P := P) (σ := σ) x :=
+  rfl
+
+omit [LinearOrder K] [IsStrictOrderedRing K] [P.IsReduced] [P.IsCrystallographic] in
 private theorem span_foldedRoot_eq_top
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
     Submodule.span K (Set.range (foldedRoot P σ)) = ⊤ := by
@@ -410,9 +320,9 @@ private theorem span_foldedRoot_eq_top
   refine eq_top_iff.mpr fun v _ ↦ ?_
   let c : ι → K := fun j ↦ if hj : j ∈ b.support then b.toWeightBasis.repr (v : M) ⟨j, hj⟩ else 0
   have hc : ∀ {i j}, i ∈ b.support → j ∈ P.orbitIndices σ i → c j = c i := fun hi hji ↦ by
-    have hj := P.mem_support_of_mem_orbitIndices σ hσ hi hji
+    have hj := P.mem_support_of_mem_orbitIndices hσ hi hji
     simp only [c, dite_eq_left_of_eq_true (eq_true hj), dite_eq_left_of_eq_true (eq_true hi)]
-    exact repr_eq_of_mem_orbitIndices hσ v.2 hi hji
+    exact toWeightBasis_repr_eq_of_mem_orbitIndices hσ v.2 hi hji
   obtain ⟨f, hf⟩ := exists_sum_simpleOrbits_eq hσ c hc
   have hv_exp : (v : M) = ∑ j ∈ b.support, c j • P.root j := by
     conv_lhs => rw [← b.toWeightBasis.sum_repr (v : M)]
@@ -436,7 +346,7 @@ private noncomputable def orthogonalPairing
     Module.IsReflexive.of_finite_of_free K (LinearMap.fixedSubmodule σ.weightMap)
   RootPairing.mk'' (Module.Dual.eval K (LinearMap.fixedSubmodule σ.weightMap))
     (foldedRoot P σ) (foldedCoroot hσ hsl horth)
-    (fun x ↦ foldedCorootFun_self hσ hsl x)
+    (fun x ↦ foldedCorootFun_self (P := P) (σ := σ) hσ x)
     (fun x ↦ by
       rintro _ ⟨y, rfl⟩
       obtain ⟨k, hk⟩ := mem_foldedIndices.mp x.2
@@ -447,13 +357,10 @@ private noncomputable def orthogonalPairing
       have hcomm : Commute (w : P.Aut) σ := P.commute_blockReflection_coe σ k _
       refine ⟨⟨P.orbitSum σ (P.weylGroupToPerm w j), P.orbitSum_mem_foldedIndices σ _⟩, ?_⟩
       apply Subtype.ext
-      rw [hx, hy]
-      -- Coerce the `preReflection` identity to the ambient space `M`.
-      change P.orbitSum σ (P.weylGroupToPerm w j) =
-        P.orbitSum σ j -
-          foldedCorootFun hsl ⟨P.orbitSum σ k, _⟩ (foldedRoot P σ ⟨P.orbitSum σ j, _⟩) •
-            P.orbitSum σ k
-      rw [foldedCorootFun_orbitSum hσ hsl horth k, coe_foldedRoot, Subtype.coe_mk,
+      rw [hx, hy, Module.preReflection_apply, Submodule.coe_sub, Submodule.coe_smul,
+        LinearMap.flip_apply, Module.Dual.eval_apply, foldedCoroot_apply,
+        foldedCorootFun_orbitSum hσ hsl horth k, coe_foldedRoot, coe_foldedRoot, coe_foldedRoot,
+        Subtype.coe_mk, Subtype.coe_mk, Subtype.coe_mk,
         ← P.blockReflection_smul_of_mem_fixedSubmodule σ k _ (P.orbitSum_mem_fixedSubmodule σ j),
         weylGroupToPerm_apply,
         ← P.weightMap_orbitSum (w : P.Aut)
@@ -484,11 +391,8 @@ noncomputable def ofOrthogonal
     obtain ⟨k, hk⟩ := mem_foldedIndices.mp y.2
     have hy : y = ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ := Subtype.ext hk.symm
     refine ⟨∑ a ∈ P.orbitIndices σ j, P.pairingIn ℤ a k, ?_⟩
-    rw [hy]
-    -- Unfold `Module.Dual.eval` to the coroot functional `foldedCorootFun`.
-    change ((∑ a ∈ P.orbitIndices σ j, P.pairingIn ℤ a k : ℤ) : K) =
-      foldedCorootFun hsl ⟨P.orbitSum σ k, _⟩ (foldedRoot P σ x)
-    rw [foldedCorootFun_orbitSum hσ hsl horth k, coe_foldedRoot, ← hj, orbitSum_def, map_sum,
+    rw [hy, Module.Dual.eval_apply, foldedCoroot_apply,
+      foldedCorootFun_orbitSum hσ hsl horth k, coe_foldedRoot, ← hj, orbitSum_def, map_sum,
       Int.cast_sum]
     exact Finset.sum_congr rfl fun a _ ↦ by
       rw [root_coroot'_eq_pairing, ← P.algebraMap_pairingIn ℤ]; rfl
@@ -505,14 +409,14 @@ noncomputable def ofOrthogonal
     have hsumM : ∑ a ∈ b.support,
         f ⟨P.orbitSum σ a, P.orbitSum_mem_foldedIndices σ a⟩ • P.root a = 0 := by
       rw [sum_support_smul_eq_sum_simpleOrbits hσ _
-        (fun {_ _} _ hji ↦ by
-          rw [show (⟨P.orbitSum σ _, _⟩ : P.foldedIndices σ) = ⟨P.orbitSum σ _, _⟩ from
-            Subtype.ext (orbitSum_eq_of_mem hji)])
+        (fun {_ _} _ hji ↦ congrArg f (Subtype.ext (orbitSum_eq_of_mem hji)))
         f (fun _ _ ↦ rfl)]
       have hfilt : S.filter (· ∈ t) = t := Finset.filter_mem_eq_inter.trans
         (Finset.inter_eq_right.mpr fun u hu ↦ hts hu)
-      rw [show (∑ u ∈ S, f u • (u : M)) = ∑ u ∈ S.filter (· ∈ t), g u • (u : M) by
-        rw [Finset.sum_filter]; exact Finset.sum_congr rfl fun _ _ ↦ by simp [f], hfilt]
+      have hsum_filt : ∑ u ∈ S, f u • (u : M) = ∑ u ∈ S.filter (· ∈ t), g u • (u : M) := by
+        rw [Finset.sum_filter]
+        exact Finset.sum_congr rfl fun _ _ ↦ by simp [f]
+      rw [hsum_filt, hfilt]
       simpa only [Submodule.coe_sum, Submodule.coe_smul, Submodule.coe_zero, hQroot] using
         congrArg Subtype.val hsum
     have hcoeff0 := (linearIndepOn_iff'.mp b.linearIndepOn_root) b.support _ Set.Subset.rfl hsumM
@@ -528,12 +432,17 @@ noncomputable def ofOrthogonal
       have hf_repr : ∀ j (hj : j ∈ b.support),
           b.toWeightBasis.repr (P.orbitSum σ k) ⟨j, hj⟩ = (f j : K) := fun j hj ↦ by
         rw [← Module.Basis.coord_apply, hf, map_sum, Finset.sum_eq_single_of_mem j hj]
-        · rw [map_nsmul, coord_root_self ⟨j, hj⟩, nsmul_eq_mul, mul_one]
-        · exact fun a ha haj ↦ by rw [map_nsmul, coord_root_ne ⟨j, hj⟩ ha haj, smul_zero]
+        · rw [map_nsmul, Module.Basis.coord_apply, b.toWeightBasis_repr_root ⟨j, hj⟩,
+            Finsupp.single_eq_same, nsmul_eq_mul, mul_one]
+        · intro a ha haj
+          rw [map_nsmul, Module.Basis.coord_apply, b.toWeightBasis_repr_root ⟨a, ha⟩,
+            Finsupp.single_apply,
+            ite_eq_right_iff.mpr fun h ↦ absurd (congrArg Subtype.val h) haj, smul_zero]
       have hf_orbit : ∀ {i j : ι}, i ∈ b.support → j ∈ P.orbitIndices σ i → f j = f i :=
         fun hi hji ↦ by
-          have hstep := repr_eq_of_mem_orbitIndices hσ (P.orbitSum_mem_fixedSubmodule σ k) hi hji
-          rw [hf_repr _ (P.mem_support_of_mem_orbitIndices σ hσ hi hji), hf_repr _ hi] at hstep
+          have hstep := toWeightBasis_repr_eq_of_mem_orbitIndices hσ
+            (P.orbitSum_mem_fixedSubmodule σ k) hi hji
+          rw [hf_repr _ (P.mem_support_of_mem_orbitIndices hσ hi hji), hf_repr _ hi] at hstep
           exact Nat.cast_injective hstep
       obtain ⟨f', hf'⟩ := exists_sum_simpleOrbits_eq hσ f hf_orbit
       have hdecomp : Q.root ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ =
@@ -545,7 +454,8 @@ noncomputable def ofOrthogonal
         nsmul_mem (AddSubmonoid.subset_closure (Set.mem_image_of_mem Q.root hs)) _
     intro x
     obtain ⟨k, hk⟩ := mem_foldedIndices.mp x.2
-    rw [show x = ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ from Subtype.ext hk.symm]
+    have hx : x = ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ := Subtype.ext hk.symm
+    rw [hx]
     by_cases hpos : b.IsPos k
     · exact Or.inl (hpos_mem k hpos)
     · right
@@ -577,8 +487,8 @@ noncomputable def ofOrthogonal
       | add _ _ _ _ hx hy => rw [map_add]; exact add_mem hx hy
     intro x
     obtain ⟨k, hk⟩ := mem_foldedIndices.mp x.2
-    rw [show x = ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ from Subtype.ext hk.symm,
-      ← hφ_coroot k]
+    have hx : x = ⟨P.orbitSum σ k, P.orbitSum_mem_foldedIndices σ k⟩ := Subtype.ext hk.symm
+    rw [hx, ← hφ_coroot k]
     rcases b.coroot_mem_or_neg_mem k with h | h
     · exact Or.inl (hφ_maps _ h)
     · exact Or.inr (by simpa [map_neg] using hφ_maps _ h)
@@ -678,8 +588,8 @@ theorem card_mul_pairingIn_orbitSum_eq_neg_card_edges
   · refine Finset.sum_congr rfl fun p hp ↦ ?_
     obtain ⟨hp_mem, hne0⟩ := Finset.mem_filter.mp hp
     obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp_mem
-    have h1 : p.1 ∈ b.support := P.mem_support_of_mem_orbitIndices σ hσ hj hp1
-    have h2 : p.2 ∈ b.support := P.mem_support_of_mem_orbitIndices σ hσ hk hp2
+    have h1 : p.1 ∈ b.support := P.mem_support_of_mem_orbitIndices hσ hj hp1
+    have h2 : p.2 ∈ b.support := P.mem_support_of_mem_orbitIndices hσ hk hp2
     have hne : (⟨p.1, h1⟩ : b.support) ≠ ⟨p.2, h2⟩ := fun heq ↦ by
       have h12 : p.1 = p.2 := congrArg Subtype.val heq
       have hp2j : p.2 ∈ P.orbitIndices σ j := h12 ▸ hp1

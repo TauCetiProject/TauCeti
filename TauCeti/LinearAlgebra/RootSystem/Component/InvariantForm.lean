@@ -44,6 +44,8 @@ induced bijection of irreducible components.
   form on a component.
 * `RootPairing.InvariantForm.posDefEquivScale`: positive-definite invariant forms correspond to
   positive scales, one per component.
+* `RootPairing.normalizedInvariantForm`: the canonical positive-definite invariant form rescaled on
+  each component so that the longest roots have squared length `2`.
 
 ## Main results
 
@@ -62,6 +64,12 @@ induced bijection of irreducible components.
   `RootPairing.InvariantForm.posDefEquivScale_symm_comp_componentEquiv_coe`: the component scales of
   forms pulled back along an equivalence are the scales of the original forms on the corresponding
   components.
+* `RootPairing.posDef_normalizedInvariantForm`,
+  `RootPairing.normalizedInvariantForm_root_self_le`,
+  `RootPairing.exists_mem_supp_normalizedInvariantForm_root_self`,
+  `RootPairing.comap_normalizedInvariantForm`,
+  `RootPairing.normalizedInvariantForm_weightMap`: positivity, long-root normalization, and
+  equivalence naturality of `RootPairing.normalizedInvariantForm`.
 
 ## References
 
@@ -391,5 +399,153 @@ theorem posDefEquivScale_symm_comp_componentEquiv_coe (e : P.Equiv Q) (B₀ : Q.
 end Equiv
 
 end InvariantForm
+
+/-! ### Normalized invariant form -/
+
+section Normalized
+
+variable {ι K M N : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+  (P : RootPairing ι K M N) [Finite ι] [P.IsRootSystem]
+
+omit [IsStrictOrderedRing K] [P.IsRootSystem] in
+/-- The maximal squared length of a root in the irreducible component `C` under the canonical root
+form. -/
+private noncomputable def maxRootFormOnComponent (C : P.Component) : K :=
+  letI := Fintype.ofFinite ι
+  letI : DecidablePred (· ∈ C.supp) := Classical.decPred _
+  ((Finset.univ.filter (· ∈ C.supp)).image
+    fun i ↦ P.RootForm (P.root i) (P.root i)).max' <| by
+      obtain ⟨i, hi⟩ := C.nonempty_supp
+      exact ⟨_, Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨Finset.mem_univ i, hi⟩)⟩
+
+omit [IsStrictOrderedRing K] [P.IsRootSystem] in
+private theorem rootForm_le_maxRootFormOnComponent [Fintype ι] {C : P.Component} {i : ι}
+    (hi : i ∈ C.supp) :
+    P.RootForm (P.root i) (P.root i) ≤ P.maxRootFormOnComponent C := by
+  obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
+  let _ := Fintype.ofFinite ι
+  let _ : DecidablePred (· ∈ C.supp) := Classical.decPred _
+  exact Finset.le_max' _ _
+    (Finset.mem_image_of_mem (fun j ↦ P.RootForm (P.root j) (P.root j))
+      (Finset.mem_filter.mpr ⟨Finset.mem_univ i, hi⟩))
+
+private theorem maxRootFormOnComponent_pos (C : P.Component) :
+    0 < P.maxRootFormOnComponent C := by
+  let _ := Fintype.ofFinite ι
+  obtain ⟨i, hi⟩ := C.nonempty_supp
+  exact lt_of_lt_of_le (P.rootForm_posDef _ (P.ne_zero i))
+    (P.rootForm_le_maxRootFormOnComponent hi)
+
+omit [IsStrictOrderedRing K] [P.IsRootSystem] in
+private theorem exists_mem_supp_rootForm_eq_maxRootFormOnComponent [Fintype ι] (C : P.Component) :
+    ∃ i ∈ C.supp, P.RootForm (P.root i) (P.root i) = P.maxRootFormOnComponent C := by
+  obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
+  let _ := Fintype.ofFinite ι
+  let _ : DecidablePred (· ∈ C.supp) := Classical.decPred _
+  have hmem := Finset.max'_mem
+    ((Finset.univ.filter (· ∈ C.supp)).image fun i ↦ P.RootForm (P.root i) (P.root i))
+    (by
+      obtain ⟨i, hi⟩ := C.nonempty_supp
+      exact ⟨_, Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨Finset.mem_univ i, hi⟩)⟩)
+  obtain ⟨i, hi, heq⟩ := Finset.mem_image.mp hmem
+  exact ⟨i, (Finset.mem_filter.mp hi).2, heq⟩
+
+/-- **The normalized invariant form of a finite root system**: the unique positive-definite
+invariant form obtained by rescaling the canonical root form on each irreducible component so that
+the longest roots in each component have squared length `2`. -/
+noncomputable def normalizedInvariantForm : P.InvariantForm :=
+  letI := Fintype.ofFinite ι
+  ((InvariantForm.posDefEquivScale P.toInvariantForm P.rootForm_posDef).symm fun C ↦
+    ⟨2 / P.maxRootFormOnComponent C, div_pos zero_lt_two (P.maxRootFormOnComponent_pos C)⟩).1
+
+/-- The normalized invariant form of a finite root system is positive definite. -/
+theorem posDef_normalizedInvariantForm :
+    P.normalizedInvariantForm.form.toQuadraticMap.PosDef := by
+  let _ := Fintype.ofFinite ι
+  exact ((InvariantForm.posDefEquivScale P.toInvariantForm P.rootForm_posDef).symm _).2
+
+private theorem normalizedInvariantForm_root_self_eq [Fintype ι] (i : ι) :
+    P.normalizedInvariantForm.form (P.root i) (P.root i) =
+      2 / P.maxRootFormOnComponent (P.componentOf i) * P.RootForm (P.root i) (P.root i) := by
+  obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
+  let _ := Fintype.ofFinite ι
+  have hmem := P.root_mem_componentSpace i
+  exact InvariantForm.form_posDefEquivScale_symm_apply_of_mem P.toInvariantForm P.rootForm_posDef
+    (fun C ↦ ⟨2 / P.maxRootFormOnComponent C,
+      div_pos zero_lt_two (P.maxRootFormOnComponent_pos C)⟩) hmem hmem
+
+/-- Every root has squared length at most `2` under the normalized invariant form. -/
+theorem normalizedInvariantForm_root_self_le (i : ι) :
+    P.normalizedInvariantForm.form (P.root i) (P.root i) ≤ 2 := by
+  let _ := Fintype.ofFinite ι
+  rw [P.normalizedInvariantForm_root_self_eq i, div_mul_eq_mul_div,
+    div_le_iff₀ (P.maxRootFormOnComponent_pos (P.componentOf i))]
+  exact mul_le_mul_of_nonneg_left
+    (P.rootForm_le_maxRootFormOnComponent
+      ((SimpleGraph.ConnectedComponent.mem_supp_iff _ _).mpr rfl))
+    zero_le_two
+
+/-- Every irreducible component contains a root of squared length `2` under the normalized
+invariant form. -/
+theorem exists_mem_supp_normalizedInvariantForm_root_self (C : P.Component) :
+    ∃ i ∈ C.supp, P.normalizedInvariantForm.form (P.root i) (P.root i) = 2 := by
+  let _ := Fintype.ofFinite ι
+  obtain ⟨i, hi, hmax⟩ := P.exists_mem_supp_rootForm_eq_maxRootFormOnComponent C
+  have hcomp : P.componentOf i = C := (SimpleGraph.ConnectedComponent.mem_supp_iff C i).mp hi
+  refine ⟨i, hi, ?_⟩
+  rw [P.normalizedInvariantForm_root_self_eq i, hcomp, hmax,
+    div_mul_cancel₀ _ (P.maxRootFormOnComponent_pos C).ne']
+
+section Equiv
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module K M₂] [AddCommGroup N₂] [Module K N₂]
+  {P : RootPairing ι K M N} {Q : RootPairing ι₂ K M₂ N₂} [Finite ι₂]
+  [P.IsRootSystem] [Q.IsRootSystem]
+
+omit [IsStrictOrderedRing K] [P.IsRootSystem] [Q.IsRootSystem] in
+private theorem maxRootFormOnComponent_componentEquiv (e : P.Equiv Q) (C : P.Component) :
+    Q.maxRootFormOnComponent (e.componentEquiv C) = P.maxRootFormOnComponent C := by
+  let _ := Fintype.ofFinite ι
+  let _ := Fintype.ofFinite ι₂
+  apply le_antisymm
+  · obtain ⟨j, hj, hmax⟩ :=
+      Q.exists_mem_supp_rootForm_eq_maxRootFormOnComponent (e.componentEquiv C)
+    rw [← hmax]
+    have hi : e.indexEquiv.symm j ∈ C.supp := e.indexEquiv_mem_supp_iff.mp (by simpa using hj)
+    have hrf : Q.RootForm (Q.root j) (Q.root j) =
+        P.RootForm (P.root (e.indexEquiv.symm j)) (P.root (e.indexEquiv.symm j)) := by
+      rw [← Hom.rootForm_weightMap e.toHom, Hom.root_weightMap_apply,
+        _root_.Equiv.apply_symm_apply]
+    exact hrf.le.trans (P.rootForm_le_maxRootFormOnComponent hi)
+  · obtain ⟨i, hi, hmax⟩ := P.exists_mem_supp_rootForm_eq_maxRootFormOnComponent C
+    rw [← hmax]
+    have hrf : P.RootForm (P.root i) (P.root i) =
+        Q.RootForm (Q.root (e.indexEquiv i)) (Q.root (e.indexEquiv i)) := by
+      rw [← Hom.rootForm_weightMap e.toHom, Hom.root_weightMap_apply]
+    exact hrf.le.trans (Q.rootForm_le_maxRootFormOnComponent (e.indexEquiv_mem_supp_iff.mpr hi))
+
+/-- The normalized invariant form is natural under every equivalence of root systems. -/
+@[simp]
+theorem comap_normalizedInvariantForm (e : P.Equiv Q) :
+    InvariantForm.comap e.toHom Q.normalizedInvariantForm = P.normalizedInvariantForm := by
+  let _ := Fintype.ofFinite ι
+  let _ := Fintype.ofFinite ι₂
+  refine InvariantForm.eq_of_forall_apply_root_self_eq fun i ↦ ?_
+  rw [InvariantForm.comap_form_apply, Hom.root_weightMap_apply,
+    Q.normalizedInvariantForm_root_self_eq, P.normalizedInvariantForm_root_self_eq,
+    ← e.componentEquiv_componentOf, maxRootFormOnComponent_componentEquiv,
+    ← Hom.root_weightMap_apply, Hom.rootForm_weightMap]
+
+/-- Every equivalence of root systems is an isometry for the normalized invariant forms. -/
+@[simp]
+theorem normalizedInvariantForm_weightMap (e : P.Equiv Q) (x y : M) :
+    Q.normalizedInvariantForm.form (e.weightMap x) (e.weightMap y) =
+      P.normalizedInvariantForm.form x y := by
+  rw [← InvariantForm.comap_form_apply, comap_normalizedInvariantForm]
+
+end Equiv
+
+end Normalized
 
 end RootPairing

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
 
 /-!
 # The normalisation of an invariant form against the coroots
@@ -31,6 +32,8 @@ step towards a higher weight.
 
 * `RootPairing.InvariantForm.form_root_add_root_self`: the squared length of a sum of two roots.
 * `RootPairing.InvariantForm.two_mul_apply_root`: `2 ⟨x, α⟩ = ⟨x, α^∨⟩ ⟨α, α⟩` for every `x`.
+* `RootPairing.InvariantForm.eq_of_forall_apply_root_self_eq`: an invariant form of a root system
+  is determined by the squared lengths of the roots.
 * `RootPairing.InvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq`: if `x` and `y` have
   equal length and `y - x`, of positive length, is a nonnegative combination of roots of
   nonnegative length, some root with positive coefficient has negative coroot value on `x`.
@@ -59,6 +62,17 @@ theorem two_mul_apply_root (x : M) (j : ι) :
   rw [reflection_apply, reflection_apply_self, LinearMap.map_sub₂, LinearMap.map_smul₂, map_neg,
     map_neg, smul_eq_mul] at h
   linear_combination -h
+
+/-- **An invariant form of a root system is determined by the squared lengths of the roots.** -/
+theorem eq_of_forall_apply_root_self_eq [IsDomain R] [NeZero (2 : R)] [P.IsRootSystem]
+    {B₁ B₂ : P.InvariantForm}
+    (h : ∀ i : ι, B₁.form (P.root i) (P.root i) = B₂.form (P.root i) (P.root i)) : B₁ = B₂ := by
+  ext : 1
+  refine LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P)) fun i ↦
+    LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P)) fun j ↦ ?_
+  have h1 := B₁.two_mul_apply_root_root i j
+  have h2 := B₂.two_mul_apply_root_root i j
+  exact mul_left_cancel₀ (two_ne_zero (α := R)) (by rw [h1, h2, h j])
 
 /-- **A raising root between vectors of the same length.** Let `x` and `y` have the same length
 for an invariant form, and let `y - x`, of positive length, be a nonnegative combination

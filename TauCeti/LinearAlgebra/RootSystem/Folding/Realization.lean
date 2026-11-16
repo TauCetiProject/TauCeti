@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
 import Mathlib.LinearAlgebra.RootSystem.Basic
+import TauCeti.LinearAlgebra.FixedSubmodule
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
@@ -386,16 +387,9 @@ private theorem indexEquiv_comm_of_weightMap_comm (e : P.Equiv P₂)
 /-- Restriction of an intertwining weight equivalence to the fixed submodules. -/
 private noncomputable def fixedSubmoduleEquiv (e : P.Equiv P₂)
     (hσ : ∀ x, e.weightMap (σ.weightMap x) = σ₂.weightMap (e.weightMap x)) :
-    LinearMap.fixedSubmodule σ.weightMap ≃ₗ[R] LinearMap.fixedSubmodule σ₂.weightMap where
-  toFun x := ⟨e.weightMap x.1, LinearMap.mem_fixedSubmodule_iff.mpr <| by
-    rw [← hσ, LinearMap.mem_fixedSubmodule_iff.mp x.2]⟩
-  invFun y := ⟨e.weightEquiv.symm y.1, LinearMap.mem_fixedSubmodule_iff.mpr <| by
-    apply e.bijective_weightMap.injective
-    rw [hσ, Equiv.weightMap_weightEquiv_symm, LinearMap.mem_fixedSubmodule_iff.mp y.2]⟩
-  left_inv x := Subtype.ext (e.weightEquiv_symm_weightMap x.1)
-  right_inv y := Subtype.ext (e.weightMap_weightEquiv_symm y.1)
-  map_add' x y := Subtype.ext (map_add e.weightMap x.1 y.1)
-  map_smul' c x := Subtype.ext (map_smul e.weightMap c x.1)
+    LinearMap.fixedSubmodule σ.weightMap ≃ₗ[R] LinearMap.fixedSubmodule σ₂.weightMap :=
+  e.weightEquiv.fixedSubmoduleCongr (LinearMap.ext fun x ↦ by
+    simpa [LinearMap.comp_apply, Equiv.weightEquiv_apply] using hσ x)
 
 variable [Finite ι] [Finite ι₂] {b : P.Base} {b₂ : P₂.Base}
 
@@ -446,7 +440,8 @@ noncomputable def map (F : P.OrbitSumRealization b σ) (e : P.Equiv P₂)
     simp
   root_eq i := by
     obtain ⟨j, rfl⟩ := (foldedIndicesEquiv e hσ).surjective i
-    simp [mapPairing, RootPairing.map, fixedSubmoduleEquiv, foldedIndicesEquiv, F.root_eq]
+    simp [mapPairing, RootPairing.map, fixedSubmoduleEquiv, foldedIndicesEquiv,
+      LinearEquiv.fixedSubmoduleCongr_apply, Equiv.weightEquiv_apply, F.root_eq]
   base_eq i := by
     classical
     have hcomm := indexEquiv_comm_of_weightMap_comm e hσ
@@ -484,7 +479,8 @@ theorem coe_equivOfEquiv_weightMap (x : LinearMap.fixedSubmodule σ.weightMap) :
     (((F₁.equivOfEquiv F₂ e hσ hb).weightMap x : LinearMap.fixedSubmodule σ₂.weightMap) : M₂) =
       e.weightMap (x : M) := by
   obtain rfl : F₂ = F₁.map e hσ hb := Subsingleton.elim _ _
-  rfl
+  simp [equivOfEquiv, mapPairingEquiv, equivMap, fixedSubmoduleEquiv,
+    LinearEquiv.fixedSubmoduleCongr_apply, Equiv.weightEquiv_apply]
 
 @[simp]
 theorem coe_equivOfEquiv_indexEquiv (i : P.foldedIndices σ) :
