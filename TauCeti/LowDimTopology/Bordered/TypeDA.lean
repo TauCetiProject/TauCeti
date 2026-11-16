@@ -223,8 +223,9 @@ private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngrade
       fun y => dM (P.boxAct dM n a φ y) := by
     rw [Finset.sum_eq_single (Fin.last n) (fun k _ hk => ite_eq_right (by
       have := Fin.val_lt_last hk; omega)) (by simp),
-      ite_eq_left (by rw [Fin.val_last, Nat.sub_self])]
-    rfl
+      ite_eq_left (by rw [Fin.val_last, Nat.sub_self]), boxAct_apply, boxAct_apply,
+      P.coeff_eq_of_eq (b := fun l => a ⟨l, l.isLt.trans_le (Fin.last n).is_le⟩) (Fin.val_last n)
+        fun l => congrArg a (Fin.ext rfl), Fin.val_last]
   -- Only the first composite has `m₁` inside.
   have hfirst : ∑ k : Fin (n + 1),
       continuationMap R M (P.coeff (n - k) fun l => a ⟨k + l, lt_tsub_iff_left.mp l.isLt⟩)
@@ -278,9 +279,11 @@ noncomputable def boxModule {dM : M →ₗ[R] M} (hM : IsUngradedDGRightModule d
           LinearMap.sum_apply]
         refine Finset.sum_congr rfl fun l _ => ?_
         rw [boxAct_apply, ite_eq_right (Nat.pos_iff_ne_zero.mp l.pos), zero_add]
-    rw [hcomp, hdiff, hmul, add_self_eq_zero_of_charTwo R, add_zero, ← LinearMap.add_apply,
-      ← LinearMap.add_apply, ← LinearMap.add_apply, ← continuationMap_add, ← continuationMap_add,
-      ← continuationMap_add, P.stasheff, continuationMap_zero, LinearMap.zero_apply]
+    rw [hcomp, hdiff, hmul, add_self_eq_zero_of_charTwo R, add_zero]
+    calc _ = continuationMap R M (typeDAComp P.coeff n a + (P.coeff n a).map dB +
+          ungradedStasheffDiff P.coeff dA n a + ungradedStasheffMul P.coeff n a) φ := by
+          simp only [continuationMap_add, LinearMap.add_apply]
+      _ = 0 := by rw [P.stasheff, continuationMap_zero, LinearMap.zero_apply]
 
 end BoxModule
 
@@ -354,6 +357,7 @@ private theorem boxModule_act (hM : IsUngradedDGRightModule dB dM) (n : ℕ) :
   (rfl)
 
 /-- The operations of `M ⊠ P`: `m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a) = ψ ⬝ δₙ(a)`, `n ≥ 1`. -/
+@[simp]
 theorem boxModule_act_apply (hM : IsUngradedDGRightModule dB dM) (n : ℕ) (a : Fin n → A)
     (ψ : Y → M) :
     (P.boxModule hM).act n a ψ =
@@ -566,8 +570,6 @@ private theorem identityCoeff_stasheff_two [Fintype S] [CharP R 2] (hιι : ∀ 
     typeDAComp (identityCoeff (R := R) ι) 2 a + (identityCoeff (R := R) ι 2 a).map d +
       ungradedStasheffDiff (identityCoeff (R := R) ι) d 2 a +
         ungradedStasheffMul (identityCoeff (R := R) ι) 2 a = 0 := by
-  have hc (k : ℕ) (hk : k ≠ 1) (b : Fin k → A) : identityCoeff (R := R) ι k b = 0 :=
-    identityCoeff_apply_eq_zero hk b
   -- `∑ u, ι s * a₀ * ι u * ι u * a₁ * ι t = ι s * a₀ * a₁ * ι t`, the product term.
   have hmid : (identityCoeff (R := R) ι ((1 : Fin 3) : ℕ) fun l => a ⟨l, by omega⟩) *
       (identityCoeff (R := R) ι (2 - ((1 : Fin 3) : ℕ)) fun l =>
@@ -587,8 +589,8 @@ private theorem identityCoeff_stasheff_two [Fintype S] [CharP R 2] (hιι : ∀ 
   -- Only the composite `δ₁ * δ₁` and the product term survive, and they cancel.
   rw [typeDAComp_def, Fin.sum_univ_three, hmid, ungradedStasheffDiff_def,
     ungradedStasheffMul_succ, Fin.sum_univ_one, hmul]
-  simp only [ne_eq, hc, Fin.val_zero, Fin.val_two, Nat.sub_zero, Nat.sub_self, zero_ne_one,
-    OfNat.ofNat_ne_one, not_false_eq_true, Matrix.mul_zero,
+  simp only [ne_eq, identityCoeff_apply_eq_zero, Fin.val_zero, Fin.val_two, Nat.sub_zero,
+    Nat.sub_self, zero_ne_one, OfNat.ofNat_ne_one, not_false_eq_true, Matrix.mul_zero,
     Matrix.map_zero _ (map_zero d), Finset.sum_const_zero, zero_add, add_zero]
   exact add_self_eq_zero_of_charTwo R _
 
@@ -613,19 +615,17 @@ noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) =
   stasheff n a := by
     -- The relation of length one is the Leibniz rule for `ι s * a * ι t`, and that of length two
     -- is `∑ u, ι s * a * ι u * ι u * b * ι t = ι s * a * b * ι t`.
-    -- The only nonzero operation has one algebra input.
-    have hc (k : ℕ) (hk : k ≠ 1) (b : Fin k → A) : identityCoeff (R := R) ι k b = 0 :=
-      identityCoeff_apply_eq_zero hk b
-    -- So composites vanish except in length two.
+    -- The only nonzero operation has one algebra input, so composites vanish except in length two.
     have hcomp (n : ℕ) (hn : n ≠ 2) (a : Fin n → A) :
         typeDAComp (identityCoeff (R := R) ι) n a = 0 :=
       Finset.sum_eq_zero fun k _ => by
         rcases eq_or_ne (k : ℕ) 1 with hk | hk
-        · rw [hc (n - k) (by omega), Matrix.mul_zero]
-        · rw [hc k hk, Matrix.zero_mul]
+        · rw [identityCoeff_apply_eq_zero (n := n - k) (by omega), Matrix.mul_zero]
+        · rw [identityCoeff_apply_eq_zero hk, Matrix.zero_mul]
     match n with
     | 0 =>
-      simp [hcomp 0 (by decide), ungradedStasheffDiff_def, hc 0 (by decide)]
+      simp [hcomp 0 (by decide), ungradedStasheffDiff_def,
+        identityCoeff_apply_eq_zero (n := 0) (by decide)]
     | 1 =>
       have hmap : (identityCoeff (R := R) ι 1 a).map d =
           identityCoeff (R := R) ι 1 fun _ => d (a 0) := by
@@ -635,13 +635,15 @@ noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) =
       have hupd : Function.update a 0 (d (a 0)) = fun _ => d (a 0) :=
         funext fun l => by rw [Fin.fin_one_eq_zero l, Function.update_self]
       rw [hcomp 1 (by decide), hmap, ungradedStasheffDiff_def, Fin.sum_univ_one, hupd,
-        ungradedStasheffMul_succ, Finset.sum_eq_zero fun l _ => hc 0 (by decide) _, zero_add,
-        add_zero, add_self_eq_zero_of_charTwo R]
+        ungradedStasheffMul_succ,
+        Finset.sum_eq_zero fun l _ => identityCoeff_apply_eq_zero (by decide) _, zero_add, add_zero,
+        add_self_eq_zero_of_charTwo R]
     | 2 => exact identityCoeff_stasheff_two hιι hsum a
     | n + 3 =>
-      rw [hcomp (n + 3) (by omega), hc _ (by omega), ungradedStasheffDiff_def,
-        ungradedStasheffMul_succ, Finset.sum_eq_zero fun l _ => hc _ (by omega) _,
-        Finset.sum_eq_zero fun l _ => hc _ (by omega) _]
+      rw [hcomp (n + 3) (by omega), identityCoeff_apply_eq_zero (n := n + 3) (by omega),
+        ungradedStasheffDiff_def, ungradedStasheffMul_succ,
+        Finset.sum_eq_zero fun l _ => identityCoeff_apply_eq_zero (by omega) _,
+        Finset.sum_eq_zero fun l _ => identityCoeff_apply_eq_zero (by omega) _]
       simp
 
 @[simp]
@@ -681,15 +683,15 @@ theorem boxCoeff_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 
     Finset.sum_range_one, hzero (by decide), Matrix.zero_apply, zero_add, N.iteratedCoeff_one,
     PiTensorProduct.lift.tprod, identity_coeff_one_apply]
   -- `ι s * δ * ι t` with `δ = ι (idem x) * δ * ι (idem x')`.
-  conv_lhs => rw [← N.coeff_mul_idem, ← N.idem_mul_coeff]
   by_cases h₁ : p.1 = N.idem p.2
   · by_cases h₂ : q.1 = N.idem q.2
-    · rw [ite_eq_left ⟨h₁, h₂⟩, h₁, h₂, ← mul_assoc, ← mul_assoc, hιι, mul_assoc, hιι,
-        N.idem_mul_coeff, N.coeff_mul_idem]
-    · rw [ite_eq_right fun h => h₂ h.2, mul_assoc, mul_assoc, hιo _ _ (Ne.symm h₂), mul_zero,
-        mul_zero]
-  · rw [ite_eq_right fun h => h₁ h.1, ← mul_assoc, ← mul_assoc, hιo _ _ h₁, zero_mul, zero_mul,
-      zero_mul]
+    · rw [ite_eq_left ⟨h₁, h₂⟩, h₁, h₂, N.idem_mul_coeff, N.coeff_mul_idem]
+    · -- `δ = δ * ι (idem x')` and `ι (idem x') * ι t = 0`.
+      rw [ite_eq_right fun h => h₂ h.2, ← N.coeff_mul_idem]
+      simp only [mul_assoc, hιo _ _ (Ne.symm h₂), mul_zero]
+  · -- `δ = ι (idem x) * δ` and `ι s * ι (idem x) = 0`.
+    rw [ite_eq_right fun h => h₁ h.1, ← N.idem_mul_coeff]
+    simp only [← mul_assoc, hιo _ _ h₁, zero_mul]
 
 end Identity
 
