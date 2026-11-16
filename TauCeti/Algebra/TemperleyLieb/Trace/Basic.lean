@@ -43,8 +43,8 @@ not assert the existence of a Markov trace at every loop parameter.
   `TauCeti.TemperleyLieb.IsMarkovTrace.unique`: uniqueness of bounded and full Markov traces.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_isMarkovTraceUpTo`: a full Markov trace agrees up to
   level `N` with any Markov trace defined up to `N` strands.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.eq_zero_of_succ`: when the loop parameter vanishes, every
-  Markov trace vanishes on one or more strands.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.apply_succ_eq_zero_of_eq_zero`: when the loop parameter
+  vanishes, every Markov trace vanishes on one or more strands.
 
 ## References
 
@@ -142,15 +142,6 @@ namespace IsMarkovTrace
 
 variable {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
 
-/-- The Markov property for a last generator sandwiched between two included elements.
-This is the trace reduction for the capped terms in the tower's normal form. -/
-@[simp]
-theorem map_strandIncl_mul_e_last_mul (htr : IsMarkovTrace R δ tr) {n : ℕ}
-    (a b : TemperleyLieb R δ (n + 1)) :
-    tr (n + 2) (strandIncl a * e δ (Fin.last n) * strandIncl b) = tr (n + 1) (a * b) := by
-  rw [htr.map_mul_comm, ← mul_assoc, ← map_mul, htr.map_strandIncl_mul_e_last,
-    htr.map_mul_comm]
-
 /-- Every Markov trace on the full tower restricts to a Markov trace up to `N` strands. -/
 theorem isMarkovTraceUpTo (htr : IsMarkovTrace R δ tr) (N : ℕ) :
     IsMarkovTraceUpTo R δ N (fun n _ ↦ tr n) where
@@ -158,6 +149,14 @@ theorem isMarkovTraceUpTo (htr : IsMarkovTrace R δ tr) (N : ℕ) :
   map_mul_comm n _ := htr.map_mul_comm n
   map_strandIncl n _ := htr.map_strandIncl n
   map_strandIncl_mul_e_last n _ := htr.map_strandIncl_mul_e_last n
+
+/-- The Markov property for a last generator sandwiched between two included elements.
+This is the trace reduction for the capped terms in the tower's normal form. -/
+@[simp]
+theorem map_strandIncl_mul_e_last_mul (htr : IsMarkovTrace R δ tr) {n : ℕ}
+    (a b : TemperleyLieb R δ (n + 1)) :
+    tr (n + 2) (strandIncl a * e δ (Fin.last n) * strandIncl b) = tr (n + 1) (a * b) :=
+  (htr.isMarkovTraceUpTo (n + 2)).map_strandIncl_mul_e_last_mul le_rfl a b
 
 /-- A full Markov trace agrees on at most `N` strands with any Markov trace defined up to `N`
 strands. -/
@@ -177,8 +176,8 @@ theorem unique {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMa
 
 /-- When the loop parameter vanishes, every unnormalized Markov trace vanishes on one or more
 strands. -/
-theorem eq_zero_of_succ {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
-    (htr : IsMarkovTrace R δ tr) (hδ : δ = 0) (n : ℕ) : tr (n + 1) = 0 := by
+theorem apply_succ_eq_zero_of_eq_zero (htr : IsMarkovTrace R δ tr) (hδ : δ = 0) (n : ℕ) :
+    tr (n + 1) = 0 := by
   subst hδ
   let tr' : ∀ m : ℕ, TemperleyLieb R 0 m →ₗ[R] R := fun
     | 0 => tr 0

@@ -413,14 +413,8 @@ theorem pathRep_strandIncl_apply {m : ℕ}
     pathRep G v₀ hr' hδ' (strandIncl x) s t =
       extendLast (α := fun _ ↦ V)
         (pathRep G v₀
-          (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (by omega))))
-          (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (by omega)))) x) s t := by
-  let hr₁ : ∀ v, G.edist v₀ v ≤ (m + 1 : ℕ) → r v ≠ 0 :=
-    fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (by omega)))
-  let hδ₁ : ∀ v, G.edist v₀ v < (m + 1 : ℕ) → ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2 :=
-    fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (by omega)))
-  change pathRep G v₀ hr' hδ' (strandIncl x) s t =
-    extendLast (α := fun _ ↦ V) (pathRep G v₀ hr₁ hδ₁ x) s t
+          (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (m + 1).le_succ)))
+          (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (m + 1).le_succ))) x) s t := by
   induction x using TemperleyLieb.induction generalizing s t with
   | e i =>
     rw [strandIncl_e, pathRep_e, pathRep_e, ← pathGenerator_castSucc_apply hs]
@@ -434,7 +428,7 @@ theorem pathRep_strandIncl_apply {m : ℕ}
     by_cases hu : G.IsWalkFrom v₀ u
     · rw [hy hu]
     -- A row of a walk has no entry in the column of a non-walk.
-    rw [extendLast_apply, ite_eq_right_iff.2 fun hlast ↦ pathRep_apply_eq_zero hr₁ hδ₁ x
+    rw [extendLast_apply, ite_eq_right_iff.2 fun hlast ↦ pathRep_apply_eq_zero _ _ x
       fun h ↦ hu ((isWalkFrom_iff_init u).2 ⟨h.1.1 ((isWalkFrom_iff_init s).1 hs).1, by
         rw [← h.2, ← hlast]; exact ((isWalkFrom_iff_init s).1 hs).2⟩), zero_mul, zero_mul]
 
@@ -478,9 +472,9 @@ private theorem sum_pathWeight {δ : K} (hr₀ : r v₀ ≠ 0) :
       rw [Fin.fin_one_eq_zero i]; exact h.apply_zero)]
   | m + 1, hδ => by
     rw [Fintype.sum_fin_snoc, Finset.sum_congr rfl fun t _ ↦ sum_pathWeight_snoc
-        (fun v hv ↦ hδ v (hv.trans_lt (Nat.cast_lt.2 (by omega)))) t,
+        (fun v hv ↦ hδ v (hv.trans_lt (Nat.cast_lt.2 m.lt_succ_self))) t,
       ← Finset.mul_sum,
-      sum_pathWeight hr₀ (fun v hv ↦ hδ v (hv.trans (Nat.cast_lt.2 (by omega)))),
+      sum_pathWeight hr₀ (fun v hv ↦ hδ v (hv.trans (Nat.cast_lt.2 m.lt_succ_self))),
       pow_succ, mul_comm]
 
 end Weight
@@ -524,17 +518,18 @@ theorem pathTrace_mul_comm (x y : TemperleyLieb K δ n) :
   rw [pathTrace_apply, pathTrace_apply, map_mul, map_mul, ← mul_assoc,
     (commute_diagonal_pathWeight_pathRep hr hδ x).eq, mul_assoc, trace_mul_comm, mul_assoc]
 
-/-- On the diagonal weighted by walks, the path representation of `strandIncl x` agrees with
-`extendLast` of the path representation of `x`. -/
-private theorem pathWeight_mul_pathRep_strandIncl {m : ℕ}
+/-- Left-multiplying by the diagonal walk-weight matrix, the path representation of `strandIncl x`
+agrees with `extendLast` of the path representation of `x`. -/
+private theorem diagonal_pathWeight_mul_pathRep_strandIncl {m : ℕ}
+    {hr₁ : ∀ v, G.edist v₀ v ≤ (m + 1 : ℕ) → r v ≠ 0}
+    {hδ₁ : ∀ v, G.edist v₀ v < (m + 1 : ℕ) → ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2}
     (hr' : ∀ v, G.edist v₀ v ≤ (m + 2 : ℕ) → r v ≠ 0)
     (hδ' : ∀ v, G.edist v₀ v < (m + 2 : ℕ) → ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
-    (x : TemperleyLieb K δ (m + 1)) (s t : Fin (m + 3) → V) :
-    pathWeight G v₀ r s * pathRep G v₀ hr' hδ' (strandIncl x) s t =
-      pathWeight G v₀ r s * extendLast (α := fun _ ↦ V)
-        (pathRep G v₀
-          (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (by omega))))
-          (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (by omega)))) x) s t := by
+    (x : TemperleyLieb K δ (m + 1)) :
+    diagonal (pathWeight G v₀ r) * pathRep G v₀ hr' hδ' (strandIncl x) =
+      diagonal (pathWeight G v₀ r) * extendLast (α := fun _ ↦ V) (pathRep G v₀ hr₁ hδ₁ x) := by
+  ext s t
+  simp only [diagonal_mul]
   by_cases hs : G.IsWalkFrom v₀ s
   · rw [pathRep_strandIncl_apply hr' hδ' x hs]
   · rw [pathWeight_def, ite_eq_right hs, zero_mul, zero_mul]
@@ -547,40 +542,39 @@ theorem pathTrace_strandIncl {m : ℕ}
     (x : TemperleyLieb K δ (m + 1)) :
     pathTrace G v₀ hr' hδ' (strandIncl x) =
       δ * pathTrace G v₀
-        (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (by omega))))
-        (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (by omega)))) x := by
-  simp only [pathTrace_apply, trace, Matrix.diag_apply, diagonal_mul]
-  rw [Finset.sum_congr rfl fun s _ ↦ pathWeight_mul_pathRep_strandIncl hr' hδ' x s s,
-    Fintype.sum_fin_snoc, Finset.mul_sum]
+        (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (m + 1).le_succ)))
+        (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (m + 1).le_succ))) x := by
+  suffices ∀ {hr₁ hδ₁},
+      trace (diagonal (pathWeight G v₀ r) * extendLast (α := fun _ ↦ V) (pathRep G v₀ hr₁ hδ₁ x)) =
+        δ * trace (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr₁ hδ₁ x) by
+    rw [pathTrace_apply, pathTrace_apply, ← this]
+    exact congr_arg trace (diagonal_pathWeight_mul_pathRep_strandIncl hr' hδ' x)
+  intro hr₁ hδ₁
+  simp only [trace, Matrix.diag_apply, diagonal_mul]
+  rw [Fintype.sum_fin_snoc, Finset.mul_sum]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
   simp only [extendLast_apply, Fin.init_snoc, ite_true]
   rw [← Finset.sum_mul,
-    sum_pathWeight_snoc (fun v hv ↦ hδ' v (hv.trans_lt (Nat.cast_lt.2 (by omega)))), mul_assoc]
+    sum_pathWeight_snoc (fun v hv ↦ hδ' v (hv.trans_lt (Nat.cast_lt.2 (m + 1).lt_succ_self))),
+    mul_assoc]
 
 /-- The weighted partial trace over the last step of walks, against the generator matrix capping
 the last step with the previous one, recovers the weighted trace one level down. -/
 private theorem trace_pathGenerator_mul_pathRep_strandIncl {m : ℕ}
+    {hr₁ : ∀ v, G.edist v₀ v ≤ (m + 1 : ℕ) → r v ≠ 0}
+    {hδ₁ : ∀ v, G.edist v₀ v < (m + 1 : ℕ) → ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2}
     (hr' : ∀ v, G.edist v₀ v ≤ (m + 2 : ℕ) → r v ≠ 0)
     (hδ' : ∀ v, G.edist v₀ v < (m + 2 : ℕ) → ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
     (x : TemperleyLieb K δ (m + 1))
     {a b c : Fin (m + 3)} (ha : a.val = m) (hb : b.val = m + 1) (hc : c.val = m + 2) :
     trace (pathGenerator G v₀ r a b c *
         (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr' hδ' (strandIncl x))) =
-      trace (diagonal (pathWeight G v₀ r) *
-        pathRep G v₀
-          (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (by omega))))
-          (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (by omega)))) x) := by
-  let hr₁ : ∀ v, G.edist v₀ v ≤ (m + 1 : ℕ) → r v ≠ 0 :=
-    fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (by omega)))
-  let hδ₁ : ∀ v, G.edist v₀ v < (m + 1 : ℕ) → ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2 :=
-    fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (by omega)))
-  change trace (pathGenerator G v₀ r a b c *
-      (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr' hδ' (strandIncl x))) =
-    trace (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr₁ hδ₁ x)
+      trace (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr₁ hδ₁ x) := by
   obtain ⟨a', rfl, ha'⟩ : ∃ a' : Fin (m + 2), a = a'.castSucc ∧ a'.val = m :=
     ⟨⟨m, by omega⟩, Fin.ext ha, rfl⟩
   obtain rfl : b = (Fin.last (m + 1)).castSucc := Fin.ext hb
   obtain rfl : c = Fin.last (m + 2) := Fin.ext hc
+  rw [diagonal_pathWeight_mul_pathRep_strandIncl (hr₁ := hr₁) (hδ₁ := hδ₁) hr' hδ' x]
   simp only [trace, Matrix.diag_apply, pathGenerator_mul_apply, diagonal_mul]
   rw [Fintype.sum_fin_snoc]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
@@ -598,11 +592,11 @@ private theorem trace_pathGenerator_mul_pathRep_strandIncl {m : ℕ}
   rw [Fin.snoc_castSucc]
   rw [Finset.sum_eq_single_of_mem (t (Fin.last (m + 1))) ((G.mem_neighborFinset _ _).2 hadj)
     fun z _ hz ↦ by
-      rw [← Fin.snoc_update, pathWeight_mul_pathRep_strandIncl hr' hδ' x, extendLast_apply,
-        Fin.init_snoc, Fin.init_snoc, Fin.snoc_last, Fin.snoc_last, ite_eq_left rfl,
+      rw [← Fin.snoc_update, extendLast_apply, Fin.init_snoc, Fin.init_snoc, Fin.snoc_last,
+        Fin.snoc_last, ite_eq_left rfl,
         pathRep_apply_eq_zero hr₁ hδ₁ x fun h ↦ hz (by simpa using h.2), mul_zero, mul_zero]]
-  rw [update_eq_self_iff.2 (Fin.snoc_castSucc ..).symm, pathWeight_mul_pathRep_strandIncl hr' hδ' x,
-    extendLast_apply, ite_eq_left rfl, Fin.init_snoc, pathWeight_def, pathWeight_def,
+  rw [update_eq_self_iff.2 (Fin.snoc_castSucc ..).symm, extendLast_apply, ite_eq_left rfl,
+    Fin.init_snoc, pathWeight_def, pathWeight_def,
     ite_eq_left ((isWalkFrom_snoc t _).2 ⟨ht, hadj.symm⟩), ite_eq_left ht, Fin.snoc_last]
   have := hr' (t a') ((ht.edist_apply_le a').trans (Nat.cast_le.2 (by omega)))
   field_simp
@@ -616,8 +610,8 @@ theorem pathTrace_strandIncl_mul_e_last {m : ℕ}
     (x : TemperleyLieb K δ (m + 1)) :
     pathTrace G v₀ hr' hδ' (strandIncl x * e δ (Fin.last m)) =
       pathTrace G v₀
-        (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (by omega))))
-        (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (by omega)))) x := by
+        (fun v hv ↦ hr' v (hv.trans (Nat.cast_le.2 (m + 1).le_succ)))
+        (fun v hv ↦ hδ' v (hv.trans_le (Nat.cast_le.2 (m + 1).le_succ))) x := by
   rw [pathTrace_apply, pathTrace_apply, map_mul, pathRep_e, ← mul_assoc, trace_mul_comm]
   exact trace_pathGenerator_mul_pathRep_strandIncl hr' hδ' x rfl rfl rfl
 

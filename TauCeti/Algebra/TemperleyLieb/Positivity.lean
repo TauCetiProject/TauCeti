@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.QuantumDimension
-public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.QuantumGroups.QuantumInteger.Real
 public import TauCeti.RingTheory.TraceFunctional.Positive
 public import Mathlib.Analysis.Complex.Order
@@ -14,7 +13,6 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 
 import TauCeti.Algebra.TemperleyLieb.PathModel
 import TauCeti.Algebra.TemperleyLieb.SpinPositivity
-import TauCeti.Analysis.StarAlgebra.CauchySchwarz
 import TauCeti.Combinatorics.SimpleGraph.PathGraph
 
 /-!
@@ -44,11 +42,15 @@ vertex `0`, walks of length `n` only invoke the eigenvector equation `[t] + [t +
 vertices `t < n`, where it holds identically, and bounded Markov uniqueness up to `n` strands
 identifies the path-model trace with `tr n`.
 
-Whenever the form at level `n` is positive semidefinite (at admissible `δ` for all `n`, or at
-inadmissible `δ > 0` for `n < k`), `tr n` bundles into a `TauCeti.StarPositiveFunctional`: Cauchy–
-Schwarz holds, and the zero set `{x | tr n (x⋆ * x) = 0}` coincides with the trace radical.
-Conversely, pulling `((δ : ℂ) ^ n)⁻¹ * tr n` back along star-multiplicative maps from positive
-functionals forces `δ ∈ jonesLoopParameters` without any injectivity assumption.
+Whenever the form at level `n` is positive semidefinite (for instance at admissible `δ` for all
+`n`, or at inadmissible `δ > 0` for `n < k`), Cauchy–Schwarz holds by
+`LinearMap.norm_map_star_mul_sq_le` and the zero set `{x | tr n (x⋆ * x) = 0}` coincides with the
+trace radical by
+`TauCeti.TemperleyLieb.IsMarkovTrace.mem_traceRadical_iff_map_star_mul_self_eq_zero`;
+at admissible `δ`, `TauCeti.TemperleyLieb.IsMarkovTrace.starPositiveFunctional` bundles `tr n` into
+a `TauCeti.StarPositiveFunctional`. Conversely, for `δ > 0`, pulling `((δ : ℂ) ^ n)⁻¹ * tr n` back
+along star-multiplicative maps from positive functionals forces `δ ∈ jonesLoopParameters` without
+any injectivity assumption.
 
 The results are stated for an arbitrary Markov trace, so they apply to the spin-model trace
 `TauCeti.TemperleyLieb.markovTrace` through `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`.
@@ -81,9 +83,9 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   `TauCeti.TemperleyLieb.markovTrace_nonneg_iff`: **Jones's positivity theorem**.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_lt_floor`,
   `TauCeti.TemperleyLieb.markovTrace_nonneg_iff_lt_floor`: **the first bad level**.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.norm_map_star_mul_sq_le`,
-  `TauCeti.TemperleyLieb.IsMarkovTrace.mem_traceRadical_iff_map_star_mul_self_eq_zero`: Cauchy–
-  Schwarz and the quadratic characterization of the trace radical.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.mem_traceRadical_iff_map_star_mul_self_eq_zero`: quadratic
+  characterization `{x | tr n (x⋆ * x) = 0}` of the trace radical when the form at level `n` is
+  positive semidefinite.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_jonesLoopParameters_of_pullback`: **pullback criterion**
   for admissibility.
 
@@ -317,6 +319,8 @@ end StarRing
 
 open scoped ComplexOrder
 
+section RealLoop
+
 variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
 
@@ -457,45 +461,25 @@ theorem toLinearMap_starPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) t
     (htr.starPositiveFunctional hδ n).toLinearMap = tr n :=
   (rfl)
 
-/-- **Cauchy–Schwarz inequality** for the Hermitian form of a Markov trace at an admissible loop
-parameter. -/
-theorem norm_map_star_mul_sq_le (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) {n : ℕ} (x y : TemperleyLieb ℂ (δ : ℂ) n) :
-    ‖tr n (star x * y)‖ ^ 2 ≤ ‖tr n (star x * x)‖ * ‖tr n (star y * y)‖ :=
-  (tr n).norm_map_star_mul_sq_le
-    (htr.map_star_mul_self_nonneg_of_mem_jonesLoopParameters hδ) x y
+end RealLoop
 
-/-- **Cauchy–Schwarz inequality** for the Hermitian form of a Markov trace below the first bad
-level. -/
-theorem norm_map_star_mul_sq_le_of_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : 0 < δ)
-    (hδJ : δ ∉ jonesLoopParameters) {n : ℕ} (hn : n < ⌊π / arccos (δ / 2)⌋₊)
-    (x y : TemperleyLieb ℂ (δ : ℂ) n) :
-    ‖tr n (star x * y)‖ ^ 2 ≤ ‖tr n (star x * x)‖ * ‖tr n (star y * y)‖ :=
-  (tr n).norm_map_star_mul_sq_le (htr.map_star_mul_self_nonneg_of_lt_floor hδ hδJ hn) x y
-
-/-- At an admissible loop parameter, the trace radical on `n` strands is precisely the null space
-`{x | tr n (x⋆ * x) = 0}` of the Hermitian form. -/
-theorem mem_traceRadical_iff_map_star_mul_self_eq_zero (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
-    x ∈ (tr n).traceRadical (htr.map_mul_comm n) ↔ tr n (star x * x) = 0 :=
-  (htr.starPositiveFunctional hδ n).mem_traceRadical_iff_apply_star_mul_self_eq_zero
-    (htr.map_mul_comm n) x
-
-/-- Below the first bad level at an inadmissible positive loop parameter, the trace radical on `n`
-strands is precisely the null space `{x | tr n (x⋆ * x) = 0}` of the Hermitian form. -/
-theorem mem_traceRadical_iff_map_star_mul_self_eq_zero_of_lt_floor
-    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : 0 < δ) (hδJ : δ ∉ jonesLoopParameters) {n : ℕ}
-    (hn : n < ⌊π / arccos (δ / 2)⌋₊) (x : TemperleyLieb ℂ (δ : ℂ) n) :
+/-- Whenever the Hermitian form of a Markov trace on `n` strands is positive semidefinite, the
+trace radical on `n` strands is precisely its null space `{x | tr n (x⋆ * x) = 0}`. -/
+theorem mem_traceRadical_iff_map_star_mul_self_eq_zero {δ : ℂ} [Fact (IsSelfAdjoint δ)]
+    {tr : ∀ n : ℕ, TemperleyLieb ℂ δ n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ δ tr) {n : ℕ}
+    (h : ∀ x : TemperleyLieb ℂ δ n, 0 ≤ tr n (star x * x)) (x : TemperleyLieb ℂ δ n) :
     x ∈ (tr n).traceRadical (htr.map_mul_comm n) ↔ tr n (star x * x) = 0 :=
   StarPositiveFunctional.mem_traceRadical_iff_apply_star_mul_self_eq_zero
-    ⟨tr n, htr.map_star_mul_self_nonneg_of_lt_floor hδ hδJ hn⟩ (htr.map_mul_comm n) x
+    ⟨tr n, h⟩ (htr.map_mul_comm n) x
 
 /-- **Pullback criterion for admissibility.** Let `δ > 0` and let `ρ n` be star-multiplicative
 maps from `TemperleyLieb ℂ (δ : ℂ) n` into star-equipped multiplicative types `B n` carrying
 maps `σ n : B n → ℂ` nonnegative on squares `b⋆ * b` such that
 `σ n (ρ n x) = ((δ : ℂ) ^ n)⁻¹ * tr n x` for every `n` and `x`. Then `δ` is an admissible loop
 parameter. Injectivity of `ρ n` is not required. -/
-theorem mem_jonesLoopParameters_of_pullback (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : 0 < δ)
+theorem mem_jonesLoopParameters_of_pullback {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
+    {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : 0 < δ)
     {B : ℕ → Type*} {F : ℕ → Type*} [∀ n, Mul (B n)] [∀ n, Star (B n)]
     [∀ n, FunLike (F n) (TemperleyLieb ℂ (δ : ℂ) n) (B n)]
     [∀ n, MulHomClass (F n) (TemperleyLieb ℂ (δ : ℂ) n) (B n)]

@@ -91,6 +91,17 @@ theorem qInt_one (δ : R) : qInt R δ 1 = 1 := by
 theorem qInt_two (δ : R) : qInt R δ 2 = δ := by
   simp [qInt_def]
 
+/-- `[3] = δ ^ 2 - 1`. -/
+theorem qInt_three (δ : R) : qInt R δ 3 = δ ^ 2 - 1 := by
+  simp [qInt_def, S_two]
+
+/-- `[4] = δ ^ 3 - 2 * δ`. -/
+theorem qInt_four (δ : R) : qInt R δ 4 = δ ^ 3 - 2 * δ := by
+  have h : ((4 : ℕ) : ℤ) - 1 = 1 + 2 := rfl
+  rw [qInt_def, h, S_add_two]
+  simp [S_two]
+  ring
+
 /-- The defining recurrence of the quantum integers: `[n + 2] = δ [n + 1] - [n]`. -/
 theorem qInt_add_two (δ : R) (n : ℕ) :
     qInt R δ (n + 2) = δ * qInt R δ (n + 1) - qInt R δ n := by
