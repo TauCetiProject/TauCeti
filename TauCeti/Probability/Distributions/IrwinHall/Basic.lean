@@ -14,8 +14,8 @@ public import TauCeti.Probability.Independence.ConvolutionPower
 The Irwin–Hall law of order `n` is the distribution of the sum of `n` independent unit-uniform
 variables. This file defines it using convolution powers, identifies the product-measure
 construction, and proves convolution by addition of orders, almost-sure bounds, and absolute
-continuity for positive orders. The totalized family is measurable in its natural-number order,
-and order zero is the point mass at zero.
+continuity for positive orders. The family is measurable in its natural-number order, and order
+zero is the point mass at zero.
 
 The convolution recursion provides the measure identity used to integrate successive uniform
 summands when calculating densities and cumulative probabilities.
