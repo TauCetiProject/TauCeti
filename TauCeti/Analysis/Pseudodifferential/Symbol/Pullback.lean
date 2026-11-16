@@ -223,6 +223,30 @@ private def coreFrequency (hL : ContDiff ℝ ∞ L) (j : Fin n) (a : Symbol n V 
 
 variable {κ}
 
+/-- The pointwise form of the left-inverse hypothesis `Linv y ∘ L y = id`. -/
+private theorem apply_apply_eq_self_of_comp_eq_id
+    (hLL : ∀ y, (Linv y).comp (L y) = ContinuousLinearMap.id ℝ _) (y ξ : CoordinateSpace n) :
+    Linv y (L y ξ) = ξ := by
+  rw [← ContinuousLinearMap.comp_apply, hLL, ContinuousLinearMap.id_apply]
+
+/-- On a compact set of points `y`, `‖L y ξ‖` and `‖ξ‖` are comparable uniformly in `y`: the norms
+of `L` and of its left inverse are bounded there. -/
+private theorem exists_norm_apply_le_and_norm_le (hL : Continuous L) (hLinv : Continuous Linv)
+    (hLL : ∀ y, (Linv y).comp (L y) = ContinuousLinearMap.id ℝ _)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ c, 1 ≤ c ∧ ∀ y ∈ K, ∀ ξ, ‖L y ξ‖ ≤ c * ‖ξ‖ ∧ ‖ξ‖ ≤ c * ‖L y ξ‖ := by
+  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hL.norm.continuousOn
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hLinv.norm.continuousOn
+  refine ⟨max 1 (max A B), le_max_left _ _, fun y hy ξ ↦ ⟨?_, ?_⟩⟩
+  · have hAy : ‖L y‖ ≤ max 1 (max A B) :=
+      (by simpa using hA _ hy : ‖L y‖ ≤ A).trans ((le_max_left A B).trans (le_max_right 1 _))
+    exact ((L y).le_opNorm ξ).trans (mul_le_mul_of_nonneg_right hAy (norm_nonneg _))
+  · have hBy : ‖Linv y‖ ≤ max 1 (max A B) :=
+      (by simpa using hB _ hy : ‖Linv y‖ ≤ B).trans ((le_max_right A B).trans (le_max_right 1 _))
+    calc ‖ξ‖ = ‖Linv y (L y ξ)‖ := by rw [apply_apply_eq_self_of_comp_eq_id hLL]
+      _ ≤ ‖Linv y‖ * ‖L y ξ‖ := (Linv y).le_opNorm _
+      _ ≤ max 1 (max A B) * ‖L y ξ‖ := mul_le_mul_of_nonneg_right hBy (norm_nonneg _)
+
 private theorem coordinateDeriv_coreCoeff_fst (hL : ContDiff ℝ ∞ L) (hLinv : ContDiff ℝ ∞ Linv)
     (hLL : ∀ y, (Linv y).comp (L y) = ContinuousLinearMap.id ℝ _) (a : Symbol n V W m)
     (j : Fin n) (x ξ : CoordinateSpace n) :
@@ -239,8 +263,7 @@ private theorem coordinateDeriv_coreCoeff_fst (hL : ContDiff ℝ ∞ L) (hLinv :
     ha.hasFDerivAt.comp x (hκ.prodMk hη)
   simp only [coordinateDeriv_cons, coordinateDeriv_nil, coreCoeff]
   rw [h.fderiv, ContinuousLinearMap.comp_apply, fderiv_apply_eq_sum_coordinateDeriv ha]
-  have hξ : Linv (κ x) (L (κ x) ξ) = ξ := by
-    simpa using congrArg (fun A ↦ A ξ) (hLL (κ x))
+  have hξ : Linv (κ x) (L (κ x) ξ) = ξ := apply_apply_eq_self_of_comp_eq_id hLL _ _
   simp only [coreSpatial, coefficient_add, Pi.add_apply, coefficient_sum, Finset.sum_apply]
   rw [coefficient_eulerTerm]
   simp [coefficient_smulSpatial, coefficient_spatialDeriv, coefficient_frequencyDeriv, hξ]
@@ -267,24 +290,11 @@ private theorem exists_norm_coreCoeff_le (hL : ContDiff ℝ ∞ L) (hLinv : Cont
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖coreCoeff κ L a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   have hK' := hK.image κ.continuous
   obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient _ hK'
-  obtain ⟨A, hA⟩ := hK'.exists_bound_of_continuousOn hL.continuous.norm.continuousOn
-  obtain ⟨B, hB⟩ := hK'.exists_bound_of_continuousOn hLinv.continuous.norm.continuousOn
-  set c := max 1 (max A B)
-  have hc : 1 ≤ c := le_max_left _ _
+  obtain ⟨c, hc, hcK⟩ :=
+    exists_norm_apply_le_and_norm_le hL.continuous hLinv.continuous hLL hK'
   refine ⟨C * c ^ |m|, by positivity, fun x hx ξ ↦ ?_⟩
   have hy : κ x ∈ κ '' K := Set.mem_image_of_mem _ hx
-  have hAy : ‖L (κ x)‖ ≤ c :=
-    (by simpa using hA _ hy : ‖L (κ x)‖ ≤ A).trans ((le_max_left A B).trans (le_max_right 1 _))
-  have hBy : ‖Linv (κ x)‖ ≤ c :=
-    (by simpa using hB _ hy : ‖Linv (κ x)‖ ≤ B).trans ((le_max_right A B).trans (le_max_right 1 _))
-  have h₁ : ‖L (κ x) ξ‖ ≤ c * ‖ξ‖ :=
-    ((L (κ x)).le_opNorm ξ).trans (mul_le_mul_of_nonneg_right hAy (norm_nonneg _))
-  have h₂ : ‖ξ‖ ≤ c * ‖L (κ x) ξ‖ := by
-    have hξ : Linv (κ x) (L (κ x) ξ) = ξ := by
-      simpa using congrArg (fun A ↦ A ξ) (hLL (κ x))
-    calc ‖ξ‖ = ‖Linv (κ x) (L (κ x) ξ)‖ := by rw [hξ]
-      _ ≤ ‖Linv (κ x)‖ * ‖L (κ x) ξ‖ := (Linv (κ x)).le_opNorm _
-      _ ≤ c * ‖L (κ x) ξ‖ := mul_le_mul_of_nonneg_right hBy (norm_nonneg _)
+  obtain ⟨h₁, h₂⟩ := hcK _ hy ξ
   calc ‖coreCoeff κ L a (x, ξ)‖ ≤ C * (1 + ‖L (κ x) ξ‖ ^ 2) ^ (m / 2) := hC _ hy _
     _ ≤ C * (c ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
       mul_le_mul_of_nonneg_left (one_add_norm_sq_rpow_le_of_norm_le_mul hc m h₁ h₂) hC0
@@ -343,6 +353,7 @@ theorem pullback_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
     pullback κ (inclusion h a) = inclusion h (pullback κ a) :=
   Symbol.ext (funext fun _ ↦ by simp)
 
+@[simp]
 theorem pullback_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
     (b : Symbol n W U m') (a : Symbol n V W m) :
     pullback κ (b.comp a) = (pullback κ b).comp (pullback κ a) :=
@@ -355,6 +366,7 @@ theorem pullback_refl (a : Symbol n V W m) :
   Symbol.ext (funext fun _ ↦ by simp [Diffeomorph.coe_refl, ContinuousLinearMap.adjoint_id])
 
 /-- **Functoriality**: pulling back along `κ₂ ∘ κ₁` is pulling back along `κ₂`, then along `κ₁`. -/
+@[simp]
 theorem pullback_trans
     (κ₁ κ₂ : CoordinateSpace n ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯
       CoordinateSpace n) (a : Symbol n V W m) :
@@ -415,6 +427,7 @@ theorem pullback_castDegree {m' : ℝ} (h : m = m') (a : HomogeneousSymbol E E V
     pullback κ (a.castDegree h) = (pullback κ a).castDegree h :=
   HomogeneousSymbol.ext (funext fun _ ↦ by simp)
 
+@[simp]
 theorem pullback_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
     (b : HomogeneousSymbol E E W U m') (a : HomogeneousSymbol E E V W m) :
     pullback κ (b.comp a) = (pullback κ b).comp (pullback κ a) :=
@@ -426,6 +439,7 @@ theorem pullback_refl (a : HomogeneousSymbol E E V W m) :
   HomogeneousSymbol.ext
     (funext fun _ ↦ by simp [Diffeomorph.coe_refl, ContinuousLinearMap.adjoint_id])
 
+@[simp]
 theorem pullback_trans (κ₁ κ₂ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E) (a : HomogeneousSymbol E E V W m) :
     pullback (κ₁.trans κ₂) a = pullback κ₁ (pullback κ₂ a) :=
   HomogeneousSymbol.ext (funext fun p ↦ by
@@ -464,21 +478,15 @@ private theorem isSmoothing_pullback_cutoffSymbol_sub (χ : FrequencyCutoff (Coo
     (Symbol.pullback κ (cutoffSymbol χ h) -
       cutoffSymbol χ (HomogeneousSymbol.pullback κ h)).IsSmoothing := by
   refine Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero fun K hK ↦ ?_
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn
-    (κ.contDiff.fderiv_right (m := ∞) le_rfl).adjoint.continuous.norm.continuousOn
-  set c := max B 1
-  have hc : 0 < c := lt_of_lt_of_le one_pos (le_max_right _ _)
+  obtain ⟨c, hc, hcK⟩ := Symbol.exists_norm_apply_le_and_norm_le
+    (κ.contDiff_adjoint_fderiv_symm (m := 0) (by simp)).continuous
+    (κ.contDiff_adjoint_fderiv_comp_symm (m := 0) (by simp)).continuous
+    (κ.adjoint_fderiv_comp_adjoint_fderiv_symm (by simp)) (hK.image κ.continuous)
   refine ⟨2 * c, fun x hx ξ hξ ↦ ?_⟩
   set η := ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ x)) ξ
-  have hBx : ‖ContinuousLinearMap.adjoint (fderiv ℝ κ x)‖ ≤ c :=
-    (by simpa using hB x hx : _ ≤ B).trans (le_max_left _ _)
-  have hξη : ‖ξ‖ ≤ c * ‖η‖ :=
-    calc ‖ξ‖ = ‖ContinuousLinearMap.adjoint (fderiv ℝ κ x) η‖ := by
-          rw [κ.adjoint_fderiv_adjoint_fderiv_symm_apply (by simp)]
-      _ ≤ ‖ContinuousLinearMap.adjoint (fderiv ℝ κ x)‖ * ‖η‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ c * ‖η‖ := mul_le_mul_of_nonneg_right hBx (norm_nonneg _)
-  have h2ξ : 2 ≤ ‖ξ‖ := le_trans (by linarith [le_max_right B 1]) hξ
-  have h2η : 2 ≤ ‖η‖ := le_of_mul_le_mul_left (by linarith) hc
+  have hξη : ‖ξ‖ ≤ c * ‖η‖ := (hcK _ (Set.mem_image_of_mem _ hx) ξ).2
+  have h2ξ : 2 ≤ ‖ξ‖ := le_trans (by linarith) hξ
+  have h2η : 2 ≤ ‖η‖ := le_of_mul_le_mul_left (by linarith) (by linarith : 0 < c)
   simp [Symbol.coefficient_sub, χ.apply_eq_one_of_two_le_norm h2ξ,
     χ.apply_eq_one_of_two_le_norm h2η, η]
 
@@ -530,12 +538,14 @@ theorem pullback_refl (a : ClassicalSymbol n V W m) :
     pullback (Diffeomorph.refl 𝓘(ℝ, CoordinateSpace n) (CoordinateSpace n) ∞) a = a :=
   ClassicalSymbol.ext (by simp)
 
+@[simp]
 theorem pullback_trans
     (κ₁ κ₂ : CoordinateSpace n ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯
       CoordinateSpace n) (a : ClassicalSymbol n V W m) :
     pullback (κ₁.trans κ₂) a = pullback κ₁ (pullback κ₂ a) :=
   ClassicalSymbol.ext (by simp [Symbol.pullback_trans])
 
+@[simp]
 theorem pullback_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
     (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
     pullback κ (b.comp a) = (pullback κ b).comp (pullback κ a) :=
