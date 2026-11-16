@@ -255,10 +255,8 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered
   rw [cutoffTempered_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   set ψi := TestFunction.smulLeftCLM (hg i) ψ
-  have hψi : tsupport ψi ⊆ tsupport ψ := by
-    rw [show (ψi : CoordinateSpace n → ℂ) = fun x ↦ g i x • ψ x from
-      funext (TestFunction.smulLeftCLM_apply (hg i) ψ)]
-    exact tsupport_smul_subset_right _ _
+  have hψi : tsupport ψi ⊆ tsupport ψ :=
+    (TestFunction.tsupport_smulLeftCLM_subset (hg i) ψ).trans inter_subset_right
   rw [show (fun x ↦ c i * ψi x) = c i • (ψi : CoordinateSpace n → ℂ) from
       funext fun x ↦ (smul_eq_mul _ _).symm,
     TemperedDistribution.smulLeftCLM_smul (ψi.hasCompactSupport.hasTemperateGrowth ψi.contDiff),
