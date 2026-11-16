@@ -10,7 +10,12 @@ public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.NoncommProd
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Fintype.Powerset
+public import Mathlib.Data.Nat.Choose.Basic
 public import TauCeti.Algebra.GroupWithZero.Indicator
+
+import Mathlib.Data.Fintype.BigOperators
+import Mathlib.Data.Nat.Choose.Sum
 
 /-!
 # Splitting products and sums over the subsets of a finite set
@@ -41,6 +46,10 @@ which commutes pairwise everywhere.
   over the `n + 1`-element subsets when an index is added to `s`, and
   `Finset.sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute`, the same recursion as
   sums over `powersetCard` for a family commuting pairwise everywhere.
+* `TauCeti.exists_minimal_vanishing_subsum`: a vanishing sum with a nonzero term has a minimal
+  vanishing subsum with at least two terms.
+* `TauCeti.sum_filter_two_le_card`: a sum over the subsets with at least two elements of a finite
+  type, of a function of the cardinality, grouped by cardinality.
 -/
 
 public section
@@ -115,6 +124,7 @@ end Finset
 namespace TauCeti
 
 open Finset
+open scoped Finset
 
 /-- **A product over the subsets of a finite set `s` with at least two elements splits into four
 parts**: the empty set, the singletons, the subsets with at least two elements other than `s`, and
@@ -144,5 +154,42 @@ theorem prod_powerset_eq_mul_prod_singleton_mul_prod_filter_mul {α M : Type*} [
     grind
   rw [hsing, hbig, prod_image fun _ _ _ _ h ↦ singleton_inj.1 h]
   ac_rfl
+
+/-- A vanishing sum `∑ fᵢ = 0` with a nonzero term has a minimal vanishing subsum with at least two
+terms: an index set `I` with `∑ i ∈ I, fᵢ = 0` such that no nonempty proper subset of `I` has
+vanishing sum. Applied to a linear relation `∑ cᵢxᵢ = 0` among the unknowns of a unit equation,
+it yields a nondegenerate homogeneous solution in fewer unknowns. -/
+theorem exists_minimal_vanishing_subsum {ι M : Type*} [Fintype ι] [AddCommMonoid M] {f : ι → M}
+    (h : ∑ i, f i = 0) (hf : f ≠ 0) :
+    ∃ I : Finset ι, 2 ≤ #I ∧ ∑ i ∈ I, f i = 0 ∧ ∀ J ⊂ I, J.Nonempty → ∑ i ∈ J, f i ≠ 0 := by
+  classical
+  -- Choose `I` of least cardinality among the nonempty vanishing subsums of nonzero terms.
+  let s := univ.filter (f · ≠ 0)
+  let F := s.powerset.filter fun J ↦ J.Nonempty ∧ ∑ i ∈ J, f i = 0
+  have hsF : s ∈ F := by
+    obtain ⟨i, hi⟩ := Function.ne_iff.mp hf
+    exact mem_filter.mpr ⟨mem_powerset_self s, ⟨i, by simpa [s] using hi⟩,
+      by rw [sum_filter_ne_zero, h]⟩
+  obtain ⟨I, hIF, hImin⟩ := F.exists_min_image card ⟨s, hsF⟩
+  obtain ⟨hIs, hIne, hI0⟩ : I ⊆ s ∧ I.Nonempty ∧ ∑ i ∈ I, f i = 0 := by simpa [F] using hIF
+  refine ⟨I, ?_, hI0, fun J hJI hJ hJ0 ↦ ?_⟩
+  · by_contra! hI
+    obtain ⟨i, rfl⟩ := card_eq_one.mp (le_antisymm (Nat.lt_succ_iff.mp hI) hIne.card_pos)
+    exact (by simpa [s] using hIs (mem_singleton_self i) : f i ≠ 0) (by simpa using hI0)
+  · exact (card_lt_card hJI).not_ge (hImin J (by simpa [F, hJ, hJ0] using hJI.subset.trans hIs))
+
+
+/-- A sum over the subsets with at least two elements of an `(n + 2)`-element type, of a function
+of the cardinality, grouped by cardinality. -/
+theorem sum_filter_two_le_card {ι M : Type*} [Fintype ι] [AddCommMonoid M] {n : ℕ}
+    (hn : Fintype.card ι = n + 2) (g : ℕ → M) :
+    ∑ I ∈ (univ : Finset (Finset ι)).filter (2 ≤ #·), g #I =
+      ∑ k : Fin (n + 1), (n + 2).choose (k + 2) • g (k + 2) := by
+  classical
+  rw [sum_filter, ← powerset_univ, sum_powerset_apply_card (fun m ↦ if 2 ≤ m then g m else 0),
+    card_univ, hn, Fin.sum_univ_eq_sum_range (fun k ↦ (n + 2).choose (k + 2) • g (k + 2)),
+    sum_range_succ', sum_range_succ']
+  simp only [zero_add, Nat.not_ofNat_le_one, nonpos_iff_eq_zero, OfNat.ofNat_ne_zero, ite_false,
+    le_add_iff_nonneg_left, zero_le, ite_true, nsmul_zero, add_zero]
 
 end TauCeti
