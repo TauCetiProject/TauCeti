@@ -283,10 +283,10 @@ def finiteTypeSplitTorusCoordinateIso :
 
 /-- The underlying morphism of `finiteTypeSplitTorusCoordinateIso` is the split-torus coordinate
 isomorphism followed by the identification of the finite-type package with its object. -/
-theorem finiteTypeSplitTorusCoordinateIso_hom :
+theorem finiteTypeSplitTorusCoordinateIso_hom_hom :
     (finiteTypeSplitTorusCoordinateIso R i half hi hhalf).hom.hom =
-      ((splitTorusCoordinateIso R i half hi hhalf) ≪≫
-        eqToIso (finiteTypeCoordinateHopfAlgebra_obj R 2).symm).hom := by
+      (splitTorusCoordinateIso R i half hi hhalf).hom ≫
+        eqToHom (finiteTypeCoordinateHopfAlgebra_obj R 2).symm := by
   unfold finiteTypeSplitTorusCoordinateIso
   rfl
 
