@@ -181,9 +181,14 @@ example (P : E) :
 
 /-! ### Scalar multiples and the stage-2 cross-difference criterion -/
 
-private theorem two_zsmul_some_three_three
-    (h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3) :
-    (2 : ℤ) • (Affine.Point.some 3 3 h : E) = .some 1 4 nonsingular_one_four := by
+private theorem nonsingular_three_three : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
+  simp only [Affine.nonsingular_iff, Affine.equation_iff,
+    model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
+  decide
+
+private theorem two_zsmul_some_three_three :
+    (2 : ℤ) • (Affine.Point.some 3 3 nonsingular_three_three : E) =
+      .some 1 4 nonsingular_one_four := by
   have hY : (3 : ZMod 7) ≠ (model (0 : ZMod 7) 1).toAffine.negY 3 3 := by
     simp only [Affine.negY, model_a₁, model_a₃]
     decide
@@ -195,28 +200,26 @@ private theorem two_zsmul_some_three_three
   simp only [Affine.addX, Affine.addY, Affine.negAddY, Affine.negY, model_a₁, model_a₂, model_a₃]
   decide
 
-private theorem four_zsmul_some_three_three
-    (h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3) :
-    (4 : ℤ) • (Affine.Point.some 3 3 h : E) = twoTorsionPoint 0 one_ne_zero := by
+private theorem four_zsmul_some_three_three :
+    (4 : ℤ) • (Affine.Point.some 3 3 nonsingular_three_three : E) =
+      twoTorsionPoint 0 one_ne_zero := by
   have h4 : (4 : ℤ) = 2 + 2 := rfl
-  rw [h4, add_zsmul, two_zsmul_some_three_three h]
+  rw [h4, add_zsmul, two_zsmul_some_three_three]
   exact (add_self_eq_twoTorsionPoint_iff one_ne_zero nonsingular_one_four).mpr (by decide)
 
-private theorem eight_zsmul_some_three_three
-    (h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3) :
-    (8 : ℤ) • (Affine.Point.some 3 3 h : E) = 0 := by
+private theorem eight_zsmul_some_three_three :
+    (8 : ℤ) • (Affine.Point.some 3 3 nonsingular_three_three : E) = 0 := by
   have h8 : (8 : ℤ) = 4 + 4 := rfl
-  rw [h8, add_zsmul, four_zsmul_some_three_three h, twoTorsionPoint_add_self]
+  rw [h8, add_zsmul, four_zsmul_some_three_three, twoTorsionPoint_add_self]
 
-private theorem coordinates_three_zsmul_some_three_three
-    (h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3) :
-    coordinates (0 : ZMod 7) 1 ((3 : ℤ) • .some 3 3 h) = ⟨5, 1⟩ := by
+private theorem coordinates_three_zsmul_some_three_three :
+    coordinates (0 : ZMod 7) 1 ((3 : ℤ) • .some 3 3 nonsingular_three_three) = ⟨5, 1⟩ := by
   have h3 : (3 : ℤ) = 2 + 1 := rfl
   have hX : (1 : ZMod 7) ≠ 3 := by decide
   have hslope : (model (0 : ZMod 7) 1).toAffine.slope 1 3 4 3 = 3 := by
     rw [Affine.slope_of_X_ne hX]
     exact (div_eq_iff (by decide)).mpr (by decide)
-  rw [h3, add_zsmul, one_zsmul, two_zsmul_some_three_three h,
+  rw [h3, add_zsmul, one_zsmul, two_zsmul_some_three_three,
     Affine.Point.add_of_X_ne hX, coordinates_some, hslope]
   ext
   · simp only [Affine.addX, model_a₁, model_a₂]
@@ -226,21 +229,17 @@ private theorem coordinates_three_zsmul_some_three_three
 -- Over `𝔽₇` with `Q = (3, 3)` of order `8`, `(m, n) = (5, 3)` gives `x([5]Q) = x([3]Q) = 5`,
 -- vanishing cross difference, and `[5 + 3]Q = [8]Q = 0`.
 example :
-    let h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide
-    let Q : E := .some 3 3 h
+    let Q : E := .some 3 3 nonsingular_three_three
     coordinates 0 1 ((5 : ℤ) • Q) = ⟨5, 1⟩ ∧
       coordinates 0 1 ((3 : ℤ) • Q) = ⟨5, 1⟩ ∧
       (coordinates 0 1 ((5 : ℤ) • Q)).cross (coordinates 0 1 ((3 : ℤ) • Q)) = 0 ∧
       ((5 : ℤ) + 3) • Q = 0 := by
-  intro h Q
-  have h8 : ((5 : ℤ) + 3) • Q = 0 := eight_zsmul_some_three_three h
+  intro Q
+  have h8 : ((5 : ℤ) + 3) • Q = 0 := eight_zsmul_some_three_three
   have h5 : (5 : ℤ) • Q = -((3 : ℤ) • Q) :=
     eq_neg_of_add_eq_zero_left ((add_zsmul Q 5 3).symm.trans h8)
   have hc3 : coordinates 0 1 ((3 : ℤ) • Q) = ⟨5, 1⟩ :=
-    coordinates_three_zsmul_some_three_three h
+    coordinates_three_zsmul_some_three_three
   have hc5 : coordinates 0 1 ((5 : ℤ) • Q) = ⟨5, 1⟩ := by
     rw [h5, coordinates_neg, hc3]
   exact ⟨hc5, hc3, (cross_coordinates_zsmul_eq_zero_iff one_ne_zero).mpr (.inr h8), h8⟩
@@ -248,19 +247,15 @@ example :
 -- For `(m, n) = (3, 1)`, the `x`-coordinates are `5` and `3`, the cross difference `5 - 3` is
 -- nonzero, and neither `[2]Q` nor `[4]Q` vanishes.
 example :
-    let h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide
-    let Q : E := .some 3 3 h
+    let Q : E := .some 3 3 nonsingular_three_three
     coordinates 0 1 ((3 : ℤ) • Q) = ⟨5, 1⟩ ∧
       coordinates 0 1 ((1 : ℤ) • Q) = ⟨3, 1⟩ ∧
       (coordinates 0 1 ((3 : ℤ) • Q)).cross (coordinates 0 1 ((1 : ℤ) • Q)) = 5 - 3 ∧
       (5 - 3 : ZMod 7) ≠ 0 ∧
       ((3 : ℤ) - 1) • Q ≠ 0 ∧ ((3 : ℤ) + 1) • Q ≠ 0 := by
-  intro h Q
+  intro Q
   have hc3 : coordinates 0 1 ((3 : ℤ) • Q) = ⟨5, 1⟩ :=
-    coordinates_three_zsmul_some_three_three h
+    coordinates_three_zsmul_some_three_three
   have hc1 : coordinates 0 1 ((1 : ℤ) • Q) = ⟨3, 1⟩ := by
     rw [one_zsmul, coordinates_some]
   have hcross :
@@ -275,15 +270,11 @@ example :
 -- With step `w = 6` and `q = 7 = 6 + 1`, `[7]Q = -Q ≠ 0`, and the coordinate pairs of `[6]Q`
 -- and `[1]Q` have nonzero cross difference because neither `[5]Q` nor `[7]Q` vanishes.
 example :
-    let h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide
-    let Q : E := .some 3 3 h
+    let Q : E := .some 3 3 nonsingular_three_three
     (7 : ℤ) • Q = -Q ∧ (7 : ℤ) • Q ≠ 0 ∧
       (coordinates 0 1 ((6 : ℤ) • Q)).cross (coordinates 0 1 ((1 : ℤ) • Q)) ≠ 0 := by
-  intro h Q
-  have h8 : ((7 : ℤ) + 1) • Q = 0 := eight_zsmul_some_three_three h
+  intro Q
+  have h8 : ((7 : ℤ) + 1) • Q = 0 := eight_zsmul_some_three_three
   have h7 : (7 : ℤ) • Q = -Q :=
     eq_neg_of_add_eq_zero_left (((add_zsmul Q 7 1).trans (by rw [one_zsmul])).symm.trans h8)
   have h7ne : (7 : ℤ) • Q ≠ 0 := by
@@ -292,7 +283,7 @@ example :
   have h6 : (6 : ℤ) • Q = -((2 : ℤ) • Q) :=
     eq_neg_of_add_eq_zero_left ((add_zsmul Q 6 2).symm.trans h8)
   refine ⟨h7, h7ne, ?_⟩
-  have h2 : (2 : ℤ) • Q = .some 1 4 nonsingular_one_four := two_zsmul_some_three_three h
+  have h2 : (2 : ℤ) • Q = .some 1 4 nonsingular_one_four := two_zsmul_some_three_three
   rw [h6, h2, coordinates_neg, one_zsmul, coordinates_some, coordinates_some, Pair.cross_def]
   decide
 
@@ -300,11 +291,7 @@ example :
 -- have coordinate pair `(1, 1)` with cross difference `1 · 1 - 1 · 1 = 0`, and
 -- `exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero` produces a witness.
 example :
-    let h : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide
-    let Q : E := .some 3 3 h
+    let Q : E := .some 3 3 nonsingular_three_three
     (8 : ℤ) • Q = 0 ∧
       (6 : ℤ) • Q = .some 1 3 nonsingular_one_three ∧
       (2 : ℤ) • Q = .some 1 4 nonsingular_one_four ∧
@@ -313,9 +300,9 @@ example :
       ∃ i : ℤ, 2 * |(8 : ℤ) - i * 6| ≤ 6 ∧
         (coordinates 0 1 ((i * 6) • Q)).cross
           (coordinates 0 1 (|(8 : ℤ) - i * 6| • Q)) = 0 := by
-  intro h Q
-  have h8 : (8 : ℤ) • Q = 0 := eight_zsmul_some_three_three h
-  have h2 : (2 : ℤ) • Q = .some 1 4 nonsingular_one_four := two_zsmul_some_three_three h
+  intro Q
+  have h8 : (8 : ℤ) • Q = 0 := eight_zsmul_some_three_three
+  have h2 : (2 : ℤ) • Q = .some 1 4 nonsingular_one_four := two_zsmul_some_three_three
   have h6 : (6 : ℤ) • Q = .some 1 3 nonsingular_one_three := by
     have hneg : (6 : ℤ) • Q = -((2 : ℤ) • Q) :=
       eq_neg_of_add_eq_zero_left ((add_zsmul Q 6 2).symm.trans h8)
