@@ -11,6 +11,8 @@ import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 
 /-!
 # Conformal Euclidean coordinate charts and locally conformally flat metrics
@@ -90,100 +92,49 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-! ### Locality and pullback invariance of `IsLocallyConformallyFlat` -/
 
-/-- Vanishing of the Riemann curvature tensor is preserved and reflected by a local Riemannian
-isometry. -/
-private theorem curvatureTensor_eq_zero_iff_of_isLocalRiemannianIsometry
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [T2Space N] [IsManifold J ∞ N]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    [RiemannianBundle (fun z : N ↦ TangentSpace J z)]
-    [IsContMDiffRiemannianBundle J ∞ F (fun z : N ↦ TangentSpace J z)]
-    {f : M → N} (hf : TauCeti.IsLocalRiemannianIsometry I J f) (x : M) :
-    (CovariantDerivative.leviCivitaConnection J N).curvatureTensor (f x) = 0 ↔
-      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x = 0 := by
-  constructor
-  · intro h
-    ext u v w
-    apply hf.mfderiv_injective x
-    simp [hf.mfderiv_curvatureTensor, h]
-  · intro h
-    ext u v w
-    obtain ⟨u, rfl⟩ := hf.mfderiv_surjective x u
-    obtain ⟨v, rfl⟩ := hf.mfderiv_surjective x v
-    obtain ⟨w, rfl⟩ := hf.mfderiv_surjective x w
-    simp [← hf.mfderiv_curvatureTensor, h]
-
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- Rescaling both source and target metrics by compatible positive factors preserves a local
-Riemannian isometry on a smaller open submanifold. -/
-private theorem isLocalRiemannianIsometry_rescale_opens
+Riemannian isometry. -/
+private theorem isLocalRiemannianIsometry_rescale
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    {W₁ W : Opens M} (hW₁W : W₁ ≤ W)
-    (gN : ContMDiffRiemannianMetric J ∞ F (fun z : N ↦ TangentSpace J z))
-    {f : W → N}
-    (hf : letI : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
-            ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+    {gM : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {gN : ContMDiffRiemannianMetric J ∞ F (fun z : N ↦ TangentSpace J z)}
+    {f : M → N}
+    (hf : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨gM.toRiemannianMetric⟩
           letI : RiemannianBundle (fun z : N ↦ TangentSpace J z) := ⟨gN.toRiemannianMetric⟩
           TauCeti.IsLocalRiemannianIsometry I J f)
-    {c : M → ℝ} (hc : ContMDiff I 𝓘(ℝ) ∞ c) (hc_pos : ∀ y, 0 < c y)
-    {h : N → ℝ} (hh : ContMDiff J 𝓘(ℝ) ∞ h) (hh_pos : ∀ z, 0 < h z)
-    (hch : ∀ y : W₁, h (f (Opens.inclusion hW₁W y)) = c y.1) :
-    letI : RiemannianBundle (fun y : W₁ ↦ TangentSpace I y) :=
-      ⟨((g.rescale c hc hc_pos).restrictOpenTangentSpace W₁).toRiemannianMetric⟩
+    {cM : M → ℝ} (hcM : ContMDiff I 𝓘(ℝ) ∞ cM) (hcM_pos : ∀ y, 0 < cM y)
+    {cN : N → ℝ} (hcN : ContMDiff J 𝓘(ℝ) ∞ cN) (hcN_pos : ∀ z, 0 < cN z)
+    (hch : ∀ y, cN (f y) = cM y) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(gM.rescale cM hcM hcM_pos).toRiemannianMetric⟩
     letI : RiemannianBundle (fun z : N ↦ TangentSpace J z) :=
-      ⟨(gN.rescale h hh hh_pos).toRiemannianMetric⟩
-    TauCeti.IsLocalRiemannianIsometry I J (f ∘ Opens.inclusion hW₁W) := by
+      ⟨(gN.rescale cN hcN hcN_pos).toRiemannianMetric⟩
+    TauCeti.IsLocalRiemannianIsometry I J f := by
   obtain ⟨hf_smooth, hf_inv, hf_inner⟩ : ContMDiff I J ∞ f ∧
-      (∀ z : W, (mfderiv I J f z).IsInvertible) ∧
-      ∀ (y : W₁) (u v : TangentSpace I y),
-        gN.inner (f (Opens.inclusion hW₁W y))
-          (mfderiv I J f (Opens.inclusion hW₁W y) (mfderiv I I (Opens.inclusion hW₁W) y u))
-          (mfderiv I J f (Opens.inclusion hW₁W y) (mfderiv I I (Opens.inclusion hW₁W) y v)) =
-        g.inner y.1 (tangentSpaceOpenEquiv (I := I) y u)
-          (tangentSpaceOpenEquiv (I := I) y v) := by
-    let _ : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
-      ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩
+      (∀ y, (mfderiv I J f y).IsInvertible) ∧
+      ∀ (y : M) (u v : TangentSpace I y),
+        gN.inner (f y) (mfderiv I J f y u) (mfderiv I J f y v) = gM.inner y u v := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨gM.toRiemannianMetric⟩
     let _ : RiemannianBundle (fun z : N ↦ TangentSpace J z) := ⟨gN.toRiemannianMetric⟩
-    refine ⟨hf.contMDiff, hf.isInvertible_mfderiv, fun y u v ↦ ?_⟩
-    have hteq (w : TangentSpace I y) :
-        tangentSpaceOpenEquiv (I := I) (Opens.inclusion hW₁W y)
-            (mfderiv I I (Opens.inclusion hW₁W) y w) =
-          tangentSpaceOpenEquiv (I := I) y w := by
-      simpa only [mfderiv_id, ContinuousLinearMap.id_apply] using
-        tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Opens.inclusion hW₁W) (A := id) rfl w
-    have h₀ := hf.inner_mfderiv (Opens.inclusion hW₁W y)
-      (mfderiv I I (Opens.inclusion hW₁W) y u) (mfderiv I I (Opens.inclusion hW₁W) y v)
-    rwa [inner_riemannianBundle gN, inner_riemannianBundle (g.restrictOpenTangentSpace W),
-      restrictOpenTangentSpace_inner, hteq u, hteq v] at h₀
-  let _ : RiemannianBundle (fun y : W₁ ↦ TangentSpace I y) :=
-    ⟨((g.rescale c hc hc_pos).restrictOpenTangentSpace W₁).toRiemannianMetric⟩
+    exact ⟨hf.contMDiff, hf.isInvertible_mfderiv, fun y u v ↦ by
+      simpa only [inner_riemannianBundle gN, inner_riemannianBundle gM] using
+        hf.inner_mfderiv y u v⟩
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(gM.rescale cM hcM hcM_pos).toRiemannianMetric⟩
   let _ : RiemannianBundle (fun z : N ↦ TangentSpace J z) :=
-    ⟨(gN.rescale h hh hh_pos).toRiemannianMetric⟩
-  have hmf (y : W₁) :
-      mfderiv I J (f ∘ Opens.inclusion hW₁W) y =
-        (mfderiv I J f (Opens.inclusion hW₁W y)).comp (mfderiv I I (Opens.inclusion hW₁W) y) :=
-    mfderiv_comp y (hf_smooth.mdifferentiableAt (by simp))
-      ((contMDiff_inclusion (n := ∞) hW₁W).mdifferentiableAt (by simp))
-  refine
-    { contMDiff := hf_smooth.comp (contMDiff_inclusion hW₁W)
-      isInvertible_mfderiv := fun y ↦ by
-        obtain ⟨e_f, he_f⟩ := hf_inv (Opens.inclusion hW₁W y)
-        refine ⟨(ContinuousLinearEquiv.refl ℝ (TangentSpace I y)).trans e_f, ?_⟩
-        ext v
-        rw [hmf y, ContinuousLinearMap.comp_apply, mfderiv_inclusion_apply, ← he_f]
-        rfl
-      inner_mfderiv := fun y u v ↦ ?_ }
-  rw [inner_riemannianBundle (gN.rescale h hh hh_pos),
-    inner_riemannianBundle ((g.rescale c hc hc_pos).restrictOpenTangentSpace W₁)]
-  simp only [Function.comp_apply, rescale_inner, restrictOpenTangentSpace_inner, hmf y,
-    ContinuousLinearMap.comp_apply, hch y]
-  rw [hf_inner y u v]
+    ⟨(gN.rescale cN hcN hcN_pos).toRiemannianMetric⟩
+  exact
+    { contMDiff := hf_smooth
+      isInvertible_mfderiv := hf_inv
+      inner_mfderiv := fun y u v ↦ by
+        rw [inner_riemannianBundle (gN.rescale cN hcN hcN_pos),
+          inner_riemannianBundle (gM.rescale cM hcM hcM_pos),
+          rescale_inner, rescale_inner, hch y, hf_inner y u v] }
 
+open scoped TauCeti in
 /-- **Transporting conformal flatness along a local Riemannian isometry.** If an open neighbourhood
 `(W, g|_W)` of `x` admits a local Riemannian isometry `f : W → N` into `(N, g_N)` and `g_N` is
 locally conformally flat, then `g` admits a globally smooth positive factor `c : M → ℝ` whose
@@ -228,6 +179,32 @@ theorem exists_eventually_curvatureTensor_rescale_eq_zero_of_isLocalRiemannianIs
   have hW₁W : W₁ ≤ W := fun y hy ↦ (hV_sub y hy).1.2
   let g₁ := g.rescale c hc hc_pos
   let gN₁ := gN.rescale h hh hh_pos
+  have hfW₁ :
+      letI : RiemannianBundle (fun y : W₁ ↦ TangentSpace I y) :=
+        ⟨(g.restrictOpenTangentSpace W₁).toRiemannianMetric⟩
+      letI : RiemannianBundle (fun z : N ↦ TangentSpace J z) := ⟨gN.toRiemannianMetric⟩
+      TauCeti.IsLocalRiemannianIsometry I J (f ∘ Opens.inclusion hW₁W) := by
+    have hinc :
+        letI : RiemannianBundle (fun y : W₁ ↦ TangentSpace I y) :=
+          ⟨(g.restrictOpenTangentSpace W₁).toRiemannianMetric⟩
+        letI : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
+          ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩
+        TauCeti.IsLocalRiemannianIsometry I I (Opens.inclusion hW₁W) := by
+      let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      exact g.riemannianBundle_restrictOpenTangentSpace_eq W₁ ▸
+        g.riemannianBundle_restrictOpenTangentSpace_eq W ▸
+        TauCeti.IsLocalRiemannianIsometry.inclusion (I := I) hW₁W
+    let _ : RiemannianBundle (fun y : W₁ ↦ TangentSpace I y) :=
+      ⟨(g.restrictOpenTangentSpace W₁).toRiemannianMetric⟩
+    let _ : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
+      ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩
+    let _ : RiemannianBundle (fun z : N ↦ TangentSpace J z) := ⟨gN.toRiemannianMetric⟩
+    exact hf.comp hinc
+  have hres_W₁ : (g.restrictOpenTangentSpace W₁).rescale (c ∘ Subtype.val)
+      (hc.comp contMDiff_subtype_val) (fun y ↦ hc_pos y.1) =
+      g₁.restrictOpenTangentSpace W₁ := by
+    ext y v w
+    simp only [g₁, Function.comp_apply, rescale_inner, restrictOpenTangentSpace_inner]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
   have : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
     ⟨g₁.inner, g₁.contMDiff, fun _ _ _ ↦ rfl⟩
@@ -239,18 +216,22 @@ theorem exists_eventually_curvatureTensor_rescale_eq_zero_of_isLocalRiemannianIs
   let _ : RiemannianBundle (fun z : N ↦ TangentSpace J z) := ⟨gN₁.toRiemannianMetric⟩
   have : IsContMDiffRiemannianBundle J ∞ F (fun z : N ↦ TangentSpace J z) :=
     ⟨gN₁.inner, gN₁.contMDiff, fun _ _ _ ↦ rfl⟩
-  have hf₁ := isLocalRiemannianIsometry_rescale_opens g hW₁W gN hf hc hc_pos hh hh_pos fun y ↦ by
-    have hGy : G y.1 = extend Subtype.val lW 0 y.1 := (hV_sub y.1 y.2).1.1
-    have hext : extend Subtype.val lW 0 y.1 = lW (Opens.inclusion hW₁W y) :=
-      congrFun (extend_comp Subtype.val_injective lW 0) (Opens.inclusion hW₁W y)
-    simp only [c, hGy, hext, lW, Real.exp_log (hh_pos _)]
+  have hf₁ : TauCeti.IsLocalRiemannianIsometry I J (f ∘ Opens.inclusion hW₁W) := by
+    have h := isLocalRiemannianIsometry_rescale hfW₁ (hc.comp contMDiff_subtype_val)
+      (fun y ↦ hc_pos y.1) hh hh_pos fun y ↦ by
+        have hGy : G y.1 = extend Subtype.val lW 0 y.1 := (hV_sub y.1 y.2).1.1
+        have hext : extend Subtype.val lW 0 y.1 = lW (Opens.inclusion hW₁W y) :=
+          Subtype.val_injective.extend_apply lW 0 (Opens.inclusion hW₁W y)
+        simp only [Function.comp_apply, c, hGy, hext, lW, Real.exp_log (hh_pos _)]
+    rw [hres_W₁] at h
+    exact h
   refine ⟨c, hc, hc_pos, eventually_of_mem (hV_open.mem_nhds hxV) fun y hy ↦ ?_⟩
   obtain ⟨y', hy'UW, hy'eq⟩ := (hV_sub y hy).2
   have hyW₁ : Opens.inclusion hW₁W ⟨y, hy⟩ ∈ U_W :=
     (Subtype.ext hy'eq : y' = Opens.inclusion hW₁W ⟨y, hy⟩) ▸ hy'UW
-  exact (curvatureTensor_eq_zero_iff_of_isLocalRiemannianIsometry
-      (g₁.isLocalRiemannianIsometry_restrictOpenTangentSpace W₁) ⟨y, hy⟩).2
-    ((curvatureTensor_eq_zero_iff_of_isLocalRiemannianIsometry hf₁ ⟨y, hy⟩).1 (hUW_flat _ hyW₁))
+  exact ((g₁.isLocalRiemannianIsometry_restrictOpenTangentSpace W₁).curvatureTensor_eq_zero_iff
+      ⟨y, hy⟩).2
+    ((hf₁.curvatureTensor_eq_zero_iff ⟨y, hy⟩).1 (hUW_flat _ hyW₁))
 
 /-- Restricting a locally conformally flat metric to an open submanifold yields a locally
 conformally flat metric. -/
@@ -281,8 +262,7 @@ theorem IsLocallyConformallyFlat.restrictOpenTangentSpace
       fun _ _ _ ↦ rfl⟩
   exact (curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
     (by rw [hres_eq]; rfl) y).trans
-    ((curvatureTensor_eq_zero_iff_of_isLocalRiemannianIsometry
-      (g₁.isLocalRiemannianIsometry_restrictOpenTangentSpace U) y).1 hy)
+    (((g₁.isLocalRiemannianIsometry_restrictOpenTangentSpace U).curvatureTensor_eq_zero_iff y).1 hy)
 
 /-- **Locality of `IsLocallyConformallyFlat` on open covers.** A smooth Riemannian metric `g` is
 locally conformally flat if and only if every point belongs to an open subset `W` on which the
@@ -334,7 +314,7 @@ theorem IsLocallyConformallyFlat.pullback_of_isInvertible
     gN₁.isLocalRiemannianIsometry_pullback_of_isInvertible hf hinv
   exact (curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
     (by rw [hpull_eq]; rfl) y).trans
-    ((curvatureTensor_eq_zero_iff_of_isLocalRiemannianIsometry hiso y).1 hy)
+    ((hiso.curvatureTensor_eq_zero_iff y).1 hy)
 
 /-- Pulling back a locally conformally flat metric along a diffeomorphism preserves local conformal
 flatness. -/
@@ -349,47 +329,6 @@ theorem IsLocallyConformallyFlat.pullback
   hgN.pullback_of_isInvertible Φ.contMDiff fun _ ↦ Φ.isInvertible_mfderiv (by simp)
 
 /-! ### Conformal Euclidean coordinate charts -/
-
-/-- Package a smooth diffeomorphism `d : W ≃ₘ B` between open subsets of `M` and `F` as an ambient
-`PartialDiffeomorph` with exact source `W` and target `B`. -/
-private def partialDiffeomorphOfDiffeomorphOpens {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {W : Opens M} {B : Opens F} (x₀ : M) (d : W ≃ₘ^∞⟮I, 𝓘(ℝ, F)⟯ B) :
-    PartialDiffeomorph I 𝓘(ℝ, F) M F ∞ where
-  toPartialEquiv :=
-    { toFun := extend Subtype.val (Subtype.val ∘ d) 0
-      invFun := extend Subtype.val (Subtype.val ∘ d.symm) (fun _ ↦ x₀)
-      source := W
-      target := B
-      map_source' := fun y hy ↦ by
-        have h := congrFun (extend_comp Subtype.val_injective (Subtype.val ∘ d) 0) ⟨y, hy⟩
-        simp only [Function.comp_apply] at h
-        rw [h]
-        exact (d ⟨y, hy⟩).2
-      map_target' := fun z hz ↦ by
-        have h := congrFun (extend_comp Subtype.val_injective
-          (Subtype.val ∘ d.symm) (fun _ ↦ x₀)) ⟨z, hz⟩
-        simp only [Function.comp_apply] at h
-        rw [h]
-        exact (d.symm ⟨z, hz⟩).2
-      left_inv' := fun y hy ↦ by
-        have h₁ := congrFun (extend_comp Subtype.val_injective (Subtype.val ∘ d) 0) ⟨y, hy⟩
-        have h₂ := congrFun (extend_comp Subtype.val_injective
-          (Subtype.val ∘ d.symm) (fun _ ↦ x₀)) (d ⟨y, hy⟩)
-        simp only [Function.comp_apply] at h₁ h₂
-        rw [h₁, h₂, d.symm_apply_apply]
-      right_inv' := fun z hz ↦ by
-        have h₁ := congrFun (extend_comp Subtype.val_injective
-          (Subtype.val ∘ d.symm) (fun _ ↦ x₀)) ⟨z, hz⟩
-        have h₂ := congrFun (extend_comp Subtype.val_injective
-          (Subtype.val ∘ d) 0) (d.symm ⟨z, hz⟩)
-        simp only [Function.comp_apply] at h₁ h₂
-        rw [h₁, h₂, d.apply_symm_apply] }
-  open_source := W.isOpen
-  open_target := B.isOpen
-  contMDiffOn_toFun := ContMDiffMap.contMDiffOn_extend W
-    ⟨Subtype.val ∘ d, contMDiff_subtype_val.comp d.contMDiff⟩ 0
-  contMDiffOn_invFun := ContMDiffMap.contMDiffOn_extend B
-    ⟨Subtype.val ∘ d.symm, contMDiff_subtype_val.comp d.symm.contMDiff⟩ (fun _ ↦ x₀)
 
 open scoped TauCeti in
 /-- **Conformal Euclidean-ball charts around an interior point.** Let `g` be a locally conformally
@@ -409,6 +348,7 @@ theorem IsLocallyConformallyFlat.exists_partialDiffeomorph_ball_of_isInteriorPoi
       x₀ ∈ e.source ∧ e.source ⊆ U ∧ e.target = Metric.ball 0 r ∧ e x₀ = 0 ∧
         ∀ y ∈ e.source, ∀ u v : TangentSpace I y,
           g.inner y u v = c y * ⟪mfderiv I 𝓘(ℝ, F) e y u, mfderiv I 𝓘(ℝ, F) e y v⟫_ℝ := by
+  have : Nonempty M := ⟨x₀⟩
   obtain ⟨f, hf, hf_pos, hflat⟩ := (g.isLocallyConformallyFlat_iff).1 hg x₀
   let g₁ := g.rescale f hf hf_pos
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
@@ -421,35 +361,68 @@ theorem IsLocallyConformallyFlat.exists_partialDiffeomorph_ball_of_isInteriorPoi
     TauCeti.exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_isInteriorPoint
       hx₀ hflat hU L
   let B : Opens F := ⟨Metric.ball (0 : F) r, Metric.isOpen_ball⟩
-  let e := partialDiffeomorphOfDiffeomorphOpens x₀ Ψ.toDiffeomorph
+  let e := Ψ.toDiffeomorph.toPartialDiffeomorphOpens
+  have he_src : e.source = W := Ψ.toDiffeomorph.toPartialDiffeomorphOpens_source
+  have he_tgt : e.target = Metric.ball 0 r := by
+    rw [Diffeomorph.toPartialDiffeomorphOpens_target, Opens.coe_mk]
   have he_comp : (e : M → F) ∘ (Subtype.val : W → M) = (Subtype.val : B → F) ∘ Ψ :=
-    extend_comp Subtype.val_injective (Subtype.val ∘ Ψ.toDiffeomorph) 0
+    Ψ.toDiffeomorph.toPartialDiffeomorphOpens_comp_subtype_val
+  have he_x₀ : e x₀ = 0 :=
+    (Ψ.toDiffeomorph.toPartialDiffeomorphOpens_apply_coe ⟨x₀, hx₀W⟩).trans hΨ0
   have hc : ContMDiff I 𝓘(ℝ) ∞ fun y ↦ (f y)⁻¹ := hf.inv₀ fun y ↦ (hf_pos y).ne'
   have hc_pos (y : M) : 0 < (f y)⁻¹ := inv_pos.2 (hf_pos y)
-  refine ⟨r, hr, fun y ↦ (f y)⁻¹, hc, hc_pos, e, hx₀W, hWU, rfl,
-    (congrFun he_comp ⟨x₀, hx₀W⟩).trans hΨ0, fun y hy u v ↦ ?_⟩
-  let yW : W := ⟨y, hy⟩
-  have hm (w : TangentSpace I yW) :
-      mfderiv I 𝓘(ℝ, F) e y (tangentSpaceOpenEquiv (I := I) yW w) =
-        tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) (Ψ yW) (mfderiv I 𝓘(ℝ, F) Ψ yW w) := by
-    have he_diff : MDifferentiableAt I 𝓘(ℝ, F) e y :=
-      (e.contMDiffOn.contMDiffAt (e.open_source.mem_nhds hy)).mdifferentiableAt (by simp)
-    have h₁ :=
-      mfderiv_comp_apply yW he_diff ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)) w
-    have h₂ := mfderiv_comp_apply yW ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp))
-      (Ψ.mdifferentiableAt yW) w
-    rw [mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe] at h₁ h₂
-    exact h₁.symm.trans ((congrFun (congrArg (fun k ↦ mfderiv I 𝓘(ℝ, F) k yW) he_comp) w).trans h₂)
-  have hΨ_in := Ψ.inner_mfderiv yW ((tangentSpaceOpenEquiv (I := I) yW).symm u)
-    ((tangentSpaceOpenEquiv (I := I) yW).symm v)
-  rw [inner_tangentSpace_open B, ← hm, ← hm, inner_tangentSpace_open W,
-    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply] at hΨ_in
-  have hg₁_in : RiemannianBundle.g.inner y u v = f y * g.inner y u v :=
-    g.rescale_inner f hf hf_pos y u v
-  rw [hg₁_in] at hΨ_in
-  have hΨ_in' : ⟪mfderiv I 𝓘(ℝ, F) e y u, mfderiv I 𝓘(ℝ, F) e y v⟫_ℝ = f y * g.inner y u v :=
-    hΨ_in
-  rw [hΨ_in', inv_mul_cancel_left₀ (hf_pos y).ne']
+  refine ⟨r, hr, fun y ↦ (f y)⁻¹, hc, hc_pos, e, he_src ▸ hx₀W, he_src ▸ hWU, he_tgt, he_x₀,
+    fun y hy u v ↦ ?_⟩
+  have hyW : y ∈ W := by rwa [he_src] at hy
+  let yW : W := ⟨y, hyW⟩
+  have hιB := TauCeti.IsLocalRiemannianIsometry.subtype_val (I := 𝓘(ℝ, F)) B
+  have hιW := TauCeti.IsLocalRiemannianIsometry.subtype_val (I := I) W
+  have he_diff : MDifferentiableAt I 𝓘(ℝ, F) e y :=
+    (e.contMDiffOn.contMDiffAt (e.open_source.mem_nhds hy)).mdifferentiableAt (by simp)
+  have hmv (w : TangentSpace I yW) :
+      mvfderiv I e y (tangentSpaceOpenEquiv (I := I) yW w) =
+        mvfderiv 𝓘(ℝ, F) (Subtype.val : B → F) (Ψ yW) (mfderiv I 𝓘(ℝ, F) Ψ yW w) := by
+    have h₁ := mvfderiv_comp_apply yW he_diff (hιW.mdifferentiableAt yW) w
+    rw [mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe] at h₁
+    have h₂ := mvfderiv_comp_apply yW (hιB.mdifferentiableAt (Ψ yW)) (Ψ.mdifferentiableAt yW) w
+    exact h₁.symm.trans ((congrArg (fun k ↦ mvfderiv I k yW w) he_comp).trans h₂)
+  let u' : TangentSpace I yW := (tangentSpaceOpenEquiv (I := I) yW).symm u
+  let v' : TangentSpace I yW := (tangentSpaceOpenEquiv (I := I) yW).symm v
+  have hinner_eq :
+      ⟪mfderiv I 𝓘(ℝ, F) e y u, mfderiv I 𝓘(ℝ, F) e y v⟫_ℝ = f y * g.inner y u v := by
+    calc ⟪mfderiv I 𝓘(ℝ, F) e y u, mfderiv I 𝓘(ℝ, F) e y v⟫_ℝ
+        = ⟪mvfderiv I e y u, mvfderiv I e y v⟫_ℝ := by
+            simpa only [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+              using inner_tangentSpace_vectorSpace
+                (mfderiv I 𝓘(ℝ, F) e y u) (mfderiv I 𝓘(ℝ, F) e y v)
+      _ = ⟪mvfderiv I e y (tangentSpaceOpenEquiv (I := I) yW u'),
+            mvfderiv I e y (tangentSpaceOpenEquiv (I := I) yW v')⟫_ℝ := by
+            simp only [u', v', ContinuousLinearEquiv.apply_symm_apply]
+      _ = ⟪mvfderiv 𝓘(ℝ, F) (Subtype.val : B → F) (Ψ yW) (mfderiv I 𝓘(ℝ, F) Ψ yW u'),
+            mvfderiv 𝓘(ℝ, F) (Subtype.val : B → F) (Ψ yW) (mfderiv I 𝓘(ℝ, F) Ψ yW v')⟫_ℝ := by
+            rw [hmv u', hmv v']
+      _ = ⟪mfderiv 𝓘(ℝ, F) 𝓘(ℝ, F) (Subtype.val : B → F) (Ψ yW) (mfderiv I 𝓘(ℝ, F) Ψ yW u'),
+            mfderiv 𝓘(ℝ, F) 𝓘(ℝ, F) (Subtype.val : B → F) (Ψ yW)
+              (mfderiv I 𝓘(ℝ, F) Ψ yW v')⟫_ℝ := by
+            simpa only [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+              using (inner_tangentSpace_vectorSpace
+                (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, F) (Subtype.val : B → F) (Ψ yW) (mfderiv I 𝓘(ℝ, F) Ψ yW u'))
+                (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, F) (Subtype.val : B → F) (Ψ yW)
+                  (mfderiv I 𝓘(ℝ, F) Ψ yW v'))).symm
+      _ = ⟪mfderiv I 𝓘(ℝ, F) Ψ yW u', mfderiv I 𝓘(ℝ, F) Ψ yW v'⟫_ℝ :=
+            hιB.inner_mfderiv (Ψ yW) _ _
+      _ = ⟪u', v'⟫_ℝ :=
+            Ψ.inner_mfderiv yW u' v'
+      _ = ⟪mfderiv I I (Subtype.val : W → M) yW u', mfderiv I I (Subtype.val : W → M) yW v'⟫_ℝ :=
+            (hιW.inner_mfderiv yW u' v').symm
+      _ = ⟪u, v⟫_ℝ := by
+            simp only [mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+              u', v', ContinuousLinearEquiv.apply_symm_apply]
+      _ = g₁.inner y u v :=
+            inner_riemannianBundle g₁ y u v
+      _ = f y * g.inner y u v :=
+            g.rescale_inner f hf hf_pos y u v
+  rw [hinner_eq, inv_mul_cancel_left₀ (hf_pos y).ne']
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- A conformal partial diffeomorphism `e` into `F` induces a local Riemannian isometry on any open
@@ -484,17 +457,14 @@ private theorem isLocalRiemannianIsometry_partialDiffeomorph_rescale
         (e.contMDiffOn.contMDiffAt (e.open_source.mem_nhds (hWe y.2))).comp y
           contMDiff_subtype_val.contMDiffAt
       isInvertible_mfderiv := fun y ↦ by
-        obtain ⟨e_lin, he_lin⟩ :=
-          (e.isLocalDiffeomorphAt I 𝓘(ℝ, F) ∞ (hWe y.2)).isInvertible_mfderiv (by simp)
-        refine ⟨(tangentSpaceOpenEquiv (I := I) y).trans e_lin, ?_⟩
-        rw [hmf y, ← he_lin]
-        rfl
+        rw [hmf y, ContinuousLinearMap.isInvertible_comp_equiv]
+        exact (e.isLocalDiffeomorphAt I 𝓘(ℝ, F) ∞ (hWe y.2)).isInvertible_mfderiv (by simp)
       inner_mfderiv := fun y u v ↦ ?_ }
   rw [inner_riemannianBundle gF, inner_riemannianBundle (g.restrictOpenTangentSpace W)]
   simp only [Function.comp_apply, gF, rescale_inner, ofLE_inner, hmf y,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hhe y,
-    restrictOpenTangentSpace_inner, hinner y.1 (hWe y.2)]
-  rfl
+    restrictOpenTangentSpace_inner, hinner y.1 (hWe y.2),
+    ← inner_riemannianBundle (riemannianMetricVectorSpace F)]
 
 /-- **Conformal charts into a real inner-product space imply local conformal flatness.** Suppose
 every point `x : M` lies in the source of a smooth partial diffeomorphism `e` into `F` on which `g`

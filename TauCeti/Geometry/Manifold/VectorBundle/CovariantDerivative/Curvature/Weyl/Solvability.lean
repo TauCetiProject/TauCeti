@@ -442,32 +442,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The inclusion `Opens.inclusion hsub` between nested open submanifolds equipped with the
-restricted Riemannian bundle is a local Riemannian isometry, and its differential commutes with
-`tangentSpaceOpenEquiv`. -/
-private theorem isLocalRiemannianIsometry_opens_inclusion
-    {W W₀ : Opens M} (hsub : W ≤ W₀) :
-    IsLocalRiemannianIsometry I I (Opens.inclusion hsub) ∧
-      ∀ (y : W) (v : TangentSpace I y),
-        tangentSpaceOpenEquiv (I := I) (Opens.inclusion hsub y)
-            (mfderiv I I (Opens.inclusion hsub) y v) =
-          tangentSpaceOpenEquiv (I := I) y v := by
-  have hmf (y : W) (v : TangentSpace I y) :
-      tangentSpaceOpenEquiv (I := I) (Opens.inclusion hsub y)
-          (mfderiv I I (Opens.inclusion hsub) y v) =
-        tangentSpaceOpenEquiv (I := I) y v := by
-    simpa only [mfderiv_id, ContinuousLinearMap.id_apply] using
-      tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Opens.inclusion hsub) (A := id) rfl v
-  refine ⟨{ contMDiff := contMDiff_inclusion hsub
-            isInvertible_mfderiv := fun y ↦
-              ⟨ContinuousLinearEquiv.refl ℝ (TangentSpace I y), by
-                ext v
-                exact (mfderiv_inclusion_apply hsub y v).symm⟩
-            inner_mfderiv := fun y v w ↦ by
-              rw [inner_tangentSpace_open, inner_tangentSpace_open, hmf, hmf] }, hmf⟩
-
 /-- Around an interior point `x₀` near which the Weyl and Cotton tensors vanish, there is an open
 neighbourhood `W₀` diffeomorphic to `E` and a smooth Riemannian metric `gE` on `E` with everywhere
 vanishing Weyl and Cotton tensors such that the coordinate diffeomorphism `W₀ ≃ₘ E` is a local
@@ -531,7 +505,7 @@ private theorem mgradient_and_hessian_eq_of_comp_opens
         hessian I φM y u v =
           (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm y
             (mgradient I φM y) u v := by
-  obtain ⟨hι_sub, hmf_sub⟩ := isLocalRiemannianIsometry_opens_inclusion (I := I) hW_W₀
+  have hι_sub := IsLocalRiemannianIsometry.inclusion (I := I) hW_W₀
   have hΨW : IsLocalRiemannianIsometry I 𝓘(ℝ, E) (Ψ ∘ Opens.inclusion hW_W₀) := hΨ_iso.comp hι_sub
   have hιW := IsLocalRiemannianIsometry.subtype_val (I := I) W_op
   refine ⟨?_, fun y hy u v ↦ ?_⟩
@@ -544,7 +518,8 @@ private theorem mgradient_and_hessian_eq_of_comp_opens
         e₀ (tangentSpaceOpenEquiv (I := I) ⟨x₀, hW_W₀ hx₀W⟩ w) =
           mfderiv I 𝓘(ℝ, E) Ψ ⟨x₀, hW_W₀ hx₀W⟩ w := by
       simpa [e₀] using DFunLike.congr_fun (Ψ.mfderivToContinuousLinearEquiv_coe (by simp)) w
-    rw [← hm₁, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe, ← hmf_sub ⟨x₀, hx₀W⟩, he₀,
+    rw [← hm₁, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      ← tangentSpaceOpenEquiv_mfderiv_inclusion_apply hW_W₀ ⟨x₀, hx₀W⟩, he₀,
       ← mfderiv_comp_apply (⟨x₀, hx₀W⟩ : W_op)
         (hΨ_iso.mdifferentiableAt ⟨x₀, hW_W₀ hx₀W⟩) (hι_sub.mdifferentiableAt ⟨x₀, hx₀W⟩),
       hcomp, hm₂]
@@ -619,7 +594,7 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
     (SmoothBumpFunction.nhds_basis_support (I := I) hW₁_nhds).mem_iff.mp hW₁_nhds
   obtain ⟨W, hW_sub, hW_open, hx₀W⟩ := eventually_nhds_iff.1 (β.eventuallyEq_one.and hW₁_nhds)
   let ψM : M → E := Function.extend Subtype.val Ψ 0
-  have hψ (y : W₀) : ψM y.1 = Ψ y := congrFun (Function.extend_comp Subtype.val_injective Ψ 0) y
+  have hψ (y : W₀) : ψM y.1 = Ψ y := Subtype.val_injective.extend_apply Ψ 0 y
   let Φ (p : M × (ℝ × TangentSpace I x₀)) : ℝ := β p.1 * Φ_E (ψM p.1, eQ p.2)
   have hΦ : ContMDiff (I.prod 𝓘(ℝ, ℝ × TangentSpace I x₀)) 𝓘(ℝ) ∞ Φ :=
     contMDiff_mul_extend_family Ψ β (fun x hx ↦ by

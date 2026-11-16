@@ -40,6 +40,8 @@ subset can be carried, near any point of its source, to the ambient manifold.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
 * `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
   it maps onto each other.
+* `Diffeomorph.toPartialDiffeomorphOpens`: a diffeomorphism between open subsets of nonempty
+  manifolds as an ambient partial diffeomorphism with those exact source and target sets.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
@@ -230,6 +232,79 @@ diffeomorphism. -/
 theorem subtype_symm_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (y : V) :
     ((g.subtype h_iff).symm y : M) = g.symm y :=
   (rfl)
+
+/-- Package a `C^n` diffeomorphism `d : U ≃ₘ^n V` between open subsets of `M` and `N` as an
+ambient `PartialDiffeomorph` with exact source `U` and target `V`. -/
+noncomputable def toPartialDiffeomorphOpens [Nonempty M] [Nonempty N] (d : U ≃ₘ^n⟮I, J⟯ V) :
+    PartialDiffeomorph I J M N n where
+  toPartialEquiv :=
+    { toFun := Function.extend Subtype.val (Subtype.val ∘ d) (fun _ ↦ Classical.arbitrary N)
+      invFun := Function.extend Subtype.val (Subtype.val ∘ d.symm) (fun _ ↦ Classical.arbitrary M)
+      source := U
+      target := V
+      map_source' := fun x hx ↦ by
+        rw [← Subtype.coe_mk x hx, Subtype.val_injective.extend_apply]
+        exact (d ⟨x, hx⟩).2
+      map_target' := fun y hy ↦ by
+        rw [← Subtype.coe_mk y hy, Subtype.val_injective.extend_apply]
+        exact (d.symm ⟨y, hy⟩).2
+      left_inv' := fun x hx ↦ by
+        rw [← Subtype.coe_mk x hx, Subtype.val_injective.extend_apply, Function.comp_apply,
+          Subtype.val_injective.extend_apply, Function.comp_apply, d.symm_apply_apply]
+      right_inv' := fun y hy ↦ by
+        rw [← Subtype.coe_mk y hy, Subtype.val_injective.extend_apply, Function.comp_apply,
+          Subtype.val_injective.extend_apply, Function.comp_apply, d.apply_symm_apply] }
+  open_source := U.isOpen
+  open_target := V.isOpen
+  contMDiffOn_toFun := fun x hx ↦
+    ((contMDiff_subtype_val.comp d.contMDiff).contMDiffAt (x := ⟨x, hx⟩)).extend_subtypeVal
+      (fun _ ↦ Classical.arbitrary N) |>.contMDiffWithinAt
+  contMDiffOn_invFun := fun y hy ↦
+    ((contMDiff_subtype_val.comp d.symm.contMDiff).contMDiffAt (x := ⟨y, hy⟩)).extend_subtypeVal
+      (fun _ ↦ Classical.arbitrary M) |>.contMDiffWithinAt
+
+/-- The source of `Diffeomorph.toPartialDiffeomorphOpens` is the domain open subset. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_source [Nonempty M] [Nonempty N] (d : U ≃ₘ^n⟮I, J⟯ V) :
+    d.toPartialDiffeomorphOpens.source = U :=
+  (rfl)
+
+/-- The target of `Diffeomorph.toPartialDiffeomorphOpens` is the codomain open subset. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_target [Nonempty M] [Nonempty N] (d : U ≃ₘ^n⟮I, J⟯ V) :
+    d.toPartialDiffeomorphOpens.target = V :=
+  (rfl)
+
+/-- On the domain open subset, `Diffeomorph.toPartialDiffeomorphOpens` evaluates as `d`. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_apply_coe [Nonempty M] [Nonempty N] (d : U ≃ₘ^n⟮I, J⟯ V)
+    (x : U) : d.toPartialDiffeomorphOpens x = d x :=
+  Subtype.val_injective.extend_apply (Subtype.val ∘ d) (fun _ ↦ Classical.arbitrary N) x
+
+/-- On the codomain open subset, the inverse of `Diffeomorph.toPartialDiffeomorphOpens` evaluates
+as `d.symm`. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_symm_apply_coe [Nonempty M] [Nonempty N] (d : U ≃ₘ^n⟮I, J⟯ V)
+    (y : V) : d.toPartialDiffeomorphOpens.toPartialEquiv.symm y = d.symm y :=
+  Subtype.val_injective.extend_apply (Subtype.val ∘ d.symm) (fun _ ↦ Classical.arbitrary M) y
+
+/-- Composing `Diffeomorph.toPartialDiffeomorphOpens` with the inclusion of `U` recovers `d`
+followed by the inclusion of `V`. -/
+theorem toPartialDiffeomorphOpens_comp_subtype_val [Nonempty M] [Nonempty N]
+    (d : U ≃ₘ^n⟮I, J⟯ V) :
+    (d.toPartialDiffeomorphOpens : M → N) ∘ (Subtype.val : U → M) =
+      (Subtype.val : V → N) ∘ d :=
+  funext fun x ↦ d.toPartialDiffeomorphOpens_apply_coe x
+
+/-- Composing the inverse of `Diffeomorph.toPartialDiffeomorphOpens` with the inclusion of `V`
+recovers `d.symm` followed by the inclusion of `U`. -/
+theorem toPartialDiffeomorphOpens_symm_comp_subtype_val [Nonempty M] [Nonempty N]
+    (d : U ≃ₘ^n⟮I, J⟯ V) :
+    (d.toPartialDiffeomorphOpens.symm : N → M) ∘ (Subtype.val : V → N) =
+      (Subtype.val : U → M) ∘ d.symm :=
+  funext fun y ↦ by
+    simpa only [Function.comp_apply, PartialDiffeomorph.symm_toPartialEquiv] using
+      d.toPartialDiffeomorphOpens_symm_apply_coe y
 
 end Subtype
 

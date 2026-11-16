@@ -34,8 +34,9 @@ differential, so its scalar curvature at `(x, t)` is that of the metric at `(x, 
 
 ## Main results
 
-* `TauCeti.IsLocalRiemannianIsometry.subtype_val`: the inclusion of an open submanifold equipped
-  with `TauCeti.Manifold.instRiemannianBundleOpen` is a local Riemannian isometry.
+* `TauCeti.IsLocalRiemannianIsometry.subtype_val` and
+  `TauCeti.IsLocalRiemannianIsometry.inclusion`: the inclusions of open submanifolds equipped
+  with `TauCeti.Manifold.instRiemannianBundleOpen` are local Riemannian isometries.
 * `TauCeti.exists_riemannianIsometry_ball_of_inner_mfderiv_eq`: a smooth map into an inner-product
   space `F` whose differential is a linear isometry near an interior point restricts to a smooth
   `RiemannianIsometry` from an open submanifold onto an open ball around `0 : F`.
@@ -84,6 +85,26 @@ theorem IsLocalRiemannianIsometry.subtype_val
       ContinuousLinearEquiv.coe_coe]
     -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
     rfl
+
+/-- The inclusion `Opens.inclusion h : U → V` between nested open submanifolds, each equipped with
+the restricted Riemannian bundle `TauCeti.Manifold.instRiemannianBundleOpen`, is a local
+Riemannian isometry. -/
+theorem IsLocalRiemannianIsometry.inclusion
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {U V : Opens M} (h : U ≤ V) :
+    IsLocalRiemannianIsometry I I (Opens.inclusion h) where
+  contMDiff := contMDiff_inclusion h
+  isInvertible_mfderiv x :=
+    ⟨(Manifold.tangentSpaceOpenEquiv (I := I) x).trans
+      (Manifold.tangentSpaceOpenEquiv (I := I) (Opens.inclusion h x)).symm, by
+      ext v
+      apply (Manifold.tangentSpaceOpenEquiv (I := I) (Opens.inclusion h x)).injective
+      simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.apply_symm_apply] using
+        (Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply h x v).symm⟩
+  inner_mfderiv x v w := by
+    rw [Manifold.inner_tangentSpace_open V, Manifold.inner_tangentSpace_open U,
+      Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply,
+      Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply]
 
 /-- If a smooth map `Φ : M → F` sends an interior point `x₀` to `0`, has differential `L` at `x₀`
 for a linear isometric equivalence `L : TangentSpace I x₀ ≃ₗᵢ[ℝ] F`, and preserves inner products on
