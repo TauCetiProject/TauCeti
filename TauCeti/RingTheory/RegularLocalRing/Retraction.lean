@@ -16,7 +16,7 @@ import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 import TauCeti.RingTheory.RegularLocalRing.MiracleFlatness
 import TauCeti.RingTheory.RegularLocalRing.Quotient
 import TauCeti.RingTheory.RegularLocalRing.Smooth
-import TauCeti.RingTheory.Smooth.Fiber
+import TauCeti.RingTheory.Smooth.Fiber.Basic
 
 /-!
 # Regular local algebras with a retraction to the base

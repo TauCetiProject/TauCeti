@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Smooth.Fiber
 public import Mathlib.RingTheory.Smooth.Flat
 public import TauCeti.RingTheory.Unramified.LocalRing
 import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.RingTheory.Smooth.Fiber
+import TauCeti.RingTheory.Smooth.Fiber.Basic
 
 /-!
 # Étaleness at a prime: flatness and unramifiedness of the local ring
