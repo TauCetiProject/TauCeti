@@ -192,6 +192,20 @@ theorem contDiff_toProd_conj_iff {n : WithTop ℕ∞} {f : Nil → Nil} :
       ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n f :=
   contMDiff_iff_contDiff.symm
 
+/-- The ordinary derivative of a map of `Nil` in global coordinates is its manifold derivative,
+read through the canonical tangent-space identifications. -/
+@[simp]
+theorem fderiv_toProd_conj_apply (f : Nil → Nil) (p : Nil)
+    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p)
+        (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (f p)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p u) := by
+  -- Nil has the inherited model-space charts. In those charts both tangent casts
+  -- are identities, and the coordinate map is the same function as the original map.
+  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
+    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
+
 /-! ### The group structure -/
 
 /-- The product `(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)` of the real Heisenberg
@@ -327,22 +341,6 @@ theorem inner_def (p : Nil) (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) 
           ((tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p w).2.2 -
             p.x * (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p w).2.1) :=
   riemannianMetric_inner p v w
-
-/-! ### Isometries in global coordinates -/
-
-/-- The ordinary derivative of a map of `Nil` in global coordinates is its manifold derivative,
-read through the canonical tangent-space identifications. -/
-@[simp]
-theorem fderiv_toProd_conj_apply (f : Nil → Nil) (p : Nil)
-    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p)
-        (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
-      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (f p)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p u) := by
-  -- Nil has the inherited model-space charts. In those charts both tangent casts
-  -- are identities, and the coordinate map is the same function as the original map.
-  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
-    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
 
 /-! ### Left multiplication is an isometry -/
 
