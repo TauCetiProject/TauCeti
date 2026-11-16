@@ -13,9 +13,9 @@ public import TauCeti.RingTheory.PowerSeries.CharacteristicSeries
 
 Over a `ℚ`-algebra `A`, Mathlib's `Polynomial.bernoulli_generating_function` states that
 `(∑ Bₙ(t) Xⁿ / n!) · (e^X - 1) = X e^{tX}`, while `bernoulliPowerSeries_mul_exp_sub_one` states
-`B(X) · (e^X - 1) = X` for the Bernoulli series `B(X) = ∑ Bₙ Xⁿ / n!`. Cancelling `X` after
-multiplying the two identities eliminates the non-unit denominator `e^X - 1` without division and
-gives the direct factorization
+`B(X) · (e^X - 1) = X` for the Bernoulli series `B(X) = ∑ Bₙ Xⁿ / n!`. Eliminating `e^X - 1` by
+cross-multiplying the two identities and cancelling `X` avoids dividing by `X` and gives the direct
+factorization
 
 `∑ Bₙ(t) Xⁿ / n! = B(X) · e^{tX}`.
 
@@ -46,8 +46,9 @@ polylogarithms.
 ## References
 
 * F. Hirzebruch, *Topological Methods in Algebraic Geometry*, Springer (1966), §1.
-* D. Zagier, *The Bloch–Wigner–Ramakrishnan polylogarithm function*, Math. Ann. 286 (1990),
-  §7, pp. 413–414.
+* D. Zagier, *Polylogarithms, Dedekind zeta functions and the algebraic K-theory of fields*,
+  in *Arithmetic Algebraic Geometry* (Texel, 1989), Progress in Mathematics 89,
+  Birkhäuser (1991), pp. 391–430, §7, pp. 413–414.
 -/
 
 public section
@@ -61,8 +62,7 @@ section GeneratingSeries
 variable {A : Type*} [CommRing A] [Algebra ℚ A]
 
 /-- **Exponential generating series of Bernoulli polynomials**: over any `ℚ`-algebra `A`,
-`∑ Bₙ(t) Xⁿ / n! = B(X) · e^{tX}`, proved by cancelling `X` against `e^X - 1` without dividing
-by `X`. -/
+`∑ Bₙ(t) Xⁿ / n! = B(X) · e^{tX}`. -/
 theorem mk_aeval_bernoulli_eq_bernoulliPowerSeries_mul_rescale_exp (t : A) :
     (PowerSeries.mk fun n => Polynomial.aeval t ((1 / n ! : ℚ) • Polynomial.bernoulli n)) =
       bernoulliPowerSeries A * PowerSeries.rescale t (PowerSeries.exp A) := by
@@ -96,7 +96,6 @@ theorem mk_aeval_inv_two_bernoulli_eq_aHatSeries (A : Type*) [CommRing A] [Algeb
 section Midpoint
 
 /-- **Midpoint evaluation of Bernoulli polynomials**: `Bₙ(1/2) = (2 / 2ⁿ - 1) Bₙ` in `ℚ`. -/
-@[simp]
 theorem bernoulli_eval_inv_two (n : ℕ) :
     (Polynomial.bernoulli n).eval 2⁻¹ = (2 / 2 ^ n - 1) * bernoulli n := by
   have h := congrArg (PowerSeries.coeff n) (mk_aeval_inv_two_bernoulli_eq_aHatSeries ℚ)
@@ -106,8 +105,8 @@ theorem bernoulli_eval_inv_two (n : ℕ) :
   have hne : (n ! : ℚ) ≠ 0 := mod_cast Nat.factorial_ne_zero n
   exact mul_left_cancel₀ (inv_ne_zero hne) (by linear_combination h)
 
-/-- Odd-degree Bernoulli polynomials vanish at `1/2`, by the reflection symmetry
-`Bₙ(1 - x) = (-1)ⁿ Bₙ(x)`. -/
+/-- Odd-degree Bernoulli polynomials vanish at `1 / 2`. -/
+@[simp]
 theorem bernoulli_eval_inv_two_eq_zero_of_odd {n : ℕ} (hn : Odd n) :
     (Polynomial.bernoulli n).eval 2⁻¹ = 0 := by
   have h := Polynomial.bernoulli_eval_one_sub n 2⁻¹

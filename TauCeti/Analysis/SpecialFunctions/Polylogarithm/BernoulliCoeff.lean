@@ -27,10 +27,10 @@ single-valued polylogarithms:
 
 * Under a counterclockwise loop around `1`, a coherent determination of `Li_{n - k}` changes by
   `-2πi L^{n - 1 - k} / (n - 1 - k)!` where `L = ℓ + iθ` has real part `ℓ = log ‖z‖`. Weighting
-  against `cₖ ℓ^k` extracts `2πi` times the degree-`(n - 1)` coefficient of `Â(2ℓX) e^{iθX}`.
+  against `cₖ ℓ^k` extracts `-2πi` times the degree-`(n - 1)` coefficient of `Â(2ℓX) e^{iθX}`.
   Because the ring endomorphism `H(X) ↦ conj(H(-X))` of `ℂ⟦X⟧` fixes both `Â(2ℓX)` and `e^{iθX}`,
   its coefficients are real in even degree and purely imaginary in odd degree; after multiplying by
-  `2πi`, the parity projection (`Re` for odd `n`, `Im` for even `n`) vanishes for every `L ∈ ℂ`.
+  `-2πi`, the parity projection (`Re` for odd `n`, `Im` for even `n`) vanishes for every `L ∈ ℂ`.
 * Inserting Bernoulli's inversion identity
   `Liₘ(z) + (-1)^m Liₘ(z⁻¹) = -(2πi)^m Bₘ(1/2 + L/(2πi)) / m!` into the `cₖ`-weighted sum extracts
   the degree-`n` coefficient of `-Â(2ℓX) Â(2πi X) e^{iθX}` up to the boundary term `-cₙ ℓ^n`. Since
@@ -68,8 +68,9 @@ this cancellation.
 
 ## References
 
-* Don Zagier, *The Bloch–Wigner–Ramakrishnan polylogarithm function*, Math. Ann. 286 (1990),
-  §7, (33)–(35), pp. 413–414.
+* Don Zagier, *Polylogarithms, Dedekind zeta functions and the algebraic K-theory of fields*,
+  in *Arithmetic Algebraic Geometry* (Texel, 1989), Progress in Mathematics 89,
+  Birkhäuser (1991), pp. 391–430, §7, (33)–(35), pp. 413–414.
 * Joseph Oesterlé, *Polylogarithmes*, Séminaire Bourbaki, exposé 762, Astérisque 216 (1993),
   §3.1–3.2, (18)–(22), pp. 57–58.
 -/
@@ -155,8 +156,7 @@ theorem coeff_hirzebruchLSeries_eq_bernoulliCoeff {k : ℕ} (hk : k ≠ 1) :
     PowerSeries.coeff k (TauCeti.hirzebruchLSeries A) = algebraMap ℚ A (bernoulliCoeff k) := by
   rw [TauCeti.coeff_hirzebruchLSeries A hk, bernoulliCoeff_def]
 
-/-- Scaling Mathlib's Bernoulli generating identity by `2` gives
-`(∑ cₖ Xᵏ) · (e^{2X} - 1) = 2X` over any `ℚ`-algebra `A`, without dividing by `X`. -/
+/-- Over any `ℚ`-algebra `A`, `(∑ cₖ Xᵏ) · (e^{2X} - 1) = 2X`. -/
 theorem mk_algebraMap_bernoulliCoeff_mul_rescale_two_exp_sub_one :
     (PowerSeries.mk fun k => algebraMap ℚ A (bernoulliCoeff k)) *
       (PowerSeries.rescale 2 (PowerSeries.exp A) - 1) = 2 * PowerSeries.X := by
@@ -259,9 +259,9 @@ theorem sum_bernoulliCoeff_div_factorial_three :
     ∑ j ∈ range 4, bernoulliCoeff j / (3 - j).factorial = 0 :=
   sum_bernoulliCoeff_div_factorial_eq_zero_of_odd (by decide)
 
-/-- Replacing `bernoulli` (`B₁ = -1 / 2`) by `bernoulli'` (`B₁ = +1 / 2`) gives `c₀' + c₁' = 2`
+/- Replacing `bernoulli` (`B₁ = -1 / 2`) by `bernoulli'` (`B₁ = +1 / 2`) gives `c₀' + c₁' = 2`
 instead of `0`, breaking the degree-one cancellation. -/
-theorem sum_two_pow_mul_bernoulli'_div_factorial_one :
+example :
     ∑ j ∈ range 2, (2 ^ j * bernoulli' j / j.factorial) / (1 - j).factorial = 2 := by
   norm_num [Finset.sum_range_succ, Nat.factorial]
 
@@ -322,8 +322,9 @@ private theorem two_pi_I_mul_coeff_monodromyGeneratingSeries (L : ℂ) (m : ℕ)
   ring
 
 /-- **Odd-weight monodromy cancellation**: for odd `n` and every complex logarithm determination
-`L`, the peripheral monodromy change around `1` of Zagier's `bernoulliCoeff`-weighted sum is purely
-imaginary, so its real part vanishes. -/
+`L`, the negated peripheral `T₁`-monodromy sum around `1` (omitting the leading `-` sign of the
+counterclockwise jump) of Zagier's `bernoulliCoeff`-weighted sum is purely imaginary, so its real
+part vanishes. -/
 theorem re_sum_bernoulliCoeff_mul_pow_div_factorial_eq_zero {n : ℕ} (hn : Odd n) (L : ℂ) :
     (∑ k ∈ range n, (bernoulliCoeff k : ℂ) *
       (2 * Real.pi * Complex.I * L ^ (n - 1 - k) / ((n - 1 - k).factorial : ℂ)) *
@@ -348,8 +349,9 @@ theorem re_sum_bernoulliCoeff_mul_pow_div_factorial_eq_zero {n : ℕ} (hn : Odd 
   simp
 
 /-- **Even-weight monodromy cancellation**: for even `n` and every complex logarithm determination
-`L`, the peripheral monodromy change around `1` of Zagier's `bernoulliCoeff`-weighted sum is real,
-so its imaginary part vanishes. -/
+`L`, the negated peripheral `T₁`-monodromy sum around `1` (omitting the leading `-` sign of the
+counterclockwise jump) of Zagier's `bernoulliCoeff`-weighted sum is real, so its imaginary part
+vanishes. -/
 theorem im_sum_bernoulliCoeff_mul_pow_div_factorial_eq_zero {n : ℕ} (hn : Even n) (L : ℂ) :
     (∑ k ∈ range n, (bernoulliCoeff k : ℂ) *
       (2 * Real.pi * Complex.I * L ^ (n - 1 - k) / ((n - 1 - k).factorial : ℂ)) *
@@ -389,7 +391,8 @@ theorem im_sum_bernoulliCoeff_mul_pow_div_factorial_eq_zero {n : ℕ} (hn : Even
   rw [hreal, Complex.ofReal_im]
 
 /-- **Parity-projected monodromy cancellation**: in every weight `n`, the parity projection (`Re`
-for odd `n`, `Im` for even `n`) of the peripheral monodromy defect around `1` vanishes. -/
+for odd `n`, `Im` for even `n`) of the negated peripheral `T₁`-monodromy sum around `1` (omitting
+the leading `-` sign of the counterclockwise jump) vanishes. -/
 theorem ite_odd_re_im_sum_bernoulliCoeff_mul_pow_div_factorial_eq_zero (n : ℕ) (L : ℂ) :
     (let w : ℂ := ∑ k ∈ range n, (bernoulliCoeff k : ℂ) *
         (2 * Real.pi * Complex.I * L ^ (n - 1 - k) / ((n - 1 - k).factorial : ℂ)) *
@@ -416,9 +419,9 @@ theorem sum_bernoulliCoeff_mul_neg_two_pi_I_pow_div_factorial_two (L : ℂ) :
   rw [Complex.I_sq]
   ring
 
-/-- Replacing `bernoulliCoeff 1 = -1` by `+1` (the `bernoulli'` convention `B₁ = +1 / 2`) leaves
+/- Replacing `bernoulliCoeff 1 = -1` by `+1` (the `bernoulli'` convention `B₁ = +1 / 2`) leaves
 imaginary part `-4π Re L` in weight two instead of `0`. -/
-theorem im_sum_bernoulli'_mul_neg_two_pi_I_pow_div_factorial_two (L : ℂ) :
+example (L : ℂ) :
     (∑ k ∈ range 2, ((2 ^ k * bernoulli' k / k.factorial : ℚ) : ℂ) *
       (-2 * Real.pi * Complex.I * L ^ (1 - k) / ((1 - k).factorial : ℂ)) *
       (L.re : ℂ) ^ k).im = -4 * Real.pi * L.re := by
