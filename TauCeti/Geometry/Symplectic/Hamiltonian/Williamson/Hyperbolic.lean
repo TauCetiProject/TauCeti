@@ -41,7 +41,7 @@ The proof has two steps.
 * **Equality of spans.** The forms `Q i` Poisson-commute with `P`, since `𝔥` is abelian, and the
   coefficients `aₖ` are nonzero with distinct squares, so every `Q i` is a combination of the
   hyperbolic blocks
-  (`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero` in the namespace
+  (`IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero` in the namespace
   `TauCeti.SymplecticForm`).
   The hyperbolic blocks Poisson-commute, and a nondegenerate family is maximal among
   Poisson-commuting families
@@ -228,12 +228,9 @@ theorem exists_isDarbouxBasis_eq_sum_smul_hyperbolic {P : QuadraticForm ℝ V} {
   obtain ⟨n, b, a, hb, ha, ha0, hA⟩ := ω.exists_isDarbouxBasis_hamiltonianEnd_apply_eq hs hP
   refine ⟨n, b, a, hb, ha, ha0, ω.hamiltonianEnd_injective (b.ext ?_)⟩
   rintro ⟨k, i⟩
-  rw [← ellipticHyperbolic_empty b]
   obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
-  · rw [hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst, (hA k).1]
-    simp
-  · rw [hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd, (hA k).2]
-    simp
+  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_fst, (hA k).1]
+  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd, (hA k).2]
 
 namespace IsNondegenerateQuadraticFamily
 
@@ -254,12 +251,11 @@ theorem exists_isDarbouxBasis_span_eq_span_hyperbolic (h : ω.IsNondegenerateQua
   rintro _ ⟨i, rfl⟩
   -- `Q i` Poisson-commutes with the regular element `∑ₖ aₖ Hₖ`, so it is a combination of the
   -- `Hₖ`.
-  have hcomm := h.quadraticPoissonBracket_eq_zero_of_mem_span (Submodule.subset_span ⟨i, rfl⟩) hP
-  rw [← ellipticHyperbolic_empty b] at hcomm
-  simpa using hb.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero ∅
-    (fun k l hkl _ hsq ↦
+  exact hb.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero
+    (fun k l hkl hsq ↦
       hkl (ha.injective ((pow_left_inj₀ (ha0 k).le (ha0 l).le two_ne_zero).1 hsq)))
-    (fun k ↦ (ha0 k).ne') hcomm
+    (fun k ↦ (ha0 k).ne')
+    (h.quadraticPoissonBracket_eq_zero_of_mem_span (Submodule.subset_span ⟨i, rfl⟩) hP)
 
 /-- **Nondegenerate families of hyperbolic type.** The span of a nondegenerate family `Q` of
 quadratic forms contains a form whose Hamiltonian endomorphism has `dim V` distinct real
@@ -287,11 +283,10 @@ theorem exists_mem_span_card_eq_finrank_iff (h : ω.IsNondegenerateQuadraticFami
     rintro _ ⟨k, i⟩ rfl
     refine Module.End.hasEigenvalue_of_hasEigenvector (x := b (k, i))
       ⟨Module.End.mem_eigenspace_iff.2 ?_, b.ne_zero _⟩
-    rw [← ellipticHyperbolic_empty b]
     obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
-    · rw [hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst]
+    · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_fst]
       simp [ev]
-    · rw [hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd]
+    · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd]
       simp [ev]
 
 end IsNondegenerateQuadraticFamily
