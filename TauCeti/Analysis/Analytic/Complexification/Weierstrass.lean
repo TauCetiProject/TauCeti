@@ -189,19 +189,6 @@ private theorem analyticAt_re_comp_of_eventually_star {X Y : Type*} [NormedAddCo
   ⟨(Complex.reCLM.analyticAt _).comp ((hF.restrictScalars (𝕜 := ℝ)).comp hφ),
     TauCeti.eventually_ofReal_re_eq hφ.continuousAt hφs h⟩
 
-/-- Complexifies a `Fin d`-indexed family of real analytic functions at `x₀`, returning
-holomorphic germs at `fun j ↦ (x₀ j : ℂ)` that agree with the original functions near `x₀` and
-commute with complex conjugation. -/
-private theorem exists_complexification_fin {x₀ : ι → ℝ} {d : ℕ} {c : Fin d → (ι → ℝ) → ℝ}
-    (hc : ∀ i, AnalyticAt ℝ (c i) x₀) :
-    ∃ C : Fin d → (ι → ℂ) → ℂ,
-      (∀ i, AnalyticAt ℂ (C i) fun j ↦ (x₀ j : ℂ)) ∧
-      (∀ i, ∀ᶠ x in 𝓝 x₀, (C i fun j ↦ (x j : ℂ)) = c i x) ∧
-      (∀ i z, C i (star z) = star (C i z)) := by
-  choose ρ hρ C hC hCc hCstar using fun i ↦ (hc i).exists_complexification
-  exact ⟨C, fun i ↦ hC i _ (Metric.mem_ball_self (hρ i)),
-    fun i ↦ Filter.mem_of_superset (Metric.ball_mem_nhds x₀ (hρ i)) (hCc i), hCstar⟩
-
 private theorem exists_weierstrassPreparation_real_pi {f : (ι → ℝ) × ℝ → ℝ}
     {x₀ : ι → ℝ} {t₀ : ℝ} {d : ℕ} (hf : AnalyticAt ℝ f (x₀, t₀))
     (hd : analyticOrderAt (fun t ↦ f (x₀, t)) t₀ = d) :
@@ -260,7 +247,7 @@ private theorem exists_weierstrassDivision_monicOfCoeff_real_pi {d : ℕ}
           ∑ i : Fin d, r i p.1 * (p.2 - t₀) ^ (i : ℕ) := by
   -- complexify the dividend and the coefficients
   obtain ⟨G, hG, hGg, hGstar⟩ := hg.exists_complexification_prod
-  obtain ⟨C, hCan, hCc, hCstar⟩ := exists_complexification_fin hc
+  obtain ⟨C, hCan, hCc, hCstar⟩ := TauCeti.exists_complexification_family hc
   have hC0 (i : Fin d) : (C i fun j ↦ (x₀ j : ℂ)) = 0 := by
     rw [(hCc i).self_of_nhds, hc0 i, Complex.ofReal_zero]
   obtain ⟨Q, R, hQ, hR, hdiv⟩ := hG.exists_weierstrassDivision_monicOfCoeff hCan hC0
@@ -377,9 +364,9 @@ private theorem eventuallyEq_of_weierstrassDivision_real_unit {x₀ : Unit → �
       fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - t₀) * q' p +
           ∑ i : Fin d, r' i p.1 * (p.2 - t₀) ^ (i : ℕ)) :
     q =ᶠ[𝓝 (x₀, t₀)] q' ∧ ∀ i, r i =ᶠ[𝓝 x₀] r' i := by
-  obtain ⟨C, hCan, hCc_ev, -⟩ := AnalyticAt.exists_complexification_fin hc
-  obtain ⟨R, hRan, hRr_ev, -⟩ := AnalyticAt.exists_complexification_fin hr
-  obtain ⟨R', hR'an, hRr'_ev, -⟩ := AnalyticAt.exists_complexification_fin hr'
+  obtain ⟨C, hCan, hCc_ev, -⟩ := exists_complexification_family hc
+  obtain ⟨R, hRan, hRr_ev, -⟩ := exists_complexification_family hr
+  obtain ⟨R', hR'an, hRr'_ev, -⟩ := exists_complexification_family hr'
   obtain ⟨Q, hQ, hQq, -⟩ := hq.exists_complexification_prod
   obtain ⟨Q', hQ', hQq', -⟩ := hq'.exists_complexification_prod
   have hC0 (i : Fin d) : (C i fun j ↦ (x₀ j : ℂ)) = 0 := by

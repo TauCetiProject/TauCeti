@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Analytic.Constructions
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Analysis.Analytic.ChangeOrigin
 import Mathlib.Analysis.Analytic.Polynomial
-import Mathlib.Analysis.Analytic.Uniqueness
-import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.RingTheory.Algebraic.Integral
+import TauCeti.Analysis.Analytic.Germ
 import TauCeti.Order.Filter.Germ.MvPolynomial
 
 /-!
@@ -34,16 +34,17 @@ nonvanishing germs and under exact division inside analytic germs:
 
 * polynomial functions, in particular constants, coordinate functions, and linear functionals, are
   Nash germs;
-* sums, negations, differences, products, powers, finite sums and finite products of Nash germs
-  are Nash germs;
+* sums, negations, differences, products, powers, finite sums, finite products, and evaluations of
+  monic polynomials with Nash coefficients at Nash arguments are Nash germs;
 * the inverse and quotients of Nash germs are Nash germs where the denominator does not vanish,
   and an analytic quotient of a Nash germ by a nonzero Nash germ is again a Nash germ.
 
 The algebraic closure properties come from Mathlib's algebraic elements of an algebra over a
 domain (`IsAlgebraic.add`, `IsAlgebraic.mul`, `IsAlgebraic.invOf`, `IsAlgebraic.of_mul`): a
 polynomial relation near `x` is exactly algebraicity of the germ of `f` at `x` over `ℝ[y]`, where
-polynomials act on germs as polynomial functions (`Filter.Germ.isAlgebraic_coe_iff`), and the
-subalgebra of analytic germs at `x` is an integral domain by the identity principle.
+polynomials act on germs as polynomial functions (`Filter.Germ.isAlgebraic_coe_iff` and
+`TauCeti.analyticGerms.isAlgebraic_ofAnalyticAt_iff`), and the ring of analytic germs
+`TauCeti.analyticGerms ℝ x` is an integral domain by the identity principle.
 
 ## Main declarations
 
@@ -55,9 +56,10 @@ subalgebra of analytic germs at `x` is an integral domain by the identity princi
 * `MvPolynomial.isNashAt_eval`, `LinearMap.isNashAt`, `ContinuousLinearMap.isNashAt`,
   `LinearMap.isNashAt_apply`, `ContinuousLinearMap.isNashAt_apply`: polynomial and linear Nash
   germs.
-* `TauCeti.IsNashAt.add`, `TauCeti.IsNashAt.mul`, `TauCeti.IsNashAt.inv`, `TauCeti.IsNashAt.div`,
-  `TauCeti.IsNashAt.of_eventuallyEq_mul_left`, `TauCeti.IsNashAt.of_eventuallyEq_mul_right`: the
-  algebraic and exact-division closure properties.
+* `TauCeti.IsNashAt.add`, `TauCeti.IsNashAt.mul`, `TauCeti.IsNashAt.eval_monicOfCoeff`,
+  `TauCeti.IsNashAt.inv`, `TauCeti.IsNashAt.div`, `TauCeti.IsNashAt.of_eventuallyEq_mul_left`,
+  `TauCeti.IsNashAt.of_eventuallyEq_mul_right`: the algebraic and exact-division closure
+  properties.
 
 ## References
 
@@ -195,6 +197,19 @@ theorem _root_.Finset.isNashAt_prod {ι : Type*} {F : ι → (σ → ℝ) → �
     (h : ∀ i ∈ N, IsNashAt (F i) x) : IsNashAt (∏ i ∈ N, F i) x :=
   Finset.prod_induction _ (IsNashAt · x) (fun _ _ ↦ .mul) (isNashAt_const 1) h
 
+/-- Evaluating a monic polynomial whose lower coefficients are Nash germs at `x` on a Nash germ
+`g` at `x` produces a Nash germ at `x`. -/
+theorem IsNashAt.eval_monicOfCoeff {d : ℕ} {c : Fin d → (σ → ℝ) → ℝ} {g : (σ → ℝ) → ℝ}
+    {x : σ → ℝ} (hc : ∀ i, IsNashAt (c i) x) (hg : IsNashAt g x) :
+    IsNashAt (fun y ↦ (Polynomial.monicOfCoeff (fun i ↦ c i y)).eval (g y)) x := by
+  have heq : (fun y ↦ (Polynomial.monicOfCoeff (fun i ↦ c i y)).eval (g y)) =
+      (fun y ↦ g y ^ d) + ∑ i : Fin d, fun y ↦ c i y * g y ^ (i : ℕ) := by
+    ext y
+    simp [Polynomial.eval_monicOfCoeff, Finset.sum_apply]
+  rw [heq]
+  exact (hg.fun_pow d).add
+    (Finset.univ.isNashAt_sum fun i _ ↦ (hc i).fun_mul (hg.fun_pow (i : ℕ)))
+
 /-! ### Linear maps -/
 
 /-- A linear functional on a finite-dimensional real coordinate space is a Nash germ. -/
@@ -245,68 +260,27 @@ theorem IsNashAt.div (hf : IsNashAt f x) (hg : IsNashAt g x) (h0 : g x ≠ 0) :
     IsNashAt (f / g) x := by
   simpa [div_eq_mul_inv] using hf.mul (hg.inv h0)
 
-/-- The `MvPolynomial σ ℝ`-subalgebra of analytic germs at `x` inside `Germ (𝓝 x) ℝ`. -/
-private def analyticGermSubalgebra (x : σ → ℝ) :
-    Subalgebra (MvPolynomial σ ℝ) (Germ (𝓝 x) ℝ) where
-  carrier := {φ | ∃ f : (σ → ℝ) → ℝ, AnalyticAt ℝ f x ∧ (f : Germ (𝓝 x) ℝ) = φ}
-  mul_mem' := by
-    rintro _ _ ⟨f, hf, rfl⟩ ⟨g, hg, rfl⟩
-    exact ⟨f * g, hf.mul hg, Germ.coe_mul _ _⟩
-  add_mem' := by
-    rintro _ _ ⟨f, hf, rfl⟩ ⟨g, hg, rfl⟩
-    exact ⟨f + g, hf.add hg, Germ.coe_add _ _⟩
-  algebraMap_mem' p :=
-    ⟨fun y ↦ MvPolynomial.eval y p, AnalyticOnNhd.eval_mvPolynomial p x (Set.mem_univ x),
-      (Germ.mvPolynomialAlgebra_algebraMap_apply (𝓝 x) p).symm⟩
-
-/-- A nonzero analytic germ at `x` is a non-zero-divisor in `analyticGermSubalgebra x`, by the
-identity principle on a ball around `x`. -/
-private theorem mem_nonZeroDivisors_analyticGermSubalgebra (hf : AnalyticAt ℝ f x)
-    (hf0 : ¬ f =ᶠ[𝓝 x] 0) :
-    (⟨(f : Germ (𝓝 x) ℝ), f, hf, rfl⟩ : analyticGermSubalgebra x) ∈
-      nonZeroDivisors (analyticGermSubalgebra x) := by
-  rw [mem_nonZeroDivisors_iff_right]
-  rintro ⟨_, h, hh, rfl⟩ hprod
-  apply Subtype.ext
-  change (h : Germ (𝓝 x) ℝ) = (0 : Germ (𝓝 x) ℝ)
-  rw [← Germ.coe_zero, Germ.coe_eq]
-  have hmul : (h * f : (σ → ℝ) → ℝ) =ᶠ[𝓝 x] 0 := by
-    have hval := congrArg Subtype.val hprod
-    rw [Subalgebra.coe_mul, Subalgebra.coe_zero, ← Germ.coe_mul, ← Germ.coe_zero,
-      Germ.coe_eq] at hval
-    exact hval
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp <|
-    (hf.eventually_analyticAt.and hh.eventually_analyticAt).and hmul
-  refine eventually_of_mem (Metric.ball_mem_nhds x hr) fun y hy ↦ ?_
-  by_contra hy0
-  have hf_ev : f =ᶠ[𝓝 y] 0 := by
-    filter_upwards [Metric.isOpen_ball.mem_nhds hy,
-      (hball hy).1.2.continuousAt.eventually_ne hy0] with w hw hhw
-    exact (mul_eq_zero.mp (hball hw).2).resolve_left hhw
-  have hf_on : AnalyticOnNhd ℝ f (Metric.ball x r) := fun w hw ↦ (hball hw).1.1
-  have hzero := hf_on.eqOn_zero_of_preconnected_of_eventuallyEq_zero
-    (convex_ball x r).isPreconnected hy hf_ev
-  exact hf0 (eventually_of_mem (Metric.ball_mem_nhds x hr) fun w hw ↦ hzero hw)
+attribute [local instance] analyticGerms.mvPolynomialAlgebra
 
 /-- **Exact division of Nash germs.** If `g =ᶠ[𝓝 x] f * u` with `f` and `g` Nash germs at `x`,
 `f` not identically zero near `x`, and `u` real analytic at `x`, then `u` is a Nash germ at `x`. -/
 theorem IsNashAt.of_eventuallyEq_mul_left {u : (σ → ℝ) → ℝ}
     (hg : IsNashAt g x) (hf : IsNashAt f x) (hf0 : ¬ f =ᶠ[𝓝 x] 0)
     (hu : AnalyticAt ℝ u x) (h : g =ᶠ[𝓝 x] f * u) : IsNashAt u x := by
-  let S := analyticGermSubalgebra x
-  let fS : S := ⟨(f : Germ (𝓝 x) ℝ), f, hf.analyticAt, rfl⟩
-  let uS : S := ⟨(u : Germ (𝓝 x) ℝ), u, hu, rfl⟩
-  have hfg : fS * uS = ⟨(g : Germ (𝓝 x) ℝ), g, hg.analyticAt, rfl⟩ :=
-    Subtype.ext (by rw [Subalgebra.coe_mul, ← Germ.coe_mul]; exact Germ.coe_eq.2 h.symm)
-  have hfS_alg : IsAlgebraic (MvPolynomial σ ℝ) fS :=
-    (Subalgebra.isAlgebraic_iff_isAlgebraic_val (S := S)).2 hf.isAlgebraic
-  have hfuS_alg : IsAlgebraic (MvPolynomial σ ℝ) (fS * uS) := by
+  let fG := analyticGerms.ofAnalyticAt f hf.analyticAt
+  let uG := analyticGerms.ofAnalyticAt u hu
+  have hfg : fG * uG = analyticGerms.ofAnalyticAt g hg.analyticAt := by
+    rw [← analyticGerms.ofAnalyticAt_mul]
+    exact analyticGerms.ofAnalyticAt_congr h.symm
+  have hfG_nz : fG ∈ nonZeroDivisors (analyticGerms ℝ x) :=
+    mem_nonZeroDivisors_of_ne_zero (mt analyticGerms.ofAnalyticAt_eq_zero_iff.1 hf0)
+  have hfG_alg : IsAlgebraic (MvPolynomial σ ℝ) fG :=
+    analyticGerms.isAlgebraic_ofAnalyticAt_iff.2 hf.2
+  have hfuG_alg : IsAlgebraic (MvPolynomial σ ℝ) (fG * uG) := by
     rw [hfg]
-    exact (Subalgebra.isAlgebraic_iff_isAlgebraic_val (S := S)).2 hg.isAlgebraic
-  have huS_alg : IsAlgebraic (MvPolynomial σ ℝ) uS :=
-    IsAlgebraic.of_mul (mem_nonZeroDivisors_analyticGermSubalgebra hf.analyticAt hf0) hfS_alg
-      hfuS_alg
-  exact .of_isAlgebraic hu ((Subalgebra.isAlgebraic_iff_isAlgebraic_val (S := S)).1 huS_alg)
+    exact analyticGerms.isAlgebraic_ofAnalyticAt_iff.2 hg.2
+  exact ⟨hu, analyticGerms.isAlgebraic_ofAnalyticAt_iff.1
+    (IsAlgebraic.of_mul hfG_nz hfG_alg hfuG_alg)⟩
 
 /-- Right-factor version of `TauCeti.IsNashAt.of_eventuallyEq_mul_left`: if `g =ᶠ[𝓝 x] u * f` with
 `f` and `g` Nash germs at `x`, `f` not identically zero near `x`, and `u` real analytic at `x`,

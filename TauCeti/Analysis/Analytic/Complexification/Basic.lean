@@ -68,6 +68,8 @@ commutes with complex conjugation near the point, not only the one constructed h
   composition law equal to the identity near a real point.
 * `AnalyticAt.eventually_apply_star`: a complex analytic function that is real at the real points
   near a real point commutes with conjugation near it.
+* `TauCeti.exists_complexification_family`: germ-level complexification for an indexed family of
+  real analytic functions at a common real point.
 * `TauCeti.eventually_ofReal_re_eq`: conversely, a function commuting with conjugation is real at
   points fixed by conjugation.
 
@@ -521,6 +523,19 @@ theorem eventually_apply_star {F : (ι → ℂ) → ℂ} {a : ι → ℝ}
 end AnalyticAt
 
 namespace TauCeti
+
+/-- Complexifies an indexed family of real analytic functions at `a : ι → ℝ`, returning
+holomorphic germs at `fun j ↦ (a j : ℂ)` that agree with the original functions near `a` and
+commute with complex conjugation. -/
+theorem exists_complexification_family {ι κ : Type*} [Fintype ι] {a : ι → ℝ}
+    {f : κ → (ι → ℝ) → ℝ} (hf : ∀ k, AnalyticAt ℝ (f k) a) :
+    ∃ F : κ → (ι → ℂ) → ℂ,
+      (∀ k, AnalyticAt ℂ (F k) fun j ↦ (a j : ℂ)) ∧
+      (∀ k, ∀ᶠ x in 𝓝 a, (F k fun j ↦ (x j : ℂ)) = f k x) ∧
+      (∀ k z, F k (star z) = star (F k z)) := by
+  choose ρ hρ F hF hFf hFstar using fun k ↦ (hf k).exists_complexification
+  exact ⟨F, fun k ↦ hF k _ (Metric.mem_ball_self (hρ k)),
+    fun k ↦ Filter.mem_of_superset (Metric.ball_mem_nhds a (hρ k)) (hFf k), hFstar⟩
 
 /-- A complex-valued function commuting with conjugation is real at the points `φ x` near `x₀`,
 when the values of `φ` are fixed by conjugation and `φ` is continuous at `x₀`. -/

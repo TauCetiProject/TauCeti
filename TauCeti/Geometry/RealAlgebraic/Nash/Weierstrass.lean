@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
+import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Analysis.Polynomial.Order
@@ -73,8 +74,6 @@ changes (`TauCeti.IsNashAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`)
 
 * `TauCeti.IsNashAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: general-position linear
   change of coordinates making a non-identically-zero Nash germ regular in the vertical variable.
-* `TauCeti.IsNashAt.eval_monicOfCoeff`: evaluating a monic polynomial with Nash coefficients at a
-  Nash argument yields a Nash germ.
 * `TauCeti.IsNashAt.exists_weierstrassPreparation`: **Nash Weierstrass preparation theorem.**
 * `TauCeti.IsNashAt.exists_weierstrassDivision_monicOfCoeff`,
   `TauCeti.IsNashAt.exists_weierstrassDivision`: **Nash Weierstrass division theorems.**
@@ -119,11 +118,6 @@ private theorem prodRealEquivSumUnit_symm_apply {σ : Type*} (p : σ ⊕ Unit �
     (prodRealEquivSumUnit σ).symm p = (p ∘ Sum.inl, p (Sum.inr ())) :=
   Prod.ext rfl rfl
 
-@[simp]
-private theorem sumElim_comp_inl_inr {σ α : Type*} (p : σ ⊕ Unit → α) :
-    Sum.elim (p ∘ Sum.inl) (fun _ : Unit ↦ p (Sum.inr ())) = p := by
-  ext (i | ⟨⟩) <;> rfl
-
 /-- **General position in the vertical variable for Nash germs.** Let `f : (σ ⊕ Unit → ℝ) → ℝ` be
 a Nash germ at `p` that does not vanish on a neighborhood of `p`. Then there exist a continuous
 linear automorphism `L` of `σ ⊕ Unit → ℝ` and coordinates `(x₀, t₀)` with
@@ -144,22 +138,10 @@ theorem IsNashAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top
   obtain ⟨M, ⟨x₀, t₀⟩, hM, hord⟩ := han.exists_continuousLinearEquiv_analyticOrderAt_ne_top hne
   let L := E.symm.trans (M.trans E)
   have hLp : L (Sum.elim x₀ (fun _ ↦ t₀)) = p := by
-    simp [L, E, hM]
+    have hE : E.symm (Sum.elim x₀ (fun _ ↦ t₀)) = (x₀, t₀) := by simp [E]
+    simp only [L, ContinuousLinearEquiv.trans_apply, hE, hM, E.apply_symm_apply]
   refine ⟨L, x₀, t₀, hLp, L.isNashAt_comp_iff.mpr (hLp.symm ▸ hf), ?_⟩
   simpa [L, E, Function.comp_def] using hord
-
-/-- Evaluating a monic polynomial whose lower coefficients are Nash germs at `x` on a Nash germ
-`g` at `x` produces a Nash germ at `x`. -/
-theorem IsNashAt.eval_monicOfCoeff {d : ℕ} {c : Fin d → (σ → ℝ) → ℝ} {g : (σ → ℝ) → ℝ}
-    {x : σ → ℝ} (hc : ∀ i, IsNashAt (c i) x) (hg : IsNashAt g x) :
-    IsNashAt (fun y ↦ (Polynomial.monicOfCoeff (fun i ↦ c i y)).eval (g y)) x := by
-  have heq : (fun y ↦ (Polynomial.monicOfCoeff (fun i ↦ c i y)).eval (g y)) =
-      (fun y ↦ g y ^ d) + ∑ i : Fin d, fun y ↦ c i y * g y ^ (i : ℕ) := by
-    ext y
-    simp [Polynomial.eval_monicOfCoeff, Finset.sum_apply]
-  rw [heq]
-  exact (hg.fun_pow d).add
-    (Finset.univ.isNashAt_sum fun i _ ↦ (hc i).fun_mul (hg.fun_pow (i : ℕ)))
 
 end LinearCoordinates
 
@@ -181,14 +163,6 @@ private theorem complexVertDeriv_sumElim (k : ℕ) (F : (σ ⊕ Unit → ℂ) �
     complexVertDeriv k F (Sum.elim x (fun _ ↦ w)) =
       iteratedDeriv k (fun ζ ↦ F (Sum.elim x (fun _ ↦ ζ))) w := by
   simp only [complexVertDeriv, Sum.elim_comp_inl, Sum.elim_inr]
-
-/-- The vertical slice embedding `ζ ↦ Sum.elim x (fun _ ↦ ζ)` into `σ ⊕ Unit → ℂ` is analytic. -/
-private theorem analyticAt_sumElim_const (x : σ → ℂ) (w : ℂ) :
-    AnalyticAt ℂ (fun ζ : ℂ ↦ Sum.elim x (fun _ : Unit ↦ ζ)) w :=
-  analyticAt_pi_iff.mpr fun j ↦ by
-    cases j with
-    | inl _ => exact analyticAt_const
-    | inr _ => exact analyticAt_id
 
 /-- For `F` holomorphic on `V`, the analytic order of the vertical slice
 `ζ ↦ F (Sum.elim x (fun _ ↦ ζ))` at `w` equals `n` if and only if the first `n` vertical
@@ -219,15 +193,12 @@ private theorem complexVertDeriv_succ_eq_fderiv {V : Set (σ ⊕ Unit → ℂ)}
     simpa [φ] using
       (((hasDerivAt_id (z (Sum.inr ()))).sub_const (z (Sum.inr ()))).smul_const vℂ).const_add z
   have hφz : φ (z (Sum.inr ())) = z := by simp [φ]
-  have hGφ : HasFDerivAt (complexVertDeriv k F)
-      (fderiv ℂ (complexVertDeriv k F) z) (φ (z (Sum.inr ()))) := by
-    rw [hφz]
-    exact (hG z hz).differentiableAt.hasFDerivAt
+  have hGφ := hφz ▸ (hG z hz).differentiableAt.hasFDerivAt
   have hstep : complexVertDeriv (k + 1) F z =
       deriv (fun w ↦ complexVertDeriv k F (φ w)) (z (Sum.inr ())) := by
     simp only [complexVertDeriv, hφ_eq, Sum.elim_comp_inl, Sum.elim_inr, iteratedDeriv_succ]
   rw [hstep]
-  exact (hGφ.comp_hasDerivAt (z (Sum.inr ())) hφ_deriv).deriv
+  simpa [hφz, Function.comp_def] using (hGφ.comp_hasDerivAt (z (Sum.inr ())) hφ_deriv).deriv
 
 /-- If `L ∘ complexVertDeriv k F ∘ (complexToRealPi (σ ⊕ Unit)).symm` has semialgebraic graph on
 `(complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V`, then so does the `(k + 1)`-th vertical derivative. -/
@@ -278,7 +249,8 @@ private theorem analyticOnNhd_and_isSemialgebraicOn_complexVertDeriv {V : Set (�
   | zero =>
     have h0 : complexVertDeriv 0 F = F := by
       ext z
-      simp [complexVertDeriv, iteratedDeriv_zero]
+      simp only [complexVertDeriv, iteratedDeriv_zero]
+      exact congrArg F (Sum.elim_comp_inl_inr z)
     simpa only [h0] using ⟨hFV, hFS⟩
   | succ k ih =>
     obtain ⟨hGa, hGS⟩ := ih
@@ -294,21 +266,13 @@ private theorem analyticOnNhd_and_isSemialgebraicOn_complexVertDeriv {V : Set (�
     refine ⟨han, isSemialgebraicOn_pi_iff.mpr ⟨hS, fun j ↦ ?_⟩⟩
     cases j with
     | inl u =>
-      have hre : IsSemialgebraicOn
-          (fun a (_ : Unit) ↦
-            Complex.reCLM (complexVertDeriv k F ((complexToRealPi (σ ⊕ Unit)).symm a)))
-          ((complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V) :=
-        (hcoords (.inl u)).congr fun a _ ↦ funext fun _ ↦ by simp
-      exact (isSemialgebraicOn_comp_complexVertDeriv_succ hVo hGa Complex.reCLM hre).congr
-        fun a _ ↦ funext fun _ ↦ by simp
+      exact (isSemialgebraicOn_comp_complexVertDeriv_succ hVo hGa Complex.reCLM
+        ((hcoords (.inl u)).congr fun a _ ↦ funext fun _ ↦ by simp)).congr
+          fun a _ ↦ funext fun _ ↦ by simp
     | inr u =>
-      have him : IsSemialgebraicOn
-          (fun a (_ : Unit) ↦
-            Complex.imCLM (complexVertDeriv k F ((complexToRealPi (σ ⊕ Unit)).symm a)))
-          ((complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V) :=
-        (hcoords (.inr u)).congr fun a _ ↦ funext fun _ ↦ by simp
-      exact (isSemialgebraicOn_comp_complexVertDeriv_succ hVo hGa Complex.imCLM him).congr
-        fun a _ ↦ funext fun _ ↦ by simp
+      exact (isSemialgebraicOn_comp_complexVertDeriv_succ hVo hGa Complex.imCLM
+        ((hcoords (.inr u)).congr fun a _ ↦ funext fun _ ↦ by simp)).congr
+          fun a _ ↦ funext fun _ ↦ by simp
 
 /-- Pulling back a realified complex vertical derivative along real polynomial coordinates `(xP,
 wRe, wIm)`: both the locus in `V` where it vanishes and the locus in `V` where it is nonzero are
@@ -340,12 +304,8 @@ private theorem isSemialgebraic_setOf_complexVertDeriv_eq_and_ne_zero {ν : Type
     ext v
     rw [mem_ofPred_eq, mem_preimage, mem_preimage_sumArrowEquivProdArrow_graphOn]
     have hinl : ((fun t ↦ MvPolynomial.eval v (q t)) ∘ Sum.inl) =
-        fun s ↦ MvPolynomial.eval v (pIn s) := by
-      ext s
-      simp [q]
-    have hinr : ((fun t ↦ MvPolynomial.eval v (q t)) ∘ Sum.inr) = 0 := by
-      ext u
-      simp [q]
+        fun s ↦ MvPolynomial.eval v (pIn s) := funext fun s ↦ by simp [q]
+    have hinr : ((fun t ↦ MvPolynomial.eval v (q t)) ∘ Sum.inr) = 0 := funext fun u ↦ by simp [q]
     rw [hinl, hinr, mem_preimage, hpt]
     refine and_congr_right fun _ ↦ ?_
     simp [Complex.ext_iff, funext_iff]
@@ -413,35 +373,14 @@ private theorem eventuallyEq_complexification_weierstrassPreparation {d : ℕ}
     (continuous_fst.tendsto (x₀, t₀)).comp hp_prod
   filter_upwards [hp_real.eventually (hVo.mem_nhds hz₀V), ball_mem_nhds p₀ hrU,
     hp_prod.eventually hfac, hp_inl.eventually hCc_ev] with p hpV hpU hpf hpC
-  rw [sumElim_comp_inl_inr] at hpf
+  have hp_eq : Sum.elim (p ∘ Sum.inl) (fun _ : Unit ↦ p (Sum.inr ())) = p := Sum.elim_comp_inl_inr p
+  rw [hp_eq] at hpf
   rw [hFr p hpV, hpf, Complex.ofReal_mul, ← hUr p hpU]
   congr 1
   simp only [Polynomial.eval_monicOfCoeff, Complex.ofReal_add, Complex.ofReal_pow,
     Complex.ofReal_sum, Complex.ofReal_mul, Complex.ofReal_sub]
   congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hci : C i ((fun j ↦ (p j : ℂ)) ∘ Sum.inl) = (c i (p ∘ Sum.inl) : ℂ) := hpC i
-  rw [hci]
-
-/-- For a nonzero complex polynomial `P` and a function `v : ℂ → ℂ` analytic and nonzero at
-`w₀ + ζ`, the product `w ↦ P.eval (w - w₀) * v w` has analytic order `P.rootMultiplicity ζ` at
-`w₀ + ζ`. -/
-private theorem analyticOrderAt_eval_sub_mul_of_ne_zero {P : ℂ[X]} (hP : P ≠ 0)
-    {v : ℂ → ℂ} {w₀ ζ : ℂ} (hv : AnalyticAt ℂ v (w₀ + ζ)) (hv0 : v (w₀ + ζ) ≠ 0) :
-    analyticOrderAt (fun w ↦ P.eval (w - w₀) * v w) (w₀ + ζ) = (P.rootMultiplicity ζ : ℕ∞) := by
-  have htr : AnalyticAt ℂ (fun w : ℂ ↦ w - w₀) (w₀ + ζ) :=
-    analyticAt_id.fun_sub analyticAt_const
-  have hP_an : AnalyticAt ℂ (fun w ↦ P.eval (w - w₀)) (w₀ + ζ) :=
-    ((AnalyticOnNhd.eval_polynomial P) _ trivial).comp htr
-  have htr' : deriv (fun w : ℂ ↦ w - w₀) (w₀ + ζ) ≠ 0 := by
-    rw [deriv_sub_const, deriv_id'']; exact one_ne_zero
-  have hP_ord : analyticOrderAt (fun w ↦ P.eval (w - w₀)) (w₀ + ζ) =
-      (P.rootMultiplicity ζ : ℕ∞) := by
-    have hcomp := analyticOrderAt_comp_of_deriv_ne_zero (f := fun u ↦ P.eval u) htr htr'
-    rw [Function.comp_def, add_sub_cancel_left, Polynomial.analyticOrderAt_eval hP] at hcomp
-    exact hcomp
-  have hv_ord : analyticOrderAt v (w₀ + ζ) = 0 := hv.analyticOrderAt_eq_zero.mpr hv0
-  exact (analyticOrderAt_mul hP_an hv).trans (by rw [hP_ord, hv_ord, add_zero])
+  exact Finset.sum_congr rfl fun i _ ↦ congrArg (· * _) (hpC i).symm
 
 /-- For a Nash germ `f` with real Weierstrass preparation `(c, u)` at `(x₀, t₀)`, there exist an
 open set `V`, a holomorphic extension `F` of `f` on `V` with semialgebraic realified graph on `V`,
@@ -475,15 +414,14 @@ private theorem exists_polydisc_weierstrass_rootMultiplicity {d : ℕ}
   let p₀ : σ ⊕ Unit → ℝ := Sum.elim x₀ (fun _ ↦ t₀)
   let z₀ : σ ⊕ Unit → ℂ := fun j ↦ (p₀ j : ℂ)
   obtain ⟨V, hVo, hz₀V, -, -, -, F, hFV, hFr, -, hFS⟩ := hf.exists_complexification univ_mem
-  choose ρ hρ C hC hCc _ using fun i ↦ (hc i).exists_complexification
+  obtain ⟨C, hC, hCc, -⟩ := exists_complexification_family hc
   have hu_sum : AnalyticAt ℝ (fun p : σ ⊕ Unit → ℝ ↦ u (p ∘ Sum.inl, p (Sum.inr ()))) p₀ := by
     simpa [Function.comp_def] using
       hu.comp_of_eq ((prodRealEquivSumUnit σ).symm.analyticAt p₀) (by simp [p₀])
   obtain ⟨rU, hrU, U, hU, hUr, -⟩ := hu_sum.exists_complexification
-  have hCc_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, C i (fun j ↦ (x j : ℂ)) = c i x :=
-    eventually_all.mpr fun i ↦ Filter.mem_of_superset (ball_mem_nhds x₀ (hρ i)) (hCc i)
+  have hCc_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, C i (fun j ↦ (x j : ℂ)) = c i x := eventually_all.mpr hCc
   have hF_eq := eventuallyEq_complexification_weierstrassPreparation hVo hz₀V hFV hFr
-    (fun i ↦ hC i _ (mem_ball_self (hρ i))) hCc_ev hrU hU hUr hfac
+    hC hCc_ev hrU hU hUr hfac
   have hUz₀ : U z₀ ≠ 0 := by
     rw [hUr p₀ (mem_ball_self hrU)]
     exact Complex.ofReal_ne_zero.mpr hu0
@@ -531,8 +469,9 @@ private theorem exists_polydisc_weierstrass_rootMultiplicity {d : ℕ}
       (fun w ↦ U (Sum.elim (fun i ↦ (x i : ℂ)) (fun _ ↦ w))) ((t₀ : ℂ) + ζ) :=
     (hU _ (hballZ hz₀_pt).1.2).comp_of_eq (analyticAt_sumElim_const _ _) rfl
   rw [analyticOrderAt_congr hslice_eq]
-  exact analyticOrderAt_eval_sub_mul_of_ne_zero (Polynomial.monic_monicOfCoeff _).ne_zero
-    hU_slice_an (hballZ hz₀_pt).2.1
+  simpa only [add_sub_cancel_left] using
+    Polynomial.analyticOrderAt_eval_sub_mul_of_ne_zero (Polynomial.monic_monicOfCoeff _).ne_zero
+      (t₀ : ℂ) hU_slice_an (hballZ hz₀_pt).2.1
 
 /-- The locus where `r` complex coordinates encoded as real and imaginary parts are pairwise
 distinct is semialgebraic. -/
@@ -669,6 +608,7 @@ private theorem isNashAt_weierstrassPreparation_coeff {d : ℕ}
   let x := w ∘ Sum.inl
   let P : ℂ[X] := Polynomial.monicOfCoeff (fun j ↦ (c j x : ℂ))
   have hP_monic : P.Monic := Polynomial.monic_monicOfCoeff _
+  have hP_coeff (j : Fin d) : P.coeff (j : ℕ) = (c j x : ℂ) := Polynomial.coeff_monicOfCoeff _ j
   have hnorm (z : ℂ) : ‖z‖ < R ↔ z.re ^ 2 + z.im ^ 2 < R ^ 2 := by
     rw [← sq_lt_sq₀ (norm_nonneg z) hR.le, Complex.sq_norm, Complex.normSq_apply]
     simp only [sq]
@@ -699,11 +639,8 @@ private theorem isNashAt_weierstrassPreparation_coeff {d : ℕ}
         (hord_eq.trans (congrArg Nat.cast (hmult l)))⟩
     · intro j
       have hcj : w (.inr j) = c j x := (congrFun hcx j).symm
-      rw [hcj, ← Polynomial.coeff_monicOfCoeff (fun k ↦ (c k x : ℂ)) j]
-      change P.coeff (j : ℕ) = _
-      rw [← hprod]
-      simp [Complex.re_add_im, m']
-      rfl
+      rw [hcj, ← hP_coeff j, ← hprod]
+      simp [Complex.re_add_im, m', r']
   · -- Reverse direction: recover `P` from `d` roots counted with vertical-slice multiplicity.
     rintro ⟨r, m, hx, y, hyR, hpair, hderiv, hcoeff⟩
     refine ⟨hx, ?_⟩
@@ -720,10 +657,8 @@ private theorem isNashAt_weierstrassPreparation_coeff {d : ℕ}
       (fun _ _ h ↦ by_contra fun hne ↦ hpair _ _ hne h) (fun l ↦ (hmult l).ge)
     funext j
     apply Complex.ofReal_injective
-    rw [← Polynomial.coeff_monicOfCoeff (fun k ↦ (c k x : ℂ)) j]
-    change P.coeff (j : ℕ) = _
-    rw [hP_eq, ← hcoeff j]
-    rfl
+    rw [← hP_coeff j, hP_eq]
+    exact (hcoeff j).symm
 
 /-- **Nash Weierstrass preparation theorem.** Let `f : (σ ⊕ Unit → ℝ) → ℝ` be a Nash germ at
 `Sum.elim x₀ (fun _ ↦ t₀)`, with `σ` finite, and suppose the vertical slice
@@ -758,8 +693,8 @@ theorem IsNashAt.exists_weierstrassPreparation {f : (σ ⊕ Unit → ℝ) → �
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (Sum.inr ()) - t₀) * u p := by
     filter_upwards [(E.symm.continuous.tendsto' p₀ (x₀, t₀) (by simp [E, p₀])).eventually hfac_prod]
       with p hp
-    simpa only [Function.comp_apply, u, E, prodRealEquivSumUnit_symm_apply,
-      prodRealEquivSumUnit_apply, sumElim_comp_inl_inr] using hp
+    rw [Function.comp_apply, E.apply_symm_apply] at hp
+    simpa only [u, E, prodRealEquivSumUnit_symm_apply] using hp
   have hP_nash : IsNashAt
       (fun p : σ ⊕ Unit → ℝ ↦
         (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (Sum.inr ()) - t₀)) p₀ :=
@@ -771,10 +706,7 @@ theorem IsNashAt.exists_weierstrassPreparation {f : (σ ⊕ Unit → ℝ) → �
       0 := by
     intro h0
     have hline : Tendsto (fun t : ℝ ↦ Sum.elim x₀ (fun _ : Unit ↦ t)) (𝓝 t₀) (𝓝 p₀) :=
-      tendsto_pi_nhds.mpr fun j ↦ by
-        cases j with
-        | inl _ => exact tendsto_const_nhds
-        | inr _ => exact tendsto_id
+      tendsto_pi_nhds.mpr fun j ↦ by cases j <;> [exact tendsto_const_nhds; exact tendsto_id]
     obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.mp (hline.eventually h0)
     have hs_mem : t₀ + δ / 2 ∈ ball t₀ δ := by
       rw [mem_ball, dist_self_add_left, Real.norm_of_nonneg (by positivity)]
@@ -962,18 +894,20 @@ private theorem weierstrassDivision_eventuallyEq_of_perturbed_preparation {d : �
   have hline_cont : Continuous (fun s : ℝ ↦
       Sum.elim (Sum.elim (p ∘ Sum.inl) (fun _ : Unit ↦ s)) (fun _ : Unit ↦ p (Sum.inr ()))) :=
     continuous_pi fun j ↦ by
-      rcases j with (i | ⟨⟩) | ⟨⟩
-      · exact continuous_const
-      · exact continuous_id
-      · exact continuous_const
+      rcases j with (i | ⟨⟩) | ⟨⟩ <;>
+        [exact continuous_const; exact continuous_id; exact continuous_const]
   have hline_ev : ∀ᶠ s in 𝓝 (0 : ℝ),
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (Sum.inr ()) - t₀) - s * g p =
         (Polynomial.monicOfCoeff
           (fun i ↦ A i (Sum.elim (p ∘ Sum.inl) (fun _ ↦ s)))).eval (p (Sum.inr ()) - t₀) *
           U (Sum.elim (Sum.elim (p ∘ Sum.inl) (fun _ ↦ s)) (fun _ ↦ p (Sum.inr ()))) := by
     filter_upwards [(hline_cont.tendsto' 0 (ιQ p) (by simp [ιQ])).eventually hHp] with s hs
-    simpa only [projDropMiddle_apply, Sum.elim_comp_inl, Sum.elim_inl, Sum.elim_inr,
-      sumElim_comp_inl_inr] using hs
+    have hdrop : projDropMiddle σ
+        (Sum.elim (Sum.elim (p ∘ Sum.inl) (fun _ : Unit ↦ s)) (fun _ : Unit ↦ p (Sum.inr ()))) =
+        p := by
+      rw [projDropMiddle_apply, Sum.elim_comp_inl, Sum.elim_comp_inl, Sum.elim_inr]
+      exact Sum.elim_comp_inl_inr p
+    simpa only [hdrop, Sum.elim_comp_inl, Sum.elim_inl, Sum.elim_inr] using hs
   simpa [ιQ, ιY] using weierstrassDivision_eq_of_perturbed_preparation
     (fun i ↦ by simpa [ιY] using (hAd i).differentiableAt)
     (by simpa [ιQ] using hUd.differentiableAt) (by simpa [ιY] using hAc)
@@ -1002,7 +936,7 @@ theorem IsNashAt.exists_weierstrassDivision_monicOfCoeff {d : ℕ}
   let H : ((σ ⊕ Unit) ⊕ Unit → ℝ) → ℝ := fun q ↦
     (Polynomial.monicOfCoeff (fun i ↦ c i ((q ∘ Sum.inl) ∘ Sum.inl))).eval (q (Sum.inr ()) - t₀) -
       q (.inl (.inr ())) * g (πH q)
-  have hπH_q₀ : πH q₀ = p₀ := by simp [πH, p₀, q₀, y₀]
+  have hπH_q₀ : πH q₀ = Sum.elim x₀ (fun _ ↦ t₀) := by simp [πH, q₀, y₀]
   have hH_nash : IsNashAt H q₀ := by
     have hP : IsNashAt (fun q : (σ ⊕ Unit) ⊕ Unit → ℝ ↦
         (Polynomial.monicOfCoeff (fun i ↦ c i ((q ∘ Sum.inl) ∘ Sum.inl))).eval
@@ -1010,8 +944,7 @@ theorem IsNashAt.exists_weierstrassDivision_monicOfCoeff {d : ℕ}
       IsNashAt.eval_monicOfCoeff
         (fun i ↦ (hc i).comp fun j ↦ isNashAt_apply (σ := (σ ⊕ Unit) ⊕ Unit) (.inl (.inl j)))
         ((isNashAt_apply (σ := (σ ⊕ Unit) ⊕ Unit) (.inr ())).fun_sub (isNashAt_const t₀))
-    have hg_comp : IsNashAt (g ∘ πH) q₀ :=
-      (show IsNashAt g (πH q₀) by simpa [hπH_q₀, p₀] using hg).comp_continuousLinearMap πH
+    have hg_comp : IsNashAt (g ∘ πH) q₀ := (hπH_q₀.symm ▸ hg).comp_continuousLinearMap
     exact hP.fun_sub ((isNashAt_apply (σ := (σ ⊕ Unit) ⊕ Unit) (.inl (.inr ()))).fun_mul hg_comp)
   have hH_ord : analyticOrderAt (fun t ↦ H (Sum.elim y₀ (fun _ ↦ t))) t₀ = d := by
     have hslice : (fun t : ℝ ↦ H (Sum.elim y₀ (fun _ ↦ t))) =
@@ -1023,13 +956,12 @@ theorem IsNashAt.exists_weierstrassDivision_monicOfCoeff {d : ℕ}
   obtain ⟨A, U, hA, -, hU, hU0, hH_prep⟩ := hH_nash.exists_weierstrassPreparation hH_ord
   let vA : σ ⊕ Unit → ℝ := Sum.elim 0 (fun _ ↦ 1)
   let vU : (σ ⊕ Unit) ⊕ Unit → ℝ := Sum.elim vA (fun _ ↦ 0)
+  have hιQ_p₀ : embedZeroProd σ p₀ = Sum.elim y₀ (fun _ ↦ t₀) := by simp [p₀, y₀]
+  have hιY_x₀ : embedZero σ x₀ = y₀ := by simp [y₀]
   have hq_nash : IsNashAt (fun p ↦ - fderiv ℝ U (embedZeroProd σ p) vU) p₀ :=
-    (show IsNashAt (fun z ↦ - fderiv ℝ U z vU) (embedZeroProd σ p₀) by
-      simpa [p₀, q₀, y₀] using (hU.fderiv_apply vU).fun_neg).comp_continuousLinearMap
-      (embedZeroProd σ)
+    (hιQ_p₀.symm ▸ (hU.fderiv_apply vU).fun_neg).comp_continuousLinearMap
   have hr_nash (i : Fin d) : IsNashAt (fun x ↦ - fderiv ℝ (A i) (embedZero σ x) vA) x₀ :=
-    (show IsNashAt (fun y ↦ - fderiv ℝ (A i) y vA) (embedZero σ x₀) by
-      simpa [y₀] using ((hA i).fderiv_apply vA).fun_neg).comp_continuousLinearMap (embedZero σ)
+    (hιY_x₀.symm ▸ ((hA i).fderiv_apply vA).fun_neg).comp_continuousLinearMap
   refine ⟨_, _, hq_nash, hr_nash, ?_⟩
   exact weierstrassDivision_eventuallyEq_of_perturbed_preparation
     (fun i ↦ (hc i).analyticAt) hc0 (fun i ↦ (hA i).analyticAt) hU.analyticAt hU0 hH_prep

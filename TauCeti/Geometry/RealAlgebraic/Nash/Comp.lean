@@ -60,13 +60,13 @@ theorem IsNashAt.comp {f : (τ → ℝ) → ℝ} (hf : IsNashAt f (g x))
 
 /-- Precomposing a Nash germ with a linear map yields a Nash germ. -/
 theorem IsNashAt.comp_linearMap {f : (τ → ℝ) → ℝ} {x : σ → ℝ}
-    (L : (σ → ℝ) →ₗ[ℝ] (τ → ℝ)) (hf : IsNashAt f (L x)) : IsNashAt (f ∘ L) x :=
+    {L : (σ → ℝ) →ₗ[ℝ] (τ → ℝ)} (hf : IsNashAt f (L x)) : IsNashAt (f ∘ L) x :=
   hf.comp fun j ↦ L.isNashAt_apply j
 
 /-- Precomposing a Nash germ with a continuous linear map yields a Nash germ. -/
 theorem IsNashAt.comp_continuousLinearMap {f : (τ → ℝ) → ℝ} {x : σ → ℝ}
-    (L : (σ → ℝ) →L[ℝ] (τ → ℝ)) (hf : IsNashAt f (L x)) : IsNashAt (f ∘ L) x :=
-  hf.comp_linearMap L.toLinearMap
+    {L : (σ → ℝ) →L[ℝ] (τ → ℝ)} (hf : IsNashAt f (L x)) : IsNashAt (f ∘ L) x :=
+  hf.comp_linearMap
 
 /-- Precomposing with a linear equivalence preserves Nash germs in both directions. -/
 @[simp]
@@ -76,8 +76,8 @@ theorem _root_.LinearEquiv.isNashAt_comp_iff {f : (τ → ℝ) → ℝ} {x : σ 
     have hx : L.symm.toLinearMap (L x) = x := L.symm_apply_apply x
     have hcomp : (f ∘ L) ∘ L.symm.toLinearMap = f := by ext y; simp
     rw [← hcomp]
-    exact (hx ▸ h).comp_linearMap L.symm.toLinearMap,
-    fun h ↦ h.comp_linearMap L.toLinearMap⟩
+    exact (hx ▸ h).comp_linearMap,
+    fun h ↦ h.comp_linearMap⟩
 
 /-- Precomposing with a continuous linear equivalence preserves Nash germs in both directions. -/
 @[simp]
