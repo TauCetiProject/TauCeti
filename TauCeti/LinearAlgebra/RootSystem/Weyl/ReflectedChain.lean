@@ -8,6 +8,8 @@ module
 public import TauCeti.GroupTheory.Coxeter.ChainProperty
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ChainBond
 
+import TauCeti.LinearAlgebra.RootSystem.Reduced
+
 /-!
 # Reflecting saturated chains of `W / W_λ` in a simple root
 
@@ -95,7 +97,7 @@ namespace _root_.CoxeterSystem.MinimalCosetRepChain
 
 variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : _root_.RootPairing ι R M N} {b : P.Base} [Finite ι]
-  [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] {lam : M}
+  [P.IsCrystallographic] [P.IsReduced] {lam : M}
 
 /-- The **reflection** `sᵢ x₀ ⋗ sᵢ x₁ ⋗ ⋯ ⋗ sᵢ x_l` of a saturated chain `x₀ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` lying strictly on one side of the wall of the simple root `αᵢ`: either
@@ -120,25 +122,21 @@ variable {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
   {hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0}
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem length_simpleMul : (simpleMul hlam C i hC).length = C.length :=
   (rfl)
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem simpleMul_apply (k : Fin ((simpleMul hlam C i hC).length + 1)) :
     ((simpleMul hlam C i hC) k).1 =
       (weylCoxeterSystem P b).simple i * (C ⟨k, by simpa using k.2⟩).1 :=
   (rfl)
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem head_simpleMul :
     (simpleMul hlam C i hC).head.1 = (weylCoxeterSystem P b).simple i * C.head.1 :=
   (rfl)
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem last_simpleMul :
     (simpleMul hlam C i hC).last.1 = (weylCoxeterSystem P b).simple i * C.last.1 :=
@@ -151,7 +149,7 @@ end _root_.CoxeterSystem.MinimalCosetRepChain
 section RootDatum
 
 variable [AddCommGroup M] [AddCommGroup N] {P : _root_.RootPairing ι ℤ M N} {b : P.Base}
-  [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M} {a : ℚ}
+  [Finite ι] [P.IsReduced] {lam : M} {a : ℚ}
 
 namespace _root_.CoxeterSystem.MinimalCosetRepChain
 
@@ -192,7 +190,6 @@ theorem isAChain_simpleMul_iff :
 
 end _root_.CoxeterSystem.MinimalCosetRepChain
 
-omit [P.flip.IsReduced] in
 /-- **The cover `u ⋖ sᵢ u` is an `a`-chain when `a ⟨u λ, αᵢ^∨⟩` is an integer.** For a minimal coset
 representative `u` of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ > 0`, the saturated chain `sᵢ u ⋗ u` has the
 single bond `⟨u λ, αᵢ^∨⟩`. -/
@@ -266,6 +263,7 @@ theorem IsAChain.exists_isAChain_simple_mul_last (hlam : lam ∈ dominantChamber
     ∃ D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
       D.head = C.head ∧ D.last.1 = (weylCoxeterSystem P b).simple i * C.last.1 ∧
         IsAChain a lam D := by
+  have := P.flip_isReduced
   -- The least `k` from which on the chain stays on the positive side.
   have hex : ∃ k, ∀ j (hj : j ≤ C.length), k ≤ j →
       0 < P.coroot' i ((C ⟨j, Nat.lt_succ_of_le hj⟩).1 • lam) :=
@@ -317,6 +315,7 @@ theorem IsAChain.exists_isAChain_simple_mul_head (hlam : lam ∈ dominantChamber
     ∃ D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
       D.head.1 = (weylCoxeterSystem P b).simple i * C.head.1 ∧ D.last = C.last ∧
         IsAChain a lam D := by
+  have := P.flip_isReduced
   -- The first index `k + 1` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
       0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩

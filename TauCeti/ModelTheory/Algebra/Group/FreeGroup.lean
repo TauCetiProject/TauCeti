@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Algebra.Group.Sentences
+public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+import TauCeti.GroupTheory.FreeGroup.Vaught
 import TauCeti.ModelTheory.Semantics
 import Mathlib.GroupTheory.FreeGroup.Reduce
 
@@ -14,8 +16,8 @@ import Mathlib.GroupTheory.FreeGroup.Reduce
 
 The existential theory of a group `G` with coefficients is the set of existential sentences of
 the group language with named coefficients that hold in `G`, and dually for the universal theory.
-This file computes the truth values of three such sentences in the free group `F(A)`, with the
-basis letters as coefficients.
+This file computes the truth values of four such sentences in free groups: three in the free group
+`F(A)`, with the basis letters as coefficients, and one without coefficients in every free group.
 
 * The existential sentence `FirstOrder.Language.group.nontrivialCentralizerSentence a`, saying
   that some nontrivial element commutes with `a`, holds in `F(A)` for every basis letter `a`.
@@ -25,11 +27,18 @@ basis letters as coefficients.
 * The sentence `∃ x, x = x` holds in every nonempty structure
   (`FirstOrder.Language.Sentence.realize_ex_bdEqual_self_iff`); an example records it in the
   trivial group `F(∅)`.
+* The universal sentence `FirstOrder.Language.group.vaughtSentence`,
+  `∀ x y z, x ^ 2 * y ^ 2 * z ^ 2 = 1 → x * y * x⁻¹ * y⁻¹ = 1`, holds in every free group: this is
+  Lyndon's theorem `IsFreeGroup.isVaught`. An example reads it in `F(A)` with the basis letters as
+  coefficients.
 
 The existential and universal theories of a group in the language with coefficients are studied by
 Kharlampovich and Myasnikov, *Implicit function theorem over free groups*, §2.3 and §3.2, and
 *Algebraic geometry over free groups: lifting solutions into generic points*, Definition 9, where
 the existential theory is the set of true sentences `∃ x₁ … xₙ, ⋀ uᵢ = 1 ∧ ⋀ vⱼ ≠ 1`.
+That every free group satisfies Vaught's sentence is due to R. C. Lyndon, *The equation
+`a²b² = c²` in free groups*, Michigan Math. J. 6 (1959); see also *Implicit function theorem over
+free groups*, §3.1, Definition 7.
 -/
 
 public section
@@ -38,7 +47,7 @@ namespace FirstOrder.Language.group
 
 open FirstOrder TauCeti TauCeti.Group
 
-variable {A : Type*}
+variable {A G : Type*}
 
 attribute [local instance] structureOfGroup
 
@@ -84,5 +93,18 @@ example :
         Language.group[[Empty]].Sentence) := by
   let := Language.constantsOn.structure (FreeGroup.of : Empty → FreeGroup Empty)
   exact (Sentence.realize_ex_bdEqual_self_iff _).2 inferInstance
+
+/-- **Lyndon's theorem**, as a universal sentence: every free group satisfies the Vaught sentence
+`∀ x y z, x ^ 2 * y ^ 2 * z ^ 2 = 1 → x * y * x⁻¹ * y⁻¹ = 1`. -/
+theorem realize_vaughtSentence_of_isFreeGroup [Group G] [IsFreeGroup G] : G ⊨ vaughtSentence :=
+  realize_vaughtSentence_iff.2 IsFreeGroup.isVaught
+
+/-- Read in the group language with the basis letters as coefficients, the Vaught sentence holds
+in `F(A)`: it belongs to the universal theory of `F(A)` with coefficients. -/
+example :
+    letI := Language.constantsOn.structure (FreeGroup.of : A → FreeGroup A)
+    FreeGroup A ⊨ (Language.group.lhomWithConstants A).onSentence vaughtSentence := by
+  let := Language.constantsOn.structure (FreeGroup.of : A → FreeGroup A)
+  exact (LHom.realize_onSentence _ _ _).2 realize_vaughtSentence_of_isFreeGroup
 
 end FirstOrder.Language.group

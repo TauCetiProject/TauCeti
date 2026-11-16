@@ -232,7 +232,7 @@ private theorem checkerboardAmbientForm_apply (x y : Fin n → ℚ) :
 /-- **The checkerboard lattice** in the Conway–Sloane coordinate model: the integer vectors of
 `ℚⁿ` whose coordinate sum is even, with the standard dot product.  For `n ≥ 4` this is the
 positive root lattice of type `Dₙ`. -/
-noncomputable def checkerboardLattice : IntegralLattice (Fin n → ℚ) :=
+def checkerboardLattice : IntegralLattice (Fin n → ℚ) :=
   ofSubmodule (checkerboardCarrier n) (Matrix.toBilin' 1)
     (Matrix.isSymm_toBilin'_iff_isSymm.mpr Matrix.isSymm_one) (by
     rintro x ⟨hx, -⟩ y ⟨hy, -⟩
@@ -503,11 +503,11 @@ theorem checkerboardLattice_form_checkerboardSpinor_checkerboardCospinor [NeZero
 variable (n)
 
 /-- The class of the vector representative `v` in the checkerboard discriminant group. -/
-noncomputable def checkerboardVectorClass [NeZero n] : (checkerboardLattice n).DiscriminantGroup :=
+def checkerboardVectorClass [NeZero n] : (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩
 
 /-- The class of the spinor representative `s` in the checkerboard discriminant group. -/
-noncomputable def checkerboardSpinorClass : (checkerboardLattice n).DiscriminantGroup :=
+def checkerboardSpinorClass : (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩
 
 /-- The spinor class is represented by the Conway--Sloane spinor vector. -/
@@ -517,7 +517,7 @@ theorem checkerboardSpinorClass_def :
   (rfl)
 
 /-- The class of the cospinor representative `c` in the checkerboard discriminant group. -/
-noncomputable def checkerboardCospinorClass [NeZero n] :
+def checkerboardCospinorClass [NeZero n] :
     (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardCospinor n, checkerboardCospinor_mem_dualCarrier⟩
 
@@ -920,7 +920,7 @@ theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three (hn : Odd n) :
 
 variable {n} in
 /-- The homomorphism `ℤ/2 → A_L` determined by an element of order dividing two. -/
-private noncomputable def checkerboardZModTwoHom (x : (checkerboardLattice n).DiscriminantGroup)
+private def checkerboardZModTwoHom (x : (checkerboardLattice n).DiscriminantGroup)
     (hx : (2 : ℤ) • x = 0) : ZMod 2 →+ (checkerboardLattice n).DiscriminantGroup :=
   ZMod.lift 2 ⟨zmultiplesHom _ x, by simpa using hx⟩
 
@@ -1029,20 +1029,11 @@ zero. -/
     FiniteQuadraticModule :=
   FiniteQuadraticModule.kleinFour (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ))
     ((((n : ℚ) / 8 : ℚ)) : AddCircle (1 : ℚ)) (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ))
-    (by
-      rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
-      exact ⟨2, by norm_num⟩)
+    (AddCircle.zsmul_coe_eq_zero (c := 2) (by norm_num))
     (by
       obtain ⟨k, hk⟩ := hn
-      rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
-      refine ⟨k, ?_⟩
-      rw [hk]
-      push_cast
-      ring_nf
-      norm_cast)
-    (by
-      rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
-      exact ⟨1, by norm_num⟩)
+      exact AddCircle.zsmul_coe_eq_zero (c := k) (by rw [hk]; push_cast; ring))
+    (AddCircle.zsmul_coe_eq_zero (c := 1) (by norm_num))
 
 /-- The first standard generator has quadratic value `1 / 2`. -/
 @[simp]
