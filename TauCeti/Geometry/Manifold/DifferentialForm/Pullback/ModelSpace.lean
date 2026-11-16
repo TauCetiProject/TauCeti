@@ -31,7 +31,7 @@ results such as Moser's lemma. When `e` is differentiable in both directions, pu
 (`OpenPartialHomeomorph.mpullback_mpullback_symm`), so `η` is determined by its reading in `e`. If
 `e` intertwines a self-map `f` of `M` preserving `η` with a map `A` of `E`, for instance the action
 of a group element in an equivariant chart, the reading of `η` in `e` is `A`-invariant
-(`OpenPartialHomeomorph.mpullback_mpullback_symm_of_intertwines`).
+(`OpenPartialHomeomorph.mpullback_mpullback_symm_eq_mpullback_symm_of_intertwines`).
 -/
 
 public section
@@ -64,7 +64,7 @@ omit [IsManifold I ∞ M] in
 intertwines a self-map `f` of its source preserving the form `η` with a map `A` of `E`. Then `η`
 read through `e.symm` is `A`-invariant at every point `y` of the target of `e` where `A` and `f`
 are differentiable. -/
-theorem _root_.OpenPartialHomeomorph.mpullback_mpullback_symm_of_intertwines
+theorem _root_.OpenPartialHomeomorph.mpullback_mpullback_symm_eq_mpullback_symm_of_intertwines
     (e : OpenPartialHomeomorph M E) (hes : MDifferentiableOn 𝓘(ℝ, E) I e.symm e.target)
     {f : M → M} {A : E → E} {η : RoughForm I M F k} (hηf : mpullback I I f η = η)
     (hA : ∀ z ∈ e.source, f z ∈ e.source ∧ e (f z) = A (e z)) {y : E} (hy : y ∈ e.target)

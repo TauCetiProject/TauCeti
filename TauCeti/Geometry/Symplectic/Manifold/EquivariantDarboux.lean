@@ -174,7 +174,8 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     rfl
   have hηρ (g : G) {y : E} (hy : y ∈ e.target) :
       (η (ρ g y)).compContinuousLinearMap (ρ g) = η y := by
-    have h := e.mpullback_mpullback_symm_of_intertwines (hes.mdifferentiableOn (by simp))
+    have h := e.mpullback_mpullback_symm_eq_mpullback_symm_of_intertwines
+      (hes.mdifferentiableOn (by simp))
       (by simpa using congrArg Subtype.val (hG g)) (hequiv g) hy (ρ g).mdifferentiableAt
       ((ContMDiffSMul.contMDiff_const_smul (I := IG) (n := ∞) g).mdifferentiable (by simp) _)
     rw [mpullback_eq_flat] at h
