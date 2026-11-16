@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 import Mathlib.RingTheory.Flat.Basic
+import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.RingTheory.Etale.Normal
 import TauCeti.RingTheory.Idempotents.Connected.Spectrum
@@ -26,7 +27,8 @@ closure (`IsIntegral.exists_includeRight_eq`), every idempotent of `K ⊗[R] S` 
 idempotent of `S`. When `Spec S` is connected, the only idempotents of `S` are `0` and `1`
 (`IsIdempotentElem.eq_zero_or_eq_one_of_preconnectedSpace`), forcing every nonzero element of
 `K ⊗[R] S` to be a unit. Thus `K ⊗[R] S` is a field, and `S`, which embeds into `K ⊗[R] S` by
-flatness, is an integral domain.
+flatness, is an integral domain. When `K` is moreover a fraction field of `R`, `K ⊗[R] S` is a
+fraction field of `S` (`TauCeti.Algebra.Etale.isFractionRing_tensorProduct_of_connectedSpace`).
 
 Conversely, if `K ⊗[R] S` is a field then `S` is a domain, so `Spec S` is irreducible and in
 particular connected. Specializing to `K = FractionRing R` for an integrally closed domain `R`
@@ -39,12 +41,13 @@ hypotheses.
 
 * `TauCeti.Algebra.Etale.isField_tensorProduct_of_connectedSpace`: for `R` integrally closed in a
   field `K` and an étale `R`-algebra `S` with connected `Spec S`, `K ⊗[R] S` is a field.
-* `TauCeti.Algebra.Etale.isDomain_of_isField_tensorProduct`: if `S` is flat over `R`, `R → K` is
-  injective and `K ⊗[R] S` is a field, then `S` is a domain.
 * `TauCeti.Algebra.Etale.isField_tensorProduct_iff_connectedSpace`,
   `TauCeti.Algebra.Etale.isDomain_iff_connectedSpace_of_isIntegrallyClosedIn`: for `R` integrally
   closed in a field `K` and `S` étale over `R`, `K ⊗[R] S` is a field if and only if `Spec S` is
   connected, if and only if `S` is a domain.
+* `TauCeti.Algebra.Etale.isFractionRing_tensorProduct_of_connectedSpace`: when `R` is integrally
+  closed in a fraction field `K` and `S` is a connected étale `R`-algebra, `K ⊗[R] S` is a
+  fraction field of `S`.
 * `TauCeti.Algebra.Etale.isDomain_of_connectedSpace`,
   `TauCeti.Algebra.Etale.isDomain_iff_connectedSpace`,
   `TauCeti.Algebra.Etale.isIntegrallyClosed_of_connectedSpace`: over an integrally closed domain
@@ -95,22 +98,16 @@ theorem isField_tensorProduct_of_connectedSpace [IsIntegrallyClosedIn R K] [Alge
     exact isUnit_iff_exists_inv.mp
       (Ideal.span_singleton_eq_top.mp (hspan.symm ▸ he ▸ Ideal.span_singleton_one))
 
-variable {R K S} in
-/-- If `S` is flat over `R`, `R → K` is injective and `K ⊗[R] S` is a field, then `S` embeds into
-the field `K ⊗[R] S` and is therefore an integral domain. -/
-theorem isDomain_of_isField_tensorProduct [Module.Flat R S]
-    (hinj : Function.Injective (algebraMap R K)) (hf : IsField (K ⊗[R] S)) :
-    IsDomain S := by
-  let _ : Field (K ⊗[R] S) := hf.toField
-  exact (Algebra.TensorProduct.includeRight_injective (B := S) hinj).isDomain
-    (Algebra.TensorProduct.includeRight : S →ₐ[R] K ⊗[R] S).toRingHom
-
 /-- For `R` integrally closed in a field `K` and `S` étale over `R`, the generic fibre `K ⊗[R] S`
 is a field if and only if `Spec S` is connected. -/
 theorem isField_tensorProduct_iff_connectedSpace [IsIntegrallyClosedIn R K] [Algebra.Etale R S] :
     IsField (K ⊗[R] S) ↔ ConnectedSpace (PrimeSpectrum S) := by
   refine ⟨fun hf ↦ ?_, fun _ ↦ isField_tensorProduct_of_connectedSpace R K S⟩
-  have : IsDomain S := isDomain_of_isField_tensorProduct (isIntegrallyClosedIn_iff.mp ‹_›).1 hf
+  let _ : Field (K ⊗[R] S) := hf.toField
+  have : IsDomain S :=
+    (Algebra.TensorProduct.includeRight_injective (B := S)
+      (isIntegrallyClosedIn_iff.mp ‹_›).1).isDomain
+      (Algebra.TensorProduct.includeRight : S →ₐ[R] K ⊗[R] S).toRingHom
   infer_instance
 
 include K in
@@ -118,10 +115,39 @@ include K in
 `Spec S` is connected. -/
 theorem isDomain_iff_connectedSpace_of_isIntegrallyClosedIn [IsIntegrallyClosedIn R K]
     [Algebra.Etale R S] :
-    IsDomain S ↔ ConnectedSpace (PrimeSpectrum S) :=
-  ⟨fun _ ↦ inferInstance, fun _ ↦
-    isDomain_of_isField_tensorProduct (isIntegrallyClosedIn_iff.mp ‹_›).1
-      (isField_tensorProduct_of_connectedSpace R K S)⟩
+    IsDomain S ↔ ConnectedSpace (PrimeSpectrum S) := by
+  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ?_⟩
+  let _ : Field (K ⊗[R] S) := (isField_tensorProduct_of_connectedSpace R K S).toField
+  exact (Algebra.TensorProduct.includeRight_injective (B := S)
+    (isIntegrallyClosedIn_iff.mp ‹_›).1).isDomain
+    (Algebra.TensorProduct.includeRight : S →ₐ[R] K ⊗[R] S).toRingHom
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- **The generic fibre of a connected étale algebra is its fraction field.** When `R` is
+integrally closed in a fraction field `K` and `S` is a connected étale `R`-algebra, `K ⊗[R] S` is
+a fraction field of `S`. -/
+theorem isFractionRing_tensorProduct_of_connectedSpace [IsIntegrallyClosedIn R K]
+    [IsFractionRing R K] [Algebra.Etale R S] [ConnectedSpace (PrimeSpectrum S)] :
+    IsFractionRing S (K ⊗[R] S) := by
+  let _ : Field (K ⊗[R] S) := (isField_tensorProduct_of_connectedSpace R K S).toField
+  have hinjRK : Function.Injective (algebraMap R K) := (isIntegrallyClosedIn_iff.mp ‹_›).1
+  have : IsDomain R := hinjRK.isDomain (algebraMap R K)
+  have hinjSL : Function.Injective (algebraMap S (K ⊗[R] S)) :=
+    Algebra.TensorProduct.includeRight_injective hinjRK
+  have : IsDomain S := hinjSL.isDomain (algebraMap S (K ⊗[R] S))
+  have hinjRS : Function.Injective (algebraMap R S) := fun r₁ r₂ hr ↦
+    hinjRK <| (algebraMap K (K ⊗[R] S)).injective <| by
+      rw [← IsScalarTower.algebraMap_apply R K (K ⊗[R] S),
+        ← IsScalarTower.algebraMap_apply R K (K ⊗[R] S),
+        IsScalarTower.algebraMap_apply R S (K ⊗[R] S),
+        IsScalarTower.algebraMap_apply R S (K ⊗[R] S), hr]
+  have : IsLocalization (Algebra.algebraMapSubmonoid S (nonZeroDivisors R)) (K ⊗[R] S) :=
+    IsLocalization.tensorRight (S := S) K (nonZeroDivisors R)
+  refine ⟨fun y ↦ isUnit_iff_ne_zero.mpr (map_ne_zero_of_mem_nonZeroDivisors _ hinjSL y.2),
+    fun z ↦ ?_, fun {a b} hab ↦ ⟨1, by simp [hinjSL hab]⟩⟩
+  obtain ⟨⟨s, _, ⟨r, hr, rfl⟩⟩, h⟩ :=
+    IsLocalization.surj (Algebra.algebraMapSubmonoid S (nonZeroDivisors R)) z
+  exact ⟨⟨s, ⟨algebraMap R S r, map_mem_nonZeroDivisors _ hinjRS hr⟩⟩, h⟩
 
 end IntegrallyClosedIn
 

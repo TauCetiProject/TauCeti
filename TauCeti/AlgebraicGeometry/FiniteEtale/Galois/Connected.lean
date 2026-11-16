@@ -119,6 +119,7 @@ object of `FiniteEtaleScheme (Spec R)` if and only if `PrimeSpectrum A` is conne
 theorem isConnected_spec_obj_iff (R : CommRingCat.{u}) (A : CommAlgCat.FiniteEtale.{u} R) :
     PreGaloisCategory.IsConnected ((spec R).obj (op A)) ↔ ConnectedSpace (PrimeSpectrum A.obj) := by
   rw [isConnected_iff_connectedSpace, spec_obj_obj]
+  -- The underlying topological space of `Spec (.of A.obj)` is `PrimeSpectrum A.obj` by definition.
   rfl
 
 /-- The spectrum of a finite étale `R`-algebra with connected prime spectrum (for instance, a

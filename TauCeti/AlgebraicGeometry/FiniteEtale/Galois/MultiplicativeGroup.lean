@@ -17,6 +17,7 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.CategoryTheory.Galois.Connected
 import TauCeti.RingTheory.Etale.LaurentPolynomial
 import TauCeti.RingTheory.RootsOfUnity.TateModule.BasisChange
+import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Units
 
 /-!
 # The étale fundamental group of the multiplicative group
@@ -33,12 +34,13 @@ The identification is built in three stages so that each hypothesis enters only 
 * **Kummer monodromy over an affine base.** Over any commutative ring `R` with a unit `t ∈ Rˣ` and
   a separably closed `R`-algebra `Ω` sending `t` to `1`, the fibre over `Spec Ω ⟶ Spec R` of the
   degree-`n` Kummer cover `Spec R[x]/(x ^ n - t)` is `μ_n(Ω)`
-  (`kummerCoverFiberEquivRootsOfUnity`). When `R` supplies deck transformations for all elements of
-  `μ_n(Ω)`, naturality with `kummerCoverDeck` shows that every automorphism `σ` of the fibre
-  functor acts on `μ_n(Ω)` by multiplication by a root of unity `kummerMonodromyLevel σ ∈ μ_n(Ω)`,
-  namely the image of `1`. Compatibility along `kummerCoverMap` assembles these finite-level
-  characters into a continuous homomorphism `kummerMonodromy` into `PrimeToPTateModule p Ω`, which
-  is surjective whenever `Spec R` and the Kummer covers are connected.
+  (`kummerCoverFiberEquivRootsOfUnity`), of cardinality `n` (`card_kummerCoverFiber`). When `R`
+  supplies deck transformations for all elements of `μ_n(Ω)`, naturality with `kummerCoverDeck`
+  shows that every automorphism `σ` of the fibre functor acts on `μ_n(Ω)` by multiplication by a
+  root of unity `kummerMonodromyLevel σ ∈ μ_n(Ω)`, namely the image of `1`. Compatibility along
+  `kummerCoverMap` assembles these finite-level characters into a continuous homomorphism
+  `kummerMonodromy` into `PrimeToPTateModule p Ω`, which is surjective whenever `Spec R` and the
+  Kummer covers are connected.
 * **The multiplicative group in arbitrary characteristic.** For `R = K[T, T⁻¹]` and `t = T` over a
   field `K`, every Kummer cover `Spec K[T, T⁻¹][x]/(x ^ n - T)` with `n` invertible in `K` is an
   integral domain (`TauCeti.isDomain_standardTameCover_laurentPolynomial_T`), hence categorically
@@ -83,17 +85,20 @@ The identification is built in three stages so that each hypothesis enters only 
 
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquivRootsOfUnity_smul`: `Aut (fiber x)` acts on the
   Kummer fibre `μ_n(Ω)` by multiplication by `kummerMonodromyLevel`.
+* `TauCeti.FiniteEtaleScheme.card_kummerCoverFiber`,
+  `TauCeti.FiniteEtaleScheme.card_multiplicativeGroupPowerCoverFiber`: the fibre over `1` of a
+  degree-`n` Kummer cover has cardinality `n`.
 * `TauCeti.FiniteEtaleScheme.multiplicativeGroupPrimeToPMonodromy_surjective`: surjectivity of the
   prime-to-`p` monodromy of `𝔾_{m, K}` over any separably closed field.
 * `TauCeti.FiniteEtaleScheme.exists_iso_kummerCover_of_isConnected`: every connected finite étale
   cover of `𝔾_{m, K}` over an algebraically closed field of characteristic zero is isomorphic to a
   Kummer power cover.
 * `TauCeti.FiniteEtaleScheme.multiplicativeGroupAutFiberContinuousMulEquivZHat_symm_zpowHat`,
-  `TauCeti.FiniteEtaleScheme.ofMul_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat`,
-  `TauCeti.FiniteEtaleScheme.toZMod_five_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat`:
-  replacing `ζ` by `ζ ^ᶻ u` composes the parametrization with multiplication by `u`, composes the
-  coordinate map with multiplication by `u⁻¹`, and for `u ≡ 2 (mod 5)` sends the generator carrying
-  eigenvalue `ζ` from coordinate `1` to residue `3` (not `2`) modulo `5`.
+  `TauCeti.FiniteEtaleScheme.ofMul_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat`, and
+  `TauCeti.FiniteEtaleScheme.toZMod_ofMul_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat`
+  show that replacing `ζ` by `ζ ^ᶻ u` composes the parametrization with multiplication by `u`,
+  composes the coordinate map with multiplication by `u⁻¹`, and reduces the generator's coordinate
+  modulo `n` to `(u mod n)⁻¹`.
 
 ## References
 
@@ -130,13 +135,12 @@ private theorem kummerCoverFiberEquivRootsOfUnity_smul_aux (n : ℕ) (hn : IsUni
       kummerCoverFiberEquivRootsOfUnity t Ω n hn ht
         (σ • (kummerCoverFiberEquivRootsOfUnity t Ω n hn ht).symm 1) *
         kummerCoverFiberEquivRootsOfUnity t Ω n hn ht y := by
-  let e := kummerCoverFiberEquivRootsOfUnity t Ω n hn ht
+  set e := kummerCoverFiberEquivRootsOfUnity t Ω n hn ht
   obtain ⟨ζ, hζ⟩ := hdeck (e y)
   have hy : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
       (kummerCoverDeck t hn ζ).hom (e.symm 1) = y :=
     e.injective <| by
       rw [kummerCoverFiberEquivRootsOfUnity_map_kummerCoverDeck, hζ, e.apply_symm_apply, mul_one]
-  change e (σ • y) = e (σ • e.symm 1) * e y
   rw [← hy, PreGaloisCategory.mulAction_naturality,
     kummerCoverFiberEquivRootsOfUnity_map_kummerCoverDeck, hζ, hy, mul_comm]
 
@@ -165,7 +169,6 @@ theorem kummerMonodromyLevel_apply (n : ℕ) (hn : IsUnit (n : R)) (ht : algebra
 
 /-- **Action on the Kummer fibre.** Every `σ ∈ Aut (fiber x)` multiplies elements of the Kummer
 fibre `μ_n(Ω)` over `1` by `kummerMonodromyLevel t Ω n hn ht hdeck σ`. -/
-@[simp]
 theorem kummerCoverFiberEquivRootsOfUnity_smul (n : ℕ) (hn : IsUnit (n : R))
     (ht : algebraMap R Ω t = 1)
     (hdeck : Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) n))
@@ -175,6 +178,18 @@ theorem kummerCoverFiberEquivRootsOfUnity_smul (n : ℕ) (hn : IsUnit (n : R))
       kummerMonodromyLevel t Ω n hn ht hdeck σ *
         kummerCoverFiberEquivRootsOfUnity t Ω n hn ht y :=
   kummerCoverFiberEquivRootsOfUnity_smul_aux t Ω n hn ht hdeck σ y
+
+/-- Over a separably closed field `Ω` sending `t` to `1`, the geometric fibre of the degree-`n`
+Kummer cover has cardinality `n`. -/
+theorem card_kummerCoverFiber (n : ℕ) (hn : IsUnit (n : R)) (ht : algebraMap R Ω t = 1) :
+    Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
+      (kummerCover t n hn)) = n := by
+  have hnΩ : (n : Ω) ≠ 0 := (by simpa using hn.map (algebraMap R Ω) : IsUnit (n : Ω)).ne_zero
+  have : NeZero (n : Ω) := ⟨hnΩ⟩
+  have : NeZero n := .of_neZero_natCast Ω
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
+  rw [Nat.card_congr (kummerCoverFiberEquivRootsOfUnity t Ω n hn ht)]
+  exact hζ.card_rootsOfUnity
 
 /-- Each finite-level Kummer character is locally constant on `Aut (fiber x)`. -/
 theorem isLocallyConstant_kummerMonodromyLevel (n : ℕ) (hn : IsUnit (n : R))
@@ -206,8 +221,7 @@ theorem kummerMonodromyLevel_pow_div {n m : ℕ} (hn : IsUnit (n : R)) (hm : IsU
     simp
   rw [kummerMonodromyLevel_apply,
     ← kummerCoverFiberEquivRootsOfUnity_map_kummerCoverMap t hn hm ht h,
-    ← PreGaloisCategory.mulAction_naturality, hmap_one]
-  rfl
+    ← PreGaloisCategory.mulAction_naturality, hmap_one, kummerMonodromyLevel_apply]
 
 /-- Over a connected base `Spec R`, if the degree-`n` Kummer cover is connected, then the level-`n`
 Kummer character is surjective: `Aut (fiber x)` acts transitively on the fibre of a connected
@@ -277,6 +291,12 @@ noncomputable def multiplicativeGroupOnePoint [CommRing K] (Ω : Type u) [CommRi
     Spec (.of Ω) ⟶ Spec (.of K[T;T⁻¹]) :=
   Spec.map (CommRingCat.ofHom (laurentEval (R := K) (1 : Ωˣ)).toRingHom)
 
+/-- `multiplicativeGroupOnePoint K Ω` is `Spec` of evaluation of Laurent polynomials at `1`. -/
+theorem multiplicativeGroupOnePoint_def [CommRing K] (Ω : Type u) [CommRing Ω] [Algebra K Ω] :
+    multiplicativeGroupOnePoint K Ω =
+      Spec.map (CommRingCat.ofHom (laurentEval (R := K) (1 : Ωˣ)).toRingHom) :=
+  (rfl)
+
 private theorem algebraMap_laurentEval_one_genericUnit [CommRing K] (Ω : Type u) [CommRing Ω]
     [Algebra K Ω] :
     letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
@@ -332,22 +352,50 @@ noncomputable def multiplicativeGroupPowerCoverFiberEquiv (Ω : Type u) [Field �
   kummerCoverFiberEquivRootsOfUnity (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) Ω n hn
     (algebraMap_laurentEval_one_genericUnit K Ω)
 
+/-- On the fibres `μ_n(Ω)` over `1` of the power covers of `𝔾_{m, K}`, the map from degree `m` to
+degree `n ∣ m` is the power map `ζ ↦ ζ ^ (m / n)`. -/
+@[simp]
+theorem multiplicativeGroupPowerCoverFiberEquiv_map_kummerCoverMap (Ω : Type u) [Field Ω]
+    [IsSepClosed Ω] [Algebra K Ω] {n m : ℕ}
+    (hn : IsUnit (n : (CommRingCat.of K[T;T⁻¹])))
+    (hm : IsUnit (m : (CommRingCat.of K[T;T⁻¹]))) (hd : n ∣ m)
+    (y : (fiber (multiplicativeGroupOnePoint K Ω)).obj
+      (kummerCover (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) m hm)) :
+    (multiplicativeGroupPowerCoverFiberEquiv K Ω n hn
+        ((fiber (multiplicativeGroupOnePoint K Ω)).map
+          (kummerCoverMap (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) hn hm hd) y) :
+      Ωˣ) =
+      (multiplicativeGroupPowerCoverFiberEquiv K Ω m hm y : Ωˣ) ^ (m / n) :=
+  letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
+  kummerCoverFiberEquivRootsOfUnity_map_kummerCoverMap (R := .of K[T;T⁻¹])
+    (LaurentPolynomial.genericUnit K) hn hm (algebraMap_laurentEval_one_genericUnit K Ω) hd y
+
+/-- On the fibre `μ_n(Ω)` over `1` of the degree-`n` power cover of `𝔾_{m, K}`, the deck
+transformation of `ζ : rootsOfUnity n K[T;T⁻¹]` multiplies by its evaluation at `1`. -/
+@[simp]
+theorem multiplicativeGroupPowerCoverFiberEquiv_map_kummerCoverDeck (Ω : Type u) [Field Ω]
+    [IsSepClosed Ω] [Algebra K Ω] (n : ℕ) (hn : IsUnit (n : (CommRingCat.of K[T;T⁻¹])))
+    (ζ : rootsOfUnity n K[T;T⁻¹])
+    (y : (fiber (multiplicativeGroupOnePoint K Ω)).obj
+      (kummerCover (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) n hn)) :
+    multiplicativeGroupPowerCoverFiberEquiv K Ω n hn
+        ((fiber (multiplicativeGroupOnePoint K Ω)).map
+          (kummerCoverDeck (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) hn ζ).hom y) =
+      restrictRootsOfUnity (laurentEval (R := K) (1 : Ωˣ)).toRingHom n ζ *
+        multiplicativeGroupPowerCoverFiberEquiv K Ω n hn y :=
+  letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
+  kummerCoverFiberEquivRootsOfUnity_map_kummerCoverDeck (R := .of K[T;T⁻¹])
+    (LaurentPolynomial.genericUnit K) hn (algebraMap_laurentEval_one_genericUnit K Ω) ζ y
+
 /-- Over a separably closed `K`-algebra `Ω`, the geometric fibre over `1` of the degree-`n` power
-cover of `𝔾_{m, K}` has cardinality `n` whenever `(n : Ω) ≠ 0` (for example whenever `n` is
-invertible in `K[T, T⁻¹]`). -/
+cover of `𝔾_{m, K}` has cardinality `n` whenever `n` is invertible in `K[T, T⁻¹]`. -/
 theorem card_multiplicativeGroupPowerCoverFiber (Ω : Type u) [Field Ω] [IsSepClosed Ω]
     [Algebra K Ω] (n : ℕ) (hn : IsUnit (n : (CommRingCat.of K[T;T⁻¹]))) :
     Nat.card ((fiber (multiplicativeGroupOnePoint K Ω)).obj
-      (kummerCover (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) n hn)) = n := by
-  have hnΩ : (n : Ω) ≠ 0 := by
-    have hu : IsUnit (n : Ω) := by
-      simpa using hn.map (laurentEval (R := K) (1 : Ωˣ)).toRingHom
-    exact hu.ne_zero
-  have : NeZero (n : Ω) := ⟨hnΩ⟩
-  have : NeZero n := .of_neZero_natCast Ω
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
-  rw [Nat.card_congr (multiplicativeGroupPowerCoverFiberEquiv K Ω n hn)]
-  exact hζ.card_rootsOfUnity
+      (kummerCover (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) n hn)) = n :=
+  letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
+  card_kummerCoverFiber (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) Ω n hn
+    (algebraMap_laurentEval_one_genericUnit K Ω)
 
 /-- Evaluation at `1` induces a surjective map `μ_n(K[T, T⁻¹]) → μ_n(K)`, split by the constant
 inclusion `C : K →+* K[T, T⁻¹]`. -/
@@ -356,8 +404,7 @@ private theorem restrictRootsOfUnity_laurentEval_one_surjective (n : ℕ) :
       (restrictRootsOfUnity (laurentEval (R := K) (1 : Kˣ)).toRingHom n) := fun ζ ↦
   ⟨restrictRootsOfUnity (LaurentPolynomial.C : K →+* K[T;T⁻¹]) n ζ, by
     ext
-    change laurentEval (R := K) (1 : Kˣ) (LaurentPolynomial.C ((ζ : Kˣ) : K)) = _
-    simp⟩
+    simp [restrictRootsOfUnity]⟩
 
 section SepClosed
 
@@ -375,10 +422,27 @@ noncomputable def multiplicativeGroupPrimeToPMonodromy (p : ℕ) [ExpChar K p] :
     (isUnit_natCast_laurentPolynomial_of_coprime K p)
     fun m ↦ restrictRootsOfUnity_laurentEval_one_surjective K m
 
+/-- The level-`m` component of `multiplicativeGroupPrimeToPMonodromy K p σ` is the image of the
+base point `1 ∈ μ_m(K)` under `σ`. -/
+theorem proj_multiplicativeGroupPrimeToPMonodromy (p : ℕ) [ExpChar K p]
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p})
+    (hn : IsUnit ((m : ℕ) : (CommRingCat.of K[T;T⁻¹])))
+    (σ : Aut (fiber (multiplicativeGroupOnePoint K K))) :
+    PrimeToPTateModule.proj m (multiplicativeGroupPrimeToPMonodromy K p σ) =
+      multiplicativeGroupPowerCoverFiberEquiv K K m hn
+        (σ • (multiplicativeGroupPowerCoverFiberEquiv K K m hn).symm 1) := by
+  let _ : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
+  exact (proj_kummerMonodromy (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
+    (algebraMap_laurentEval_one_genericUnit K K)
+    (isUnit_natCast_laurentPolynomial_of_coprime K p)
+    (fun m ↦ restrictRootsOfUnity_laurentEval_one_surjective K m) m σ).trans
+    (kummerMonodromyLevel_apply (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K m hn
+      (algebraMap_laurentEval_one_genericUnit K K)
+      (restrictRootsOfUnity_laurentEval_one_surjective K m) σ)
+
 /-- On the degree-`m` power cover of `𝔾_{m, K}`, an automorphism `σ ∈ π₁^ét(𝔾_{m, K}, 1)` multiplies
 points of the fibre `μ_m(K)` over `1` by the level-`m` projection of
 `multiplicativeGroupPrimeToPMonodromy K p σ`. -/
-@[simp]
 theorem multiplicativeGroupPowerCoverFiberEquiv_smul (p : ℕ) [ExpChar K p]
     (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p})
     (hn : IsUnit ((m : ℕ) : (CommRingCat.of K[T;T⁻¹])))
@@ -472,9 +536,8 @@ theorem multiplicativeGroupPrimeToPMonodromy_injective :
   ext X z
   obtain ⟨Y, i, y, rfl, hY, _⟩ :=
     PreGaloisCategory.fiber_in_connected_component (fiber (multiplicativeGroupOnePoint K K)) X z
-  change σ • (fiber (multiplicativeGroupOnePoint K K)).map i y =
-    (fiber (multiplicativeGroupOnePoint K K)).map i y
-  rw [PreGaloisCategory.mulAction_naturality, hconn Y y]
+  rw [← PreGaloisCategory.mulAction_def, PreGaloisCategory.mulAction_naturality, hconn Y y]
+  simp
 
 /-- **The étale fundamental group of `𝔾_{m, K}` is its Tate module `lim_n μ_n(K)`.** Over an
 algebraically closed field `K` of characteristic zero, `multiplicativeGroupPrimeToPMonodromy K 1` is
@@ -513,6 +576,32 @@ noncomputable def multiplicativeGroupAutFiberContinuousMulEquivZHat
   (multiplicativeGroupAutFiberContinuousMulEquivTateModule K).trans
     (PrimeToPTateModule.continuousMulEquivZHat ζ hζ)
 
+/-- Evaluating `multiplicativeGroupAutFiberContinuousMulEquivZHat` applies
+`PrimeToPTateModule.continuousMulEquivZHat` to `multiplicativeGroupPrimeToPMonodromy K 1`. -/
+@[simp]
+theorem multiplicativeGroupAutFiberContinuousMulEquivZHat_apply
+    (ζ : PrimeToPTateModule 1 K)
+    (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1},
+      IsPrimitiveRoot (PrimeToPTateModule.proj m ζ : Kˣ) m)
+    (σ : Aut (fiber (multiplicativeGroupOnePoint K K))) :
+    multiplicativeGroupAutFiberContinuousMulEquivZHat K ζ hζ σ =
+      PrimeToPTateModule.continuousMulEquivZHat ζ hζ
+        (multiplicativeGroupPrimeToPMonodromy K 1 σ) :=
+  (rfl)
+
+/-- The inverse of `multiplicativeGroupAutFiberContinuousMulEquivZHat` sends `a ∈ ℤ̂` to the
+automorphism corresponding to `zHat.lift ζ a` under the Tate-module isomorphism. -/
+@[simp]
+theorem multiplicativeGroupAutFiberContinuousMulEquivZHat_symm_apply
+    (ζ : PrimeToPTateModule 1 K)
+    (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1},
+      IsPrimitiveRoot (PrimeToPTateModule.proj m ζ : Kˣ) m)
+    (a : zHat.{u}) :
+    (multiplicativeGroupAutFiberContinuousMulEquivZHat K ζ hζ).symm a =
+      (multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm (zHat.lift ζ a) :=
+  congrArg (multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm
+    (PrimeToPTateModule.continuousMulEquivZHat_symm_apply hζ a)
+
 /-- Composing the coordinate isomorphism with the inverse parametrization recovers the intrinsic,
 root-choice-free Tate-module isomorphism regardless of which compatible primitive family `ζ` was
 chosen. -/
@@ -525,7 +614,7 @@ theorem multiplicativeGroupAutFiberContinuousMulEquivZHat_trans_symm
         (PrimeToPTateModule.continuousMulEquivZHat ζ hζ).symm =
       multiplicativeGroupAutFiberContinuousMulEquivTateModule K := by
   ext σ
-  simp [multiplicativeGroupAutFiberContinuousMulEquivZHat]
+  simp
 
 /-- **Action of `ℤ̂` on the finite Kummer fibres through `ℤ̂ → ℤ/nℤ`.** Once a compatible primitive
 family `ζ = (ζ_n)_n` is fixed, the automorphism parametrized by `a ∈ ℤ̂` multiplies points of the
@@ -550,13 +639,9 @@ theorem multiplicativeGroupPowerCoverFiberEquiv_symm_zHat_smul
   rw [Subgroup.coe_mul] at hsmul
   refine hsmul.trans ?_
   congr 1
-  have h1 : multiplicativeGroupPrimeToPMonodromy K 1
-      ((multiplicativeGroupAutFiberContinuousMulEquivZHat K ζ hζ).symm a) = zHat.lift ζ a := by
-    change multiplicativeGroupAutFiberContinuousMulEquivTateModule K
-      ((multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm
-        ((PrimeToPTateModule.continuousMulEquivZHat ζ hζ).symm a)) = zHat.lift ζ a
-    rw [ContinuousMulEquiv.apply_symm_apply, PrimeToPTateModule.continuousMulEquivZHat_symm_apply]
-  rw [h1]
+  rw [multiplicativeGroupAutFiberContinuousMulEquivZHat_symm_apply,
+    ← multiplicativeGroupAutFiberContinuousMulEquivTateModule_apply,
+    ContinuousMulEquiv.apply_symm_apply]
   exact PrimeToPTateModule.coe_proj_zHatLift ζ n a
 
 end AlgClosedCharZero
@@ -582,7 +667,11 @@ theorem multiplicativeGroupAutFiberContinuousMulEquivZHat_symm_zpowHat
         (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u)).symm (toMul a) =
       (multiplicativeGroupAutFiberContinuousMulEquivZHat K ζ hζ).symm
         (toMul ((u : Additive zHat.{u}) * a)) := by
-  simp only [multiplicativeGroupAutFiberContinuousMulEquivZHat, ContinuousMulEquiv.symm_trans_apply,
+  rw [multiplicativeGroupAutFiberContinuousMulEquivZHat_symm_apply,
+    multiplicativeGroupAutFiberContinuousMulEquivZHat_symm_apply,
+    ← PrimeToPTateModule.continuousMulEquivZHat_symm_apply
+      (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u),
+    ← PrimeToPTateModule.continuousMulEquivZHat_symm_apply hζ,
     PrimeToPTateModule.continuousMulEquivZHat_zpowHat_symm_apply hζ u a]
 
 /-- **Basis change for the coordinate map `π₁^ét(𝔾_{m, K}, 1) ≃ₜ* ℤ̂`.** Replacing `ζ` by `ζ ^ᶻ u`
@@ -597,29 +686,60 @@ theorem ofMul_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat
         (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u) σ) =
       ((u⁻¹ : (Additive zHat.{u})ˣ) : Additive zHat.{u}) *
         ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K ζ hζ σ) := by
-  simp only [multiplicativeGroupAutFiberContinuousMulEquivZHat, ContinuousMulEquiv.trans_apply,
+  rw [multiplicativeGroupAutFiberContinuousMulEquivZHat_apply,
+    multiplicativeGroupAutFiberContinuousMulEquivZHat_apply,
     PrimeToPTateModule.ofMul_continuousMulEquivZHat_zpowHat_apply hζ u]
 
-/-- **Mod-`5` coordinate check on `π₁^ét(𝔾_{m, K}, 1)`.** For any profinite unit `u` with
-`u ≡ 2 (mod 5)`, the generator `(multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm ζ`
-has coordinate `1` in the `ζ`-basis and residue `3` (not `2`) modulo `5` in the rescaled
-`(ζ ^ᶻ u)`-basis. -/
-theorem toZMod_five_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat
+/-- **Mod-`n` coordinate of the generator in a rescaled basis.** For every `n : ℕ+` and
+`u ∈ (Additive zHat)ˣ`, the generator
+`γ = (multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm ζ` has residue `(u mod n)⁻¹`
+modulo `n` in the rescaled `(ζ ^ᶻ u)`-basis. -/
+theorem toZMod_ofMul_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat
     (ζ : PrimeToPTateModule 1 K)
     (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1},
       IsPrimitiveRoot (PrimeToPTateModule.proj m ζ : Kˣ) m)
-    {u : (Additive zHat.{u})ˣ} (hu : zHat.toZMod 5 (u : Additive zHat.{u}) = 2) :
-    let γ := (multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm ζ
-    ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K ζ hζ γ) = 1 ∧
-      zHat.toZMod 5
-        (ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K (ζ ^ᶻ (u : Additive zHat.{u}))
-          (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u) γ)) = 3 ∧
-      zHat.toZMod 5
-        (ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K (ζ ^ᶻ (u : Additive zHat.{u}))
-          (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u) γ)) ≠ 2 := by
-  simpa only [multiplicativeGroupAutFiberContinuousMulEquivZHat, ContinuousMulEquiv.trans_apply,
-    ContinuousMulEquiv.apply_symm_apply] using
-    PrimeToPTateModule.toZMod_five_continuousMulEquivZHat_zpowHat_self hζ hu
+    (n : ℕ+) (u : (Additive zHat.{u})ˣ) :
+    zHat.toZMod n (ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K
+        (ζ ^ᶻ (u : Additive zHat.{u}))
+        (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u)
+        ((multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm ζ))) =
+      (((Units.map (zHat.toZMod.{u} n).toMonoidHom u)⁻¹ : (ZMod n)ˣ) : ZMod n) := by
+  rw [multiplicativeGroupAutFiberContinuousMulEquivZHat_apply,
+    ← multiplicativeGroupAutFiberContinuousMulEquivTateModule_apply,
+    ContinuousMulEquiv.apply_symm_apply]
+  exact PrimeToPTateModule.toZMod_ofMul_continuousMulEquivZHat_zpowHat_self hζ n u
+
+-- Sanity check modulo `5`: lifting `2 ∈ (ZMod 5)ˣ` to `u ∈ ℤ̂ˣ`, the generator `γ` carrying `ζ`
+-- has coordinate `1` in the `ζ`-basis and residue `3` (not `2`) modulo `5` in the `(ζ ^ᶻ u)`-basis.
+example (ζ : PrimeToPTateModule 1 K)
+    (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1},
+      IsPrimitiveRoot (PrimeToPTateModule.proj m ζ : Kˣ) m) :
+    ∃ u : (Additive zHat.{u})ˣ, zHat.toZMod 5 (u : Additive zHat.{u}) = 2 ∧
+      let γ := (multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm ζ
+      ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K ζ hζ γ) = 1 ∧
+        zHat.toZMod 5
+          (ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K (ζ ^ᶻ (u : Additive zHat.{u}))
+            (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u) γ)) = 3 ∧
+        zHat.toZMod 5
+          (ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K (ζ ^ᶻ (u : Additive zHat.{u}))
+            (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u) γ)) ≠ 2 := by
+  let v : (ZMod (5 : ℕ+))ˣ := ⟨2, 3, by decide, by decide⟩
+  obtain ⟨u, hu⟩ := zHat.unitsMap_toZMod_surjective.{u} 5 v
+  have hu2 : zHat.toZMod 5 (u : Additive zHat.{u}) = 2 := by
+    have hval := congrArg Units.val hu
+    rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] at hval
+    exact hval
+  have hnew : zHat.toZMod 5
+      (ofMul (multiplicativeGroupAutFiberContinuousMulEquivZHat K (ζ ^ᶻ (u : Additive zHat.{u}))
+        (PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat hζ u)
+        ((multiplicativeGroupAutFiberContinuousMulEquivTateModule K).symm ζ))) = 3 := by
+    rw [toZMod_ofMul_multiplicativeGroupAutFiberContinuousMulEquivZHat_zpowHat K ζ hζ 5 u, hu]
+    decide
+  refine ⟨u, hu2, ?_, hnew, hnew.symm ▸ by decide⟩
+  rw [multiplicativeGroupAutFiberContinuousMulEquivZHat_apply,
+    ← multiplicativeGroupAutFiberContinuousMulEquivTateModule_apply,
+    ContinuousMulEquiv.apply_symm_apply, PrimeToPTateModule.continuousMulEquivZHat_self,
+    zHat.ofMul_gen]
 
 /-- **The étale fundamental group of `𝔾_{m, ℂ}` at `1` is `ℤ̂`** via the standard compatible system
 of complex primitive roots of unity `ζ_n = exp(2πi / n)` (`PrimeToPTateModule.complexExp 1`). -/
@@ -628,6 +748,15 @@ noncomputable def complexMultiplicativeGroupAutFiberContinuousMulEquivZHat :
   multiplicativeGroupAutFiberContinuousMulEquivZHat ℂ
     (PrimeToPTateModule.complexExp 1)
     (PrimeToPTateModule.isPrimitiveRoot_proj_complexExp 1)
+
+/-- `complexMultiplicativeGroupAutFiberContinuousMulEquivZHat` specializes
+`multiplicativeGroupAutFiberContinuousMulEquivZHat` to `PrimeToPTateModule.complexExp 1`. -/
+theorem complexMultiplicativeGroupAutFiberContinuousMulEquivZHat_def :
+    complexMultiplicativeGroupAutFiberContinuousMulEquivZHat =
+      multiplicativeGroupAutFiberContinuousMulEquivZHat ℂ
+        (PrimeToPTateModule.complexExp 1)
+        (PrimeToPTateModule.isPrimitiveRoot_proj_complexExp 1) :=
+  (rfl)
 
 /-- Over `ℂ`, under `complexMultiplicativeGroupAutFiberContinuousMulEquivZHat`, an element `a ∈ ℤ̂`
 acts on the fibre `μ_n(ℂ)` over `1` of the degree-`n` power cover of `𝔾_{m, ℂ}` through the
@@ -641,6 +770,7 @@ theorem complexMultiplicativeGroupPowerCoverFiberEquiv_symm_zHat_smul
         (complexMultiplicativeGroupAutFiberContinuousMulEquivZHat.symm a • y) : ℂˣ) : ℂ) =
       Complex.exp (2 * Real.pi * Complex.I / n) ^ (zHat.toZMod n (ofMul a)).val *
         ((multiplicativeGroupPowerCoverFiberEquiv ℂ ℂ n hn y : ℂˣ) : ℂ) := by
+  rw [complexMultiplicativeGroupAutFiberContinuousMulEquivZHat_def]
   have h := congrArg (Units.val : ℂˣ → ℂ)
     (multiplicativeGroupPowerCoverFiberEquiv_symm_zHat_smul ℂ
       (PrimeToPTateModule.complexExp 1)
