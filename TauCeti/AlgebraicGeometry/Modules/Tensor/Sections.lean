@@ -126,8 +126,9 @@ theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U))
   have h := congrArg (fun φ ↦ φ.hom (r ⊗ₜ t))
     (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) F)
   simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
-  exact (congrArg ((λ_ F).hom.app U)
-    (tmulRight_apply (𝟙_ X.Modules) t (show Γ(𝟙_ X.Modules, U) from r))).trans h.symm
+  -- `Γ(𝟙_ X.Modules, U)` is definitionally `Γ(X, U)` at default transparency (not under `rw`'s
+  -- implicit transparency), so `tmulRight` evaluates `μ (sectionsFunctor U)` on `r ⊗ₜ t` directly.
+  exact h.symm
 
 /-- The right unitor `F ⊗ 𝒪_X ≅ F` sends `t ⊗ r` to `r • t`. -/
 theorem rightUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)) :

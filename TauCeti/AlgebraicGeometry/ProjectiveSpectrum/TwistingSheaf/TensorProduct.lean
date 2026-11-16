@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
 
 /-!
 # Tensor products of twisting sheaves
@@ -30,8 +31,9 @@ sheafified tensor product follows the Cartier divisor construction in
 * `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso` and
   `AlgebraicGeometry.Proj.twistingSheaf.tensorIso`: the isomorphisms `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)`
   (sheaf-level and monoidal in `(Proj A).Modules`) when the degree-one standard opens cover
-  `Proj A`, with `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on
-  pure tensors.
+  `Proj A`, with `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` and
+  `AlgebraicGeometry.Proj.twistingSheaf.tensorIso_hom_app_tmulRight` describing them on pure
+  tensors.
 * `AlgebraicGeometry.Proj.lineBundleClass_twistingSheaf_eq_zpow`: `[𝒪(n)] = [𝒪(1)] ^ n` in the
   group of line-bundle classes.
 
@@ -256,6 +258,68 @@ theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 
         (twistingSheaf 𝒜 n)).inv ≫ (tensorProductIso f hf hcover m n).hom) U
       ((adj.unit.app P).app (op U) (s ⊗ₜ t)) = mul 𝒜 U m n s t at hU
   exact hU
+
+/-- On sections over an open `U`, the monoidal isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` sends the
+pure tensor `s ⊗ t` (written `tmulRight _ t s`) to the product of sections `mul 𝒜 U m n s t`. -/
+@[simp]
+theorem tensorIso_hom_app_tmulRight (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
+    (t : Γ(twistingSheaf 𝒜 n, U)) :
+    (tensorIso f hf hcover m n).hom.app U
+        (Scheme.Modules.tmulRight (twistingSheaf 𝒜 m) t s) =
+      mul 𝒜 U m n s t := by
+  -- Evaluating `p` on `tmulRight M t s` is definitionally applying `forget.μ ≫ forget.map p` to
+  -- `s ⊗ₜ t` at `U`; keeping `M`, `N`, `P` abstract avoids unfolding `twistingSheaf`.
+  have hcomp_app : ∀ (M N P : (Proj 𝒜).Modules) (p : M ⊗ N ⟶ P)
+      (s : Γ(M, U)) (t : Γ(N, U)),
+      p.app U (Scheme.Modules.tmulRight M t s) =
+        (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget
+          (TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf)) M N ≫
+          (_root_.SheafOfModules.forget _).map
+            (p : (M : _root_.SheafOfModules
+              (TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf)) ⊗ N ⟶ P)).app
+            (op U) (s ⊗ₜ t) :=
+    fun M _ _ p s t ↦ congrArg (p.app U) (Scheme.Modules.tmulRight_apply M t s)
+  let M : _root_.SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf) :=
+    twistingSheaf 𝒜 m
+  let N : _root_.SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf) :=
+    twistingSheaf 𝒜 n
+  let P : _root_.SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf) :=
+    twistingSheaf 𝒜 (m + n)
+  let p : M ⊗ N ⟶ P := (tensorIso f hf hcover m n).hom
+  let q : TauCeti.SheafOfModules.tensorProduct (Proj 𝒜).sheaf M N ⟶ P :=
+    (tensorProductIso f hf hcover m n).hom
+  let φ : M.val ⊗ N.val ⟶
+      (_root_.SheafOfModules.forget (TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf)).obj P :=
+    tensorPresheafHom 𝒜 m n
+  have hp : p = (M.tensorUnderlyingIso N).hom ≫
+      (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).inv ≫ q :=
+    SheafOfModules.Hom.ext (Scheme.Modules.isoOfSheafIso_hom_val (Proj 𝒜) _)
+  have hinvp : (M.tensorUnderlyingIso N).inv ≫ p =
+      (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).inv ≫ q :=
+    (congrArg ((M.tensorUnderlyingIso N).inv ≫ ·) hp).trans (Iso.inv_hom_id_assoc _ _)
+  have hq : (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).inv ≫ q =
+      ((TauCeti.SheafOfModules.sheafificationForgetAdjunction (Proj 𝒜).sheaf).homEquiv
+        (M.val ⊗ N.val) P).symm φ :=
+    ((congrArg
+      (fun g ↦ (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).inv ≫ g)
+      (tensorProductIso_hom f hf hcover m n)).trans (Iso.inv_hom_id_assoc _ _)).trans <|
+      (congrArg
+        ((PresheafOfModules.sheafification (R := (Proj 𝒜).ringCatSheaf)
+          (𝟙 (Proj 𝒜).ringCatSheaf.obj)).map φ ≫ ·)
+        (TauCeti.SheafOfModules.sheafificationForgetAdjunction_counit_app (Proj 𝒜).sheaf
+          P).symm).trans
+        ((TauCeti.SheafOfModules.sheafificationForgetAdjunction (Proj 𝒜).sheaf).homEquiv_symm_apply
+          (M.val ⊗ N.val) P φ).symm
+  have hμ : Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget
+      (TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf)) M N ≫
+      (_root_.SheafOfModules.forget _).map p = φ :=
+    (TauCeti.SheafOfModules.forget_μ_comp_map (R := (Proj 𝒜).sheaf) p).trans <|
+      (congrArg ((TauCeti.SheafOfModules.sheafificationForgetAdjunction (Proj 𝒜).sheaf).homEquiv
+        (M.val ⊗ N.val) P) (hinvp.trans hq)).trans (Equiv.apply_symm_apply _ _)
+  exact (hcomp_app _ _ _ (tensorIso f hf hcover m n).hom s t).trans <|
+    (congrArg (fun g ↦ g.app (op U) (s ⊗ₜ t)) hμ).trans <|
+      (tensorPresheafHom_app_apply m n U (s ⊗ₜ t)).trans
+        (TensorProduct.lift.tmul (f' := mul 𝒜 U m n) s t)
 
 end Cover
 
