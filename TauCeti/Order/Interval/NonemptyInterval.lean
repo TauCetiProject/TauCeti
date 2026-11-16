@@ -11,7 +11,7 @@ public import Mathlib.Order.Interval.Basic
 public import Mathlib.Order.Interval.Set.OrderIso
 
 /-!
-# Finite supports, order-isomorphism transport, and translation of nonempty intervals
+# Finite supports, order-isomorphism transport, translation, and shortening of nonempty intervals
 
 `NonemptyInterval α` in `Mathlib.Order.Interval.Basic` packages a pair of endpoints `s.fst ≤ s.snd`
 ordered by set inclusion `(s : Set α) ⊆ (t : Set α)`. When `α` is a `LocallyFiniteOrder`, the points
@@ -23,8 +23,10 @@ that `#s.toFinset` counts the points in `s` (for `α = ℤ`, `(s.snd + 1 - s.fst
 
 This file also upgrades `NonemptyInterval.map` along an `OrderIso` `e : α ≃o β` to an order
 isomorphism `NonemptyInterval.orderIsoCongr e : NonemptyInterval α ≃o NonemptyInterval β` preserving
-finite-support cardinalities, and defines right additive translation `NonemptyInterval.shift s c`
-sending `[a, b]` to `[a + c, b + c]`.
+finite-support cardinalities, defines right additive translation `NonemptyInterval.shift s c`
+sending `[a, b]` to `[a + c, b + c]`, and provides one-step right extension and shortening on
+`NonemptyInterval ℤ` (`NonemptyInterval.extendRight` and `NonemptyInterval.shorten`, characterized
+by `s.shorten = some t ↔ s = t.extendRight`).
 
 ## Main definitions
 
@@ -32,6 +34,10 @@ sending `[a, b]` to `[a + c, b + c]`.
 * `NonemptyInterval.orderIsoCongr`: transport of nonempty intervals along an order isomorphism as an
   `OrderIso`.
 * `NonemptyInterval.shift`: right translation `[a, b] ↦ [a + c, b + c]` of a nonempty interval.
+* `NonemptyInterval.extendRight`: right one-step extension `[b, e] ↦ [b, e + 1]` on
+  `NonemptyInterval ℤ`.
+* `NonemptyInterval.shorten`: right one-step shortening on `NonemptyInterval ℤ`, returning
+  `some [b, e - 1]` when `b < e` and `none` on singletons.
 -/
 
 public section
@@ -335,6 +341,155 @@ theorem natCast_card_toFinset_int (s : NonemptyInterval ℤ) :
   have h := s.fst_le_snd
   rw [card_toFinset_int]
   omega
+
+/-- Extend a nonempty integer interval `[b, e]` on the right by one step to `[b, e + 1]`. -/
+def extendRight (s : NonemptyInterval ℤ) : NonemptyInterval ℤ :=
+  ⟨(s.fst, s.snd + 1), by have := s.fst_le_snd; omega⟩
+
+@[simp]
+theorem fst_extendRight (s : NonemptyInterval ℤ) : s.extendRight.fst = s.fst :=
+  (rfl)
+
+@[simp]
+theorem snd_extendRight (s : NonemptyInterval ℤ) : s.extendRight.snd = s.snd + 1 :=
+  (rfl)
+
+theorem fst_lt_snd_extendRight (s : NonemptyInterval ℤ) :
+    s.extendRight.fst < s.extendRight.snd := by
+  have := s.fst_le_snd
+  rw [fst_extendRight, snd_extendRight]
+  omega
+
+theorem le_extendRight (s : NonemptyInterval ℤ) : s ≤ s.extendRight :=
+  ⟨le_rfl, by rw [snd_extendRight]; omega⟩
+
+theorem lt_extendRight (s : NonemptyInterval ℤ) : s < s.extendRight :=
+  lt_of_le_of_ne s.le_extendRight fun h => by
+    have := congrArg (fun u : NonemptyInterval ℤ => u.snd) h
+    rw [snd_extendRight] at this
+    omega
+
+@[simp]
+theorem extendRight_le_extendRight {s t : NonemptyInterval ℤ} :
+    s.extendRight ≤ t.extendRight ↔ s ≤ t := by
+  simp only [le_def, fst_extendRight, snd_extendRight]
+  omega
+
+theorem extendRight_injective : Injective NonemptyInterval.extendRight := by
+  intro s t h
+  exact le_antisymm
+    (extendRight_le_extendRight.mp h.le)
+    (extendRight_le_extendRight.mp h.ge)
+
+@[simp]
+theorem extendRight_inj {s t : NonemptyInterval ℤ} :
+    s.extendRight = t.extendRight ↔ s = t :=
+  extendRight_injective.eq_iff
+
+theorem extendRight_shift (s : NonemptyInterval ℤ) (c : ℤ) :
+    (s.shift c).extendRight = s.extendRight.shift c := by
+  ext
+  · simp
+  · simp only [snd_extendRight, snd_shift]
+    omega
+
+@[simp]
+theorem card_toFinset_extendRight (s : NonemptyInterval ℤ) :
+    #s.extendRight.toFinset = #s.toFinset + 1 := by
+  have := s.fst_le_snd
+  rw [card_toFinset_int, card_toFinset_int, fst_extendRight, snd_extendRight]
+  omega
+
+theorem not_extendRight_le_of_fst_eq_snd {s t : NonemptyInterval ℤ} (ht : t.fst = t.snd) :
+    ¬ s.extendRight ≤ t := by
+  rw [le_def, fst_extendRight, snd_extendRight]
+  have := s.fst_le_snd
+  omega
+
+/-- Shorten a nonempty integer interval `[b, e]` on the right: return `some [b, e - 1]` when
+`b < e`, and `none` when `b = e` is a singleton. -/
+def shorten (s : NonemptyInterval ℤ) : Option (NonemptyInterval ℤ) :=
+  if h : s.fst < s.snd then some ⟨(s.fst, s.snd - 1), by omega⟩ else none
+
+theorem shorten_of_lt {s : NonemptyInterval ℤ} (h : s.fst < s.snd) :
+    s.shorten = some ⟨(s.fst, s.snd - 1), by omega⟩ := by
+  unfold shorten
+  simp [h]
+
+theorem shorten_of_eq {s : NonemptyInterval ℤ} (h : s.fst = s.snd) :
+    s.shorten = none := by
+  unfold shorten
+  simp [h]
+
+@[simp]
+theorem shorten_eq_none_iff {s : NonemptyInterval ℤ} :
+    s.shorten = none ↔ s.fst = s.snd := by
+  unfold shorten
+  have := s.fst_le_snd
+  split_ifs with h
+  · simp [h.ne]
+  · simp
+    omega
+
+@[simp]
+theorem shorten_pure (a : ℤ) : (pure a : NonemptyInterval ℤ).shorten = none :=
+  shorten_of_eq rfl
+
+@[simp]
+theorem shorten_extendRight (s : NonemptyInterval ℤ) :
+    s.extendRight.shorten = some s := by
+  rw [shorten_of_lt s.fst_lt_snd_extendRight]
+  congr 1
+  ext <;> simp
+
+/-- `NonemptyInterval.shorten` returns `some t` if and only if the input interval is
+`t.extendRight`. -/
+theorem shorten_eq_some_iff {s t : NonemptyInterval ℤ} :
+    s.shorten = some t ↔ s = t.extendRight := by
+  refine ⟨fun h => ?_, fun h => h ▸ t.shorten_extendRight⟩
+  unfold shorten at h
+  split_ifs at h with hlt
+  rw [Option.some.injEq] at h
+  subst h
+  ext <;> simp
+
+theorem fst_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
+    t.fst = s.fst := by
+  rw [shorten_eq_some_iff.mp h, fst_extendRight]
+
+theorem snd_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
+    t.snd = s.snd - 1 := by
+  rw [shorten_eq_some_iff.mp h, snd_extendRight]
+  omega
+
+theorem mem_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) {a : ℤ} :
+    a ∈ t ↔ s.fst ≤ a ∧ a < s.snd := by
+  rw [shorten_eq_some_iff.mp h, mem_def, fst_extendRight, snd_extendRight]
+  omega
+
+theorem card_toFinset_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
+    #t.toFinset + 1 = #s.toFinset := by
+  rw [shorten_eq_some_iff.mp h, card_toFinset_extendRight]
+
+theorem le_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
+    t ≤ s := by
+  rw [shorten_eq_some_iff.mp h]
+  exact t.le_extendRight
+
+theorem shorten_le_shorten_iff {s₁ s₂ t₁ t₂ : NonemptyInterval ℤ}
+    (h₁ : s₁.shorten = some t₁) (h₂ : s₂.shorten = some t₂) :
+    t₁ ≤ t₂ ↔ s₁ ≤ s₂ := by
+  rw [shorten_eq_some_iff.mp h₁, shorten_eq_some_iff.mp h₂, extendRight_le_extendRight]
+
+theorem shorten_shift (s : NonemptyInterval ℤ) (c : ℤ) :
+    (s.shift c).shorten = s.shorten.map fun t => t.shift c := by
+  cases hs : s.shorten with
+  | none =>
+    rw [Option.map_none, shorten_eq_none_iff]
+    have h := shorten_eq_none_iff.mp hs
+    simp [h]
+  | some t =>
+    rw [Option.map_some, shorten_eq_some_iff.mp hs, ← extendRight_shift, shorten_extendRight]
 
 end Int
 

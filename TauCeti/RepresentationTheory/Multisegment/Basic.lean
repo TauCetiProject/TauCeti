@@ -19,20 +19,17 @@ set inclusion (`s ≤ t ↔ t.fst ≤ s.fst ∧ s.snd ≤ t.snd`), and an intege
 `TauCeti.Multisegment` is a finite multiset of such segments in which repeated segments remain
 distinct occurrences.
 
-This file develops the segment-truncation and multisegment combinatorics underlying graded nilpotent
-operators on type-A windows and the Zelevinsky–Atobe–Kondo–Yasuda multisegment operations:
+This file develops the multisegment combinatorics underlying graded nilpotent operators on type-A
+windows and the Zelevinsky–Atobe–Kondo–Yasuda multisegment operations:
 
-* Right shortening `NonemptyInterval.shorten` maps `[b, e]` to `some [b, e - 1]` when `b < e` and
-  deletes singletons `[b, b]` to `none`. Its partial right inverse `NonemptyInterval.extendRight`
-  maps `[b, e]` to `[b, e + 1]`, giving the characterization
-  `s.shorten = some t ↔ s = t.extendRight`.
 * `TauCeti.Multisegment.degreeDimension`, `TauCeti.Multisegment.degreeSupport`, and
   `TauCeti.Multisegment.totalLength` record the multiplicity of segments covering each integer
   grade, the finite set of supported grades, and the total basis dimension
   `∑ s ∈ m, #s.toFinset`, linked by double counting (`sum_degreeSupport_degreeDimension`).
 * `TauCeti.Multisegment.shift` translates every occurrence on the right by an integer `c`,
   preserving multiplicities and total length while reindexing degree dimensions.
-* `TauCeti.Multisegment.rightTruncate` applies `NonemptyInterval.shorten` to every occurrence via
+* `TauCeti.Multisegment.rightTruncate` applies `NonemptyInterval.shorten` (mapping `[b, e]` to
+  `some [b, e - 1]` when `b < e` and deleting singletons `[b, b]` to `none`) to every occurrence via
   `Multiset.filterMap`, satisfying `(rightTruncate m).count t = m.count t.extendRight` and lowering
   `totalLength m` by `m.card`.
 * `TauCeti.Multisegment.occurrenceInterval` indexes the `m.card` occurrences of `m` by
@@ -49,159 +46,6 @@ operators on type-A windows and the Zelevinsky–Atobe–Kondo–Yasuda multiseg
 public section
 
 open Finset Function
-
-namespace NonemptyInterval
-
-/-- Extend a nonempty integer interval `[b, e]` on the right by one step to `[b, e + 1]`. -/
-def extendRight (s : NonemptyInterval ℤ) : NonemptyInterval ℤ :=
-  ⟨(s.fst, s.snd + 1), by have := s.fst_le_snd; omega⟩
-
-@[simp]
-theorem fst_extendRight (s : NonemptyInterval ℤ) : s.extendRight.fst = s.fst :=
-  (rfl)
-
-@[simp]
-theorem snd_extendRight (s : NonemptyInterval ℤ) : s.extendRight.snd = s.snd + 1 :=
-  (rfl)
-
-theorem fst_lt_snd_extendRight (s : NonemptyInterval ℤ) :
-    s.extendRight.fst < s.extendRight.snd := by
-  have := s.fst_le_snd
-  rw [fst_extendRight, snd_extendRight]
-  omega
-
-theorem le_extendRight (s : NonemptyInterval ℤ) : s ≤ s.extendRight :=
-  ⟨le_rfl, by rw [snd_extendRight]; omega⟩
-
-theorem lt_extendRight (s : NonemptyInterval ℤ) : s < s.extendRight :=
-  lt_of_le_of_ne s.le_extendRight fun h => by
-    have := congrArg (fun u : NonemptyInterval ℤ => u.snd) h
-    rw [snd_extendRight] at this
-    omega
-
-@[simp]
-theorem extendRight_le_extendRight {s t : NonemptyInterval ℤ} :
-    s.extendRight ≤ t.extendRight ↔ s ≤ t := by
-  simp only [le_def, fst_extendRight, snd_extendRight]
-  omega
-
-theorem extendRight_injective : Injective NonemptyInterval.extendRight := by
-  intro s t h
-  exact le_antisymm
-    (extendRight_le_extendRight.mp h.le)
-    (extendRight_le_extendRight.mp h.ge)
-
-@[simp]
-theorem extendRight_inj {s t : NonemptyInterval ℤ} :
-    s.extendRight = t.extendRight ↔ s = t :=
-  extendRight_injective.eq_iff
-
-theorem extendRight_shift (s : NonemptyInterval ℤ) (c : ℤ) :
-    (s.shift c).extendRight = s.extendRight.shift c := by
-  ext
-  · simp
-  · simp only [snd_extendRight, snd_shift]
-    omega
-
-@[simp]
-theorem card_toFinset_extendRight (s : NonemptyInterval ℤ) :
-    #s.extendRight.toFinset = #s.toFinset + 1 := by
-  have := s.fst_le_snd
-  rw [card_toFinset_int, card_toFinset_int, fst_extendRight, snd_extendRight]
-  omega
-
-theorem not_extendRight_le_of_fst_eq_snd {s t : NonemptyInterval ℤ} (ht : t.fst = t.snd) :
-    ¬ s.extendRight ≤ t := by
-  rw [le_def, fst_extendRight, snd_extendRight]
-  have := s.fst_le_snd
-  omega
-
-/-- Shorten a nonempty integer interval `[b, e]` on the right: return `some [b, e - 1]` when
-`b < e`, and `none` when `b = e` is a singleton. -/
-def shorten (s : NonemptyInterval ℤ) : Option (NonemptyInterval ℤ) :=
-  if h : s.fst < s.snd then some ⟨(s.fst, s.snd - 1), by omega⟩ else none
-
-theorem shorten_of_lt {s : NonemptyInterval ℤ} (h : s.fst < s.snd) :
-    s.shorten = some ⟨(s.fst, s.snd - 1), by omega⟩ := by
-  unfold shorten
-  simp [h]
-
-theorem shorten_of_eq {s : NonemptyInterval ℤ} (h : s.fst = s.snd) :
-    s.shorten = none := by
-  unfold shorten
-  simp [h]
-
-@[simp]
-theorem shorten_eq_none_iff {s : NonemptyInterval ℤ} :
-    s.shorten = none ↔ s.fst = s.snd := by
-  unfold shorten
-  have := s.fst_le_snd
-  split_ifs with h
-  · simp [h.ne]
-  · simp
-    omega
-
-@[simp]
-theorem shorten_pure (a : ℤ) : (pure a : NonemptyInterval ℤ).shorten = none :=
-  shorten_of_eq rfl
-
-@[simp]
-theorem shorten_extendRight (s : NonemptyInterval ℤ) :
-    s.extendRight.shorten = some s := by
-  rw [shorten_of_lt s.fst_lt_snd_extendRight]
-  congr 1
-  ext <;> simp
-
-/-- `NonemptyInterval.shorten` returns `some t` if and only if the input interval is
-`t.extendRight`. -/
-theorem shorten_eq_some_iff {s t : NonemptyInterval ℤ} :
-    s.shorten = some t ↔ s = t.extendRight := by
-  refine ⟨fun h => ?_, fun h => h ▸ t.shorten_extendRight⟩
-  unfold shorten at h
-  split_ifs at h with hlt
-  rw [Option.some.injEq] at h
-  subst h
-  ext <;> simp
-
-theorem fst_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
-    t.fst = s.fst := by
-  rw [shorten_eq_some_iff.mp h, fst_extendRight]
-
-theorem snd_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
-    t.snd = s.snd - 1 := by
-  rw [shorten_eq_some_iff.mp h, snd_extendRight]
-  omega
-
-theorem mem_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) {a : ℤ} :
-    a ∈ t ↔ s.fst ≤ a ∧ a < s.snd := by
-  rw [shorten_eq_some_iff.mp h, mem_def, fst_extendRight, snd_extendRight]
-  omega
-
-theorem card_toFinset_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
-    #t.toFinset + 1 = #s.toFinset := by
-  rw [shorten_eq_some_iff.mp h, card_toFinset_extendRight]
-
-theorem le_of_shorten_eq_some {s t : NonemptyInterval ℤ} (h : s.shorten = some t) :
-    t ≤ s := by
-  rw [shorten_eq_some_iff.mp h]
-  exact t.le_extendRight
-
-theorem shorten_le_shorten_iff {s₁ s₂ t₁ t₂ : NonemptyInterval ℤ}
-    (h₁ : s₁.shorten = some t₁) (h₂ : s₂.shorten = some t₂) :
-    t₁ ≤ t₂ ↔ s₁ ≤ s₂ := by
-  rw [shorten_eq_some_iff.mp h₁, shorten_eq_some_iff.mp h₂, extendRight_le_extendRight]
-
-theorem shorten_shift (s : NonemptyInterval ℤ) (c : ℤ) :
-    (s.shift c).shorten = s.shorten.map fun t => t.shift c := by
-  cases hs : s.shorten with
-  | none =>
-    rw [Option.map_none, shorten_eq_none_iff]
-    have h := shorten_eq_none_iff.mp hs
-    simp [h]
-  | some t =>
-    rw [Option.map_some, shorten_eq_some_iff.mp hs, ← extendRight_shift, shorten_extendRight]
-
-end NonemptyInterval
 
 namespace TauCeti
 
@@ -695,13 +539,7 @@ theorem card_filter_occurrenceInterval_comp_equiv (m : Multisegment)
     (σ : Equiv.Perm (Fin m.card)) (s : Interval) :
     #(Finset.univ.filter fun i : Fin m.card => occurrenceInterval m (σ i) = s) = m.count s := by
   rw [← card_filter_occurrenceInterval_eq m s]
-  refine Finset.card_bij (fun i _ => σ i) ?_ ?_ ?_
-  · intro i hi
-    simpa using hi
-  · intro i₁ _ i₂ _ h
-    exact σ.injective h
-  · intro j hj
-    exact ⟨σ.symm j, by simpa using hj, σ.apply_symm_apply j⟩
+  exact Finset.card_equiv σ (by simp)
 
 theorem sum_occurrenceInterval {M : Type*} [AddCommMonoid M]
     (m : Multisegment) (f : Interval → M) :

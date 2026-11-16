@@ -197,14 +197,7 @@ theorem IsInclusionChain.subset {A B : Finset Interval} (hB : IsInclusionChain B
 theorem IsInclusionChain.insert_of_forall_le {A : Finset Interval} {t : Interval}
     (hA : IsInclusionChain A) (ht : ∀ s ∈ A, s ≤ t) :
     IsInclusionChain (insert t A) := by
-  rw [isInclusionChain_iff_forall] at hA ⊢
-  intro u hu v hv
-  rcases Finset.mem_insert.mp hu with rfl | hu' <;>
-    rcases Finset.mem_insert.mp hv with rfl | hv'
-  · exact Or.inl le_rfl
-  · exact Or.inr (ht v hv')
-  · exact Or.inl (ht u hu')
-  · exact hA u hu' v hv'
+  simpa [IsInclusionChain] using hA.insert fun s hs _ => Or.inr (ht s hs)
 
 theorem IsInclusionChain.card_le_one_of_isAntichain {A : Finset Interval}
     (hchain : IsInclusionChain A) (hanti : IsAntichain (· ≤ ·) (A : Set Interval)) :
@@ -323,11 +316,8 @@ private theorem chainWeight_shift_le (m : Multisegment) (a c : ℤ) :
   intro A _ hA
   let e : Interval ↪ Interval := ⟨fun s => s.shift (-c), NonemptyInterval.shift_injective (-c)⟩
   have hAe : IsInclusionChain (A.map e) := by
-    rw [isInclusionChain_iff_forall] at hA ⊢
-    intro u hu v hv
-    rcases Finset.mem_map.mp hu with ⟨s, hs, rfl⟩
-    rcases Finset.mem_map.mp hv with ⟨t, ht, rfl⟩
-    exact (hA s hs t ht).imp (NonemptyInterval.shift_mono (-c)) (NonemptyInterval.shift_mono (-c))
+    simpa [IsInclusionChain] using
+      Monotone.isChain_image (f := e) (fun _ _ => NonemptyInterval.shift_mono (-c)) hA
   calc
     ∑ s ∈ A, (cutPart (shift m c) (a + c)).count s
       = ∑ s ∈ A, (cutPart m a).count (e s) := by
