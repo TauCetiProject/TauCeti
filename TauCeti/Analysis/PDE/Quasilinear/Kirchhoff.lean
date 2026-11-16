@@ -72,6 +72,18 @@ private theorem hasDerivAt_intervalIntegral_zero (hA : Continuous A) (y : ℝ) :
     HasDerivAt (fun z ↦ ∫ s in 0..z, A s) (A y) y :=
   (hA.integral_hasStrictDerivAt 0 y).hasDerivAt
 
+/-- The derivative function of Kirchhoff's potential `Ψ(y) = ∫_0^y A` of a continuous
+coefficient is `A`. -/
+private theorem deriv_intervalIntegral_zero (hA : Continuous A) :
+    deriv (fun z ↦ ∫ s in 0..z, A s) = A :=
+  funext fun y ↦ (hasDerivAt_intervalIntegral_zero hA y).deriv
+
+/-- Kirchhoff's potential `Ψ(y) = ∫_0^y A` of a continuous coefficient is `C¹`. -/
+private theorem contDiff_one_intervalIntegral_zero (hA : Continuous A) :
+    ContDiff ℝ 1 fun z ↦ ∫ s in 0..z, A s :=
+  contDiff_one_iff_deriv.2 ⟨fun y ↦ (hasDerivAt_intervalIntegral_zero hA y).differentiableAt,
+    by rw [deriv_intervalIntegral_zero hA]; exact hA⟩
+
 /-- The primitive `G(r) = ∫_{x₀}^r f + F(r)` of the data is interval integrable on `[x₀, x₁]`. -/
 private theorem intervalIntegrable_intervalIntegral_add (hx : x₀ < x₁)
     (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : IntegrableOn F (Ioo x₀ x₁)) :
@@ -109,12 +121,10 @@ theorem exists_forall_intervalIntegral_intervalRepresentativeL_eq (hx : x₀ < x
   refine ⟨k, fun t ↦ ?_⟩
   have htI : (t : ℝ) ∈ uIcc x₀ x₁ := Icc_subset_uIcc t.2
   -- `Ψ ∘ v` is absolutely continuous on `[x₀, t]`, with derivative the flux `A(v) v' = k - G`.
-  have hΨ : ContDiff ℝ 1 fun z ↦ ∫ s in 0..z, A s :=
-    contDiff_one_iff_deriv.2 ⟨fun y ↦ (hasDerivAt_intervalIntegral_zero hA y).differentiableAt,
-      by rw [funext (Continuous.deriv_integral A hA 0)]; exact hA⟩
   have hac : AbsolutelyContinuousOnInterval ((fun z ↦ ∫ s in 0..z, A s) ∘ v) x₀ t :=
     ((W1p.absolutelyContinuousOnInterval_intervalRepresentativeL hx u).mono
-      (uIcc_subset_uIcc left_mem_uIcc htI)).comp_of_contDiffAt fun _ _ ↦ hΨ.contDiffAt
+      (uIcc_subset_uIcc left_mem_uIcc htI)).comp_of_contDiffAt fun _ _ ↦
+      (contDiff_one_intervalIntegral_zero hA).contDiffAt
   have hne : ∀ᵐ r ∂volume, r ≠ x₁ := by simp [ae_iff, measure_singleton]
   have hderiv : ∀ᵐ r, r ∈ uIoc x₀ (t : ℝ) →
       deriv ((fun z ↦ ∫ s in 0..z, A s) ∘ v) r = k - ((∫ s in x₀..r, f s) + F r) := by
@@ -157,7 +167,7 @@ theorem eq_of_intervalTraceL_eq_of_forall_setIntegral_eq (hx : x₀ < x₁) (hA 
   obtain ⟨k₁, h₁⟩ := exists_forall_intervalIntegral_intervalRepresentativeL_eq hx hA hf hF hu₁
   obtain ⟨k₂, h₂⟩ := exists_forall_intervalIntegral_intervalRepresentativeL_eq hx hA hf hF hu₂
   have hΨ : StrictMono fun y ↦ ∫ s in 0..y, A s := strictMono_of_deriv_pos fun y ↦ by
-    rw [(hasDerivAt_intervalIntegral_zero hA y).deriv]
+    rw [deriv_intervalIntegral_zero hA]
     exact hA₀ y
   rw [W1p.intervalTraceL_apply, W1p.intervalTraceL_apply, Prod.mk.injEq] at htr
   -- The two transforms agree at both endpoints, so their slopes `k₁` and `k₂` agree.
@@ -177,28 +187,16 @@ private theorem exists_lipschitzWith_inverse_intervalIntegral {lam : ℝ} (hlam 
     (hA : Continuous A) (hAlam : ∀ y, lam ≤ A y) :
     ∃ g : ℝ → ℝ, (∀ y, ∫ s in 0..g y, A s = y) ∧ (∀ y, g (∫ s in 0..y, A s) = y) ∧
       LipschitzWith (Real.toNNReal lam⁻¹) g := by
-  have hd : Differentiable ℝ fun y ↦ ∫ s in 0..y, A s := fun y ↦
-    (hasDerivAt_intervalIntegral_zero hA y).differentiableAt
+  have hd : Differentiable ℝ fun y ↦ ∫ s in 0..y, A s :=
+    (contDiff_one_intervalIntegral_zero hA).differentiable one_ne_zero
   have hd' : ∀ y, lam ≤ deriv (fun y ↦ ∫ s in 0..y, A s) y := fun y ↦ by
-    rw [Continuous.deriv_integral A hA 0 y]
+    rw [deriv_intervalIntegral_zero hA]
     exact hAlam y
   have hanti := hd.antilipschitzWith_of_le_deriv hlam hd'
   have hsurj := hd.surjective_of_le_deriv hlam hd'
   exact ⟨Function.surjInv hsurj, Function.surjInv_eq hsurj,
     fun y ↦ hanti.injective (Function.surjInv_eq hsurj _),
     hanti.to_rightInverse (Function.surjInv_eq hsurj)⟩
-
-omit [Fact (1 ≤ p)] in
-/-- The primitive `G(r) = ∫_{x₀}^r f + F(r)` of the data lies in `Lᵖ(x₀, x₁)` when `F` does. -/
-private theorem memLp_intervalIntegral_add (hx : x₀ < x₁) (hf : IntegrableOn f (Ioo x₀ x₁))
-    (hF : MemLp F p (volume.restrict (Ioo x₀ x₁))) :
-    MemLp (fun r ↦ (∫ s in x₀..r, f s) + F r) p (volume.restrict (Ioo x₀ x₁)) := by
-  have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
-  have hΦ := TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-    (left_mem_Icc.2 hx.le)
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hΦ
-  exact (MemLp.of_bound ((hΦ.mono Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo) C
-    (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr ↦ hC r (Ioo_subset_Icc_self hr))).add hF
 
 /-- **The candidate solution.** For a continuous coefficient `A ≥ λ > 0`, let `w` solve the linear
 problem `-w'' = f + F'` with boundary values `Ψ(g₀)` and `Ψ(g₁)`, where `Ψ(y) = ∫_0^y A`. Then
@@ -251,17 +249,19 @@ private theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq_of_le (hx : x
         ∫ t in Ioo x₀ x₁, A (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
             W1p.gradient u t * deriv φ t =
           (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t := by
-  have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   obtain ⟨v, k, hvac, hv₀, hv₁, hvd⟩ := exists_absolutelyContinuousOnInterval_and_ae_hasDerivAt
     hx hlam hA hAlam hf (hF.integrable Fact.out) g₀ g₁
   -- The derivative `(k - G) / A(v)` is dominated by `|k - G| / λ`, which lies in `Lᵖ`.
   have hdv : MemLp (deriv v) p (volume.restrict (Ioo x₀ x₁)) := by
-    refine ((memLp_const k).sub (memLp_intervalIntegral_add hx hf hF)).const_mul lam⁻¹
-      |>.of_le (measurable_deriv v).aestronglyMeasurable ?_
+    refine ((memLp_const k).sub
+      ((TauCeti.intervalIntegral.memLp_primitive hf (left_mem_Icc.2 hx.le)).add hF)).const_mul
+      lam⁻¹ |>.of_le (measurable_deriv v).aestronglyMeasurable ?_
     filter_upwards [(ae_restrict_iff' measurableSet_Ioo).2 hvd] with r hr
-    rw [hr.deriv, norm_mul, norm_mul, norm_inv, norm_inv, Real.norm_of_nonneg hlam.le,
+    rw [hr.deriv]
+    simp only [norm_mul, norm_inv, Pi.sub_apply, Pi.add_apply, Real.norm_of_nonneg hlam.le,
       Real.norm_of_nonneg (hlam.le.trans (hAlam _))]
-    exact mul_le_mul_of_nonneg_right (inv_anti₀ hlam (hAlam _)) (norm_nonneg _)
+    gcongr
+    exact hAlam _
   -- The Sobolev class represented by `v`.
   obtain ⟨u, hurep, hugrad⟩ := W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq hx
     (left_mem_Icc.2 hx.le) (v x₀) hdv
@@ -299,7 +299,6 @@ theorem existsUnique_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x�
         ∫ t in Ioo x₀ x₁, A (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
             W1p.gradient u t * deriv φ t =
           (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t := by
-  have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   obtain ⟨u, hu⟩ := exists_intervalTraceL_eq_and_forall_setIntegral_eq_of_le hx hlam hA hAlam hf
     hF g₀ g₁
   exact ⟨u, hu, fun u' hu' ↦ eq_of_intervalTraceL_eq_of_forall_setIntegral_eq hx hA

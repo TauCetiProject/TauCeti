@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Order.ProjIcc
@@ -37,6 +38,8 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.memLp_primitive`: on a bounded interval `(a, b)`, the primitive based
+  at a point of `[a, b]` of a function integrable on `(a, b)` lies in every `Lᵖ(a, b)`.
 * `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
   `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
   the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
@@ -95,6 +98,14 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on `(a, b)`, based at a point
+`t₀` of `[a, b]`, lies in every `Lᵖ(a, b)`: it is continuous on the compact interval `[a, b]`. -/
+theorem memLp_primitive {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b))
+    (ht₀ : t₀ ∈ Icc a b) :
+    MemLp (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b)) :=
+  (continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).memLp_restrict_of_subset_isCompact
+    isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
 `(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`
