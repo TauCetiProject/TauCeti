@@ -121,18 +121,14 @@ theorem hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral {c : ι �
     HasSum (fun a : ι → ℕ ↦ (∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * f x) *
       ∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * g x) (|∏ i, c i|⁻¹ * ∫ x, f x * g x) := by
   -- Undo the dilation: `f = f' ∘ (x ↦ c x)` for `f' = f ∘ (y ↦ c⁻¹ y)`.
-  let d : (ι → ℝ) ≃ₜ (ι → ℝ) :=
-    Homeomorph.piCongrRight fun i ↦ Homeomorph.mulLeft₀ (c i)⁻¹ (inv_ne_zero (hc i))
-  have hd' : ⇑d = fun x i ↦ (c i)⁻¹ * x i := by
-    funext x i
-    simp [d]
+  let d : (ι → ℝ) → ι → ℝ := fun x i ↦ (c i)⁻¹ * x i
   have hd : ∀ x : ι → ℝ, d (fun i ↦ c i * x i) = x := fun x ↦ by
     funext i
-    simp [hd', inv_mul_cancel_left₀ (hc i)]
+    simp [d, inv_mul_cancel_left₀ (hc i)]
   have hmemLp : ∀ {h : (ι → ℝ) → ℝ}, MemLp h 2 (Measure.pi fun _ : ι ↦ volume) →
       MemLp (h ∘ d) 2 (Measure.pi fun _ : ι ↦ volume) := fun hh ↦ by
-    refine MemLp.comp_of_map ?_ d.continuous.aemeasurable
-    rw [hd', map_mul_pi_addHaar_eq_smul _ fun i ↦ inv_ne_zero (hc i)]
+    refine MemLp.comp_of_map ?_ (by fun_prop : Continuous d).aemeasurable
+    rw [map_mul_pi_addHaar_eq_smul _ fun i ↦ inv_ne_zero (hc i)]
     exact hh.smul_measure ENNReal.ofReal_ne_top
   have key := hasSum_integral_prod_hermiteFunction_mul_mul_integral (hmemLp hf) (hmemLp hg)
   have hcoeff : ∀ (h : (ι → ℝ) → ℝ) (a : ι → ℕ),

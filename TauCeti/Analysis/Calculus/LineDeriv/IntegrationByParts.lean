@@ -64,8 +64,8 @@ Lipschitz test function.
   and of the weighted squares `g · (L u) ^ 2`.
 * `TauCeti.integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply`: integration
   by parts twice, `∫ B f (∂_v ∂_w g) = ∫ B (∂_w ∂_v f) g`, for compactly supported `g`.
-  `TauCeti.integrable_mul_of_forall_notMem_tsupport_eq_zero` records the integrability of a
-  product of continuous functions one of which vanishes off a compact support.
+  `TauCeti.integrable_bilinear_of_forall_notMem_tsupport_eq_zero` records the integrability of
+  a bilinear pairing of continuous maps one of which vanishes off a compact support.
 * `TauCeti.integral_bilinear_fderiv_apply_comm`: the integral of `B (∂_v u) (∂_w u)` is symmetric
   in the two directions, and `TauCeti.integral_bilinForm_fderiv_apply_comm` its form for a
   bilinear form on a finite-dimensional space.
@@ -185,14 +185,16 @@ theorem integral_neg_fderiv_fderiv_apply_mul_eq_integral_sq (L : V →L[ℝ] ℝ
   simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.mul_apply'] at h
   simp only [sq, h, neg_mul, integral_neg]
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- A product `p q` of continuous functions is integrable when `q` vanishes off the support of a
-compactly supported function `g`. -/
-theorem integrable_mul_of_forall_notMem_tsupport_eq_zero {R α : Type*} [NormedRing R] [Zero α]
-    {g : E → α} (hgc : HasCompactSupport g) {p q : E → R} (hp : Continuous p) (hq : Continuous q)
-    (hq0 : ∀ x, x ∉ tsupport g → q x = 0) : Integrable (fun x ↦ p x * q x) μ :=
-  (hp.mul hq).integrable_of_hasCompactSupport <| HasCompactSupport.mul_left <|
-    hgc.mono' fun x hx ↦ by_contra fun h ↦ hx (hq0 x h)
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
+/-- A continuous bilinear pairing `B (p x) (q x)` of continuous maps is integrable when `q`
+vanishes off the support of a compactly supported function `g`. -/
+theorem integrable_bilinear_of_forall_notMem_tsupport_eq_zero [IsFiniteMeasureOnCompacts μ]
+    {V' α : Type*} [NormedAddCommGroup V'] [NormedSpace ℝ V'] [Zero α] (B : V →L[ℝ] V' →L[ℝ] W)
+    {g : E → α} (hgc : HasCompactSupport g) {p : E → V} {q : E → V'} (hp : Continuous p)
+    (hq : Continuous q) (hq0 : ∀ x, x ∉ tsupport g → q x = 0) :
+    Integrable (fun x ↦ B (p x) (q x)) μ :=
+  ((B.continuous.comp hp).clm_apply hq).integrable_of_hasCompactSupport <|
+    hgc.mono' <| Function.support_subset_iff'.2 fun x hx ↦ by simp [hq0 x hx]
 
 /-- **Integration by parts twice.** For a continuous bilinear map `B`, a compactly supported `C²`
 map `g` and a map `f` that is `C²` at every point of the support of `g`, the second derivative
@@ -223,20 +225,18 @@ theorem integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply {V
     fun x ↦ by simp [(hg.contDiffAt.hasFDerivAt_fderiv_apply le_rfl w).fderiv]
   have hDg : ∀ x, x ∉ tsupport g → fderiv ℝ g x w = 0 := fun x hx ↦ by
     simp [fderiv_of_notMem_tsupport ℝ hx]
+  -- `∫ B F (∂_v ∂_w g) = -∫ B (∂_v F) (∂_w g)`, then `∫ B (∂_v F) (∂_w g) = -∫ B (∂_w ∂_v F) g`;
   -- every integrand pairs a continuous map with one vanishing off the support of `g`
-  have hint : ∀ {P : E → V} {Q : E → V'}, Continuous P → Continuous Q →
-      (∀ x, x ∉ tsupport g → Q x = 0) → Integrable (fun x ↦ B (P x) (Q x)) μ :=
-    fun hP hQ hQ0 ↦ ((B.continuous.comp hP).clm_apply hQ).integrable_of_hasCompactSupport <|
-      hgc.mono' fun x hx ↦ by_contra fun h ↦ hx (by simp [hQ0 x h])
-  -- `∫ B F (∂_v ∂_w g) = -∫ B (∂_v F) (∂_w g)`, then `∫ B (∂_v F) (∂_w g) = -∫ B (∂_w ∂_v F) g`
   have h₃ := integral_bilinear_fderiv_right_eq_neg_left_of_integrable (μ := μ) (B := B)
     (f := F) (g := fun x ↦ fderiv ℝ g x w) (v := v)
-    (hint ((hF.continuous_fderiv (by norm_num)).clm_apply continuous_const) hg₁.continuous hDg)
+    (integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hgc
+      ((hF.continuous_fderiv (by norm_num)).clm_apply continuous_const) hg₁.continuous hDg)
     (by
       simp only [hsnd]
-      exact hint hF.continuous (hg.continuous_fderiv_fderiv_apply le_rfl v w) fun x hx ↦ by
-        simp [fderiv_fderiv_of_notMem_tsupport hx])
-    (hint hF.continuous hg₁.continuous hDg)
+      exact integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hgc hF.continuous
+        (hg.continuous_fderiv_fderiv_apply le_rfl v w) fun x hx ↦ by
+          simp [fderiv_fderiv_of_notMem_tsupport hx])
+    (integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hgc hF.continuous hg₁.continuous hDg)
     (fun x _ ↦ hF.differentiable (by norm_num) x) (fun x _ ↦ hg₁.differentiable one_ne_zero x)
   have h₄ := integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply (μ := μ) B
     (fun x _ ↦ hF.contDiffAt) (hg.of_le (by norm_num)) hgc v w

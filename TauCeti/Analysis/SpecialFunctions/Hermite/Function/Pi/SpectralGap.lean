@@ -97,15 +97,15 @@ theorem integral_prod_hermiteFunction_comp_mul_mul_neg_fderiv_fderiv_add (c : ι
   have hP : ContDiff ℝ 2 P := contDiff_prod_hermiteFunction_comp_mul c a
   -- every integrand below has a factor vanishing off the support of `u`
   have hxPu : Integrable fun x ↦ P x * (c i ^ 4 * x i ^ 2 * u x) :=
-    integrable_mul_of_forall_notMem_tsupport_eq_zero huc hP.continuous
-      (continuous_const.mul ((continuous_apply i).pow 2) |>.mul hu.continuous)
+    integrable_bilinear_of_forall_notMem_tsupport_eq_zero (ContinuousLinearMap.mul ℝ ℝ) huc
+      hP.continuous (continuous_const.mul ((continuous_apply i).pow 2) |>.mul hu.continuous)
       fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
   have hPu2 : Integrable fun x ↦ P x * fderiv ℝ (fderiv ℝ u) x v v :=
-    integrable_mul_of_forall_notMem_tsupport_eq_zero huc hP.continuous
-      (hu.continuous_fderiv_fderiv_apply le_rfl v v)
+    integrable_bilinear_of_forall_notMem_tsupport_eq_zero (ContinuousLinearMap.mul ℝ ℝ) huc
+      hP.continuous (hu.continuous_fderiv_fderiv_apply le_rfl v v)
       fun x hx ↦ by simp [fderiv_fderiv_of_notMem_tsupport hx]
   have hP2u : Integrable fun x ↦ fderiv ℝ (fderiv ℝ P) x v v * u x :=
-    integrable_mul_of_forall_notMem_tsupport_eq_zero huc
+    integrable_bilinear_of_forall_notMem_tsupport_eq_zero (ContinuousLinearMap.mul ℝ ℝ) huc
       (hP.continuous_fderiv_fderiv_apply le_rfl v v) hu.continuous
       fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   have heig : ∀ x, fderiv ℝ (fderiv ℝ P) x v v =
@@ -145,8 +145,8 @@ theorem hasSum_mul_sq_integral_prod_hermiteFunction_comp_mul_mul {c : ι → ℝ
       ((continuous_const.mul ((continuous_apply i).pow 2)).mul hu.continuous)
   have hsupp : HasCompactSupport fun x ↦
       -fderiv ℝ (fderiv ℝ u) x (Pi.single i 1) (Pi.single i 1) + c i ^ 4 * x i ^ 2 * u x := by
-    refine huc.mono' fun x hx ↦ by_contra fun h ↦ hx ?_
-    simp [fderiv_fderiv_of_notMem_tsupport h, image_eq_zero_of_notMem_tsupport h]
+    refine huc.mono' <| Function.support_subset_iff'.2 fun x hx ↦ ?_
+    simp [fderiv_fderiv_of_notMem_tsupport hx, image_eq_zero_of_notMem_tsupport hx]
   convert hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral hc
     (hcont.memLp_of_hasCompactSupport hsupp) (hu.continuous.memLp_of_hasCompactSupport huc)
     using 1
