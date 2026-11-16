@@ -28,10 +28,11 @@ The formulas use the root-string calculations in
 `TauCeti.Algebra.Lie.Sl2.Weyl.WeightThree`, as the double-bond formulas use `WeightTwo`.
 The braid proof follows the double-bond proof in
 `TauCeti.Algebra.Lie.Presentation.Serre.DoubleBond`: conjugation by the five-letter word
-`a b a b a` fixes the raising and lowering generators at the node of `b`. Writing `v₁, v₂, v₃`
-for the iterated raising brackets of `E i` by `E j`, the raising generator passes through
-`⁅E i, E j⁆`, `v₂ / 2`, `v₂ / 2`, `v₁` and back to `E j`, using the string coefficients
-`3, 4, 3` of lowering along the four-element string.
+`a b a b a` fixes the raising generator at the node of `b`, and
+`TauCeti.IsSerreSystem.weylUnit_braid_of_conj_E_eq` gives the braid relation from this.
+Writing `v₁, v₂, v₃` for the iterated raising brackets of `E i` by `E j`, the raising
+generator passes through `⁅E i, E j⁆`, `v₂ / 2`, `v₂ / 2`, `v₁` and back to `E j`, using the
+string coefficients `3, 4, 3` of lowering along the four-element string.
 
 ## References
 
@@ -107,7 +108,7 @@ private theorem weylUnit_conj_five_E_of_tripleBond (hs : IsSerreSystem ℚ CM H 
     (hEj : IsNilpotent (E j)) (hFj : IsNilpotent (F j)) :
     let a := weylUnit hEi hFi
     let b := weylUnit hEj hFj
-    ConjAct.toConjAct (a * b * a * b * a) • E j = E j := by
+    ConjAct.toConjAct ((a * b) ^ 2 * a) • E j = E j := by
   dsimp only
   let a := weylUnit hEi hFi
   let b := weylUnit hEj hFj
@@ -152,7 +153,8 @@ private theorem weylUnit_conj_five_E_of_tripleBond (hs : IsSerreSystem ℚ CM H 
   have hfix : c a (c b (c a (c b (c a (E j))))) = E j := by
     rw [h₁, map_smul, h₂, map_smul, h₃, smul_smul, map_smul, h₄]
     norm_num
-  simpa only [c, MulSemiringAction.toAlgEquiv_apply, ConjAct.toConjAct_mul, mul_smul] using hfix
+  simpa only [c, MulSemiringAction.toAlgEquiv_apply, sq, ConjAct.toConjAct_mul, mul_smul] using
+    hfix
 
 /-- At a triple bond the pinned Weyl units satisfy the length-six braid relation in the
 unit group of an associative rational algebra. Only the four root operators at the two
@@ -166,34 +168,8 @@ theorem weylUnit_braid_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
         weylUnit hEi hFi * weylUnit hEj hFj =
       weylUnit hEj hFj * weylUnit hEi hFi * weylUnit hEj hFj * weylUnit hEi hFi *
         weylUnit hEj hFj * weylUnit hEi hFi := by
-  let a := weylUnit hEi hFi
-  let b := weylUnit hEj hFj
-  -- Degenerate Serre systems are allowed: a zero Cartan operator kills this entire bond.
-  by_cases hj : H j = 0
-  · obtain ⟨hEi0, hFi0, hEj0, hFj0⟩ :=
-      hs.eq_zero_of_H_eq_zero_of_cartan_ne_zero (i := i) (by omega) (by omega) hj
-    apply Units.ext
-    simp [hEi0, hFi0, hEj0, hFj0]
-  have hi : H i ≠ 0 := fun hi => hj (by
-    rw [← hs.lie_E_F_self j,
-      (hs.eq_zero_of_H_eq_zero_of_cartan_ne_zero (i := j) (by omega) (by omega) hi).1, zero_lie])
-  have hE := hs.weylUnit_conj_five_E_of_tripleBond hii hjj hij hji hi hj hEi hFi hEj hFj
-  -- Signed exchange preserves each Weyl conjugation, so the raising calculation also
-  -- proves that the five-letter word fixes the lowering operator.
-  have hF : ConjAct.toConjAct (a * b * a * b * a) • F j = F j := by
-    have h := hs.neg_swap.weylUnit_conj_five_E_of_tripleBond hii hjj hij hji
-      (neg_ne_zero.mpr hi) (neg_ne_zero.mpr hj) hFi.neg hEi.neg hFj.neg hEj.neg
-    dsimp only at h
-    simp only [ConjAct.toConjAct_mul, mul_smul] at h ⊢
-    simpa only [hs.toConjAct_weylUnit_neg_swap_smul hii hEi hFi,
-      hs.toConjAct_weylUnit_neg_swap_smul hjj hEj hFj, smul_neg, neg_inj] using h
-  -- Exponentiating gives commutation with the Weyl unit itself, not merely equality
-  -- of conjugation actions. This eliminates any possible central discrepancy.
-  calc
-    _ = b * (a * b * a * b * a) :=
-      mul_inv_eq_iff_eq_mul.mp (conj_weylUnit_eq_of_conj_eq hEj hFj hEj hFj
-        (by simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct] using hE)
-        (by simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct] using hF))
-    _ = _ := by simp only [a, b, mul_assoc]
+  simpa only [pow_succ, pow_zero, one_mul, ← mul_assoc] using
+    hs.weylUnit_braid_of_conj_E_eq hii hjj (by omega) (by omega) hEi hFi hEj hFj 2
+      fun hs' => hs'.weylUnit_conj_five_E_of_tripleBond hii hjj hij hji
 
 end TauCeti.IsSerreSystem
