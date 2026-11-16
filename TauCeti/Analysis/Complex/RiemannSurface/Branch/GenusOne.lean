@@ -30,7 +30,7 @@ when `X` has genus one.
 This is the Riemann–Hurwitz step in the analysis of curves near a pseudoholomorphic torus: a
 compact holomorphic curve projecting with positive degree onto a torus, and of genus at most one,
 is an unbranched covering of it
-(`FiniteHolomorphicMap.isCoveringMap_and_genus_eq_one_and_singularity_eq_zero`).
+(`FiniteHolomorphicMap.isCoveringMap_and_genus_eq_one_and_singularity_eq_zero_of_le_zero`).
 
 ## Main results
 
@@ -39,8 +39,6 @@ is an unbranched covering of it
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.one_le_genus`: the source has genus at least one.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.isCoveringMap_iff_eulerChar_eq_zero`: `f` is a
   covering map exactly when `χ(X) = 0`.
-* `TauCeti.RiemannSurface.FiniteHolomorphicMap.ramificationDegree_eq_two_mul_genus_sub_two`:
-  `R(f) = 2 genus X - 2` when `χ(X) = 2 - 2 · genus X`.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.isCoveringMap_iff_genus_eq_one`: `f` is then a
   covering map exactly when `X` has genus one.
 
@@ -88,12 +86,6 @@ theorem isCoveringMap_iff_eulerChar_eq_zero (hY : eulerChar Y = 0) :
     IsCoveringMap f ↔ eulerChar X = 0 := by
   rw [f.isCoveringMap_iff_ramificationDegree_eq_zero, f.eulerChar_eq_neg_ramificationDegree hY]
   omega
-
-/-- **Riemann–Hurwitz over a surface of genus one**, in genus form: if `χ(X) = 2 - 2 · genus X`
-and `χ(Y) = 0`, then the ramification degree is `2 genus X - 2`. -/
-theorem ramificationDegree_eq_two_mul_genus_sub_two (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 0) : (ramificationDegree f : ℤ) = 2 * genus X - 2 := by
-  linear_combination f.eulerChar_eq_neg_ramificationDegree hY - hX
 
 /-- A finite holomorphic map from a compact Riemann surface with `χ(X) = 2 - 2 · genus X` to a
 surface of Euler characteristic zero is a covering map exactly when `X` has genus one. -/
