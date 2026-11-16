@@ -335,8 +335,11 @@ theorem refl_equiv (E : GradedExactStructure C) :
 morphism. -/
 @[simp]
 theorem refl_commShift_hom_app (E : GradedExactStructure C) (X : C) :
-    (GradedExactEquiv.refl E).commShift.hom.app X = eqToHom (by simp) :=
-  Category.comp_id _
+    (GradedExactEquiv.refl E).commShift.hom.app X = eqToHom (by simp) := by
+  simp only [GradedExactEquiv.refl, Equivalence.refl_functor, Functor.comp_obj, Functor.id_obj,
+    Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.rightUnitor_hom_app,
+    Functor.leftUnitor_inv_app, Category.comp_id]
+  exact (eqToHom_refl _ _).symm
 
 /-- The inverse of a graded exact equivalence is a graded exact equivalence. -/
 protected def symm (h : GradedExactEquiv E E') : GradedExactEquiv E' E :=
@@ -377,8 +380,13 @@ theorem symm_commShift_hom_app (h : GradedExactEquiv E E') (X : D) :
         h.equiv.inverse.map (h.commShift.inv.app (h.equiv.inverse.obj X)) ≫
         h.equiv.unitIso.inv.app (E.shift.functor.obj (h.equiv.inverse.obj X)) ≫
         eqToHom (by simp) := by
-  change _ = 𝟙 _ ≫ _ ≫ _ ≫ _ ≫ 𝟙 _
-  simp [GradedExactEquiv.symm]
+  simp only [GradedExactEquiv.symm, Equivalence.symm_functor, Functor.comp_obj, Iso.trans_hom,
+    Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app,
+    Functor.id_obj, Functor.leftUnitor_inv_app, Functor.whiskerRight_app, Functor.comp_map,
+    Functor.associator_hom_app, Functor.whiskerLeft_app, Functor.associator_inv_app,
+    Functor.rightUnitor_hom_app, Category.comp_id, Category.id_comp, eqToHom_naturality,
+    eqToHom_refl]
+  exact ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
 
 /-- A composite of graded exact equivalences is a graded exact equivalence, for the composed
 commutation isomorphism. -/
@@ -404,8 +412,12 @@ theorem trans_commShift_hom_app (h : GradedExactEquiv E E') (h' : GradedExactEqu
     (h.trans h').commShift.hom.app X =
       eqToHom (by simp) ≫ h'.equiv.functor.map (h.commShift.hom.app X) ≫
         h'.commShift.hom.app (h.equiv.functor.obj X) ≫ eqToHom (by simp) := by
-  change _ = 𝟙 _ ≫ _ ≫ _ ≫ 𝟙 _
-  simp [GradedExactEquiv.trans]
+  simp only [GradedExactEquiv.trans, Equivalence.trans_functor, Functor.comp_obj,
+    GradedConflationExact.comp_commShift, toGradedConflationExact_commShift, Iso.trans_hom,
+    Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app,
+    Functor.associator_inv_app, Functor.whiskerRight_app, Functor.associator_hom_app,
+    Functor.whiskerLeft_app, Category.comp_id, Category.id_comp, eqToHom_naturality, eqToHom_refl]
+  exact ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
 
 end GradedExactEquiv
 
