@@ -20,7 +20,6 @@ import TauCeti.Geometry.Symplectic.Manifold.Opens
 public import TauCeti.Geometry.Symplectic.Lagrangian.Opens
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.ContMDiff.OnSubset
 
 /-!
 # The relative Moser theorem
