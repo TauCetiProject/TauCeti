@@ -9,8 +9,8 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Multiplicity
 public import TauCeti.RingTheory.LocalRing.Residue
 -- Non-public: the left-right symmetry of the Jacobson radical and the dimension theory of
 -- products and of one-dimensional spaces are used only inside proofs.
-import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import TauCeti.LinearAlgebra.Dimension.Pi
 import TauCeti.RingTheory.Jacobson.MulOpposite
 
 /-!
@@ -94,27 +94,6 @@ def radicalQuotientPrecomp (Y : C) {X X' : C} (g : X' ⟶ X) :
 theorem radicalQuotientPrecomp_mk (Y : C) {X X' : C} (g : X' ⟶ X) (f : X ⟶ Y) :
     radicalQuotientPrecomp k Y g (Submodule.Quotient.mk f) = Submodule.Quotient.mk (g ≫ f) :=
   (rfl)
-
-/-- **A finite product of lines and zero spaces** over a division ring has dimension the number of
-lines. -/
-private theorem finrank_pi_eq_card_of_finrank_eq_one {D : Type*} [DivisionRing D] {J : Type*}
-    [Finite J] (M : J → Type*) [∀ j, AddCommGroup (M j)] [∀ j, Module D (M j)] (p : J → Prop)
-    (h₁ : ∀ j, p j → finrank D (M j) = 1) (h₀ : ∀ j, ¬p j → Subsingleton (M j)) :
-    finrank D (Π j, M j) = Nat.card {j // p j} := by
-  classical
-  have := Fintype.ofFinite J
-  have (j : J) : Module.Finite D (M j) := by
-    by_cases h : p j
-    · exact Module.finite_of_finrank_eq_succ (h₁ j h)
-    · have := h₀ j h
-      infer_instance
-  have hdim (j : J) : finrank D (M j) = if p j then 1 else 0 := by
-    split_ifs with h
-    · exact h₁ j h
-    · have := h₀ j h
-      exact finrank_zero_of_subsingleton
-  rw [Module.finrank_pi_fintype]
-  simp [hdim, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 /-! ### The residue ring of the source -/
 
