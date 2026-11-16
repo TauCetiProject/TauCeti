@@ -31,6 +31,9 @@ compatibility lets local properties of modules, expressed on open covers, be tra
 scheme morphisms. Being an isomorphism is such a local property: a morphism of modules is an
 isomorphism exactly when its pullbacks to the members of an open cover are.
 
+Along an isomorphism of schemes, pullback is direct image along the inverse, both being left
+adjoint to direct image.
+
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
 module by free modules can be moved between slices, open subschemes and open immersions.
@@ -51,6 +54,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_left_unitality_app` and
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
+* `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
+  pullback is direct image along the inverse;
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
   `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
@@ -205,6 +210,21 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
   simp [pullbackCongr]
 
 end Coherence
+
+section IsIso
+
+/-- Along an isomorphism of schemes `g`, pullback is direct image along the inverse, both being
+left adjoint to direct image along `g`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv (g : X ⟶ Y) [IsIso g] :
+    pullback g ≅ pushforward (inv g) :=
+  (pullbackPushforwardAdjunction g).leftAdjointUniq
+    (CategoryTheory.Equivalence.mk (pushforward (inv g)) (pushforward g)
+      ((pushforwardId Y).symm ≪≫ pushforwardCongr (IsIso.inv_hom_id g).symm ≪≫
+        (pushforwardComp (inv g) g).symm)
+      (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
+        pushforwardId X)).toAdjunction
+
+end IsIso
 
 section Unit
 

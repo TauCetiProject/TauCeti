@@ -194,16 +194,6 @@ section IsIso
 variable {X Y : Scheme.{u}} (g : X ⟶ Y) [IsIso g] (R : Type u) [CommRing R]
   [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [g.IsOver (Spec (.of R))]
 
-/-- Along an isomorphism of schemes `g`, pullback is direct image along the inverse, both being
-left adjoint to direct image along `g`. -/
-noncomputable def pullbackIsoPushforwardInv : pullback g ≅ pushforward (inv g) :=
-  (pullbackPushforwardAdjunction g).leftAdjointUniq
-    (CategoryTheory.Equivalence.mk (pushforward (inv g)) (pushforward g)
-      ((pushforwardId Y).symm ≪≫ pushforwardCongr (IsIso.inv_hom_id g).symm ≪≫
-        (pushforwardComp (inv g) g).symm)
-      (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
-        pushforwardId X)).toAdjunction
-
 /-- Pullback along an isomorphism of schemes over `R` preserves cohomology as an `R`-module.
 Along an isomorphism, pullback is direct image along the inverse
 (`Scheme.Hom.pullbackIsoPushforwardInv`), so this is the closed-immersion comparison for the
