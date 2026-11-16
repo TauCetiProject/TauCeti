@@ -53,7 +53,7 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
   have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
   let μ (n : ℕ) : ProbabilityMeasure ℝ :=
     ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
-      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r⟩
   have hsplit (n : ℕ) : (μ n : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r =
       stableCompensatedPoissonMeasure α β (ε n) :=
     (stableCompensatedPoissonMeasure_split α β (hε n) (min_le_left r _)).symm

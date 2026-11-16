@@ -52,18 +52,14 @@ namespace TauCeti.Probability
 variable {α β r : ℝ}
 
 /-- Removing the inner cutoff from compensated band laws recovers any probability factor in
-the stable large-jump decomposition. The inner cutoffs need not be monotone, and need not stay
-below the outer cutoff `r`: they tend to zero, so they eventually do. Shape two is excluded:
-there the Lévy measure vanishes, so the band laws are the point mass at zero while the factor is
-Gaussian. -/
+the stable large-jump decomposition: as the inner cutoff `ε` tends to zero from above, the band
+laws converge weakly to the factor. Shape two is excluded: there the Lévy measure vanishes, so
+the band laws are the point mass at zero while the factor is Gaussian. -/
 theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
-    (hα : α ≠ 2) {μ : ProbabilityMeasure ℝ}
-    (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0)
-    {ε : ℕ → ℝ} (hε : ∀ n, 0 < ε n) (hr : 0 < r)
-    (hlim : Tendsto ε atTop (𝓝[>] 0)) :
-    Tendsto (β := ProbabilityMeasure ℝ) (fun n ↦ ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
-      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩ :
-        ℕ → ProbabilityMeasure ℝ) atTop (𝓝 μ) := by
+    (hα : α ≠ 2) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
+    (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
+    Tendsto (β := ProbabilityMeasure ℝ) (fun ε : ℝ ↦ ⟨stableSmallJumpRemainderMeasure α β ε r,
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure α β ε r⟩) (𝓝[>] 0) (𝓝 μ) := by
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   -- The decomposition forces valid parameters, since the stable measure is zero otherwise.
   have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
@@ -71,6 +67,10 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
     infer_instance
   replace hα : α ∈ Ioo 0 2 := ⟨hv.1.1, hv.1.2.lt_of_ne hα⟩
   have hβ := hv.2
+  -- Mathlib's Lévy continuity theorem is sequential; `𝓝[>] 0` is countably generated.
+  refine tendsto_of_seq_tendsto fun ε hlim ↦ ?_
+  change Tendsto (β := ProbabilityMeasure ℝ) (fun n ↦ ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
+    isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r⟩) atTop (𝓝 μ)
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t
   have hne : charFun (stableCompensatedPoissonMeasure α β r) t ≠ 0 := by
@@ -85,10 +85,11 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
   have ht := ((tendsto_charFun_stableCompensatedPoissonMeasure hα hβ t).comp hlim).div_const
     (charFun (stableCompensatedPoissonMeasure α β r) t)
   apply ht.congr'
-  filter_upwards [(tendsto_nhdsWithin_iff.mp hlim).1.eventually_le_const hr] with n hnr
-  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure (α := α) (β := β) (r := r) (hε n)
+  filter_upwards [(tendsto_nhdsWithin_iff.mp hlim).1.eventually_le_const hr,
+    (tendsto_nhdsWithin_iff.mp hlim).2] with n hnr hn
+  let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r
   simp only [Function.comp_apply, ProbabilityMeasure.coe_mk]
-  rw [stableCompensatedPoissonMeasure_split α β (hε n) hnr,
+  rw [stableCompensatedPoissonMeasure_split α β (Set.mem_Ioi.1 hn) hnr,
     charFun_conv, mul_div_cancel_right₀ _ hne]
 
 private theorem lintegral_sq_le_of_conv_eq
@@ -109,7 +110,7 @@ private theorem lintegral_sq_le_of_conv_eq
   have hεr (n : ℕ) : ε n ≤ r := min_le_left _ _
   let ρ (n : ℕ) : ProbabilityMeasure ℝ :=
     ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
-      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r⟩
   have hεlim : Tendsto ε atTop (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨?_, .of_forall hε⟩
     simpa only [min_eq_right hr.le] using
@@ -117,7 +118,7 @@ private theorem lintegral_sq_le_of_conv_eq
         (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 2⁻¹)
           (by norm_num : (2 : ℝ)⁻¹ < 1)))
   have hconv : Tendsto ρ atTop (𝓝 μ) :=
-    tendsto_stableSmallJumpRemainderMeasure_of_conv_eq hα hμ hε hr hεlim
+    (tendsto_stableSmallJumpRemainderMeasure_of_conv_eq hα hr hμ).comp hεlim
   have hbound (n : ℕ) : ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(ρ n : Measure ℝ) ≤
       ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
     have hmem := memLp_two_id_stableSmallJumpRemainderMeasure hα' hβ (hε n) (hεr n)
