@@ -228,10 +228,13 @@ so `J · T ⊆ J` for every `T ⊆ S`), every subset of `S` is bounded, and
 variable {T : Type*} [CommRing T] [UniformSpace T] [IsUniformAddGroup T]
   [IsLinearTopology T T] [CompleteSpace T] [T2Space T]
 
+section RingHom
+
+variable {φ : R →+* T} (hφ : Continuous φ) (b : Fin k → T)
+
 /-- **Continuous evaluation of `R⟨X₁, …, Xₖ⟩` into a complete Hausdorff linearly topologised
 ring**, at an arbitrary tuple `b : Fin k → T` with no norm or power-boundedness condition on `b`. -/
-noncomputable def restrictedLiftOfIsLinearTopology {φ : R →+* T} (hφ : Continuous φ)
-    (b : Fin k → T) :
+noncomputable def restrictedLiftOfIsLinearTopology :
     IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T :=
   letI := IsLinearTopology.isTopologicalRing (R := T)
   letI := IsLinearTopology.nonarchimedeanRing T
@@ -239,17 +242,14 @@ noncomputable def restrictedLiftOfIsLinearTopology {φ : R →+* T} (hφ : Conti
 
 /-- `restrictedLiftOfIsLinearTopology` is `restrictedLift` supplied with the nonarchimedean
 topological-ring instances and linear-topology power-boundedness witness. -/
-theorem restrictedLiftOfIsLinearTopology_eq_restrictedLift {φ : R →+* T} (hφ : Continuous φ)
-    (b : Fin k → T) :
+theorem restrictedLiftOfIsLinearTopology_eq_restrictedLift :
     restrictedLiftOfIsLinearTopology hφ b =
       letI := IsLinearTopology.isTopologicalRing (R := T)
       letI := IsLinearTopology.nonarchimedeanRing T
-      restrictedLift (b := b) hφ fun _ ↦ isPowerBounded_of_isLinearTopology _ := by
-  rfl
+      restrictedLift (b := b) hφ fun _ ↦ isPowerBounded_of_isLinearTopology _ := by rfl
 
 /-- `restrictedLiftOfIsLinearTopology` is continuous. -/
-theorem continuous_restrictedLiftOfIsLinearTopology {φ : R →+* T} (hφ : Continuous φ)
-    (b : Fin k → T) :
+theorem continuous_restrictedLiftOfIsLinearTopology :
     Continuous (restrictedLiftOfIsLinearTopology hφ b) := by
   have := IsLinearTopology.isTopologicalRing (R := T)
   have := IsLinearTopology.nonarchimedeanRing T
@@ -257,8 +257,7 @@ theorem continuous_restrictedLiftOfIsLinearTopology {φ : R →+* T} (hφ : Cont
 
 /-- `restrictedLiftOfIsLinearTopology` extends `φ` on constants. -/
 @[simp]
-theorem restrictedLiftOfIsLinearTopology_algebraMap {φ : R →+* T} (hφ : Continuous φ)
-    (b : Fin k → T) (r : R) :
+theorem restrictedLiftOfIsLinearTopology_algebraMap (r : R) :
     restrictedLiftOfIsLinearTopology hφ b (algebraMap R _ r) = φ r := by
   have := IsLinearTopology.isTopologicalRing (R := T)
   have := IsLinearTopology.nonarchimedeanRing T
@@ -266,18 +265,17 @@ theorem restrictedLiftOfIsLinearTopology_algebraMap {φ : R →+* T} (hφ : Cont
 
 /-- `restrictedLiftOfIsLinearTopology` sends each coordinate variable `Xᵢ` to `bᵢ`. -/
 @[simp]
-theorem restrictedLiftOfIsLinearTopology_X {φ : R →+* T} (hφ : Continuous φ)
-    (b : Fin k → T) (i : Fin k) :
+theorem restrictedLiftOfIsLinearTopology_X (i : Fin k) :
     restrictedLiftOfIsLinearTopology hφ b ⟨X i, isRestricted_X _ i⟩ = b i := by
   have := IsLinearTopology.isTopologicalRing (R := T)
   have := IsLinearTopology.nonarchimedeanRing T
   exact restrictedLift_X hφ _ i
 
+include hφ in
 /-- **Universal property of `R⟨X₁, …, Xₖ⟩` into complete Hausdorff linearly topologised rings.**
 A continuous ring homomorphism `φ : R →+* T` extends uniquely to a continuous ring homomorphism
 `R⟨X₁, …, Xₖ⟩ →+* T` sending each `Xᵢ` to an arbitrary `bᵢ ∈ T`. -/
-theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology
-    {φ : R →+* T} (hφ : Continuous φ) (b : Fin k → T) :
+theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology :
     ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T,
       Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
         ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
@@ -286,38 +284,40 @@ theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology
   exact existsUnique_continuous_ringHom_isRestricted_subring (b := b) hφ
     fun _ ↦ isPowerBounded_of_isLinearTopology _
 
+end RingHom
+
+section AlgHom
+
+variable [Algebra R T] (hφ : Continuous (algebraMap R T)) (b : Fin k → T)
+
 /-- **Continuous `R`-algebra evaluation of `R⟨X₁, …, Xₖ⟩` into a complete Hausdorff linearly
 topologised `R`-algebra**, at an arbitrary point `b : Fin k → T`. -/
-noncomputable def restrictedLiftAlgHomOfIsLinearTopology [Algebra R T]
-    (hφ : Continuous (algebraMap R T)) (b : Fin k → T) :
+noncomputable def restrictedLiftAlgHomOfIsLinearTopology :
     IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] T :=
   { restrictedLiftOfIsLinearTopology hφ b with
     commutes' := restrictedLiftOfIsLinearTopology_algebraMap hφ b }
 
 /-- Underlying ring map of `restrictedLiftAlgHomOfIsLinearTopology`. -/
 @[simp]
-theorem coe_restrictedLiftAlgHomOfIsLinearTopology [Algebra R T]
-    (hφ : Continuous (algebraMap R T)) (b : Fin k → T) :
-    ⇑(restrictedLiftAlgHomOfIsLinearTopology hφ b) = ⇑(restrictedLiftOfIsLinearTopology hφ b) := by
-  rfl
+theorem coe_restrictedLiftAlgHomOfIsLinearTopology :
+    ⇑(restrictedLiftAlgHomOfIsLinearTopology hφ b) =
+      ⇑(restrictedLiftOfIsLinearTopology hφ b) := by rfl
 
 /-- `restrictedLiftAlgHomOfIsLinearTopology` is continuous. -/
-theorem continuous_restrictedLiftAlgHomOfIsLinearTopology [Algebra R T]
-    (hφ : Continuous (algebraMap R T)) (b : Fin k → T) :
+theorem continuous_restrictedLiftAlgHomOfIsLinearTopology :
     Continuous (restrictedLiftAlgHomOfIsLinearTopology hφ b) :=
   continuous_restrictedLiftOfIsLinearTopology hφ b
 
 /-- `restrictedLiftAlgHomOfIsLinearTopology` sends each `Xᵢ` to `bᵢ`. -/
 @[simp]
-theorem restrictedLiftAlgHomOfIsLinearTopology_X [Algebra R T]
-    (hφ : Continuous (algebraMap R T)) (b : Fin k → T) (i : Fin k) :
+theorem restrictedLiftAlgHomOfIsLinearTopology_X (i : Fin k) :
     restrictedLiftAlgHomOfIsLinearTopology hφ b ⟨X i, isRestricted_X _ i⟩ = b i :=
   restrictedLiftOfIsLinearTopology_X hφ b i
 
+include hφ in
 /-- **Universal property of `R⟨X₁, …, Xₖ⟩` for continuous `R`-algebra maps into a complete
 Hausdorff linearly topologised `R`-algebra.** -/
-theorem existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology [Algebra R T]
-    (hφ : Continuous (algebraMap R T)) (b : Fin k → T) :
+theorem existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology :
     ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] T,
       Continuous ψ ∧ ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
   refine ⟨restrictedLiftAlgHomOfIsLinearTopology hφ b,
@@ -328,6 +328,8 @@ theorem existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology 
   have := IsLinearTopology.nonarchimedeanRing T
   exact restrictedLift_unique (b := b) hφ (fun _ ↦ isPowerBounded_of_isLinearTopology _) hψ
     ψ.commutes hX
+
+end AlgHom
 
 end LinearTopology
 

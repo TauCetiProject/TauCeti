@@ -388,9 +388,8 @@ theorem restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_apply
         (restrictedMvPowerSeriesCompletionEquiv 0 A x) := by
   simp [restrictedMvPowerSeriesCompletionFinZeroAlgEquiv]
 
-/-- On the image of a zero-variable restricted series,
-`restrictedMvPowerSeriesCompletionFinZeroAlgEquiv` evaluates
-`weightedRestrictedSubringFinZeroEquiv`. -/
+/-- On a zero-variable restricted series, `restrictedMvPowerSeriesCompletionFinZeroAlgEquiv`
+evaluates `weightedRestrictedSubringFinZeroEquiv`. -/
 @[simp]
 theorem restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_coe
     (f : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
@@ -409,13 +408,9 @@ theorem restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_symm_apply (a : A) :
 /-- The zero-variable completion algebra equivalence `A⟨⟩ ≃ₐ[A] A` is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionFinZeroAlgEquiv :
     Continuous (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A) := by
-  have h : ⇑(restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A) =
-      ⇑(weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))) ∘
-        ⇑(restrictedMvPowerSeriesCompletionEquiv 0 A) :=
-    funext (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_apply (A := A))
-  rw [h]
-  exact (continuous_weightedRestrictedSubringFinZeroEquiv _).comp
-    (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv (k := 0) (A := A)).continuous
+  simpa only [Function.comp_def, ← restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_apply] using
+    (continuous_weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))).comp
+      (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv (k := 0) (A := A)).continuous
 
 /-- The inverse of `restrictedMvPowerSeriesCompletionFinZeroAlgEquiv` is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_symm :
@@ -423,12 +418,9 @@ theorem continuous_restrictedMvPowerSeriesCompletionFinZeroAlgEquiv_symm :
   have h : ⇑(restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A).symm =
       ⇑(restrictedMvPowerSeriesCompletionEquiv 0 A).symm ∘
         ⇑(weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))).symm := by
-    ext a
-    simp [restrictedMvPowerSeriesCompletionFinZeroAlgEquiv]
-  rw [h]
-  exact (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm
-    (k := 0) (A := A)).continuous.comp
-    (continuous_weightedRestrictedSubringFinZeroEquiv_symm _)
+    ext a; simp [restrictedMvPowerSeriesCompletionFinZeroAlgEquiv]
+  exact h ▸ (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm
+    (k := 0) (A := A)).continuous.comp (continuous_weightedRestrictedSubringFinZeroEquiv_symm _)
 
 end FinZero
 

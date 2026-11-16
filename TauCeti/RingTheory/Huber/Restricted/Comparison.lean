@@ -161,12 +161,12 @@ end Evaluation
 
 section TopologicalEvaluation
 
-variable {T : Type*} [CommRing T] [UniformSpace T] [IsUniformAddGroup T]
+variable {T : Type*} [CommRing T] [UniformSpace T] [IsUniformAddGroup T] [CompleteSpace T]
   {ψ : R →+* T} {b : Fin k → T}
 
 /-- Huber topological evaluation into a complete Hausdorff nonarchimedean ring agrees with
 `restrictedLift` across `restrictedMvPowerSeriesGaussEquiv`. -/
-theorem weightedEvalHom_eq_restrictedLift [NonarchimedeanRing T] [CompleteSpace T] [T3Space T]
+theorem weightedEvalHom_eq_restrictedLift [NonarchimedeanRing T] [T3Space T]
     (hψ : Continuous ψ) (hb : ∀ i, IsPowerBounded (b i))
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
     weightedEvalHom isWeightFamily_one_weight hψ.continuousAt
@@ -174,11 +174,11 @@ theorem weightedEvalHom_eq_restrictedLift [NonarchimedeanRing T] [CompleteSpace 
       restrictedLift hψ hb (restrictedMvPowerSeriesGaussEquiv f) := by
   simp [restrictedLift_apply]
 
-/-- Uncompleted Huber evaluation into a complete Hausdorff linearly topologised ring at arbitrary
-variable images agrees with `restrictedLiftOfIsLinearTopology` across
-`restrictedMvPowerSeriesGaussEquiv`, without assuming `R` complete. -/
-theorem weightedEvalHom_eq_restrictedLiftOfIsLinearTopology [IsLinearTopology T T]
-    [CompleteSpace T] [T2Space T] (hψ : Continuous ψ)
+/-- Uncompleted Huber evaluation into a complete Hausdorff linearly topologised ring agrees with
+`restrictedLiftOfIsLinearTopology` across `restrictedMvPowerSeriesGaussEquiv`, without assuming `R`
+complete. -/
+theorem weightedEvalHom_eq_restrictedLiftOfIsLinearTopology [IsLinearTopology T T] [T2Space T]
+    (hψ : Continuous ψ)
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
     (letI := IsLinearTopology.isTopologicalRing (R := T)
      letI := IsLinearTopology.nonarchimedeanRing T
@@ -190,10 +190,12 @@ theorem weightedEvalHom_eq_restrictedLiftOfIsLinearTopology [IsLinearTopology T 
   rw [restrictedLiftOfIsLinearTopology_eq_restrictedLift]
   exact weightedEvalHom_eq_restrictedLift hψ (fun _ ↦ isPowerBounded_of_isLinearTopology _) f
 
-/-- Over a complete base `R`, completed Huber evaluation into a complete Hausdorff nonarchimedean
-ring agrees with `restrictedLift` across `restrictedMvPowerSeriesCompletionGaussEquiv`. -/
-theorem weightedEvalHomCompletion_eq_restrictedLift [CompleteSpace R] [NonarchimedeanRing T]
-    [CompleteSpace T] [T3Space T] (hψ : Continuous ψ) (hb : ∀ i, IsPowerBounded (b i))
+variable [CompleteSpace R]
+
+/-- Over complete `R`, completed Huber evaluation into a complete Hausdorff nonarchimedean ring
+agrees with `restrictedLift` across `restrictedMvPowerSeriesCompletionGaussEquiv`. -/
+theorem weightedEvalHomCompletion_eq_restrictedLift [NonarchimedeanRing T] [T3Space T]
+    (hψ : Continuous ψ) (hb : ∀ i, IsPowerBounded (b i))
     (x : restrictedMvPowerSeriesCompletion k R) :
     weightedEvalHomCompletion isWeightFamily_one_weight hψ.continuousAt
         ((isWeightBounded_one_weight_iff_forall_isPowerBounded ψ b).mpr hb) x =
@@ -201,16 +203,15 @@ theorem weightedEvalHomCompletion_eq_restrictedLift [CompleteSpace R] [Nonarchim
   refine UniformSpace.Completion.induction_on x (isClosed_eq
     (continuous_weightedEvalHomCompletion _ _ _)
     ((continuous_restrictedLift hψ hb).comp
-      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) ?_
-  intro f
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) fun f ↦ ?_
   rw [weightedEvalHomCompletion_coe, restrictedMvPowerSeriesCompletionGaussEquiv_coe,
     weightedEvalHom_eq_restrictedLift hψ hb]
 
-/-- Over a complete base `R`, completed Huber evaluation into a complete Hausdorff linearly
-topologised ring at arbitrary variable images agrees with `restrictedLiftOfIsLinearTopology` across
+/-- Over complete `R`, completed Huber evaluation into a complete Hausdorff linearly topologised
+ring agrees with `restrictedLiftOfIsLinearTopology` across
 `restrictedMvPowerSeriesCompletionGaussEquiv`. -/
 theorem weightedEvalHomCompletionOfIsLinearTopology_eq_restrictedLiftOfIsLinearTopology
-    [CompleteSpace R] [IsLinearTopology T T] [CompleteSpace T] [T2Space T] (hψ : Continuous ψ)
+    [IsLinearTopology T T] [T2Space T] (hψ : Continuous ψ)
     (x : restrictedMvPowerSeriesCompletion k R) :
     weightedEvalHomCompletionOfIsLinearTopology hψ b x =
       restrictedLiftOfIsLinearTopology hψ b (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
@@ -221,14 +222,12 @@ theorem weightedEvalHomCompletionOfIsLinearTopology_eq_restrictedLiftOfIsLinearT
   exact weightedEvalHomCompletion_eq_restrictedLift hψ
     (fun _ ↦ isPowerBounded_of_isLinearTopology _) x
 
-/-- Over a complete base `R`, `weightedEvalAlgHomCompletionOfIsLinearTopology` into a complete
-Hausdorff linearly topologised `R`-algebra agrees as an `R`-algebra map with
+/-- Over complete `R`, `weightedEvalAlgHomCompletionOfIsLinearTopology` agrees with
 `restrictedLiftAlgHomOfIsLinearTopology` composed with
 `restrictedMvPowerSeriesCompletionGaussAlgEquiv`. -/
 theorem
   weightedEvalAlgHomCompletionOfIsLinearTopology_eq_restrictedLiftAlgHomOfIsLinearTopology_comp
-    [CompleteSpace R] [IsLinearTopology T T] [CompleteSpace T] [T2Space T] [Algebra R T]
-    (hψ : Continuous (algebraMap R T)) :
+    [IsLinearTopology T T] [T2Space T] [Algebra R T] (hψ : Continuous (algebraMap R T)) :
     weightedEvalAlgHomCompletionOfIsLinearTopology hψ b =
       (restrictedLiftAlgHomOfIsLinearTopology hψ b).comp
         (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k) (R := R)).toAlgHom := by
