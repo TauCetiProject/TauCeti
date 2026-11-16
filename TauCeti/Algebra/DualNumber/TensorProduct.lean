@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DualNumber
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.Algebra.DualNumber.Grading
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # Base change of the dual numbers
@@ -18,6 +21,14 @@ mapped into `S`.
 The statement and naming are modelled on Mathlib's `MvPolynomial.algebraTensorAlgEquiv`
 (in `Mathlib/RingTheory/TensorProduct/MvPolynomial.lean`); the construction here instead
 assembles the two directions from `Algebra.TensorProduct.lift` and `DualNumber.lift`.
+
+## Main results
+
+* `TauCeti.dualNumberAlgebraTensorAlgEquiv`: the `S`-algebra equivalence `S ⊗[R] R[ε] ≃ₐ[S] S[ε]`.
+* `TauCeti.sndHom_comp_dualNumberAlgebraTensorAlgEquiv`: base change intertwines the canonical
+  traces `TrivSqZeroExt.sndHom`.
+* `TauCeti.isHomogeneous_dualNumberAlgebraTensorAlgEquiv`: base change is homogeneous of degree
+  zero for `TauCeti.dualNumberIntegerGrade`.
 -/
 
 public section
@@ -70,5 +81,38 @@ theorem dualNumberAlgebraTensorAlgEquiv_tmul_eps (s : S) :
 theorem dualNumberAlgebraTensorAlgEquiv_symm_eps :
     (dualNumberAlgebraTensorAlgEquiv R S).symm ε = 1 ⊗ₜ ε := by
   simp [dualNumberAlgebraTensorAlgEquiv, lift_apply_apply]
+
+variable (R S)
+
+/-- Base change `S ⊗[R] R[ε] ≃ₐ[S] S[ε]` intertwines the canonical traces of `R[ε]` and
+`S[ε]`. -/
+theorem sndHom_comp_dualNumberAlgebraTensorAlgEquiv :
+    TrivSqZeroExt.sndHom S S ∘ₗ (dualNumberAlgebraTensorAlgEquiv R S).toLinearMap =
+      Module.Dual.baseChange S (TrivSqZeroExt.sndHom R R) :=
+  TensorProduct.AlgebraTensorModule.ext fun _ _ ↦ by simp [Algebra.smul_def, mul_comm]
+
+/-- Base change `S ⊗[R] R[ε] ≃ₐ[S] S[ε]` is homogeneous of degree zero between the
+base-changed integer grading and `TauCeti.dualNumberIntegerGrade S`. -/
+theorem isHomogeneous_dualNumberAlgebraTensorAlgEquiv :
+    TauCeti.LinearMap.IsHomogeneous (dualNumberAlgebraTensorAlgEquiv R S).toLinearMap
+      (fun p ↦ (dualNumberIntegerGrade R p).baseChange S) (dualNumberIntegerGrade S) 0 := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p z hz
+  rw [add_zero]
+  have hle : (dualNumberIntegerGrade R p).baseChange S ≤
+      (dualNumberIntegerGrade S p).comap (dualNumberAlgebraTensorAlgEquiv R S).toLinearMap := by
+    rw [Submodule.baseChange_eq_span, Submodule.span_le]
+    rintro _ ⟨x, hx, rfl⟩
+    rw [SetLike.mem_coe] at hx
+    rw [SetLike.mem_coe, Submodule.mem_comap, TensorProduct.mk_apply]
+    rcases eq_or_ne p 0 with rfl | h0
+    · rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero] at hx ⊢
+      simp [hx]
+    · rcases eq_or_ne p 2 with rfl | h2
+      · rw [← Nat.cast_ofNat, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_two] at hx ⊢
+        simp [hx]
+      · rw [dualNumberIntegerGrade_eq_bot R h0 h2] at hx
+        simp [(Submodule.mem_bot R).mp hx]
+  exact hle hz
 
 end TauCeti

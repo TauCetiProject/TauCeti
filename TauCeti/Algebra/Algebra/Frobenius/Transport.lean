@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Coalgebra.TensorProduct
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.Algebra.Algebra.Frobenius.Coalgebra
+public import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Transport, tensor products, and scalar extension of Frobenius algebras
@@ -20,9 +20,6 @@ algebras over an arbitrary commutative semiring `R`.
 
 ## Main definitions and results
 
-* `Coalgebra.IsFrobenius.isPerfPair_compr₂_mul_counit`, `Coalgebra.IsFrobenius.traceTensorEquiv`,
-  `Coalgebra.IsFrobenius.eq_of_counit_eq`: the trace pairing of a unital Frobenius coalgebra is
-  perfect, and its counit uniquely determines its comultiplication.
 * `CoalgEquiv.isFrobenius_iff`, `AlgEquiv.toCoalgEquivOfIsFrobenius`,
   `AlgEquiv.frobeniusCoalgEquiv`, `LinearMap.isPerfPair_compr₂_mul_iff_of_algEquiv`,
   `LinearMap.traceDualBasis_map`, `LinearMap.map_frobeniusCoalgebra_comul_of_algEquiv`: transport
@@ -30,11 +27,15 @@ algebras over an arbitrary commutative semiring `R`.
 * `TensorProduct.instIsFrobenius`: the heterobasic tensor product `A ⊗[R] B` of an `S`-Frobenius
   coalgebra `A` and an `R`-Frobenius coalgebra `B` is `S`-Frobenius, unifying tensor products
   (`S = R`) and scalar extension (`A = S`).
-* `LinearMap.isPerfPair_compr₂_mul_dualDistrib`, `LinearMap.frobeniusCoalgebra_dualDistrib`,
-  `LinearMap.traceDualBasis_dualDistrib`, `LinearMap.isPerfPair_compr₂_mul_baseChange`,
-  `LinearMap.frobeniusCoalgebra_baseChange`, `LinearMap.traceDualBasis_baseChange`: compatibility of
-  perfect traces, `LinearMap.frobeniusCoalgebra`, and `LinearMap.traceDualBasis` with tensor
-  products and scalar extension.
+* `LinearMap.isPerfPair_compr₂_mul_algebraTensorModule_dualDistrib`,
+  `LinearMap.isPerfPair_compr₂_mul_dualDistrib`, `LinearMap.isPerfPair_compr₂_mul_baseChange`:
+  perfectness of tensor-product and base-changed traces on finite projective (not necessarily
+  commutative or associative) algebras.
+* `LinearMap.frobeniusCoalgebra_algebraTensorModule_dualDistrib`,
+  `LinearMap.frobeniusCoalgebra_dualDistrib`, `LinearMap.traceDualBasis_dualDistrib`,
+  `LinearMap.frobeniusCoalgebra_baseChange`, `LinearMap.traceDualBasis_baseChange`: compatibility
+  of `LinearMap.frobeniusCoalgebra` and `LinearMap.traceDualBasis` with tensor products and scalar
+  extension for commutative algebras.
 
 ## References
 
@@ -46,129 +47,6 @@ public section
 noncomputable section
 
 open TensorProduct
-
-/-! ### Perfectness and uniqueness for Frobenius coalgebras -/
-
-namespace Coalgebra.IsFrobenius
-
-section NonAssoc
-
-variable {R A : Type*} [CommSemiring R] [NonAssocSemiring A] [Module R A] [Coalgebra R A]
-  [SMulCommClass R A A] [IsScalarTower R A A] [IsFrobenius R A]
-
-private theorem sum_counit_mul_left_smul_of_comul_one {S : Finset (A × A)}
-    (hS : Coalgebra.comul (R := R) (1 : A) = ∑ i ∈ S, i.1 ⊗ₜ[R] i.2) (a : A) :
-    ∑ x ∈ S, Coalgebra.counit (R := R) (a * x.1) • x.2 = a := by
-  simpa [hS, tmul_sum, right_def] using
-    congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A ↦
-      TensorProduct.lid R A ((Coalgebra.counit (R := R) (A := A)).rTensor A (f (a ⊗ₜ[R] 1))))
-      (right_eq_comul_comp_mul' (R := R) (A := A))
-
-private theorem sum_counit_mul_right_smul_of_comul_one {S : Finset (A × A)}
-    (hS : Coalgebra.comul (R := R) (1 : A) = ∑ i ∈ S, i.1 ⊗ₜ[R] i.2) (a : A) :
-    ∑ x ∈ S, Coalgebra.counit (R := R) (x.2 * a) • x.1 = a := by
-  simpa [hS, sum_tmul, left_def] using
-    congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A ↦
-      _root_.TensorProduct.rid R A ((Coalgebra.counit (R := R) (A := A)).lTensor A (f (1 ⊗ₜ[R] a))))
-      (left_eq_comul_comp_mul' (R := R) (A := A))
-
-/-- The flipped trace pairing `b ↦ (a ↦ counit (a * b))` of a unital Frobenius coalgebra is
-bijective. -/
-theorem compr₂_mul_counit_flip_bijective :
-    Function.Bijective
-      (((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).flip) := by
-  have ⟨S, hS⟩ := TensorProduct.exists_finset (R := R) (Coalgebra.comul (R := R) (1 : A))
-  refine ⟨fun a b h ↦ ?_, fun f ↦ ⟨∑ x ∈ S, f x.2 • x.1, LinearMap.ext fun b ↦ ?_⟩⟩
-  · rw [← sum_counit_mul_right_smul_of_comul_one hS b]
-    simp only [LinearMap.ext_iff, LinearMap.flip_apply, LinearMap.compr₂_apply,
-      LinearMap.mul_apply_apply] at h
-    simp [← h, sum_counit_mul_right_smul_of_comul_one hS]
-  · calc
-      (((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).flip
-          (∑ x ∈ S, f x.2 • x.1)) b
-        = ∑ x ∈ S, Coalgebra.counit (R := R) (b * x.1) • f x.2 := by simp [mul_comm (f _)]
-      _ = f (∑ x ∈ S, Coalgebra.counit (R := R) (b * x.1) • x.2) := by
-          simp only [← map_smul, ← map_sum]
-      _ = f b := by rw [sum_counit_mul_left_smul_of_comul_one hS]
-
-/-- The trace pairing `(a, b) ↦ counit (a * b)` of a unital Frobenius coalgebra is a perfect
-pairing. -/
-instance isPerfPair_compr₂_mul_counit :
-    ((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).IsPerfPair where
-  bijective_left := compr₂_mul_counit_bijective
-  bijective_right := compr₂_mul_counit_flip_bijective
-
-end NonAssoc
-
-section Semiring
-
-variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [Coalgebra R A]
-  [IsFrobenius R A]
-
-/-- The tensor trace equivalence `A ⊗[R] A ≃ₗ[R] Module.Dual R (A ⊗[R] A)` of a Frobenius
-coalgebra, sending `a ⊗ₜ b` to `x ⊗ₜ y ↦ counit (x * a) * counit (b * y)`. -/
-def traceTensorEquiv : A ⊗[R] A ≃ₗ[R] Module.Dual R (A ⊗[R] A) :=
-  (TensorProduct.congr
-      (((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).flip.toPerfPair)
-      (((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).toPerfPair)).trans
-    (TensorProduct.dualDistribEquiv R A A)
-
-variable {R A}
-
-/-- Evaluation of `traceTensorEquiv` on pure tensors. -/
-@[simp]
-theorem traceTensorEquiv_tmul (a b x y : A) :
-    traceTensorEquiv R A (a ⊗ₜ[R] b) (x ⊗ₜ[R] y) =
-      Coalgebra.counit (R := R) (x * a) * Coalgebra.counit (R := R) (b * y) := by
-  simp [traceTensorEquiv, mul_comm]
-
-/-- On the comultiplication of `a`, `traceTensorEquiv` evaluates `x ⊗ₜ y` to
-`counit (x * a * y)`. -/
-@[simp]
-theorem traceTensorEquiv_comul (a x y : A) :
-    traceTensorEquiv R A (Coalgebra.comul (R := R) a) (x ⊗ₜ[R] y) =
-      Coalgebra.counit (R := R) (x * a * y) := by
-  have heval (t : A ⊗[R] A) :
-      traceTensorEquiv R A t (x ⊗ₜ[R] y) =
-        Coalgebra.counit (R := R)
-          (_root_.TensorProduct.lid R A ((Coalgebra.counit (R := R) (A := A)).rTensor A
-            ((LinearMap.mul' R A).rTensor A
-              ((_root_.TensorProduct.assoc R A A A).symm (x ⊗ₜ[R] t)))) * y) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul b z => simp
-    | add t u ht hu => simp_all [tmul_add, add_mul]
-  have h := congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A ↦ f (x ⊗ₜ[R] a))
-    (right_eq_comul_comp_mul' (R := R) (A := A))
-  simp only [right_def, LinearMap.comp_apply, LinearMap.lTensor_tmul, LinearEquiv.coe_coe,
-    LinearMap.mul'_apply] at h
-  rw [heval, h, Coalgebra.rTensor_counit_comul, _root_.TensorProduct.lid_tmul, one_smul]
-
-end Semiring
-
-/-- Two Frobenius coalgebra structures on the same algebra with the same counit are equal. -/
-theorem eq_of_counit_eq {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    (c₁ c₂ : Coalgebra R A) (h₁ : letI := c₁; IsFrobenius R A)
-    (h₂ : letI := c₂; IsFrobenius R A) (hε : c₁.counit = c₂.counit) : c₁ = c₂ := by
-  refine Coalgebra.ext ?_ hε
-  let := c₁; have := h₁
-  ext a
-  apply (traceTensorEquiv R A).injective
-  refine TensorProduct.ext' fun x y ↦ ?_
-  rw [traceTensorEquiv_comul]
-  have heq : traceTensorEquiv R A (c₂.comul a) (x ⊗ₜ[R] y) =
-      letI := c₂; haveI := h₂; traceTensorEquiv R A (c₂.comul a) (x ⊗ₜ[R] y) := by
-    induction c₂.comul a using TensorProduct.inductionOn with
-    | tmul u v =>
-      simp only [traceTensorEquiv_tmul]
-      exact congrArg₂ (· * ·) (congrFun (congrArg DFunLike.coe hε) (x * u))
-        (congrFun (congrArg DFunLike.coe hε) (v * y))
-    | add t u ht hu => simp_all
-  rw [heq]
-  let := c₂; have := h₂
-  rw [traceTensorEquiv_comul]
-  exact congrFun (congrArg DFunLike.coe hε) (x * a * y)
-
-end Coalgebra.IsFrobenius
 
 /-! ### Transport along algebra and coalgebra isomorphisms -/
 
@@ -185,8 +63,8 @@ private theorem isFrobenius_of_mul (e : A ≃ₗc[R] B) (hmul : ∀ x y, e (x * 
     [Coalgebra.IsFrobenius R A] : Coalgebra.IsFrobenius R B := by
   constructor
   refine TensorProduct.ext' fun x y ↦ ?_
-  obtain ⟨a, rfl⟩ := e.surjective x
-  obtain ⟨b, rfl⟩ := e.surjective y
+  obtain ⟨a, rfl⟩ := EquivLike.surjective e x
+  obtain ⟨b, rfl⟩ := EquivLike.surjective e y
   have hcomul (c : A) : Coalgebra.comul (R := R) (e c) =
       TensorProduct.map e.toLinearMap e.toLinearMap (Coalgebra.comul (R := R) c) :=
     (congrArg (fun f : A →ₗ[R] B ⊗[R] B ↦ f c) e.map_comp_comul).symm
@@ -206,8 +84,6 @@ private theorem isFrobenius_of_mul (e : A ≃ₗc[R] B) (hmul : ∀ x y, e (x * 
     induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn with
     | tmul u v => simp [hmul]
     | add t u ht hu => simp_all [tmul_add]
-  change Coalgebra.IsFrobenius.left R B (e a ⊗ₜ[R] e b) =
-    Coalgebra.IsFrobenius.right R B (e a ⊗ₜ[R] e b)
   rw [hleft, hright, Coalgebra.IsFrobenius.left_eq_right (R := R) (A := A)]
 
 /-- A multiplicative coalgebra equivalence preserves and reflects the Frobenius equation. -/
@@ -237,25 +113,37 @@ def toCoalgEquivOfIsFrobenius (e : A ≃ₐ[R] B)
   counit_comp := hε
   map_comp_comul := by
     ext a
-    apply (Coalgebra.IsFrobenius.traceTensorEquiv R B).injective
+    apply (LinearMap.traceTensorEquiv (Coalgebra.counit (R := R) (A := B))).injective
     refine TensorProduct.ext' fun x y ↦ ?_
     have hε_apply (u : A) : Coalgebra.counit (R := R) (e u) = Coalgebra.counit (R := R) u :=
       congrFun (congrArg DFunLike.coe hε) u
     have hmap (t : A ⊗[R] A) :
-        Coalgebra.IsFrobenius.traceTensorEquiv R B
+        LinearMap.traceTensorEquiv (Coalgebra.counit (R := R) (A := B))
             (TensorProduct.map e.toLinearMap e.toLinearMap t) (x ⊗ₜ[R] y) =
-          Coalgebra.IsFrobenius.traceTensorEquiv R A t (e.symm x ⊗ₜ[R] e.symm y) := by
+          LinearMap.traceTensorEquiv (Coalgebra.counit (R := R) (A := A)) t
+            (e.symm x ⊗ₜ[R] e.symm y) := by
       induction t using TensorProduct.inductionOn with
       | tmul u v =>
         simp only [TensorProduct.map_tmul, AlgEquiv.toLinearMap_apply,
-          Coalgebra.IsFrobenius.traceTensorEquiv_tmul]
+          LinearMap.traceTensorEquiv_tmul]
         rw [← hε_apply (e.symm x * u), ← hε_apply (v * e.symm y), map_mul e, map_mul e,
           e.apply_symm_apply, e.apply_symm_apply]
       | add t u ht hu => simp_all
     simp only [LinearMap.comp_apply, AlgEquiv.toLinearEquiv_toLinearMap, AlgEquiv.toLinearMap_apply]
-    rw [hmap, Coalgebra.IsFrobenius.traceTensorEquiv_comul,
-      Coalgebra.IsFrobenius.traceTensorEquiv_comul, ← hε_apply, map_mul e, map_mul e,
-      e.apply_symm_apply, e.apply_symm_apply]
+    calc
+      LinearMap.traceTensorEquiv (Coalgebra.counit (R := R) (A := B))
+          (TensorProduct.map e.toLinearMap e.toLinearMap (Coalgebra.comul (R := R) a))
+          (x ⊗ₜ[R] y)
+        = LinearMap.traceTensorEquiv (Coalgebra.counit (R := R) (A := A))
+            (Coalgebra.comul (R := R) a) (e.symm x ⊗ₜ[R] e.symm y) := hmap _
+      _ = Coalgebra.counit (R := R) (e.symm x * a * e.symm y) :=
+          LinearMap.traceTensorEquiv_comul_of_isFrobenius _ ‹Coalgebra R A› rfl inferInstance _ _ _
+      _ = Coalgebra.counit (R := R) (x * e a * y) := by
+          rw [← hε_apply, map_mul e, map_mul e, e.apply_symm_apply, e.apply_symm_apply]
+      _ = LinearMap.traceTensorEquiv (Coalgebra.counit (R := R) (A := B))
+            (Coalgebra.comul (R := R) (e a)) (x ⊗ₜ[R] y) :=
+          (LinearMap.traceTensorEquiv_comul_of_isFrobenius _ ‹Coalgebra R B› rfl inferInstance
+            _ _ _).symm
 
 /-- The underlying function of `toCoalgEquivOfIsFrobenius` is the algebra equivalence. -/
 @[simp]
@@ -371,14 +259,6 @@ section CommAlgEquiv
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B]
   [Algebra R A] [Algebra R B]
 
-/-- Pairing a basis element with a trace-dual basis element yields the Kronecker delta. -/
-@[simp]
-theorem apply_mul_traceDualBasis {ι : Type*} [Finite ι] [DecidableEq ι]
-    (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
-    (b : Module.Basis ι R A) (i j : ι) :
-    ε (b i * traceDualBasis ε b j) = if i = j then 1 else 0 := by
-  rw [mul_comm, traceDualBasis_mul, b.repr_self, Finsupp.single_apply, eq_comm]
-
 /-- Transporting a basis along an algebra isomorphism commutes with forming the trace-dual basis. -/
 theorem traceDualBasis_map {ι : Type*} [Finite ι] (e : A ≃ₐ[R] B) (ε : B →ₗ[R] R)
     [((mul R B).compr₂ ε).IsPerfPair] [((mul R A).compr₂ (ε ∘ₗ e.toLinearMap)).IsPerfPair]
@@ -388,12 +268,14 @@ theorem traceDualBasis_map {ι : Type*} [Finite ι] (e : A ≃ₐ[R] B) (ε : B 
   ext i
   apply ((mul R B).compr₂ ε).toPerfPair.injective
   ext y
-  simp only [toPerfPair_apply, compr₂_apply, mul_apply_apply, traceDualBasis_mul,
-    Module.Basis.map_repr, LinearEquiv.trans_apply, Module.Basis.map_apply,
-    AlgEquiv.coe_toLinearEquiv]
-  change (b.repr (e.symm y)) i = _
-  rw [← traceDualBasis_mul (ε ∘ₗ e.toLinearMap) b i (e.symm y), comp_apply,
-    AlgEquiv.toLinearMap_apply, map_mul e, e.apply_symm_apply]
+  calc
+    ((mul R B).compr₂ ε).toPerfPair (traceDualBasis ε (b.map e.toLinearEquiv) i) y
+      = b.repr (e.symm y) i := by simp
+    _ = (ε ∘ₗ e.toLinearMap) (traceDualBasis (ε ∘ₗ e.toLinearMap) b i * e.symm y) :=
+        (traceDualBasis_mul (ε ∘ₗ e.toLinearMap) b i (e.symm y)).symm
+    _ = ((mul R B).compr₂ ε).toPerfPair
+          ((traceDualBasis (ε ∘ₗ e.toLinearMap) b).map e.toLinearEquiv i) y := by
+        simp [-traceDualBasis_mul]
 
 variable [Module.Finite R A] [Module.Projective R A] [Module.Finite R B] [Module.Projective R B]
 
@@ -454,11 +336,13 @@ end AlgEquiv
 
 namespace LinearMap
 
-section HeterobasicTensor
+section NonUnitalHeterobasicTensor
 
 variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
-  [CommSemiring A] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
-  [CommSemiring B] [Algebra R B]
+  [NonUnitalNonAssocSemiring A] [Module R A] [Module S A] [IsScalarTower R S A]
+  [SMulCommClass R S A] [SMulCommClass R A A] [IsScalarTower R A A]
+  [SMulCommClass S A A] [IsScalarTower S A A]
+  [NonUnitalNonAssocSemiring B] [Module R B] [SMulCommClass R B B] [IsScalarTower R B B]
   [Module.Finite S A] [Module.Projective S A] [Module.Finite R B] [Module.Projective R B]
   (εA : A →ₗ[S] S) (εB : B →ₗ[R] R)
   [((mul S A).compr₂ εA).IsPerfPair] [((mul R B).compr₂ εB).IsPerfPair]
@@ -467,14 +351,40 @@ variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
 theorem isPerfPair_compr₂_mul_algebraTensorModule_dualDistrib :
     ((mul S (A ⊗[R] B)).compr₂
       (TensorProduct.AlgebraTensorModule.dualDistrib R S A B (εA ⊗ₜ[R] εB))).IsPerfPair := by
-  let : Coalgebra S A := εA.frobeniusCoalgebra; let : Coalgebra R B := εB.frobeniusCoalgebra
-  have := εA.frobeniusCoalgebra_isFrobenius; have := εB.frobeniusCoalgebra_isFrobenius
-  have hcounit : Coalgebra.counit (R := S) (A := A ⊗[R] B) =
-      TensorProduct.AlgebraTensorModule.dualDistrib R S A B (εA ⊗ₜ[R] εB) :=
-    TensorProduct.AlgebraTensorModule.ext fun _ _ ↦ by
-      simp [TensorProduct.AlgebraTensorModule.dualDistrib_apply, Coalgebra.counit]
-  rw [← hcounit]
-  exact Coalgebra.IsFrobenius.isPerfPair_compr₂_mul_counit
+  let eL : A ⊗[R] B ≃ₗ[S] Module.Dual S (A ⊗[R] B) :=
+    (TensorProduct.AlgebraTensorModule.congr
+        (((mul S A).compr₂ εA).toPerfPair)
+        (((mul R B).compr₂ εB).toPerfPair)).trans
+      (TauCeti.TensorProduct.AlgebraTensorModule.dualDistribEquiv R S A B)
+  let eR : A ⊗[R] B ≃ₗ[S] Module.Dual S (A ⊗[R] B) :=
+    (TensorProduct.AlgebraTensorModule.congr
+        (((mul S A).compr₂ εA).flip.toPerfPair)
+        (((mul R B).compr₂ εB).flip.toPerfPair)).trans
+      (TauCeti.TensorProduct.AlgebraTensorModule.dualDistribEquiv R S A B)
+  have hL : ((mul S (A ⊗[R] B)).compr₂
+      (TensorProduct.AlgebraTensorModule.dualDistrib R S A B (εA ⊗ₜ[R] εB))) =
+      eL.toLinearMap := by
+    refine TensorProduct.AlgebraTensorModule.ext fun a₁ b₁ ↦ ?_
+    refine TensorProduct.AlgebraTensorModule.ext fun a₂ b₂ ↦ ?_
+    simp [eL]
+  have hR : ((mul S (A ⊗[R] B)).compr₂
+      (TensorProduct.AlgebraTensorModule.dualDistrib R S A B (εA ⊗ₜ[R] εB))).flip =
+      eR.toLinearMap := by
+    refine TensorProduct.AlgebraTensorModule.ext fun a₁ b₁ ↦ ?_
+    refine TensorProduct.AlgebraTensorModule.ext fun a₂ b₂ ↦ ?_
+    simp [eR]
+  exact ⟨hL ▸ eL.bijective, hR ▸ eR.bijective⟩
+
+end NonUnitalHeterobasicTensor
+
+section HeterobasicTensor
+
+variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [CommSemiring A] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
+  [CommSemiring B] [Algebra R B]
+  [Module.Finite S A] [Module.Projective S A] [Module.Finite R B] [Module.Projective R B]
+  (εA : A →ₗ[S] S) (εB : B →ₗ[R] R)
+  [((mul S A).compr₂ εA).IsPerfPair] [((mul R B).compr₂ εB).IsPerfPair]
 
 /-- On a heterobasic tensor product `A ⊗[R] B`, the Frobenius coalgebra reconstructed from the
 tensor-product trace equals the tensor product of the reconstructed Frobenius coalgebras. -/
@@ -493,16 +403,17 @@ theorem frobeniusCoalgebra_algebraTensorModule_dualDistrib [Module.Finite S (A �
 
 end HeterobasicTensor
 
-section TensorProduct
+section NonUnitalTensorProduct
 
-variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B]
-  [Algebra R A] [Algebra R B]
+variable {R A B : Type*} [CommSemiring R]
+  [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+  [NonUnitalNonAssocSemiring B] [Module R B] [SMulCommClass R B B] [IsScalarTower R B B]
   [Module.Finite R A] [Module.Projective R A] [Module.Finite R B] [Module.Projective R B]
   (εA : A →ₗ[R] R) (εB : B →ₗ[R] R)
   [((mul R A).compr₂ εA).IsPerfPair] [((mul R B).compr₂ εB).IsPerfPair]
 
-/-- The tensor product of two perfect traces on finite projective commutative `R`-algebras is a
-perfect trace on `A ⊗[R] B`. -/
+/-- The tensor product of two perfect traces on finite projective `R`-algebras is a perfect trace
+on `A ⊗[R] B`. -/
 instance isPerfPair_compr₂_mul_dualDistrib :
     ((mul R (A ⊗[R] B)).compr₂ (TensorProduct.dualDistrib R A B (εA ⊗ₜ[R] εB))).IsPerfPair := by
   have heq : TensorProduct.dualDistrib R A B (εA ⊗ₜ[R] εB) =
@@ -510,6 +421,16 @@ instance isPerfPair_compr₂_mul_dualDistrib :
     ext a b; simp [mul_comm]
   rw [heq]
   exact isPerfPair_compr₂_mul_algebraTensorModule_dualDistrib εA εB
+
+end NonUnitalTensorProduct
+
+section TensorProduct
+
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B]
+  [Algebra R A] [Algebra R B]
+  [Module.Finite R A] [Module.Projective R A] [Module.Finite R B] [Module.Projective R B]
+  (εA : A →ₗ[R] R) (εB : B →ₗ[R] R)
+  [((mul R A).compr₂ εA).IsPerfPair] [((mul R B).compr₂ εB).IsPerfPair]
 
 /-- The Frobenius coalgebra reconstructed from the tensor product of two perfect traces is the
 tensor product of the reconstructed Frobenius coalgebras. -/
@@ -533,31 +454,36 @@ theorem traceDualBasis_dualDistrib {ι κ : Type*} [Finite ι] [Finite κ]
   apply ((mul R (A ⊗[R] B)).compr₂
     (TensorProduct.dualDistrib R A B (εA ⊗ₜ[R] εB))).toPerfPair.injective
   refine TensorProduct.ext' fun x y ↦ ?_
-  simp only [toPerfPair_apply, compr₂_apply, mul_apply_apply]
-  rw [traceDualBasis_mul, Module.Basis.tensorProduct_apply, Algebra.TensorProduct.tmul_mul_tmul,
-    TensorProduct.dualDistrib_apply, traceDualBasis_mul, traceDualBasis_mul,
-    Module.Basis.tensorProduct_repr_tmul_apply, smul_eq_mul, mul_comm]
+  simpa [Algebra.TensorProduct.tmul_mul_tmul] using mul_comm ((bB.repr y) j) ((bA.repr x) i)
 
 end TensorProduct
+
+section NonUnitalBaseChange
+
+variable {R : Type*} (S : Type*) {A : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+  [Module.Finite R A] [Module.Projective R A]
+  (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
+
+/-- Extending scalars preserves perfectness of a trace on a finite projective algebra. -/
+instance isPerfPair_compr₂_mul_baseChange :
+    ((mul S (S ⊗[R] A)).compr₂ (Module.Dual.baseChange S ε)).IsPerfPair := by
+  have : ((mul S S).compr₂ (LinearMap.id (R := S) (M := S))).IsPerfPair :=
+    TauCeti.Coalgebra.IsFrobenius.isPerfPair_compr₂_mul_counit (R := S) (A := S)
+  have heq : Module.Dual.baseChange S ε =
+      TensorProduct.AlgebraTensorModule.dualDistrib R S S A
+        ((LinearMap.id (R := S) (M := S)) ⊗ₜ[R] ε) :=
+    TensorProduct.AlgebraTensorModule.ext fun _ _ ↦ by simp
+  rw [heq]
+  exact isPerfPair_compr₂_mul_algebraTensorModule_dualDistrib (LinearMap.id (R := S) (M := S)) ε
+
+end NonUnitalBaseChange
 
 section BaseChange
 
 variable {R : Type*} (S : Type*) {A : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [CommSemiring A] [Algebra R A] [Module.Finite R A] [Module.Projective R A]
   (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
-
-/-- Extending scalars preserves perfectness of a trace on a finite projective commutative
-algebra. -/
-instance isPerfPair_compr₂_mul_baseChange :
-    ((mul S (S ⊗[R] A)).compr₂ (Module.Dual.baseChange S ε)).IsPerfPair := by
-  have : ((mul S S).compr₂ (LinearMap.id (R := S) (M := S))).IsPerfPair :=
-    Coalgebra.IsFrobenius.isPerfPair_compr₂_mul_counit (R := S) (A := S)
-  have heq : Module.Dual.baseChange S ε =
-      TensorProduct.AlgebraTensorModule.dualDistrib R S S A
-        ((LinearMap.id (R := S) (M := S)) ⊗ₜ[R] ε) :=
-    TensorProduct.AlgebraTensorModule.ext fun _ _ ↦ rfl
-  rw [heq]
-  exact isPerfPair_compr₂_mul_algebraTensorModule_dualDistrib (LinearMap.id (R := S) (M := S)) ε
 
 /-- The Frobenius coalgebra reconstructed from a base-changed trace `Module.Dual.baseChange S ε` is
 the base change of the Frobenius coalgebra reconstructed from `ε`. -/
@@ -580,10 +506,7 @@ theorem traceDualBasis_baseChange {ι : Type*} [Finite ι]
   ext i
   apply ((mul S (S ⊗[R] A)).compr₂ (Module.Dual.baseChange S ε)).toPerfPair.injective
   refine TensorProduct.AlgebraTensorModule.ext fun s a ↦ ?_
-  simp only [toPerfPair_apply, compr₂_apply, mul_apply_apply]
-  rw [traceDualBasis_mul, Module.Basis.baseChange_apply, Algebra.TensorProduct.tmul_mul_tmul,
-    one_mul, Module.Dual.baseChange_apply_tmul, traceDualBasis_mul,
-    Module.Basis.baseChange_repr_tmul, Algebra.smul_def, mul_comm]
+  simp [Algebra.smul_def, Algebra.TensorProduct.tmul_mul_tmul]
 
 end BaseChange
 

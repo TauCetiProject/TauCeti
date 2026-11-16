@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Coalgebra.TensorProduct
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
@@ -22,6 +23,8 @@ an algebra structure on the coalgebra.
   pure tensors.
 * `TauCeti.Coalgebra.baseChange_comul`: the comultiplication of a scalar extension is the scalar
   extension of the comultiplication, followed by `distribBaseChange`.
+* `TauCeti.Coalgebra.baseChange_counit`: the counit of a scalar extension is
+  `Module.Dual.baseChange` of the counit.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor_lTensor_comul`: cancellation
   commutes with comultiplication on a scalar-extended tensor factor.
 * `TensorProduct.rid_counit_cancelBaseChange`: contraction against the counit commutes
@@ -70,6 +73,12 @@ theorem baseChange_comul :
     LinearMap.coe_restrictScalars, LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
     LinearMap.baseChange_tmul]
   exact baseChange_comul_tmul A 1 h
+
+/-- The counit of a base-changed coalgebra is `Module.Dual.baseChange` of the counit. -/
+theorem baseChange_counit :
+    Coalgebra.counit (R := A) (A := A ⊗[R] H) =
+      Module.Dual.baseChange A (Coalgebra.counit (R := R) (A := H)) :=
+  TensorProduct.AlgebraTensorModule.ext fun _ _ ↦ by simp
 
 end TauCeti.Coalgebra
 

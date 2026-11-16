@@ -10,10 +10,10 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 /-!
 # Sums over selected homogeneous components
 
-For an internal module grading, the sum of the pieces indexed by any set is
-characterized by vanishing of all excluded components. Such sums are stable
-under homogeneous projections. These criteria detect membership and homogeneity
-of `TauCeti.supportedLieSubalgebra`.
+For an internal module grading, the sum of the pieces indexed by any set (and in particular a
+single piece, `TauCeti.DirectSum.mem_iff_decompose_eq_zero`) is characterized by vanishing of all
+excluded components. Such sums are stable under homogeneous projections. These criteria detect
+membership and homogeneity of `TauCeti.supportedLieSubalgebra`.
 
 We use Mathlib's `DirectSum.decompose_of_mem_ne` and
 `DirectSum.sum_support_decompose` to detect and reconstruct the allowed support.
@@ -65,5 +65,11 @@ theorem isHomogeneous_iSup :
       (_root_.DirectSum.decompose ℳ x i).property
   · rw [(mem_iSup_iff_decompose_eq_zero ℳ S).mp hx i hi]
     exact Submodule.zero_mem _
+
+/-- An element belongs to the `k`-th homogeneous piece if and only if every component of another
+degree vanishes. -/
+theorem mem_iff_decompose_eq_zero {k : ι} {x : M} :
+    x ∈ ℳ k ↔ ∀ i, i ≠ k → (_root_.DirectSum.decompose ℳ x i : M) = 0 := by
+  simpa using mem_iSup_iff_decompose_eq_zero ℳ {k} (x := x)
 
 end TauCeti.DirectSum

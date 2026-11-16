@@ -49,7 +49,7 @@ compatible with: the total-degree grading of the underlying tensor product of gr
   their restrictions to the two factors.
 * `TauCeti.gradedTensor_tmul_one_mul_one_tmul_comm`: the images of homogeneous elements of the two
   factors supercommute.
-* `TauCeti.isHomogeneous_mul'_of_gradedAlgebra` and `TauCeti.instGradedAlgebraTensorProduct`:
+* `TauCeti.isHomogeneous_mul'` and `TauCeti.instGradedAlgebraTensorProduct`:
   multiplication of an internally `ℤ`-graded algebra has degree zero, and the ordinary tensor
   product `A ⊗[R] B` (without Koszul signs) is also an internally `ℤ`-graded algebra for the
   total-degree grading.
@@ -382,14 +382,11 @@ open scoped DirectSum TensorProduct
 
 namespace TauCeti
 
-variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
-  [Algebra R A] [Algebra R B]
-  (𝒜 : ℤ → Submodule R A) (ℬ : ℤ → Submodule R B)
-  [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
-
-/-- Multiplication of an internally `ℤ`-graded algebra is homogeneous of degree zero for the
-total-degree tensor-product grading. -/
-theorem isHomogeneous_mul'_of_gradedAlgebra :
+/-- Multiplication of an internally `ℤ`-graded non-unital non-associative algebra is homogeneous
+of degree zero for the total-degree tensor-product grading. -/
+theorem isHomogeneous_mul' {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] :
     TauCeti.LinearMap.IsHomogeneous (_root_.LinearMap.mul' R A)
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece 𝒜 0 := by
@@ -401,6 +398,11 @@ theorem isHomogeneous_mul'_of_gradedAlgebra :
   simp only [G, InternalGrading.ofDecomposition_piece] at ha hb
   rw [Submodule.mem_comap, _root_.LinearMap.mul'_apply]
   simpa only [add_sub_cancel, add_zero] using SetLike.mul_mem_graded ha hb
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra R B]
+  (𝒜 : ℤ → Submodule R A) (ℬ : ℤ → Submodule R B)
+  [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
 
 /-- The total-degree grading of the ordinary tensor product `A ⊗[R] B` of two internally
 `ℤ`-graded algebras is a graded monoid. -/
@@ -415,7 +417,7 @@ instance instGradedMonoidTensorProduct :
       simpa only [G, InternalGrading.ofDecomposition_piece] using SetLike.one_mem_graded 𝒜
     have h1B : (1 : B) ∈ H.piece 0 := by
       simpa only [H, InternalGrading.ofDecomposition_piece] using SetLike.one_mem_graded ℬ
-    change (1 : A) ⊗ₜ[R] (1 : B) ∈ (G.tensorProduct H).piece 0
+    rw [Algebra.TensorProduct.one_def]
     simpa only [add_zero] using InternalGrading.tmul_mem_tensorProduct G H h1A h1B
   mul_mem m n x y hx hy := by
     let G := InternalGrading.ofDecomposition 𝒜

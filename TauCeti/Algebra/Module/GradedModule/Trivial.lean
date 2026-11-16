@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # The trivial grading of a module
@@ -27,6 +28,9 @@ homogeneous piece of any family closed under scalar multiplication.  For an alge
 ## Main results
 
 * `TauCeti.mem_trivialGrading_iff`: an element has degree `p` exactly when `p = 0` or it is zero.
+* `TauCeti.trivialGrading_eq_bot_of_odd`: every odd-degree piece of the trivial grading is zero.
+* `TauCeti.isHomogeneous_trivialGrading_iff`: a linear map into the trivial grading has degree `q`
+  if and only if it vanishes on every piece of degree `p` with `p + q ≠ 0`.
 * `TauCeti.instDecompositionTrivialGrading`: the trivial grading is an internal grading.
 * `TauCeti.instGradedSMulTrivialGrading`: the trivially graded base ring acts compatibly with any
   family of scalar-stable sets containing zero.
@@ -54,6 +58,10 @@ theorem trivialGrading_zero : trivialGrading R A 0 = ⊤ := by
 theorem trivialGrading_eq_bot {p : ℤ} (hp : p ≠ 0) : trivialGrading R A p = ⊥ := by
   simp [trivialGrading, hp]
 
+/-- Every odd-degree piece of the trivial grading is zero. -/
+theorem trivialGrading_eq_bot_of_odd {p : ℤ} (hp : Odd p) : trivialGrading R A p = ⊥ :=
+  trivialGrading_eq_bot R A (by rcases hp with ⟨k, rfl⟩; omega)
+
 /-- An element belongs to degree `p` of the trivial grading exactly when `p = 0` or the element
 itself is zero. -/
 @[simp]
@@ -62,6 +70,20 @@ theorem mem_trivialGrading_iff {p : ℤ} {a : A} :
   by_cases hp : p = 0
   · simp [hp]
   · simp [trivialGrading, hp]
+
+/-- A linear map `f : M →ₗ[R] N` is homogeneous of degree `q` into the trivial grading of `N` if
+and only if it vanishes on every homogeneous piece of degree `p` with `p + q ≠ 0`. -/
+theorem isHomogeneous_trivialGrading_iff {R M N σM : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [SetLike σM M]
+    (ℳ : ℤ → σM) (f : M →ₗ[R] N) (q : ℤ) :
+    TauCeti.LinearMap.IsHomogeneous f ℳ (trivialGrading R N) q ↔
+      ∀ (p : ℤ), p + q ≠ 0 → ∀ x ∈ ℳ p, f x = 0 := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  refine ⟨fun h p hp x hx ↦ ((mem_trivialGrading_iff R N).mp (h p x hx)).resolve_left hp,
+    fun h p x hx ↦ (mem_trivialGrading_iff R N).mpr ?_⟩
+  by_cases hp : p + q = 0
+  · exact Or.inl hp
+  · exact Or.inr (h p hp x hx)
 
 /-- Every element of the module, viewed as an element of the degree-zero piece of the trivial
 grading. -/

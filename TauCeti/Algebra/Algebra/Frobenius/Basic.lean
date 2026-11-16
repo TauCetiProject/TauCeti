@@ -51,8 +51,6 @@ The trace of square matrices is the basic example; see `TauCeti.Algebra.Algebra.
 
 ## Main results
 
-* `LinearMap.isFrobeniusFunctional_of_isPerfPair`: a perfect trace pairing implies
-  `LinearMap.IsFrobeniusFunctional` over any commutative semiring.
 * `LinearMap.IsFrobeniusFunctional.of_left`, `LinearMap.IsFrobeniusFunctional.of_right`: in finite
   dimension one-sided nondegeneracy suffices.
 * `LinearMap.exists_isFrobeniusFunctional_iff`: a Frobenius functional exists if and only if the
@@ -125,12 +123,6 @@ theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
     simpa using h (MulOpposite.op c)
   · refine MulOpposite.unop_injective (hφ.eq_zero_of_forall_left fun c => ?_)
     simpa using h (MulOpposite.op c)
-
-/-- A linear functional whose trace pairing `(a, b) ↦ φ (a * b)` is perfect is a Frobenius
-functional. -/
-theorem isFrobeniusFunctional_of_isPerfPair
-    (hφ : ((mul k A).compr₂ φ).IsPerfPair) : φ.IsFrobeniusFunctional :=
-  hφ.nondegenerate
 
 end CommSemiring
 

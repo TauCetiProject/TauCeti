@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.Algebra.Module.GradedModule.Dual.Basic
 public import TauCeti.Algebra.Module.GradedModule.KoszulTensor
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 
 /-!
 # Graded tensor duality
@@ -25,8 +26,11 @@ internal total-degree gradings, so it also identifies each homogeneous piece. Th
 allows tensor powers and their graded duals to be interchanged in bar constructions.
 
 The sign automorphism is `InternalGrading.koszulTensorTwist`; the underlying finite-projective
-comparison is Mathlib's `TensorProduct.dualDistribEquiv`. The graded evaluation convention
-follows E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Section 1.
+comparison is Mathlib's `TensorProduct.dualDistribEquiv`. The file also bridges `dualPiece` with
+`TauCeti.LinearMap.IsHomogeneous` into `TauCeti.trivialGrading`
+(`TauCeti.InternalGrading.mem_dualPiece_iff_isHomogeneous` and
+`TauCeti.isHomogeneous_dualDistrib_tmul`). The graded evaluation convention follows
+E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Section 1.
 -/
 
 public section
@@ -60,6 +64,33 @@ theorem dualDistrib_tmul_mem_dualPiece (G : InternalGrading R M ℤ) (H : Intern
     · rw [(mem_dualPiece_iff H q ψ).mp hψ (r - s) y hy (by omega), mul_zero]
     · rw [(mem_dualPiece_iff G p φ).mp hφ s x hx hs, zero_mul]
   exact hle hz
+
+/-- A linear functional belongs to `G.dualPiece q` if and only if it is homogeneous of degree `q`
+into the trivial grading of `R`. -/
+theorem mem_dualPiece_iff_isHomogeneous (G : InternalGrading R M ℤ) (q : ℤ) (φ : Module.Dual R M) :
+    φ ∈ G.dualPiece q ↔ TauCeti.LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) q := by
+  rw [mem_dualPiece_iff, isHomogeneous_trivialGrading_iff]
+  exact ⟨fun h p hp x hx ↦ h p x hx (by omega), fun h p x hx hp ↦ h p (by omega) x hx⟩
+
+/-- The tensor product of homogeneous linear functionals of degrees `q₁` and `q₂` into the trivial
+grading has degree `q₁ + q₂` for the total-degree tensor-product grading. -/
+theorem _root_.TauCeti.isHomogeneous_dualDistrib_tmul
+    (ℳ : ℤ → Submodule R M) (𝒩 : ℤ → Submodule R N)
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+    {εM : M →ₗ[R] R} {εN : N →ₗ[R] R} {q₁ q₂ : ℤ}
+    (hM : TauCeti.LinearMap.IsHomogeneous εM ℳ (trivialGrading R R) q₁)
+    (hN : TauCeti.LinearMap.IsHomogeneous εN 𝒩 (trivialGrading R R) q₂) :
+    TauCeti.LinearMap.IsHomogeneous (TensorProduct.dualDistrib R M N (εM ⊗ₜ[R] εN))
+      ((ofDecomposition ℳ).tensorProduct (ofDecomposition 𝒩)).piece
+      (trivialGrading R R) (q₁ + q₂) := by
+  let G := ofDecomposition ℳ
+  let H := ofDecomposition 𝒩
+  exact ((G.tensorProduct H).mem_dualPiece_iff_isHomogeneous (q₁ + q₂) _).mp
+    (G.dualDistrib_tmul_mem_dualPiece H
+      ((G.mem_dualPiece_iff_isHomogeneous q₁ εM).mpr
+        (by simpa only [G, ofDecomposition_piece] using hM))
+      ((H.mem_dualPiece_iff_isHomogeneous q₂ εN).mpr
+        (by simpa only [H, ofDecomposition_piece] using hN)))
 
 /-- Mathlib's ordinary tensor-dual map preserves the internal total degree. -/
 theorem isHomogeneous_dualDistrib (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)

@@ -63,7 +63,10 @@ of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectS
 has `i`-th component `DirectSum.of M i (x i)` (`DirectSum.coe_decompose_summand`).
 
 Over any semiring, the spans of the basis vectors in the fibers of a map on the index set of a basis
-form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`).
+form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`); when a basis is
+homogeneous for an internal decomposition, each piece is spanned by the basis vectors in that degree
+(`Module.Basis.span_image_fiber_eq_of_mem`) and homogeneous elements have zero coordinates in other
+degrees (`Module.Basis.repr_eq_zero_of_mem_of_ne`).
 -/
 
 public section
@@ -673,3 +676,39 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
   · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩
+
+/-- If a basis `b` is homogeneous with respect to an internal direct-sum decomposition `ℳ`, then
+each homogeneous piece `ℳ c` is spanned by the basis vectors of degree `c`. -/
+theorem Module.Basis.span_image_fiber_eq_of_mem {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [DecidableEq κ] (b : Module.Basis ι R M)
+    {ℳ : κ → Submodule R M} [DirectSum.Decomposition ℳ] {deg : ι → κ}
+    (hb : ∀ i, b i ∈ ℳ (deg i)) (c : κ) :
+    Submodule.span R (b '' {i | deg i = c}) = ℳ c := by
+  let A : κ → Submodule R M := fun k => Submodule.span R (b '' {i | deg i = k})
+  have hle : ∀ k, A k ≤ ℳ k := fun k =>
+    Submodule.span_le.mpr (by rintro _ ⟨i, rfl, rfl⟩; exact hb i)
+  refine le_antisymm (hle c) fun a ha => ?_
+  obtain ⟨d, hd⟩ := (b.isInternal_span_image_fiber deg).surjective a
+  let inc : (k : κ) → A k →+ ℳ k := fun k => (Submodule.inclusion (hle k)).toAddMonoidHom
+  have hcoe : (DirectSum.coeAddMonoidHom ℳ).comp (DirectSum.map inc) =
+      DirectSum.coeAddMonoidHom A := by
+    apply DirectSum.addHom_ext
+    intro k x
+    simp [inc]
+  have heq : DirectSum.map inc d = DirectSum.of (fun k => ℳ k) c ⟨a, ha⟩ :=
+    (DirectSum.Decomposition.isInternal ℳ).injective (by
+      rw [← AddMonoidHom.comp_apply, hcoe, hd, DirectSum.coeAddMonoidHom_of])
+  have hval := congrArg (fun x => (x c : M)) heq
+  simp only [DirectSum.map_apply, DirectSum.of_eq_same] at hval
+  exact hval ▸ (d c).2
+
+/-- If a basis `b` is homogeneous with respect to an internal direct-sum decomposition `ℳ`, then
+a homogeneous element of degree `q ≠ deg i` has zero `i`-th coordinate in `b`. -/
+theorem Module.Basis.repr_eq_zero_of_mem_of_ne {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [DecidableEq κ] (b : Module.Basis ι R M)
+    {ℳ : κ → Submodule R M} [DirectSum.Decomposition ℳ] {deg : ι → κ}
+    (hb : ∀ i, b i ∈ ℳ (deg i)) {q : κ} {i : ι} (hq : q ≠ deg i) {a : M} (ha : a ∈ ℳ q) :
+    b.repr a i = 0 := by
+  by_contra h
+  rw [← b.span_image_fiber_eq_of_mem hb q] at ha
+  exact hq ((Module.Basis.mem_span_image b).mp ha (Finsupp.mem_support_iff.mpr h)).symm

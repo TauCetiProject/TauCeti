@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # The degree-two grading on the dual numbers
@@ -36,6 +38,10 @@ the usual ungraded dual-number algebra.
   the two nonzero pieces are linearly equivalent to the base ring.
 * `TauCeti.dualNumberIntegerGrade_zero_eq_span_one`: in the integer grading, degree zero is the
   line through `1`.
+* `TauCeti.dualNumberIntegerGrade_eq_bot` and `TauCeti.dualNumberIntegerGrade_eq_bot_of_odd`:
+  every integer degree outside zero and two (in particular every odd degree) vanishes.
+* `TauCeti.isHomogeneous_sndHom_dualNumberIntegerGrade`: the canonical trace
+  `TrivSqZeroExt.sndHom R R` has degree `-2`.
 
 ## Implementation notes
 
@@ -302,6 +308,21 @@ theorem dualNumberIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
     dualNumberIntegerGrade R d = ⊥ :=
   Graded.extendByZero_of_neg _ hd
 
+/-- All integer-graded pieces of the dual numbers other than degrees zero and two vanish. -/
+theorem dualNumberIntegerGrade_eq_bot {p : ℤ} (h0 : p ≠ 0) (h2 : p ≠ 2) :
+    dualNumberIntegerGrade R p = ⊥ := by
+  by_cases hp : p < 0
+  · exact dualNumberIntegerGrade_eq_bot_of_neg R hp
+  · lift p to ℕ using (not_lt.mp hp)
+    rw [dualNumberIntegerGrade_ofNat]
+    exact dualNumberGrade_eq_bot R (by omega) (by omega)
+
+/-- The integer-graded dual numbers are even-supported: every odd-degree piece vanishes. -/
+theorem dualNumberIntegerGrade_eq_bot_of_odd {p : ℤ} (hp : Odd p) :
+    dualNumberIntegerGrade R p = ⊥ := by
+  rcases hp with ⟨k, rfl⟩
+  exact dualNumberIntegerGrade_eq_bot R (by omega) (by omega)
+
 /-- The unit of the dual numbers has integer degree zero. -/
 theorem one_mem_dualNumberIntegerGrade_zero :
     (1 : DualNumber R) ∈ dualNumberIntegerGrade R 0 := by
@@ -329,5 +350,18 @@ degrees. This is a definition rather than a global instance, like `dualNumberGra
 noncomputable def dualNumberIntegerGradedAlgebra : GradedAlgebra (dualNumberIntegerGrade R) :=
   let _ := dualNumberGradedAlgebra R
   Graded.gradedAlgebraExtendByZero (dualNumberGrade R)
+
+/-- The canonical trace `TrivSqZeroExt.sndHom R R` is homogeneous of degree `-2` with respect to
+`TauCeti.dualNumberIntegerGrade R`. -/
+theorem isHomogeneous_sndHom_dualNumberIntegerGrade :
+    TauCeti.LinearMap.IsHomogeneous (TrivSqZeroExt.sndHom R R) (dualNumberIntegerGrade R)
+      (trivialGrading R R) (-2) := by
+  rw [isHomogeneous_trivialGrading_iff]
+  intro p hp x hx
+  rcases eq_or_ne p 0 with rfl | h0
+  · rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero] at hx
+    simpa using hx
+  · rw [dualNumberIntegerGrade_eq_bot R h0 (by omega)] at hx
+    simp [(Submodule.mem_bot R).mp hx]
 
 end TauCeti

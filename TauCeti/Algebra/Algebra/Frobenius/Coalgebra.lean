@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.RingTheory.Coalgebra.IsFrobenius
 public import TauCeti.Algebra.Coalgebra.Basic
@@ -13,18 +14,28 @@ import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 /-!
 # Reconstructing a Frobenius coalgebra from a perfect trace
 
-A perfect trace pairing on a finite projective commutative algebra determines a
-unique Frobenius coalgebra with the given counit. The coproduct is the transpose
-of multiplication under the trace pairing. In a finite basis it is the familiar
-sum of basis vectors tensored with their trace-duals times the input.
+This file develops single-algebra Frobenius coalgebra duality and trace reconstruction over an
+arbitrary commutative semiring `R`:
 
-We reuse the transposed coalgebra on `TauCeti.ConvolutionDual`, Mathlib's perfect
-pairings, and `CoalgEquiv.toCoalgebra` to obtain the coalgebra laws. No field or
-characteristic hypothesis is needed.
+* For any unital (not necessarily associative or commutative) Frobenius coalgebra `A`, its trace
+  pairing `(a, b) ↦ counit (a * b)` is perfect
+  (`TauCeti.Coalgebra.IsFrobenius.isPerfPair_compr₂_mul_counit`), `LinearMap.traceTensorEquiv`
+  identifies `A ⊗[R] A` with `Module.Dual R (A ⊗[R] A)` via `x ⊗ₜ y ↦ ε (x * a) * ε (b * y)`,
+  and the counit uniquely determines the Frobenius coalgebra structure
+  (`Coalgebra.eq_of_counit_eq_of_isFrobenius`).
+* For a finite projective commutative algebra `A`, a perfect trace pairing determines a unique
+  Frobenius coalgebra `LinearMap.frobeniusCoalgebra` with the given counit. The coproduct is the
+  transpose of multiplication under the trace pairing. In any finite basis it is the familiar sum
+  of basis vectors tensored with their trace-duals times the input
+  (`LinearMap.frobeniusCoalgebra_comul_eq_sum`, `TauCeti.Coalgebra.IsFrobenius.comul_eq_sum`).
 
-The trace presentation of commutative Frobenius algebras is the algebraic input
-to surface evaluation and neck cutting; see J. Kock, *Frobenius Algebras and 2D
-Topological Quantum Field Theories*, Chapter 2.
+We reuse the transposed coalgebra on `TauCeti.ConvolutionDual`, Mathlib's perfect pairings, and
+`CoalgEquiv.toCoalgebra` to obtain the coalgebra laws. No field or characteristic hypothesis is
+needed.
+
+## References
+
+* J. Kock, *Frobenius Algebras and 2D Topological Quantum Field Theories*, Chapter 2.
 -/
 
 public section
@@ -32,6 +43,98 @@ public section
 noncomputable section
 
 open TensorProduct
+
+namespace TauCeti.Coalgebra.IsFrobenius
+
+variable {R A : Type*} [CommSemiring R]
+
+/-- Multiplying the first leg of the coproduct of a Frobenius coalgebra on the left by `x`
+multiplies its input on the left by `x`. -/
+theorem comul_mul_left [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A]
+    [IsScalarTower R A A] [Coalgebra R A] [Coalgebra.IsFrobenius R A] (x b : A) :
+    (LinearMap.mulLeft R x).rTensor A (Coalgebra.comul (R := R) b) =
+      Coalgebra.comul (R := R) (x * b) := by
+  have h := congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A ↦ f (x ⊗ₜ[R] b))
+    (Coalgebra.IsFrobenius.right_eq_comul_comp_mul' (R := R) (A := A))
+  simp only [Coalgebra.IsFrobenius.right_def, LinearMap.comp_apply, LinearMap.lTensor_tmul,
+    LinearMap.mul'_apply] at h
+  rw [← h]
+  induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn with
+  | tmul u v => simp
+  | add t u ht hu => simp_all [TensorProduct.tmul_add]
+
+/-- The trace pairing `(a, b) ↦ counit (a * b)` of a unital Frobenius coalgebra is a perfect
+pairing. -/
+instance isPerfPair_compr₂_mul_counit [NonAssocSemiring A] [Module R A] [Coalgebra R A]
+    [SMulCommClass R A A] [IsScalarTower R A A] [Coalgebra.IsFrobenius R A] :
+    ((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).IsPerfPair :=
+  LinearMap.IsPerfPair.of_bijective _ Coalgebra.IsFrobenius.compr₂_mul_counit_bijective
+
+end TauCeti.Coalgebra.IsFrobenius
+
+namespace LinearMap
+
+section NonUnital
+
+variable {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [SMulCommClass R A A] [IsScalarTower R A A]
+  [Module.Finite R A] [Module.Projective R A]
+  (ε : A →ₗ[R] R) [hε : ((mul R A).compr₂ ε).IsPerfPair]
+
+/-- Tensoring the trace pairing identifies a tensor `a ⊗ₜ b` with the bilinear functional
+`x ⊗ₜ y ↦ ε (x * a) * ε (b * y)` on two copies of the algebra. -/
+def traceTensorEquiv : A ⊗[R] A ≃ₗ[R] Module.Dual R (A ⊗[R] A) :=
+  (TensorProduct.congr
+      (((mul R A).compr₂ ε).flip.toPerfPair)
+      (((mul R A).compr₂ ε).toPerfPair)).trans
+    (TensorProduct.dualDistribEquiv R A A)
+
+/-- The tensor trace pairing evaluates pure tensors componentwise. -/
+@[simp] theorem traceTensorEquiv_tmul (a b x y : A) :
+    traceTensorEquiv ε (a ⊗ₜ[R] b) (x ⊗ₜ[R] y) = ε (x * a) * ε (b * y) := by
+  simp [traceTensorEquiv, mul_comm]
+
+/-- The coproduct of any Frobenius coalgebra with counit `ε` is adjoint to multiplication for the
+trace pairing: `traceTensorEquiv ε (c.comul a) (x ⊗ₜ y) = ε (x * a * y)`. -/
+theorem traceTensorEquiv_comul_of_isFrobenius (c : Coalgebra R A) (hc : c.counit = ε)
+    (hf : letI := c; Coalgebra.IsFrobenius R A) (a x y : A) :
+    traceTensorEquiv ε (c.comul a) (x ⊗ₜ[R] y) = ε (x * a * y) := by
+  let := c
+  let := hf
+  -- Contract the first leg after multiplying it on the left by `x`, then pair the second with `y`.
+  have heval (t : A ⊗[R] A) :
+      traceTensorEquiv ε t (x ⊗ₜ[R] y) =
+        ε (TensorProduct.lid R A (c.counit.rTensor A
+          ((mul' R A).rTensor A ((TensorProduct.assoc R A A A).symm (x ⊗ₜ[R] t)))) * y) := by
+    induction t using TensorProduct.inductionOn with
+    | tmul b z => simp [hc, smul_mul_assoc, map_smul, smul_eq_mul]
+    | add t u ht hu => simp_all [tmul_add, add_mul]
+  have h := congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A => f (x ⊗ₜ[R] a))
+    (Coalgebra.IsFrobenius.right_eq_comul_comp_mul' (R := R) (A := A))
+  simp only [Coalgebra.IsFrobenius.right_def, comp_apply, lTensor_tmul,
+    LinearEquiv.coe_coe, mul'_apply] at h
+  rw [heval, h, Coalgebra.rTensor_counit_comul, TensorProduct.lid_tmul, one_smul]
+
+end NonUnital
+
+end LinearMap
+
+namespace Coalgebra
+
+/-- Two Frobenius coalgebra structures on the same algebra with the same counit are equal. -/
+theorem eq_of_counit_eq_of_isFrobenius {R A : Type*} [CommSemiring R] [NonAssocSemiring A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    (c₁ c₂ : Coalgebra R A) (h₁ : letI := c₁; IsFrobenius R A)
+    (h₂ : letI := c₂; IsFrobenius R A) (hε : c₁.counit = c₂.counit) : c₁ = c₂ := by
+  refine Coalgebra.ext ?_ hε
+  let := c₁; have := h₁
+  ext a
+  apply (LinearMap.traceTensorEquiv c₁.counit).injective
+  refine TensorProduct.ext' fun x y ↦ ?_
+  rw [LinearMap.traceTensorEquiv_comul_of_isFrobenius c₁.counit c₁ rfl h₁,
+    LinearMap.traceTensorEquiv_comul_of_isFrobenius c₁.counit c₂ hε.symm h₂]
+
+end Coalgebra
 
 namespace LinearMap
 
@@ -75,22 +178,21 @@ private theorem frobeniusCoalgebra_comul :
       (TensorProduct.congr d d).symm.toLinearMap ∘ₗ
         Coalgebra.comul ∘ₗ (d).toLinearMap := (rfl)
 
-/-- Tensoring the trace pairing identifies a tensor with the corresponding
-bilinear functional on two copies of the algebra. -/
-def traceTensorEquiv : A ⊗[R] A ≃ₗ[R] Module.Dual R (A ⊗[R] A) :=
-  (TensorProduct.congr d d).trans (TauCeti.ConvolutionDual.dualDistribEquiv R A)
-
-/-- The tensor trace pairing evaluates pure tensors componentwise. -/
-@[simp] theorem traceTensorEquiv_tmul (a b x y : A) :
-    traceTensorEquiv ε (a ⊗ₜ[R] b) (x ⊗ₜ[R] y) = ε (a * x) * ε (b * y) := by
-  simp [traceTensorEquiv]
+private theorem traceTensorEquiv_eq_convolutionDual (t : A ⊗[R] A) :
+    traceTensorEquiv ε t =
+      TauCeti.ConvolutionDual.dualDistribEquiv R A (TensorProduct.congr d d t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul a b =>
+    refine TensorProduct.ext' fun x y ↦ ?_
+    simp [mul_comm]
+  | add t u ht hu => simp_all
 
 /-- The coproduct is adjoint to multiplication for the trace pairing. -/
 @[simp] theorem traceTensorEquiv_frobeniusCoalgebra_comul (a x y : A) :
     traceTensorEquiv ε ((frobeniusCoalgebra ε).comul a) (x ⊗ₜ[R] y) =
       ε (a * (x * y)) := by
-  simp only [frobeniusCoalgebra_comul, comp_apply, traceTensorEquiv,
-    LinearEquiv.trans_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  rw [traceTensorEquiv_eq_convolutionDual, frobeniusCoalgebra_comul]
+  simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
   simp
 
 private theorem traceTensorEquiv_map_mulLeft (a : A) (t : A ⊗[R] A) (x y : A) :
@@ -150,41 +252,12 @@ theorem frobeniusCoalgebra_isFrobenius :
   rw [hl, hr, ← frobeniusCoalgebra_comul_mul_left ε a b,
     ← frobeniusCoalgebra_comul_mul_right ε a b]
 
-/-- The coproduct of any Frobenius coalgebra with counit `ε` is adjoint to
-multiplication for the trace pairing. -/
-theorem traceTensorEquiv_comul_of_isFrobenius (c : Coalgebra R A) (hc : c.counit = ε)
-    (hf : letI := c; Coalgebra.IsFrobenius R A) (a x y : A) :
-    traceTensorEquiv ε (c.comul a) (x ⊗ₜ[R] y) = ε (a * (x * y)) := by
-  let := c
-  let := hf
-  -- Contract the first leg after multiplying it by x, then pair the second with y.
-  have heval (t : A ⊗[R] A) :
-      traceTensorEquiv ε t (x ⊗ₜ[R] y) =
-        ε (TensorProduct.lid R A (c.counit.rTensor A
-          ((mul' R A).rTensor A ((TensorProduct.assoc R A A A).symm (x ⊗ₜ[R] t)))) * y) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul b z => simp [hc, mul_comm b x]
-    | add t u ht hu => simp_all [tmul_add, add_mul]
-  have h := congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A => f (x ⊗ₜ[R] a))
-    (Coalgebra.IsFrobenius.right_eq_comul_comp_mul' (R := R) (A := A))
-  simp only [Coalgebra.IsFrobenius.right_def, comp_apply, lTensor_tmul,
-    LinearEquiv.coe_coe, mul'_apply] at h
-  rw [heval, h, Coalgebra.rTensor_counit_comul, TensorProduct.lid_tmul, one_smul,
-    mul_comm x a, mul_assoc]
-
 /-- A Frobenius coalgebra with the given counit is the trace reconstruction.
 In particular, the reconstruction is independent of any choice of basis. -/
 theorem frobeniusCoalgebra_eq (c : Coalgebra R A) (hc : c.counit = ε)
-    (hf : letI := c; Coalgebra.IsFrobenius R A) : frobeniusCoalgebra ε = c := by
-  have hcomul : (frobeniusCoalgebra ε).comul = c.comul := by
-    ext a
-    apply (traceTensorEquiv ε).injective
-    apply TensorProduct.ext'
-    intro x y
-    rw [traceTensorEquiv_frobeniusCoalgebra_comul,
-      traceTensorEquiv_comul_of_isFrobenius ε c hc hf]
-  have hcounit : (frobeniusCoalgebra ε).counit = c.counit := by simp [hc]
-  exact Coalgebra.ext hcomul hcounit
+    (hf : letI := c; Coalgebra.IsFrobenius R A) : frobeniusCoalgebra ε = c :=
+  Coalgebra.eq_of_counit_eq_of_isFrobenius (frobeniusCoalgebra ε) c
+    (frobeniusCoalgebra_isFrobenius ε) hf (by simp [hc])
 
 omit [Module.Finite R A] [Module.Projective R A] in
 /-- The basis dual to `b` for the trace pairing, with the same indexing type. -/
@@ -202,6 +275,13 @@ omit [Module.Finite R A] [Module.Projective R A] in
     compr₂_apply, mul_apply_apply] using
     congrArg (fun f : Module.Dual R A => f a)
       (((mul R A).compr₂ ε).apply_symm_toPerfPair_self (b.dualBasis i))
+
+omit [Module.Finite R A] [Module.Projective R A] in
+/-- Pairing a basis element with a trace-dual basis element yields the Kronecker delta. -/
+@[simp] theorem apply_mul_traceDualBasis {ι : Type*} [Finite ι] [DecidableEq ι]
+    (b : Module.Basis ι R A) (i j : ι) :
+    ε (b i * traceDualBasis ε b j) = if i = j then 1 else 0 := by
+  rw [mul_comm, traceDualBasis_mul, b.repr_self, Finsupp.single_apply, eq_comm]
 
 omit [Module.Finite R A] [Module.Projective R A] in
 /-- Coordinates in the trace-dual basis are pairings with the original basis. -/
@@ -225,20 +305,33 @@ theorem frobeniusCoalgebra_comul_eq_sum {ι : Type*} [Fintype ι]
   simp only [traceTensorEquiv_tmul, mul_assoc, traceDualBasis_mul]
   symm
   calc
-    ∑ i, ε (b i * x) * b.repr (a * y) i =
-        ∑ i, b.repr (a * y) i • ε (b i * x) := by
+    ∑ i, ε (x * b i) * b.repr (a * y) i =
+        ∑ i, b.repr (a * y) i • ε (x * b i) := by
       apply Finset.sum_congr rfl
       intro i _
       rw [smul_eq_mul, mul_comm]
-    _ = ε ((∑ i, b.repr (a * y) i • b i) * x) := by
-      rw [Finset.sum_mul, map_sum]
-      simp only [smul_mul_assoc, map_smul]
-    _ = ε ((a * y) * x) := by rw [b.sum_repr]
-    _ = ε (a * (x * y)) := by rw [mul_right_comm, mul_assoc]
+    _ = ε (x * ∑ i, b.repr (a * y) i • b i) := by
+      rw [Finset.mul_sum, map_sum]
+      simp only [mul_smul_comm, map_smul]
+    _ = ε (x * (a * y)) := by rw [b.sum_repr]
+    _ = ε (a * (x * y)) := by rw [mul_left_comm]
 
 end LinearMap
 
 namespace TauCeti
+
+/-- In any finite basis `b` of a commutative Frobenius algebra, the comultiplication of `a` is
+`∑ i, b i ⊗ₜ (traceDualBasis counit b i * a)`. -/
+theorem Coalgebra.IsFrobenius.comul_eq_sum {R A : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [Coalgebra R A] [Coalgebra.IsFrobenius R A] {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι R A) (a : A) :
+    Coalgebra.comul (R := R) a =
+      ∑ i, b i ⊗ₜ[R] (LinearMap.traceDualBasis (Coalgebra.counit (R := R) (A := A)) b i * a) := by
+  have hc : (Coalgebra.counit (R := R) (A := A)).frobeniusCoalgebra = ‹Coalgebra R A› :=
+    LinearMap.frobeniusCoalgebra_eq _ _ rfl inferInstance
+  have hcomul := LinearMap.frobeniusCoalgebra_comul_eq_sum (Coalgebra.counit (R := R) (A := A)) b a
+  rw [hc] at hcomul
+  exact hcomul
 
 /-- A perfect trace on a finite projective commutative algebra determines a unique
 coalgebra with that counit satisfying the Frobenius law. -/

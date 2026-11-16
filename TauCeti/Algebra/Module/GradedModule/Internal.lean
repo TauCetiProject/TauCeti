@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.DirectSum.Supported
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Module.Submodule.Finite
 
@@ -86,6 +87,14 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   homogeneous linear map with Koszul twists up to the sign determined by its degree.
 * `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
   twisting a block of a tuple.
+* `TauCeti.mem_of_forall_pairing_eq_zero`: graded-orthogonality criterion for a left-injective
+  bilinear pairing.
+* `TauCeti.even_of_isHomogeneous_ne_zero`: a nonzero homogeneous map between even-supported
+  internally `ℤ`-graded modules has even degree.
+* `TauCeti.eq_bot_iff_of_isHomogeneous_linearEquiv`,
+  `TauCeti.forall_odd_eq_bot_iff_of_isHomogeneous_linearEquiv`, and
+  `TauCeti.isHomogeneous_comp_linearEquiv_iff`: vanishing, even support, and homogeneity under
+  degree-zero linear equivalences.
 
 Later files use Mathlib's decomposition API to define maps of nonzero degree, shifts,
 tensor-product gradings, and signed multilinear operations.
@@ -142,6 +151,12 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
 @[simp]
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
+
+/-- Rebuilding an internal grading from the pieces of `G` recovers `G`. -/
+@[simp]
+theorem ofDecomposition_self (G : InternalGrading R M ι) :
+    ofDecomposition G.piece = G :=
+  ext fun _ ↦ rfl
 
 /-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
 instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from
@@ -369,24 +384,26 @@ variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
 again homogeneous of degree zero. The equivalence may be linear over a ring `S` other than the
 ring `R` over which the homogeneous pieces are submodules. -/
 theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
-    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[S] N}
-    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) :
-    IsHomogeneous e.symm.toLinearMap H.piece G.piece 0 := by
-  -- The restrictions `ep p : G.piece p → H.piece p` assemble to a map of direct sums lying over
-  -- `e`; it is surjective because `e` and both decompositions are, hence so is each `ep p`.
-  let ep : (p : ι) → G.piece p →+ H.piece p := fun p ↦
+    {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
+    {𝒩 : ι → Submodule R N} [DirectSum.Decomposition 𝒩] {e : M ≃ₗ[S] N}
+    (he : IsHomogeneous e.toLinearMap ℳ 𝒩 0) :
+    IsHomogeneous e.symm.toLinearMap 𝒩 ℳ 0 := by
+  -- The restrictions `ep p : ℳ p → 𝒩 p` assemble to a map of direct sums lying over `e`; it is
+  -- surjective because `e` and both decompositions are, hence so is each `ep p`.
+  let ep : (p : ι) → ℳ p →+ 𝒩 p := fun p ↦
     { toFun := fun x ↦ ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem x.2⟩
       map_zero' := Subtype.ext (map_zero e.toLinearMap)
       map_add' := fun x y ↦ Subtype.ext (map_add e.toLinearMap (x : M) (y : M)) }
-  have hcomm : (DirectSum.coeAddMonoidHom H.piece).comp (DirectSum.map ep) =
-      e.toAddEquiv.toAddMonoidHom.comp (DirectSum.coeAddMonoidHom G.piece) := by
+  have hcomm : (DirectSum.coeAddMonoidHom 𝒩).comp (DirectSum.map ep) =
+      e.toAddEquiv.toAddMonoidHom.comp (DirectSum.coeAddMonoidHom ℳ) := by
     apply DirectSum.addHom_ext
     intro p x
     simp [ep]
   have hmap_surj : Function.Surjective (DirectSum.map ep) := by
     intro y
-    obtain ⟨x, hx⟩ := G.isInternal.surjective (e.symm (DirectSum.coeAddMonoidHom H.piece y))
-    refine ⟨x, H.isInternal.injective ?_⟩
+    obtain ⟨x, hx⟩ :=
+      (DirectSum.Decomposition.isInternal ℳ).surjective (e.symm (DirectSum.coeAddMonoidHom 𝒩 y))
+    refine ⟨x, (DirectSum.Decomposition.isInternal 𝒩).injective ?_⟩
     have hc := DFunLike.congr_fun hcomm x
     rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, hx] at hc
     exact hc.trans (e.apply_symm_apply _)
@@ -461,6 +478,112 @@ theorem isHomogeneous_range {ι : Type*} [DecidableEq ι] [AddMonoid ι]
   | add x y hx hy => simpa using Submodule.add_mem _ hx hy
 
 end LinearMap.IsHomogeneous
+
+section Comparisons
+
+/-- If a left-injective bilinear pairing `B : M →ₗ[R] N →ₗ[R] P` between internally graded modules
+vanishes whenever the degrees do not sum to `D`, then any element `v : M` pairing to zero with
+every homogeneous element outside degree `r + k = D` lies in `ℳ r`. -/
+theorem mem_of_forall_pairing_eq_zero {R M N P : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+    {ι : Type*} [DecidableEq ι] [AddRightCancelMonoid ι]
+    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    (𝒩 : ι → Submodule R N) [DirectSum.Decomposition 𝒩]
+    {B : M →ₗ[R] N →ₗ[R] P} (hB_inj : Function.Injective B) {D r : ι}
+    (hB_zero : ∀ {m k : ι}, m + k ≠ D → ∀ {x : M}, x ∈ ℳ m → ∀ {y : N}, y ∈ 𝒩 k → B x y = 0)
+    {v : M} (hv : ∀ {k : ι}, r + k ≠ D → ∀ {y : N}, y ∈ 𝒩 k → B v y = 0) :
+    v ∈ ℳ r := by
+  classical
+  refine (DirectSum.mem_iff_decompose_eq_zero ℳ).mpr fun n hn ↦ ?_
+  apply hB_inj
+  rw [map_zero]
+  refine (InternalGrading.ofDecomposition 𝒩).linearMap_ext fun k y hy ↦ ?_
+  rw [InternalGrading.ofDecomposition_piece] at hy
+  rw [_root_.LinearMap.zero_apply]
+  by_cases hnk : n + k = D
+  · have hsum := congrArg (fun x ↦ B x y) (DirectSum.sum_support_decompose ℳ v)
+    rw [hv (fun hrk ↦ hn (add_right_cancel (hnk.trans hrk.symm))) hy,
+      map_sum, _root_.LinearMap.sum_apply, Finset.sum_eq_single n] at hsum
+    · exact hsum
+    · intro m _ hmn
+      exact hB_zero (fun hmk ↦ hmn (add_right_cancel (hmk.trans hnk.symm)))
+        (DirectSum.decompose ℳ v m).2 hy
+    · intro hnot
+      simp [DFinsupp.notMem_support_iff.mp hnot]
+  · exact hB_zero hnk (DirectSum.decompose ℳ v n).2 hy
+
+/-- If a nonzero homogeneous linear map of degree `q` maps between internally `ℤ`-graded modules
+with even support, then `q` is even. -/
+theorem even_of_isHomogeneous_ne_zero {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ] (𝒩 : ℤ → Submodule R N)
+    (hM : ∀ p : ℤ, Odd p → ℳ p = ⊥) (hN : ∀ p : ℤ, Odd p → 𝒩 p = ⊥)
+    {f : M →ₗ[R] N} {q : ℤ} (hf : LinearMap.IsHomogeneous f ℳ 𝒩 q) (hne : f ≠ 0) :
+    Even q := by
+  by_contra hnot
+  have hodd : Odd q := Int.not_even_iff_odd.mp hnot
+  apply hne
+  refine (InternalGrading.ofDecomposition ℳ).linearMap_ext fun p x hx ↦ ?_
+  rw [InternalGrading.ofDecomposition_piece] at hx
+  rw [_root_.LinearMap.zero_apply]
+  rcases Int.even_or_odd p with hp | hp
+  · have hfx : f x ∈ 𝒩 (p + q) := hf.map_mem hx
+    rw [hN (p + q) (hp.add_odd hodd)] at hfx
+    exact (Submodule.mem_bot R).mp hfx
+  · rw [hM p hp] at hx
+    rw [(Submodule.mem_bot R).mp hx, map_zero]
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- A degree-zero homogeneous linear equivalence preserves and reflects vanishing of each
+homogeneous piece. -/
+theorem eq_bot_iff_of_isHomogeneous_linearEquiv {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    (ℳ : ι → Submodule R M) (𝒩 : ι → Submodule R N)
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+    (e : M ≃ₗ[R] N) (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝒩 0) (p : ι) :
+    ℳ p = ⊥ ↔ 𝒩 p = ⊥ := by
+  have hsymm := he.linearEquiv_symm
+  refine ⟨fun hM ↦ (Submodule.eq_bot_iff _).mpr fun y hy ↦ ?_,
+    fun hN ↦ (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_⟩
+  · have hmem : e.symm y ∈ ℳ p := by
+      simpa only [add_zero, LinearEquiv.coe_coe] using hsymm.map_mem hy
+    rw [hM] at hmem
+    simpa [(Submodule.mem_bot R).mp hmem] using (e.apply_symm_apply y).symm
+  · have hmem : e x ∈ 𝒩 p := by
+      simpa only [add_zero, LinearEquiv.coe_coe] using he.map_mem hx
+    rw [hN] at hmem
+    exact e.injective (by simpa using (Submodule.mem_bot R).mp hmem)
+
+/-- A degree-zero linear equivalence between internally `ℤ`-graded modules preserves and reflects
+even support. -/
+theorem forall_odd_eq_bot_iff_of_isHomogeneous_linearEquiv
+    (ℳ : ℤ → Submodule R M) (𝒩 : ℤ → Submodule R N)
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+    (e : M ≃ₗ[R] N) (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝒩 0) :
+    (∀ p : ℤ, Odd p → ℳ p = ⊥) ↔ (∀ p : ℤ, Odd p → 𝒩 p = ⊥) :=
+  forall_congr' fun p ↦ imp_congr_right fun _ ↦
+    eq_bot_iff_of_isHomogeneous_linearEquiv ℳ 𝒩 e he p
+
+/-- Pulling back a linear map along a degree-zero homogeneous linear equivalence preserves and
+reflects homogeneity of degree `q`. -/
+theorem isHomogeneous_comp_linearEquiv_iff {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    (ℳ : ι → Submodule R M) (𝒩 : ι → Submodule R N)
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+    {P : Type*} [AddCommMonoid P] [Module R P] {σP : Type*} [SetLike σP P]
+    (𝒬 : ι → σP) (e : M ≃ₗ[R] N) (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝒩 0)
+    (f : N →ₗ[R] P) (q : ι) :
+    LinearMap.IsHomogeneous (f ∘ₗ e.toLinearMap) ℳ 𝒬 q ↔
+      LinearMap.IsHomogeneous f 𝒩 𝒬 q := by
+  have hsymm := he.linearEquiv_symm
+  refine ⟨fun h ↦ LinearMap.isHomogeneous_def.mpr fun p y hy ↦ ?_,
+    fun h ↦ by simpa only [zero_add] using h.comp he⟩
+  have hmem : e.symm y ∈ ℳ p := by
+    simpa only [add_zero, LinearEquiv.coe_coe] using hsymm.map_mem hy
+  simpa only [_root_.LinearMap.comp_apply, LinearEquiv.coe_coe, e.apply_symm_apply] using
+    h.map_mem hmem
+
+end Comparisons
 
 section FiniteSupport
 

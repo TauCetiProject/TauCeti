@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
 public import TauCeti.Algebra.Algebra.Frobenius.Graded
 public import TauCeti.Algebra.DualNumber.Grading
-public import TauCeti.Algebra.DualNumber.TensorProduct
 public import TauCeti.Algebra.DualNumber.Trace
 
 /-!
@@ -20,9 +19,10 @@ even-supported grading theory on the dual numbers `R[ε]` over a commutative sem
 
 ## Main results
 
-* `TauCeti.isPerfPair_compr₂_mul_sndHom`, `TauCeti.bilinForm_toMatrix_compr₂_mul_smul_sndHom`,
-  `TauCeti.det_bilinForm_toMatrix_compr₂_mul_smul_sndHom`: the canonical trace pairing is perfect,
-  and `c • TrivSqZeroExt.sndHom R R` has pairing matrix `!![0, c; c, 0]` (determinant `-c ^ 2`).
+* `TauCeti.bilinForm_toMatrix_compr₂_mul_smul_sndHom`,
+  `TauCeti.bilinForm_toMatrix_dualNumberTracePairing`,
+  `TauCeti.det_bilinForm_toMatrix_compr₂_mul_smul_sndHom`: `c • TrivSqZeroExt.sndHom R R` has
+  pairing matrix `!![0, c; c, 0]` (determinant `-c ^ 2`).
 * `TauCeti.isPerfPair_compr₂_mul_smul_sndHom_iff`,
   `TauCeti.isFrobeniusFunctional_smul_sndHom_iff`,
   `TauCeti.isFrobeniusFunctional_two_smul_sndHom_int`,
@@ -33,17 +33,15 @@ even-supported grading theory on the dual numbers `R[ε]` over a commutative sem
   `TauCeti.sndHom_handleElement_frobeniusCoalgebra_sndHom`,
   `TauCeti.handleElement_frobeniusCoalgebra_sndHom_sq`: trace-reconstructed coproduct and handle
   identities.
-* `TauCeti.odd_dualNumberIntegerGrade_eq_bot`,
-  `TauCeti.isHomogeneous_sndHom_dualNumberIntegerGrade`,
-  `TauCeti.isHomogeneous_frobeniusCoalgebra_sndHom_comul`,
-  `TauCeti.handleElement_frobeniusCoalgebra_sndHom_mem_grade`,
-  `TauCeti.sndHom_comp_dualNumberAlgebraTensorAlgEquiv`,
-  `TauCeti.isHomogeneous_dualNumberAlgebraTensorAlgEquiv`: even-supported grading and base change.
+* `TauCeti.isHomogeneous_frobeniusCoalgebra_sndHom_comul`,
+  `TauCeti.handleElement_frobeniusCoalgebra_sndHom_mem_grade`: degree compatibility of the
+  reconstructed comultiplication and handle element with `TauCeti.dualNumberIntegerGrade`.
 
 ## References
 
 * J. Kock, *Frobenius Algebras and 2D Topological Quantum Field Theories*, Chapter 2.
-* J. Goertz, A. Marino, P. Wedrich, *The gl(N) web algebra and foams* (v1), Example 2.9.
+* Goertz–Marino–Wedrich, *Monoidal 2-categories from foam evaluation*, arXiv:2602.11120v1,
+  Example 2.9.
 -/
 
 public section
@@ -55,14 +53,6 @@ namespace TauCeti
 section Pairing
 
 variable (R : Type*) [CommSemiring R]
-
-/-- The canonical trace pairing `(x, y) ↦ (x * y).snd` on `R[ε]` is perfect. -/
-instance isPerfPair_compr₂_mul_sndHom :
-    ((LinearMap.mul R R[ε]).compr₂ (TrivSqZeroExt.sndHom R R)).IsPerfPair := by
-  have h : (LinearMap.mul R R[ε]).compr₂ (TrivSqZeroExt.sndHom R R) = dualNumberTracePairing R := by
-    ext x y; simp
-  rw [h]
-  exact dualNumberTracePairing_isPerfPair R
 
 /-- The matrix of the scaled trace pairing `(x, y) ↦ c * (x * y).snd` in the basis `(1, ε)` is
 `!![0, c; c, 0]`. -/
@@ -89,10 +79,7 @@ theorem isPerfPair_compr₂_mul_smul_sndHom_iff (c : R) :
   · intro h
     obtain ⟨x, hx⟩ := h.bijective_left.surjective (TrivSqZeroExt.sndHom R R)
     have hε := LinearMap.congr_fun hx (DualNumber.eps : R[ε])
-    simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.smul_apply,
-      TrivSqZeroExt.sndHom_apply, smul_eq_mul, DualNumber.snd_mul, DualNumber.fst_eps,
-      DualNumber.snd_eps, mul_one, mul_zero, add_zero] at hε
-    exact isUnit_iff_exists_inv.mpr ⟨x.fst, hε⟩
+    exact isUnit_iff_exists_inv.mpr ⟨x.fst, by simpa using hε⟩
   · rintro ⟨u, rfl⟩
     have hcomp :
         (LinearMap.mul R R[ε]).compr₂ ((u : R) • TrivSqZeroExt.sndHom R R) =
@@ -121,9 +108,7 @@ theorem isFrobeniusFunctional_smul_sndHom_iff_mul_eq_zero (c : R) :
       intro a ha
       have hε := ha (DualNumber.eps : R[ε])
       have h1 := ha (1 : R[ε])
-      simp only [LinearMap.smul_apply, TrivSqZeroExt.sndHom_apply, smul_eq_mul, DualNumber.snd_mul,
-        DualNumber.fst_eps, DualNumber.snd_eps, mul_one, mul_zero, add_zero] at hε h1
-      exact TrivSqZeroExt.ext (hc a.fst hε) (hc a.snd h1)
+      exact TrivSqZeroExt.ext (hc a.fst (by simpa using hε)) (hc a.snd (by simpa using h1))
     exact ⟨hleft, fun b hb ↦ hleft b fun a ↦ by rw [mul_comm]; exact hb a⟩
 
 end Pairing
@@ -144,10 +129,8 @@ theorem det_bilinForm_toMatrix_compr₂_mul_smul_sndHom (c : R) :
 only if `c` is regular. -/
 theorem isFrobeniusFunctional_smul_sndHom_iff (c : R) :
     (c • TrivSqZeroExt.sndHom R R).IsFrobeniusFunctional ↔ IsRegular c := by
-  rw [isFrobeniusFunctional_smul_sndHom_iff_mul_eq_zero, Commute.isRegular_iff (Commute.all c)]
-  refine ⟨fun hc a b hab ↦
-      sub_eq_zero.mp (hc (a - b) (by dsimp at hab; rw [mul_sub, hab, sub_self])),
-    fun hc r hr ↦ hc (by simpa using hr)⟩
+  rw [isFrobeniusFunctional_smul_sndHom_iff_mul_eq_zero, Commute.isRegular_iff (Commute.all c),
+    isLeftRegular_iff_right_eq_zero_of_mul]
 
 /-- Over `ℤ`, the pairing matrix of `2 • TrivSqZeroExt.sndHom ℤ ℤ` in `(1, ε)` has
 determinant `-4`. -/
@@ -205,61 +188,34 @@ theorem frobeniusCoalgebra_sndHom_comul_eps :
   simp [Fin.sum_univ_two]
 
 /-- The handle element of the trace-reconstructed Frobenius algebra `R[ε]` is `2 * ε`. -/
+@[simp]
 theorem handleElement_frobeniusCoalgebra_sndHom :
-    (letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra; Coalgebra.handleElement R R[ε]) =
-      2 * DualNumber.eps := by
+    letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
+    TauCeti.Coalgebra.handleElement R R[ε] = 2 * DualNumber.eps := by
+  let := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
   rw [LinearMap.handleElement_frobeniusCoalgebra_eq_sum (TrivSqZeroExt.sndHom R R)
     (dualNumberBasis R)]
   simp [Fin.sum_univ_two, two_mul]
 
 /-- The canonical trace evaluates the handle element of `R[ε]` to `2`. -/
 theorem sndHom_handleElement_frobeniusCoalgebra_sndHom :
-    TrivSqZeroExt.sndHom R R
-        (letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra; Coalgebra.handleElement R R[ε]) =
-      2 := by
-  rw [handleElement_frobeniusCoalgebra_sndHom]
+    letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
+    TrivSqZeroExt.sndHom R R (TauCeti.Coalgebra.handleElement R R[ε]) = 2 := by
+  let := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
   simp [two_mul, one_add_one_eq_two]
 
 /-- The handle element of the trace-reconstructed Frobenius algebra `R[ε]` squares to zero. -/
 theorem handleElement_frobeniusCoalgebra_sndHom_sq :
-    (letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra; Coalgebra.handleElement R R[ε]) ^ 2 =
-      0 := by
-  rw [handleElement_frobeniusCoalgebra_sndHom]
+    letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
+    TauCeti.Coalgebra.handleElement R R[ε] ^ 2 = 0 := by
+  let := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
   simp [sq, mul_assoc, mul_left_comm]
 
 end CoalgebraAndHandle
 
-section GradedAndBaseChange
+section Graded
 
 variable (R : Type*) [CommSemiring R]
-
-/-- The integer grading `TauCeti.dualNumberIntegerGrade R` has even support: every odd degree piece
-is `⊥`. -/
-theorem odd_dualNumberIntegerGrade_eq_bot {p : ℤ} (hp : Odd p) :
-    dualNumberIntegerGrade R p = ⊥ := by
-  by_cases hneg : p < 0
-  · exact dualNumberIntegerGrade_eq_bot_of_neg R hneg
-  · lift p to ℕ using (not_lt.mp hneg)
-    rw [dualNumberIntegerGrade_ofNat]
-    rcases hp with ⟨k, hk⟩
-    exact dualNumberGrade_eq_bot R (by omega) (by omega)
-
-/-- With `deg ε = 2`, the canonical trace `TrivSqZeroExt.sndHom R R` is homogeneous of degree
-`-2`. -/
-theorem isHomogeneous_sndHom_dualNumberIntegerGrade :
-    TauCeti.LinearMap.IsHomogeneous (TrivSqZeroExt.sndHom R R)
-      (dualNumberIntegerGrade R) (trivialGrading R R) (-2) := by
-  rw [isHomogeneous_trivialGrading_neg_iff]
-  intro p hp x hx
-  by_cases hneg : p < 0
-  · rw [dualNumberIntegerGrade_eq_bot_of_neg R hneg] at hx
-    simp [(Submodule.mem_bot R).mp hx]
-  · lift p to ℕ using (not_lt.mp hneg)
-    rw [dualNumberIntegerGrade_ofNat] at hx
-    rcases eq_or_ne p 0 with rfl | h0
-    · exact (mem_dualNumberGrade_zero R).mp hx
-    · rw [dualNumberGrade_eq_bot R h0 (by omega)] at hx
-      simp [(Submodule.mem_bot R).mp hx]
 
 /-- With `deg ε = 2`, the trace-reconstructed comultiplication on `R[ε]` is homogeneous of degree
 `2`. -/
@@ -275,47 +231,13 @@ theorem isHomogeneous_frobeniusCoalgebra_sndHom_comul :
 
 /-- With `deg ε = 2`, the handle element of `R[ε]` lies in degree `2`. -/
 theorem handleElement_frobeniusCoalgebra_sndHom_mem_grade :
-    (letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra; Coalgebra.handleElement R R[ε]) ∈
-      dualNumberIntegerGrade R 2 := by
+    letI := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
+    TauCeti.Coalgebra.handleElement R R[ε] ∈ dualNumberIntegerGrade R 2 := by
+  let := (TrivSqZeroExt.sndHom R R).frobeniusCoalgebra
   rw [handleElement_frobeniusCoalgebra_sndHom, two_mul]
   exact (dualNumberIntegerGrade R 2).add_mem
     (eps_mem_dualNumberIntegerGrade_two R) (eps_mem_dualNumberIntegerGrade_two R)
 
-variable (S : Type*) [CommSemiring S] [Algebra R S]
-
-/-- Base change `S ⊗[R] R[ε] ≃ₐ[S] S[ε]` intertwines the canonical traces of `R[ε]` and
-`S[ε]`. -/
-theorem sndHom_comp_dualNumberAlgebraTensorAlgEquiv :
-    TrivSqZeroExt.sndHom S S ∘ₗ (dualNumberAlgebraTensorAlgEquiv R S).toLinearMap =
-      Module.Dual.baseChange S (TrivSqZeroExt.sndHom R R) :=
-  TensorProduct.AlgebraTensorModule.ext fun _ _ ↦ by simp [Algebra.smul_def, mul_comm]
-
-/-- Base change `S ⊗[R] R[ε] ≃ₐ[S] S[ε]` is homogeneous of degree zero between the
-base-changed integer grading and `TauCeti.dualNumberIntegerGrade S`. -/
-theorem isHomogeneous_dualNumberAlgebraTensorAlgEquiv :
-    TauCeti.LinearMap.IsHomogeneous (dualNumberAlgebraTensorAlgEquiv R S).toLinearMap
-      (fun p ↦ (dualNumberIntegerGrade R p).baseChange S) (dualNumberIntegerGrade S) 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
-  intro p z hz
-  rw [add_zero]
-  have hle : (dualNumberIntegerGrade R p).baseChange S ≤
-      (dualNumberIntegerGrade S p).comap (dualNumberAlgebraTensorAlgEquiv R S).toLinearMap := by
-    rw [Submodule.baseChange_eq_span, Submodule.span_le]
-    rintro _ ⟨x, hx, rfl⟩
-    rw [SetLike.mem_coe] at hx
-    rw [SetLike.mem_coe, Submodule.mem_comap, TensorProduct.mk_apply]
-    by_cases hneg : p < 0
-    · rw [dualNumberIntegerGrade_eq_bot_of_neg R hneg] at hx
-      simp [(Submodule.mem_bot R).mp hx]
-    · lift p to ℕ using (not_lt.mp hneg)
-      rw [dualNumberIntegerGrade_ofNat] at hx ⊢
-      rcases eq_or_ne p 0 with rfl | h0
-      · rw [mem_dualNumberGrade_zero] at hx ⊢; simp [hx]
-      · rcases eq_or_ne p 2 with rfl | h2
-        · rw [mem_dualNumberGrade_two] at hx ⊢; simp [hx]
-        · rw [dualNumberGrade_eq_bot R h0 h2] at hx; simp [(Submodule.mem_bot R).mp hx]
-  exact hle hz
-
-end GradedAndBaseChange
+end Graded
 
 end TauCeti

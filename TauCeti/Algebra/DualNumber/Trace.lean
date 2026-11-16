@@ -20,6 +20,7 @@ associative bilinear form obtained by taking the infinitesimal coefficient of a 
 
 * `TauCeti.dualNumberTracePairing`: the Frobenius trace pairing on the dual numbers.
 * `TauCeti.dualNumberTracePairing_isPerfPair`: the trace pairing is perfect.
+* `TauCeti.isPerfPair_compr₂_mul_sndHom`: typeclass bridge for the unfolded trace pairing.
 * `TauCeti.dualNumberTracePairing_isSymm`: the trace pairing is symmetric.
 * `TauCeti.dualNumberTracePairing_mul_assoc`: the trace pairing is associative.
 -/
@@ -90,6 +91,13 @@ instance dualNumberTracePairing_isPerfPair : (dualNumberTracePairing k).IsPerfPa
     simp only [LinearMap.flip_apply]
     rw [(dualNumberTracePairing_isSymm k).eq z x]
     exact LinearMap.congr_fun hx z
+
+/-- Typeclass bridge exposing `dualNumberTracePairing_isPerfPair` under the unfolded pairing head
+`(LinearMap.mul k (DualNumber k)).compr₂ (TrivSqZeroExt.sndHom k k)`, since `dualNumberTracePairing`
+is semireducible and typeclass search does not unfold it automatically. -/
+instance isPerfPair_compr₂_mul_sndHom :
+    ((LinearMap.mul k (DualNumber k)).compr₂ (TrivSqZeroExt.sndHom k k)).IsPerfPair :=
+  dualNumberTracePairing_isPerfPair k
 
 /-- The Frobenius trace pairing on the dual numbers is associative with multiplication. -/
 theorem dualNumberTracePairing_mul_assoc (x y z : DualNumber k) :

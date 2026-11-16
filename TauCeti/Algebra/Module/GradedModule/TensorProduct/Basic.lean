@@ -45,6 +45,8 @@ degrees. This grading is used by tensor products of differential graded objects.
   `TauCeti.InternalGrading.isHomogeneous_assoc_symm`: reassociation preserves total degree.
 * `TauCeti.InternalGrading.koszulTwist_tensorProduct`: the Koszul twist of the total grading is
   the tensor product of the Koszul twists of the factors.
+* `TauCeti.tensorProduct_piece_eq_bot_of_odd`: the tensor product of even-supported internally
+  `ℤ`-graded modules is even-supported.
 
 The construction reuses `DirectSum.IsInternal.tensorProduct` for the bidegree decomposition
 and `DirectSum.IsInternal.iSup_fiber` to collect equal total degrees.
@@ -189,6 +191,32 @@ theorem isHomogeneous_assoc {P : Type w'} [AddCommMonoid P] [Module R P]
   exact (isHomogeneous_assoc_symm G H K).linearEquiv_symm
 
 end Internal
+
+end InternalGrading
+
+/-- The total-degree tensor product of two even-supported internally `ℤ`-graded modules is
+even-supported. -/
+theorem tensorProduct_piece_eq_bot_of_odd {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (ℳ : ℤ → Submodule R M) (𝒩 : ℤ → Submodule R N)
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+    (hM : ∀ p : ℤ, Odd p → ℳ p = ⊥) (hN : ∀ p : ℤ, Odd p → 𝒩 p = ⊥)
+    {n : ℤ} (hn : Odd n) :
+    ((InternalGrading.ofDecomposition ℳ).tensorProduct
+      (InternalGrading.ofDecomposition 𝒩)).piece n = ⊥ := by
+  rw [eq_bot_iff]
+  refine (InternalGrading.ofDecomposition ℳ).tensorProduct_piece_le
+    (InternalGrading.ofDecomposition 𝒩) (C := ⊥) fun p x hx y hy ↦ ?_
+  simp only [InternalGrading.ofDecomposition_piece] at hx hy
+  rw [Submodule.mem_bot]
+  rcases Int.even_or_odd p with ⟨m, rfl⟩ | hp
+  · rcases hn with ⟨k, rfl⟩
+    rw [hN _ ⟨k - m, by ring⟩] at hy
+    rw [(Submodule.mem_bot R).mp hy, TensorProduct.tmul_zero]
+  · rw [hM p hp] at hx
+    rw [(Submodule.mem_bot R).mp hx, TensorProduct.zero_tmul]
+
+namespace InternalGrading
 
 section KoszulTwist
 
