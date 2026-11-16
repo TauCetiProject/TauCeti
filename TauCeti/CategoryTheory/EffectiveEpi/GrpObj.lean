@@ -65,11 +65,13 @@ hypothesis on `p` for any fpqc or fppf morphism of schemes, so the results are e
   `TauCeti.DescentDatum.Hom.eq_descendMonObj`, `TauCeti.DescentDatum.Hom.eq_descendGrpObj`:
   uniqueness of the descended structure.
 * `TauCeti.isCommMonObj_descendMonObj`, `TauCeti.isCommMonObj_descendGrpObj`,
+  `TauCeti.DescentDatum.Hom.isCommMonObj_of_mono`,
   `TauCeti.DescentDatum.Hom.isCommMonObj_descendMonObj`,
   `TauCeti.DescentDatum.Hom.isCommMonObj_descendGrpObj`: the descended structure is commutative if
   the given one is.
-* `TauCeti.isMonHom_descendHom`, `TauCeti.DescentDatum.Hom.isMonHom_descend`: a homomorphism
-  satisfying the descent condition descends to a homomorphism.
+* `TauCeti.isMonHom_descendHom`, `TauCeti.DescentDatum.Hom.isMonHom_descend`,
+  `TauCeti.DescentDatum.Hom.isMonHom_of_comp_eq_baseChangeHom`: a homomorphism satisfying the
+  descent condition (or intertwining morphisms of descent data) descends to a homomorphism.
 -/
 
 public section
@@ -249,6 +251,18 @@ instance Hom.isMonHom_descend {X Y : Over S} [MonObj X] [MonObj Y]
   rw [← (Over.pullback p).isMonHom_map_iff, ← baseChangeHom_hom, baseChangeHom_descend]
   infer_instance
 
+/-- **Compatibility of descended morphisms with monoid structures.** If `u : X ⟶ Y` in `Over S`
+intertwines monoid-homomorphism morphisms of descent data `g : baseChange p X ⟶ D` and
+`f : D ⟶ baseChange p Y` via `f.comp g = baseChangeHom p u`, then `u` is a monoid
+homomorphism. -/
+theorem Hom.isMonHom_of_comp_eq_baseChangeHom {X Y : Over S} [MonObj X] [MonObj Y]
+    {Z : Over S'} [MonObj Z] {D : DescentDatum p Z}
+    (f : Hom D (baseChange p Y)) (g : Hom (baseChange p X) D) [IsMonHom f.hom] [IsMonHom g.hom]
+    {u : X ⟶ Y} (h : f.comp g = baseChangeHom p u) :
+    IsMonHom u := by
+  rw [← (Over.pullback p).isMonHom_map_iff, ← baseChangeHom_hom, ← h, Hom.comp_hom]
+  infer_instance
+
 /-- **Uniqueness isomorphism of descended monoid objects.** If `f : baseChange p X ⟶ D` and
 `g : baseChange p Y ⟶ D` are isomorphisms of descent data whose underlying morphisms in `Over S'`
 are monoid homomorphisms, then the comparison isomorphism `f.descendIso g : X ≅ Y` is a monoid
@@ -327,15 +341,15 @@ theorem Hom.eq_descendMonObj (h : MonObj X₀) (hf : letI := h; IsMonHom f.hom) 
   (Over.pullback p).monObjObj_injective X₀
     (monObj_eq_of_mono f.hom _ _ hf f.isMonHom_hom_descendMonObj)
 
-/-- **Descent of commutativity along an isomorphism of descent data.** If
-`f : baseChange p X₀ ⟶ D` is an isomorphism of descent data whose underlying morphism in `Over S'`
-is a monoid homomorphism and `Y` is a commutative monoid object, then `X₀` is a commutative monoid
-object. -/
-theorem Hom.isCommMonObj_of_isIso {X₀ : Over S} [MonObj X₀] {Y : Over S'} [MonObj Y]
+/-- **Descent of commutativity along a monomorphic comparison of descent data.** If
+`f : baseChange p X₀ ⟶ D` is a morphism of descent data whose underlying morphism in `Over S'` is
+a monomorphic monoid homomorphism and `Y` is a commutative monoid object, then `X₀` is a
+commutative monoid object. -/
+theorem Hom.isCommMonObj_of_mono {X₀ : Over S} [MonObj X₀] {Y : Over S'} [MonObj Y]
     [IsCommMonObj Y] {D : DescentDatum p Y} (f : Hom (baseChange p X₀) D)
-    [IsIso f.hom] [IsMonHom f.hom] :
+    [Mono f.hom] [IsMonHom f.hom] :
     IsCommMonObj X₀ :=
-  ((Over.pullback p).isCommMonObj_obj_iff X₀).1 (isCommMonObj_of_mono f.hom)
+  ((Over.pullback p).isCommMonObj_obj_iff X₀).1 (TauCeti.isCommMonObj_of_mono f.hom)
 
 /-- **Descent of commutativity along an effective descent datum.** If `Y` is a commutative monoid
 object, so is `X₀` equipped with `f.descendMonObj`. -/
@@ -344,7 +358,7 @@ theorem Hom.isCommMonObj_descendMonObj [IsCommMonObj Y] :
     IsCommMonObj X₀ := by
   let := f.descendMonObj
   have := f.isMonHom_hom_descendMonObj
-  exact f.isCommMonObj_of_isIso
+  exact f.isCommMonObj_of_mono
 
 end MonObj
 

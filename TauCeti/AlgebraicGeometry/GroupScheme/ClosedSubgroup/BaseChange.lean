@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.CategoryTheory.Comma.Over
-import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
 /-!
 # Base change of closed subgroup schemes
@@ -207,50 +206,6 @@ private theorem pullbackCompIso_inv_hom_hom {Z : Scheme.{u}} (t : Z ⟶ Y) (s : 
   simp only [pullbackCompIso]
   exact Category.comp_id _
 
-private theorem pullbackComp_hom_fst_fst {Z : Scheme.{u}} (t : Z ⟶ Y) (s : Y ⟶ X) (A : Over X) :
-    ((Over.pullbackComp t s).hom.app A).left ≫
-        pullback.fst ((Over.pullback s).obj A).hom t ≫ pullback.fst A.hom s =
-      pullback.fst A.hom (t ≫ s) := by
-  simp [Over.pullbackComp]
-
-private theorem pullbackComp_hom_fst_snd {Z : Scheme.{u}} (t : Z ⟶ Y) (s : Y ⟶ X) (A : Over X) :
-    ((Over.pullbackComp t s).hom.app A).left ≫
-        pullback.fst ((Over.pullback s).obj A).hom t ≫ pullback.snd A.hom s =
-      pullback.snd A.hom (t ≫ s) ≫ t := by
-  simp [Over.pullbackComp]
-
-private theorem pullbackComp_inv_fst {Z : Scheme.{u}} (t : Z ⟶ Y) (s : Y ⟶ X) (A : Over X) :
-    ((Over.pullbackComp t s).inv.app A).left ≫ pullback.fst A.hom (t ≫ s) =
-      pullback.fst ((Over.pullback s).obj A).hom t ≫ pullback.fst A.hom s := by
-  simp [Over.pullbackComp]
-
-@[reassoc]
-private theorem pullbackComp_inv_snd {Z : Scheme.{u}} (t : Z ⟶ Y) (s : Y ⟶ X) (A : Over X) :
-    ((Over.pullbackComp t s).inv.app A).left ≫ pullback.snd A.hom (t ≫ s) =
-      pullback.snd ((Over.pullback s).obj A).hom t := by
-  simp [Over.pullbackComp]
-
-private theorem overlapOver_left_fst (p : Y ⟶ X) (A : Over X) :
-    (((Over.pullbackComp (pullback.fst p p) p).inv.app A).left ≫
-        eqToHom (congrArg (fun f ↦ pullback A.hom f) (pullback.condition (f := p) (g := p))) ≫
-        ((Over.pullbackComp (pullback.snd p p) p).hom.app A).left) ≫
-      pullback.fst ((Over.pullback p).obj A).hom (pullback.snd p p) =
-      pullback.lift
-        (pullback.fst ((Over.pullback p).obj A).hom (pullback.fst p p) ≫ pullback.fst A.hom p)
-        (pullback.snd ((Over.pullback p).obj A).hom (pullback.fst p p) ≫ pullback.snd p p)
-        (by
-          rw [Category.assoc, pullback.condition, ← Over.pullback_obj_hom p A,
-            pullback.condition_assoc, pullback.condition, Category.assoc]) := by
-  refine pullback.hom_ext ?_ ?_
-  · rw [pullback.lift_fst, Category.assoc, Category.assoc, Category.assoc,
-      pullbackComp_hom_fst_fst,
-      eqToHom_comp_pullback_fst A.hom (pullback.condition (f := p) (g := p)),
-      pullbackComp_inv_fst]
-  · rw [pullback.lift_snd, Category.assoc, Category.assoc, Category.assoc,
-      pullbackComp_hom_fst_snd,
-      eqToHom_comp_pullback_snd_assoc A.hom (pullback.condition (f := p) (g := p)),
-      pullbackComp_inv_snd_assoc]
-
 /-- On underlying schemes, `overlapIso p G` sends `((g, y₁), (y₁, y₂))` in
 `(G ×_X Y) ×_Y (Y ×_X Y)` to `((g, y₂), (y₁, y₂))`: its first projection to `G ×_X Y` pairs the
 `G`-coordinate `g` with the second `Y`-coordinate `y₂`. -/
@@ -283,7 +238,8 @@ theorem overlapIso_hom_left_fst (p : Y ⟶ X) (G : Grp (Over X)) :
     simp only [Over.comp_left, Over.eqToHom_left]
     rfl
   exact (congrArg (· ≫ pullback.fst ((Over.pullback p).obj G.X).hom (pullback.snd p p))
-    hleft).trans (overlapOver_left_fst p G.X)
+    hleft).trans ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
+      (Over.pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst p G.X)))
 
 /-- The two pullbacks to `Y ×_X Y` of the base change `baseChange p P` of any closed subgroup
 scheme `P` of `G` agree under `overlapIso p G`. -/
