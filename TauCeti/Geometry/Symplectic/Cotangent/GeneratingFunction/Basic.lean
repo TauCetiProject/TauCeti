@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import TauCeti.Analysis.Calculus.DifferentialForm.Exact
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
@@ -122,6 +123,13 @@ theorem cotangentGeneratingTarget_fst (S : V × W → ℝ) (x : V × W) :
 theorem cotangentGeneratingTarget_snd_apply (S : V × W → ℝ) (x : V × W) (b : W) :
     (cotangentGeneratingTarget S x).2 b = -fderiv ℝ S x (0, b) :=
   (rfl)
+
+/-- The target covector is minus the derivative of the second-variable slice. -/
+theorem cotangentGeneratingTarget_snd_eq_neg_fderiv_slice {q : V} {Q : W}
+    (hS : DifferentiableAt ℝ S (q, Q)) :
+    (cotangentGeneratingTarget S (q, Q)).2 = -fderiv ℝ (fun z ↦ S (q, z)) Q := by
+  rw [fderiv_slice_right hS]
+  rfl
 
 /-- The differential of the generating function of the reversed relation. -/
 theorem fderiv_cotangentGeneratingReverse (S : V × W → ℝ) (x : V × W)

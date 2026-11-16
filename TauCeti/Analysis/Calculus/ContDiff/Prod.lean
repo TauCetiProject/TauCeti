@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
@@ -137,15 +138,12 @@ theorem comp_graph_of_fderiv_right_eq_zero {n : WithTop ℕ∞} {f : P × E → 
         ((hf.fderiv_right (m := (n + 1 : ℕ)) le_rfl).comp p hgraph).clm_comp contDiffAt_const
       -- Along the graph the vertical derivative vanishes, leaving the horizontal derivative `d`.
       have hhas : ∀ᶠ q in nhds p, HasFDerivAt (fun q ↦ f (q, ψ q)) (d q) q := by
-        have hf₁ : ContDiffAt 𝕜 1 f (p, ψ p) := hf.of_le le_add_self
-        have hψ₁ : ContDiffAt 𝕜 1 ψ p := hψ.of_le (by simp)
-        filter_upwards [hcrit, hgraph.continuousAt.eventually (hf₁.eventually (by simp)),
-          hψ₁.eventually (by simp)] with q hq hfq hψq
-        have hfq' := hfq.differentiableAt one_ne_zero
-        have hψq' := hψq.differentiableAt one_ne_zero
+        filter_upwards [hcrit,
+          hgraph.continuousAt.eventually (hf.eventually_differentiableAt le_add_self),
+          hψ.eventually_differentiableAt (by simp)] with q hq hfq' hψq'
         have hcomp : DifferentiableAt 𝕜 (fun q ↦ f (q, ψ q)) q :=
           hfq'.comp q (differentiableAt_id.prodMk hψq')
-        convert hcomp.hasFDerivAt using 1
+        refine hcomp.hasFDerivAt.congr_fderiv ?_
         rw [hfq'.hasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hψq' hq,
           TauCeti.fderiv_slice_left hfq']
       exact contDiffAt_succ_iff_hasFDerivAt.2 ⟨d, Filter.eventually_iff_exists_mem.1 hhas, hd⟩

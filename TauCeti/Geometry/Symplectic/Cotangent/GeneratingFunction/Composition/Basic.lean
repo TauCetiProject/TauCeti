@@ -115,11 +115,9 @@ theorem cotangentGeneratingTarget_eq_cotangentGeneratingSource_iff
   have hF : DifferentiableAt ℝ (cotangentGeneratingSum S T) ((q, Q), a) :=
     (hS.comp ((q, Q), a) (differentiableAt_fst.fst.prodMk differentiableAt_snd)).add
       (hT.comp ((q, Q), a) (differentiableAt_snd.prodMk differentiableAt_fst.snd))
-  rw [← cotangentGeneratingTarget_sum_snd_eq_zero_iff (x := ((q, Q), a)) hS hT]
-  have hslice := fderiv_slice_right hF
-  simp only [cotangentGeneratingSum_apply] at hslice
-  simp only [hslice, ContinuousLinearMap.ext_iff, cotangentGeneratingTarget_snd_apply,
-    ContinuousLinearMap.comp_apply, inr_apply, _root_.zero_apply, neg_eq_zero]
+  rw [← cotangentGeneratingTarget_sum_snd_eq_zero_iff (x := ((q, Q), a)) hS hT,
+    cotangentGeneratingTarget_snd_eq_neg_fderiv_slice hF, neg_eq_zero]
+  simp only [cotangentGeneratingSum_apply]
 
 /-- Along a differentiable stationary branch, the intermediate derivatives cancel.
 The differential of the critical value is the sum of the two outer derivatives. -/
@@ -135,13 +133,8 @@ theorem fderiv_cotangentGeneratingSum_comp_graph_apply
     (hS.comp (y, b y) (differentiableAt_fst.fst.prodMk differentiableAt_snd)).add
       (hT.comp (y, b y) (differentiableAt_snd.prodMk differentiableAt_fst.snd))
   have hzero : fderiv ℝ (fun z ↦ cotangentGeneratingSum S T (y, z)) (b y) = 0 := by
-    rw [fderiv_slice_right hF]
-    ext z
-    have hcrit := (cotangentGeneratingTarget_sum_snd_eq_zero_iff
-      (x := (y, b y)) hS hT).2 hmatch
-    have hh := congrArg (fun p : StrongDual ℝ W ↦ p z) hcrit
-    simpa only [cotangentGeneratingTarget_snd_apply, _root_.zero_apply,
-      ContinuousLinearMap.comp_apply, inr_apply, neg_eq_zero] using hh
+    rw [← neg_eq_zero, ← cotangentGeneratingTarget_snd_eq_neg_fderiv_slice hF]
+    exact (cotangentGeneratingTarget_sum_snd_eq_zero_iff (x := (y, b y)) hS hT).2 hmatch
   rw [hF.hasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hb hzero,
     fderiv_slice_left hF, ContinuousLinearMap.comp_apply, inl_apply,
     fderiv_cotangentGeneratingSum_apply hS hT]
@@ -235,18 +228,6 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
   let R : V × U → ℝ := fun y ↦ F (y, b y)
   have hFat : ContDiffAt ℝ (n + 2) F ((q, Q), b (q, Q)) := by
     simpa only [hb₀] using hF
-  -- The branch is stationary, so the critical value gains one order over the chain rule.
-  have hcrit : ∀ᶠ y in 𝓝 (q, Q), fderiv ℝ (fun z ↦ F (y, z)) (b y) = 0 := by
-    have hto : Tendsto (fun y ↦ (y, b y)) (𝓝 (q, Q)) (𝓝 ((q, Q), a)) := by
-      simpa only [hb₀, id_eq] using (continuousAt_id.prodMk hb.continuousAt).tendsto
-    filter_upwards [hto.eventually (hunique.and (hF₂.eventually_differentiableAt (by norm_num)))]
-      with y hy
-    rw [fderiv_slice_right hy.2]
-    ext z
-    have hzy := congrArg (fun p : StrongDual ℝ W ↦ p z) (hy.1.2 rfl)
-    simpa only [G, cotangentGeneratingTarget_snd_apply, _root_.zero_apply,
-      ContinuousLinearMap.comp_apply, inr_apply, neg_eq_zero] using hzy
-  have hR : ContDiffAt ℝ (n + 2) R (q, Q) := hFat.comp_graph_of_fderiv_right_eq_zero hb hcrit
   have hg₁ : ContinuousAt (fun x : (V × U) × W ↦ (x.1.1, x.2)) ((q, Q), a) := by fun_prop
   have hg₂ : ContinuousAt (fun x : (V × U) × W ↦ (x.2, x.1.2)) ((q, Q), a) := by fun_prop
   have hs := (hg₁.eventually (hS₂.eventually_differentiableAt (by norm_num))).and
@@ -256,6 +237,13 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
         cotangentGeneratingSource T (x.2, x.1.2) ↔ b x.1 = x.2 := by
     filter_upwards [hunique, hs] with x hx hxs
     exact (cotangentGeneratingTarget_sum_snd_eq_zero_iff hxs.1 hxs.2).symm.trans hx
+  -- The branch is stationary, so the critical value gains one order over the chain rule.
+  have hcrit : ∀ᶠ y in 𝓝 (q, Q), fderiv ℝ (fun z ↦ F (y, z)) (b y) = 0 := by
+    have hto : Tendsto (fun y ↦ (y, b y)) (𝓝 (q, Q)) (𝓝 ((q, Q), a)) := by
+      simpa only [hb₀, id_eq] using (continuousAt_id.prodMk hb.continuousAt).tendsto
+    filter_upwards [hto.eventually (hmatching.and hs)] with y ⟨hm, hSy, hTy⟩
+    exact (cotangentGeneratingTarget_eq_cotangentGeneratingSource_iff hSy hTy).1 (hm.2 rfl)
+  have hR : ContDiffAt ℝ (n + 2) R (q, Q) := hFat.comp_graph_of_fderiv_right_eq_zero hb hcrit
   -- Along the stationary branch, differentiation gives both endpoint covectors.
   have hrelations := eventually_cotangentGeneratingSum_comp_graph_relations hs
     (hb.of_le (by simp : (1 : WithTop ℕ∞) ≤ n + 1)) hb₀ hmatching
