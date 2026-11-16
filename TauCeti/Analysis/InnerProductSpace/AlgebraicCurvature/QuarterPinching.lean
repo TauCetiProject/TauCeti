@@ -60,9 +60,8 @@ private theorem apply_add_smul_self_mem_Icc_of_span {r : FourTensor V} {f : Fin 
     {s₁ s₂ : ℝ} (hs₁ : s₁ = 1 ∨ s₁ = -1) (hs₂ : s₂ = 1 ∨ s₂ = -1) :
     4 * a ≤ r ![f i + s₁ • f j, f k + s₂ • f l, f i + s₁ • f j, f k + s₂ • f l] ∧
       r ![f i + s₁ • f j, f k + s₂ • f l, f i + s₁ • f j, f k + s₂ • f l] ≤ 4 * b := by
-  have hf4 : Orthonormal ℝ ![f i, f j, f k, f l] :=
-    (show f ∘ ![i, j, k, l] = ![f i, f j, f k, f l] by funext t; fin_cases t <;> rfl) ▸
-      hf.comp ![i, j, k, l] hinj
+  have hcomp : f ∘ ![i, j, k, l] = ![f i, f j, f k, f l] := by funext t; fin_cases t <;> rfl
+  have hf4 : Orthonormal ℝ ![f i, f j, f k, f l] := hcomp ▸ hf.comp ![i, j, k, l] hinj
   have hfs : Orthonormal ℝ ![f i, s₁ • f j, f k, s₂ • f l] :=
     hf4.orthonormal_of_forall_eq_or_eq_neg fun t ↦ by
       fin_cases t
@@ -179,9 +178,7 @@ theorem mem_interior_isPIC2FourFrame_of_sectional_mem_Icc (r : algebraicCurvatur
 theorem IsPIC2FourFrame.sectionalMin_nonneg {r : FourTensor V} (hpic : IsPIC2FourFrame r)
     (hn : 4 ≤ Module.finrank ℝ V) : 0 ≤ sectionalMin r := by
   rw [sectionalMin_def]; refine Real.sInf_nonneg ?_; rintro _ ⟨u, hu, rfl⟩
-  have hu' : Orthonormal ℝ ![u 0, u 1] := by
-    rwa [show ![u 0, u 1] = u by funext i; fin_cases i <;> rfl]
-  obtain ⟨f, hf, h0, h2⟩ := hu'.exists_fin_four_extension hn
+  obtain ⟨f, hf, h0, h2⟩ := (hu.pair zero_ne_one).exists_fin_four_extension hn
   simpa only [pic2Expression_zero_zero, h0, h2] using
     (isPIC2FourFrame_def r).1 hpic f hf 0 (by norm_num) 0 (by norm_num)
 
@@ -270,31 +267,26 @@ theorem fubiniStudy_apply (J : AlmostComplexStructure V) (u v z w : V) :
       ⟪J u, z⟫_ℝ * ⟪J v, w⟫_ℝ - ⟪J u, w⟫_ℝ * ⟪J v, z⟫_ℝ + 2 * ⟪J u, v⟫_ℝ * ⟪J z, w⟫_ℝ := by
   simp [fubiniStudy]
 
-omit [FiniteDimensional ℝ V] in
-private theorem inner_J_left_eq_neg {J : AlmostComplexStructure V}
-    (hJ : ∀ u v, ⟪J u, J v⟫_ℝ = ⟪u, v⟫_ℝ) (x y : V) : ⟪J x, y⟫_ℝ = -⟪J y, x⟫_ℝ := by
-  simpa only [innerₗ_apply_apply, real_inner_comm x (J y)] using
-    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ x y
-
 /-- For orthogonal `J`, `fubiniStudy J` is an algebraic curvature tensor. -/
 theorem isAlgebraicCurvature_fubiniStudy {J : AlmostComplexStructure V}
     (hJ : ∀ u v, ⟪J u, J v⟫_ℝ = ⟪u, v⟫_ℝ) : IsAlgebraicCurvature (fubiniStudy J) := by
   refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
     simp only [fubiniStudy_apply]
-  · rw [inner_J_left_eq_neg hJ v u]; ring
-  · rw [inner_J_left_eq_neg hJ w z]; ring
+  · rw [J.inner_apply_left_eq_neg_swap hJ v u]; ring
+  · rw [J.inner_apply_left_eq_neg_swap hJ w z]; ring
   · rw [real_inner_comm u z, real_inner_comm v w, real_inner_comm v z, real_inner_comm u w,
-      inner_J_left_eq_neg hJ z u, inner_J_left_eq_neg hJ w v, inner_J_left_eq_neg hJ z v,
-      inner_J_left_eq_neg hJ w u]; ring
-  · rw [real_inner_comm u z, real_inner_comm u v, real_inner_comm v z, inner_J_left_eq_neg hJ v u,
-      inner_J_left_eq_neg hJ z u, inner_J_left_eq_neg hJ z v]; ring
+      J.inner_apply_left_eq_neg_swap hJ z u, J.inner_apply_left_eq_neg_swap hJ w v,
+      J.inner_apply_left_eq_neg_swap hJ z v, J.inner_apply_left_eq_neg_swap hJ w u]; ring
+  · rw [real_inner_comm u z, real_inner_comm u v, real_inner_comm v z,
+      J.inner_apply_left_eq_neg_swap hJ v u, J.inner_apply_left_eq_neg_swap hJ z u,
+      J.inner_apply_left_eq_neg_swap hJ z v]; ring
 
 /-- With orthogonal `J`, `fubiniStudy J ![u, v, u, v] = ‖u‖² ‖v‖² - ⟪u, v⟫² + 3 ⟪J u, v⟫²`. -/
 theorem fubiniStudy_apply_self {J : AlmostComplexStructure V}
     (hJ : ∀ u v, ⟪J u, J v⟫_ℝ = ⟪u, v⟫_ℝ) (u v : V) :
     fubiniStudy J ![u, v, u, v] = ‖u‖ ^ 2 * ‖v‖ ^ 2 - ⟪u, v⟫_ℝ ^ 2 + 3 * ⟪J u, v⟫_ℝ ^ 2 := by
   rw [fubiniStudy_apply, J.inner_apply_self hJ u, J.inner_apply_self hJ v,
-    inner_J_left_eq_neg hJ v u, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
+    J.inner_apply_left_eq_neg_swap hJ v u, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
     real_inner_comm u v]; ring
 
 /-- On an orthonormal pair `(u, v)`, `1 ≤ fubiniStudy J ![u, v, u, v] ≤ 4`. -/

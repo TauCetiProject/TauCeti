@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 
 /-!
 # Algebraic curvature tensors
@@ -60,8 +61,9 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 ## Main statements
 
 * `TauCeti.FourTensor.abs_apply_le_norm_of_norm_eq_one`,
+  `TauCeti.FourTensor.IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent`,
   `TauCeti.FourTensor.ofLinearMap₄_toLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄_ofLinearMap₄`:
-  unit-vector norm bound and currying inverses in finite dimension.
+  unit-vector norm bound, vanishing on dependent pairs, and currying inverses in finite dimension.
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap`: pullback preserves algebraic
   curvature tensors.
@@ -321,6 +323,15 @@ def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →�
 @[simp]
 theorem toLinearMap₄_apply (r : FourTensor V) (u v z w : V) :
     toLinearMap₄ r u v z w = r ![u, v, z, w] := (rfl)
+
+/-- For an algebraic curvature tensor `r`, `r ![u, v, u, v] = 0` for linearly dependent `u, v`. -/
+theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : FourTensor V}
+    (hr : IsAlgebraicCurvature r) {u v : V} (huv : ¬ LinearIndependent ℝ ![u, v]) :
+    r ![u, v, u, v] = 0 := by
+  have h := LinearMap.apply_apply_apply_apply_eq_zero_of_not_linearIndependent
+    (T := toLinearMap₄ r) two_ne_zero
+    (fun a b c d ↦ by simpa only [toLinearMap₄_apply] using hr.antisymm_first a b c d) huv
+  simp only [toLinearMap₄_apply] at h; linarith [hr.antisymm_last u v u v]
 
 /-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction. -/
 private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=

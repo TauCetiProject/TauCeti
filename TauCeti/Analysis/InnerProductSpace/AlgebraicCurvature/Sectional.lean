@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Compact
-import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
@@ -39,21 +38,6 @@ open scoped InnerProductSpace NNReal Pointwise
 noncomputable section
 
 namespace TauCeti.FourTensor
-
-section NormedSpace
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- For an algebraic curvature tensor `r`, `r ![u, v, u, v] = 0` for linearly dependent `u, v`. -/
-theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : FourTensor V}
-    (hr : IsAlgebraicCurvature r) {u v : V} (huv : ¬ LinearIndependent ℝ ![u, v]) :
-    r ![u, v, u, v] = 0 := by
-  have h := LinearMap.apply_apply_apply_apply_eq_zero_of_not_linearIndependent
-    (T := toLinearMap₄ r) two_ne_zero
-    (fun a b c d ↦ by simpa only [toLinearMap₄_apply] using hr.antisymm_first a b c d) huv
-  simp only [toLinearMap₄_apply] at h; linarith [hr.antisymm_last u v u v]
-
-end NormedSpace
 
 section InnerProductSpace
 
@@ -117,8 +101,7 @@ theorem le_sectionalMin_of_forall_le {r : FourTensor V} {c : ℝ}
     (hne : {u : Fin 2 → V | Orthonormal ℝ u}.Nonempty)
     (hc : ∀ u v : V, Orthonormal ℝ ![u, v] → c ≤ r ![u, v, u, v]) : c ≤ sectionalMin r := by
   obtain ⟨u₀, hu₀⟩ := hne
-  refine le_csInf ⟨_, ⟨u₀, hu₀, rfl⟩⟩ fun _ ⟨u, hu, h⟩ ↦ h ▸ hc (u 0) (u 1) ?_
-  rwa [show ![u 0, u 1] = u by funext i; fin_cases i <;> rfl]
+  exact le_csInf ⟨_, ⟨u₀, hu₀, rfl⟩⟩ fun _ ⟨u, hu, h⟩ ↦ h ▸ hc (u 0) (u 1) (hu.pair zero_ne_one)
 
 /-- An upper bound on all orthonormal pairs bounds `sectionalMax r` above when frames exist. -/
 theorem sectionalMax_le_of_forall_le {r : FourTensor V} {c : ℝ}
@@ -197,8 +180,7 @@ theorem IsAlgebraicCurvature.exists_orthonormal_apply_self_eq_det_gram_mul {r : 
     simp only [Matrix.gram_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
     conv_lhs => rw [hu_eq, hv_eq]
     simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right]
-    simp only [real_inner_self_eq_norm_sq, he₀, he₁, he₀e₁,
-      show ⟪e₁, e₀⟫_ℝ = 0 by rw [real_inner_comm]; exact he₀e₁]; ring
+    simp only [real_inner_self_eq_norm_sq, real_inner_comm e₀ e₁, he₀, he₁, he₀e₁]; ring
   have hr_eq : r ![u, v, u, v] = ‖u‖ ^ 2 * ‖w‖ ^ 2 * r ![e₀, e₁, e₀, e₁] := by
     have h1 (a c d : V) : r ![a, a, c, d] = 0 := by linarith [hr.antisymm_first a a c d]
     have h2 (a b c : V) : r ![a, b, c, c] = 0 := by linarith [hr.antisymm_last a b c c]
@@ -242,8 +224,7 @@ theorem exists_orthonormal_eq_sectionalMin (hn : 2 ≤ Module.finrank ℝ V) (r 
     r.cont.comp (continuous_pi fun k ↦ by fin_cases k <;> exact continuous_apply _)
   obtain ⟨u, hu, hmin⟩ :=
     TauCeti.isCompact_setOfPred_orthonormal.exists_isMinOn hKne hcont.continuousOn
-  have hu' : Orthonormal ℝ ![u 0, u 1] := by
-    rwa [show ![u 0, u 1] = u by funext i; fin_cases i <;> rfl]
+  have hu' : Orthonormal ℝ ![u 0, u 1] := hu.pair zero_ne_one
   exact ⟨u 0, u 1, hu', le_antisymm
     (le_sectionalMin_of_forall_le hKne fun w z hwz ↦ isMinOn_iff.1 hmin ![w, z] hwz)
     (sectionalMin_le_of_orthonormal r hu')⟩

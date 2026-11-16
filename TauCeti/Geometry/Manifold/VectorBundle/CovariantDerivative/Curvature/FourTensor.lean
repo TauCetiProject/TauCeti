@@ -129,8 +129,9 @@ private theorem exists_continuousAt_pullback_curvatureFourTensor (x₀ : M) :
   · filter_upwards [e.open_baseSet.mem_nhds hx₀] with y hy
     let d := e.orthonormalBasis c ⟨y, hy⟩
     refine ⟨d.repr.symm, ?_⟩; ext m
-    conv_rhs => rw [show m = fun s ↦ ∑ k : Fin n, ⟪b₀ k, m s⟫_ℝ • b₀ k from
-      funext fun s ↦ (b₀.sum_repr' (m s)).symm]
+    have hm : m = fun s ↦ ∑ k : Fin n, ⟪b₀ k, m s⟫_ℝ • b₀ k :=
+      funext fun s ↦ (b₀.sum_repr' (m s)).symm
+    conv_rhs => rw [hm]
     rw [(cov.curvatureFourTensor y).compContinuousLinearMap
       (fun _ ↦ (d.repr.symm : V₀ →L[ℝ] TangentSpace I y)) |>.map_sum, sum_apply]
     refine Finset.sum_congr rfl fun i _ ↦ ?_

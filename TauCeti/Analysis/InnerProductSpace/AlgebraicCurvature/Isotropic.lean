@@ -18,9 +18,9 @@ For `r : FourTensor V`, its complex-multilinear extension `r.complexify` to
 pic2Expression r f l m` for algebraic curvature tensors (and `isotropicExpression r f` at
 `l = m = 1`). Nonnegativity on orthonormal four-frames (and `l, m ∈ [-1, 1]`) defines the closed
 convex `O(V)`-invariant cones `IsPICFourFrame` and `IsPIC2FourFrame` (matching geometric `PIC2`
-when `4 ≤ finrank ℝ V` and vacuous otherwise). In finite dimensions, `interior {q | IsPIC2FourFrame
-q.1}` is characterized by strict positivity of `pic2Expression` and by `0 < pic2Min r` when
-`4 ≤ finrank ℝ V`.
+in finite dimension `≥ 4`, and vacuous when no orthonormal four-frame exists). In finite
+dimensions, `interior {q | IsPIC2FourFrame q.1}` is characterized by strict positivity of
+`pic2Expression` and by `0 < pic2Min r` when `4 ≤ finrank ℝ V`.
 
 ## Main definitions & statements
 
@@ -283,7 +283,8 @@ section InnerProductSpace
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W]
 
-/-- Nonnegative isotropic curvature in real four-frame form (vacuous when `finrank ℝ V < 4`). -/
+/-- Nonnegative isotropic curvature in real four-frame form (vacuous when no orthonormal
+four-frame exists). -/
 def IsPICFourFrame (r : FourTensor V) : Prop :=
   ∀ f : Fin 4 → V, Orthonormal ℝ f → 0 ≤ isotropicExpression r f
 
@@ -292,7 +293,7 @@ theorem isPICFourFrame_def (r : FourTensor V) :
     IsPICFourFrame r ↔ ∀ f : Fin 4 → V, Orthonormal ℝ f → 0 ≤ isotropicExpression r f := Iff.rfl
 
 /-- Real four-frame `PIC2`: `pic2Expression r f l m ≥ 0` on orthonormal four-frames `f` and
-`l, m ∈ [-1, 1]` (vacuous when `finrank ℝ V < 4`). -/
+`l, m ∈ [-1, 1]` (vacuous when no orthonormal four-frame exists). -/
 def IsPIC2FourFrame (r : FourTensor V) : Prop :=
   ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
     ∀ m ∈ Icc (-1 : ℝ) 1, 0 ≤ pic2Expression r f l m
@@ -341,9 +342,9 @@ theorem convex_setOf_le_pic2Expression (ε : ℝ) :
       ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r f l m} :=
   fun _ h₁ _ h₂ a b ha hb hab f hf l hl m hm ↦ by
     rw [pic2Expression_add, pic2Expression_smul, pic2Expression_smul]
+    have hε : a * ε + b * ε = ε := by rw [← add_mul, hab, one_mul]
     linarith [mul_le_mul_of_nonneg_left (h₁ f hf l hl m hm) ha,
-      mul_le_mul_of_nonneg_left (h₂ f hf l hl m hm) hb,
-      show a * ε + b * ε = ε by rw [← add_mul, hab, one_mul]]
+      mul_le_mul_of_nonneg_left (h₂ f hf l hl m hm) hb]
 
 /-- The `PIC` four-frame cone is convex in `FourTensor V`. -/
 theorem convex_setOf_isPICFourFrame : Convex ℝ {r : FourTensor V | IsPICFourFrame r} :=
@@ -360,12 +361,8 @@ theorem continuous_pic2Expression :
   have heval (i₀ i₁ i₂ i₃ : Fin 4) : Continuous fun p : FourTensor V × (Fin 4 → V) × ℝ × ℝ ↦
       p.1 ![p.2.1 i₀, p.2.1 i₁, p.2.1 i₂, p.2.1 i₃] := by
     have hvec : Continuous fun p : FourTensor V × (Fin 4 → V) × ℝ × ℝ ↦
-        ![p.2.1 i₀, p.2.1 i₁, p.2.1 i₂, p.2.1 i₃] := by
-      rw [show (fun p : FourTensor V × (Fin 4 → V) × ℝ × ℝ ↦
-          ![p.2.1 i₀, p.2.1 i₁, p.2.1 i₂, p.2.1 i₃]) = fun p k ↦ p.2.1 (![i₀, i₁, i₂, i₃] k) by
-        funext p k; fin_cases k <;> rfl]
-      exact continuous_pi fun k ↦
-        (continuous_apply (![i₀, i₁, i₂, i₃] k)).comp (continuous_fst.comp continuous_snd)
+        ![p.2.1 i₀, p.2.1 i₁, p.2.1 i₂, p.2.1 i₃] :=
+      continuous_pi fun k ↦ by fin_cases k <;> dsimp <;> fun_prop
     exact continuous_eval.comp (continuous_fst.prodMk hvec)
   simp only [pic2Expression_def]; fun_prop
 
@@ -599,7 +596,8 @@ theorem mem_interior_isPIC2FourFrame_iff_forall_pos {r : algebraicCurvatureSubmo
     have hval := hball hdist f hf l hl m hm
     simp only [Submodule.coe_sub, Submodule.coe_smul_of_tower, I₀, pic2Expression_sub,
       pic2Expression_smul, pic2Expression_constantCurvature hf] at hval
-    nlinarith [show 1 ≤ (1 + l ^ 2) * (1 + m ^ 2) by nlinarith [sq_nonneg l, sq_nonneg m]]
+    have hprod : 1 ≤ (1 + l ^ 2) * (1 + m ^ 2) := by nlinarith [sq_nonneg l, sq_nonneg m]
+    nlinarith
   · obtain ⟨ε, hε, hle⟩ := exists_pos_le_pic2Expression_of_forall_pos hpos
     exact mem_interior_isPIC2FourFrame_of_exists_pos_le hε hle
 
