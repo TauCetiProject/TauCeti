@@ -206,8 +206,9 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_
     rw [← mul_div_cancel₀ ρ two_ne_zero] at hρΩ hρa
     exact ⟨ρ / 2, half_pos hρ, hρΩ, hρa⟩
   choose! r hr hrΩ hosc using hsmall
-  obtain ⟨t, htK, hcover⟩ :=
-    hK.elim_nhds_subcover (fun x => ball x (r x)) fun x hx => ball_mem_nhds x (hr x hx)
+  obtain ⟨t, htK, hcover⟩ := hK.exists_finset_eLpNorm_restrict_inter_le_sum (μ := volume)
+    (ε := IteratedGradient (EuclideanSpace ℝ (Fin n)) 1) (fun x hx => ball_mem_nhds x (hr x hx))
+    hp.le
   set C : EuclideanSpace ℝ (Fin n) → ℝ := fun x =>
     C₀ * (4 / lam x + (1 + (∑ i, ∑ j, |a x i j| + δ * lam x + β * (2 * r x) +
       γ * (2 * r x) ^ 2) / lam x) ^ 2 / r x ^ 2)
@@ -222,9 +223,8 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_
         rw [← toReal_eLpNorm]
         simp_rw [← toReal_eLpNorm]
         rw [← ENNReal.toReal_sum hfin]
-        exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 hfin)
-          ((eLpNorm_mono_measure _ (Measure.restrict_mono hcover le_rfl)).trans
-            (eLpNorm_restrict_biUnion_finset_le _ hp.le t _))
+        refine ENNReal.toReal_mono (ENNReal.sum_ne_top.2 hfin) ?_
+        simpa only [Set.univ_inter] using hcover (Wkp.iteratedGradient 1 u) Set.univ
     _ ≤ ∑ x ∈ t, C x * (‖f‖ + ‖Wkp.value 2 u‖) := Finset.sum_le_sum fun x hxt =>
         hball (hlam x (htK x hxt)) (hA x (htK x hxt)) (hr x (htK x hxt)) (hrΩ x (htK x hxt)) ha
           (hosc x (htK x hxt)) hb hbβ hc hcγ u f heq
