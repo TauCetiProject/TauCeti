@@ -364,9 +364,9 @@ theorem aestronglyMeasurable_timeDependentGeometricBrownianMotion
     (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ) (μ σ : ℝ≥0 → ℝ)
     (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :
     AEStronglyMeasurable[ℱ t] (hW.timeDependentGeometricBrownianMotion s μ σ hσ t) P := by
-  rw [funext (hW.timeDependentGeometricBrownianMotion_def s μ σ hσ t)]
-  exact (continuous_const.mul (continuous_exp.comp (continuous_const.add continuous_id)))
-    |>.comp_aestronglyMeasurable (hW.aestronglyMeasurable_wienerIntegral t _)
+  exact hW.toIsPreBrownianReal.aestronglyMeasurable_timeDependentGeometricBrownianMotion
+    (ℱ.le t) s μ σ hσ
+    (fun u hu ↦ ((hW.adapted u).mono (ℱ.mono hu) le_rfl).aestronglyMeasurable)
 
 /-- With deterministic initial value, the process is independent of every random variable
 known at time zero. -/

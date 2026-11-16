@@ -449,8 +449,7 @@ theorem hasLaw_wienerIntegral_toLp_sub (hB : IsPreBrownianReal B P) {s T : ℝ�
       hfT.coeFn_toLp, hc.coeFn_toLp,
       coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hsT hfs.coeFn_toLp]
       with t h₁ h₂ h₃ h₄
-    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, Set.indicator_compl]
-    rfl
+    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, Set.indicator_compl, Pi.sub_apply]
   have hsq : (∫ t, (Ioc 0 s)ᶜ.indicator f t ^ 2 ∂timeMeasure T) =
       (∫ t, f t ^ 2 ∂timeMeasure T) - ∫ t, f t ^ 2 ∂timeMeasure s := by
     have hi : Integrable (fun t ↦ f t ^ 2) (timeMeasure T) := hfT.integrable_sq
