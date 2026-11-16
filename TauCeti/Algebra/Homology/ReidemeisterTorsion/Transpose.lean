@@ -10,6 +10,7 @@ import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Alternating.Append
 import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Determinant.Dual
+import TauCeti.LinearAlgebra.Matrix.Dual
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
@@ -88,21 +89,6 @@ variable {ι ι' V V' W W' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] 
 `c`. -/
 private abbrev pairingEquiv (c : Basis ι F V) (e : Basis ι F W) : W ≃ₗ[F] Dual F V :=
   e.equiv c.dualBasis (Equiv.refl ι)
-
-/-- If the matrix of `g : W' → W` in the bases `e'`, `e` is the transpose of the matrix of
-`f : V → V'` in the bases `c`, `c'`, then under the identifications `pairingEquiv` of `W` and
-`W'` with the duals of `V` and `V'`, the map `g` is the transpose of `f`. -/
-private theorem pairingEquiv_apply_map (c : Basis ι F V) (c' : Basis ι' F V') (e : Basis ι F W)
-    (e' : Basis ι' F W') {f : V →ₗ[F] V'} {g : W' →ₗ[F] W}
-    (h : LinearMap.toMatrix e' e g = (LinearMap.toMatrix c c' f)ᵀ) (y : W') :
-    pairingEquiv c e (g y) = (pairingEquiv c' e' y).comp f := by
-  have key : (pairingEquiv c e).toLinearMap ∘ₗ g = f.dualMap ∘ₗ (pairingEquiv c' e').toLinearMap :=
-    e'.ext fun l ↦ c.ext fun k ↦ by
-      have hkl := congr_fun₂ h k l
-      rw [LinearMap.toMatrix_apply, Matrix.transpose_apply, LinearMap.toMatrix_apply] at hkl
-      conv_lhs => rw [LinearMap.comp_apply, LinearEquiv.coe_coe, ← e.sum_repr (g (e' l)), map_sum]
-      simp [hkl, Finsupp.single_apply]
-  exact LinearMap.congr_fun key y
 
 variable {Ψ : W ≃ₗ[F] Dual F V} {Ψ' : W' ≃ₗ[F] Dual F V'} {f : V →ₗ[F] V'} {g : W' →ₗ[F] W}
   {p q r : ℕ} (U : Basis (Fin (p + q)) F V) (U' : Basis (Fin (q + r)) F V')
@@ -211,6 +197,26 @@ end LinearAlgebra
 variable {C D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
   {c : ∀ i, Basis (Fin (n i)) F (C.X i)} {e : ∀ i, Basis (Fin (n i)) F (D.X i)}
 
+/-- At a degree `j` of a two-periodic complex with neighbouring degree `k`, if the spaces of
+`C` and `D` in degree `j` have bases of the same length and the differentials of `D` into and out
+of `j` have ranges of the dimensions of those of `C` out of and into `j`, then `D` is exact at `j`
+exactly when `C` is. -/
+private theorem exactAt_iff_of_finrank_range_eq {j k : ZMod 2} {m : ℕ}
+    (cj : Basis (Fin m) F (C.X j)) (ej : Basis (Fin m) F (D.X j))
+    (hjk : (ComplexShape.up (ZMod 2)).Rel j k) (hkj : (ComplexShape.up (ZMod 2)).Rel k j)
+    (hin : finrank F (LinearMap.range (D.d k j).hom) =
+      finrank F (LinearMap.range (C.d j k).hom))
+    (hout : finrank F (LinearMap.range (D.d j k).hom) =
+      finrank F (LinearMap.range (C.d k j).hom)) :
+    D.ExactAt j ↔ C.ExactAt j := by
+  have : Module.Finite F (C.X j) := .of_basis cj
+  have : Module.Finite F (D.X j) := .of_basis ej
+  rw [exactAt_iff_finrank_add_finrank D (ComplexShape.prev_eq' _ hkj)
+      (ComplexShape.next_eq' _ hjk),
+    exactAt_iff_finrank_add_finrank C (ComplexShape.prev_eq' _ hkj)
+      (ComplexShape.next_eq' _ hjk),
+    hin, hout, finrank_eq_card_basis cj, finrank_eq_card_basis ej, add_comm]
+
 /-- A based two-periodic complex `D` whose differentials have, in the bases `e`, the transposes
 of the matrices of the differentials of `C` in the bases `c` is acyclic exactly when `C` is. -/
 theorem acyclic_iff_of_toMatrix_eq_transpose
@@ -220,35 +226,14 @@ theorem acyclic_iff_of_toMatrix_eq_transpose
       (LinearMap.toMatrix (c 0) (c 1) (C.d 0 1).hom)ᵀ) :
     D.Acyclic ↔ C.Acyclic := by
   -- Transposition preserves the rank of the matrices of the differentials.
-  have hrk₀₁ : finrank F (LinearMap.range (D.d 0 1).hom) =
-      finrank F (LinearMap.range (C.d 1 0).hom) := by
-    rw [← LinearMap.rank_toMatrix _ (e 0) (e 1), h₀₁, Matrix.rank_transpose,
-      LinearMap.rank_toMatrix]
-  have hrk₁₀ : finrank F (LinearMap.range (D.d 1 0).hom) =
-      finrank F (LinearMap.range (C.d 0 1).hom) := by
-    rw [← LinearMap.rank_toMatrix _ (e 1) (e 0), h₁₀, Matrix.rank_transpose,
-      LinearMap.rank_toMatrix]
-  have : Module.Finite F (C.X 0) := .of_basis (c 0)
-  have : Module.Finite F (D.X 0) := .of_basis (e 0)
-  have : Module.Finite F (C.X 1) := .of_basis (c 1)
-  have : Module.Finite F (D.X 1) := .of_basis (e 1)
-  have h₁₀ : (ComplexShape.up (ZMod 2)).Rel 1 0 := CharTwo.add_self_eq_zero 1
-  have h₀₁ : (ComplexShape.up (ZMod 2)).Rel 0 1 := zero_add 1
-  have hex₀ : D.ExactAt 0 ↔ C.ExactAt 0 := by
-    rw [exactAt_iff_finrank_add_finrank D (ComplexShape.prev_eq' _ h₁₀)
-        (ComplexShape.next_eq' _ h₀₁),
-      exactAt_iff_finrank_add_finrank C (ComplexShape.prev_eq' _ h₁₀)
-        (ComplexShape.next_eq' _ h₀₁),
-      hrk₀₁, hrk₁₀, finrank_eq_card_basis (c 0), finrank_eq_card_basis (e 0), add_comm]
-  have hex₁ : D.ExactAt 1 ↔ C.ExactAt 1 := by
-    rw [exactAt_iff_finrank_add_finrank D (ComplexShape.prev_eq' _ h₀₁)
-        (ComplexShape.next_eq' _ h₁₀),
-      exactAt_iff_finrank_add_finrank C (ComplexShape.prev_eq' _ h₀₁)
-        (ComplexShape.next_eq' _ h₁₀),
-      hrk₀₁, hrk₁₀, finrank_eq_card_basis (c 1), finrank_eq_card_basis (e 1), add_comm]
+  have hrk₀₁ := LinearMap.finrank_range_eq_of_toMatrix_eq_transpose h₀₁
+  have hrk₁₀ := LinearMap.finrank_range_eq_of_toMatrix_eq_transpose h₁₀
+  have hr₁₀ : (ComplexShape.up (ZMod 2)).Rel 1 0 := CharTwo.add_self_eq_zero 1
+  have hr₀₁ : (ComplexShape.up (ZMod 2)).Rel 0 1 := zero_add 1
   refine forall_congr' fun j ↦ ?_
   fin_cases j
-  exacts [hex₀, hex₁]
+  exacts [exactAt_iff_of_finrank_range_eq (c 0) (e 0) hr₀₁ hr₁₀ hrk₁₀ hrk₀₁,
+    exactAt_iff_of_finrank_range_eq (c 1) (e 1) hr₁₀ hr₀₁ hrk₀₁ hrk₁₀]
 
 /-- An acyclic based two-periodic complex `C` has bases `U₀` of `C₀` and `U₁` of `C₁`, made of
 bases of the boundaries followed by lifts, in which the torsion is the ratio of the
@@ -316,16 +301,18 @@ private theorem parityTorsion_eq_inv_det_mul_inv_det
       W₀ = U₀.dualBasis.map (pairingEquiv (c 0) (e 0)).symm := ⟨_, rfl⟩
   obtain ⟨W₁, hW₁⟩ : ∃ W₁ : Basis (Fin (q + p)) F (D.X 1),
       W₁ = U₁.dualBasis.map (pairingEquiv (c 1) (e 1)).symm := ⟨_, rfl⟩
-  have hΨ₁₀ := pairingEquiv_apply_map (c 0) (c 1) (e 0) (e 1) h₁₀
-  have hΨ₀₁ := pairingEquiv_apply_map (c 1) (c 0) (e 1) (e 0) h₀₁
+  have hΨ₁₀ := LinearMap.congr_fun
+    ((LinearMap.toMatrix_eq_transpose_iff (c 0) (c 1) (e 0) (e 1)).1 h₁₀)
+  have hΨ₀₁ := LinearMap.congr_fun
+    ((LinearMap.toMatrix_eq_transpose_iff (c 1) (c 0) (e 1) (e 0)).1 h₀₁)
   have hβ₁ (a : Fin q) : (D.d 1 0).hom (W₁ (Fin.castAdd p a)) = W₀ (Fin.natAdd p a) := by
     rw [hW₀, hW₁]; exact map_dualBasis_castAdd U₀ U₁ hΨ₁₀ hz₀ hm₀ a
   have hσ₁ (a : Fin p) : (D.d 1 0).hom (W₁ (Fin.natAdd q a)) = 0 := by
-    rw [hW₁]; exact map_dualBasis_natAdd U₀ U₁ hΨ₁₀ hz₀ hm₀ a
+    rw [hW₁]; exact map_dualBasis_natAdd (Ψ := pairingEquiv (c 0) (e 0)) U₀ U₁ hΨ₁₀ hz₀ hm₀ a
   have hβ₀ (a : Fin p) : (D.d 0 1).hom (W₀ (Fin.castAdd q a)) = W₁ (Fin.natAdd q a) := by
     rw [hW₀, hW₁]; exact map_dualBasis_castAdd U₁ U₀ hΨ₀₁ hz₁ hm₁ a
   have hσ₀ (a : Fin q) : (D.d 0 1).hom (W₀ (Fin.natAdd p a)) = 0 := by
-    rw [hW₀]; exact map_dualBasis_natAdd U₁ U₀ hΨ₀₁ hz₁ hm₁ a
+    rw [hW₀]; exact map_dualBasis_natAdd (Ψ := pairingEquiv (c 1) (e 1)) U₁ U₀ hΨ₀₁ hz₁ hm₁ a
   -- So the `σ` are bases of the boundaries of `D`, with lifts the `β`, and the brackets of `D` are
   -- the determinants of the reordered dual bases `(σⱼ, βⱼ)`.
   rw [parityTorsion_eq hD (rangeBasis W₁ W₀ hβ₁ hσ₁) (rangeBasis W₀ W₁ hβ₀ hσ₀)
