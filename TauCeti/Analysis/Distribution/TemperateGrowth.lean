@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.Order.IntermediateValue
