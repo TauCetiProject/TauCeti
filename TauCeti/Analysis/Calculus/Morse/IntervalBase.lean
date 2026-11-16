@@ -615,6 +615,8 @@ theorem tendsto_intervalBaseTimeCoordinate_nhdsLT_one :
   refine (h₃.add_atTop h₂).congr fun t ↦ ?_
   rw [intervalBaseTimeCoordinate_apply]; ring
 
+/-! ### The flow and the time coordinate -/
+
 private theorem strictMonoOn_intervalBaseFlow_Icc_zero_one (C s : ℝ) :
     StrictMonoOn (intervalBaseFlow C s) (Icc 0 1) := by
   intro x hx y hy hxy

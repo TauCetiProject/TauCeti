@@ -59,8 +59,8 @@ counterexamples.
   `f_{r(t)}` is a Morse function whose gradient flow on the circle is Morse–Smale.
 
 On a window `[a, b] ⊆ (0, 1)` the slope is Lipschitz in the angle, uniformly in `t`, so solutions
-through a given point are unique (`TauCeti.eqOn_of_hasDerivAt_circleContinuationSlope`) and, for a
-path continuous on the window, exist
+through a given point are unique (`TauCeti.eqOn_of_hasDerivWithinAt_circleContinuationSlope`) and,
+for a path continuous on the window, exist
 (`TauCeti.exists_eq_forall_mem_Icc_hasDerivWithinAt_circleContinuationSlope`). For small `δ`, the
 trajectories joining zeros of `W` of the same index are classified by the basins of their ends in
 `TauCeti.Analysis.Calculus.Morse.CircleContinuation.Basin`.
@@ -284,6 +284,20 @@ theorem dist_circleContinuationSlope_sub_le (δ δ' : ℝ) (r : ℝ → ℝ) {t 
   simp only [circleContinuationSlope_def]
   ring
 
+/-- If `m₀ > 0` bounds `t (1 - t²)` below, the slope at time `t` is `4 |δ| / m₀`-Lipschitz in the
+angle. -/
+private theorem lipschitzWith_circleContinuationSlope {δ m₀ t : ℝ} (r : ℝ → ℝ) (hm₀ : 0 < m₀)
+    (h₀ : 0 < t) (h₁ : t < 1) (hm : m₀ ≤ t * (1 - t ^ 2)) :
+    LipschitzWith ⟨4 * |δ| / m₀, div_nonneg (by positivity) hm₀.le⟩
+      (circleContinuationSlope δ r t) := by
+  refine LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_
+  refine (dist_circleContinuationSlope_le δ r h₀ h₁ θ θ').trans ?_
+  -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
+  change _ ≤ (4 * |δ| / m₀) * dist θ θ'
+  rw [div_eq_mul_inv]
+  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (inv_anti₀ hm₀ hm)
+    (by positivity)) dist_nonneg
+
 /-- **Continuous dependence on `δ`.** Let `m₀ > 0` bound `t (1 - t²)` below on `[a, b] ⊆ (0, 1)`.
 Two solutions `Θ₁`, `Θ₂` of `Θ' = circleContinuationSlope δᵢ r t (Θ t)` on `[a, b]` stay within the
 Grönwall bound with Lipschitz constant `4 |δ₂| / m₀` and error `2 |δ₁ - δ₂| / m₀`: the trajectories
@@ -298,17 +312,10 @@ theorem abs_sub_le_gronwallBound_of_hasDerivWithinAt_circleContinuationSlope
     ∀ t ∈ Icc a b, |Θ₁ t - Θ₂ t| ≤
       gronwallBound |Θ₁ a - Θ₂ a| (4 * |δ₂| / m₀) (2 * |δ₁ - δ₂| / m₀) (t - a) := by
   have hmem : ∀ t ∈ Icc a b, 0 < t ∧ t < 1 := fun t ht ↦ ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩
-  set K : ℝ≥0 := ⟨4 * |δ₂| / m₀, by positivity⟩
-  have hK : ∀ t ∈ Ico a b, LipschitzOnWith K (circleContinuationSlope δ₂ r t) univ := by
-    intro t ht
-    refine (LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_).lipschitzOnWith
+  have hK : ∀ t ∈ Ico a b, LipschitzOnWith _ (circleContinuationSlope δ₂ r t) univ := fun t ht ↦
     have ht' := Ico_subset_Icc_self ht
-    refine (dist_circleContinuationSlope_le δ₂ r (hmem t ht').1 (hmem t ht').2 θ θ').trans ?_
-    -- Unfold the coercion of the `ℝ≥0` constant `K`.
-    change _ ≤ (4 * |δ₂| / m₀) * dist θ θ'
-    rw [div_eq_mul_inv]
-    gcongr
-    exact hm t ht'
+    (lipschitzWith_circleContinuationSlope r hm₀ (hmem t ht').1 (hmem t ht').2
+      (hm t ht')).lipschitzOnWith
   have hbound : ∀ t ∈ Ico a b, dist (circleContinuationSlope δ₁ r t (Θ₁ t))
       (circleContinuationSlope δ₂ r t (Θ₁ t)) ≤ 2 * |δ₁ - δ₂| / m₀ := by
     intro t ht
@@ -345,50 +352,41 @@ private theorem mul_one_sub_sq_pos {a b : ℝ} (ha : 0 < a) (hb : b < 1) (hab : 
     0 < a * (1 - b ^ 2) :=
   mul_pos ha (by nlinarith)
 
-/-- The slope is `4 |δ| / (a (1 - b²))`-Lipschitz in the angle at every time of `[a, b]`. -/
-private theorem lipschitzWith_circleContinuationSlope {δ a b t : ℝ} (r : ℝ → ℝ) (ha : 0 < a)
-    (hb : b < 1) (hab : a ≤ b) (ht : t ∈ Icc a b) :
-    LipschitzWith ⟨4 * |δ| / (a * (1 - b ^ 2)),
-      div_nonneg (by positivity) (mul_one_sub_sq_pos ha hb hab).le⟩
-      (circleContinuationSlope δ r t) := by
-  have hm := mul_one_sub_sq_pos ha hb hab
-  refine LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_
-  refine (dist_circleContinuationSlope_le δ r (ha.trans_le ht.1)
-    (ht.2.trans_lt hb) θ θ').trans ?_
-  -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
-  change _ ≤ (4 * |δ| / (a * (1 - b ^ 2))) * dist θ θ'
-  rw [div_eq_mul_inv]
-  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-    (inv_anti₀ hm (mul_one_sub_sq_le ha hb ht)) (by positivity)) dist_nonneg
-
 /-- **Uniqueness of continuation trajectories.** Two solutions of
 `Θ' = circleContinuationSlope δ r t (Θ t)` on `[a, b] ⊆ (0, 1)` which agree at one time agree on
 `[a, b]`. -/
-theorem eqOn_of_hasDerivAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂ : ℝ → ℝ} {a b t₀ : ℝ}
+theorem eqOn_of_hasDerivWithinAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂ : ℝ → ℝ} {a b t₀ : ℝ}
     (ha : 0 < a) (hb : b < 1)
-    (hΘ₁ : ∀ t ∈ Icc a b, HasDerivAt Θ₁ (circleContinuationSlope δ r t (Θ₁ t)) t)
-    (hΘ₂ : ∀ t ∈ Icc a b, HasDerivAt Θ₂ (circleContinuationSlope δ r t (Θ₂ t)) t)
+    (hΘ₁ : ∀ t ∈ Icc a b,
+      HasDerivWithinAt Θ₁ (circleContinuationSlope δ r t (Θ₁ t)) (Icc a b) t)
+    (hΘ₂ : ∀ t ∈ Icc a b,
+      HasDerivWithinAt Θ₂ (circleContinuationSlope δ r t (Θ₂ t)) (Icc a b) t)
     (ht₀ : t₀ ∈ Icc a b) (h : Θ₁ t₀ = Θ₂ t₀) : EqOn Θ₁ Θ₂ (Icc a b) := by
+  have hab : a ≤ b := ht₀.1.trans ht₀.2
   have hK : ∀ t ∈ Icc a b, LipschitzOnWith _ (circleContinuationSlope δ r t) univ :=
-    fun t ht ↦ (lipschitzWith_circleContinuationSlope (δ := δ) r ha hb
-      (ht₀.1.trans ht₀.2) ht).lipschitzOnWith
+    fun t ht ↦ (lipschitzWith_circleContinuationSlope (δ := δ) r (mul_one_sub_sq_pos ha hb hab)
+      (ha.trans_le ht.1) (ht.2.trans_lt hb) (mul_one_sub_sq_le ha hb ht)).lipschitzOnWith
   have hsub₁ : Icc a t₀ ⊆ Icc a b := Icc_subset_Icc_right ht₀.2
   have hsub₂ : Icc t₀ b ⊆ Icc a b := Icc_subset_Icc_left ht₀.1
   rw [← Icc_union_Icc_eq_Icc ht₀.1 ht₀.2]
   refine EqOn.union ?_ ?_
   · exact ODE_solution_unique_of_mem_Icc_left (s := fun _ ↦ univ)
       (fun t ht ↦ hK t (hsub₁ (Ioc_subset_Icc_self ht)))
-      (HasDerivAt.continuousOn fun t ht ↦ hΘ₁ t (hsub₁ ht))
-      (fun t ht ↦ (hΘ₁ t (hsub₁ (Ioc_subset_Icc_self ht))).hasDerivWithinAt)
-      (fun _ _ ↦ mem_univ _) (HasDerivAt.continuousOn fun t ht ↦ hΘ₂ t (hsub₁ ht))
-      (fun t ht ↦ (hΘ₂ t (hsub₁ (Ioc_subset_Icc_self ht))).hasDerivWithinAt)
+      (fun t ht ↦ (hΘ₁ t (hsub₁ ht)).continuousWithinAt.mono hsub₁)
+      (fun t ht ↦ (hΘ₁ t (hsub₁ (Ioc_subset_Icc_self ht))).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsLE_of_mem ⟨ht.1, ht.2.trans ht₀.2⟩))
+      (fun _ _ ↦ mem_univ _) (fun t ht ↦ (hΘ₂ t (hsub₁ ht)).continuousWithinAt.mono hsub₁)
+      (fun t ht ↦ (hΘ₂ t (hsub₁ (Ioc_subset_Icc_self ht))).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsLE_of_mem ⟨ht.1, ht.2.trans ht₀.2⟩))
       (fun _ _ ↦ mem_univ _) h
   · exact ODE_solution_unique_of_mem_Icc_right (s := fun _ ↦ univ)
       (fun t ht ↦ hK t (hsub₂ (Ico_subset_Icc_self ht)))
-      (HasDerivAt.continuousOn fun t ht ↦ hΘ₁ t (hsub₂ ht))
-      (fun t ht ↦ (hΘ₁ t (hsub₂ (Ico_subset_Icc_self ht))).hasDerivWithinAt)
-      (fun _ _ ↦ mem_univ _) (HasDerivAt.continuousOn fun t ht ↦ hΘ₂ t (hsub₂ ht))
-      (fun t ht ↦ (hΘ₂ t (hsub₂ (Ico_subset_Icc_self ht))).hasDerivWithinAt)
+      (fun t ht ↦ (hΘ₁ t (hsub₂ ht)).continuousWithinAt.mono hsub₂)
+      (fun t ht ↦ (hΘ₁ t (hsub₂ (Ico_subset_Icc_self ht))).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsGE_of_mem ⟨ht₀.1.trans ht.1, ht.2⟩))
+      (fun _ _ ↦ mem_univ _) (fun t ht ↦ (hΘ₂ t (hsub₂ ht)).continuousWithinAt.mono hsub₂)
+      (fun t ht ↦ (hΘ₂ t (hsub₂ (Ico_subset_Icc_self ht))).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsGE_of_mem ⟨ht₀.1.trans ht.1, ht.2⟩))
       (fun _ _ ↦ mem_univ _) h
 
 /-- **Existence of continuation trajectories.** If the path `r` is continuous on the window
@@ -407,7 +405,8 @@ theorem exists_eq_forall_mem_Icc_hasDerivWithinAt_circleContinuationSlope {δ a 
   have hPL : IsPicardLindelof (circleContinuationSlope δ r) (tmin := a) (tmax := b) ⟨t₀, ht₀⟩ θ₀
       ⟨2 * |δ| / (a * (1 - b ^ 2)) * (b - a), mul_nonneg L.2 (sub_nonneg.2 hab)⟩ 0 L
       ⟨4 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) hm.le⟩ := by
-    refine ⟨fun t ht ↦ (lipschitzWith_circleContinuationSlope r ha hb hab ht).lipschitzOnWith,
+    refine ⟨fun t ht ↦ (lipschitzWith_circleContinuationSlope r hm (ha.trans_le ht.1)
+        (ht.2.trans_lt hb) (mul_one_sub_sq_le ha hb ht)).lipschitzOnWith,
       fun θ _ ↦ ?_, fun t ht θ _ ↦ ?_, ?_⟩
     · simp only [circleContinuationSlope_def]
       exact ContinuousOn.div (continuousOn_const.mul (continuous_sin.comp_continuousOn
