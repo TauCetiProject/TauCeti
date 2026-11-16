@@ -73,7 +73,8 @@ theorem stableSmallJumpRemainderMeasure_self (α β r : ℝ) :
   simp
 
 /-- The compensated small-jump remainder is a probability measure for all cutoffs. When the
-Lévy mass of the band is zero or infinite the jump rate is zero, and the law is a point mass. -/
+Lévy mass of the band is zero or infinite, the jump rate (its `ENNReal.toNNReal`) is zero and the
+law is a point mass. -/
 instance isProbabilityMeasure_stableSmallJumpRemainderMeasure (α β ε r : ℝ) :
     IsProbabilityMeasure (stableSmallJumpRemainderMeasure α β ε r) := by
   rw [stableSmallJumpRemainderMeasure_def]

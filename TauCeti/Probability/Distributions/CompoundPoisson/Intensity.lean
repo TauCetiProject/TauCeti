@@ -14,9 +14,9 @@ A finite jump intensity `ν` determines a compound Poisson law with rate `ν uni
 normalized jump measure `cond ν univ`. Adding two intensities convolves their laws, so jumps
 in disjoint measurable regions can be separated into independent compound Poisson sums.
 Zero intensity gives the point mass at zero, even though its normalized jump measure is zero.
-For any intensity `ν` and set `s`, the rate `ν s` and jump law `cond ν s` give a probability law
-(`isProbabilityMeasure_compoundPoissonMeasure_cond`): when `ν s` is zero or infinite the rate is
-zero and the law is the point mass at zero.
+For any intensity `ν` and set `s`, the rate `(ν s).toNNReal` and jump law `cond ν s` give a
+probability law (`isProbabilityMeasure_compoundPoissonMeasure_cond`): when `ν s` is zero or
+infinite, `(ν s).toNNReal` vanishes and the law is the point mass at zero.
 
 The characteristic-function formula uses the unnormalized intensity directly. This avoids
 requiring positive mass for each part when decomposing an intensity.
@@ -36,9 +36,9 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-/-- The rate `ν s` and jump law `cond ν s` of any intensity `ν` on any set `s` give a probability
-law. When `ν s` is zero or infinite the rate is zero and the law is the point mass at zero;
-otherwise `cond ν s` is a probability measure. -/
+/-- The rate `(ν s).toNNReal` and jump law `cond ν s` of any intensity `ν` on any set `s` give a
+probability law. When `ν s` is zero or infinite, `(ν s).toNNReal = 0` and the law is the point
+mass at zero; otherwise `cond ν s` is a probability measure. -/
 instance isProbabilityMeasure_compoundPoissonMeasure_cond
     {E : Type*} [AddMonoid E] [MeasurableSpace E] (ν : Measure E) (s : Set E) :
     IsProbabilityMeasure (compoundPoissonMeasure (ν s).toNNReal (cond ν s)) := by
