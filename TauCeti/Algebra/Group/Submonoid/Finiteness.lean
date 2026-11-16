@@ -39,7 +39,7 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
   `S.nsmulSaturation = F + S` (`AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_add`).
   Consequently `S.nsmulSaturation` is finitely generated (`AddSubmonoid.FG.nsmulSaturation`), and
   for any finitely generated submonoid `S` of an arbitrary abelian group `G`, pulling back along a
-  finite free presentation `(s → ℤ) →+ G` shows that its saturation inside
+  finite free presentation `(Fin n → ℤ) →+ G` shows that its saturation inside
   `AddSubgroup.closure (S : Set G)` is finitely generated
   (`AddSubmonoid.FG.nsmulSaturation_inf_closure`).
 
@@ -213,16 +213,11 @@ variable {G : Type*} [AddCommGroup G]
 `AddSubgroup.closure (S : Set G)` is finitely generated. -/
 theorem FG.nsmulSaturation_inf_closure {S : AddSubmonoid G} (hS : S.FG) :
     (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).FG := by
-  classical
-  obtain ⟨s, hs⟩ := isAddFG_iff.mp hS
-  let π : (s → ℤ) →+ G := (Fintype.linearCombination ℤ (Subtype.val : s → G)).toAddMonoidHom
-  have hrange : AddMonoidHom.mrange π = (AddSubgroup.closure (S : Set G)).toAddSubmonoid :=
-    congrArg AddSubgroup.toAddSubmonoid
-      (show AddMonoidHom.range π = AddSubgroup.closure (S : Set G) by
-        rw [← LinearMap.range_toAddSubgroup, Fintype.range_linearCombination,
-          Subtype.range_coe_subtype, Finset.setOfPred_mem, ← Submodule.span_closure, hs,
-          Submodule.span_int_eq_addSubgroupClosure])
-  have hfg : ((S.comap π).nsmulSaturation.map π).FG := ((hS.comap π).nsmulSaturation).map π
+  obtain ⟨n, π, hπ⟩ := AddSubgroup.fg_iff_exists_fin_addMonoidHom.mp hS.addSubgroupClosure
+  have hrange : AddMonoidHom.mrange π = (AddSubgroup.closure (S : Set G)).toAddSubmonoid := by
+    ext x
+    simp [← hπ]
+  have hfg := ((hS.comap π).nsmulSaturation).map π
   rwa [S.nsmulSaturation_comap π, map_comap_eq, hrange] at hfg
 
 /-- In any abelian group `G`, the saturation of the pullback of a finitely generated submonoid `S`

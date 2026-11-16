@@ -75,4 +75,4 @@ theorem Set.Finite.exists_fg_subgroup_subset_exists_map_mapDomainRingHom_eq {G :
     (H.subtype.mem_lifts_mapDomainRingHom_iff p).mpr fun i hi g hg ↦
       ⟨⟨g, Subgroup.subset_closure (.inr (Set.mem_biUnion hi hg))⟩, rfl⟩
   exact ⟨H, (Subgroup.fg_iff H).mpr ⟨t, rfl, ht⟩,
-    Set.subset_union_left.trans Subgroup.subset_closure, hlifts⟩
+    Set.subset_union_left.trans Subgroup.subset_closure, (Polynomial.mem_lifts p).mp hlifts⟩

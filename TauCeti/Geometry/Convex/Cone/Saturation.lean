@@ -254,16 +254,6 @@ namespace AddMonoidHom
 
 open PointedCone
 
-/-- Over an ordered semiring `R`, the pointed cone hull of the image of `AddSubmonoid.closure s`
-agrees with that of `i '' s`. -/
-@[simp]
-theorem hull_image_coe_addSubmonoid_closure {R N V : Type*} [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] [AddCommMonoid N] [AddCommMonoid V] [Module R V]
-    (i : N →+ V) (s : Set N) :
-    hull R (i '' (AddSubmonoid.closure s : Set N)) = hull R (i '' s) := by
-  rw [← AddSubmonoid.coe_map, AddMonoidHom.map_mclosure]
-  exact Submodule.span_closure
-
 /-- Over a linearly ordered field `K`, every element in the saturation of `S` maps into the cone
 hull of `i '' S`. -/
 theorem nsmulSaturation_le_latticePoints_hull_image {K N W : Type*} [Field K] [LinearOrder K]

@@ -57,8 +57,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   every element some positive power of which it contains.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
   perfect.
-* `IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le` and
-  `IsIntegrallyClosed.of_leftInverse`: a ring retract of an integrally closed commutative ring
+* `Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le` and
+  `Function.LeftInverse.isIntegrallyClosed`: a ring retract of an integrally closed commutative ring
   whose section preserves nonzerodivisors (in particular when the ambient ring has no zero divisors)
   is integrally closed.
 -/
@@ -260,7 +260,7 @@ end Subring
 /-- **A ring retract of an integrally closed ring along a nonzerodivisor-preserving section is
 integrally closed.** If `i : R →+* A` admits a left inverse `π : A →+* R`, carries nonzerodivisors
 of `R` to nonzerodivisors of `A`, and `A` is integrally closed, then `R` is integrally closed. -/
-theorem IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le {R A : Type*} [CommRing R]
+theorem Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le {R A : Type*} [CommRing R]
     [CommRing A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R} (h : Function.LeftInverse π i)
     (hnzd : nonZeroDivisors R ≤ (nonZeroDivisors A).comap i) : IsIntegrallyClosed R := by
   let f : FractionRing R →+* FractionRing A := IsLocalization.map (FractionRing A) i hnzd
@@ -279,8 +279,8 @@ theorem IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le {R A : Type*} [C
 /-- **A ring retract of an integrally closed ring without zero divisors is integrally closed.** If
 `i : R →+* A` admits a left inverse `π : A →+* R` and `A` is integrally closed without zero
 divisors, then `R` is integrally closed. -/
-theorem IsIntegrallyClosed.of_leftInverse {R A : Type*} [CommRing R] [CommRing A]
+theorem Function.LeftInverse.isIntegrallyClosed {R A : Type*} [CommRing R] [CommRing A]
     [NoZeroDivisors A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R}
     (h : Function.LeftInverse π i) : IsIntegrallyClosed R :=
-  of_leftInverse_of_nonZeroDivisors_le h
+  h.isIntegrallyClosed_of_nonZeroDivisors_le
     (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective i h.injective)

@@ -44,8 +44,8 @@ any finitely generated `T` with `S ≤ T ≤ S.powSaturation`
 `Submonoid.FG.finite_mapDomainRingHom_inclusion_of_le_powSaturation`), and hence that for a
 finitely generated submonoid `S` the algebra of its saturation in an ambient free abelian group or
 in `AddSubgroup.closure (S : Set G)` (for any abelian group `G`) is finite over `R[S]`
-(`TauCeti.AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_finite` and
-`TauCeti.AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite`).
+(`AddSubmonoid.FG.finite_mapDomainRingHom_inclusion_nsmulSaturation` and
+`AddSubmonoid.FG.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure`).
 -/
 
 public section
@@ -225,13 +225,13 @@ theorem finite_mapDomainRingHom_inclusion_of_le_powSaturation {M : Type*} [CommM
 
 end Submonoid.FG
 
-namespace TauCeti.AddMonoidAlgebra
+namespace AddSubmonoid.FG
 
-open _root_.AddMonoidAlgebra
+open AddMonoidAlgebra
 
 /-- For a finitely generated submonoid `S` of a free abelian group `L`, `R[S.nsmulSaturation]` is
 a finite `R[S]`-algebra over any commutative ring `R`. -/
-theorem mapDomainRingHom_inclusion_nsmulSaturation_finite {L : Type*} [AddCommGroup L]
+theorem finite_mapDomainRingHom_inclusion_nsmulSaturation {L : Type*} [AddCommGroup L]
     [Module.Free ℤ L] {S : AddSubmonoid L} (hS : S.FG) (R : Type*) [CommRing R] :
     (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).Finite :=
   hS.nsmulSaturation.finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation R
@@ -240,11 +240,11 @@ theorem mapDomainRingHom_inclusion_nsmulSaturation_finite {L : Type*} [AddCommGr
 /-- For a finitely generated submonoid `S` of an abelian group `G`, the algebra of the saturation
 of `S` inside `AddSubgroup.closure (S : Set G)` is a finite `R[S]`-algebra over any commutative
 ring `R`. -/
-theorem mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite {G : Type*} [AddCommGroup G]
+theorem finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure {G : Type*} [AddCommGroup G]
     {S : AddSubmonoid G} (hS : S.FG) (R : Type*) [CommRing R] :
     (mapDomainRingHom R
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).Finite :=
   hS.nsmulSaturation_inf_closure.finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation R
     (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) inf_le_left
 
-end TauCeti.AddMonoidAlgebra
+end AddSubmonoid.FG

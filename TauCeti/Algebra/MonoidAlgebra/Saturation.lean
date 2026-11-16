@@ -25,10 +25,11 @@ necessary. For the inclusion of a submonoid `S ≤ N` it follows that `R[sat S]`
 `R[S]`.
 
 When `N = G` is a torsion-free abelian group (`[Module.IsTorsionFree ℤ G]`) and `R` is reduced, the
-integral closure of `R[M]` in `R[G]` is graded (`AddMonoidHom.isIntegralElem_single_coeff`), so it
-consists exactly of the elements supported on the saturation of the image of `f`. For a submonoid
-`S ≤ G` this identifies `R[sat S]` with the integral closure of `R[S]` in `R[G]`, and shows, for `R`
-nontrivial, that `R[S]` is integrally closed in `R[G]` exactly when `S` is saturated in `G`.
+integral closure of `R[M]` in `R[G]` is graded
+(`AddMonoidHom.isIntegralElem_mapDomainRingHom_single_coeff`), so it consists exactly of the
+elements supported on the saturation of the image of `f`. For a submonoid `S ≤ G` this identifies
+`R[sat S]` with the integral closure of `R[S]` in `R[G]`, and shows, for `R` nontrivial, that `R[S]`
+is integrally closed in `R[G]` exactly when `S` is saturated in `G`.
 
 Conversely, over any nontrivial commutative ring `R`, if `R[S]` is integrally closed then `S` is
 saturated inside the group it generates: an element `x` of that group with `n • x ∈ S` for some
@@ -41,13 +42,13 @@ fraction ring of `R[S]`, see `TauCeti.Algebra.MonoidAlgebra.IntegrallyClosed`.
 
 ## Main results
 
-* `AddMonoidHom.isIntegralElem_single_iff`: for `c` not nilpotent, `single x c` is integral
-  over `R[M]` iff `x ∈ (AddMonoidHom.mrange f).nsmulSaturation`.
+* `AddMonoidHom.isIntegralElem_mapDomainRingHom_single_iff`: for `c` not nilpotent, `single x c` is
+  integral over `R[M]` iff `x ∈ (AddMonoidHom.mrange f).nsmulSaturation`.
 * `AddSubmonoid.isIntegral_mapDomainRingHom_inclusion_nsmulSaturation`: `R[sat S]` is
   integral over `R[S]`.
-* `AddMonoidHom.isIntegralElem_iff_forall_mem_support`: for a torsion-free abelian group `G` and a
-  reduced ring `R`, an element of `R[G]` is integral over `R[M]` iff its support lies in the
-  saturation of the image of `f`.
+* `AddMonoidHom.isIntegralElem_mapDomainRingHom_iff_forall_mem_support`: for a torsion-free abelian
+  group `G` and a reduced ring `R`, an element of `R[G]` is integral over `R[M]` iff its support
+  lies in the saturation of the image of `f`.
 * `AddSubmonoid.isIntegralClosure_nsmulSaturation`: `R[sat S]` is the integral closure of `R[S]`
   in `R[G]` for any torsion-free abelian group `G`.
 * `AddSubmonoid.isIntegrallyClosedIn_iff_nsmulSaturated`: for a nontrivial reduced ring `R` and a
@@ -77,7 +78,7 @@ variable {R M N : Type*} [CommRing R] [AddCommMonoid M] [AddCommMonoid N]
 
 /-- A monomial in `R[N]` whose exponent lies in the positive-multiple saturation of the range of
 `f : M →+ N` is integral over `R[M]`. -/
-theorem isIntegralElem_single (f : M →+ N) {x : N}
+theorem isIntegralElem_mapDomainRingHom_single (f : M →+ N) {x : N}
     (hx : x ∈ (AddMonoidHom.mrange f).nsmulSaturation) (c : R) :
     (mapDomainRingHom R f).IsIntegralElem (AddMonoidAlgebra.single x c) := by
   obtain ⟨n, hn, m, hm⟩ := AddSubmonoid.mem_nsmulSaturation.mp hx
@@ -86,11 +87,11 @@ theorem isIntegralElem_single (f : M →+ N) {x : N}
 
 /-- A monomial `single x c` of `R[N]` with non-nilpotent coefficient is integral over `R[M]`
 exactly when some positive multiple of `x` lies in the image of `f`. -/
-theorem isIntegralElem_single_iff [IsRightCancelAdd N] (f : M →+ N) {x : N} {c : R}
+theorem isIntegralElem_mapDomainRingHom_single_iff [IsRightCancelAdd N] (f : M →+ N) {x : N} {c : R}
     (hc : ¬IsNilpotent c) :
     (mapDomainRingHom R f).IsIntegralElem (AddMonoidAlgebra.single x c) ↔
       x ∈ (AddMonoidHom.mrange f).nsmulSaturation := by
-  refine ⟨fun ⟨p, hp, hpx⟩ ↦ ?_, (f.isIntegralElem_single · c)⟩
+  refine ⟨fun ⟨p, hp, hpx⟩ ↦ ?_, (f.isIntegralElem_mapDomainRingHom_single · c)⟩
   by_contra hx
   -- The coefficient of the monic equation at `p.natDegree • x` comes only from its leading
   -- term: every lower term `f (p.coeff i) * single (i • x) (c ^ i)` would need an exponent
@@ -114,16 +115,17 @@ theorem isIntegralElem_single_iff [IsRightCancelAdd N] (f : M →+ N) {x : N} {c
 /-- **The integral closure of a monoid algebra in the algebra of a torsion-free abelian group.**
 Over a reduced ring `R`, an element of `R[G]` is integral over `R[M]` along `f : M →+ G` exactly
 when its support lies in the saturation of the image of `f`. -/
-theorem isIntegralElem_iff_forall_mem_support {G : Type*} [AddCommGroup G]
+theorem isIntegralElem_mapDomainRingHom_iff_forall_mem_support {G : Type*} [AddCommGroup G]
     [Module.IsTorsionFree ℤ G] [IsReduced R] (f : M →+ G) {x : AddMonoidAlgebra R G} :
     (mapDomainRingHom R f).IsIntegralElem x ↔
       ∀ g ∈ x.coeff.support, g ∈ (AddMonoidHom.mrange f).nsmulSaturation := by
   refine ⟨fun hx g hg ↦ ?_, fun h ↦ ?_⟩
-  · refine (f.isIntegralElem_single_iff ?_).mp (f.isIntegralElem_single_coeff hx g)
+  · refine (f.isIntegralElem_mapDomainRingHom_single_iff ?_).mp
+      (f.isIntegralElem_mapDomainRingHom_single_coeff hx g)
     exact fun hnil ↦ Finsupp.mem_support_iff.mp hg hnil.eq_zero
   · rw [← sum_coeff_single x, Finsupp.sum]
     exact Finset.sum_induction _ _ (fun _ _ ha hb ↦ ha.add _ hb) (RingHom.isIntegralElem_zero _)
-      fun g hg ↦ f.isIntegralElem_single (h g hg) _
+      fun g hg ↦ f.isIntegralElem_mapDomainRingHom_single (h g hg) _
 
 end AddMonoidHom
 
@@ -139,8 +141,8 @@ theorem isIntegral_mapDomainRingHom_inclusion_nsmulSaturation {N : Type*} [AddCo
   | add y z hy hz => exact hy.add _ hz
   | single x r =>
     obtain ⟨n, hn, hnx⟩ := mem_nsmulSaturation.mp x.property
-    exact (inclusion S.le_nsmulSaturation).isIntegralElem_single (mem_nsmulSaturation.mpr
-      ⟨n, hn, ⟨n • (x : N), hnx⟩, Subtype.ext (by simp)⟩) r
+    exact (inclusion S.le_nsmulSaturation).isIntegralElem_mapDomainRingHom_single
+      (mem_nsmulSaturation.mpr ⟨n, hn, ⟨n • (x : N), hnx⟩, Subtype.ext (by simp)⟩) r
 
 section CancelMonoid
 
@@ -203,12 +205,11 @@ theorem isIntegralClosure_nsmulSaturation [IsReduced R] :
   let := (mapDomainRingHom R S.subtype).toAlgebra
   let := (mapDomainRingHom R S.nsmulSaturation.subtype).toAlgebra
   refine ⟨mapDomain_injective S.nsmulSaturation.subtype_injective, fun {x} ↦ ?_⟩
-  rw [IsIntegral, RingHom.algebraMap_toAlgebra, AddMonoidHom.isIntegralElem_iff_forall_mem_support,
+  rw [IsIntegral, RingHom.algebraMap_toAlgebra,
+    AddMonoidHom.isIntegralElem_mapDomainRingHom_iff_forall_mem_support,
     mrange_subtype, RingHom.algebraMap_toAlgebra]
-  simp only [mapDomainRingHom_apply, ← Set.mem_range, mem_range_mapDomain_iff]
-  refine ⟨fun h g hg ↦ ⟨⟨g, h g hg⟩, rfl⟩, fun h g hg ↦ ?_⟩
-  obtain ⟨⟨g', hg'⟩, rfl⟩ := h g hg
-  exact hg'
+  simp only [mapDomainRingHom_apply, ← Set.mem_range, mem_range_mapDomain_iff,
+    ← AddMonoidHom.coe_mrange, mrange_subtype, SetLike.mem_coe]
 
 /-- **Normality relative to the ambient group algebra.** For a submonoid `S` of a torsion-free
 abelian group `G` and a nontrivial reduced ring `R`, the algebra `R[S]` is integrally closed in
@@ -220,21 +221,21 @@ theorem isIntegrallyClosedIn_iff_nsmulSaturated [Nontrivial R] [IsReduced R] :
   have hint (x : AddMonoidAlgebra R G) :
       IsIntegral (AddMonoidAlgebra R S) x ↔ ∀ g ∈ x.coeff.support, g ∈ S.nsmulSaturation := by
     rw [IsIntegral, RingHom.algebraMap_toAlgebra,
-      AddMonoidHom.isIntegralElem_iff_forall_mem_support, mrange_subtype]
+      AddMonoidHom.isIntegralElem_mapDomainRingHom_iff_forall_mem_support, mrange_subtype]
   have hrange (x : AddMonoidAlgebra R G) :
       (∃ y, algebraMap (AddMonoidAlgebra R S) (AddMonoidAlgebra R G) y = x) ↔
         ∀ g ∈ x.coeff.support, g ∈ S := by
     simp only [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply, ← Set.mem_range,
-      mem_range_mapDomain_iff]
-    refine ⟨fun h g hg ↦ ?_, fun h g hg ↦ ⟨⟨g, h g hg⟩, rfl⟩⟩
-    obtain ⟨⟨g', hg'⟩, rfl⟩ := h g hg
-    exact hg'
+      mem_range_mapDomain_iff, ← AddMonoidHom.coe_mrange, mrange_subtype, SetLike.mem_coe]
   rw [isIntegrallyClosedIn_iff]
   refine ⟨fun ⟨_, h⟩ n x hnx ↦ or_iff_not_imp_left.mpr fun hn ↦ ?_, fun hS ↦
     ⟨mapDomain_injective S.subtype_injective, fun {x} hx ↦ ?_⟩⟩
-  · refine (hrange (single x 1)).mp (h ((hint _).mpr fun g hg ↦ ?_)) x (by simp)
-    obtain rfl : g = x := by simpa using hg
-    exact mem_nsmulSaturation.mpr ⟨n, Nat.pos_of_ne_zero hn, hnx⟩
+  · have hx_int : IsIntegral (AddMonoidAlgebra R S) (single x (1 : R)) := by
+      rw [IsIntegral, RingHom.algebraMap_toAlgebra]
+      refine S.subtype.isIntegralElem_mapDomainRingHom_single ?_ 1
+      rw [mrange_subtype]
+      exact mem_nsmulSaturation.mpr ⟨n, Nat.pos_of_ne_zero hn, hnx⟩
+    exact (hrange (single x 1)).mp (h hx_int) x (by simp)
   · refine (hrange x).mpr fun g hg ↦ ?_
     rw [← nsmulSaturation_eq_self hS]
     exact (hint x).mp hx g hg
