@@ -189,23 +189,13 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_s
   have hH : ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, ∀ n, HolderOnWith C (1 - 2 / p) (u n) K :=
     fun K hK hKU ↦ (exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le hp hU hK hKU A M B).imp
       fun C hC n ↦ hC (u n) (g n) (hu n) (hA n) (hM n) (hB n)
-  have hα : (0 : ℝ) < ((1 - 2 / p : ℝ≥0) : ℝ) := by
-    rw [NNReal.coe_pos, tsub_pos_iff_lt, div_lt_one₀ (zero_lt_two.trans hp)]
-    exact hp
+  have hα : 0 < 1 - 2 / p := tsub_pos_of_lt ((div_lt_one₀ (zero_lt_two.trans hp)).2 hp)
   -- A common Hölder bound on a closed disc about each point of `U` gives equicontinuity.
-  have hequi : EquicontinuousOn u U := by
-    intro x hx
+  have hequi : EquicontinuousOn u U := equicontinuousOn_of_forall_holderOnWith hα fun x hx ↦ by
     obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 hU x hx
     obtain ⟨C, hC⟩ := hH (closedBall x (r / 2)) (isCompact_closedBall x _)
       ((closedBall_subset_ball (by linarith)).trans hrU)
-    refine (Metric.equicontinuousAt_of_continuity_modulus
-      (fun y ↦ C * dist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ)) ?_ u ?_).equicontinuousWithinAt U
-    · have hcont : Continuous fun y ↦ (C : ℝ) * dist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) :=
-        continuous_const.mul ((continuous_const.dist continuous_id).rpow_const
-          fun _ ↦ Or.inr hα.le)
-      simpa [Real.zero_rpow hα.ne'] using hcont.tendsto x
-    · filter_upwards [closedBall_mem_nhds x (by positivity : 0 < r / 2)] with y hy n
-      exact (hC n).dist_le (mem_closedBall_self (by positivity)) hy
+    exact ⟨C, _, closedBall_mem_nhds x (by positivity), hC⟩
   obtain ⟨φ, hφ, v, hconvOn⟩ := hequi.exists_strictMono_tendstoLocallyUniformlyOn hU fun z hz ↦
     ⟨closedBall 0 A, isCompact_closedBall _ _, fun n ↦ mem_closedBall_zero_iff.2 (hA n z hz)⟩
   refine ⟨φ, hφ, v, hconvOn, fun K hK hKU ↦ ?_⟩

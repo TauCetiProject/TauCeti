@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Precompact
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness of coefficients solving the equation of elementary symmetric functions
@@ -24,9 +25,9 @@ the `b_j` are the Newton coefficients of the normal moments of the curvature cur
 satisfy this equation only up to remainders `r_j`
 (`TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton` gives the equation with its explicit
 remainder). Bounds on the `r_j` in `L^{p_m}`, `p_m = 2 + 2 / m`, come from Taubes's estimates for
-the Seiberg–Witten equations, which are not proved in Tau Ceti; here they are a hypothesis. The
-roots `R(z)` of the polynomial `Wᵐ - b₁ Wᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ` stay in a fixed disc, by the bounds
-of `TauCeti.norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub`.
+the Seiberg–Witten equations; here they are a hypothesis. The roots `R(z)` of the polynomial
+`Wᵐ - b₁ Wᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ` stay in a fixed disc, by the bounds of
+`TauCeti.norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub`.
 
 This file proves that such coefficient families are precompact. For a sequence of families with
 roots in a fixed disc, bounded `ν` and `μ`, and remainders bounded in `Lᵖ(U)` for some `p > 2`,
@@ -152,8 +153,7 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm {m : ℕ} {p : ℝ�
   obtain ⟨φ, hφ, hc⟩ := extraction_forall_mem_finset (P := fun j φ ↦ ∃ v : ℂ → ℂ,
       TendstoLocallyUniformlyOn (fun n ↦ b (φ n) j) v atTop U ∧
         ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K) h
-    fun j _ φ ψ hψ ⟨v, hv, hvH⟩ ↦ ⟨v, fun s hs z hz ↦ (hv s hs z hz).imp fun _ ⟨ht, hev⟩ ↦
-      ⟨ht, hψ.tendsto_atTop.eventually hev⟩, hvH⟩
+    fun j _ φ ψ hψ ⟨v, hv, hvH⟩ ↦ ⟨v, hv.comp_tendsto hψ.tendsto_atTop, hvH⟩
   choose! c hc using hc
   exact ⟨φ, hφ, c, hc⟩
 

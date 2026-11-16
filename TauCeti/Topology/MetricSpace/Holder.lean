@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.MetricSpace.HolderNorm
 public import Mathlib.Topology.MetricSpace.Thickening
 
@@ -51,6 +52,10 @@ points, the form in which Hölder seminorms are written in analysis texts.
 
 By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
 `α ≤ 1`.
+
+A family of maps that are Hölder near each point of a set, with a common constant and a common
+positive exponent, is equicontinuous on that set
+(`TauCeti.equicontinuousOn_of_forall_holderOnWith`).
 
 ## Main declarations
 
@@ -524,5 +529,23 @@ theorem holderWith_norm_rpow {E : Type*} [SeminormedAddCommGroup E] {α : ℝ≥
     refine (key _ _ (norm_nonneg x) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
     rw [abs_sub_comm] at hxy
     exact (le_abs_self _).trans hxy
+
+/-- **Common local Hölder bounds give equicontinuity.** If each point `x ∈ s` has a neighbourhood
+on which all the maps `f i` are `r`-Hölder with one constant, for a fixed exponent `r > 0`, then the
+family `f` is equicontinuous on `s`. -/
+theorem equicontinuousOn_of_forall_holderOnWith {ι X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {f : ι → X → Y} {s : Set X} {r : ℝ≥0} (hr : 0 < r)
+    (h : ∀ x ∈ s, ∃ C : ℝ≥0, ∃ t ∈ 𝓝 x, ∀ i, HolderOnWith C r (f i) t) :
+    EquicontinuousOn f s := by
+  intro x hx
+  obtain ⟨C, t, ht, hC⟩ := h x hx
+  refine (Metric.equicontinuousAt_of_continuity_modulus (fun y ↦ C * dist x y ^ (r : ℝ)) ?_ f ?_
+    ).equicontinuousWithinAt s
+  · have hcont : Continuous fun y ↦ (C : ℝ) * dist x y ^ (r : ℝ) :=
+      continuous_const.mul ((continuous_const.dist continuous_id).rpow_const
+        fun _ ↦ Or.inr r.coe_nonneg)
+    simpa [Real.zero_rpow (NNReal.coe_pos.2 hr).ne'] using hcont.tendsto x
+  · filter_upwards [ht] with y hy i
+    exact (hC i).dist_le (mem_of_mem_nhds ht) hy
 
 end TauCeti
