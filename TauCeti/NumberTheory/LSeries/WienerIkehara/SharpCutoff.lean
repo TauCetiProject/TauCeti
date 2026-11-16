@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.Analysis.Asymptotics.Sum.Window
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Approximation
+import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
 
 /-!
 # The Wiener--Ikehara theorem

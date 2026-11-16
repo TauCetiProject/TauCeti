@@ -35,8 +35,14 @@ open scoped Topology
 /-- On a locally finite order bounded below, every initial segment `{a | a ≤ b}` is finite, so the
 identity map is Northcott. -/
 instance instNorthcottId {α : Type*} [Preorder α] [LocallyFiniteOrderBot α] :
-    Northcott (fun a : α ↦ a) where
+    Northcott (id : α → α) where
   finite_le := Set.finite_Iic
+
+/-- Lambda-form spelling of `TauCeti.instNorthcottId`, so typeclass synthesis finds `Northcott` for
+both `id` and `fun a ↦ a` at `.instances` transparency. -/
+instance instNorthcottId' {α : Type*} [Preorder α] [LocallyFiniteOrderBot α] :
+    Northcott (fun a : α ↦ a) :=
+  instNorthcottId
 
 variable {ι : Type*} (N : ι → ℕ) [Northcott N]
 
@@ -239,21 +245,25 @@ theorem eventually_summatory_indicator_sub_eq (w : ι → ℝ) {S T : Set ι}
   · rw [Set.indicator_of_notMem hS, Set.indicator_of_notMem (by tauto)]
 
 /-- For a nonnegative real cutoff, the carrier of the identity on `ℕ` is `Finset.Iic ⌊x⌋₊`. -/
-theorem normLE_nat_eq_Iic {x : ℝ} (hx : 0 ≤ x) :
+theorem normLE_id_eq_Iic {x : ℝ} (hx : 0 ≤ x) :
     normLE (fun n : ℕ ↦ n) x = Finset.Iic ⌊x⌋₊ := by
   ext n
   rw [mem_normLE, Finset.mem_Iic, Nat.le_floor_iff hx]
 
 /-- For a weight on `ℕ` vanishing at `0`, the summatory function along the identity height is the
 partial sum over `Finset.Icc 1 ⌊x⌋₊` at every real cutoff `x` (both sides vanish when `x < 1`). -/
-theorem summatory_nat_eq_sum_Icc {M : Type*} [AddCommMonoid M] {w : ℕ → M} (hw0 : w 0 = 0)
+theorem summatory_id_eq_sum_Icc {M : Type*} [AddCommMonoid M] {w : ℕ → M} (hw0 : w 0 = 0)
     (x : ℝ) :
     summatory (fun n : ℕ ↦ n) w x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, w n := by
   rcases lt_or_ge x 0 with hx | hx
   · rw [summatory_eq_zero_of_neg _ hx, Nat.floor_of_nonpos hx.le]
     simp
-  · rw [summatory_apply, normLE_nat_eq_Iic hx, ← Finset.Icc_bot, Nat.bot_eq_zero,
-      ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le _),
-      Finset.sum_insert (by simp), hw0, zero_add, zero_add]
+  · rw [summatory_apply, normLE_id_eq_Iic hx]
+    refine (Finset.sum_subset (fun n hn ↦ ?_) fun n hn hnot ↦ ?_).symm
+    · simp only [Finset.mem_Icc, Finset.mem_Iic] at hn ⊢
+      exact hn.2
+    · simp only [Finset.mem_Icc, Finset.mem_Iic] at hn hnot
+      obtain rfl : n = 0 := by omega
+      exact hw0
 
 end TauCeti
