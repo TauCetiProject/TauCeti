@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.BaseChange
@@ -40,7 +41,8 @@ finite `R`-basis via `mapScalars (b.coord i)`.
 When `G` is a locally compact topological monoid (not necessarily commutative or compact),
 `extendScalars O` respects right convolution, upgrading `baseChangeLinearEquiv O` to an `O`-algebra
 isomorphism `baseChangeAlgEquiv O : O ⊗[R] D(G, R) ≃ₐ[O] D(G, O)` sending `a ⊗ₜ dirac R x` to
-`a • dirac O x`.
+`a • dirac O x`. On `ℤ_p`, `mapScalars l` and `extendScalars O` act coefficientwise on the Amice
+transform (`coeff_amiceTransform_mapScalars`, `amiceTransform_extendScalars`).
 
 On a profinite group `Γ` over `ℤ_p`, comparing `baseChangeAlgEquiv O` with
 `completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ` and the integral-measure isomorphism
@@ -79,12 +81,17 @@ records that `ContinuousSMul ℤ_[p] O` fails whenever `p^n • (1 : O)` does no
 * `AbstractMeasure.ext_of_apply_comp_algebraMap`: for a finite free Hausdorff topological
   `R`-algebra `O` with `ContinuousSMul R O`, two `O`-valued measures agree if they agree on test
   functions of the form `algebraMap R O ∘ g` with `g ∈ C(X, R)`.
-* `AbstractMeasure.extendScalars_apply_comp_algebraMap`,
+* `AbstractMeasure.mapScalars_smul_dirac`, `AbstractMeasure.mapScalars_mapScalars`,
+  `AbstractMeasure.extendScalars_apply_comp_algebraMap`,
   `AbstractMeasure.extendScalars_apply_eq_sum`, `AbstractMeasure.extendScalars_self`,
   `AbstractMeasure.extendScalars_apply_one`, `AbstractMeasure.extendScalars_extendScalars`,
   `AbstractMeasure.extendScalars_injective`, `AbstractMeasure.extendScalars_dirac`,
   `AbstractMeasure.extendScalars_map`, `AbstractMeasure.finiteProjection_extendScalars`,
+  `AbstractMeasure.baseChangeLinearEquiv_symm_extendScalars`,
+  `AbstractMeasure.baseChangeLinearEquiv_symm_dirac`,
   `AbstractMeasure.baseChangeLinearEquiv_symm_apply`.
+* `AbstractMeasure.coeff_amiceTransform_mapScalars`, `AbstractMeasure.amiceTransform_extendScalars`:
+  Amice-transform formulas for `mapScalars` and `extendScalars` on `ℤ_p`.
 * `AbstractMeasure.continuous_mapScalars_weak`, `AbstractMeasure.continuous_extendScalars_weak`:
   weak-topology continuity of `mapScalars` and `extendScalars` over normed commutative rings.
 * `AbstractMeasure.toCompletedGroupAlgebra_baseChangeAlgEquiv`: compatibility of measure base change
@@ -103,7 +110,7 @@ records that `ContinuousSMul ℤ_[p] O` fails whenever `p^n • (1 : O)` does no
 public noncomputable section
 
 open ContinuousMap TauCeti
-open scoped TensorProduct
+open scoped PowerSeries TensorProduct
 
 namespace AbstractMeasure
 
@@ -163,12 +170,36 @@ theorem mapScalars_smul (r : R) (l : O →ₗ[R] R) (ν : D(X, O)) :
   ext g
   simp
 
+/-- Retracting `a • dirac O x` along `l : O →ₗ[R] R` gives `l a • dirac R x`. -/
+@[simp]
+theorem mapScalars_smul_dirac (l : O →ₗ[R] R) (a : O) (x : X) :
+    mapScalars l (a • dirac O x) = l a • dirac R x := by
+  ext g
+  simp only [mapScalars_apply, _root_.smul_apply, dirac_apply, comp_apply,
+    ContinuousMap.coe_ofClass, algebraMapCLM_apply, smul_eq_mul]
+  rw [mul_comm a, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+
 /-- Retracting a Dirac measure along `l : O →ₗ[R] R` scales the scalar Dirac measure by `l 1`. -/
 @[simp]
 theorem mapScalars_dirac (l : O →ₗ[R] R) (x : X) :
     mapScalars l (dirac O x) = l 1 • dirac R x := by
+  simpa using mapScalars_smul_dirac l (1 : O) x
+
+/-- Retracting scalars in two steps along a scalar tower `R → O → O'` agrees with retracting
+directly along `l₁.comp (l₂.restrictScalars R)`. -/
+@[simp]
+theorem mapScalars_mapScalars [CompactSpace O]
+    {O' : Type*} [CommRing O'] [TopologicalSpace O'] [IsTopologicalRing O'] [T2Space O']
+    [Algebra R O'] [Algebra O O'] [IsScalarTower R O O']
+    [ContinuousSMul R O'] [ContinuousSMul O O'] [Module.Finite O O'] [Module.Finite R O']
+    (l₁ : O →ₗ[R] R) (l₂ : O' →ₗ[O] O) (ν : D(X, O')) :
+    mapScalars l₁ (mapScalars l₂ ν) = mapScalars (l₁.comp (l₂.restrictScalars R)) ν := by
   ext g
-  simp [Algebra.algebraMap_eq_smul_one, mul_comm]
+  have hcomp : (algebraMapCLM O O' : C(O, O')).comp ((algebraMapCLM R O : C(R, O)).comp g) =
+      (algebraMapCLM R O' : C(R, O')).comp g := by
+    ext x
+    simp [IsScalarTower.algebraMap_apply R O O']
+  simp [hcomp]
 
 /-- Scalar retraction commutes with pushforward along any continuous map `X → Y`. -/
 @[simp]
@@ -476,15 +507,18 @@ theorem baseChangeLinearEquiv_tmul (a : O) (μ : D(X, R)) :
     baseChangeLinearEquiv O (a ⊗ₜ[R] μ) = a • extendScalars O μ :=
   (rfl)
 
-/-- `baseChangeLinearEquiv O` sends `1 ⊗ₜ μ` to `extendScalars O μ`. -/
-theorem baseChangeLinearEquiv_one_tmul (μ : D(X, R)) :
-    baseChangeLinearEquiv O ((1 : O) ⊗ₜ[R] μ) = extendScalars O μ := by
+/-- `(baseChangeLinearEquiv O).symm` sends `extendScalars O μ` to `1 ⊗ₜ μ`. -/
+@[simp]
+theorem baseChangeLinearEquiv_symm_extendScalars (μ : D(X, R)) :
+    (baseChangeLinearEquiv O).symm (extendScalars O μ) = (1 : O) ⊗ₜ[R] μ := by
+  apply (baseChangeLinearEquiv O).injective
   simp
 
-/-- `baseChangeLinearEquiv O` sends `a ⊗ₜ dirac R x` to `a • dirac O x`. -/
-theorem baseChangeLinearEquiv_tmul_dirac (a : O) (x : X) :
-    baseChangeLinearEquiv O (a ⊗ₜ[R] dirac R x) = a • dirac O x := by
-  simp
+/-- `(baseChangeLinearEquiv O).symm` sends `dirac O x` to `1 ⊗ₜ dirac R x`. -/
+@[simp]
+theorem baseChangeLinearEquiv_symm_dirac (x : X) :
+    (baseChangeLinearEquiv O).symm (dirac O x) = (1 : O) ⊗ₜ[R] dirac R x := by
+  rw [← extendScalars_dirac (R := R), baseChangeLinearEquiv_symm_extendScalars]
 
 /-- In any finite `R`-basis `b` of `O`, `(baseChangeLinearEquiv O).symm ν` decomposes as
 `∑ i, b i ⊗ₜ mapScalars (b.coord i) ν`. -/
@@ -561,6 +595,21 @@ theorem convolveFunRight_extendScalars_comp_algebraMap (ν : D(G, R)) (g : C(G, 
   simp only [convolveFunRight_apply, comp_apply, ContinuousMap.coe_ofClass, algebraMapCLM_apply]
   exact extendScalars_apply_comp_algebraMap ν ⟨fun y ↦ g (x * y), by fun_prop⟩
 
+omit [ContinuousMul G] [Module.Free R O] in
+/-- Retracting the multiplicative identity `1 = dirac 1` along `l : O →ₗ[R] R` scales `1` by
+`l 1`. -/
+@[simp]
+theorem mapScalars_one (l : O →ₗ[R] R) :
+    mapScalars l (1 : D(G, O)) = l 1 • (1 : D(G, R)) := by
+  simp [one_def]
+
+omit [ContinuousMul G] [Module.Free R O] in
+/-- Retracting `a • 1` along `l : O →ₗ[R] R` gives `l a • 1`. -/
+@[simp]
+theorem mapScalars_smul_one (l : O →ₗ[R] R) (a : O) :
+    mapScalars l (a • (1 : D(G, O))) = l a • (1 : D(G, R)) := by
+  simp [one_def]
+
 omit [ContinuousMul G] in
 /-- Extending scalars preserves the multiplicative identity `1 = dirac 1`. -/
 @[simp]
@@ -579,6 +628,13 @@ theorem extendScalars_mul (μ ν : D(G, R)) :
   ext_of_apply_comp_algebraMap R fun g ↦ by
     rw [extendScalars_apply_comp_algebraMap, mul_apply, mul_apply,
       convolveFunRight_extendScalars_comp_algebraMap, extendScalars_apply_comp_algebraMap]
+
+omit [Module.Free R O] in
+/-- Scalar retraction intertwines the scalar embeddings `O → D(G, O)` and `R → D(G, R)`. -/
+@[simp]
+theorem mapScalars_algebraMap (l : O →ₗ[R] R) (a : O) :
+    mapScalars l (algebraMap O D(G, O) a) = algebraMap R D(G, R) (l a) := by
+  rw [Algebra.algebraMap_eq_smul_one, mapScalars_smul_one, ← Algebra.algebraMap_eq_smul_one]
 
 /-- Extending scalars intertwines the scalar embeddings `R → D(G, R)` and `O → D(G, O)`. -/
 @[simp]
@@ -642,32 +698,53 @@ theorem baseChangeLinearEquiv_mul (z w : O ⊗[R] D(G, R)) :
       baseChangeLinearEquiv O z * baseChangeLinearEquiv O w :=
   (baseChangeAlgEquiv (G := G) (R := R) O).map_mul z w
 
-/-- `baseChangeAlgEquiv O` sends `a ⊗ₜ μ` to `a • extendScalars O μ`. -/
+/-- `(baseChangeLinearEquiv O).symm` preserves the convolution identity. -/
 @[simp]
-theorem baseChangeAlgEquiv_tmul (a : O) (μ : D(G, R)) :
-    baseChangeAlgEquiv O (a ⊗ₜ[R] μ) = a • extendScalars O μ :=
-  (rfl)
+theorem baseChangeLinearEquiv_symm_one :
+    (baseChangeLinearEquiv (R := R) O).symm (1 : D(G, O)) = 1 :=
+  (baseChangeAlgEquiv (G := G) (R := R) O).symm.map_one
 
-/-- `baseChangeAlgEquiv O` sends `1 ⊗ₜ μ` to `extendScalars O μ`. -/
-theorem baseChangeAlgEquiv_one_tmul (μ : D(G, R)) :
-    baseChangeAlgEquiv O ((1 : O) ⊗ₜ[R] μ) = extendScalars O μ := by
-  simp
-
-/-- `baseChangeAlgEquiv O` sends `a ⊗ₜ dirac R x` to `a • dirac O x`. -/
-theorem baseChangeAlgEquiv_tmul_dirac (a : O) (x : G) :
-    baseChangeAlgEquiv O (a ⊗ₜ[R] dirac R x) = a • dirac O x := by
-  simp
-
-/-- In any finite `R`-basis `b` of `O`, `(baseChangeAlgEquiv O).symm ν` decomposes as
-`∑ i, b i ⊗ₜ mapScalars (b.coord i) ν`. -/
-theorem baseChangeAlgEquiv_symm_apply {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R O) (ν : D(G, O)) :
-    (baseChangeAlgEquiv (R := R) O).symm ν = ∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν :=
-  baseChangeLinearEquiv_symm_apply b ν
+/-- `(baseChangeLinearEquiv O).symm` preserves convolution multiplication. -/
+@[simp]
+theorem baseChangeLinearEquiv_symm_mul (ν₁ ν₂ : D(G, O)) :
+    (baseChangeLinearEquiv (R := R) O).symm (ν₁ * ν₂) =
+      (baseChangeLinearEquiv (R := R) O).symm ν₁ * (baseChangeLinearEquiv (R := R) O).symm ν₂ :=
+  (baseChangeAlgEquiv (G := G) (R := R) O).symm.map_mul ν₁ ν₂
 
 end LocallyCompact
 
 end Monoid
+
+section Amice
+
+variable {p : ℕ} [Fact p.Prime]
+  {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+  [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Finite ℤ_[p] O]
+
+/-- Scalar retraction along `l : O →ₗ[ℤ_[p]] ℤ_[p]` acts coefficientwise on the Amice
+transform. -/
+@[simp]
+theorem coeff_amiceTransform_mapScalars (l : O →ₗ[ℤ_[p]] ℤ_[p]) (ν : D(ℤ_[p], O)) (n : ℕ) :
+    (mapScalars l ν).amiceTransform.coeff n = l (ν.amiceTransform.coeff n) := by
+  simp only [coeff_amiceTransform, mapScalars_apply]
+  congr 2
+  ext x
+  simp [Algebra.algebraMap_eq_smul_one]
+
+/-- Extending scalars from `ℤ_p` to `O` applies `algebraMap ℤ_[p] O` to the coefficients of the
+Amice transform. -/
+@[simp]
+theorem amiceTransform_extendScalars [Module.Free ℤ_[p] O] (μ : D(ℤ_[p], ℤ_[p])) :
+    (extendScalars O μ).amiceTransform =
+      PowerSeries.map (algebraMap ℤ_[p] O) μ.amiceTransform := by
+  ext n
+  simp only [coeff_amiceTransform, PowerSeries.coeff_map]
+  rw [← extendScalars_apply_comp_algebraMap]
+  congr 1
+  ext x
+  simp [Algebra.algebraMap_eq_smul_one]
+
+end Amice
 
 section CompletedGroupAlgebra
 
@@ -735,21 +812,11 @@ theorem toCompletedGroupAlgebra_surjective_of_free_of_finite (p : ℕ) [Fact p.P
   let e : O ⊗[ℤ_[p]] D(Γ, ℤ_[p]) ≃ₐ[O] O ⊗[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ :=
     Algebra.TensorProduct.congr (AlgEquiv.refl : O ≃ₐ[O] O)
       (completedGroupAlgebraEquiv (Γ := Γ) (p := p))
-  let z : O ⊗[ℤ_[p]] D(Γ, ℤ_[p]) :=
-    e.symm ((completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ).symm y)
-  refine ⟨baseChangeAlgEquiv O z, ?_⟩
-  rw [toCompletedGroupAlgebra_baseChangeAlgEquiv]
-  have hz : Algebra.TensorProduct.map (AlgHom.id O O)
-      (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) z =
-        (completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ).symm y := by
-    have hmap : Algebra.TensorProduct.map (AlgHom.id O O)
-        (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) =
-        e.toAlgHom := by
-      ext x
-      simp [e]
-    rw [hmap]
-    exact e.apply_symm_apply _
-  rw [hz, AlgEquiv.apply_symm_apply]
+  refine ⟨baseChangeAlgEquiv O (e.symm ((completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ).symm y)),
+    ?_⟩
+  rw [toCompletedGroupAlgebra_baseChangeAlgEquiv, ← toAlgHom_completedGroupAlgebraEquiv (p := p),
+    ← AlgEquiv.refl_toAlgHom, ← Algebra.TensorProduct.congr_apply, e.apply_symm_apply,
+    AlgEquiv.apply_symm_apply]
 
 /-- **`O`-valued measures are the completed group algebra (Rodrigues Jacinto–Williams,
 Proposition 3.16).** For a profinite group `Γ` and a Hausdorff topological commutative
@@ -765,12 +832,67 @@ def completedGroupAlgebraEquivOfFreeOfFinite (p : ℕ) [Fact p.Prime]
 /-- The forward map of `completedGroupAlgebraEquivOfFreeOfFinite p O` is
 `toCompletedGroupAlgebra`. -/
 @[simp]
-theorem completedGroupAlgebraEquivOfFreeOfFinite_apply {p : ℕ} [Fact p.Prime]
+theorem coe_completedGroupAlgebraEquivOfFreeOfFinite {p : ℕ} [Fact p.Prime]
+    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
+    ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O) = toCompletedGroupAlgebra :=
+  funext <| AlgEquiv.ofBijective_apply _ _
+
+/-- Forgetting invertibility of `completedGroupAlgebraEquivOfFreeOfFinite p O` gives
+`toCompletedGroupAlgebra`. -/
+@[simp]
+theorem toAlgHom_completedGroupAlgebraEquivOfFreeOfFinite {p : ℕ} [Fact p.Prime]
+    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
+    (completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toAlgHom = toCompletedGroupAlgebra :=
+  AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` is a left inverse to
+`toCompletedGroupAlgebra`. -/
+@[simp]
+theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_toCompletedGroupAlgebra
+    {p : ℕ} [Fact p.Prime]
     {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
     [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
     (ν : D(Γ, O)) :
-    completedGroupAlgebraEquivOfFreeOfFinite p O ν = toCompletedGroupAlgebra ν :=
-  AlgEquiv.ofBijective_apply _ _ _
+    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm (toCompletedGroupAlgebra ν) = ν :=
+  (completedGroupAlgebraEquivOfFreeOfFinite p O).symm_apply_apply ν
+
+/-- `toCompletedGroupAlgebra` is a right inverse to
+`(completedGroupAlgebraEquivOfFreeOfFinite p O).symm`. -/
+@[simp]
+theorem toCompletedGroupAlgebra_completedGroupAlgebraEquivOfFreeOfFinite_symm
+    {p : ℕ} [Fact p.Prime]
+    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
+    (y : completedGroupAlgebra O Γ) :
+    toCompletedGroupAlgebra ((completedGroupAlgebraEquivOfFreeOfFinite p O).symm y) = y :=
+  (completedGroupAlgebraEquivOfFreeOfFinite p O).apply_symm_apply y
+
+/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` sends the group element `γ` in `O[[Γ]]`
+to `dirac O γ`. -/
+@[simp]
+theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_of {p : ℕ} [Fact p.Prime]
+    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
+    (γ : Γ) :
+    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm (completedGroupAlgebra.of O Γ γ) =
+      dirac O γ := by
+  rw [← toCompletedGroupAlgebra_dirac,
+    completedGroupAlgebraEquivOfFreeOfFinite_symm_toCompletedGroupAlgebra]
+
+/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` intertwines coefficient extension along
+`algebraMap ℤ_[p] O` on `ℤ_p[[Γ]]` with `extendScalars O ∘ completedGroupAlgebraEquiv.symm`. -/
+@[simp]
+theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_mapRingHom {p : ℕ} [Fact p.Prime]
+    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
+    (x : completedGroupAlgebra ℤ_[p] Γ) :
+    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm
+        (completedGroupAlgebra.mapRingHom Γ (algebraMap ℤ_[p] O) x) =
+      extendScalars O (completedGroupAlgebraEquiv.symm x) := by
+  apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
+  simp
 
 /-- In any finite `ℤ_p`-basis `b` of `O`, `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm`
 extracts each scalar coordinate in `ℤ_p[[Γ]]`, converts it to an integral measure, and recombines
@@ -784,7 +906,7 @@ theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_apply {p : ℕ} [Fact p.Pr
         (completedGroupAlgebraEquiv.symm
           (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) := by
   apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
-  rw [AlgEquiv.apply_symm_apply, completedGroupAlgebraEquivOfFreeOfFinite_apply]
+  rw [AlgEquiv.apply_symm_apply, coe_completedGroupAlgebraEquivOfFreeOfFinite]
   have hsum : ∑ i : ι, b i • extendScalars O
       (completedGroupAlgebraEquiv.symm
         (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) =
@@ -794,7 +916,7 @@ theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_apply {p : ℕ} [Fact p.Pr
     simp [map_sum]
   rw [hsum, toCompletedGroupAlgebra_baseChangeAlgEquiv]
   simp only [map_sum, Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq,
-    ← completedGroupAlgebraEquiv_apply, AlgEquiv.apply_symm_apply]
+    toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm]
   rw [← map_sum, ← completedGroupAlgebra.baseChangeEquiv_symm_apply b y,
     AlgEquiv.apply_symm_apply]
 
@@ -812,21 +934,20 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (p : ℕ) [F
   let _ : TopologicalSpace D(Γ, O) := WeakTopology
   let _ : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
   let b := Module.Free.chooseBasis ℤ_[p] O
-  let hZp := (isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p)).homeomorph
-    (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ)
-  have hhZp_symm (x : completedGroupAlgebra ℤ_[p] Γ) :
-      hZp.symm x = (completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm x := by
-    apply (completedGroupAlgebraEquiv (Γ := Γ) (p := p)).injective
-    rw [AlgEquiv.apply_symm_apply, completedGroupAlgebraEquiv_apply]
-    exact hZp.apply_symm_apply x
+  have hZp_coe : ⇑(completedGroupAlgebraEquiv (Γ := Γ) (p := p)).toEquiv =
+      ⇑(toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) :=
+    funext fun μ ↦ completedGroupAlgebraEquiv_apply μ
+  have hZp_symm : Continuous ⇑(completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm :=
+    ((completedGroupAlgebraEquiv (Γ := Γ) (p := p)).toEquiv.isHomeomorph_iff.mp
+      (by rw [hZp_coe]; exact isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p))).2
   have hsymm_cont :
-      Continuous (⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).symm) := by
+      Continuous ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).symm := by
     have hcont_i (i : _) :
         Continuous (fun y : completedGroupAlgebra O Γ ↦
-          extendScalars O (hZp.symm
+          extendScalars O ((completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm
             (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y))) :=
       (continuous_extendScalars_weak (X := Γ) (R := ℤ_[p]) (O := O)).comp
-        (hZp.symm.continuous.comp
+        (hZp_symm.comp
           (completedGroupAlgebra.continuous_mapAddMonoidHom
             (b.coord i).continuous_of_finite_of_compactSpace))
     refine continuous_induced_rng.mpr (continuous_pi fun f : C(Γ, O) ↦ ?_)
@@ -834,26 +955,22 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (p : ℕ) [F
     have hfun : (fun y : completedGroupAlgebra O Γ ↦
         (completedGroupAlgebraEquivOfFreeOfFinite p O).symm y f) =
         fun y ↦ ∑ i, b i *
-          extendScalars O (hZp.symm
+          extendScalars O ((completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm
             (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) f := by
       ext y
       rw [← coe_toCLMEquiv, completedGroupAlgebraEquivOfFreeOfFinite_symm_apply b y,
         map_sum, _root_.sum_apply]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simp [← hhZp_symm, smul_eq_mul]
+      simp [smul_eq_mul]
     rw [hfun]
     exact continuous_finsetSum _ fun i _ ↦
       continuous_const.mul (((continuous_apply f).comp continuous_induced_dom).comp (hcont_i i))
-  let H : D(Γ, O) ≃ₜ completedGroupAlgebra O Γ :=
-    { (completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toEquiv with
-      continuous_toFun := continuous_toCompletedGroupAlgebra.congr fun ν ↦
-        (completedGroupAlgebraEquivOfFreeOfFinite_apply ν).symm
-      continuous_invFun := hsymm_cont }
-  have hH : (⇑H : D(Γ, O) → completedGroupAlgebra O Γ) =
-      (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) :=
-    funext fun ν ↦ completedGroupAlgebraEquivOfFreeOfFinite_apply (p := p) ν
-  rw [← hH]
-  exact H.isHomeomorph
+  have hO_coe : ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toEquiv =
+      ⇑(toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
+    rw [AlgEquiv.toEquiv_eq_coe, AlgEquiv.coe_toEquiv, coe_completedGroupAlgebraEquivOfFreeOfFinite]
+  rw [← hO_coe]
+  exact (completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toEquiv.isHomeomorph_iff.mpr
+    ⟨by rw [hO_coe]; exact continuous_toCompletedGroupAlgebra, hsymm_cont⟩
 
 open Topology in
 /-- For a profinite group `Γ` and a finite free normed `ℤ_p`-algebra `O` with continuous
@@ -901,7 +1018,8 @@ example :
   AlgEquiv.ext fun z ↦
     TensorProduct.inductionOn z
       (fun r μ ↦ by
-        rw [baseChangeAlgEquiv_tmul, extendScalars_self, Algebra.TensorProduct.lid_tmul])
+        rw [coe_baseChangeAlgEquiv, baseChangeLinearEquiv_tmul, extendScalars_self,
+          Algebra.TensorProduct.lid_tmul])
       fun z₁ z₂ hz₁ hz₂ ↦ by rw [map_add, map_add, hz₁, hz₂]
 
 example (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]

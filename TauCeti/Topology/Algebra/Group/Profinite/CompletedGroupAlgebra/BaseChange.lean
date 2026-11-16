@@ -46,9 +46,11 @@ compactness/finite-quotient hypotheses beyond `[Group Γ] [TopologicalSpace Γ]`
 
 * `TauCeti.completedGroupAlgebra.proj_mapAddMonoidHom`,
   `TauCeti.completedGroupAlgebra.mapAddMonoidHom_of`,
-  `TauCeti.completedGroupAlgebra.mapAddMonoidHom_smul_of`: levelwise, group-element, and
+  `TauCeti.completedGroupAlgebra.mapAddMonoidHom_smul_of`,
+  `TauCeti.completedGroupAlgebra.mapAddMonoidHom_smul_one`: levelwise, group-element, and
   linear-form formulas for `mapAddMonoidHom`, together with `mapAddMonoidHom_one`,
-  `mapAddMonoidHom_algebraMap`, `mapAddMonoidHom_id`, `mapAddMonoidHom_comp`,
+  `mapAddMonoidHom_algebraMap`, `mapAddMonoidHom_zero`, `mapAddMonoidHom_add`,
+  `mapAddMonoidHom_neg`, `mapAddMonoidHom_id`, `mapAddMonoidHom_comp`,
   `mapAddMonoidHom_toAddMonoidHom`, `mapAddMonoidHom_injective`, and `continuous_mapAddMonoidHom`.
 * `TauCeti.completedGroupAlgebra.proj_mapRingHom`,
   `TauCeti.completedGroupAlgebra.coeff_proj_mapRingHom`,
@@ -57,8 +59,12 @@ compactness/finite-quotient hypotheses beyond `[Group Γ] [TopologicalSpace Γ]`
   `continuous_mapRingHom`.
 * `TauCeti.completedGroupAlgebra.baseChange_bijective`: `baseChange R S Γ` is bijective whenever
   `S` is finite and free over `R`.
-* `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply`: explicit decomposition of
-  `(baseChangeEquiv R S Γ).symm` in any finite `R`-basis of `S`.
+* `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_baseChange`,
+  `TauCeti.completedGroupAlgebra.baseChange_baseChangeEquiv_symm`,
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_mapRingHom`,
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_of`,
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply`: inverse cancellation, pure-tensor and
+  generator normal forms, and basis decomposition of `(baseChangeEquiv R S Γ).symm`.
 
 ## References
 
@@ -133,6 +139,28 @@ theorem mapAddMonoidHom_algebraMap (f : R →+ S) (r : R) :
     simp [Algebra.algebraMap_eq_smul_one, MonoidAlgebra.one_def, MonoidAlgebra.smul_single]
 
 variable (Γ) in
+/-- Additive coefficient change along the zero homomorphism is the zero homomorphism. -/
+@[simp]
+theorem mapAddMonoidHom_zero :
+    mapAddMonoidHom Γ (0 : R →+ S) = 0 :=
+  AddMonoidHom.ext fun x ↦ ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun a ↦ by
+    simp
+
+/-- Additive coefficient change distributes over addition of additive homomorphisms. -/
+@[simp]
+theorem mapAddMonoidHom_add (f g : R →+ S) :
+    mapAddMonoidHom Γ (f + g) = mapAddMonoidHom Γ f + mapAddMonoidHom Γ g :=
+  AddMonoidHom.ext fun x ↦ ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun a ↦ by
+    simp
+
+/-- Additive coefficient change commutes with negation of additive homomorphisms. -/
+@[simp]
+theorem mapAddMonoidHom_neg (f : R →+ S) :
+    mapAddMonoidHom Γ (-f) = -mapAddMonoidHom Γ f :=
+  AddMonoidHom.ext fun x ↦ ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun a ↦ by
+    simp
+
+variable (Γ) in
 /-- Additive coefficient change along the identity homomorphism is the identity. -/
 @[simp]
 theorem mapAddMonoidHom_id :
@@ -171,11 +199,6 @@ def mapRingHom (f : R →+* S) : completedGroupAlgebra R Γ →+* completedGroup
   map_zero' := (mapAddMonoidHom Γ f.toAddMonoidHom).map_zero
   map_add' := (mapAddMonoidHom Γ f.toAddMonoidHom).map_add
 
-/-- Forgetting multiplication on `mapRingHom Γ f` recovers `mapAddMonoidHom Γ f.toAddMonoidHom`. -/
-theorem toAddMonoidHom_mapRingHom (f : R →+* S) :
-    (mapRingHom Γ f).toAddMonoidHom = mapAddMonoidHom Γ f.toAddMonoidHom :=
-  (rfl)
-
 /-- Applying `mapAddMonoidHom` to a ring homomorphism `f : R →+* S` coerced to `R →+ S` agrees with
 `mapRingHom Γ f` coerced to `R[[Γ]] →+ S[[Γ]]`. -/
 @[simp]
@@ -189,9 +212,8 @@ theorem mapAddMonoidHom_toAddMonoidHom (f : R →+* S) :
 theorem proj_mapRingHom (f : R →+* S) (U : OpenNormalSubgroup Γ) (x : completedGroupAlgebra R Γ) :
     proj S Γ U (mapRingHom Γ f x) =
       MonoidAlgebra.mapRingHom (Γ ⧸ U.toSubgroup) f (proj R Γ U x) := by
-  rw [← AddMonoidHom.coe_ofClass (mapRingHom Γ f), ← RingHom.toAddMonoidHom_eq_coe,
-    toAddMonoidHom_mapRingHom, proj_mapAddMonoidHom, RingHom.toAddMonoidHom_eq_coe,
-    ← MonoidAlgebra.coe_mapRingHom]
+  rw [← AddMonoidHom.coe_ofClass (mapRingHom Γ f), ← mapAddMonoidHom_toAddMonoidHom,
+    proj_mapAddMonoidHom, ← MonoidAlgebra.coe_mapRingHom]
 
 /-- Each coefficient of `mapRingHom Γ f x` at level `U` is `f` applied to the corresponding
 coefficient of `x`. -/
@@ -230,20 +252,17 @@ theorem mapRingHom_comp (g : S →+* T) (f : R →+* S) :
 /-- Coefficient change along an injective ring homomorphism is injective. -/
 theorem mapRingHom_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (mapRingHom Γ f) := by
-  intro x y h
-  rw [← AddMonoidHom.coe_ofClass (mapRingHom Γ f), ← RingHom.toAddMonoidHom_eq_coe,
-    toAddMonoidHom_mapRingHom] at h
-  exact mapAddMonoidHom_injective (Γ := Γ) (f := f.toAddMonoidHom)
-    (by simpa only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass] using hf) h
+  simpa only [mapAddMonoidHom_toAddMonoidHom, AddMonoidHom.coe_ofClass] using
+    mapAddMonoidHom_injective (Γ := Γ) (f := (f : R →+ S))
+      (by simpa only [AddMonoidHom.coe_ofClass] using hf)
 
 /-- Coefficient change along a continuous ring homomorphism is continuous for the inverse-limit
 topologies. -/
 theorem continuous_mapRingHom [TopologicalSpace R] [TopologicalSpace S] {f : R →+* S}
     (hf : Continuous f) : Continuous (mapRingHom Γ f) := by
-  rw [← AddMonoidHom.coe_ofClass (mapRingHom Γ f), ← RingHom.toAddMonoidHom_eq_coe,
-    toAddMonoidHom_mapRingHom]
-  exact continuous_mapAddMonoidHom
-    (by simpa only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass] using hf)
+  simpa only [mapAddMonoidHom_toAddMonoidHom, AddMonoidHom.coe_ofClass] using
+    continuous_mapAddMonoidHom (Γ := Γ) (f := (f : R →+ S))
+      (by simpa only [AddMonoidHom.coe_ofClass] using hf)
 
 end MapCoefficients
 
@@ -271,6 +290,14 @@ theorem mapAddMonoidHom_smul_of (g : S →ₗ[R] R) (s : S) (γ : Γ) :
     mapAddMonoidHom Γ g.toAddMonoidHom (s • of S Γ γ) = g s • of R Γ γ := by
   rw [← mapRingHom_of (algebraMap R S) γ, mapAddMonoidHom_smul_mapRingHom]
 
+variable {R S Γ} in
+/-- Applying an `R`-linear form `g : S →ₗ[R] R` coefficientwise to `s • (1 : S[[Γ]])` gives
+`g s • 1`. -/
+@[simp]
+theorem mapAddMonoidHom_smul_one (g : S →ₗ[R] R) (s : S) :
+    mapAddMonoidHom Γ g.toAddMonoidHom (s • 1) = g s • 1 := by
+  rw [← map_one (mapRingHom Γ (algebraMap R S)), mapAddMonoidHom_smul_mapRingHom]
+
 /-- **Scalar extension to the completed group algebra.** The canonical `S`-algebra homomorphism
 `S ⊗[R] R[[Γ]] →ₐ[S] S[[Γ]]` sending `s ⊗ₜ x` to `s • mapRingHom Γ (algebraMap R S) x`. -/
 def baseChange : S ⊗[R] completedGroupAlgebra R Γ →ₐ[S] completedGroupAlgebra S Γ :=
@@ -289,24 +316,6 @@ variable {R S Γ}
 theorem baseChange_tmul (s : S) (x : completedGroupAlgebra R Γ) :
     baseChange R S Γ (s ⊗ₜ[R] x) = s • mapRingHom Γ (algebraMap R S) x :=
   (rfl)
-
-/-- `baseChange R S Γ` sends `1 ⊗ₜ x` to `mapRingHom Γ (algebraMap R S) x`. -/
-theorem baseChange_one_tmul (x : completedGroupAlgebra R Γ) :
-    baseChange R S Γ ((1 : S) ⊗ₜ[R] x) = mapRingHom Γ (algebraMap R S) x := by
-  simp
-
-/-- `baseChange R S Γ` sends `s ⊗ₜ of R Γ γ` to `s • of S Γ γ`. -/
-theorem baseChange_tmul_of (s : S) (γ : Γ) :
-    baseChange R S Γ (s ⊗ₜ[R] of R Γ γ) = s • of S Γ γ := by
-  simp
-
-/-- At level `U`, the `a`-th coefficient of `baseChange R S Γ (s ⊗ₜ x)` is `s` times the image of
-the `a`-th coefficient of `x`. -/
-theorem coeff_proj_baseChange_tmul (s : S) (x : completedGroupAlgebra R Γ)
-    (U : OpenNormalSubgroup Γ) (a : Γ ⧸ U.toSubgroup) :
-    (proj S Γ U (baseChange R S Γ (s ⊗ₜ[R] x))).coeff a =
-      s * algebraMap R S ((proj R Γ U x).coeff a) := by
-  simp
 
 section FiniteFree
 
@@ -378,10 +387,30 @@ theorem baseChangeEquiv_tmul (s : S) (x : completedGroupAlgebra R Γ) :
     baseChangeEquiv R S Γ (s ⊗ₜ[R] x) = s • mapRingHom Γ (algebraMap R S) x :=
   (rfl)
 
-/-- `baseChangeEquiv R S Γ` sends `s ⊗ₜ of R Γ γ` to `s • of S Γ γ`. -/
-theorem baseChangeEquiv_tmul_of (s : S) (γ : Γ) :
-    baseChangeEquiv R S Γ (s ⊗ₜ[R] of R Γ γ) = s • of S Γ γ :=
-  baseChange_tmul_of s γ
+/-- `(baseChangeEquiv R S Γ).symm` is a left inverse to `baseChange R S Γ`. -/
+@[simp]
+theorem baseChangeEquiv_symm_baseChange (z : S ⊗[R] completedGroupAlgebra R Γ) :
+    (baseChangeEquiv R S Γ).symm (baseChange R S Γ z) = z :=
+  (baseChangeEquiv R S Γ).symm_apply_apply z
+
+/-- `baseChange R S Γ` is a right inverse to `(baseChangeEquiv R S Γ).symm`. -/
+@[simp]
+theorem baseChange_baseChangeEquiv_symm (y : completedGroupAlgebra S Γ) :
+    baseChange R S Γ ((baseChangeEquiv R S Γ).symm y) = y :=
+  (baseChangeEquiv R S Γ).apply_symm_apply y
+
+/-- `(baseChangeEquiv R S Γ).symm` sends an element extended along `algebraMap R S` to `1 ⊗ₜ x`. -/
+@[simp]
+theorem baseChangeEquiv_symm_mapRingHom (x : completedGroupAlgebra R Γ) :
+    (baseChangeEquiv R S Γ).symm (mapRingHom Γ (algebraMap R S) x) = 1 ⊗ₜ[R] x := by
+  apply (baseChangeEquiv R S Γ).injective
+  simp
+
+/-- `(baseChangeEquiv R S Γ).symm` sends the group element `of S Γ γ` to `1 ⊗ₜ of R Γ γ`. -/
+@[simp]
+theorem baseChangeEquiv_symm_of (γ : Γ) :
+    (baseChangeEquiv R S Γ).symm (of S Γ γ) = 1 ⊗ₜ[R] of R Γ γ := by
+  rw [← mapRingHom_of (algebraMap R S) γ, baseChangeEquiv_symm_mapRingHom]
 
 /-- In any finite `R`-basis `b` of `S`, `(baseChangeEquiv R S Γ).symm y` decomposes as
 `∑ i, b i ⊗ₜ mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y`. -/

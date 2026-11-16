@@ -94,9 +94,8 @@ theorem toContinuousLinearMapOfFiniteOfCompactSpace_add (f g : M →ₗ[R] N) :
 
 /-- Upgrading a scalar multiple of a linear map commutes with scalar multiplication. -/
 @[simp]
-theorem toContinuousLinearMapOfFiniteOfCompactSpace_smul {S : Type*} [Monoid S]
-    [DistribMulAction S N] [SMulCommClass R S N] [ContinuousConstSMul S N] (c : S)
-    (f : M →ₗ[R] N) :
+theorem toContinuousLinearMapOfFiniteOfCompactSpace_smul {S : Type*} [DistribSMul S N]
+    [SMulCommClass R S N] [ContinuousConstSMul S N] (c : S) (f : M →ₗ[R] N) :
     (c • f).toContinuousLinearMapOfFiniteOfCompactSpace =
       c • f.toContinuousLinearMapOfFiniteOfCompactSpace := by
   ext
