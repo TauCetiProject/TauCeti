@@ -29,9 +29,10 @@ recursive on these letters.
   `Σ k, L.Term (α ⊕ Fin k)`; its encoding and decoding functions are those of Mathlib's
   `Encodable` instance for dependent pairs, only the proof that they are primitive recursive is
   new.
-* `FirstOrder.Language.Term.primrec_sigma_iff`: a function into terms with slots is primitive
-  recursive exactly when its number of slots and its term with slots read as numbers are. Forming
-  `⟨k, t⟩` (`FirstOrder.Language.Term.primrec_sigma_mk`) and its two projections
+* `FirstOrder.Language.Term.primrec_sigma_iff`, `FirstOrder.Language.Term.computable_sigma_iff`:
+  a function into terms with slots is primitive recursive, respectively computable, exactly when
+  its number of slots and its term with slots read as numbers are. Forming `⟨k, t⟩`
+  (`FirstOrder.Language.Term.primrec_sigma_mk`) and its two projections
   (`FirstOrder.Language.Term.primrec_sigma_fst`,
   `FirstOrder.Language.Term.primrec_relabel_sigma_val`) are primitive recursive.
 * `FirstOrder.Language.Term.primrec₂_liftAt_sigma`,
@@ -41,10 +42,8 @@ recursive on these letters.
   number of slots (as in `BoundedFormula.castLE`), relabelling free variables into free variables
   and new slots (as in `BoundedFormula.relabel`) and substituting terms for free variables (as in
   `BoundedFormula.subst`) are primitive recursive.
-* `FirstOrder.Language.Term.relabel_val_liftAt`,
-  `FirstOrder.Language.Term.relabel_val_relabelAux`, `FirstOrder.Language.Term.relabel_val_subst`:
-  reading slots as numbers turns these operations into relabellings and substitutions of terms
-  over `α ⊕ ℕ`.
+* `FirstOrder.Language.Term.computable₂_relabel_relabelAux_sigma`: relabelling free variables
+  into free variables and new slots along a computable map is computable.
 
 ## Implementation notes
 
@@ -52,7 +51,9 @@ A slot `i : Fin k` has the same code as the number `i`, so reading slots as numb
 (`Term.relabel (Sum.map id Fin.val)`) embeds `Σ k, L.Term (α ⊕ Fin k)` into
 `ℕ × L.Term (α ⊕ ℕ)` without changing codes; its image consists of the pairs `(k, s)` all of
 whose slot letters are below `k`. Primitive recursiveness is reduced along this embedding to
-`FirstOrder.Language.Term.instPrimcodable` with variables `α ⊕ ℕ`.
+`FirstOrder.Language.Term.instPrimcodable` with variables `α ⊕ ℕ`; the identities
+`FirstOrder.Language.Term.relabel_val_liftAt`, `FirstOrder.Language.Term.relabel_val_relabelAux`
+and `FirstOrder.Language.Term.relabel_sumMap_subst` describe the operations on the image.
 
 ## References
 
@@ -72,46 +73,7 @@ open Encodable
 
 variable {L : Language.{u, v}} {α : Type w}
 
-/-! ### Spellings and slots read as numbers -/
-
-/-- Reading slots as numbers after `Term.liftAt n' m` raises the numbers `≥ m` by `n'`. -/
-theorem relabel_val_liftAt {k : ℕ} (n' m : ℕ) (t : L.Term (α ⊕ Fin k)) :
-    (t.liftAt n' m).relabel (Sum.map id Fin.val) =
-      (t.relabel (Sum.map id Fin.val)).relabel
-        (Sum.map id fun i => if i < m then i else i + n') := by
-  rw [liftAt, relabel_relabel, relabel_relabel]
-  congr 1
-  funext x
-  rcases x with a | i
-  · simp
-  · simp only [Function.comp_apply, Sum.map_inr]
-    split_ifs <;> simp
-
-/-- Reading slots as numbers after `BoundedFormula.relabelAux g k` sends a free variable to the
-number of the slot that `g` assigns to it, and the slot `j` to `n + j`. -/
-theorem relabel_val_relabelAux {β : Type*} {n k : ℕ} (g : α → β ⊕ Fin n)
-    (t : L.Term (α ⊕ Fin k)) :
-    (t.relabel (BoundedFormula.relabelAux g k)).relabel (Sum.map id Fin.val) =
-      (t.relabel (Sum.map id Fin.val)).relabel
-        (Sum.elim (Sum.map id Fin.val ∘ g) fun j => Sum.inr (n + j)) := by
-  rw [relabel_relabel, relabel_relabel]
-  congr 1
-  funext x
-  rcases x with a | i
-  · rcases h : g a with b | j <;> simp [BoundedFormula.relabelAux, h]
-  · simp [BoundedFormula.relabelAux]
-
-/-- Reading slots as numbers commutes with the substitution of `BoundedFormula.subst`. -/
-theorem relabel_val_subst {β : Type*} {k : ℕ} (f : α → L.Term β)
-    (t : L.Term (α ⊕ Fin k)) :
-    (t.subst (Sum.elim (Term.relabel Sum.inl ∘ f) (var ∘ Sum.inr))).relabel
-        (Sum.map id Fin.val) =
-      (t.relabel (Sum.map id Fin.val)).subst
-        (Sum.elim (Term.relabel Sum.inl ∘ f) (var ∘ Sum.inr)) := by
-  rw [relabel_subst, subst_relabel]
-  congr 1
-  funext x
-  rcases x with a | i <;> simp [Function.comp_def]
+/-! ### Codes of terms with bound-variable slots -/
 
 section Encodable
 
@@ -167,6 +129,8 @@ private theorem encode_decode_sigma (c : ℕ) :
 
 end Encodable
 
+/-! ### Primitive recursive and computable maps of terms with slots -/
+
 section Primcodable
 
 variable [Primcodable α] [Primcodable (Σ i, L.Functions i)]
@@ -219,6 +183,14 @@ theorem primrec_sigma_iff {β : Type*} [Primcodable β] {f : β → Σ k, L.Term
     fun h => Primrec.encode_iff.1 <|
       (Primrec.encode.comp h).of_eq fun b => (encode_sigma (f b)).symm⟩
 
+/-- A function into terms with bound-variable slots is computable exactly when its number of
+slots and its term with slots read as natural numbers are. -/
+theorem computable_sigma_iff {β : Type*} [Primcodable β] {f : β → Σ k, L.Term (α ⊕ Fin k)} :
+    Computable f ↔ Computable fun b => ((f b).1, (f b).2.relabel (Sum.map id Fin.val)) :=
+  ⟨fun h => Computable.encode_iff.1 <| (Computable.encode.comp h).of_eq fun b => encode_sigma (f b),
+    fun h => Computable.encode_iff.1 <|
+      (Computable.encode.comp h).of_eq fun b => (encode_sigma (f b)).symm⟩
+
 /-- Forming the term with `k` bound-variable slots from a term over `α ⊕ Fin k` is primitive
 recursive. -/
 theorem primrec_sigma_mk (k : ℕ) :
@@ -241,7 +213,7 @@ theorem primrec₂_liftAt_sigma :
       (⟨t.1 + p.1, t.2.liftAt p.1 p.2⟩ : Σ k, L.Term (α ⊕ Fin k)) := by
   have hlift : Primrec₂ fun (p : ℕ × ℕ) (x : α ⊕ ℕ) =>
       Sum.map id (fun i => if i < p.2 then i else i + p.1) x :=
-    (Primrec.sumElim (Primrec.sumInl.comp .snd).to₂ (Primrec.sumInr.comp (Primrec.ite
+    (Primrec₂.sumElim (Primrec.sumInl.comp .snd).to₂ (Primrec.sumInr.comp (Primrec.ite
       (Primrec.nat_lt.comp .snd (Primrec.snd.comp .fst)) .snd
       (Primrec.nat_add.comp .snd (Primrec.fst.comp .fst)))).to₂).of_eq
       fun _ x => by rcases x with a | i <;> simp
@@ -289,6 +261,25 @@ theorem primrec₂_relabel_relabelAux_sigma {γ β : Type*} [Primcodable γ] [Pr
     fun p => ?_
   rw [relabel_val_relabelAux]
 
+/-- Relabelling the free variables of a term into free variables and `n` new bound-variable
+slots, as `BoundedFormula.relabel` does on the terms of a formula, is computable, uniformly in a
+parameter on which the relabelling depends computably. -/
+theorem computable₂_relabel_relabelAux_sigma {γ β : Type*} [Primcodable γ] [Primcodable β]
+    {n : ℕ} {g : γ → α → β ⊕ Fin n} (hg : Computable₂ g) :
+    Computable₂ fun c (t : Σ k, L.Term (α ⊕ Fin k)) =>
+      (⟨n + t.1, t.2.relabel (BoundedFormula.relabelAux (g c) t.1)⟩ :
+        Σ k, L.Term (β ⊕ Fin k)) := by
+  have hmap : Computable₂ fun (c : γ) (x : α ⊕ ℕ) =>
+      Sum.elim (Sum.map id Fin.val ∘ g c) (fun j => Sum.inr (n + j)) x :=
+    Computable.sumCasesOn .snd
+      ((Primrec.sumMap .id .fin_val).to_comp.comp (hg.comp (Computable.fst.comp .fst) .snd)).to₂
+      (Primrec.sumInr.comp (Primrec.nat_add.comp (.const n) .snd)).to_comp.to₂
+  refine computable_sigma_iff.2 <| (Computable.pair
+    (Primrec.nat_add.comp (.const n) (primrec_sigma_fst.comp .snd)).to_comp
+    ((computable₂_relabel hmap).comp .fst (primrec_relabel_sigma_val.to_comp.comp .snd))).of_eq
+    fun p => ?_
+  rw [relabel_val_relabelAux]
+
 /-- Substituting terms for the free variables of a term with bound-variable slots, as
 `BoundedFormula.subst` does on the terms of a formula, is primitive recursive, uniformly in a
 parameter on which the substituted terms depend primitive recursively. -/
@@ -303,7 +294,7 @@ theorem primrec₂_subst_sigma {γ β : Type*} [Primcodable γ] [Primcodable β]
       (primrec_var.comp (Primrec.sumInr.comp .snd)).to₂
   refine primrec_sigma_iff.2 <| (Primrec.pair (primrec_sigma_fst.comp .snd)
     ((primrec₂_subst hσ).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq fun p => ?_
-  rw [relabel_val_subst]
+  rw [relabel_sumMap_subst]
 
 end Primcodable
 
