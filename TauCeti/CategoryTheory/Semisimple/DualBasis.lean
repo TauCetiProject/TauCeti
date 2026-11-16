@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import TauCeti.CategoryTheory.Linear.SplitSimpleFamily
 public import TauCeti.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Semisimple.Basic
 public import TauCeti.CategoryTheory.Simple.Classes
@@ -39,6 +40,11 @@ it is natural in `X`: for `h : A ⟶ A'` and any bilinear map `β`,
 Combining the two, a sum over a basis of `S ⟶ F.obj B`, for an additive functor `F`, can be
 computed through the simple constituents `T` of `B`, using bases of `S ⟶ F.obj T` and `T ⟶ B`.
 
+The representatives of the simple classes form a split simple family in the sense of
+`TauCeti.IsSplitSimpleFamily`, and `TauCeti.homPairing` is the composition pairing
+`TauCeti.homPairingOfBijective` of an object with scalar endomorphisms, so the general results
+over a commutative semiring of `TauCeti.CategoryTheory.Linear.SplitSimpleFamily` apply here.
+
 These identities are the linear algebra behind sums of the shape `∑ i, b i ⊗ … ⊗ b.homDual i`
 in a fusion category, such as the half-braiding of the object `⨁ S, S ⊗ X ⊗ Sᘁ` of the Drinfeld
 centre: naturality of the canonical element gives naturality in the braided object, and the
@@ -54,7 +60,10 @@ factorization through simple constituents gives compatibility with tensor produc
 * `Module.Basis.sum_homDual_comp`: naturality of the canonical element, and
   `Module.Basis.sum_homDual_eq` its independence of the basis;
 * `TauCeti.sum_homDual_eq_sum_map_homDual`: the canonical element computed through the simple
-  constituents of an object.
+  constituents of an object;
+* `TauCeti.homPairing_eq_homPairingOfBijective` and `TauCeti.isSplitSimpleFamily_simpleClasses`:
+  the comparison with the split simple families of
+  `TauCeti.CategoryTheory.Linear.SplitSimpleFamily`.
 
 ## References
 
@@ -96,6 +105,34 @@ instance isPerfPair_homPairing (S X : C) [Simple S] [FiniteDimensional k (S ⟶ 
     exact zero_ne_one h
 
 end Perfect
+
+section SplitSimpleFamily
+
+variable (k : Type w) [Field k] [IsAlgClosed k]
+
+/-- By Schur's lemma, the composition pairing of a simple object is the composition pairing of an
+object with scalar endomorphisms. -/
+theorem homPairing_eq_homPairingOfBijective {C : Type u} [Category.{v} C] [Preadditive C]
+    [Linear k C] [HasKernels C] (S X : C) [Simple S] [FiniteDimensional k (S ⟶ S)] :
+    homPairing k S X = homPairingOfBijective (bijective_algebraMap_end_of_simple k S) X := by
+  ext f g
+  rw [eq_comm, homPairingOfBijective_eq_iff, homPairing_smul_id]
+
+/-- **The field case.** In a finite semisimple category over an algebraically closed field, with
+finite-dimensional endomorphisms of simple objects, the representatives of the simple classes
+form a split simple family. No finiteness of `SimpleClasses C` is needed. -/
+theorem isSplitSimpleFamily_simpleClasses {C : Type u} [Category.{v} C] [Abelian C]
+    [HasFiniteBiproducts C] [Linear k C] [IsFiniteSemisimpleCategory C]
+    [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)] :
+    IsSplitSimpleFamily k (fun S : SimpleClasses C ↦ S.repr) where
+  bijective_algebraMap S := bijective_algebraMap_end_of_simple k S.repr
+  homOrthogonal := SimpleClasses.homOrthogonal_repr
+  exists_iso_biproduct X := by
+    obtain ⟨κ, _, f, _, _, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+    exact ⟨κ, inferInstance, fun j ↦ SimpleClasses.classOf (f j),
+      ⟨e ≪≫ biproduct.mapIso fun j ↦ (SimpleClasses.classOfReprIso (f j)).symm⟩⟩
+
+end SplitSimpleFamily
 
 end TauCeti
 
