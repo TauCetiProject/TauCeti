@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.Basic
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Quotient
 
 /-!
 # Descent of the Cauchy–Riemann linearization to normal directions
@@ -139,7 +139,7 @@ theorem isComplexAntilinear_normalCauchyRiemannLinearization
     (hj : j.toLinearMap = j₀.toLinearMap) (hJ₀ : (J (u x)).toLinearMap = J₀.toLinearMap)
     (hJ : ∀ᶠ y in 𝓝 (u x), ∀ v, J y (J y v) = -v)
     (hu : IsComplexLinearMap j₀ J₀ (fderiv ℝ u x).toLinearMap) :
-    IsComplexAntilinear j₀.toLinearMap (normalComplexStructure j₀ J₀ u x hu).toLinearMap
+    IsComplexAntilinear j₀.toLinearMap hu.quotientRange.toLinearMap
       (normalCauchyRiemannLinearization j J u ξ x) := by
   have hjv (v : U) : j v = j₀ v := LinearMap.congr_fun hj v
   have hJv (v : V) : J (u x) v = J₀ v := LinearMap.congr_fun hJ₀ v
@@ -151,11 +151,8 @@ theorem isComplexAntilinear_normalCauchyRiemannLinearization
   have h := isComplexAntilinear_cauchyRiemannLinearization ξ
     (fun v ↦ by simp only [hjv, j₀.apply_apply]) hJ hzero
   rw [hj, hJ₀] at h
-  apply isComplexAntilinear_of_apply
-  intro v
-  simpa only [normalCauchyRiemannLinearization_apply, Submodule.mkQ_apply,
-    normalComplexStructure_mk, Submodule.Quotient.mk_neg, ContinuousLinearMap.coe_coe] using
-      congrArg (fderiv ℝ u x).toLinearMap.range.mkQ (h.apply v)
+  exact ((isComplexLinearMap_iff_isComplexLinear _ _ _).1
+    hu.isComplexLinearMap_quotientRange_mkQ).comp_antilinear h
 
 /-- The Leibniz remainder of the actual normal linearization is the intrinsic real
 Cauchy–Riemann symbol on the normal quotient. Together with
@@ -170,12 +167,12 @@ theorem normalCauchyRiemannLinearization_fun_smul_eq_smul_add_cauchyRiemannSymbo
     (hf : DifferentiableAt ℝ f x) (hξ : DifferentiableAt ℝ ξ x) :
     normalCauchyRiemannLinearization j J u (fun y ↦ f y • ξ y) x =
       f x • normalCauchyRiemannLinearization j J u ξ x +
-      cauchyRiemannSymbol j₀ (normalComplexStructure j₀ J₀ u x hu) (fderiv ℝ f x).toLinearMap
+      cauchyRiemannSymbol j₀ hu.quotientRange (fderiv ℝ f x).toLinearMap
         ((fderiv ℝ u x).toLinearMap.range.mkQ (ξ x)) := by
   have h := congrArg (fun L : U →ₗ[ℝ] V ↦ (fderiv ℝ u x).toLinearMap.range.mkQ.comp L)
     (cauchyRiemannLinearization_fun_smul_eq_smul_add_cauchyRiemannSymbol j₀ J₀ u ξ f x hj hJ₀ hf hξ)
   rw [LinearMap.comp_add, LinearMap.comp_smul,
-    (isComplexLinearMap_normalComplexStructure_mkQ j₀ J₀ u x hu).comp_cauchyRiemannSymbol] at h
+    hu.isComplexLinearMap_quotientRange_mkQ.comp_cauchyRiemannSymbol] at h
   ext v
   simpa only [normalCauchyRiemannLinearization_apply, LinearMap.comp_apply,
     LinearMap.add_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe] using

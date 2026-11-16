@@ -25,10 +25,11 @@ records the derivative of the pairing `(x, φ) ↦ φ x` of a space with its con
 linear map to a fixed vector (or of a varying bilinear map to two fixed vectors, together with the
 second derivative of the latter), the product rule
 for a varying bilinear map applied to two varying vectors, and the fact that the derivative of a
-field of symmetric bilinear maps takes symmetric values. A continuous linear map vanishing on a
-function near a point vanishes on its derivative there. Finally, a family of continuous linear maps
-out of a finite-dimensional space is differentiable, or has a given derivative in a scalar variable,
-within a set or at a point, exactly when each of its evaluations does; this is how derivatives of
+field of symmetric bilinear maps takes symmetric values. The derivative of a locally
+square-minus-one endomorphism field anticommutes with its value. A continuous linear map vanishing
+on a function near a point vanishes on its derivative there. Finally, a family of continuous linear
+maps out of a finite-dimensional space is differentiable, or has a given scalar derivative, within
+a set or at a point, exactly when each of its evaluations does; this is how derivatives of
 families of linear and bilinear maps are tested on vectors. Composing a family of continuous linear
 maps on the left with a fixed one composes its derivative with that map.
 
@@ -155,6 +156,24 @@ theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
   · -- Both sides are derivatives of functions of `y` which agree near `x`.
     have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
     rw [← fderiv_clm_apply_const_apply₂ hd, ← fderiv_clm_apply_const_apply₂ hd, heq.fderiv_eq]
+  · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- The derivative of a locally square-minus-one endomorphism field anticommutes with
+its value at the base point, including for totalized derivatives. -/
+theorem fderiv_apply_apply_eq_neg_of_eventually_sq_neg
+    {J : E → F →L[𝕜] F} {p : E}
+    (hJ : ∀ᶠ y in 𝓝 p, ∀ v, J y (J y v) = -v) (w : E) (v : F) :
+    fderiv 𝕜 J p w (J p v) = -J p (fderiv 𝕜 J p w v) := by
+  by_cases hd : DifferentiableAt 𝕜 J p
+  · have he : (fun y ↦ J y (J y v)) =ᶠ[𝓝 p] fun _ ↦ -v :=
+      hJ.mono fun y hy ↦ hy v
+    have hder := hd.hasFDerivAt.clm_apply
+      (hd.hasFDerivAt.clm_apply (hasFDerivAt_const (x := p) v))
+    have hzero := congrArg (fun L : E →L[𝕜] F ↦ L w)
+      (hder.unique ((hasFDerivAt_const (-v) p).congr_of_eventuallyEq he))
+    simp only [add_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.flip_apply, zero_apply, map_zero, zero_add] at hzero
+    exact eq_neg_of_add_eq_zero_right hzero
   · simp [fderiv_zero_of_not_differentiableAt hd]
 
 /-- If a continuous linear map `L` vanishes on `g` near `x`, then `L` vanishes on every directional

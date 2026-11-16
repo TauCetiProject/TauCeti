@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
-public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
+public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Symbol
 
@@ -125,23 +125,11 @@ theorem isComplexAntilinear_cauchyRiemannLinearization
     (hu : cauchyRiemannOperator j J u x = 0) :
     IsComplexAntilinear j.toLinearMap (J (u x)).toLinearMap
       (cauchyRiemannLinearization j J u ξ x).toLinearMap := by
-  have hT (v : V) : fderiv ℝ J (u x) (ξ x) (J (u x) v) =
-      -J (u x) (fderiv ℝ J (u x) (ξ x) v) := by
-    by_cases hd : DifferentiableAt ℝ J (u x)
-    · have he : (fun y ↦ J y (J y v)) =ᶠ[𝓝 (u x)] fun _ ↦ -v :=
-        hJ.mono fun y hy ↦ hy v
-      have hder := hd.hasFDerivAt.clm_apply
-        (hd.hasFDerivAt.clm_apply (hasFDerivAt_const (x := u x) v))
-      have hzero := congrArg (fun L : V →L[ℝ] V ↦ L (ξ x))
-        (hder.unique ((hasFDerivAt_const (-v) (u x)).congr_of_eventuallyEq he))
-      simp only [add_apply, comp_apply, flip_apply, zero_apply, map_zero, zero_add] at hzero
-      exact eq_neg_of_add_eq_zero_right hzero
-    · simp [fderiv_zero_of_not_differentiableAt hd]
   apply isComplexAntilinear_of_apply
   intro v
   simp only [ContinuousLinearMap.coe_coe, cauchyRiemannLinearization_apply,
     hj, map_neg, fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hu,
-    hT, map_sub, hJ.self_of_nhds]
+    fderiv_apply_apply_eq_neg_of_eventually_sq_neg hJ, map_sub, hJ.self_of_nhds]
   abel
 
 /-- The local-coordinate linearization is additive on differentiable directions. -/

@@ -97,12 +97,6 @@ variable {U V : Type*}
   [AddCommGroup U] [Module ℝ U] [AddCommGroup V] [Module ℝ V]
   {j : AlmostComplexStructure U} {J : AlmostComplexStructure V} {f : U →ₗ[ℝ] V}
 
-/-- The range of a complex-linear map is invariant under the target structure. -/
-theorem IsComplexLinearMap.apply_mem_range (hf : IsComplexLinearMap j J f)
-    {v : V} (hv : v ∈ LinearMap.range f) : J v ∈ LinearMap.range f := by
-  obtain ⟨u, rfl⟩ := hv
-  exact ⟨j u, (isComplexLinearMap_iff_apply _ _ _).1 hf u⟩
-
 /-- The almost complex structure on the quotient by the range of a complex-linear map. -/
 def IsComplexLinearMap.quotientRange (hf : IsComplexLinearMap j J f) :
     AlmostComplexStructure (V ⧸ LinearMap.range f) :=

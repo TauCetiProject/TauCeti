@@ -33,13 +33,9 @@ variable {U V : Type*} [AddCommGroup U] [Module ℝ U] [AddCommGroup V] [Module 
 
 /-- The symbol of the unnormalized real Cauchy–Riemann operator at a real covector. -/
 def cauchyRiemannSymbol (j : AlmostComplexStructure U) (J : AlmostComplexStructure V)
-    : (U →ₗ[ℝ] ℝ) →ₗ[ℝ] V →ₗ[ℝ] (U →ₗ[ℝ] V) where
-  toFun ℓ :=
-    { toFun q := (ℓ.comp j.toLinearMap).smulRight q - ℓ.smulRight (J q)
-      map_add' q r := by ext v; simp [smul_add, sub_add_sub_comm]
-      map_smul' c q := by ext v; simp [J.apply_smul, smul_sub, smul_smul, mul_comm] }
-  map_add' ℓ m := by ext q v; simp [add_smul]; abel
-  map_smul' c ℓ := by ext q v; simp [smul_sub, smul_smul]
+    : (U →ₗ[ℝ] ℝ) →ₗ[ℝ] V →ₗ[ℝ] (U →ₗ[ℝ] V) :=
+  LinearMap.comp LinearMap.smulRightₗ (LinearMap.lcomp ℝ ℝ j.toLinearMap) -
+    LinearMap.compl₂ LinearMap.smulRightₗ J.toLinearMap
 
 /-- Evaluation of the real Cauchy–Riemann symbol. -/
 @[simp]
@@ -93,8 +89,8 @@ def cauchyRiemannSymbolAntilinear (j : AlmostComplexStructure U)
     (U →ₗ[ℝ] ℝ) →ₗ[ℝ] V →ₗ[ℝ] complexAntilinearMaps j.toLinearMap J.toLinearMap where
   toFun ℓ := (cauchyRiemannSymbol j J ℓ).codRestrict _ fun q ↦
     mem_complexAntilinearMaps.2 (isComplexAntilinear_cauchyRiemannSymbol j J ℓ q)
-  map_add' ℓ m := by ext q v; simp [cauchyRiemannSymbol, add_smul]; abel
-  map_smul' c ℓ := by ext q v; simp [cauchyRiemannSymbol, smul_sub, smul_smul]
+  map_add' ℓ m := by ext q; simp
+  map_smul' c ℓ := by ext q; simp
 
 /-- Forgetting the corestriction recovers the real Cauchy–Riemann symbol. -/
 @[simp]
@@ -181,7 +177,8 @@ theorem cauchyRiemannSymbolEquiv_apply (j : AlmostComplexStructure U)
     (hU : Module.finrank ℝ U = 2) (J : AlmostComplexStructure V)
     (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) (q : V) :
     cauchyRiemannSymbolEquiv j hU J ℓ hℓ q =
-      cauchyRiemannSymbolAntilinear j J ℓ q := (rfl)
+      cauchyRiemannSymbolAntilinear j J ℓ q :=
+  LinearEquiv.ofBijective_apply _ q
 
 /-- The inverse symbol cancels the corestricted symbol. -/
 @[simp]
@@ -189,8 +186,9 @@ theorem cauchyRiemannSymbolEquiv_symm_apply_cauchyRiemannSymbolAntilinear
     (j : AlmostComplexStructure U) (hU : Module.finrank ℝ U = 2)
     (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) (q : V) :
     (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm
-      (cauchyRiemannSymbolAntilinear j J ℓ q) = q :=
-  (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm_apply_apply q
+      (cauchyRiemannSymbolAntilinear j J ℓ q) = q := by
+  rw [← cauchyRiemannSymbolEquiv_apply j hU J ℓ hℓ]
+  exact (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm_apply_apply q
 
 /-- The corestricted symbol cancels the inverse symbol. -/
 @[simp]
@@ -198,8 +196,9 @@ theorem cauchyRiemannSymbolAntilinear_apply_cauchyRiemannSymbolEquiv_symm
     (j : AlmostComplexStructure U) (hU : Module.finrank ℝ U = 2)
     (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0)
     (f : complexAntilinearMaps j.toLinearMap J.toLinearMap) :
-    cauchyRiemannSymbolAntilinear j J ℓ ((cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm f) = f :=
-  (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).apply_symm_apply f
+    cauchyRiemannSymbolAntilinear j J ℓ ((cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm f) = f := by
+  rw [← cauchyRiemannSymbolEquiv_apply j hU J ℓ hℓ]
+  exact (cauchyRiemannSymbolEquiv j hU J ℓ hℓ).apply_symm_apply f
 
 /-- The uncorestricted symbol of the inverse recovers the underlying antilinear map. -/
 @[simp]

@@ -513,6 +513,14 @@ lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplex
     IsComplexLinearMap J J'' (G.comp F) :=
   IsComplexLinear.comp hG hF
 
+/-- The range of a complex-linear map is invariant under the target structure. -/
+theorem IsComplexLinearMap.apply_mem_range
+    {j : AlmostComplexStructure V} {J : AlmostComplexStructure W} {f : V →ₗ[ℝ] W}
+    (hf : IsComplexLinearMap j J f) {v : W} (hv : v ∈ LinearMap.range f) :
+    J v ∈ LinearMap.range f := by
+  obtain ⟨u, rfl⟩ := hv
+  exact ⟨j u, (isComplexLinearMap_iff_apply _ _ _).1 hf u⟩
+
 /-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
 the restricted complex structure. -/
 lemma IsComplexLinearMap.restrict {J : AlmostComplexStructure V} {f : V →ₗ[ℝ] V}
