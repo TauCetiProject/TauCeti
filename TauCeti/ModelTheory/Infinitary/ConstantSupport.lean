@@ -20,7 +20,8 @@ interpreted. This is what allows a constant that does not occur in a set of sent
 reinterpreted as a witness, the argument behind the witness clauses of consistency properties.
 
 The support is a set rather than a `Finset`: a countable conjunction can mention infinitely many
-constants. A term mentions only finitely many (`Term.finite_constantSupport`).
+constants. A term mentions only finitely many (`Term.finite_constantSupport`), and so does any
+embedded finitary formula (`BoundedFormula.finite_constantSupport_toInf`).
 
 ## Main definitions
 
@@ -39,6 +40,8 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
 * `FirstOrder.Language.BoundedFormulaInf.constantSupport_onBoundedFormulaInf`,
   `FirstOrder.Language.BoundedFormulaInf.constantSupport_eq_empty_iff`: a formula of `L[[γ]]` has
   empty support precisely when it comes from `L`.
+* `FirstOrder.Language.BoundedFormula.finite_constantSupport_toInf`: a finitary formula of `L[[γ]]`
+  mentions finitely many constants.
 
 ## References
 
@@ -354,5 +357,19 @@ theorem realize_congr_of_eqOn_constantSupport {M : Type w} [L.Structure M] {e e'
   · exact R.elim
 
 end BoundedFormulaInf
+
+namespace BoundedFormula
+
+/-- A finitary formula of `L[[γ]]`, embedded at any carrier, mentions finitely many constants. -/
+theorem finite_constantSupport_toInf (φ : L[[γ]].BoundedFormula α n) :
+    (φ.toInf : L[[γ]].BoundedFormulaInf ι α n).constantSupport.Finite := by
+  induction φ with
+  | falsum => simp [toInf_falsum]
+  | equal t₁ t₂ => simp [toInf_equal, t₁.finite_constantSupport, t₂.finite_constantSupport]
+  | rel _ ts => simp [toInf_rel, Set.finite_iUnion fun i => (ts i).finite_constantSupport]
+  | imp _ _ ih₁ ih₂ => simp [toInf_imp, ih₁, ih₂]
+  | all _ ih => simp [toInf_all, ih]
+
+end BoundedFormula
 
 end FirstOrder.Language
