@@ -146,16 +146,6 @@ theorem _root_.MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le
   exact ((ENNReal.mul_pos (by exact_mod_cast hc.ne')
     (Metric.measure_closedBall_pos μ y hε).ne').trans_le hd).ne'
 
-/-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
-continuous functions into an order-closed space holds everywhere. -/
-theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    (μ : Measure X) [μ.IsOpenPosMeasure] [TopologicalSpace Y] [Preorder Y]
-    [OrderClosedTopology Y] {f g : X → Y} (hf : Continuous f) (hg : Continuous g) :
-    f ≤ᵐ[μ] g ↔ f ≤ g :=
-  -- The closed set where `f ≤ g` is dense, hence everything.
-  ⟨fun h x => (μ.dense_of_ae h).induction (fun _ => id) (isClosed_le hf hg) x,
-    Eventually.of_forall⟩
-
 /-- Under a measure positive on nonempty open sets, an almost everywhere inequality on an open set
 `U` between functions continuous on `U` into an order-closed space holds at every point of `U`. -/
 theorem _root_.ContinuousOn.le_of_ae_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
@@ -171,6 +161,15 @@ theorem _root_.ContinuousOn.le_of_ae_le {X Y : Type*} [TopologicalSpace X] [Meas
   intro x hx
   by_contra hfg
   exact (hW.eq_empty_of_measure_zero hnull).subset ⟨hx, hfg⟩
+
+/-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
+continuous functions into an order-closed space holds everywhere. -/
+theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    (μ : Measure X) [μ.IsOpenPosMeasure] [TopologicalSpace Y] [Preorder Y]
+    [OrderClosedTopology Y] {f g : X → Y} (hf : Continuous f) (hg : Continuous g) :
+    f ≤ᵐ[μ] g ↔ f ≤ g :=
+  ⟨fun h x => ContinuousOn.le_of_ae_le isOpen_univ hf.continuousOn hg.continuousOn
+    (by rwa [Measure.restrict_univ]) x trivial, Eventually.of_forall⟩
 
 /-- On a discrete space, a measure positive on nonempty open sets charges every point, so
 almost everywhere means everywhere. -/
