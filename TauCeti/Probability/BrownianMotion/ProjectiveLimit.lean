@@ -11,21 +11,9 @@ public import Mathlib.Probability.BrownianMotion.Basic
 /-!
 # Canonical pre-Brownian measure on product path space
 
-Combining `ProbabilityTheory.BrownianReal.projectiveFamily` with Kolmogorov's extension theorem
-`MeasureTheory.projectiveLimit` yields `TauCeti.Probability.brownianProjectiveLimit`, the canonical
-probability measure on `(ℝ≥0 → ℝ)` (with the product `σ`-algebra) under which coordinate evaluation
-satisfies `ProbabilityTheory.IsPreBrownianReal`.
-
-## Main declarations
-
-* `TauCeti.Probability.brownianProjectiveLimit`: Kolmogorov projective limit of
-  `BrownianReal.projectiveFamily`.
-* `TauCeti.Probability.isProjectiveLimit_brownianProjectiveLimit`,
-  `TauCeti.Probability.isProjectiveLimit_projectiveFamily_iff`: projective-limit characterization.
-* `TauCeti.Probability.isPreBrownianReal_eval_brownianProjectiveLimit`,
-  `TauCeti.Probability.isPreBrownianReal_eval_iff`,
-  `TauCeti.Probability.hasLaw_brownianProjectiveLimit_iff`: coordinate pre-Brownian motion and
-  path-law universal property.
+Combines `ProbabilityTheory.BrownianReal.projectiveFamily` with `MeasureTheory.projectiveLimit`
+to define `TauCeti.Probability.brownianProjectiveLimit` on `ℝ≥0 → ℝ` (product `σ`-algebra), where
+coordinate evaluation is `IsPreBrownianReal`.
 
 ## References
 
@@ -55,8 +43,7 @@ theorem isProjectiveLimit_brownianProjectiveLimit :
     IsProjectiveLimit brownianProjectiveLimit projectiveFamily :=
   isProjectiveLimit_projectiveLimit isProjectiveMeasureFamily_projectiveFamily
 
-/-- A measure on `ℝ≥0 → ℝ` is a projective limit of `projectiveFamily` iff it equals
-`brownianProjectiveLimit`. -/
+/-- Uniqueness of `brownianProjectiveLimit` as projective limit of `projectiveFamily`. -/
 theorem isProjectiveLimit_projectiveFamily_iff {μ : Measure (ℝ≥0 → ℝ)} :
     IsProjectiveLimit μ projectiveFamily ↔ μ = brownianProjectiveLimit :=
   ⟨fun h ↦ h.unique isProjectiveLimit_brownianProjectiveLimit,
@@ -68,18 +55,15 @@ theorem isPreBrownianReal_eval_brownianProjectiveLimit :
   ⟨fun I ↦ ⟨(Finset.measurable_restrict I).aemeasurable,
     isProjectiveLimit_brownianProjectiveLimit I⟩⟩
 
-/-- Evaluation `(t, ω) ↦ ω t` satisfies `IsPreBrownianReal` under `μ` iff
-`μ = brownianProjectiveLimit`. -/
+/-- Evaluation `(t, ω) ↦ ω t` is `IsPreBrownianReal` under `μ` iff `μ = brownianProjectiveLimit`. -/
 theorem isPreBrownianReal_eval_iff {μ : Measure (ℝ≥0 → ℝ)} :
     IsPreBrownianReal (fun t (ω : ℝ≥0 → ℝ) ↦ ω t) μ ↔ μ = brownianProjectiveLimit :=
   ⟨fun h ↦ isProjectiveLimit_projectiveFamily_iff.mp fun I ↦ (h.hasLaw I).map_eq,
     fun h ↦ h ▸ isPreBrownianReal_eval_brownianProjectiveLimit⟩
 
-/-- `ω ↦ (X · ω)` has law `brownianProjectiveLimit` under `P` iff `IsPreBrownianReal X P` and
-`AEMeasurable (fun ω t ↦ X t ω) P`. -/
+/-- `X` has path law `brownianProjectiveLimit` iff `IsPreBrownianReal X P` and a.e. measurable. -/
 theorem hasLaw_brownianProjectiveLimit_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : ℝ≥0 → Ω → ℝ} :
-    HasLaw (fun ω t ↦ X t ω) brownianProjectiveLimit P ↔
+    {X : ℝ≥0 → Ω → ℝ} : HasLaw (fun ω t ↦ X t ω) brownianProjectiveLimit P ↔
       IsPreBrownianReal X P ∧ AEMeasurable (fun ω t ↦ X t ω) P :=
   ⟨fun h ↦ ⟨⟨fun I ↦ (isPreBrownianReal_eval_brownianProjectiveLimit.hasLaw I).fun_comp h⟩,
       h.aemeasurable⟩,

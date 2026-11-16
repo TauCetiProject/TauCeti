@@ -17,32 +17,14 @@ import TauCeti.Probability.Independence.Sup
 /-!
 # Vector Brownian motion relative to a filtration
 
-This file defines `TauCeti.Probability.IsFilteredPreBrownian` and
-`TauCeti.Probability.IsFilteredBrownian` for `E`-valued processes relative to a filtration `ℱ`:
-`W` satisfies `IsPreBrownian` (resp. `IsBrownian`), is adapted to `ℱ`, and every increment
-`W t - W s` (`s ≤ t`) is independent of `ℱ s`.
+Defines `IsFilteredPreBrownian` and `IsFilteredBrownian` for `E`-valued processes relative to a
+filtration `ℱ`: `W` satisfies `IsPreBrownian` (resp. `IsBrownian`), is adapted to `ℱ`, and every
+increment `W t - W s` (`s ≤ t`) is independent of `ℱ s`.
 
-Coordinatewise `IsFilteredPreBrownianReal` alone does not imply `IsFilteredPreBrownian` (for
-instance, under repeated coordinates), and at a single fixed pair `s ≤ t`, marginal independence of
-each `⟪b i, W t - W s⟫` from `ℱ s` plus coordinate independence does not algebraically yield joint
-independence without subdividing `[s, t]`; `isFilteredPreBrownian_iff_orthonormalBasis` directly
-packages joint independence of the coordinate increment vector from `ℱ s`.
-
-## Main declarations
-
-* `TauCeti.Probability.IsFilteredPreBrownian`, `TauCeti.Probability.IsFilteredBrownian`:
-  vector pre-Brownian and Brownian motion in `E` relative to `ℱ`.
-* `TauCeti.Probability.IsFilteredPreBrownian.of_le`, `ambientNullAugmentation`, `nullAugment`,
-  `rightCont`, `rightCont_nullAugment`, `sup_const`: filtration restriction, null augmentation,
-  right-continuation, usual augmentation, and independent enlargement.
-* `TauCeti.Probability.IsFilteredPreBrownian.shift`, `smul`, `IsFilteredBrownian.shift`, `smul`:
-  filtered time shift and diffusive scaling.
-* `TauCeti.Probability.IsPreBrownian.isFilteredPreBrownian_natural`,
-  `IsBrownian.isFilteredBrownian_rightCont_nullAugment_natural`,
-  `IsPreBrownian.isFilteredPreBrownian_natural_sup_comap`: natural filtration, its usual
-  augmentation, and independent initial enlargement.
-* `TauCeti.Probability.isFilteredPreBrownian_iff_orthonormalBasis`,
-  `MeasureTheory.Adapted.isFilteredPreBrownian`: basis and increment characterizations.
+Coordinatewise `IsFilteredPreBrownianReal` alone does not imply `IsFilteredPreBrownian`, nor does
+marginal independence of each `⟪b i, W t - W s⟫` from `ℱ s` at a fixed `(s, t)` yield joint
+independence without subdividing `[s, t]`; `isFilteredPreBrownian_iff_orthonormalBasis` packages
+joint independence of the coordinate increment vector from `ℱ s`.
 
 ## References
 
@@ -63,10 +45,10 @@ variable {Ω ι E F : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 section Defs
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+  {ℱ : Filtration ℝ≥0 mΩ} {W W' : ℝ≥0 → Ω → E}
 
-/-- `W : ℝ≥0 → Ω → E` is a **vector pre-Brownian motion relative to `ℱ`** under `P` if it is a
-vector pre-Brownian motion in `E`, adapted to `ℱ`, with increments `W t - W s` (`s ≤ t`)
-independent of `ℱ s`. -/
+/-- `W : ℝ≥0 → Ω → E` is a **vector pre-Brownian motion relative to `ℱ`** under `P` if it is
+`IsPreBrownian`, adapted to `ℱ`, with increments `W t - W s` (`s ≤ t`) independent of `ℱ s`. -/
 structure IsFilteredPreBrownian (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 → Ω → E)
     (P : Measure Ω := by volume_tac) : Prop extends IsPreBrownian W P where
   /-- `W t` is `ℱ t`-measurable for every `t`. -/
@@ -74,35 +56,14 @@ structure IsFilteredPreBrownian (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 → 
   /-- For `s ≤ t`, the increment `W t - W s` is independent of `ℱ s`. -/
   indep_sub ⦃s t : ℝ≥0⦄ : s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P
 
-/-- `W : ℝ≥0 → Ω → E` is a **vector Brownian motion relative to `ℱ`** under `P` if it is a
-filtered vector pre-Brownian motion with `P`-almost surely continuous sample paths. -/
+/-- `W : ℝ≥0 → Ω → E` is a **vector Brownian motion relative to `ℱ`** under `P` if it is
+`IsFilteredPreBrownian` with `P`-almost surely continuous sample paths. -/
 structure IsFilteredBrownian (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 → Ω → E)
     (P : Measure Ω := by volume_tac) : Prop extends IsFilteredPreBrownian ℱ W P where
   /-- Almost every sample path `t ↦ W t ω` is continuous. -/
   ae_continuous : ∀ᵐ ω ∂P, Continuous (W · ω)
 
-/-- Forget the filtration and view a filtered vector Brownian motion as an `IsBrownian` process. -/
-theorem IsFilteredBrownian.toIsBrownian {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
-    (hW : IsFilteredBrownian ℱ W P) : IsBrownian W P :=
-  ⟨hW.toIsPreBrownian, hW.ae_continuous⟩
-
-/-- Package `IsBrownian` with adaptedness and increment independence into `IsFilteredBrownian`. -/
-theorem IsFilteredBrownian.of_isBrownian {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
-    (hW : IsBrownian W P) (hadapt : Adapted ℱ W)
-    (hindep : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P) :
-    IsFilteredBrownian ℱ W P :=
-  ⟨⟨hW.toIsPreBrownian, hadapt, hindep⟩, hW.ae_continuous⟩
-
-/-- Equivalence between `IsFilteredBrownian ℱ W P` and `IsBrownian W P` plus `ℱ`-compatibility. -/
-theorem isFilteredBrownian_iff {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E} :
-    IsFilteredBrownian ℱ W P ↔ IsBrownian W P ∧ Adapted ℱ W ∧
-      ∀ ⦃s t : ℝ≥0⦄, s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P :=
-  ⟨fun h ↦ ⟨h.toIsBrownian, h.adapted, h.indep_sub⟩,
-    fun ⟨hW, hadapt, hindep⟩ ↦ .of_isBrownian hW hadapt hindep⟩
-
 namespace IsFilteredPreBrownian
-
-variable {ℱ : Filtration ℝ≥0 mΩ} {W W' : ℝ≥0 → Ω → E}
 
 /-- Every time marginal of a filtered vector pre-Brownian motion is ambient-measurable. -/
 theorem measurable (hW : IsFilteredPreBrownian ℱ W P) (t : ℝ≥0) : Measurable (W t) :=
@@ -116,10 +77,9 @@ theorem indepFun_sub (hW : IsFilteredPreBrownian ℱ W P) {s t : ℝ≥0} (hst :
 
 /-- Fixed-time a.s. equality preserves `IsFilteredPreBrownian` for `ℱ`-adapted modifications. -/
 theorem congr (hW : IsFilteredPreBrownian ℱ W P) (hW' : Adapted ℱ W')
-    (h : ∀ t, W t =ᵐ[P] W' t) : IsFilteredPreBrownian ℱ W' P where
-  toIsPreBrownian := hW.toIsPreBrownian.congr h
-  adapted := hW'
-  indep_sub s t hst := (hW.indep_sub hst).comap_congr_left ((h t).sub (h s))
+    (h : ∀ t, W t =ᵐ[P] W' t) : IsFilteredPreBrownian ℱ W' P :=
+  ⟨hW.toIsPreBrownian.congr h, hW',
+    fun s t hst ↦ (hW.indep_sub hst).comap_congr_left ((h t).sub (h s))⟩
 
 /-- Indistinguishable adapted processes have the same `IsFilteredPreBrownian` property. -/
 theorem congr_indist (hW : IsFilteredPreBrownian ℱ W P) (hW' : Adapted ℱ W')
@@ -141,13 +101,19 @@ end IsFilteredPreBrownian
 
 namespace IsFilteredBrownian
 
-variable {ℱ : Filtration ℝ≥0 mΩ} {W W' : ℝ≥0 → Ω → E}
+/-- Forget the filtration and view a filtered vector Brownian motion as an `IsBrownian` process. -/
+theorem toIsBrownian (hW : IsFilteredBrownian ℱ W P) : IsBrownian W P :=
+  ⟨hW.toIsPreBrownian, hW.ae_continuous⟩
+
+/-- Package `IsBrownian` with adaptedness and increment independence into `IsFilteredBrownian`. -/
+theorem of_isBrownian (hW : IsBrownian W P) (hadapt : Adapted ℱ W)
+    (hindep : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P) :
+    IsFilteredBrownian ℱ W P := ⟨⟨hW.toIsPreBrownian, hadapt, hindep⟩, hW.ae_continuous⟩
 
 /-- Indistinguishable adapted processes share the `IsFilteredBrownian` property. -/
 theorem congr_indist (hW : IsFilteredBrownian ℱ W P) (hW' : Adapted ℱ W')
     (h : W ≡ᵐ[P] W') : IsFilteredBrownian ℱ W' P :=
-  ⟨hW.toIsFilteredPreBrownian.congr_indist hW' h,
-    (hW.toIsBrownian.congr_indist h).ae_continuous⟩
+  ⟨hW.toIsFilteredPreBrownian.congr_indist hW' h, (hW.toIsBrownian.congr_indist h).ae_continuous⟩
 
 /-- `IsFilteredBrownian` passes to any smaller filtration `𝒢 ≤ ℱ` to which `W` is adapted. -/
 theorem of_le (hW : IsFilteredBrownian ℱ W P) {𝒢 : Filtration ℝ≥0 mΩ} (h𝒢 : 𝒢 ≤ ℱ)
@@ -161,15 +127,21 @@ theorem ambientNullAugmentation (hW : IsFilteredBrownian ℱ W P) :
 
 end IsFilteredBrownian
 
+/-- Equivalence between `IsFilteredBrownian ℱ W P` and `IsBrownian W P` plus `ℱ`-compatibility. -/
+theorem isFilteredBrownian_iff : IsFilteredBrownian ℱ W P ↔ IsBrownian W P ∧ Adapted ℱ W ∧
+    ∀ ⦃s t : ℝ≥0⦄, s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P :=
+  ⟨fun h ↦ ⟨h.toIsBrownian, h.adapted, h.indep_sub⟩,
+    fun ⟨hW, hadapt, hindep⟩ ↦ .of_isBrownian hW hadapt hindep⟩
+
 /-- On `E = ℝ`, `IsFilteredPreBrownian` is equivalent to `IsFilteredPreBrownianReal`. -/
 @[simp]
-theorem isFilteredPreBrownian_real_iff {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} :
+theorem isFilteredPreBrownian_real_iff {W : ℝ≥0 → Ω → ℝ} :
     IsFilteredPreBrownian ℱ W P ↔ IsFilteredPreBrownianReal ℱ W P :=
   ⟨fun h ↦ ⟨isPreBrownian_real_iff.mp h.toIsPreBrownian, h.adapted, h.indep_sub⟩,
     fun h ↦ ⟨isPreBrownian_real_iff.mpr h.toIsPreBrownianReal, h.adapted, h.indep_sub⟩⟩
 
 /-- On `E = ℝ`, `IsFilteredBrownian` is equivalent to `IsBrownianReal` plus `ℱ`-compatibility. -/
-theorem isFilteredBrownian_real_iff {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} :
+theorem isFilteredBrownian_real_iff {W : ℝ≥0 → Ω → ℝ} :
     IsFilteredBrownian ℱ W P ↔ IsBrownianReal W P ∧ Adapted ℱ W ∧
       ∀ ⦃s t : ℝ≥0⦄, s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P := by
   rw [isFilteredBrownian_iff, isBrownian_real_iff]
@@ -179,6 +151,7 @@ end Defs
 section Borel
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
 
 /-- On `[Subsingleton E]`, every process on a probability space satisfies `IsFilteredBrownian`. -/
 theorem IsFilteredBrownian.of_subsingleton [Subsingleton E] [IsProbabilityMeasure P]
@@ -193,20 +166,15 @@ theorem IsFilteredPreBrownian.of_subsingleton [Subsingleton E] [IsProbabilityMea
     (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 → Ω → E) : IsFilteredPreBrownian ℱ W P :=
   (IsFilteredBrownian.of_subsingleton ℱ W).toIsFilteredPreBrownian
 
-/-- Completing the probability space and adjoining all ambient null events to `ℱ` preserves
-`IsFilteredPreBrownian`. -/
-theorem IsFilteredPreBrownian.nullAugment {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
-    (hW : IsFilteredPreBrownian ℱ W P) :
+/-- Completing the ambient space and adjoining all null events preserves `IsFilteredPreBrownian`. -/
+theorem IsFilteredPreBrownian.nullAugment (hW : IsFilteredPreBrownian ℱ W P) :
     @IsFilteredPreBrownian (NullMeasurableSpace Ω P) E inferInstance _ _ _
-      (ℱ.nullAugment P) (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω) P.completion where
-  toIsPreBrownian := hW.toIsPreBrownian.completion
-  adapted t := (hW.adapted t).mono (ℱ.le_nullAugment P t) le_rfl
-  indep_sub _ _ hst := (hW.indep_sub hst).nullAugment_right
+      (ℱ.nullAugment P) (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω) P.completion :=
+  ⟨hW.toIsPreBrownian.completion, fun t ↦ (hW.adapted t).mono (ℱ.le_nullAugment P t) le_rfl,
+    fun _ _ hst ↦ (hW.indep_sub hst).nullAugment_right⟩
 
-/-- Completing the probability space and adjoining all ambient null events to `ℱ` preserves
-`IsFilteredBrownian`. -/
-theorem IsFilteredBrownian.nullAugment {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
-    (hW : IsFilteredBrownian ℱ W P) :
+/-- Completing the ambient space and adjoining all null events preserves `IsFilteredBrownian`. -/
+theorem IsFilteredBrownian.nullAugment (hW : IsFilteredBrownian ℱ W P) :
     @IsFilteredBrownian (NullMeasurableSpace Ω P) E inferInstance _ _ _
       (ℱ.nullAugment P) (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω) P.completion :=
   ⟨hW.toIsFilteredPreBrownian.nullAugment, hW.ae_continuous⟩
@@ -216,17 +184,46 @@ end Borel
 section SecondCountable
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [SecondCountableTopology E]
+  [SecondCountableTopology E] {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
+
+section LinearIsometry
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+  [SecondCountableTopology F]
+
+/-- Linear isometry equivalences preserve `IsFilteredPreBrownian`. -/
+theorem IsFilteredPreBrownian.comp_linearIsometryEquiv (hW : IsFilteredPreBrownian ℱ W P)
+    (f : E ≃ₗᵢ[ℝ] F) : IsFilteredPreBrownian ℱ (fun t ω ↦ f (W t ω)) P where
+  toIsPreBrownian := hW.toIsPreBrownian.comp_linearIsometryEquiv f
+  adapted t := f.continuous.measurable.comp (hW.adapted t)
+  indep_sub s t hst := indep_of_indep_of_le_left (hW.indep_sub hst)
+    (MeasurableSpace.comap_le_comap_of_eq_comp f f.continuous.measurable (by ext ω; simp [map_sub]))
+
+/-- `f ∘ W` satisfies `IsFilteredPreBrownian` iff `W` does, for `f : E ≃ₗᵢ[ℝ] F`. -/
+theorem isFilteredPreBrownian_comp_linearIsometryEquiv_iff (f : E ≃ₗᵢ[ℝ] F) :
+    IsFilteredPreBrownian ℱ (fun t ω ↦ f (W t ω)) P ↔ IsFilteredPreBrownian ℱ W P :=
+  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
+
+/-- Linear isometry equivalences preserve `IsFilteredBrownian`. -/
+theorem IsFilteredBrownian.comp_linearIsometryEquiv (hW : IsFilteredBrownian ℱ W P)
+    (f : E ≃ₗᵢ[ℝ] F) : IsFilteredBrownian ℱ (fun t ω ↦ f (W t ω)) P :=
+  ⟨hW.toIsFilteredPreBrownian.comp_linearIsometryEquiv f,
+    (hW.toIsBrownian.comp_linearIsometryEquiv f).ae_continuous⟩
+
+/-- `f ∘ W` satisfies `IsFilteredBrownian` iff `W` does, for `f : E ≃ₗᵢ[ℝ] F`. -/
+theorem isFilteredBrownian_comp_linearIsometryEquiv_iff (f : E ≃ₗᵢ[ℝ] F) :
+    IsFilteredBrownian ℱ (fun t ω ↦ f (W t ω)) P ↔ IsFilteredBrownian ℱ W P :=
+  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
+
+end LinearIsometry
 
 namespace IsFilteredPreBrownian
-
-variable {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
 
 /-- For nonzero `u : E`, `‖u‖⁻¹ * ⟪u, W t ω⟫` satisfies `IsFilteredPreBrownianReal ℱ`. -/
 theorem isFilteredPreBrownianReal_norm_inv_mul_inner (hW : IsFilteredPreBrownian ℱ W P) {u : E}
     (hu : u ≠ 0) : IsFilteredPreBrownianReal ℱ (fun t ω ↦ ‖u‖⁻¹ * ⟪u, W t ω⟫) P where
   toIsPreBrownianReal := hW.isPreBrownianReal_norm_inv_mul_inner hu
-  adapted t := ((continuous_const.mul (innerSL ℝ u).continuous).measurable).comp (hW.adapted t)
+  adapted t := (continuous_const.mul (innerSL ℝ u).continuous).measurable.comp (hW.adapted t)
   indep_sub s t hst := indep_of_indep_of_le_left (hW.indep_sub hst)
     (MeasurableSpace.comap_le_comap_of_eq_comp (fun x : E ↦ ‖u‖⁻¹ * ⟪u, x⟫)
       (continuous_const.mul (innerSL ℝ u).continuous).measurable
@@ -235,72 +232,12 @@ theorem isFilteredPreBrownianReal_norm_inv_mul_inner (hW : IsFilteredPreBrownian
 /-- For a unit vector `u : E` (`‖u‖ = 1`), `⟪u, W t ω⟫` satisfies `IsFilteredPreBrownianReal ℱ`. -/
 theorem isFilteredPreBrownianReal_inner_of_norm_eq_one (hW : IsFilteredPreBrownian ℱ W P) {u : E}
     (hu : ‖u‖ = 1) : IsFilteredPreBrownianReal ℱ (fun t ω ↦ ⟪u, W t ω⟫) P := by
-  have hu0 : u ≠ 0 := by intro h; simp [h] at hu
-  simpa [hu] using hW.isFilteredPreBrownianReal_norm_inv_mul_inner hu0
-
-/-- Linear isometry equivalences preserve `IsFilteredPreBrownian`. -/
-theorem comp_linearIsometryEquiv [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
-    (hW : IsFilteredPreBrownian ℱ W P) (f : E ≃ₗᵢ[ℝ] F) :
-    IsFilteredPreBrownian ℱ (fun t ω ↦ f (W t ω)) P where
-  toIsPreBrownian := hW.toIsPreBrownian.comp_linearIsometryEquiv f
-  adapted t := f.continuous.measurable.comp (hW.adapted t)
-  indep_sub s t hst := indep_of_indep_of_le_left (hW.indep_sub hst)
-    (MeasurableSpace.comap_le_comap_of_eq_comp f f.continuous.measurable (by ext ω; simp [map_sub]))
+  simpa [hu] using
+    hW.isFilteredPreBrownianReal_norm_inv_mul_inner (u := u) (norm_ne_zero_iff.mp (by simp [hu]))
 
 /-- Negating a filtered vector pre-Brownian motion preserves `IsFilteredPreBrownian`. -/
 theorem neg (hW : IsFilteredPreBrownian ℱ W P) : IsFilteredPreBrownian ℱ (-W) P :=
   hW.comp_linearIsometryEquiv (.neg ℝ)
-
-end IsFilteredPreBrownian
-
-/-- `f ∘ W` satisfies `IsFilteredPreBrownian` iff `W` does, for `f : E ≃ₗᵢ[ℝ] F`. -/
-theorem isFilteredPreBrownian_comp_linearIsometryEquiv_iff [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
-    {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E} (f : E ≃ₗᵢ[ℝ] F) :
-    IsFilteredPreBrownian ℱ (fun t ω ↦ f (W t ω)) P ↔ IsFilteredPreBrownian ℱ W P :=
-  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
-
-namespace IsFilteredBrownian
-
-variable {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
-
-/-- For nonzero `u : E`, `‖u‖⁻¹ * ⟪u, W t ω⟫` satisfies `IsFilteredBrownian ℱ`. -/
-theorem isFilteredBrownian_norm_inv_mul_inner (hW : IsFilteredBrownian ℱ W P)
-    {u : E} (hu : u ≠ 0) : IsFilteredBrownian ℱ (fun t ω ↦ ‖u‖⁻¹ * ⟪u, W t ω⟫) P :=
-  ⟨isFilteredPreBrownian_real_iff.mpr (hW.isFilteredPreBrownianReal_norm_inv_mul_inner hu),
-    (hW.toIsBrownian.isBrownianReal_norm_inv_mul_inner hu).cont⟩
-
-/-- For a unit vector `u : E` (`‖u‖ = 1`), `⟪u, W t ω⟫` satisfies `IsFilteredBrownian ℱ`. -/
-theorem isFilteredBrownian_inner_of_norm_eq_one (hW : IsFilteredBrownian ℱ W P)
-    {u : E} (hu : ‖u‖ = 1) : IsFilteredBrownian ℱ (fun t ω ↦ ⟪u, W t ω⟫) P :=
-  ⟨isFilteredPreBrownian_real_iff.mpr (hW.isFilteredPreBrownianReal_inner_of_norm_eq_one hu),
-    (hW.toIsBrownian.isBrownianReal_inner_of_norm_eq_one hu).cont⟩
-
-/-- Linear isometry equivalences preserve `IsFilteredBrownian`. -/
-theorem comp_linearIsometryEquiv [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
-    (hW : IsFilteredBrownian ℱ W P) (f : E ≃ₗᵢ[ℝ] F) :
-    IsFilteredBrownian ℱ (fun t ω ↦ f (W t ω)) P :=
-  ⟨hW.toIsFilteredPreBrownian.comp_linearIsometryEquiv f,
-    (hW.toIsBrownian.comp_linearIsometryEquiv f).ae_continuous⟩
-
-/-- Negating a filtered vector Brownian motion preserves `IsFilteredBrownian`. -/
-theorem neg (hW : IsFilteredBrownian ℱ W P) : IsFilteredBrownian ℱ (-W) P :=
-  hW.comp_linearIsometryEquiv (.neg ℝ)
-
-end IsFilteredBrownian
-
-/-- `f ∘ W` satisfies `IsFilteredBrownian` iff `W` does, for `f : E ≃ₗᵢ[ℝ] F`. -/
-theorem isFilteredBrownian_comp_linearIsometryEquiv_iff [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
-    {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E} (f : E ≃ₗᵢ[ℝ] F) :
-    IsFilteredBrownian ℱ (fun t ω ↦ f (W t ω)) P ↔ IsFilteredBrownian ℱ W P :=
-  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
-
-namespace IsFilteredPreBrownian
-
-variable {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
 
 /-- On a second-countable Borel space, a filtered vector pre-Brownian motion is strongly adapted. -/
 theorem stronglyAdapted (hW : IsFilteredPreBrownian ℱ W P) : StronglyAdapted ℱ W :=
@@ -332,14 +269,12 @@ theorem indep_comap_shift (hW : IsFilteredPreBrownian ℱ W P) (s : ℝ≥0) :
     Indep (.comap (fun ω u ↦ W (s + u) ω - W s ω) inferInstance) (ℱ s) P :=
   have := hW.isProbabilityMeasure; hW.adapted.indep_comap_shift hW.indep_sub s
 
-/-- Diffusive scaling `t ↦ (√c)⁻¹ • W (c * t)` (`c ≠ 0`) preserves `IsFilteredPreBrownian` on
-`ℱ.comp (mul_right_mono (a := c))`. -/
+/-- Diffusive scaling `(√c)⁻¹ • W (c * t)` (`c ≠ 0`) preserves `IsFilteredPreBrownian`. -/
 theorem smul (hW : IsFilteredPreBrownian ℱ W P) {c : ℝ≥0} (hc : c ≠ 0) :
     IsFilteredPreBrownian (ℱ.comp (mul_right_mono (a := c)))
       (fun t ω ↦ (√(c : ℝ))⁻¹ • W (c * t) ω) P where
   toIsPreBrownian := hW.toIsPreBrownian.smul hc
-  adapted t := (measurable_const_smul (√(c : ℝ))⁻¹).comp
-    (hW.adapted.comp (mul_right_mono (a := c)) t)
+  adapted t := (measurable_const_smul _).comp (hW.adapted.comp (mul_right_mono (a := c)) t)
   indep_sub s t hst := by
     rw [Filtration.comp_apply]
     exact indep_of_indep_of_le_left (hW.indep_sub (mul_right_mono (a := c) hst))
@@ -358,19 +293,15 @@ theorem shift (hW : IsFilteredPreBrownian ℱ W P) (t₀ : ℝ≥0) :
       fun ω ↦ W (t₀ + s) ω - W t₀ ω) = W (t₀ + t) - W (t₀ + s) by ext ω; simp]
     exact hW.indep_sub (by gcongr)
 
-/-- Right-continuing the filtration preserves `IsFilteredPreBrownian` when paths are almost surely
-right-continuous at each fixed time. -/
+/-- Right-continuing `ℱ` preserves `IsFilteredPreBrownian` under a.s. right-continuity. -/
 theorem rightCont (hW : IsFilteredPreBrownian ℱ W P)
     (hcont : ∀ s, ∀ᵐ ω ∂P, ContinuousWithinAt (W · ω) (Set.Ioi s) s) :
-    IsFilteredPreBrownian ℱ.rightCont W P where
-  toIsPreBrownian := hW.toIsPreBrownian
-  adapted t := (hW.adapted t).mono (ℱ.le_rightCont t) le_rfl
-  indep_sub s _ hst :=
-    have := hW.isProbabilityMeasure
-    hW.adapted.indep_comap_sub_rightCont hst (fun _ _ hut ↦ hW.indep_sub hut) (hcont s)
+    IsFilteredPreBrownian ℱ.rightCont W P :=
+  ⟨hW.toIsPreBrownian, fun t ↦ (hW.adapted t).mono (ℱ.le_rightCont t) le_rfl,
+    fun s _ hst ↦ have := hW.isProbabilityMeasure
+      hW.adapted.indep_comap_sub_rightCont hst (fun _ _ hut ↦ hW.indep_sub hut) (hcont s)⟩
 
-/-- Completing the probability space and taking the right-continuous null augmentation preserves
-`IsFilteredPreBrownian` under fixed-time almost sure right-continuity. -/
+/-- Usual augmentation on the completed space preserves `IsFilteredPreBrownian`. -/
 theorem rightCont_nullAugment (hW : IsFilteredPreBrownian ℱ W P)
     (hcont : ∀ s, ∀ᵐ ω ∂P, ContinuousWithinAt (W · ω) (Set.Ioi s) s) :
     @IsFilteredPreBrownian (NullMeasurableSpace Ω P) E inferInstance _ _ _
@@ -401,14 +332,27 @@ end IsFilteredPreBrownian
 
 namespace IsFilteredBrownian
 
-variable {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
+/-- For nonzero `u : E`, `‖u‖⁻¹ * ⟪u, W t ω⟫` satisfies `IsFilteredBrownian ℱ`. -/
+theorem isFilteredBrownian_norm_inv_mul_inner (hW : IsFilteredBrownian ℱ W P)
+    {u : E} (hu : u ≠ 0) : IsFilteredBrownian ℱ (fun t ω ↦ ‖u‖⁻¹ * ⟪u, W t ω⟫) P :=
+  ⟨isFilteredPreBrownian_real_iff.mpr (hW.isFilteredPreBrownianReal_norm_inv_mul_inner hu),
+    (hW.toIsBrownian.isBrownianReal_norm_inv_mul_inner hu).cont⟩
+
+/-- For a unit vector `u : E` (`‖u‖ = 1`), `⟪u, W t ω⟫` satisfies `IsFilteredBrownian ℱ`. -/
+theorem isFilteredBrownian_inner_of_norm_eq_one (hW : IsFilteredBrownian ℱ W P)
+    {u : E} (hu : ‖u‖ = 1) : IsFilteredBrownian ℱ (fun t ω ↦ ⟪u, W t ω⟫) P :=
+  ⟨isFilteredPreBrownian_real_iff.mpr (hW.isFilteredPreBrownianReal_inner_of_norm_eq_one hu),
+    (hW.toIsBrownian.isBrownianReal_inner_of_norm_eq_one hu).cont⟩
+
+/-- Negating a filtered vector Brownian motion preserves `IsFilteredBrownian`. -/
+theorem neg (hW : IsFilteredBrownian ℱ W P) : IsFilteredBrownian ℱ (-W) P :=
+  hW.comp_linearIsometryEquiv (.neg ℝ)
 
 /-- On a second-countable Borel space, a filtered vector Brownian motion is strongly adapted. -/
 theorem stronglyAdapted (hW : IsFilteredBrownian ℱ W P) : StronglyAdapted ℱ W :=
   hW.toIsFilteredPreBrownian.stronglyAdapted
 
-/-- Diffusive scaling `t ↦ (√c)⁻¹ • W (c * t)` (`c ≠ 0`) preserves `IsFilteredBrownian` on
-`ℱ.comp (mul_right_mono (a := c))`. -/
+/-- Diffusive scaling `(√c)⁻¹ • W (c * t)` (`c ≠ 0`) preserves `IsFilteredBrownian`. -/
 theorem smul (hW : IsFilteredBrownian ℱ W P) {c : ℝ≥0} (hc : c ≠ 0) :
     IsFilteredBrownian (ℱ.comp (mul_right_mono (a := c)))
       (fun t ω ↦ (√(c : ℝ))⁻¹ • W (c * t) ω) P :=
@@ -420,14 +364,11 @@ theorem shift (hW : IsFilteredBrownian ℱ W P) (t₀ : ℝ≥0) :
   ⟨hW.toIsFilteredPreBrownian.shift t₀, (hW.toIsBrownian.shift t₀).ae_continuous⟩
 
 /-- Right-continuing the filtration preserves `IsFilteredBrownian`. -/
-theorem rightCont (hW : IsFilteredBrownian ℱ W P) :
-    IsFilteredBrownian ℱ.rightCont W P :=
+theorem rightCont (hW : IsFilteredBrownian ℱ W P) : IsFilteredBrownian ℱ.rightCont W P :=
   ⟨hW.toIsFilteredPreBrownian.rightCont
-      fun _ ↦ hW.ae_continuous.mono fun _ hω ↦ hω.continuousAt.continuousWithinAt,
-    hW.ae_continuous⟩
+      fun _ ↦ hW.ae_continuous.mono fun _ hω ↦ hω.continuousAt.continuousWithinAt, hW.ae_continuous⟩
 
-/-- Completing the probability space and taking the right-continuous null augmentation preserves
-`IsFilteredBrownian`. -/
+/-- Usual augmentation on the completed space preserves `IsFilteredBrownian`. -/
 theorem rightCont_nullAugment (hW : IsFilteredBrownian ℱ W P) :
     @IsFilteredBrownian (NullMeasurableSpace Ω P) E inferInstance _ _ _
       (ℱ.nullAugment P).rightCont (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω) P.completion :=
@@ -450,10 +391,10 @@ end SecondCountable
 section Complete
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [SecondCountableTopology E] [CompleteSpace E]
+  [SecondCountableTopology E] [CompleteSpace E] {W : ℝ≥0 → Ω → E}
 
 /-- Strongly measurable `IsPreBrownian` processes are filtered in their natural filtration. -/
-theorem IsPreBrownian.isFilteredPreBrownian_natural {W : ℝ≥0 → Ω → E} (hW : IsPreBrownian W P)
+theorem IsPreBrownian.isFilteredPreBrownian_natural (hW : IsPreBrownian W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) :
     IsFilteredPreBrownian (Filtration.natural W hmeas) W P where
   toIsPreBrownian := hW
@@ -465,24 +406,22 @@ theorem IsPreBrownian.isFilteredPreBrownian_natural {W : ℝ≥0 → Ω → E} (
         (measurable_pi_apply _) (by ext ω; simp [add_tsub_cancel_of_le hst]))
 
 /-- Strongly measurable `IsBrownian` processes are filtered in their natural filtration. -/
-theorem IsBrownian.isFilteredBrownian_natural {W : ℝ≥0 → Ω → E} (hW : IsBrownian W P)
-    (hmeas : ∀ t, StronglyMeasurable (W t)) :
-    IsFilteredBrownian (Filtration.natural W hmeas) W P :=
+theorem IsBrownian.isFilteredBrownian_natural (hW : IsBrownian W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) : IsFilteredBrownian (Filtration.natural W hmeas) W P :=
   ⟨hW.toIsPreBrownian.isFilteredPreBrownian_natural hmeas, hW.ae_continuous⟩
 
-/-- Strongly measurable `IsBrownian` processes are filtered in the usual augmentation of their
-natural filtration on the completed probability space. -/
-theorem IsBrownian.isFilteredBrownian_rightCont_nullAugment_natural {W : ℝ≥0 → Ω → E}
-    (hW : IsBrownian W P) (hmeas : ∀ t, StronglyMeasurable (W t)) :
+/-- Strongly measurable `IsBrownian` processes are filtered in the usual natural filtration. -/
+theorem IsBrownian.isFilteredBrownian_rightCont_nullAugment_natural (hW : IsBrownian W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) :
     @IsFilteredBrownian (NullMeasurableSpace Ω P) E inferInstance _ _ _
       ((Filtration.natural W hmeas).nullAugment P).rightCont
       (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω) P.completion :=
   (hW.isFilteredBrownian_natural hmeas).rightCont_nullAugment
 
 /-- Enlarging `Filtration.natural W` by independent `𝒢 ≤ mΩ` preserves `IsFilteredPreBrownian`. -/
-theorem IsPreBrownian.isFilteredPreBrownian_natural_sup_const {W : ℝ≥0 → Ω → E}
-    (hW : IsPreBrownian W P) (hmeas : ∀ t, StronglyMeasurable (W t)) {𝒢 : MeasurableSpace Ω}
-    (h𝒢 : 𝒢 ≤ mΩ) (hIndep : Indep 𝒢 (.comap (fun ω t ↦ W t ω) inferInstance) P) :
+theorem IsPreBrownian.isFilteredPreBrownian_natural_sup_const (hW : IsPreBrownian W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {𝒢 : MeasurableSpace Ω} (h𝒢 : 𝒢 ≤ mΩ)
+    (hIndep : Indep 𝒢 (.comap (fun ω t ↦ W t ω) inferInstance) P) :
     IsFilteredPreBrownian (Filtration.natural W hmeas ⊔ Filtration.const ℝ≥0 𝒢 h𝒢) W P :=
   (hW.isFilteredPreBrownian_natural hmeas).sup_const h𝒢 <| indep_of_indep_of_le_right hIndep <| by
     rw [MeasurableSpace.comap_process_pi]
@@ -490,25 +429,24 @@ theorem IsPreBrownian.isFilteredPreBrownian_natural_sup_const {W : ℝ≥0 → �
       le_iSup (fun r ↦ MeasurableSpace.comap (W r) inferInstance) s
 
 /-- Enlarging `Filtration.natural W` by an independent `𝒢 ≤ mΩ` preserves `IsFilteredBrownian`. -/
-theorem IsBrownian.isFilteredBrownian_natural_sup_const {W : ℝ≥0 → Ω → E}
-    (hW : IsBrownian W P) (hmeas : ∀ t, StronglyMeasurable (W t)) {𝒢 : MeasurableSpace Ω}
-    (h𝒢 : 𝒢 ≤ mΩ) (hIndep : Indep 𝒢 (.comap (fun ω t ↦ W t ω) inferInstance) P) :
+theorem IsBrownian.isFilteredBrownian_natural_sup_const (hW : IsBrownian W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {𝒢 : MeasurableSpace Ω} (h𝒢 : 𝒢 ≤ mΩ)
+    (hIndep : Indep 𝒢 (.comap (fun ω t ↦ W t ω) inferInstance) P) :
     IsFilteredBrownian (Filtration.natural W hmeas ⊔ Filtration.const ℝ≥0 𝒢 h𝒢) W P :=
   ⟨hW.toIsPreBrownian.isFilteredPreBrownian_natural_sup_const hmeas h𝒢 hIndep, hW.ae_continuous⟩
 
 /-- Enlarging `Filtration.natural W` by an independent `ξ` preserves `IsFilteredPreBrownian`. -/
-theorem IsPreBrownian.isFilteredPreBrownian_natural_sup_comap {W : ℝ≥0 → Ω → E}
-    (hW : IsPreBrownian W P) (hmeas : ∀ t, StronglyMeasurable (W t)) {G : Type*}
-    [MeasurableSpace G] {ξ : Ω → G} (hξ : Measurable ξ) (hIndep : IndepFun ξ (fun ω t ↦ W t ω) P) :
+theorem IsPreBrownian.isFilteredPreBrownian_natural_sup_comap (hW : IsPreBrownian W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {G : Type*} [MeasurableSpace G] {ξ : Ω → G}
+    (hξ : Measurable ξ) (hIndep : IndepFun ξ (fun ω t ↦ W t ω) P) :
     IsFilteredPreBrownian (Filtration.natural W hmeas ⊔
       Filtration.const ℝ≥0 (.comap ξ inferInstance) hξ.comap_le) W P :=
-  hW.isFilteredPreBrownian_natural_sup_const hmeas hξ.comap_le
-    ((IndepFun_iff_Indep _ _ _).mp hIndep)
+  hW.isFilteredPreBrownian_natural_sup_const hmeas hξ.comap_le ((IndepFun_iff_Indep ..).mp hIndep)
 
 /-- Enlarging `Filtration.natural W` by an independent `ξ` preserves `IsFilteredBrownian`. -/
-theorem IsBrownian.isFilteredBrownian_natural_sup_comap {W : ℝ≥0 → Ω → E}
-    (hW : IsBrownian W P) (hmeas : ∀ t, StronglyMeasurable (W t)) {G : Type*}
-    [MeasurableSpace G] {ξ : Ω → G} (hξ : Measurable ξ) (hIndep : IndepFun ξ (fun ω t ↦ W t ω) P) :
+theorem IsBrownian.isFilteredBrownian_natural_sup_comap (hW : IsBrownian W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {G : Type*} [MeasurableSpace G] {ξ : Ω → G}
+    (hξ : Measurable ξ) (hIndep : IndepFun ξ (fun ω t ↦ W t ω) P) :
     IsFilteredBrownian (Filtration.natural W hmeas ⊔
       Filtration.const ℝ≥0 (.comap ξ inferInstance) hξ.comap_le) W P :=
   ⟨hW.toIsPreBrownian.isFilteredPreBrownian_natural_sup_comap hmeas hξ hIndep, hW.ae_continuous⟩
@@ -518,64 +456,54 @@ end Complete
 section OrthonormalBasis
 
 variable [Fintype ι] [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E]
+  [BorelSpace E] {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E}
 
 /-- Orthonormal basis coordinates `⟪b i, W t ω⟫` satisfy `IsFilteredPreBrownianReal ℱ`. -/
 theorem IsFilteredPreBrownian.isFilteredPreBrownianReal_orthonormalBasis
-    {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E} (hW : IsFilteredPreBrownian ℱ W P)
-    (b : OrthonormalBasis ι ℝ E) (i : ι) :
+    (hW : IsFilteredPreBrownian ℱ W P) (b : OrthonormalBasis ι ℝ E) (i : ι) :
     IsFilteredPreBrownianReal ℱ (fun t ω ↦ ⟪b i, W t ω⟫) P :=
   have := b.toBasis.finiteDimensional_of_finite
   hW.isFilteredPreBrownianReal_inner_of_norm_eq_one (b.orthonormal.1 i)
 
 /-- Orthonormal basis coordinates `⟪b i, W t ω⟫` satisfy `IsFilteredBrownian ℱ`. -/
 theorem IsFilteredBrownian.isFilteredBrownian_orthonormalBasis
-    {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → E} (hW : IsFilteredBrownian ℱ W P)
-    (b : OrthonormalBasis ι ℝ E) (i : ι) :
+    (hW : IsFilteredBrownian ℱ W P) (b : OrthonormalBasis ι ℝ E) (i : ι) :
     IsFilteredBrownian ℱ (fun t ω ↦ ⟪b i, W t ω⟫) P :=
   have := b.toBasis.finiteDimensional_of_finite
   hW.isFilteredBrownian_inner_of_norm_eq_one (b.orthonormal.1 i)
 
 /-- Characterization of `IsFilteredPreBrownian ℱ W P` via a finite orthonormal basis `b`. -/
-theorem isFilteredPreBrownian_iff_orthonormalBasis {ℱ : Filtration ℝ≥0 mΩ}
-    {W : ℝ≥0 → Ω → E} (b : OrthonormalBasis ι ℝ E) :
+theorem isFilteredPreBrownian_iff_orthonormalBasis (b : OrthonormalBasis ι ℝ E) :
     IsFilteredPreBrownian ℱ W P ↔ IsPreBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P ∧
       (∀ i, Adapted ℱ (fun t ω ↦ ⟪b i, W t ω⟫)) ∧
       ∀ ⦃s t : ℝ≥0⦄, s ≤ t →
         Indep (.comap (fun ω i ↦ ⟪b i, W t ω⟫ - ⟪b i, W s ω⟫) inferInstance) (ℱ s) P := by
   have : FiniteDimensional ℝ E := b.toBasis.finiteDimensional_of_finite
-  constructor
-  · refine fun hW ↦ ⟨hW.isPreBrownianVector_orthonormalBasis b,
-      fun i ↦ (hW.isFilteredPreBrownianReal_orthonormalBasis b i).adapted, fun s t hst ↦ ?_⟩
-    exact indep_of_indep_of_le_left (hW.indep_sub hst)
-      (MeasurableSpace.comap_le_comap_of_eq_comp (fun (x : E) (i : ι) ↦ ⟪b i, x⟫)
-        (continuous_pi fun i ↦ (innerSL ℝ (b i)).continuous).measurable
-        (by ext ω i; simp [inner_sub_right]))
-  · rintro ⟨hB, hadapt, hindep⟩
-    have hsum : Measurable fun z : ι → ℝ ↦ ∑ i, z i • b i := Continuous.measurable (by fun_prop)
-    refine ⟨(isPreBrownian_iff_isPreBrownianVector b).mpr hB, fun t ↦ ?_, fun s t hst ↦ ?_⟩
-    · have heq : W t = (fun z : ι → ℝ ↦ ∑ i, z i • b i) ∘ fun ω i ↦ ⟪b i, W t ω⟫ := by
-        ext ω; simpa [b.repr_apply_apply] using (b.sum_repr (W t ω)).symm
-      exact heq ▸ hsum.comp ((@measurable_pi_iff Ω ι (fun _ ↦ ℝ) (ℱ t) _ _).mpr fun i ↦ hadapt i t)
-    · exact indep_of_indep_of_le_left (hindep hst)
-        (MeasurableSpace.comap_le_comap_of_eq_comp (fun z : ι → ℝ ↦ ∑ i, z i • b i) hsum
-          (by ext ω; simpa [b.repr_apply_apply, inner_sub_right] using
-            (b.sum_repr (W t ω - W s ω)).symm))
+  have hf : Measurable fun (x : E) (i : ι) ↦ ⟪b i, x⟫ :=
+    (continuous_pi fun i ↦ (innerSL ℝ (b i)).continuous).measurable
+  have hg : Measurable fun z : ι → ℝ ↦ ∑ i, z i • b i := Continuous.measurable (by fun_prop)
+  refine ⟨fun hW ↦ ⟨hW.isPreBrownianVector_orthonormalBasis b,
+      fun i ↦ (hW.isFilteredPreBrownianReal_orthonormalBasis b i).adapted, fun s t hst ↦
+        indep_of_indep_of_le_left (hW.indep_sub hst) (MeasurableSpace.comap_le_comap_of_eq_comp _ hf
+          (by ext ω i; simp [inner_sub_right]))⟩, fun ⟨hB, hadapt, hindep⟩ ↦ ?_⟩
+  refine ⟨(isPreBrownian_iff_isPreBrownianVector b).mpr hB, fun t ↦ ?_, fun s t hst ↦
+    indep_of_indep_of_le_left (hindep hst) (MeasurableSpace.comap_le_comap_of_eq_comp _ hg
+      (by ext ω; simpa [inner_sub_right] using (b.sum_repr' (W t ω - W s ω)).symm))⟩
+  have heq : W t = (fun z : ι → ℝ ↦ ∑ i, z i • b i) ∘ fun ω i ↦ ⟪b i, W t ω⟫ := by
+    ext ω; exact (b.sum_repr' (W t ω)).symm
+  exact heq ▸ hg.comp ((@measurable_pi_iff Ω ι (fun _ ↦ ℝ) (ℱ t) _ _).mpr fun i ↦ hadapt i t)
 
 /-- Characterization of `IsFilteredBrownian ℱ W P` via a finite orthonormal basis `b`. -/
-theorem isFilteredBrownian_iff_orthonormalBasis {ℱ : Filtration ℝ≥0 mΩ}
-    {W : ℝ≥0 → Ω → E} (b : OrthonormalBasis ι ℝ E) :
+theorem isFilteredBrownian_iff_orthonormalBasis (b : OrthonormalBasis ι ℝ E) :
     IsFilteredBrownian ℱ W P ↔ IsBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P ∧
       (∀ i, Adapted ℱ (fun t ω ↦ ⟪b i, W t ω⟫)) ∧
       ∀ ⦃s t : ℝ≥0⦄, s ≤ t →
-        Indep (.comap (fun ω i ↦ ⟪b i, W t ω⟫ - ⟪b i, W s ω⟫) inferInstance) (ℱ s) P := by
-  refine ⟨fun hW ↦ ?_, fun ⟨hB, hadapt, hindep⟩ ↦ ?_⟩
-  · obtain ⟨_, hadapt, hindep⟩ :=
-      (isFilteredPreBrownian_iff_orthonormalBasis b).mp hW.toIsFilteredPreBrownian
-    exact ⟨hW.toIsBrownian.isBrownianVector_orthonormalBasis b, hadapt, hindep⟩
-  · have hpre := (isFilteredPreBrownian_iff_orthonormalBasis b).mpr
-      ⟨hB.toIsPreBrownianVector, hadapt, hindep⟩
-    exact .of_isBrownian ((isBrownian_iff_isBrownianVector b).mpr hB) hpre.adapted hpre.indep_sub
+        Indep (.comap (fun ω i ↦ ⟪b i, W t ω⟫ - ⟪b i, W s ω⟫) inferInstance) (ℱ s) P :=
+  ⟨fun hW ↦ ⟨hW.toIsBrownian.isBrownianVector_orthonormalBasis b,
+      ((isFilteredPreBrownian_iff_orthonormalBasis b).mp hW.toIsFilteredPreBrownian).2⟩,
+    fun ⟨hB, hadapt, hindep⟩ ↦
+      have hpre := (isFilteredPreBrownian_iff_orthonormalBasis b).mpr ⟨hB.1, hadapt, hindep⟩
+      .of_isBrownian ((isBrownian_iff_isBrownianVector b).mpr hB) hpre.adapted hpre.indep_sub⟩
 
 end OrthonormalBasis
 
@@ -595,34 +523,23 @@ theorem stronglyMeasurable_sum_smul_stdOrthonormalBasis (t : ℝ≥0) :
 /-- Unconditional witness of `IsFilteredPreBrownian` on any finite-dimensional space `E`. -/
 theorem isFilteredPreBrownian_sum_smul_pi_brownianProjectiveLimit :
     IsFilteredPreBrownian
-      (Filtration.natural
-        (fun t (ω : Fin (Module.finrank ℝ E) → ℝ≥0 → ℝ) ↦ ∑ i, ω i t • stdOrthonormalBasis ℝ E i)
-        stronglyMeasurable_sum_smul_stdOrthonormalBasis)
+      (Filtration.natural (fun t (ω : Fin (Module.finrank ℝ E) → ℝ≥0 → ℝ) ↦
+        ∑ i, ω i t • stdOrthonormalBasis ℝ E i) stronglyMeasurable_sum_smul_stdOrthonormalBasis)
       (fun t (ω : Fin (Module.finrank ℝ E) → ℝ≥0 → ℝ) ↦ ∑ i, ω i t • stdOrthonormalBasis ℝ E i)
       (Measure.pi fun _ : Fin (Module.finrank ℝ E) ↦ brownianProjectiveLimit) :=
   isPreBrownian_sum_smul_pi_brownianProjectiveLimit.isFilteredPreBrownian_natural
     stronglyMeasurable_sum_smul_stdOrthonormalBasis
 
-end FiniteDimensional
-
-end TauCeti.Probability
-
-namespace MeasureTheory.Adapted
-
-open TauCeti.Probability ProbabilityTheory
-
-variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {X : ℝ≥0 → Ω → E}
-
-/-- An adapted `E`-valued process whose marginals `X t` have law `(stdGaussian E).map (√t • ·)`
-and whose increments `X t - X s` (`s ≤ t`) are independent of `ℱ s` satisfies
-`IsFilteredPreBrownian ℱ X P`. -/
-theorem isFilteredPreBrownian (hX : Adapted ℱ X)
+/-- An adapted `E`-valued process with marginals `(stdGaussian E).map (√t • ·)` and increments
+`X t - X s` (`s ≤ t`) independent of `ℱ s` satisfies `IsFilteredPreBrownian ℱ X P`. -/
+theorem _root_.MeasureTheory.Adapted.isFilteredPreBrownian {ℱ : Filtration ℝ≥0 mΩ}
+    {X : ℝ≥0 → Ω → E} (hX : Adapted ℱ X)
     (hlaw : ∀ t : ℝ≥0, HasLaw (X t) ((stdGaussian E).map (fun x : E ↦ √(t : ℝ) • x)) P)
     (hindep : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) P) :
     IsFilteredPreBrownian ℱ X P :=
   have := (hlaw 0).isProbabilityMeasure
   ⟨HasIndepIncrements.isPreBrownian_of_hasLaw hlaw (hX.hasIndepIncrements hindep), hX, hindep⟩
 
-end MeasureTheory.Adapted
+end FiniteDimensional
+
+end TauCeti.Probability

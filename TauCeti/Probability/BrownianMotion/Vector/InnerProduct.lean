@@ -24,31 +24,10 @@ import TauCeti.Probability.Moments.Covariance
 /-!
 # Vector Brownian motion on real inner-product spaces
 
-This file defines basis-free centered pre-Brownian and Brownian motion in a real inner-product space
-`E`, proves their equivalence with `IsPreBrownianVector` / `IsBrownianVector` in every finite
-orthonormal basis (and projection onto arbitrary orthonormal families), establishes Gaussian laws of
-directional projections and vector increments, proves invariance under linear isometric
-equivalences, and derives noncentered translations `ξ + W`.
-
-## Main definitions
-
-* `TauCeti.Probability.IsPreBrownian`: centered `E`-valued Gaussian process `W : ℝ≥0 → Ω → E` with
-  `cov[⟪u, W s⟫, ⟪v, W t⟫; P] = min s t * ⟪u, v⟫`.
-* `TauCeti.Probability.IsBrownian`: `IsPreBrownian` with almost-sure path continuity.
-
-## Main results
-
-* `TauCeti.Probability.IsPreBrownian.isPreBrownianVector_of_orthonormal`,
-  `TauCeti.Probability.isPreBrownian_iff_isPreBrownianVector`,
-  `TauCeti.Probability.isBrownian_iff_isBrownianVector`: orthonormal projections and basis
-  dictionary.
-* `TauCeti.Probability.IsPreBrownian.hasLaw_inner_eval`,
-  `TauCeti.Probability.IsPreBrownian.isPreBrownianReal_norm_inv_mul_inner`,
-  `TauCeti.Probability.isPreBrownian_comp_linearIsometryEquiv_iff`: directional projections and
-  `E ≃ₗᵢ[ℝ] F` invariance.
-* `TauCeti.Probability.IsPreBrownian.hasLaw_sub_of_le`, `IsPreBrownian.hasIndepIncrements`,
-  `ProbabilityTheory.HasIndepIncrements.isPreBrownian_of_hasLaw`,
-  `IsPreBrownian.indepFun_add_left_increments`: increment laws and translations `ξ + W`.
+Defines basis-free centered pre-Brownian (`IsPreBrownian`) and Brownian (`IsBrownian`) motion in a
+real inner-product space `E`, establishes equivalence with `IsPreBrownianVector`/`IsBrownianVector`
+in finite orthonormal bases (and projections onto arbitrary orthonormal families), derives Gaussian
+laws of projections and increments, proves invariance under `E ≃ₗᵢ[ℝ] F`, and treats `ξ + W`.
 
 ## References
 
@@ -69,11 +48,10 @@ variable {ι Ω E F : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 
 section Defs
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E] {W W' : ℝ≥0 → Ω → E}
 
-/-- `W : ℝ≥0 → Ω → E` is a **vector pre-Brownian motion** in a real inner-product space `E` under
-`P` if it is a centered `E`-valued Gaussian process whose inner-product projections satisfy
-`cov[⟪u, W s⟫, ⟪v, W t⟫; P] = min s t * ⟪u, v⟫` for all `s, t : ℝ≥0` and `u, v : E`. -/
+/-- `W : ℝ≥0 → Ω → E` is a **vector pre-Brownian motion** in `E` under `P` if it is a centered
+Gaussian process with `cov[⟪u, W s⟫, ⟪v, W t⟫; P] = min s t * ⟪u, v⟫`. -/
 structure IsPreBrownian (W : ℝ≥0 → Ω → E) (P : Measure Ω := by volume_tac) : Prop where
   /-- `W` is an `E`-valued Gaussian process under `P`. -/
   isGaussianProcess : IsGaussianProcess W P
@@ -90,8 +68,6 @@ structure IsBrownian (W : ℝ≥0 → Ω → E) (P : Measure Ω := by volume_tac
   ae_continuous : ∀ᵐ ω ∂P, Continuous (W · ω)
 
 namespace IsPreBrownian
-
-variable {W W' : ℝ≥0 → Ω → E}
 
 /-- A vector pre-Brownian motion can only exist under a probability measure. -/
 theorem isProbabilityMeasure (hW : IsPreBrownian W P) : IsProbabilityMeasure P :=
@@ -114,16 +90,10 @@ theorem congr_indist (hW : IsPreBrownian W P) (h : W ≡ᵐ[P] W') : IsPreBrowni
 
 end IsPreBrownian
 
-namespace IsBrownian
-
-variable {W W' : ℝ≥0 → Ω → E}
-
 /-- Indistinguishable modifications preserve `IsBrownian`. -/
-theorem congr_indist (hW : IsBrownian W P) (h : W ≡ᵐ[P] W') : IsBrownian W' P :=
+theorem IsBrownian.congr_indist (hW : IsBrownian W P) (h : W ≡ᵐ[P] W') : IsBrownian W' P :=
   ⟨hW.toIsPreBrownian.congr_indist h,
     hW.ae_continuous.mp (h.mono fun _ hω hc ↦ by simpa [funext hω] using hc)⟩
-
-end IsBrownian
 
 end Defs
 
@@ -176,11 +146,10 @@ theorem covariance_inner_sub (hW : IsPreBrownian W P) (s₁ s₂ t₁ t₂ : ℝ
     (hW.memLp_two_inner_eval v t₂) (hW.memLp_two_inner_eval v t₁)]
   simp only [hW.covariance_inner]; ring
 
-/-- Cross-covariance of directional increments over the same interval `[s, t]` (`s ≤ t`) equals
-`((t : ℝ) - s) * ⟪u, v⟫`. -/
+/-- Cross-covariance of increments over `[s, t]` (`s ≤ t`) is `((t : ℝ) - s) * ⟪u, v⟫`. -/
 theorem covariance_inner_sub_of_le (hW : IsPreBrownian W P) {s t : ℝ≥0} (hst : s ≤ t) (u v : E) :
     cov[fun ω ↦ ⟪u, W t ω - W s ω⟫, fun ω ↦ ⟪v, W t ω - W s ω⟫; P] = ((t : ℝ) - s) * ⟪u, v⟫ := by
-  have h : (s : ℝ) ≤ t := NNReal.coe_le_coe.mpr hst
+  have h : (s : ℝ) ≤ t := mod_cast hst
   rw [hW.covariance_inner_sub, min_self, min_self, min_eq_right h, min_eq_left h]; ring
 
 /-- Variance of a directional projection `⟪u, W t⟫` equals `‖u‖ ^ 2 * t`. -/
@@ -206,14 +175,13 @@ theorem completion (hW : IsPreBrownian W P) :
   isGaussianProcess := hW.isGaussianProcess.completion
   integral_inner t u := by
     have h := hW.hasLaw_inner_eval u t
-    exact h.completion.integral_eq.trans (h.integral_eq.symm.trans (hW.integral_inner t u))
+    rw [h.completion.integral_eq, ← h.integral_eq, hW.integral_inner]
   covariance_inner s t u v := by
     have h := hasLaw_map ((hW.hasGaussianLaw_inner_eval u s).aemeasurable.prodMk
       (hW.hasGaussianLaw_inner_eval v t).aemeasurable)
-    have h₁ := h.completion.covariance_fun_comp measurable_fst.aemeasurable
-      measurable_snd.aemeasurable
-    have h₂ := h.covariance_fun_comp measurable_fst.aemeasurable measurable_snd.aemeasurable
-    exact (h₁.trans h₂.symm).trans (hW.covariance_inner s t u v)
+    rw [h.completion.covariance_fun_comp measurable_fst.aemeasurable measurable_snd.aemeasurable,
+      ← h.covariance_fun_comp measurable_fst.aemeasurable measurable_snd.aemeasurable,
+      hW.covariance_inner]
 
 end IsPreBrownian
 
@@ -254,8 +222,7 @@ theorem isPreBrownian_real_iff {W : ℝ≥0 → Ω → ℝ} :
   mpr hW := hW.isGaussianProcess.isPreBrownian_of_integral_eval hW.integral_eval fun s t u v ↦ by
     have := hW.isGaussianProcess.isProbabilityMeasure
     simp_rw [RCLike.inner_apply, conj_trivial, mul_comm (W _ _) _]
-    rw [covariance_const_mul_left, covariance_const_mul_right, hW.covariance_eval]
-    push_cast; ring
+    rw [covariance_const_mul_left, covariance_const_mul_right, hW.covariance_eval]; push_cast; ring
 
 /-- On `E = ℝ`, `IsBrownian` agrees with `ProbabilityTheory.IsBrownianReal`. -/
 @[simp]
@@ -269,6 +236,40 @@ section Transformations
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] {W : ℝ≥0 → Ω → E}
+
+section LinearIsometry
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+  [SecondCountableTopology F]
+
+/-- Applying a linear isometric equivalence `f : E ≃ₗᵢ[ℝ] F` preserves `IsPreBrownian`. -/
+theorem IsPreBrownian.comp_linearIsometryEquiv (hW : IsPreBrownian W P) (f : E ≃ₗᵢ[ℝ] F) :
+    IsPreBrownian (fun t ω ↦ f (W t ω)) P where
+  isGaussianProcess :=
+    hW.isGaussianProcess.comp_left fun _ ↦ f.toContinuousLinearEquiv.toContinuousLinearMap
+  integral_inner t u := by
+    simp_rw [real_inner_comm _ u, f.inner_map_eq_flip, real_inner_comm (f.symm u)]
+    exact hW.integral_inner t (f.symm u)
+  covariance_inner s t u v := by
+    simp_rw [real_inner_comm (f _), f.inner_map_eq_flip, real_inner_comm (f.symm _)]
+    rw [hW.covariance_inner, f.symm.inner_map_map]
+
+/-- Linear isometric equivalences preserve and reflect `IsPreBrownian`. -/
+theorem isPreBrownian_comp_linearIsometryEquiv_iff (f : E ≃ₗᵢ[ℝ] F) :
+    IsPreBrownian (fun t ω ↦ f (W t ω)) P ↔ IsPreBrownian W P :=
+  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
+
+/-- Linear isometric equivalences preserve `IsBrownian`. -/
+theorem IsBrownian.comp_linearIsometryEquiv (hW : IsBrownian W P) (f : E ≃ₗᵢ[ℝ] F) :
+    IsBrownian (fun t ω ↦ f (W t ω)) P :=
+  ⟨hW.toIsPreBrownian.comp_linearIsometryEquiv f, hW.ae_continuous.mono fun _ ↦ f.continuous.comp⟩
+
+/-- Linear isometric equivalences preserve and reflect `IsBrownian`. -/
+theorem isBrownian_comp_linearIsometryEquiv_iff (f : E ≃ₗᵢ[ℝ] F) :
+    IsBrownian (fun t ω ↦ f (W t ω)) P ↔ IsBrownian W P :=
+  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
+
+end LinearIsometry
 
 namespace IsPreBrownian
 
@@ -287,21 +288,8 @@ theorem isPreBrownianReal_norm_inv_mul_inner (hW : IsPreBrownian W P) {u : E} (h
 /-- Projecting onto a unit vector `u` (`‖u‖ = 1`) produces a scalar pre-Brownian motion. -/
 theorem isPreBrownianReal_inner_of_norm_eq_one (hW : IsPreBrownian W P) {u : E} (hu : ‖u‖ = 1) :
     IsPreBrownianReal (fun t ω ↦ ⟪u, W t ω⟫) P := by
-  have hu0 : u ≠ 0 := by intro h; simp [h] at hu
-  simpa [hu] using hW.isPreBrownianReal_norm_inv_mul_inner hu0
-
-/-- Applying a linear isometric equivalence `f : E ≃ₗᵢ[ℝ] F` preserves `IsPreBrownian`. -/
-theorem comp_linearIsometryEquiv [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
-    (hW : IsPreBrownian W P) (f : E ≃ₗᵢ[ℝ] F) : IsPreBrownian (fun t ω ↦ f (W t ω)) P where
-  isGaussianProcess :=
-    hW.isGaussianProcess.comp_left fun _ ↦ f.toContinuousLinearEquiv.toContinuousLinearMap
-  integral_inner t u := by
-    simp_rw [real_inner_comm _ u, f.inner_map_eq_flip, real_inner_comm (f.symm u)]
-    exact hW.integral_inner t (f.symm u)
-  covariance_inner s t u v := by
-    simp_rw [real_inner_comm (f _), f.inner_map_eq_flip, real_inner_comm (f.symm _)]
-    rw [hW.covariance_inner, f.symm.inner_map_map]
+  simpa [hu] using
+    hW.isPreBrownianReal_norm_inv_mul_inner (u := u) (norm_ne_zero_iff.mp (by simp [hu]))
 
 /-- Negation preserves `IsPreBrownian`. -/
 theorem neg (hW : IsPreBrownian W P) : IsPreBrownian (-W) P :=
@@ -315,14 +303,11 @@ theorem smul (hW : IsPreBrownian W P) {c : ℝ≥0} (hc : c ≠ 0) :
     simp_rw [real_inner_smul_right, integral_const_mul, hW.integral_inner, mul_zero]
   covariance_inner s t u v := by
     have := hW.isProbabilityMeasure
-    have hc_pos : (0 : ℝ) < c := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hc)
+    have hc0 : (0 : ℝ) < c := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hc)
     simp_rw [real_inner_smul_right]
-    rw [covariance_const_mul_left, covariance_const_mul_right, hW.covariance_inner]
-    push_cast
-    rw [← mul_min_of_nonneg _ _ hc_pos.le]
-    have hsq : (√(c : ℝ))⁻¹ * ((√(c : ℝ))⁻¹ * ((c : ℝ) * min (s : ℝ) t * ⟪u, v⟫)) =
-        ((√(c : ℝ)) ^ 2)⁻¹ * (c : ℝ) * (min (s : ℝ) t * ⟪u, v⟫) := by ring
-    rw [hsq, Real.sq_sqrt hc_pos.le, inv_mul_cancel₀ hc_pos.ne', one_mul]
+    rw [covariance_const_mul_left, covariance_const_mul_right, hW.covariance_inner,
+      NNReal.coe_mul, NNReal.coe_mul, ← mul_min_of_nonneg _ _ hc0.le, ← mul_assoc, ← mul_assoc,
+      ← mul_inv, Real.mul_self_sqrt hc0.le, inv_mul_cancel_left₀ hc0.ne']
 
 /-- Deterministic time shift `W (t₀ + t) - W t₀` preserves `IsPreBrownian`. -/
 theorem shift (hW : IsPreBrownian W P) (t₀ : ℝ≥0) :
@@ -349,42 +334,32 @@ theorem indepFun_shift [CompleteSpace E] (hW : IsPreBrownian W P) (t₀ : ℝ≥
   have := hW.isProbabilityMeasure
   refine IsGaussianProcess.indepFun_of_covariance_inner
     (hW.isGaussianProcess.of_isGaussianProcess fun
-      | .inl t => ⟨{t₀, t₀ + t}, { toFun z := z ⟨t₀ + t, by simp⟩ - z ⟨t₀, by simp⟩
-                                   map_add' _ _ := by simp; abel
-                                   map_smul' _ _ := by simp; module }, by simp⟩
-      | .inr ⟨u, _⟩ => ⟨{u}, { toFun z := z ⟨u, by simp⟩, map_add' _ _ := rfl
-                               map_smul' _ _ := rfl }, by simp⟩)
+      | .inl t => ⟨{t₀, t₀ + t}, ContinuousLinearMap.proj ⟨t₀ + t, by simp⟩ -
+          ContinuousLinearMap.proj ⟨t₀, by simp⟩, by simp⟩
+      | .inr ⟨u, _⟩ => ⟨{u}, ContinuousLinearMap.proj ⟨u, by simp⟩, by simp⟩)
     (fun t ↦ (hW.aemeasurable (t₀ + t)).sub (hW.aemeasurable t₀))
     (fun u ↦ hW.aemeasurable u.1) fun t ⟨u, hu⟩ x y ↦ ?_
-  have hsub : (fun ω ↦ ⟪x, W (t₀ + t) ω - W t₀ ω⟫) =
-      (fun ω ↦ ⟪x, W (t₀ + t) ω⟫) - fun ω ↦ ⟪x, W t₀ ω⟫ := by ext ω; simp [inner_sub_right]
-  have hu1 : (u : ℝ) ≤ ((t₀ + t : ℝ≥0) : ℝ) := by
-    push_cast; linarith [NNReal.coe_le_coe.mpr hu, t.coe_nonneg]
-  rw [hsub, covariance_sub_left (hW.memLp_two_inner_eval x (t₀ + t))
-    (hW.memLp_two_inner_eval x t₀) (hW.memLp_two_inner_eval y u),
-    hW.covariance_inner, hW.covariance_inner, min_eq_right hu1,
+  simp_rw [inner_sub_right]
+  rw [covariance_fun_sub_left (hW.memLp_two_inner_eval x _) (hW.memLp_two_inner_eval x _)
+    (hW.memLp_two_inner_eval y _), hW.covariance_inner, hW.covariance_inner,
+    min_eq_right (NNReal.coe_le_coe.mpr (le_trans (c := t₀ + t) hu le_self_add)),
     min_eq_right (NNReal.coe_le_coe.mpr hu), sub_self]
 
 /-- Every vector pre-Brownian motion on a complete separable space has independent increments. -/
 theorem hasIndepIncrements [CompleteSpace E] (hW : IsPreBrownian W P) :
     HasIndepIncrements W P := by
-  have := hW.isProbabilityMeasure
-  intro n t ht
+  intro n t ht; have := hW.isProbabilityMeasure
   refine HasGaussianLaw.iIndepFun_of_covariance_inner hW.isGaussianProcess.hasGaussianLaw_increments
     fun i j hij x y ↦ ?_
-  have hcov_lt ⦃a b : Fin n⦄ (hab : a < b) (u v : E) :
+  have hlt ⦃a b : Fin n⦄ (hab : a < b) (u v : E) :
       cov[fun ω ↦ ⟪u, W (t a.succ) ω - W (t a.castSucc) ω⟫,
         fun ω ↦ ⟪v, W (t b.succ) ω - W (t b.castSucc) ω⟫; P] = 0 := by
-    have h1 : (t a.castSucc : ℝ) ≤ t a.succ := NNReal.coe_le_coe.mpr (ht a.castSucc_le_succ)
-    have h2 : (t a.succ : ℝ) ≤ t b.castSucc :=
-      NNReal.coe_le_coe.mpr (ht (Fin.succ_le_castSucc_iff.mpr hab))
-    have h3 : (t b.castSucc : ℝ) ≤ t b.succ := NNReal.coe_le_coe.mpr (ht b.castSucc_le_succ)
+    have h1 : (t a.castSucc : ℝ) ≤ t a.succ := mod_cast ht a.castSucc_le_succ
+    have h2 : (t a.succ : ℝ) ≤ t b.castSucc := mod_cast ht (Fin.succ_le_castSucc_iff.mpr hab)
+    have h3 : (t b.castSucc : ℝ) ≤ t b.succ := mod_cast ht b.castSucc_le_succ
     rw [hW.covariance_inner_sub, min_eq_left (h1.trans (h2.trans h3)), min_eq_left (h1.trans h2),
       min_eq_left (h2.trans h3), min_eq_left h2]; ring
-  rcases lt_trichotomy i j with hlt | rfl | hgt
-  · exact hcov_lt hlt x y
-  · exact absurd rfl hij
-  · exact (covariance_comm ..).trans (hcov_lt hgt y x)
+  exact (lt_or_gt_of_ne hij).elim (fun h ↦ hlt h x y) fun h ↦ (covariance_comm ..).trans (hlt h y x)
 
 /-- A vector pre-Brownian motion on a separable space vanishes almost surely at `t = 0`. -/
 theorem eval_zero_ae_eq_zero (hW : IsPreBrownian W P) : W 0 =ᵐ[P] 0 := by
@@ -419,12 +394,6 @@ theorem isPreBrownianVector_of_orthonormal (hW : IsPreBrownian W P) {v : ι → 
 
 end IsPreBrownian
 
-/-- Linear isometric equivalences preserve and reflect `IsPreBrownian`. -/
-theorem isPreBrownian_comp_linearIsometryEquiv_iff [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F] (f : E ≃ₗᵢ[ℝ] F) :
-    IsPreBrownian (fun t ω ↦ f (W t ω)) P ↔ IsPreBrownian W P :=
-  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
-
 namespace IsBrownian
 
 /-- Normalized inner product `‖u‖⁻¹ * ⟪u, W t ω⟫` (`u ≠ 0`) is a scalar Brownian motion. -/
@@ -443,15 +412,8 @@ theorem isBrownianVector_of_orthonormal (hW : IsBrownian W P) {v : ι → E} (hv
   ⟨hW.isPreBrownianVector_of_orthonormal hv,
     fun i ↦ hW.ae_continuous.mono fun _ ↦ (innerSL ℝ (v i)).continuous.comp⟩
 
-/-- Linear isometric equivalences preserve `IsBrownian`. -/
-theorem comp_linearIsometryEquiv [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
-    (hW : IsBrownian W P) (f : E ≃ₗᵢ[ℝ] F) : IsBrownian (fun t ω ↦ f (W t ω)) P :=
-  ⟨hW.toIsPreBrownian.comp_linearIsometryEquiv f, hW.ae_continuous.mono fun _ ↦ f.continuous.comp⟩
-
 /-- Negating a vector Brownian motion preserves `IsBrownian`. -/
-theorem neg (hW : IsBrownian W P) : IsBrownian (-W) P :=
-  hW.comp_linearIsometryEquiv (.neg ℝ)
+theorem neg (hW : IsBrownian W P) : IsBrownian (-W) P := hW.comp_linearIsometryEquiv (.neg ℝ)
 
 /-- Brownian diffusive scaling `(√c)⁻¹ • W (c * t)` (`c ≠ 0`) preserves `IsBrownian`. -/
 theorem smul (hW : IsBrownian W P) {c : ℝ≥0} (hc : c ≠ 0) :
@@ -465,85 +427,70 @@ theorem shift (hW : IsBrownian W P) (t₀ : ℝ≥0) :
 
 end IsBrownian
 
-/-- Linear isometric equivalences preserve and reflect `IsBrownian`. -/
-theorem isBrownian_comp_linearIsometryEquiv_iff [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F] (f : E ≃ₗᵢ[ℝ] F) :
-    IsBrownian (fun t ω ↦ f (W t ω)) P ↔ IsBrownian W P :=
-  ⟨fun h ↦ by simpa using h.comp_linearIsometryEquiv f.symm, fun h ↦ h.comp_linearIsometryEquiv f⟩
-
 end Transformations
 
 section OrthonormalBasis
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [Fintype ι] [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] {W : ℝ≥0 → Ω → E} {B : ι → ℝ≥0 → Ω → ℝ}
 
 /-- Projecting `IsPreBrownian` onto a finite orthonormal basis `b` yields `IsPreBrownianVector`. -/
-theorem IsPreBrownian.isPreBrownianVector_orthonormalBasis [Fintype ι] {W : ℝ≥0 → Ω → E}
-    (hW : IsPreBrownian W P) (b : OrthonormalBasis ι ℝ E) :
-    IsPreBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
+theorem IsPreBrownian.isPreBrownianVector_orthonormalBasis (hW : IsPreBrownian W P)
+    (b : OrthonormalBasis ι ℝ E) : IsPreBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
   have := b.repr.symm.finiteDimensional; hW.isPreBrownianVector_of_orthonormal b.orthonormal
 
 /-- Projecting `IsBrownian` onto a finite orthonormal basis `b` yields `IsBrownianVector`. -/
-theorem IsBrownian.isBrownianVector_orthonormalBasis [Fintype ι] {W : ℝ≥0 → Ω → E}
-    (hW : IsBrownian W P) (b : OrthonormalBasis ι ℝ E) :
-    IsBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
+theorem IsBrownian.isBrownianVector_orthonormalBasis (hW : IsBrownian W P)
+    (b : OrthonormalBasis ι ℝ E) : IsBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
   have := b.repr.symm.finiteDimensional; hW.isBrownianVector_of_orthonormal b.orthonormal
 
 /-- Expanding `IsPreBrownianVector` along a finite orthonormal basis `b` yields `IsPreBrownian`. -/
-theorem IsPreBrownianVector.isPreBrownian_sum_smul [Fintype ι] {B : ι → ℝ≥0 → Ω → ℝ}
-    (hB : IsPreBrownianVector B P) (b : OrthonormalBasis ι ℝ E) :
-    IsPreBrownian (fun t ω ↦ ∑ i, B i t ω • b i) P := by
+theorem IsPreBrownianVector.isPreBrownian_sum_smul (hB : IsPreBrownianVector B P)
+    (b : OrthonormalBasis ι ℝ E) : IsPreBrownian (fun t ω ↦ ∑ i, B i t ω • b i) P := by
   classical
-  have := b.repr.symm.finiteDimensional
-  have := hB.isProbabilityMeasure
+  have := b.repr.symm.finiteDimensional; have := hB.isProbabilityMeasure
   refine (hB.isGaussianProcess.sum_smul univ fun _ i ↦ b i).isPreBrownian_of_integral_eval
     (fun t ↦ by
-      rw [integral_finsetSum _ fun i _ ↦
-        ((hB.memLp_two_eval i t).integrable one_le_two).smul_const _]
+      rw [integral_finsetSum _ fun i _ ↦ ((hB.isPreBrownianReal i).integrable_eval t).smul_const _]
       simp [integral_smul_const, hB.integral_eval]) fun s t u v ↦ ?_
   have hexp (w : E) (r : ℝ≥0) : (fun ω ↦ ⟪w, ∑ i, B i r ω • b i⟫) =
       ∑ i : ι, fun ω ↦ ⟪w, b i⟫ * B i r ω := by ext ω; simp [inner_sum, inner_smul_right, mul_comm]
-  have hentry (i j : ι) : cov[fun ω ↦ ⟪u, b i⟫ * B i s ω, fun ω ↦ ⟪v, b j⟫ * B j t ω; P] =
-      ⟪u, b i⟫ * ⟪v, b j⟫ * if i = j then (min s t : ℝ) else 0 := by
-    rw [covariance_const_mul_left, covariance_const_mul_right, hB.covariance_fun_eval]; ring
   rw [hexp u s, hexp v t, covariance_sum_sum (fun i ↦ (hB.memLp_two_eval i s).const_mul _)
     (fun j ↦ (hB.memLp_two_eval j t).const_mul _)]
-  simp only [hentry, mul_ite, mul_zero, sum_ite_eq, mem_univ, ↓reduceIte, ← sum_mul]
-  simp_rw [real_inner_comm (b _) v]
-  rw [b.sum_inner_mul_inner u v, mul_comm]
+  simp only [covariance_const_mul_left, covariance_const_mul_right, hB.covariance_fun_eval,
+    mul_ite, mul_zero, sum_ite_eq, mem_univ, ↓reduceIte, ← mul_assoc, ← sum_mul]
+  simp_rw [mul_comm ⟪v, b _⟫, real_inner_comm (b _) v]; rw [b.sum_inner_mul_inner u v, mul_comm]
 
 /-- Expanding `IsBrownianVector` along a finite orthonormal basis `b` yields `IsBrownian`. -/
-theorem IsBrownianVector.isBrownian_sum_smul [Fintype ι] {B : ι → ℝ≥0 → Ω → ℝ}
-    (hB : IsBrownianVector B P) (b : OrthonormalBasis ι ℝ E) :
-    IsBrownian (fun t ω ↦ ∑ i, B i t ω • b i) P :=
+theorem IsBrownianVector.isBrownian_sum_smul (hB : IsBrownianVector B P)
+    (b : OrthonormalBasis ι ℝ E) : IsBrownian (fun t ω ↦ ∑ i, B i t ω • b i) P :=
   ⟨hB.toIsPreBrownianVector.isPreBrownian_sum_smul b,
     (ae_all_iff.mpr hB.ae_continuous).mono fun _ _ ↦ by fun_prop⟩
 
-/-- `IsPreBrownian W P` iff its coordinates in a finite orthonormal basis `b` are
-`IsPreBrownianVector`. -/
-theorem isPreBrownian_iff_isPreBrownianVector [Fintype ι] {W : ℝ≥0 → Ω → E}
-    (b : OrthonormalBasis ι ℝ E) :
+/-- `IsPreBrownian W P` iff its coordinates in a finite orthonormal basis are pre-Brownian. -/
+theorem isPreBrownian_iff_isPreBrownianVector (b : OrthonormalBasis ι ℝ E) :
     IsPreBrownian W P ↔ IsPreBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
   ⟨fun hW ↦ hW.isPreBrownianVector_orthonormalBasis b,
     fun hB ↦ by simpa only [b.sum_repr'] using hB.isPreBrownian_sum_smul b⟩
 
 /-- `IsBrownian W P` iff its coordinates in a finite orthonormal basis are `IsBrownianVector`. -/
-theorem isBrownian_iff_isBrownianVector [Fintype ι] {W : ℝ≥0 → Ω → E}
-    (b : OrthonormalBasis ι ℝ E) : IsBrownian W P ↔ IsBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
+theorem isBrownian_iff_isBrownianVector (b : OrthonormalBasis ι ℝ E) :
+    IsBrownian W P ↔ IsBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
   ⟨fun hW ↦ hW.isBrownianVector_orthonormalBasis b,
     fun hB ↦ by simpa only [b.sum_repr'] using hB.isBrownian_sum_smul b⟩
 
+variable {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)] {P₀ : ∀ i, Measure (Ω₀ i)}
+  {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
+
 /-- Product construction of `IsPreBrownian` along a finite orthonormal basis `b`. -/
-theorem isPreBrownian_sum_smul_pi [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
-    {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
-    (hB₀ : ∀ i, IsPreBrownianReal (B₀ i) (P₀ i)) (b : OrthonormalBasis ι ℝ E) :
+theorem isPreBrownian_sum_smul_pi (hB₀ : ∀ i, IsPreBrownianReal (B₀ i) (P₀ i))
+    (b : OrthonormalBasis ι ℝ E) :
     IsPreBrownian (fun t (ω : ∀ j, Ω₀ j) ↦ ∑ i, B₀ i t (ω i) • b i) (Measure.pi P₀) :=
   (isPreBrownianVector_pi hB₀).isPreBrownian_sum_smul b
 
 /-- Product construction of `IsBrownian` along a finite orthonormal basis `b`. -/
-theorem isBrownian_sum_smul_pi [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
-    {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
-    (hB₀ : ∀ i, IsBrownianReal (B₀ i) (P₀ i)) (b : OrthonormalBasis ι ℝ E) :
+theorem isBrownian_sum_smul_pi (hB₀ : ∀ i, IsBrownianReal (B₀ i) (P₀ i))
+    (b : OrthonormalBasis ι ℝ E) :
     IsBrownian (fun t (ω : ∀ j, Ω₀ j) ↦ ∑ i, B₀ i t (ω i) • b i) (Measure.pi P₀) :=
   (isBrownianVector_pi hB₀).isBrownian_sum_smul b
 
@@ -564,12 +511,12 @@ theorem hasLaw_sub_of_le (hW : IsPreBrownian W P) {s t : ℝ≥0} (hst : s ≤ t
       fun ω i ↦ ⟪b i, W t ω⟫ - ⟪b i, W s ω⟫ := by
     ext ω; simp_rw [Pi.sub_apply, Function.comp_apply, ← inner_sub_right]
     exact (b.sum_repr' (W t ω - W s ω)).symm
-  have hmeas : Measurable (fun (z : Fin (Module.finrank ℝ E) → ℝ) ↦ ∑ i, z i • b i) := by fun_prop
+  have hm : Measurable (fun (z : Fin (Module.finrank ℝ E) → ℝ) ↦ ∑ i, z i • b i) := by fun_prop
   rw [hsum]
-  refine (HasLaw.mk hmeas.aemeasurable ?_).fun_comp
+  refine (HasLaw.mk hm.aemeasurable ?_).fun_comp
     ((hW.isPreBrownianVector_orthonormalBasis b).hasLaw_sub_pi hst)
-  rw [pi_gaussianReal_zero_eq_map_smul, Measure.map_map hmeas (by fun_prop),
-    stdGaussian_eq_map_pi_orthonormalBasis b, Measure.map_map (by fun_prop) hmeas]
+  rw [pi_gaussianReal_zero_eq_map_smul, Measure.map_map hm (by fun_prop),
+    stdGaussian_eq_map_pi_orthonormalBasis b, Measure.map_map (by fun_prop) hm]
   congr 1; ext z; simp [smul_sum, smul_smul]
 
 /-- At any time `t : ℝ≥0`, `W t` has law `(stdGaussian E).map (fun x ↦ √t • x)`. -/
@@ -602,11 +549,9 @@ theorem _root_.ProbabilityTheory.HasIndepIncrements.isPreBrownian_of_hasLaw {X :
     (hlaw t).hasGaussianLaw
   have h0 : ∀ᵐ ω ∂P, X 0 ω = 0 := HasLaw.ae_eq_of_dirac (by simpa using hlaw 0)
   have hG : IsGaussianProcess X P := hincr.isGaussianProcess hgauss h0
-  refine hG.isPreBrownian_of_integral_eval
-    (fun t ↦ by
-      rw [(hlaw t).integral_eq, integral_map (φ := fun x : E ↦ √(t : ℝ) • x) (by fun_prop)
-        (f := fun x : E ↦ x) measurable_id.aestronglyMeasurable, integral_smul,
-        integral_id_stdGaussian, smul_zero]) fun s t u v ↦ ?_
+  refine hG.isPreBrownian_of_integral_eval (fun t ↦ by
+    rw [(hlaw t).integral_eq, integral_map (by fun_prop) (by fun_prop),
+      integral_smul, integral_id_stdGaussian, smul_zero]) fun s t u v ↦ ?_
   have hle ⦃a b : ℝ≥0⦄ (hab : a ≤ b) (x y : E) :
       cov[fun ω ↦ ⟪x, X a ω⟫, fun ω ↦ ⟪y, X b ω⟫; P] = (a : ℝ) * ⟪x, y⟫ := by
     have hind : IndepFun (fun ω ↦ ⟪x, X a ω⟫) (fun ω ↦ ⟪y, X b ω - X a ω⟫) P :=
