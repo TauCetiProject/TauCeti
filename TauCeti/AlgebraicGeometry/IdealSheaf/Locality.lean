@@ -88,11 +88,12 @@ theorem IdealSheafData.le_ker_of_forall_exists {X Z : Scheme.{u}} (I : Z.IdealSh
   refine le_ofIdeals_iff.2 fun V x hx ↦ RingHom.mem_ker.2 <| X.IsSheaf.section_ext fun p hp ↦ ?_
   -- near `p`, refine `V` to an affine open `V' ⊆ V ∩ U` of `Z` containing `f p`
   obtain ⟨U, W, e, hpW, hU⟩ := h p
-  obtain ⟨_, ⟨V', hV', rfl⟩, hpV', hV'le⟩ := Z.isBasis_affineOpens.exists_subset_of_mem_open
-    (show f p ∈ V.1 ⊓ U.1 from ⟨hp, e hpW⟩) (V.1 ⊓ U.1).2
-  have hV'V : (⟨V', hV'⟩ : Z.affineOpens) ≤ V := fun y hy ↦ (hV'le hy).1
-  have hV'U : (⟨V', hV'⟩ : Z.affineOpens) ≤ U := fun y hy ↦ (hV'le hy).2
-  refine ⟨W ⊓ f ⁻¹ᵁ V', inf_le_right.trans (f.preimage_mono hV'V), ⟨hpW, hpV'⟩, ?_⟩
+  obtain ⟨V', hV', hpV', hV'le⟩ := exists_isAffineOpen_mem_and_subset (x := f p) (U := V.1 ⊓ U.1)
+    (TopologicalSpace.Opens.mem_inf.2 ⟨f.mem_preimage.1 hp, f.mem_preimage.1 (e hpW)⟩)
+  have hle : V' ≤ V.1 ⊓ U.1 := SetLike.coe_subset_coe.1 hV'le
+  have hV'V : (⟨V', hV'⟩ : Z.affineOpens) ≤ V := (le_inf_iff.1 hle).1
+  have hV'U : (⟨V', hV'⟩ : Z.affineOpens) ≤ U := (le_inf_iff.1 hle).2
+  refine ⟨W ⊓ f ⁻¹ᵁ V', inf_le_right.trans (f.preimage_mono hV'V), ⟨hpW, f.mem_preimage.2 hpV'⟩, ?_⟩
   have := I.ideal_le_ker_appLE_of_le f (U' := ⟨V', hV'⟩) hV'U (inf_le_left : W ⊓ f ⁻¹ᵁ V' ≤ W) e
     inf_le_right hU (I.ideal_le_comap_ideal hV'V hx)
   rw [RingHom.mem_ker, ← CommRingCat.comp_apply, Scheme.Hom.map_appLE] at this
@@ -104,11 +105,9 @@ theorem IdealSheafData.le_ker_iff {X Z : Scheme.{u}} (I : Z.IdealSheafData) (f :
     I ≤ f.ker ↔ ∀ (U : Z.affineOpens) (V : X.affineOpens) (e : V.1 ≤ f ⁻¹ᵁ U.1),
       I.ideal U ≤ RingHom.ker (f.appLE U V e).hom := by
   refine ⟨fun h U V e ↦ I.ideal_le_ker_appLE h U e, fun h ↦ I.le_ker_of_forall_exists f fun p ↦ ?_⟩
-  obtain ⟨_, ⟨U, hU, rfl⟩, hpU, -⟩ := Z.isBasis_affineOpens.exists_subset_of_mem_open
-    (Set.mem_univ (f p)) isOpen_univ
-  obtain ⟨_, ⟨V, hV, rfl⟩, hpV, hVle⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
-    (show p ∈ (f ⁻¹ᵁ U).1 from hpU) (f ⁻¹ᵁ U).2
-  exact ⟨⟨U, hU⟩, V, hVle, hpV, h ⟨U, hU⟩ ⟨V, hV⟩ hVle⟩
+  obtain ⟨⟨V, U, hVU⟩, hpV⟩ := TopologicalSpace.Opens.mem_iSup.1
+    (f.iSup_affineOpens_le_preimage_eq_top.ge (TopologicalSpace.Opens.mem_top p))
+  exact ⟨U, V.1, hVU, hpV, h U V hVU⟩
 
 /-- Ideal sheaves with equal pullbacks to every member of an open cover are equal. -/
 theorem IdealSheafData.ext_of_comap_openCover

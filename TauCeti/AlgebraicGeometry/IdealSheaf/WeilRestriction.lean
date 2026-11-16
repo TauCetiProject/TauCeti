@@ -166,17 +166,19 @@ private theorem le_ker_snd_of_weilRestriction_le_ker (I : Y.IdealSheafData) {T :
     (t : T ⟶ S) (h : I.weilRestriction g ≤ t.ker) : I ≤ (pullback.snd t g).ker := by
   refine I.le_ker_of_forall_exists _ fun p ↦ ?_
   -- near `p`, choose affine opens `US ⊆ S` and `UT ⊆ t⁻¹ US`
-  obtain ⟨_, ⟨US, hUS, rfl⟩, hpUS, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
-    (Set.mem_univ (g (pullback.snd t g p))) isOpen_univ
+  obtain ⟨US, hUS, hpUS, -⟩ := exists_isAffineOpen_mem_and_subset
+    (x := g (pullback.snd t g p)) (U := ⊤) (TopologicalSpace.Opens.mem_top _)
   have htp : t (pullback.fst t g p) = g (pullback.snd t g p) := by
     rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
-  have hpUS' : t (pullback.fst t g p) ∈ (US : Set S) := htp ▸ hpUS
-  obtain ⟨_, ⟨UT, hUT, rfl⟩, hpUT, hUTle⟩ :=
-    T.isBasis_affineOpens.exists_subset_of_mem_open hpUS' (t ⁻¹ᵁ US).2
+  obtain ⟨UT, hUT, hpUT, hUTle⟩ := exists_isAffineOpen_mem_and_subset
+    (x := pullback.fst t g p) (U := t ⁻¹ᵁ US) (t.mem_preimage.2 (htp ▸ hpUS))
+  have hUTle' : UT ≤ t ⁻¹ᵁ US := SetLike.coe_subset_coe.1 hUTle
   -- over `UT`, the content of `I(g⁻¹ US)` vanishes, so `I(g⁻¹ US)` vanishes on `T ×_S Y`
-  exact ⟨⟨g ⁻¹ᵁ US, hUS.preimage g⟩, _, inf_le_left, ⟨hpUS, hpUT⟩,
-    (weilRestriction_ideal_le_ker_iff I t ⟨US, hUS⟩ ⟨UT, hUT⟩ hUTle).1
-      ((I.weilRestriction g).ideal_le_ker_appLE h ⟨US, hUS⟩ hUTle)⟩
+  exact ⟨⟨g ⁻¹ᵁ US, hUS.preimage g⟩, _, inf_le_left,
+    TopologicalSpace.Opens.mem_inf.2 ⟨(pullback.snd t g).mem_preimage.2 (g.mem_preimage.2 hpUS),
+      (pullback.fst t g).mem_preimage.2 hpUT⟩,
+    (weilRestriction_ideal_le_ker_iff I t ⟨US, hUS⟩ ⟨UT, hUT⟩ hUTle').1
+      ((I.weilRestriction g).ideal_le_ker_appLE h ⟨US, hUS⟩ hUTle')⟩
 
 /-- The converse: if `I` vanishes after base change along `g`, the Weil restriction of `I`
 vanishes on `T`. -/
