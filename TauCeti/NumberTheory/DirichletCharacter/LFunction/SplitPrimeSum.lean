@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebyshev.WeightedPrimeMellin
+public import TauCeti.NumberTheory.DirichletCharacter.Bounds
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
 public import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDerivNearOne
 
@@ -15,8 +16,9 @@ public import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDerivNearOne
 Let `χ` be a Dirichlet character of positive level. For real `σ > 1`, the combination
 `-ζ′/ζ(σ) - re L′/L(σ, χ)` is the sum of the series `∑ Λ(n) (1 + re χ(n)) / n ^ σ`, whose terms
 are nonnegative because `‖χ(n)‖ ≤ 1`. Keeping only the primes `p ≤ X` and comparing `p ^ σ` with
-`p X ^ (σ - 1)` bounds the weighted prime sum `∑_{p ≤ X} (1 + re χ(p)) log p / p` by
-`X ^ (σ - 1)` times the combination. At the primes with `χ(p) = 1` the weight is `2`, so
+`p X ^ (σ - 1)` (`TauCeti.weightedPrimeSum_le_rpow_mul_sum`) bounds the weighted prime sum
+`∑_{p ≤ X} (1 + re χ(p)) log p / p` by `X ^ (σ - 1)` times the combination. At the primes with
+`χ(p) = 1` the weight is `2`, so
 
 `∑_{p ≤ X, χ(p) = 1} log p / p ≤ (X ^ (σ - 1) / 2) (-ζ′/ζ(σ) - re L′/L(σ, χ))`.
 
@@ -64,14 +66,7 @@ open scoped LSeries.notation
 
 namespace DirichletCharacter
 
-variable {N : ℕ} (χ : DirichletCharacter ℂ N) {σ : ℝ}
-
-/-- The weight `1 + re χ(a)` is nonnegative, since `‖χ(a)‖ ≤ 1`. -/
-private theorem one_add_re_nonneg (a : ZMod N) : 0 ≤ 1 + (χ a).re := by
-  have := (Complex.abs_re_le_norm (χ a)).trans (χ.norm_le_one a)
-  linarith [neg_abs_le (χ a).re]
-
-variable [NeZero N]
+variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) {σ : ℝ}
 
 /-- **The Landau combination as a positive series.** For real `σ > 1`,
 `-re ζ′/ζ(σ) - re L′/L(σ, χ)` is the sum of `∑ Λ(n) (1 + re χ(n)) / n ^ σ`, a series of
@@ -103,41 +98,19 @@ theorem sum_vonMangoldt_mul_one_add_re_div_rpow_le (hσ : 1 < σ) (s : Finset �
     (Real.rpow_nonneg n.cast_nonneg σ))
     (χ.hasSum_vonMangoldt_mul_one_add_re_div_rpow hσ)
 
-/-- For a prime `p ≤ X` and `1 ≤ σ`, the term `log p / p · w` is at most `X ^ (σ - 1)` times
-`Λ(p) w / p ^ σ`, for every weight `w ≥ 0`. -/
-private theorem log_div_mul_le_rpow_mul {p : ℕ} (hp : p.Prime) {X : ℝ} (hpX : (p : ℝ) ≤ X)
-    (hσ : 1 ≤ σ) {w : ℝ} (hw : 0 ≤ w) :
-    Real.log p / p * w ≤ X ^ (σ - 1) * (Λ p * w / (p : ℝ) ^ σ) := by
-  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.pos
-  have hpos : 0 < (p : ℝ) ^ (σ - 1) := Real.rpow_pos_of_pos hp0 _
-  have hpow : (p : ℝ) ^ σ = p * (p : ℝ) ^ (σ - 1) := by
-    rw [← Real.rpow_one_add' hp0.le (by linarith), add_sub_cancel]
-  have hX : 1 ≤ X ^ (σ - 1) / (p : ℝ) ^ (σ - 1) :=
-    (one_le_div hpos).mpr (Real.rpow_le_rpow hp0.le hpX (by linarith))
-  have h : X ^ (σ - 1) * (Λ p * w / (p : ℝ) ^ σ) =
-      Real.log p / p * w * (X ^ (σ - 1) / (p : ℝ) ^ (σ - 1)) := by
-    rw [vonMangoldt_apply_prime hp, hpow]
-    field_simp
-  rw [h]
-  exact le_mul_of_one_le_right
-    (mul_nonneg (div_nonneg (Real.log_natCast_nonneg p) hp0.le) hw) hX
-
 /-- **Weighted primes and the Landau combination.** For real `σ > 1` and `X ≥ 0`, the weighted
 prime sum `∑_{p ≤ X} (1 + re χ(p)) log p / p` is at most
 `X ^ (σ - 1) (-re ζ′/ζ(σ) - re L′/L(σ, χ))`. -/
 theorem weightedPrimeSum_one_add_re_le (hσ : 1 < σ) {X : ℝ} (hX : 0 ≤ X) :
     TauCeti.weightedPrimeSum (fun p ↦ 1 + (χ p).re) X ≤
       X ^ (σ - 1) * (-(logDeriv riemannZeta σ).re - (logDeriv (LFunction χ) σ).re) := by
-  rw [TauCeti.weightedPrimeSum_def]
-  calc ∑ p ∈ Nat.primesLE ⌊X⌋₊, (Real.log p / p) • (1 + (χ p).re)
-      ≤ ∑ p ∈ Nat.primesLE ⌊X⌋₊, X ^ (σ - 1) * (Λ p * (1 + (χ p).re) / (p : ℝ) ^ σ) := by
-        refine Finset.sum_le_sum fun p hp ↦ ?_
-        obtain ⟨hpX, hp⟩ := Nat.mem_primesLE.mp hp
-        rw [smul_eq_mul]
-        exact log_div_mul_le_rpow_mul hp ((Nat.le_floor_iff hX).mp hpX) hσ.le
-          (χ.one_add_re_nonneg p)
-    _ = X ^ (σ - 1) * ∑ p ∈ Nat.primesLE ⌊X⌋₊, Λ p * (1 + (χ p).re) / (p : ℝ) ^ σ :=
-        (Finset.mul_sum _ _ _).symm
+  calc TauCeti.weightedPrimeSum (fun p ↦ 1 + (χ p).re) X
+      ≤ X ^ (σ - 1) * ∑ p ∈ Nat.primesLE ⌊X⌋₊, Real.log p * (1 + (χ p).re) / (p : ℝ) ^ σ :=
+        TauCeti.weightedPrimeSum_le_rpow_mul_sum (fun p _ ↦ χ.one_add_re_nonneg p) hσ.le X
+    _ = X ^ (σ - 1) * ∑ p ∈ Nat.primesLE ⌊X⌋₊, Λ p * (1 + (χ p).re) / (p : ℝ) ^ σ := by
+        congr 1
+        exact Finset.sum_congr rfl fun p hp ↦ by
+          rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
     _ ≤ X ^ (σ - 1) * (-(logDeriv riemannZeta σ).re - (logDeriv (LFunction χ) σ).re) :=
         mul_le_mul_of_nonneg_left (χ.sum_vonMangoldt_mul_one_add_re_div_rpow_le hσ _)
           (Real.rpow_nonneg hX _)
