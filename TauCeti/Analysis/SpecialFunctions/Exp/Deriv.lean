@@ -26,6 +26,8 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 
 ## Main results
 
+* `TauCeti.hasDerivAt_mul_exp_neg_mul`: `t ↦ c exp (-k t)` has derivative `-k c exp (-k t)`, so
+  it solves `x' = -k x`.
 * `TauCeti.differentiableAt_comp_exp_iff`: `f ∘ exp` is differentiable at `y` exactly when `f` is
   differentiable at `exp y`.
 * `TauCeti.deriv_comp_exp`: `(f ∘ exp)'(y) = e^y • f'(e^y)`, unconditionally.
@@ -59,6 +61,14 @@ namespace Real
 end Real
 
 namespace TauCeti
+
+/-- The curve `t ↦ c exp (-k t)` has derivative `-k c exp (-k t)`: it solves `x' = -k x`. -/
+theorem hasDerivAt_mul_exp_neg_mul (k c t : ℝ) :
+    HasDerivAt (fun s ↦ c * Real.exp (-(k * s))) (-(k * (c * Real.exp (-(k * t))))) t := by
+  have h : HasDerivAt (fun s : ℝ ↦ -(k * s)) (-k) t := by
+    simpa using ((hasDerivAt_id t).const_mul k).fun_neg
+  convert h.exp.const_mul c using 1
+  ring
 
 /-- Every real iterated derivative of the complex exponential at `z` has norm `‖exp z‖`. -/
 theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
