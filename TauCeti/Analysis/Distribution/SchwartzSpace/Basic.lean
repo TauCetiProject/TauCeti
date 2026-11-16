@@ -45,6 +45,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supported in `U`.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
+* `TauCeti.eq_of_forall_integral_mul_eq`: scalar Schwartz functions are determined by their
+  integrals against Schwartz functions.
 * `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
   is the same whether built through `HasCompactSupport.toSchwartzMap` or from `MemLp`.
 -/
@@ -300,6 +302,20 @@ theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[𝕜] W} (hg 
     (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 :=
   isOpen_univ.eqOn_of_integral_clm_apply_eq (μ := μ) (K₂ := 0) hg.continuousOn continuousOn_const
     (fun f _ _ ↦ by simp [h f]) (Set.mem_univ ζ)
+
+/-- **Schwartz functions are determined by their pairings.** Two scalar Schwartz functions `f`
+and `g` with `∫ f u ∂μ = ∫ g u ∂μ` for every Schwartz function `u` agree, for a locally finite
+measure of temperate growth charging every nonempty open set. -/
+theorem eq_of_forall_integral_mul_eq [μ.HasTemperateGrowth] {𝕜' : Type*} [RCLike 𝕜']
+    {f g : 𝓢(E, 𝕜')} (h : ∀ u : 𝓢(E, 𝕜'), ∫ x, f x * u x ∂μ = ∫ x, g x * u x ∂μ) : f = g := by
+  ext x
+  have h0 := eq_zero_of_forall_integral_apply_eq_zero (μ := μ)
+    (g := fun y ↦ ContinuousLinearMap.mul 𝕜' 𝕜' (f y - g y)) (by fun_prop) (fun u ↦ by
+      have hi (v : 𝓢(E, 𝕜')) : Integrable (fun ζ ↦ v ζ * u ζ) μ :=
+        (SchwartzMap.pairing (ContinuousLinearMap.mul 𝕜' 𝕜') v u).integrable
+      simp only [ContinuousLinearMap.mul_apply', sub_mul]
+      rw [integral_sub (hi f) (hi g), h u, sub_self]) x
+  simpa [sub_eq_zero] using congrArg (· 1) h0
 
 end TauCeti
 
