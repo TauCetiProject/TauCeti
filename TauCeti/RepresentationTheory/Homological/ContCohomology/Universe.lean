@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 import Mathlib.Topology.Instances.Int
 import Mathlib.Topology.Instances.ZMod
 
@@ -68,8 +67,8 @@ nothing about changing the carrier universe of `X` itself to a strictly larger u
   `TopRep.continuousCohomologyUniverseIso_zero_hom_degreeZeroClass`: compatibility in degree zero
   with `ContinuousCohomology.zeroIso` and `TauCeti.ContinuousCohomology.degreeZeroClass`.
 * `TauCeti.ContinuousCohomology.map_comp_continuousCohomologyUniverseIso_hom`: naturality with
-  respect to `ContinuousCohomology.map`, with specializations to `coeffMap`, `res`, `resLE`,
-  `infl`, and equivariant maps of discrete modules (`ofDiscreteModulePair`, `ofDiscreteModuleMap`).
+  respect to `ContinuousCohomology.map`, with specializations to `coeffMap`, `res`, `resLE`, and
+  `infl`.
 * `TopRep.continuousCohomologyUniverseIso_refl`: when `v = max u w` (in particular at `u = 0`,
   `v = 0`), the comparison is the identity isomorphism in every degree.
 * `TopRep.subsingleton_continuousCohomology_max_iff` and
@@ -579,6 +578,9 @@ theorem subsingleton_continuousCohomology_universe_iff (X : TopRep.{u, u₁, u} 
 
 /-- The forward map of `continuousCohomologyUniverseIso` preserves membership in the `p`-primary
 component. -/
+-- Not a `simp` lemma: Mathlib's `AddCommGroup.mem_primaryComponent` is already `@[simp]` and
+-- rewrites the left-hand side to `∃ k, p ^ k • _ = 0`, so the `simpNF` linter rejects `@[simp]`
+-- here; use with `rw` or `simp only`.
 theorem mem_primaryComponent_continuousCohomologyUniverseIso_hom_iff
     (X : TopRep.{max u v, u₁, u} k G) (n p : ℕ)
     (x : continuousCohomology.{u₁, u, max u v} n X) :
@@ -596,6 +598,8 @@ theorem mem_primaryComponent_continuousCohomologyUniverseIso_hom_iff
 
 /-- The inverse map of `continuousCohomologyUniverseIso` preserves membership in the `p`-primary
 component. -/
+-- Not a `simp` lemma, for the same reason as
+-- `mem_primaryComponent_continuousCohomologyUniverseIso_hom_iff`.
 theorem mem_primaryComponent_continuousCohomologyUniverseIso_inv_iff
     (X : TopRep.{max u v, u₁, u} k G) (n p : ℕ)
     (x : continuousCohomology.{u₁, u, v} n X) :
@@ -876,76 +880,62 @@ theorem infl_comp_continuousCohomologyUniverseIso_inv (N : Subgroup G) [N.Normal
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
     infl_comp_continuousCohomologyUniverseIso_hom]
 
-/-! ### Equivariant maps of discrete modules -/
-
-/-- Compatible-pair maps between discrete modules (`TauCeti.ofDiscreteModulePair`) commute with
-`continuousCohomologyUniverseIso`. -/
-@[reassoc]
-theorem map_ofDiscreteModulePair_comp_continuousCohomologyUniverseIso_hom
-    {M N : Type (max u v)} [AddCommGroup M] [Module k M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [SMulCommClass G k M] [ContinuousSMul k M]
-    [AddCommGroup N] [Module k N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction H N] [SMulCommClass H k N] [ContinuousSMul k N]
-    (φ : H →ₜ* G) (f : M →ₗ[k] N) (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (n : ℕ) :
-    _root_.ContinuousCohomology.map.{u₁, u, max u v} φ
-        (ofDiscreteModulePair (φ : H →* G) f hf) n ≫
-        ((ofDiscreteModule k H N).continuousCohomologyUniverseIso.{u₁, u, v} n).hom =
-      ((ofDiscreteModule k G M).continuousCohomologyUniverseIso.{u₁, u, v} n).hom ≫
-        _root_.ContinuousCohomology.map.{u₁, u, v} φ
-          (ofDiscreteModulePair (φ : H →* G) f hf) n :=
-  map_comp_continuousCohomologyUniverseIso_hom φ (ofDiscreteModulePair (φ : H →* G) f hf) n
-
-/-- Inverse form of `map_ofDiscreteModulePair_comp_continuousCohomologyUniverseIso_hom`. -/
-@[reassoc]
-theorem map_ofDiscreteModulePair_comp_continuousCohomologyUniverseIso_inv
-    {M N : Type (max u v)} [AddCommGroup M] [Module k M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [SMulCommClass G k M] [ContinuousSMul k M]
-    [AddCommGroup N] [Module k N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction H N] [SMulCommClass H k N] [ContinuousSMul k N]
-    (φ : H →ₜ* G) (f : M →ₗ[k] N) (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (n : ℕ) :
-    _root_.ContinuousCohomology.map.{u₁, u, v} φ
-        (ofDiscreteModulePair (φ : H →* G) f hf) n ≫
-        ((ofDiscreteModule k H N).continuousCohomologyUniverseIso.{u₁, u, v} n).inv =
-      ((ofDiscreteModule k G M).continuousCohomologyUniverseIso.{u₁, u, v} n).inv ≫
-        _root_.ContinuousCohomology.map.{u₁, u, max u v} φ
-          (ofDiscreteModulePair (φ : H →* G) f hf) n :=
-  map_comp_continuousCohomologyUniverseIso_inv φ (ofDiscreteModulePair (φ : H →* G) f hf) n
-
-/-- Equivariant coefficient maps between discrete modules (`TauCeti.ofDiscreteModuleMap`) commute
-with `continuousCohomologyUniverseIso`. -/
-@[reassoc]
-theorem coeffMap_ofDiscreteModuleMap_comp_continuousCohomologyUniverseIso_hom
-    {M N : Type (max u v)} [AddCommGroup M] [Module k M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [SMulCommClass G k M] [ContinuousSMul k M]
-    [AddCommGroup N] [Module k N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction G N] [SMulCommClass G k N] [ContinuousSMul k N]
-    (f : M →ₗ[k] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) (n : ℕ) :
-    coeffMap.{u₁, u, max u v} (ofDiscreteModuleMap f hf) n ≫
-        ((ofDiscreteModule k G N).continuousCohomologyUniverseIso.{u₁, u, v} n).hom =
-      ((ofDiscreteModule k G M).continuousCohomologyUniverseIso.{u₁, u, v} n).hom ≫
-        coeffMap.{u₁, u, v} (ofDiscreteModuleMap f hf) n :=
-  coeffMap_comp_continuousCohomologyUniverseIso_hom (ofDiscreteModuleMap f hf) n
-
-/-- Inverse form of `coeffMap_ofDiscreteModuleMap_comp_continuousCohomologyUniverseIso_hom`. -/
-@[reassoc]
-theorem coeffMap_ofDiscreteModuleMap_comp_continuousCohomologyUniverseIso_inv
-    {M N : Type (max u v)} [AddCommGroup M] [Module k M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [SMulCommClass G k M] [ContinuousSMul k M]
-    [AddCommGroup N] [Module k N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction G N] [SMulCommClass G k N] [ContinuousSMul k N]
-    (f : M →ₗ[k] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) (n : ℕ) :
-    coeffMap.{u₁, u, v} (ofDiscreteModuleMap f hf) n ≫
-        ((ofDiscreteModule k G N).continuousCohomologyUniverseIso.{u₁, u, v} n).inv =
-      ((ofDiscreteModule k G M).continuousCohomologyUniverseIso.{u₁, u, v} n).inv ≫
-        coeffMap.{u₁, u, max u v} (ofDiscreteModuleMap f hf) n :=
-  coeffMap_comp_continuousCohomologyUniverseIso_inv (ofDiscreteModuleMap f hf) n
-
 end TauCeti.ContinuousCohomology
 
 end
 
 section
-open CategoryTheory TopRep TauCeti TauCeti.ContinuousCohomology
+open CategoryTheory TopRep TauCeti.ContinuousCohomology
+
+/-- For a trivial representation `X` and an additive character `f : G → X.V`, the homogeneous
+difference cochain `(g₀, g₁) ↦ f g₁ - f g₀` is `G`-invariant in `TopRep.resolutionX X 2`. -/
+private theorem diffChar_mem_invariants
+    {k : Type u₁} {G : Type u} [Ring k] [TopologicalSpace k]
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (X : TopRep.{max u v, u₁, u} k G) (hρ : ∀ (g : G) (m : X.V), X.ρ g m = m)
+    (f : G → X.V) (hf : ∀ g h : G, f (g * h) = f g + f h)
+    (F : C(G, C(G, X.V))) (hF : ∀ g₀ g₁ : G, F g₀ g₁ = f g₁ - f g₀) :
+    F ∈ (TopRep.resolutionX.{u₁, u, v} X 2).ρ.invariants := by
+  rw [ContRepresentation.mem_invariants]
+  intro g
+  refine ContinuousMap.ext fun g₀ ↦ ContinuousMap.ext fun g₁ ↦ ?_
+  rw [TopRep.resolutionX_succ_ρ_apply_apply, TopRep.resolutionX_succ_ρ_apply_apply,
+    hρ, hF, hF, hf, hf]
+  abel
+
+/-- Any homogeneous `1`-cochain of the form `(g₀, g₁) ↦ f g₁ - f g₀` is a `1`-cocycle. -/
+private theorem diffChar_d_one_eq_zero
+    {k : Type u₁} {G : Type u} [Ring k] [TopologicalSpace k]
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (X : TopRep.{max u v, u₁, u} k G) (f : G → X.V)
+    (a : (TopRep.homogeneousCochains.{u₁, u, v} X).X 1)
+    (ha : ∀ g₀ g₁ : G, (a.val : C(G, C(G, X.V))) g₀ g₁ = f g₁ - f g₀) :
+    ((TopRep.homogeneousCochains.{u₁, u, v} X).d 1 2).hom a = 0 := by
+  refine Subtype.ext (ContinuousMap.ext fun g₀ ↦ ContinuousMap.ext fun g₁ ↦
+    ContinuousMap.ext fun g₂ ↦ ?_)
+  rw [TopRep.homogeneousCochains.d_one_apply, ha, ha, ha]
+  simp only [ZeroMemClass.coe_zero, ContinuousMap.zero_apply]
+  abel
+
+/-- Action of a coefficient map `f : X ⟶ Y` on a degree-zero cohomology class. -/
+private theorem coeffMap_degreeZeroClass_eq
+    {k : Type u₁} {G : Type u} [Ring k] [TopologicalSpace k]
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    {X Y : TopRep.{max u v, u₁, u} k G} (f : X ⟶ Y)
+    (x : X.V) (hx : ∀ g : G, X.ρ g x = x)
+    (y : Y.V) (hy : ∀ g : G, Y.ρ g y = y) (hf : f.hom x = y) :
+    coeffMap.{u₁, u, v} f 0 (degreeZeroClass.{u₁, u, v} X x hx) =
+      degreeZeroClass.{u₁, u, v} Y y hy := by
+  have h := ConcreteCategory.congr_hom (coeffMap_comp_zeroIso_hom.{u₁, u, v} f)
+    (degreeZeroClass.{u₁, u, v} X x hx)
+  simp only [ConcreteCategory.comp_apply] at h
+  have hval : ((ContinuousCohomology.zeroIso.{u₁, u, v} Y).hom
+      (coeffMap.{u₁, u, v} f 0 (degreeZeroClass.{u₁, u, v} X x hx)) : Y.V) = y := by
+    rw [h]
+    simp only [TopModuleCat.hom_ofHom, ContIntertwiningMap.mapInvariants_apply,
+      coe_zeroIso_hom_degreeZeroClass, hf]
+  exact (ContinuousCohomology.zeroIso.{u₁, u, v} Y).toContinuousLinearEquiv.injective
+    (Subtype.ext (hval.trans (coe_zeroIso_hom_degreeZeroClass y hy).symm))
 
 /-- Over the trivial group `PUnit.{u + 1}` with trivial coefficients `ULift.{u} ℤ` in degree `0`,
 the comparison sends the degree-zero class of `1` to the degree-zero class of `1`, and that class
@@ -1007,57 +997,21 @@ example :
   let G := ULift.{u} (Multiplicative (ZMod 2))
   let M := ULift.{u} (ZMod 2)
   let X := TopRep.of (ContRepresentation.trivial ℤ G M)
+  let f : G → M := fun g ↦ ULift.up (Multiplicative.toAdd g.down)
   let F : C(G, C(G, M)) := ContinuousMap.curry
     ⟨fun p : G × G ↦ ULift.up (Multiplicative.toAdd p.2.down - Multiplicative.toAdd p.1.down),
       continuous_of_discreteTopology⟩
-  have hρ_u : ∀ (g : G) (m : M), ((TopRep.resolutionX.{0, u, u} X 0).ρ g) m = m :=
-    fun _ _ ↦ rfl
-  have hρ_0 : ∀ (g : G) (m : M), ((TopRep.resolutionX.{0, u, 0} X 0).ρ g) m = m :=
-    fun _ _ ↦ rfl
-  have hmul : ∀ x y : G, (x * y).down = x.down * y.down := fun _ _ ↦ rfl
-  have hinv : ∀ x : G, (x⁻¹).down = x.down⁻¹ := fun _ ↦ rfl
-  have hinv_u : F ∈ (TopRep.resolutionX.{0, u, u} X 2).ρ.invariants := by
-    rw [ContRepresentation.mem_invariants]
-    intro g
-    refine ContinuousMap.ext fun g₀ ↦ ContinuousMap.ext fun g₁ ↦ ULift.ext ?_
-    rw [TopRep.resolutionX_succ_ρ_apply_apply, TopRep.resolutionX_succ_ρ_apply_apply, hρ_u]
-    simp only [F, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
-    rw [hmul, hmul, hinv, toAdd_mul, toAdd_mul, toAdd_inv]
-    abel
-  have hinv_0 : F ∈ (TopRep.resolutionX.{0, u, 0} X 2).ρ.invariants := by
-    rw [ContRepresentation.mem_invariants]
-    intro g
-    refine ContinuousMap.ext fun g₀ ↦ ContinuousMap.ext fun g₁ ↦ ULift.ext ?_
-    rw [TopRep.resolutionX_succ_ρ_apply_apply, TopRep.resolutionX_succ_ρ_apply_apply, hρ_0]
-    simp only [F, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
-    rw [hmul, hmul, hinv, toAdd_mul, toAdd_mul, toAdd_inv]
-    abel
-  let a₁ : (TopRep.homogeneousCochains.{0, u, u} X).X 1 := ⟨F, hinv_u⟩
-  let a₀ : (TopRep.homogeneousCochains.{0, u, 0} X).X 1 := ⟨F, hinv_0⟩
-  have ha₁ : ((TopRep.homogeneousCochains.{0, u, u} X).d 1 2).hom a₁ = 0 := by
-    refine Subtype.ext (ContinuousMap.ext fun g₀ ↦ ContinuousMap.ext fun g₁ ↦
-      ContinuousMap.ext fun g₂ ↦ ?_)
-    rw [TopRep.homogeneousCochains.d_one_apply]
-    have hz : (((0 : (TopRep.homogeneousCochains.{0, u, u} X).X 2).val :
-        C(G, C(G, C(G, M)))) g₀ g₁ g₂) = 0 := rfl
-    rw [hz]
-    refine ULift.ext ?_
-    change (Multiplicative.toAdd g₂.down - Multiplicative.toAdd g₁.down) -
-        ((Multiplicative.toAdd g₂.down - Multiplicative.toAdd g₀.down) -
-          (Multiplicative.toAdd g₁.down - Multiplicative.toAdd g₀.down)) = 0
-    abel
-  have ha₀ : ((TopRep.homogeneousCochains.{0, u, 0} X).d 1 2).hom a₀ = 0 := by
-    refine Subtype.ext (ContinuousMap.ext fun g₀ ↦ ContinuousMap.ext fun g₁ ↦
-      ContinuousMap.ext fun g₂ ↦ ?_)
-    rw [TopRep.homogeneousCochains.d_one_apply]
-    have hz : (((0 : (TopRep.homogeneousCochains.{0, u, 0} X).X 2).val :
-        C(G, C(G, C(G, M)))) g₀ g₁ g₂) = 0 := rfl
-    rw [hz]
-    refine ULift.ext ?_
-    change (Multiplicative.toAdd g₂.down - Multiplicative.toAdd g₁.down) -
-        ((Multiplicative.toAdd g₂.down - Multiplicative.toAdd g₀.down) -
-          (Multiplicative.toAdd g₁.down - Multiplicative.toAdd g₀.down)) = 0
-    abel
+  have hρ : ∀ (g : G) (m : X.V), X.ρ g m = m := fun _ _ ↦ rfl
+  have hf : ∀ g h : G, f (g * h) = f g + f h := fun g h ↦ ULift.ext (toAdd_mul g.down h.down)
+  have hF : ∀ g₀ g₁ : G, F g₀ g₁ = f g₁ - f g₀ := fun _ _ ↦ ULift.ext rfl
+  let a₁ : (TopRep.homogeneousCochains.{0, u, u} X).X 1 :=
+    ⟨F, diffChar_mem_invariants.{0, u, u} X hρ f hf F hF⟩
+  let a₀ : (TopRep.homogeneousCochains.{0, u, 0} X).X 1 :=
+    ⟨F, diffChar_mem_invariants.{0, u, 0} X hρ f hf F hF⟩
+  have ha₁ : ((TopRep.homogeneousCochains.{0, u, u} X).d 1 2).hom a₁ = 0 :=
+    diffChar_d_one_eq_zero.{0, u, u} X f a₁ hF
+  have ha₀ : ((TopRep.homogeneousCochains.{0, u, 0} X).d 1 2).hom a₀ = 0 :=
+    diffChar_d_one_eq_zero.{0, u, 0} X f a₀ hF
   refine ⟨a₁, ha₁, a₀, ha₀, rfl, rfl, ?_, ?_⟩
   · rw [X.continuousCohomologyUniverseIso_hom_cochainClass.{0, u, 0} 1 a₁ ha₁]
     congr 1
@@ -1070,8 +1024,8 @@ example :
     let g₁ : G := ⟨Multiplicative.ofAdd 1⟩
     have hc_inv : (c.val : C(G, M)) g₁ = (c.val : C(G, M)) 1 := by
       have hcg := (ContRepresentation.mem_invariants c.val).1 c.2 g₁⁻¹
-      have hev := congrArg (fun f : C(G, M) ↦ f 1) hcg
-      rw [TopRep.resolutionX_succ_ρ_apply_apply, inv_inv, mul_one, hρ_0] at hev
+      have hev := congrArg (fun b : C(G, M) ↦ b 1) hcg
+      rw [TopRep.resolutionX_succ_ρ_apply_apply, inv_inv, mul_one, hρ] at hev
       exact hev
     have hc_val : (a₀.val : C(G, C(G, M))) = (TopRep.d.{0, u, 0} X 1).hom c.val :=
       (congrArg Subtype.val hc).trans (TopRep.homogeneousCochains.d_apply X 0 c)
@@ -1096,31 +1050,15 @@ example {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] :
           (degreeZeroClass.{0, u, u} X ⟨1⟩ hm₁)) =
       degreeZeroClass.{0, u, 0} X ⟨2⟩ hm₂ := by
   intro X hm₁ hm₂
-  let f : X ⟶ X := 2 • 𝟙 X
-  have hf_val : (f : TopRep.res (ContinuousMonoidHom.id G : G →* G) X ⟶ X).hom (ULift.up 1) =
-      ULift.up (2 : ℤ) := by
-    change (2 • 𝟙 X : X ⟶ X).hom (ULift.up 1) = ULift.up (2 : ℤ)
-    rw [two_nsmul]
-    rfl
-  have hd_u : ∀ (u : X.V) (_ : u = ⟨2⟩) (hu : ∀ g : G, X.ρ g u = u),
-      degreeZeroClass.{0, u, u} X u hu = degreeZeroClass.{0, u, u} X ⟨2⟩ hm₂ := by
-    rintro _ rfl _; rfl
-  have hd_0 : ∀ (u : X.V) (_ : u = ⟨2⟩) (hu : ∀ g : G, X.ρ g u = u),
-      degreeZeroClass.{0, u, 0} X u hu = degreeZeroClass.{0, u, 0} X ⟨2⟩ hm₂ := by
-    rintro _ rfl _; rfl
-  have hcoeff_u : coeffMap.{0, u, u} (2 • 𝟙 X) 0 (degreeZeroClass.{0, u, u} X ⟨1⟩ hm₁) =
-      degreeZeroClass.{0, u, u} X ⟨2⟩ hm₂ := by
-    rw [coeffMap_def]
-    exact (map_degreeZeroClass.{0, u, u} (X := X) (Y := X)
-      (ContinuousMonoidHom.id G) f (ULift.up 1) hm₁).trans (hd_u _ hf_val _)
-  have hcoeff_0 : coeffMap.{0, u, 0} (2 • 𝟙 X) 0 (degreeZeroClass.{0, u, 0} X ⟨1⟩ hm₁) =
-      degreeZeroClass.{0, u, 0} X ⟨2⟩ hm₂ := by
-    rw [coeffMap_def]
-    exact (map_degreeZeroClass.{0, u, 0} (X := X) (Y := X)
-      (ContinuousMonoidHom.id G) f (ULift.up 1) hm₁).trans (hd_0 _ hf_val _)
+  have hf_val : (2 • 𝟙 X : X ⟶ X).hom (ULift.up 1) = ULift.up (2 : ℤ) := by
+    rw [two_nsmul, TopRep.hom_add, ContIntertwiningMap.add_apply, TopRep.hom_id,
+      ContIntertwiningMap.id_apply]
+    exact ULift.ext one_add_one_eq_two
   refine ⟨?_, ?_⟩
-  · rw [hcoeff_u, X.continuousCohomologyUniverseIso_zero_hom_degreeZeroClass]
-  · rw [X.continuousCohomologyUniverseIso_zero_hom_degreeZeroClass, hcoeff_0]
+  · rw [coeffMap_degreeZeroClass_eq.{0, u, u} (X := X) (Y := X) (2 • 𝟙 X) ⟨1⟩ hm₁ ⟨2⟩ hm₂ hf_val,
+      X.continuousCohomologyUniverseIso_zero_hom_degreeZeroClass]
+  · rw [X.continuousCohomologyUniverseIso_zero_hom_degreeZeroClass,
+      coeffMap_degreeZeroClass_eq.{0, u, 0} (X := X) (Y := X) (2 • 𝟙 X) ⟨1⟩ hm₁ ⟨2⟩ hm₂ hf_val]
 
 /-- At `u = 0` (`G : Type 0`), the universe comparison on continuous cohomology is the identity in
 every degree. -/
