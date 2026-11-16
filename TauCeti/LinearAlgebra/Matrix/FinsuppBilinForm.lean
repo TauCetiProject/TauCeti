@@ -179,11 +179,8 @@ theorem finsuppBilinForm_single_right (x : I →₀ R) (j : I) (b : R) :
 @[simp]
 theorem isSymm_finsuppBilinForm_iff {A : Matrix I I R} :
     A.finsuppBilinForm.IsSymm ↔ A.IsSymm := by
-  rw [Matrix.IsSymm, ← finsuppBilinForm_injective.eq_iff, finsuppBilinForm_transpose,
-    LinearMap.BilinForm.isSymm_def]
-  refine ⟨fun h ↦ LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_, fun h x y ↦ ?_⟩
-  · simpa using h y x
-  · simpa using DFunLike.congr_fun (DFunLike.congr_fun h y) x
+  rw [LinearMap.BilinForm.isSymm_iff_flip, Matrix.IsSymm, ← finsuppBilinForm_inj,
+    finsuppBilinForm_transpose]
 
 /-- A symmetric matrix defines a symmetric bilinear form on `I →₀ R`. -/
 theorem IsSymm.finsuppBilinForm {A : Matrix I I R} (hA : A.IsSymm) :

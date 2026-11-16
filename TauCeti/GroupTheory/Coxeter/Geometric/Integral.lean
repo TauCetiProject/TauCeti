@@ -349,15 +349,11 @@ theorem exists_algebraMap_int_eq_two_mul_geometricForm_iff :
   have hpi_div_pos : 0 < Real.pi / M i j := div_pos Real.pi_pos hm_pos
   have hpi_div_lt : Real.pi / M i j < Real.pi / 3 :=
     div_lt_div_of_pos_left Real.pi_pos (by norm_num) (by exact_mod_cast hlt)
-  have hmem₁ : (0 : ℝ) ∈ Set.Icc 0 Real.pi := ⟨le_rfl, Real.pi_pos.le⟩
-  have hmem₂ : Real.pi / M i j ∈ Set.Icc 0 Real.pi :=
-    ⟨hpi_div_pos.le, hpi_div_lt.le.trans (div_le_self Real.pi_pos.le (by norm_num))⟩
-  have hmem₃ : Real.pi / 3 ∈ Set.Icc 0 Real.pi :=
-    ⟨by positivity, div_le_self Real.pi_pos.le (by norm_num)⟩
   have hcos_lt_one : Real.cos (Real.pi / M i j) < 1 := by
-    simpa using Real.strictAntiOn_cos hmem₁ hmem₂ hpi_div_pos
+    simpa using Real.cos_lt_cos_of_nonneg_of_le_pi le_rfl (by linarith [Real.pi_pos]) hpi_div_pos
   have hhalf_lt_cos : (1 / 2 : ℝ) < Real.cos (Real.pi / M i j) := by
-    simpa [Real.cos_pi_div_three] using Real.strictAntiOn_cos hmem₂ hmem₃ hpi_div_lt
+    simpa [Real.cos_pi_div_three] using
+      Real.cos_lt_cos_of_nonneg_of_le_pi hpi_div_pos.le (by linarith [Real.pi_pos]) hpi_div_lt
   have hentry :=
     TauCeti.algebraMap_apply_eq_neg_two_mul_cos_of_algebraMap_eq_two_mul_geometricForm (hA i j)
   rw [eq_intCast] at hentry
