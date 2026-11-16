@@ -26,10 +26,10 @@ Let `q : CStarAction.Hom α β` be a surjective equivariant `⋆`-homomorphism f
   Hilbert-space extensions, and Bochner integration on `C_c(G, A)`.
 
 Specializing `q` to `α.quotientMkHom I hI` gives `CovariantRepresentation.quotientLift` and
-`CovariantMultiplierHom.quotientLift` on concrete quotient actions `α.quotient I hI`. Together with
-`CovariantRepresentation.idealExtension`, these constructions classify covariant pairs of `α`
-according to their restriction to an invariant ideal `I` and descent to `A ⧸ I`, with no universe
-restriction on the Hilbert space or target C⋆-algebra.
+`CovariantMultiplierHom.quotientLift` on concrete quotient actions `α.quotient I hI`,
+characterizing Hilbert-space and multiplier-valued covariant pairs of `α` whose coefficient map
+vanishes on `I` (with no universe restriction on `H` or `C`) and supplying the representation-level
+input for exactness in the middle of the full crossed-product sequence.
 
 ## Main declarations
 
@@ -42,8 +42,8 @@ restriction on the Hilbert space or target C⋆-algebra.
   `TauCeti.CStarAction.CovariantMultiplierHom.quotientLift`: descent of multiplier-valued covariant
   homomorphisms into `𝓜(ℂ, C)`, with uniqueness (`eq_descend_iff`, `exists_comap_eq_iff`,
   `eq_quotientLift_iff`, `exists_comap_quotientMkHom_eq_iff`), pushforward compatibility
-  (`map_descend`, `toCovariantRepresentation_descend`), and strict Bochner integration
-  compatibility.
+  (`map_descend`, `toCovariantRepresentation_descend`, `map_quotientLift`,
+  `toCovariantRepresentation_quotientLift`), and strict Bochner integration compatibility.
 
 ## References
 
@@ -61,33 +61,6 @@ open scoped CStarAlgebra MultiplierAlgebra
 
 namespace TauCeti.CStarAction
 
-/-- Factor `f : A →⋆ₙₐ[ℂ] D` vanishing on `ker q` through a surjective `q : Hom α β`. -/
-private def descendCoefficient {G A B D : Type*} [Group G] [TopologicalSpace G]
-    [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra D]
-    {α : CStarAction G A} {β : CStarAction G B}
-    (q : Hom α β) (hq : Function.Surjective q)
-    (f : A →⋆ₙₐ[ℂ] D) (hf : ∀ a, q a = 0 → f a = 0) : B →⋆ₙₐ[ℂ] D :=
-  (TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker q.toNonUnitalStarAlgHom) f
-    fun a ha => hf a ((TwoSidedIdeal.mem_ker q.toNonUnitalStarAlgHom).mp ha)).comp
-    (NonUnitalStarAlgHom.quotientKerEquivOfSurjective
-      (φ := q.toNonUnitalStarAlgHom) hq).symm.toNonUnitalStarAlgHom
-
-private theorem descendCoefficient_apply {G A B D : Type*} [Group G] [TopologicalSpace G]
-    [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra D]
-    {α : CStarAction G A} {β : CStarAction G B}
-    (q : Hom α β) (hq : Function.Surjective q)
-    (f : A →⋆ₙₐ[ℂ] D) (hf : ∀ a, q a = 0 → f a = 0) (a : A) :
-    descendCoefficient q hq f hf (q a) = f a := by
-  have hsymm :
-      (NonUnitalStarAlgHom.quotientKerEquivOfSurjective
-        (φ := q.toNonUnitalStarAlgHom) hq).symm (q a) =
-        TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker q.toNonUnitalStarAlgHom) a :=
-    (NonUnitalStarAlgHom.quotientKerEquivOfSurjective
-      (φ := q.toNonUnitalStarAlgHom) hq).symm_apply_eq.mpr
-      (NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk
-        (φ := q.toNonUnitalStarAlgHom) hq a).symm
-  simp [descendCoefficient, hsymm]
-
 /-! ### Descent of Hilbert-space covariant representations -/
 
 namespace CovariantRepresentation
@@ -103,21 +76,28 @@ variable {G A B H : Type*} [Group G] [TopologicalSpace G]
 kernel is annihilated by `P.coefficient` to a covariant representation of `β` on `H`. -/
 def descend (q : Hom α β) (hq : Function.Surjective q)
     (hker : ∀ a, q a = 0 → P.coefficient a = 0) : CovariantRepresentation β H where
-  coefficient := descendCoefficient q hq P.coefficient hker
+  coefficient := q.toNonUnitalStarAlgHom.liftOfSurjective hq P.coefficient hker
   group := P.group
   isUnitary := P.isUnitary
   continuous_orbit := P.continuous_orbit
   covariance r b ξ := by
     obtain ⟨a, rfl⟩ := hq b
-    rw [← q.map_action, descendCoefficient_apply, descendCoefficient_apply]
+    rw [← q.map_action r a, ← q.coe_toNonUnitalStarAlgHom,
+      NonUnitalStarAlgHom.liftOfSurjective_apply, NonUnitalStarAlgHom.liftOfSurjective_apply]
     exact P.covariance r a ξ
+
+theorem descend_coefficient (q : Hom α β) (hq : Function.Surjective q)
+    (hker : ∀ a, q a = 0 → P.coefficient a = 0) :
+    (P.descend q hq hker).coefficient =
+      q.toNonUnitalStarAlgHom.liftOfSurjective hq P.coefficient hker :=
+  (rfl)
 
 /-- The descended coefficient representation sends `q a` to `P.coefficient a`. -/
 @[simp]
 theorem descend_coefficient_apply (q : Hom α β) (hq : Function.Surjective q)
     (hker : ∀ a, q a = 0 → P.coefficient a = 0) (a : A) :
     (P.descend q hq hker).coefficient (q a) = P.coefficient a :=
-  descendCoefficient_apply q hq P.coefficient hker a
+  q.toNonUnitalStarAlgHom.liftOfSurjective_apply hq P.coefficient hker a
 
 /-- Composing the descended coefficient representation with `q` recovers `P.coefficient`. -/
 @[simp]
@@ -151,6 +131,12 @@ theorem eq_descend_iff (q : Hom α β) (hq : Function.Surjective q)
   obtain ⟨a, rfl⟩ := hq b
   simpa using DFunLike.congr_fun (congrArg coefficient hQ) a
 
+@[simp]
+theorem descend_comap {Q : CovariantRepresentation β H} (q : Hom α β) (hq : Function.Surjective q)
+    (hker : ∀ a, q a = 0 → (Q.comap q).coefficient a = 0) :
+    (Q.comap q).descend q hq hker = Q :=
+  (((Q.comap q).eq_descend_iff q hq hker).mpr rfl).symm
+
 /-- A covariant representation `P` of `α` is the pullback along a surjective `q : Hom α β` of some
 covariant representation of `β` precisely when `P.coefficient` vanishes on `ker q`. -/
 theorem exists_comap_eq_iff (q : Hom α β) (hq : Function.Surjective q) :
@@ -179,12 +165,38 @@ def quotientLift (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
   P.descend (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) fun a ha =>
     hP a (TwoSidedIdeal.Quotient.eq_zero_iff_mem.mp ((α.quotientMkHom_apply I hI a).symm.trans ha))
 
+theorem quotientLift_def (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hP : ∀ a ∈ I, P.coefficient a = 0) :
+    P.quotientLift I hI hP =
+      P.descend (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) (fun a ha =>
+        hP a (TwoSidedIdeal.Quotient.eq_zero_iff_mem.mp
+          ((α.quotientMkHom_apply I hI a).symm.trans ha))) :=
+  (rfl)
+
 @[simp]
 theorem quotientLift_coefficient_mk (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
     (hP : ∀ a ∈ I, P.coefficient a = 0) (a : A) :
     (P.quotientLift I hI hP).coefficient (TwoSidedIdeal.Quotient.mk I a) = P.coefficient a := by
   rw [quotientLift, ← α.quotientMkHom_apply I hI, descend_coefficient_apply]
+
+theorem quotientLift_coefficient (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hP : ∀ a ∈ I, P.coefficient a = 0) :
+    (P.quotientLift I hI hP).coefficient =
+      TwoSidedIdeal.Quotient.liftStarAlgHom I P.coefficient hP :=
+  TwoSidedIdeal.Quotient.nonUnitalStarAlgHom_ext <|
+    NonUnitalStarAlgHom.ext fun a => by simp
+
+@[simp]
+theorem quotientLift_coefficient_comp (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hP : ∀ a ∈ I, P.coefficient a = 0) :
+    (P.quotientLift I hI hP).coefficient.comp (TwoSidedIdeal.Quotient.mkStarAlgHom I) =
+      P.coefficient :=
+  NonUnitalStarAlgHom.ext fun a => by
+    simp [NonUnitalStarAlgHom.comp_apply, P.quotientLift_coefficient_mk I hI hP]
 
 @[simp]
 theorem quotientLift_group (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
@@ -207,6 +219,14 @@ theorem eq_quotientLift_iff (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (hP : ∀ a ∈ I, P.coefficient a = 0) {Q : CovariantRepresentation (α.quotient I hI) H} :
     Q = P.quotientLift I hI hP ↔ Q.comap (α.quotientMkHom I hI) = P :=
   P.eq_descend_iff (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) _
+
+@[simp]
+theorem quotientLift_comap_quotientMkHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    {Q : CovariantRepresentation (α.quotient I hI) H}
+    (hQ : ∀ a ∈ I, (Q.comap (α.quotientMkHom I hI)).coefficient a = 0) :
+    (Q.comap (α.quotientMkHom I hI)).quotientLift I hI hQ = Q :=
+  (((Q.comap (α.quotientMkHom I hI)).eq_quotientLift_iff I hI hQ).mpr rfl).symm
 
 /-- `P` factors through `α.quotient I hI` precisely when `P.coefficient` vanishes on `I`. -/
 theorem exists_comap_quotientMkHom_eq_iff (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
@@ -262,11 +282,40 @@ theorem integratedStarAlgHom_descend_comp_convolutionMap [BorelSpace G] [μ.IsHa
       P.integratedStarAlgHom μ :=
   NonUnitalStarAlgHom.ext fun _ => by simp
 
-theorem integratedStarAlgHom_descend_convolutionMap_apply [BorelSpace G] [μ.IsHaarMeasure]
-    (f : ConvolutionAlgebra α μ) :
-    (P.descend q hq hker).integratedStarAlgHom μ (q.convolutionMap μ f) =
-      P.integratedStarAlgHom μ f :=
-  DFunLike.congr_fun (P.integratedStarAlgHom_descend_comp_convolutionMap q hq hker μ) f
+@[simp]
+theorem integratedOperator_quotientLift_convolutionMap
+    [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
+    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hP : ∀ a ∈ I, P.coefficient a = 0) (f : ConvolutionAlgebra α μ) :
+    (P.quotientLift I hI hP).integratedOperator μ
+        ((α.quotientMkHom I hI).convolutionMap μ f).ofConv =
+      P.integratedOperator μ f.ofConv :=
+  P.integratedOperator_descend_convolutionMap (α.quotientMkHom I hI)
+    (α.quotientMkHom_surjective I hI) _ μ f
+
+@[simp]
+theorem integratedOperatorL1_quotientLift_convolutionMapL1
+    [BorelSpace G] [MeasurableMul G] [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
+    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hP : ∀ a ∈ I, P.coefficient a = 0) (x : Completion (ConvolutionAlgebra α μ)) :
+    (P.quotientLift I hI hP).integratedOperatorL1 μ
+        ((α.quotientMkHom I hI).convolutionMapL1 μ x) =
+      P.integratedOperatorL1 μ x :=
+  P.integratedOperatorL1_descend_convolutionMapL1 (α.quotientMkHom I hI)
+    (α.quotientMkHom_surjective I hI) _ μ x
+
+@[simp]
+theorem integratedStarAlgHom_quotientLift_comp_convolutionMap [BorelSpace G] [μ.IsHaarMeasure]
+    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hP : ∀ a ∈ I, P.coefficient a = 0) :
+    ((P.quotientLift I hI hP).integratedStarAlgHom μ).comp
+        ((α.quotientMkHom I hI).convolutionMap μ) =
+      P.integratedStarAlgHom μ :=
+  P.integratedStarAlgHom_descend_comp_convolutionMap (α.quotientMkHom I hI)
+    (α.quotientMkHom_surjective I hI) _ μ
 
 end Integration
 
@@ -287,20 +336,27 @@ variable {G A B C D : Type*} [Group G] [TopologicalSpace G]
 homomorphism `q` whose kernel is annihilated by `M.coefficient`. -/
 def descend (q : Hom α β) (hq : Function.Surjective q)
     (hker : ∀ a, q a = 0 → M.coefficient a = 0) : CovariantMultiplierHom β C where
-  coefficient := descendCoefficient q hq M.coefficient hker
+  coefficient := q.toNonUnitalStarAlgHom.liftOfSurjective hq M.coefficient hker
   group := M.group
   continuous_group_fst := M.continuous_group_fst
   covariance r b := by
     obtain ⟨a, rfl⟩ := hq b
-    rw [← q.map_action, descendCoefficient_apply, descendCoefficient_apply]
+    rw [← q.map_action r a, ← q.coe_toNonUnitalStarAlgHom,
+      NonUnitalStarAlgHom.liftOfSurjective_apply, NonUnitalStarAlgHom.liftOfSurjective_apply]
     exact M.covariance r a
+
+theorem descend_coefficient (q : Hom α β) (hq : Function.Surjective q)
+    (hker : ∀ a, q a = 0 → M.coefficient a = 0) :
+    (M.descend q hq hker).coefficient =
+      q.toNonUnitalStarAlgHom.liftOfSurjective hq M.coefficient hker :=
+  (rfl)
 
 /-- The descended coefficient map sends `q a` to `M.coefficient a`. -/
 @[simp]
 theorem descend_coefficient_apply (q : Hom α β) (hq : Function.Surjective q)
     (hker : ∀ a, q a = 0 → M.coefficient a = 0) (a : A) :
     (M.descend q hq hker).coefficient (q a) = M.coefficient a :=
-  descendCoefficient_apply q hq M.coefficient hker a
+  q.toNonUnitalStarAlgHom.liftOfSurjective_apply hq M.coefficient hker a
 
 /-- Composing `(M.descend q hq hker).coefficient` with `q` recovers `M.coefficient`. -/
 @[simp]
@@ -332,6 +388,12 @@ theorem eq_descend_iff (q : Hom α β) (hq : Function.Surjective q)
   obtain ⟨a, rfl⟩ := hq b
   simpa using DFunLike.congr_fun (congrArg coefficient hN) a
 
+@[simp]
+theorem descend_comap {N : CovariantMultiplierHom β C} (q : Hom α β) (hq : Function.Surjective q)
+    (hker : ∀ a, q a = 0 → (N.comap q).coefficient a = 0) :
+    (N.comap q).descend q hq hker = N :=
+  (((N.comap q).eq_descend_iff q hq hker).mpr rfl).symm
+
 /-- A covariant multiplier homomorphism `M` of `α` factors through a surjective `q : Hom α β`
 precisely when `M.coefficient` vanishes on `ker q`. -/
 theorem exists_comap_eq_iff (q : Hom α β) (hq : Function.Surjective q) :
@@ -361,6 +423,7 @@ theorem map_descend (q : Hom α β) (hq : Function.Surjective q)
   ((M.map hψ).eq_descend_iff q hq _).2 <| by rw [← map_comap, M.comap_descend]
 
 /-- Extending to a Hilbert space via a nondegenerate representation commutes with `descend`. -/
+@[simp]
 theorem toCovariantRepresentation_descend (q : Hom α β) (hq : Function.Surjective q)
     (hker : ∀ a, q a = 0 → M.coefficient a = 0) {H : Type*} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : C →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
@@ -379,12 +442,38 @@ def quotientLift (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
   M.descend (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) fun a ha =>
     hM a (TwoSidedIdeal.Quotient.eq_zero_iff_mem.mp ((α.quotientMkHom_apply I hI a).symm.trans ha))
 
+theorem quotientLift_def (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hM : ∀ a ∈ I, M.coefficient a = 0) :
+    M.quotientLift I hI hM =
+      M.descend (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) (fun a ha =>
+        hM a (TwoSidedIdeal.Quotient.eq_zero_iff_mem.mp
+          ((α.quotientMkHom_apply I hI a).symm.trans ha))) :=
+  (rfl)
+
 @[simp]
 theorem quotientLift_coefficient_mk (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
     (hM : ∀ a ∈ I, M.coefficient a = 0) (a : A) :
     (M.quotientLift I hI hM).coefficient (TwoSidedIdeal.Quotient.mk I a) = M.coefficient a := by
   rw [quotientLift, ← α.quotientMkHom_apply I hI, descend_coefficient_apply]
+
+theorem quotientLift_coefficient (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hM : ∀ a ∈ I, M.coefficient a = 0) :
+    (M.quotientLift I hI hM).coefficient =
+      TwoSidedIdeal.Quotient.liftStarAlgHom I M.coefficient hM :=
+  TwoSidedIdeal.Quotient.nonUnitalStarAlgHom_ext <|
+    NonUnitalStarAlgHom.ext fun a => by simp
+
+@[simp]
+theorem quotientLift_coefficient_comp (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hM : ∀ a ∈ I, M.coefficient a = 0) :
+    (M.quotientLift I hI hM).coefficient.comp (TwoSidedIdeal.Quotient.mkStarAlgHom I) =
+      M.coefficient :=
+  NonUnitalStarAlgHom.ext fun a => by
+    simp [NonUnitalStarAlgHom.comp_apply, M.quotientLift_coefficient_mk I hI hM]
 
 @[simp]
 theorem quotientLift_group (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
@@ -408,6 +497,14 @@ theorem eq_quotientLift_iff (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     N = M.quotientLift I hI hM ↔ N.comap (α.quotientMkHom I hI) = M :=
   M.eq_descend_iff (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) _
 
+@[simp]
+theorem quotientLift_comap_quotientMkHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    {N : CovariantMultiplierHom (α.quotient I hI) C}
+    (hN : ∀ a ∈ I, (N.comap (α.quotientMkHom I hI)).coefficient a = 0) :
+    (N.comap (α.quotientMkHom I hI)).quotientLift I hI hN = N :=
+  (((N.comap (α.quotientMkHom I hI)).eq_quotientLift_iff I hI hN).mpr rfl).symm
+
 /-- `M` factors through `α.quotient I hI` precisely when `M.coefficient` vanishes on `I`. -/
 theorem exists_comap_quotientMkHom_eq_iff (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
@@ -424,6 +521,26 @@ theorem isMultiplierNondegenerate_quotientLift_coefficient_iff (I : TwoSidedIdea
       M.coefficient.IsMultiplierNondegenerate :=
   M.isMultiplierNondegenerate_descend_coefficient_iff (α.quotientMkHom I hI)
     (α.quotientMkHom_surjective I hI) _
+
+/-- Pushing forward along a nondegenerate multiplier homomorphism commutes with `quotientLift`. -/
+theorem map_quotientLift (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hM : ∀ a ∈ I, M.coefficient a = 0)
+    {ψ : C →⋆ₙₐ[ℂ] 𝓜(ℂ, D)} (hψ : ψ.IsMultiplierNondegenerate) :
+    (M.quotientLift I hI hM).map hψ =
+      (M.map hψ).quotientLift I hI (fun a ha => by simp [hM a ha]) :=
+  M.map_descend (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) _ hψ
+
+/-- Extending to a Hilbert space via a nondegenerate representation commutes with `quotientLift`. -/
+@[simp]
+theorem toCovariantRepresentation_quotientLift (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hM : ∀ a ∈ I, M.coefficient a = 0) {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : C →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) :
+    (M.quotientLift I hI hM).toCovariantRepresentation hρ =
+      (M.toCovariantRepresentation hρ).quotientLift I hI (fun a ha => by simp [hM a ha]) :=
+  M.toCovariantRepresentation_descend (α.quotientMkHom I hI) (α.quotientMkHom_surjective I hI) _ hρ
 
 end Basic
 
@@ -453,11 +570,28 @@ theorem integratedStarAlgHom_descend_comp_convolutionMap [BorelSpace G] [μ.IsHa
       M.integratedStarAlgHom μ := by
   rw [← (M.descend q hq hker).integratedStarAlgHom_comap μ q, M.comap_descend q hq hker]
 
-theorem integratedStarAlgHom_descend_convolutionMap_apply [BorelSpace G] [μ.IsHaarMeasure]
-    (f : ConvolutionAlgebra α μ) :
-    (M.descend q hq hker).integratedStarAlgHom μ (q.convolutionMap μ f) =
-      M.integratedStarAlgHom μ f :=
-  DFunLike.congr_fun (M.integratedStarAlgHom_descend_comp_convolutionMap q hq hker μ) f
+@[simp]
+theorem integratedMultiplier_quotientLift_convolutionMap
+    [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
+    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hM : ∀ a ∈ I, M.coefficient a = 0) (f : ConvolutionAlgebra α μ) :
+    (M.quotientLift I hI hM).integratedMultiplier μ
+        ((α.quotientMkHom I hI).convolutionMap μ f).ofConv =
+      M.integratedMultiplier μ f.ofConv :=
+  M.integratedMultiplier_descend_convolutionMap (α.quotientMkHom I hI)
+    (α.quotientMkHom_surjective I hI) _ μ f
+
+@[simp]
+theorem integratedStarAlgHom_quotientLift_comp_convolutionMap [BorelSpace G] [μ.IsHaarMeasure]
+    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
+    (hM : ∀ a ∈ I, M.coefficient a = 0) :
+    ((M.quotientLift I hI hM).integratedStarAlgHom μ).comp
+        ((α.quotientMkHom I hI).convolutionMap μ) =
+      M.integratedStarAlgHom μ :=
+  M.integratedStarAlgHom_descend_comp_convolutionMap (α.quotientMkHom I hI)
+    (α.quotientMkHom_surjective I hI) _ μ
 
 end Integration
 
