@@ -36,7 +36,10 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
-  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`.
+  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, compatible
+  with restriction along `x ∈ A` (`TauCeti.localHomologyRestriction_singularHomologyπ_apply`) and
+  vanishing on classes supported away from `x`
+  (`TauCeti.singularHomologyToLocalHomology_singularHomologyMap_eq_zero`).
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
@@ -161,6 +164,57 @@ theorem singularHomologyToLocalHomology_apply (x : M) {k : ℕ}
         (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
           (C := ModuleCat.{w} Λ) N k).hom μ) :=
   (rfl)
+
+/-- Restricting the relative image in `Hₖ(M, M ∖ A; N)` of a global class `μ ∈ Hₖ(M; N)` to a
+point `x ∈ A` gives `singularHomologyToLocalHomology N x k μ`. -/
+theorem localHomologyRestriction_singularHomologyπ_apply {A : Set M} {x : M} (hx : x ∈ A)
+    {k : ℕ} (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
+    localHomologyRestriction N (singleton_subset_iff.2 hx) k
+      (((TopPair.ofSubset (Aᶜ : Set (TopCat.of M))).singularHomologyπ
+        (C := ModuleCat.{w} Λ) N k) μ) =
+      singularHomologyToLocalHomology N x k μ := by
+  have hπ :=
+    TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id_assoc N
+      (X := TopCat.of M) (S := Aᶜ) (S' := (univ : Set M)ᶜ)
+      (compl_subset_compl.2 (subset_univ A)) k
+      (localHomologyRestriction N (singleton_subset_iff.2 hx) k)
+  rw [← localHomologyRestriction_def _ (subset_univ A), localHomologyRestriction_comp] at hπ
+  rw [singularHomologyToLocalHomology, hπ]
+  -- Composition in `ModuleCat` acts by composition of the underlying maps, and
+  -- `(ofSubset Aᶜ).fst` is `M` by definition.
+  rfl
+
+/-- A singular homology class pushed forward along a continuous map `f : Y → M` whose range misses
+`y` has zero image in the local homology `Hₖ(M, M ∖ {y}; N)`. -/
+theorem singularHomologyToLocalHomology_singularHomologyMap_eq_zero {Y : Type w}
+    [TopologicalSpace Y] {f : C(Y, M)} {y : M} (hy : y ∉ range f) {k : ℕ}
+    (γ : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj
+      (TopCat.of Y) : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology N y k
+      ((((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+        (TopCat.ofHom f)) γ) = 0 := by
+  let Py := TopPair.ofSubset (({y} : Set M)ᶜ : Set (TopCat.of M))
+  let j : TopCat.of Y ⟶ Py.snd :=
+    TopCat.ofHom ⟨fun z ↦ ⟨f z, fun hfy ↦ hy ⟨z, mem_singleton_iff.1 hfy⟩⟩, by fun_prop⟩
+  have hπ :=
+    TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id N
+      (X := TopCat.of M) (S := ({y} : Set M)ᶜ) (S' := (univ : Set M)ᶜ)
+      (compl_subset_compl.2 (subset_univ {y})) k
+  rw [← localHomologyRestriction_def _ (subset_univ {y})] at hπ
+  have hj :
+      SSet.homologyMap (TopCat.toSSet.map (j ≫ Py.map)) N k γ =
+        SSet.homologyMap (TopCat.toSSet.map Py.map) N k
+          (SSet.homologyMap (TopCat.toSSet.map j) N k γ) := by
+    rw [Functor.map_comp, SSet.homologyMap_comp]
+    rfl
+  have hPy :
+      Py.singularHomologyπ N k
+        (SSet.homologyMap (TopCat.toSSet.map Py.map) N k
+          (SSet.homologyMap (TopCat.toSSet.map j) N k γ)) = 0 :=
+    ConcreteCategory.congr_hom (Py.homologyMap_comp_singularHomologyπ N k) _
+  rw [singularHomologyFunctor_obj_map, singularHomologyToLocalHomology, hπ]
+  -- `TopCat.ofHom f` is `j ≫ Py.map` by definition (`Py.map` is subtype inclusion).
+  exact hj.symm ▸ hPy
 
 end SingularHomology
 

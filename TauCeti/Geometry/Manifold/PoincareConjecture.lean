@@ -42,9 +42,9 @@ real normed space `F` of dimension `n + 1`:
   compact space is Lindelöf, and a Lindelöf space charted on a finite-dimensional real normed space
   is second-countable (`ChartedSpace.secondCountable_of_lindelof`).
 * **Simple connectivity** (`ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere`,
-  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere_of_rank_lt`): when `dim_ℝ F ≥ 3` (that
-  is, `n ≥ 2`), `sphere c r` is simply connected (`TauCeti.simplyConnectedSpace_sphere`) and simple
-  connectivity is invariant under homotopy equivalence.
+  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere_of_two_lt_rank`): when `dim_ℝ F ≥ 3`
+  (that is, `n ≥ 2`), `sphere c r` is simply connected (`TauCeti.simplyConnectedSpace_sphere`) and
+  simple connectivity is invariant under homotopy equivalence.
 
 Consequently, for `n ≥ 2`, `ContinuousMap.HomotopyEquiv.NonemptyDiffeomorphSphere M n` is equivalent
 to the closed simply connected second-countable formulation
@@ -52,10 +52,11 @@ to the closed simply connected second-countable formulation
 `M ≃ₕ 𝕊ⁿ` that is smoothable once compact and second-countable (`TauCeti.IsSmoothable (𝓡 n) M`) is
 homeomorphic to `𝕊ⁿ` whenever `NonemptyDiffeomorphSphere M n` holds
 (`ContinuousMap.HomotopyEquiv.nonempty_homeomorph_sphere_of_isSmoothable`). Contrapositively, no
-noncompact Hausdorff `n`-manifold—and in particular no `n`-dimensional real normed space `E`, for
-any `n ≥ 0`—is homotopy equivalent to a sphere of positive radius in dimension `n + 1`
-(`TauCeti.isEmpty_homotopyEquiv_sphere_of_noncompactSpace`,
-`TauCeti.isEmpty_homotopyEquiv_sphere_of_finrank_succ`).
+noncompact Hausdorff `n`-manifold—and in particular no positive-dimensional real normed space
+`E`—is homotopy equivalent to a sphere of positive radius in dimension `n + 1`
+(`TauCeti.isEmpty_homotopyEquiv_sphere_of_noncompactSpace`), and in dimension `n = 0` the same holds
+because `E` is path-connected while the `0`-sphere has two path components
+(`TauCeti.isEmpty_homotopyEquiv_sphere_of_finrank_succ`).
 
 ## Main results
 
@@ -65,11 +66,6 @@ any `n ≥ 0`—is homotopy equivalent to a sphere of positive radius in dimensi
 * `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere` and
   `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere_euclideanSpace`: such a manifold is
   second-countable.
-* `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere_of_rank_lt`,
-  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere`, and
-  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere_euclideanSpace`: any space homotopy
-  equivalent to a sphere of nonnegative radius in a real normed space of rank greater than `2` is
-  simply connected.
 * `ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_iff_of_two_le` and
   `ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_of_simplyConnected`: for `n ≥ 2`, Mathlib's
   `NonemptyDiffeomorphSphere M n` reduces to compact simply connected second-countable smooth
@@ -102,15 +98,6 @@ local macro:max "𝕊" noWs n:superscript(term) : term =>
 
 universe u v w
 
-/-- Dilation and translation identify the unit sphere of a real normed space with any sphere of
-positive radius. -/
-private noncomputable def sphereUnitHomeomorph {F : Type w} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (c : F) {r : ℝ} (hr : 0 < r) :
-    sphere (0 : F) 1 ≃ₜ sphere c r :=
-  ((Homeomorph.smulOfNeZero r hr.ne').trans (Homeomorph.addRight c)).subtype fun x ↦ by
-    simp [mem_sphere_iff_norm, Homeomorph.smulOfNeZero_apply, norm_smul, Real.norm_eq_abs,
-      abs_of_pos hr, hr.ne']
-
 namespace ContinuousMap.HomotopyEquiv
 
 section TopologicalInvariants
@@ -131,7 +118,7 @@ theorem compactSpace_of_sphere {M : Type u} [TopologicalSpace M] [T2Space M]
     have hV1 : finrank ℝ V = 1 := TauCeti.finrank_euclideanSpace_ulift_fin.{u} 1
     have hFV_dim : finrank ℝ F = finrank ℝ V := (by lia : finrank ℝ F = 1).trans hV1.symm
     let eV : M ≃ₕ sphere (0 : V) 1 :=
-      e.trans ((sphereUnitHomeomorph c hr).symm.trans
+      e.trans ((TauCeti.sphereHomeomorphOfPos c hr).symm.trans
         (TauCeti.sphereHomeomorphOfFinrankEq hFV_dim)).toHomotopyEquiv
     have : Subsingleton E := Module.finrank_zero_iff.mp hn
     have : DiscreteTopology M := ChartedSpace.discreteTopology E M
@@ -147,7 +134,7 @@ theorem compactSpace_of_sphere {M : Type u} [TopologicalSpace M] [T2Space M]
     have hV : finrank ℝ V = d + 2 := TauCeti.finrank_euclideanSpace_ulift_fin.{u} (d + 2)
     have hFV_dim : finrank ℝ F = finrank ℝ V := (by lia : finrank ℝ F = d + 2).trans hV.symm
     let eV : M ≃ₕ sphere (0 : V) 1 :=
-      e.trans ((sphereUnitHomeomorph c hr).symm.trans
+      e.trans ((TauCeti.sphereHomeomorphOfPos c hr).symm.trans
         (TauCeti.sphereHomeomorphOfFinrankEq hFV_dim)).toHomotopyEquiv
     have hrankV : 1 < Module.rank ℝ V := by
       rw [← Module.finrank_eq_rank, hV]
@@ -189,32 +176,6 @@ theorem secondCountableTopology_of_sphere_euclideanSpace {M : Type u} [Topologic
     [T2Space M] {n : ℕ} [ChartedSpace ℝⁿ M] (e : M ≃ₕ 𝕊ⁿ) : SecondCountableTopology M :=
   e.secondCountableTopology_of_sphere (E := ℝⁿ) (by simp) one_pos
 
-/-- Any topological space homotopy equivalent to a sphere of nonnegative radius in a real normed
-space of rank greater than two is simply connected. -/
-theorem simplyConnectedSpace_of_sphere_of_rank_lt {M : Type u} [TopologicalSpace M]
-    {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] {c : F} {r : ℝ}
-    (e : M ≃ₕ sphere c r) (hF : 2 < Module.rank ℝ F) (hr : 0 ≤ r) :
-    SimplyConnectedSpace M :=
-  have := TauCeti.simplyConnectedSpace_sphere hF c hr
-  e.simplyConnectedSpace
-
-/-- Any topological space homotopy equivalent to a sphere of nonnegative radius in a real normed
-space of finite dimension at least `3` is simply connected. -/
-theorem simplyConnectedSpace_of_sphere {M : Type u} [TopologicalSpace M]
-    {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] {c : F} {r : ℝ}
-    (e : M ≃ₕ sphere c r) (hF : 3 ≤ finrank ℝ F) (hr : 0 ≤ r) :
-    SimplyConnectedSpace M := by
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by lia)
-  refine e.simplyConnectedSpace_of_sphere_of_rank_lt ?_ hr
-  rw [← Module.finrank_eq_rank]
-  exact_mod_cast (by lia : 2 < finrank ℝ F)
-
-/-- Any topological space homotopy equivalent to `𝕊ⁿ` with `2 ≤ n` is simply connected. -/
-theorem simplyConnectedSpace_of_sphere_euclideanSpace {M : Type u} [TopologicalSpace M]
-    {n : ℕ} (e : M ≃ₕ 𝕊ⁿ) (hn : 2 ≤ n) : SimplyConnectedSpace M :=
-  have := TauCeti.simplyConnectedSpace_sphere_euclideanSpace hn
-  e.simplyConnectedSpace
-
 end TopologicalInvariants
 
 section PoincareReductions
@@ -234,9 +195,10 @@ theorem nonemptyDiffeomorphSphere_iff_of_two_le {M : Type u} [TopologicalSpace M
       (e.simplyConnectedSpace_of_sphere_euclideanSpace hn)
       e.secondCountableTopology_of_sphere_euclideanSpace e⟩
 
-/-- **Deduction of `NonemptyDiffeomorphSphere` from simple connectivity alone.** For `2 ≤ n` (in
-particular for `n = 3`), if every compact, simply connected, second-countable smooth `n`-manifold
-structure on `M` is diffeomorphic to `𝕊ⁿ`, then `NonemptyDiffeomorphSphere M n` holds. -/
+/-- **Smooth Poincaré from the closed simply connected case, without the homotopy-equivalence
+premise.** For `2 ≤ n` (in particular for `n = 3`), to prove `NonemptyDiffeomorphSphere M n` it
+suffices to show—without assuming `M ≃ₕ 𝕊ⁿ`—that every compact, simply connected, second-countable
+smooth `n`-manifold structure on `M` is diffeomorphic to `𝕊ⁿ`. -/
 theorem nonemptyDiffeomorphSphere_of_simplyConnected {M : Type u} [TopologicalSpace M] [T2Space M]
     {n : ℕ} (hn : 2 ≤ n)
     (h : ∀ (_ : ChartedSpace ℝⁿ M) (_ : IsManifold (𝓡 n) ∞ M),
@@ -321,7 +283,7 @@ theorem isEmpty_homotopyEquiv_sphere_of_finrank_succ {E : Type v} [NormedAddComm
     have : Nontrivial F := Module.nontrivial_of_finrank_pos (by lia : 0 < finrank ℝ F)
     obtain ⟨p⟩ : Nonempty (sphere (0 : F) 1) :=
       (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
-    let e₁ : E ≃ₕ sphere (0 : F) 1 := e.trans (sphereUnitHomeomorph c hr).symm.toHomotopyEquiv
+    let e₁ : E ≃ₕ sphere (0 : F) 1 := e.trans (sphereHomeomorphOfPos c hr).symm.toHomotopyEquiv
     have hpath : ZerothHomotopy.mk (e₁.symm (-p)) = ZerothHomotopy.mk (e₁.symm p) :=
       Quotient.sound (PathConnectedSpace.joined _ _)
     have hp : ZerothHomotopy.mk (-p) = ZerothHomotopy.mk p := by

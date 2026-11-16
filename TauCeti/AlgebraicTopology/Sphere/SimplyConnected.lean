@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
 import Mathlib.Analysis.Convex.Combination
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Spheres are simply connected above rank two
@@ -52,6 +53,10 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
+* `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere_of_two_lt_rank`,
+  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere`, and
+  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere_euclideanSpace`: any space homotopy
+  equivalent to a sphere of nonnegative radius above rank two is simply connected.
 
 ## References
 
@@ -430,11 +435,7 @@ theorem simplyConnectedSpace_sphere (h : 2 < Module.rank ℝ E) (c : E) {r : ℝ
     refine simply_connected_iff_loops_nullhomotopic.mpr ⟨hpc, fun x γ => ?_⟩
     obtain ⟨γ', hγγ', p, hp⟩ := γ.exists_homotopic_notMem_range h
     exact hγγ'.trans (γ'.homotopic_refl_of_notMem_range hp)
-  let e : sphere (0 : E) 1 ≃ₜ sphere c r :=
-    ((Homeomorph.smulOfNeZero r hr.ne').trans (Homeomorph.addRight c)).subtype fun x => by
-      simp [mem_sphere_iff_norm, Homeomorph.smulOfNeZero_apply,
-        norm_smul, Real.norm_eq_abs, abs_of_pos hr, hr.ne']
-  exact e.symm.toHomotopyEquiv.simplyConnectedSpace
+  exact (sphereHomeomorphOfPos c hr).symm.toHomotopyEquiv.simplyConnectedSpace
 
 /-- **The `n`-sphere is simply connected for `2 ≤ n`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
@@ -460,5 +461,37 @@ theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤
   omega
 
 end TauCeti
+
+namespace ContinuousMap.HomotopyEquiv
+
+/-- Any topological space homotopy equivalent to a sphere of nonnegative radius in a real
+normed space of rank greater than two is simply connected. -/
+theorem simplyConnectedSpace_of_sphere_of_two_lt_rank {M : Type*} [TopologicalSpace M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {c : F} {r : ℝ}
+    (e : M ≃ₕ sphere c r) (hF : 2 < Module.rank ℝ F) (hr : 0 ≤ r) :
+    SimplyConnectedSpace M :=
+  have := TauCeti.simplyConnectedSpace_sphere hF c hr
+  e.simplyConnectedSpace
+
+/-- Any topological space homotopy equivalent to a sphere of nonnegative radius in a real
+normed space of finite dimension at least `3` is simply connected. -/
+theorem simplyConnectedSpace_of_sphere {M : Type*} [TopologicalSpace M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {c : F} {r : ℝ}
+    (e : M ≃ₕ sphere c r) (hF : 3 ≤ Module.finrank ℝ F) (hr : 0 ≤ r) :
+    SimplyConnectedSpace M := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  refine e.simplyConnectedSpace_of_sphere_of_two_lt_rank ?_ hr
+  rw [← Module.finrank_eq_rank]
+  exact_mod_cast (by omega : 2 < Module.finrank ℝ F)
+
+/-- Any topological space homotopy equivalent to the Euclidean `n`-sphere with `2 ≤ n` is simply
+connected. -/
+theorem simplyConnectedSpace_of_sphere_euclideanSpace {M : Type*} [TopologicalSpace M]
+    {n : ℕ} (e : M ≃ₕ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (hn : 2 ≤ n) :
+    SimplyConnectedSpace M :=
+  have := TauCeti.simplyConnectedSpace_sphere_euclideanSpace hn
+  e.simplyConnectedSpace
+
+end ContinuousMap.HomotopyEquiv
 
 end
