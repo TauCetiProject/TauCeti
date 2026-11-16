@@ -21,10 +21,10 @@ quaternion symbols, while each unordered pair of negative unit lines contributes
 giving the closed formula `s(Q) = [(-1, -1)]^C(q, 2)`. Since `[(-1, -1)]` has order `2`, the Hasse
 invariant is trivial precisely when `C(q, 2) = q(q - 1)/2` is even.
 
-Unlike over local fields, `(rank, discr, hasseInvariant)` is **not** a complete system of
-invariants over an ordered real closed field: `⟨1, 1, 1, 1⟩` (`q = 0`) and `⟨-1, -1, -1, -1⟩`
-(`q = 4`, `C(4, 2) = 6`) both have rank `4`, trivial discriminant, and trivial Hasse invariant,
-while their signatures `4` and `-4` distinguish them.
+Unlike over non-archimedean local fields, `(rank, discr, hasseInvariant)` is **not** a complete
+system of invariants over an ordered real closed field: `⟨1, 1, 1, 1⟩` (`q = 0`) and
+`⟨-1, -1, -1, -1⟩` (`q = 4`, `C(4, 2) = 6`) both have rank `4`, trivial discriminant, and trivial
+Hasse invariant, while their signatures `4` and `-4` distinguish them.
 
 ## Main results
 
@@ -142,12 +142,6 @@ end QuadraticForm
 namespace TauCeti
 
 open scoped _root_.Quaternion
-
-/-- Over `ℝ`, the quaternion symbol `[(-1, -1)]` is the Brauer class of Hamilton's quaternions
-`ℍ[ℝ]`. -/
-theorem BrauerGroup.quaternionClass_neg_one_neg_one_real :
-    BrauerGroup.quaternionClass (-1 : ℝˣ) (-1) = BrauerGroup.mk (CSA.of ℝ ℍ[ℝ]) := by
-  simp [BrauerGroup.quaternionClass_def]
 
 /-- The real normal form `p⟨1⟩ ⊥ q⟨-1⟩` has Hasse invariant `[ℍ[ℝ]]^C(q, 2)`. -/
 @[simp]

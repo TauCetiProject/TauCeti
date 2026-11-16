@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.IsRealClosed.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.Algebra.Quaternion.Subgroup
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
-import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # Quaternion Brauer symbols over semireal and ordered real closed fields
@@ -27,8 +26,6 @@ both `a` and `b` are negative and is trivial otherwise. In particular, the quate
 
 ## Main results
 
-* `TauCeti.BrauerGroup.quaternionClass_pow`: a natural-number power of any quaternion symbol is
-  `1` or `[(a, b)]` according to the parity of the exponent.
 * `TauCeti.BrauerGroup.quaternionClass_neg_one_neg_one_ne_one`: `[(-1, -1)] ≠ 1` over a semireal
   field.
 * `TauCeti.BrauerGroup.orderOf_quaternionClass_neg_one_neg_one`: `[(-1, -1)]` has order `2`.
@@ -55,21 +52,6 @@ public section
 namespace TauCeti
 
 namespace BrauerGroup
-
-section Field
-
-variable {K : Type*} [Field K] [Invertible (2 : K)]
-
-/-- Every quaternion symbol is `2`-torsion, so a natural-number power `[(a, b)] ^ n` is `1` when
-`n` is even and `[(a, b)]` when `n` is odd. -/
-theorem quaternionClass_pow (a b : Kˣ) (n : ℕ) :
-    quaternionClass a b ^ n = if Even n then 1 else quaternionClass a b := by
-  rcases n.even_or_odd with ⟨m, rfl⟩ | ⟨m, rfl⟩
-  · simp [← two_mul, pow_mul]
-  · rw [ite_eq_right (Nat.not_even_iff_odd.mpr ⟨m, rfl⟩), pow_add, pow_mul, quaternionClass_sq,
-      one_pow, one_mul, pow_one]
-
-end Field
 
 section Semireal
 

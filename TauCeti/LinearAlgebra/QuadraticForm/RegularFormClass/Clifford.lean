@@ -99,6 +99,8 @@ invariant, so it depends only on the Witt class.
   Clifford and Hasse invariants in every rank.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero`: its
   form `c = s · [(-1,-1)]^C(m,2)` in rank `2m` with trivial signed discriminant.
+* `TauCeti.RegularFormClass.cliffordInvariant_nsmul_one`: its value `[(-1, -1)]^C(n + 1, 4)` on
+  `n` copies of the unit line.
 * `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_odd`: in odd rank the Clifford
   invariant is unchanged by scaling.
 * `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero`: on a class
@@ -616,6 +618,17 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : Regu
     _ = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
         rw [pow_eq_pow_of_modEq (Choose.choose_mul_choose_add_choose_modEq m)
           (quaternionClass_sq _ _)]
+
+-- Not @[simp]: `nsmul_eq_mul` and `mul_one` rewrite `n • 1` to `↑n` on `RegularFormClass K`.
+/-- The Clifford invariant of `n` copies of the unit line `⟨1, …, 1⟩` is `[(-1, -1)]^C(n + 1, 4)`:
+both its Hasse invariant and its discriminant are trivial, leaving only the constant sign term of
+Lam's comparison. -/
+theorem cliffordInvariant_nsmul_one (n : ℕ) :
+    cliffordInvariant (n • (1 : RegularFormClass K)) =
+      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ (n + 1).choose 4 := by
+  rw [cliffordInvariant_eq_hasseInvariant_mul, hasseInvariant_nsmul_one, discr_nsmul, discr_one,
+    smul_zero, quaternionClassOnSquareClasses_zero_right, one_pow, mul_one, one_mul, rank_nsmul,
+    rank_one, mul_one]
 
 end Lam
 

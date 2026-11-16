@@ -52,13 +52,16 @@ translates into the solvability of the norm equation `b = x² - ay²` and into t
   algebras are isomorphic, and `TauCeti.BrauerGroup.quaternionClass_eq_one_iff`: a symbol is
   trivial exactly when its algebra is split.
 * `TauCeti.BrauerGroup.quaternionClass_comm`, `TauCeti.BrauerGroup.quaternionClass_sq`,
+  `TauCeti.BrauerGroup.quaternionClass_pow`,
   `TauCeti.BrauerGroup.quaternionClass_mul_sq_right`, `TauCeti.BrauerGroup.quaternionClass_one_sub`:
-  symmetry, `2`-torsion, square-class invariance and the Steinberg relation.
+  symmetry, `2`-torsion and natural-number powers, square-class invariance and the Steinberg
+  relation.
 * `TauCeti.BrauerGroup.quaternionClass_mul`, `TauCeti.BrauerGroup.quaternionClass_mul_left`:
   **bilinearity of the quaternion symbol**.
 * `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`: the symbol as a pairing of square classes,
   which is symmetric and bilinear (`quaternionClassOnSquareClasses_comm`,
-  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`) with
+  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`,
+  `quaternionClassOnSquareClasses_nsmul_left`, `quaternionClassOnSquareClasses_nsmul_right`) with
   `2`-torsion values (`quaternionClassOnSquareClasses_sq`).
 * `TauCeti.BrauerGroup.quaternionClass_congr`: isometric binary forms `⟨a,b⟩ ≅ ⟨c,d⟩`
   have equal symbols `[(a,b)] = [(c,d)]`.
@@ -213,6 +216,14 @@ theorem inv_quaternionClass (a b : Kˣ) : (quaternionClass a b)⁻¹ = quaternio
 theorem quaternionClass_sq (a b : Kˣ) : quaternionClass a b ^ 2 = 1 := by
   rw [pow_two]
   exact inv_eq_iff_mul_eq_one.1 (inv_quaternionClass a b)
+
+/-- Every quaternion symbol is `2`-torsion, so a natural-number power `[(a, b)] ^ n` is `1` when
+`n` is even and `[(a, b)]` when `n` is odd. -/
+theorem quaternionClass_pow (a b : Kˣ) (n : ℕ) :
+    quaternionClass a b ^ n = if Even n then 1 else quaternionClass a b := by
+  rcases n.even_or_odd with ⟨m, rfl⟩ | ⟨m, rfl⟩
+  · simp [← two_mul, pow_mul]
+  · simp [Nat.not_even_iff_odd.mpr ⟨m, rfl⟩, pow_add, pow_mul]
 
 /-! ### The split symbols -/
 
@@ -379,6 +390,24 @@ theorem quaternionClassOnSquareClasses_sq (x y : SquareClassGroup K) :
     quaternionClassOnSquareClasses x y ^ 2 = 1 := by
   rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
     quaternionClassOnSquareClasses_squareClass, quaternionClass_sq]
+
+/-- Natural-scalar multiples in the first argument of the square-class pairing become powers of the
+symbol. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_nsmul_left (n : ℕ) (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses (n • x) y = quaternionClassOnSquareClasses x y ^ n := by
+  induction n with
+  | zero => rw [zero_nsmul, quaternionClassOnSquareClasses_zero_left, pow_zero]
+  | succ n ih => rw [succ_nsmul, quaternionClassOnSquareClasses_add_left, ih, pow_succ]
+
+/-- Natural-scalar multiples in the second argument of the square-class pairing become powers of
+the symbol. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_nsmul_right (x : SquareClassGroup K) (n : ℕ)
+    (y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x (n • y) = quaternionClassOnSquareClasses x y ^ n := by
+  rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_nsmul_left,
+    quaternionClassOnSquareClasses_comm]
 
 /-! ### Invariance under isometry of binary forms -/
 

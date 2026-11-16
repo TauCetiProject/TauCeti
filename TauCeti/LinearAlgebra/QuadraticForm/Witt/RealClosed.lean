@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.RealClo
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Signature
 import Mathlib.FieldTheory.IsRealClosed.Real
+import TauCeti.Data.Nat.Choose.Lucas
 
 /-!
 # The Clifford invariant over ordered real closed fields and `ℝ`
@@ -61,10 +62,6 @@ public section
 open QuadraticMap QuadraticForm TauCeti
 
 namespace TauCeti
-
-private theorem even_choose_four_succ_iff_of_lt_eight {r : ℕ} (hr : r < 8) :
-    Even ((r + 1).choose 4) ↔ ¬(3 ≤ r ∧ r ≤ 6) := by
-  interval_cases r <;> decide
 
 section Semireal
 
@@ -119,11 +116,12 @@ theorem cliffordInvariant_eq_ite_signature (x : WittRing K) :
       else 1 := by
   have h0 : 0 ≤ signature x % 8 := Int.emod_nonneg _ (by norm_num)
   have _ : signature x % 8 < 8 := Int.emod_lt_of_pos _ (by norm_num)
-  have hr : (signature x % 8).toNat < 8 := by omega
-  have hcond : (3 ≤ (signature x % 8).toNat ∧ (signature x % 8).toNat ≤ 6) ↔
-      (3 ≤ signature x % 8 ∧ signature x % 8 ≤ 6) := by omega
+  have heven : Even (((signature x % 8).toNat + 1).choose 4) ↔
+      ¬(3 ≤ signature x % 8 ∧ signature x % 8 ≤ 6) := by
+    rw [Nat.even_choose_four_iff, Nat.even_iff]
+    omega
   rw [cliffordInvariant_eq_pow_choose_emod_signature, BrauerGroup.quaternionClass_pow]
-  simp only [even_choose_four_succ_iff_of_lt_eight hr, hcond, ite_not]
+  simp only [heven, ite_not]
 
 /-- Over an ordered real closed field, the Clifford invariant of a Witt class is trivial if and
 only if its signature modulo `8` lies outside `{3, 4, 5, 6}` (that is, `< 3` or `= 7`). -/
@@ -270,16 +268,12 @@ example :
   · rw [hasseInvariant_formClass_realSignatureForm,
       ← BrauerGroup.quaternionClass_neg_one_neg_one_real,
       (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff _).mpr (by decide)]
-  · rw [← RegularFormClass.sigPos_add_sigNeg_eq_rank, sigPos_formClass, sigNeg_formClass,
-      RegularFormClass.discr_eq_sigNeg_nsmul, sigNeg_formClass, sigPos_realSignatureForm,
-      sigNeg_realSignatureForm]
-    norm_num
-    rw [succ_nsmul, succ_nsmul, one_nsmul,
-      BrauerGroup.quaternionClassOnSquareClasses_add_right,
-      BrauerGroup.quaternionClassOnSquareClasses_add_right,
-      BrauerGroup.quaternionClassOnSquareClasses_squareClass, ← pow_two,
-      BrauerGroup.quaternionClass_sq, one_mul,
-      BrauerGroup.quaternionClass_neg_one_neg_one_real]
+  · rw [← RegularFormClass.sigPos_add_sigNeg_eq_rank, RegularFormClass.discr_eq_sigNeg_nsmul,
+      sigPos_formClass, sigNeg_formClass, sigPos_realSignatureForm, sigNeg_realSignatureForm,
+      BrauerGroup.quaternionClassOnSquareClasses_nsmul_right,
+      BrauerGroup.quaternionClassOnSquareClasses_squareClass, ← pow_mul,
+      ← BrauerGroup.quaternionClass_neg_one_neg_one_real]
+    exact (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff _).mpr (by decide)
 
 /-- **Mixed-summand `I²` additivity over `ℝ`.** Only one summand needs to lie in `I(ℝ)²` for the
 Clifford invariant to be additive: `4 ∈ I(ℝ)²` while `3 ∉ I(ℝ)²`, and both have Clifford invariant

@@ -201,12 +201,10 @@ theorem WittRing.signature_oneFoldPfisterClass (a : Kˣ) :
 theorem mem_fundamentalIdeal_pow_iff_dvd_signature {x : WittRing K} (n : ℕ) :
     x ∈ fundamentalIdeal K ^ n ↔ (2 ^ n : ℤ) ∣ WittRing.signature x := by
   refine ⟨dvd_signature_of_mem_fundamentalIdeal_pow, fun ⟨k, hk⟩ => ?_⟩
-  have htwo : (2 : WittRing K) ∈ fundamentalIdeal K := by
-    rw [mem_fundamentalIdeal_iff, map_ofNat]
-    rfl
   rw [← WittRing.intCast_signature x, hk]
   push_cast
-  exact Ideal.mul_mem_right (k : WittRing K) (fundamentalIdeal K ^ n) (Ideal.pow_mem_pow htwo n)
+  exact Ideal.mul_mem_right (k : WittRing K) (fundamentalIdeal K ^ n)
+    (two_pow_mem_fundamentalIdeal_pow n)
 
 /-- Under the signature isomorphism `W(K) ≃+* ℤ`, the `n`-th power of the fundamental ideal maps to
 the principal ideal `(2^n)` of `ℤ`. -/

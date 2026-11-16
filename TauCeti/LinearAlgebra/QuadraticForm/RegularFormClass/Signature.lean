@@ -30,9 +30,11 @@ the Witt ring with `ℤ` by signature.
 ## Main results
 
 * `TauCeti.RegularFormClass.sigPos` and `TauCeti.RegularFormClass.sigNeg`: the positive and
-  negative indices of inertia on regular-form classes.
+  negative indices of inertia on regular-form classes, with natural-number scalar formulas
+  `TauCeti.RegularFormClass.sigPos_nsmul` and `TauCeti.RegularFormClass.sigNeg_nsmul`.
 * `TauCeti.RegularFormClass.signatureHom`: the integer signature as a semiring homomorphism.
-* `TauCeti.signature_formClass`: computes signature from the inertia indices of a regular form.
+* `QuadraticForm.sigPos_formClass`, `QuadraticForm.sigNeg_formClass`, and
+  `TauCeti.signature_formClass`: compute the inertia indices and signature from a regular form.
 * `TauCeti.RegularFormClass.signature_mk_binary`: the signature of `⟨a, b⟩` is the sum of the
   signs of `a` and `b`.
 * `TauCeti.RegularFormClass.mk_one_one_ne_mk_neg_one_neg_one`: the classes of `⟨1, 1⟩` and
@@ -101,28 +103,39 @@ theorem RegularFormClass.signature_mk (p : RegularFormPresentation K) :
       (_root_.sigPos (presentedForm p) : ℤ) - _root_.sigNeg (presentedForm p) := (rfl)
 
 omit [IsStrictOrderedRing K] in
-/-- The positive index on isometry classes agrees with that of any regular form. -/
-@[simp]
-theorem sigPos_formClass [Invertible (2 : K)] (Q : QuadraticForm K M) (hQ : Q.Nondegenerate) :
-    RegularFormClass.sigPos (formClass Q hQ) = _root_.sigPos Q := by
-  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
-  rw [formClass_mk Q hQ p hp, RegularFormClass.sigPos_mk, hp.sigPos_eq]
-
-omit [IsStrictOrderedRing K] in
-/-- The negative index on isometry classes agrees with that of any regular form. -/
-@[simp]
-theorem sigNeg_formClass [Invertible (2 : K)] (Q : QuadraticForm K M) (hQ : Q.Nondegenerate) :
-    RegularFormClass.sigNeg (formClass Q hQ) = _root_.sigNeg Q := by
-  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
-  rw [formClass_mk Q hQ p hp, RegularFormClass.sigNeg_mk, hp.sigNeg_eq]
-
-omit [IsStrictOrderedRing K] in
 /-- The signature on isometry classes agrees with the inertia indices of any regular form. -/
 @[simp]
 theorem signature_formClass [Invertible (2 : K)] (Q : QuadraticForm K M) (hQ : Q.Nondegenerate) :
     RegularFormClass.signature (formClass Q hQ) = (_root_.sigPos Q : ℤ) - _root_.sigNeg Q := by
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p hp, RegularFormClass.signature_mk, hp.sigPos_eq, hp.sigNeg_eq]
+
+end TauCeti
+
+namespace QuadraticForm
+
+variable {K M : Type*} [Field K] [LinearOrder K] [AddCommGroup M] [Module K M]
+  [FiniteDimensional K M] [Invertible (2 : K)]
+
+/-- The positive index on isometry classes agrees with that of any regular form. -/
+@[simp]
+theorem sigPos_formClass (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate) :
+    TauCeti.RegularFormClass.sigPos (TauCeti.formClass Q hQ) = _root_.sigPos Q := by
+  obtain ⟨p, hp⟩ := TauCeti.exists_presentedForm_equivalent Q hQ
+  rw [TauCeti.formClass_mk Q hQ p hp, TauCeti.RegularFormClass.sigPos_mk, hp.sigPos_eq]
+
+/-- The negative index on isometry classes agrees with that of any regular form. -/
+@[simp]
+theorem sigNeg_formClass (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate) :
+    TauCeti.RegularFormClass.sigNeg (TauCeti.formClass Q hQ) = _root_.sigNeg Q := by
+  obtain ⟨p, hp⟩ := TauCeti.exists_presentedForm_equivalent Q hQ
+  rw [TauCeti.formClass_mk Q hQ p hp, TauCeti.RegularFormClass.sigNeg_mk, hp.sigNeg_eq]
+
+end QuadraticForm
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 namespace RegularFormClass
 
@@ -171,6 +184,26 @@ theorem signature_add (x y : RegularFormClass K) :
     signature (x + y) = signature x + signature y := by
   simp only [signature_eq_sigPos_sub_sigNeg, sigPos_add, sigNeg_add, Nat.cast_add]
   ring
+
+-- Not `@[simp]`: `nsmul_eq_mul` rewrites the left-hand side in the semiring
+-- `RegularFormClass K`, so this declaration would fail `simpNF`.
+/-- The positive index of inertia of the orthogonal sum of `n` copies of a class is `n` times its
+positive index. -/
+theorem sigPos_nsmul (n : ℕ) (x : RegularFormClass K) :
+    sigPos (n • x) = n * sigPos x := by
+  induction n with
+  | zero => rw [zero_nsmul, sigPos_zero, zero_mul]
+  | succ n ih => rw [succ_nsmul, sigPos_add, ih, add_one_mul]
+
+-- Not `@[simp]`: `nsmul_eq_mul` rewrites the left-hand side in the semiring
+-- `RegularFormClass K`, so this declaration would fail `simpNF`.
+/-- The negative index of inertia of the orthogonal sum of `n` copies of a class is `n` times its
+negative index. -/
+theorem sigNeg_nsmul (n : ℕ) (x : RegularFormClass K) :
+    sigNeg (n • x) = n * sigNeg x := by
+  induction n with
+  | zero => rw [zero_nsmul, sigNeg_zero, zero_mul]
+  | succ n ih => rw [succ_nsmul, sigNeg_add, ih, add_one_mul]
 
 /-- A line has positive index `1` when its coefficient is positive and `0` otherwise. -/
 @[simp 1100]

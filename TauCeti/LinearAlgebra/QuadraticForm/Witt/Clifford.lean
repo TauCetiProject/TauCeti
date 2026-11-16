@@ -38,9 +38,8 @@ the subgroup `TauCeti.fundamentalI3InI2`.
   when `x ∈ I(K)²`.
 * `TauCeti.WittRing.cliffordInvariant_eq_one_of_mem_fundamentalIdeal_cube`: `c` is trivial on
   `I(K)³`.
-* `TauCeti.RegularFormClass.cliffordInvariant_nsmul_one`,
-  `TauCeti.WittRing.cliffordInvariant_natCast`, and `TauCeti.WittRing.cliffordInvariant_intCast`:
-  the value of `c` on multiples of `⟨1⟩` and its eightfold periodicity on integer casts
+* `TauCeti.WittRing.cliffordInvariant_natCast` and `TauCeti.WittRing.cliffordInvariant_intCast`:
+  the value of `c` on natural-number casts and its eightfold periodicity on integer casts
   (`8 ∈ I(K)³`).
 * `TauCeti.cliffordHomI2_pfisterClass`: `c⟨⟨a, b⟩⟩ = [(a, b)]`.
 * `TauCeti.cliffordHomI2_two_torsion`: the values of `c` on `I(K)²` are `2`-torsion.
@@ -62,37 +61,6 @@ universe u
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-! ### The Clifford invariant of a Witt class -/
-
-/-- The Clifford invariant of `n` copies of the unit line `⟨1, …, 1⟩` is `[(-1, -1)]^C(n + 1, 4)`:
-both its Hasse invariant and its discriminant are trivial, leaving only the constant sign term of
-Lam's comparison. -/
-theorem RegularFormClass.cliffordInvariant_nsmul_one (n : ℕ) :
-    RegularFormClass.cliffordInvariant (n • (1 : RegularFormClass K)) =
-      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ (n + 1).choose 4 := by
-  rw [RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul,
-    RegularFormClass.hasseInvariant_nsmul_one, RegularFormClass.discr_nsmul,
-    RegularFormClass.discr_one, smul_zero, BrauerGroup.quaternionClassOnSquareClasses_zero_right,
-    one_pow, mul_one, one_mul, RegularFormClass.rank_nsmul, RegularFormClass.rank_one, mul_one]
-
-/-- The Witt class `2 = ⟨1, 1⟩ = ⟨⟨-1⟩⟩` belongs to the fundamental ideal `I(K)`. -/
-theorem two_mem_fundamentalIdeal : (2 : WittRing K) ∈ fundamentalIdeal K := by
-  rw [mem_fundamentalIdeal_iff, map_ofNat]
-  rfl
-
-/-- Every power `(2 : WittRing K) ^ n` belongs to `I(K)^n`. -/
-theorem two_pow_mem_fundamentalIdeal_pow (n : ℕ) :
-    (2 : WittRing K) ^ n ∈ fundamentalIdeal K ^ n :=
-  Ideal.pow_mem_pow two_mem_fundamentalIdeal n
-
-/-- The Witt class `4 = ⟨1, 1, 1, 1⟩` belongs to `I(K)²`. -/
-theorem four_mem_fundamentalIdeal_sq : (4 : WittRing K) ∈ fundamentalIdeal K ^ 2 := by
-  simpa only [(by norm_num : (2 : WittRing K) ^ 2 = 4)] using
-    two_pow_mem_fundamentalIdeal_pow (K := K) 2
-
-/-- The Witt class `8` belongs to `I(K)³`. -/
-theorem eight_mem_fundamentalIdeal_cube : (8 : WittRing K) ∈ fundamentalIdeal K ^ 3 := by
-  simpa only [(by norm_num : (2 : WittRing K) ^ 3 = 8)] using
-    two_pow_mem_fundamentalIdeal_pow (K := K) 3
 
 namespace WittRing
 
