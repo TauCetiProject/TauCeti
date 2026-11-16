@@ -44,6 +44,8 @@ difference of the two skeleta.
   a given `n`-cell misses its open cell.
 * `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union, and more
   generally in every subset of the `n`-skeleton.
+* `TauCeti.cellRetractMap`: the characteristic map of a cell precomposed with the radial
+  retraction onto the closed unit ball, a continuous map on all of `Fin n → ℝ`.
 * `TauCeti.openCellChart`: the inverse of the characteristic map of an `n`-cell, as a chart of the
   `n`-skeleton with source the open cell and target the open unit ball.
 * `TauCeti.iUnionOpenCellHomeomorph`: that union is homeomorphic to the disjoint union of one
@@ -104,6 +106,25 @@ map. -/
 @[simp]
 lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i)) :
     ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := (rfl)
+
+/-- The characteristic map of an `n`-cell `i`, precomposed with the radial retraction of
+`Fin n → ℝ` onto the closed unit ball: a continuous map on all of `Fin n → ℝ` that agrees with the
+characteristic map on the closed unit ball (`TauCeti.cellRetractMap_of_mem`). -/
+noncomputable def cellRetractMap (i : cell C n) : C(Fin n → ℝ, X) :=
+  ⟨fun y ↦ map n i (radialRetraction 1 y), (continuousOn n i).comp_continuous
+    (lipschitzWith_radialRetraction zero_le_one).continuous
+    fun y ↦ radialRetraction_mem_closedBall zero_le_one y⟩
+
+/-- The retracted characteristic map is the characteristic map after the radial retraction. -/
+@[simp]
+lemma cellRetractMap_apply (i : cell C n) (y : Fin n → ℝ) :
+    cellRetractMap n i y = map n i (radialRetraction 1 y) :=
+  (rfl)
+
+/-- On the closed unit ball, the retracted characteristic map is the characteristic map. -/
+lemma cellRetractMap_of_mem (i : cell C n) {y : Fin n → ℝ} (hy : y ∈ closedBall 0 1) :
+    cellRetractMap n i y = map n i y := by
+  rw [cellRetractMap_apply, radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 hy)]
 
 variable [T2Space X]
 
@@ -250,9 +271,7 @@ noncomputable def openCellChart (i : cell C n) :
   open_target := isOpen_ball
   continuousOn_toFun := (continuousOn_symm n i).comp continuous_subtype_val.continuousOn
     fun x hx ↦ by rwa [target_map_eq_openCell]
-  continuousOn_invFun := Continuous.continuousOn <| Continuous.subtype_mk
-    ((continuousOn n i).comp_continuous (lipschitzWith_radialRetraction zero_le_one).continuous
-      fun y ↦ radialRetraction_mem_closedBall zero_le_one y) _
+  continuousOn_invFun := ((cellRetractMap n i).continuous.subtype_mk _).continuousOn
 
 /-- The chart of an open cell is the inverse of its characteristic map. -/
 @[simp]
