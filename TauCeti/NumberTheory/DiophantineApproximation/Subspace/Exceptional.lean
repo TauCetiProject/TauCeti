@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 public import TauCeti.NumberTheory.Height.Subspace.Basic
 
 import TauCeti.Analysis.AbsoluteValue.LinearForms
-import TauCeti.Analysis.ExteriorPower.WedgeForms
+import TauCeti.Analysis.ExteriorPower.Plucker
 import TauCeti.LinearAlgebra.ExteriorPower.Hyperplane
 import TauCeti.NumberTheory.Height.FundamentalInequality
 import TauCeti.NumberTheory.Height.Primitive
@@ -31,30 +31,32 @@ At every level `Q ≥ 1`, expressing each coordinate at a place in terms of the 
 the Plücker coordinates of a domain basis of `approxSpan S₀ L c Q` at the infinite places and `S₀`,
 while integrality outside `S₀` bounds all remaining finite places by `1`. Consequently, the
 relative logarithmic height of `approxSpan S₀ L c Q` is bounded above linearly in `log Q`
-(`TauCeti.NumberField.exists_forall_logHeight_approxSpan_le`).
+(`TauCeti.NumberField.exists_forall_relativeSubspaceLogHeight_approxSpan_le`).
 
 When `approxWeight S₀ c ≤ -ε / 2` (`0 < ε`) and `approxSpan S₀ L c Q` is a hyperplane
 (`finrank K (approxSpan S₀ L c Q) + 1 = Fintype.card ι`), a complementary lower bound holds outside
 at most one fixed proper subspace `W₀` independent of `Q`
-(`TauCeti.NumberField.exists_forall_logHeight_approxSpan`). Specifically, at each relevant place
-`v`, choosing `k v` of maximal exponent `c v (k v)` among the indices `i` whose
-`(Fintype.card ι - 1)`-wedge form omitting `i` does not vanish on the Plücker point of
-`approxSpan S₀ L c Q` places any normal vector of `approxSpan S₀ L c Q` in the threshold subspace
-`TauCeti.NumberField.thresholdSubspace S₀ L c k` (Evertse 1996, Lemma 27). Two cases arise:
+(`TauCeti.NumberField.exists_forall_approxSpan_eq_or_le_relativeSubspaceLogHeight_and_le`).
+Specifically, at each relevant place `v`, choosing `k v` of maximal exponent `c v (k v)` among the
+indices `i` whose `(Fintype.card ι - 1)`-wedge form omitting `i` does not vanish on the Plücker
+point of `approxSpan S₀ L c Q` places any linear form annihilating `approxSpan S₀ L c Q` in the
+threshold subspace `TauCeti.NumberField.thresholdSubspace S₀ L c k` (Evertse 1996, Lemma 27). Two
+cases arise:
 
-* If some index choice `k` with `TauCeti.NumberField.weightAt S₀ c k < -ε / 4` has a nonzero vector
-  `z₀ ∈ thresholdSubspace S₀ L c k`, the product formula forces `z₀ ⬝ᵥ x = 0` for all points `x`
+* If some index choice `k` with `TauCeti.NumberField.weightAt S₀ c k < -ε / 4` has a nonzero linear
+  form `φ₀ ∈ thresholdSubspace S₀ L c k`, the product formula forces `φ₀ x = 0` for all points `x`
   of `approxDomain S₀ L c Q` above a threshold level
-  (`TauCeti.NumberField.exists_forall_mem_of_weightAt_lt`), so every hyperplane
-  `approxSpan S₀ L c Q` above that threshold equals the single fixed hyperplane `W₀` orthogonal to
-  `z₀`.
+  (`TauCeti.NumberField.exists_ne_top_forall_mem_of_thresholdSubspace_ne_bot`), so every hyperplane
+  `approxSpan S₀ L c Q` above that threshold equals the single fixed hyperplane
+  `W₀ = LinearMap.ker φ₀`.
 * Otherwise, every `k` arising from a hyperplane `approxSpan S₀ L c Q` satisfies
-  `-ε / 4 ≤ weightAt S₀ c k`, and combining the local Liouville inequality for the nonvanishing
-  wedge forms with the domain bounds over all `t = Fintype.card (InfinitePlace K) + S₀.card` places
-  yields `ε * log Q / (4 * t) - C₅ ≤ (approxSpan S₀ L c Q).relativeSubspaceLogHeight`
-  (`TauCeti.NumberField.exists_forall_le_logHeight_approxSpan`). Notice that `t` counts places
-  without archimedean multiplicity because the projective height in the local Liouville inequality
-  carries exponent `1` even at complex places.
+  `-ε / 4 ≤ weightAt S₀ c k` (hence `approxWeight S₀ c - weightAt S₀ c k ≤ -ε / 4`), and combining
+  the local Liouville inequality for the nonvanishing wedge forms with the domain bounds over all
+  `t = Fintype.card (InfinitePlace K) + S₀.card` places yields
+  `ε * log Q / (4 * t) - C₅ ≤ (approxSpan S₀ L c Q).relativeSubspaceLogHeight`
+  (`TauCeti.NumberField.exists_forall_le_relativeSubspaceLogHeight_approxSpan`). Notice that `t`
+  counts places without archimedean multiplicity because the projective height in the local
+  Liouville inequality carries exponent `1` even at complex places.
 
 In Diophantine approximation, the upper bound combines with Northcott's finiteness property at
 bounded levels, while the lower bound outside `W₀` feeds Roth's lemma along a chain of growing
@@ -63,31 +65,31 @@ levels when proving the finiteness of hyperplane spans.
 ## Main definitions
 
 * `TauCeti.NumberField.weightAt S₀ c k`: the weight of an exponent family `c` along a place-indexed
-  choice `k : AbsoluteValue K ℝ → ι`, namely
-  `∑ v : InfinitePlace K, v.mult * c v.1 (k v.1) + ∑ v ∈ S₀, c v.1 (k v.1)`.
-* `TauCeti.NumberField.thresholdSubspace S₀ L c k`: the subspace of `ι → K` of vectors that, at
-  every infinite place and every place of `S₀`, lie in the span of the coefficient vectors of the
-  forms `L v i` with `c v i ≤ c v (k v)`.
+  choice `k : AbsoluteValue K ℝ → ι`, defined as `approxWeight (ι := Unit) S₀ fun v _ ↦ c v (k v)`,
+  i.e., `∑ v : InfinitePlace K, v.mult * c v.1 (k v.1) + ∑ v ∈ S₀, c v.1 (k v.1)`.
+* `TauCeti.NumberField.thresholdSubspace S₀ L c k`: the subspace of `Module.Dual K (ι → K)` of
+  linear forms that, at every infinite place and every place of `S₀`, lie in the span of the forms
+  `L v i` with `c v i ≤ c v (k v)`.
 
 ## Main results
 
 * `TauCeti.NumberField.exists_forall_one_le_mul_rpow_weightAt`: for any
-  `z ∈ thresholdSubspace S₀ L c k`, some `M ≥ 1` satisfies `1 ≤ M * Q ^ weightAt S₀ c k` whenever
-  `Q ≥ 1`, `x ∈ approxDomain S₀ L c Q`, and `z ⬝ᵥ x ≠ 0`.
-* `TauCeti.NumberField.exists_forall_mem_of_weightAt_lt`: if `weightAt S₀ c k < -ε / 4` and
-  `thresholdSubspace S₀ L c k ≠ ⊥`, a single proper subspace `W₀ ≠ ⊤` contains
-  `approxDomain S₀ L c Q` for all `Q ≥ 1` with `C₄ / ε ≤ log Q`.
-* `TauCeti.NumberField.exists_forall_logHeight_approxSpan_le` and
-  `TauCeti.NumberField.exists_forall_logHeight_approxSpan_le_of_finrank_add_one`: upper bound on
+  `φ ∈ thresholdSubspace S₀ L c k`, some `M ≥ 1` satisfies `1 ≤ M * Q ^ weightAt S₀ c k` whenever
+  `Q ≥ 1`, `x ∈ approxDomain S₀ L c Q`, and `φ x ≠ 0`.
+* `TauCeti.NumberField.exists_ne_top_forall_mem_of_thresholdSubspace_ne_bot`: if
+  `thresholdSubspace S₀ L c k ≠ ⊥`, a single proper subspace `W₀ ≠ ⊤` and a constant `C > 0`
+  satisfy `x ∈ W₀` for all `Q ≥ 1` with `C ≤ -weightAt S₀ c k * Real.log Q` and all
+  `x ∈ approxDomain S₀ L c Q`.
+* `TauCeti.NumberField.exists_forall_relativeSubspaceLogHeight_approxSpan_le`: upper bound on
   `(approxSpan S₀ L c Q).relativeSubspaceLogHeight` valid at every level `Q ≥ 1`, with additive
   constant `C₆` uniform across `c` and `Q`.
-* `TauCeti.NumberField.exists_forall_le_logHeight_approxSpan`: lower bound on
-  `(approxSpan S₀ L c Q).relativeSubspaceLogHeight` for hyperplanes when
-  `approxWeight S₀ c ≤ -ε / 2` and no `k` with nontrivial `thresholdSubspace` has
-  `weightAt S₀ c k < -ε / 4`, with constant `C₅` uniform across `c`, `ε`, and `Q`.
-* `TauCeti.NumberField.exists_forall_logHeight_approxSpan`: Bombieri–Gubler Lemma 7.5.21, giving a
-  single proper subspace `W₀ ≠ ⊤` outside which every hyperplane `approxSpan S₀ L c Q` at large
-  level satisfies both logarithmic height bounds.
+* `TauCeti.NumberField.exists_forall_le_relativeSubspaceLogHeight_approxSpan`: lower bound on
+  `(approxSpan S₀ L c Q).relativeSubspaceLogHeight` for hyperplanes when every `k` with nontrivial
+  `thresholdSubspace S₀ L c k` satisfies `approxWeight S₀ c - weightAt S₀ c k ≤ -δ`, with constant
+  `C₅` uniform across `c`, `δ`, and `Q`.
+* `TauCeti.NumberField.exists_forall_approxSpan_eq_or_le_relativeSubspaceLogHeight_and_le`:
+  Bombieri–Gubler Lemma 7.5.21, giving a single proper subspace `W₀ ≠ ⊤` outside which every
+  hyperplane `approxSpan S₀ L c Q` at large level satisfies both logarithmic height bounds.
 
 ## References
 
@@ -115,65 +117,57 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
 
 /-- **The weight of an exponent family along an index choice `k`**: the sum
 `∑ v : InfinitePlace K, v.mult * c v.1 (k v.1) + ∑ v ∈ S₀, c v.1 (k v.1)` over the infinite places
-and `S₀`. -/
+and `S₀`, defined as `approxWeight` over `Unit`. -/
 def weightAt (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K ℝ → ι → ℝ)
     (k : AbsoluteValue K ℝ → ι) : ℝ :=
-  ∑ v : InfinitePlace K, (v.mult : ℝ) * c v.1 (k v.1) + ∑ v ∈ S₀, c v.1 (k v.1)
+  approxWeight (ι := Unit) S₀ fun v _ ↦ c v (k v)
 
 /-- Explicit sum formula for `weightAt`. -/
 theorem weightAt_def (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K ℝ → ι → ℝ)
     (k : AbsoluteValue K ℝ → ι) :
     weightAt S₀ c k =
       ∑ v : InfinitePlace K, (v.mult : ℝ) * c v.1 (k v.1) + ∑ v ∈ S₀, c v.1 (k v.1) := by
-  rfl
+  simp [weightAt, approxWeight_def]
 
 /-- The weight of the zero exponent family along any `k` is `0`. -/
 @[simp]
 theorem weightAt_zero (S₀ : Finset (FinitePlace K)) (k : AbsoluteValue K ℝ → ι) :
-    weightAt S₀ (0 : AbsoluteValue K ℝ → ι → ℝ) k = 0 := by
-  simp [weightAt]
+    weightAt S₀ (0 : AbsoluteValue K ℝ → ι → ℝ) k = 0 :=
+  approxWeight_zero (ι := Unit) S₀
 
 /-- `weightAt S₀ c k` depends on `c` and `k` only at the infinite places and `S₀`. -/
 theorem weightAt_congr {S₀ : Finset (FinitePlace K)} {c₁ c₂ : AbsoluteValue K ℝ → ι → ℝ}
     {k₁ k₂ : AbsoluteValue K ℝ → ι}
     (hInf : ∀ v : InfinitePlace K, c₁ v.1 (k₁ v.1) = c₂ v.1 (k₂ v.1))
     (hFin : ∀ v ∈ S₀, c₁ v.1 (k₁ v.1) = c₂ v.1 (k₂ v.1)) :
-    weightAt S₀ c₁ k₁ = weightAt S₀ c₂ k₂ := by
-  rw [weightAt, weightAt]
-  congr 1
-  · exact Finset.sum_congr rfl fun v _ ↦ by rw [hInf v]
-  · exact Finset.sum_congr rfl fun v hv ↦ hFin v hv
+    weightAt S₀ c₁ k₁ = weightAt S₀ c₂ k₂ :=
+  approxWeight_congr (fun v _ ↦ hInf v) fun v hv _ ↦ hFin v hv
 
 /-- `weightAt S₀` is additive in the exponent family. -/
 theorem weightAt_add (S₀ : Finset (FinitePlace K)) (c₁ c₂ : AbsoluteValue K ℝ → ι → ℝ)
     (k : AbsoluteValue K ℝ → ι) :
-    weightAt S₀ (c₁ + c₂) k = weightAt S₀ c₁ k + weightAt S₀ c₂ k := by
-  simp only [weightAt, Pi.add_apply, Finset.sum_add_distrib, mul_add]
-  ring
+    weightAt S₀ (c₁ + c₂) k = weightAt S₀ c₁ k + weightAt S₀ c₂ k :=
+  approxWeight_add S₀ (fun v _ ↦ c₁ v (k v)) fun v _ ↦ c₂ v (k v)
 
 /-- `weightAt S₀` commutes with negation of the exponent family. -/
 @[simp]
 theorem weightAt_neg (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K ℝ → ι → ℝ)
     (k : AbsoluteValue K ℝ → ι) :
-    weightAt S₀ (-c) k = -weightAt S₀ c k := by
-  simp only [weightAt, Pi.neg_apply, Finset.sum_neg_distrib, mul_neg]
-  ring
+    weightAt S₀ (-c) k = -weightAt S₀ c k :=
+  approxWeight_neg S₀ fun v _ ↦ c v (k v)
 
 /-- `weightAt S₀` commutes with subtraction of exponent families. -/
 theorem weightAt_sub (S₀ : Finset (FinitePlace K)) (c₁ c₂ : AbsoluteValue K ℝ → ι → ℝ)
     (k : AbsoluteValue K ℝ → ι) :
-    weightAt S₀ (c₁ - c₂) k = weightAt S₀ c₁ k - weightAt S₀ c₂ k := by
-  rw [sub_eq_add_neg, weightAt_add, weightAt_neg, sub_eq_add_neg]
+    weightAt S₀ (c₁ - c₂) k = weightAt S₀ c₁ k - weightAt S₀ c₂ k :=
+  approxWeight_sub S₀ (fun v _ ↦ c₁ v (k v)) fun v _ ↦ c₂ v (k v)
 
 /-- `weightAt S₀` is homogeneous with respect to real scalar multiplication on the exponent
 family. -/
 theorem weightAt_smul (S₀ : Finset (FinitePlace K)) (r : ℝ)
     (c : AbsoluteValue K ℝ → ι → ℝ) (k : AbsoluteValue K ℝ → ι) :
-    weightAt S₀ (r • c) k = r * weightAt S₀ c k := by
-  simp only [weightAt, Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum, mul_add]
-  congr 1
-  rw [Finset.mul_sum]
-  exact Finset.sum_congr rfl fun v _ ↦ by ring
+    weightAt S₀ (r • c) k = r * weightAt S₀ c k :=
+  approxWeight_smul S₀ r fun v _ ↦ c v (k v)
 
 /-- `weightAt S₀` is monotone with respect to placewise inequalities at the infinite places and
 `S₀`. -/
@@ -181,10 +175,8 @@ theorem weightAt_mono {S₀ : Finset (FinitePlace K)} {c₁ c₂ : AbsoluteValue
     {k₁ k₂ : AbsoluteValue K ℝ → ι}
     (hInf : ∀ v : InfinitePlace K, c₁ v.1 (k₁ v.1) ≤ c₂ v.1 (k₂ v.1))
     (hFin : ∀ v ∈ S₀, c₁ v.1 (k₁ v.1) ≤ c₂ v.1 (k₂ v.1)) :
-    weightAt S₀ c₁ k₁ ≤ weightAt S₀ c₂ k₂ := by
-  rw [weightAt, weightAt]
-  refine add_le_add (Finset.sum_le_sum fun v _ ↦ ?_) (Finset.sum_le_sum fun v hv ↦ hFin v hv)
-  exact mul_le_mul_of_nonneg_left (hInf v) (Nat.cast_nonneg _)
+    weightAt S₀ c₁ k₁ ≤ weightAt S₀ c₂ k₂ :=
+  approxWeight_mono (fun v _ ↦ hInf v) fun v hv _ ↦ hFin v hv
 
 /-- Over a finite index type, `weightAt S₀ c k` is at most the weighted sum of the local suprema
 `⨆ i, c v i`. -/
@@ -192,12 +184,10 @@ theorem weightAt_le [Finite ι] (S₀ : Finset (FinitePlace K)) (c : AbsoluteVal
     (k : AbsoluteValue K ℝ → ι) :
     weightAt S₀ c k ≤
       ∑ v : InfinitePlace K, (v.mult : ℝ) * (⨆ i, c v.1 i) + ∑ v ∈ S₀, ⨆ i, c v.1 i := by
-  rw [weightAt]
-  refine add_le_add ?_ ?_
-  · gcongr with v
-    exact Finite.le_ciSup_of_le (k v.1) le_rfl
-  · gcongr with v
-    exact Finite.le_ciSup_of_le (k v.1) le_rfl
+  simpa [weightAt, approxWeight_def] using approxWeight_mono (ι := Unit) (S₀ := S₀)
+    (c₁ := fun v _ ↦ c v (k v)) (c₂ := fun v _ ↦ ⨆ i, c v i)
+    (fun v _ ↦ Finite.le_ciSup_of_le (k v.1) le_rfl)
+    fun v _ _ ↦ Finite.le_ciSup_of_le (k v.1) le_rfl
 
 /-- A positive level raised to `weightAt S₀ c k` splits as the product of the selected local
 powers. -/
@@ -206,10 +196,8 @@ theorem rpow_weightAt (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K ℝ �
     Q ^ weightAt S₀ c k =
       (∏ v : InfinitePlace K, (Q ^ c v.1 (k v.1)) ^ v.mult) *
         ∏ v ∈ S₀, Q ^ c v.1 (k v.1) := by
-  rw [weightAt, Real.rpow_add hQ, Real.rpow_sum_of_pos hQ, Real.rpow_sum_of_pos hQ]
-  congr 1
-  refine Finset.prod_congr rfl fun v _ ↦ ?_
-  rw [mul_comm, Real.rpow_mul hQ.le, Real.rpow_natCast]
+  simpa only [weightAt, Fintype.prod_unique] using
+    rpow_approxWeight (ι := Unit) S₀ (fun v _ ↦ c v (k v)) hQ
 
 /-- For `p + 1 = Fintype.card ι` and `0 < Q`, `Q ^ (approxWeight S₀ c - weightAt S₀ c k)` equals
 the product of the local bounds over the `p`-subsets `omitOne hm (k v)` omitting `k v`. -/
@@ -220,21 +208,16 @@ theorem rpow_approxWeight_sub_weightAt [DecidableEq ι] [Fintype ι] {p : ℕ}
       (∏ v : InfinitePlace K,
           (∏ j ∈ (omitOne hm (k v.1) : Finset ι), Q ^ c v.1 j) ^ v.mult) *
         ∏ v ∈ S₀, ∏ j ∈ (omitOne hm (k v.1) : Finset ι), Q ^ c v.1 j := by
-  have herase (v : AbsoluteValue K ℝ) :
-      ∑ i, c v i - c v (k v) = ∑ j ∈ Finset.univ.erase (k v), c v j :=
-    (Finset.sum_erase_eq_sub (Finset.mem_univ (k v))).symm
-  have hsub : approxWeight S₀ c - weightAt S₀ c k =
-      ∑ v : InfinitePlace K, (v.mult : ℝ) * (∑ j ∈ Finset.univ.erase (k v.1), c v.1 j) +
-        ∑ v ∈ S₀, ∑ j ∈ Finset.univ.erase (k v.1), c v.1 j := by
-    rw [approxWeight_def, weightAt_def]
-    simp_rw [← herase, mul_sub, Finset.sum_sub_distrib]
-    ring
-  rw [hsub, Real.rpow_add hQ, Real.rpow_sum_of_pos hQ, Real.rpow_sum_of_pos hQ]
-  congr 1
-  · refine Finset.prod_congr rfl fun v _ ↦ ?_
-    rw [mul_comm, Real.rpow_mul hQ.le, Real.rpow_natCast, Real.rpow_sum_of_pos hQ, coe_omitOne]
-  · refine Finset.prod_congr rfl fun v _ ↦ ?_
-    rw [Real.rpow_sum_of_pos hQ, coe_omitOne]
+  have hsplit (v : AbsoluteValue K ℝ) :
+      ∏ i, Q ^ c v i =
+        Q ^ c v (k v) * ∏ j ∈ (omitOne hm (k v) : Finset ι), Q ^ c v j := by
+    rw [coe_omitOne]
+    exact (Finset.mul_prod_erase Finset.univ (fun i ↦ Q ^ c v i) (Finset.mem_univ (k v))).symm
+  have hpos : (∏ v : InfinitePlace K, (Q ^ c v.1 (k v.1)) ^ v.mult) *
+      ∏ v ∈ S₀, Q ^ c v.1 (k v.1) ≠ 0 := by positivity
+  rw [Real.rpow_sub hQ, rpow_approxWeight S₀ c hQ, rpow_weightAt S₀ c k hQ]
+  simp_rw [hsplit, mul_pow, Finset.prod_mul_distrib]
+  rw [mul_mul_mul_comm, mul_div_cancel_left₀ _ hpos]
 
 end WeightAt
 
@@ -242,122 +225,168 @@ end WeightAt
 
 section ThresholdSubspace
 
-variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [DecidableEq ι]
+variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
 
 /-- **The threshold subspace** associated to a placewise index choice `k` (Evertse 1996, Lemma 27):
-the vectors in `ι → K` that, at every infinite place `v` and every `v ∈ S₀`, belong to the span of
-the coefficient vectors of the forms `L v i` with `c v i ≤ c v (k v)`. -/
+the linear forms in `Dual K (ι → K)` that, at every infinite place `v` and every `v ∈ S₀`, belong
+to the span of the forms `L v i` with `c v i ≤ c v (k v)`. -/
 def thresholdSubspace (S₀ : Finset (FinitePlace K))
     (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) (c : AbsoluteValue K ℝ → ι → ℝ)
-    (k : AbsoluteValue K ℝ → ι) : Submodule K (ι → K) :=
-  (⨅ v : InfinitePlace K,
-      Submodule.span K ((fun i j ↦ L v.1 i (Pi.single j 1)) '' {i | c v.1 i ≤ c v.1 (k v.1)})) ⊓
-    ⨅ v ∈ S₀,
-      Submodule.span K ((fun i j ↦ L v.1 i (Pi.single j 1)) '' {i | c v.1 i ≤ c v.1 (k v.1)})
+    (k : AbsoluteValue K ℝ → ι) : Submodule K (Dual K (ι → K)) :=
+  (⨅ v : InfinitePlace K, Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)})) ⊓
+    ⨅ v ∈ S₀, Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)})
 
 /-- Explicit intersection formula for `thresholdSubspace`. -/
 theorem thresholdSubspace_def (S₀ : Finset (FinitePlace K))
     (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) (c : AbsoluteValue K ℝ → ι → ℝ)
     (k : AbsoluteValue K ℝ → ι) :
     thresholdSubspace S₀ L c k =
-      (⨅ v : InfinitePlace K,
-          Submodule.span K
-            ((fun i j ↦ L v.1 i (Pi.single j 1)) '' {i | c v.1 i ≤ c v.1 (k v.1)})) ⊓
-        ⨅ v ∈ S₀,
-          Submodule.span K
-            ((fun i j ↦ L v.1 i (Pi.single j 1)) '' {i | c v.1 i ≤ c v.1 (k v.1)}) := by
+      (⨅ v : InfinitePlace K, Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)})) ⊓
+        ⨅ v ∈ S₀, Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)}) := by
   rfl
 
 /-- Membership in `thresholdSubspace` unfolded place by place. -/
 @[simp, grind =]
 theorem mem_thresholdSubspace_iff {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ}
-    {k : AbsoluteValue K ℝ → ι} {z : ι → K} :
-    z ∈ thresholdSubspace S₀ L c k ↔
-      (∀ v : InfinitePlace K, z ∈ Submodule.span K
-        ((fun i j ↦ L v.1 i (Pi.single j 1)) '' {i | c v.1 i ≤ c v.1 (k v.1)})) ∧
-      ∀ v ∈ S₀, z ∈ Submodule.span K
-        ((fun i j ↦ L v.1 i (Pi.single j 1)) '' {i | c v.1 i ≤ c v.1 (k v.1)}) := by
+    {k : AbsoluteValue K ℝ → ι} {φ : Dual K (ι → K)} :
+    φ ∈ thresholdSubspace S₀ L c k ↔
+      (∀ v : InfinitePlace K, φ ∈ Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)})) ∧
+      ∀ v ∈ S₀, φ ∈ Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)}) := by
   simp [thresholdSubspace]
 
-/-- **Product-formula bound on threshold pairings.** For any `z ∈ thresholdSubspace S₀ L c k`, some
-constant `M ≥ 1` independent of `Q` satisfies `1 ≤ M * Q ^ weightAt S₀ c k` whenever `Q ≥ 1`,
-`x ∈ approxDomain S₀ L c Q`, and `z ⬝ᵥ x ≠ 0`. -/
-theorem exists_forall_one_le_mul_rpow_weightAt [Fintype ι] {S₀ : Finset (FinitePlace K)}
+/-- A submodule lies in `thresholdSubspace` iff it lies in the local threshold span at every
+infinite place and every place of `S₀`. -/
+@[simp]
+theorem le_thresholdSubspace_iff {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ}
-    {k : AbsoluteValue K ℝ → ι} {z : ι → K} (hz : z ∈ thresholdSubspace S₀ L c k) :
+    {k : AbsoluteValue K ℝ → ι} {U : Submodule K (Dual K (ι → K))} :
+    U ≤ thresholdSubspace S₀ L c k ↔
+      (∀ v : InfinitePlace K, U ≤ Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)})) ∧
+      ∀ v ∈ S₀, U ≤ Submodule.span K (L v.1 '' {i | c v.1 i ≤ c v.1 (k v.1)}) := by
+  simp [thresholdSubspace]
+
+/-- `thresholdSubspace S₀ L c k` depends on `L`, `c`, and `k` only through the forms `L v` and the
+threshold predicates `c v i ≤ c v (k v)` at the infinite places and `S₀`. -/
+theorem thresholdSubspace_congr {S₀ : Finset (FinitePlace K)}
+    {L₁ L₂ : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c₁ c₂ : AbsoluteValue K ℝ → ι → ℝ}
+    {k₁ k₂ : AbsoluteValue K ℝ → ι}
+    (hLinf : ∀ (v : InfinitePlace K) (i : ι), L₁ v.1 i = L₂ v.1 i)
+    (hLfin : ∀ v ∈ S₀, ∀ i : ι, L₁ v.1 i = L₂ v.1 i)
+    (hcinf : ∀ (v : InfinitePlace K) (i : ι),
+      c₁ v.1 i ≤ c₁ v.1 (k₁ v.1) ↔ c₂ v.1 i ≤ c₂ v.1 (k₂ v.1))
+    (hcfin : ∀ v ∈ S₀, ∀ i : ι,
+      c₁ v.1 i ≤ c₁ v.1 (k₁ v.1) ↔ c₂ v.1 i ≤ c₂ v.1 (k₂ v.1)) :
+    thresholdSubspace S₀ L₁ c₁ k₁ = thresholdSubspace S₀ L₂ c₂ k₂ := by
+  ext φ
+  simp only [mem_thresholdSubspace_iff]
+  have hEq (v : AbsoluteValue K ℝ) (hL : ∀ i, L₁ v i = L₂ v i)
+      (hc : ∀ i, c₁ v i ≤ c₁ v (k₁ v) ↔ c₂ v i ≤ c₂ v (k₂ v)) :
+      L₁ v '' {i | c₁ v i ≤ c₁ v (k₁ v)} = L₂ v '' {i | c₂ v i ≤ c₂ v (k₂ v)} := by
+    have hs : {i | c₁ v i ≤ c₁ v (k₁ v)} = {i | c₂ v i ≤ c₂ v (k₂ v)} := Set.ext hc
+    rw [hs, funext hL]
+  refine and_congr (forall_congr' fun v ↦ ?_) (forall₂_congr fun v hv ↦ ?_)
+  · rw [hEq v.1 (hLinf v) (hcinf v)]
+  · rw [hEq v.1 (hLfin v hv) (hcfin v hv)]
+
+/-- Increasing the threshold exponent `c v (k v)` at every infinite place and every `v ∈ S₀`
+enlarges `thresholdSubspace S₀ L c k`. -/
+theorem thresholdSubspace_mono {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ}
+    {k₁ k₂ : AbsoluteValue K ℝ → ι}
+    (hInf : ∀ v : InfinitePlace K, c v.1 (k₁ v.1) ≤ c v.1 (k₂ v.1))
+    (hFin : ∀ v ∈ S₀, c v.1 (k₁ v.1) ≤ c v.1 (k₂ v.1)) :
+    thresholdSubspace S₀ L c k₁ ≤ thresholdSubspace S₀ L c k₂ := by
+  rw [le_thresholdSubspace_iff]
+  refine ⟨fun v ↦ inf_le_left.trans ((iInf_le _ v).trans (Submodule.span_mono ?_)),
+    fun v hv ↦ inf_le_right.trans ((biInf_le _ hv).trans (Submodule.span_mono ?_))⟩
+  · exact Set.image_mono fun i hi ↦ hi.trans (hInf v)
+  · exact Set.image_mono fun i hi ↦ hi.trans (hFin v hv)
+
+/-- Enlarging `S₀` shrinks `thresholdSubspace S₀ L c k`. -/
+theorem thresholdSubspace_anti {S₁ S₂ : Finset (FinitePlace K)} (hS : S₁ ⊆ S₂)
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) (c : AbsoluteValue K ℝ → ι → ℝ)
+    (k : AbsoluteValue K ℝ → ι) :
+    thresholdSubspace S₂ L c k ≤ thresholdSubspace S₁ L c k := by
+  rw [le_thresholdSubspace_iff]
+  exact ⟨fun v ↦ inf_le_left.trans (iInf_le _ v),
+    fun v hv ↦ inf_le_right.trans (biInf_le _ (hS hv))⟩
+
+/-- **Product-formula bound on threshold pairings.** For any `φ ∈ thresholdSubspace S₀ L c k`, some
+constant `M ≥ 1` independent of `Q` satisfies `1 ≤ M * Q ^ weightAt S₀ c k` whenever `Q ≥ 1`,
+`x ∈ approxDomain S₀ L c Q`, and `φ x ≠ 0`. -/
+theorem exists_forall_one_le_mul_rpow_weightAt [Finite ι] {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ}
+    {k : AbsoluteValue K ℝ → ι} {φ : Dual K (ι → K)} (hφ : φ ∈ thresholdSubspace S₀ L c k) :
     ∃ M : ℝ, 1 ≤ M ∧ ∀ ⦃Q : ℝ⦄, 1 ≤ Q → ∀ x ∈ approxDomain S₀ L c Q,
-      z ⬝ᵥ x ≠ 0 → 1 ≤ M * Q ^ weightAt S₀ c k := by
-  obtain ⟨d, hd0, hd_int⟩ := NumberField.exists_smul_apply_le_one z
-  obtain ⟨hdz_inf, hdz_fin⟩ := mem_thresholdSubspace_iff.mp (Submodule.smul_mem _ d hz)
+      φ x ≠ 0 → 1 ≤ M * Q ^ weightAt S₀ c k := by
+  have := Fintype.ofFinite ι
+  obtain ⟨d, hd0, hd_int⟩ :=
+    NumberField.FinitePlace.exists_ne_zero_smul_apply_le_one (fun j ↦ φ (Pi.basisFun K ι j))
+  obtain ⟨hdφ_inf, hdφ_fin⟩ := mem_thresholdSubspace_iff.mp (Submodule.smul_mem _ d hφ)
   choose Binf hBinf1 hBinf using fun v : InfinitePlace K ↦
-    v.1.exists_one_le_forall_dotProduct_le_mul (L v.1) {i | c v.1 i ≤ c v.1 (k v.1)} (hdz_inf v)
+    v.1.exists_one_le_forall_apply_le_mul_of_mem_span (hdφ_inf v)
   choose Bfin hBfin1 hBfin using fun v : S₀ ↦
-    v.1.1.exists_one_le_forall_dotProduct_le_mul (L v.1.1) {i | c v.1.1 i ≤ c v.1.1 (k v.1.1)}
-      (hdz_fin v.1 v.2)
+    v.1.1.exists_one_le_forall_apply_le_mul_of_mem_span (hdφ_fin v.1 v.2)
   refine ⟨(∏ v : InfinitePlace K, Binf v ^ v.mult) * ∏ v : S₀, Bfin v,
     one_le_mul_of_one_le_of_one_le (Finset.one_le_prod₀ fun v _ ↦ one_le_pow₀ (hBinf1 v))
       (Finset.one_le_prod₀ fun v _ ↦ hBfin1 v),
-    fun Q hQ x hx hzx ↦ ?_⟩
+    fun Q hQ x hx hφx ↦ ?_⟩
   have hQ0 : 0 < Q := zero_lt_one.trans_le hQ
   obtain ⟨hx_inf, hx_fin, hx_out⟩ := mem_approxDomain.mp hx
-  have hdzx : (d • z) ⬝ᵥ x ≠ 0 := by simpa [smul_dotProduct] using mul_ne_zero hd0 hzx
-  refine (NumberField.one_le_prod_apply_of_forall_le_one S₀ hdzx fun v hv ↦
-    v.1.apply_dotProduct_le_one_of_isNonarchimedean v.add_le (hd_int v) (hx_out v hv)).trans ?_
+  have hdφx_eq : (d • φ) x = (d • fun j ↦ φ (Pi.basisFun K ι j)) ⬝ᵥ x := by
+    conv_lhs => rw [← (Pi.basisFun K ι).sum_repr x, map_sum]
+    simp [dotProduct, mul_comm]
+  have hdφx : (d • φ) x ≠ 0 := by simpa using mul_ne_zero hd0 hφx
+  refine (NumberField.one_le_prod_apply_of_forall_le_one S₀ hdφx fun v hv ↦ ?_).trans ?_
+  · rw [hdφx_eq]
+    exact v.1.apply_dotProduct_le_one_of_isNonarchimedean v.add_le (hd_int v) (hx_out v hv)
   rw [← S₀.prod_coe_sort]
-  calc (∏ v : InfinitePlace K, v ((d • z) ⬝ᵥ x) ^ v.mult) * ∏ v : S₀, v.1 ((d • z) ⬝ᵥ x)
+  calc (∏ v : InfinitePlace K, v ((d • φ) x) ^ v.mult) * ∏ v : S₀, v.1 ((d • φ) x)
       ≤ (∏ v : InfinitePlace K, (Binf v * Q ^ c v.1 (k v.1)) ^ v.mult) *
           ∏ v : S₀, Bfin v * Q ^ c v.1.1 (k v.1.1) := by
         refine mul_le_mul ?_ ?_ (Finset.prod_nonneg fun _ _ ↦ apply_nonneg _ _)
           (Finset.prod_nonneg fun v _ ↦ pow_nonneg
             (mul_nonneg (zero_le_one.trans (hBinf1 v)) (by positivity)) _)
         · gcongr with v
-          exact hBinf v (by positivity) fun i hi ↦
-            (hx_inf v i).trans (Real.rpow_le_rpow_of_exponent_le hQ hi)
+          exact hBinf v (by positivity) fun _ ⟨i, hi, hf⟩ ↦
+            hf ▸ (hx_inf v i).trans (Real.rpow_le_rpow_of_exponent_le hQ hi)
         · gcongr with v
-          exact hBfin v (by positivity) fun i hi ↦
-            (hx_fin v.1 v.2 i).trans (Real.rpow_le_rpow_of_exponent_le hQ hi)
+          exact hBfin v (by positivity) fun _ ⟨i, hi, hf⟩ ↦
+            hf ▸ (hx_fin v.1 v.2 i).trans (Real.rpow_le_rpow_of_exponent_le hQ hi)
     _ = ((∏ v : InfinitePlace K, Binf v ^ v.mult) * ∏ v : S₀, Bfin v) * Q ^ weightAt S₀ c k := by
         simp only [mul_pow, Finset.prod_mul_distrib, rpow_weightAt S₀ c k hQ0,
           ← S₀.prod_coe_sort]
         ring
 
-/-- **Uniqueness of the exceptional subspace** (Evertse 1996, Lemma 27): if some index choice `k`
-with `weightAt S₀ c k < -ε / 4` (`0 < ε`) has a nontrivial `thresholdSubspace S₀ L c k`, then a
-single proper subspace `W₀ ≠ ⊤` of `ι → K` and a threshold constant `C₄ > 0` satisfy
-`x ∈ W₀` for every `Q ≥ 1` with `C₄ / ε ≤ Real.log Q` and every `x ∈ approxDomain S₀ L c Q`. -/
-theorem exists_forall_mem_of_weightAt_lt [Finite ι] {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ}
-    {k : AbsoluteValue K ℝ → ι} {ε : ℝ} (hε : 0 < ε) (hk : weightAt S₀ c k < -ε / 4)
+/-- **Uniqueness of the exceptional subspace** (Evertse 1996, Lemma 27): if
+`thresholdSubspace S₀ L c k` is nontrivial, then a single proper subspace `W₀ ≠ ⊤` of `ι → K` and
+a constant `C > 0` satisfy `x ∈ W₀` for every `Q ≥ 1` with `C ≤ -weightAt S₀ c k * Real.log Q` and
+every `x ∈ approxDomain S₀ L c Q`. -/
+theorem exists_ne_top_forall_mem_of_thresholdSubspace_ne_bot [Finite ι]
+    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    {c : AbsoluteValue K ℝ → ι → ℝ} {k : AbsoluteValue K ℝ → ι}
     (ht : thresholdSubspace S₀ L c k ≠ ⊥) :
-    ∃ (W₀ : Submodule K (ι → K)) (C₄ : ℝ), W₀ ≠ ⊤ ∧ 0 < C₄ ∧
-      ∀ ⦃Q : ℝ⦄, 1 ≤ Q → C₄ / ε ≤ Real.log Q →
+    ∃ (W₀ : Submodule K (ι → K)) (C : ℝ), W₀ ≠ ⊤ ∧ 0 < C ∧
+      ∀ ⦃Q : ℝ⦄, 1 ≤ Q → C ≤ -weightAt S₀ c k * Real.log Q →
         ∀ ⦃x : ι → K⦄, x ∈ approxDomain S₀ L c Q → x ∈ W₀ := by
-  cases nonempty_fintype ι
-  obtain ⟨z₀, hz₀_mem, hz₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot ht
-  obtain ⟨M, hM1, hM⟩ := exists_forall_one_le_mul_rpow_weightAt hz₀_mem
-  let W₀ : Submodule K (ι → K) := LinearMap.ker (dotProductBilin K K z₀)
-  have hW₀ : W₀ ≠ ⊤ := by
-    obtain ⟨j, hj⟩ := Function.ne_iff.mp hz₀
-    intro htop
-    have hmem : (Pi.single j 1 : ι → K) ∈ W₀ := htop ▸ Submodule.mem_top
-    exact hj (by simpa [W₀] using hmem)
+  obtain ⟨φ₀, hφ₀_mem, hφ₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot ht
+  obtain ⟨M, hM1, hM⟩ := exists_forall_one_le_mul_rpow_weightAt hφ₀_mem
+  let W₀ : Submodule K (ι → K) := LinearMap.ker φ₀
+  have hW₀ : W₀ ≠ ⊤ := fun htop ↦ hφ₀ (LinearMap.ker_eq_top.mp htop)
   have hlogM : 0 ≤ Real.log M := Real.log_nonneg hM1
-  refine ⟨W₀, 4 * (Real.log M + 1), hW₀, by positivity, fun Q hQ hlogQ x hx ↦ ?_⟩
+  refine ⟨W₀, Real.log M + 1, hW₀, by positivity, fun Q hQ hlogQ x hx ↦ ?_⟩
   by_contra hxW₀
-  have hzx : z₀ ⬝ᵥ x ≠ 0 := by simpa [W₀] using hxW₀
-  have h1 : 1 ≤ M * Q ^ weightAt S₀ c k := hM hQ x hx hzx
+  have hφx : φ₀ x ≠ 0 := by simpa [W₀] using hxW₀
+  have h1 : 1 ≤ M * Q ^ weightAt S₀ c k := hM hQ x hx hφx
   have hQ0 : 0 < Q := zero_lt_one.trans_le hQ
   have hM0 : 0 < M := zero_lt_one.trans_le hM1
   have hlt : M * Q ^ weightAt S₀ c k < 1 := by
     calc M * Q ^ weightAt S₀ c k
-        ≤ M * Q ^ (-ε / 4) :=
-          mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hQ hk.le) hM0.le
-      _ = Real.exp (Real.log M + Real.log Q * (-ε / 4)) := by
+        = Real.exp (Real.log M + Real.log Q * weightAt S₀ c k) := by
           rw [Real.rpow_def_of_pos hQ0, Real.exp_add, Real.exp_log hM0]
       _ < 1 := by
           rw [Real.exp_lt_one_iff]
-          have := (div_le_iff₀ hε).mp hlogQ
           linarith
   linarith
 
@@ -397,10 +426,15 @@ private theorem exists_one_le_forall_mulHeight_plucker_le [Finite ι]
           C * Q ^ ((p : ℝ) *
             (∑ v : InfinitePlace K, (v.mult : ℝ) * (⨆ i, c v.1 i) +
               ∑ v ∈ S₀, ⨆ i, c v.1 i)) := by
+  have := Fintype.ofFinite ι
+  have hspan_inf (v : InfinitePlace K) : Submodule.span K (Set.range (L v.1)) = ⊤ :=
+    (hLinf v).span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  have hspan_fin (v : S₀) : Submodule.span K (Set.range (L v.1.1)) = ⊤ :=
+    (hLfin v.1 v.2).span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
   choose A hA1 hA using fun v : InfinitePlace K ↦
-    v.1.exists_one_le_forall_iSup_plucker_le (hLinf v)
+    v.1.exists_one_le_forall_iSup_plucker_le (hspan_inf v)
   choose B hB1 hB using fun v : S₀ ↦
-    v.1.1.exists_one_le_forall_iSup_plucker_le (hLfin v.1 v.2)
+    v.1.1.exists_one_le_forall_iSup_plucker_le (hspan_fin v)
   refine ⟨(∏ v : InfinitePlace K, A v ^ v.mult) * ∏ v : S₀, B v,
     one_le_mul_of_one_le_of_one_le (Finset.one_le_prod₀ fun v _ ↦ one_le_pow₀ (hA1 v))
       (Finset.one_le_prod₀ fun v _ ↦ hB1 v),
@@ -434,16 +468,17 @@ private theorem exists_one_le_forall_mulHeight_plucker_le [Finite ι]
           Q ^ ((p : ℝ) *
             (∑ v : InfinitePlace K, (v.mult : ℝ) * (⨆ i, c v.1 i) +
               ∑ v ∈ S₀, ⨆ i, c v.1 i)) := by
-        have hpow (y : ℝ) : (Q ^ y) ^ p = Q ^ ((p : ℝ) * y) := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hQ0.le, mul_comm]
-        have hpow_mult (v : InfinitePlace K) :
-            (Q ^ ((p : ℝ) * ⨆ i, c v.1 i)) ^ v.mult =
-              Q ^ ((p : ℝ) * ((v.mult : ℝ) * ⨆ i, c v.1 i)) := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hQ0.le]
-          ring_nf
-        simp only [hpow, mul_pow, Finset.prod_mul_distrib, hpow_mult, mul_add, Finset.mul_sum,
-          Real.rpow_add hQ0, Real.rpow_sum_of_pos hQ0,
-          S₀.prod_coe_sort (fun v ↦ Q ^ ((p : ℝ) * ⨆ i, c v.1 i))]
+        have hrpow := rpow_approxWeight (ι := Fin p) S₀ (fun v _ ↦ ⨆ i, c v i) hQ0
+        have hwt : approxWeight (ι := Fin p) S₀ (fun v _ ↦ ⨆ i, c v i) =
+            (p : ℝ) * (∑ v : InfinitePlace K, (v.mult : ℝ) * (⨆ i, c v.1 i) +
+              ∑ v ∈ S₀, ⨆ i, c v.1 i) := by
+          simp only [approxWeight_def, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+            nsmul_eq_mul, mul_add, Finset.mul_sum]
+          congr 1
+          exact Finset.sum_congr rfl fun v _ ↦ by ring
+        rw [hwt] at hrpow
+        simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at hrpow
+        simp only [mul_pow, Finset.prod_mul_distrib, hrpow, ← S₀.prod_coe_sort]
         ring
 
 /-- **Upper bound on the height of `approxSpan`** at every level `Q ≥ 1`: for forms `L` linearly
@@ -451,7 +486,7 @@ independent at every infinite place and every place of `S₀`, there exists `C�
 `c` and `Q`) such that `(approxSpan S₀ L c Q).relativeSubspaceLogHeight` is bounded by
 `finrank K (approxSpan S₀ L c Q)` times the weighted sum of local maximum exponents times `log Q`,
 plus `C₆`. -/
-theorem exists_forall_logHeight_approxSpan_le [Finite ι]
+theorem exists_forall_relativeSubspaceLogHeight_approxSpan_le [Finite ι]
     {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
     (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) :
@@ -476,26 +511,6 @@ theorem exists_forall_logHeight_approxSpan_le [Finite ι]
   rw [Real.log_mul hC0.ne' (Real.rpow_pos_of_pos hQ0 _).ne', Real.log_rpow hQ0]
   ring
 
-/-- Hyperplane specialization of `exists_forall_logHeight_approxSpan_le`: for forms `L` linearly
-independent at every infinite place and every place of `S₀`, there exists `C₆ ≥ 0` (independent of
-`c` and `Q`) such that at every level `Q ≥ 1` where `approxSpan S₀ L c Q` has codimension one, its
-relative logarithmic height is bounded by `Fintype.card ι - 1` times the weighted sum of local
-maximum exponents times `log Q`, plus `C₆`. -/
-theorem exists_forall_logHeight_approxSpan_le_of_finrank_add_one [Fintype ι]
-    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) :
-    ∃ C₆ : ℝ, 0 ≤ C₆ ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) ⦃Q : ℝ⦄, 1 ≤ Q →
-      finrank K (approxSpan S₀ L c Q) + 1 = Fintype.card ι →
-      (approxSpan S₀ L c Q).relativeSubspaceLogHeight ≤
-        ((Fintype.card ι - 1 : ℕ) : ℝ) *
-          (∑ v : InfinitePlace K, (v.mult : ℝ) * (⨆ i, c v.1 i) +
-            ∑ v ∈ S₀, ⨆ i, c v.1 i) * Real.log Q + C₆ := by
-  obtain ⟨C₆, hC₆, h⟩ := exists_forall_logHeight_approxSpan_le hLinf hLfin
-  refine ⟨C₆, hC₆, fun c Q hQ hdim ↦ ?_⟩
-  have hcard : finrank K (approxSpan S₀ L c Q) = Fintype.card ι - 1 := by omega
-  simpa only [hcard] using h c hQ
-
 end UpperBound
 
 /-! ### Lower bound outside the exceptional subspace -/
@@ -505,15 +520,15 @@ section LowerBound
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [LinearOrder ι] [Fintype ι]
 
 /-- Choosing at each place `v` the index `k v` of largest exponent `c v i` among those `i` where
-`wedgeForms (L v) p (omitOne hm i) (plucker x) ≠ 0` places any orthogonal vector `a` in
-`thresholdSubspace S₀ L c k`. -/
+`wedgeForms (L v) p (omitOne hm i) (plucker x) ≠ 0` places the orthogonal linear form
+`dotProductBilin K K a` in `thresholdSubspace S₀ L c k`. -/
 private theorem exists_pattern_max {p : ℕ} (hm : p + 1 = Fintype.card ι)
     {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
     (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
     (c : AbsoluteValue K ℝ → ι → ℝ) {x : Fin p → ι → K} (hx : LinearIndependent K x)
     {a : ι → K} (hxa : ∀ r, x r ⬝ᵥ a = 0) :
-    ∃ k : AbsoluteValue K ℝ → ι, a ∈ thresholdSubspace S₀ L c k ∧
+    ∃ k : AbsoluteValue K ℝ → ι, dotProductBilin K K a ∈ thresholdSubspace S₀ L c k ∧
       (∀ v : InfinitePlace K, wedgeForms (L v.1) p (omitOne hm (k v.1)) (plucker x) ≠ 0) ∧
       ∀ v ∈ S₀, wedgeForms (L v.1) p (omitOne hm (k v.1)) (plucker x) ≠ 0 := by
   classical
@@ -532,21 +547,32 @@ private theorem exists_pattern_max {p : ℕ} (hm : p + 1 = Fintype.card ι)
         fun j hj ↦ himax j (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hj⟩)⟩⟩
     · have : Nonempty ι := Fintype.card_pos_iff.mp (by omega)
       exact ⟨Classical.arbitrary ι, fun h ↦ (hLv h).elim⟩
+  have hmap (v : AbsoluteValue K ℝ) (hLv : LinearIndependent K (L v)) :
+      dotProductBilin K K a ∈ Submodule.span K
+        (L v '' {i | wedgeForms (L v) p (omitOne hm i) (plucker x) ≠ 0}) := by
+    have hmem := Submodule.apply_mem_span_image_of_mem_span (dotProductBilin K K)
+      (mem_span_of_forall_dotProduct_eq_zero hm hLv hx hxa)
+    have himg : dotProductBilin K K '' ((fun i j ↦ L v i (Pi.single j 1)) ''
+          {i | wedgeForms (L v) p (omitOne hm i) (plucker x) ≠ 0}) =
+        L v '' {i | wedgeForms (L v) p (omitOne hm i) (plucker x) ≠ 0} := by
+      rw [← Set.image_comp]
+      refine Set.image_congr fun i _ ↦ ?_
+      ext y
+      simp
+    rwa [himg] at hmem
   choose k hk using hex
   refine ⟨k, mem_thresholdSubspace_iff.mpr ⟨fun v ↦ ?_, fun v hv ↦ ?_⟩,
     fun v ↦ (hk v.1 (hLinf v)).1, fun v hv ↦ (hk v.1 (hLfin v hv)).1⟩
   · exact Submodule.span_mono (Set.image_mono fun j hj ↦ (hk v.1 (hLinf v)).2 j hj)
-      (mem_span_of_forall_dotProduct_eq_zero hm (hLinf v) hx hxa)
+      (hmap v.1 (hLinf v))
   · exact Submodule.span_mono (Set.image_mono fun j hj ↦ (hk v.1 (hLfin v hv)).2 j hj)
-      (mem_span_of_forall_dotProduct_eq_zero hm (hLfin v hv) hx hxa)
+      (hmap v.1 (hLfin v hv))
 
 /-- Uniform multiplicative height comparison over all infinite places and `S₀` for the Plücker
 point of `p` linearly independent points in `approxDomain S₀ L c Q` (`p + 1 = Fintype.card ι`). -/
 private theorem exists_one_le_forall_one_le_mul_mulHeight_plucker_pow {p : ℕ}
     (hm : p + 1 = Fintype.card ι) {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) :
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) (k : AbsoluteValue K ℝ → ι)
       ⦃Q : ℝ⦄, 1 ≤ Q → ∀ {x : Fin p → ι → K},
         LinearIndependent K x → (∀ r, x r ∈ approxDomain S₀ L c Q) →
@@ -555,9 +581,9 @@ private theorem exists_one_le_forall_one_le_mul_mulHeight_plucker_pow {p : ℕ}
         1 ≤ C * mulHeight (plucker x) ^ (Fintype.card (InfinitePlace K) + S₀.card) *
           Q ^ (approxWeight S₀ c - weightAt S₀ c k) := by
   choose Ainf hAinf1 hAinf using fun v : InfinitePlace K ↦
-    v.exists_one_le_forall_iSup_plucker_pow_mult_le (hLinf v) p
+    v.exists_one_le_forall_iSup_plucker_pow_mult_le (L v.1) p
   choose Bfin hBfin1 hBfin using fun v : S₀ ↦
-    v.1.exists_one_le_forall_iSup_plucker_le (hLfin v.1 v.2) p
+    v.1.exists_one_le_forall_iSup_plucker_le (L v.1.1) p
   let C : ℝ := (∏ v : InfinitePlace K, Ainf v) * ∏ v : S₀, Bfin v
   have hC1 : 1 ≤ C := one_le_mul_of_one_le_of_one_le
     (Finset.one_le_prod₀ fun v _ ↦ hAinf1 v) (Finset.one_le_prod₀ fun v _ ↦ hBfin1 v)
@@ -596,36 +622,36 @@ private theorem exists_one_le_forall_one_le_mul_mulHeight_plucker_pow {p : ℕ}
         ring
 
 /-- **Lower bound on the height of a hyperplane `approxSpan`:** for forms `L` linearly independent
-at every infinite place and every `v ∈ S₀`, there exists `C₅ ≥ 0` (independent of `c`, `ε`, and
-`Q`) such that whenever `approxWeight S₀ c ≤ -ε / 2` and no index choice `k` with nontrivial
-`thresholdSubspace S₀ L c k` has `weightAt S₀ c k < -ε / 4`, at every level `Q ≥ 1` where
+at every infinite place and every `v ∈ S₀`, there exists `C₅ ≥ 0` (independent of `c`, `δ`, and
+`Q`) such that whenever every index choice `k` with nontrivial `thresholdSubspace S₀ L c k`
+satisfies `approxWeight S₀ c - weightAt S₀ c k ≤ -δ`, at every level `Q ≥ 1` where
 `approxSpan S₀ L c Q` is a hyperplane its relative logarithmic height is at least
-`ε * Real.log Q / (4 * (Fintype.card (InfinitePlace K) + S₀.card : ℝ)) - C₅`. -/
-theorem exists_forall_le_logHeight_approxSpan
+`δ * Real.log Q / (Fintype.card (InfinitePlace K) + S₀.card : ℝ) - C₅`. -/
+theorem exists_forall_le_relativeSubspaceLogHeight_approxSpan
     {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
     (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) :
-    ∃ C₅ : ℝ, 0 ≤ C₅ ∧ ∀ {c : AbsoluteValue K ℝ → ι → ℝ} {ε : ℝ},
-      approxWeight S₀ c ≤ -ε / 2 →
+    ∃ C₅ : ℝ, 0 ≤ C₅ ∧ ∀ {c : AbsoluteValue K ℝ → ι → ℝ} {δ : ℝ},
       (∀ k : AbsoluteValue K ℝ → ι, thresholdSubspace S₀ L c k ≠ ⊥ →
-        -ε / 4 ≤ weightAt S₀ c k) →
+        approxWeight S₀ c - weightAt S₀ c k ≤ -δ) →
       ∀ ⦃Q : ℝ⦄, 1 ≤ Q →
         finrank K (approxSpan S₀ L c Q) + 1 = Fintype.card ι →
-        ε * Real.log Q / (4 * (Fintype.card (InfinitePlace K) + S₀.card : ℝ)) - C₅ ≤
+        δ * Real.log Q / (Fintype.card (InfinitePlace K) + S₀.card : ℝ) - C₅ ≤
           (approxSpan S₀ L c Q).relativeSubspaceLogHeight := by
   rcases isEmpty_or_nonempty ι with hι | hι
-  · refine ⟨0, le_rfl, fun _ _ _ _ hdim ↦ ?_⟩
+  · refine ⟨0, le_rfl, fun _ _ _ hdim ↦ ?_⟩
     rw [Fintype.card_eq_zero] at hdim
     omega
   let p := Fintype.card ι - 1
   have hm : p + 1 = Fintype.card ι := Nat.sub_add_cancel Fintype.card_pos
-  obtain ⟨C, hC1, hC⟩ := exists_one_le_forall_one_le_mul_mulHeight_plucker_pow hm hLinf hLfin
+  obtain ⟨C, hC1, hC⟩ :=
+    exists_one_le_forall_one_le_mul_mulHeight_plucker_pow (S₀ := S₀) (L := L) hm
   let tNat : ℕ := Fintype.card (InfinitePlace K) + S₀.card
   let t : ℝ := (Fintype.card (InfinitePlace K) : ℝ) + S₀.card
   have ht_eq : (tNat : ℝ) = t := Nat.cast_add _ _
   have ht_pos : 0 < t := ht_eq ▸ by exact_mod_cast Nat.add_pos_left Fintype.card_pos S₀.card
   refine ⟨Real.log C / t, div_nonneg (Real.log_nonneg hC1) ht_pos.le,
-    fun {c ε} hc hno Q hQ hdim ↦ ?_⟩
+    fun {c δ} hno Q hQ hdim ↦ ?_⟩
   obtain ⟨y, hyr, hy_span, hy_li⟩ :=
     Submodule.exists_fun_fin_finrank_span_eq K (approxDomain S₀ L c Q)
   have hfp : finrank K ↥(Submodule.span K (approxDomain S₀ L c Q)) = p := by
@@ -636,28 +662,31 @@ theorem exists_forall_le_logHeight_approxSpan
   have hx_span : Submodule.span K (Set.range x) = approxSpan S₀ L c Q := by
     have hrange : Set.range x = Set.range y := (Fin.castOrderIso hfp.symm).surjective.range_comp y
     rw [hrange, hy_span, approxSpan_eq_span]
-  obtain ⟨a, ha, hVa, -⟩ := Submodule.exists_normal hdim
+  obtain ⟨a, ha, hVa, -⟩ := exists_ne_zero_mem_iff_dotProduct_eq_zero_and_plucker_omitOne hdim
   have hxa (r : Fin p) : x r ⬝ᵥ a = 0 :=
     (hVa (x r)).mp (hx_span ▸ Submodule.subset_span ⟨r, rfl⟩)
   obtain ⟨k, ha_mem, hkinf, hkfin⟩ := exists_pattern_max hm hLinf hLfin c hx_li hxa
-  have hwk : -ε / 4 ≤ weightAt S₀ c k :=
-    hno k fun hbot ↦ ha ((Submodule.mem_bot K).mp (hbot ▸ ha_mem))
+  have ha_dual : dotProductBilin K K a ≠ 0 := by
+    obtain ⟨j, hj⟩ := Function.ne_iff.mp ha
+    intro h0
+    have := congrArg (fun f : Dual K (ι → K) ↦ f (Pi.single j 1)) h0
+    exact hj (by simpa using this)
+  have hwk : approxWeight S₀ c - weightAt S₀ c k ≤ -δ :=
+    hno k fun hbot ↦ ha_dual ((Submodule.mem_bot K).mp (hbot ▸ ha_mem))
   have hQ0 : 0 < Q := zero_lt_one.trans_le hQ
-  have h1 : 1 ≤ C * mulHeight (plucker x) ^ tNat * Q ^ (-ε / 4) :=
+  have h1 : 1 ≤ C * mulHeight (plucker x) ^ tNat * Q ^ (-δ) :=
     (hC c k hQ hx_li hxr hkinf hkfin).trans <| mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_exponent_le hQ (by linarith))
+      (Real.rpow_le_rpow_of_exponent_le hQ hwk)
       (mul_nonneg (zero_le_one.trans hC1) (pow_nonneg (mulHeight_pos _).le _))
-  have hlog : 0 ≤ Real.log C + t * logHeight (plucker x) + -ε / 4 * Real.log Q := by
+  have hlog : 0 ≤ Real.log C + t * logHeight (plucker x) + -δ * Real.log Q := by
     have hC0 : 0 < C := zero_lt_one.trans_le hC1
     have hHt : 0 < mulHeight (plucker x) ^ tNat := pow_pos (mulHeight_pos _) _
     have hlog1 := Real.log_nonneg h1
     rwa [Real.log_mul (mul_ne_zero hC0.ne' hHt.ne') (Real.rpow_pos_of_pos hQ0 _).ne',
       Real.log_mul hC0.ne' hHt.ne', Real.log_pow, ht_eq, ← logHeight_eq_log_mulHeight,
       Real.log_rpow hQ0] at hlog1
-  have hdiv_eq : ε * Real.log Q / (4 * t) - Real.log C / t =
-      (ε * Real.log Q / 4 - Real.log C) / t := by
-    rw [sub_div, div_div]
-  rw [← hx_span, Submodule.relativeSubspaceLogHeight_span_range hx_li, hdiv_eq, div_le_iff₀ ht_pos]
+  rw [← hx_span, Submodule.relativeSubspaceLogHeight_span_range hx_li, ← sub_div,
+    div_le_iff₀ ht_pos]
   linarith
 
 /-- **Heights of hyperplane approximation spans and the exceptional subspace**
@@ -669,7 +698,7 @@ constants `C₄ > 0`, `C₅ ≥ 0`, `C₆ ≥ 0` independent of `Q` such that at
 `approxSpan S₀ L c Q = W₀` or `(approxSpan S₀ L c Q).relativeSubspaceLogHeight` lies between
 `ε * Real.log Q / (4 * (Fintype.card (InfinitePlace K) + S₀.card : ℝ)) - C₅` and
 `(Fintype.card ι - 1) * (∑ v, v.mult * ⨆ i, c v.1 i + ∑ v ∈ S₀, ⨆ i, c v.1 i) * Real.log Q + C₆`. -/
-theorem exists_forall_logHeight_approxSpan
+theorem exists_forall_approxSpan_eq_or_le_relativeSubspaceLogHeight_and_le
     {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
     (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
@@ -689,23 +718,34 @@ theorem exists_forall_logHeight_approxSpan
   rcases isEmpty_or_nonempty ι with hι | hι
   · rw [approxWeight_isEmpty] at hc
     linarith
-  obtain ⟨C₆, hC₆, hup⟩ := exists_forall_logHeight_approxSpan_le_of_finrank_add_one hLinf hLfin
+  obtain ⟨C₆, hC₆, hup⟩ := exists_forall_relativeSubspaceLogHeight_approxSpan_le hLinf hLfin
   by_cases hexc : ∃ k : AbsoluteValue K ℝ → ι,
       weightAt S₀ c k < -ε / 4 ∧ thresholdSubspace S₀ L c k ≠ ⊥
   · obtain ⟨k₀, hk₀, ht₀⟩ := hexc
-    obtain ⟨W₀, C₄, hW₀, hC₄, hmem⟩ := exists_forall_mem_of_weightAt_lt hε hk₀ ht₀
-    refine ⟨W₀, C₄, 0, C₆, hW₀, hC₄, le_rfl, hC₆, fun Q hQ hlogQ hdim ↦ Or.inl ?_⟩
-    have hle : approxSpan S₀ L c Q ≤ W₀ := approxSpan_le_iff.mpr (hmem hQ hlogQ)
+    obtain ⟨W₀, C, hW₀, hC, hmem⟩ := exists_ne_top_forall_mem_of_thresholdSubspace_ne_bot ht₀
+    refine ⟨W₀, 4 * C, 0, C₆, hW₀, by positivity, le_rfl, hC₆, fun Q hQ hlogQ hdim ↦ Or.inl ?_⟩
+    have hlogQ0 : 0 ≤ Real.log Q := Real.log_nonneg hQ
+    have h4C : 4 * C ≤ ε * Real.log Q := by linarith [(div_le_iff₀ hε).mp hlogQ]
+    have hC_le : C ≤ -weightAt S₀ c k₀ * Real.log Q := by nlinarith
+    have hle : approxSpan S₀ L c Q ≤ W₀ := approxSpan_le_iff.mpr (hmem hQ hC_le)
     have hlt : finrank K W₀ < Fintype.card ι := by
       simpa [Module.finrank_fintype_fun_eq_card K] using Submodule.finrank_lt hW₀
     have hge : finrank K (approxSpan S₀ L c Q) ≤ finrank K W₀ := Submodule.finrank_mono hle
     exact Submodule.eq_of_le_of_finrank_eq hle (by omega)
   · have hno : ∀ k : AbsoluteValue K ℝ → ι, thresholdSubspace S₀ L c k ≠ ⊥ →
-        -ε / 4 ≤ weightAt S₀ c k :=
-      fun k ht ↦ le_of_not_gt fun hlt ↦ hexc ⟨k, hlt, ht⟩
-    obtain ⟨C₅, hC₅, hlow⟩ := exists_forall_le_logHeight_approxSpan hLinf hLfin
-    exact ⟨⊥, 1, C₅, C₆, bot_ne_top, zero_lt_one, hC₅, hC₆,
-      fun Q hQ _ hdim ↦ Or.inr ⟨hlow hc hno hQ hdim, hup c hQ hdim⟩⟩
+        approxWeight S₀ c - weightAt S₀ c k ≤ -(ε / 4) := fun k ht ↦ by
+      have := le_of_not_gt fun hlt ↦ hexc ⟨k, hlt, ht⟩
+      linarith
+    obtain ⟨C₅, hC₅, hlow⟩ := exists_forall_le_relativeSubspaceLogHeight_approxSpan hLinf hLfin
+    refine ⟨⊥, 1, C₅, C₆, bot_ne_top, zero_lt_one, hC₅, hC₆,
+      fun Q hQ _ hdim ↦ Or.inr ⟨?_, ?_⟩⟩
+    · have h1 := hlow hno hQ hdim
+      have hdiv : ε * Real.log Q / (4 * (Fintype.card (InfinitePlace K) + S₀.card : ℝ)) =
+          ε / 4 * Real.log Q / (Fintype.card (InfinitePlace K) + S₀.card : ℝ) := by
+        rw [div_mul_eq_div_div, div_mul_eq_mul_div]
+      rwa [hdiv]
+    · have hcard : finrank K (approxSpan S₀ L c Q) = Fintype.card ι - 1 := by omega
+      simpa only [hcard] using hup c hQ
 
 end LowerBound
 
@@ -715,8 +755,9 @@ end LowerBound
 Over `ℚ`, for every positive natural number `N`, the vector `w = ![(N : ℚ), 0]` spans a line of
 relative height `1`, while its first coordinate `LinearMap.proj 0 w = N` has scalar height `N`.
 Thus no constant `C` can bound `mulHeight₁ (l w)` by `C * (ℚ ∙ w).relativeSubspaceHeight` across
-all spanning representatives `w`; the proof of `exists_forall_le_logHeight_approxSpan` uses the
-scale-invariant local Liouville inequality instead. -/
+all spanning representatives `w`; the proof of
+`exists_forall_le_relativeSubspaceLogHeight_approxSpan` uses the scale-invariant local Liouville
+inequality instead. -/
 example (N : ℕ) (hN : 1 ≤ N) :
     let w : Fin 2 → ℚ := ![(N : ℚ), 0]
     (ℚ ∙ w).relativeSubspaceHeight = 1 ∧
@@ -727,12 +768,12 @@ example (N : ℕ) (hN : 1 ≤ N) :
   · simp [Submodule.relativeSubspaceHeight_span_singleton, w]
   · simpa [w] using Rat.mulHeight₁_natCast N
 
-/-- **Without the exceptional subspace `W₀`, the lower bound of `exists_forall_logHeight_approxSpan`
-is false.** Over `ℚ` in two variables with `S₀ = ∅`, coordinate forms `L _ = LinearMap.proj`, and
-exponents `c _ = ![-1, 0]`, the total weight is `approxWeight ∅ c = -1 ≤ -1 / 2`, yet at every
-level `Q > 1` the span `approxSpan ∅ L c Q` is the fixed hyperplane `ℚ ∙ ![0, 1]` of relative
-logarithmic height `0`, which violates any positive-slope lower bound `ε * log Q / 4 - C₅` for
-large `Q`. -/
+/-- **Without the exceptional subspace `W₀`, the lower bound of
+`exists_forall_approxSpan_eq_or_le_relativeSubspaceLogHeight_and_le` is false.** Over `ℚ` in two
+variables with `S₀ = ∅`, coordinate forms `L _ = LinearMap.proj`, and exponents `c _ = ![-1, 0]`,
+the total weight is `approxWeight ∅ c = -1 ≤ -1 / 2`, yet at every level `Q > 1` the span
+`approxSpan ∅ L c Q` is the fixed hyperplane `ℚ ∙ ![0, 1]` of relative logarithmic height `0`,
+which violates any positive-slope lower bound `ε * log Q / 4 - C₅` for large `Q`. -/
 example :
     let L : AbsoluteValue ℚ ℝ → Fin 2 → Dual ℚ (Fin 2 → ℚ) := fun _ ↦ LinearMap.proj
     let c : AbsoluteValue ℚ ℝ → Fin 2 → ℝ := fun _ ↦ ![-1, 0]

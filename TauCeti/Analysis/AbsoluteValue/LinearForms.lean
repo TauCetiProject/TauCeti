@@ -10,13 +10,11 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.LinearAlgebra.LinearIndependent.Defs
+public import Mathlib.LinearAlgebra.StdBasis
 
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Fintype.Order
-import Mathlib.Tactic.Linarith
+import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.Algebra.Order.AbsoluteValue.Basic
-import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Local bounds for linear forms and dot products
@@ -28,11 +26,13 @@ coordinate bounds, dot-product pairings `y ⬝ᵥ x`, and evaluations of linear 
   dot product (`AbsoluteValue.apply_dotProduct_le_mul_of_isNonarchimedean`); in particular, the unit
   ball of `ι → R` is closed under dot products
   (`AbsoluteValue.apply_dotProduct_le_one_of_isNonarchimedean`).
-* When a vector `z` lies in the span of the coefficient vectors `j ↦ l i (Pi.single j 1)` of a
-  subfamily `s` of linear forms, a constant `B ≥ 1` independent of `x` and `M` bounds `v (z ⬝ᵥ x)`
-  by `B * M` whenever `v (l i x) ≤ M` on `s`
+* Whenever a linear form `φ` lies in the span of a set `F` of linear forms on a module `E`, a
+  constant `B ≥ 1` independent of `x` and `M` bounds `v (φ x)` by `B * M` whenever `v (f x) ≤ M` on
+  `F` (`AbsoluteValue.exists_one_le_forall_apply_le_mul_of_mem_span`). In coordinates, this yields
+  the same bound for `v (z ⬝ᵥ x)` when `z` lies in the span of the coefficient vectors
+  `j ↦ l i (Pi.basisFun R ι j)` of a subfamily of linear forms
   (`AbsoluteValue.exists_one_le_forall_dotProduct_le_mul`).
-* Over a field, `#ι` linearly independent linear forms on `ι → K` span the dual space, so a
+* Whenever a finite family of linear forms `l : κ → Module.Dual R (ι → R)` spans the dual space, a
   constant `C ≥ 1` bounds every coordinate `v (x j)` by `C * ⨆ i, v (l i x)`
   (`AbsoluteValue.exists_one_le_forall_apply_le_mul_iSup`).
 
@@ -74,61 +74,68 @@ theorem apply_dotProduct_le_one_of_isNonarchimedean {R S ι : Type*} [Semiring R
   (v.apply_dotProduct_le_mul_of_isNonarchimedean hv zero_le_one zero_le_one hy hx).trans_eq
     (one_mul 1)
 
-/-- If `z` lies in the span of the coefficient vectors `j ↦ l i (Pi.single j 1)` of the forms
-`l i` with `i ∈ s`, then some constant `B ≥ 1` (depending only on `v`, `l`, `s`, and `z`) bounds
-`v (z ⬝ᵥ x)` by `B * M` whenever `0 ≤ M` and `v (l i x) ≤ M` for all `i ∈ s`. -/
-theorem exists_one_le_forall_dotProduct_le_mul {R S ι κ : Type*} [CommSemiring R] [Semiring S]
-    [LinearOrder S] [IsOrderedRing S] [DecidableEq ι] [Fintype ι] (v : AbsoluteValue R S)
-    (l : κ → Module.Dual R (ι → R)) (s : Set κ) {z : ι → R}
-    (hz : z ∈ Submodule.span R ((fun i j ↦ l i (Pi.single j 1)) '' s)) :
-    ∃ B : S, 1 ≤ B ∧ ∀ ⦃M : S⦄, 0 ≤ M → ∀ ⦃x : ι → R⦄,
-      (∀ i ∈ s, v (l i x) ≤ M) → v (z ⬝ᵥ x) ≤ B * M := by
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ hz
-  · rintro _ ⟨i, hi, rfl⟩
-    refine ⟨1, le_rfl, fun M _ x hx ↦ ?_⟩
-    have hdot : (fun j ↦ l i (Pi.single j 1)) ⬝ᵥ x = l i x := by
-      conv_rhs => rw [← (Pi.basisFun R ι).sum_repr x, map_sum]
-      simp [dotProduct, mul_comm]
-    rw [hdot, one_mul]
-    exact hx i hi
+/-- If a linear form `φ` lies in the span of a set `F` of linear forms on `E`, then some constant
+`B ≥ 1` (depending only on `v`, `F`, and `φ`) bounds `v (φ x)` by `B * M` whenever `0 ≤ M` and
+`v (f x) ≤ M` for all `f ∈ F`. -/
+theorem exists_one_le_forall_apply_le_mul_of_mem_span {R S E : Type*} [CommSemiring R]
+    [Semiring S] [LinearOrder S] [IsOrderedRing S] [AddCommMonoid E] [Module R E]
+    (v : AbsoluteValue R S) {F : Set (Module.Dual R E)} {φ : Module.Dual R E}
+    (hφ : φ ∈ Submodule.span R F) :
+    ∃ B : S, 1 ≤ B ∧ ∀ ⦃M : S⦄, 0 ≤ M → ∀ ⦃x : E⦄,
+      (∀ f ∈ F, v (f x) ≤ M) → v (φ x) ≤ B * M := by
+  refine Submodule.span_induction ?_ ?_ ?_ ?_ hφ
+  · intro f hf
+    exact ⟨1, le_rfl, fun M _ x hx ↦ by rw [one_mul]; exact hx f hf⟩
   · exact ⟨1, le_rfl, fun M hM _ _ ↦ by
-      simpa only [zero_dotProduct, AbsoluteValue.map_zero, one_mul] using hM⟩
-  · rintro z₁ z₂ - - ⟨B₁, hB₁, h₁⟩ ⟨B₂, hB₂, h₂⟩
+      simpa only [LinearMap.zero_apply, AbsoluteValue.map_zero, one_mul] using hM⟩
+  · rintro φ₁ φ₂ - - ⟨B₁, hB₁, h₁⟩ ⟨B₂, hB₂, h₂⟩
     refine ⟨B₁ + B₂, hB₁.trans (le_add_of_nonneg_right (zero_le_one.trans hB₂)),
       fun M hM x hx ↦ ?_⟩
-    rw [add_dotProduct, add_mul]
+    rw [LinearMap.add_apply, add_mul]
     exact (v.add_le _ _).trans (add_le_add (h₁ hM hx) (h₂ hM hx))
-  · rintro r z - ⟨B, _, h⟩
+  · rintro r φ - ⟨B, _, h⟩
     refine ⟨max (v r * B) 1, le_max_right _ _, fun M hM x hx ↦ ?_⟩
-    rw [smul_dotProduct, smul_eq_mul, map_mul]
-    calc v r * v (z ⬝ᵥ x)
+    rw [LinearMap.smul_apply, smul_eq_mul, map_mul]
+    calc v r * v (φ x)
         ≤ v r * (B * M) := mul_le_mul_of_nonneg_left (h hM hx) (v.nonneg _)
       _ = v r * B * M := (mul_assoc _ _ _).symm
       _ ≤ max (v r * B) 1 * M := mul_le_mul_of_nonneg_right (le_max_left _ _) hM
 
-/-- At any real-valued absolute value where `#ι` linear forms `l` on `ι → K` are linearly
-independent, some `C ≥ 1` bounds every coordinate `v (x j)` by `C * ⨆ i, v (l i x)`. -/
-theorem exists_one_le_forall_apply_le_mul_iSup {K ι : Type*} [Field K] [Finite ι]
-    (v : AbsoluteValue K ℝ) {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
-    ∃ C : ℝ, 1 ≤ C ∧ ∀ (x : ι → K) (j : ι), v (x j) ≤ C * ⨆ i, v (l i x) := by
-  cases nonempty_fintype ι
-  obtain ⟨a, ha⟩ := hl.exists_sum_smul_eq_proj
-  refine ⟨1 + ∑ j, ∑ i, v (a j i),
-    le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ v.nonneg _),
-    fun x j ↦ ?_⟩
-  have hxj : x j = ∑ i, a j i * l i x := by simpa using (LinearMap.congr_fun (ha j) x).symm
-  rw [hxj]
-  calc v (∑ i, a j i * l i x)
-      ≤ ∑ i, v (a j i) * v (l i x) :=
-        (v.sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ by rw [map_mul])
-    _ ≤ ∑ i, v (a j i) * ⨆ k, v (l k x) :=
-        Finset.sum_le_sum fun i _ ↦
-          mul_le_mul_of_nonneg_left (Finite.le_ciSup_of_le i le_rfl) (v.nonneg _)
-    _ = (∑ i, v (a j i)) * ⨆ k, v (l k x) := (Finset.sum_mul _ _ _).symm
-    _ ≤ (1 + ∑ j', ∑ i, v (a j' i)) * ⨆ k, v (l k x) := by
-        refine mul_le_mul_of_nonneg_right ?_ (Real.iSup_nonneg fun k ↦ v.nonneg _)
-        have := Finset.single_le_sum (f := fun j' ↦ ∑ i, v (a j' i))
-          (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ v.nonneg _) (Finset.mem_univ j)
-        linarith
+/-- If `z` lies in the span of the coefficient vectors `j ↦ l i (Pi.basisFun R ι j)` of the forms
+`l i` with `i ∈ s`, then some constant `B ≥ 1` (depending only on `v`, `l`, `s`, and `z`) bounds
+`v (z ⬝ᵥ x)` by `B * M` whenever `0 ≤ M` and `v (l i x) ≤ M` for all `i ∈ s`. -/
+theorem exists_one_le_forall_dotProduct_le_mul {R S ι κ : Type*} [CommSemiring R] [Semiring S]
+    [LinearOrder S] [IsOrderedRing S] [Fintype ι] (v : AbsoluteValue R S)
+    (l : κ → Module.Dual R (ι → R)) (s : Set κ) {z : ι → R}
+    (hz : z ∈ Submodule.span R ((fun i j ↦ l i (Pi.basisFun R ι j)) '' s)) :
+    ∃ B : S, 1 ≤ B ∧ ∀ ⦃M : S⦄, 0 ≤ M → ∀ ⦃x : ι → R⦄,
+      (∀ i ∈ s, v (l i x) ≤ M) → v (z ⬝ᵥ x) ≤ B * M := by
+  have hmap : dotProductBilin R R z ∈ Submodule.span R (l '' s) := by
+    have hmem := Submodule.apply_mem_span_image_of_mem_span (dotProductBilin R R) hz
+    have himg : dotProductBilin R R '' ((fun i j ↦ l i (Pi.basisFun R ι j)) '' s) =
+        l '' s := by
+      rw [← Set.image_comp]
+      refine Set.image_congr fun i _ ↦ ?_
+      ext x
+      conv_rhs => rw [← (Pi.basisFun R ι).sum_repr x, map_sum]
+      simp [dotProduct, mul_comm]
+    rwa [himg] at hmem
+  obtain ⟨B, hB1, hB⟩ := v.exists_one_le_forall_apply_le_mul_of_mem_span hmap
+  exact ⟨B, hB1, fun M hM x hx ↦ hB hM fun _ ⟨i, hi, hf⟩ ↦ hf ▸ hx i hi⟩
+
+/-- At any real-valued absolute value where a finite family of linear forms `l` on `ι → R` spans
+the dual space, some `C ≥ 1` bounds every coordinate `v (x j)` by `C * ⨆ i, v (l i x)`. -/
+theorem exists_one_le_forall_apply_le_mul_iSup {R ι κ : Type*} [CommSemiring R] [Finite ι]
+    [Finite κ] (v : AbsoluteValue R ℝ) {l : κ → Module.Dual R (ι → R)}
+    (hl : Submodule.span R (Set.range l) = ⊤) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (x : ι → R) (j : ι), v (x j) ≤ C * ⨆ i, v (l i x) := by
+  choose B _ hB using fun j : ι ↦
+    v.exists_one_le_forall_apply_le_mul_of_mem_span
+      (hl ▸ Submodule.mem_top : LinearMap.proj (R := R) (φ := fun _ : ι ↦ R) j ∈ _)
+  refine ⟨max 1 (⨆ j, B j), le_max_left _ _, fun x j ↦ ?_⟩
+  have : Nonempty ι := ⟨j⟩
+  have hM0 : 0 ≤ ⨆ i, v (l i x) := Real.iSup_nonneg fun _ ↦ v.nonneg _
+  refine (hB j hM0 fun _ ⟨i, hf⟩ ↦ hf ▸ Finite.le_ciSup_of_le i le_rfl).trans ?_
+  exact mul_le_mul_of_nonneg_right ((Finite.le_ciSup_of_le j le_rfl).trans (le_max_right _ _)) hM0
 
 end AbsoluteValue

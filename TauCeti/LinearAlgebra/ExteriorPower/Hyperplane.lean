@@ -24,7 +24,8 @@ For any linearly independent family `x : Fin p → ι → K` in `U` with `p + 1 
 complementary minors (`TauCeti.exists_plucker_eq_mul_plucker_compl_or_eq_neg`) identify the
 coordinates `a i` of any normal vector, up to a common nonzero scalar and signs, with the Plücker
 coordinates `plucker x (omitOne hm i)` at the `(Fintype.card ι - 1)`-element subsets omitting `i`.
-In particular, `plucker x (omitOne hm i) = 0 ↔ a i = 0` (`Submodule.exists_normal`).
+In particular, `plucker x (omitOne hm i) = 0 ↔ a i = 0`
+(`TauCeti.exists_ne_zero_mem_iff_dotProduct_eq_zero_and_plucker_omitOne`).
 
 When `l : ι → Dual K (ι → K)` is a linearly independent family of linear forms on `ι → K`,
 applying this coordinate characterization after the change of coordinates `LinearMap.pi l` and its
@@ -42,9 +43,10 @@ inside a subspace determined solely by the nonvanishing pattern of the wedge for
   a nonzero vector orthogonal to `p` linearly independent vectors in `K^ι` (`p + 1 = #ι`) has
   `i`-th coordinate proportional up to sign to `plucker x (omitOne hm i)`, hence vanishing
   simultaneously with it.
-* `Submodule.exists_normal`: every hyperplane `U` in `K^ι` admits a nonzero normal vector `a`
-  cutting out `U` by `x ⬝ᵥ a = 0` whose vanishing coordinates match the vanishing `omitOne`
-  Plücker coordinates of any basis of `U`.
+* `TauCeti.exists_ne_zero_mem_iff_dotProduct_eq_zero_and_plucker_omitOne`: every hyperplane `U` in
+  `K^ι` admits a nonzero vector `a` cutting out `U` by `x ⬝ᵥ a = 0` whose vanishing coordinates
+  match the vanishing `omitOne` Plücker coordinates of any linearly independent family of `p`
+  vectors in `U` (`p + 1 = #ι`).
 * `TauCeti.exists_wedgeForms_omitOne_ne_zero`: for linearly independent forms `l`, every nonzero
   vector in `powersetCard ι p → K` (`p + 1 = #ι`) has a nonvanishing `omitOne` wedge form.
 * `TauCeti.mem_span_of_forall_dotProduct_eq_zero`: any vector orthogonal to the hyperplane spanned
@@ -122,9 +124,7 @@ theorem mem_span_of_forall_dotProduct_eq_zero (hm : p + 1 = Fintype.card ι)
   have ha' : a' ≠ 0 := by simpa [a'] using ha
   let y : Fin p → ι → K := fun r ↦ Φ (x r)
   have hy : LinearIndependent K y := hx.map' Φ.toLinearMap Φ.ker
-  have hya' (r : Fin p) : y r ⬝ᵥ a' = 0 := by
-    rw [dotProduct_comm, Φ.dotProductContragredient_apply_dotProduct_apply, dotProduct_comm]
-    exact hxa r
+  have hya' (r : Fin p) : y r ⬝ᵥ a' = 0 := by simpa [y, a'] using hxa r
   -- In the coordinates defined by `l`, the `i`-th coordinate of `a'` vanishes with the `i`-th
   -- omitting-one wedge form.
   have hy_eq : y = fun b k ↦ l k (x b) := by ext; simp [y, Φ]
@@ -144,29 +144,23 @@ theorem mem_span_of_forall_dotProduct_eq_zero (hm : p + 1 = Fintype.card ι)
   · simp [(hzero i).mpr hi]
   · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
 
-end TauCeti
-
-namespace Submodule
-
-open TauCeti
-
-/-- Every hyperplane `U` in `ι → K` is cut out by a nonzero normal vector `a : ι → K` via
+/-- Every hyperplane `U` in `ι → K` is cut out by a nonzero vector `a : ι → K` via
 `x ∈ U ↔ x ⬝ᵥ a = 0`, and for any linearly independent family `x : Fin p → ι → K` in `U` with
 `p + 1 = Fintype.card ι`, the Plücker coordinate `plucker x (omitOne hm i)` vanishes if and only if
 `a i = 0`. -/
-theorem exists_normal {K ι : Type*} [Field K] [LinearOrder ι] [Fintype ι]
+theorem exists_ne_zero_mem_iff_dotProduct_eq_zero_and_plucker_omitOne
     {U : Submodule K (ι → K)} (hU : finrank K U + 1 = Fintype.card ι) :
     ∃ a : ι → K, a ≠ 0 ∧ (∀ x, x ∈ U ↔ x ⬝ᵥ a = 0) ∧
       ∀ {p : ℕ} (hm : p + 1 = Fintype.card ι) {x : Fin p → ι → K},
         LinearIndependent K x → (∀ r, x r ∈ U) →
         ∀ i : ι, (plucker x (omitOne hm i) = 0 ↔ a i = 0) := by
   have hdim : finrank K U.euclideanDual = 1 := by
-    have := finrank_add_finrank_euclideanDual U
+    have := Submodule.finrank_add_finrank_euclideanDual U
     omega
   obtain ⟨⟨a, ha_mem⟩, ha₀, -⟩ := finrank_eq_one_iff'.mp hdim
   have ha : a ≠ 0 := by simpa using ha₀
-  have hUa : ∀ x ∈ U, x ⬝ᵥ a = 0 := mem_euclideanDual.mp ha_mem
-  refine ⟨a, ha, fun x ↦ mem_iff_dotProduct_eq_zero_of_finrank_add_one hU ha hUa,
+  have hUa : ∀ x ∈ U, x ⬝ᵥ a = 0 := Submodule.mem_euclideanDual.mp ha_mem
+  refine ⟨a, ha, fun x ↦ Submodule.mem_iff_dotProduct_eq_zero_of_finrank_add_one hU ha hUa,
     fun {p} hm {x} hx hxr i ↦ plucker_omitOne_eq_zero_iff hm hx ha (fun r ↦ hUa _ (hxr r)) i⟩
 
-end Submodule
+end TauCeti
