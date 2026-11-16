@@ -43,8 +43,8 @@ unions with disjoint sets.
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
-* `TauCeti.integral_mul_norm_sq_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
-  extension `1_s f`, then `∫ g ‖f₀‖² = ∫_s g ‖f‖²`.
+* `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
+  extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
@@ -230,15 +230,17 @@ theorem setIntegral_sq_le_of_support_subset_closedBall {E : Type*} [PseudoMetric
         rw [measureReal_restrict_apply hmeasB]
         exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
 
-/-- If `f₀` is almost everywhere the zero extension `1_s f` of `f`, then the integral of
-`g ‖f₀‖²` over the whole space is the integral of `g ‖f‖²` over `s`. -/
-theorem integral_mul_norm_sq_of_ae_eq_indicator {X E : Type*} [MeasurableSpace X]
-    [NormedAddCommGroup E] {μ : Measure X} {s : Set X} (hs : MeasurableSet s) {f f₀ : X → E}
-    (g : X → ℝ) (h : f₀ =ᵐ[μ] s.indicator f) :
-    ∫ x, g x * ‖f₀ x‖ ^ 2 ∂μ = ∫ x in s, g x * ‖f x‖ ^ 2 ∂μ := by
-  rw [← integral_indicator hs]
+/-- If `f₀` is almost everywhere the zero extension `1_s f` of `f` and `Φ x 0 = 0` for every
+`x`, then the integral of `Φ x (f₀ x)` over the whole space is the integral of `Φ x (f x)`
+over `s`. -/
+theorem integral_eq_setIntegral_of_ae_eq_indicator {X E G : Type*} [MeasurableSpace X] [Zero E]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure X} {s : Set X}
+    (hs : NullMeasurableSet s μ) {f f₀ : X → E} (Φ : X → E → G) (hΦ : ∀ x, Φ x 0 = 0)
+    (h : f₀ =ᵐ[μ] s.indicator f) :
+    ∫ x, Φ x (f₀ x) ∂μ = ∫ x in s, Φ x (f x) ∂μ := by
+  rw [← integral_indicator₀ hs]
   refine integral_congr_ae (h.mono fun x hx => ?_)
-  by_cases hx' : x ∈ s <;> simp [hx, hx']
+  by_cases hx' : x ∈ s <;> simp [hx, hx', hΦ]
 
 end TauCeti
 

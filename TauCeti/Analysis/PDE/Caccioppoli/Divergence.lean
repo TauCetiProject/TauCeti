@@ -322,15 +322,15 @@ theorem exists_setIntegral_ball_norm_indicator_gradient_sq_le_divergence :
     (Eventually.of_forall fun x => by positivity) hrR (by simp) fun ψ hψ hcpt _ => by
       have hcacc :=
         h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt (.inr u.2)
-      have e1 := integral_mul_norm_sq_of_ae_eq_indicator hOm (fun x => ψ x ^ 2) hgrad
-      have e2 : ∫ x, ‖∇ ψ x‖ ^ 2 * W1p.value u₀ x ^ 2 ∂mu =
-          ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value (u : W1p mu Omega 2) x ^ 2 ∂mu := by
-        simpa only [Real.norm_eq_abs, sq_abs] using
-          integral_mul_norm_sq_of_ae_eq_indicator hOm (fun x => ‖∇ ψ x‖ ^ 2) hval
+      have e1 := integral_eq_setIntegral_of_ae_eq_indicator hOm.nullMeasurableSet
+        (fun x v => ψ x ^ 2 * ‖v‖ ^ 2) (by simp) hgrad
+      have e2 := integral_eq_setIntegral_of_ae_eq_indicator hOm.nullMeasurableSet
+        (fun x v => ‖∇ ψ x‖ ^ 2 * v ^ 2) (by simp) hval
       have e3 : ∫ x, ψ x ^ 2 *
             (12 / lam ^ 2 * ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2) ∂mu =
           12 / lam ^ 2 * ∫ x in Omega, ψ x ^ 2 * ‖F x‖ ^ 2 ∂mu := by
-        rw [← integral_mul_norm_sq_of_ae_eq_indicator hOm _ (f₀ := _) .rfl, ← integral_const_mul]
+        rw [integral_eq_setIntegral_of_ae_eq_indicator hOm.nullMeasurableSet
+          (fun x v => ψ x ^ 2 * (12 / lam ^ 2 * ‖v‖ ^ 2)) (by simp) .rfl, ← integral_const_mul]
         exact integral_congr_ae (.of_forall fun x => by ring)
       simp only [htop]
       rw [e1, e2, e3]
