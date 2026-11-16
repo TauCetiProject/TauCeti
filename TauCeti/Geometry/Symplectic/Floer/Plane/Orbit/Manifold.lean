@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
-public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 
