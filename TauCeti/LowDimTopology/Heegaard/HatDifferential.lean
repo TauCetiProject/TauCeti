@@ -214,7 +214,7 @@ theorem IsNice.hammingDist_eq_one_or_eq_two_of_hatCoefficient_ne_zero [Decidable
 
 /-- When the relative Maslov grading is normalized, as in a singly pointed diagram of a closed
 surface of genus `n`
-(`IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton`),
+(`maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton`),
 and the periodic domains have Maslov index zero at `x`, the hat differential lowers the relative
 Maslov grading by one: a nonzero coefficient from `x` to `y` forces `gr(x, y) = 1`. -/
 theorem relativeGrading_eq_one_of_hatCoefficient_ne_zero [Fintype Basepoint]

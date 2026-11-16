@@ -5,32 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
+public import TauCeti.LowDimTopology.Heegaard.MaslovIndex
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.Ring
 
 /-!
-# The relative Maslov grading of a multipointed Heegaard diagram
+# The components of `Σ - α` in a Heegaard diagram
 
 A *balanced* multipointed Heegaard diagram `(Σ, α, β, z₁, …, z_b)` of a closed `3`-manifold has
 `n = g + b - 1` attaching curves of each kind on a surface of genus `g`, and each component of
 `Σ - α` (and of `Σ - β`) contains exactly one basepoint: compressing `Σ` along the `α`-curves
-gives `b` spheres, one around each basepoint. For generators `x`, `y` joined by a domain `D`, the
-*relative Maslov grading* is
+gives `b` spheres, one around each basepoint. This file develops the components of `Σ - α` on the
+incidence data `TauCeti.HeegaardRegionSystem` and computes the Maslov index
+`TauCeti.HeegaardRegionSystem.maslovIndex` of their domains. In a multipointed diagram they take
+the role that the whole surface plays in the singly pointed case: two domains from `x` to `y`
+differ by a periodic domain plus a combination of them.
 
-`gr(x, y) = μ(D) - 2 ∑ᵢ n_{zᵢ}(D)`,
-
-where `μ` is the combinatorial Maslov index `TauCeti.HeegaardRegionSystem.maslovIndex`. This is
-the formula by which `TauCeti.HeegaardRegionSystem.relativeGrading` is defined, for any number of
-basepoints. Its lemmas assume a normalization of the domains from a generator to itself, and this
-file proves that normalization for multipointed diagrams on the incidence data
-`TauCeti.HeegaardRegionSystem`, from the components of `Σ - α`.
-
-The singly pointed argument shows that two domains from `x` to `y` differ by a periodic domain
-plus a multiple of the whole surface, whose Maslov index two cancels its basepoint multiplicity
-one. With `b` basepoints the whole surface has Maslov index `2b` and multiplicity one at every
-basepoint, but it no longer accounts for every domain from `x` to `x`. Its role is taken by the
-components of `Σ - α`. Two regions lie in the same component
+Two regions lie in the same component
 (`TauCeti.HeegaardRegionSystem.SameAlphaComponent`) when they are joined by a chain of regions,
 consecutive ones on the two sides of a `β`-arc. The domain `A(r₀)` of the component of a region
 `r₀` (`TauCeti.HeegaardRegionSystem.alphaComponentDomain`) has no `β`-boundary, and its
@@ -50,25 +41,18 @@ the component lies on both of its sides
 `χ(C)`, and the point measure of `A(r₀)` at every generator is `k(C) / 2`, since each point of a
 generator on a boundary circle of `C` sees two of its four corners in `C`. When `C` is a
 sphere with holes, `χ(C) = 2 - k(C)`, so `μ(A(r₀)) = 2`
-(`TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain_eq_two`). This normalization is
-the counterpart of the Euler characteristics `χ` of the regions being those of a closed surface of
-genus `n` in the singly pointed case: the Euler characteristics are not determined by the
-incidence data, so they are an explicit argument.
+(`TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain_eq_two`). The Euler
+characteristics `χ` of the regions are not determined by the incidence data, so they are an
+explicit argument.
 
 When distinct basepoints lie in distinct components, a domain `E` connects a generator to itself
 exactly when `E - ∑ᵢ n_{zᵢ}(E) A(zᵢ)` is periodic
-(`TauCeti.HeegaardRegionSystem.isDomainBetween_self_iff_sub_sum_smul_mem_periodicDomains`). If
-moreover the components of the basepoints are spheres with holes, then `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` is
-a periodic Maslov index at `x`
-(`IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices`). This is the
-normalization from which `TauCeti.LowDimTopology.Heegaard.RelativeGrading` proves that the
-relative grading `TauCeti.HeegaardRegionSystem.relativeGrading` is well defined modulo
-the periodic Maslov indices `TauCeti.HeegaardRegionSystem.periodicMaslovIndices`, additive and
-antisymmetric (`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq` and the
-lemmas following it); when the periodic domains have Maslov index zero at `x`, these hold in `ℚ`.
-When every region also lies in the component of a basepoint, the whole surface is the sum of the
-`A(zᵢ)` and has Maslov index `2b` (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two_mul_card`):
-`2` for one basepoint and `4` for two.
+(`TauCeti.HeegaardRegionSystem.isDomainBetween_self_iff_sub_sum_smul_mem_periodicDomains`). From
+this `TauCeti.LowDimTopology.Heegaard.RelativeGrading` derives the normalization of the relative
+Maslov grading `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` of a multipointed diagram. When every region also lies in
+the component of a basepoint, the whole surface is the sum of the `A(zᵢ)` and has Maslov index
+`2b` (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two_mul_card`): `2` for one basepoint and
+`4` for two.
 
 ## Main definitions
 
@@ -91,10 +75,6 @@ When every region also lies in the component of a basepoint, the whole surface i
   domain from `x` to `x` is a periodic domain plus `∑ᵢ n_{zᵢ}(E) A(zᵢ)`.
 * `TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two_mul_card`: in a balanced diagram the
   whole surface has Maslov index `2b`.
-* `IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices`:
-  when the basepoints lie in distinct sphere-with-holes components of `Σ - α`, a domain `E` from
-  `x` to `x` has `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` among the periodic Maslov indices at `x`, so the
-  relative grading `TauCeti.HeegaardRegionSystem.relativeGrading` is well defined modulo them.
 
 ## References
 
@@ -472,29 +452,6 @@ theorem maslovIndex_one_eq_two_mul_card
   rw [← sum_alphaComponentDomain_basepoint hz hcover, map_sum,
     sum_congr rfl fun z _ => H.maslovIndex_alphaComponentDomain_eq_two (hχ z) x y, sum_const,
     card_univ, nsmul_eq_mul, mul_comm]
-
-/-- **The normalization of the relative grading in a multipointed diagram.** When the basepoints
-lie in distinct sphere-with-holes components of `Σ - α`, a domain `E` from `x` to `x` has
-`μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` among the periodic Maslov indices at `x`: it is a periodic domain plus
-`n_{zᵢ}(E)` copies of the domain of the component of each basepoint `zᵢ`, which has Maslov index
-two. This is the hypothesis of the relative grading lemmas
-(`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq` and those following it),
-so the relative grading `TauCeti.HeegaardRegionSystem.relativeGrading` of a multipointed diagram
-is well defined modulo the periodic Maslov indices, additive and antisymmetric. -/
-theorem IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices
-    (hz : ∀ z z', H.SameAlphaComponent (H.basepoint z) (H.basepoint z') → z = z')
-    (hχ : ∀ z, H.alphaComponentEuler χ (H.basepoint z) =
-      2 - H.alphaComponentBoundaryCount (H.basepoint z))
-    {x : H.Generator} {E : Region → ℤ} (hE : H.IsDomainBetween x x E) :
-    H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x := by
-  have h := maslovIndex_mem_periodicMaslovIndices (χ := χ) (x := x)
-    ((isDomainBetween_self_iff_sub_sum_smul_mem_periodicDomains hz).mp hE)
-  rw [map_sub, map_sum] at h
-  simp only [AddMonoidHom.map_zsmul] at h
-  simp only [H.maslovIndex_alphaComponentDomain_eq_two (hχ _), zsmul_eq_mul] at h
-  convert h using 2
-  rw [mul_sum]
-  exact sum_congr rfl fun z _ => mul_comm _ _
 
 end Balanced
 
