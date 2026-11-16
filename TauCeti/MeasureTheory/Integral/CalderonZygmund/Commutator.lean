@@ -788,8 +788,8 @@ omit [Nonempty ι] in
 
 where `η_b` is the VMO modulus of `b`, bounded here by `M`, and `C` depends only on
 `n = Fintype.card ι`, `s`, `p`, `A`, `C₀` and `δ`. For `b` of vanishing mean oscillation the
-commutator `[b, T]` is therefore small as an operator on `Lᵖ(B)` for small balls `B`, uniformly in
-their centre. -/
+bound `‖[b, T] f‖_{Lᵖ(B)} ≤ C η_b(16 r) ‖f‖_p` is therefore small for small balls `B`, uniformly in
+their centre, for all such `f`. -/
 theorem exists_eLpNorm_restrict_ball_smul_sub_le_of_vmoModulus_le {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {s p : ℝ≥0∞} (hs : 1 ≤ s)
     (hsp : s < p) (hp_top : p ≠ ∞) (A C₀ : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :

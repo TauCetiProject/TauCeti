@@ -71,6 +71,7 @@ easy half of Sarason's characterization.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
   vanishing mean oscillation.
+* `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub`: the triangle inequality for the extended norm.
 * `TauCeti.enorm_setAverage_ball_sub_setAverage_ball_le_vmoModulus` and
   `TauCeti.enorm_setAverage_ball_sub_setAverage_ball_le`: for an additive Haar measure, the
   averages over the concentric balls `B(c, 2ʲ r)` drift by at most `2ⁿ η_f(2ʲ r)`, hence by at most
@@ -648,6 +649,12 @@ end Invariance
 
 /-! ### Averages over concentric balls -/
 
+/-- **Triangle inequality for the extended norm.** `‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, the form in
+which averages over a chain of balls are compared. -/
+theorem eNorm_sub_le_eNorm_sub_add_eNorm_sub {G : Type*} [SeminormedAddCommGroup G] (u v w : G) :
+    ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
+  simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
+
 section ConcentricBalls
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -663,8 +670,6 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le_vmoModulus {b : E → F}
     ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ ≤
       j * 2 ^ Module.finrank ℝ E * vmoModulus b μ (2 ^ j * r) := by
   set n := Module.finrank ℝ E
-  have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
-    simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
   have hstep : ∀ ρ : ℝ, 0 < ρ →
       ‖(⨍ y in ball c ρ, b y ∂μ) - ⨍ y in ball c (2 * ρ), b y ∂μ‖ₑ ≤
         2 ^ n * vmoModulus b μ (2 * ρ) := fun ρ hρ => by
@@ -687,7 +692,7 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le_vmoModulus {b : E → F}
         ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ‖ₑ +
             ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ := by
           rw [eNorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
-          exact htri _ _ _
+          exact eNorm_sub_le_eNorm_sub_add_eNorm_sub _ _ _
       _ ≤ 2 ^ n * vmoModulus b μ (2 ^ (j + 1) * r) +
             j * 2 ^ n * vmoModulus b μ (2 ^ (j + 1) * r) := by
           gcongr
@@ -706,12 +711,10 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStron
       (j + 1) * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
   have h1 := enorm_setAverage_ball_sub_setAverage_ball_le_vmoModulus hb c hr 1
   rw [pow_one, Nat.cast_one, one_mul, eNorm_sub_rev] at h1
-  have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
-    simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
   calc ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ
       ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ +
           ‖(⨍ y in ball c r, b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ :=
-        htri _ _ _
+        eNorm_sub_le_eNorm_sub_add_eNorm_sub _ _ _
     _ ≤ j * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ +
           2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
         gcongr

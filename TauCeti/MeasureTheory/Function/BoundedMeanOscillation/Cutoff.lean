@@ -102,8 +102,6 @@ private theorem ofReal_mul_enorm_setAverage_ball_sub_le {b : E → F}
   have hj4 := (le_div_iff₀ hs).1 hj
   have hρ4 : 4 * R < 2 ^ (j + 1) * s := (div_lt_iff₀ hs).1 hj'
   have hρ8 : 2 ^ (j + 1) * s ≤ 8 * R := by rw [pow_succ]; linarith
-  have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
-    simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
   -- From `B(c, s)` to `B(c, 2ʲ⁺¹ s)` by doubling, then to `B(x₀, R) ⊆ B(c, 2ʲ⁺¹ s)`.
   have hchain : ‖(⨍ y in ball c s, b y ∂μ) - ⨍ y in ball c (2 ^ (j + 1) * s), b y ∂μ‖ₑ ≤
       (j + 1) * 2 ^ n * η := by
@@ -128,13 +126,23 @@ private theorem ofReal_mul_enorm_setAverage_ball_sub_le {b : E → F}
   calc ENNReal.ofReal s * ‖(⨍ y in ball c s, b y ∂μ) - ⨍ y in ball x₀ R, b y ∂μ‖ₑ
       ≤ ENNReal.ofReal s * ((j + 1) * 2 ^ n * η + 8 ^ n * η) := by
         gcongr
-        exact (htri _ _ _).trans (add_le_add hchain hbig)
+        exact (eNorm_sub_le_eNorm_sub_add_eNorm_sub _ _ _).trans (add_le_add hchain hbig)
     _ = ENNReal.ofReal s * (j + 1) * 2 ^ n * η + ENNReal.ofReal s * 8 ^ n * η := by ring
     _ ≤ 4 * ENNReal.ofReal R * 8 ^ n * η + ENNReal.ofReal R * 8 ^ n * η := by
         gcongr
     _ = 5 * 8 ^ n * ENNReal.ofReal R * η := by ring
 
 variable {b : E → F} {ψ : E → ℝ} {K L : ℝ≥0} {x₀ c : E} {R s : ℝ}
+
+omit [CompleteSpace F] in
+/-- A Lipschitz `ψ` vanishing off `B(x₀, R)` has compact support, so `ψ • (b - κ)` is integrable
+for a locally integrable `b` and a constant `κ`. -/
+private theorem integrable_smul_sub_of_lipschitzWith (hb : LocallyIntegrable b μ)
+    (hψ : LipschitzWith K ψ) (hψ0 : ∀ x, R ≤ dist x x₀ → ψ x = 0) (κ : F) :
+    Integrable (fun x => ψ x • (b x - κ)) μ :=
+  (hb.sub (locallyIntegrable_const κ)).integrable_smul_left_of_hasCompactSupport hψ.continuous
+    (HasCompactSupport.intro (isCompact_closedBall x₀ R) fun x hx =>
+      hψ0 x (not_le.1 (by simpa using hx)).le)
 
 /-- The mean oscillation of `ψ • (b - b_{B(x₀, R)})` on a ball `B(c, s)` of radius `s ≥ R`. -/
 private theorem setLAverage_enorm_smul_sub_le_of_le
@@ -239,12 +247,7 @@ theorem bmoSeminorm_smul_sub_setAverage_le (hb : LocallyIntegrable b μ) (hψ : 
   have hψL' (x : E) : ‖ψ x‖ₑ ≤ L := by
     rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
     exact ENNReal.ofReal_le_ofReal (hψL x)
-  -- The localized function is integrable, since `ψ` is continuous with compact support.
-  have hψc : HasCompactSupport ψ :=
-    HasCompactSupport.intro (isCompact_closedBall x₀ R) fun x hx =>
-      hψ0 x (not_le.1 (by simpa using hx)).le
-  have hint := (hb.sub (locallyIntegrable_const (⨍ y in ball x₀ R, b y ∂μ))
-    ).integrable_smul_left_of_hasCompactSupport hψ.continuous hψc
+  have hint := integrable_smul_sub_of_lipschitzWith hb hψ hψ0 (⨍ y in ball x₀ R, b y ∂μ)
   refine bmoSeminorm_le fun c s => ?_
   rcases le_or_gt s 0 with hs | hs
   · simp [ball_eq_empty.2 hs]
@@ -277,12 +280,8 @@ theorem _root_.MeasureTheory.LocallyIntegrable.exists_bmoSeminorm_le_and_eqOn
     rw [Real.norm_of_nonneg (ramp_nonneg _ _ _)]
     exact ramp_le_one _ _ _
   have hψ0 (y : E) (hy : 2 * r ≤ dist y x₀) : ψ y = 0 := ramp_eq_zero hr.le (by linarith)
-  have hψc : HasCompactSupport ψ :=
-    HasCompactSupport.intro (isCompact_closedBall x₀ (2 * r)) fun y hy =>
-      hψ0 y (not_le.1 (by simpa using hy)).le
   refine ⟨fun y => ψ y • (b y - ⨍ z in ball x₀ (2 * r), b z ∂μ), ⨍ z in ball x₀ (2 * r), b z ∂μ,
-    (hb.sub (locallyIntegrable_const _)).integrable_smul_left_of_hasCompactSupport
-      hψ.continuous hψc, ?_, fun y hy => ?_⟩
+    integrable_smul_sub_of_lipschitzWith hb hψ hψ0 _, ?_, fun y hy => ?_⟩
   · refine (bmoSeminorm_smul_sub_setAverage_le hb hψ hψ1 hψ0).trans_eq ?_
     have hKR : ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (2 * r) = 2 := by
       have hinv : ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞) = ENNReal.ofReal r⁻¹ := by
