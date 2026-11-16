@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
 
@@ -42,10 +43,11 @@ the model space `H` of a model with corners `I : ModelWithCorners ℝ E H` whose
 star-convex about `c`, the map `(t, x) ↦ I.symm (c + (1 - ψ t) • (I x - c))`, with `ψ` the smooth
 transition function from `0` to `1`, is such a smooth contraction
 (`TauCeti.exists_contMDiff_contraction_of_starConvex`), so the inclusion is a quasi-isomorphism
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`). The model may have
-boundary and corners: the contraction stays in `range I` because `I '' U` does. For a star-convex
-open subset of a normed space, the case `I = 𝓘(ℝ, V)`, the smooth singular homology vanishes in
-positive degrees (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`).
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`), and the smooth
+singular homology of `U` vanishes in positive degrees
+(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`). The model may have boundary
+and corners: the contraction stays in `range I` because `I '' U` does. A star-convex open subset of
+a normed space `V` is the case `I = 𝓘(ℝ, V)`.
 
 These are the base cases of the Mayer–Vietoris induction (`TauCeti.mayerVietoris_induction`) that
 compares smooth with continuous singular homology on manifolds with corners: the empty open set,
@@ -66,8 +68,8 @@ intersection. The step for countable disjoint unions is
   star-convex image is smoothly contractible.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
   has no smooth singular homology in positive degrees.
-* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has a star-convex open
-  subset of a normed space.
+* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has an open set of
+  the model space with star-convex image.
 
 ## References
 
@@ -90,12 +92,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
 /-! ### The empty manifold -/
-
-/-- The singular simplicial set of an empty space has no simplices: a simplex has a value at a
-vertex. -/
-private instance [IsEmpty M] : (TopCat.toSSet.obj (TopCat.of M)).HasDimensionLT 0 :=
-  (SSet.notNonempty_iff_hasDimensionLT_zero _).1 fun ⟨σ⟩ ↦
-    isEmptyElim ((TopCat.of M).toSSetObjEquiv _ σ (StdSimplex.single 0))
 
 variable {C : Type*} [Category C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
 
@@ -243,20 +239,21 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex [Cate
   exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction R hF (F (1, ⟨x₀, hx₀⟩))
     h₀ fun x ↦ Subtype.ext ((h₁ x).trans (h₁ _).symm)
 
-/-- **A star-convex open subset has vanishing positive-degree smooth singular homology.**
-The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
-smooth transition function from `0` to `1`, stays in the subset, so its smooth singular homology
-vanishes in every positive degree. -/
+/-- **An open set with star-convex image in the model has vanishing positive-degree smooth
+singular homology.** Let `U` be an open set of the model space `H` of a model with corners `I` whose
+image `I '' U` is star-convex. The smooth contraction `(t, x) ↦ I.symm (c + (1 - ψ t) • (I x - c))`
+towards the centre `c`, with `ψ` the smooth transition function from `0` to `1`, stays in `U`, so
+the smooth singular homology of `U` vanishes in every positive degree. For a star-convex open
+subset of a normed space `V`, take `I = 𝓘(ℝ, V)`. -/
 theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomology C]
-    {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : TopologicalSpace.Opens V} {c : V}
-    (hU : StarConvex ℝ c (U : Set V)) {n : ℕ} (hn : n ≠ 0) :
-    IsZero ((smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).homology R n) := by
-  rcases (U : Set V).eq_empty_or_nonempty with hempty | ⟨x₀, hx₀⟩
+    {H : Type u} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {U : TopologicalSpace.Opens H} {c : E} (hU : StarConvex ℝ c (I '' U)) {n : ℕ} (hn : n ≠ 0) :
+    IsZero ((smoothSingularSubcomplex I U : SSet).homology R n) := by
+  rcases (U : Set H).eq_empty_or_nonempty with hempty | ⟨x₀, hx₀⟩
   · -- An empty open set has no smooth simplices at all.
     have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.2⟩
     exact (HomologicalComplex.homologyFunctor C _ n).map_isZero (SSet.isZero_chainComplex _ R)
-  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex (I := 𝓘(ℝ, V)) (U := U)
-    (by rwa [modelWithCornersSelf_coe, image_id])
+  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex hU
   exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF (F (1, ⟨x₀, hx₀⟩)) h₀
     (fun x ↦ Subtype.ext ((h₁ x).trans (h₁ _).symm)) hn
 
