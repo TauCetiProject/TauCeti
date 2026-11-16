@@ -45,8 +45,8 @@ sub-`MulAction` `Matrix.isotropicPoints Q σ`, the natural permutation domain of
 ## Main results
 
 * `Matrix.mem_specialIsometryGroup_iff`: the defining matrix equation.
-* `Matrix.specialIsometryGroup_ext`, `Matrix.specialIsometryGroup_coe_mul_mulVec`,
-  `Matrix.specialIsometryGroup_coe_inv_mulVec_of_mulVec_eq`, and
+* `Matrix.specialIsometryGroup_ext`, `Matrix.coe_mul_specialIsometryGroup_mulVec`,
+  `Matrix.coe_inv_specialIsometryGroup_mulVec_of_mulVec_eq`, and
   `Matrix.coe_inv_specialIsometryGroup_eq_of_mul_eq_one`: matrix extensionality, product and
   inverse action, and right-inverse characterization in `Q.specialIsometryGroup σ`.
 * `Matrix.mem_isotropicPoints_iff`: a point is isotropic when its chosen representative is.
@@ -109,17 +109,17 @@ theorem specialIsometryGroup_ext {g₁ g₂ : Q.specialIsometryGroup σ}
 
 /-- Matrix-vector multiplication by a product in `Q.specialIsometryGroup σ` composes the two
 matrix actions. -/
-theorem specialIsometryGroup_coe_mul_mulVec (g₁ g₂ : Q.specialIsometryGroup σ) (x : n → K) :
+theorem coe_mul_specialIsometryGroup_mulVec (g₁ g₂ : Q.specialIsometryGroup σ) (x : n → K) :
     (((g₁ * g₂ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x =
       ((g₁ : SpecialLinearGroup n K) : Matrix n n K) *ᵥ
         (((g₂ : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x) := by
   rw [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, mulVec_mulVec]
 
 /-- If `g : Q.specialIsometryGroup σ` sends `x` to `y`, then `g⁻¹` sends `y` to `x`. -/
-theorem specialIsometryGroup_coe_inv_mulVec_of_mulVec_eq {g : Q.specialIsometryGroup σ}
+theorem coe_inv_specialIsometryGroup_mulVec_of_mulVec_eq {g : Q.specialIsometryGroup σ}
     {x y : n → K} (h : ((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = y) :
     (((g⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ y = x := by
-  rw [← h, ← specialIsometryGroup_coe_mul_mulVec, inv_mul_cancel, Subgroup.coe_one,
+  rw [← h, ← coe_mul_specialIsometryGroup_mulVec, inv_mul_cancel, Subgroup.coe_one,
     SpecialLinearGroup.coe_one, one_mulVec]
 
 /-- If the matrix of `g : Q.specialIsometryGroup σ` has right inverse `B`, then `B` is the

@@ -82,7 +82,7 @@ instance normal_elementaryUnitaryGroup : (Q.elementaryUnitaryGroup σ).Normal :=
 
 /-- Any unitary transvection along an isotropic vector (zero or nonzero) that belongs to
 `Q.specialIsometryGroup σ` lies in `Q.elementaryUnitaryGroup σ`. -/
-theorem unitaryTransvection_mem_elementaryUnitaryGroup {g : SpecialLinearGroup n K}
+theorem mk_mem_elementaryUnitaryGroup_of_coe_eq_unitaryTransvection {g : SpecialLinearGroup n K}
     (hg : g ∈ Q.specialIsometryGroup σ) {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
     (hga : (g : Matrix n n K) = Q.unitaryTransvection σ v a) :
     (⟨g, hg⟩ : Q.specialIsometryGroup σ) ∈ Q.elementaryUnitaryGroup σ := by
@@ -100,7 +100,7 @@ theorem exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection
     ∃ t ∈ Q.elementaryUnitaryGroup σ,
       ((t : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a := by
   obtain ⟨g, hg, hga⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ hv ha
-  exact ⟨⟨g, hg⟩, unitaryTransvection_mem_elementaryUnitaryGroup hg hv hga, hga⟩
+  exact ⟨⟨g, hg⟩, mk_mem_elementaryUnitaryGroup_of_coe_eq_unitaryTransvection hg hv hga, hga⟩
 
 /-- **A unitary transvection joins two isotropic vectors.** If `σ` is an involution, `Q` is
 `ε`-Hermitian, and `x` and `y` are isotropic with `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, then
@@ -169,9 +169,8 @@ theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_n
     exists_elementaryUnitaryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_eq
       hσ hQ hx hcy (hcyx ▸ (map_ne_zero σ).mpr hd) hxcy
   refine ⟨g, g.2, c, hc, fun u hu ↦ ?_, hgx⟩
-  have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hxU u hu)
-  have hyu : (σ ∘ y) ⬝ᵥ (Q *ᵥ u) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hyU u hu)
-  simp [hga, unitaryTransvection_mulVec, hxu, hyu]
+  simp [hga, unitaryTransvection_mulVec, (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hxU u hu),
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hyU u hu)]
 
 /-- **Connecting two isotropic vectors in `u^⊥` off `K ∙ u`.** Let `σ` be an involution, let `Q` be
 an invertible `ε`-Hermitian matrix, and suppose that the trace `t ↦ t + ε σ(t)` is onto the
@@ -246,10 +245,9 @@ theorem isPretransitive_elementaryUnitaryGroup (hσ : Function.Involutive σ)
   induction p using Projectivization.ind with | h x hx0 => ?_
   induction q using Projectivization.ind with | h y hy0 => ?_
   rw [mk_mem_isotropicPoints_iff] at hp hq
-  obtain ⟨g, c, -, -, hgx⟩ :=
-    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
-      hσ hQ hdet htr hadm (u := 0) hp hq (by simp [hx0]) (by simp [hy0]) (by simp) (by simp)
-  refine ⟨g, Subtype.ext ?_⟩
+  obtain ⟨g, hg, c, -, hgx⟩ :=
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_smul hσ hQ hdet htr hadm hx0 hy0 hp hq
+  refine ⟨⟨g, hg⟩, Subtype.ext ?_⟩
   exact TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hx0 hy0 (c := c)
     (by rwa [Subgroup.smul_def, Subgroup.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec])
 

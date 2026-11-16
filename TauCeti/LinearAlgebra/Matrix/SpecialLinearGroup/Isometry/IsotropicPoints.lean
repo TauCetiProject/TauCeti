@@ -103,18 +103,18 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq (hσ : Function.Involu
 
 /-- **Constructing a hyperbolic pair from a nonempty isotropic-point set.** For involutive `σ` and
 invertible `ε`-Hermitian `Q` with trace onto `{s | σ(s) = ε s}`, nonemptiness of
-`Q.isotropicPoints σ` yields nonzero `e, f` with `h(e, e) = h(f, f) = 0`, `h(e, f) = 1`,
-`h(f, e) = ε`, `ε * ε = 1`, and `σ ε = ε`. -/
+`Q.isotropicPoints σ` yields nonzero `e, f` with `h(e, e) = h(f, f) = 0`, `h(e, f) = 1`, and
+`h(f, e) = ε`. -/
 theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPoints
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) [Nonempty (Q.isotropicPoints σ)] :
     ∃ e f : n → K, e ≠ 0 ∧ f ≠ 0 ∧ (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0 ∧
-      (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε ∧ ε * ε = 1 ∧ σ ε = ε := by
+      (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by
   obtain ⟨p₀⟩ := ‹Nonempty (Q.isotropicPoints σ)›
-  obtain ⟨f, hf₀, hf, hef, hfe, hε, hσε⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ
+  obtain ⟨f, hf₀, hf, hef, hfe⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ
     hdet htr (p₀ : ℙ K (n → K)).rep_ne_zero (comp_rep_dotProduct_mulVec_rep p₀)
   exact ⟨_, f, (p₀ : ℙ K (n → K)).rep_ne_zero, hf₀, comp_rep_dotProduct_mulVec_rep p₀, hf, hef,
-    hfe, hε, hσε⟩
+    hfe⟩
 
 /-- **Nontriviality of `Q.specialIsometryGroup σ` when an isotropic point exists** and some nonzero
 `d` satisfies `d + ε * σ d = 0`. -/

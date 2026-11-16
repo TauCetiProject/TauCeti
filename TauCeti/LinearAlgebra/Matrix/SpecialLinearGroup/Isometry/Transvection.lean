@@ -48,8 +48,10 @@ as the model for this file.
   `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection`: admissible unitary
   transvections `τ_{v,a}` and Siegel transformations `S(u, w, c)` lie in the special isometry
   group.
-* `Matrix.exists_coe_eq_unitaryTransvection_iff`: for a nondegenerate `ε`-Hermitian `Q`, the
-  transvection `τ_{v,a}` along an isotropic point is an isometry exactly when `a + ε σ(a) = 0`.
+* `Matrix.exists_coe_eq_unitaryTransvection_iff` and
+  `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff`: for a nondegenerate
+  `ε`-Hermitian `Q`, `τ_{v,a}` and `S(u, w, c)` are isometries exactly when their parameters
+  satisfy `a + ε σ(a) = 0` and `c + ε σ(c) + ε h(w, w) = 0`.
 * `Matrix.coe_mul_unitaryTransvection_mul_coe_inv` and
   `Matrix.coe_mul_siegelTransvection_mul_coe_inv`: an isometry `g` conjugates `τ_{v,a}` to
   `τ_{g v,a}` and `S(u, w, c)` to `S(g u, g w, c)`.
@@ -260,6 +262,13 @@ theorem exists_coe_eq_unitaryTransvection (hσ : Function.Involutive σ) (hQ : (
     (comp_rep_dotProduct_mulVec_rep p) ha
   exact ⟨⟨⟨g, hg⟩, a, hga⟩, hga⟩
 
+private theorem vecMulVec_mulVec_comp_vecMul_ne_zero (hdet : Q.det ≠ 0) {u : n → K}
+    (hu0 : u ≠ 0) : vecMulVec (Q *ᵥ u) ((σ ∘ u) ᵥ* Q) ≠ 0 :=
+  vecMulVec_eq_zero.not.mpr <| not_or.mpr
+    ⟨fun h0 ↦ hdet (exists_mulVec_eq_zero_iff.mp ⟨u, hu0, h0⟩),
+      fun h0 ↦ hdet (exists_vecMul_eq_zero_iff.mp
+        ⟨σ ∘ u, fun h ↦ hu0 (funext fun i ↦ (map_eq_zero σ).mp (congrFun h i)), h0⟩)⟩
+
 /-- **The parameters of the transvection group of an isotropic point.** If `σ` is an involution
 and `Q` is a nondegenerate `ε`-Hermitian matrix, the transvection `τ_{v,a}` along the
 representative `v` of an isotropic point is an isometry exactly when `a + ε σ(a) = 0`. For a
@@ -270,19 +279,28 @@ theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
         Q.unitaryTransvection σ (p : ℙ K (n → K)).rep a) ↔ a + ε * σ a = 0 := by
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, exists_coe_eq_unitaryTransvection hσ hQ p⟩
-  set v := (p : ℙ K (n → K)).rep
-  have hv := comp_rep_dotProduct_mulVec_rep p
-  have h := (mem_specialIsometryGroup_iff).mp (g : Q.specialIsometryGroup σ).2
-  rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ hv, add_eq_left, smul_eq_zero,
-    vecMulVec_eq_zero] at h
-  -- The column `Q v` and the row `vᵀ ^ σ Q` are nonzero, as `Q` is invertible and `v ≠ 0`.
-  have hQv : Q *ᵥ v ≠ 0 := fun h0 ↦
-    hdet (exists_mulVec_eq_zero_iff.mp ⟨v, (p : ℙ K (n → K)).rep_ne_zero, h0⟩)
-  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ (p : ℙ K (n → K)).rep_ne_zero <| funext fun i ↦
-    (map_eq_zero σ).mp (congrFun h0 i)
-  have hvQ : (σ ∘ v) ᵥ* Q ≠ 0 := fun h0 ↦
-    hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, hσv, h0⟩)
-  exact h.resolve_right (not_or.mpr ⟨hQv, hvQ⟩)
+  have h := mem_specialIsometryGroup_iff.mp (g : Q.specialIsometryGroup σ).2
+  rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ (comp_rep_dotProduct_mulVec_rep p),
+    add_eq_left, smul_eq_zero] at h
+  exact h.resolve_right
+    (vecMulVec_mulVec_comp_vecMul_ne_zero hdet (p : ℙ K (n → K)).rep_ne_zero)
+
+/-- **The parameters of Siegel transformations in the special isometry group.** If `σ` is an
+involution and `Q` is a nondegenerate `ε`-Hermitian matrix, the Siegel transformation `S(u, w, c)`
+along a nonzero isotropic vector `u` with `h(u, w) = 0` belongs to `Q.specialIsometryGroup σ` if
+and only if `c + ε * σ c + ε * h(w, w) = 0`. -/
+theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    {u w : n → K} (hu0 : u ≠ 0) (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (c : K) :
+    (∃ g ∈ Q.specialIsometryGroup σ,
+      (g : Matrix n n K) = Q.siegelTransvection σ ε u w c) ↔
+      c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0 := by
+  refine ⟨fun ⟨g, hg, hcg⟩ ↦ ?_,
+    exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu huw⟩
+  have h := mem_specialIsometryGroup_iff.mp hg
+  rw [hcg, transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, add_eq_left, smul_eq_zero] at h
+  exact h.resolve_right (vecMulVec_mulVec_comp_vecMul_ne_zero hdet hu0)
 
 end Field
 

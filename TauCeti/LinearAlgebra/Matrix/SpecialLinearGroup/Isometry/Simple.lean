@@ -25,8 +25,10 @@ hypothesis and perfectness, and in particular under the three-way hypothesis of
 
 ## References
 
-* K. Iwasawa, *Über die Einfachheit der speziellen projektiven Gruppen* (1941); D. E. Taylor, *The
-  Geometry of the Classical Groups* (1992), Theorem 11.29.
+* K. Iwasawa, *Über die Einfachheit der speziellen projektiven Gruppen*, Proc. Imp. Acad. Tokyo
+  **17** (1941), 57--59.
+* D. E. Taylor, *The Geometry of the Classical Groups* (1992), Chapter 10, Theorems 10.9 and 10.20.
+* L. C. Grove, *Classical Groups and Geometric Algebra* (2002), Chapter 11.
 -/
 
 public section
@@ -73,9 +75,7 @@ theorem isSimpleGroup_quotient_center_specialIsometryGroup
       (3 ≤ Fintype.card n ∧ ∃ c : K, c ≠ 0 ∧ c * σ c ≠ 1)) :
     IsSimpleGroup (Q.specialIsometryGroup σ ⧸ Subgroup.center (Q.specialIsometryGroup σ)) :=
   isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top hσ hQ hdet htr hadm
-    (hperf.elim (fun ⟨c, hc0, hcsq, hσc⟩ ↦ Or.inl ⟨c, hc0, fun h1 ↦ hcsq (by simp [h1]), hσc⟩)
-      fun h ↦ h.elim (Or.inr ∘ Or.inr) fun ⟨_, c, hc0, hc1⟩ ↦ Or.inl ⟨c * σ c,
-        mul_ne_zero hc0 ((map_ne_zero σ).mpr hc0), hc1, by rw [map_mul, hσ c, mul_comm]⟩)
+    (exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span hσ hperf)
     (commutator_specialIsometryGroup_eq_top hσ hQ hdet htr hadm hperf)
 
 end Matrix

@@ -26,8 +26,10 @@ classification list is simple (`TauCeti.TypeALieIndex.isSimpleGroup_group_ofTwis
 
 ## References
 
-* R. W. Carter, *Simple Groups of Lie Type*, Wiley (1972), §14.1; D. E. Taylor, *The Geometry of
-  the Classical Groups*, Heldermann (1992), Theorems 11.28--11.29.
+* R. W. Carter, *Simple Groups of Lie Type*, Wiley (1972), §14.1.
+* D. E. Taylor, *The Geometry of the Classical Groups*, Heldermann (1992), Chapter 10, Theorems
+  10.9 and 10.20.
+* L. C. Grove, *Classical Groups and Geometric Algebra* (2002), Chapter 11.
 -/
 
 public section
@@ -45,16 +47,14 @@ private theorem isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA (r 
       (GaloisField d.characteristic (d.fieldExponent * 2))).val.specialIsometryGroup
       (iterateFrobenius _ d.characteristic d.fieldExponent)
     commutator G = ⊤ ∧ IsSimpleGroup (G ⧸ Subgroup.center G) := by
-  intro d G
-  let K := GaloisField d.characteristic (d.fieldExponent * 2)
+  intro d G; let K := GaloisField d.characteristic (d.fieldExponent * 2)
   let σ := iterateFrobenius K d.characteristic d.fieldExponent
   let Q := (typeAGraphConjugator d.rank K).val
   have hr_eq : d.rank = r := by simp [d, ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType]
   have hpow_eq : d.characteristic ^ d.fieldExponent = q.card := by
     simp [d, ValidLieTypeIndex.characteristic, ValidLieTypeIndex.fieldExponent, PrimePower.card_def]
   obtain ⟨hr2, hq3⟩ := (LieTypeIndex.inStandardRange_iff _).mp ((LieTypeIndex.valid_iff _).mp hv).1
-  have : NeZero d.rank := ⟨by omega⟩
-  have := d.nonempty_isotropicPoints_galoisField (r := d.rank)
+  have : NeZero d.rank := ⟨by omega⟩; have := d.nonempty_isotropicPoints_galoisField (r := d.rank)
   have hperf : (∃ c : K, c ≠ 0 ∧ c ^ 2 ≠ 1 ∧ σ c = c) ∨
       (∃ u w : Fin (d.rank + 1) → K, u ≠ 0 ∧ w ∉ K ∙ u ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0 ∧
         (σ ∘ w) ⬝ᵥ (Q *ᵥ w) = 0 ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) ∨
@@ -63,11 +63,10 @@ private theorem isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA (r 
     · have h3 : 3 ≤ d.characteristic ^ d.fieldExponent := hpow_eq.symm ▸ hq3 (hr_eq ▸ h2.symm)
       obtain ⟨c, hc0, hc1⟩ := FiniteField.exists_ne_zero_pow_ne_one
         (k := d.characteristic ^ d.fieldExponent + 1) (Nat.succ_ne_zero _)
-        (by rw [d.natCard_galoisField]; nlinarith)
-      exact Or.inr (Or.inr ⟨by rw [Fintype.card_fin]; omega, c, hc0,
+        (by rw [d.natCard_galoisField_mul_two]; nlinarith)
+      exact .inr (.inr ⟨by rw [Fintype.card_fin]; omega, c, hc0,
         by simpa [σ, pow_succ', iterateFrobenius_def] using hc1⟩)
-    · exact Or.inr (Or.inl
-        (d.exists_notMem_span_and_comp_dotProduct_mulVec_eq_zero_of_three_le hr3))
+    · exact .inr (.inl (d.exists_notMem_span_and_comp_dotProduct_mulVec_eq_zero_of_three_le hr3))
   have hσ := d.involutive_iterateFrobenius_galoisField
   have hQ := d.transpose_map_typeAGraphConjugator_galoisField (r := d.rank)
   have hdet := (isUnits_det_units (typeAGraphConjugator d.rank K)).ne_zero
@@ -126,8 +125,7 @@ namespace TauCeti.ValidLieTypeIndex
 /-- **Every `²A_r(q)` on the classification list is simple.** -/
 theorem isSimpleGroup_twistedA {r : ℕ} {q : PrimePower} (hv : (LieTypeIndex.twistedA r q).Valid) :
     IsSimpleGroup (ValidLieTypeIndex.Group ⟨_, hv⟩) := by
-  unfold ValidLieTypeIndex.Group
-  rw [steinberg_twistedA, GraphTwistedIndex.steinberg_twistedA]
+  unfold ValidLieTypeIndex.Group; rw [steinberg_twistedA, GraphTwistedIndex.steinberg_twistedA]
   exact TypeALieIndex.isSimpleGroup_group_ofTwistedA r q hv
 
 end TauCeti.ValidLieTypeIndex
