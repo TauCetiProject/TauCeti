@@ -51,7 +51,7 @@ belong to De Giorgi's class with a linear term above the level `0`
 
 now with `γ` in the constant. On balls where `βR/λ` and `γR²/λ` are bounded, the `L²` norm can
 be replaced by any `Lᵖ` norm with `0 < p ≤ 2`
-(`TauCeti.PDE.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`). For a positive weak
+(`TauCeti.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`). For a positive weak
 supersolution `u` of the same equation, `u⁻¹` is formally a subsolution of the equation with mass
 coefficient `-c`, so Moser's weak Harnack and Harnack inequalities with lower-order terms need
 local boundedness for mass coefficients of either sign.

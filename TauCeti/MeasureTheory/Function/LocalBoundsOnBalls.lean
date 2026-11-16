@@ -37,7 +37,7 @@ balls `r < ρ` and the interpolation `‖w‖²_{L²} ≤ F(ρ)^{2-p} ‖w‖ᵖ
 
 ## Main declarations
 
-* `TauCeti.PDE.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`: local `L²` bounds for
+* `TauCeti.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`: local `L²` bounds for
   the supremum on half balls imply the same bounds with any `Lᵖ` norm, `0 < p ≤ 2`.
 
 ## References
@@ -55,8 +55,6 @@ open Filter MeasureTheory Set TopologicalSpace
 open scoped Topology
 
 namespace TauCeti
-
-namespace PDE
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
 
@@ -302,7 +300,5 @@ theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ) (D :
   field_simp
 
 end L2ToLp
-
-end PDE
 
 end TauCeti

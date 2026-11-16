@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.SpecificLimits.FastGeometric
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
-import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.Interpolation
+import TauCeti.MeasureTheory.Function.LocalBoundsOnBalls
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -79,7 +79,7 @@ Writing `F(r)` for the essential supremum of `(u - k)⁺` on `B(x₀, r)`, the `
 concentric balls `r < ρ` and the interpolation `‖w‖²_{L²} ≤ F(ρ)^{2-p} ‖w‖ᵖ_{Lᵖ}` give
 `F(r) ≤ F(ρ)/2 + C (ρ - r)^{-n/p} ‖(u - k)⁺‖_{Lᵖ}`, and the absorption lemma
 `TauCeti.exists_le_mul_mul_rpow_add_of_le_mul_add` removes the term `F(ρ)/2`
-(`TauCeti.PDE.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`). Small `p` is
+(`TauCeti.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`). Small `p` is
 what Moser's proof of the Harnack inequality needs, where the supremum bound for subsolutions is
 matched with an infimum bound for supersolutions through a small positive power.
 
@@ -1289,7 +1289,7 @@ every ball `B(y, s) ⊆ B(x₀, R)`, then
 
 `u ≤ k + C R^{2e/p} (∫_{B(x₀, R)} ((u - k)⁺)ᵖ)^{1/p}` almost everywhere on `B(x₀, R/2)`.
 
-This is `TauCeti.PDE.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball` applied to
+This is `TauCeti.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball` applied to
 `(u - k)⁺`. -/
 theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ)
     (D : ℝ) (hD : 0 ≤ D) {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
